@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import mapUrl from '../../assets/map/elondia-map.webp'
-import { className, combatRules, geography, locationById, raceName } from '@/engine/data'
+import { geography, locationById } from '@/engine/data'
 import { canTravelHere, CELL_NAME, currentArea, currentCell, DUNGEON_LAYERS, questRunnableHere } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
-import {
-  canAcceptRank, guildQuests, questTemplate, recruitableHere, restCost, RATION_CC, templeCost,
-} from '@/engine/town'
+import { marketsHere } from '@/engine/companions'
+import { canAcceptRank, guildQuests, questTemplate, RATION_CC, templeCost } from '@/engine/town'
 import { MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
 import { useGame } from '@/stores/game'
+import ActionPanel from './ActionPanel.vue'
 import AreaMap from './AreaMap.vue'
+import MarketPanel from './MarketPanel.vue'
+import RestPanel from './RestPanel.vue'
+import TavernPanel from './TavernPanel.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -55,9 +58,8 @@ function runQuest(id: string) {
   intent.value = ''
 }
 
-// ---- 酒館 ----
-const recruitable = computed(() => recruitableHere(s.value))
-const partyFull = computed(() => s.value.party.length >= combatRules.party_max)
+// ---- 市場 ----
+const publicMarket = computed(() => marketsHere(s.value).some((m) => m.kind === 'public'))
 const rations = computed(() => s.value.inventory.find((i) => i.name === '乾糧')?.qty ?? 0)
 
 // ---- 旅行 ----
@@ -113,8 +115,7 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
         <h3>{{ CELL_NAME[cell.kind] === '牆' ? '道路' : CELL_NAME[cell.kind] }}</h3>
 
         <template v-if="cell.kind === 'inn'">
-          <p class="muted small">住一晚：全員 HP 與法術環回滿，每次休息可用的能力重置。</p>
-          <button :disabled="s.money_cc < restCost(s)" @click="game.rest()">休息（{{ formatMoney(restCost(s)) }}）</button>
+          <p class="muted small">可以在這裡長休（見下方「休息」）。</p>
         </template>
 
         <template v-else-if="cell.kind === 'temple'">
@@ -132,23 +133,11 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
               購買乾糧（{{ formatMoney(rationQty * RATION_CC) }}）
             </button>
           </div>
+          <MarketPanel v-if="publicMarket" kind="public" />
         </template>
 
         <template v-else-if="cell.kind === 'tavern'">
-          <p v-if="recruitable.length === 0" class="muted small">這裡沒有願意同行的冒險者。</p>
-          <ul class="plain">
-            <li v-for="n in recruitable" :key="n.id">
-              <div class="row" style="justify-content: space-between">
-                <strong>{{ n.name }}</strong>
-                <span class="small muted">{{ raceName(n.race) }}・{{ className(n.class) }} Lv.{{ n.level }}</span>
-              </div>
-              <div class="small muted">{{ n.personality }}</div>
-              <button class="small" :disabled="partyFull || s.money_cc < n.hire_cc" @click="game.recruit(n.id)">
-                招募（{{ formatMoney(n.hire_cc) }}）
-              </button>
-              <span v-if="partyFull" class="small muted"> 隊伍已滿</span>
-            </li>
-          </ul>
+          <TavernPanel :key="`${s.location}-${s.time.day}`" />
         </template>
 
         <template v-else-if="cell.kind === 'guild'">
@@ -195,10 +184,7 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
         </template>
 
         <template v-else-if="cell.kind === 'safe'">
-          <p class="muted small">安全房：每人消耗 1 份乾糧，花 2 小時休整，回復一半最大生命值。每間只能用一次。</p>
-          <button :disabled="cell.done || rations < s.party.length" @click="game.restAtSafeRoom()">
-            {{ cell.done ? '已休整過' : `休整（乾糧 ${s.party.length} 份）` }}
-          </button>
+          <p class="muted small">安全房：魔物不會靠近，可以安心短休或長休（見下方「休息」）。</p>
         </template>
 
         <p v-else class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
@@ -208,6 +194,9 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
           <button class="small primary" @click="runQuest(q.id)">執行委託（約 {{ questTemplate(q)?.hours ?? 1 }} 小時）</button>
         </div>
       </section>
+
+      <ActionPanel />
+      <RestPanel />
 
       <section class="panel">
         <label class="intent small">

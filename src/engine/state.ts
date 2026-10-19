@@ -1,7 +1,7 @@
 // 遊戲狀態、時間與報告提交。
 
 import { baseAttrs, createPlayer, gainXp, recalc } from './character'
-import { abilities, attributeRules, classDef, locationById, type Attrs } from './data'
+import { abilities, attributeRules, classDef, contractDef, locationById, type Attrs } from './data'
 import { ensureRelationship, recordMemory, setAffinity } from './social'
 import { Rng } from './rng'
 import type { GameState, GameTime, InventoryItem, Report } from './types'
@@ -69,6 +69,13 @@ export function migrate(state: GameState): GameState {
     state.memories = []
     for (const r of state.reports) recordMemory(state, r)
   }
+  // v3 之前沒有夥伴系統：原本的隊友都是雇傭的
+  for (const m of state.party) {
+    m.hitDiceUsed ??= 0
+    if (!m.isPlayer) m.bond ??= 'hired'
+  }
+  state.npcs ??= {}
+  state.suggestions ??= []
   return state
 }
 
@@ -141,6 +148,16 @@ export function commitReport(state: GameState, report: Report): Report {
     const member = state.party.find((m) => m.id === snap.id)
     if (!member) continue
     if (snap.hp) member.hp = Math.max(0, Math.min(member.maxHp, snap.hp[1]))
+  }
+  // 奴隸契約「收益歸屬」：主角賺到的錢有一部分歸主人（成為奴隸的那份報告除外）
+  const pc = state.party.find((m) => m.isPlayer)
+  if (pc?.contract && !pc.status.includes('fugitive') && (c.money_cc ?? 0) > 0 && !c.companions?.some((x) => x.npc === 'pc' && x.change === 'enslaved')) {
+    const def = contractDef(pc.contract.kind)
+    const taken = def.functions.includes('income') ? Math.floor(c.money_cc! * def.income_share) : 0
+    if (taken > 0) {
+      c.money_cc! -= taken
+      c.master_share_cc = taken
+    }
   }
   if (c.money_cc) state.money_cc += c.money_cc
   for (const item of c.items_gained ?? []) addItem(state.inventory, item.name, item.qty, item.quality)

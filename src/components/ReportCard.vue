@@ -3,7 +3,8 @@ import { computed, ref } from 'vue'
 import { locationById } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import type { Report } from '@/engine/types'
-import { actorNames, describeChanges, describeEntry } from '@/narrator/describe'
+import { actorNames, describeChanges, describeCheck, describeEntry } from '@/narrator/describe'
+import { visibleNarration } from '@/narrator/judge'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 
@@ -17,10 +18,12 @@ const KIND_NAME: Record<Report['kind'], string> = {
 
 const narration = computed(() => game.narrations[props.report.report_id])
 // 關閉 AI 細節描述時不顯示敘事，改顯示戰報或事件簡述（已生成的敘事仍保留，重新開啟後會再出現）
-const showStory = computed(() => settings.aiNarration && !!narration.value)
+// AI 判定的主動行動：AI 直接寫出的經過一律顯示
+const showStory = computed(() => (settings.aiNarration || props.report.check?.source === 'ai') && !!narration.value)
 const showBattleReport = computed(() => props.report.kind === 'combat' && !showStory.value && !!props.report.timeline?.length)
 const names = computed(() => actorNames(props.report))
 const changes = computed(() => describeChanges(props.report))
+const check = computed(() => describeCheck(props.report))
 const showRaw = ref(false)
 const copied = ref(false)
 
@@ -42,9 +45,10 @@ async function copyPrompt() {
       <span class="small muted">{{ formatTime(report.time.start) }}</span>
     </header>
     <p>{{ report.outcome.summary }}</p>
+    <p v-if="check" class="small check">🎲 {{ check }}<template v-if="report.check?.twist"><br /><span>✨ 出乎預料：{{ report.check.twist }}</span></template><template v-if="report.check?.rationale"><br /><span class="muted">判定理由：{{ report.check.rationale }}</span></template></p>
 
     <div v-if="showStory && narration" class="story">
-      <div class="narration">{{ narration.text }}<span v-if="narration.status === 'streaming'" class="cursor">▌</span></div>
+      <div class="narration">{{ visibleNarration(narration.text) }}<span v-if="narration.status === 'streaming'" class="cursor">▌</span></div>
       <p v-if="narration.status === 'error'" class="small" style="color: var(--danger)">{{ narration.error }}</p>
     </div>
 
@@ -93,4 +97,5 @@ async function copyPrompt() {
 .actions { margin-top: 6px; }
 .raw { max-height: 320px; overflow: auto; background: var(--bg); padding: 8px; border-radius: 6px; }
 details summary { cursor: pointer; color: var(--accent-2); }
+.check { color: var(--accent-2); margin: 0 0 8px; }
 </style>

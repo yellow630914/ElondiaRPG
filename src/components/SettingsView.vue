@@ -106,6 +106,11 @@ function doReset() {
         開啟：每次行動、事件或戰鬥結束後，自動請 AI 寫出詳細經過（需先設定 AI 服務）。<br />
         關閉：不呼叫 AI，戰鬥直接顯示戰報，其他事件顯示簡述。
       </p>
+      <label class="check"><input v-model="settings.aiJudge" type="checkbox" /> AI 判定主動行動</label>
+      <p class="small muted">
+        開啟：主動行動（談判、雇傭、殺價、邀請、逃離……）先擲骰，再把骰值與完整資料交給 AI，由 AI 決定成敗（可能出乎預料）並直接寫出經過；酒館候選人也由 AI 設計。<br />
+        關閉：依規則判定（預設屬性與參考 DC）。
+      </p>
       <label>
         輸出語言
         <select v-model="settings.language">

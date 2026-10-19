@@ -85,6 +85,10 @@ function addMemory() {
 }
 
 const STARS = { 1: '★', 2: '★★', 3: '★★★' } as const
+
+// ---- AI 提議的關係更新 ----
+const suggestions = computed(() => s.value.suggestions ?? [])
+const suggestionDraft = reactive<Record<string, string>>({})
 </script>
 
 <template>
@@ -93,6 +97,18 @@ const STARS = { 1: '★', 2: '★★', 3: '★★★' } as const
       <h2>人際關係</h2>
       <p class="small muted">主角認識的角色。親密度由遊戲中的互動決定；外貌與關係描述可以自行編輯，會在相關事件中提供給 AI 參考。</p>
       <p v-if="rels.length === 0" class="muted small">還沒有認識任何人。到酒館招募夥伴吧。</p>
+
+      <div v-if="suggestions.length" class="suggestions">
+        <h3 class="small">AI 提議更新「與{{ pcName }}的關係」</h3>
+        <div v-for="sg in suggestions" :key="sg.id" class="suggestion small">
+          <div><strong>{{ nameOf(sg.npc) }}</strong> <span class="muted">目前：{{ s.relationships?.[sg.npc]?.toPlayer }}</span></div>
+          <textarea v-model="suggestionDraft[sg.id]" rows="2" :placeholder="sg.text" />
+          <div class="row">
+            <button class="small primary" @click="game.acceptSuggestion(sg.id, suggestionDraft[sg.id] || sg.text)">採用</button>
+            <button class="small" @click="game.rejectSuggestion(sg.id)">不採用</button>
+          </div>
+        </div>
+      </div>
 
       <article v-for="r in rels" :key="r.id" class="rel">
         <div class="row" style="justify-content: space-between">
@@ -182,6 +198,7 @@ const STARS = { 1: '★', 2: '★★', 3: '★★★' } as const
             <span>{{ formatTime(m.time) }}</span>
             <span>{{ m.scene ?? locationById(m.location).name }}</span>
             <span class="muted">{{ m.participants.map(nameOf).join('、') }}</span>
+            <span v-if="m.merged" class="tag" title="記憶超過 200 筆時，舊的日常記憶會合併成摘要">合併 {{ m.merged }} 筆</span>
             <span class="spacer" />
             <button
               class="small star"
@@ -218,6 +235,9 @@ dd { margin: 0; }
 .add { margin-bottom: 8px; display: grid; gap: 6px; }
 .add textarea { width: 100%; margin-top: 6px; }
 .memory { display: grid; gap: 4px; }
+.suggestions { border: 1px dashed var(--accent); border-radius: 6px; padding: 8px; margin-bottom: 8px; display: grid; gap: 8px; }
+.suggestion { display: grid; gap: 4px; }
+.suggestion textarea { width: 100%; }
 .meta { gap: 10px; }
 .spacer { flex: 1; }
 .star { color: var(--accent); }

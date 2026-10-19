@@ -1,5 +1,6 @@
+import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { Attrs } from './data'
+import type { AttrId, Attrs, Bond, NpcDef } from './data'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
 
@@ -80,6 +81,43 @@ export interface Changes {
   affinity?: { npc: string; delta: number; after: number; reason?: string }[]
   reputation?: { faction: string; delta: number }[]
   flags?: Record<string, unknown>
+  /** 入隊、離隊、獲釋、成為奴隸、逃亡、被抓回 */
+  companions?: CompanionChange[]
+  /** 非戰鬥狀態（奴隸印記、逃亡、受罰）的增減 */
+  conditions?: { actor: string; condition: string; added: boolean }[]
+  /** 短休花費／長休回復的生命骰 */
+  hit_dice?: { actor: string; spent?: number; regained?: number; healed?: number }[]
+  /** 奴隸契約「收益歸屬」被主人拿走的金錢 */
+  master_share_cc?: number
+}
+
+export interface CompanionChange {
+  npc: string
+  name: string
+  change: 'joined' | 'left' | 'freed' | 'enslaved' | 'escaped' | 'recaptured'
+  bond?: Bond
+  reason?: string
+}
+
+/** 主動行動的檢定：程式擲骰，AI（或規則）決定屬性與 DC */
+export interface CheckInfo {
+  action: string
+  attr: AttrId
+  /** 程式算出的參考 DC */
+  base_dc: number
+  /** 實際使用的 DC（AI 可在 ±dc_adjust 內調整） */
+  dc: number
+  natural: number
+  modifier: number
+  total: number
+  /** 實際的成功程度（AI 判定時由 AI 決定） */
+  degree: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
+  /** 骰值對 DC 算出的參考成功程度；只在與實際結果不同時記錄 */
+  reference_degree?: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
+  source: 'ai' | 'rules'
+  rationale?: string
+  /** AI 讓結果出乎預料時的說明 */
+  twist?: string
 }
 
 export interface Report {
@@ -94,6 +132,7 @@ export interface Report {
   timeline?: TimelineEntry[]
   outcome: { result: OutcomeResult; summary?: string; tags?: string[] }
   changes: Changes
+  check?: CheckInfo
   narration?: {
     pov?: 'second_person' | 'third_person'
     length?: 'short' | 'medium' | 'long'
@@ -136,6 +175,63 @@ export interface Character {
   /** 只有 NPC 隊友有；-100 ~ 100。來源是人際關係條目，這裡是同步副本 */
   affinity?: number
   isPlayer?: boolean
+  /** 入隊方式；主角沒有（除非加入了別人的隊伍，見 GameState） */
+  bond?: Bond
+  /** 隊長的 id：跟著別人的隊伍一起行動的成員（bond = leader / ally） */
+  group?: string
+  /** 奴隸契約；主角也可能有（主人是 NPC） */
+  contract?: ContractRef
+  /** 已花掉的生命骰（總數 = 等級） */
+  hitDiceUsed?: number
+}
+
+export interface ContractRef {
+  kind: string
+  /** 主人的 id；主角為 pc */
+  master: string
+  masterName: string
+  /** 目前的服從懲罰（受罰可能加重） */
+  obedience: number
+  since: GameTime
+}
+
+/** 遊戲中登場的 NPC（含程式生成的）；不在隊伍時保存角色資料，再次入隊時沿用 */
+export interface NpcRecord extends NpcDef {
+  generated?: boolean
+  background?: string
+  character?: Character
+}
+
+export interface TavernCandidate {
+  npc: string
+  asking_cc: number
+  /** 今天拒絕了 */
+  declined?: boolean
+  /** 部分成功時對方的還價 */
+  counter_cc?: number
+}
+
+export interface SlaveListing {
+  npc: string
+  price_cc: number
+  contract: string
+  haggled?: boolean
+}
+
+export interface PartyOffer {
+  id: string
+  leader: string
+  members: string[]
+  pay_cc: number
+  location: string
+  day: number
+}
+
+export interface RelationSuggestion {
+  id: string
+  npc: string
+  text: string
+  report?: string
 }
 
 /**
@@ -195,4 +291,20 @@ export interface GameState {
   relationships?: Record<string, Relationship>
   /** 共同記憶 */
   memories?: Memory[]
+  /** 登場過的 NPC（含生成的） */
+  npcs?: Record<string, NpcRecord>
+  /** 各城鎮酒館今天的候選人 */
+  taverns?: Record<string, { day: number; candidates: TavernCandidate[]; flavored?: boolean }>
+  /** 奴隸市場今天的商品；鍵為 城鎮/public 或 城鎮/black */
+  markets?: Record<string, { day: number; stock: SlaveListing[] }>
+  /** 其他隊伍的入隊邀請 */
+  partyOffers?: PartyOffer[]
+  /** 主角打算離開目前所在的別人隊伍：下次休息時進行 */
+  pendingLeave?: { mode: 'sneak' | 'formal' }
+  /** 已擲骰、等待判定的主動行動 */
+  pendingAction?: ActionPending
+  /** 上次長休結束的時間 */
+  lastLongRest?: GameTime
+  /** AI 提議的人際關係文字更新，等待玩家確認 */
+  suggestions?: RelationSuggestion[]
 }

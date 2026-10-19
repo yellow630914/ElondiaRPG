@@ -6,9 +6,11 @@ import {
 } from '@/engine/character'
 import { abilityApCost } from '@/engine/combat'
 import {
-  abilityDef, armorDef, attributeRules, attrName, className, classDef, damageTypeName, raceName,
-  type AbilityDef,
+  abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName, contractDef,
+  damageTypeName, raceName, slaveryRules, type AbilityDef,
 } from '@/engine/data'
+import { isBound, leaderOf } from '@/engine/party'
+import { hitDiceLeft, hitDie } from '@/engine/rest'
 import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import StatBar from './StatBar.vue'
@@ -23,6 +25,12 @@ const s = computed(() => game.state!)
 const inCombat = computed(() => !!s.value.combat)
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
+const leader = computed(() => leaderOf(s.value))
+const bound = computed(() => isBound(s.value))
+
+function contractFor(m: Character) {
+  return m.contract ? { ...m.contract, def: contractDef(m.contract.kind) } : null
+}
 
 function grouped(m: Character) {
   const list = m.abilities.map(abilityDef)
@@ -67,7 +75,24 @@ function affinityText(m: Character): string {
       <div class="small muted">
         {{ raceName(m.race) }}・{{ className(m.class) }}・Lv.{{ m.level }}（經驗 {{ m.xp }}/{{ xpToNext(m.level) }}）
       </div>
+      <div class="row small">
+        <span v-if="m.bond" class="tag" :class="m.bond">{{ companionRules.bonds[m.bond] }}</span>
+        <span v-if="m.group && m.bond !== 'leader'" class="tag">{{ s.party.find((x) => x.id === m.group)?.name }}的隊伍</span>
+        <span v-for="c in m.status" :key="c" class="tag warn" :title="companionRules.conditions[c]?.desc">{{ conditionName(c) }}</span>
+        
+      </div>
       <StatBar kind="hp" :value="m.hp" :max="m.maxHp" />
+      <div class="small muted">生命骰 d{{ hitDie(m) }} 剩 {{ hitDiceLeft(m) }}/{{ m.level }}</div>
+      <div v-if="contractFor(m)" class="contract small">
+        <strong>{{ contractFor(m)!.def.name }}</strong>（主人 {{ contractFor(m)!.masterName }}）
+        <div>{{ contractFor(m)!.def.mark }}</div>
+        <ul class="plain">
+          <li v-for="f in contractFor(m)!.def.functions" :key="f" class="muted">・{{ slaveryRules.functions[f] }}</li>
+          <li v-for="e in contractFor(m)!.def.side_effects" :key="e" class="muted">・副作用：{{ e }}</li>
+        </ul>
+        <div class="muted">目前的服從懲罰：-{{ contractFor(m)!.obedience }}</div>
+        <button v-if="m.contract?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
+      </div>
 
       <table class="attrs small">
         <tr v-for="a in attributeRules.attributes" :key="a.id">
@@ -121,11 +146,28 @@ function affinityText(m: Character): string {
         </ul>
       </div>
 
-      <button v-if="!m.isPlayer" class="small danger" style="margin-top: 8px" :disabled="inCombat" @click="game.dismiss(m.id)">
-        請離隊伍
-      </button>
+      <button
+        v-if="!m.isPlayer && !m.group && m.bond !== 'slave'"
+        class="small danger"
+        style="margin-top: 8px"
+        :disabled="inCombat"
+        @click="game.dismiss(m.id)"
+      >請離隊伍</button>
     </section>
   </div>
+
+  <section v-if="leader" class="panel">
+    <h2>{{ leader.name }}的隊伍</h2>
+    <p v-if="bound" class="small muted">你是{{ leader.name }}的奴隸，不能自行離隊；只能在「冒險」頁的主動行動中談判或逃離。</p>
+    <template v-else>
+      <p class="small muted">你是這支隊伍的隊員。離隊會在下次休息（短休或長休）時進行：正式道別比較體面；偷偷離開要過靈巧檢定，被發現會很尷尬。</p>
+      <div class="row">
+        <button class="small" :class="{ primary: s.pendingLeave?.mode === 'formal' }" @click="game.requestLeave('formal')">正式道別</button>
+        <button class="small" :class="{ primary: s.pendingLeave?.mode === 'sneak' }" @click="game.requestLeave('sneak')">偷偷離開</button>
+        <button v-if="s.pendingLeave" class="small" @click="game.requestLeave(null)">打消念頭</button>
+      </div>
+    </template>
+  </section>
 
   <section class="panel">
     <h2>行囊</h2>
@@ -146,4 +188,7 @@ function affinityText(m: Character): string {
 .options { display: grid; gap: 6px; margin-top: 6px; }
 .option { display: grid; text-align: left; gap: 2px; }
 .abilities h3 { margin: 6px 0 2px; color: var(--accent-2); }
+.tag.slave, .tag.warn { color: var(--danger); border-color: var(--danger); }
+.tag.leader { color: var(--accent); border-color: var(--accent); }
+.contract { padding: 6px 8px; border: 1px dashed var(--danger); border-radius: 6px; display: grid; gap: 2px; }
 </style>

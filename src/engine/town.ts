@@ -1,19 +1,22 @@
 // 城鎮行動：旅店休息、酒館招募、公會委託、補給、升級選技能。
 
-import { abilityQuality, createNpc, guildRankFor, proficiency, snapshot } from './character'
+import { abilityQuality, guildRankFor, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
   abilityDef, attributeRules, combatRules, dungeonEncounters, economy, locationById, npcs, regionById,
   townQuestsPerTown, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
-import { Rng, roll, withBonus } from './rng'
-import { ensureRelationship } from './social'
+import { roll, withBonus } from './rng'
+import { isFugitive, joinParty, leaveParty } from './party'
+import { npcRecord } from './npcs'
+import { innCost, longRest } from './rest'
+import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, GuildRank, Quest, Report } from './types'
 import { shortestPath } from './world'
 
-export const INN_CC_PER_PERSON = 15
+export { INN_CC_PER_PERSON } from './rest'
 export const RATION_CC = 5
 /** 公會只發布這個天數內可到達的冒險區域委託 */
 export const QUEST_RANGE_DAYS = 7
@@ -41,28 +44,17 @@ function baseReport(state: GameState, kind: Report['kind'], hours: number): Repo
 // ---- 旅店 ----
 
 export function restCost(state: GameState): number {
-  return INN_CC_PER_PERSON * state.party.length
+  return innCost(state)
 }
 
-/** 在旅店住一晚：全員 HP 與法術環回滿、每次休息的能力重置，時間推進到隔天早上 8 點。 */
+/** 在旅店住一晚（長休）：見 rest.ts。 */
 export function rest(state: GameState): Report {
-  const cost = restCost(state)
-  if (state.money_cc < cost) throw new Error('旅費不足')
-  const hours = (24 - state.time.hour + 8) % 24 || 24
-  const report = baseReport(state, 'rest', hours)
-  report.location.scene = `${locationById(state.location).name}的旅店`
-  report.party = state.party.map((m) => {
-    const snap = snapshot(m, undefined, player(state))
-    snap.hp = [m.hp, m.maxHp, m.maxHp]
-    return snap
-  })
-  for (const m of state.party) {
-    m.slotsUsed = []
-    m.usesPerRest = {}
-  }
-  report.outcome.summary = `在旅店休息一晚，花費 ${formatMoney(cost)}。`
-  report.changes.money_cc = -cost
-  return commitReport(state, report)
+  return longRest(state, 'inn')
+}
+
+/** 逃亡奴隸頸上的印記會被官方機構認出 */
+function assertNotFugitive(state: GameState, place: string) {
+  if (isFugitive(state)) throw new Error(`${place}的人認出了你頸上的契約印記，拒絕接待`)
 }
 
 // ---- 神殿 ----
@@ -76,6 +68,7 @@ export function templeCost(state: GameState): number {
 
 /** 在神殿接受治療：受傷的隊員 HP 回滿，不推進到隔天，也不回復法術環。 */
 export function templeHeal(state: GameState): Report {
+  assertNotFugitive(state, '神殿')
   const cost = templeCost(state)
   if (cost === 0) throw new Error('沒有需要治療的隊員')
   if (state.money_cc < cost) throw new Error('金錢不足')
@@ -107,40 +100,40 @@ export function buyRations(state: GameState, qty: number): Report {
 
 // ---- 酒館招募 ----
 
+/** 這座城鎮的具名 NPC（data/world/npcs.json），不含隊伍裡的 */
 export function recruitableHere(state: GameState): NpcDef[] {
-  return npcs.filter((n) => n.location === state.location && !state.recruited.includes(n.id))
+  const inParty = new Set(state.party.map((m) => m.id))
+  return npcs.filter((n) => !inParty.has(n.id) && (npcRecord(state, n.id)?.location ?? n.location) === state.location)
 }
 
+/** 以要價雇用具名 NPC（酒館候選名單另見 companions.ts）。 */
 export function recruit(state: GameState, npcId: string): Report {
   const def = recruitableHere(state).find((n) => n.id === npcId)
   if (!def) throw new Error('這裡沒有這位角色')
   if (state.party.length >= combatRules.party_max) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
   if (state.money_cc < def.hire_cc) throw new Error('招募費用不足')
-  const npc = createNpc(def, new Rng(hashString(def.id)))
-  // 之前見過的角色沿用原本的親密度
-  const rel = ensureRelationship(state, def)
-  npc.affinity = rel.affinity
-  if (rel.toPlayer === '初次見面。') rel.toPlayer = '在酒館受雇加入隊伍的冒險夥伴。'
-  state.party.push(npc)
-  state.recruited.push(npc.id)
   const report = baseReport(state, 'social', 1)
+  const met = !!state.relationships?.[npcId]
+  const npc = joinParty(state, npcRecord(state, npcId)!, 'hired', report, { reason: met ? '再次同行' : '初次結識' })
   report.location.scene = `${locationById(state.location).name}的酒館`
   report.outcome.summary = `在酒館招募了${npc.name}加入隊伍，支付 ${formatMoney(def.hire_cc)}。`
   report.changes.money_cc = -def.hire_cc
-  report.changes.affinity = [{ npc: npc.id, delta: 0, after: npc.affinity ?? 0, reason: rel.firstMet?.time.day === state.time.day ? '初次結識' : '再次同行' }]
+  report.changes.affinity = [{ npc: npc.id, delta: 0, after: npc.affinity ?? 0, reason: met ? '再次同行' : '初次結識' }]
   report.narration = { pov: 'second_person', length: 'short', focus: [`${npc.name}的第一印象與性格`] }
   report.lore_keys!.push(attributeRules.races[npc.race]?.name ?? npc.race)
   return commitReport(state, report)
 }
 
+/** 請同伴離隊。跟著的隊伍不能「請走」（要在休息時自己離開），奴隸要先解除契約。 */
 export function dismiss(state: GameState, npcId: string): Report {
-  const i = state.party.findIndex((m) => m.id === npcId && !m.isPlayer)
-  if (i < 0) throw new Error('隊伍中沒有這位角色')
+  const npc = state.party.find((m) => m.id === npcId && !m.isPlayer)
+  if (!npc) throw new Error('隊伍中沒有這位角色')
+  if (npc.bond === 'leader' || npc.group) throw new Error('這是你跟著的隊伍；要離開請在休息時離隊')
+  if (npc.bond === 'slave') throw new Error('奴隸不能遣散，請先解除契約')
   const report = baseReport(state, 'social', 0.5)
-  const npc = state.party[i]!
+  leaveParty(state, npcId, report, '遣散')
   report.outcome.summary = `${npc.name}離開了隊伍。`
   report.outcome.tags = ['離隊']
-  state.party.splice(i, 1)
   return commitReport(state, report)
 }
 
@@ -218,6 +211,7 @@ export function guildQuests(state: GameState): Quest[] {
 }
 
 export function acceptQuest(state: GameState, questId: string): Report {
+  assertNotFugitive(state, '公會')
   const quest = state.quests.find((q) => q.id === questId && q.status === 'available')
   if (!quest) throw new Error('找不到這個委託')
   if (!canAcceptRank(state, quest.rank)) throw new Error('公會階級不足，無法接取')
@@ -277,6 +271,7 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
 }
 
 export function turnInQuest(state: GameState, questId: string): Report {
+  assertNotFugitive(state, '公會')
   const quest = state.quests.find((q) => q.id === questId && q.status === 'ready')
   if (!quest) throw new Error('委託尚未完成')
   if (quest.giver !== state.location) throw new Error(`請回到${locationById(quest.giver).name}交付`)
@@ -286,11 +281,15 @@ export function turnInQuest(state: GameState, questId: string): Report {
   report.quest = { id: quest.id, title: quest.title, rank: quest.rank, status: 'completed' }
   report.outcome.summary = `交付委託「${quest.title}」，獲得報酬 ${formatMoney(quest.reward_cc)}。`
   const tpl = questTemplate(quest)
-  report.changes = {
-    money_cc: quest.reward_cc,
-    reputation: [{ faction: 'guild', delta: RANK_ORDER.indexOf(quest.rank) + 1 }],
-    ...(tpl?.item ? { items_lost: [{ name: tpl.item, qty: tpl.qty ?? 1 }] } : {}),
-  }
+  // 報酬模板：金錢、聲望、交付物品，加上範本額外的報酬（物品、親密度、夥伴……）
+  const effects: RewardEffect[] = [
+    { type: 'money', amount: quest.reward_cc },
+    { type: 'reputation', faction: 'guild', delta: RANK_ORDER.indexOf(quest.rank) + 1 },
+    ...(tpl?.item ? [{ type: 'item' as const, name: tpl.item, qty: -(tpl.qty ?? 1) }] : []),
+    ...(tpl?.rewards ?? []),
+  ]
+  const notes = applyEffects(state, report, effects)
+  if (notes.length) report.outcome.summary += notes.join('；')
   report.lore_keys!.push('冒險者公會')
   return commitReport(state, report)
 }
@@ -311,10 +310,4 @@ export function chooseAbility(state: GameState, memberId: string, abilityId: str
   report.changes.skills_gained = [{ actor: member.id, skill: a.name, quality: abilityQuality(a), source: 'level_up' }]
   report.narration = { length: 'short' }
   return commitReport(state, report)
-}
-
-function hashString(s: string): number {
-  let h = 2166136261
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
-  return h >>> 0
 }

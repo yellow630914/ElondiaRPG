@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { geography } from '@/engine/data'
 import {
   afterCombat, ascend, canTravelHere, cellAt, currentArea, currentCell, descend, enterLocation, getArea,
-  goOutskirts, isRevealed, move, moveTo, position, questRunnableHere, restAtSafeRoom, returnToTown, type Area,
+  goOutskirts, isRevealed, move, moveTo, position, questRunnableHere, returnToTown, type Area,
 } from '@/engine/grid'
+import { longRest } from '@/engine/rest'
 import { newGame } from '@/engine/state'
 import { acceptQuest, guildQuests } from '@/engine/town'
 import { travel } from '@/engine/travel'
@@ -180,7 +181,7 @@ describe('dungeons', () => {
     expect(currentCell(state).kind).toBe('stairs_down')
   })
 
-  it('heals half HP at a safe room once, consuming rations', () => {
+  it('takes a long rest at a safe room once, consuming rations', () => {
     const state = game(4)
     travel(state, 'whisper_crypt')
     const area = currentArea(state)
@@ -189,10 +190,12 @@ describe('dungeons', () => {
     const pc = state.party[0]!
     pc.hp = 1
     const rations = state.inventory.find((i) => i.name === '乾糧')!.qty
-    restAtSafeRoom(state)
-    expect(pc.hp).toBe(1 + Math.ceil(pc.maxHp / 2))
+    pc.slotsUsed = [1]
+    longRest(state, 'safe')
+    expect(pc.hp).toBe(pc.maxHp)
+    expect(pc.slotsUsed).toEqual([])
     expect(state.inventory.find((i) => i.name === '乾糧')?.qty ?? 0).toBe(rations - 1)
-    expect(() => restAtSafeRoom(state)).toThrow('已經休整過')
+    expect(() => longRest(state, 'safe')).toThrow('已經長休過')
   })
 
   it('throws everyone out of the dungeon after a defeat', () => {

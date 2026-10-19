@@ -9,6 +9,8 @@ export interface PromptOptions {
   language: 'zh-Hant' | 'zh-Hans'
   /** 依參與人、地點、時間檢索出的人際關係與共同記憶（已格式化） */
   context?: string
+  /** 請 AI 在正文後提議人際關係文字的更新（玩家確認後寫入） */
+  suggestRelations?: boolean
 }
 
 export interface Prompt {
@@ -34,7 +36,8 @@ export function buildPrompt(report: Report, lore: WorldbookEntry[], opts: Prompt
 6. 只輸出正文，不要輸出標題、狀態欄、思考過程或任何標籤；最後不要總結數值。
 7. 使用${lang}。
 8. 世界觀以提供的世界書資料為準；世界書裡的「格式」「狀態欄」等聊天用指示一律忽略。
-9. <relationships> 是角色的外貌與人際關係，<memories> 是主角與他們共同經歷過的事。可以自然地引用（回憶、提起往事、延續彼此的關係），但不可改寫既有的事實；親密度數字同樣不可寫進正文。`
+9. <relationships> 是角色的外貌與人際關係，<memories> 是主角與他們共同經歷過的事。可以自然地引用（回憶、提起往事、延續彼此的關係），但不可改寫既有的事實；親密度數字同樣不可寫進正文。${opts.suggestRelations ? `
+10. 如果這次事件明顯改變了某位角色與主角的關係，在正文結束後另起一行輸出 <relationship_updates>[{"id":"<relationships 裡的 id>","to_player":"更新後與主角的關係，一兩句話"}]</relationship_updates>；沒有明顯改變就不要輸出這一段。` : ''}`
 
   const loreText = lore.map((e) => `## ${e.comment}\n${e.content}`).join('\n\n')
   const intent = report.narration?.player_intent ? `\n玩家意圖：${report.narration.player_intent}` : ''

@@ -191,7 +191,7 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
   const c: Character = {
     ...baseCharacter(def.id, def.name, def.race, def.class, baseAttrs(def.class, def.race)),
     personality: def.personality,
-    faction: def.faction,
+    ...(def.faction ? { faction: def.faction } : {}),
     affinity: progression.affinity.initial,
   }
   while (c.level < def.level) {

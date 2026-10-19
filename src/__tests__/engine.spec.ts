@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { startCombat } from '@/engine/combat'
+import { enterLocation, standOn } from '@/engine/grid'
 import { fightToEnd } from './helpers/fight'
 import { formatMoney } from '@/engine/money'
 import { Rng, roll } from '@/engine/rng'
@@ -189,6 +190,9 @@ describe('town', () => {
 
   it('rests at the inn and restores HP', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 6 })
+    enterLocation(state)
+    expect(() => rest(state)).toThrow('要在旅店')
+    standOn(state, 'inn')
     state.party[0]!.hp = 1
     expectValid(rest(state))
     expect(state.party[0]!.hp).toBe(state.party[0]!.maxHp)

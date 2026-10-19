@@ -1,0 +1,165 @@
+// 報酬／後果模板：事件、委託與主動行動的結果都用同一組效果描述，可以任意組合。
+//
+// 例：委託報酬「80 銅幣＋傷藥 2 瓶＋委託人好感 +5＋獵戶自願入隊」
+//   [{ type: 'money', amount: 80 }, { type: 'item', name: '傷藥', qty: 2 },
+//    { type: 'affinity', npc: 'gen_3', delta: 5 }, { type: 'companion', npc: 'gen_3', mode: 'voluntary' }]
+//
+// applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
+// 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
+
+import { npcRecord, generateNpc, type NpcSpec } from './npcs'
+import {
+  addAffinity, addCondition, enslavePlayer, freePlayer, freeSlave, joinParty, leaveParty, partyRoom, pcOf, removeCondition, setHp,
+} from './party'
+import { addMemory, addSuggestions, ensureRelationship } from './social'
+import { withRng } from './state'
+import type { GameState, NpcRecord, Report } from './types'
+
+export type NpcRef = string | NpcSpec
+
+export type RewardEffect =
+  | { type: 'money'; amount: number }
+  | { type: 'item'; name: string; qty: number; quality?: string }
+  | { type: 'affinity'; npc: string; delta: number; reason?: string }
+  | { type: 'reputation'; faction: string; delta: number }
+  | { type: 'xp'; amount: number; target?: string }
+  | { type: 'flag'; key: string; value: unknown }
+  /** 新增夥伴：自願、雇傭或以奴隸身分入隊 */
+  | { type: 'companion'; npc: NpcRef; mode: 'voluntary' | 'hired' | 'slave'; contract?: string }
+  /** 主角加入別人的隊伍（被動邀請），對方可能付錢 */
+  | { type: 'join_party'; leader: NpcRef; members?: NpcRef[]; pay_cc?: number }
+  | { type: 'leave'; npc: string; reason?: string }
+  /** 人際關係文字：預設是提議（玩家確認後才寫入） */
+  | { type: 'relationship_text'; npc: string; text: string; apply?: boolean }
+  | { type: 'memory'; summary: string; importance?: 1 | 2 | 3 }
+  | { type: 'condition'; target: string; condition: string; add: boolean }
+  /** 生命值：amount 為加減的點數，ratio 為最大生命值的比例 */
+  | { type: 'hp'; target: string; amount?: number; ratio?: number }
+  | { type: 'enslave_player'; master: NpcRef; contract: string; members?: NpcRef[] }
+  /** 解除契約：npc 為 pc 時是主角獲釋 */
+  | { type: 'free'; npc: string }
+
+export const EFFECT_TYPES: RewardEffect['type'][] = [
+  'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
+  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free',
+]
+
+/** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
+export function resolveNpc(state: GameState, ref: NpcRef, prefix = 'evt'): NpcRecord {
+  if (typeof ref === 'string') {
+    const rec = npcRecord(state, ref)
+    if (!rec) throw new Error(`unknown npc: ${ref}`)
+    return rec
+  }
+  if (ref.id) {
+    const rec = npcRecord(state, ref.id)
+    if (rec) return rec
+  }
+  return withRng(state, (rng) => generateNpc(state, rng, ref, prefix))
+}
+
+function memberOrPc(state: GameState, id: string) {
+  return id === 'pc' ? pcOf(state) : state.party.find((m) => m.id === id)
+}
+
+/** 套用效果，回傳每個效果的簡短說明（無法套用的會註明原因）。 */
+export function applyEffects(state: GameState, report: Report, effects: RewardEffect[]): string[] {
+  const notes: string[] = []
+  const c = report.changes
+  for (const e of effects) {
+    switch (e.type) {
+      case 'money':
+        if (!e.amount) break
+        c.money_cc = (c.money_cc ?? 0) + Math.round(e.amount)
+        break
+      case 'item':
+        if (e.qty > 0) (c.items_gained ??= []).push({ name: e.name, qty: e.qty, ...(e.quality ? { quality: e.quality } : {}), owner: 'pc' })
+        else if (e.qty < 0) (c.items_lost ??= []).push({ name: e.name, qty: -e.qty })
+        break
+      case 'affinity': {
+        const rec = npcRecord(state, e.npc)
+        if (rec) ensureRelationship(state, rec)
+        addAffinity(state, report, e.npc, e.delta, e.reason)
+        break
+      }
+      case 'reputation':
+        if (e.delta) (c.reputation ??= []).push({ faction: e.faction, delta: Math.round(e.delta) })
+        break
+      case 'xp': {
+        const targets = e.target ? state.party.filter((m) => m.id === e.target) : state.party
+        for (const m of targets) (c.xp ??= []).push({ actor: m.id, amount: Math.round(e.amount) })
+        break
+      }
+      case 'flag':
+        ;(c.flags ??= {})[e.key] = e.value
+        break
+      case 'companion': {
+        const rec = resolveNpc(state, e.npc)
+        if (partyRoom(state) < 1) {
+          ensureRelationship(state, rec)
+          notes.push(`${rec.name}想加入，但隊伍已滿`)
+          break
+        }
+        if (e.mode === 'slave' && pcOf(state).contract) {
+          notes.push(`身為奴隸，無法擁有奴隸`)
+          break
+        }
+        joinParty(state, rec, e.mode, report, { ...(e.contract ? { contract: e.contract } : {}), reason: '事件' })
+        notes.push(`${rec.name}加入了隊伍`)
+        break
+      }
+      case 'join_party': {
+        const leader = resolveNpc(state, e.leader)
+        const members = (e.members ?? []).map((m) => resolveNpc(state, m))
+        if (partyRoom(state) < 1 + members.length) {
+          notes.push(`${leader.name}的隊伍沒有空位`)
+          break
+        }
+        joinParty(state, leader, 'leader', report, { group: leader.id })
+        for (const m of members) joinParty(state, m, 'ally', report, { group: leader.id })
+        if (e.pay_cc) c.money_cc = (c.money_cc ?? 0) + Math.round(e.pay_cc)
+        notes.push(`加入了${leader.name}的隊伍`)
+        break
+      }
+      case 'leave':
+        if (state.party.some((m) => m.id === e.npc && !m.isPlayer)) leaveParty(state, e.npc, report, e.reason)
+        break
+      case 'relationship_text':
+        if (!state.relationships?.[e.npc]) break
+        if (e.apply) state.relationships[e.npc]!.toPlayer = e.text
+        else addSuggestions(state, [{ id: e.npc, to_player: e.text }], report.report_id)
+        break
+      case 'memory':
+        addMemory(state, {
+          time: { ...report.time.start }, location: report.location.at,
+          participants: report.party.map((p) => p.id), summary: e.summary, importance: e.importance ?? 2,
+        })
+        break
+      case 'condition': {
+        const who = memberOrPc(state, e.target)
+        if (!who) break
+        if (e.add) addCondition(who, e.condition, report)
+        else removeCondition(who, e.condition, report)
+        break
+      }
+      case 'hp': {
+        const who = memberOrPc(state, e.target)
+        if (!who) break
+        const delta = e.amount ?? Math.round((e.ratio ?? 0) * who.maxHp)
+        setHp(state, who, who.hp + delta, report)
+        break
+      }
+      case 'enslave_player': {
+        const master = resolveNpc(state, e.master)
+        const members = (e.members ?? []).map((m) => resolveNpc(state, m))
+        enslavePlayer(state, master, e.contract, report, members)
+        break
+      }
+      case 'free':
+        if (e.npc === 'pc') freePlayer(state, report)
+        else freeSlave(state, e.npc, report)
+        break
+    }
+  }
+  return notes
+}

@@ -9,6 +9,8 @@ interface SavedSettings {
   configs: Record<ProviderId, ProviderConfig>
   /** AI 細節描述：開啟時每次行動後自動請 AI 寫事件經過；關閉時只顯示戰報與事件簡述 */
   aiNarration: boolean
+  /** AI 判定：主動行動由 AI 看骰值判定、酒館候選人由 AI 潤飾；關閉時依規則判定 */
+  aiJudge: boolean
   adult: boolean
   language: 'zh-Hant' | 'zh-Hans'
   loreBudget: number
@@ -21,6 +23,7 @@ function defaults(): SavedSettings {
       PROVIDERS.map((p) => [p.id, { apiKey: '', model: p.defaultModel, ...(p.presets ? { baseURL: p.presets[0]!.baseURL } : {}) }]),
     ) as Record<ProviderId, ProviderConfig>,
     aiNarration: false,
+    aiJudge: false,
     adult: false,
     language: 'zh-Hant',
     loreBudget: 12000,
@@ -47,17 +50,19 @@ export const useSettings = defineStore('settings', () => {
   const provider = ref(initial.provider)
   const configs = ref(initial.configs)
   const aiNarration = ref(initial.aiNarration)
+  const aiJudge = ref(initial.aiJudge)
   const adult = ref(initial.adult)
   const language = ref(initial.language)
   const loreBudget = ref(initial.loreBudget)
 
   watch(
-    [provider, configs, aiNarration, adult, language, loreBudget],
+    [provider, configs, aiNarration, aiJudge, adult, language, loreBudget],
     () => {
       const data: SavedSettings = {
         provider: provider.value,
         configs: configs.value,
         aiNarration: aiNarration.value,
+        aiJudge: aiJudge.value,
         adult: adult.value,
         language: language.value,
         loreBudget: loreBudget.value,
@@ -78,5 +83,5 @@ export const useSettings = defineStore('settings', () => {
     return !!cfg.model && (!!cfg.apiKey || !!info.keyOptional) && (!info.needsBaseURL || !!cfg.baseURL)
   }
 
-  return { provider, configs, aiNarration, adult, language, loreBudget, current, ready }
+  return { provider, configs, aiNarration, aiJudge, adult, language, loreBudget, current, ready }
 })

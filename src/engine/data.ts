@@ -13,6 +13,11 @@ import abilitiesJson from '@data/rules/abilities.json'
 import equipmentJson from '@data/rules/equipment.json'
 import enemiesJson from '@data/rules/enemies.json'
 import townQuestsJson from '@data/rules/town_quests.json'
+import companionsJson from '@data/rules/companions.json'
+import slaveryJson from '@data/rules/slavery.json'
+import actionsJson from '@data/rules/actions.json'
+import npcPoolJson from '@data/world/npc_pool.json'
+import type { RewardEffect } from './effects'
 import type { GuildRank, QuestKind, SkillQuality } from './types'
 
 // ---- 地理 ----
@@ -55,7 +60,7 @@ export interface NpcDef {
   location: string
   hire_cc: number
   personality: string
-  faction: string
+  faction?: string
   appearance?: string
   /** 與其他角色的關係：角色 id → 文字 */
   relations?: Record<string, string>
@@ -120,6 +125,8 @@ export interface ClassDef {
   armor: string
   start: string[]
   role: string
+  /** 生命骰面數（短休時花費） */
+  hit_die: number
 }
 export const classes = (classesJson as unknown as { classes: Record<string, ClassDef> }).classes
 
@@ -341,12 +348,105 @@ export interface TownQuestTemplate {
   encounter?: EncounterGroup
   encounter_chance?: number
   reward_cc: [number, number]
+  /** 交付時的額外報酬（報酬模板，見 effects.ts） */
+  rewards?: RewardEffect[]
 }
 const townQuestsData = townQuestsJson as unknown as { per_town: number; templates: TownQuestTemplate[] }
 export const townQuestsPerTown = townQuestsData.per_town
 export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.fromEntries(
   townQuestsData.templates.map((t) => [t.id, t]),
 )
+
+// ---- 夥伴、奴隸契約、主動行動 ----
+
+export type Bond = 'hired' | 'voluntary' | 'slave' | 'leader' | 'ally'
+export interface ConditionDef { name: string; desc: string; check_penalty?: number; clears?: 'long_rest' }
+export const companionRules = companionsJson as unknown as {
+  bonds: Record<Bond, string>
+  leave_threshold: number
+  initial_affinity: Record<Bond, number>
+  tavern: {
+    base_candidates: number; max_candidates: number; level_spread: [number, number]; cha_level_bonus_at: number
+    asking: { a: number; b: number; c: number }; asking_variance: number
+    hire: { base: number; fee_weight: number; level_gap: number; min: number; max: number }
+  }
+  wait_party: {
+    hours: number; base: number; per_cha_mod: number; per_level: number; max: number
+    pay_chance: number; pay_chance_per_cha_mod: number; pay_per_level: number; leader_level: [number, number]
+  }
+  invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number }
+  leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
+  rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'wild' | 'dungeon', number> }
+  conditions: Record<string, ConditionDef>
+}
+
+export function conditionName(id: string): string {
+  return companionRules.conditions[id]?.name ?? statuses[id]?.name ?? id
+}
+
+export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal'
+export interface ContractDef {
+  name: string
+  mark: string
+  functions: ContractFunction[]
+  obedience_penalty: number
+  income_share: number
+  spell_cap?: number
+  negotiate_dc: number
+  escape_dc: number
+  recapture_chance: number
+  side_effects: string[]
+  escape_effects: { hp_ratio: number }
+}
+export interface MarketDef { name: string; price_mult: number; stock: [number, number]; races: Record<string, number> }
+export type Degree = 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
+export const slaveryRules = slaveryJson as unknown as {
+  prices_cc: Record<'1' | '2' | '3', Record<'human' | 'demon' | 'elf', [number, number]>> & {
+    beyond_tier3_mult: number; variance: number
+    race_group: Record<string, 'human' | 'demon' | 'elf'>; race_mult: Record<string, number>; class_mult: Record<string, number>
+  }
+  black_market_only: string[]
+  markets: Record<string, { public?: MarketDef; black?: MarketDef }>
+  black_market_search: { attr: AttrId; dc: number; hours: number }
+  haggle: { attr: AttrId; base: number; black_market_bonus: number; price_factor: Record<Degree, number> }
+  self_sale: { hours: number; base: number; per_cha_mod: number; per_level: number; max: number; share: number; contract_weights: Record<string, number> }
+  contracts: Record<string, ContractDef>
+  functions: Record<ContractFunction, string>
+  freedom: {
+    negotiate: { attr: AttrId; hours: number; affinity_step: number }
+    escape: { attr: AttrId; hours: number }
+    punishment: Record<'light' | 'heavy', { hp_ratio: number; affinity: number; obedience?: number }>
+    obedience_max: number
+    fugitive: { inn_mult: number; inn_recapture_mult: number }
+  }
+  release_affinity: number
+}
+
+export function contractDef(id: string): ContractDef {
+  const c = slaveryRules.contracts[id]
+  if (!c) throw new Error(`unknown contract: ${id}`)
+  return c
+}
+
+export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape'
+export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp'
+export const actionRules = actionsJson as unknown as {
+  dc_adjust: number
+  degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
+  caps: {
+    affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
+    item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number
+  }
+  kinds: Record<ActionKind, { name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[] }>
+}
+
+export const npcPool = npcPoolJson as unknown as {
+  names: Record<string, string[]>
+  personalities: string[]
+  features: Record<string, string[]>
+  outfits: string[]
+  slave_backgrounds: string[]
+}
 
 // ---- 查詢 ----
 

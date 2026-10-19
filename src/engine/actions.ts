@@ -1,0 +1,330 @@
+// 主動行動：玩家用文字描述行為，擲骰先發生，再把完整資料與骰值交給 AI 直接寫出結果。
+//
+// 1. prepareAction：檢查能不能做、算出參考 DC、先擲 1d20（存進 state.pendingAction，重新整理也不會重擲）。
+// 2. AI 判定（AI 關閉時略過）：AI 看到隊伍狀態、屬性、裝備、技能、人際關係、共同記憶、骰值與參考 DC，
+//    自己決定成功與否（骰值只是參考，可以出乎預料），直接寫出結果的經過，並提出效果（封閉清單）
+//    與人際關係文字的更新提議。屬性與 DC 只是給玩家看的判定依據（DC 夾在參考值 ±3）。
+// 3. resolveAction：採用 AI 的成功程度，套用機制結果（雇傭、殺價、邀請、談判、逃離……）
+//    與夾住上限的 AI 效果，產生報告；AI 寫的經過直接作為這份報告的敘事。
+//    AI 關閉時依規則：預設屬性、參考 DC 與骰值決定成功程度。
+// 說明見 docs/RELATIONSHIP_MEMORY.md 第 5 節。
+
+import { mod, proficiency, snapshot } from './character'
+import {
+  applyBlackMarket, applyEscape, applyHaggle, applyHire, applyInvite, applyNegotiate, setupFor, type MarketKind,
+} from './companions'
+import {
+  actionRules, ATTR_IDS, attrName, locationById, regionById, type ActionKind, type AttrId, type Degree, type EffectKind,
+} from './data'
+import { applyEffects, type RewardEffect } from './effects'
+import { addAffinity, conditionPenalty, pcOf } from './party'
+import { addSuggestions } from './social'
+import { roll } from './rng'
+import { addHours, commitReport, newReportId, withRng } from './state'
+import type { CheckInfo, GameState, GameTime, Report } from './types'
+
+export interface ActionInput {
+  kind: ActionKind
+  /** 玩家描述的行為 */
+  text: string
+  /** 對象：NPC id；殺價為 "public:npc" / "black:npc" */
+  target?: string
+  /** 雇傭談判的出價 */
+  offer_cc?: number
+}
+
+export interface ActionPending extends ActionInput {
+  id: string
+  natural: number
+  base_dc: number
+  /** 規則判定時使用的屬性 */
+  attr: AttrId
+  /** 各屬性的檢定修正 = mod + 熟練 */
+  modifiers: Record<AttrId, number>
+  situational: { label: string; value: number }[]
+  outcomes: Partial<Record<Degree, string>>
+  targetName?: string
+  scene: string
+  time: GameTime
+  location: string
+}
+
+export interface RelationshipUpdate { id: string; to_player: string }
+
+export interface Judgment {
+  attr: AttrId
+  dc: number
+  rationale?: string
+  /** AI 決定的成功程度（骰值只是參考）；沒有給時依骰值與 DC 計算 */
+  degree?: Degree
+  /** 出乎預料的轉折（AI 讓結果偏離骰值時說明） */
+  twist?: string
+  summary?: string
+  /** AI 直接寫出的結果經過（作為報告的敘事） */
+  narrative?: string
+  effects: RewardEffect[]
+  relationship_updates: RelationshipUpdate[]
+}
+
+export const DEGREE_NAME: Record<Degree, string> = {
+  critical: '大成功', success: '成功', partial: '部分成功', fail: '失敗', fumble: '大失敗',
+}
+
+export function computeDegree(natural: number, total: number, dc: number): Degree {
+  const d = actionRules.degrees
+  if (natural === 20) return 'critical'
+  if (natural === 1 || total <= dc - d.fumble_margin) return 'fumble'
+  if (total >= dc + d.critical_margin) return 'critical'
+  if (total >= dc) return 'success'
+  if (total >= dc - d.partial_margin) return 'partial'
+  return 'fail'
+}
+
+export function situationalTotal(p: ActionPending): number {
+  return p.situational.reduce((s, x) => s + x.value, 0)
+}
+
+export function prepareAction(state: GameState, input: ActionInput): ActionPending {
+  if (state.combat) throw new Error('戰鬥中不能這麼做')
+  if (state.pendingAction) throw new Error('還有一個行動等待判定')
+  const kind = actionRules.kinds[input.kind]
+  if (!kind) throw new Error('沒有這種行動')
+  const text = input.text.trim().slice(0, 400)
+  if (input.kind === 'free' && !text) throw new Error('請描述你要做什麼')
+  const setup = setupFor(state, input.kind, input.target, input.offer_cc)
+  const pc = pcOf(state)
+  const penalty = conditionPenalty(pc)
+  const situational = [...setup.situational, ...(penalty ? [{ label: '受罰', value: -penalty }] : [])].filter((x) => x.value !== 0)
+  const natural = withRng(state, (rng) => roll(rng, '1d20').total)
+  const pending: ActionPending = {
+    ...input,
+    text,
+    id: `a-${state.nextReportNo}`,
+    natural,
+    base_dc: setup.dc,
+    attr: kind.attr,
+    modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(pc.attrs[a]) + proficiency(pc.level)])) as Record<AttrId, number>,
+    situational,
+    outcomes: setup.outcomes,
+    ...(setup.targetName ? { targetName: setup.targetName } : {}),
+    scene: setup.scene,
+    time: { ...state.time },
+    location: state.location,
+  }
+  state.pendingAction = pending
+  return pending
+}
+
+// ---- 驗證 AI 的回傳 ----
+
+const clipText = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
+const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : NaN)
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
+
+const EFFECT_OF: Partial<Record<RewardEffect['type'], EffectKind>> = {
+  affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
+  money: 'money', item: 'item', xp: 'xp',
+}
+
+/**
+ * 把 AI 回傳的 JSON 轉成判定：屬性不合法時用預設屬性，DC 夾在參考 DC ±dc_adjust，
+ * 效果只保留這種行動允許的種類，數值夾在上限內。結構完全不對時丟出錯誤。
+ */
+export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknown): Judgment {
+  if (!raw || typeof raw !== 'object') throw new Error('AI 回傳的不是 JSON 物件')
+  const r = raw as Record<string, unknown>
+  const caps = actionRules.caps
+  const adj = actionRules.dc_adjust
+  const attr = (ATTR_IDS as string[]).includes(String(r.attr)) ? (r.attr as AttrId) : p.attr
+  const dcRaw = num(r.dc)
+  const dc = Number.isNaN(dcRaw) ? p.base_dc : clamp(Math.round(dcRaw), p.base_dc - adj, p.base_dc + adj)
+  const degree = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree) ? (r.degree as Degree) : undefined
+  const allowed = new Set(actionRules.kinds[p.kind].effects)
+  const pc = pcOf(state)
+  const known = (id: string) => !!state.relationships?.[id]
+  const effects: RewardEffect[] = []
+  const affinitySeen = new Map<string, number>()
+  let items = 0
+  let flags = 0
+  let money = 0
+  for (const e of Array.isArray(r.effects) ? r.effects : []) {
+    if (!e || typeof e !== 'object') continue
+    const x = e as Record<string, unknown>
+    const type = String(x.type) as RewardEffect['type']
+    const kind = EFFECT_OF[type]
+    if (!kind || !allowed.has(kind)) continue
+    switch (type) {
+      case 'affinity': {
+        const npc = String(x.npc ?? '')
+        const delta = num(x.delta)
+        if (!known(npc) || Number.isNaN(delta)) break
+        const used = affinitySeen.get(npc) ?? 0
+        const d = clamp(Math.round(delta), -caps.affinity - used, caps.affinity - used)
+        if (d === 0) break
+        affinitySeen.set(npc, used + d)
+        effects.push({ type, npc, delta: d, ...(x.reason ? { reason: clipText(x.reason, 40) } : {}) })
+        break
+      }
+      case 'relationship_text': {
+        const npc = String(x.npc ?? '')
+        const text = clipText(x.text, caps.relationship_text_chars)
+        if (known(npc) && text) effects.push({ type, npc, text })
+        break
+      }
+      case 'flag': {
+        const key = clipText(x.key, 40).replace(/[^\w:\-\u4e00-\u9fff]/g, '_')
+        if (!key || flags >= caps.flags || key.startsWith('black_market:') || key.startsWith('invite_wait:') || key === 'negotiate_bonus') break
+        const value = typeof x.value === 'boolean' || typeof x.value === 'number' ? x.value : clipText(x.value, 60) || true
+        effects.push({ type, key: `ai:${key}`, value })
+        flags++
+        break
+      }
+      case 'reputation': {
+        const faction = clipText(x.faction, 30)
+        const delta = num(x.delta)
+        if (!faction || Number.isNaN(delta)) break
+        const d = clamp(Math.round(delta), -caps.reputation, caps.reputation)
+        if (d) effects.push({ type, faction, delta: d })
+        break
+      }
+      case 'money': {
+        const amount = num(x.amount)
+        if (Number.isNaN(amount)) break
+        const cap = caps.money_cc_per_level * pc.level
+        // 只能賺取上限內的錢；花錢不能超過持有的金額
+        const a = clamp(Math.round(amount), -Math.max(0, state.money_cc - money), cap - Math.max(0, money))
+        if (a) {
+          money += a
+          effects.push({ type, amount: a })
+        }
+        break
+      }
+      case 'item': {
+        const name = clipText(x.name, 20)
+        const qty = num(x.qty)
+        if (!name || Number.isNaN(qty) || items >= caps.items) break
+        const q = Math.round(qty)
+        const have = state.inventory.find((i) => i.name === name)?.qty ?? 0
+        const n = q > 0 ? Math.min(q, caps.item_qty) : -Math.min(-q, have)
+        if (n) {
+          effects.push({ type, name, qty: n })
+          items++
+        }
+        break
+      }
+      case 'xp': {
+        const amount = num(x.amount)
+        if (Number.isNaN(amount) || amount <= 0) break
+        effects.push({ type, amount: clamp(Math.round(amount), 0, caps.xp_per_level * pc.level) })
+        break
+      }
+    }
+  }
+  const updates: RelationshipUpdate[] = []
+  for (const u of Array.isArray(r.relationship_updates) ? r.relationship_updates : []) {
+    const id = String((u as Record<string, unknown>)?.id ?? '')
+    const text = clipText((u as Record<string, unknown>)?.to_player, caps.relationship_text_chars)
+    if (known(id) && text) updates.push({ id, to_player: text })
+  }
+  return {
+    attr, dc,
+    ...(clipText(r.rationale, 200) ? { rationale: clipText(r.rationale, 200) } : {}),
+    ...(degree ? { degree } : {}),
+    ...(clipText(r.summary, caps.summary_chars) ? { summary: clipText(r.summary, caps.summary_chars) } : {}),
+    ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
+    ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
+    effects,
+    relationship_updates: updates,
+  }
+}
+
+// ---- 判定 ----
+
+function actionReport(state: GameState, p: ActionPending, hours: number): Report {
+  const start = { ...state.time }
+  const loc = locationById(state.location)
+  const pc = pcOf(state)
+  return {
+    schema_version: '0.1',
+    report_id: newReportId(state),
+    kind: p.kind === 'free' ? 'action' : 'social',
+    time: { start, end: addHours(start, hours) },
+    location: { at: state.location, region: loc.region, scene: p.scene },
+    party: state.party.map((m) => snapshot(m, undefined, pc)),
+    outcome: { result: 'neutral' },
+    changes: {},
+    narration: { pov: 'second_person', length: 'short', ...(p.text ? { player_intent: p.text } : {}) },
+    lore_keys: [loc.name, regionById(loc.region).name],
+  }
+}
+
+/** 依判定（AI 或規則）結算等待中的行動。 */
+export function resolveAction(state: GameState, judgment: Judgment | null): Report {
+  const p = state.pendingAction
+  if (!p) throw new Error('沒有等待判定的行動')
+  const kind = actionRules.kinds[p.kind]
+  const attr = judgment?.attr ?? p.attr
+  const dc = judgment?.dc ?? p.base_dc
+  const modifier = p.modifiers[attr] + situationalTotal(p)
+  const total = p.natural + modifier
+  // 參考：骰值對 DC 算出的成功程度；實際結果由 AI 決定
+  const reference = computeDegree(p.natural, total, dc)
+  const degree = judgment?.degree ?? reference
+  delete state.pendingAction
+
+  const report = actionReport(state, p, kind.hours)
+  const check: CheckInfo = {
+    action: kind.name, attr, base_dc: p.base_dc, dc, natural: p.natural, modifier, total, degree,
+    ...(degree !== reference ? { reference_degree: reference } : {}),
+    source: judgment ? 'ai' : 'rules',
+    ...(judgment?.rationale ? { rationale: judgment.rationale } : {}),
+    ...(judgment?.twist ? { twist: judgment.twist } : {}),
+  }
+  report.check = check
+  if (p.target && state.relationships?.[p.target]) {
+    const rel = state.relationships[p.target]!
+    if (!report.party.some((x) => x.id === rel.id)) report.others = [{ id: rel.id, name: rel.name }]
+  }
+  report.timeline = [{
+    seq: 1, time: report.time.start, actor: 'pc', action: `${kind.name}（${attrName(attr)}）`,
+    ...(p.target && !p.target.includes(':') ? { target: p.target } : {}),
+    roll: { dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc },
+    result: degree === 'fail' ? 'fail' : degree,
+  }]
+
+  const mechanical = applyMechanics(state, report, p, degree)
+  const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
+  if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
+  if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }
+  const success = degree === 'critical' || degree === 'success'
+  const lead = `${kind.name}${p.targetName ? `（${p.targetName}）` : ''}：${DEGREE_NAME[degree]}。`
+  report.outcome = {
+    result: success ? 'success' : degree === 'partial' ? 'neutral' : 'failure',
+    summary: [lead, mechanical, judgment?.summary ?? '', ...notes].filter(Boolean).join(''),
+    tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.twist ? ['出乎預料'] : [])],
+  }
+  return commitReport(state, report)
+}
+
+function applyMechanics(state: GameState, report: Report, p: ActionPending, degree: Degree): string {
+  switch (p.kind) {
+    case 'hire': return applyHire(state, report, p.target!, p.offer_cc ?? 0, degree)
+    case 'haggle': {
+      const [mk, id] = p.target!.split(':') as [MarketKind, string]
+      return applyHaggle(state, report, mk, id, degree)
+    }
+    case 'invite': return applyInvite(state, report, p.target!, degree)
+    case 'black_market': return applyBlackMarket(state, report, degree)
+    case 'negotiate': return applyNegotiate(state, report, degree)
+    case 'escape': return applyEscape(state, report, degree)
+    case 'free': return ''
+  }
+}
+
+/** 沒有 AI（或 AI 的判斷與骰值不符）時的預設效果：自由行動依成功程度小幅改變對象的親密度。 */
+function defaultEffects(state: GameState, report: Report, p: ActionPending, degree: Degree): string[] {
+  if (p.kind !== 'free' || !p.target || !state.relationships?.[p.target]) return []
+  const delta = { critical: 4, success: 2, partial: 0, fail: -2, fumble: -4 }[degree]
+  addAffinity(state, report, p.target, delta, p.text.slice(0, 30))
+  return []
+}

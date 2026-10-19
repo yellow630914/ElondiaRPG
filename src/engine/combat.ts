@@ -13,7 +13,7 @@ import {
   slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, combatRules, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies,
+  abilityDef, armorDef, combatRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies,
   locationById, regionById, statusDef, wildEncounters,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type EncounterGroup,
   type LuckRoll, type Mods, type WeaponDef,
@@ -165,6 +165,11 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
   })
 }
 
+function spellCap(c: Character): number {
+  const cap = c.contract ? contractDef(c.contract.kind).spell_cap : undefined
+  return cap ?? 9
+}
+
 function fromCharacter(c: Character, rng: Rng): Combatant {
   const gear = gearAffinities(c)
   const armor = armorDef(c.armor)
@@ -173,8 +178,9 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
     id: c.id, name: c.name, side: 'party', level: c.level, attrs: { ...c.attrs }, prof: proficiency(c.level),
     hp: c.hp, maxHp: c.maxHp, tempHp: 0,
     ap: apMax, apMax, apRegen: apRegenFor(c.level),
-    slots: slotsLeft(c),
-    slotMax: slotMaxFor(c.class, c.level, c.attrs),
+    // 魔導束縛契約：只能施放 spell_cap 環以下的法術
+    slots: slotsLeft(c).slice(0, spellCap(c)),
+    slotMax: slotMaxFor(c.class, c.level, c.attrs).slice(0, spellCap(c)),
     abilities: [...c.abilities],
     weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr,
     resist: gear.resist, offense: gear.offense, baseMods: gear.mods,

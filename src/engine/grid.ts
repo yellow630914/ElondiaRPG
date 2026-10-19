@@ -78,7 +78,7 @@ const maps = mapsJson as unknown as {
   generation: {
     step_minutes: { settlement: number; wild: number; dungeon: number }
     wild: { size: [number, number]; obstacles: number; encounters: [number, number]; resources: [number, number]; resource_items: string[] }
-    dungeon: { size: [number, number]; carve_steps: number; layers: LayerGen[]; resource_items: string[]; safe_room_heal: number }
+    dungeon: { size: [number, number]; carve_steps: number; layers: LayerGen[]; resource_items: string[] }
   }
 }
 
@@ -201,6 +201,25 @@ function reveal(area: Area, x: number, y: number) {
 function storeArea(state: GameState, area: Area) {
   state.areas ??= {}
   state.areas[area.key] = area
+}
+
+/** 聚落所有區塊的 key */
+export function blockKeys(locationId: string): string[] {
+  return blocksFor(locationById(locationId)).map((b) => settlementKey(locationId, b.id))
+}
+
+/** 站到聚落裡第一個指定種類的設施上（測試與事件用） */
+export function standOn(state: GameState, kind: CellKind): boolean {
+  const keys = locationById(state.location).type === 'dungeon' ? [currentArea(state).key] : blockKeys(state.location)
+  for (const key of keys) {
+    const area = getArea(state, key)
+    const i = area.cells.findIndex((c) => c.kind === kind)
+    if (i >= 0) {
+      placeAt(state, area, i % area.width, Math.floor(i / area.width))
+      return true
+    }
+  }
+  return false
 }
 
 function placeAt(state: GameState, area: Area, x: number, y: number) {
@@ -576,28 +595,6 @@ export function ascend(state: GameState) {
   const prev = getArea(state, layerKey(area.location, area.layer - 1))
   const down = findKind(prev, 'stairs_down')!
   placeAt(state, prev, down.x, down.y)
-}
-
-/** 在安全房休整：每人消耗 1 份乾糧，回復一半最大生命值，花 2 小時。每間安全房限一次。 */
-export function restAtSafeRoom(state: GameState): Report {
-  const cell = currentCell(state)
-  if (cell.kind !== 'safe') throw new Error('這裡不是安全房')
-  if (cell.done) throw new Error('這間安全房已經休整過了')
-  const need = state.party.length
-  const have = state.inventory.find((i) => i.name === '乾糧')?.qty ?? 0
-  if (have < need) throw new Error(`需要 ${need} 份乾糧`)
-  const area = currentArea(state)
-  const before = state.party.map((m) => ({ ...m }))
-  const ratio = maps.generation.dungeon.safe_room_heal
-  for (const m of state.party) m.hp = Math.min(m.maxHp, m.hp + Math.ceil(m.maxHp * ratio))
-  cell.done = true
-  const report = eventReport(state, area, 120)
-  report.kind = 'rest'
-  report.party = state.party.map((m, i) => snapshot(m, before[i], player(state)))
-  // 快照已是休整後的 HP，commit 時不要再覆寫
-  report.outcome = { result: 'success', summary: `在${area.name}的安全房休整了兩個小時。`, tags: ['安全房'] }
-  report.changes.items_lost = [{ name: '乾糧', qty: need }]
-  return commitReport(state, report)
 }
 
 /** 戰鬥結束後：獲勝清除格子；撤退退回上一格；戰敗被送回城鎮或地下城入口外。 */

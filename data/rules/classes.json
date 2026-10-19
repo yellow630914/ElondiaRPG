@@ -1,63 +1,63 @@
 {
-  "$comment": "職業。priority 為建角時基礎陣列 [15,14,13,12,10] 的分配順序。caster：full = 全施法者（1-9 環）、half = 半施法者（以 ceil(等級/2) 查表，最高 5 環）、none = 不施法。casting 為施法屬性（法術命中與豁免 DC）。start 為初始能力，其餘在升級時三選一（清單見 abilities.json）。",
+  "$comment": "職業。priority 為建角時基礎陣列 [15,14,13,12,10] 的分配順序。caster：full = 全施法者（1-9 環）、half = 半施法者（以 ceil(等級/2) 查表，最高 5 環）、none = 不施法。casting 為施法屬性（法術命中與豁免 DC）。start 為初始能力，其餘在升級時三選一（清單見 abilities.json）。hit_die 為生命骰：短休時花費以回復生命值（依 D&D 5e）。",
   "version": 1,
   "classes": {
     "fighter": {
-      "name": "戰士", "priority": ["str", "dex", "fai", "cha", "int"], "caster": "none",
+      "name": "戰士", "hit_die": 10, "priority": ["str", "dex", "fai", "cha", "int"], "caster": "none",
       "weapon": "longsword", "armor": "chain_shield",
       "start": ["power_strike", "second_wind", "battle_rhythm"],
       "role": "穩定的前排輸出，靠行動點節奏與爆發技能壓制敵人"
     },
     "barbarian": {
-      "name": "野蠻人", "priority": ["str", "fai", "dex", "cha", "int"], "caster": "none",
+      "name": "野蠻人", "hit_die": 12, "priority": ["str", "fai", "dex", "cha", "int"], "caster": "none",
       "weapon": "greataxe", "armor": "leather",
       "start": ["rage", "reckless_blow"],
       "role": "狂暴減傷、以生命換取高傷害"
     },
     "paladin": {
-      "name": "聖騎士", "priority": ["str", "fai", "cha", "dex", "int"], "caster": "half", "casting": "fai",
+      "name": "聖騎士", "hit_die": 10, "priority": ["str", "fai", "cha", "dex", "int"], "caster": "half", "casting": "fai",
       "weapon": "warhammer", "armor": "chain_shield",
       "start": ["lay_on_hands", "divine_smite", "bless"],
       "role": "神聖傷害與守護，兼顧治療"
     },
     "ranger": {
-      "name": "遊俠", "priority": ["dex", "fai", "str", "int", "cha"], "caster": "half", "casting": "fai",
+      "name": "遊俠", "hit_die": 10, "priority": ["dex", "fai", "str", "int", "cha"], "caster": "half", "casting": "fai",
       "weapon": "longbow", "armor": "leather",
       "start": ["double_shot", "hunters_mark", "thorn_whip"],
       "role": "遠程穩定輸出、印記與控場"
     },
     "rogue": {
-      "name": "遊蕩者", "priority": ["dex", "cha", "int", "str", "fai"], "caster": "none",
+      "name": "遊蕩者", "hit_die": 8, "priority": ["dex", "cha", "int", "str", "fai"], "caster": "none",
       "weapon": "rapier", "armor": "leather",
       "start": ["sneak_attack", "cunning_action"],
       "role": "高迴避、高幸運一擊率的單體爆發"
     },
     "monk": {
-      "name": "武僧", "priority": ["dex", "fai", "str", "cha", "int"], "caster": "none",
+      "name": "武僧", "hit_die": 8, "priority": ["dex", "fai", "str", "cha", "int"], "caster": "none",
       "weapon": "monk_fists", "armor": "monk_robe",
       "start": ["flurry", "centering"],
       "role": "自行產生行動點的多段攻擊與控制"
     },
     "bard": {
-      "name": "吟遊詩人", "priority": ["cha", "dex", "int", "fai", "str"], "caster": "full", "casting": "cha",
+      "name": "吟遊詩人", "hit_die": 8, "priority": ["cha", "dex", "int", "fai", "str"], "caster": "full", "casting": "cha",
       "weapon": "rapier", "armor": "leather",
       "start": ["vicious_mockery", "bardic_inspiration", "healing_word", "dissonant_whispers"],
       "role": "幸運骰支援、心靈傷害與控場"
     },
     "cleric": {
-      "name": "牧師", "priority": ["fai", "str", "cha", "int", "dex"], "caster": "full", "casting": "fai",
+      "name": "牧師", "hit_die": 8, "priority": ["fai", "str", "cha", "int", "dex"], "caster": "full", "casting": "fai",
       "weapon": "mace", "armor": "chain_shield",
       "start": ["sacred_flame", "guidance", "cure_wounds", "guiding_bolt"],
       "role": "治療與神聖傷害，對不死生物特別有效"
     },
     "druid": {
-      "name": "德魯伊", "priority": ["fai", "int", "dex", "cha", "str"], "caster": "full", "casting": "fai",
+      "name": "德魯伊", "hit_die": 8, "priority": ["fai", "int", "dex", "cha", "str"], "caster": "full", "casting": "fai",
       "weapon": "quarterstaff", "armor": "leather",
       "start": ["thorn_whip", "produce_flame", "cure_wounds", "entangle"],
       "role": "自然元素傷害、持續傷害與束縛"
     },
     "wizard": {
-      "name": "法師", "priority": ["int", "dex", "fai", "cha", "str"], "caster": "full", "casting": "int",
+      "name": "法師", "hit_die": 6, "priority": ["int", "dex", "fai", "cha", "str"], "caster": "full", "casting": "int",
       "weapon": "quarterstaff", "armor": "cloth",
       "start": ["fire_bolt", "ray_of_frost", "magic_missile", "burning_hands", "arcane_recovery"],
       "role": "最強的範圍傷害與屬性克制，但生命值最低"

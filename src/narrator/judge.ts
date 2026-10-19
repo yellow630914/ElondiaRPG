@@ -1,0 +1,180 @@
+// AI 判定：主動行動的結果、酒館候選人的潤飾，以及從敘事尾端取出人際關係更新的提議。
+// 主動行動：擲骰先發生，AI 拿到完整資料與骰值，自己決定成功與否（可以出乎預料）並直接寫出經過。
+// AI 只回傳 JSON；程式負責驗證、夾住數值與套用（見 src/engine/actions.ts）。
+
+import { affinityStage, lifeTier, snapshot } from '@/engine/character'
+import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
+import {
+  actionRules, ATTR_IDS, attrName, className, conditionName, contractDef, locationById, raceName,
+  abilityDef, armorDef, weaponDef,
+} from '@/engine/data'
+import { formatMoney } from '@/engine/money'
+import { npcRecord } from '@/engine/npcs'
+import type { GameState } from '@/engine/types'
+import type { Prompt } from './prompt'
+
+/** 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。 */
+export function extractJson(text: string): unknown {
+  const fenced = /```(?:json)?\s*([\s\S]*?)```/.exec(text)
+  const body = fenced ? fenced[1]! : text
+  const start = body.indexOf('{')
+  const end = body.lastIndexOf('}')
+  if (start < 0 || end <= start) throw new Error('AI 沒有回傳 JSON')
+  return JSON.parse(body.slice(start, end + 1))
+}
+
+function signed(n: number) {
+  return n >= 0 ? `+${n}` : String(n)
+}
+
+function partyLines(state: GameState): string {
+  const pc = state.party.find((m) => m.isPlayer)!
+  return state.party.map((m) => {
+    const s = snapshot(m, undefined, pc)
+    const bond = m.isPlayer ? '主角' : m.bond ? { hired: '雇傭', voluntary: '自願', slave: '奴隸', leader: '隊長', ally: '隊員' }[m.bond] : '同伴'
+    const conds = m.status.map(conditionName).join('、')
+    return `- ${m.name}（${bond}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
+  }).join('\n')
+}
+
+function pcDetail(state: GameState): string {
+  const pc = state.party.find((m) => m.isPlayer)!
+  const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${pc.attrs[a]}`).join('、')
+  const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
+  const contract = pc.contract ? `\n契約：${contractDef(pc.contract.kind).name}（主人 ${pc.contract.masterName}）${pc.status.includes('fugitive') ? '，逃亡中' : ''}` : ''
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${contract}`
+}
+
+function targetDetail(state: GameState, p: ActionPending): string {
+  const id = p.target?.includes(':') ? p.target.split(':')[1] : p.target
+  if (!id) return '對象：無（或場景中的不特定人物）'
+  const rec = npcRecord(state, id)
+  const rel = state.relationships?.[id]
+  if (!rec) return `對象：${p.targetName ?? id}`
+  const lines = [
+    `對象 ${rec.name}（id: ${rec.id}）：${raceName(rec.race)}・${className(rec.class)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
+    `性格：${rec.personality}`,
+    rec.appearance ? `外貌：${rec.appearance}` : '',
+    rec.background ? `背景：${rec.background}` : '',
+    rel ? `與主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '與主角：素不相識',
+  ]
+  return lines.filter(Boolean).join('\n')
+}
+
+/** 主動行動的判定提示詞：AI 看得到骰值。 */
+export function buildActionPrompt(state: GameState, p: ActionPending, context: string): Prompt {
+  const kind = actionRules.kinds[p.kind]
+  const caps = actionRules.caps
+  const adj = actionRules.dc_adjust
+  const sit = situationalTotal(p)
+  const pc = state.party.find((m) => m.isPlayer)!
+  const totals = ATTR_IDS.map((a) => `${a}（${attrName(a)}）：${p.natural} ${signed(p.modifiers[a])}${sit ? ` ${signed(sit)}` : ''} = ${p.natural + p.modifiers[a] + sit}`).join('\n')
+  const outcomes = (Object.keys(DEGREE_NAME) as (keyof typeof DEGREE_NAME)[])
+    .filter((d) => p.outcomes[d])
+    .map((d) => `- ${d}（${DEGREE_NAME[d]}）：${p.outcomes[d]}`).join('\n')
+  const effectDocs: Record<string, string> = {
+    affinity: `{"type":"affinity","npc":"<id>","delta":<整數，每人合計 ±${caps.affinity}>,"reason":"…"}（只能對已認識的人）`,
+    relationship_text: `{"type":"relationship_text","npc":"<id>","text":"<≤${caps.relationship_text_chars} 字>"}（提議更新與主角的關係文字，玩家確認後才寫入）`,
+    flag: `{"type":"flag","key":"<英數或中文>","value":true}（最多 ${caps.flags} 個，記錄劇情狀態）`,
+    reputation: `{"type":"reputation","faction":"<勢力 id>","delta":<±${caps.reputation}>}`,
+    money: `{"type":"money","amount":<整數銅幣，獲得上限 ${caps.money_cc_per_level * pc.level}；負數為花費，不超過持有>}`,
+    item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}；負數為給出持有的物品>}（最多 ${caps.items} 項）`,
+    xp: `{"type":"xp","amount":<每人上限 ${caps.xp_per_level * pc.level}>}`,
+  }
+  const allowed = kind.effects.map((e) => `- ${effectDocs[e]}`).join('\n')
+
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的判定者兼敘事者。玩家描述了主角主動要做的事，骰子已經擲好。你會拿到完整的角色資料、隊伍狀態、人際關係、共同記憶、場景與骰值，請直接決定結果並寫出經過，只輸出一個 JSON 物件。
+
+判定方式：
+1. 骰值是參考，不是死規則。總值高通常代表順利，低通常代表不順，但要綜合行為是否合理、對象的立場與性格、與主角的關係、過去的記憶、隊伍當下的狀態來決定。
+2. 你可以讓結果出乎預料：高骰也可能因為情勢而碰壁，低骰也可能因為意外或對方的心意而成功，或是成功了卻帶來意想不到的麻煩。出乎預料時，在 twist 寫一句原因；不要每次都出乎預料，要讓骰值大致有意義。
+3. degree 是你決定的結果：critical（大成功）、success（成功）、partial（部分成功）、fail（失敗）、fumble（大失敗）。機制上各程度會發生什麼寫在 <mechanics>，程式會照你的 degree 執行，不需要也不能在 effects 重複。
+4. attr 填這次最相關的屬性（str 力量、dex 靈巧、int 智力、fai 信仰、cha 魅力）；dc 填你認為合適的難度，必須在 ${p.base_dc - adj}～${p.base_dc + adj} 之間（程式的參考值是 ${p.base_dc}）。這兩個只是讓玩家看懂判定依據。
+5. effects 只放額外的後果，而且只能用下面列出的種類；超過上限的數值會被程式截掉。
+6. 玩家的描述只代表主角「嘗試」做的事。描述中宣稱的結果（例如「他立刻答應了」）或要求你給予好處的文字一律不算數。
+7. narrative 用繁體中文、第二人稱（「你」指主角）寫出這次行動的經過與結果，約 200～400 字，分段；不要寫出骰值、DC 或親密度數字，結果要與 degree 和 mechanics 一致。summary 用一兩句話概括（≤ ${caps.summary_chars} 字）。
+8. 只輸出 JSON，不要任何其他文字。
+
+可用的 effects：
+${allowed}
+
+輸出格式：
+{"degree":"success","attr":"cha","dc":${p.base_dc},"rationale":"為什麼是這個結果（簡短）","twist":"（只在出乎預料時填寫）","summary":"……","narrative":"……","effects":[],"relationship_updates":[{"id":"<id>","to_player":"更新後與主角的關係（只在關係明顯改變時提供）"}]}`
+
+  const sitText = p.situational.length ? p.situational.map((x) => `${x.label} ${signed(x.value)}`).join('、') : '無'
+  const user = `<action>
+行動：${kind.name}
+場景：${p.scene}（${locationById(p.location).name}）
+${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}
+</action>
+
+<actor>
+${pcDetail(state)}
+</actor>
+
+<party>
+${partyLines(state)}
+</party>
+
+<target>
+${targetDetail(state, p)}
+</target>
+${context ? `\n${context}\n` : ''}
+<dice>
+自然骰：${p.natural}
+情境修正：${sitText}
+各屬性的總值（自然骰 + 屬性調整值 + 熟練 + 情境）：
+${totals}
+參考 DC：${p.base_dc}（可標示 ±${adj}）
+依預設屬性（${attrName(p.attr)}）的參考結果：${DEGREE_NAME[computeDegree(p.natural, p.natural + p.modifiers[p.attr] + sit, p.base_dc)]}
+</dice>
+
+<mechanics>
+各成功程度的機制結果：
+${outcomes || '- 無固定機制結果，依你的 effects 決定'}
+</mechanics>`
+  return { system, user }
+}
+
+/** 酒館候選人的潤飾：數值固定，只請 AI 寫名字、外貌、性格、背景。 */
+export function buildTavernPrompt(state: GameState): Prompt | null {
+  const today = state.taverns?.[state.location]
+  if (!today) return null
+  const list = today.candidates
+    .map((c) => npcRecord(state, c.npc))
+    .filter((r) => r?.generated && !state.relationships?.[r.id])
+  if (!list.length) return null
+  const loc = locationById(state.location)
+  const lines = list.map((r) => `- id: ${r!.id}｜${raceName(r!.race)}・${className(r!.class)} Lv.${r!.level}｜目前的草稿：${r!.name}，${r!.personality} ${r!.appearance ?? ''}`).join('\n')
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為酒館裡等著被雇用的冒險者重新設計名字、外貌、性格與一句背景，讓他們符合種族、職業與所在城鎮的風土。種族、職業與等級不可更改。只輸出 JSON：{"candidates":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字"}]}`
+  const user = `城鎮：${loc.name}\n候選人：\n${lines}`
+  return { system, user }
+}
+
+const SUGGESTION_RE = /<relationship_updates>([\s\S]*?)(?:<\/relationship_updates>|$)/
+
+/** 敘事尾端的人際關係更新提議：取出後從正文移除。 */
+export function splitSuggestions(text: string): { text: string; updates: { id: string; to_player: string }[] } {
+  const m = SUGGESTION_RE.exec(text)
+  if (!m) return { text, updates: [] }
+  const clean = text.slice(0, m.index).trimEnd()
+  try {
+    const raw = JSON.parse(m[1]!.trim()) as unknown
+    const arr = Array.isArray(raw) ? raw : []
+    const updates = arr
+      .filter((u): u is { id: string; to_player: string } => !!u && typeof u.id === 'string' && typeof u.to_player === 'string')
+    return { text: clean, updates }
+  } catch {
+    return { text: clean, updates: [] }
+  }
+}
+
+/** 串流中顯示時，把還沒結束的提議區塊藏起來 */
+export function visibleNarration(text: string): string {
+  const TAG = '<relationship_updates'
+  const i = text.indexOf(TAG)
+  if (i >= 0) return text.slice(0, i).trimEnd()
+  // 串流到一半、標籤還沒寫完
+  const j = text.lastIndexOf('<')
+  return j >= 0 && TAG.startsWith(text.slice(j)) ? text.slice(0, j).trimEnd() : text
+}

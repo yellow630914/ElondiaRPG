@@ -1,0 +1,73 @@
+{
+  "$comment": "夥伴系統：入隊方式、離隊規則、短休／長休、非戰鬥狀態。說明見 docs/COMPANIONS.md。金額單位為銅幣（CC）。",
+  "version": 1,
+  "bonds": {
+    "hired": "雇傭",
+    "voluntary": "自願",
+    "slave": "奴隸",
+    "leader": "隊長",
+    "ally": "隊員"
+  },
+  "leave_threshold": -20,
+  "initial_affinity": { "hired": 0, "voluntary": 10, "slave": -10, "leader": 5, "ally": 0 },
+
+  "tavern": {
+    "$comment": "候選人數 = base + max(0, mod(魅力))，最多 max；等級在 主角等級 + level_spread 之間，mod(魅力) ≥ cha_level_bonus_at 時上限再 +1。要價 = (a + b × 等級 + c × 等級²) × (1 ± asking_variance)。",
+    "base_candidates": 3,
+    "max_candidates": 6,
+    "level_spread": [-1, 1],
+    "cha_level_bonus_at": 2,
+    "asking": { "a": 60, "b": 45, "c": 10 },
+    "asking_variance": 0.25,
+    "hire": {
+      "$comment": "出價 ≥ 要價直接成交；否則魅力檢定。DC = base + ceil(fee_weight × (1 - 出價/要價)) + level_gap × max(0, 候選等級 - 主角等級)，夾在 [min, max]。",
+      "base": 10,
+      "fee_weight": 12,
+      "level_gap": 2,
+      "min": 5,
+      "max": 30
+    }
+  },
+
+  "wait_party": {
+    "$comment": "在酒館等待其他隊伍邀請。機率 = base + per_cha_mod × mod(魅力) + per_level × 等級，夾在 [0.05, max]。對方可能付給主角簽約金 = pay_per_level × 主角等級 × (1 + max(0, mod(魅力)) × 0.25)。",
+    "hours": 3,
+    "base": 0.3,
+    "per_cha_mod": 0.08,
+    "per_level": 0.02,
+    "max": 0.85,
+    "pay_chance": 0.35,
+    "pay_chance_per_cha_mod": 0.1,
+    "pay_per_level": 40,
+    "leader_level": [0, 2]
+  },
+
+  "invite": {
+    "$comment": "邀請認識的人入隊：親密度至少 min_affinity。DC = base - floor(親密度 / affinity_step) + level_gap × max(0, 對方等級 - 主角等級)。",
+    "min_affinity": 0,
+    "base": 16,
+    "affinity_step": 10,
+    "level_gap": 2
+  },
+
+  "leave_party": {
+    "$comment": "主角離開別人的隊伍：在下一次休息時進行。sneak = 靈巧檢定對 DC base + floor(隊長等級 / 2)；formal 不需檢定。",
+    "sneak_base": 11,
+    "affinity": { "formal": -3, "sneak_success": -12, "sneak_fail": -20 }
+  },
+
+  "rest": {
+    "$comment": "依 D&D 5e：短休 1 小時，可花生命骰回復生命值（每顆 = 生命骰 + mod(力量) + mod(信仰)，至少 1）；長休 8 小時，需要旅店或安全點，生命值與法術環全滿、每次休息的能力重置、回復一半生命骰（至少 1），24 小時內只能長休一次。荒野與地下城（安全房以外）短休有機率被襲擊。",
+    "short_hours": 1,
+    "long_hours": 8,
+    "long_rest_gap_hours": 16,
+    "ambush": { "settlement": 0, "wild": 0.15, "dungeon": 0.25 }
+  },
+
+  "conditions": {
+    "$comment": "非戰鬥狀態（Character.status）。check_penalty 會加在所有主動行動檢定上；clears 表示何時解除。",
+    "slave_mark": { "name": "奴隸契約印記", "desc": "頸上刻著奴隸契約的印記。" },
+    "fugitive": { "name": "逃亡奴隸", "desc": "契約仍在，公會、神殿等官方機構不接待，旅店加價且可能通報。" },
+    "punished": { "name": "受罰", "desc": "被主人懲罰，下次長休前所有檢定 -2。", "check_penalty": 2, "clears": "long_rest" }
+  }
+}

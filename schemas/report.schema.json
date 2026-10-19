@@ -139,7 +139,65 @@
             "properties": { "faction": { "type": "string" }, "delta": { "type": "integer" } }
           }
         },
-        "flags": { "type": "object", "additionalProperties": true }
+        "flags": { "type": "object", "additionalProperties": true },
+        "companions": {
+          "type": "array",
+          "description": "夥伴的進出：入隊、離隊、獲釋、成為奴隸、逃亡、被抓回。npc 為 pc 時是主角本人。",
+          "items": {
+            "type": "object",
+            "required": ["npc", "name", "change"],
+            "properties": {
+              "npc": { "type": "string" },
+              "name": { "type": "string" },
+              "change": { "enum": ["joined", "left", "freed", "enslaved", "escaped", "recaptured"] },
+              "bond": { "enum": ["hired", "voluntary", "slave", "leader", "ally"] },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "description": "非戰鬥狀態（奴隸契約印記、逃亡奴隸、受罰）的增減。",
+          "items": {
+            "type": "object",
+            "required": ["actor", "condition", "added"],
+            "properties": { "actor": { "type": "string" }, "condition": { "type": "string" }, "added": { "type": "boolean" } }
+          }
+        },
+        "hit_dice": {
+          "type": "array",
+          "description": "短休花費、長休回復的生命骰。",
+          "items": {
+            "type": "object",
+            "required": ["actor"],
+            "properties": {
+              "actor": { "type": "string" },
+              "spent": { "type": "integer" },
+              "regained": { "type": "integer" },
+              "healed": { "type": "integer" }
+            }
+          }
+        },
+        "master_share_cc": { "type": "integer", "description": "奴隸契約的收益歸屬：被主人拿走的金錢（已從 money_cc 扣除）。" }
+      }
+    },
+    "check": {
+      "type": "object",
+      "description": "主動行動的檢定。擲骰先發生；AI 判定（source = ai）時，AI 看著骰值決定成功與否，可以出乎預料，DC 只能在參考 DC ±3 內標示；規則判定（source = rules）依骰值對參考 DC。",
+      "required": ["action", "attr", "base_dc", "dc", "natural", "modifier", "total", "degree", "source"],
+      "properties": {
+        "action": { "type": "string" },
+        "attr": { "enum": ["str", "dex", "int", "fai", "cha"] },
+        "base_dc": { "type": "integer" },
+        "dc": { "type": "integer" },
+        "natural": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "modifier": { "type": "integer" },
+        "total": { "type": "integer" },
+        "degree": { "enum": ["critical", "success", "partial", "fail", "fumble"] },
+        "reference_degree": { "enum": ["critical", "success", "partial", "fail", "fumble"], "description": "骰值對 DC 算出的參考成功程度；只在與實際結果不同時記錄" },
+        "source": { "enum": ["ai", "rules"] },
+        "rationale": { "type": "string" },
+        "twist": { "type": "string", "description": "AI 讓結果出乎預料時的說明" }
       }
     },
     "narration": {

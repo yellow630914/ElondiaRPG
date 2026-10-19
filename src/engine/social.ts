@@ -42,6 +42,8 @@ export interface Memory {
   pinned?: boolean
   /** 來源報告；手動新增的記憶沒有 */
   report?: string
+  /** 合併了幾筆舊記憶 */
+  merged?: number
 }
 
 export interface ContextQuery {
@@ -59,6 +61,11 @@ export interface ContextResult {
 }
 
 const MAX_MEMORIES = 6
+/** 記憶超過這個數量時，把舊的日常記憶合併成摘要 */
+export const MEMORY_CAP = 200
+/** 合併時保留最近的這幾筆不動 */
+const KEEP_RECENT = 50
+const MERGED_SUMMARY_CHARS = 200
 
 // ---- 人際關係 ----
 
@@ -75,7 +82,7 @@ export function ensureRelationship(state: GameState, who: NpcDef | { id: string;
     existing.lastSeen = place
     return existing
   }
-  const def = 'personality' in who ? who : npcs.find((n) => n.id === who.id)
+  const def = 'personality' in who ? who : (state.npcs?.[who.id] ?? npcs.find((n) => n.id === who.id))
   const rel: Relationship = {
     id: who.id,
     name: who.name,
@@ -134,9 +141,15 @@ function memoryImportance(report: Report): Memory['importance'] | null {
     case 'quest':
       return report.quest?.status === 'completed' ? 3 : report.quest?.status === 'accepted' ? 2 : null
     case 'social':
-      return 2
+      return report.outcome.result === 'neutral' ? 1 : 2
     case 'travel':
       return 1
+    case 'action':
+      // 主動行動（有檢定）才記；大成功、大失敗比較難忘
+      if (!report.check) return null
+      return report.check.degree === 'critical' || report.check.degree === 'fumble' ? 2 : 1
+    case 'rest':
+      return report.changes.companions?.length ? 2 : null
     default:
       return null
   }
@@ -157,6 +170,7 @@ export function recordMemory(state: GameState, report: Report): Memory | null {
     report: report.report_id,
   }
   ;(state.memories ??= []).push(memory)
+  compactMemories(state)
   for (const id of memory.participants) {
     const rel = relationsOf(state)[id]
     if (rel) rel.lastSeen = { time: { ...report.time.end }, location: memory.location }
@@ -167,6 +181,7 @@ export function recordMemory(state: GameState, report: Report): Memory | null {
 export function addMemory(state: GameState, m: Omit<Memory, 'id'>): Memory {
   const memory = { ...m, id: `m-manual-${Date.now().toString(36)}-${(state.memories ?? []).length}` }
   ;(state.memories ??= []).push(memory)
+  compactMemories(state)
   return memory
 }
 
@@ -180,6 +195,83 @@ export function editMemory(state: GameState, id: string, patch: MemoryPatch) {
 
 export function deleteMemory(state: GameState, id: string) {
   state.memories = (state.memories ?? []).filter((m) => m.id !== id)
+}
+
+/**
+ * 記憶超過 MEMORY_CAP 筆時，把較舊的日常記憶（重要程度 1、未釘選）合併：
+ * 先依「同一天」合併成一筆摘要；還是太多就依「10 天」為一段再合併。最近 KEEP_RECENT 筆不動。
+ * 回傳合併掉的筆數。
+ */
+export function compactMemories(state: GameState, cap = MEMORY_CAP): number {
+  const list = state.memories ?? []
+  if (list.length <= cap) return 0
+  const before = list.length
+  for (const span of [1, 10]) {
+    if ((state.memories ?? []).length <= cap) break
+    mergeMemories(state, span)
+  }
+  return before - (state.memories ?? []).length
+}
+
+function mergeMemories(state: GameState, spanDays: number) {
+  const list = state.memories ?? []
+  const cutoff = list.length - KEEP_RECENT
+  const groups = new Map<number, Memory[]>()
+  list.forEach((m, i) => {
+    if (i >= cutoff || m.pinned || m.importance !== 1) return
+    const key = Math.floor((m.time.day - 1) / spanDays)
+    groups.set(key, [...(groups.get(key) ?? []), m])
+  })
+  const removed = new Set<string>()
+  const merged: Memory[] = []
+  for (const [key, ms] of groups) {
+    if (ms.length < 2) continue
+    for (const m of ms) removed.add(m.id)
+    const counts = new Map<string, number>()
+    for (const m of ms) counts.set(m.location, (counts.get(m.location) ?? 0) + 1)
+    const location = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]![0]
+    const days = spanDays === 1 ? `第 ${ms[0]!.time.day} 天` : `第 ${key * spanDays + 1}～${(key + 1) * spanDays} 天`
+    let summary = `${days}的日常：${ms.map((m) => m.summary.replace(/。$/, '')).join('；')}。`
+    if (summary.length > MERGED_SUMMARY_CHARS) summary = `${summary.slice(0, MERGED_SUMMARY_CHARS - 1)}…`
+    merged.push({
+      id: `m-merged-${spanDays}-${key}-${ms[0]!.id}`,
+      time: { ...ms[0]!.time },
+      location,
+      participants: [...new Set(ms.flatMap((m) => m.participants))],
+      summary,
+      importance: 1,
+      merged: ms.reduce((n, m) => n + (m.merged ?? 1), 0),
+    })
+  }
+  if (!merged.length) return
+  const kept = list.filter((m) => !removed.has(m.id))
+  state.memories = [...kept, ...merged].sort((a, b) => a.time.day - b.time.day || (a.time.hour ?? 0) - (b.time.hour ?? 0) || (a.time.minute ?? 0) - (b.time.minute ?? 0))
+}
+
+// ---- AI 提議的人際關係文字 ----
+
+/** 接受提議：寫入「與主角的關係」 */
+export function acceptSuggestion(state: GameState, id: string, text?: string) {
+  const s = state.suggestions?.find((x) => x.id === id)
+  if (!s) throw new Error('沒有這個提議')
+  const rel = relationsOf(state)[s.npc]
+  if (rel) rel.toPlayer = (text ?? s.text).trim() || rel.toPlayer
+  state.suggestions = (state.suggestions ?? []).filter((x) => x.id !== id)
+}
+
+export function rejectSuggestion(state: GameState, id: string) {
+  state.suggestions = (state.suggestions ?? []).filter((x) => x.id !== id)
+}
+
+/** 加入提議（只接受已有條目的角色，同一角色只保留最新一筆） */
+export function addSuggestions(state: GameState, updates: { id: string; to_player: string }[], report?: string) {
+  for (const u of updates) {
+    const rel = relationsOf(state)[u.id]
+    const text = u.to_player.trim().slice(0, 120)
+    if (!rel || !text || text === rel.toPlayer) continue
+    state.suggestions = (state.suggestions ?? []).filter((x) => x.npc !== u.id)
+    state.suggestions.push({ id: `s-${report ?? 'x'}-${u.id}`, npc: u.id, text, ...(report ? { report } : {}) })
+  }
 }
 
 // ---- 檢索 ----
@@ -246,7 +338,7 @@ export function formatContext(state: GameState, ctx: ContextResult): string {
     const lines = ctx.relationships.map((r) => {
       const others = Object.entries(r.toOthers).map(([id, text]) => `${nameOf(state, id)}：${text}`)
       return [
-        `- ${r.name}｜親密度 ${r.affinity}（${affinityStage(r.affinity)}）`,
+        `- ${r.name}｜親密度 ${r.affinity}（${affinityStage(r.affinity)}）｜id: ${r.id}`,
         r.appearance && `  外貌：${r.appearance}`,
         r.personality && `  性格：${r.personality}`,
         `  與主角：${r.toPlayer}`,

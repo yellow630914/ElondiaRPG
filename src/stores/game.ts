@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import * as actions from '@/engine/actions'
 import * as combat from '@/engine/combat'
+import * as companions from '@/engine/companions'
+import * as rest from '@/engine/rest'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
 import * as social from '@/engine/social'
@@ -9,6 +12,7 @@ import type { Attrs, AttrId } from '@/engine/data'
 import * as town from '@/engine/town'
 import { travel } from '@/engine/travel'
 import type { GameState, Report } from '@/engine/types'
+import { buildActionPrompt, buildTavernPrompt, extractJson, splitSuggestions } from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
 import { useSettings } from './settings'
 
@@ -50,6 +54,8 @@ export const useGame = defineStore('game', () => {
   const state = ref<GameState | null>(saved ? load(saved) : null)
   const narrations = ref<Record<string, NarrationState>>(readJson(NARRATION_KEY) ?? {})
   const error = ref<string | null>(null)
+  /** AI 正在判定主動行動 */
+  const judging = ref(false)
   const controllers = new Map<string, AbortController>()
 
   const pc = computed(() => (state.value ? player(state.value) : null))
@@ -61,7 +67,7 @@ export const useGame = defineStore('game', () => {
   }
 
   /** 執行引擎動作；錯誤訊息顯示在畫面上而不是丟出。 */
-  function run<T>(fn: (s: GameState) => T): T | undefined {
+  function run<T>(fn: (s: GameState) => T, opts: { narrate?: boolean } = {}): T | undefined {
     if (!state.value) return undefined
     error.value = null
     try {
@@ -69,7 +75,7 @@ export const useGame = defineStore('game', () => {
       save()
       const settings = useSettings()
       const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
-      if (settings.aiNarration && settings.ready() && report && report.kind !== 'trade') {
+      if (opts.narrate !== false && settings.aiNarration && settings.ready() && report && report.kind !== 'trade') {
         void narrate(report)
       }
       return result
@@ -127,7 +133,11 @@ export const useGame = defineStore('game', () => {
     const lore = selectLore(book, report, { adult: settings.adult, budgetChars: settings.loreBudget, playerName })
     const s = state.value
     const context = s ? social.formatContext(s, social.selectContext(s, social.queryForReport(s, report))) : ''
-    return buildPrompt(report, lore, { playerName, language: settings.language, ...(context ? { context } : {}) })
+    return buildPrompt(report, lore, {
+      playerName, language: settings.language,
+      ...(context ? { context } : {}),
+      suggestRelations: context.includes('<relationships>'),
+    })
   }
 
   async function narrate(report: Report) {
@@ -143,6 +153,10 @@ export const useGame = defineStore('game', () => {
       for await (const chunk of streamNarration(settings.provider, settings.current(), prompt, controller.signal)) {
         entry.text += chunk
       }
+      // 正文後面的人際關係更新提議：取出來等玩家確認
+      const { text, updates } = splitSuggestions(entry.text)
+      entry.text = text
+      if (state.value && updates.length) social.addSuggestions(state.value, updates, report.report_id)
       entry.status = 'done'
       save()
     } catch (e) {
@@ -157,11 +171,82 @@ export const useGame = defineStore('game', () => {
     controllers.get(reportId)?.abort()
   }
 
+  // ---- 主動行動：程式擲骰，AI 看骰值判定（或依規則） ----
+
+  async function perform(input: actions.ActionInput) {
+    const pending = run((s) => actions.prepareAction(s, input))
+    if (pending) await judge()
+  }
+
+  /** 判定等待中的行動。useAI 未指定時依設定。AI 失敗時保留行動，可以重試或改用規則。 */
+  async function judge(useAI?: boolean) {
+    const s = state.value
+    const pending = s?.pendingAction
+    if (!s || !pending || judging.value) return
+    const settings = useSettings()
+    const ai = useAI ?? (settings.aiJudge && settings.ready())
+    if (!ai) {
+      run((st) => actions.resolveAction(st, null))
+      return
+    }
+    judging.value = true
+    error.value = null
+    try {
+      const { completeText } = await import('@/narrator/providers')
+      const participants = ['pc', ...s.party.filter((m) => !m.isPlayer).map((m) => m.id)]
+      const target = pending.target?.includes(':') ? pending.target.split(':')[1] : pending.target
+      if (target && s.relationships?.[target] && !participants.includes(target)) participants.push(target)
+      const context = social.formatContext(s, social.selectContext(s, { participants, location: s.location }))
+      const text = await completeText(settings.provider, settings.current(), buildActionPrompt(s, pending, context))
+      const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
+      // AI 已經直接寫出經過：當作這份報告的敘事，不再另外請 AI 描述
+      const report = run((st) => actions.resolveAction(st, judgment), { narrate: !judgment.narrative })
+      if (report && judgment.narrative) {
+        narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+        save()
+      }
+    } catch (e) {
+      error.value = `AI 判定失敗：${e instanceof Error ? e.message : String(e)}（可以重試，或改用規則判定）`
+    } finally {
+      judging.value = false
+    }
+  }
+
+  /** 酒館候選人：AI 開啟時請 AI 潤飾名字、外貌與性格（每天每間酒館一次） */
+  async function flavorTavern() {
+    const s = state.value
+    const settings = useSettings()
+    if (!s || !settings.aiJudge || !settings.ready()) return
+    const today = s.taverns?.[s.location]
+    if (!today || today.flavored || today.day !== s.time.day) return
+    today.flavored = true
+    try {
+      const { completeText } = await import('@/narrator/providers')
+      const prompt = buildTavernPrompt(s)
+      if (!prompt) return
+      const raw = extractJson(await completeText(settings.provider, settings.current(), prompt)) as { candidates?: companions.CandidateFlavor[] }
+      run((st) => companions.applyCandidateFlavor(st, Array.isArray(raw.candidates) ? raw.candidates : []))
+    } catch (e) {
+      error.value = `AI 生成酒館候選人失敗：${e instanceof Error ? e.message : String(e)}`
+    }
+  }
+
+  function hire(npcId: string, offer: number, text: string) {
+    const s = state.value
+    if (!s) return
+    const c = s.taverns?.[s.location]?.candidates.find((x) => x.npc === npcId)
+    if (c && offer >= companions.askingFor(c)) return run((st) => companions.hireAtAsking(st, npcId, offer))
+    return perform({ kind: 'hire', target: npcId, offer_cc: offer, text })
+  }
+
   return {
-    state, narrations, error, pc,
+    state, narrations, error, pc, judging,
     start, reset, importSave, exportSave, promptFor, narrate, cancelNarration,
+    perform, judge, flavorTavern, hire,
     travel: (to: string, intent?: string) => run((s) => travel(s, to, intent)),
     rest: () => run(town.rest),
+    shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
+    longRest: (place: 'inn' | 'safe') => run((s) => rest.longRest(s, place)),
     buyRations: (qty: number) => run((s) => town.buyRations(s, qty)),
     recruit: (id: string) => run((s) => town.recruit(s, id)),
     dismiss: (id: string) => run((s) => town.dismiss(s, id)),
@@ -187,7 +272,19 @@ export const useGame = defineStore('game', () => {
     returnToTown: () => run(grid.returnToTown),
     descend: () => run(grid.descend),
     ascend: () => run(grid.ascend),
-    restAtSafeRoom: () => run(grid.restAtSafeRoom),
+    restAtSafeRoom: () => run((s) => rest.longRest(s, 'safe')),
+    // 夥伴
+    tavernCandidates: () => run(companions.tavernCandidates) ?? [],
+    waitForParty: () => run(companions.waitForParty),
+    acceptPartyOffer: (id: string) => run((s) => companions.acceptPartyOffer(s, id)),
+    declinePartyOffer: (id: string) => run((s) => companions.declinePartyOffer(s, id)),
+    requestLeave: (mode: 'sneak' | 'formal' | null) => run((s) => companions.requestLeave(s, mode)),
+    marketStock: (kind: companions.MarketKind) => run((s) => companions.marketStock(s, kind)) ?? [],
+    buySlave: (kind: companions.MarketKind, id: string) => run((s) => companions.buySlave(s, kind, id)),
+    offerSelf: (kind: companions.MarketKind) => run((s) => companions.offerSelf(s, kind)),
+    releaseSlave: (id: string) => run((s) => companions.releaseSlave(s, id)),
+    acceptSuggestion: (id: string, text?: string) => run((s) => social.acceptSuggestion(s, id, text)),
+    rejectSuggestion: (id: string) => run((s) => social.rejectSuggestion(s, id)),
     // 人際關係與共同記憶
     editRelationship: (id: string, patch: social.RelationshipPatch) => run((s) => social.editRelationship(s, id, patch)),
     addMemory: (m: Omit<social.Memory, 'id'>) => run((s) => social.addMemory(s, m)),

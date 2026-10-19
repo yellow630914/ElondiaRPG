@@ -154,3 +154,10 @@ export async function listModels(provider: ProviderId, config: ProviderConfig): 
   }
   return ids.sort()
 }
+
+/** 不串流顯示、只要完整文字時使用（AI 判定、角色潤飾）。 */
+export async function completeText(provider: ProviderId, config: ProviderConfig, prompt: Prompt, signal?: AbortSignal): Promise<string> {
+  let text = ''
+  for await (const chunk of streamNarration(provider, config, prompt, signal)) text += chunk
+  return text
+}
