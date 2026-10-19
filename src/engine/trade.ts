@@ -396,6 +396,7 @@ export function effectText(state: GameState, e: RewardEffect, keeper?: string): 
     case 'quest_reward': return `委託報酬 ${e.percent > 0 ? '+' : ''}${e.percent}%`
     case 'quest_flag': return e.key === 'lead' ? '委託線索（檢定 +5）' : e.key === 'suspicious' ? '消息走漏（檢定 -2）' : '委託旗標'
     case 'hp': return '生命值變化'
+    case 'ability': return `${e.chance !== undefined && e.chance < 1 ? `${Math.round(e.chance * 100)}% 機率` : ''}${e.choices ? `學習新能力（${e.choices} 選一）` : `領悟${e.ability ? `【${e.ability}】` : '新能力'}`}`
     default: return e.type
   }
 }

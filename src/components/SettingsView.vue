@@ -129,6 +129,17 @@ function doReset() {
     </div>
   </section>
 
+  <section class="panel">
+    <h2>🎮 遊戲規則</h2>
+    <div class="form">
+      <label>
+        升級時能力三選一的重抽次數（每組）
+        <input v-model.number="settings.abilityRerolls" type="number" min="0" max="99" style="width: 100px" />
+      </label>
+      <p class="small muted">0 表示不能重抽。只影響之後的重抽，已經用掉的次數照算。</p>
+    </div>
+  </section>
+
   <section v-if="game.state" class="panel">
     <h2>💾 存檔</h2>
     <p class="small muted">遊戲會自動存在瀏覽器中。匯出的 JSON 可以在其他瀏覽器的開始畫面匯入。</p>

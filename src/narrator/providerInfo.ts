@@ -68,3 +68,9 @@ export const PROVIDERS: ProviderInfo[] = [
 export function providerInfo(id: ProviderId): ProviderInfo {
   return PROVIDERS.find((p) => p.id === id)!
 }
+
+/** 一次 AI 呼叫的 token 用量（輸入含快取讀寫） */
+export interface TokenUsage {
+  input: number
+  output: number
+}

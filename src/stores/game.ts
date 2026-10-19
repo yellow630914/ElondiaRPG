@@ -22,10 +22,20 @@ import {
   buildActionPrompt, buildNegotiationPrompt, buildShopPrompt, buildTavernPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
+import type { TokenUsage } from '@/narrator/providerInfo'
 import { useSettings } from './settings'
 
 const SAVE_KEY = 'elondia.save'
 const NARRATION_KEY = 'elondia.narrations'
+const USAGE_KEY = 'elondia.usage'
+/** 不屬於任何一則日誌的 AI 呼叫（酒館候選人、商店清單、談判方式、失敗的判定） */
+export const OTHER_USAGE = '_other'
+
+export interface UsageEntry {
+  input: number
+  output: number
+  calls: number
+}
 
 function readJson<T>(key: string): T | null {
   try {
@@ -61,6 +71,8 @@ export const useGame = defineStore('game', () => {
   const saved = readJson<GameState>(SAVE_KEY)
   const state = ref<GameState | null>(saved ? load(saved) : null)
   const narrations = ref<Record<string, NarrationState>>(readJson(NARRATION_KEY) ?? {})
+  /** token 用量：日誌 id（或 OTHER_USAGE）→ 累計 */
+  const usage = ref<Record<string, UsageEntry>>(readJson(USAGE_KEY) ?? {})
   const error = ref<string | null>(null)
   /** AI 正在判定主動行動 */
   const judging = ref(false)
@@ -74,6 +86,7 @@ export const useGame = defineStore('game', () => {
     if (state.value) writeJson(SAVE_KEY, state.value)
     const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
     writeJson(NARRATION_KEY, finished)
+    writeJson(USAGE_KEY, usage.value)
   }
 
   /** 執行引擎動作；錯誤訊息顯示在畫面上而不是丟出。 */
@@ -99,6 +112,23 @@ export const useGame = defineStore('game', () => {
     return typeof x === 'object' && x !== null && 'report_id' in x
   }
 
+  function addUsage(key: string, u: TokenUsage) {
+    const e = (usage.value[key] ??= { input: 0, output: 0, calls: 0 })
+    e.input += u.input
+    e.output += u.output
+    e.calls += 1
+  }
+
+  /** 收集一次呼叫的用量；呼叫結束後再決定記在哪一則日誌 */
+  function usageCollector() {
+    const got: TokenUsage[] = []
+    return { onUsage: (u: TokenUsage) => got.push(u), flush: (key: string) => { for (const u of got.splice(0)) addUsage(key, u) } }
+  }
+
+  const totalUsage = computed(() =>
+    Object.values(usage.value).reduce((t, e) => ({ input: t.input + e.input, output: t.output + e.output, calls: t.calls + e.calls }), { input: 0, output: 0, calls: 0 }),
+  )
+
   function hasReport(x: unknown): x is { report: Report } {
     return typeof x === 'object' && x !== null && 'report' in x && isReport((x as { report: unknown }).report)
   }
@@ -107,6 +137,7 @@ export const useGame = defineStore('game', () => {
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
     grid.enterLocation(state.value)
     narrations.value = {}
+    usage.value = {}
     error.value = null
     save()
   }
@@ -115,8 +146,10 @@ export const useGame = defineStore('game', () => {
     for (const c of controllers.values()) c.abort()
     state.value = null
     narrations.value = {}
+    usage.value = {}
     localStorage.removeItem(SAVE_KEY)
     localStorage.removeItem(NARRATION_KEY)
+    localStorage.removeItem(USAGE_KEY)
   }
 
   function importSave(json: string) {
@@ -163,7 +196,8 @@ export const useGame = defineStore('game', () => {
     try {
       const prompt = await promptFor(report)
       const { streamNarration } = await import('@/narrator/providers')
-      for await (const chunk of streamNarration(settings.provider, settings.current(), prompt, controller.signal)) {
+      const onUsage = (u: TokenUsage) => addUsage(report.report_id, u)
+      for await (const chunk of streamNarration(settings.provider, settings.current(), prompt, controller.signal, onUsage)) {
         entry.text += chunk
       }
       // 正文後面的人際關係更新提議：取出來等玩家確認
@@ -204,21 +238,22 @@ export const useGame = defineStore('game', () => {
     }
     judging.value = true
     error.value = null
+    const collector = usageCollector()
     try {
       const { completeText } = await import('@/narrator/providers')
       const participants = ['pc', ...s.party.filter((m) => !m.isPlayer).map((m) => m.id)]
       const target = pending.target?.includes(':') ? pending.target.split(':')[1] : pending.target
       if (target && s.relationships?.[target] && !participants.includes(target)) participants.push(target)
       const context = social.formatContext(s, social.selectContext(s, { participants, location: s.location }))
-      const text = await completeText(settings.provider, settings.current(), buildActionPrompt(s, pending, context))
+      const text = await completeText(settings.provider, settings.current(), buildActionPrompt(s, pending, context), undefined, collector.onUsage)
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // AI 已經直接寫出經過：當作這份報告的敘事，不再另外請 AI 描述
       const report = run((st) => actions.resolveAction(st, judgment), { narrate: !judgment.narrative })
-      if (report && judgment.narrative) {
-        narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
-        save()
-      }
+      collector.flush(report?.report_id ?? OTHER_USAGE)
+      if (report && judgment.narrative) narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+      save()
     } catch (e) {
+      collector.flush(OTHER_USAGE)
       error.value = `AI 判定失敗：${e instanceof Error ? e.message : String(e)}（可以重試，或改用規則判定）`
     } finally {
       judging.value = false
@@ -237,7 +272,7 @@ export const useGame = defineStore('game', () => {
       const { completeText } = await import('@/narrator/providers')
       const prompt = buildTavernPrompt(s)
       if (!prompt) return
-      const raw = extractJson(await completeText(settings.provider, settings.current(), prompt)) as { candidates?: companions.CandidateFlavor[] }
+      const raw = extractJson(await completeText(settings.provider, settings.current(), prompt, undefined, (u) => addUsage(OTHER_USAGE, u))) as { candidates?: companions.CandidateFlavor[] }
       run((st) => companions.applyCandidateFlavor(st, Array.isArray(raw.candidates) ? raw.candidates : []))
     } catch (e) {
       error.value = `AI 生成酒館候選人失敗：${e instanceof Error ? e.message : String(e)}`
@@ -255,7 +290,7 @@ export const useGame = defineStore('game', () => {
     save()
     try {
       const { completeText } = await import('@/narrator/providers')
-      const raw = extractJson(await completeText(settings.provider, settings.current(), buildShopPrompt(s, type)))
+      const raw = extractJson(await completeText(settings.provider, settings.current(), buildShopPrompt(s, type), undefined, (u) => addUsage(OTHER_USAGE, u)))
       run((st) => trade.applyAiDeals(st, type, raw))
     } catch (e) {
       error.value = `AI 生成交易清單失敗：${e instanceof Error ? e.message : String(e)}（先用一般的商品清單）`
@@ -271,7 +306,7 @@ export const useGame = defineStore('game', () => {
     n.ai = true
     try {
       const { completeText } = await import('@/narrator/providers')
-      const raw = extractJson(await completeText(settings.provider, settings.current(), buildNegotiationPrompt(s, n)))
+      const raw = extractJson(await completeText(settings.provider, settings.current(), buildNegotiationPrompt(s, n), undefined, (u) => addUsage(OTHER_USAGE, u)))
       run((st) => negotiation.applyAiOptions(st, n.id, raw))
     } catch (e) {
       error.value = `AI 生成談判方式失敗：${e instanceof Error ? e.message : String(e)}（先用預設的談判方式）`
@@ -288,7 +323,7 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, pc, judging, intent,
+    state, narrations, error, pc, judging, intent, usage, totalUsage,
     start, reset, importSave, exportSave, promptFor, narrate, cancelNarration,
     perform, judge, flavorTavern, hire, flavorShop, startNegotiation,
     // 商店、談判、行囊
@@ -321,7 +356,7 @@ export const useGame = defineStore('game', () => {
     turnInQuest: (id: string) => run((s) => town.turnInQuest(s, id)),
     templeHeal: () => run(town.templeHeal),
     chooseAbility: (member: string, ability: string) => run((s) => town.chooseAbility(s, member, ability)),
-    rerollAbility: (member: string) => run((s) => town.rerollAbility(s, member)),
+    rerollAbility: (member: string) => run((s) => town.rerollAbility(s, member, useSettings().rerollLimit())),
     spendAttr: (member: string, attr: AttrId) =>
       run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),

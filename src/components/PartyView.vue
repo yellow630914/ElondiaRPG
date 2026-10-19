@@ -16,6 +16,7 @@ import { formatMoney } from '@/engine/money'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
 import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import { useSettings } from '@/stores/settings'
 import StatBar from './StatBar.vue'
 import NameTag from './NameTag.vue'
 
@@ -25,6 +26,7 @@ const QUALITY_NAME: Record<string, string> = {
 const TYPE_NAME = { skill: '技能', spell: '法術', cantrip: '戲法' }
 
 const game = useGame()
+const settings = useSettings()
 const s = computed(() => game.state!)
 const inCombat = computed(() => !!s.value.combat)
 
@@ -161,7 +163,7 @@ function affinityText(m: Character): string {
       <div v-if="m.pendingAbilityChoices?.length" class="choose">
         <div class="row" style="justify-content: space-between">
           <strong class="small">升級！請選擇一項能力：</strong>
-          <button class="small" :disabled="inCombat || rerollsLeft(m) <= 0" @click="game.rerollAbility(m.id)">🎲 重抽（剩 {{ rerollsLeft(m) }} 次）</button>
+          <button class="small" :disabled="inCombat || rerollsLeft(m, settings.rerollLimit()) <= 0" @click="game.rerollAbility(m.id)">🎲 重抽（剩 {{ rerollsLeft(m, settings.rerollLimit()) }} 次）</button>
         </div>
         <div class="options">
           <button

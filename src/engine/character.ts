@@ -239,16 +239,16 @@ export function abilityChoices(c: Character, rng: Rng, count = 3): string[] {
   return picked
 }
 
-/** 這組能力選項還能重抽幾次 */
-export function rerollsLeft(c: Character): number {
-  return c.pendingAbilityChoices?.length ? Math.max(0, progression.ability_rerolls - (c.abilityRerollsUsed ?? 0)) : 0
+/** 這組能力選項還能重抽幾次。max 為每組的重抽上限（玩家可在設定中調整，預設見 progression.json）。 */
+export function rerollsLeft(c: Character, max = progression.ability_rerolls): number {
+  return c.pendingAbilityChoices?.length ? Math.max(0, max - (c.abilityRerollsUsed ?? 0)) : 0
 }
 
 /** 重抽升級時的能力三選一：盡量換成目前沒出現的能力。 */
-export function rerollAbilityChoices(c: Character, rng: Rng): string[] {
+export function rerollAbilityChoices(c: Character, rng: Rng, max = progression.ability_rerolls): string[] {
   const current = c.pendingAbilityChoices?.[0]
   if (!current) throw new Error('沒有待選的能力')
-  if (rerollsLeft(c) <= 0) throw new Error('這次升級已經不能再重抽了')
+  if (rerollsLeft(c, max) <= 0) throw new Error('這次升級已經不能再重抽了')
   const fresh = learnable(c).filter((a) => !current.includes(a.id))
   if (!fresh.length) throw new Error('沒有其他可以學的能力了')
   const picked: string[] = []
@@ -258,6 +258,15 @@ export function rerollAbilityChoices(c: Character, rng: Rng): string[] {
   c.pendingAbilityChoices![0] = picked
   c.abilityRerollsUsed = (c.abilityRerollsUsed ?? 0) + 1
   return picked
+}
+
+/** 學會一項能力（事件、任務的技能報酬）。必須是這個職業的能力且尚未學會。 */
+export function learnAbility(c: Character, id: string): AbilityDef {
+  const a = classAbilities(c.class).find((x) => x.id === id)
+  if (!a) throw new Error('這個職業學不了這項能力')
+  if (c.abilities.includes(id)) throw new Error('已經學會了')
+  c.abilities.push(id)
+  return a
 }
 
 /** 加經驗值並處理升級；回傳升了幾級。會直接修改角色。 */

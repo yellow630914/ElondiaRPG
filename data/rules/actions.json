@@ -28,7 +28,8 @@
       "attr": "cha",
       "base": 12,
       "hours": 0.5,
-      "effects": ["affinity", "relationship_text", "flag", "reputation", "money", "item", "xp"],
+      "effects": ["affinity", "relationship_text", "flag", "reputation", "money", "item", "xp", "ability"],
+      "$comment_ability": "ability：只在 AI 判定為大成功時採用，最多一項，必須是目前可以學的能力（否則隨機）",
       "$comment_base": "有對象時 DC = base + 2 × max(0, 對方生命層級 - 主角生命層級) - floor(親密度 / 25)"
     },
     "hire": { "name": "雇傭談判", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"] },
@@ -39,7 +40,7 @@
     "escape": { "name": "逃離主人", "attr": "dex", "hours": 2, "effects": ["affinity", "relationship_text", "flag"] },
     "bargain": { "name": "交涉價格", "attr": "cha", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag"] },
     "negotiation": { "name": "談判", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag", "reputation"] },
-    "rest_talk": { "name": "長休時的互動", "attr": "cha", "base": 10, "hours": 0, "effects": ["affinity", "relationship_text", "flag", "xp", "meet"],
+    "rest_talk": { "name": "長休時的互動", "attr": "cha", "base": 10, "hours": 0, "effects": ["affinity", "relationship_text", "flag", "xp", "meet", "ability"],
       "$comment_meet": "meet：在旅店認識新的人（只有在旅店長休、對象是「同旅館的人」時）" }
   }
 }

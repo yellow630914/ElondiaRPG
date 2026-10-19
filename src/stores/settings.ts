@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { progression } from '@/engine/data'
 import { PROVIDERS, type ProviderConfig, type ProviderId } from '@/narrator/providerInfo'
 
 const KEY = 'elondia.settings'
@@ -11,6 +12,8 @@ interface SavedSettings {
   aiNarration: boolean
   /** AI 判定：主動行動由 AI 看骰值判定、酒館候選人由 AI 潤飾；關閉時依規則判定 */
   aiJudge: boolean
+  /** 升級時的能力三選一，每組可以重抽的次數 */
+  abilityRerolls: number
   adult: boolean
   language: 'zh-Hant' | 'zh-Hans'
   loreBudget: number
@@ -24,6 +27,7 @@ function defaults(): SavedSettings {
     ) as Record<ProviderId, ProviderConfig>,
     aiNarration: false,
     aiJudge: false,
+    abilityRerolls: progression.ability_rerolls,
     adult: false,
     language: 'zh-Hant',
     loreBudget: 12000,
@@ -51,18 +55,20 @@ export const useSettings = defineStore('settings', () => {
   const configs = ref(initial.configs)
   const aiNarration = ref(initial.aiNarration)
   const aiJudge = ref(initial.aiJudge)
+  const abilityRerolls = ref(initial.abilityRerolls)
   const adult = ref(initial.adult)
   const language = ref(initial.language)
   const loreBudget = ref(initial.loreBudget)
 
   watch(
-    [provider, configs, aiNarration, aiJudge, adult, language, loreBudget],
+    [provider, configs, aiNarration, aiJudge, abilityRerolls, adult, language, loreBudget],
     () => {
       const data: SavedSettings = {
         provider: provider.value,
         configs: configs.value,
         aiNarration: aiNarration.value,
         aiJudge: aiJudge.value,
+        abilityRerolls: abilityRerolls.value,
         adult: adult.value,
         language: language.value,
         loreBudget: loreBudget.value,
@@ -83,5 +89,8 @@ export const useSettings = defineStore('settings', () => {
     return !!cfg.model && (!!cfg.apiKey || !!info.keyOptional) && (!info.needsBaseURL || !!cfg.baseURL)
   }
 
-  return { provider, configs, aiNarration, aiJudge, adult, language, loreBudget, current, ready }
+  /** 重抽次數（夾在 0～99） */
+  const rerollLimit = () => Math.max(0, Math.min(99, Math.floor(Number(abilityRerolls.value) || 0)))
+
+  return { provider, configs, aiNarration, aiJudge, abilityRerolls, rerollLimit, adult, language, loreBudget, current, ready }
 })

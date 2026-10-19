@@ -439,7 +439,7 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
-export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet'
+export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }

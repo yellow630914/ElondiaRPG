@@ -115,7 +115,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 const EFFECT_OF: Partial<Record<RewardEffect['type'], EffectKind>> = {
   affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
-  money: 'money', item: 'item', xp: 'xp', meet: 'meet',
+  money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability',
 }
 
 /**
@@ -202,6 +202,15 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
           effects.push({ type, name, qty: n })
           items++
         }
+        break
+      }
+      case 'ability': {
+        // 技能報酬只在 AI 判定為大成功時採用，最多一項
+        if (degree !== 'critical' || effects.some((y) => y.type === 'ability')) break
+        const target = String(x.target ?? 'pc')
+        if (target !== 'pc' && !state.party.some((m) => m.id === target)) break
+        const ability = clipText(x.ability, 30)
+        effects.push({ type: 'ability', target, ...(ability ? { ability } : {}) })
         break
       }
       case 'meet': {

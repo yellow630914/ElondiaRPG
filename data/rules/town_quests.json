@@ -1,5 +1,5 @@
 {
-  "$comment": "F 級委託範本：地點在城內 (town) 或城鎮近郊 (outskirts)，不需要旅行。城內委託要走到 spot 指定的設施格子（tavern / shop / gate / inn / guild）執行；近郊委託會在近郊地圖上標出委託地點。{town} 會換成城鎮名稱。kind：pest / hunt = 戰鬥；search / gather / patrol = 檢定（1d20 + 熟練加值 ≥ dc，失敗可再試）；delivery = 花時間即可完成。encounter_chance 為檢定前遭遇敵人的機率，遭遇時改為戰鬥，委託維持進行中。報酬依世界書 F 級 3-5 銀幣（30-50 銅）。",
+  "$comment": "F 級委託範本：地點在城內 (town) 或城鎮近郊 (outskirts)，不需要旅行。城內委託要走到 spot 指定的設施格子（tavern / shop / gate / inn / guild）執行；近郊委託會在近郊地圖上標出委託地點。{town} 會換成城鎮名稱。kind：pest / hunt = 戰鬥；search / gather / patrol = 檢定（1d20 + 熟練加值 ≥ dc，失敗可再試）；delivery = 花時間即可完成。encounter_chance 為檢定前遭遇敵人的機率，遭遇時改為戰鬥，委託維持進行中。報酬依世界書 F 級 3-5 銀幣（30-50 銅）。rewards 為交付時的額外報酬（報酬模板），例如有機率領悟新能力（type: ability）。",
   "version": 1,
   "per_town": 3,
   "templates": [
@@ -21,7 +21,8 @@
     {
       "id": "night_patrol", "spot": "gate", "kind": "patrol", "area": "town",
       "title": "協助{town}的衛兵夜間巡邏", "scene": "{town}的夜街",
-      "hours": 4, "dc": 10, "encounter_chance": 0.3, "encounter": [["bandit", 1]], "reward_cc": [35, 50]
+      "hours": 4, "dc": 10, "encounter_chance": 0.3, "encounter": [["bandit", 1]], "reward_cc": [35, 50],
+      "rewards": [{ "type": "ability", "target": "pc", "chance": 0.15 }]
     },
     {
       "id": "herb_gathering", "kind": "gather", "area": "outskirts",
@@ -37,12 +38,14 @@
     {
       "id": "goblin_scouts", "kind": "hunt", "area": "outskirts",
       "title": "討伐在{town}近郊出沒的哥布林", "scene": "{town}近郊的丘陵",
-      "hours": 4, "encounter": [["goblin", 2]], "reward_cc": [40, 50]
+      "hours": 4, "encounter": [["goblin", 2]], "reward_cc": [40, 50],
+      "rewards": [{ "type": "ability", "target": "pc", "choices": 3, "chance": 0.2 }]
     },
     {
       "id": "scout_road", "kind": "search", "area": "outskirts",
       "title": "偵查{town}近郊商道的異狀", "scene": "{town}近郊的商道",
-      "hours": 3, "dc": 12, "encounter_chance": 0.2, "encounter": [["wolf", 2]], "reward_cc": [35, 50]
+      "hours": 3, "dc": 12, "encounter_chance": 0.2, "encounter": [["wolf", 2]], "reward_cc": [35, 50],
+      "rewards": [{ "type": "ability", "target": "pc", "chance": 0.15 }]
     }
   ]
 }

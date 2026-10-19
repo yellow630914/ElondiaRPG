@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { locationById } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import type { Report } from '@/engine/types'
-import { actorNames, describeChanges, describeCheck, describeEntry } from '@/narrator/describe'
+import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
 import { visibleNarration } from '@/narrator/judge'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
@@ -24,6 +24,7 @@ const showBattleReport = computed(() => props.report.kind === 'combat' && !showS
 const names = computed(() => actorNames(props.report))
 const changes = computed(() => describeChanges(props.report))
 const check = computed(() => describeCheck(props.report))
+const tokens = computed(() => game.usage[props.report.report_id])
 const showRaw = ref(false)
 const copied = ref(false)
 
@@ -83,6 +84,9 @@ async function copyPrompt() {
       <button class="small" @click="showRaw = !showRaw">{{ showRaw ? '隱藏' : '顯示' }}報告 JSON</button>
     </div>
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
+    <p v-if="tokens" class="small muted tokens" title="這則日誌的 AI 呼叫（判定、敘事）用掉的 token">
+      🔢 輸入 {{ formatTokens(tokens.input) }}・輸出 {{ formatTokens(tokens.output) }} tokens<template v-if="tokens.calls > 1">（{{ tokens.calls }} 次呼叫）</template>
+    </p>
   </article>
 </template>
 
@@ -98,4 +102,5 @@ async function copyPrompt() {
 .raw { max-height: 320px; overflow: auto; background: var(--bg); padding: 8px; border-radius: 6px; }
 details summary { cursor: pointer; color: var(--accent-2); }
 .check { color: var(--accent-2); margin: 0 0 8px; }
+.tokens { margin: 6px 0 0; text-align: right; }
 </style>

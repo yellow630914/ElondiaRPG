@@ -125,3 +125,8 @@ export function humanizeReport(report: Report) {
 export function abilityName(id: string): string {
   return abilities[id]?.name ?? id
 }
+
+/** token 數的顯示：1234 → "1,234"，12345 → "1.2 萬" */
+export function formatTokens(n: number): string {
+  return n >= 10000 ? `${(n / 10000).toFixed(1)} 萬` : n.toLocaleString('en-US')
+}

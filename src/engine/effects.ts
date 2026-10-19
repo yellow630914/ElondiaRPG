@@ -7,6 +7,7 @@
 // applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
+import { abilityChoices, abilityQuality, learnable, learnAbility } from './character'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import {
   addAffinity, addCondition, enslavePlayer, freePlayer, freeSlave, joinParty, leaveParty, partyRoom, pcOf, removeCondition, setHp,
@@ -42,12 +43,17 @@ export type RewardEffect =
   | { type: 'quest_reward'; quest: string; percent: number }
   /** 任務旗標，例如 lead（委託檢定 +5）、suspicious（-2） */
   | { type: 'quest_flag'; quest: string; key: string; value: unknown }
+  /**
+   * 技能報酬：學會新能力。ability 指定能力（id 或名稱，必須是目前可以學的）；沒指定或不能學時隨機挑一項。
+   * choices 有值時改成給一次「N 選一」的學習機會（和升級一樣在隊伍視窗選）。chance 為取得的機率。
+   */
+  | { type: 'ability'; target?: string; ability?: string; choices?: number; chance?: number }
   /** 認識新的人（例如同旅館的旅客）：登錄 NPC、建立人際關係，平常待在 spot */
   | { type: 'meet'; npc: NpcSpec; affinity?: number; to_player?: string; spot?: string }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
-  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag', 'meet',
+  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag', 'meet', 'ability',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -171,6 +177,33 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         const before = q.reward_cc
         q.reward_cc = Math.max(0, Math.round(q.reward_cc * (1 + e.percent / 100)))
         notes.push(`「${q.title}」的報酬從 ${before} 調整為 ${q.reward_cc} 銅幣`)
+        break
+      }
+      case 'ability': {
+        const who = memberOrPc(state, e.target ?? 'pc')
+        if (!who) break
+        if (e.chance !== undefined && e.chance < 1 && !withRng(state, (rng) => rng.chance(e.chance!))) break
+        if (e.choices) {
+          const choices = withRng(state, (rng) => abilityChoices(who, rng, Math.max(1, Math.min(5, e.choices!))))
+          if (!choices.length) {
+            notes.push(`${who.name}沒有可以學的新能力`)
+            break
+          }
+          who.pendingAbilityChoices = [...(who.pendingAbilityChoices ?? []), choices]
+          notes.push(`${who.name}得到一次學習新能力的機會（${choices.length} 選一）`)
+          break
+        }
+        const pool = learnable(who)
+        const wanted = e.ability?.trim()
+        let def = wanted ? pool.find((a) => a.id === wanted || a.name === wanted) : undefined
+        if (!def && pool.length) def = withRng(state, (rng) => rng.pick(pool))
+        if (!def) {
+          notes.push(`${who.name}沒有可以學的新能力`)
+          break
+        }
+        learnAbility(who, def.id)
+        ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: def.name, quality: abilityQuality(def), source: 'insight' })
+        notes.push(`${who.name}領悟了【${def.name}】`)
         break
       }
       case 'meet': {

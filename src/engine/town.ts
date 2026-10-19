@@ -301,10 +301,10 @@ export function turnInQuest(state: GameState, questId: string): Report {
 // ---- 升級 ----
 
 /** 重抽升級時的能力選項（不推進時間，也不產生報告） */
-export function rerollAbility(state: GameState, memberId: string): string[] {
+export function rerollAbility(state: GameState, memberId: string, max?: number): string[] {
   const member = state.party.find((m) => m.id === memberId)
   if (!member) throw new Error('隊伍中沒有這位角色')
-  return withRng(state, (rng) => rerollAbilityChoices(member, rng))
+  return withRng(state, (rng) => rerollAbilityChoices(member, rng, max))
 }
 
 export function chooseAbility(state: GameState, memberId: string, abilityId: string): Report {
