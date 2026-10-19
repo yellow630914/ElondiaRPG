@@ -17,6 +17,9 @@ import companionsJson from '@data/rules/companions.json'
 import slaveryJson from '@data/rules/slavery.json'
 import actionsJson from '@data/rules/actions.json'
 import npcPoolJson from '@data/world/npc_pool.json'
+import itemsJson from '@data/rules/items.json'
+import shopsJson from '@data/rules/shops.json'
+import negotiationsJson from '@data/rules/negotiations.json'
 import type { RewardEffect } from './effects'
 import type { GuildRank, QuestKind, SkillQuality } from './types'
 
@@ -45,7 +48,9 @@ export interface Route {
   note?: string
 }
 
+export interface Faction { id: string; name: string }
 export const geography = geographyJson as unknown as {
+  factions: Faction[]
   regions: Region[]
   locations: Location[]
   routes: Route[]
@@ -428,7 +433,7 @@ export function contractDef(id: string): ContractDef {
   return c
 }
 
-export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape'
+export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
@@ -446,6 +451,70 @@ export const npcPool = npcPoolJson as unknown as {
   features: Record<string, string[]>
   outfits: string[]
   slave_backgrounds: string[]
+}
+
+// ---- 物品、商店、談判 ----
+
+export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'valuable' | 'scroll' | 'equipment' | 'info'
+export interface ItemDef {
+  name: string
+  category: ItemCategory
+  price_cc: number
+  tags: string[]
+  desc?: string
+  use?: { heal?: string; slot?: number }
+  equip?: { weapon?: string; armor?: string }
+  /** 最低要在哪種規模的聚落才買得到 */
+  min_location?: string
+}
+export const itemRules = itemsJson as unknown as {
+  sell_ratio: number
+  material_sell_ratio: number
+  custom_price_ranges: Record<string, [number, number]>
+  categories: Record<ItemCategory, string>
+  items: ItemDef[]
+}
+const itemIndex = new Map(itemRules.items.map((i) => [i.name, i]))
+export function itemDef(name: string): ItemDef | undefined {
+  return itemIndex.get(name)
+}
+
+export type ShopType = 'general' | 'temple' | 'tavern'
+export interface DealCost { type: 'money' | 'item' | 'hours'; amount?: number; name?: string; qty?: number }
+export interface ShopSpecial { id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number }
+export interface ShopTypeDef {
+  name: string
+  cell: string
+  keeper: { classes: string[]; title: string }
+  catalog_tag: string
+  buys: ItemCategory[]
+  ai_effects: RewardEffect['type'][]
+  specials: ShopSpecial[]
+}
+export const shopRules = shopsJson as unknown as {
+  location_price_mult: Record<string, number>
+  location_rank: Record<string, number>
+  affinity_discount_per_point: number
+  max_affinity_discount: number
+  max_deals: number
+  ai_caps: { affinity: number; reputation: number; price_floor_ratio: number; deals: number; stock: number }
+  bargain: { base: number; price_factor: Record<Degree, number> }
+  types: Record<ShopType, ShopTypeDef>
+}
+
+export interface NegotiationOutcome { text: string; effects: RewardEffect[] }
+export interface NegotiationTemplate {
+  title: string
+  goal: string
+  counterpart: 'guild_clerk' | 'informant' | 'keeper'
+  base: number
+  rank_dc: number
+  options: { label: string; attr: AttrId; dc: number; cost_cc?: number; cost_ratio?: number }[]
+  outcomes: Record<Degree, NegotiationOutcome>
+}
+export const negotiationRules = negotiationsJson as unknown as {
+  max_attempts: number
+  templates: Record<string, NegotiationTemplate>
 }
 
 // ---- 查詢 ----

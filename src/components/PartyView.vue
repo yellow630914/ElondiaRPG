@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import {
   abilityQuality, apMaxFor, apRegenFor, castingAttr, evadeFloor, gearAffinities, guildRankFor, luckyThreshold,
   mod, proficiency, slotMaxFor, weaponFor, xpToNext,
@@ -7,9 +7,12 @@ import {
 import { abilityApCost } from '@/engine/combat'
 import {
   abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName, contractDef,
-  damageTypeName, raceName, slaveryRules, type AbilityDef,
+  damageTypeName, itemRules, locationById, raceName, slaveryRules, type AbilityDef,
 } from '@/engine/data'
 import { isBound, leaderOf } from '@/engine/party'
+import { canEquip, canUse } from '@/engine/inventory'
+import { itemCategory, itemValue } from '@/engine/trade'
+import { formatMoney } from '@/engine/money'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
 import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -26,6 +29,28 @@ const inCombat = computed(() => !!s.value.combat)
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 const leader = computed(() => leaderOf(s.value))
+
+// ---- 主角設定 ----
+const editingProfile = ref(false)
+const profile = reactive({ gender: '', appearance: '', background: '' })
+function startProfile(m: Character) {
+  profile.gender = m.gender ?? ''
+  profile.appearance = m.appearance ?? ''
+  profile.background = m.background ?? ''
+  editingProfile.value = true
+}
+function saveProfile() {
+  game.editProfile({ ...profile })
+  editingProfile.value = false
+}
+
+// ---- 行囊 ----
+const itemTarget = reactive<Record<string, string>>({})
+function itemDesc(name: string): string {
+  const cat = itemCategory(s.value, name)
+  const value = itemValue(s.value, name)
+  return [cat ? itemRules.categories[cat] : '', value !== undefined ? `約 ${formatMoney(value)}` : ''].filter(Boolean).join('・')
+}
 const bound = computed(() => isBound(s.value))
 
 function contractFor(m: Character) {
@@ -117,6 +142,20 @@ function affinityText(m: Character): string {
         <li>天賦【{{ attributeRules.races[m.race]?.talent.name }}】{{ attributeRules.races[m.race]?.talent.desc }}</li>
       </ul>
       <p v-if="m.personality" class="small">{{ m.personality }}</p>
+      <div v-if="m.isPlayer" class="small profile">
+        <template v-if="!editingProfile">
+          <div><span class="muted">性別</span> {{ m.gender || '—' }}<template v-if="m.birthplace">・<span class="muted">出身</span> {{ locationById(m.birthplace).name }}</template></div>
+          <div v-if="m.appearance"><span class="muted">外貌</span> {{ m.appearance }}</div>
+          <div v-if="m.background"><span class="muted">背景</span> {{ m.background }}</div>
+          <button class="small" @click="startProfile(m)">編輯設定</button>
+        </template>
+        <form v-else class="profile-edit" @submit.prevent="saveProfile">
+          <label>性別<input v-model="profile.gender" maxlength="20" /></label>
+          <label>外貌<textarea v-model="profile.appearance" rows="3" maxlength="400" /></label>
+          <label>背景<textarea v-model="profile.background" rows="4" maxlength="800" /></label>
+          <div class="row"><button class="small primary" type="submit">儲存</button><button class="small" type="button" @click="editingProfile = false">取消</button></div>
+        </form>
+      </div>
 
       <div v-if="m.pendingAbilityChoices?.length" class="choose">
         <strong class="small">升級！請選擇一項能力：</strong>
@@ -172,9 +211,19 @@ function affinityText(m: Character): string {
   <section class="panel">
     <h2>行囊</h2>
     <p v-if="s.inventory.length === 0" class="muted small">空空如也。</p>
-    <div class="row">
-      <span v-for="i in s.inventory" :key="i.name" class="tag">{{ i.name }} ×{{ i.qty }}</span>
-    </div>
+    <ul class="plain small inventory">
+      <li v-for="i in s.inventory" :key="i.name" class="row">
+        <strong>{{ i.name }} ×{{ i.qty }}</strong>
+        <span class="muted">{{ itemDesc(i.name) }}</span>
+        <template v-if="canUse(i.name) || canEquip(i.name)">
+          <select v-model="itemTarget[i.name]">
+            <option v-for="m in s.party" :key="m.id" :value="m.id">{{ m.name }}</option>
+          </select>
+          <button v-if="canUse(i.name)" class="small" :disabled="inCombat" @click="game.useItem(i.name, itemTarget[i.name] ?? 'pc')">使用</button>
+          <button v-if="canEquip(i.name)" class="small" :disabled="inCombat" @click="game.equipItem(i.name, itemTarget[i.name] ?? 'pc')">裝備</button>
+        </template>
+      </li>
+    </ul>
   </section>
 </template>
 
@@ -190,5 +239,10 @@ function affinityText(m: Character): string {
 .abilities h3 { margin: 6px 0 2px; color: var(--accent-2); }
 .tag.slave, .tag.warn { color: var(--danger); border-color: var(--danger); }
 .tag.leader { color: var(--accent); border-color: var(--accent); }
+.profile { display: grid; gap: 2px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.profile-edit { display: grid; gap: 4px; }
+.profile-edit label { display: grid; gap: 2px; }
+.profile-edit textarea { width: 100%; }
+.inventory li { padding: 3px 0; gap: 8px; }
 .contract { padding: 6px 8px; border: 1px dashed var(--danger); border-radius: 6px; display: grid; gap: 2px; }
 </style>

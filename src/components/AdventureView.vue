@@ -5,7 +5,8 @@ import { geography, locationById } from '@/engine/data'
 import { canTravelHere, CELL_NAME, currentArea, currentCell, DUNGEON_LAYERS, questRunnableHere } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
-import { canAcceptRank, guildQuests, questTemplate, RATION_CC, templeCost } from '@/engine/town'
+import { canNegotiate } from '@/engine/negotiation'
+import { canAcceptRank, guildQuests, questTemplate, templeCost } from '@/engine/town'
 import { MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
@@ -13,6 +14,8 @@ import { useGame } from '@/stores/game'
 import ActionPanel from './ActionPanel.vue'
 import AreaMap from './AreaMap.vue'
 import MarketPanel from './MarketPanel.vue'
+import NegotiationPanel from './NegotiationPanel.vue'
+import ShopPanel from './ShopPanel.vue'
 import RestPanel from './RestPanel.vue'
 import TavernPanel from './TavernPanel.vue'
 
@@ -22,7 +25,6 @@ const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
 const cell = computed(() => currentCell(s.value))
 const intent = ref('')
-const rationQty = ref(5)
 const showWorldMap = ref(false)
 
 const AREA_NAME: Record<Quest['area'], string> = { town: '城內', outskirts: '近郊', dungeon: '冒險區域' }
@@ -123,21 +125,21 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
           <button :disabled="templeCost(s) === 0 || s.money_cc < templeCost(s)" @click="game.templeHeal()">
             治療（{{ formatMoney(templeCost(s)) }}）
           </button>
+          <ShopPanel :key="`temple-${s.location}-${s.time.day}`" type="temple" />
         </template>
 
         <template v-else-if="cell.kind === 'shop'">
-          <p class="muted small">野外與海路旅行每人每天消耗 1 份乾糧；地下城的安全房休整也要乾糧。目前持有 {{ rations }} 份。</p>
-          <div class="row">
-            <input v-model.number="rationQty" type="number" min="1" max="99" style="width: 70px" />
-            <button :disabled="s.money_cc < rationQty * RATION_CC || rationQty < 1" @click="game.buyRations(rationQty)">
-              購買乾糧（{{ formatMoney(rationQty * RATION_CC) }}）
-            </button>
-          </div>
+          <p class="muted small">野外與海路旅行每人每天消耗 1 份乾糧；地下城的安全房長休也要乾糧。目前持有 {{ rations }} 份。</p>
+          <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" />
           <MarketPanel v-if="publicMarket" kind="public" />
         </template>
 
         <template v-else-if="cell.kind === 'tavern'">
           <TavernPanel :key="`${s.location}-${s.time.day}`" />
+          <details class="tavern-trade">
+            <summary class="small">酒館的交易（餐點、情報……）</summary>
+            <ShopPanel :key="`tavern-${s.location}-${s.time.day}`" type="tavern" />
+          </details>
         </template>
 
         <template v-else-if="cell.kind === 'guild'">
@@ -157,6 +159,12 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
               >{{ canAcceptRank(s, q.rank) ? '接取' : '階級不足' }}</button>
               <button v-else-if="q.status === 'ready'" class="small primary" @click="game.turnInQuest(q.id); refreshQuests()">交付</button>
               <span v-else class="small muted">進行中</span>
+              <button
+                v-if="!canNegotiate(s, 'quest_reward', { quest: q.id })"
+                class="small"
+                @click="game.startNegotiation('quest_reward', { quest: q.id })"
+              >談判報酬</button>
+              <span v-else-if="q.flags?.negotiated" class="small muted">（已談過報酬）</span>
             </li>
           </ul>
         </template>
@@ -195,6 +203,7 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
         </div>
       </section>
 
+      <NegotiationPanel />
       <ActionPanel />
       <RestPanel />
 
@@ -210,7 +219,14 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
         <ul class="plain small">
           <li v-for="q in activeQuests" :key="q.id">
             <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ q.progress }}/{{ q.goal }}）
+            <span v-if="q.flags?.lead" class="tag">有線索 +5</span>
+            <span v-if="q.flags?.suspicious" class="tag">消息走漏 -2</span>
             <div class="muted">{{ questWhere(q) }}</div>
+            <button
+              v-if="!canNegotiate(s, 'quest_lead', { quest: q.id }) && questTemplate(q)?.dc !== undefined"
+              class="small"
+              @click="game.startNegotiation('quest_lead', { quest: q.id })"
+            >打聽門路</button>
           </li>
         </ul>
       </section>
@@ -236,6 +252,7 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
 </template>
 
 <style scoped>
+.tavern-trade { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 6px; }
 .world-map { width: 100%; border-radius: var(--radius); margin: 8px 0; }
 .main { display: grid; grid-template-columns: auto minmax(280px, 1fr); gap: 14px; align-items: start; }
 .intent { display: grid; gap: 4px; }

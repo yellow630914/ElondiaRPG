@@ -38,10 +38,14 @@ export type RewardEffect =
   | { type: 'enslave_player'; master: NpcRef; contract: string; members?: NpcRef[] }
   /** 解除契約：npc 為 pc 時是主角獲釋 */
   | { type: 'free'; npc: string }
+  /** 委託報酬按百分比調整（談判的結果） */
+  | { type: 'quest_reward'; quest: string; percent: number }
+  /** 任務旗標，例如 lead（委託檢定 +5）、suspicious（-2） */
+  | { type: 'quest_flag'; quest: string; key: string; value: unknown }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
-  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free',
+  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -159,6 +163,19 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         if (e.npc === 'pc') freePlayer(state, report)
         else freeSlave(state, e.npc, report)
         break
+      case 'quest_reward': {
+        const q = state.quests.find((x) => x.id === e.quest)
+        if (!q) break
+        const before = q.reward_cc
+        q.reward_cc = Math.max(0, Math.round(q.reward_cc * (1 + e.percent / 100)))
+        notes.push(`「${q.title}」的報酬從 ${before} 調整為 ${q.reward_cc} 銅幣`)
+        break
+      }
+      case 'quest_flag': {
+        const q = state.quests.find((x) => x.id === e.quest)
+        if (q) (q.flags ??= {})[e.key] = e.value
+        break
+      }
     }
   }
   return notes

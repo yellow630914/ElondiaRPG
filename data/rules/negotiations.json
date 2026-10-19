@@ -1,0 +1,68 @@
+{
+  "$comment": "談判範本。談判 = 目標＋各成功程度的結果（報酬模板的效果，可以是任務旗標、報酬或懲罰）＋可選的談判方式（屬性、DC 修正、代價）。選擇方式時依規則檢定（不需要 AI）；主角自行描述做法時是主動行動，由 AI 看骰值判定。AI 判定開啟時，談判方式清單由 AI 依對象與情境生成（DC 夾在基準 ±3）。部分成功後可以再談一次。說明見 docs/TRADE.md。",
+  "version": 1,
+  "max_attempts": 2,
+  "templates": {
+    "quest_reward": {
+      "title": "談判委託報酬",
+      "goal": "說服公會提高「{quest}」的報酬。",
+      "counterpart": "guild_clerk",
+      "base": 13,
+      "rank_dc": 1,
+      "options": [
+        { "label": "指出委託的風險被低估", "attr": "int", "dc": 0 },
+        { "label": "展示自己的戰績與實力", "attr": "str", "dc": 1 },
+        { "label": "動之以情，說明自己的難處", "attr": "cha", "dc": 0 },
+        { "label": "以信仰立誓必定完成", "attr": "fai", "dc": 1 },
+        { "label": "先付報酬一成作為保證金", "attr": "cha", "dc": -3, "cost_ratio": 0.1 }
+      ],
+      "outcomes": {
+        "critical": { "text": "報酬 +35%", "effects": [{ "type": "quest_reward", "quest": "{quest_id}", "percent": 35 }, { "type": "quest_flag", "quest": "{quest_id}", "key": "negotiated", "value": true }] },
+        "success": { "text": "報酬 +20%", "effects": [{ "type": "quest_reward", "quest": "{quest_id}", "percent": 20 }, { "type": "quest_flag", "quest": "{quest_id}", "key": "negotiated", "value": true }] },
+        "partial": { "text": "對方猶豫，可以再談一次", "effects": [] },
+        "fail": { "text": "維持原價，不能再談", "effects": [{ "type": "quest_flag", "quest": "{quest_id}", "key": "negotiated", "value": false }] },
+        "fumble": { "text": "惹惱公會：報酬 -10%，公會聲望 -1", "effects": [{ "type": "quest_reward", "quest": "{quest_id}", "percent": -10 }, { "type": "reputation", "faction": "guild", "delta": -1 }, { "type": "quest_flag", "quest": "{quest_id}", "key": "negotiated", "value": false }] }
+      }
+    },
+    "quest_lead": {
+      "title": "打聽委託的門路",
+      "goal": "找知情的人問出「{quest}」的線索。",
+      "counterpart": "informant",
+      "base": 12,
+      "rank_dc": 0,
+      "options": [
+        { "label": "請對方喝一杯慢慢聊", "attr": "cha", "dc": -2, "cost_cc": 10 },
+        { "label": "從對方的話裡推敲線索", "attr": "int", "dc": 0 },
+        { "label": "直接施壓", "attr": "str", "dc": 2 },
+        { "label": "塞點錢", "attr": "cha", "dc": -4, "cost_cc": 50 }
+      ],
+      "outcomes": {
+        "critical": { "text": "得到確切的線索（委託檢定 +5）與一點經驗", "effects": [{ "type": "quest_flag", "quest": "{quest_id}", "key": "lead", "value": true }, { "type": "xp", "amount": 5 }] },
+        "success": { "text": "得到線索（委託檢定 +5）", "effects": [{ "type": "quest_flag", "quest": "{quest_id}", "key": "lead", "value": true }] },
+        "partial": { "text": "對方欲言又止，可以再問一次", "effects": [] },
+        "fail": { "text": "沒問出什麼", "effects": [] },
+        "fumble": { "text": "消息走漏（委託檢定 -2）", "effects": [{ "type": "quest_flag", "quest": "{quest_id}", "key": "suspicious", "value": true }] }
+      }
+    },
+    "shop_discount": {
+      "title": "談長期折扣",
+      "goal": "讓{keeper}以後給你打折。",
+      "counterpart": "keeper",
+      "base": 14,
+      "rank_dc": 0,
+      "options": [
+        { "label": "承諾以後常來光顧", "attr": "cha", "dc": 0 },
+        { "label": "用專業知識挑出商品的毛病", "attr": "int", "dc": 1 },
+        { "label": "搬出冒險者公會的名號", "attr": "cha", "dc": 2 },
+        { "label": "先大手筆買一批貨（50 銅）", "attr": "cha", "dc": -3, "cost_cc": 50 }
+      ],
+      "outcomes": {
+        "critical": { "text": "以後這間店 85 折", "effects": [{ "type": "flag", "key": "discount:{shop}", "value": 0.15 }, { "type": "affinity", "npc": "keeper", "delta": 3 }] },
+        "success": { "text": "以後這間店 9 折", "effects": [{ "type": "flag", "key": "discount:{shop}", "value": 0.1 }] },
+        "partial": { "text": "店主還在考慮，可以再談一次", "effects": [] },
+        "fail": { "text": "店主不肯", "effects": [] },
+        "fumble": { "text": "店主覺得你在找麻煩（親密度 -5）", "effects": [{ "type": "affinity", "npc": "keeper", "delta": -5 }] }
+      }
+    }
+  }
+}

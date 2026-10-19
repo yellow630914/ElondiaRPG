@@ -1,6 +1,7 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { AttrId, Attrs, Bond, NpcDef } from './data'
+import type { AttrId, Attrs, Bond, DealCost, NpcDef } from './data'
+import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
 
@@ -183,6 +184,11 @@ export interface Character {
   contract?: ContractRef
   /** 已花掉的生命骰（總數 = 等級） */
   hitDiceUsed?: number
+  /** 主角的設定（建角時填寫，可在隊伍頁修改） */
+  gender?: string
+  appearance?: string
+  background?: string
+  birthplace?: string
 }
 
 export interface ContractRef {
@@ -257,6 +263,8 @@ export interface Quest {
   progress: number
   reward_cc: number
   status: 'available' | 'accepted' | 'ready' | 'completed'
+  /** 任務旗標（談判、事件的結果），例如 lead：委託檢定 +5 */
+  flags?: Record<string, unknown>
 }
 
 export interface InventoryItem {
@@ -307,4 +315,60 @@ export interface GameState {
   lastLongRest?: GameTime
   /** AI 提議的人際關係文字更新，等待玩家確認 */
   suggestions?: RelationSuggestion[]
+  /** 各商店今天的交易清單；鍵為 城鎮/商店類型 */
+  shops?: Record<string, ShopState>
+  /** AI 自創的物品（可以再賣回商店） */
+  customItems?: Record<string, { category: string; price_cc: number; desc?: string }>
+  /** 進行中與結束的談判 */
+  negotiations?: Negotiation[]
+}
+
+export interface Deal {
+  id: string
+  title: string
+  desc?: string
+  gives: DealCost[]
+  gets: RewardEffect[]
+  /** 今天還能交易幾次 */
+  stock: number
+  haggled?: boolean
+}
+
+export interface ShopState {
+  day: number
+  /** 店主（NPC id） */
+  keeper: string
+  deals: Deal[]
+  source: 'ai' | 'rules'
+  /** 今天已經請 AI 生成過（不論成功與否） */
+  aiTried?: boolean
+}
+
+export interface NegotiationOption {
+  id: string
+  label: string
+  attr: AttrId
+  dc: number
+  cost_cc?: number
+}
+
+export interface Negotiation {
+  id: string
+  template: string
+  title: string
+  goal: string
+  /** 談判對象（NPC id） */
+  counterpart: string
+  location: string
+  base_dc: number
+  options: NegotiationOption[]
+  outcomes: Record<'critical' | 'success' | 'partial' | 'fail' | 'fumble', { text: string; effects: RewardEffect[] }>
+  attempts: number
+  status: 'open' | 'done'
+  /** 相關的委託或商店 */
+  quest?: string
+  shop?: string
+  result?: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
+  /** 談判方式由 AI 生成 */
+  ai?: boolean
 }

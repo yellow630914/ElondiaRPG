@@ -5,12 +5,13 @@
 import { affinityStage, lifeTier, snapshot } from '@/engine/character'
 import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
+  geography, itemRules, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef,
 } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import type { GameState } from '@/engine/types'
+import type { GameState, Negotiation } from '@/engine/types'
 import type { Prompt } from './prompt'
 
 /** 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。 */
@@ -42,7 +43,8 @@ function pcDetail(state: GameState): string {
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${pc.attrs[a]}`).join('、')
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
   const contract = pc.contract ? `\n契約：${contractDef(pc.contract.kind).name}（主人 ${pc.contract.masterName}）${pc.status.includes('fugitive') ? '，逃亡中' : ''}` : ''
-  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${contract}`
+  const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${contract}`
 }
 
 function targetDetail(state: GameState, p: ActionPending): string {
@@ -177,4 +179,68 @@ export function visibleNarration(text: string): string {
   // 串流到一半、標籤還沒寫完
   const j = text.lastIndexOf('<')
   return j >= 0 && TAG.startsWith(text.slice(j)) ? text.slice(0, j).trimEnd() : text
+}
+
+/** 商店的交易清單：AI 依商店類型、城鎮與店主生成，程式再驗證價格與效果（見 engine/trade.ts）。 */
+export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
+  const def = shopRules.types[type]
+  const shop = state.shops?.[`${state.location}/${type}`]
+  const keeper = shop ? npcRecord(state, shop.keeper) : undefined
+  const loc = locationById(state.location)
+  const pc = state.party.find((m) => m.isPlayer)!
+  const catalog = (shop?.deals ?? [])
+    .filter((d) => d.id.startsWith('item:'))
+    .map((d) => `- ${d.title}：${formatMoney(d.gives.find((g) => g.type === 'money')?.amount ?? 0)}`)
+    .join('\n')
+  const ranges = Object.entries(itemRules.custom_price_ranges)
+    .filter(([k]) => !k.startsWith('$'))
+    .map(([k, v]) => `${k}（${itemRules.categories[k as keyof typeof itemRules.categories] ?? k}）${v[0]}～${v[1]} 銅`).join('、')
+  const docs: Record<string, string> = {
+    item: '{"type":"item","name":"物品名","qty":1}；不在目錄裡的自創物品要加上 "category" 與 "price_cc"（單價，銅幣）、"desc"',
+    affinity: `{"type":"affinity","npc":"keeper 或 party","delta":<±${shopRules.ai_caps.affinity}>}（keeper = 店主，party = 每位隊友）`,
+    flag: '{"type":"flag","key":"英數或中文","value":true}（劇情旗標，例如得到某個情報）',
+    memory: '{"type":"memory","summary":"主角得知或經歷的事，一句話"}（情報、傳聞的內容寫在這裡）',
+    reputation: `{"type":"reputation","faction":"local","delta":<±${shopRules.ai_caps.reputation}>}`,
+    condition: '{"type":"condition","condition":"blessed"}（神殿祝福：下次長休前檢定 +1）',
+    companion: `{"type":"companion","mode":"hired 或 voluntary${slaveryRules.markets[state.location] ? ' 或 slave' : ''}","npc":{"name":"","race":"human","class":"fighter","level":1,"personality":"","appearance":"","background":""}}（等級不超過 ${pc.level + 1}）`,
+  }
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的商店設計者。請為這間店設計今天的交易清單，只輸出一個 JSON 物件。
+
+規則：
+1. 每筆交易 = gives（主角付出：{"type":"money","amount":銅幣}、{"type":"item","name":"…","qty":1}、{"type":"hours","amount":小時}）＋ gets（主角得到，可以組合多種）。
+2. 交易要符合店的類型、城鎮的風土與店主的性格；除了單純買東西，也可以有組合交易（例如買甜點附贈店主的好感、付錢換情報、幫忙做事換報酬）。
+3. 價格參考世界書：一般城鎮物價為基準，繁華都市或偏遠地區 ±30%。目錄裡的物品照目錄價格；自創物品依類別的價格區間：${ranges}。程式會把過低的價格調回下限。
+4. gets 只能用下面列出的種類：
+${def.ai_effects.map((t) => `- ${docs[t] ?? t}`).join('\n')}
+5. 設計 5～8 筆，stock 為今天能交易的次數（1～5）。
+6. 只輸出 JSON：{"deals":[{"title":"≤12 字","desc":"≤40 字","gives":[…],"gets":[…],"stock":1}]}`
+  const user = `城鎮：${loc.name}（${geography.regions.find((r) => r.id === loc.region)?.name ?? ''}，${loc.type}${loc.faction ? `，${geography.factions.find((f) => f.id === loc.faction)?.name ?? loc.faction}` : ''}）
+商店：${def.name}
+${keeper ? `${def.keeper.title}：${keeper.name}（${raceName(keeper.race)}）｜${keeper.personality}｜${keeper.appearance ?? ''}` : ''}
+主角：${pc.name} Lv.${pc.level}，持有 ${formatMoney(state.money_cc)}
+目錄（這間店平常賣的東西與價格）：
+${catalog || '（無）'}`
+  return { system, user }
+}
+
+/** 談判方式：AI 依對象與情境生成，程式把 DC 夾在基準 ±3（見 engine/negotiation.ts）。 */
+export function buildNegotiationPrompt(state: GameState, n: Negotiation): Prompt {
+  const rec = npcRecord(state, n.counterpart)
+  const rel = state.relationships?.[n.counterpart]
+  const results = (Object.keys(n.outcomes) as (keyof typeof n.outcomes)[]).map((d) => `- ${DEGREE_NAME[d]}：${n.outcomes[d].text}`).join('\n')
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的談判設計者。主角要和一個人談判，請依對象的性格、立場、與主角的關係，設計 3～5 種主角可以採取的談判方式，只輸出 JSON。
+
+規則：
+1. 每種方式要有具體的做法（≤20 字）、檢定屬性（str 力量、dex 靈巧、int 智力、fai 信仰、cha 魅力）與 DC。
+2. DC 基準是 ${n.base_dc}，必須在 ${n.base_dc - actionRules.dc_adjust}～${n.base_dc + actionRules.dc_adjust} 之間：越對症下藥越容易。
+3. 可以有需要付出代價的方式（cost_cc，銅幣），代價越高越容易。
+4. 只輸出 JSON：{"options":[{"label":"…","attr":"cha","dc":${n.base_dc},"cost_cc":0}]}`
+  const user = `談判：${n.title}
+目標：${n.goal}
+對象：${rec ? `${rec.name}（${raceName(rec.race)}・${className(rec.class)} Lv.${rec.level}）｜${rec.personality}` : n.counterpart}
+${rel ? `與主角：${rel.toPlayer}（親密度 ${rel.affinity}）` : '與主角：素不相識'}
+${pcDetail(state)}
+可能的結果：
+${results}`
+  return { system, user }
 }

@@ -4,15 +4,23 @@ import * as actions from '@/engine/actions'
 import * as combat from '@/engine/combat'
 import * as companions from '@/engine/companions'
 import * as rest from '@/engine/rest'
+import * as trade from '@/engine/trade'
+import * as negotiation from '@/engine/negotiation'
+import * as inventory from '@/engine/inventory'
+import type { ShopType } from '@/engine/data'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
 import * as social from '@/engine/social'
-import { spendAttrPoint } from '@/engine/character'
+import { editProfile, protagonistText, spendAttrPoint, type ProfilePatch } from '@/engine/character'
+import { locationById } from '@/engine/data'
 import type { Attrs, AttrId } from '@/engine/data'
+import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
 import { travel } from '@/engine/travel'
 import type { GameState, Report } from '@/engine/types'
-import { buildActionPrompt, buildTavernPrompt, extractJson, splitSuggestions } from '@/narrator/judge'
+import {
+  buildActionPrompt, buildNegotiationPrompt, buildShopPrompt, buildTavernPrompt, extractJson, splitSuggestions,
+} from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
 import { useSettings } from './settings'
 
@@ -93,8 +101,8 @@ export const useGame = defineStore('game', () => {
     return typeof x === 'object' && x !== null && 'report' in x && isReport((x as { report: unknown }).report)
   }
 
-  function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>) {
-    state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}) })
+  function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>, profile: Omit<NewGameOptions, 'name' | 'race' | 'classId' | 'bonus' | 'seed'> = {}) {
+    state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
     grid.enterLocation(state.value)
     narrations.value = {}
     error.value = null
@@ -133,8 +141,11 @@ export const useGame = defineStore('game', () => {
     const lore = selectLore(book, report, { adult: settings.adult, budgetChars: settings.loreBudget, playerName })
     const s = state.value
     const context = s ? social.formatContext(s, social.selectContext(s, social.queryForReport(s, report))) : ''
+    const me = s?.party.find((m) => m.isPlayer)
+    const protagonist = me ? protagonistText(me, me.birthplace ? locationById(me.birthplace).name : undefined) : ''
     return buildPrompt(report, lore, {
       playerName, language: settings.language,
+      ...(protagonist ? { protagonist } : {}),
       ...(context ? { context } : {}),
       suggestRelations: context.includes('<relationships>'),
     })
@@ -231,6 +242,41 @@ export const useGame = defineStore('game', () => {
     }
   }
 
+  /** 商店：AI 開啟時請 AI 生成今天的交易清單（每間店每天一次，失敗時保留規則清單） */
+  async function flavorShop(type: ShopType) {
+    const s = state.value
+    const settings = useSettings()
+    if (!s || !settings.aiJudge || !settings.ready()) return
+    const shop = trade.shopState(s, type)
+    if (shop.aiTried || shop.source === 'ai') return
+    shop.aiTried = true
+    save()
+    try {
+      const { completeText } = await import('@/narrator/providers')
+      const raw = extractJson(await completeText(settings.provider, settings.current(), buildShopPrompt(s, type)))
+      run((st) => trade.applyAiDeals(st, type, raw))
+    } catch (e) {
+      error.value = `AI 生成交易清單失敗：${e instanceof Error ? e.message : String(e)}（先用一般的商品清單）`
+    }
+  }
+
+  /** 開始談判；AI 開啟時請 AI 依對象與情境生成談判方式 */
+  async function startNegotiation(template: string, ctx: negotiation.NegotiationContext) {
+    const n = run((s) => negotiation.startNegotiation(s, template, ctx))
+    const s = state.value
+    const settings = useSettings()
+    if (!n || !s || n.ai || !settings.aiJudge || !settings.ready()) return n
+    n.ai = true
+    try {
+      const { completeText } = await import('@/narrator/providers')
+      const raw = extractJson(await completeText(settings.provider, settings.current(), buildNegotiationPrompt(s, n)))
+      run((st) => negotiation.applyAiOptions(st, n.id, raw))
+    } catch (e) {
+      error.value = `AI 生成談判方式失敗：${e instanceof Error ? e.message : String(e)}（先用預設的談判方式）`
+    }
+    return n
+  }
+
   function hire(npcId: string, offer: number, text: string) {
     const s = state.value
     if (!s) return
@@ -242,7 +288,18 @@ export const useGame = defineStore('game', () => {
   return {
     state, narrations, error, pc, judging,
     start, reset, importSave, exportSave, promptFor, narrate, cancelNarration,
-    perform, judge, flavorTavern, hire,
+    perform, judge, flavorTavern, hire, flavorShop, startNegotiation,
+    // 商店、談判、行囊
+    shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),
+    buyDeal: (type: ShopType, id: string) => run((s) => trade.buyDeal(s, type, id)),
+    sellItem: (type: ShopType, name: string, qty: number) => run((s) => trade.sellItem(s, type, name, qty)),
+    bargain: (type: ShopType, dealId: string, text: string) => perform({ kind: 'bargain', target: trade.bargainTarget(type, dealId), text }),
+    chooseOption: (id: string, option: string) => run((s) => negotiation.chooseOption(s, id, option)),
+    negotiateFreely: (id: string, text: string) => perform({ kind: 'negotiation', target: id, text }),
+    abandonNegotiation: (id: string) => run((s) => negotiation.abandonNegotiation(s, id)),
+    useItem: (name: string, member: string) => run((s) => inventory.useItem(s, name, member)),
+    equipItem: (name: string, member: string) => run((s) => inventory.equipItem(s, name, member)),
+    editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     travel: (to: string, intent?: string) => run((s) => travel(s, to, intent)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),

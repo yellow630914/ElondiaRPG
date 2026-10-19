@@ -20,7 +20,9 @@ import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, isBound, isEnslaved, joinParty,
   leaderOf, partyRoom, pcOf, playerEscapes, punish, setHp,
 } from './party'
+import { negotiationSetup } from './negotiation'
 import { ensureRelationship } from './social'
+import { bargainSetup } from './trade'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 
@@ -596,9 +598,19 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
         },
       }
     }
+    case 'bargain': {
+      const b = bargainSetup(state, target ?? '')
+      return { dc: b.dc, targetName: `${b.keeper.name}（${b.deal.title}）`, situational: [], scene: `${locationById(state.location).name}・${b.deal.title}`, outcomes: b.outcomes }
+    }
+    case 'negotiation': {
+      const n = negotiationSetup(state, target ?? '')
+      return { dc: n.dc, targetName: n.targetName, situational: [], scene: n.scene, outcomes: n.outcomes }
+    }
     case 'free': {
-      const rel = target ? state.relationships?.[target] : undefined
       const rec = target ? npcRecord(state, target) : undefined
+      // 對認識之前的人（例如店主）行動，就算認識了
+      if (rec) ensureRelationship(state, rec)
+      const rel = target ? state.relationships?.[target] : undefined
       const situational = isBound(state) && target && target === pc.contract?.master ? [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }] : []
       let dc = 12
       if (rec) dc += 2 * Math.max(0, lifeTier(rec.level) - lifeTier(pc.level))

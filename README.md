@@ -24,17 +24,20 @@ pnpm build             # 型別檢查 + 建置到 dist/
 - 開啟：每次行動、事件或戰鬥結束後，自動請 AI 寫出詳細經過。需要先在「設定」頁選擇 AI 服務並填入自己的 API key（Anthropic、OpenAI、Google Gemini，或 OpenRouter / DeepSeek / Ollama 等 OpenAI 相容格式）。
 - 關閉（預設）：不呼叫 AI，戰鬥直接顯示戰報，其他事件顯示簡述。
 
-**AI 判定主動行動**（「設定」頁，預設關閉）：開啟時，主動行動擲骰後由 AI 決定結果並寫出經過，酒館候選人也由 AI 設計；關閉時依規則判定。
+**AI 判定主動行動**（「設定」頁，預設關閉）：開啟時，主動行動擲骰後由 AI 決定結果並寫出經過，酒館候選人、商店的交易清單與談判方式也由 AI 設計；關閉時依規則判定與生成。
 
 > - `pnpm-workspace.yaml` 已經設定好不執行 `@google/genai` 與 `protobufjs` 的安裝腳本（兩者都不需要），所以 `pnpm install` 不會出現 `ERR_PNPM_IGNORED_BUILDS`。
 > - 也可以用 npm（`npm install`、`npm run dev`）。`.npmrc` 的 `legacy-peer-deps` 是為了避開 npm 10 在解析 vitest 選用依賴時的錯誤。
 
 ## 目前可以做什麼
 
-- 建立角色（6 種族、10 職業、五屬性與自由點數），從索里耶爾出發
+- 建立角色：6 種族、10 職業、五屬性與自由點數；自選出生地（冒險的起點），自行填寫性別、外貌與背景（會交給 AI 作為描寫主角的依據）
 - 走格子：城市與城鎮是固定的格子地圖（可在區塊間移動），近郊荒野與地下城四層是隨機生成、有戰爭迷霧
 - 依世界書路程旅行，消耗天數、食宿與乾糧，旅途有天候檢定與事件
 - 旅店、神殿、雜貨店、酒館、冒險者公會都是地圖上的設施
+- 商店與交易：每間店每天一份交易清單（可由 AI 依商店類型生成），交易內容可以組合金錢、物品、好感度、情報甚至夥伴；一般交易直接計算，想殺價時才檢定
+- 談判：委託報酬、打聽門路、長期折扣；選擇談判方式依規則檢定，自己描述做法則交給 AI 判定；結果可以是任務旗標或報酬
+- 行囊：使用藥劑、更換裝備
 - 夥伴：酒館雇傭（可自訂出價與談判方式）、加入別人的隊伍、奴隸市場（公開與黑市，可殺價）、主角作為奴隸（談判或逃離）、事件入隊與主動邀請；親密度 ≤ -20 的同伴會在休息時離隊；奴隸契約印記有不同的限制與副作用
 - D&D 短休（生命骰）與長休（旅店、安全房）
 - 主動行動：用文字描述主角要做的事，先擲骰，再把骰值與完整資料（隊伍、屬性、裝備、技能、人際關係、記憶）交給 AI，由 AI 決定成敗（可能出乎預料）並直接寫出經過；數值後果由程式夾在上限內
@@ -54,10 +57,11 @@ pnpm build             # 型別檢查 + 建置到 dist/
 | [`docs/QUEST_EVENT_DESIGN.md`](docs/QUEST_EVENT_DESIGN.md) | 任務／事件生成系統與 AI 權責劃分（提案） |
 | [`docs/RELATIONSHIP_MEMORY.md`](docs/RELATIONSHIP_MEMORY.md) | 人際關係與共同記憶系統、主動行動（擲骰後由 AI 判定並寫出結果） |
 | [`docs/COMPANIONS.md`](docs/COMPANIONS.md) | 報酬模板、新增夥伴的五種方式、離隊規則、奴隸契約印記、短休與長休 |
+| [`docs/TRADE.md`](docs/TRADE.md) | 物品目錄、交易清單、價格、交涉與談判 |
 | [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索（周邊 → 淺層 → 中層 → 深層），含實作狀態 |
 | [`docs/WORLD_NOTES.md`](docs/WORLD_NOTES.md) | 世界書與地圖之間的不一致與缺漏 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema） |
 | [`examples/reports/`](examples/reports/) | 範例報告：戰鬥、旅行 |
 | [`data/world/`](data/world/) | 區域、勢力、地點、路線天數、城鎮格子地圖、可招募 NPC、生成 NPC 的素材 |
-| [`data/rules/`](data/rules/) | 屬性、職業、戰鬥規則、傷害屬性、狀態、能力、裝備、敵人、經濟、委託、夥伴與休息、奴隸契約、主動行動 |
+| [`data/rules/`](data/rules/) | 屬性、職業、戰鬥規則、傷害屬性、狀態、能力、裝備、敵人、經濟、委託、夥伴與休息、奴隸契約、主動行動、物品、商店、談判 |
 | [`data/worldbook/elondia.worldbook.json`](data/worldbook/elondia.worldbook.json) | 原始世界書（SillyTavern 格式） |

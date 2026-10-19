@@ -9,16 +9,47 @@ import type { GameState, GameTime, InventoryItem, Report } from './types'
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
 
-export function newGame(opts: { name: string; race: string; classId: string; bonus?: Partial<Attrs>; seed?: number }): GameState {
+export interface NewGameOptions {
+  name: string
+  race: string
+  classId: string
+  bonus?: Partial<Attrs>
+  seed?: number
+  /** 出生地（聚落的 location id），也是冒險的起點 */
+  birthplace?: string
+  gender?: string
+  appearance?: string
+  background?: string
+}
+
+/** 各種族的預設出生地 */
+export const DEFAULT_BIRTHPLACE: Record<string, string> = {
+  human: 'soriel', elf: 'silvermoon', dwarf: 'ironforge', demon: 'bloodplume', catfolk: 'sandcastle', yulin: 'canglue',
+}
+
+export function newGame(opts: NewGameOptions): GameState {
   const seed = opts.seed ?? Math.floor(Math.random() * 2 ** 31)
+  const birthplace = opts.birthplace ?? START_LOCATION
+  const loc = locationById(birthplace)
+  if (loc.type === 'dungeon') throw new Error('出生地必須是聚落')
+  const pc = createPlayer(opts.name, opts.race, opts.classId, opts.bonus)
+  pc.birthplace = birthplace
+  if (loc.faction) pc.faction = loc.faction
+  const clip = (s: string | undefined, n: number) => s?.trim().slice(0, n) || undefined
+  const gender = clip(opts.gender, 20)
+  const appearance = clip(opts.appearance, 400)
+  const background = clip(opts.background, 800)
+  if (gender) pc.gender = gender
+  if (appearance) pc.appearance = appearance
+  if (background) pc.background = background
   return {
     version: 1,
     seed,
     rngState: seed,
     time: { day: 1, hour: 8, minute: 0 },
-    location: START_LOCATION,
+    location: birthplace,
     money_cc: START_MONEY_CC,
-    party: [createPlayer(opts.name, opts.race, opts.classId, opts.bonus)],
+    party: [pc],
     inventory: [{ name: '乾糧', qty: 5 }],
     quests: [],
     recruited: [],

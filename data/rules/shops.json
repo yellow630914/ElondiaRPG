@@ -1,0 +1,57 @@
+{
+  "$comment": "商店類型與交易清單。每份交易 = 付出（gives：金錢、物品、時間）＋ 得到（gets：報酬模板的效果，可複合）。清單每天每間店生成一次：AI 判定開啟時由 AI 依商店類型生成，否則依 catalog 與 specials 生成。一般交易直接計算，不需要 AI；只有主角主動交涉時才檢定。npc 寫 keeper 代表店主、party 代表每位隊友。",
+  "version": 1,
+  "location_price_mult": { "capital": 1.15, "city": 1.1, "port": 1.0, "town": 1.0, "village": 1.2, "outpost": 1.25, "fortress": 1.2 },
+  "location_rank": { "village": 0, "outpost": 0, "fortress": 0, "town": 1, "port": 1, "city": 2, "capital": 3 },
+  "affinity_discount_per_point": 0.002,
+  "max_affinity_discount": 0.1,
+  "max_deals": 10,
+  "ai_caps": { "affinity": 3, "reputation": 1, "price_floor_ratio": 0.8, "deals": 8, "stock": 5 },
+  "bargain": {
+    "$comment": "對單筆交易交涉（主動行動）：DC = base - floor(店主親密度 / 25)。成功程度決定價格倍率，每筆每天一次。",
+    "base": 12,
+    "price_factor": { "critical": 0.7, "success": 0.85, "partial": 0.95, "fail": 1.0, "fumble": 1.1 }
+  },
+  "types": {
+    "general": {
+      "name": "雜貨店",
+      "cell": "shop",
+      "keeper": { "classes": ["rogue", "fighter", "bard"], "title": "店主" },
+      "catalog_tag": "general",
+      "buys": ["food", "gear", "material", "valuable", "equipment"],
+      "ai_effects": ["item", "affinity", "flag", "memory"],
+      "specials": [
+        { "id": "haul", "title": "幫店主搬貨", "desc": "花一個小時搬貨，換一點工錢。", "gives": [{ "type": "hours", "amount": 1 }],
+          "gets": [{ "type": "money", "amount": 10 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1 }
+      ]
+    },
+    "temple": {
+      "name": "神殿",
+      "cell": "temple",
+      "keeper": { "classes": ["cleric", "paladin"], "title": "司祭" },
+      "catalog_tag": "temple",
+      "buys": ["valuable", "scroll"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "reputation", "condition"],
+      "specials": [
+        { "id": "donate", "title": "捐獻", "desc": "向神殿捐獻，聲望提升。", "gives": [{ "type": "money", "amount": 100 }],
+          "gets": [{ "type": "reputation", "faction": "local", "delta": 1 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1 },
+        { "id": "bless", "title": "祈求祝福", "desc": "下次長休前，所有主動行動檢定 +1。", "gives": [{ "type": "money", "amount": 50 }],
+          "gets": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }], "stock": 1 }
+      ]
+    },
+    "tavern": {
+      "name": "酒館",
+      "cell": "tavern",
+      "keeper": { "classes": ["fighter", "bard", "rogue"], "title": "酒保" },
+      "catalog_tag": "tavern",
+      "buys": ["food", "valuable", "info"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "companion"],
+      "specials": [
+        { "id": "round", "title": "請全場喝一杯", "desc": "隊友們都很開心。", "gives": [{ "type": "money", "amount": 30 }],
+          "gets": [{ "type": "affinity", "npc": "party", "delta": 2 }, { "type": "affinity", "npc": "keeper", "delta": 1 }], "stock": 1 },
+        { "id": "rumor", "title": "向酒保買情報", "desc": "打聽附近的消息。", "gives": [{ "type": "money", "amount": 100 }],
+          "gets": [{ "type": "flag", "key": "rumor", "value": true }, { "type": "memory", "summary": "從酒保那裡打聽到附近的消息。", "importance": 1 }], "stock": 1 }
+      ]
+    }
+  }
+}

@@ -288,3 +288,26 @@ export function snapshot(c: Character, before?: Character, player?: Character): 
   }
   return state
 }
+
+/** 主角的設定（性別、出身、外貌、背景），交給 AI 參考。 */
+export function protagonistText(c: Character, birthplaceName?: string): string {
+  const lines = [
+    `${c.name}｜${c.gender ? `${c.gender}｜` : ''}${attributeRules.races[c.race]?.name ?? c.race}・${classDef(c.class).name} Lv.${c.level}${birthplaceName ? `｜出身：${birthplaceName}` : ''}`,
+    c.appearance ? `外貌：${c.appearance}` : '',
+    c.background ? `背景：${c.background}` : '',
+  ]
+  return lines.filter(Boolean).join('\n')
+}
+
+export type ProfilePatch = Partial<Pick<Character, 'gender' | 'appearance' | 'background'>>
+
+/** 修改主角設定（名字以外的文字欄位） */
+export function editProfile(c: Character, patch: ProfilePatch) {
+  for (const k of ['gender', 'appearance', 'background'] as const) {
+    const v = patch[k]
+    if (v === undefined) continue
+    const t = v.trim().slice(0, k === 'background' ? 800 : k === 'appearance' ? 400 : 20)
+    if (t) c[k] = t
+    else delete c[k]
+  }
+}

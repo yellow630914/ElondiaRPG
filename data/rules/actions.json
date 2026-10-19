@@ -35,6 +35,8 @@
     "invite": { "name": "邀請入隊", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"] },
     "black_market": { "name": "打聽黑市", "attr": "cha", "hours": 2, "effects": ["flag", "reputation", "money"] },
     "negotiate": { "name": "談判解除契約", "attr": "cha", "hours": 1, "effects": ["affinity", "relationship_text", "flag"] },
-    "escape": { "name": "逃離主人", "attr": "dex", "hours": 2, "effects": ["affinity", "relationship_text", "flag"] }
+    "escape": { "name": "逃離主人", "attr": "dex", "hours": 2, "effects": ["affinity", "relationship_text", "flag"] },
+    "bargain": { "name": "交涉價格", "attr": "cha", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag"] },
+    "negotiation": { "name": "談判", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag", "reputation"] }
   }
 }

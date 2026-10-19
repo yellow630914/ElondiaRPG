@@ -10,6 +10,7 @@
 // 說明見 docs/RELATIONSHIP_MEMORY.md 第 5 節。
 
 import { mod, proficiency, snapshot } from './character'
+import { computeDegree, DEGREE_NAME } from './checks'
 import {
   applyBlackMarket, applyEscape, applyHaggle, applyHire, applyInvite, applyNegotiate, setupFor, type MarketKind,
 } from './companions'
@@ -18,7 +19,9 @@ import {
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { addAffinity, conditionPenalty, pcOf } from './party'
+import { applyNegotiationOutcome } from './negotiation'
 import { addSuggestions } from './social'
+import { applyBargain } from './trade'
 import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { CheckInfo, GameState, GameTime, Report } from './types'
@@ -66,19 +69,7 @@ export interface Judgment {
   relationship_updates: RelationshipUpdate[]
 }
 
-export const DEGREE_NAME: Record<Degree, string> = {
-  critical: '大成功', success: '成功', partial: '部分成功', fail: '失敗', fumble: '大失敗',
-}
-
-export function computeDegree(natural: number, total: number, dc: number): Degree {
-  const d = actionRules.degrees
-  if (natural === 20) return 'critical'
-  if (natural === 1 || total <= dc - d.fumble_margin) return 'fumble'
-  if (total >= dc + d.critical_margin) return 'critical'
-  if (total >= dc) return 'success'
-  if (total >= dc - d.partial_margin) return 'partial'
-  return 'fail'
-}
+export { computeDegree, DEGREE_NAME }
 
 export function situationalTotal(p: ActionPending): number {
   return p.situational.reduce((s, x) => s + x.value, 0)
@@ -94,7 +85,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const setup = setupFor(state, input.kind, input.target, input.offer_cc)
   const pc = pcOf(state)
   const penalty = conditionPenalty(pc)
-  const situational = [...setup.situational, ...(penalty ? [{ label: '受罰', value: -penalty }] : [])].filter((x) => x.value !== 0)
+  const situational = [...setup.situational, ...(penalty ? [{ label: penalty > 0 ? '受罰' : '祝福', value: -penalty }] : [])].filter((x) => x.value !== 0)
   const natural = withRng(state, (rng) => roll(rng, '1d20').total)
   const pending: ActionPending = {
     ...input,
@@ -317,6 +308,8 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'black_market': return applyBlackMarket(state, report, degree)
     case 'negotiate': return applyNegotiate(state, report, degree)
     case 'escape': return applyEscape(state, report, degree)
+    case 'bargain': return applyBargain(state, report, p.target!, degree)
+    case 'negotiation': return applyNegotiationOutcome(state, report, p.target!, degree)
     case 'free': return ''
   }
 }
