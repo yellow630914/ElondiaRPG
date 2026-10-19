@@ -56,7 +56,9 @@ async function* streamAnthropic(config: ProviderConfig, prompt: Prompt, signal?:
   const params = {
     model: config.model,
     max_tokens: config.maxTokens ?? CLAUDE_DEFAULT_MAX_TOKENS,
-    system: prompt.system,
+    // system 只放不太變動的內容（規則、常駐世界書、文風），在這裡設快取斷點：
+    // 下一次請求的 system 相同時直接讀快取，輸入費用與延遲都會下降
+    system: [{ type: 'text' as const, text: prompt.system, cache_control: { type: 'ephemeral' as const } }],
     messages: [{ role: 'user' as const, content: prompt.user }],
   }
   // 支援的模型開啟伺服器端備援：被安全分類器拒絕時，自動改由建議的備援模型完成
@@ -74,6 +76,7 @@ async function* streamAnthropic(config: ProviderConfig, prompt: Prompt, signal?:
   onUsage?.({
     input: u.input_tokens + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0),
     output: u.output_tokens,
+    cached: u.cache_read_input_tokens ?? 0,
   })
   if (final.stop_reason === 'refusal') {
     throw new NarrationRefusedError(final.stop_details?.category ?? undefined)
@@ -112,7 +115,13 @@ async function* streamOpenAI(provider: ProviderId, config: ProviderConfig, promp
     { signal },
   )
   for await (const chunk of stream) {
-    if (chunk.usage) onUsage?.({ input: chunk.usage.prompt_tokens, output: chunk.usage.completion_tokens })
+    if (chunk.usage) {
+      onUsage?.({
+        input: chunk.usage.prompt_tokens,
+        output: chunk.usage.completion_tokens,
+        cached: chunk.usage.prompt_tokens_details?.cached_tokens ?? 0,
+      })
+    }
     const text = chunk.choices[0]?.delta?.content
     if (text) yield text
     if (chunk.choices[0]?.finish_reason === 'content_filter') throw new NarrationRefusedError('content_filter')
@@ -134,7 +143,7 @@ async function* streamGemini(config: ProviderConfig, prompt: Prompt, signal?: Ab
   for await (const chunk of stream) {
     // 每一段都帶著累計的用量，取最後一段
     const m = chunk.usageMetadata
-    if (m) usage = { input: m.promptTokenCount ?? 0, output: (m.candidatesTokenCount ?? 0) + (m.thoughtsTokenCount ?? 0) }
+    if (m) usage = { input: m.promptTokenCount ?? 0, output: (m.candidatesTokenCount ?? 0) + (m.thoughtsTokenCount ?? 0), cached: m.cachedContentTokenCount ?? 0 }
     if (chunk.text) yield chunk.text
     if (chunk.promptFeedback?.blockReason) throw new NarrationRefusedError(String(chunk.promptFeedback.blockReason))
   }

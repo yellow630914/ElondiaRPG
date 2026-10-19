@@ -85,7 +85,7 @@ async function copyPrompt() {
     </div>
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
     <p v-if="tokens" class="small muted tokens" title="這則日誌的 AI 呼叫（判定、敘事）用掉的 token">
-      🔢 輸入 {{ formatTokens(tokens.input) }}・輸出 {{ formatTokens(tokens.output) }} tokens<template v-if="tokens.calls > 1">（{{ tokens.calls }} 次呼叫）</template>
+      🔢 輸入 {{ formatTokens(tokens.input) }}<template v-if="tokens.cached">（快取 {{ formatTokens(tokens.cached) }}）</template>・輸出 {{ formatTokens(tokens.output) }} tokens<template v-if="tokens.calls > 1">（{{ tokens.calls }} 次呼叫）</template>
     </p>
   </article>
 </template>

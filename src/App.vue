@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
 import { locationById } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
@@ -19,10 +19,20 @@ import SaveDialog from '@/components/SaveDialog.vue'
 import SettingsView from '@/components/SettingsView.vue'
 import SuggestionToast from '@/components/SuggestionToast.vue'
 
+// 提示詞頁籤會載入整本世界書，切過去時才載入
+const PromptsView = defineAsyncComponent(() => import('@/components/PromptsView.vue'))
+
 const game = useGame()
 const inCombat = computed(() => !!game.state?.combat)
 const pendingSkills = computed(() => game.state?.party.some((m) => m.pendingAbilityChoices?.length || m.attrPoints > 0) ?? false)
 const suggestionCount = computed(() => game.state?.suggestions?.length ?? 0)
+
+type Tab = 'adventure' | 'prompts'
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'adventure', label: '🗺️ 冒險' },
+  { id: 'prompts', label: '🧩 提示詞' },
+]
+const tab = ref<Tab>('adventure')
 
 const showSettings = ref(false)
 const showParty = ref(false)
@@ -51,6 +61,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 <template>
   <header class="top">
     <h1>⚔️ 埃隆迪亞大陸</h1>
+    <nav class="row tabs">
+      <button v-for="t in TABS" :key="t.id" :class="{ active: tab === t.id }" @click="tab = t.id">{{ t.label }}</button>
+    </nav>
     <div v-if="game.state" class="row status small">
       <span>📅 {{ formatTime(game.state.time) }}</span>
       <span>📍 {{ locationById(game.state.location).name }}</span>
@@ -72,9 +85,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <button class="small" style="margin-left: auto" @click="game.error = null">✕</button>
   </div>
 
-  <NewGameView v-if="!game.state" @settings="showSettings = true" @saves="showSaves = true" />
+  <PromptsView v-if="tab === 'prompts'" />
 
-  <main v-else class="game" :class="{ combat: inCombat }">
+  <NewGameView v-if="!game.state" v-show="tab === 'adventure'" @settings="showSettings = true" @saves="showSaves = true" />
+
+  <main v-else v-show="tab === 'adventure'" class="game" :class="{ combat: inCombat }">
     <aside class="left">
       <MapPanel />
       <section class="panel quick">
@@ -115,7 +130,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     <SettingsView />
   </AppDialog>
 
-  <SuggestionToast v-if="game.state && !showRelations" @open-relations="showRelations = true" />
+  <SuggestionToast v-if="game.state && !showRelations" @open-relations="tab = 'adventure'; showRelations = true" />
 </template>
 
 <style scoped>
@@ -130,6 +145,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 }
 .top h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.1em; margin: 0; }
 .status { gap: 16px; color: var(--muted); }
+.tabs { gap: 6px; }
+.tabs button.active { border-color: var(--accent); color: var(--accent); }
 .top-buttons { margin-left: auto; gap: 6px; }
 .notice {
   position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 60;

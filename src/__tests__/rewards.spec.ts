@@ -99,7 +99,7 @@ describe('token usage', () => {
     const report = g.state!.reports.at(-1)!
     expect(report.check?.source).toBe('ai')
     expect(g.usage[report.report_id]).toEqual({ input: 1200, output: 300, calls: 1 })
-    expect(g.totalUsage).toEqual({ input: 1200, output: 300, calls: 1 })
+    expect(g.totalUsage).toEqual({ input: 1200, output: 300, calls: 1, cached: 0 })
     expect(g.narrations[report.report_id]?.text).toBe('你們聊到深夜。')
   })
 })

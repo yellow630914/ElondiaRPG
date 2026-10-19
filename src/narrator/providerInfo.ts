@@ -71,6 +71,9 @@ export function providerInfo(id: ProviderId): ProviderInfo {
 
 /** 一次 AI 呼叫的 token 用量（輸入含快取讀寫） */
 export interface TokenUsage {
+  /** 輸入 tokens（含讀取快取的部分） */
   input: number
   output: number
+  /** 輸入中從提示詞快取讀取的部分 */
+  cached?: number
 }

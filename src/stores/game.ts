@@ -11,18 +11,18 @@ import type { ShopType } from '@/engine/data'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
 import * as social from '@/engine/social'
-import { editProfile, protagonistText, spendAttrPoint, type ProfilePatch } from '@/engine/character'
-import { locationById } from '@/engine/data'
+import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
 import { travel } from '@/engine/travel'
 import type { GameState, Report } from '@/engine/types'
 import {
-  buildActionPrompt, buildNegotiationPrompt, buildShopPrompt, buildTavernPrompt, extractJson, splitSuggestions,
+  buildNegotiationPrompt, buildShopPrompt, buildTavernPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
 import type { TokenUsage } from '@/narrator/providerInfo'
+import { usePrompts } from './prompts'
 import { useSettings } from './settings'
 import {
   AUTO_SLOTS, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, type SaveData, type SlotMeta,
@@ -38,6 +38,8 @@ export interface UsageEntry {
   input: number
   output: number
   calls: number
+  /** 輸入中讀取提示詞快取的部分 */
+  cached?: number
 }
 
 function readJson<T>(key: string): T | null {
@@ -128,6 +130,7 @@ export const useGame = defineStore('game', () => {
     e.input += u.input
     e.output += u.output
     e.calls += 1
+    if (u.cached) e.cached = (e.cached ?? 0) + u.cached
   }
 
   /** 收集一次呼叫的用量；呼叫結束後再決定記在哪一則日誌 */
@@ -137,7 +140,10 @@ export const useGame = defineStore('game', () => {
   }
 
   const totalUsage = computed(() =>
-    Object.values(usage.value).reduce((t, e) => ({ input: t.input + e.input, output: t.output + e.output, calls: t.calls + e.calls }), { input: 0, output: 0, calls: 0 }),
+    Object.values(usage.value).reduce<Required<UsageEntry>>(
+      (t, e) => ({ input: t.input + e.input, output: t.output + e.output, calls: t.calls + e.calls, cached: t.cached + (e.cached ?? 0) }),
+      { input: 0, output: 0, calls: 0, cached: 0 },
+    ),
   )
 
   // ---- 存檔欄位 ----
@@ -295,25 +301,32 @@ export const useGame = defineStore('game', () => {
 
 
   // 世界書、繁簡轉換字典與各家 SDK 都很大，用到時才載入
+  async function composeFor(report: Report) {
+    const [{ composeNarration }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
+    return composeNarration(state.value, report, opts)
+  }
+
   async function promptFor(report: Report): Promise<Prompt> {
-    const [{ loadWorldbook, selectLore }, { buildPrompt }] = await Promise.all([
-      import('@/narrator/lore'),
-      import('@/narrator/prompt'),
-    ])
-    const settings = useSettings()
-    const book = await loadWorldbook()
-    const playerName = pc.value?.name ?? '你'
-    const lore = selectLore(book, report, { adult: settings.adult, budgetChars: settings.loreBudget, playerName })
+    return (await composeFor(report)).prompt
+  }
+
+  /** 判定請求的提示詞；沒有等待中的行動時用一個範例行動（在複製的狀態上擲骰，不影響遊戲） */
+  async function composeJudgePreview(text = '（預覽用的範例行動）') {
     const s = state.value
-    const context = s ? social.formatContext(s, social.selectContext(s, social.queryForReport(s, report))) : ''
-    const me = s?.party.find((m) => m.isPlayer)
-    const protagonist = me ? protagonistText(me, me.birthplace ? locationById(me.birthplace).name : undefined) : ''
-    return buildPrompt(report, lore, {
-      playerName, language: settings.language,
-      ...(protagonist ? { protagonist } : {}),
-      ...(context ? { context } : {}),
-      suggestRelations: context.includes('<relationships>'),
-    })
+    if (!s) return null
+    let st = s
+    let pending = s.pendingAction
+    if (!pending) {
+      if (s.combat) return null
+      st = JSON.parse(JSON.stringify(s)) as GameState
+      try {
+        pending = actions.prepareAction(st, { kind: 'free', text })
+      } catch {
+        return null
+      }
+    }
+    const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
+    return { ...composeJudge(st, pending, opts), sample: !s.pendingAction }
   }
 
   async function narrate(report: Report) {
@@ -371,11 +384,8 @@ export const useGame = defineStore('game', () => {
     const collector = usageCollector()
     try {
       const { completeText } = await import('@/narrator/providers')
-      const participants = ['pc', ...s.party.filter((m) => !m.isPlayer).map((m) => m.id)]
-      const target = pending.target?.includes(':') ? pending.target.split(':')[1] : pending.target
-      if (target && s.relationships?.[target] && !participants.includes(target)) participants.push(target)
-      const context = social.formatContext(s, social.selectContext(s, { participants, location: s.location }))
-      const text = await completeText(settings.provider, settings.current(), buildActionPrompt(s, pending, context), undefined, collector.onUsage)
+      const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
+      const text = await completeText(settings.provider, settings.current(), composeJudge(s, pending, opts).prompt, undefined, collector.onUsage)
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // AI 已經直接寫出經過：當作這份報告的敘事，不再另外請 AI 描述
       const report = run((st) => actions.resolveAction(st, judgment), { narrate: !judgment.narrative })
@@ -453,9 +463,9 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, pc, judging, intent, usage, totalUsage, slots, notice,
+    state, narrations, error, pc, judging, intent, usage, totalUsage, slots, notice, flash,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
-    start, reset, promptFor, narrate, cancelNarration,
+    start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
     perform, judge, flavorTavern, hire, flavorShop, startNegotiation,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),

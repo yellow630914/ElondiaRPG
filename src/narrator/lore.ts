@@ -1,5 +1,12 @@
-// 從世界書挑選要注入提示詞的條目。
-// 世界書正文是簡體、遊戲資料是繁體，比對關鍵字前先把報告文字轉成簡體。
+// 世界書：把世界書檔案的條目整理成可以調整的清單，再依報告或行動挑選要注入的條目。
+// 世界書正文是簡體、遊戲資料是繁體，比對關鍵字前先把文字轉成簡體（兩種寫法都比對）。
+//
+// 每個條目有一種注入方式：
+//   constant 常駐：每次都注入，放在 system 前段（不太變動，可以被快取）
+//   keyword  關鍵字：報告或行動的文字命中關鍵字時注入，放在 user 後段
+//   travel   旅行：只有旅行報告注入
+//   off      停用
+// 預設值依下面的常數決定；玩家可以在「提示詞」頁籤覆寫（見 src/stores/prompts.ts）。
 
 import { Converter } from 'opencc-js/t2cn'
 import type { Report } from '@/engine/types'
@@ -18,6 +25,29 @@ export interface Worldbook {
   entries: Record<string, WorldbookEntry>
 }
 
+export type LoreMode = 'constant' | 'keyword' | 'travel' | 'off'
+
+/** 一個可以注入的世界書條目（內建條目套用玩家的覆寫後的樣子，或玩家新增的條目） */
+export interface LoreItem {
+  uid: number
+  comment: string
+  content: string
+  keys: string[]
+  mode: LoreMode
+  /** 注入順序：越小越前面 */
+  order: number
+  /** 成人向：設定開啟才注入 */
+  adult: boolean
+  builtin: boolean
+  /** 內建條目被玩家改過 */
+  edited?: boolean
+  /** 預設值的說明（為什麼常駐、為什麼停用） */
+  note?: string
+}
+
+/** 玩家對內建條目的覆寫；沒寫的欄位用預設值 */
+export type LoreOverride = Partial<Pick<LoreItem, 'comment' | 'content' | 'keys' | 'mode' | 'order' | 'adult'>>
+
 export interface LoreOptions {
   /** 是否注入成人向條目（敘事傾向、情色喜劇法則、相關價格參考） */
   adult: boolean
@@ -26,19 +56,23 @@ export interface LoreOptions {
   playerName: string
 }
 
-// 世界觀、勢力概述、神祇：每次都注入
+// 世界觀、勢力概述、神祇：常駐
 const ALWAYS = [0, 28, 44]
-// 視角和文風：注入，但把寫死的玩家名改掉
+// 視角和文風：改由「文風」條目管理，預設停用
 const STYLE = 5
-const STYLE_HARDCODED_NAME = '沈頤'
+// 世界書裡寫死的玩家名，注入時換成主角名
+const HARDCODED_NAME = '沈頤'
 // 地標相對位置：旅行報告才注入
 const TRAVEL_ONLY = [46]
-// 改由引擎實作或與遊戲 UI 衝突的條目：一律不注入
+// 改由引擎實作或與遊戲 UI 衝突的條目：預設停用
 const EXCLUDED = new Set([1, 2, 3, 4, 8, 10, 11, 29, 30, 31])
-// 成人向條目：設定開啟才注入
+// 成人向條目：設定開啟才注入；其中 38、39 是敘事法則，開啟時常駐
 const ADULT = new Set([16, 17, 18, 38, 39])
+const ADULT_CONSTANT = new Set([38, 39])
 // 巨龍條目沒有關鍵字，以「龍」觸發
 const DRAGON = 45
+/** 玩家新增的條目 uid 從這裡開始，避免和世界書檔案衝突 */
+export const CUSTOM_LORE_UID = 100000
 
 const toSimplified = Converter({ from: 'tw', to: 'cn' })
 
@@ -49,7 +83,115 @@ export function loadWorldbook(): Promise<Worldbook> {
   return cached
 }
 
-function reportText(report: Report): string {
+/** 內建條目的預設注入方式 */
+export function defaultLoreItem(e: WorldbookEntry): LoreItem {
+  const base = { uid: e.uid, comment: e.comment, content: e.content, keys: e.key.filter(Boolean), order: e.order, adult: ADULT.has(e.uid), builtin: true }
+  if (e.disable) return { ...base, mode: 'off', note: '世界書檔案中已停用' }
+  if (ALWAYS.includes(e.uid)) return { ...base, mode: 'constant', note: '世界觀基礎，預設常駐' }
+  if (e.uid === STYLE) return { ...base, mode: 'off', note: '文風改由「文風」條目管理；需要時可以開啟' }
+  if (TRAVEL_ONLY.includes(e.uid)) return { ...base, mode: 'travel', note: '只在旅行報告注入' }
+  if (EXCLUDED.has(e.uid)) return { ...base, mode: 'off', note: '規則已由遊戲引擎實作，或是聊天用的格式指示' }
+  if (ADULT_CONSTANT.has(e.uid)) return { ...base, mode: 'constant', note: '成人向：設定開啟時常駐' }
+  if (e.uid === DRAGON) return { ...base, mode: 'keyword', keys: ['龍', '龙'], note: '原本沒有關鍵字，以「龍」觸發' }
+  return { ...base, mode: 'keyword' }
+}
+
+/** 套用覆寫並加上玩家新增的條目，依注入順序排序 */
+export function loreItems(book: Worldbook, overrides: Record<string, LoreOverride> = {}, custom: LoreItem[] = []): LoreItem[] {
+  const builtin = Object.values(book.entries)
+    .filter((e) => e.content.trim())
+    .map((e) => {
+      const d = defaultLoreItem(e)
+      const o = overrides[e.uid]
+      return o && Object.keys(o).length ? { ...d, ...o, edited: true } : d
+    })
+  return [...builtin, ...custom.map((c) => ({ ...c, builtin: false }))].sort((a, b) => a.order - b.order || a.uid - b.uid)
+}
+
+export type LoreStatus = 'constant' | 'triggered' | 'idle' | 'off' | 'adult' | 'budget'
+
+export const LORE_STATUS_NAME: Record<LoreStatus, string> = {
+  constant: '常駐',
+  triggered: '觸發',
+  idle: '未觸發',
+  off: '停用',
+  adult: '成人（未開啟）',
+  budget: '超出字數上限',
+}
+
+export interface LoreEntryState {
+  status: LoreStatus
+  /** 命中的關鍵字 */
+  hit?: string
+  /** 注入順序（1 起算；沒注入時沒有） */
+  position?: number
+}
+
+export interface LoreSelection {
+  /** 常駐條目：放在 system 前段 */
+  constant: LoreItem[]
+  /** 這次觸發的條目：放在 user 後段 */
+  triggered: LoreItem[]
+  states: Record<number, LoreEntryState>
+  chars: number
+}
+
+export interface LoreQuery {
+  /** 拿來比對關鍵字的文字（報告或行動） */
+  text: string
+  travel: boolean
+}
+
+function withPlayerName(content: string, playerName: string): string {
+  return content.split(HARDCODED_NAME).join(playerName).split('{{player}}').join(playerName)
+}
+
+export function pickLore(items: LoreItem[], q: LoreQuery, opts: LoreOptions): LoreSelection {
+  const haystack = q.text + '\n' + toSimplified(q.text)
+  const states: Record<number, LoreEntryState> = {}
+  const wanted: { item: LoreItem; constant: boolean }[] = []
+  for (const it of items) {
+    if (it.mode === 'off' || !it.content.trim()) {
+      states[it.uid] = { status: 'off' }
+      continue
+    }
+    if (it.adult && !opts.adult) {
+      states[it.uid] = { status: 'adult' }
+      continue
+    }
+    if (it.mode === 'constant') {
+      wanted.push({ item: it, constant: true })
+      continue
+    }
+    const hit = it.mode === 'travel' ? (q.travel ? '旅行報告' : undefined) : it.keys.find((k) => k && haystack.includes(k))
+    if (hit) {
+      states[it.uid] = { status: 'triggered', hit }
+      wanted.push({ item: it, constant: false })
+    } else {
+      states[it.uid] = { status: 'idle' }
+    }
+  }
+
+  // 常駐條目排前面，所以字數不夠時優先保留；兩組內部都依注入順序
+  wanted.sort((a, b) => Number(b.constant) - Number(a.constant) || a.item.order - b.item.order || a.item.uid - b.item.uid)
+  const result: LoreSelection = { constant: [], triggered: [], states, chars: 0 }
+  let position = 0
+  for (const { item, constant } of wanted) {
+    const content = withPlayerName(item.content, opts.playerName)
+    if (result.chars + content.length > opts.budgetChars && position > 0) {
+      states[item.uid] = { ...states[item.uid], status: 'budget' }
+      continue
+    }
+    position += 1
+    result.chars += content.length
+    states[item.uid] = { ...(constant ? { status: 'constant' as const } : states[item.uid]!), position }
+    ;(constant ? result.constant : result.triggered).push({ ...item, content })
+  }
+  return result
+}
+
+/** 報告裡拿來比對關鍵字的文字 */
+export function reportLoreText(report: Report): string {
   return [
     ...(report.lore_keys ?? []),
     report.location.scene ?? '',
@@ -59,37 +201,12 @@ function reportText(report: Report): string {
   ].join('\n')
 }
 
-export function selectLore(book: Worldbook, report: Report, opts: LoreOptions): WorldbookEntry[] {
-  const raw = reportText(report)
-  const haystack = raw + '\n' + toSimplified(raw)
-  const entries = Object.values(book.entries).filter((e) => e.content.trim() && !e.disable)
+export function loreForReport(items: LoreItem[], report: Report, opts: LoreOptions): LoreSelection {
+  return pickLore(items, { text: reportLoreText(report), travel: report.kind === 'travel' }, opts)
+}
 
-  const picked: WorldbookEntry[] = []
-  const add = (e: WorldbookEntry | undefined) => {
-    if (e && !picked.includes(e)) picked.push(e)
-  }
-  const byUid = (uid: number) => entries.find((e) => e.uid === uid)
-
-  for (const uid of ALWAYS) add(byUid(uid))
-  const style = byUid(STYLE)
-  if (style) add({ ...style, content: style.content.split(STYLE_HARDCODED_NAME).join(opts.playerName) })
-  if (report.kind === 'travel') for (const uid of TRAVEL_ONLY) add(byUid(uid))
-  if (/[龍龙]/.test(haystack)) add(byUid(DRAGON))
-
-  const keyed = entries
-    .filter((e) => !EXCLUDED.has(e.uid) && (opts.adult || !ADULT.has(e.uid)))
-    .filter((e) => e.key.some((k) => k && haystack.includes(k)))
-    .sort((a, b) => a.order - b.order)
-  for (const e of keyed) add(e)
-  if (opts.adult) for (const uid of [38, 39]) add(byUid(uid))
-
-  // 依加入順序裁切到字數上限；必注入的條目排在前面，所以會優先保留
-  const result: WorldbookEntry[] = []
-  let used = 0
-  for (const e of picked) {
-    if (used + e.content.length > opts.budgetChars && result.length > 0) continue
-    result.push(e)
-    used += e.content.length
-  }
-  return result
+/** 以預設設定挑選報告的世界書（常駐在前、觸發在後） */
+export function selectLore(book: Worldbook, report: Report, opts: LoreOptions, overrides?: Record<string, LoreOverride>): LoreItem[] {
+  const sel = loreForReport(loreItems(book, overrides), report, opts)
+  return [...sel.constant, ...sel.triggered]
 }

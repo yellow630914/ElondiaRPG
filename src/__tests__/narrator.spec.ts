@@ -36,7 +36,8 @@ describe('selectLore', () => {
   })
 
   it('adds relative positions for travel reports and replaces the hardcoded player name', () => {
-    const lore = selectLore(book, trip, opts)
+    expect(comments(trip)).not.toContain('视角和文风条目')
+    const lore = selectLore(book, trip, opts, { 5: { mode: 'constant' } })
     expect(lore.map((e) => e.comment)).toContain('区域地理地标相对位置')
     const style = lore.find((e) => e.comment === '视角和文风条目')!
     expect(style.content).not.toContain('沈頤')

@@ -51,7 +51,7 @@ onMounted(() => toBottom(true))
     </header>
     <p v-if="game.totalUsage.calls" class="small muted usage" :title="otherTitle">
       🔢 本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens
-      （輸入 {{ formatTokens(game.totalUsage.input) }}・輸出 {{ formatTokens(game.totalUsage.output) }}・{{ game.totalUsage.calls }} 次呼叫）
+      （輸入 {{ formatTokens(game.totalUsage.input) }}<template v-if="game.totalUsage.cached">，其中快取 {{ formatTokens(game.totalUsage.cached) }}</template>・輸出 {{ formatTokens(game.totalUsage.output) }}・{{ game.totalUsage.calls }} 次呼叫）
     </p>
     <div ref="feed" class="feed">
       <button v-if="all.length > reports.length" class="small more" @click="shown += PAGE">⬆️ 載入更早的紀錄（還有 {{ all.length - reports.length }} 筆）</button>

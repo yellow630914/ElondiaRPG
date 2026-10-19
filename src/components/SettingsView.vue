@@ -113,6 +113,7 @@ function doReset() {
           <option value="zh-Hans">简体中文</option>
         </select>
       </label>
+      <p class="small muted">文風、世界書條目與其他提示詞在上方的「🧩 提示詞」頁籤調整，也可以在那裡預覽送出的內容。</p>
       <label>
         世界書注入字數上限
         <input v-model.number="settings.loreBudget" type="number" min="2000" step="1000" style="width: 140px" />
