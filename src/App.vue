@@ -9,12 +9,14 @@ import AdventureView from '@/components/AdventureView.vue'
 import CombatView from '@/components/CombatView.vue'
 import PartyView from '@/components/PartyView.vue'
 import LogView from '@/components/LogView.vue'
+import RelationsView from '@/components/RelationsView.vue'
 import SettingsView from '@/components/SettingsView.vue'
 
-type Tab = 'adventure' | 'party' | 'log' | 'settings'
+type Tab = 'adventure' | 'party' | 'relations' | 'log' | 'settings'
 const TABS: { id: Tab; name: string }[] = [
   { id: 'adventure', name: '冒險' },
   { id: 'party', name: '隊伍' },
+  { id: 'relations', name: '關係' },
   { id: 'log', name: '日誌' },
   { id: 'settings', name: '設定' },
 ]
@@ -68,6 +70,7 @@ function onCombatFinished() {
       <AdventureView v-else />
     </template>
     <PartyView v-else-if="tab === 'party'" />
+    <RelationsView v-else-if="tab === 'relations'" />
     <LogView v-else-if="tab === 'log'" />
     <SettingsView v-else-if="tab === 'settings'" />
   </template>

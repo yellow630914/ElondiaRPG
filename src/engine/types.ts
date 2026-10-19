@@ -1,6 +1,7 @@
 import type { CombatState } from './combat'
 import type { Attrs } from './data'
 import type { Area, Position } from './grid'
+import type { Memory, Relationship } from './social'
 
 // 報告型別對應 schemas/report.schema.json，修改時兩邊要同步。
 
@@ -132,7 +133,7 @@ export interface Character {
   faction?: string
   /** 升級時待選的能力選項（每組三選一） */
   pendingAbilityChoices?: string[][]
-  /** 只有 NPC 隊友有；-100 ~ 100，隱性數值 */
+  /** 只有 NPC 隊友有；-100 ~ 100。來源是人際關係條目，這裡是同步副本 */
   affinity?: number
   isPlayer?: boolean
 }
@@ -190,4 +191,8 @@ export interface GameState {
   position?: Position
   /** 隨機生成的區域（近郊、冒險區域各層） */
   areas?: Record<string, Area>
+  /** 人際關係：角色 id → 條目 */
+  relationships?: Record<string, Relationship>
+  /** 共同記憶 */
+  memories?: Memory[]
 }

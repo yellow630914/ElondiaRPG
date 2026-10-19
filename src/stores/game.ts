@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import * as combat from '@/engine/combat'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
+import * as social from '@/engine/social'
 import { spendAttrPoint } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
 import * as town from '@/engine/town'
@@ -124,7 +125,9 @@ export const useGame = defineStore('game', () => {
     const book = await loadWorldbook()
     const playerName = pc.value?.name ?? '你'
     const lore = selectLore(book, report, { adult: settings.adult, budgetChars: settings.loreBudget, playerName })
-    return buildPrompt(report, lore, { playerName, language: settings.language })
+    const s = state.value
+    const context = s ? social.formatContext(s, social.selectContext(s, social.queryForReport(s, report))) : ''
+    return buildPrompt(report, lore, { playerName, language: settings.language, ...(context ? { context } : {}) })
   }
 
   async function narrate(report: Report) {
@@ -185,5 +188,10 @@ export const useGame = defineStore('game', () => {
     descend: () => run(grid.descend),
     ascend: () => run(grid.ascend),
     restAtSafeRoom: () => run(grid.restAtSafeRoom),
+    // 人際關係與共同記憶
+    editRelationship: (id: string, patch: social.RelationshipPatch) => run((s) => social.editRelationship(s, id, patch)),
+    addMemory: (m: Omit<social.Memory, 'id'>) => run((s) => social.addMemory(s, m)),
+    editMemory: (id: string, patch: social.MemoryPatch) => run((s) => social.editMemory(s, id, patch)),
+    deleteMemory: (id: string) => run((s) => social.deleteMemory(s, id)),
   }
 })

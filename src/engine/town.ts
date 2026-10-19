@@ -7,6 +7,7 @@ import {
   townQuestsPerTown, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
 import { Rng, roll, withBonus } from './rng'
+import { ensureRelationship } from './social'
 import { formatMoney } from './money'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, GuildRank, Quest, Report } from './types'
@@ -116,13 +117,17 @@ export function recruit(state: GameState, npcId: string): Report {
   if (state.party.length >= combatRules.party_max) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
   if (state.money_cc < def.hire_cc) throw new Error('招募費用不足')
   const npc = createNpc(def, new Rng(hashString(def.id)))
+  // 之前見過的角色沿用原本的親密度
+  const rel = ensureRelationship(state, def)
+  npc.affinity = rel.affinity
+  if (rel.toPlayer === '初次見面。') rel.toPlayer = '在酒館受雇加入隊伍的冒險夥伴。'
   state.party.push(npc)
   state.recruited.push(npc.id)
   const report = baseReport(state, 'social', 1)
   report.location.scene = `${locationById(state.location).name}的酒館`
   report.outcome.summary = `在酒館招募了${npc.name}加入隊伍，支付 ${formatMoney(def.hire_cc)}。`
   report.changes.money_cc = -def.hire_cc
-  report.changes.affinity = [{ npc: npc.id, delta: 0, after: npc.affinity ?? 0, reason: '初次結識' }]
+  report.changes.affinity = [{ npc: npc.id, delta: 0, after: npc.affinity ?? 0, reason: rel.firstMet?.time.day === state.time.day ? '初次結識' : '再次同行' }]
   report.narration = { pov: 'second_person', length: 'short', focus: [`${npc.name}的第一印象與性格`] }
   report.lore_keys!.push(attributeRules.races[npc.race]?.name ?? npc.race)
   return commitReport(state, report)

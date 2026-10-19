@@ -2,6 +2,7 @@
 
 import { baseAttrs, createPlayer, gainXp, recalc } from './character'
 import { abilities, attributeRules, classDef, locationById, type Attrs } from './data'
+import { ensureRelationship, recordMemory, setAffinity } from './social'
 import { Rng } from './rng'
 import type { GameState, GameTime, InventoryItem, Report } from './types'
 
@@ -25,6 +26,8 @@ export function newGame(opts: { name: string; race: string; classId: string; bon
     flags: {},
     reports: [],
     nextReportNo: 1,
+    relationships: {},
+    memories: [],
   }
 }
 
@@ -52,6 +55,19 @@ export function migrate(state: GameState): GameState {
     c.maxHp = 0
     recalc(c)
     c.hp = c.maxHp
+  }
+  // v2 之前沒有人際關係與共同記憶：由隊友與過去的報告補建
+  if (!state.relationships) {
+    state.relationships = {}
+    for (const m of state.party) {
+      if (m.isPlayer) continue
+      ensureRelationship(state, { id: m.id, name: m.name })
+      setAffinity(state, m.id, m.affinity ?? 0)
+    }
+  }
+  if (!state.memories) {
+    state.memories = []
+    for (const r of state.reports) recordMemory(state, r)
   }
   return state
 }
@@ -129,10 +145,7 @@ export function commitReport(state: GameState, report: Report): Report {
   if (c.money_cc) state.money_cc += c.money_cc
   for (const item of c.items_gained ?? []) addItem(state.inventory, item.name, item.qty, item.quality)
   for (const item of c.items_lost ?? []) removeItem(state.inventory, item.name, item.qty)
-  for (const a of c.affinity ?? []) {
-    const npc = state.party.find((m) => m.id === a.npc)
-    if (npc) npc.affinity = a.after
-  }
+  for (const a of c.affinity ?? []) setAffinity(state, a.npc, a.after)
   for (const r of c.reputation ?? []) state.reputation[r.faction] = (state.reputation[r.faction] ?? 0) + r.delta
   if (c.flags) Object.assign(state.flags, c.flags)
 
@@ -150,5 +163,6 @@ export function commitReport(state: GameState, report: Report): Report {
   }
 
   state.reports.push(report)
+  recordMemory(state, report)
   return report
 }

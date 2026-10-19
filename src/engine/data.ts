@@ -56,6 +56,9 @@ export interface NpcDef {
   hire_cc: number
   personality: string
   faction: string
+  appearance?: string
+  /** 與其他角色的關係：角色 id → 文字 */
+  relations?: Record<string, string>
 }
 export const npcs = (npcsJson as unknown as { npcs: NpcDef[] }).npcs
 

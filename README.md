@@ -36,6 +36,7 @@ pnpm build             # 型別檢查 + 建置到 dist/
 - 公會委託：F 級在城內與近郊，E 級以上在冒險區域
 - 逐回合戰鬥：行動點、法術環、命中對迴避、幸運一擊、13 種傷害屬性加成、10 類 BUFF／DEBUFF，10 個職業共 150 項技能／法術／戲法
 - 戰後產生戰報、分配經驗；升級時分配屬性點並三選一學習能力
+- 人際關係（親密度、外貌、與主角及他人的關係）與冒險記憶（時間、地點、參與人、簡述），生成文本時依參與人、地點、時間檢索後交給 AI
 - AI 細節描述可開關：開啟時自動生成敘事（串流顯示），關閉時顯示戰報與事件簡述；也可以複製提示詞自行使用
 - 自動存檔在瀏覽器，可匯出 / 匯入
 
@@ -46,6 +47,7 @@ pnpm build             # 型別檢查 + 建置到 dist/
 | [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 遊戲設計：架構、走格子、旅行、城鎮、AI 敘事管線、待決定事項 |
 | [`docs/COMBAT_SYSTEM.md`](docs/COMBAT_SYSTEM.md) | 戰鬥系統：屬性、三資源、命中與迴避、幸運一擊、傷害屬性、BUFF、各職業能力清單 |
 | [`docs/QUEST_EVENT_DESIGN.md`](docs/QUEST_EVENT_DESIGN.md) | 任務／事件生成系統與 AI 權責劃分（提案） |
+| [`docs/RELATIONSHIP_MEMORY.md`](docs/RELATIONSHIP_MEMORY.md) | 人際關係與共同記憶系統，以及主動行動由 AI 判定的建議 |
 | [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索（周邊 → 淺層 → 中層 → 深層），含實作狀態 |
 | [`docs/WORLD_NOTES.md`](docs/WORLD_NOTES.md) | 世界書與地圖之間的不一致與缺漏 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema） |
