@@ -1,0 +1,10 @@
+# 以下兩個套件的安裝腳本不需要執行：
+# - @google/genai 的 preinstall 只是 echo 'preinstall: no-op'
+# - protobufjs 的 postinstall 只會檢查版本號格式並印出警告
+allowBuilds:
+  '@google/genai': false
+  protobufjs: false
+
+# pnpm 預設不安裝剛發布不久的版本；這些版本是專案鎖定的，先排除在外
+minimumReleaseAgeExclude:
+  - openai@7.39.0

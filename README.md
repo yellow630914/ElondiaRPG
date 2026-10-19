@@ -6,15 +6,15 @@
 
 ## 執行
 
-需要 Node.js 22.18 以上與 Git。
+需要 Node.js 22.18 以上、Git 與 [pnpm](https://pnpm.io/)。
 
 ```bash
 git clone -b claude/admiring-tesla-zzw8ii https://github.com/yellow630914/ElondiaRPG.git
 cd ElondiaRPG
-npm install
-npm run dev        # 開發伺服器
-npm run test:unit  # 測試
-npm run build      # 型別檢查 + 建置到 dist/
+pnpm install
+pnpm dev               # 開發伺服器
+pnpm test:unit --run   # 測試
+pnpm build             # 型別檢查 + 建置到 dist/
 ```
 
 開發伺服器啟動後，用瀏覽器打開終端機顯示的網址（預設 http://localhost:5173）。
@@ -24,7 +24,8 @@ npm run build      # 型別檢查 + 建置到 dist/
 - 開啟：每次行動、事件或戰鬥結束後，自動請 AI 寫出詳細經過。需要先在「設定」頁選擇 AI 服務並填入自己的 API key（Anthropic、OpenAI、Google Gemini，或 OpenRouter / DeepSeek / Ollama 等 OpenAI 相容格式）。
 - 關閉（預設）：不呼叫 AI，戰鬥直接顯示戰報，其他事件顯示簡述。
 
-> `.npmrc` 設定了 `legacy-peer-deps`，用來避開 npm 10 在解析 vitest 選用依賴時的錯誤。
+> - `pnpm-workspace.yaml` 已經設定好不執行 `@google/genai` 與 `protobufjs` 的安裝腳本（兩者都不需要），所以 `pnpm install` 不會出現 `ERR_PNPM_IGNORED_BUILDS`。
+> - 也可以用 npm（`npm install`、`npm run dev`）。`.npmrc` 的 `legacy-peer-deps` 是為了避開 npm 10 在解析 vitest 選用依賴時的錯誤。
 
 ## 目前可以做什麼
 
