@@ -16,6 +16,9 @@ const KIND_NAME: Record<Report['kind'], string> = {
 }
 
 const narration = computed(() => game.narrations[props.report.report_id])
+// 關閉 AI 細節描述時不顯示敘事，改顯示戰報或事件簡述（已生成的敘事仍保留，重新開啟後會再出現）
+const showStory = computed(() => settings.aiNarration && !!narration.value)
+const showBattleReport = computed(() => props.report.kind === 'combat' && !showStory.value && !!props.report.timeline?.length)
 const names = computed(() => actorNames(props.report))
 const changes = computed(() => describeChanges(props.report))
 const showRaw = ref(false)
@@ -40,12 +43,18 @@ async function copyPrompt() {
     </header>
     <p>{{ report.outcome.summary }}</p>
 
-    <div v-if="narration" class="story">
+    <div v-if="showStory && narration" class="story">
       <div class="narration">{{ narration.text }}<span v-if="narration.status === 'streaming'" class="cursor">▌</span></div>
       <p v-if="narration.status === 'error'" class="small" style="color: var(--danger)">{{ narration.error }}</p>
     </div>
 
-    <details v-if="report.timeline?.length">
+    <div v-if="showBattleReport" class="battle-report">
+      <h3 class="small">戰報</h3>
+      <div class="small timeline">
+        <div v-for="t in report.timeline" :key="t.seq">{{ describeEntry(t, names) }}</div>
+      </div>
+    </div>
+    <details v-else-if="report.timeline?.length">
       <summary class="small">經過（{{ report.timeline.length }} 筆）</summary>
       <div class="small timeline">
         <div v-for="t in report.timeline" :key="t.seq">{{ describeEntry(t, names) }}</div>
@@ -56,14 +65,16 @@ async function copyPrompt() {
     </div>
 
     <div class="row actions">
-      <button
-        v-if="narration?.status !== 'streaming'"
-        class="small"
-        :disabled="!settings.ready()"
-        :title="settings.ready() ? '' : '請先在設定中填好 AI 服務'"
-        @click="game.narrate(report)"
-      >{{ narration ? '重新生成敘事' : '生成敘事' }}</button>
-      <button v-else class="small" @click="game.cancelNarration(report.report_id)">停止</button>
+      <template v-if="settings.aiNarration">
+        <button
+          v-if="narration?.status !== 'streaming'"
+          class="small"
+          :disabled="!settings.ready()"
+          @click="game.narrate(report)"
+        >{{ narration ? '重新生成敘事' : '生成敘事' }}</button>
+        <button v-else class="small" @click="game.cancelNarration(report.report_id)">停止</button>
+        <span v-if="!settings.ready()" class="small muted">AI 服務尚未設定，請到「設定」填寫</span>
+      </template>
       <button class="small" @click="copyPrompt">{{ copied ? '已複製' : '複製提示詞' }}</button>
       <button class="small" @click="showRaw = !showRaw">{{ showRaw ? '隱藏' : '顯示' }}報告 JSON</button>
     </div>
@@ -75,6 +86,8 @@ async function copyPrompt() {
 .story { border-left: 3px solid var(--accent); padding: 4px 12px; margin: 8px 0; background: #0002; }
 .cursor { animation: blink 1s steps(1) infinite; color: var(--accent); }
 @keyframes blink { 50% { opacity: 0; } }
+.battle-report { border-left: 3px solid var(--accent-2); padding: 4px 12px; margin: 8px 0; background: #0002; }
+.battle-report .timeline { color: var(--text); }
 .timeline { display: grid; gap: 2px; padding: 6px 0; color: var(--muted); }
 .changes { margin: 6px 0; }
 .actions { margin-top: 6px; }

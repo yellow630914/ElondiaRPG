@@ -7,7 +7,8 @@ const KEY = 'elondia.settings'
 interface SavedSettings {
   provider: ProviderId
   configs: Record<ProviderId, ProviderConfig>
-  autoNarrate: boolean
+  /** AI 細節描述：開啟時每次行動後自動請 AI 寫事件經過；關閉時只顯示戰報與事件簡述 */
+  aiNarration: boolean
   adult: boolean
   language: 'zh-Hant' | 'zh-Hans'
   loreBudget: number
@@ -19,7 +20,7 @@ function defaults(): SavedSettings {
     configs: Object.fromEntries(
       PROVIDERS.map((p) => [p.id, { apiKey: '', model: p.defaultModel, ...(p.presets ? { baseURL: p.presets[0]!.baseURL } : {}) }]),
     ) as Record<ProviderId, ProviderConfig>,
-    autoNarrate: false,
+    aiNarration: false,
     adult: false,
     language: 'zh-Hant',
     loreBudget: 12000,
@@ -31,8 +32,11 @@ function load(): SavedSettings {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return base
-    const saved = JSON.parse(raw) as Partial<SavedSettings>
-    return { ...base, ...saved, configs: { ...base.configs, ...saved.configs } }
+    const saved = JSON.parse(raw) as Partial<SavedSettings> & { autoNarrate?: boolean }
+    // 舊版設定叫 autoNarrate
+    const aiNarration = saved.aiNarration ?? saved.autoNarrate ?? base.aiNarration
+    delete saved.autoNarrate
+    return { ...base, ...saved, aiNarration, configs: { ...base.configs, ...saved.configs } }
   } catch {
     return base
   }
@@ -42,18 +46,18 @@ export const useSettings = defineStore('settings', () => {
   const initial = load()
   const provider = ref(initial.provider)
   const configs = ref(initial.configs)
-  const autoNarrate = ref(initial.autoNarrate)
+  const aiNarration = ref(initial.aiNarration)
   const adult = ref(initial.adult)
   const language = ref(initial.language)
   const loreBudget = ref(initial.loreBudget)
 
   watch(
-    [provider, configs, autoNarrate, adult, language, loreBudget],
+    [provider, configs, aiNarration, adult, language, loreBudget],
     () => {
       const data: SavedSettings = {
         provider: provider.value,
         configs: configs.value,
-        autoNarrate: autoNarrate.value,
+        aiNarration: aiNarration.value,
         adult: adult.value,
         language: language.value,
         loreBudget: loreBudget.value,
@@ -74,5 +78,5 @@ export const useSettings = defineStore('settings', () => {
     return !!cfg.model && (!!cfg.apiKey || !!info.keyOptional) && (!info.needsBaseURL || !!cfg.baseURL)
   }
 
-  return { provider, configs, autoNarrate, adult, language, loreBudget, current, ready }
+  return { provider, configs, aiNarration, adult, language, loreBudget, current, ready }
 })

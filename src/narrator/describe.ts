@@ -19,7 +19,8 @@ function describeEffect(e: Effect, names: Record<string, string>): string {
   switch (e.type) {
     case 'damage': return `${who} 受到 ${e.amount} 點${e.element ? `${e.element}` : ''}傷害`
     case 'heal': return `${who} 回復 ${e.amount} HP`
-    case 'status_add': return `${who} 陷入「${e.status}」`
+    case 'status_add':
+      return e.status === '死亡' || e.status === '倒下' ? `${who} 倒下了` : `${who} 陷入「${e.status}」`
     case 'status_remove': return `${who} 解除「${e.status}」`
     default: return e.text ?? ''
   }

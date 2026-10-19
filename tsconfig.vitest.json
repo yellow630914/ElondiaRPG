@@ -7,9 +7,7 @@
   "exclude": [],
 
   "compilerOptions": {
-    // Vitest runs in a different environment than the application code.
-    // Adjust lib and types accordingly.
-    "lib": [],
+    // 測試在 happy-dom 環境執行，沿用 app 設定的 DOM lib，另外加上 Node 型別。
     "types": ["node"],
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.

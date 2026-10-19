@@ -6,16 +6,23 @@
 
 ## 執行
 
-需要 Node.js 22.18 以上。
+需要 Node.js 22.18 以上與 Git。
 
 ```bash
+git clone -b claude/admiring-tesla-zzw8ii https://github.com/yellow630914/ElondiaRPG.git
+cd ElondiaRPG
 npm install
 npm run dev        # 開發伺服器
 npm run test:unit  # 測試
 npm run build      # 型別檢查 + 建置到 dist/
 ```
 
-開啟後在「設定」頁選擇 AI 服務並填入自己的 API key（Anthropic、OpenAI、Google Gemini，或 OpenRouter / DeepSeek / Ollama 等 OpenAI 相容格式）。不設定 AI 也能玩，日誌會顯示引擎產生的文字戰報。
+開發伺服器啟動後，用瀏覽器打開終端機顯示的網址（預設 http://localhost:5173）。
+
+**AI 細節描述**可以在「設定」或「日誌」頁開關：
+
+- 開啟：每次行動、事件或戰鬥結束後，自動請 AI 寫出詳細經過。需要先在「設定」頁選擇 AI 服務並填入自己的 API key（Anthropic、OpenAI、Google Gemini，或 OpenRouter / DeepSeek / Ollama 等 OpenAI 相容格式）。
+- 關閉（預設）：不呼叫 AI，戰鬥直接顯示戰報，其他事件顯示簡述。
 
 > `.npmrc` 設定了 `legacy-peer-deps`，用來避開 npm 10 在解析 vitest 選用依賴時的錯誤。
 
@@ -26,7 +33,7 @@ npm run build      # 型別檢查 + 建置到 dist/
 - 旅店休息、購買乾糧、在酒館招募 NPC 隊友（最多 4 人）
 - 冒險者公會委託：F 級在城內與近郊（戰鬥、檢定、送貨），E 級以上在冒險區域
 - 逐回合手動戰鬥：攻擊、技能、防禦、撤退；戰後產生戰報、分配經驗、升級三選一技能
-- 每份報告都可以交給 AI 生成敘事（串流顯示），或複製提示詞自行使用
+- AI 細節描述可開關：開啟時自動生成敘事（串流顯示），關閉時顯示戰報與事件簡述；也可以複製提示詞自行使用
 - 自動存檔在瀏覽器，可匯出 / 匯入
 
 ## 文件與資料

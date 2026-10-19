@@ -57,7 +57,7 @@ export const useGame = defineStore('game', () => {
       const result = fn(state.value)
       save()
       const settings = useSettings()
-      if (settings.autoNarrate && settings.ready() && isReport(result) && result.kind !== 'trade') {
+      if (settings.aiNarration && settings.ready() && isReport(result) && result.kind !== 'trade') {
         void narrate(result)
       }
       return result

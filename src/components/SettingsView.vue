@@ -101,7 +101,11 @@ function doReset() {
   <section class="panel">
     <h2>敘事選項</h2>
     <div class="form">
-      <label class="check"><input v-model="settings.autoNarrate" type="checkbox" /> 每次行動後自動生成敘事</label>
+      <label class="check"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述</label>
+      <p class="small muted">
+        開啟：每次行動、事件或戰鬥結束後，自動請 AI 寫出詳細經過（需先設定 AI 服務）。<br />
+        關閉：不呼叫 AI，戰鬥直接顯示戰報，其他事件顯示簡述。
+      </p>
       <label>
         輸出語言
         <select v-model="settings.language">

@@ -2,9 +2,11 @@
 import { computed, ref } from 'vue'
 import type { Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import { useSettings } from '@/stores/settings'
 import ReportCard from './ReportCard.vue'
 
 const game = useGame()
+const settings = useSettings()
 const hideTrade = ref(true)
 const reports = computed(() =>
   [...(game.state?.reports ?? [])].reverse().filter((r: Report) => !(hideTrade.value && r.kind === 'trade')),
@@ -12,7 +14,8 @@ const reports = computed(() =>
 </script>
 
 <template>
-  <div class="row" style="margin-bottom: 10px">
+  <div class="row" style="margin-bottom: 10px; gap: 16px">
+    <label class="small"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述</label>
     <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易紀錄</label>
   </div>
   <p v-if="reports.length === 0" class="muted">還沒有任何紀錄。</p>
