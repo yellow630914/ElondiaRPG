@@ -12,7 +12,6 @@ const models = ref<string[]>([])
 const loading = ref(false)
 const message = ref('')
 const showKey = ref(false)
-const exported = ref('')
 
 async function loadModels() {
   loading.value = true
@@ -32,10 +31,6 @@ async function loadModels() {
 function onMaxTokens(e: Event) {
   const v = Number((e.target as HTMLInputElement).value)
   cfg.value.maxTokens = v > 0 ? v : undefined
-}
-
-function doExport() {
-  exported.value = game.exportSave()
 }
 
 function doReset() {
@@ -142,12 +137,11 @@ function doReset() {
 
   <section v-if="game.state" class="panel">
     <h2>💾 存檔</h2>
-    <p class="small muted">遊戲會自動存在瀏覽器中。匯出的 JSON 可以在其他瀏覽器的開始畫面匯入。</p>
+    <p class="small muted">目前的進度會自動存在瀏覽器中。存檔欄位、快速存檔、匯出與匯入檔案在右上角的「💾 存讀檔」。</p>
     <div class="row">
-      <button @click="doExport">匯出存檔</button>
-      <button class="danger" @click="doReset">刪除存檔</button>
+      <button class="danger" @click="doReset">放棄目前的進度並回到開始畫面</button>
     </div>
-    <textarea v-if="exported" :value="exported" rows="6" readonly style="width: 100%; margin-top: 8px" />
+    <p class="small muted">存檔欄位裡的存檔不會被刪除。</p>
   </section>
 </template>
 

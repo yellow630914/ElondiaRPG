@@ -52,7 +52,7 @@ pnpm build             # 型別檢查 + 建置到 dist/
 - 長休時可以和夥伴或同旅館的旅客互動；升級的能力三選一可以重抽（次數可在設定調整）；事件與委託可能給技能報酬
 - 戰鬥中可以使用藥劑等道具；主動行動可以搭配法術或技能（花法術環或使用次數換檢定加值）；委託板每天更新
 - 每則日誌顯示 AI 呼叫用掉的 token（輸入／輸出），日誌上方有本局總計
-- 自動存檔在瀏覽器，可匯出 / 匯入
+- 存讀檔：多個存檔欄位、快速存檔／讀檔（F8 或 Ctrl+S／F9）、長休與抵達目的地時自動存檔（保留 3 份）、讀檔前自動備份；存檔可以匯出成檔案或匯入，目前進度也一直自動存在瀏覽器
 
 ## 文件與資料
 
@@ -64,6 +64,7 @@ pnpm build             # 型別檢查 + 建置到 dist/
 | [`docs/RELATIONSHIP_MEMORY.md`](docs/RELATIONSHIP_MEMORY.md) | 人際關係與共同記憶系統、主動行動（擲骰後由 AI 判定並寫出結果） |
 | [`docs/COMPANIONS.md`](docs/COMPANIONS.md) | 報酬模板、新增夥伴的五種方式、離隊規則、奴隸契約印記、短休與長休 |
 | [`docs/TRADE.md`](docs/TRADE.md) | 物品目錄、交易清單、價格、交涉與談判 |
+| [`docs/PROMPTS.md`](docs/PROMPTS.md) | 發給 AI 的提示詞結構（敘事、判定、生成），以及調整文風的建議 |
 | [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索（周邊 → 淺層 → 中層 → 深層），含實作狀態 |
 | [`docs/WORLD_NOTES.md`](docs/WORLD_NOTES.md) | 世界書與地圖之間的不一致與缺漏 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema） |

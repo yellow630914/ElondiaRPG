@@ -5,7 +5,7 @@ import { abilities, ATTR_IDS, attributeRules, classes, geography, isSettlement, 
 import { DEFAULT_BIRTHPLACE } from '@/engine/state'
 import { useGame } from '@/stores/game'
 
-const emit = defineEmits<{ settings: [] }>()
+const emit = defineEmits<{ settings: []; saves: [] }>()
 const game = useGame()
 
 const name = ref('')
@@ -55,15 +55,6 @@ function start() {
     appearance: appearance.value,
     background: background.value,
   })
-}
-
-function doImport() {
-  importError.value = ''
-  try {
-    game.importSave(importText.value)
-  } catch (e) {
-    importError.value = e instanceof Error ? e.message : String(e)
-  }
 }
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
@@ -142,18 +133,11 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
     </div>
     <div class="row">
       <button class="primary" @click="start">開始冒險</button>
+      <button @click="emit('saves')">📂 讀取存檔</button>
       <button @click="emit('settings')">AI 設定</button>
     </div>
   </section>
 
-  <details class="panel">
-    <summary>匯入存檔</summary>
-    <textarea v-model="importText" rows="5" placeholder="貼上匯出的存檔 JSON" style="width: 100%; margin-top: 8px" />
-    <div class="row">
-      <button :disabled="!importText" @click="doImport">匯入</button>
-      <span v-if="importError" class="small" style="color: var(--danger)">{{ importError }}</span>
-    </div>
-  </details>
 </template>
 
 <style scoped>

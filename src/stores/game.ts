@@ -24,6 +24,9 @@ import {
 import type { Prompt } from '@/narrator/prompt'
 import type { TokenUsage } from '@/narrator/providerInfo'
 import { useSettings } from './settings'
+import {
+  AUTO_SLOTS, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, type SaveData, type SlotMeta,
+} from './saves'
 
 const SAVE_KEY = 'elondia.save'
 const NARRATION_KEY = 'elondia.narrations'
@@ -78,6 +81,11 @@ export const useGame = defineStore('game', () => {
   const judging = ref(false)
   /** 行動備註：下一次委託或旅行時交給 AI 的玩家意圖 */
   const intent = ref('')
+  /** 存檔欄位列表（新的在前） */
+  const slots = ref<SlotMeta[]>([])
+  /** 畫面上方短暫顯示的提示（例如「已快速存檔」） */
+  const notice = ref<string | null>(null)
+  let noticeTimer: ReturnType<typeof setTimeout> | undefined
   const controllers = new Map<string, AbortController>()
 
   const pc = computed(() => (state.value ? player(state.value) : null))
@@ -98,6 +106,9 @@ export const useGame = defineStore('game', () => {
       save()
       const settings = useSettings()
       const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
+      // 自動存檔：長休、抵達目的地
+      if (report?.kind === 'rest' && report.outcome.tags?.includes('長休')) void autoSave('長休')
+      if (report?.kind === 'travel' && report.outcome.result === 'arrived') void autoSave('抵達')
       if (opts.narrate !== false && settings.aiNarration && settings.ready() && report && report.kind !== 'trade') {
         void narrate(report)
       }
@@ -129,6 +140,135 @@ export const useGame = defineStore('game', () => {
     Object.values(usage.value).reduce((t, e) => ({ input: t.input + e.input, output: t.output + e.output, calls: t.calls + e.calls }), { input: 0, output: 0, calls: 0 }),
   )
 
+  // ---- 存檔欄位 ----
+
+  function flash(text: string) {
+    notice.value = text
+    clearTimeout(noticeTimer)
+    noticeTimer = setTimeout(() => (notice.value = null), 2500)
+  }
+
+  function snapshot(): SaveData | null {
+    if (!state.value) return null
+    const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
+    return JSON.parse(JSON.stringify({ state: state.value, narrations: finished, usage: usage.value })) as SaveData
+  }
+
+  async function refreshSlots() {
+    try {
+      slots.value = (await slotStore().list()).sort((a, b) => b.savedAt - a.savedAt)
+    } catch (e) {
+      error.value = `讀取存檔列表失敗：${e instanceof Error ? e.message : String(e)}`
+    }
+  }
+
+  async function writeSlot(id: string, name: string, kind: SlotMeta['kind']) {
+    const data = snapshot()
+    if (!data) throw new Error('沒有進行中的遊戲')
+    await slotStore().put(slotMeta(id, name, kind, data), data)
+    await refreshSlots()
+  }
+
+  /** 手動存檔：給 id 時覆寫那個欄位 */
+  async function saveToSlot(name: string, id?: string) {
+    try {
+      const data = snapshot()
+      if (!data) return
+      const meta = slots.value.find((m) => m.id === id)
+      await writeSlot(id ?? `m-${Date.now().toString(36)}`, name.trim() || meta?.name || slotTitle(slotMeta('', '', 'manual', data)), 'manual')
+      flash('💾 已存檔')
+    } catch (e) {
+      error.value = `存檔失敗：${e instanceof Error ? e.message : String(e)}`
+    }
+  }
+
+  async function quickSave() {
+    try {
+      await writeSlot(QUICK_SLOT, '快速存檔', 'quick')
+      flash('⚡ 已快速存檔')
+    } catch (e) {
+      error.value = `快速存檔失敗：${e instanceof Error ? e.message : String(e)}`
+    }
+  }
+
+  /** 自動存檔：在長休、抵達目的地、讀檔前保存，循環使用 AUTO_SLOTS 個欄位 */
+  async function autoSave(reason: string) {
+    if (!state.value) return
+    let n = 0
+    try {
+      n = (Number(localStorage.getItem('elondia.autoIndex') ?? 0) + 1) % AUTO_SLOTS
+      localStorage.setItem('elondia.autoIndex', String(n))
+    } catch {
+      // 無痕模式等情況下照樣存在第 0 格
+    }
+    try {
+      await writeSlot(`auto-${n}`, `自動存檔（${reason}）`, 'auto')
+    } catch {
+      // 自動存檔失敗不打斷遊戲
+    }
+  }
+
+  function applySnapshot(data: SaveData) {
+    for (const c of controllers.values()) c.abort()
+    state.value = load(data.state)
+    narrations.value = (data.narrations ?? {}) as Record<string, NarrationState>
+    usage.value = (data.usage ?? {}) as Record<string, UsageEntry>
+    error.value = null
+    save()
+  }
+
+  /** 讀檔：先把目前的進度自動存一份，免得誤讀 */
+  async function loadSlot(id: string) {
+    try {
+      const data = await slotStore().get(id)
+      if (!data) throw new Error('找不到這個存檔')
+      if (state.value) await autoSave('讀檔前')
+      applySnapshot(data)
+      flash('📂 已讀取存檔')
+    } catch (e) {
+      error.value = `讀檔失敗：${e instanceof Error ? e.message : String(e)}`
+    }
+  }
+
+  async function quickLoad() {
+    if (!slots.value.length) await refreshSlots()
+    if (!slots.value.some((m) => m.id === QUICK_SLOT)) {
+      flash('還沒有快速存檔')
+      return
+    }
+    await loadSlot(QUICK_SLOT)
+  }
+
+  async function deleteSlot(id: string) {
+    await slotStore().remove(id)
+    await refreshSlots()
+  }
+
+  async function renameSlot(id: string, name: string) {
+    await slotStore().rename(id, name.trim())
+    await refreshSlots()
+  }
+
+  /** 匯出成檔案：回傳檔名與內容（目前的遊戲或某個欄位） */
+  async function exportFile(id?: string): Promise<{ name: string; text: string } | null> {
+    const data = id ? await slotStore().get(id) : snapshot()
+    if (!data) return null
+    return { name: saveFileName(slotMeta('', '', 'manual', data)), text: JSON.stringify(data, null, 2) }
+  }
+
+  /** 匯入檔案：存成一個新的手動存檔欄位（不會直接讀取） */
+  async function importFile(text: string, fileName = '匯入的存檔') {
+    try {
+      const data = parseSaveFile(text)
+      const meta = slotMeta(`m-${Date.now().toString(36)}`, fileName.replace(/\.json$/i, ''), 'manual', data)
+      await slotStore().put(meta, data)
+      await refreshSlots()
+      flash('📥 已匯入，可以在存檔列表讀取')
+    } catch (e) {
+      error.value = `匯入失敗：${e instanceof Error ? e.message : String(e)}`
+    }
+  }
+
   function hasReport(x: unknown): x is { report: Report } {
     return typeof x === 'object' && x !== null && 'report' in x && isReport((x as { report: unknown }).report)
   }
@@ -152,17 +292,7 @@ export const useGame = defineStore('game', () => {
     localStorage.removeItem(USAGE_KEY)
   }
 
-  function importSave(json: string) {
-    const data = JSON.parse(json) as { state?: GameState; narrations?: Record<string, NarrationState> }
-    if (!data.state?.party?.length) throw new Error('存檔格式不正確')
-    state.value = load(data.state)
-    narrations.value = data.narrations ?? {}
-    save()
-  }
 
-  function exportSave(): string {
-    return JSON.stringify({ state: state.value, narrations: narrations.value }, null, 2)
-  }
 
   // 世界書、繁簡轉換字典與各家 SDK 都很大，用到時才載入
   async function promptFor(report: Report): Promise<Prompt> {
@@ -323,8 +453,9 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, pc, judging, intent, usage, totalUsage,
-    start, reset, importSave, exportSave, promptFor, narrate, cancelNarration,
+    state, narrations, error, pc, judging, intent, usage, totalUsage, slots, notice,
+    refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
+    start, reset, promptFor, narrate, cancelNarration,
     perform, judge, flavorTavern, hire, flavorShop, startNegotiation,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),
