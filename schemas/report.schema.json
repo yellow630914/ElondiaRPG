@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "elondia/report.schema.json",
+  "title": "ElondiaRPG 事件報告",
+  "description": "遊戲引擎在一次行動、事件或戰鬥結束後輸出的結構化報告。引擎是數值的唯一來源；AI 只把報告寫成敘事，不得改動任何數值或結果。",
+  "type": "object",
+  "required": ["schema_version", "report_id", "kind", "time", "location", "party", "outcome", "changes"],
+  "properties": {
+    "schema_version": { "const": "0.1" },
+    "report_id": { "type": "string" },
+    "kind": { "enum": ["travel", "combat", "action", "event", "quest", "rest", "trade", "social"] },
+    "time": {
+      "type": "object",
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "$ref": "#/$defs/game_time" },
+        "end": { "$ref": "#/$defs/game_time" }
+      }
+    },
+    "location": {
+      "type": "object",
+      "required": ["at"],
+      "properties": {
+        "at": { "type": "string", "description": "geography.json 的 location id；旅行中為出發地" },
+        "to": { "type": "string" },
+        "region": { "type": "string" },
+        "scene": { "type": "string", "description": "更細的場景描述，例如「蛇溪洞窟第二層」" },
+        "weather": { "type": "string" }
+      }
+    },
+    "party": {
+      "type": "array",
+      "description": "玩家方角色在事件前後的狀態快照",
+      "items": { "$ref": "#/$defs/actor_state" }
+    },
+    "others": {
+      "type": "array",
+      "description": "敵人、NPC 等非玩家方角色",
+      "items": { "$ref": "#/$defs/actor_state" }
+    },
+    "quest": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "rank": { "enum": ["F", "E", "D", "C", "B", "A", "S"] },
+        "status": { "enum": ["accepted", "progress", "completed", "failed", "abandoned"] }
+      }
+    },
+    "timeline": {
+      "type": "array",
+      "description": "依時間排序的關鍵節拍。戰鬥時每回合或每個重要動作一筆；旅行時每天或每個遭遇一筆。",
+      "items": {
+        "type": "object",
+        "required": ["seq", "actor", "action", "result"],
+        "properties": {
+          "seq": { "type": "integer" },
+          "round": { "type": "integer" },
+          "time": { "$ref": "#/$defs/game_time" },
+          "actor": { "type": "string" },
+          "action": { "type": "string", "description": "動作或技能名稱" },
+          "target": { "type": "string" },
+          "roll": {
+            "type": "object",
+            "properties": {
+              "dice": { "type": "string", "examples": ["1d20+5"] },
+              "value": { "type": "integer" },
+              "dc": { "type": "integer" }
+            }
+          },
+          "result": { "enum": ["success", "critical", "fail", "fumble", "partial", "none"] },
+          "effects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": { "enum": ["damage", "heal", "status_add", "status_remove", "move", "item", "flag", "note"] },
+                "target": { "type": "string" },
+                "amount": { "type": "number" },
+                "element": { "type": "string" },
+                "status": { "type": "string" },
+                "text": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "required": ["result"],
+      "properties": {
+        "result": { "enum": ["victory", "defeat", "fled", "arrived", "interrupted", "success", "failure", "neutral"] },
+        "summary": { "type": "string", "description": "引擎產生的一句話結果，供 AI 對照" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "changes": {
+      "type": "object",
+      "description": "這次報告造成的所有狀態變化。AI 必須在敘事中如實反映，不能增減。",
+      "properties": {
+        "money_cc": { "type": "integer" },
+        "xp": { "type": "array", "items": { "$ref": "#/$defs/actor_delta" } },
+        "level_up": { "type": "array", "items": { "$ref": "#/$defs/actor_delta" } },
+        "skills_gained": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["actor", "skill", "quality", "source"],
+            "properties": {
+              "actor": { "type": "string" },
+              "skill": { "type": "string" },
+              "quality": { "enum": ["common", "uncommon", "rare", "epic", "legendary", "mythic"] },
+              "source": { "enum": ["level_up", "study", "insight", "bloodline", "race_change"] }
+            }
+          }
+        },
+        "items_gained": { "type": "array", "items": { "$ref": "#/$defs/item_delta" } },
+        "items_lost": { "type": "array", "items": { "$ref": "#/$defs/item_delta" } },
+        "affinity": {
+          "type": "array",
+          "description": "親密值變化。屬隱性規則，敘事中只能透過態度呈現，不可寫出數字。",
+          "items": {
+            "type": "object",
+            "required": ["npc", "delta", "after"],
+            "properties": {
+              "npc": { "type": "string" },
+              "delta": { "type": "integer" },
+              "after": { "type": "integer" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "reputation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": { "faction": { "type": "string" }, "delta": { "type": "integer" } }
+          }
+        },
+        "flags": { "type": "object", "additionalProperties": true }
+      }
+    },
+    "narration": {
+      "type": "object",
+      "description": "給 AI 的敘事指示",
+      "properties": {
+        "pov": { "enum": ["second_person", "third_person"], "default": "second_person" },
+        "length": { "enum": ["short", "medium", "long"], "default": "medium" },
+        "tone": { "type": "string" },
+        "focus": { "type": "array", "items": { "type": "string" } },
+        "player_intent": { "type": "string", "description": "玩家在 UI 上選擇的意圖或自由輸入的備註" }
+      }
+    },
+    "lore_keys": {
+      "type": "array",
+      "description": "用來從世界書挑選條目的關鍵字（地名、勢力、種族）。引擎自動填入，也可手動補充。",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "game_time": {
+      "type": "object",
+      "required": ["day"],
+      "description": "day 為自開局起算的第幾天；hour 0-23",
+      "properties": {
+        "day": { "type": "integer", "minimum": 1 },
+        "hour": { "type": "integer", "minimum": 0, "maximum": 23 },
+        "minute": { "type": "integer", "minimum": 0, "maximum": 59 }
+      }
+    },
+    "actor_state": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "race": { "type": "string" },
+        "class": { "type": "string" },
+        "level": { "type": "integer" },
+        "rank": { "type": "string" },
+        "hp": { "type": "array", "prefixItems": [{ "type": "integer" }, { "type": "integer" }, { "type": "integer" }], "description": "[事件前, 事件後, 上限]" },
+        "mp": { "type": "array", "prefixItems": [{ "type": "integer" }, { "type": "integer" }, { "type": "integer" }] },
+        "status": { "type": "array", "items": { "type": "string" } },
+        "equipment": { "type": "array", "items": { "type": "string" } },
+        "personality": { "type": "string", "description": "NPC 性格摘要，供 AI 演繹（角色扮演指導第三層）" },
+        "attitude": { "type": "string", "description": "引擎依實力差、立場、親密值算出的態度，AI 據此演繹" }
+      }
+    },
+    "actor_delta": {
+      "type": "object",
+      "required": ["actor"],
+      "properties": {
+        "actor": { "type": "string" },
+        "amount": { "type": "integer" },
+        "from": { "type": "integer" },
+        "to": { "type": "integer" }
+      }
+    },
+    "item_delta": {
+      "type": "object",
+      "required": ["name", "qty"],
+      "properties": {
+        "name": { "type": "string" },
+        "qty": { "type": "integer" },
+        "quality": { "type": "string" },
+        "owner": { "type": "string" }
+      }
+    }
+  }
+}

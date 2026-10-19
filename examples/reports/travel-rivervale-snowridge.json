@@ -1,0 +1,27 @@
+{
+  "schema_version": "0.1",
+  "report_id": "r-000043",
+  "kind": "travel",
+  "time": { "start": { "day": 16, "hour": 7 }, "end": { "day": 18, "hour": 17 } },
+  "location": { "at": "rivervale", "to": "snowridge", "region": "north", "weather": "第二天午後起風雪" },
+  "party": [
+    { "id": "pc", "name": "{{user}}", "race": "human", "class": "fighter", "level": 4, "rank": "E", "hp": [34, 31, 34], "status": ["輕微凍傷"] }
+  ],
+  "timeline": [
+    { "seq": 1, "time": { "day": 16, "hour": 7 }, "actor": "pc", "action": "出發・沿山道北上", "result": "none" },
+    { "seq": 2, "time": { "day": 17, "hour": 14 }, "actor": "pc", "action": "求生檢定・風雪中找避風處", "roll": { "dice": "1d20+2", "value": 11, "dc": 13 }, "result": "fail",
+      "effects": [{ "type": "damage", "target": "pc", "amount": 3, "element": "寒冷" }, { "type": "status_add", "target": "pc", "status": "輕微凍傷" }] },
+    { "seq": 3, "time": { "day": 17, "hour": 20 }, "actor": "pc", "action": "遭遇・矮人商隊", "result": "success",
+      "effects": [{ "type": "note", "text": "與銅鬚氏族商隊同營過夜，購買耐寒油膏" }, { "type": "item", "text": "耐寒油膏 x1" }] },
+    { "seq": 4, "time": { "day": 18, "hour": 17 }, "actor": "pc", "action": "抵達雪嵴哨站", "result": "success" }
+  ],
+  "outcome": { "result": "arrived", "summary": "冒風雪北上兩天半抵達雪嵴哨站，途中與矮人商隊結識。" },
+  "changes": {
+    "money_cc": -45,
+    "items_gained": [{ "name": "耐寒油膏", "qty": 1, "owner": "pc" }],
+    "items_lost": [{ "name": "乾糧", "qty": 3, "owner": "pc" }],
+    "reputation": [{ "faction": "dwarf_clans", "delta": 1 }]
+  },
+  "narration": { "pov": "second_person", "length": "short", "tone": "冷冽、旅途感" },
+  "lore_keys": ["河谷鎮", "雪嵴哨站", "北境", "矮人", "銅鬚"]
+}

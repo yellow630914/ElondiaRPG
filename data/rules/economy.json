@@ -1,0 +1,60 @@
+{
+  "$comment": "經濟資料。所有金額以銅幣 (CC) 為最小單位儲存，避免浮點誤差。來源：世界書「價格參考-*」條目。此處只收錄遊戲核心迴圈會用到的部分，其餘商品價格請直接查世界書。",
+  "version": 1,
+  "currency": {
+    "base_unit": "CC",
+    "units": [
+      { "id": "CC", "name": "銅幣", "value": 1 },
+      { "id": "SC", "name": "銀幣", "value": 10 },
+      { "id": "GC", "name": "金幣", "value": 100 },
+      { "id": "PC", "name": "白金幣", "value": 1000 }
+    ]
+  },
+  "price_variance": {
+    "town_baseline": "普通城鎮物價",
+    "city_or_remote": 0.3,
+    "quest_reward": 0.5
+  },
+  "quest_rewards_cc": {
+    "$comment": "B/A/S 為團隊合計，且需帶領麾下勢力；耗時為世界書所述。",
+    "F": { "range": [30, 50], "party": "solo", "duration_days": [0, 1] },
+    "E": { "range": [30, 50], "party": "solo", "duration_days": [0, 1] },
+    "D_solo": { "range": [80, 160], "party": "solo", "duration_days": [0, 1] },
+    "C_solo": { "range": [80, 160], "party": "solo", "duration_days": [0, 1] },
+    "C_team": { "range": [720, 1420], "party": "team_3plus", "duration_days": [2, 4] },
+    "B": { "range": [5400, 10800], "party": "team_3plus", "duration_days": [7, 14] },
+    "A": { "range": [80000, 160000], "party": "team_3plus", "duration_days": [30, 30] },
+    "S": { "range": [4000000, 5000000], "party": "leader", "duration_days": [90, 180], "alt_reward": "爵位/領地" }
+  },
+  "lodging_cc_per_night": {
+    "dormitory": [3, 4],
+    "single_room": [10, 20],
+    "single_room_hot_water": [10, 30],
+    "suite": [60, 100],
+    "noble_suite": [100, 300]
+  },
+  "meals_cc": {
+    "black_bread": 1,
+    "ale": 3,
+    "stew_soup": 4,
+    "tavern_stew_set": 10,
+    "restaurant": [20, 30],
+    "noble_restaurant": [60, 80]
+  },
+  "travel_cc": {
+    "carriage_neighbor_city": [100, 200],
+    "carriage_cross_kingdom": [500, 800],
+    "flying_mount_short": [100, 200],
+    "teleport_circle": [500, 800]
+  },
+  "services_cc": {
+    "doctor": 20,
+    "weapon_sharpen": 10,
+    "armor_patch": 15,
+    "enchanted_weapon_care": 20,
+    "identify_common": 30,
+    "identify_magic": 100,
+    "tavern_rumor": [50, 200],
+    "mercenary_tier2_per_day": [60, 100]
+  }
+}

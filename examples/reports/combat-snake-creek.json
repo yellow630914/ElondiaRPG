@@ -1,0 +1,39 @@
+{
+  "schema_version": "0.1",
+  "report_id": "r-000042",
+  "kind": "combat",
+  "time": { "start": { "day": 14, "hour": 15, "minute": 20 }, "end": { "day": 14, "hour": 15, "minute": 31 } },
+  "location": { "at": "snake_creek", "region": "central", "scene": "蛇溪洞窟・第一層的積水溶洞", "weather": "洞內潮濕、毒霧稀薄" },
+  "party": [
+    { "id": "pc", "name": "{{user}}", "race": "human", "class": "fighter", "level": 4, "rank": "E", "hp": [34, 19, 34], "status": ["輕度中毒"], "equipment": ["鋼製長劍", "硬皮甲"] },
+    { "id": "npc_lina", "name": "莉娜", "race": "catfolk", "class": "ranger", "level": 3, "rank": "E", "hp": [22, 22, 22], "status": [], "personality": "沙痕部落嚮導，嘴硬心軟，怕水", "attitude": "對等 / 友好" }
+  ],
+  "others": [
+    { "id": "e1", "name": "溪蛇魔", "level": 3, "hp": [26, 0, 26], "status": ["死亡"] },
+    { "id": "e2", "name": "幼年溪蛇魔", "level": 1, "hp": [10, 4, 10], "status": ["逃走"] }
+  ],
+  "quest": { "id": "q-guild-0107", "title": "清除蛇溪洞窟入口的蛇魔", "rank": "E", "status": "completed" },
+  "timeline": [
+    { "seq": 1, "round": 1, "actor": "e1", "action": "伏擊・毒牙", "target": "pc", "roll": { "dice": "1d20+4", "value": 17, "dc": 14 }, "result": "success",
+      "effects": [{ "type": "damage", "target": "pc", "amount": 9, "element": "毒" }, { "type": "status_add", "target": "pc", "status": "輕度中毒" }] },
+    { "seq": 2, "round": 1, "actor": "npc_lina", "action": "連射", "target": "e2", "roll": { "dice": "1d20+5", "value": 15, "dc": 12 }, "result": "success",
+      "effects": [{ "type": "damage", "target": "e2", "amount": 6 }] },
+    { "seq": 3, "round": 1, "actor": "pc", "action": "二連斬", "target": "e1", "roll": { "dice": "1d20+6", "value": 26, "dc": 13 }, "result": "critical",
+      "effects": [{ "type": "damage", "target": "e1", "amount": 18 }] },
+    { "seq": 4, "round": 2, "actor": "e1", "action": "纏繞", "target": "pc", "roll": { "dice": "1d20+4", "value": 9, "dc": 14 }, "result": "fail", "effects": [] },
+    { "seq": 5, "round": 2, "actor": "pc", "action": "斬擊", "target": "e1", "roll": { "dice": "1d20+6", "value": 18, "dc": 13 }, "result": "success",
+      "effects": [{ "type": "damage", "target": "e1", "amount": 8 }, { "type": "note", "text": "溪蛇魔倒下" }] },
+    { "seq": 6, "round": 2, "actor": "e2", "action": "逃竄", "result": "success", "effects": [{ "type": "move", "target": "e2", "text": "鑽入深處水道" }] },
+    { "seq": 7, "round": 3, "actor": "pc", "action": "毒素侵蝕", "result": "none", "effects": [{ "type": "damage", "target": "pc", "amount": 6, "element": "毒" }] }
+  ],
+  "outcome": { "result": "victory", "summary": "擊殺溪蛇魔，幼體逃入深處；主角中毒受傷。", "tags": ["伏擊", "爆擊", "敵人逃走"] },
+  "changes": {
+    "money_cc": 40,
+    "xp": [{ "actor": "pc", "amount": 120 }, { "actor": "npc_lina", "amount": 120 }],
+    "items_gained": [{ "name": "溪蛇魔毒囊", "qty": 1, "quality": "common", "owner": "pc" }],
+    "affinity": [{ "npc": "npc_lina", "delta": 3, "after": 27, "reason": "主角正面擋下伏擊" }],
+    "flags": { "snake_creek_hatchling_escaped": true }
+  },
+  "narration": { "pov": "second_person", "length": "medium", "focus": ["伏擊的緊張感", "莉娜對主角受傷的反應"], "player_intent": "優先保護莉娜" },
+  "lore_keys": ["蛇溪洞窟", "阿爾貝納", "貓魅族", "沙痕部落"]
+}

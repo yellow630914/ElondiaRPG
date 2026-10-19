@@ -1,0 +1,112 @@
+{
+  "$comment": "成長相關規則。來源：世界書條目「力量體系等級規則」「等級成長規則」「冒險者公會等級制度」「技能規則」「技能獲取」「職業體系規則」。",
+  "version": 1,
+  "level": { "min": 1, "max": 20 },
+  "life_tiers": [
+    { "tier": 1, "levels": [1, 4], "max_skill_quality": "common" },
+    { "tier": 2, "levels": [5, 8], "max_skill_quality": "uncommon" },
+    { "tier": 3, "levels": [9, 12], "max_skill_quality": "rare" },
+    { "tier": 4, "levels": [13, 16], "max_skill_quality": "epic" },
+    { "tier": 5, "levels": [17, 20], "max_skill_quality": "legendary" }
+  ],
+  "skill_qualities": [
+    { "id": "common", "name": "普通", "example": "初級劍術掌握" },
+    { "id": "uncommon", "name": "優良", "example": "二連斬" },
+    { "id": "rare", "name": "稀有", "example": "穿甲箭" },
+    { "id": "epic", "name": "史詩", "example": "神聖庇護" },
+    { "id": "legendary", "name": "傳說", "example": "時間暫停" },
+    { "id": "mythic", "name": "神話", "example": "天國復生" }
+  ],
+  "skill_sources": [
+    { "id": "level_up", "name": "升級", "tier_capped": true, "note": "提供三個選項三選一" },
+    { "id": "study", "name": "學習", "tier_capped": true },
+    { "id": "insight", "name": "領悟", "tier_capped": true, "note": "重大戰鬥或生死危機後觸發" },
+    { "id": "bloodline", "name": "血脈覺醒", "tier_capped": false },
+    { "id": "race_change", "name": "種族轉換", "tier_capped": false }
+  ],
+  "growth_stages": [
+    {
+      "levels": [1, 4], "name": "新手期",
+      "magic_circle": [1, 2], "martial": "初窺門徑", "faith": "蒙受恩賜",
+      "level_up_requirement": "大量 F、E 級任務"
+    },
+    {
+      "levels": [5, 9], "name": "進階期",
+      "magic_circle": [3, 4], "martial": "小有所成", "faith": "微光信徒",
+      "level_up_requirement": "數個 D、C 級任務，並通過一次晉階試煉"
+    },
+    {
+      "levels": [10, 14], "name": "精英期",
+      "magic_circle": [5, 6], "martial": "爐火純青", "faith": "虔誠使徒",
+      "level_up_requirement": "以 B、A 級任務為主，能帶隊執行 A 級任務"
+    },
+    {
+      "levels": [15, 19], "name": "大師期",
+      "magic_circle": [7, 8], "martial": "登峰造極", "faith": "神之選民",
+      "level_up_requirement": "參與解決王國級 S 級災難事件"
+    },
+    {
+      "levels": [20, 20], "name": "傳奇",
+      "magic_circle": [9, 9], "martial": "超凡入聖", "faith": "行走於世的神眷者",
+      "level_up_requirement": "史詩級偉業"
+    }
+  ],
+  "guild_ranks": [
+    { "rank": "F", "levels": [1, 2], "desc": "實習級，送貨、偵查等入門任務" },
+    { "rank": "E", "levels": [3, 4], "desc": "新手級，需團隊協作或導師指導" },
+    { "rank": "D", "levels": [5, 6], "desc": "普通級，公會主力" },
+    { "rank": "C", "levels": [7, 8], "desc": "中堅級，能獨當一面" },
+    { "rank": "B", "levels": [9, 10], "desc": "資深級，團隊核心" },
+    { "rank": "A", "levels": [11, 12], "desc": "精英級，能應對區域性危機" },
+    { "rank": "S", "levels": [13, 14], "desc": "傳奇級，影響國家或大陸命運" }
+  ],
+  "guild_rules": {
+    "accept_quest": "只能接取同級或更低等級任務；組隊時可接高一級任務",
+    "promotion": "完成同級或更高等級任務達一定數量，並獲公會高層認可",
+    "penalties": ["罰款", "降級", "開除"]
+  },
+  "classes": [
+    { "id": "cleric", "name": "牧師", "power": ["faith"] },
+    { "id": "fighter", "name": "戰士", "power": ["martial"] },
+    { "id": "rogue", "name": "遊蕩者", "power": ["martial"] },
+    { "id": "paladin", "name": "聖騎士", "power": ["faith", "martial"] },
+    { "id": "wizard", "name": "法師", "power": ["magic"] },
+    { "id": "bard", "name": "吟遊詩人", "power": ["magic", "martial"] },
+    { "id": "ranger", "name": "遊俠", "power": ["martial"] },
+    { "id": "barbarian", "name": "野蠻人", "power": ["martial"] },
+    { "id": "monk", "name": "武僧", "power": ["martial"] },
+    { "id": "druid", "name": "德魯伊", "power": ["magic"] }
+  ],
+  "races": [
+    { "id": "human", "name": "人類", "home": "central" },
+    { "id": "elf", "name": "精靈", "home": "forest" },
+    { "id": "dwarf", "name": "矮人", "home": "north" },
+    { "id": "demon", "name": "魔族", "home": "south" },
+    { "id": "catfolk", "name": "貓魅族", "home": "west" },
+    { "id": "yulin", "name": "玉璘族", "home": "east_sea" }
+  ],
+  "affinity": {
+    "$comment": "親密值；世界書規定為隱性數值，角色無法感知，只體現在態度上。",
+    "min": -100, "max": 100, "initial": 0,
+    "stages": [
+      { "range": [-100, -81], "name": "絕對厭惡/仇恨" },
+      { "range": [-80, -61], "name": "深切反感/敵意" },
+      { "range": [-60, -41], "name": "抵觸/不悅" },
+      { "range": [-40, -21], "name": "冷淡/疏遠" },
+      { "range": [-20, -1], "name": "漠然/輕微不適" },
+      { "range": [0, 19], "name": "普通/中立" },
+      { "range": [20, 39], "name": "友好/好感" },
+      { "range": [40, 59], "name": "親近/信任" },
+      { "range": [60, 79], "name": "深厚情感/依賴" },
+      { "range": [80, 100], "name": "愛慕/忠誠" }
+    ]
+  },
+  "power_gap_attitude": {
+    "$comment": "角色扮演指導第一層：差值 = 觀察者生命層級 - 目標生命層級（整數）。世界書另有「警戒」「審視」兩檔只對應小數差值，若改用等級/4 之類的小數境界值才會用到。",
+    "by_diff": {
+      "-3": "畏服", "-2": "敬畏", "-1": "戒備", "0": "對等",
+      "1": "俯瞰", "2": "威壓", "3": "漠然"
+    },
+    "clamp": [-3, 3]
+  }
+}
