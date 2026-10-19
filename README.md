@@ -45,6 +45,7 @@ pnpm build             # 型別檢查 + 建置到 dist/
 |---|---|
 | [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 遊戲設計：架構、走格子、旅行、城鎮、AI 敘事管線、待決定事項 |
 | [`docs/COMBAT_SYSTEM.md`](docs/COMBAT_SYSTEM.md) | 戰鬥系統：屬性、三資源、命中與迴避、幸運一擊、傷害屬性、BUFF、各職業能力清單 |
+| [`docs/QUEST_EVENT_DESIGN.md`](docs/QUEST_EVENT_DESIGN.md) | 任務／事件生成系統與 AI 權責劃分（提案） |
 | [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索（周邊 → 淺層 → 中層 → 深層），含實作狀態 |
 | [`docs/WORLD_NOTES.md`](docs/WORLD_NOTES.md) | 世界書與地圖之間的不一致與缺漏 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema） |
