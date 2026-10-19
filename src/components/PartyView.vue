@@ -94,7 +94,7 @@ function affinityText(m: Character): string {
   <div class="grid">
     <section v-for="m in s.party" :key="m.id" class="panel member">
       <div class="row" style="justify-content: space-between">
-        <h2>{{ m.name }}</h2>
+        <h2>{{ m.isPlayer ? "⭐" : "🛡️" }} {{ m.name }}</h2>
         <span class="tag">{{ guildRankFor(m.level) }} 級</span>
       </div>
       <div class="small muted">
@@ -196,8 +196,8 @@ function affinityText(m: Character): string {
   </div>
 
   <section v-if="leader" class="panel">
-    <h2>{{ leader.name }}的隊伍</h2>
-    <p v-if="bound" class="small muted">你是{{ leader.name }}的奴隸，不能自行離隊；只能在「冒險」頁的主動行動中談判或逃離。</p>
+    <h2>🚩 {{ leader.name }}的隊伍</h2>
+    <p v-if="bound" class="small muted">你是{{ leader.name }}的奴隸，不能自行離隊；只能在左側的「主動行動」中談判或逃離。</p>
     <template v-else>
       <p class="small muted">你是這支隊伍的隊員。離隊會在下次休息（短休或長休）時進行：正式道別比較體面；偷偷離開要過靈巧檢定，被發現會很尷尬。</p>
       <div class="row">
@@ -209,7 +209,7 @@ function affinityText(m: Character): string {
   </section>
 
   <section class="panel">
-    <h2>行囊</h2>
+    <h2>🎒 行囊</h2>
     <p v-if="s.inventory.length === 0" class="muted small">空空如也。</p>
     <ul class="plain small inventory">
       <li v-for="i in s.inventory" :key="i.name" class="row">

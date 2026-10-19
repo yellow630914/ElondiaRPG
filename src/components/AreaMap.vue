@@ -84,7 +84,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </template>
 
 <style scoped>
-.map-wrap { --cell: clamp(30px, 7vw, 46px); }
+.map-wrap { --cell: clamp(30px, 8vw, 40px); margin-top: 8px; }
 .map { display: grid; gap: 2px; width: max-content; max-width: 100%; overflow-x: auto; }
 .cell {
   width: var(--cell); height: var(--cell); padding: 0; border-radius: 4px;

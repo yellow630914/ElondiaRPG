@@ -75,7 +75,7 @@ const showBlack = ref(false)
     <p v-if="bound" class="small muted">身為奴隸，你只能在一旁看著主人和別人談話。</p>
 
     <template v-else>
-      <h4>候選冒險者</h4>
+      <h4>🧑‍🤝‍🧑 候選冒險者</h4>
       <p class="small muted">魅力（{{ mod(s.party[0]!.attrs.cha) >= 0 ? '+' : '' }}{{ mod(s.party[0]!.attrs.cha) }}）越高，來搭話的人越多、等級越高。出價低於要價時要談判；出價的影響最大，運氣好甚至能免費雇到人。</p>
       <p v-if="visible.length === 0" class="muted small">今天沒有人在等雇主。</p>
       <ul class="plain">
@@ -104,8 +104,8 @@ const showBlack = ref(false)
       </ul>
       <p v-if="partyFull" class="small muted">隊伍已滿（{{ combatRules.party_max }} 人）。</p>
 
-      <h4>加入別人的隊伍</h4>
-      <p v-if="leader" class="small muted">你正跟著{{ leader.name }}的隊伍。想離開的話，到「隊伍」頁選擇離隊方式，會在下次休息時進行。</p>
+      <h4>🚩 加入別人的隊伍</h4>
+      <p v-if="leader" class="small muted">你正跟著{{ leader.name }}的隊伍。想離開的話，到地圖下方的「👥 隊伍」選擇離隊方式，會在下次休息時進行。</p>
       <template v-else>
         <p class="small muted">在酒館等其他隊伍邀請（{{ companionRules.wait_party.hours }} 小時，機率約 {{ chance }}%，受魅力與等級影響）。對方可能付簽約金給你。</p>
         <button class="small" :disabled="partyFull" @click="game.waitForParty()">等待組隊</button>
@@ -123,7 +123,7 @@ const showBlack = ref(false)
       </template>
 
       <template v-if="inviteList.length">
-        <h4>邀請認識的人</h4>
+        <h4>✉️ 邀請認識的人</h4>
         <p class="small muted">需要親密度與魅力檢定。被婉拒後，要等下次長休才能再邀請。</p>
         <input v-model="inviteText" class="wide small" placeholder="邀請的方式（選填）" />
         <ul class="plain small">
@@ -134,7 +134,7 @@ const showBlack = ref(false)
         </ul>
       </template>
 
-      <h4>黑市</h4>
+      <h4>🕶️ 黑市</h4>
       <template v-if="blackKnown">
         <button class="small" @click="showBlack = !showBlack">{{ showBlack ? '離開黑市' : '前往黑市' }}</button>
         <MarketPanel v-if="showBlack" kind="black" />

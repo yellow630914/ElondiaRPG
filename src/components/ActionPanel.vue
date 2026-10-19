@@ -85,7 +85,7 @@ function doFreedom(kind: 'negotiate' | 'escape') {
   </section>
 
   <section v-else class="panel">
-    <h3>主動行動</h3>
+    <h3>🎲 主動行動</h3>
     <template v-if="contract && bound">
       <p class="small mark">
         頸上的{{ contract.def.name }}：{{ contract.def.mark }}<br />

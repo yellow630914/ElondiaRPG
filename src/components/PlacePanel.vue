@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import mapUrl from '../../assets/map/elondia-map.webp'
 import { geography, locationById } from '@/engine/data'
 import { canTravelHere, CELL_NAME, currentArea, currentCell, DUNGEON_LAYERS, questRunnableHere } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
@@ -11,12 +10,9 @@ import { MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
 import { useGame } from '@/stores/game'
-import ActionPanel from './ActionPanel.vue'
-import AreaMap from './AreaMap.vue'
 import MarketPanel from './MarketPanel.vue'
 import NegotiationPanel from './NegotiationPanel.vue'
 import ShopPanel from './ShopPanel.vue'
-import RestPanel from './RestPanel.vue'
 import TavernPanel from './TavernPanel.vue'
 
 const game = useGame()
@@ -24,8 +20,7 @@ const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
 const cell = computed(() => currentCell(s.value))
-const intent = ref('')
-const showWorldMap = ref(false)
+const intent = computed({ get: () => game.intent, set: (v: string) => (game.intent = v) })
 
 const AREA_NAME: Record<Quest['area'], string> = { town: '城內', outskirts: '近郊', dungeon: '冒險區域' }
 
@@ -87,34 +82,17 @@ function go(id: string) {
   intent.value = ''
 }
 
-const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYERS[area.value.layer]?.name : undefined))
+const CELL_ICON: Partial<Record<string, string>> = {
+  inn: '🛏️', guild: '🏛️', tavern: '🍺', shop: '🛒', temple: '⛪', gate: '🚪', exit: '🚪', safe: '🔥',
+  stairs_down: '⬇️', stairs_up: '⬆️', quest: '❗', floor: '🧭', link: '➡️',
+}
 </script>
 
 <template>
-  <section class="panel">
-    <div class="row" style="justify-content: space-between">
-      <div>
-        <h2>{{ area.name }}</h2>
-        <p class="muted small" style="margin: 0">
-          {{ here.name }}・{{ geography.regions.find((r) => r.id === here.region)?.name }}
-          <span v-if="layerName">・{{ layerName }}</span>
-          <span v-if="here.rank" class="tag">建議 {{ here.rank }} 級</span>
-        </p>
-      </div>
-      <button class="small" @click="showWorldMap = !showWorldMap">{{ showWorldMap ? '收起世界地圖' : '世界地圖' }}</button>
-    </div>
-    <img v-if="showWorldMap" :src="mapUrl" alt="埃隆迪亞大陸地圖" class="world-map" />
-  </section>
-
-  <div class="main">
-    <section class="panel">
-      <AreaMap />
-    </section>
-
-    <div>
+    <div class="place">
       <!-- 目前所在格子 -->
       <section class="panel">
-        <h3>{{ CELL_NAME[cell.kind] === '牆' ? '道路' : CELL_NAME[cell.kind] }}</h3>
+        <h3>{{ CELL_ICON[cell.kind] ?? '📍' }} {{ CELL_NAME[cell.kind] === '牆' ? '道路' : CELL_NAME[cell.kind] }}</h3>
 
         <template v-if="cell.kind === 'inn'">
           <p class="muted small">可以在這裡長休（見下方「休息」）。</p>
@@ -204,18 +182,9 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
       </section>
 
       <NegotiationPanel />
-      <ActionPanel />
-      <RestPanel />
-
-      <section class="panel">
-        <label class="intent small">
-          行動備註（選填，會交給 AI 作為玩家意圖）
-          <input v-model="intent" placeholder="例如：優先保護隊友、想打聽關於魔族的消息" />
-        </label>
-      </section>
 
       <section v-if="activeQuests.length" class="panel">
-        <h3>進行中的委託</h3>
+        <h3>📜 進行中的委託</h3>
         <ul class="plain small">
           <li v-for="q in activeQuests" :key="q.id">
             <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ q.progress }}/{{ q.goal }}）
@@ -230,11 +199,9 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
           </li>
         </ul>
       </section>
-    </div>
-  </div>
 
-  <section v-if="canTravelHere(s)" class="panel">
-    <h3>啟程旅行</h3>
+      <section v-if="canTravelHere(s)" class="panel">
+        <h3>🧳 啟程旅行</h3>
     <details v-for="g in destinations" :key="g.region.id" :open="g.region.id === here.region">
       <summary>{{ g.region.name }}</summary>
       <ul class="plain">
@@ -247,18 +214,13 @@ const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYER
           <button class="small" @click="go(d.id)">前往</button>
         </li>
       </ul>
-    </details>
-  </section>
+        </details>
+      </section>
+    </div>
 </template>
 
 <style scoped>
 .tavern-trade { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 6px; }
-.world-map { width: 100%; border-radius: var(--radius); margin: 8px 0; }
-.main { display: grid; grid-template-columns: auto minmax(280px, 1fr); gap: 14px; align-items: start; }
-.intent { display: grid; gap: 4px; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
 details summary { cursor: pointer; padding: 4px 0; color: var(--accent-2); }
-@media (max-width: 860px) {
-  .main { grid-template-columns: 1fr; }
-}
 </style>

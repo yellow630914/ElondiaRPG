@@ -148,7 +148,7 @@
 
 ### 5.1 AI 服務（已實作）
 
-玩家在「設定」頁自行輸入 API key，key 只存在瀏覽器的 localStorage，請求直接從瀏覽器送出（`src/narrator/providers.ts`）。支援四種格式：
+玩家在「設定」視窗自行輸入 API key，key 只存在瀏覽器的 localStorage，請求直接從瀏覽器送出（`src/narrator/providers.ts`）。支援四種格式：
 
 | 格式 | SDK | 備註 |
 |---|---|---|

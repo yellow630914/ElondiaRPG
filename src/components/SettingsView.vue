@@ -45,7 +45,7 @@ function doReset() {
 
 <template>
   <section class="panel">
-    <h2>AI 敘事服務</h2>
+    <h2>🤖 AI 服務</h2>
     <p class="small muted">
       API key 只會存在這個瀏覽器的 localStorage，請求直接從瀏覽器送往你選擇的服務。請勿在共用電腦上保存 key。
     </p>
@@ -99,7 +99,7 @@ function doReset() {
   </section>
 
   <section class="panel">
-    <h2>敘事選項</h2>
+    <h2>✨ 敘事與判定</h2>
     <div class="form">
       <label class="check"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述</label>
       <p class="small muted">
@@ -130,7 +130,7 @@ function doReset() {
   </section>
 
   <section v-if="game.state" class="panel">
-    <h2>存檔</h2>
+    <h2>💾 存檔</h2>
     <p class="small muted">遊戲會自動存在瀏覽器中。匯出的 JSON 可以在其他瀏覽器的開始畫面匯入。</p>
     <div class="row">
       <button @click="doExport">匯出存檔</button>

@@ -64,6 +64,8 @@ export const useGame = defineStore('game', () => {
   const error = ref<string | null>(null)
   /** AI 正在判定主動行動 */
   const judging = ref(false)
+  /** 行動備註：下一次委託或旅行時交給 AI 的玩家意圖 */
+  const intent = ref('')
   const controllers = new Map<string, AbortController>()
 
   const pc = computed(() => (state.value ? player(state.value) : null))
@@ -286,7 +288,7 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, pc, judging,
+    state, narrations, error, pc, judging, intent,
     start, reset, importSave, exportSave, promptFor, narrate, cancelNarration,
     perform, judge, flavorTavern, hire, flavorShop, startNegotiation,
     // 商店、談判、行囊

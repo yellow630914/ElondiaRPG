@@ -94,7 +94,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
 <template>
   <div class="layout">
     <section class="panel">
-      <h2>人際關係</h2>
+      <h2>💞 人際關係</h2>
       <p class="small muted">主角認識的角色。親密度由遊戲中的互動決定；外貌與關係描述可以自行編輯，會在相關事件中提供給 AI 參考。</p>
       <p v-if="rels.length === 0" class="muted small">還沒有認識任何人。到酒館招募夥伴吧。</p>
 
@@ -161,7 +161,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
     </section>
 
     <section class="panel">
-      <h2>冒險記憶</h2>
+      <h2>🗂️ 冒險記憶</h2>
       <p class="small muted">主角經歷過的事件。生成文本時，會依參與人、地點與時間找出相關的記憶交給 AI。釘選的記憶一定會被找到。</p>
 
       <div class="row filters small">

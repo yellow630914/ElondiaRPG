@@ -24,7 +24,7 @@ const leader = computed(() => leaderOf(s.value))
 
 <template>
   <section class="panel">
-    <h3>休息</h3>
+    <h3>🛏️ 休息</h3>
     <p class="small muted">
       短休 1 小時：花生命骰回復生命值。<span v-if="ambush">這裡有 {{ Math.round(ambush * 100) }}% 的機率被襲擊。</span>
     </p>
@@ -33,7 +33,7 @@ const leader = computed(() => leaderOf(s.value))
         {{ m.name }}：生命骰 d{{ hitDie(m) }} × {{ hitDiceLeft(m) }}/{{ m.level }}<span v-if="autoHitDice(m)" class="muted">（會用 {{ autoHitDice(m) }} 顆）</span>
       </li>
     </ul>
-    <button class="small" @click="game.shortRest()">短休</button>
+    <button class="small" @click="game.shortRest()">☕ 短休</button>
 
     <template v-if="place === 'inn'">
       <p class="small muted">長休（住到隔天早上）：生命值、法術環全滿，回復一半生命骰。24 小時內只能長休一次。</p>

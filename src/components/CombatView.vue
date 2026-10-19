@@ -109,13 +109,13 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 <template>
   <section class="panel">
     <div class="row" style="justify-content: space-between">
-      <h2>戰鬥・{{ combat.scene ?? '' }}</h2>
+      <h2>⚔️ 戰鬥・{{ combat.scene ?? '' }}</h2>
       <span class="muted">第 {{ combat.round }} 回合</span>
     </div>
 
     <div class="sides">
       <div>
-        <h3>隊伍</h3>
+        <h3>🛡️ 隊伍</h3>
         <div v-for="c in party" :key="c.id" class="fighter" :class="{ current: actor?.id === c.id, down: !isActive(c) }">
           <div class="row" style="justify-content: space-between">
             <strong>{{ c.name }}</strong>
@@ -138,7 +138,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
         </div>
       </div>
       <div>
-        <h3>敵人</h3>
+        <h3>👹 敵人</h3>
         <div
           v-for="c in foes"
           :key="c.id"
@@ -213,7 +213,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
   </section>
 
   <section class="panel">
-    <h3>戰鬥紀錄</h3>
+    <h3>📜 戰鬥紀錄</h3>
     <div ref="log" class="log small">
       <div v-for="t in combat.timeline" :key="t.seq">{{ describeEntry(t, names) }}</div>
       <div v-if="combat.timeline.length === 0" class="muted">戰鬥開始。</div>

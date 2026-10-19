@@ -66,7 +66,7 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
 <template>
   <div class="shop">
     <div class="row" style="justify-content: space-between">
-      <h4>{{ shopRules.types[type].name }}的交易</h4>
+      <h4>🪙 {{ shopRules.types[type].name }}的交易</h4>
       <span class="small muted">
         <template v-if="loading">AI 正在準備今天的商品…</template>
         <template v-else-if="shop?.source === 'ai'">今天的清單由 AI 設計</template>

@@ -13,7 +13,7 @@ const game = useGame()
 const settings = useSettings()
 
 const KIND_NAME: Record<Report['kind'], string> = {
-  travel: '旅行', combat: '戰鬥', action: '行動', event: '事件', quest: '委託', rest: '休息', trade: '交易', social: '交流',
+  travel: '🧳 旅行', combat: '⚔️ 戰鬥', action: '🎲 行動', event: '✨ 事件', quest: '📜 委託', rest: '🛏️ 休息', trade: '🪙 交易', social: '💬 交流',
 }
 
 const narration = computed(() => game.narrations[props.report.report_id])

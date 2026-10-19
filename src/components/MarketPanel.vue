@@ -38,7 +38,7 @@ function sellSelf() {
 
 <template>
   <div v-if="market" class="market">
-    <h4>{{ market.name }}</h4>
+    <h4>⛓️ {{ market.name }}</h4>
     <p class="small muted">
       {{ kind === 'black' ? '不公開的買賣，價格較低，也有精靈這類在公開市場買不到的人，但風險自負。' : '合法的奴隸市場。' }}
       買下的奴隸會被刻上契約印記，不會因為親密度低而離隊。可以殺價或用其他方式影響價格（每人每天一次）。
