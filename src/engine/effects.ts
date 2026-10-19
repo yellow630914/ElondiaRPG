@@ -9,6 +9,7 @@
 
 import { abilityChoices, abilityQuality, learnable, learnAbility } from './character'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
+import { changeHitDice, changeSlots } from './resources'
 import {
   addAffinity, addCondition, enslavePlayer, freePlayer, freeSlave, joinParty, leaveParty, partyRoom, pcOf, removeCondition, setHp,
 } from './party'
@@ -34,8 +35,12 @@ export type RewardEffect =
   | { type: 'relationship_text'; npc: string; text: string; apply?: boolean }
   | { type: 'memory'; summary: string; importance?: 1 | 2 | 3 }
   | { type: 'condition'; target: string; condition: string; add: boolean }
-  /** 生命值：amount 為加減的點數，ratio 為最大生命值的比例 */
+  /** 生命值：amount 為加減的點數，ratio 為最大生命值的比例（不會因此倒下，至少留 1 點） */
   | { type: 'hp'; target: string; amount?: number; ratio?: number }
+  /** 法術環：delta < 0 花掉（至少 circle 環），> 0 回復（不超過 circle 環） */
+  | { type: 'slot'; target: string; delta: number; circle?: number }
+  /** 生命骰：delta < 0 花掉，> 0 回復 */
+  | { type: 'hit_dice'; target: string; delta: number }
   | { type: 'enslave_player'; master: NpcRef; contract: string; members?: NpcRef[] }
   /** 解除契約：npc 為 pc 時是主角獲釋 */
   | { type: 'free'; npc: string }
@@ -53,7 +58,7 @@ export type RewardEffect =
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
-  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag', 'meet', 'ability',
+  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -159,6 +164,20 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         if (!who) break
         const delta = e.amount ?? Math.round((e.ratio ?? 0) * who.maxHp)
         setHp(state, who, who.hp + delta, report)
+        break
+      }
+      case 'slot': {
+        const who = memberOrPc(state, e.target)
+        if (!who || !e.delta) break
+        const n = changeSlots(who, e.delta, e.circle, report)
+        if (n) notes.push(`${who.name}${e.delta < 0 ? '用掉' : '回復'} ${n} 個法術環`)
+        break
+      }
+      case 'hit_dice': {
+        const who = memberOrPc(state, e.target)
+        if (!who || !e.delta) break
+        const n = changeHitDice(who, e.delta, report)
+        if (n) notes.push(`${who.name}${n > 0 ? '回復' : '用掉'} ${Math.abs(n)} 顆生命骰`)
         break
       }
       case 'enslave_player': {

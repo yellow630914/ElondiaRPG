@@ -4,7 +4,7 @@ import { abilityQuality, guildRankFor, proficiency, rerollAbilityChoices, snapsh
 import { startCombat, type CombatState } from './combat'
 import {
   abilityDef, attributeRules, combatRules, dungeonEncounters, economy, locationById, npcs, regionById,
-  townQuestsPerTown, townQuestTemplates, type NpcDef, type TownQuestTemplate,
+  townQuestsPerTown, townQuestsRefreshDays, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
 import { roll, withBonus } from './rng'
 import { isFugitive, joinParty, leaveParty } from './party'
@@ -175,8 +175,18 @@ export function canAcceptRank(state: GameState, rank: GuildRank): boolean {
  */
 export function guildQuests(state: GameState): Quest[] {
   if (locationById(state.location).type === 'dungeon') return []
-  const here = state.quests.filter((q) => q.giver === state.location && q.status !== 'completed')
-  if (here.some((q) => q.status === 'available')) return here
+  const boardKey = `guild_board:${state.location}`
+  const posted = Number(state.flags[boardKey] ?? 0)
+  if (posted && state.time.day - posted < townQuestsRefreshDays) {
+    return state.quests.filter((q) => q.giver === state.location && q.status !== 'completed')
+  }
+  // 委託板更新：沒人接的舊委託撤下（談過報酬的保留），談到一半的談判也一併結束
+  const expired = new Set(
+    state.quests.filter((q) => q.giver === state.location && q.status === 'available' && q.flags?.negotiated === undefined).map((q) => q.id),
+  )
+  state.quests = state.quests.filter((q) => !expired.has(q.id))
+  for (const n of state.negotiations ?? []) if (n.quest && expired.has(n.quest)) n.status = 'done'
+  state.flags[boardKey] = state.time.day
   withRng(state, (rng) => {
     const pool = Object.values(townQuestTemplates)
     for (let i = 0; i < townQuestsPerTown && pool.length > 0; i++) {

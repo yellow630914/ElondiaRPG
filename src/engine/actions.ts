@@ -25,7 +25,8 @@ import { addSuggestions } from './social'
 import { applyBargain } from './trade'
 import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
-import type { CheckInfo, GameState, GameTime, Report } from './types'
+import { useAbilityOutOfCombat, type AbilityUse } from './resources'
+import type { Character, CheckInfo, GameState, GameTime, Report, ResourceChange } from './types'
 
 export interface ActionInput {
   kind: ActionKind
@@ -35,6 +36,8 @@ export interface ActionInput {
   target?: string
   /** 雇傭談判的出價 */
   offer_cc?: number
+  /** 搭配使用的能力（例如用魅惑術幫談判）：花資源換檢定加值 */
+  use?: { member: string; ability: string }
 }
 
 export interface ActionPending extends ActionInput {
@@ -51,6 +54,10 @@ export interface ActionPending extends ActionInput {
   scene: string
   time: GameTime
   location: string
+  /** 使用能力花掉的資源（擲骰時就已扣除） */
+  spent?: ResourceChange[]
+  /** 使用的能力，給 AI 參考 */
+  usedAbility?: { member: string; name: string; desc: string; cost: string }
 }
 
 export interface RelationshipUpdate { id: string; to_player: string }
@@ -87,6 +94,15 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const pc = pcOf(state)
   const penalty = conditionPenalty(pc)
   const situational = [...setup.situational, ...(penalty ? [{ label: penalty > 0 ? '受罰' : '祝福', value: -penalty }] : [])].filter((x) => x.value !== 0)
+  // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
+  let used: AbilityUse | undefined
+  let user: Character | undefined
+  if (input.use) {
+    user = state.party.find((m) => m.id === input.use!.member)
+    if (!user) throw new Error('隊伍中沒有這位角色')
+    used = useAbilityOutOfCombat(user, input.use.ability)
+    situational.push({ label: `${user.name}的【${used.ability.name}】`, value: used.bonus })
+  }
   const natural = withRng(state, (rng) => roll(rng, '1d20').total)
   const pending: ActionPending = {
     ...input,
@@ -102,6 +118,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     scene: setup.scene,
     time: { ...state.time },
     location: state.location,
+    ...(used?.change ? { spent: [used.change] } : {}),
+    ...(used && user ? { usedAbility: { member: user.id, name: used.ability.name, desc: used.ability.desc, cost: used.cost } } : {}),
   }
   state.pendingAction = pending
   return pending
@@ -115,7 +133,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 const EFFECT_OF: Partial<Record<RewardEffect['type'], EffectKind>> = {
   affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
-  money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability',
+  money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp',
 }
 
 /**
@@ -202,6 +220,16 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
           effects.push({ type, name, qty: n })
           items++
         }
+        break
+      }
+      case 'hp': {
+        // 受傷或治療：每人最多失去 hp_loss_ratio、回復 hp_gain_ratio 的最大生命值，不會因此倒下
+        const target = String(x.target ?? 'pc')
+        const who = target === 'pc' ? pc : state.party.find((m) => m.id === target)
+        const amount = num(x.amount)
+        if (!who || Number.isNaN(amount) || effects.some((y) => y.type === 'hp' && y.target === who.id)) break
+        const a = clamp(Math.round(amount), -Math.ceil(who.maxHp * caps.hp_loss_ratio), Math.ceil(who.maxHp * caps.hp_gain_ratio))
+        if (a) effects.push({ type: 'hp', target: who.id, amount: a })
         break
       }
       case 'ability': {
@@ -297,11 +325,16 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     ...(judgment?.twist ? { twist: judgment.twist } : {}),
   }
   report.check = check
+  if (p.spent?.length) report.changes.resources = [...p.spent]
+  if (p.usedAbility) {
+    const who = state.party.find((m) => m.id === p.usedAbility!.member)?.name ?? ''
+    report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), `${who}使用了【${p.usedAbility.name}】`] }
+  }
   if (p.kind === 'rest_talk') {
     // 長休時的互動：把剛結束的長休一起交給 AI 描寫（長休本身不另外寫敘事）
     const restReport = [...state.reports].reverse().find((r) => r.kind === 'rest')
     if (restReport?.outcome.summary) {
-      report.narration = { ...report.narration, length: 'medium', focus: [`長休的經過：${restReport.outcome.summary}`, '入睡前或清晨與對象的互動'] }
+      report.narration = { ...report.narration, length: 'medium', focus: [`長休的經過：${restReport.outcome.summary}`, '入睡前或清晨與對象的互動', ...(report.narration?.focus ?? [])] }
     }
   }
   if (p.target && state.relationships?.[p.target]) {

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  abilityApCost, currentActor, isActive, multLabel, unusableReason, validTargets, type Combatant,
+  abilityApCost, combatItems, currentActor, isActive, itemTargets, multLabel, unusableReason, validTargets,
+  type Combatant,
 } from '@/engine/combat'
 import { luckyThreshold } from '@/engine/character'
 import { abilityDef, combatRules, damageTypeName, statusDef, type AbilityDef } from '@/engine/data'
@@ -21,12 +22,22 @@ const log = ref<HTMLElement | null>(null)
 const costs = combatRules.action_costs
 
 /** 已選擇、等待指定目標的行動 */
-const pending = ref<{ kind: 'attack' } | { kind: 'ability'; ability: AbilityDef } | null>(null)
+const pending = ref<{ kind: 'attack' } | { kind: 'ability'; ability: AbilityDef } | { kind: 'item'; item: string } | null>(null)
 
 const targets = computed(() => {
   if (!actor.value || !pending.value) return []
+  if (pending.value.kind === 'item') return itemTargets(combat.value, pending.value.item)
   return validTargets(combat.value, actor.value.id, pending.value.kind === 'ability' ? pending.value.ability : undefined)
 })
+
+// 道具：行囊裡可以在戰鬥中使用的東西
+const items = computed(() => combatItems(game.state!))
+function itemEffect(name: string): string {
+  const use = items.value.find((i) => i.name === name)?.def.use
+  if (use?.heal) return `回復 ${use.heal} HP`
+  if (use?.slot) return `回復 ${use.slot} 環以下的法術環`
+  return ''
+}
 
 const groups = computed(() => {
   const a = actor.value
@@ -64,7 +75,8 @@ function choose(a: AbilityDef) {
 function chooseTarget(id: string) {
   const p = pending.value
   if (!p) return
-  send(p.kind === 'attack' ? { type: 'attack', target: id } : { type: 'ability', ability: p.ability.id, target: id })
+  if (p.kind === 'item') send({ type: 'item', item: p.item, target: id })
+  else send(p.kind === 'attack' ? { type: 'attack', target: id } : { type: 'ability', ability: p.ability.id, target: id })
 }
 
 function finish() {
@@ -202,6 +214,22 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
               {{ a.name }}
               <span class="small muted">{{ costText(a) }}</span>
               <span v-if="reason(a)" class="small why">{{ reason(a) }}</span>
+            </button>
+          </div>
+        </div>
+        <div v-if="items.length" class="group">
+          <h4 class="small muted">🧪 道具（{{ costs.item }} AP）</h4>
+          <div class="row">
+            <button
+              v-for="i in items"
+              :key="i.name"
+              class="ability"
+              :disabled="actor.ap < costs.item"
+              :title="i.def.desc ?? ''"
+              @click="pending = { kind: 'item', item: i.name }"
+            >
+              {{ i.name }} ×{{ i.qty }}
+              <span class="small muted">{{ itemEffect(i.name) }}</span>
             </button>
           </div>
         </div>

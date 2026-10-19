@@ -154,7 +154,7 @@ export const combatRules = combatJson as unknown as {
   party_max: number
   hp: { base: number; per_level: number; min_per_level: number }
   ap: { base: number; every_levels: number; min: number; regen: number; regen_every_levels: number }
-  action_costs: { weapon_attack: number; defend: number; flee: number; spell_by_circle: number[] }
+  action_costs: { weapon_attack: number; defend: number; flee: number; item: number; spell_by_circle: number[] }
   defend: { evade: number }
   flee_dc: number
   hit: { evade_floor_base: number }
@@ -361,8 +361,9 @@ export interface TownQuestTemplate {
   /** 交付時的額外報酬（報酬模板，見 effects.ts） */
   rewards?: RewardEffect[]
 }
-const townQuestsData = townQuestsJson as unknown as { per_town: number; templates: TownQuestTemplate[] }
+const townQuestsData = townQuestsJson as unknown as { per_town: number; refresh_days: number; templates: TownQuestTemplate[] }
 export const townQuestsPerTown = townQuestsData.per_town
+export const townQuestsRefreshDays = townQuestsData.refresh_days
 export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.fromEntries(
   townQuestsData.templates.map((t) => [t.id, t]),
 )
@@ -439,13 +440,13 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
-export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability'
+export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
   caps: {
     affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
-    item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number
+    item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
   }
   kinds: Record<ActionKind, { name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[] }>
 }

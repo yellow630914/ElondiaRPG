@@ -178,7 +178,21 @@
             }
           }
         },
-        "master_share_cc": { "type": "integer", "description": "奴隸契約的收益歸屬：被主人拿走的金錢（已從 money_cc 扣除）。" }
+        "master_share_cc": { "type": "integer", "description": "奴隸契約的收益歸屬：被主人拿走的金錢（已從 money_cc 扣除）。" },
+        "resources": {
+          "type": "array",
+          "description": "法術環、生命骰、每次休息可用次數的增減（例如為了談判施放魅惑術而花掉的法術環）。",
+          "items": {
+            "type": "object",
+            "required": ["actor", "kind", "delta"],
+            "properties": {
+              "actor": { "type": "string" },
+              "kind": { "enum": ["slot", "hit_dice", "ability_use"] },
+              "delta": { "type": "integer" },
+              "detail": { "type": "string" }
+            }
+          }
+        }
       }
     },
     "check": {

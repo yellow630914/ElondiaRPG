@@ -18,6 +18,7 @@
     "weapon_attack": 2,
     "defend": 1,
     "flee": 2,
+    "item": 1,
     "spell_by_circle": [2, 2, 3, 3, 3, 4, 4, 4, 5]
   },
   "defend": { "evade": 3 },

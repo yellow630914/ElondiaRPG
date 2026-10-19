@@ -5,7 +5,8 @@ import { actionRules, ATTR_IDS, attrName, classEmoji, contractDef, raceEmoji, ty
 import { formatMoney } from '@/engine/money'
 import { npcRecord, presentHere } from '@/engine/npcs'
 import { isBound, isFugitive } from '@/engine/party'
-import { useGame } from '@/stores/game'
+import { parseUse, useGame } from '@/stores/game'
+import AbilityPicker from './AbilityPicker.vue'
 import { useSettings } from '@/stores/settings'
 import JudgeToggle from './JudgeToggle.vue'
 
@@ -46,9 +47,12 @@ watch(targets, (list) => {
   if (target.value && !list.some((t) => t.id === target.value)) target.value = ''
 })
 
+const use = ref('')
 function doFree() {
-  void game.perform({ kind: 'free', text: text.value, ...(target.value ? { target: target.value } : {}) })
+  const u = parseUse(use.value)
+  void game.perform({ kind: 'free', text: text.value, ...(target.value ? { target: target.value } : {}), ...(u ? { use: u } : {}) })
   text.value = ''
+  use.value = ''
 }
 
 // ---- 奴隸身分 ----
@@ -60,8 +64,10 @@ const contract = computed(() => {
 })
 const freedomText = ref('')
 function doFreedom(kind: 'negotiate' | 'escape') {
-  void game.perform({ kind, text: freedomText.value })
+  const u = parseUse(use.value)
+  void game.perform({ kind, text: freedomText.value, ...(u ? { use: u } : {}) })
   freedomText.value = ''
+  use.value = ''
 }
 </script>
 
@@ -105,6 +111,7 @@ function doFreedom(kind: 'negotiate' | 'escape') {
         <span class="muted">主人 {{ contract.masterName }}・服從懲罰 -{{ contract.obedience }}・{{ contract.def.side_effects.join('；') }}</span>
       </p>
       <textarea v-model="freedomText" rows="2" placeholder="描述你打算怎麼說服主人，或怎麼逃走" />
+      <AbilityPicker v-model="use" />
       <div class="row">
         <button class="small" @click="doFreedom('negotiate')">談判解除契約</button>
         <button class="small danger" @click="doFreedom('escape')">逃離主人</button>
@@ -124,6 +131,7 @@ function doFreedom(kind: 'negotiate' | 'escape') {
       </select>
     </div>
     <textarea v-model="text" rows="2" placeholder="例如：買一份甜點給莉娜，順便問她怕水的原因" />
+    <AbilityPicker v-model="use" />
     <button class="small primary" :disabled="!text.trim() || game.judging" @click="doFree">行動</button>
   </section>
 </template>

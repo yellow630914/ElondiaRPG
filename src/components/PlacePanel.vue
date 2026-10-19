@@ -122,6 +122,7 @@ const CELL_ICON: Partial<Record<string, string>> = {
 
         <template v-else-if="cell.kind === 'guild'">
           <ul class="plain">
+            <li class="muted small">📋 委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。</li>
             <li v-if="quests.length === 0" class="muted small">目前沒有委託。</li>
             <li v-for="q in quests" :key="q.id">
               <div><span class="tag">{{ q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>

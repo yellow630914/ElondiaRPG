@@ -332,7 +332,8 @@ export const useGame = defineStore('game', () => {
     sellItem: (type: ShopType, name: string, qty: number) => run((s) => trade.sellItem(s, type, name, qty)),
     bargain: (type: ShopType, dealId: string, text: string) => perform({ kind: 'bargain', target: trade.bargainTarget(type, dealId), text }),
     chooseOption: (id: string, option: string) => run((s) => negotiation.chooseOption(s, id, option)),
-    negotiateFreely: (id: string, text: string) => perform({ kind: 'negotiation', target: id, text }),
+    negotiateFreely: (id: string, text: string, use?: { member: string; ability: string }) =>
+      perform({ kind: 'negotiation', target: id, text, ...(use ? { use } : {}) }),
     abandonNegotiation: (id: string) => run((s) => negotiation.abandonNegotiation(s, id)),
     useItem: (name: string, member: string) => run((s) => inventory.useItem(s, name, member)),
     equipItem: (name: string, member: string) => run((s) => inventory.equipItem(s, name, member)),
@@ -394,3 +395,9 @@ export const useGame = defineStore('game', () => {
     deleteMemory: (id: string) => run((s) => social.deleteMemory(s, id)),
   }
 })
+
+/** AbilityPicker 的值（"成員|能力"）轉成主動行動的 use */
+export function parseUse(value: string): { member: string; ability: string } | undefined {
+  const [member, ability] = value.split('|')
+  return member && ability ? { member, ability } : undefined
+}

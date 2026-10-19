@@ -13,10 +13,10 @@ import {
   slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, combatRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies,
+  abilityDef, armorDef, combatRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
   locationById, regionById, statusDef, wildEncounters,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type EncounterGroup,
-  type LuckRoll, type Mods, type WeaponDef,
+  type ItemDef, type LuckRoll, type Mods, type WeaponDef,
 } from './data'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
@@ -80,6 +80,8 @@ export type CombatAction =
   | { type: 'defend' }
   | { type: 'flee' }
   | { type: 'end_turn' }
+  /** 使用行囊裡的道具（藥劑等），目標是隊友（可以救起倒下的隊友） */
+  | { type: 'item'; item: string; target: string }
 
 export interface CombatState {
   id: string
@@ -93,6 +95,8 @@ export interface CombatState {
   status: 'ongoing' | 'victory' | 'defeat' | 'fled'
   startHp: Record<string, number>
   affinity: Record<string, { delta: number; reasons: string[] }>
+  /** 戰鬥中用掉的道具：戰鬥結束時從行囊扣除（報告的 items_lost） */
+  itemsUsed?: Record<string, number>
   intent?: string
   /** 由委託觸發的戰鬥；獲勝時推進這個委託 */
   questId?: string
@@ -401,11 +405,13 @@ export function act(state: GameState, action: CombatAction): CombatState {
   if (!combat || combat.status !== 'ongoing') throw new Error('目前沒有進行中的戰鬥')
   const actor = currentActor(combat)
   if (!actor || actor.side !== 'party') throw new Error('現在不是隊員的回合')
+  if (action.type === 'item' && combatItems(state).every((i) => i.name !== action.item)) throw new Error(`沒有${action.item}了`)
   withRng(state, (rng) => {
     if (action.type === 'end_turn') {
       endTurn(combat, rng)
     } else {
-      perform(combat, actor, action, rng)
+      if (action.type === 'item') useItem(combat, rng, actor, action.item, action.target)
+      else perform(combat, actor, action, rng)
       checkEnd(combat)
       if (combat.status === 'ongoing' && (!isActive(actor) || !hasAnyAction(combat, actor) || action.type === 'flee')) {
         endTurn(combat, rng)
@@ -457,6 +463,48 @@ function perform(combat: CombatState, actor: Combatant, action: CombatAction, rn
       return
     }
   }
+}
+
+// ---- 道具 ----
+
+/** 戰鬥中可以用的道具（行囊數量扣掉這場已用掉的） */
+export function combatItems(state: GameState): { name: string; qty: number; def: ItemDef }[] {
+  const used = state.combat?.itemsUsed ?? {}
+  return state.inventory
+    .map((i) => ({ name: i.name, qty: i.qty - (used[i.name] ?? 0), def: itemDef(i.name)! }))
+    .filter((i) => i.qty > 0 && i.def?.use)
+}
+
+/** 道具的目標：治療類可以給倒下的隊友，回復法術環的要有用掉的法術環 */
+export function itemTargets(combat: CombatState, name: string): Combatant[] {
+  const use = itemDef(name)?.use
+  const allies = combat.combatants.filter((c) => c.side === 'party' && !c.fled)
+  if (use?.heal) return allies.filter((c) => c.hp < c.maxHp)
+  if (use?.slot) return allies.filter((c) => isActive(c) && restorableCircle(c, use.slot!) !== null)
+  return []
+}
+
+function restorableCircle(c: Combatant, maxCircle: number): number | null {
+  for (let i = Math.min(maxCircle, c.slotMax.length) - 1; i >= 0; i--) if ((c.slots[i] ?? 0) < (c.slotMax[i] ?? 0)) return i
+  return null
+}
+
+function useItem(combat: CombatState, rng: Rng, actor: Combatant, name: string, targetId: string) {
+  const cost = combatRules.action_costs.item
+  if (actor.ap < cost) throw new Error('行動點不足')
+  const use = itemDef(name)?.use
+  const target = itemTargets(combat, name).find((t) => t.id === targetId)
+  if (!use || !target) throw new Error('不能對這個目標使用')
+  actor.ap -= cost
+  const effects: Effect[] = []
+  if (use.heal) heal(target, roll(rng, use.heal).total, effects)
+  if (use.slot) {
+    const i = restorableCircle(target, use.slot)!
+    target.slots[i] = (target.slots[i] ?? 0) + 1
+    effects.push({ type: 'note', target: target.id, text: `回復一個 ${i + 1} 環法術環` })
+  }
+  combat.itemsUsed = { ...combat.itemsUsed, [name]: (combat.itemsUsed?.[name] ?? 0) + 1 }
+  push(combat, { actor: actor.id, action: `使用${name}`, target: target.id, result: 'success', effects })
 }
 
 function push(combat: CombatState, entry: Omit<TimelineEntry, 'seq' | 'round'>) {
@@ -1050,6 +1098,7 @@ export function finishCombat(state: GameState): Report {
       ...(money ? { money_cc: money } : {}),
       ...(share > 0 ? { xp: state.party.map((m) => ({ actor: m.id, amount: share })) } : {}),
       ...(items.length ? { items_gained: items } : {}),
+      ...(combat.itemsUsed ? { items_lost: Object.entries(combat.itemsUsed).map(([name, qty]) => ({ name, qty })) } : {}),
       ...(affinity.length ? { affinity } : {}),
       ...(victory && combat.cell ? { flags: { [`cleared:${combat.cell.area}:${combat.cell.x},${combat.cell.y}`]: true } } : {}),
     },

@@ -53,6 +53,11 @@ export function describeChanges(report: Report): string[] {
   for (const i of c.items_gained ?? []) lines.push(`獲得 ${i.name} ×${i.qty}`)
   for (const i of c.items_lost ?? []) lines.push(`消耗 ${i.name} ×${i.qty}`)
   for (const r of c.reputation ?? []) lines.push(`聲望（${r.faction}）${r.delta > 0 ? '+' : ''}${r.delta}`)
+  for (const r of c.resources ?? []) {
+    const who = names[r.actor] ?? r.actor
+    const what = { slot: '法術環', hit_dice: '生命骰', ability_use: '能力次數' }[r.kind]
+    lines.push(`${who} ${r.delta < 0 ? '用掉' : '回復'}${what}${Math.abs(r.delta) > 1 ? ` ×${Math.abs(r.delta)}` : ''}${r.detail ? `（${r.detail}）` : ''}`)
+  }
   if (c.master_share_cc) lines.push(`主人拿走 ${formatMoney(c.master_share_cc)}（收益歸屬）`)
   for (const h of c.hit_dice ?? []) {
     const who = names[h.actor] ?? h.actor

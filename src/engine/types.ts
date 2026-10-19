@@ -91,6 +91,15 @@ export interface Changes {
   hit_dice?: { actor: string; spent?: number; regained?: number; healed?: number }[]
   /** 奴隸契約「收益歸屬」被主人拿走的金錢 */
   master_share_cc?: number
+  /** 法術環、生命骰、每次休息可用次數的增減 */
+  resources?: ResourceChange[]
+}
+
+export interface ResourceChange {
+  actor: string
+  kind: 'slot' | 'hit_dice' | 'ability_use'
+  delta: number
+  detail?: string
 }
 
 export interface CompanionChange {
