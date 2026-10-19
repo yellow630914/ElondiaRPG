@@ -7,6 +7,7 @@ import { npcRecord, presentHere } from '@/engine/npcs'
 import { isBound, isFugitive } from '@/engine/party'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
+import JudgeToggle from './JudgeToggle.vue'
 
 const game = useGame()
 const settings = useSettings()
@@ -94,7 +95,10 @@ function doFreedom(kind: 'negotiate' | 'escape') {
   </section>
 
   <section v-else class="panel">
-    <h3>🎲 主動行動</h3>
+    <div class="row head">
+      <h3>🎲 主動行動</h3>
+      <JudgeToggle />
+    </div>
     <template v-if="contract && bound">
       <p class="small mark">
         頸上的{{ contract.def.name }}：{{ contract.def.mark }}<br />
@@ -126,6 +130,8 @@ function doFreedom(kind: 'negotiate' | 'escape') {
 
 <style scoped>
 .pending { border-color: var(--accent); }
+.head { justify-content: space-between; }
+.head h3 { margin: 0; }
 .dice { color: var(--accent); font-size: 1.2rem; }
 .totals { gap: 12px; }
 .totals .def { color: var(--accent); }

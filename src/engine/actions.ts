@@ -288,6 +288,13 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     ...(judgment?.twist ? { twist: judgment.twist } : {}),
   }
   report.check = check
+  if (p.kind === 'rest_talk') {
+    // 長休時的互動：把剛結束的長休一起交給 AI 描寫（長休本身不另外寫敘事）
+    const restReport = [...state.reports].reverse().find((r) => r.kind === 'rest')
+    if (restReport?.outcome.summary) {
+      report.narration = { ...report.narration, length: 'medium', focus: [`長休的經過：${restReport.outcome.summary}`, '入睡前或清晨與對象的互動'] }
+    }
+  }
   if (p.target && state.relationships?.[p.target]) {
     const rel = state.relationships[p.target]!
     if (!report.party.some((x) => x.id === rel.id)) report.others = [{ id: rel.id, name: rel.name }]

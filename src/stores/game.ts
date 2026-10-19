@@ -307,8 +307,10 @@ export const useGame = defineStore('game', () => {
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */
     longRest: async (place: 'inn' | 'safe', talk?: { text: string; target?: string }) => {
-      const report = run((s) => rest.longRest(s, place))
-      if (report && talk?.text.trim()) await perform({ kind: 'rest_talk', text: talk.text, ...(talk.target ? { target: talk.target } : {}) })
+      const withTalk = !!talk?.text.trim()
+      // 有互動時，長休本身不另外寫敘事：和互動合成一段（互動的報告會帶上長休的經過）
+      const report = run((s) => rest.longRest(s, place), { narrate: !withTalk })
+      if (report && withTalk) await perform({ kind: 'rest_talk', text: talk!.text, ...(talk!.target ? { target: talk!.target } : {}) })
       return report
     },
     buyRations: (qty: number) => run((s) => town.buyRations(s, qty)),

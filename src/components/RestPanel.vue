@@ -7,6 +7,7 @@ import { leaderOf } from '@/engine/party'
 import { autoHitDice, hitDiceLeft, hitDie, innCost, longRestBlocked } from '@/engine/rest'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
+import JudgeToggle from './JudgeToggle.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -61,11 +62,15 @@ async function doLongRest(where: 'inn' | 'safe') {
         長休時想做什麼？（選填，主動行動）
         <textarea v-model="talkText" rows="2" :placeholder="place === 'inn' ? '例如：睡前在旅店大廳和其他旅客聊天、陪莉娜看星星' : '例如：守夜時和隊友聊起各自的故鄉'" />
       </label>
+      <div class="row talk-row">
       <select v-model="talkTarget">
         <option value="">👥 全體夥伴</option>
         <option v-for="m in companions" :key="m.id" :value="m.id">{{ raceEmoji(m.race) }}{{ m.name }}{{ classEmoji(m.class) }}</option>
         <option v-if="place === 'inn'" value="guests">🏨 同旅館的旅客</option>
       </select>
+      <JudgeToggle />
+      </div>
+      <p class="muted">有寫互動時，長休和互動會合成一段經過。</p>
     </div>
 
     <p v-if="leaveMode && leader" class="small warn">下次休息時會{{ leaveMode === 'sneak' ? '偷偷離開' : '向' + leader.name + '正式道別並離開' }}隊伍。</p>
@@ -78,5 +83,7 @@ async function doLongRest(where: 'inn' | 'safe') {
 .talk { display: grid; gap: 4px; margin-top: 6px; }
 .talk label { display: grid; gap: 2px; }
 .talk textarea { width: 100%; }
+.talk p { margin: 0; }
+.talk-row { justify-content: space-between; }
 .warn { color: var(--danger); }
 </style>
