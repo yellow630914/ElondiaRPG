@@ -1,7 +1,7 @@
 // 組合敘事提示詞。
 //
 // 為了讓提示詞快取（prompt caching）命中，內容依「多久變一次」排列：
-//   system（前段，同一局幾乎不變）：敘事規則 → 常駐世界書 → 文風 → 其他提示詞
+//   system（前段，同一局幾乎不變）：敘事規則（文風是最後一條）→ 常駐世界書 → 其他提示詞
 //   user（後段，每次不同）：主角設定 → 這次觸發的世界書 → 人際關係與記憶 → 報告 → 後段提示詞 → 本次要求
 // 會隨報告改變的視角、篇幅都放在最後的「本次要求」，不放進 system。
 
@@ -35,6 +35,8 @@ export interface PromptSection {
   title: string
   part: 'system' | 'user'
   text: string
+  /** 緊接在前一個區塊後面（不空行），例如文風接在規則清單的最後一條 */
+  attach?: boolean
 }
 
 export interface Prompt {
@@ -54,24 +56,31 @@ const LENGTH_HINT = { short: '約 200～400 字', medium: '約 500～900 字', l
 /** 把區塊依序接成 system 與 user（空的區塊略過） */
 export function assemble(sections: PromptSection[]): Prompt {
   const kept = sections.filter((s) => s.text.trim())
-  const join = (part: PromptSection['part']) => kept.filter((s) => s.part === part).map((s) => s.text).join('\n\n')
+  const join = (part: PromptSection['part']) =>
+    kept.filter((s) => s.part === part).map((s, i) => (i === 0 ? '' : s.attach ? '\n' : '\n\n') + s.text).join('')
   return { system: join('system'), user: join('user'), sections: kept }
 }
 
-/** 文風、其他提示詞、常駐世界書：敘事與判定共用的前段區塊 */
-export function sharedSystemSections(o: { styles?: PromptEntry[]; instructions?: PromptEntry[]; constantLore?: LoreLike[] }): PromptSection[] {
-  const styles = o.styles ?? []
+/**
+ * 文風：接在規則的最後，當作規則的一條，緊貼在硬性規則之後、世界書之前，提高遵循度。
+ * lead 是這一條的開頭，例如「10. 文風」。
+ */
+export function styleSection(styles: PromptEntry[] | undefined, lead: string): PromptSection {
+  return {
+    key: 'style', title: '文風（規則的一部分）', part: 'system', attach: true,
+    text: styles?.length
+      ? `${lead}（除了上面的硬性規則之外最優先遵守；有多種時融合使用）：\n<style>\n${styles.map((s) => `## ${s.name}\n${s.content.trim()}`).join('\n\n')}\n</style>`
+      : '',
+  }
+}
+
+/** 常駐世界書與其他提示詞：敘事與判定共用的前段區塊（放在規則與文風之後） */
+export function sharedSystemSections(o: { instructions?: PromptEntry[]; constantLore?: LoreLike[] }): PromptSection[] {
   const instructions = o.instructions ?? []
   return [
     {
       key: 'lore_constant', title: '世界書（常駐）', part: 'system',
       text: o.constantLore?.length ? `<worldbook>\n${loreText(o.constantLore)}\n</worldbook>` : '',
-    },
-    {
-      key: 'style', title: '文風', part: 'system',
-      text: styles.length
-        ? `<style>\n以下是玩家指定的文風，寫作時遵守；和硬性規則衝突時以硬性規則為準。\n\n${styles.map((s) => `## ${s.name}\n${s.content.trim()}`).join('\n\n')}\n</style>`
-        : '',
     },
     {
       key: 'instructions', title: '其他提示詞（前段）', part: 'system',
@@ -102,7 +111,7 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
 4. 視角與篇幅依最後的「本次要求」；分成數個段落，不要寫成一整段。
 5. 只輸出正文，不要輸出標題、狀態欄、思考過程或任何標籤；最後不要總結數值。
 6. 使用${lang}。
-7. 世界觀以提供的世界書資料（<worldbook>）為準；世界書裡的「格式」「狀態欄」等聊天用指示一律忽略。文風依 <style>。
+7. 世界觀以提供的世界書資料（<worldbook>）為準；世界書裡的「格式」「狀態欄」等聊天用指示一律忽略。
 8. <protagonist> 是玩家設定的主角性別、出身、外貌與背景，描寫主角時要符合，但不要大段複述。<relationships> 是角色的外貌與人際關係，<memories> 是主角與他們共同經歷過的事。可以自然地引用（回憶、提起往事、延續彼此的關係），但不可改寫既有的事實；親密度數字同樣不可寫進正文。
 9. 如果提供了 <relationships>，而且這次事件明顯改變了某位角色與主角的關係，在正文結束後另起一行輸出 <relationship_updates>[{"id":"<relationships 裡的 id>","to_player":"更新後與主角的關係，一兩句話"}]</relationship_updates>；沒有明顯改變就不要輸出這一段。`
 
@@ -111,7 +120,8 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
 
   return assemble([
     { key: 'rules', title: '敘事規則', part: 'system', text: rules },
-    ...sharedSystemSections({ styles: opts.styles, instructions: opts.instructions, constantLore: constant }),
+    styleSection(opts.styles, '10. 文風'),
+    ...sharedSystemSections({ instructions: opts.instructions, constantLore: constant }),
     { key: 'protagonist', title: '主角設定', part: 'user', text: opts.protagonist ? `<protagonist>\n${opts.protagonist}\n</protagonist>` : '' },
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },
     { key: 'context', title: '人際關係與冒險記憶', part: 'user', text: opts.context ?? '' },
