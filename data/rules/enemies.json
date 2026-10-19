@@ -1,21 +1,75 @@
 {
-  "$comment": "敵人資料（提案，先涵蓋中央平原的冒險區域與道路）。habitats 為 geography.json 的地點 id，或 road / trail / wild 代表旅途遭遇。loot 的 chance 為 0-1。",
-  "version": 1,
+  "$comment": "敵人。attrs 五屬性；weapon 為普通攻擊（dice、type、attr）；evade 迴避修正、dr 物理減傷；resist / offense 為傷害倍率加減（-1 = 免疫、-0.5 = 抗性、+0.5 = 弱點，見 damage_types.json）；abilities 為可用技能（abilities.json 中 classes 含 monster 的項目）；ap 為行動點上限（每回合回復 2）。habitats 為旅途遭遇的路段類型或地點 id。encounters 依冒險區域與層別（outskirts 周邊 / shallow 淺層 / middle 中層 / deep 深層 / boss 層主）列出敵人組合，每組為 [敵人 id, 數量]。",
+  "version": 2,
   "enemies": [
-    { "id": "giant_rat", "name": "巨鼠", "level": 1, "hp": 7, "ac": 11, "attack": 3, "damage": "1d4", "xp": 25, "habitats": ["whisper_crypt", "snake_creek", "road"], "loot": [{ "item": "鼠皮", "chance": 0.5 }] },
-    { "id": "goblin", "name": "哥布林", "level": 1, "hp": 9, "ac": 13, "attack": 4, "damage": "1d6", "xp": 35, "habitats": ["snake_creek", "trail", "road"], "money_cc": [5, 20], "loot": [{ "item": "粗製短刀", "chance": 0.2 }] },
-    { "id": "bandit", "name": "盜賊", "level": 2, "hp": 14, "ac": 13, "attack": 4, "damage": "1d8", "xp": 50, "habitats": ["road", "trail", "snake_creek"], "money_cc": [10, 40] },
-    { "id": "creek_serpent", "name": "溪蛇魔", "level": 3, "hp": 26, "ac": 13, "attack": 5, "damage": "1d8", "xp": 120, "skills": ["venom_bite"], "habitats": ["snake_creek"], "loot": [{ "item": "溪蛇魔毒囊", "chance": 0.7 }] },
-    { "id": "serpent_hatchling", "name": "幼年溪蛇魔", "level": 1, "hp": 10, "ac": 12, "attack": 3, "damage": "1d4", "xp": 30, "skills": ["venom_bite"], "habitats": ["snake_creek"] },
-    { "id": "skeleton", "name": "骷髏士兵", "level": 2, "hp": 13, "ac": 13, "attack": 4, "damage": "1d6", "xp": 50, "habitats": ["whisper_crypt", "mist_abbey"], "loot": [{ "item": "古舊骨片", "chance": 0.4 }] },
-    { "id": "crypt_wight", "name": "墓穴屍妖", "level": 4, "hp": 32, "ac": 14, "attack": 5, "damage": "1d10", "xp": 180, "skills": ["bone_chill"], "habitats": ["whisper_crypt"], "money_cc": [50, 150], "loot": [{ "item": "帝國舊制徽章", "chance": 0.5 }] },
-    { "id": "mist_wraith", "name": "霧影靈體", "level": 5, "hp": 38, "ac": 14, "attack": 6, "damage": "2d6", "xp": 260, "skills": ["bone_chill"], "habitats": ["mist_abbey"], "loot": [{ "item": "霧影殘晶", "chance": 0.6 }] },
-    { "id": "wolf", "name": "灰狼", "level": 1, "hp": 11, "ac": 12, "attack": 4, "damage": "1d6", "xp": 35, "habitats": ["trail", "wild"], "loot": [{ "item": "狼皮", "chance": 0.6 }] }
+    { "id": "giant_rat", "name": "巨鼠", "level": 1, "attrs": { "str": 6, "dex": 15, "int": 2, "fai": 10, "cha": 4 }, "hp": 7, "ap": 3,
+      "weapon": { "dice": "1d4", "type": "piercing", "attr": "dex" }, "evade": 0, "dr": 0, "resist": { "poison": -0.25 },
+      "xp": 25, "habitats": ["road"], "loot": [{ "item": "鼠皮", "chance": 0.5 }] },
+    { "id": "goblin", "name": "哥布林", "level": 1, "attrs": { "str": 8, "dex": 14, "int": 10, "fai": 8, "cha": 8 }, "hp": 9, "ap": 3,
+      "weapon": { "dice": "1d6", "type": "slashing", "attr": "dex" }, "evade": 1, "dr": 0, "abilities": ["dirty_trick"],
+      "xp": 35, "habitats": ["trail", "road"], "money_cc": [5, 20], "loot": [{ "item": "粗製短刀", "chance": 0.2 }] },
+    { "id": "bandit", "name": "盜賊", "level": 2, "attrs": { "str": 12, "dex": 12, "int": 10, "fai": 10, "cha": 10 }, "hp": 14, "ap": 4,
+      "weapon": { "dice": "1d8", "type": "slashing", "attr": "str" }, "evade": 0, "dr": 1, "abilities": ["dirty_trick"],
+      "xp": 50, "habitats": ["road", "trail"], "money_cc": [10, 40] },
+    { "id": "wolf", "name": "灰狼", "level": 1, "attrs": { "str": 12, "dex": 15, "int": 3, "fai": 12, "cha": 6 }, "hp": 11, "ap": 4,
+      "weapon": { "dice": "1d6", "type": "piercing", "attr": "str" }, "evade": 1, "dr": 0, "abilities": ["wolf_trip"], "resist": { "cold": -0.25, "fire": 0.25 },
+      "xp": 35, "habitats": ["trail", "wild"], "loot": [{ "item": "狼皮", "chance": 0.6 }] },
+    { "id": "serpent_hatchling", "name": "幼年溪蛇魔", "level": 1, "attrs": { "str": 8, "dex": 14, "int": 2, "fai": 10, "cha": 4 }, "hp": 10, "ap": 3,
+      "weapon": { "dice": "1d4", "type": "piercing", "attr": "dex" }, "evade": 1, "dr": 0, "abilities": ["venom_bite"], "resist": { "poison": -1, "cold": 0.5 },
+      "xp": 30 },
+    { "id": "creek_serpent", "name": "溪蛇魔", "level": 3, "attrs": { "str": 14, "dex": 14, "int": 3, "fai": 12, "cha": 5 }, "hp": 26, "ap": 4,
+      "weapon": { "dice": "1d8", "type": "piercing", "attr": "str" }, "evade": 1, "dr": 1, "abilities": ["venom_bite"], "resist": { "poison": -1, "cold": 0.5 },
+      "xp": 120, "loot": [{ "item": "溪蛇魔毒囊", "chance": 0.7 }] },
+    { "id": "serpent_matriarch", "name": "溪蛇魔母", "level": 5, "attrs": { "str": 16, "dex": 14, "int": 4, "fai": 13, "cha": 8 }, "hp": 52, "ap": 5,
+      "weapon": { "dice": "2d6", "type": "piercing", "attr": "str" }, "evade": 1, "dr": 2, "abilities": ["venom_bite"], "resist": { "poison": -1, "cold": 0.5, "physical": -0.25 },
+      "xp": 400, "money_cc": [100, 300], "loot": [{ "item": "蛇魔母的鱗片", "chance": 1 }] },
+    { "id": "skeleton", "name": "骷髏士兵", "level": 2, "attrs": { "str": 10, "dex": 14, "int": 6, "fai": 8, "cha": 5 }, "hp": 13, "ap": 4,
+      "weapon": { "dice": "1d6", "type": "piercing", "attr": "dex" }, "evade": 0, "dr": 1,
+      "resist": { "piercing": -0.5, "slashing": -0.25, "bludgeoning": 0.5, "poison": -1, "radiant": 0.5 },
+      "xp": 50, "loot": [{ "item": "古舊骨片", "chance": 0.4 }] },
+    { "id": "crypt_wight", "name": "墓穴屍妖", "level": 4, "attrs": { "str": 15, "dex": 14, "int": 10, "fai": 13, "cha": 15 }, "hp": 32, "ap": 5,
+      "weapon": { "dice": "1d8", "type": "slashing", "attr": "str" }, "evade": 1, "dr": 2, "abilities": ["bone_chill"],
+      "resist": { "necrotic": -0.5, "poison": -1, "physical": -0.25, "radiant": 0.5 },
+      "xp": 180, "money_cc": [50, 150], "loot": [{ "item": "帝國舊制徽章", "chance": 0.5 }] },
+    { "id": "crypt_general", "name": "亡靈將軍", "level": 6, "attrs": { "str": 17, "dex": 12, "int": 12, "fai": 14, "cha": 16 }, "hp": 70, "ap": 5,
+      "weapon": { "dice": "2d8", "type": "slashing", "attr": "str" }, "evade": 0, "dr": 3, "abilities": ["bone_chill", "wraith_wail"],
+      "resist": { "necrotic": -1, "poison": -1, "physical": -0.25, "radiant": 0.5 },
+      "xp": 600, "money_cc": [200, 500], "loot": [{ "item": "千年將軍的佩劍", "chance": 1 }] },
+    { "id": "mist_wraith", "name": "霧影靈體", "level": 5, "attrs": { "str": 6, "dex": 16, "int": 12, "fai": 14, "cha": 15 }, "hp": 38, "ap": 5,
+      "weapon": { "dice": "2d6", "type": "necrotic", "attr": "dex" }, "evade": 2, "dr": 0, "abilities": ["bone_chill", "wraith_wail"],
+      "resist": { "physical": -0.5, "necrotic": -1, "poison": -1, "cold": -0.5, "radiant": 0.5 },
+      "xp": 260, "loot": [{ "item": "霧影殘晶", "chance": 0.6 }] },
+    { "id": "fallen_abbot", "name": "墮落院長", "level": 7, "attrs": { "str": 12, "dex": 12, "int": 14, "fai": 18, "cha": 14 }, "hp": 84, "ap": 6,
+      "weapon": { "dice": "2d6", "type": "necrotic", "attr": "fai" }, "evade": 1, "dr": 1, "abilities": ["bone_chill", "wraith_wail"],
+      "resist": { "necrotic": -1, "poison": -1, "radiant": 0.25 },
+      "xp": 900, "money_cc": [300, 800], "loot": [{ "item": "晨霧聖典殘頁", "chance": 1 }] }
   ],
   "encounters": {
-    "$comment": "冒險區域一次探索會遇到的敵人組合；每組為 [敵人 id, 數量]。",
-    "snake_creek": [[["goblin", 2]], [["serpent_hatchling", 2], ["bandit", 1]], [["creek_serpent", 1], ["serpent_hatchling", 1]]],
-    "whisper_crypt": [[["giant_rat", 3]], [["skeleton", 2]], [["skeleton", 2], ["crypt_wight", 1]]],
-    "mist_abbey": [[["skeleton", 3]], [["mist_wraith", 1], ["skeleton", 1]]]
+    "snake_creek": {
+      "outskirts": [[["goblin", 2]], [["giant_rat", 3]]],
+      "shallow": [[["serpent_hatchling", 2]], [["bandit", 2]], [["goblin", 2], ["bandit", 1]]],
+      "middle": [[["creek_serpent", 1], ["serpent_hatchling", 1]], [["serpent_hatchling", 3]]],
+      "deep": [[["creek_serpent", 2]], [["creek_serpent", 1], ["serpent_hatchling", 2]]],
+      "boss": [["serpent_matriarch", 1], ["serpent_hatchling", 2]]
+    },
+    "whisper_crypt": {
+      "outskirts": [[["giant_rat", 3]], [["bandit", 2]]],
+      "shallow": [[["skeleton", 2]], [["giant_rat", 2], ["skeleton", 1]]],
+      "middle": [[["skeleton", 3]], [["crypt_wight", 1]]],
+      "deep": [[["crypt_wight", 1], ["skeleton", 2]], [["crypt_wight", 2]]],
+      "boss": [["crypt_general", 1], ["skeleton", 2]]
+    },
+    "mist_abbey": {
+      "outskirts": [[["wolf", 2]], [["bandit", 2]]],
+      "shallow": [[["skeleton", 2]], [["skeleton", 3]]],
+      "middle": [[["mist_wraith", 1]], [["mist_wraith", 1], ["skeleton", 1]]],
+      "deep": [[["mist_wraith", 2]], [["mist_wraith", 1], ["skeleton", 2]]],
+      "boss": [["fallen_abbot", 1], ["mist_wraith", 1]]
+    }
+  },
+  "wild_encounters": {
+    "$comment": "城鎮近郊（荒野）的遭遇表，依區域。",
+    "central": [[["giant_rat", 2]], [["goblin", 2]], [["wolf", 1]], [["bandit", 1]]],
+    "default": [[["wolf", 2]], [["bandit", 1]], [["goblin", 2]]]
   }
 }

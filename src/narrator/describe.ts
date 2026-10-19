@@ -1,7 +1,7 @@
 // 不經 AI、直接把報告轉成可讀的文字戰報。AI 關閉或失敗時顯示這份。
 // 也用來把 id 換成名稱，讓送給 AI 的報告更好讀。
 
-import { className, geography, raceName, skills } from '@/engine/data'
+import { abilities, className, geography, raceName, statuses } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import type { Effect, Report, TimelineEntry } from '@/engine/types'
@@ -17,17 +17,20 @@ export function actorNames(report: Report): Record<string, string> {
 function describeEffect(e: Effect, names: Record<string, string>): string {
   const who = e.target ? (names[e.target] ?? e.target) : ''
   switch (e.type) {
-    case 'damage': return `${who} 受到 ${e.amount} 點${e.element ? `${e.element}` : ''}傷害`
+    case 'damage': return `${who} 受到 ${e.amount} 點${e.element ? `${e.element}` : ''}傷害${e.text ? `（${e.text}）` : ''}`
     case 'heal': return `${who} 回復 ${e.amount} HP`
-    case 'status_add':
-      return e.status === '死亡' || e.status === '倒下' ? `${who} 倒下了` : `${who} 陷入「${e.status}」`
-    case 'status_remove': return `${who} 解除「${e.status}」`
-    default: return e.text ?? ''
+    case 'status_add': {
+      if (e.status === '死亡' || e.status === '倒下') return `${who} 倒下了`
+      const buff = Object.values(statuses).find((s) => s.name === e.status)?.kind === 'buff'
+      return buff ? `${who} 獲得「${e.status}」` : `${who} 陷入「${e.status}」`
+    }
+    case 'status_remove': return e.text ? `${who} ${e.text}` : `${who} 解除「${e.status}」`
+    default: return e.text ? `${who ? `${who}：` : ''}${e.text}` : ''
   }
 }
 
 const RESULT_TEXT: Record<TimelineEntry['result'], string> = {
-  success: '成功', critical: '爆擊！', fail: '失敗', fumble: '大失敗', partial: '部分成功', none: '',
+  success: '成功', critical: '幸運一擊！', fail: '失敗', fumble: '大失敗', partial: '部分成功', none: '',
 }
 
 export function describeEntry(t: TimelineEntry, names: Record<string, string>): string {
@@ -87,6 +90,6 @@ export function humanizeReport(report: Report) {
   }
 }
 
-export function skillName(id: string): string {
-  return skills[id]?.name ?? id
+export function abilityName(id: string): string {
+  return abilities[id]?.name ?? id
 }

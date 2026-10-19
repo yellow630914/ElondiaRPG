@@ -1,12 +1,12 @@
 // 城鎮行動：旅店休息、酒館招募、公會委託、補給、升級選技能。
 
-import { createNpc, guildRankFor, proficiency, snapshot } from './character'
+import { abilityQuality, createNpc, guildRankFor, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  combatRules, economy, encounterTables, locationById, npcs, progression, regionById, skills,
+  abilityDef, attributeRules, combatRules, dungeonEncounters, economy, locationById, npcs, regionById,
   townQuestsPerTown, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
-import { roll, withBonus } from './rng'
+import { Rng, roll, withBonus } from './rng'
 import { formatMoney } from './money'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, GuildRank, Quest, Report } from './types'
@@ -43,7 +43,7 @@ export function restCost(state: GameState): number {
   return INN_CC_PER_PERSON * state.party.length
 }
 
-/** 在旅店住一晚：全員 HP/MP 回滿，時間推進到隔天早上 8 點。 */
+/** 在旅店住一晚：全員 HP 與法術環回滿、每次休息的能力重置，時間推進到隔天早上 8 點。 */
 export function rest(state: GameState): Report {
   const cost = restCost(state)
   if (state.money_cc < cost) throw new Error('旅費不足')
@@ -53,11 +53,41 @@ export function rest(state: GameState): Report {
   report.party = state.party.map((m) => {
     const snap = snapshot(m, undefined, player(state))
     snap.hp = [m.hp, m.maxHp, m.maxHp]
-    snap.mp = [m.mp, m.maxMp, m.maxMp]
     return snap
   })
+  for (const m of state.party) {
+    m.slotsUsed = []
+    m.usesPerRest = {}
+  }
   report.outcome.summary = `在旅店休息一晚，花費 ${formatMoney(cost)}。`
   report.changes.money_cc = -cost
+  return commitReport(state, report)
+}
+
+// ---- 神殿 ----
+
+/** 神殿治療的費用：每位受傷的隊員 TEMPLE_CC（世界書：普通醫師診療 2 銀幣）。 */
+export const TEMPLE_CC = 20
+
+export function templeCost(state: GameState): number {
+  return state.party.filter((m) => m.hp < m.maxHp).length * TEMPLE_CC
+}
+
+/** 在神殿接受治療：受傷的隊員 HP 回滿，不推進到隔天，也不回復法術環。 */
+export function templeHeal(state: GameState): Report {
+  const cost = templeCost(state)
+  if (cost === 0) throw new Error('沒有需要治療的隊員')
+  if (state.money_cc < cost) throw new Error('金錢不足')
+  const report = baseReport(state, 'action', 1)
+  report.location.scene = `${locationById(state.location).name}的神殿`
+  report.party = state.party.map((m) => {
+    const snap = snapshot(m, undefined, player(state))
+    snap.hp = [m.hp, m.maxHp, m.maxHp]
+    return snap
+  })
+  report.outcome.summary = `在神殿接受治療，奉獻 ${formatMoney(cost)}。`
+  report.changes.money_cc = -cost
+  report.narration = { pov: 'second_person', length: 'short' }
   return commitReport(state, report)
 }
 
@@ -85,7 +115,7 @@ export function recruit(state: GameState, npcId: string): Report {
   if (!def) throw new Error('這裡沒有這位角色')
   if (state.party.length >= combatRules.party_max) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
   if (state.money_cc < def.hire_cc) throw new Error('招募費用不足')
-  const npc = createNpc(def)
+  const npc = createNpc(def, new Rng(hashString(def.id)))
   state.party.push(npc)
   state.recruited.push(npc.id)
   const report = baseReport(state, 'social', 1)
@@ -94,7 +124,7 @@ export function recruit(state: GameState, npcId: string): Report {
   report.changes.money_cc = -def.hire_cc
   report.changes.affinity = [{ npc: npc.id, delta: 0, after: npc.affinity ?? 0, reason: '初次結識' }]
   report.narration = { pov: 'second_person', length: 'short', focus: [`${npc.name}的第一印象與性格`] }
-  report.lore_keys!.push(progression.races.find((r) => r.id === npc.race)?.name ?? npc.race)
+  report.lore_keys!.push(attributeRules.races[npc.race]?.name ?? npc.race)
   return commitReport(state, report)
 }
 
@@ -161,7 +191,7 @@ export function guildQuests(state: GameState): Quest[] {
         status: 'available',
       })
     }
-    const targets = Object.keys(encounterTables).filter((id) => {
+    const targets = Object.keys(dungeonEncounters).filter((id) => {
       const path = shortestPath(state.location, id)
       return path !== null && path.days[1] <= QUEST_RANGE_DAYS
     })
@@ -260,19 +290,26 @@ export function turnInQuest(state: GameState, questId: string): Report {
   return commitReport(state, report)
 }
 
-// ---- 升級技能 ----
+// ---- 升級 ----
 
-export function chooseSkill(state: GameState, memberId: string, skillId: string): Report {
+export function chooseAbility(state: GameState, memberId: string, abilityId: string): Report {
   const member = state.party.find((m) => m.id === memberId)
-  const choices = member?.pendingSkillChoices?.[0]
-  if (!member || !choices?.includes(skillId)) throw new Error('沒有這個技能選項')
-  member.pendingSkillChoices!.shift()
-  if (member.pendingSkillChoices!.length === 0) delete member.pendingSkillChoices
-  member.skills.push(skillId)
-  const skill = skills[skillId]!
+  const choices = member?.pendingAbilityChoices?.[0]
+  if (!member || !choices?.includes(abilityId)) throw new Error('沒有這個能力選項')
+  member.pendingAbilityChoices!.shift()
+  if (member.pendingAbilityChoices!.length === 0) delete member.pendingAbilityChoices
+  member.abilities.push(abilityId)
+  const a = abilityDef(abilityId)
   const report = baseReport(state, 'action', 0)
-  report.outcome.summary = `${member.name}領悟了${skill.name}。`
-  report.changes.skills_gained = [{ actor: member.id, skill: skill.name, quality: skill.quality, source: 'level_up' }]
+  const kind = a.type === 'spell' ? `${a.circle} 環法術` : a.type === 'cantrip' ? '戲法' : '技能'
+  report.outcome.summary = `${member.name}習得${kind}【${a.name}】。`
+  report.changes.skills_gained = [{ actor: member.id, skill: a.name, quality: abilityQuality(a), source: 'level_up' }]
   report.narration = { length: 'short' }
   return commitReport(state, report)
+}
+
+function hashString(s: string): number {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619)
+  return h >>> 0
 }

@@ -29,11 +29,13 @@ pnpm build             # 型別檢查 + 建置到 dist/
 
 ## 目前可以做什麼
 
-- 建立角色（6 種族、10 職業），從索里耶爾出發
-- 依世界書路程在地圖上移動，消耗天數、食宿與乾糧，旅途有天候檢定與事件
-- 旅店休息、購買乾糧、在酒館招募 NPC 隊友（最多 4 人）
-- 冒險者公會委託：F 級在城內與近郊（戰鬥、檢定、送貨），E 級以上在冒險區域
-- 逐回合手動戰鬥：攻擊、技能、防禦、撤退；戰後產生戰報、分配經驗、升級三選一技能
+- 建立角色（6 種族、10 職業、五屬性與自由點數），從索里耶爾出發
+- 走格子：城市與城鎮是固定的格子地圖（可在區塊間移動），近郊荒野與地下城四層是隨機生成、有戰爭迷霧
+- 依世界書路程旅行，消耗天數、食宿與乾糧，旅途有天候檢定與事件
+- 旅店、神殿、雜貨店、酒館（招募 NPC 隊友，最多 4 人）、冒險者公會都是地圖上的設施
+- 公會委託：F 級在城內與近郊，E 級以上在冒險區域
+- 逐回合戰鬥：行動點、法術環、命中對迴避、幸運一擊、13 種傷害屬性加成、10 類 BUFF／DEBUFF，10 個職業共 150 項技能／法術／戲法
+- 戰後產生戰報、分配經驗；升級時分配屬性點並三選一學習能力
 - AI 細節描述可開關：開啟時自動生成敘事（串流顯示），關閉時顯示戰報與事件簡述；也可以複製提示詞自行使用
 - 自動存檔在瀏覽器，可匯出 / 匯入
 
@@ -41,11 +43,12 @@ pnpm build             # 型別檢查 + 建置到 dist/
 
 | 路徑 | 說明 |
 |---|---|
-| [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 遊戲設計：架構、戰鬥與旅行規則、AI 敘事管線、待決定事項 |
-| [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索提案（周邊 → 淺層 → 中層 → 深層） |
+| [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 遊戲設計：架構、走格子、旅行、城鎮、AI 敘事管線、待決定事項 |
+| [`docs/COMBAT_SYSTEM.md`](docs/COMBAT_SYSTEM.md) | 戰鬥系統：屬性、三資源、命中與迴避、幸運一擊、傷害屬性、BUFF、各職業能力清單 |
+| [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索（周邊 → 淺層 → 中層 → 深層），含實作狀態 |
 | [`docs/WORLD_NOTES.md`](docs/WORLD_NOTES.md) | 世界書與地圖之間的不一致與缺漏 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema） |
 | [`examples/reports/`](examples/reports/) | 範例報告：戰鬥、旅行 |
-| [`data/world/`](data/world/) | 區域、勢力、地點、路線天數、可招募 NPC |
-| [`data/rules/`](data/rules/) | 等級、經濟、戰鬥、技能、敵人 |
+| [`data/world/`](data/world/) | 區域、勢力、地點、路線天數、城鎮格子地圖、可招募 NPC |
+| [`data/rules/`](data/rules/) | 屬性、職業、戰鬥規則、傷害屬性、狀態、能力、裝備、敵人、經濟、委託 |
 | [`data/worldbook/elondia.worldbook.json`](data/worldbook/elondia.worldbook.json) | 原始世界書（SillyTavern 格式） |

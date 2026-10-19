@@ -1,0 +1,44 @@
+{
+  "$comment": "五屬性與種族。屬性值 1-30，調整值 = floor((屬性值 - 10) / 2)。建角時依職業優先順序分配基礎陣列，再加種族加值與自由點數；每升一級獲得 1 點屬性點。種族天賦可帶有傷害屬性加成（resist / offense，規則見 damage_types.json）或戰鬥修正（mods，欄位同 statuses.json）。",
+  "version": 1,
+  "attributes": [
+    { "id": "str", "name": "力量", "short": "力", "desc": "力量武器的命中與傷害、生命值、力量豁免" },
+    { "id": "dex", "name": "靈巧", "short": "巧", "desc": "靈巧武器的命中與傷害、迴避、行動點、幸運一擊、先攻" },
+    { "id": "int", "name": "智力", "short": "智", "desc": "奧術法術（法師）、法術環" },
+    { "id": "fai", "name": "信仰", "short": "信", "desc": "神術與自然法術（牧師、德魯伊、聖騎士、遊俠）、生命值、法術環、維持專注" },
+    { "id": "cha", "name": "魅力", "short": "魅", "desc": "吟遊法術（吟遊詩人）、行動點、幸運一擊" }
+  ],
+  "score": { "min": 1, "max": 30 },
+  "creation": {
+    "array": [15, 14, 13, 12, 10],
+    "bonus_points": 2,
+    "max_score": 18
+  },
+  "level_up_points": 1,
+  "races": {
+    "human": {
+      "name": "人類", "bonus": { "str": 1, "dex": 1, "int": 1, "fai": 1, "cha": 1 },
+      "talent": { "name": "適應力", "desc": "全屬性 +1。" }
+    },
+    "elf": {
+      "name": "精靈", "bonus": { "dex": 2, "int": 1 },
+      "talent": { "name": "星辰之裔", "desc": "心靈傷害 ×0.75。", "resist": { "psychic": -0.25 } }
+    },
+    "dwarf": {
+      "name": "矮人", "bonus": { "str": 2, "fai": 1 },
+      "talent": { "name": "熔爐之軀", "desc": "毒素傷害 ×0.5、火焰傷害 ×0.75。", "resist": { "poison": -0.5, "fire": -0.25 } }
+    },
+    "demon": {
+      "name": "魔族", "bonus": { "str": 1, "cha": 2 },
+      "talent": { "name": "荒原血脈", "desc": "火焰 ×0.5、暗影 ×0.75，但神聖傷害 ×1.25。", "resist": { "fire": -0.5, "necrotic": -0.25, "radiant": 0.25 } }
+    },
+    "catfolk": {
+      "name": "貓魅族", "bonus": { "dex": 2, "cha": 1 },
+      "talent": { "name": "貓之反射", "desc": "迴避 +1、幸運一擊閾值 -1。", "mods": { "evade": 1, "crit": 1 } }
+    },
+    "yulin": {
+      "name": "玉璘族", "bonus": { "cha": 2, "fai": 1 },
+      "talent": { "name": "潮汐之鱗", "desc": "寒冰 ×0.5，但閃電傷害 ×1.25。", "resist": { "cold": -0.5, "lightning": 0.25 } }
+    }
+  }
+}

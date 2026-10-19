@@ -4,11 +4,18 @@ import geographyJson from '@data/world/geography.json'
 import npcsJson from '@data/world/npcs.json'
 import progressionJson from '@data/rules/progression.json'
 import economyJson from '@data/rules/economy.json'
+import attributesJson from '@data/rules/attributes.json'
+import classesJson from '@data/rules/classes.json'
 import combatJson from '@data/rules/combat.json'
-import skillsJson from '@data/rules/skills.json'
+import damageTypesJson from '@data/rules/damage_types.json'
+import statusesJson from '@data/rules/statuses.json'
+import abilitiesJson from '@data/rules/abilities.json'
+import equipmentJson from '@data/rules/equipment.json'
 import enemiesJson from '@data/rules/enemies.json'
 import townQuestsJson from '@data/rules/town_quests.json'
 import type { GuildRank, QuestKind, SkillQuality } from './types'
+
+// ---- 地理 ----
 
 export type RouteMode = 'road' | 'trail' | 'wild' | 'sea' | 'dive' | 'underground'
 export type LocationType =
@@ -33,6 +40,12 @@ export interface Route {
   note?: string
 }
 
+export const geography = geographyJson as unknown as {
+  regions: Region[]
+  locations: Location[]
+  routes: Route[]
+}
+
 export interface NpcDef {
   id: string
   name: string
@@ -44,70 +57,8 @@ export interface NpcDef {
   personality: string
   faction: string
 }
-
-export interface ClassCombat {
-  hit_die: number
-  mp_per_level: number
-  ac: number
-  damage: string
-  attack_attr: number
-  start_skills: string[]
-}
-
-export interface SkillEffect {
-  kind: 'attack' | 'damage' | 'heal' | 'buff'
-  damage_mult?: number
-  hit_mod?: number
-  hits?: number
-  bonus_dice?: string
-  dice?: string
-  add_level?: boolean
-  element?: string
-  status?: string
-  turns?: number
-  self_status?: string
-}
-export interface SkillDef {
-  id: string
-  name: string
-  quality: SkillQuality
-  mp: number
-  enemy_only?: boolean
-  target: 'enemy' | 'ally' | 'self' | 'all_enemies' | 'all_allies'
-  effect: SkillEffect
-}
-export interface StatusDef {
-  dot?: string
-  skip_turn?: boolean
-  attack_bonus?: number
-  ac_bonus?: number
-  ac_penalty?: number
-  turns?: number
-  desc: string
-}
-
-export interface EnemyDef {
-  id: string
-  name: string
-  level: number
-  hp: number
-  ac: number
-  attack: number
-  damage: string
-  xp: number
-  skills?: string[]
-  habitats: string[]
-  money_cc?: [number, number]
-  loot?: { item: string; chance: number }[]
-}
-export type EncounterGroup = [string, number][]
-
-export const geography = geographyJson as unknown as {
-  regions: Region[]
-  locations: Location[]
-  routes: Route[]
-}
 export const npcs = (npcsJson as unknown as { npcs: NpcDef[] }).npcs
+
 export const progression = progressionJson as unknown as {
   life_tiers: { tier: number; levels: [number, number]; max_skill_quality: SkillQuality }[]
   guild_ranks: { rank: GuildRank; levels: [number, number]; desc: string }[]
@@ -121,25 +72,256 @@ export const economy = economyJson as unknown as {
   lodging_cc_per_night: Record<string, [number, number]>
   meals_cc: Record<string, number | [number, number]>
 }
+
+// ---- 屬性、種族、職業 ----
+
+export type AttrId = 'str' | 'dex' | 'int' | 'fai' | 'cha'
+export const ATTR_IDS: AttrId[] = ['str', 'dex', 'int', 'fai', 'cha']
+export type Attrs = Record<AttrId, number>
+
+/** 傷害屬性或群組（physical / elemental / divine / arcane / all）→ 倍率加減 */
+export type AffinityMap = Partial<Record<string, number>>
+
+/** 戰鬥修正，欄位同 statuses.json 的 mods */
+export interface Mods {
+  hit?: number
+  evade?: number
+  save?: number
+  damage?: number
+  dr?: number
+  ap_regen?: number
+  crit?: number
+}
+
+export interface RaceDef {
+  name: string
+  bonus: Partial<Attrs>
+  talent: { name: string; desc: string; resist?: AffinityMap; offense?: AffinityMap; mods?: Mods }
+}
+
+export const attributeRules = attributesJson as unknown as {
+  attributes: { id: AttrId; name: string; short: string; desc: string }[]
+  score: { min: number; max: number }
+  creation: { array: number[]; bonus_points: number; max_score: number }
+  level_up_points: number
+  races: Record<string, RaceDef>
+}
+
+export type CasterType = 'full' | 'half' | 'none'
+export interface ClassDef {
+  name: string
+  priority: AttrId[]
+  caster: CasterType
+  casting?: AttrId
+  weapon: string
+  armor: string
+  start: string[]
+  role: string
+}
+export const classes = (classesJson as unknown as { classes: Record<string, ClassDef> }).classes
+
+export function classDef(id: string): ClassDef {
+  const c = classes[id]
+  if (!c) throw new Error(`unknown class: ${id}`)
+  return c
+}
+
+// ---- 戰鬥規則 ----
+
 export const combatRules = combatJson as unknown as {
   proficiency: { base: number; every_levels: number }
   xp_to_next_level_per_level: number
   party_max: number
+  hp: { base: number; per_level: number; min_per_level: number }
+  ap: { base: number; every_levels: number; min: number; regen: number; regen_every_levels: number }
+  action_costs: { weapon_attack: number; defend: number; flee: number; spell_by_circle: number[] }
+  defend: { evade: number }
   flee_dc: number
-  defend_ac_bonus: number
-  classes: Record<string, ClassCombat>
+  hit: { evade_floor_base: number }
+  lucky: { base: number; attr_floor: number; floor: number }
+  save: { dc_base: number }
+  concentration: { attr: AttrId; min_dc: number }
+  spell_slots: { full: Record<string, number[]>; half_max_circle: number; bonus_max_circle: number }
+  cantrip: { scale_levels: number[]; known_base: number; known_every_levels: number }
+  quality_by_level: { levels: [number, number]; quality: SkillQuality }[]
+  quality_by_circle: SkillQuality[]
 }
-const skillsData = skillsJson as unknown as { skills: SkillDef[]; statuses: Record<string, StatusDef> }
-export const skills: Record<string, SkillDef> = Object.fromEntries(skillsData.skills.map((s) => [s.id, s]))
-export const statuses = skillsData.statuses
+
+export interface DamageTypeDef { id: string; name: string; group: string }
+export const damageTypes = damageTypesJson as unknown as {
+  types: DamageTypeDef[]
+  groups: Record<string, string>
+  labels: { max: number; name: string }[]
+}
+const damageTypeIndex = new Map(damageTypes.types.map((t) => [t.id, t]))
+
+export function damageType(id: string): DamageTypeDef {
+  const t = damageTypeIndex.get(id)
+  if (!t) throw new Error(`unknown damage type: ${id}`)
+  return t
+}
+
+export function damageTypeName(id: string): string {
+  return damageTypeIndex.get(id)?.name ?? damageTypes.groups[id] ?? id
+}
+
+export type LuckRoll = 'attack' | 'evade' | 'save'
+export type Control = 'stun' | 'silence' | 'no_cast' | 'taunt' | 'confuse'
+export interface StatusDef {
+  name: string
+  kind: 'buff' | 'debuff'
+  mods?: Mods
+  luck?: string
+  luck_on?: LuckRoll[]
+  advantage?: LuckRoll[]
+  disadvantage?: LuckRoll[]
+  attacked_advantage?: boolean
+  attacked_disadvantage?: boolean
+  resist?: AffinityMap
+  offense?: AffinityMap
+  dot?: { dice: string; type: string }
+  hot?: string
+  pulse?: { dice: string; type: string; mod?: boolean }
+  on_hit?: { status?: string; turns?: number; dice?: string; type?: string }
+  control?: Control
+  special?: 'undying' | 'halve_next' | 'reduce_next'
+  charges?: number
+}
+export const statuses = (statusesJson as unknown as { statuses: Record<string, StatusDef> }).statuses
+
+export function statusDef(id: string): StatusDef {
+  const s = statuses[id]
+  if (!s) throw new Error(`unknown status: ${id}`)
+  return s
+}
+
+// ---- 技能、法術、戲法 ----
+
+export type AbilityType = 'skill' | 'spell' | 'cantrip'
+export type AbilityTarget =
+  | 'enemy' | 'ally' | 'ally_or_downed' | 'self' | 'all_enemies' | 'all_allies' | 'random_enemies'
+export interface DamagePart {
+  dice?: string
+  type?: string
+  mod?: boolean
+  weapon?: boolean
+  scale?: { dice: string; per: number }
+}
+export interface ApplyDef {
+  status: string
+  turns: number
+  to?: 'target' | 'self' | 'allies' | 'enemies'
+  on?: 'hit' | 'fail' | 'always'
+  save?: AttrId
+  value?: { dice?: string; mod?: boolean; level?: boolean; flat?: number }
+}
+export interface AbilityDef {
+  id: string
+  name: string
+  type: AbilityType
+  classes: string[]
+  unlock?: number
+  circle?: number
+  ap?: number
+  attr?: AttrId | 'casting'
+  target: AbilityTarget
+  count?: number
+  resolve: 'attack' | 'save' | 'auto'
+  save?: AttrId
+  on_save?: 'half' | 'none'
+  damage?: DamagePart[]
+  mult?: number
+  hits?: number
+  hit?: number
+  adv?: boolean
+  crit?: number
+  heal?: { dice?: string; mod?: boolean; level?: boolean; flat?: number; full?: boolean }
+  shield?: { flat?: number; level?: number }
+  apply?: ApplyDef[]
+  ap_gain?: number
+  ap_gain_on_hit?: number
+  uses?: { per_turn?: number; per_combat?: number; per_rest?: number }
+  concentration?: boolean
+  cleanse?: boolean
+  lifesteal?: number
+  recover_slot?: boolean
+  hp_limit?: number
+  kill?: boolean
+  desc: string
+}
+const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
+export const abilities: Record<string, AbilityDef> = Object.fromEntries(abilityList.map((a) => [a.id, a]))
+
+export function abilityDef(id: string): AbilityDef {
+  const a = abilities[id]
+  if (!a) throw new Error(`unknown ability: ${id}`)
+  return a
+}
+
+export function classAbilities(classId: string): AbilityDef[] {
+  return abilityList.filter((a) => a.classes.includes(classId))
+}
+
+// ---- 裝備 ----
+
+export interface WeaponDef { name: string; dice: string; type: string; attr: AttrId; scale?: Record<string, string> }
+export interface ArmorDef { name: string; evade: number; dr: number; resist?: AffinityMap; offense?: AffinityMap }
+export const equipment = equipmentJson as unknown as {
+  weapons: Record<string, WeaponDef>
+  armors: Record<string, ArmorDef>
+}
+
+export function weaponDef(id: string): WeaponDef {
+  return equipment.weapons[id] ?? equipment.weapons.unarmed!
+}
+
+export function armorDef(id: string): ArmorDef {
+  return equipment.armors[id] ?? equipment.armors.none!
+}
+
+// ---- 敵人 ----
+
+export interface EnemyDef {
+  id: string
+  name: string
+  level: number
+  attrs: Attrs
+  hp: number
+  ap: number
+  weapon: { dice: string; type: string; attr: AttrId }
+  evade: number
+  dr: number
+  resist?: AffinityMap
+  offense?: AffinityMap
+  abilities?: string[]
+  xp: number
+  habitats?: string[]
+  money_cc?: [number, number]
+  loot?: { item: string; chance: number }[]
+}
+export type EncounterGroup = [string, number][]
+export type DungeonLayerId = 'outskirts' | 'shallow' | 'middle' | 'deep'
+export interface DungeonEncounters {
+  outskirts: EncounterGroup[]
+  shallow: EncounterGroup[]
+  middle: EncounterGroup[]
+  deep: EncounterGroup[]
+  boss: EncounterGroup
+}
 const enemiesData = enemiesJson as unknown as {
   enemies: EnemyDef[]
-  encounters: Record<string, EncounterGroup[] | string>
+  encounters: Record<string, DungeonEncounters>
+  wild_encounters: Record<string, EncounterGroup[] | string>
 }
 export const enemies: Record<string, EnemyDef> = Object.fromEntries(enemiesData.enemies.map((e) => [e.id, e]))
-export const encounterTables: Record<string, EncounterGroup[]> = Object.fromEntries(
-  Object.entries(enemiesData.encounters).filter((e): e is [string, EncounterGroup[]] => Array.isArray(e[1])),
-)
+export const dungeonEncounters = enemiesData.encounters
+
+export function wildEncounters(region: string): EncounterGroup[] {
+  const table = enemiesData.wild_encounters[region] ?? enemiesData.wild_encounters.default
+  return Array.isArray(table) ? table : []
+}
+
+// ---- 委託 ----
 
 export interface TownQuestTemplate {
   id: string
@@ -147,6 +329,8 @@ export interface TownQuestTemplate {
   area: 'town' | 'outskirts'
   title: string
   scene: string
+  /** 城內委託的執行地點（設施種類） */
+  spot?: string
   hours: number
   dc?: number
   item?: string
@@ -160,6 +344,8 @@ export const townQuestsPerTown = townQuestsData.per_town
 export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.fromEntries(
   townQuestsData.templates.map((t) => [t.id, t]),
 )
+
+// ---- 查詢 ----
 
 const locationIndex = new Map(geography.locations.map((l) => [l.id, l]))
 const regionIndex = new Map(geography.regions.map((r) => [r.id, r]))
@@ -177,11 +363,15 @@ export function regionById(id: string): Region {
 }
 
 export function className(id: string): string {
-  return progression.classes.find((c) => c.id === id)?.name ?? id
+  return classes[id]?.name ?? id
 }
 
 export function raceName(id: string): string {
-  return progression.races.find((r) => r.id === id)?.name ?? id
+  return attributeRules.races[id]?.name ?? id
+}
+
+export function attrName(id: AttrId): string {
+  return attributeRules.attributes.find((a) => a.id === id)?.name ?? id
 }
 
 /** 有公會、旅店、酒館的聚落 */

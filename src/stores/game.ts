@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import * as combat from '@/engine/combat'
 import { migrate, newGame, player } from '@/engine/state'
+import * as grid from '@/engine/grid'
+import { spendAttrPoint } from '@/engine/character'
+import type { Attrs, AttrId } from '@/engine/data'
 import * as town from '@/engine/town'
 import { travel } from '@/engine/travel'
 import type { GameState, Report } from '@/engine/types'
@@ -34,9 +37,16 @@ export interface NarrationState {
   error?: string
 }
 
+/** 讀入存檔：補上新欄位，舊存檔沒有格子位置時放到目前地點的入口。 */
+function load(s: GameState): GameState {
+  migrate(s)
+  if (!s.position) grid.enterLocation(s)
+  return s
+}
+
 export const useGame = defineStore('game', () => {
   const saved = readJson<GameState>(SAVE_KEY)
-  const state = ref<GameState | null>(saved ? migrate(saved) : null)
+  const state = ref<GameState | null>(saved ? load(saved) : null)
   const narrations = ref<Record<string, NarrationState>>(readJson(NARRATION_KEY) ?? {})
   const error = ref<string | null>(null)
   const controllers = new Map<string, AbortController>()
@@ -57,8 +67,9 @@ export const useGame = defineStore('game', () => {
       const result = fn(state.value)
       save()
       const settings = useSettings()
-      if (settings.aiNarration && settings.ready() && isReport(result) && result.kind !== 'trade') {
-        void narrate(result)
+      const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
+      if (settings.aiNarration && settings.ready() && report && report.kind !== 'trade') {
+        void narrate(report)
       }
       return result
     } catch (e) {
@@ -71,8 +82,13 @@ export const useGame = defineStore('game', () => {
     return typeof x === 'object' && x !== null && 'report_id' in x
   }
 
-  function start(name: string, race: string, classId: string) {
-    state.value = newGame({ name, race, classId })
+  function hasReport(x: unknown): x is { report: Report } {
+    return typeof x === 'object' && x !== null && 'report' in x && isReport((x as { report: unknown }).report)
+  }
+
+  function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>) {
+    state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}) })
+    grid.enterLocation(state.value)
     narrations.value = {}
     error.value = null
     save()
@@ -89,7 +105,7 @@ export const useGame = defineStore('game', () => {
   function importSave(json: string) {
     const data = JSON.parse(json) as { state?: GameState; narrations?: Record<string, NarrationState> }
     if (!data.state?.party?.length) throw new Error('存檔格式不正確')
-    state.value = migrate(data.state)
+    state.value = load(data.state)
     narrations.value = data.narrations ?? {}
     save()
   }
@@ -149,10 +165,25 @@ export const useGame = defineStore('game', () => {
     visitGuild: () => run(town.guildQuests) ?? [],
     acceptQuest: (id: string) => run((s) => town.acceptQuest(s, id)),
     turnInQuest: (id: string) => run((s) => town.turnInQuest(s, id)),
-    chooseSkill: (member: string, skill: string) => run((s) => town.chooseSkill(s, member, skill)),
-    explore: (intent?: string) => run((s) => combat.startCombat(s, undefined, { intent })),
+    templeHeal: () => run(town.templeHeal),
+    chooseAbility: (member: string, ability: string) => run((s) => town.chooseAbility(s, member, ability)),
+    spendAttr: (member: string, attr: AttrId) =>
+      run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),
     act: (action: combat.CombatAction) => run((s) => combat.act(s, action)),
-    finishCombat: () => run(combat.finishCombat),
+    finishCombat: () =>
+      run((s) => {
+        const report = combat.finishCombat(s)
+        grid.afterCombat(s, report)
+        return report
+      }),
+    // 走格子
+    moveTo: (x: number, y: number) => run((s) => grid.moveTo(s, x, y)),
+    move: (dx: number, dy: number) => run((s) => grid.move(s, dx, dy)),
+    goOutskirts: () => run(grid.goOutskirts),
+    returnToTown: () => run(grid.returnToTown),
+    descend: () => run(grid.descend),
+    ascend: () => run(grid.ascend),
+    restAtSafeRoom: () => run(grid.restAtSafeRoom),
   }
 })

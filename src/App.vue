@@ -22,7 +22,7 @@ const TABS: { id: Tab; name: string }[] = [
 const game = useGame()
 const tab = ref<Tab>('adventure')
 const inCombat = computed(() => !!game.state?.combat)
-const pendingSkills = computed(() => game.state?.party.some((m) => m.pendingSkillChoices?.length) ?? false)
+const pendingSkills = computed(() => game.state?.party.some((m) => m.pendingAbilityChoices?.length || m.attrPoints > 0) ?? false)
 
 watch(inCombat, (now) => {
   if (now) tab.value = 'adventure'
@@ -56,7 +56,7 @@ function onCombatFinished() {
       >
         {{ t.name }}
         <span v-if="t.id === 'adventure' && inCombat" class="tag">戰鬥中</span>
-        <span v-if="t.id === 'party' && pendingSkills" class="tag">可選技能</span>
+        <span v-if="t.id === 'party' && pendingSkills" class="tag">可升級</span>
       </button>
       <button v-if="!game.state" @click="tab = 'adventure'">← 返回</button>
     </nav>

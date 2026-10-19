@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
-import { act, currentActor, finishCombat, startCombat, validTargets } from '@/engine/combat'
+import { startCombat } from '@/engine/combat'
+import { fightToEnd } from './helpers/fight'
 import { formatMoney } from '@/engine/money'
 import { Rng, roll } from '@/engine/rng'
 import { newGame } from '@/engine/state'
@@ -16,17 +17,6 @@ function expectValid(report: Report) {
   const ok = validate(report)
   expect(validate.errors ?? [], JSON.stringify(validate.errors, null, 2)).toEqual([])
   expect(ok).toBe(true)
-}
-
-/** 每回合都用普通攻擊打第一個敵人，直到戰鬥結束 */
-function fightToEnd(state: GameState) {
-  for (let i = 0; i < 200 && state.combat?.status === 'ongoing'; i++) {
-    const actor = currentActor(state.combat)!
-    const target = validTargets(state.combat, actor.id)[0]!
-    act(state, { type: 'attack', target: target.id })
-  }
-  expect(state.combat?.status).not.toBe('ongoing')
-  return finishCombat(state)
 }
 
 /** 每天公會會重新發委託；換日直到出現指定類型的委託為止 */
@@ -112,7 +102,7 @@ describe('combat', () => {
     const report = fightToEnd(state)
     expect(report.outcome.result).toBe('victory')
     expect(report.changes.level_up?.[0]).toMatchObject({ actor: 'pc', from: 1, to: 2 })
-    expect(state.party[0]!.pendingSkillChoices?.[0]?.length).toBeGreaterThan(0)
+    expect(state.party[0]!.pendingAbilityChoices?.[0]?.length).toBeGreaterThan(0)
   })
 })
 

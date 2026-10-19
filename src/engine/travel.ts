@@ -7,6 +7,7 @@ import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Character, Effect, GameState, ItemDelta, Report, TimelineEntry } from './types'
 import { shortestPath } from './world'
+import { enterLocation } from './grid'
 
 /** 官道沿途有旅店：每人每天食宿 */
 export const ROAD_DAILY_CC = 15
@@ -142,7 +143,9 @@ export function travel(state: GameState, destination: string, intent?: string): 
       regionById(dest.region).name,
     ],
   }
-  return commitReport(state, report)
+  commitReport(state, report)
+  enterLocation(state)
+  return report
 }
 
 function resolveEvent(rng: Rng, ev: TravelEvent, members: Character[], time: Report['time']['start'], seq: number): TimelineEntry {

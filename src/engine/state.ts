@@ -1,14 +1,14 @@
 // 遊戲狀態、時間與報告提交。
 
-import { gainXp, createPlayer } from './character'
-import { locationById } from './data'
+import { baseAttrs, createPlayer, gainXp, recalc } from './character'
+import { abilities, attributeRules, classDef, locationById, type Attrs } from './data'
 import { Rng } from './rng'
 import type { GameState, GameTime, InventoryItem, Report } from './types'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
 
-export function newGame(opts: { name: string; race: string; classId: string; seed?: number }): GameState {
+export function newGame(opts: { name: string; race: string; classId: string; bonus?: Partial<Attrs>; seed?: number }): GameState {
   const seed = opts.seed ?? Math.floor(Math.random() * 2 ** 31)
   return {
     version: 1,
@@ -17,7 +17,7 @@ export function newGame(opts: { name: string; race: string; classId: string; see
     time: { day: 1, hour: 8, minute: 0 },
     location: START_LOCATION,
     money_cc: START_MONEY_CC,
-    party: [createPlayer(opts.name, opts.race, opts.classId)],
+    party: [createPlayer(opts.name, opts.race, opts.classId, opts.bonus)],
     inventory: [{ name: '乾糧', qty: 5 }],
     quests: [],
     recruited: [],
@@ -33,6 +33,25 @@ export function migrate(state: GameState): GameState {
   for (const q of state.quests) {
     q.kind ??= 'clear_dungeon'
     q.area ??= 'dungeon'
+  }
+  // v1 的角色沒有五屬性與能力清單：依職業與種族重建，已升的等級換成屬性點
+  for (const c of state.party as (typeof state.party[number] & { skills?: string[]; mp?: number; maxMp?: number; pendingSkillChoices?: unknown })[]) {
+    if (c.attrs) continue
+    const cls = classDef(c.class)
+    c.attrs = baseAttrs(c.class, c.race)
+    c.attrPoints = (c.level - 1) * attributeRules.level_up_points
+    c.abilities = [...new Set([...cls.start, ...(c.skills ?? []).filter((id) => abilities[id]?.classes.includes(c.class))])]
+    c.weapon = cls.weapon
+    c.armor = cls.armor
+    c.slotsUsed = []
+    c.usesPerRest = {}
+    delete c.skills
+    delete c.mp
+    delete c.maxMp
+    delete c.pendingSkillChoices
+    c.maxHp = 0
+    recalc(c)
+    c.hp = c.maxHp
   }
   return state
 }
@@ -93,7 +112,7 @@ export function removeItem(inv: InventoryItem[], name: string, qty: number): num
 /**
  * 把報告的結果套用到遊戲狀態，並把報告加進事件紀錄。
  * 經驗值造成的升級在這裡結算，結果會補寫進 report.changes.level_up。
- * 隊伍的 HP/MP 以報告 party 快照的「事件後」數值為準。
+ * 隊伍的 HP 以報告 party 快照的「事件後」數值為準。
  */
 export function commitReport(state: GameState, report: Report): Report {
   const c = report.changes
@@ -106,7 +125,6 @@ export function commitReport(state: GameState, report: Report): Report {
     const member = state.party.find((m) => m.id === snap.id)
     if (!member) continue
     if (snap.hp) member.hp = Math.max(0, Math.min(member.maxHp, snap.hp[1]))
-    if (snap.mp) member.mp = Math.max(0, Math.min(member.maxMp, snap.mp[1]))
   }
   if (c.money_cc) state.money_cc += c.money_cc
   for (const item of c.items_gained ?? []) addItem(state.inventory, item.name, item.qty, item.quality)

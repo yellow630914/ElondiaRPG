@@ -1,4 +1,6 @@
 import type { CombatState } from './combat'
+import type { Attrs } from './data'
+import type { Area, Position } from './grid'
 
 // 報告型別對應 schemas/report.schema.json，修改時兩邊要同步。
 
@@ -110,16 +112,26 @@ export interface Character {
   class: string
   level: number
   xp: number
+  /** 五屬性：力量、靈巧、智力、信仰、魅力 */
+  attrs: Attrs
+  /** 尚未分配的屬性點 */
+  attrPoints: number
   hp: number
+  /** 由等級與屬性推導，見 character.ts 的 recalc */
   maxHp: number
-  mp: number
-  maxMp: number
-  skills: string[]
+  /** 各環已使用的法術環數量（索引 0 = 1 環） */
+  slotsUsed: number[]
+  /** 每次休息可用 N 次的能力已使用次數 */
+  usesPerRest: Record<string, number>
+  /** 已學會的技能、法術、戲法 id */
+  abilities: string[]
+  weapon: string
+  armor: string
   status: string[]
   personality?: string
   faction?: string
-  /** 升級時待選的技能選項（每組三選一） */
-  pendingSkillChoices?: string[][]
+  /** 升級時待選的能力選項（每組三選一） */
+  pendingAbilityChoices?: string[][]
   /** 只有 NPC 隊友有；-100 ~ 100，隱性數值 */
   affinity?: number
   isPlayer?: boolean
@@ -174,4 +186,8 @@ export interface GameState {
   nextReportNo: number
   /** 進行中的戰鬥 */
   combat?: CombatState
+  /** 在格子地圖上的位置 */
+  position?: Position
+  /** 隨機生成的區域（近郊、冒險區域各層） */
+  areas?: Record<string, Area>
 }

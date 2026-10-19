@@ -1,21 +1,67 @@
 {
-  "$comment": "戰鬥數值（提案）。世界書只給了 DND 1-20 級的強度基準，以下為簡化的 d20 規則：命中 = 1d20 + 攻擊加值 ≥ 目標 AC；20 為爆擊（傷害骰加倍），1 為大失敗。熟練加值 = 2 + floor((等級-1)/4)。",
-  "version": 1,
+  "$comment": "戰鬥規則數值。公式說明見 docs/COMBAT_SYSTEM.md。mod(x) = floor((x - 10) / 2)。",
+  "version": 2,
   "proficiency": { "base": 2, "every_levels": 4 },
   "xp_to_next_level_per_level": 100,
   "party_max": 4,
+
+  "hp": {
+    "$comment": "最大生命值 = base + 等級 × max(min_per_level, per_level + mod(力量) + mod(信仰))",
+    "base": 8, "per_level": 4, "min_per_level": 1
+  },
+  "ap": {
+    "$comment": "行動點上限 = base + floor(等級 / every_levels) + floor((mod(靈巧) + mod(魅力)) / 2)，至少 min。每回合開始回復 regen + floor(等級 / regen_every_levels)，剩餘的行動點可累積到下回合（不超過上限）。戰鬥開始時行動點全滿。",
+    "base": 3, "every_levels": 5, "min": 3,
+    "regen": 2, "regen_every_levels": 6
+  },
+  "action_costs": {
+    "weapon_attack": 2,
+    "defend": 1,
+    "flee": 2,
+    "spell_by_circle": [2, 2, 3, 3, 3, 4, 4, 4, 5]
+  },
+  "defend": { "evade": 3 },
   "flee_dc": 12,
-  "defend_ac_bonus": 4,
-  "classes": {
-    "fighter":   { "hit_die": 10, "mp_per_level": 1, "ac": 16, "damage": "1d10", "attack_attr": 3, "start_skills": ["power_strike", "second_wind"] },
-    "barbarian": { "hit_die": 12, "mp_per_level": 1, "ac": 14, "damage": "1d12", "attack_attr": 3, "start_skills": ["reckless_blow"] },
-    "paladin":   { "hit_die": 10, "mp_per_level": 2, "ac": 17, "damage": "1d8",  "attack_attr": 3, "start_skills": ["power_strike", "lay_on_hands"] },
-    "ranger":    { "hit_die": 10, "mp_per_level": 2, "ac": 14, "damage": "1d8",  "attack_attr": 3, "start_skills": ["double_shot"] },
-    "rogue":     { "hit_die": 8,  "mp_per_level": 1, "ac": 14, "damage": "1d6",  "attack_attr": 4, "start_skills": ["sneak_attack"] },
-    "monk":      { "hit_die": 8,  "mp_per_level": 2, "ac": 15, "damage": "1d6",  "attack_attr": 3, "start_skills": ["flurry"] },
-    "bard":      { "hit_die": 8,  "mp_per_level": 3, "ac": 13, "damage": "1d6",  "attack_attr": 2, "start_skills": ["inspire", "healing_word"] },
-    "cleric":    { "hit_die": 8,  "mp_per_level": 4, "ac": 15, "damage": "1d6",  "attack_attr": 2, "start_skills": ["healing_word", "sacred_flame"] },
-    "druid":     { "hit_die": 8,  "mp_per_level": 4, "ac": 13, "damage": "1d6",  "attack_attr": 2, "start_skills": ["thorn_whip", "healing_word"] },
-    "wizard":    { "hit_die": 6,  "mp_per_level": 5, "ac": 12, "damage": "1d4",  "attack_attr": 2, "start_skills": ["fire_bolt", "magic_missile"] }
-  }
+
+  "hit": {
+    "$comment": "命中骰 = 1d20 + 熟練加值 + mod(能力屬性) + 修正。迴避骰 = 1d20（下限 = 1 + max(0, mod(靈巧))）+ floor(mod(靈巧) / 2) + 防具迴避 + 修正。命中骰 ≥ 迴避骰即命中；自然骰 1 必定失手。",
+    "evade_floor_base": 1
+  },
+  "lucky": {
+    "$comment": "幸運一擊：命中骰的自然骰 ≥ 閾值時必定命中，且傷害骰數加倍。閾值 = 20 - floor((mod(靈巧) + mod(魅力)) / 3) - 修正，屬性造成的下限為 attr_floor，加上 BUFF 後的下限為 floor。",
+    "base": 20, "attr_floor": 16, "floor": 12
+  },
+  "save": {
+    "$comment": "豁免 DC = 8 + 熟練加值 + mod(施法或技能屬性)。豁免骰 = 1d20 + mod(豁免屬性) + 修正，≥ DC 成功。",
+    "dc_base": 8
+  },
+  "concentration": {
+    "$comment": "維持專注的法術一次只能有一個；施法者受到傷害時進行信仰豁免，DC = max(min_dc, floor(傷害 / 2))，失敗則專注中斷。",
+    "attr": "fai", "min_dc": 10
+  },
+
+  "spell_slots": {
+    "$comment": "全施法者各等級的法術環數量（索引 0 = 1 環）。環數解鎖等級對齊世界書：1-2 環 Lv1-4、3-4 環 Lv5-9、5-6 環 Lv10-14、7-8 環 Lv15-19、9 環 Lv20。半施法者以 ceil(等級 / 2) 查表，最高 5 環。額外法術環：S = mod(智力) + mod(信仰)，對 1-4 環中已擁有的每一環 c，若 S ≥ 2c 則該環 +1。",
+    "full": {
+      "1": [2], "2": [3], "3": [4, 2], "4": [4, 3],
+      "5": [4, 3, 2], "6": [4, 3, 3], "7": [4, 3, 3, 1], "8": [4, 3, 3, 2], "9": [4, 3, 3, 3],
+      "10": [4, 3, 3, 3, 1], "11": [4, 3, 3, 3, 2], "12": [4, 3, 3, 3, 2, 1], "13": [4, 3, 3, 3, 2, 1], "14": [4, 3, 3, 3, 2, 1],
+      "15": [4, 3, 3, 3, 2, 1, 1], "16": [4, 3, 3, 3, 2, 1, 1], "17": [4, 3, 3, 3, 2, 1, 1, 1], "18": [4, 3, 3, 3, 3, 1, 1, 1],
+      "19": [4, 3, 3, 3, 3, 2, 1, 1], "20": [4, 3, 3, 3, 3, 2, 2, 1, 1]
+    },
+    "half_max_circle": 5,
+    "bonus_max_circle": 4
+  },
+  "cantrip": {
+    "$comment": "戲法不花行動點，但每回合只能施放一次。傷害骰數在 scale_levels 的每個門檻 +1 倍（5、11、17 級）。可學會的戲法數量 = known_base + floor(等級 / known_every_levels)。",
+    "scale_levels": [5, 11, 17], "known_base": 2, "known_every_levels": 4
+  },
+  "quality_by_level": [
+    { "levels": [1, 4], "quality": "common" },
+    { "levels": [5, 8], "quality": "uncommon" },
+    { "levels": [9, 12], "quality": "rare" },
+    { "levels": [13, 16], "quality": "epic" },
+    { "levels": [17, 20], "quality": "legendary" }
+  ],
+  "quality_by_circle": ["common", "common", "uncommon", "uncommon", "rare", "rare", "epic", "epic", "legendary"]
 }
