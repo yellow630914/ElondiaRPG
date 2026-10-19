@@ -58,6 +58,16 @@ export interface CombatState {
   startMp: Record<string, number>
   affinity: Record<string, { delta: number; reasons: string[] }>
   intent?: string
+  /** 由委託觸發的戰鬥；獲勝時推進這個委託 */
+  questId?: string
+  /** 細部場景，例如「索里耶爾近郊的農田」 */
+  scene?: string
+}
+
+export interface CombatOptions {
+  intent?: string
+  questId?: string
+  scene?: string
 }
 
 const COMBAT_MINUTES_PER_ROUND = 1
@@ -72,7 +82,7 @@ export function encounterFor(locationId: string, rng: Rng): EncounterGroup {
   return [[rng.pick(fallback).id, rng.int(1, 2)]]
 }
 
-export function startCombat(state: GameState, group?: EncounterGroup, intent?: string): CombatState {
+export function startCombat(state: GameState, group?: EncounterGroup, opts: CombatOptions = {}): CombatState {
   if (state.combat) throw new Error('戰鬥進行中')
   return withRng(state, (rng) => {
     const enemyGroup = group ?? encounterFor(state.location, rng)
@@ -111,7 +121,9 @@ export function startCombat(state: GameState, group?: EncounterGroup, intent?: s
       startHp: Object.fromEntries(fighters.map((f) => [f.id, f.hp])),
       startMp: Object.fromEntries(fighters.map((f) => [f.id, f.mp])),
       affinity: {},
-      ...(intent ? { intent } : {}),
+      ...(opts.intent ? { intent: opts.intent } : {}),
+      ...(opts.questId ? { questId: opts.questId } : {}),
+      ...(opts.scene ? { scene: opts.scene } : {}),
     }
     state.combat = combat
     if (!beginTurn(combat, rng)) endTurn(combat, rng)
@@ -463,7 +475,7 @@ export function finishCombat(state: GameState): Report {
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
   const share = state.party.length > 0 ? Math.floor(xpTotal / state.party.length) : 0
-  const quest = victory ? advanceQuest(state, combat.location) : undefined
+  const quest = victory ? advanceQuest(state, combat) : undefined
   const resultName = { victory: '勝利', defeat: '戰敗', fled: '撤退', ongoing: '' }[combat.status]
   const end = addHours(combat.startTime, (combat.round * COMBAT_MINUTES_PER_ROUND) / 60)
 
@@ -472,14 +484,14 @@ export function finishCombat(state: GameState): Report {
     report_id: newReportId(state),
     kind: 'combat',
     time: { start: combat.startTime, end },
-    location: { at: combat.location, region: loc.region, scene: loc.name },
+    location: { at: combat.location, region: loc.region, scene: combat.scene ?? loc.name },
     party,
     others,
     ...(quest ? { quest } : {}),
     timeline: combat.timeline,
     outcome: {
       result: combat.status,
-      summary: `在${loc.name}與${foes.map((f) => f.name).join('、')}交戰，${resultName}（${combat.round} 回合）。`,
+      summary: `在${combat.scene ?? loc.name}與${foes.map((f) => f.name).join('、')}交戰，${resultName}（${combat.round} 回合）。`,
       tags: tagsFor(combat),
     },
     changes: {
@@ -509,8 +521,10 @@ function tagsFor(combat: CombatState): string[] {
   return [...tags]
 }
 
-function advanceQuest(state: GameState, locationId: string): Report['quest'] | undefined {
-  const quest = state.quests.find((q) => q.status === 'accepted' && q.target === locationId)
+function advanceQuest(state: GameState, combat: CombatState): Report['quest'] | undefined {
+  const quest = combat.questId
+    ? state.quests.find((q) => q.id === combat.questId && q.status === 'accepted')
+    : state.quests.find((q) => q.status === 'accepted' && q.kind === 'clear_dungeon' && q.target === combat.location)
   if (!quest) return undefined
   quest.progress += 1
   if (quest.progress >= quest.goal) quest.status = 'ready'

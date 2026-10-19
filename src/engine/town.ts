@@ -1,7 +1,12 @@
 // 城鎮行動：旅店休息、酒館招募、公會委託、補給、升級選技能。
 
-import { createNpc, guildRankFor, snapshot } from './character'
-import { combatRules, economy, encounterTables, locationById, npcs, progression, regionById, skills, type NpcDef } from './data'
+import { createNpc, guildRankFor, proficiency, snapshot } from './character'
+import { startCombat, type CombatState } from './combat'
+import {
+  combatRules, economy, encounterTables, locationById, npcs, progression, regionById, skills,
+  townQuestsPerTown, townQuestTemplates, type NpcDef, type TownQuestTemplate,
+} from './data'
+import { roll, withBonus } from './rng'
 import { formatMoney } from './money'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, GuildRank, Quest, Report } from './types'
@@ -106,11 +111,20 @@ export function dismiss(state: GameState, npcId: string): Report {
 
 // ---- 冒險者公會 ----
 
-/** 冒險區域的難度範圍如 "F-E"：只需清剿一次的委託取下限，兩次以上取上限。 */
+/** 冒險區域只發 E 級以上的委託。難度範圍如 "E-D"：只需清剿一次的取下限，兩次以上取上限。 */
 function questRank(dungeonId: string, goal: number): GuildRank {
   const [low, high] = (locationById(dungeonId).rank ?? 'E').split('-')
   const rank = goal > 1 ? (high ?? low) : low
-  return (RANK_ORDER as string[]).includes(rank ?? '') ? (rank as GuildRank) : 'E'
+  const index = RANK_ORDER.indexOf(rank as GuildRank)
+  return RANK_ORDER[Math.max(index, RANK_ORDER.indexOf('E'))]!
+}
+
+function townText(text: string, townId: string): string {
+  return text.split('{town}').join(locationById(townId).name)
+}
+
+export function questTemplate(quest: Quest): TownQuestTemplate | undefined {
+  return quest.template ? townQuestTemplates[quest.template] : undefined
 }
 
 function rewardRange(rank: GuildRank): [number, number] {
@@ -126,12 +140,27 @@ export function canAcceptRank(state: GameState, rank: GuildRank): boolean {
   return target <= mine || (state.party.length > 1 && target === mine + 1)
 }
 
-/** 公會委託列表；若這座城鎮還沒有委託，就依附近的冒險區域產生。 */
+/**
+ * 公會委託列表；若這座城鎮沒有可接的委託就產生新的：
+ * F 級城內／近郊委託若干個，加上附近每個冒險區域各一個 E 級以上的清剿委託。
+ */
 export function guildQuests(state: GameState): Quest[] {
   if (locationById(state.location).type === 'dungeon') return []
   const here = state.quests.filter((q) => q.giver === state.location && q.status !== 'completed')
   if (here.some((q) => q.status === 'available')) return here
   withRng(state, (rng) => {
+    const pool = Object.values(townQuestTemplates)
+    for (let i = 0; i < townQuestsPerTown && pool.length > 0; i++) {
+      const tpl = pool.splice(rng.int(0, pool.length - 1), 1)[0]!
+      state.quests.push({
+        id: `q-${state.location}-${state.time.day}-${tpl.id}`,
+        title: townText(tpl.title, state.location),
+        rank: 'F', kind: tpl.kind, area: tpl.area, template: tpl.id,
+        giver: state.location, target: state.location, goal: 1, progress: 0,
+        reward_cc: rng.int(tpl.reward_cc[0], tpl.reward_cc[1]),
+        status: 'available',
+      })
+    }
     const targets = Object.keys(encounterTables).filter((id) => {
       const path = shortestPath(state.location, id)
       return path !== null && path.days[1] <= QUEST_RANGE_DAYS
@@ -143,7 +172,8 @@ export function guildQuests(state: GameState): Quest[] {
       state.quests.push({
         id: `q-${state.location}-${state.time.day}-${target}`,
         title: `清剿${locationById(target).name}的魔物（${goal} 次）`,
-        rank, giver: state.location, target, goal, progress: 0,
+        rank, kind: 'clear_dungeon', area: 'dungeon',
+        giver: state.location, target, goal, progress: 0,
         reward_cc: Math.round(rng.int(lo, hi) * (1 + (goal - 1) * 0.5)),
         status: 'available',
       })
@@ -165,6 +195,52 @@ export function acceptQuest(state: GameState, questId: string): Report {
   return commitReport(state, report)
 }
 
+/**
+ * 執行城內／近郊委託。戰鬥類委託（或檢定前遭遇敵人）會開始戰鬥並回傳戰鬥狀態，
+ * 戰報在戰鬥結束後產生；其餘直接產生委託報告。
+ */
+export function doTownQuest(state: GameState, questId: string, intent?: string): Report | CombatState {
+  const quest = state.quests.find((q) => q.id === questId && q.status === 'accepted')
+  const tpl = quest && questTemplate(quest)
+  if (!quest || !tpl) throw new Error('找不到這個委託')
+  if (quest.giver !== state.location) throw new Error(`這是${locationById(quest.giver).name}的委託`)
+  const scene = townText(tpl.scene, state.location)
+
+  if (tpl.kind === 'pest' || tpl.kind === 'hunt') {
+    return startCombat(state, tpl.encounter, { questId: quest.id, scene, ...(intent ? { intent } : {}) })
+  }
+  const ambushed = tpl.encounter && withRng(state, (rng) => rng.chance(tpl.encounter_chance ?? 0))
+  if (ambushed) {
+    // 遭遇戰不推進委託；打完可以再試一次
+    return startCombat(state, tpl.encounter, { scene, ...(intent ? { intent } : {}) })
+  }
+
+  const report = baseReport(state, 'quest', tpl.hours)
+  report.location.scene = scene
+  report.quest = { id: quest.id, title: quest.title, rank: quest.rank, status: 'progress' }
+  report.narration = { pov: 'second_person', length: 'short', ...(intent ? { player_intent: intent } : {}) }
+  let success = true
+  if (tpl.dc !== undefined) {
+    const pc = player(state)
+    const dice = withBonus('1d20', proficiency(pc.level))
+    const r = withRng(state, (rng) => roll(rng, dice))
+    success = r.total >= tpl.dc
+    report.timeline = [{
+      seq: 1, time: report.time.start, actor: pc.id, action: quest.title,
+      roll: { dice, value: r.total, dc: tpl.dc }, result: success ? 'success' : 'fail',
+    }]
+  }
+  if (success) {
+    quest.progress = quest.goal
+    quest.status = 'ready'
+    if (tpl.item) report.changes.items_gained = [{ name: tpl.item, qty: tpl.qty ?? 1, owner: 'pc' }]
+    report.outcome = { result: 'success', summary: `完成「${quest.title}」，可以回公會交付了。` }
+  } else {
+    report.outcome = { result: 'failure', summary: `「${quest.title}」這次沒有進展，花了 ${tpl.hours} 小時，可以再試一次。` }
+  }
+  return commitReport(state, report)
+}
+
 export function turnInQuest(state: GameState, questId: string): Report {
   const quest = state.quests.find((q) => q.id === questId && q.status === 'ready')
   if (!quest) throw new Error('委託尚未完成')
@@ -174,9 +250,11 @@ export function turnInQuest(state: GameState, questId: string): Report {
   report.location.scene = `${locationById(state.location).name}的冒險者公會`
   report.quest = { id: quest.id, title: quest.title, rank: quest.rank, status: 'completed' }
   report.outcome.summary = `交付委託「${quest.title}」，獲得報酬 ${formatMoney(quest.reward_cc)}。`
+  const tpl = questTemplate(quest)
   report.changes = {
     money_cc: quest.reward_cc,
     reputation: [{ faction: 'guild', delta: RANK_ORDER.indexOf(quest.rank) + 1 }],
+    ...(tpl?.item ? { items_lost: [{ name: tpl.item, qty: tpl.qty ?? 1 }] } : {}),
   }
   report.lore_keys!.push('冒險者公會')
   return commitReport(state, report)

@@ -28,6 +28,15 @@ export function newGame(opts: { name: string; race: string; classId: string; see
   }
 }
 
+/** 讀入舊版存檔時補上新欄位。 */
+export function migrate(state: GameState): GameState {
+  for (const q of state.quests) {
+    q.kind ??= 'clear_dungeon'
+    q.area ??= 'dungeon'
+  }
+  return state
+}
+
 export function player(state: GameState) {
   const pc = state.party.find((c) => c.isPlayer)
   if (!pc) throw new Error('no player character')

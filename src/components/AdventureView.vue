@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import mapUrl from '../../assets/map/elondia-map.webp'
 import { combatRules, encounterTables, geography, isSettlement, locationById, raceName, className } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { canAcceptRank, recruitableHere, restCost, RATION_CC } from '@/engine/town'
+import { canAcceptRank, questTemplate, recruitableHere, restCost, RATION_CC } from '@/engine/town'
 import { MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
@@ -43,6 +43,22 @@ function routeText(path: Path) {
   const modes = [...new Set(path.legs.map((l) => MODE_NAME[l.mode]))].join('/')
   const via = path.legs.slice(0, -1).map((l) => locationById(l.to).name)
   return via.length ? `${modes}・經${via.join('、')}` : modes
+}
+
+const AREA_NAME: Record<Quest['area'], string> = { town: '城內', outskirts: '近郊', dungeon: '冒險區域' }
+
+function canRunHere(q: Quest) {
+  return q.status === 'accepted' && q.area !== 'dungeon' && q.giver === s.value.location
+}
+
+function questHours(q: Quest) {
+  return questTemplate(q)?.hours ?? 1
+}
+
+function runQuest(id: string) {
+  game.doTownQuest(id, intent.value || undefined)
+  intent.value = ''
+  refreshQuests()
 }
 
 function openGuild() {
@@ -146,7 +162,7 @@ function explore() {
         <ul v-else class="plain">
           <li v-if="quests.length === 0" class="muted small">目前沒有委託。</li>
           <li v-for="q in quests" :key="q.id">
-            <div><span class="tag">{{ q.rank }}</span> {{ q.title }}</div>
+            <div><span class="tag">{{ q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>
             <div class="small muted">
               報酬 {{ formatMoney(q.reward_cc) }}
               <span v-if="q.status !== 'available'">・進度 {{ q.progress }}/{{ q.goal }}</span>
@@ -155,6 +171,7 @@ function explore() {
               {{ canAcceptRank(s, q.rank) ? '接取' : '階級不足' }}
             </button>
             <button v-else-if="q.status === 'ready'" class="small primary" @click="turnIn(q.id)">交付</button>
+            <button v-else-if="canRunHere(q)" class="small primary" @click="runQuest(q.id)">執行（約 {{ questHours(q) }} 小時）</button>
             <span v-else class="small muted">進行中</span>
           </li>
         </ul>
@@ -167,8 +184,11 @@ function explore() {
         <li v-for="q in activeQuests" :key="q.id">
           <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ q.progress }}/{{ q.goal }}）
           <div class="muted">
-            {{ q.status === 'ready' ? `完成！回到${locationById(q.giver).name}交付` : `目標：${locationById(q.target).name}` }}
+            <template v-if="q.status === 'ready'">完成！回到{{ locationById(q.giver).name }}交付</template>
+            <template v-else-if="q.area === 'dungeon'">目標：{{ locationById(q.target).name }}</template>
+            <template v-else>地點：{{ locationById(q.target).name }}{{ AREA_NAME[q.area] }}</template>
           </div>
+          <button v-if="canRunHere(q)" class="small primary" @click="runQuest(q.id)">執行（約 {{ questHours(q) }} 小時）</button>
         </li>
       </ul>
     </section>

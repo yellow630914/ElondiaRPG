@@ -7,7 +7,8 @@ import economyJson from '@data/rules/economy.json'
 import combatJson from '@data/rules/combat.json'
 import skillsJson from '@data/rules/skills.json'
 import enemiesJson from '@data/rules/enemies.json'
-import type { GuildRank, SkillQuality } from './types'
+import townQuestsJson from '@data/rules/town_quests.json'
+import type { GuildRank, QuestKind, SkillQuality } from './types'
 
 export type RouteMode = 'road' | 'trail' | 'wild' | 'sea' | 'dive' | 'underground'
 export type LocationType =
@@ -138,6 +139,26 @@ const enemiesData = enemiesJson as unknown as {
 export const enemies: Record<string, EnemyDef> = Object.fromEntries(enemiesData.enemies.map((e) => [e.id, e]))
 export const encounterTables: Record<string, EncounterGroup[]> = Object.fromEntries(
   Object.entries(enemiesData.encounters).filter((e): e is [string, EncounterGroup[]] => Array.isArray(e[1])),
+)
+
+export interface TownQuestTemplate {
+  id: string
+  kind: Exclude<QuestKind, 'clear_dungeon'>
+  area: 'town' | 'outskirts'
+  title: string
+  scene: string
+  hours: number
+  dc?: number
+  item?: string
+  qty?: number
+  encounter?: EncounterGroup
+  encounter_chance?: number
+  reward_cc: [number, number]
+}
+const townQuestsData = townQuestsJson as unknown as { per_town: number; templates: TownQuestTemplate[] }
+export const townQuestsPerTown = townQuestsData.per_town
+export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.fromEntries(
+  townQuestsData.templates.map((t) => [t.id, t]),
 )
 
 const locationIndex = new Map(geography.locations.map((l) => [l.id, l]))

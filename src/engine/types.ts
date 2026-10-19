@@ -125,14 +125,25 @@ export interface Character {
   isPlayer?: boolean
 }
 
+/**
+ * clear_dungeon：到冒險區域獲勝 goal 次（E 級以上）。
+ * 其餘為 F 級城內／近郊委託：pest、hunt 是戰鬥；search、gather、patrol 是檢定；delivery 花時間即可。
+ */
+export type QuestKind = 'clear_dungeon' | 'pest' | 'hunt' | 'search' | 'gather' | 'patrol' | 'delivery'
+
 export interface Quest {
   id: string
   title: string
   rank: GuildRank
+  kind: QuestKind
+  area: 'town' | 'outskirts' | 'dungeon'
+  /** 城內／近郊委託的範本 id（data/rules/town_quests.json） */
+  template?: string
   /** 發布委託的城鎮，也是交付地點 */
   giver: string
+  /** 執行地點；城內／近郊委託就是發布的城鎮 */
   target: string
-  /** 需要在目標地點獲勝的次數 */
+  /** 需要完成的次數 */
   goal: number
   progress: number
   reward_cc: number

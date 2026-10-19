@@ -1,0 +1,48 @@
+{
+  "$comment": "F 級委託範本：地點在城內 (town) 或城鎮近郊 (outskirts)，不需要旅行。{town} 會換成城鎮名稱。kind：pest / hunt = 戰鬥；search / gather / patrol = 檢定（1d20 + 熟練加值 ≥ dc，失敗可再試）；delivery = 花時間即可完成。encounter_chance 為檢定前遭遇敵人的機率，遭遇時改為戰鬥，委託維持進行中。報酬依世界書 F 級 3-5 銀幣（30-50 銅）。",
+  "version": 1,
+  "per_town": 3,
+  "templates": [
+    {
+      "id": "cellar_rats", "kind": "pest", "area": "town",
+      "title": "驅趕{town}酒館地窖的巨鼠", "scene": "{town}的酒館地窖",
+      "hours": 2, "encounter": [["giant_rat", 2]], "reward_cc": [30, 40]
+    },
+    {
+      "id": "lost_purse", "kind": "search", "area": "town",
+      "title": "尋找商人在{town}市集遺失的錢袋", "scene": "{town}的市集",
+      "hours": 2, "dc": 11, "reward_cc": [30, 40]
+    },
+    {
+      "id": "apothecary_delivery", "kind": "delivery", "area": "town",
+      "title": "替{town}的藥鋪送貨", "scene": "{town}的街巷",
+      "hours": 3, "reward_cc": [30, 35]
+    },
+    {
+      "id": "night_patrol", "kind": "patrol", "area": "town",
+      "title": "協助{town}的衛兵夜間巡邏", "scene": "{town}的夜街",
+      "hours": 4, "dc": 10, "encounter_chance": 0.3, "encounter": [["bandit", 1]], "reward_cc": [35, 50]
+    },
+    {
+      "id": "herb_gathering", "kind": "gather", "area": "outskirts",
+      "title": "在{town}近郊採集草藥", "scene": "{town}近郊的林地",
+      "hours": 4, "dc": 10, "item": "藥草", "qty": 3,
+      "encounter_chance": 0.25, "encounter": [["wolf", 1]], "reward_cc": [35, 50]
+    },
+    {
+      "id": "farm_pests", "kind": "hunt", "area": "outskirts",
+      "title": "清除{town}近郊農田的害獸", "scene": "{town}近郊的農田",
+      "hours": 3, "encounter": [["giant_rat", 3]], "reward_cc": [35, 50]
+    },
+    {
+      "id": "goblin_scouts", "kind": "hunt", "area": "outskirts",
+      "title": "討伐在{town}近郊出沒的哥布林", "scene": "{town}近郊的丘陵",
+      "hours": 4, "encounter": [["goblin", 2]], "reward_cc": [40, 50]
+    },
+    {
+      "id": "scout_road", "kind": "search", "area": "outskirts",
+      "title": "偵查{town}近郊商道的異狀", "scene": "{town}近郊的商道",
+      "hours": 3, "dc": 12, "encounter_chance": 0.2, "encounter": [["wolf", 2]], "reward_cc": [35, 50]
+    }
+  ]
+}

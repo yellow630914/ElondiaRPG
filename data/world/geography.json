@@ -31,7 +31,7 @@
     { "id": "rivervale", "name": "河谷鎮", "region": "central", "type": "town", "faction": "human_alliance", "note": "中立談判地" },
     { "id": "coast_ferry", "name": "沿海渡口", "region": "central", "type": "port", "faction": "dawn_kingdom", "note": "僅見於地圖" },
     { "id": "whisper_crypt", "name": "低語墓穴", "region": "central", "type": "dungeon", "rank": "E-D", "estimated_rank": true },
-    { "id": "snake_creek", "name": "蛇溪洞窟", "region": "central", "type": "dungeon", "rank": "F-E", "estimated_rank": true },
+    { "id": "snake_creek", "name": "蛇溪洞窟", "region": "central", "type": "dungeon", "rank": "E-D", "estimated_rank": true },
     { "id": "mist_abbey", "name": "晨霧修道院遺址", "region": "central", "type": "dungeon", "rank": "D-C", "estimated_rank": true },
 
     { "id": "ironforge", "name": "鐵爐堡", "region": "north", "type": "capital", "faction": "dwarf_clans" },

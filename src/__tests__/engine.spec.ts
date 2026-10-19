@@ -5,9 +5,9 @@ import { act, currentActor, finishCombat, startCombat, validTargets } from '@/en
 import { formatMoney } from '@/engine/money'
 import { Rng, roll } from '@/engine/rng'
 import { newGame } from '@/engine/state'
-import { acceptQuest, guildQuests, recruit, rest, turnInQuest } from '@/engine/town'
+import { acceptQuest, canAcceptRank, doTownQuest, guildQuests, recruit, rest, turnInQuest } from '@/engine/town'
 import { travel } from '@/engine/travel'
-import type { GameState, Report } from '@/engine/types'
+import type { GameState, Quest, QuestKind, Report } from '@/engine/types'
 import { shortestPath } from '@/engine/world'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
@@ -27,6 +27,17 @@ function fightToEnd(state: GameState) {
   }
   expect(state.combat?.status).not.toBe('ongoing')
   return finishCombat(state)
+}
+
+/** 每天公會會重新發委託；換日直到出現指定類型的委託為止 */
+function findQuest(state: GameState, match: (q: Quest) => boolean): Quest {
+  for (let day = state.time.day; day < state.time.day + 60; day++) {
+    state.quests = state.quests.filter((q) => q.status !== 'available')
+    state.time.day = day
+    const quest = guildQuests(state).find((q) => q.status === 'available' && match(q))
+    if (quest) return quest
+  }
+  throw new Error('no matching quest generated')
 }
 
 describe('world', () => {
@@ -93,31 +104,6 @@ describe('combat', () => {
     expect(state.party[0]!.hp).toBeGreaterThan(0)
   })
 
-  it('advances quests and pays out on turn-in', () => {
-    const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 11 })
-    state.location = 'albena'
-    // 公會每次會為附近每個冒險區域各發一個委託；找到蛇溪洞窟的 F 級委託為止
-    let quest = guildQuests(state).find((q) => q.target === 'snake_creek' && q.rank === 'F')
-    for (let day = 2; !quest && day < 50; day++) {
-      state.quests = []
-      state.time.day = day
-      quest = guildQuests(state).find((q) => q.target === 'snake_creek' && q.rank === 'F')
-    }
-    if (!quest) throw new Error('no F-rank quest generated')
-    expectValid(acceptQuest(state, quest.id))
-    state.location = 'snake_creek'
-    for (let fights = 0; quest.progress < quest.goal && fights < 20; fights++) {
-      state.party[0]!.hp = state.party[0]!.maxHp
-      startCombat(state, [['giant_rat', 1]])
-      fightToEnd(state)
-    }
-    expect(quest.status).toBe('ready')
-    state.location = 'albena'
-    const money = state.money_cc
-    expectValid(turnInQuest(state, quest.id))
-    expect(state.money_cc).toBe(money + quest.reward_cc)
-  })
-
   it('levels up and offers skill choices', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 3 })
     state.location = 'snake_creek'
@@ -127,6 +113,73 @@ describe('combat', () => {
     expect(report.outcome.result).toBe('victory')
     expect(report.changes.level_up?.[0]).toMatchObject({ actor: 'pc', from: 1, to: 2 })
     expect(state.party[0]!.pendingSkillChoices?.[0]?.length).toBeGreaterThan(0)
+  })
+})
+
+describe('quests', () => {
+  it('offers F-rank quests in town and only E or higher for dungeons', () => {
+    const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 8 })
+    const quests = guildQuests(state)
+    const townQuests = quests.filter((q) => q.area !== 'dungeon')
+    const dungeonQuests = quests.filter((q) => q.area === 'dungeon')
+    expect(townQuests.length).toBe(3)
+    expect(townQuests.every((q) => q.rank === 'F' && q.target === 'soriel')).toBe(true)
+    expect(dungeonQuests.length).toBeGreaterThan(0)
+    expect(dungeonQuests.every((q) => q.rank !== 'F')).toBe(true)
+  })
+
+  it('completes a combat quest in the outskirts and pays out', () => {
+    const state = newGame({ name: '測試者', race: 'human', classId: 'barbarian', seed: 12 })
+    const quest = findQuest(state, (q) => q.kind === 'hunt' || q.kind === 'pest')
+    expectValid(acceptQuest(state, quest.id))
+    for (let tries = 0; quest.status === 'accepted' && tries < 10; tries++) {
+      state.party[0]!.hp = state.party[0]!.maxHp
+      doTownQuest(state, quest.id)
+      expect(state.combat?.questId).toBe(quest.id)
+      const report = fightToEnd(state)
+      expectValid(report)
+      expect(report.location.scene).toContain('索里耶爾')
+    }
+    expect(quest.status).toBe('ready')
+    const money = state.money_cc
+    expectValid(turnInQuest(state, quest.id))
+    expect(state.money_cc).toBe(money + quest.reward_cc)
+  })
+
+  it('completes check-based quests, retrying and fighting off ambushes', () => {
+    const kinds: QuestKind[] = ['search', 'gather', 'patrol', 'delivery']
+    for (const kind of kinds) {
+      const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 20 })
+      const quest = findQuest(state, (q) => q.kind === kind)
+      acceptQuest(state, quest.id)
+      for (let tries = 0; quest.status === 'accepted' && tries < 30; tries++) {
+        state.party[0]!.hp = state.party[0]!.maxHp
+        const result = doTownQuest(state, quest.id)
+        if (state.combat) fightToEnd(state)
+        else expectValid(result as Report)
+      }
+      expect(quest.status, kind).toBe('ready')
+      expectValid(turnInQuest(state, quest.id))
+      if (kind === 'gather') expect(state.inventory.find((i) => i.name === '藥草')).toBeUndefined()
+    }
+  })
+
+  it('requires a party for E-rank dungeon quests at level 1', () => {
+    const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 11 })
+    state.location = 'albena'
+    const quest = findQuest(state, (q) => q.area === 'dungeon' && q.target === 'snake_creek' && q.rank === 'E')
+    expect(canAcceptRank(state, quest.rank)).toBe(false)
+    state.location = 'soriel'
+    recruit(state, 'npc_lina')
+    state.location = 'albena'
+    expectValid(acceptQuest(state, quest.id))
+    state.location = 'snake_creek'
+    for (let fights = 0; quest.progress < quest.goal && fights < 20; fights++) {
+      for (const m of state.party) m.hp = m.maxHp
+      startCombat(state, [['giant_rat', 1]])
+      fightToEnd(state)
+    }
+    expect(quest.status).toBe('ready')
   })
 })
 
@@ -142,11 +195,6 @@ describe('town', () => {
     expectValid(report)
     const lina = report.party.find((p) => p.id === 'npc_lina')!
     expect(lina.attitude).toBeTruthy()
-  })
-
-  it('offers quests in the starting town', () => {
-    const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 8 })
-    expect(guildQuests(state).length).toBeGreaterThan(0)
   })
 
   it('rests at the inn and restores HP', () => {

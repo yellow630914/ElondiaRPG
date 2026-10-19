@@ -24,7 +24,7 @@ npm run build      # 型別檢查 + 建置到 dist/
 - 建立角色（6 種族、10 職業），從索里耶爾出發
 - 依世界書路程在地圖上移動，消耗天數、食宿與乾糧，旅途有天候檢定與事件
 - 旅店休息、購買乾糧、在酒館招募 NPC 隊友（最多 4 人）
-- 接取冒險者公會委託、探索冒險區域
+- 冒險者公會委託：F 級在城內與近郊（戰鬥、檢定、送貨），E 級以上在冒險區域
 - 逐回合手動戰鬥：攻擊、技能、防禦、撤退；戰後產生戰報、分配經驗、升級三選一技能
 - 每份報告都可以交給 AI 生成敘事（串流顯示），或複製提示詞自行使用
 - 自動存檔在瀏覽器，可匯出 / 匯入
@@ -34,6 +34,7 @@ npm run build      # 型別檢查 + 建置到 dist/
 | 路徑 | 說明 |
 |---|---|
 | [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 遊戲設計：架構、戰鬥與旅行規則、AI 敘事管線、待決定事項 |
+| [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索提案（周邊 → 淺層 → 中層 → 深層） |
 | [`docs/WORLD_NOTES.md`](docs/WORLD_NOTES.md) | 世界書與地圖之間的不一致與缺漏 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema） |
 | [`examples/reports/`](examples/reports/) | 範例報告：戰鬥、旅行 |
