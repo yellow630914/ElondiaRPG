@@ -5,6 +5,7 @@ import { locationById } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import type { Memory, Relationship } from '@/engine/social'
 import { useGame } from '@/stores/game'
+import NameTag from './NameTag.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -101,7 +102,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
       <div v-if="suggestions.length" class="suggestions">
         <h3 class="small">AI 提議更新「與{{ pcName }}的關係」</h3>
         <div v-for="sg in suggestions" :key="sg.id" class="suggestion small">
-          <div><strong>{{ nameOf(sg.npc) }}</strong> <span class="muted">目前：{{ s.relationships?.[sg.npc]?.toPlayer }}</span></div>
+          <div><NameTag :id="sg.npc" /> <span class="muted">目前：{{ s.relationships?.[sg.npc]?.toPlayer }}</span></div>
           <textarea v-model="suggestionDraft[sg.id]" rows="2" :placeholder="sg.text" />
           <div class="row">
             <button class="small primary" @click="game.acceptSuggestion(sg.id, suggestionDraft[sg.id] || sg.text)">採用</button>
@@ -112,7 +113,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
 
       <article v-for="r in rels" :key="r.id" class="rel">
         <div class="row" style="justify-content: space-between">
-          <strong>{{ r.name }}</strong>
+          <NameTag :id="r.id" />
           <span class="small">{{ affinityStage(r.affinity) }}（{{ r.affinity }}）</span>
         </div>
         <div class="affinity"><span :style="{ left: affinityPct(r.affinity) }" /></div>

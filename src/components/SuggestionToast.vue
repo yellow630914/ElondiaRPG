@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useGame } from '@/stores/game'
+import NameTag from './NameTag.vue'
 
 // AI 提議更新人際關係描述時，在右下角彈出提醒，可以直接採用、修改或不採用。
 const emit = defineEmits<{ 'open-relations': [] }>()
@@ -33,7 +34,7 @@ function snooze() {
   <Transition name="toast">
     <aside v-if="current && rel" class="toast" role="alertdialog" aria-live="polite">
       <header class="row">
-        <strong>💞 {{ rel.name }}和你的關係有了變化</strong>
+        <strong>💞 <NameTag :id="current.npc" /> 和你的關係有了變化</strong>
         <span v-if="pending.length > 1" class="tag">還有 {{ pending.length - 1 }} 則</span>
       </header>
       <p class="small muted">目前：{{ rel.toPlayer }}</p>

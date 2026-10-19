@@ -299,6 +299,16 @@ function ensureQuestMarkers(state: GameState, area: Area, rng: Rng) {
   }
 }
 
+/** 已完成（或不再進行中）的委託，把近郊的委託地點標記拿掉。 */
+export function clearQuestMarkers(state: GameState) {
+  const active = new Set(state.quests.filter((q) => q.status === 'accepted').map((q) => q.id))
+  for (const area of Object.values(state.areas ?? {})) {
+    area.cells.forEach((c, i) => {
+      if (c.kind === 'quest' && (!c.questId || !active.has(c.questId))) area.cells[i] = { kind: 'floor' }
+    })
+  }
+}
+
 /** 城內委託要站在指定設施上，近郊委託要站在委託地點上。 */
 export function questRunnableHere(state: GameState, quest: { id: string; area: string; giver: string; spot?: string }): boolean {
   if (quest.giver !== state.location) return false
@@ -599,6 +609,7 @@ export function ascend(state: GameState) {
 
 /** 戰鬥結束後：獲勝清除格子；撤退退回上一格；戰敗被送回城鎮或地下城入口外。 */
 export function afterCombat(state: GameState, report: Report) {
+  clearQuestMarkers(state)
   const result = report.outcome.result
   const p = state.position
   if (!p) return

@@ -35,6 +35,7 @@ export interface ActorState {
   equipment?: string[]
   personality?: string
   attitude?: string
+  gender?: string
 }
 
 export interface Effect {
@@ -173,6 +174,8 @@ export interface Character {
   faction?: string
   /** 升級時待選的能力選項（每組三選一） */
   pendingAbilityChoices?: string[][]
+  /** 目前這組選項已經重抽的次數 */
+  abilityRerollsUsed?: number
   /** 只有 NPC 隊友有；-100 ~ 100。來源是人際關係條目，這裡是同步副本 */
   affinity?: number
   isPlayer?: boolean
@@ -184,7 +187,7 @@ export interface Character {
   contract?: ContractRef
   /** 已花掉的生命骰（總數 = 等級） */
   hitDiceUsed?: number
-  /** 主角的設定（建角時填寫，可在隊伍頁修改） */
+  /** 性別：主角是自由輸入的文字；NPC 是性別 id（見 npc_pool.json） */
   gender?: string
   appearance?: string
   background?: string
@@ -205,6 +208,8 @@ export interface ContractRef {
 export interface NpcRecord extends NpcDef {
   generated?: boolean
   background?: string
+  /** 平常待的設施（格子種類，例如 tavern、shop、inn）；沒有時在整個聚落都找得到 */
+  spot?: string
   character?: Character
 }
 

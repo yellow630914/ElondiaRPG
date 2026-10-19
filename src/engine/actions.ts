@@ -18,6 +18,7 @@ import {
   actionRules, ATTR_IDS, attrName, locationById, regionById, type ActionKind, type AttrId, type Degree, type EffectKind,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
+import type { NpcSpec } from './npcs'
 import { addAffinity, conditionPenalty, pcOf } from './party'
 import { applyNegotiationOutcome } from './negotiation'
 import { addSuggestions } from './social'
@@ -114,7 +115,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 const EFFECT_OF: Partial<Record<RewardEffect['type'], EffectKind>> = {
   affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
-  money: 'money', item: 'item', xp: 'xp',
+  money: 'money', item: 'item', xp: 'xp', meet: 'meet',
 }
 
 /**
@@ -201,6 +202,21 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
           effects.push({ type, name, qty: n })
           items++
         }
+        break
+      }
+      case 'meet': {
+        // 只有在旅店長休、對象是同旅館的人時才能認識新的人
+        if (p.target !== 'guests' || effects.some((y) => y.type === 'meet')) break
+        const spec = (x.npc && typeof x.npc === 'object' ? x.npc : {}) as Record<string, unknown>
+        const str = (v: unknown, n: number) => clipText(v, n) || undefined
+        const level = Math.max(1, Math.min(pc.level + 2, Math.round(num(spec.level) || pc.level)))
+        const affinity = clamp(Math.round(num(x.affinity) || 0), -caps.meet_affinity, caps.meet_affinity)
+        const npc: NpcSpec = { level, location: state.location }
+        for (const [k, n] of [['name', 12], ['gender', 10], ['race', 12], ['class', 12], ['personality', 80], ['appearance', 120], ['background', 120]] as const) {
+          const v = str(spec[k], n)
+          if (v) npc[k] = v
+        }
+        effects.push({ type: 'meet', npc, spot: 'inn', ...(affinity ? { affinity } : {}), ...(str(x.to_player, caps.relationship_text_chars) ? { to_player: str(x.to_player, caps.relationship_text_chars)! } : {}) })
         break
       }
       case 'xp': {
@@ -310,14 +326,28 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'escape': return applyEscape(state, report, degree)
     case 'bargain': return applyBargain(state, report, p.target!, degree)
     case 'negotiation': return applyNegotiationOutcome(state, report, p.target!, degree)
-    case 'free': return ''
+    case 'free':
+    case 'rest_talk': return ''
   }
 }
 
 /** 沒有 AI（或 AI 的判斷與骰值不符）時的預設效果：自由行動依成功程度小幅改變對象的親密度。 */
 function defaultEffects(state: GameState, report: Report, p: ActionPending, degree: Degree): string[] {
+  if (p.kind === 'rest_talk') return restTalkDefaults(state, report, p, degree)
   if (p.kind !== 'free' || !p.target || !state.relationships?.[p.target]) return []
   const delta = { critical: 4, success: 2, partial: 0, fail: -2, fumble: -4 }[degree]
   addAffinity(state, report, p.target, delta, p.text.slice(0, 30))
+  return []
+}
+
+/** 長休時的互動（依規則）：和隊友聊天親密度小幅變化；和同旅館的人相處愉快時會認識一位新朋友。 */
+function restTalkDefaults(state: GameState, report: Report, p: ActionPending, degree: Degree): string[] {
+  const delta = { critical: 3, success: 2, partial: 1, fail: -1, fumble: -3 }[degree]
+  if (p.target === 'guests') {
+    if (degree !== 'critical' && degree !== 'success') return []
+    return applyEffects(state, report, [{ type: 'meet', npc: { level: pcOf(state).level, location: state.location }, spot: 'inn', affinity: delta * 3 }])
+  }
+  const targets = p.target ? [p.target] : state.party.filter((m) => !m.isPlayer).map((m) => m.id)
+  for (const id of targets) addAffinity(state, report, id, delta, '長休時的相處')
   return []
 }

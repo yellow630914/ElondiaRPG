@@ -8,6 +8,7 @@ import { costText, dealMoney, discount, effectText, itemCategory, keeperTitle, s
 import type { Deal } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
+import NameTag from './NameTag.vue'
 
 const props = defineProps<{ type: ShopType }>()
 const game = useGame()
@@ -73,7 +74,7 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
       </span>
     </div>
     <p v-if="keeper" class="small muted">
-      {{ keeperTitle(type) }}：{{ keeper.name }}・{{ keeper.personality }}
+      {{ keeperTitle(type) }}：<NameTag :id="keeper.id" />・{{ keeper.personality }}
       <template v-if="off">（你享有 {{ off }}% 折扣）</template>
     </p>
 

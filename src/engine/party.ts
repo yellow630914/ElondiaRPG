@@ -2,9 +2,10 @@
 // 這些函式直接修改狀態，並把變化記在報告的 changes 裡；報告由呼叫端提交。
 
 import { snapshot } from './character'
-import { combatRules, companionRules, contractDef, npcs as namedNpcs, slaveryRules, type Bond } from './data'
+import { combatRules, companionRules, contractDef, locationById, npcs as namedNpcs, slaveryRules, type Bond } from './data'
 import { characterFor, npcRecord, registerNpc } from './npcs'
 import { ensureRelationship, setAffinity } from './social'
+import { reachable } from './world'
 import type { Character, CompanionChange, ContractRef, GameState, NpcRecord, Report } from './types'
 
 const JOIN_TEXT: Record<Bond, string> = {
@@ -96,7 +97,11 @@ export function leaveParty(state: GameState, id: string, report?: Report, reason
   const stored: Character = JSON.parse(JSON.stringify(member)) as Character
   delete stored.bond
   delete stored.group
-  registerNpc(state, { ...rec, level: member.level, location: state.location, character: stored })
+  // 離隊的人回到這座城鎮的酒館；在冒險區域離隊則回到最近的聚落
+  const home = locationById(state.location).type === 'dungeon'
+    ? reachable(state.location).find((r) => locationById(r.id).type !== 'dungeon')?.id ?? rec.location
+    : state.location
+  registerNpc(state, { ...rec, level: member.level, location: home, spot: 'tavern', character: stored })
   recordChange(report, { npc: id, name: member.name, change: 'left', ...(member.bond ? { bond: member.bond } : {}), ...(reason ? { reason } : {}) })
   return member
 }

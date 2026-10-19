@@ -1,6 +1,6 @@
 // 城鎮行動：旅店休息、酒館招募、公會委託、補給、升級選技能。
 
-import { abilityQuality, guildRankFor, proficiency, snapshot } from './character'
+import { abilityQuality, guildRankFor, proficiency, rerollAbilityChoices, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
   abilityDef, attributeRules, combatRules, dungeonEncounters, economy, locationById, npcs, regionById,
@@ -9,6 +9,7 @@ import {
 import { roll, withBonus } from './rng'
 import { isFugitive, joinParty, leaveParty } from './party'
 import { npcRecord } from './npcs'
+import { clearQuestMarkers } from './grid'
 import { innCost, longRest } from './rest'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
@@ -264,6 +265,7 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   if (success) {
     quest.progress = quest.goal
     quest.status = 'ready'
+    clearQuestMarkers(state)
     if (tpl.item) report.changes.items_gained = [{ name: tpl.item, qty: tpl.qty ?? 1, owner: 'pc' }]
     report.outcome = { result: 'success', summary: `完成「${quest.title}」，可以回公會交付了。` }
   } else {
@@ -298,11 +300,19 @@ export function turnInQuest(state: GameState, questId: string): Report {
 
 // ---- 升級 ----
 
+/** 重抽升級時的能力選項（不推進時間，也不產生報告） */
+export function rerollAbility(state: GameState, memberId: string): string[] {
+  const member = state.party.find((m) => m.id === memberId)
+  if (!member) throw new Error('隊伍中沒有這位角色')
+  return withRng(state, (rng) => rerollAbilityChoices(member, rng))
+}
+
 export function chooseAbility(state: GameState, memberId: string, abilityId: string): Report {
   const member = state.party.find((m) => m.id === memberId)
   const choices = member?.pendingAbilityChoices?.[0]
   if (!member || !choices?.includes(abilityId)) throw new Error('沒有這個能力選項')
   member.pendingAbilityChoices!.shift()
+  delete member.abilityRerollsUsed
   if (member.pendingAbilityChoices!.length === 0) delete member.pendingAbilityChoices
   member.abilities.push(abilityId)
   const a = abilityDef(abilityId)

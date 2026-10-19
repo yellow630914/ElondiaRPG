@@ -19,6 +19,7 @@
     "flags": 3,
     "relationship_text_chars": 120,
     "summary_chars": 160,
+    "meet_affinity": 10,
     "narrative_chars": 2000
   },
   "kinds": {
@@ -37,6 +38,8 @@
     "negotiate": { "name": "談判解除契約", "attr": "cha", "hours": 1, "effects": ["affinity", "relationship_text", "flag"] },
     "escape": { "name": "逃離主人", "attr": "dex", "hours": 2, "effects": ["affinity", "relationship_text", "flag"] },
     "bargain": { "name": "交涉價格", "attr": "cha", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag"] },
-    "negotiation": { "name": "談判", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag", "reputation"] }
+    "negotiation": { "name": "談判", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag", "reputation"] },
+    "rest_talk": { "name": "長休時的互動", "attr": "cha", "base": 10, "hours": 0, "effects": ["affinity", "relationship_text", "flag", "xp", "meet"],
+      "$comment_meet": "meet：在旅店認識新的人（只有在旅店長休、對象是「同旅館的人」時）" }
   }
 }

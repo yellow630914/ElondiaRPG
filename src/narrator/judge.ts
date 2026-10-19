@@ -5,7 +5,7 @@
 import { affinityStage, lifeTier, snapshot } from '@/engine/character'
 import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
-  geography, itemRules, shopRules, slaveryRules, type ShopType,
+  geography, genderName, itemRules, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef,
 } from '@/engine/data'
@@ -34,7 +34,7 @@ function partyLines(state: GameState): string {
     const s = snapshot(m, undefined, pc)
     const bond = m.isPlayer ? '主角' : m.bond ? { hired: '雇傭', voluntary: '自願', slave: '奴隸', leader: '隊長', ally: '隊員' }[m.bond] : '同伴'
     const conds = m.status.map(conditionName).join('、')
-    return `- ${m.name}（${bond}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
+    return `- ${m.name}（${bond}${m.gender ? `・${genderName(m.gender)}` : ''}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
   }).join('\n')
 }
 
@@ -54,7 +54,7 @@ function targetDetail(state: GameState, p: ActionPending): string {
   const rel = state.relationships?.[id]
   if (!rec) return `對象：${p.targetName ?? id}`
   const lines = [
-    `對象 ${rec.name}（id: ${rec.id}）：${raceName(rec.race)}・${className(rec.class)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
+    `對象 ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderName(rec.gender)}` : ''}）：${raceName(rec.race)}・${className(rec.class)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
     `性格：${rec.personality}`,
     rec.appearance ? `外貌：${rec.appearance}` : '',
     rec.background ? `背景：${rec.background}` : '',
@@ -82,6 +82,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
     money: `{"type":"money","amount":<整數銅幣，獲得上限 ${caps.money_cc_per_level * pc.level}；負數為花費，不超過持有>}`,
     item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}；負數為給出持有的物品>}（最多 ${caps.items} 項）`,
     xp: `{"type":"xp","amount":<每人上限 ${caps.xp_per_level * pc.level}>}`,
+    meet: `{"type":"meet","npc":{"name":"","gender":"male/female/femboy/ts/futa/unknown","race":"human","class":"fighter","level":${pc.level},"personality":"","appearance":"","background":""},"affinity":<±${caps.meet_affinity}>,"to_player":"與主角的關係"}（只限對象是同旅館的旅客，最多認識一人）`,
   }
   const allowed = kind.effects.map((e) => `- ${effectDocs[e]}`).join('\n')
 
@@ -103,11 +104,14 @@ ${allowed}
 輸出格式：
 {"degree":"success","attr":"cha","dc":${p.base_dc},"rationale":"為什麼是這個結果（簡短）","twist":"（只在出乎預料時填寫）","summary":"……","narrative":"……","effects":[],"relationship_updates":[{"id":"<id>","to_player":"更新後與主角的關係（只在關係明顯改變時提供）"}]}`
 
+  const restNote = p.kind === 'rest_talk'
+    ? `\n這是長休期間（入睡前或清晨）的互動，時間已經包含在長休裡。${p.target === 'guests' ? '對象是同旅館的其他旅客，可以用 meet 讓主角認識其中一人。' : p.target ? '' : '對象是所有夥伴。'}`
+    : ''
   const sitText = p.situational.length ? p.situational.map((x) => `${x.label} ${signed(x.value)}`).join('、') : '無'
   const user = `<action>
 行動：${kind.name}
 場景：${p.scene}（${locationById(p.location).name}）
-${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}
+${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}
 </action>
 
 <actor>
@@ -147,8 +151,8 @@ export function buildTavernPrompt(state: GameState): Prompt | null {
     .filter((r) => r?.generated && !state.relationships?.[r.id])
   if (!list.length) return null
   const loc = locationById(state.location)
-  const lines = list.map((r) => `- id: ${r!.id}｜${raceName(r!.race)}・${className(r!.class)} Lv.${r!.level}｜目前的草稿：${r!.name}，${r!.personality} ${r!.appearance ?? ''}`).join('\n')
-  const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為酒館裡等著被雇用的冒險者重新設計名字、外貌、性格與一句背景，讓他們符合種族、職業與所在城鎮的風土。種族、職業與等級不可更改。只輸出 JSON：{"candidates":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字"}]}`
+  const lines = list.map((r) => `- id: ${r!.id}｜${genderName(r!.gender)}｜${raceName(r!.race)}・${className(r!.class)} Lv.${r!.level}｜目前的草稿：${r!.name}，${r!.personality} ${r!.appearance ?? ''}`).join('\n')
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為酒館裡等著被雇用的冒險者重新設計名字、外貌、性格與一句背景，讓他們符合種族、職業與所在城鎮的風土。種族、性別、職業與等級不可更改，名字要符合性別。只輸出 JSON：{"candidates":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字"}]}`
   const user = `城鎮：${loc.name}\n候選人：\n${lines}`
   return { system, user }
 }

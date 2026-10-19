@@ -2,13 +2,14 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { mod } from '@/engine/character'
 import { askingFor, invitable, marketsHere, partyOffersHere, waitChance } from '@/engine/companions'
-import { className, combatRules, companionRules, raceName } from '@/engine/data'
+import { className, combatRules, companionRules, genderName, raceName } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { isBound, leaderOf } from '@/engine/party'
 import type { TavernCandidate } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import MarketPanel from './MarketPanel.vue'
+import NameTag from './NameTag.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -52,15 +53,6 @@ const offersHere = computed(() => partyOffersHere(s.value))
 const leader = computed(() => leaderOf(s.value))
 const chance = computed(() => Math.round(waitChance(s.value) * 100))
 
-function offerText(o: { leader: string; members: string[] }) {
-  const l = npcRecord(s.value, o.leader)!
-  const members = o.members.map((id) => npcRecord(s.value, id)!)
-  return {
-    leader: `${l.name}（${raceName(l.race)}・${className(l.class)} Lv.${l.level}）`,
-    members: members.map((m) => `${m.name}（${className(m.class)} Lv.${m.level}）`).join('、'),
-    personality: l.personality,
-  }
-}
 
 // ---- 邀請、黑市 ----
 const inviteList = computed(() => invitable(s.value))
@@ -82,8 +74,8 @@ const showBlack = ref(false)
         <li v-for="c in visible" :key="c.npc" class="cand">
           <template v-if="npcRecord(s, c.npc)">
             <div class="row" style="justify-content: space-between">
-              <strong>{{ npcRecord(s, c.npc)!.name }}</strong>
-              <span class="small muted">{{ raceName(npcRecord(s, c.npc)!.race) }}・{{ className(npcRecord(s, c.npc)!.class) }} Lv.{{ npcRecord(s, c.npc)!.level }}</span>
+              <NameTag :id="c.npc" />
+              <span class="small muted">{{ genderName(npcRecord(s, c.npc)!.gender) }}・{{ raceName(npcRecord(s, c.npc)!.race) }}・{{ className(npcRecord(s, c.npc)!.class) }} Lv.{{ npcRecord(s, c.npc)!.level }}</span>
             </div>
             <div class="small muted">{{ npcRecord(s, c.npc)!.personality }}</div>
             <div v-if="npcRecord(s, c.npc)!.appearance" class="small muted">{{ npcRecord(s, c.npc)!.appearance }}</div>
@@ -111,9 +103,9 @@ const showBlack = ref(false)
         <button class="small" :disabled="partyFull" @click="game.waitForParty()">等待組隊</button>
         <ul class="plain">
           <li v-for="o in offersHere" :key="o.id" class="cand small">
-            <div><strong>{{ offerText(o).leader }}</strong> 邀請你同行<template v-if="o.pay_cc">，願意付 {{ formatMoney(o.pay_cc) }}</template></div>
-            <div v-if="o.members.length" class="muted">隊員：{{ offerText(o).members }}</div>
-            <div class="muted">{{ offerText(o).personality }}</div>
+            <div><NameTag :id="o.leader" /> <span class="muted">Lv.{{ npcRecord(s, o.leader)?.level }}</span> 邀請你同行<template v-if="o.pay_cc">，願意付 {{ formatMoney(o.pay_cc) }}</template></div>
+            <div v-if="o.members.length" class="muted">隊員：<template v-for="(id, i) in o.members" :key="id"><span v-if="i">、</span><NameTag :id="id" /></template></div>
+            <div class="muted">{{ npcRecord(s, o.leader)?.personality }}</div>
             <div class="row">
               <button class="small primary" @click="game.acceptPartyOffer(o.id)">加入</button>
               <button class="small" @click="game.declinePartyOffer(o.id)">婉拒</button>
@@ -128,7 +120,7 @@ const showBlack = ref(false)
         <input v-model="inviteText" class="wide small" placeholder="邀請的方式（選填）" />
         <ul class="plain small">
           <li v-for="r in inviteList" :key="r.id" class="row">
-            <span>{{ r.name }}（{{ className(r.class) }} Lv.{{ r.level }}・親密度 {{ s.relationships?.[r.id]?.affinity }}）</span>
+            <span><NameTag :id="r.id" />（Lv.{{ r.level }}・親密度 {{ s.relationships?.[r.id]?.affinity }}）</span>
             <button class="small" :disabled="partyFull || game.judging" @click="game.perform({ kind: 'invite', target: r.id, text: inviteText }); inviteText = ''">邀請</button>
           </li>
         </ul>

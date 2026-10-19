@@ -2,12 +2,12 @@
 import { computed, reactive, ref } from 'vue'
 import {
   abilityQuality, apMaxFor, apRegenFor, castingAttr, evadeFloor, gearAffinities, guildRankFor, luckyThreshold,
-  mod, proficiency, slotMaxFor, weaponFor, xpToNext,
+  mod, proficiency, rerollsLeft, slotMaxFor, weaponFor, xpToNext,
 } from '@/engine/character'
 import { abilityApCost } from '@/engine/combat'
 import {
   abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName, contractDef,
-  damageTypeName, itemRules, locationById, raceName, slaveryRules, type AbilityDef,
+  damageTypeName, genderName, itemRules, locationById, raceName, slaveryRules, type AbilityDef,
 } from '@/engine/data'
 import { isBound, leaderOf } from '@/engine/party'
 import { canEquip, canUse } from '@/engine/inventory'
@@ -17,6 +17,7 @@ import { hitDiceLeft, hitDie } from '@/engine/rest'
 import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import StatBar from './StatBar.vue'
+import NameTag from './NameTag.vue'
 
 const QUALITY_NAME: Record<string, string> = {
   common: '普通', uncommon: '優良', rare: '稀有', epic: '史詩', legendary: '傳說', mythic: '神話',
@@ -94,11 +95,11 @@ function affinityText(m: Character): string {
   <div class="grid">
     <section v-for="m in s.party" :key="m.id" class="panel member">
       <div class="row" style="justify-content: space-between">
-        <h2>{{ m.isPlayer ? "⭐" : "🛡️" }} {{ m.name }}</h2>
+        <h2><NameTag :id="m.id" /><span v-if="m.isPlayer" class="tag pc">主角</span></h2>
         <span class="tag">{{ guildRankFor(m.level) }} 級</span>
       </div>
       <div class="small muted">
-        {{ raceName(m.race) }}・{{ className(m.class) }}・Lv.{{ m.level }}（經驗 {{ m.xp }}/{{ xpToNext(m.level) }}）
+        <template v-if="m.gender">{{ genderName(m.gender) }}・</template>{{ raceName(m.race) }}・{{ className(m.class) }}・Lv.{{ m.level }}（經驗 {{ m.xp }}/{{ xpToNext(m.level) }}）
       </div>
       <div class="row small">
         <span v-if="m.bond" class="tag" :class="m.bond">{{ companionRules.bonds[m.bond] }}</span>
@@ -158,7 +159,10 @@ function affinityText(m: Character): string {
       </div>
 
       <div v-if="m.pendingAbilityChoices?.length" class="choose">
-        <strong class="small">升級！請選擇一項能力：</strong>
+        <div class="row" style="justify-content: space-between">
+          <strong class="small">升級！請選擇一項能力：</strong>
+          <button class="small" :disabled="inCombat || rerollsLeft(m) <= 0" @click="game.rerollAbility(m.id)">🎲 重抽（剩 {{ rerollsLeft(m) }} 次）</button>
+        </div>
         <div class="options">
           <button
             v-for="id in m.pendingAbilityChoices[0]"
@@ -244,5 +248,6 @@ function affinityText(m: Character): string {
 .profile-edit label { display: grid; gap: 2px; }
 .profile-edit textarea { width: 100%; }
 .inventory li { padding: 3px 0; gap: 8px; }
+.tag.pc { margin-left: 8px; vertical-align: middle; }
 .contract { padding: 6px 8px; border: 1px dashed var(--danger); border-radius: 6px; display: grid; gap: 2px; }
 </style>

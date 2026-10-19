@@ -305,7 +305,12 @@ export const useGame = defineStore('game', () => {
     travel: (to: string, intent?: string) => run((s) => travel(s, to, intent)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
-    longRest: (place: 'inn' | 'safe') => run((s) => rest.longRest(s, place)),
+    /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */
+    longRest: async (place: 'inn' | 'safe', talk?: { text: string; target?: string }) => {
+      const report = run((s) => rest.longRest(s, place))
+      if (report && talk?.text.trim()) await perform({ kind: 'rest_talk', text: talk.text, ...(talk.target ? { target: talk.target } : {}) })
+      return report
+    },
     buyRations: (qty: number) => run((s) => town.buyRations(s, qty)),
     recruit: (id: string) => run((s) => town.recruit(s, id)),
     dismiss: (id: string) => run((s) => town.dismiss(s, id)),
@@ -314,6 +319,7 @@ export const useGame = defineStore('game', () => {
     turnInQuest: (id: string) => run((s) => town.turnInQuest(s, id)),
     templeHeal: () => run(town.templeHeal),
     chooseAbility: (member: string, ability: string) => run((s) => town.chooseAbility(s, member, ability)),
+    rerollAbility: (member: string) => run((s) => town.rerollAbility(s, member)),
     spendAttr: (member: string, attr: AttrId) =>
       run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),

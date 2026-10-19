@@ -7,6 +7,7 @@ import { npcRecord } from '@/engine/npcs'
 import type { Degree } from '@/engine/data'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
+import NameTag from './NameTag.vue'
 
 const game = useGame()
 const settings = useSettings()
@@ -28,7 +29,7 @@ function free(id: string) {
       <h3>🤝 {{ n.title }}</h3>
       <button class="small" @click="game.abandonNegotiation(n.id)">放棄</button>
     </div>
-    <p class="small">對象：{{ npcRecord(s, n.counterpart)?.name }}・{{ npcRecord(s, n.counterpart)?.personality }}</p>
+    <p class="small">對象：<NameTag :id="n.counterpart" />・{{ npcRecord(s, n.counterpart)?.personality }}</p>
     <p class="small">{{ n.goal }}<span class="muted">（還可以談 {{ n.attempts }} 次）</span></p>
     <ul class="plain small results">
       <li v-for="d in DEGREES" :key="d"><span class="tag">{{ DEGREE_NAME[d] }}</span> {{ n.outcomes[d].text }}</li>

@@ -17,6 +17,7 @@ function icon(cell: Cell): string {
   if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap'].includes(cell.kind)) return ''
   if (cell.kind === 'trap') return ''
   if (cell.kind === 'resource' && cell.item && /礦|錢/.test(cell.item)) return '💎'
+  if (cell.kind === 'quest' && !game.state?.quests.some((q) => q.id === cell.questId && q.status === 'accepted')) return ''
   return ICON[cell.kind] ?? ''
 }
 

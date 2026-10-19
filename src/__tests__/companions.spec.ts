@@ -216,11 +216,11 @@ describe('tavern hiring', () => {
 })
 
 describe('joining another party', () => {
-  function offered(): GameState {
-    for (let seed = 1; seed < 60; seed++) {
+  function offered(maxMembers = 2): GameState {
+    for (let seed = 1; seed < 80; seed++) {
       const state = game(seed, { cha: 16 })
       waitForParty(state)
-      if (state.partyOffers?.length) return state
+      if (state.partyOffers?.length && state.partyOffers[0]!.members.length <= maxMembers) return state
     }
     throw new Error('no offer')
   }
@@ -239,7 +239,7 @@ describe('joining another party', () => {
   })
 
   it('leaves the party at the next rest with a formal farewell', () => {
-    const state = offered()
+    const state = offered(1)
     acceptPartyOffer(state, state.partyOffers![0]!.id)
     const leader = leaderOf(state)!
     expect(() => recruit(state, 'npc_lina')).not.toThrow()

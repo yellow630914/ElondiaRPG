@@ -8,6 +8,7 @@ import { abilityDef, combatRules, damageTypeName, statusDef, type AbilityDef } f
 import { describeEntry } from '@/narrator/describe'
 import { useGame } from '@/stores/game'
 import StatBar from './StatBar.vue'
+import NameTag from './NameTag.vue'
 
 const emit = defineEmits<{ finished: [] }>()
 const game = useGame()
@@ -118,7 +119,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
         <h3>🛡️ 隊伍</h3>
         <div v-for="c in party" :key="c.id" class="fighter" :class="{ current: actor?.id === c.id, down: !isActive(c) }">
           <div class="row" style="justify-content: space-between">
-            <strong>{{ c.name }}</strong>
+            <NameTag :id="c.id" />
             <span class="small muted">Lv.{{ c.level }}・幸運 {{ luckyThreshold(c.attrs) }}+</span>
           </div>
           <StatBar kind="hp" :value="c.hp" :max="c.maxHp" />

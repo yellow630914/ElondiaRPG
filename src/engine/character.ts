@@ -2,7 +2,7 @@
 // 公式說明見 docs/COMBAT_SYSTEM.md，數值在 data/rules/combat.json。
 
 import {
-  ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, progression, weaponDef,
+  ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
 } from './data'
 import type { Rng } from './rng'
@@ -192,6 +192,7 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
     ...baseCharacter(def.id, def.name, def.race, def.class, baseAttrs(def.class, def.race)),
     personality: def.personality,
     ...(def.faction ? { faction: def.faction } : {}),
+    ...(def.gender ? { gender: def.gender } : {}),
     affinity: progression.affinity.initial,
   }
   while (c.level < def.level) {
@@ -235,6 +236,27 @@ export function abilityChoices(c: Character, rng: Rng, count = 3): string[] {
   while (picked.length < count && pool.length > 0) {
     picked.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]!.id)
   }
+  return picked
+}
+
+/** 這組能力選項還能重抽幾次 */
+export function rerollsLeft(c: Character): number {
+  return c.pendingAbilityChoices?.length ? Math.max(0, progression.ability_rerolls - (c.abilityRerollsUsed ?? 0)) : 0
+}
+
+/** 重抽升級時的能力三選一：盡量換成目前沒出現的能力。 */
+export function rerollAbilityChoices(c: Character, rng: Rng): string[] {
+  const current = c.pendingAbilityChoices?.[0]
+  if (!current) throw new Error('沒有待選的能力')
+  if (rerollsLeft(c) <= 0) throw new Error('這次升級已經不能再重抽了')
+  const fresh = learnable(c).filter((a) => !current.includes(a.id))
+  if (!fresh.length) throw new Error('沒有其他可以學的能力了')
+  const picked: string[] = []
+  while (picked.length < current.length && fresh.length) picked.push(fresh.splice(rng.int(0, fresh.length - 1), 1)[0]!.id)
+  // 新的能力不夠三個時，用原本的選項補上
+  for (const id of current) if (picked.length < current.length && !picked.includes(id)) picked.push(id)
+  c.pendingAbilityChoices![0] = picked
+  c.abilityRerollsUsed = (c.abilityRerollsUsed ?? 0) + 1
   return picked
 }
 
@@ -283,6 +305,7 @@ export function snapshot(c: Character, before?: Character, player?: Character): 
     equipment: [weaponDef(c.weapon).name, armorDef(c.armor).name],
   }
   if (c.personality) state.personality = c.personality
+  if (c.gender) state.gender = genderName(c.gender)
   if (player && !c.isPlayer && c.affinity !== undefined) {
     state.attitude = `${powerGapAttitude(c.level, player.level)} / ${affinityStage(c.affinity)}`
   }

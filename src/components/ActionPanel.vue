@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { DEGREE_NAME, situationalTotal } from '@/engine/actions'
-import { actionRules, ATTR_IDS, attrName, contractDef, type Degree } from '@/engine/data'
+import { actionRules, ATTR_IDS, attrName, classEmoji, contractDef, raceEmoji, type Degree } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { npcRecord } from '@/engine/npcs'
+import { npcRecord, presentHere } from '@/engine/npcs'
 import { isBound, isFugitive } from '@/engine/party'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
@@ -28,12 +28,21 @@ const totals = computed(() => {
 // ---- 自由行動 ----
 const text = ref('')
 const target = ref('')
+// 對象：隊友，以及現在就在身邊的認識的人（同一個聚落、站在他平常待的設施上）
+function label(id: string, name: string): string {
+  const rec = s.value.party.find((m) => m.id === id) ?? npcRecord(s.value, id)
+  return rec ? `${raceEmoji(rec.race)}${name}${classEmoji(rec.class)}` : name
+}
 const targets = computed(() => {
-  const inParty = s.value.party.filter((m) => !m.isPlayer).map((m) => ({ id: m.id, name: m.name, note: '隊伍' }))
+  const inParty = s.value.party.filter((m) => !m.isPlayer).map((m) => ({ id: m.id, name: label(m.id, m.name), note: '隊伍' }))
   const here = Object.values(s.value.relationships ?? {})
-    .filter((r) => !inParty.some((p) => p.id === r.id) && (npcRecord(s.value, r.id)?.location === s.value.location))
-    .map((r) => ({ id: r.id, name: r.name, note: '在這裡' }))
+    .filter((r) => !inParty.some((p) => p.id === r.id) && presentHere(s.value, r.id))
+    .map((r) => ({ id: r.id, name: label(r.id, r.name), note: '在這裡' }))
   return [...inParty, ...here]
+})
+// 換了地點，原本選的對象不在了就清掉
+watch(targets, (list) => {
+  if (target.value && !list.some((t) => t.id === target.value)) target.value = ''
 })
 
 function doFree() {

@@ -11,16 +11,17 @@
 
 import { lifeTier, mod, snapshot } from './character'
 import {
-  combatRules, companionRules, contractDef, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
+  actionRules, combatRules, companionRules, contractDef, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
   type ActionKind, type Degree, type MarketDef,
 } from './data'
 import { formatMoney } from './money'
-import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
+import { askingPrice, generateNpc, npcRecord, presentHere, slavePrice, weightedPick } from './npcs'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, isBound, isEnslaved, joinParty,
   leaderOf, partyRoom, pcOf, playerEscapes, punish, setHp,
 } from './party'
 import { negotiationSetup } from './negotiation'
+import { currentArea, currentCell } from './grid'
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
 import { addHours, commitReport, newReportId, withRng } from './state'
@@ -270,7 +271,7 @@ export function invitable(state: GameState): NpcRecord[] {
   return Object.values(state.relationships ?? {})
     .filter((r) => !inParty.has(r.id) && r.affinity >= min && !state.flags[`invite_wait:${r.id}`])
     .map((r) => npcRecord(state, r.id))
-    .filter((rec): rec is NpcRecord => !!rec && rec.location === state.location)
+    .filter((rec): rec is NpcRecord => !!rec && presentHere(state, rec.id))
 }
 
 export function inviteDc(state: GameState, npcId: string): number {
@@ -606,7 +607,28 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       const n = negotiationSetup(state, target ?? '')
       return { dc: n.dc, targetName: n.targetName, situational: [], scene: n.scene, outcomes: n.outcomes }
     }
+    case 'rest_talk': {
+      const last = state.lastLongRest
+      const t = state.time
+      if (!last || last.day !== t.day || last.hour !== t.hour || last.minute !== t.minute) throw new Error('要在長休時才能這麼做')
+      const atInn = currentCell(state).kind === 'inn'
+      if (target === 'guests' && !atInn) throw new Error('只有在旅店才有其他旅客')
+      if (target && target !== 'guests' && !state.party.some((m) => m.id === target && !m.isPlayer)) throw new Error('隊伍裡沒有這個人')
+      const rec = target && target !== 'guests' ? npcRecord(state, target) : undefined
+      const rel = rec ? state.relationships?.[rec.id] : undefined
+      const where = atInn ? `${locationById(state.location).name}的旅店` : `${currentArea(state).name}的安全房`
+      return {
+        dc: (actionRulesBase('rest_talk')) - (rel ? Math.floor(rel.affinity / 25) : 0),
+        targetName: target === 'guests' ? '同旅館的旅客' : rec?.name ?? '夥伴們',
+        situational: [],
+        scene: `${where}・長休`,
+        outcomes: target === 'guests'
+          ? { critical: '和旅客相談甚歡，結識新朋友', success: '認識一位新朋友', partial: '聊了幾句', fail: '沒什麼交集', fumble: '起了點口角' }
+          : { critical: '關係明顯拉近', success: '相處愉快', partial: '平淡地度過', fail: '有點尷尬', fumble: '鬧得不愉快' },
+      }
+    }
     case 'free': {
+      if (target && !presentHere(state, target)) throw new Error('對方不在這裡')
       const rec = target ? npcRecord(state, target) : undefined
       // 對認識之前的人（例如店主）行動，就算認識了
       if (rec) ensureRelationship(state, rec)
@@ -618,4 +640,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return { dc, ...(rec ? { targetName: rec.name } : {}), situational, scene: locationById(state.location).name, outcomes: {} }
     }
   }
+}
+
+function actionRulesBase(kind: ActionKind): number {
+  return actionRules.kinds[kind].base ?? 12
 }

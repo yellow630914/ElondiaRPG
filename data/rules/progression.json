@@ -85,6 +85,8 @@
     { "id": "catfolk", "name": "貓魅族", "home": "west" },
     { "id": "yulin", "name": "玉璘族", "home": "east_sea" }
   ],
+  "ability_rerolls": 3,
+  "$comment_ability_rerolls": "升級時的能力三選一，每組可以重抽的次數。",
   "affinity": {
     "$comment": "親密值；世界書規定為隱性數值，角色無法感知，只體現在態度上。",
     "min": -100, "max": 100, "initial": 0,

@@ -7,7 +7,7 @@
 // 說明見 docs/RELATIONSHIP_MEMORY.md。
 
 import { affinityStage } from './character'
-import { locationById, npcs, progression, type NpcDef } from './data'
+import { genderName, locationById, npcs, progression, type NpcDef } from './data'
 import type { GameState, GameTime, Report } from './types'
 
 export interface Relationship {
@@ -325,11 +325,17 @@ export function queryForReport(state: GameState, report: Report): ContextQuery {
 
 function nameOf(state: GameState, id: string): string {
   if (id === 'pc') return state.party.find((m) => m.isPlayer)?.name ?? '主角'
-  return relationsOf(state)[id]?.name ?? state.party.find((m) => m.id === id)?.name ?? id
+  return relationsOf(state)[id]?.name ?? state.party.find((m) => m.id === id)?.name
+    ?? state.npcs?.[id]?.name ?? npcs.find((n) => n.id === id)?.name ?? id
 }
 
 function timeText(t: GameTime): string {
   return `第 ${t.day} 天 ${String(t.hour ?? 0).padStart(2, '0')}:${String(t.minute ?? 0).padStart(2, '0')}`
+}
+
+function genderOf(state: GameState, id: string): string {
+  const g = state.npcs?.[id]?.gender ?? npcs.find((n) => n.id === id)?.gender
+  return g ? genderName(g) : ''
 }
 
 export function formatContext(state: GameState, ctx: ContextResult): string {
@@ -338,7 +344,7 @@ export function formatContext(state: GameState, ctx: ContextResult): string {
     const lines = ctx.relationships.map((r) => {
       const others = Object.entries(r.toOthers).map(([id, text]) => `${nameOf(state, id)}：${text}`)
       return [
-        `- ${r.name}｜親密度 ${r.affinity}（${affinityStage(r.affinity)}）｜id: ${r.id}`,
+        `- ${r.name}${genderOf(state, r.id) ? `（${genderOf(state, r.id)}）` : ''}｜親密度 ${r.affinity}（${affinityStage(r.affinity)}）｜id: ${r.id}`,
         r.appearance && `  外貌：${r.appearance}`,
         r.personality && `  性格：${r.personality}`,
         `  與主角：${r.toPlayer}`,

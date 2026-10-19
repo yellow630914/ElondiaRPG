@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { marketsHere, selfSaleChance, type MarketKind } from '@/engine/companions'
-import { className, combatRules, contractDef, raceName, slaveryRules } from '@/engine/data'
+import { className, combatRules, contractDef, genderName, raceName, slaveryRules } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { isEnslaved } from '@/engine/party'
 import type { SlaveListing } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import NameTag from './NameTag.vue'
 
 const props = defineProps<{ kind: MarketKind }>()
 const game = useGame()
@@ -47,8 +48,8 @@ function sellSelf() {
       <li v-for="l in stock" :key="l.npc" class="item small">
         <template v-if="npcRecord(s, l.npc)">
           <div class="row" style="justify-content: space-between">
-            <strong>{{ npcRecord(s, l.npc)!.name }}</strong>
-            <span class="muted">{{ raceName(npcRecord(s, l.npc)!.race) }}・{{ className(npcRecord(s, l.npc)!.class) }} Lv.{{ npcRecord(s, l.npc)!.level }}</span>
+            <NameTag :id="l.npc" />
+            <span class="muted">{{ genderName(npcRecord(s, l.npc)!.gender) }}・{{ raceName(npcRecord(s, l.npc)!.race) }}・{{ className(npcRecord(s, l.npc)!.class) }} Lv.{{ npcRecord(s, l.npc)!.level }}</span>
           </div>
           <div class="muted">{{ npcRecord(s, l.npc)!.appearance }} {{ npcRecord(s, l.npc)!.background }}</div>
           <div class="muted" :title="contractDef(l.contract).side_effects.join('；')">契約：{{ contractDef(l.contract).name }}</div>

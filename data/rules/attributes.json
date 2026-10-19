@@ -17,27 +17,27 @@
   "level_up_points": 1,
   "races": {
     "human": {
-      "name": "人類", "bonus": { "str": 1, "dex": 1, "int": 1, "fai": 1, "cha": 1 },
+      "name": "人類", "emoji": "🧑", "bonus": { "str": 1, "dex": 1, "int": 1, "fai": 1, "cha": 1 },
       "talent": { "name": "適應力", "desc": "全屬性 +1。" }
     },
     "elf": {
-      "name": "精靈", "bonus": { "dex": 2, "int": 1 },
+      "name": "精靈", "emoji": "🧝", "bonus": { "dex": 2, "int": 1 },
       "talent": { "name": "星辰之裔", "desc": "心靈傷害 ×0.75。", "resist": { "psychic": -0.25 } }
     },
     "dwarf": {
-      "name": "矮人", "bonus": { "str": 2, "fai": 1 },
+      "name": "矮人", "emoji": "🧔", "bonus": { "str": 2, "fai": 1 },
       "talent": { "name": "熔爐之軀", "desc": "毒素傷害 ×0.5、火焰傷害 ×0.75。", "resist": { "poison": -0.5, "fire": -0.25 } }
     },
     "demon": {
-      "name": "魔族", "bonus": { "str": 1, "cha": 2 },
+      "name": "魔族", "emoji": "😈", "bonus": { "str": 1, "cha": 2 },
       "talent": { "name": "荒原血脈", "desc": "火焰 ×0.5、暗影 ×0.75，但神聖傷害 ×1.25。", "resist": { "fire": -0.5, "necrotic": -0.25, "radiant": 0.25 } }
     },
     "catfolk": {
-      "name": "貓魅族", "bonus": { "dex": 2, "cha": 1 },
+      "name": "貓魅族", "emoji": "🐱", "bonus": { "dex": 2, "cha": 1 },
       "talent": { "name": "貓之反射", "desc": "迴避 +1、幸運一擊閾值 -1。", "mods": { "evade": 1, "crit": 1 } }
     },
     "yulin": {
-      "name": "玉璘族", "bonus": { "cha": 2, "fai": 1 },
+      "name": "玉璘族", "emoji": "🐉", "bonus": { "cha": 2, "fai": 1 },
       "talent": { "name": "潮汐之鱗", "desc": "寒冰 ×0.5，但閃電傷害 ×1.25。", "resist": { "cold": -0.5, "lightning": 0.25 } }
     }
   }

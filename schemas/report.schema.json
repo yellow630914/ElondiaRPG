@@ -242,6 +242,7 @@
         "mp": { "type": "array", "prefixItems": [{ "type": "integer" }, { "type": "integer" }, { "type": "integer" }] },
         "status": { "type": "array", "items": { "type": "string" } },
         "equipment": { "type": "array", "items": { "type": "string" } },
+        "gender": { "type": "string", "description": "性別（顯示名稱）" },
         "personality": { "type": "string", "description": "NPC 性格摘要，供 AI 演繹（角色扮演指導第三層）" },
         "attitude": { "type": "string", "description": "引擎依實力差、立場、親密值算出的態度，AI 據此演繹" }
       }

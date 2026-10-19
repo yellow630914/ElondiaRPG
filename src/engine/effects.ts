@@ -42,10 +42,12 @@ export type RewardEffect =
   | { type: 'quest_reward'; quest: string; percent: number }
   /** 任務旗標，例如 lead（委託檢定 +5）、suspicious（-2） */
   | { type: 'quest_flag'; quest: string; key: string; value: unknown }
+  /** 認識新的人（例如同旅館的旅客）：登錄 NPC、建立人際關係，平常待在 spot */
+  | { type: 'meet'; npc: NpcSpec; affinity?: number; to_player?: string; spot?: string }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
-  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag',
+  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag', 'meet',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -169,6 +171,16 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         const before = q.reward_cc
         q.reward_cc = Math.max(0, Math.round(q.reward_cc * (1 + e.percent / 100)))
         notes.push(`「${q.title}」的報酬從 ${before} 調整為 ${q.reward_cc} 銅幣`)
+        break
+      }
+      case 'meet': {
+        const rec = resolveNpc(state, e.npc, 'met')
+        if (e.spot) rec.spot = e.spot
+        const rel = ensureRelationship(state, rec)
+        if (e.to_player) rel.toPlayer = e.to_player
+        if (e.affinity) addAffinity(state, report, rec.id, e.affinity, '初次相識')
+        ;(report.others ??= []).push({ id: rec.id, name: rec.name, race: rec.race, class: rec.class, level: rec.level, personality: rec.personality })
+        notes.push(`認識了${rec.name}`)
         break
       }
       case 'quest_flag': {

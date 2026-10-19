@@ -59,6 +59,8 @@ export const geography = geographyJson as unknown as {
 export interface NpcDef {
   id: string
   name: string
+  /** 性別 id（見 npc_pool.json 的 genders） */
+  gender?: string
   race: string
   class: string
   level: number
@@ -79,6 +81,7 @@ export const progression = progressionJson as unknown as {
   races: { id: string; name: string; home: string }[]
   affinity: { min: number; max: number; initial: number; stages: { range: [number, number]; name: string }[] }
   power_gap_attitude: { by_diff: Record<string, string>; clamp: [number, number] }
+  ability_rerolls: number
 }
 export const economy = economyJson as unknown as {
   quest_rewards_cc: Record<string, { range: [number, number]; party: string; duration_days: [number, number] }>
@@ -108,6 +111,7 @@ export interface Mods {
 
 export interface RaceDef {
   name: string
+  emoji: string
   bonus: Partial<Attrs>
   talent: { name: string; desc: string; resist?: AffinityMap; offense?: AffinityMap; mods?: Mods }
 }
@@ -130,6 +134,7 @@ export interface ClassDef {
   armor: string
   start: string[]
   role: string
+  emoji: string
   /** 生命骰面數（短休時花費） */
   hit_die: number
 }
@@ -433,20 +438,22 @@ export function contractDef(id: string): ContractDef {
   return c
 }
 
-export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation'
-export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp'
+export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
+export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
   caps: {
     affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
-    item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number
+    item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number
   }
   kinds: Record<ActionKind, { name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[] }>
 }
 
+export interface GenderDef { name: string; color: string; weight: number; names: 'm' | 'f' | 'any' }
 export const npcPool = npcPoolJson as unknown as {
-  names: Record<string, string[]>
+  genders: Record<string, GenderDef>
+  names: Record<string, { m: string[]; f: string[] }>
   personalities: string[]
   features: Record<string, string[]>
   outfits: string[]
@@ -515,6 +522,36 @@ export interface NegotiationTemplate {
 export const negotiationRules = negotiationsJson as unknown as {
   max_attempts: number
   templates: Record<string, NegotiationTemplate>
+}
+
+// ---- 性別、種族與職業的顯示 ----
+
+export const GENDER_IDS = Object.keys(npcPool.genders).filter((k) => !k.startsWith('$'))
+
+/** 性別：NPC 用 id；主角是自由輸入的文字，能對應到已知性別時沿用其顏色 */
+export function genderDef(g?: string): (GenderDef & { id: string }) | undefined {
+  if (!g) return undefined
+  const byId = npcPool.genders[g]
+  if (byId && !g.startsWith('$')) return { ...byId, id: g }
+  const text = g.trim().toLowerCase()
+  const alias: Record<string, string> = {
+    男: 'male', 男性: 'male', male: 'male', m: 'male', 女: 'female', 女性: 'female', female: 'female', f: 'female',
+    偽娘: 'femboy', 伪娘: 'femboy', ts: 'ts', 扶她: 'futa', 未知: 'unknown', 不明: 'unknown',
+  }
+  const id = alias[text]
+  return id ? { ...npcPool.genders[id]!, id } : undefined
+}
+
+export function genderName(g?: string): string {
+  return genderDef(g)?.name ?? g ?? ''
+}
+
+export function raceEmoji(id: string): string {
+  return attributeRules.races[id]?.emoji ?? ''
+}
+
+export function classEmoji(id: string): string {
+  return classes[id]?.emoji ?? ''
 }
 
 // ---- 查詢 ----

@@ -5,13 +5,15 @@
 // NPC 不在隊伍時，角色資料（等級、經驗、能力）保存在 NpcRecord.character，再次入隊時沿用。
 
 import { createNpc, lifeTier } from './character'
-import { attributeRules, classes, companionRules, locationById, npcPool, npcs as namedNpcs, slaveryRules } from './data'
+import { attributeRules, classes, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, slaveryRules } from './data'
+import { currentArea, currentCell } from './grid'
 import { Rng } from './rng'
 import type { Character, GameState, NpcRecord } from './types'
 
 export interface NpcSpec {
   id?: string
   name?: string
+  gender?: string
   race?: string
   class?: string
   level?: number
@@ -91,8 +93,10 @@ function raceWeights(location: string): Record<string, number> {
   return Object.fromEntries(Object.entries(base).filter(([r]) => attributeRules.races[r]))
 }
 
-function uniqueName(state: GameState, rng: Rng, race: string): string {
-  const pool = npcPool.names[race] ?? npcPool.names.human!
+function uniqueName(state: GameState, rng: Rng, race: string, gender: string): string {
+  const names = npcPool.names[race] ?? npcPool.names.human!
+  const kind = npcPool.genders[gender]?.names ?? 'any'
+  const pool = kind === 'm' ? names.m : kind === 'f' ? names.f : [...names.m, ...names.f]
   const used = new Set([
     ...Object.values(state.npcs ?? {}).map((n) => n.name),
     ...namedNpcs.map((n) => n.name),
@@ -117,10 +121,14 @@ export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, pref
   const race = spec.race && attributeRules.races[spec.race] ? spec.race : weightedPick(rng, raceWeights(location))
   const cls = spec.class && classes[spec.class] ? spec.class : rng.pick(Object.keys(classes))
   const level = Math.max(1, Math.min(20, Math.round(spec.level ?? 1)))
+  const gender = spec.gender && GENDER_IDS.includes(spec.gender)
+    ? spec.gender
+    : weightedPick(rng, Object.fromEntries(GENDER_IDS.map((g) => [g, npcPool.genders[g]!.weight])))
   const features = npcPool.features[race] ?? npcPool.features.human!
   const rec: NpcRecord = {
     id: spec.id ?? newNpcId(state, prefix),
-    name: spec.name?.trim() || uniqueName(state, rng, race),
+    name: spec.name?.trim() || uniqueName(state, rng, race, gender),
+    gender,
     race,
     class: cls,
     level,
@@ -148,4 +156,29 @@ export function findNpcByName(state: GameState, name: string): string | undefine
     if (r.name === n || r.aliases?.includes(n)) return r.id
   }
   return state.party.find((m) => m.name === n)?.id
+}
+
+const SHOP_SPOT: Record<string, string> = { general: 'shop', temple: 'temple', tavern: 'tavern' }
+
+/** NPC 平常待的設施：店主在自己的店、公會職員在公會，冒險者與知情人在酒館。 */
+export function npcSpot(rec: NpcRecord): string | undefined {
+  if (rec.spot) return rec.spot
+  const keeper = /^keeper_.+_(\w+)$/.exec(rec.id)
+  if (keeper) return SHOP_SPOT[keeper[1]!] ?? 'shop'
+  if (rec.id.startsWith('clerk_')) return 'guild'
+  if (/^(tav|pty|gen|inf)_/.test(rec.id) || namedNpcs.some((n) => n.id === rec.id)) return 'tavern'
+  return undefined
+}
+
+/**
+ * 角色現在是否在主角身邊：隊友永遠在；其他人要在同一個聚落（不在近郊或地下城），
+ * 而且主角站在他平常待的設施上（沒有固定設施的人在整個聚落都找得到）。
+ */
+export function presentHere(state: GameState, id: string): boolean {
+  if (state.party.some((m) => m.id === id)) return true
+  const rec = npcRecord(state, id)
+  if (!rec || rec.location !== state.location) return false
+  if (currentArea(state).kind !== 'settlement') return false
+  const spot = npcSpot(rec)
+  return !spot || currentCell(state).kind === spot
 }
