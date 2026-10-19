@@ -148,3 +148,42 @@ export function estimateTokens(text: string): number {
   const cjk = (text.match(/[　-鿿豈-﫿＀-￯]/g) ?? []).length
   return Math.round(cjk + (text.length - cjk) / 4)
 }
+
+// ---- 文風、其他提示詞的匯出與匯入 ----
+
+export type EntryFileKind = 'styles' | 'custom'
+
+const FILE_TYPE: Record<EntryFileKind, string> = { styles: 'elondia-styles', custom: 'elondia-prompts' }
+
+export function exportEntries(kind: EntryFileKind, entries: PromptEntry[]): object {
+  return {
+    type: FILE_TYPE[kind],
+    version: 1,
+    entries: entries.map(({ preset: _preset, ...e }) => e),
+  }
+}
+
+/**
+ * 讀取匯入的條目檔案：
+ * - 本遊戲匯出的 JSON（{type, entries}）、條目陣列，或整份提示詞設定（取對應的清單）
+ * - 純文字或 Markdown：整份當作一個條目，檔名當名稱
+ */
+export function parseEntryFile(kind: EntryFileKind, text: string, fileName = ''): PromptEntry[] {
+  const base = fileName.replace(/\.[^.]+$/, '') || (kind === 'styles' ? '匯入的文風' : '匯入的提示詞')
+  let raw: unknown
+  try {
+    raw = JSON.parse(text)
+  } catch {
+    if (!text.trim()) throw new Error('檔案是空的')
+    return [cleanEntry({ name: base, content: text.trim(), ...(kind === 'custom' ? { position: 'system' } : {}) }, 0, kind === 'styles' ? 'style' : 'custom')]
+  }
+  const r = raw as { entries?: unknown; styles?: unknown; custom?: unknown }
+  const list = Array.isArray(raw) ? raw : Array.isArray(r?.entries) ? r.entries : Array.isArray(r?.[kind]) ? r[kind] : null
+  if (!list) throw new Error(kind === 'styles' ? '這不是文風檔案' : '這不是提示詞檔案')
+  return (list as Partial<PromptEntry>[])
+    .filter((e) => e && typeof e === 'object' && typeof e.content === 'string')
+    .map((e, i) => {
+      const { preset: _preset, id: _id, ...rest } = e
+      return cleanEntry(kind === 'custom' ? { position: 'system', ...rest } : { ...rest, position: undefined }, i, kind === 'styles' ? 'style' : 'custom')
+    })
+}

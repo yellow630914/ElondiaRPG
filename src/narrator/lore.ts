@@ -210,3 +210,74 @@ export function selectLore(book: Worldbook, report: Report, opts: LoreOptions, o
   const sel = loreForReport(loreItems(book, overrides), report, opts)
   return [...sel.constant, ...sel.triggered]
 }
+
+// ---- 世界書檔案（SillyTavern 格式）的匯出與匯入 ----
+
+/** 匯出時附在每個條目 extensions 裡的本遊戲資料；SillyTavern 會忽略 */
+interface ElondiaLoreExt {
+  mode: LoreMode
+  adult: boolean
+  /** 內建條目：匯入時改成覆寫，而不是新增一條 */
+  builtin: boolean
+}
+
+/** 匯出成 SillyTavern 世界書格式（含玩家的修改與新增條目），也可以匯入回本遊戲 */
+export function exportWorldbook(items: LoreItem[], name = '埃隆迪亞大陸'): object {
+  const entries: Record<string, object> = {}
+  for (const it of items) {
+    const ext: ElondiaLoreExt = { mode: it.mode, adult: it.adult, builtin: it.builtin }
+    entries[it.uid] = {
+      uid: it.uid,
+      key: it.keys,
+      keysecondary: [],
+      comment: it.comment,
+      content: it.content,
+      constant: it.mode === 'constant',
+      selective: true,
+      order: it.order,
+      position: 0,
+      disable: it.mode === 'off',
+      extensions: { elondia: ext },
+    }
+  }
+  return { name, entries }
+}
+
+/** 從世界書檔案讀出的條目 */
+export interface ImportedLore {
+  uid?: number
+  comment: string
+  content: string
+  keys: string[]
+  mode: LoreMode
+  order: number
+  adult: boolean
+  builtin: boolean
+}
+
+/** 讀取世界書檔案：SillyTavern 格式（entries 物件或陣列），或本遊戲匯出的檔案 */
+export function parseWorldbookFile(raw: unknown): ImportedLore[] {
+  const r = raw as { entries?: unknown } | unknown[] | null
+  const list = Array.isArray(r) ? r : r && typeof r === 'object' && r.entries && typeof r.entries === 'object' ? Object.values(r.entries) : null
+  if (!list) throw new Error('這不是世界書檔案（找不到 entries）')
+  const strings = (v: unknown) => (Array.isArray(v) ? v.filter((k): k is string => typeof k === 'string' && !!k.trim()).map((k) => k.trim()) : [])
+  const out: ImportedLore[] = []
+  for (const e of list as Record<string, unknown>[]) {
+    if (!e || typeof e !== 'object' || typeof e.content !== 'string' || !e.content.trim()) continue
+    const ext = ((e.extensions as Record<string, unknown> | undefined)?.elondia ?? {}) as Partial<ElondiaLoreExt>
+    const mode: LoreMode = ext.mode && ['constant', 'keyword', 'travel', 'off'].includes(ext.mode)
+      ? ext.mode
+      : e.disable ? 'off' : e.constant ? 'constant' : 'keyword'
+    out.push({
+      ...(typeof e.uid === 'number' ? { uid: e.uid } : {}),
+      comment: typeof e.comment === 'string' && e.comment.trim() ? e.comment.trim() : String(e.content).trim().slice(0, 16),
+      content: e.content,
+      keys: strings(e.key ?? e.keys),
+      mode,
+      order: typeof e.order === 'number' ? e.order : 700,
+      adult: !!ext.adult,
+      builtin: !!ext.builtin,
+    })
+  }
+  return out
+}

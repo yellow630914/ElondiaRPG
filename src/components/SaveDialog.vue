@@ -5,6 +5,7 @@ import { locationById } from '@/engine/data'
 import type { SlotMeta } from '@/stores/saves'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
+import { download } from './download'
 
 const emit = defineEmits<{ loaded: [] }>()
 const game = useGame()
@@ -61,18 +62,6 @@ function startRename(m: SlotMeta) {
 async function saveRename(id: string) {
   if (renameText.value.trim()) await game.renameSlot(id, renameText.value)
   renaming.value = null
-}
-
-function download(name: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = name
-  // 有些瀏覽器要把連結放進頁面裡，檔名才會生效
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 async function exportSlot(id?: string) {

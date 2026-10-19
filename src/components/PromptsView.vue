@@ -8,6 +8,7 @@ import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { useSettings } from '@/stores/settings'
 import PromptEntryList from './PromptEntryList.vue'
+import { dateStamp, download } from './download'
 
 type Sub = 'styles' | 'lore' | 'custom' | 'data' | 'preview'
 const SUBS: { id: Sub; label: string }[] = [
@@ -108,6 +109,30 @@ function inputValue(e: Event) {
   return (e.target as HTMLInputElement).value
 }
 
+const loreInput = ref<HTMLInputElement | null>(null)
+
+async function exportLore() {
+  download(`elondia-worldbook-${dateStamp()}.json`, await prompts.exportLore())
+}
+
+async function onImportLore(e: Event) {
+  const input = e.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
+  const total = { added: 0, updated: 0, skipped: 0 }
+  try {
+    for (const f of files) {
+      const r = await prompts.importLore(await f.text())
+      total.added += r.added
+      total.updated += r.updated
+      total.skipped += r.skipped
+    }
+    game.flash(`世界書：新增 ${total.added} 條、更新 ${total.updated} 條${total.skipped ? `、略過 ${total.skipped} 條（已存在）` : ''}`)
+  } catch (err) {
+    game.error = `匯入世界書失敗：${err instanceof Error ? err.message : String(err)}`
+  }
+}
+
 function addLore() {
   openLore.value = prompts.addLore().uid
   loreFilter.value = 'all'
@@ -159,14 +184,7 @@ async function copyPreview() {
 const fileInput = ref<HTMLInputElement | null>(null)
 
 function exportConfig() {
-  const url = URL.createObjectURL(new Blob([prompts.exportConfig()], { type: 'application/json' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'elondia-prompts.json'
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  download(`elondia-prompts-${dateStamp()}.json`, prompts.exportConfig())
 }
 
 async function onImport(e: Event) {
@@ -176,7 +194,7 @@ async function onImport(e: Event) {
   if (!f) return
   try {
     prompts.importConfig(await f.text())
-    game.flash('已匯入提示詞設定')
+    game.flash('已匯入全部提示詞設定')
   } catch (err) {
     game.error = `匯入失敗：${err instanceof Error ? err.message : String(err)}`
   }
@@ -231,11 +249,16 @@ function resetAll() {
         <label class="check"><input v-model="settings.adult" type="checkbox" /> 成人向條目</label>
         <label class="check"><input v-model="prompts.config.loreInJudge" type="checkbox" /> 判定請求也帶世界書</label>
         <button class="small primary" @click="addLore">＋ 新增條目</button>
+        <button class="small" title="SillyTavern 世界書格式，含修改與新增的條目" @click="exportLore">📤 匯出世界書</button>
+        <button class="small" title="SillyTavern 世界書，或本遊戲匯出的世界書" @click="loreInput?.click()">📥 匯入世界書</button>
+        <input ref="loreInput" type="file" accept=".json,application/json" multiple hidden @change="onImportLore" />
       </div>
       <p v-if="settings.adult" class="small muted">請確認你使用的 AI 服務的使用政策允許此類內容。</p>
       <p class="small muted">
         常駐：每次都注入，放在前段。關鍵字觸發：報告（或判定的行動）文字裡出現關鍵字時注入，放在後段；世界書是簡體，比對時繁簡兩種寫法都會比。
-        注入順序（order）越小越前面；超過字數上限時，常駐條目優先保留。
+        注入順序（order）越小越前面；超過字數上限時，常駐條目優先保留。<br />
+        匯出的檔案是 SillyTavern 世界書格式，可以在酒館使用，也可以匯入回來（內建條目的修改會還原成匯出時的樣子）。匯入其他世界書時，條目會加成自訂條目；
+        常駐、停用依檔案的設定，其餘為關鍵字觸發；內容和現有條目完全相同的會略過。
       </p>
       <div class="row small">
         觸發情形依據：
@@ -359,8 +382,8 @@ function resetAll() {
     <div class="row footer small">
       <span class="muted">提示詞設定存在這個瀏覽器，所有存檔共用。</span>
       <span class="spacer" />
-      <button class="small" @click="exportConfig">📤 匯出設定</button>
-      <button class="small" @click="fileInput?.click()">📥 匯入設定</button>
+      <button class="small" title="文風、其他提示詞、世界書的修改與判定設定，一次全部" @click="exportConfig">📤 匯出全部設定</button>
+      <button class="small" title="會取代目前所有的提示詞設定" @click="fileInput?.click()">📥 匯入全部設定</button>
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onImport" />
       <button class="small danger" @click="resetAll">全部恢復預設</button>
     </div>

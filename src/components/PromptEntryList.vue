@@ -1,10 +1,38 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { estimateTokens, TARGET_NAME, type PromptEntry, type PromptTarget } from '@/narrator/promptConfig'
+import { useGame } from '@/stores/game'
 import { usePrompts, type EntryList } from '@/stores/prompts'
+import { dateStamp, download } from './download'
 
 const props = defineProps<{ list: EntryList }>()
 const prompts = usePrompts()
+const game = useGame()
+const fileInput = ref<HTMLInputElement | null>(null)
+const label = computed(() => (props.list === 'styles' ? '文風' : '提示詞'))
+
+function exportList(onlyEnabled: boolean) {
+  const name = props.list === 'styles' ? 'styles' : 'prompts'
+  download(`elondia-${name}${onlyEnabled ? '-enabled' : ''}-${dateStamp()}.json`, prompts.exportEntries(props.list, onlyEnabled))
+}
+
+async function onImport(e: Event) {
+  const input = e.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
+  let added = 0
+  let skipped = 0
+  try {
+    for (const f of files) {
+      const r = prompts.importEntries(props.list, await f.text(), f.name)
+      added += r.added
+      skipped += r.skipped
+    }
+    game.flash(`已匯入 ${added} 個${label.value}${skipped ? `，略過 ${skipped} 個重複的` : ''}`)
+  } catch (err) {
+    game.error = `匯入${label.value}失敗：${err instanceof Error ? err.message : String(err)}`
+  }
+}
 const entries = computed(() => prompts.config[props.list])
 const open = ref<string | null>(null)
 const TARGETS: PromptTarget[] = ['narration', 'judge']
@@ -68,7 +96,13 @@ function changed(e: PromptEntry): boolean {
   <div class="row">
     <button class="primary small" @click="add">＋ 新增{{ list === 'styles' ? '文風' : '提示詞' }}</button>
     <button class="small" @click="prompts.restorePresets(list)">加回刪掉的內建條目</button>
+    <span class="spacer" />
+    <button class="small" @click="exportList(false)">📤 匯出全部</button>
+    <button class="small" :disabled="!entries.some((e) => e.enabled)" @click="exportList(true)">📤 只匯出開啟的</button>
+    <button class="small" title="本遊戲匯出的 JSON，或純文字／Markdown（整份當一個條目，檔名當名稱）" @click="fileInput?.click()">📥 匯入</button>
+    <input ref="fileInput" type="file" accept=".json,.txt,.md,application/json,text/plain,text/markdown" multiple hidden @change="onImport" />
   </div>
+  <p class="small muted">匯入的條目加在清單最後，名稱和內容都相同的會略過；也可以匯入 .txt 或 .md 檔，整份當作一個{{ label }}。</p>
 </template>
 
 <style scoped>
@@ -83,4 +117,5 @@ function changed(e: PromptEntry): boolean {
 .editor label.check { display: inline-flex; gap: 4px; align-items: center; }
 .editor textarea { width: 100%; font-family: inherit; line-height: 1.6; }
 .switch input { width: 16px; height: 16px; }
+.spacer { flex: 1; }
 </style>

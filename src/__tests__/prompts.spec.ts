@@ -168,3 +168,60 @@ describe('prompts store', () => {
     expect(narration.lore!.states[0]!.status).toBe('constant')
   })
 })
+
+describe('import and export', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+  })
+
+  it('exports and imports styles and other prompts', async () => {
+    const { usePrompts } = await import('@/stores/prompts')
+    const prompts = usePrompts()
+    const e = prompts.addEntry('styles')
+    Object.assign(e, { name: '雨夜', content: '多寫雨聲。', targets: ['narration'] })
+    const all = prompts.exportEntries('styles')
+    const enabled = JSON.parse(prompts.exportEntries('styles', true))
+    expect(enabled.type).toBe('elondia-styles')
+    expect(enabled.entries.map((x: { name: string }) => x.name)).toEqual(['埃隆迪亞・史詩奇幻', '雨夜'])
+
+    prompts.resetAll()
+    expect(prompts.importEntries('styles', all)).toEqual({ added: 1, skipped: 4 })
+    const imported = prompts.config.styles.at(-1)!
+    expect(imported).toMatchObject({ name: '雨夜', content: '多寫雨聲。', targets: ['narration'] })
+    expect(imported.preset).toBeUndefined()
+    expect(prompts.importEntries('custom', '角色說話要帶口癖。', '口癖.md')).toEqual({ added: 1, skipped: 0 })
+    expect(prompts.config.custom.at(-1)).toMatchObject({ name: '口癖', position: 'system', enabled: true })
+    expect(() => prompts.importEntries('styles', '{"foo":1}')).toThrow('這不是文風檔案')
+  })
+
+  it('round-trips the worldbook in SillyTavern format', async () => {
+    const { usePrompts } = await import('@/stores/prompts')
+    const prompts = usePrompts()
+    await prompts.ensureLoaded()
+    prompts.updateLore(44, { mode: 'off' })
+    const mine = prompts.addLore()
+    Object.assign(mine, { comment: '蛇溪的傳說', content: '蛇溪底下睡著一條老蛇。', keys: ['蛇溪'] })
+    const file = await prompts.exportLore()
+    const parsed = JSON.parse(file)
+    expect(parsed.entries[44]).toMatchObject({ disable: true, constant: false })
+    expect(parsed.entries[0]).toMatchObject({ constant: true, extensions: { elondia: { builtin: true } } })
+
+    prompts.resetAll()
+    expect(prompts.items.find((x) => x.uid === 44)!.mode).toBe('constant')
+    const r = await prompts.importLore(file)
+    expect(r).toMatchObject({ added: 1, updated: 1 })
+    expect(prompts.items.find((x) => x.uid === 44)).toMatchObject({ mode: 'off', edited: true })
+    expect(prompts.config.customLore[0]).toMatchObject({ comment: '蛇溪的傳說', keys: ['蛇溪'], mode: 'keyword' })
+    // 同一份再匯入：沒有變化
+    expect(await prompts.importLore(file)).toMatchObject({ added: 0, updated: 0 })
+
+    // 原始世界書檔案：內容都已存在，全部略過
+    expect((await prompts.importLore(JSON.stringify(worldbook))).added).toBe(0)
+    // 其他 SillyTavern 世界書：加成自訂條目，常駐與停用依檔案
+    const st = { entries: { 0: { uid: 0, key: ['月'], comment: '雙月', content: '天上有兩個月亮。', constant: true }, 1: { uid: 1, key: [], comment: '舊規則', content: '舊的規則。', disable: true } } }
+    expect(await prompts.importLore(JSON.stringify(st))).toMatchObject({ added: 2 })
+    expect(prompts.config.customLore.slice(-2).map((x) => x.mode)).toEqual(['constant', 'off'])
+    await expect(prompts.importLore('{"a":1}')).rejects.toThrow('世界書')
+  })
+})

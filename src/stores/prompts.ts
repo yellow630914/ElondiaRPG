@@ -6,7 +6,8 @@ import { computed, ref, shallowRef, watch } from 'vue'
 import type { ComposeOptions } from '@/narrator/compose'
 import type { LoreItem, LoreOverride, Worldbook } from '@/narrator/lore'
 import {
-  defaultPromptConfig, normalizeConfig, PRESET_CUSTOM, PRESET_STYLES, type PromptConfig, type PromptEntry,
+  defaultPromptConfig, exportEntries as entriesFile, normalizeConfig, parseEntryFile, PRESET_CUSTOM, PRESET_STYLES,
+  type PromptConfig, type PromptEntry,
 } from '@/narrator/promptConfig'
 import { useSettings } from './settings'
 
@@ -142,6 +143,75 @@ export const usePrompts = defineStore('prompts', () => {
     config.value.customLore = config.value.customLore.filter((e) => e.uid !== uid)
   }
 
+  // ---- 單獨匯出、匯入：文風、其他提示詞、世界書 ----
+
+  /** 匯出文風或其他提示詞（只匯出開啟的，或全部） */
+  function exportEntries(list: EntryList, onlyEnabled = false): string {
+    const entries = config.value[list].filter((e) => !onlyEnabled || e.enabled)
+    return JSON.stringify(entriesFile(list, entries), null, 2)
+  }
+
+  /** 匯入文風或其他提示詞，加在清單最後；名稱與內容都相同的條目略過。回傳新增與略過的數量 */
+  function importEntries(list: EntryList, text: string, fileName?: string): { added: number; skipped: number } {
+    const arr = config.value[list]
+    let added = 0
+    let skipped = 0
+    for (const e of parseEntryFile(list, text, fileName)) {
+      if (arr.some((x) => x.name === e.name && x.content.trim() === e.content.trim())) {
+        skipped += 1
+        continue
+      }
+      arr.push({ ...e, id: newId(list === 'styles' ? 'style' : 'custom') })
+      added += 1
+    }
+    return { added, skipped }
+  }
+
+  /** 匯出整本世界書（SillyTavern 格式，含修改與新增的條目） */
+  async function exportLore(): Promise<string> {
+    await ensureLoaded()
+    return JSON.stringify(loreMod.value!.exportWorldbook(items.value), null, 2)
+  }
+
+  /**
+   * 匯入世界書檔案（SillyTavern 格式或本遊戲匯出的檔案）：
+   * - 本遊戲匯出的內建條目：套用成覆寫（和預設相同就清掉覆寫）
+   * - 其他條目：新增成自訂條目；內容和現有條目完全相同的略過
+   */
+  async function importLore(text: string): Promise<{ added: number; updated: number; skipped: number }> {
+    await ensureLoaded()
+    const mod = loreMod.value!
+    const entries = mod.parseWorldbookFile(JSON.parse(text))
+    const result = { added: 0, updated: 0, skipped: 0 }
+    for (const e of entries) {
+      const builtin = e.builtin && e.uid !== undefined ? Object.values(book.value!.entries).find((x) => x.uid === e.uid && x.content.trim()) : undefined
+      if (builtin) {
+        const d = mod.defaultLoreItem(builtin)
+        const diff: LoreOverride = {}
+        if (e.comment !== d.comment) diff.comment = e.comment
+        if (e.content !== d.content) diff.content = e.content
+        if (e.keys.join('\n') !== d.keys.join('\n')) diff.keys = e.keys
+        if (e.mode !== d.mode) diff.mode = e.mode
+        if (e.order !== d.order) diff.order = e.order
+        if (e.adult !== d.adult) diff.adult = e.adult
+        const before = JSON.stringify(config.value.lore[builtin.uid] ?? {})
+        if (Object.keys(diff).length) config.value.lore[builtin.uid] = diff
+        else delete config.value.lore[builtin.uid]
+        if (before !== JSON.stringify(diff)) result.updated += 1
+        else result.skipped += 1
+        continue
+      }
+      if (items.value.some((x) => x.content.trim() === e.content.trim())) {
+        result.skipped += 1
+        continue
+      }
+      const item = addLore()
+      Object.assign(item, { comment: e.comment, content: e.content, keys: e.keys, mode: e.mode, order: e.order, adult: e.adult })
+      result.added += 1
+    }
+    return result
+  }
+
   // ---- 匯出、匯入、重設 ----
 
   function exportConfig(): string {
@@ -160,6 +230,7 @@ export const usePrompts = defineStore('prompts', () => {
     config, book, items, ensureLoaded, composeOptions,
     addEntry, duplicateEntry, removeEntry, moveEntry, restoreEntry, restorePresets, presetOf,
     isCustomLore, updateLore, resetLore, addLore, removeLore,
+    exportEntries, importEntries, exportLore, importLore,
     exportConfig, importConfig, resetAll,
   }
 })
