@@ -1,0 +1,21 @@
+{
+  "$comment": "戰鬥數值（提案）。世界書只給了 DND 1-20 級的強度基準，以下為簡化的 d20 規則：命中 = 1d20 + 攻擊加值 ≥ 目標 AC；20 為爆擊（傷害骰加倍），1 為大失敗。熟練加值 = 2 + floor((等級-1)/4)。",
+  "version": 1,
+  "proficiency": { "base": 2, "every_levels": 4 },
+  "xp_to_next_level_per_level": 100,
+  "party_max": 4,
+  "flee_dc": 12,
+  "defend_ac_bonus": 4,
+  "classes": {
+    "fighter":   { "hit_die": 10, "mp_per_level": 1, "ac": 16, "damage": "1d10", "attack_attr": 3, "start_skills": ["power_strike", "second_wind"] },
+    "barbarian": { "hit_die": 12, "mp_per_level": 1, "ac": 14, "damage": "1d12", "attack_attr": 3, "start_skills": ["reckless_blow"] },
+    "paladin":   { "hit_die": 10, "mp_per_level": 2, "ac": 17, "damage": "1d8",  "attack_attr": 3, "start_skills": ["power_strike", "lay_on_hands"] },
+    "ranger":    { "hit_die": 10, "mp_per_level": 2, "ac": 14, "damage": "1d8",  "attack_attr": 3, "start_skills": ["double_shot"] },
+    "rogue":     { "hit_die": 8,  "mp_per_level": 1, "ac": 14, "damage": "1d6",  "attack_attr": 4, "start_skills": ["sneak_attack"] },
+    "monk":      { "hit_die": 8,  "mp_per_level": 2, "ac": 15, "damage": "1d6",  "attack_attr": 3, "start_skills": ["flurry"] },
+    "bard":      { "hit_die": 8,  "mp_per_level": 3, "ac": 13, "damage": "1d6",  "attack_attr": 2, "start_skills": ["inspire", "healing_word"] },
+    "cleric":    { "hit_die": 8,  "mp_per_level": 4, "ac": 15, "damage": "1d6",  "attack_attr": 2, "start_skills": ["healing_word", "sacred_flame"] },
+    "druid":     { "hit_die": 8,  "mp_per_level": 4, "ac": 13, "damage": "1d6",  "attack_attr": 2, "start_skills": ["thorn_whip", "healing_word"] },
+    "wizard":    { "hit_die": 6,  "mp_per_level": 5, "ac": 12, "damage": "1d4",  "attack_attr": 2, "start_skills": ["fire_bolt", "magic_missile"] }
+  }
+}
