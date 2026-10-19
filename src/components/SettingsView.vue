@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { providerInfo, PROVIDERS } from '@/narrator/providerInfo'
+import { providerInfo, PROVIDERS, type ProviderId } from '@/narrator/providerInfo'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 
@@ -8,7 +8,11 @@ const settings = useSettings()
 const game = useGame()
 const info = computed(() => providerInfo(settings.provider))
 const cfg = computed(() => settings.configs[settings.provider])
-const models = ref<string[]>([])
+// 載入的模型清單依服務分開保存，切換服務再切回來不必重新載入
+const loaded = ref<Partial<Record<ProviderId, string[]>>>({})
+const models = computed(() => loaded.value[settings.provider] ?? [])
+const hints = computed(() => info.value.modelHints.filter((m) => !models.value.includes(m)))
+const known = computed(() => [...hints.value, ...models.value])
 const loading = ref(false)
 const message = ref('')
 const showKey = ref(false)
@@ -18,14 +22,19 @@ async function loadModels() {
   message.value = ''
   try {
     const { listModels } = await import('@/narrator/providers')
-    models.value = await listModels(settings.provider, cfg.value)
-    message.value = `連線成功，共 ${models.value.length} 個模型。`
+    const provider = settings.provider
+    loaded.value[provider] = await listModels(provider, cfg.value)
+    message.value = `連線成功，共 ${loaded.value[provider]!.length} 個模型，可以從下拉選單選擇。`
   } catch (e) {
-    models.value = []
     message.value = `連線失敗：${e instanceof Error ? e.message : String(e)}`
   } finally {
     loading.value = false
   }
+}
+
+function pickModel(e: Event) {
+  const v = (e.target as HTMLSelectElement).value
+  if (v) cfg.value.model = v
 }
 
 function onMaxTokens(e: Event) {
@@ -48,7 +57,7 @@ function doReset() {
     <div class="form">
       <label>
         服務
-        <select v-model="settings.provider" @change="models = []; message = ''">
+        <select v-model="settings.provider" @change="message = ''">
           <option v-for="p in PROVIDERS" :key="p.id" :value="p.id">{{ p.name }}</option>
         </select>
       </label>
@@ -69,18 +78,24 @@ function doReset() {
         </span>
       </label>
 
-      <label>
-        模型
+      <div class="field">
+        <span>模型</span>
         <span class="row">
-          <input v-model="cfg.model" list="model-list" placeholder="輸入或載入模型清單" style="flex: 1" />
+          <select :value="known.includes(cfg.model) ? cfg.model : ''" style="flex: 1; min-width: 0" @change="pickModel">
+            <option value="" disabled>{{ cfg.model ? `自訂：${cfg.model}` : '選擇模型' }}</option>
+            <optgroup v-if="hints.length" label="常用">
+              <option v-for="m in hints" :key="m" :value="m">{{ m }}</option>
+            </optgroup>
+            <optgroup v-if="models.length" :label="`服務提供的模型（${models.length}）`">
+              <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
+            </optgroup>
+          </select>
           <button class="small" :disabled="loading || (!cfg.apiKey && !info.keyOptional)" @click="loadModels">
             {{ loading ? '載入中…' : '載入模型清單' }}
           </button>
         </span>
-        <datalist id="model-list">
-          <option v-for="m in [...new Set([...info.modelHints, ...models])]" :key="m" :value="m" />
-        </datalist>
-      </label>
+        <input v-model.trim="cfg.model" placeholder="或直接輸入模型名稱" aria-label="模型名稱" />
+      </div>
       <p v-if="message" class="small">{{ message }}</p>
 
       <label>
@@ -148,6 +163,6 @@ function doReset() {
 
 <style scoped>
 .form { display: grid; gap: 12px; max-width: 560px; }
-.form label { display: grid; gap: 4px; }
+.form label, .form .field { display: grid; gap: 4px; }
 .form label.check { display: flex; gap: 6px; align-items: center; }
 </style>
