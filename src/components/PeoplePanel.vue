@@ -56,6 +56,13 @@ function attack(p: PresentNpc) {
   if (confirm(`偷襲${p.rec.name}？被人看到的話，這裡與${p.rec.name}常去的地方都會提高警戒、降低聲望。`)) interact('attack', p)
 }
 
+/** 帶到「主動行動」：選好對象，捲到主動行動面板 */
+function toAction(p: PresentNpc) {
+  game.actionTarget = p.rec.id
+  document.querySelector('.action-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  document.querySelector<HTMLTextAreaElement>('.action-panel textarea:last-of-type')?.focus({ preventScroll: true })
+}
+
 function tagsOf(rec: NpcRecord) {
   return (rec.tags ?? []).map((t) => tagDef(t)).filter((t) => !!t)
 }
@@ -151,6 +158,7 @@ async function hire(id: string) {
               <div class="row">
                 <button class="small" :disabled="busy" title="魅力檢定：聊得好會拉近關係，也可能聽到消息" @click="interact('chat', p)">💬 聊天</button>
                 <button class="small" :disabled="busy" title="魅力檢定：奉承、討好；失敗會降低親密度，對貴族更難" @click="interact('flatter', p)">🌹 獻媚</button>
+                <button class="small" :disabled="busy" title="在主動行動裡以這個人為對象，自由描述要做的事" @click="toAction(p)">🎲 主動行動</button>
                 <button v-if="p.kind === 'adventurer' && !p.staff" class="small" :disabled="busy || partyFull" @click="startHire(p.rec.id)">
                   🤝 {{ hiring === p.rec.id ? '收起' : '雇用' }}
                 </button>
@@ -182,6 +190,7 @@ async function hire(id: string) {
             <template v-else>
               <p class="muted">{{ p.rec.name }}對你充滿敵意。</p>
               <div class="row">
+                <button class="small" :disabled="busy" @click="toAction(p)">🎲 主動行動</button>
                 <button class="small" :disabled="busy" @click="interact('steal', p)">🫳 偷竊</button>
                 <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" @click="attack(p)">🗡️ 偷襲</button>
               </div>

@@ -101,6 +101,8 @@ export const useGame = defineStore('game', () => {
   const judging = ref(false)
   /** 行動備註：下一次委託或旅行時交給 AI 的玩家意圖 */
   const intent = ref('')
+  /** 主動行動的對象（「這裡的人」可以直接帶入） */
+  const actionTarget = ref('')
   /** 存檔欄位列表（新的在前） */
   const slots = ref<SlotMeta[]>([])
   /** 畫面上方短暫顯示的提示（例如「已快速存檔」） */
@@ -499,7 +501,7 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, pc, judging, intent, usage, totalUsage, slots, notice, flash,
+    state, narrations, error, pc, judging, intent, actionTarget, usage, totalUsage, slots, notice, flash,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
     perform, judge, flavorRoster, hire, flavorShop, startNegotiation,

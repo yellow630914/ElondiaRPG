@@ -4,7 +4,8 @@ import { DEGREE_NAME, situationalTotal } from '@/engine/actions'
 import { actionRules, ATTR_IDS, attrName, classEmoji, contractDef, raceEmoji, slaveryRules, type Degree } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import { presentHere } from '@/engine/population'
+import { npcTitle } from '@/engine/npcs'
+import { peopleHere } from '@/engine/population'
 import { isBound, isEnslaved, isFugitive } from '@/engine/party'
 import { atSafeSpot, contractTerms, markSummary, masterAllows, masterRefusedToday, type MarkChoice } from '@/engine/slavery'
 import { currentArea } from '@/engine/grid'
@@ -33,23 +34,22 @@ const totals = computed(() => {
 
 // ---- 自由行動 ----
 const text = ref('')
-const target = ref('')
-// 對象：隊友，以及現在就在身邊的認識的人（同一個聚落、站在他平常待的設施上）
+// 對象：隊友，以及「這裡的人」（身邊的人可以選；同一區較遠的人要先走近）
+const target = computed({ get: () => game.actionTarget, set: (v: string) => { game.actionTarget = v } })
 function label(id: string, name: string): string {
   const rec = s.value.party.find((m) => m.id === id) ?? npcRecord(s.value, id)
   return rec ? `${raceEmoji(rec.race)}${name}${classEmoji(rec.class)}` : name
 }
-const targets = computed(() => {
-  const inParty = s.value.party.filter((m) => !m.isPlayer).map((m) => ({ id: m.id, name: label(m.id, m.name), note: '隊伍' }))
-  const here = Object.values(s.value.relationships ?? {})
-    .filter((r) => !inParty.some((p) => p.id === r.id) && presentHere(s.value, r.id))
-    .map((r) => ({ id: r.id, name: label(r.id, r.name), note: '在這裡' }))
-  return [...inParty, ...here]
-})
-// 換了地點，原本選的對象不在了就清掉
-watch(targets, (list) => {
-  if (target.value && !list.some((t) => t.id === target.value)) target.value = ''
-})
+const partyTargets = computed(() => s.value.party.filter((m) => !m.isPlayer).map((m) => ({ id: m.id, name: label(m.id, m.name), note: '' })))
+const people = computed(() => peopleHere(s.value).map((p) => ({
+  id: p.rec.id, name: label(p.rec.id, p.rec.name), note: npcTitle(p.rec), near: p.dist <= 1, dist: p.dist,
+})))
+const nearTargets = computed(() => people.value.filter((p) => p.near))
+const farTargets = computed(() => people.value.filter((p) => !p.near))
+// 移動之後，原本選的對象不在身邊了就清掉
+watch([partyTargets, nearTargets], ([party, near]) => {
+  if (target.value && ![...party, ...near].some((t) => t.id === target.value)) target.value = ''
+}, { immediate: true })
 
 const use = ref('')
 function doFree() {
@@ -144,7 +144,7 @@ function doMarking() {
     </template>
   </section>
 
-  <section v-else class="panel">
+  <section v-else class="panel action-panel">
     <div class="row head">
       <h3>🎲 主動行動</h3>
       <JudgeToggle />
@@ -174,7 +174,15 @@ function doMarking() {
     <div class="row">
       <select v-model="target">
         <option value="">（沒有特定對象）</option>
-        <option v-for="t in targets" :key="t.id" :value="t.id">{{ t.name }}・{{ t.note }}</option>
+        <optgroup v-if="partyTargets.length" label="隊伍">
+          <option v-for="t in partyTargets" :key="t.id" :value="t.id">{{ t.name }}</option>
+        </optgroup>
+        <optgroup v-if="nearTargets.length" label="身邊的人">
+          <option v-for="t in nearTargets" :key="t.id" :value="t.id">{{ t.name }}・{{ t.note }}</option>
+        </optgroup>
+        <optgroup v-if="farTargets.length" label="這一區（要先走近）">
+          <option v-for="t in farTargets" :key="t.id" :value="t.id" disabled>{{ t.name }}・{{ t.note }}・📍{{ t.dist }} 格</option>
+        </optgroup>
       </select>
     </div>
     <textarea v-model="text" rows="2" placeholder="例如：買一份甜點給莉娜，順便問她怕水的原因" />
