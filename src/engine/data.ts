@@ -132,6 +132,8 @@ export interface Mods {
   dr?: number
   ap_regen?: number
   crit?: number
+  /** 仇恨倍率的加減（0.1 = +10%） */
+  threat?: number
 }
 
 export interface RaceDef {
@@ -152,6 +154,8 @@ export const attributeRules = attributesJson as unknown as {
 export type CasterType = 'full' | 'half' | 'none'
 export interface ClassDef {
   name: string
+  /** 仇恨值：開戰時的初始值與累積倍率（combat.json 的 threat） */
+  threat?: { start: number; mult: number }
   priority: AttrId[]
   caster: CasterType
   casting?: AttrId
@@ -180,6 +184,7 @@ export function classDef(id: string): ClassDef {
 // ---- 戰鬥規則 ----
 
 export const combatRules = combatJson as unknown as {
+  threat: { floor: number; decay: number; gains: Record<'damage' | 'heal' | 'status' | 'defend' | 'miss' | 'item', number> }
   proficiency: { base: number; every_levels: number }
   xp_to_next_level_per_level: number
   party_max: number
@@ -269,6 +274,8 @@ export interface ApplyDef {
 export interface AbilityDef {
   id: string
   name: string
+  /** 使用時另外加減的仇恨值（例如堅守 +20、隱匿 -10） */
+  threat?: number
   type: AbilityType
   classes: string[]
   unlock?: number
@@ -315,8 +322,8 @@ export function classAbilities(classId: string): AbilityDef[] {
 
 // ---- 裝備 ----
 
-export interface WeaponDef { name: string; dice: string; type: string; attr: AttrId; scale?: Record<string, string> }
-export interface ArmorDef { name: string; evade: number; dr: number; resist?: AffinityMap; offense?: AffinityMap }
+export interface WeaponDef { name: string; dice: string; type: string; attr: AttrId; scale?: Record<string, string>; threat?: number }
+export interface ArmorDef { name: string; evade: number; dr: number; resist?: AffinityMap; offense?: AffinityMap; threat?: number }
 export const equipment = equipmentJson as unknown as {
   weapons: Record<string, WeaponDef>
   armors: Record<string, ArmorDef>

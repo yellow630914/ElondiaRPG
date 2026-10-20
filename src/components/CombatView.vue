@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import {
-  abilityApCost, combatItems, currentActor, isActive, itemTargets, multLabel, unusableReason, validTargets,
+  abilityApCost, combatItems, currentActor, isActive, itemTargets, multLabel, threatMultOf, threatShares, unusableReason, validTargets,
   type Combatant,
 } from '@/engine/combat'
 import { luckyThreshold } from '@/engine/character'
@@ -14,6 +14,8 @@ import NameTag from './NameTag.vue'
 const emit = defineEmits<{ finished: [] }>()
 const game = useGame()
 const combat = computed(() => game.state!.combat!)
+// 仇恨值：敵人選目標的機率（不是絕對的）
+const shares = computed(() => threatShares(combat.value))
 const actor = computed(() => currentActor(combat.value))
 const party = computed(() => combat.value.combatants.filter((c) => c.side === 'party'))
 const foes = computed(() => combat.value.combatants.filter((c) => c.side === 'enemy'))
@@ -140,6 +142,10 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
             <span class="pips"><i v-for="n in c.apMax" :key="n" :class="{ on: n <= c.ap }" /></span>
             <span class="muted">{{ c.ap }}/{{ c.apMax }}（+{{ c.apRegen }}/回合）</span>
             <span v-if="c.tempHp" class="tag">臨時 HP {{ c.tempHp }}</span>
+          </div>
+          <div v-if="isActive(c)" class="small muted threat" :title="`仇恨值 ${Math.round(c.threat ?? 0)}・累積倍率 ×${threatMultOf(c).toFixed(2)}（職業、裝備、天賦與狀態）。敵人依仇恨加權選目標，不是絕對的。`">
+            🎯 仇恨 {{ Math.round(c.threat ?? 0) }}・被盯上約 {{ Math.round((shares[c.id] ?? 0) * 100) }}%
+            <span class="bar"><i :style="{ width: `${Math.round((shares[c.id] ?? 0) * 100)}%` }" /></span>
           </div>
           <div v-if="c.slotMax.length" class="small muted">{{ slotsText(c) }}</div>
           <div class="small">
@@ -273,4 +279,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 @media (max-width: 720px) {
   .sides { grid-template-columns: 1fr; }
 }
+.threat { display: flex; gap: 6px; align-items: center; }
+.threat .bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; max-width: 120px; }
+.threat .bar i { display: block; height: 100%; background: var(--danger); }
 </style>

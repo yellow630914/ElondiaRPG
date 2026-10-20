@@ -4,23 +4,23 @@
   "weapons": {
     "unarmed": { "name": "徒手", "dice": "1d4", "type": "bludgeoning", "attr": "str" },
     "longsword": { "name": "長劍", "dice": "1d8", "type": "slashing", "attr": "str" },
-    "greataxe": { "name": "巨斧", "dice": "1d12", "type": "slashing", "attr": "str" },
-    "warhammer": { "name": "戰鎚", "dice": "1d8", "type": "bludgeoning", "attr": "str" },
+    "greataxe": { "name": "巨斧", "dice": "1d12", "type": "slashing", "attr": "str", "threat": 0.1 },
+    "warhammer": { "name": "戰鎚", "dice": "1d8", "type": "bludgeoning", "attr": "str", "threat": 0.1 },
     "mace": { "name": "鎚矛", "dice": "1d6", "type": "bludgeoning", "attr": "str" },
     "quarterstaff": { "name": "長棍", "dice": "1d6", "type": "bludgeoning", "attr": "str" },
-    "rapier": { "name": "細劍", "dice": "1d8", "type": "piercing", "attr": "dex" },
-    "shortsword": { "name": "短劍", "dice": "1d6", "type": "piercing", "attr": "dex" },
+    "rapier": { "name": "細劍", "dice": "1d8", "type": "piercing", "attr": "dex", "threat": -0.05 },
+    "shortsword": { "name": "短劍", "dice": "1d6", "type": "piercing", "attr": "dex", "threat": -0.05 },
     "scimitar": { "name": "彎刀", "dice": "1d6", "type": "slashing", "attr": "dex" },
-    "dagger": { "name": "匕首", "dice": "1d4", "type": "piercing", "attr": "dex" },
-    "longbow": { "name": "長弓", "dice": "1d8", "type": "piercing", "attr": "dex" },
+    "dagger": { "name": "匕首", "dice": "1d4", "type": "piercing", "attr": "dex", "threat": -0.1 },
+    "longbow": { "name": "長弓", "dice": "1d8", "type": "piercing", "attr": "dex", "threat": -0.15 },
     "monk_fists": { "name": "武僧拳腳", "dice": "1d6", "type": "bludgeoning", "attr": "dex", "scale": { "5": "1d8", "11": "1d10", "17": "1d12" } }
   },
   "armors": {
-    "none": { "name": "無", "evade": 0, "dr": 0 },
-    "cloth": { "name": "布衣", "evade": 1, "dr": 0 },
+    "none": { "name": "無", "evade": 0, "dr": 0, "threat": -0.1 },
+    "cloth": { "name": "布衣", "evade": 1, "dr": 0, "threat": -0.1 },
     "monk_robe": { "name": "武僧袍", "evade": 2, "dr": 0 },
     "leather": { "name": "皮甲", "evade": 1, "dr": 1 },
-    "chain_shield": { "name": "鍊甲與盾", "evade": -1, "dr": 3, "resist": { "slashing": -0.25 } },
-    "plate": { "name": "板甲", "evade": -3, "dr": 4, "resist": { "slashing": -0.25, "piercing": -0.25, "lightning": 0.25 } }
+    "chain_shield": { "name": "鍊甲與盾", "evade": -1, "dr": 3, "resist": { "slashing": -0.25 }, "threat": 0.15 },
+    "plate": { "name": "板甲", "evade": -3, "dr": 4, "resist": { "slashing": -0.25, "piercing": -0.25, "lightning": 0.25 }, "threat": 0.25 }
   }
 }

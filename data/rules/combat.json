@@ -57,6 +57,13 @@
     "$comment": "戲法不花行動點，但每回合只能施放一次。傷害骰數在 scale_levels 的每個門檻 +1 倍（5、11、17 級）。可學會的戲法數量 = known_base + floor(等級 / known_every_levels)。",
     "scale_levels": [5, 11, 17], "known_base": 2, "known_every_levels": 4
   },
+  "threat": {
+    "$comment": "仇恨值：影響敵人選誰當目標的機率，不是絕對的。敵人選目標時，每個人的權重 = floor + 仇恨值（嘲諷狀態例外，只打嘲諷者）。行動累積仇恨：對敵人造成的傷害 × damage、治療隊友的量 × heal、施加狀態每個 × status、防禦 defend、沒命中 miss、使用道具 item；能力可以另外寫 threat（例如堅守）。累積量再乘上倍率 = 職業 threat.mult × (1 + 防具 threat + 武器 threat + 天賦與狀態的 mods.threat)。開戰時的仇恨 = 職業 threat.start × 倍率；每回合結束乘上 decay。",
+    "floor": 5,
+    "decay": 0.85,
+    "gains": { "damage": 1, "heal": 0.6, "status": 3, "defend": 4, "miss": 1, "item": 1 }
+  },
+
   "quality_by_level": [
     { "levels": [1, 4], "quality": "common" },
     { "levels": [5, 8], "quality": "uncommon" },

@@ -13,7 +13,7 @@ import {
   slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
+  abilityDef, armorDef, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
   locationById, population, regionById, statusDef, wildEncounters,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type WeaponDef,
@@ -77,6 +77,10 @@ export interface Combatant {
   defId?: string
   /** 敵對的 NPC（冒險者）的 id */
   npcId?: string
+  /** 仇恨值：越高越容易被敵人選為目標（見 combat.json 的 threat） */
+  threat: number
+  /** 仇恨累積倍率的固定部分：職業 × (1 + 防具 + 武器)；天賦與狀態的 mods.threat 在累積時另外算 */
+  threatMult: number
 }
 
 export type CombatAction =
@@ -194,7 +198,10 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
   const gear = gearAffinities(c)
   const armor = armorDef(c.armor)
   const apMax = apMaxFor(c.level, c.attrs)
+  const cls = classDef(c.class).threat ?? { start: 0, mult: 1 }
+  const threatMult = cls.mult * (1 + (armor.threat ?? 0) + (weaponFor(c).threat ?? 0))
   return {
+    threat: Math.round(cls.start * threatMult * (1 + (gear.mods.threat ?? 0))), threatMult,
     id: c.id, name: c.name, side: 'party', level: c.level, attrs: { ...c.attrs }, prof: proficiency(c.level),
     hp: c.hp, maxHp: c.maxHp, tempHp: 0,
     ap: apMax, apMax, apRegen: apRegenFor(c.level),
@@ -225,7 +232,7 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng): Combata
     statuses: [],
     initiative: roll(rng, '1d20').total + mod(def.attrs.dex),
     usedTurn: {}, usedCombat: {}, usedRest: {},
-    defId,
+    defId, threat: 0, threatMult: 1,
   }
 }
 
@@ -316,7 +323,7 @@ function hasSpecial(c: Combatant, special: string) {
 }
 
 function modsOf(c: Combatant): Required<Mods> {
-  const total: Required<Mods> = { hit: 0, evade: 0, save: 0, damage: 0, dr: 0, ap_regen: 0, crit: 0 }
+  const total: Required<Mods> = { hit: 0, evade: 0, save: 0, damage: 0, dr: 0, ap_regen: 0, crit: 0, threat: 0 }
   const add = (m?: Mods) => {
     for (const [k, v] of Object.entries(m ?? {})) total[k as keyof Mods] += v ?? 0
   }
@@ -525,6 +532,65 @@ function useItem(combat: CombatState, rng: Rng, actor: Combatant, name: string, 
 
 function push(combat: CombatState, entry: Omit<TimelineEntry, 'seq' | 'round'>) {
   combat.timeline.push({ seq: combat.timeline.length + 1, round: combat.round, ...entry })
+  accrueThreat(combat, entry)
+}
+
+// ---- 仇恨值 ----
+
+/** 這位角色的仇恨累積倍率：職業與裝備的固定部分，乘上天賦與狀態的加減 */
+export function threatMultOf(c: Combatant): number {
+  return Math.max(0, (c.threatMult ?? 1) * (1 + modsOf(c).threat))
+}
+
+/** 加減仇恨值：增加時乘上倍率，減少（隱匿等）直接扣，最低 0 */
+export function addThreat(c: Combatant, amount: number) {
+  c.threat = Math.max(0, (c.threat ?? 0) + (amount > 0 ? amount * threatMultOf(c) : amount))
+}
+
+/** 每筆行動依效果累積仇恨：對敵人的傷害、治療隊友、對別人施加狀態、防禦、沒命中、用道具 */
+function accrueThreat(combat: CombatState, entry: Omit<TimelineEntry, 'seq' | 'round'>) {
+  const actor = combat.combatants.find((c) => c.id === entry.actor)
+  if (!actor) return
+  const g = combatRules.threat.gains
+  const sideOf = (id?: string) => combat.combatants.find((c) => c.id === id)?.side
+  let gain = 0
+  for (const e of entry.effects ?? []) {
+    if (e.type === 'damage' && sideOf(e.target) && sideOf(e.target) !== actor.side) gain += (e.amount ?? 0) * g.damage
+    if (e.type === 'heal' && e.target !== actor.id && sideOf(e.target) === actor.side) gain += (e.amount ?? 0) * g.heal
+    if (e.type === 'status_add' && e.target !== actor.id && e.status !== '倒下') gain += g.status
+  }
+  if (entry.action === '防禦') gain += g.defend
+  if (entry.result === 'fail' && entry.roll && !entry.effects?.some((e) => e.type === 'damage')) gain += g.miss
+  if (entry.action.startsWith('使用')) gain += g.item
+  if (gain > 0) addThreat(actor, gain)
+}
+
+/** 每回合結束，仇恨逐漸淡去 */
+function decayThreat(combat: CombatState) {
+  for (const c of combat.combatants) c.threat = Math.round((c.threat ?? 0) * combatRules.threat.decay * 10) / 10
+}
+
+/** 敵人選目標的權重：floor + 仇恨值（不是絕對的，只影響機率） */
+export function targetWeight(c: Combatant): number {
+  return combatRules.threat.floor + (c.threat ?? 0)
+}
+
+/** 依仇恨值加權抽一個目標 */
+export function pickByThreat(rng: Rng, foes: Combatant[]): Combatant {
+  const total = foes.reduce((s, f) => s + targetWeight(f), 0)
+  let r = rng.next() * total
+  for (const f of foes) {
+    r -= targetWeight(f)
+    if (r < 0) return f
+  }
+  return foes[foes.length - 1]!
+}
+
+/** 在敵人眼中，每位隊員被選為目標的機率（給畫面顯示） */
+export function threatShares(combat: CombatState): Record<string, number> {
+  const party = combat.combatants.filter((c) => c.side === 'party' && isActive(c))
+  const total = party.reduce((s, c) => s + targetWeight(c), 0)
+  return Object.fromEntries(party.map((c) => [c.id, total ? targetWeight(c) / total : 0]))
 }
 
 function noteAffinity(combat: CombatState, id: string, delta: number, reason: string) {
@@ -862,6 +928,8 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
     }
   }
 
+  // 能力本身的仇恨（堅守 +、隱匿 -）
+  if (a.threat) addThreat(actor, a.threat)
   if (a.lifesteal && dealt > 0) {
     const effects: Effect[] = []
     heal(actor, Math.floor(dealt * a.lifesteal), effects)
@@ -937,6 +1005,7 @@ function endTurn(combat: CombatState, rng: Rng) {
     if (combat.turn >= combat.order.length) {
       combat.turn = 0
       combat.round += 1
+      decayThreat(combat)
     }
     if (beginTurn(combat, rng)) return
     if (combat.status !== 'ongoing') return
@@ -1008,7 +1077,8 @@ function enemyTurn(combat: CombatState, actor: Combatant, rng: Rng) {
     if (foes.length === 0) return
     const taunt = actor.statuses.find((s) => statusDef(s.id).control === 'taunt')
     const taunter = taunt && foes.find((f) => f.id === taunt.source)
-    const target = taunter ?? rng.pick(foes)
+    // 嘲諷時只打嘲諷者；否則依仇恨值加權選目標
+    const target = taunter ?? pickByThreat(rng, foes)
     const usable = usableAbilities(combat, actor.id).filter((a) => a.target !== 'self' || !actor.statuses.length)
     if (usable.length > 0 && rng.chance(0.5)) {
       const a = rng.pick(usable)

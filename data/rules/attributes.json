@@ -26,15 +26,15 @@
     },
     "dwarf": {
       "name": "矮人", "emoji": "🧔", "bonus": { "str": 2, "fai": 1 },
-      "talent": { "name": "熔爐之軀", "desc": "毒素傷害 ×0.5、火焰傷害 ×0.75。", "resist": { "poison": -0.5, "fire": -0.25 } }
+      "talent": { "name": "熔爐之軀", "desc": "毒素傷害 ×0.5、火焰傷害 ×0.75；身形結實顯眼，仇恨 +10%。", "resist": { "poison": -0.5, "fire": -0.25 }, "mods": { "threat": 0.1 } }
     },
     "demon": {
       "name": "魔族", "emoji": "😈", "bonus": { "str": 1, "cha": 2 },
-      "talent": { "name": "荒原血脈", "desc": "火焰 ×0.5、暗影 ×0.75，但神聖傷害 ×1.25。", "resist": { "fire": -0.5, "necrotic": -0.25, "radiant": 0.25 } }
+      "talent": { "name": "荒原血脈", "desc": "火焰 ×0.5、暗影 ×0.75，但神聖傷害 ×1.25；魔族的氣息惹人注目，仇恨 +10%。", "resist": { "fire": -0.5, "necrotic": -0.25, "radiant": 0.25 }, "mods": { "threat": 0.1 } }
     },
     "catfolk": {
       "name": "貓魅族", "emoji": "🐱", "bonus": { "dex": 2, "cha": 1 },
-      "talent": { "name": "貓之反射", "desc": "迴避 +1、幸運一擊閾值 -1。", "mods": { "evade": 1, "crit": 1 } }
+      "talent": { "name": "貓之反射", "desc": "迴避 +1、幸運一擊閾值 -1；身手輕巧不易被盯上，仇恨 -15%。", "mods": { "evade": 1, "crit": 1, "threat": -0.15 } }
     },
     "yulin": {
       "name": "玉璘族", "emoji": "🐉", "bonus": { "cha": 2, "fai": 1 },
