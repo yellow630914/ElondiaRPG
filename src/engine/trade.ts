@@ -9,11 +9,12 @@
 import { snapshot } from './character'
 import {
   companionRules, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
-  type DealCost, type Degree, type ItemCategory, type ShopType,
+  type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
-import { askingPrice, generateNpc, npcRecord, slavePrice } from './npcs'
+import { gearRules } from './gear'
+import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
 import { reputationBand } from './security'
@@ -94,7 +95,14 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
       const stock = i.category === 'food' || i.category === 'gear' ? 20 : rng.int(2, 5)
       deals.push(itemDeal(state, i.name, stock))
     }
-    for (const i of pickSome(equipment, rng.int(2, 4))) deals.push(itemDeal(state, i.name, 1))
+    // 裝備：稀有的材料比較少出現（第一級最常見，精金極少）
+    const gearWeight = (i: ItemDef) => [0, 10, 6, 1.5, 0.2, 0][i.gear ? gearRules.materials[i.gear.material]?.tier ?? 1 : 1] ?? 1
+    const picked = new Set<string>()
+    for (let n = rng.int(3, 6); n > 0 && picked.size < equipment.length; n--) {
+      const pool = equipment.filter((i) => !picked.has(i.name))
+      picked.add(weightedPick(rng, Object.fromEntries(pool.map((i) => [i.name, gearWeight(i)]))))
+    }
+    for (const name of picked) deals.push(itemDeal(state, name, 1))
     for (const i of pickSome(valuables, 2)) deals.push(itemDeal(state, i.name, rng.int(1, 2)))
     for (const sp of def.specials) deals.push(specialDeal(sp))
     return deals

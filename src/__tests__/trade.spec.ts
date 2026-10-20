@@ -34,8 +34,8 @@ describe('shops', () => {
     const rations = shop.deals.find((d) => d.id === 'item:乾糧')!
     // 索里耶爾是王都：價格 ×1.15
     expect(rations.gives[0]).toEqual({ type: 'money', amount: 6 })
-    const gear = shop.deals.filter((d) => d.id.startsWith('item:') && itemDef(d.title)?.equip)
-    expect(gear.length).toBeGreaterThanOrEqual(2)
+    const gear = shop.deals.filter((d) => d.id.startsWith('item:') && itemDef(d.title)?.gear)
+    expect(gear.length).toBeGreaterThanOrEqual(3)
     const report = buyDeal(state, 'general', 'item:乾糧')
     expectValid(report)
     expect(report.check).toBeUndefined()
@@ -229,14 +229,21 @@ describe('items', () => {
     const state = game(13)
     const pc = state.party[0]!
     pc.hp = 1
-    state.inventory.push({ name: '微弱治療藥劑', qty: 1 }, { name: '板甲', qty: 1 })
+    state.inventory.push({ name: '微弱治療藥劑', qty: 1 }, { name: '鐵板甲', qty: 1 }, { name: '鋼巨斧', qty: 1 })
     useItem(state, '微弱治療藥劑', 'pc')
     expect(pc.hp).toBeGreaterThanOrEqual(5)
     expect(state.inventory.some((i) => i.name === '微弱治療藥劑')).toBe(false)
-    expect(pc.armor).toBe('chain_shield')
-    equipItem(state, '板甲', 'pc')
+    // 戰士開局：鐵長劍、鐵盾、鐵鍊甲
+    expect(pc.armor).toBe('chain')
+    expect(pc.gear?.off_hand?.name).toBe('鐵盾')
+    equipItem(state, '鐵板甲', 'pc')
     expect(pc.armor).toBe('plate')
-    expect(state.inventory.find((i) => i.name === '鍊甲與盾')?.qty).toBe(1)
+    expect(state.inventory.find((i) => i.name === '鐵鍊甲')?.qty).toBe(1)
+    // 雙手武器：副手的盾收回行囊
+    equipItem(state, '鋼巨斧', 'pc')
+    expect(pc.weapon).toBe('greataxe')
+    expect(pc.gear?.off_hand).toBeUndefined()
+    expect(state.inventory.find((i) => i.name === '鐵盾')?.qty).toBe(1)
   })
 })
 

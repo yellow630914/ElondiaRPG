@@ -20,7 +20,7 @@ import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
 import { travel } from '@/engine/travel'
-import type { GameState, Report } from '@/engine/types'
+import type { GameState, GearSlot, Report } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
@@ -518,7 +518,8 @@ export const useGame = defineStore('game', () => {
       perform({ kind: 'negotiation', target: id, text, ...(use ? { use } : {}) }),
     abandonNegotiation: (id: string) => run((s) => negotiation.abandonNegotiation(s, id)),
     useItem: (name: string, member: string) => run((s) => inventory.useItem(s, name, member)),
-    equipItem: (name: string, member: string) => run((s) => inventory.equipItem(s, name, member)),
+    equipItem: (name: string, member: string, slot?: GearSlot) => run((s) => inventory.equipItem(s, name, member, slot)),
+    unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     travel: (to: string, intent?: string) => run((s) => travel(s, to, intent, { adult: useSettings().adult })),
     rest: () => run(town.rest),

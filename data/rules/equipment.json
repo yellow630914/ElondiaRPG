@@ -1,8 +1,8 @@
 {
-  "$comment": "裝備。武器：dice 傷害骰、type 傷害屬性、attr 命中與傷害使用的屬性、scale 依等級提升傷害骰（武僧）。防具：evade 迴避修正、dr 物理減傷、resist / offense 傷害倍率加減（見 damage_types.json）。",
+  "$comment": "裝備的基本類型（gear.json 的底材以這裡的武器與上身防具為基礎；材料與附魔另外加成）。武器：dice 傷害骰、type 傷害屬性、attr 命中與傷害使用的屬性、scale 依等級提升傷害骰（武僧）。防具：evade 迴避修正、dr 物理減傷、resist / offense 傷害倍率加減（見 damage_types.json）。",
   "version": 1,
   "weapons": {
-    "unarmed": { "name": "徒手", "dice": "1d4", "type": "bludgeoning", "attr": "str" },
+    "unarmed": { "name": "徒手", "dice": "1d4", "type": "bludgeoning", "attr": "str", "natural": true },
     "longsword": { "name": "長劍", "dice": "1d8", "type": "slashing", "attr": "str" },
     "greataxe": { "name": "巨斧", "dice": "1d12", "type": "slashing", "attr": "str", "threat": 0.1 },
     "warhammer": { "name": "戰鎚", "dice": "1d8", "type": "bludgeoning", "attr": "str", "threat": 0.1 },
@@ -13,13 +13,14 @@
     "scimitar": { "name": "彎刀", "dice": "1d6", "type": "slashing", "attr": "dex" },
     "dagger": { "name": "匕首", "dice": "1d4", "type": "piercing", "attr": "dex", "threat": -0.1 },
     "longbow": { "name": "長弓", "dice": "1d8", "type": "piercing", "attr": "dex", "threat": -0.15 },
-    "monk_fists": { "name": "武僧拳腳", "dice": "1d6", "type": "bludgeoning", "attr": "dex", "scale": { "5": "1d8", "11": "1d10", "17": "1d12" } }
+    "monk_fists": { "name": "武僧拳腳", "dice": "1d6", "type": "bludgeoning", "attr": "dex", "scale": { "5": "1d8", "11": "1d10", "17": "1d12" }, "natural": true }
   },
   "armors": {
     "none": { "name": "無", "evade": 0, "dr": 0, "threat": -0.1 },
     "cloth": { "name": "布衣", "evade": 1, "dr": 0, "threat": -0.1 },
     "monk_robe": { "name": "武僧袍", "evade": 2, "dr": 0 },
     "leather": { "name": "皮甲", "evade": 1, "dr": 1 },
+    "chain": { "name": "鍊甲", "evade": -1, "dr": 2, "resist": { "slashing": -0.25 }, "threat": 0.05 },
     "chain_shield": { "name": "鍊甲與盾", "evade": -1, "dr": 3, "resist": { "slashing": -0.25 }, "threat": 0.15 },
     "plate": { "name": "板甲", "evade": -3, "dr": 4, "resist": { "slashing": -0.25, "piercing": -0.25, "lightning": 0.25 }, "threat": 0.25 }
   }

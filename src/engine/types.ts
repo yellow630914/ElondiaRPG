@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { AttrId, Attrs, Bond, DealCost, NpcDef } from './data'
+import type { AffinityMap, AttrId, Attrs, Bond, DealCost, Mods, NpcDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -156,6 +156,24 @@ export interface Report {
 
 // ---- 遊戲狀態 ----
 
+/** 裝備欄位（gear.json 的 slots） */
+export type GearSlot = 'main_hand' | 'off_hand' | 'head' | 'body' | 'legs' | 'wrists' | 'feet' | 'belt' | 'accessory' | 'neck_1' | 'neck_2'
+
+/** 一件裝備的組成：底材 × 材料（＋稀有度與附魔） */
+export interface GearSpec {
+  base: string
+  material: string
+  /** 沒有時用材料的稀有度 */
+  rarity?: string
+  enchants?: { mods?: Mods; resist?: AffinityMap; offense?: AffinityMap }
+}
+
+/** 穿在身上的裝備：物品名稱與組成（自帶組成，不必回頭查存檔） */
+export interface EquippedGear {
+  name: string
+  spec: GearSpec
+}
+
 export interface Character {
   id: string
   name: string
@@ -176,8 +194,11 @@ export interface Character {
   usesPerRest: Record<string, number>
   /** 已學會的技能、法術、戲法 id */
   abilities: string[]
+  /** 武器與上身防具的基本類型（equipment.json）；有裝備欄位時由主手與上身的裝備決定 */
   weapon: string
   armor: string
+  /** 裝備欄位 */
+  gear?: Partial<Record<GearSlot, EquippedGear>>
   status: string[]
   personality?: string
   faction?: string
@@ -433,7 +454,7 @@ export interface GameState {
   /** 各商店今天的交易清單；鍵為 城鎮/商店類型 */
   shops?: Record<string, ShopState>
   /** AI 自創的物品（可以再賣回商店） */
-  customItems?: Record<string, { category: string; price_cc: number; desc?: string }>
+  customItems?: Record<string, { category: string; price_cc: number; desc?: string; gear?: GearSpec }>
   /** 進行中與結束的談判 */
   negotiations?: Negotiation[]
 }

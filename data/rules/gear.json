@@ -1,0 +1,133 @@
+{
+  "$comment": "裝備模板。角色（主角、夥伴、敵對冒險者，所有種族共用）有 11 個欄位。一件裝備 = 底材（base：決定欄位、武器或防具類型、固定數值、隨材料成長的數值）＋ 材料（material：等級 tier、成長值 bonus、稀有度、價格倍率、建議等級）＋ 附魔（enchants，只有打造、事件或特殊物品才有）。數值依 scale 由材料的 bonus 推算：full = bonus、half = floor(bonus/2)、up = ceil(bonus/2)、third = floor(bonus/3)、res = -0.15 × bonus（抗性）。商店與敵人掉落的『制式裝備』是 base × material 的組合（scripts 產生到 items.json）。附魔點數依稀有度（enchant_points）：命中、傷害、迴避、減傷、豁免、幸運一擊每 +1 = 1 點，行動點回復 +1 = 2 點，抗性或屬性攻擊加成每 0.25 = 1 點，仇恨每 ±0.1 = 1 點。",
+  "version": 1,
+
+  "slots": {
+    "main_hand": "主手", "off_hand": "副手", "head": "頭部", "body": "上身", "legs": "下身",
+    "wrists": "手腕", "feet": "鞋子", "belt": "腰帶", "accessory": "首飾", "neck_1": "項鍊", "neck_2": "項鍊"
+  },
+  "slot_groups": { "neck": ["neck_1", "neck_2"] },
+
+  "rarities": {
+    "common": { "name": "普通", "enchant_points": 0 },
+    "uncommon": { "name": "優良", "enchant_points": 1 },
+    "rare": { "name": "稀有", "enchant_points": 2 },
+    "epic": { "name": "史詩", "enchant_points": 4 },
+    "legendary": { "name": "傳說", "enchant_points": 6 }
+  },
+  "enchant_costs": { "hit": 1, "damage": 1, "evade": 1, "dr": 1, "save": 1, "crit": 1, "ap_regen": 2, "resist": 1, "offense": 1, "threat": 1 },
+
+  "materials": {
+    "iron":        { "kind": "metal", "name": "鐵", "tier": 1, "bonus": 0, "rarity": "common", "level": 1, "price": 1 },
+    "steel":       { "kind": "metal", "name": "鋼", "tier": 2, "bonus": 1, "rarity": "common", "level": 3, "price": 2 },
+    "mithril":     { "kind": "metal", "name": "秘銀", "tier": 3, "bonus": 2, "rarity": "rare", "level": 7, "price": 15, "armor": { "evade": 1 }, "desc": "輕盈而堅韌的秘銀，做成防具幾乎不妨礙行動。" },
+    "adamantine":  { "kind": "metal", "name": "精金", "tier": 4, "bonus": 4, "rarity": "epic", "level": 11, "price": 150, "armor": { "dr": 1 }, "desc": "世上最堅硬的金屬之一。" },
+    "star_iron":   { "kind": "metal", "name": "星隕鐵", "tier": 5, "bonus": 6, "rarity": "legendary", "level": 15, "price": 1000, "armor": { "dr": 1, "evade": 1 }, "desc": "從天而降的隕鐵，鍛造的方法只有少數矮人大師知道。" },
+    "leather":     { "kind": "leather", "name": "皮革", "tier": 1, "bonus": 0, "rarity": "common", "level": 1, "price": 1 },
+    "hard_leather":{ "kind": "leather", "name": "硬皮", "tier": 2, "bonus": 1, "rarity": "common", "level": 3, "price": 2 },
+    "beast_hide":  { "kind": "leather", "name": "魔獸皮", "tier": 3, "bonus": 2, "rarity": "rare", "level": 7, "price": 15 },
+    "dragonhide":  { "kind": "leather", "name": "龍皮", "tier": 4, "bonus": 4, "rarity": "epic", "level": 11, "price": 150, "resist": { "fire": -0.25 } },
+    "elder_dragonhide": { "kind": "leather", "name": "古龍皮", "tier": 5, "bonus": 6, "rarity": "legendary", "level": 15, "price": 1000, "resist": { "fire": -0.5 } },
+    "linen":       { "kind": "cloth", "name": "亞麻", "tier": 1, "bonus": 0, "rarity": "common", "level": 1, "price": 1 },
+    "silk":        { "kind": "cloth", "name": "絲綢", "tier": 2, "bonus": 1, "rarity": "common", "level": 3, "price": 2 },
+    "moonsilk":    { "kind": "cloth", "name": "月影絲", "tier": 3, "bonus": 2, "rarity": "rare", "level": 7, "price": 15, "resist": { "psychic": -0.25 } },
+    "spellweave":  { "kind": "cloth", "name": "魔織布", "tier": 4, "bonus": 4, "rarity": "epic", "level": 11, "price": 150, "resist": { "force": -0.25 } },
+    "starweave":   { "kind": "cloth", "name": "星輝織", "tier": 5, "bonus": 6, "rarity": "legendary", "level": 15, "price": 1000, "resist": { "force": -0.25, "psychic": -0.25 } },
+    "oak":         { "kind": "wood", "name": "橡木", "tier": 1, "bonus": 0, "rarity": "common", "level": 1, "price": 1 },
+    "yew":         { "kind": "wood", "name": "紫杉", "tier": 2, "bonus": 1, "rarity": "common", "level": 3, "price": 2 },
+    "elderwood":   { "kind": "wood", "name": "古樹木", "tier": 3, "bonus": 2, "rarity": "rare", "level": 7, "price": 15 },
+    "worldtree":   { "kind": "wood", "name": "世界樹枝", "tier": 4, "bonus": 4, "rarity": "epic", "level": 11, "price": 150 },
+    "divine_wood": { "kind": "wood", "name": "神木", "tier": 5, "bonus": 6, "rarity": "legendary", "level": 15, "price": 1000 },
+    "copper":      { "kind": "jewel", "name": "銅製", "tier": 1, "bonus": 1, "rarity": "common", "level": 1, "price": 1 },
+    "silver":      { "kind": "jewel", "name": "銀製", "tier": 2, "bonus": 1, "rarity": "uncommon", "level": 3, "price": 4 },
+    "gold":        { "kind": "jewel", "name": "金製", "tier": 3, "bonus": 2, "rarity": "rare", "level": 7, "price": 20 },
+    "mithril_jewel": { "kind": "jewel", "name": "秘銀", "tier": 4, "bonus": 3, "rarity": "epic", "level": 11, "price": 200 },
+    "starstone":   { "kind": "jewel", "name": "星辰石", "tier": 5, "bonus": 4, "rarity": "legendary", "level": 15, "price": 1500 }
+  },
+
+  "bases": {
+    "dagger":       { "slot": "main_hand", "name": "匕首", "kind": "metal", "weapon": "dagger", "price": 160, "scale": { "damage": "full", "hit": "half" } },
+    "shortsword":   { "slot": "main_hand", "name": "短劍", "kind": "metal", "weapon": "shortsword", "price": 180, "scale": { "damage": "full", "hit": "half" } },
+    "scimitar":     { "slot": "main_hand", "name": "彎刀", "kind": "metal", "weapon": "scimitar", "price": 200, "scale": { "damage": "full", "hit": "half" } },
+    "rapier":       { "slot": "main_hand", "name": "細劍", "kind": "metal", "weapon": "rapier", "price": 260, "scale": { "damage": "full", "hit": "half" } },
+    "longsword":    { "slot": "main_hand", "name": "長劍", "kind": "metal", "weapon": "longsword", "price": 240, "scale": { "damage": "full", "hit": "half" } },
+    "mace":         { "slot": "main_hand", "name": "鎚矛", "kind": "metal", "weapon": "mace", "price": 200, "scale": { "damage": "full", "hit": "half" } },
+    "warhammer":    { "slot": "main_hand", "name": "戰鎚", "kind": "metal", "weapon": "warhammer", "price": 280, "scale": { "damage": "full", "hit": "half" } },
+    "greataxe":     { "slot": "main_hand", "name": "巨斧", "kind": "metal", "weapon": "greataxe", "two_handed": true, "price": 450, "scale": { "damage": "full", "hit": "half" } },
+    "quarterstaff": { "slot": "main_hand", "name": "長棍", "kind": "wood", "weapon": "quarterstaff", "two_handed": true, "price": 30, "scale": { "damage": "full", "hit": "half" } },
+    "spellstaff":   { "slot": "main_hand", "name": "法杖", "kind": "wood", "weapon": "quarterstaff", "two_handed": true, "price": 120, "scale": { "hit": "up", "save": "half" }, "desc": "施法者的法杖：強化法術的命中，也讓心神更穩。" },
+    "longbow":      { "slot": "main_hand", "name": "長弓", "kind": "wood", "weapon": "longbow", "two_handed": true, "price": 300, "scale": { "damage": "full", "hit": "half" } },
+
+    "shield":       { "slot": "off_hand", "name": "盾", "kind": "metal", "price": 150, "stats": { "dr": 1 }, "threat": 0.1, "scale": { "dr": "half", "evade": "third" } },
+    "buckler":      { "slot": "off_hand", "name": "小圓盾", "kind": "leather", "price": 80, "stats": { "evade": 1 }, "scale": { "evade": "half" } },
+    "focus":        { "slot": "off_hand", "name": "法器寶珠", "kind": "jewel", "price": 200, "stats": { "save": 1 }, "scale": { "save": "half", "hit": "half" } },
+
+    "helm":         { "slot": "head", "name": "頭盔", "kind": "metal", "price": 300, "stats": { "dr": 1, "evade": -1 }, "scale": { "dr": "half" } },
+    "leather_cap":  { "slot": "head", "name": "皮帽", "kind": "leather", "price": 40, "scale": { "evade": "half" } },
+    "hood":         { "slot": "head", "name": "兜帽", "kind": "cloth", "price": 20, "scale": { "save": "up" } },
+
+    "plate":        { "slot": "body", "name": "板甲", "kind": "metal", "armor": "plate", "price": 6000, "scale": { "dr": "half" } },
+    "chain":        { "slot": "body", "name": "鍊甲", "kind": "metal", "armor": "chain", "price": 3800, "scale": { "dr": "half" } },
+    "leather_armor":{ "slot": "body", "name": "皮甲", "kind": "leather", "armor": "leather", "price": 600, "scale": { "evade": "half", "dr": "third" } },
+    "robe":         { "slot": "body", "name": "長袍", "kind": "cloth", "armor": "cloth", "price": 60, "scale": { "save": "up" } },
+    "monk_robe":    { "slot": "body", "name": "武僧袍", "kind": "cloth", "armor": "monk_robe", "price": 90, "scale": { "evade": "half", "save": "third" } },
+
+    "greaves":      { "slot": "legs", "name": "腿甲", "kind": "metal", "price": 400, "stats": { "dr": 1, "evade": -1 }, "scale": { "dr": "half" } },
+    "leather_leggings": { "slot": "legs", "name": "皮褲", "kind": "leather", "price": 50, "scale": { "evade": "half" } },
+    "trousers":     { "slot": "legs", "name": "長褲", "kind": "cloth", "price": 15, "scale": { "save": "half" } },
+
+    "vambraces":    { "slot": "wrists", "name": "護臂", "kind": "metal", "price": 200, "scale": { "dr": "half", "hit": "third" } },
+    "bracers":      { "slot": "wrists", "name": "皮護腕", "kind": "leather", "price": 40, "scale": { "hit": "up" } },
+    "wraps":        { "slot": "wrists", "name": "纏腕布", "kind": "cloth", "price": 10, "scale": { "crit": "third", "save": "half" } },
+
+    "sabatons":     { "slot": "feet", "name": "鐵靴", "kind": "metal", "price": 250, "scale": { "dr": "half" } },
+    "boots":        { "slot": "feet", "name": "皮靴", "kind": "leather", "price": 20, "scale": { "evade": "up" } },
+    "shoes":        { "slot": "feet", "name": "布鞋", "kind": "cloth", "price": 8, "scale": { "evade": "half" } },
+
+    "girdle":       { "slot": "belt", "name": "鐵腰帶", "kind": "metal", "price": 120, "scale": { "dr": "half", "damage": "third" } },
+    "belt":         { "slot": "belt", "name": "皮腰帶", "kind": "leather", "price": 12, "scale": { "damage": "half", "hit": "third" } },
+    "sash":         { "slot": "belt", "name": "腰帶", "kind": "cloth", "price": 25, "scale": { "save": "half" } },
+
+    "ring_precision": { "slot": "accessory", "name": "精準之戒", "kind": "jewel", "price": 80, "scale": { "hit": "up" } },
+    "ring_guard":     { "slot": "accessory", "name": "守護之戒", "kind": "jewel", "price": 80, "scale": { "save": "up" } },
+    "ring_fortune":   { "slot": "accessory", "name": "幸運之戒", "kind": "jewel", "price": 120, "scale": { "crit": "third_up" } },
+    "ring_swift":     { "slot": "accessory", "name": "迅捷之戒", "kind": "jewel", "price": 200, "scale": { "evade": "up" } },
+
+    "amulet_ward":    { "slot": "neck", "name": "守護護符", "kind": "jewel", "price": 100, "scale": { "save": "up" } },
+    "amulet_iron":    { "slot": "neck", "name": "鐵膚護符", "kind": "jewel", "price": 140, "scale": { "dr": "up" } },
+    "pendant_fire":   { "slot": "neck", "name": "抗火項鍊", "kind": "jewel", "price": 90, "resist_scale": { "fire": "res" } },
+    "pendant_cold":   { "slot": "neck", "name": "抗寒項鍊", "kind": "jewel", "price": 90, "resist_scale": { "cold": "res" } },
+    "pendant_lightning": { "slot": "neck", "name": "抗雷項鍊", "kind": "jewel", "price": 90, "resist_scale": { "lightning": "res" } },
+    "pendant_poison": { "slot": "neck", "name": "抗毒項鍊", "kind": "jewel", "price": 90, "resist_scale": { "poison": "res" } },
+    "pendant_shadow": { "slot": "neck", "name": "驅暗項鍊", "kind": "jewel", "price": 110, "resist_scale": { "necrotic": "res" } },
+    "pendant_mind":   { "slot": "neck", "name": "明心項鍊", "kind": "jewel", "price": 110, "resist_scale": { "psychic": "res" } }
+  },
+
+  "classes": {
+    "$comment": "職業的裝備模板：start 是開局（主角）與等級最低的夥伴的基本配備（鐵、皮革、亞麻、橡木、銅等第一級材料）；main / off / body 是可以挑的底材，pieces 是頭、腿、手腕、腳、腰帶用哪一種材料類型（metal 重甲、leather 輕甲、cloth 布）。",
+    "fighter":   { "start": { "main_hand": "longsword", "off_hand": "shield", "body": "chain" }, "main": ["longsword", "warhammer", "mace", "scimitar"], "off": ["shield"], "body": ["chain", "plate"], "pieces": "metal" },
+    "barbarian": { "start": { "main_hand": "greataxe", "body": "leather_armor" }, "main": ["greataxe"], "off": [], "body": ["leather_armor"], "pieces": "leather" },
+    "paladin":   { "start": { "main_hand": "warhammer", "off_hand": "shield", "body": "chain" }, "main": ["warhammer", "longsword", "mace"], "off": ["shield"], "body": ["chain", "plate"], "pieces": "metal" },
+    "ranger":    { "start": { "main_hand": "longbow", "body": "leather_armor" }, "main": ["longbow"], "off": [], "body": ["leather_armor"], "pieces": "leather" },
+    "rogue":     { "start": { "main_hand": "rapier", "body": "leather_armor" }, "main": ["rapier", "shortsword", "dagger", "scimitar"], "off": ["buckler"], "body": ["leather_armor"], "pieces": "leather" },
+    "monk":      { "start": { "body": "monk_robe" }, "main": [], "off": [], "body": ["monk_robe"], "pieces": "cloth" },
+    "bard":      { "start": { "main_hand": "rapier", "body": "leather_armor" }, "main": ["rapier", "shortsword"], "off": ["focus", "buckler"], "body": ["leather_armor"], "pieces": "leather" },
+    "cleric":    { "start": { "main_hand": "mace", "off_hand": "shield", "body": "chain" }, "main": ["mace", "warhammer"], "off": ["shield"], "body": ["chain"], "pieces": "metal" },
+    "druid":     { "start": { "main_hand": "quarterstaff", "body": "leather_armor" }, "main": ["quarterstaff", "spellstaff"], "off": [], "body": ["leather_armor"], "pieces": "leather" },
+    "wizard":    { "start": { "main_hand": "quarterstaff", "body": "robe" }, "main": ["spellstaff", "quarterstaff"], "off": [], "body": ["robe"], "pieces": "cloth" },
+    "noncombatant": { "start": { "body": "robe" }, "main": [], "off": [], "body": ["robe"], "pieces": "cloth" }
+  },
+
+  "races": {
+    "$comment": "種族的裝備模板：目前所有種族都使用同一套 11 個欄位；blocked 可以封住某些欄位（例如將來加入無法穿鞋的種族）。",
+    "human": { "blocked": [] }, "elf": { "blocked": [] }, "dwarf": { "blocked": [] },
+    "demon": { "blocked": [] }, "catfolk": { "blocked": [] }, "yulin": { "blocked": [] }
+  },
+
+  "loadout": {
+    "$comment": "夥伴與敵對冒險者依等級即時生成的裝備：每個欄位從建議等級不超過角色等級的材料中挑（最高的一級機率 top、低一級 below、再低 lower），傳說材料另外乘上 legendary；頭、腿、手腕、腳、腰帶各有 pieces_base + pieces_per_level × 等級 的機率穿戴，首飾與兩條項鍊各有 jewelry_base + jewelry_per_level × 等級。",
+    "top": 0.35, "below": 0.45, "lower": 0.2, "legendary": 0.15,
+    "pieces_base": 0.3, "pieces_per_level": 0.06,
+    "jewelry_base": 0.05, "jewelry_per_level": 0.04, "jewelry_max": 0.7
+  }
+}

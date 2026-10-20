@@ -4,7 +4,7 @@
   "classes": {
     "fighter": {
       "name": "戰士", "emoji": "⚔️", "hit_die": 10, "threat": { "start": 8, "mult": 1.3 }, "priority": ["str", "dex", "fai", "cha", "int"], "caster": "none",
-      "weapon": "longsword", "armor": "chain_shield",
+      "weapon": "longsword", "armor": "chain",
       "start": ["power_strike", "second_wind", "battle_rhythm"],
       "role": "穩定的前排輸出，靠行動點節奏與爆發技能壓制敵人"
     },
@@ -16,7 +16,7 @@
     },
     "paladin": {
       "name": "聖騎士", "emoji": "🛡️", "hit_die": 10, "threat": { "start": 6, "mult": 1.2 }, "priority": ["str", "fai", "cha", "dex", "int"], "caster": "half", "casting": "fai",
-      "weapon": "warhammer", "armor": "chain_shield",
+      "weapon": "warhammer", "armor": "chain",
       "start": ["lay_on_hands", "divine_smite", "bless"],
       "role": "神聖傷害與守護，兼顧治療"
     },
@@ -46,7 +46,7 @@
     },
     "cleric": {
       "name": "牧師", "emoji": "🙏", "hit_die": 8, "threat": { "start": 3, "mult": 1.0 }, "priority": ["fai", "str", "cha", "int", "dex"], "caster": "full", "casting": "fai",
-      "weapon": "mace", "armor": "chain_shield",
+      "weapon": "mace", "armor": "chain",
       "start": ["sacred_flame", "guidance", "cure_wounds", "guiding_bolt"],
       "role": "治療與神聖傷害，對不死生物特別有效"
     },

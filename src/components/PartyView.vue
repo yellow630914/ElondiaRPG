@@ -12,6 +12,7 @@ import {
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { contractTerms } from '@/engine/slavery'
 import { canEquip, canUse } from '@/engine/inventory'
+import { gearSpecOf, gearSummary, SLOTS, slotName } from '@/engine/gear'
 import { itemCategory, itemValue } from '@/engine/trade'
 import { formatMoney } from '@/engine/money'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
@@ -53,7 +54,8 @@ const itemTarget = reactive<Record<string, string>>({})
 function itemDesc(name: string): string {
   const cat = itemCategory(s.value, name)
   const value = itemValue(s.value, name)
-  return [cat ? itemRules.categories[cat] : '', value !== undefined ? `約 ${formatMoney(value)}` : ''].filter(Boolean).join('・')
+  const spec = gearSpecOf(s.value, name)
+  return [spec ? gearSummary(spec) : cat ? itemRules.categories[cat] : '', value !== undefined ? `約 ${formatMoney(value)}` : ''].filter(Boolean).join('・')
 }
 const bound = computed(() => isBound(s.value))
 
@@ -149,6 +151,20 @@ function affinityText(m: Character): string {
         <li>傷害倍率 {{ affinityText(m) }}</li>
         <li>天賦【{{ attributeRules.races[m.race]?.talent.name }}】{{ attributeRules.races[m.race]?.talent.desc }}</li>
       </ul>
+      <details v-if="!isNoncombatant(m) || m.gear" class="gear small" open>
+        <summary>🛡️ 裝備</summary>
+        <ul class="plain">
+          <li v-for="slot in SLOTS" :key="slot" class="row">
+            <span class="muted slot">{{ slotName(slot) }}</span>
+            <template v-if="m.gear?.[slot]">
+              <span :title="gearSummary(m.gear[slot]!.spec)">{{ m.gear[slot]!.name }}</span>
+              <span class="muted">{{ gearSummary(m.gear[slot]!.spec) }}</span>
+              <button class="small" :disabled="inCombat" @click="game.unequipItem(m.id, slot)">卸下</button>
+            </template>
+            <span v-else class="muted">—</span>
+          </li>
+        </ul>
+      </details>
       <p v-if="m.personality" class="small">{{ m.personality }}</p>
       <div v-if="m.isPlayer" class="small profile">
         <template v-if="!editingProfile">
@@ -226,12 +242,12 @@ function affinityText(m: Character): string {
       <li v-for="i in s.inventory" :key="i.name" class="row">
         <strong>{{ i.name }} ×{{ i.qty }}</strong>
         <span class="muted">{{ itemDesc(i.name) }}</span>
-        <template v-if="canUse(i.name) || canEquip(i.name)">
+        <template v-if="canUse(i.name) || canEquip(s, i.name)">
           <select v-model="itemTarget[i.name]">
             <option v-for="m in s.party" :key="m.id" :value="m.id">{{ m.name }}</option>
           </select>
           <button v-if="canUse(i.name)" class="small" :disabled="inCombat" @click="game.useItem(i.name, itemTarget[i.name] ?? 'pc')">使用</button>
-          <button v-if="canEquip(i.name)" class="small" :disabled="inCombat" @click="game.equipItem(i.name, itemTarget[i.name] ?? 'pc')">裝備</button>
+          <button v-if="canEquip(s, i.name)" class="small" :disabled="inCombat" @click="game.equipItem(i.name, itemTarget[i.name] ?? 'pc')">裝備</button>
         </template>
       </li>
     </ul>
@@ -240,6 +256,8 @@ function affinityText(m: Character): string {
 
 <style scoped>
 .member { display: grid; gap: 6px; align-content: start; }
+.gear li { gap: 6px; padding: 1px 0; }
+.gear .slot { min-width: 3em; }
 .attrs th { text-align: left; padding-right: 12px; font-weight: normal; cursor: help; }
 .attrs td { padding: 1px 6px; }
 .attrs .num { font-weight: 600; text-align: right; min-width: 2em; }

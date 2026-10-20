@@ -5,6 +5,7 @@ import {
   ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
 } from './data'
+import { gearBonuses, generateLoadout, startingGear, syncGear } from './gear'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
 
@@ -124,19 +125,22 @@ export function weaponFor(c: Pick<Character, 'weapon' | 'level'>): WeaponDef {
   return { ...w, dice }
 }
 
-/** 種族天賦 + 防具帶來的傷害倍率加減與戰鬥修正 */
-export function gearAffinities(c: Pick<Character, 'race' | 'armor'>): { resist: AffinityMap; offense: AffinityMap; mods: Mods } {
+/** 種族天賦 + 防具類型 + 身上所有裝備（材料、附魔）帶來的傷害倍率加減與戰鬥修正 */
+export function gearAffinities(c: Pick<Character, 'race' | 'armor' | 'gear'>): { resist: AffinityMap; offense: AffinityMap; mods: Mods } {
   const talent = attributeRules.races[c.race]?.talent
   const armor = armorDef(c.armor)
+  const gear = gearBonuses(c)
   const resist: AffinityMap = {}
   const offense: AffinityMap = {}
-  for (const src of [talent?.resist, armor.resist]) {
+  for (const src of [talent?.resist, armor.resist, gear.resist]) {
     for (const [k, v] of Object.entries(src ?? {})) resist[k] = (resist[k] ?? 0) + (v ?? 0)
   }
-  for (const src of [talent?.offense, armor.offense]) {
+  for (const src of [talent?.offense, armor.offense, gear.offense]) {
     for (const [k, v] of Object.entries(src ?? {})) offense[k] = (offense[k] ?? 0) + (v ?? 0)
   }
-  return { resist, offense, mods: { ...(talent?.mods ?? {}) } }
+  const mods: Mods = { ...(talent?.mods ?? {}) }
+  for (const [k, v] of Object.entries(gear.mods)) mods[k as keyof Mods] = (mods[k as keyof Mods] ?? 0) + (v ?? 0)
+  return { resist, offense, mods }
 }
 
 // ---- 建立角色 ----
@@ -183,7 +187,11 @@ export function createPlayer(name: string, race: string, classId: string, bonus:
     attrs[a] += add
     budget -= add
   }
-  return { ...baseCharacter('pc', name, race, classId, attrs), isPlayer: true }
+  const c: Character = { ...baseCharacter('pc', name, race, classId, attrs), isPlayer: true }
+  // 主角從職業的基本配備開始（第一級材料）
+  c.gear = startingGear(classId)
+  syncGear(c, classDef(classId).weapon)
+  return c
 }
 
 /** NPC 依等級自動成長：屬性點加在主屬性，能力依名字決定的固定順序挑選。 */
@@ -201,6 +209,9 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
     const choice = abilityChoices(c, rng)[0]
     if (choice) c.abilities.push(choice)
   }
+  // 夥伴與敵對冒險者：依等級即時生成裝備
+  c.gear = generateLoadout(c.class, c.level, rng, c.race)
+  syncGear(c, classDef(c.class).weapon)
   recalc(c)
   c.hp = c.maxHp
   return c
@@ -311,7 +322,7 @@ export function snapshot(c: Character, before?: Character, player?: Character): 
     rank: guildRankFor(c.level),
     hp: [b.hp, c.hp, c.maxHp],
     status: [...c.status],
-    equipment: [weaponDef(c.weapon).name, armorDef(c.armor).name],
+    equipment: c.gear ? Object.values(c.gear).filter((g) => !!g).map((g) => g!.name) : [weaponDef(c.weapon).name, armorDef(c.armor).name],
   }
   if (c.personality) state.personality = c.personality
   if (c.gender) state.gender = genderName(c.gender)

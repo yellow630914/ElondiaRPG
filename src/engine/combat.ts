@@ -20,6 +20,7 @@ import {
 } from './data'
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { safeText } from './content'
+import { gearBonuses } from './gear'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
@@ -207,7 +208,8 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
   const armor = armorDef(c.armor)
   const apMax = apMaxFor(c.level, c.attrs)
   const cls = classDef(c.class).threat ?? { start: 0, mult: 1 }
-  const threatMult = cls.mult * (1 + (armor.threat ?? 0) + (weaponFor(c).threat ?? 0))
+  // 防具與武器的類型、其他裝備（盾牌等）的仇恨加減
+  const threatMult = cls.mult * (1 + (armor.threat ?? 0) + (weaponFor(c).threat ?? 0) + gearBonuses(c).threat)
   return {
     threat: Math.round(cls.start * threatMult * (1 + (gear.mods.threat ?? 0))), threatMult,
     id: c.id, name: c.name, side: 'party', level: c.level, attrs: { ...c.attrs }, prof: proficiency(c.level),

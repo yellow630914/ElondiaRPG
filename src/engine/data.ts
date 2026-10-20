@@ -26,7 +26,7 @@ import negotiationsJson from '@data/rules/negotiations.json'
 import workJson from '@data/rules/work.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
-import type { GuildRank, QuestKind, SkillQuality } from './types'
+import type { GearSpec, GuildRank, QuestKind, SkillQuality } from './types'
 
 // ---- 地理 ----
 
@@ -323,7 +323,7 @@ export function classAbilities(classId: string): AbilityDef[] {
 
 // ---- 裝備 ----
 
-export interface WeaponDef { name: string; dice: string; type: string; attr: AttrId; scale?: Record<string, string>; threat?: number }
+export interface WeaponDef { name: string; dice: string; type: string; attr: AttrId; scale?: Record<string, string>; threat?: number; natural?: boolean }
 export interface ArmorDef { name: string; evade: number; dr: number; resist?: AffinityMap; offense?: AffinityMap; threat?: number }
 export const equipment = equipmentJson as unknown as {
   weapons: Record<string, WeaponDef>
@@ -691,14 +691,34 @@ export const workRules = workJson as unknown as {
 // ---- 物品、商店、談判 ----
 
 export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'valuable' | 'scroll' | 'equipment' | 'info'
+/**
+ * 消耗品的效果（都是可以量化的數值）：
+ * heal 回復生命（骰子）、slot 回復一個 N 環以下的法術環、cleanse 解除狀態、status 給自己或隊友一個狀態、
+ * temp_hp 臨時生命值、ap 立刻獲得行動點、revive 以最大生命的比例救起倒下的隊友、
+ * damage 對敵人造成傷害（one 單體、all 全體）、apply 對敵人施加狀態（可以有豁免）。combat_only：只能在戰鬥中使用。
+ */
+export interface ItemUse {
+  heal?: string
+  slot?: number
+  cleanse?: string[]
+  status?: { id: string; turns: number }
+  temp_hp?: number
+  ap?: number
+  revive?: number
+  damage?: { dice: string; type: string; area?: 'one' | 'all' }
+  apply?: { status: string; turns: number; save?: AttrId; dc?: number }
+  combat_only?: boolean
+}
+
 export interface ItemDef {
   name: string
   category: ItemCategory
   price_cc: number
   tags: string[]
   desc?: string
-  use?: { heal?: string; slot?: number }
-  equip?: { weapon?: string; armor?: string }
+  use?: ItemUse
+  /** 裝備：底材 × 材料（gear.json） */
+  gear?: GearSpec
   /** 最低要在哪種規模的聚落才買得到 */
   min_location?: string
 }
