@@ -1,0 +1,245 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { abilities, ATTR_IDS, attrName, damageTypeName, damageTypes, enemies, itemRules, monsterTraits, type AttrId } from '@/engine/data'
+import { builtinEnemy, builtinPlacementsOf, ENEMY_KINDS, placementsOf, tableOptions, type EnemyMod, type Placement } from '@/engine/mods'
+import { useContent } from '@/stores/content'
+import { useGame } from '@/stores/game'
+import AffinityRows from './AffinityRows.vue'
+
+// 怪物的編輯表單：存檔前是草稿，按「儲存」才套用
+const props = defineProps<{ id: string }>()
+const emit = defineEmits<{ deleted: [] }>()
+const content = useContent()
+const game = useGame()
+
+const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T
+function current(): EnemyMod {
+  return clone(content.mods.enemies[props.id] ?? (enemies[props.id] as EnemyMod))
+}
+const draft = ref<EnemyMod>(current())
+const saved = ref(JSON.stringify(draft.value))
+watch(() => props.id, () => {
+  draft.value = current()
+  saved.value = JSON.stringify(draft.value)
+})
+const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
+const builtin = computed(() => !!builtinEnemy(props.id))
+const edited = computed(() => builtin.value && !!content.mods.enemies[props.id])
+
+// ---- 選項 ----
+const damageIds = damageTypes.types.map((t) => t.id)
+const monsterAbilities = computed(() => Object.values(abilities).filter((a) => a.classes.includes('monster')))
+const otherAbilities = computed(() => Object.values(abilities).filter((a) => !a.classes.includes('monster') && a.type !== 'spell'))
+const itemNames = computed(() => {
+  void content.version
+  return itemRules.items.map((i) => i.name)
+})
+const tables = tableOptions()
+const builtinPlaces = computed(() => builtinPlacementsOf(props.id))
+const nowPlaces = computed(() => {
+  void content.version
+  return placementsOf(props.id)
+})
+
+const pickAbility = ref('')
+function addAbility() {
+  if (!pickAbility.value) return
+  const list = (draft.value.abilities ??= [])
+  if (!list.includes(pickAbility.value)) list.push(pickAbility.value)
+  pickAbility.value = ''
+}
+function removeAbility(id: string) {
+  draft.value.abilities = (draft.value.abilities ?? []).filter((a) => a !== id)
+}
+
+function addLoot() {
+  ;(draft.value.loot ??= []).push({ item: '', chance: 0.5 })
+}
+function percent(v: number | undefined) {
+  return Math.round((v ?? 0) * 100)
+}
+
+function toggleExclude(key: string, on: boolean) {
+  const set = new Set(draft.value.exclude ?? [])
+  if (on) set.add(key)
+  else set.delete(key)
+  draft.value.exclude = [...set]
+}
+function addSpawn() {
+  ;(draft.value.spawns ??= []).push({ table: tables[0]!.key, count: 1 } as Placement)
+}
+
+const money = computed({
+  get: () => draft.value.money_cc ?? [0, 0],
+  set: (v: [number, number]) => { draft.value.money_cc = v },
+})
+
+function toggleTrait(t: string, on: boolean) {
+  const set = new Set(draft.value.traits ?? [])
+  if (on) set.add(t)
+  else set.delete(t)
+  draft.value.traits = [...set]
+}
+
+// ---- 動作 ----
+function save() {
+  try {
+    content.saveEnemy(props.id, draft.value)
+    draft.value = current()
+    saved.value = JSON.stringify(draft.value)
+    game.flash(`已儲存「${draft.value.name}」`)
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+  }
+}
+function discard() {
+  draft.value = current()
+}
+function restore() {
+  if (!confirm(`把「${draft.value.name}」恢復成內建的樣子？`)) return
+  content.restoreEnemy(props.id)
+  draft.value = current()
+  saved.value = JSON.stringify(draft.value)
+}
+function remove() {
+  if (!confirm(`刪除「${draft.value.name}」？已經在地圖上的這種怪物會消失。`)) return
+  content.deleteEnemy(props.id)
+  emit('deleted')
+}
+</script>
+
+<template>
+  <div class="editor">
+    <div class="row head">
+      <h3>{{ draft.name || '（未命名）' }}</h3>
+      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
+      <span v-if="dirty" class="tag warn">未儲存</span>
+      <span class="spacer" />
+      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
+      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
+      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
+      <button v-else class="small danger" @click="remove">刪除</button>
+    </div>
+    <p class="small muted">id：{{ id }}</p>
+
+    <fieldset>
+      <legend>基本</legend>
+      <div class="grid">
+        <label>名稱 <input v-model="draft.name" maxlength="20" /></label>
+        <label>等級 <input v-model.number="draft.level" type="number" min="1" max="30" /></label>
+        <label>種類
+          <select v-model="draft.kind">
+            <option v-for="(n, k) in ENEMY_KINDS" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
+        <label>生命 <input v-model.number="draft.hp" type="number" min="1" /></label>
+        <label>行動點 <input v-model.number="draft.ap" type="number" min="1" max="12" /></label>
+        <label>迴避修正 <input v-model.number="draft.evade" type="number" /></label>
+        <label>物理減傷 <input v-model.number="draft.dr" type="number" min="0" /></label>
+        <label>經驗值 <input v-model.number="draft.xp" type="number" min="0" /></label>
+        <label>金錢（最少～最多）
+          <span class="pair"><input v-model.number="money[0]" type="number" min="0" /> ～ <input v-model.number="money[1]" type="number" min="0" /></span>
+        </label>
+      </div>
+      <div class="row checks">
+        <label class="check"><input v-model="draft.armed" type="checkbox" /> 持有裝備（打倒時可能掉裝備）</label>
+        <label class="check"><input v-model="draft.rut" type="checkbox" /> 可能擲到「發情」</label>
+      </div>
+      <label class="block">描述（給 AI 的外觀與習性）<textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>屬性與普通攻擊</legend>
+      <div class="grid">
+        <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }} <input v-model.number="draft.attrs[a]" type="number" min="1" max="30" /></label>
+      </div>
+      <div class="grid">
+        <label>攻擊骰 <input v-model="draft.weapon.dice" placeholder="1d6" /></label>
+        <label>傷害類型
+          <select v-model="draft.weapon.type">
+            <option v-for="t in damageIds" :key="t" :value="t">{{ damageTypeName(t) }}</option>
+          </select>
+        </label>
+        <label>攻擊屬性
+          <select v-model="draft.weapon.attr">
+            <option v-for="a in ATTR_IDS" :key="a" :value="a as AttrId">{{ attrName(a) }}</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>抗性與攻擊加成</legend>
+      <p class="small muted">受到的傷害倍率：-1 免疫、-0.5 減半、+0.5 弱點（×1.5）。攻擊加成是造成傷害的倍率加減。</p>
+      <AffinityRows v-model="draft.resist" label="抗性" />
+      <AffinityRows v-model="draft.offense" label="攻擊加成" />
+    </fieldset>
+
+    <fieldset>
+      <legend>技能</legend>
+      <div class="chips">
+        <span v-for="a in draft.abilities ?? []" :key="a" class="tag chip" :title="abilities[a]?.desc">
+          {{ abilities[a]?.name ?? a }} <button class="x" @click="removeAbility(a)">×</button>
+        </span>
+        <span v-if="!draft.abilities?.length" class="small muted">（只用普通攻擊）</span>
+      </div>
+      <div class="row">
+        <select v-model="pickAbility">
+          <option value="">選擇技能…</option>
+          <optgroup label="怪物技能">
+            <option v-for="a in monsterAbilities" :key="a.id" :value="a.id">{{ a.name }}：{{ a.desc.slice(0, 40) }}</option>
+          </optgroup>
+          <optgroup label="職業技能與戲法">
+            <option v-for="a in otherAbilities" :key="a.id" :value="a.id">{{ a.name }}：{{ a.desc.slice(0, 40) }}</option>
+          </optgroup>
+        </select>
+        <button class="small" :disabled="!pickAbility" @click="addAbility">＋ 加入</button>
+      </div>
+      <p class="small muted">怪物沒有法術環，所以不能用法術。</p>
+      <div class="row checks">
+        <span class="small">固定特徵：</span>
+        <label v-for="(t, id) in monsterTraits.traits" :key="id" class="check small" :title="t.desc">
+          <input type="checkbox" :checked="draft.traits?.includes(String(id))" @change="toggleTrait(String(id), ($event.target as HTMLInputElement).checked)" /> {{ t.name }}
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>掉落物</legend>
+      <datalist id="item-names"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
+      <div v-for="(l, i) in draft.loot ?? []" :key="i" class="row">
+        <input v-model="l.item" list="item-names" placeholder="物品名稱" class="grow" />
+        <label class="small">機率 <input class="num" type="number" min="1" max="100" :value="percent(l.chance)" @input="l.chance = Number(($event.target as HTMLInputElement).value) / 100" />%</label>
+        <label class="small">數量 <input v-model.number="l.qty" class="num" type="number" min="1" placeholder="1" /></label>
+        <button class="small" @click="draft.loot!.splice(i, 1)">移除</button>
+        <span v-if="l.item && !itemNames.includes(l.item)" class="small warn-text">目錄裡沒有這個物品</span>
+      </div>
+      <button class="small" @click="addLoot">＋ 掉落物</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>出現地點</legend>
+      <p class="small">目前出現在：{{ nowPlaces.map((p) => `${p.label}${p.groups > 1 ? `（${p.groups} 組）` : ''}`).join('、') || '（沒有，不會遇到）' }}</p>
+      <template v-if="builtinPlaces.length">
+        <p class="small muted">內建的遭遇表（勾選就從那裡移除；遭遇表不會被清空）：</p>
+        <div class="row checks">
+          <label v-for="p in builtinPlaces" :key="p.key" class="check small">
+            <input type="checkbox" :checked="draft.exclude?.includes(p.key)" @change="toggleExclude(p.key, ($event.target as HTMLInputElement).checked)" /> 移除 {{ p.label }}
+          </label>
+        </div>
+      </template>
+      <p class="small muted">另外加入：每一組是遭遇表裡的一個選項（遭遇時從所有選項平均抽一個），權重是放幾組。層主會取代原本的層主。</p>
+      <div v-for="(s, i) in draft.spawns ?? []" :key="i" class="row">
+        <select v-model="s.table" class="grow">
+          <option v-for="t in tables" :key="t.key" :value="t.key">{{ t.label }}</option>
+        </select>
+        <label class="small">一組 <input v-model.number="s.count" class="num" type="number" min="1" max="6" /> 隻</label>
+        <label v-if="!s.table.startsWith('boss:')" class="small">權重 <input v-model.number="s.weight" class="num" type="number" min="1" max="5" placeholder="1" /></label>
+        <button class="small" @click="draft.spawns!.splice(i, 1)">移除</button>
+      </div>
+      <button class="small" @click="addSpawn">＋ 出現地點</button>
+    </fieldset>
+  </div>
+</template>
+
+<style scoped src="./editor.css"></style>

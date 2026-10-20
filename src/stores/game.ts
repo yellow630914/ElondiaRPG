@@ -7,7 +7,8 @@ import * as rest from '@/engine/rest'
 import * as trade from '@/engine/trade'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
-import { slaveryRules, type ShopType } from '@/engine/data'
+import { classes, slaveryRules, type ShopType } from '@/engine/data'
+import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
 import * as population from '@/engine/population'
@@ -87,6 +88,8 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
 /** 讀入存檔：補上新欄位，舊存檔沒有格子位置時放到目前地點的入口。 */
 function load(s: GameState): GameState {
   migrate(s)
+  // 武器與防具類型由裝備決定（自訂內容可能改過底材）
+  for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
   if (!s.position) grid.enterLocation(s)
   population.ensureRoster(s, s.location)
   population.refreshRosters(s)

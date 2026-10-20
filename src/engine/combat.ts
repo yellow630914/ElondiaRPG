@@ -150,7 +150,8 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
   if (state.combat) throw new Error('戰鬥進行中')
   return withRng(state, (rng) => {
     const npcs = (opts.npcs ?? []).map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r)
-    const enemyGroup = group ?? (npcs.length ? [] : encounterFor(state.location, rng))
+    // 玩家刪掉的自建怪物（舊地圖上可能還有）略過
+    const enemyGroup = (group ?? (npcs.length ? [] : encounterFor(state.location, rng))).filter(([id]) => !!enemies[id])
     // 無法戰鬥的隊員（普通人）不上場
     const fighters: Combatant[] = state.party.filter((c) => c.hp > 0 && !isNoncombatant(c)).map((c) => fromCharacter(c, rng))
     if (fighters.length === 0) throw new Error('隊伍沒有能戰鬥的成員')

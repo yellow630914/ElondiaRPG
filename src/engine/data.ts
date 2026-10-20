@@ -388,6 +388,8 @@ const enemiesData = enemiesJson as unknown as {
 }
 export const enemies: Record<string, EnemyDef> = Object.fromEntries(enemiesData.enemies.map((e) => [e.id, e]))
 export const dungeonEncounters = enemiesData.encounters
+/** 城郊遭遇表（玩家自訂內容會直接修改） */
+export const wildEncounterTables = enemiesData.wild_encounters
 
 export function wildEncounters(region: string): EncounterGroup[] {
   const table = enemiesData.wild_encounters[region] ?? enemiesData.wild_encounters.default
@@ -731,6 +733,8 @@ export interface ItemDef {
   forge?: { materials: string[] }
   /** 最低要在哪種規模的聚落才買得到 */
   min_location?: string
+  /** 事件可能出現：AI 判定主動行動時可以把它當成報酬 */
+  event?: boolean
 }
 export const itemRules = itemsJson as unknown as {
   sell_ratio: number
@@ -740,6 +744,11 @@ export const itemRules = itemsJson as unknown as {
   items: ItemDef[]
 }
 const itemIndex = new Map(itemRules.items.map((i) => [i.name, i]))
+/** 物品清單改變後（玩家自訂內容）重建索引 */
+export function reindexItems() {
+  itemIndex.clear()
+  for (const i of itemRules.items) itemIndex.set(i.name, i)
+}
 export function itemDef(name: string): ItemDef | undefined {
   return itemIndex.get(name)
 }

@@ -1,0 +1,24 @@
+/* 內容編輯器共用的樣式 */
+.editor { display: grid; gap: 10px; }
+.head { gap: 6px; align-items: center; }
+.head h3 { margin: 0; }
+.spacer { flex: 1; }
+fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; display: grid; gap: 6px; min-width: 0; }
+legend { color: var(--accent); padding: 0 4px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; }
+.grid label, label.block { display: grid; gap: 2px; font-size: 0.9rem; }
+.grid input, .grid select, label.block textarea, label.block input { width: 100%; }
+textarea { font-family: inherit; line-height: 1.5; }
+.pair { display: flex; gap: 4px; align-items: center; }
+.pair input { width: 70px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.checks { gap: 4px 12px; }
+label.check { display: inline-flex; gap: 4px; align-items: center; }
+.grow { flex: 1; min-width: 140px; }
+.num { width: 64px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { display: inline-flex; gap: 4px; align-items: center; }
+.x { padding: 0 4px; line-height: 1.2; }
+.warn { color: var(--danger); border-color: var(--danger); }
+.warn-text { color: var(--danger); }
+.summary { background: var(--panel-2); border-radius: var(--radius); padding: 4px 8px; }

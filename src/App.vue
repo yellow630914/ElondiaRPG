@@ -26,6 +26,7 @@ import SuggestionToast from '@/components/SuggestionToast.vue'
 
 // 提示詞頁籤會載入整本世界書，切過去時才載入
 const PromptsView = defineAsyncComponent(() => import('@/components/PromptsView.vue'))
+const ContentView = defineAsyncComponent(() => import('@/components/ContentView.vue'))
 
 const game = useGame()
 // 成人向開關變更時重畫遊戲畫面（娼館／按摩店等名稱）
@@ -43,10 +44,11 @@ const crime = computed(() => {
   return level ? { text: `🚨 警戒 ${level}`, title: `${locationById(s.location).name}的衛兵警戒 ${level}` } : null
 })
 
-type Tab = 'adventure' | 'prompts'
+type Tab = 'adventure' | 'prompts' | 'content'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'adventure', label: '🗺️ 冒險' },
   { id: 'prompts', label: '🧩 提示詞' },
+  { id: 'content', label: '🛠️ 內容' },
 ]
 const tab = ref<Tab>('adventure')
 
@@ -103,6 +105,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   </div>
 
   <PromptsView v-if="tab === 'prompts'" />
+  <ContentView v-if="tab === 'content'" />
 
   <NewGameView v-if="!game.state" v-show="tab === 'adventure'" @settings="showSettings = true" @saves="showSaves = true" />
 

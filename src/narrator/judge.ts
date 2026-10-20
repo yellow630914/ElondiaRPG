@@ -117,7 +117,7 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     flag: `{"type":"flag","key":"<英數或中文>","value":true}（最多 ${caps.flags} 個，記錄劇情狀態）`,
     reputation: `{"type":"reputation","faction":"<勢力 id>","delta":<±${caps.reputation}>}`,
     money: `{"type":"money","amount":<整數${CURRENCY.name}，獲得上限 ${caps.money_cc_per_level * pc.level}；負數為花費，不超過持有>}`,
-    item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}；負數為給出持有的物品>}（最多 ${caps.items} 項）`,
+    item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}；負數為給出持有的物品>}（最多 ${caps.items} 項）${eventItems()}`,
     xp: `{"type":"xp","amount":<每人上限 ${caps.xp_per_level * pc.level}>}`,
     hp: `{"type":"hp","target":"pc 或隊友 id","amount":<整數，受傷為負：最多 -${Math.round(caps.hp_loss_ratio * 100)}% 最大生命值，治療最多 +${Math.round(caps.hp_gain_ratio * 100)}%>}（例如爬牆失足、被打了一拳、喝下熱湯；不會因此倒下）`,
     ability: `{"type":"ability","target":"pc 或隊友 id","ability":"能力名稱"}（技能報酬：只在 degree 為 critical、而且行為合理時，例如向高手請教、從經歷中領悟；最多一項。主角目前可以學的能力：${learnable(pc).slice(0, 15).map((a) => a.name).join('、') || '無'}）`,
@@ -130,6 +130,12 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
   // 主角不是奴隸時，不提供和契約有關的效果
   const list = kind.effects.filter((e) => pc.contract || (e !== 'release' && e !== 'change_master'))
   return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>`
+}
+
+/** 玩家設定為「事件可能出現」的物品：AI 判定時可以當成報酬 */
+function eventItems(): string {
+  const list = itemRules.items.filter((i) => i.event).slice(0, 30)
+  return list.length ? `。合理時可以給這些特殊物品：${list.map((i) => `${i.name}${i.desc ? `（${i.desc.slice(0, 30)}）` : ''}`).join('、')}` : ''
 }
 
 /** gear 效果的說明：打造時是成品；自由行動時是事件得到的裝備 */

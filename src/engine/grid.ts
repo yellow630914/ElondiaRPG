@@ -549,8 +549,14 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
     case 'elite':
     case 'boss': {
       if (cell.done || !cell.group?.length) return {}
+      // 玩家刪掉的自建怪物：格子視為已清除
+      const group = cell.group.filter(([id]) => !!enemies[id])
+      if (!group.length) {
+        cell.done = true
+        return {}
+      }
       const scene = area.name
-      return { combat: startCombat(state, cell.group, { scene, cell: { area: area.key, x, y } }) }
+      return { combat: startCombat(state, group, { scene, cell: { area: area.key, x, y } }) }
     }
     case 'trap': {
       if (cell.done) return {}
