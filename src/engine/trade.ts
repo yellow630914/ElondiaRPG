@@ -13,7 +13,7 @@ import {
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
-import { gearRules } from './gear'
+import { gearName, gearPrice, gearRules, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
 import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
@@ -327,6 +327,14 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
         }
         value += price * qty
         gets.push({ type: 'item', name, qty })
+      } else if (t === 'gear') {
+        // 特製裝備：材料不超過主角等級 + 2，稀有度最多比材料原本的高一級；登錄後當成一般物品賣
+        const probe = sanitizeGearSpec({ ...x, rarity: undefined, enchants: undefined }, { maxLevel: pc.level + 2 })
+        if (!probe) continue
+        const spec = sanitizeGearSpec(x, { maxLevel: pc.level + 2, maxRarity: shiftRarity(gearRules.materials[probe.material]!.rarity, 1) })!
+        const name = registerGear(state, spec, clip(x.name, 20) || undefined, clip(x.desc, 80) || undefined)
+        value += gearPrice(spec)
+        gets.push({ type: 'item', name, qty: 1 })
       } else if (t === 'affinity') {
         const npc = String(x.npc ?? '')
         if (npc !== 'keeper' && npc !== 'party' && !state.relationships?.[npc]) continue
@@ -395,6 +403,7 @@ export function effectText(state: GameState, e: RewardEffect, keeper?: string): 
   switch (e.type) {
     case 'money': return `${e.amount >= 0 ? '+' : ''}${formatMoney(e.amount)}`
     case 'item': return `${e.name} ×${e.qty}`
+    case 'gear': return `【${e.name ?? gearName(e.spec)}】`
     case 'affinity': return `${who(e.npc)}好感 ${e.delta > 0 ? '+' : ''}${e.delta}`
     case 'reputation': return `聲望 ${e.delta > 0 ? '+' : ''}${e.delta}`
     case 'xp': return `經驗 +${e.amount}`

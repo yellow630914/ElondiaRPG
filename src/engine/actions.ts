@@ -23,6 +23,8 @@ import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, apply
 import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
+import { applyCraft } from './craft'
+import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
 import { npcRecord, type NpcSpec } from './npcs'
 import { presentHere } from './population'
 import { addAffinity, conditionPenalty, pcOf } from './party'
@@ -32,7 +34,7 @@ import { applyBargain } from './trade'
 import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { useAbilityOutOfCombat, type AbilityUse } from './resources'
-import type { Character, CheckInfo, GameState, GameTime, Report, ResourceChange } from './types'
+import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, ResourceChange } from './types'
 
 export interface ActionInput {
   kind: ActionKind
@@ -154,7 +156,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const EFFECT_OF: Partial<Record<RewardEffect['type'], EffectKind>> = {
   affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
   money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp', mark: 'mark',
-  free: 'release', change_master: 'change_master',
+  free: 'release', change_master: 'change_master', gear: 'gear',
 }
 
 /**
@@ -286,6 +288,26 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         effects.push({ type: 'change_master', master: rec.id })
         break
       }
+      case 'gear': {
+        // 裝備：打造時是成品的名稱、描述與附魔（底材與材料固定，稀有度依成功程度）；
+        // 自由行動時是事件得到的裝備：成功以上、材料不超過主角等級、稀有度不超過材料原本的（大成功可以高一級），最多一件
+        if (effects.some((y) => y.type === 'gear')) break
+        const name = clipText(x.name, 20) || undefined
+        const desc = clipText(x.desc, 80) || undefined
+        let spec: GearSpec | undefined
+        if (p.kind === 'craft') {
+          const [base, material] = (p.target ?? '').split(':')
+          spec = sanitizeGearSpec(x, { maxLevel: 99, maxRarity: 'legendary', base, material })
+        } else {
+          if (degree !== 'critical' && degree !== 'success') break
+          const probe = sanitizeGearSpec({ ...x, rarity: undefined, enchants: undefined }, { maxLevel: pc.level })
+          if (!probe) break
+          const natural = gearRules.materials[probe.material]!.rarity
+          spec = sanitizeGearSpec(x, { maxLevel: pc.level, maxRarity: degree === 'critical' ? shiftRarity(natural, 1) : natural })
+        }
+        if (spec) effects.push({ type: 'gear', spec, ...(name ? { name } : {}), ...(desc ? { desc } : {}) })
+        break
+      }
       case 'meet': {
         // 只有在旅店長休、對象是同旅館的人時才能認識新的人
         if (p.target !== 'guests' || effects.some((y) => y.type === 'meet')) break
@@ -393,7 +415,10 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     result: degree === 'fail' ? 'fail' : degree,
   }]
 
-  const mechanical = applyMechanics(state, report, p, degree)
+  // 打造：AI 提出的成品交給打造的機制處理（不另外給一件）
+  const crafted = p.kind === 'craft' ? judgment?.effects.find((e) => e.type === 'gear') : undefined
+  if (crafted && judgment) judgment.effects = judgment.effects.filter((e) => e !== crafted)
+  const mechanical = applyMechanics(state, report, p, degree, crafted as Extract<RewardEffect, { type: 'gear' }> | undefined)
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
   if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
   if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }
@@ -407,7 +432,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   return commitReport(state, report)
 }
 
-function applyMechanics(state: GameState, report: Report, p: ActionPending, degree: Degree): string {
+function applyMechanics(state: GameState, report: Report, p: ActionPending, degree: Degree, crafted?: Extract<RewardEffect, { type: 'gear' }>): string {
   switch (p.kind) {
     case 'hire': return applyHire(state, report, p.target!, p.offer_cc ?? 0, degree)
     case 'haggle': {
@@ -435,6 +460,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'unmark': return applyUnmark(state, report, p.target!, degree)
     case 'work': return applyWork(state, report, p.target!, degree)
     case 'patron': return applyPatron(state, report, p.target, degree)
+    case 'craft': return applyCraft(state, report, p.target!, degree, crafted)
     case 'free':
     case 'rest_talk': return ''
   }

@@ -30,7 +30,8 @@
       "attr": "cha",
       "base": 12,
       "hours": 0.5,
-      "effects": ["affinity", "relationship_text", "flag", "reputation", "money", "item", "xp", "ability", "hp", "release", "change_master"],
+      "effects": ["affinity", "relationship_text", "flag", "reputation", "money", "item", "xp", "ability", "hp", "release", "change_master", "gear"],
+      "$comment_gear": "gear（事件得到的裝備）：只在成功以上採用，最多一件；材料的建議等級不超過主角等級，稀有度不超過材料原本的（大成功可以高一級）",
       "$comment_slavery": "release（解除主角的契約）只在大成功、而且有對象時採用；change_master（對象成為主角的新主人）只在成功以上、主角是奴隸、對象就在身邊時採用",
       "$comment_ability": "ability：只在 AI 判定為大成功時採用，最多一項，必須是目前可以學的能力（否則隨機）",
       "$comment_base": "有對象時 DC = base + 2 × max(0, 對方生命層級 - 主角生命層級) - floor(親密度 / 25)"
@@ -80,6 +81,8 @@
     "patron": { "name": "消費", "attr": "cha", "hours": 2, "effects": ["affinity", "relationship_text", "flag", "money", "item", "hp"],
       "$comment": "在娼館消費（work.json 的 brothel.patron）；有主人的奴隸不能消費" },
     "unmark": { "name": "解除印記", "attr": "fai", "hours": 2, "effects": ["relationship_text", "flag", "hp"],
-      "$comment": "找人解除契約印記：神殿、黑市刻印師或法師（見 slavery.json 的 unmark；屬性依服務）" }
+      "$comment": "找人解除契約印記：神殿、黑市刻印師或法師（見 slavery.json 的 unmark；屬性依服務）" },
+    "craft": { "name": "委託打造", "attr": "int", "hours": 8, "effects": ["affinity", "relationship_text", "flag", "gear"],
+      "$comment": "在雜貨店委託工匠打造裝備（gear.json 的 craft）：DC 與工錢依材料；成品依成功程度。gear：AI 可以替成品取名、寫描述、挑附魔（稀有度與附魔點數依成功程度夾住）" }
   }
 }

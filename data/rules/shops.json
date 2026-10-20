@@ -19,7 +19,7 @@
       "keeper": { "classes": ["rogue", "fighter", "bard"], "title": "店主" },
       "catalog_tag": "general",
       "buys": ["food", "gear", "material", "valuable", "equipment"],
-      "ai_effects": ["item", "affinity", "flag", "memory"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
       "specials": [
         { "id": "haul", "title": "幫店主搬貨", "desc": "花一個小時搬貨，換一點工錢。", "gives": [{ "type": "hours", "amount": 1 }],
           "gets": [{ "type": "money", "amount": 10 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1 }

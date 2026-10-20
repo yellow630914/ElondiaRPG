@@ -17,6 +17,7 @@ import NegotiationPanel from './NegotiationPanel.vue'
 import ShopPanel from './ShopPanel.vue'
 import TavernPanel from './TavernPanel.vue'
 import WorkPanel from './WorkPanel.vue'
+import CraftPanel from './CraftPanel.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -186,6 +187,7 @@ const CELL_ICON: Partial<Record<string, string>> = {
         <p v-else class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
 
         <WorkPanel :key="`${area.key}-${cell.kind}`" />
+        <CraftPanel :key="`craft-${area.key}-${cell.kind}`" />
 
         <div v-for="q in runnableHere" :key="q.id" class="quest-here">
           <div class="small"><span class="tag">{{ q.rank }}</span> {{ q.title }}</div>

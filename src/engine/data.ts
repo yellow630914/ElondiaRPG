@@ -591,9 +591,9 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron'
+  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
-  | 'release' | 'change_master'
+  | 'release' | 'change_master' | 'gear'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
@@ -719,6 +719,8 @@ export interface ItemDef {
   use?: ItemUse
   /** 裝備：底材 × 材料（gear.json） */
   gear?: GearSpec
+  /** 打造材料：可以做成哪些材料（gear.json 的 materials） */
+  forge?: { materials: string[] }
   /** 最低要在哪種規模的聚落才買得到 */
   min_location?: string
 }

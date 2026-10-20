@@ -11,6 +11,8 @@ import {
 } from '@/engine/data'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
+import { craftRarity } from '@/engine/craft'
+import { gearName, gearRules, rarityName, rarityPoints } from '@/engine/gear'
 import { contractTerms, markSummary } from '@/engine/slavery'
 import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
@@ -123,10 +125,25 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     meet: `{"type":"meet","npc":{"name":"","gender":"male/female/femboy/ts/futa/unknown","race":"human","class":"fighter","level":${pc.level},"personality":"","appearance":"","background":""},"affinity":<±${caps.meet_affinity}>,"to_player":"與主角的關係"}（只限對象是同旅館的旅客，最多認識一人）`,
     release: '{"type":"free","npc":"pc"}（抹去主角的契約印記、恢復自由：只在 degree 為 critical、而且行為合理時，例如說動了能解咒的人、主人一時心軟）',
     change_master: `{"type":"change_master","npc":"${p.target ?? '<對象 id>'}"}（行動的對象成為主角的新主人，印記沿用：只在 degree 為 success 以上、對象願意收下主角時）`,
+    gear: gearDoc(state, p),
   }
   // 主角不是奴隸時，不提供和契約有關的效果
   const list = kind.effects.filter((e) => pc.contract || (e !== 'release' && e !== 'change_master'))
   return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>`
+}
+
+/** gear 效果的說明：打造時是成品；自由行動時是事件得到的裝備 */
+function gearDoc(state: GameState, p: ActionPending): string {
+  const pc = state.party.find((m) => m.isPlayer)!
+  const enchant = `enchants 可用：mods（hit 命中、damage 傷害、evade 迴避、dr 減傷、save 豁免、crit 幸運一擊、ap_regen 行動點回復、threat 仇恨 ±0.1 為單位）、resist（抗性，負數，-0.25 為一級，例如 {"fire":-0.25}）、offense（屬性傷害加成，正數，0.25 為一級）。點數：${Object.entries(gearRules.enchant_costs).map(([k, v]) => `${k} ${v}`).join('、')}（resist / offense 每 0.25、threat 每 0.1 算一次）；各稀有度可用的點數：${Object.entries(gearRules.rarities).map(([, r]) => `${r.name} ${r.enchant_points}`).join('、')}，超過會被刪掉`
+  if (p.kind === 'craft') {
+    const [base, material] = (p.target ?? '').split(':')
+    const rar = (['critical', 'success', 'partial'] as const).map((d) => `${DEGREE_NAME[d]}→${rarityName(craftRarity(material!, d)!)}（${d === 'partial' ? 0 : rarityPoints(craftRarity(material!, d)!)} 點）`).join('、')
+    return `{"type":"gear","name":"<成品的名字 ≤20 字，可以不填>","desc":"<≤80 字>","enchants":{"mods":{"hit":1}}}（打造的成品：${gearName({ base: base!, material: material! })}，底材與材料固定。稀有度依 degree：${rar}；失敗與大失敗不會做出東西。${enchant}）`
+  }
+  const mats = Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level).map(([id, m]) => `${id}（${m.name}）`).join('、')
+  const bases = Object.entries(gearRules.bases).map(([id, b]) => `${id}（${b.name}）`).join('、')
+  return `{"type":"gear","base":"<底材 id>","material":"<材料 id>","name":"<≤20 字，可以不填>","desc":"<≤80 字>","rarity":"common/uncommon/rare/epic/legendary","enchants":{}}（事件中得到一件裝備，例如在遺跡裡找到、別人贈送：只在 degree 為 success 以上而且合理時，最多一件。稀有度不超過材料原本的，大成功可以高一級。底材：${bases}。材料要和底材同類（金屬、皮革、布料、木材、寶石），目前可用：${mats}。${enchant}）`
 }
 
 /** 判定也帶世界書時，拿來比對關鍵字的文字 */
@@ -270,6 +287,7 @@ export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
     memory: '{"type":"memory","summary":"主角得知或經歷的事，一句話"}（情報、傳聞的內容寫在這裡）',
     reputation: `{"type":"reputation","faction":"local","delta":<±${shopRules.ai_caps.reputation}>}`,
     condition: '{"type":"condition","condition":"blessed"}（神殿祝福：下次長休前檢定 +1）',
+    gear: `{"type":"gear","base":"<底材 id>","material":"<材料 id>","name":"<≤20 字，可以不填>","desc":"<≤80 字>","rarity":"common/uncommon/rare/epic/legendary","enchants":{"mods":{"hit":1}}}（特製裝備，程式依組成定價：材料的建議等級不超過 ${pc.level + 2}，稀有度最多比材料原本的高一級，附魔在稀有度的點數內。底材：${Object.entries(gearRules.bases).map(([id, b]) => `${id}（${b.name}）`).join('、')}；材料（要和底材同類）：${Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level + 2).map(([id, m]) => `${id}（${m.name}）`).join('、')}）`,
     companion: `{"type":"companion","mode":"hired 或 voluntary${slaveryRules.markets[state.location] ? ' 或 slave' : ''}","npc":{"name":"","race":"human","class":"fighter","level":1,"personality":"","appearance":"","background":""}}（等級不超過 ${pc.level + 1}）`,
   }
   const system = `你是奇幻 RPG《埃隆迪亞大陸》的商店設計者。請為這間店設計今天的交易清單，只輸出一個 JSON 物件。

@@ -7,7 +7,7 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, damageTypeName, equipment, itemDef, weaponDef, type AffinityMap, type Mods } from './data'
+import { armorDef, damageTypeName, damageTypes, equipment, itemDef, weaponDef, type AffinityMap, type AttrId, type Mods } from './data'
 import type { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
 
@@ -59,6 +59,10 @@ export const gearRules = gearJson as unknown as {
   bases: Record<string, BaseDef>
   classes: Record<string, ClassGearTemplate>
   races: Record<string, { blocked: GearSlot[] }>
+  craft: {
+    hours: number; attr: AttrId; fee: number[]; dc: number[]; min_location: Record<string, string>
+    units: Record<string, number>; lost_on_fail: number
+  }
   loadout: {
     top: number; below: number; lower: number; legendary: number
     pieces_base: number; pieces_per_level: number
@@ -308,4 +312,188 @@ export function gearSummary(spec: GearSpec): string {
   const all = [...bonus, ...res, ...off, ...(s.threat ? [`仇恨 ${signed(Math.round(s.threat * 100))}%`] : [])]
   if (all.length) parts.push(all.join('、'))
   return parts.join('・')
+}
+
+// ---- AI 打造與事件生成的裝備 ----
+
+export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary']
+
+export function shiftRarity(r: string, n: number): string {
+  const i = Math.max(0, RARITY_ORDER.indexOf(r))
+  return RARITY_ORDER[Math.max(0, Math.min(RARITY_ORDER.length - 1, i + n))]!
+}
+
+/** 稀有度可以用的附魔點數 */
+export function rarityPoints(r: string): number {
+  return gearRules.rarities[r]?.enchant_points ?? 0
+}
+
+const ENCHANT_MODS: Record<string, number> = { hit: 2, damage: 3, evade: 2, dr: 2, save: 2, crit: 1, ap_regen: 1 }
+const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : NaN)
+const isAffinityKey = (k: string) => k in damageTypes.groups || damageTypes.types.some((t) => t.id === k)
+
+/**
+ * 整理附魔：mods 為整數（每項有上限），resist 以 0.25 為單位、只能減傷（負數，最多 -0.5），
+ * offense 以 0.25 為單位、只能增加（最多 +0.5），threat 以 0.1 為單位（±0.3）。
+ * 總點數超過 points 時從最後一項開始刪減。
+ */
+export function sanitizeEnchants(raw: unknown, points: number): GearSpec['enchants'] | undefined {
+  if (!raw || typeof raw !== 'object' || points <= 0) return undefined
+  const r = raw as Record<string, unknown>
+  const entries: { group: 'mods' | 'resist' | 'offense'; key: string; value: number }[] = []
+  for (const [k, v] of Object.entries((r.mods ?? {}) as Record<string, unknown>)) {
+    const n = num(v)
+    if (Number.isNaN(n)) continue
+    if (k === 'threat') {
+      const t = Math.round(Math.max(-0.3, Math.min(0.3, n)) * 10) / 10
+      if (t) entries.push({ group: 'mods', key: k, value: t })
+    } else if (ENCHANT_MODS[k]) {
+      const m = Math.round(Math.max(0, Math.min(ENCHANT_MODS[k]!, n)))
+      if (m) entries.push({ group: 'mods', key: k, value: m })
+    }
+  }
+  for (const [k, v] of Object.entries((r.resist ?? {}) as Record<string, unknown>)) {
+    const n = Math.round(Math.max(-0.5, Math.min(0, num(v) || 0)) * 4) / 4
+    if (n && isAffinityKey(k)) entries.push({ group: 'resist', key: k, value: n })
+  }
+  for (const [k, v] of Object.entries((r.offense ?? {}) as Record<string, unknown>)) {
+    const n = Math.round(Math.max(0, Math.min(0.5, num(v) || 0)) * 4) / 4
+    if (n && isAffinityKey(k)) entries.push({ group: 'offense', key: k, value: n })
+  }
+  const build = (list: typeof entries) => {
+    const e: NonNullable<GearSpec['enchants']> = {}
+    for (const x of list) ((e[x.group] ??= {}) as Record<string, number>)[x.key] = x.value
+    return e
+  }
+  // 超過點數：刪掉最後一項（一項一項刪，直到夠用）
+  while (entries.length && enchantPoints(build(entries)) > points) entries.pop()
+  return entries.length ? build(entries) : undefined
+}
+
+/** 依名稱或 id 找底材、材料（AI 可能寫中文名稱） */
+export function findBase(v: unknown): string | undefined {
+  const s = typeof v === 'string' ? v.trim() : ''
+  if (!s) return undefined
+  if (gearRules.bases[s]) return s
+  return Object.entries(gearRules.bases).find(([, b]) => b.name === s)?.[0]
+}
+
+export function findMaterial(v: unknown, kind?: MaterialKind): string | undefined {
+  const s = typeof v === 'string' ? v.trim() : ''
+  if (!s) return undefined
+  const ok = (m: MaterialDef) => !kind || m.kind === kind
+  if (gearRules.materials[s] && ok(gearRules.materials[s]!)) return s
+  return Object.entries(gearRules.materials).find(([, m]) => m.name === s && ok(m))?.[0]
+}
+
+export interface GearLimits {
+  /** 材料的建議等級上限 */
+  maxLevel: number
+  /** 稀有度上限（沒有時為材料原本的稀有度） */
+  maxRarity?: string
+  /** 固定底材或材料（打造時由玩家選定） */
+  base?: string
+  material?: string
+}
+
+/**
+ * 把 AI 提出的裝備（{ base, material, rarity, enchants }）整理成合法的組成：底材與材料要同類型、
+ * 材料不超過等級上限（超過時降到上限內最高的一級）、稀有度不超過上限、附魔在稀有度的點數內。
+ */
+export function sanitizeGearSpec(raw: unknown, limits: GearLimits): GearSpec | undefined {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const base = limits.base ?? findBase(r.base ?? r.slot)
+  if (!base) return undefined
+  const kind = gearRules.bases[base]!.kind
+  let material = limits.material ?? findMaterial(r.material, kind) ?? materialOf(kind, 1)
+  if (gearRules.materials[material]!.level > limits.maxLevel) {
+    const fit = Object.entries(gearRules.materials).filter(([, m]) => m.kind === kind && m.level <= limits.maxLevel)
+    material = fit.sort((a, b) => b[1].tier - a[1].tier)[0]?.[0] ?? materialOf(kind, 1)
+  }
+  const natural = gearRules.materials[material]!.rarity
+  const cap = limits.maxRarity ?? natural
+  const want = typeof r.rarity === 'string' && RARITY_ORDER.includes(r.rarity) ? r.rarity : natural
+  const rarity = RARITY_ORDER[Math.min(RARITY_ORDER.indexOf(want), Math.max(RARITY_ORDER.indexOf(cap), RARITY_ORDER.indexOf(natural)))]!
+  const enchants = sanitizeEnchants(r.enchants, rarityPoints(rarity))
+  return { base, material, ...(rarity !== natural ? { rarity } : {}), ...(enchants ? { enchants } : {}) }
+}
+
+/** 和目錄裡的制式品完全相同（沒有附魔、稀有度也沒變） */
+function isStandard(spec: GearSpec): boolean {
+  return !spec.enchants && !spec.rarity
+}
+
+function sameSpec(a?: GearSpec, b?: GearSpec): boolean {
+  return !!a && !!b && JSON.stringify(a) === JSON.stringify(b)
+}
+
+/**
+ * 登錄一件打造或事件生成的裝備，回傳物品名稱。制式品直接用目錄的名稱；
+ * 其他的用 AI 取的名字（沒有時是「稀有度＋制式名稱」），和現有的物品撞名時加上編號。
+ */
+export function registerGear(state: Pick<GameState, 'customItems'>, spec: GearSpec, name?: string, desc?: string): string {
+  const standard = gearName(spec)
+  if (isStandard(spec) && !name) return standard
+  const want = (name?.trim().slice(0, 20) || `${rarityName(spec.rarity ?? gearRules.materials[spec.material]!.rarity)}${standard}`)
+  const taken = (n: string) => {
+    if (itemDef(n)) return !sameSpec(itemDef(n)!.gear, spec) || !isStandard(spec)
+    const c = state.customItems?.[n]
+    return !!c && !sameSpec(c.gear, spec)
+  }
+  let final = want
+  for (let i = 2; taken(final); i++) final = `${want}（${i}）`
+  if (itemDef(final)) return final
+  ;(state.customItems ??= {})[final] = {
+    category: 'equipment', price_cc: gearPrice(spec), gear: spec,
+    ...(desc?.trim() ? { desc: desc.trim().slice(0, 80) } : {}),
+  }
+  return final
+}
+
+const ENCHANT_POOL: Record<string, { mods?: (keyof Mods)[]; resist?: boolean; offense?: boolean }> = {
+  weapon: { mods: ['hit', 'damage', 'crit'], offense: true },
+  armor: { mods: ['dr', 'evade', 'save'], resist: true },
+  jewel: { mods: ['save', 'crit', 'hit', 'evade', 'ap_regen'], resist: true },
+  focus: { mods: ['hit', 'save', 'ap_regen'], offense: true },
+}
+const ELEMENTS = ['fire', 'cold', 'lightning', 'acid', 'poison', 'radiant', 'necrotic', 'force', 'psychic']
+
+/** 規則生成的附魔（沒有 AI 時）：依欄位挑合適的加成，用掉 points 點 */
+export function rollEnchants(base: string, points: number, rng: Rng): GearSpec['enchants'] | undefined {
+  const b = gearRules.bases[base]!
+  const pool = ENCHANT_POOL[b.weapon ? 'weapon' : base === 'focus' ? 'focus' : b.kind === 'jewel' ? 'jewel' : 'armor']!
+  const e: NonNullable<GearSpec['enchants']> = {}
+  let left = points
+  for (let guard = 0; left > 0 && guard < 20; guard++) {
+    const options: (() => boolean)[] = []
+    for (const k of pool.mods ?? []) {
+      options.push(() => {
+        const cost = gearRules.enchant_costs[k] ?? 1
+        const next = ((e.mods ??= {})[k] ?? 0) + 1
+        if (cost > left || next > (ENCHANT_MODS[k] ?? 1)) return false
+        e.mods![k] = next
+        left -= cost
+        return true
+      })
+    }
+    if (pool.resist) options.push(() => {
+      const k = rng.pick(ELEMENTS)
+      const next = ((e.resist ??= {})[k] ?? 0) - 0.25
+      if (next < -0.5) return false
+      e.resist![k] = next
+      left -= gearRules.enchant_costs.resist ?? 1
+      return true
+    })
+    if (pool.offense) options.push(() => {
+      const k = rng.pick(ELEMENTS)
+      const next = ((e.offense ??= {})[k] ?? 0) + 0.25
+      if (next > 0.5) return false
+      e.offense![k] = next
+      left -= gearRules.enchant_costs.offense ?? 1
+      return true
+    })
+    rng.pick(options)()
+  }
+  for (const k of ['mods', 'resist', 'offense'] as const) if (e[k] && !Object.keys(e[k]!).length) delete e[k]
+  return Object.keys(e).length ? e : undefined
 }

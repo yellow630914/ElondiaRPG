@@ -16,7 +16,8 @@ import {
 } from './party'
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
-import type { GameState, NpcRecord, Report } from './types'
+import { registerGear } from './gear'
+import type { GameState, GearSpec, NpcRecord, Report } from './types'
 
 export type NpcRef = string | NpcSpec
 
@@ -58,12 +59,17 @@ export type RewardEffect =
    * choices 有值時改成給一次「N 選一」的學習機會（和升級一樣在隊伍視窗選）。chance 為取得的機率。
    */
   | { type: 'ability'; target?: string; ability?: string; choices?: number; chance?: number }
+  /**
+   * 裝備（打造或事件生成）：spec 為底材 × 材料＋稀有度與附魔（已經整理過），name 沒有時用制式名稱或「稀有度＋制式名稱」。
+   * 新的裝備登錄在 state.customItems。
+   */
+  | { type: 'gear'; spec: GearSpec; name?: string; desc?: string }
   /** 認識新的人（例如同旅館的旅客）：登錄 NPC、建立人際關係，平常待在 spot */
   | { type: 'meet'; npc: NpcSpec; affinity?: number; to_player?: string; spot?: string }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
-  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark',
+  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -98,6 +104,12 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         if (e.qty > 0) (c.items_gained ??= []).push({ name: e.name, qty: e.qty, ...(e.quality ? { quality: e.quality } : {}), owner: 'pc' })
         else if (e.qty < 0) (c.items_lost ??= []).push({ name: e.name, qty: -e.qty })
         break
+      case 'gear': {
+        const name = registerGear(state, e.spec, e.name, e.desc)
+        ;(c.items_gained ??= []).push({ name, qty: 1, owner: 'pc' })
+        notes.push(`得到【${name}】`)
+        break
+      }
       case 'affinity': {
         const rec = npcRecord(state, e.npc)
         if (rec) ensureRelationship(state, rec)

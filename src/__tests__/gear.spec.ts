@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
+import Ajv2020 from 'ajv/dist/2020'
+import schema from '../../schemas/report.schema.json'
+import { prepareAction, resolveAction, sanitizeJudgment, type Judgment } from '@/engine/actions'
+import { craftPlan } from '@/engine/craft'
 import { itemRules } from '@/engine/data'
-import { enchantPoints, gearName, gearPrice, gearRules, gearStats, generateLoadout, startingGear } from '@/engine/gear'
+import {
+  enchantPoints, gearName, gearPrice, gearRules, gearSpecOf, gearStats, generateLoadout, rarityPoints, sanitizeEnchants, startingGear,
+} from '@/engine/gear'
+import { enterLocation, standOn } from '@/engine/grid'
 import { Rng } from '@/engine/rng'
+import { applyAiDeals, shopState } from '@/engine/trade'
+import { newGame } from '@/engine/state'
+import type { GameState, GearSpec } from '@/engine/types'
 
 describe('gear', () => {
   it('lists every base × material of the same kind in the catalog', () => {
@@ -58,5 +68,106 @@ describe('gear', () => {
       return n
     }
     expect(count(10)).toBeGreaterThan(count(1))
+  })
+})
+
+describe('crafting', () => {
+  const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
+  function game(location = 'soriel'): GameState {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: location })
+    enterLocation(state)
+    return state
+  }
+  function craft(state: GameState, target: string, natural: number, judgment: Judgment | null = null) {
+    prepareAction(state, { kind: 'craft', target, text: '' })
+    state.pendingAction!.natural = natural
+    const r = resolveAction(state, judgment)
+    expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
+    return r
+  }
+
+  it('only works at the general store and needs forge materials beyond the first tier', () => {
+    const state = game()
+    expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:iron', text: '' })).toThrow('雜貨店')
+    standOn(state, 'shop')
+    expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:leather', text: '' })).toThrow('不能')
+    expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('材料不夠')
+    state.money_cc = 5000
+    state.inventory.push({ name: '秘銀礦石', qty: 1 }, { name: '精鋼錠', qty: 2 })
+    expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('材料不夠')
+    expect(craftPlan(state, 'longsword', 'steel').blocked).toBeUndefined()
+    expect(craftPlan(state, 'dagger', 'iron').units).toBe(0)
+  })
+
+  it('makes an enchanted piece on success and spends fee and materials', () => {
+    const state = game()
+    standOn(state, 'shop')
+    state.money_cc = 5000
+    state.inventory.push({ name: '精鋼錠', qty: 3 })
+    const plan = craftPlan(state, 'longsword', 'steel')
+    const r = craft(state, 'longsword:steel', 20)
+    expect(r.check?.degree).toBe('critical')
+    expect(state.money_cc).toBe(5000 - plan.fee)
+    expect(state.inventory.find((i) => i.name === '精鋼錠')?.qty).toBe(1)
+    const made = r.changes.items_gained!.find((i) => gearSpecOf(state, i.name))!
+    const spec = gearSpecOf(state, made.name)!
+    expect(spec).toMatchObject({ base: 'longsword', material: 'steel', rarity: 'uncommon' })
+    expect(enchantPoints(spec.enchants)).toBeLessThanOrEqual(rarityPoints('uncommon'))
+    expect(state.customItems![made.name]!.category).toBe('equipment')
+  })
+
+  it('loses half the materials on failure and uses the AI name and enchants within the cap', () => {
+    const state = game()
+    standOn(state, 'shop')
+    state.money_cc = 50000
+    state.inventory.push({ name: '秘銀礦石', qty: 4 })
+    const failed = craft(state, 'longsword:mithril', 8)
+    expect(failed.check?.degree).toBe('fail')
+    expect(state.inventory.find((i) => i.name === '秘銀礦石')?.qty).toBe(3)
+    prepareAction(state, { kind: 'craft', target: 'longsword:mithril', text: '劍身刻著火焰紋路' })
+    const j = sanitizeJudgment(state, state.pendingAction!, {
+      degree: 'success', effects: [{ type: 'gear', name: '破曉', desc: '劍身有火焰紋路', enchants: { mods: { hit: 2, damage: 3 }, offense: { fire: 0.5 } } }],
+    })
+    const r = resolveAction(state, j)
+    expect(r.changes.items_gained!.map((i) => i.name)).toContain('破曉')
+    const spec = gearSpecOf(state, '破曉')!
+    expect(spec.material).toBe('mithril')
+    expect(spec.rarity).toBeUndefined()
+    expect(enchantPoints(spec.enchants)).toBeLessThanOrEqual(2)
+  })
+
+  it('caps event gear from free actions by level and degree', () => {
+    const state = game()
+    prepareAction(state, { kind: 'free', text: '翻找遺跡' })
+    const j = sanitizeJudgment(state, state.pendingAction!, {
+      degree: 'success', effects: [{ type: 'gear', base: 'plate', material: 'adamantine', rarity: 'legendary', enchants: { mods: { dr: 2 } } }],
+    })
+    const g = j.effects.find((e) => e.type === 'gear') as { spec: GearSpec }
+    expect(g.spec.material).toBe('iron')
+    expect(g.spec.enchants).toBeUndefined()
+    const fail = sanitizeJudgment(state, state.pendingAction!, { degree: 'fail', effects: [{ type: 'gear', base: 'dagger', material: 'iron' }] })
+    expect(fail.effects).toHaveLength(0)
+  })
+
+  it('trims enchants to the rarity points', () => {
+    const e = sanitizeEnchants({ mods: { hit: 9, dr: 1, ap_regen: 1 }, resist: { fire: -1, nonsense: -0.25 } }, 4)
+    expect(enchantPoints(e)).toBeLessThanOrEqual(4)
+    expect(e?.mods?.hit).toBe(2)
+    expect(e?.resist?.nonsense).toBeUndefined()
+  })
+})
+
+describe('special gear at shops', () => {
+  it('prices AI gear from its composition and caps the material by level', () => {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6 })
+    enterLocation(state)
+    const n = applyAiDeals(state, 'general', {
+      deals: [{ title: '老兵的佩劍', gives: [{ type: 'money', amount: 1 }], gets: [{ type: 'gear', base: 'longsword', material: 'star_iron', name: '老兵的佩劍', rarity: 'uncommon', enchants: { mods: { hit: 1 } } }], stock: 1 }],
+    })
+    expect(n).toBe(1)
+    const spec = gearSpecOf(state, '老兵的佩劍')!
+    expect(gearRules.materials[spec.material]!.level).toBeLessThanOrEqual(3)
+    const deal = shopState(state, 'general').deals.find((d) => d.title === '老兵的佩劍')!
+    expect(deal.gives[0]!.amount).toBeGreaterThanOrEqual(gearPrice(spec) * 0.5)
   })
 })
