@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { mod } from '@/engine/character'
 import { askingFor, invitable, marketsHere, partyOffersHere, waitChance } from '@/engine/companions'
 import { className, combatRules, companionRules, genderName, raceName } from '@/engine/data'
-import { formatMoney } from '@/engine/money'
+import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { isBound, leaderOf } from '@/engine/party'
 import type { TavernCandidate } from '@/engine/types'
@@ -85,7 +85,7 @@ const showBlack = ref(false)
               <button v-else class="small" :disabled="partyFull" @click="toggle(c)">{{ open === c.npc ? '收起' : '談雇傭' }}</button>
             </div>
             <div v-if="open === c.npc" class="nego small">
-              <label>出價（銅幣）<input v-model.number="offers[c.npc]" type="number" min="0" step="5" /></label>
+              <label>出價（{{ CURRENCY.short }}）<input v-model.number="offers[c.npc]" type="number" min="0" step="5" /></label>
               <label>談判方式（選填，會交給 AI 判定）<input v-model="approach[c.npc]" placeholder="例如：答應分他一成戰利品、請他喝酒" /></label>
               <button class="small primary" :disabled="(offers[c.npc] ?? 0) > s.money_cc || game.judging" @click="hire(c)">
                 {{ (offers[c.npc] ?? 0) >= askingFor(c) ? `雇用（${formatMoney(offers[c.npc] ?? 0)}）` : '提出條件（魅力檢定）' }}

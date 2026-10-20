@@ -46,9 +46,10 @@ describe('world', () => {
 
 describe('money and dice', () => {
   it('formats copper into larger units', () => {
-    expect(formatMoney(1234)).toBe('1 白金 2 金 3 銀 4 銅')
-    expect(formatMoney(-15)).toBe('-1 銀 5 銅')
-    expect(formatMoney(0)).toBe('0 銅')
+    expect(formatMoney(1234)).toBe('1,234 白鸛')
+    expect(formatMoney(-15)).toBe('-15 白鸛')
+    expect(formatMoney(0)).toBe('0 白鸛')
+    expect(formatMoney(1234567)).toBe('1,234,567 白鸛')
   })
 
   it('rolls deterministically from a seed', () => {

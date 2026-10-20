@@ -1,6 +1,6 @@
 // 報酬／後果模板：事件、委託與主動行動的結果都用同一組效果描述，可以任意組合。
 //
-// 例：委託報酬「80 銅幣＋傷藥 2 瓶＋委託人好感 +5＋獵戶自願入隊」
+// 例：委託報酬「80 白鸛＋傷藥 2 瓶＋委託人好感 +5＋獵戶自願入隊」
 //   [{ type: 'money', amount: 80 }, { type: 'item', name: '傷藥', qty: 2 },
 //    { type: 'affinity', npc: 'gen_3', delta: 5 }, { type: 'companion', npc: 'gen_3', mode: 'voluntary' }]
 //
@@ -8,6 +8,7 @@
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
 import { abilityChoices, abilityQuality, learnable, learnAbility } from './character'
+import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import { changeHitDice, changeSlots } from './resources'
 import {
@@ -195,7 +196,7 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         if (!q) break
         const before = q.reward_cc
         q.reward_cc = Math.max(0, Math.round(q.reward_cc * (1 + e.percent / 100)))
-        notes.push(`「${q.title}」的報酬從 ${before} 調整為 ${q.reward_cc} 銅幣`)
+        notes.push(`「${q.title}」的報酬從 ${formatMoney(before)} 調整為 ${formatMoney(q.reward_cc)}`)
         break
       }
       case 'ability': {

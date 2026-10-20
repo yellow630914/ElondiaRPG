@@ -1,5 +1,5 @@
 {
-  "$comment": "物品目錄。price_cc 為普通城鎮的售價（銅幣），依世界書「價格參考」各條目取中間值；材料（material）的價格是商人的收購價。use：使用效果（heal 回復生命骰、full_heal 回滿、slot 回復一個法術環）。equip：裝備後替換角色的武器（weapon）或防具（armor），id 對應 equipment.json。商店依 tags 決定賣不賣。",
+  "$comment": "物品目錄。price_cc 為普通城鎮的售價（白鸛幣），依世界書「價格參考」各條目取中間值；材料（material）的價格是商人的收購價。use：使用效果（heal 回復生命骰、full_heal 回滿、slot 回復一個法術環）。equip：裝備後替換角色的武器（weapon）或防具（armor），id 對應 equipment.json。商店依 tags 決定賣不賣。",
   "version": 1,
   "sell_ratio": 0.5,
   "material_sell_ratio": 1.0,

@@ -1,5 +1,5 @@
 {
-  "$comment": "夥伴系統：入隊方式、離隊規則、短休／長休、非戰鬥狀態。說明見 docs/COMPANIONS.md。金額單位為銅幣（CC）。",
+  "$comment": "夥伴系統：入隊方式、離隊規則、短休／長休、非戰鬥狀態。說明見 docs/COMPANIONS.md。金額單位為白鸛幣。",
   "version": 1,
   "bonds": {
     "hired": "雇傭",

@@ -1,22 +1,19 @@
-// 金額一律以銅幣 (CC) 整數儲存，顯示時才換算。
+// 貨幣：全大陸統一使用阿爾貝納發行的白鸛幣，金額一律以整數儲存（欄位名稱的 _cc 沿用舊名）。
+// 世界書的價格是舊幣制（銅、銀、金、白金），換算見 data/rules/economy.json。
 
-const UNITS = [
-  { name: '白金幣', short: '白金', value: 1000 },
-  { name: '金幣', short: '金', value: 100 },
-  { name: '銀幣', short: '銀', value: 10 },
-  { name: '銅幣', short: '銅', value: 1 },
-] as const
+import economyJson from '@data/rules/economy.json'
 
-/** 1234 → "1 白金 2 金 3 銀 4 銅" */
+export const CURRENCY = economyJson.currency as { id: string; name: string; short: string; issuer: string; legacy: Record<string, number> }
+
+/** 1234 → "1,234 白鸛" */
 export function formatMoney(cc: number): string {
-  if (cc === 0) return '0 銅'
-  const sign = cc < 0 ? '-' : ''
-  let rest = Math.abs(Math.round(cc))
-  const parts: string[] = []
-  for (const unit of UNITS) {
-    const n = Math.floor(rest / unit.value)
-    rest -= n * unit.value
-    if (n > 0) parts.push(`${n} ${unit.short}`)
-  }
-  return sign + parts.join(' ')
+  const n = Math.round(cc)
+  const sign = n < 0 ? '-' : ''
+  return `${sign}${String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} ${CURRENCY.short}`
+}
+
+/** 給 AI 的貨幣說明：只有一種貨幣，世界書的舊幣制要換算 */
+export function currencyRule(): string {
+  const legacy = Object.entries(CURRENCY.legacy).map(([k, v]) => `1 ${k} = ${v}`).join('、')
+  return `貨幣只有阿爾貝納發行的${CURRENCY.name}（簡稱${CURRENCY.short}），金額都以${CURRENCY.name}計；不要寫銅幣、銀幣、金幣。世界書裡的舊幣制價格換算成${CURRENCY.name}：${legacy}。`
 }

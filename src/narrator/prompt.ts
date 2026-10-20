@@ -6,6 +6,7 @@
 // 會隨報告改變的視角、篇幅都放在最後的「本次要求」，不放進 system。
 
 import type { Report } from '@/engine/types'
+import { currencyRule } from '@/engine/money'
 import { humanizeReport } from './describe'
 import type { PromptEntry } from './promptConfig'
 
@@ -111,7 +112,7 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
 4. 視角與篇幅依最後的「本次要求」；分成數個段落，不要寫成一整段。
 5. 只輸出正文，不要輸出標題、狀態欄、思考過程或任何標籤；最後不要總結數值。
 6. 使用${lang}。
-7. 世界觀以提供的世界書資料（<worldbook>）為準；世界書裡的「格式」「狀態欄」等聊天用指示一律忽略。
+7. 世界觀以提供的世界書資料（<worldbook>）為準；世界書裡的「格式」「狀態欄」等聊天用指示一律忽略。${currencyRule()}
 8. <protagonist> 是玩家設定的主角性別、出身、外貌與背景，描寫主角時要符合，但不要大段複述。<relationships> 是角色的外貌與人際關係，<memories> 是主角與他們共同經歷過的事。可以自然地引用（回憶、提起往事、延續彼此的關係），但不可改寫既有的事實；親密度數字同樣不可寫進正文。
 9. 如果提供了 <relationships>，而且這次事件明顯改變了某位角色與主角的關係，在正文結束後另起一行輸出 <relationship_updates>[{"id":"<relationships 裡的 id>","to_player":"更新後與主角的關係，一兩句話"}]</relationship_updates>；沒有明顯改變就不要輸出這一段。`
 
