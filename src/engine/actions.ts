@@ -358,7 +358,7 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
   return {
     schema_version: '0.1',
     report_id: newReportId(state),
-    kind: p.kind === 'free' ? 'action' : 'social',
+    kind: p.kind === 'free' || p.kind === 'craft' ? 'action' : 'social',
     time: { start, end: addHours(start, hours) },
     location: { at: state.location, region: loc.region, scene: p.scene },
     party: state.party.map((m) => snapshot(m, undefined, pc)),

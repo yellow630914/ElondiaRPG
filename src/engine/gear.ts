@@ -438,12 +438,13 @@ function sameSpec(a?: GearSpec, b?: GearSpec): boolean {
 
 /**
  * 登錄一件打造或事件生成的裝備，回傳物品名稱。制式品直接用目錄的名稱；
- * 其他的用 AI 取的名字（沒有時是「稀有度＋制式名稱」），和現有的物品撞名時加上編號。
+ * 其他的用 AI 取的名字（沒有時是「稀有度＋制式名稱」或「精製＋制式名稱」），和現有的物品撞名時加上編號。
  */
 export function registerGear(state: Pick<GameState, 'customItems'>, spec: GearSpec, name?: string, desc?: string): string {
   const standard = gearName(spec)
   if (isStandard(spec) && !name) return standard
-  const want = (name?.trim().slice(0, 20) || `${rarityName(spec.rarity ?? gearRules.materials[spec.material]!.rarity)}${standard}`)
+  // 預設名稱：稀有度比材料高時加上稀有度（優良鐵長劍），只是有附魔時是「精製」（精製秘銀長劍）
+  const want = name?.trim().slice(0, 20) || `${spec.rarity ? rarityName(spec.rarity) : '精製'}${standard}`
   const taken = (n: string) => {
     if (itemDef(n)) return !sameSpec(itemDef(n)!.gear, spec) || !isStandard(spec)
     const c = state.customItems?.[n]

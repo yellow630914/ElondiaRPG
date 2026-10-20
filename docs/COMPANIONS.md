@@ -25,6 +25,7 @@
 | `free` | 解除契約（主角或 NPC 奴隸） |
 | `slot` | 法術環：`delta` 負數花掉（至少 `circle` 環，用最低的）、正數回復（不超過 `circle` 環） |
 | `hit_dice` | 生命骰：`delta` 負數花掉、正數回復 |
+| `gear` | **裝備**：`spec`（底材 × 材料＋稀有度與附魔，已依 `gear.json` 整理）與選填的 `name`、`desc`；新的裝備登錄在存檔的 `customItems`，制式品沿用目錄名稱。見 [`ITEMS.md`](ITEMS.md) |
 | `ability` | **技能報酬**：學會新能力。可指定能力（id 或名稱，必須是目前可以學的，否則隨機挑一項）、給一次「N 選一」的學習機會（`choices`），或加上取得機率（`chance`）。記錄在報告的 `skills_gained`，來源為 `insight` |
 
 例：委託報酬「80 白鸛＋傷藥 2 瓶＋委託人好感 +5＋獵戶自願入隊」
