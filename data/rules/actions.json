@@ -82,6 +82,8 @@
       "$comment": "在娼館消費（work.json 的 brothel.patron）；有主人的奴隸不能消費" },
     "unmark": { "name": "解除印記", "attr": "fai", "hours": 2, "effects": ["relationship_text", "flag", "hp"],
       "$comment": "找人解除契約印記：神殿、黑市刻印師或法師（見 slavery.json 的 unmark；屬性依服務）" },
+    "defeat_event": { "name": "戰敗後的處境", "attr": "cha", "hours": 2, "effects": ["relationship_text", "flag", "hp"],
+      "$comment": "成人向的戰敗事件：回應圍上來的敵人（combat.json 的 defeat_event）；三選一或自己描述，結果依成功程度" },
     "craft": { "name": "委託打造", "attr": "int", "hours": 8, "effects": ["affinity", "relationship_text", "flag", "gear"],
       "$comment": "在鐵匠鋪、裁縫店、珠寶店委託工匠打造裝備（gear.json 的 craft）：DC 與工錢依材料；成品依成功程度。gear：AI 可以替成品取名、寫描述、挑附魔（稀有度與附魔點數依成功程度夾住）" }
   }

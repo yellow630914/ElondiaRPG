@@ -15,6 +15,7 @@ import * as population from '@/engine/population'
 import * as encounters from '@/engine/encounters'
 import * as security from '@/engine/security'
 import * as slavery from '@/engine/slavery'
+import * as defeat from '@/engine/defeat'
 import * as social from '@/engine/social'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
@@ -586,6 +587,8 @@ export const useGame = defineStore('game', () => {
     buySlave: (kind: companions.MarketKind, id: string, mark?: slavery.MarkChoice) => run((s) => companions.buySlave(s, kind, id, mark)),
     chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
     answerMasterEvent: (index: number) => run((s) => slavery.answerMasterEvent(s, index)),
+    // 成人向的戰敗事件：關閉成人向時直接離開
+    skipDefeatEvent: () => run(defeat.skipDefeatEvent),
     offerSelf: (kind: companions.MarketKind) => run((s) => companions.offerSelf(s, kind)),
     releaseSlave: (id: string) => run((s) => companions.releaseSlave(s, id)),
     acceptSuggestion: (id: string, text?: string) => run((s) => social.acceptSuggestion(s, id, text)),

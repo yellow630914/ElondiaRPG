@@ -3,7 +3,7 @@ import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import type { Composed } from '@/narrator/compose'
 import { LORE_STATUS_NAME, type LoreItem, type LoreMode, type LoreSelection } from '@/narrator/lore'
 import { estimateTokens } from '@/narrator/promptConfig'
-import { DEFAULT_NARRATION_RULES, type PromptSection } from '@/narrator/prompt'
+import { DEFAULT_DEFEAT_RULES, DEFAULT_NARRATION_RULES, type PromptSection } from '@/narrator/prompt'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { useSettings } from '@/stores/settings'
@@ -77,6 +77,19 @@ const rulesText = computed({
   },
 })
 const rulesEdited = computed(() => prompts.config.narrationRules !== undefined)
+
+// 戰敗事件規則（成人向）：同樣可以修改、恢復預設
+const defeatText = computed({
+  get: () => prompts.config.defeatRules ?? DEFAULT_DEFEAT_RULES,
+  set: (v: string) => {
+    if (v === DEFAULT_DEFEAT_RULES) delete prompts.config.defeatRules
+    else prompts.config.defeatRules = v
+  },
+})
+const defeatEdited = computed(() => prompts.config.defeatRules !== undefined)
+function restoreDefeat() {
+  if (confirm('把戰敗事件規則恢復成預設？你的修改會消失。')) delete prompts.config.defeatRules
+}
 
 function restoreRules() {
   if (confirm('把敘事規則恢復成預設？你的修改會消失。')) delete prompts.config.narrationRules
@@ -218,7 +231,7 @@ async function onImport(e: Event) {
 }
 
 function resetAll() {
-  if (confirm('把敘事規則、文風、其他提示詞與世界書的修改全部恢復成預設值？')) prompts.resetAll()
+  if (confirm('把敘事規則、戰敗事件規則、文風、其他提示詞與世界書的修改全部恢復成預設值？')) prompts.resetAll()
 }
 </script>
 
@@ -257,6 +270,18 @@ function resetAll() {
       </p>
       <textarea v-model="rulesText" class="rules" rows="22" spellcheck="false" />
       <p class="small muted">{{ rulesText.length }} 字・約 {{ estimateTokens(rulesText) }} tokens。規則放在前段（可以被快取），改動後第一次請求會重新建立快取。</p>
+
+      <div class="row defeat-head">
+        <h3>戰敗事件規則（成人向）</h3>
+        <span v-if="defeatEdited" class="tag">已修改</span>
+        <span class="spacer" />
+        <button class="small" :disabled="!defeatEdited" @click="restoreDefeat">↩️ 恢復預設</button>
+      </div>
+      <p class="small muted">
+        只在成人向的戰敗事件附加在敘事規則之後：前半段是戰報（停在敵人動手的前一刻），後半段是玩家回應之後的經過（AI 判定的 narrative 也會用）。
+        可用的代換：<code v-pre>{{player}}</code> 主角名。關閉成人向時不會發生戰敗事件。
+      </p>
+      <textarea v-model="defeatText" class="rules" rows="9" spellcheck="false" />
     </section>
 
     <!-- 文風 -->
@@ -452,6 +477,8 @@ label.check { display: inline-flex; gap: 4px; align-items: center; }
 .editor label.check { display: inline-flex; }
 .editor textarea { width: 100%; font-family: inherit; line-height: 1.6; }
 textarea.rules { width: 100%; font-family: inherit; line-height: 1.6; box-sizing: border-box; }
+.defeat-head { margin-top: 16px; gap: 6px; align-items: center; }
+.defeat-head h3 { margin: 0; }
 pre {
   white-space: pre-wrap; word-break: break-word; background: var(--panel-2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 8px 10px; margin: 4px 0 8px; max-height: 420px; overflow: auto; font-size: 0.85rem; line-height: 1.6;

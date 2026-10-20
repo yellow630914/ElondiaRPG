@@ -150,6 +150,8 @@ export interface Report {
     tone?: string
     focus?: string[]
     player_intent?: string
+    /** 戰敗事件：前半段停在對方動手前（defeat_cliffhanger），後半段是玩家回應之後（defeat_event） */
+    mode?: 'defeat_cliffhanger' | 'defeat_event'
   }
   lore_keys?: string[]
 }
@@ -275,6 +277,16 @@ export interface NpcRecord extends NpcDef {
   /** 同行的隊伍（一起遭遇） */
   group?: string
   character?: Character
+}
+
+export interface PendingDefeat {
+  /** 圍上來的敵人（名字與 NPC id） */
+  foes: { name: string; npc?: string }[]
+  /** 戰敗的地點與場景 */
+  location: string
+  scene: string
+  /** 戰報 id（敘事停在動手前的那一份） */
+  report: string
 }
 
 export interface PendingMasterEvent {
@@ -430,6 +442,8 @@ export interface GameState {
   pendingMark?: PendingMark
   /** 主人的突發事件，等待主角回應（三選一或自己輸入） */
   pendingMasterEvent?: PendingMasterEvent
+  /** 成人向的戰敗事件：等待玩家回應（回應後才回到入口或城門） */
+  pendingDefeat?: PendingDefeat
   /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */
   masterPass?: Record<string, number>
   masterRefuse?: Record<string, number>

@@ -17,7 +17,7 @@ import { contractTerms, markSummary } from '@/engine/slavery'
 import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
 import type { GameState, Negotiation } from '@/engine/types'
-import { assemble, endNotesSection, LANGUAGE_NAME, loreText, sharedSystemSections, styleSection, type LoreLike, type Prompt } from './prompt'
+import { assemble, endNotesSection, fillDefeatRules, LANGUAGE_NAME, loreText, sharedSystemSections, styleSection, type LoreLike, type Prompt } from './prompt'
 import type { PromptEntry } from './promptConfig'
 
 /** 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。 */
@@ -80,6 +80,8 @@ export interface JudgePromptOptions {
   narrative?: boolean
   /** 判定也帶世界書時：常駐條目與這次觸發的條目 */
   lore?: { constant: LoreLike[]; triggered: LoreLike[] }
+  /** 玩家修改過的戰敗事件規則 */
+  defeatRules?: string
 }
 
 /** 主動行動的判定規則：不含任何會隨行動改變的內容，可以被快取 */
@@ -184,6 +186,8 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
   return assemble([
     { key: 'rules', title: '判定規則', part: 'system', text: judgeRules(lang, narrative) },
     styleSection(narrative ? opts.styles : [], '9. narrative 的文風'),
+    // 成人向的戰敗事件：回應時另外附上戰敗事件規則（narrative 是後半段）
+    { key: 'defeat', title: '戰敗事件規則', part: 'system', text: p.kind === 'defeat_event' && narrative ? `${fillDefeatRules(opts.defeatRules, pc.name)}\n這次的 narrative 是戰敗事件的後半段。` : '' },
     { key: 'format', title: '輸出格式', part: 'system', text: JUDGE_FORMAT },
     ...sharedSystemSections({ instructions: opts.instructions, constantLore: opts.lore?.constant }),
     { key: 'actor', title: '主角', part: 'user', text: `<actor>\n${pcDetail(state)}\n</actor>` },

@@ -30,6 +30,8 @@ export interface PromptOptions {
   endNotes?: PromptEntry[]
   /** 玩家修改過的敘事規則（沒有時用預設） */
   rules?: string
+  /** 玩家修改過的戰敗事件規則（沒有時用預設） */
+  defeatRules?: string
 }
 
 /** 提示詞的一個區塊；預覽畫面依此顯示順序與大小 */
@@ -116,6 +118,21 @@ export const DEFAULT_NARRATION_RULES = `你是奇幻 RPG《埃隆迪亞大陸》
 8. <protagonist> 是玩家設定的主角性別、出身、外貌與背景，描寫主角時要符合，但不要大段複述。<relationships> 是角色的外貌與人際關係，<memories> 是主角與他們共同經歷過的事。可以自然地引用（回憶、提起往事、延續彼此的關係），但不可改寫既有的事實；親密度數字同樣不可寫進正文。
 9. 如果提供了 <relationships>，而且這次事件明顯改變了某位角色與主角的關係，在正文結束後另起一行輸出 <relationship_updates>[{"id":"<relationships 裡的 id>","to_player":"更新後與主角的關係，一兩句話"}]</relationship_updates>；沒有明顯改變就不要輸出這一段。`
 
+/**
+ * 成人向戰敗事件的敘事規則：只在戰敗事件的戰報（停在動手前）與玩家回應之後的報告附加，放在敘事規則之後。
+ * 玩家可以在「提示詞 → 敘事規則」修改；{{player}} 換成主角名。
+ */
+export const DEFAULT_DEFEAT_RULES = `<defeat_event>
+這是成人向的戰敗事件（玩家開啟了成人向設定）。登場的所有角色都是成年人。
+1. 前半段（本次要求會註明）：依 timeline 寫完戰鬥與{{player}}倒下，接著寫敵人圍上來、意圖逐漸明顯的緊張時刻。在對方真正動手之前停筆，最後一句停在懸念上，留給玩家決定怎麼反應；不要寫出之後發生的事，也不要替主角做決定。
+2. 後半段（本次要求會註明）：依報告的結果（主角的反應與成功程度）寫出接下來的經過。大成功與成功時主角化解危機或脫身；部分成功時付出一些代價才脫身；失敗與大失敗時依成人向設定與文風描寫這段遭遇。最後寫主角被丟下或獨自醒來，然後回到安全的地方。
+3. 不可改變報告的結果、數值與損失；敵人的言行依它們的種類、性格與世界書；主角的反應要符合 <protagonist> 的設定。
+</defeat_event>`
+
+export function fillDefeatRules(template: string | undefined, player: string): string {
+  return (template?.trim() ? template : DEFAULT_DEFEAT_RULES).split('{{player}}').join(player)
+}
+
 const STYLE_SLOT = '{{style}}'
 
 export function fillRules(template: string, v: { language: string; player: string }): string {
@@ -149,10 +166,15 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
 
   const intent = report.narration?.player_intent ? `\n玩家意圖：${report.narration.player_intent}` : ''
   const focus = report.narration?.focus?.length ? `\n描寫重點：${report.narration.focus.join('、')}` : ''
+  const defeat = report.narration?.mode === 'defeat_cliffhanger'
+    ? '\n- 戰敗事件的前半段：停在敵人準備動手的前一刻，等玩家決定反應'
+    : report.narration?.mode === 'defeat_event' ? '\n- 戰敗事件的後半段：依主角的反應與成功程度寫出經過' : ''
 
   return assemble([
     { key: 'rules', title: '敘事規則', part: 'system', text: rules },
     ...(inline ? [] : [style]),
+    // 成人向的戰敗事件：另外一套規則，接在敘事規則之後
+    { key: 'defeat', title: '戰敗事件規則', part: 'system', text: report.narration?.mode ? fillDefeatRules(opts.defeatRules, opts.playerName) : '' },
     ...sharedSystemSections({ instructions: opts.instructions, constantLore: constant }),
     { key: 'protagonist', title: '主角設定', part: 'user', text: opts.protagonist ? `<protagonist>\n${opts.protagonist}\n</protagonist>` : '' },
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },
@@ -163,7 +185,7 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
       key: 'request', title: '本次要求', part: 'user',
       text: `本次要求：
 - 視角：${pov}
-- 篇幅：${length}${intent}${focus}
+- 篇幅：${length}${defeat}${intent}${focus}
 請依照上述報告寫出這次事件的詳細經過。`,
     },
   ])

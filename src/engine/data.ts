@@ -202,6 +202,14 @@ export const combatRules = combatJson as unknown as {
   cantrip: { scale_levels: number[]; known_base: number; known_every_levels: number }
   quality_by_level: { levels: [number, number]; quality: SkillQuality }[]
   quality_by_circle: SkillQuality[]
+  defeat_event: {
+    npc_tags: string[]; monster_traits: string[]; exclude_traits: string[]
+    check: { attr: AttrId; dc: number }
+    options: { label: string; attr: AttrId; dc: number }[]
+    free_dc: number
+    money_loss: Record<Degree, number>
+    shaken_on: Degree[]
+  }
 }
 
 export interface DamageTypeDef { id: string; name: string; group: string }
@@ -598,7 +606,7 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft'
+  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'defeat_event'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'
 export const actionRules = actionsJson as unknown as {

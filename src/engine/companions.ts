@@ -10,6 +10,7 @@
 // 這裡提供參考 DC、各成功程度的機制結果，以及套用結果的函式。
 
 import { setupCraft } from './craft'
+import { setupDefeatEvent } from './defeat'
 import { lifeTier, mod, snapshot } from './character'
 import {
   actionRules, combatRules, companionRules, contractDef, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
@@ -636,6 +637,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupPatron(state, target)
     case 'craft':
       return setupCraft(state, target)
+    case 'defeat_event':
+      return setupDefeatEvent(state, target)
     case 'negotiate': {
       if (isFugitive(state)) {
         // 逃亡奴隸找到了主人：當面談判，不必在安全的地方，但 DC 較高

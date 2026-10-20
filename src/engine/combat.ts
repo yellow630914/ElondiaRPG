@@ -21,6 +21,7 @@ import {
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { safeText } from './content'
 import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
+import { rollDefeatEvent } from './defeat'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
@@ -1461,6 +1462,8 @@ export function finishCombat(state: GameState): Report {
       action: `${x.name}：救助或逃跑（親密度）`, roll: { dice: '1d20', value: x.total, dc: nc.defeat_check.dc }, result: x.rescue ? 'success' : 'fail',
     }]
   }
+  // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）
+  if (combat.status === 'defeat' && !rescued) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes))
   delete state.combat
   return commitReport(state, report)
 }

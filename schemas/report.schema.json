@@ -222,7 +222,8 @@
         "length": { "enum": ["short", "medium", "long"], "default": "medium" },
         "tone": { "type": "string" },
         "focus": { "type": "array", "items": { "type": "string" } },
-        "player_intent": { "type": "string", "description": "玩家在 UI 上選擇的意圖或自由輸入的備註" }
+        "player_intent": { "type": "string", "description": "玩家在 UI 上選擇的意圖或自由輸入的備註" },
+        "mode": { "enum": ["defeat_cliffhanger", "defeat_event"], "description": "特殊的敘事：戰敗事件的前半段（停在對方動手前）與後半段（玩家回應之後）" }
       }
     },
     "lore_keys": {

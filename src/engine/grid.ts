@@ -690,6 +690,7 @@ export function assertNoStandoff(state: GameState) {
   if (state.standoff) throw new Error('先處理眼前的對峙')
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
+  if (state.pendingDefeat) throw new Error('先應付眼前的處境')
 }
 
 /** 城門盤查：沒過時回傳盤查的紀錄（沒有擲骰時直接說明原因） */
@@ -798,13 +799,22 @@ export function afterCombat(state: GameState, report: Report) {
     }
   } else if (result === 'fled' && p.prev) {
     state.position = { area: p.area, x: p.prev.x, y: p.prev.y }
-  } else if (result === 'defeat') {
-    const loc = locationById(state.location)
-    if (loc.type === 'dungeon') {
-      enterLocation(state)
-    } else if (area?.kind === 'wild') {
-      enterTownGate(state)
-    }
+  } else if (result === 'defeat' && !state.pendingDefeat) {
+    // 成人向的戰敗事件等玩家回應之後才離開（defeat.ts）
+    afterDefeat(state)
+  }
+}
+
+/** 戰敗之後：地下城回到入口（重新生成），近郊回到城門，城裡留在原地 */
+export function afterDefeat(state: GameState) {
+  const p = state.position
+  if (!p) return
+  const area = state.areas?.[p.area]
+  const loc = locationById(state.location)
+  if (loc.type === 'dungeon') {
+    enterLocation(state)
+  } else if (area?.kind === 'wild') {
+    enterTownGate(state)
   }
 }
 

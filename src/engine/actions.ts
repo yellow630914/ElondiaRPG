@@ -24,6 +24,7 @@ import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
 import { applyCraft, parseCraftTarget } from './craft'
+import { applyDefeatResponse } from './defeat'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
 import { npcRecord, type NpcSpec } from './npcs'
 import { presentHere } from './population'
@@ -103,6 +104,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   if (state.combat) throw new Error('戰鬥中不能這麼做')
   if (state.pendingAction) throw new Error('還有一個行動等待判定')
   if (state.pendingMasterEvent && input.kind !== 'master_event') throw new Error('先回應主人的要求')
+  if (state.pendingDefeat && input.kind !== 'defeat_event') throw new Error('先應付眼前的處境')
   const kind = actionRules.kinds[input.kind]
   if (!kind) throw new Error('沒有這種行動')
   const text = input.text.trim().slice(0, 400)
@@ -461,6 +463,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'work': return applyWork(state, report, p.target!, degree)
     case 'patron': return applyPatron(state, report, p.target, degree)
     case 'craft': return applyCraft(state, report, p.target!, degree, crafted)
+    case 'defeat_event': return applyDefeatResponse(state, report, degree)
     case 'free':
     case 'rest_talk': return ''
   }
