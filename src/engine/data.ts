@@ -563,6 +563,8 @@ export interface MasterEventDef {
   /** 只在經過這種設施（同一格或相鄰）時發生，機率為 chance，不在一般事件的抽選裡 */
   cell?: string
   chance?: number
+  /** 成人向的親密場景是什麼（{master} 換成主人的名字）：回應帶 adult_scene 時，敘事要詳細描寫 */
+  scene?: string
 }
 
 export interface UnmarkServiceDef {
@@ -595,6 +597,8 @@ export interface MasterEventOption {
   fail_effects?: RewardEffect[]
   /** 覆蓋事件的耗時 */
   hours?: number
+  /** 這個回應會進入親密場景（事件的 scene）：always 一定、success / fail 檢定成功或失敗時；只在開啟成人向時 */
+  adult_scene?: 'always' | 'success' | 'fail'
 }
 
 export function contractDef(id: string): ContractDef {

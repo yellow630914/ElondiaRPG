@@ -252,13 +252,13 @@
         { "label": "把錢袋交還主人", "result": "你把錢袋原封不動地交還，{master}收下了。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "交還錢袋" }] },
         { "label": "偷拿幾枚", "check": { "attr": "dex", "dc": 15 }, "success": "你手指一勾，幾枚硬幣就滑進了袖子。", "fail": "你的手才伸出去就被當場抓住。", "effects_success": [{ "type": "money", "amount": 30 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -6, "reason": "偷錢被抓" }, { "type": "hp", "target": "pc", "amount": -3 }] }
       ] },
-      { "id": "brothel_forced", "weight": 0, "cell": "brothel", "chance": 0.35, "text": "經過娼館門口時，{master}停下腳步，把你推給了老鴇：「進去做幾個鐘頭，賺的錢歸我。」", "hours": 0.25, "options": [
-        { "label": "順從地進去接客", "result": "你在娼館裡待了幾個鐘頭才出來。", "effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "聽話" }], "hours": 4 },
-        { "label": "哀求主人放過你", "check": { "attr": "cha", "dc": 14 }, "success": "{master}嘖了一聲，拉著你走了。", "fail": "{master}不理會你的哀求，你還是被推了進去。", "fail_effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "哀求" }], "hours": 2 },
-        { "label": "斷然拒絕", "check": { "attr": "fai", "dc": 16 }, "success": "{master}看你態度堅決，只好作罷。", "fail": "{master}冷笑一聲，硬是把你推了進去。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕" }], "fail_effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "當面拒絕主人" }], "hours": 2 }
+      { "id": "brothel_forced", "weight": 0, "cell": "brothel", "chance": 0.35, "scene": "被{master}推進娼館接客", "text": "經過娼館門口時，{master}停下腳步，把你推給了老鴇：「進去做幾個鐘頭，賺的錢歸我。」", "hours": 0.25, "options": [
+        { "label": "順從地進去接客", "adult_scene": "always", "result": "你在娼館裡待了幾個鐘頭才出來。", "effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "聽話" }], "hours": 4 },
+        { "label": "哀求主人放過你", "adult_scene": "fail", "check": { "attr": "cha", "dc": 14 }, "success": "{master}嘖了一聲，拉著你走了。", "fail": "{master}不理會你的哀求，你還是被推了進去。", "fail_effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "哀求" }], "hours": 2 },
+        { "label": "斷然拒絕", "check": { "attr": "fai", "dc": 16 }, "success": "{master}看你態度堅決，只好作罷。", "fail": "{master}冷笑一聲，硬是把你推了進去。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕" }], "adult_scene": "fail", "fail_effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "當面拒絕主人" }], "hours": 2 }
       ] },
-      { "id": "proposition", "weight": 2, "adult": true, "text": "{master}把你叫到身邊，直白地提出要你今晚陪伴。", "hours": 0.25, "options": [
-        { "label": "答應", "result": "你點了頭，{master}的神情柔和下來。", "effects": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "答應了主人的邀約" }], "hours": 2 },
+      { "id": "proposition", "weight": 2, "adult": true, "scene": "陪{master}過夜", "text": "{master}把你叫到身邊，直白地提出要你今晚陪伴。", "hours": 0.25, "options": [
+        { "label": "答應", "adult_scene": "always", "result": "你點了頭，{master}的神情柔和下來。", "effects": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "答應了主人的邀約" }], "hours": 2 },
         { "label": "委婉推辭", "check": { "attr": "cha", "dc": 14 }, "success": "{master}沒有勉強，只是揮手讓你退下。", "fail": "{master}的臉色沉了下來，沒再多說。", "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "推辭了主人的邀約" }] },
         { "label": "斷然拒絕", "check": { "attr": "fai", "dc": 15 }, "success": "{master}愣了一下，竟對你有些另眼相看。", "fail": "{master}被拂了面子，冷冷地讓你滾開。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "堅守底線" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -5, "reason": "當面拒絕主人" }] }
       ] }

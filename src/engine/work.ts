@@ -2,7 +2,7 @@
 // 走主動行動 work：玩家可以描述怎麼做，AI 依此判定並寫進日誌；報酬依成功程度。
 // 被主人帶著時，收入依印記歸主人（state.ts 的收益歸屬）。
 
-import { safeText } from './content'
+import { adultScene, safeText } from './content'
 import { locationById, workRules, type Degree, type JobDef } from './data'
 import { applyEffects } from './effects'
 import { currentArea, currentCell } from './grid'
@@ -43,6 +43,8 @@ export function setupWork(state: GameState, target?: string) {
   const boss = employer(state, job.cell)
   const pay = (d: Degree) => formatMoney(workPay(job, hours, d))
   return {
+    // 娼館的工作是接客：敘事要詳細描寫
+    ...(job.cell === 'brothel' ? adultScene(`在娼館接客（${hours} 小時）`) : {}),
     attr: job.attr, dc: job.dc, hours, situational: [],
     ...(boss ? { targetName: npcRecord(state, boss)!.name } : {}),
     scene: `${locationById(state.location).name}・${job.name}（${hours} 小時）`,

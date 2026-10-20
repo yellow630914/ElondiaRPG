@@ -24,6 +24,7 @@ import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
 import { applyCraft, parseCraftTarget } from './craft'
+import { adultContent, type AdultScene } from './content'
 import { applyDefeatResponse } from './defeat'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
 import { npcRecord, type NpcSpec } from './npcs'
@@ -75,6 +76,8 @@ export interface ActionPending extends ActionInput {
   spent?: ResourceChange[]
   /** 使用的能力，給 AI 參考 */
   usedAbility?: { member: string; name: string; desc: string; cost: string }
+  /** 成人向：可能進入的親密場景 */
+  adultScene?: AdultScene
 }
 
 export interface RelationshipUpdate { id: string; to_player: string }
@@ -90,6 +93,8 @@ export interface Judgment {
   summary?: string
   /** AI 直接寫出的結果經過（作為報告的敘事） */
   narrative?: string
+  /** AI 認為這次的經過包含親密場景（只在開啟成人向時採用）：場景是什麼 */
+  adult_scene?: string
   effects: RewardEffect[]
   relationship_updates: RelationshipUpdate[]
 }
@@ -139,6 +144,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     situational,
     outcomes: setup.outcomes,
     ...(setup.targetName ? { targetName: setup.targetName } : {}),
+    ...(setup.adultScene ? { adultScene: setup.adultScene } : {}),
     scene: setup.scene,
     time: { ...state.time },
     location: state.location,
@@ -346,6 +352,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     ...(clipText(r.summary, caps.summary_chars) ? { summary: clipText(r.summary, caps.summary_chars) } : {}),
     ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
+    ...(adultContent() && clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
     effects,
     relationship_updates: updates,
   }
@@ -424,6 +431,8 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
   if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
   if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }
+  const scene = adultSceneFor(p, degree, judgment)
+  if (scene) report.narration = { ...report.narration, length: report.narration?.length === 'long' ? 'long' : 'medium', adult_scene: scene }
   const success = degree === 'critical' || degree === 'success'
   const lead = `${kind.name}${p.targetName ? `（${p.targetName}）` : ''}：${DEGREE_NAME[degree]}。`
   report.outcome = {
@@ -432,6 +441,17 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.twist ? ['出乎預料'] : [])],
   }
   return commitReport(state, report)
+}
+
+/**
+ * 這次的經過有沒有親密場景（只在開啟成人向時）：行動本身會進入場景（娼館、戰敗事件沒能脫身），
+ * 或 AI 判定認為有（主人的要求、自由行動、長休的互動……）。
+ */
+export function adultSceneFor(p: ActionPending, degree: Degree, judgment: Judgment | null): string | undefined {
+  if (!adultContent()) return undefined
+  const s = p.adultScene
+  if (s && (!s.on || s.on.includes(degree))) return s.label
+  return judgment?.adult_scene
 }
 
 function applyMechanics(state: GameState, report: Report, p: ActionPending, degree: Degree, crafted?: Extract<RewardEffect, { type: 'gear' }>): string {

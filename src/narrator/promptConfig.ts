@@ -38,6 +38,8 @@ export interface PromptConfig {
   narrationRules?: string
   /** 玩家修改過的戰敗事件規則；沒有時用預設（DEFAULT_DEFEAT_RULES） */
   defeatRules?: string
+  /** 玩家修改過的成人場景規則；沒有時用預設（DEFAULT_SCENE_RULES） */
+  sceneRules?: string
 }
 
 export const TARGET_NAME: Record<PromptTarget, string> = { narration: '敘事', judge: '判定' }
@@ -138,6 +140,7 @@ export function normalizeConfig(raw: unknown): PromptConfig {
     loreInJudge: !!r.loreInJudge,
     ...(typeof r.narrationRules === 'string' && r.narrationRules.trim() ? { narrationRules: r.narrationRules } : {}),
     ...(typeof r.defeatRules === 'string' && r.defeatRules.trim() ? { defeatRules: r.defeatRules } : {}),
+    ...(typeof r.sceneRules === 'string' && r.sceneRules.trim() ? { sceneRules: r.sceneRules } : {}),
   }
 }
 

@@ -8,7 +8,7 @@
 import { lifeTier, mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, type AttrId, type ContractDef, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
-import { safeText } from './content'
+import { adultContent, adultScene, safeText } from './content'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
@@ -452,6 +452,11 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   } else if (o.result) {
     report.outcome.summary += withMaster(state, o.result)
   }
+  // 成人向：這個回應進入親密場景時，敘事要詳細描寫
+  const ok = report.outcome.result === 'success'
+  if (adultContent() && e.scene && (o.adult_scene === 'always' || (o.check && o.adult_scene === (ok ? 'success' : 'fail')))) {
+    report.narration = { ...report.narration, length: 'medium', adult_scene: withMaster(state, e.scene) }
+  }
   delete state.pendingMasterEvent
   const notes = applyEffects(state, report, affordable(state, effects))
   if (notes.length) report.outcome.summary += notes.join('，') + '。'
@@ -463,6 +468,8 @@ export function setupMasterEvent(state: GameState) {
   const e = pendingEventDef(state)
   const c = pcOf(state).contract!
   return {
+    // 可能進入親密場景的事件：自己描述的回應由 AI 判定是否進入
+    ...(e.scene ? adultScene(withMaster(state, e.scene), []) : {}),
     dc: e.free_dc ?? slaveryRules.master_events.free_dc, targetName: c.masterName, situational: [],
     scene: `${currentArea(state).name}・${state.pendingMasterEvent!.text}`,
     outcomes: {

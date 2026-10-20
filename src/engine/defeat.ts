@@ -7,7 +7,7 @@
 // 設定關閉成人向時不會發生；已經在等待回應時關閉，可以直接略過。
 
 import { mod } from './character'
-import { adultContent } from './content'
+import { adultContent, adultScene } from './content'
 import { combatRules, locationById, regionById, type AttrId, type Degree } from './data'
 import { applyEffects } from './effects'
 import { afterDefeat } from './grid'
@@ -85,6 +85,8 @@ export function setupDefeatEvent(state: GameState, target?: string) {
   const loss = (d: Degree) => (r.money_loss[d] ? `，再損失 ${Math.round(r.money_loss[d] * 100)}% 的錢` : '')
   const shaken = (d: Degree) => (r.shaken_on.includes(d) ? '，驚魂未定（下次長休前檢定 -1）' : '')
   return {
+    // 沒能脫身時是這段遭遇（部分成功時由 AI 決定代價是否包含）
+    ...adultScene(`戰敗後落入${ev.foes.map((f) => f.name).join('、')}手中`, ['fail', 'fumble']),
     dc: o.dc, ...(o.attr ? { attr: o.attr } : {}), situational: [],
     targetName: ev.foes.map((f) => f.name).join('、'),
     scene: `${ev.scene}・戰敗後被${ev.foes.map((f) => f.name).join('、')}圍住（${o.label}）`,

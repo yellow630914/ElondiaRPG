@@ -9,6 +9,7 @@
 // 需要檢定的部分（雇傭談判、殺價、邀請、打聽黑市、談判解除契約、逃離）走主動行動（actions.ts），
 // 這裡提供參考 DC、各成功程度的機制結果，以及套用結果的函式。
 
+import type { AdultScene } from './content'
 import { setupCraft } from './craft'
 import { setupDefeatEvent } from './defeat'
 import { lifeTier, mod, snapshot } from './character'
@@ -560,6 +561,8 @@ export interface ActionSetup {
   attr?: AttrId
   /** 耗時（沒有時用 actions.json 的設定） */
   hours?: number
+  /** 成人向：可能進入的親密場景（content.ts 的 adultScene） */
+  adultScene?: AdultScene
 }
 
 export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string): ActionSetup {

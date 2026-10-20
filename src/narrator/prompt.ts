@@ -32,6 +32,10 @@ export interface PromptOptions {
   rules?: string
   /** 玩家修改過的戰敗事件規則（沒有時用預設） */
   defeatRules?: string
+  /** 玩家修改過的成人場景規則（沒有時用預設） */
+  sceneRules?: string
+  /** 成人向是否開啟；關閉時不附上成人場景規則（舊的報告可能還帶著 adult_scene） */
+  adult?: boolean
 }
 
 /** 提示詞的一個區塊；預覽畫面依此顯示順序與大小 */
@@ -125,12 +129,34 @@ export const DEFAULT_NARRATION_RULES = `你是奇幻 RPG《埃隆迪亞大陸》
 export const DEFAULT_DEFEAT_RULES = `<defeat_event>
 這是成人向的戰敗事件（玩家開啟了成人向設定）。登場的所有角色都是成年人。
 1. 前半段（本次要求會註明）：依 timeline 寫完戰鬥與{{player}}倒下，接著寫敵人圍上來、意圖逐漸明顯的緊張時刻。在對方真正動手之前停筆，最後一句停在懸念上，留給玩家決定怎麼反應；不要寫出之後發生的事，也不要替主角做決定。
-2. 後半段（本次要求會註明）：依報告的結果（主角的反應與成功程度）寫出接下來的經過。大成功與成功時主角化解危機或脫身；部分成功時付出一些代價才脫身；失敗與大失敗時依成人向設定與文風描寫這段遭遇。最後寫主角被丟下或獨自醒來，然後回到安全的地方。
+2. 後半段（本次要求會註明）：依報告的結果（主角的反應與成功程度）寫出接下來的經過。大成功與成功時主角化解危機或脫身；部分成功時付出一些代價才脫身；失敗與大失敗時依成人場景規則（<adult_scene>）把這段遭遇當作正文的主體詳細描寫。最後寫主角被丟下或獨自醒來，然後回到安全的地方。
 3. 不可改變報告的結果、數值與損失；敵人的言行依它們的種類、性格與世界書；主角的反應要符合 <protagonist> 的設定。
 </defeat_event>`
 
 export function fillDefeatRules(template: string | undefined, player: string): string {
   return (template?.trim() ? template : DEFAULT_DEFEAT_RULES).split('{{player}}').join(player)
+}
+
+/**
+ * 成人場景規則：報告帶 narration.adult_scene（娼館的消費與工作、主人的邀約、戰敗事件的遭遇、AI 判定認為有親密場景的行動）時，
+ * 附加在敘事規則之後，要求在正文詳細描寫經過。玩家可以在「提示詞 → 敘事規則」修改；{{player}} 換成主角名。
+ */
+export const DEFAULT_SCENE_RULES = `<adult_scene>
+這次的經過包含成人向的親密場景（玩家開啟了成人向設定）。登場的所有角色都是成年人。
+1. 親密場景是這次正文的主體：具體寫出經過，不要用「一夜過去」「事後」之類的跳接帶過，也不要只寫開頭和結束。
+2. 依時間順序寫出細節：場所與氣氛、雙方的動作與身體的反應、觸覺、氣味、聲音等感官、對話與心理的變化；節奏要有起伏，從開始、過程到結束。
+3. 角色的言行依他們的種族、性格、對主角的態度與彼此的關係；{{player}}的反應依 <protagonist> 的設定與這次的情境（主動、順從、被迫或抗拒），寫出對應的心理。
+4. 報告的結果、數值、收入與損失不可更改；被多收錢、出了差錯、主人的反應等結果也要寫進經過裡。
+5. 文字的露骨程度依文風與世界書；篇幅依「本次要求」，大部分篇幅留給這段場景。
+</adult_scene>`
+
+export function fillSceneRules(template: string | undefined, player: string): string {
+  return (template?.trim() ? template : DEFAULT_SCENE_RULES).split('{{player}}').join(player)
+}
+
+/** 報告有沒有要詳細描寫的親密場景（成人向關閉時一律沒有） */
+export function adultSceneOf(report: Report, adult = true): string | undefined {
+  return adult ? report.narration?.adult_scene : undefined
 }
 
 const STYLE_SLOT = '{{style}}'
@@ -156,7 +182,9 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
   const lang = LANGUAGE_NAME[opts.language]
   const { constant, triggered } = Array.isArray(lore) ? { constant: [], triggered: lore } : lore
   const pov = report.narration?.pov === 'third_person' ? '第三人稱' : `第二人稱，以「你」指稱主角${opts.playerName}`
-  const length = LENGTH_HINT[report.narration?.length ?? 'medium']
+  const scene = adultSceneOf(report, opts.adult)
+  // 親密場景至少寫中等篇幅
+  const length = LENGTH_HINT[scene && (report.narration?.length ?? 'medium') === 'short' ? 'medium' : report.narration?.length ?? 'medium']
 
   const filled = fillRules(opts.rules?.trim() ? opts.rules : DEFAULT_NARRATION_RULES, { language: lang, player: opts.playerName })
   // 文風：規則裡有 {{style}} 時放在那個位置，否則接在規則的最後；前綴接續前一行的編號或項目符號
@@ -169,12 +197,15 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
   const defeat = report.narration?.mode === 'defeat_cliffhanger'
     ? '\n- 戰敗事件的前半段：停在敵人準備動手的前一刻，等玩家決定反應'
     : report.narration?.mode === 'defeat_event' ? '\n- 戰敗事件的後半段：依主角的反應與成功程度寫出經過' : ''
+  const sceneLine = scene ? `\n- 成人場景：${scene}；依 <adult_scene> 的規則在正文中詳細描寫經過` : ''
 
   return assemble([
     { key: 'rules', title: '敘事規則', part: 'system', text: rules },
     ...(inline ? [] : [style]),
     // 成人向的戰敗事件：另外一套規則，接在敘事規則之後
     { key: 'defeat', title: '戰敗事件規則', part: 'system', text: report.narration?.mode ? fillDefeatRules(opts.defeatRules, opts.playerName) : '' },
+    // 成人向的親密場景：要求在正文詳細描寫經過
+    { key: 'scene', title: '成人場景規則', part: 'system', text: scene ? fillSceneRules(opts.sceneRules, opts.playerName) : '' },
     ...sharedSystemSections({ instructions: opts.instructions, constantLore: constant }),
     { key: 'protagonist', title: '主角設定', part: 'user', text: opts.protagonist ? `<protagonist>\n${opts.protagonist}\n</protagonist>` : '' },
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },
@@ -185,7 +216,7 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
       key: 'request', title: '本次要求', part: 'user',
       text: `本次要求：
 - 視角：${pov}
-- 篇幅：${length}${defeat}${intent}${focus}
+- 篇幅：${length}${defeat}${sceneLine}${intent}${focus}
 請依照上述報告寫出這次事件的詳細經過。`,
     },
   ])

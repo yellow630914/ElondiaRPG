@@ -23,3 +23,14 @@ export function safeText(s: string): string {
   for (const [from, to] of SAFE_NAMES) s = s.split(from).join(to)
   return s
 }
+
+/** 主動行動可能進入的親密場景：on 是會進入場景的成功程度（沒有時一律；空陣列時由 AI 判定） */
+export interface AdultScene {
+  label: string
+  on?: ('critical' | 'success' | 'partial' | 'fail' | 'fumble')[]
+}
+
+/** 開啟成人向時才回傳場景，給 setup 函式展開：{ ...adultScene('…') } */
+export function adultScene(label: string, on?: AdultScene['on']): { adultScene?: AdultScene } {
+  return adult ? { adultScene: { label, ...(on ? { on } : {}) } } : {}
+}

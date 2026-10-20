@@ -3,7 +3,7 @@ import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import type { Composed } from '@/narrator/compose'
 import { LORE_STATUS_NAME, type LoreItem, type LoreMode, type LoreSelection } from '@/narrator/lore'
 import { estimateTokens } from '@/narrator/promptConfig'
-import { DEFAULT_DEFEAT_RULES, DEFAULT_NARRATION_RULES, type PromptSection } from '@/narrator/prompt'
+import { DEFAULT_DEFEAT_RULES, DEFAULT_NARRATION_RULES, DEFAULT_SCENE_RULES, type PromptSection } from '@/narrator/prompt'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { useSettings } from '@/stores/settings'
@@ -89,6 +89,19 @@ const defeatText = computed({
 const defeatEdited = computed(() => prompts.config.defeatRules !== undefined)
 function restoreDefeat() {
   if (confirm('把戰敗事件規則恢復成預設？你的修改會消失。')) delete prompts.config.defeatRules
+}
+
+// 成人場景規則：娼館、主人的邀約、戰敗事件的遭遇等親密場景，要求在正文詳細描寫
+const sceneText = computed({
+  get: () => prompts.config.sceneRules ?? DEFAULT_SCENE_RULES,
+  set: (v: string) => {
+    if (v === DEFAULT_SCENE_RULES) delete prompts.config.sceneRules
+    else prompts.config.sceneRules = v
+  },
+})
+const sceneEdited = computed(() => prompts.config.sceneRules !== undefined)
+function restoreScene() {
+  if (confirm('把成人場景規則恢復成預設？你的修改會消失。')) delete prompts.config.sceneRules
 }
 
 function restoreRules() {
@@ -282,6 +295,17 @@ function resetAll() {
         可用的代換：<code v-pre>{{player}}</code> 主角名。關閉成人向時不會發生戰敗事件。
       </p>
       <textarea v-model="defeatText" class="rules" rows="9" spellcheck="false" />
+      <div class="row defeat-head">
+        <h3>成人場景規則（成人向）</h3>
+        <span v-if="sceneEdited" class="tag">已修改</span>
+        <span class="spacer" />
+        <button class="small" :disabled="!sceneEdited" @click="restoreScene">↩️ 恢復預設</button>
+      </div>
+      <p class="small muted">
+        經過包含親密場景時附加在敘事規則之後，要求在正文詳細描寫：娼館的消費與接客、主人的邀約（答應或被推進娼館）、戰敗事件沒能脫身，以及 AI 判定認為有親密場景的行動（自由行動、長休的互動等）。
+        開啟成人向時，判定請求也會附上（只在 AI 標出 adult_scene 時適用）。可用的代換：<code v-pre>{{player}}</code> 主角名。
+      </p>
+      <textarea v-model="sceneText" class="rules" rows="9" spellcheck="false" />
     </section>
 
     <!-- 文風 -->

@@ -64,6 +64,8 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     endNotes: activeEntries(o.config.custom, 'narration', name, 'end'),
     ...(o.config.narrationRules ? { rules: o.config.narrationRules } : {}),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
+    ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
+    adult: o.adult,
   })
   return { prompt, lore }
 }
@@ -80,6 +82,8 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     instructions: activeEntries(o.config.custom, 'judge', name, 'system'),
     endNotes: activeEntries(o.config.custom, 'judge', name, 'end'),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
+    ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
+    adult: o.adult,
     ...(lore ? { lore } : {}),
   })
   return { prompt, ...(lore ? { lore } : {}) }

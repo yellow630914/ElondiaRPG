@@ -2,7 +2,7 @@
 // 被迫工作是主人的突發事件（slavery.json master_events 裡 cell 為 brothel 的事件），
 // 無主的奴隸找老鴇當主人走「投靠新主人」（seek_master），成功後老鴇改刻娼妓契約。
 
-import { safeText } from './content'
+import { adultScene, safeText } from './content'
 import { locationById, workRules, type Degree } from './data'
 import { applyEffects } from './effects'
 import { currentArea, currentCell } from './grid'
@@ -51,6 +51,7 @@ export function setupPatron(state: GameState, target?: string) {
   const price = patronPrice(state, target)
   if (state.money_cc < price) throw new Error(`錢不夠（要 ${formatMoney(price)}）`)
   return {
+    ...adultScene(`在娼館與${rec?.name ?? '娼妓'}共度`),
     dc: r.dc, situational: [], hours: r.hours,
     targetName: rec?.name ?? safeText('娼館'),
     scene: safeText(`${locationById(state.location).name}的娼館`),
