@@ -428,6 +428,7 @@ export interface ContractDef {
   negotiate_dc: number
   escape_dc: number
   recapture_chance: number
+  exit_dc: number
   side_effects: string[]
   escape_effects: { hp_ratio: number }
 }
@@ -453,6 +454,28 @@ export const slaveryRules = slaveryJson as unknown as {
     fugitive: { inn_mult: number; inn_recapture_mult: number }
   }
   release_affinity: number
+  custom_mark: Record<'income_share' | 'negotiate_dc' | 'escape_dc' | 'exit_dc' | 'recapture_chance' | 'escape_hp_ratio' | 'obedience_penalty', [number, number]> & {
+    name_chars: number; mark_chars: number; side_effect_chars: number; side_effects: number
+  }
+  master_permit: { attr: AttrId; hours: number; affinity_step: number }
+  safe_spots: string[]
+  marking: { attr: AttrId; base: number; severity: string[] }
+  master_events: {
+    step_chance: number; travel_chance: number; cooldown_hours: number
+    events: MasterEventDef[]
+  }
+}
+
+export interface MasterEventDef {
+  id: string
+  weight: number
+  /** {master} 會換成主人的名字 */
+  text: string
+  hours: number
+  effects?: RewardEffect[]
+  check?: { attr: AttrId; dc: number; success: string }
+  effects_success?: RewardEffect[]
+  fail_effects?: RewardEffect[]
 }
 
 export function contractDef(id: string): ContractDef {
@@ -462,8 +485,8 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
-  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack'
-export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp'
+  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking'
+export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }

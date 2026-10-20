@@ -11,6 +11,7 @@ import {
 } from '@/engine/data'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
+import { contractTerms, markSummary } from '@/engine/slavery'
 import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
 import type { GameState, Negotiation } from '@/engine/types'
@@ -37,7 +38,8 @@ export function partyLines(state: GameState): string {
     const s = snapshot(m, undefined, pc)
     const bond = m.isPlayer ? '主角' : m.bond ? { hired: '雇傭', voluntary: '自願', slave: '奴隸', leader: '隊長', ally: '隊員' }[m.bond] : '同伴'
     const conds = m.status.map(conditionName).join('、')
-    return `- ${m.name}（${bond}${m.gender ? `・${genderName(m.gender)}` : ''}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
+    const mark = m.contract && !m.isPlayer ? `｜印記：${contractTerms(m.contract).name}（${contractTerms(m.contract).mark}）` : ''
+    return `- ${m.name}（${bond}${m.gender ? `・${genderName(m.gender)}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
   }).join('\n')
 }
 
@@ -45,7 +47,7 @@ function pcDetail(state: GameState): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${pc.attrs[a]}`).join('、')
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
-  const contract = pc.contract ? `\n契約：${contractDef(pc.contract.kind).name}（主人 ${pc.contract.masterName}）${pc.status.includes('fugitive') ? '，逃亡中' : ''}` : ''
+  const contract = pc.contract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pc.contract)}` : ''
   const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
   return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${contract}`
 }
@@ -117,6 +119,7 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     xp: `{"type":"xp","amount":<每人上限 ${caps.xp_per_level * pc.level}>}`,
     hp: `{"type":"hp","target":"pc 或隊友 id","amount":<整數，受傷為負：最多 -${Math.round(caps.hp_loss_ratio * 100)}% 最大生命值，治療最多 +${Math.round(caps.hp_gain_ratio * 100)}%>}（例如爬牆失足、被打了一拳、喝下熱湯；不會因此倒下）`,
     ability: `{"type":"ability","target":"pc 或隊友 id","ability":"能力名稱"}（技能報酬：只在 degree 為 critical、而且行為合理時，例如向高手請教、從經歷中領悟；最多一項。主角目前可以學的能力：${learnable(pc).slice(0, 15).map((a) => a.name).join('、') || '無'}）`,
+    mark: `{"type":"mark","name":"<≤12 字>","text":"<≤160 字>"}（依主角在刻印時的行為，提議印記的名稱與樣子；只是文字，數值依程式）`,
     meet: `{"type":"meet","npc":{"name":"","gender":"male/female/femboy/ts/futa/unknown","race":"human","class":"fighter","level":${pc.level},"personality":"","appearance":"","background":""},"affinity":<±${caps.meet_affinity}>,"to_player":"與主角的關係"}（只限對象是同旅館的旅客，最多認識一人）`,
   }
   return `<effects_allowed>\n這次可用的 effects：\n${kind.effects.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>`
@@ -169,7 +172,7 @@ ${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}${p.it
     {
       key: 'dice', title: '骰值', part: 'user',
       text: `<dice>
-自然骰：${p.natural}
+自然骰：${p.natural}${p.rolls ? `（擲兩次取高：${p.rolls.join('、')}；${p.advantage}）` : ''}
 情境修正：${sitText}
 各屬性的總值（自然骰 + 屬性調整值 + 熟練 + 情境）：
 ${totals}

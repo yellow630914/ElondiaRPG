@@ -2,13 +2,14 @@
 // 旅途事件目前都是非戰鬥事件；遭遇戰需要中斷旅程，留待之後實作。
 
 import { proficiency, snapshot } from './character'
-import { locationById, regionById, type RouteMode } from './data'
+import { locationById, regionById, slaveryRules, type RouteMode } from './data'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Character, Effect, GameState, ItemDelta, Report, TimelineEntry } from './types'
 import { shortestPath } from './world'
 import { assertNoStandoff, currentArea, enterLocation, placeOutside } from './grid'
 import { arrivalCheck, gateCheck } from './security'
+import { assertMasterAllows, maybeMasterEvent } from './slavery'
 import { ensureRoster, pruneNpcs, refreshRosters } from './population'
 
 /** 官道沿途有旅店：每人每天食宿 */
@@ -72,6 +73,8 @@ export function travel(state: GameState, destination: string, intent?: string): 
   const path = shortestPath(state.location, destination)
   if (!path || path.legs.length === 0) throw new Error(`無法前往 ${destination}`)
   assertNoStandoff(state)
+  // 身為奴隸：出發前要主人同意
+  assertMasterAllows(state)
   // 從聚落出發要經過城門盤查；被攔下時回傳盤查的紀錄，不會出發
   if (currentArea(state).kind === 'settlement') {
     const g = gateCheck(state)
@@ -161,6 +164,8 @@ export function travel(state: GameState, destination: string, intent?: string): 
   pruneNpcs(state)
   // 進城的盤查：付不出罰金就被擋在城外
   if (!arrivalCheck(state)) placeOutside(state)
+  // 被主人帶著時，旅途中可能有主人的突發事件
+  maybeMasterEvent(state, slaveryRules.master_events.travel_chance)
   return report
 }
 

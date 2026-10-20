@@ -43,6 +43,8 @@ export type RewardEffect =
   /** 生命骰：delta < 0 花掉，> 0 回復 */
   | { type: 'hit_dice'; target: string; delta: number }
   | { type: 'enslave_player'; master: NpcRef; contract: string; members?: NpcRef[] }
+  /** 刻印時提議的印記名稱與描述（只是文字，數值依模板） */
+  | { type: 'mark'; name?: string; text?: string }
   /** 解除契約：npc 為 pc 時是主角獲釋 */
   | { type: 'free'; npc: string }
   /** 委託報酬按百分比調整（談判的結果） */
@@ -59,7 +61,7 @@ export type RewardEffect =
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
-  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice',
+  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -185,6 +187,12 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         const master = resolveNpc(state, e.master)
         const members = (e.members ?? []).map((m) => resolveNpc(state, m))
         enslavePlayer(state, master, e.contract, report, members)
+        // 刻印前還有一次檢定：主角的表現決定最後刻上哪一種印記
+        state.pendingMark = { intended: e.contract }
+        break
+      }
+      case 'mark': {
+        if (state.pendingMark) state.pendingMark.suggestion = { ...(e.name ? { name: e.name } : {}), ...(e.text ? { mark: e.text } : {}) }
         break
       }
       case 'free':

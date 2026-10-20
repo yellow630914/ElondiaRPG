@@ -15,6 +15,7 @@ import {
 } from './data'
 import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
+import { assertMasterAllows } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, Report } from './types'
@@ -605,6 +606,7 @@ function gather(state: GameState, area: Area, item: string): Report {
 /** 和敵對的人對峙時，不能離開 */
 export function assertNoStandoff(state: GameState) {
   if (state.standoff) throw new Error('先處理眼前的對峙')
+  if (state.pendingMark) throw new Error('先完成契約印記的刻印')
 }
 
 /** 城門盤查：沒過時回傳盤查的紀錄（沒有擲骰時直接說明原因） */
@@ -619,6 +621,7 @@ function passGate(state: GameState): Report | undefined {
 export function goOutskirts(state: GameState): Report | undefined {
   if (currentCell(state).kind !== 'gate') throw new Error('要在城門才能出城')
   assertNoStandoff(state)
+  assertMasterAllows(state)
   const blocked = passGate(state)
   if (blocked) return blocked
   placeOutside(state)

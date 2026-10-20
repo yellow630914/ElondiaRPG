@@ -6,10 +6,11 @@ import {
 } from '@/engine/character'
 import { abilityApCost } from '@/engine/combat'
 import {
-  abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName, contractDef,
+  abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName,
   damageTypeName, genderName, itemRules, locationById, raceName, slaveryRules, type AbilityDef,
 } from '@/engine/data'
 import { isBound, leaderOf } from '@/engine/party'
+import { contractTerms } from '@/engine/slavery'
 import { canEquip, canUse } from '@/engine/inventory'
 import { itemCategory, itemValue } from '@/engine/trade'
 import { formatMoney } from '@/engine/money'
@@ -57,7 +58,7 @@ function itemDesc(name: string): string {
 const bound = computed(() => isBound(s.value))
 
 function contractFor(m: Character) {
-  return m.contract ? { ...m.contract, def: contractDef(m.contract.kind) } : null
+  return m.contract ? { ...m.contract, def: contractTerms(m.contract) } : null
 }
 
 function grouped(m: Character) {
@@ -112,12 +113,15 @@ function affinityText(m: Character): string {
       <StatBar kind="hp" :value="m.hp" :max="m.maxHp" />
       <div class="small muted">生命骰 d{{ hitDie(m) }} 剩 {{ hitDiceLeft(m) }}/{{ m.level }}</div>
       <div v-if="contractFor(m)" class="contract small">
-        <strong>{{ contractFor(m)!.def.name }}</strong>（主人 {{ contractFor(m)!.masterName }}）
+        <strong>{{ contractFor(m)!.def.name }}</strong>（主人 {{ contractFor(m)!.masterName || '無主' }}）
         <div>{{ contractFor(m)!.def.mark }}</div>
         <ul class="plain">
-          <li v-for="f in contractFor(m)!.def.functions" :key="f" class="muted">・{{ slaveryRules.functions[f] }}</li>
+          <li v-for="f in contractFor(m)!.def.functions" :key="f" class="muted">・{{ (slaveryRules.functions as Record<string, string>)[f] }}</li>
           <li v-for="e in contractFor(m)!.def.side_effects" :key="e" class="muted">・副作用：{{ e }}</li>
         </ul>
+        <div class="muted">
+          收益歸主人 {{ Math.round(contractFor(m)!.def.income_share * 100) }}%・談判 DC {{ contractFor(m)!.def.negotiate_dc }}・逃離 DC {{ contractFor(m)!.def.escape_dc }}・出城 DC {{ contractFor(m)!.def.exit_dc }}
+        </div>
         <div class="muted">目前的服從懲罰：-{{ contractFor(m)!.obedience }}</div>
         <button v-if="m.contract?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
       </div>

@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { DEGREE_NAME, situationalTotal } from '@/engine/actions'
-import { actionRules, ATTR_IDS, attrName, classEmoji, contractDef, raceEmoji, type Degree } from '@/engine/data'
+import { actionRules, ATTR_IDS, attrName, classEmoji, contractDef, raceEmoji, slaveryRules, type Degree } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { presentHere } from '@/engine/population'
-import { isBound, isFugitive } from '@/engine/party'
+import { isBound, isEnslaved, isFugitive } from '@/engine/party'
+import { atSafeSpot, contractTerms, markSummary, masterAllows, masterRefusedToday, type MarkChoice } from '@/engine/slavery'
+import { currentArea } from '@/engine/grid'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import { useSettings } from '@/stores/settings'
 import JudgeToggle from './JudgeToggle.vue'
+import MarkPicker from './MarkPicker.vue'
 
 const game = useGame()
 const settings = useSettings()
@@ -59,16 +62,31 @@ function doFree() {
 // ---- 奴隸身分 ----
 const bound = computed(() => isBound(s.value))
 const fugitive = computed(() => isFugitive(s.value))
+const enslaved = computed(() => isEnslaved(s.value))
 const contract = computed(() => {
   const c = s.value.party.find((m) => m.isPlayer)?.contract
-  return c ? { ...c, def: contractDef(c.kind) } : null
+  return c ? { ...c, def: contractTerms(c), summary: markSummary(c) } : null
 })
+const safe = computed(() => atSafeSpot(s.value))
+// 在聚落裡、主人今天還沒同意出城：可以請求
+const inTown = computed(() => currentArea(s.value).kind === 'settlement')
+const permitted = computed(() => masterAllows(s.value))
+const refused = computed(() => masterRefusedToday(s.value))
 const freedomText = ref('')
-function doFreedom(kind: 'negotiate' | 'escape') {
+function doFreedom(kind: 'negotiate' | 'escape' | 'master_permit') {
   const u = parseUse(use.value)
   void game.perform({ kind, text: freedomText.value, ...(u ? { use: u } : {}) })
   freedomText.value = ''
   use.value = ''
+}
+
+// ---- 刻印 ----
+const pendingMark = computed(() => s.value.pendingMark)
+const markText = ref('')
+const markChoice = ref<MarkChoice>('labor')
+function doMarking() {
+  void game.perform({ kind: 'marking', text: markText.value })
+  markText.value = ''
 }
 </script>
 
@@ -102,27 +120,54 @@ function doFreedom(kind: 'negotiate' | 'escape') {
     <p v-if="!settings.ready('judge')" class="small muted">「主動行動判定」的模型來源尚未設定，只能依規則判定。</p>
   </section>
 
+  <section v-else-if="pendingMark" class="panel pending">
+    <h3>🔥 刻下契約印記</h3>
+    <template v-if="!pendingMark.rolled">
+      <p class="small">
+        {{ contract?.masterName || '主人' }}打算刻下<strong>{{ contractDef(pendingMark.intended).name }}</strong>：{{ contractDef(pendingMark.intended).mark }}
+      </p>
+      <p class="small muted">
+        刻印前還有一次機會（{{ attrName(slaveryRules.marking.attr) }}檢定）：描述你的態度與做法，AI 會依此決定能選哪些印記，或依你的行為描寫印記的樣子。
+        大成功可以自訂印記；失敗會換成更重的印記。
+      </p>
+      <textarea v-model="markText" rows="2" placeholder="例如：低頭順從，懇求用最輕的印記；或趁刻印師分心時掙扎" />
+      <button class="small primary" :disabled="game.judging" @click="doMarking">面對刻印</button>
+    </template>
+    <template v-else>
+      <p v-if="pendingMark.suggestion?.name || pendingMark.suggestion?.mark" class="small mark">
+        依你的行為，印記會是：{{ pendingMark.suggestion.name }} {{ pendingMark.suggestion.mark }}
+        <span class="muted">（選模板時套用這段名稱與描述，數值依模板）</span>
+      </p>
+      <p class="small muted">選擇要刻上的印記{{ pendingMark.custom ? '，或自訂' : '' }}：</p>
+      <MarkPicker :key="pendingMark.allowed?.join()" v-model="markChoice" :allowed="pendingMark.allowed" :allow-custom="pendingMark.custom" :base="pendingMark.intended" />
+      <button class="small primary" @click="game.chooseMark(markChoice)">刻下</button>
+    </template>
+  </section>
+
   <section v-else class="panel">
     <div class="row head">
       <h3>🎲 主動行動</h3>
       <JudgeToggle />
     </div>
     <template v-if="contract && bound">
-      <p class="small mark">
-        頸上的{{ contract.def.name }}：{{ contract.def.mark }}<br />
-        <span class="muted">主人 {{ contract.masterName }}・服從懲罰 -{{ contract.obedience }}・{{ contract.def.side_effects.join('；') }}</span>
+      <p class="small mark pre">⛓️ {{ contract.summary }}</p>
+      <p v-if="inTown" class="small muted">
+        {{ permitted ? `${contract.masterName}今天同意你出城。` : refused ? `${contract.masterName}今天不准你離開這座城。` : `出城或旅行前要先請求${contract.masterName}同意（${attrName(slaveryRules.master_permit.attr)}檢定，印記越重越難）。` }}
       </p>
-      <textarea v-model="freedomText" rows="2" placeholder="描述你打算怎麼說服主人，或怎麼逃走" />
+      <textarea v-model="freedomText" rows="2" placeholder="描述你打算怎麼說服主人、用什麼理由請求出城，或怎麼逃走" />
       <AbilityPicker v-model="use" />
       <div class="row">
-        <button class="small" @click="doFreedom('negotiate')">談判解除契約</button>
-        <button class="small danger" @click="doFreedom('escape')">逃離主人</button>
+        <button v-if="inTown && !permitted" class="small" :disabled="refused || game.judging" @click="doFreedom('master_permit')">請求主人同意出城</button>
+        <button class="small" :disabled="!safe || game.judging" :title="safe ? '' : '要在旅店、安全房或神殿才能談判'" @click="doFreedom('negotiate')">談判解除契約</button>
+        <button class="small danger" :disabled="game.judging" @click="doFreedom('escape')">逃離主人</button>
       </div>
+      <p v-if="!safe" class="small muted">和主人談判要在安全的地方（旅店、安全房或神殿）；逃離隨時都可以。</p>
       <hr />
     </template>
     <p v-else-if="contract && fugitive" class="small mark">
       你是逃亡奴隸：頸上的{{ contract.def.name }}仍在。公會與神殿不接待你，旅店加價，每次休息都可能被{{ contract.masterName }}找到。
     </p>
+    <p v-else-if="contract && enslaved" class="small mark pre">⛓️ {{ contract.summary }}<br /><span class="muted">你沒有主人：印記還在，但沒有人牽著鏈子，行動不受限制。</span></p>
     <p class="small muted">
       用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，{{ aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）' }}。
     </p>
@@ -148,5 +193,6 @@ function doFreedom(kind: 'negotiate' | 'escape') {
 .outcomes { margin: 6px 0; display: grid; gap: 2px; }
 textarea { width: 100%; margin: 6px 0; }
 .mark { color: var(--accent-2); }
+.pre { white-space: pre-line; }
 hr { border: none; border-top: 1px dashed var(--border); margin: 10px 0; }
 </style>

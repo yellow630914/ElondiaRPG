@@ -1,7 +1,8 @@
 // 遊戲狀態、時間與報告提交。
 
 import { baseAttrs, createPlayer, gainXp, recalc } from './character'
-import { abilities, attributeRules, classDef, contractDef, locationById, type Attrs } from './data'
+import { abilities, attributeRules, classDef, locationById, type Attrs } from './data'
+import { contractTerms, type SlaveStart } from './slavery'
 import { ensureRelationship, recordMemory, setAffinity } from './social'
 import { Rng } from './rng'
 import type { GameState, GameTime, InventoryItem, Report } from './types'
@@ -20,6 +21,8 @@ export interface NewGameOptions {
   gender?: string
   appearance?: string
   background?: string
+  /** 以奴隸身分開始（主人與印記，見 engine/slavery.ts） */
+  slave?: SlaveStart
 }
 
 /** 各種族的預設出生地 */
@@ -183,8 +186,8 @@ export function commitReport(state: GameState, report: Report): Report {
   // 奴隸契約「收益歸屬」：主角賺到的錢有一部分歸主人（成為奴隸的那份報告除外）
   const pc = state.party.find((m) => m.isPlayer)
   if (pc?.contract && !pc.status.includes('fugitive') && (c.money_cc ?? 0) > 0 && !c.companions?.some((x) => x.npc === 'pc' && x.change === 'enslaved')) {
-    const def = contractDef(pc.contract.kind)
-    const taken = def.functions.includes('income') ? Math.floor(c.money_cc! * def.income_share) : 0
+    const def = contractTerms(pc.contract)
+    const taken = pc.contract.master && def.functions.includes('income') ? Math.floor(c.money_cc! * def.income_share) : 0
     if (taken > 0) {
       c.money_cc! -= taken
       c.master_share_cc = taken

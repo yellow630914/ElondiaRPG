@@ -204,13 +204,39 @@ export interface Character {
 }
 
 export interface ContractRef {
+  /** 印記的模板 id（data/rules/slavery.json 的 contracts），自訂的印記為 custom */
   kind: string
-  /** 主人的 id；主角為 pc */
+  /** 主人的 id；主角為 pc；無主為空字串 */
   master: string
   masterName: string
   /** 目前的服從懲罰（受罰可能加重） */
   obedience: number
   since: GameTime
+  /** 這枚印記的條款（自訂的印記，或刻印時決定的版本）；沒有時用模板的值 */
+  terms?: MarkTerms
+}
+
+/** 契約印記的條款：名稱、描述與各項數值（描述會給 AI 判定與寫正文） */
+export interface MarkTerms {
+  name: string
+  /** 印記的外觀與感覺 */
+  mark: string
+  /** 收益歸屬：主角賺到的錢歸主人的比例（0～1） */
+  income_share: number
+  negotiate_dc: number
+  escape_dc: number
+  /** 出城、旅行時向主人請求同意的檢定難度 */
+  exit_dc: number
+  /** 逃亡時每次休息被找到的機率（0～1） */
+  recapture_chance: number
+  /** 逃離時的反噬：失去最大生命值的比例 */
+  escape_hp_ratio: number
+  /** 對主人的檢定懲罰（初始值） */
+  obedience_penalty: number
+  side_effects: string[]
+  functions: string[]
+  /** 魔力封印：最多能施放的法術環 */
+  spell_cap?: number
 }
 
 /** 遊戲中登場的 NPC（含程式生成的）；不在隊伍時保存角色資料，再次入隊時沿用 */
@@ -228,6 +254,19 @@ export interface NpcRecord extends NpcDef {
   /** 同行的隊伍（一起遭遇） */
   group?: string
   character?: Character
+}
+
+export interface PendingMark {
+  /** 主人原本打算刻的印記模板 */
+  intended: string
+  /** 刻印檢定之後可以選的印記模板（還沒擲骰時為空） */
+  allowed?: string[]
+  /** 可以自訂印記（大成功） */
+  custom?: boolean
+  /** 刻印的檢定擲過了 */
+  rolled?: boolean
+  /** AI 依行為提議的印記描述 */
+  suggestion?: { name?: string; mark?: string }
 }
 
 export interface Standoff {
@@ -359,6 +398,13 @@ export interface GameState {
   pendingLeave?: { mode: 'sneak' | 'formal' }
   /** 已擲骰、等待判定的主動行動 */
   pendingAction?: ActionPending
+  /** 剛成為奴隸、等待刻印的檢定與選擇（見 engine/slavery.ts） */
+  pendingMark?: PendingMark
+  /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */
+  masterPass?: Record<string, number>
+  masterRefuse?: Record<string, number>
+  /** 上一次主人突發事件的時間（小時數，避免太頻繁） */
+  lastMasterEvent?: number
   /** 和敵對冒險者的對峙（見 engine/encounters.ts） */
   standoff?: Standoff
   /** 今天已經避開或談妥的敵對 NPC：id → 日期 */

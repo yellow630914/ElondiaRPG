@@ -7,12 +7,13 @@ import * as rest from '@/engine/rest'
 import * as trade from '@/engine/trade'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
-import type { ShopType } from '@/engine/data'
+import { slaveryRules, type ShopType } from '@/engine/data'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
 import * as population from '@/engine/population'
 import * as encounters from '@/engine/encounters'
 import * as security from '@/engine/security'
+import * as slavery from '@/engine/slavery'
 import * as social from '@/engine/social'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
@@ -73,7 +74,8 @@ export interface NarrationState {
 /** 移動之後：附近有敵對的冒險者時開始對峙 */
 function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   if (r.combat || r.report) return r
-  const report = encounters.checkHostiles(s)
+  // 敵對的冒險者優先；被主人帶著時可能有主人的突發事件
+  const report = encounters.checkHostiles(s) ?? slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance)
   return report ? { report } : r
 }
 
@@ -297,6 +299,7 @@ export const useGame = defineStore('game', () => {
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
     grid.enterLocation(state.value)
     population.ensureRoster(state.value, state.value.location)
+    if (profile.slave) slavery.startAsSlave(state.value, profile.slave)
     narrations.value = {}
     usage.value = {}
     error.value = null
@@ -561,7 +564,8 @@ export const useGame = defineStore('game', () => {
     declinePartyOffer: (id: string) => run((s) => companions.declinePartyOffer(s, id)),
     requestLeave: (mode: 'sneak' | 'formal' | null) => run((s) => companions.requestLeave(s, mode)),
     marketStock: (kind: companions.MarketKind) => run((s) => companions.marketStock(s, kind)) ?? [],
-    buySlave: (kind: companions.MarketKind, id: string) => run((s) => companions.buySlave(s, kind, id)),
+    buySlave: (kind: companions.MarketKind, id: string, mark?: slavery.MarkChoice) => run((s) => companions.buySlave(s, kind, id, mark)),
+    chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
     offerSelf: (kind: companions.MarketKind) => run((s) => companions.offerSelf(s, kind)),
     releaseSlave: (id: string) => run((s) => companions.releaseSlave(s, id)),
     acceptSuggestion: (id: string, text?: string) => run((s) => social.acceptSuggestion(s, id, text)),

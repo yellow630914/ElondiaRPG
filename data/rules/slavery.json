@@ -61,6 +61,7 @@
       "negotiate_dc": 18,
       "escape_dc": 17,
       "recapture_chance": 0.1,
+      "exit_dc": 12,
       "side_effects": ["違抗主人的命令時印記會刺痛", "見到主人時頸部微微發熱"],
       "escape_effects": { "hp_ratio": 0.1 }
     },
@@ -73,6 +74,7 @@
       "negotiate_dc": 20,
       "escape_dc": 19,
       "recapture_chance": 0.2,
+      "exit_dc": 14,
       "side_effects": ["無法對主人揮出武器", "離主人太遠時鎖鏈紋會收緊，呼吸困難"],
       "escape_effects": { "hp_ratio": 0.3 }
     },
@@ -86,6 +88,7 @@
       "negotiate_dc": 22,
       "escape_dc": 22,
       "recapture_chance": 0.35,
+      "exit_dc": 16,
       "side_effects": ["法陣抽取魔力，最多只能施放 1 環法術", "主人能感知印記的位置"],
       "escape_effects": { "hp_ratio": 0.4 }
     }
@@ -112,5 +115,53 @@
     "fugitive": { "inn_mult": 2, "inn_recapture_mult": 1.5 }
   },
 
-  "release_affinity": 15
+  "release_affinity": 15,
+
+  "custom_mark": {
+    "$comment": "自訂印記（建立角色、買奴隸時）的數值範圍；超出的會被夾回範圍內。",
+    "income_share": [0, 1],
+    "negotiate_dc": [8, 30],
+    "escape_dc": [8, 30],
+    "exit_dc": [5, 25],
+    "recapture_chance": [0, 0.6],
+    "escape_hp_ratio": [0, 0.8],
+    "obedience_penalty": [0, 8],
+    "name_chars": 12,
+    "mark_chars": 160,
+    "side_effect_chars": 40,
+    "side_effects": 4
+  },
+
+  "master_permit": {
+    "$comment": "主角身為奴隸時，出城（到近郊）或旅行前要先得到主人同意：魅力檢定，DC = 印記的 exit_dc + 目前的服從懲罰 - floor(主人親密度 / affinity_step)。可以描述請求的理由，交給 AI 判定合理性。同意後當天在這座城不用再問；被拒絕當天就不能再問。大失敗會受到輕度懲罰。",
+    "attr": "cha",
+    "hours": 0.25,
+    "affinity_step": 20
+  },
+
+  "safe_spots": ["inn", "safe", "temple"],
+
+  "marking": {
+    "$comment": "成為奴隸時的刻印檢定（可以描述自己的行為，例如討好、反抗、哀求）：DC = base + floor(主人等級 / 2)。結果決定可以選的印記：大成功可以任選或自訂，成功可以選主人原本打算的或更輕的，部分成功就是主人原本打算的，失敗加重一級，大失敗最重而且服從懲罰 +1。印記由輕到重依 severity。",
+    "attr": "cha",
+    "base": 12,
+    "severity": ["labor", "combat", "arcane"]
+  },
+
+  "slave_target_advantage": "主角對自己的奴隸主動行動時，奴隸抗拒的檢定處於劣勢：主角擲兩次取較高的。",
+
+  "master_events": {
+    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時。effects 用報酬模板（npc 寫 master 代表主人）；有 check 時先檢定，失敗才套用 fail_effects。",
+    "step_chance": 0.02,
+    "travel_chance": 0.35,
+    "cooldown_hours": 6,
+    "events": [
+      { "id": "errand", "weight": 4, "text": "{master}塞給你一張清單，要你去替他跑腿採買。", "effects": [{ "type": "money", "amount": -15 }], "hours": 1 },
+      { "id": "show_off", "weight": 3, "text": "{master}在旁人面前炫耀你頸上的印記，要你乖乖站好。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "表現順從" }], "hours": 0.5 },
+      { "id": "bad_mood", "weight": 3, "text": "{master}心情很差，把怒氣出在你身上。", "check": { "attr": "cha", "dc": 13, "success": "你低聲下氣地應付過去。" }, "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "惹主人不快" }], "hours": 0.25 },
+      { "id": "reward", "weight": 2, "text": "{master}難得心情好，賞了你一點零錢。", "effects": [{ "type": "money", "amount": 20 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "被賞賜" }], "hours": 0.1 },
+      { "id": "carry", "weight": 3, "text": "{master}把沉重的行李都丟給你扛。", "check": { "attr": "str", "dc": 12, "success": "你咬著牙扛了下來。" }, "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }], "hours": 0.5 },
+      { "id": "test_loyalty", "weight": 2, "text": "{master}故意把錢袋放在你面前，看你會不會動心。", "check": { "attr": "fai", "dc": 12, "success": "你連看都沒看，{master}滿意地點點頭。" }, "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "通過考驗" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "多看了錢袋一眼" }], "hours": 0.25 }
+    ]
+  }
 }

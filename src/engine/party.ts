@@ -2,11 +2,12 @@
 // 這些函式直接修改狀態，並把變化記在報告的 changes 裡；報告由呼叫端提交。
 
 import { snapshot } from './character'
-import { combatRules, companionRules, contractDef, locationById, npcs as namedNpcs, slaveryRules, type Bond } from './data'
+import { combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, type Bond } from './data'
 import { characterFor, npcRecord, registerNpc } from './npcs'
 import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
-import type { Character, CompanionChange, ContractRef, GameState, NpcRecord, Report } from './types'
+import { contractTerms, makeContract, type MarkChoice } from './slavery'
+import type { Character, CompanionChange, ContractRef, GameState, MarkTerms, NpcRecord, Report } from './types'
 
 const JOIN_TEXT: Record<Bond, string> = {
   hired: '在酒館受雇加入隊伍的冒險夥伴。',
@@ -39,9 +40,9 @@ export function isFugitive(state: GameState): boolean {
   return pcOf(state).status.includes('fugitive')
 }
 
-/** 主角被主人帶著（有契約且沒有逃亡） */
+/** 主角被主人帶著（有契約、有主人、沒有逃亡） */
 export function isBound(state: GameState): boolean {
-  return isEnslaved(state) && !isFugitive(state)
+  return isEnslaved(state) && !!pcOf(state).contract!.master && !isFugitive(state)
 }
 
 export function assertFree(state: GameState, what = '這麼做') {
@@ -53,7 +54,8 @@ function recordChange(report: Report | undefined, change: CompanionChange) {
 }
 
 export interface JoinOptions {
-  contract?: string
+  /** 奴隸的印記：模板 id 或自訂的條款 */
+  contract?: MarkChoice
   group?: string
   reason?: string
 }
@@ -74,10 +76,7 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
   member.affinity = rel.affinity
   if (opts.group) member.group = opts.group
   if (bond === 'slave') {
-    const kind = opts.contract ?? 'labor'
-    const def = contractDef(kind)
-    const pc = pcOf(state)
-    member.contract = { kind, master: 'pc', masterName: pc.name, obedience: def.obedience_penalty, since: { ...state.time } }
+    member.contract = makeContract(opts.contract ?? 'labor', 'pc', pcOf(state).name, state.time)
     member.status.push('slave_mark')
   }
   if (state.npcs?.[rec.id]) delete state.npcs[rec.id]!.character
@@ -150,18 +149,20 @@ export function conditionPenalty(c: Character): number {
  * 主角成為奴隸：原本的同伴與主角分開（離隊），主人與他的隊員入隊。
  * 主角頸上刻下契約印記。
  */
-export function enslavePlayer(state: GameState, master: NpcRecord, contractKind: string, report?: Report, members: NpcRecord[] = []) {
+export function enslavePlayer(state: GameState, master: NpcRecord | null, contract: MarkChoice, report?: Report, members: NpcRecord[] = []) {
   const pc = pcOf(state)
   if (pc.contract) throw new Error('主角已經是奴隸了')
-  const def = contractDef(contractKind)
   for (const m of [...state.party]) if (!m.isPlayer) leaveParty(state, m.id, report, '與主角分開')
   delete state.pendingLeave
   state.partyOffers = []
-  joinParty(state, master, 'leader', report, { group: master.id })
-  for (const m of members) if (partyRoom(state) > 0) joinParty(state, m, 'ally', report, { group: master.id })
-  pc.contract = { kind: contractKind, master: master.id, masterName: master.name, obedience: def.obedience_penalty, since: { ...state.time } }
+  if (master) {
+    joinParty(state, master, 'leader', report, { group: master.id })
+    for (const m of members) if (partyRoom(state) > 0) joinParty(state, m, 'ally', report, { group: master.id })
+  }
+  // 無主：契約印記還在，但沒有人帶著主角
+  pc.contract = makeContract(contract, master?.id ?? '', master?.name ?? '', state.time)
   addCondition(pc, 'slave_mark', report)
-  recordChange(report, { npc: 'pc', name: pc.name, change: 'enslaved', reason: `${def.name}，主人：${master.name}` })
+  recordChange(report, { npc: 'pc', name: pc.name, change: 'enslaved', reason: `${contractTerms(pc.contract).name}，${master ? `主人：${master.name}` : '無主'}` })
 }
 
 /** 解除主角的契約（談判成功、事件獎勵）。主人仍在隊伍中，關係變成普通的隊長與隊員。 */
@@ -235,6 +236,6 @@ export function setHp(state: GameState, c: Character, hp: number, report?: Repor
   if (snap) snap.hp = [snap.hp?.[0] ?? before, c.hp, c.maxHp]
 }
 
-export function contractOf(c: Character): (ContractRef & { def: ReturnType<typeof contractDef> }) | undefined {
-  return c.contract ? { ...c.contract, def: contractDef(c.contract.kind) } : undefined
+export function contractOf(c: Character): (ContractRef & { def: MarkTerms }) | undefined {
+  return c.contract ? { ...c.contract, def: contractTerms(c.contract) } : undefined
 }

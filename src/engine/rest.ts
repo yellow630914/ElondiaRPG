@@ -8,12 +8,13 @@
 
 import { mod, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
-import { classDef, companionRules, contractDef, locationById, regionById, wildEncounters, type DungeonLayerId } from './data'
+import { classDef, companionRules, locationById, regionById, wildEncounters, type DungeonLayerId } from './data'
 import { currentArea, currentCell, DUNGEON_LAYERS } from './grid'
 import { formatMoney } from './money'
 import { clearInviteCooldowns } from './companions'
 import { addAffinity, isBound, isFugitive, leaderGroup, leaderOf, leaveParty, pcOf, punish, recapturePlayer, removeCondition } from './party'
 import { roll, withBonus, type Rng } from './rng'
+import { contractTerms } from './slavery'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Character, GameState, GameTime, Report } from './types'
 
@@ -97,6 +98,7 @@ export function autoHitDice(c: Character): number {
 export function shortRest(state: GameState, spend?: Record<string, number>): Report | CombatState {
   if (state.combat) throw new Error('戰鬥中不能休息')
   if (state.standoff) throw new Error('先處理眼前的對峙')
+  if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   const area = currentArea(state)
   const ambushed = withRng(state, (rng) => rng.chance(ambushChance(state)))
   if (ambushed) {
@@ -220,7 +222,7 @@ export function restChecks(state: GameState, report: Report, place: 'short' | 'i
 
   const pc = pcOf(state)
   if (pc.contract && isFugitive(state)) {
-    const def = contractDef(pc.contract.kind)
+    const def = contractTerms(pc.contract)
     if (def.functions.includes('tracking')) {
       const mult = place === 'inn' ? 1.5 : 1
       const caught = withRng(state, (rng) => rng.chance(def.recapture_chance * mult))

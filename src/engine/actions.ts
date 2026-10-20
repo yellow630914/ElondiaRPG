@@ -15,10 +15,11 @@ import {
   applyBlackMarket, applyEscape, applyHaggle, applyHire, applyInvite, applyNegotiate, setupFor, type MarketKind,
 } from './companions'
 import {
-  actionRules, ATTR_IDS, attrName, locationById, regionById, type ActionKind, type AttrId, type Degree, type EffectKind,
+  actionRules, ATTR_IDS, attrName, locationById, regionById, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
+import { applyMarking, applyPermit } from './slavery'
 import { applyInteraction } from './interactions'
 import type { NpcSpec } from './npcs'
 import { addAffinity, conditionPenalty, pcOf } from './party'
@@ -47,6 +48,10 @@ export interface ActionInput {
 export interface ActionPending extends ActionInput {
   id: string
   natural: number
+  /** 擲兩次取高（優勢）時的兩個骰值 */
+  rolls?: number[]
+  /** 優勢的原因 */
+  advantage?: string
   base_dc: number
   /** 規則判定時使用的屬性 */
   attr: AttrId
@@ -107,12 +112,16 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     used = useAbilityOutOfCombat(user, input.use.ability)
     situational.push({ label: `${user.name}的【${used.ability.name}】`, value: used.bonus })
   }
-  const natural = withRng(state, (rng) => roll(rng, '1d20').total)
+  // 對自己的奴隸行動：奴隸抗拒時處於劣勢，主角擲兩次取較高的
+  const ownSlave = !!input.target && state.party.some((m) => m.id === input.target && m.bond === 'slave' && m.contract?.master === 'pc')
+  const rolls = withRng(state, (rng) => (ownSlave ? [roll(rng, '1d20').total, roll(rng, '1d20').total] : [roll(rng, '1d20').total]))
+  const natural = Math.max(...rolls)
   const pending: ActionPending = {
     ...input,
     text,
     id: `a-${state.nextReportNo}`,
     natural,
+    ...(ownSlave ? { rolls, advantage: '對方是主角的奴隸，抗拒時處於劣勢' } : {}),
     base_dc: setup.dc,
     attr: kind.attr,
     modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(pc.attrs[a]) + proficiency(pc.level)])) as Record<AttrId, number>,
@@ -137,7 +146,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 const EFFECT_OF: Partial<Record<RewardEffect['type'], EffectKind>> = {
   affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
-  money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp',
+  money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp', mark: 'mark',
 }
 
 /**
@@ -245,6 +254,14 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         effects.push({ type: 'ability', target, ...(ability ? { ability } : {}) })
         break
       }
+      case 'mark': {
+        // 刻印時 AI 依主角的行為提議的印記名稱與描述（只是文字）
+        if (effects.some((y) => y.type === 'mark')) break
+        const name = clipText(x.name, slaveryRules.custom_mark.name_chars)
+        const text = clipText(x.text ?? x.mark, slaveryRules.custom_mark.mark_chars)
+        if (name || text) effects.push({ type: 'mark', ...(name ? { name } : {}), ...(text ? { text } : {}) })
+        break
+      }
       case 'meet': {
         // 只有在旅店長休、對象是同旅館的人時才能認識新的人
         if (p.target !== 'guests' || effects.some((y) => y.type === 'meet')) break
@@ -346,7 +363,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     if (!report.party.some((x) => x.id === rel.id)) report.others = [{ id: rel.id, name: rel.name }]
   }
   report.timeline = [{
-    seq: 1, time: report.time.start, actor: 'pc', action: `${kind.name}（${attrName(attr)}）`,
+    seq: 1, time: report.time.start, actor: 'pc', action: `${kind.name}（${attrName(attr)}${p.rolls ? `・優勢 ${p.rolls.join('、')}` : ''}）`,
     ...(p.target && !p.target.includes(':') ? { target: p.target } : {}),
     roll: { dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc },
     result: degree === 'fail' ? 'fail' : degree,
@@ -386,6 +403,8 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'attack': return applyInteraction(state, report, p.kind, p.target!, degree, p.item)
     case 'bluff':
     case 'intimidate': return applyStandoff(state, degree)
+    case 'master_permit': return applyPermit(state, report, degree)
+    case 'marking': return applyMarking(state, degree)
     case 'free':
     case 'rest_talk': return ''
   }

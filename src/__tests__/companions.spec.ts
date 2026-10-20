@@ -15,6 +15,7 @@ import { isFugitive, leaderOf } from '@/engine/party'
 import { hitDiceLeft, longRest, shortRest } from '@/engine/rest'
 import { acceptSuggestion, addMemory, addSuggestions, compactMemories, editMemory, ensureRelationship, setAffinity } from '@/engine/social'
 import { applyRosterFlavor } from '@/engine/population'
+import { chooseMark } from '@/engine/slavery'
 import { addHours, commitReport, newGame, withRng } from '@/engine/state'
 import { acceptQuest, guildQuests, recruit } from '@/engine/town'
 import type { GameState, Report } from '@/engine/types'
@@ -326,7 +327,14 @@ describe('the player as a slave', () => {
     for (let seed = 1; seed < 60; seed++) {
       const state = game(seed, { location: 'rhineburg', cha: 16 })
       offerSelf(state, 'public')
-      if (state.party[0]!.contract) return state
+      if (state.party[0]!.contract) {
+        // 刻印檢定：部分成功 = 主人原本打算的印記
+        prepareAction(state, { kind: 'marking', text: '' })
+        forceRoll(state, 10)
+        resolveAction(state, null)
+        chooseMark(state, state.pendingMark!.allowed![0]!)
+        return state
+      }
     }
     throw new Error('nobody bought')
   }
@@ -351,6 +359,8 @@ describe('the player as a slave', () => {
 
   it('negotiates freedom: the master erases the contract', () => {
     const state = enslaved()
+    expect(() => prepareAction(state, { kind: 'negotiate', text: '' })).toThrow('安全的地方')
+    standOn(state, 'inn')
     const p = prepareAction(state, { kind: 'negotiate', text: '提出用三次委託的報酬換取自由' })
     expect(p.situational[0]?.value).toBeLessThan(0)
     forceRoll(state, 20)

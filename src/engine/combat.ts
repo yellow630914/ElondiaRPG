@@ -19,6 +19,7 @@ import {
   type ItemDef, type LuckRoll, type Mods, type WeaponDef,
 } from './data'
 import { characterFor, npcRecord, registerNpc } from './npcs'
+import { contractTerms } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
@@ -183,7 +184,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
 }
 
 function spellCap(c: Character): number {
-  const cap = c.contract ? contractDef(c.contract.kind).spell_cap : undefined
+  const cap = c.contract ? contractTerms(c.contract).spell_cap : undefined
   return cap ?? 9
 }
 

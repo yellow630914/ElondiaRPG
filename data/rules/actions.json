@@ -63,6 +63,10 @@
     "steal": { "name": "偷竊", "attr": "dex", "base": 12, "hours": 0.25, "effects": ["relationship_text", "flag"],
       "$comment": "規則見 data/rules/security.json 的 steal：偷到的錢由程式決定，AI 只能補充關係文字與旗標" },
     "attack": { "name": "偷襲", "attr": "dex", "base": 12, "hours": 0, "effects": ["relationship_text", "flag"],
-      "$comment": "只能攻擊冒險者。規則見 data/rules/security.json 的 attack" }
+      "$comment": "只能攻擊冒險者。規則見 data/rules/security.json 的 attack" },
+    "master_permit": { "name": "請求主人同意", "attr": "cha", "hours": 0.25, "effects": ["relationship_text", "flag", "affinity"],
+      "$comment": "身為奴隸時出城或旅行前，向主人請求同意。DC 見 slavery.json 的 master_permit（依印記的 exit_dc）" },
+    "marking": { "name": "刻印", "attr": "cha", "hours": 0.5, "effects": ["relationship_text", "flag", "mark"],
+      "$comment": "成為奴隸時的刻印檢定，結果決定可以選的印記（見 slavery.json 的 marking）。mark：AI 依主角的行為提議印記的名稱與描述（只是文字，數值依模板）" }
   }
 }

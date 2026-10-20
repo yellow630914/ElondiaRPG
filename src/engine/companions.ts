@@ -18,6 +18,7 @@ import { formatMoney } from './money'
 import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { hireable, presentHere } from './population'
 import { setupStandoff } from './encounters'
+import { atSafeSpot, contractTerms, setupMarking, setupPermit, startMarking, type MarkChoice } from './slavery'
 import { setupInteraction } from './interactions'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, isBound, isEnslaved, joinParty,
@@ -311,7 +312,8 @@ function listing(state: GameState, kind: MarketKind, npcId: string): SlaveListin
   return l
 }
 
-export function buySlave(state: GameState, kind: MarketKind, npcId: string): Report {
+/** 買下奴隸；可以選擇要刻的印記（模板或自訂），沒選時用市場原本的 */
+export function buySlave(state: GameState, kind: MarketKind, npcId: string, mark?: MarkChoice): Report {
   assertFree(state, '買奴隸')
   const l = listing(state, kind, npcId)
   if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
@@ -319,12 +321,12 @@ export function buySlave(state: GameState, kind: MarketKind, npcId: string): Rep
   const def = marketDef(state, kind)
   const rec = npcRecord(state, npcId)!
   const report = socialReport(state, 1, def.name)
-  joinParty(state, rec, 'slave', report, { contract: l.contract, reason: '買下' })
+  const member = joinParty(state, rec, 'slave', report, { contract: mark ?? l.contract, reason: '買下' })
   report.changes.money_cc = -l.price_cc
   const markets = state.markets![`${state.location}/${kind}`]!
   markets.stock = markets.stock.filter((x) => x.npc !== npcId)
-  const c = contractDef(l.contract)
-  report.outcome.summary = `在${def.name}以 ${formatMoney(l.price_cc)} 買下${rec.name}，在頸上刻下${c.name}的印記。`
+  const c = contractTerms(member.contract!)
+  report.outcome.summary = `在${def.name}以 ${formatMoney(l.price_cc)} 買下${rec.name}，在頸上刻下${c.name}的印記：${c.mark}`
   report.narration = { pov: 'second_person', length: 'short', focus: [`${rec.name}的身世與第一印象`, '契約印記'] }
   if (kind === 'black') report.outcome.tags = ['黑市']
   return commitReport(state, report)
@@ -393,14 +395,15 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
   }
   const share = Math.round(deal.price * s.share)
   enslavePlayer(state, deal.master, deal.contract, report)
+  // 刻印前還有一次檢定：主角的表現決定最後刻上哪一種印記
+  startMarking(state, deal.contract)
   report.changes.money_cc = share
-  const c = contractDef(deal.contract)
   report.outcome = {
     result: 'success',
-    summary: `${deal.master.name}以 ${formatMoney(deal.price)} 買下了你，你拿到 ${formatMoney(share)} 的賣身錢。頸上被刻下${c.name}的印記：${c.mark}`,
+    summary: `${deal.master.name}以 ${formatMoney(deal.price)} 買下了你，你拿到 ${formatMoney(share)} 的賣身錢。${deal.master.name}打算在你頸上刻下${contractDef(deal.contract).name}。`,
     tags: ['成為奴隸'],
   }
-  report.narration = { pov: 'second_person', length: 'medium', focus: ['主人的模樣與態度', '契約印記刻下的過程'] }
+  report.narration = { pov: 'second_person', length: 'medium', focus: ['主人的模樣與態度', '即將刻下契約印記'] }
   return commitReport(state, report)
 }
 
@@ -408,7 +411,7 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
 export function negotiateDc(state: GameState): number {
   const pc = pcOf(state)
   if (!pc.contract || !isBound(state)) throw new Error('你不是被主人帶著的奴隸')
-  const def = contractDef(pc.contract.kind)
+  const def = contractTerms(pc.contract)
   const masterAff = state.relationships?.[pc.contract.master]?.affinity ?? 0
   const bonus = state.flags['negotiate_bonus'] ? 2 : 0
   return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus
@@ -417,7 +420,7 @@ export function negotiateDc(state: GameState): number {
 export function escapeDc(state: GameState): number {
   const pc = pcOf(state)
   if (!pc.contract || !isBound(state)) throw new Error('你不是被主人帶著的奴隸')
-  return contractDef(pc.contract.kind).escape_dc
+  return contractTerms(pc.contract).escape_dc
 }
 
 /** 對主人的檢定都受到服從懲罰 */
@@ -449,11 +452,11 @@ export function applyNegotiate(state: GameState, report: Report, degree: Degree)
 
 export function applyEscape(state: GameState, report: Report, degree: Degree): string {
   const pc = pcOf(state)
-  const def = contractDef(pc.contract!.kind)
+  const def = contractTerms(pc.contract!)
   const master = pc.contract!.masterName
   if (degree === 'critical' || degree === 'success' || degree === 'partial') {
     const mult = degree === 'critical' ? 0.5 : degree === 'partial' ? 2 : 1
-    const loss = Math.ceil(pc.maxHp * def.escape_effects.hp_ratio * mult)
+    const loss = Math.ceil(pc.maxHp * def.escape_hp_ratio * mult)
     playerEscapes(state, report)
     if (loss > 0) setHp(state, pc, pc.hp - loss, report)
     const pain = def.functions.includes('tether') ? '鎖鏈紋收緊，勒得你幾乎無法呼吸' : '印記一陣灼痛'
@@ -544,7 +547,12 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
         outcomes: { critical: '找到黑市（如果這裡有）', success: '找到黑市（如果這裡有）', partial: '得到一點線索', fail: '沒人透露', fumble: '被衛兵盯上（聲望 -1）' },
       }
     }
+    case 'master_permit':
+      return setupPermit(state)
+    case 'marking':
+      return setupMarking(state)
     case 'negotiate': {
+      if (!atSafeSpot(state)) throw new Error('和主人談判要在安全的地方（旅店、安全房或神殿）')
       const master = pc.contract?.masterName
       return {
         dc: negotiateDc(state), targetName: master, situational: [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }],
@@ -553,13 +561,13 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       }
     }
     case 'escape': {
-      const def = contractDef(pc.contract?.kind ?? 'labor')
+      const def = contractTerms(pc.contract ?? { kind: 'labor' })
       return {
         dc: escapeDc(state), targetName: pc.contract?.masterName, situational: [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }],
         scene: locationById(state.location).name,
         outcomes: {
           critical: `逃走，契約仍在（成為逃亡奴隸）；印記反噬減半`,
-          success: `逃走，契約仍在（成為逃亡奴隸）；印記反噬 ${Math.round(def.escape_effects.hp_ratio * 100)}% 生命值`,
+          success: `逃走，契約仍在（成為逃亡奴隸）；印記反噬 ${Math.round(def.escape_hp_ratio * 100)}% 生命值`,
           partial: `逃走但受重傷（印記反噬加倍）`,
           fail: '被發現，輕度懲罰',
           fumble: '當場被抓，嚴厲懲罰，契約束縛加重',
