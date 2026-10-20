@@ -34,6 +34,8 @@ export interface PromptConfig {
   customLore: LoreItem[]
   /** 判定請求也注入世界書（常駐條目放前段、觸發條目放後段） */
   loreInJudge: boolean
+  /** 玩家修改過的敘事規則；沒有時用預設（DEFAULT_NARRATION_RULES） */
+  narrationRules?: string
 }
 
 export const TARGET_NAME: Record<PromptTarget, string> = { narration: '敘事', judge: '判定' }
@@ -132,6 +134,7 @@ export function normalizeConfig(raw: unknown): PromptConfig {
     lore: r.lore && typeof r.lore === 'object' ? r.lore : {},
     customLore: Array.isArray(r.customLore) ? r.customLore.filter((e) => e && typeof e.uid === 'number') : [],
     loreInJudge: !!r.loreInJudge,
+    ...(typeof r.narrationRules === 'string' && r.narrationRules.trim() ? { narrationRules: r.narrationRules } : {}),
   }
 }
 

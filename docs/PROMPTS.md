@@ -61,6 +61,8 @@ user（後段：每次不同）
 
 ### 規則（system 第一段）
 
+玩家可以在提示詞頁籤的「📜 敘事規則」直接修改這段（存在 `elondia.prompts` 的 `narrationRules`，沒有修改時用 `DEFAULT_NARRATION_RULES`），「恢復預設」清掉修改。代換：`{{language}}` 輸出語言、`{{currency}}` 貨幣說明、`{{player}}` 主角名；文風的編號接在最後一條規則之後。第 9 條 `<relationship_updates>` 的格式由程式讀取，改掉會讓人際關係更新失效。判定規則不開放修改。
+
 ```
 你是奇幻 RPG《埃隆迪亞大陸》的敘事者……
 

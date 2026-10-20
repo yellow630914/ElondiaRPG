@@ -62,6 +62,7 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     styles: activeEntries(o.config.styles, 'narration', name),
     instructions: activeEntries(o.config.custom, 'narration', name, 'system'),
     endNotes: activeEntries(o.config.custom, 'narration', name, 'end'),
+    ...(o.config.narrationRules ? { rules: o.config.narrationRules } : {}),
   })
   return { prompt, lore }
 }

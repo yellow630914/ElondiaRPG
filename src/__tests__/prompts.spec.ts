@@ -128,6 +128,25 @@ describe('prompt order for caching', () => {
   })
 })
 
+describe('narration rules', () => {
+  it('uses the default rules until the player edits them, and restores them', () => {
+    const state = game()
+    const def = composeNarration(state, combat, options()).prompt
+    expect(def.system).toContain('6. 使用繁體中文。')
+    expect(def.system).toContain('10. 文風')
+    expect(def.system).not.toContain('{{')
+    const config = { ...defaultPromptConfig(), narrationRules: '你是說書人，{{player}}是主角。\n1. 用{{language}}。\n2. 每段不超過三句。' }
+    const edited = composeNarration(state, combat, options({ config })).prompt
+    expect(edited.system).toContain('你是說書人，艾倫是主角。\n1. 用繁體中文。')
+    expect(edited.system).toContain('3. 文風')
+    expect(edited.system).not.toContain('不可新增報告沒有的戰利品')
+    // 空白或讀回來的空字串都用預設
+    expect(composeNarration(state, combat, options({ config: { ...config, narrationRules: '  ' } })).prompt.system).toBe(def.system)
+    expect(normalizeConfig({ narrationRules: '' }).narrationRules).toBeUndefined()
+    expect(normalizeConfig({ narrationRules: 'x' }).narrationRules).toBe('x')
+  })
+})
+
 describe('prompt config', () => {
   it('normalizes saved or imported settings', () => {
     expect(normalizeConfig(null).styles.length).toBeGreaterThan(1)

@@ -3,15 +3,16 @@ import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import type { Composed } from '@/narrator/compose'
 import { LORE_STATUS_NAME, type LoreItem, type LoreMode, type LoreSelection } from '@/narrator/lore'
 import { estimateTokens } from '@/narrator/promptConfig'
-import type { PromptSection } from '@/narrator/prompt'
+import { DEFAULT_NARRATION_RULES, type PromptSection } from '@/narrator/prompt'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { useSettings } from '@/stores/settings'
 import PromptEntryList from './PromptEntryList.vue'
 import { dateStamp, download } from './download'
 
-type Sub = 'styles' | 'lore' | 'custom' | 'data' | 'preview'
+type Sub = 'rules' | 'styles' | 'lore' | 'custom' | 'data' | 'preview'
 const SUBS: { id: Sub; label: string }[] = [
+  { id: 'rules', label: '📜 敘事規則' },
   { id: 'styles', label: '🎨 文風' },
   { id: 'lore', label: '📚 世界書' },
   { id: 'custom', label: '🧩 其他提示詞' },
@@ -28,7 +29,7 @@ const MODES: { id: LoreMode; label: string }[] = [
 const game = useGame()
 const prompts = usePrompts()
 const settings = useSettings()
-const sub = ref<Sub>('styles')
+const sub = ref<Sub>('rules')
 
 // ---- 預覽依據：哪一則日誌（敘事）、等待中的行動或範例行動（判定） ----
 const reports = computed(() => [...(game.state?.reports ?? [])].reverse().slice(0, 30))
@@ -64,6 +65,22 @@ watch(
   },
   { deep: true },
 )
+
+// ---- 敘事規則 ----
+// 沒有修改時存成 undefined（跟著預設走，之後更新遊戲時會拿到新的預設）
+const rulesText = computed({
+  get: () => prompts.config.narrationRules ?? DEFAULT_NARRATION_RULES,
+  set: (v: string) => {
+    // 清空時暫時保留空白（方便整段重寫），送出時用預設；重新載入後恢復成預設
+    if (v === DEFAULT_NARRATION_RULES) delete prompts.config.narrationRules
+    else prompts.config.narrationRules = v
+  },
+})
+const rulesEdited = computed(() => prompts.config.narrationRules !== undefined)
+
+function restoreRules() {
+  if (confirm('把敘事規則恢復成預設？你的修改會消失。')) delete prompts.config.narrationRules
+}
 
 // ---- 世界書 ----
 const loreBasis = ref<'narration' | 'judge'>('narration')
@@ -201,7 +218,7 @@ async function onImport(e: Event) {
 }
 
 function resetAll() {
-  if (confirm('把文風、其他提示詞與世界書的修改全部恢復成預設值？')) prompts.resetAll()
+  if (confirm('把敘事規則、文風、其他提示詞與世界書的修改全部恢復成預設值？')) prompts.resetAll()
 }
 </script>
 
@@ -224,8 +241,26 @@ function resetAll() {
       前段任何一個字改變，快取就要重新建立，所以請把常變動的指示放在後段。
     </p>
 
+    <!-- 敘事規則 -->
+    <section v-if="sub === 'rules'" class="panel">
+      <div class="row">
+        <h2>📜 敘事規則</h2>
+        <span v-if="rulesEdited" class="tag">已修改</span>
+        <span class="spacer" />
+        <button class="small" :disabled="!rulesEdited" @click="restoreRules">↩️ 恢復預設</button>
+      </div>
+      <p class="small muted">
+        「AI 細節描述」每次請求最前面的規則（判定主動行動用的是另一份判定規則，不受影響）。修改後立即套用到之後的敘事，可以到「👁️ 預覽」確認送出的內容。<br />
+        可用的代換：<code v-pre>{{language}}</code> 輸出語言、<code v-pre>{{currency}}</code> 貨幣說明、<code v-pre>{{player}}</code> 主角名。
+        開啟的文風會接在最後一條規則之後，編號自動接續。<br />
+        ⚠ 第 9 條的 <code>&lt;relationship_updates&gt;</code> 格式是遊戲用來讀取人際關係更新的，刪掉或改格式會讓這個功能失效；清空內容等於恢復預設。
+      </p>
+      <textarea v-model="rulesText" class="rules" rows="22" spellcheck="false" />
+      <p class="small muted">{{ rulesText.length }} 字・約 {{ estimateTokens(rulesText) }} tokens。規則放在前段（可以被快取），改動後第一次請求會重新建立快取。</p>
+    </section>
+
     <!-- 文風 -->
-    <section v-if="sub === 'styles'" class="panel">
+    <section v-else-if="sub === 'styles'" class="panel">
       <h2>🎨 文風</h2>
       <p class="small muted">開啟的文風會常駐在每次敘事與判定請求的前段：依序合併成一個 &lt;style&gt; 區塊，接在硬性規則的最後當作規則的一條（排在世界書前面），讓 AI 更確實遵守。可以同時開啟多個，例如一個整體風格加一個「多寫環境描寫」。</p>
       <PromptEntryList list="styles" />
@@ -382,7 +417,7 @@ function resetAll() {
     <div class="row footer small">
       <span class="muted">提示詞設定存在這個瀏覽器，所有存檔共用。</span>
       <span class="spacer" />
-      <button class="small" title="文風、其他提示詞、世界書的修改與判定設定，一次全部" @click="exportConfig">📤 匯出全部設定</button>
+      <button class="small" title="敘事規則、文風、其他提示詞、世界書的修改與判定設定，一次全部" @click="exportConfig">📤 匯出全部設定</button>
       <button class="small" title="會取代目前所有的提示詞設定" @click="fileInput?.click()">📥 匯入全部設定</button>
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onImport" />
       <button class="small danger" @click="resetAll">全部恢復預設</button>
@@ -416,6 +451,7 @@ label.check { display: inline-flex; gap: 4px; align-items: center; }
 .editor label { display: grid; gap: 4px; }
 .editor label.check { display: inline-flex; }
 .editor textarea { width: 100%; font-family: inherit; line-height: 1.6; }
+textarea.rules { width: 100%; font-family: inherit; line-height: 1.6; box-sizing: border-box; }
 pre {
   white-space: pre-wrap; word-break: break-word; background: var(--panel-2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 8px 10px; margin: 4px 0 8px; max-height: 420px; overflow: auto; font-size: 0.85rem; line-height: 1.6;
