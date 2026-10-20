@@ -27,9 +27,9 @@ import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
-import type { TokenUsage } from '@/narrator/providerInfo'
+import { providerInfo, type ProviderId, type TokenUsage } from '@/narrator/providerInfo'
 import { usePrompts } from './prompts'
-import { useSettings } from './settings'
+import { AI_FEATURES, useSettings, type AiFeature } from './settings'
 import {
   AUTO_SLOTS, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, type SaveData, type SlotMeta,
 } from './saves'
@@ -46,6 +46,38 @@ export interface UsageEntry {
   calls: number
   /** 輸入中讀取提示詞快取的部分 */
   cached?: number
+  /** 依來源分開的用量（哪個功能、哪個模型來源、服務與模型）；舊紀錄沒有 */
+  by?: UsagePart[]
+}
+
+/** 一次 AI 呼叫的來源：功能、模型來源的名稱、服務與模型 */
+export interface UsageOrigin {
+  feature: AiFeature
+  source: string
+  provider: ProviderId
+  model: string
+}
+
+export interface UsagePart extends UsageOrigin {
+  input: number
+  output: number
+  calls: number
+  cached?: number
+}
+
+function sameOrigin(a: UsageOrigin, b: UsageOrigin): boolean {
+  return a.feature === b.feature && a.source === b.source && a.provider === b.provider && a.model === b.model
+}
+
+/** 來源的顯示文字：「來源名（服務 模型）」；舊紀錄沒有記下來源 */
+export function usageSourceLabel(o: Pick<UsageOrigin, 'source' | 'provider' | 'model'>): string {
+  if (!o.provider) return '未記錄來源'
+  const service = [providerInfo(o.provider)?.name, o.model].filter(Boolean).join(' ')
+  return o.source ? `${o.source}（${service}）` : service
+}
+
+export function usageFeatureName(f: AiFeature): string {
+  return AI_FEATURES.find((x) => x.id === f)?.name ?? f
 }
 
 function readJson<T>(key: string): T | null {
@@ -160,22 +192,53 @@ export const useGame = defineStore('game', () => {
     return typeof x === 'object' && x !== null && 'report_id' in x
   }
 
-  function addUsage(key: string, u: TokenUsage) {
+  /** 記下一次呼叫的用量：日誌（或「其他」）的合計，以及依來源分開的明細 */
+  function addUsage(key: string, u: TokenUsage, origin: UsageOrigin) {
     const e = (usage.value[key] ??= { input: 0, output: 0, calls: 0 })
     e.input += u.input
     e.output += u.output
     e.calls += 1
     if (u.cached) e.cached = (e.cached ?? 0) + u.cached
+    const by = (e.by ??= [])
+    let part = by.find((x) => sameOrigin(x, origin))
+    if (!part) by.push((part = { ...origin, input: 0, output: 0, calls: 0 }))
+    part.input += u.input
+    part.output += u.output
+    part.calls += 1
+    if (u.cached) part.cached = (part.cached ?? 0) + u.cached
+  }
+
+  /** 這個功能現在用的來源（記在用量明細上） */
+  function originOf(feature: AiFeature, src: { name: string; provider: ProviderId; config: { model: string } }): UsageOrigin {
+    return { feature, source: src.name, provider: src.provider, model: src.config.model || providerInfo(src.provider).defaultModel || '' }
   }
 
   /** 收集一次呼叫的用量；呼叫結束後再決定記在哪一則日誌 */
-  function usageCollector() {
+  function usageCollector(origin: UsageOrigin) {
     const got: TokenUsage[] = []
-    return { onUsage: (u: TokenUsage) => got.push(u), flush: (key: string) => { for (const u of got.splice(0)) addUsage(key, u) } }
+    return { onUsage: (u: TokenUsage) => got.push(u), flush: (key: string) => { for (const u of got.splice(0)) addUsage(key, u, origin) } }
   }
 
+  /** 本局依來源（模型來源、服務與模型）合計的用量，舊紀錄沒有明細的歸在「未記錄來源」 */
+  const usageBySource = computed(() => {
+    const out: (Omit<UsagePart, 'feature'> & { features: AiFeature[] })[] = []
+    for (const e of Object.values(usage.value)) {
+      const parts: UsagePart[] = e.by?.length ? e.by : [{ feature: 'narration', source: '', provider: '' as ProviderId, model: '', input: e.input, output: e.output, calls: e.calls, ...(e.cached ? { cached: e.cached } : {}) }]
+      for (const p of parts) {
+        let t = out.find((x) => x.source === p.source && x.provider === p.provider && x.model === p.model)
+        if (!t) out.push((t = { source: p.source, provider: p.provider, model: p.model, input: 0, output: 0, calls: 0, cached: 0, features: [] }))
+        t.input += p.input
+        t.output += p.output
+        t.calls += p.calls
+        t.cached = (t.cached ?? 0) + (p.cached ?? 0)
+        if (e.by?.length && !t.features.includes(p.feature)) t.features.push(p.feature)
+      }
+    }
+    return out.sort((a, b) => b.input + b.output - (a.input + a.output))
+  })
+
   const totalUsage = computed(() =>
-    Object.values(usage.value).reduce<Required<UsageEntry>>(
+    Object.values(usage.value).reduce<Required<Omit<UsageEntry, 'by'>>>(
       (t, e) => ({ input: t.input + e.input, output: t.output + e.output, calls: t.calls + e.calls, cached: t.cached + (e.cached ?? 0) }),
       { input: 0, output: 0, calls: 0, cached: 0 },
     ),
@@ -377,8 +440,8 @@ export const useGame = defineStore('game', () => {
     try {
       const prompt = await promptFor(report)
       const { streamNarration } = await import('@/narrator/providers')
-      const onUsage = (u: TokenUsage) => addUsage(report.report_id, u)
       const src = settings.sourceFor('narration')
+      const onUsage = (u: TokenUsage) => addUsage(report.report_id, u, originOf('narration', src))
       for await (const chunk of streamNarration(src.provider, src.config, prompt, controller.signal, onUsage)) {
         entry.text += chunk
       }
@@ -420,11 +483,11 @@ export const useGame = defineStore('game', () => {
     }
     judging.value = true
     error.value = null
-    const collector = usageCollector()
+    const src = settings.sourceFor('judge')
+    const collector = usageCollector(originOf('judge', src))
     try {
       const { completeText } = await import('@/narrator/providers')
       const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
-      const src = settings.sourceFor('judge')
       const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts).prompt, undefined, collector.onUsage)
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型
@@ -460,7 +523,7 @@ export const useGame = defineStore('game', () => {
     try {
       const { completeText } = await import('@/narrator/providers')
       const src = settings.sourceFor('roster')
-      const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(OTHER_USAGE, u))) as { npcs?: population.NpcFlavor[] }
+      const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(OTHER_USAGE, u, originOf('roster', src)))) as { npcs?: population.NpcFlavor[] }
       run((st) => population.applyRosterFlavor(st, loc, Array.isArray(raw.npcs) ? raw.npcs : []))
     } catch (e) {
       error.value = `AI 潤飾居民失敗：${e instanceof Error ? e.message : String(e)}（先用預設的名字與設定）`
@@ -482,7 +545,7 @@ export const useGame = defineStore('game', () => {
     try {
       const { completeText } = await import('@/narrator/providers')
       const src = settings.sourceFor('shop')
-      const raw = extractJson(await completeText(src.provider, src.config, buildShopPrompt(s, type), undefined, (u) => addUsage(OTHER_USAGE, u)))
+      const raw = extractJson(await completeText(src.provider, src.config, buildShopPrompt(s, type), undefined, (u) => addUsage(OTHER_USAGE, u, originOf('shop', src))))
       run((st) => trade.applyAiDeals(st, type, raw))
     } catch (e) {
       error.value = `AI 生成交易清單失敗：${e instanceof Error ? e.message : String(e)}（先用一般的商品清單）`
@@ -499,7 +562,7 @@ export const useGame = defineStore('game', () => {
     try {
       const { completeText } = await import('@/narrator/providers')
       const src = settings.sourceFor('negotiation')
-      const raw = extractJson(await completeText(src.provider, src.config, buildNegotiationPrompt(s, n), undefined, (u) => addUsage(OTHER_USAGE, u)))
+      const raw = extractJson(await completeText(src.provider, src.config, buildNegotiationPrompt(s, n), undefined, (u) => addUsage(OTHER_USAGE, u, originOf('negotiation', src))))
       run((st) => negotiation.applyAiOptions(st, n.id, raw))
     } catch (e) {
       error.value = `AI 生成談判方式失敗：${e instanceof Error ? e.message : String(e)}（先用預設的談判方式）`
@@ -516,7 +579,7 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, pc, judging, intent, actionTarget, usage, totalUsage, slots, notice, flash,
+    state, narrations, error, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
     perform, judge, flavorRoster, hire, flavorShop, startNegotiation,

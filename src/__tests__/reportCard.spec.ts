@@ -46,6 +46,16 @@ describe('ReportCard', () => {
     expect(wrapper.find('.battle-report').exists()).toBe(false)
     expect(wrapper.text()).toContain('重新寫出經過')
   })
+
+  it('shows which source each token count came from', () => {
+    const pinia = setup(true)
+    useGame().usage[combat.report_id] = {
+      input: 900, output: 200, calls: 1,
+      by: [{ feature: 'narration', source: '寫作用', provider: 'openai', model: 'gpt-test', input: 900, output: 200, calls: 1 }],
+    }
+    const wrapper = mount(ReportCard, { props: { report: combat }, global: { plugins: [pinia] } })
+    expect(wrapper.find('.tokens .origin').text()).toContain('敘事正文・寫作用（OpenAI gpt-test）')
+  })
 })
 
 describe('settings migration', () => {

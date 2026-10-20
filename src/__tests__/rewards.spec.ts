@@ -100,9 +100,30 @@ describe('token usage', () => {
     await g.perform({ kind: 'free', target: 'npc_lina', text: '聊聊天' })
     const report = g.state!.reports.at(-1)!
     expect(report.check?.source).toBe('ai')
-    expect(g.usage[report.report_id]).toEqual({ input: 1200, output: 300, calls: 1 })
+    const source = settings.sources[0]!.name
+    expect(g.usage[report.report_id]).toEqual({
+      input: 1200, output: 300, calls: 1,
+      by: [{ feature: 'judge', source, provider: 'anthropic', model: 'claude-sonnet-5-5', input: 1200, output: 300, calls: 1 }],
+    })
     expect(g.totalUsage).toEqual({ input: 1200, output: 300, calls: 1, cached: 0 })
+    expect(g.usageBySource).toEqual([{ source, provider: 'anthropic', model: 'claude-sonnet-5-5', input: 1200, output: 300, calls: 1, cached: 0, features: ['judge'] }])
     expect(g.narrations[report.report_id]?.text).toBe('你們聊到深夜。')
+  })
+
+  it('groups usage by source and keeps old entries without a source', async () => {
+    const { useGame, usageSourceLabel } = await import('@/stores/game')
+    const g = useGame()
+    const part = { source: '來源 2', provider: 'gemini' as const, model: 'gemini-pro-latest' }
+    g.usage = {
+      r1: { input: 100, output: 10, calls: 2, by: [{ feature: 'judge', ...part, input: 60, output: 4, calls: 1 }, { feature: 'narration', ...part, input: 40, output: 6, calls: 1 }] },
+      old: { input: 5, output: 1, calls: 1 },
+    }
+    expect(g.usageBySource).toEqual([
+      { ...part, input: 100, output: 10, calls: 2, cached: 0, features: ['judge', 'narration'] },
+      { source: '', provider: '', model: '', input: 5, output: 1, calls: 1, cached: 0, features: [] },
+    ])
+    expect(usageSourceLabel(part)).toBe('來源 2（Google Gemini gemini-pro-latest）')
+    expect(usageSourceLabel(g.usageBySource[1]!)).toBe('未記錄來源')
   })
 })
 

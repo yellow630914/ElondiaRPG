@@ -5,7 +5,7 @@ import { formatTime } from '@/engine/state'
 import type { Report } from '@/engine/types'
 import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
 import { visibleNarration } from '@/narrator/judge'
-import { useGame } from '@/stores/game'
+import { usageFeatureName, usageSourceLabel, useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 
 const props = defineProps<{ report: Report }>()
@@ -83,6 +83,9 @@ async function copyPrompt() {
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
     <p v-if="tokens" class="small muted tokens" title="這則日誌的 AI 呼叫（判定、敘事）用掉的 token">
       🔢 輸入 {{ formatTokens(tokens.input) }}<template v-if="tokens.cached">（快取 {{ formatTokens(tokens.cached) }}）</template>・輸出 {{ formatTokens(tokens.output) }} tokens<template v-if="tokens.calls > 1">（{{ tokens.calls }} 次呼叫）</template>
+      <template v-for="(p, i) in tokens.by ?? []" :key="i">
+        <br /><span class="origin">{{ usageFeatureName(p.feature) }}・{{ usageSourceLabel(p) }}：輸入 {{ formatTokens(p.input) }}<template v-if="p.cached">（快取 {{ formatTokens(p.cached) }}）</template>・輸出 {{ formatTokens(p.output) }}<template v-if="p.calls > 1">（{{ p.calls }} 次）</template></span>
+      </template>
     </p>
   </article>
 </template>
@@ -100,4 +103,5 @@ async function copyPrompt() {
 details summary { cursor: pointer; color: var(--accent-2); }
 .check { color: var(--accent-2); margin: 0 0 8px; }
 .tokens { margin: 6px 0 0; text-align: right; }
+.tokens .origin { opacity: .85; }
 </style>

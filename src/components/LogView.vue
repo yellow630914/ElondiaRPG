@@ -4,7 +4,7 @@ import type { Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import { formatTokens } from '@/narrator/describe'
-import { OTHER_USAGE } from '@/stores/game'
+import { OTHER_USAGE, usageFeatureName, usageSourceLabel } from '@/stores/game'
 import ReportCard from './ReportCard.vue'
 
 // 冒險頁中間的日誌：舊的在上、新的在下，有新紀錄時捲到最下面。
@@ -53,6 +53,12 @@ onMounted(() => toBottom(true))
       🔢 本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens
       （輸入 {{ formatTokens(game.totalUsage.input) }}<template v-if="game.totalUsage.cached">，其中快取 {{ formatTokens(game.totalUsage.cached) }}</template>・輸出 {{ formatTokens(game.totalUsage.output) }}・{{ game.totalUsage.calls }} 次呼叫）
     </p>
+    <ul v-if="game.usageBySource.length" class="small muted sources" title="依模型來源（服務與模型）分開的用量">
+      <li v-for="(u, i) in game.usageBySource" :key="i">
+        {{ usageSourceLabel(u) }}：{{ formatTokens(u.input + u.output) }} tokens
+        （輸入 {{ formatTokens(u.input) }}<template v-if="u.cached">，快取 {{ formatTokens(u.cached) }}</template>・輸出 {{ formatTokens(u.output) }}・{{ u.calls }} 次<template v-if="u.features.length">・{{ u.features.map(usageFeatureName).join('、') }}</template>）
+      </li>
+    </ul>
     <div ref="feed" class="feed">
       <button v-if="all.length > reports.length" class="small more" @click="shown += PAGE">⬆️ 載入更早的紀錄（還有 {{ all.length - reports.length }} 筆）</button>
       <p v-if="reports.length === 0" class="muted empty">還沒有任何紀錄。從地圖上走到酒館、公會或城門，開始你的冒險吧。</p>
@@ -66,6 +72,7 @@ onMounted(() => toBottom(true))
 .log-head { gap: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
 .log-head h2 { margin: 0; }
 .usage { margin: 6px 0 0; }
+.sources { margin: 2px 0 0; padding-left: 22px; }
 .spacer { flex: 1; }
 .feed {
   overflow-y: auto;
