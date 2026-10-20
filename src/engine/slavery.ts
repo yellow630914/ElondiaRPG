@@ -328,12 +328,18 @@ function hoursOf(t: GameTime): number {
 }
 
 /** 移動或旅行之後：被主人帶著時，可能發生主人的突發事件（等待主角回應） */
-export function maybeMasterEvent(state: GameState, chance: number): PendingMasterEvent | undefined {
+export interface MasterEventOptions {
+  /** 允許成人向事件（設定的「成人向」） */
+  adult?: boolean
+}
+
+export function maybeMasterEvent(state: GameState, chance: number, opts: MasterEventOptions = {}): PendingMasterEvent | undefined {
   if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent) return undefined
   const ev = slaveryRules.master_events
   const now = hoursOf(state.time)
   if (state.lastMasterEvent !== undefined && now - state.lastMasterEvent < ev.cooldown_hours) return undefined
-  const picked = withRng(state, (rng) => (rng.chance(chance) ? pickEvent(rng, ev.events) : undefined))
+  const events = ev.events.filter((e) => opts.adult || !e.adult)
+  const picked = withRng(state, (rng) => (rng.chance(chance) ? pickEvent(rng, events) : undefined))
   if (!picked) return undefined
   return startMasterEvent(state, picked)
 }

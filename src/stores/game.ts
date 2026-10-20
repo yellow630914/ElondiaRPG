@@ -77,7 +77,7 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   // 敵對的冒險者優先；被主人帶著時可能有主人的突發事件（等待回應，顯示在主動行動面板）
   const report = encounters.checkHostiles(s)
   if (report) return { report }
-  slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance)
+  slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance, { adult: useSettings().adult })
   return r
 }
 
@@ -517,7 +517,7 @@ export const useGame = defineStore('game', () => {
     useItem: (name: string, member: string) => run((s) => inventory.useItem(s, name, member)),
     equipItem: (name: string, member: string) => run((s) => inventory.equipItem(s, name, member)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
-    travel: (to: string, intent?: string) => run((s) => travel(s, to, intent)),
+    travel: (to: string, intent?: string) => run((s) => travel(s, to, intent, { adult: useSettings().adult })),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */

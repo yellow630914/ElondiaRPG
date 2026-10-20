@@ -9,7 +9,7 @@ import type { Character, Effect, GameState, ItemDelta, Report, TimelineEntry } f
 import { shortestPath } from './world'
 import { assertNoStandoff, currentArea, enterLocation, placeOutside } from './grid'
 import { arrivalCheck, gateCheck } from './security'
-import { assertMasterAllows, maybeMasterEvent } from './slavery'
+import { assertMasterAllows, maybeMasterEvent, type MasterEventOptions } from './slavery'
 import { ensureRoster, pruneNpcs, refreshRosters } from './population'
 
 /** 官道沿途有旅店：每人每天食宿 */
@@ -69,7 +69,7 @@ function daysToHours(days: number): number {
   return Math.floor(days) * 24 + (days % 1) * 12
 }
 
-export function travel(state: GameState, destination: string, intent?: string): Report {
+export function travel(state: GameState, destination: string, intent?: string, events: MasterEventOptions = {}): Report {
   const path = shortestPath(state.location, destination)
   if (!path || path.legs.length === 0) throw new Error(`無法前往 ${destination}`)
   assertNoStandoff(state)
@@ -165,7 +165,7 @@ export function travel(state: GameState, destination: string, intent?: string): 
   // 進城的盤查：付不出罰金就被擋在城外
   if (!arrivalCheck(state)) placeOutside(state)
   // 被主人帶著時，旅途中可能有主人的突發事件
-  maybeMasterEvent(state, slaveryRules.master_events.travel_chance)
+  maybeMasterEvent(state, slaveryRules.master_events.travel_chance, events)
   return report
 }
 

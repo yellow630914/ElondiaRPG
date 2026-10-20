@@ -151,7 +151,7 @@
   "slave_target_advantage": "主角對自己的奴隸主動行動時，奴隸抗拒的檢定處於劣勢：主角擲兩次取較高的。",
 
   "master_events": {
-    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時。事件發生後，玩家從三個 options 選一個回應，或自己輸入回應（主動行動 master_event，參考 DC 依事件的 free，沒有時用 free_dc）。option：沒有 check 時直接套用 effects；有 check 時檢定，成功套用 effects_success、失敗套用 fail_effects（effects 兩者都套用）。effects 用報酬模板，npc 寫 master 代表主人。free_outcomes：自己輸入的回應沒有 AI 判定時，依成功程度套用的效果。",
+    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時。事件發生後，玩家從三個 options 選一個回應，或自己輸入回應（主動行動 master_event，參考 DC 依事件的 free，沒有時用 free_dc）。option：沒有 check 時直接套用 effects；有 check 時檢定，成功套用 effects_success、失敗套用 fail_effects（effects 兩者都套用）。adult：成人向事件，設定開啟「成人向」時才會發生。effects 用報酬模板，npc 寫 master 代表主人。free_outcomes：自己輸入的回應沒有 AI 判定時，依成功程度套用的效果。",
     "step_chance": 0.02,
     "travel_chance": 0.35,
     "cooldown_hours": 6,
@@ -193,6 +193,11 @@
         { "label": "視而不見", "check": { "attr": "fai", "dc": 12 }, "success": "你連看都沒看，{master}滿意地點點頭。", "fail": "你忍不住多看了錢袋一眼。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "通過考驗" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "多看了錢袋一眼" }] },
         { "label": "把錢袋交還主人", "result": "你把錢袋原封不動地交還，{master}收下了。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "交還錢袋" }] },
         { "label": "偷拿幾枚", "check": { "attr": "dex", "dc": 15 }, "success": "你手指一勾，幾枚硬幣就滑進了袖子。", "fail": "你的手才伸出去就被當場抓住。", "effects_success": [{ "type": "money", "amount": 30 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -6, "reason": "偷錢被抓" }, { "type": "hp", "target": "pc", "amount": -3 }] }
+      ] },
+      { "id": "proposition", "weight": 2, "adult": true, "text": "{master}把你叫到身邊，直白地提出要你今晚陪伴。", "hours": 0.25, "options": [
+        { "label": "答應", "result": "你點了頭，{master}的神情柔和下來。", "effects": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "答應了主人的邀約" }], "hours": 2 },
+        { "label": "委婉推辭", "check": { "attr": "cha", "dc": 14 }, "success": "{master}沒有勉強，只是揮手讓你退下。", "fail": "{master}的臉色沉了下來，沒再多說。", "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "推辭了主人的邀約" }] },
+        { "label": "斷然拒絕", "check": { "attr": "fai", "dc": 15 }, "success": "{master}愣了一下，竟對你有些另眼相看。", "fail": "{master}被拂了面子，冷冷地讓你滾開。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "堅守底線" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -5, "reason": "當面拒絕主人" }] }
       ] }
     ]
   }

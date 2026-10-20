@@ -88,7 +88,7 @@ function doReset() {
         <input v-model.number="settings.loreBudget" type="number" min="2000" step="1000" style="width: 140px" />
       </label>
       <label class="check">
-        <input v-model="settings.adult" type="checkbox" /> 注入成人向世界書條目（敘事傾向、情色喜劇法則等）
+        <input v-model="settings.adult" type="checkbox" /> 成人向：注入成人向世界書條目（敘事傾向、情色喜劇法則等），並開啟成人向的事件（例如主人的性邀約）
       </label>
       <p v-if="settings.adult" class="small muted">請確認你使用的 AI 服務的使用政策允許此類內容；不允許時模型可能拒絕生成。</p>
     </div>

@@ -139,6 +139,22 @@ describe('the master holds the leash', () => {
     }
   })
 
+  it('keeps adult events behind the adult setting', () => {
+    const adult = slaveryRules.master_events.events.filter((e) => e.adult).map((e) => e.id)
+    expect(adult).toContain('proposition')
+    const seen = (opts: { adult?: boolean }) => {
+      const ids = new Set<string>()
+      for (let seed = 1; seed < 80; seed++) {
+        const state = bound()
+        state.rngState = seed
+        ids.add(maybeMasterEvent(state, 1, opts)!.id)
+      }
+      return ids
+    }
+    expect([...seen({})].some((id) => adult.includes(id))).toBe(false)
+    expect(seen({ adult: true })).toContain('proposition')
+  })
+
   it('lets the player answer in their own words', () => {
     const state = bound()
     startMasterEvent(state, slaveryRules.master_events.events.find((e) => e.id === 'bad_mood')!)

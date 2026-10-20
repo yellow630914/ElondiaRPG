@@ -477,6 +477,8 @@ export interface MasterEventDef {
   options: MasterEventOption[]
   /** 自己輸入回應時的參考 DC（沒有時用 free_dc） */
   free_dc?: number
+  /** 成人向：設定開啟「成人向」時才會發生 */
+  adult?: boolean
 }
 
 export interface MasterEventOption {
