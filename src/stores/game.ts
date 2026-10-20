@@ -77,6 +77,9 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   // 敵對的冒險者優先；被主人帶著時可能有主人的突發事件（等待回應，顯示在主動行動面板）
   const report = encounters.checkHostiles(s)
   if (report) return { report }
+  // 戰敗時逃開的同伴：回到聚落或安全房時歸隊
+  const back = companions.rejoinAway(s)
+  if (back) return { report: back }
   slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance, { adult: useSettings().adult })
   return r
 }

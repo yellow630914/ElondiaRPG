@@ -6,7 +6,7 @@ import {
   apMaxFor, apRegenFor, baseAttrs, createPlayer, luckyThreshold, maxHpFor, slotMaxFor, evadeFloor, learnable,
 } from '@/engine/character'
 import {
-  abilities, ATTR_IDS, classes, damageTypes, enemies, statuses, dungeonEncounters, weaponDef, armorDef,
+  abilities, ATTR_IDS, classes, combatClasses, damageTypes, enemies, statuses, dungeonEncounters, weaponDef, armorDef,
 } from '@/engine/data'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
@@ -46,7 +46,7 @@ describe('data integrity', () => {
   })
 
   it('gives every class valid starting gear and abilities', () => {
-    for (const [id, cls] of Object.entries(classes)) {
+    for (const [id, cls] of Object.entries(combatClasses)) {
       expect([...cls.priority].sort()).toEqual([...ATTR_IDS].sort())
       expect(weaponDef(cls.weapon).name).not.toBe('徒手')
       expect(armorDef(cls.armor)).toBeDefined()
@@ -202,7 +202,7 @@ describe('combat rules', () => {
   })
 
   it('runs full fights for every class without getting stuck', () => {
-    for (const classId of Object.keys(classes)) {
+    for (const classId of Object.keys(combatClasses)) {
       const state = stateWith(classId, 3, 42)
       startCombat(state, [['goblin', 2]])
       for (let i = 0; i < 300 && state.combat!.status === 'ongoing'; i++) {

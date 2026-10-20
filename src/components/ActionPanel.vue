@@ -84,7 +84,7 @@ const seekTargets = computed(() => {
   if (!enslaved.value || bound.value) return []
   return peopleHere(s.value)
     .filter((p) => p.dist <= 1 && p.rec.id !== contract.value?.master && !p.rec.tags?.includes('slave') && !isHostile(s.value, p.rec))
-    .map((p) => ({ id: p.rec.id, name: `${label(p.rec.id, p.rec.name)}・${npcTitle(p.rec)}・DC ${seekMasterDc(s.value, p.rec)}${p.kind === 'commoner' ? '・不同行' : ''}` }))
+    .map((p) => ({ id: p.rec.id, name: `${label(p.rec.id, p.rec.name)}・${npcTitle(p.rec)}・DC ${seekMasterDc(s.value, p.rec)}${p.kind === 'commoner' ? '・不戰鬥' : ''}` }))
 })
 function doFreedom(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_return' | 'seek_master' | 'unmark', target?: string) {
   const u = parseUse(use.value)

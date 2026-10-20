@@ -109,7 +109,7 @@ function sellSelf() {
         成交後你拿到成交價的 {{ Math.round(slaveryRules.self_sale.share * 100) }}%。
         <template v-if="enslaved">買下你的人成為新主人，頸上的印記沿用；逃亡狀態解除。</template>
         <template v-else>之後由主人帶領；要恢復自由只能談判或逃離。</template>
-        普通人主人不會跟著你冒險。隊伍必須只剩你一人。
+        普通人主人會同行，但不參與戰鬥。隊伍必須只剩你一人。
       </p>
       <p class="muted">常見的買家：{{ buyers }}</p>
       <button class="small danger" :disabled="s.party.length > 1" @click="sellSelf">登記</button>

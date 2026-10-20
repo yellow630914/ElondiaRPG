@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
-import { buySlave, marketStock, offerSelf, pickBuyer } from '@/engine/companions'
+import { buySlave, marketStock, offerSelf, pickBuyer, rejoinAway } from '@/engine/companions'
+import { finishCombat, startCombat } from '@/engine/combat'
 import { slaveryRules } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
 import { enterLocation, goOutskirts, move, standOn } from '@/engine/grid'
-import { isBound, isEnslaved, isFugitive, leaderOf } from '@/engine/party'
+import { isBound, isEnslaved, isFugitive, isNoncombatant, leaderOf } from '@/engine/party'
 import { characterFor, generateNpc, registerNpc } from '@/engine/npcs'
 import { Rng } from '@/engine/rng'
 import {
@@ -356,8 +357,8 @@ describe('who becomes the new master depends on who they are', () => {
     expect(masterTagDc({ kind: 'commoner', class: '', tags: ['priest', 'noble'] })).toBe(2 - 3)
   })
 
-  it('a commoner master stays in town: bound, but not in the party and no master events', () => {
-    const state = game()
+  function commonerMaster(seed = 3) {
+    const state = game(seed)
     startAsSlave(state, { master: { type: 'none' }, mark: 'labor' })
     const merchant = generateNpc(state, new Rng(5), { kind: 'commoner', tags: ['merchant'], level: 2 }, 'cmn')
     registerNpc(state, merchant)
@@ -367,11 +368,55 @@ describe('who becomes the new master depends on who they are', () => {
     expect(pending.base_dc).toBe(seekMasterDc(state, merchant))
     state.pendingAction!.natural = 20
     resolveAction(state, null)
+    return { state, master: state.party.find((m) => m.id === merchant.id)! }
+  }
+
+  it('a commoner master travels along as a noncombatant', () => {
+    const { state, master } = commonerMaster()
     expect(isBound(state)).toBe(true)
-    expect(state.party).toHaveLength(1)
-    expect(maybeMasterEvent(state, 1)).toBeUndefined()
+    expect(leaderOf(state)?.id).toBe(master.id)
+    expect(master.class).toBe('noncombatant')
+    expect(isNoncombatant(master)).toBe(true)
+    expect(maybeMasterEvent(state, 1)).toBeTruthy()
+    startCombat(state)
+    expect(state.combat!.combatants.some((c) => c.id === master.id)).toBe(false)
+  })
+
+  it('on defeat a noncombatant who cares fetches help: no money lost, back at half HP', () => {
+    const { state, master } = commonerMaster()
+    master.affinity = 100
+    state.relationships![master.id]!.affinity = 100
+    state.money_cc = 1000
+    startCombat(state)
+    state.combat!.status = 'defeat'
+    const r = finishCombat(state)
+    expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
+    expect(r.outcome.tags).toContain('搬救兵')
+    expect(state.money_cc).toBe(1000)
+    expect(master.hp).toBe(Math.ceil(master.maxHp / 2))
+    expect(master.status).not.toContain('away')
+  })
+
+  it('on defeat a noncombatant who does not care runs off and waits in town', () => {
+    const { state, master } = commonerMaster()
+    master.affinity = -100
+    state.relationships![master.id]!.affinity = -100
+    state.money_cc = 1000
     standOn(state, 'gate')
-    expect(() => goOutskirts(state)).toThrow('請求')
+    ;(state.masterPass ??= {})[state.location] = state.time.day
+    goOutskirts(state)
+    startCombat(state)
+    state.combat!.status = 'defeat'
+    finishCombat(state)
+    expect(state.money_cc).toBe(900)
+    expect(master.status).toContain('away')
+    expect(master.hp).toBe(Math.ceil(master.maxHp / 2))
+    expect(maybeMasterEvent(state, 1)).toBeUndefined()
+    expect(rejoinAway(state)).toBeUndefined()
+    enterLocation(state)
+    const back = rejoinAway(state)!
+    expect(validate(back)).toBe(true)
+    expect(master.status).not.toContain('away')
   })
 
   it('a marked slave can sell themselves at the market to a new master, keeping the mark', () => {

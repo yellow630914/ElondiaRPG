@@ -60,11 +60,19 @@
     "ambush": { "settlement": 0, "wild": 0.15, "dungeon": 0.25 }
   },
 
+  "noncombatant": {
+    "$comment": "無法戰鬥的隊員（普通人）：不參與戰鬥、不分經驗。戰敗時各自檢定 d20 + floor(親密度 / affinity_step) ≥ dc：成功＝救助（先逃走一段時間去搬救兵，rescue_hours 小時後帶人回來，戰敗不損失金錢）；失敗＝逃跑（先回到安全的地方等你，獲得「暫時離隊」，回到聚落或安全房時歸隊）。兩者都以 return_hp_ratio 的生命值歸隊。",
+    "defeat_check": { "dc": 12, "affinity_step": 10 },
+    "rescue_hours": 2,
+    "return_hp_ratio": 0.5
+  },
+
   "conditions": {
     "$comment": "非戰鬥狀態（Character.status）。check_penalty 會加在所有主動行動檢定上；clears 表示何時解除。",
     "slave_mark": { "name": "奴隸契約印記", "desc": "頸上刻著奴隸契約的印記。" },
     "fugitive": { "name": "逃亡奴隸", "desc": "契約仍在，公會、神殿等官方機構不接待，旅店加價且可能通報。" },
     "punished": { "name": "受罰", "desc": "被主人懲罰，下次長休前所有檢定 -2。", "check_penalty": 2, "clears": "long_rest" },
-    "blessed": { "name": "祝福", "desc": "神殿的祝福，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" }
+    "blessed": { "name": "祝福", "desc": "神殿的祝福，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" },
+    "away": { "name": "暫時離隊", "desc": "戰敗時逃到安全的地方等你；回到聚落或安全房時以一半生命值歸隊。" }
   }
 }

@@ -9,7 +9,7 @@ import {
   abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName,
   damageTypeName, genderName, itemRules, locationById, raceName, slaveryRules, type AbilityDef,
 } from '@/engine/data'
-import { isBound, leaderOf } from '@/engine/party'
+import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { contractTerms } from '@/engine/slavery'
 import { canEquip, canUse } from '@/engine/inventory'
 import { itemCategory, itemValue } from '@/engine/trade'
@@ -138,7 +138,8 @@ function affinityText(m: Character): string {
       </table>
       <p v-if="m.attrPoints > 0" class="small" style="color: var(--accent)">可分配屬性點：{{ m.attrPoints }}</p>
 
-      <ul class="plain small stats">
+      <p v-if="isNoncombatant(m)" class="small muted">🧺 無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>
+      <ul v-else class="plain small stats">
         <li>行動點 {{ apMaxFor(m.level, m.attrs) }}（每回合 +{{ apRegenFor(m.level) }}）</li>
         <li>法術環 {{ slotsText(m) }}</li>
         <li v-if="classDef(m.class).caster !== 'none'">施法屬性 {{ attrName(castingAttr(m.class)) }}・熟練 +{{ proficiency(m.level) }}</li>
@@ -184,7 +185,7 @@ function affinityText(m: Character): string {
         </div>
       </div>
 
-      <div v-for="g in grouped(m)" :key="g.type" class="abilities">
+      <div v-for="g in isNoncombatant(m) ? [] : grouped(m)" :key="g.type" class="abilities">
         <h3 class="small">{{ TYPE_NAME[g.type] }}</h3>
         <ul class="plain small">
           <li v-for="a in g.items" :key="a.id">

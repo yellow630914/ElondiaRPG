@@ -26,7 +26,7 @@ import {
 import { setupInteraction } from './interactions'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, changeMaster, isBound, isEnslaved, isFugitive, joinParty,
-  leaderOf, masterTravels, partyRoom, pcOf, playerEscapes, punish, recapturePlayer, setHp,
+  leaderOf, partyRoom, pcOf, playerEscapes, punish, recapturePlayer, removeCondition, setHp,
 } from './party'
 import { negotiationSetup } from './negotiation'
 import { currentArea, currentCell } from './grid'
@@ -378,6 +378,19 @@ export function selfSaleChance(state: GameState): number {
   return Math.max(0.05, Math.min(s.max, s.base + s.per_cha_mod * mod(pc.attrs.cha) + s.per_level * pc.level))
 }
 
+/** 戰敗時逃開的隊員：回到聚落或安全房時，在這裡等著你，重新歸隊（生命值維持戰敗時的一半） */
+export function rejoinAway(state: GameState): Report | undefined {
+  const away = state.party.filter((m) => m.status.includes('away'))
+  if (!away.length || state.combat) return undefined
+  const area = currentArea(state)
+  if (area.kind !== 'settlement' && currentCell(state).kind !== 'safe') return undefined
+  const report = socialReport(state, 0, area.name, 'event')
+  for (const m of away) removeCondition(m, 'away', report)
+  report.outcome = { result: 'neutral', summary: `${away.map((m) => m.name).join('、')}在這裡等著你，重新歸隊。`, tags: ['歸隊'] }
+  report.narration = { pov: 'second_person', length: 'short', focus: ['重逢'] }
+  return commitReport(state, report)
+}
+
 /** 市場上出價的買家是哪一種人：依市場的標籤權重，再挑這個標籤可能的 NPC 種類 */
 export function pickBuyer(rng: Rng, kind: MarketKind): { tag: string; kind: NpcKind } {
   const t = slaveryRules.master_tags
@@ -422,7 +435,7 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
     report.changes.money_cc = share
     report.outcome = {
       result: 'success',
-      summary: `${who}以 ${formatMoney(deal.price)} 買下了你，成為你的新主人；你拿到 ${formatMoney(share)}。頸上的印記沿用。${masterTravels(deal.master) ? '' : `${deal.master.name}不會跟著你冒險。`}`,
+      summary: `${who}以 ${formatMoney(deal.price)} 買下了你，成為你的新主人；你拿到 ${formatMoney(share)}。頸上的印記沿用。`,
       tags: ['換了主人'],
     }
     report.narration = { pov: 'second_person', length: 'medium', focus: ['新主人的模樣與態度'] }

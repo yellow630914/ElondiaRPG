@@ -9,6 +9,7 @@ import type { Character, Effect, GameState, ItemDelta, Report, TimelineEntry } f
 import { shortestPath } from './world'
 import { assertNoStandoff, currentArea, enterLocation, placeOutside } from './grid'
 import { arrivalCheck, gateCheck } from './security'
+import { rejoinAway } from './companions'
 import { assertMasterAllows, maybeMasterEvent, type MasterEventOptions } from './slavery'
 import { ensureRoster, pruneNpcs, refreshRosters } from './population'
 
@@ -164,6 +165,8 @@ export function travel(state: GameState, destination: string, intent?: string, e
   pruneNpcs(state)
   // 進城的盤查：付不出罰金就被擋在城外
   if (!arrivalCheck(state)) placeOutside(state)
+  // 戰敗時逃開的同伴在聚落等著
+  rejoinAway(state)
   // 被主人帶著時，旅途中可能有主人的突發事件
   maybeMasterEvent(state, slaveryRules.master_events.travel_chance, events)
   return report

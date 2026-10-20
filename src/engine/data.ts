@@ -160,8 +160,14 @@ export interface ClassDef {
   emoji: string
   /** 生命骰面數（短休時花費） */
   hit_die: number
+  /** 無法戰鬥：同行但不參與戰鬥、不分經驗（普通人入隊時用） */
+  noncombat?: boolean
 }
 export const classes = (classesJson as unknown as { classes: Record<string, ClassDef> }).classes
+/** 普通人入隊時的職業 */
+export const NONCOMBAT_CLASS = 'noncombatant'
+/** 可以選、可以隨機抽到的職業（不含「無法戰鬥」） */
+export const combatClasses: Record<string, ClassDef> = Object.fromEntries(Object.entries(classes).filter(([, c]) => !c.noncombat))
 
 export function classDef(id: string): ClassDef {
   const c = classes[id]
@@ -410,6 +416,7 @@ export const companionRules = companionsJson as unknown as {
   invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number }
   leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
   rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'wild' | 'dungeon', number> }
+  noncombatant: { defeat_check: { dc: number; affinity_step: number }; rescue_hours: number; return_hp_ratio: number }
   conditions: Record<string, ConditionDef>
 }
 

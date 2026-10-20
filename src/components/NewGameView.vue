@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { apMaxFor, apRegenFor, baseAttrs, luckyThreshold, maxHpFor, mod, slotMaxFor } from '@/engine/character'
-import { abilities, ATTR_IDS, attributeRules, classes, geography, isSettlement, locationById, type AttrId } from '@/engine/data'
+import { abilities, ATTR_IDS, attributeRules, combatClasses as classes, geography, isSettlement, locationById, type AttrId } from '@/engine/data'
 import { GENDER_IDS, genderName, raceName, tagDef } from '@/engine/data'
 import { npcTitle } from '@/engine/npcs'
 import { masterCandidates, type MarkChoice, type MasterSpec, type SlaveStart } from '@/engine/slavery'

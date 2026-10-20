@@ -13,12 +13,13 @@ import {
   slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, combatRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
+  abilityDef, armorDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
   locationById, population, regionById, statusDef, wildEncounters,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type WeaponDef,
 } from './data'
 import { characterFor, npcRecord, registerNpc } from './npcs'
+import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
@@ -138,7 +139,8 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
   return withRng(state, (rng) => {
     const npcs = (opts.npcs ?? []).map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r)
     const enemyGroup = group ?? (npcs.length ? [] : encounterFor(state.location, rng))
-    const fighters: Combatant[] = state.party.filter((c) => c.hp > 0).map((c) => fromCharacter(c, rng))
+    // 無法戰鬥的隊員（普通人）不上場
+    const fighters: Combatant[] = state.party.filter((c) => c.hp > 0 && !isNoncombatant(c)).map((c) => fromCharacter(c, rng))
     if (fighters.length === 0) throw new Error('隊伍沒有能戰鬥的成員')
     const counts: Record<string, number> = {}
     for (const [id, n] of enemyGroup) counts[id] = (counts[id] ?? 0) + n
@@ -1033,11 +1035,24 @@ export function finishCombat(state: GameState): Report {
   const defeated = foes.filter((f) => f.hp === 0)
   const victory = combat.status === 'victory'
 
+  // 戰敗時，無法戰鬥的隊員依親密度檢定：救助（逃開去搬救兵）或逃跑（回到安全的地方等你）
+  const nc = companionRules.noncombatant
+  const bystanders = combat.status === 'defeat' ? state.party.filter((m) => isNoncombatant(m) && !m.status.includes('away')) : []
+  const fates = withRng(state, (rng) => bystanders.map((m) => {
+    const aff = m.affinity ?? state.relationships?.[m.id]?.affinity ?? 0
+    const natural = rng.int(1, 20)
+    const total = natural + Math.floor(aff / nc.defeat_check.affinity_step)
+    return { id: m.id, name: m.name, natural, total, rescue: total >= nc.defeat_check.dc }
+  }))
+  const rescued = fates.some((f) => f.rescue)
+
   const party: ActorState[] = state.party.map((member) => {
     const f = combat.combatants.find((c) => c.id === member.id)
     const before = { ...member, hp: combat.startHp[member.id] ?? member.hp }
-    // 倒下的隊員在戰後被救起，以 1 HP 狀態歸隊（戰敗時是被路人所救）
-    const after = { ...member, hp: Math.max(1, f?.hp ?? member.hp) }
+    // 倒下的隊員在戰後被救起，以 1 HP 狀態歸隊（戰敗時是被路人所救）；無法戰鬥的隊員以一半生命值歸隊
+    const fled = fates.some((x) => x.id === member.id)
+    const hp = fled ? Math.max(1, Math.ceil(member.maxHp * nc.return_hp_ratio)) : Math.max(1, f?.hp ?? member.hp)
+    const after = { ...member, hp }
     const snap = snapshot(after, before, pc)
     snap.status = f ? f.statuses.map((s) => statusDef(s.id).name).concat(f.hp === 0 ? ['倒下'] : []) : []
     return snap
@@ -1079,11 +1094,12 @@ export function finishCombat(state: GameState): Report {
       }
     }
   })
-  if (combat.status === 'defeat') money = -Math.floor(state.money_cc * 0.1)
+  // 戰敗：損失一成的錢；有人搬來救兵時不損失
+  if (combat.status === 'defeat' && !rescued) money = -Math.floor(state.money_cc * 0.1)
   settleNpcFoes(state, foes, victory)
 
   for (const member of state.party) {
-    if (!member.isPlayer && victory) noteAffinity(combat, member.id, 2, '並肩作戰獲勝')
+    if (!member.isPlayer && victory && !isNoncombatant(member)) noteAffinity(combat, member.id, 2, '並肩作戰獲勝')
   }
   const affinity = Object.entries(combat.affinity)
     .map(([npc, a]) => {
@@ -1094,10 +1110,12 @@ export function finishCombat(state: GameState): Report {
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
 
-  const share = state.party.length > 0 ? Math.floor(xpTotal / state.party.length) : 0
+  // 經驗只分給上場的隊員
+  const fighters = state.party.filter((m) => !isNoncombatant(m))
+  const share = fighters.length > 0 ? Math.floor(xpTotal / fighters.length) : 0
   const quest = victory ? advanceQuest(state, combat) : undefined
   const resultName = { victory: '勝利', defeat: '戰敗', fled: '撤退', ongoing: '' }[combat.status]
-  const end = addHours(combat.startTime, (combat.round * COMBAT_MINUTES_PER_ROUND) / 60)
+  const end = addHours(combat.startTime, (combat.round * COMBAT_MINUTES_PER_ROUND) / 60 + (rescued ? nc.rescue_hours : 0))
   const scene = combat.scene ?? loc.name
 
   const report: Report = {
@@ -1112,12 +1130,14 @@ export function finishCombat(state: GameState): Report {
     timeline: combat.timeline,
     outcome: {
       result: combat.status,
-      summary: `在${scene}與${foes.map((f) => f.name).join('、')}交戰，${resultName}（${combat.round} 回合）。`,
-      tags: tagsFor(combat),
+      summary: `在${scene}與${foes.map((f) => f.name).join('、')}交戰，${resultName}（${combat.round} 回合）。${fates.map((x) => x.rescue
+        ? `${x.name}先逃開去搬救兵，${nc.rescue_hours} 小時後帶人回來救了你們。`
+        : `${x.name}逃到安全的地方等你。`).join('')}`,
+      tags: [...tagsFor(combat), ...(rescued ? ['搬救兵'] : [])],
     },
     changes: {
       ...(money ? { money_cc: money } : {}),
-      ...(share > 0 ? { xp: state.party.map((m) => ({ actor: m.id, amount: share })) } : {}),
+      ...(share > 0 ? { xp: fighters.map((m) => ({ actor: m.id, amount: share })) } : {}),
       ...(items.length ? { items_gained: items } : {}),
       ...(combat.itemsUsed ? { items_lost: Object.entries(combat.itemsUsed).map(([name, qty]) => ({ name, qty })) } : {}),
       ...(affinity.length ? { affinity } : {}),
@@ -1128,6 +1148,15 @@ export function finishCombat(state: GameState): Report {
       ...(combat.intent ? { player_intent: combat.intent } : {}),
     },
     lore_keys: [loc.name, regionById(loc.region).name, ...new Set(foes.map((f) => enemies[f.defId!]?.name ?? f.name))],
+  }
+  // 逃跑的人暫時離隊：回到聚落或安全房時歸隊
+  for (const x of fates) {
+    const m = state.party.find((p) => p.id === x.id)
+    if (m && !x.rescue) addCondition(m, 'away', report)
+    report.timeline = [...(report.timeline ?? []), {
+      seq: (report.timeline?.length ?? 0) + 1, time: combat.startTime, actor: x.id,
+      action: `${x.name}：救助或逃跑（親密度）`, roll: { dice: '1d20', value: x.total, dc: nc.defeat_check.dc }, result: x.rescue ? 'success' : 'fail',
+    }]
   }
   delete state.combat
   return commitReport(state, report)

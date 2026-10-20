@@ -12,7 +12,7 @@ import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
 import { generateNpc, npcKind, npcRecord, registerNpc } from './npcs'
 import {
-  addAffinity, changeMaster, enslavePlayer, freePlayer, isBound, isEnslaved, isFugitive, masterTravels, pcOf, punish, recapturePlayer, setHp,
+  addAffinity, changeMaster, enslavePlayer, freePlayer, isBound, isEnslaved, isFugitive, pcOf, punish, recapturePlayer, setHp,
 } from './party'
 import { areaOf, isHostile, nearbyPeople, presentHere } from './population'
 import { ensureRelationship } from './social'
@@ -340,8 +340,9 @@ export interface MasterEventOptions {
 
 export function maybeMasterEvent(state: GameState, chance: number, opts: MasterEventOptions = {}): PendingMasterEvent | undefined {
   if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent) return undefined
-  // 主人不同行（普通人主人留在城裡）時沒有突發事件
-  if (!state.party.some((m) => m.id === pcOf(state).contract!.master)) return undefined
+  // 主人不在身邊（戰敗時逃開了）時沒有突發事件
+  const master = state.party.find((m) => m.id === pcOf(state).contract!.master)
+  if (!master || master.status.includes('away')) return undefined
   const ev = slaveryRules.master_events
   const now = hoursOf(state.time)
   if (state.lastMasterEvent !== undefined && now - state.lastMasterEvent < ev.cooldown_hours) return undefined
@@ -551,7 +552,7 @@ export function seekMasterDc(state: GameState, rec: NpcRecord): number {
 export function setupSeekMaster(state: GameState, target?: string) {
   const rec = seekTarget(state, target)
   ensureRelationship(state, rec)
-  const stays = !masterTravels(rec) ? '（普通人主人留在自己的城裡，不與你同行）' : ''
+  const stays = npcKind(rec) === 'commoner' ? '（普通人主人同行，但不參與戰鬥）' : ''
   return {
     dc: seekMasterDc(state, rec), targetName: rec.name, situational: [],
     scene: `${currentArea(state).name}・請${rec.name}收下自己`,
@@ -573,7 +574,7 @@ export function applySeekMaster(state: GameState, report: Report, target: string
         c.obedience = Math.max(0, c.obedience - 1)
         addAffinity(state, report, rec.id, 3, '收下了主角')
       }
-      return `${rec.name}收下了你，成為你的新主人。${masterTravels(rec) ? '' : `${rec.name}不會跟著你冒險，但印記的規矩照舊。`}`
+      return `${rec.name}收下了你，成為你的新主人。`
     }
     case 'partial':
       addAffinity(state, report, rec.id, 1, '對主角有些好感')

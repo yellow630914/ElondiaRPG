@@ -61,6 +61,11 @@
       "weapon": "quarterstaff", "armor": "cloth",
       "start": ["fire_bolt", "ray_of_frost", "magic_missile", "burning_hands", "arcane_recovery"],
       "role": "最強的範圍傷害與屬性克制，但生命值最低"
+    },
+    "noncombatant": {
+      "name": "無法戰鬥", "emoji": "🧺", "hit_die": 6, "priority": ["cha", "fai", "int", "dex", "str"], "caster": "none",
+      "weapon": "unarmed", "armor": "cloth", "start": [], "noncombat": true,
+      "role": "普通人：可以同行（佔隊伍名額），但不參與戰鬥、不分經驗、不學能力。戰敗時依親密度救助或逃跑（見 companions.json 的 noncombatant）"
     }
   }
 }

@@ -6,7 +6,7 @@
 
 import { createNpc, lifeTier } from './character'
 import {
-  attributeRules, classes, className, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, slaveryRules, tagDef,
+  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, slaveryRules, tagDef,
   type Haunt, type NpcKind,
 } from './data'
 import { Rng } from './rng'
@@ -123,7 +123,7 @@ export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, pref
   const location = spec.location ?? state.location
   const kind: NpcKind = spec.kind ?? 'adventurer'
   const race = spec.race && attributeRules.races[spec.race] ? spec.race : weightedPick(rng, raceWeights(location))
-  const cls = kind === 'commoner' ? '' : spec.class && classes[spec.class] ? spec.class : rng.pick(Object.keys(classes))
+  const cls = kind === 'commoner' ? '' : spec.class && combatClasses[spec.class] ? spec.class : rng.pick(Object.keys(combatClasses))
   const level = Math.max(1, Math.min(20, Math.round(spec.level ?? 1)))
   const gender = spec.gender && GENDER_IDS.includes(spec.gender)
     ? spec.gender
@@ -179,7 +179,8 @@ export function npcIdentity(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation'
 /** 取得 NPC 的角色資料：之前同行過就沿用，否則依等級生成。 */
 export function characterFor(state: GameState, rec: NpcRecord): Character {
   if (rec.character) return JSON.parse(JSON.stringify(rec.character)) as Character
-  return createNpc(rec, new Rng(hashString(rec.id)))
+  // 普通人沒有職業：入隊時用「無法戰鬥」
+  return createNpc({ ...rec, class: rec.class || NONCOMBAT_CLASS }, new Rng(hashString(rec.id)))
 }
 
 /** 找出 NPC 的 id（依名字或別名比對），供 AI 回傳的名字對應 */

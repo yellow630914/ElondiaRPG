@@ -2,8 +2,8 @@
 // 這些函式直接修改狀態，並把變化記在報告的 changes 裡；報告由呼叫端提交。
 
 import { snapshot } from './character'
-import { combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, type Bond } from './data'
-import { characterFor, npcKind, npcRecord, registerNpc } from './npcs'
+import { classes, combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, type Bond } from './data'
+import { characterFor, npcRecord, registerNpc } from './npcs'
 import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
 import { contractTerms, makeContract, type MarkChoice } from './slavery'
@@ -145,9 +145,9 @@ export function conditionPenalty(c: Character): number {
 
 // ---- 主角成為奴隸、獲釋、逃亡 ----
 
-/** 冒險者主人帶著主角一起行動；普通人主人留在自己的城裡（印記與規則照舊，只是不同行） */
-export function masterTravels(rec: Pick<NpcRecord, 'kind' | 'class'>): boolean {
-  return npcKind(rec) !== 'commoner'
+/** 無法戰鬥的隊員（普通人）：同行但不參與戰鬥、不分經驗 */
+export function isNoncombatant(c: Pick<Character, 'class'>): boolean {
+  return !!classes[c.class]?.noncombat
 }
 
 /**
@@ -161,7 +161,7 @@ export function enslavePlayer(state: GameState, master: NpcRecord | null, contra
   delete state.pendingLeave
   state.partyOffers = []
   if (master && !state.npcs?.[master.id]) registerNpc(state, master)
-  if (master && masterTravels(master)) {
+  if (master) {
     joinParty(state, master, 'leader', report, { group: master.id })
     for (const m of members) if (partyRoom(state) > 0) joinParty(state, m, 'ally', report, { group: master.id })
   }
@@ -208,10 +208,7 @@ export function recapturePlayer(state: GameState, report?: Report) {
   if (!contract) return
   const master = npcRecord(state, contract.master)
   removeCondition(pc, 'fugitive', report)
-  if (!master || !masterTravels(master)) {
-    if (master) recordChange(report, { npc: 'pc', name: pc.name, change: 'recaptured', reason: `被${master.name}找到` })
-    return
-  }
+  if (!master) return
   while (partyRoom(state) < 1) {
     const last = [...state.party].reverse().find((m) => !m.isPlayer)
     if (!last) break
@@ -240,7 +237,7 @@ export function changeMaster(state: GameState, master: NpcRecord | null, report?
   const old = c.masterName || '無主'
   pc.contract = { ...c, master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } }
   if (master && !state.npcs?.[master.id]) registerNpc(state, master)
-  if (master && masterTravels(master)) {
+  if (master) {
     while (partyRoom(state) < 1) {
       const last = [...state.party].reverse().find((m) => !m.isPlayer)
       if (!last) break
