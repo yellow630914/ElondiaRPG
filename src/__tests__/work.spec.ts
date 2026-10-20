@@ -4,7 +4,7 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { madamHere } from '@/engine/brothel'
 import { setAdultContent } from '@/engine/content'
-import { contractDef, locationById, slaveryRules, tagDef } from '@/engine/data'
+import { contractDef, geography, locationById, slaveryRules, tagDef } from '@/engine/data'
 import { cellName, enterLocation, standOn, zonesOf } from '@/engine/grid'
 import { npcRecord } from '@/engine/npcs'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
@@ -33,9 +33,8 @@ function act(state: GameState, input: Parameters<typeof prepareAction>[1], natur
 afterEach(() => setAdultContent(false))
 
 describe('brothels on the map', () => {
-  it('appear in cities and capitals, staffed by a madam and workers', () => {
-    expect(zonesOf(locationById('soriel'))).toContain('brothel')
-    expect(zonesOf(locationById('rivervale'))).not.toContain('brothel')
+  it('appear in every settlement, staffed by a madam and workers', () => {
+    for (const l of geography.locations.filter((x) => x.type !== 'dungeon')) expect(zonesOf(l), l.name).toContain('brothel')
     const state = game()
     const madam = madamHere(state)!
     expect(madam.tags).toEqual(['prostitute', 'merchant'])
@@ -43,7 +42,7 @@ describe('brothels on the map', () => {
     const workers = state.rosters!.soriel!.members.filter((id) => npcRecord(state, id)?.tags?.includes('prostitute'))
     expect(workers.length).toBeGreaterThanOrEqual(3)
     const town = game('rivervale')
-    expect(town.rosters!.rivervale!.members.some((id) => npcRecord(town, id)?.tags?.includes('prostitute'))).toBe(false)
+    expect(town.rosters!.rivervale!.members.some((id) => npcRecord(town, id)?.tags?.includes('prostitute'))).toBe(true)
   })
 
   it('becomes a massage shop with the adult setting off', () => {

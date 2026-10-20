@@ -19,8 +19,8 @@ describe('shop types', () => {
     const tiers: Record<string, { ids: string[]; blocks: number[]; kinds: string[] }> = {
       capital: { ids: ['soriel', 'rhineburg', 'dawnlight', 'ironforge', 'bloodplume', 'silvermoon', 'tidehaven', 'canglue'], blocks: [4, 5], kinds: ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'brothel', 'temple'] },
       city: { ids: ['albena', 'shadow_vale', 'silent_tomb'], blocks: [3, 3], kinds: ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'brothel', 'temple'] },
-      medium: { ids: ['rivervale', 'greyrock', 'moltenhold', 'coral_bay', 'coast_ferry', 'ashport'], blocks: [2, 2], kinds: ['smithy', 'tailor', 'informant', 'temple'] },
-      small: { ids: ['snowridge', 'bone_hills', 'windspeak', 'mosswhisper', 'sandcastle', 'sunscorch', 'stilltide_oasis'], blocks: [1, 1], kinds: ['inn', 'guild', 'tavern', 'shop'] },
+      medium: { ids: ['rivervale', 'greyrock', 'moltenhold', 'coral_bay', 'coast_ferry', 'ashport', 'sandcastle'], blocks: [2, 2], kinds: ['smithy', 'tailor', 'informant', 'temple', 'brothel'] },
+      small: { ids: ['snowridge', 'bone_hills', 'windspeak', 'mosswhisper', 'sunscorch', 'stilltide_oasis'], blocks: [1, 1], kinds: ['inn', 'guild', 'tavern', 'shop', 'brothel'] },
     }
     const layouts = new Map<string, string>()
     for (const t of Object.values(tiers)) {

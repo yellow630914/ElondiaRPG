@@ -76,7 +76,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <div class="map-wrap">
-    <div class="map" :style="{ gridTemplateColumns: `repeat(${area.width}, var(--cell))` }">
+    <div class="map" :style="{ '--w': area.width }">
       <template v-for="row in rows" :key="row[0]!.y">
         <button
           v-for="c in row"
@@ -98,10 +98,14 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </template>
 
 <style scoped>
-.map-wrap { --cell: clamp(30px, 8vw, 40px); margin-top: 8px; }
-.map { display: grid; gap: 2px; width: max-content; max-width: 100%; overflow-x: auto; }
+/* 格子依面板寬度縮放：地圖再寬也不會超出面板（最大 40px） */
+.map-wrap { container-type: inline-size; margin-top: 8px; }
+.map {
+  --cell: min(40px, calc((100cqw - (var(--w) - 1) * 2px) / var(--w)));
+  display: grid; gap: 2px; grid-template-columns: repeat(var(--w), var(--cell)); width: max-content; max-width: 100%;
+}
 .cell {
-  width: var(--cell); height: var(--cell); padding: 0; border-radius: 4px;
+  width: var(--cell); height: var(--cell); padding: 0; border-radius: 4px; min-width: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: calc(var(--cell) * 0.5); background: #3a3329; border: 1px solid transparent; cursor: default;
 }
