@@ -59,6 +59,7 @@ export const usePrompts = defineStore('prompts', () => {
       adult: settings.adult,
       budgetChars: settings.loreBudget,
       language: settings.language,
+      splitNarrative: settings.splitJudgeNarrative(),
     }
   }
 

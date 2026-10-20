@@ -1,46 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { providerInfo, PROVIDERS, type ProviderId } from '@/narrator/providerInfo'
+import { ref } from 'vue'
 import { useGame } from '@/stores/game'
-import { useSettings } from '@/stores/settings'
+import { AI_FEATURES, useSettings } from '@/stores/settings'
+import ModelSourceEditor from './ModelSourceEditor.vue'
 
 const settings = useSettings()
 const game = useGame()
-const info = computed(() => providerInfo(settings.provider))
-const cfg = computed(() => settings.configs[settings.provider])
-// 載入的模型清單依服務分開保存，切換服務再切回來不必重新載入
-const loaded = ref<Partial<Record<ProviderId, string[]>>>({})
-const models = computed(() => loaded.value[settings.provider] ?? [])
-const hints = computed(() => info.value.modelHints.filter((m) => !models.value.includes(m)))
-const known = computed(() => [...hints.value, ...models.value])
-const loading = ref(false)
-const message = ref('')
-const showKey = ref(false)
-
-async function loadModels() {
-  loading.value = true
-  message.value = ''
-  try {
-    const { listModels } = await import('@/narrator/providers')
-    const provider = settings.provider
-    loaded.value[provider] = await listModels(provider, cfg.value)
-    message.value = `連線成功，共 ${loaded.value[provider]!.length} 個模型，可以從下拉選單選擇。`
-  } catch (e) {
-    message.value = `連線失敗：${e instanceof Error ? e.message : String(e)}`
-  } finally {
-    loading.value = false
-  }
-}
-
-function pickModel(e: Event) {
-  const v = (e.target as HTMLSelectElement).value
-  if (v) cfg.value.model = v
-}
-
-function onMaxTokens(e: Event) {
-  const v = Number((e.target as HTMLInputElement).value)
-  cfg.value.maxTokens = v > 0 ? v : undefined
-}
+const tab = ref(0)
 
 function doReset() {
   if (confirm('確定要刪除目前的存檔？此動作無法復原。')) game.reset()
@@ -49,62 +15,40 @@ function doReset() {
 
 <template>
   <section class="panel">
-    <h2>🤖 AI 服務</h2>
+    <h2>🤖 模型來源</h2>
     <p class="small muted">
+      可以設定三個模型來源（例如一個擅長寫作的模型、一個便宜的模型），再在下方指定每個功能用哪一個。
       API key 只會存在這個瀏覽器的 localStorage，請求直接從瀏覽器送往你選擇的服務。請勿在共用電腦上保存 key。
     </p>
+    <nav class="row tabs">
+      <button v-for="(s, i) in settings.sources" :key="i" :class="{ active: tab === i }" @click="tab = i">
+        {{ settings.sourceReady(i) ? '🟢' : '⚪' }} {{ s.name }}
+      </button>
+    </nav>
+    <ModelSourceEditor :key="tab" :index="tab" />
+  </section>
 
-    <div class="form">
-      <label>
-        服務
-        <select v-model="settings.provider" @change="message = ''">
-          <option v-for="p in PROVIDERS" :key="p.id" :value="p.id">{{ p.name }}</option>
-        </select>
-      </label>
-
-      <label v-if="info.needsBaseURL">
-        Base URL
-        <input v-model="cfg.baseURL" placeholder="https://.../v1" />
-        <span class="row">
-          <button v-for="p in info.presets" :key="p.name" class="small" @click="cfg.baseURL = p.baseURL">{{ p.name }}</button>
-        </span>
-      </label>
-
-      <label>
-        API key{{ info.keyOptional ? '（選填）' : '' }}
-        <span class="row">
-          <input v-model="cfg.apiKey" :type="showKey ? 'text' : 'password'" :placeholder="info.keyHint" autocomplete="off" style="flex: 1" />
-          <button class="small" @click="showKey = !showKey">{{ showKey ? '隱藏' : '顯示' }}</button>
-        </span>
-      </label>
-
-      <div class="field">
-        <span>模型</span>
-        <span class="row">
-          <select :value="known.includes(cfg.model) ? cfg.model : ''" style="flex: 1; min-width: 0" @change="pickModel">
-            <option value="" disabled>{{ cfg.model ? `自訂：${cfg.model}` : '選擇模型' }}</option>
-            <optgroup v-if="hints.length" label="常用">
-              <option v-for="m in hints" :key="m" :value="m">{{ m }}</option>
-            </optgroup>
-            <optgroup v-if="models.length" :label="`服務提供的模型（${models.length}）`">
-              <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
-            </optgroup>
-          </select>
-          <button class="small" :disabled="loading || (!cfg.apiKey && !info.keyOptional)" @click="loadModels">
-            {{ loading ? '載入中…' : '載入模型清單' }}
-          </button>
-        </span>
-        <input v-model.trim="cfg.model" placeholder="或直接輸入模型名稱" aria-label="模型名稱" />
-      </div>
-      <p v-if="message" class="small">{{ message }}</p>
-
-      <label>
-        最大輸出 tokens（選填，留空用服務預設值）
-        <input type="number" min="0" :value="cfg.maxTokens ?? ''" style="width: 140px" @input="onMaxTokens" />
-      </label>
-    </div>
-    <p class="small" :style="{ color: settings.ready() ? 'var(--good)' : 'var(--muted)' }">
-      {{ settings.ready() ? '✓ 已可生成敘事' : '尚未完成設定' }}
+  <section class="panel">
+    <h2>🔀 功能分配</h2>
+    <p class="small muted">只有「敘事正文」會寫出日誌裡的正文，適合用寫作能力好的模型；其他功能只輸出 JSON，可以改用便宜、快速的模型。</p>
+    <table class="routes small">
+      <tbody>
+        <tr v-for="f in AI_FEATURES" :key="f.id">
+          <td class="name">{{ f.prose ? '✍️' : '🧮' }} {{ f.name }}</td>
+          <td>
+            <select v-model.number="settings.routes[f.id]">
+              <option v-for="(s, i) in settings.sources" :key="i" :value="i">{{ s.name }}{{ settings.sourceReady(i) ? '' : '（未設定）' }}</option>
+            </select>
+          </td>
+          <td class="muted">{{ f.desc }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="small" :class="settings.splitJudgeNarrative() ? 'note' : 'muted'">
+      <template v-if="settings.splitJudgeNarrative()">
+        判定與正文使用不同的來源：主動行動先由「{{ settings.sourceFor('judge').name }}」判定（只回傳 JSON），經過再交給「{{ settings.sourceFor('narration').name }}」撰寫（每次主動行動兩次呼叫）。
+      </template>
+      <template v-else>判定與正文使用同一個來源：判定時順便寫出經過（每次主動行動一次呼叫）。</template>
     </p>
   </section>
 
@@ -163,6 +107,12 @@ function doReset() {
 
 <style scoped>
 .form { display: grid; gap: 12px; max-width: 560px; }
+.tabs { gap: 6px; margin-bottom: 10px; }
+.tabs button.active { border-color: var(--accent); color: var(--accent); }
+.routes { border-collapse: collapse; width: 100%; }
+.routes td { border-bottom: 1px solid var(--border); padding: 6px 8px 6px 0; vertical-align: top; }
+.routes .name { white-space: nowrap; font-weight: 600; }
+.note { color: var(--accent-2); }
 .form label, .form .field { display: grid; gap: 4px; }
 .form label.check { display: flex; gap: 6px; align-items: center; }
 </style>

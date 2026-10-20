@@ -123,7 +123,7 @@ export const useGame = defineStore('game', () => {
       // 自動存檔：長休、抵達目的地
       if (report?.kind === 'rest' && report.outcome.tags?.includes('長休')) void autoSave('長休')
       if (report?.kind === 'travel' && report.outcome.result === 'arrived') void autoSave('抵達')
-      if (opts.narrate !== false && settings.aiNarration && settings.ready() && report && report.kind !== 'trade') {
+      if (opts.narrate !== false && settings.aiNarration && settings.ready('narration') && report && report.kind !== 'trade') {
         void narrate(report)
       }
       return result
@@ -353,7 +353,8 @@ export const useGame = defineStore('game', () => {
       const prompt = await promptFor(report)
       const { streamNarration } = await import('@/narrator/providers')
       const onUsage = (u: TokenUsage) => addUsage(report.report_id, u)
-      for await (const chunk of streamNarration(settings.provider, settings.current(), prompt, controller.signal, onUsage)) {
+      const src = settings.sourceFor('narration')
+      for await (const chunk of streamNarration(src.provider, src.config, prompt, controller.signal, onUsage)) {
         entry.text += chunk
       }
       // 正文後面的人際關係更新提議：取出來等玩家確認
@@ -387,7 +388,7 @@ export const useGame = defineStore('game', () => {
     const pending = s?.pendingAction
     if (!s || !pending || judging.value) return
     const settings = useSettings()
-    const ai = useAI ?? (settings.aiJudge && settings.ready())
+    const ai = useAI ?? (settings.aiJudge && settings.ready('judge'))
     if (!ai) {
       run((st) => actions.resolveAction(st, null))
       return
@@ -398,12 +399,17 @@ export const useGame = defineStore('game', () => {
     try {
       const { completeText } = await import('@/narrator/providers')
       const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
-      const text = await completeText(settings.provider, settings.current(), composeJudge(s, pending, opts).prompt, undefined, collector.onUsage)
+      const src = settings.sourceFor('judge')
+      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts).prompt, undefined, collector.onUsage)
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
-      // AI 已經直接寫出經過：當作這份報告的敘事，不再另外請 AI 描述
-      const report = run((st) => actions.resolveAction(st, judgment), { narrate: !judgment.narrative })
+      // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型
+      if (opts.splitNarrative) delete judgment.narrative
+      // 判定與正文同一個來源時，AI 已經直接寫出經過：當作這份報告的敘事。
+      // 不同來源時（例如判定用便宜的模型），經過另外交給敘事正文的來源撰寫。
+      const report = run((st) => actions.resolveAction(st, judgment), { narrate: false })
       collector.flush(report?.report_id ?? OTHER_USAGE)
       if (report && judgment.narrative) narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+      else if (report && (opts.splitNarrative || settings.aiNarration) && settings.ready('narration')) void narrate(report)
       save()
     } catch (e) {
       collector.flush(OTHER_USAGE)
@@ -417,7 +423,7 @@ export const useGame = defineStore('game', () => {
   async function flavorRoster() {
     const s = state.value
     const settings = useSettings()
-    if (!s || !settings.aiJudge || !settings.ready()) return
+    if (!s || !settings.aiJudge || !settings.ready('roster')) return
     const loc = s.location
     const roster = s.rosters?.[loc]
     if (!roster || roster.flavored || flavoring.has(loc)) return
@@ -429,7 +435,8 @@ export const useGame = defineStore('game', () => {
     flavoring.add(loc)
     try {
       const { completeText } = await import('@/narrator/providers')
-      const raw = extractJson(await completeText(settings.provider, settings.current(), prompt, undefined, (u) => addUsage(OTHER_USAGE, u))) as { npcs?: population.NpcFlavor[] }
+      const src = settings.sourceFor('roster')
+      const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(OTHER_USAGE, u))) as { npcs?: population.NpcFlavor[] }
       run((st) => population.applyRosterFlavor(st, loc, Array.isArray(raw.npcs) ? raw.npcs : []))
     } catch (e) {
       error.value = `AI 潤飾居民失敗：${e instanceof Error ? e.message : String(e)}（先用預設的名字與設定）`
@@ -443,14 +450,15 @@ export const useGame = defineStore('game', () => {
   async function flavorShop(type: ShopType) {
     const s = state.value
     const settings = useSettings()
-    if (!s || !settings.aiJudge || !settings.ready()) return
+    if (!s || !settings.aiJudge || !settings.ready('shop')) return
     const shop = trade.shopState(s, type)
     if (shop.aiTried || shop.source === 'ai') return
     shop.aiTried = true
     save()
     try {
       const { completeText } = await import('@/narrator/providers')
-      const raw = extractJson(await completeText(settings.provider, settings.current(), buildShopPrompt(s, type), undefined, (u) => addUsage(OTHER_USAGE, u)))
+      const src = settings.sourceFor('shop')
+      const raw = extractJson(await completeText(src.provider, src.config, buildShopPrompt(s, type), undefined, (u) => addUsage(OTHER_USAGE, u)))
       run((st) => trade.applyAiDeals(st, type, raw))
     } catch (e) {
       error.value = `AI 生成交易清單失敗：${e instanceof Error ? e.message : String(e)}（先用一般的商品清單）`
@@ -462,11 +470,12 @@ export const useGame = defineStore('game', () => {
     const n = run((s) => negotiation.startNegotiation(s, template, ctx))
     const s = state.value
     const settings = useSettings()
-    if (!n || !s || n.ai || !settings.aiJudge || !settings.ready()) return n
+    if (!n || !s || n.ai || !settings.aiJudge || !settings.ready('negotiation')) return n
     n.ai = true
     try {
       const { completeText } = await import('@/narrator/providers')
-      const raw = extractJson(await completeText(settings.provider, settings.current(), buildNegotiationPrompt(s, n), undefined, (u) => addUsage(OTHER_USAGE, u)))
+      const src = settings.sourceFor('negotiation')
+      const raw = extractJson(await completeText(src.provider, src.config, buildNegotiationPrompt(s, n), undefined, (u) => addUsage(OTHER_USAGE, u)))
       run((st) => negotiation.applyAiOptions(st, n.id, raw))
     } catch (e) {
       error.value = `AI 生成談判方式失敗：${e instanceof Error ? e.message : String(e)}（先用預設的談判方式）`

@@ -16,7 +16,7 @@ function setup(aiNarration: boolean) {
   setActivePinia(pinia)
   const settings = useSettings()
   settings.aiNarration = aiNarration
-  settings.configs.anthropic.apiKey = 'sk-ant-test'
+  settings.sources[0]!.configs.anthropic.apiKey = 'sk-ant-test'
   const game = useGame()
   game.narrations[combat.report_id] = { text: '溶洞裡的水聲忽然停了。', status: 'done' }
   return pinia

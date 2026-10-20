@@ -23,7 +23,7 @@ pnpm build             # 型別檢查 + 建置到 dist/
 
 **AI 細節描述**可以在「⚙️ 設定」或日誌上方開關：
 
-- 開啟：每次行動、事件或戰鬥結束後，自動請 AI 寫出詳細經過。需要先在「設定」選擇 AI 服務並填入自己的 API key（Anthropic、OpenAI、Google Gemini，或 OpenRouter / DeepSeek / Ollama 等 OpenAI 相容格式）。
+- 開啟：每次行動、事件或戰鬥結束後，自動請 AI 寫出詳細經過。需要先在「設定」選擇 AI 服務並填入自己的 API key（Anthropic、OpenAI、Google Gemini，或 OpenRouter / DeepSeek / Ollama 等 OpenAI 相容格式）。可以設定三個模型來源，再指定每個功能用哪一個，例如正文用寫作好的模型、判定與各種清單用便宜的模型（見 [`docs/PROMPTS.md`](docs/PROMPTS.md)）。
 - 關閉（預設）：不呼叫 AI，戰鬥直接顯示戰報，其他事件顯示簡述。
 
 **AI 判定主動行動**（「設定」，預設關閉）：開啟時，主動行動擲骰後由 AI 決定結果並寫出經過，各地居民的名字與設定、商店的交易清單與談判方式也由 AI 設計；關閉時依規則判定與生成。

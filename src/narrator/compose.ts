@@ -17,6 +17,8 @@ export interface ComposeOptions {
   adult: boolean
   budgetChars: number
   language: 'zh-Hant' | 'zh-Hans'
+  /** 判定與正文用不同的模型：判定不寫經過 */
+  splitNarrative?: boolean
 }
 
 export interface Composed {
@@ -71,6 +73,7 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     : undefined
   const prompt = buildActionPrompt(state, p, judgeContext(state, p), {
     language: o.language,
+    narrative: !o.splitNarrative,
     styles: activeEntries(o.config.styles, 'judge', name),
     instructions: activeEntries(o.config.custom, 'judge', name, 'system'),
     endNotes: activeEntries(o.config.custom, 'judge', name, 'end'),

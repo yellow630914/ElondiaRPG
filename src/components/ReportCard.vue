@@ -74,11 +74,11 @@ async function copyPrompt() {
         <button
           v-if="narration?.status !== 'streaming'"
           class="small"
-          :disabled="!settings.ready()"
+          :disabled="!settings.ready('narration')"
           @click="game.narrate(report)"
         >{{ narration ? '重新生成敘事' : '生成敘事' }}</button>
         <button v-else class="small" @click="game.cancelNarration(report.report_id)">停止</button>
-        <span v-if="!settings.ready()" class="small muted">AI 服務尚未設定，請到「設定」填寫</span>
+        <span v-if="!settings.ready('narration')" class="small muted">「敘事正文」的模型來源尚未設定，請到「設定」填寫</span>
       </template>
       <button class="small" @click="copyPrompt">{{ copied ? '已複製' : '複製提示詞' }}</button>
       <button class="small" @click="showRaw = !showRaw">{{ showRaw ? '隱藏' : '顯示' }}報告 JSON</button>

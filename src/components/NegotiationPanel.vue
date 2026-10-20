@@ -17,7 +17,7 @@ const list = computed(() => openNegotiationsHere(s.value))
 const text = reactive<Record<string, string>>({})
 const use = reactive<Record<string, string>>({})
 const DEGREES = Object.keys(DEGREE_NAME) as Degree[]
-const aiOn = computed(() => settings.aiJudge && settings.ready())
+const aiOn = computed(() => settings.aiJudge && settings.ready('negotiation'))
 
 function free(id: string) {
   void game.negotiateFreely(id, text[id] ?? '', parseUse(use[id] ?? ''))

@@ -88,8 +88,8 @@ describe('token usage', () => {
     const { useSettings } = await import('@/stores/settings')
     const { useGame } = await import('@/stores/game')
     const settings = useSettings()
-    settings.configs.anthropic = { apiKey: 'x', model: 'claude-sonnet-5-5' }
-    settings.provider = 'anthropic'
+    settings.sources[0]!.configs.anthropic = { apiKey: 'x', model: 'claude-sonnet-5-5' }
+    settings.sources[0]!.provider = 'anthropic'
     settings.aiJudge = true
     const g = useGame()
     g.start('艾倫', 'human', 'fighter')
@@ -101,5 +101,56 @@ describe('token usage', () => {
     expect(g.usage[report.report_id]).toEqual({ input: 1200, output: 300, calls: 1 })
     expect(g.totalUsage).toEqual({ input: 1200, output: 300, calls: 1, cached: 0 })
     expect(g.narrations[report.report_id]?.text).toBe('你們聊到深夜。')
+  })
+})
+
+describe('model sources', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('migrates the old single-service settings into source 1', async () => {
+    localStorage.setItem('elondia.settings', JSON.stringify({ provider: 'gemini', configs: { gemini: { apiKey: 'AIza-old', model: 'gemini-pro-latest' } }, aiJudge: true }))
+    const { useSettings } = await import('@/stores/settings')
+    const settings = useSettings()
+    expect(settings.sources.length).toBe(3)
+    expect(settings.sources[0]).toMatchObject({ name: '來源 1', provider: 'gemini' })
+    expect(settings.sources[0]!.configs.gemini.apiKey).toBe('AIza-old')
+    // 來源 2、3 先複製一份，只要改模型就好
+    expect(settings.sources[1]!.configs.gemini.apiKey).toBe('AIza-old')
+    expect(settings.sourceFor('shop')).toMatchObject({ index: 0, provider: 'gemini' })
+    expect(settings.ready('judge')).toBe(true)
+    expect(settings.splitJudgeNarrative()).toBe(false)
+  })
+
+  it('sends each feature to its own source, and lets the writing model write the action', async () => {
+    const { useSettings } = await import('@/stores/settings')
+    const { useGame } = await import('@/stores/game')
+    const providers = await import('@/narrator/providers')
+    const settings = useSettings()
+    settings.sources[0]!.configs.anthropic = { apiKey: 'x', model: 'claude-opus-5-5' }
+    settings.sources[1]!.provider = 'gemini'
+    settings.sources[1]!.configs.gemini = { apiKey: 'AIza', model: 'gemini-flash-latest' }
+    settings.routes.judge = 1
+    settings.aiJudge = true
+    expect(settings.splitJudgeNarrative()).toBe(true)
+    const g = useGame()
+    g.start('艾倫', 'human', 'fighter')
+    standOn(g.state!, 'tavern')
+    g.recruit('npc_lina')
+    await g.perform({ kind: 'free', target: 'npc_lina', text: '聊聊天' })
+    const judgeCall = vi.mocked(providers.completeText).mock.calls[0]!
+    expect(judgeCall[0]).toBe('gemini')
+    expect(judgeCall[1]).toMatchObject({ model: 'gemini-flash-latest' })
+    const prompt = judgeCall[2] as { system: string; user: string }
+    expect(prompt.system).toContain('narrative 填空字串')
+    expect(prompt.system).not.toContain('<style>')
+    // 經過交給敘事正文的來源（即使沒開 AI 細節描述）
+    await new Promise((r) => setTimeout(r, 0))
+    const narrationCall = vi.mocked(providers.streamNarration).mock.calls[0]!
+    expect(narrationCall[0]).toBe('anthropic')
+    expect(narrationCall[1]).toMatchObject({ model: 'claude-opus-5-5' })
   })
 })

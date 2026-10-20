@@ -15,7 +15,7 @@ const game = useGame()
 const settings = useSettings()
 const s = computed(() => game.state!)
 const pending = computed(() => s.value.pendingAction)
-const aiOn = computed(() => settings.aiJudge && settings.ready())
+const aiOn = computed(() => settings.aiJudge && settings.ready('judge'))
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 
@@ -94,12 +94,12 @@ function doFreedom(kind: 'negotiate' | 'escape') {
       </template>
     </ul>
     <div class="row">
-      <button class="primary" :disabled="game.judging || !settings.ready()" @click="game.judge(true)">
+      <button class="primary" :disabled="game.judging || !settings.ready('judge')" @click="game.judge(true)">
         {{ game.judging ? 'AI 判定中…' : 'AI 判定' }}
       </button>
       <button :disabled="game.judging" @click="game.judge(false)">依規則判定（{{ attrName(pending.attr) }}）</button>
     </div>
-    <p v-if="!settings.ready()" class="small muted">尚未設定 AI 服務，只能依規則判定。</p>
+    <p v-if="!settings.ready('judge')" class="small muted">「主動行動判定」的模型來源尚未設定，只能依規則判定。</p>
   </section>
 
   <section v-else class="panel">

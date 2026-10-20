@@ -19,7 +19,7 @@ const loading = ref(false)
 
 onMounted(async () => {
   game.shopState(props.type)
-  loading.value = settings.aiJudge && settings.ready()
+  loading.value = settings.aiJudge && settings.ready('shop')
   await game.flavorShop(props.type)
   loading.value = false
 })
