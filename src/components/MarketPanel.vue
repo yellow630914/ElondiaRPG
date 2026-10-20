@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { marketsHere, selfSaleChance, type MarketKind } from '@/engine/companions'
-import { className, combatRules, contractDef, genderName, raceName, slaveryRules } from '@/engine/data'
+import { className, combatRules, contractDef, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import { isEnslaved } from '@/engine/party'
+import { isBound, isEnslaved } from '@/engine/party'
 import type { MarkChoice } from '@/engine/slavery'
 import type { SlaveListing } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -24,6 +24,13 @@ onMounted(() => {
 const stock = computed(() => s.value.markets?.[`${s.value.location}/${props.kind}`]?.stock ?? loaded.value)
 const partyFull = computed(() => s.value.party.length >= combatRules.party_max)
 const enslaved = computed(() => isEnslaved(s.value))
+const bound = computed(() => isBound(s.value))
+// 這個市場常見的買家（依權重）
+const buyers = computed(() => Object.entries(slaveryRules.master_tags.tags)
+  .filter(([, t]) => t[props.kind] > 0)
+  .sort((a, b) => b[1][props.kind] - a[1][props.kind])
+  .map(([id, t]) => `${tagDef(id)?.name ?? id}${t.chance ? `（${t.chance > 0 ? '+' : ''}${Math.round(t.chance * 100)}%）` : ''}`)
+  .join('、'))
 const haggleText = reactive<Record<string, string>>({})
 const open = ref<string | null>(null)
 // 買下前選印記：預設是這名奴隸身上原本的契約
@@ -46,7 +53,10 @@ function haggle(l: SlaveListing) {
 }
 
 function sellSelf() {
-  if (confirm('登記出售自己：買家主要看你的魅力與等級，你幾乎無法影響結果。被買下後要過一次刻印檢定，決定刻上哪一種契約印記；原本的同伴會離開。確定嗎？')) {
+  const msg = enslaved.value
+    ? '登記出售自己：買下你的人會成為新主人，頸上的印記沿用。確定嗎？'
+    : '登記出售自己：買家主要看你的魅力與等級，你幾乎無法影響結果。被買下後要過一次刻印檢定，決定刻上哪一種契約印記；原本的同伴會離開。確定嗎？'
+  if (confirm(msg)) {
     game.offerSelf(props.kind)
   }
 }
@@ -92,13 +102,16 @@ function sellSelf() {
     </ul>
     <p v-if="stock.length === 0" class="small muted">今天沒有貨了。</p>
 
-    <details v-if="!enslaved" class="small">
-      <summary>登記出售自己</summary>
+    <details v-if="!bound" class="small">
+      <summary>{{ enslaved ? '登記出售自己（找新主人）' : '登記出售自己' }}</summary>
       <p class="muted">
-        等 {{ slaveryRules.self_sale.hours }} 小時，有買家的機率約 {{ Math.round(selfSaleChance(s) * 100) }}%（主要看魅力與等級）。
-        成交後你拿到成交價的 {{ Math.round(slaveryRules.self_sale.share * 100) }}% 作為賣身錢，之後由主人帶領；要恢復自由只能談判或逃離。
-        隊伍必須只剩你一人。
+        等 {{ slaveryRules.self_sale.hours }} 小時，有買家的機率約 {{ Math.round(selfSaleChance(s) * 100) }}%（主要看魅力與等級，再依出價的人的身分增減）。
+        成交後你拿到成交價的 {{ Math.round(slaveryRules.self_sale.share * 100) }}%。
+        <template v-if="enslaved">買下你的人成為新主人，頸上的印記沿用；逃亡狀態解除。</template>
+        <template v-else>之後由主人帶領；要恢復自由只能談判或逃離。</template>
+        普通人主人不會跟著你冒險。隊伍必須只剩你一人。
       </p>
+      <p class="muted">常見的買家：{{ buyers }}</p>
       <button class="small danger" :disabled="s.party.length > 1" @click="sellSelf">登記</button>
     </details>
   </div>

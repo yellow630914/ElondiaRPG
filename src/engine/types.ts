@@ -105,7 +105,7 @@ export interface ResourceChange {
 export interface CompanionChange {
   npc: string
   name: string
-  change: 'joined' | 'left' | 'freed' | 'enslaved' | 'escaped' | 'recaptured'
+  change: 'joined' | 'left' | 'freed' | 'enslaved' | 'escaped' | 'recaptured' | 'transferred'
   bond?: Bond
   reason?: string
 }

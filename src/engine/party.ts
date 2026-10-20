@@ -3,7 +3,7 @@
 
 import { snapshot } from './character'
 import { combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, type Bond } from './data'
-import { characterFor, npcRecord, registerNpc } from './npcs'
+import { characterFor, npcKind, npcRecord, registerNpc } from './npcs'
 import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
 import { contractTerms, makeContract, type MarkChoice } from './slavery'
@@ -145,6 +145,11 @@ export function conditionPenalty(c: Character): number {
 
 // ---- 主角成為奴隸、獲釋、逃亡 ----
 
+/** 冒險者主人帶著主角一起行動；普通人主人留在自己的城裡（印記與規則照舊，只是不同行） */
+export function masterTravels(rec: Pick<NpcRecord, 'kind' | 'class'>): boolean {
+  return npcKind(rec) !== 'commoner'
+}
+
 /**
  * 主角成為奴隸：原本的同伴與主角分開（離隊），主人與他的隊員入隊。
  * 主角頸上刻下契約印記。
@@ -155,7 +160,8 @@ export function enslavePlayer(state: GameState, master: NpcRecord | null, contra
   for (const m of [...state.party]) if (!m.isPlayer) leaveParty(state, m.id, report, '與主角分開')
   delete state.pendingLeave
   state.partyOffers = []
-  if (master) {
+  if (master && !state.npcs?.[master.id]) registerNpc(state, master)
+  if (master && masterTravels(master)) {
     joinParty(state, master, 'leader', report, { group: master.id })
     for (const m of members) if (partyRoom(state) > 0) joinParty(state, m, 'ally', report, { group: master.id })
   }
@@ -202,7 +208,10 @@ export function recapturePlayer(state: GameState, report?: Report) {
   if (!contract) return
   const master = npcRecord(state, contract.master)
   removeCondition(pc, 'fugitive', report)
-  if (!master) return
+  if (!master || !masterTravels(master)) {
+    if (master) recordChange(report, { npc: 'pc', name: pc.name, change: 'recaptured', reason: `被${master.name}找到` })
+    return
+  }
   while (partyRoom(state) < 1) {
     const last = [...state.party].reverse().find((m) => !m.isPlayer)
     if (!last) break
@@ -210,6 +219,41 @@ export function recapturePlayer(state: GameState, report?: Report) {
   }
   joinParty(state, master, 'leader', report, { group: master.id })
   recordChange(report, { npc: 'pc', name: pc.name, change: 'recaptured', reason: `被${master.name}找到` })
+}
+
+/**
+ * 替換主角的主人：印記（條款與服從懲罰）沿用，主人換人；master 為 null 時變成無主。
+ * 原本帶著主角的主人與他的隊員離隊，新主人以隊長身分入隊（隊伍滿了就讓最後入隊的同伴離開），逃亡狀態解除。
+ * 事件、AI（change_master 效果）與「投靠新主人」都走這裡。
+ */
+export function changeMaster(state: GameState, master: NpcRecord | null, report?: Report, reason?: string) {
+  const pc = pcOf(state)
+  const c = pc.contract
+  if (!c) throw new Error('主角不是奴隸')
+  if (master?.id === c.master && isBound(state)) return
+  // 新主人原本就在隊伍裡（同伴、原主人的隊員）：先離隊，再以隊長身分回來
+  if (master && state.party.some((m) => m.id === master.id)) leaveParty(state, master.id, report, '成為主角的主人')
+  if (isBound(state)) {
+    for (const m of leaderGroup(state)) leaveParty(state, m.id, report, master ? `把${pc.name}交給了${master.name}` : `放棄了${pc.name}`)
+  }
+  removeCondition(pc, 'fugitive', report)
+  const old = c.masterName || '無主'
+  pc.contract = { ...c, master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } }
+  if (master && !state.npcs?.[master.id]) registerNpc(state, master)
+  if (master && masterTravels(master)) {
+    while (partyRoom(state) < 1) {
+      const last = [...state.party].reverse().find((m) => !m.isPlayer)
+      if (!last) break
+      leaveParty(state, last.id, report, '主角換了主人，被迫分開')
+    }
+    // 剛離隊的人用登錄裡的資料（保留等級、經驗與能力）
+    joinParty(state, npcRecord(state, master.id) ?? master, 'leader', report, { group: master.id })
+  }
+  if (master) {
+    const rel = ensureRelationship(state, master)
+    rel.toPlayer = '主角的主人。'
+  }
+  recordChange(report, { npc: 'pc', name: pc.name, change: 'transferred', reason: `${old} → ${master?.name ?? '無主'}${reason ? `（${reason}）` : ''}` })
 }
 
 /** 懲罰：扣生命值、親密度，重罰時服從懲罰加重。 */

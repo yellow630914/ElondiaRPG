@@ -75,7 +75,7 @@ export function describeChanges(report: Report): string[] {
 }
 
 const COMPANION_TEXT = {
-  joined: '加入隊伍', left: '離開隊伍', freed: '獲得自由', enslaved: '成為奴隸', escaped: '逃離主人', recaptured: '被抓回',
+  joined: '加入隊伍', left: '離開隊伍', freed: '獲得自由', enslaved: '成為奴隸', escaped: '逃離主人', recaptured: '被抓回', transferred: '換了主人',
 } as const
 
 /** 主動行動的檢定：「魅力檢定 DC 15：擲出 11 + 3 = 14，部分成功」 */

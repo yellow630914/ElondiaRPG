@@ -5,12 +5,17 @@
 // - 主角身為奴隸：出城、旅行前要主人同意（檢定依印記的 exit_dc）；成為奴隸時有刻印檢定，結果決定能選哪些印記；
 //   移動與旅行時可能遇到主人的突發事件：主角從三種回應選一個，或自己輸入回應交給 AI 判定。
 
-import { mod, proficiency, snapshot } from './character'
-import { contractDef, locationById, regionById, slaveryRules, type ContractDef, type MasterEventDef } from './data'
+import { lifeTier, mod, proficiency, snapshot } from './character'
+import { contractDef, locationById, regionById, slaveryRules, type AttrId, type ContractDef, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { applyEffects, type RewardEffect } from './effects'
-import { currentArea, currentCell } from './grid'
-import { generateNpc, registerNpc } from './npcs'
-import { addAffinity, enslavePlayer, isBound, pcOf, punish } from './party'
+import { formatMoney } from './money'
+import { currentArea, currentCell, getArea } from './grid'
+import { generateNpc, npcKind, npcRecord, registerNpc } from './npcs'
+import {
+  addAffinity, changeMaster, enslavePlayer, freePlayer, isBound, isEnslaved, isFugitive, masterTravels, pcOf, punish, recapturePlayer, setHp,
+} from './party'
+import { areaOf, isHostile, nearbyPeople, presentHere } from './population'
+import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
 import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report } from './types'
@@ -335,6 +340,8 @@ export interface MasterEventOptions {
 
 export function maybeMasterEvent(state: GameState, chance: number, opts: MasterEventOptions = {}): PendingMasterEvent | undefined {
   if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent) return undefined
+  // 主人不同行（普通人主人留在城裡）時沒有突發事件
+  if (!state.party.some((m) => m.id === pcOf(state).contract!.master)) return undefined
   const ev = slaveryRules.master_events
   const now = hoursOf(state.time)
   if (state.lastMasterEvent !== undefined && now - state.lastMasterEvent < ev.cooldown_hours) return undefined
@@ -447,6 +454,251 @@ export function masterEventDefaults(state: GameState, report: Report, degree: De
   const c = pcOf(state).contract
   if (!c?.master) return []
   return applyEffects(state, report, affordable(state, forMaster(slaveryRules.master_events.free_outcomes[degree], c.master)))
+}
+
+// ---- 逃亡之後：找到主人、投靠新主人、解除印記 ----
+
+/** 主角契約上的主人（無主時沒有） */
+export function masterOf(state: GameState): NpcRecord | undefined {
+  const c = pcOf(state).contract
+  return c?.master ? npcRecord(state, c.master) : undefined
+}
+
+/** 逃亡奴隸的主人就在身邊（同一格或相鄰） */
+export function masterNearby(state: GameState): boolean {
+  const rec = masterOf(state)
+  return isFugitive(state) && !!rec && !rec.dead && presentHere(state, rec.id)
+}
+
+/** 逃亡奴隸的主人今天在哪裡（印記隱約感應得到） */
+export function masterWhereabouts(state: GameState): string | undefined {
+  const c = pcOf(state).contract
+  if (!c?.master || !isFugitive(state)) return undefined
+  const rec = npcRecord(state, c.master)
+  if (!rec || rec.dead) return `${c.masterName}已經不在人世了。`
+  if (presentHere(state, rec.id)) return `${c.masterName}就在你身邊。`
+  const key = areaOf(state, rec)
+  const locId = key?.split('/')[0] ?? rec.location
+  if (locId !== state.location) return `${c.masterName}今天在${locationById(locId).name}。`
+  return `${c.masterName}今天就在這座城裡${key ? `的${getArea(state, key).name}` : ''}（在「這裡的人」裡找到他，走到旁邊）。`
+}
+
+export function setupReturn(state: GameState) {
+  if (!isFugitive(state)) throw new Error('你不是逃亡奴隸')
+  const c = pcOf(state).contract!
+  if (!masterNearby(state)) throw new Error(`${c.masterName}不在你身邊`)
+  const r = slaveryRules.fugitive_master.return
+  const aff = state.relationships?.[c.master]?.affinity ?? 0
+  return {
+    dc: r.base - Math.floor(aff / r.affinity_step), targetName: c.masterName, situational: [],
+    scene: `${currentArea(state).name}・回到${c.masterName}身邊`,
+    outcomes: {
+      critical: '主人收回你，不追究（親密度 +2）', success: '主人收回你，只冷冷看了你一眼（親密度 -2）',
+      partial: '主人收回你，輕度懲罰', fail: '主人收回你，嚴厲懲罰', fumble: '主人收回你，嚴厲懲罰，服從懲罰再 +1',
+    } as Partial<Record<Degree, string>>,
+  }
+}
+
+export function applyReturn(state: GameState, report: Report, degree: Degree): string {
+  const c = pcOf(state).contract!
+  recapturePlayer(state, report)
+  switch (degree) {
+    case 'critical':
+      addAffinity(state, report, c.master, 2, '主動回來')
+      return `${c.masterName}沒有追究，讓你回到身邊。`
+    case 'success':
+      addAffinity(state, report, c.master, -2, '逃跑過')
+      return `${c.masterName}收回了你，只冷冷看了你一眼。`
+    case 'partial':
+      return `${c.masterName}收回了你。${punish(state, 'light', report)}`
+    case 'fail':
+      return `${c.masterName}收回了你。${punish(state, 'heavy', report)}`
+    case 'fumble': {
+      const line = punish(state, 'heavy', report)
+      c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+      return `${c.masterName}收回了你，怒氣未消。${line}`
+    }
+  }
+}
+
+/** 投靠新主人：無主或逃亡時，對身邊的冒險者 */
+function seekTarget(state: GameState, target?: string): NpcRecord {
+  if (!isEnslaved(state)) throw new Error('你不是奴隸')
+  if (isBound(state)) throw new Error('你已經有主人帶著了')
+  const rec = target ? npcRecord(state, target) : undefined
+  if (!rec || rec.dead) throw new Error('要投靠誰？')
+  if (rec.id === pcOf(state).contract!.master) throw new Error('要回到原本的主人身邊，請用「回到主人身邊」')
+  if (state.party.some((m) => m.id === rec.id)) throw new Error('要請同伴當主人，請用自由行動')
+  if (!presentHere(state, rec.id)) throw new Error('對方不在身邊')
+  if (rec.tags?.includes('slave')) throw new Error(`${rec.name}自己也是奴隸`)
+  if (isHostile(state, rec)) throw new Error(`${rec.name}對你充滿敵意`)
+  return rec
+}
+
+/** 對方的身分對「收下主角」的 DC 修正：種類加上最有利的一個標籤 */
+export function masterTagDc(rec: Pick<NpcRecord, 'kind' | 'class' | 'tags'>): number {
+  const t = slaveryRules.master_tags
+  const tagDcs = (rec.tags ?? []).map((x) => t.tags[x]?.dc).filter((x): x is number => x !== undefined)
+  return t.kinds[npcKind(rec)].dc + (tagDcs.length ? Math.min(...tagDcs) : 0)
+}
+
+export function seekMasterDc(state: GameState, rec: NpcRecord): number {
+  const r = slaveryRules.seek_master
+  const aff = state.relationships?.[rec.id]?.affinity ?? 0
+  return r.base + 2 * Math.max(0, lifeTier(rec.level) - lifeTier(pcOf(state).level)) - Math.floor(aff / r.affinity_step) + masterTagDc(rec)
+}
+
+export function setupSeekMaster(state: GameState, target?: string) {
+  const rec = seekTarget(state, target)
+  ensureRelationship(state, rec)
+  const stays = !masterTravels(rec) ? '（普通人主人留在自己的城裡，不與你同行）' : ''
+  return {
+    dc: seekMasterDc(state, rec), targetName: rec.name, situational: [],
+    scene: `${currentArea(state).name}・請${rec.name}收下自己`,
+    outcomes: {
+      critical: `${rec.name}成為新主人，服從懲罰 -1（親密度 +3）${stays}`, success: `${rec.name}成為新主人${stays}`,
+      partial: '對方沒有答應，但對你有些好感（親密度 +1）', fail: '被拒絕（親密度 -2）', fumble: '對方覺得被冒犯（親密度 -5）',
+    } as Partial<Record<Degree, string>>,
+  }
+}
+
+export function applySeekMaster(state: GameState, report: Report, target: string, degree: Degree): string {
+  const rec = npcRecord(state, target)!
+  switch (degree) {
+    case 'critical':
+    case 'success': {
+      changeMaster(state, rec, report, '投靠')
+      const c = pcOf(state).contract!
+      if (degree === 'critical') {
+        c.obedience = Math.max(0, c.obedience - 1)
+        addAffinity(state, report, rec.id, 3, '收下了主角')
+      }
+      return `${rec.name}收下了你，成為你的新主人。${masterTravels(rec) ? '' : `${rec.name}不會跟著你冒險，但印記的規矩照舊。`}`
+    }
+    case 'partial':
+      addAffinity(state, report, rec.id, 1, '對主角有些好感')
+      return `${rec.name}沒有答應，但對你多了幾分好感。`
+    case 'fail':
+      addAffinity(state, report, rec.id, -2, '拒絕收下主角')
+      return `${rec.name}拒絕了。`
+    case 'fumble':
+      addAffinity(state, report, rec.id, -5, '覺得被冒犯')
+      return `${rec.name}覺得被冒犯，冷冷地拒絕了你。`
+  }
+}
+
+// 解除印記：神殿、黑市刻印師、法師
+
+export type UnmarkServiceId = keyof typeof slaveryRules.unmark.services
+
+export interface UnmarkOffer {
+  /** 主動行動的 target：服務 id，法師為 mage:<id> */
+  target: string
+  service: UnmarkServiceId
+  name: string
+  desc: string
+  attr: AttrId
+  dc: number
+  fee_cc: number
+  /** 法師的名字 */
+  helper?: string
+}
+
+/** 印記強度：談判與逃離 DC 的平均，加上目前的服從懲罰 */
+export function markStrength(c: ContractRef): number {
+  const t = contractTerms(c)
+  return Math.round((t.negotiate_dc + t.escape_dc) / 2) + c.obedience
+}
+
+function blackMarketKnown(state: GameState): boolean {
+  return !!slaveryRules.markets[state.location]?.black && !!state.flags[`black_market:${state.location}`]
+}
+
+/** 現在找得到的解除印記服務（被主人帶著時沒有） */
+export function unmarkOffers(state: GameState): UnmarkOffer[] {
+  const pc = pcOf(state)
+  if (!pc.contract || isBound(state) || state.pendingMark) return []
+  const u = slaveryRules.unmark
+  const strength = markStrength(pc.contract)
+  const sealed = contractTerms(pc.contract).functions.includes('spell_seal')
+  const cell = currentCell(state).kind
+  const out: UnmarkOffer[] = []
+  for (const [id, def] of Object.entries(u.services) as [UnmarkServiceId, UnmarkServiceDef][]) {
+    const base = { service: id, name: def.name, desc: def.desc, attr: def.attr }
+    const dc = strength - def.dc_offset + (isFugitive(state) ? def.fugitive_dc ?? 0 : 0) - (sealed ? def.arcane_bonus ?? 0 : 0)
+    const fee = strength * def.price_per_point
+    if (def.where === 'cell' && cell === def.cell) out.push({ ...base, target: id, dc, fee_cc: fee })
+    if (def.where === 'black_market' && cell === def.cell && blackMarketKnown(state)) out.push({ ...base, target: id, dc, fee_cc: fee })
+    if (def.where === 'caster') {
+      const casters = [
+        ...state.party.filter((m) => !m.isPlayer && def.classes?.includes(m.class)).map((m) => ({ id: m.id, name: m.name, free: true })),
+        ...nearbyPeople(state).filter((p) => def.classes?.includes(p.rec.class) && !isHostile(state, p.rec)).map((p) => ({ id: p.rec.id, name: p.rec.name, free: false })),
+      ]
+      for (const c of casters) out.push({ ...base, target: `mage:${c.id}`, dc, fee_cc: c.free ? 0 : fee, helper: c.name })
+    }
+  }
+  return out
+}
+
+function unmarkOffer(state: GameState, target?: string): UnmarkOffer {
+  if (isBound(state)) throw new Error('被主人帶著時，要先談判或逃離')
+  if (!pcOf(state).contract) throw new Error('你身上沒有契約印記')
+  const offer = unmarkOffers(state).find((o) => o.target === target)
+  if (!offer) throw new Error('這裡沒有人能解除你的印記')
+  return offer
+}
+
+export function setupUnmark(state: GameState, target?: string) {
+  const o = unmarkOffer(state, target)
+  if (state.money_cc < o.fee_cc) throw new Error(`錢不夠（要 ${formatMoney(o.fee_cc)}）`)
+  const def = slaveryRules.unmark.services[o.service]
+  const fee = (d: Degree) => Math.round(o.fee_cc * slaveryRules.unmark.fee_ratio[d])
+  const bad = def.fumble === 'betray' ? '被出賣給主人（有主人時當場被抓回去）' : `術式反噬，失去 ${Math.round((def.backlash_hp_ratio ?? 0) * 100)}% 生命值`
+  return {
+    attr: o.attr, dc: o.dc, targetName: o.helper ?? o.name, situational: [],
+    scene: `${currentArea(state).name}・${o.name}`,
+    outcomes: {
+      critical: `印記被抹去（收費 ${fee('critical')}）`, success: `印記被抹去（收費 ${fee('success')}）`,
+      partial: `印記淡了一些，服從懲罰 -1（收費 ${fee('partial')}）`, fail: `沒有成功（收費 ${fee('fail')}）`,
+      fumble: `${bad}（收費 ${fee('fumble')}）`,
+    } as Partial<Record<Degree, string>>,
+  }
+}
+
+export function applyUnmark(state: GameState, report: Report, target: string, degree: Degree): string {
+  const o = unmarkOffer(state, target)
+  const def = slaveryRules.unmark.services[o.service]
+  const pc = pcOf(state)
+  const c = pc.contract!
+  const fee = Math.min(state.money_cc, Math.round(o.fee_cc * slaveryRules.unmark.fee_ratio[degree]))
+  const lines: string[] = []
+  if (fee > 0) applyEffects(state, report, [{ type: 'money', amount: -fee }])
+  switch (degree) {
+    case 'critical':
+    case 'success':
+      freePlayer(state, report, o.name)
+      lines.push(`${o.helper ?? o.name}抹去了你頸上的${contractTerms(c).name}，你恢復了自由。`)
+      break
+    case 'partial':
+      c.obedience = Math.max(0, c.obedience - 1)
+      lines.push('印記淡了一些，但沒有完全消失。')
+      break
+    case 'fail':
+      lines.push('印記紋絲不動。')
+      break
+    case 'fumble':
+      if (def.fumble === 'betray' && masterOf(state) && !masterOf(state)!.dead) {
+        recapturePlayer(state, report)
+        lines.push(`刻印師把你出賣給了${c.masterName}。`, punish(state, 'heavy', report))
+      } else {
+        const loss = Math.max(1, Math.ceil(pc.maxHp * (def.backlash_hp_ratio ?? 0.2)))
+        setHp(state, pc, pc.hp - loss, report)
+        lines.push(`印記的術式反噬，失去 ${loss} 點生命值。`)
+      }
+      break
+  }
+  if (fee > 0) lines.push(`付了 ${formatMoney(fee)}。`)
+  return lines.join('')
 }
 
 /** 談判只能在安全的地方（旅店、安全房、神殿） */

@@ -12,17 +12,21 @@
 import { lifeTier, mod, snapshot } from './character'
 import {
   actionRules, combatRules, companionRules, contractDef, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
-  type ActionKind, type Degree, type MarketDef,
+  tagDef, type ActionKind, type AttrId, type Degree, type MarketDef, type NpcKind,
 } from './data'
+import type { Rng } from './rng'
 import { formatMoney } from './money'
 import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { hireable, presentHere } from './population'
 import { setupStandoff } from './encounters'
-import { atSafeSpot, contractTerms, setupMarking, setupMasterEvent, setupPermit, startMarking, type MarkChoice } from './slavery'
+import {
+  atSafeSpot, contractTerms, masterNearby, setupMarking, setupMasterEvent, setupPermit, setupReturn, setupSeekMaster, setupUnmark, startMarking,
+  type MarkChoice,
+} from './slavery'
 import { setupInteraction } from './interactions'
 import {
-  addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, isBound, isEnslaved, joinParty,
-  leaderOf, partyRoom, pcOf, playerEscapes, punish, setHp,
+  addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, changeMaster, isBound, isEnslaved, isFugitive, joinParty,
+  leaderOf, masterTravels, partyRoom, pcOf, playerEscapes, punish, recapturePlayer, setHp,
 } from './party'
 import { negotiationSetup } from './negotiation'
 import { currentArea, currentCell } from './grid'
@@ -374,17 +378,34 @@ export function selfSaleChance(state: GameState): number {
   return Math.max(0.05, Math.min(s.max, s.base + s.per_cha_mod * mod(pc.attrs.cha) + s.per_level * pc.level))
 }
 
-/** 主角在市場登記出售自己。隊伍必須只剩主角。 */
+/** 市場上出價的買家是哪一種人：依市場的標籤權重，再挑這個標籤可能的 NPC 種類 */
+export function pickBuyer(rng: Rng, kind: MarketKind): { tag: string; kind: NpcKind } {
+  const t = slaveryRules.master_tags
+  const tag = weightedPick(rng, Object.fromEntries(Object.entries(t.tags).map(([id, x]) => [id, x[kind]])))
+  const kinds = (tagDef(tag)?.kinds ?? ['adventurer']) as NpcKind[]
+  const npcKind = weightedPick(rng, Object.fromEntries(kinds.map((k) => [k, t.kinds[k].market]))) as NpcKind
+  return { tag, kind: npcKind }
+}
+
+/**
+ * 主角在市場登記出售自己。隊伍必須只剩主角。
+ * 已經是奴隸（無主或逃亡）時也可以：買下的人成為新主人，印記沿用。
+ * 買家的身分（標籤）影響成交機率（slavery.json 的 master_tags）。
+ */
 export function offerSelf(state: GameState, kind: MarketKind): Report {
   const def = marketDef(state, kind)
-  if (isEnslaved(state)) throw new Error('你已經是奴隸了')
+  if (isBound(state)) throw new Error('你已經有主人帶著了')
+  if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   if (state.party.length > 1) throw new Error('要先讓同伴離隊，才能登記出售自己')
   const s = slaveryRules.self_sale
   const pc = pcOf(state)
+  const marked = isEnslaved(state)
   const report = socialReport(state, s.hours, def.name)
   const deal = withRng(state, (rng) => {
-    if (!rng.chance(selfSaleChance(state))) return null
-    const master = generateNpc(state, rng, { level: Math.min(20, pc.level + rng.int(1, 4)) }, 'mst')
+    const buyer = pickBuyer(rng, kind)
+    const chance = Math.max(0.05, Math.min(s.max, selfSaleChance(state) + slaveryRules.master_tags.tags[buyer.tag]!.chance))
+    if (!rng.chance(chance)) return null
+    const master = generateNpc(state, rng, { level: Math.min(20, pc.level + rng.int(1, 4)), kind: buyer.kind, tags: [buyer.tag] }, 'mst')
     const contract = weightedPick(rng, s.contract_weights)
     const price = slavePrice(pc, def.price_mult, rng)
     return { master, contract, price }
@@ -394,13 +415,26 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
     return commitReport(state, report)
   }
   const share = Math.round(deal.price * s.share)
+  const who = `${tagDef(deal.master.tags?.[0] ?? '')?.name ?? ''}${deal.master.name}`
+  if (marked) {
+    // 已經刻著印記：買家成為新主人，印記沿用
+    changeMaster(state, deal.master, report, `在${def.name}被買下`)
+    report.changes.money_cc = share
+    report.outcome = {
+      result: 'success',
+      summary: `${who}以 ${formatMoney(deal.price)} 買下了你，成為你的新主人；你拿到 ${formatMoney(share)}。頸上的印記沿用。${masterTravels(deal.master) ? '' : `${deal.master.name}不會跟著你冒險。`}`,
+      tags: ['換了主人'],
+    }
+    report.narration = { pov: 'second_person', length: 'medium', focus: ['新主人的模樣與態度'] }
+    return commitReport(state, report)
+  }
   enslavePlayer(state, deal.master, deal.contract, report)
   // 刻印前還有一次檢定：主角的表現決定最後刻上哪一種印記
   startMarking(state, deal.contract)
   report.changes.money_cc = share
   report.outcome = {
     result: 'success',
-    summary: `${deal.master.name}以 ${formatMoney(deal.price)} 買下了你，你拿到 ${formatMoney(share)} 的賣身錢。${deal.master.name}打算在你頸上刻下${contractDef(deal.contract).name}。`,
+    summary: `${who}以 ${formatMoney(deal.price)} 買下了你，你拿到 ${formatMoney(share)} 的賣身錢。${deal.master.name}打算在你頸上刻下${contractDef(deal.contract).name}。`,
     tags: ['成為奴隸'],
   }
   report.narration = { pov: 'second_person', length: 'medium', focus: ['主人的模樣與態度', '即將刻下契約印記'] }
@@ -410,11 +444,14 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
 /** 主角的談判 DC：契約越強越難，主人的親密度越高越容易。 */
 export function negotiateDc(state: GameState): number {
   const pc = pcOf(state)
-  if (!pc.contract || !isBound(state)) throw new Error('你不是被主人帶著的奴隸')
+  const fugitive = isFugitive(state) && !!pc.contract?.master
+  if (!pc.contract || (!isBound(state) && !fugitive)) throw new Error('你不是被主人帶著的奴隸')
   const def = contractTerms(pc.contract)
   const masterAff = state.relationships?.[pc.contract.master]?.affinity ?? 0
   const bonus = state.flags['negotiate_bonus'] ? 2 : 0
-  return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus
+  // 逃亡後當面談判：主人還在氣頭上
+  const angry = fugitive ? slaveryRules.fugitive_master.negotiate_dc_bonus : 0
+  return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus + angry
 }
 
 export function escapeDc(state: GameState): number {
@@ -444,8 +481,16 @@ export function applyNegotiate(state: GameState, report: Report, degree: Degree)
       ;(report.changes.flags ??= {}).negotiate_bonus = true
       return `${master}沒有答應，但似乎有些動搖（下次談判較容易）。`
     case 'fail':
+      if (isFugitive(state)) {
+        addAffinity(state, report, pc.contract!.master, -5, '逃跑後還想談條件')
+        return `${master}拒絕了，轉身離開。`
+      }
       return `${master}拒絕了。${punish(state, 'light', report)}`
     case 'fumble':
+      if (isFugitive(state)) {
+        recapturePlayer(state, report)
+        return `${master}一把抓住了你。${punish(state, 'heavy', report)}`
+      }
       return `${master}勃然大怒。${punish(state, 'heavy', report)}`
   }
 }
@@ -488,6 +533,8 @@ export interface ActionSetup {
   /** 各成功程度的機制結果（給 AI 與玩家參考） */
   outcomes: Partial<Record<Degree, string>>
   scene: string
+  /** 預設屬性（沒有時用 actions.json 的設定） */
+  attr?: AttrId
 }
 
 export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string): ActionSetup {
@@ -553,7 +600,22 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupMarking(state)
     case 'master_event':
       return setupMasterEvent(state)
+    case 'master_return':
+      return setupReturn(state)
+    case 'seek_master':
+      return setupSeekMaster(state, target)
+    case 'unmark':
+      return setupUnmark(state, target)
     case 'negotiate': {
+      if (isFugitive(state)) {
+        // 逃亡奴隸找到了主人：當面談判，不必在安全的地方，但 DC 較高
+        if (!masterNearby(state)) throw new Error(`${pc.contract?.masterName ?? '主人'}不在你身邊`)
+        return {
+          dc: negotiateDc(state), targetName: pc.contract!.masterName, situational: [],
+          scene: `${locationById(state.location).name}・找到逃離的主人`,
+          outcomes: { critical: '主人抹去契約，恢復自由（主人親密度 +5）', success: '主人抹去契約，恢復自由', partial: '主人動搖（下次談判 DC -2）', fail: '主人拒絕（親密度 -5）', fumble: '被主人當場抓回去，嚴厲懲罰' },
+        }
+      }
       if (!atSafeSpot(state)) throw new Error('和主人談判要在安全的地方（旅店、安全房或神殿）')
       const master = pc.contract?.masterName
       return {

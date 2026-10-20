@@ -149,7 +149,7 @@
             "properties": {
               "npc": { "type": "string" },
               "name": { "type": "string" },
-              "change": { "enum": ["joined", "left", "freed", "enslaved", "escaped", "recaptured"] },
+              "change": { "enum": ["joined", "left", "freed", "enslaved", "escaped", "recaptured", "transferred"] },
               "bond": { "enum": ["hired", "voluntary", "slave", "leader", "ally"] },
               "reason": { "type": "string" }
             }

@@ -121,8 +121,12 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     ability: `{"type":"ability","target":"pc 或隊友 id","ability":"能力名稱"}（技能報酬：只在 degree 為 critical、而且行為合理時，例如向高手請教、從經歷中領悟；最多一項。主角目前可以學的能力：${learnable(pc).slice(0, 15).map((a) => a.name).join('、') || '無'}）`,
     mark: `{"type":"mark","name":"<≤12 字>","text":"<≤160 字>"}（依主角在刻印時的行為，提議印記的名稱與樣子；只是文字，數值依程式）`,
     meet: `{"type":"meet","npc":{"name":"","gender":"male/female/femboy/ts/futa/unknown","race":"human","class":"fighter","level":${pc.level},"personality":"","appearance":"","background":""},"affinity":<±${caps.meet_affinity}>,"to_player":"與主角的關係"}（只限對象是同旅館的旅客，最多認識一人）`,
+    release: '{"type":"free","npc":"pc"}（抹去主角的契約印記、恢復自由：只在 degree 為 critical、而且行為合理時，例如說動了能解咒的人、主人一時心軟）',
+    change_master: `{"type":"change_master","npc":"${p.target ?? '<對象 id>'}"}（行動的對象成為主角的新主人，印記沿用：只在 degree 為 success 以上、對象願意收下主角時）`,
   }
-  return `<effects_allowed>\n這次可用的 effects：\n${kind.effects.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>`
+  // 主角不是奴隸時，不提供和契約有關的效果
+  const list = kind.effects.filter((e) => pc.contract || (e !== 'release' && e !== 'change_master'))
+  return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>`
 }
 
 /** 判定也帶世界書時，拿來比對關鍵字的文字 */

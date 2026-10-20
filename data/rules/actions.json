@@ -30,7 +30,8 @@
       "attr": "cha",
       "base": 12,
       "hours": 0.5,
-      "effects": ["affinity", "relationship_text", "flag", "reputation", "money", "item", "xp", "ability", "hp"],
+      "effects": ["affinity", "relationship_text", "flag", "reputation", "money", "item", "xp", "ability", "hp", "release", "change_master"],
+      "$comment_slavery": "release（解除主角的契約）只在大成功、而且有對象時採用；change_master（對象成為主角的新主人）只在成功以上、主角是奴隸、對象就在身邊時採用",
       "$comment_ability": "ability：只在 AI 判定為大成功時採用，最多一項，必須是目前可以學的能力（否則隨機）",
       "$comment_base": "有對象時 DC = base + 2 × max(0, 對方生命層級 - 主角生命層級) - floor(親密度 / 25)"
     },
@@ -68,7 +69,13 @@
       "$comment": "身為奴隸時出城或旅行前，向主人請求同意。DC 見 slavery.json 的 master_permit（依印記的 exit_dc）" },
     "marking": { "name": "刻印", "attr": "cha", "hours": 0.5, "effects": ["relationship_text", "flag", "mark"],
       "$comment": "成為奴隸時的刻印檢定，結果決定可以選的印記（見 slavery.json 的 marking）。mark：AI 依主角的行為提議印記的名稱與描述（只是文字，數值依模板）" },
-    "master_event": { "name": "回應主人", "attr": "cha", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag", "hp", "money", "item"],
-      "$comment": "主人的突發事件：玩家自己輸入的回應。參考 DC 見 slavery.json 的 master_events（free_dc）；沒有 AI 時依 free_outcomes" }
+    "master_event": { "name": "回應主人", "attr": "cha", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag", "hp", "money", "item", "release"],
+      "$comment": "主人的突發事件：玩家自己輸入的回應。參考 DC 見 slavery.json 的 master_events（free_dc）；沒有 AI 時依 free_outcomes。release：只在 AI 判定為大成功時採用（主人一時心軟，抹去印記）" },
+    "master_return": { "name": "回到主人身邊", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"],
+      "$comment": "逃亡奴隸主動回到身邊的主人那裡。一定會被收回，成功程度決定懲罰（見 slavery.json 的 fugitive_master）" },
+    "seek_master": { "name": "投靠新主人", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"],
+      "$comment": "無主或逃亡的奴隸請身邊的冒險者成為新主人（見 slavery.json 的 seek_master）" },
+    "unmark": { "name": "解除印記", "attr": "fai", "hours": 2, "effects": ["relationship_text", "flag", "hp"],
+      "$comment": "找人解除契約印記：神殿、黑市刻印師或法師（見 slavery.json 的 unmark；屬性依服務）" }
   }
 }

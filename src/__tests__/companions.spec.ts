@@ -327,7 +327,8 @@ describe('the player as a slave', () => {
     for (let seed = 1; seed < 60; seed++) {
       const state = game(seed, { location: 'rhineburg', cha: 16 })
       offerSelf(state, 'public')
-      if (state.party[0]!.contract) {
+      // 這些測試要的是會帶著主角行動的主人（普通人主人留在城裡，見 slavery.spec）
+      if (state.party[0]!.contract && leaderOf(state)) {
         // 刻印檢定：部分成功 = 主人原本打算的印記
         prepareAction(state, { kind: 'marking', text: '' })
         forceRoll(state, 10)

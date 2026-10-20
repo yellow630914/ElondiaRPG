@@ -12,7 +12,7 @@ import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import { changeHitDice, changeSlots } from './resources'
 import {
-  addAffinity, addCondition, enslavePlayer, freePlayer, freeSlave, joinParty, leaveParty, partyRoom, pcOf, removeCondition, setHp,
+  addAffinity, addCondition, changeMaster, enslavePlayer, freePlayer, freeSlave, joinParty, leaveParty, partyRoom, pcOf, removeCondition, setHp,
 } from './party'
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
@@ -47,6 +47,8 @@ export type RewardEffect =
   | { type: 'mark'; name?: string; text?: string }
   /** 解除契約：npc 為 pc 時是主角獲釋 */
   | { type: 'free'; npc: string }
+  /** 替換主角的主人（印記沿用）；master 為 null 時變成無主 */
+  | { type: 'change_master'; master: NpcRef | null; reason?: string }
   /** 委託報酬按百分比調整（談判的結果） */
   | { type: 'quest_reward'; quest: string; percent: number }
   /** 任務旗標，例如 lead（委託檢定 +5）、suspicious（-2） */
@@ -61,7 +63,7 @@ export type RewardEffect =
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
-  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark',
+  'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -193,6 +195,12 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       }
       case 'mark': {
         if (state.pendingMark) state.pendingMark.suggestion = { ...(e.name ? { name: e.name } : {}), ...(e.text ? { mark: e.text } : {}) }
+        break
+      }
+      case 'change_master': {
+        const master = e.master === null ? null : resolveNpc(state, e.master)
+        changeMaster(state, master, report, e.reason)
+        notes.push(master ? `${master.name}成為主角的新主人` : '主角變成無主的奴隸')
         break
       }
       case 'free':

@@ -5,9 +5,11 @@ import { actionRules, ATTR_IDS, attrName, classEmoji, contractDef, raceEmoji, sl
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { npcTitle } from '@/engine/npcs'
-import { peopleHere } from '@/engine/population'
+import { isHostile, peopleHere } from '@/engine/population'
 import { isBound, isEnslaved, isFugitive } from '@/engine/party'
-import { atSafeSpot, contractTerms, markSummary, masterAllows, masterRefusedToday, type MarkChoice } from '@/engine/slavery'
+import {
+  atSafeSpot, contractTerms, markSummary, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, unmarkOffers, type MarkChoice,
+} from '@/engine/slavery'
 import { currentArea } from '@/engine/grid'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
@@ -73,9 +75,20 @@ const inTown = computed(() => currentArea(s.value).kind === 'settlement')
 const permitted = computed(() => masterAllows(s.value))
 const refused = computed(() => masterRefusedToday(s.value))
 const freedomText = ref('')
-function doFreedom(kind: 'negotiate' | 'escape' | 'master_permit') {
+// 逃亡或無主：找到主人、投靠新主人、解除印記
+const whereabouts = computed(() => masterWhereabouts(s.value))
+const nearMaster = computed(() => masterNearby(s.value))
+const offers = computed(() => unmarkOffers(s.value))
+const seekTarget = ref('')
+const seekTargets = computed(() => {
+  if (!enslaved.value || bound.value) return []
+  return peopleHere(s.value)
+    .filter((p) => p.dist <= 1 && p.rec.id !== contract.value?.master && !p.rec.tags?.includes('slave') && !isHostile(s.value, p.rec))
+    .map((p) => ({ id: p.rec.id, name: `${label(p.rec.id, p.rec.name)}・${npcTitle(p.rec)}・DC ${seekMasterDc(s.value, p.rec)}${p.kind === 'commoner' ? '・不同行' : ''}` }))
+})
+function doFreedom(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_return' | 'seek_master' | 'unmark', target?: string) {
   const u = parseUse(use.value)
-  void game.perform({ kind, text: freedomText.value, ...(u ? { use: u } : {}) })
+  void game.perform({ kind, text: freedomText.value, ...(target ? { target } : {}), ...(u ? { use: u } : {}) })
   freedomText.value = ''
   use.value = ''
 }
@@ -164,10 +177,36 @@ function doMarking() {
       <p v-if="!safe" class="small muted">和主人談判要在安全的地方（旅店、安全房或神殿）；逃離隨時都可以。</p>
       <hr />
     </template>
-    <p v-else-if="contract && fugitive" class="small mark">
-      你是逃亡奴隸：頸上的{{ contract.def.name }}仍在。公會與神殿不接待你，旅店加價，每次休息都可能被{{ contract.masterName }}找到。
-    </p>
-    <p v-else-if="contract && enslaved" class="small mark pre">⛓️ {{ contract.summary }}<br /><span class="muted">你沒有主人：印記還在，但沒有人牽著鏈子，行動不受限制。</span></p>
+    <template v-else-if="contract && enslaved">
+      <p class="small mark pre">⛓️ {{ contract.summary }}</p>
+      <p v-if="fugitive" class="small mark">
+        你是逃亡奴隸：公會與神殿不接待你（解除印記除外），旅店加價{{ contract.def.functions.includes('tracking') ? `，每次休息都可能被${contract.masterName}找到` : '' }}。
+      </p>
+      <p v-else class="small muted">你沒有主人：印記還在，但沒有人牽著鏈子，行動不受限制。</p>
+      <p v-if="whereabouts" class="small muted">🧭 {{ whereabouts }}</p>
+      <textarea v-model="freedomText" rows="2" placeholder="描述你的做法：怎麼向主人認錯或談條件、怎麼請人收下你，或怎麼撐過解除印記的痛" />
+      <AbilityPicker v-model="use" />
+      <div v-if="nearMaster" class="row">
+        <button class="small" :disabled="game.judging" @click="doFreedom('master_return')">回到{{ contract.masterName }}身邊</button>
+        <button class="small" :disabled="game.judging" @click="doFreedom('negotiate')">當面談判解除契約</button>
+      </div>
+      <div v-if="seekTargets.length" class="row">
+        <select v-model="seekTarget" class="small">
+          <option value="">投靠誰…</option>
+          <option v-for="t in seekTargets" :key="t.id" :value="t.id">{{ t.name }}</option>
+        </select>
+        <button class="small" :disabled="!seekTarget || game.judging" @click="doFreedom('seek_master', seekTarget)">投靠新主人（魅力）</button>
+      </div>
+      <ul v-if="offers.length" class="plain small offers">
+        <li v-for="o in offers" :key="o.target">
+          <strong>{{ o.name }}</strong><template v-if="o.helper">（{{ o.helper }}）</template>・{{ attrName(o.attr) }} DC {{ o.dc }}・{{ o.fee_cc ? formatMoney(o.fee_cc) : '免費' }}
+          <button class="small" :disabled="game.judging || s.money_cc < o.fee_cc" @click="doFreedom('unmark', o.target)">解除印記</button>
+          <br /><span class="muted">{{ o.desc }}</span>
+        </li>
+      </ul>
+      <p v-else class="small muted">要解除印記：到神殿、在知道黑市的城鎮找酒館裡的刻印師，或請身邊（或隊伍裡）的法師。</p>
+      <hr />
+    </template>
     <p class="small muted">
       用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，{{ aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）' }}。
     </p>
@@ -202,5 +241,6 @@ function doMarking() {
 textarea { width: 100%; margin: 6px 0; }
 .mark { color: var(--accent-2); }
 .pre { white-space: pre-line; }
+.offers { display: grid; gap: 4px; margin: 6px 0; }
 hr { border: none; border-top: 1px dashed var(--border); margin: 10px 0; }
 </style>

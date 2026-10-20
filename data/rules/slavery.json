@@ -117,6 +117,49 @@
 
   "release_affinity": 15,
 
+  "fugitive_master": {
+    "$comment": "逃亡奴隸與原本的主人：主人在身邊（同一格或相鄰）時，可以主動回到主人身邊，或當面談判解除契約（不必在安全的地方，但 DC 較高）。回去一定會被收回，成功程度決定懲罰；談判大失敗會被當場抓回去。",
+    "return": { "attr": "cha", "base": 12, "affinity_step": 20 },
+    "negotiate_dc_bonus": 3
+  },
+
+  "seek_master": {
+    "$comment": "無主或逃亡的奴隸投靠身邊的人，請對方成為新的主人。DC = base + 2 × max(0, 生命層級差) − floor(親密度 / affinity_step) + 身分修正（master_tags）。成功後印記沿用，逃亡狀態解除；冒險者主人成為隊長，普通人主人留在自己的城裡。",
+    "attr": "cha", "base": 12, "affinity_step": 25
+  },
+
+  "master_tags": {
+    "$comment": "找新主人時，對方的身分影響結果。kinds：NPC 種類的 DC 修正（普通人養不起、也不常收奴隸）與在市場出價的權重。tags：標籤的 DC 修正（投靠時；有多個標籤取最有利的一個）、在奴隸市場出價的權重（public 公開市場、black 黑市）與成交機率修正 chance。標籤是奴隸的人不能當主人。",
+    "kinds": {
+      "adventurer": { "dc": 0, "market": 3 },
+      "commoner": { "dc": 2, "market": 2 }
+    },
+    "tags": {
+      "commoner": { "dc": 3, "chance": -0.1, "public": 2, "black": 1 },
+      "traveler": { "dc": 1, "chance": 0, "public": 2, "black": 1 },
+      "merchant": { "dc": -1, "chance": 0.05, "public": 4, "black": 3 },
+      "noble": { "dc": -3, "chance": 0.1, "public": 4, "black": 2 },
+      "royal": { "dc": 2, "chance": 0.05, "public": 1, "black": 0 },
+      "priest": { "dc": 4, "chance": -0.1, "public": 1, "black": 0 },
+      "bishop": { "dc": 2, "chance": 0, "public": 0.5, "black": 0 },
+      "villain": { "dc": -2, "chance": 0.1, "public": 0, "black": 5 }
+    }
+  },
+
+  "unmark": {
+    "$comment": "找人解除契約印記（無主或逃亡時；被主人帶著時要先談判或逃離）。印記強度 = round((談判 DC + 逃離 DC) / 2) + 目前的服從懲罰；DC = 強度 − dc_offset（魔力封印的印記對法師再 − arcane_bonus）；費用 = 強度 × price_per_point，依成功程度收 fee_ratio。大成功與成功解除印記，部分成功服從懲罰 −1。大失敗：backlash 扣生命值比例，betray 被出賣給主人（有主人時當場被抓回去）。",
+    "hours": 2,
+    "fee_ratio": { "critical": 0.5, "success": 1, "partial": 0.5, "fail": 0.5, "fumble": 0.5 },
+    "services": {
+      "temple": { "name": "神殿解咒", "where": "cell", "cell": "temple", "attr": "fai", "dc_offset": 4, "price_per_point": 150, "fugitive_dc": 2, "fumble": "backlash", "backlash_hp_ratio": 0.2,
+        "desc": "祭司以聖印淨化契約之力。逃亡奴隸會被冷眼相待（DC +2）。" },
+      "black": { "name": "黑市刻印師", "where": "black_market", "cell": "tavern", "attr": "str", "dc_offset": 2, "price_per_point": 80, "fumble": "betray", "backlash_hp_ratio": 0.3,
+        "desc": "在酒館裡透過黑市找人用燒灼的方式刮掉印記：便宜，但要咬牙忍住；大失敗時會被出賣給主人。" },
+      "mage": { "name": "法師解構", "where": "caster", "classes": ["wizard"], "attr": "int", "dc_offset": 3, "arcane_bonus": 3, "price_per_point": 120, "fumble": "backlash", "backlash_hp_ratio": 0.3,
+        "desc": "請身邊的法師拆解印記的術式，對魔導束縛特別有效；隊伍裡的法師不收錢。" }
+    }
+  },
+
   "custom_mark": {
     "$comment": "自訂印記（建立角色、買奴隸時）的數值範圍；超出的會被夾回範圍內。",
     "income_share": [0, 1],

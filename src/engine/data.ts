@@ -458,6 +458,13 @@ export const slaveryRules = slaveryJson as unknown as {
     name_chars: number; mark_chars: number; side_effect_chars: number; side_effects: number
   }
   master_permit: { attr: AttrId; hours: number; affinity_step: number }
+  fugitive_master: { return: { attr: AttrId; base: number; affinity_step: number }; negotiate_dc_bonus: number }
+  seek_master: { attr: AttrId; base: number; affinity_step: number }
+  master_tags: {
+    kinds: Record<'adventurer' | 'commoner', { dc: number; market: number }>
+    tags: Record<string, { dc: number; chance: number; public: number; black: number }>
+  }
+  unmark: { hours: number; fee_ratio: Record<Degree, number>; services: Record<'temple' | 'black' | 'mage', UnmarkServiceDef> }
   safe_spots: string[]
   marking: { attr: AttrId; base: number; severity: string[] }
   master_events: {
@@ -479,6 +486,24 @@ export interface MasterEventDef {
   free_dc?: number
   /** 成人向：設定開啟「成人向」時才會發生 */
   adult?: boolean
+}
+
+export interface UnmarkServiceDef {
+  name: string
+  desc: string
+  /** cell：站在設施上；black_market：知道這裡的黑市，在酒館；caster：身邊或隊伍裡有這些職業的人 */
+  where: 'cell' | 'black_market' | 'caster'
+  cell?: string
+  classes?: string[]
+  attr: AttrId
+  dc_offset: number
+  /** 對魔力封印的印記，DC 再降低 */
+  arcane_bonus?: number
+  /** 逃亡奴隸的 DC 增加 */
+  fugitive_dc?: number
+  price_per_point: number
+  fumble: 'backlash' | 'betray'
+  backlash_hp_ratio?: number
 }
 
 export interface MasterEventOption {
@@ -503,7 +528,9 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
+  | 'master_return' | 'seek_master' | 'unmark'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
+  | 'release' | 'change_master'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }

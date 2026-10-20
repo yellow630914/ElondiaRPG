@@ -19,9 +19,10 @@ import {
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
-import { applyMarking, applyMasterEventResponse, applyPermit, masterEventDefaults } from './slavery'
+import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, applySeekMaster, applyUnmark, masterEventDefaults } from './slavery'
 import { applyInteraction } from './interactions'
-import type { NpcSpec } from './npcs'
+import { npcRecord, type NpcSpec } from './npcs'
+import { presentHere } from './population'
 import { addAffinity, conditionPenalty, pcOf } from './party'
 import { applyNegotiationOutcome } from './negotiation'
 import { addSuggestions } from './social'
@@ -124,7 +125,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     natural,
     ...(ownSlave ? { rolls, advantage: '對方是主角的奴隸，抗拒時處於劣勢' } : {}),
     base_dc: setup.dc,
-    attr: kind.attr,
+    attr: setup.attr ?? kind.attr,
     modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(pc.attrs[a]) + proficiency(pc.level)])) as Record<AttrId, number>,
     situational,
     outcomes: setup.outcomes,
@@ -148,6 +149,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 const EFFECT_OF: Partial<Record<RewardEffect['type'], EffectKind>> = {
   affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
   money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp', mark: 'mark',
+  free: 'release', change_master: 'change_master',
 }
 
 /**
@@ -261,6 +263,22 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         const name = clipText(x.name, slaveryRules.custom_mark.name_chars)
         const text = clipText(x.text ?? x.mark, slaveryRules.custom_mark.mark_chars)
         if (name || text) effects.push({ type: 'mark', ...(name ? { name } : {}), ...(text ? { text } : {}) })
+        break
+      }
+      case 'free': {
+        // 解除主角的契約：只在大成功時採用；自由行動要有對象（例如施術者、願意出手的大人物）
+        if (degree !== 'critical' || !pc.contract || state.pendingMark || effects.some((y) => y.type === 'free')) break
+        if (p.kind === 'free' && !p.target) break
+        effects.push({ type: 'free', npc: 'pc' })
+        break
+      }
+      case 'change_master': {
+        // 對象成為主角的新主人：成功以上、主角是奴隸、對象就是這次行動的對象而且在身邊
+        if (!degree || !['critical', 'success'].includes(degree) || !pc.contract || state.pendingMark || !p.target) break
+        if (String(x.npc ?? p.target) !== p.target || p.target === pc.contract.master || effects.some((y) => y.type === 'change_master')) break
+        const rec = npcRecord(state, p.target)
+        if (!rec || rec.dead || !presentHere(state, rec.id)) break
+        effects.push({ type: 'change_master', master: rec.id })
         break
       }
       case 'meet': {
@@ -407,6 +425,9 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'master_permit': return applyPermit(state, report, degree)
     case 'marking': return applyMarking(state, degree)
     case 'master_event': applyMasterEventResponse(state); return ''
+    case 'master_return': return applyReturn(state, report, degree)
+    case 'seek_master': return applySeekMaster(state, report, p.target!, degree)
+    case 'unmark': return applyUnmark(state, report, p.target!, degree)
     case 'free':
     case 'rest_talk': return ''
   }
