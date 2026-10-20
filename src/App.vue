@@ -3,6 +3,7 @@ import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 
 import { locationById } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
+import { alertLevel, factionName } from '@/engine/security'
 import { useGame } from '@/stores/game'
 import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
@@ -18,6 +19,7 @@ import RelationsView from '@/components/RelationsView.vue'
 import RestPanel from '@/components/RestPanel.vue'
 import SaveDialog from '@/components/SaveDialog.vue'
 import SettingsView from '@/components/SettingsView.vue'
+import StandoffPanel from '@/components/StandoffPanel.vue'
 import SuggestionToast from '@/components/SuggestionToast.vue'
 
 // 提示詞頁籤會載入整本世界書，切過去時才載入
@@ -27,6 +29,15 @@ const game = useGame()
 const inCombat = computed(() => !!game.state?.combat)
 const pendingSkills = computed(() => game.state?.party.some((m) => m.pendingAbilityChoices?.length || m.attrPoints > 0) ?? false)
 const suggestionCount = computed(() => game.state?.suggestions?.length ?? 0)
+// 通緝與這裡的衛兵警戒
+const crime = computed(() => {
+  const s = game.state
+  if (!s) return null
+  const wanted = Object.keys(s.wanted ?? {})
+  if (wanted.length) return { text: '⛔ 通緝中', title: `被${wanted.map(factionName).join('、')}通緝` }
+  const level = alertLevel(s)
+  return level ? { text: `🚨 警戒 ${level}`, title: `${locationById(s.location).name}的衛兵警戒 ${level}` } : null
+})
 
 type Tab = 'adventure' | 'prompts'
 const TABS: { id: Tab; label: string }[] = [
@@ -69,6 +80,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <span>📅 {{ formatTime(game.state.time) }}</span>
       <span>📍 {{ locationById(game.state.location).name }}</span>
       <span>💰 {{ formatMoney(game.state.money_cc) }}</span>
+      <span v-if="crime" class="crime" :title="crime.title">{{ crime.text }}</span>
     </div>
     <div class="row top-buttons">
       <button v-if="game.state" class="small" title="快速存檔（F8 / Ctrl+S）" @click="game.quickSave()">⚡ 快存</button>
@@ -102,6 +114,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         </button>
       </section>
       <template v-if="!inCombat">
+        <StandoffPanel v-if="game.state.standoff && !game.state.pendingAction" />
         <ActionPanel />
         <RestPanel />
         <IntentPanel />
@@ -147,6 +160,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 }
 .top h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.1em; margin: 0; }
 .status { gap: 16px; color: var(--muted); }
+.crime { color: var(--danger); }
 .tabs { gap: 6px; }
 .tabs button.active { border-color: var(--accent); color: var(--accent); }
 .top-buttons { margin-left: auto; gap: 6px; }

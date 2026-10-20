@@ -460,7 +460,7 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
-  | 'chat' | 'gift' | 'flatter'
+  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
@@ -515,6 +515,12 @@ export const population = populationJson as unknown as {
   roster: Record<string, { adventurer: number; commoner: number }>
   adventurer_level: Record<string, [number, number]>
   known_weight: number
+  turnover: { period_days: number; chance: number }
+  visitors: {
+    outskirts: { chance: number; adventurer: number; reunion_chance: number }
+    dungeon: { chance: number; party_chance: number; party_size: [number, number]; villain_chance: number; reunion_chance: number }
+  }
+  hostility: { affinity: number; sight: number; toll_per_level: number; xp_per_level: number; money_per_level: [number, number] }
 }
 
 export function tagDef(id: string): NpcTagDef | undefined {

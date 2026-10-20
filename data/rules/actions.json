@@ -55,6 +55,14 @@
     "flatter": { "name": "獻媚", "attr": "cha", "base": 13, "hours": 0.5, "effects": ["relationship_text", "flag"],
       "affinity": { "critical": 6, "success": 4, "partial": 1, "fail": -3, "fumble": -6 },
       "status_dc": 2,
-      "$comment": "人際關係上的討好、奉承。對方的財富等級每高於 2 一級，DC + status_dc（貴族、皇族不吃這一套）；可以搭配魅惑術等能力" }
+      "$comment": "人際關係上的討好、奉承。對方的財富等級每高於 2 一級，DC + status_dc（貴族、皇族不吃這一套）；可以搭配魅惑術等能力" },
+    "bluff": { "name": "蒙混過關", "attr": "cha", "base": 12, "hours": 0.25, "effects": ["relationship_text", "flag"],
+      "$comment": "和敵對冒險者對峙時：DC = base + floor(對方最高等級 / 2)，主角主動現身時 -2。成功放行；部分成功對方降價；失敗開戰；大失敗對方先手" },
+    "intimidate": { "name": "威嚇", "attr": "str", "base": 12, "hours": 0.25, "effects": ["relationship_text", "flag"],
+      "$comment": "和敵對冒險者對峙時：同蒙混，另依雙方隊伍的等級總和差距修正（每 2 級 ±1，最多 ±4）" },
+    "steal": { "name": "偷竊", "attr": "dex", "base": 12, "hours": 0.25, "effects": ["relationship_text", "flag"],
+      "$comment": "規則見 data/rules/security.json 的 steal：偷到的錢由程式決定，AI 只能補充關係文字與旗標" },
+    "attack": { "name": "偷襲", "attr": "dex", "base": 12, "hours": 0, "effects": ["relationship_text", "flag"],
+      "$comment": "只能攻擊冒險者。規則見 data/rules/security.json 的 attack" }
   }
 }

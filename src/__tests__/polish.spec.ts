@@ -6,7 +6,7 @@ import { gainXp, rerollsLeft, snapshot } from '@/engine/character'
 import { GENDER_IDS, genderDef, npcPool } from '@/engine/data'
 import { clearQuestMarkers, currentArea, enterLocation, goOutskirts, standOn } from '@/engine/grid'
 import { generateNpc } from '@/engine/npcs'
-import { peopleHere, presentHere } from '@/engine/population'
+import { areaOf, peopleHere, presentHere } from '@/engine/population'
 import { longRest } from '@/engine/rest'
 import { newGame, withRng } from '@/engine/state'
 import { acceptQuest, chooseAbility, dismiss, guildQuests, recruit, rerollAbility } from '@/engine/town'
@@ -84,12 +84,15 @@ describe('presence', () => {
     const town = withRng(state, (rng) => generateNpc(state, rng, { haunts: [{ location: 'soriel', zone: 'town', weight: 1 }] }))
     const noble = withRng(state, (rng) => generateNpc(state, rng, { haunts: [{ location: 'soriel', zone: 'noble', weight: 1 }] }))
     const away = withRng(state, (rng) => generateNpc(state, rng, { haunts: [{ location: 'albena', zone: 'town', weight: 1 }] }))
-    expect(presentHere(state, town.id)).toBe(true)
-    expect(presentHere(state, noble.id)).toBe(false)
-    expect(presentHere(state, away.id)).toBe(false)
-    expect(peopleHere(state).map((p) => p.rec.id)).toContain(town.id)
+    const ids = () => peopleHere(state).map((p) => p.rec.id)
+    expect(areaOf(state, town)).toMatch(/^soriel\/(pilgrim|market)$/)
+    expect(areaOf(state, noble)).toBe('soriel/sanctum')
+    expect(areaOf(state, away)).toMatch(/^albena\//)
+    if (areaOf(state, town) === currentArea(state).key) expect(ids()).toContain(town.id)
+    expect(ids()).not.toContain(noble.id)
+    expect(ids()).not.toContain(away.id)
     goOutskirts(state)
-    expect(presentHere(state, town.id)).toBe(false)
+    expect(ids()).not.toContain(town.id)
   })
 })
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { cellAt, CELL_NAME, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
+import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 
 const game = useGame()
@@ -27,6 +28,20 @@ function label(cell: Cell): string {
   return CELL_NAME[cell.kind] + (cell.done ? '（已清除）' : '') + (cell.item && !cell.done ? `：${cell.item}` : '')
 }
 
+// 地圖上的人：每格標出人數，敵對的人用紅色
+const people = computed(() => {
+  const map = new Map<string, PresentNpc[]>()
+  for (const p of peopleHere(game.state!)) {
+    const k = `${p.x},${p.y}`
+    map.set(k, [...(map.get(k) ?? []), p])
+  }
+  return map
+})
+
+function peopleTitle(list: PresentNpc[]): string {
+  return list.map((p) => p.rec.name).join('、')
+}
+
 const rows = computed(() =>
   Array.from({ length: area.value.height }, (_, y) =>
     Array.from({ length: area.value.width }, (_, x) => {
@@ -35,7 +50,8 @@ const rows = computed(() =>
       const here = pos.value.x === x && pos.value.y === y
       const adjacent = Math.abs(pos.value.x - x) + Math.abs(pos.value.y - y) === 1
       const blocked = cell.kind === 'wall' || cell.kind === 'water'
-      return { x, y, cell, seen, here, canStep: adjacent && seen && !blocked }
+      const who = seen ? people.value.get(`${x},${y}`) ?? [] : []
+      return { x, y, cell, seen, here, who, canStep: adjacent && seen && !blocked }
     }),
   ),
 )
@@ -72,11 +88,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           class="cell"
           :class="[c.seen ? c.cell.kind : 'fog', { here: c.here, step: c.canStep, done: c.cell.done }]"
           :disabled="!c.canStep"
-          :title="c.seen ? label(c.cell) : '未探索'"
+          :title="c.seen ? label(c.cell) + (c.who.length ? `\n👤 ${peopleTitle(c.who)}` : '') : '未探索'"
           @click="step(c.x, c.y)"
         >
           <span v-if="c.here">🧭</span>
           <span v-else-if="c.seen">{{ icon(c.cell) }}</span>
+          <span v-if="c.who.length" class="npc" :class="{ hostile: c.who.some((p) => isHostile(game.state!, p.rec)), many: c.who.length > 1 }">{{ c.who.length > 1 ? c.who.length : '' }}</span>
         </button>
       </template>
     </div>
@@ -105,4 +122,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .cell.step:hover { background-color: #5a4a33; }
 .cell.here { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
 .hint { margin: 6px 0 0; }
+.cell { position: relative; }
+.npc {
+  position: absolute; right: 1px; top: 1px; min-width: 9px; height: 9px; border-radius: 5px;
+  background: var(--accent-2); font-size: 8px; line-height: 9px; color: #1b1814; font-weight: 700; padding: 0 1px;
+}
+.npc.many { min-width: 12px; height: 12px; line-height: 12px; border-radius: 6px; font-size: 9px; }
+.npc.hostile { background: var(--danger); }
 </style>

@@ -10,6 +10,7 @@ import { MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
 import { useGame } from '@/stores/game'
+import GuardStatus from './GuardStatus.vue'
 import MarketPanel from './MarketPanel.vue'
 import NegotiationPanel from './NegotiationPanel.vue'
 import ShopPanel from './ShopPanel.vue'
@@ -150,10 +151,12 @@ const CELL_ICON: Partial<Record<string, string>> = {
 
         <template v-else-if="cell.kind === 'gate'">
           <p class="muted small">出城到近郊的荒野，或從這裡啟程前往其他地點。</p>
+          <GuardStatus can-pay />
           <button @click="game.goOutskirts()">前往{{ here.name }}近郊</button>
         </template>
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'wild'">
+          <GuardStatus can-pay />
           <button @click="game.returnToTown()">返回{{ here.name }}</button>
         </template>
 

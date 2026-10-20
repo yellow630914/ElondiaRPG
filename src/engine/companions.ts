@@ -16,7 +16,8 @@ import {
 } from './data'
 import { formatMoney } from './money'
 import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
-import { adventurersInTown, presentHere } from './population'
+import { hireable, presentHere } from './population'
+import { setupStandoff } from './encounters'
 import { setupInteraction } from './interactions'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, isBound, isEnslaved, joinParty,
@@ -60,7 +61,7 @@ export function tavernCandidates(state: GameState): TavernCandidate[] {
   const taverns = (state.taverns ??= {})
   const existing = taverns[loc]?.day === today ? taverns[loc]!.candidates : []
   // 今天在城裡的冒險者（名單上的人與具名 NPC），保留今天談判過的狀態（拒絕、還價）
-  const candidates = adventurersInTown(state).map((rec) => existing.find((c) => c.npc === rec.id) ?? { npc: rec.id, asking_cc: rec.hire_cc })
+  const candidates = hireable(state).map((rec) => existing.find((c) => c.npc === rec.id) ?? { npc: rec.id, asking_cc: rec.hire_cc })
   taverns[loc] = { day: today, candidates, ...(taverns[loc]?.day === today && taverns[loc]?.flavored ? { flavored: true } : {}) }
   return candidates
 }
@@ -492,7 +493,12 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
     case 'chat':
     case 'gift':
     case 'flatter':
+    case 'steal':
+    case 'attack':
       return setupInteraction(state, kind, target, item)
+    case 'bluff':
+    case 'intimidate':
+      return setupStandoff(state, kind, actionRulesBase(kind))
     case 'hire': {
       const rec = npcRecord(state, target ?? '')
       if (!rec) throw new Error('酒館裡沒有這位冒險者')

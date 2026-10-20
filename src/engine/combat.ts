@@ -14,14 +14,15 @@ import {
 } from './character'
 import {
   abilityDef, armorDef, combatRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
-  locationById, regionById, statusDef, wildEncounters,
+  locationById, population, regionById, statusDef, wildEncounters,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type WeaponDef,
 } from './data'
+import { characterFor, npcRecord, registerNpc } from './npcs'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
-  ActorState, Character, Effect, GameState, GameTime, ItemDelta, Report, RollResult, TimelineEntry,
+  ActorState, Character, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
 } from './types'
 
 export interface StatusInstance {
@@ -72,6 +73,8 @@ export interface Combatant {
   fled?: boolean
   /** 敵人的資料 id */
   defId?: string
+  /** 敵對的 NPC（冒險者）的 id */
+  npcId?: string
 }
 
 export type CombatAction =
@@ -111,6 +114,10 @@ export interface CombatOptions {
   questId?: string
   scene?: string
   cell?: CombatState['cell']
+  /** 和 NPC（冒險者）戰鬥：他們的 id */
+  npcs?: string[]
+  /** 先手：party = 主角偷襲成功，enemy = 對方先手 */
+  surprise?: 'party' | 'enemy'
 }
 
 const COMBAT_MINUTES_PER_ROUND = 1
@@ -128,7 +135,8 @@ export function encounterFor(locationId: string, rng: Rng, layer: 'outskirts' | 
 export function startCombat(state: GameState, group?: EncounterGroup, opts: CombatOptions = {}): CombatState {
   if (state.combat) throw new Error('戰鬥進行中')
   return withRng(state, (rng) => {
-    const enemyGroup = group ?? encounterFor(state.location, rng)
+    const npcs = (opts.npcs ?? []).map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r)
+    const enemyGroup = group ?? (npcs.length ? [] : encounterFor(state.location, rng))
     const fighters: Combatant[] = state.party.filter((c) => c.hp > 0).map((c) => fromCharacter(c, rng))
     if (fighters.length === 0) throw new Error('隊伍沒有能戰鬥的成員')
     const counts: Record<string, number> = {}
@@ -142,6 +150,11 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
         fighters.push(fromEnemy(`e${idx++}`, defId, suffix, rng))
       }
     }
+    for (const rec of npcs) {
+      fighters.push({ ...fromCharacter(characterFor(state, rec), rng), side: 'enemy', npcId: rec.id })
+    }
+    // 先手：被偷襲的一方排在最後
+    if (opts.surprise) for (const f of fighters) if (f.side !== opts.surprise) f.initiative -= 100
     const order = [...fighters]
       .sort((a, b) => b.initiative - a.initiative || (a.side === 'party' ? -1 : 1))
       .map((f) => f.id)
@@ -1044,10 +1057,16 @@ export function finishCombat(state: GameState): Report {
 
   let money = 0
   const items: ItemDelta[] = []
-  const xpTotal = victory ? defeated.reduce((sum, f) => sum + (enemies[f.defId!]?.xp ?? 0), 0) : 0
+  const h = population.hostility
+  const xpOf = (f: Combatant) => (f.npcId ? h.xp_per_level * f.level : enemies[f.defId!]?.xp ?? 0)
+  const xpTotal = victory ? defeated.reduce((sum, f) => sum + xpOf(f), 0) : 0
   withRng(state, (rng) => {
     if (!victory) return
     for (const f of defeated) {
+      if (f.npcId) {
+        money += rng.int(h.money_per_level[0], h.money_per_level[1]) * f.level
+        continue
+      }
       const def = enemies[f.defId!]
       if (!def) continue
       if (def.money_cc) money += rng.int(def.money_cc[0], def.money_cc[1])
@@ -1060,6 +1079,7 @@ export function finishCombat(state: GameState): Report {
     }
   })
   if (combat.status === 'defeat') money = -Math.floor(state.money_cc * 0.1)
+  settleNpcFoes(state, foes, victory)
 
   for (const member of state.party) {
     if (!member.isPlayer && victory) noteAffinity(combat, member.id, 2, '並肩作戰獲勝')
@@ -1110,6 +1130,26 @@ export function finishCombat(state: GameState): Report {
   }
   delete state.combat
   return commitReport(state, report)
+}
+
+/** 和 NPC 戰鬥後：倒下的人死亡（從名單移除），還活著的人敵對 */
+function settleNpcFoes(state: GameState, foes: Combatant[], victory: boolean) {
+  for (const f of foes) {
+    if (!f.npcId) continue
+    const rec = npcRecord(state, f.npcId)
+    if (!rec) continue
+    // 具名 NPC 第一次有變化時複製進存檔
+    const stored = state.npcs?.[rec.id] ?? registerNpc(state, { ...rec })
+    if (f.hp === 0) {
+      stored.dead = true
+      delete stored.at
+      for (const r of Object.values(state.rosters ?? {})) r.members = r.members.filter((id) => id !== rec.id)
+    } else {
+      stored.hostile = true
+      // 撤退或戰敗：今天不會馬上又打起來
+      if (!victory) (state.avoided ??= {})[rec.id] = state.time.day
+    }
+  }
 }
 
 function tagsFor(combat: CombatState): string[] {

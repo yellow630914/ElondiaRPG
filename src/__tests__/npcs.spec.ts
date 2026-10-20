@@ -7,9 +7,10 @@ import { affinityTable, giftBonus } from '@/engine/interactions'
 import { generateNpc } from '@/engine/npcs'
 import { withRng } from '@/engine/state'
 import { locationById, npcTags } from '@/engine/data'
-import { enterLocation, standOn, zonesOf } from '@/engine/grid'
+import { cellAt, currentArea, enterLocation, standOn, zonesOf } from '@/engine/grid'
 import { npcKind, npcRecord, npcTitle } from '@/engine/npcs'
-import { ensureRoster, peopleHere, whereToday } from '@/engine/population'
+import { areaOf, ensureRoster, peopleHere, presentHere, whereToday } from '@/engine/population'
+import { shopState } from '@/engine/trade'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
 
@@ -80,30 +81,48 @@ describe('rosters', () => {
 })
 
 describe('people here', () => {
-  it('lists residents of the current district and staff at their facility', () => {
+  it('scatters residents over the cells of their district and keeps shopkeepers in their shop', () => {
     const state = game()
     ensureRoster(state, 'soriel')
     standOn(state, 'shop')
     const here = peopleHere(state)
+    const area = currentArea(state)
     expect(here.length).toBeGreaterThan(0)
-    for (const p of here.filter((x) => !x.staff)) {
-      const today = whereToday(p.rec, state.time.day)!
-      expect(today.location).toBe('soriel')
-      expect(['town', 'temple']).toContain(today.zone)
+    for (const p of here) {
+      expect(areaOf(state, p.rec)).toBe(area.key)
+      const cell = cellAt(area, p.x, p.y)!
+      expect(['wall', 'water', 'link', 'gate']).not.toContain(cell.kind)
     }
-    // 名單上今天在城裡一般區域的人都列得出來
-    const expected = state.rosters!.soriel!.members.filter((id) => {
-      const t = whereToday(npcRecord(state, id)!, state.time.day)!
-      return t.location === 'soriel' && t.zone === 'town'
-    })
-    for (const id of expected) expect(here.map((p) => p.rec.id)).toContain(id)
+    // 不是每個人都擠在同一格
+    expect(new Set(here.map((p) => `${p.x},${p.y}`)).size).toBeGreaterThan(1)
+    // 店主在店裡，主角站在店裡時就在身邊
+    const keeper = shopState(state, 'general').keeper
+    expect(peopleHere(state).find((p) => p.rec.id === keeper)).toMatchObject({ staff: true, dist: 0 })
+    expect(presentHere(state, keeper)).toBe(true)
+    // 只有身邊（相鄰格）的人能互動
+    for (const p of peopleHere(state)) expect(presentHere(state, p.rec.id)).toBe(p.dist <= 1)
+  })
+
+  it('moves people around during the day', () => {
+    const state = game()
+    ensureRoster(state, 'soriel')
+    const at = (h: number) => {
+      state.time = { ...state.time, hour: h }
+      return peopleHere(state).map((p) => `${p.rec.id}:${p.x},${p.y}`).sort().join('|')
+    }
+    expect(at(8)).toBe(at(9))
+    expect(at(8)).not.toBe(at(14))
   })
 })
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
 function someone(state: GameState, spec: Parameters<typeof generateNpc>[2] = {}) {
-  return withRng(state, (rng) => generateNpc(state, rng, { kind: 'commoner', tags: ['commoner'], occupation: '麵包師', haunts: [{ location: state.location, zone: 'town', weight: 1 }], ...spec }))
+  const rec = withRng(state, (rng) => generateNpc(state, rng, { kind: 'commoner', tags: ['commoner'], occupation: '麵包師', haunts: [{ location: state.location, zone: 'town', weight: 1 }], ...spec }))
+  // 站在主角旁邊
+  const p = state.position!
+  rec.at = { area: p.area, x: p.x, y: p.y, until: state.time.day }
+  return rec
 }
 
 function act(state: GameState, input: Parameters<typeof prepareAction>[1], natural: number) {

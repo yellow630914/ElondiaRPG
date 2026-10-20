@@ -18,6 +18,7 @@ import {
   actionRules, ATTR_IDS, attrName, locationById, regionById, type ActionKind, type AttrId, type Degree, type EffectKind,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
+import { applyStandoff } from './encounters'
 import { applyInteraction } from './interactions'
 import type { NpcSpec } from './npcs'
 import { addAffinity, conditionPenalty, pcOf } from './party'
@@ -380,7 +381,11 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'negotiation': return applyNegotiationOutcome(state, report, p.target!, degree)
     case 'chat':
     case 'gift':
-    case 'flatter': return applyInteraction(state, report, p.kind, p.target!, degree, p.item)
+    case 'flatter':
+    case 'steal':
+    case 'attack': return applyInteraction(state, report, p.kind, p.target!, degree, p.item)
+    case 'bluff':
+    case 'intimidate': return applyStandoff(state, degree)
     case 'free':
     case 'rest_talk': return ''
   }

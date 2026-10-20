@@ -96,6 +96,7 @@ export function autoHitDice(c: Character): number {
  */
 export function shortRest(state: GameState, spend?: Record<string, number>): Report | CombatState {
   if (state.combat) throw new Error('戰鬥中不能休息')
+  if (state.standoff) throw new Error('先處理眼前的對峙')
   const area = currentArea(state)
   const ambushed = withRng(state, (rng) => rng.chance(ambushChance(state)))
   if (ambushed) {
@@ -131,6 +132,7 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
 export function longRest(state: GameState, place: 'inn' | 'safe'): Report {
   const blocked = longRestBlocked(state, place)
   if (blocked) throw new Error(blocked)
+  if (state.standoff) throw new Error('先處理眼前的對峙')
   const area = currentArea(state)
   let hours = companionRules.rest.long_hours
   let scene = `${area.name}的安全房`

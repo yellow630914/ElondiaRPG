@@ -7,8 +7,9 @@ import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Character, Effect, GameState, ItemDelta, Report, TimelineEntry } from './types'
 import { shortestPath } from './world'
-import { enterLocation } from './grid'
-import { ensureRoster, pruneNpcs } from './population'
+import { assertNoStandoff, currentArea, enterLocation, placeOutside } from './grid'
+import { arrivalCheck, gateCheck } from './security'
+import { ensureRoster, pruneNpcs, refreshRosters } from './population'
 
 /** 官道沿途有旅店：每人每天食宿 */
 export const ROAD_DAILY_CC = 15
@@ -70,6 +71,15 @@ function daysToHours(days: number): number {
 export function travel(state: GameState, destination: string, intent?: string): Report {
   const path = shortestPath(state.location, destination)
   if (!path || path.legs.length === 0) throw new Error(`無法前往 ${destination}`)
+  assertNoStandoff(state)
+  // 從聚落出發要經過城門盤查；被攔下時回傳盤查的紀錄，不會出發
+  if (currentArea(state).kind === 'settlement') {
+    const g = gateCheck(state)
+    if (!g.ok) {
+      if (g.report) return g.report
+      throw new Error(g.reason)
+    }
+  }
   const before = state.party.map((c) => ({ ...c }))
   const members = state.party.map((c) => ({ ...c }))
   const timeline: TimelineEntry[] = []
@@ -147,7 +157,10 @@ export function travel(state: GameState, destination: string, intent?: string): 
   commitReport(state, report)
   enterLocation(state)
   ensureRoster(state, state.location)
+  refreshRosters(state)
   pruneNpcs(state)
+  // 進城的盤查：付不出罰金就被擋在城外
+  if (!arrivalCheck(state)) placeOutside(state)
   return report
 }
 

@@ -11,6 +11,8 @@ import type { ShopType } from '@/engine/data'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
 import * as population from '@/engine/population'
+import * as encounters from '@/engine/encounters'
+import * as security from '@/engine/security'
 import * as social from '@/engine/social'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
@@ -66,11 +68,19 @@ export interface NarrationState {
   error?: string
 }
 
+/** 移動之後：附近有敵對的冒險者時開始對峙 */
+function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
+  if (r.combat || r.report) return r
+  const report = encounters.checkHostiles(s)
+  return report ? { report } : r
+}
+
 /** 讀入存檔：補上新欄位，舊存檔沒有格子位置時放到目前地點的入口。 */
 function load(s: GameState): GameState {
   migrate(s)
   if (!s.position) grid.enterLocation(s)
   population.ensureRoster(s, s.location)
+  population.refreshRosters(s)
   return s
 }
 
@@ -520,12 +530,18 @@ export const useGame = defineStore('game', () => {
         return report
       }),
     // 走格子
-    moveTo: (x: number, y: number) => run((s) => grid.moveTo(s, x, y)),
-    move: (dx: number, dy: number) => run((s) => grid.move(s, dx, dy)),
-    goOutskirts: () => run(grid.goOutskirts),
+    moveTo: (x: number, y: number) => run((s) => afterMove(s, grid.moveTo(s, x, y))),
+    move: (dx: number, dy: number) => run((s) => afterMove(s, grid.move(s, dx, dy))),
+    goOutskirts: () => run((s) => grid.goOutskirts(s) ?? encounters.checkHostiles(s)),
     returnToTown: () => run(grid.returnToTown),
-    descend: () => run(grid.descend),
-    ascend: () => run(grid.ascend),
+    descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s))),
+    ascend: () => run((s) => (grid.ascend(s), encounters.checkHostiles(s))),
+    // 對峙：避開、現身、偷襲或開戰、付過路費（蒙混與威嚇是主動行動）
+    avoidFoes: () => run(encounters.avoidFoes),
+    revealSelf: () => run(encounters.revealSelf),
+    fightFoes: () => run((s) => encounters.fightFoes(s)),
+    payToll: () => run(encounters.payToll),
+    payFine: () => run(security.payFine),
     restAtSafeRoom: () => run((s) => rest.longRest(s, 'safe')),
     // 夥伴
     tavernCandidates: () => run(companions.tavernCandidates) ?? [],

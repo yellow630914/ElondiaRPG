@@ -3,11 +3,11 @@ import { computed, reactive, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { askingFor } from '@/engine/companions'
 import { combatRules, genderName, raceName, tagDef } from '@/engine/data'
-import { currentArea } from '@/engine/grid'
+import { cellAt, CELL_NAME, currentArea, position } from '@/engine/grid'
 import { affinityTable, itemValue, type InteractionKind } from '@/engine/interactions'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcTitle } from '@/engine/npcs'
-import { peopleHere, type PresentNpc } from '@/engine/population'
+import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
@@ -36,6 +36,24 @@ watch(people, (list) => {
 
 function rel(id: string) {
   return s.value.relationships?.[id]
+}
+
+function hostile(p: PresentNpc): boolean {
+  return isHostile(s.value, p.rec)
+}
+
+/** 遠處的人在哪裡：方向與格子 */
+function whereIs(p: PresentNpc): string {
+  const me = position(s.value)
+  const dx = p.x - me.x
+  const dy = p.y - me.y
+  const dir = `${dx < 0 ? '西' : dx > 0 ? '東' : ''}${dy < 0 ? '北' : dy > 0 ? '南' : ''}`
+  const cell = cellAt(currentArea(s.value), p.x, p.y)
+  return `在${dir ? `${dir}方` : '這裡'}的${cell ? CELL_NAME[cell.kind] : '某處'}（${p.dist} 格）`
+}
+
+function attack(p: PresentNpc) {
+  if (confirm(`偷襲${p.rec.name}？被人看到的話，這裡與${p.rec.name}常去的地方都會提高警戒、降低聲望。`)) interact('attack', p)
 }
 
 function tagsOf(rec: NpcRecord) {
@@ -101,7 +119,7 @@ async function hire(id: string) {
 <template>
   <section class="panel people">
     <div class="row head">
-      <h3>👥 這裡的人 <span class="small muted">{{ where }}・{{ people.length }} 人</span></h3>
+      <h3>👥 這裡的人 <span class="small muted">{{ where }}・{{ people.length }} 人，身邊 {{ people.filter((p) => p.dist <= 1).length }} 人</span></h3>
       <JudgeToggle />
     </div>
     <p v-if="!people.length" class="small muted">這裡現在沒有別人。</p>
@@ -110,10 +128,12 @@ async function hire(id: string) {
     <div v-for="g in groups" :key="g.title" class="group">
       <h4>{{ g.title }}</h4>
       <ul class="plain">
-        <li v-for="p in g.items" :key="p.rec.id" :class="{ open: open === p.rec.id }">
+        <li v-for="p in g.items" :key="p.rec.id" :class="{ open: open === p.rec.id, far: p.dist > 1 }">
           <div class="row line" @click="open = open === p.rec.id ? null : p.rec.id">
             <NameTag :id="p.rec.id" />
             <span class="small muted">{{ npcTitle(p.rec) }}</span>
+            <span v-if="hostile(p)" class="tag small bad">敵對</span>
+            <span v-if="p.dist > 1" class="small muted">📍{{ p.dist }} 格</span>
             <span v-for="t in tagsOf(p.rec)" :key="t.name" class="tag small" :title="t.ai_hint">{{ t.emoji }}{{ t.name }}</span>
             <span v-if="rel(p.rec.id)" class="small known" :title="`親密度 ${rel(p.rec.id)!.affinity}`">💞 {{ affinityStage(rel(p.rec.id)!.affinity) }}</span>
           </div>
@@ -124,7 +144,8 @@ async function hire(id: string) {
             <div v-if="rel(p.rec.id)" class="muted">{{ p.rec.personality }}</div>
             <div v-if="rel(p.rec.id)?.toPlayer" class="muted">與你：{{ rel(p.rec.id)!.toPlayer }}</div>
 
-            <template v-if="!p.rec.hostile">
+            <p v-if="p.dist > 1" class="muted">{{ whereIs(p) }}。走到旁邊（相鄰的格子）才能互動。</p>
+            <template v-else-if="!hostile(p)">
               <input v-model="text[p.rec.id]" placeholder="想說什麼、怎麼做（選填，會交給 AI 判定）" />
               <AbilityPicker v-model="use" />
               <div class="row">
@@ -133,6 +154,10 @@ async function hire(id: string) {
                 <button v-if="p.kind === 'adventurer' && !p.staff" class="small" :disabled="busy || partyFull" @click="startHire(p.rec.id)">
                   🤝 {{ hiring === p.rec.id ? '收起' : '雇用' }}
                 </button>
+              </div>
+              <div class="row">
+                <button class="small" :disabled="busy" title="靈巧檢定：偷錢或東西；被發現會降低親密度，在城裡還會提高衛兵警戒、降低聲望" @click="interact('steal', p)">🫳 偷竊</button>
+                <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" title="靈巧檢定：成功就先手開戰；被看到會有衛兵與聲望的後果" @click="attack(p)">🗡️ 偷襲</button>
               </div>
               <div class="row">
                 <select v-model="gift[p.rec.id]" class="small">
@@ -154,7 +179,13 @@ async function hire(id: string) {
                 </template>
               </div>
             </template>
-            <p v-else class="muted">{{ p.rec.name }}對你充滿敵意。</p>
+            <template v-else>
+              <p class="muted">{{ p.rec.name }}對你充滿敵意。</p>
+              <div class="row">
+                <button class="small" :disabled="busy" @click="interact('steal', p)">🫳 偷竊</button>
+                <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" @click="attack(p)">🗡️ 偷襲</button>
+              </div>
+            </template>
           </div>
         </li>
       </ul>
@@ -171,6 +202,8 @@ async function hire(id: string) {
 .group h4 { margin: 8px 0 2px; color: var(--accent-2); font-size: 0.9rem; }
 .line { gap: 6px; cursor: pointer; }
 .known { color: var(--accent); }
+.bad { color: var(--danger); border-color: var(--danger); }
+li.far .line { opacity: 0.7; }
 li.open { background: var(--panel-2); border-radius: 6px; padding: 6px; }
 .detail { display: grid; gap: 4px; margin-top: 4px; }
 .detail input, .detail select { min-width: 0; }

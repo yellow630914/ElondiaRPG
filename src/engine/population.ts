@@ -7,7 +7,9 @@
 // - 店主、公會職員等職員沒有活躍地點，固定待在自己的設施；舊資料（沒有活躍地點）沿用同樣的規則。
 
 import { geography, locationById, npcs as namedNpcs, npcTags, population, type Haunt, type Location, type NpcKind } from './data'
-import { currentArea, currentCell, zonesOf, type Zone } from './grid'
+import {
+  currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
+} from './grid'
 import { generateNpc, hashString, npcKind, npcRecord, npcSpot, registerNpc, weightedPick } from './npcs'
 import { Rng } from './rng'
 import type { GameState, NpcRecord, Roster } from './types'
@@ -91,7 +93,7 @@ function round(n: number): number {
 }
 
 /** 生成一位名單上的居民 */
-export function generateResident(state: GameState, rng: Rng, loc: Location, kind: NpcKind): NpcRecord {
+export function generateResident(state: GameState, rng: Rng, loc: Location, kind: NpcKind, prefix?: string): NpcRecord {
   const tags = pickTags(rng, kind, loc)
   const occupations = tags.flatMap((t) => npcTags.tags[t]?.occupations ?? [])
   let level: number
@@ -110,7 +112,7 @@ export function generateResident(state: GameState, rng: Rng, loc: Location, kind
     haunts: buildHaunts(rng, kind, tags, loc),
     ...(kind === 'commoner' && occupations.length ? { occupation: rng.pick(occupations) } : {}),
     ...(loc.faction && kind === 'commoner' ? { faction: loc.faction } : {}),
-  }, kind === 'adventurer' ? 'adv' : 'cmn')
+  }, prefix ?? (kind === 'adventurer' ? 'adv' : 'cmn'))
 }
 
 /** 建立地點的名單（已經有就直接回傳）；地下城沒有名單 */
@@ -142,7 +144,7 @@ export function whereToday(rec: Pick<NpcRecord, 'id' | 'haunts'>, day: number): 
 }
 
 /** 所有登錄過的 NPC（遊戲中的紀錄優先，加上還沒登場的具名 NPC） */
-function allNpcs(state: GameState): NpcRecord[] {
+export function allNpcs(state: GameState): NpcRecord[] {
   const seen = new Set<string>()
   const out: NpcRecord[] = []
   for (const rec of [...Object.values(state.npcs ?? {}), ...namedNpcs.map((n) => npcRecord(state, n.id)!)]) {
@@ -153,12 +155,66 @@ function allNpcs(state: GameState): NpcRecord[] {
   return out
 }
 
-/** 主角目前看得到的地區：聚落是所在區塊的地區（站在神殿格上再加上神殿），近郊是 outskirts */
-export function visibleZones(state: GameState): Zone[] {
-  const area = currentArea(state)
-  if (area.kind === 'dungeon') return []
-  if (area.kind === 'wild') return ['outskirts']
-  return [area.zone ?? 'town', ...(currentCell(state).kind === 'temple' ? ['temple' as Zone] : [])]
+/** 地下城的活躍地點：今天在第幾層 */
+function layerOf(rec: Pick<NpcRecord, 'id'>, day: number): number {
+  return hashString(`${rec.id}@${day}:layer`) % DUNGEON_LAYERS.length
+}
+
+function pickBlock(rec: Pick<NpcRecord, 'id'>, day: number, keys: string[]): string | undefined {
+  if (!keys.length) return undefined
+  return keys[hashString(`${rec.id}@${day}:block`) % keys.length]
+}
+
+/** NPC 今天在哪個區域（區域 key）；不在任何地圖上時為 undefined */
+export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day): string | undefined {
+  if (rec.dead) return undefined
+  if (rec.at && day <= rec.at.until) return rec.at.area
+  const today = whereToday(rec, day)
+  if (today) {
+    const loc = locationById(today.location)
+    if (today.zone === 'outskirts') return loc.type === 'dungeon' ? undefined : outskirtsKey(loc.id)
+    if (today.zone === 'dungeon') return loc.type === 'dungeon' ? layerKey(loc.id, layerOf(rec, day)) : undefined
+    const blocks = settlementBlocks(loc)
+    const keys = today.zone === 'temple'
+      ? blocks.filter((b) => b.kinds.has('temple')).map((b) => b.key)
+      : blocks.filter((b) => b.zone === today.zone).map((b) => b.key)
+    return pickBlock(rec, day, keys.length ? keys : blocks.filter((b) => b.zone === 'town').map((b) => b.key))
+  }
+  // 沒有活躍地點：職員在自己的設施所在的區塊；其他人（舊資料、入住旅館時認識的人……）要認識才找得到
+  const loc = locationById(rec.location)
+  const blocks = settlementBlocks(loc)
+  const spot = npcSpot(rec)
+  if (spot) return blocks.find((b) => b.kinds.has(spot as CellKind))?.key
+  if (!state.relationships?.[rec.id]) return undefined
+  return pickBlock(rec, day, blocks.filter((b) => b.zone === 'town').map((b) => b.key))
+}
+
+// 隨機的人在格子上的分佈：冒險者常在酒館與公會，普通人多在街上；神官在神殿
+const CELL_WEIGHTS: Record<NpcKind, Partial<Record<CellKind, number>>> = {
+  adventurer: { tavern: 6, guild: 4, inn: 2, floor: 1, shop: 1, temple: 0.5, resource: 1, quest: 1, safe: 2 },
+  commoner: { floor: 3, shop: 2, tavern: 1, inn: 1, temple: 1, resource: 1, quest: 1 },
+}
+const TAG_CELLS: Record<string, Partial<Record<CellKind, number>>> = {
+  priest: { temple: 8 },
+  bishop: { temple: 10 },
+  merchant: { shop: 4 },
+}
+
+/** NPC 在區域裡的格子：職員在自己的設施，暫時待著的人在指定的格子，其他人依日期與時段（每 6 小時）分佈 */
+export function npcCell(state: GameState, rec: NpcRecord, area: Area): { x: number; y: number } | null {
+  if (rec.at && rec.at.area === area.key && state.time.day <= rec.at.until) return { x: rec.at.x, y: rec.at.y }
+  const spot = !rec.haunts?.length ? npcSpot(rec) : undefined
+  if (spot) return findKind(area, spot as CellKind)
+  const weights: Partial<Record<CellKind, number>> = { ...CELL_WEIGHTS[npcKind(rec)] }
+  for (const t of rec.tags ?? []) Object.assign(weights, TAG_CELLS[t] ?? {})
+  const slot = Math.floor((state.time.hour ?? 0) / 6)
+  const rng = new Rng(hashString(`${rec.id}@${state.time.day}#${slot}@${area.key}`))
+  const options = Object.fromEntries(
+    area.cells.map((c, i) => [String(i), weights[c.kind] ?? 0] as const).filter(([, w]) => w > 0),
+  )
+  if (!Object.keys(options).length) return null
+  const i = Number(weightedPick(rng, options))
+  return { x: i % area.width, y: Math.floor(i / area.width) }
 }
 
 export interface PresentNpc {
@@ -166,45 +222,37 @@ export interface PresentNpc {
   kind: NpcKind
   /** 職員：店主、公會職員等，固定待在自己的設施 */
   staff: boolean
+  x: number
+  y: number
+  /** 和主角的距離（格；斜角也算一格） */
+  dist: number
 }
 
-/** 這裡的人：今天在這個地點、這個地區的 NPC（不含隊友） */
+/** 這個區域裡的人（不含隊友），依距離排序；距離 1 以內的人才能互動 */
 export function peopleHere(state: GameState): PresentNpc[] {
   const inParty = new Set(state.party.map((m) => m.id))
   const area = currentArea(state)
-  const zones = visibleZones(state)
-  const cell = currentCell(state)
+  const p = position(state)
   const out: PresentNpc[] = []
   for (const rec of allNpcs(state)) {
-    if (inParty.has(rec.id)) continue
-    const today = whereToday(rec, state.time.day)
-    if (today) {
-      if (today.location === state.location && zones.includes(today.zone as Zone)) out.push({ rec, kind: npcKind(rec), staff: false })
-      continue
-    }
-    // 沒有活躍地點：職員待在自己的設施；其他人（舊資料、入住旅館時認識的人……）要認識才會列出
-    if (rec.location !== state.location || area.kind !== 'settlement') continue
-    const spot = npcSpot(rec)
-    if (spot ? cell.kind === spot : !!state.relationships?.[rec.id]) out.push({ rec, kind: npcKind(rec), staff: !!spot })
+    if (inParty.has(rec.id) || areaOf(state, rec) !== area.key) continue
+    const cell = npcCell(state, rec, area)
+    if (!cell) continue
+    const staff = !rec.haunts?.length && !!npcSpot(rec)
+    out.push({ rec, kind: npcKind(rec), staff, ...cell, dist: Math.max(Math.abs(cell.x - p.x), Math.abs(cell.y - p.y)) })
   }
-  // 職員排前面，再依冒險者、普通人、名字排序
-  return out.sort((a, b) => Number(b.staff) - Number(a.staff) || (a.kind === b.kind ? 0 : a.kind === 'adventurer' ? -1 : 1) || a.rec.name.localeCompare(b.rec.name))
+  return out.sort((a, b) => a.dist - b.dist || Number(b.staff) - Number(a.staff) || a.rec.name.localeCompare(b.rec.name))
 }
 
-/**
- * 角色現在是否在主角身邊：隊友永遠在；有活躍地點的人要今天在這裡、這個地區；
- * 其他人要在同一個聚落，而且主角站在他平常待的設施上（沒有固定設施的人在整個聚落都找得到）。
- */
+/** 身邊的人：同一格或相鄰的格子 */
+export function nearbyPeople(state: GameState): PresentNpc[] {
+  return peopleHere(state).filter((p) => p.dist <= 1)
+}
+
+/** 角色現在是否在主角身邊：隊友永遠在；其他人要在同一個區域、同一格或相鄰的格子 */
 export function presentHere(state: GameState, id: string): boolean {
   if (state.party.some((m) => m.id === id)) return true
-  const rec = npcRecord(state, id)
-  if (!rec) return false
-  const today = whereToday(rec, state.time.day)
-  if (today) return today.location === state.location && visibleZones(state).includes(today.zone as Zone)
-  if (rec.location !== state.location) return false
-  if (currentArea(state).kind !== 'settlement') return false
-  const spot = npcSpot(rec)
-  return !spot || currentCell(state).kind === spot
+  return nearbyPeople(state).some((p) => p.rec.id === id)
 }
 
 /** 今天在這座城裡（任何區塊）、可以雇用的冒險者 */
@@ -213,11 +261,145 @@ export function adventurersInTown(state: GameState): NpcRecord[] {
   ensureRoster(state, state.location)
   return allNpcs(state).filter((rec) => {
     if (inParty.has(rec.id) || npcKind(rec) !== 'adventurer' || rec.hostile) return false
+    if (rec.dead) return false
     const today = whereToday(rec, state.time.day)
     if (today) return today.location === state.location && today.zone !== 'outskirts' && today.zone !== 'dungeon'
     // 舊資料：離隊後回到酒館的人
     return rec.location === state.location && npcSpot(rec) === 'tavern' && !/^(slv|pty|mst)_/.test(rec.id)
   })
+}
+
+/** 今天在城裡、或就在身邊（野外、地下城）的冒險者都可以雇用 */
+export function hireable(state: GameState): NpcRecord[] {
+  const list = adventurersInTown(state)
+  for (const p of nearbyPeople(state)) {
+    if (p.kind === 'adventurer' && !p.staff && !p.rec.hostile && !isHostile(state, p.rec) && !list.includes(p.rec)) list.push(p.rec)
+  }
+  return list
+}
+
+/**
+ * 敵對：被攻擊過、或在野外與地下城遇到「惡人」或關係很差的冒險者。
+ * 在城裡，惡人與關係差的人不會動手（只有被攻擊過的人保持敵對）。
+ */
+export function isHostile(state: GameState, rec: NpcRecord, areaKind = currentArea(state).kind): boolean {
+  if (rec.hostile) return true
+  if (areaKind === 'settlement' || npcKind(rec) !== 'adventurer') return false
+  const affinity = state.relationships?.[rec.id]?.affinity
+  return !!rec.tags?.includes('villain') || (affinity !== undefined && affinity <= population.hostility.affinity)
+}
+
+// ---- 名單變動 ----
+
+/** 每 period_days 天，每份名單有機率發生一件事：有人搬來、冒險者搬家、旅人離開（見 npc_population.json） */
+export function refreshRosters(state: GameState) {
+  const t = population.turnover
+  const today = state.time.day
+  for (const [locId, roster] of Object.entries(state.rosters ?? {})) {
+    const since = roster.updated ?? roster.day
+    const periods = Math.floor((today - since) / t.period_days)
+    // 很久沒回來時，最多補算最近 10 次
+    for (let i = Math.max(1, periods - 9); i <= periods; i++) {
+      const rng = new Rng(hashString(`${state.seed}:turnover:${locId}:${since + i * t.period_days}`))
+      if (rng.next() < t.chance) rosterEvent(state, locId, roster, rng)
+    }
+    if (periods > 0) roster.updated = since + periods * t.period_days
+  }
+}
+
+function rosterEvent(state: GameState, locId: string, roster: Roster, rng: Rng) {
+  const loc = locationById(locId)
+  const size = population.roster[loc.type]
+  if (!size) return
+  const inParty = new Set(state.party.map((m) => m.id))
+  const members = roster.members.map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r && !r.dead)
+  roster.members = members.map((r) => r.id)
+  const count = (k: NpcKind) => members.filter((r) => npcKind(r) === k).length
+  // 未滿額：有人搬來
+  for (const kind of ['adventurer', 'commoner'] as NpcKind[]) {
+    if (count(kind) < size[kind]) {
+      roster.members.push(generateResident(state, rng, loc, kind).id)
+      return
+    }
+  }
+  const movable = members.filter((r) => r.generated && !inParty.has(r.id))
+  if (!movable.length) return
+  const who = rng.pick(movable)
+  roster.members = roster.members.filter((id) => id !== who.id)
+  const elsewhere = (who.haunts ?? []).filter((h) => h.location !== locId && h.zone !== 'dungeon' && isSettlement(h.location))
+  if (npcKind(who) === 'adventurer' && elsewhere.length) {
+    // 搬到另一個活躍地點：加入那裡的名單，活躍地點改以新家為中心
+    const to = locationById(rng.pick(elsewhere).location)
+    who.location = to.id
+    who.haunts = buildHaunts(rng, 'adventurer', who.tags ?? [], to)
+    state.rosters![to.id]?.members.push(who.id)
+  } else if (state.relationships?.[who.id]) {
+    // 認識的人離開這一帶：到兩步以內的另一座聚落生活
+    const near = [...new Set(neighbors(locId).flatMap((n) => [n, ...neighbors(n)]))].filter((id) => id !== locId && isSettlement(id))
+    if (near.length) {
+      const to = locationById(rng.pick(near))
+      who.location = to.id
+      who.haunts = buildHaunts(rng, npcKind(who), who.tags ?? [], to)
+    }
+  } else {
+    // 不認識的人就這樣離開了
+    delete state.npcs![who.id]
+  }
+}
+
+// ---- 野外與地下城遇到的人 ----
+
+/** 可以放人的格子（距離起點 min 格以上、不是遭遇或陷阱） */
+function openCells(area: Area, from: { x: number; y: number } | null, min: number): number[] {
+  const OK = new Set<CellKind>(['floor', 'resource', 'quest', 'safe'])
+  return area.cells
+    .map((c, i) => (OK.has(c.kind) ? i : -1))
+    .filter((i) => i >= 0 && (!from || Math.max(Math.abs((i % area.width) - from.x), Math.abs(Math.floor(i / area.width) - from.y)) >= min))
+}
+
+/**
+ * 進入近郊（每天一次）或地下城的一層時，可能遇到人：認識的人（重逢），或新面孔；
+ * 地下城遇到的一定是冒險者，可能是一支隊伍，也可能是惡人。用固定亂數，不影響遊戲的亂數。
+ */
+export function spawnVisitors(state: GameState, area: Area, from: { x: number; y: number } | null) {
+  if (area.kind === 'settlement') return
+  const day = state.time.day
+  const dungeon = area.kind === 'dungeon'
+  const cfg = dungeon ? population.visitors.dungeon : population.visitors.outskirts
+  const rng = new Rng(hashString(`${state.seed}:visit:${area.key}:${day}`))
+  if (rng.next() >= cfg.chance) return
+  const cells = openCells(area, from, 3)
+  if (!cells.length) return
+  const place = (rec: NpcRecord, i: number) => {
+    rec.at = { area: area.key, x: i % area.width, y: Math.floor(i / area.width), until: day }
+  }
+  const spot = rng.pick(cells)
+
+  // 重逢：認識的人，活躍地點包含這裡
+  if (rng.next() < cfg.reunion_chance) {
+    const inParty = new Set(state.party.map((m) => m.id))
+    const known = allNpcs(state).filter((r) => !r.dead && !inParty.has(r.id) && state.relationships?.[r.id]
+      && (!dungeon || npcKind(r) === 'adventurer') && (r.haunts ?? []).some((h) => h.location === area.location))
+    if (known.length) {
+      place(rng.pick(known), spot)
+      return
+    }
+  }
+
+  const home = locationById(isSettlement(area.location) ? area.location : neighbors(area.location).find(isSettlement) ?? area.location)
+  if (!isSettlement(home.id)) return
+  const kind: NpcKind = dungeon || rng.next() < population.visitors.outskirts.adventurer ? 'adventurer' : 'commoner'
+  const d = population.visitors.dungeon
+  const size = dungeon && rng.next() < d.party_chance ? rng.int(d.party_size[0], d.party_size[1]) : 1
+  const villain = dungeon && rng.next() < d.villain_chance
+  const group = size > 1 ? `grp_${hashString(`${area.key}:${day}`)}` : undefined
+  const near = [spot, ...cells.filter((i) => i !== spot && Math.abs((i % area.width) - (spot % area.width)) <= 1 && Math.abs(Math.floor(i / area.width) - Math.floor(spot / area.width)) <= 1)]
+  for (let n = 0; n < size; n++) {
+    const rec = generateResident(state, rng, home, kind, 'vis')
+    if (villain && !rec.tags?.includes('villain')) rec.tags = [...(rec.tags ?? []), 'villain']
+    if (group) rec.group = group
+    place(rec, near[n % near.length]!)
+  }
 }
 
 /** 和主角沒有任何關聯、也不在名單上的生成 NPC：移除，避免存檔越來越大 */
@@ -232,7 +414,7 @@ export function pruneNpcs(state: GameState) {
     ...state.party.flatMap((m) => (m.contract ? [m.contract.master] : [])),
   ])
   for (const [id, rec] of Object.entries(state.npcs ?? {})) {
-    if (rec.generated && /^(tav|slv|pty)_/.test(id) && !keep.has(id)) delete state.npcs![id]
+    if (rec.generated && /^(tav|slv|pty|vis)_/.test(id) && !keep.has(id) && !(rec.at && rec.at.until >= state.time.day)) delete state.npcs![id]
   }
 }
 

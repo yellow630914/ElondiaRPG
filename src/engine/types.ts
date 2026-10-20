@@ -221,7 +221,26 @@ export interface NpcRecord extends NpcDef {
   spot?: string
   /** 被攻擊後敵對（不再接受雇用與一般互動） */
   hostile?: boolean
+  /** 已經死亡（不再出現） */
+  dead?: boolean
+  /** 暫時待在某一格（野外與地下城遇到的人、重逢的熟人）；until 之後失效 */
+  at?: { area: string; x: number; y: number; until: number }
+  /** 同行的隊伍（一起遭遇） */
+  group?: string
   character?: Character
+}
+
+export interface Standoff {
+  /** 對方（一個人或一支隊伍） */
+  npcs: string[]
+  area: string
+  /** 被對方發現了 */
+  detected: boolean
+  /** 主角主動現身（應對檢定 +2） */
+  revealed?: boolean
+  /** 對方開的過路費 */
+  demand_cc: number
+  day: number
 }
 
 export interface Roster {
@@ -231,6 +250,8 @@ export interface Roster {
   day: number
   /** AI 已經潤飾過名字、外貌與性格 */
   flavored?: boolean
+  /** 上次檢查名單變動的日期 */
+  updated?: number
 }
 
 export interface TavernCandidate {
@@ -338,6 +359,18 @@ export interface GameState {
   pendingLeave?: { mode: 'sneak' | 'formal' }
   /** 已擲骰、等待判定的主動行動 */
   pendingAction?: ActionPending
+  /** 和敵對冒險者的對峙（見 engine/encounters.ts） */
+  standoff?: Standoff
+  /** 今天已經避開或談妥的敵對 NPC：id → 日期 */
+  avoided?: Record<string, number>
+  /** 各地點的衛兵警戒：等級與最後一次犯案的日期 */
+  alerts?: Record<string, { level: number; day: number }>
+  /** 被通緝的勢力 */
+  wanted?: Record<string, { day: number }>
+  /** 今天通過城門盤查的地點 → 日期 */
+  gatePass?: Record<string, number>
+  /** 今天被城門擋下的地點 → 日期 */
+  gateBlock?: Record<string, number>
   /** 上次長休結束的時間 */
   lastLongRest?: GameTime
   /** AI 提議的人際關係文字更新，等待玩家確認 */

@@ -19,5 +19,23 @@
     "outpost": [1, 5],
     "fortress": [1, 6]
   },
-  "known_weight": 3
+  "known_weight": 3,
+  "turnover": {
+    "$comment": "名單變動：每 period_days 天，每份名單有 chance 的機率發生一件事（未滿額時有人搬來；否則冒險者搬到他的另一個活躍地點，或旅人離開這一帶）。",
+    "period_days": 3,
+    "chance": 0.25
+  },
+  "visitors": {
+    "$comment": "野外與地下城遇到的人：進入近郊（每天一次）或地下城的一層時擲 chance。reunion_chance = 改成遇到認識的人（活躍地點包含這裡）的機率；party_chance = 地下城遇到的是一支隊伍（party_size 人）；villain_chance = 帶有「惡人」標籤；adventurer = 近郊遇到的是冒險者的機率（其餘是普通人）。",
+    "outskirts": { "chance": 0.5, "adventurer": 0.5, "reunion_chance": 0.3 },
+    "dungeon": { "chance": 0.45, "party_chance": 0.5, "party_size": [2, 3], "villain_chance": 0.3, "reunion_chance": 0.25 }
+  },
+  "hostility": {
+    "$comment": "在野外與地下城，帶「惡人」標籤、已經敵對、或對主角的親密度 ≤ affinity 的冒險者視為敵對；距離 sight 格以內就會發生對峙（主角先擲潛行，見 docs/NPC_SYSTEM.md 第 8.1 節）。toll_per_level = 對方開價（每個等級，白鸛）；xp_per_level、money_per_level = 擊敗冒險者的經驗與戰利品。",
+    "affinity": -20,
+    "sight": 2,
+    "toll_per_level": 30,
+    "xp_per_level": 25,
+    "money_per_level": [5, 20]
+  }
 }

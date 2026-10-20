@@ -1,0 +1,30 @@
+{
+  "$comment": "衛兵警戒、通緝、罰金與聲望（見 docs/NPC_SYSTEM.md 第 9 節）。警戒是每個地點 0～max，最後一次犯案後每 decay_days 天降 1；達到 max 時被該地點所屬的勢力通緝。出入城門時，警戒 1 以上要檢定（主角靈巧或魅力取高，DC = gate_dc_base + gate_dc_per_level × 警戒），失敗當天就過不去，要繳警戒罰金；通緝時不能檢定，必須繳通緝罰金。罰金以一般人的生活費（economy.json 的 commoner_living_cc_per_day）計：警戒 = alert_days 天 × 警戒等級，通緝 = wanted_days 天，再乘上該勢力聲望的 fine 倍率。reputation_bands 依聲望（≥ min）調整買入價（buy）、賣出價（sell）與罰金倍率（fine）。palace_reputation = 進入王城需要的聲望。",
+  "version": 1,
+  "alert": { "max": 3, "decay_days": 7, "gate_dc_base": 10, "gate_dc_per_level": 3 },
+  "fines": { "alert_days": 7, "wanted_days": 60 },
+  "reputation_bands": [
+    { "min": 10, "buy": -0.1, "sell": 0.1, "fine": 0.6 },
+    { "min": 5, "buy": -0.05, "sell": 0.05, "fine": 0.8 },
+    { "min": -4, "buy": 0, "sell": 0, "fine": 1 },
+    { "min": -9, "buy": 0.15, "sell": -0.15, "fine": 1.5 },
+    { "min": -999, "buy": 0.3, "sell": -0.3, "fine": 2 }
+  ],
+  "palace_reputation": 10,
+  "steal": {
+    "$comment": "偷到的錢 = 一般人生活費 × loot_days[對方的財富等級] × (0.5～1.5)；大成功加倍，商人身上可能改成偷到一件商品。DC = base + 2 × 生命層級差 + wary（財富等級 ≥ 2 的人比較警覺）- floor(親密度 / 25)。",
+    "base": 12,
+    "wary": 2,
+    "loot_days": [0.2, 1, 4, 15, 50],
+    "fail": { "affinity": -5, "alert": 1, "reputation": -1 },
+    "fumble": { "affinity": -10, "alert": 2, "reputation": -2 }
+  },
+  "attack": {
+    "$comment": "偷襲（靈巧）：DC = base + floor(對方等級 / 2)。成功先手開戰、沒有目擊者；部分成功沒有先手、沒有目擊者；失敗被目擊；大失敗被目擊而且對方先手。被目擊時：對方敵對，現在的地點警戒 + alert_here、聲望 reputation_here；對方每個活躍地點（聚落）警戒 + alert_haunts、所屬勢力聲望 reputation_haunts。",
+    "base": 12,
+    "alert_here": 2,
+    "reputation_here": -2,
+    "alert_haunts": 1,
+    "reputation_haunts": -1
+  }
+}

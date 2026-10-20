@@ -16,6 +16,7 @@ import { formatMoney } from './money'
 import { askingPrice, generateNpc, npcRecord, slavePrice } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
+import { reputationBand } from './security'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Deal, GameState, Report, ShopState } from './types'
 
@@ -127,20 +128,20 @@ export function discount(state: GameState, key: string): number {
   return Math.min(0.5, fromAffinity + negotiated)
 }
 
-/** 這筆交易實際要付的錢 */
+/** 這筆交易實際要付的錢：折扣後，再依這裡所屬勢力的聲望調整（見 security.json） */
 export function dealMoney(state: GameState, key: string, deal: Deal): number {
   const base = deal.gives.filter((g) => g.type === 'money').reduce((s, g) => s + (g.amount ?? 0), 0)
-  return base > 0 ? Math.max(1, Math.round(base * (1 - discount(state, key)))) : 0
+  return base > 0 ? Math.max(1, Math.round(base * (1 - discount(state, key)) * (1 + reputationBand(state).buy))) : 0
 }
 
-/** 收購價：目錄價 × 收購比例（材料是全價）× 地點倍率 × 親密度加成 */
+/** 收購價：目錄價 × 收購比例（材料是全價）× 地點倍率 × 親密度加成 × 聲望倍率 */
 export function sellPrice(state: GameState, key: string, name: string): number | null {
   const type = typeOf(key)
   const cat = itemCategory(state, name)
   const value = itemValue(state, name)
   if (!cat || value === undefined || !shopRules.types[type].buys.includes(cat)) return null
   const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
-  return Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2)))
+  return Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell)))
 }
 
 // ---- 交易 ----

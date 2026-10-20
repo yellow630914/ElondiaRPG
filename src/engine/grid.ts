@@ -13,6 +13,8 @@ import {
   dungeonEncounters, locationById, regionById, wildEncounters,
   type DungeonLayerId, type EncounterGroup, type Location,
 } from './data'
+import { spawnVisitors } from './population'
+import { gateCheck, zoneEntryBlock } from './security'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, Report } from './types'
@@ -126,6 +128,16 @@ export function zonesOf(loc: Location): Zone[] {
   return [...zones]
 }
 
+/** 聚落的各區塊：區域 key、地區、有哪些設施 */
+export function settlementBlocks(loc: Location): { key: string; zone: Zone; kinds: Set<CellKind> }[] {
+  if (loc.type === 'dungeon') return []
+  return blocksFor(loc).map((b) => ({
+    key: settlementKey(loc.id, b.id),
+    zone: b.zone ?? 'town',
+    kinds: new Set(b.grid.join('').split('').map((ch) => maps.legend[ch]?.kind).filter((k): k is CellKind => !!k)),
+  }))
+}
+
 /** 主角現在所在的地區：站在神殿格上是神殿，其餘依區域 */
 export function currentZone(state: GameState): Zone {
   const area = currentArea(state)
@@ -195,7 +207,7 @@ export function cellAt(area: Area, x: number, y: number): Cell | undefined {
   return area.cells[y * area.width + x]
 }
 
-function findKind(area: Area, kind: CellKind): { x: number; y: number } | null {
+export function findKind(area: Area, kind: CellKind): { x: number; y: number } | null {
   const i = area.cells.findIndex((c) => c.kind === kind)
   return i < 0 ? null : { x: i % area.width, y: Math.floor(i / area.width) }
 }
@@ -267,6 +279,7 @@ export function enterLocation(state: GameState) {
     const area = withRng(state, (rng) => generateLayer(state, loc, 0, rng))
     storeArea(state, area)
     const entry = findKind(area, 'exit')!
+    spawnVisitors(state, area, entry)
     placeAt(state, area, entry.x, entry.y)
     return
   }
@@ -470,6 +483,7 @@ function stepMinutes(area: Area): number {
 /** 往上下左右移動一格，觸發走進格子的內容。 */
 export function move(state: GameState, dx: number, dy: number): StepResult {
   if (state.combat) throw new Error('戰鬥進行中')
+  assertNoStandoff(state)
   if (Math.abs(dx) + Math.abs(dy) !== 1) throw new Error('一次只能移動一格')
   const p = position(state)
   const area = currentArea(state)
@@ -477,6 +491,11 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   const ny = p.y + dy
   const cell = cellAt(area, nx, ny)
   if (!walkable(cell)) throw new Error('那裡過不去')
+  // 貴族區與王城有衛兵把守
+  if (cell!.kind === 'link') {
+    const blocked = zoneEntryBlock(state, getArea(state, cell!.link!.area).zone)
+    if (blocked) throw new Error(blocked)
+  }
   state.time = addHours(state.time, stepMinutes(area) / 60)
   state.position = { area: area.key, x: nx, y: ny, prev: { x: p.x, y: p.y } }
   reveal(area, nx, ny)
@@ -583,14 +602,37 @@ function gather(state: GameState, area: Area, item: string): Report {
 
 // ---- 格子上的動作 ----
 
-/** 從城門前往近郊（每天重新生成一次）。 */
-export function goOutskirts(state: GameState) {
+/** 和敵對的人對峙時，不能離開 */
+export function assertNoStandoff(state: GameState) {
+  if (state.standoff) throw new Error('先處理眼前的對峙')
+}
+
+/** 城門盤查：沒過時回傳盤查的紀錄（沒有擲骰時直接說明原因） */
+function passGate(state: GameState): Report | undefined {
+  const g = gateCheck(state)
+  if (g.ok) return undefined
+  if (g.report) return g.report
+  throw new Error(g.reason)
+}
+
+/** 從城門前往近郊（每天重新生成一次）。被衛兵攔下時回傳盤查的紀錄，不會出城。 */
+export function goOutskirts(state: GameState): Report | undefined {
   if (currentCell(state).kind !== 'gate') throw new Error('要在城門才能出城')
+  assertNoStandoff(state)
+  const blocked = passGate(state)
+  if (blocked) return blocked
+  placeOutside(state)
+  return undefined
+}
+
+/** 直接站到近郊的出口（不經過城門盤查，例如被擋在城外） */
+export function placeOutside(state: GameState) {
   const loc = locationById(state.location)
   let area = state.areas?.[outskirtsKey(loc.id)]
   if (!area || area.day !== state.time.day) {
     area = withRng(state, (rng) => generateOutskirts(state, loc, rng))
     storeArea(state, area)
+    spawnVisitors(state, area, findKind(area, 'exit'))
   } else {
     const existing = area
     withRng(state, (rng) => ensureQuestMarkers(state, existing, rng))
@@ -599,10 +641,14 @@ export function goOutskirts(state: GameState) {
   placeAt(state, area, exit.x, exit.y)
 }
 
-/** 從近郊的出口回到城門。 */
-export function returnToTown(state: GameState) {
+/** 從近郊的出口回到城門。被衛兵攔下時回傳盤查的紀錄，不會進城。 */
+export function returnToTown(state: GameState): Report | undefined {
   if (currentArea(state).kind !== 'wild' || currentCell(state).kind !== 'exit') throw new Error('要在近郊的出口才能回城')
+  assertNoStandoff(state)
+  const blocked = passGate(state)
+  if (blocked) return blocked
   enterTownGate(state)
+  return undefined
 }
 
 function enterTownGate(state: GameState) {
@@ -616,6 +662,7 @@ function enterTownGate(state: GameState) {
 
 /** 走下行階梯：生成下一層並站在它的上行階梯。 */
 export function descend(state: GameState) {
+  assertNoStandoff(state)
   const area = currentArea(state)
   if (currentCell(state).kind !== 'stairs_down' || area.layer === undefined) throw new Error('這裡沒有往下的階梯')
   const loc = locationById(area.location)
@@ -624,6 +671,7 @@ export function descend(state: GameState) {
   if (!target) {
     target = withRng(state, (rng) => generateLayer(state, loc, next, rng))
     storeArea(state, target)
+    spawnVisitors(state, target, findKind(target, 'stairs_up'))
   }
   const up = findKind(target, 'stairs_up')!
   placeAt(state, target, up.x, up.y)
@@ -631,6 +679,7 @@ export function descend(state: GameState) {
 
 /** 走上行階梯回到上一層的下行階梯。 */
 export function ascend(state: GameState) {
+  assertNoStandoff(state)
   const area = currentArea(state)
   if (currentCell(state).kind !== 'stairs_up' || !area.layer) throw new Error('這裡沒有往上的階梯')
   const prev = getArea(state, layerKey(area.location, area.layer - 1))
