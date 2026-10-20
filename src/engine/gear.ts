@@ -71,6 +71,7 @@ export const gearRules = gearJson as unknown as {
   craft: {
     hours: number; attr: AttrId; fee: number[]; dc: number[]; min_location: Record<string, string>
     units: Record<string, number>; lost_on_fail: number
+    aux: { max_kinds: number; max_qty: number; chance_per_value: number; max_chance: number; elements: Record<string, string[]> }
   }
   loadout: {
     top: number; below: number; lower: number; legendary: number
@@ -468,8 +469,8 @@ const ENCHANT_POOL: Record<string, { mods?: (keyof Mods)[]; resist?: boolean; of
 }
 const ELEMENTS = ['fire', 'cold', 'lightning', 'acid', 'poison', 'radiant', 'necrotic', 'force', 'psychic']
 
-/** 規則生成的附魔（沒有 AI 時）：依欄位挑合適的加成，用掉 points 點 */
-export function rollEnchants(base: string, points: number, rng: Rng): GearSpec['enchants'] | undefined {
+/** 規則生成的附魔（沒有 AI 時）：依欄位挑合適的加成，用掉 points 點；elements 是偏好的屬性（輔料決定） */
+export function rollEnchants(base: string, points: number, rng: Rng, elements: string[] = []): GearSpec['enchants'] | undefined {
   const b = gearRules.bases[base]!
   const pool = ENCHANT_POOL[b.weapon ? 'weapon' : base === 'focus' ? 'focus' : b.kind === 'jewel' ? 'jewel' : 'armor']!
   const e: NonNullable<GearSpec['enchants']> = {}
@@ -486,22 +487,28 @@ export function rollEnchants(base: string, points: number, rng: Rng): GearSpec['
         return true
       })
     }
-    if (pool.resist) options.push(() => {
-      const k = rng.pick(ELEMENTS)
+    const element = () => (elements.length && rng.chance(0.8) ? rng.pick(elements) : rng.pick(ELEMENTS))
+    const resist = () => {
+      const k = element()
       const next = ((e.resist ??= {})[k] ?? 0) - 0.25
       if (next < -0.5) return false
       e.resist![k] = next
       left -= gearRules.enchant_costs.resist ?? 1
       return true
-    })
-    if (pool.offense) options.push(() => {
-      const k = rng.pick(ELEMENTS)
+    }
+    const offense = () => {
+      const k = element()
       const next = ((e.offense ??= {})[k] ?? 0) + 0.25
       if (next > 0.5) return false
       e.offense![k] = next
       left -= gearRules.enchant_costs.offense ?? 1
       return true
-    })
+    }
+    // 有偏好的屬性（輔料）時，抗性與屬性攻擊的機會加倍
+    for (let n = elements.length ? 2 : 1; n > 0; n--) {
+      if (pool.resist) options.push(resist)
+      if (pool.offense) options.push(offense)
+    }
     rng.pick(options)()
   }
   for (const k of ['mods', 'resist', 'offense'] as const) if (e[k] && !Object.keys(e[k]!).length) delete e[k]

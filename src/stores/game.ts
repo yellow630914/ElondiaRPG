@@ -90,6 +90,14 @@ function load(s: GameState): GameState {
   migrate(s)
   // 武器與防具類型由裝備決定（自訂內容可能改過底材）
   for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
+  // 地圖改版後舊的區塊可能不存在了：回到這個地點的城門
+  if (s.position) {
+    try {
+      grid.getArea(s, s.position.area)
+    } catch {
+      delete s.position
+    }
+  }
   if (!s.position) grid.enterLocation(s)
   population.ensureRoster(s, s.location)
   population.refreshRosters(s)

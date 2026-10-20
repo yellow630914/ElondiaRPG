@@ -23,7 +23,7 @@ import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, apply
 import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
-import { applyCraft } from './craft'
+import { applyCraft, parseCraftTarget } from './craft'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
 import { npcRecord, type NpcSpec } from './npcs'
 import { presentHere } from './population'
@@ -296,7 +296,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         const desc = clipText(x.desc, 80) || undefined
         let spec: GearSpec | undefined
         if (p.kind === 'craft') {
-          const [base, material] = (p.target ?? '').split(':')
+          const { base, material } = parseCraftTarget(p.target)
           spec = sanitizeGearSpec(x, { maxLevel: 99, maxRarity: 'legendary', base, material })
         } else {
           if (degree !== 'critical' && degree !== 'success') break

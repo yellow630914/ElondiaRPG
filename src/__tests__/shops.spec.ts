@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { act, combatant, startCombat } from '@/engine/combat'
-import { geography, itemDef, itemRules, locationById, shopRules, statuses } from '@/engine/data'
-import { CELL_ICON, enterLocation, standOn, zonesOf } from '@/engine/grid'
+import { itemDef, itemRules, shopRules, statuses } from '@/engine/data'
+import { blockKeys, CELL_ICON, enterLocation, getArea, standOn } from '@/engine/grid'
 import { formatDice, parseDice, sanitizeEnemy } from '@/engine/mods'
 import { migrate, newGame } from '@/engine/state'
 import { buyDeal, shopState } from '@/engine/trade'
@@ -15,20 +15,30 @@ function game(location = 'soriel', seed = 4): GameState {
 }
 
 describe('shop types', () => {
-  it('puts the new shops on every settlement map and gives every place an icon', () => {
-    const want: Record<string, string[]> = {
-      capital: ['smithy', 'tailor', 'jeweler', 'magic', 'informant'], city: ['smithy', 'tailor', 'jeweler', 'magic', 'informant'],
-      port: ['smithy', 'tailor', 'jeweler', 'magic', 'informant'], town: ['smithy', 'tailor'], village: ['smithy', 'tailor'],
+  it('sizes settlements by tier, gives each its own layout and puts the shops on the map', () => {
+    const tiers: Record<string, { ids: string[]; blocks: number[]; kinds: string[] }> = {
+      capital: { ids: ['soriel', 'rhineburg', 'dawnlight', 'ironforge', 'bloodplume', 'silvermoon', 'tidehaven', 'canglue'], blocks: [4, 5], kinds: ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'brothel', 'temple'] },
+      city: { ids: ['albena', 'shadow_vale', 'silent_tomb'], blocks: [3, 3], kinds: ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'brothel', 'temple'] },
+      medium: { ids: ['rivervale', 'greyrock', 'moltenhold', 'coral_bay', 'coast_ferry', 'ashport'], blocks: [2, 2], kinds: ['smithy', 'tailor', 'informant', 'temple'] },
+      small: { ids: ['snowridge', 'bone_hills', 'windspeak', 'mosswhisper', 'sandcastle', 'sunscorch', 'stilltide_oasis'], blocks: [1, 1], kinds: ['inn', 'guild', 'tavern', 'shop'] },
     }
-    for (const [type, kinds] of Object.entries(want)) {
-      const loc = geography.locations.find((l) => l.type === type)!
-      const state = game(loc.id)
-      for (const k of kinds) expect(standOn(state, k as never), `${loc.name} ${k}`).toBe(true)
+    const layouts = new Map<string, string>()
+    for (const t of Object.values(tiers)) {
+      for (const id of t.ids) {
+        const keys = blockKeys(id)
+        expect(keys.length, id).toBeGreaterThanOrEqual(t.blocks[0]!)
+        expect(keys.length, id).toBeLessThanOrEqual(t.blocks[1]!)
+        const state = game(id)
+        for (const k of [...t.kinds, 'inn', 'guild', 'tavern', 'shop', 'gate']) expect(standOn(state, k as never), `${id} ${k}`).toBe(true)
+        // 每個地點的格局都不一樣
+        const grid = keys.map((key) => getArea(state, key).cells.map((c) => c.kind[0]).join('')).join('|')
+        expect(layouts.get(grid), `${id} 和 ${layouts.get(grid)} 一樣`).toBeUndefined()
+        layouts.set(grid, id)
+      }
     }
     for (const k of ['inn', 'guild', 'tavern', 'shop', 'temple', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant'] as const) {
       expect(CELL_ICON[k], k).toBeTruthy()
     }
-    expect(zonesOf(locationById('soriel'))).toContain('town')
   })
 
   it('sells gear by kind: smithy metal and wood, tailor leather and cloth, jeweler jewelry', () => {

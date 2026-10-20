@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment, type Judgment } from '@/engine/actions'
-import { craftPlan } from '@/engine/craft'
+import { craftPlan, craftTarget, parseCraftTarget } from '@/engine/craft'
 import { itemRules } from '@/engine/data'
 import {
   enchantPoints, gearName, gearPrice, gearRules, gearSpecOf, gearStats, generateLoadout, rarityPoints, sanitizeEnchants, startingGear,
@@ -136,6 +136,44 @@ describe('crafting', () => {
     expect(spec.material).toBe('mithril')
     expect(spec.rarity).toBeUndefined()
     expect(enchantPoints(spec.enchants)).toBeLessThanOrEqual(2)
+  })
+
+  it('takes any material as 輔料: consumed either way, raises quality by chance, steers the element', () => {
+    const state = game()
+    standOn(state, 'smithy')
+    state.money_cc = 50000
+    state.inventory.push({ name: '精鋼錠', qty: 2 }, { name: '火蜥鱗片', qty: 3 }, { name: '乾糧', qty: 1 })
+    const plan = craftPlan(state, 'longsword', 'steel', [{ name: '火蜥鱗片', qty: 2 }])
+    expect(plan.blocked).toBeUndefined()
+    expect(plan.auxValue).toBe(72)
+    expect(plan.auxChance).toBeCloseTo(72 / 480)
+    expect(plan.elements).toContain('fire')
+    expect(craftPlan(state, 'longsword', 'steel', [{ name: '乾糧', qty: 1 }]).blocked).toContain('不是材料')
+    expect(craftPlan(state, 'longsword', 'steel', [{ name: '火蜥鱗片', qty: 5 }]).blocked).toContain('不夠')
+    // 打造材料本身不能再當輔料用掉
+    expect(craftPlan(state, 'longsword', 'steel', [{ name: '精鋼錠', qty: 1 }]).blocked).toContain('不夠')
+    expect(parseCraftTarget(craftTarget('longsword', 'steel', [{ name: '火蜥鱗片', qty: 2 }]))).toEqual({ base: 'longsword', material: 'steel', aux: [{ name: '火蜥鱗片', qty: 2 }] })
+
+    // 擲中時：部分成功照成功做（附魔），用掉輔料
+    const aux = gearRules.craft.aux
+    const before = { ...aux }
+    Object.assign(aux, { chance_per_value: 1000, max_chance: 1 })
+    try {
+      const r = craft(state, craftTarget('longsword', 'steel', [{ name: '火蜥鱗片', qty: 1 }]), 8)
+      expect(r.check?.degree).toBe('partial')
+      const made = r.changes.items_gained!.find((i) => gearSpecOf(state, i.name))!
+      const spec = gearSpecOf(state, made.name)!
+      expect(spec.rarity).toBe('uncommon')
+      expect(spec.enchants).toBeDefined()
+      expect(state.inventory.find((i) => i.name === '火蜥鱗片')?.qty).toBe(2)
+      expect(r.outcome.summary).toContain('輔料')
+    } finally {
+      Object.assign(aux, before)
+    }
+    // 失敗也會用掉輔料
+    state.inventory.push({ name: '精鋼錠', qty: 2 })
+    craft(state, craftTarget('longsword', 'steel', [{ name: '火蜥鱗片', qty: 1 }]), 2)
+    expect(state.inventory.find((i) => i.name === '火蜥鱗片')?.qty).toBe(1)
   })
 
   it('caps event gear from free actions by level and degree', () => {

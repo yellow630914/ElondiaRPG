@@ -132,7 +132,22 @@
     "dc": [10, 12, 14, 16, 18],
     "min_location": { "3": "town", "4": "city", "5": "capital" },
     "units": { "main_hand": 2, "two_handed": 3, "off_hand": 2, "head": 1, "body": 3, "legs": 2, "wrists": 1, "feet": 1, "belt": 1, "accessory": 1, "ring": 1 },
-    "lost_on_fail": 0.5
+    "lost_on_fail": 0.5,
+    "aux": {
+      "$comment": "輔料：任何材料都可以加進去（最多 max_kinds 種、每種 max_qty 個），不論結果都會用掉。輔料的總價值 ÷（底價 × 材料倍率）× chance_per_value 是成品稀有度再高一級的機率（上限 max_chance；部分成功時改成照成功做）。名稱或描述裡的字決定附魔的屬性方向（elements）。",
+      "max_kinds": 3, "max_qty": 5, "chance_per_value": 1, "max_chance": 0.6,
+      "elements": {
+        "fire": ["火", "焰", "熔", "炎", "灼", "燼", "硫磺"],
+        "cold": ["冰", "寒", "霜", "雪"],
+        "lightning": ["雷", "電", "風暴"],
+        "poison": ["毒", "蛛", "蠍", "蛇", "蟾"],
+        "acid": ["酸"],
+        "radiant": ["聖", "光", "日", "祭", "神"],
+        "necrotic": ["暗", "影", "骨", "魂", "屍", "死", "血", "墓"],
+        "psychic": ["夢", "憶", "心", "低語", "回音", "回聲"],
+        "force": ["符", "魔", "法", "晶", "星"]
+      }
+    }
   },
   "drops": {
     "$comment": "裝備的取得：敵對冒險者倒下時，身上每件裝備（徒手、拳腳除外）各有 adventurer.chance 的機率掉落，最多 adventurer.max 件；持有裝備的人形怪物（enemies.json 的 armed）有 armed.chance + armed.per_level × 等級（上限 armed.max_chance）的機率掉一件依等級生成的裝備；怪物型層主只掉打造材料等高價材料。寶箱與掉落的生成裝備有 bump 的機率稀有度高一級並附魔。",

@@ -197,7 +197,7 @@ describe('interactions', () => {
 })
 
 describe('capital districts', () => {
-  it('links every block both ways and gives capitals a noble district and a palace', async () => {
+  it('links every block both ways and gives capitals a noble district and a palace (except the holy city)', async () => {
     const maps = (await import('../../data/world/maps.json')).default as unknown as {
       maps: Record<string, { blocks: { id: string; grid: string[]; links?: Record<string, string>; zone?: string }[] }>
       templates: Record<string, { blocks: { id: string; grid: string[]; links?: Record<string, string>; zone?: string }[] }>
@@ -213,11 +213,14 @@ describe('capital districts', () => {
         }
       }
     }
-    for (const id of ['soriel', 'rhineburg', 'silvermoon']) {
+    for (const id of ['rhineburg', 'dawnlight', 'silvermoon']) {
       const zones = zonesOf(locationById(id))
       expect(zones).toContain('noble')
       expect(zones).toContain('palace')
     }
+    // 索里耶爾是聖城：有聖殿區（貴族區），沒有王城區
+    expect(zonesOf(locationById('soriel'))).toContain('noble')
+    expect(zonesOf(locationById('soriel'))).not.toContain('palace')
     expect(zonesOf(locationById('rivervale'))).not.toContain('noble')
   })
 })

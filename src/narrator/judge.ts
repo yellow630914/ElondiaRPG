@@ -5,13 +5,13 @@
 import { affinityStage, learnable, lifeTier, snapshot } from '@/engine/character'
 import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
-  geography, genderName, itemRules, tagDef, shopRules, slaveryRules, type ShopType,
+  geography, genderName, itemDef, itemRules, tagDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef,
 } from '@/engine/data'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
-import { craftRarity } from '@/engine/craft'
+import { craftRarity, parseCraftTarget } from '@/engine/craft'
 import { gearName, gearRules, rarityName, rarityPoints } from '@/engine/gear'
 import { contractTerms, markSummary } from '@/engine/slavery'
 import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
@@ -143,9 +143,12 @@ function gearDoc(state: GameState, p: ActionPending): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const enchant = `enchants 可用：mods（hit 命中、damage 傷害、evade 迴避、dr 減傷、save 豁免、crit 幸運一擊、ap_regen 行動點回復、threat 仇恨 ±0.1 為單位）、resist（抗性，負數，-0.25 為一級，例如 {"fire":-0.25}）、offense（屬性傷害加成，正數，0.25 為一級）。點數：${Object.entries(gearRules.enchant_costs).map(([k, v]) => `${k} ${v}`).join('、')}（resist / offense 每 0.25、threat 每 0.1 算一次）；各稀有度可用的點數：${Object.entries(gearRules.rarities).map(([, r]) => `${r.name} ${r.enchant_points}`).join('、')}，超過會被刪掉`
   if (p.kind === 'craft') {
-    const [base, material] = (p.target ?? '').split(':')
-    const rar = (['critical', 'success', 'partial'] as const).map((d) => `${DEGREE_NAME[d]}→${rarityName(craftRarity(material!, d)!)}（${d === 'partial' ? 0 : rarityPoints(craftRarity(material!, d)!)} 點）`).join('、')
-    return `{"type":"gear","name":"<成品的名字 ≤20 字，可以不填>","desc":"<≤80 字>","enchants":{"mods":{"hit":1}}}（打造的成品：${gearName({ base: base!, material: material! })}，底材與材料固定。稀有度依 degree：${rar}；失敗與大失敗不會做出東西。${enchant}）`
+    const { base, material, aux } = parseCraftTarget(p.target)
+    const rar = (['critical', 'success', 'partial'] as const).map((d) => `${DEGREE_NAME[d]}→${rarityName(craftRarity(material, d)!)}（${d === 'partial' ? 0 : rarityPoints(craftRarity(material, d)!)} 點）`).join('、')
+    const auxText = aux.length
+      ? `輔料：${aux.map((x) => `${x.name}×${x.qty}${itemDef(x.name)?.desc ? `（${itemDef(x.name)!.desc}）` : ''}`).join('、')}。請依輔料的特性決定附魔的方向（例如火蜥鱗片 → 抗火或火焰攻擊），也可以反映在名字與描述上；輔料有機會讓品質再高一級（由程式擲骰，附魔點數依最後的稀有度夾住，可以照高一級的點數提）。`
+      : ''
+    return `{"type":"gear","name":"<成品的名字 ≤20 字，可以不填>","desc":"<≤80 字>","enchants":{"mods":{"hit":1}}}（打造的成品：${gearName({ base, material })}，底材與材料固定。稀有度依 degree：${rar}；失敗與大失敗不會做出東西。${auxText}${enchant}）`
   }
   const mats = Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level).map(([id, m]) => `${id}（${m.name}）`).join('、')
   const bases = Object.entries(gearRules.bases).map(([id, b]) => `${id}（${b.name}）`).join('、')

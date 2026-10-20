@@ -86,7 +86,7 @@ describe('presence', () => {
     const noble = withRng(state, (rng) => generateNpc(state, rng, { haunts: [{ location: 'soriel', zone: 'noble', weight: 1 }] }))
     const away = withRng(state, (rng) => generateNpc(state, rng, { haunts: [{ location: 'albena', zone: 'town', weight: 1 }] }))
     const ids = () => peopleHere(state).map((p) => p.rec.id)
-    expect(areaOf(state, town)).toMatch(/^soriel\/(pilgrim|market)$/)
+    expect(areaOf(state, town)).toMatch(/^soriel\/(pilgrim|market|harbor)$/)
     expect(areaOf(state, noble)).toBe('soriel/sanctum')
     expect(areaOf(state, away)).toMatch(/^albena\//)
     if (areaOf(state, town) === currentArea(state).key) expect(ids()).toContain(town.id)
