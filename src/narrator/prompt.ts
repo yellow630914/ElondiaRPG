@@ -122,10 +122,17 @@ export function fillRules(template: string, v: { language: string; player: strin
   return template.split('{{language}}').join(v.language).split('{{currency}}').join(currencyRule()).split('{{player}}').join(v.player)
 }
 
-/** 規則清單的下一個編號（文風接在規則最後，當作下一條） */
-export function nextRuleNumber(rules: string): number {
-  const nums = [...rules.matchAll(/^\s*(\d+)\./gm)].map((m) => Number(m[1]))
-  return nums.length ? Math.max(...nums) + 1 : 1
+/**
+ * 文風這一條的前綴，依它前面的最後一行決定（文風接在那一行之後，當作同一個清單的下一條）：
+ * 編號清單「9. ……」→「10. 文風」；項目符號「- ……」→「- 文風」；其他（例如 XML 標籤的結尾）→「文風」。
+ */
+export function styleLead(before: string): string {
+  const last = before.split('\n').map((l) => l.trim()).filter(Boolean).at(-1) ?? ''
+  const num = /^(\d+)[.、．]/.exec(last)
+  if (num) return `${Number(num[1]) + 1}. 文風`
+  const bullet = /^([-*・•])\s/.exec(last)
+  if (bullet) return `${bullet[1]} 文風`
+  return '文風'
 }
 
 export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreLike[]; triggered: LoreLike[] }, opts: PromptOptions): Prompt {
@@ -135,9 +142,9 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
   const length = LENGTH_HINT[report.narration?.length ?? 'medium']
 
   const filled = fillRules(opts.rules?.trim() ? opts.rules : DEFAULT_NARRATION_RULES, { language: lang, player: opts.playerName })
-  // 文風：規則裡有 {{style}} 時放在那個位置，否則接在規則的最後
-  const style = styleSection(opts.styles, `${nextRuleNumber(filled)}. 文風`)
+  // 文風：規則裡有 {{style}} 時放在那個位置，否則接在規則的最後；前綴接續前一行的編號或項目符號
   const inline = filled.includes(STYLE_SLOT)
+  const style = styleSection(opts.styles, styleLead(inline ? filled.slice(0, filled.indexOf(STYLE_SLOT)) : filled))
   const rules = inline ? filled.replace(/\n?\{\{style\}\}/, style.text ? `\n${style.text}` : '') : filled
 
   const intent = report.narration?.player_intent ? `\n玩家意圖：${report.narration.player_intent}` : ''

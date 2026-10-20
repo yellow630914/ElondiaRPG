@@ -11,6 +11,7 @@ import type { Report } from '@/engine/types'
 import { composeJudge, composeNarration, type ComposeOptions } from '@/narrator/compose'
 import { loreForReport, loreItems, type Worldbook } from '@/narrator/lore'
 import { activeEntries, defaultPromptConfig, normalizeConfig } from '@/narrator/promptConfig'
+import { styleLead } from '@/narrator/prompt'
 
 const book = worldbook as unknown as Worldbook
 const combat = combatExample as unknown as Report
@@ -144,6 +145,13 @@ describe('narration rules', () => {
     expect(composeNarration(state, combat, options({ config: { ...config, narrationRules: '  ' } })).prompt.system).toBe(def.system)
     expect(normalizeConfig({ narrationRules: '' }).narrationRules).toBeUndefined()
     expect(normalizeConfig({ narrationRules: 'x' }).narrationRules).toBe('x')
+  })
+
+  it('numbers the style after the line right before it', () => {
+    expect(styleLead('<framework>\n1. a\n12. b\n</framework>\n<hard_rules>\n1. c\n10. d\n')).toBe('11. 文風')
+    expect(styleLead('<execution>\n- 段落\n- 用字\n')).toBe('- 文風')
+    expect(styleLead('<negative>\n- x\n</negative>')).toBe('文風')
+    expect(styleLead('')).toBe('文風')
   })
 
   it('puts the style where {{style}} is', () => {
