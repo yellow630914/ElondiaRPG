@@ -69,7 +69,7 @@ pnpm build             # 型別檢查 + 建置到 dist/
 | [`docs/RELATIONSHIP_MEMORY.md`](docs/RELATIONSHIP_MEMORY.md) | 人際關係與共同記憶系統、主動行動（擲骰後由 AI 判定並寫出結果） |
 | [`docs/COMPANIONS.md`](docs/COMPANIONS.md) | 報酬模板、新增夥伴的五種方式、離隊規則、奴隸契約印記、短休與長休 |
 | [`docs/TRADE.md`](docs/TRADE.md) | 物品目錄、交易清單、價格、交涉與談判 |
-| [`docs/MONSTERS.md`](docs/MONSTERS.md) | 怪物一覽：到處都有的、各地區城郊與地下城各層、層主；技能、抗性、可否發情、掉落 |
+| [`docs/MONSTERS.md`](docs/MONSTERS.md) | 怪物一覽：到處都有的、各地區城郊、每座地下城各層的小怪與三隻層主；技能、抗性、可否發情、掉落 |
 | [`docs/WORK.md`](docs/WORK.md) | 工作（各設施換錢）、娼館（消費、被迫工作、老鴇、娼妓契約）、成人向開關的換詞 |
 | [`docs/NPC_SYSTEM.md`](docs/NPC_SYSTEM.md) | NPC 系統重作方案（名單、標籤、活躍地點、互動、警戒與通緝；設計中） |
 | [`docs/PROMPTS.md`](docs/PROMPTS.md) | 發給 AI 的提示詞結構（敘事、判定、生成）、排列順序與快取、提示詞頁籤 |

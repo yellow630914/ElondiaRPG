@@ -161,7 +161,7 @@ describe('dungeons', () => {
     expect(currentArea(state).name).toBe('蛇溪洞窟・周邊')
     expect(currentCell(state).kind).toBe('exit')
     expect(canTravelHere(state)).toBe(true)
-    const guards = ['', 'grave_robber_chief', 'crypt_necromancer']
+    const guards = ['', 'smuggler_boss', 'serpent_alpha']
     for (let layer = 0; layer < 3; layer++) {
       const area = currentArea(state)
       expect(area.layer).toBe(layer)

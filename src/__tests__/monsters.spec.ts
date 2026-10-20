@@ -29,6 +29,27 @@ describe('monster data', () => {
     for (const region of geography.regions) expect(wildEncounters(region.id).length, region.id).toBeGreaterThanOrEqual(4)
   })
 
+  it('gives every dungeon its own two monsters per layer and its own three layer bosses', () => {
+    const seen = new Set<string>()
+    for (const d of geography.locations.filter((l) => l.type === 'dungeon')) {
+      const t = dungeonEncounters[d.id]!
+      const own: string[] = []
+      for (const layer of ['outskirts', 'shallow', 'middle', 'deep'] as const) {
+        const ids = new Set(t[layer].flat().map(([id]) => id))
+        // 每層的遭遇只用到這一層與上一層的怪物；這一層自己的兩種一定都會出現
+        own.push(...[...ids].filter((id) => !own.includes(id)))
+      }
+      const bosses = (['shallow', 'middle', 'deep'] as const).map((l) => t.bosses![l]![0]![0])
+      expect(new Set(bosses).size, d.id).toBe(3)
+      const all = [...own, ...bosses]
+      expect(all.length, d.id).toBe(11)
+      for (const id of all) {
+        expect(seen.has(id), `${id} 出現在兩座地下城`).toBe(false)
+        seen.add(id)
+      }
+    }
+  })
+
   it('catalogues every loot item and uses only monster abilities', () => {
     for (const e of Object.values(enemies)) {
       for (const l of e.loot ?? []) expect(itemDef(l.item), `${e.id} → ${l.item}`).toBeTruthy()
