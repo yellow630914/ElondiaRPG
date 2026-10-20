@@ -11,9 +11,11 @@ import mapsJson from '@data/world/maps.json'
 import { mod, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  dungeonEncounters, locationById, regionById, wildEncounters,
+  dungeonEncounters, enemies, itemDef, locationById, regionById, wildEncounters,
   type DungeonLayerId, type EncounterGroup, type Location,
 } from './data'
+import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
+import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
@@ -24,7 +26,7 @@ import type { GameState, Report } from './types'
 export type CellKind =
   | 'floor' | 'wall' | 'water'
   | 'inn' | 'guild' | 'tavern' | 'shop' | 'temple' | 'gate' | 'link' | 'brothel'
-  | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe'
+  | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe' | 'chest'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
 
 export interface Cell {
@@ -36,6 +38,8 @@ export interface Cell {
   questId?: string
   /** 通道：通往的區域與座標 */
   link?: { area: string; x: number; y: number }
+  /** 寶箱：這一層怪物的最高等級（決定內容） */
+  level?: number
   /** 打倒守在這裡的層主後，格子變成這種設施（淺層、中層的層主守著往下的階梯） */
   then?: CellKind
 }
@@ -77,6 +81,8 @@ interface LayerGen {
   encounters: [number, number]
   traps: [number, number]
   resources: [number, number]
+  /** 寶箱數量 */
+  chests?: [number, number]
   elites?: number
   boss?: boolean
   /** 層主守著往下的階梯（打倒後變成階梯） */
@@ -100,7 +106,7 @@ const maps = mapsJson as unknown as {
 export const CELL_NAME: Record<CellKind, string> = {
   floor: '道路', wall: '牆', water: '水道',
   inn: '旅店', guild: '冒險者公會', tavern: '酒館', shop: '雜貨店', temple: '神殿', gate: '城門', link: '通道', brothel: '娼館',
-  encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房',
+  encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房', chest: '寶箱',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
 }
 
@@ -438,6 +444,12 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
     cells[i] = { kind: 'resource', item: rng.pick(g.resource_items) }
     used.add(i)
   }
+  // 寶箱：內容依這一層怪物的最高等級
+  const level = Math.max(1, ...table.flat().map(([id]) => enemies[id]?.level ?? 1))
+  for (const i of randomCells(rng, area, spec.chests ? between(rng, spec.chests) : 0, used)) {
+    cells[i] = { kind: 'chest', level }
+    used.add(i)
+  }
   return area
 }
 
@@ -550,6 +562,11 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
       cell.done = true
       return { report: gather(state, area, cell.item) }
     }
+    case 'chest': {
+      if (cell.done) return {}
+      cell.done = true
+      return { report: openChest(state, area, cell.level ?? 1) }
+    }
     default:
       return {}
   }
@@ -613,6 +630,39 @@ function gather(state: GameState, area: Area, item: string): Report {
   } else {
     report.changes.items_gained = [{ name: item, qty: 1, owner: 'pc' }]
     report.outcome = { result: 'success', summary: `在${area.name}採集到${item}。` }
+  }
+  return commitReport(state, report)
+}
+
+/** 打開寶箱：錢、消耗品、裝備與打造材料（gear.json 的 chests） */
+function openChest(state: GameState, area: Area, level: number): Report {
+  const report = eventReport(state, area, 5)
+  report.kind = 'event'
+  const layer = DUNGEON_LAYERS[area.layer ?? 0]!.id
+  const t = gearRules.chests[layer] ?? gearRules.chests.outskirts!
+  const items: { name: string; qty: number; owner: 'pc' }[] = []
+  const add = (name: string) => {
+    const x = items.find((i) => i.name === name)
+    if (x) x.qty++
+    else items.push({ name, qty: 1, owner: 'pc' })
+  }
+  const money = withRng(state, (rng) => {
+    for (const [name, p] of t.items) if (itemDef(name) && rng.chance(p)) add(name)
+    if (rng.chance(t.gear)) add(registerGear(state, randomGear(rng, level)))
+    if (t.gear_extra && rng.chance(t.gear_extra)) add(registerGear(state, randomGear(rng, level)))
+    for (const [tier, p] of t.forge) {
+      if (!rng.chance(p)) continue
+      const name = forgeItemFor(rng.pick(MATERIAL_KINDS), tier)
+      if (name) add(name)
+    }
+    return rng.int(t.money[0], t.money[1]) * level
+  })
+  report.changes.money_cc = money
+  if (items.length) report.changes.items_gained = items
+  report.outcome = {
+    result: 'success',
+    summary: `在${area.name}打開一個寶箱：${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name))].join('、')}。`,
+    tags: ['寶箱'],
   }
   return commitReport(state, report)
 }

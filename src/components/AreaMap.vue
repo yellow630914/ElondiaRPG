@@ -10,12 +10,12 @@ const pos = computed(() => position(game.state!))
 
 const ICON: Partial<Record<Cell['kind'], string>> = {
   inn: '🛏️', guild: '📜', tavern: '🍺', shop: '🛒', temple: '⛪', gate: '🚪', link: '➡️',
-  encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥',
+  encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
   stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
 }
 
 function icon(cell: Cell): string {
-  if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap'].includes(cell.kind)) return ''
+  if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap', 'chest'].includes(cell.kind)) return ''
   if (cell.kind === 'trap') return ''
   if (cell.kind === 'resource' && cell.item && /礦|錢/.test(cell.item)) return '💎'
   if (cell.kind === 'quest' && !game.state?.quests.some((q) => q.id === cell.questId && q.status === 'accepted')) return ''

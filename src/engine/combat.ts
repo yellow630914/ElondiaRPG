@@ -20,7 +20,7 @@ import {
 } from './data'
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { safeText } from './content'
-import { gearBonuses } from './gear'
+import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
@@ -572,12 +572,25 @@ export function combatItems(state: GameState): { name: string; qty: number; def:
     .filter((i) => i.qty > 0 && i.def?.use)
 }
 
-/** 道具的目標：治療類可以給倒下的隊友，回復法術環的要有用掉的法術環 */
+/** 道具是對敵人用的（投擲傷害或施加負面狀態） */
+export function itemHitsEnemies(use: ItemDef['use']): boolean {
+  return !!use?.damage || !!use?.apply
+}
+
+/**
+ * 道具的目標：治療類可以給倒下的隊友，回復法術環的要有用掉的法術環，復甦只能給倒下的隊友，
+ * 解除狀態要身上有那些狀態；投擲類以敵人為目標（範圍為全體時選任何一個敵人都會波及全部）。
+ */
 export function itemTargets(combat: CombatState, name: string): Combatant[] {
   const use = itemDef(name)?.use
+  if (!use) return []
+  if (itemHitsEnemies(use)) return combat.combatants.filter((c) => c.side === 'enemy' && isActive(c))
   const allies = combat.combatants.filter((c) => c.side === 'party' && !c.fled)
-  if (use?.heal) return allies.filter((c) => c.hp < c.maxHp)
-  if (use?.slot) return allies.filter((c) => isActive(c) && restorableCircle(c, use.slot!) !== null)
+  if (use.revive) return allies.filter((c) => c.hp === 0)
+  if (use.heal) return allies.filter((c) => c.hp < c.maxHp)
+  if (use.slot) return allies.filter((c) => isActive(c) && restorableCircle(c, use.slot!) !== null)
+  if (use.cleanse && !use.status && !use.temp_hp && !use.ap) return allies.filter((c) => isActive(c) && c.statuses.some((x) => use.cleanse!.includes(x.id)))
+  if (use.status || use.temp_hp || use.ap || use.cleanse) return allies.filter(isActive)
   return []
 }
 
@@ -594,11 +607,47 @@ function useItem(combat: CombatState, rng: Rng, actor: Combatant, name: string, 
   if (!use || !target) throw new Error('不能對這個目標使用')
   actor.ap -= cost
   const effects: Effect[] = []
-  if (use.heal) heal(target, roll(rng, use.heal).total, effects)
-  if (use.slot) {
-    const i = restorableCircle(target, use.slot)!
-    target.slots[i] = (target.slots[i] ?? 0) + 1
-    effects.push({ type: 'note', target: target.id, text: `回復一個 ${i + 1} 環法術環` })
+  if (itemHitsEnemies(use)) {
+    // 投擲：傷害與狀態；範圍為全體時波及所有敵人。傷害骰只擲一次
+    const hit = use.area === 'all' ? combat.combatants.filter((c) => c.side === 'enemy' && isActive(c)) : [target]
+    const dmg = use.damage ? rollDice(rng, use.damage.dice, 1) : 0
+    for (const t of hit) {
+      let saved = false
+      if (use.apply?.save && use.apply.dc) saved = savingThrow(rng, t, use.apply.save, use.apply.dc).success
+      if (use.damage) dealDamage(combat, rng, null, t, [{ amount: dmg, type: use.damage.type, weapon: false }], effects, { half: saved })
+      if (use.apply && !saved && isActive(t)) {
+        addStatus(t, { id: use.apply.status, turns: use.apply.turns, source: actor.id })
+        effects.push({ type: 'status_add', target: t.id, status: statusDef(use.apply.status).name })
+      } else if (use.apply && saved) {
+        effects.push({ type: 'note', target: t.id, text: '豁免成功' })
+      }
+    }
+  } else {
+    if (use.revive && target.hp === 0) heal(target, Math.max(1, Math.round(target.maxHp * use.revive)), effects)
+    if (use.heal) heal(target, roll(rng, use.heal).total, effects)
+    if (use.slot) {
+      const i = restorableCircle(target, use.slot)!
+      target.slots[i] = (target.slots[i] ?? 0) + 1
+      effects.push({ type: 'note', target: target.id, text: `回復一個 ${i + 1} 環法術環` })
+    }
+    if (use.cleanse) {
+      const removed = target.statuses.filter((x) => use.cleanse!.includes(x.id))
+      target.statuses = target.statuses.filter((x) => !use.cleanse!.includes(x.id))
+      for (const x of removed) effects.push({ type: 'status_remove', target: target.id, status: statusDef(x.id).name })
+    }
+    if (use.status) {
+      addStatus(target, { id: use.status.id, turns: use.status.turns, source: actor.id })
+      effects.push({ type: 'status_add', target: target.id, status: statusDef(use.status.id).name })
+    }
+    if (use.temp_hp) {
+      target.tempHp = Math.max(target.tempHp, use.temp_hp)
+      effects.push({ type: 'note', target: target.id, text: `暫時生命 ${use.temp_hp}` })
+    }
+    if (use.ap) {
+      const before = target.ap
+      target.ap = Math.min(target.apMax, target.ap + use.ap)
+      effects.push({ type: 'note', target: target.id, text: `行動點 +${target.ap - before}` })
+    }
   }
   combat.itemsUsed = { ...combat.itemsUsed, [name]: (combat.itemsUsed?.[name] ?? 0) + 1 }
   push(combat, { actor: actor.id, action: `使用${name}`, target: target.id, result: 'success', effects })
@@ -1307,21 +1356,38 @@ export function finishCombat(state: GameState): Report {
   const h = population.hostility
   const xpOf = (f: Combatant) => Math.round((f.npcId ? h.xp_per_level * f.level : enemies[f.defId!]?.xp ?? 0) * (f.xpMult ?? 1))
   const xpTotal = victory ? defeated.reduce((sum, f) => sum + xpOf(f), 0) : 0
+  const gain = (name: string, qty = 1) => {
+    const existing = items.find((i) => i.name === name)
+    if (existing) existing.qty += qty
+    else items.push({ name, qty, owner: 'pc' })
+  }
+  const drops = gearRules.drops
   withRng(state, (rng) => {
     if (!victory) return
     for (const f of defeated) {
       if (f.npcId) {
         money += rng.int(h.money_per_level[0], h.money_per_level[1]) * f.level
+        // 敵對冒險者：身上的裝備有機會留下來
+        const rec = npcRecord(state, f.npcId)
+        const worn = rec ? Object.values(characterFor(state, rec).gear ?? {}).filter((g) => !!g) : []
+        let n = 0
+        while (worn.length && n < drops.adventurer.max) {
+          const g = worn.splice(rng.int(0, worn.length - 1), 1)[0]!
+          if (!rng.chance(drops.adventurer.chance)) continue
+          gain(registerGear(state, g.spec, itemDef(g.name) ? undefined : g.name))
+          n++
+        }
         continue
       }
       const def = enemies[f.defId!]
       if (!def) continue
       if (def.money_cc) money += rng.int(def.money_cc[0], def.money_cc[1])
       for (const l of def.loot ?? []) {
-        if (!rng.chance(l.chance)) continue
-        const existing = items.find((i) => i.name === l.item)
-        if (existing) existing.qty += 1
-        else items.push({ name: l.item, qty: 1, owner: 'pc' })
+        if (rng.chance(l.chance)) gain(l.item, l.qty ?? 1)
+      }
+      // 持有裝備的人形怪物：有機會掉一件依等級生成的裝備
+      if (def.armed && rng.chance(Math.min(drops.armed.max_chance, drops.armed.chance + drops.armed.per_level * def.level))) {
+        gain(registerGear(state, randomGear(rng, def.level)))
       }
     }
   })

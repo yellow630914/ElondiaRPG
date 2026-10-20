@@ -7,7 +7,7 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, damageTypeName, damageTypes, equipment, itemDef, weaponDef, type AffinityMap, type AttrId, type Mods } from './data'
+import { armorDef, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, type AffinityMap, type AttrId, type Mods } from './data'
 import type { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
 
@@ -59,6 +59,15 @@ export const gearRules = gearJson as unknown as {
   bases: Record<string, BaseDef>
   classes: Record<string, ClassGearTemplate>
   races: Record<string, { blocked: GearSlot[] }>
+  drops: {
+    adventurer: { chance: number; max: number }
+    armed: { chance: number; per_level: number; max_chance: number }
+    bump: number
+  }
+  chests: Record<string, {
+    money: [number, number]; gear: number; gear_extra?: number
+    items: [string, number][]; forge: [number, number][]
+  }>
   craft: {
     hours: number; attr: AttrId; fee: number[]; dc: number[]; min_location: Record<string, string>
     units: Record<string, number>; lost_on_fail: number
@@ -497,3 +506,30 @@ export function rollEnchants(base: string, points: number, rng: Rng): GearSpec['
   for (const k of ['mods', 'resist', 'offense'] as const) if (e[k] && !Object.keys(e[k]!).length) delete e[k]
   return Object.keys(e).length ? e : undefined
 }
+
+// ---- 寶箱與掉落 ----
+
+/** 依等級隨機生成一件裝備（寶箱、人形怪物的掉落）：底材平均挑，材料依等級，有機會高一級稀有度並附魔 */
+export function randomGear(rng: Rng, level: number, bases = Object.keys(gearRules.bases)): GearSpec {
+  const base = rng.pick(bases)
+  const kind = gearRules.bases[base]!.kind
+  const material = materialOf(kind, rollTier(rng, kind, level))
+  const spec: GearSpec = { base, material }
+  if (rng.chance(gearRules.drops.bump)) {
+    const rarity = shiftRarity(gearRules.materials[material]!.rarity, 1)
+    spec.rarity = rarity
+    const enchants = rollEnchants(base, rarityPoints(rarity), rng)
+    if (enchants) spec.enchants = enchants
+  }
+  return spec
+}
+
+/** 某一類型、某一級的打造材料（items.json 有 forge 的物品，挑最便宜的） */
+export function forgeItemFor(kind: MaterialKind, tier: number): string | undefined {
+  const material = materialOf(kind, tier)
+  return itemRules.items
+    .filter((i) => i.forge?.materials.includes(material))
+    .sort((a, b) => a.price_cc - b.price_cc)[0]?.name
+}
+
+export const MATERIAL_KINDS: MaterialKind[] = ['metal', 'leather', 'cloth', 'wood', 'jewel']

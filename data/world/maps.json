@@ -192,7 +192,7 @@
     "town": "town", "village": "town", "outpost": "town", "fortress": "town"
   },
   "generation": {
-    "$comment": "隨機格子。wild = 城鎮近郊；dungeon = 冒險區域的四層（周邊、淺層、中層、深層）。數量為 [最少, 最多]。step_minutes 為每走一格花費的時間。",
+    "$comment": "隨機格子。wild = 城鎮近郊；dungeon = 冒險區域的四層（周邊、淺層、中層、深層）。數量為 [最少, 最多]（chests 為寶箱，內容見 gear.json 的 chests）。step_minutes 為每走一格花費的時間。",
     "step_minutes": { "settlement": 5, "wild": 15, "dungeon": 10 },
     "wild": {
       "size": [9, 9], "obstacles": 0.18,
@@ -202,10 +202,10 @@
     "dungeon": {
       "size": [9, 9], "carve_steps": 55,
       "layers": [
-        { "id": "outskirts", "name": "周邊", "encounters": [2, 3], "traps": [0, 1], "resources": [1, 2], "trap_dc": 10, "trap_damage": "1d4" },
-        { "id": "shallow", "name": "淺層", "encounters": [3, 4], "traps": [1, 2], "resources": [1, 2], "guard": true, "trap_dc": 12, "trap_damage": "1d6" },
-        { "id": "middle", "name": "中層", "encounters": [3, 5], "traps": [1, 3], "resources": [1, 2], "elites": 1, "guard": true, "trap_dc": 13, "trap_damage": "2d6" },
-        { "id": "deep", "name": "深層", "encounters": [3, 5], "traps": [2, 3], "resources": [1, 3], "elites": 1, "boss": true, "trap_dc": 15, "trap_damage": "3d6" }
+        { "id": "outskirts", "name": "周邊", "encounters": [2, 3], "traps": [0, 1], "resources": [1, 2], "chests": [0, 1], "trap_dc": 10, "trap_damage": "1d4" },
+        { "id": "shallow", "name": "淺層", "encounters": [3, 4], "traps": [1, 2], "resources": [1, 2], "chests": [1, 1], "guard": true, "trap_dc": 12, "trap_damage": "1d6" },
+        { "id": "middle", "name": "中層", "encounters": [3, 5], "traps": [1, 3], "resources": [1, 2], "chests": [1, 2], "elites": 1, "guard": true, "trap_dc": 13, "trap_damage": "2d6" },
+        { "id": "deep", "name": "深層", "encounters": [3, 5], "traps": [2, 3], "resources": [1, 3], "chests": [1, 2], "elites": 1, "boss": true, "trap_dc": 15, "trap_damage": "3d6" }
       ],
       "resource_items": ["鐵礦石", "夜光蘑菇", "古錢"]
     }

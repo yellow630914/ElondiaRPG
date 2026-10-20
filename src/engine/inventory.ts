@@ -1,7 +1,7 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
 import { snapshot } from './character'
-import { classDef, itemDef, locationById, regionById } from './data'
+import { attrName, classDef, damageTypeName, itemDef, locationById, regionById, statusDef, type ItemUse } from './data'
 import { gearRules, gearSpecOf, gearStats, slotName, slotsFor, syncGear } from './gear'
 import { pcOf } from './party'
 import { roll } from './rng'
@@ -39,6 +39,23 @@ function take(state: GameState, name: string) {
 export function canUse(name: string): boolean {
   const use = itemDef(name)?.use
   return !!use && !use.combat_only && (!!use.heal || !!use.slot)
+}
+
+/** 消耗品效果的一行說明 */
+export function useSummary(use?: ItemUse): string {
+  if (!use) return ''
+  const parts: string[] = []
+  if (use.revive) parts.push(`救起倒下的隊友（${Math.round(use.revive * 100)}% 生命）`)
+  if (use.heal) parts.push(`回復 ${use.heal} HP`)
+  if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
+  if (use.cleanse) parts.push(`解除${use.cleanse.map((id) => statusDef(id).name).join('、')}`)
+  if (use.status) parts.push(`${statusDef(use.status.id).name} ${use.status.turns} 回合`)
+  if (use.temp_hp) parts.push(`暫時生命 ${use.temp_hp}`)
+  if (use.ap) parts.push(`行動點 +${use.ap}`)
+  const area = use.area === 'all' ? '所有敵人' : '一名敵人'
+  if (use.damage) parts.push(`${area} ${use.damage.dice} ${damageTypeName(use.damage.type)}傷害`)
+  if (use.apply) parts.push(`${use.damage ? '' : area}${statusDef(use.apply.status).name} ${use.apply.turns} 回合${use.apply.save ? `（${attrName(use.apply.save)}豁免 DC ${use.apply.dc}）` : ''}`)
+  return parts.join('、') + (use.combat_only ? '・戰鬥中' : '')
 }
 
 export function canEquip(state: Pick<GameState, 'customItems'>, name: string): boolean {

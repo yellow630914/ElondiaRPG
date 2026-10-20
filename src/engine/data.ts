@@ -356,7 +356,12 @@ export interface EnemyDef {
   xp: number
   habitats?: string[]
   money_cc?: [number, number]
-  loot?: { item: string; chance: number }[]
+  /** 掉落物：機率與數量（預設 1） */
+  loot?: { item: string; chance: number; qty?: number }[]
+  /** 種類：beast、humanoid、undead、spirit、construct、plant、demon、elemental、fey */
+  kind?: string
+  /** 持有裝備的人形怪物：打倒時有機會掉落裝備（gear.json 的 drops.armed） */
+  armed?: boolean
   /** 可以擲到「發情」特徵（monster_traits.json 的 requires） */
   rut?: boolean
   /** 一定帶著的特徵（例如層主天生巨大） */
@@ -695,7 +700,7 @@ export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'valuab
  * 消耗品的效果（都是可以量化的數值）：
  * heal 回復生命（骰子）、slot 回復一個 N 環以下的法術環、cleanse 解除狀態、status 給自己或隊友一個狀態、
  * temp_hp 臨時生命值、ap 立刻獲得行動點、revive 以最大生命的比例救起倒下的隊友、
- * damage 對敵人造成傷害（one 單體、all 全體）、apply 對敵人施加狀態（可以有豁免）。combat_only：只能在戰鬥中使用。
+ * damage 對敵人造成傷害、apply 對敵人施加狀態（可以有豁免），area 為投擲的範圍（one 單體、all 全體）。戰鬥以外只能用 heal 與 slot。
  */
 export interface ItemUse {
   heal?: string
@@ -705,8 +710,11 @@ export interface ItemUse {
   temp_hp?: number
   ap?: number
   revive?: number
-  damage?: { dice: string; type: string; area?: 'one' | 'all' }
+  /** 投擲：對敵人造成傷害（area 為 all 時波及所有敵人） */
+  damage?: { dice: string; type: string }
+  /** 投擲：對敵人施加狀態，save 與 dc 為豁免（成功時不受狀態、傷害減半） */
   apply?: { status: string; turns: number; save?: AttrId; dc?: number }
+  area?: 'one' | 'all'
   combat_only?: boolean
 }
 

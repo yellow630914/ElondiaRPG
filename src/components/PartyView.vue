@@ -7,12 +7,12 @@ import {
 import { abilityApCost } from '@/engine/combat'
 import {
   abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName,
-  damageTypeName, genderName, itemRules, locationById, raceName, slaveryRules, type AbilityDef,
+  damageTypeName, genderName, itemDef, itemRules, locationById, raceName, slaveryRules, type AbilityDef,
 } from '@/engine/data'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { contractTerms } from '@/engine/slavery'
-import { canEquip, canUse } from '@/engine/inventory'
-import { gearSpecOf, gearSummary, SLOTS, slotName } from '@/engine/gear'
+import { canEquip, canUse, useSummary } from '@/engine/inventory'
+import { gearRules, gearSpecOf, gearSummary, SLOTS, slotName } from '@/engine/gear'
 import { itemCategory, itemValue } from '@/engine/trade'
 import { formatMoney } from '@/engine/money'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
@@ -55,7 +55,10 @@ function itemDesc(name: string): string {
   const cat = itemCategory(s.value, name)
   const value = itemValue(s.value, name)
   const spec = gearSpecOf(s.value, name)
-  return [spec ? gearSummary(spec) : cat ? itemRules.categories[cat] : '', value !== undefined ? `約 ${formatMoney(value)}` : ''].filter(Boolean).join('・')
+  const def = itemDef(name)
+  const forge = def?.forge ? `可打造${[...new Set(def.forge.materials.map((m) => gearRules.materials[m]!.name))].join('、')}` : ''
+  return [spec ? gearSummary(spec) : cat ? itemRules.categories[cat] : '', useSummary(def?.use), forge, value !== undefined ? `約 ${formatMoney(value)}` : '']
+    .filter(Boolean).join('・')
 }
 const bound = computed(() => isBound(s.value))
 

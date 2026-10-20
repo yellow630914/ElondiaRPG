@@ -134,6 +134,19 @@
     "units": { "main_hand": 2, "two_handed": 3, "off_hand": 2, "head": 1, "body": 3, "legs": 2, "wrists": 1, "feet": 1, "belt": 1, "accessory": 1, "neck": 1 },
     "lost_on_fail": 0.5
   },
+  "drops": {
+    "$comment": "裝備的取得：敵對冒險者倒下時，身上每件裝備（徒手、拳腳除外）各有 adventurer.chance 的機率掉落，最多 adventurer.max 件；持有裝備的人形怪物（enemies.json 的 armed）有 armed.chance + armed.per_level × 等級（上限 armed.max_chance）的機率掉一件依等級生成的裝備；怪物型層主只掉打造材料等高價材料。寶箱與掉落的生成裝備有 bump 的機率稀有度高一級並附魔。",
+    "adventurer": { "chance": 0.35, "max": 2 },
+    "armed": { "chance": 0.12, "per_level": 0.02, "max_chance": 0.35 },
+    "bump": 0.25
+  },
+  "chests": {
+    "$comment": "地下城的寶箱（每層的數量見 maps.json 的 generation.dungeon.layers[].chests）。level 為這一層怪物的最高等級；money 為 [最少, 最多] × level；gear 為裝一件裝備的機率（deep 的 gear_extra 為第二件的機率）；items 為 [物品, 機率]；forge 為 [材料等級, 機率]，依底材隨機挑一種類型。",
+    "outskirts": { "money": [5, 20], "gear": 0.4, "items": [["微弱治療藥劑", 0.5], ["解毒劑", 0.3], ["火焰瓶", 0.2]], "forge": [[2, 0.15]] },
+    "shallow": { "money": [8, 30], "gear": 0.6, "items": [["微弱治療藥劑", 0.5], ["微弱法力恢復藥劑", 0.3], ["解毒劑", 0.3], ["火焰瓶", 0.25], ["護盾藥劑", 0.2]], "forge": [[2, 0.3]] },
+    "middle": { "money": [10, 40], "gear": 0.75, "items": [["治療藥劑", 0.4], ["法力恢復藥劑", 0.25], ["巨力藥劑", 0.2], ["鐵膚藥劑", 0.2], ["冰霜瓶", 0.2], ["萬用解藥", 0.2]], "forge": [[2, 0.3], [3, 0.15]] },
+    "deep": { "money": [15, 60], "gear": 0.9, "gear_extra": 0.35, "items": [["治療藥劑", 0.5], ["高等治療藥劑", 0.15], ["復甦藥劑", 0.15], ["活力藥劑", 0.2], ["雷光彈", 0.2], ["抗火藥劑", 0.15]], "forge": [[3, 0.3], [4, 0.06]] }
+  },
   "loadout": {
     "$comment": "夥伴與敵對冒險者依等級即時生成的裝備：每個欄位從建議等級不超過角色等級的材料中挑（最高的一級機率 top、低一級 below、再低 lower），傳說材料另外乘上 legendary；頭、腿、手腕、腳、腰帶各有 pieces_base + pieces_per_level × 等級 的機率穿戴，首飾與兩條項鍊各有 jewelry_base + jewelry_per_level × 等級。",
     "top": 0.35, "below": 0.45, "lower": 0.2, "legendary": 0.15,

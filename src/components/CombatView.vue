@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useSummary } from '@/engine/inventory'
 import { computed, nextTick, ref, watch } from 'vue'
 import {
   abilityApCost, combatItems, currentActor, isActive, itemTargets, multLabel, threatMultOf, threatShares, unusableReason, validTargets,
@@ -36,10 +37,7 @@ const targets = computed(() => {
 // 道具：行囊裡可以在戰鬥中使用的東西
 const items = computed(() => combatItems(game.state!))
 function itemEffect(name: string): string {
-  const use = items.value.find((i) => i.name === name)?.def.use
-  if (use?.heal) return `回復 ${use.heal} HP`
-  if (use?.slot) return `回復 ${use.slot} 環以下的法術環`
-  return ''
+  return useSummary(items.value.find((i) => i.name === name)?.def.use).replace('・戰鬥中', '')
 }
 
 const groups = computed(() => {
