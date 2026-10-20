@@ -10,6 +10,7 @@ import {
   type Haunt, type NpcKind,
 } from './data'
 import { Rng } from './rng'
+import { rollLook } from './traits'
 import type { Character, GameState, NpcRecord } from './types'
 
 export interface NpcSpec {
@@ -101,19 +102,13 @@ function raceWeights(location: string): Record<string, number> {
   return Object.fromEntries(Object.entries(base).filter(([r]) => attributeRules.races[r]))
 }
 
-function uniqueName(state: GameState, rng: Rng, race: string, gender: string): string {
-  const names = npcPool.names[race] ?? npcPool.names.human!
-  const kind = npcPool.genders[gender]?.names ?? 'any'
-  const pool = kind === 'm' ? names.m : kind === 'f' ? names.f : [...names.m, ...names.f]
-  const used = new Set([
+/** 已經用過的名字：登錄過的 NPC、具名 NPC、隊伍 */
+function usedNames(state: GameState): Set<string> {
+  return new Set([
     ...Object.values(state.npcs ?? {}).map((n) => n.name),
     ...namedNpcs.map((n) => n.name),
     ...state.party.map((m) => m.name),
   ])
-  const free = pool.filter((n) => !used.has(n))
-  if (free.length) return rng.pick(free)
-  const base = rng.pick(pool)
-  for (let i = 2; ; i++) if (!used.has(`${base}・${i}`)) return `${base}・${i}`
 }
 
 function newNpcId(state: GameState, prefix: string): string {
@@ -133,22 +128,24 @@ export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, pref
   const gender = spec.gender && GENDER_IDS.includes(spec.gender)
     ? spec.gender
     : weightedPick(rng, Object.fromEntries(GENDER_IDS.map((g) => [g, npcPool.genders[g]!.weight])))
-  const features = npcPool.features[race] ?? npcPool.features.human!
   const tags = spec.tags ?? []
   const outfits = kind === 'commoner'
     ? tags.map((t) => npcPool.commoner_outfits[t]).find(Boolean) ?? npcPool.commoner_outfits.default!
     : npcPool.outfits
+  // 名字、外貌（多部位）、性格（多象限）：至少一項來自種族或血統，見 traits.ts
+  const look = rollLook(rng, { race, gender, kind, location, used: usedNames(state), outfit: rng.pick(outfits) })
   const rec: NpcRecord = {
     id: spec.id ?? newNpcId(state, prefix),
-    name: spec.name?.trim() || uniqueName(state, rng, race, gender),
+    name: spec.name?.trim() || look.name,
     gender,
     race,
     class: cls,
     level,
     location,
     hire_cc: kind === 'commoner' ? 0 : askingPrice(level, rng),
-    personality: spec.personality?.trim() || rng.pick(kind === 'commoner' ? npcPool.commoner_personalities : npcPool.personalities),
-    appearance: spec.appearance?.trim() || `${rng.pick(features)}，${rng.pick(outfits)}。`,
+    personality: spec.personality?.trim() || look.personality,
+    appearance: spec.appearance?.trim() || look.appearance,
+    ...(look.lineage ? { lineage: look.lineage } : {}),
     ...(spec.faction ? { faction: spec.faction } : {}),
     ...(spec.background ? { background: spec.background } : {}),
     kind,
@@ -173,10 +170,10 @@ export function npcTitle(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 
 }
 
 /** 給 AI 的身分說明：類型、職業或職業描述、標籤 */
-export function npcIdentity(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 'tags'>): string {
+export function npcIdentity(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 'tags' | 'lineage'>): string {
   const kind = npcKind(rec) === 'adventurer' ? '冒險者' : '普通人'
   const tags = (rec.tags ?? []).map((t) => tagDef(t)).filter(Boolean).map((t) => `${t!.name}（${t!.ai_hint}）`)
-  return [`${kind}・${npcTitle(rec)}`, ...tags].join('；')
+  return [`${kind}・${npcTitle(rec)}`, ...(rec.lineage ? [`出身：${rec.lineage}`] : []), ...tags].join('；')
 }
 
 /** 取得 NPC 的角色資料：之前同行過就沿用，否則依等級生成。 */

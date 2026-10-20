@@ -132,7 +132,7 @@
 
 ## 6. NPC 登錄
 
-`GameState.npcs` 記錄所有登場過的 NPC（含各地點名單上的居民、其他隊伍、奴隸、事件角色；名單與活躍地點見 docs/NPC_SYSTEM.md）。具名 NPC 第一次離隊時也會複製進來。生成用的名字、性格、外貌素材在 `data/world/npc_pool.json`，種族比例依地區調整（南境多魔族、北境多矮人……）。
+`GameState.npcs` 記錄所有登場過的 NPC（含各地點名單上的居民、其他隊伍、奴隸、事件角色；名單與活躍地點見 docs/NPC_SYSTEM.md）。具名 NPC 第一次離隊時也會複製進來。生成用的名字、外貌（多部位）與性格（多象限）素材在 `data/world/npc_traits.json`（見 docs/NPC_SYSTEM.md 第 15 節），性別與服裝在 `data/world/npc_pool.json`，種族比例依地區調整（南境多魔族、北境多矮人……）。
 
 ## 7. 性別、名牌與所在位置
 

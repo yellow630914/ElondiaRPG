@@ -172,10 +172,11 @@ describe('tavern hiring', () => {
 
   it('hires at the asking price without a check', () => {
     const state = game(7)
+    state.money_cc = 5000
     const c = tavernCandidates(state).find((x) => x.npc.startsWith('adv_'))!
     hireAtAsking(state, c.npc)
     expect(state.party.find((m) => m.id === c.npc)?.bond).toBe('hired')
-    expect(state.money_cc).toBe(500 - c.asking_cc)
+    expect(state.money_cc).toBe(5000 - c.asking_cc)
   })
 
   it('negotiates a lower fee with a check, and can even hire for free', () => {

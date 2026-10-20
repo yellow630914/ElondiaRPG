@@ -1,0 +1,773 @@
+{
+  "$comment": "NPC 的名字、外貌與性格素材（依世界書的種族條目整理）。外貌由多個部位組成（parts），性格由多個象限組成（personality.axes）；每個 NPC 至少有一項外貌（features 種族特徵）與一項性格來自種族或血統（lineages），其他部位與象限隨機。選項可以是字串或物件：t = 文字；tags = 標籤；not = 不能同時出現的標籤（外貌與性格共用，用來避免矛盾）；body = 只適用的體型（masc 陽剛、fem 陰柔、andro 中性；依性別決定，見 body_by_gender）；omit = 選了這項就略過的部位（例如光頭不寫髮色）。種族的 parts 會和共用的選項混在一起抽（種族的權重較高），force 的部位只從種族（或血統）的選項抽，血統的 force 優先。lineages 是種族下的血統、部族或氏族：home 是常出現的地點，名字可以帶上 surname。",
+  "version": 1,
+  "body_by_gender": {"male": "masc", "female": "fem", "femboy": "andro", "ts": "fem", "futa": "fem"},
+  "part_order": ["height", "build", "eyes", "face", "hair_color", "hair_style", "chest", "waist", "hips", "legs", "feet"],
+  "part_names": {"height": "身高", "build": "壯碩程度", "eyes": "眼睛", "face": "面部", "hair_color": "髮色", "hair_style": "髮型", "chest": "胸部", "waist": "腰身", "hips": "髖臀", "legs": "腿部", "feet": "足部"},
+  "race_part_weight": 3,
+  "parts": {
+    "height": [
+      {"t": "個子矮小", "tags": ["short"], "not": ["tall"]},
+      {"t": "身形嬌小", "tags": ["short", "petite"], "not": ["tall", "huge"], "body": ["fem", "andro"]},
+      {"t": "中等身高"},
+      {"t": "中等偏高的個子", "tags": ["tall"], "not": ["short"]},
+      {"t": "身材高挑", "tags": ["tall"], "not": ["short"]},
+      {"t": "高大挺拔", "tags": ["tall"], "not": ["short"], "body": ["masc"]},
+      {"t": "比一般人高出一個頭", "tags": ["tall", "towering"], "not": ["short", "petite"]}
+    ],
+    "build": [
+      {"t": "骨架纖細", "tags": ["slim"], "not": ["big", "heavy"]},
+      {"t": "身形精瘦", "tags": ["slim", "fit"], "not": ["heavy"]},
+      {"t": "勻稱結實", "tags": ["fit"], "not": ["heavy"]},
+      {"t": "肩寬背厚", "tags": ["big"], "not": ["slim", "petite"], "body": ["masc"]},
+      {"t": "魁梧壯碩", "tags": ["big", "huge"], "not": ["slim", "petite"], "body": ["masc", "fem"]},
+      {"t": "略帶豐腴", "tags": ["soft"], "not": ["slim"]},
+      {"t": "圓潤福態", "tags": ["soft", "heavy"], "not": ["slim", "fit"]},
+      {"t": "柔韌而有彈性", "tags": ["fit", "agile"], "not": ["heavy"]}
+    ],
+    "eyes": [
+      {"t": "灰藍色的眼睛"},
+      {"t": "深褐色的眼睛"},
+      {"t": "琥珀色的眼睛"},
+      {"t": "翠綠的眼睛"},
+      {"t": "黑亮的眼睛"},
+      {"t": "細長的鳳眼"},
+      {"t": "圓溜溜的大眼睛", "tags": ["cute"], "not": ["cold"]},
+      {"t": "眼角微垂，帶著睏意", "tags": ["sleepy"], "not": ["sharp"]},
+      {"t": "目光銳利", "tags": ["sharp"], "not": ["sleepy", "timid"]},
+      {"t": "眼下有淡淡的黑眼圈", "tags": ["tired"]},
+      {"t": "一隻眼睛蒙著眼罩", "tags": ["scarred"]}
+    ],
+    "face": [
+      {"t": "臉上有雀斑"},
+      {"t": "鵝蛋臉"},
+      {"t": "娃娃臉", "tags": ["cute", "young"], "not": ["old", "weathered"]},
+      {"t": "高顴骨"},
+      {"t": "鼻梁挺直"},
+      {"t": "眉間有一道淡淡的疤", "tags": ["scarred"]},
+      {"t": "棱角分明的下顎", "body": ["masc"]},
+      {"t": "嘴角總是微微上揚", "tags": ["smile"], "not": ["gloomy", "cold"]},
+      {"t": "左頰有顆小痣"},
+      {"t": "曬得黝黑的臉"},
+      {"t": "飽經風霜的面容", "tags": ["weathered"], "not": ["young"]},
+      {"t": "下巴留著修剪整齊的短鬚", "tags": ["beard"], "body": ["masc"]},
+      {"t": "滿臉濃密的絡腮鬍", "tags": ["beard"], "body": ["masc"]},
+      {"t": "蒼白而精緻的臉龐", "tags": ["pale"], "not": ["weathered"]}
+    ],
+    "hair_color": [
+      "烏黑",
+      "栗色",
+      "淡金色",
+      "赤紅",
+      "亞麻色",
+      "深棕色",
+      "銀白",
+      {"t": "灰白", "tags": ["old"], "not": ["young"]},
+      "蜂蜜色"
+    ],
+    "hair_style": [
+      {"t": "短髮"},
+      {"t": "短髮，亂翹著"},
+      {"t": "捲髮，垂到肩頭"},
+      {"t": "長髮，高高紮成馬尾"},
+      {"t": "長髮，編成辮子"},
+      {"t": "長髮，隨意披散"},
+      {"t": "長髮，盤成髮髻"},
+      {"t": "平頭，削得極短", "body": ["masc"]},
+      {"t": "剃得精光的光頭", "tags": ["bald"], "body": ["masc"], "omit": ["hair_color"]},
+      {"t": "長髮，紮成雙馬尾", "tags": ["cute"], "body": ["fem", "andro"]},
+      {"t": "鮑伯頭，剛好齊肩", "body": ["fem", "andro"]}
+    ],
+    "chest": [
+      {"t": "胸膛寬厚", "tags": ["big"], "not": ["petite"], "body": ["masc"]},
+      {"t": "胸口平坦", "body": ["masc", "andro"]},
+      {"t": "胸前有道舊傷", "tags": ["scarred"], "body": ["masc"]},
+      {"t": "胸部豐滿", "tags": ["curvy"], "not": ["petite"], "body": ["fem"]},
+      {"t": "胸部小巧", "body": ["fem", "andro"]},
+      {"t": "胸型勻稱", "body": ["fem"]},
+      {"t": "胸前沉甸甸的", "tags": ["curvy"], "not": ["petite", "slim"], "body": ["fem"]}
+    ],
+    "waist": [
+      {"t": "腰身纖細", "tags": ["slim"], "not": ["heavy"]},
+      {"t": "腰身緊實", "tags": ["fit"], "not": ["heavy"]},
+      {"t": "腰圍粗壯", "tags": ["big"], "not": ["slim", "petite"]},
+      {"t": "柳腰不盈一握", "tags": ["slim"], "not": ["heavy", "big"], "body": ["fem", "andro"]},
+      {"t": "小腹微凸", "tags": ["soft"], "not": ["fit", "slim"]}
+    ],
+    "hips": [
+      {"t": "臀部緊實", "tags": ["fit"]},
+      {"t": "窄臀", "not": ["curvy"], "body": ["masc", "andro"]},
+      {"t": "髖部寬闊", "tags": ["curvy"], "not": ["petite"], "body": ["fem"]},
+      {"t": "臀線圓潤", "tags": ["curvy"], "body": ["fem", "andro"]},
+      {"t": "骨盆略寬", "body": ["masc"]}
+    ],
+    "legs": [
+      {"t": "修長的雙腿", "tags": ["long_legs"], "not": ["short"]},
+      {"t": "結實的小腿", "tags": ["fit"]},
+      {"t": "腿部粗壯", "tags": ["big"], "not": ["slim"]},
+      {"t": "纖細的腿", "tags": ["slim"], "not": ["big"]},
+      {"t": "一雙 O 型腿"},
+      {"t": "大腿上有道疤", "tags": ["scarred"]},
+      {"t": "走路略有點外八"}
+    ],
+    "feet": [
+      {"t": "小巧的腳"},
+      {"t": "大腳板"},
+      {"t": "走路有點跛", "tags": ["limp"], "not": ["agile"]},
+      {"t": "腳步輕盈", "tags": ["agile"], "not": ["limp", "heavy"]},
+      {"t": "腳底滿是老繭"},
+      {"t": "習慣踮著腳走路"}
+    ]
+  },
+  "personality": {
+    "axes": [
+      {
+        "id": "social",
+        "name": "社交",
+        "options": [
+          {"t": "開朗健談", "tags": ["talkative"], "not": ["quiet"]},
+          {"t": "沉默寡言", "tags": ["quiet"], "not": ["talkative"]},
+          {"t": "隨和好相處", "tags": ["easy"], "not": ["cold"]},
+          {"t": "冷淡疏離", "tags": ["cold"], "not": ["easy", "warm"]},
+          {"t": "怕生，熟了才放得開", "tags": ["shy"], "not": ["bold"]},
+          {"t": "自來熟", "tags": ["talkative", "bold"], "not": ["shy", "quiet"]}
+        ]
+      },
+      {
+        "id": "temper",
+        "name": "處事",
+        "options": [
+          {"t": "謹慎多疑", "tags": ["cautious"], "not": ["reckless"]},
+          {"t": "莽撞衝動", "tags": ["reckless"], "not": ["cautious", "calm"]},
+          {"t": "一絲不苟", "tags": ["meticulous"], "not": ["lazy"]},
+          {"t": "隨性散漫", "tags": ["lazy"], "not": ["meticulous"]},
+          {"t": "沉著冷靜", "tags": ["calm"], "not": ["hot", "reckless"]},
+          {"t": "想得多做得少", "tags": ["indecisive"], "not": ["reckless"]}
+        ]
+      },
+      {
+        "id": "heart",
+        "name": "待人",
+        "options": [
+          {"t": "熱心助人", "tags": ["kind", "warm"], "not": ["cruel"]},
+          {"t": "精明市儈", "tags": ["greedy"], "not": ["generous"]},
+          {"t": "正直守信", "tags": ["honest"], "not": ["sly"]},
+          {"t": "油滑狡黠", "tags": ["sly"], "not": ["honest"]},
+          {"t": "嘴硬心軟", "tags": ["tsundere", "warm"], "not": ["cruel"]},
+          {"t": "對人冷酷，只講利害", "tags": ["cruel"], "not": ["kind", "warm"]},
+          {"t": "出手大方", "tags": ["generous"], "not": ["greedy"]}
+        ]
+      },
+      {
+        "id": "mood",
+        "name": "情緒",
+        "options": [
+          {"t": "樂天", "tags": ["cheerful"], "not": ["gloomy"]},
+          {"t": "憂鬱", "tags": ["gloomy"], "not": ["cheerful", "smile"]},
+          {"t": "脾氣火爆", "tags": ["hot"], "not": ["calm", "mild"]},
+          {"t": "溫和", "tags": ["mild"], "not": ["hot"]},
+          {"t": "疲憊而淡漠", "tags": ["tired"], "not": ["cheerful"]},
+          {"t": "情緒起伏很大", "tags": ["moody"], "not": ["calm"]}
+        ]
+      },
+      {
+        "id": "quirk",
+        "name": "嗜好與習慣",
+        "options": [
+          {"t": "愛吹噓自己的經歷", "tags": ["talkative"], "not": ["quiet"]},
+          {"t": "迷信，出門前要做些古怪的小儀式"},
+          {"t": "好奇心旺盛，看到沒見過的東西就想伸手碰"},
+          {"t": "嗜甜如命"},
+          {"t": "怕水"},
+          {"t": "見錢眼開", "tags": ["greedy"], "not": ["generous"]},
+          {"t": "好勝心強，什麼都要比"},
+          {"t": "虔誠，每天早晚禱告", "tags": ["pious"]},
+          {"t": "愛哼歌"},
+          {"t": "記性很差"},
+          {"t": "對自己的過去閉口不談"},
+          {"t": "喜歡收集亮晶晶的小東西"},
+          {"t": "酒量很好，也很愛喝"},
+          {"t": "討厭貴族"},
+          {"t": "很照顧年紀小的人", "tags": ["warm"], "not": ["cruel"]},
+          {"t": "說話愛引用老話"},
+          {"t": "有潔癖"},
+          {"t": "一緊張就會結巴", "tags": ["timid"], "not": ["bold"]}
+        ]
+      }
+    ],
+    "quirks_by_kind": {
+      "adventurer": [
+        {"t": "只在報酬談妥後才肯多說幾句", "tags": ["greedy"], "not": ["generous"]},
+        {"t": "遇到真正的危險時意外地可靠"},
+        {"t": "喜歡和隊友比較戰果"},
+        {"t": "總在擦拭自己的武器"},
+        {"t": "出發前一定要把行囊整理三遍", "tags": ["meticulous"], "not": ["lazy"]}
+      ],
+      "commoner": [
+        {"t": "很在意街坊的眼光"},
+        {"t": "說起家人就停不下來", "tags": ["talkative"], "not": ["quiet"]},
+        {"t": "對冒險者又敬又怕", "tags": ["timid"]},
+        {"t": "總想打聽外地的新鮮事"},
+        {"t": "手上的活一刻也停不下來", "tags": ["meticulous"]}
+      ]
+    }
+  },
+  "races": {
+    "human": {
+      "names": {
+        "m": ["艾德溫", "柯爾", "羅德里克", "加雷斯", "托比亞斯", "賽門", "雷納德", "奧斯卡", "馬提亞斯", "阿爾弗雷德", "布蘭登", "康拉德", "埃里克", "費迪南", "吉爾伯特", "哈羅德", "伊凡", "朱利安", "盧卡斯", "諾頓"],
+        "f": ["瑪莎", "伊蓮", "菲歐娜", "諾拉", "薇拉", "葛蕾塔", "茱恩", "海倫娜", "艾莉莎", "碧翠絲", "卡洛琳", "黛安娜", "艾芙琳", "芙蕾雅", "葛溫", "伊莎貝拉", "茉莉", "羅莎琳", "蘇菲亞", "維多莉亞"]
+      },
+      "surnames": ["布萊克伍德", "史東", "哈特", "米勒", "格雷", "溫特", "阿什福德", "克羅斯", "費爾德", "洛克", "萊恩", "諾斯"],
+      "surname_chance": 0.4,
+      "features": [
+        {"t": "典型平原人的輪廓，膚色健康"},
+        {"t": "曬得黝黑的皮膚，帶著田野的氣息", "tags": ["weathered"]},
+        {"t": "手上有長年勞作留下的繭"},
+        {"t": "耳垂上戴著小小的銅環"}
+      ],
+      "parts": {
+        "eyes": [
+          {"t": "灰藍色的眼睛"},
+          {"t": "深褐色的眼睛"}
+        ],
+        "hair_color": ["栗色", "深棕色", "淡金色"]
+      },
+      "personality": [
+        {"t": "躁動又有野心，總想在短短一生做出點什麼", "tags": ["bold"], "not": ["lazy"], "axis": "temper"},
+        {"t": "腳踏實地，相信努力就有回報", "tags": ["honest"], "axis": "heart"},
+        {"t": "對信仰半信半疑", "axis": "quirk"},
+        {"t": "把家族的名聲看得很重", "axis": "quirk"}
+      ],
+      "lineages": [
+        {
+          "id": "rhine",
+          "name": "萊茵帝國出身",
+          "weight": 2,
+          "home": ["rhineburg", "greyrock"],
+          "features": [
+            {"t": "站姿筆挺，帶著軍人的習慣"}
+          ],
+          "personality": [
+            {"axis": "temper", "t": "講究紀律與榮譽", "tags": ["meticulous"], "not": ["lazy"]}
+          ]
+        },
+        {
+          "id": "dawn",
+          "name": "晨曦王國出身",
+          "weight": 2,
+          "home": ["dawnlight", "coast_ferry"],
+          "features": [
+            {"t": "舉止優雅，口音帶著晨光城的腔調"}
+          ],
+          "personality": [
+            {"axis": "quirk", "t": "愛談論詩歌與魔法"}
+          ]
+        },
+        {
+          "id": "aude",
+          "name": "奧德聯邦出身",
+          "weight": 2,
+          "home": ["albena", "rivervale"],
+          "features": [
+            {"t": "衣角別著行會的小徽章"}
+          ],
+          "personality": [
+            {"axis": "heart", "t": "凡事講契約，算得很清楚", "tags": ["greedy"], "not": ["generous"]}
+          ]
+        },
+        {
+          "id": "holy",
+          "name": "聖環教廷出身",
+          "weight": 2,
+          "home": ["soriel"],
+          "features": [
+            {"t": "頸上掛著小小的白金環"}
+          ],
+          "personality": [
+            {"axis": "quirk", "t": "說話常提起光明三神", "tags": ["pious"]}
+          ]
+        }
+      ]
+    },
+    "elf": {
+      "names": {
+        "m": ["希爾凡", "凡瑞爾", "塔恩", "伊薩爾", "卡萊恩", "埃拉隆", "菲納爾", "格倫迪爾", "伊斯瑞爾", "萊薩斯", "米瑟蘭", "諾恩希爾", "奧瑞恩", "瑟拉斯", "泰爾溫"],
+        "f": ["艾蘿蒂", "莉瑟拉", "梅洛薇", "諾菲雅", "瑟芙蘭", "雅瑞希", "伊芙琳德", "凱拉妮", "露希恩", "米瑞爾", "妮梵", "希爾薇", "塔薇莉", "維拉妮", "艾絲緹"]
+      },
+      "surnames": ["星樹", "月葉", "銀露", "風歌", "翠影", "晨星"],
+      "surname_chance": 0.3,
+      "features": [
+        {"t": "長而尖的耳朵"},
+        {"t": "幾乎不見歲月痕跡的肌膚", "tags": ["young"], "not": ["weathered", "old"]},
+        {"t": "身上帶著淡淡的草木香"}
+      ],
+      "exclude": ["beard", "bald"],
+      "parts": {
+        "height": [
+          {"t": "身材高挑", "tags": ["tall"], "not": ["short"]},
+          {"t": "身形修長", "tags": ["tall", "slim"], "not": ["short", "heavy"]}
+        ],
+        "build": [
+          {"t": "骨架纖細", "tags": ["slim"], "not": ["big", "heavy"]},
+          {"t": "輕盈勻稱", "tags": ["slim", "agile"], "not": ["heavy"]}
+        ],
+        "eyes": [
+          {"t": "翡翠色的眼眸"},
+          {"t": "星光般的銀灰眼眸"},
+          {"t": "能看見魔力流動的淡紫色眼睛"}
+        ],
+        "hair_color": ["淺金色", "銀白", "月白", "淡綠"],
+        "feet": [
+          {"t": "腳步輕得沒有聲音", "tags": ["agile"], "not": ["limp", "heavy"]}
+        ]
+      },
+      "personality": [
+        {"axis": "social", "t": "優雅而矜持，與外族保持距離", "tags": ["cold"], "not": ["talkative"]},
+        {"axis": "temper", "t": "做事從容不迫，彷彿時間永遠用不完", "tags": ["calm"], "not": ["reckless"]},
+        {"axis": "quirk", "t": "能聽見風與樹的低語"}
+      ],
+      "lineages": [
+        {
+          "id": "forest",
+          "name": "森居族群",
+          "weight": 4,
+          "home": ["silvermoon", "mosswhisper", "windspeak"],
+          "personality": [
+            {"axis": "quirk", "t": "習慣在林間打赤腳"}
+          ]
+        },
+        {
+          "id": "verdant",
+          "name": "翠輝議會的世家",
+          "weight": 1,
+          "home": ["silvermoon"],
+          "features": [
+            {"t": "髮間繫著星樹家系的銀葉飾"}
+          ],
+          "personality": [
+            {"axis": "heart", "t": "看不起短命的外族", "tags": ["cold"], "not": ["warm"]}
+          ]
+        },
+        {
+          "id": "starring",
+          "name": "星月之環的學者",
+          "weight": 2,
+          "features": [
+            {"t": "指尖有洗不掉的星墨痕跡"}
+          ],
+          "personality": [
+            {"axis": "quirk", "t": "對星象與時間法術著迷"}
+          ]
+        },
+        {
+          "id": "sprout",
+          "name": "新芽同盟",
+          "weight": 2,
+          "personality": [
+            {"axis": "social", "t": "熱衷結交外族朋友", "tags": ["talkative", "warm"], "not": ["cold"]}
+          ]
+        },
+        {
+          "id": "mist",
+          "name": "迷霧之幕的暮影精靈",
+          "weight": 1,
+          "features": [
+            {"t": "暮影精靈特有的灰紫色肌膚"}
+          ],
+          "personality": [
+            {"axis": "social", "t": "說話只說一半，像在試探", "tags": ["sly"], "not": ["honest"]}
+          ]
+        }
+      ]
+    },
+    "dwarf": {
+      "names": {
+        "m": ["布倫", "托林", "杜林", "哈克", "巴林", "格倫", "索爾", "莫拉丁", "瑞克", "瓦爾登", "鐸格", "蓋爾", "霍格", "柯林", "烏夫"],
+        "f": ["葛莉達", "希格麗", "赫爾嘉", "茵格麗", "布倫希", "達格妮", "艾琳德", "芙瑞雅", "古德倫", "哈莉", "卡特拉", "朗希爾", "斯凡娜", "托拉", "薇菈"]
+      },
+      "surname_chance": 1,
+      "features": [
+        {"t": "帶著礦石般色澤的肌膚"},
+        {"t": "被爐火燻黑的粗壯手指"},
+        {"t": "手臂上滿是鍛造留下的燙疤", "tags": ["scarred"]}
+      ],
+      "force": {
+        "height": [
+          {"t": "矮壯", "tags": ["short", "big"], "not": ["tall", "slim"]},
+          {"t": "比人類矮了一大截", "tags": ["short"], "not": ["tall"]},
+          {"t": "個子不高卻像塊岩石", "tags": ["short", "big"], "not": ["tall", "slim"]}
+        ]
+      },
+      "parts": {
+        "build": [
+          {"t": "厚實得像一塊岩石", "tags": ["big"], "not": ["slim"]},
+          {"t": "肩寬背厚", "tags": ["big"], "not": ["slim"]},
+          {"t": "結實粗壯", "tags": ["big", "fit"], "not": ["slim"]}
+        ],
+        "eyes": [
+          {"t": "如熔金般發亮的眼睛"},
+          {"t": "鐵灰色的眼睛"}
+        ],
+        "face": [
+          {"t": "編成辮子的濃密鬍鬚，掛著小鐵環", "tags": ["beard"], "body": ["masc"]},
+          {"t": "赤銅色的大鬍子", "tags": ["beard"], "body": ["masc"]},
+          {"t": "臉頰紅潤，鼻頭圓大"}
+        ],
+        "hair_color": ["赤銅色", "鐵灰色", "煤黑", "火紅"],
+        "legs": [
+          {"t": "短而粗壯的腿", "tags": ["big"], "not": ["long_legs"]}
+        ]
+      },
+      "exclude": ["long_legs", "petite", "slim"],
+      "personality": [
+        {"axis": "heart", "t": "重承諾，說到做到", "tags": ["honest"], "not": ["sly"]},
+        {"axis": "temper", "t": "固執得像塊石頭", "tags": ["stubborn"]},
+        {"axis": "quirk", "t": "喝醉會唱走調的戰歌"},
+        {"axis": "quirk", "t": "對做工粗糙的東西嗤之以鼻"}
+      ],
+      "lineages": [
+        {
+          "id": "ironforge",
+          "name": "鐵爐氏族",
+          "surname": "鐵爐",
+          "weight": 2,
+          "home": ["ironforge"],
+          "personality": [
+            {"axis": "social", "t": "帶著山之王系的驕傲與威嚴", "tags": ["proud"], "not": ["shy"]}
+          ]
+        },
+        {
+          "id": "greyrock",
+          "name": "灰岩氏族",
+          "surname": "灰岩",
+          "weight": 2,
+          "home": ["greyrock", "snowridge"],
+          "features": [
+            {"t": "盾牌上刻著灰岩氏族的誓紋"}
+          ],
+          "personality": [
+            {"axis": "social", "t": "沉默堅毅，守誓如命", "tags": ["quiet", "honest"], "not": ["talkative"]}
+          ]
+        },
+        {
+          "id": "copperbeard",
+          "name": "銅鬚氏族",
+          "surname": "銅鬚",
+          "weight": 3,
+          "home": ["rivervale", "albena", "ironforge"],
+          "features": [
+            {"t": "腰間掛滿精巧的小工具"}
+          ],
+          "personality": [
+            {"axis": "heart", "t": "精明健談，什麼都能拿來做生意", "tags": ["talkative", "greedy"], "not": ["quiet"]}
+          ]
+        },
+        {
+          "id": "mistrock",
+          "name": "迷石氏族",
+          "surname": "迷石",
+          "weight": 1,
+          "features": [
+            {"t": "皮膚上刻著淡淡發光的古老符文"}
+          ],
+          "personality": [
+            {"axis": "quirk", "t": "常低聲對著石頭說話"}
+          ]
+        }
+      ]
+    },
+    "demon": {
+      "names": {
+        "m": ["卡札爾", "莫格斯", "瓦爾薩", "澤戈斯", "伊格拉斯", "巴洛克", "德拉肯", "格里姆", "哈茲爾", "庫爾薩", "馬洛斯", "拉格納", "薩洛斯", "烏爾戈", "佐格"],
+        "f": ["莉莉絲", "賽菈", "薇絲珂", "妮菈", "亞斯塔", "貝菈朵", "卡蜜菈", "黛瑪", "伊芙菈", "瑪爾維", "莫蕾雅", "妮克絲", "賽蓮", "塔妮絲", "維洛卡"]
+      },
+      "features": [
+        {"t": "帶著魔能氣息的體溫"}
+      ],
+      "personality": [
+        {"axis": "temper", "t": "信奉力量階序，對強者格外尊重", "tags": ["proud"]}
+      ],
+      "lineages": [
+        {
+          "id": "succubus",
+          "name": "魅魔（赤翼宮廷）",
+          "weight": 3,
+          "home": ["bloodplume"],
+          "features": [
+            {"t": "蜜金色的肌膚，背後一對小而鋒利的翅膀", "body": ["masc", "andro"]},
+            {"t": "緋紅透亮的肌膚，背後雙翼舒展如烈焰", "body": ["fem"]}
+          ],
+          "parts": {
+            "height": [
+              {"t": "身材高挑", "tags": ["tall"], "not": ["short"]}
+            ],
+            "build": [
+              {"t": "體態修長而陰柔", "tags": ["slim"], "not": ["big"], "body": ["masc", "andro"]},
+              {"t": "體態妖嬈", "tags": ["curvy"], "not": ["big"], "body": ["fem"]}
+            ],
+            "eyes": [
+              {"t": "眉眼間自帶蠱惑的魅光"}
+            ]
+          },
+          "personality": [
+            {"axis": "social", "t": "擅於揣摩人心，笑起來慵懶而危險", "tags": ["sly", "smile"], "not": ["honest", "shy"]}
+          ]
+        },
+        {
+          "id": "flame",
+          "name": "炎魔（炎獄軍團）",
+          "weight": 2,
+          "home": ["moltenhold"],
+          "features": [
+            {"t": "炭黑龜裂如熔岩岩殼的肌膚"}
+          ],
+          "force": {
+            "build": [
+              {"t": "體格雄壯如鐵塔", "tags": ["big", "huge"], "not": ["slim"], "body": ["masc"]},
+              {"t": "體態精悍矯健", "tags": ["fit"], "not": ["heavy"], "body": ["fem", "andro"]}
+            ]
+          },
+          "parts": {
+            "eyes": [
+              {"t": "雙目熾亮如爐火"}
+            ],
+            "hair_color": [
+              {"t": "如燼火般明滅的", "body": ["fem", "andro"]}
+            ]
+          },
+          "personality": [
+            {"axis": "mood", "t": "好戰，受不了律法的束縛", "tags": ["hot"], "not": ["calm", "mild"]}
+          ]
+        },
+        {
+          "id": "shadow",
+          "name": "影魔（暗影氏族）",
+          "weight": 2,
+          "home": ["shadow_vale"],
+          "features": [
+            {"t": "灰黑的肌膚，面容隱在暗紋之下", "body": ["masc"]},
+            {"t": "泛著墨藍微光的肌膚", "body": ["fem", "andro"]}
+          ],
+          "parts": {
+            "build": [
+              {"t": "精瘦如影", "tags": ["slim"], "not": ["big"]}
+            ],
+            "eyes": [
+              {"t": "幽光似鬼火的雙眸"}
+            ],
+            "feet": [
+              {"t": "行動悄無聲息", "tags": ["agile"], "not": ["limp"]}
+            ]
+          },
+          "personality": [
+            {"axis": "social", "t": "寡言而神祕，行事隱密", "tags": ["quiet"], "not": ["talkative"]}
+          ]
+        },
+        {
+          "id": "orc",
+          "name": "獸人（血角氏族）",
+          "weight": 2,
+          "home": ["bone_hills"],
+          "features": [
+            {"t": "灰褐粗礪的肌膚，頭頂一對厚重的巨角，獠牙外露", "body": ["masc"]},
+            {"t": "苔綠色的肌膚，頭頂一對纖細彎曲的角", "body": ["fem", "andro"]}
+          ],
+          "force": {
+            "build": [
+              {"t": "魁梧如戰獸，肌肉賁張", "tags": ["big", "huge"], "not": ["slim", "petite"], "body": ["masc"]},
+              {"t": "強健而線條圓潤", "tags": ["big"], "not": ["slim", "petite"], "body": ["fem", "andro"]}
+            ]
+          },
+          "parts": {
+            "eyes": [
+              {"t": "眼神凶悍"}
+            ]
+          },
+          "personality": [
+            {"axis": "temper", "t": "崇尚蠻力，有話直說", "tags": ["bold", "honest"], "not": ["sly", "shy"]}
+          ]
+        },
+        {
+          "id": "necro",
+          "name": "死靈（幽冥典儀會）",
+          "weight": 1,
+          "home": ["silent_tomb"],
+          "features": [
+            {"t": "灰白似枯骨的肌膚，周身繚繞冷霧", "tags": ["pale"]}
+          ],
+          "parts": {
+            "build": [
+              {"t": "清癯纖瘦", "tags": ["slim"], "not": ["big", "heavy"]}
+            ],
+            "eyes": [
+              {"t": "眼窩深陷", "body": ["masc"]},
+              {"t": "眼中透出幽紫微光", "body": ["fem", "andro"]}
+            ],
+            "hair_color": [
+              {"t": "枯槁如霜的", "body": ["fem", "andro"]}
+            ]
+          },
+          "personality": [
+            {"axis": "mood", "t": "陰冷，對生死冷眼旁觀", "tags": ["cold"], "not": ["cheerful", "warm"]}
+          ]
+        }
+      ]
+    },
+    "catfolk": {
+      "names": {
+        "m": ["卡爾", "魯克", "薩希", "托戈", "雅克", "巴魯", "達克", "費羅", "嘉魯", "哈奇", "卡夫", "里歐", "莫卡", "尼歐", "塔爾"],
+        "f": ["莉娜", "米婭", "妮可", "茉茉", "露露", "阿雅", "貝拉", "琪琪", "黛娜", "艾菈", "菲菲", "嘉娜", "卡雅", "米蘿", "娜菈"]
+      },
+      "features": [
+        {"t": "頭頂豎著毛茸茸的貓耳，脊後垂著修長的尾巴"},
+        {"t": "會隨光線收縮的豎瞳，暗處也看得清楚"}
+      ],
+      "parts": {
+        "build": [
+          {"t": "輕盈靈動，四肢富有彈性", "tags": ["agile", "fit"], "not": ["heavy"]}
+        ],
+        "feet": [
+          {"t": "腳步輕盈無聲", "tags": ["agile"], "not": ["limp", "heavy"]},
+          {"t": "跳得又高又遠", "tags": ["agile"], "not": ["limp"]}
+        ]
+      },
+      "personality": [
+        {"axis": "quirk", "t": "感官敏銳，一點聲響就豎起耳朵"},
+        {"axis": "quirk", "t": "相信祖靈的低語"}
+      ],
+      "lineages": [
+        {
+          "id": "redmane",
+          "name": "赤鬃部落",
+          "weight": 2,
+          "home": ["sunscorch"],
+          "features": [
+            {"t": "烈焰般赤棕色的耳尾，耳側延伸出一小簇鬃毛"}
+          ],
+          "force": {
+            "hair_color": ["赤棕色"]
+          },
+          "personality": [
+            {"axis": "mood", "t": "勇猛好戰，喜歡正面硬碰硬", "tags": ["hot", "bold"], "not": ["timid", "calm"]}
+          ]
+        },
+        {
+          "id": "nightclaw",
+          "name": "夜爪部落",
+          "weight": 2,
+          "home": ["echo_canyon"],
+          "features": [
+            {"t": "深黑近墨的耳尾"}
+          ],
+          "force": {
+            "hair_color": ["烏黑"]
+          },
+          "personality": [
+            {"axis": "social", "t": "警覺而隱密，習慣夜行", "tags": ["quiet", "cautious"], "not": ["talkative"]}
+          ]
+        },
+        {
+          "id": "sandscar",
+          "name": "沙痕部落",
+          "weight": 3,
+          "home": ["sandcastle"],
+          "features": [
+            {"t": "淺沙黃色的耳尾，尾梢一撮深褐色的部族之印"}
+          ],
+          "force": {
+            "hair_color": ["沙金色"]
+          },
+          "personality": [
+            {"axis": "heart", "t": "圓融，擅長調解與帶路", "tags": ["easy", "warm"], "not": ["cold"]}
+          ]
+        },
+        {
+          "id": "moontail",
+          "name": "月尾部落",
+          "weight": 2,
+          "home": ["stilltide_oasis"],
+          "features": [
+            {"t": "銀灰泛藍的耳尾，尾上繫著銀鈴"}
+          ],
+          "force": {
+            "hair_color": ["銀灰色", "淺藍色"]
+          },
+          "personality": [
+            {"axis": "temper", "t": "沉靜神祕，精通草藥與占卜", "tags": ["calm"], "not": ["reckless", "hot"]}
+          ]
+        }
+      ]
+    },
+    "yulin": {
+      "names": {
+        "m": ["沐雪", "汐月", "琉璃", "雲裳", "珊瑚", "若蘭", "鈴音", "瀾香", "珠綺", "葵", "櫻汐", "螢", "千鶴", "朝霞", "凝露"],
+        "f": ["沐雪", "汐月", "琉璃", "雲裳", "珊瑚", "若蘭", "鈴音", "瀾香", "珠綺", "葵", "櫻汐", "螢", "千鶴", "朝霞", "凝露"]
+      },
+      "body": "fem",
+      "exclude": ["beard", "bald", "weathered"],
+      "features": [
+        {"t": "耳後與頸側有細密的鰓裂"},
+        {"t": "化形後的雙腿上隱約留著玉色鱗紋"}
+      ],
+      "parts": {
+        "eyes": [
+          {"t": "在光線下泛起珍珠般虹彩的眼瞳"}
+        ],
+        "face": [
+          {"t": "五官柔美，肌膚細膩瑩潤"}
+        ],
+        "hair_color": ["深海般幽藍", "珊瑚般緋紅"],
+        "hair_style": [
+          {"t": "長髮，綰成髮髻、插著珍珠簪"},
+          {"t": "長髮，如水草般柔順地披散"}
+        ],
+        "feet": [
+          {"t": "在陸上走路還有點不穩"}
+        ]
+      },
+      "personality": [
+        {"axis": "mood", "t": "樂天知命", "tags": ["cheerful"], "not": ["gloomy"]},
+        {"axis": "temper", "t": "有點迷糊少根筋", "tags": ["lazy"], "not": ["meticulous"]},
+        {"axis": "quirk", "t": "愛歌舞宴飲"}
+      ],
+      "lineages": [
+        {
+          "id": "spring",
+          "name": "春潮閣",
+          "weight": 1,
+          "personality": [
+            {"axis": "social", "t": "活潑跳脫，熱衷籌辦慶典", "tags": ["talkative"], "not": ["quiet"]}
+          ]
+        },
+        {
+          "id": "summer",
+          "name": "夏瀾殿",
+          "weight": 1,
+          "personality": [
+            {"axis": "heart", "t": "豪爽好客，酒量驚人", "tags": ["generous"], "not": ["greedy"]}
+          ]
+        },
+        {
+          "id": "autumn",
+          "name": "秋珊苑",
+          "weight": 1,
+          "personality": [
+            {"axis": "temper", "t": "難得地沉靜，喜歡詩文與史籍", "tags": ["calm"], "not": ["reckless"]}
+          ]
+        },
+        {
+          "id": "winter",
+          "name": "冬璃宮",
+          "weight": 1,
+          "features": [
+            {"t": "身上佩著精雕的雪玉璜環"}
+          ],
+          "personality": [
+            {"axis": "temper", "t": "細緻內斂，講究工藝", "tags": ["meticulous"], "not": ["lazy"]}
+          ]
+        }
+      ]
+    }
+  }
+}

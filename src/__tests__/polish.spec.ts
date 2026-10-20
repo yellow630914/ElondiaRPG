@@ -6,6 +6,7 @@ import { gainXp, rerollsLeft, snapshot } from '@/engine/character'
 import { GENDER_IDS, genderDef, npcPool } from '@/engine/data'
 import { clearQuestMarkers, currentArea, enterLocation, goOutskirts, standOn } from '@/engine/grid'
 import { generateNpc } from '@/engine/npcs'
+import { npcTraits } from '@/engine/traits'
 import { areaOf, peopleHere, presentHere } from '@/engine/population'
 import { longRest } from '@/engine/rest'
 import { newGame, withRng } from '@/engine/state'
@@ -48,8 +49,8 @@ describe('npc gender', () => {
       const rec = generateNpc(state, rng, { race: 'human' })
       expect(GENDER_IDS).toContain(rec.gender)
       const pool = npcPool.genders[rec.gender!]!.names
-      if (pool === 'm') expect(npcPool.names.human!.m.some((n) => rec.name.startsWith(n))).toBe(true)
-      if (pool === 'f') expect(npcPool.names.human!.f.some((n) => rec.name.startsWith(n))).toBe(true)
+      if (pool === 'm') expect(npcTraits.races.human!.names.m.some((n) => rec.name.startsWith(n))).toBe(true)
+      if (pool === 'f') expect(npcTraits.races.human!.names.f.some((n) => rec.name.startsWith(n))).toBe(true)
     }
     expect(generateNpc(state, rng, { gender: 'futa' }).gender).toBe('futa')
   })

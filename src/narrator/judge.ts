@@ -207,9 +207,9 @@ export function buildRosterPrompt(state: GameState, locId: string): Prompt | nul
   const faction = loc.faction ? geography.factions.find((f) => f.id === loc.faction)?.name ?? '' : ''
   const lines = list.map((r) => {
     const tags = (r.tags ?? []).map((t) => tagDef(t)?.name).filter(Boolean).join('、')
-    return `- id: ${r.id}｜${npcKind(r) === 'adventurer' ? `冒險者・${className(r.class)}` : `普通人・${r.occupation ?? '平民'}`}｜${genderName(r.gender)}｜${raceName(r.race)} Lv.${r.level}${tags ? `｜標籤：${tags}` : ''}｜目前的草稿：${r.name}，${r.personality} ${r.appearance ?? ''}`
+    return `- id: ${r.id}｜${npcKind(r) === 'adventurer' ? `冒險者・${className(r.class)}` : `普通人・${r.occupation ?? '平民'}`}｜${genderName(r.gender)}｜${raceName(r.race)}${r.lineage ? `（${r.lineage}）` : ''} Lv.${r.level}${tags ? `｜標籤：${tags}` : ''}｜目前的草稿：${r.name}｜外貌：${r.appearance ?? ''}｜性格：${r.personality}`
   }).join('\n')
-  const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為這個地點的居民重新設計名字、外貌、性格與一句背景，讓他們符合種族、性別、身分（冒險者或普通人、職業、標籤）與所在地的風土；普通人可以把職業描述改得更具體。種族、性別、類型、冒險者的職業與等級不可更改，名字要符合性別，彼此不要重複。只輸出 JSON：{"npcs":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字","occupation":"普通人才填，≤10 字"}]}`
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為這個地點的居民重新設計名字、外貌、性格與一句背景，讓他們符合種族、性別、身分（冒險者或普通人、職業、標籤）與所在地的風土；普通人可以把職業描述改得更具體。種族、血統、性別、類型、冒險者的職業與等級不可更改，名字要符合性別，彼此不要重複；草稿的外貌與性格是依世界書的種族設定組出來的，潤飾時保留其中的種族特徵（例如耳尾、角、鰓裂、膚色）與主要的性格基調，只把文字寫得更自然。只輸出 JSON：{"npcs":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字","occupation":"普通人才填，≤10 字"}]}`
   const user = `地點：${loc.name}（${region}${faction ? `，${faction}` : ''}）\n居民：\n${lines}`
   return { system, user }
 }

@@ -219,3 +219,39 @@ describe('capital districts', () => {
     expect(zonesOf(locationById('rivervale'))).not.toContain('noble')
   })
 })
+
+describe('appearance and personality', () => {
+  it('builds looks from body parts and personality from axes, with at least one racial trait each', async () => {
+    const { rollLook, npcTraits } = await import('@/engine/traits')
+    const { Rng } = await import('@/engine/rng')
+    const rng = new Rng(5)
+    // 所有選項的互斥標籤
+    const allOptions = [
+      ...Object.values(npcTraits.parts).flat(),
+      ...npcTraits.personality.axes.flatMap((a) => a.options),
+      ...Object.values(npcTraits.personality.quirks_by_kind).flat(),
+      ...Object.values(npcTraits.races).flatMap((r) => [
+        ...(r.features ?? []), ...Object.values(r.parts ?? {}).flat(), ...Object.values(r.force ?? {}).flat(), ...(r.personality ?? []),
+        ...(r.lineages ?? []).flatMap((l) => [...(l.features ?? []), ...Object.values(l.parts ?? {}).flat(), ...Object.values(l.force ?? {}).flat(), ...(l.personality ?? [])]),
+      ]),
+    ].map((o) => (typeof o === 'string' ? { t: o } : o)) as { t: string; tags?: string[]; not?: string[] }[]
+    const notOf = new Map(allOptions.map((o) => [o.t, o.not ?? []]))
+    for (const race of Object.keys(npcTraits.races)) {
+      for (const gender of ['male', 'female', 'femboy', 'ts', 'futa', 'unknown']) {
+        for (let i = 0; i < 15; i++) {
+          const look = rollLook(rng, { race, gender, kind: i % 2 ? 'commoner' : 'adventurer', location: 'soriel', used: new Set() })
+          const d = look.detail
+          expect(d.features.length, `${race} feature`).toBeGreaterThan(0)
+          expect(d.raceTraits.length, `${race} trait`).toBeGreaterThan(0)
+          expect(Object.keys(d.parts).length).toBeGreaterThanOrEqual(9)
+          expect(Object.keys(d.traits).length).toBeGreaterThanOrEqual(4)
+          // 沒有矛盾：選到的任何一項，它的互斥標籤都不在選到的標籤裡
+          const chosen = [...Object.values(d.parts), ...d.features, ...Object.values(d.traits)]
+          for (const t of chosen) for (const n of notOf.get(t) ?? []) expect(d.tags, `${look.appearance} ${look.personality}`).not.toContain(n)
+          if (race === 'dwarf') expect(look.name).toMatch(/・/)
+          if (race === 'elf' || race === 'yulin') expect(d.tags).not.toContain('beard')
+        }
+      }
+    }
+  })
+})

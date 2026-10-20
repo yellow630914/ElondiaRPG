@@ -139,7 +139,7 @@ async function hire(id: string) {
           </div>
 
           <div v-if="open === p.rec.id" class="detail small">
-            <div class="muted">{{ genderName(p.rec.gender) }}・{{ raceName(p.rec.race) }}・{{ npcTitle(p.rec) }} Lv.{{ p.rec.level }}</div>
+            <div class="muted">{{ genderName(p.rec.gender) }}・{{ raceName(p.rec.race) }}<template v-if="p.rec.lineage">（{{ p.rec.lineage }}）</template>・{{ npcTitle(p.rec) }} Lv.{{ p.rec.level }}</div>
             <div v-if="p.rec.appearance" class="muted">{{ p.rec.appearance }}</div>
             <div v-if="rel(p.rec.id)" class="muted">{{ p.rec.personality }}</div>
             <div v-if="rel(p.rec.id)?.toPlayer" class="muted">與你：{{ rel(p.rec.id)!.toPlayer }}</div>

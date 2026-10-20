@@ -81,6 +81,8 @@ export interface NpcDef {
   haunts?: Haunt[]
   /** 普通人的職業描述（麵包師、修女……） */
   occupation?: string
+  /** 血統、部族、氏族或出身派系（例如「沙痕部落」「魅魔（赤翼宮廷）」） */
+  lineage?: string
 }
 
 export type NpcKind = 'commoner' | 'adventurer'
@@ -482,12 +484,8 @@ export const actionRules = actionsJson as unknown as {
 export interface GenderDef { name: string; color: string; weight: number; names: 'm' | 'f' | 'any' }
 export const npcPool = npcPoolJson as unknown as {
   genders: Record<string, GenderDef>
-  names: Record<string, { m: string[]; f: string[] }>
-  personalities: string[]
-  features: Record<string, string[]>
   outfits: string[]
   slave_backgrounds: string[]
-  commoner_personalities: string[]
   commoner_outfits: Record<string, string[]>
 }
 
