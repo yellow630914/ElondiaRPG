@@ -1,0 +1,23 @@
+{
+  "$comment": "各地點的 NPC 名單：第一次進入地點時建立，之後相對固定（變動規則在第二階段加入）。roster = 名單人數（冒險者與普通人約 1:1，不含店主、公會職員等職員）。adventurer_level = 冒險者的等級範圍（抽兩次取較低者，低等級比較常見）。known_weight = 和主角有關係的人在抽選時的權重倍率。說明見 docs/NPC_SYSTEM.md 第 6 節。",
+  "version": 1,
+  "roster": {
+    "capital": { "adventurer": 12, "commoner": 12 },
+    "city": { "adventurer": 8, "commoner": 8 },
+    "town": { "adventurer": 5, "commoner": 5 },
+    "port": { "adventurer": 5, "commoner": 5 },
+    "village": { "adventurer": 3, "commoner": 3 },
+    "outpost": { "adventurer": 3, "commoner": 3 },
+    "fortress": { "adventurer": 3, "commoner": 3 }
+  },
+  "adventurer_level": {
+    "capital": [1, 8],
+    "city": [1, 7],
+    "town": [1, 5],
+    "port": [1, 6],
+    "village": [1, 4],
+    "outpost": [1, 5],
+    "fortress": [1, 6]
+  },
+  "known_weight": 3
+}

@@ -43,6 +43,18 @@
     "bargain": { "name": "交涉價格", "attr": "cha", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag"] },
     "negotiation": { "name": "談判", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag", "reputation", "hp"] },
     "rest_talk": { "name": "長休時的互動", "attr": "cha", "base": 10, "hours": 0, "effects": ["affinity", "relationship_text", "flag", "xp", "meet", "ability", "hp"],
-      "$comment_meet": "meet：在旅店認識新的人（只有在旅店長休、對象是「同旅館的人」時）" }
+      "$comment_meet": "meet：在旅店認識新的人（只有在旅店長休、對象是「同旅館的人」時）" },
+    "chat": { "name": "聊天", "attr": "cha", "base": 10, "hours": 0.5, "effects": ["relationship_text", "flag"],
+      "affinity": { "critical": 3, "success": 2, "partial": 1, "fail": 0, "fumble": -2 },
+      "$comment": "和這裡的人聊天：親密度依成功程度改變（程式負責，AI 只能補充關係文字與旗標，例如得到情報）" },
+    "gift": { "name": "送禮", "attr": "cha", "base": 10, "hours": 0.25, "effects": ["relationship_text", "flag"],
+      "affinity": { "critical": 4, "success": 2, "partial": 1, "fail": 0, "fumble": -3 },
+      "value_steps": [0.5, 2, 8],
+      "wealth_scale": [0.5, 1, 3, 10, 30],
+      "$comment": "送出一件持有的物品（大失敗時被退回）。部分成功以上，禮物越貴重親密度加得越多：門檻 = 一般人生活費（每天）× wealth_scale[對方的財富等級]，價格每達到門檻 × value_steps 的一級再 +1。財富等級見 npc_tags.json" },
+    "flatter": { "name": "獻媚", "attr": "cha", "base": 13, "hours": 0.5, "effects": ["relationship_text", "flag"],
+      "affinity": { "critical": 6, "success": 4, "partial": 1, "fail": -3, "fumble": -6 },
+      "status_dc": 2,
+      "$comment": "人際關係上的討好、奉承。對方的財富等級每高於 2 一級，DC + status_dc（貴族、皇族不吃這一套）；可以搭配魅惑術等能力" }
   }
 }

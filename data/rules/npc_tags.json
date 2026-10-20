@@ -1,0 +1,93 @@
+{
+  "$comment": "NPC 標籤：決定活躍地點、生成機率，並給 AI 當作身分參考。kinds = 適用的 NPC 類型（commoner 普通人、adventurer 冒險者）。commoner_weight = 普通人的主要標籤權重（每位普通人抽一個主要標籤）；adventurer_chance = 冒險者帶這個標籤的機率（各自獨立）；extra_chance = 已有其他標籤時再加上這個標籤的機率（例如商人＋旅人 = 行商）。location_types = 只在這些類型的地點生成（沒寫為全部）。zone_weights 覆寫該 NPC 在各地區的權重（town 一般、noble 貴族區、palace 王城、temple 神殿、outskirts 近郊、dungeon 地下城）；地點沒有的地區會併入 town。haunt_extra = 除了所屬地點，再加入幾個相鄰的地點（沿道路，權重 haunt_extra_weight）。occupations 是普通人的職業描述；wealth 是財富等級（1 平民～4 皇族，送禮與偷竊用）。說明見 docs/NPC_SYSTEM.md 第 4 節。",
+  "version": 1,
+  "kinds": {
+    "commoner": {
+      "name": "普通人",
+      "zone_weights": { "town": 1, "outskirts": 0.3 },
+      "level": [1, 3]
+    },
+    "adventurer": {
+      "name": "冒險者",
+      "zone_weights": { "town": 1, "outskirts": 0.6, "dungeon": 0.5 },
+      "dungeon_haunts": [1, 2]
+    }
+  },
+  "neighbor_weight": 0.1,
+  "tags": {
+    "traveler": {
+      "name": "旅人", "emoji": "🧳", "kinds": ["commoner", "adventurer"],
+      "commoner_weight": 0, "adventurer_chance": 0.35, "extra_chance": 0.15,
+      "haunt_extra": [2, 4], "haunt_extra_weight": [0.5, 0.9],
+      "wealth": 1,
+      "ai_hint": "四處移動的旅人，熟悉各地的道路與傳聞"
+    },
+    "merchant": {
+      "name": "商人", "emoji": "💰", "kinds": ["commoner"],
+      "commoner_weight": 22,
+      "zone_weights": { "town": 1.2, "outskirts": 0.1 },
+      "wealth": 2,
+      "occupations": ["布商", "香料商", "古董商", "酒商", "藥草商", "皮貨商", "珠寶商", "糧商"],
+      "ai_hint": "做買賣的商人，精打細算，重視信用與利益"
+    },
+    "commoner": {
+      "name": "平民", "emoji": "🧺", "kinds": ["commoner"],
+      "commoner_weight": 60,
+      "zone_weights": { "town": 1, "outskirts": 0.5 },
+      "wealth": 1,
+      "occupations": ["麵包師", "洗衣婦", "碼頭工人", "農夫", "鐵匠學徒", "馬夫", "城門守衛", "裁縫", "獵戶", "牧羊人", "酒館女侍", "賣花的小販", "說書人", "漁夫"],
+      "ai_hint": "一般的平民百姓，過著自己的日子"
+    },
+    "slave": {
+      "name": "奴隸", "emoji": "⛓️", "kinds": ["commoner", "adventurer"],
+      "commoner_weight": 3, "adventurer_chance": 0.02,
+      "wealth": 0,
+      "occupations": ["家僕", "雜役", "礦工", "搬運工"],
+      "ai_hint": "身分是奴隸，受主人或契約約束"
+    },
+    "noble": {
+      "name": "貴族", "emoji": "🎩", "kinds": ["commoner", "adventurer"],
+      "commoner_weight": 8, "adventurer_chance": 0.05,
+      "location_types": ["capital", "city", "port"],
+      "zone_weights": { "town": 0.5, "noble": 1.5 },
+      "haunt_extra": [0, 1], "haunt_extra_weight": [0.2, 0.4],
+      "wealth": 3,
+      "occupations": ["子爵", "男爵家的千金", "沒落的騎士家長子", "議員", "伯爵夫人", "貴族家的次子"],
+      "ai_hint": "貴族出身，重視身分、禮節與家族名聲"
+    },
+    "royal": {
+      "name": "皇族", "emoji": "👑", "kinds": ["commoner"],
+      "commoner_weight": 0.6,
+      "location_types": ["capital"],
+      "zone_weights": { "town": 0.1, "noble": 1, "palace": 2 },
+      "wealth": 4,
+      "occupations": ["王子", "公主", "王弟", "女王的姪女", "王室的遠親"],
+      "ai_hint": "王族成員，地位崇高，身邊通常有侍從或護衛"
+    },
+    "priest": {
+      "name": "神官", "emoji": "🙏", "kinds": ["commoner", "adventurer"],
+      "commoner_weight": 8, "adventurer_chance": 0.08,
+      "zone_weights": { "town": 0.6, "noble": 0.4, "temple": 1.2 },
+      "wealth": 2,
+      "occupations": ["修女", "見習神官", "神殿書記", "治療師", "祭司"],
+      "ai_hint": "侍奉神祇的神職人員，言行受教義約束"
+    },
+    "bishop": {
+      "name": "主教", "emoji": "✝️", "kinds": ["commoner"],
+      "commoner_weight": 1,
+      "location_types": ["capital", "city"],
+      "zone_weights": { "town": 0.1, "noble": 0.6, "temple": 1.5 },
+      "wealth": 3,
+      "occupations": ["主教", "大主教", "樞機"],
+      "ai_hint": "教會的高階神職者，握有宗教與政治影響力"
+    },
+    "villain": {
+      "name": "惡人", "emoji": "🗡️", "kinds": ["adventurer"],
+      "adventurer_chance": 0.1,
+      "zone_weights": { "town": 0.6, "outskirts": 0.8, "dungeon": 0.9 },
+      "haunt_extra": [0, 2], "haunt_extra_weight": [0.3, 0.6],
+      "wealth": 1,
+      "ai_hint": "品行惡劣的冒險者：搶劫、勒索、背叛同伴都做得出來；在城裡會收斂，在野外與地下城可能動手"
+    }
+  }
+}

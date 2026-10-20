@@ -23,7 +23,7 @@ function refresh() {
 
 onMounted(async () => {
   refresh()
-  await game.flavorTavern()
+  await game.flavorRoster()
   refresh()
 })
 
@@ -68,8 +68,8 @@ const showBlack = ref(false)
 
     <template v-else>
       <h4>🧑‍🤝‍🧑 候選冒險者</h4>
-      <p class="small muted">魅力（{{ mod(s.party[0]!.attrs.cha) >= 0 ? '+' : '' }}{{ mod(s.party[0]!.attrs.cha) }}）越高，來搭話的人越多、等級越高。出價低於要價時要談判；出價的影響最大，運氣好甚至能免費雇到人。</p>
-      <p v-if="visible.length === 0" class="muted small">今天沒有人在等雇主。</p>
+      <p class="small muted">今天在城裡、可以雇用的冒險者（在右側「這裡的人」也能直接雇用）。出價低於要價時要談判；出價的影響最大，運氣好甚至能免費雇到人。</p>
+      <p v-if="visible.length === 0" class="muted small">今天城裡沒有可以雇用的冒險者。</p>
       <ul class="plain">
         <li v-for="c in visible" :key="c.npc" class="cand">
           <template v-if="npcRecord(s, c.npc)">

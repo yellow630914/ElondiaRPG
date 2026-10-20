@@ -4,20 +4,21 @@ import schema from '../../schemas/report.schema.json'
 import { computeDegree, prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
 import { startCombat } from '@/engine/combat'
 import {
-  acceptPartyOffer, applyCandidateFlavor, buySlave, hireAtAsking, marketStock, offerSelf, requestLeave, releaseSlave,
+  acceptPartyOffer, buySlave, hireAtAsking, marketStock, offerSelf, requestLeave, releaseSlave,
   tavernCandidates, waitForParty,
 } from '@/engine/companions'
 import { contractDef, slaveryRules } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
 import { enterLocation, standOn } from '@/engine/grid'
-import { generateNpc, slavePrice } from '@/engine/npcs'
+import { generateNpc, npcKind, npcRecord, slavePrice } from '@/engine/npcs'
 import { isFugitive, leaderOf } from '@/engine/party'
 import { hitDiceLeft, longRest, shortRest } from '@/engine/rest'
-import { acceptSuggestion, addMemory, addSuggestions, compactMemories, editMemory, setAffinity } from '@/engine/social'
+import { acceptSuggestion, addMemory, addSuggestions, compactMemories, editMemory, ensureRelationship, setAffinity } from '@/engine/social'
+import { applyRosterFlavor } from '@/engine/population'
 import { addHours, commitReport, newGame, withRng } from '@/engine/state'
 import { acceptQuest, guildQuests, recruit } from '@/engine/town'
 import type { GameState, Report } from '@/engine/types'
-import { buildActionPrompt, extractJson, splitSuggestions, visibleNarration } from '@/narrator/judge'
+import { buildActionPrompt, buildRosterPrompt, extractJson, splitSuggestions, visibleNarration } from '@/narrator/judge'
 
 const ajv = new Ajv2020({ strict: false })
 const validate = ajv.compile(schema)
@@ -157,17 +158,21 @@ describe('short and long rests', () => {
 })
 
 describe('tavern hiring', () => {
-  it('offers more candidates to a charismatic adventurer', () => {
-    const plain = tavernCandidates(game(6, { cha: 10 }))
-    const charming = tavernCandidates(game(6, { cha: 18 }))
-    expect(charming.length).toBeGreaterThan(plain.length)
-    // 索里耶爾的具名 NPC 也在名單上
-    expect(plain.map((c) => c.npc)).toContain('npc_lina')
+  it('offers the adventurers who are in town today, from the roster', () => {
+    const state = game(6)
+    const list = tavernCandidates(state)
+    expect(list.length).toBeGreaterThan(0)
+    for (const c of list) expect(npcKind(npcRecord(state, c.npc)!)).toBe('adventurer')
+    // 名單相對固定：同一天再問一次是同一批人，不會新增 NPC
+    const count = Object.keys(state.npcs!).length
+    expect(tavernCandidates(state).map((c) => c.npc)).toEqual(list.map((c) => c.npc))
+    expect(Object.keys(state.npcs!).length).toBe(count)
+    expect(state.rosters!.soriel!.members.length).toBe(24)
   })
 
   it('hires at the asking price without a check', () => {
     const state = game(7)
-    const c = tavernCandidates(state).find((x) => x.npc.startsWith('tav_'))!
+    const c = tavernCandidates(state).find((x) => x.npc.startsWith('adv_'))!
     hireAtAsking(state, c.npc)
     expect(state.party.find((m) => m.id === c.npc)?.bond).toBe('hired')
     expect(state.money_cc).toBe(500 - c.asking_cc)
@@ -175,7 +180,7 @@ describe('tavern hiring', () => {
 
   it('negotiates a lower fee with a check, and can even hire for free', () => {
     const state = game(8)
-    const c = tavernCandidates(state).find((x) => x.npc.startsWith('tav_'))!
+    const c = tavernCandidates(state).find((x) => x.npc.startsWith('adv_'))!
     const p = prepareAction(state, { kind: 'hire', target: c.npc, offer_cc: 0, text: '請他喝一杯，說明這趟冒險的意義' })
     expect(p.base_dc).toBeGreaterThanOrEqual(22)
     expect(() => prepareAction(state, { kind: 'free', text: '再試一次' })).toThrow('等待判定')
@@ -189,7 +194,8 @@ describe('tavern hiring', () => {
 
   it('makes a counter-offer on a partial success and refuses on a failure', () => {
     const state = game(9)
-    const [a, b] = tavernCandidates(state).filter((x) => x.npc.startsWith('tav_'))
+    // 等級低的人比較好談（參考 DC 不會高到只有大成功才過）
+    const [a, b] = tavernCandidates(state).filter((x) => x.npc.startsWith('adv_')).sort((x, y) => x.asking_cc - y.asking_cc)
     const p = prepareAction(state, { kind: 'hire', target: a!.npc, offer_cc: Math.floor(a!.asking_cc / 2), text: '' })
     forceRoll(state, Math.max(2, p.base_dc - p.modifiers.cha - 1))
     resolveAction(state, null)
@@ -202,16 +208,23 @@ describe('tavern hiring', () => {
     expect(state.relationships![b!.npc]!.affinity).toBe(-8)
   })
 
-  it('accepts AI flavor text for generated candidates only', () => {
+  it('accepts AI flavor text for unknown generated residents only', () => {
     const state = game(10)
-    const gen = tavernCandidates(state).find((x) => x.npc.startsWith('tav_'))!
-    applyCandidateFlavor(state, [
-      { id: gen.npc, name: '星落', appearance: '披著星紋斗篷', personality: '愛看星星' },
+    tavernCandidates(state)
+    const [gen, known] = state.rosters!.soriel!.members.filter((id) => id.startsWith('cmn_'))
+    ensureRelationship(state, npcRecord(state, known!)!)
+    const before = npcRecord(state, known!)!.name
+    expect(buildRosterPrompt(state, 'soriel')!.user).toContain(gen!)
+    applyRosterFlavor(state, 'soriel', [
+      { id: gen!, name: '星落', appearance: '披著星紋斗篷', personality: '愛看星星', occupation: '占星師' },
+      { id: known!, name: '冒牌貨' },
       { id: 'npc_lina', name: '冒牌貨' },
     ])
-    expect(state.npcs![gen.npc]!.name).toBe('星落')
-    expect(state.npcs![gen.npc]!.level).toBeGreaterThan(0)
+    expect(state.npcs![gen!]).toMatchObject({ name: '星落', occupation: '占星師', class: '' })
+    expect(state.npcs![known!]!.name).toBe(before)
     expect(state.npcs!.npc_lina).toBeUndefined()
+    expect(state.rosters!.soriel!.flavored).toBe(true)
+    expect(buildRosterPrompt(state, 'soriel')).toBeNull()
   })
 })
 
@@ -478,7 +491,7 @@ describe('AI judgment', () => {
 
   it('lets the AI outcome drive the mechanics, e.g. a hire succeeding on a low roll', () => {
     const state = game(21)
-    const c = tavernCandidates(state).find((x) => x.npc.startsWith('tav_'))!
+    const c = tavernCandidates(state).find((x) => x.npc.startsWith('adv_'))!
     const p = prepareAction(state, { kind: 'hire', target: c.npc, offer_cc: 10, text: '說起自己在故鄉救過他的妹妹' })
     forceRoll(state, 2)
     resolveAction(state, sanitizeJudgment(state, p, { degree: 'success', twist: '他認出了主角', effects: [] }))

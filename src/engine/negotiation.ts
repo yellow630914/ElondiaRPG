@@ -41,7 +41,9 @@ function counterpartFor(state: GameState, tpl: NegotiationTemplate, ctx: Negotia
   if (tpl.counterpart === 'keeper') return shopState(state, ctx.shop!).keeper
   const id = tpl.counterpart === 'guild_clerk' ? `clerk_${state.location}` : `inf_${state.location}_${quest?.template ?? 'x'}`
   if (!npcRecord(state, id)) {
-    withRng(state, (rng) => generateNpc(state, rng, { id, class: tpl.counterpart === 'guild_clerk' ? 'bard' : 'rogue', level: rng.int(1, 3) }))
+    withRng(state, (rng) => generateNpc(state, rng, tpl.counterpart === 'guild_clerk'
+      ? { id, kind: 'commoner', tags: ['commoner'], occupation: '公會職員', level: rng.int(1, 3) }
+      : { id, class: 'rogue', level: rng.int(1, 3) }))
   }
   return id
 }

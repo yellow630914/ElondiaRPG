@@ -39,6 +39,8 @@ export interface Area {
   location: string
   name: string
   kind: 'settlement' | 'wild' | 'dungeon'
+  /** 聚落區塊所屬的地區（貴族區、王城）；沒有時為一般區域 */
+  zone?: Zone
   /** 冒險區域的層數（0 = 周邊） */
   layer?: number
   width: number
@@ -58,7 +60,11 @@ export interface Position {
   prev?: { x: number; y: number }
 }
 
-interface BlockDef { id: string; name: string; grid: string[]; links?: Record<string, string> }
+interface BlockDef { id: string; name: string; grid: string[]; links?: Record<string, string>; zone?: Zone }
+
+/** 地區：決定 NPC 出現在哪裡（見 docs/NPC_SYSTEM.md 第 5 節） */
+export type Zone = 'town' | 'noble' | 'palace' | 'temple' | 'outskirts' | 'dungeon'
+export const ZONES: Zone[] = ['town', 'noble', 'palace', 'temple', 'outskirts', 'dungeon']
 interface LayerGen {
   id: DungeonLayerId
   name: string
@@ -73,6 +79,7 @@ interface LayerGen {
 const maps = mapsJson as unknown as {
   legend: Record<string, { kind: CellKind; name: string }>
   maps: Record<string, { blocks: BlockDef[] }>
+  palace_names: Record<string, string>
   templates: Record<string, { blocks: BlockDef[] }>
   template_by_type: Record<string, string>
   generation: {
@@ -105,6 +112,29 @@ function settlementKey(locationId: string, blockId: string) {
   return `${locationId}/${blockId}`
 }
 
+function palaceName(loc: Location): string {
+  return (loc.faction && maps.palace_names[loc.faction]) || '王城'
+}
+
+/** 一個地點有哪些地區（依地圖的區塊與設施） */
+export function zonesOf(loc: Location): Zone[] {
+  const zones = new Set<Zone>(['town', 'outskirts'])
+  for (const b of blocksFor(loc)) {
+    if (b.zone) zones.add(b.zone)
+    if (b.grid.some((row) => row.includes('C'))) zones.add('temple')
+  }
+  return [...zones]
+}
+
+/** 主角現在所在的地區：站在神殿格上是神殿，其餘依區域 */
+export function currentZone(state: GameState): Zone {
+  const area = currentArea(state)
+  if (area.kind === 'dungeon') return 'dungeon'
+  if (area.kind === 'wild') return 'outskirts'
+  if (currentCell(state).kind === 'temple') return 'temple'
+  return area.zone ?? 'town'
+}
+
 export function outskirtsKey(locationId: string) {
   return `${locationId}/outskirts`
 }
@@ -134,8 +164,9 @@ function buildBlock(loc: Location, block: BlockDef): Area {
   return {
     key: settlementKey(loc.id, block.id),
     location: loc.id,
-    name: block.name.split('{town}').join(loc.name),
+    name: block.name.split('{town}').join(loc.name).split('{palace}').join(palaceName(loc)),
     kind: 'settlement',
+    ...(block.zone && block.zone !== 'town' ? { zone: block.zone } : {}),
     width, height, cells,
   }
 }

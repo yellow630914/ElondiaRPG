@@ -18,6 +18,7 @@ import {
   actionRules, ATTR_IDS, attrName, locationById, regionById, type ActionKind, type AttrId, type Degree, type EffectKind,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
+import { applyInteraction } from './interactions'
 import type { NpcSpec } from './npcs'
 import { addAffinity, conditionPenalty, pcOf } from './party'
 import { applyNegotiationOutcome } from './negotiation'
@@ -38,6 +39,8 @@ export interface ActionInput {
   offer_cc?: number
   /** 搭配使用的能力（例如用魅惑術幫談判）：花資源換檢定加值 */
   use?: { member: string; ability: string }
+  /** 送禮：送出的物品名稱 */
+  item?: string
 }
 
 export interface ActionPending extends ActionInput {
@@ -90,7 +93,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   if (!kind) throw new Error('沒有這種行動')
   const text = input.text.trim().slice(0, 400)
   if (input.kind === 'free' && !text) throw new Error('請描述你要做什麼')
-  const setup = setupFor(state, input.kind, input.target, input.offer_cc)
+  const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item)
   const pc = pcOf(state)
   const penalty = conditionPenalty(pc)
   const situational = [...setup.situational, ...(penalty ? [{ label: penalty > 0 ? '受罰' : '祝福', value: -penalty }] : [])].filter((x) => x.value !== 0)
@@ -375,6 +378,9 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'escape': return applyEscape(state, report, degree)
     case 'bargain': return applyBargain(state, report, p.target!, degree)
     case 'negotiation': return applyNegotiationOutcome(state, report, p.target!, degree)
+    case 'chat':
+    case 'gift':
+    case 'flatter': return applyInteraction(state, report, p.kind, p.target!, degree, p.item)
     case 'free':
     case 'rest_talk': return ''
   }

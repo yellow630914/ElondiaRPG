@@ -12,6 +12,7 @@ import LogView from '@/components/LogView.vue'
 import MapPanel from '@/components/MapPanel.vue'
 import NewGameView from '@/components/NewGameView.vue'
 import PartyView from '@/components/PartyView.vue'
+import PeoplePanel from '@/components/PeoplePanel.vue'
 import PlacePanel from '@/components/PlacePanel.vue'
 import RelationsView from '@/components/RelationsView.vue'
 import RestPanel from '@/components/RestPanel.vue'
@@ -113,6 +114,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
     </section>
 
     <aside v-if="!inCombat" class="right">
+      <PeoplePanel />
       <PlacePanel />
     </aside>
   </main>

@@ -60,7 +60,7 @@
 
 ### 3.1.1 隊伍與 NPC 招募（已實作）
 
-- 酒館可招募 NPC（`data/world/npcs.json` 的具名角色，加上依魅力與等級生成的候選人），隊伍上限 4 人。
+- 可招募今天在城裡的冒險者（各地點的固定名單，含 `data/world/npcs.json` 的具名角色；見 docs/NPC_SYSTEM.md），隊伍上限 4 人。
 - 新增夥伴的五種方式（酒館雇傭、加入別人的隊伍、買入奴隸、主角作為奴隸、事件入隊與主動邀請）、離隊規則與奴隸契約印記見 [`COMPANIONS.md`](COMPANIONS.md)。
 - NPC 帶有性格描述與隱性親密值；報告中的 `attitude` = 實力差基準態度 + 親密值階段，`personality` 交給 AI 演繹。
 

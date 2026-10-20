@@ -12,11 +12,7 @@
   "initial_affinity": { "hired": 0, "voluntary": 10, "slave": -10, "leader": 5, "ally": 0 },
 
   "tavern": {
-    "$comment": "候選人數 = base + max(0, mod(魅力))，最多 max；等級在 主角等級 + level_spread 之間，mod(魅力) ≥ cha_level_bonus_at 時上限再 +1。要價 = (a + b × 等級 + c × 等級²) × (1 ± asking_variance)。",
-    "base_candidates": 3,
-    "max_candidates": 6,
-    "level_spread": [-1, 1],
-    "cha_level_bonus_at": 2,
+    "$comment": "可以雇用的人 = 今天在城裡的冒險者（地點名單，見 data/rules/npc_population.json 與 docs/NPC_SYSTEM.md）。要價 = (a + b × 等級 + c × 等級²) × (1 ± asking_variance)，建立名單時決定。",
     "asking": { "a": 60, "b": 45, "c": 10 },
     "asking_variance": 0.25,
     "hire": {

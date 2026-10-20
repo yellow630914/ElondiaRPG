@@ -10,6 +10,7 @@ import * as inventory from '@/engine/inventory'
 import type { ShopType } from '@/engine/data'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
+import * as population from '@/engine/population'
 import * as social from '@/engine/social'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
@@ -18,7 +19,7 @@ import * as town from '@/engine/town'
 import { travel } from '@/engine/travel'
 import type { GameState, Report } from '@/engine/types'
 import {
-  buildNegotiationPrompt, buildShopPrompt, buildTavernPrompt, extractJson, splitSuggestions,
+  buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
 import type { TokenUsage } from '@/narrator/providerInfo'
@@ -69,6 +70,7 @@ export interface NarrationState {
 function load(s: GameState): GameState {
   migrate(s)
   if (!s.position) grid.enterLocation(s)
+  population.ensureRoster(s, s.location)
   return s
 }
 
@@ -282,6 +284,7 @@ export const useGame = defineStore('game', () => {
   function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>, profile: Omit<NewGameOptions, 'name' | 'race' | 'classId' | 'bonus' | 'seed'> = {}) {
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
     grid.enterLocation(state.value)
+    population.ensureRoster(state.value, state.value.location)
     narrations.value = {}
     usage.value = {}
     error.value = null
@@ -400,24 +403,31 @@ export const useGame = defineStore('game', () => {
     }
   }
 
-  /** 酒館候選人：AI 開啟時請 AI 潤飾名字、外貌與性格（每天每間酒館一次） */
-  async function flavorTavern() {
+  /** 地點的名單：AI 開啟時請 AI 潤飾名字、外貌、性格與背景（每個地點一次） */
+  async function flavorRoster() {
     const s = state.value
     const settings = useSettings()
     if (!s || !settings.aiJudge || !settings.ready()) return
-    const today = s.taverns?.[s.location]
-    if (!today || today.flavored || today.day !== s.time.day) return
-    today.flavored = true
+    const loc = s.location
+    const roster = s.rosters?.[loc]
+    if (!roster || roster.flavored || flavoring.has(loc)) return
+    const prompt = buildRosterPrompt(s, loc)
+    if (!prompt) {
+      roster.flavored = true
+      return
+    }
+    flavoring.add(loc)
     try {
       const { completeText } = await import('@/narrator/providers')
-      const prompt = buildTavernPrompt(s)
-      if (!prompt) return
-      const raw = extractJson(await completeText(settings.provider, settings.current(), prompt, undefined, (u) => addUsage(OTHER_USAGE, u))) as { candidates?: companions.CandidateFlavor[] }
-      run((st) => companions.applyCandidateFlavor(st, Array.isArray(raw.candidates) ? raw.candidates : []))
+      const raw = extractJson(await completeText(settings.provider, settings.current(), prompt, undefined, (u) => addUsage(OTHER_USAGE, u))) as { npcs?: population.NpcFlavor[] }
+      run((st) => population.applyRosterFlavor(st, loc, Array.isArray(raw.npcs) ? raw.npcs : []))
     } catch (e) {
-      error.value = `AI 生成酒館候選人失敗：${e instanceof Error ? e.message : String(e)}`
+      error.value = `AI 潤飾居民失敗：${e instanceof Error ? e.message : String(e)}（先用預設的名字與設定）`
+    } finally {
+      flavoring.delete(loc)
     }
   }
+  const flavoring = new Set<string>()
 
   /** 商店：AI 開啟時請 AI 生成今天的交易清單（每間店每天一次，失敗時保留規則清單） */
   async function flavorShop(type: ShopType) {
@@ -466,7 +476,7 @@ export const useGame = defineStore('game', () => {
     state, narrations, error, pc, judging, intent, usage, totalUsage, slots, notice, flash,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
-    perform, judge, flavorTavern, hire, flavorShop, startNegotiation,
+    perform, judge, flavorRoster, hire, flavorShop, startNegotiation,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),
     buyDeal: (type: ShopType, id: string) => run((s) => trade.buyDeal(s, type, id)),

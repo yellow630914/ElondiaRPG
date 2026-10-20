@@ -17,6 +17,8 @@ import companionsJson from '@data/rules/companions.json'
 import slaveryJson from '@data/rules/slavery.json'
 import actionsJson from '@data/rules/actions.json'
 import npcPoolJson from '@data/world/npc_pool.json'
+import npcTagsJson from '@data/rules/npc_tags.json'
+import populationJson from '@data/rules/npc_population.json'
 import itemsJson from '@data/rules/items.json'
 import shopsJson from '@data/rules/shops.json'
 import negotiationsJson from '@data/rules/negotiations.json'
@@ -71,6 +73,23 @@ export interface NpcDef {
   appearance?: string
   /** 與其他角色的關係：角色 id → 文字 */
   relations?: Record<string, string>
+  /** 普通人或冒險者；沒寫時有職業的算冒險者 */
+  kind?: NpcKind
+  /** 標籤（見 data/rules/npc_tags.json） */
+  tags?: string[]
+  /** 活躍地點：每天依權重決定出現在哪個地點的哪個地區 */
+  haunts?: Haunt[]
+  /** 普通人的職業描述（麵包師、修女……） */
+  occupation?: string
+}
+
+export type NpcKind = 'commoner' | 'adventurer'
+
+export interface Haunt {
+  location: string
+  /** 地區：town、noble、palace、temple、outskirts、dungeon（見 grid.ts 的 Zone） */
+  zone: string
+  weight: number
 }
 export const npcs = (npcsJson as unknown as { npcs: NpcDef[] }).npcs
 
@@ -84,6 +103,8 @@ export const progression = progressionJson as unknown as {
   ability_rerolls: number
 }
 export const economy = economyJson as unknown as {
+  /** 一般人每天的生活費（罰金、禮物價值的基準） */
+  commoner_living_cc_per_day: number
   quest_rewards_cc: Record<string, { range: [number, number]; party: string; duration_days: [number, number] }>
   lodging_cc_per_night: Record<string, [number, number]>
   meals_cc: Record<string, number | [number, number]>
@@ -377,7 +398,6 @@ export const companionRules = companionsJson as unknown as {
   leave_threshold: number
   initial_affinity: Record<Bond, number>
   tavern: {
-    base_candidates: number; max_candidates: number; level_spread: [number, number]; cha_level_bonus_at: number
     asking: { a: number; b: number; c: number }; asking_variance: number
     hire: { base: number; fee_weight: number; level_gap: number; min: number; max: number }
   }
@@ -440,6 +460,7 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
+  | 'chat' | 'gift' | 'flatter'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
@@ -448,7 +469,14 @@ export const actionRules = actionsJson as unknown as {
     affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
     item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
   }
-  kinds: Record<ActionKind, { name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[] }>
+  kinds: Record<ActionKind, {
+    name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[]
+    /** 社交互動：各成功程度的親密度變化 */
+    affinity?: Record<Degree, number>
+    value_steps?: number[]
+    wealth_scale?: number[]
+    status_dc?: number
+  }>
 }
 
 export interface GenderDef { name: string; color: string; weight: number; names: 'm' | 'f' | 'any' }
@@ -459,6 +487,38 @@ export const npcPool = npcPoolJson as unknown as {
   features: Record<string, string[]>
   outfits: string[]
   slave_backgrounds: string[]
+  commoner_personalities: string[]
+  commoner_outfits: Record<string, string[]>
+}
+
+export interface NpcTagDef {
+  name: string
+  emoji: string
+  kinds: NpcKind[]
+  commoner_weight?: number
+  adventurer_chance?: number
+  extra_chance?: number
+  location_types?: string[]
+  zone_weights?: Record<string, number>
+  haunt_extra?: [number, number]
+  haunt_extra_weight?: [number, number]
+  wealth: number
+  occupations?: string[]
+  ai_hint: string
+}
+export const npcTags = npcTagsJson as unknown as {
+  kinds: Record<NpcKind, { name: string; zone_weights: Record<string, number>; level?: [number, number]; dungeon_haunts?: [number, number] }>
+  neighbor_weight: number
+  tags: Record<string, NpcTagDef>
+}
+export const population = populationJson as unknown as {
+  roster: Record<string, { adventurer: number; commoner: number }>
+  adventurer_level: Record<string, [number, number]>
+  known_weight: number
+}
+
+export function tagDef(id: string): NpcTagDef | undefined {
+  return npcTags.tags[id]
 }
 
 // ---- 物品、商店、談判 ----

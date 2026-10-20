@@ -219,7 +219,18 @@ export interface NpcRecord extends NpcDef {
   background?: string
   /** 平常待的設施（格子種類，例如 tavern、shop、inn）；沒有時在整個聚落都找得到 */
   spot?: string
+  /** 被攻擊後敵對（不再接受雇用與一般互動） */
+  hostile?: boolean
   character?: Character
+}
+
+export interface Roster {
+  /** 名單上的 NPC id（不含店主、公會職員等職員） */
+  members: string[]
+  /** 建立的日期 */
+  day: number
+  /** AI 已經潤飾過名字、外貌與性格 */
+  flavored?: boolean
 }
 
 export interface TavernCandidate {
@@ -315,6 +326,8 @@ export interface GameState {
   memories?: Memory[]
   /** 登場過的 NPC（含生成的） */
   npcs?: Record<string, NpcRecord>
+  /** 各地點的 NPC 名單（第一次進入時建立，見 engine/population.ts） */
+  rosters?: Record<string, Roster>
   /** 各城鎮酒館今天的候選人 */
   taverns?: Record<string, { day: number; candidates: TavernCandidate[]; flavored?: boolean }>
   /** 奴隸市場今天的商品；鍵為 城鎮/public 或 城鎮/black */

@@ -8,6 +8,7 @@
 
 import { affinityStage } from './character'
 import { genderName, locationById, npcs, progression, type NpcDef } from './data'
+import { npcIdentity } from './npcs'
 import type { GameState, GameTime, Report } from './types'
 
 export interface Relationship {
@@ -333,6 +334,13 @@ function timeText(t: GameTime): string {
   return `第 ${t.day} 天 ${String(t.hour ?? 0).padStart(2, '0')}:${String(t.minute ?? 0).padStart(2, '0')}`
 }
 
+/** 不在隊伍裡的 NPC 的身分（類型、職業、標籤） */
+function identityOf(state: GameState, id: string): string {
+  if (state.party.some((m) => m.id === id)) return ''
+  const rec = state.npcs?.[id] ?? npcs.find((n) => n.id === id)
+  return rec ? npcIdentity(rec) : ''
+}
+
 function genderOf(state: GameState, id: string): string {
   const g = state.npcs?.[id]?.gender ?? npcs.find((n) => n.id === id)?.gender
   return g ? genderName(g) : ''
@@ -345,6 +353,7 @@ export function formatContext(state: GameState, ctx: ContextResult): string {
       const others = Object.entries(r.toOthers).map(([id, text]) => `${nameOf(state, id)}：${text}`)
       return [
         `- ${r.name}${genderOf(state, r.id) ? `（${genderOf(state, r.id)}）` : ''}｜親密度 ${r.affinity}（${affinityStage(r.affinity)}）｜id: ${r.id}`,
+        identityOf(state, r.id) && `  身分：${identityOf(state, r.id)}`,
         r.appearance && `  外貌：${r.appearance}`,
         r.personality && `  性格：${r.personality}`,
         `  與主角：${r.toPlayer}`,

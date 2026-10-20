@@ -5,8 +5,10 @@
 // NPC 不在隊伍時，角色資料（等級、經驗、能力）保存在 NpcRecord.character，再次入隊時沿用。
 
 import { createNpc, lifeTier } from './character'
-import { attributeRules, classes, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, slaveryRules } from './data'
-import { currentArea, currentCell } from './grid'
+import {
+  attributeRules, classes, className, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, slaveryRules, tagDef,
+  type Haunt, type NpcKind,
+} from './data'
 import { Rng } from './rng'
 import type { Character, GameState, NpcRecord } from './types'
 
@@ -22,6 +24,12 @@ export interface NpcSpec {
   faction?: string
   background?: string
   location?: string
+  /** 普通人沒有職業（class 為空字串），改用 occupation 描述 */
+  kind?: NpcKind
+  tags?: string[]
+  occupation?: string
+  haunts?: Haunt[]
+  spot?: string
 }
 
 export function hashString(s: string): number {
@@ -115,16 +123,21 @@ function newNpcId(state: GameState, prefix: string): string {
   return `${prefix}_${n}`
 }
 
-/** 生成一位 NPC 並登錄。spec 沒指定的欄位隨機決定。 */
+/** 生成一位 NPC 並登錄。spec 沒指定的欄位隨機決定；普通人沒有職業。 */
 export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, prefix = 'gen'): NpcRecord {
   const location = spec.location ?? state.location
+  const kind: NpcKind = spec.kind ?? 'adventurer'
   const race = spec.race && attributeRules.races[spec.race] ? spec.race : weightedPick(rng, raceWeights(location))
-  const cls = spec.class && classes[spec.class] ? spec.class : rng.pick(Object.keys(classes))
+  const cls = kind === 'commoner' ? '' : spec.class && classes[spec.class] ? spec.class : rng.pick(Object.keys(classes))
   const level = Math.max(1, Math.min(20, Math.round(spec.level ?? 1)))
   const gender = spec.gender && GENDER_IDS.includes(spec.gender)
     ? spec.gender
     : weightedPick(rng, Object.fromEntries(GENDER_IDS.map((g) => [g, npcPool.genders[g]!.weight])))
   const features = npcPool.features[race] ?? npcPool.features.human!
+  const tags = spec.tags ?? []
+  const outfits = kind === 'commoner'
+    ? tags.map((t) => npcPool.commoner_outfits[t]).find(Boolean) ?? npcPool.commoner_outfits.default!
+    : npcPool.outfits
   const rec: NpcRecord = {
     id: spec.id ?? newNpcId(state, prefix),
     name: spec.name?.trim() || uniqueName(state, rng, race, gender),
@@ -133,14 +146,37 @@ export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, pref
     class: cls,
     level,
     location,
-    hire_cc: askingPrice(level, rng),
-    personality: spec.personality?.trim() || rng.pick(npcPool.personalities),
-    appearance: spec.appearance?.trim() || `${rng.pick(features)}，${rng.pick(npcPool.outfits)}。`,
+    hire_cc: kind === 'commoner' ? 0 : askingPrice(level, rng),
+    personality: spec.personality?.trim() || rng.pick(kind === 'commoner' ? npcPool.commoner_personalities : npcPool.personalities),
+    appearance: spec.appearance?.trim() || `${rng.pick(features)}，${rng.pick(outfits)}。`,
     ...(spec.faction ? { faction: spec.faction } : {}),
     ...(spec.background ? { background: spec.background } : {}),
+    kind,
+    ...(tags.length ? { tags } : {}),
+    ...(spec.occupation ? { occupation: spec.occupation } : {}),
+    ...(spec.haunts?.length ? { haunts: spec.haunts } : {}),
+    ...(spec.spot ? { spot: spec.spot } : {}),
     generated: true,
   }
   return registerNpc(state, rec)
+}
+
+/** 普通人或冒險者（舊資料沒寫時，有職業的算冒險者） */
+export function npcKind(rec: Pick<NpcRecord, 'kind' | 'class'>): NpcKind {
+  return rec.kind ?? (rec.class ? 'adventurer' : 'commoner')
+}
+
+/** 身分的簡稱：冒險者是職業，普通人是職業描述 */
+export function npcTitle(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 'tags'>): string {
+  if (npcKind(rec) === 'adventurer') return className(rec.class)
+  return rec.occupation ?? tagDef(rec.tags?.[0] ?? '')?.name ?? '平民'
+}
+
+/** 給 AI 的身分說明：類型、職業或職業描述、標籤 */
+export function npcIdentity(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 'tags'>): string {
+  const kind = npcKind(rec) === 'adventurer' ? '冒險者' : '普通人'
+  const tags = (rec.tags ?? []).map((t) => tagDef(t)).filter(Boolean).map((t) => `${t!.name}（${t!.ai_hint}）`)
+  return [`${kind}・${npcTitle(rec)}`, ...tags].join('；')
 }
 
 /** 取得 NPC 的角色資料：之前同行過就沿用，否則依等級生成。 */
@@ -168,17 +204,4 @@ export function npcSpot(rec: NpcRecord): string | undefined {
   if (rec.id.startsWith('clerk_')) return 'guild'
   if (/^(tav|pty|gen|inf)_/.test(rec.id) || namedNpcs.some((n) => n.id === rec.id)) return 'tavern'
   return undefined
-}
-
-/**
- * 角色現在是否在主角身邊：隊友永遠在；其他人要在同一個聚落（不在近郊或地下城），
- * 而且主角站在他平常待的設施上（沒有固定設施的人在整個聚落都找得到）。
- */
-export function presentHere(state: GameState, id: string): boolean {
-  if (state.party.some((m) => m.id === id)) return true
-  const rec = npcRecord(state, id)
-  if (!rec || rec.location !== state.location) return false
-  if (currentArea(state).kind !== 'settlement') return false
-  const spot = npcSpot(rec)
-  return !spot || currentCell(state).kind === spot
 }

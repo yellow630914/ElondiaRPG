@@ -5,7 +5,8 @@ import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions
 import { gainXp, rerollsLeft, snapshot } from '@/engine/character'
 import { GENDER_IDS, genderDef, npcPool } from '@/engine/data'
 import { clearQuestMarkers, currentArea, enterLocation, goOutskirts, standOn } from '@/engine/grid'
-import { generateNpc, presentHere } from '@/engine/npcs'
+import { generateNpc } from '@/engine/npcs'
+import { peopleHere, presentHere } from '@/engine/population'
 import { longRest } from '@/engine/rest'
 import { newGame, withRng } from '@/engine/state'
 import { acceptQuest, chooseAbility, dismiss, guildQuests, recruit, rerollAbility } from '@/engine/town'
@@ -66,17 +67,29 @@ describe('npc gender', () => {
 })
 
 describe('presence', () => {
-  it('only offers people who are actually at the same place', () => {
+  it('keeps people without active locations at their facility', () => {
     const state = game(4)
     standOn(state, 'tavern')
-    recruit(state, 'npc_lina')
-    dismiss(state, 'npc_lina')
-    expect(presentHere(state, 'npc_lina')).toBe(true)
+    const rec = withRng(state, (rng) => generateNpc(state, rng, { spot: 'tavern' }))
+    expect(presentHere(state, rec.id)).toBe(true)
     standOn(state, 'gate')
-    expect(presentHere(state, 'npc_lina')).toBe(false)
-    expect(() => prepareAction(state, { kind: 'free', target: 'npc_lina', text: '打招呼' })).toThrow('不在這裡')
+    expect(presentHere(state, rec.id)).toBe(false)
+    expect(() => prepareAction(state, { kind: 'free', target: rec.id, text: '打招呼' })).toThrow('不在這裡')
     goOutskirts(state)
-    expect(presentHere(state, 'npc_lina')).toBe(false)
+    expect(presentHere(state, rec.id)).toBe(false)
+  })
+
+  it('places people by their active locations for the day', () => {
+    const state = game(4)
+    const town = withRng(state, (rng) => generateNpc(state, rng, { haunts: [{ location: 'soriel', zone: 'town', weight: 1 }] }))
+    const noble = withRng(state, (rng) => generateNpc(state, rng, { haunts: [{ location: 'soriel', zone: 'noble', weight: 1 }] }))
+    const away = withRng(state, (rng) => generateNpc(state, rng, { haunts: [{ location: 'albena', zone: 'town', weight: 1 }] }))
+    expect(presentHere(state, town.id)).toBe(true)
+    expect(presentHere(state, noble.id)).toBe(false)
+    expect(presentHere(state, away.id)).toBe(false)
+    expect(peopleHere(state).map((p) => p.rec.id)).toContain(town.id)
+    goOutskirts(state)
+    expect(presentHere(state, town.id)).toBe(false)
   })
 })
 

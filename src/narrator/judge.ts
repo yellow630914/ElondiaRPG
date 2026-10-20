@@ -5,12 +5,14 @@
 import { affinityStage, learnable, lifeTier, snapshot } from '@/engine/character'
 import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
-  geography, genderName, itemRules, shopRules, slaveryRules, type ShopType,
+  geography, genderName, itemRules, tagDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef,
 } from '@/engine/data'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
-import { npcRecord } from '@/engine/npcs'
+import { itemValue } from '@/engine/interactions'
+import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
+import { unflavored } from '@/engine/population'
 import type { GameState, Negotiation } from '@/engine/types'
 import { assemble, endNotesSection, LANGUAGE_NAME, loreText, sharedSystemSections, styleSection, type LoreLike, type Prompt } from './prompt'
 import type { PromptEntry } from './promptConfig'
@@ -55,7 +57,8 @@ function targetDetail(state: GameState, p: ActionPending): string {
   const rel = state.relationships?.[id]
   if (!rec) return `對象：${p.targetName ?? id}`
   const lines = [
-    `對象 ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderName(rec.gender)}` : ''}）：${raceName(rec.race)}・${className(rec.class)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
+    `對象 ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderName(rec.gender)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
+    `身分：${npcIdentity(rec)}`,
     `性格：${rec.personality}`,
     rec.appearance ? `外貌：${rec.appearance}` : '',
     rec.background ? `背景：${rec.background}` : '',
@@ -154,7 +157,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
       text: `<action>
 行動：${kind.name}
 場景：${p.scene}（${locationById(p.location).name}）
-${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}
+${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}
 </action>`,
     },
     {
@@ -187,18 +190,19 @@ ${outcomes || '- 無固定機制結果，依你的 effects 決定'}
   ])
 }
 
-/** 酒館候選人的潤飾：數值固定，只請 AI 寫名字、外貌、性格、背景。 */
-export function buildTavernPrompt(state: GameState): Prompt | null {
-  const today = state.taverns?.[state.location]
-  if (!today) return null
-  const list = today.candidates
-    .map((c) => npcRecord(state, c.npc))
-    .filter((r) => r?.generated && !state.relationships?.[r.id])
+/** 地點名單的潤飾：數值、類型與標籤固定，只請 AI 寫名字、外貌、性格、背景（普通人還有職業描述）。 */
+export function buildRosterPrompt(state: GameState, locId: string): Prompt | null {
+  const list = unflavored(state, locId)
   if (!list.length) return null
-  const loc = locationById(state.location)
-  const lines = list.map((r) => `- id: ${r!.id}｜${genderName(r!.gender)}｜${raceName(r!.race)}・${className(r!.class)} Lv.${r!.level}｜目前的草稿：${r!.name}，${r!.personality} ${r!.appearance ?? ''}`).join('\n')
-  const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為酒館裡等著被雇用的冒險者重新設計名字、外貌、性格與一句背景，讓他們符合種族、職業與所在城鎮的風土。種族、性別、職業與等級不可更改，名字要符合性別。只輸出 JSON：{"candidates":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字"}]}`
-  const user = `城鎮：${loc.name}\n候選人：\n${lines}`
+  const loc = locationById(locId)
+  const region = geography.regions.find((r) => r.id === loc.region)?.name ?? ''
+  const faction = loc.faction ? geography.factions.find((f) => f.id === loc.faction)?.name ?? '' : ''
+  const lines = list.map((r) => {
+    const tags = (r.tags ?? []).map((t) => tagDef(t)?.name).filter(Boolean).join('、')
+    return `- id: ${r.id}｜${npcKind(r) === 'adventurer' ? `冒險者・${className(r.class)}` : `普通人・${r.occupation ?? '平民'}`}｜${genderName(r.gender)}｜${raceName(r.race)} Lv.${r.level}${tags ? `｜標籤：${tags}` : ''}｜目前的草稿：${r.name}，${r.personality} ${r.appearance ?? ''}`
+  }).join('\n')
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為這個地點的居民重新設計名字、外貌、性格與一句背景，讓他們符合種族、性別、身分（冒險者或普通人、職業、標籤）與所在地的風土；普通人可以把職業描述改得更具體。種族、性別、類型、冒險者的職業與等級不可更改，名字要符合性別，彼此不要重複。只輸出 JSON：{"npcs":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字","occupation":"普通人才填，≤10 字"}]}`
+  const user = `地點：${loc.name}（${region}${faction ? `，${faction}` : ''}）\n居民：\n${lines}`
   return { system, user }
 }
 
@@ -286,7 +290,7 @@ export function buildNegotiationPrompt(state: GameState, n: Negotiation): Prompt
 4. 只輸出 JSON：{"options":[{"label":"…","attr":"cha","dc":${n.base_dc},"cost_cc":0}]}`
   const user = `談判：${n.title}
 目標：${n.goal}
-對象：${rec ? `${rec.name}（${raceName(rec.race)}・${className(rec.class)} Lv.${rec.level}）｜${rec.personality}` : n.counterpart}
+對象：${rec ? `${rec.name}（${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}）｜${npcIdentity(rec)}｜${rec.personality}` : n.counterpart}
 ${rel ? `與主角：${rel.toPlayer}（親密度 ${rel.affinity}）` : '與主角：素不相識'}
 ${pcDetail(state)}
 可能的結果：

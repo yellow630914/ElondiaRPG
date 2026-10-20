@@ -15,7 +15,9 @@ import {
   type ActionKind, type Degree, type MarketDef,
 } from './data'
 import { formatMoney } from './money'
-import { askingPrice, generateNpc, npcRecord, presentHere, slavePrice, weightedPick } from './npcs'
+import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
+import { adventurersInTown, presentHere } from './population'
+import { setupInteraction } from './interactions'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, isBound, isEnslaved, joinParty,
   leaderOf, partyRoom, pcOf, playerEscapes, punish, setHp,
@@ -56,30 +58,10 @@ export function tavernCandidates(state: GameState): TavernCandidate[] {
   const loc = state.location
   const today = state.time.day
   const taverns = (state.taverns ??= {})
-  const existing = taverns[loc]
-  const inParty = new Set(state.party.map((m) => m.id))
-  if (existing && existing.day === today) return existing.candidates.filter((c) => !inParty.has(c.npc))
-
-  const pc = pcOf(state)
-  const chaMod = mod(pc.attrs.cha)
-  const t = companionRules.tavern
-  const candidates: TavernCandidate[] = []
-  // 具名 NPC：所在城鎮（或之前離隊的地點）是這裡
-  for (const def of namedNpcs) {
-    const rec = npcRecord(state, def.id)!
-    if (inParty.has(def.id) || rec.location !== loc) continue
-    candidates.push({ npc: def.id, asking_cc: rec.hire_cc })
-  }
-  const count = Math.min(t.max_candidates, t.base_candidates + Math.max(0, chaMod)) - candidates.length
-  withRng(state, (rng) => {
-    const lo = Math.max(1, pc.level + t.level_spread[0])
-    const hi = Math.max(1, pc.level + t.level_spread[1] + (chaMod >= t.cha_level_bonus_at ? 1 : 0))
-    for (let i = 0; i < count; i++) {
-      const rec = generateNpc(state, rng, { level: rng.int(lo, hi) }, 'tav')
-      candidates.push({ npc: rec.id, asking_cc: askingPrice(rec.level, rng) })
-    }
-  })
-  taverns[loc] = { day: today, candidates }
+  const existing = taverns[loc]?.day === today ? taverns[loc]!.candidates : []
+  // 今天在城裡的冒險者（名單上的人與具名 NPC），保留今天談判過的狀態（拒絕、還價）
+  const candidates = adventurersInTown(state).map((rec) => existing.find((c) => c.npc === rec.id) ?? { npc: rec.id, asking_cc: rec.hire_cc })
+  taverns[loc] = { day: today, candidates, ...(taverns[loc]?.day === today && taverns[loc]?.flavored ? { flavored: true } : {}) }
   return candidates
 }
 
@@ -161,31 +143,6 @@ export function applyHire(state: GameState, report: Report, npcId: string, offer
       addAffinity(state, report, npcId, -8, '覺得被羞辱')
       return `${rec.name}覺得被羞辱，冷著臉走開了。`
   }
-}
-
-/** AI 開啟時，酒館候選人的名字、外貌與性格可以改由 AI 生成（數值不變）。 */
-export interface CandidateFlavor { id: string; name?: string; appearance?: string; personality?: string; background?: string }
-
-export function applyCandidateFlavor(state: GameState, flavors: CandidateFlavor[]) {
-  const today = state.taverns?.[state.location]
-  if (!today || today.day !== state.time.day) return
-  const ids = new Set(today.candidates.map((c) => c.npc))
-  const clip = (s: unknown, n: number) => (typeof s === 'string' ? s.trim().slice(0, n) : '')
-  const usedNames = new Set(Object.values(state.npcs ?? {}).map((n) => n.name))
-  for (const f of flavors) {
-    const rec = state.npcs?.[f.id]
-    if (!ids.has(f.id) || !rec?.generated || state.relationships?.[f.id]) continue
-    const name = clip(f.name, 12)
-    if (name && !usedNames.has(name)) {
-      usedNames.add(name)
-      rec.name = name
-    }
-    rec.appearance = clip(f.appearance, 160) || rec.appearance
-    rec.personality = clip(f.personality, 120) || rec.personality
-    const bg = clip(f.background, 160)
-    if (bg) rec.background = bg
-  }
-  today.flavored = true
 }
 
 // ---- 2. 加入別人的隊伍 ----
@@ -529,9 +486,13 @@ export interface ActionSetup {
   scene: string
 }
 
-export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number): ActionSetup {
+export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string): ActionSetup {
   const pc = pcOf(state)
   switch (kind) {
+    case 'chat':
+    case 'gift':
+    case 'flatter':
+      return setupInteraction(state, kind, target, item)
     case 'hire': {
       const rec = npcRecord(state, target ?? '')
       if (!rec) throw new Error('酒館裡沒有這位冒險者')

@@ -46,7 +46,10 @@ function keeperFor(state: GameState, type: ShopType): string {
   const id = `keeper_${state.location}_${type}`
   if (npcRecord(state, id)) return id
   const def = shopRules.types[type]
-  withRng(state, (rng) => generateNpc(state, rng, { id, class: rng.pick(def.keeper.classes), level: rng.int(1, 4) }))
+  // 店主是普通人：神殿是神官，其他是商人
+  withRng(state, (rng) => generateNpc(state, rng, {
+    id, kind: 'commoner', tags: [type === 'temple' ? 'priest' : 'merchant'], occupation: def.keeper.title, level: rng.int(1, 4),
+  }))
   return id
 }
 

@@ -3,7 +3,8 @@ import { computed, ref, watch } from 'vue'
 import { DEGREE_NAME, situationalTotal } from '@/engine/actions'
 import { actionRules, ATTR_IDS, attrName, classEmoji, contractDef, raceEmoji, type Degree } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { npcRecord, presentHere } from '@/engine/npcs'
+import { npcRecord } from '@/engine/npcs'
+import { presentHere } from '@/engine/population'
 import { isBound, isFugitive } from '@/engine/party'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
@@ -76,6 +77,7 @@ function doFreedom(kind: 'negotiate' | 'escape') {
     <h3>🎲 {{ actionRules.kinds[pending.kind].name }}<template v-if="pending.targetName">（{{ pending.targetName }}）</template></h3>
     <p v-if="pending.text" class="small">「{{ pending.text }}」</p>
     <p v-if="pending.offer_cc !== undefined" class="small">出價：{{ formatMoney(pending.offer_cc) }}</p>
+    <p v-if="pending.item" class="small">禮物：{{ pending.item }}</p>
     <p class="small">
       自然骰 <strong class="dice">{{ pending.natural }}</strong>・參考 DC {{ pending.base_dc }}
       <span class="muted">（骰值是給 AI 的參考；AI 會依角色、關係與情勢決定結果，可能出乎預料）</span>
