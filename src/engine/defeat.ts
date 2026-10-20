@@ -48,7 +48,9 @@ export function rollDefeatEvent(state: GameState, rng: Rng, report: Report, foes
   const res = roll(rng, dice)
   const hit = res.total >= r.check.dc
   const entry: TimelineEntry = {
-    seq: (report.timeline?.length ?? 0) + 1, time: report.time.end, actor: 'pc', action: '倒下之後（魅力：敵人是否起意）',
+    seq: (report.timeline?.length ?? 0) + 1, time: report.time.end, actor: 'pc',
+    // 魅力越高越容易引起敵人的興趣：總值達到 DC 時觸發
+    action: hit ? '倒下之後：魅力引起了敵人的興趣' : '倒下之後：敵人沒有起意（魅力）',
     roll: { dice, value: res.total, dc: r.check.dc }, result: hit ? 'success' : 'fail',
   }
   report.timeline = [...(report.timeline ?? []), entry]

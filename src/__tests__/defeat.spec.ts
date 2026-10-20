@@ -93,7 +93,27 @@ describe('defeat event', () => {
     const unlucky = game()
     const r = lose(unlucky)
     expect(unlucky.pendingDefeat).toBeUndefined()
-    expect(r.timeline!.at(-1)!.action).toContain('魅力')
+    expect(r.timeline!.at(-1)!.action).toContain('沒有起意')
+  })
+
+  it('triggers more often the more charismatic the hero is', () => {
+    setAdultContent(true)
+    const count = (cha: number) => {
+      let n = 0
+      for (let seed = 1; seed <= 60; seed++) {
+        const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed })
+        goOutskirts(state)
+        state.party[0]!.attrs.cha = cha
+        lose(state)
+        if (state.pendingDefeat) n++
+      }
+      return n
+    }
+    const plain = count(6)
+    const charming = count(20)
+    expect(charming).toBeGreaterThan(plain)
+    expect(charming).toBeGreaterThan(30)
+    expect(plain).toBeLessThan(30)
   })
 
   it('counts monsters in rut but never young ones', () => {

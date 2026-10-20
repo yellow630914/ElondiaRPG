@@ -73,7 +73,7 @@
   ],
   "quality_by_circle": ["common", "common", "uncommon", "uncommon", "rare", "rare", "epic", "epic", "legendary"],
   "defeat_event": {
-    "$comment": "成人向的戰敗事件（設定關閉成人向時不會發生）。戰敗而且沒有人搬來救兵時，還站著的敵人裡有符合條件的（NPC 有 npc_tags 的標籤，或怪物擲到 monster_traits 的特徵；有 exclude_traits 的怪物不算），主角做一次 check 檢定（敵人有沒有起意），成功就觸發。戰報的敘事停在對方準備動手的前一刻，等玩家回應：options 三選一或自己輸入（主動行動 defeat_event，參考 DC 為 free_dc）。結果依成功程度：再損失 money_loss 比例的錢、shaken_on 的程度加上「驚魂未定」；之後和一般戰敗一樣（地下城回到入口、近郊回到城門）。",
+    "$comment": "成人向的戰敗事件（設定關閉成人向時不會發生）。戰敗而且沒有人搬來救兵時，還站著的敵人裡有符合條件的（NPC 有 npc_tags 的標籤，或怪物擲到 monster_traits 的特徵；有 exclude_traits 的怪物不算），擲 1d20 + check 屬性的調整值，達到 DC 就觸發（魅力越高越容易引起敵人的興趣）。戰報的敘事停在對方準備動手的前一刻，等玩家回應：options 三選一或自己輸入（主動行動 defeat_event，參考 DC 為 free_dc）。結果依成功程度：再損失 money_loss 比例的錢、shaken_on 的程度加上「驚魂未定」；之後和一般戰敗一樣（地下城回到入口、近郊回到城門）。",
     "npc_tags": ["villain"],
     "monster_traits": ["rut"],
     "exclude_traits": ["young"],
