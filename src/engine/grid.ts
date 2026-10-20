@@ -36,6 +36,8 @@ export interface Cell {
   questId?: string
   /** 通道：通往的區域與座標 */
   link?: { area: string; x: number; y: number }
+  /** 打倒守在這裡的層主後，格子變成這種設施（淺層、中層的層主守著往下的階梯） */
+  then?: CellKind
 }
 
 export interface Area {
@@ -77,6 +79,8 @@ interface LayerGen {
   resources: [number, number]
   elites?: number
   boss?: boolean
+  /** 層主守著往下的階梯（打倒後變成階梯） */
+  guard?: boolean
   trap_dc: number
   trap_damage: string
 }
@@ -405,9 +409,13 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   }
   // 最遠的格子放階梯或層主
   const far = farthest(area, start)
+  // 深層：最終層主；淺層、中層：層主守著往下的階梯（沒有層主資料時直接是階梯）
+  const bossGroup = dungeonEncounters[loc.id]?.bosses?.[spec.id as 'shallow' | 'middle' | 'deep'] ?? (spec.boss ? dungeonEncounters[loc.id]?.boss : undefined)
   cells[far] = spec.boss
-    ? { kind: 'boss', group: dungeonEncounters[loc.id]?.boss ?? [] }
-    : { kind: 'stairs_down' }
+    ? { kind: 'boss', group: bossGroup ?? [] }
+    : spec.guard && bossGroup?.length
+      ? { kind: 'boss', group: bossGroup, then: 'stairs_down' }
+      : { kind: 'stairs_down' }
   used.add(far)
 
   const table = dungeonEncounters[loc.id]?.[spec.id] ?? wildEncounters(loc.region)
@@ -714,6 +722,12 @@ export function afterCombat(state: GameState, report: Report) {
       const target = state.areas?.[areaKey!]
       const cell = target && cellAt(target, cx!, cy!)
       if (cell) cell.done = true
+      // 守著階梯的層主倒下：格子變成往下的階梯
+      if (cell?.then) {
+        cell.kind = cell.then
+        delete cell.then
+        delete cell.done
+      }
       delete state.flags[key]
     }
   } else if (result === 'fled' && p.prev) {

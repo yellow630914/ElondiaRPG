@@ -5,7 +5,8 @@ import {
   type Combatant,
 } from '@/engine/combat'
 import { luckyThreshold } from '@/engine/character'
-import { abilityDef, combatRules, damageTypeName, statusDef, type AbilityDef } from '@/engine/data'
+import { safeText } from '@/engine/content'
+import { abilityDef, combatRules, damageTypeName, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { describeEntry } from '@/narrator/describe'
 import { useGame } from '@/stores/game'
 import StatBar from './StatBar.vue'
@@ -174,6 +175,9 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
             <span class="tag">{{ damageTypeName(c.weapon.type) }}攻擊</span>
             <span v-for="t in affinityTags(c)" :key="t.text" class="tag" :class="t.kind">{{ t.text }}</span>
           </div>
+          <div v-if="c.traits?.length" class="small">
+            <span v-for="t in c.traits" :key="t" class="tag trait" :title="safeText(monsterTraits.traits[t]?.desc ?? '')">{{ safeText(monsterTraits.traits[t]?.name ?? t) }}</span>
+          </div>
           <div class="small">
             <span v-for="st in c.statuses" :key="st.id" class="tag" :class="statusDef(st.id).kind">
               {{ statusDef(st.id).name }}{{ st.turns < 99 ? ` ${st.turns}` : '' }}
@@ -282,4 +286,5 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 .threat { display: flex; gap: 6px; align-items: center; }
 .threat .bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; max-width: 120px; }
 .threat .bar i { display: block; height: 100%; background: var(--danger); }
+.trait { border-color: var(--accent-2); color: var(--accent-2); }
 </style>

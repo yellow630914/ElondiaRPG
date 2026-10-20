@@ -12,6 +12,7 @@ import statusesJson from '@data/rules/statuses.json'
 import abilitiesJson from '@data/rules/abilities.json'
 import equipmentJson from '@data/rules/equipment.json'
 import enemiesJson from '@data/rules/enemies.json'
+import monsterTraitsJson from '@data/rules/monster_traits.json'
 import townQuestsJson from '@data/rules/town_quests.json'
 import companionsJson from '@data/rules/companions.json'
 import slaveryJson from '@data/rules/slavery.json'
@@ -356,6 +357,12 @@ export interface EnemyDef {
   habitats?: string[]
   money_cc?: [number, number]
   loot?: { item: string; chance: number }[]
+  /** 可以擲到「發情」特徵（monster_traits.json 的 requires） */
+  rut?: boolean
+  /** 一定帶著的特徵（例如層主天生巨大） */
+  traits?: string[]
+  /** 給 AI 的一句描述（外觀與習性） */
+  desc?: string
 }
 export type EncounterGroup = [string, number][]
 export type DungeonLayerId = 'outskirts' | 'shallow' | 'middle' | 'deep'
@@ -364,7 +371,10 @@ export interface DungeonEncounters {
   shallow: EncounterGroup[]
   middle: EncounterGroup[]
   deep: EncounterGroup[]
+  /** 深層的層主（舊資料） */
   boss: EncounterGroup
+  /** 各層的層主：淺層、中層守著往下的階梯，深層是最終層主 */
+  bosses?: Partial<Record<'shallow' | 'middle' | 'deep', EncounterGroup>>
 }
 const enemiesData = enemiesJson as unknown as {
   enemies: EnemyDef[]
@@ -377,6 +387,39 @@ export const dungeonEncounters = enemiesData.encounters
 export function wildEncounters(region: string): EncounterGroup[] {
   const table = enemiesData.wild_encounters[region] ?? enemiesData.wild_encounters.default
   return Array.isArray(table) ? table : []
+}
+
+// ---- 怪物的特徵與狀態 ----
+
+export interface MonsterTraitDef {
+  name: string
+  weight: number
+  desc: string
+  hp_mult?: number
+  hp_ratio?: number
+  mods?: Mods
+  ap?: number
+  initiative?: number
+  resist?: AffinityMap
+  offense?: AffinityMap
+  xp_mult?: number
+  ai?: MonsterAi
+  excludes?: string[]
+  /** 怪物資料上要有這個旗標才會擲到 */
+  requires?: 'rut'
+}
+
+export interface MonsterAi {
+  /** 對仇恨的在意程度：選目標的權重 = floor + 仇恨 × focus（預設 1） */
+  focus?: number
+  prefer?: 'weakest' | 'caster'
+  flee_below?: number
+  never_flee?: boolean
+}
+
+export const monsterTraits = monsterTraitsJson as unknown as {
+  roll: { chance: number; max: number; bonus: Record<string, number> }
+  traits: Record<string, MonsterTraitDef>
 }
 
 // ---- 委託 ----

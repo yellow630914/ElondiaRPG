@@ -203,8 +203,8 @@
       "size": [9, 9], "carve_steps": 55,
       "layers": [
         { "id": "outskirts", "name": "周邊", "encounters": [2, 3], "traps": [0, 1], "resources": [1, 2], "trap_dc": 10, "trap_damage": "1d4" },
-        { "id": "shallow", "name": "淺層", "encounters": [3, 4], "traps": [1, 2], "resources": [1, 2], "trap_dc": 12, "trap_damage": "1d6" },
-        { "id": "middle", "name": "中層", "encounters": [3, 5], "traps": [1, 3], "resources": [1, 2], "elites": 1, "trap_dc": 13, "trap_damage": "2d6" },
+        { "id": "shallow", "name": "淺層", "encounters": [3, 4], "traps": [1, 2], "resources": [1, 2], "guard": true, "trap_dc": 12, "trap_damage": "1d6" },
+        { "id": "middle", "name": "中層", "encounters": [3, 5], "traps": [1, 3], "resources": [1, 2], "elites": 1, "guard": true, "trap_dc": 13, "trap_damage": "2d6" },
         { "id": "deep", "name": "深層", "encounters": [3, 5], "traps": [2, 3], "resources": [1, 3], "elites": 1, "boss": true, "trap_dc": 15, "trap_damage": "3d6" }
       ],
       "resource_items": ["礦石", "發光蘑菇", "古錢"]

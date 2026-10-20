@@ -1,0 +1,73 @@
+{
+  "$comment": "怪物的特徵與狀態（和人類 NPC 的標籤分開）。開戰時每隻怪物依 roll 擲出 0～max 個特徵：機率 = chance + 所在位置的 bonus（冒險區域的層別、層主、近郊荒野）。特徵只改變能力值與戰鬥行為，不改掉落物（掉落物在 enemies.json 每隻怪物單獨設定）。欄位：hp_mult 最大生命倍率、hp_ratio 開戰時的生命比例、mods 加減（hit 命中、evade 迴避、save 豁免、damage 傷害、dr 減傷、crit 幸運一擊、threat 仇恨）、ap 行動點上限、initiative 先攻、resist / offense 傷害倍率、xp_mult 經驗倍率、ai 戰鬥行為（focus 對仇恨的在意程度：選目標的權重 = floor + 仇恨 × focus；prefer 偏好的目標：weakest 生命比例低的、caster 施法者；flee_below 生命比例低於此值時想逃；never_flee 不逃）、excludes 互斥的特徵、requires 怪物資料上要有這個旗標才會擲到（例如發情只會出現在 rut: true 的怪物身上）。",
+  "version": 1,
+
+  "roll": {
+    "chance": 0.3,
+    "max": 2,
+    "bonus": { "wild": 0, "outskirts": 0, "shallow": 0.05, "middle": 0.1, "deep": 0.15, "boss": 0.2 }
+  },
+
+  "traits": {
+    "wounded": {
+      "name": "受傷", "weight": 4,
+      "desc": "身上帶傷：生命值只剩六成、命中 -1，傷重時想逃。",
+      "hp_ratio": 0.6, "mods": { "hit": -1 }, "xp_mult": 0.8, "ai": { "flee_below": 0.3 }
+    },
+    "huge": {
+      "name": "巨大", "weight": 3,
+      "desc": "體型遠比同類龐大：生命 ×1.5、傷害 +2、減傷 +1、迴避 -2，也更引人注目。",
+      "hp_mult": 1.5, "mods": { "damage": 2, "dr": 1, "evade": -2 }, "xp_mult": 1.4, "excludes": ["young"]
+    },
+    "agile": {
+      "name": "敏捷", "weight": 3,
+      "desc": "身手矯健：迴避 +2、命中 +1、行動點 +1、先攻 +3。",
+      "mods": { "evade": 2, "hit": 1 }, "ap": 1, "initiative": 3, "xp_mult": 1.2
+    },
+    "rut": {
+      "name": "發情", "weight": 3, "requires": "rut",
+      "desc": "正值發情期，躁動好鬥：傷害 +1、豁免 -1；注意力渙散，比較不受仇恨牽引。只會出現在資料標明 rut 的怪物身上。",
+      "mods": { "damage": 1, "save": -1 }, "xp_mult": 1.1, "ai": { "focus": 0.5 }
+    },
+    "enraged": {
+      "name": "暴怒", "weight": 3,
+      "desc": "怒不可遏：傷害 +3、命中 +1、迴避 -2；死盯著仇恨最高的人，絕不逃跑。",
+      "mods": { "damage": 3, "hit": 1, "evade": -2 }, "xp_mult": 1.3, "ai": { "focus": 2, "never_flee": true }, "excludes": ["timid"]
+    },
+    "hungry": {
+      "name": "飢餓", "weight": 2,
+      "desc": "飢腸轆轆：命中 +1，專挑虛弱的獵物下手。",
+      "mods": { "hit": 1 }, "xp_mult": 1.1, "ai": { "prefer": "weakest" }
+    },
+    "cunning": {
+      "name": "狡猾", "weight": 2,
+      "desc": "懂得挑軟柿子：命中 +1，優先攻擊施法者，比較不理會仇恨。",
+      "mods": { "hit": 1 }, "xp_mult": 1.2, "ai": { "prefer": "caster", "focus": 0.4 }
+    },
+    "armored": {
+      "name": "硬殼", "weight": 2,
+      "desc": "外皮或盔甲格外堅硬：減傷 +2。",
+      "mods": { "dr": 2 }, "xp_mult": 1.2
+    },
+    "old": {
+      "name": "年老", "weight": 2,
+      "desc": "年老體衰但經驗老到：生命 ×0.8、命中 -1、豁免 +1。",
+      "hp_mult": 0.8, "mods": { "hit": -1, "save": 1 }, "xp_mult": 0.9, "excludes": ["young"]
+    },
+    "young": {
+      "name": "年幼", "weight": 2,
+      "desc": "還沒長大：生命 ×0.6、傷害 -1，經驗也比較少。",
+      "hp_mult": 0.6, "mods": { "damage": -1 }, "xp_mult": 0.6, "excludes": ["huge", "old"]
+    },
+    "timid": {
+      "name": "怯懦", "weight": 2,
+      "desc": "膽小：傷害 -1，生命低於四成就想逃。",
+      "mods": { "damage": -1 }, "xp_mult": 0.9, "ai": { "flee_below": 0.4 }, "excludes": ["enraged"]
+    },
+    "frenzied": {
+      "name": "嗜血", "weight": 2,
+      "desc": "聞到血腥味就停不下來：傷害 +2、迴避 -1，專挑受傷的人。",
+      "mods": { "damage": 2, "evade": -1 }, "xp_mult": 1.2, "ai": { "prefer": "weakest", "never_flee": true }
+    }
+  }
+}

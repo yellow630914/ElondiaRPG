@@ -155,16 +155,26 @@ describe('outskirts', () => {
 })
 
 describe('dungeons', () => {
-  it('generates four layers with stairs, a safe room and a boss on the deepest layer', () => {
+  it('generates four layers with stairs, a safe room, layer bosses guarding the stairs and a boss on the deepest layer', () => {
     const state = game(9)
     travel(state, 'snake_creek')
     expect(currentArea(state).name).toBe('蛇溪洞窟・周邊')
     expect(currentCell(state).kind).toBe('exit')
     expect(canTravelHere(state)).toBe(true)
+    const guards = ['', 'grave_robber_chief', 'crypt_necromancer']
     for (let layer = 0; layer < 3; layer++) {
       const area = currentArea(state)
       expect(area.layer).toBe(layer)
       expect(area.cells.some((c) => c.kind === 'safe')).toBe(true)
+      // 淺層、中層：層主守著往下的階梯；打倒後格子變成階梯（測試直接換掉）
+      const guard = area.cells.find((c) => c.kind === 'boss' && c.then === 'stairs_down')
+      if (layer > 0) {
+        expect(guard?.group?.[0]?.[0]).toBe(guards[layer])
+        guard!.kind = guard!.then!
+        delete guard!.then
+      } else {
+        expect(guard).toBeUndefined()
+      }
       // 直接走到階梯（測試只檢查地圖結構，不打遭遇）
       const steps = pathTo(area, position(state), (x, y) => cellAt(area, x, y)!.kind === 'stairs_down', [])!
       expect(steps).not.toBeNull()

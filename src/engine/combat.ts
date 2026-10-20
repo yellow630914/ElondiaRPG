@@ -14,11 +14,12 @@ import {
 } from './character'
 import {
   abilityDef, armorDef, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
-  locationById, population, regionById, statusDef, wildEncounters,
+  locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type EncounterGroup,
-  type ItemDef, type LuckRoll, type Mods, type WeaponDef,
+  type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
 } from './data'
-import { characterFor, npcRecord, registerNpc } from './npcs'
+import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
+import { safeText } from './content'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
@@ -81,6 +82,12 @@ export interface Combatant {
   threat: number
   /** 仇恨累積倍率的固定部分：職業 × (1 + 防具 + 武器)；天賦與狀態的 mods.threat 在累積時另外算 */
   threatMult: number
+  /** 怪物的特徵與狀態（monster_traits.json） */
+  traits?: string[]
+  /** 戰鬥行為（特徵合成） */
+  ai?: MonsterAi
+  /** 經驗倍率（特徵） */
+  xpMult?: number
 }
 
 export type CombatAction =
@@ -149,12 +156,13 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     const counts: Record<string, number> = {}
     for (const [id, n] of enemyGroup) counts[id] = (counts[id] ?? 0) + n
     const seen: Record<string, number> = {}
+    const bonus = traitBonus(state, opts)
     let idx = 1
     for (const [defId, n] of enemyGroup) {
       for (let i = 0; i < n; i++) {
         seen[defId] = (seen[defId] ?? 0) + 1
         const suffix = counts[defId]! > 1 ? ` ${String.fromCharCode(64 + seen[defId]!)}` : ''
-        fighters.push(fromEnemy(`e${idx++}`, defId, suffix, rng))
+        fighters.push(fromEnemy(`e${idx++}`, defId, suffix, rng, bonus))
       }
     }
     for (const rec of npcs) {
@@ -218,10 +226,10 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
   }
 }
 
-function fromEnemy(id: string, defId: string, suffix: string, rng: Rng): Combatant {
+function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 0): Combatant {
   const def = enemies[defId]
   if (!def) throw new Error(`unknown enemy: ${defId}`)
-  return {
+  const c: Combatant = {
     id, name: def.name + suffix, side: 'enemy', level: def.level, attrs: { ...def.attrs }, prof: proficiency(def.level),
     hp: def.hp, maxHp: def.hp, tempHp: 0,
     ap: def.ap, apMax: def.ap, apRegen: combatRules.ap.regen,
@@ -234,6 +242,70 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng): Combata
     usedTurn: {}, usedCombat: {}, usedRest: {},
     defId, threat: 0, threatMult: 1,
   }
+  applyTraits(c, rollTraits(rng, def, bonus))
+  return c
+}
+
+// ---- 怪物的特徵與狀態 ----
+
+/** 開戰的位置讓特徵比較容易出現：冒險區域越深越容易，層主最容易 */
+function traitBonus(state: GameState, opts: CombatOptions): number {
+  const b = monsterTraits.roll.bonus
+  const p = state.position
+  const area = p ? state.areas?.[p.area] : undefined
+  if (!area) return b.wild ?? 0
+  const cell = opts.cell ? area.cells[opts.cell.y * area.width + opts.cell.x] : undefined
+  if (cell?.kind === 'boss') return b.boss ?? 0
+  if (area.kind === 'dungeon') return b[(['outskirts', 'shallow', 'middle', 'deep'] as const)[area.layer ?? 0] ?? 'deep'] ?? 0
+  return b.wild ?? 0
+}
+
+/** 擲出怪物的特徵：資料上固定的特徵，加上 0～max 個隨機特徵（互斥的不會同時出現；發情要怪物有 rut 旗標） */
+export function rollTraits(rng: Rng, def: Pick<EnemyDef, 'traits' | 'rut'>, bonus = 0): string[] {
+  const r = monsterTraits.roll
+  const out = [...(def.traits ?? [])]
+  for (let i = 0; i < r.max; i++) {
+    if (!rng.chance(r.chance + bonus)) break
+    const pool = Object.entries(monsterTraits.traits).filter(([id, t]) =>
+      !out.includes(id)
+      && !(t.excludes ?? []).some((x) => out.includes(x))
+      && !out.some((o) => monsterTraits.traits[o]?.excludes?.includes(id))
+      && (!t.requires || !!def[t.requires]))
+    if (!pool.length) break
+    out.push(weightedPick(rng, Object.fromEntries(pool.map(([id, t]) => [id, t.weight]))))
+  }
+  return out
+}
+
+/** 把特徵套到戰鬥中的怪物上：能力值、行為與名稱 */
+export function applyTraits(c: Combatant, traits: string[]) {
+  if (!traits.length) return
+  const ai: MonsterAi = { ...(c.ai ?? {}) }
+  let hpRatio = 1
+  for (const id of traits) {
+    const t = monsterTraits.traits[id]
+    if (!t) continue
+    if (t.hp_mult) c.maxHp = Math.max(1, Math.round(c.maxHp * t.hp_mult))
+    if (t.hp_ratio) hpRatio = Math.min(hpRatio, t.hp_ratio)
+    for (const [k, v] of Object.entries(t.mods ?? {})) c.baseMods[k as keyof Mods] = (c.baseMods[k as keyof Mods] ?? 0) + (v ?? 0)
+    if (t.ap) {
+      c.apMax += t.ap
+      c.ap += t.ap
+    }
+    if (t.initiative) c.initiative += t.initiative
+    for (const [k, v] of Object.entries(t.resist ?? {})) c.resist[k] = (c.resist[k] ?? 0) + (v ?? 0)
+    for (const [k, v] of Object.entries(t.offense ?? {})) c.offense[k] = (c.offense[k] ?? 0) + (v ?? 0)
+    if (t.xp_mult) c.xpMult = (c.xpMult ?? 1) * t.xp_mult
+    if (t.ai?.focus !== undefined) ai.focus = (ai.focus ?? 1) * t.ai.focus
+    if (t.ai?.prefer) ai.prefer = t.ai.prefer
+    if (t.ai?.flee_below) ai.flee_below = Math.max(ai.flee_below ?? 0, t.ai.flee_below)
+    if (t.ai?.never_flee) ai.never_flee = true
+  }
+  if (ai.never_flee) delete ai.flee_below
+  c.hp = Math.max(1, Math.round(c.maxHp * hpRatio))
+  c.ai = ai
+  c.traits = traits
+  c.name = `${traits.map((id) => safeText(monsterTraits.traits[id]?.name ?? id)).join('・')}的${c.name}`
 }
 
 // ---- 查詢 ----
@@ -575,12 +647,24 @@ export function targetWeight(c: Combatant): number {
   return combatRules.threat.floor + (c.threat ?? 0)
 }
 
-/** 依仇恨值加權抽一個目標 */
-export function pickByThreat(rng: Rng, foes: Combatant[]): Combatant {
-  const total = foes.reduce((s, f) => s + targetWeight(f), 0)
+/**
+ * 某個敵人眼中，這個目標的權重：floor + 仇恨 × 對仇恨的在意程度（特徵的 focus），
+ * 再依偏好調整（飢餓、嗜血挑虛弱的；狡猾挑施法者）。
+ */
+export function targetWeightFor(actor: Combatant | undefined, c: Combatant): number {
+  const ai = actor?.ai
+  let w = combatRules.threat.floor + (c.threat ?? 0) * (ai?.focus ?? 1)
+  if (ai?.prefer === 'weakest') w *= 1 + 2 * (1 - c.hp / Math.max(1, c.maxHp))
+  if (ai?.prefer === 'caster' && c.slotMax.length > 0) w *= 2
+  return Math.max(0.1, w)
+}
+
+/** 依仇恨值（與攻擊者的偏好）加權抽一個目標 */
+export function pickByThreat(rng: Rng, foes: Combatant[], actor?: Combatant): Combatant {
+  const total = foes.reduce((s, f) => s + targetWeightFor(actor, f), 0)
   let r = rng.next() * total
   for (const f of foes) {
-    r -= targetWeight(f)
+    r -= targetWeightFor(actor, f)
     if (r < 0) return f
   }
   return foes[foes.length - 1]!
@@ -1070,19 +1154,29 @@ function runEnemyTurns(combat: CombatState, rng: Rng) {
   }
 }
 
-/** 敵人 AI：有能用的技能時 50% 使用，否則武器攻擊；被嘲諷時只攻擊嘲諷者。 */
+/**
+ * 敵人 AI（怪物與敵對的冒險者）：
+ * - 選目標：被嘲諷時只打嘲諷者；否則依仇恨加權（特徵改變在意程度與偏好）。
+ * - 選行動：替每個能用的技能打分數（治療給最需要的隊友、不重複上增益與減益、範圍技能看人數），
+ *   武器攻擊是基準分；依分數加權抽選，保留一點不可預測。
+ * - 想逃：生命低於特徵的 flee_below 時嘗試撤退。
+ */
 function enemyTurn(combat: CombatState, actor: Combatant, rng: Rng) {
   for (let step = 0; step < 6 && combat.status === 'ongoing' && isActive(actor); step++) {
     const foes = foesOf(combat, actor)
     if (foes.length === 0) return
+    if (wantsToFlee(actor) && actor.ap >= combatRules.action_costs.flee) {
+      perform(combat, actor, { type: 'flee' }, rng)
+      checkEnd(combat)
+      if (actor.fled) return
+      continue
+    }
     const taunt = actor.statuses.find((s) => statusDef(s.id).control === 'taunt')
     const taunter = taunt && foes.find((f) => f.id === taunt.source)
-    // 嘲諷時只打嘲諷者；否則依仇恨值加權選目標
-    const target = taunter ?? pickByThreat(rng, foes)
-    const usable = usableAbilities(combat, actor.id).filter((a) => a.target !== 'self' || !actor.statuses.length)
-    if (usable.length > 0 && rng.chance(0.5)) {
-      const a = rng.pick(usable)
-      useAbility(combat, rng, actor, a, a.target === 'enemy' ? target.id : undefined)
+    const target = taunter ?? pickByThreat(rng, foes, actor)
+    const plan = chooseAction(combat, rng, actor, target, !!taunter)
+    if (plan) {
+      useAbility(combat, rng, actor, plan.ability, plan.target)
     } else if (actor.ap >= combatRules.action_costs.weapon_attack) {
       actor.ap -= combatRules.action_costs.weapon_attack
       weaponAttack(combat, rng, actor, target, '攻擊')
@@ -1091,6 +1185,71 @@ function enemyTurn(combat: CombatState, actor: Combatant, rng: Rng) {
     }
     checkEnd(combat)
   }
+}
+
+export function wantsToFlee(actor: Combatant): boolean {
+  const below = actor.ai?.flee_below
+  return !!below && !actor.ai?.never_flee && actor.hp / Math.max(1, actor.maxHp) < below
+}
+
+const hpRatio = (c: Combatant) => c.hp / Math.max(1, c.maxHp)
+
+/** 能力會不會對某人施加這些狀態（已經有的不算） */
+function freshStatuses(a: AbilityDef, who: Combatant, to: ApplyDef['to'][]): boolean {
+  const list = (a.apply ?? []).filter((x) => to.includes(x.to ?? 'target'))
+  return list.length > 0 && list.some((x) => !who.statuses.some((s) => s.id === x.status))
+}
+
+/** 替能用的技能打分數，挑一個（或回傳 null 表示用武器攻擊） */
+export function chooseAction(combat: CombatState, rng: Rng, actor: Combatant, target: Combatant, taunted: boolean): { ability: AbilityDef; target?: string } | null {
+  const foes = foesOf(combat, actor)
+  const allies = alliesOf(combat, actor)
+  const options: { ability: AbilityDef; target?: string; score: number }[] = []
+  for (const a of usableAbilities(combat, actor.id)) {
+    const limited = a.uses?.per_combat !== undefined || a.uses?.per_rest !== undefined || a.type === 'spell' ? 0.3 : 0
+    // 治療：只在有人受傷時，給最需要的人
+    if (a.heal) {
+      const pool = a.target === 'self' ? [actor] : a.target === 'all_allies' ? allies
+        : combat.combatants.filter((x) => x.side === actor.side && !x.fled && (a.target === 'ally_or_downed' || x.hp > 0))
+      const hurt = pool.filter((x) => hpRatio(x) < 0.6).sort((x, y) => hpRatio(x) - hpRatio(y))
+      if (!hurt.length) continue
+      options.push({ ability: a, target: a.target === 'ally' || a.target === 'ally_or_downed' ? hurt[0]!.id : undefined, score: 3 + (1 - hpRatio(hurt[0]!)) * 4 })
+      continue
+    }
+    // 淨化：有隊友身上有減益時
+    if (a.cleanse && !a.damage?.length) {
+      const dirty = allies.find((x) => x.statuses.some((s) => statusDef(s.id).kind === 'debuff'))
+      if (dirty) options.push({ ability: a, target: a.target === 'ally' ? dirty.id : undefined, score: 2.5 })
+      continue
+    }
+    const harmful = !!a.damage?.length || a.target === 'enemy' || a.target === 'all_enemies' || a.target === 'random_enemies'
+    if (!harmful) {
+      // 增益：已經有的不再上；第一、二回合比較想先上
+      const who = a.target === 'self' ? [actor] : a.target === 'all_allies' ? allies : [actor]
+      if (!who.some((w) => freshStatuses(a, w, ['self', 'allies', 'target']) || a.shield)) continue
+      if (a.target === 'self' && taunted) continue
+      options.push({ ability: a, target: a.target === 'ally' ? actor.id : undefined, score: 1.6 + (combat.round <= 2 ? 0.8 : 0) - limited })
+      continue
+    }
+    if (a.target === 'enemy') {
+      // 純減益：對方已經有就不用
+      if (!a.damage?.length && !freshStatuses(a, target, ['target'])) continue
+      options.push({ ability: a, target: target.id, score: (a.damage?.length ? 2.4 : 2) + limited })
+      continue
+    }
+    // 範圍或隨機目標：人越多越划算
+    options.push({ ability: a, score: (foes.length >= 2 ? 2 + 0.7 * (foes.length - 1) : 1) + limited })
+  }
+  if (!options.length) return null
+  // 武器攻擊是基準分 2；依分數平方加權抽選
+  const weaponScore = actor.ap >= combatRules.action_costs.weapon_attack ? 2 : 0
+  const total = options.reduce((s, o) => s + o.score ** 2, 0) + weaponScore ** 2
+  let r = rng.next() * total
+  for (const o of options) {
+    r -= o.score ** 2
+    if (r < 0) return { ability: o.ability, ...(o.target ? { target: o.target } : {}) }
+  }
+  return null
 }
 
 // ---- 結束戰鬥與戰報 ----
@@ -1144,7 +1303,7 @@ export function finishCombat(state: GameState): Report {
   let money = 0
   const items: ItemDelta[] = []
   const h = population.hostility
-  const xpOf = (f: Combatant) => (f.npcId ? h.xp_per_level * f.level : enemies[f.defId!]?.xp ?? 0)
+  const xpOf = (f: Combatant) => Math.round((f.npcId ? h.xp_per_level * f.level : enemies[f.defId!]?.xp ?? 0) * (f.xpMult ?? 1))
   const xpTotal = victory ? defeated.reduce((sum, f) => sum + xpOf(f), 0) : 0
   withRng(state, (rng) => {
     if (!victory) return
