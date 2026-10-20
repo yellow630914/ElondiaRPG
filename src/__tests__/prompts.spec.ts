@@ -145,6 +145,16 @@ describe('narration rules', () => {
     expect(normalizeConfig({ narrationRules: '' }).narrationRules).toBeUndefined()
     expect(normalizeConfig({ narrationRules: 'x' }).narrationRules).toBe('x')
   })
+
+  it('puts the style where {{style}} is', () => {
+    const state = game()
+    const config = { ...defaultPromptConfig(), narrationRules: '<hard_rules>\n1. 甲\n2. 乙\n{{style}}\n</hard_rules>\n<negative>\n- 丙\n</negative>' }
+    const p = composeNarration(state, combat, options({ config })).prompt
+    expect(p.system).toMatch(/2\. 乙\n3\. 文風[\s\S]*<\/style>\n<\/hard_rules>\n<negative>/)
+    expect(p.sections!.some((x) => x.key === 'style')).toBe(false)
+    const off = { ...config, styles: config.styles.map((e) => ({ ...e, enabled: false })) }
+    expect(composeNarration(state, combat, options({ config: off })).prompt.system).toContain('2. 乙\n</hard_rules>')
+  })
 })
 
 describe('prompt config', () => {

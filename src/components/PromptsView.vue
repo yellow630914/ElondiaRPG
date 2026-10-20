@@ -251,9 +251,9 @@ function resetAll() {
       </div>
       <p class="small muted">
         「AI 細節描述」每次請求最前面的規則（判定主動行動用的是另一份判定規則，不受影響）。修改後立即套用到之後的敘事，可以到「👁️ 預覽」確認送出的內容。<br />
-        可用的代換：<code v-pre>{{language}}</code> 輸出語言、<code v-pre>{{currency}}</code> 貨幣說明、<code v-pre>{{player}}</code> 主角名。
-        開啟的文風會接在最後一條規則之後，編號自動接續。<br />
-        ⚠ 第 9 條的 <code>&lt;relationship_updates&gt;</code> 格式是遊戲用來讀取人際關係更新的，刪掉或改格式會讓這個功能失效；清空內容等於恢復預設。
+        可用的代換：<code v-pre>{{language}}</code> 輸出語言、<code v-pre>{{currency}}</code> 貨幣說明、<code v-pre>{{player}}</code> 主角名、<code v-pre>{{style}}</code> 文風放的位置（自成一行；沒有時文風接在規則最後），文風的編號自動接續最大的規則編號。
+        視角與篇幅每次由程式寫在最後的「本次要求」，規則裡不要寫死。<br />
+        ⚠ 預設第 9 條的 <code>&lt;relationship_updates&gt;</code> 格式是遊戲用來讀取人際關係更新的，刪掉或改格式會讓這個功能失效；清空內容等於恢復預設。
       </p>
       <textarea v-model="rulesText" class="rules" rows="22" spellcheck="false" />
       <p class="small muted">{{ rulesText.length }} 字・約 {{ estimateTokens(rulesText) }} tokens。規則放在前段（可以被快取），改動後第一次請求會重新建立快取。</p>
