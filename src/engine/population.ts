@@ -20,6 +20,7 @@ import type { GameState, NpcRecord, Roster } from './types'
 export function pickTags(rng: Rng, kind: NpcKind, loc: Location): string[] {
   const usable = Object.entries(npcTags.tags)
     .filter(([, t]) => t.kinds.includes(kind) && (!t.location_types || t.location_types.includes(loc.type)))
+    .filter(([, t]) => !t.requires_zone || zonesOf(loc).includes(t.requires_zone as Zone))
   const tags: string[] = []
   if (kind === 'commoner') {
     const weights = Object.fromEntries(usable.map(([id, t]) => [id, t.commoner_weight ?? 0]))
@@ -120,6 +121,7 @@ export function ensureRoster(state: GameState, locId: string): Roster | undefine
   const loc = locationById(locId)
   const size = population.roster[loc.type]
   if (!size) return undefined
+  ensureMadam(state, loc)
   const rosters = (state.rosters ??= {})
   if (rosters[locId]) return rosters[locId]
   // 具名 NPC：所屬地點是這裡的算進冒險者名額
@@ -128,8 +130,39 @@ export function ensureRoster(state: GameState, locId: string): Roster | undefine
   const members = [...named]
   for (let i = named.length; i < size.adventurer; i++) members.push(generateResident(state, rng, loc, 'adventurer').id)
   for (let i = 0; i < size.commoner; i++) members.push(generateResident(state, rng, loc, 'commoner').id)
+  // 有娼館的城鎮：至少有幾位娼妓
+  if (zonesOf(loc).includes('brothel')) {
+    const have = members.filter((id) => npcRecord(state, id)?.tags?.includes('prostitute')).length
+    for (let i = have; i < population.brothel_workers; i++) members.push(generateWorker(state, rng, loc).id)
+  }
   rosters[locId] = { members, day: state.time.day }
   return rosters[locId]
+}
+
+/** 娼妓：普通人，主要待在娼館 */
+function generateWorker(state: GameState, rng: Rng, loc: Location): NpcRecord {
+  const tags = ['prostitute']
+  const [lo, hi] = npcTags.kinds.commoner.level ?? [1, 3]
+  return generateNpc(state, rng, {
+    kind: 'commoner', tags, level: rng.int(lo, hi), location: loc.id,
+    haunts: buildHaunts(rng, 'commoner', tags, loc),
+    occupation: rng.pick(npcTags.tags.prostitute?.occupations ?? ['娼妓']),
+    ...(loc.faction ? { faction: loc.faction } : {}),
+  }, 'cmn')
+}
+
+/** 娼館的老鴇：店主（商人）兼娼妓，固定待在娼館 */
+export function madamId(locId: string): string {
+  return `keeper_${locId}_brothel`
+}
+
+function ensureMadam(state: GameState, loc: Location) {
+  if (!zonesOf(loc).includes('brothel') || npcRecord(state, madamId(loc.id))) return
+  const rng = new Rng(hashString(`${state.seed}:madam:${loc.id}`))
+  generateNpc(state, rng, {
+    id: madamId(loc.id), kind: 'commoner', tags: ['prostitute', 'merchant'], occupation: '老鴇', level: rng.int(2, 5),
+    location: loc.id, spot: 'brothel', ...(loc.faction ? { faction: loc.faction } : {}),
+  })
 }
 
 // ---- 每天在哪裡 ----
@@ -175,8 +208,8 @@ export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day): 
     if (today.zone === 'outskirts') return loc.type === 'dungeon' ? undefined : outskirtsKey(loc.id)
     if (today.zone === 'dungeon') return loc.type === 'dungeon' ? layerKey(loc.id, layerOf(rec, day)) : undefined
     const blocks = settlementBlocks(loc)
-    const keys = today.zone === 'temple'
-      ? blocks.filter((b) => b.kinds.has('temple')).map((b) => b.key)
+    const keys = today.zone === 'temple' || today.zone === 'brothel'
+      ? blocks.filter((b) => b.kinds.has(today.zone as CellKind)).map((b) => b.key)
       : blocks.filter((b) => b.zone === today.zone).map((b) => b.key)
     return pickBlock(rec, day, keys.length ? keys : blocks.filter((b) => b.zone === 'town').map((b) => b.key))
   }
@@ -198,6 +231,7 @@ const TAG_CELLS: Record<string, Partial<Record<CellKind, number>>> = {
   priest: { temple: 8 },
   bishop: { temple: 10 },
   merchant: { shop: 4 },
+  prostitute: { brothel: 10 },
 }
 
 /** NPC 在區域裡的格子：職員在自己的設施，暫時待著的人在指定的格子，其他人依日期與時段（每 6 小時）分佈 */

@@ -6,6 +6,7 @@
 //   有戰爭迷霧；離開後重新進入會重新生成（近郊每天換一次）。
 // 走進格子會觸發內容：遭遇（戰鬥）、陷阱（檢定）、資源（採集）等；設施與樓梯等需要在格子上選擇動作。
 
+import { safeText } from './content'
 import mapsJson from '@data/world/maps.json'
 import { mod, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
@@ -22,7 +23,7 @@ import type { GameState, Report } from './types'
 
 export type CellKind =
   | 'floor' | 'wall' | 'water'
-  | 'inn' | 'guild' | 'tavern' | 'shop' | 'temple' | 'gate' | 'link'
+  | 'inn' | 'guild' | 'tavern' | 'shop' | 'temple' | 'gate' | 'link' | 'brothel'
   | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
 
@@ -66,8 +67,8 @@ export interface Position {
 interface BlockDef { id: string; name: string; grid: string[]; links?: Record<string, string>; zone?: Zone }
 
 /** 地區：決定 NPC 出現在哪裡（見 docs/NPC_SYSTEM.md 第 5 節） */
-export type Zone = 'town' | 'noble' | 'palace' | 'temple' | 'outskirts' | 'dungeon'
-export const ZONES: Zone[] = ['town', 'noble', 'palace', 'temple', 'outskirts', 'dungeon']
+export type Zone = 'town' | 'noble' | 'palace' | 'temple' | 'brothel' | 'outskirts' | 'dungeon'
+export const ZONES: Zone[] = ['town', 'noble', 'palace', 'temple', 'brothel', 'outskirts', 'dungeon']
 interface LayerGen {
   id: DungeonLayerId
   name: string
@@ -94,9 +95,14 @@ const maps = mapsJson as unknown as {
 
 export const CELL_NAME: Record<CellKind, string> = {
   floor: '道路', wall: '牆', water: '水道',
-  inn: '旅店', guild: '冒險者公會', tavern: '酒館', shop: '雜貨店', temple: '神殿', gate: '城門', link: '通道',
+  inn: '旅店', guild: '冒險者公會', tavern: '酒館', shop: '雜貨店', temple: '神殿', gate: '城門', link: '通道', brothel: '娼館',
   encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
+}
+
+/** 格子的名稱（關閉成人向時，娼館顯示為按摩店） */
+export function cellName(kind: CellKind): string {
+  return safeText(CELL_NAME[kind])
 }
 
 const WALKABLE_BLOCKERS: CellKind[] = ['wall', 'water']
@@ -125,6 +131,7 @@ export function zonesOf(loc: Location): Zone[] {
   for (const b of blocksFor(loc)) {
     if (b.zone) zones.add(b.zone)
     if (b.grid.some((row) => row.includes('C'))) zones.add('temple')
+    if (b.grid.some((row) => row.includes('B'))) zones.add('brothel')
   }
   return [...zones]
 }
@@ -145,6 +152,7 @@ export function currentZone(state: GameState): Zone {
   if (area.kind === 'dungeon') return 'dungeon'
   if (area.kind === 'wild') return 'outskirts'
   if (currentCell(state).kind === 'temple') return 'temple'
+  if (currentCell(state).kind === 'brothel') return 'brothel'
   return area.zone ?? 'town'
 }
 

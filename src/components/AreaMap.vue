@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted } from 'vue'
-import { cellAt, CELL_NAME, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
+import { cellAt, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 
@@ -25,7 +25,7 @@ function icon(cell: Cell): string {
 function label(cell: Cell): string {
   if (cell.kind === 'trap' && !cell.done) return '道路'
   if (cell.kind === 'trap') return '已觸發的陷阱'
-  return CELL_NAME[cell.kind] + (cell.done ? '（已清除）' : '') + (cell.item && !cell.done ? `：${cell.item}` : '')
+  return cellName(cell.kind) + (cell.done ? '（已清除）' : '') + (cell.item && !cell.done ? `：${cell.item}` : '')
 }
 
 // 地圖上的人：每格標出人數，敵對的人用紅色

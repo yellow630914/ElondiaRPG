@@ -27,12 +27,14 @@ describe('rosters', () => {
     const rng = state.rngState
     const roster = ensureRoster(state, 'albena')!
     expect(state.rngState).toBe(rng)
-    expect(roster.members.length).toBe(16)
     const recs = roster.members.map((id) => npcRecord(state, id)!)
     const adventurers = recs.filter((r) => npcKind(r) === 'adventurer')
     const commoners = recs.filter((r) => npcKind(r) === 'commoner')
     expect(adventurers.length).toBe(8)
-    expect(commoners.length).toBe(8)
+    // 普通人 8 位；阿爾貝納有娼館，娼妓不足 3 位時另外補上
+    expect(commoners.length).toBeGreaterThanOrEqual(8)
+    expect(commoners.length).toBeLessThanOrEqual(8 + 3)
+    expect(commoners.filter((r) => r.tags?.includes('prostitute')).length).toBeGreaterThanOrEqual(3)
     // 具名 NPC 算在冒險者名額裡
     expect(roster.members).toContain('npc_kai')
     for (const c of commoners) {

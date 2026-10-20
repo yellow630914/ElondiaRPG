@@ -1,0 +1,38 @@
+{
+  "$comment": "工作與娼館。工作：站在設施格子上花時間換錢（主動行動 work，可以輸入做法，影響日誌與結果）。報酬 = 時數 × rate_cc × 成功程度倍率；被主人帶著時，收入依印記歸主人。娼館：消費（patron）、被迫工作（slavery.json master_events 的 cell 事件）、無主的奴隸找老鴇當主人（seek_master）。safe_names：設定關閉成人向時，畫面與交給 AI 的文字依序替換這些詞（娼館 → 按摩店、娼妓 → 技師……）。",
+  "version": 1,
+
+  "safe_names": [
+    ["娼妓契約", "技師契約"],
+    ["娼館", "按摩店"],
+    ["老鴇", "店長"],
+    ["娼妓", "技師"],
+    ["男娼", "技師"],
+    ["接客", "按摩"],
+    ["恩客", "熟客"],
+    ["賣身", "工作"]
+  ],
+
+  "hours": [2, 4, 8],
+  "degree_pay": { "critical": 1.5, "success": 1, "partial": 0.7, "fail": 0.4, "fumble": 0 },
+  "fumble_affinity": -3,
+
+  "jobs": {
+    "tavern": { "name": "酒館跑堂", "attr": "cha", "dc": 11, "rate_cc": 3, "desc": "端酒、收拾桌子、應付喝醉的客人。" },
+    "inn": { "name": "旅店雜役", "attr": "str", "dc": 10, "rate_cc": 2, "desc": "劈柴、打水、搬行李、整理房間。" },
+    "shop": { "name": "雜貨店幫工", "attr": "int", "dc": 11, "rate_cc": 3, "desc": "搬貨、點貨、顧店、跑腿送貨。" },
+    "temple": { "name": "神殿雜務", "attr": "fai", "dc": 11, "rate_cc": 2, "official": true, "desc": "打掃聖堂、照顧病人、抄寫經文。" },
+    "guild": { "name": "公會文書", "attr": "int", "dc": 13, "rate_cc": 4, "official": true, "desc": "整理委託單、抄寫報告、跑公文。" },
+    "brothel": { "name": "娼館接客", "attr": "cha", "dc": 12, "rate_cc": 6, "desc": "在娼館接待客人；收入比一般工作高，但要看客人的臉色。" }
+  },
+
+  "brothel": {
+    "patron": {
+      "$comment": "在娼館消費：價格 = price_cc × 對象種族的倍率（世界書「價格參考-妓女和娼妇」：人類平民 10-14 銅幣、魔族略貴、精靈極貴）；沒有指定對象時用 price_cc。大成功打折並放鬆（下次長休前檢定 +1）、成功放鬆、部分成功只是普通的一晚、失敗被多收錢、大失敗錢袋被摸走。對象的親密度依成功程度變化。",
+      "attr": "cha", "dc": 11, "hours": 2, "price_cc": 12,
+      "race_mult": { "demon": 1.2, "elf": 10, "yulin": 6 },
+      "discount": 0.5, "overcharge": 0.5, "pickpocket_ratio": 0.1,
+      "affinity": { "critical": 4, "success": 2, "partial": 1, "fail": 0, "fumble": -2 }
+    }
+  }
+}

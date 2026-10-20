@@ -22,6 +22,8 @@ import populationJson from '@data/rules/npc_population.json'
 import itemsJson from '@data/rules/items.json'
 import shopsJson from '@data/rules/shops.json'
 import negotiationsJson from '@data/rules/negotiations.json'
+import workJson from '@data/rules/work.json'
+import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
 import type { GuildRank, QuestKind, SkillQuality } from './types'
 
@@ -493,6 +495,9 @@ export interface MasterEventDef {
   free_dc?: number
   /** 成人向：設定開啟「成人向」時才會發生 */
   adult?: boolean
+  /** 只在經過這種設施（同一格或相鄰）時發生，機率為 chance，不在一般事件的抽選裡 */
+  cell?: string
+  chance?: number
 }
 
 export interface UnmarkServiceDef {
@@ -530,12 +535,13 @@ export interface MasterEventOption {
 export function contractDef(id: string): ContractDef {
   const c = slaveryRules.contracts[id]
   if (!c) throw new Error(`unknown contract: ${id}`)
-  return c
+  // 關閉成人向時，娼妓契約顯示為技師契約
+  return adultContent() ? c : { ...c, name: safeText(c.name), mark: safeText(c.mark), side_effects: c.side_effects.map(safeText) }
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark'
+  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master'
 export const actionRules = actionsJson as unknown as {
@@ -571,6 +577,8 @@ export interface NpcTagDef {
   adventurer_chance?: number
   extra_chance?: number
   location_types?: string[]
+  /** 只出現在有這個地區的聚落（例如娼妓只在有娼館的城鎮） */
+  requires_zone?: string
   zone_weights?: Record<string, number>
   haunt_extra?: [number, number]
   haunt_extra_weight?: [number, number]
@@ -584,6 +592,8 @@ export const npcTags = npcTagsJson as unknown as {
   tags: Record<string, NpcTagDef>
 }
 export const population = populationJson as unknown as {
+  /** 有娼館的城鎮，名單上至少有幾位娼妓 */
+  brothel_workers: number
   roster: Record<string, { adventurer: number; commoner: number }>
   adventurer_level: Record<string, [number, number]>
   known_weight: number
@@ -596,7 +606,36 @@ export const population = populationJson as unknown as {
 }
 
 export function tagDef(id: string): NpcTagDef | undefined {
-  return npcTags.tags[id]
+  const t = npcTags.tags[id]
+  // 關閉成人向時，娼妓顯示為技師
+  return !t || adultContent() ? t : { ...t, name: safeText(t.name), ai_hint: safeText(t.ai_hint) }
+}
+
+// ---- 工作與娼館 ----
+
+export interface JobDef {
+  name: string
+  attr: AttrId
+  dc: number
+  /** 每小時的基本工資 */
+  rate_cc: number
+  desc: string
+  /** 官方機構：逃亡奴隸不能在這裡工作 */
+  official?: boolean
+}
+
+export const workRules = workJson as unknown as {
+  safe_names: [string, string][]
+  hours: number[]
+  degree_pay: Record<Degree, number>
+  fumble_affinity: number
+  jobs: Record<string, JobDef>
+  brothel: {
+    patron: {
+      attr: AttrId; dc: number; hours: number; price_cc: number; race_mult: Record<string, number>
+      discount: number; overcharge: number; pickpocket_ratio: number; affinity: Record<Degree, number>
+    }
+  }
 }
 
 // ---- 物品、商店、談判 ----

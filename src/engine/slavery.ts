@@ -7,6 +7,8 @@
 
 import { lifeTier, mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, type AttrId, type ContractDef, type MasterEventDef, type UnmarkServiceDef } from './data'
+import { isMadam, nearBrothel } from './brothel'
+import { safeText } from './content'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
@@ -252,9 +254,21 @@ export function setupMarking(state: GameState) {
   const master = state.party.find((m) => m.id === c.master)
   const sev = slaveryRules.marking.severity
   const heavier = sev[Math.min(sev.length - 1, sev.indexOf(pm.intended) + 1)]!
+  const dc = slaveryRules.marking.base + Math.floor((master?.level ?? 1) / 2)
+  const scene = `${locationById(state.location).name}・刻下契約印記`
+  // 不在輕重順序裡的印記（例如老鴇的娼妓契約）：主人只會刻這一種，表現好可以換成最輕的
+  if (!sev.includes(pm.intended)) {
+    const name = contractDef(pm.intended).name
+    return {
+      dc, targetName: c.masterName, situational: [], scene,
+      outcomes: {
+        critical: '可以自己選印記，甚至自訂', success: `可以選${name}或${contractDef(sev[0]!).name}`,
+        partial: `刻上${name}`, fail: `刻上${name}`, fumble: `刻上${name}，服從懲罰 +1`,
+      } as Partial<Record<Degree, string>>,
+    }
+  }
   return {
-    dc: slaveryRules.marking.base + Math.floor((master?.level ?? 1) / 2), targetName: c.masterName, situational: [],
-    scene: `${locationById(state.location).name}・刻下契約印記`,
+    dc, targetName: c.masterName, situational: [], scene,
     outcomes: {
       critical: '可以自己選印記，甚至自訂', success: `可以選${contractDef(pm.intended).name}或更輕的印記`,
       partial: `刻上${contractDef(pm.intended).name}`, fail: `主人改用更重的${contractDef(heavier).name}`,
@@ -269,6 +283,15 @@ export function applyMarking(state: GameState, degree: Degree): string {
   const sev = slaveryRules.marking.severity
   const i = Math.max(0, sev.indexOf(pm.intended))
   pm.rolled = true
+  if (!sev.includes(pm.intended)) {
+    pm.allowed = degree === 'critical' ? [...sev, pm.intended] : degree === 'success' ? [pm.intended, sev[0]!] : [pm.intended]
+    if (degree === 'critical') pm.custom = true
+    if (degree === 'fumble') {
+      const c = pcOf(state).contract
+      if (c) c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+    }
+    return { critical: '刻印的人被你說動了，讓你自己決定印記的樣子。', success: '你爭取到選擇印記的餘地。', partial: '主人照原本的打算刻印。', fail: '主人照原本的打算刻印。', fumble: '主人勃然大怒，下手更重。' }[degree]
+  }
   switch (degree) {
     case 'critical':
       pm.allowed = [...sev]
@@ -347,7 +370,10 @@ export function maybeMasterEvent(state: GameState, chance: number, opts: MasterE
   const now = hoursOf(state.time)
   if (state.lastMasterEvent !== undefined && now - state.lastMasterEvent < ev.cooldown_hours) return undefined
   const events = ev.events.filter((e) => opts.adult || !e.adult)
-  const picked = withRng(state, (rng) => (rng.chance(chance) ? pickEvent(rng, events) : undefined))
+  // 經過特定設施（娼館）時的事件：有自己的機率，先擲；沒發生才擲一般的事件
+  const local = events.filter((e) => e.cell === 'brothel' && nearBrothel(state))
+  const picked = withRng(state, (rng) => local.find((e) => rng.chance(e.chance ?? 0))
+    ?? (rng.chance(chance) ? pickEvent(rng, events.filter((e) => !e.cell)) : undefined))
   if (!picked) return undefined
   return startMasterEvent(state, picked)
 }
@@ -373,7 +399,7 @@ function forMaster(effects: RewardEffect[] | undefined, master: string): RewardE
 }
 
 function withMaster(state: GameState, s: string): string {
-  return s.split('{master}').join(pcOf(state).contract?.masterName ?? '主人')
+  return safeText(s.split('{master}').join(pcOf(state).contract?.masterName ?? '主人'))
 }
 
 /** 等待回應的事件定義 */
@@ -408,9 +434,9 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     time: { start, end: addHours(start, o.hours ?? e.hours) },
     location: { at: area.location, region: loc.region, scene: area.name },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', summary: `${state.pendingMasterEvent!.text}你選擇${o.label}。`, tags: ['主人'] },
+    outcome: { result: 'neutral', summary: `${state.pendingMasterEvent!.text}你選擇${safeText(o.label)}。`, tags: ['主人'] },
     changes: {},
-    narration: { pov: 'second_person', length: 'short', focus: [`${c.masterName}的突發要求`, `主角的回應：${o.label}`] },
+    narration: { pov: 'second_person', length: 'short', focus: [`${c.masterName}的突發要求`, `主角的回應：${safeText(o.label)}`] },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
   let effects = forMaster(o.effects, c.master)
@@ -552,7 +578,8 @@ export function seekMasterDc(state: GameState, rec: NpcRecord): number {
 export function setupSeekMaster(state: GameState, target?: string) {
   const rec = seekTarget(state, target)
   ensureRelationship(state, rec)
-  const stays = npcKind(rec) === 'commoner' ? '（普通人主人同行，但不參與戰鬥）' : ''
+  const stays = (npcKind(rec) === 'commoner' ? '（普通人主人同行，但不參與戰鬥）' : '')
+    + (isMadam(rec) ? safeText(`（老鴇會把印記改刻成${contractDef('brothel').name}）`) : '')
   return {
     dc: seekMasterDc(state, rec), targetName: rec.name, situational: [],
     scene: `${currentArea(state).name}・請${rec.name}收下自己`,
@@ -569,12 +596,13 @@ export function applySeekMaster(state: GameState, report: Report, target: string
     case 'critical':
     case 'success': {
       changeMaster(state, rec, report, '投靠')
+      const remarked = remarkByMadam(state, rec)
       const c = pcOf(state).contract!
       if (degree === 'critical') {
         c.obedience = Math.max(0, c.obedience - 1)
         addAffinity(state, report, rec.id, 3, '收下了主角')
       }
-      return `${rec.name}收下了你，成為你的新主人。`
+      return `${rec.name}收下了你，成為你的新主人。${remarked ? safeText(`${rec.name}把你的印記改刻成了${contractDef('brothel').name}。`) : ''}`
     }
     case 'partial':
       addAffinity(state, report, rec.id, 1, '對主角有些好感')
@@ -586,6 +614,18 @@ export function applySeekMaster(state: GameState, report: Report, target: string
       addAffinity(state, report, rec.id, -5, '覺得被冒犯')
       return `${rec.name}覺得被冒犯，冷冷地拒絕了你。`
   }
+}
+
+/** 老鴇收下主角：改刻娼妓契約（服從懲罰至少是娼妓契約的） */
+export function remarkByMadam(state: GameState, master: Pick<NpcRecord, 'tags'>): boolean {
+  if (!isMadam(master)) return false
+  const pc = pcOf(state)
+  const c = pc.contract
+  if (!c || (c.kind === 'brothel' && !c.terms)) return false
+  const next: ContractRef = { ...c, kind: 'brothel', obedience: Math.max(c.obedience, contractDef('brothel').obedience_penalty) }
+  delete next.terms
+  pc.contract = next
+  return true
 }
 
 // 解除印記：神殿、黑市刻印師、法師

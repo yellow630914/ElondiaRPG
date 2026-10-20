@@ -88,6 +88,18 @@
       "haunt_extra": [0, 2], "haunt_extra_weight": [0.3, 0.6],
       "wealth": 1,
       "ai_hint": "品行惡劣的冒險者：搶劫、勒索、背叛同伴都做得出來；在城裡會收斂，在野外與地下城可能動手"
+    },
+    "prostitute": {
+      "$comment": "娼妓（關閉成人向時顯示為技師）。只出現在有娼館的城鎮（requires_zone），平常待在娼館格子；娼館的店主是帶這個標籤的老鴇。",
+      "name": "娼妓",
+      "emoji": "🌹",
+      "kinds": ["commoner"],
+      "commoner_weight": 6,
+      "requires_zone": "brothel",
+      "zone_weights": { "brothel": 2.5, "town": 0.4 },
+      "wealth": 1,
+      "occupations": ["娼妓", "陪酒", "舞者"],
+      "ai_hint": "在娼館工作的人，多半是奴隸身分，收入大多要上繳給老鴇或主人"
     }
   }
 }

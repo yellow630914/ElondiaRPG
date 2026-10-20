@@ -1,0 +1,66 @@
+// 工作：站在旅店、酒館、神殿、雜貨店、公會、娼館等設施上，花時間換錢（data/rules/work.json）。
+// 走主動行動 work：玩家可以描述怎麼做，AI 依此判定並寫進日誌；報酬依成功程度。
+// 被主人帶著時，收入依印記歸主人（state.ts 的收益歸屬）。
+
+import { safeText } from './content'
+import { locationById, workRules, type Degree, type JobDef } from './data'
+import { applyEffects } from './effects'
+import { currentArea, currentCell } from './grid'
+import { formatMoney } from './money'
+import { npcRecord } from './npcs'
+import { addAffinity, isFugitive } from './party'
+import type { GameState, Report } from './types'
+
+/** 現在站的設施有沒有工作可做 */
+export function jobHere(state: GameState): (JobDef & { cell: string }) | undefined {
+  const cell = currentCell(state).kind
+  const job = workRules.jobs[cell]
+  return job ? { ...job, name: safeText(job.name), desc: safeText(job.desc), cell } : undefined
+}
+
+/** 主動行動的 target：時數 */
+function hoursOf(target?: string): number {
+  const h = Number(target)
+  if (!workRules.hours.includes(h)) throw new Error(`工作時數只能是 ${workRules.hours.join('、')} 小時`)
+  return h
+}
+
+export function workPay(job: JobDef, hours: number, degree: Degree): number {
+  return Math.round(hours * job.rate_cc * workRules.degree_pay[degree])
+}
+
+/** 雇主：這個設施的店主（有登場過的話） */
+function employer(state: GameState, cell: string): string | undefined {
+  const id = `keeper_${state.location}_${cell === 'shop' ? 'general' : cell}`
+  return npcRecord(state, id) ? id : undefined
+}
+
+export function setupWork(state: GameState, target?: string) {
+  const job = jobHere(state)
+  if (!job) throw new Error('這裡沒有工作可做')
+  if (job.official && isFugitive(state)) throw new Error(`${currentArea(state).name}的人認出了你頸上的契約印記，不肯雇你`)
+  const hours = hoursOf(target)
+  const boss = employer(state, job.cell)
+  const pay = (d: Degree) => formatMoney(workPay(job, hours, d))
+  return {
+    attr: job.attr, dc: job.dc, hours, situational: [],
+    ...(boss ? { targetName: npcRecord(state, boss)!.name } : {}),
+    scene: `${locationById(state.location).name}・${job.name}（${hours} 小時）`,
+    outcomes: {
+      critical: `做得很出色，拿到 ${pay('critical')}`, success: `拿到 ${pay('success')}`, partial: `拿到 ${pay('partial')}`,
+      fail: `做得不好，只拿到 ${pay('fail')}`, fumble: '出了差錯，白做一場（雇主親密度 -3）',
+    } as Partial<Record<Degree, string>>,
+  }
+}
+
+export function applyWork(state: GameState, report: Report, target: string, degree: Degree): string {
+  const job = jobHere(state)!
+  const hours = hoursOf(target)
+  const pay = workPay(job, hours, degree)
+  if (pay > 0) applyEffects(state, report, [{ type: 'money', amount: pay }])
+  if (degree === 'fumble') {
+    const boss = employer(state, job.cell)
+    if (boss) addAffinity(state, report, boss, workRules.fumble_affinity, '工作出了差錯')
+  }
+  return `做了 ${hours} 小時的${job.name}，${pay > 0 ? `賺到 ${formatMoney(pay)}` : '一分錢也沒拿到'}。`
+}

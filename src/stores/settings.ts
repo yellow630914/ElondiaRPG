@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { setAdultContent } from '@/engine/content'
 import { progression } from '@/engine/data'
 import type { Report } from '@/engine/types'
 import { PROVIDERS, type ProviderConfig, type ProviderId } from '@/narrator/providerInfo'
@@ -145,6 +146,8 @@ export const useSettings = defineStore('settings', () => {
   const aiJudge = ref(initial.aiJudge)
   const abilityRerolls = ref(initial.abilityRerolls)
   const adult = ref(initial.adult)
+  // 引擎的成人向開關（娼館／按摩店等名稱、成人向事件）
+  watch(adult, setAdultContent, { immediate: true })
   const language = ref(initial.language)
   const loreBudget = ref(initial.loreBudget)
 

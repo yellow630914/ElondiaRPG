@@ -73,6 +73,7 @@
     "fugitive": { "name": "逃亡奴隸", "desc": "契約仍在，公會、神殿等官方機構不接待，旅店加價且可能通報。" },
     "punished": { "name": "受罰", "desc": "被主人懲罰，下次長休前所有檢定 -2。", "check_penalty": 2, "clears": "long_rest" },
     "blessed": { "name": "祝福", "desc": "神殿的祝福，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" },
-    "away": { "name": "暫時離隊", "desc": "戰敗時逃到安全的地方等你；回到聚落或安全房時以一半生命值歸隊。" }
+    "away": { "name": "暫時離隊", "desc": "戰敗時逃到安全的地方等你；回到聚落或安全房時以一半生命值歸隊。" },
+    "relaxed": { "name": "放鬆", "desc": "在娼館度過了愉快的時光，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" }
   }
 }

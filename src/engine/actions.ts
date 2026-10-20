@@ -21,6 +21,8 @@ import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
 import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, applySeekMaster, applyUnmark, masterEventDefaults } from './slavery'
 import { applyInteraction } from './interactions'
+import { applyPatron } from './brothel'
+import { applyWork } from './work'
 import { npcRecord, type NpcSpec } from './npcs'
 import { presentHere } from './population'
 import { addAffinity, conditionPenalty, pcOf } from './party'
@@ -47,6 +49,8 @@ export interface ActionInput {
 }
 
 export interface ActionPending extends ActionInput {
+  /** 耗時（小時；沒有時用 actions.json 的設定，例如工作的時數） */
+  hours?: number
   id: string
   natural: number
   /** 擲兩次取高（優勢）時的兩個骰值 */
@@ -126,6 +130,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     ...(ownSlave ? { rolls, advantage: '對方是主角的奴隸，抗拒時處於劣勢' } : {}),
     base_dc: setup.dc,
     attr: setup.attr ?? kind.attr,
+    ...(setup.hours ? { hours: setup.hours } : {}),
     modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(pc.attrs[a]) + proficiency(pc.level)])) as Record<AttrId, number>,
     situational,
     outcomes: setup.outcomes,
@@ -356,7 +361,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const degree = judgment?.degree ?? reference
   delete state.pendingAction
 
-  const report = actionReport(state, p, kind.hours)
+  const report = actionReport(state, p, p.hours ?? kind.hours)
   const check: CheckInfo = {
     action: kind.name, attr, base_dc: p.base_dc, dc, natural: p.natural, modifier, total, degree,
     ...(degree !== reference ? { reference_degree: reference } : {}),
@@ -428,6 +433,8 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'master_return': return applyReturn(state, report, degree)
     case 'seek_master': return applySeekMaster(state, report, p.target!, degree)
     case 'unmark': return applyUnmark(state, report, p.target!, degree)
+    case 'work': return applyWork(state, report, p.target!, degree)
+    case 'patron': return applyPatron(state, report, p.target, degree)
     case 'free':
     case 'rest_talk': return ''
   }

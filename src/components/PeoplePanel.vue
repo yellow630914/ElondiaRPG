@@ -3,7 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { askingFor } from '@/engine/companions'
 import { combatRules, genderName, raceName, tagDef } from '@/engine/data'
-import { cellAt, CELL_NAME, currentArea, position } from '@/engine/grid'
+import { cellAt, CELL_NAME, cellName, currentArea, position } from '@/engine/grid'
 import { affinityTable, itemValue, type InteractionKind } from '@/engine/interactions'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcTitle } from '@/engine/npcs'
@@ -49,7 +49,7 @@ function whereIs(p: PresentNpc): string {
   const dy = p.y - me.y
   const dir = `${dx < 0 ? '西' : dx > 0 ? '東' : ''}${dy < 0 ? '北' : dy > 0 ? '南' : ''}`
   const cell = cellAt(currentArea(s.value), p.x, p.y)
-  return `在${dir ? `${dir}方` : '這裡'}的${cell ? CELL_NAME[cell.kind] : '某處'}（${p.dist} 格）`
+  return `在${dir ? `${dir}方` : '這裡'}的${cell ? cellName(cell.kind) : '某處'}（${p.dist} 格）`
 }
 
 function attack(p: PresentNpc) {

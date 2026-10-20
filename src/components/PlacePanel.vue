@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { geography, locationById } from '@/engine/data'
-import { canTravelHere, CELL_NAME, currentArea, currentCell, DUNGEON_LAYERS, questRunnableHere } from '@/engine/grid'
+import { canTravelHere, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, questRunnableHere } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -10,11 +10,13 @@ import { MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
 import { useGame } from '@/stores/game'
+import BrothelPanel from './BrothelPanel.vue'
 import GuardStatus from './GuardStatus.vue'
 import MarketPanel from './MarketPanel.vue'
 import NegotiationPanel from './NegotiationPanel.vue'
 import ShopPanel from './ShopPanel.vue'
 import TavernPanel from './TavernPanel.vue'
+import WorkPanel from './WorkPanel.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -48,7 +50,7 @@ function questWhere(q: Quest): string {
   if (q.area === 'dungeon') return `目標：${locationById(q.target).name}`
   if (q.area === 'outskirts') return `地點：${locationById(q.target).name}近郊（地圖上的 ❗）`
   const spot = questTemplate(q)?.spot ?? 'guild'
-  return `地點：${locationById(q.target).name}的${CELL_NAME[spot as keyof typeof CELL_NAME] ?? spot}`
+  return `地點：${locationById(q.target).name}的${(spot in CELL_NAME ? cellName(spot as keyof typeof CELL_NAME) : spot)}`
 }
 
 function runQuest(id: string) {
@@ -85,7 +87,7 @@ function go(id: string) {
 
 const CELL_ICON: Partial<Record<string, string>> = {
   inn: '🛏️', guild: '🏛️', tavern: '🍺', shop: '🛒', temple: '⛪', gate: '🚪', exit: '🚪', safe: '🔥',
-  stairs_down: '⬇️', stairs_up: '⬆️', quest: '❗', floor: '🧭', link: '➡️',
+  stairs_down: '⬇️', stairs_up: '⬆️', quest: '❗', floor: '🧭', link: '➡️', brothel: '🏮',
 }
 </script>
 
@@ -93,7 +95,7 @@ const CELL_ICON: Partial<Record<string, string>> = {
     <div class="place">
       <!-- 目前所在格子 -->
       <section class="panel">
-        <h3>{{ CELL_ICON[cell.kind] ?? '📍' }} {{ CELL_NAME[cell.kind] === '牆' ? '道路' : CELL_NAME[cell.kind] }}</h3>
+        <h3>{{ CELL_ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
 
         <template v-if="cell.kind === 'inn'">
           <p class="muted small">可以在這裡長休（見下方「休息」）。</p>
@@ -173,11 +175,17 @@ const CELL_ICON: Partial<Record<string, string>> = {
           <button @click="game.ascend()">回到{{ DUNGEON_LAYERS[(area.layer ?? 1) - 1]?.name }}</button>
         </template>
 
+        <template v-else-if="cell.kind === 'brothel'">
+          <BrothelPanel />
+        </template>
+
         <template v-else-if="cell.kind === 'safe'">
           <p class="muted small">安全房：魔物不會靠近，可以安心短休或長休（見下方「休息」）。</p>
         </template>
 
         <p v-else class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
+
+        <WorkPanel :key="`${area.key}-${cell.kind}`" />
 
         <div v-for="q in runnableHere" :key="q.id" class="quest-here">
           <div class="small"><span class="tag">{{ q.rank }}</span> {{ q.title }}</div>

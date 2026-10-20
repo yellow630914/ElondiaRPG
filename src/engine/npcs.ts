@@ -5,6 +5,7 @@
 // NPC 不在隊伍時，角色資料（等級、經驗、能力）保存在 NpcRecord.character，再次入隊時沿用。
 
 import { createNpc, lifeTier } from './character'
+import { safeText } from './content'
 import {
   attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, slaveryRules, tagDef,
   type Haunt, type NpcKind,
@@ -166,7 +167,7 @@ export function npcKind(rec: Pick<NpcRecord, 'kind' | 'class'>): NpcKind {
 /** 身分的簡稱：冒險者是職業，普通人是職業描述 */
 export function npcTitle(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 'tags'>): string {
   if (npcKind(rec) === 'adventurer') return className(rec.class)
-  return rec.occupation ?? tagDef(rec.tags?.[0] ?? '')?.name ?? '平民'
+  return safeText(rec.occupation ?? tagDef(rec.tags?.[0] ?? '')?.name ?? '平民')
 }
 
 /** 給 AI 的身分說明：類型、職業或職業描述、標籤 */

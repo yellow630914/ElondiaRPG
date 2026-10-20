@@ -20,7 +20,7 @@ import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { hireable, presentHere } from './population'
 import { setupStandoff } from './encounters'
 import {
-  atSafeSpot, contractTerms, masterNearby, setupMarking, setupMasterEvent, setupPermit, setupReturn, setupSeekMaster, setupUnmark, startMarking,
+  atSafeSpot, contractTerms, masterNearby, remarkByMadam, setupMarking, setupMasterEvent, setupPermit, setupReturn, setupSeekMaster, setupUnmark, startMarking,
   type MarkChoice,
 } from './slavery'
 import { setupInteraction } from './interactions'
@@ -29,6 +29,8 @@ import {
   leaderOf, partyRoom, pcOf, playerEscapes, punish, recapturePlayer, removeCondition, setHp,
 } from './party'
 import { negotiationSetup } from './negotiation'
+import { setupPatron } from './brothel'
+import { setupWork } from './work'
 import { currentArea, currentCell } from './grid'
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
@@ -418,8 +420,13 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
     const buyer = pickBuyer(rng, kind)
     const chance = Math.max(0.05, Math.min(s.max, selfSaleChance(state) + slaveryRules.master_tags.tags[buyer.tag]!.chance))
     if (!rng.chance(chance)) return null
-    const master = generateNpc(state, rng, { level: Math.min(20, pc.level + rng.int(1, 4)), kind: buyer.kind, tags: [buyer.tag] }, 'mst')
-    const contract = weightedPick(rng, s.contract_weights)
+    // 娼妓標籤的買家是老鴇（店主兼娼妓）
+    const madam = buyer.tag === 'prostitute'
+    const master = generateNpc(state, rng, {
+      level: Math.min(20, pc.level + rng.int(1, 4)), kind: buyer.kind,
+      tags: madam ? ['prostitute', 'merchant'] : [buyer.tag], ...(madam ? { occupation: '老鴇' } : {}),
+    }, 'mst')
+    const contract = madam ? 'brothel' : weightedPick(rng, s.contract_weights)
     const price = slavePrice(pc, def.price_mult, rng)
     return { master, contract, price }
   })
@@ -432,6 +439,7 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
   if (marked) {
     // 已經刻著印記：買家成為新主人，印記沿用
     changeMaster(state, deal.master, report, `在${def.name}被買下`)
+    remarkByMadam(state, deal.master)
     report.changes.money_cc = share
     report.outcome = {
       result: 'success',
@@ -548,6 +556,8 @@ export interface ActionSetup {
   scene: string
   /** 預設屬性（沒有時用 actions.json 的設定） */
   attr?: AttrId
+  /** 耗時（沒有時用 actions.json 的設定） */
+  hours?: number
 }
 
 export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string): ActionSetup {
@@ -619,6 +629,10 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupSeekMaster(state, target)
     case 'unmark':
       return setupUnmark(state, target)
+    case 'work':
+      return setupWork(state, target)
+    case 'patron':
+      return setupPatron(state, target)
     case 'negotiate': {
       if (isFugitive(state)) {
         // 逃亡奴隸找到了主人：當面談判，不必在安全的地方，但 DC 較高

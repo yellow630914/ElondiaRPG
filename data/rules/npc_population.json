@@ -19,6 +19,7 @@
     "outpost": [1, 5],
     "fortress": [1, 6]
   },
+  "brothel_workers": 3,
   "known_weight": 3,
   "turnover": {
     "$comment": "名單變動：每 period_days 天，每份名單有 chance 的機率發生一件事（未滿額時有人搬來；否則冒險者搬到他的另一個活躍地點，或旅人離開這一帶）。",

@@ -75,6 +75,10 @@
       "$comment": "逃亡奴隸主動回到身邊的主人那裡。一定會被收回，成功程度決定懲罰（見 slavery.json 的 fugitive_master）" },
     "seek_master": { "name": "投靠新主人", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"],
       "$comment": "無主或逃亡的奴隸請身邊的冒險者成為新主人（見 slavery.json 的 seek_master）" },
+    "work": { "name": "工作", "attr": "cha", "hours": 4, "effects": ["affinity", "relationship_text", "flag", "money", "item", "hp"],
+      "$comment": "在設施上工作換錢（data/rules/work.json 的 jobs）：屬性、DC、時數依工作；報酬依成功程度。money：AI 可以另外給小費或扣錢（上限照 caps）" },
+    "patron": { "name": "消費", "attr": "cha", "hours": 2, "effects": ["affinity", "relationship_text", "flag", "money", "item", "hp"],
+      "$comment": "在娼館消費（work.json 的 brothel.patron）；有主人的奴隸不能消費" },
     "unmark": { "name": "解除印記", "attr": "fai", "hours": 2, "effects": ["relationship_text", "flag", "hp"],
       "$comment": "找人解除契約印記：神殿、黑市刻印師或法師（見 slavery.json 的 unmark；屬性依服務）" }
   }

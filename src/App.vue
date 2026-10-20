@@ -5,6 +5,7 @@ import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import { alertLevel, factionName } from '@/engine/security'
 import { useGame } from '@/stores/game'
+import { useSettings } from '@/stores/settings'
 import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import CombatView from '@/components/CombatView.vue'
@@ -27,6 +28,8 @@ import SuggestionToast from '@/components/SuggestionToast.vue'
 const PromptsView = defineAsyncComponent(() => import('@/components/PromptsView.vue'))
 
 const game = useGame()
+// 成人向開關變更時重畫遊戲畫面（娼館／按摩店等名稱）
+const settings = useSettings()
 const inCombat = computed(() => !!game.state?.combat)
 const pendingSkills = computed(() => game.state?.party.some((m) => m.pendingAbilityChoices?.length || m.attrPoints > 0) ?? false)
 const suggestionCount = computed(() => game.state?.suggestions?.length ?? 0)
@@ -103,7 +106,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
   <NewGameView v-if="!game.state" v-show="tab === 'adventure'" @settings="showSettings = true" @saves="showSaves = true" />
 
-  <main v-else v-show="tab === 'adventure'" class="game" :class="{ combat: inCombat }">
+  <main v-else v-show="tab === 'adventure'" :key="settings.adult ? 'adult' : 'safe'" class="game" :class="{ combat: inCombat }">
     <aside class="left">
       <MapPanel />
       <section class="panel quick">
