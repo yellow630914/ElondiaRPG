@@ -160,12 +160,14 @@ describe('prompts store', () => {
     const rng = g.state!.rngState
     const preview = await g.composeJudgePreview()
     expect(preview?.sample).toBe(true)
-    expect(preview!.prompt.system).toContain('多寫雨聲。')
+    // 預設判定只回傳 JSON（不帶文風）；文風在敘事正文裡
+    expect(preview!.prompt.system).not.toContain('多寫雨聲。')
     expect(g.state!.pendingAction).toBeUndefined()
     expect(g.state!.rngState).toBe(rng)
 
     const narration = await g.composeFor(combat)
     expect(narration.lore!.states[0]!.status).toBe('constant')
+    expect(narration.prompt.system).toContain('多寫雨聲。')
   })
 })
 

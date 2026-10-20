@@ -65,6 +65,8 @@ function writeJson(key: string, value: unknown) {
 export interface NarrationState {
   text: string
   status: 'streaming' | 'done' | 'error'
+  /** 玩家手動要求的（AI 細節描述關閉時也顯示） */
+  manual?: boolean
   error?: string
 }
 
@@ -123,7 +125,7 @@ export const useGame = defineStore('game', () => {
       // 自動存檔：長休、抵達目的地
       if (report?.kind === 'rest' && report.outcome.tags?.includes('長休')) void autoSave('長休')
       if (report?.kind === 'travel' && report.outcome.result === 'arrived') void autoSave('抵達')
-      if (opts.narrate !== false && settings.aiNarration && settings.ready('narration') && report && report.kind !== 'trade') {
+      if (opts.narrate !== false && report && settings.autoNarrates(report) && settings.ready('narration')) {
         void narrate(report)
       }
       return result
@@ -342,12 +344,13 @@ export const useGame = defineStore('game', () => {
     return { ...composeJudge(st, pending, opts), sample: !s.pendingAction }
   }
 
-  async function narrate(report: Report) {
+  /** 請「敘事正文」的模型寫出這則日誌的經過。manual：玩家在日誌上手動要求（AI 細節描述關閉時也顯示） */
+  async function narrate(report: Report, opts: { manual?: boolean } = {}) {
     const settings = useSettings()
     controllers.get(report.report_id)?.abort()
     const controller = new AbortController()
     controllers.set(report.report_id, controller)
-    narrations.value[report.report_id] = { text: '', status: 'streaming' }
+    narrations.value[report.report_id] = { text: '', status: 'streaming', ...(opts.manual ? { manual: true } : {}) }
     const entry = narrations.value[report.report_id]!
     try {
       const prompt = await promptFor(report)
@@ -404,12 +407,11 @@ export const useGame = defineStore('game', () => {
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型
       if (opts.splitNarrative) delete judgment.narrative
-      // 判定與正文同一個來源時，AI 已經直接寫出經過：當作這份報告的敘事。
-      // 不同來源時（例如判定用便宜的模型），經過另外交給敘事正文的來源撰寫。
-      const report = run((st) => actions.resolveAction(st, judgment), { narrate: false })
+      // 預設：判定只回傳 JSON，經過交給「敘事正文」依報告撰寫（和其他日誌一樣）。
+      // 勾選「判定時順便寫出經過」而且同一個來源時，直接採用判定寫的經過，省一次呼叫。
+      const report = run((st) => actions.resolveAction(st, judgment), { narrate: !judgment.narrative })
       collector.flush(report?.report_id ?? OTHER_USAGE)
       if (report && judgment.narrative) narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
-      else if (report && (opts.splitNarrative || settings.aiNarration) && settings.ready('narration')) void narrate(report)
       save()
     } catch (e) {
       collector.flush(OTHER_USAGE)

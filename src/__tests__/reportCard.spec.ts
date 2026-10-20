@@ -30,7 +30,7 @@ describe('ReportCard', () => {
     expect(wrapper.find('.battle-report').exists()).toBe(true)
     expect(wrapper.find('.battle-report').text()).toContain('溪蛇魔')
     expect(wrapper.find('.story').exists()).toBe(false)
-    expect(wrapper.text()).not.toContain('生成敘事')
+    expect(wrapper.text()).not.toContain('重新寫出經過')
   })
 
   it('shows only the summary for non-combat events when AI narration is off', () => {
@@ -44,7 +44,7 @@ describe('ReportCard', () => {
     const wrapper = mount(ReportCard, { props: { report: combat }, global: { plugins: [setup(true)] } })
     expect(wrapper.find('.story').text()).toContain('水聲')
     expect(wrapper.find('.battle-report').exists()).toBe(false)
-    expect(wrapper.text()).toContain('重新生成敘事')
+    expect(wrapper.text()).toContain('重新寫出經過')
   })
 })
 

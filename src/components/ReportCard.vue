@@ -19,7 +19,7 @@ const KIND_NAME: Record<Report['kind'], string> = {
 const narration = computed(() => game.narrations[props.report.report_id])
 // 關閉 AI 細節描述時不顯示敘事，改顯示戰報或事件簡述（已生成的敘事仍保留，重新開啟後會再出現）
 // AI 判定的主動行動：AI 直接寫出的經過一律顯示
-const showStory = computed(() => (settings.aiNarration || props.report.check?.source === 'ai') && !!narration.value)
+const showStory = computed(() => !!narration.value && (settings.aiNarration || !!narration.value.manual || props.report.check?.source === 'ai'))
 const showBattleReport = computed(() => props.report.kind === 'combat' && !showStory.value && !!props.report.timeline?.length)
 const names = computed(() => actorNames(props.report))
 const changes = computed(() => describeChanges(props.report))
@@ -70,16 +70,13 @@ async function copyPrompt() {
     </div>
 
     <div class="row actions">
-      <template v-if="settings.aiNarration">
-        <button
-          v-if="narration?.status !== 'streaming'"
-          class="small"
-          :disabled="!settings.ready('narration')"
-          @click="game.narrate(report)"
-        >{{ narration ? '重新生成敘事' : '生成敘事' }}</button>
+      <template v-if="settings.ready('narration')">
+        <button v-if="narration?.status !== 'streaming'" class="small" title="用「敘事正文」的模型寫出這則日誌的經過" @click="game.narrate(report, { manual: !settings.aiNarration })">
+          ✍️ {{ showStory ? '重新寫出經過' : '寫出經過' }}
+        </button>
         <button v-else class="small" @click="game.cancelNarration(report.report_id)">停止</button>
-        <span v-if="!settings.ready('narration')" class="small muted">「敘事正文」的模型來源尚未設定，請到「設定」填寫</span>
       </template>
+      <span v-else-if="settings.aiNarration" class="small muted">「敘事正文」的模型來源尚未設定，請到「設定」填寫</span>
       <button class="small" @click="copyPrompt">{{ copied ? '已複製' : '複製提示詞' }}</button>
       <button class="small" @click="showRaw = !showRaw">{{ showRaw ? '隱藏' : '顯示' }}報告 JSON</button>
     </div>

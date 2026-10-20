@@ -91,6 +91,8 @@ describe('token usage', () => {
     settings.sources[0]!.configs.anthropic = { apiKey: 'x', model: 'claude-sonnet-5-5' }
     settings.sources[0]!.provider = 'anthropic'
     settings.aiJudge = true
+    // 判定時順便寫出經過：一次呼叫
+    settings.judgeWritesNarrative = true
     const g = useGame()
     g.start('艾倫', 'human', 'fighter')
     standOn(g.state!, 'tavern')
@@ -122,7 +124,38 @@ describe('model sources', () => {
     expect(settings.sources[1]!.configs.gemini.apiKey).toBe('AIza-old')
     expect(settings.sourceFor('shop')).toMatchObject({ index: 0, provider: 'gemini' })
     expect(settings.ready('judge')).toBe(true)
+    // 預設判定與正文分開
+    expect(settings.splitJudgeNarrative()).toBe(true)
+    settings.judgeWritesNarrative = true
     expect(settings.splitJudgeNarrative()).toBe(false)
+  })
+
+  it('narrates a judged action with the narration prompt by default, even with AI narration off', async () => {
+    const { useSettings } = await import('@/stores/settings')
+    const { useGame } = await import('@/stores/game')
+    const providers = await import('@/narrator/providers')
+    const settings = useSettings()
+    settings.sources[0]!.configs.anthropic = { apiKey: 'x', model: 'claude-opus-5-5' }
+    settings.aiJudge = true
+    const g = useGame()
+    g.start('艾倫', 'human', 'fighter')
+    standOn(g.state!, 'tavern')
+    g.recruit('npc_lina')
+    await g.perform({ kind: 'free', target: 'npc_lina', text: '聊聊天' })
+    const judgePrompt = vi.mocked(providers.completeText).mock.calls[0]![2] as { system: string }
+    expect(judgePrompt.system).toContain('narrative 填空字串')
+    await new Promise((r) => setTimeout(r, 0))
+    const narrationPrompt = vi.mocked(providers.streamNarration).mock.calls[0]![2] as { system: string; user: string }
+    expect(narrationPrompt.system).toContain('敘事者')
+    expect(narrationPrompt.user).toContain('聊聊天')
+    // 其他種類的日誌：AI 細節描述關閉時不自動寫
+    const report = g.state!.reports.at(-1)!
+    expect(settings.autoNarrates(report)).toBe(true)
+    expect(settings.autoNarrates({ ...report, check: undefined, kind: 'combat' })).toBe(false)
+    settings.aiNarration = true
+    expect(settings.autoNarrates({ ...report, check: undefined, kind: 'combat' })).toBe(true)
+    settings.narrateKinds.combat = false
+    expect(settings.autoNarrates({ ...report, check: undefined, kind: 'combat' })).toBe(false)
   })
 
   it('sends each feature to its own source, and lets the writing model write the action', async () => {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useGame } from '@/stores/game'
-import { AI_FEATURES, useSettings } from '@/stores/settings'
+import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
 import ModelSourceEditor from './ModelSourceEditor.vue'
 
 const settings = useSettings()
@@ -44,11 +44,15 @@ function doReset() {
         </tr>
       </tbody>
     </table>
-    <p class="small" :class="settings.splitJudgeNarrative() ? 'note' : 'muted'">
+    <label class="check small" :class="{ muted: settings.sourceIndex('judge') !== settings.sourceIndex('narration') }">
+      <input v-model="settings.judgeWritesNarrative" type="checkbox" :disabled="settings.sourceIndex('judge') !== settings.sourceIndex('narration')" />
+      判定時順便寫出經過（判定與敘事正文同一個來源時才有效；省一次呼叫，但經過不是用敘事正文的提示詞寫的）
+    </label>
+    <p class="small note">
       <template v-if="settings.splitJudgeNarrative()">
-        判定與正文使用不同的來源：主動行動先由「{{ settings.sourceFor('judge').name }}」判定（只回傳 JSON），經過再交給「{{ settings.sourceFor('narration').name }}」撰寫（每次主動行動兩次呼叫）。
+        主動行動：先由「{{ settings.sourceFor('judge').name }}」判定（只回傳 JSON），再由「{{ settings.sourceFor('narration').name }}」用敘事正文的提示詞寫出經過（每次兩次呼叫）。
       </template>
-      <template v-else>判定與正文使用同一個來源：判定時順便寫出經過（每次主動行動一次呼叫）。</template>
+      <template v-else>主動行動：由「{{ settings.sourceFor('judge').name }}」判定時順便寫出經過（每次一次呼叫）。</template>
     </p>
   </section>
 
@@ -57,12 +61,18 @@ function doReset() {
     <div class="form">
       <label class="check"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述</label>
       <p class="small muted">
-        開啟：每次行動、事件或戰鬥結束後，自動請 AI 寫出詳細經過（需先設定 AI 服務）。<br />
-        關閉：不呼叫 AI，戰鬥直接顯示戰報，其他事件顯示簡述。
+        開啟：下列種類的日誌產生後，自動請「敘事正文」的模型寫出詳細經過。<br />
+        關閉：不自動呼叫 AI（AI 判定的主動行動除外），戰鬥直接顯示戰報，其他事件顯示簡述。每則日誌都可以手動按「✍️ 寫出經過」。
       </p>
+      <div class="kinds">
+        <label v-for="k in NARRATE_KINDS" :key="k.id" class="check small" :title="k.desc">
+          <input v-model="settings.narrateKinds[k.id]" type="checkbox" /> {{ k.name }}
+          <span class="muted">{{ k.desc }}</span>
+        </label>
+      </div>
       <label class="check"><input v-model="settings.aiJudge" type="checkbox" /> AI 判定主動行動</label>
       <p class="small muted">
-        開啟：主動行動（談判、雇傭、殺價、邀請、逃離……）先擲骰，再把骰值與完整資料交給 AI，由 AI 決定成敗（可能出乎預料）並直接寫出經過；酒館候選人、商店的交易清單與談判方式也由 AI 設計。<br />
+        開啟：主動行動（談判、雇傭、殺價、邀請、逃離……）先擲骰，再把骰值與完整資料交給 AI，由 AI 決定成敗（可能出乎預料），經過再交給敘事正文寫出；各地居民、商店的交易清單與談判方式也由 AI 設計。<br />
         關閉：依規則判定（預設屬性與參考 DC）。
       </p>
       <label>
@@ -113,6 +123,8 @@ function doReset() {
 .routes td { border-bottom: 1px solid var(--border); padding: 6px 8px 6px 0; vertical-align: top; }
 .routes .name { white-space: nowrap; font-weight: 600; }
 .note { color: var(--accent-2); }
+.kinds { display: grid; gap: 4px; padding-left: 22px; }
+.kinds .muted { margin-left: 4px; }
 .form label, .form .field { display: grid; gap: 4px; }
 .form label.check { display: flex; gap: 6px; align-items: center; }
 </style>
