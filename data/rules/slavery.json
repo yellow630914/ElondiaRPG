@@ -151,17 +151,49 @@
   "slave_target_advantage": "主角對自己的奴隸主動行動時，奴隸抗拒的檢定處於劣勢：主角擲兩次取較高的。",
 
   "master_events": {
-    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時。effects 用報酬模板（npc 寫 master 代表主人）；有 check 時先檢定，失敗才套用 fail_effects。",
+    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時。事件發生後，玩家從三個 options 選一個回應，或自己輸入回應（主動行動 master_event，參考 DC 依事件的 free，沒有時用 free_dc）。option：沒有 check 時直接套用 effects；有 check 時檢定，成功套用 effects_success、失敗套用 fail_effects（effects 兩者都套用）。effects 用報酬模板，npc 寫 master 代表主人。free_outcomes：自己輸入的回應沒有 AI 判定時，依成功程度套用的效果。",
     "step_chance": 0.02,
     "travel_chance": 0.35,
     "cooldown_hours": 6,
+    "free_dc": 13,
+    "free_outcomes": {
+      "critical": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "應對得體" }],
+      "success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "應對得體" }],
+      "partial": [],
+      "fail": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "惹主人不快" }],
+      "fumble": [{ "type": "affinity", "npc": "master", "delta": -4, "reason": "觸怒主人" }, { "type": "hp", "target": "pc", "amount": -3 }]
+    },
     "events": [
-      { "id": "errand", "weight": 4, "text": "{master}塞給你一張清單，要你去替他跑腿採買。", "effects": [{ "type": "money", "amount": -15 }], "hours": 1 },
-      { "id": "show_off", "weight": 3, "text": "{master}在旁人面前炫耀你頸上的印記，要你乖乖站好。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "表現順從" }], "hours": 0.5 },
-      { "id": "bad_mood", "weight": 3, "text": "{master}心情很差，把怒氣出在你身上。", "check": { "attr": "cha", "dc": 13, "success": "你低聲下氣地應付過去。" }, "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "惹主人不快" }], "hours": 0.25 },
-      { "id": "reward", "weight": 2, "text": "{master}難得心情好，賞了你一點零錢。", "effects": [{ "type": "money", "amount": 20 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "被賞賜" }], "hours": 0.1 },
-      { "id": "carry", "weight": 3, "text": "{master}把沉重的行李都丟給你扛。", "check": { "attr": "str", "dc": 12, "success": "你咬著牙扛了下來。" }, "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }], "hours": 0.5 },
-      { "id": "test_loyalty", "weight": 2, "text": "{master}故意把錢袋放在你面前，看你會不會動心。", "check": { "attr": "fai", "dc": 12, "success": "你連看都沒看，{master}滿意地點點頭。" }, "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "通過考驗" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "多看了錢袋一眼" }], "hours": 0.25 }
+      { "id": "errand", "weight": 4, "text": "{master}塞給你一張清單，要你去替他跑腿採買。", "hours": 1, "options": [
+        { "label": "乖乖照辦", "result": "你跑遍了市集，把東西買齊交了回去。", "effects": [{ "type": "money", "amount": -15 }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "跑腿辦得妥當" }] },
+        { "label": "殺價省下零錢", "check": { "attr": "cha", "dc": 12 }, "success": "你殺了價，把省下的零錢交回去，{master}難得點了點頭。", "fail": "店家不肯讓價，還耽擱了不少時間。", "effects_success": [{ "type": "money", "amount": -8 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "精打細算" }], "fail_effects": [{ "type": "money", "amount": -15 }], "hours": 1.5 },
+        { "label": "推說身上沒錢", "check": { "attr": "cha", "dc": 14 }, "success": "{master}嘖了一聲，自己掏了錢。", "fail": "{master}一眼看穿你的藉口，罵了你一頓，還是得自己出錢。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "推託差事" }], "fail_effects": [{ "type": "money", "amount": -15 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "說謊推託" }] }
+      ] },
+      { "id": "show_off", "weight": 3, "text": "{master}在旁人面前炫耀你頸上的印記，要你乖乖站好。", "hours": 0.5, "options": [
+        { "label": "順從地站好", "result": "你垂著手站好，任人打量。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "表現順從" }] },
+        { "label": "主動表現，替主人爭面子", "check": { "attr": "cha", "dc": 13 }, "success": "旁人嘖嘖稱奇，{master}得意極了。", "fail": "你表現得太刻意，反而讓{master}丟了臉。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "替主人爭面子" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "讓主人丟臉" }] },
+        { "label": "低頭別過臉", "result": "{master}不太高興，但沒當眾說什麼。", "effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "不配合" }] }
+      ] },
+      { "id": "bad_mood", "weight": 3, "text": "{master}心情很差，把怒氣出在你身上。", "hours": 0.25, "options": [
+        { "label": "低聲下氣地安撫", "check": { "attr": "cha", "dc": 13 }, "success": "你低聲下氣地應付過去。", "fail": "怎麼說都不對，{master}的怒氣反而更大。", "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "惹主人不快" }] },
+        { "label": "默默承受", "result": "你咬著牙挨過這一陣。", "effects": [{ "type": "hp", "target": "pc", "amount": -3 }] },
+        { "label": "頂嘴", "check": { "attr": "cha", "dc": 16 }, "success": "{master}愣了一下，反而收斂了脾氣。", "fail": "{master}勃然大怒，下手更重。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "敢於直言" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -5 }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "頂嘴" }] }
+      ] },
+      { "id": "reward", "weight": 2, "text": "{master}難得心情好，賞了你一點零錢。", "hours": 0.1, "options": [
+        { "label": "道謝收下", "result": "你道了謝，把零錢收好。", "effects": [{ "type": "money", "amount": 20 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "被賞賜" }] },
+        { "label": "趁機討多一點", "check": { "attr": "cha", "dc": 13 }, "success": "{master}笑罵你貪心，又多給了一些。", "fail": "{master}的好心情一下子沒了，把錢收了回去。", "effects_success": [{ "type": "money", "amount": 40 }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "討賞" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "貪心" }] },
+        { "label": "把錢還給主人表示忠心", "check": { "attr": "fai", "dc": 12 }, "success": "{master}有些意外，看你的眼神柔和了一點。", "fail": "{master}覺得你在裝模作樣。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "表示忠心" }] }
+      ] },
+      { "id": "carry", "weight": 3, "text": "{master}把沉重的行李都丟給你扛。", "hours": 0.5, "options": [
+        { "label": "咬牙硬扛", "check": { "attr": "str", "dc": 12 }, "success": "你咬著牙扛了下來。", "fail": "你扛得肩膀都磨破了。", "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }] },
+        { "label": "分幾趟慢慢搬", "result": "你分了好幾趟才搬完，{master}嫌你慢。", "effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "動作太慢" }], "hours": 1.5 },
+        { "label": "請主人雇個挑夫", "check": { "attr": "cha", "dc": 14 }, "success": "{master}勉強同意，雇了個挑夫。", "fail": "{master}罵你偷懶，行李還是得你扛。", "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "想偷懶" }] }
+      ] },
+      { "id": "test_loyalty", "weight": 2, "text": "{master}故意把錢袋放在你面前，看你會不會動心。", "hours": 0.25, "options": [
+        { "label": "視而不見", "check": { "attr": "fai", "dc": 12 }, "success": "你連看都沒看，{master}滿意地點點頭。", "fail": "你忍不住多看了錢袋一眼。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "通過考驗" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "多看了錢袋一眼" }] },
+        { "label": "把錢袋交還主人", "result": "你把錢袋原封不動地交還，{master}收下了。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "交還錢袋" }] },
+        { "label": "偷拿幾枚", "check": { "attr": "dex", "dc": 15 }, "success": "你手指一勾，幾枚硬幣就滑進了袖子。", "fail": "你的手才伸出去就被當場抓住。", "effects_success": [{ "type": "money", "amount": 30 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -6, "reason": "偷錢被抓" }, { "type": "hp", "target": "pc", "amount": -3 }] }
+      ] }
     ]
   }
 }

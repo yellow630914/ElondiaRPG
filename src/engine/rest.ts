@@ -99,6 +99,7 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
   if (state.combat) throw new Error('戰鬥中不能休息')
   if (state.standoff) throw new Error('先處理眼前的對峙')
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
+  if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
   const area = currentArea(state)
   const ambushed = withRng(state, (rng) => rng.chance(ambushChance(state)))
   if (ambushed) {

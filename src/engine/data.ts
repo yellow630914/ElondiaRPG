@@ -462,6 +462,7 @@ export const slaveryRules = slaveryJson as unknown as {
   marking: { attr: AttrId; base: number; severity: string[] }
   master_events: {
     step_chance: number; travel_chance: number; cooldown_hours: number
+    free_dc: number; free_outcomes: Record<Degree, RewardEffect[]>
     events: MasterEventDef[]
   }
 }
@@ -472,10 +473,24 @@ export interface MasterEventDef {
   /** {master} 會換成主人的名字 */
   text: string
   hours: number
+  /** 給玩家選的三種回應 */
+  options: MasterEventOption[]
+  /** 自己輸入回應時的參考 DC（沒有時用 free_dc） */
+  free_dc?: number
+}
+
+export interface MasterEventOption {
+  label: string
+  /** 沒有檢定時的結果文字 */
+  result?: string
+  check?: { attr: AttrId; dc: number }
+  success?: string
+  fail?: string
   effects?: RewardEffect[]
-  check?: { attr: AttrId; dc: number; success: string }
   effects_success?: RewardEffect[]
   fail_effects?: RewardEffect[]
+  /** 覆蓋事件的耗時 */
+  hours?: number
 }
 
 export function contractDef(id: string): ContractDef {
@@ -485,7 +500,7 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
-  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking'
+  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number

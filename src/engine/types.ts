@@ -256,6 +256,13 @@ export interface NpcRecord extends NpcDef {
   character?: Character
 }
 
+export interface PendingMasterEvent {
+  /** slavery.json master_events.events 的 id */
+  id: string
+  /** 已經代入主人名字的事件描述 */
+  text: string
+}
+
 export interface PendingMark {
   /** 主人原本打算刻的印記模板 */
   intended: string
@@ -400,6 +407,8 @@ export interface GameState {
   pendingAction?: ActionPending
   /** 剛成為奴隸、等待刻印的檢定與選擇（見 engine/slavery.ts） */
   pendingMark?: PendingMark
+  /** 主人的突發事件，等待主角回應（三選一或自己輸入） */
+  pendingMasterEvent?: PendingMasterEvent
   /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */
   masterPass?: Record<string, number>
   masterRefuse?: Record<string, number>

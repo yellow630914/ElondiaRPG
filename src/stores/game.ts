@@ -74,9 +74,11 @@ export interface NarrationState {
 /** 移動之後：附近有敵對的冒險者時開始對峙 */
 function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   if (r.combat || r.report) return r
-  // 敵對的冒險者優先；被主人帶著時可能有主人的突發事件
-  const report = encounters.checkHostiles(s) ?? slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance)
-  return report ? { report } : r
+  // 敵對的冒險者優先；被主人帶著時可能有主人的突發事件（等待回應，顯示在主動行動面板）
+  const report = encounters.checkHostiles(s)
+  if (report) return { report }
+  slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance)
+  return r
 }
 
 /** 讀入存檔：補上新欄位，舊存檔沒有格子位置時放到目前地點的入口。 */
@@ -566,6 +568,7 @@ export const useGame = defineStore('game', () => {
     marketStock: (kind: companions.MarketKind) => run((s) => companions.marketStock(s, kind)) ?? [],
     buySlave: (kind: companions.MarketKind, id: string, mark?: slavery.MarkChoice) => run((s) => companions.buySlave(s, kind, id, mark)),
     chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
+    answerMasterEvent: (index: number) => run((s) => slavery.answerMasterEvent(s, index)),
     offerSelf: (kind: companions.MarketKind) => run((s) => companions.offerSelf(s, kind)),
     releaseSlave: (id: string) => run((s) => companions.releaseSlave(s, id)),
     acceptSuggestion: (id: string, text?: string) => run((s) => social.acceptSuggestion(s, id, text)),

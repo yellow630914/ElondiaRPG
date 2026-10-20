@@ -19,7 +19,7 @@ import {
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
-import { applyMarking, applyPermit } from './slavery'
+import { applyMarking, applyMasterEventResponse, applyPermit, masterEventDefaults } from './slavery'
 import { applyInteraction } from './interactions'
 import type { NpcSpec } from './npcs'
 import { addAffinity, conditionPenalty, pcOf } from './party'
@@ -95,6 +95,7 @@ export function situationalTotal(p: ActionPending): number {
 export function prepareAction(state: GameState, input: ActionInput): ActionPending {
   if (state.combat) throw new Error('戰鬥中不能這麼做')
   if (state.pendingAction) throw new Error('還有一個行動等待判定')
+  if (state.pendingMasterEvent && input.kind !== 'master_event') throw new Error('先回應主人的要求')
   const kind = actionRules.kinds[input.kind]
   if (!kind) throw new Error('沒有這種行動')
   const text = input.text.trim().slice(0, 400)
@@ -405,6 +406,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'intimidate': return applyStandoff(state, degree)
     case 'master_permit': return applyPermit(state, report, degree)
     case 'marking': return applyMarking(state, degree)
+    case 'master_event': applyMasterEventResponse(state); return ''
     case 'free':
     case 'rest_talk': return ''
   }
@@ -413,6 +415,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
 /** 沒有 AI（或 AI 的判斷與骰值不符）時的預設效果：自由行動依成功程度小幅改變對象的親密度。 */
 function defaultEffects(state: GameState, report: Report, p: ActionPending, degree: Degree): string[] {
   if (p.kind === 'rest_talk') return restTalkDefaults(state, report, p, degree)
+  if (p.kind === 'master_event') return masterEventDefaults(state, report, degree)
   if (p.kind !== 'free' || !p.target || !state.relationships?.[p.target]) return []
   const delta = { critical: 4, success: 2, partial: 0, fail: -2, fumble: -4 }[degree]
   addAffinity(state, report, p.target, delta, p.text.slice(0, 30))

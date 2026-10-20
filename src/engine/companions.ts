@@ -18,7 +18,7 @@ import { formatMoney } from './money'
 import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { hireable, presentHere } from './population'
 import { setupStandoff } from './encounters'
-import { atSafeSpot, contractTerms, setupMarking, setupPermit, startMarking, type MarkChoice } from './slavery'
+import { atSafeSpot, contractTerms, setupMarking, setupMasterEvent, setupPermit, startMarking, type MarkChoice } from './slavery'
 import { setupInteraction } from './interactions'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, isBound, isEnslaved, joinParty,
@@ -551,6 +551,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupPermit(state)
     case 'marking':
       return setupMarking(state)
+    case 'master_event':
+      return setupMasterEvent(state)
     case 'negotiate': {
       if (!atSafeSpot(state)) throw new Error('和主人談判要在安全的地方（旅店、安全房或神殿）')
       const master = pc.contract?.masterName

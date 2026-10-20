@@ -19,6 +19,7 @@ import RelationsView from '@/components/RelationsView.vue'
 import RestPanel from '@/components/RestPanel.vue'
 import SaveDialog from '@/components/SaveDialog.vue'
 import SettingsView from '@/components/SettingsView.vue'
+import MasterEventPanel from '@/components/MasterEventPanel.vue'
 import StandoffPanel from '@/components/StandoffPanel.vue'
 import SuggestionToast from '@/components/SuggestionToast.vue'
 
@@ -115,6 +116,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       </section>
       <template v-if="!inCombat">
         <StandoffPanel v-if="game.state.standoff && !game.state.pendingAction" />
+        <MasterEventPanel v-if="game.state.pendingMasterEvent && !game.state.pendingAction" />
         <ActionPanel />
         <RestPanel />
         <IntentPanel />

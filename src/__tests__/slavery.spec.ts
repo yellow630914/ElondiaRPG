@@ -8,7 +8,8 @@ import { applyEffects } from '@/engine/effects'
 import { enterLocation, goOutskirts, move, standOn } from '@/engine/grid'
 import { isBound, isEnslaved, leaderOf } from '@/engine/party'
 import {
-  chooseMark, contractTerms, markSummary, masterCandidates, maybeMasterEvent, permitDc, sanitizeTerms, startAsSlave,
+  answerMasterEvent, chooseMark, contractTerms, markSummary, masterCandidates, maybeMasterEvent, permitDc, sanitizeTerms, startAsSlave,
+  startMasterEvent,
 } from '@/engine/slavery'
 import { commitReport, newGame } from '@/engine/state'
 import type { GameState, Report } from '@/engine/types'
@@ -108,14 +109,45 @@ describe('the master holds the leash', () => {
     expect(() => prepareAction(arcane, { kind: 'master_permit', text: '' })).toThrow('拒絕')
   })
 
-  it('springs master events while moving, with a cooldown', () => {
+  it('springs master events while moving, with a cooldown, and waits for an answer', () => {
     const state = bound()
-    const r = maybeMasterEvent(state, 1)!
+    const ev = maybeMasterEvent(state, 1)!
+    expect(state.pendingMasterEvent).toEqual(ev)
+    expect(() => move(state, 0, 1)).toThrow('回應主人')
+    expect(() => prepareAction(state, { kind: 'free', text: '看看四周' })).toThrow('回應主人')
+    const r = answerMasterEvent(state, 0)
     expect(validate(r)).toBe(true)
     expect(r.outcome.tags).toContain('主人')
+    expect(r.outcome.summary).toContain(slaveryRules.master_events.events.find((e) => e.id === ev.id)!.options[0]!.label)
+    expect(state.pendingMasterEvent).toBeUndefined()
     expect(maybeMasterEvent(state, 1)).toBeUndefined()
     state.time.day += 1
     expect(maybeMasterEvent(state, 1)).toBeTruthy()
+  })
+
+  it('offers three answers per event, each one valid', () => {
+    for (const def of slaveryRules.master_events.events) {
+      expect(def.options).toHaveLength(3)
+      def.options.forEach((_, i) => {
+        const state = bound()
+        state.money_cc = 5
+        startMasterEvent(state, def)
+        const r = answerMasterEvent(state, i)
+        expect(validate(r), `${def.id}/${i} ${JSON.stringify(validate.errors)}`).toBe(true)
+        expect(state.money_cc).toBeGreaterThanOrEqual(0)
+      })
+    }
+  })
+
+  it('lets the player answer in their own words', () => {
+    const state = bound()
+    startMasterEvent(state, slaveryRules.master_events.events.find((e) => e.id === 'bad_mood')!)
+    const master = leaderOf(state)!.id
+    const before = state.relationships![master]!.affinity
+    const r = act(state, { kind: 'master_event', text: '端上一杯熱茶，問主人今天遇到了什麼事' }, 20)
+    expect(r.outcome.summary).toBeTruthy()
+    expect(state.pendingMasterEvent).toBeUndefined()
+    expect(state.relationships![master]!.affinity).toBe(before + 3)
   })
 })
 

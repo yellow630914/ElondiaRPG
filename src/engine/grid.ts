@@ -607,6 +607,7 @@ function gather(state: GameState, area: Area, item: string): Report {
 export function assertNoStandoff(state: GameState) {
   if (state.standoff) throw new Error('先處理眼前的對峙')
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
+  if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
 }
 
 /** 城門盤查：沒過時回傳盤查的紀錄（沒有擲骰時直接說明原因） */

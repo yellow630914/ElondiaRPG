@@ -3,7 +3,7 @@
 // - 印記是一份「條款」：名稱、描述與數值（收益率、談判／逃離／出城 DC、被找到的機率、逃離反噬、服從懲罰）。
 //   模板在 slavery.json 的 contracts；建立角色或買奴隸時也可以自訂，數值夾在 custom_mark 的範圍內。
 // - 主角身為奴隸：出城、旅行前要主人同意（檢定依印記的 exit_dc）；成為奴隸時有刻印檢定，結果決定能選哪些印記；
-//   移動與旅行時可能遇到主人的突發事件。
+//   移動與旅行時可能遇到主人的突發事件：主角從三種回應選一個，或自己輸入回應交給 AI 判定。
 
 import { mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, type ContractDef, type MasterEventDef } from './data'
@@ -13,7 +13,7 @@ import { generateNpc, registerNpc } from './npcs'
 import { addAffinity, enslavePlayer, isBound, pcOf, punish } from './party'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
-import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, Report } from './types'
+import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report } from './types'
 import type { Degree } from './data'
 
 // ---- 印記條款 ----
@@ -327,16 +327,21 @@ function hoursOf(t: GameTime): number {
   return t.day * 24 + (t.hour ?? 0) + (t.minute ?? 0) / 60
 }
 
-/** 移動或旅行之後：被主人帶著時，可能發生主人的突發事件 */
-export function maybeMasterEvent(state: GameState, chance: number): Report | undefined {
-  if (!isBound(state) || state.combat || state.pendingAction || state.standoff) return undefined
+/** 移動或旅行之後：被主人帶著時，可能發生主人的突發事件（等待主角回應） */
+export function maybeMasterEvent(state: GameState, chance: number): PendingMasterEvent | undefined {
+  if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent) return undefined
   const ev = slaveryRules.master_events
   const now = hoursOf(state.time)
   if (state.lastMasterEvent !== undefined && now - state.lastMasterEvent < ev.cooldown_hours) return undefined
   const picked = withRng(state, (rng) => (rng.chance(chance) ? pickEvent(rng, ev.events) : undefined))
   if (!picked) return undefined
-  state.lastMasterEvent = now
-  return masterEvent(state, picked)
+  return startMasterEvent(state, picked)
+}
+
+export function startMasterEvent(state: GameState, e: MasterEventDef): PendingMasterEvent {
+  state.lastMasterEvent = hoursOf(state.time)
+  state.pendingMasterEvent = { id: e.id, text: withMaster(state, e.text) }
+  return state.pendingMasterEvent
 }
 
 function pickEvent(rng: Rng, list: MasterEventDef[]): MasterEventDef {
@@ -353,40 +358,89 @@ function forMaster(effects: RewardEffect[] | undefined, master: string): RewardE
   return (effects ?? []).map((e) => ('npc' in e && e.npc === 'master' ? { ...e, npc: master } : e) as RewardEffect)
 }
 
-export function masterEvent(state: GameState, e: MasterEventDef): Report {
+function withMaster(state: GameState, s: string): string {
+  return s.split('{master}').join(pcOf(state).contract?.masterName ?? '主人')
+}
+
+/** 等待回應的事件定義 */
+export function pendingEventDef(state: GameState): MasterEventDef {
+  const pm = state.pendingMasterEvent
+  const e = pm && slaveryRules.master_events.events.find((x) => x.id === pm.id)
+  if (!e) throw new Error('現在沒有主人的要求')
+  return e
+}
+
+/** 錢不夠時只花得起手上的 */
+function affordable(state: GameState, effects: RewardEffect[]): RewardEffect[] {
+  return effects
+    .map((x) => (x.type === 'money' && x.amount < 0 ? { ...x, amount: -Math.min(-x.amount, state.money_cc) } : x))
+    .filter((x) => x.type !== 'money' || x.amount !== 0)
+}
+
+/** 從三個回應裡選一個：有檢定的依規則擲骰 */
+export function answerMasterEvent(state: GameState, index: number): Report {
+  const e = pendingEventDef(state)
+  const o = e.options[index]
+  if (!o) throw new Error('沒有這個選項')
   const pc = pcOf(state)
   const c = pc.contract!
   const area = currentArea(state)
   const loc = locationById(area.location)
   const start = { ...state.time }
-  const text = (s: string) => s.split('{master}').join(c.masterName)
   const report: Report = {
     schema_version: '0.1',
     report_id: newReportId(state),
     kind: 'event',
-    time: { start, end: addHours(start, e.hours) },
+    time: { start, end: addHours(start, o.hours ?? e.hours) },
     location: { at: area.location, region: loc.region, scene: area.name },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', summary: text(e.text), tags: ['主人'] },
+    outcome: { result: 'neutral', summary: `${state.pendingMasterEvent!.text}你選擇${o.label}。`, tags: ['主人'] },
     changes: {},
-    narration: { pov: 'second_person', length: 'short', focus: [`${c.masterName}的突發要求`] },
+    narration: { pov: 'second_person', length: 'short', focus: [`${c.masterName}的突發要求`, `主角的回應：${o.label}`] },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
-  let effects = forMaster(e.effects, c.master)
-  if (e.check) {
-    const dice = withBonus('1d20', mod(pc.attrs[e.check.attr]) + proficiency(pc.level))
+  let effects = forMaster(o.effects, c.master)
+  if (o.check) {
+    const dice = withBonus('1d20', mod(pc.attrs[o.check.attr]) + proficiency(pc.level))
     const r = withRng(state, (rng) => roll(rng, dice))
-    const ok = r.total >= e.check.dc
-    report.timeline = [{ seq: 1, time: start, actor: 'pc', action: `${c.masterName}的要求`, roll: { dice, value: r.total, dc: e.check.dc }, result: ok ? 'success' : 'fail' }]
-    effects = [...effects, ...forMaster(ok ? e.effects_success : e.fail_effects, c.master)]
+    const ok = r.total >= o.check.dc
+    report.timeline = [{ seq: 1, time: start, actor: 'pc', action: o.label, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
+    effects = [...effects, ...forMaster(ok ? o.effects_success : o.fail_effects, c.master)]
     report.outcome.result = ok ? 'success' : 'failure'
-    if (ok) report.outcome.summary += text(e.check.success)
+    const after = ok ? o.success : o.fail
+    if (after) report.outcome.summary += withMaster(state, after)
+  } else if (o.result) {
+    report.outcome.summary += withMaster(state, o.result)
   }
-  // 錢不夠時只花得起手上的
-  effects = effects.map((x) => (x.type === 'money' && x.amount < 0 ? { ...x, amount: -Math.min(-x.amount, state.money_cc) } : x)).filter((x) => x.type !== 'money' || x.amount !== 0)
-  const notes = applyEffects(state, report, effects)
+  delete state.pendingMasterEvent
+  const notes = applyEffects(state, report, affordable(state, effects))
   if (notes.length) report.outcome.summary += notes.join('，') + '。'
   return commitReport(state, report)
+}
+
+/** 自己輸入回應（主動行動 master_event） */
+export function setupMasterEvent(state: GameState) {
+  const e = pendingEventDef(state)
+  const c = pcOf(state).contract!
+  return {
+    dc: e.free_dc ?? slaveryRules.master_events.free_dc, targetName: c.masterName, situational: [],
+    scene: `${currentArea(state).name}・${state.pendingMasterEvent!.text}`,
+    outcomes: {
+      critical: '主人很滿意（親密度 +3）', success: '應付過去（親密度 +1）', partial: '勉強過關',
+      fail: '惹主人不快（親密度 -2）', fumble: '觸怒主人（親密度 -4，挨打）',
+    } as Partial<Record<Degree, string>>,
+  }
+}
+
+export function applyMasterEventResponse(state: GameState) {
+  delete state.pendingMasterEvent
+}
+
+/** 沒有 AI 判定時，自己輸入的回應依成功程度的效果 */
+export function masterEventDefaults(state: GameState, report: Report, degree: Degree): string[] {
+  const c = pcOf(state).contract
+  if (!c?.master) return []
+  return applyEffects(state, report, affordable(state, forMaster(slaveryRules.master_events.free_outcomes[degree], c.master)))
 }
 
 /** 談判只能在安全的地方（旅店、安全房、神殿） */
