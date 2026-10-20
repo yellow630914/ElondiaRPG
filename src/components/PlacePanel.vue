@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { geography, locationById } from '@/engine/data'
-import { canTravelHere, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, questRunnableHere } from '@/engine/grid'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, questRunnableHere } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -86,9 +86,17 @@ function go(id: string) {
   intent.value = ''
 }
 
-const CELL_ICON: Partial<Record<string, string>> = {
-  inn: '🛏️', guild: '🏛️', tavern: '🍺', shop: '🛒', temple: '⛪', gate: '🚪', exit: '🚪', safe: '🔥',
-  stairs_down: '⬇️', stairs_up: '⬆️', quest: '❗', floor: '🧭', link: '➡️', brothel: '🏮',
+const ICON: Partial<Record<string, string>> = { ...CELL_ICON, floor: '🧭' }
+
+// 鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商：各自的交易清單
+const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant'] as const
+const shopHere = computed(() => (SHOPS as readonly string[]).includes(cell.value.kind) ? (cell.value.kind as (typeof SHOPS)[number]) : null)
+const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
+  smithy: '金屬與木製的武器、防具；也接金屬、木材的打造委託。',
+  tailor: '皮革與布料的衣物、護具；也接皮革、布料的打造委託。',
+  jeweler: '戒指、項鍊、護符、法器寶珠與寶石材料；也接飾品的打造委託。',
+  magic: '各種卷軸，另外每天進一批不一樣的藥劑與材料。',
+  informant: '賣附近地下城、城郊魔物的底細，也能打聽進行中委託的線索。',
 }
 </script>
 
@@ -96,7 +104,7 @@ const CELL_ICON: Partial<Record<string, string>> = {
     <div class="place">
       <!-- 目前所在格子 -->
       <section class="panel">
-        <h3>{{ CELL_ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
+        <h3>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
 
         <template v-if="cell.kind === 'inn'">
           <p class="muted small">可以在這裡長休（見下方「休息」）。</p>
@@ -114,6 +122,11 @@ const CELL_ICON: Partial<Record<string, string>> = {
           <p class="muted small">野外與海路旅行每人每天消耗 1 份乾糧；地下城的安全房長休也要乾糧。目前持有 {{ rations }} 份。</p>
           <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" />
           <MarketPanel v-if="publicMarket" kind="public" />
+        </template>
+
+        <template v-else-if="shopHere">
+          <p class="muted small">{{ SHOP_NOTE[shopHere] }}</p>
+          <ShopPanel :key="`${shopHere}-${s.location}-${s.time.day}`" :type="shopHere" />
         </template>
 
         <template v-else-if="cell.kind === 'tavern'">

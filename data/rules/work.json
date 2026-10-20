@@ -22,6 +22,11 @@
     "tavern": { "name": "酒館跑堂", "attr": "cha", "dc": 11, "rate_cc": 3, "desc": "端酒、收拾桌子、應付喝醉的客人。" },
     "inn": { "name": "旅店雜役", "attr": "str", "dc": 10, "rate_cc": 2, "desc": "劈柴、打水、搬行李、整理房間。" },
     "shop": { "name": "雜貨店幫工", "attr": "int", "dc": 11, "rate_cc": 3, "desc": "搬貨、點貨、顧店、跑腿送貨。" },
+    "smithy": { "name": "鐵匠學徒", "attr": "str", "dc": 12, "rate_cc": 4, "desc": "拉風箱、搬鐵料、敲打粗胚。" },
+    "tailor": { "name": "裁縫助手", "attr": "dex", "dc": 11, "rate_cc": 3, "desc": "穿針引線、裁布、縫補客人的衣物。" },
+    "jeweler": { "name": "珠寶店看店", "attr": "cha", "dc": 12, "rate_cc": 4, "desc": "招呼客人、擦拭首飾、盯著有沒有人順手牽羊。" },
+    "magic": { "name": "藥材整理", "attr": "int", "dc": 13, "rate_cc": 4, "desc": "分類藥材、抄寫卷軸目錄、小心別碰到危險的東西。" },
+    "informant": { "name": "跑腿打聽", "attr": "cha", "dc": 12, "rate_cc": 3, "desc": "替情報販子跑腿、在街頭打聽消息。" },
     "temple": { "name": "神殿雜務", "attr": "fai", "dc": 11, "rate_cc": 2, "official": true, "desc": "打掃聖堂、照顧病人、抄寫經文。" },
     "guild": { "name": "公會文書", "attr": "int", "dc": 13, "rate_cc": 4, "official": true, "desc": "整理委託單、抄寫報告、跑公文。" },
     "brothel": { "name": "娼館接客", "attr": "cha", "dc": 12, "rate_cc": 6, "desc": "在娼館接待客人；收入比一般工作高，但要看客人的臉色。" }

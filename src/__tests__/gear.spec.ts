@@ -86,10 +86,12 @@ describe('crafting', () => {
     return r
   }
 
-  it('only works at the general store and needs forge materials beyond the first tier', () => {
+  it('only works at the matching shop and needs forge materials beyond the first tier', () => {
     const state = game()
-    expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:iron', text: '' })).toThrow('雜貨店')
-    standOn(state, 'shop')
+    expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:iron', text: '' })).toThrow('鐵匠鋪')
+    standOn(state, 'tailor')
+    expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:iron', text: '' })).toThrow('要到鐵匠鋪')
+    standOn(state, 'smithy')
     expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:leather', text: '' })).toThrow('不能')
     expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('材料不夠')
     state.money_cc = 5000
@@ -101,7 +103,7 @@ describe('crafting', () => {
 
   it('makes an enchanted piece on success and spends fee and materials', () => {
     const state = game()
-    standOn(state, 'shop')
+    standOn(state, 'smithy')
     state.money_cc = 5000
     state.inventory.push({ name: '精鋼錠', qty: 3 })
     const plan = craftPlan(state, 'longsword', 'steel')
@@ -118,7 +120,7 @@ describe('crafting', () => {
 
   it('loses half the materials on failure and uses the AI name and enchants within the cap', () => {
     const state = game()
-    standOn(state, 'shop')
+    standOn(state, 'smithy')
     state.money_cc = 50000
     state.inventory.push({ name: '秘銀礦石', qty: 4 })
     const failed = craft(state, 'longsword:mithril', 8)
@@ -161,13 +163,13 @@ describe('special gear at shops', () => {
   it('prices AI gear from its composition and caps the material by level', () => {
     const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6 })
     enterLocation(state)
-    const n = applyAiDeals(state, 'general', {
+    const n = applyAiDeals(state, 'smithy', {
       deals: [{ title: '老兵的佩劍', gives: [{ type: 'money', amount: 1 }], gets: [{ type: 'gear', base: 'longsword', material: 'star_iron', name: '老兵的佩劍', rarity: 'uncommon', enchants: { mods: { hit: 1 } } }], stock: 1 }],
     })
     expect(n).toBe(1)
     const spec = gearSpecOf(state, '老兵的佩劍')!
     expect(gearRules.materials[spec.material]!.level).toBeLessThanOrEqual(3)
-    const deal = shopState(state, 'general').deals.find((d) => d.title === '老兵的佩劍')!
+    const deal = shopState(state, 'smithy').deals.find((d) => d.title === '老兵的佩劍')!
     expect(deal.gives[0]!.amount).toBeGreaterThanOrEqual(gearPrice(spec) * 0.5)
   })
 })

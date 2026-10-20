@@ -12,7 +12,7 @@ import type { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
 
 type Scale = 'full' | 'half' | 'up' | 'third' | 'third_up' | 'res'
-type MaterialKind = 'metal' | 'leather' | 'cloth' | 'wood' | 'jewel'
+export type MaterialKind = 'metal' | 'leather' | 'cloth' | 'wood' | 'jewel'
 
 export interface MaterialDef {
   kind: MaterialKind
@@ -28,7 +28,7 @@ export interface MaterialDef {
 }
 
 export interface BaseDef {
-  slot: GearSlot | 'neck'
+  slot: GearSlot | 'ring'
   name: string
   kind: MaterialKind
   weapon?: string
@@ -81,8 +81,8 @@ export const gearRules = gearJson as unknown as {
 
 export const SLOTS = Object.keys(gearRules.slots) as GearSlot[]
 const PIECE_SLOTS: GearSlot[] = ['head', 'legs', 'wrists', 'feet', 'belt']
-const JEWELRY: { slot: GearSlot; group: 'accessory' | 'neck' }[] = [
-  { slot: 'accessory', group: 'accessory' }, { slot: 'neck_1', group: 'neck' }, { slot: 'neck_2', group: 'neck' },
+const JEWELRY: { slot: GearSlot; group: 'accessory' | 'ring' }[] = [
+  { slot: 'accessory', group: 'accessory' }, { slot: 'ring_1', group: 'ring' }, { slot: 'ring_2', group: 'ring' },
 ]
 
 export function slotName(slot: GearSlot): string {
@@ -105,7 +105,7 @@ function scaled(s: Scale, bonus: number): number {
 }
 
 export interface GearStats {
-  slot: GearSlot | 'neck'
+  slot: GearSlot | 'ring'
   base: BaseDef
   material: MaterialDef
   rarity: string
@@ -273,8 +273,8 @@ const PIECE_BASES: Record<MaterialKind, Partial<Record<GearSlot, string>>> = {
   jewel: {},
 }
 const JEWELRY_BASES = {
-  accessory: ['ring_precision', 'ring_guard', 'ring_fortune', 'ring_swift'],
-  neck: ['amulet_ward', 'amulet_iron', 'pendant_fire', 'pendant_cold', 'pendant_lightning', 'pendant_poison', 'pendant_shadow', 'pendant_mind'],
+  accessory: ['amulet_ward', 'amulet_iron', 'pendant_fire', 'pendant_cold', 'pendant_lightning', 'pendant_poison', 'pendant_shadow', 'pendant_mind'],
+  ring: ['ring_precision', 'ring_guard', 'ring_fortune', 'ring_swift'],
 }
 
 /** 夥伴與敵對冒險者：依職業模板與等級生成一套裝備 */
@@ -306,7 +306,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 /** 一行說明：稀有度・欄位・武器或防具類型・加成 */
 export function gearSummary(spec: GearSpec): string {
   const s = gearStats(spec)
-  const parts = [rarityName(s.rarity), s.slot === 'neck' ? '項鍊' : slotName(s.slot)]
+  const parts = [rarityName(s.rarity), s.slot === 'ring' ? '戒指' : slotName(s.slot)]
   if (s.weapon) {
     const w = weaponDef(s.weapon)
     parts.push(`${w.dice} ${damageTypeName(w.type)}${s.two_handed ? '（雙手）' : ''}`)

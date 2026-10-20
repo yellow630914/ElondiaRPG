@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, damageTypeName, damageTypes, enemies, itemDef, itemRules, statuses, type ItemUse } from '@/engine/data'
+import { ATTR_IDS, attrName, damageTypeName, damageTypes, enemies, itemDef, itemRules, statuses, type AttrId, type ItemUse } from '@/engine/data'
 import { gearPrice, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
 import { useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
@@ -57,7 +57,7 @@ const enemyList = computed(() => {
   return Object.values(enemies).sort((a, b) => a.level - b.level)
 })
 const LAYER: Record<ChestLayer, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層' }
-const SHOPS: Record<string, string> = { general: '雜貨店', temple: '神殿', tavern: '酒館' }
+const SHOPS: Record<string, string> = { general: '雜貨店', temple: '神殿', tavern: '酒館', smith: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', info: '情報商' }
 const LOCS: Record<string, string> = { village: '任何聚落', town: '城鎮以上', city: '城市以上', capital: '王都' }
 const bases = computed(() => {
   void content.version
@@ -264,10 +264,18 @@ function remove() {
           </label>
           <label v-if="use.apply.save">豁免 DC <input v-model.number="use.apply.dc" type="number" min="5" max="30" /></label>
         </template>
+        <label v-if="use.damage || use.apply">豁免（成功時傷害減半、不受狀態）
+          <select :value="use.save?.attr ?? ''" @change="use.save = ($event.target as HTMLSelectElement).value ? { attr: ($event.target as HTMLSelectElement).value as AttrId, dc: use.save?.dc ?? 13 } : undefined">
+            <option value="">（不能豁免）</option>
+            <option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option>
+          </select>
+        </label>
+        <label v-if="use.save">豁免 DC <input v-model.number="use.save.dc" type="number" min="5" max="30" /></label>
         <label v-if="use.damage || use.apply">範圍
           <select v-model="use.area"><option value="one">一名敵人</option><option value="all">所有敵人</option></select>
         </label>
       </div>
+      <label class="check small"><input v-model="use.escape" type="checkbox" /> 傳送：全隊立刻脫離戰鬥</label>
       <label class="check small"><input v-model="use.combat_only" type="checkbox" /> 只能在戰鬥中使用（回復生命、法術環以外的效果一律只能在戰鬥中用）</label>
     </fieldset>
 
@@ -312,7 +320,7 @@ function remove() {
           <input type="checkbox" :checked="draft.forge?.materials.includes(String(id))" @change="setForge(String(id), ($event.target as HTMLInputElement).checked)" /> {{ m.name }}（{{ m.tier }} 級）
         </label>
       </div>
-      <p class="small muted">勾選後可以在雜貨店拿它委託打造對應材料的裝備（第 2 級以上）。</p>
+      <p class="small muted">勾選後可以在鐵匠鋪、裁縫店或珠寶店拿它委託打造對應材料的裝備（第 2 級以上）。</p>
     </fieldset>
   </div>
 </template>

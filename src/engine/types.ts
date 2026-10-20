@@ -157,7 +157,7 @@ export interface Report {
 // ---- 遊戲狀態 ----
 
 /** 裝備欄位（gear.json 的 slots） */
-export type GearSlot = 'main_hand' | 'off_hand' | 'head' | 'body' | 'legs' | 'wrists' | 'feet' | 'belt' | 'accessory' | 'neck_1' | 'neck_2'
+export type GearSlot = 'main_hand' | 'off_hand' | 'head' | 'body' | 'legs' | 'wrists' | 'feet' | 'belt' | 'accessory' | 'ring_1' | 'ring_2'
 
 /** 一件裝備的組成：底材 × 材料（＋稀有度與附魔） */
 export interface GearSpec {

@@ -1,12 +1,12 @@
-// 委託打造：站在雜貨店上，選底材與材料，交給工匠打造（data/rules/gear.json 的 craft）。
+// 委託打造：在鐵匠鋪（金屬、木材）、裁縫店（皮革、布料）、珠寶店（寶石）選底材與材料，交給工匠打造（data/rules/gear.json 的 craft）。
 // 走主動行動 craft（target = "底材:材料"）：玩家可以描述想要的樣子，AI 決定成功程度，
 // 也可以用 gear 效果替成品取名、寫描述、挑附魔（程式依成功程度夾住稀有度與附魔點數）。
 // AI 關閉時依規則：成功以上隨機附魔。
 
 import { itemDef, locationById, shopRules, type Degree } from './data'
 import { applyEffects, type RewardEffect } from './effects'
-import { gearName, gearRules, rarityName, rarityPoints, registerGear, rollEnchants, sanitizeGearSpec, shiftRarity } from './gear'
-import { currentCell } from './grid'
+import { gearName, gearRules, type MaterialKind, rarityName, rarityPoints, registerGear, rollEnchants, sanitizeGearSpec, shiftRarity } from './gear'
+import { CELL_NAME, currentCell, type CellKind } from './grid'
 import { formatMoney } from './money'
 import { withRng } from './state'
 import type { GameState, GearSpec, Report } from './types'
@@ -36,8 +36,17 @@ export function forgeOf(name: string): string[] {
   return itemDef(name)?.forge?.materials ?? []
 }
 
+/** 哪種材料到哪裡打造 */
+export const CRAFT_SHOP: Record<MaterialKind, CellKind> = { metal: 'smithy', wood: 'smithy', leather: 'tailor', cloth: 'tailor', jewel: 'jeweler' }
+
+/** 這裡可以打造的材料類型 */
+export function craftKindsHere(state: GameState): MaterialKind[] {
+  const cell = currentCell(state).kind
+  return (Object.keys(CRAFT_SHOP) as MaterialKind[]).filter((k) => CRAFT_SHOP[k] === cell)
+}
+
 export function canCraftHere(state: GameState): boolean {
-  return currentCell(state).kind === 'shop'
+  return craftKindsHere(state).length > 0
 }
 
 export function parseCraftTarget(target?: string): { base: string; material: string } {
@@ -92,8 +101,10 @@ export function craftRarity(material: string, degree: Degree): string | undefine
 }
 
 export function setupCraft(state: GameState, target?: string) {
-  if (!canCraftHere(state)) throw new Error('要在雜貨店委託工匠打造')
+  if (!canCraftHere(state)) throw new Error('要在鐵匠鋪、裁縫店或珠寶店委託打造')
   const { base, material } = parseCraftTarget(target)
+  const kind = gearRules.bases[base]!.kind
+  if (!craftKindsHere(state).includes(kind)) throw new Error(`${gearRules.bases[base]!.name}要到${CELL_NAME[CRAFT_SHOP[kind]]}打造`)
   const plan = craftPlan(state, base, material)
   if (plan.blocked) throw new Error(plan.blocked)
   const name = gearName({ base, material })

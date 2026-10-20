@@ -1,6 +1,6 @@
 // 商店與交易。說明見 docs/TRADE.md。
 //
-// - 每間店（雜貨店、神殿、酒館）每天有一份交易清單。每筆交易 = 付出（金錢、物品、時間）＋ 得到（報酬模板的效果，可複合）。
+// - 每間店（雜貨店、神殿、酒館、鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商）每天有一份交易清單。每筆交易 = 付出（金錢、物品、時間）＋ 得到（報酬模板的效果，可複合）。
 //   AI 判定開啟時清單由 AI 依商店類型生成（程式驗證、補上價格下限），否則依物品目錄與 specials 生成。
 // - 一般交易（買、賣）直接計算，不需要 AI。
 // - 主角想殺價、交涉時才是主動行動（bargain）：成功程度決定這筆交易的價格倍率。
@@ -8,8 +8,8 @@
 
 import { snapshot } from './character'
 import {
-  companionRules, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
-  type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType,
+  companionRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
+  wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
@@ -21,7 +21,9 @@ import { reputationBand } from './security'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Deal, GameState, Report, ShopState } from './types'
 
-const CELL_SHOP: Record<string, ShopType> = { shop: 'general', temple: 'temple', tavern: 'tavern' }
+const CELL_SHOP: Record<string, ShopType> = {
+  shop: 'general', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant',
+}
 
 export function shopTypeForCell(cellKind: string): ShopType | null {
   return CELL_SHOP[cellKind] ?? null
@@ -38,6 +40,9 @@ function typeOf(key: string): ShopType {
 function locationMult(state: GameState): number {
   return shopRules.location_price_mult[locationById(state.location).type] ?? 1
 }
+
+/** 商店賣材料時的加成（材料的目錄價是收購價） */
+const MATERIAL_MARKUP = 2
 
 function locationRank(type: string): number {
   return shopRules.location_rank[type] ?? 1
@@ -68,13 +73,13 @@ export function itemCategory(state: GameState, name: string): ItemCategory | und
   return itemDef(name)?.category ?? (state.customItems?.[name]?.category as ItemCategory | undefined)
 }
 
-function itemDeal(state: GameState, name: string, stock: number): Deal {
+function itemDeal(state: GameState, name: string, stock: number, markup = 1): Deal {
   const def = itemDef(name)!
   return {
     id: `item:${name}`,
     title: name,
     ...(def.desc ? { desc: def.desc } : {}),
-    gives: [{ type: 'money', amount: Math.max(1, Math.round(def.price_cc * locationMult(state))) }],
+    gives: [{ type: 'money', amount: Math.max(1, Math.round(def.price_cc * markup * locationMult(state))) }],
     gets: [{ type: 'item', name, qty: 1 }],
     stock,
   }
@@ -88,12 +93,12 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
   return withRng(state, (rng) => {
     const deals: Deal[] = []
     const equipment = available.filter((i) => i.category === 'equipment')
-    const valuables = available.filter((i) => i.category === 'valuable')
     const pickSome = <T>(list: T[], n: number) => [...list].sort(() => rng.next() - 0.5).slice(0, n)
     for (const i of available) {
-      if (i.category === 'equipment' || i.category === 'valuable') continue
+      if (i.category === 'equipment') continue
       const stock = i.category === 'food' || i.category === 'gear' ? 20 : rng.int(2, 5)
-      deals.push(itemDeal(state, i.name, stock))
+      // 材料的目錄價是收購價：店裡賣的時候加成（避免買進賣出套利）
+      deals.push(itemDeal(state, i.name, stock, i.category === 'material' ? def.random?.material_markup ?? MATERIAL_MARKUP : 1))
     }
     // 裝備：稀有的材料比較少出現（第一級最常見，精金極少）
     const gearWeight = (i: ItemDef) => [0, 10, 6, 1.5, 0.2, 0][i.gear ? gearRules.materials[i.gear.material]?.tier ?? 1 : 1] ?? 1
@@ -103,10 +108,72 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
       picked.add(weightedPick(rng, Object.fromEntries(pool.map((i) => [i.name, gearWeight(i)]))))
     }
     for (const name of picked) deals.push(itemDeal(state, name, 1))
-    for (const i of pickSome(valuables, 2)) deals.push(itemDeal(state, i.name, rng.int(1, 2)))
+    // 魔法物品店：每天隨機上架消耗品與材料（材料以收購價加成賣出，依聚落規模限制價格）
+    if (def.random) {
+      const r = def.random
+      const have = new Set(deals.map((d) => d.title))
+      const consumables = itemRules.items.filter((i) => i.category === 'consumable' && !have.has(i.name) && locationRank(i.min_location ?? 'village') <= rank)
+      for (const i of pickSome(consumables, r.consumables ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 3)))
+      const cap = r.max_material_price?.[Math.min(rank, (r.max_material_price.length ?? 1) - 1)] ?? 300
+      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5)
+      for (const i of pickSome(materials, r.materials ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 2), r.material_markup ?? 2))
+    }
+    if (def.info) deals.push(...infoDeals(state, def.info))
     for (const sp of def.specials) deals.push(specialDeal(sp))
     return deals
   })
+}
+
+/** 弱點與免疫的簡短說明 */
+function weaknessText(id: string): string {
+  const e = enemies[id]
+  if (!e) return ''
+  const weak = Object.entries(e.resist ?? {}).filter(([, v]) => (v ?? 0) > 0).map(([k]) => damageTypeName(k))
+  const immune = Object.entries(e.resist ?? {}).filter(([, v]) => (v ?? 0) <= -1).map(([k]) => damageTypeName(k))
+  return [weak.length ? `怕${weak.join('、')}` : '', immune.length ? `不怕${immune.join('、')}` : ''].filter(Boolean).join('，')
+}
+
+/** 情報商：同地區每座地下城的層主、這一帶城郊的魔物、進行中委託的線索 */
+function infoDeals(state: GameState, info: NonNullable<ShopTypeDef['info']>): Deal[] {
+  const loc = locationById(state.location)
+  const mult = locationMult(state)
+  const deals: Deal[] = []
+  const LAYER: Record<string, string> = { shallow: '淺層', middle: '中層', deep: '深層' }
+  for (const d of geography.locations.filter((l) => l.type === 'dungeon' && l.region === loc.region && dungeonEncounters[l.id])) {
+    const t = dungeonEncounters[d.id]!
+    const bosses = Object.entries(t.bosses ?? { deep: t.boss })
+      .filter(([, g]) => g?.[0])
+      .map(([layer, g]) => {
+        const id = g![0]![0]
+        const w = weaknessText(id)
+        return `${LAYER[layer] ?? layer}層主是${enemies[id]?.name ?? id}${w ? `（${w}）` : ''}`
+      })
+    if (!bosses.length) continue
+    deals.push({
+      id: `info:dungeon:${d.id}`, title: `${d.name}的情報`, desc: '各層層主的底細與弱點。',
+      gives: [{ type: 'money', amount: Math.round(info.dungeon_price * mult) }],
+      gets: [{ type: 'memory', summary: `情報商說：${d.name}的${bosses.join('；')}。`, importance: 2 }, { type: 'flag', key: `intel:${d.id}`, value: true }],
+      stock: 1,
+    })
+  }
+  const wild = [...new Set(wildEncounters(loc.region).flat().map(([id]) => id))].filter((id) => enemies[id])
+  if (wild.length) {
+    deals.push({
+      id: `info:wild:${loc.region}`, title: `${regionById(loc.region).name}城郊的魔物`, desc: '這一帶野外常見的魔物與弱點。',
+      gives: [{ type: 'money', amount: Math.round(info.wild_price * mult) }],
+      gets: [{ type: 'memory', summary: `情報商說，${regionById(loc.region).name}的城郊常見${wild.map((id) => `${enemies[id]!.name}${weaknessText(id) ? `（${weaknessText(id)}）` : ''}`).join('、')}。`, importance: 1 }],
+      stock: 1,
+    })
+  }
+  for (const q of state.quests.filter((x) => x.status === 'accepted' && !x.flags?.lead)) {
+    deals.push({
+      id: `info:quest:${q.id}`, title: `「${q.title}」的線索`, desc: '打聽委託的內幕（委託的檢定 +5）。',
+      gives: [{ type: 'money', amount: Math.round(info.quest_price * mult) }],
+      gets: [{ type: 'quest_flag', quest: q.id, key: 'lead', value: true }, { type: 'memory', summary: `從情報商那裡買到「${q.title}」的線索。`, importance: 1 }],
+      stock: 1,
+    })
+  }
+  return deals
 }
 
 function specialDeal(sp: { id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number }): Deal {

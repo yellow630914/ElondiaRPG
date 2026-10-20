@@ -4,6 +4,7 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
 import { protagonistText } from '@/engine/character'
 import { itemDef, locationById } from '@/engine/data'
+import { gearRules } from '@/engine/gear'
 import { enterLocation, standOn } from '@/engine/grid'
 import { equipItem, useItem } from '@/engine/inventory'
 import { applyAiOptions, canNegotiate, chooseOption, startNegotiation } from '@/engine/negotiation'
@@ -34,8 +35,11 @@ describe('shops', () => {
     const rations = shop.deals.find((d) => d.id === 'item:乾糧')!
     // 索里耶爾是王都：價格 ×1.15
     expect(rations.gives[0]).toEqual({ type: 'money', amount: 6 })
-    const gear = shop.deals.filter((d) => d.id.startsWith('item:') && itemDef(d.title)?.gear)
+    // 裝備改在鐵匠鋪、裁縫店、珠寶店賣
+    expect(shop.deals.some((d) => itemDef(d.title)?.gear)).toBe(false)
+    const gear = shopState(state, 'smithy').deals.filter((d) => d.id.startsWith('item:') && itemDef(d.title)?.gear)
     expect(gear.length).toBeGreaterThanOrEqual(3)
+    for (const d of gear) expect(['metal', 'wood']).toContain(gearRules.bases[itemDef(d.title)!.gear!.base]!.kind)
     const report = buyDeal(state, 'general', 'item:乾糧')
     expectValid(report)
     expect(report.check).toBeUndefined()

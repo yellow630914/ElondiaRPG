@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted } from 'vue'
-import { cellAt, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
+import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 
@@ -8,11 +8,7 @@ const game = useGame()
 const area = computed(() => currentArea(game.state!))
 const pos = computed(() => position(game.state!))
 
-const ICON: Partial<Record<Cell['kind'], string>> = {
-  inn: '🛏️', guild: '📜', tavern: '🍺', shop: '🛒', temple: '⛪', gate: '🚪', link: '➡️',
-  encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
-  stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
-}
+const ICON = CELL_ICON
 
 function icon(cell: Cell): string {
   if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap', 'chest'].includes(cell.kind)) return ''

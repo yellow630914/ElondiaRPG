@@ -5,7 +5,7 @@ import { abilities, attributeRules, classDef, locationById, type Attrs } from '.
 import { contractTerms, type SlaveStart } from './slavery'
 import { ensureRelationship, recordMemory, setAffinity } from './social'
 import { Rng } from './rng'
-import type { GameState, GameTime, InventoryItem, Report } from './types'
+import type { EquippedGear, GameState, GameTime, InventoryItem, Report } from './types'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
@@ -66,7 +66,32 @@ export function newGame(opts: NewGameOptions): GameState {
 }
 
 /** 讀入舊版存檔時補上新欄位。 */
+/**
+ * 舊的飾品欄位：首飾放戒指、兩條項鍊放項鍊與護符。改成首飾放項鍊、兩枚戒指：
+ * 原本的首飾（戒指）移到第一枚戒指，第一條項鍊移到首飾，第二條項鍊放回行囊（沒有行囊的 NPC 直接拿掉）。
+ */
+function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefined, pack?: GameState['inventory']) {
+  if (!gear || (!('neck_1' in gear) && !('neck_2' in gear))) return
+  const ring = gear.accessory
+  const neck1 = gear.neck_1
+  const neck2 = gear.neck_2
+  delete gear.accessory
+  delete gear.neck_1
+  delete gear.neck_2
+  if (ring) gear.ring_1 = ring
+  if (neck1) gear.accessory = neck1
+  if (neck2 && pack) {
+    const it = pack.find((i) => i.name === neck2.name)
+    if (it) it.qty++
+    else pack.push({ name: neck2.name, qty: 1 })
+  }
+}
+
 export function migrate(state: GameState): GameState {
+  // 「飾品」類別已經拿掉（併入裝備）：AI 自創的飾品改成雜物
+  for (const c of Object.values(state.customItems ?? {})) if (c.category === 'valuable') c.category = 'gear'
+  for (const m of state.party) migrateJewelry(m.gear as Record<string, EquippedGear | undefined>, state.inventory)
+  for (const r of Object.values(state.npcs ?? {})) migrateJewelry(r.character?.gear as Record<string, EquippedGear | undefined> | undefined)
   for (const q of state.quests) {
     q.kind ??= 'clear_dungeon'
     q.area ??= 'dungeon'

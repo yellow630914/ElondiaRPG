@@ -585,6 +585,7 @@ export function itemHitsEnemies(use: ItemDef['use']): boolean {
 export function itemTargets(combat: CombatState, name: string): Combatant[] {
   const use = itemDef(name)?.use
   if (!use) return []
+  if (use.escape) return combat.combatants.filter((c) => c.side === 'party' && isActive(c))
   if (itemHitsEnemies(use)) return combat.combatants.filter((c) => c.side === 'enemy' && isActive(c))
   const allies = combat.combatants.filter((c) => c.side === 'party' && !c.fled)
   if (use.revive) return allies.filter((c) => c.hp === 0)
@@ -608,18 +609,22 @@ function useItem(combat: CombatState, rng: Rng, actor: Combatant, name: string, 
   if (!use || !target) throw new Error('不能對這個目標使用')
   actor.ap -= cost
   const effects: Effect[] = []
-  if (itemHitsEnemies(use)) {
+  if (use.escape) {
+    combat.status = 'fled'
+    effects.push({ type: 'move', target: actor.id, text: '全隊被傳送出戰場' })
+  } else if (itemHitsEnemies(use)) {
     // 投擲：傷害與狀態；範圍為全體時波及所有敵人。傷害骰只擲一次
     const hit = use.area === 'all' ? combat.combatants.filter((c) => c.side === 'enemy' && isActive(c)) : [target]
     const dmg = use.damage ? rollDice(rng, use.damage.dice, 1) : 0
     for (const t of hit) {
       let saved = false
-      if (use.apply?.save && use.apply.dc) saved = savingThrow(rng, t, use.apply.save, use.apply.dc).success
+      const save = use.save ?? (use.apply?.save && use.apply.dc ? { attr: use.apply.save, dc: use.apply.dc } : undefined)
+      if (save) saved = savingThrow(rng, t, save.attr, save.dc).success
       if (use.damage) dealDamage(combat, rng, null, t, [{ amount: dmg, type: use.damage.type, weapon: false }], effects, { half: saved })
       if (use.apply && !saved && isActive(t)) {
         addStatus(t, { id: use.apply.status, turns: use.apply.turns, source: actor.id })
         effects.push({ type: 'status_add', target: t.id, status: statusDef(use.apply.status).name })
-      } else if (use.apply && saved) {
+      } else if (saved) {
         effects.push({ type: 'note', target: t.id, text: '豁免成功' })
       }
     }

@@ -22,3 +22,4 @@ label.check { display: inline-flex; gap: 4px; align-items: center; }
 .warn { color: var(--danger); border-color: var(--danger); }
 .warn-text { color: var(--danger); }
 .summary { background: var(--panel-2); border-radius: var(--radius); padding: 4px 8px; }
+.pair.dice input { width: 52px; }

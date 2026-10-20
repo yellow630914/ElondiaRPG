@@ -697,12 +697,13 @@ export const workRules = workJson as unknown as {
 
 // ---- 物品、商店、談判 ----
 
-export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'valuable' | 'scroll' | 'equipment' | 'info'
+export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'scroll' | 'equipment' | 'info'
 /**
  * 消耗品的效果（都是可以量化的數值）：
  * heal 回復生命（骰子）、slot 回復一個 N 環以下的法術環、cleanse 解除狀態、status 給自己或隊友一個狀態、
  * temp_hp 臨時生命值、ap 立刻獲得行動點、revive 以最大生命的比例救起倒下的隊友、
- * damage 對敵人造成傷害、apply 對敵人施加狀態（可以有豁免），area 為投擲的範圍（one 單體、all 全體）。戰鬥以外只能用 heal 與 slot。
+ * damage 對敵人造成傷害、apply 對敵人施加狀態、save 豁免（成功時傷害減半、不受狀態），area 為投擲的範圍（one 單體、all 全體）；
+ * escape 傳送脫離戰鬥。戰鬥以外只能用 heal 與 slot。
  */
 export interface ItemUse {
   heal?: string
@@ -716,7 +717,11 @@ export interface ItemUse {
   damage?: { dice: string; type: string }
   /** 投擲：對敵人施加狀態，save 與 dc 為豁免（成功時不受狀態、傷害減半） */
   apply?: { status: string; turns: number; save?: AttrId; dc?: number }
+  /** 投擲的豁免（沒有 apply 也能用）：成功時傷害減半、不受狀態 */
+  save?: { attr: AttrId; dc: number }
   area?: 'one' | 'all'
+  /** 傳送：全隊立刻脫離戰鬥 */
+  escape?: boolean
   combat_only?: boolean
 }
 
@@ -753,7 +758,7 @@ export function itemDef(name: string): ItemDef | undefined {
   return itemIndex.get(name)
 }
 
-export type ShopType = 'general' | 'temple' | 'tavern'
+export type ShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant'
 export interface DealCost { type: 'money' | 'item' | 'hours'; amount?: number; name?: string; qty?: number }
 export interface ShopSpecial { id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number }
 export interface ShopTypeDef {
@@ -764,6 +769,10 @@ export interface ShopTypeDef {
   buys: ItemCategory[]
   ai_effects: RewardEffect['type'][]
   specials: ShopSpecial[]
+  /** 每天隨機上架：目錄裡任何商店的消耗品與材料（材料的售價 = 收購價 × material_markup） */
+  random?: { consumables?: number; materials?: number; material_markup?: number; max_material_price?: number[] }
+  /** 情報商：依附近的地下城、城郊與進行中的委託生成情報 */
+  info?: { dungeon_price: number; wild_price: number; quest_price: number }
 }
 export const shopRules = shopsJson as unknown as {
   location_price_mult: Record<string, number>

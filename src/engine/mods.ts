@@ -221,6 +221,8 @@ const strip = <T extends object>(v: T, keys: string[]): T => {
 }
 
 const LOC_BY_TIER: Record<number, string> = { 3: 'city', 4: 'capital' }
+/** 裝備在哪種店賣：金屬與木材是鐵匠鋪，皮革與布料是裁縫店，寶石是珠寶店 */
+export const GEAR_SHOP: Record<string, string> = { metal: 'smith', wood: 'smith', leather: 'tailor', cloth: 'tailor', jewel: 'jeweler' }
 
 /** 自建的底材或材料：產生「底材 × 同類材料」的制式裝備（已有同名物品時略過） */
 function generateCatalog(mods: ContentMods) {
@@ -233,7 +235,7 @@ function generateCatalog(mods: ContentMods) {
       if (names.has(name)) continue
       names.add(name)
       itemRules.items.push({
-        name, category: 'equipment', price_cc: gearPrice(spec), tags: m.tier <= 4 ? ['general'] : [], gear: spec,
+        name, category: 'equipment', price_cc: gearPrice(spec), tags: m.tier <= 4 ? [GEAR_SHOP[m.kind]!] : [], gear: spec,
         ...(LOC_BY_TIER[m.tier] ? { min_location: LOC_BY_TIER[m.tier] } : {}),
         ...(b.desc || m.desc ? { desc: `${b.desc ?? ''}${m.desc ?? ''}` } : {}),
       })
@@ -329,6 +331,18 @@ const dice = (v: unknown, d: string) => {
   const s = str(v, 12).replace(/\s+/g, '')
   return DICE.test(s) ? s : d
 }
+/** 怪物的攻擊骰：{x}d{y}+{z}（z 可以省略） */
+export interface DiceParts { count: number; sides: number; bonus: number }
+export function parseDice(v: string): DiceParts {
+  const m = /^(\d+)d(\d+)(?:\+(\d+))?$/.exec(v.replace(/\s+/g, ''))
+  return m ? { count: Number(m[1]), sides: Number(m[2]), bonus: Number(m[3] ?? 0) } : { count: 1, sides: 6, bonus: 0 }
+}
+export function formatDice(d: DiceParts): string {
+  const count = Math.max(1, Math.min(20, Math.round(d.count) || 1))
+  const sides = Math.max(2, Math.min(100, Math.round(d.sides) || 6))
+  const bonus = Math.max(0, Math.min(99, Math.round(d.bonus) || 0))
+  return `${count}d${sides}${bonus ? `+${bonus}` : ''}`
+}
 const DAMAGE_IDS = () => damageTypes.types.map((t) => t.id)
 const AFFINITY_KEYS = () => [...DAMAGE_IDS(), ...Object.keys(damageTypes.groups), 'all']
 const MOD_KEYS: (keyof Mods)[] = ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit', 'threat']
@@ -378,7 +392,7 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
     attrs,
     hp: int(raw.hp, 1, 9999, 10),
     ap: int(raw.ap, 1, 12, 3),
-    weapon: { dice: dice(w.dice, '1d6'), type: DAMAGE_IDS().includes(w.type) ? w.type : 'slashing', attr: ATTR_IDS.includes(w.attr) ? w.attr : 'str' },
+    weapon: { dice: formatDice(parseDice(String(w.dice ?? ''))), type: DAMAGE_IDS().includes(w.type) ? w.type : 'slashing', attr: ATTR_IDS.includes(w.attr) ? w.attr : 'str' },
     evade: int(raw.evade, -10, 20, 0),
     dr: int(raw.dr, 0, 30, 0),
     xp: int(raw.xp, 0, 99999, 25),
@@ -406,8 +420,8 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   return out
 }
 
-const CATEGORIES: ItemCategory[] = ['food', 'consumable', 'gear', 'material', 'valuable', 'scroll', 'equipment', 'info']
-const SHOP_TAGS = ['general', 'temple', 'tavern']
+const CATEGORIES: ItemCategory[] = ['food', 'consumable', 'gear', 'material', 'scroll', 'equipment', 'info']
+export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info']
 const LOCATIONS = ['village', 'town', 'city', 'capital']
 
 function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
@@ -430,9 +444,11 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
       ...(u.apply.save && ATTR_IDS.includes(u.apply.save) ? { save: u.apply.save, dc: int(u.apply.dc, 5, 30, 12) } : {}),
     }
   }
+  if (u.save?.attr && ATTR_IDS.includes(u.save.attr) && (out.damage || out.apply)) out.save = { attr: u.save.attr, dc: int(u.save.dc, 5, 30, 13) }
+  if (u.escape) out.escape = true
   if ((out.damage || out.apply) && u.area === 'all') out.area = 'all'
   else if (out.damage || out.apply) out.area = 'one'
-  if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.revive || out.cleanse) {
+  if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.revive || out.cleanse || out.escape) {
     if (!(out.heal || out.slot) || u.combat_only) out.combat_only = true
   }
   return Object.keys(out).length ? out : undefined
@@ -484,7 +500,7 @@ const SCALES = ['full', 'half', 'up', 'third', 'third_up', 'res']
 
 export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean): BaseMod {
   const kind = (['metal', 'leather', 'cloth', 'wood', 'jewel'] as const).includes(raw.kind as 'metal') ? raw.kind! : 'metal'
-  const slots = [...Object.keys(gearRules.slots).filter((s) => !s.startsWith('neck')), 'neck']
+  const slots = [...Object.keys(gearRules.slots).filter((s) => !s.startsWith('ring')), 'ring']
   const slot = slots.includes(raw.slot as string) ? raw.slot! : 'main_hand'
   const out: BaseMod = { slot, name: str(raw.name, 12) || '未命名的底材', kind, price: int(raw.price, 1, 1e7, 100) }
   if (raw.two_handed && slot === 'main_hand') out.two_handed = true

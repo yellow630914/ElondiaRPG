@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { abilities, ATTR_IDS, attrName, damageTypeName, damageTypes, enemies, itemRules, monsterTraits, type AttrId } from '@/engine/data'
-import { builtinEnemy, builtinPlacementsOf, ENEMY_KINDS, placementsOf, tableOptions, type EnemyMod, type Placement } from '@/engine/mods'
+import {
+  builtinEnemy, builtinPlacementsOf, ENEMY_KINDS, formatDice, parseDice, placementsOf, tableOptions, type DiceParts, type EnemyMod, type Placement,
+} from '@/engine/mods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
@@ -81,6 +83,12 @@ function toggleTrait(t: string, on: boolean) {
   draft.value.traits = [...set]
 }
 
+// 攻擊骰：只能是 {x}d{y}+{z}
+const dice = computed(() => parseDice(draft.value.weapon.dice))
+function setDice(k: keyof DiceParts, e: Event) {
+  draft.value.weapon.dice = formatDice({ ...dice.value, [k]: Number((e.target as HTMLInputElement).value) })
+}
+
 // ---- 動作 ----
 function save() {
   try {
@@ -154,7 +162,13 @@ function remove() {
         <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }} <input v-model.number="draft.attrs[a]" type="number" min="1" max="30" /></label>
       </div>
       <div class="grid">
-        <label>攻擊骰 <input v-model="draft.weapon.dice" placeholder="1d6" /></label>
+        <label>攻擊骰（{x}d{y}+{z}）
+          <span class="pair dice">
+            <input type="number" min="1" max="20" :value="dice.count" title="骰子數量 x" @change="setDice('count', $event)" />d
+            <input type="number" min="2" max="100" :value="dice.sides" title="骰子面數 y" @change="setDice('sides', $event)" />+
+            <input type="number" min="0" max="99" :value="dice.bonus" title="固定加值 z" @change="setDice('bonus', $event)" />
+          </span>
+        </label>
         <label>傷害類型
           <select v-model="draft.weapon.type">
             <option v-for="t in damageIds" :key="t" :value="t">{{ damageTypeName(t) }}</option>

@@ -55,6 +55,8 @@ export function useSummary(use?: ItemUse): string {
   const area = use.area === 'all' ? '所有敵人' : '一名敵人'
   if (use.damage) parts.push(`${area} ${use.damage.dice} ${damageTypeName(use.damage.type)}傷害`)
   if (use.apply) parts.push(`${use.damage ? '' : area}${statusDef(use.apply.status).name} ${use.apply.turns} 回合${use.apply.save ? `（${attrName(use.apply.save)}豁免 DC ${use.apply.dc}）` : ''}`)
+  if (use.save) parts.push(`${attrName(use.save.attr)}豁免 DC ${use.save.dc}（成功減半）`)
+  if (use.escape) parts.push('全隊脫離戰鬥')
   return parts.join('、') + (use.combat_only ? '・戰鬥中' : '')
 }
 

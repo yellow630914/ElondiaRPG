@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { attrName } from '@/engine/data'
-import { canCraftHere, craftPlan, craftRarity } from '@/engine/craft'
+import { canCraftHere, craftKindsHere, craftPlan, craftRarity } from '@/engine/craft'
 import { gearName, gearRules, gearSummary, rarityName, rarityPoints, slotName } from '@/engine/gear'
 import { formatMoney } from '@/engine/money'
 import { parseUse, useGame } from '@/stores/game'
@@ -11,8 +11,13 @@ import AbilityPicker from './AbilityPicker.vue'
 const game = useGame()
 const s = computed(() => game.state!)
 const here = computed(() => canCraftHere(s.value))
-const bases = Object.entries(gearRules.bases).map(([id, b]) => ({ id, ...b }))
-const base = ref('longsword')
+// 只列這間店做得出來的底材（鐵匠鋪：金屬、木材；裁縫店：皮革、布料；珠寶店：寶石）
+const bases = computed(() => Object.entries(gearRules.bases).filter(([, b]) => craftKindsHere(s.value).includes(b.kind)).map(([id, b]) => ({ id, ...b })))
+const picked = ref('')
+const base = computed({
+  get: () => (bases.value.some((b) => b.id === picked.value) ? picked.value : bases.value[0]?.id ?? 'longsword'),
+  set: (v: string) => { picked.value = v },
+})
 const kind = computed(() => gearRules.bases[base.value]!.kind)
 const materials = computed(() => Object.entries(gearRules.materials).filter(([, m]) => m.kind === kind.value).map(([id, m]) => ({ id, ...m })))
 const material = ref('iron')
@@ -20,7 +25,7 @@ const mat = computed(() => (gearRules.materials[material.value]?.kind === kind.v
 const plan = computed(() => craftPlan(s.value, base.value, mat.value))
 const text = ref('')
 const use = ref('')
-const slotLabel = (slot: string) => (slot === 'neck' ? '項鍊' : slotName(slot as never))
+const slotLabel = (slot: string) => (slot === 'ring' ? '戒指' : slotName(slot as never))
 
 function craft() {
   const u = parseUse(use.value)
@@ -33,7 +38,7 @@ function craft() {
 <template>
   <details v-if="here" class="craft small">
     <summary>🔨 委託打造</summary>
-    <p class="muted">店主會把委託轉給熟識的工匠。第一級材料由工匠提供；更好的材料要自備（龍鱗、秘銀礦石之類可以打造的材料）。{{ attrName(gearRules.craft.attr) }}檢定，約 {{ gearRules.craft.hours }} 小時。</p>
+    <p class="muted">第一級材料由工匠提供；更好的材料要自備（龍鱗、秘銀礦石之類可以打造的材料）。{{ attrName(gearRules.craft.attr) }}檢定，約 {{ gearRules.craft.hours }} 小時。</p>
     <div class="row">
       <select v-model="base">
         <option v-for="b in bases" :key="b.id" :value="b.id">{{ slotLabel(b.slot) }}・{{ b.name }}</option>

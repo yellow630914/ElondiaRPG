@@ -18,8 +18,8 @@
       "cell": "shop",
       "keeper": { "classes": ["rogue", "fighter", "bard"], "title": "店主" },
       "catalog_tag": "general",
-      "buys": ["food", "gear", "material", "valuable", "equipment"],
-      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "buys": ["food", "gear", "material"],
+      "ai_effects": ["item", "affinity", "flag", "memory"],
       "specials": [
         { "id": "haul", "title": "幫店主搬貨", "desc": "花一個小時搬貨，換一點工錢。", "gives": [{ "type": "hours", "amount": 1 }],
           "gets": [{ "type": "money", "amount": 10 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1 }
@@ -30,7 +30,7 @@
       "cell": "temple",
       "keeper": { "classes": ["cleric", "paladin"], "title": "司祭" },
       "catalog_tag": "temple",
-      "buys": ["valuable", "scroll"],
+      "buys": ["scroll", "consumable"],
       "ai_effects": ["item", "affinity", "flag", "memory", "reputation", "condition"],
       "specials": [
         { "id": "donate", "title": "捐獻", "desc": "向神殿捐獻，聲望提升。", "gives": [{ "type": "money", "amount": 100 }],
@@ -39,12 +39,70 @@
           "gets": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }], "stock": 1 }
       ]
     },
+    "smithy": {
+      "name": "鐵匠鋪",
+      "cell": "smithy",
+      "keeper": { "classes": ["fighter", "barbarian"], "title": "鐵匠" },
+      "catalog_tag": "smith",
+      "buys": ["equipment", "material"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "specials": [
+        { "id": "bellows", "title": "幫鐵匠拉風箱", "desc": "在爐火旁幹一個小時的活，換一點工錢。", "gives": [{ "type": "hours", "amount": 1 }],
+          "gets": [{ "type": "money", "amount": 12 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1 }
+      ]
+    },
+    "tailor": {
+      "name": "裁縫店",
+      "cell": "tailor",
+      "keeper": { "classes": ["bard", "rogue"], "title": "裁縫" },
+      "catalog_tag": "tailor",
+      "buys": ["equipment", "material"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "specials": [
+        { "id": "mend", "title": "請裁縫縫補衣物", "desc": "把隊伍的衣物都補好，看起來體面多了。", "gives": [{ "type": "money", "amount": 20 }],
+          "gets": [{ "type": "affinity", "npc": "keeper", "delta": 1 }, { "type": "affinity", "npc": "party", "delta": 1 }], "stock": 1 }
+      ]
+    },
+    "jeweler": {
+      "name": "珠寶店",
+      "cell": "jeweler",
+      "keeper": { "classes": ["bard", "rogue"], "title": "珠寶商" },
+      "catalog_tag": "jeweler",
+      "buys": ["equipment", "material"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "specials": [
+        { "id": "appraise", "title": "請珠寶商鑑定", "desc": "珠寶商替你看看身上的東西值多少，順便聊聊。", "gives": [{ "type": "money", "amount": 30 }],
+          "gets": [{ "type": "affinity", "npc": "keeper", "delta": 2 }, { "type": "memory", "summary": "請珠寶商鑑定了身上的東西。", "importance": 1 }], "stock": 1 }
+      ]
+    },
+    "magic": {
+      "name": "魔法物品店",
+      "cell": "magic",
+      "keeper": { "classes": ["wizard", "bard"], "title": "店主" },
+      "catalog_tag": "magic",
+      "buys": ["scroll", "consumable", "material"],
+      "ai_effects": ["item", "affinity", "flag", "memory"],
+      "random": { "consumables": 4, "materials": 5, "material_markup": 2, "max_material_price": [150, 300, 600, 1500],
+        "$comment": "卷軸照目錄上架；另外每天隨機上架消耗品與材料（材料依聚落規模限制收購價上限：村莊、城鎮、城市、王都）" },
+      "specials": []
+    },
+    "informant": {
+      "name": "情報商",
+      "cell": "informant",
+      "keeper": { "classes": ["rogue", "bard"], "title": "情報販子" },
+      "catalog_tag": "info",
+      "buys": ["info"],
+      "ai_effects": ["memory", "flag", "affinity", "item"],
+      "info": { "dungeon_price": 120, "wild_price": 60, "quest_price": 80,
+        "$comment": "規則生成的情報：同地區每座地下城的層主與弱點、這一帶城郊的魔物與弱點、進行中委託的線索（委託檢定 +5）" },
+      "specials": []
+    },
     "tavern": {
       "name": "酒館",
       "cell": "tavern",
       "keeper": { "classes": ["fighter", "bard", "rogue"], "title": "酒保" },
       "catalog_tag": "tavern",
-      "buys": ["food", "valuable", "info"],
+      "buys": ["food", "info"],
       "ai_effects": ["item", "affinity", "flag", "memory", "companion"],
       "specials": [
         { "id": "round", "title": "請全場喝一杯", "desc": "隊友們都很開心。", "gives": [{ "type": "money", "amount": 30 }],

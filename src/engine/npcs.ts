@@ -193,7 +193,9 @@ export function findNpcByName(state: GameState, name: string): string | undefine
   return state.party.find((m) => m.name === n)?.id
 }
 
-const SHOP_SPOT: Record<string, string> = { general: 'shop', temple: 'temple', tavern: 'tavern' }
+const SHOP_SPOT: Record<string, string> = {
+  general: 'shop', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant',
+}
 
 /** NPC 平常待的設施：店主在自己的店、公會職員在公會，冒險者與知情人在酒館。 */
 export function npcSpot(rec: NpcRecord): string | undefined {
