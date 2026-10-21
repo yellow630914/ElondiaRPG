@@ -1,0 +1,378 @@
+{
+ "3": {
+  "inputs": {
+   "seed": 183227886939007,
+   "steps": 30,
+   "cfg": 5,
+   "sampler_name": "er_sde",
+   "scheduler": "simple",
+   "denoise": 1,
+   "model": [
+    "161",
+    0
+   ],
+   "positive": [
+    "6",
+    0
+   ],
+   "negative": [
+    "7",
+    0
+   ],
+   "latent_image": [
+    "5",
+    0
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "5": {
+  "inputs": {
+   "width": 464,
+   "height": 768,
+   "batch_size": 1
+  },
+  "class_type": "EmptyLatentImage",
+  "_meta": {
+   "title": "空白潛在影像"
+  }
+ },
+ "6": {
+  "inputs": {
+   "text": [
+    "201",
+    0
+   ],
+   "clip": [
+    "161",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "正向"
+  }
+ },
+ "7": {
+  "inputs": {
+   "text": [
+    "164",
+    0
+   ],
+   "clip": [
+    "161",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "反向"
+  }
+ },
+ "26": {
+  "inputs": {
+   "samples": [
+    "43",
+    0
+   ],
+   "vae": [
+    "157",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE 解碼"
+  }
+ },
+ "43": {
+  "inputs": {
+   "seed": 0,
+   "steps": 12,
+   "cfg": 7,
+   "sampler_name": "er_sde",
+   "scheduler": "simple",
+   "denoise": 0.7000000000000002,
+   "model": [
+    "161",
+    0
+   ],
+   "positive": [
+    "6",
+    0
+   ],
+   "negative": [
+    "7",
+    0
+   ],
+   "latent_image": [
+    "46",
+    0
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "46": {
+  "inputs": {
+   "upscale_method": "bicubic",
+   "scale_by": 2,
+   "samples": [
+    "3",
+    0
+   ]
+  },
+  "class_type": "LatentUpscaleBy",
+  "_meta": {
+   "title": "放大 latent 空間"
+  }
+ },
+ "71": {
+  "inputs": {
+   "samples": [
+    "3",
+    0
+   ],
+   "vae": [
+    "157",
+    0
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE 解碼"
+  }
+ },
+ "72": {
+  "inputs": {
+   "images": [
+    "71",
+    0
+   ]
+  },
+  "class_type": "PreviewImage",
+  "_meta": {
+   "title": "第一次採樣"
+  }
+ },
+ "154": {
+  "inputs": {
+   "images": [
+    "26",
+    0
+   ]
+  },
+  "class_type": "PreviewImage",
+  "_meta": {
+   "title": "完成"
+  }
+ },
+ "157": {
+  "inputs": {
+   "vae_name": "qwen_image_vae.safetensors"
+  },
+  "class_type": "VAELoader",
+  "_meta": {
+   "title": "載入 VAE"
+  }
+ },
+ "158": {
+  "inputs": {
+   "clip_name": "qwen_3_06b_base.safetensors",
+   "type": "stable_diffusion",
+   "device": "default"
+  },
+  "class_type": "CLIPLoader",
+  "_meta": {
+   "title": "載入 CLIP"
+  }
+ },
+ "161": {
+  "inputs": {
+   "__lm_autocomplete_meta_text": {
+    "version": 1,
+    "textWidgetName": "text",
+    "lastAccepted": {
+     "start": 110,
+     "end": 148,
+     "insertedText": "<lora:gpt-image-2_anima-base1_v1-1:1>,",
+     "textSnapshot": "<lora:anima-base-1-photo-background-v4:0.30>, <lora:Cyaniji v1:0.30>, <lora:Artistic_anime_update_64d32a:0.30><lora:gpt-image-2_anima-base1_v1-1:1>,"
+    }
+   },
+   "text": "<lora:anima-base-1-photo-background-v4:0.30>, <lora:Cyaniji v1:0.30>, <lora:Artistic_anime_update_64d32a:0.30><lora:gpt-image-2_anima-base1_v1-1:1.00>",
+   "loras": {
+    "__value__": [
+     {
+      "name": "Artistic_anime_update_64d32a",
+      "strength": "0.30",
+      "active": true,
+      "expanded": false,
+      "clipStrength": "0.30",
+      "locked": false
+     },
+     {
+      "name": "anima-base-1-photo-background-v4",
+      "strength": "0.30",
+      "active": true,
+      "expanded": false,
+      "clipStrength": "0.30",
+      "locked": false
+     },
+     {
+      "name": "Cyaniji v1",
+      "strength": "0.30",
+      "active": true,
+      "expanded": false,
+      "clipStrength": "0.30",
+      "locked": false
+     },
+     {
+      "name": "gpt-image-2_anima-base1_v1-1",
+      "strength": 1,
+      "active": true,
+      "expanded": false,
+      "clipStrength": 1,
+      "locked": false
+     }
+    ]
+   },
+   "model": [
+    "169",
+    0
+   ],
+   "clip": [
+    "169",
+    1
+   ]
+  },
+  "class_type": "Lora Loader (LoraManager)",
+  "_meta": {
+   "title": "Lora Loader (LoraManager)"
+  }
+ },
+ "164": {
+  "inputs": {
+   "positive": "lowres, bad anatomy, bad hands, watermark,",
+   "auto_random": false,
+   "temp_str": "",
+   "random_template": "",
+   "打开提示词编辑器": ""
+  },
+  "class_type": "WeiLinPromptUIWithoutLora",
+  "_meta": {
+   "title": "WeiLin Prompt Editor"
+  }
+ },
+ "165": {
+  "inputs": {
+   "positive": "masterpiece, best quality, very aesthetic,",
+   "auto_random": false,
+   "temp_str": "",
+   "random_template": "",
+   "打开提示词编辑器": ""
+  },
+  "class_type": "WeiLinPromptUIWithoutLora",
+  "_meta": {
+   "title": "固定 Tag（品質 / 風格 / LoRA 觸發詞）"
+  }
+ },
+ "168": {
+  "inputs": {
+   "unet_name": "anima_aestheticV11.safetensors",
+   "weight_dtype": "default"
+  },
+  "class_type": "Unet Loader (LoraManager)",
+  "_meta": {
+   "title": "Unet Loader (LoraManager)"
+  }
+ },
+ "169": {
+  "inputs": {
+   "__lm_autocomplete_meta_text": {
+    "version": 1,
+    "textWidgetName": "text",
+    "lastAccepted": {
+     "start": 160,
+     "end": 202,
+     "insertedText": "<lora:anima-base-1-photo-background-v4:1>,",
+     "textSnapshot": "<lora:anima-base-1-masterpiece-v51:0.40><lora:anima-highres-aesthetic-boost:0.50:0.50><lora:anima-turbo-lora-v0.2:0.50><lora:anima-base-1-light-concepts-v31:1>,<lora:anima-base-1-photo-background-v4:1>,"
+    }
+   },
+   "text": "<lora:anima-base-1-masterpiece-v51:0.50><lora:anima-highres-aesthetic-boost:0.50:0.50><lora:anima-turbo-lora-v0.2:0.50><lora:anima-base-1-light-concepts-v31:0.50>",
+   "loras": {
+    "__value__": [
+     {
+      "name": "anima-highres-aesthetic-boost",
+      "strength": "0.50",
+      "active": true,
+      "expanded": false,
+      "clipStrength": "0.50",
+      "locked": false
+     },
+     {
+      "name": "anima-base-1-masterpiece-v51",
+      "strength": "0.50",
+      "active": true,
+      "expanded": false,
+      "clipStrength": "0.50",
+      "locked": false
+     },
+     {
+      "name": "anima-turbo-lora-v0.2",
+      "strength": "0.50",
+      "active": true,
+      "expanded": false,
+      "clipStrength": "0.50",
+      "locked": false
+     },
+     {
+      "name": "anima-base-1-light-concepts-v31",
+      "strength": "0.50",
+      "active": true,
+      "expanded": false,
+      "clipStrength": "0.50",
+      "locked": false
+     }
+    ]
+   },
+   "model": [
+    "168",
+    0
+   ],
+   "clip": [
+    "158",
+    0
+   ]
+  },
+  "class_type": "Lora Loader (LoraManager)",
+  "_meta": {
+   "title": "Lora Loader (LoraManager)"
+  }
+ },
+ "201": {
+  "inputs": {
+   "string_a": [
+    "165",
+    0
+   ],
+   "string_b": "",
+   "delimiter": ", "
+  },
+  "class_type": "StringConcatenate",
+  "_meta": {
+   "title": "固定 Tag + 產生的 Tag"
+  }
+ },
+ "203": {
+  "inputs": {},
+  "class_type": "PreviewAny",
+  "_meta": {
+   "title": "被丟掉的非法 Tag"
+  }
+ }
+}

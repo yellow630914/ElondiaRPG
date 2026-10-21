@@ -13,7 +13,7 @@ export type ImageServiceId = 'openai' | 'novelai' | 'comfyui'
 export interface ImageServiceConfig {
   apiKey: string
   baseURL: string
-  /** OpenAI：模型；NovelAI：模型；ComfyUI：checkpoint 檔名（工作流程的 %model%） */
+  /** OpenAI：模型；NovelAI：模型（ComfyUI 的模型與參數改放在設定組合裡，見 comfy.ts；這裡的舊值只用來轉換） */
   model: string
   width: number
   height: number
@@ -23,7 +23,7 @@ export interface ImageServiceConfig {
   sampler: string
   /** 負面提示詞（OpenAI 不支援） */
   negative: string
-  /** ComfyUI：API 格式的工作流程 JSON（用 %prompt% 等代號） */
+  /** 舊版 ComfyUI 的工作流程（升級時轉成設定組合） */
   workflow: string
   /** 額外的請求參數（JSON，合併進請求；NovelAI 合併進 parameters） */
   extra: string
@@ -43,7 +43,7 @@ export interface ImageServiceInfo {
   sizes: [number, number][]
 }
 
-const NEGATIVE = 'lowres, bad anatomy, bad hands, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, jpeg artifacts, text, signature, watermark, username, blurry'
+export const NEGATIVE = 'lowres, bad anatomy, bad hands, missing fingers, extra digits, fewer digits, cropped, worst quality, low quality, jpeg artifacts, text, signature, watermark, username, blurry'
 
 /** ComfyUI 的預設工作流程（API 格式）：一般的文生圖。代號會換成設定與提示詞 */
 export const DEFAULT_COMFY_WORKFLOW = JSON.stringify({
@@ -91,7 +91,7 @@ export const IMAGE_SERVICES: ImageServiceInfo[] = [
     },
     keyOptional: true,
     danbooru: true,
-    note: '送出 API 格式的工作流程到 /prompt，等到算完再從 /view 下載。ComfyUI 啟動時要加 --enable-cors-header。模型欄位填 checkpoint 的檔名；工作流程可以換成自己的（在 ComfyUI 用「Export (API)」匯出，再把文字換成 %prompt%、%negative% 等代號）。',
+    note: '送出工作流程到 /prompt，等算完再下載圖片。ComfyUI 啟動時要加 --enable-cors-header。每個主模存成一組設定：Checkpoint 或 UNet（模型、文字編碼器、VAE 分開載入）模式只用 ComfyUI 內建的節點，可以加多個 LoRA 與高解析修復；也可以貼上自己的工作流程。按「讀取 ComfyUI 清單」可以直接選伺服器上的檔案，「從工作流程匯入」可以把跑得動的工作流程變成一組設定。',
     sizes: [[832, 1216], [1024, 1024], [1216, 832], [512, 768]],
   },
 ]

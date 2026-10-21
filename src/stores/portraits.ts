@@ -159,7 +159,9 @@ export const usePortraits = defineStore('portraits', () => {
         jobs.value[key] = { ...jobs.value[key]!, tags: prompt }
       }
       jobs.value[key] = { ...jobs.value[key]!, stage: 'image' }
-      const blob = await generateImage(image.service, image.config(), { prompt, signal: controller.signal })
+      const blob = await generateImage(image.service, image.config(), {
+        prompt, signal: controller.signal, ...(image.service === 'comfyui' ? { comfy: image.preset() } : {}),
+      })
       await put(key, { blob, prompt, ...(prompt !== job.semantic ? { semantic: job.semantic } : {}), service: image.service, time: Date.now() })
       delete jobs.value[key]
     } catch (e) {

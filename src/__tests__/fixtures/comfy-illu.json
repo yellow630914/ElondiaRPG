@@ -1,0 +1,373 @@
+{
+ "3": {
+  "inputs": {
+   "seed": 318970301059844,
+   "steps": 30,
+   "cfg": 7,
+   "sampler_name": "euler_ancestral",
+   "scheduler": "normal",
+   "denoise": 1,
+   "model": [
+    "152",
+    0
+   ],
+   "positive": [
+    "6",
+    0
+   ],
+   "negative": [
+    "7",
+    0
+   ],
+   "latent_image": [
+    "5",
+    0
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "4": {
+  "inputs": {
+   "ckpt_name": "Illu_ani_waiNSFW_v140.safetensors"
+  },
+  "class_type": "CheckpointLoaderSimple",
+  "_meta": {
+   "title": "載入檢查點"
+  }
+ },
+ "5": {
+  "inputs": {
+   "width": 1024,
+   "height": 1024,
+   "batch_size": 1
+  },
+  "class_type": "EmptyLatentImage",
+  "_meta": {
+   "title": "空白潛在影像"
+  }
+ },
+ "6": {
+  "inputs": {
+   "text": [
+    "24",
+    0
+   ],
+   "clip": [
+    "152",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "正向"
+  }
+ },
+ "7": {
+  "inputs": {
+   "text": [
+    "25",
+    0
+   ],
+   "clip": [
+    "152",
+    1
+   ]
+  },
+  "class_type": "CLIPTextEncode",
+  "_meta": {
+   "title": "反向"
+  }
+ },
+ "24": {
+  "inputs": {
+   "positive": "1girl, solo, looking at viewer,",
+   "打开可视化PromptUI": ""
+  },
+  "class_type": "WeiLinComfyUIPromptAllInOneGreat",
+  "_meta": {
+   "title": "WeiLin Positive Prompt To String"
+  }
+ },
+ "25": {
+  "inputs": {
+   "negative": "lowres, bad anatomy, bad hands, watermark,",
+   "打开可视化PromptUI": ""
+  },
+  "class_type": "WeiLinComfyUIPromptAllInOneNeg",
+  "_meta": {
+   "title": "WeiLin Negative Prompt To String"
+  }
+ },
+ "26": {
+  "inputs": {
+   "samples": [
+    "43",
+    0
+   ],
+   "vae": [
+    "4",
+    2
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE 解碼"
+  }
+ },
+ "43": {
+  "inputs": {
+   "seed": 0,
+   "steps": 30,
+   "cfg": 7,
+   "sampler_name": "euler_ancestral",
+   "scheduler": "normal",
+   "denoise": 0.7000000000000002,
+   "model": [
+    "152",
+    0
+   ],
+   "positive": [
+    "6",
+    0
+   ],
+   "negative": [
+    "7",
+    0
+   ],
+   "latent_image": [
+    "46",
+    0
+   ]
+  },
+  "class_type": "KSampler",
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "46": {
+  "inputs": {
+   "upscale_method": "bicubic",
+   "scale_by": 2,
+   "samples": [
+    "3",
+    0
+   ]
+  },
+  "class_type": "LatentUpscaleBy",
+  "_meta": {
+   "title": "放大 latent 空間"
+  }
+ },
+ "49": {
+  "inputs": {
+   "guide_size": 512,
+   "guide_size_for": true,
+   "max_size": 1024,
+   "seed": 906282641807616,
+   "steps": 20,
+   "cfg": 8,
+   "sampler_name": "euler",
+   "scheduler": "normal",
+   "denoise": 0.5,
+   "feather": 5,
+   "noise_mask": true,
+   "force_inpaint": true,
+   "bbox_threshold": 0.5,
+   "bbox_dilation": 10,
+   "bbox_crop_factor": 3,
+   "sam_detection_hint": "center-1",
+   "sam_dilation": 0,
+   "sam_threshold": 0.93,
+   "sam_bbox_expansion": 0,
+   "sam_mask_hint_threshold": 0.7,
+   "sam_mask_hint_use_negative": "False",
+   "drop_size": 10,
+   "wildcard": "",
+   "cycle": 1,
+   "inpaint_model": false,
+   "noise_mask_feather": 20,
+   "tiled_encode": false,
+   "tiled_decode": false,
+   "image": [
+    "26",
+    0
+   ],
+   "model": [
+    "152",
+    0
+   ],
+   "clip": [
+    "152",
+    1
+   ],
+   "vae": [
+    "4",
+    2
+   ],
+   "positive": [
+    "6",
+    0
+   ],
+   "negative": [
+    "7",
+    0
+   ],
+   "bbox_detector": [
+    "63",
+    0
+   ]
+  },
+  "class_type": "FaceDetailer",
+  "_meta": {
+   "title": "FaceDetailer"
+  }
+ },
+ "57": {
+  "inputs": {
+   "images": [
+    "26",
+    0
+   ]
+  },
+  "class_type": "PreviewImage",
+  "_meta": {
+   "title": "面部修復前"
+  }
+ },
+ "63": {
+  "inputs": {
+   "model_name": "bbox/face_yolov8m.pt"
+  },
+  "class_type": "UltralyticsDetectorProvider",
+  "_meta": {
+   "title": "UltralyticsDetectorProvider"
+  }
+ },
+ "71": {
+  "inputs": {
+   "samples": [
+    "3",
+    0
+   ],
+   "vae": [
+    "4",
+    2
+   ]
+  },
+  "class_type": "VAEDecode",
+  "_meta": {
+   "title": "VAE 解碼"
+  }
+ },
+ "72": {
+  "inputs": {
+   "images": [
+    "71",
+    0
+   ]
+  },
+  "class_type": "PreviewImage",
+  "_meta": {
+   "title": "第一次採樣"
+  }
+ },
+ "79": {
+  "inputs": {
+   "lora_name": "add-detail-xl.safetensors",
+   "strength_model": 1,
+   "strength_clip": 1,
+   "model": [
+    "4",
+    0
+   ],
+   "clip": [
+    "4",
+    1
+   ]
+  },
+  "class_type": "LoraLoader",
+  "_meta": {
+   "title": "細節LORA"
+  }
+ },
+ "150": {
+  "inputs": {
+   "lora_name": "detailed hand focus style illustriousXL v1.safetensors",
+   "strength_model": 1,
+   "strength_clip": 1,
+   "model": [
+    "79",
+    0
+   ],
+   "clip": [
+    "79",
+    1
+   ]
+  },
+  "class_type": "LoraLoader",
+  "_meta": {
+   "title": "手 LORA"
+  }
+ },
+ "152": {
+  "inputs": {
+   "lora_name": "eye_focus_illus.safetensors",
+   "strength_model": 1,
+   "strength_clip": 1,
+   "model": [
+    "150",
+    0
+   ],
+   "clip": [
+    "150",
+    1
+   ]
+  },
+  "class_type": "LoraLoader",
+  "_meta": {
+   "title": "亮晶晶 LORA"
+  }
+ },
+ "153": {
+  "inputs": {
+   "filename_prefix": "test %F",
+   "filename_keys": "",
+   "foldername_prefix": "test",
+   "foldername_keys": "",
+   "delimiter": "-",
+   "save_job_data": "disabled",
+   "job_data_per_image": false,
+   "job_custom_text": "",
+   "save_metadata": true,
+   "counter_digits": 4,
+   "counter_position": "last",
+   "one_counter_per_folder": true,
+   "image_preview": true,
+   "output_ext": ".png",
+   "quality": 75,
+   "images": [
+    "49",
+    0
+   ]
+  },
+  "class_type": "SaveImageExtended",
+  "_meta": {
+   "title": "💾 Save Image Extended"
+  }
+ },
+ "154": {
+  "inputs": {
+   "images": [
+    "49",
+    0
+   ]
+  },
+  "class_type": "PreviewImage",
+  "_meta": {
+   "title": "完成"
+  }
+ }
+}

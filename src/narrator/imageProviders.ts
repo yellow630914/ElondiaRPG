@@ -1,7 +1,13 @@
 // 送出生圖請求：OpenAI（/images/generations）、NovelAI（/ai/generate-image，回傳 ZIP）、ComfyUI（/prompt → /history → /view）。
 // 請求直接從瀏覽器送出，key 只存在這個瀏覽器。
 
+import {
+  buildWorkflow, checkWorkflow, comfyServer, executionErrorText, pickOutputImage, presetFromLegacy, promptErrorText,
+  type ComfyHistoryEntry, type ComfyPreset,
+} from './comfy'
 import type { ImageServiceConfig, ImageServiceId } from './imageInfo'
+
+export { fillWorkflow } from './comfy'
 
 export interface ImageRequest {
   prompt: string
@@ -9,6 +15,10 @@ export interface ImageRequest {
   negative?: string
   seed?: number
   signal?: AbortSignal
+  /** ComfyUI：用哪一組設定（沒有時由舊版的單一工作流程設定轉換） */
+  comfy?: ComfyPreset
+  /** ComfyUI：送出前檢查節點與檔案（預設檢查） */
+  check?: boolean
 }
 
 /** 產生一張圖片 */
@@ -145,32 +155,6 @@ export async function firstZipEntry(buf: Uint8Array): Promise<Blob> {
 
 // ---- ComfyUI ----
 
-/**
- * 把工作流程裡的代號換成值：整個字串就是代號時換成原本的型別（數字就是數字），
- * 字串裡夾著代號時做文字取代。代號：%prompt% %negative% %width% %height% %seed% %steps% %scale% %sampler% %model%
- */
-export function fillWorkflow(workflow: string, vars: Record<string, string | number>): Record<string, unknown> {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(workflow)
-  } catch {
-    throw new Error('ComfyUI 的工作流程不是正確的 JSON')
-  }
-  const walk = (v: unknown): unknown => {
-    if (typeof v === 'string') {
-      const whole = /^%(\w+)%$/.exec(v)
-      if (whole && whole[1]! in vars) return vars[whole[1]!]
-      return v.replace(/%(\w+)%/g, (m, k: string) => (k in vars ? String(vars[k]) : m))
-    }
-    if (Array.isArray(v)) return v.map(walk)
-    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]))
-    return v
-  }
-  const out = walk(parsed)
-  if (!out || typeof out !== 'object' || Array.isArray(out)) throw new Error('ComfyUI 的工作流程要是 API 格式的 JSON 物件')
-  return out as Record<string, unknown>
-}
-
 const sleep = (ms: number, signal?: AbortSignal) => new Promise<void>((resolve, reject) => {
   const t = setTimeout(resolve, ms)
   signal?.addEventListener('abort', () => {
@@ -179,32 +163,51 @@ const sleep = (ms: number, signal?: AbortSignal) => new Promise<void>((resolve, 
   }, { once: true })
 })
 
+/** 依設定組合組出工作流程 → 送出前檢查 → /prompt → 等 /history → 從 /view 下載成品圖 */
 async function comfyImage(cfg: ImageServiceConfig, req: ImageRequest): Promise<Blob> {
-  const base = trimURL(cfg.baseURL || 'http://127.0.0.1:8188')
-  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {}) }
-  const prompt = fillWorkflow(cfg.workflow, {
-    prompt: req.prompt, negative: req.negative ?? cfg.negative, width: cfg.width, height: cfg.height,
-    seed: req.seed ?? Math.floor(Math.random() * 2 ** 32), steps: cfg.steps, scale: cfg.scale, sampler: cfg.sampler, model: cfg.model,
-  })
-  const res = await fetch(`${base}/prompt`, {
-    method: 'POST', headers, body: JSON.stringify({ prompt, client_id: 'elondia', ...parseExtra(cfg.extra) }), signal: req.signal,
-  })
+  const preset = req.comfy ?? presetFromLegacy(cfg)
+  const server = comfyServer(cfg)
+  const prompt = buildWorkflow(preset, { prompt: req.prompt, seed: req.seed ?? Math.floor(Math.random() * 2 ** 32), ...(req.negative ? { negative: req.negative } : {}) })
+  if (req.check !== false) {
+    const problems = await checkWorkflow(server, prompt, preset.mode !== 'custom', req.signal)
+    if (problems.length) throw new Error(problems.join('；'))
+  }
+  let res: Response
+  try {
+    res = await fetch(`${server.base}/prompt`, {
+      method: 'POST', headers: server.headers, body: JSON.stringify({ prompt, client_id: 'elondia', ...parseExtra(cfg.extra) }), signal: req.signal,
+    })
+  } catch (e) {
+    if (req.signal?.aborted) throw e
+    throw new Error(`連不到 ComfyUI（${server.base}）：確認 ComfyUI 有開、網址正確，並且啟動時加了 --enable-cors-header`)
+  }
+  if (res.status === 400) {
+    let body: unknown = null
+    try {
+      body = await res.json()
+    } catch {
+      // 不是 JSON 就用一般的錯誤訊息
+    }
+    if (body) throw new Error(promptErrorText(body))
+  }
   if (!res.ok) throw await failure(res, 'ComfyUI')
   const { prompt_id: id } = (await res.json()) as { prompt_id?: string }
   if (!id) throw new Error('ComfyUI 沒有回傳工作編號')
   // 等它算完（最多 10 分鐘）
   for (let i = 0; i < 400; i++) {
     await sleep(1500, req.signal)
-    const h = await fetch(`${base}/history/${id}`, { headers, signal: req.signal })
+    const h = await fetch(`${server.base}/history/${id}`, { headers: server.headers, signal: req.signal })
     if (!h.ok) continue
-    const hist = (await h.json()) as Record<string, { outputs?: Record<string, { images?: { filename: string; subfolder?: string; type?: string }[] }>; status?: { status_str?: string } }>
-    const entry = hist[id]
+    const entry = ((await h.json()) as Record<string, ComfyHistoryEntry>)[id]
     if (!entry) continue
-    if (entry.status?.status_str === 'error') throw new Error('ComfyUI 執行工作流程時出錯（看 ComfyUI 的主控台）')
-    const image = Object.values(entry.outputs ?? {}).flatMap((o) => o.images ?? [])[0]
-    if (!image) continue
+    if (entry.status?.status_str === 'error') throw new Error(executionErrorText(entry))
+    const image = pickOutputImage(entry.outputs, preset.mode === 'custom' ? preset.outputNode : '')
+    if (!image) {
+      if (entry.status?.completed) throw new Error('ComfyUI 跑完了，但工作流程沒有輸出圖片（需要 SaveImage 或 PreviewImage 節點）')
+      continue
+    }
     const q = new URLSearchParams({ filename: image.filename, subfolder: image.subfolder ?? '', type: image.type ?? 'output' })
-    const img = await fetch(`${base}/view?${q}`, { headers, signal: req.signal })
+    const img = await fetch(`${server.base}/view?${q}`, { headers: server.headers, signal: req.signal })
     if (!img.ok) throw await failure(img, 'ComfyUI（下載圖片）')
     return img.blob()
   }

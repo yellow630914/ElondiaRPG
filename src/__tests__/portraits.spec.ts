@@ -134,7 +134,7 @@ describe('image services', () => {
       }
       return new Response(new Blob(['IMG']))
     })
-    const p = generateImage('comfyui', cfg('comfyui'), { prompt: '1girl', seed: 1 })
+    const p = generateImage('comfyui', cfg('comfyui'), { prompt: '1girl', seed: 1, check: false })
     await vi.advanceTimersByTimeAsync(4000)
     const blob = await p
     expect(await blob.text()).toBe('IMG')
