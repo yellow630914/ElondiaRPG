@@ -2,10 +2,11 @@
 import { computed, ref, watch } from 'vue'
 import { abilities, ATTR_IDS, attrName, className, damageTypeName, damageTypes, statuses, type ApplyDef, type AttrId, type DamagePart } from '@/engine/data'
 import {
-  ABILITY_RESOLVES, ABILITY_TARGETS, ABILITY_TYPES, abilityClasses, abilityUsage, builtinAbility, type AbilityMod,
+  ABILITY_RESOLVES, ABILITY_TARGETS, ABILITY_TYPES, abilityClasses, builtinAbility, type AbilityMod,
 } from '@/engine/mods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
+import UsageNote from './UsageNote.vue'
 
 // 能力（技能、法術、戲法）的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -41,7 +42,7 @@ const TO: Record<NonNullable<ApplyDef['to']>, string> = { target: '目標', self
 const ON: Record<NonNullable<ApplyDef['on']>, string> = { hit: '命中時', fail: '豁免失敗時', always: '一定' }
 const usage = computed(() => {
   void content.version
-  return abilityUsage(props.id, game.state)
+  return content.usageOf('ability', props.id)
 })
 
 function toggleClass(c: string, on: boolean) {
@@ -92,7 +93,7 @@ function restore() {
 function remove() {
   if (!confirm(`刪除「${draft.value.name}」？`)) return
   try {
-    content.deleteAbility(props.id, game.state)
+    content.deleteAbility(props.id)
     emit('deleted')
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
@@ -116,7 +117,7 @@ function remove() {
       >刪除</button>
     </div>
     <p class="small muted">id：{{ id }}</p>
-    <p v-if="usage.length" class="small muted">用到這個能力的地方：{{ usage.join('、') }}{{ builtin ? '' : '（都拿掉之後才能刪除）' }}</p>
+    <UsageNote :usage="usage" :deletable="!builtin" />
 
     <fieldset>
       <legend>基本</legend>

@@ -3,7 +3,7 @@
 import { abilityQuality, guildRankFor, proficiency, rerollAbilityChoices, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  abilityDef, attributeRules, combatRules, dungeonEncounters, economy, locationById, npcs, regionById,
+  abilityDef, attributeRules, combatRules, dungeonEncounters, economy, itemDef, locationById, npcs, regionById,
   townQuestsPerTown, townQuestsRefreshDays, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
 import { roll, withBonus } from './rng'
@@ -91,7 +91,8 @@ export function templeHeal(state: GameState): Report {
 // ---- 補給 ----
 
 export function buyRations(state: GameState, qty: number): Report {
-  const cost = RATION_CC * qty
+  // 價格跟著目錄（自訂內容可能改過乾糧的價格；不然低買高賣）
+  const cost = (itemDef('乾糧')?.price_cc ?? RATION_CC) * qty
   if (qty <= 0) throw new Error('數量錯誤')
   if (state.money_cc < cost) throw new Error('金錢不足')
   const report = baseReport(state, 'trade', 0.5)

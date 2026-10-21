@@ -130,6 +130,8 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
 /** 讀入存檔：補上新欄位，舊存檔沒有格子位置時放到目前地點的入口。 */
 function load(s: GameState): GameState {
   migrate(s)
+  // 自訂內容刪掉的特殊任務：中斷，任務同行的夥伴離隊
+  story.pruneStories(s)
   // 武器與防具類型由裝備決定（自訂內容可能改過底材）
   for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
   // 地圖改版後舊的區塊可能不存在了：回到這個地點的城門

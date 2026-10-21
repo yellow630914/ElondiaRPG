@@ -1,0 +1,133 @@
+// 自訂內容的引用檢查：刪除前列出還有哪些地方用到這一項（見 docs/CONTENT_DEPENDENCIES.md）。
+// 檢查兩種地方：其他內容（任務、固定 NPC、物品……），以及目前載入的存檔。
+// 其他存檔要等讀檔時才知道；讀檔時的清理見 state.ts 的 migrate。
+
+import { itemRules, npcs as namedNpcs, stories, type StoryDef, type StoryOutcome } from './data'
+import type { RewardEffect } from './effects'
+import { gearSpecOf } from './gear'
+import type { Character, GameState, GearSpec } from './types'
+
+/** 一個特殊任務的所有結果（任務點的成功、失敗與各選項） */
+export function storyOutcomes(s: StoryDef): StoryOutcome[] {
+  return s.nodes
+    .flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])])
+    .filter((o): o is StoryOutcome => !!o)
+}
+
+/** 一個特殊任務的所有效果（結果裡的效果與完成報酬） */
+export function storyEffects(s: StoryDef): RewardEffect[] {
+  return [...(s.rewards ?? []), ...storyOutcomes(s).flatMap((o) => o.effects ?? [])]
+}
+
+/** 存檔裡有裝備的角色：隊伍與登場過的人 */
+function characters(state: GameState): Character[] {
+  return [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((c): c is Character => !!c)]
+}
+
+const activeQuests = (state: GameState) => state.quests.filter((q) => q.status === 'accepted' || q.status === 'ready')
+
+// ---- 怪物 ----
+
+export function enemyUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  for (const s of stories) {
+    for (const n of s.nodes) if (n.enemies?.some(([e]) => e === id)) out.push(`特殊任務「${s.title}」的任務點「${n.title}」`)
+  }
+  if (state) {
+    for (const q of activeQuests(state)) if (q.monster === id) out.push(`進行中的委託「${q.title}」`)
+    for (const it of state.intel ?? []) if (it.status === 'active' && it.group?.some(([e]) => e === id)) out.push(`情報「${it.title}」`)
+  }
+  return out
+}
+
+// ---- 物品 ----
+
+/** 怪物的掉落會在刪除時一起拿掉，不算在這裡 */
+export function itemUsage(name: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  for (const s of stories) {
+    if (storyEffects(s).some((e) => e.type === 'item' && e.name === name)) out.push(`特殊任務「${s.title}」的獎勵`)
+  }
+  if (state) {
+    const have = state.inventory.find((i) => i.name === name && i.qty > 0)
+    if (have) out.push(`目前存檔的行囊（×${have.qty}）`)
+    for (const c of characters(state)) {
+      if (Object.values(c.gear ?? {}).some((g) => g?.name === name)) out.push(`目前存檔「${c.name}」身上的裝備`)
+    }
+    for (const q of activeQuests(state)) if (q.item === name) out.push(`進行中的委託「${q.title}」`)
+  }
+  return out
+}
+
+// ---- 裝備的底材與材料 ----
+
+export function gearUsage(kind: 'base' | 'material', id: string, state?: GameState | null, customItems: string[] = []): string[] {
+  const uses = (spec: Pick<GearSpec, 'base' | 'material'> | undefined) => !!spec && (kind === 'base' ? spec.base === id : spec.material === id)
+  const out: string[] = []
+  // 玩家建立或修改過的物品（自動產生的制式裝備會跟著消失，不算）
+  for (const i of itemRules.items) {
+    if (customItems.includes(i.name) && uses(i.gear)) out.push(`物品「${i.name}」`)
+    if (kind === 'material' && i.forge?.materials.includes(id)) out.push(`物品「${i.name}」的打造材料`)
+  }
+  for (const n of namedNpcs) if (Object.values(n.gear ?? {}).some(uses)) out.push(`固定 NPC「${n.name}」的裝備`)
+  for (const s of stories) {
+    if (storyEffects(s).some((e) => e.type === 'gear' && uses(e.spec))) out.push(`特殊任務「${s.title}」的獎勵`)
+  }
+  if (state) {
+    for (const c of characters(state)) {
+      if (Object.values(c.gear ?? {}).some((g) => uses(g?.spec))) out.push(`目前存檔「${c.name}」身上的裝備`)
+    }
+    const held = state.inventory.filter((i) => i.qty > 0 && uses(gearSpecOf(state, i.name))).map((i) => i.name)
+    if (held.length) out.push(`目前存檔的行囊（${held.slice(0, 3).join('、')}${held.length > 3 ? '…' : ''}）`)
+  }
+  return out
+}
+
+// ---- 固定 NPC ----
+
+export function npcUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  for (const s of stories) {
+    const where: string[] = []
+    if (s.start.npc === id) where.push('開頭')
+    for (const n of s.nodes) {
+      if (n.at.npc === id) where.push(`任務點「${n.title}」的地點`)
+      if (n.foes?.includes(id)) where.push(`任務點「${n.title}」的敵人`)
+      if (n.allies?.includes(id)) where.push(`任務點「${n.title}」的友方`)
+    }
+    if (storyOutcomes(s).some((o) => o.join === id || o.leave === id)) where.push('任務同行')
+    if (storyEffects(s).some((e) => (e.type === 'companion' && e.npc === id) || (e.type === 'affinity' && e.npc === id))) where.push('效果')
+    if (where.length) out.push(`特殊任務「${s.title}」的${[...new Set(where)].join('、')}`)
+  }
+  if (state) {
+    const m = state.party.find((x) => x.id === id)
+    if (m) out.push(`目前存檔的隊伍（${m.name}）`)
+    if (state.party.some((x) => x.contract?.master === id)) out.push('目前存檔的主人（奴隸契約）')
+  }
+  return out
+}
+
+// ---- 特殊任務 ----
+
+export function storyUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  for (const s of stories) {
+    if (s.id !== id && storyEffects(s).some((e) => e.type === 'start_story' && e.story === id)) out.push(`特殊任務「${s.title}」的效果`)
+  }
+  if (state?.stories?.[id]?.status === 'active') out.push('目前存檔正在進行這個任務（先放棄或完成）')
+  return out
+}
+
+/** 自建物品改名：目前存檔裡的行囊、身上的裝備與進行中的委託一起改 */
+export function renameItemInState(state: GameState, from: string, to: string) {
+  const have = state.inventory.find((i) => i.name === from)
+  if (have) {
+    const other = state.inventory.find((i) => i.name === to)
+    if (other) {
+      other.qty += have.qty
+      state.inventory = state.inventory.filter((i) => i !== have)
+    } else have.name = to
+  }
+  for (const c of characters(state)) for (const g of Object.values(c.gear ?? {})) if (g?.name === from) g.name = to
+  for (const q of state.quests) if (q.item === from) q.item = to
+}

@@ -7,6 +7,7 @@ import {
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
+import UsageNote from './UsageNote.vue'
 
 // 怪物的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -109,9 +110,20 @@ function restore() {
   draft.value = current()
   saved.value = JSON.stringify(draft.value)
 }
+// 還有地方用到時不能刪（見 docs/CONTENT_DEPENDENCIES.md）
+const usage = computed(() => {
+  void content.version
+  void game.state?.time.minute
+  return content.usageOf('enemy', props.id)
+})
 function remove() {
   if (!confirm(`刪除「${draft.value.name}」？已經在地圖上的這種怪物會消失。`)) return
-  content.deleteEnemy(props.id)
+  try {
+    content.deleteEnemy(props.id)
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+    return
+  }
   emit('deleted')
 }
 </script>
@@ -126,8 +138,9 @@ function remove() {
       <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
       <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
       <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" @click="remove">刪除</button>
+      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
     </div>
+    <UsageNote :usage="usage" :deletable="!builtin" />
     <p class="small muted">id：{{ id }}</p>
 
     <fieldset>

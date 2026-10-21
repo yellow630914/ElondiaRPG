@@ -1,11 +1,12 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import {
-  abilities, ATTR_IDS, enemies, geography, npcs as namedNpcs, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, enemies, geography, itemDef, npcs as namedNpcs, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere,
 } from './data'
 import type { RewardEffect } from './effects'
-import { CELL_NAME, type CellKind } from './grid'
+import { blockKeys, CELL_NAME, settlementArea, type CellKind } from './grid'
+import { gearKnown } from './gear'
 import { RANK_ORDER } from './materialQuests'
 import { sanitizeCond, sanitizeGearSpecLoose } from './mods'
 import { cleanFlag } from './storyFlags'
@@ -38,6 +39,7 @@ export function applyStoryMod(id: string, m: StoryMod) {
 // ---- 整理 ----
 
 const num = (v: unknown, lo: number, hi: number, d: number) => {
+  if (v === '' || v === null || v === undefined) return d
   const n = typeof v === 'number' ? v : Number(v)
   return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d
 }
@@ -301,6 +303,11 @@ export function flagUsage(def: StoryDef): FlagUse[] {
 }
 
 /** 任務鏈可能的問題（不擋儲存，只是提醒） */
+/** 這個聚落有沒有這種設施 */
+function hasFacility(location: string, kind: CellKind): boolean {
+  return blockKeys(location).some((k) => settlementArea(k)?.cells.some((c) => c.kind === kind))
+}
+
 export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string[] {
   const out: string[] = []
   const npcIds = new Set(namedNpcs.map((n) => n.id))
@@ -314,6 +321,23 @@ export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string
   if (!def.nodes.some((n) => outcomesOf(n).some(({ o }) => o.complete))) out.push('沒有任何結果會完成任務（勾選「完成任務」）')
   if (def.start.kind === 'npc' && (!def.start.npc || !npcIds.has(def.start.npc))) out.push('開頭的固定 NPC 不存在')
   if ((def.start.kind === 'guild') && !def.start.location) out.push('沒有指定哪座城鎮的公會')
+  if (def.start.kind === 'guild' && def.start.location && !hasFacility(def.start.location, 'guild')) out.push('開頭的城鎮沒有冒險者公會')
+  if (def.start.kind === 'informant' && def.start.location && !hasFacility(def.start.location, 'informant')) out.push('開頭的城鎮沒有情報商')
+  // 開頭的旗標和其他任務一樣（例如複製來的任務）：兩個任務會互相觸發對方的任務點
+  for (const f of def.start_flags ?? []) {
+    const other = others.find((s) => s.id !== def.id && (s.start_flags ?? []).includes(f))
+    if (other) out.push(`開頭的旗標 🚩${f} 也是「${other.title}」的開頭旗標，兩個任務的任務點會互相觸發（請改名）`)
+  }
+  // 效果裡用到的東西要存在
+  const effects = [...(def.rewards ?? []), ...def.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.effects ?? []))]
+  for (const e of effects) {
+    if (e.type === 'item' && e.qty > 0 && !itemDef(e.name)) out.push(`效果裡的物品「${e.name}」不存在`)
+    if (e.type === 'gear' && !gearKnown(e.spec)) out.push('效果裡的裝備：底材或材料不存在')
+    if ((e.type === 'affinity' || e.type === 'companion') && typeof e.npc === 'string' && e.npc !== 'keeper' && e.npc !== 'party' && !npcIds.has(e.npc)) {
+      out.push(`效果裡的角色 ${e.npc} 不存在`)
+    }
+    if (e.type === 'start_story' && !others.some((s) => s.id === e.story)) out.push(`效果要開始的特殊任務 ${e.story} 不存在`)
+  }
   for (const n of def.nodes) {
     const t = `任務點「${n.title}」`
     if (n.at.where !== 'npc' && n.at.where !== 'road' && n.at.where !== 'side' && !n.at.location) out.push(`${t}沒有指定地點`)
@@ -329,8 +353,12 @@ export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string
     if (n.kind === 'choice' && !n.options?.length) out.push(`${t}是選擇，但沒有選項`)
     for (const { o } of outcomesOf(n)) {
       if (o.join && !npcIds.has(o.join)) out.push(`${t}要同行的角色 ${o.join} 不存在`)
+      if (o.leave && !npcIds.has(o.leave)) out.push(`${t}要離開的角色 ${o.leave} 不存在`)
     }
     if (n.at.where === 'cell' && n.at.cell && !(n.at.cell in CELL_NAME)) out.push(`${t}的設施不存在`)
+    else if (n.at.where === 'cell' && n.at.cell && n.at.location && !hasFacility(n.at.location, n.at.cell as CellKind)) {
+      out.push(`${t}：${geography.locations.find((l) => l.id === n.at.location)?.name ?? n.at.location}沒有${CELL_NAME[n.at.cell as CellKind] ?? n.at.cell}`)
+    }
   }
   return out
 }

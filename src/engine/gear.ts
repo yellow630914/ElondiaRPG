@@ -133,7 +133,12 @@ function addMap(into: AffinityMap, from?: AffinityMap) {
   }
 }
 
-/** 一件裝備的數值 */
+/** 底材與材料都還在（自訂內容可能刪掉了自建的底材或材料） */
+export function gearKnown(spec: Pick<GearSpec, 'base' | 'material'> | undefined): spec is GearSpec {
+  return !!spec && !!gearRules.bases[spec.base] && !!gearRules.materials[spec.material]
+}
+
+/** 一件裝備的數值（底材或材料不存在時丟錯；可能遇到失效裝備的地方先用 gearKnown 檢查） */
 export function gearStats(spec: GearSpec): GearStats {
   const base = gearRules.bases[spec.base]
   const material = gearRules.materials[spec.material]
@@ -176,8 +181,9 @@ export function gearName(spec: Pick<GearSpec, 'base' | 'material'>): string {
 
 /** 依組成估價：底材價格 × 材料倍率 × 附魔（每點 +50%） */
 export function gearPrice(spec: GearSpec): number {
-  const base = gearRules.bases[spec.base]!
-  const material = gearRules.materials[spec.material]!
+  const base = gearRules.bases[spec.base]
+  const material = gearRules.materials[spec.material]
+  if (!base || !material) return 0
   const points = enchantPoints(spec.enchants)
   return Math.round(base.price * material.price * (1 + 0.5 * points))
 }
@@ -200,6 +206,7 @@ export function gearSpecOf(state: Pick<GameState, 'customItems'> | undefined, na
 
 /** 這件裝備可以放的欄位 */
 export function slotsFor(spec: GearSpec): GearSlot[] {
+  if (!gearKnown(spec)) return []
   const slot = gearStats(spec).slot
   return gearRules.slot_groups[slot] ?? [slot as GearSlot]
 }
@@ -212,8 +219,9 @@ export function syncGear(c: Character, classWeapon?: string) {
   const body = c.gear?.body
   const natural = classWeapon && equipment.weapons[classWeapon]?.natural ? classWeapon
     : equipment.weapons[c.weapon]?.natural ? c.weapon : 'unarmed'
-  c.weapon = main ? gearStats(main.spec).weapon ?? natural : natural
-  c.armor = body ? gearStats(body.spec).armor ?? 'none' : 'none'
+  // 失效的裝備（底材或材料被刪掉）：當成沒有裝備
+  c.weapon = main && gearKnown(main.spec) ? gearStats(main.spec).weapon ?? natural : natural
+  c.armor = body && gearKnown(body.spec) ? gearStats(body.spec).armor ?? 'none' : 'none'
 }
 
 /** 身上所有裝備的加成合計（主手武器的骰子與上身防具的迴避、減傷另外由武器與防具類型計算） */
@@ -223,7 +231,7 @@ export function gearBonuses(c: Pick<Character, 'gear'>): { mods: Mods; resist: A
   const offense: AffinityMap = {}
   let threat = 0
   for (const g of Object.values(c.gear ?? {})) {
-    if (!g) continue
+    if (!g || !gearKnown(g.spec)) continue
     const s = gearStats(g.spec)
     addMods(mods, s.mods)
     addMap(resist, s.resist)
@@ -239,7 +247,11 @@ export function equipped(name: string, spec: GearSpec): EquippedGear {
 
 /** 材料類型裡指定等級的材料（tier 1～5） */
 function materialOf(kind: MaterialKind, tier: number): string {
-  return Object.entries(gearRules.materials).find(([, m]) => m.kind === kind && m.tier === tier)![0]
+  const list = Object.entries(gearRules.materials).filter(([, m]) => m.kind === kind)
+  // 沒有剛好這一級的材料時，用最接近的（同樣接近時取低的）
+  const best = list.sort(([, a], [, b]) => Math.abs(a.tier - tier) - Math.abs(b.tier - tier) || a.tier - b.tier)[0]
+  if (!best) throw new Error(`沒有${kind}類的材料`)
+  return best[0]
 }
 
 function piece(base: string, tier: number): EquippedGear {
@@ -306,6 +318,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 
 /** 一行說明：稀有度・欄位・武器或防具類型・加成 */
 export function gearSummary(spec: GearSpec): string {
+  if (!gearKnown(spec)) return '（已失效：底材或材料不存在，沒有效果）'
   const s = gearStats(spec)
   const parts = [rarityName(s.rarity), s.slot === 'ring' ? '戒指' : slotName(s.slot)]
   if (s.weapon) {
@@ -442,10 +455,12 @@ function sameSpec(a?: GearSpec, b?: GearSpec): boolean {
  * 其他的用 AI 取的名字（沒有時是「稀有度＋制式名稱」或「精製＋制式名稱」），和現有的物品撞名時加上編號。
  */
 export function registerGear(state: Pick<GameState, 'customItems'>, spec: GearSpec, name?: string, desc?: string): string {
+  if (!gearKnown(spec)) throw new Error('這件裝備的底材或材料不存在')
   const standard = gearName(spec)
-  if (isStandard(spec) && !name) return standard
+  // 制式品：目錄裡真的有同名、同組成的物品才直接用（底材或材料改過名、目錄物品被改掉時另外登錄）
+  if (isStandard(spec) && !name && sameSpec(itemDef(standard)?.gear, spec)) return standard
   // 預設名稱：稀有度比材料高時加上稀有度（優良鐵長劍），只是有附魔時是「精製」（精製秘銀長劍）
-  const want = name?.trim().slice(0, 20) || `${spec.rarity ? rarityName(spec.rarity) : '精製'}${standard}`
+  const want = name?.trim().slice(0, 20) || (isStandard(spec) ? standard : `${spec.rarity ? rarityName(spec.rarity) : '精製'}${standard}`)
   const taken = (n: string) => {
     if (itemDef(n)) return !sameSpec(itemDef(n)!.gear, spec) || !isStandard(spec)
     const c = state.customItems?.[n]

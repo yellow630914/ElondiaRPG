@@ -8,6 +8,7 @@ import type { GearSlot } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
+import UsageNote from './UsageNote.vue'
 
 // 裝備底材與材料的編輯表單
 const props = defineProps<{ kind: 'base' | 'material'; id: string }>()
@@ -88,10 +89,21 @@ function restore() {
   else content.restoreMaterial(props.id)
   reset()
 }
+// 還有地方用到時不能刪（見 docs/CONTENT_DEPENDENCIES.md）
+const usage = computed(() => {
+  void content.version
+  void game.state?.time.minute
+  return content.usageOf(props.kind === 'base' ? 'base' : 'material', props.id)
+})
 function remove() {
-  if (!confirm('刪除？用它做成的制式裝備會一起消失，行囊裡已有的會變成一般物品。')) return
-  if (props.kind === 'base') content.deleteBase(props.id)
-  else content.deleteMaterial(props.id)
+  if (!confirm('刪除？用它做成的制式裝備會一起消失；其他存檔裡已有的會失效（沒有效果、不能裝備）。')) return
+  try {
+    if (props.kind === 'base') content.deleteBase(props.id)
+    else content.deleteMaterial(props.id)
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+    return
+  }
   emit('deleted')
 }
 </script>
@@ -106,8 +118,9 @@ function remove() {
       <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
       <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
       <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" @click="remove">刪除</button>
+      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
     </div>
+    <UsageNote :usage="usage" :deletable="!builtin" />
     <p class="small muted">id：{{ id }}</p>
 
     <template v-if="kind === 'base'">
@@ -124,7 +137,7 @@ function remove() {
           <label>底價（第一級材料，{{ formatMoney(base.price) }}）<input v-model.number="base.price" type="number" min="1" /></label>
           <label>仇恨（0.1 = +10%）<input v-model.number="base.threat" type="number" step="0.05" /></label>
         </div>
-        <label v-if="base.slot === 'main_hand'" class="check small"><input v-model="base.two_handed" type="checkbox" /> 雙手武器（空出副手）</label>
+        <label v-if="base.slot === 'main_hand'" class="check small"><input v-model="base.two_handed" type="checkbox" :disabled="builtin" /> 雙手武器（空出副手）</label>
         <label class="block">描述 <input v-model="base.desc" maxlength="120" /></label>
         <p v-if="builtin" class="small muted">內建底材不能改欄位與材料類型；改名只影響之後新打造或生成的裝備，目錄裡的制式裝備沿用原本的名稱。</p>
       </fieldset>
@@ -177,7 +190,7 @@ function remove() {
           <label>類型
             <select v-model="mat.kind" :disabled="builtin"><option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option></select>
           </label>
-          <label>等級（1～5，決定打造的工錢與 DC）<input v-model.number="mat.tier" type="number" min="1" max="5" /></label>
+          <label>等級（1～5，決定打造的工錢與 DC）<input v-model.number="mat.tier" type="number" min="1" max="5" :disabled="builtin" :title="builtin ? '內建材料的等級不能改（隨機裝備依類型與等級找材料）' : ''" /></label>
           <label>加成 <input v-model.number="mat.bonus" type="number" min="0" max="10" /></label>
           <label>稀有度
             <select v-model="mat.rarity"><option v-for="r in RARITY_ORDER" :key="r" :value="r">{{ rarityName(r) }}</option></select>

@@ -9,6 +9,8 @@ import OutcomeEditor from './OutcomeEditor.vue'
 
 // 一個任務點：在哪裡、解鎖的條件、種類（劇情、判定、戰鬥、選擇）、結果
 const node = defineModel<StoryNode>({ required: true })
+/** 目前存檔已經完成這個任務點：id 不能改（改了會被當成新的任務點，再觸發一次） */
+const props = defineProps<{ lockedId?: boolean }>()
 const where = computed(() => node.value.at.where)
 const locations = computed(() => geography.locations.filter((l) =>
   where.value === 'dungeon' ? l.type === 'dungeon' : where.value === 'npc' ? true : l.type !== 'dungeon'))
@@ -53,7 +55,7 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
 <template>
   <div class="node">
     <div class="grid">
-      <label>id <input v-model="node.id" maxlength="40" /></label>
+      <label>id <input v-model="node.id" maxlength="40" :disabled="props.lockedId" :title="props.lockedId ? '目前的存檔已經完成這個任務點，id 不能改（改了會再觸發一次）' : ''" /></label>
       <label>目標（冒險筆記上看到的） <input v-model="node.title" maxlength="40" /></label>
       <label>種類
         <select :value="node.kind" @change="setKind(($event.target as HTMLSelectElement).value as StoryNode['kind'])">

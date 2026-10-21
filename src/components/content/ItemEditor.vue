@@ -9,6 +9,7 @@ import { TOOL_KINDS, toolSummary } from '@/engine/tools'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
+import UsageNote from './UsageNote.vue'
 
 // 物品的編輯表單：基本資料、出現的地方（商店、掉落、寶箱、採集、事件）、消耗品效果、裝備組成
 const props = defineProps<{ name: string }>()
@@ -160,9 +161,20 @@ function restore() {
   content.restoreItem(props.name)
   reset()
 }
+// 還有地方用到時不能刪（見 docs/CONTENT_DEPENDENCIES.md）
+const usage = computed(() => {
+  void content.version
+  void game.state?.time.minute
+  return content.usageOf('item', props.name)
+})
 function remove() {
-  if (!confirm(`刪除「${props.name}」？行囊裡已有的會變成無法使用的雜物，怪物也不再掉落。`)) return
-  content.deleteItem(props.name)
+  if (!confirm(`刪除「${props.name}」？怪物不再掉落；其他存檔裡已有的會變成無法使用的雜物。`)) return
+  try {
+    content.deleteItem(props.name)
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+    return
+  }
   content.setItemDrops(props.name, [])
   emit('deleted')
 }
@@ -178,8 +190,9 @@ function remove() {
       <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
       <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
       <button v-if="!custom" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" @click="remove">刪除</button>
+      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
     </div>
+    <UsageNote :usage="usage" :deletable="custom" />
 
     <fieldset>
       <legend>基本</legend>

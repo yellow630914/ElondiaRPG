@@ -141,9 +141,17 @@ export function migrate(state: GameState): GameState {
 
 /** 自訂內容刪掉的能力：從角色身上拿掉（讀檔時，以及自訂內容改變之後） */
 export function pruneAbilities(state: GameState) {
+  const known = (id: string) => !!abilities[id]
   for (const c of [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((x): x is Character => !!x)]) {
-    if (c.abilities?.some((id) => !abilities[id])) c.abilities = c.abilities.filter((id) => !!abilities[id])
+    if (c.abilities?.some((id) => !known(id))) c.abilities = c.abilities.filter(known)
+    // 升級時還沒選的能力：拿掉不存在的選項，整組都沒了就不用選
+    if (c.pendingAbilityChoices?.length) {
+      c.pendingAbilityChoices = c.pendingAbilityChoices.map((set) => set.filter(known)).filter((set) => set.length)
+      if (!c.pendingAbilityChoices.length) delete c.pendingAbilityChoices
+    }
   }
+  // 進行中的戰鬥
+  for (const x of state.combat?.combatants ?? []) if (x.abilities.some((id) => !known(id))) x.abilities = x.abilities.filter(known)
 }
 
 export function player(state: GameState) {

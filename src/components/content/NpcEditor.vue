@@ -14,6 +14,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import FlagInput from './FlagInput.vue'
 import NpcPlacementEditor from './NpcPlacementEditor.vue'
+import UsageNote from './UsageNote.vue'
 
 // 固定 NPC 的編輯表單：不會因為名單變動消失；可以固定在聚落的某一格、只在劇情旗標符合時出現
 const props = defineProps<{ id: string }>()
@@ -130,9 +131,20 @@ function restore() {
   draft.value = current()
   saved.value = snap(draft.value)
 }
+// 還有地方用到時不能刪（見 docs/CONTENT_DEPENDENCIES.md）
+const usage = computed(() => {
+  void content.version
+  void game.state?.time.minute
+  return content.usageOf('npc', props.id)
+})
 function remove() {
-  if (!confirm(`刪除「${draft.value.name}」？用到這個角色的特殊任務會找不到人。`)) return
-  content.deleteNpc(props.id)
+  if (!confirm(`刪除「${draft.value.name}」？其他存檔裡已經登場過的這個角色會留著，但不會再更新。`)) return
+  try {
+    content.deleteNpc(props.id)
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+    return
+  }
   emit('deleted')
 }
 </script>
@@ -147,8 +159,9 @@ function remove() {
       <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
       <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
       <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" @click="remove">刪除</button>
+      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
     </div>
+    <UsageNote :usage="usage" :deletable="!builtin" />
     <p class="small muted">id：{{ id }}（特殊任務用這個 id 指定角色）・已經登場過的角色，出現條件與固定格子會跟著這裡改，其他資料以存檔裡的為準。</p>
 
     <fieldset>

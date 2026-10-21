@@ -6,11 +6,12 @@ import { ref } from 'vue'
 import { enemies, itemDef, npcs as namedNpcs, stories } from '@/engine/data'
 import { builtinStory, flagUsage, sanitizeStory, type StoryMod } from '@/engine/storyMods'
 import {
-  abilityUsage, applyContent, builtinAbility, builtinEnemy, builtinNpc, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeEnemy,
+  abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
 } from '@/engine/mods'
 import { pruneAbilities } from '@/engine/state'
-import type { GameState } from '@/engine/types'
+import { pruneStories } from '@/engine/story'
+import { enemyUsage, gearUsage, itemUsage, npcUsage, renameItemInState, storyUsage } from '@/engine/usage'
 import { useGame } from './game'
 
 const KEY = 'elondia.content'
@@ -39,13 +40,37 @@ export const useContent = defineStore('content', () => {
     problems.value = applyContent(mods.value)
     // 被拿掉的能力（匯入、全部恢復預設）：從目前存檔的角色身上拿掉
     const game = useGame()
-    if (game.state) pruneAbilities(game.state)
+    if (game.state) {
+      pruneAbilities(game.state)
+      pruneStories(game.state)
+    }
     version.value++
     try {
       localStorage.setItem(KEY, JSON.stringify(mods.value))
     } catch {
       // 寫不進去時只在本次有效
     }
+  }
+
+  // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
+
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability'
+  /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
+  function usageOf(kind: Kind, key: string): string[] {
+    const state = useGame().state
+    switch (kind) {
+      case 'enemy': return enemyUsage(key, state)
+      case 'item': return itemUsage(key, state)
+      case 'base': return gearUsage('base', key, state, Object.keys(mods.value.items))
+      case 'material': return gearUsage('material', key, state, Object.keys(mods.value.items))
+      case 'npc': return npcUsage(key, state)
+      case 'story': return storyUsage(key, state)
+      case 'ability': return abilityUsage(key, state)
+    }
+  }
+  function assertUnused(kind: Kind, key: string) {
+    const used = usageOf(kind, key)
+    if (used.length) throw new Error(`還有地方用到，不能刪除：${used.slice(0, 3).join('、')}${used.length > 3 ? ` 等 ${used.length} 處` : ''}`)
   }
 
   // ---- 怪物 ----
@@ -59,6 +84,7 @@ export const useContent = defineStore('content', () => {
   /** 自建的怪物才能刪 */
   function deleteEnemy(id: string) {
     if (!mods.value.enemies[id]?.custom) throw new Error('內建的怪物不能刪除')
+    assertUnused('enemy', id)
     delete mods.value.enemies[id]
     save()
   }
@@ -76,11 +102,17 @@ export const useContent = defineStore('content', () => {
     const existing = mods.value.items[name]
     const custom = existing ? !!existing.custom : !!draft.custom
     if (!existing && custom && itemDef(name)) throw new Error(`已經有叫「${name}」的物品`)
-    const target = custom && rename?.trim() ? rename.trim().slice(0, 20) : name
+    const target = custom && rename?.trim() ? cleanItemName(rename) || name : name
+    // AI 生成或打造時登錄在目前存檔的物品也算（同名會蓋掉它的類別、價格與裝備組成）
+    const taken = (n: string) => !!mods.value.items[n] || !!itemDef(n) || !!useGame().state?.customItems?.[n]
+    if (!existing && custom && useGame().state?.customItems?.[name]) throw new Error(`目前的存檔已經有叫「${name}」的物品`)
     if (target !== name) {
-      if (mods.value.items[target] || itemDef(target)) throw new Error(`已經有叫「${target}」的物品`)
+      if (taken(target)) throw new Error(`已經有叫「${target}」的物品`)
       delete mods.value.items[name]
       renameRefs(name, target)
+      // 目前存檔裡的同名物品一起改名（其他存檔裡的會變成無法使用的雜物）
+      const game = useGame()
+      if (game.state) renameItemInState(game.state, name, target)
     }
     mods.value.items[target] = sanitizeItem(target, draft, custom)
     save()
@@ -89,6 +121,7 @@ export const useContent = defineStore('content', () => {
 
   function deleteItem(name: string) {
     if (!mods.value.items[name]?.custom) throw new Error('內建的物品不能刪除')
+    assertUnused('item', name)
     delete mods.value.items[name]
     renameRefs(name, null)
     save()
@@ -100,12 +133,17 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
-  /** 改名或刪除時更新怪物掉落裡的參照 */
+  /** 改名或刪除時更新怪物掉落與特殊任務獎勵裡的參照 */
   function renameRefs(from: string, to: string | null) {
     for (const e of Object.values(mods.value.enemies)) {
       if (!e.loot?.some((l) => l.item === from)) continue
       e.loot = to ? e.loot.map((l) => (l.item === from ? { ...l, item: to } : l)) : e.loot.filter((l) => l.item !== from)
       if (!e.loot.length) delete e.loot
+    }
+    if (!to) return
+    for (const s of Object.values(mods.value.stories)) {
+      const lists = [s.rewards, ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).map((o) => o?.effects)]
+      for (const list of lists) for (const e of list ?? []) if (e.type === 'item' && e.name === from) e.name = to
     }
   }
 
@@ -130,11 +168,12 @@ export const useContent = defineStore('content', () => {
   // ---- 底材與材料 ----
 
   function saveBase(id: string, draft: Partial<BaseMod>, custom: boolean) {
-    mods.value.bases[id] = sanitizeBase(draft, custom)
+    mods.value.bases[id] = sanitizeBase(draft, custom, id)
     save()
   }
   function deleteBase(id: string) {
     if (!mods.value.bases[id]?.custom) throw new Error('內建的底材不能刪除')
+    assertUnused('base', id)
     delete mods.value.bases[id]
     save()
   }
@@ -143,11 +182,12 @@ export const useContent = defineStore('content', () => {
     save()
   }
   function saveMaterial(id: string, draft: Partial<MaterialMod>, custom: boolean) {
-    mods.value.materials[id] = sanitizeMaterial(draft, custom)
+    mods.value.materials[id] = sanitizeMaterial(draft, custom, id)
     save()
   }
   function deleteMaterial(id: string) {
     if (!mods.value.materials[id]?.custom) throw new Error('內建的材料不能刪除')
+    assertUnused('material', id)
     delete mods.value.materials[id]
     save()
   }
@@ -164,6 +204,7 @@ export const useContent = defineStore('content', () => {
   }
   function deleteNpc(id: string) {
     if (!mods.value.npcs[id]?.custom) throw new Error('內建的角色不能刪除')
+    assertUnused('npc', id)
     delete mods.value.npcs[id]
     save()
   }
@@ -180,6 +221,7 @@ export const useContent = defineStore('content', () => {
   }
   function deleteStory(id: string) {
     if (!mods.value.stories[id]?.custom) throw new Error('內建的特殊任務不能刪除')
+    assertUnused('story', id)
     delete mods.value.stories[id]
     save()
   }
@@ -195,10 +237,9 @@ export const useContent = defineStore('content', () => {
     save()
   }
   /** 自建、而且沒有被任何地方用到的能力才能刪 */
-  function deleteAbility(id: string, state?: GameState | null) {
+  function deleteAbility(id: string) {
     if (!mods.value.abilities[id]?.custom) throw new Error('內建的能力不能刪除')
-    const used = abilityUsage(id, state)
-    if (used.length) throw new Error(`還有地方用到這個能力：${used.slice(0, 3).join('、')}${used.length > 3 ? ` 等 ${used.length} 處` : ''}`)
+    assertUnused('ability', id)
     delete mods.value.abilities[id]
     save()
   }
@@ -232,7 +273,7 @@ export const useContent = defineStore('content', () => {
   }
 
   return {
-    mods, problems, version,
+    mods, problems, version, usageOf,
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,

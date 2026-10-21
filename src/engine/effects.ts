@@ -16,7 +16,7 @@ import {
 } from './party'
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
-import { registerGear } from './gear'
+import { gearKnown, registerGear } from './gear'
 import type { GameState, GearSpec, Intel, NpcRecord, Report } from './types'
 import { addIntel } from './intel'
 import { startStory } from './story'
@@ -112,6 +112,11 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         else if (e.qty < 0) (c.items_lost ??= []).push({ name: e.name, qty: -e.qty })
         break
       case 'gear': {
+        // 底材或材料被刪掉的裝備獎勵：略過
+        if (!gearKnown(e.spec)) {
+          notes.push('（有一件裝備獎勵已經不存在）')
+          break
+        }
         const name = registerGear(state, e.spec, e.name, e.desc)
         ;(c.items_gained ??= []).push({ name, qty: 1, owner: 'pc' })
         notes.push(`得到【${name}】`)
@@ -135,7 +140,16 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         ;(c.flags ??= {})[e.key] = e.value
         break
       case 'companion': {
+        // 指定的固定 NPC 已經不存在（自訂內容刪掉了），或已經在隊伍裡：略過
+        if (typeof e.npc === 'string' && !npcRecord(state, e.npc)) {
+          notes.push('（要加入的角色已經不存在）')
+          break
+        }
         const rec = resolveNpc(state, e.npc)
+        if (state.party.some((m) => m.id === rec.id)) {
+          notes.push(`${rec.name}已經在隊伍裡了`)
+          break
+        }
         if (partyRoom(state) < 1) {
           ensureRelationship(state, rec)
           notes.push(`${rec.name}想加入，但隊伍已滿`)

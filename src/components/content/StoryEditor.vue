@@ -10,6 +10,7 @@ import { useGame } from '@/stores/game'
 import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
 import StoryNodeEditor from './StoryNodeEditor.vue'
+import UsageNote from './UsageNote.vue'
 
 // 特殊任務的編輯表單：開頭、任務點（依劇情旗標解鎖）、完成報酬；下方檢查任務鏈與旗標的流向
 const props = defineProps<{ id: string }>()
@@ -106,9 +107,24 @@ function restore() {
   draft.value = current()
   saved.value = snap(draft.value)
 }
+// 目前存檔裡這個任務的進度：完成過的任務點 id 不能改
+const progress = computed(() => game.state?.stories?.[props.id])
+const doneInSave = computed(() => new Set(progress.value?.done ?? []))
+
+// 還有地方用到時不能刪（見 docs/CONTENT_DEPENDENCIES.md）
+const usage = computed(() => {
+  void content.version
+  void game.state?.time.minute
+  return content.usageOf('story', props.id)
+})
 function remove() {
-  if (!confirm(`刪除「${draft.value.title}」？進行中的存檔會找不到這個任務。`)) return
-  content.deleteStory(props.id)
+  if (!confirm(`刪除「${draft.value.title}」？其他存檔裡進行中的這個任務會中斷（任務同行的夥伴在讀檔時離隊）。`)) return
+  try {
+    content.deleteStory(props.id)
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+    return
+  }
   emit('deleted')
 }
 </script>
@@ -123,8 +139,12 @@ function remove() {
       <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
       <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
       <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" @click="remove">刪除</button>
+      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
     </div>
+    <UsageNote :usage="usage" :deletable="!builtin" />
+    <p v-if="progress?.status === 'active'" class="small warn-text">
+      目前的存檔正在進行這個任務（完成了 {{ progress.done.length }} 個任務點）：完成過的任務點 id 不能改；改旗標名稱或解鎖條件可能讓這個存檔的任務卡住。
+    </p>
     <p class="small muted">id：{{ id }}・旗標名稱只用在劇情（存成 story:名稱）；以 ai: 開頭的名稱讀 AI 判定寫下的旗標。</p>
 
     <fieldset>
@@ -201,7 +221,7 @@ function remove() {
           <button class="small" title="複製" @click.stop="duplicate(i)">📄</button>
           <button class="small" title="刪除" @click.stop="removeNode(i)">🗑️</button>
         </div>
-        <StoryNodeEditor v-if="open === i" v-model="draft.nodes[i]!" />
+        <StoryNodeEditor v-if="open === i" v-model="draft.nodes[i]!" :locked-id="doneInSave.has(draft.nodes[i]!.id)" />
       </div>
       <button class="small" @click="addNode">＋ 任務點</button>
     </fieldset>

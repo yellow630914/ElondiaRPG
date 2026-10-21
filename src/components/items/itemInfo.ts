@@ -31,7 +31,8 @@ export function categoryName(state: GameState, name: string): string {
 export function itemEffect(state: GameState, name: string): string {
   const def = itemDef(name)
   const spec = gearSpecOf(state, name)
-  const forge = def?.forge ? `可打造${[...new Set(def.forge.materials.map((m) => gearRules.materials[m]!.name))].join('、')}` : ''
+  const forgeNames = [...new Set((def?.forge?.materials ?? []).map((m) => gearRules.materials[m]?.name).filter(Boolean))]
+  const forge = forgeNames.length ? `可打造${forgeNames.join('、')}` : ''
   return [spec ? gearSummary(spec) : '', useSummary(def?.use), toolSummary(def?.tool), forge].filter(Boolean).join('・')
 }
 

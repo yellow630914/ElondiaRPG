@@ -2,7 +2,7 @@
 
 import { snapshot } from './character'
 import { attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, regionById, statusDef, type ItemUse } from './data'
-import { gearRules, gearSpecOf, gearStats, slotName, slotsFor, syncGear } from './gear'
+import { gearKnown, gearRules, gearSpecOf, gearStats, slotName, slotsFor, syncGear } from './gear'
 import { gainCondition, pcOf } from './party'
 import { toolDef } from './tools'
 import { roll } from './rng'
@@ -113,6 +113,7 @@ export function equipItem(state: GameState, name: string, memberId: string, slot
   take(state, name)
   const spec = gearSpecOf(state, name)
   if (!spec) throw new Error('這個東西不能裝備')
+  if (!gearKnown(spec)) throw new Error('這件裝備的底材或材料已經不存在，不能裝備')
   const m = member(state, memberId)
   const options = slotsFor(spec).filter((x) => !(gearRules.races[m.race]?.blocked ?? []).includes(x))
   if (!options.length) throw new Error(`${m.name}無法使用這個欄位`)
@@ -121,7 +122,7 @@ export function equipItem(state: GameState, name: string, memberId: string, slot
   const target = slot ?? options.find((x) => !gear[x]) ?? options[0]!
   const stats = gearStats(spec)
   const main = gear.main_hand
-  if (target === 'off_hand' && main && gearStats(main.spec).two_handed) throw new Error(`${main.name}要用雙手，副手空不出來`)
+  if (target === 'off_hand' && main && gearKnown(main.spec) && gearStats(main.spec).two_handed) throw new Error(`${main.name}要用雙手，副手空不出來`)
   const report = itemReport(state, 0.1)
   const back: string[] = []
   const removed = gear[target]

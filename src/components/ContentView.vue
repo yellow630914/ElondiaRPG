@@ -149,7 +149,7 @@ function create() {
       select(id)
     } else if (sub.value === 'items') {
       let name = '新的物品'
-      for (let i = 2; itemDef(name); i++) name = `新的物品${i}`
+      for (let i = 2; itemDef(name) || game.state?.customItems?.[name]; i++) name = `新的物品${i}`
       content.saveItem(name, newItem(name))
       select(name)
     } else if (sub.value === 'npcs') {
@@ -194,7 +194,7 @@ function duplicate() {
       select(id)
     } else if (sub.value === 'items') {
       let name = `${key}（複製）`.slice(0, 20)
-      for (let i = 2; itemDef(name); i++) name = `${key.slice(0, 15)}（複製${i}）`
+      for (let i = 2; itemDef(name) || game.state?.customItems?.[name]; i++) name = `${key.slice(0, 15)}（複製${i}）`
       content.saveItem(name, { ...JSON.parse(JSON.stringify(itemDef(key))), custom: true })
       select(name)
     } else if (sub.value === 'stories') {

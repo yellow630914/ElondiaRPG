@@ -367,6 +367,21 @@ function finishStory(state: GameState, report: Report, progress: StoryProgress, 
   report.outcome.tags = [...new Set([...(report.outcome.tags ?? []), status === 'completed' ? '任務完成' : '任務失敗'])]
 }
 
+/**
+ * 自訂內容刪掉的特殊任務：存檔裡進行中的算中斷，任務同行的夥伴離隊（不然會一直佔著同行的名額）。
+ * 讀檔時與自訂內容改變之後呼叫。
+ */
+export function pruneStories(state: GameState) {
+  for (const p of Object.values(state.stories ?? {})) {
+    if (p.status !== 'active' || storyDef(p.id)) continue
+    p.status = 'failed'
+    p.ended = { ...state.time }
+    for (const g of p.guests ?? []) if (state.party.some((m) => m.id === g && m.bond === 'guest')) leaveParty(state, g, undefined, '任務同行結束')
+    p.guests = []
+    p.log.push({ time: { ...state.time }, text: '這個特殊任務已經不存在，任務中斷' })
+  }
+}
+
 /** 放棄進行中的任務 */
 export function abandonStory(state: GameState, id: string): Report {
   const progress = state.stories?.[id]

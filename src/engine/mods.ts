@@ -377,6 +377,12 @@ export function applyContent(mods: ContentMods): string[] {
     def.name = name
     // 底材或材料被刪掉的裝備：拿掉組成（變成一般物品）
     if (def.gear && (gearRules.bases[def.gear.base]?.kind === undefined || gearRules.bases[def.gear.base]!.kind !== gearRules.materials[def.gear.material]?.kind)) delete def.gear
+    // 被刪掉的材料：拿掉打造的連結
+    if (def.forge) {
+      const forge = def.forge.materials.filter((x) => !!gearRules.materials[x])
+      if (forge.length) def.forge = { materials: forge }
+      else delete def.forge
+    }
     const i = itemRules.items.findIndex((x) => x.name === name)
     if (i >= 0) itemRules.items[i] = def
     else itemRules.items.push(def)
@@ -416,6 +422,8 @@ export function applyContent(mods: ContentMods): string[] {
 // ---- 整理（儲存與匯入時） ----
 
 const num = (v: unknown, lo: number, hi: number, d: number) => {
+  // 空白的欄位用預設值（不要變成 0 再被夾到最小值）
+  if (v === '' || v === null || v === undefined) return d
   const n = typeof v === 'number' ? v : Number(v)
   return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d
 }
@@ -562,10 +570,15 @@ export function sanitizeGearSpecLoose(g: GearSpec | undefined): GearSpec | undef
   return out
 }
 
+/** 物品名稱：最多 20 字，拿掉打造指令用的分隔符號（| 與 *） */
+export function cleanItemName(v: unknown): string {
+  return str(v, 40).replace(/[|*]/g, '').trim().slice(0, 20)
+}
+
 export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolean): ItemMod {
   const category = CATEGORIES.includes(raw.category as ItemCategory) ? raw.category as ItemCategory : 'material'
   const out: ItemMod = {
-    name: str(name, 20) || '未命名的物品',
+    name: cleanItemName(name) || '未命名的物品',
     category,
     price_cc: int(raw.price_cc, 0, 1e8, 10),
     tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t)),
@@ -598,7 +611,7 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
 
 const SCALES = ['full', 'half', 'up', 'third', 'third_up', 'res']
 
-export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean): BaseMod {
+export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string): BaseMod {
   const kind = (['metal', 'leather', 'cloth', 'wood', 'jewel'] as const).includes(raw.kind as 'metal') ? raw.kind! : 'metal'
   const slots = [...Object.keys(gearRules.slots).filter((s) => !s.startsWith('ring')), 'ring']
   const slot = slots.includes(raw.slot as string) ? raw.slot! : 'main_hand'
@@ -636,10 +649,18 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean): BaseMod {
     }
   }
   if (custom) out.custom = true
+  // 內建底材的欄位、材料類型、雙手不能改：存檔裡的裝備、職業的起始武器與制式裝備都靠它們
+  const builtin = !custom && id ? snapshot.bases[id] : undefined
+  if (builtin) {
+    out.slot = builtin.slot
+    out.kind = builtin.kind
+    if (builtin.two_handed) out.two_handed = true
+    else delete out.two_handed
+  }
   return out
 }
 
-export function sanitizeMaterial(raw: Partial<MaterialMod>, custom: boolean): MaterialMod {
+export function sanitizeMaterial(raw: Partial<MaterialMod>, custom: boolean, id?: string): MaterialMod {
   const kind = (['metal', 'leather', 'cloth', 'wood', 'jewel'] as const).includes(raw.kind as 'metal') ? raw.kind! : 'metal'
   const out: MaterialMod = {
     kind, name: str(raw.name, 8) || '未命名', tier: int(raw.tier, 1, 5, 1), bonus: int(raw.bonus, 0, 10, 0),
@@ -651,6 +672,12 @@ export function sanitizeMaterial(raw: Partial<MaterialMod>, custom: boolean): Ma
   if (res) out.resist = res
   if (str(raw.desc, 120)) out.desc = str(raw.desc, 120)
   if (custom) out.custom = true
+  // 內建材料的類型與等級不能改：隨機裝備、起始裝備與 NPC 的配備依「類型 × 等級」找材料
+  const builtin = !custom && id ? snapshot.materials[id] : undefined
+  if (builtin) {
+    out.kind = builtin.kind
+    out.tier = builtin.tier
+  }
   return out
 }
 
@@ -662,9 +689,15 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
   for (const [id, a] of Object.entries(out.abilities)) if (a.custom && !abilities[id]) abilities[id] = { ...strip(a, ['custom']), id }
-  for (const [id, v] of Object.entries(r.materials ?? {})) out.materials[id] = sanitizeMaterial(v, !!v.custom || !snapshot.materials[id])
-  for (const [id, v] of Object.entries(r.bases ?? {})) out.bases[id] = sanitizeBase(v, !!v.custom || !snapshot.bases[id])
-  for (const [name, v] of Object.entries(r.items ?? {})) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
+  for (const [id, v] of Object.entries(r.materials ?? {})) out.materials[id] = sanitizeMaterial(v, !!v.custom || !snapshot.materials[id], id)
+  for (const [id, v] of Object.entries(r.bases ?? {})) out.bases[id] = sanitizeBase(v, !!v.custom || !snapshot.bases[id], id)
+  // 物品、固定 NPC 與任務的裝備組成會檢查底材與材料存不存在：先把自建的登錄進去（之後 applyContent 會重新套用一次）
+  for (const [id, m] of Object.entries(out.materials)) if (m.custom && !gearRules.materials[id]) gearRules.materials[id] = strip(m, ['custom'])
+  for (const [id, b] of Object.entries(out.bases)) if (b.custom && !gearRules.bases[id]) gearRules.bases[id] = strip(b, ['custom', 'weaponDef', 'armorDef'])
+  for (const [raw, v] of Object.entries(r.items ?? {})) {
+    const name = cleanItemName(raw)
+    if (name) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
+  }
   for (const [id, v] of Object.entries(r.enemies ?? {})) out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id])
   for (const [id, v] of Object.entries(r.npcs ?? {})) out.npcs[id] = sanitizeNpc(id, v, !!v.custom || !builtinNpc(id))
   for (const [id, v] of Object.entries(r.stories ?? {})) out.stories[id] = sanitizeStory(id, v, !!v.custom || !builtinStory(id))
@@ -896,7 +929,10 @@ export function abilityUsage(id: string, state?: GameState | null): string[] {
   }
   if (state) {
     const who = [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((c): c is Character => !!c)]
-    for (const c of who) if (c.abilities?.includes(id)) out.push(`目前存檔的「${c.name}」`)
+    for (const c of who) {
+      if (c.abilities?.includes(id)) out.push(`目前存檔的「${c.name}」`)
+      else if (c.pendingAbilityChoices?.some((set) => set.includes(id))) out.push(`目前存檔的「${c.name}」升級時的選項`)
+    }
   }
   return out
 }
