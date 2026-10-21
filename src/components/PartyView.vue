@@ -216,7 +216,7 @@ function affinityText(m: Character): string {
       </div>
 
       <button
-        v-if="!m.isPlayer && !m.group && m.bond !== 'slave'"
+        v-if="!m.isPlayer && !m.group && m.bond !== 'slave' && m.bond !== 'guest'"
         class="small danger"
         style="margin-top: 8px"
         :disabled="inCombat"

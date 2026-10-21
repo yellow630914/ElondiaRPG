@@ -11,7 +11,7 @@ import mapsJson from '@data/world/maps.json'
 import { mod, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  dungeonEncounters, enemies, itemDef, locationById, regionById, wildEncounters,
+  dungeonEncounters, enemies, geography, itemDef, locationById, regionById, wildEncounters,
   type DungeonLayerId, type EncounterGroup, type Location,
 } from './data'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
@@ -274,6 +274,15 @@ function reveal(area: Area, x: number, y: number) {
 function storeArea(state: GameState, area: Area) {
   state.areas ??= {}
   state.areas[area.key] = area
+}
+
+/** 聚落的固定區塊（不需要存檔；不是聚落區塊時為 undefined） */
+export function settlementArea(key: string): Area | undefined {
+  const [locationId, blockId] = key.split('/') as [string, string]
+  const loc = geography.locations.find((l) => l.id === locationId)
+  if (!loc || loc.type === 'dungeon') return undefined
+  const block = blocksFor(loc).find((b) => b.id === blockId)
+  return block ? buildBlock(loc, block) : undefined
 }
 
 /** 聚落所有區塊的 key */

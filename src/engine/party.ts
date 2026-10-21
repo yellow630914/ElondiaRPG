@@ -15,10 +15,12 @@ const JOIN_TEXT: Record<Bond, string> = {
   slave: '被主角買下的奴隸。',
   leader: '帶著主角一起冒險的隊長。',
   ally: '同一支隊伍的隊員。',
+  guest: '因為任務暫時同行的夥伴。',
 }
 
+/** 隊伍還有幾個名額（任務同行的夥伴不佔名額） */
 export function partyRoom(state: GameState): number {
-  return combatRules.party_max - state.party.length
+  return combatRules.party_max - state.party.filter((m) => m.bond !== 'guest').length
 }
 
 export function pcOf(state: GameState): Character {
@@ -63,7 +65,9 @@ export interface JoinOptions {
 /** NPC 入隊。新認識的角色依入隊方式設定初始親密度。 */
 export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?: Report, opts: JoinOptions = {}): Character {
   if (state.party.some((m) => m.id === rec.id)) throw new Error(`${rec.name}已經在隊伍裡了`)
-  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
+  if (bond === 'guest') {
+    if (state.party.filter((m) => m.bond === 'guest').length >= companionRules.guest_max) throw new Error(`任務同行的夥伴最多 ${companionRules.guest_max} 人`)
+  } else if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
   const known = !!state.relationships?.[rec.id]
   const rel = ensureRelationship(state, rec)
   if (!known) setAffinity(state, rec.id, companionRules.initial_affinity[bond])

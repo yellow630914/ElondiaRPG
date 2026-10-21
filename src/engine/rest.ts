@@ -206,7 +206,7 @@ export function restChecks(state: GameState, report: Report, place: 'short' | 'i
     delete state.pendingLeave
   }
   for (const m of [...state.party]) {
-    if (m.isPlayer || m.bond === 'slave' || m.bond === 'leader') continue
+    if (m.isPlayer || m.bond === 'slave' || m.bond === 'leader' || m.bond === 'guest') continue
     if ((m.affinity ?? 0) > threshold) continue
     leaveParty(state, m.id, report, '親密度過低')
     lines.push(`${m.name}受夠了，在休息時離開了隊伍。`)

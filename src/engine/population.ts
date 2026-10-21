@@ -12,6 +12,7 @@ import {
 } from './grid'
 import { generateNpc, hashString, npcKind, npcRecord, npcSpot, registerNpc, weightedPick } from './npcs'
 import { Rng } from './rng'
+import { condMet } from './storyFlags'
 import type { GameState, NpcRecord, Roster } from './types'
 
 // ---- 生成 ----
@@ -167,6 +168,11 @@ function ensureMadam(state: GameState, loc: Location) {
 
 // ---- 每天在哪裡 ----
 
+/** 劇情旗標不符合時不出現（固定 NPC 的 requires） */
+export function visibleNpc(state: GameState, rec: Pick<NpcRecord, 'requires'>): boolean {
+  return condMet(state, rec.requires)
+}
+
 /** NPC 今天在哪裡（依活躍地點的權重，用 NPC id＋日期的固定亂數）；沒有活躍地點時為 undefined */
 export function whereToday(rec: Pick<NpcRecord, 'id' | 'haunts'>, day: number): Haunt | undefined {
   const haunts = rec.haunts ?? []
@@ -200,8 +206,10 @@ function pickBlock(rec: Pick<NpcRecord, 'id'>, day: number, keys: string[]): str
 
 /** NPC 今天在哪個區域（區域 key）；不在任何地圖上時為 undefined */
 export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day): string | undefined {
-  if (rec.dead) return undefined
+  if (rec.dead || !visibleNpc(state, rec)) return undefined
   if (rec.at && day <= rec.at.until) return rec.at.area
+  // 固定 NPC：站在指定的格子
+  if (rec.fixed) return rec.fixed.area
   const today = whereToday(rec, day)
   if (today) {
     const loc = locationById(today.location)
@@ -237,6 +245,7 @@ const TAG_CELLS: Record<string, Partial<Record<CellKind, number>>> = {
 /** NPC 在區域裡的格子：職員在自己的設施，暫時待著的人在指定的格子，其他人依日期與時段（每 6 小時）分佈 */
 export function npcCell(state: GameState, rec: NpcRecord, area: Area): { x: number; y: number } | null {
   if (rec.at && rec.at.area === area.key && state.time.day <= rec.at.until) return { x: rec.at.x, y: rec.at.y }
+  if (rec.fixed?.area === area.key && rec.fixed.x < area.width && rec.fixed.y < area.height) return { x: rec.fixed.x, y: rec.fixed.y }
   const spot = !rec.haunts?.length ? npcSpot(rec) : undefined
   if (spot) return findKind(area, spot as CellKind)
   const weights: Partial<Record<CellKind, number>> = { ...CELL_WEIGHTS[npcKind(rec)] }
@@ -295,7 +304,8 @@ export function adventurersInTown(state: GameState): NpcRecord[] {
   ensureRoster(state, state.location)
   return allNpcs(state).filter((rec) => {
     if (inParty.has(rec.id) || npcKind(rec) !== 'adventurer' || rec.hostile) return false
-    if (rec.dead) return false
+    if (rec.dead || !visibleNpc(state, rec)) return false
+    if (rec.fixed) return rec.fixed.area.split('/')[0] === state.location
     const today = whereToday(rec, state.time.day)
     if (today) return today.location === state.location && today.zone !== 'outskirts' && today.zone !== 'dungeon'
     // 舊資料：離隊後回到酒館的人

@@ -7,7 +7,7 @@ import {
   townQuestsPerTown, townQuestsRefreshDays, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
 import { roll, withBonus } from './rng'
-import { isFugitive, joinParty, leaveParty } from './party'
+import { isFugitive, joinParty, leaveParty, partyRoom } from './party'
 import { npcRecord } from './npcs'
 import { clearQuestMarkers } from './grid'
 import { innCost, longRest } from './rest'
@@ -113,7 +113,7 @@ export function recruitableHere(state: GameState): NpcDef[] {
 export function recruit(state: GameState, npcId: string): Report {
   const def = recruitableHere(state).find((n) => n.id === npcId)
   if (!def) throw new Error('這裡沒有這位角色')
-  if (state.party.length >= combatRules.party_max) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
+  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
   if (state.money_cc < def.hire_cc) throw new Error('招募費用不足')
   const report = baseReport(state, 'social', 1)
   const met = !!state.relationships?.[npcId]
@@ -133,6 +133,7 @@ export function dismiss(state: GameState, npcId: string): Report {
   if (!npc) throw new Error('隊伍中沒有這位角色')
   if (npc.bond === 'leader' || npc.group) throw new Error('這是你跟著的隊伍；要離開請在休息時離隊')
   if (npc.bond === 'slave') throw new Error('奴隸不能遣散，請先解除契約')
+  if (npc.bond === 'guest') throw new Error('任務同行的夥伴會在任務的進展中離開')
   const report = baseReport(state, 'social', 0.5)
   leaveParty(state, npcId, report, '遣散')
   report.outcome.summary = `${npc.name}離開了隊伍。`

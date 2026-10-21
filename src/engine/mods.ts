@@ -9,11 +9,13 @@
 
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, ATTR_IDS, damageTypes, dungeonEncounters, enemies, equipment, geography, itemRules, monsterTraits, reindexItems, statuses,
-  wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup, type EnemyDef, type ItemCategory,
-  type ItemDef, type ItemUse, type Mods, type WeaponDef,
+  abilities, attributeRules, ATTR_IDS, classes, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
+  npcs as namedNpcs, npcTags, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
+  type EnemyDef, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef,
 } from './data'
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
+import { settlementArea, ZONES } from './grid'
+import { cleanFlag } from './storyFlags'
 import type { GearSlot, GearSpec } from './types'
 
 export type ChestLayer = 'outskirts' | 'shallow' | 'middle' | 'deep'
@@ -51,16 +53,22 @@ export interface MaterialMod extends MaterialDef {
   custom?: boolean
 }
 
+/** 固定 NPC：內建的具名角色（data/world/npcs.json）可以修改，自建的可以刪除 */
+export interface NpcMod extends NpcDef {
+  custom?: boolean
+}
+
 export interface ContentMods {
   version: 1
   enemies: Record<string, EnemyMod>
   items: Record<string, ItemMod>
   bases: Record<string, BaseMod>
   materials: Record<string, MaterialMod>
+  npcs: Record<string, NpcMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -79,6 +87,12 @@ const snapshot = {
   weapons: clone(equipment.weapons),
   armors: clone(equipment.armors),
   gather: { wild: [...maps.generation.wild.resource_items], dungeon: [...maps.generation.dungeon.resource_items] },
+  npcs: clone(namedNpcs),
+}
+
+export function builtinNpc(id: string): NpcDef | undefined {
+  const n = snapshot.npcs.find((x) => x.id === id)
+  return n ? clone(n) : undefined
 }
 
 export function builtinEnemy(id: string): EnemyDef | undefined {
@@ -113,6 +127,7 @@ function restore() {
   replaceRecord(equipment.armors, snapshot.armors)
   maps.generation.wild.resource_items.splice(0, Infinity, ...snapshot.gather.wild)
   maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon)
+  namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs))
 }
 
 // ---- 遭遇表 ----
@@ -315,6 +330,12 @@ export function applyContent(mods: ContentMods): string[] {
     enemies[id] = { ...strip(m, ['custom', 'spawns', 'exclude']), id }
   })
   tryEach('怪物的出現地點', mods.enemies, (id, m) => applyPlacements(id, m))
+  tryEach('固定 NPC', mods.npcs, (id, m) => {
+    const def = { ...strip(m, ['custom']), id }
+    const i = namedNpcs.findIndex((n) => n.id === id)
+    if (i >= 0) namedNpcs[i] = def
+    else namedNpcs.push(def)
+  })
   return problems
 }
 
@@ -563,7 +584,97 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, v] of Object.entries(r.bases ?? {})) out.bases[id] = sanitizeBase(v, !!v.custom || !snapshot.bases[id])
   for (const [name, v] of Object.entries(r.items ?? {})) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
   for (const [id, v] of Object.entries(r.enemies ?? {})) out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id])
+  for (const [id, v] of Object.entries(r.npcs ?? {})) out.npcs[id] = sanitizeNpc(id, v, !!v.custom || !builtinNpc(id))
   return out
+}
+
+// ---- 固定 NPC ----
+
+const GEAR_SLOTS = Object.keys(gearRules.slots) as GearSlot[]
+
+function settlementIds(): string[] {
+  return geography.locations.filter((l) => l.type !== 'dungeon').map((l) => l.id)
+}
+
+/** 劇情旗標的條件：名稱整理過、去掉重複 */
+function cond(v: unknown): NpcDef['requires'] {
+  if (!v || typeof v !== 'object') return undefined
+  const r = v as { flags?: unknown; flags_none?: unknown }
+  const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
+  const flags = list(r.flags)
+  const none = list(r.flags_none)
+  return flags.length || none.length ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}) } : undefined
+}
+export { cond as sanitizeCond }
+
+export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): NpcMod {
+  const kind = raw.kind === 'commoner' ? 'commoner' : 'adventurer'
+  const cls = kind === 'commoner' ? '' : raw.class && classes[raw.class] && !classes[raw.class]!.noncombat ? raw.class : 'fighter'
+  const location = settlementIds().includes(raw.location ?? '') ? raw.location! : 'soriel'
+  const out: NpcMod = {
+    id,
+    name: str(raw.name, 12) || '未命名',
+    race: raw.race && attributeRules.races[raw.race] ? raw.race : 'human',
+    class: cls,
+    level: int(raw.level, 1, 20, 1),
+    location,
+    hire_cc: int(raw.hire_cc, 0, 1e7, kind === 'commoner' ? 0 : 100),
+    personality: str(raw.personality, 160) || '沉默寡言。',
+    kind,
+  }
+  if (raw.gender && GENDER_IDS.includes(raw.gender)) out.gender = raw.gender
+  if (str(raw.appearance, 240)) out.appearance = str(raw.appearance, 240)
+  if (str(raw.background, 400)) out.background = str(raw.background, 400)
+  if (str(raw.faction, 30)) out.faction = str(raw.faction, 30)
+  if (str(raw.occupation, 12)) out.occupation = str(raw.occupation, 12)
+  if (str(raw.lineage, 30)) out.lineage = str(raw.lineage, 30)
+  const tags = (raw.tags ?? []).filter((t) => !!npcTags.tags[t])
+  if (tags.length) out.tags = [...new Set(tags)]
+  const haunts = (raw.haunts ?? [])
+    .filter((h) => h && geography.locations.some((l) => l.id === h.location) && ZONES.includes(h.zone as never))
+    .map((h) => ({ location: h.location, zone: h.zone, weight: Math.round(num(h.weight, 0.01, 10, 1) * 100) / 100 }))
+  if (haunts.length) out.haunts = haunts
+  if (raw.relations && typeof raw.relations === 'object') {
+    const rel = Object.fromEntries(Object.entries(raw.relations).map(([k, v]) => [k, str(v, 160)]).filter(([, v]) => v))
+    if (Object.keys(rel).length) out.relations = rel
+  }
+  if (raw.attrs) {
+    const a = Object.fromEntries(ATTR_IDS.map((k) => [k, raw.attrs?.[k] ? int(raw.attrs[k], 1, 30, 10) : 0]).filter(([, v]) => v))
+    if (Object.keys(a).length) out.attrs = a
+  }
+  const abil = (raw.abilities ?? []).filter((a) => !!abilities[a])
+  if (abil.length) out.abilities = [...new Set(abil)]
+  if (raw.gear) {
+    const g: NonNullable<NpcDef['gear']> = {}
+    for (const slot of GEAR_SLOTS) {
+      const spec = sanitizeGearSpecLoose(raw.gear[slot])
+      const base = spec && gearRules.bases[spec.base]
+      if (!spec || !base) continue
+      // 底材要放得進這個欄位（戒指放兩個戒指欄）
+      if (base.slot === slot || (base.slot === 'ring' && slot.startsWith('ring'))) g[slot] = spec
+    }
+    if (Object.keys(g).length) out.gear = g
+  }
+  if (raw.fixed && typeof raw.fixed.area === 'string') {
+    const area = settlementArea(raw.fixed.area)
+    if (area) {
+      const x = int(raw.fixed.x, 0, area.width - 1, 0)
+      const y = int(raw.fixed.y, 0, area.height - 1, 0)
+      const kind = area.cells[y * area.width + x]?.kind
+      if (kind && kind !== 'wall' && kind !== 'water') out.fixed = { area: area.key, x, y }
+    }
+  }
+  const req = cond(raw.requires)
+  if (req) out.requires = req
+  if (custom) out.custom = true
+  return out
+}
+
+export function newNpc(id: string): NpcMod {
+  return {
+    id, name: '新的角色', race: 'human', class: 'fighter', level: 3, location: 'soriel', hire_cc: 200, kind: 'adventurer',
+    gender: 'male', personality: '沉默寡言，但很可靠。', appearance: '', haunts: [{ location: 'soriel', zone: 'town', weight: 1 }], custom: true,
+  }
 }
 
 /** 新的 id（自建項目） */

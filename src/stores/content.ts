@@ -3,10 +3,10 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { enemies, itemDef } from '@/engine/data'
+import { enemies, itemDef, npcs as namedNpcs } from '@/engine/data'
 import {
-  applyContent, builtinEnemy, emptyMods, normalizeMods, sanitizeBase, sanitizeEnemy, sanitizeItem, sanitizeMaterial,
-  type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod,
+  applyContent, builtinEnemy, builtinNpc, emptyMods, normalizeMods, sanitizeBase, sanitizeEnemy, sanitizeItem, sanitizeMaterial, sanitizeNpc,
+  type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
 } from '@/engine/mods'
 
 const KEY = 'elondia.content'
@@ -149,6 +149,29 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 固定 NPC ----
+
+  function saveNpc(id: string, draft: Partial<NpcMod>) {
+    mods.value.npcs[id] = sanitizeNpc(id, draft, !builtinNpc(id))
+    save()
+  }
+  function deleteNpc(id: string) {
+    if (!mods.value.npcs[id]?.custom) throw new Error('內建的角色不能刪除')
+    delete mods.value.npcs[id]
+    save()
+  }
+  function restoreNpc(id: string) {
+    if (!mods.value.npcs[id]?.custom) delete mods.value.npcs[id]
+    save()
+  }
+
+  /** 內容頁籤裡用過的劇情旗標（自動完成用） */
+  function knownFlags(): string[] {
+    const set = new Set<string>()
+    for (const n of namedNpcs) for (const f of [...(n.requires?.flags ?? []), ...(n.requires?.flags_none ?? [])]) set.add(f)
+    return [...set].sort()
+  }
+
   // ---- 匯出、匯入、重設 ----
 
   function exportMods(): string {
@@ -170,6 +193,7 @@ export const useContent = defineStore('content', () => {
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
+    saveNpc, deleteNpc, restoreNpc, knownFlags,
     exportMods, importMods, resetAll,
   }
 })

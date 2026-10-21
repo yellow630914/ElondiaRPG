@@ -41,7 +41,18 @@ export function hashString(s: string): number {
 }
 
 export function npcRecord(state: GameState, id: string): NpcRecord | undefined {
-  return state.npcs?.[id] ?? namedNpcs.find((n) => n.id === id)
+  const stored = state.npcs?.[id]
+  const def = namedNpcs.find((n) => n.id === id)
+  // 固定 NPC 登場後會複製進存檔；出現的條件與固定的格子跟著內容頁籤的設定走
+  if (stored && def) syncPlacement(stored, def)
+  return stored ?? def
+}
+
+function syncPlacement(rec: NpcRecord, def: NpcRecord) {
+  for (const k of ['fixed', 'requires'] as const) {
+    if (def[k]) rec[k] = JSON.parse(JSON.stringify(def[k]))
+    else delete rec[k]
+  }
 }
 
 export function registerNpc(state: GameState, rec: NpcRecord): NpcRecord {

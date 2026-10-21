@@ -2,10 +2,10 @@
 // 公式說明見 docs/COMBAT_SYSTEM.md，數值在 data/rules/combat.json。
 
 import {
-  ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
+  abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
 } from './data'
-import { gearBonuses, generateLoadout, startingGear, syncGear } from './gear'
+import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGear } from './gear'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
 
@@ -211,6 +211,20 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
   }
   // 夥伴與敵對冒險者：依等級即時生成裝備
   c.gear = generateLoadout(c.class, c.level, rng, c.race)
+  // 固定 NPC：內容頁籤設定的屬性、能力與裝備取代生成的
+  for (const a of ATTR_IDS) {
+    const v = def.attrs?.[a]
+    if (v) c.attrs[a] = v
+  }
+  if (def.abilities?.length) c.abilities = [...new Set(def.abilities.filter((id) => !!abilityTable[id]))]
+  if (def.gear) {
+    c.gear = {}
+    for (const [slot, spec] of Object.entries(def.gear)) {
+      if (spec && gearRules.bases[spec.base] && gearRules.materials[spec.material]) c.gear[slot as keyof typeof c.gear] = { name: gearName(spec), spec: { ...spec } }
+    }
+  }
+  if (def.appearance) c.appearance = def.appearance
+  if (def.background) c.background = def.background
   syncGear(c, classDef(c.class).weapon)
   recalc(c)
   c.hp = c.maxHp

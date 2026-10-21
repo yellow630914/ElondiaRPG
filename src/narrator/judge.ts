@@ -6,7 +6,7 @@ import { affinityStage, learnable, lifeTier, snapshot } from '@/engine/character
 import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
   geography, genderName, itemDef, itemRules, tagDef, shopRules, slaveryRules, type ShopType,
-  actionRules, ATTR_IDS, attrName, className, conditionName, contractDef, locationById, raceName,
+  actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef,
 } from '@/engine/data'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
@@ -38,7 +38,7 @@ export function partyLines(state: GameState): string {
   const pc = state.party.find((m) => m.isPlayer)!
   return state.party.map((m) => {
     const s = snapshot(m, undefined, pc)
-    const bond = m.isPlayer ? '主角' : m.bond ? { hired: '雇傭', voluntary: '自願', slave: '奴隸', leader: '隊長', ally: '隊員' }[m.bond] : '同伴'
+    const bond = m.isPlayer ? '主角' : m.bond ? companionRules.bonds[m.bond] : '同伴'
     const conds = m.status.map(conditionName).join('、')
     const mark = m.contract && !m.isPlayer ? `｜印記：${contractTerms(m.contract).name}（${contractTerms(m.contract).mark}）` : ''
     return `- ${m.name}（${bond}${m.gender ? `・${genderName(m.gender)}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`

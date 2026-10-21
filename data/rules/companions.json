@@ -6,10 +6,13 @@
     "voluntary": "自願",
     "slave": "奴隸",
     "leader": "隊長",
-    "ally": "隊員"
+    "ally": "隊員",
+    "guest": "任務同行"
   },
+  "$comment_guest": "任務同行（guest）：特殊任務讓固定 NPC 暫時入隊，不佔隊伍名額（最多 guest_max 人），不能遣散，任務的結果讓他離隊。",
+  "guest_max": 2,
   "leave_threshold": -20,
-  "initial_affinity": { "hired": 0, "voluntary": 10, "slave": -10, "leader": 5, "ally": 0 },
+  "initial_affinity": { "hired": 0, "voluntary": 10, "slave": -10, "leader": 5, "ally": 0, "guest": 5 },
 
   "tavern": {
     "$comment": "可以雇用的人 = 今天在城裡的冒險者（地點名單，見 data/rules/npc_population.json 與 docs/NPC_SYSTEM.md）。要價 = (a + b × 等級 + c × 等級²) × (1 ± asking_variance)，建立名單時決定。",

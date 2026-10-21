@@ -26,7 +26,7 @@ import negotiationsJson from '@data/rules/negotiations.json'
 import workJson from '@data/rules/work.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
-import type { GearSpec, GuildRank, QuestKind, SkillQuality } from './types'
+import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality } from './types'
 
 // ---- 地理 ----
 
@@ -86,6 +86,24 @@ export interface NpcDef {
   occupation?: string
   /** 血統、部族、氏族或出身派系（例如「沙痕部落」「魅魔（赤翼宮廷）」） */
   lineage?: string
+  // ---- 固定 NPC（內容頁籤可以編輯）：不寫時依職業與等級生成 ----
+  background?: string
+  /** 屬性（升級之後的最終值） */
+  attrs?: Partial<Attrs>
+  /** 會的能力（取代依職業隨機學的能力） */
+  abilities?: string[]
+  /** 初始裝備（取代依等級隨機生成的裝備；沒寫的欄位空著） */
+  gear?: Partial<Record<GearSlot, GearSpec>>
+  /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
+  fixed?: { area: string; x: number; y: number }
+  /** 只在劇情旗標符合時出現（特殊任務用，見 story.ts） */
+  requires?: StoryCond
+}
+
+/** 劇情旗標的條件：flags 全部成立、flags_none 全部不成立 */
+export interface StoryCond {
+  flags?: string[]
+  flags_none?: string[]
 }
 
 export type NpcKind = 'commoner' | 'adventurer'
@@ -491,10 +509,12 @@ export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.from
 
 // ---- 夥伴、奴隸契約、主動行動 ----
 
-export type Bond = 'hired' | 'voluntary' | 'slave' | 'leader' | 'ally'
+export type Bond = 'hired' | 'voluntary' | 'slave' | 'leader' | 'ally' | 'guest'
 export interface ConditionDef { name: string; desc: string; check_penalty?: number; clears?: 'long_rest' }
 export const companionRules = companionsJson as unknown as {
   bonds: Record<Bond, string>
+  /** 任務同行的夥伴最多幾人（不佔隊伍名額） */
+  guest_max: number
   leave_threshold: number
   initial_affinity: Record<Bond, number>
   tavern: {
