@@ -24,6 +24,7 @@ import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { rollDefeatEvent } from './defeat'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
+import { advanceBossHunts } from './materialQuests'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
@@ -1502,10 +1503,16 @@ function tagsFor(combat: CombatState): string[] {
 }
 
 function advanceQuest(state: GameState, combat: CombatState): Report['quest'] | undefined {
+  // 討伐層主的委託：打倒的怪物裡有目標就記一次（和清剿委託分開算）
+  const defeated = combat.combatants.filter((c) => c.side === 'enemy' && c.hp <= 0 && c.defId).map((c) => c.defId!)
+  const hunts = advanceBossHunts(state, combat.location, defeated)
   const quest = combat.questId
     ? state.quests.find((q) => q.id === combat.questId && q.status === 'accepted')
     : state.quests.find((q) => q.status === 'accepted' && q.kind === 'clear_dungeon' && q.target === combat.location)
-  if (!quest) return undefined
+  if (!quest) {
+    const h = hunts[0]
+    return h ? { id: h.id, title: h.title, rank: h.rank, status: 'progress' } : undefined
+  }
   quest.progress += 1
   if (quest.progress >= quest.goal) quest.status = 'ready'
   return { id: quest.id, title: quest.title, rank: quest.rank, status: 'progress' }

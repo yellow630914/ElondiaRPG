@@ -441,7 +441,7 @@ export const monsterTraits = monsterTraitsJson as unknown as {
 
 export interface TownQuestTemplate {
   id: string
-  kind: Exclude<QuestKind, 'clear_dungeon'>
+  kind: Exclude<QuestKind, 'clear_dungeon' | MaterialQuestKind>
   area: 'town' | 'outskirts'
   title: string
   scene: string
@@ -457,7 +457,32 @@ export interface TownQuestTemplate {
   /** 交付時的額外報酬（報酬模板，見 effects.ts） */
   rewards?: RewardEffect[]
 }
-const townQuestsData = townQuestsJson as unknown as { per_town: number; refresh_days: number; templates: TownQuestTemplate[] }
+export type MaterialQuestKind = 'gather_wild' | 'gather_dungeon' | 'drop_wild' | 'drop_dungeon' | 'boss_hunt'
+export interface MaterialQuestDef {
+  /** 固定的等級 */
+  rank?: GuildRank
+  /** 依怪物等級浮動的範圍 [最低, 最高] */
+  ranks?: [GuildRank, GuildRank]
+  /** 只在這一層（gather_dungeon：周邊） */
+  layer?: DungeonLayerId
+  qty: [number, number]
+  reward_mult?: number
+}
+export interface MaterialQuestRules {
+  max_multiplier: number
+  max_cells: number
+  item_value_mult: number
+  per_town: number
+  dungeon_quests: number
+  dungeon_kinds: Partial<Record<MaterialQuestKind, number>>
+  gather_wild: MaterialQuestDef
+  gather_dungeon: MaterialQuestDef
+  drop_wild: MaterialQuestDef
+  drop_dungeon: MaterialQuestDef
+  boss_hunt: MaterialQuestDef
+}
+const townQuestsData = townQuestsJson as unknown as { per_town: number; refresh_days: number; templates: TownQuestTemplate[]; material_quests: MaterialQuestRules }
+export const materialQuestRules = townQuestsData.material_quests
 export const townQuestsPerTown = townQuestsData.per_town
 export const townQuestsRefreshDays = townQuestsData.refresh_days
 export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.fromEntries(

@@ -6,6 +6,7 @@ import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
 import { canAcceptRank, guildQuests, questTemplate, templeCost } from '@/engine/town'
+import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, questProgressText, rewardFor } from '@/engine/materialQuests'
 import { MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
@@ -42,13 +43,20 @@ function refreshQuests() {
 }
 
 const activeQuests = computed(() => s.value.quests.filter((q) => q.status === 'accepted' || q.status === 'ready'))
+// 材料委託可以過量交付：選要交幾份（預設全部）
+const turnInQty = ref<Record<string, number>>({})
+function turnIn(q: Quest) {
+  game.turnInQuest(q.id, isMaterialQuest(q) ? turnInQty.value[q.id] ?? deliverable(s.value, q) : undefined)
+  refreshQuests()
+}
 const runnableHere = computed(() =>
   activeQuests.value.filter((q) => q.status === 'accepted' && q.area !== 'dungeon' && questRunnableHere(s.value, { ...q, spot: questTemplate(q)?.spot })),
 )
 
 function questWhere(q: Quest): string {
-  if (q.status === 'ready') return `完成！回到${locationById(q.giver).name}的冒險者公會交付`
-  if (q.area === 'dungeon') return `目標：${locationById(q.target).name}`
+  if (canTurnIn(s.value, q)) return `可以交付了！回到${locationById(q.giver).name}的冒險者公會${isMaterialQuest(q) ? '（可以多交，報酬依數量增加）' : ''}`
+  if (q.area === 'dungeon') return `目標：${locationById(q.target).name}${q.layer ? `・${layerName(q.layer)}` : ''}`
+  if (isMaterialQuest(q)) return `地點：${locationById(q.target).name}近郊（${isCollectQuest(q) && q.monster ? '打倒牠們' : '採集點'}）`
   if (q.area === 'outskirts') return `地點：${locationById(q.target).name}近郊（地圖上的 ❗）`
   const spot = questTemplate(q)?.spot ?? 'guild'
   return `地點：${locationById(q.target).name}的${(spot in CELL_NAME ? cellName(spot as keyof typeof CELL_NAME) : spot)}`
@@ -144,8 +152,8 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
             <li v-for="q in quests" :key="q.id">
               <div><span class="tag">{{ q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>
               <div class="small muted">
-                報酬 {{ formatMoney(q.reward_cc) }}
-                <span v-if="q.status !== 'available'">・進度 {{ q.progress }}/{{ q.goal }}</span>
+                報酬 {{ formatMoney(q.reward_cc) }}<template v-if="isMaterialQuest(q) && (q.max ?? q.goal) > q.goal">（可以過量交付到 {{ q.max }}{{ isCollectQuest(q) ? ' 份' : ' 次' }}，報酬依比例增加）</template>
+                <span v-if="q.status !== 'available'">・{{ questProgressText(s, q) }}</span>
               </div>
               <button
                 v-if="q.status === 'available'"
@@ -153,7 +161,16 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
                 :disabled="!canAcceptRank(s, q.rank)"
                 @click="game.acceptQuest(q.id); refreshQuests()"
               >{{ canAcceptRank(s, q.rank) ? '接取' : '階級不足' }}</button>
-              <button v-else-if="q.status === 'ready'" class="small primary" @click="game.turnInQuest(q.id); refreshQuests()">交付</button>
+              <template v-else-if="canTurnIn(s, q)">
+                <input
+                  v-if="isMaterialQuest(q) && deliverable(s, q) > q.goal"
+                  v-model.number="turnInQty[q.id]" type="number" class="qty" :min="q.goal" :max="deliverable(s, q)"
+                  :placeholder="String(deliverable(s, q))"
+                />
+                <button class="small primary" @click="turnIn(q)">
+                  交付<template v-if="isMaterialQuest(q)">（{{ formatMoney(rewardFor(q, turnInQty[q.id] ?? deliverable(s, q))) }}）</template>
+                </button>
+              </template>
               <span v-else class="small muted">進行中</span>
               <button
                 v-if="!canNegotiate(s, 'quest_reward', { quest: q.id })"
@@ -214,7 +231,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         <h3>📜 進行中的委託</h3>
         <ul class="plain small">
           <li v-for="q in activeQuests" :key="q.id">
-            <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ q.progress }}/{{ q.goal }}）
+            <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ questProgressText(s, q) }}）
             <span v-if="q.flags?.lead" class="tag">有線索 +5</span>
             <span v-if="q.flags?.suspicious" class="tag">消息走漏 -2</span>
             <div class="muted">{{ questWhere(q) }}</div>
@@ -248,6 +265,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
 
 <style scoped>
 .tavern-trade { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 6px; }
+.qty { width: 56px; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
 details summary { cursor: pointer; padding: 4px 0; color: var(--accent-2); }
 </style>

@@ -15,6 +15,7 @@ import {
   type DungeonLayerId, type EncounterGroup, type Location,
 } from './data'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
+import { questTargets } from './materialQuests'
 import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
@@ -358,7 +359,28 @@ export function generateOutskirts(state: GameState, loc: Location, rng: Rng): Ar
     used.add(i)
   }
   ensureQuestMarkers(state, area, rng)
+  ensureQuestTargets(state, area, rng, table)
   return area
+}
+
+/**
+ * 帶著材料或掉落委託進入這一區時，確保有足量的採集點與戰鬥點：
+ * 已有的（還沒採、還沒打的）先算進去，不夠時把空地改成採集點或遭遇（遭遇用遭遇表裡有這隻怪物的一組）。
+ */
+export function ensureQuestTargets(state: GameState, area: Area, rng: Rng, table: EncounterGroup[]) {
+  const layer = area.kind === 'dungeon' ? DUNGEON_LAYERS[area.layer ?? 0]?.id : undefined
+  if (area.kind === 'settlement') return
+  const exit = area.cells.findIndex((c) => c.kind === 'exit' || c.kind === 'stairs_up')
+  const keep = new Set([exit, exit - area.width])
+  for (const t of questTargets(state, area.location, layer)) {
+    const has = area.cells.filter((c) => !c.done && (t.item
+      ? c.kind === 'resource' && c.item === t.item
+      : (c.kind === 'encounter' || c.kind === 'elite') && c.group?.some(([id]) => id === t.monster))).length
+    const group = table.find((g) => g.some(([id]) => id === t.monster)) ?? [[t.monster!, 1]] as EncounterGroup
+    for (const i of randomCells(rng, area, Math.max(0, t.cells - has), keep)) {
+      area.cells[i] = t.item ? { kind: 'resource', item: t.item } : { kind: 'encounter', group }
+    }
+  }
 }
 
 /** 在近郊標出已接取的近郊委託地點（接委託時近郊已經生成過也會補上）。 */
@@ -460,6 +482,7 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
     cells[i] = { kind: 'chest', level }
     used.add(i)
   }
+  ensureQuestTargets(state, area, rng, table)
   return area
 }
 
@@ -722,7 +745,10 @@ export function placeOutside(state: GameState) {
     spawnVisitors(state, area, findKind(area, 'exit'))
   } else {
     const existing = area
-    withRng(state, (rng) => ensureQuestMarkers(state, existing, rng))
+    withRng(state, (rng) => {
+      ensureQuestMarkers(state, existing, rng)
+      ensureQuestTargets(state, existing, rng, wildEncounters(loc.region))
+    })
   }
   const exit = findKind(area, 'exit')!
   placeAt(state, area, exit.x, exit.y)

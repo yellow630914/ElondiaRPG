@@ -369,9 +369,15 @@ export interface RelationSuggestion {
 
 /**
  * clear_dungeon：到冒險區域獲勝 goal 次（E 級以上）。
- * 其餘為 F 級城內／近郊委託：pest、hunt 是戰鬥；search、gather、patrol 是檢定；delivery 花時間即可。
+ * pest、hunt、search、gather、patrol、delivery：F 級城內／近郊委託的範本（pest、hunt 是戰鬥；search、gather、patrol 是檢定；delivery 花時間即可）。
+ * 材料委託（交付 goal 份，最多 max 份，報酬依交付的份數）：
+ * - gather_wild：近郊採集點的材料（F 級）；gather_dungeon：地下城周邊採集點的材料（E 級）
+ * - drop_wild：近郊怪物掉落的材料（F～E 級）；drop_dungeon：地下城怪物掉落的材料（F～B 級，依怪物等級）
+ * boss_hunt：討伐地下城的層主 goal 次，最多 max 次（F～B 級，依層主等級）。
  */
-export type QuestKind = 'clear_dungeon' | 'pest' | 'hunt' | 'search' | 'gather' | 'patrol' | 'delivery'
+export type QuestKind =
+  | 'clear_dungeon' | 'pest' | 'hunt' | 'search' | 'gather' | 'patrol' | 'delivery'
+  | 'gather_wild' | 'gather_dungeon' | 'drop_wild' | 'drop_dungeon' | 'boss_hunt'
 
 export interface Quest {
   id: string
@@ -389,6 +395,14 @@ export interface Quest {
   goal: number
   progress: number
   reward_cc: number
+  /** 材料委託：要交的材料；討伐、掉落委託：目標怪物（enemies 的 id）與牠出現的那一層 */
+  item?: string
+  monster?: string
+  layer?: 'outskirts' | 'shallow' | 'middle' | 'deep'
+  /** 可以過量交付：最多交付（或討伐）的數量；報酬依實際數量比例增加 */
+  max?: number
+  /** 交付時實際交了多少（完成後記錄） */
+  delivered?: number
   status: 'available' | 'accepted' | 'ready' | 'completed'
   /** 任務旗標（談判、事件的結果），例如 lead：委託檢定 +5 */
   flags?: Record<string, unknown>

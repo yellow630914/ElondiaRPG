@@ -9,7 +9,7 @@
 import { snapshot } from './character'
 import {
   companionRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
-  wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType, type ShopTypeDef,
+  townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
@@ -165,7 +165,8 @@ function infoDeals(state: GameState, info: NonNullable<ShopTypeDef['info']>): De
       stock: 1,
     })
   }
-  for (const q of state.quests.filter((x) => x.status === 'accepted' && !x.flags?.lead)) {
+  // 只有要檢定的委託用得到線索
+  for (const q of state.quests.filter((x) => x.status === 'accepted' && !x.flags?.lead && x.template && townQuestTemplates[x.template]?.dc !== undefined)) {
     deals.push({
       id: `info:quest:${q.id}`, title: `「${q.title}」的線索`, desc: '打聽委託的內幕（委託的檢定 +5）。',
       gives: [{ type: 'money', amount: Math.round(info.quest_price * mult) }],

@@ -112,8 +112,8 @@ describe('quests', () => {
   it('offers F-rank quests in town and only E or higher for dungeons', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 8 })
     const quests = guildQuests(state)
-    const townQuests = quests.filter((q) => q.area !== 'dungeon')
-    const dungeonQuests = quests.filter((q) => q.area === 'dungeon')
+    const townQuests = quests.filter((q) => q.template)
+    const dungeonQuests = quests.filter((q) => q.kind === 'clear_dungeon')
     expect(townQuests.length).toBe(3)
     expect(townQuests.every((q) => q.rank === 'F' && q.target === 'soriel')).toBe(true)
     expect(dungeonQuests.length).toBeGreaterThan(0)

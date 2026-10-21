@@ -612,7 +612,7 @@ export const useGame = defineStore('game', () => {
     dismiss: (id: string) => run((s) => town.dismiss(s, id)),
     visitGuild: () => run(town.guildQuests) ?? [],
     acceptQuest: (id: string) => run((s) => town.acceptQuest(s, id)),
-    turnInQuest: (id: string) => run((s) => town.turnInQuest(s, id)),
+    turnInQuest: (id: string, count?: number) => run((s) => town.turnInQuest(s, id, count)),
     templeHeal: () => run(town.templeHeal),
     chooseAbility: (member: string, ability: string) => run((s) => town.chooseAbility(s, member, ability)),
     rerollAbility: (member: string) => run((s) => town.rerollAbility(s, member, useSettings().rerollLimit())),

@@ -12,6 +12,9 @@ import { npcRecord } from './npcs'
 import { clearQuestMarkers } from './grid'
 import { innCost, longRest } from './rest'
 import { applyEffects, type RewardEffect } from './effects'
+import {
+  canTurnIn, deliverable, isCollectQuest, isMaterialQuest, postDungeonQuests, postWildQuests, RANK_ORDER, rewardFor, rewardRange,
+} from './materialQuests'
 import { formatMoney } from './money'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, GuildRank, Quest, Report } from './types'
@@ -22,7 +25,6 @@ export const RATION_CC = 5
 /** 公會只發布這個天數內可到達的冒險區域委託 */
 export const QUEST_RANGE_DAYS = 7
 
-const RANK_ORDER: GuildRank[] = ['F', 'E', 'D', 'C', 'B', 'A', 'S']
 
 function baseReport(state: GameState, kind: Report['kind'], hours: number): Report {
   const start = { ...state.time }
@@ -156,12 +158,6 @@ export function questTemplate(quest: Quest): TownQuestTemplate | undefined {
   return quest.template ? townQuestTemplates[quest.template] : undefined
 }
 
-function rewardRange(rank: GuildRank): [number, number] {
-  const table = economy.quest_rewards_cc
-  const entry = table[rank] ?? table[`${rank}_solo`]
-  return entry?.range ?? [30, 50]
-}
-
 export function canAcceptRank(state: GameState, rank: GuildRank): boolean {
   const mine = RANK_ORDER.indexOf(guildRankFor(player(state).level))
   const target = RANK_ORDER.indexOf(rank)
@@ -171,7 +167,8 @@ export function canAcceptRank(state: GameState, rank: GuildRank): boolean {
 
 /**
  * 公會委託列表；若這座城鎮沒有可接的委託就產生新的：
- * F 級城內／近郊委託若干個，加上附近每個冒險區域各一個 E 級以上的清剿委託。
+ * F 級城內／近郊委託若干個、近郊的採集與掉落委託，加上附近每個冒險區域各一個 E 級以上的清剿委託，
+ * 再挑幾座地下城發採集、掉落或討伐層主的委託（materialQuests.ts）。
  */
 export function guildQuests(state: GameState): Quest[] {
   if (locationById(state.location).type === 'dungeon') return []
@@ -217,6 +214,7 @@ export function guildQuests(state: GameState): Quest[] {
         status: 'available',
       })
     }
+    state.quests.push(...postWildQuests(state, rng), ...postDungeonQuests(state, rng, targets))
   })
   return state.quests.filter((q) => q.giver === state.location && q.status !== 'completed')
 }
@@ -284,20 +282,32 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   return commitReport(state, report)
 }
 
-export function turnInQuest(state: GameState, questId: string): Report {
+/**
+ * 交付委託。材料委託交 count 份（預設：能交的全部，不超過上限），討伐委託依打倒的次數；
+ * 超過要求的部分依比例增加報酬。
+ */
+export function turnInQuest(state: GameState, questId: string, count?: number): Report {
   assertNotFugitive(state, '公會')
-  const quest = state.quests.find((q) => q.id === questId && q.status === 'ready')
+  const quest = state.quests.find((q) => q.id === questId && canTurnIn(state, q))
   if (!quest) throw new Error('委託尚未完成')
   if (quest.giver !== state.location) throw new Error(`請回到${locationById(quest.giver).name}交付`)
+  const material = isMaterialQuest(quest)
+  const most = material ? deliverable(state, quest) : quest.goal
+  const n = material ? Math.max(quest.goal, Math.min(most, Math.round(count ?? most))) : quest.goal
+  if (material && n > most) throw new Error('數量不夠')
+  const pay = material ? rewardFor(quest, n) : quest.reward_cc
   quest.status = 'completed'
+  if (material) quest.delivered = n
   const report = baseReport(state, 'quest', 0.5)
   report.location.scene = `${locationById(state.location).name}的冒險者公會`
   report.quest = { id: quest.id, title: quest.title, rank: quest.rank, status: 'completed' }
-  report.outcome.summary = `交付委託「${quest.title}」，獲得報酬 ${formatMoney(quest.reward_cc)}。`
+  const extra = n > quest.goal ? `（多交了 ${n - quest.goal} ${isCollectQuest(quest) ? '份' : '次'}）` : ''
+  report.outcome.summary = `交付委託「${quest.title}」${extra}，獲得報酬 ${formatMoney(pay)}。`
   const tpl = questTemplate(quest)
   // 報酬模板：金錢、聲望、交付物品，加上範本額外的報酬（物品、親密度、夥伴……）
   const effects: RewardEffect[] = [
-    { type: 'money', amount: quest.reward_cc },
+    { type: 'money', amount: pay },
+    ...(isCollectQuest(quest) && quest.item ? [{ type: 'item' as const, name: quest.item, qty: -n }] : []),
     { type: 'reputation', faction: 'guild', delta: RANK_ORDER.indexOf(quest.rank) + 1 },
     ...(tpl?.item ? [{ type: 'item' as const, name: tpl.item, qty: -(tpl.qty ?? 1) }] : []),
     ...(tpl?.rewards ?? []),
