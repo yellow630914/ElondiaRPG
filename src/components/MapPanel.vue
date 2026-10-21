@@ -11,7 +11,7 @@ const game = useGame()
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
-const layerName = computed(() => (area.value.layer !== undefined ? DUNGEON_LAYERS[area.value.layer]?.name : undefined))
+const layerName = computed(() => (area.value.kind === 'dungeon' && area.value.layer !== undefined ? DUNGEON_LAYERS[area.value.layer]?.name : undefined))
 const showWorldMap = ref(false)
 </script>
 

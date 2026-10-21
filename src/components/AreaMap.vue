@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
+import { locationById } from '@/engine/data'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 
@@ -10,10 +11,15 @@ const pos = computed(() => position(game.state!))
 
 const ICON = CELL_ICON
 
+const EVENT_ICON = { special: '⭐', master: '⛓️', advanced: '✨' }
+
 function icon(cell: Cell): string {
   if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap', 'chest'].includes(cell.kind)) return ''
   if (cell.kind === 'trap') return ''
   if (cell.kind === 'resource' && cell.item && /礦|錢/.test(cell.item)) return '💎'
+  // 旅途的事件：依種類顯示（出發時就擲好了）
+  if (cell.kind === 'event' && !cell.done) return (EVENT_ICON as Record<string, string>)[cell.event?.tier ?? ''] ?? '❔'
+  if (cell.kind === 'event' || cell.kind === 'road') return ''
   // 特殊任務的任務點是 ⭐，委託地點是 ❗
   if (cell.kind === 'quest' && cell.storyNode) return '⭐'
   if (cell.kind === 'quest' && !game.state?.quests.some((q) => q.id === cell.questId && q.status === 'accepted')) return ''
@@ -24,6 +30,9 @@ function label(cell: Cell): string {
   if (cell.kind === 'trap' && !cell.done) return '道路'
   if (cell.kind === 'trap') return '已觸發的陷阱'
   if (cell.kind === 'quest' && cell.storyNode) return '特殊任務的任務點'
+  if (cell.town) return `${cell.kind === 'arrive' ? '目的地' : cell.kind === 'waypoint' ? '途經' : '出發'}：${locationById(cell.town).name}`
+  if (cell.kind === 'event') return cell.done ? '走過的路' : ({ special: '特殊事件', master: '主人的事件', advanced: '高階事件' } as Record<string, string>)[cell.event?.tier ?? ''] ?? '事件'
+  if (cell.kind === 'road') return cell.road?.paid ? '走過的路' : '路'
   return cellName(cell.kind) + (cell.done ? '（已清除）' : '') + (cell.item && !cell.done ? `：${cell.item}` : '')
 }
 

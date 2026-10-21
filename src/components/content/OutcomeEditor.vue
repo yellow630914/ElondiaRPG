@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { npcs as namedNpcs, type StoryOutcome } from '@/engine/data'
+import { geography, npcs as namedNpcs, type StoryOutcome } from '@/engine/data'
+import { travelEvents } from '@/engine/road'
+import { SIDE_MAPS } from '@/engine/storyMods'
 import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
 
@@ -45,6 +47,18 @@ const end = computed({
         <select v-model="o.leave">
           <option :value="undefined">（無）</option>
           <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
+        </select>
+      </div>
+      <div class="row small">
+        進入臨時地圖
+        <select v-model="o.side_map">
+          <option :value="undefined">（無）</option>
+          <option v-for="k in SIDE_MAPS()" :key="k" :value="k">{{ travelEvents.side_maps[k]!.name }}</option>
+        </select>
+        改去別的地點
+        <select v-model="o.travel_to">
+          <option :value="undefined">（無）</option>
+          <option v-for="l in geography.locations" :key="l.id" :value="l.id">{{ l.name }}</option>
         </select>
       </div>
       <EffectsEditor v-model="o.effects" />

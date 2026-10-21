@@ -4,7 +4,7 @@
 
 - 資料：`data/rules/stories.json`（內建）＋「🛠️ 內容 → ⭐ 特殊任務」的自訂內容（存在瀏覽器，所有存檔共用，可以匯出、匯入）。
 - 程式：`src/engine/story.ts`（進行任務）、`src/engine/storyMods.ts`（整理、檢查）、`src/engine/storyFlags.ts`（劇情旗標）。
-- 內建的範例：「失竊的聖環徽記」（瑟琳），四個任務點分別示範劇情、判定、戰鬥、選擇，以及任務同行。
+- 內建的範例：「失竊的聖環徽記」（瑟琳），四個任務點分別示範劇情、判定、戰鬥、選擇，以及任務同行；「翻覆的篷車」示範旅途上的開頭、臨時地圖與改道（見 [`TRAVEL_EVENTS.md`](TRAVEL_EVENTS.md)）。
 
 ## 1. 想法：用劇情旗標串起任務點
 
@@ -50,7 +50,7 @@
 | 欄位 | 說明 |
 |---|---|
 | `id`、`title`、`text` | id（英數）、冒險筆記上的目標、觸發時的事件描述（也交給 AI） |
-| `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施上（`at.cell`）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`） |
+| `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施上（`at.cell`）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`）、`road` 旅途上、`side` 臨時地圖裡的 ⭐（`at.side_map`） |
 | `at.location` | 地點 id（`npc` 可以不寫，跟著角色走） |
 | `requires` | 解鎖的旗標條件 |
 | `kind` | `story` 劇情（直接發生）、`check` 判定（`check: { attr, dc }`）、`combat` 戰鬥（`enemies` 怪物、`foes` 固定 NPC）、`choice` 選擇（`options`，每個選項可以有自己的檢定） |
@@ -68,7 +68,9 @@
   "join": "npc_selene",      // 固定 NPC 以「任務同行」加入（不佔隊伍名額）
   "leave": "npc_selene",     // 任務同行離開
   "complete": true,          // 完成任務（發完成報酬）；或 "fail_quest": true 任務失敗
-  "retry": false             // true：這個任務點不結束，之後可以再來
+  "retry": false,            // true：這個任務點不結束，之後可以再來
+  "side_map": "cave",        // 進入臨時地圖（洞窟、遺跡、驛站），出口回到原本的地方
+  "travel_to": "rivervale"   // 改去別的地點（旅途中直接抵達，不在旅途時被帶過去）
 }
 ```
 

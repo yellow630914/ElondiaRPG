@@ -27,6 +27,7 @@ import { applyCraft, parseCraftTarget } from './craft'
 import { adultContent, type AdultScene } from './content'
 import { applyDefeatResponse } from './defeat'
 import { applyStoryCheck, refreshStoryMarkers } from './story'
+import { applyPendingMove } from './road'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
 import { npcRecord, type NpcSpec } from './npcs'
 import { presentHere } from './population'
@@ -443,7 +444,10 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   }
   const committed = commitReport(state, report)
   // 特殊任務的判定：解鎖或結束的任務點，更新地圖上的 ⭐
-  if (p.kind === 'story') refreshStoryMarkers(state)
+  if (p.kind === 'story') {
+    refreshStoryMarkers(state)
+    applyPendingMove(state)
+  }
   return committed
 }
 

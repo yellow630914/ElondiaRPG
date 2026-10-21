@@ -283,6 +283,26 @@ export interface NpcRecord extends NpcDef {
   character?: Character
 }
 
+export interface RoadState {
+  from: string
+  to: string
+  start: GameTime
+  /** 各段路的交通方式 */
+  modes: string[]
+  /** 已經走了幾小時 */
+  hours: number
+  /** 累計的花費與乾糧（抵達時寫進旅行報告） */
+  money: number
+  rations: number
+  starved: boolean
+  timeline: TimelineEntry[]
+  /** 出發時的生命值（旅行報告的前後對照） */
+  hpBefore: Record<string, number>
+  intent?: string
+  /** 主人的事件允許成人向 */
+  adult?: boolean
+}
+
 export interface StoryProgress {
   id: string
   status: 'active' | 'completed' | 'failed'
@@ -477,6 +497,14 @@ export interface GameState {
   pendingDefeat?: PendingDefeat
   /** 特殊任務的進度（story.ts） */
   stories?: Record<string, StoryProgress>
+  /** 旅途中（road.ts）：走在單行道的臨時地圖上，抵達時才產生旅行報告 */
+  road?: RoadState
+  /** 旅途上等待回應的事件（選擇、高階事件） */
+  roadEvent?: { x: number; template: string }
+  /** 在臨時地圖裡：離開時回到的位置 */
+  side?: { area: string; back: { area: string; x: number; y: number } }
+  /** 事件結果要求的移動（進入臨時地圖、改去別的地點），在報告提交之後執行 */
+  pendingMove?: { side_map?: string; travel_to?: string }
   /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */
   masterPass?: Record<string, number>
   masterRefuse?: Record<string, number>

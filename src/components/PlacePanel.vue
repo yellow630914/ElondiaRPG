@@ -112,7 +112,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
 <template>
     <div class="place">
       <!-- 目前所在格子 -->
-      <section class="panel">
+      <section v-if="area.kind !== 'road'" class="panel">
         <h3>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
 
         <template v-if="cell.kind === 'inn'">
@@ -192,6 +192,11 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         <template v-else-if="cell.kind === 'exit' && area.kind === 'wild'">
           <GuardStatus can-pay />
           <button @click="game.returnToTown()">返回{{ here.name }}</button>
+        </template>
+
+        <template v-else-if="cell.kind === 'exit' && area.kind === 'side'">
+          <p class="muted small">{{ area.name }}的出口。</p>
+          <button @click="game.leaveSide()">離開，回到{{ s.road ? '旅途' : '原本的地方' }}</button>
         </template>
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'dungeon'">

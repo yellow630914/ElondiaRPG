@@ -22,7 +22,7 @@ import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/charact
 import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
-import { travel } from '@/engine/travel'
+import * as road from '@/engine/road'
 import type { GameState, GearSlot, Report } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
@@ -115,7 +115,8 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   // 戰敗時逃開的同伴：回到聚落或安全房時歸隊
   const back = companions.rejoinAway(s)
   if (back) return { report: back }
-  slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance, { adult: useSettings().adult })
+  // 旅途上主人的事件出發時就放在格子上了
+  if (!s.road || s.side) slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance, { adult: useSettings().adult })
   return r
 }
 
@@ -597,7 +598,19 @@ export const useGame = defineStore('game', () => {
     equipItem: (name: string, member: string, slot?: GearSlot) => run((s) => inventory.equipItem(s, name, member, slot)),
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
-    travel: (to: string, intent?: string) => run((s) => travel(s, to, intent, { adult: useSettings().adult })),
+    // 旅行：畫出旅途的單行道，一格一天往前走（road.ts）
+    travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent, { adult: useSettings().adult })),
+    /** 一路往前走，遇到事件、戰鬥或抵達時停下 */
+    walkRoad: () => run((s) => {
+      for (let i = 0; i < 80; i++) {
+        if (!s.road || s.side || s.roadEvent || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction) return {}
+        const r = afterMove(s, grid.move(s, 1, 0))
+        if (r.report || r.combat || s.roadEvent || s.pendingMasterEvent) return r
+      }
+      return {}
+    }),
+    answerRoadEvent: (i: number) => run((s) => road.answerRoadEvent(s, i)),
+    leaveSide: () => run((s) => road.leaveSide(s)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */

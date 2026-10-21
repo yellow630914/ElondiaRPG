@@ -17,6 +17,7 @@ import {
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { questTargets } from './materialQuests'
 import { ensureStoryMarkers } from './story'
+import { applyPendingMove, leaveSide, roadMove } from './road'
 import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
@@ -31,6 +32,7 @@ export type CellKind =
   | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant'
   | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe' | 'chest'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
+  | 'road' | 'waypoint' | 'arrive' | 'event'
 
 export interface Cell {
   kind: CellKind
@@ -47,13 +49,35 @@ export interface Cell {
   level?: number
   /** 打倒守在這裡的層主後，格子變成這種設施（淺層、中層的層主守著往下的階梯） */
   then?: CellKind
+  /** 旅途的一格：第幾段路、走這一格花幾小時 */
+  road?: { leg: number; hours: number; paid?: boolean }
+  /** 旅途的事件（出發時就擲好） */
+  event?: RoadEvent
+  /** 途經或抵達的地點 */
+  town?: string
+}
+
+/** 旅途格子上的事件：auto 原本的旅途事件、normal 普通事件、advanced 高階事件、special 特殊任務的開頭、master 主人的事件 */
+export interface RoadEvent {
+  tier: 'auto' | 'normal' | 'advanced' | 'special' | 'master'
+  /** auto：原本的旅途事件（travel.ts 的 EVENTS） */
+  hazard?: { mode: string; index: number }
+  /** normal / advanced：travel_events.json 的範本 */
+  template?: string
+  /** special：特殊任務的 id */
+  story?: string
+  /** 出發時擲好的自然骰 */
+  roll?: number
 }
 
 export interface Area {
   key: string
   location: string
   name: string
-  kind: 'settlement' | 'wild' | 'dungeon'
+  /** road：旅途（單行道）；side：旅途或事件帶進去的臨時地圖（洞窟、遺跡、驛站） */
+  kind: 'settlement' | 'wild' | 'dungeon' | 'road' | 'side'
+  /** 臨時地圖的範本（travel_events.json 的 side_maps） */
+  template?: string
   /** 聚落區塊所屬的地區（貴族區、王城）；沒有時為一般區域 */
   zone?: Zone
   /** 冒險區域的層數（0 = 周邊） */
@@ -114,6 +138,7 @@ export const CELL_NAME: Record<CellKind, string> = {
   smithy: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', informant: '情報商',
   encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房', chest: '寶箱',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
+  road: '路', waypoint: '途經', arrive: '目的地', event: '事件',
 }
 
 /** 地圖與場所標題用的圖示：每一種設施都要有 */
@@ -122,6 +147,7 @@ export const CELL_ICON: Partial<Record<CellKind, string>> = {
   smithy: '⚒️', tailor: '🧵', jeweler: '💍', magic: '🔮', informant: '🕵️',
   encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
   stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
+  waypoint: '🏘️', arrive: '🏁', event: '❔',
 }
 
 /** 格子的名稱（關閉成人向時，娼館顯示為按摩店） */
@@ -174,7 +200,7 @@ export function settlementBlocks(loc: Location): { key: string; zone: Zone; kind
 export function currentZone(state: GameState): Zone {
   const area = currentArea(state)
   if (area.kind === 'dungeon') return 'dungeon'
-  if (area.kind === 'wild') return 'outskirts'
+  if (area.kind === 'wild' || area.kind === 'road' || area.kind === 'side') return 'outskirts'
   if (currentCell(state).kind === 'temple') return 'temple'
   if (currentCell(state).kind === 'brothel') return 'brothel'
   return area.zone ?? 'town'
@@ -260,10 +286,11 @@ export function currentCell(state: GameState): Cell {
 }
 
 export function isRevealed(area: Area, x: number, y: number): boolean {
-  return area.kind === 'settlement' || (area.revealed?.includes(y * area.width + x) ?? false)
+  // 聚落與旅途整張看得到（旅途的事件出發時就擲好了）
+  return area.kind === 'settlement' || area.kind === 'road' || (area.revealed?.includes(y * area.width + x) ?? false)
 }
 
-function reveal(area: Area, x: number, y: number) {
+export function reveal(area: Area, x: number, y: number) {
   if (area.kind === 'settlement') return
   const set = new Set(area.revealed ?? [])
   for (let dy = -1; dy <= 1; dy++) {
@@ -274,7 +301,7 @@ function reveal(area: Area, x: number, y: number) {
   area.revealed = [...set]
 }
 
-function storeArea(state: GameState, area: Area) {
+export function storeArea(state: GameState, area: Area) {
   state.areas ??= {}
   state.areas[area.key] = area
 }
@@ -307,7 +334,7 @@ export function standOn(state: GameState, kind: CellKind): boolean {
   return false
 }
 
-function placeAt(state: GameState, area: Area, x: number, y: number) {
+export function placeAt(state: GameState, area: Area, x: number, y: number) {
   state.position = { area: area.key, x, y }
   reveal(area, x, y)
 }
@@ -501,6 +528,77 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   return area
 }
 
+// ---- 臨時地圖（旅途事件帶進去的洞窟、遺跡、驛站） ----
+
+export interface SideMapDef {
+  name: string
+  size?: [number, number]
+  carve_steps?: number
+  encounters?: [number, number]
+  elites?: number
+  traps?: [number, number]
+  resources?: [number, number]
+  chests?: [number, number]
+  /** 寶箱與陷阱比照地下城的哪一層 */
+  chest_layer?: DungeonLayerId
+  /** 固定的地圖（驛站）：每個字元依 legend 對應格子種類 */
+  grid?: string[]
+  legend?: Record<string, CellKind>
+  /** 可能遇到冒險者 */
+  visitors?: boolean
+}
+
+/**
+ * 生成臨時地圖：固定地圖照著畫；洞窟、遺跡從出口隨機挖出通道，放遭遇（用 table，強一點）、陷阱、資源與寶箱。
+ * location 是這張地圖算在哪個地點（地名、地區、店家）。
+ */
+export function generateSide(state: GameState, key: string, template: string, def: SideMapDef, location: string, table: EncounterGroup[], rng: Rng): Area {
+  if (def.grid) {
+    const width = def.grid[0]!.length
+    const cells = def.grid.join('').split('').map((ch) => ({ kind: def.legend?.[ch] ?? 'floor' }) as Cell)
+    return { key, location, name: def.name, kind: 'side', template, width, height: def.grid.length, cells, revealed: [] }
+  }
+  const [width, height] = def.size ?? [7, 7]
+  const layer = Math.max(0, DUNGEON_LAYERS.findIndex((l) => l.id === (def.chest_layer ?? 'outskirts')))
+  const cells: Cell[] = Array.from({ length: width * height }, () => ({ kind: 'wall' }) as Cell)
+  const area: Area = { key, location, name: def.name, kind: 'side', template, layer, width, height, cells, revealed: [] }
+  let x = Math.floor(width / 2)
+  let y = height - 1
+  const start = y * width + x
+  cells[start] = { kind: 'floor' }
+  for (let step = 0; step < (def.carve_steps ?? 25); step++) {
+    const [dx, dy] = rng.pick([[1, 0], [-1, 0], [0, -1], [0, -1], [0, 1]] as const)
+    x = Math.max(0, Math.min(width - 1, x + dx))
+    y = Math.max(0, Math.min(height - 1, y + dy))
+    cells[y * width + x] = { kind: 'floor' }
+  }
+  cells[start] = { kind: 'exit' }
+  const used = new Set([start])
+  const strongest = [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
+  for (const i of randomCells(rng, area, between(rng, def.encounters ?? [1, 2]), used)) {
+    cells[i] = { kind: 'encounter', group: rng.pick(table) }
+    used.add(i)
+  }
+  for (const i of randomCells(rng, area, def.elites ?? 0, used)) {
+    cells[i] = { kind: 'elite', group: strongest.map(([id, n], idx) => [id, idx === 0 ? n + 1 : n] as [string, number]) }
+    used.add(i)
+  }
+  for (const i of randomCells(rng, area, between(rng, def.traps ?? [0, 0]), used)) {
+    cells[i] = { kind: 'trap' }
+    used.add(i)
+  }
+  for (const i of randomCells(rng, area, between(rng, def.resources ?? [0, 0]), used)) {
+    cells[i] = { kind: 'resource', item: rng.pick(maps.generation.dungeon.resource_items) }
+    used.add(i)
+  }
+  const level = Math.max(1, ...table.flat().map(([id]) => enemies[id]?.level ?? 1)) + 1
+  for (const i of randomCells(rng, area, between(rng, def.chests ?? [1, 1]), used)) {
+    cells[i] = { kind: 'chest', level }
+    used.add(i)
+  }
+  return area
+}
+
 function neighborsOf(area: Area, i: number): number[] {
   const x = i % area.width
   const y = Math.floor(i / area.width)
@@ -564,6 +662,8 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   if (Math.abs(dx) + Math.abs(dy) !== 1) throw new Error('一次只能移動一格')
   const p = position(state)
   const area = currentArea(state)
+  // 旅途：單行道，一格一天
+  if (area.kind === 'road') return roadMove(state, dx, dy)
   const nx = p.x + dx
   const ny = p.y + dy
   const cell = cellAt(area, nx, ny)
@@ -845,6 +945,8 @@ export function afterCombat(state: GameState, report: Report) {
     // 成人向的戰敗事件等玩家回應之後才離開（defeat.ts）
     afterDefeat(state)
   }
+  // 特殊任務的戰鬥結果要求的移動（進入臨時地圖、改道）
+  applyPendingMove(state)
 }
 
 /** 戰敗之後：地下城回到入口（重新生成），近郊回到城門，城裡留在原地 */
@@ -853,7 +955,12 @@ export function afterDefeat(state: GameState) {
   if (!p) return
   const area = state.areas?.[p.area]
   const loc = locationById(state.location)
-  if (loc.type === 'dungeon') {
+  if (area?.kind === 'side') {
+    // 臨時地圖裡倒下：被帶回原本的地方（旅途或地圖上）
+    leaveSide(state)
+  } else if (area?.kind === 'road') {
+    // 旅途上倒下：留在原地，醒來繼續趕路
+  } else if (loc.type === 'dungeon') {
     enterLocation(state)
   } else if (area?.kind === 'wild') {
     enterTownGate(state)

@@ -8,6 +8,7 @@ import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
+import RoadPanel from '@/components/RoadPanel.vue'
 import CombatView from '@/components/CombatView.vue'
 import IntentPanel from '@/components/IntentPanel.vue'
 import LogView from '@/components/LogView.vue'
@@ -113,6 +114,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   <main v-else v-show="tab === 'adventure'" :key="settings.adult ? 'adult' : 'safe'" class="game" :class="{ combat: inCombat }">
     <aside class="left">
       <MapPanel />
+      <RoadPanel v-if="game.state.road && !inCombat" />
       <section class="panel quick">
         <button @click="showParty = true">
           👥 隊伍 <span v-if="pendingSkills" class="tag hot">可升級</span>

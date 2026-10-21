@@ -1,0 +1,140 @@
+{
+  "$comment": "旅途的事件（見 docs/TRAVEL_EVENTS.md）。出發時把旅途畫成一條單行道（每天一格），先擲好每一格的事件。chance：各種路段每天發生事件的機率；weights：事件的種類（auto 原本的旅途事件與自動判定、choice 普通選擇、combat 戰鬥、advanced 高階事件：可能進入臨時地圖）。特殊事件（特殊任務的開頭，stories.json 的 start.kind = travel）與主人的事件（身為奴隸時）另外擲。templates 的 kind：check（出發時就擲好的檢定，走到時直接揭曉）、choice（選項，選項可以有檢定）；advanced 的 check 是先擲好的檢定，成功時才出現選項。結果的格式和特殊任務相同，另外可以用 side_map（進入臨時地圖）與 travel_to（改去別的地點）。",
+  "version": 1,
+  "chance": { "road": 0.3, "trail": 0.45, "wild": 0.55, "sea": 0.3, "dive": 0.25, "underground": 0.4 },
+  "weights": { "auto": 4, "choice": 3, "combat": 2, "advanced": 1.5 },
+  "combat_modes": ["road", "trail", "wild", "underground"],
+  "templates": [
+    {
+      "id": "stuck_wagon", "tier": "normal", "kind": "choice", "modes": ["road", "trail"],
+      "title": "陷在泥裡的馬車",
+      "text": "一輛商隊的馬車陷在泥濘裡，車夫急得滿頭大汗，朝你們揮手求助。",
+      "options": [
+        { "label": "幫忙推車", "check": { "attr": "str", "dc": 12 },
+          "success": { "text": "你們一起使勁，車輪終於脫出泥坑。商人塞了一點謝禮給你。", "effects": [{ "type": "money", "amount": 30 }] },
+          "fail": { "text": "車子紋風不動，你還扭傷了腰。", "effects": [{ "type": "hp", "target": "pc", "ratio": -0.1 }] } },
+        { "label": "不理會，繼續趕路", "success": { "text": "你們從馬車旁走了過去。" } }
+      ]
+    },
+    {
+      "id": "wounded_traveler", "tier": "normal", "kind": "choice",
+      "title": "受傷的旅人",
+      "text": "路邊坐著一個受傷的旅人，腿上的傷口還在滲血。",
+      "options": [
+        { "label": "替他包紮", "check": { "attr": "fai", "dc": 11 },
+          "success": { "text": "你仔細地替他止了血。他千恩萬謝，說起前面路上的見聞。", "effects": [{ "type": "xp", "amount": 20 }] },
+          "fail": { "text": "你手忙腳亂，只能勉強把傷口綁住，他還是一跛一跛地走了。" } },
+        { "label": "分他一份乾糧", "success": { "text": "他接過乾糧，眼眶都紅了。", "effects": [{ "type": "item", "name": "乾糧", "qty": -1 }, { "type": "xp", "amount": 15 }] } },
+        { "label": "不理會", "success": { "text": "你們沒有停下腳步。" } }
+      ]
+    },
+    {
+      "id": "shady_peddler", "tier": "normal", "kind": "choice", "modes": ["road"],
+      "title": "兜售藥水的行商",
+      "text": "一個行商攔住你們，兜售「包治百病」的藥水，瓶子上的封蠟看起來很新。",
+      "options": [
+        { "label": "買一瓶（40 白鸛幣）", "success": { "text": "你買下了一瓶。", "effects": [{ "type": "money", "amount": -40 }, { "type": "item", "name": "治療藥劑", "qty": 1 }] } },
+        { "label": "看穿他的把戲", "check": { "attr": "int", "dc": 13 },
+          "success": { "text": "你指出封蠟的破綻，他心虛地塞給你一瓶真貨要你閉嘴。", "effects": [{ "type": "item", "name": "治療藥劑", "qty": 1 }] },
+          "fail": { "text": "你們還在爭論，他已經趁亂摸走了一點錢。", "effects": [{ "type": "money", "amount": -20 }] } },
+        { "label": "走開", "success": { "text": "你們繞過了他。" } }
+      ]
+    },
+    {
+      "id": "roadside_shrine", "tier": "normal", "kind": "choice", "modes": ["trail", "wild"],
+      "title": "荒廢的小祠",
+      "text": "路旁有一座荒廢的小祠，石像的臉已經被風雨磨平，供桌上還散落著幾枚古錢。",
+      "options": [
+        { "label": "祈禱", "check": { "attr": "fai", "dc": 12 },
+          "success": { "text": "一股暖意流過全身，疲勞消退了不少。", "effects": [{ "type": "hp", "target": "pc", "ratio": 0.25 }] },
+          "fail": { "text": "四周靜悄悄的，什麼也沒有發生。" } },
+        { "label": "拿走供品", "check": { "attr": "dex", "dc": 12 },
+          "success": { "text": "你把古錢收進了錢袋。", "effects": [{ "type": "money", "amount": 25 }] },
+          "fail": { "text": "指尖一碰到古錢，一道冰冷的刺痛竄上手臂。", "effects": [{ "type": "hp", "target": "pc", "ratio": -0.15 }] } },
+        { "label": "離開", "success": { "text": "你們向石像點點頭，繼續上路。" } }
+      ]
+    },
+    {
+      "id": "ship_dice", "tier": "normal", "kind": "choice", "modes": ["sea"],
+      "title": "甲板上的骰局",
+      "text": "幾個水手在甲板上擲骰子，笑著邀你下注。",
+      "options": [
+        { "label": "下注 40 白鸛幣", "check": { "attr": "cha", "dc": 12 },
+          "success": { "text": "你手氣正旺，連贏了好幾把。", "effects": [{ "type": "money", "amount": 40 }] },
+          "fail": { "text": "骰子一點都不給面子。", "effects": [{ "type": "money", "amount": -40 }] } },
+        { "label": "婉拒", "success": { "text": "你笑著搖頭，倚著船舷看海。" } }
+      ]
+    },
+    {
+      "id": "herb_patch", "tier": "normal", "kind": "check", "modes": ["trail", "wild", "road"],
+      "title": "路邊的草藥",
+      "text": "路邊長著一片草藥。",
+      "check": { "attr": "int", "dc": 11 },
+      "success": { "text": "你認出了能用的草藥，採了一些。", "effects": [{ "type": "item", "name": "藥草", "qty": 2 }] },
+      "fail": { "text": "分不清哪些能用，只好作罷。" }
+    },
+    {
+      "id": "glint_in_rut", "tier": "normal", "kind": "check", "modes": ["road"],
+      "title": "車轍裡的反光",
+      "text": "車轍裡有東西在反光。",
+      "check": { "attr": "dex", "dc": 10 },
+      "success": { "text": "是幾枚別人掉的銀幣。", "effects": [{ "type": "money", "amount": 15 }] },
+      "fail": { "text": "只是一片碎玻璃。" }
+    },
+    {
+      "id": "beast_tracks", "tier": "normal", "kind": "check", "modes": ["wild", "trail"],
+      "title": "獸群的足跡",
+      "text": "地上滿是新鮮的獸群足跡。",
+      "check": { "attr": "int", "dc": 12 },
+      "success": { "text": "你看出獸群的去向，帶著大家繞開了牠們。", "effects": [{ "type": "xp", "amount": 10 }] },
+      "fail": { "text": "你們一頭撞進了獸群的地盤，狼狽地逃了出來。", "effects": [{ "type": "hp", "target": "pc", "ratio": -0.1 }] }
+    },
+    {
+      "id": "hidden_cave", "tier": "advanced", "kind": "check", "modes": ["trail", "wild", "underground"],
+      "title": "岩壁上的裂縫",
+      "text": "岩壁上有一道不起眼的裂縫，裡面隱約有風吹出來。",
+      "check": { "attr": "int", "dc": 12 },
+      "success": { "text": "你注意到裂縫後面是一個洞窟，地上還有拖行的痕跡。" },
+      "fail": { "text": "你們沒有多看那道裂縫一眼。" },
+      "options": [
+        { "label": "進去看看", "success": { "text": "你們側身擠進了裂縫。", "side_map": "cave" } },
+        { "label": "繼續趕路", "success": { "text": "你們決定不節外生枝。" } }
+      ]
+    },
+    {
+      "id": "old_ruins", "tier": "advanced", "kind": "choice", "modes": ["wild", "trail", "road"],
+      "title": "半截石柱",
+      "text": "地平線上露出半截石柱，附近的草地下埋著整齊的石板，看起來是一座古代遺跡。",
+      "options": [
+        { "label": "去探探", "success": { "text": "你們離開道路，朝石柱走去。", "side_map": "ruins" } },
+        { "label": "繼續趕路", "success": { "text": "遺跡在身後漸漸看不見了。" } }
+      ]
+    },
+    {
+      "id": "waystation", "tier": "advanced", "kind": "choice", "modes": ["road", "trail"],
+      "title": "路邊的驛站",
+      "text": "前方有一座驛站，炊煙裊裊，門口拴著幾匹馬，還有行商在擺攤。",
+      "options": [
+        { "label": "進去歇腳", "success": { "text": "你們推開了驛站的門。", "side_map": "waystation" } },
+        { "label": "繼續趕路", "success": { "text": "你們沒有停留。" } }
+      ]
+    }
+  ],
+  "side_maps": {
+    "$comment": "臨時地圖：cave、ruins 是隨機挖出的小洞窟（遭遇用這段路的城郊遭遇表，強一點），waystation 是固定的驛站（安全房可以長休、有雜貨商、可能遇到冒險者）。從出口離開就回到旅途。",
+    "cave": { "name": "神秘洞窟", "size": [7, 7], "carve_steps": 26, "encounters": [1, 2], "elites": 1, "traps": [0, 1], "resources": [1, 2], "chests": [1, 1], "chest_layer": "shallow" },
+    "ruins": { "name": "遺跡廢墟", "size": [8, 8], "carve_steps": 34, "encounters": [2, 3], "elites": 0, "traps": [1, 2], "resources": [0, 1], "chests": [2, 2], "chest_layer": "middle" },
+    "waystation": {
+      "name": "驛站",
+      "grid": [
+        "#######",
+        "#S.M.S#",
+        "#.....#",
+        "#S...S#",
+        "###E###"
+      ],
+      "legend": { "#": "wall", ".": "floor", "S": "safe", "M": "shop", "E": "exit" },
+      "visitors": true
+    }
+  }
+}

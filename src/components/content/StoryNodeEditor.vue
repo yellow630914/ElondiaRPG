@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { ATTR_IDS, attrName, enemies, geography, npcs as namedNpcs, type StoryNode, type StoryOption } from '@/engine/data'
 import { cellName } from '@/engine/grid'
-import { LAYER_NAME, NODE_KINDS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
+import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
+import { travelEvents } from '@/engine/road'
 import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
 
@@ -68,7 +69,7 @@ function toggleFoe(id: string, on: boolean) {
           <option v-for="(n, k) in WHERE_NAME" :key="k" :value="k">{{ n }}</option>
         </select>
       </label>
-      <label>{{ where === 'npc' ? '地點（選填：只在這裡）' : '地點' }}
+      <label v-if="where !== 'road' && where !== 'side'">{{ where === 'npc' ? '地點（選填：只在這裡）' : '地點' }}
         <select v-model="node.at.location">
           <option v-if="where === 'npc'" :value="undefined">（跟著角色走）</option>
           <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
@@ -82,6 +83,12 @@ function toggleFoe(id: string, on: boolean) {
       <label v-if="where === 'dungeon'">哪一層
         <select v-model="node.at.layer">
           <option v-for="l in STORY_LAYERS" :key="l" :value="l">{{ LAYER_NAME[l] }}</option>
+        </select>
+      </label>
+      <label v-if="where === 'side'">哪一種臨時地圖
+        <select v-model="node.at.side_map">
+          <option :value="undefined">（任何一種）</option>
+          <option v-for="k in SIDE_MAPS()" :key="k" :value="k">{{ travelEvents.side_maps[k]!.name }}</option>
         </select>
       </label>
       <label v-if="where === 'npc'">固定 NPC

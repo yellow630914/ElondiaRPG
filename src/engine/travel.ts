@@ -23,11 +23,11 @@ export const MODE_NAME: Record<RouteMode, string> = {
   road: '官道', trail: '山道', wild: '荒野', sea: '海路', dive: '潛水', underground: '地底',
 }
 
-const EVENT_CHANCE: Record<RouteMode, number> = {
+export const EVENT_CHANCE: Record<RouteMode, number> = {
   road: 0.15, trail: 0.3, wild: 0.45, sea: 0.25, dive: 0.2, underground: 0.3,
 }
 
-interface TravelEvent {
+export interface TravelEvent {
   action: string
   /** 有 dc 時進行求生檢定，失敗則受傷 */
   dc?: number
@@ -36,7 +36,7 @@ interface TravelEvent {
   text: string
 }
 
-const EVENTS: Record<RouteMode, TravelEvent[]> = {
+export const EVENTS: Record<RouteMode, TravelEvent[]> = {
   road: [
     { action: '遭遇・行商隊伍', text: '與往來的商隊同行一段路，交換了沿途見聞' },
     { action: '遭遇・巡邏騎士', text: '被巡邏騎士盤查身分後放行' },
@@ -60,13 +60,13 @@ const EVENTS: Record<RouteMode, TravelEvent[]> = {
   underground: [{ action: '地下・落石', dc: 12, failDamage: '1d4', text: '避開了落石', failText: '被落石擦傷' }],
 }
 
-function rollLegDays(rng: Rng, [min, max]: [number, number]): number {
+export function rollLegDays(rng: Rng, [min, max]: [number, number]): number {
   if (min === max) return min
   const steps = Math.round((max - min) * 2)
   return min + rng.int(0, steps) / 2
 }
 
-function daysToHours(days: number): number {
+export function daysToHours(days: number): number {
   return Math.floor(days) * 24 + (days % 1) * 12
 }
 
@@ -159,6 +159,14 @@ export function travel(state: GameState, destination: string, intent?: string, e
     ],
   }
   commitReport(state, report)
+  arrive(state)
+  // 被主人帶著時，旅途中可能有主人的突發事件
+  maybeMasterEvent(state, slaveryRules.master_events.travel_chance, events)
+  return report
+}
+
+/** 抵達 state.location：建立地圖與名單，進城盤查，逃開的同伴歸隊 */
+export function arrive(state: GameState) {
   enterLocation(state)
   ensureRoster(state, state.location)
   refreshRosters(state)
@@ -167,12 +175,9 @@ export function travel(state: GameState, destination: string, intent?: string, e
   if (!arrivalCheck(state)) placeOutside(state)
   // 戰敗時逃開的同伴在聚落等著
   rejoinAway(state)
-  // 被主人帶著時，旅途中可能有主人的突發事件
-  maybeMasterEvent(state, slaveryRules.master_events.travel_chance, events)
-  return report
 }
 
-function resolveEvent(rng: Rng, ev: TravelEvent, members: Character[], time: Report['time']['start'], seq: number): TimelineEntry {
+export function resolveEvent(rng: Rng, ev: TravelEvent, members: Character[], time: Report['time']['start'], seq: number): TimelineEntry {
   if (ev.dc === undefined) {
     return { seq, time, actor: 'pc', action: ev.action, result: 'none', effects: [{ type: 'note', text: ev.text }] }
   }

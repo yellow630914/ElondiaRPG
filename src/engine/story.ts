@@ -20,6 +20,7 @@ import { presentHere } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { condMet, flagKey } from './storyFlags'
+import { applyPendingMove, queueMove } from './road'
 import type { GameState, Report, StoryProgress } from './types'
 
 export function storyDef(id: string): StoryDef | undefined {
@@ -137,8 +138,10 @@ export function activeNodes(state: GameState): ActiveNode[] {
 export function nodeIsHere(state: GameState, n: ActiveNode): boolean {
   const at = n.node.at
   const area = currentArea(state)
-  if (at.location && at.where !== 'npc' && area.location !== at.location) return false
+  if (at.location && at.where !== 'npc' && at.where !== 'road' && at.where !== 'side' && area.location !== at.location) return false
   switch (at.where) {
+    case 'road': return area.kind === 'road'
+    case 'side': return currentCell(state).kind === 'quest' && currentCell(state).storyNode === n.ref
     case 'settlement': return area.kind === 'settlement'
     case 'cell': return area.kind === 'settlement' && currentCell(state).kind === at.cell
     case 'npc': return !!at.npc && presentHere(state, at.npc) && (!at.location || area.location === at.location)
@@ -170,6 +173,8 @@ export function placeText(n: StoryNode, state?: GameState): string {
     case 'npc': return `找${(at.npc && (state ? npcRecord(state, at.npc) : namedNpcs.find((x) => x.id === at.npc))?.name) || '某人'}${loc ? `（${loc}）` : ''}`
     case 'outskirts': return `${loc}近郊（⭐）`
     case 'dungeon': return `${loc}・${LAYER[at.layer ?? 'outskirts']}（⭐）`
+    case 'road': return '旅途上'
+    case 'side': return '臨時地圖裡（⭐）'
   }
   return loc
 }
@@ -208,6 +213,7 @@ export function playNode(state: GameState, ref: string, option?: number, intent?
   report.outcome = { ...report.outcome, result: 'success', summary: lines.join('') }
   const committed = commitReport(state, report)
   refreshStoryMarkers(state)
+  applyPendingMove(state)
   return committed
 }
 
@@ -306,6 +312,8 @@ function resolveOutcome(
     }
   }
   if (outcome.leave) leaveGuest(state, report, progress, outcome.leave, lines)
+  // 進入臨時地圖、改去別的地點：報告提交之後執行
+  queueMove(state, outcome)
   if (!outcome.retry) progress.done = [...new Set([...progress.done, node.id])]
   log(progress, state, `${node.title}${label ? `（${label}）` : ''}：${outcome.text ?? (success ? '完成' : '失敗')}`, node.id)
   if (outcome.complete) finishStory(state, report, progress, def, 'completed', lines)
@@ -361,15 +369,15 @@ function layerId(area: Area): DungeonLayerId | undefined {
 /** 這一區該有哪些任務點 */
 function markersFor(state: GameState, area: Area): string[] {
   return activeNodes(state)
-    .filter(({ node }) => node.at.location === area.location && (
+    .filter(({ node }) => (node.at.where === 'side' && area.kind === 'side' && (!node.at.side_map || node.at.side_map === area.template)) || (node.at.location === area.location && (
       (node.at.where === 'outskirts' && area.kind === 'wild') ||
-      (node.at.where === 'dungeon' && area.kind === 'dungeon' && (node.at.layer ?? 'outskirts') === layerId(area))))
+      (node.at.where === 'dungeon' && area.kind === 'dungeon' && (node.at.layer ?? 'outskirts') === layerId(area)))))
     .map((n) => n.ref)
 }
 
 /** 在近郊或地下城的一層放上任務點（已經有的保留） */
 export function ensureStoryMarkers(state: GameState, area: Area, rng: Rng) {
-  if (area.kind === 'settlement') return
+  if (area.kind === 'settlement' || area.kind === 'road') return
   const have = new Set(area.cells.map((c) => c.storyNode).filter(Boolean))
   const entry = area.cells.findIndex((c) => c.kind === 'exit' || c.kind === 'stairs_up')
   for (const ref of markersFor(state, area)) {

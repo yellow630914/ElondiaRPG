@@ -131,7 +131,7 @@ export interface StoryStart {
 }
 
 /** 任務點在哪裡觸發 */
-export type StoryWhere = 'settlement' | 'cell' | 'npc' | 'outskirts' | 'dungeon'
+export type StoryWhere = 'settlement' | 'cell' | 'npc' | 'outskirts' | 'dungeon' | 'road' | 'side'
 export interface StoryPlace {
   where: StoryWhere
   /** 地點 id（npc 時可以不寫：跟著角色走） */
@@ -142,6 +142,8 @@ export interface StoryPlace {
   layer?: DungeonLayerId
   /** npc：這位固定 NPC 在身邊時 */
   npc?: string
+  /** side：哪一種臨時地圖（沒有時任何一種） */
+  side_map?: string
 }
 
 export interface StoryCheck { attr: AttrId; dc: number }
@@ -159,6 +161,10 @@ export interface StoryOutcome {
   fail_quest?: boolean
   /** 這個任務點可以再來一次（沒有時觸發過就結束） */
   retry?: boolean
+  /** 進入臨時地圖（travel_events.json 的 side_maps），出口回到原本的地方 */
+  side_map?: string
+  /** 改去別的地點：旅途中直接抵達那裡，不在旅途時被帶到那裡 */
+  travel_to?: string
 }
 
 export interface StoryOption {
@@ -629,7 +635,7 @@ export const companionRules = companionsJson as unknown as {
   }
   invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number }
   leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
-  rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'wild' | 'dungeon', number> }
+  rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'wild' | 'dungeon' | 'road' | 'side', number> }
   noncombatant: { defeat_check: { dc: number; affinity_step: number }; rescue_hours: number; return_hp_ratio: number }
   conditions: Record<string, ConditionDef>
 }

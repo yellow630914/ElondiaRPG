@@ -100,6 +100,71 @@
         { "type": "xp", "amount": 120 },
         { "type": "item", "name": "治療藥劑", "qty": 2 }
       ]
+    },
+    {
+      "id": "overturned_wagon",
+      "title": "翻覆的篷車",
+      "summary": "旅途上遇到一輛翻覆的篷車，商人不見了，只剩一個嚇壞的小女孩。",
+      "rank": "E",
+      "start": {
+        "kind": "travel",
+        "chance": 0.15,
+        "text": "路邊翻著一輛篷車，貨物散了一地，車上的人不見蹤影。車底下躲著一個嚇壞的小女孩，地上有一串拖行的痕跡通往林子裡。"
+      },
+      "start_flags": ["wagon_found"],
+      "nodes": [
+        {
+          "id": "decide",
+          "title": "決定怎麼處理翻覆的篷車",
+          "text": "小女孩抽抽噎噎地說，爸爸和車夫被一群蒙面人抓走了。她家在河谷鎮。",
+          "at": { "where": "road" },
+          "requires": { "flags": ["wagon_found"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "循著拖行的痕跡追進林子",
+              "check": { "attr": "int", "dc": 12 },
+              "success": { "text": "痕跡一路通往山壁上的一個洞窟，裡面傳來說話聲。", "set_flags": ["wagon_trail"], "side_map": "cave" },
+              "fail": { "text": "痕跡在溪邊斷了，你們找了半天也沒有頭緒，只好先把小女孩送回河谷鎮。", "set_flags": ["wagon_escort"], "travel_to": "rivervale" }
+            },
+            {
+              "label": "先把小女孩送回河谷鎮",
+              "success": { "text": "你們改變路線，護送小女孩往河谷鎮走去。", "set_flags": ["wagon_escort"], "travel_to": "rivervale" }
+            }
+          ]
+        },
+        {
+          "id": "hideout",
+          "title": "救出被抓走的商人",
+          "text": "洞窟深處，幾個蒙面盜賊圍著被綁住的商人，正在清點搶來的貨物。",
+          "at": { "where": "side", "side_map": "cave" },
+          "requires": { "flags": ["wagon_trail"] },
+          "kind": "combat",
+          "enemies": [["bandit", 3]],
+          "success": {
+            "text": "盜賊被打倒了。商人抱著女兒又哭又笑，堅持把一部分貨物送給你們當謝禮。",
+            "effects": [{ "type": "item", "name": "治療藥劑", "qty": 2 }],
+            "set_flags": ["wagon_rescued"],
+            "complete": true
+          }
+        },
+        {
+          "id": "home",
+          "title": "把小女孩送到河谷鎮的旅店",
+          "text": "小女孩的母親在旅店門口急得團團轉，一看到女兒就衝了過來。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "inn" },
+          "requires": { "flags": ["wagon_escort"] },
+          "kind": "story",
+          "success": {
+            "text": "母親千恩萬謝，說會請鎮上的衛兵去找丈夫。至少，孩子平安回家了。",
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [
+        { "type": "money", "amount": 200 },
+        { "type": "xp", "amount": 150 }
+      ]
     }
   ]
 }
