@@ -18,6 +18,7 @@ import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import StatBar from './StatBar.vue'
 import NameTag from './NameTag.vue'
+import PortraitBox from './PortraitBox.vue'
 
 const QUALITY_NAME: Record<string, string> = {
   common: '普通', uncommon: '優良', rare: '稀有', epic: '史詩', legendary: '傳說', mythic: '神話',
@@ -95,6 +96,7 @@ function affinityText(m: Character): string {
       <div class="small muted">
         <template v-if="m.gender">{{ genderName(m.gender) }}・</template>{{ raceName(m.race) }}・{{ className(m.class) }}・Lv.{{ m.level }}（經驗 {{ m.xp }}/{{ xpToNext(m.level) }}）
       </div>
+      <PortraitBox :id="m.id" />
       <div class="row small">
         <span v-if="m.bond" class="tag" :class="m.bond">{{ companionRules.bonds[m.bond] }}</span>
         <span v-if="m.group && m.bond !== 'leader'" class="tag">{{ s.party.find((x) => x.id === m.group)?.name }}的隊伍</span>

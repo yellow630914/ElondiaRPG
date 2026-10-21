@@ -8,7 +8,7 @@ import { PROVIDERS, type ProviderConfig, type ProviderId } from '@/narrator/prov
 const KEY = 'elondia.settings'
 
 /** 會呼叫 AI 的功能（見 docs/PROMPTS.md 第 1 節） */
-export type AiFeature = 'narration' | 'judge' | 'roster' | 'shop' | 'negotiation'
+export type AiFeature = 'narration' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'tags'
 
 export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: boolean }[] = [
   { id: 'narration', name: '敘事正文', desc: '所有日誌的詳細經過：戰鬥、旅行、事件，以及主動行動判定之後的經過；也可以在每則日誌手動生成', prose: true },
@@ -16,6 +16,7 @@ export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: bo
   { id: 'roster', name: '居民潤飾', desc: '第一次到一個地點時，設計居民的名字、外貌與性格（JSON）', prose: false },
   { id: 'shop', name: '商店清單', desc: '第一次進店時設計今天的交易清單（JSON）', prose: false },
   { id: 'negotiation', name: '談判方式', desc: '開始談判時設計可以採取的方式（JSON）', prose: false },
+  { id: 'tags', name: '插圖標籤轉換', desc: '生成形象插圖前，把角色描述轉成 Danbooru 標籤（插圖設定勾選「轉成 Danbooru 標籤」時才用）', prose: false },
 ]
 
 /** 模型來源：一組服務、key 與模型。每個來源對各服務各自保存設定，切換服務不會弄丟 key。 */

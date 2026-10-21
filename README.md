@@ -79,6 +79,7 @@ pnpm build             # 型別檢查 + 建置到 dist/
 | [`docs/WORK.md`](docs/WORK.md) | 工作（各設施換錢）、娼館（消費、被迫工作、老鴇、娼妓契約）、成人向開關的換詞 |
 | [`docs/NPC_SYSTEM.md`](docs/NPC_SYSTEM.md) | NPC 系統重作方案（名單、標籤、活躍地點、互動、警戒與通緝；設計中） |
 | [`docs/PROMPTS.md`](docs/PROMPTS.md) | 發給 AI 的提示詞結構（敘事、判定、生成）、排列順序與快取、提示詞頁籤 |
+| [`docs/PORTRAITS.md`](docs/PORTRAITS.md) | 角色形象插圖：生圖服務（ChatGPT、NovelAI、ComfyUI）、提示詞模板、Danbooru 標籤轉換、圖片保存 |
 | [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索（周邊 → 淺層 → 中層 → 深層），含實作狀態 |
 | [`docs/WORLD_NOTES.md`](docs/WORLD_NOTES.md) | 世界書與地圖之間的不一致與缺漏 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema） |

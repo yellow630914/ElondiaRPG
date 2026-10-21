@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useGame } from '@/stores/game'
 import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
+import ImageSettings from './ImageSettings.vue'
 import ModelSourceEditor from './ModelSourceEditor.vue'
 
 const settings = useSettings()
@@ -55,6 +56,8 @@ function doReset() {
       <template v-else>主動行動：由「{{ settings.sourceFor('judge').name }}」判定時順便寫出經過（每次一次呼叫）。</template>
     </p>
   </section>
+
+  <ImageSettings />
 
   <section class="panel">
     <h2>✨ 敘事與判定</h2>

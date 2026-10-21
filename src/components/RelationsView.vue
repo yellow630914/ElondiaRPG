@@ -6,6 +6,7 @@ import { formatTime } from '@/engine/state'
 import type { Memory, Relationship } from '@/engine/social'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
+import PortraitBox from './PortraitBox.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -117,6 +118,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
           <span class="small">{{ affinityStage(r.affinity) }}（{{ r.affinity }}）</span>
         </div>
         <div class="affinity"><span :style="{ left: affinityPct(r.affinity) }" /></div>
+        <PortraitBox v-if="game.state" :id="r.id" size="small" />
 
         <template v-if="editing !== r.id">
           <dl class="small">

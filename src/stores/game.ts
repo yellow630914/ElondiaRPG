@@ -603,6 +603,7 @@ export const useGame = defineStore('game', () => {
 
   return {
     state, narrations, error, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump,
+    usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
     perform, judge, flavorRoster, hire, flavorShop, startNegotiation,
