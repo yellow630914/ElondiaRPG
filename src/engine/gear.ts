@@ -69,7 +69,7 @@ export const gearRules = gearJson as unknown as {
     items: [string, number][]; forge: [number, number][]
   }>
   craft: {
-    hours: number; attr: AttrId; fee: number[]; dc: number[]; min_location: Record<string, string>
+    hours: number; attr: AttrId; fee: number[]; dc: number[]
     units: Record<string, number>; lost_on_fail: number
     aux: { max_kinds: number; max_qty: number; chance_per_value: number; max_chance: number; elements: Record<string, string[]> }
   }

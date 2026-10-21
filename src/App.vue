@@ -9,6 +9,7 @@ import { useSettings } from '@/stores/settings'
 import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import NotebookView from '@/components/NotebookView.vue'
+import CraftDialog from '@/components/CraftDialog.vue'
 import { canTurnIn } from '@/engine/materialQuests'
 import RoadPanel from '@/components/RoadPanel.vue'
 import CombatView from '@/components/CombatView.vue'
@@ -62,6 +63,7 @@ const showParty = ref(false)
 const showInventory = ref(false)
 const showRelations = ref(false)
 const showNotebook = ref(false)
+const showCraft = ref(false)
 /** 可以回公會交付的委託 */
 const readyQuests = computed(() => (game.state ? game.state.quests.filter((q) => canTurnIn(game.state!, q)).length : 0))
 const showSaves = ref(false)
@@ -150,6 +152,7 @@ onBeforeUnmount(() => {
         <button @click="showNotebook = true">
           📒 筆記 <span v-if="readyQuests" class="tag hot">{{ readyQuests }} 件可交付</span>
         </button>
+        <button @click="showCraft = true">🛠️ 工藝</button>
       </section>
       <template v-if="!inCombat">
         <StandoffPanel v-if="game.state.standoff && !game.state.pendingAction" />
@@ -183,6 +186,9 @@ onBeforeUnmount(() => {
   </AppDialog>
   <AppDialog :open="showNotebook" title="冒險筆記" icon="📒" width="900px" @close="showNotebook = false">
     <NotebookView />
+  </AppDialog>
+  <AppDialog :open="showCraft" title="工藝" icon="🛠️" width="760px" @close="showCraft = false">
+    <CraftDialog @close="showCraft = false" />
   </AppDialog>
   <AppDialog :open="showSaves" title="存檔與讀檔" icon="💾" width="860px" @close="showSaves = false">
     <SaveDialog @loaded="showSaves = false" />

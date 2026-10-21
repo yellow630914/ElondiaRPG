@@ -8,7 +8,7 @@
 
 import { snapshot } from './character'
 import {
-  companionRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
+  companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
   stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
@@ -39,7 +39,13 @@ function typeOf(key: string): ShopType {
 }
 
 export function locationMult(state: GameState): number {
-  return shopRules.location_price_mult[locationById(state.location).type] ?? 1
+  return (shopRules.location_price_mult[locationById(state.location).type] ?? 1) * notorietyMult(state)
+}
+
+/** 剛遣散入隊沒多久的夥伴：這座城的物價暫時上漲（crafts.json 的 dismiss_penalty） */
+export function notorietyMult(state: GameState): number {
+  const until = Number(state.flags[`notoriety:${state.location}`] ?? 0)
+  return until >= state.time.day ? craftRules.dismiss_penalty.price_mult : 1
 }
 
 /** 商店賣材料時的加成（材料的目錄價是收購價） */

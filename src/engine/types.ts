@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { AffinityMap, AttrId, Attrs, Bond, DealCost, Mods, NpcDef } from './data'
+import type { AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, Mods, NpcDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -97,6 +97,8 @@ export interface Changes {
   merit?: number
   /** 通過晉升考核 */
   rank_up?: { from: GuildRank; to: GuildRank }
+  /** 工藝經驗（level：升到幾級） */
+  craft_xp?: { actor: string; craft: CraftId; amount: number; level?: number }[]
 }
 
 export interface ResourceChange {
@@ -232,6 +234,10 @@ export interface Character {
   appearance?: string
   background?: string
   birthplace?: string
+  /** 工藝的等級與經驗（沒有的工藝視為 1 級、0 經驗；見 engine/crafting.ts） */
+  crafts?: Partial<Record<CraftId, CraftSkill>>
+  /** 入隊的時間（入隊沒多久就遣散有懲罰） */
+  joined?: GameTime
 }
 
 export interface ContractRef {
@@ -287,6 +293,8 @@ export interface NpcRecord extends NpcDef {
   character?: Character
   /** 目前套用的「依劇情旗標改變出沒」（stages 的索引） */
   stage?: number
+  /** 不在隊伍裡的 NPC（店主）的工藝等級；隊友的在 character.crafts */
+  crafts?: Partial<Record<CraftId, CraftSkill>>
 }
 
 /** 情報（冒險筆記）：事件點（在近郊或地下城的某一層放一個事件）或特殊任務的消息 */
@@ -476,6 +484,12 @@ export interface InventoryItem {
   name: string
   qty: number
   quality?: string
+}
+
+/** 一種工藝的等級與累積的經驗 */
+export interface CraftSkill {
+  level: number
+  xp: number
 }
 
 /** 冒險者公會的階級與功績（只有主角；隊友的階級依等級換算） */

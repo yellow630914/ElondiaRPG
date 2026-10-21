@@ -25,6 +25,7 @@ import shopsJson from '@data/rules/shops.json'
 import negotiationsJson from '@data/rules/negotiations.json'
 import workJson from '@data/rules/work.json'
 import storiesJson from '@data/rules/stories.json'
+import craftsJson from '@data/rules/crafts.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
 import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality } from './types'
@@ -799,7 +800,7 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'defeat_event' | 'story'
+  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'defeat_event' | 'story'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'
 export const actionRules = actionsJson as unknown as {
@@ -966,10 +967,13 @@ export interface ItemIntel {
   story?: string
 }
 
-export type ToolKind = 'lockpick' | 'trap' | 'light' | 'travel' | 'camp' | 'hone'
+export type ToolKind = 'lockpick' | 'trap' | 'light' | 'travel' | 'camp' | 'hone' | 'craft'
 export interface ItemTool {
   kind: ToolKind
   bonus?: number
+  /** 工藝工具：哪種工藝、第幾階（1 低階隨身、2 中階工坊、3 高階工作台） */
+  craft?: CraftId
+  tier?: 1 | 2 | 3
   /** 照明：燒的是哪種物品（油燈的燈油）；沒有時燒工具本身（有 burns 時）或不會燒掉 */
   fuel?: string
 }
@@ -1101,3 +1105,35 @@ export function attrName(id: AttrId): string {
 export function isSettlement(loc: Location): boolean {
   return loc.type !== 'dungeon'
 }
+
+
+// ---- 工藝（crafts.json，見 docs/CRAFTING.md） ----
+
+export type CraftId = 'smithing' | 'woodworking' | 'leatherwork' | 'tailoring' | 'jewelcraft'
+
+export interface CraftSkillDef {
+  name: string
+  /** 處理的材料種類（gear.json 的 materials.kind） */
+  kinds: string[]
+  attr: AttrId
+  /** 可以租工坊、委託打造的店 */
+  shop: string
+}
+
+export const craftRules = craftsJson as unknown as {
+  skills: Record<CraftId, CraftSkillDef>
+  max_level: number
+  level_bonus: number
+  xp_to_next: number[]
+  xp: Record<Degree, number>
+  tool_tier: number[]
+  tool_tier_names: string[]
+  safe_points: string[]
+  workshop_rent: { per_hour_cc: number }
+  self: { hours: number; tier1_cost_ratio: number }
+  shop_levels: Record<string, [number, number]>
+  companion: { min_affinity: number }
+  dismiss_penalty: { days: number; affinity: number; price_mult: number; notoriety_days: number }
+}
+
+export const CRAFT_IDS = Object.keys(craftRules.skills) as CraftId[]

@@ -125,12 +125,11 @@
   },
 
   "craft": {
-    "$comment": "委託打造（金屬、木材在鐵匠鋪，皮革、布料在裁縫店，寶石在珠寶店）：選底材與材料。第一級材料由工匠提供；第二級以上要自備打造材料（items.json 有 forge 的物品），數量依欄位（units；雙手武器用 two_handed）。工錢 = 底材價格 × fee[材料等級 - 1] × 地點物價。DC 依材料等級（dc），第三級以上的材料要在 min_location 以上的地點才有人會做。成功程度：critical 稀有度 +1 並附魔；success 附魔（至少 uncommon）；partial 沒有附魔；fail 沒做成、材料損失一半；fumble 沒做成、材料全部損失。工錢不論結果都要付。",
+    "$comment": "委託打造（金屬、木材在鐵匠鋪，皮革、布料在裁縫店，寶石在珠寶店）：選底材與材料。第一級材料由工匠提供；第二級以上要自備打造材料（items.json 有 forge 的物品），數量依欄位（units；雙手武器用 two_handed）。工錢 = 底材價格 × fee[材料等級 - 1] × 地點物價。DC 依材料等級（dc）；店主的工藝等級（crafts.json 的 shop_levels）要達到材料等級才做得了，比需要的高時每高一級檢定 +1。成功程度：critical 稀有度 +1 並附魔；success 附魔（至少 uncommon）；partial 沒有附魔；fail 沒做成、材料損失一半；fumble 沒做成、材料全部損失。工錢不論結果都要付。",
     "hours": 8,
     "attr": "int",
     "fee": [1, 2, 3, 4, 5],
     "dc": [10, 12, 14, 16, 18],
-    "min_location": { "3": "town", "4": "city", "5": "capital" },
     "units": { "main_hand": 2, "two_handed": 3, "off_hand": 2, "head": 1, "body": 3, "legs": 2, "wrists": 1, "feet": 1, "belt": 1, "accessory": 1, "ring": 1 },
     "lost_on_fail": 0.5,
     "aux": {

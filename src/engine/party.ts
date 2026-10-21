@@ -78,6 +78,7 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
   member.status = member.status.filter((s) => s !== 'slave_mark')
   member.bond = bond
   member.affinity = rel.affinity
+  member.joined = { ...state.time }
   if (opts.group) member.group = opts.group
   if (bond === 'slave') {
     member.contract = makeContract(opts.contract ?? 'labor', 'pc', pcOf(state).name, state.time)

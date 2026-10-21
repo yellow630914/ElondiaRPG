@@ -152,6 +152,20 @@
         },
         "flags": { "type": "object", "additionalProperties": true },
         "merit": { "type": "integer", "description": "主角得到的冒險者公會功績點" },
+        "craft_xp": {
+          "type": "array",
+          "description": "工藝經驗：誰的哪種工藝得到多少；level 是升到的等級",
+          "items": {
+            "type": "object",
+            "required": ["actor", "craft", "amount"],
+            "properties": {
+              "actor": { "type": "string" },
+              "craft": { "enum": ["smithing", "woodworking", "leatherwork", "tailoring", "jewelcraft"] },
+              "amount": { "type": "integer" },
+              "level": { "type": "integer" }
+            }
+          }
+        },
         "rank_up": {
           "type": "object",
           "description": "通過晉升考核，主角的公會階級提升",

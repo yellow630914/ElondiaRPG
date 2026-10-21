@@ -9,7 +9,7 @@
 
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, classes, companionRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart,
@@ -611,6 +611,11 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (category === 'gear' && raw.tool && TOOL_KINDS.includes(raw.tool.kind)) {
     const def = itemRules.tools[raw.tool.kind]
     out.tool = { kind: raw.tool.kind, ...(def.bonus !== undefined ? { bonus: int(raw.tool.bonus ?? def.bonus, 1, def.max ?? 10, def.bonus) } : {}) }
+    // 工藝工具：哪種工藝、低階或中階（高階是房子裡的工作台，不能是隨身物品）
+    if (raw.tool.kind === 'craft') {
+      out.tool.craft = CRAFT_IDS.includes(raw.tool.craft as never) ? raw.tool.craft : 'smithing'
+      out.tool.tier = raw.tool.tier === 2 ? 2 : 1
+    }
     // 照明：燒另一種物品（油燈的燈油）
     const fuel = typeof raw.tool.fuel === 'string' ? cleanItemName(raw.tool.fuel) : ''
     if (raw.tool.kind === 'light' && fuel && fuel !== name) out.tool.fuel = fuel

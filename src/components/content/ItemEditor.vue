@@ -9,6 +9,7 @@ import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
+import { CRAFT_IDS, craftRules } from '@/engine/data'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
@@ -84,7 +85,11 @@ const conditionList = Object.entries(companionRules.conditions)
   .map(([id, c]) => ({ id, name: `${c.name}：${c.desc}` }))
 function setTool(kind: string) {
   if (!kind) delete draft.value.tool
-  else draft.value.tool = { kind: kind as ToolKind, ...(itemRules.tools[kind as ToolKind].bonus !== undefined ? { bonus: draft.value.tool?.bonus ?? itemRules.tools[kind as ToolKind].bonus } : {}) }
+  else draft.value.tool = {
+    kind: kind as ToolKind,
+    ...(itemRules.tools[kind as ToolKind].bonus !== undefined ? { bonus: draft.value.tool?.bonus ?? itemRules.tools[kind as ToolKind].bonus } : {}),
+    ...(kind === 'craft' ? { craft: draft.value.tool?.craft ?? 'smithing', tier: draft.value.tool?.tier ?? 1 } : {}),
+  }
 }
 const toolText = computed(() => toolSummary(draft.value.tool))
 
@@ -337,6 +342,19 @@ function remove() {
         <label v-if="draft.tool && itemRules.tools[draft.tool.kind].bonus !== undefined">加值
           <input v-model.number="draft.tool.bonus" type="number" min="1" :max="itemRules.tools[draft.tool.kind].max ?? 10" />
         </label>
+        <template v-if="draft.tool?.kind === 'craft'">
+          <label>工藝
+            <select v-model="draft.tool.craft">
+              <option v-for="c in CRAFT_IDS" :key="c" :value="c">{{ craftRules.skills[c].name }}</option>
+            </select>
+          </label>
+          <label>階級
+            <select v-model.number="draft.tool.tier">
+              <option :value="1">低階：隨身工具組（第 1～2 級材料，任何地方）</option>
+              <option :value="2">中階：攜帶式工坊（第 3 級材料，旅店、安全房展開）</option>
+            </select>
+          </label>
+        </template>
         <label v-if="draft.tool?.kind === 'light'">燒什麼
           <input v-model="draft.tool.fuel" placeholder="空白：燒自己（火把）或不會燒（照明石）" />
         </label>

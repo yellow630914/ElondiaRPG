@@ -81,6 +81,8 @@ describe('crafting', () => {
   function craft(state: GameState, target: string, natural: number, judgment: Judgment | null = null) {
     prepareAction(state, { kind: 'craft', target, text: '' })
     state.pendingAction!.natural = natural
+    // 這幾個測試看的是材料與成品：拿掉工匠手藝的加值（另外測）
+    state.pendingAction!.situational = state.pendingAction!.situational.filter((x) => !x.label.startsWith('工匠的手藝'))
     const r = resolveAction(state, judgment)
     expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
     return r

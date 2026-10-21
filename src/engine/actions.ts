@@ -23,7 +23,7 @@ import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, apply
 import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
-import { applyCraft, parseCraftTarget } from './craft'
+import { applyCraft, applyMake, craftPart, parseCraftTarget } from './craft'
 import { adultContent, type AdultScene } from './content'
 import { applyDefeatResponse } from './defeat'
 import { applyStoryCheck, refreshStoryMarkers } from './story'
@@ -57,6 +57,8 @@ export interface ActionInput {
 export interface ActionPending extends ActionInput {
   /** 耗時（小時；沒有時用 actions.json 的設定，例如工作的時數） */
   hours?: number
+  /** 擲檢定的隊員（不是主角時；例如由夥伴動手製作） */
+  actor?: string
   id: string
   natural: number
   /** 擲兩次取高（優勢）時的兩個骰值 */
@@ -117,7 +119,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const text = input.text.trim().slice(0, 400)
   if (input.kind === 'free' && !text) throw new Error('請描述你要做什麼')
   const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item)
-  const pc = pcOf(state)
+  // 擲檢定的人：通常是主角；夥伴動手製作時是那位夥伴
+  const pc = (setup.actor && state.party.find((m) => m.id === setup.actor)) || pcOf(state)
   const situational = [...setup.situational, ...conditionModifiers(pc, setup.attr ?? kind.attr)].filter((x) => x.value !== 0)
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
   let used: AbilityUse | undefined
@@ -142,6 +145,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     attr: setup.attr ?? kind.attr,
     ...(setup.hours ? { hours: setup.hours } : {}),
     modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(pc.attrs[a]) + proficiency(pc.level)])) as Record<AttrId, number>,
+    ...(setup.actor && !pc.isPlayer ? { actor: pc.id } : {}),
     situational,
     outcomes: setup.outcomes,
     ...(setup.targetName ? { targetName: setup.targetName } : {}),
@@ -304,8 +308,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         const name = clipText(x.name, 20) || undefined
         const desc = clipText(x.desc, 80) || undefined
         let spec: GearSpec | undefined
-        if (p.kind === 'craft') {
-          const { base, material } = parseCraftTarget(p.target)
+        if (p.kind === 'craft' || p.kind === 'make') {
+          const { base, material } = parseCraftTarget(craftPart(p.target))
           spec = sanitizeGearSpec(x, { maxLevel: 99, maxRarity: 'legendary', base, material })
         } else {
           if (degree !== 'critical' && degree !== 'success') break
@@ -368,7 +372,7 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
   return {
     schema_version: '0.1',
     report_id: newReportId(state),
-    kind: p.kind === 'free' || p.kind === 'craft' ? 'action' : 'social',
+    kind: p.kind === 'free' || p.kind === 'craft' || p.kind === 'make' ? 'action' : 'social',
     time: { start, end: addHours(start, hours) },
     location: { at: state.location, region: loc.region, scene: p.scene },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
@@ -426,7 +430,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   }]
 
   // 打造：AI 提出的成品交給打造的機制處理（不另外給一件）
-  const crafted = p.kind === 'craft' ? judgment?.effects.find((e) => e.type === 'gear') : undefined
+  const crafted = p.kind === 'craft' || p.kind === 'make' ? judgment?.effects.find((e) => e.type === 'gear') : undefined
   if (crafted && judgment) judgment.effects = judgment.effects.filter((e) => e !== crafted)
   const mechanical = applyMechanics(state, report, p, degree, crafted as Extract<RewardEffect, { type: 'gear' }> | undefined)
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
@@ -490,6 +494,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'work': return applyWork(state, report, p.target!, degree)
     case 'patron': return applyPatron(state, report, p.target, degree)
     case 'craft': return applyCraft(state, report, p.target!, degree, crafted)
+    case 'make': return applyMake(state, report, p.target!, degree, crafted)
     case 'defeat_event': return applyDefeatResponse(state, report, degree)
     case 'story': return applyStoryCheck(state, report, p.target!, degree)
     case 'free':

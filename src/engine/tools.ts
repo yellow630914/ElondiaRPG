@@ -1,7 +1,7 @@
 // 雜物的工具模板（items.json 的 tools）：開鎖、陷阱、照明、旅途、露營、保養。
 // 行囊（全隊共用）裡同一種工具只算加值最高的一件；沒有模板的雜物交給 AI 判斷（判定時會看到行囊）。
 
-import { itemDef, itemRules, type ItemTool, type ToolDef, type ToolKind } from './data'
+import { craftRules, itemDef, itemRules, type ItemTool, type ToolDef, type ToolKind } from './data'
 import type { GameState } from './types'
 
 export const TOOL_KINDS = Object.keys(itemRules.tools).filter((k) => !k.startsWith('$')) as ToolKind[]
@@ -21,6 +21,10 @@ export function toolValue(tool: ItemTool): number {
 export function toolSummary(tool: ItemTool | undefined): string {
   const def = toolDef(tool)
   if (!tool || !def) return ''
+  if (tool.kind === 'craft') {
+    const craft = craftRules.skills[tool.craft ?? 'smithing']?.name
+    return `${def.name}：${craftRules.tool_tier_names[(tool.tier ?? 1) - 1] ?? ''}的${craft}工具`
+  }
   return `${def.name}：${def.desc.replace('{bonus}', String(toolValue(tool)))}`
 }
 

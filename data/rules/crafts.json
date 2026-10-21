@@ -1,0 +1,22 @@
+{
+  "$comment": "工藝（見 docs/CRAFTING.md）。五種工藝各自有等級（1～max_level）與經驗：等級 N 可以處理第 N 級以下的材料。自己動手（行動 make）：做的人擲 attr 檢定，再加工藝等級 × level_bonus；DC 照 gear.json 的 craft.dc；第一級材料自己買，費用 = 底材價格 × tier1_cost_ratio（另乘地點物價），第二級以上要自備打造材料（和委託一樣）。工具：材料等級對應 tool_tier（1 低階＝隨身工具組，任何地方；2 中階＝攜帶式工坊，只能在旅店、安全房、自己的房子展開，或在對應的店租用工坊；3 高階＝房子裡的工作台，之後的房屋系統）。經驗 = 材料等級 × xp[成功程度]，升級需要 xp_to_next[目前等級 - 1]。店主的工藝等級依聚落規模 shop_levels 隨機。夥伴：自願加入且親密度達到 companion.min_affinity、或奴隸才肯動手；雇傭的不幫忙。開店中的店主不能邀請入隊。dismiss_penalty：入隊 days 天內遣散，對方親密度 affinity，這座城的物價 × price_mult 持續 notoriety_days 天。",
+  "skills": {
+    "smithing": { "name": "鍛造", "kinds": ["metal"], "attr": "str", "shop": "smithy" },
+    "woodworking": { "name": "木工", "kinds": ["wood"], "attr": "dex", "shop": "smithy" },
+    "leatherwork": { "name": "製革", "kinds": ["leather"], "attr": "dex", "shop": "tailor" },
+    "tailoring": { "name": "裁縫", "kinds": ["cloth"], "attr": "dex", "shop": "tailor" },
+    "jewelcraft": { "name": "珠寶", "kinds": ["jewel"], "attr": "int", "shop": "jeweler" }
+  },
+  "max_level": 5,
+  "level_bonus": 1,
+  "xp_to_next": [6, 15, 30, 50],
+  "xp": { "critical": 3, "success": 2, "partial": 1, "fail": 1, "fumble": 0 },
+  "tool_tier": [1, 1, 2, 3, 3],
+  "tool_tier_names": ["低階（隨身工具組）", "中階（工坊）", "高階（房子的工作台）"],
+  "safe_points": ["inn", "safe"],
+  "workshop_rent": { "per_hour_cc": 6 },
+  "self": { "hours": 8, "tier1_cost_ratio": 0.5 },
+  "shop_levels": { "village": [1, 2], "outpost": [1, 2], "fortress": [2, 2], "town": [2, 3], "port": [2, 3], "city": [3, 4], "capital": [4, 5] },
+  "companion": { "min_affinity": 30 },
+  "dismiss_penalty": { "days": 3, "affinity": -20, "price_mult": 1.1, "notoriety_days": 7 }
+}

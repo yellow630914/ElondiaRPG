@@ -10,7 +10,8 @@
 // 這裡提供參考 DC、各成功程度的機制結果，以及套用結果的函式。
 
 import type { AdultScene } from './content'
-import { setupCraft } from './craft'
+import { setupCraft, setupMake } from './craft'
+import { isShopStaff } from './crafting'
 import { setupStoryCheck } from './story'
 import { setupDefeatEvent } from './defeat'
 import { lifeTier, mod, snapshot } from './character'
@@ -240,7 +241,8 @@ export function invitable(state: GameState): NpcRecord[] {
   return Object.values(state.relationships ?? {})
     .filter((r) => !inParty.has(r.id) && r.affinity >= min && !state.flags[`invite_wait:${r.id}`])
     .map((r) => npcRecord(state, r.id))
-    .filter((rec): rec is NpcRecord => !!rec && presentHere(state, rec.id))
+    // 開店中的店主、公會職員：得顧店，不能邀請入隊
+    .filter((rec): rec is NpcRecord => !!rec && presentHere(state, rec.id) && !isShopStaff(rec))
 }
 
 export function inviteDc(state: GameState, npcId: string): number {
@@ -564,6 +566,8 @@ export interface ActionSetup {
   hours?: number
   /** 成人向：可能進入的親密場景（content.ts 的 adultScene） */
   adultScene?: AdultScene
+  /** 擲檢定的人（沒有時是主角；例如由夥伴動手製作） */
+  actor?: string
 }
 
 export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string): ActionSetup {
@@ -641,6 +645,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupPatron(state, target)
     case 'craft':
       return setupCraft(state, target)
+    case 'make':
+      return setupMake(state, target)
     case 'story':
       return setupStoryCheck(state, target)
     case 'defeat_event':

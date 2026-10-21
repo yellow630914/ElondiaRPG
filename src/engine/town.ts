@@ -4,7 +4,7 @@ import { abilityQuality, proficiency, rerollAbilityChoices, snapshot } from './c
 import { dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit } from './guild'
 import { startCombat, type CombatState } from './combat'
 import {
-  abilityDef, attributeRules, combatRules, dungeonEncounters, economy, itemDef, locationById, npcs, regionById,
+  craftRules, abilityDef, attributeRules, combatRules, dungeonEncounters, economy, itemDef, locationById, npcs, regionById,
   townQuestsPerTown, townQuestsRefreshDays, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
 import { roll, withBonus } from './rng'
@@ -140,7 +140,23 @@ export function dismiss(state: GameState, npcId: string): Report {
   leaveParty(state, npcId, report, '遣散')
   report.outcome.summary = `${npc.name}離開了隊伍。`
   report.outcome.tags = ['離隊']
+  // 入隊沒多久就遣散：對方覺得被利用，消息傳開，這座城的物價上漲一陣子
+  const pen = craftRules.dismiss_penalty
+  if (npc.joined && hoursBetween(npc.joined, state.time) < pen.days * 24) {
+    const rel = state.relationships?.[npcId]
+    if (rel) {
+      const after = Math.max(-100, rel.affinity + pen.affinity)
+      ;(report.changes.affinity ??= []).push({ npc: npcId, delta: after - rel.affinity, after, reason: '才入隊沒多久就被遣散' })
+    }
+    state.flags[`notoriety:${state.location}`] = state.time.day + pen.notoriety_days
+    report.outcome.summary += `才入隊沒幾天就被遣散，${npc.name}覺得被利用了；這件事在${locationById(state.location).name}傳開，商店對你的開價高了一些。`
+    report.outcome.tags.push('用完就丟')
+  }
   return commitReport(state, report)
+}
+
+function hoursBetween(a: { day: number; hour?: number }, b: { day: number; hour?: number }): number {
+  return (b.day - a.day) * 24 + (b.hour ?? 0) - (a.hour ?? 0)
 }
 
 // ---- 冒險者公會 ----
