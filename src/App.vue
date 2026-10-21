@@ -81,8 +81,20 @@ function onKey(e: KeyboardEvent) {
     askQuickLoad()
   }
 }
-onMounted(() => window.addEventListener('keydown', onKey))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+// 自動保存失敗時，離開頁面前提醒一下
+function onLeave(e: BeforeUnloadEvent) {
+  if (!game.saveWarning) return
+  e.preventDefault()
+  e.returnValue = ''
+}
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('beforeunload', onLeave)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('beforeunload', onLeave)
+})
 </script>
 
 <template>
@@ -107,6 +119,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   <Transition name="fade">
     <div v-if="game.notice" class="notice">{{ game.notice }}</div>
   </Transition>
+
+  <div v-if="game.saveWarning" class="error row save-warning">
+    <span>💾⚠️ {{ game.saveWarning }}</span>
+    <button class="small" style="margin-left: auto" @click="showSaves = true">💾 存讀檔</button>
+  </div>
 
   <div v-if="game.error" class="error row">
     <span>⚠️ {{ game.error }}</span>
@@ -198,6 +215,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius);
   padding: 6px 14px; box-shadow: 0 6px 20px #000a;
 }
+.save-warning { position: sticky; top: 0; z-index: 50; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 

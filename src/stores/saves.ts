@@ -1,8 +1,8 @@
-// 存檔欄位：手動存檔、快速存檔、自動存檔。
+// 存檔欄位：手動存檔、快速存檔、自動存檔；以及一直自動保存的「進行中的遊戲」。
 //
-// 目前進行中的遊戲一直自動存在 localStorage（elondia.save）；這裡的「存檔欄位」是另外保存的快照，
-// 可以隨時讀回。存檔可能很大（報告與敘事會越來越多），所以放在 IndexedDB；
+// 存檔可能很大（報告與敘事會越來越多），所以都放在 IndexedDB（elondia 資料庫）；
 // 瀏覽器不支援 IndexedDB 時（或測試環境）改用 localStorage。
+// 進行中的遊戲以前存在 localStorage（elondia.save 等），第一次啟動新版時會搬進 IndexedDB。
 
 import { locationById } from '@/engine/data'
 import type { GameState } from '@/engine/types'
@@ -83,8 +83,31 @@ export interface SlotStore {
 }
 
 const DB_NAME = 'elondia'
+const DB_VERSION = 2
 const META = 'slot_meta'
 const DATA = 'slot_data'
+/** 進行中的遊戲：state、narrations、usage 三筆 JSON 文字 */
+const CURRENT = 'current'
+
+let dbPromise: Promise<IDBDatabase> | null = null
+/** 存檔欄位與進行中的遊戲共用同一個資料庫連線（版本升級時才不會互相卡住） */
+function openDb(): Promise<IDBDatabase> {
+  dbPromise ??= new Promise((resolve, reject) => {
+    const r = indexedDB.open(DB_NAME, DB_VERSION)
+    r.onupgradeneeded = () => {
+      const d = r.result
+      if (!d.objectStoreNames.contains(META)) d.createObjectStore(META, { keyPath: 'id' })
+      if (!d.objectStoreNames.contains(DATA)) d.createObjectStore(DATA)
+      if (!d.objectStoreNames.contains(CURRENT)) d.createObjectStore(CURRENT)
+    }
+    r.onsuccess = () => resolve(r.result)
+    r.onerror = () => reject(r.error ?? new Error('打不開存檔資料庫'))
+    r.onblocked = () => reject(new Error('存檔資料庫被其他分頁占用，請關掉其他《埃隆迪亞大陸》分頁後重新整理'))
+  })
+  // 打不開時下次再試
+  dbPromise.catch(() => (dbPromise = null))
+  return dbPromise
+}
 
 function request<T>(r: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -102,17 +125,7 @@ function done(tx: IDBTransaction): Promise<void> {
 }
 
 function indexedDbStore(): SlotStore {
-  let db: Promise<IDBDatabase> | null = null
-  const open = () =>
-    (db ??= new Promise((resolve, reject) => {
-      const r = indexedDB.open(DB_NAME, 1)
-      r.onupgradeneeded = () => {
-        r.result.createObjectStore(META, { keyPath: 'id' })
-        r.result.createObjectStore(DATA)
-      }
-      r.onsuccess = () => resolve(r.result)
-      r.onerror = () => reject(r.error)
-    }))
+  const open = openDb
   return {
     async list() {
       const d = await open()
@@ -195,3 +208,140 @@ export function useSlotStore(s: SlotStore) {
 }
 
 export { localStorageStore }
+
+// ---- 進行中的遊戲 ----
+
+export type CurrentPart = 'state' | 'narrations' | 'usage'
+/** 每一部分的 JSON 文字 */
+export type CurrentData = Partial<Record<CurrentPart, string>>
+
+/** 舊版放在 localStorage 的 key（localStorage 的儲存位置也沿用） */
+export const CURRENT_LS_KEYS: Record<CurrentPart, string> = {
+  state: 'elondia.save',
+  narrations: 'elondia.narrations',
+  usage: 'elondia.usage',
+}
+const PARTS = Object.keys(CURRENT_LS_KEYS) as CurrentPart[]
+
+export interface CurrentStore {
+  /** 存在哪裡（顯示用） */
+  kind: 'indexeddb' | 'localstorage'
+  read(): Promise<CurrentData>
+  write(data: CurrentData): Promise<void>
+  clear(): Promise<void>
+}
+
+function readLocalCurrent(): CurrentData {
+  const out: CurrentData = {}
+  for (const p of PARTS) {
+    try {
+      const raw = localStorage.getItem(CURRENT_LS_KEYS[p])
+      if (raw) out[p] = raw
+    } catch {
+      // 被封鎖時當作沒有
+    }
+  }
+  return out
+}
+
+function clearLocalCurrent() {
+  for (const p of PARTS) {
+    try {
+      localStorage.removeItem(CURRENT_LS_KEYS[p])
+    } catch {
+      // 略過
+    }
+  }
+}
+
+function localCurrentStore(): CurrentStore {
+  return {
+    kind: 'localstorage',
+    async read() {
+      return readLocalCurrent()
+    },
+    async write(data) {
+      // 空間不足時丟出錯誤，由遊戲顯示警告
+      for (const p of PARTS) if (data[p] !== undefined) localStorage.setItem(CURRENT_LS_KEYS[p], data[p]!)
+    },
+    async clear() {
+      clearLocalCurrent()
+    },
+  }
+}
+
+function indexedDbCurrentStore(): CurrentStore {
+  return {
+    kind: 'indexeddb',
+    async read() {
+      const d = await openDb()
+      const store = d.transaction(CURRENT).objectStore(CURRENT)
+      const out: CurrentData = {}
+      for (const p of PARTS) {
+        const v = await request(store.get(p) as IDBRequest<string | undefined>)
+        if (typeof v === 'string') out[p] = v
+      }
+      return out
+    },
+    async write(data) {
+      const d = await openDb()
+      const tx = d.transaction(CURRENT, 'readwrite')
+      for (const p of PARTS) if (data[p] !== undefined) tx.objectStore(CURRENT).put(data[p], p)
+      await done(tx)
+    },
+    async clear() {
+      const d = await openDb()
+      const tx = d.transaction(CURRENT, 'readwrite')
+      tx.objectStore(CURRENT).clear()
+      await done(tx)
+    },
+  }
+}
+
+let current: CurrentStore | null = null
+
+export function currentStore(): CurrentStore {
+  current ??= typeof indexedDB !== 'undefined' ? indexedDbCurrentStore() : localCurrentStore()
+  return current
+}
+
+/** 測試用：換成指定的儲存位置 */
+export function useCurrentStore(s: CurrentStore | null) {
+  current = s
+}
+
+let preloaded: CurrentData | null = null
+
+/**
+ * 啟動時（掛上畫面之前）讀出進行中的遊戲；IndexedDB 還沒有、localStorage 有舊版的資料時搬過去。
+ * IndexedDB 打不開時改用 localStorage。
+ */
+export async function preloadCurrent(): Promise<void> {
+  const legacy = readLocalCurrent()
+  try {
+    const store = currentStore()
+    const data = await store.read()
+    if (data.state || store.kind === 'localstorage') {
+      preloaded = data
+      // 已經搬過了：清掉舊版殘留的 localStorage
+      if (store.kind === 'indexeddb' && legacy.state) clearLocalCurrent()
+      return
+    }
+    if (legacy.state) {
+      await store.write(legacy)
+      clearLocalCurrent()
+    }
+    preloaded = legacy
+  } catch (e) {
+    console.warn('進行中的遊戲改存在 localStorage：', e)
+    current = localCurrentStore()
+    preloaded = legacy
+  }
+}
+
+/** 遊戲 store 建立時取用啟動時讀出的資料；沒有預先讀過時（測試）直接讀 localStorage */
+export function takePreloaded(): CurrentData {
+  const data = preloaded ?? readLocalCurrent()
+  preloaded = null
+  return data
+}

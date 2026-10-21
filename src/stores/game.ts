@@ -33,12 +33,10 @@ import { providerInfo, type ProviderId, type TokenUsage } from '@/narrator/provi
 import { usePrompts } from './prompts'
 import { AI_FEATURES, useSettings, type AiFeature } from './settings'
 import {
-  AUTO_SLOTS, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, type SaveData, type SlotMeta,
+  AUTO_SLOTS, currentStore, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, takePreloaded,
+  type CurrentData, type SaveData, type SlotMeta,
 } from './saves'
 
-const SAVE_KEY = 'elondia.save'
-const NARRATION_KEY = 'elondia.narrations'
-const USAGE_KEY = 'elondia.usage'
 /** 不屬於任何一則日誌的 AI 呼叫（酒館候選人、商店清單、談判方式、失敗的判定） */
 export const OTHER_USAGE = '_other'
 
@@ -82,21 +80,19 @@ export function usageFeatureName(f: AiFeature): string {
   return AI_FEATURES.find((x) => x.id === f)?.name ?? f
 }
 
-function readJson<T>(key: string): T | null {
+function parseJson<T>(raw: string | undefined): T | null {
   try {
-    const raw = localStorage.getItem(key)
     return raw ? (JSON.parse(raw) as T) : null
   } catch {
     return null
   }
 }
 
-function writeJson(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // 儲存空間不足或被封鎖時略過；遊戲仍可繼續
-  }
+/** 儲存失敗的原因（給玩家看） */
+function saveFailure(e: unknown): string {
+  const name = e instanceof DOMException ? e.name : ''
+  if (name === 'QuotaExceededError') return '瀏覽器的儲存空間不足'
+  return e instanceof Error ? e.message : String(e)
 }
 
 export interface NarrationState {
@@ -149,12 +145,15 @@ function load(s: GameState): GameState {
 }
 
 export const useGame = defineStore('game', () => {
-  const saved = readJson<GameState>(SAVE_KEY)
+  const boot = takePreloaded()
+  const saved = parseJson<GameState>(boot.state)
   const state = ref<GameState | null>(saved ? load(saved) : null)
-  const narrations = ref<Record<string, NarrationState>>(readJson(NARRATION_KEY) ?? {})
+  const narrations = ref<Record<string, NarrationState>>(parseJson(boot.narrations) ?? {})
   /** token 用量：日誌 id（或 OTHER_USAGE）→ 累計 */
-  const usage = ref<Record<string, UsageEntry>>(readJson(USAGE_KEY) ?? {})
+  const usage = ref<Record<string, UsageEntry>>(parseJson(boot.usage) ?? {})
   const error = ref<string | null>(null)
+  /** 自動保存失敗：一直顯示到下一次保存成功 */
+  const saveWarning = ref<string | null>(null)
   /** AI 正在判定主動行動 */
   const judging = ref(false)
   /** 行動備註：下一次委託或旅行時交給 AI 的玩家意圖 */
@@ -172,11 +171,41 @@ export const useGame = defineStore('game', () => {
 
   const pc = computed(() => (state.value ? player(state.value) : null))
 
+  // 自動保存：每次動作後把整份遊戲寫進 IndexedDB。寫入是非同步的，寫到一半又有新的動作時，
+  // 只保留最新的一份，等這次寫完再寫
+  let pendingWrite: CurrentData | null = null
+  let writing: Promise<void> | null = null
+
   function save() {
-    if (state.value) writeJson(SAVE_KEY, state.value)
     const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
-    writeJson(NARRATION_KEY, finished)
-    writeJson(USAGE_KEY, usage.value)
+    pendingWrite = {
+      ...(state.value ? { state: JSON.stringify(state.value) } : {}),
+      narrations: JSON.stringify(finished),
+      usage: JSON.stringify(usage.value),
+    }
+    writing ??= flushSave()
+  }
+
+  async function flushSave() {
+    try {
+      while (pendingWrite) {
+        const data = pendingWrite
+        pendingWrite = null
+        try {
+          await currentStore().write(data)
+          saveWarning.value = null
+        } catch (e) {
+          saveWarning.value = `自動保存失敗（${saveFailure(e)}）：重新整理或關掉頁面會失去最近的進度。請先用「💾 存讀檔」匯出存檔，或刪掉用不到的存檔欄位與形象圖再繼續。`
+        }
+      }
+    } finally {
+      writing = null
+    }
+  }
+
+  /** 等目前的自動保存寫完（測試與讀檔前用） */
+  async function flushed(): Promise<void> {
+    while (writing) await writing
   }
 
   /** 執行引擎動作；錯誤訊息顯示在畫面上而不是丟出。 */
@@ -406,9 +435,16 @@ export const useGame = defineStore('game', () => {
     state.value = null
     narrations.value = {}
     usage.value = {}
-    localStorage.removeItem(SAVE_KEY)
-    localStorage.removeItem(NARRATION_KEY)
-    localStorage.removeItem(USAGE_KEY)
+    pendingWrite = null
+    void (async () => {
+      await flushed()
+      try {
+        await currentStore().clear()
+        saveWarning.value = null
+      } catch (e) {
+        saveWarning.value = `清除進行中的遊戲失敗（${saveFailure(e)}）`
+      }
+    })()
   }
 
 
@@ -602,7 +638,7 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump,
+    state, narrations, error, saveWarning, flushed, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,

@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { localStorageStore, parseSaveFile, QUICK_SLOT, useSlotStore } from '@/stores/saves'
+import { localStorageStore, parseSaveFile, preloadCurrent, QUICK_SLOT, useCurrentStore, useSlotStore, type CurrentData, type CurrentStore } from '@/stores/saves'
 import { useGame } from '@/stores/game'
 
 describe('save slots', () => {
@@ -56,5 +56,84 @@ describe('save slots', () => {
     await g.deleteSlot(imported.id)
     expect(g.slots).toHaveLength(0)
     expect(() => parseSaveFile('not json')).toThrow()
+  })
+})
+
+describe('current game storage', () => {
+  /** 記憶體裡的「IndexedDB」；fail 為 true 時寫入失敗 */
+  function memoryStore() {
+    const data: CurrentData = {}
+    const s: CurrentStore & { data: CurrentData; fail: boolean } = {
+      kind: 'indexeddb', data, fail: false,
+      async read() { return { ...data } },
+      async write(d) {
+        if (s.fail) throw new DOMException('full', 'QuotaExceededError')
+        Object.assign(data, d)
+      },
+      async clear() { for (const k of Object.keys(data)) delete data[k as keyof CurrentData] },
+    }
+    return s
+  }
+
+  beforeEach(() => {
+    localStorage.clear()
+    useSlotStore(localStorageStore())
+  })
+  afterEach(() => useCurrentStore(null))
+
+  it('moves an old localStorage game into IndexedDB on start-up', async () => {
+    const store = memoryStore()
+    useCurrentStore(store)
+    setActivePinia(createPinia())
+    const g = useGame()
+    g.start('艾倫', 'human', 'fighter')
+    await g.flushed()
+    // 舊版：存在 localStorage
+    localStorage.setItem('elondia.save', store.data.state!)
+    localStorage.setItem('elondia.usage', '{}')
+    await store.clear()
+    await preloadCurrent()
+    expect(store.data.state).toContain('艾倫')
+    expect(localStorage.getItem('elondia.save')).toBeNull()
+    setActivePinia(createPinia())
+    expect(useGame().state!.party[0]!.name).toBe('艾倫')
+  })
+
+  it('warns when the auto-save cannot be written, until a later save succeeds', async () => {
+    const store = memoryStore()
+    useCurrentStore(store)
+    setActivePinia(createPinia())
+    const g = useGame()
+    g.start('艾倫', 'human', 'fighter')
+    await g.flushed()
+    expect(g.saveWarning).toBeNull()
+    store.fail = true
+    g.state!.money_cc = 3
+    g.editProfile({})
+    await g.flushed()
+    expect(g.saveWarning).toContain('儲存空間不足')
+    store.fail = false
+    g.editProfile({})
+    await g.flushed()
+    expect(g.saveWarning).toBeNull()
+    expect(JSON.parse(store.data.state!).money_cc).toBe(3)
+  })
+
+  it('keeps only the newest write when actions come faster than the disk', async () => {
+    const store = memoryStore()
+    let writes = 0
+    const write = store.write
+    store.write = async (d) => { writes++; await new Promise((r) => setTimeout(r, 5)); return write(d) }
+    useCurrentStore(store)
+    setActivePinia(createPinia())
+    const g = useGame()
+    g.start('艾倫', 'human', 'fighter')
+    for (let i = 0; i < 5; i++) {
+      g.state!.money_cc = 100 + i
+      g.editProfile({})
+    }
+    await g.flushed()
+    expect(writes).toBeLessThanOrEqual(2)
+    expect(JSON.parse(store.data.state!).money_cc).toBe(104)
   })
 })
