@@ -3,7 +3,8 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { enemies, itemDef, npcs as namedNpcs } from '@/engine/data'
+import { enemies, itemDef, npcs as namedNpcs, stories } from '@/engine/data'
+import { builtinStory, flagUsage, sanitizeStory, type StoryMod } from '@/engine/storyMods'
 import {
   applyContent, builtinEnemy, builtinNpc, emptyMods, normalizeMods, sanitizeBase, sanitizeEnemy, sanitizeItem, sanitizeMaterial, sanitizeNpc,
   type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
@@ -165,10 +166,27 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 特殊任務 ----
+
+  function saveStory(id: string, draft: Partial<StoryMod>) {
+    mods.value.stories[id] = sanitizeStory(id, draft, !builtinStory(id))
+    save()
+  }
+  function deleteStory(id: string) {
+    if (!mods.value.stories[id]?.custom) throw new Error('內建的特殊任務不能刪除')
+    delete mods.value.stories[id]
+    save()
+  }
+  function restoreStory(id: string) {
+    if (!mods.value.stories[id]?.custom) delete mods.value.stories[id]
+    save()
+  }
+
   /** 內容頁籤裡用過的劇情旗標（自動完成用） */
   function knownFlags(): string[] {
     const set = new Set<string>()
     for (const n of namedNpcs) for (const f of [...(n.requires?.flags ?? []), ...(n.requires?.flags_none ?? [])]) set.add(f)
+    for (const s of stories) for (const u of flagUsage(s)) set.add(u.flag)
     return [...set].sort()
   }
 
@@ -193,7 +211,7 @@ export const useContent = defineStore('content', () => {
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
-    saveNpc, deleteNpc, restoreNpc, knownFlags,
+    saveNpc, deleteNpc, restoreNpc, saveStory, deleteStory, restoreStory, knownFlags,
     exportMods, importMods, resetAll,
   }
 })

@@ -1,0 +1,105 @@
+{
+  "$comment": "特殊任務（人工編寫的任務鏈）。格式見 docs/STORY_QUESTS.md；可以在「🛠️ 內容 → ⭐ 特殊任務」編輯。旗標名稱存在 GameState.flags 的 story:<名稱>。start.kind：guild（公會）、npc（固定 NPC）、travel（旅途中的事件）、informant（情報商）、manual（只由其他事件開啟）。任務點的 at.where：settlement（在聚落裡）、cell（站在某種設施上）、npc（某位固定 NPC 在身邊）、outskirts（近郊的 ⭐）、dungeon（地下城某一層的 ⭐）。kind：story（劇情）、check（判定）、combat（戰鬥）、choice（選擇）。",
+  "version": 1,
+  "stories": [
+    {
+      "id": "lost_relic",
+      "title": "失竊的聖環徽記",
+      "summary": "索里耶爾神殿的聖環徽記被人偷走了，見習修女瑟琳拜託你幫忙找回來。",
+      "rank": "F",
+      "start": {
+        "kind": "npc",
+        "npc": "npc_selene",
+        "text": "瑟琳臉色發白地拉住你：神殿供奉的聖環徽記昨夜不見了，主教還沒發現。她不敢聲張，只能私下拜託信得過的冒險者。"
+      },
+      "start_flags": ["relic_started"],
+      "nodes": [
+        {
+          "id": "ask_tavern",
+          "title": "到索里耶爾的酒館打聽消息",
+          "text": "酒館老闆擦著杯子回想：昨晚有個戴兜帽的瘦子在角落喝悶酒，付錢時掉出一枚銀色的東西，之後往城外的方向走了。",
+          "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
+          "requires": { "flags": ["relic_started"] },
+          "kind": "story",
+          "success": {
+            "text": "瑟琳聽了堅持要一起去找：「那是我們的聖物，我不能只在神殿裡祈禱。」",
+            "set_flags": ["relic_lead"],
+            "join": "npc_selene"
+          }
+        },
+        {
+          "id": "track",
+          "title": "在索里耶爾近郊追查兜帽人的足跡",
+          "text": "城外的泥地上有一串新鮮的腳印，混在商隊的車轍之間，時有時無。",
+          "at": { "where": "outskirts", "location": "soriel" },
+          "requires": { "flags": ["relic_lead"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 12 },
+          "success": {
+            "text": "足跡一路往低語墓穴延伸，草叢裡還掉著一片沾了蠟的兜帽碎布。",
+            "set_flags": ["relic_trail"]
+          }
+        },
+        {
+          "id": "crypt_camp",
+          "title": "到低語墓穴的周邊找出盜賊",
+          "text": "墓穴入口附近升著一堆小火，兩個盜賊正在分贓，其中一人手上把玩著一枚刻著聖環的徽記。",
+          "at": { "where": "dungeon", "location": "whisper_crypt", "layer": "outskirts" },
+          "requires": { "flags": ["relic_trail"] },
+          "kind": "combat",
+          "enemies": [["bandit", 2]],
+          "success": {
+            "text": "盜賊倒下後，你從他的懷裡拿回了聖環徽記。",
+            "set_flags": ["relic_found"]
+          }
+        },
+        {
+          "id": "return",
+          "title": "決定聖環徽記的去向",
+          "text": "聖環徽記在你手上沉甸甸的。神殿就在眼前，但你也知道黑市的人願意出好價錢。",
+          "at": { "where": "cell", "location": "soriel", "cell": "temple" },
+          "requires": { "flags": ["relic_found"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "交還給神殿",
+              "success": {
+                "text": "瑟琳鬆了一口氣，偷偷把徽記放回祭壇。主教始終不知道這件事，但瑟琳把這份恩情記在心裡。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "affinity", "npc": "npc_selene", "delta": 15, "reason": "找回了聖環徽記" }
+                ],
+                "leave": "npc_selene",
+                "complete": true
+              }
+            },
+            {
+              "label": "說服瑟琳把它賣掉",
+              "check": { "attr": "cha", "dc": 16 },
+              "success": {
+                "text": "瑟琳猶豫了很久，最後別過頭去，讓你把徽記交給了黑市的人。",
+                "effects": [
+                  { "type": "money", "amount": 400 },
+                  { "type": "affinity", "npc": "npc_selene", "delta": -20, "reason": "賣掉了聖物" }
+                ],
+                "set_flags": ["relic_sold"],
+                "leave": "npc_selene",
+                "complete": true
+              },
+              "fail": {
+                "text": "瑟琳氣得發抖，一把搶回徽記：「我看錯你了。」她頭也不回地走進神殿。",
+                "effects": [{ "type": "affinity", "npc": "npc_selene", "delta": -10, "reason": "想賣掉聖物" }],
+                "leave": "npc_selene",
+                "fail_quest": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [
+        { "type": "xp", "amount": 120 },
+        { "type": "item", "name": "治療藥劑", "qty": 2 }
+      ]
+    }
+  ]
+}

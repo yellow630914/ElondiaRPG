@@ -25,12 +25,14 @@ function current(): NpcMod {
   return clone(content.mods.npcs[props.id] ?? (namedNpcs.find((n) => n.id === props.id) as NpcMod))
 }
 const draft = ref<NpcMod>(current())
-const saved = ref(JSON.stringify(draft.value))
+// 比較時略過空的條件（表單會先建立空的 requires 物件）
+const snap = (v: unknown) => JSON.stringify(v, (k, x) => (k === 'requires' && x && !x.flags?.length && !x.flags_none?.length ? undefined : x))
+const saved = ref(snap(draft.value))
 watch(() => props.id, () => {
   draft.value = current()
-  saved.value = JSON.stringify(draft.value)
+  saved.value = snap(draft.value)
 })
-const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
+const dirty = computed(() => snap(draft.value) !== saved.value)
 const builtin = computed(() => !!builtinNpc(props.id))
 const edited = computed(() => builtin.value && !!content.mods.npcs[props.id])
 
@@ -44,7 +46,7 @@ const tags = computed(() => Object.entries(npcTags.tags).filter(([, t]) => t.kin
 const placeMode = computed({
   get: () => (draft.value.fixed ? 'fixed' : 'haunts'),
   set: (v: string) => {
-    if (v === 'fixed') draft.value.fixed = { area: blockKeys(draft.value.location)[0]!, x: 0, y: 0 }
+    if (v === 'fixed') setBlock(blockKeys(draft.value.location)[0]!)
     else delete draft.value.fixed
   },
 })
@@ -63,6 +65,10 @@ function setBlock(key: string) {
   const i = a?.cells.findIndex((c) => c.kind !== 'wall' && c.kind !== 'water') ?? -1
   if (a && i >= 0) draft.value.fixed = { area: key, x: i % a.width, y: Math.floor(i / a.width) }
 }
+// 換了所屬地點：固定的格子跟著換到那裡的第一個區塊
+watch(() => draft.value.location, (loc) => {
+  if (draft.value.fixed && !blockKeys(loc).includes(draft.value.fixed.area)) setBlock(blockKeys(loc)[0]!)
+})
 function addHaunt() {
   ;(draft.value.haunts ??= []).push({ location: draft.value.location, zone: 'town', weight: 1 })
 }
@@ -128,7 +134,7 @@ function save() {
     if (draft.value.requires && !draft.value.requires.flags?.length && !draft.value.requires.flags_none?.length) delete draft.value.requires
     content.saveNpc(props.id, draft.value)
     draft.value = current()
-    saved.value = JSON.stringify(draft.value)
+    saved.value = snap(draft.value)
     game.flash(`已儲存「${draft.value.name}」`)
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
@@ -141,7 +147,7 @@ function restore() {
   if (!confirm(`把「${draft.value.name}」恢復成內建的樣子？`)) return
   content.restoreNpc(props.id)
   draft.value = current()
-  saved.value = JSON.stringify(draft.value)
+  saved.value = snap(draft.value)
 }
 function remove() {
   if (!confirm(`刪除「${draft.value.name}」？用到這個角色的特殊任務會找不到人。`)) return
@@ -211,7 +217,7 @@ function remove() {
       <div class="grid">
         <label>所屬地點
           <select v-model="draft.location">
-            <option v-for="l in settlements" :key="l.id" :value="l.id">{{ regionById(l.region).name }}・{{ l.name }}</option>
+            <option v-for="l in settlements" :key="l.id" :value="l.id">{{ l.name }}（{{ regionById(l.region).name }}）</option>
           </select>
         </label>
         <label>出現的方式

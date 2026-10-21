@@ -82,6 +82,7 @@
       "$comment": "在娼館消費（work.json 的 brothel.patron）；有主人的奴隸不能消費" },
     "unmark": { "name": "解除印記", "attr": "fai", "hours": 2, "effects": ["relationship_text", "flag", "hp"],
       "$comment": "找人解除契約印記：神殿、黑市刻印師或法師（見 slavery.json 的 unmark；屬性依服務）" },
+    "story": { "name": "特殊任務的判定", "attr": "int", "hours": 1, "effects": ["affinity", "relationship_text", "flag", "hp", "item"], "$comment": "特殊任務的判定任務點或有檢定的選項（story.ts）：屬性與 DC 由任務設定，成功與失敗的結果也由任務決定；AI 只能另外加一點點後果" },
     "defeat_event": { "name": "戰敗後的處境", "attr": "cha", "hours": 2, "effects": ["relationship_text", "flag", "hp"],
       "$comment": "成人向的戰敗事件：回應圍上來的敵人（combat.json 的 defeat_event）；三選一或自己描述，結果依成功程度" },
     "craft": { "name": "委託打造", "attr": "int", "hours": 8, "effects": ["affinity", "relationship_text", "flag", "gear"],

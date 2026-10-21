@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { className, enemies, itemDef, itemRules, locationById, npcs as namedNpcs } from '@/engine/data'
+import { className, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, stories } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { builtinBase, builtinEnemy, builtinMaterial, builtinNpc, ENEMY_KINDS, newBase, newEnemy, newItem, newMaterial, newModId, newNpc } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -11,15 +11,18 @@ import EnemyEditor from './content/EnemyEditor.vue'
 import GearEditor from './content/GearEditor.vue'
 import ItemEditor from './content/ItemEditor.vue'
 import NpcEditor from './content/NpcEditor.vue'
+import StoryEditor from './content/StoryEditor.vue'
+import { builtinStory, newStory, START_KINDS } from '@/engine/storyMods'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'npcs'
+type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
   { id: 'items', label: '🎒 物品' },
   { id: 'bases', label: '🗡️ 裝備底材' },
   { id: 'materials', label: '💎 材料' },
   { id: 'npcs', label: '🧑 固定 NPC' },
+  { id: 'stories', label: '⭐ 特殊任務' },
 ]
 const content = useContent()
 const game = useGame()
@@ -27,7 +30,7 @@ const sub = ref<Sub>('enemies')
 const search = ref('')
 const filter = ref<'all' | 'custom' | 'edited'>('all')
 const category = ref('')
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', npcs: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', npcs: '', stories: '' })
 
 const KINDS: Record<string, string> = { metal: '金屬', leather: '皮革', cloth: '布料', wood: '木材', jewel: '寶石' }
 
@@ -49,6 +52,10 @@ const rows = computed<Row[]>(() => {
       .filter((i) => !category.value || i.category === category.value)
       .map((i) => ({ key: i.name, name: i.name, note: `${itemRules.categories[i.category]}・${formatMoney(i.price_cc)}`, status: st(!!m.items[i.name], !!m.items[i.name]?.custom) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
+  } else if (sub.value === 'stories') {
+    list = stories
+      .map((d) => ({ key: d.id, name: d.title, note: `${START_KINDS[d.start.kind]}・${d.nodes.length} 個任務點`, status: st(!!m.stories[d.id], !builtinStory(d.id)) }))
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'npcs') {
     list = namedNpcs
       .map((n) => ({ key: n.id, name: n.name, note: `${locationById(n.location).name}・${n.class ? className(n.class) : n.occupation ?? '普通人'} Lv.${n.level}`, status: st(!!m.npcs[n.id], !builtinNpc(n.id)) }))
@@ -69,7 +76,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), npcs: n(m.npcs) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -77,7 +84,7 @@ const current = computed(() => {
   const key = selected.value[sub.value]
   if (!key) return ''
   const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
-    : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : !!gearRules.materials[key]
+    : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? stories.some((d) => d.id === key) : !!gearRules.materials[key]
   return exists ? key : ''
 })
 
@@ -99,6 +106,10 @@ function create() {
     } else if (sub.value === 'npcs') {
       const id = newModId('npc')
       content.saveNpc(id, newNpc(id))
+      select(id)
+    } else if (sub.value === 'stories') {
+      const id = newModId('story')
+      content.saveStory(id, newStory(id))
       select(id)
     } else if (sub.value === 'bases') {
       const id = newModId('base')
@@ -133,6 +144,11 @@ function duplicate() {
       for (let i = 2; itemDef(name); i++) name = `${key.slice(0, 15)}（複製${i}）`
       content.saveItem(name, { ...JSON.parse(JSON.stringify(itemDef(key))), custom: true })
       select(name)
+    } else if (sub.value === 'stories') {
+      const id = newModId('story')
+      const src = JSON.parse(JSON.stringify(content.mods.stories[key] ?? stories.find((d) => d.id === key)))
+      content.saveStory(id, { ...src, title: `${src.title}（複製）`.slice(0, 30), custom: true })
+      select(id)
     } else if (sub.value === 'npcs') {
       const id = newModId('npc')
       const src = JSON.parse(JSON.stringify(content.mods.npcs[key] ?? namedNpcs.find((n) => n.id === key)))
@@ -154,7 +170,7 @@ function duplicate() {
   }
 }
 
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', npcs: '＋ 新增角色' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
 // ---- 匯出、匯入、重設 ----
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -187,7 +203,7 @@ function resetAll() {
       <span class="small muted">{{ counts[sub] }}</span>
     </nav>
     <p class="small muted note">
-      在這裡新增或修改怪物、物品、裝備底材、材料與固定 NPC。內建的項目可以修改（隨時「恢復預設」），不能刪除；自建的項目可以刪除。
+      在這裡新增或修改怪物、物品、裝備底材、材料、固定 NPC 與特殊任務。內建的項目可以修改（隨時「恢復預設」），不能刪除；自建的項目可以刪除。
       修改存在這個瀏覽器，所有存檔共用，儲存後立刻生效（已經生成的地圖、商店清單要等下次重新生成）。
     </p>
     <p v-if="content.problems.length" class="small warn-text">有些自訂內容沒辦法套用：{{ content.problems.join('；') }}</p>
@@ -226,6 +242,7 @@ function resetAll() {
         <EnemyEditor v-else-if="sub === 'enemies'" :id="current" :key="`e-${current}`" @deleted="select('')" />
         <ItemEditor v-else-if="sub === 'items'" :key="`i-${current}`" :name="current" @renamed="select" @deleted="select('')" />
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
+        <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" />
         <GearEditor v-else-if="sub === 'bases'" :id="current" :key="`b-${current}`" kind="base" @deleted="select('')" />
         <GearEditor v-else :id="current" :key="`m-${current}`" kind="material" @deleted="select('')" />
       </section>

@@ -47,6 +47,17 @@
         "status": { "enum": ["accepted", "progress", "completed", "failed", "abandoned"] }
       }
     },
+    "story": {
+      "type": "object",
+      "description": "特殊任務（人工編寫的任務鏈）：哪個任務、哪個任務點",
+      "required": ["id", "title", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "node": { "type": "string" },
+        "status": { "enum": ["started", "progress", "completed", "failed"] }
+      }
+    },
     "timeline": {
       "type": "array",
       "description": "依時間排序的關鍵節拍。戰鬥時每回合或每個重要動作一筆；旅行時每天或每個遭遇一筆。",
@@ -150,7 +161,7 @@
               "npc": { "type": "string" },
               "name": { "type": "string" },
               "change": { "enum": ["joined", "left", "freed", "enslaved", "escaped", "recaptured", "transferred"] },
-              "bond": { "enum": ["hired", "voluntary", "slave", "leader", "ally"] },
+              "bond": { "enum": ["hired", "voluntary", "slave", "leader", "ally", "guest"] },
               "reason": { "type": "string" }
             }
           }

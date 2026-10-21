@@ -16,6 +16,7 @@ import {
 } from './data'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { questTargets } from './materialQuests'
+import { ensureStoryMarkers } from './story'
 import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
@@ -38,6 +39,8 @@ export interface Cell {
   group?: EncounterGroup
   item?: string
   questId?: string
+  /** 特殊任務的任務點：任務 id:任務點 id */
+  storyNode?: string
   /** 通道：通往的區域與座標 */
   link?: { area: string; x: number; y: number }
   /** 寶箱：這一層怪物的最高等級（決定內容） */
@@ -369,6 +372,7 @@ export function generateOutskirts(state: GameState, loc: Location, rng: Rng): Ar
   }
   ensureQuestMarkers(state, area, rng)
   ensureQuestTargets(state, area, rng, table)
+  ensureStoryMarkers(state, area, rng)
   return area
 }
 
@@ -408,7 +412,8 @@ export function clearQuestMarkers(state: GameState) {
   const active = new Set(state.quests.filter((q) => q.status === 'accepted').map((q) => q.id))
   for (const area of Object.values(state.areas ?? {})) {
     area.cells.forEach((c, i) => {
-      if (c.kind === 'quest' && (!c.questId || !active.has(c.questId))) area.cells[i] = { kind: 'floor' }
+      // 特殊任務的任務點由 story.ts 管理
+      if (c.kind === 'quest' && !c.storyNode && (!c.questId || !active.has(c.questId))) area.cells[i] = { kind: 'floor' }
     })
   }
 }
@@ -492,6 +497,7 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
     used.add(i)
   }
   ensureQuestTargets(state, area, rng, table)
+  ensureStoryMarkers(state, area, rng)
   return area
 }
 
@@ -757,6 +763,7 @@ export function placeOutside(state: GameState) {
     withRng(state, (rng) => {
       ensureQuestMarkers(state, existing, rng)
       ensureQuestTargets(state, existing, rng, wildEncounters(loc.region))
+      ensureStoryMarkers(state, existing, rng)
     })
   }
   const exit = findKind(area, 'exit')!

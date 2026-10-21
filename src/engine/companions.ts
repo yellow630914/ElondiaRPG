@@ -11,6 +11,7 @@
 
 import type { AdultScene } from './content'
 import { setupCraft } from './craft'
+import { setupStoryCheck } from './story'
 import { setupDefeatEvent } from './defeat'
 import { lifeTier, mod, snapshot } from './character'
 import {
@@ -640,6 +641,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupPatron(state, target)
     case 'craft':
       return setupCraft(state, target)
+    case 'story':
+      return setupStoryCheck(state, target)
     case 'defeat_event':
       return setupDefeatEvent(state, target)
     case 'negotiate': {

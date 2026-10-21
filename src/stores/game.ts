@@ -17,6 +17,7 @@ import * as security from '@/engine/security'
 import * as slavery from '@/engine/slavery'
 import * as defeat from '@/engine/defeat'
 import * as social from '@/engine/social'
+import * as story from '@/engine/story'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
@@ -619,6 +620,10 @@ export const useGame = defineStore('game', () => {
     spendAttr: (member: string, attr: AttrId) =>
       run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),
+    // 特殊任務：接下、進行沒有檢定的任務點（劇情、選項、戰鬥）、放棄；有檢定的走 perform({ kind: 'story' })
+    startStory: (id: string) => run((s) => story.startStory(s, id)),
+    playStoryNode: (ref: string, option?: number, intent?: string) => run((s) => story.playNode(s, ref, option, intent)),
+    abandonStory: (id: string) => run((s) => story.abandonStory(s, id)),
     act: (action: combat.CombatAction) => run((s) => combat.act(s, action)),
     finishCombat: () =>
       run((s) => {

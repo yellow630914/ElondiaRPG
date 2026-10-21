@@ -140,6 +140,8 @@ export interface Report {
   party: ActorState[]
   others?: ActorState[]
   quest?: { id?: string; title?: string; rank?: GuildRank; status?: 'accepted' | 'progress' | 'completed' | 'failed' | 'abandoned' }
+  /** 特殊任務：哪個任務、哪個任務點 */
+  story?: { id: string; title: string; node?: string; status: 'started' | 'progress' | 'completed' | 'failed' }
   timeline?: TimelineEntry[]
   outcome: { result: OutcomeResult; summary?: string; tags?: string[] }
   changes: Changes
@@ -279,6 +281,19 @@ export interface NpcRecord extends NpcDef {
   /** 同行的隊伍（一起遭遇） */
   group?: string
   character?: Character
+}
+
+export interface StoryProgress {
+  id: string
+  status: 'active' | 'completed' | 'failed'
+  started: GameTime
+  ended?: GameTime
+  /** 已經結束的任務點 */
+  done: string[]
+  /** 冒險筆記上的經過 */
+  log: { time: GameTime; text: string; node?: string }[]
+  /** 這個任務帶來的任務同行夥伴（任務結束時離隊） */
+  guests?: string[]
 }
 
 export interface PendingDefeat {
@@ -460,6 +475,8 @@ export interface GameState {
   pendingMasterEvent?: PendingMasterEvent
   /** 成人向的戰敗事件：等待玩家回應（回應後才回到入口或城門） */
   pendingDefeat?: PendingDefeat
+  /** 特殊任務的進度（story.ts） */
+  stories?: Record<string, StoryProgress>
   /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */
   masterPass?: Record<string, number>
   masterRefuse?: Record<string, number>

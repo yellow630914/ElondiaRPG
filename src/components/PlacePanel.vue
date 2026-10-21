@@ -15,6 +15,7 @@ import BrothelPanel from './BrothelPanel.vue'
 import GuardStatus from './GuardStatus.vue'
 import MarketPanel from './MarketPanel.vue'
 import NegotiationPanel from './NegotiationPanel.vue'
+import StoryPanel from './StoryPanel.vue'
 import ShopPanel from './ShopPanel.vue'
 import TavernPanel from './TavernPanel.vue'
 import WorkPanel from './WorkPanel.vue'
@@ -226,6 +227,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
       </section>
 
       <NegotiationPanel />
+      <StoryPanel />
 
       <section v-if="activeQuests.length" class="panel">
         <h3>📜 進行中的委託</h3>

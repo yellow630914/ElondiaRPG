@@ -14,6 +14,8 @@ function icon(cell: Cell): string {
   if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap', 'chest'].includes(cell.kind)) return ''
   if (cell.kind === 'trap') return ''
   if (cell.kind === 'resource' && cell.item && /礦|錢/.test(cell.item)) return '💎'
+  // 特殊任務的任務點是 ⭐，委託地點是 ❗
+  if (cell.kind === 'quest' && cell.storyNode) return '⭐'
   if (cell.kind === 'quest' && !game.state?.quests.some((q) => q.id === cell.questId && q.status === 'accepted')) return ''
   return ICON[cell.kind] ?? ''
 }
@@ -21,6 +23,7 @@ function icon(cell: Cell): string {
 function label(cell: Cell): string {
   if (cell.kind === 'trap' && !cell.done) return '道路'
   if (cell.kind === 'trap') return '已觸發的陷阱'
+  if (cell.kind === 'quest' && cell.storyNode) return '特殊任務的任務點'
   return cellName(cell.kind) + (cell.done ? '（已清除）' : '') + (cell.item && !cell.done ? `：${cell.item}` : '')
 }
 

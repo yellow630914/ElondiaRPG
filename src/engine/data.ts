@@ -24,6 +24,7 @@ import itemsJson from '@data/rules/items.json'
 import shopsJson from '@data/rules/shops.json'
 import negotiationsJson from '@data/rules/negotiations.json'
 import workJson from '@data/rules/work.json'
+import storiesJson from '@data/rules/stories.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
 import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality } from './types'
@@ -105,6 +106,107 @@ export interface StoryCond {
   flags?: string[]
   flags_none?: string[]
 }
+
+// ---- 特殊任務（人工編寫的任務鏈，data/rules/stories.json，說明見 docs/STORY_QUESTS.md） ----
+
+/** 任務從哪裡開始 */
+export type StoryStartKind = 'guild' | 'npc' | 'travel' | 'informant' | 'manual'
+export interface StoryStart {
+  kind: StoryStartKind
+  /** guild：哪座城鎮的公會；informant：哪座城鎮的情報商（沒有時任何情報商） */
+  location?: string
+  /** npc：跟這位固定 NPC 說話 */
+  npc?: string
+  /** travel：旅途中遇到的機率（每段旅程），只在前往這些地區時（沒有時任何地區） */
+  chance?: number
+  regions?: string[]
+  /** informant：情報的價格 */
+  price?: number
+  /** 主角至少要幾級 */
+  min_level?: number
+  /** 劇情旗標的條件 */
+  requires?: StoryCond
+  /** 開頭的事件描述（旅途、情報商的開頭；沒有時用任務的簡介） */
+  text?: string
+}
+
+/** 任務點在哪裡觸發 */
+export type StoryWhere = 'settlement' | 'cell' | 'npc' | 'outskirts' | 'dungeon'
+export interface StoryPlace {
+  where: StoryWhere
+  /** 地點 id（npc 時可以不寫：跟著角色走） */
+  location?: string
+  /** cell：站在這種設施上 */
+  cell?: string
+  /** dungeon：放在第幾層（outskirts / shallow / middle / deep） */
+  layer?: DungeonLayerId
+  /** npc：這位固定 NPC 在身邊時 */
+  npc?: string
+}
+
+export interface StoryCheck { attr: AttrId; dc: number }
+
+/** 任務點的結果：旗標、效果、同行的夥伴、任務完成或失敗 */
+export interface StoryOutcome {
+  text?: string
+  set_flags?: string[]
+  clear_flags?: string[]
+  effects?: RewardEffect[]
+  /** 固定 NPC 以「任務同行」加入、離開 */
+  join?: string
+  leave?: string
+  complete?: boolean
+  fail_quest?: boolean
+  /** 這個任務點可以再來一次（沒有時觸發過就結束） */
+  retry?: boolean
+}
+
+export interface StoryOption {
+  label: string
+  check?: StoryCheck
+  success?: StoryOutcome
+  fail?: StoryOutcome
+}
+
+/** 任務點：劇情（直接發生）、判定（檢定）、戰鬥、選擇（多個選項，各自可以有檢定） */
+export type StoryNodeKind = 'story' | 'check' | 'combat' | 'choice'
+export interface StoryNode {
+  id: string
+  /** 冒險筆記上的目標 */
+  title: string
+  /** 觸發時的事件描述（給玩家與 AI） */
+  text: string
+  at: StoryPlace
+  /** 解鎖的條件；沒有時任務一開始就解鎖 */
+  requires?: StoryCond
+  kind: StoryNodeKind
+  check?: StoryCheck
+  /** 戰鬥：怪物（遭遇表的格式）與固定 NPC */
+  enemies?: EncounterGroup
+  foes?: string[]
+  options?: StoryOption[]
+  /** 劇情、判定成功、戰鬥勝利 */
+  success?: StoryOutcome
+  /** 判定失敗、戰鬥落敗或撤退 */
+  fail?: StoryOutcome
+}
+
+export interface StoryDef {
+  id: string
+  title: string
+  summary: string
+  /** 建議的公會等級（顯示用；公會接取時檢查） */
+  rank?: GuildRank
+  start: StoryStart
+  /** 開始時成立的旗標（任務鏈的第一個旗標） */
+  start_flags?: string[]
+  nodes: StoryNode[]
+  /** 完成時的報酬 */
+  rewards?: RewardEffect[]
+}
+
+/** 內建的特殊任務；內容頁籤的修改套用在這份清單上 */
+export const stories = (storiesJson as unknown as { stories: StoryDef[] }).stories
 
 export type NpcKind = 'commoner' | 'adventurer'
 
@@ -655,7 +757,7 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'defeat_event'
+  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'defeat_event' | 'story'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'
 export const actionRules = actionsJson as unknown as {

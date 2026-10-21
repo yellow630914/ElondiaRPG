@@ -26,6 +26,7 @@ import { applyWork } from './work'
 import { applyCraft, parseCraftTarget } from './craft'
 import { adultContent, type AdultScene } from './content'
 import { applyDefeatResponse } from './defeat'
+import { applyStoryCheck, refreshStoryMarkers } from './story'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
 import { npcRecord, type NpcSpec } from './npcs'
 import { presentHere } from './population'
@@ -440,7 +441,10 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     summary: [lead, mechanical, judgment?.summary ?? '', ...notes].filter(Boolean).join(''),
     tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.twist ? ['出乎預料'] : [])],
   }
-  return commitReport(state, report)
+  const committed = commitReport(state, report)
+  // 特殊任務的判定：解鎖或結束的任務點，更新地圖上的 ⭐
+  if (p.kind === 'story') refreshStoryMarkers(state)
+  return committed
 }
 
 /**
@@ -484,6 +488,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'patron': return applyPatron(state, report, p.target, degree)
     case 'craft': return applyCraft(state, report, p.target!, degree, crafted)
     case 'defeat_event': return applyDefeatResponse(state, report, degree)
+    case 'story': return applyStoryCheck(state, report, p.target!, degree)
     case 'free':
     case 'rest_talk': return ''
   }

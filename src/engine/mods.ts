@@ -16,6 +16,7 @@ import {
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
+import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, type StoryMod } from './storyMods'
 import type { GearSlot, GearSpec } from './types'
 
 export type ChestLayer = 'outskirts' | 'shallow' | 'middle' | 'deep'
@@ -65,10 +66,11 @@ export interface ContentMods {
   bases: Record<string, BaseMod>
   materials: Record<string, MaterialMod>
   npcs: Record<string, NpcMod>
+  stories: Record<string, StoryMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -128,6 +130,7 @@ function restore() {
   maps.generation.wild.resource_items.splice(0, Infinity, ...snapshot.gather.wild)
   maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon)
   namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs))
+  restoreStories()
 }
 
 // ---- 遭遇表 ----
@@ -336,6 +339,7 @@ export function applyContent(mods: ContentMods): string[] {
     if (i >= 0) namedNpcs[i] = def
     else namedNpcs.push(def)
   })
+  tryEach('特殊任務', mods.stories, (id, m) => applyStoryMod(id, m))
   return problems
 }
 
@@ -585,6 +589,7 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [name, v] of Object.entries(r.items ?? {})) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
   for (const [id, v] of Object.entries(r.enemies ?? {})) out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id])
   for (const [id, v] of Object.entries(r.npcs ?? {})) out.npcs[id] = sanitizeNpc(id, v, !!v.custom || !builtinNpc(id))
+  for (const [id, v] of Object.entries(r.stories ?? {})) out.stories[id] = sanitizeStory(id, v, !!v.custom || !builtinStory(id))
   return out
 }
 

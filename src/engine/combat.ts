@@ -25,6 +25,7 @@ import { rollDefeatEvent } from './defeat'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { advanceBossHunts } from './materialQuests'
+import { applyStoryCombat, refreshStoryMarkers } from './story'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
@@ -119,6 +120,8 @@ export interface CombatState {
   intent?: string
   /** 由委託觸發的戰鬥；獲勝時推進這個委託 */
   questId?: string
+  /** 特殊任務的戰鬥任務點：結束時依勝負套用結果（story.ts） */
+  story?: { id: string; node: string }
   /** 細部場景，例如「索里耶爾近郊的農田」 */
   scene?: string
   /** 由格子觸發的戰鬥：獲勝時清除這一格 */
@@ -128,6 +131,7 @@ export interface CombatState {
 export interface CombatOptions {
   intent?: string
   questId?: string
+  story?: CombatState['story']
   scene?: string
   cell?: CombatState['cell']
   /** 和 NPC（冒險者）戰鬥：他們的 id */
@@ -191,6 +195,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       affinity: {},
       ...(opts.intent ? { intent: opts.intent } : {}),
       ...(opts.questId ? { questId: opts.questId } : {}),
+      ...(opts.story ? { story: opts.story } : {}),
       ...(opts.scene ? { scene: opts.scene } : {}),
       ...(opts.cell ? { cell: opts.cell } : {}),
     }
@@ -1465,8 +1470,12 @@ export function finishCombat(state: GameState): Report {
   }
   // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）
   if (combat.status === 'defeat' && !rescued) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes))
+  // 特殊任務的戰鬥任務點：依勝負套用結果
+  if (combat.story) applyStoryCombat(state, report, combat.story, combat.status)
   delete state.combat
-  return commitReport(state, report)
+  const committed = commitReport(state, report)
+  if (combat.story) refreshStoryMarkers(state)
+  return committed
 }
 
 /** 和 NPC 戰鬥後：倒下的人死亡（從名單移除），還活著的人敵對 */
