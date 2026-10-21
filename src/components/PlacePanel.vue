@@ -105,7 +105,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
   tailor: '皮革與布料的衣物、護具；也接皮革、布料的打造委託。',
   jeweler: '戒指、項鍊、護符、法器寶珠與寶石材料；也接飾品的打造委託。',
   magic: '各種卷軸，另外每天進一批不一樣的藥劑與材料。',
-  informant: '賣附近地下城、城郊魔物的底細，也能打聽進行中委託的線索。',
+  informant: '賣情報：附近近郊或地下城的事件點（盤踞的強敵、藏寶處、流浪商人），有時還有特殊任務的消息；也能打聽進行中委託的線索。買到的情報記在冒險筆記。',
 }
 </script>
 
@@ -192,6 +192,11 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         <template v-else-if="cell.kind === 'exit' && area.kind === 'wild'">
           <GuardStatus can-pay />
           <button @click="game.returnToTown()">返回{{ here.name }}</button>
+        </template>
+
+        <template v-else-if="cell.kind === 'merchant'">
+          <p class="muted small">照著情報找到的流浪商人：賣城裡少見的材料、藥劑、卷軸與幾件優良裝備。</p>
+          <ShopPanel :key="`wanderer-${s.location}-${s.time.day}`" type="wanderer" />
         </template>
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'side'">

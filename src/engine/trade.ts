@@ -9,15 +9,16 @@
 import { snapshot } from './character'
 import {
   companionRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
-  townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType, type ShopTypeDef,
+  stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
-import { gearName, gearPrice, gearRules, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
+import { gearName, gearPrice, gearRules, randomGear, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
 import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
 import { reputationBand } from './security'
+import { pointOffers, storyOffers } from './intel'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Deal, GameState, Report, ShopState } from './types'
 
@@ -74,7 +75,8 @@ export function itemCategory(state: GameState, name: string): ItemCategory | und
 }
 
 function itemDeal(state: GameState, name: string, stock: number, markup = 1): Deal {
-  const def = itemDef(name)!
+  // 目錄裡的物品，或登錄在存檔的裝備（流浪商人的優良裝備）
+  const def = itemDef(name) ?? state.customItems![name]!
   return {
     id: `item:${name}`,
     title: name,
@@ -118,52 +120,28 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
       const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5)
       for (const i of pickSome(materials, r.materials ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 2), r.material_markup ?? 2))
     }
+    // 流浪商人：幾件隨機的優良裝備
+    for (let n = def.rare_gear ?? 0; n > 0; n--) {
+      const spec = randomGear(rng, pcOf(state).level + 2)
+      if (spec.rarity === undefined || spec.rarity === 'common') spec.rarity = 'uncommon'
+      deals.push(itemDeal(state, registerGear(state, spec), 1))
+    }
     if (def.info) deals.push(...infoDeals(state, def.info))
     for (const sp of def.specials) deals.push(specialDeal(sp))
     return deals
   })
 }
 
-/** 弱點與免疫的簡短說明 */
-function weaknessText(id: string): string {
-  const e = enemies[id]
-  if (!e) return ''
-  const weak = Object.entries(e.resist ?? {}).filter(([, v]) => (v ?? 0) > 0).map(([k]) => damageTypeName(k))
-  const immune = Object.entries(e.resist ?? {}).filter(([, v]) => (v ?? 0) <= -1).map(([k]) => damageTypeName(k))
-  return [weak.length ? `怕${weak.join('、')}` : '', immune.length ? `不怕${immune.join('、')}` : ''].filter(Boolean).join('，')
-}
-
-/** 情報商：同地區每座地下城的層主、這一帶城郊的魔物、進行中委託的線索 */
+/**
+ * 情報商：事件點的情報（近郊或附近地下城某一層的強敵、寶物、流浪商人）、特殊任務的消息、進行中委託的線索。
+ * 事件點與任務消息見 intel.ts。
+ */
 function infoDeals(state: GameState, info: NonNullable<ShopTypeDef['info']>): Deal[] {
-  const loc = locationById(state.location)
   const mult = locationMult(state)
   const deals: Deal[] = []
-  const LAYER: Record<string, string> = { shallow: '淺層', middle: '中層', deep: '深層' }
-  for (const d of geography.locations.filter((l) => l.type === 'dungeon' && l.region === loc.region && dungeonEncounters[l.id])) {
-    const t = dungeonEncounters[d.id]!
-    const bosses = Object.entries(t.bosses ?? { deep: t.boss })
-      .filter(([, g]) => g?.[0])
-      .map(([layer, g]) => {
-        const id = g![0]![0]
-        const w = weaknessText(id)
-        return `${LAYER[layer] ?? layer}層主是${enemies[id]?.name ?? id}${w ? `（${w}）` : ''}`
-      })
-    if (!bosses.length) continue
-    deals.push({
-      id: `info:dungeon:${d.id}`, title: `${d.name}的情報`, desc: '各層層主的底細與弱點。',
-      gives: [{ type: 'money', amount: Math.round(info.dungeon_price * mult) }],
-      gets: [{ type: 'memory', summary: `情報商說：${d.name}的${bosses.join('；')}。`, importance: 2 }, { type: 'flag', key: `intel:${d.id}`, value: true }],
-      stock: 1,
-    })
-  }
-  const wild = [...new Set(wildEncounters(loc.region).flat().map(([id]) => id))].filter((id) => enemies[id])
-  if (wild.length) {
-    deals.push({
-      id: `info:wild:${loc.region}`, title: `${regionById(loc.region).name}城郊的魔物`, desc: '這一帶野外常見的魔物與弱點。',
-      gives: [{ type: 'money', amount: Math.round(info.wild_price * mult) }],
-      gets: [{ type: 'memory', summary: `情報商說，${regionById(loc.region).name}的城郊常見${wild.map((id) => `${enemies[id]!.name}${weaknessText(id) ? `（${weaknessText(id)}）` : ''}`).join('、')}。`, importance: 1 }],
-      stock: 1,
-    })
+  const points = withRng(state, (rng) => pointOffers(state, rng, info.points_per_day, info.point_prices, info.valid_days, mult))
+  for (const o of [...points, ...storyOffers(state, mult)]) {
+    deals.push({ id: o.id, title: o.title, desc: o.desc, gives: [{ type: 'money', amount: o.price }], gets: o.gets, stock: 1 })
   }
   // 只有要檢定的委託用得到線索
   for (const q of state.quests.filter((x) => x.status === 'accepted' && !x.flags?.lead && x.template && townQuestTemplates[x.template]?.dc !== undefined)) {
@@ -284,6 +262,7 @@ export function buyDeal(state: GameState, type: ShopType, dealId: string): Repor
   report.outcome.summary = `在${keeperRec.name}的店裡交易「${deal.title}」${paid ? `，付出 ${paid}` : ''}。${notes.join('；')}`
   // 有人入隊、得到報酬以外的後果時，值得交給 AI 描寫
   if (deal.gets.some((g) => g.type === 'companion' || g.type === 'memory')) report.kind = 'social'
+  if (deal.gets.some((g) => g.type === 'start_story')) report.kind = 'event'
   return commitReport(state, report)
 }
 
@@ -485,6 +464,8 @@ export function effectText(state: GameState, e: RewardEffect, keeper?: string): 
     case 'quest_reward': return `委託報酬 ${e.percent > 0 ? '+' : ''}${e.percent}%`
     case 'quest_flag': return e.key === 'lead' ? '委託線索（檢定 +5）' : e.key === 'suspicious' ? '消息走漏（檢定 -2）' : '委託旗標'
     case 'hp': return '生命值變化'
+    case 'intel': return `情報：${e.intel.title}`
+    case 'start_story': return `開始特殊任務「${stories.find((d) => d.id === e.story)?.title ?? e.story}」`
     case 'ability': return `${e.chance !== undefined && e.chance < 1 ? `${Math.round(e.chance * 100)}% 機率` : ''}${e.choices ? `學習新能力（${e.choices} 選一）` : `領悟${e.ability ? `【${e.ability}】` : '新能力'}`}`
     default: return e.type
   }

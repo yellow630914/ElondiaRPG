@@ -165,6 +165,86 @@
         { "type": "money", "amount": 200 },
         { "type": "xp", "amount": 150 }
       ]
+    },
+    {
+      "id": "smuggler_ledger",
+      "title": "走私者的帳本",
+      "summary": "情報商說，蛇溪洞窟的走私販子把記滿買家名字的帳本藏在淺層的營地裡。",
+      "rank": "E",
+      "start": {
+        "kind": "informant",
+        "price": 120,
+        "text": "情報商壓低聲音：「蛇溪洞窟淺層有個走私販子的營地，他們的帳本記著城裡一半大人物的名字。拿到它，你想交給衛兵還是拿去換錢，都是好買賣。」"
+      },
+      "start_flags": ["ledger_rumor"],
+      "nodes": [
+        {
+          "id": "sneak",
+          "title": "潛入蛇溪洞窟淺層的走私營地",
+          "text": "營地裡堆著貨箱，兩個看守靠在火堆旁打瞌睡，帳本就放在最裡面的帳篷。",
+          "at": { "where": "dungeon", "location": "snake_creek", "layer": "shallow" },
+          "requires": { "flags": ["ledger_rumor"], "flags_none": ["ledger_alarm"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "悄悄摸進帳篷",
+              "check": { "attr": "dex", "dc": 13 },
+              "success": { "text": "你屏住呼吸，把帳本塞進懷裡，看守連眼睛都沒睜開。", "set_flags": ["ledger_got"] },
+              "fail": { "text": "腳下的碎石一滑，看守跳了起來大喊有賊！", "set_flags": ["ledger_alarm"] }
+            },
+            {
+              "label": "直接殺進去",
+              "success": { "text": "你拔出武器衝進營地。", "set_flags": ["ledger_alarm"] }
+            }
+          ]
+        },
+        {
+          "id": "fight",
+          "title": "打倒走私販子",
+          "text": "走私販子的頭目抄起彎刀，手下圍了上來。",
+          "at": { "where": "dungeon", "location": "snake_creek", "layer": "shallow" },
+          "requires": { "flags": ["ledger_alarm"], "flags_none": ["ledger_got"] },
+          "kind": "combat",
+          "enemies": [["smuggler_boss", 1], ["bandit", 2]],
+          "success": { "text": "走私販子倒下了，你從帳篷裡翻出了帳本。", "set_flags": ["ledger_got"] }
+        },
+        {
+          "id": "deliver",
+          "title": "決定帳本的去向（索里耶爾的冒險者公會）",
+          "text": "帳本上密密麻麻記著貨物與買家，有幾個名字你在城裡聽過。",
+          "at": { "where": "cell", "location": "soriel", "cell": "guild" },
+          "requires": { "flags": ["ledger_got"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "交給公會與衛兵",
+              "success": {
+                "text": "公會的職員翻了幾頁，臉色一變，立刻派人通知衛兵。你拿到了一筆賞金，也在公會裡多了幾分名聲。",
+                "effects": [{ "type": "money", "amount": 300 }, { "type": "reputation", "faction": "holy_ring", "delta": 2 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "私下找帳本上的人談價錢",
+              "check": { "attr": "cha", "dc": 14 },
+              "success": {
+                "text": "一位衣著體面的商人付了一大筆錢，換回了寫著他名字的那幾頁。",
+                "effects": [{ "type": "money", "amount": 700 }],
+                "set_flags": ["ledger_blackmail"],
+                "complete": true
+              },
+              "fail": {
+                "text": "對方冷笑著叫來了打手，你只好帶著帳本狼狽地離開，最後還是把它交給了公會。",
+                "effects": [{ "type": "money", "amount": 150 }, { "type": "hp", "target": "pc", "ratio": -0.2 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [
+        { "type": "xp", "amount": 160 }
+      ]
     }
   ]
 }

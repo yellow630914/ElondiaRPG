@@ -17,7 +17,9 @@ import {
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
 import { registerGear } from './gear'
-import type { GameState, GearSpec, NpcRecord, Report } from './types'
+import type { GameState, GearSpec, Intel, NpcRecord, Report } from './types'
+import { addIntel } from './intel'
+import { startStory } from './story'
 
 export type NpcRef = string | NpcSpec
 
@@ -66,10 +68,15 @@ export type RewardEffect =
   | { type: 'gear'; spec: GearSpec; name?: string; desc?: string }
   /** 認識新的人（例如同旅館的旅客）：登錄 NPC、建立人際關係，平常待在 spot */
   | { type: 'meet'; npc: NpcSpec; affinity?: number; to_player?: string; spot?: string }
+  /** 情報：在近郊或地下城的某一層放一個事件點（戰鬥、寶物、流浪商人），記在冒險筆記 */
+  | { type: 'intel'; intel: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> }
+  /** 開始一個特殊任務（情報商賣的任務消息） */
+  | { type: 'start_story'; story: string }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
+  'intel', 'start_story',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -267,6 +274,16 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'quest_flag': {
         const q = state.quests.find((x) => x.id === e.quest)
         if (q) (q.flags ??= {})[e.key] = e.value
+        break
+      }
+      case 'intel': {
+        const it = addIntel(state, { ...e.intel, kind: 'point' })
+        notes.push(`記下情報「${it.title}」`)
+        break
+      }
+      case 'start_story': {
+        startStory(state, e.story, { report })
+        addIntel(state, { kind: 'story', story: e.story, title: report.story?.title ?? e.story, text: report.outcome.summary ?? '' })
         break
       }
     }

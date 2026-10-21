@@ -18,6 +18,7 @@ import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } fro
 import { questTargets } from './materialQuests'
 import { ensureStoryMarkers } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
+import { ensureIntelPoints, finishIntel } from './intel'
 import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
@@ -32,7 +33,7 @@ export type CellKind =
   | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant'
   | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe' | 'chest'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
-  | 'road' | 'waypoint' | 'arrive' | 'event'
+  | 'road' | 'waypoint' | 'arrive' | 'event' | 'merchant'
 
 export interface Cell {
   kind: CellKind
@@ -55,6 +56,8 @@ export interface Cell {
   event?: RoadEvent
   /** 途經或抵達的地點 */
   town?: string
+  /** 情報的事件點（冒險筆記的情報 id） */
+  intel?: string
 }
 
 /** 旅途格子上的事件：auto 原本的旅途事件、normal 普通事件、advanced 高階事件、special 特殊任務的開頭、master 主人的事件 */
@@ -138,7 +141,7 @@ export const CELL_NAME: Record<CellKind, string> = {
   smithy: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', informant: '情報商',
   encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房', chest: '寶箱',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
-  road: '路', waypoint: '途經', arrive: '目的地', event: '事件',
+  road: '路', waypoint: '途經', arrive: '目的地', event: '事件', merchant: '流浪商人',
 }
 
 /** 地圖與場所標題用的圖示：每一種設施都要有 */
@@ -147,7 +150,7 @@ export const CELL_ICON: Partial<Record<CellKind, string>> = {
   smithy: '⚒️', tailor: '🧵', jeweler: '💍', magic: '🔮', informant: '🕵️',
   encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
   stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
-  waypoint: '🏘️', arrive: '🏁', event: '❔',
+  waypoint: '🏘️', arrive: '🏁', event: '❔', merchant: '🧳',
 }
 
 /** 格子的名稱（關閉成人向時，娼館顯示為按摩店） */
@@ -400,6 +403,7 @@ export function generateOutskirts(state: GameState, loc: Location, rng: Rng): Ar
   ensureQuestMarkers(state, area, rng)
   ensureQuestTargets(state, area, rng, table)
   ensureStoryMarkers(state, area, rng)
+  ensureIntelPoints(state, area, rng)
   return area
 }
 
@@ -525,6 +529,7 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   }
   ensureQuestTargets(state, area, rng, table)
   ensureStoryMarkers(state, area, rng)
+  ensureIntelPoints(state, area, rng)
   return area
 }
 
@@ -719,6 +724,8 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
     case 'chest': {
       if (cell.done) return {}
       cell.done = true
+      // 情報的藏寶處：結束這則情報
+      if (cell.intel) finishIntel(state, cell.intel)
       return { report: openChest(state, area, cell.level ?? 1) }
     }
     default:
@@ -864,6 +871,7 @@ export function placeOutside(state: GameState) {
       ensureQuestMarkers(state, existing, rng)
       ensureQuestTargets(state, existing, rng, wildEncounters(loc.region))
       ensureStoryMarkers(state, existing, rng)
+      ensureIntelPoints(state, existing, rng)
     })
   }
   const exit = findKind(area, 'exit')!

@@ -26,6 +26,8 @@ import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { advanceBossHunts } from './materialQuests'
 import { applyStoryCombat, refreshStoryMarkers } from './story'
+import { finishIntel, intelBounty, intelById } from './intel'
+import { applyEffects } from './effects'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
@@ -1472,6 +1474,15 @@ export function finishCombat(state: GameState): Report {
   if (combat.status === 'defeat' && !rescued) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes))
   // 特殊任務的戰鬥任務點：依勝負套用結果
   if (combat.story) applyStoryCombat(state, report, combat.story, combat.status)
+  // 情報裡盤踞的強敵：打倒有額外的報酬
+  const intelId = victory && combat.cell ? state.areas?.[combat.cell.area]?.cells[combat.cell.y * state.areas[combat.cell.area]!.width + combat.cell.x]?.intel : undefined
+  const intel = intelById(state, intelId)
+  if (intel?.status === 'active') {
+    const notes = applyEffects(state, report, intelBounty(intel))
+    finishIntel(state, intel.id)
+    report.outcome.summary = `${report.outcome.summary ?? ''}照著情報打倒了盤踞的魔物${notes.length ? `：${notes.join('，')}` : ''}。`
+    report.outcome.tags = [...(report.outcome.tags ?? []), '情報']
+  }
   delete state.combat
   const committed = commitReport(state, report)
   if (combat.story) refreshStoryMarkers(state)

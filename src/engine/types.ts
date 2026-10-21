@@ -283,6 +283,29 @@ export interface NpcRecord extends NpcDef {
   character?: Character
 }
 
+/** 情報（冒險筆記）：事件點（在近郊或地下城的某一層放一個事件）或特殊任務的消息 */
+export interface Intel {
+  id: string
+  kind: 'point' | 'story'
+  title: string
+  text: string
+  /** 從哪座城鎮的情報商買到、什麼時候 */
+  from: string
+  time: GameTime
+  /** point：哪個地點、哪一層（沒有時是近郊）、什麼事件 */
+  location?: string
+  layer?: 'outskirts' | 'shallow' | 'middle' | 'deep'
+  event?: 'combat' | 'chest' | 'merchant'
+  /** combat：要打的怪物；chest、combat：寶物的等級 */
+  group?: [string, number][]
+  level?: number
+  /** 有效到第幾天（之後事件點消失） */
+  until?: number
+  /** story：特殊任務的 id */
+  story?: string
+  status: 'active' | 'done' | 'expired'
+}
+
 export interface RoadState {
   from: string
   to: string
@@ -503,6 +526,8 @@ export interface GameState {
   roadEvent?: { x: number; template: string }
   /** 在臨時地圖裡：離開時回到的位置 */
   side?: { area: string; back: { area: string; x: number; y: number } }
+  /** 冒險筆記的情報 */
+  intel?: Intel[]
   /** 事件結果要求的移動（進入臨時地圖、改去別的地點），在報告提交之後執行 */
   pendingMove?: { side_map?: string; travel_to?: string }
   /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */

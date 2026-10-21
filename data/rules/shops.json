@@ -93,8 +93,18 @@
       "catalog_tag": "info",
       "buys": ["info"],
       "ai_effects": ["memory", "flag", "affinity", "item"],
-      "info": { "dungeon_price": 120, "wild_price": 60, "quest_price": 80,
-        "$comment": "規則生成的情報：同地區每座地下城的層主與弱點、這一帶城郊的魔物與弱點、進行中委託的線索（委託檢定 +5）" },
+      "info": { "point_prices": [60, 80, 120, 180, 260], "points_per_day": 3, "valid_days": 5, "quest_price": 80, "$comment": "情報分兩種（見 docs/TRAVEL_EVENTS.md 第 5 節）：事件點（在這座城的近郊或 7 天內的地下城某一層放一個事件：盤踞的強敵、藏寶處、流浪商人；價格依層數：近郊、周邊、淺層、中層、深層；valid_days 天內有效），以及特殊任務的消息（stories.json 的 start.kind = informant）。另外還賣進行中委託的線索（委託檢定 +5）。" },
+      "specials": []
+    },
+    "wanderer": {
+      "name": "流浪商人",
+      "cell": "merchant",
+      "keeper": { "classes": ["rogue", "bard"], "title": "流浪商人" },
+      "catalog_tag": "magic",
+      "buys": ["material", "consumable", "info", "equipment"],
+      "ai_effects": ["item", "affinity", "memory"],
+      "random": { "consumables": 5, "materials": 6, "material_markup": 1.6, "max_material_price": [1500, 1500, 1500, 1500], "$comment": "情報裡的流浪商人：卷軸照目錄上架，另外每天隨機上架消耗品、比較少見的材料與幾件優良裝備" },
+      "rare_gear": 3,
       "specials": []
     },
     "tavern": {

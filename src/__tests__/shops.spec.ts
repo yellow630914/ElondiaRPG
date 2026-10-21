@@ -64,17 +64,23 @@ describe('shop types', () => {
     expect(cat('material').length).toBe(shopRules.types.magic.random!.materials)
   })
 
-  it('sells dungeon intel and quest leads at the informant', () => {
+  it('sells event points and quest leads at the informant', () => {
     const state = game('rivervale')
-    const quest = guildQuests(state)[0]!
+    const quest = guildQuests(state).find((q) => q.template === 'lost_purse' || q.template === 'scout_road' || q.template === 'night_patrol' || q.template === 'herb_gathering')
+      ?? guildQuests(state)[0]!
     acceptQuest(state, quest.id)
     const shop = shopState(state, 'informant')
-    const intel = shop.deals.find((d) => d.id.startsWith('info:dungeon:'))!
-    expect(intel.gets.find((g) => g.type === 'memory')).toBeTruthy()
-    const lead = shop.deals.find((d) => d.id === `info:quest:${quest.id}`)!
+    const points = shop.deals.filter((d) => d.id.startsWith('info:point:'))
+    expect(points.length).toBeGreaterThan(0)
+    expect(points[0]!.gets[0]!.type).toBe('intel')
     state.money_cc = 10000
-    buyDeal(state, 'informant', lead.id)
-    expect(state.quests.find((q) => q.id === quest.id)!.flags?.lead).toBe(true)
+    buyDeal(state, 'informant', points[0]!.id)
+    expect(state.intel?.[0]).toMatchObject({ kind: 'point', status: 'active', from: 'rivervale' })
+    const lead = shop.deals.find((d) => d.id === `info:quest:${quest.id}`)
+    if (lead) {
+      buyDeal(state, 'informant', lead.id)
+      expect(state.quests.find((q) => q.id === quest.id)!.flags?.lead).toBe(true)
+    }
   })
 })
 

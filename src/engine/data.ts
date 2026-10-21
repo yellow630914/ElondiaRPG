@@ -923,7 +923,7 @@ export function itemDef(name: string): ItemDef | undefined {
   return itemIndex.get(name)
 }
 
-export type ShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant'
+export type ShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer'
 export interface DealCost { type: 'money' | 'item' | 'hours'; amount?: number; name?: string; qty?: number }
 export interface ShopSpecial { id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number }
 export interface ShopTypeDef {
@@ -936,8 +936,10 @@ export interface ShopTypeDef {
   specials: ShopSpecial[]
   /** 每天隨機上架：目錄裡任何商店的消耗品與材料（材料的售價 = 收購價 × material_markup） */
   random?: { consumables?: number; materials?: number; material_markup?: number; max_material_price?: number[] }
-  /** 情報商：依附近的地下城、城郊與進行中的委託生成情報 */
-  info?: { dungeon_price: number; wild_price: number; quest_price: number }
+  /** 情報商：事件點的情報（依層數的價格：近郊、周邊、淺層、中層、深層）、特殊任務的消息、委託的線索 */
+  info?: { point_prices: number[]; points_per_day: number; valid_days: number; quest_price: number }
+  /** 流浪商人：每天幾件隨機的優良裝備 */
+  rare_gear?: number
 }
 export const shopRules = shopsJson as unknown as {
   location_price_mult: Record<string, number>
