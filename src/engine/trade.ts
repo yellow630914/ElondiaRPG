@@ -38,14 +38,14 @@ function typeOf(key: string): ShopType {
   return key.split('/')[1] as ShopType
 }
 
-function locationMult(state: GameState): number {
+export function locationMult(state: GameState): number {
   return shopRules.location_price_mult[locationById(state.location).type] ?? 1
 }
 
 /** 商店賣材料時的加成（材料的目錄價是收購價） */
 const MATERIAL_MARKUP = 2
 
-function locationRank(type: string): number {
+export function locationRank(type: string): number {
   return shopRules.location_rank[type] ?? 1
 }
 

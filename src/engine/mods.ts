@@ -9,13 +9,14 @@
 
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, classes, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, classes, companionRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
 } from './data'
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
+import { TOOL_KINDS } from './tools'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, type StoryMod } from './storyMods'
 import type { GearSlot, GearSpec } from './types'
 
@@ -504,6 +505,7 @@ const LOCATIONS = ['village', 'town', 'city', 'capital']
 function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   if (!u || typeof u !== 'object') return undefined
   const out: ItemUse = {}
+  if (u.condition && companionRules.conditions[u.condition]) out.condition = u.condition
   if (u.heal && DICE.test(String(u.heal).replace(/\s+/g, ''))) out.heal = String(u.heal).replace(/\s+/g, '')
   if (u.slot) out.slot = int(u.slot, 1, 9, 1)
   const cleanse = (u.cleanse ?? []).filter((s) => !!statuses[s])
@@ -560,6 +562,10 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   const forge = (raw.forge?.materials ?? []).filter((m) => !!gearRules.materials[m])
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
+  if (category === 'gear' && raw.tool && TOOL_KINDS.includes(raw.tool.kind)) {
+    const def = itemRules.tools[raw.tool.kind]
+    out.tool = { kind: raw.tool.kind, ...(def.bonus !== undefined ? { bonus: int(raw.tool.bonus ?? def.bonus, 1, def.max ?? 10, def.bonus) } : {}) }
+  }
   if (custom) out.custom = true
   if (raw.chests) {
     const c: Partial<Record<ChestLayer, number>> = {}

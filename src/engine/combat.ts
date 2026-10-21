@@ -230,17 +230,26 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
   const cls = classDef(c.class).threat ?? { start: 0, mult: 1 }
   // 防具與武器的類型、其他裝備（盾牌等）的仇恨加減
   const threatMult = cls.mult * (1 + (armor.threat ?? 0) + (weaponFor(c).threat ?? 0) + gearBonuses(c).threat)
+  // 非戰鬥狀態（用餐、喝酒、磨利武器……）帶進戰鬥的加減與暫時生命
+  const mods: Mods = { ...gear.mods }
+  let tempHp = 0
+  for (const s of c.status) {
+    const def = companionRules.conditions[s]
+    if (!def) continue
+    for (const [k, v] of Object.entries(def.combat_mods ?? {})) mods[k as keyof Mods] = (mods[k as keyof Mods] ?? 0) + (v ?? 0)
+    tempHp = Math.max(tempHp, def.combat_temp_hp ?? 0)
+  }
   return {
     threat: Math.round(cls.start * threatMult * (1 + (gear.mods.threat ?? 0))), threatMult,
     id: c.id, name: c.name, side: 'party', level: c.level, attrs: { ...c.attrs }, prof: proficiency(c.level),
-    hp: c.hp, maxHp: c.maxHp, tempHp: 0,
+    hp: c.hp, maxHp: c.maxHp, tempHp,
     ap: apMax, apMax, apRegen: apRegenFor(c.level),
     // 魔導束縛契約：只能施放 spell_cap 環以下的法術
     slots: slotsLeft(c).slice(0, spellCap(c)),
     slotMax: slotMaxFor(c.class, c.level, c.attrs).slice(0, spellCap(c)),
     abilities: [...c.abilities],
     weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr,
-    resist: gear.resist, offense: gear.offense, baseMods: gear.mods,
+    resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),
     statuses: [],
     initiative: roll(rng, '1d20').total + mod(c.attrs.dex),
@@ -589,7 +598,8 @@ export function combatItems(state: GameState): { name: string; qty: number; def:
   const used = state.combat?.itemsUsed ?? {}
   return state.inventory
     .map((i) => ({ name: i.name, qty: i.qty - (used[i.name] ?? 0), def: itemDef(i.name)! }))
-    .filter((i) => i.qty > 0 && i.def?.use)
+    // 吃喝（只有非戰鬥狀態）不是戰鬥中用的
+    .filter((i) => i.qty > 0 && i.def?.use && Object.keys(i.def.use).some((k) => k !== 'condition'))
 }
 
 /** 道具是對敵人用的（投擲傷害或施加負面狀態） */

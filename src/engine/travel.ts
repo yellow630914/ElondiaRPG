@@ -5,7 +5,7 @@ import { proficiency, snapshot } from './character'
 import { locationById, regionById, slaveryRules, type RouteMode } from './data'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
-import type { Character, Effect, GameState, ItemDelta, Report, TimelineEntry } from './types'
+import type { Character, Effect, GameState, Report, TimelineEntry } from './types'
 import { shortestPath } from './world'
 import { assertNoStandoff, currentArea, enterLocation, placeOutside } from './grid'
 import { arrivalCheck, gateCheck } from './security'
@@ -87,11 +87,7 @@ export function travel(state: GameState, destination: string, intent?: string, e
   const before = state.party.map((c) => ({ ...c }))
   const members = state.party.map((c) => ({ ...c }))
   const timeline: TimelineEntry[] = []
-  const itemsLost: ItemDelta[] = []
   let money = 0
-  let rations = state.inventory.find((i) => i.name === RATION)?.qty ?? 0
-  let rationsUsed = 0
-  let starved = false
   let hours = 0
   let seq = 1
   const start = { ...state.time }
@@ -104,20 +100,8 @@ export function travel(state: GameState, destination: string, intent?: string, e
       const fullDays = Math.max(1, Math.ceil(days))
       for (let d = 0; d < fullDays; d++) {
         const dayTime = addHours(start, hours + d * 24 + 12)
-        // 每日消耗：官道住旅店，其他路段吃乾糧，沒乾糧就挨餓
-        if (leg.mode === 'road') {
-          money -= ROAD_DAILY_CC * members.length
-        } else {
-          for (const m of members) {
-            if (rations > 0) {
-              rations--
-              rationsUsed++
-            } else {
-              m.hp = Math.max(1, m.hp - 2)
-              starved = true
-            }
-          }
-        }
+        // 每日花費：官道住旅店（野外與海路不用吃乾糧）
+        if (leg.mode === 'road') money -= ROAD_DAILY_CC * members.length
         if (rng.chance(EVENT_CHANCE[leg.mode])) {
           timeline.push(resolveEvent(rng, rng.pick(EVENTS[leg.mode]), members, dayTime, seq++))
         }
@@ -133,7 +117,6 @@ export function travel(state: GameState, destination: string, intent?: string, e
     }
   })
 
-  if (rationsUsed > 0) itemsLost.push({ name: RATION, qty: rationsUsed })
   const dest = locationById(destination)
   const via = path.legs.slice(0, -1).map((l) => locationById(l.to).name)
   const pc = player(state)
@@ -148,9 +131,9 @@ export function travel(state: GameState, destination: string, intent?: string, e
     outcome: {
       result: 'arrived',
       summary: `從${locationById(state.location).name}${via.length ? `經${via.join('、')}` : ''}抵達${dest.name}，耗時約 ${Math.round((hours / 24) * 10) / 10} 天。`,
-      tags: [...new Set(path.legs.map((l) => MODE_NAME[l.mode]))].concat(starved ? ['糧食耗盡'] : []),
+      tags: [...new Set(path.legs.map((l) => MODE_NAME[l.mode]))],
     },
-    changes: { money_cc: money, items_lost: itemsLost },
+    changes: { money_cc: money },
     narration: { pov: 'second_person', length: 'short', tone: '旅途感', ...(intent ? { player_intent: intent } : {}) },
     lore_keys: [
       locationById(state.location).name,

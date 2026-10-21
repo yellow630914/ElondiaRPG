@@ -15,6 +15,7 @@ import { clearInviteCooldowns } from './companions'
 import { addAffinity, isBound, isFugitive, leaderGroup, leaderOf, leaveParty, pcOf, punish, recapturePlayer, removeCondition } from './party'
 import { roll, withBonus, type Rng } from './rng'
 import { contractTerms } from './slavery'
+import { bestTool } from './tools'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Character, GameState, GameTime, Report } from './types'
 
@@ -76,7 +77,9 @@ function restReport(state: GameState, hours: number, scene: string): Report {
 function ambushChance(state: GameState): number {
   const area = currentArea(state)
   if (currentCell(state).kind === 'safe') return 0
-  return companionRules.rest.ambush[area.kind] ?? 0
+  const base = companionRules.rest.ambush[area.kind] ?? 0
+  // 露營類的工具（帳篷）：在城外紮營休息，被襲擊的機率減半
+  return area.kind !== 'settlement' && bestTool(state, 'camp') ? base / 2 : base
 }
 
 /** 自動決定要花幾顆生命骰：還差半顆骰以上的傷就繼續花 */

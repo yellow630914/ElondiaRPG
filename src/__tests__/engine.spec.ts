@@ -72,13 +72,14 @@ describe('travel', () => {
     expect(report.outcome.result).toBe('arrived')
   })
 
-  it('eats rations on trails', () => {
+  it('does not eat rations on trails any more', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'ranger', seed: 2 })
     travel(state, 'rivervale')
     const before = state.inventory.find((i) => i.name === '乾糧')!.qty
     const report = travel(state, 'snowridge')
     expectValid(report)
-    expect(state.inventory.find((i) => i.name === '乾糧')?.qty ?? 0).toBeLessThan(before)
+    expect(state.inventory.find((i) => i.name === '乾糧')?.qty).toBe(before)
+    expect(report.outcome.tags).not.toContain('糧食耗盡')
   })
 })
 

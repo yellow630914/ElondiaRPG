@@ -71,13 +71,55 @@
   },
 
   "conditions": {
-    "$comment": "非戰鬥狀態（Character.status）。check_penalty 會加在所有主動行動檢定上；clears 表示何時解除。",
+    "$comment": "非戰鬥狀態（Character.status）。check_penalty 會加在主動行動檢定上（負數是加值；check_attrs 只影響這些屬性的檢定）；clears 表示何時解除。combat_mods、combat_temp_hp：每場戰鬥的加減與開始時的暫時生命。group 與 rank：同一組只留一個，高的取代低的（用餐）。stacks_to：已經有這個狀態時再獲得一次，改成另一個狀態（喝酒）；replaces：獲得時拿掉這些狀態。",
     "slave_mark": { "name": "奴隸契約印記", "desc": "頸上刻著奴隸契約的印記。" },
     "fugitive": { "name": "逃亡奴隸", "desc": "契約仍在，公會、神殿等官方機構不接待，旅店加價且可能通報。" },
     "punished": { "name": "受罰", "desc": "被主人懲罰，下次長休前所有檢定 -2。", "check_penalty": 2, "clears": "long_rest" },
     "blessed": { "name": "祝福", "desc": "神殿的祝福，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" },
     "away": { "name": "暫時離隊", "desc": "戰敗時逃到安全的地方等你；回到聚落或安全房時以一半生命值歸隊。" },
     "shaken": { "name": "驚魂未定", "desc": "戰敗後的遭遇讓你心神不寧，下次長休前所有檢定 -1。", "check_penalty": 1, "clears": "long_rest" },
-    "relaxed": { "name": "放鬆", "desc": "在娼館度過了愉快的時光，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" }
+    "fed_light": {
+   "name": "果腹",
+   "desc": "吃了點東西。下次長休前，每場戰鬥開始時獲得 3 點暫時生命。",
+   "group": "meal", "rank": 1, "combat_temp_hp": 3,
+   "clears": "long_rest"
+  },
+  "fed_well": {
+   "name": "飽足",
+   "desc": "熱騰騰的一餐下肚。下次長休前，每場戰鬥開始時獲得 6 點暫時生命。",
+   "group": "meal", "rank": 2, "combat_temp_hp": 6,
+   "clears": "long_rest"
+  },
+  "fed_fine": {
+   "name": "美食",
+   "desc": "一頓講究的料理讓人心滿意足。下次長休前，每場戰鬥開始時獲得 8 點暫時生命，所有檢定 +1。",
+   "group": "meal", "rank": 3, "combat_temp_hp": 8, "check_penalty": -1,
+   "clears": "long_rest"
+  },
+  "fed_feast": {
+   "name": "盛宴",
+   "desc": "吃了一場豐盛的宴席，精神百倍。下次長休前，每場戰鬥開始時獲得 12 點暫時生命，命中 +1，所有檢定 +1。",
+   "group": "meal", "rank": 4, "combat_temp_hp": 12, "combat_mods": { "hit": 1 }, "check_penalty": -1,
+   "clears": "long_rest"
+  },
+  "cheered": {
+   "name": "興致高昂",
+   "desc": "喝了點酒，膽子也大了。下次長休前魅力檢定 +1；再喝會變成微醺。",
+   "check_penalty": -1, "check_attrs": ["cha"], "stacks_to": "tipsy",
+   "clears": "long_rest"
+  },
+  "tipsy": {
+   "name": "微醺",
+   "desc": "喝多了，腳步有點飄。下次長休前所有檢定 -1，戰鬥中命中 -1。",
+   "check_penalty": 1, "combat_mods": { "hit": -1 }, "replaces": ["cheered"],
+   "clears": "long_rest"
+  },
+  "honed": {
+   "name": "磨利",
+   "desc": "武器剛磨過，鋒利得很。下次長休前戰鬥傷害 +1。",
+   "combat_mods": { "damage": 1 },
+   "clears": "long_rest"
+  },
+  "relaxed": { "name": "放鬆", "desc": "在娼館度過了愉快的時光，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" }
   }
 }

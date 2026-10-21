@@ -631,7 +631,26 @@ export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.from
 // ---- 夥伴、奴隸契約、主動行動 ----
 
 export type Bond = 'hired' | 'voluntary' | 'slave' | 'leader' | 'ally' | 'guest'
-export interface ConditionDef { name: string; desc: string; check_penalty?: number; clears?: 'long_rest' }
+export interface ConditionDef {
+  name: string
+  desc: string
+  /** 主動行動檢定的減值（負數是加值） */
+  check_penalty?: number
+  /** 只影響這些屬性的檢定（沒有時所有檢定） */
+  check_attrs?: AttrId[]
+  clears?: 'long_rest'
+  /** 每場戰鬥的加減 */
+  combat_mods?: Mods
+  /** 每場戰鬥開始時的暫時生命 */
+  combat_temp_hp?: number
+  /** 同一組只留一個：rank 高的取代低的，低的蓋不掉高的（用餐） */
+  group?: string
+  rank?: number
+  /** 已經有這個狀態時再獲得一次，改成這個狀態（喝酒：興致高昂 → 微醺） */
+  stacks_to?: string
+  /** 獲得時拿掉這些狀態 */
+  replaces?: string[]
+}
 export const companionRules = companionsJson as unknown as {
   bonds: Record<Bond, string>
   /** 任務同行的夥伴最多幾人（不佔隊伍名額） */
@@ -884,6 +903,8 @@ export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'scroll
  * escape 傳送脫離戰鬥。戰鬥以外只能用 heal 與 slot。
  */
 export interface ItemUse {
+  /** 吃喝：得到這個非戰鬥狀態（companions.json 的 conditions），只能在戰鬥以外使用 */
+  condition?: string
   heal?: string
   slot?: number
   cleanse?: string[]
@@ -918,12 +939,21 @@ export interface ItemDef {
   min_location?: string
   /** 事件可能出現：AI 判定主動行動時可以把它當成報酬 */
   event?: boolean
+  /** 雜物的工具模板（items.json 的 tools） */
+  tool?: ItemTool
 }
+
+export type ToolKind = 'lockpick' | 'trap' | 'light' | 'travel' | 'camp' | 'hone'
+export interface ItemTool { kind: ToolKind; bonus?: number }
+export interface ToolDef { name: string; desc: string; bonus?: number; max?: number; condition?: string }
+export interface MealDef { id: string; name: string; condition: string; min_location?: string }
 export const itemRules = itemsJson as unknown as {
   sell_ratio: number
   material_sell_ratio: number
   custom_price_ranges: Record<string, [number, number]>
   categories: Record<ItemCategory, string>
+  meals: { hours: number; menu: MealDef[] }
+  tools: Record<ToolKind, ToolDef>
   items: ItemDef[]
 }
 const itemIndex = new Map(itemRules.items.map((i) => [i.name, i]))

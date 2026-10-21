@@ -24,6 +24,7 @@ import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
+import { bestTool, toolBonus } from './tools'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, Report } from './types'
 
@@ -48,6 +49,8 @@ export interface Cell {
   link?: { area: string; x: number; y: number }
   /** 寶箱：這一層怪物的最高等級（決定內容） */
   level?: number
+  /** 上鎖的寶箱：開鎖的 DC（打開之後拿掉） */
+  lock?: number
   /** 打倒守在這裡的層主後，格子變成這種設施（淺層、中層的層主守著往下的階梯） */
   then?: CellKind
   /** 旅途的一格：第幾段路、走這一格花幾小時 */
@@ -121,6 +124,8 @@ interface LayerGen {
   guard?: boolean
   trap_dc: number
   trap_damage: string
+  /** 寶箱上鎖的機率與開鎖的 DC */
+  chest_lock?: [number, number]
 }
 const maps = mapsJson as unknown as {
   legend: Record<string, { kind: CellKind; name: string }>
@@ -293,11 +298,11 @@ export function isRevealed(area: Area, x: number, y: number): boolean {
   return area.kind === 'settlement' || area.kind === 'road' || (area.revealed?.includes(y * area.width + x) ?? false)
 }
 
-export function reveal(area: Area, x: number, y: number) {
+export function reveal(area: Area, x: number, y: number, radius = 1) {
   if (area.kind === 'settlement') return
   const set = new Set(area.revealed ?? [])
-  for (let dy = -1; dy <= 1; dy++) {
-    for (let dx = -1; dx <= 1; dx++) {
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
       if (cellAt(area, x + dx, y + dy)) set.add((y + dy) * area.width + (x + dx))
     }
   }
@@ -339,7 +344,17 @@ export function standOn(state: GameState, kind: CellKind): boolean {
 
 export function placeAt(state: GameState, area: Area, x: number, y: number) {
   state.position = { area: area.key, x, y }
-  reveal(area, x, y)
+  reveal(area, x, y, sight(state, area))
+}
+
+/** 寶箱有沒有上鎖（依這一層的 chest_lock） */
+function chestLock(rng: Rng, spec: LayerGen): { lock?: number } {
+  return spec.chest_lock && rng.chance(spec.chest_lock[0]) ? { lock: spec.chest_lock[1] } : {}
+}
+
+/** 看得到幾格：地下城與臨時地圖帶著照明類的工具看得更遠 */
+export function sight(state: GameState, area: Area): number {
+  return 1 + (area.kind === 'dungeon' || area.kind === 'side' ? toolBonus(state, 'light') : 0)
 }
 
 /** 抵達地點（旅行後或開新遊戲）：城鎮站在城門，冒險區域站在周邊的入口。 */
@@ -524,7 +539,7 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   // 寶箱：內容依這一層怪物的最高等級
   const level = Math.max(1, ...table.flat().map(([id]) => enemies[id]?.level ?? 1))
   for (const i of randomCells(rng, area, spec.chests ? between(rng, spec.chests) : 0, used)) {
-    cells[i] = { kind: 'chest', level }
+    cells[i] = { kind: 'chest', level, ...chestLock(rng, spec) }
     used.add(i)
   }
   ensureQuestTargets(state, area, rng, table)
@@ -598,7 +613,7 @@ export function generateSide(state: GameState, key: string, template: string, de
   }
   const level = Math.max(1, ...table.flat().map(([id]) => enemies[id]?.level ?? 1)) + 1
   for (const i of randomCells(rng, area, between(rng, def.chests ?? [1, 1]), used)) {
-    cells[i] = { kind: 'chest', level }
+    cells[i] = { kind: 'chest', level, ...chestLock(rng, DUNGEON_LAYERS[layer]!) }
     used.add(i)
   }
   return area
@@ -680,8 +695,17 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   }
   state.time = addHours(state.time, stepMinutes(area) / 60)
   state.position = { area: area.key, x: nx, y: ny, prev: { x: p.x, y: p.y } }
-  reveal(area, nx, ny)
+  reveal(area, nx, ny, sight(state, area))
   return enterCell(state, area, nx, ny, cell!)
+}
+
+/** 往這個方向是牆、水或地圖外（旅途不算：那裡有自己的規則） */
+export function blockedMove(state: GameState, dx: number, dy: number): boolean {
+  if (Math.abs(dx) + Math.abs(dy) !== 1) return false
+  const area = currentArea(state)
+  if (area.kind === 'road') return false
+  const p = position(state)
+  return !walkable(cellAt(area, p.x + dx, p.y + dy))
 }
 
 /** 移動到指定格子（只能是相鄰格）。 */
@@ -723,6 +747,7 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
     }
     case 'chest': {
       if (cell.done) return {}
+      if (cell.lock) return { report: pickLockAt(state, area, cell) }
       cell.done = true
       // 情報的藏寶處：結束這則情報
       if (cell.intel) finishIntel(state, cell.intel)
@@ -754,10 +779,11 @@ function eventReport(state: GameState, area: Area, minutes: number): Report {
 function springTrap(state: GameState, area: Area, loc: Location): Report {
   const spec = DUNGEON_LAYERS[area.layer ?? 0]!
   const report = eventReport(state, area, 5)
-  // 隊伍中靈巧最高的人負責察覺陷阱
+  // 隊伍中靈巧最高的人負責察覺陷阱；陷阱類的工具（探路長竿）有加值
   const scout = [...state.party].filter((m) => m.hp > 0).sort((a, b) => b.attrs.dex - a.attrs.dex)[0] ?? player(state)
   const before = state.party.map((m) => ({ ...m }))
-  const dice = withBonus('1d20', mod(scout.attrs.dex))
+  const tool = bestTool(state, 'trap')
+  const dice = withBonus('1d20', mod(scout.attrs.dex) + (tool?.bonus ?? 0))
   const r = withRng(state, (rng) => roll(rng, dice))
   const success = r.total >= spec.trap_dc
   const effects: NonNullable<Report['timeline']>[number]['effects'] = []
@@ -768,7 +794,7 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   }
   report.kind = 'event'
   report.timeline = [{
-    seq: 1, actor: scout.id, action: '靈巧檢定・察覺陷阱',
+    seq: 1, actor: scout.id, action: `靈巧檢定・察覺陷阱${tool ? `（${tool.name} +${tool.bonus}）` : ''}`,
     roll: { dice, value: r.total, dc: spec.trap_dc }, result: success ? 'success' : 'fail', effects,
   }]
   report.party = state.party.map((m, i) => snapshot(m, before[i], player(state)))
@@ -793,6 +819,55 @@ function gather(state: GameState, area: Area, item: string): Report {
     report.outcome = { result: 'success', summary: `在${area.name}採集到${item}。` }
   }
   return commitReport(state, report)
+}
+
+/**
+ * 上鎖的寶箱：隊伍中靈巧最高的人試著開鎖（開鎖類的工具有加值）。
+ * 成功就打開；失敗時寶箱還在，可以再試（每次 10 分鐘）。
+ */
+function pickLockAt(state: GameState, area: Area, cell: Cell): Report {
+  const loc = locationById(area.location)
+  const report = eventReport(state, area, 10)
+  const picker = [...state.party].filter((m) => m.hp > 0).sort((a, b) => b.attrs.dex - a.attrs.dex)[0] ?? player(state)
+  const tool = bestTool(state, 'lockpick')
+  const dc = cell.lock!
+  const dice = withBonus('1d20', mod(picker.attrs.dex) + (tool?.bonus ?? 0))
+  const r = withRng(state, (rng) => roll(rng, dice))
+  const natural = r.rolls[0] ?? 10
+  const success = natural === 20 || (natural !== 1 && r.total >= dc)
+  const entry = {
+    seq: 1, actor: picker.id, action: `靈巧檢定・開鎖${tool ? `（${tool.name} +${tool.bonus}）` : ''}`,
+    roll: { dice, value: r.total, dc }, result: success ? 'success' as const : 'fail' as const,
+  }
+  if (!success) {
+    report.timeline = [entry]
+    report.outcome = {
+      result: 'failure',
+      summary: `${picker.name}對著${area.name}的寶箱鎖頭搗鼓了一陣，還是打不開${tool ? '' : '（沒有開鎖的工具）'}。可以再試一次。`,
+      tags: ['寶箱', '上鎖'],
+    }
+    report.lore_keys!.push(loc.name)
+    return commitReport(state, report)
+  }
+  delete cell.lock
+  cell.done = true
+  if (cell.intel) finishIntel(state, cell.intel)
+  state.time = addHours(state.time, 10 / 60)
+  const opened = openChest(state, area, cell.level ?? 1)
+  opened.timeline = [entry, ...(opened.timeline ?? [])]
+  opened.outcome.summary = `${picker.name}撬開了鎖。${opened.outcome.summary ?? ''}`
+  opened.outcome.tags = [...(opened.outcome.tags ?? []), '上鎖']
+  return opened
+}
+
+/** 站在上鎖的寶箱上：再試一次開鎖 */
+export function pickLock(state: GameState): Report {
+  if (state.combat) throw new Error('戰鬥中不能這麼做')
+  assertNoStandoff(state)
+  const area = currentArea(state)
+  const cell = currentCell(state)
+  if (cell.kind !== 'chest' || cell.done || !cell.lock) throw new Error('這裡沒有上鎖的寶箱')
+  return pickLockAt(state, area, cell)
 }
 
 /** 打開寶箱：錢、消耗品、裝備與打造材料（gear.json 的 chests） */

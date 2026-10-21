@@ -7,6 +7,7 @@ import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
 import { canAcceptRank, guildQuests, questTemplate, templeCost } from '@/engine/town'
 import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, questProgressText, rewardFor } from '@/engine/materialQuests'
+import { bestTool } from '@/engine/tools'
 import { MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
@@ -26,6 +27,7 @@ const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
 const cell = computed(() => currentCell(s.value))
+const lockTool = computed(() => bestTool(s.value, 'lockpick'))
 const intent = computed({ get: () => game.intent, set: (v: string) => (game.intent = v) })
 
 const AREA_NAME: Record<Quest['area'], string> = { town: '城內', outskirts: '近郊', dungeon: '冒險區域' }
@@ -128,7 +130,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         </template>
 
         <template v-else-if="cell.kind === 'shop'">
-          <p class="muted small">野外與海路旅行每人每天消耗 1 份乾糧；地下城的安全房長休也要乾糧。目前持有 {{ rations }} 份。</p>
+          <p class="muted small">乾糧可以吃來果腹（戰鬥開始時有一點暫時生命）；地下城的安全房長休每人要一份。目前持有 {{ rations }} 份。</p>
           <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" />
           <MarketPanel v-if="publicMarket" kind="public" />
         </template>
@@ -223,6 +225,11 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
 
         <template v-else-if="cell.kind === 'safe'">
           <p class="muted small">安全房：魔物不會靠近，可以安心短休或長休（見下方「休息」）。</p>
+        </template>
+
+        <template v-else-if="cell.kind === 'chest' && !cell.done && cell.lock">
+          <p class="muted small">🔒 上鎖的寶箱（開鎖 DC {{ cell.lock }}）。由隊伍中靈巧最高的人試著開鎖{{ lockTool ? `，帶著${lockTool.name}（+${lockTool.bonus}）` : '；帶著開鎖類的工具會容易一點' }}。</p>
+          <button class="small" @click="game.pickLock()">🔓 再試著開鎖（10 分鐘）</button>
         </template>
 
         <p v-else class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>

@@ -173,7 +173,7 @@ export function chooseOption(state: GameState, id: string, optionId: string): Re
   const pc = pcOf(state)
   ensureRelationship(state, npcRecord(state, n.counterpart)!)
   const natural = withRng(state, (rng) => roll(rng, '1d20').total)
-  const modifier = mod(pc.attrs[o.attr]) + proficiency(pc.level) - conditionPenalty(pc)
+  const modifier = mod(pc.attrs[o.attr]) + proficiency(pc.level) - conditionPenalty(pc, o.attr)
   const total = natural + modifier
   const degree = computeDegree(natural, total, o.dc)
   const report = negotiationReport(state, n, actionRules.kinds.negotiation.hours)

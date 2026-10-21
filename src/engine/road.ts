@@ -22,7 +22,8 @@ import { addHours, commitReport, newReportId, withRng } from './state'
 import { canStart, ensureStoryMarkers, startStory } from './story'
 import { flagKey } from './storyFlags'
 import { gateCheck } from './security'
-import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, RATION, ROAD_DAILY_CC, rollLegDays, SEA_FARE_CC } from './travel'
+import { toolBonus } from './tools'
+import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, ROAD_DAILY_CC, rollLegDays, SEA_FARE_CC } from './travel'
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
 import { shortestPath } from './world'
 import travelEventsJson from '@data/rules/travel_events.json'
@@ -80,7 +81,7 @@ export function startJourney(state: GameState, destination: string, intent?: str
   const seaFare = path.legs.filter((l) => l.mode === 'sea').length * SEA_FARE_CC * state.party.length
   state.road = {
     from, to: destination, start: { ...state.time }, modes: path.legs.map((l) => l.mode), hours: 0,
-    money: -seaFare, rations: 0, starved: false,
+    money: -seaFare,
     timeline: [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `出發・前往${locationById(destination).name}`, result: 'none' }],
     hpBefore: Object.fromEntries(state.party.map((m) => [m.id, m.hp])),
     ...(intent ? { intent } : {}),
@@ -192,28 +193,14 @@ export function roadMove(state: GameState, dx: number, dy: number): StepResult {
   return {}
 }
 
-/** 走一天：時間、食宿或乾糧（每一格只算一次） */
+/** 走一天：時間與官道的食宿（每一格只算一次；野外與海路不用吃乾糧） */
 function spendDay(state: GameState, road: RoadState, cell: Cell) {
   const meta = cell.road
   if (!meta || meta.hours <= 0 || meta.paid) return
   meta.paid = true
   state.time = addHours(state.time, meta.hours)
   road.hours += meta.hours
-  if (road.modes[meta.leg] === 'road') {
-    road.money -= ROAD_DAILY_CC * state.party.length
-    return
-  }
-  const have = (state.inventory.find((i) => i.name === RATION)?.qty ?? 0) - road.rations
-  let left = have
-  for (const m of state.party) {
-    if (left > 0) {
-      left--
-      road.rations++
-    } else {
-      m.hp = Math.max(1, m.hp - 2)
-      road.starved = true
-    }
-  }
+  if (road.modes[meta.leg] === 'road') road.money -= ROAD_DAILY_CC * state.party.length
 }
 
 /** 隊伍裡最擅長這個屬性的人的檢定修正 */
@@ -223,7 +210,10 @@ function bestBonus(state: GameState, attr: AttrId): { name: string; bonus: numbe
 }
 
 function roll(state: GameState, check: StoryCheck, natural: number): { ok: boolean; entry: Omit<TimelineEntry, 'seq'> } {
-  const { name, bonus } = bestBonus(state, check.attr)
+  const best = bestBonus(state, check.attr)
+  const name = best.name
+  // 旅途類的工具（地圖、指南針）讓旅途事件的檢定容易一點
+  const bonus = best.bonus + toolBonus(state, 'travel')
   const total = natural + bonus
   const ok = natural === 20 || (natural !== 1 && total >= check.dc)
   return { ok, entry: { time: { ...state.time }, actor: 'pc', action: `${name}的檢定`, roll: { dice: `1d20${bonus >= 0 ? '+' : ''}${bonus}`, value: total, dc: check.dc }, result: ok ? 'success' : 'fail' } }
@@ -414,9 +404,9 @@ export function finishJourney(state: GameState, to?: string): Report {
     outcome: {
       result: 'arrived',
       summary: `從${locationById(road.from).name}${dest === road.to ? '' : `出發前往${locationById(road.to).name}，途中改道，`}抵達${destLoc.name}，耗時約 ${Math.round((road.hours / 24) * 10) / 10} 天。`,
-      tags: [...new Set(road.modes.map((m) => MODE_NAME[m as RouteMode]))].concat(road.starved ? ['糧食耗盡'] : []),
+      tags: [...new Set(road.modes.map((m) => MODE_NAME[m as RouteMode]))],
     },
-    changes: { ...(road.money ? { money_cc: road.money } : {}), ...(road.rations ? { items_lost: [{ name: RATION, qty: road.rations }] } : {}) },
+    changes: { ...(road.money ? { money_cc: road.money } : {}) },
     narration: { pov: 'second_person', length: 'short', tone: '旅途感', ...(road.intent ? { player_intent: road.intent } : {}) },
     lore_keys: [locationById(road.from).name, destLoc.name, regionById(destLoc.region).name],
   }
@@ -490,7 +480,6 @@ export interface RoadProgress {
   from: string
   to: string
   money: number
-  rations: number
   /** 最近的見聞 */
   recent: string[]
 }
@@ -502,7 +491,7 @@ export function roadProgress(state: GameState): RoadProgress | undefined {
   const total = area ? area.cells.reduce((s, c) => s + (c.road?.hours ?? 0), 0) : road.hours
   return {
     day: Math.floor(road.hours / 24) + 1, days: Math.max(1, Math.round((total / 24) * 10) / 10), from: road.from, to: road.to,
-    money: road.money, rations: road.rations,
+    money: road.money,
     recent: road.timeline.slice(-3).map((t) => t.effects?.find((e) => e.type === 'note')?.text ? `${t.action}：${t.effects.find((e) => e.type === 'note')!.text}` : t.action),
   }
 }

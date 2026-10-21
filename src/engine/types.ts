@@ -316,10 +316,8 @@ export interface RoadState {
   modes: string[]
   /** 已經走了幾小時 */
   hours: number
-  /** 累計的花費與乾糧（抵達時寫進旅行報告） */
+  /** 累計的花費（抵達時寫進旅行報告） */
   money: number
-  rations: number
-  starved: boolean
   timeline: TimelineEntry[]
   /** 出發時的生命值（旅行報告的前後對照） */
   hpBefore: Record<string, number>

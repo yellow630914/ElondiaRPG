@@ -12,6 +12,7 @@ import {
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { contractTerms } from '@/engine/slavery'
 import { canEquip, canUse, useSummary } from '@/engine/inventory'
+import { toolSummary } from '@/engine/tools'
 import { gearRules, gearSpecOf, gearSummary, SLOTS, slotName } from '@/engine/gear'
 import { itemCategory, itemValue } from '@/engine/trade'
 import { formatMoney } from '@/engine/money'
@@ -57,7 +58,7 @@ function itemDesc(name: string): string {
   const spec = gearSpecOf(s.value, name)
   const def = itemDef(name)
   const forge = def?.forge ? `可打造${[...new Set(def.forge.materials.map((m) => gearRules.materials[m]!.name))].join('、')}` : ''
-  return [spec ? gearSummary(spec) : cat ? itemRules.categories[cat] : '', useSummary(def?.use), forge, value !== undefined ? `約 ${formatMoney(value)}` : '']
+  return [spec ? gearSummary(spec) : cat ? itemRules.categories[cat] : '', useSummary(def?.use), toolSummary(def?.tool), forge, value !== undefined ? `約 ${formatMoney(value)}` : '']
     .filter(Boolean).join('・')
 }
 const bound = computed(() => isBound(s.value))

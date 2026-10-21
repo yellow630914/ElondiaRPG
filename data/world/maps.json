@@ -1076,10 +1076,10 @@
     "dungeon": {
       "size": [9, 9], "carve_steps": 55,
       "layers": [
-        { "id": "outskirts", "name": "周邊", "encounters": [2, 3], "traps": [0, 1], "resources": [1, 2], "chests": [0, 1], "trap_dc": 10, "trap_damage": "1d4" },
-        { "id": "shallow", "name": "淺層", "encounters": [3, 4], "traps": [1, 2], "resources": [1, 2], "chests": [1, 1], "guard": true, "trap_dc": 12, "trap_damage": "1d6" },
-        { "id": "middle", "name": "中層", "encounters": [3, 5], "traps": [1, 3], "resources": [1, 2], "chests": [1, 2], "elites": 1, "guard": true, "trap_dc": 13, "trap_damage": "2d6" },
-        { "id": "deep", "name": "深層", "encounters": [3, 5], "traps": [2, 3], "resources": [1, 3], "chests": [1, 2], "elites": 1, "boss": true, "trap_dc": 15, "trap_damage": "3d6" }
+        { "id": "outskirts", "name": "周邊", "encounters": [2, 3], "traps": [0, 1], "resources": [1, 2], "chests": [0, 1], "trap_dc": 10, "trap_damage": "1d4", "chest_lock": [0.2, 10] },
+        { "id": "shallow", "name": "淺層", "encounters": [3, 4], "traps": [1, 2], "resources": [1, 2], "chests": [1, 1], "guard": true, "trap_dc": 12, "trap_damage": "1d6", "chest_lock": [0.35, 12] },
+        { "id": "middle", "name": "中層", "encounters": [3, 5], "traps": [1, 3], "resources": [1, 2], "chests": [1, 2], "elites": 1, "guard": true, "trap_dc": 13, "trap_damage": "2d6", "chest_lock": [0.5, 14] },
+        { "id": "deep", "name": "深層", "encounters": [3, 5], "traps": [2, 3], "resources": [1, 3], "chests": [1, 2], "elites": 1, "boss": true, "trap_dc": 15, "trap_damage": "3d6", "chest_lock": [0.6, 16] }
       ],
       "resource_items": ["鐵礦石", "夜光蘑菇", "古錢"]
     }

@@ -1,9 +1,10 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
 import { snapshot } from './character'
-import { attrName, classDef, damageTypeName, itemDef, locationById, regionById, statusDef, type ItemUse } from './data'
+import { attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, regionById, statusDef, type ItemUse } from './data'
 import { gearRules, gearSpecOf, gearStats, slotName, slotsFor, syncGear } from './gear'
-import { pcOf } from './party'
+import { gainCondition, pcOf } from './party'
+import { toolDef } from './tools'
 import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Character, GameState, GearSlot, Report } from './types'
@@ -38,13 +39,14 @@ function take(state: GameState, name: string) {
 
 export function canUse(name: string): boolean {
   const use = itemDef(name)?.use
-  return !!use && !use.combat_only && (!!use.heal || !!use.slot)
+  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition)) || !!toolDef(itemDef(name)?.tool)?.condition
 }
 
 /** 消耗品效果的一行說明 */
 export function useSummary(use?: ItemUse): string {
   if (!use) return ''
   const parts: string[] = []
+  if (use.condition) parts.push(`「${conditionName(use.condition)}」：${companionRules.conditions[use.condition]?.desc ?? ''}`)
   if (use.revive) parts.push(`救起倒下的隊友（${Math.round(use.revive * 100)}% 生命）`)
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
@@ -64,17 +66,29 @@ export function canEquip(state: Pick<GameState, 'customItems'>, name: string): b
   return !!gearSpecOf(state, name)
 }
 
-/** 使用消耗品（戰鬥以外）：回復生命值或法術環。其他效果只能在戰鬥中使用。 */
+/** 使用消耗品（戰鬥以外）：回復生命值或法術環、吃喝；保養類的工具（磨刀石）用了不會消耗。其他效果只能在戰鬥中使用。 */
 export function useItem(state: GameState, name: string, memberId: string): Report {
   take(state, name)
   const def = itemDef(name)
-  if (!def?.use) throw new Error('這個東西不能使用')
+  const toolCondition = toolDef(def?.tool)?.condition
+  if (!def?.use && !toolCondition) throw new Error('這個東西不能使用')
   if (!canUse(name)) throw new Error('這個東西只能在戰鬥中使用')
   const m = member(state, memberId)
-  const report = itemReport(state, 0.1)
+  const report = itemReport(state, toolCondition ? 0.25 : 0.1)
   const snap = report.party.find((p) => p.id === m.id)!
   let text = ''
-  if (def.use.heal) {
+  // 工具：得到狀態，東西留著
+  if (toolCondition) {
+    if (!gainCondition(m, toolCondition, report)) throw new Error(`${m.name}已經是「${conditionName(toolCondition)}」了`)
+    report.outcome.summary = `${m.name}用了${name}，得到「${conditionName(toolCondition)}」（${name}還留著）。`
+    return commitReport(state, report)
+  }
+  if (!def?.use) throw new Error('這個東西不能使用')
+  if (def.use.condition) {
+    const got = gainCondition(m, def.use.condition, report)
+    if (!got) throw new Error(`${m.name}${companionRules.conditions[def.use.condition]?.group === 'meal' ? '已經吃得比這更好了' : '已經喝不下了'}`)
+    text = `得到「${conditionName(got)}」`
+  } else if (def.use.heal) {
     if (m.hp >= m.maxHp) throw new Error(`${m.name}沒有受傷`)
     const before = m.hp
     const healed = withRng(state, (rng) => roll(rng, def.use!.heal!).total)

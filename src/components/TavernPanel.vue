@@ -2,7 +2,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { mod } from '@/engine/character'
 import { askingFor, invitable, marketsHere, partyOffersHere, waitChance } from '@/engine/companions'
-import { className, combatRules, companionRules, genderName, raceName } from '@/engine/data'
+import { className, combatRules, companionRules, conditionName, genderName, raceName } from '@/engine/data'
+import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { isBound, leaderOf } from '@/engine/party'
@@ -48,6 +49,17 @@ async function hire(c: TavernCandidate) {
   open.value = null
 }
 
+// ---- 用餐 ----
+const menu = computed(() => {
+  void s.value.time.minute
+  return mealMenu(s.value)
+})
+// 隊伍現在的用餐與喝酒狀態
+const MEAL_CONDITIONS = new Set(['fed_light', 'fed_well', 'fed_fine', 'fed_feast', 'cheered', 'tipsy'])
+const fed = computed(() => s.value.party
+  .map((m) => ({ name: m.name, list: m.status.filter((c) => MEAL_CONDITIONS.has(c)).map(conditionName) }))
+  .filter((x) => x.list.length))
+
 // ---- 組隊 ----
 const offersHere = computed(() => partyOffersHere(s.value))
 const leader = computed(() => leaderOf(s.value))
@@ -64,6 +76,18 @@ const showBlack = ref(false)
 
 <template>
   <div class="tavern">
+    <h4>🍲 用餐</h4>
+    <p class="small muted">全隊一起吃（價格是每人）。吃完的狀態到下次長休前有效；同時只保留最好的一餐，喝酒喝多了會微醺。</p>
+    <div class="menu">
+      <button
+        v-for="m in menu" :key="m.id" class="small" :disabled="!!m.unavailable || s.money_cc < m.total || game.judging"
+        :title="m.unavailable ?? `${conditionName(m.condition)}：${m.desc}`" @click="game.eatMeal(m.id)"
+      >
+        {{ m.name }} <span class="muted">{{ m.unavailable ?? `${formatMoney(m.price)}${s.party.length > 1 ? ` ×${s.party.length}` : ''}` }}</span>
+      </button>
+    </div>
+    <p v-if="fed.length" class="small muted">{{ fed.map((x) => `${x.name}：${x.list.join('、')}`).join('；') }}</p>
+
     <p v-if="bound" class="small muted">身為奴隸，你只能在一旁看著主人和別人談話。</p>
 
     <template v-else>
@@ -148,4 +172,5 @@ h4 { margin: 10px 0 2px; color: var(--accent-2); font-size: 0.95rem; }
 .nego { display: grid; gap: 4px; padding: 6px; background: var(--panel-2); border-radius: 6px; }
 .nego label { display: grid; gap: 2px; }
 .wide { width: 100%; }
+.menu { display: flex; flex-wrap: wrap; gap: 4px; }
 </style>

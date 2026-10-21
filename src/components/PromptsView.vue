@@ -195,6 +195,7 @@ const injected = computed(() => [
   { title: '🧝 主角設定', note: '敘事請求', s: section(narration.value, 'protagonist') },
   { title: '🧝 主角（判定用）', note: '判定請求：含屬性、技能、金錢、契約', s: section(judge.value, 'actor') },
   { title: '👥 隊伍狀態', note: '判定請求；敘事請求的隊伍狀態在報告裡', s: section(judge.value, 'party') },
+  { title: '🎒 行囊', note: '判定請求：用到行囊裡的道具時，AI 可以當成助力', s: section(judge.value, 'inventory') },
   { title: '💞 人際關係與冒險記憶（敘事）', note: '依這則日誌的參與人、地點與時間檢索', s: section(narration.value, 'context') },
   { title: '💞 人際關係與冒險記憶（判定）', note: '隊伍全員與行動對象，加上目前地點', s: section(judge.value, 'context') },
 ])

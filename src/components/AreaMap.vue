@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
 import { locationById } from '@/engine/data'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
@@ -64,6 +64,19 @@ const rows = computed(() =>
   ),
 )
 
+// 撞牆：主角那一格晃一下，地圖角落淡淡提示（浮在地圖上，不推動版面）
+const bumping = ref(false)
+let bumpTimer: ReturnType<typeof setTimeout> | undefined
+watch(() => game.bump, () => {
+  bumping.value = false
+  clearTimeout(bumpTimer)
+  requestAnimationFrame(() => {
+    bumping.value = true
+    bumpTimer = setTimeout(() => (bumping.value = false), 900)
+  })
+})
+onBeforeUnmount(() => clearTimeout(bumpTimer))
+
 function step(x: number, y: number) {
   game.moveTo(x, y)
 }
@@ -88,13 +101,16 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <div class="map-wrap">
+    <Transition name="bump-tip">
+      <span v-if="bumping" class="bump-tip small">那邊走不過去</span>
+    </Transition>
     <div class="map" :style="{ '--w': area.width }">
       <template v-for="row in rows" :key="row[0]!.y">
         <button
           v-for="c in row"
           :key="`${c.x},${c.y}`"
           class="cell"
-          :class="[c.seen ? c.cell.kind : 'fog', { here: c.here, step: c.canStep, done: c.cell.done }]"
+          :class="[c.seen ? c.cell.kind : 'fog', { here: c.here, step: c.canStep, done: c.cell.done, bump: c.here && bumping }]"
           :disabled="!c.canStep"
           :title="c.seen ? label(c.cell) + (c.who.length ? `\n👤 ${peopleTitle(c.who)}` : '') : '未探索'"
           @click="step(c.x, c.y)"
@@ -111,7 +127,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <style scoped>
 /* 格子依面板寬度縮放：地圖再寬也不會超出面板（最大 40px） */
-.map-wrap { container-type: inline-size; margin-top: 8px; }
+.map-wrap { container-type: inline-size; margin-top: 8px; position: relative; }
+.bump-tip {
+  position: absolute; top: 2px; right: 2px; z-index: 2; pointer-events: none;
+  padding: 1px 8px; border-radius: 10px; background: rgba(20, 17, 13, 0.85); color: var(--muted); border: 1px solid var(--border);
+}
+.bump-tip-enter-active, .bump-tip-leave-active { transition: opacity 0.25s; }
+.bump-tip-enter-from, .bump-tip-leave-to { opacity: 0; }
+.cell.bump { animation: bump 0.3s ease; }
+@keyframes bump {
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(1px); }
+}
 .map {
   --cell: min(40px, calc((100cqw - (var(--w) - 1) * 2px) / var(--w)));
   display: grid; gap: 2px; grid-template-columns: repeat(var(--w), var(--cell)); width: max-content; max-width: 100%;

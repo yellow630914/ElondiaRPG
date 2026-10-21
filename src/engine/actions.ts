@@ -31,7 +31,7 @@ import { applyPendingMove } from './road'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
 import { npcRecord, type NpcSpec } from './npcs'
 import { presentHere } from './population'
-import { addAffinity, conditionPenalty, pcOf } from './party'
+import { addAffinity, conditionModifiers, pcOf } from './party'
 import { applyNegotiationOutcome } from './negotiation'
 import { addSuggestions } from './social'
 import { applyBargain } from './trade'
@@ -118,8 +118,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   if (input.kind === 'free' && !text) throw new Error('請描述你要做什麼')
   const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item)
   const pc = pcOf(state)
-  const penalty = conditionPenalty(pc)
-  const situational = [...setup.situational, ...(penalty ? [{ label: penalty > 0 ? '受罰' : '祝福', value: -penalty }] : [])].filter((x) => x.value !== 0)
+  const situational = [...setup.situational, ...conditionModifiers(pc, setup.attr ?? kind.attr)].filter((x) => x.value !== 0)
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
   let used: AbilityUse | undefined
   let user: Character | undefined

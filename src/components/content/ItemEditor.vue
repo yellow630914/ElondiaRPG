@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, damageTypeName, damageTypes, enemies, itemDef, itemRules, statuses, type AttrId, type ItemUse } from '@/engine/data'
+import { ATTR_IDS, attrName, companionRules, damageTypeName, damageTypes, enemies, itemDef, itemRules, statuses, type AttrId, type ItemUse, type ToolKind } from '@/engine/data'
 import { gearPrice, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
 import { useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
+import { TOOL_KINDS, toolSummary } from '@/engine/tools'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
@@ -71,6 +72,15 @@ const materials = computed(() => {
 
 // ---- 欄位 ----
 const use = computed(() => (draft.value.use ??= {}) as ItemUse)
+// 吃喝可以給的狀態：到下次長休就解除的那些（用餐、喝酒、磨利……）
+const conditionList = Object.entries(companionRules.conditions)
+  .filter(([id, c]) => !id.startsWith('$') && c.clears === 'long_rest')
+  .map(([id, c]) => ({ id, name: `${c.name}：${c.desc}` }))
+function setTool(kind: string) {
+  if (!kind) delete draft.value.tool
+  else draft.value.tool = { kind: kind as ToolKind, ...(itemRules.tools[kind as ToolKind].bonus !== undefined ? { bonus: draft.value.tool?.bonus ?? itemRules.tools[kind as ToolKind].bonus } : {}) }
+}
+const toolText = computed(() => toolSummary(draft.value.tool))
 function toggle<T>(list: T[] | undefined, v: T, on: boolean): T[] {
   const set = new Set(list ?? [])
   if (on) set.add(v)
@@ -229,6 +239,12 @@ function remove() {
     <fieldset v-if="draft.category === 'consumable' || draft.category === 'food' || draft.category === 'scroll'">
       <legend>使用效果（{{ useText || '無' }}）</legend>
       <div class="grid">
+        <label>吃喝後的狀態（到下次長休）
+          <select :value="use.condition ?? ''" @change="use.condition = ($event.target as HTMLSelectElement).value || undefined">
+            <option value="">（無）</option>
+            <option v-for="c in conditionList" :key="c.id" :value="c.id">{{ c.name }}</option>
+          </select>
+        </label>
         <label>回復生命（骰子）<input v-model="use.heal" placeholder="2d4+2" /></label>
         <label>回復法術環（N 環以下）<input v-model.number="use.slot" type="number" min="0" max="9" /></label>
         <label>暫時生命 <input v-model.number="use.temp_hp" type="number" min="0" /></label>
@@ -277,6 +293,22 @@ function remove() {
       </div>
       <label class="check small"><input v-model="use.escape" type="checkbox" /> 傳送：全隊立刻脫離戰鬥</label>
       <label class="check small"><input v-model="use.combat_only" type="checkbox" /> 只能在戰鬥中使用（回復生命、法術環以外的效果一律只能在戰鬥中用）</label>
+    </fieldset>
+
+    <fieldset v-if="draft.category === 'gear'">
+      <legend>工具模板（{{ toolText || '無：交給 AI 判斷' }}）</legend>
+      <div class="grid">
+        <label>模板
+          <select :value="draft.tool?.kind ?? ''" @change="setTool(($event.target as HTMLSelectElement).value)">
+            <option value="">（無：交給 AI 判斷）</option>
+            <option v-for="k in TOOL_KINDS" :key="k" :value="k">{{ itemRules.tools[k].name }}</option>
+          </select>
+        </label>
+        <label v-if="draft.tool && itemRules.tools[draft.tool.kind].bonus !== undefined">加值
+          <input v-model.number="draft.tool.bonus" type="number" min="1" :max="itemRules.tools[draft.tool.kind].max ?? 10" />
+        </label>
+      </div>
+      <p class="small muted">行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。</p>
     </fieldset>
 
     <fieldset v-if="draft.category === 'equipment'">

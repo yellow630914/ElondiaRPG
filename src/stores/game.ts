@@ -7,6 +7,7 @@ import * as rest from '@/engine/rest'
 import * as trade from '@/engine/trade'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
+import * as meals from '@/engine/meals'
 import { classes, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
@@ -162,6 +163,8 @@ export const useGame = defineStore('game', () => {
   const slots = ref<SlotMeta[]>([])
   /** 畫面上方短暫顯示的提示（例如「已快速存檔」） */
   const notice = ref<string | null>(null)
+  /** 往過不去的方向移動的次數（地圖用來播放撞牆的動畫） */
+  const bump = ref(0)
   let noticeTimer: ReturnType<typeof setTimeout> | undefined
   const controllers = new Map<string, AbortController>()
 
@@ -597,7 +600,7 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash,
+    state, narrations, error, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
     perform, judge, flavorRoster, hire, flavorShop, startNegotiation,
@@ -611,6 +614,7 @@ export const useGame = defineStore('game', () => {
       perform({ kind: 'negotiation', target: id, text, ...(use ? { use } : {}) }),
     abandonNegotiation: (id: string) => run((s) => negotiation.abandonNegotiation(s, id)),
     useItem: (name: string, member: string) => run((s) => inventory.useItem(s, name, member)),
+    eatMeal: (id: string) => run((s) => meals.eatMeal(s, id)),
     equipItem: (name: string, member: string, slot?: GearSlot) => run((s) => inventory.equipItem(s, name, member, slot)),
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
@@ -662,7 +666,15 @@ export const useGame = defineStore('game', () => {
       }),
     // 走格子
     moveTo: (x: number, y: number) => run((s) => afterMove(s, grid.moveTo(s, x, y))),
-    move: (dx: number, dy: number) => run((s) => afterMove(s, grid.move(s, dx, dy))),
+    pickLock: () => run((s) => grid.pickLock(s)),
+    move: (dx: number, dy: number) => {
+      // 撞牆不算錯誤：地圖上輕輕晃一下就好（不跳出錯誤訊息、不推動版面）
+      if (state.value && !state.value.combat && grid.blockedMove(state.value, dx, dy)) {
+        bump.value++
+        return undefined
+      }
+      return run((s) => afterMove(s, grid.move(s, dx, dy)))
+    },
     goOutskirts: () => run((s) => grid.goOutskirts(s) ?? encounters.checkHostiles(s)),
     returnToTown: () => run(grid.returnToTown),
     descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s))),

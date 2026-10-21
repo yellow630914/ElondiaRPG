@@ -2,7 +2,7 @@
 // 這些函式直接修改狀態，並把變化記在報告的 changes 裡；報告由呼叫端提交。
 
 import { snapshot } from './character'
-import { classes, combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, type Bond } from './data'
+import { attrName, classes, combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, type AttrId, type Bond } from './data'
 import { characterFor, npcRecord, registerNpc } from './npcs'
 import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
@@ -142,9 +142,43 @@ export function removeCondition(c: Character, id: string, report?: Report) {
   if (report) (report.changes.conditions ??= []).push({ actor: c.id, condition: id, added: false })
 }
 
-/** 非戰鬥狀態造成的檢定懲罰（受罰等） */
-export function conditionPenalty(c: Character): number {
-  return c.status.reduce((sum, s) => sum + (companionRules.conditions[s]?.check_penalty ?? 0), 0)
+/** 非戰鬥狀態造成的檢定懲罰（受罰等；負數是加值）。attr：這次檢定的屬性（只影響某些屬性的狀態要對上才算） */
+export function conditionPenalty(c: Character, attr?: AttrId): number {
+  return conditionModifiers(c, attr).reduce((sum, x) => sum - x.value, 0)
+}
+
+/** 非戰鬥狀態對這次檢定的修正（每個狀態一行，正數是加值） */
+export function conditionModifiers(c: Character, attr?: AttrId): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = []
+  for (const s of c.status) {
+    const def = companionRules.conditions[s]
+    if (!def?.check_penalty) continue
+    if (def.check_attrs?.length && (!attr || !def.check_attrs.includes(attr))) continue
+    out.push({ label: def.check_attrs?.length ? `${def.name}（${def.check_attrs.map(attrName).join('、')}）` : def.name, value: -def.check_penalty })
+  }
+  return out
+}
+
+/**
+ * 獲得一個非戰鬥狀態，照狀態的規則處理：
+ * 同一組（用餐）只留 rank 最高的；已經有了再獲得一次會變成 stacks_to（喝酒 → 微醺）；replaces 會拿掉的狀態。
+ * 回傳實際得到的狀態（沒有變化時為 undefined）。
+ */
+export function gainCondition(c: Character, id: string, report?: Report): string | undefined {
+  const def = companionRules.conditions[id]
+  if (!def) return undefined
+  if (def.stacks_to && (c.status.includes(id) || c.status.includes(def.stacks_to))) {
+    return id === def.stacks_to ? undefined : gainCondition(c, def.stacks_to, report)
+  }
+  if (c.status.includes(id)) return undefined
+  if (def.group) {
+    const same = c.status.filter((s) => s !== id && companionRules.conditions[s]?.group === def.group)
+    if (same.some((s) => (companionRules.conditions[s]!.rank ?? 0) >= (def.rank ?? 0))) return undefined
+    for (const s of same) removeCondition(c, s, report)
+  }
+  for (const s of def.replaces ?? []) removeCondition(c, s, report)
+  addCondition(c, id, report)
+  return id
 }
 
 // ---- 主角成為奴隸、獲釋、逃亡 ----

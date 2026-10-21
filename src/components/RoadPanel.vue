@@ -21,7 +21,6 @@ const position = computed(() => s.value.position?.x ?? 0)
 const pending = computed(() => (s.value.roadEvent ? roadTemplate(s.value.roadEvent.template) : undefined))
 const busy = computed(() => !!s.value.roadEvent || !!s.value.combat || !!s.value.pendingMasterEvent || !!s.value.standoff || !!s.value.pendingAction || game.judging)
 const legs = computed(() => [...new Set((s.value.road?.modes ?? []).map((m) => MODE_NAME[m as keyof typeof MODE_NAME]))].join('、'))
-const rations = computed(() => (s.value.inventory.find((i) => i.name === '乾糧')?.qty ?? 0) - (s.value.road?.rations ?? 0))
 </script>
 
 <template>
@@ -32,7 +31,7 @@ const rations = computed(() => (s.value.inventory.find((i) => i.name === '乾糧
       <template v-if="cell.town">・{{ cell.kind === 'waypoint' ? '途經' : '從' }}{{ locationById(cell.town).name }}{{ cell.kind === 'waypoint' ? '' : '出發' }}</template>
     </p>
     <p class="small muted">
-      到目前為止：{{ progress.money < 0 ? `食宿與船資 ${formatMoney(-progress.money)}` : '沒有花費' }}・用掉乾糧 {{ progress.rations }} 份（還剩 {{ Math.max(0, rations) }} 份）。抵達時一起結算。
+      到目前為止：{{ progress.money < 0 ? `食宿與船資 ${formatMoney(-progress.money)}` : '沒有花費' }}。抵達時一起結算。
     </p>
     <ul v-if="progress.recent.length > 1" class="plain small muted recent">
       <li v-for="(t, i) in progress.recent.slice(1)" :key="i">・{{ t }}</li>
