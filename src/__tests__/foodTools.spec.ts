@@ -126,19 +126,35 @@ describe('tool templates', () => {
     expect(result.report!.timeline![0]!.action).toContain('探路長竿 +2')
   })
 
-  it('opens a locked chest with lockpicks, retrying after a failure', () => {
+  it('opens a locked chest by picking, forcing or working out the lock', () => {
     const state = game()
     addItem(state.inventory, '撬鎖工具組', 1)
     const { area, i, result } = stepOntoDungeonCell(state, { kind: 'chest', level: 1, lock: 1 })
-    let r = result.report!
+    // 走上去不會自動開：等玩家選方式
+    expect(result.report).toBeUndefined()
+    let r = pickLock(state, 'dex')
     valid(r)
-    expect(r.timeline![0]!.action).toContain('撬鎖工具組 +3')
-    // 擲出 1 才會失敗：再試到成功
-    for (let n = 0; n < 5 && !area.cells[i]!.done; n++) r = pickLock(state)
+    expect(r.timeline![0]!.action).toContain('靈巧檢定・開鎖（撬鎖工具組 +3）')
+    // 擲出 1 才會失敗：換力量、智力再試到成功
+    for (let n = 0; n < 6 && !area.cells[i]!.done; n++) r = pickLock(state, n % 2 ? 'int' : 'str')
+    expect(r.timeline![0]!.action).toMatch(/靈巧檢定・開鎖|力量檢定・硬撬|智力檢定・研究機關/)
     expect(area.cells[i]!.done).toBe(true)
     expect(area.cells[i]!.lock).toBeUndefined()
     expect(r.outcome.tags).toContain('上鎖')
-    expect(() => pickLock(state)).toThrow('沒有上鎖')
+    expect(() => pickLock(state, 'str')).toThrow('沒有上鎖')
+  })
+
+  it('forces a lock with strength, without the lockpick bonus', () => {
+    const state = game()
+    addItem(state.inventory, '撬鎖工具組', 1)
+    const { area, i } = stepOntoDungeonCell(state, { kind: 'chest', level: 1, lock: 30 })
+    const r = pickLock(state, 'str')
+    valid(r)
+    expect(r.timeline![0]!.action).toBe('力量檢定・硬撬')
+    // 擲出 20 也會打開：重新放一個上鎖的寶箱再用智力
+    area.cells[i] = { kind: 'chest', level: 1, lock: 30 }
+    const r2 = pickLock(state, 'int')
+    expect(r2.timeline![0]!.action).toBe('智力檢定・研究機關')
   })
 
   it('hones a weapon without using up the whetstone', () => {

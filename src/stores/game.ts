@@ -666,7 +666,7 @@ export const useGame = defineStore('game', () => {
       }),
     // 走格子
     moveTo: (x: number, y: number) => run((s) => afterMove(s, grid.moveTo(s, x, y))),
-    pickLock: () => run((s) => grid.pickLock(s)),
+    pickLock: (method: grid.LockMethod) => run((s) => grid.pickLock(s, method)),
     move: (dx: number, dy: number) => {
       // 撞牆不算錯誤：地圖上輕輕晃一下就好（不跳出錯誤訊息、不推動版面）
       if (state.value && !state.value.combat && grid.blockedMove(state.value, dx, dy)) {

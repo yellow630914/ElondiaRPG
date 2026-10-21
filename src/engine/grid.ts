@@ -11,7 +11,7 @@ import mapsJson from '@data/world/maps.json'
 import { mod, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  dungeonEncounters, enemies, geography, itemDef, locationById, regionById, wildEncounters,
+  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, wildEncounters,
   type DungeonLayerId, type EncounterGroup, type Location,
 } from './data'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
@@ -26,7 +26,7 @@ import { assertMasterAllows } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
 import { bestTool, toolBonus } from './tools'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
-import type { GameState, Report } from './types'
+import type { Character, GameState, Report } from './types'
 
 export type CellKind =
   | 'floor' | 'wall' | 'water'
@@ -747,7 +747,8 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
     }
     case 'chest': {
       if (cell.done) return {}
-      if (cell.lock) return { report: pickLockAt(state, area, cell) }
+      // 上鎖的寶箱：站在上面選開鎖的方式（靈巧、力量或智力）
+      if (cell.lock) return {}
       cell.done = true
       // 情報的藏寶處：結束這則情報
       if (cell.intel) finishIntel(state, cell.intel)
@@ -821,29 +822,43 @@ function gather(state: GameState, area: Area, item: string): Report {
   return commitReport(state, report)
 }
 
+/** 打開上鎖寶箱的方式：靈巧開鎖（開鎖類的工具有加值）、力量硬撬、智力研究機關 */
+export type LockMethod = 'dex' | 'str' | 'int'
+export const LOCK_METHODS: Record<LockMethod, { name: string; success: string; fail: string }> = {
+  dex: { name: '開鎖', success: '撬開了鎖', fail: '對著鎖頭搗鼓了一陣，還是打不開' },
+  str: { name: '硬撬', success: '把鎖硬生生扳斷了', fail: '使盡了力氣，寶箱還是紋風不動' },
+  int: { name: '研究機關', success: '看穿了鎖的機關，輕輕一按就開了', fail: '研究了半天，還是看不出機關的門道' },
+}
+
+/** 這種方式由誰來做：隊伍中這項屬性最高、還站得起來的人 */
+export function lockPicker(state: GameState, method: LockMethod): Character {
+  return [...state.party].filter((m) => m.hp > 0).sort((a, b) => b.attrs[method] - a.attrs[method])[0] ?? player(state)
+}
+
 /**
- * 上鎖的寶箱：隊伍中靈巧最高的人試著開鎖（開鎖類的工具有加值）。
- * 成功就打開；失敗時寶箱還在，可以再試（每次 10 分鐘）。
+ * 上鎖的寶箱：用選的方式檢定（DC 是寶箱的鎖）。
+ * 成功就打開；失敗時寶箱還在，可以再試或換一種方式（每次 10 分鐘）。
  */
-function pickLockAt(state: GameState, area: Area, cell: Cell): Report {
+function pickLockAt(state: GameState, area: Area, cell: Cell, method: LockMethod): Report {
   const loc = locationById(area.location)
   const report = eventReport(state, area, 10)
-  const picker = [...state.party].filter((m) => m.hp > 0).sort((a, b) => b.attrs.dex - a.attrs.dex)[0] ?? player(state)
-  const tool = bestTool(state, 'lockpick')
+  const how = LOCK_METHODS[method]
+  const picker = lockPicker(state, method)
+  const tool = method === 'dex' ? bestTool(state, 'lockpick') : undefined
   const dc = cell.lock!
-  const dice = withBonus('1d20', mod(picker.attrs.dex) + (tool?.bonus ?? 0))
+  const dice = withBonus('1d20', mod(picker.attrs[method]) + (tool?.bonus ?? 0))
   const r = withRng(state, (rng) => roll(rng, dice))
   const natural = r.rolls[0] ?? 10
   const success = natural === 20 || (natural !== 1 && r.total >= dc)
   const entry = {
-    seq: 1, actor: picker.id, action: `靈巧檢定・開鎖${tool ? `（${tool.name} +${tool.bonus}）` : ''}`,
+    seq: 1, actor: picker.id, action: `${attrName(method)}檢定・${how.name}${tool ? `（${tool.name} +${tool.bonus}）` : ''}`,
     roll: { dice, value: r.total, dc }, result: success ? 'success' as const : 'fail' as const,
   }
   if (!success) {
     report.timeline = [entry]
     report.outcome = {
       result: 'failure',
-      summary: `${picker.name}對著${area.name}的寶箱鎖頭搗鼓了一陣，還是打不開${tool ? '' : '（沒有開鎖的工具）'}。可以再試一次。`,
+      summary: `${picker.name}${how.fail}。可以再試一次，或換一種方式。`,
       tags: ['寶箱', '上鎖'],
     }
     report.lore_keys!.push(loc.name)
@@ -855,19 +870,20 @@ function pickLockAt(state: GameState, area: Area, cell: Cell): Report {
   state.time = addHours(state.time, 10 / 60)
   const opened = openChest(state, area, cell.level ?? 1)
   opened.timeline = [entry, ...(opened.timeline ?? [])]
-  opened.outcome.summary = `${picker.name}撬開了鎖。${opened.outcome.summary ?? ''}`
+  opened.outcome.summary = `${picker.name}${how.success}。${opened.outcome.summary ?? ''}`
   opened.outcome.tags = [...(opened.outcome.tags ?? []), '上鎖']
   return opened
 }
 
-/** 站在上鎖的寶箱上：再試一次開鎖 */
-export function pickLock(state: GameState): Report {
+/** 站在上鎖的寶箱上：選一種方式試著打開 */
+export function pickLock(state: GameState, method: LockMethod = 'dex'): Report {
   if (state.combat) throw new Error('戰鬥中不能這麼做')
   assertNoStandoff(state)
+  if (!LOCK_METHODS[method]) throw new Error('沒有這種開法')
   const area = currentArea(state)
   const cell = currentCell(state)
   if (cell.kind !== 'chest' || cell.done || !cell.lock) throw new Error('這裡沒有上鎖的寶箱')
-  return pickLockAt(state, area, cell)
+  return pickLockAt(state, area, cell, method)
 }
 
 /** 打開寶箱：錢、消耗品、裝備與打造材料（gear.json 的 chests） */

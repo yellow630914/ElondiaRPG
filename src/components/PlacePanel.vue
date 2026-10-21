@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { geography, locationById } from '@/engine/data'
-import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, questRunnableHere } from '@/engine/grid'
+import { mod } from '@/engine/character'
+import { attrName, geography, locationById } from '@/engine/data'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -28,6 +29,11 @@ const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
 const cell = computed(() => currentCell(s.value))
 const lockTool = computed(() => bestTool(s.value, 'lockpick'))
+const LOCK_ICON: Record<LockMethod, string> = { dex: '🔓', str: '💪', int: '🧠' }
+function lockBonus(k: LockMethod): number {
+  return mod(lockPicker(s.value, k).attrs[k]) + (k === 'dex' ? lockTool.value?.bonus ?? 0 : 0)
+}
+const signed = (n: number) => (n >= 0 ? `+${n}` : String(n))
 const intent = computed({ get: () => game.intent, set: (v: string) => (game.intent = v) })
 
 const AREA_NAME: Record<Quest['area'], string> = { town: '城內', outskirts: '近郊', dungeon: '冒險區域' }
@@ -228,8 +234,12 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         </template>
 
         <template v-else-if="cell.kind === 'chest' && !cell.done && cell.lock">
-          <p class="muted small">🔒 上鎖的寶箱（開鎖 DC {{ cell.lock }}）。由隊伍中靈巧最高的人試著開鎖{{ lockTool ? `，帶著${lockTool.name}（+${lockTool.bonus}）` : '；帶著開鎖類的工具會容易一點' }}。</p>
-          <button class="small" @click="game.pickLock()">🔓 再試著開鎖（10 分鐘）</button>
+          <p class="muted small">🔒 上鎖的寶箱（DC {{ cell.lock }}）。選一種方式試著打開，由隊伍中那項屬性最高的人來做；失敗可以再試或換一種，每次 10 分鐘。{{ lockTool ? `開鎖時用${lockTool.name}（+${lockTool.bonus}）。` : '靈巧開鎖時，帶著開鎖類的工具會容易一點。' }}</p>
+          <div class="row lock-methods">
+            <button v-for="(m, k) in LOCK_METHODS" :key="k" class="small" @click="game.pickLock(k)">
+              {{ LOCK_ICON[k] }} {{ m.name }} <span class="muted">（{{ attrName(k) }}・{{ lockPicker(s, k).name }} {{ signed(lockBonus(k)) }}）</span>
+            </button>
+          </div>
         </template>
 
         <p v-else class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
@@ -283,6 +293,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
 </template>
 
 <style scoped>
+.lock-methods { display: flex; flex-wrap: wrap; gap: 4px; }
 .tavern-trade { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 6px; }
 .qty { width: 56px; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
