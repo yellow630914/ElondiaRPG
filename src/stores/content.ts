@@ -6,9 +6,12 @@ import { ref } from 'vue'
 import { enemies, itemDef, npcs as namedNpcs, stories } from '@/engine/data'
 import { builtinStory, flagUsage, sanitizeStory, type StoryMod } from '@/engine/storyMods'
 import {
-  applyContent, builtinEnemy, builtinNpc, emptyMods, normalizeMods, sanitizeBase, sanitizeEnemy, sanitizeItem, sanitizeMaterial, sanitizeNpc,
-  type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
+  abilityUsage, applyContent, builtinAbility, builtinEnemy, builtinNpc, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeEnemy,
+  sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
 } from '@/engine/mods'
+import { pruneAbilities } from '@/engine/state'
+import type { GameState } from '@/engine/types'
+import { useGame } from './game'
 
 const KEY = 'elondia.content'
 
@@ -34,6 +37,9 @@ export const useContent = defineStore('content', () => {
 
   function save() {
     problems.value = applyContent(mods.value)
+    // 被拿掉的能力（匯入、全部恢復預設）：從目前存檔的角色身上拿掉
+    const game = useGame()
+    if (game.state) pruneAbilities(game.state)
     version.value++
     try {
       localStorage.setItem(KEY, JSON.stringify(mods.value))
@@ -182,6 +188,25 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 能力 ----
+
+  function saveAbility(id: string, draft: Partial<AbilityMod>) {
+    mods.value.abilities[id] = sanitizeAbility(id, draft, !builtinAbility(id))
+    save()
+  }
+  /** 自建、而且沒有被任何地方用到的能力才能刪 */
+  function deleteAbility(id: string, state?: GameState | null) {
+    if (!mods.value.abilities[id]?.custom) throw new Error('內建的能力不能刪除')
+    const used = abilityUsage(id, state)
+    if (used.length) throw new Error(`還有地方用到這個能力：${used.slice(0, 3).join('、')}${used.length > 3 ? ` 等 ${used.length} 處` : ''}`)
+    delete mods.value.abilities[id]
+    save()
+  }
+  function restoreAbility(id: string) {
+    if (!mods.value.abilities[id]?.custom) delete mods.value.abilities[id]
+    save()
+  }
+
   /** 內容頁籤裡用過的劇情旗標（自動完成用） */
   function knownFlags(): string[] {
     const set = new Set<string>()
@@ -212,6 +237,7 @@ export const useContent = defineStore('content', () => {
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, saveStory, deleteStory, restoreStory, knownFlags,
+    saveAbility, deleteAbility, restoreAbility,
     exportMods, importMods, resetAll,
   }
 })

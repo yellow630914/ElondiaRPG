@@ -12,13 +12,14 @@ import {
   abilities, attributeRules, ATTR_IDS, classes, companionRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
+  stories, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart,
 } from './data'
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, type StoryMod } from './storyMods'
-import type { GearSlot, GearSpec } from './types'
+import type { Character, GameState, GearSlot, GearSpec } from './types'
 
 export type ChestLayer = 'outskirts' | 'shallow' | 'middle' | 'deep'
 export const CHEST_LAYERS: ChestLayer[] = ['outskirts', 'shallow', 'middle', 'deep']
@@ -60,6 +61,11 @@ export interface NpcMod extends NpcDef {
   custom?: boolean
 }
 
+/** 能力（技能、法術、戲法）：內建的可以修改，自建的沒有被使用時可以刪除 */
+export interface AbilityMod extends AbilityDef {
+  custom?: boolean
+}
+
 export interface ContentMods {
   version: 1
   enemies: Record<string, EnemyMod>
@@ -68,10 +74,11 @@ export interface ContentMods {
   materials: Record<string, MaterialMod>
   npcs: Record<string, NpcMod>
   stories: Record<string, StoryMod>
+  abilities: Record<string, AbilityMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -91,6 +98,11 @@ const snapshot = {
   armors: clone(equipment.armors),
   gather: { wild: [...maps.generation.wild.resource_items], dungeon: [...maps.generation.dungeon.resource_items] },
   npcs: clone(namedNpcs),
+  abilities: clone(abilities),
+}
+
+export function builtinAbility(id: string): AbilityDef | undefined {
+  return snapshot.abilities[id] ? clone(snapshot.abilities[id]!) : undefined
 }
 
 export function builtinNpc(id: string): NpcDef | undefined {
@@ -131,6 +143,7 @@ function restore() {
   maps.generation.wild.resource_items.splice(0, Infinity, ...snapshot.gather.wild)
   maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon)
   namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs))
+  replaceRecord(abilities, snapshot.abilities)
   restoreStories()
 }
 
@@ -335,6 +348,10 @@ export function applyContent(mods: ContentMods): string[] {
       }
     }
   }
+  // 能力先套用：怪物、固定 NPC、職業都會用到
+  tryEach('能力', mods.abilities, (id, m) => {
+    abilities[id] = { ...strip(m, ['custom']), id }
+  })
   tryEach('材料', mods.materials, (id, m) => {
     gearRules.materials[id] = strip(m, ['custom'])
   })
@@ -642,6 +659,9 @@ export function normalizeMods(raw: unknown): ContentMods {
   const out = emptyMods()
   if (!raw || typeof raw !== 'object') return out
   const r = raw as Partial<ContentMods>
+  for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
+  // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
+  for (const [id, a] of Object.entries(out.abilities)) if (a.custom && !abilities[id]) abilities[id] = { ...strip(a, ['custom']), id }
   for (const [id, v] of Object.entries(r.materials ?? {})) out.materials[id] = sanitizeMaterial(v, !!v.custom || !snapshot.materials[id])
   for (const [id, v] of Object.entries(r.bases ?? {})) out.bases[id] = sanitizeBase(v, !!v.custom || !snapshot.bases[id])
   for (const [name, v] of Object.entries(r.items ?? {})) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
@@ -747,6 +767,137 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   })
   if (stages.length) out.stages = stages
   if (custom) out.custom = true
+  return out
+}
+
+// ---- 能力 ----
+
+export const ABILITY_TYPES: Record<AbilityType, string> = { skill: '技能', spell: '法術', cantrip: '戲法' }
+export const ABILITY_TARGETS: Record<AbilityTarget, string> = {
+  enemy: '一名敵人', ally: '一名隊友', ally_or_downed: '一名隊友（可救起倒下的）', self: '自己',
+  all_enemies: '所有敵人', all_allies: '所有隊友', random_enemies: '隨機敵人（數次）',
+}
+export const ABILITY_RESOLVES: Record<AbilityDef['resolve'], string> = { attack: '命中骰對迴避', save: '目標豁免', auto: '必中' }
+/** 可以學這個能力的職業（monster：怪物用） */
+export function abilityClasses(): string[] {
+  return [...Object.keys(classes).filter((c) => !classes[c]!.noncombat), 'monster']
+}
+
+function damagePart(v: unknown): DamagePart | undefined {
+  if (!v || typeof v !== 'object') return undefined
+  const p = v as DamagePart
+  const out: DamagePart = {}
+  if (p.weapon) out.weapon = true
+  else if (p.dice && DICE.test(String(p.dice).replace(/\s+/g, ''))) out.dice = String(p.dice).replace(/\s+/g, '')
+  if (!out.weapon && !out.dice) return undefined
+  if (p.type && DAMAGE_IDS().includes(p.type)) out.type = p.type
+  if (p.mod) out.mod = true
+  if (p.scale?.dice && DICE.test(String(p.scale.dice))) out.scale = { dice: String(p.scale.dice), per: int(p.scale.per, 1, 20, 4) }
+  return out
+}
+
+function applyDef(v: unknown): ApplyDef | undefined {
+  if (!v || typeof v !== 'object') return undefined
+  const a = v as ApplyDef
+  if (!a.status || !statuses[a.status]) return undefined
+  const out: ApplyDef = { status: a.status, turns: int(a.turns, 1, 20, 2) }
+  if (a.to && ['target', 'self', 'allies', 'enemies'].includes(a.to)) out.to = a.to
+  if (a.on && ['hit', 'fail', 'always'].includes(a.on)) out.on = a.on
+  if (a.save && ATTR_IDS.includes(a.save)) out.save = a.save
+  if (a.value && typeof a.value === 'object') {
+    const val: NonNullable<ApplyDef['value']> = {}
+    if (a.value.dice && DICE.test(String(a.value.dice))) val.dice = String(a.value.dice)
+    if (a.value.mod) val.mod = true
+    if (a.value.level) val.level = true
+    if (a.value.flat) val.flat = int(a.value.flat, -50, 50, 0)
+    if (Object.keys(val).length) out.value = val
+  }
+  return out
+}
+
+export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: boolean): AbilityMod {
+  const type = (Object.keys(ABILITY_TYPES) as AbilityType[]).includes(raw.type as AbilityType) ? raw.type! : 'skill'
+  const target = (Object.keys(ABILITY_TARGETS) as AbilityTarget[]).includes(raw.target as AbilityTarget) ? raw.target! : 'enemy'
+  const resolve = (Object.keys(ABILITY_RESOLVES) as AbilityDef['resolve'][]).includes(raw.resolve as AbilityDef['resolve']) ? raw.resolve! : 'auto'
+  const allowed = abilityClasses()
+  const out: AbilityMod = {
+    id,
+    name: str(raw.name, 16) || '新的能力',
+    type,
+    classes: [...new Set((raw.classes ?? []).filter((c) => allowed.includes(c)))],
+    target,
+    resolve,
+    desc: str(raw.desc, 200),
+  }
+  if (type === 'skill') out.unlock = int(raw.unlock, 1, 20, 1)
+  if (type === 'spell') out.circle = int(raw.circle, 1, 9, 1)
+  if (raw.ap !== undefined && raw.ap !== null && String(raw.ap) !== '') out.ap = int(raw.ap, 0, 12, 2)
+  if (raw.attr === 'casting' || ATTR_IDS.includes(raw.attr as AttrId)) out.attr = raw.attr
+  if (target === 'random_enemies') out.count = int(raw.count, 1, 10, 3)
+  if (resolve === 'save') {
+    out.save = ATTR_IDS.includes(raw.save as AttrId) ? raw.save : 'dex'
+    out.on_save = raw.on_save === 'none' ? 'none' : 'half'
+  }
+  const damage = (raw.damage ?? []).slice(0, 4).map(damagePart).filter((d): d is DamagePart => !!d)
+  if (damage.length) out.damage = damage
+  if (raw.mult !== undefined && raw.mult !== null && String(raw.mult) !== '' && Number(raw.mult) !== 1) out.mult = Math.round(num(raw.mult, 0.1, 5, 1) * 100) / 100
+  if (raw.hits && int(raw.hits, 1, 6, 1) > 1) out.hits = int(raw.hits, 1, 6, 1)
+  if (raw.hit) out.hit = int(raw.hit, -10, 10, 0)
+  if (raw.adv) out.adv = true
+  if (raw.crit) out.crit = int(raw.crit, 1, 5, 1)
+  if (raw.heal && typeof raw.heal === 'object') {
+    const h: NonNullable<AbilityDef['heal']> = {}
+    if (raw.heal.dice && DICE.test(String(raw.heal.dice))) h.dice = String(raw.heal.dice)
+    if (raw.heal.mod) h.mod = true
+    if (raw.heal.level) h.level = true
+    if (raw.heal.flat) h.flat = int(raw.heal.flat, 1, 999, 1)
+    if (raw.heal.full) h.full = true
+    if (Object.keys(h).length) out.heal = h
+  }
+  if (raw.shield && (raw.shield.flat || raw.shield.level)) {
+    out.shield = { ...(raw.shield.flat ? { flat: int(raw.shield.flat, 1, 999, 5) } : {}), ...(raw.shield.level ? { level: int(raw.shield.level, 1, 10, 1) } : {}) }
+  }
+  const apply = (raw.apply ?? []).slice(0, 4).map(applyDef).filter((a): a is ApplyDef => !!a)
+  if (apply.length) out.apply = apply
+  if (raw.ap_gain) out.ap_gain = int(raw.ap_gain, 1, 10, 1)
+  if (raw.ap_gain_on_hit) out.ap_gain_on_hit = int(raw.ap_gain_on_hit, 1, 10, 1)
+  if (raw.uses) {
+    const u: NonNullable<AbilityDef['uses']> = {}
+    for (const k of ['per_turn', 'per_combat', 'per_rest'] as const) if (raw.uses[k]) u[k] = int(raw.uses[k], 1, 10, 1)
+    if (Object.keys(u).length) out.uses = u
+  }
+  for (const k of ['concentration', 'cleanse', 'recover_slot', 'kill'] as const) if (raw[k]) out[k] = true
+  if (raw.lifesteal) out.lifesteal = Math.round(num(raw.lifesteal, 0.05, 1, 0.5) * 100) / 100
+  if (raw.hp_limit) out.hp_limit = int(raw.hp_limit, 1, 9999, 30)
+  if (raw.threat) out.threat = int(raw.threat, -50, 50, 0)
+  if (custom) out.custom = true
+  return out
+}
+
+export function newAbility(id: string): AbilityMod {
+  return {
+    id, name: '新的技能', type: 'skill', classes: ['fighter'], unlock: 1, ap: 2, attr: 'str', target: 'enemy', resolve: 'attack',
+    damage: [{ weapon: true }], desc: '', custom: true,
+  }
+}
+
+/**
+ * 哪些地方用到這個能力（刪除前檢查）：職業的初始能力、怪物、固定 NPC、特殊任務的獎勵，
+ * 以及目前存檔裡的角色（隊伍與登場過的人）。
+ */
+export function abilityUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  for (const [cid, c] of Object.entries(classes)) if (c.start?.includes(id)) out.push(`職業「${c.name ?? cid}」的初始能力`)
+  for (const e of Object.values(enemies)) if (e.abilities?.includes(id)) out.push(`怪物「${e.name}」`)
+  for (const n of namedNpcs) if (n.abilities?.includes(id)) out.push(`固定 NPC「${n.name}」`)
+  for (const s of stories) {
+    const effects = [...(s.rewards ?? []), ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])].flatMap((o) => o?.effects ?? []))]
+    if (effects.some((e) => e.type === 'ability' && e.ability === id)) out.push(`特殊任務「${s.title}」的獎勵`)
+  }
+  if (state) {
+    const who = [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((c): c is Character => !!c)]
+    for (const c of who) if (c.abilities?.includes(id)) out.push(`目前存檔的「${c.name}」`)
+  }
   return out
 }
 

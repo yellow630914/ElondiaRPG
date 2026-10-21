@@ -5,7 +5,7 @@ import { abilities, attributeRules, classDef, locationById, type Attrs } from '.
 import { contractTerms, type SlaveStart } from './slavery'
 import { ensureRelationship, recordMemory, setAffinity } from './social'
 import { Rng } from './rng'
-import type { EquippedGear, GameState, GameTime, InventoryItem, Report } from './types'
+import type { Character, EquippedGear, GameState, GameTime, InventoryItem, Report } from './types'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
@@ -135,7 +135,15 @@ export function migrate(state: GameState): GameState {
   }
   state.npcs ??= {}
   state.suggestions ??= []
+  pruneAbilities(state)
   return state
+}
+
+/** 自訂內容刪掉的能力：從角色身上拿掉（讀檔時，以及自訂內容改變之後） */
+export function pruneAbilities(state: GameState) {
+  for (const c of [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((x): x is Character => !!x)]) {
+    if (c.abilities?.some((id) => !abilities[id])) c.abilities = c.abilities.filter((id) => !!abilities[id])
+  }
 }
 
 export function player(state: GameState) {

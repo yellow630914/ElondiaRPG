@@ -238,28 +238,38 @@ function haveItem(state: GameState, name: string): number {
   return state.inventory.find((i) => i.name === name)?.qty ?? 0
 }
 
-/** 買下一筆交易：付出金錢、物品、時間，得到報酬。不需要 AI。 */
-export function buyDeal(state: GameState, type: ShopType, dealId: string): Report {
+/** 一般的商品（目錄裡的物品）：可以一次買好幾份 */
+export function isItemDeal(deal: Deal): boolean {
+  return deal.id.startsWith('item:')
+}
+
+/** 買下一筆交易：付出金錢、物品、時間，得到報酬。不需要 AI。一般的商品可以一次買 qty 份。 */
+export function buyDeal(state: GameState, type: ShopType, dealId: string, qty = 1): Report {
   const key = shopKey(state, type)
   const shop = shopState(state, type)
   const deal = shop.deals.find((d) => d.id === dealId)
   if (!deal || deal.stock <= 0) throw new Error('這筆交易已經沒有了')
-  const money = dealMoney(state, key, deal)
+  const n = Math.max(1, Math.floor(qty) || 1)
+  if (n > 1 && !isItemDeal(deal)) throw new Error('這筆交易一次只能做一份')
+  if (n > deal.stock) throw new Error(`今天只剩 ${deal.stock} 份`)
+  const money = dealMoney(state, key, deal) * n
   if (state.money_cc < money) throw new Error('錢不夠')
   for (const g of deal.gives) {
-    if (g.type === 'item' && haveItem(state, g.name ?? '') < (g.qty ?? 1)) throw new Error(`需要 ${g.name} ×${g.qty ?? 1}`)
+    if (g.type === 'item' && haveItem(state, g.name ?? '') < (g.qty ?? 1) * n) throw new Error(`需要 ${g.name} ×${(g.qty ?? 1) * n}`)
   }
-  const hours = deal.gives.filter((g) => g.type === 'hours').reduce((s, g) => s + (g.amount ?? 0), 0)
+  const hours = deal.gives.filter((g) => g.type === 'hours').reduce((s, g) => s + (g.amount ?? 0), 0) * n
   const report = tradeReport(state, key, Math.max(0.1, hours))
   const keeperRec = npcRecord(state, shop.keeper)!
   ensureRelationship(state, keeperRec)
   if (money) report.changes.money_cc = -money
-  for (const g of deal.gives) if (g.type === 'item') (report.changes.items_lost ??= []).push({ name: g.name!, qty: g.qty ?? 1 })
-  const notes = applyEffects(state, report, expandTokens(state, deal.gets, shop.keeper))
-  deal.stock -= 1
-  const paid = [money ? formatMoney(money) : '', ...deal.gives.filter((g) => g.type === 'item').map((g) => `${g.name} ×${g.qty ?? 1}`), hours ? `${hours} 小時` : '']
+  for (const g of deal.gives) if (g.type === 'item') (report.changes.items_lost ??= []).push({ name: g.name!, qty: (g.qty ?? 1) * n })
+  // 一次買好幾份：物品的數量相乘（其他效果一般的商品不會有）
+  const gets = n > 1 ? deal.gets.map((g) => (g.type === 'item' ? { ...g, qty: g.qty * n } : g)) : deal.gets
+  const notes = applyEffects(state, report, expandTokens(state, gets, shop.keeper))
+  deal.stock -= n
+  const paid = [money ? formatMoney(money) : '', ...deal.gives.filter((g) => g.type === 'item').map((g) => `${g.name} ×${(g.qty ?? 1) * n}`), hours ? `${hours} 小時` : '']
     .filter(Boolean).join('、')
-  report.outcome.summary = `在${keeperRec.name}的店裡交易「${deal.title}」${paid ? `，付出 ${paid}` : ''}。${notes.join('；')}`
+  report.outcome.summary = `在${keeperRec.name}的店裡交易「${deal.title}」${n > 1 ? ` ×${n}` : ''}${paid ? `，付出 ${paid}` : ''}。${notes.join('；')}`
   // 有人入隊、得到報酬以外的後果時，值得交給 AI 描寫
   if (deal.gets.some((g) => g.type === 'companion' || g.type === 'memory')) report.kind = 'social'
   if (deal.gets.some((g) => g.type === 'start_story')) report.kind = 'event'

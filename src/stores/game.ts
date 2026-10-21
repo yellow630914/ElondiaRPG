@@ -606,7 +606,7 @@ export const useGame = defineStore('game', () => {
     perform, judge, flavorRoster, hire, flavorShop, startNegotiation,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),
-    buyDeal: (type: ShopType, id: string) => run((s) => trade.buyDeal(s, type, id)),
+    buyDeal: (type: ShopType, id: string, qty = 1) => run((s) => trade.buyDeal(s, type, id, qty)),
     sellItem: (type: ShopType, name: string, qty: number) => run((s) => trade.sellItem(s, type, name, qty)),
     bargain: (type: ShopType, dealId: string, text: string) => perform({ kind: 'bargain', target: trade.bargainTarget(type, dealId), text }),
     chooseOption: (id: string, option: string) => run((s) => negotiation.chooseOption(s, id, option)),

@@ -47,6 +47,22 @@ describe('shops', () => {
     expect(state.inventory.find((i) => i.name === '乾糧')?.qty).toBe(6)
   })
 
+  it('buys several of a catalog item in one trade, but only one special deal at a time', () => {
+    const state = game(1)
+    const shop = shopState(state, 'general')
+    const deal = shop.deals.find((d) => d.id === 'item:乾糧')!
+    const stock = deal.stock
+    const report = buyDeal(state, 'general', 'item:乾糧', 3)
+    expectValid(report)
+    expect(state.money_cc).toBe(500 - 6 * 3)
+    expect(state.inventory.find((i) => i.name === '乾糧')?.qty).toBe(8)
+    expect(deal.stock).toBe(stock - 3)
+    expect(report.outcome.summary).toContain('×3')
+    expect(() => buyDeal(state, 'general', 'item:乾糧', 999)).toThrow('只剩')
+    const special = shop.deals.find((d) => !d.id.startsWith('item:'))
+    if (special) expect(() => buyDeal(state, 'general', special.id, 2)).toThrow('一次只能')
+  })
+
   it('applies composite rewards such as buying a round for everyone', () => {
     const state = game(2)
     recruit(state, 'npc_lina')

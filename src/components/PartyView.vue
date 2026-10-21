@@ -7,15 +7,11 @@ import {
 import { abilityApCost } from '@/engine/combat'
 import {
   abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName,
-  damageTypeName, genderName, itemDef, itemRules, locationById, raceName, slaveryRules, type AbilityDef,
+  damageTypeName, genderName, locationById, raceName, slaveryRules, type AbilityDef,
 } from '@/engine/data'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { contractTerms } from '@/engine/slavery'
-import { canEquip, canUse, useSummary } from '@/engine/inventory'
-import { toolSummary } from '@/engine/tools'
-import { gearRules, gearSpecOf, gearSummary, SLOTS, slotName } from '@/engine/gear'
-import { itemCategory, itemValue } from '@/engine/trade'
-import { formatMoney } from '@/engine/money'
+import { gearSummary, SLOTS, slotName } from '@/engine/gear'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
 import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -50,17 +46,6 @@ function saveProfile() {
   editingProfile.value = false
 }
 
-// ---- 行囊 ----
-const itemTarget = reactive<Record<string, string>>({})
-function itemDesc(name: string): string {
-  const cat = itemCategory(s.value, name)
-  const value = itemValue(s.value, name)
-  const spec = gearSpecOf(s.value, name)
-  const def = itemDef(name)
-  const forge = def?.forge ? `可打造${[...new Set(def.forge.materials.map((m) => gearRules.materials[m]!.name))].join('、')}` : ''
-  return [spec ? gearSummary(spec) : cat ? itemRules.categories[cat] : '', useSummary(def?.use), toolSummary(def?.tool), forge, value !== undefined ? `約 ${formatMoney(value)}` : '']
-    .filter(Boolean).join('・')
-}
 const bound = computed(() => isBound(s.value))
 
 function contractFor(m: Character) {
@@ -238,24 +223,6 @@ function affinityText(m: Character): string {
       </div>
     </template>
   </section>
-
-  <section class="panel">
-    <h2>🎒 行囊</h2>
-    <p v-if="s.inventory.length === 0" class="muted small">空空如也。</p>
-    <ul class="plain small inventory">
-      <li v-for="i in s.inventory" :key="i.name" class="row">
-        <strong>{{ i.name }} ×{{ i.qty }}</strong>
-        <span class="muted">{{ itemDesc(i.name) }}</span>
-        <template v-if="canUse(i.name) || canEquip(s, i.name)">
-          <select v-model="itemTarget[i.name]">
-            <option v-for="m in s.party" :key="m.id" :value="m.id">{{ m.name }}</option>
-          </select>
-          <button v-if="canUse(i.name)" class="small" :disabled="inCombat" @click="game.useItem(i.name, itemTarget[i.name] ?? 'pc')">使用</button>
-          <button v-if="canEquip(s, i.name)" class="small" :disabled="inCombat" @click="game.equipItem(i.name, itemTarget[i.name] ?? 'pc')">裝備</button>
-        </template>
-      </li>
-    </ul>
-  </section>
 </template>
 
 <style scoped>
@@ -276,7 +243,6 @@ function affinityText(m: Character): string {
 .profile-edit { display: grid; gap: 4px; }
 .profile-edit label { display: grid; gap: 2px; }
 .profile-edit textarea { width: 100%; }
-.inventory li { padding: 3px 0; gap: 8px; }
 .tag.pc { margin-left: 8px; vertical-align: middle; }
 .contract { padding: 6px 8px; border: 1px dashed var(--danger); border-radius: 6px; display: grid; gap: 2px; }
 </style>

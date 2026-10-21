@@ -456,6 +456,7 @@ export interface AbilityDef {
   desc: string
 }
 const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
+/** 所有能力（玩家自訂的內容會改這份：見 mods.ts） */
 export const abilities: Record<string, AbilityDef> = Object.fromEntries(abilityList.map((a) => [a.id, a]))
 
 export function abilityDef(id: string): AbilityDef {
@@ -465,7 +466,7 @@ export function abilityDef(id: string): AbilityDef {
 }
 
 export function classAbilities(classId: string): AbilityDef[] {
-  return abilityList.filter((a) => a.classes.includes(classId))
+  return Object.values(abilities).filter((a) => a.classes.includes(classId))
 }
 
 // ---- 裝備 ----

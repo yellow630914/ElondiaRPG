@@ -17,6 +17,7 @@ import LogView from '@/components/LogView.vue'
 import MapPanel from '@/components/MapPanel.vue'
 import NewGameView from '@/components/NewGameView.vue'
 import PartyView from '@/components/PartyView.vue'
+import InventoryView from '@/components/items/InventoryView.vue'
 import PeoplePanel from '@/components/PeoplePanel.vue'
 import PlacePanel from '@/components/PlacePanel.vue'
 import RelationsView from '@/components/RelationsView.vue'
@@ -58,6 +59,7 @@ const tab = ref<Tab>('adventure')
 
 const showSettings = ref(false)
 const showParty = ref(false)
+const showInventory = ref(false)
 const showRelations = ref(false)
 const showNotebook = ref(false)
 /** 可以回公會交付的委託 */
@@ -124,6 +126,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         <button @click="showParty = true">
           👥 隊伍 <span v-if="pendingSkills" class="tag hot">可升級</span>
         </button>
+        <button @click="showInventory = true">🎒 行囊</button>
         <button @click="showRelations = true">
           💞 關係 <span v-if="suggestionCount" class="tag hot">{{ suggestionCount }} 則提議</span>
         </button>
@@ -154,6 +157,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
   <AppDialog :open="showParty" title="隊伍" icon="👥" width="1200px" @close="showParty = false">
     <PartyView />
+  </AppDialog>
+  <AppDialog :open="showInventory" title="行囊" icon="🎒" width="1000px" @close="showInventory = false">
+    <InventoryView />
   </AppDialog>
   <AppDialog :open="showRelations" title="人際關係與冒險記憶" icon="💞" width="1200px" @close="showRelations = false">
     <RelationsView />
@@ -206,7 +212,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .center { grid-area: center; min-width: 0; }
 .right { grid-area: right; }
 .game.combat { grid-template-areas: 'left center center'; }
-.quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.quick { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .quick button { padding: 10px 4px; font-size: 1rem; }
 .tag.hot { color: var(--accent); border-color: var(--accent); }
 
