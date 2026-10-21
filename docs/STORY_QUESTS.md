@@ -53,6 +53,7 @@
 | `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施上（`at.cell`）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`）、`road` 旅途上、`side` 臨時地圖裡的 ⭐（`at.side_map`） |
 | `at.location` | 地點 id（`npc` 可以不寫，跟著角色走） |
 | `requires` | 解鎖的旗標條件 |
+| `allies` | 在場的友方固定 NPC（id 的清單，任何種類的任務點都可以用）：解鎖之後站在 ⭐ 旁邊，或站在設施上（`cell`；`settlement` 在城門），不管他平常的出沒與出現條件；戰鬥時站在你這邊（由你操作，生命值不留到戰鬥之後）；AI 判定與寫經過時知道他們在場（`report.others`） |
 | `kind` | `story` 劇情（直接發生）、`check` 判定（`check: { attr, dc }`）、`combat` 戰鬥（`enemies` 怪物、`foes` 固定 NPC）、`choice` 選擇（`options`，每個選項可以有自己的檢定） |
 | `success`、`fail` | 結果（劇情只有 success；判定與戰鬥沒寫 fail 時，失敗可以再試） |
 
@@ -75,6 +76,26 @@
 ```
 
 任務結束（完成、失敗或放棄）時，這個任務帶來的任務同行夥伴都會離隊。
+
+### 例：營救 A，同行一段時間後回公會
+
+```jsonc
+{
+  "start": { "kind": "guild", "location": "soriel", "text": "公會的委託：A 被盜賊抓走了。" },
+  "start_flags": ["rescue_started"],
+  "nodes": [
+    { "id": "free", "title": "到近郊救出 A", "at": { "where": "outskirts", "location": "soriel" },
+      "requires": { "flags": ["rescue_started"] },
+      "kind": "combat", "enemies": [["bandit", 2]], "allies": ["npc_a"],          // A 被綁在 ⭐ 旁邊，戰鬥時幫你打
+      "success": { "text": "你割斷繩子，A 說要跟你一起回去。", "join": "npc_a", "set_flags": ["a_rescued"] } },
+    { "id": "back", "title": "帶 A 回公會", "at": { "where": "cell", "location": "soriel", "cell": "guild" },
+      "requires": { "flags": ["a_rescued"] },
+      "kind": "story", "success": { "leave": "npc_a", "complete": true } }
+  ]
+}
+```
+
+如果 A 之後要搬家，在固定 NPC 的「依劇情旗標改變出沒」加一組需要 🚩`a_rescued` 的設定（見 [`CONTENT_EDITOR.md`](CONTENT_EDITOR.md) 第 4 節）。
 
 ## 3. 編輯器（🛠️ 內容 → ⭐ 特殊任務）
 

@@ -99,6 +99,15 @@ export interface NpcDef {
   fixed?: { area: string; x: number; y: number }
   /** 只在劇情旗標符合時出現（特殊任務用，見 story.ts） */
   requires?: StoryCond
+  /** 依劇情旗標改變出沒：由上往下第一組條件成立的設定取代上面的所屬地點、活躍地點與固定格子 */
+  stages?: NpcStage[]
+}
+
+export interface NpcStage {
+  requires: StoryCond
+  location: string
+  haunts?: Haunt[]
+  fixed?: { area: string; x: number; y: number }
 }
 
 /** 劇情旗標的條件：flags 全部成立、flags_none 全部不成立 */
@@ -190,6 +199,8 @@ export interface StoryNode {
   /** 戰鬥：怪物（遭遇表的格式）與固定 NPC */
   enemies?: EncounterGroup
   foes?: string[]
+  /** 在場的友方固定 NPC：站在任務點旁邊、戰鬥時站在隊伍這邊、判定與敘事時列為在場的人 */
+  allies?: string[]
   options?: StoryOption[]
   /** 劇情、判定成功、戰鬥勝利 */
   success?: StoryOutcome

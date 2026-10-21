@@ -12,6 +12,7 @@ import {
 } from './data'
 import { Rng } from './rng'
 import { rollLook } from './traits'
+import { condMet } from './storyFlags'
 import type { Character, GameState, NpcRecord } from './types'
 
 export interface NpcSpec {
@@ -41,18 +42,48 @@ export function hashString(s: string): number {
 }
 
 export function npcRecord(state: GameState, id: string): NpcRecord | undefined {
-  const stored = state.npcs?.[id]
+  let stored = state.npcs?.[id]
   const def = namedNpcs.find((n) => n.id === id)
-  // 固定 NPC 登場後會複製進存檔；出現的條件與固定的格子跟著內容頁籤的設定走
-  if (stored && def) syncPlacement(stored, def)
+  if (!def) return stored
+  // 依劇情旗標改變出沒：有一組成立時，複製進存檔再改（同一個角色，關係與記憶延續）
+  const stage = activeStage(state, def)
+  if (!stored && stage !== undefined) stored = registerNpc(state, JSON.parse(JSON.stringify(def)) as NpcRecord)
+  // 固定 NPC 登場後會複製進存檔；出現的條件與出沒的地方跟著內容頁籤的設定走
+  if (stored) syncPlacement(stored, def, stage)
   return stored ?? def
 }
 
-function syncPlacement(rec: NpcRecord, def: NpcRecord) {
-  for (const k of ['fixed', 'requires'] as const) {
-    if (def[k]) rec[k] = JSON.parse(JSON.stringify(def[k]))
-    else delete rec[k]
+/** 第一組條件成立的「依劇情旗標改變出沒」 */
+export function activeStage(state: GameState, def: Pick<NpcRecord, 'stages'>): number | undefined {
+  const i = (def.stages ?? []).findIndex((st) => condMet(state, st.requires))
+  return i >= 0 ? i : undefined
+}
+
+const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
+
+function syncPlacement(rec: NpcRecord, def: NpcRecord, stage: number | undefined) {
+  if (def.requires) rec.requires = clone(def.requires)
+  else delete rec.requires
+  const st = stage !== undefined ? def.stages?.[stage] : undefined
+  if (st) {
+    // 搬到新的地方
+    rec.location = st.location
+    if (st.fixed) rec.fixed = clone(st.fixed)
+    else delete rec.fixed
+    if (st.haunts?.length) rec.haunts = clone(st.haunts)
+    else delete rec.haunts
+    rec.stage = stage
+    return
   }
+  if (rec.stage !== undefined) {
+    // 條件不再成立：回到原本的設定
+    rec.location = def.location
+    if (def.haunts?.length) rec.haunts = clone(def.haunts)
+    else delete rec.haunts
+    delete rec.stage
+  }
+  if (def.fixed) rec.fixed = clone(def.fixed)
+  else delete rec.fixed
 }
 
 export function registerNpc(state: GameState, rec: NpcRecord): NpcRecord {

@@ -664,6 +664,23 @@ function cond(v: unknown): NpcDef['requires'] {
 }
 export { cond as sanitizeCond }
 
+function cleanHaunts(v: NpcDef['haunts']): NonNullable<NpcDef['haunts']> {
+  return (v ?? [])
+    .filter((h) => h && geography.locations.some((l) => l.id === h.location) && ZONES.includes(h.zone as never))
+    .map((h) => ({ location: h.location, zone: h.zone, weight: Math.round(num(h.weight, 0.01, 10, 1) * 100) / 100 }))
+}
+
+/** 固定的格子：聚落的區塊、走得到的格子 */
+function cleanFixed(v: NpcDef['fixed']): NpcDef['fixed'] {
+  if (!v || typeof v.area !== 'string') return undefined
+  const area = settlementArea(v.area)
+  if (!area) return undefined
+  const x = int(v.x, 0, area.width - 1, 0)
+  const y = int(v.y, 0, area.height - 1, 0)
+  const kind = area.cells[y * area.width + x]?.kind
+  return kind && kind !== 'wall' && kind !== 'water' ? { area: area.key, x, y } : undefined
+}
+
 export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): NpcMod {
   const kind = raw.kind === 'commoner' ? 'commoner' : 'adventurer'
   const cls = kind === 'commoner' ? '' : raw.class && classes[raw.class] && !classes[raw.class]!.noncombat ? raw.class : 'fighter'
@@ -687,9 +704,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   if (str(raw.lineage, 30)) out.lineage = str(raw.lineage, 30)
   const tags = (raw.tags ?? []).filter((t) => !!npcTags.tags[t])
   if (tags.length) out.tags = [...new Set(tags)]
-  const haunts = (raw.haunts ?? [])
-    .filter((h) => h && geography.locations.some((l) => l.id === h.location) && ZONES.includes(h.zone as never))
-    .map((h) => ({ location: h.location, zone: h.zone, weight: Math.round(num(h.weight, 0.01, 10, 1) * 100) / 100 }))
+  const haunts = cleanHaunts(raw.haunts)
   if (haunts.length) out.haunts = haunts
   if (raw.relations && typeof raw.relations === 'object') {
     const rel = Object.fromEntries(Object.entries(raw.relations).map(([k, v]) => [k, str(v, 160)]).filter(([, v]) => v))
@@ -712,17 +727,19 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
     }
     if (Object.keys(g).length) out.gear = g
   }
-  if (raw.fixed && typeof raw.fixed.area === 'string') {
-    const area = settlementArea(raw.fixed.area)
-    if (area) {
-      const x = int(raw.fixed.x, 0, area.width - 1, 0)
-      const y = int(raw.fixed.y, 0, area.height - 1, 0)
-      const kind = area.cells[y * area.width + x]?.kind
-      if (kind && kind !== 'wall' && kind !== 'water') out.fixed = { area: area.key, x, y }
-    }
-  }
+  const fixed = cleanFixed(raw.fixed)
+  if (fixed) out.fixed = fixed
   const req = cond(raw.requires)
   if (req) out.requires = req
+  // 依劇情旗標改變出沒：沒有條件的設定沒有意義，拿掉
+  const stages = (raw.stages ?? []).flatMap((st) => {
+    const r = cond(st?.requires)
+    if (!r) return []
+    const h = cleanHaunts(st.haunts)
+    const f = cleanFixed(st.fixed)
+    return [{ requires: r, location: settlementIds().includes(st.location) ? st.location : location, ...(h.length ? { haunts: h } : {}), ...(f ? { fixed: f } : {}) }]
+  })
+  if (stages.length) out.stages = stages
   if (custom) out.custom = true
   return out
 }

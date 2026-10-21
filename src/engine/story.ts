@@ -12,7 +12,7 @@ import {
   locationById, npcs as namedNpcs, regionById, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome,
 } from './data'
 import { applyEffects } from './effects'
-import { cellName, currentArea, currentCell, DUNGEON_LAYERS, type Area, type CellKind } from './grid'
+import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, type Area, type CellKind } from './grid'
 import { formatMoney } from './money'
 import { npcRecord } from './npcs'
 import { joinParty, leaveParty, pcOf } from './party'
@@ -71,7 +71,8 @@ function storyReport(state: GameState, def: StoryDef, status: NonNullable<Report
   const area = currentArea(state)
   const loc = locationById(area.location)
   const pc = pcOf(state)
-  const npcNames = [def.start.npc, node?.at.npc, ...(node?.foes ?? [])].map((id) => (id ? npcRecord(state, id)?.name : undefined)).filter((n): n is string => !!n)
+  const npcNames = [def.start.npc, node?.at.npc, ...(node?.foes ?? []), ...(node?.allies ?? [])].map((id) => (id ? npcRecord(state, id)?.name : undefined)).filter((n): n is string => !!n)
+  const others = node ? presentOthers(state, node) : []
   return {
     schema_version: '0.1',
     report_id: newReportId(state),
@@ -79,12 +80,28 @@ function storyReport(state: GameState, def: StoryDef, status: NonNullable<Report
     time: { start, end: addHours(start, hours) },
     location: { at: area.location, region: loc.region, scene: area.name },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
+    ...(others.length ? { others } : {}),
     story: { id: def.id, title: def.title, ...(node ? { node: node.id } : {}), status },
     outcome: { result: 'neutral', tags: ['特殊任務'] },
     changes: {},
     narration: { pov: 'second_person', length: 'medium', focus: [`特殊任務「${def.title}」`] },
     lore_keys: [...new Set([loc.name, regionById(loc.region).name, ...npcNames])],
   }
+}
+
+/** 任務點在場的人（友方與身邊的固定 NPC）：記在報告的 others，AI 寫經過時會帶上他們的關係與記憶 */
+function presentOthers(state: GameState, node: StoryNode): { id: string; name: string }[] {
+  const ids = [...new Set([...(node.allies ?? []), ...(node.at.npc ? [node.at.npc] : [])])]
+  return ids
+    .filter((id) => !state.party.some((m) => m.id === id))
+    .map((id) => npcRecord(state, id))
+    .filter((r): r is NonNullable<typeof r> => !!r && !r.dead)
+    .map((r) => ({ id: r.id, name: r.name }))
+}
+
+/** 在場的友方的名字（判定的場景說明用） */
+function allyNames(state: GameState, node: StoryNode): string {
+  return (node.allies ?? []).map((id) => npcRecord(state, id)?.name).filter(Boolean).join('、')
 }
 
 function log(p: StoryProgress, state: GameState, text: string, node?: string) {
@@ -191,6 +208,7 @@ export function playNode(state: GameState, ref: string, option?: number, intent?
     return startCombat(state, node.enemies ?? [], {
       story: { id: def.id, node: node.id }, scene: `${currentArea(state).name}・${node.title}`,
       ...(node.foes?.length ? { npcs: node.foes.filter((id) => !!npcRecord(state, id)) } : {}),
+      ...(node.allies?.length ? { allies: node.allies.filter((id) => !!npcRecord(state, id)) } : {}),
       ...(intent ? { intent } : {}),
     })
   }
@@ -246,7 +264,7 @@ export function setupStoryCheck(state: GameState, target?: string) {
   return {
     attr: c.check.attr, dc: c.check.dc, hours: 1, situational: [],
     ...(n.node.at.npc && npcRecord(state, n.node.at.npc) ? { targetName: npcRecord(state, n.node.at.npc)!.name } : {}),
-    scene: `${currentArea(state).name}・特殊任務「${n.def.title}」：${n.node.title}（${c.label}）。${n.node.text}`,
+    scene: `${currentArea(state).name}・特殊任務「${n.def.title}」：${n.node.title}（${c.label}）。${n.node.text}${allyNames(state, n.node) ? `在場的友方：${allyNames(state, n.node)}。` : ''}`,
     outcomes: { critical: ok, success: ok, partial: `勉強過關：${ok}`, fail: bad, fumble: bad } as Partial<Record<Degree, string>>,
   }
 }
@@ -260,6 +278,8 @@ export function applyStoryCheck(state: GameState, report: Report, target: string
   report.story = { id: n.def.id, title: n.def.title, node: n.node.id, status: 'progress' }
   report.outcome.tags = [...new Set([...(report.outcome.tags ?? []), '特殊任務'])]
   report.lore_keys = [...new Set([...(report.lore_keys ?? []), n.def.title])]
+  const present = presentOthers(state, n.node).filter((o) => !report.others?.some((x) => x.id === o.id))
+  if (present.length) report.others = [...(report.others ?? []), ...present]
   const lines = resolveOutcome(state, report, n.progress, n.def, n.node, success ? c.success : c.fail, success, n.node.kind === 'choice' ? c.label : '')
   return lines.join('')
 }
@@ -398,4 +418,49 @@ export function refreshStoryMarkers(state: GameState) {
     })
     withRng(state, (rng) => ensureStoryMarkers(state, area, rng))
   }
+}
+
+// ---- 在場的友方站在哪裡 ----
+
+/**
+ * 任務點在場的友方固定 NPC 現在站在哪一格：近郊、地下城、臨時地圖的 ⭐ 旁邊，聚落裡任務點的設施上（任何區塊）。
+ * 任務點還沒解鎖、已經結束，或那一區還沒生成時為 undefined（照平常的出沒）。
+ */
+export function allyPlacement(state: GameState, npcId: string): { area: string; x: number; y: number } | undefined {
+  // 先便宜地看有沒有進行中的任務把這個人列為友方（每畫一次人群都會叫）
+  if (!Object.values(state.stories ?? {}).some((p) => p.status === 'active' && storyDef(p.id)?.nodes.some((n) => n.allies?.includes(npcId)))) return undefined
+  for (const n of activeNodes(state)) {
+    if (!n.node.allies?.includes(npcId)) continue
+    const at = n.node.at
+    if (at.where === 'outskirts' || at.where === 'dungeon' || at.where === 'side') {
+      for (const area of Object.values(state.areas ?? {})) {
+        const i = area.cells.findIndex((c) => c.storyNode === n.ref)
+        if (i < 0) continue
+        return { area: area.key, ...besideCell(area, i) }
+      }
+      continue
+    }
+    if ((at.where === 'cell' || at.where === 'settlement') && at.location) {
+      const kind = (at.where === 'cell' ? at.cell : 'gate') as CellKind
+      for (const key of blockKeys(at.location)) {
+        const area = getArea(state, key)
+        const i = area.cells.findIndex((c) => c.kind === kind)
+        if (i >= 0) return { area: key, x: i % area.width, y: Math.floor(i / area.width) }
+      }
+    }
+  }
+  return undefined
+}
+
+/** ⭐ 旁邊一格可以站的地方（沒有時就是 ⭐ 本身） */
+function besideCell(area: Area, i: number): { x: number; y: number } {
+  const x = i % area.width
+  const y = Math.floor(i / area.width)
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, -1], [0, 1]] as const) {
+    const nx = x + dx
+    const ny = y + dy
+    const c = nx >= 0 && ny >= 0 && nx < area.width && ny < area.height ? area.cells[ny * area.width + nx] : undefined
+    if (c && c.kind !== 'wall' && c.kind !== 'water') return { x: nx, y: ny }
+  }
+  return { x, y }
 }

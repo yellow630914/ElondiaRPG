@@ -13,6 +13,7 @@ import {
 import { generateNpc, hashString, npcKind, npcRecord, npcSpot, registerNpc, weightedPick } from './npcs'
 import { Rng } from './rng'
 import { condMet } from './storyFlags'
+import { allyPlacement } from './story'
 import type { GameState, NpcRecord, Roster } from './types'
 
 // ---- 生成 ----
@@ -206,7 +207,11 @@ function pickBlock(rec: Pick<NpcRecord, 'id'>, day: number, keys: string[]): str
 
 /** NPC 今天在哪個區域（區域 key）；不在任何地圖上時為 undefined */
 export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day): string | undefined {
-  if (rec.dead || !visibleNpc(state, rec)) return undefined
+  if (rec.dead) return undefined
+  // 特殊任務在場的友方：站在任務點旁邊（不看自己的出現條件）
+  const ally = allyPlacement(state, rec.id)
+  if (ally) return ally.area
+  if (!visibleNpc(state, rec)) return undefined
   if (rec.at && day <= rec.at.until) return rec.at.area
   // 固定 NPC：站在指定的格子
   if (rec.fixed) return rec.fixed.area
@@ -244,6 +249,8 @@ const TAG_CELLS: Record<string, Partial<Record<CellKind, number>>> = {
 
 /** NPC 在區域裡的格子：職員在自己的設施，暫時待著的人在指定的格子，其他人依日期與時段（每 6 小時）分佈 */
 export function npcCell(state: GameState, rec: NpcRecord, area: Area): { x: number; y: number } | null {
+  const ally = allyPlacement(state, rec.id)
+  if (ally?.area === area.key) return { x: ally.x, y: ally.y }
   if (rec.at && rec.at.area === area.key && state.time.day <= rec.at.until) return { x: rec.at.x, y: rec.at.y }
   if (rec.fixed?.area === area.key && rec.fixed.x < area.width && rec.fixed.y < area.height) return { x: rec.fixed.x, y: rec.fixed.y }
   const spot = !rec.haunts?.length ? npcSpot(rec) : undefined

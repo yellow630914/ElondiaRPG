@@ -281,6 +281,8 @@ export interface NpcRecord extends NpcDef {
   /** 同行的隊伍（一起遭遇） */
   group?: string
   character?: Character
+  /** 目前套用的「依劇情旗標改變出沒」（stages 的索引） */
+  stage?: number
 }
 
 /** 情報（冒險筆記）：事件點（在近郊或地下城的某一層放一個事件）或特殊任務的消息 */

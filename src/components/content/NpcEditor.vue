@@ -13,6 +13,7 @@ import type { GearSlot } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import FlagInput from './FlagInput.vue'
+import NpcPlacementEditor from './NpcPlacementEditor.vue'
 
 // 固定 NPC 的編輯表單：不會因為名單變動消失；可以固定在聚落的某一格、只在劇情旗標符合時出現
 const props = defineProps<{ id: string }>()
@@ -42,35 +43,15 @@ const settlements = geography.locations.filter((l) => l.type !== 'dungeon')
 const places = geography.locations
 const tags = computed(() => Object.entries(npcTags.tags).filter(([, t]) => t.kinds.includes(draft.value.kind ?? 'adventurer')))
 
-// ---- 出現的方式：活躍地點或固定的格子 ----
-const placeMode = computed({
-  get: () => (draft.value.fixed ? 'fixed' : 'haunts'),
-  set: (v: string) => {
-    if (v === 'fixed') setBlock(blockKeys(draft.value.location)[0]!)
-    else delete draft.value.fixed
-  },
-})
-const blocks = computed(() => blockKeys(draft.value.location).map((k) => ({ key: k, area: settlementArea(k)! })).filter((b) => b.area))
-const block = computed(() => (draft.value.fixed ? settlementArea(draft.value.fixed.area) : undefined))
-function pickCell(i: number) {
-  const a = block.value
-  if (!a || !draft.value.fixed) return
-  const kind = a.cells[i]!.kind
-  if (kind === 'wall' || kind === 'water') return
-  draft.value.fixed = { area: a.key, x: i % a.width, y: Math.floor(i / a.width) }
+// ---- 依劇情旗標改變出沒：由上往下第一組條件成立的設定 ----
+function addStage() {
+  ;(draft.value.stages ??= []).push({ requires: { flags: [] }, location: draft.value.location, haunts: [{ location: draft.value.location, zone: 'town', weight: 1 }] })
 }
-function setBlock(key: string) {
-  draft.value.fixed = { area: key, x: 0, y: 0 }
-  const a = settlementArea(key)
-  const i = a?.cells.findIndex((c) => c.kind !== 'wall' && c.kind !== 'water') ?? -1
-  if (a && i >= 0) draft.value.fixed = { area: key, x: i % a.width, y: Math.floor(i / a.width) }
-}
-// 換了所屬地點：固定的格子跟著換到那裡的第一個區塊
-watch(() => draft.value.location, (loc) => {
-  if (draft.value.fixed && !blockKeys(loc).includes(draft.value.fixed.area)) setBlock(blockKeys(loc)[0]!)
-})
-function addHaunt() {
-  ;(draft.value.haunts ??= []).push({ location: draft.value.location, zone: 'town', weight: 1 })
+function moveStage(i: number, d: number) {
+  const list = draft.value.stages!
+  const j = i + d
+  if (j < 0 || j >= list.length) return
+  ;[list[i], list[j]] = [list[j]!, list[i]!]
 }
 
 // ---- 劇情條件 ----
@@ -214,53 +195,31 @@ function remove() {
 
     <fieldset>
       <legend>出現的地方</legend>
-      <div class="grid">
-        <label>所屬地點
-          <select v-model="draft.location">
-            <option v-for="l in settlements" :key="l.id" :value="l.id">{{ l.name }}（{{ regionById(l.region).name }}）</option>
-          </select>
-        </label>
-        <label>出現的方式
-          <select v-model="placeMode">
-            <option value="haunts">活躍地點（每天依權重決定在哪裡）</option>
-            <option value="fixed">固定在聚落的一格</option>
-          </select>
-        </label>
-      </div>
-      <template v-if="placeMode === 'haunts'">
-        <div v-for="(h, i) in draft.haunts ?? []" :key="i" class="row">
-          <select v-model="h.location" class="grow">
-            <option v-for="l in places" :key="l.id" :value="l.id">{{ l.name }}</option>
-          </select>
-          <select v-model="h.zone">
-            <option v-for="z in ZONES" :key="z" :value="z">{{ ZONE_NAME[z] }}</option>
-          </select>
-          <label class="small">權重 <input v-model.number="h.weight" class="num" type="number" min="0.01" step="0.1" /></label>
-          <button class="small" @click="draft.haunts!.splice(i, 1)">移除</button>
-        </div>
-        <button class="small" @click="addHaunt">＋ 活躍地點</button>
-        <p v-if="!draft.haunts?.length" class="small muted">沒有活躍地點時，要認識之後才找得到（在所屬地點的城區）。</p>
-      </template>
-      <template v-else-if="draft.fixed">
-        <label class="small">區塊
-          <select :value="draft.fixed.area" @change="setBlock(($event.target as HTMLSelectElement).value)">
-            <option v-for="b in blocks" :key="b.key" :value="b.key">{{ b.area.name }}</option>
-          </select>
-        </label>
-        <p class="small muted">點一格決定站的位置（{{ draft.fixed.x }}, {{ draft.fixed.y }}：{{ block ? cellName(block.cells[draft.fixed.y * block.width + draft.fixed.x]!.kind) : '' }}）。</p>
-        <div v-if="block" class="cells" :style="{ gridTemplateColumns: `repeat(${block.width}, 22px)` }">
-          <button
-            v-for="(c, i) in block.cells" :key="i" class="cell" :class="[c.kind, { picked: i === draft.fixed.y * block.width + draft.fixed.x }]"
-            :title="cellName(c.kind)" @click="pickCell(i)"
-          >{{ i === draft.fixed.y * block.width + draft.fixed.x ? '🧍' : CELL_ICON[c.kind] ?? '' }}</button>
-        </div>
-      </template>
+      <NpcPlacementEditor v-model="draft" />
       <div class="row">
         <span class="small">只在這些劇情旗標成立時出現：</span><FlagInput v-model="requires.flags" />
       </div>
       <div class="row">
         <span class="small">這些旗標成立時不出現：</span><FlagInput v-model="requires.flags_none" />
       </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>依劇情旗標改變出沒</legend>
+      <p class="small muted">例如因為某個事件搬家：加一組「🚩a_moved 成立時：所屬萊茵堡、活躍地點萊茵堡城區」。由上往下找第一組條件成立的設定，都不成立時用上面的設定（沒有填任何旗標的一組，儲存時會被移除）。是同一個角色，親密度、關係與記憶都會延續。</p>
+      <div v-for="(st, i) in draft.stages ?? []" :key="i" class="stage">
+        <div class="row">
+          <b class="small">第 {{ i + 1 }} 組</b>
+          <span class="spacer" />
+          <button class="small" title="往上" @click="moveStage(i, -1)">▲</button>
+          <button class="small" title="往下" @click="moveStage(i, 1)">▼</button>
+          <button class="small" @click="draft.stages!.splice(i, 1)">移除</button>
+        </div>
+        <div class="row small">這些旗標都成立時 <FlagInput v-model="st.requires.flags" /></div>
+        <div class="row small">而且這些旗標都不成立 <FlagInput v-model="st.requires.flags_none" /></div>
+        <NpcPlacementEditor v-model="draft.stages![i]!" />
+      </div>
+      <button class="small" @click="addStage">＋ 依旗標改變出沒</button>
     </fieldset>
 
     <fieldset>
@@ -316,10 +275,6 @@ function remove() {
 
 <style scoped src="./editor.css"></style>
 <style scoped>
-.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; }
-.cell { width: 22px; height: 22px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
-.cell.wall { background: var(--border); cursor: default; }
-.cell.water { background: #2a4a6a; cursor: default; }
-.cell.picked { outline: 2px solid var(--accent); }
+.stage { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 .slot { width: 3em; }
 </style>

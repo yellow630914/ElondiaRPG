@@ -186,6 +186,8 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
   const out: StoryNode = { id, title: str(n.title, 40) || '新的任務點', text: str(n.text, 600), at: place(n.at), kind }
   const req = sanitizeCond(n.requires) as StoryCond | undefined
   if (req) out.requires = req
+  const allies = (n.allies ?? []).map((a) => str(a, 60)).filter(Boolean)
+  if (allies.length) out.allies = [...new Set(allies)]
   if (kind === 'check') out.check = check(n.check) ?? { attr: 'int', dc: 12 }
   if (kind === 'combat') {
     const g = group(n.enemies)
@@ -321,6 +323,8 @@ export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string
     if (n.kind === 'combat' && !n.enemies?.length && !n.foes?.length) out.push(`${t}是戰鬥，但沒有敵人`)
     for (const [id] of n.enemies ?? []) if (!enemies[id]) out.push(`${t}的怪物 ${id} 不存在`)
     for (const id of n.foes ?? []) if (!npcIds.has(id)) out.push(`${t}的敵對角色 ${id} 不存在`)
+    for (const id of n.allies ?? []) if (!npcIds.has(id)) out.push(`${t}的友方角色 ${id} 不存在`)
+    for (const id of n.allies ?? []) if (n.foes?.includes(id)) out.push(`${t}：${id} 同時是友方與敵對角色`)
     if (n.kind === 'choice' && !n.options?.length) out.push(`${t}是選擇，但沒有選項`)
     for (const { o } of outcomesOf(n)) {
       if (o.join && !npcIds.has(o.join)) out.push(`${t}要同行的角色 ${o.join} 不存在`)

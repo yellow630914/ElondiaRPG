@@ -51,6 +51,8 @@ export interface Combatant {
   id: string
   name: string
   side: 'party' | 'enemy'
+  /** 不在隊伍裡、這場戰鬥站在隊伍這邊的固定 NPC（特殊任務的友方） */
+  ally?: boolean
   level: number
   attrs: Attrs
   prof: number
@@ -138,6 +140,8 @@ export interface CombatOptions {
   cell?: CombatState['cell']
   /** 和 NPC（冒險者）戰鬥：他們的 id */
   npcs?: string[]
+  /** 站在隊伍這邊的 NPC（特殊任務在場的友方，不在隊伍裡） */
+  allies?: string[]
   /** 先手：party = 主角偷襲成功，enemy = 對方先手 */
   surprise?: 'party' | 'enemy'
 }
@@ -177,6 +181,12 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     }
     for (const rec of npcs) {
       fighters.push({ ...fromCharacter(characterFor(state, rec), rng), side: 'enemy', npcId: rec.id })
+    }
+    // 在場的友方：和隊伍一起行動（由玩家操作），戰後不留下狀態
+    for (const id of opts.allies ?? []) {
+      const rec = npcRecord(state, id)
+      if (!rec || rec.dead || state.party.some((m) => m.id === id)) continue
+      fighters.push({ ...fromCharacter(characterFor(state, rec), rng), side: 'party', npcId: rec.id, ally: true })
     }
     // 先手：被偷襲的一方排在最後
     if (opts.surprise) for (const f of fighters) if (f.side !== opts.surprise) f.initiative -= 100
@@ -1360,11 +1370,17 @@ export function finishCombat(state: GameState): Report {
     member.usesPerRest = { ...f.usedRest }
   }
 
-  const others: ActorState[] = foes.map((f) => ({
+  // 在場的友方也記在報告裡（給 AI 寫經過）
+  const allies: ActorState[] = combat.combatants.filter((c) => c.ally).map((f) => ({
+    id: f.npcId ?? f.id, name: f.name, level: f.level,
+    hp: [combat.startHp[f.id] ?? f.maxHp, f.hp, f.maxHp],
+    status: ['同行的友方', ...(f.hp === 0 ? ['倒下'] : [])],
+  }))
+  const others: ActorState[] = [...allies, ...foes.map((f): ActorState => ({
     id: f.id, name: f.name, level: f.level,
     hp: [combat.startHp[f.id] ?? f.maxHp, f.hp, f.maxHp],
     status: f.hp === 0 ? ['死亡'] : f.fled ? ['逃走'] : f.statuses.map((s) => statusDef(s.id).name),
-  }))
+  }))]
 
   let money = 0
   const items: ItemDelta[] = []
