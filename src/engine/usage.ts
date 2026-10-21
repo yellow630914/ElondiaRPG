@@ -111,6 +111,7 @@ export function npcUsage(id: string, state?: GameState | null): string[] {
 
 export function storyUsage(id: string, state?: GameState | null): string[] {
   const out: string[] = []
+  for (const i of itemRules.items) if (i.intel?.kind === 'story' && i.intel.story === id) out.push(`情報物品「${i.name}」`)
   for (const s of stories) {
     if (s.id !== id && storyEffects(s).some((e) => e.type === 'start_story' && e.story === id)) out.push(`特殊任務「${s.title}」的效果`)
   }

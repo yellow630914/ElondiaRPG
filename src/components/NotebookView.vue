@@ -128,7 +128,7 @@ const counts = computed(() => ({
         <p v-if="it.text" class="small">{{ it.text }}</p>
         <div class="small muted">
           <template v-if="it.kind === 'point'">地點：{{ intelPlace(it) }}・第 {{ it.until }} 天前有效・</template>
-          {{ formatTime(it.time) }}在{{ locationById(it.from).name }}的情報商買到
+          {{ formatTime(it.time) }}{{ it.source ? `在${locationById(it.from).name}解讀「${it.source}」得到` : `在${locationById(it.from).name}的情報商買到` }}
         </div>
       </div>
     </template>

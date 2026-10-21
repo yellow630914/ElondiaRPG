@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { finishCombat } from '@/engine/combat'
-import { stories } from '@/engine/data'
+import { stories, townQuestTemplates } from '@/engine/data'
 import { afterCombat, currentArea, enterLocation, goOutskirts, moveTo, standOn } from '@/engine/grid'
 import { addIntel } from '@/engine/intel'
+import { readIntelItem } from '@/engine/inventory'
+import { addItem } from '@/engine/state'
 import { newGame } from '@/engine/state'
 import { storyIssues } from '@/engine/storyMods'
 import { buyDeal, shopState } from '@/engine/trade'
@@ -93,5 +95,40 @@ describe('informant intel', () => {
     // 買過就不會再賣
     state.time.day += 1
     expect(shopState(state, 'informant').deals.some((d) => d.id === 'info:story:smuggler_ledger')).toBe(false)
+  })
+
+  it('reads intel items like buying from an informant', () => {
+    const state = game()
+    // 盜墓者的藏寶圖：低語墓穴中層的藏寶處
+    addItem(state.inventory, '盜墓者的藏寶圖', 1)
+    const r = readIntelItem(state, '盜墓者的藏寶圖')
+    valid(r)
+    const it = state.intel!.at(-1)!
+    expect(it).toMatchObject({ kind: 'point', location: 'whisper_crypt', layer: 'middle', event: 'chest', status: 'active' })
+    expect(it.until).toBe(state.time.day + 10)
+    expect(state.inventory.some((i) => i.name === '盜墓者的藏寶圖')).toBe(false)
+    // 懸賞告示：附近的強敵
+    addItem(state.inventory, '懸賞告示', 1)
+    readIntelItem(state, '懸賞告示')
+    expect(state.intel!.at(-1)).toMatchObject({ event: 'combat' })
+    expect(state.intel!.at(-1)!.group?.length).toBeGreaterThan(0)
+    // AI 生成的情報（沒有內容）：附近隨機的事件點
+    state.customItems = { 酒館裡聽來的傳聞: { category: 'info', price_cc: 40 } }
+    addItem(state.inventory, '酒館裡聽來的傳聞', 1)
+    readIntelItem(state, '酒館裡聽來的傳聞')
+    expect(state.intel!.at(-1)!.kind).toBe('point')
+    expect(() => readIntelItem(state, '乾糧')).toThrow('不是情報')
+  })
+
+  it('uses a lead letter on a quest that needs a check, and keeps it when there is none', () => {
+    const state = game()
+    addItem(state.inventory, '褪色的密信', 1)
+    expect(() => readIntelItem(state, '褪色的密信')).toThrow('沒有用得到')
+    expect(state.inventory.find((i) => i.name === '褪色的密信')?.qty).toBe(1)
+    const tpl = Object.entries(townQuestTemplates).find(([, t]) => t.dc !== undefined)![0]
+    state.quests.push({ id: 'q_lead', title: '測試委託', rank: 'F', kind: 'clear_dungeon', area: 'town', template: tpl, giver: 'soriel', target: 'soriel', goal: 1, progress: 0, reward_cc: 50, status: 'accepted' } as never)
+    valid(readIntelItem(state, '褪色的密信'))
+    expect(state.quests.find((x) => x.id === 'q_lead')!.flags?.lead).toBe(true)
+    expect(state.inventory.some((i) => i.name === '褪色的密信')).toBe(false)
   })
 })

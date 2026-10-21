@@ -114,56 +114,81 @@ function strongest(table: EncounterGroup[]): EncounterGroup {
   return [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
 }
 
+/** 可以放事件點的地方：tier 0 是近郊，1～4 是地下城的周邊、淺層、中層、深層 */
+export interface PointPlace { location: string; layer?: DungeonLayerId; table: EncounterGroup[]; tier: number }
+
+/** 附近可以放事件點的地方：這座城鎮的近郊，加上 7 天內可以到的地下城的每一層 */
+export function nearbyPlaces(from: string): PointPlace[] {
+  const here = locationById(from)
+  const places: PointPlace[] = []
+  if (here.type !== 'dungeon') places.push({ location: here.id, table: wildEncounters(here.region), tier: 0 })
+  for (const d of [...new Set([...(here.type === 'dungeon' ? [here.id] : []), ...nearbyDungeons(from)])]) places.push(...dungeonPlaces(d))
+  return places
+}
+
+/** 一個地點可以放事件點的地方：聚落是近郊，地下城是有遭遇表的每一層（layer 指定時只有那一層） */
+export function placesAt(location: string, layer?: DungeonLayerId): PointPlace[] {
+  const loc = locationById(location)
+  if (loc.type !== 'dungeon') return [{ location, table: wildEncounters(loc.region), tier: 0 }]
+  return dungeonPlaces(location).filter((p) => !layer || p.layer === layer)
+}
+
+function dungeonPlaces(d: string): PointPlace[] {
+  const out: PointPlace[] = []
+  for (const [i, layer] of LAYERS.entries()) {
+    const table = dungeonEncounters[d]?.[layer]
+    if (table?.length) out.push({ location: d, layer, table, tier: i + 1 })
+  }
+  return out
+}
+
+export type PointEvent = 'combat' | 'chest' | 'merchant'
+
+/** 一則事件點情報的內容（還沒記進筆記）：盤踞的強敵、藏寶處或流浪商人 */
+export function makePoint(state: GameState, p: PointPlace, event: PointEvent, validDays: number): Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> {
+  const pc = pcOf(state)
+  const level = Math.max(1, ...p.table.flat().map(([id]) => enemies[id]?.level ?? 1))
+  const place = intelPlace(p)
+  const until = state.time.day + (event === 'merchant' ? Math.max(1, validDays - 2) : validDays)
+  let title = ''
+  let text = ''
+  let group: EncounterGroup | undefined
+  if (event === 'combat') {
+    const base = strongest(p.table)
+    group = base.map(([id, c], i) => [id, i === 0 ? c + 1 : c] as [string, number])
+    const boss = enemies[group[0]?.[0] ?? '']
+    const weak = Object.entries(boss?.resist ?? {}).filter(([, v]) => (v ?? 0) > 0).map(([k]) => k)
+    title = `${place}的${boss?.name ?? '魔物'}巢穴`
+    text = `一群${boss?.name ?? '魔物'}在${place}盤踞，附近的人說牠們搶了不少值錢的東西。${weak.length ? `聽說牠們怕${weak.map((w) => damageTypeName(w)).join('、')}。` : ''}打倒牠們有額外的收穫。`
+  } else if (event === 'chest') {
+    title = `${place}的藏寶處`
+    text = `有人把一批值錢的東西藏在${place}，還沒來得及取回。`
+  } else {
+    title = `${place}的流浪商人`
+    text = `一位流浪商人這幾天會在${place}擺攤，賣的都是城裡少見的東西。`
+  }
+  return {
+    title, text, location: p.location, ...(p.layer ? { layer: p.layer } : {}), event,
+    ...(group ? { group } : {}), level: Math.max(level, pc.level) + (event === 'chest' ? 2 : 0), until,
+  }
+}
+
 /**
  * 今天的事件點情報（每家情報商每天幾則）：地點、事件、價格。
  * prices 依層數（近郊、周邊、淺層、中層、深層），mult 是地點的價格倍率。
  */
 export function pointOffers(state: GameState, rng: Rng, n: number, prices: number[], validDays: number, mult: number): IntelOffer[] {
-  const here = locationById(state.location)
-  const places: { location: string; layer?: DungeonLayerId; table: EncounterGroup[]; tier: number }[] = []
-  if (here.type !== 'dungeon') places.push({ location: here.id, table: wildEncounters(here.region), tier: 0 })
-  for (const d of nearbyDungeons(state.location)) {
-    for (const [i, layer] of LAYERS.entries()) {
-      const table = dungeonEncounters[d]?.[layer]
-      if (table?.length) places.push({ location: d, layer, table, tier: i + 1 })
-    }
-  }
+  const places = nearbyPlaces(state.location)
   const out: IntelOffer[] = []
-  const pc = pcOf(state)
   for (let k = 0; k < n && places.length; k++) {
     const p = places.splice(rng.int(0, places.length - 1), 1)[0]!
-    const level = Math.max(1, ...p.table.flat().map(([id]) => enemies[id]?.level ?? 1))
     const event = rng.pick(['combat', 'combat', 'chest', 'chest', 'merchant'] as const)
-    const place = intelPlace(p)
     const price = Math.round((prices[p.tier] ?? prices.at(-1) ?? 100) * mult)
-    const until = state.time.day + (event === 'merchant' ? Math.max(1, validDays - 2) : validDays)
-    let title = ''
-    let text = ''
-    let group: EncounterGroup | undefined
-    if (event === 'combat') {
-      const base = strongest(p.table)
-      group = base.map(([id, c], i) => [id, i === 0 ? c + 1 : c] as [string, number])
-      const boss = enemies[group[0]?.[0] ?? '']
-      const weak = Object.entries(boss?.resist ?? {}).filter(([, v]) => (v ?? 0) > 0).map(([k]) => k)
-      title = `${place}的${boss?.name ?? '魔物'}巢穴`
-      text = `一群${boss?.name ?? '魔物'}在${place}盤踞，附近的人說牠們搶了不少值錢的東西。${weak.length ? `聽說牠們怕${weak.map((w) => damageTypeName(w)).join('、')}。` : ''}打倒牠們有額外的收穫。`
-    } else if (event === 'chest') {
-      title = `${place}的藏寶處`
-      text = `有人把一批值錢的東西藏在${place}，還沒來得及取回。`
-    } else {
-      title = `${place}的流浪商人`
-      text = `一位流浪商人這幾天會在${place}擺攤，賣的都是城裡少見的東西。`
-    }
+    const intel = makePoint(state, p, event, validDays)
     out.push({
       id: `info:point:${p.location}:${p.layer ?? 'wild'}:${event}`,
-      title, desc: `${text}（第 ${until} 天前有效）`, price,
-      gets: [{
-        type: 'intel',
-        intel: {
-          title, text, location: p.location, ...(p.layer ? { layer: p.layer } : {}), event,
-          ...(group ? { group } : {}), level: Math.max(level, pc.level) + (event === 'chest' ? 2 : 0), until,
-        },
-      }],
+      title: intel.title, desc: `${intel.text}（第 ${intel.until} 天前有效）`, price,
+      gets: [{ type: 'intel', intel }],
     })
   }
   return out

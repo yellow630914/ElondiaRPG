@@ -305,6 +305,8 @@ export interface Intel {
   until?: number
   /** story：特殊任務的 id */
   story?: string
+  /** 解讀情報物品得到的：物品名稱（沒有時是向情報商買的） */
+  source?: string
   status: 'active' | 'done' | 'expired'
 }
 

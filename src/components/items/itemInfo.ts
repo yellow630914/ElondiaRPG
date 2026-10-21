@@ -2,7 +2,7 @@
 
 import { itemDef, itemRules, type ItemCategory } from '@/engine/data'
 import { gearRules, gearSpecOf, gearSummary } from '@/engine/gear'
-import { useSummary } from '@/engine/inventory'
+import { intelSummary, isIntelItem, useSummary } from '@/engine/inventory'
 import { toolSummary } from '@/engine/tools'
 import { itemCategory } from '@/engine/trade'
 import type { GameState } from '@/engine/types'
@@ -33,7 +33,8 @@ export function itemEffect(state: GameState, name: string): string {
   const spec = gearSpecOf(state, name)
   const forgeNames = [...new Set((def?.forge?.materials ?? []).map((m) => gearRules.materials[m]?.name).filter(Boolean))]
   const forge = forgeNames.length ? `可打造${forgeNames.join('、')}` : ''
-  return [spec ? gearSummary(spec) : '', useSummary(def?.use), toolSummary(def?.tool), forge].filter(Boolean).join('・')
+  return [spec ? gearSummary(spec) : '', useSummary(def?.use), toolSummary(def?.tool), isIntelItem(state, name) ? intelSummary(def?.intel) : '', forge]
+    .filter(Boolean).join('・')
 }
 
 /** 物品的描述文字（目錄或 AI 自創的） */

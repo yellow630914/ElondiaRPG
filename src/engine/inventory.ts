@@ -1,12 +1,17 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
 import { snapshot } from './character'
-import { attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, regionById, statusDef, type ItemUse } from './data'
+import {
+  attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, regionById, shopRules, statusDef, stories, townQuestTemplates,
+  type ItemIntel, type ItemUse,
+} from './data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, slotName, slotsFor, syncGear } from './gear'
+import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
 import { gainCondition, pcOf } from './party'
 import { toolDef } from './tools'
 import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
+import { startStory } from './story'
 import type { Character, GameState, GearSlot, Report } from './types'
 
 function itemReport(state: GameState, hours: number): Report {
@@ -35,6 +40,64 @@ function member(state: GameState, id: string): Character {
 function take(state: GameState, name: string) {
   if (!state.inventory.some((i) => i.name === name && i.qty > 0)) throw new Error(`沒有${name}`)
   if (state.combat) throw new Error('戰鬥中不能這麼做')
+}
+
+/** 情報物品：可以解讀（目錄裡的，或 AI 生成、登錄在存檔的） */
+export function isIntelItem(state: Pick<GameState, 'customItems'> | undefined, name: string): boolean {
+  return (itemDef(name)?.category ?? state?.customItems?.[name]?.category) === 'info'
+}
+
+/** 情報物品解讀之後的內容（一行說明） */
+export function intelSummary(intel: ItemIntel | undefined): string {
+  if (!intel || intel.kind === 'point') {
+    const ev = intel?.event ? EVENT_NAME[intel.event] : '強敵、藏寶處或流浪商人'
+    const loc = intel?.location ? locationById(intel.location) : undefined
+    const where = !loc ? '附近' : intel?.layer ? intelPlace({ location: loc.id, layer: intel.layer }) : loc.type === 'dungeon' ? `${loc.name}的某一層` : `${loc.name}近郊`
+    return `解讀：${where}的事件點（${ev}）`
+  }
+  if (intel.kind === 'story') return `解讀：特殊任務「${stories.find((s) => s.id === intel.story)?.title ?? intel.story}」的消息`
+  return '解讀：進行中委託的線索（檢定 +5）'
+}
+const EVENT_NAME: Record<NonNullable<ItemIntel['event']>, string> = { combat: '盤踞的強敵', chest: '藏寶處', merchant: '流浪商人' }
+
+/**
+ * 解讀情報物品：和向情報商買情報一樣，記進冒險筆記（事件點）、開始特殊任務，或給進行中的委託線索。
+ * 用掉這件物品；沒有用處時（任務已經開始、沒有要檢定的委託）不會用掉。
+ */
+export function readIntelItem(state: GameState, name: string): Report {
+  take(state, name)
+  if (!isIntelItem(state, name)) throw new Error('這不是情報')
+  const spec: ItemIntel = itemDef(name)?.intel ?? { kind: 'point' }
+  const report = itemReport(state, 0.25)
+  report.kind = 'event'
+  report.outcome.tags = ['情報']
+  let text = ''
+  if (spec.kind === 'story') {
+    const def = stories.find((s) => s.id === spec.story)
+    if (!def) throw new Error('消息裡說的事已經不存在了')
+    if (state.stories?.[def.id]) throw new Error(`「${def.title}」的事你已經知道了`)
+    startStory(state, def.id)
+    addIntel(state, { kind: 'story', story: def.id, title: def.title, text: def.start.text ?? def.summary, source: name })
+    text = `得知「${def.title}」的消息，開始了這個特殊任務`
+  } else if (spec.kind === 'lead') {
+    const quests = state.quests.filter((q) => q.status === 'accepted' && !q.flags?.lead && q.template && townQuestTemplates[q.template]?.dc !== undefined)
+    const q = quests.find((x) => x.giver === state.location) ?? quests[0]
+    if (!q) throw new Error('目前沒有用得到這條線索的委託')
+    q.flags = { ...(q.flags ?? {}), lead: true }
+    text = `找到委託「${q.title}」的線索（委託的檢定 +5）`
+  } else {
+    const places = spec.location ? placesAt(spec.location, spec.layer) : nearbyPlaces(state.location)
+    if (!places.length) throw new Error('看不出這份情報說的是哪裡')
+    const it = withRng(state, (rng) => {
+      const p = rng.pick(places)
+      const event = spec.event ?? rng.pick(['combat', 'combat', 'chest', 'chest', 'merchant'] as const)
+      return addIntel(state, { ...makePoint(state, p, event, spec.days ?? shopRules.types.informant.info?.valid_days ?? 5), kind: 'point', source: name })
+    })
+    text = `記下情報「${it.title}」：${it.text}（第 ${it.until} 天前有效，見冒險筆記）`
+  }
+  report.changes.items_lost = [{ name, qty: 1 }]
+  report.outcome.summary = `解讀了${name}，${text}。`
+  return commitReport(state, report)
 }
 
 export function canUse(name: string): boolean {

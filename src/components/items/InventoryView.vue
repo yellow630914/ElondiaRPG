@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { itemRules, type ItemCategory } from '@/engine/data'
-import { canEquip, canUse } from '@/engine/inventory'
+import { canEquip, canUse, isIntelItem } from '@/engine/inventory'
 import { formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/trade'
 import { useGame } from '@/stores/game'
@@ -52,7 +52,10 @@ const value = (name: string) => itemValue(s.value, name)
         <div class="small muted">{{ categoryName(s, i.name) }}<template v-if="value(i.name) !== undefined">・約 {{ formatMoney(value(i.name)!) }}</template></div>
         <div v-if="itemEffect(s, i.name)" class="small effect">{{ itemEffect(s, i.name) }}</div>
         <div v-if="itemText(s, i.name)" class="small muted">{{ itemText(s, i.name) }}</div>
-        <div v-if="canUse(i.name) || canEquip(s, i.name)" class="row actions">
+        <div v-if="isIntelItem(s, i.name)" class="row actions">
+          <button class="small" :disabled="inCombat" title="記進冒險筆記（和向情報商買情報一樣），用掉這件情報" @click="game.readIntel(i.name)">🔍 解讀</button>
+        </div>
+        <div v-else-if="canUse(i.name) || canEquip(s, i.name)" class="row actions">
           <select :value="target[i.name] ?? s.party[0]?.id" class="small" @change="target[i.name] = ($event.target as HTMLSelectElement).value">
             <option v-for="m in s.party" :key="m.id" :value="m.id">{{ m.name }}</option>
           </select>

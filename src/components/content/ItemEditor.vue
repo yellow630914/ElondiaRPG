@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, companionRules, damageTypeName, damageTypes, enemies, itemDef, itemRules, statuses, type AttrId, type ItemUse, type ToolKind } from '@/engine/data'
+import {
+  ATTR_IDS, attrName, companionRules, damageTypeName, damageTypes, enemies, geography, itemDef, itemRules, statuses, stories,
+  type AttrId, type ItemIntel, type ItemUse, type ToolKind,
+} from '@/engine/data'
 import { gearPrice, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
-import { useSummary } from '@/engine/inventory'
+import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
@@ -27,6 +30,8 @@ function current(): { item: ItemMod; drops: Drop[] } {
   item.chests ??= src.chests
   item.gather ??= src.gather
   item.use ??= {}
+  // 打開時就補上預設的情報內容，才不會一打開就顯示「未儲存」
+  if (item.category === 'info') item.intel ??= { kind: 'point' }
   return { item, drops: src.drops }
 }
 const init = current()
@@ -82,6 +87,18 @@ function setTool(kind: string) {
   else draft.value.tool = { kind: kind as ToolKind, ...(itemRules.tools[kind as ToolKind].bonus !== undefined ? { bonus: draft.value.tool?.bonus ?? itemRules.tools[kind as ToolKind].bonus } : {}) }
 }
 const toolText = computed(() => toolSummary(draft.value.tool))
+
+// ---- 情報 ----
+const intel = computed(() => (draft.value.intel ??= { kind: 'point' }))
+const intelText = computed(() => intelSummary(draft.value.intel))
+const intelIsDungeon = computed(() => geography.locations.find((l) => l.id === intel.value.location)?.type === 'dungeon')
+function setIntelKind(kind: ItemIntel['kind']) {
+  draft.value.intel = kind === 'story' ? { kind, story: stories[0]?.id } : { kind }
+}
+function setIntelLocation(id: string) {
+  intel.value.location = id || undefined
+  if (!intelIsDungeon.value) delete intel.value.layer
+}
 function toggle<T>(list: T[] | undefined, v: T, on: boolean): T[] {
   const set = new Set(list ?? [])
   if (on) set.add(v)
@@ -322,6 +339,48 @@ function remove() {
         </label>
       </div>
       <p class="small muted">行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。</p>
+    </fieldset>
+
+    <fieldset v-if="draft.category === 'info'">
+      <legend>情報內容（{{ intelText }}）</legend>
+      <div class="grid">
+        <label>解讀後得到
+          <select :value="intel.kind" @change="setIntelKind(($event.target as HTMLSelectElement).value as ItemIntel['kind'])">
+            <option value="point">事件點</option>
+            <option value="story">特殊任務的消息</option>
+            <option value="lead">進行中委託的線索</option>
+          </select>
+        </label>
+        <template v-if="intel.kind === 'point'">
+          <label>事件
+            <select :value="intel.event ?? ''" @change="intel.event = (($event.target as HTMLSelectElement).value || undefined) as ItemIntel['event']">
+              <option value="">隨機</option>
+              <option value="combat">盤踞的強敵</option>
+              <option value="chest">藏寶處</option>
+              <option value="merchant">流浪商人</option>
+            </select>
+          </label>
+          <label>地點
+            <select :value="intel.location ?? ''" @change="setIntelLocation(($event.target as HTMLSelectElement).value)">
+              <option value="">解讀的地方附近</option>
+              <option v-for="l in geography.locations" :key="l.id" :value="l.id">{{ l.name }}{{ l.type === 'dungeon' ? '（地下城）' : '' }}</option>
+            </select>
+          </label>
+          <label v-if="intelIsDungeon">哪一層
+            <select :value="intel.layer ?? ''" @change="intel.layer = (($event.target as HTMLSelectElement).value || undefined) as ItemIntel['layer']">
+              <option value="">隨機</option>
+              <option v-for="l in CHEST_LAYERS" :key="l" :value="l">{{ LAYER[l] }}</option>
+            </select>
+          </label>
+          <label>有效天數 <input v-model.number="intel.days" type="number" min="1" max="30" placeholder="5" /></label>
+        </template>
+        <label v-else-if="intel.kind === 'story'">特殊任務
+          <select v-model="intel.story">
+            <option v-for="st in stories" :key="st.id" :value="st.id">{{ st.title }}</option>
+          </select>
+        </label>
+      </div>
+      <p class="small muted">在行囊按「🔍 解讀」：和向情報商買情報一樣記進冒險筆記，用掉這件物品。AI 自創的情報物品是解讀地點附近隨機的事件點。</p>
     </fieldset>
 
     <fieldset v-if="draft.category === 'equipment'">

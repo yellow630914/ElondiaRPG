@@ -616,6 +616,7 @@ export const useGame = defineStore('game', () => {
       perform({ kind: 'negotiation', target: id, text, ...(use ? { use } : {}) }),
     abandonNegotiation: (id: string) => run((s) => negotiation.abandonNegotiation(s, id)),
     useItem: (name: string, member: string) => run((s) => inventory.useItem(s, name, member)),
+    readIntel: (name: string) => run((s) => inventory.readIntelItem(s, name)),
     eatMeal: (id: string) => run((s) => meals.eatMeal(s, id)),
     equipItem: (name: string, member: string, slot?: GearSlot) => run((s) => inventory.equipItem(s, name, member, slot)),
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),

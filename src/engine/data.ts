@@ -942,6 +942,23 @@ export interface ItemDef {
   event?: boolean
   /** 雜物的工具模板（items.json 的 tools） */
   tool?: ItemTool
+  /** 情報：解讀之後得到什麼（沒有時是附近隨機的事件點） */
+  intel?: ItemIntel
+}
+
+/**
+ * 情報物品解讀之後的內容：
+ * point 事件點（event 沒寫時隨機；location 沒寫時在解讀的地方附近；地下城可以指定 layer）、
+ * story 特殊任務的消息（開始 story）、lead 進行中委託的線索（委託檢定 +5）。
+ */
+export interface ItemIntel {
+  kind: 'point' | 'story' | 'lead'
+  event?: 'combat' | 'chest' | 'merchant'
+  location?: string
+  layer?: DungeonLayerId
+  /** 事件點有效幾天（預設 5） */
+  days?: number
+  story?: string
 }
 
 export type ToolKind = 'lockpick' | 'trap' | 'light' | 'travel' | 'camp' | 'hone'

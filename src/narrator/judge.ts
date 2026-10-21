@@ -13,6 +13,7 @@ import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
 import { itemCategory } from '@/engine/trade'
 import { toolSummary } from '@/engine/tools'
+import { intelSummary } from '@/engine/inventory'
 import { craftRarity, parseCraftTarget } from '@/engine/craft'
 import { gearName, gearRules, rarityName, rarityPoints } from '@/engine/gear'
 import { contractTerms, markSummary } from '@/engine/slavery'
@@ -56,6 +57,7 @@ export function inventoryLines(state: GameState, max = 40): string {
     const notes = [
       cat ? itemRules.categories[cat] : '',
       toolSummary(def?.tool),
+      cat === 'info' ? intelSummary(def?.intel) : '',
       (def?.desc ?? custom?.desc ?? '').slice(0, 30),
     ].filter(Boolean)
     return `- ${i.name}×${i.qty}${notes.length ? `（${notes.join('；')}）` : ''}`

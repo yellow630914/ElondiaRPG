@@ -592,6 +592,22 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   const forge = (raw.forge?.materials ?? []).filter((m) => !!gearRules.materials[m])
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
+  if (category === 'info' && raw.intel) {
+    const it = raw.intel
+    const kind = (['point', 'story', 'lead'] as const).includes(it.kind) ? it.kind : 'point'
+    const intel: NonNullable<ItemMod['intel']> = { kind }
+    if (kind === 'point') {
+      if (it.event && ['combat', 'chest', 'merchant'].includes(it.event)) intel.event = it.event
+      const loc = geography.locations.find((l) => l.id === it.location)
+      if (loc) {
+        intel.location = loc.id
+        if (loc.type === 'dungeon' && it.layer && CHEST_LAYERS.includes(it.layer)) intel.layer = it.layer
+      }
+      if (it.days) intel.days = int(it.days, 1, 30, 5)
+    }
+    if (kind === 'story' && str(it.story, 80)) intel.story = str(it.story, 80)
+    out.intel = intel
+  }
   if (category === 'gear' && raw.tool && TOOL_KINDS.includes(raw.tool.kind)) {
     const def = itemRules.tools[raw.tool.kind]
     out.tool = { kind: raw.tool.kind, ...(def.bonus !== undefined ? { bonus: int(raw.tool.bonus ?? def.bonus, 1, def.max ?? 10, def.bonus) } : {}) }
