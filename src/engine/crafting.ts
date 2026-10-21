@@ -6,7 +6,8 @@
 
 import { craftRules, CRAFT_IDS, itemDef, locationById, type CraftId, type Degree } from './data'
 import { gearRules, type MaterialKind } from './gear'
-import { currentCell } from './grid'
+import { currentArea, currentCell } from './grid'
+import { homeOfArea, residentsHere, workbenchFor } from './homes'
 import type { Character, CraftSkill, GameState, NpcRecord } from './types'
 
 export { CRAFT_IDS }
@@ -90,8 +91,9 @@ export function crafterRefusal(state: GameState, m: Character): string | undefin
   return undefined
 }
 
+/** 誰可以動手：隊員，在自己的房子裡時加上留守的夥伴 */
 export function crafters(state: GameState): { member: Character; refusal?: string }[] {
-  return state.party.map((m) => {
+  return [...state.party, ...residentsHere(state, currentArea(state))].map((m) => {
     const refusal = crafterRefusal(state, m)
     return { member: m, ...(refusal ? { refusal } : {}) }
   })
@@ -115,7 +117,7 @@ export interface ToolAccess {
 
 /** 在安全的地方（旅店、安全房）：可以展開攜帶式工坊 */
 export function atSafePoint(state: GameState): boolean {
-  return craftRules.safe_points.includes(currentCell(state).kind)
+  return craftRules.safe_points.includes(currentCell(state).kind) || currentArea(state).kind === 'home'
 }
 
 /** 這裡做這種工藝能用的工具 */
@@ -131,6 +133,12 @@ export function toolAccess(state: GameState, id: CraftId): ToolAccess {
   // 在對應的店：可以租用店裡的工坊（中階）
   if (best.tier < 2 && currentCell(state).kind === craftRules.skills[id].shop) {
     best = { tier: 2, source: '租用店裡的工坊', rentPerHour: craftRules.workshop_rent.per_hour_cc }
+  }
+  // 自己的房子：攜帶式工坊可以展開；有這種工藝的高階工作台時是高階
+  const home = homeOfArea(state, currentArea(state))
+  if (home) {
+    const bench = workbenchFor(home, id)
+    if (bench) best = { tier: 3, source: `家裡的${bench}` }
   }
   return best
 }

@@ -14,7 +14,7 @@
   },
   "categories": {
     "food": "食物", "consumable": "消耗品", "gear": "雜物", "material": "材料",
-    "scroll": "卷軸", "equipment": "裝備", "info": "情報"
+    "scroll": "卷軸", "equipment": "裝備", "info": "情報", "furniture": "家具"
   },
   "meals": {
     "$comment": "酒館用餐：全隊一起吃，價格是每人（economy.json 的 meals_cc；區間取中間，再乘上地點的物價倍率）。condition 是吃完得到的狀態（companions.json 的 conditions）；min_location 是最小的聚落規模。",
@@ -59,6 +59,21 @@
     { "name": "攜帶式鞣皮架", "category": "gear", "price_cc": 700, "tags": ["tailor"], "tool": { "kind": "craft", "craft": "leatherwork", "tier": 2 }, "desc": "鞣皮架與藥劑箱。要在旅店或安全房展開，能處理第三級的皮革。" },
     { "name": "攜帶式織機", "category": "gear", "price_cc": 700, "tags": ["tailor"], "tool": { "kind": "craft", "craft": "tailoring", "tier": 2 }, "desc": "能拆成幾塊背著走的小織機。要在旅店或安全房展開，能處理第三級的布料。" },
     { "name": "珠寶匠工作箱", "category": "gear", "price_cc": 1100, "tags": ["jeweler"], "tool": { "kind": "craft", "craft": "jewelcraft", "tier": 2 }, "desc": "附小熔爐與研磨輪的工作箱。要在旅店或安全房展開，能處理第三級的寶石與貴金屬。" },
+    {"name": "木板床", "category": "furniture", "price_cc": 80, "tags": ["general"], "furniture": {"places": ["indoor", "basement"], "function": "bed", "comfort": 1, "icon": "🛏️"}, "desc": "簡單的木板床鋪上草蓆。有床就能在家裡長休。"},
+    {"name": "羽毛床", "category": "furniture", "price_cc": 400, "tags": ["general", "tailor"], "furniture": {"places": ["indoor"], "function": "bed", "comfort": 3, "icon": "🛏️"}, "desc": "塞滿羽毛的厚床墊，睡起來像躺在雲上。"},
+    {"name": "四柱大床", "category": "furniture", "price_cc": 2000, "tags": ["tailor"], "furniture": {"places": ["indoor"], "function": "bed", "comfort": 5, "icon": "🛏️"}, "desc": "掛著帷幔的雕花大床，貴族的寢室裡才看得到。"},
+    {"name": "羊毛地毯", "category": "furniture", "price_cc": 60, "tags": ["general", "tailor"], "furniture": {"places": ["indoor", "basement"], "comfort": 1, "icon": "🟫"}, "desc": "踩起來軟軟的，冬天也不冷腳。"},
+    {"name": "織錦掛毯", "category": "furniture", "price_cc": 150, "tags": ["tailor"], "furniture": {"places": ["indoor"], "comfort": 2, "icon": "🖼️"}, "desc": "織著狩獵場景的掛毯。"},
+    {"name": "盆栽", "category": "furniture", "price_cc": 30, "tags": ["general"], "furniture": {"places": ["indoor", "yard"], "comfort": 1, "icon": "🪴"}, "desc": "一盆好養的綠色植物。"},
+    {"name": "書架", "category": "furniture", "price_cc": 120, "tags": ["general"], "furniture": {"places": ["indoor", "basement"], "comfort": 1, "icon": "📚"}, "desc": "擺滿書的木架子。"},
+    {"name": "壁爐", "category": "furniture", "price_cc": 300, "tags": ["smith"], "furniture": {"places": ["indoor"], "comfort": 2, "icon": "🔥"}, "desc": "石砌的壁爐，冬夜裡全家圍著取暖。"},
+    {"name": "石雕像", "category": "furniture", "price_cc": 500, "tags": ["jeweler"], "furniture": {"places": ["yard", "indoor"], "comfort": 2, "icon": "🗿"}, "desc": "一尊英雄石像，擺在院子裡很有氣派。"},
+    {"name": "噴水池", "category": "furniture", "price_cc": 1500, "tags": ["jeweler"], "furniture": {"places": ["yard"], "comfort": 3, "icon": "⛲"}, "desc": "院子中央的小噴泉，水聲讓人心情平靜。"},
+    {"name": "鍛造爐", "category": "furniture", "price_cc": 4000, "tags": ["smith"], "furniture": {"places": ["yard", "basement"], "function": "workbench", "craft": "smithing", "icon": "⚒️"}, "desc": "整套的鍛爐、鐵砧與淬火槽。高階工作台：能處理第四、五級的金屬。"},
+    {"name": "木工坊", "category": "furniture", "price_cc": 3000, "tags": ["smith"], "furniture": {"places": ["indoor", "yard", "basement"], "function": "workbench", "craft": "woodworking", "icon": "🪚"}, "desc": "大工作台與一整面牆的刃具。高階工作台：能處理第四、五級的木材。"},
+    {"name": "鞣皮工坊", "category": "furniture", "price_cc": 3000, "tags": ["tailor"], "furniture": {"places": ["yard", "basement"], "function": "workbench", "craft": "leatherwork", "icon": "🧴"}, "desc": "鞣皮池與晾皮架。高階工作台：能處理第四、五級的皮革。"},
+    {"name": "大型織布機", "category": "furniture", "price_cc": 3000, "tags": ["tailor"], "furniture": {"places": ["indoor", "basement"], "function": "workbench", "craft": "tailoring", "icon": "🧶"}, "desc": "佔掉半個房間的織布機。高階工作台：能處理第四、五級的布料。"},
+    {"name": "珠寶工作台", "category": "furniture", "price_cc": 5000, "tags": ["jeweler"], "furniture": {"places": ["indoor", "basement"], "function": "workbench", "craft": "jewelcraft", "icon": "💎"}, "desc": "附熔金爐與研磨輪的工作台。高階工作台：能處理第四、五級的寶石與貴金屬。"},
     { "name": "撬鎖工具組", "category": "gear", "price_cc": 200, "tags": ["general"], "tool": { "kind": "lockpick", "bonus": 3 } },
     { "name": "普通帳篷", "category": "gear", "price_cc": 135, "tags": ["general"], "tool": { "kind": "camp" } },
     { "name": "指南針", "category": "gear", "price_cc": 90, "tags": ["general"], "tool": { "kind": "travel", "bonus": 2 } },

@@ -5,6 +5,7 @@
 import { itemRules, npcs as namedNpcs, stories, type StoryDef, type StoryOutcome } from './data'
 import type { RewardEffect } from './effects'
 import { gearSpecOf } from './gear'
+import { furnitureIn } from './homes'
 import type { Character, GameState, GearSpec } from './types'
 
 /** 一個特殊任務的所有結果（任務點的成功、失敗與各選項） */
@@ -56,6 +57,7 @@ export function itemUsage(name: string, state?: GameState | null): string[] {
       if (Object.values(c.gear ?? {}).some((g) => g?.name === name)) out.push(`目前存檔「${c.name}」身上的裝備`)
     }
     for (const q of activeQuests(state)) if (q.item === name) out.push(`進行中的委託「${q.title}」`)
+    for (const h of Object.values(state.homes ?? {})) if (furnitureIn(h).some((f) => f.name === name)) out.push(`目前存檔的房子「${h.name}」裡的家具`)
   }
   return out
 }
@@ -132,4 +134,5 @@ export function renameItemInState(state: GameState, from: string, to: string) {
   }
   for (const c of characters(state)) for (const g of Object.values(c.gear ?? {})) if (g?.name === from) g.name = to
   for (const q of state.quests) if (q.item === from) q.item = to
+  for (const h of Object.values(state.homes ?? {})) for (const a of Object.values(h.areas)) for (const c of a.cells) if (c.furniture === from) c.furniture = to
 }

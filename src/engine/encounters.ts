@@ -47,7 +47,7 @@ function names(list: NpcRecord[]): string {
 export function checkHostiles(state: GameState): Report | undefined {
   if (state.combat || state.standoff || state.pendingAction) return undefined
   const area = currentArea(state)
-  if (area.kind === 'settlement') return undefined
+  if (area.kind === 'settlement' || area.kind === 'home') return undefined
   const day = state.time.day
   const near = peopleHere(state).filter((p) => p.dist <= population.hostility.sight && isHostile(state, p.rec, area.kind) && state.avoided?.[p.rec.id] !== day)
   if (!near.length) return undefined

@@ -24,6 +24,8 @@ import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
 import { applyCraft, applyMake, craftPart, parseCraftTarget } from './craft'
+import { currentArea } from './grid'
+import { memberOrResident } from './homes'
 import { adultContent, type AdultScene } from './content'
 import { applyDefeatResponse } from './defeat'
 import { applyStoryCheck, refreshStoryMarkers } from './story'
@@ -120,7 +122,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   if (input.kind === 'free' && !text) throw new Error('請描述你要做什麼')
   const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item)
   // 擲檢定的人：通常是主角；夥伴動手製作時是那位夥伴
-  const pc = (setup.actor && state.party.find((m) => m.id === setup.actor)) || pcOf(state)
+  const pc = (setup.actor && memberOrResident(state, currentArea(state), setup.actor)) || pcOf(state)
   const situational = [...setup.situational, ...conditionModifiers(pc, setup.attr ?? kind.attr)].filter((x) => x.value !== 0)
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
   let used: AbilityUse | undefined

@@ -416,7 +416,7 @@ function markersFor(state: GameState, area: Area): string[] {
 
 /** 在近郊或地下城的一層放上任務點（已經有的保留） */
 export function ensureStoryMarkers(state: GameState, area: Area, rng: Rng) {
-  if (area.kind === 'settlement' || area.kind === 'road') return
+  if (area.kind === 'settlement' || area.kind === 'home' || area.kind === 'road') return
   const have = new Set(area.cells.map((c) => c.storyNode).filter(Boolean))
   const entry = area.cells.findIndex((c) => c.kind === 'exit' || c.kind === 'stairs_up')
   for (const ref of markersFor(state, area)) {

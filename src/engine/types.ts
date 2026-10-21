@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, Mods, NpcDef } from './data'
+import type { AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, HomeDistrict, Mods, NpcDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -295,6 +295,8 @@ export interface NpcRecord extends NpcDef {
   stage?: number
   /** 不在隊伍裡的 NPC（店主）的工藝等級；隊友的在 character.crafts */
   crafts?: Partial<Record<CraftId, CraftSkill>>
+  /** 留在玩家家裡的夥伴：房子的 id（角色資料在 character，羈絆與契約照舊） */
+  staying?: string
 }
 
 /** 情報（冒險筆記）：事件點（在近郊或地下城的某一層放一個事件）或特殊任務的消息 */
@@ -486,6 +488,22 @@ export interface InventoryItem {
   quality?: string
 }
 
+/** 玩家買下的房子（見 engine/homes.ts） */
+export interface Home {
+  id: string
+  name: string
+  location: string
+  district: HomeDistrict
+  /** 空地：城鎮區塊、格子，以及門口的街道 */
+  lot: { area: string; x: number; y: number; street: { x: number; y: number } }
+  bought: GameTime
+  price_cc: number
+  /** 各層地圖的 key，從下到上（地下室、一樓、二樓……） */
+  floors: string[]
+  /** 各層的地圖（不放在 state.areas：那裡每次旅行都會清空） */
+  areas: Record<string, Area>
+}
+
 /** 一種工藝的等級與累積的經驗 */
 export interface CraftSkill {
   level: number
@@ -566,6 +584,8 @@ export interface GameState {
   light?: LightState
   /** 緊急撤退被追上的戰鬥：獲勝後撤出地下城 */
   retreating?: boolean
+  /** 買下的房子：id → 房子 */
+  homes?: Record<string, Home>
   /** 登場過的 NPC（含生成的） */
   npcs?: Record<string, NpcRecord>
   /** 各地點的 NPC 名單（第一次進入時建立，見 engine/population.ts） */

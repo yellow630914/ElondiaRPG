@@ -24,6 +24,7 @@ import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
 import * as road from '@/engine/road'
+import * as homes from '@/engine/homes'
 import type { DefeatLoot, GameState, GearSlot, Report } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
@@ -768,7 +769,7 @@ export const useGame = defineStore('game', () => {
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */
-    longRest: async (place: 'inn' | 'safe', talk?: { text: string; target?: string }) => {
+    longRest: async (place: rest.RestPlace, talk?: { text: string; target?: string }) => {
       const withTalk = !!talk?.text.trim()
       // 有互動時，長休本身不另外寫敘事：和互動合成一段（互動的報告會帶上長休的經過）
       const report = run((s) => rest.longRest(s, place), { narrate: !withTalk })
@@ -814,6 +815,19 @@ export const useGame = defineStore('game', () => {
     },
     goOutskirts: () => run((s) => grid.goOutskirts(s) ?? encounters.checkHostiles(s)),
     returnToTown: () => run(grid.returnToTown),
+    // 房子（homes.ts）
+    buyHome: (lotId: string, name?: string) => run((s) => homes.buyHome(s, lotId, name)),
+    renameHome: (id: string, name: string) => run((s) => homes.renameHome(s, id, name)),
+    placeFurniture: (name: string) => run((s) => {
+      const p = grid.position(s)
+      homes.placeFurniture(s, grid.currentArea(s), p.x, p.y, name)
+    }),
+    takeFurniture: () => run((s) => {
+      const p = grid.position(s)
+      homes.takeFurniture(s, grid.currentArea(s), p.x, p.y)
+    }),
+    stayHome: (id: string) => run((s) => homes.stayHome(s, grid.currentArea(s), id)),
+    takeResident: (id: string) => run((s) => homes.leaveWithResident(s, grid.currentArea(s), id)),
     /** 地下城的緊急撤退（失敗會被追上打一場） */
     retreat: () => run(grid.retreat),
     /** 這個存檔的規則 */

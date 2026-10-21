@@ -11,7 +11,8 @@ import { npcRecord } from './npcs'
 import { locationMult } from './trade'
 import { applyEffects, type RewardEffect } from './effects'
 import { gearName, gearRules, type MaterialKind, rarityName, rarityPoints, registerGear, rollEnchants, sanitizeGearSpec, shiftRarity } from './gear'
-import { CELL_NAME, currentCell, type CellKind } from './grid'
+import { CELL_NAME, currentArea, currentCell, type CellKind } from './grid'
+import { memberOrResident } from './homes'
 import { formatMoney } from './money'
 import { withRng } from './state'
 import type { Character, GameState, GearSpec, Report } from './types'
@@ -275,8 +276,8 @@ export function craftPart(target?: string): string | undefined {
 export function parseMakeTarget(state: GameState, target?: string): { crafter: Character; base: string; material: string; aux: AuxItem[] } {
   const at = (target ?? '').indexOf('@')
   const id = at > 0 ? target!.slice(0, at) : 'pc'
-  const crafter = state.party.find((m) => m.id === id)
-  if (!crafter) throw new Error('隊伍中沒有這位角色')
+  const crafter = memberOrResident(state, currentArea(state), id)
+  if (!crafter) throw new Error('隊伍中（或家裡）沒有這位角色')
   return { crafter, ...parseCraftTarget(at > 0 ? target!.slice(at + 1) : target) }
 }
 

@@ -4,7 +4,7 @@ import { classEmoji, companionRules, raceEmoji } from '@/engine/data'
 import { currentArea, currentCell } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
-import { autoHitDice, hitDiceLeft, hitDie, innCost, longRestBlocked } from '@/engine/rest'
+import { autoHitDice, hitDiceLeft, hitDie, innCost, longRestBlocked, type RestPlace } from '@/engine/rest'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import JudgeToggle from './JudgeToggle.vue'
@@ -15,7 +15,7 @@ const cell = computed(() => currentCell(s.value))
 const area = computed(() => currentArea(s.value))
 const rations = computed(() => s.value.inventory.find((i) => i.name === '乾糧')?.qty ?? 0)
 const ambush = computed(() => (cell.value.kind === 'safe' ? 0 : companionRules.rest.ambush[area.value.kind] ?? 0))
-const place = computed(() => (cell.value.kind === 'inn' ? 'inn' : cell.value.kind === 'safe' ? 'safe' : null))
+const place = computed(() => (cell.value.kind === 'inn' ? 'inn' : cell.value.kind === 'safe' ? 'safe' : area.value.kind === 'home' ? 'home' : null))
 const blocked = computed(() => (place.value ? longRestBlocked(s.value, place.value) : null))
 const leaveMode = computed(() => s.value.pendingLeave?.mode)
 const lowAffinity = computed(() =>
@@ -27,7 +27,7 @@ const leader = computed(() => leaderOf(s.value))
 const talkText = ref('')
 const talkTarget = ref('')
 const companions = computed(() => s.value.party.filter((m) => !m.isPlayer))
-async function doLongRest(where: 'inn' | 'safe') {
+async function doLongRest(where: RestPlace) {
   const text = talkText.value.trim()
   talkText.value = ''
   await game.longRest(where, text ? { text, ...(talkTarget.value ? { target: talkTarget.value } : {}) } : undefined)
@@ -55,7 +55,11 @@ async function doLongRest(where: 'inn' | 'safe') {
       <p class="small muted">安全房可以長休 8 小時（每人 1 份乾糧，每間一次），短休也不會被襲擊。</p>
       <button :disabled="!!blocked || rations < s.party.length" @click="doLongRest('safe')">🌙 長休（乾糧 {{ s.party.length }} 份）</button>
     </template>
-    <p v-else class="small muted">長休要在旅店或地下城的安全房。</p>
+    <template v-else-if="place === 'home'">
+      <p class="small muted">在自己家長休（住到隔天早上，免費），要有床。家具的舒適度夠高時，大家會睡得香甜（下次長休前戰鬥開始時獲得暫時生命、檢定 +1）。</p>
+      <button :disabled="!!blocked" @click="doLongRest('home')">🌙 在家長休</button>
+    </template>
+    <p v-else class="small muted">長休要在旅店、地下城的安全房或自己的房子。</p>
     <p v-if="blocked && place" class="small muted">{{ blocked }}</p>
     <div v-if="place && !blocked" class="talk small">
       <label>

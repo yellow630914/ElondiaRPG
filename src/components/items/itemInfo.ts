@@ -8,10 +8,10 @@ import { itemCategory } from '@/engine/trade'
 import type { GameState } from '@/engine/types'
 
 export const CATEGORY_ICON: Record<ItemCategory, string> = {
-  food: '🍞', consumable: '🧪', scroll: '📜', gear: '🧰', material: '🪨', equipment: '⚔️', info: '🗞️',
+  food: '🍞', consumable: '🧪', scroll: '📜', gear: '🧰', material: '🪨', equipment: '⚔️', info: '🗞️', furniture: '🛋️',
 }
 /** 篩選分頁的順序 */
-export const CATEGORY_ORDER: ItemCategory[] = ['equipment', 'consumable', 'scroll', 'food', 'gear', 'material', 'info']
+export const CATEGORY_ORDER: ItemCategory[] = ['equipment', 'consumable', 'scroll', 'food', 'gear', 'material', 'info', 'furniture']
 
 export function categoryOf(state: GameState, name: string): ItemCategory | undefined {
   return itemCategory(state, name)

@@ -69,6 +69,7 @@ export function newGame(opts: NewGameOptions): GameState {
     memoryRules: MEMORY_RULES_VERSION,
     schema: SAVE_SCHEMA,
     guild: { rank: 'F', merit: 0 },
+    homes: {},
     options: { ...defaultOptions(), ...opts.options },
   }
 }
@@ -99,8 +100,9 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 存檔格式的版本。改了存檔的結構時：版本加一，並在 SCHEMA_STEPS 加一個轉換步驟（舊存檔讀入時依序執行）。
  * 1：這個機制之前的所有存檔（由 migrate 前半的各項檢查補齊）
  * 2：公會階級與功績（guild）、存檔規則（options）
+ * 3：房屋（homes；留守的夥伴記在 NPC 登錄的 staying）
  */
-export const SAVE_SCHEMA = 2
+export const SAVE_SCHEMA = 3
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -109,6 +111,9 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
     s.options ??= defaultOptions()
     // 正在地下城裡：從現在開始記這趟探索
     if (locationById(s.location).type === 'dungeon' && !s.road) s.expedition ??= { location: s.location, started: { ...s.time }, deepest: 0, loot: [], money_cc: 0 }
+  }],
+  [3, (s) => {
+    s.homes ??= {}
   }],
 ]
 

@@ -11,7 +11,7 @@ import mapsJson from '@data/world/maps.json'
 import {
   abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
-  type EnemyDef, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
+  type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart,
 } from './data'
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
@@ -523,7 +523,7 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   return out
 }
 
-const CATEGORIES: ItemCategory[] = ['food', 'consumable', 'gear', 'material', 'scroll', 'equipment', 'info']
+const CATEGORIES: ItemCategory[] = ['food', 'consumable', 'gear', 'material', 'scroll', 'equipment', 'info', 'furniture']
 export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info']
 const LOCATIONS = ['village', 'town', 'city', 'capital']
 
@@ -619,6 +619,18 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     // 照明：燒另一種物品（油燈的燈油）
     const fuel = typeof raw.tool.fuel === 'string' ? cleanItemName(raw.tool.fuel) : ''
     if (raw.tool.kind === 'light' && fuel && fuel !== name) out.tool.fuel = fuel
+  }
+  // 家具：能放的地方、功能、舒適度
+  if (category === 'furniture') {
+    const f: Partial<FurnitureSpec> = raw.furniture ?? {}
+    const places = (Array.isArray(f.places) ? f.places : []).filter((p): p is FurniturePlace => p === 'indoor' || p === 'yard' || p === 'basement')
+    out.furniture = {
+      places: places.length ? [...new Set(places)] : ['indoor'],
+      ...(f.function === 'bed' || f.function === 'workbench' ? { function: f.function } : {}),
+      ...(f.function === 'workbench' ? { craft: CRAFT_IDS.includes(f.craft as never) ? f.craft : 'smithing' } : {}),
+      ...(int(f.comfort, 0, 10, 0) ? { comfort: int(f.comfort, 0, 10, 0) } : {}),
+      ...(typeof f.icon === 'string' && f.icon.trim() ? { icon: [...f.icon.trim()].slice(0, 2).join('') } : {}),
+    }
   }
   // 光源與燃料：每一份能照亮幾格
   if (category === 'gear' && raw.burns !== undefined && raw.burns !== null && String(raw.burns) !== '') {

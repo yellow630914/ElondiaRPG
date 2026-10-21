@@ -26,6 +26,7 @@ import negotiationsJson from '@data/rules/negotiations.json'
 import workJson from '@data/rules/work.json'
 import storiesJson from '@data/rules/stories.json'
 import craftsJson from '@data/rules/crafts.json'
+import homesJson from '@data/rules/homes.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
 import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality } from './types'
@@ -672,7 +673,7 @@ export const companionRules = companionsJson as unknown as {
   }
   invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number }
   leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
-  rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'wild' | 'dungeon' | 'road' | 'side', number> }
+  rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'home' | 'wild' | 'dungeon' | 'road' | 'side', number> }
   noncombatant: { defeat_check: { dc: number; affinity_step: number }; rescue_hours: number; return_hp_ratio: number }
   conditions: Record<string, ConditionDef>
 }
@@ -899,7 +900,7 @@ export const workRules = workJson as unknown as {
 
 // ---- 物品、商店、談判 ----
 
-export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'scroll' | 'equipment' | 'info'
+export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'scroll' | 'equipment' | 'info' | 'furniture'
 /**
  * 消耗品的效果（都是可以量化的數值）：
  * heal 回復生命（骰子）、slot 回復一個 N 環以下的法術環、cleanse 解除狀態、status 給自己或隊友一個狀態、
@@ -938,6 +939,8 @@ export interface ItemDef {
   use?: ItemUse
   /** 光源與燃料：每一份在黑暗中能照亮幾格（火把一捆、一瓶燈油） */
   burns?: number
+  /** 家具：能放的地方、功能（床、高階工作台）、舒適度（見 docs/HOMES.md） */
+  furniture?: FurnitureSpec
   /** 裝備：底材 × 材料（gear.json） */
   gear?: GearSpec
   /** 打造材料：可以做成哪些材料（gear.json 的 materials） */
@@ -1137,3 +1140,36 @@ export const craftRules = craftsJson as unknown as {
 }
 
 export const CRAFT_IDS = Object.keys(craftRules.skills) as CraftId[]
+
+// ---- 房屋（homes.json，見 docs/HOMES.md） ----
+
+export type FurniturePlace = 'indoor' | 'yard' | 'basement'
+
+export interface FurnitureSpec {
+  places: FurniturePlace[]
+  /** bed：在家長休；workbench：高階工作台（craft） */
+  function?: 'bed' | 'workbench'
+  craft?: CraftId
+  comfort?: number
+  icon?: string
+}
+
+export type HomeDistrict = 'cottage' | 'townhouse' | 'house' | 'manor'
+
+export interface HomeDistrictDef {
+  name: string
+  price_cc: number
+  floors: number
+  basement: boolean
+  size: [number, number]
+  yard: number
+  rooms: [number, number]
+}
+
+export const homeRules = homesJson as unknown as {
+  districts: Record<HomeDistrict, HomeDistrictDef>
+  by_location: Record<string, HomeDistrict>
+  noble: HomeDistrict
+  lots: Record<string, number>
+  comfort_rested: number
+}

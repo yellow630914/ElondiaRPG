@@ -9,7 +9,8 @@ import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
-import { CRAFT_IDS, craftRules } from '@/engine/data'
+import { CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
+import { PLACE_NAME } from '@/engine/homes'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
@@ -92,6 +93,18 @@ function setTool(kind: string) {
   }
 }
 const toolText = computed(() => toolSummary(draft.value.tool))
+// 家具
+const furn = computed(() => (draft.value.furniture ??= { places: ['indoor'] }))
+function setFurnFunction(v: string) {
+  if (v === 'bed' || v === 'workbench') furn.value.function = v
+  else delete furn.value.function
+  if (v === 'workbench') furn.value.craft ??= 'smithing'
+  else delete furn.value.craft
+}
+function toggleFurnPlace(p: FurniturePlace) {
+  const list = furn.value.places
+  furn.value.places = list.includes(p) ? (list.length > 1 ? list.filter((x) => x !== p) : list) : [...list, p]
+}
 
 // ---- 情報 ----
 const intel = computed(() => (draft.value.intel ??= { kind: 'point' }))
@@ -364,6 +377,33 @@ function remove() {
       </div>
       <p class="small muted">照明：在黑暗的地方每走一格燒掉一點。「燒什麼」填燃料物品的名稱（例如油燈燒燈油，燈油本身要填能照亮幾格）；空白而且有「能照亮幾格」時燒掉工具本身（火把）；都沒有時不會燒掉（魔法照明石）。</p>
       <p class="small muted">行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。</p>
+    </fieldset>
+
+    <fieldset v-if="draft.category === 'furniture'">
+      <legend>家具</legend>
+      <div class="grid">
+        <label>功能
+          <select :value="furn.function ?? ''" @change="setFurnFunction(($event.target as HTMLSelectElement).value)">
+            <option value="">裝飾（只有舒適度）</option>
+            <option value="bed">床（在家長休）</option>
+            <option value="workbench">高階工作台</option>
+          </select>
+        </label>
+        <label v-if="furn.function === 'workbench'">工藝
+          <select v-model="furn.craft">
+            <option v-for="c in CRAFT_IDS" :key="c" :value="c">{{ craftRules.skills[c].name }}</option>
+          </select>
+        </label>
+        <label>舒適度 <input v-model.number="furn.comfort" type="number" min="0" max="10" /></label>
+        <label>圖示 <input v-model="furn.icon" maxlength="4" placeholder="🪑" /></label>
+      </div>
+      <div class="row small">
+        <span>能放在：</span>
+        <label v-for="p in (['indoor', 'yard', 'basement'] as const)" :key="p" class="check">
+          <input type="checkbox" :checked="furn.places.includes(p)" @change="toggleFurnPlace(p)" /> {{ PLACE_NAME[p] }}
+        </label>
+      </div>
+      <p class="small muted">家具擺在自己房子的格子上。床讓你在家長休；舒適度加總達到 {{ homeRules.comfort_rested }} 時，在家長休後睡得香甜；高階工作台讓這種工藝能處理第四、五級的材料。</p>
     </fieldset>
 
     <fieldset v-if="draft.category === 'info'">

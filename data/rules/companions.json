@@ -60,7 +60,7 @@
     "short_hours": 1,
     "long_hours": 8,
     "long_rest_gap_hours": 16,
-    "ambush": { "settlement": 0, "wild": 0.15, "dungeon": 0.25, "road": 0.15, "side": 0.2 }
+    "ambush": { "settlement": 0, "home": 0, "wild": 0.15, "dungeon": 0.25, "road": 0.15, "side": 0.2 }
   },
 
   "noncombatant": {
@@ -82,6 +82,12 @@
    "name": "果腹",
    "desc": "吃了點東西。下次長休前，每場戰鬥開始時獲得 3 點暫時生命。",
    "group": "meal", "rank": 1, "combat_temp_hp": 3,
+   "clears": "long_rest"
+  },
+  "well_rested": {
+   "name": "睡得香甜",
+   "desc": "在舒適的家裡好好睡了一覺。下次長休前，每場戰鬥開始時獲得 5 點暫時生命，主動行動檢定 +1。",
+   "combat_temp_hp": 5, "check_penalty": -1,
    "clears": "long_rest"
   },
   "fed_well": {

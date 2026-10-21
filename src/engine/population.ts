@@ -310,7 +310,8 @@ export function adventurersInTown(state: GameState): NpcRecord[] {
   const inParty = new Set(state.party.map((m) => m.id))
   ensureRoster(state, state.location)
   return allNpcs(state).filter((rec) => {
-    if (inParty.has(rec.id) || npcKind(rec) !== 'adventurer' || rec.hostile) return false
+    // 留在你家看家的夥伴不算
+    if (inParty.has(rec.id) || npcKind(rec) !== 'adventurer' || rec.hostile || rec.staying) return false
     if (rec.dead || !visibleNpc(state, rec)) return false
     if (rec.fixed) return rec.fixed.area.split('/')[0] === state.location
     const today = whereToday(rec, state.time.day)
@@ -324,7 +325,7 @@ export function adventurersInTown(state: GameState): NpcRecord[] {
 export function hireable(state: GameState): NpcRecord[] {
   const list = adventurersInTown(state)
   for (const p of nearbyPeople(state)) {
-    if (p.kind === 'adventurer' && !p.staff && !p.rec.hostile && !isHostile(state, p.rec) && !list.includes(p.rec)) list.push(p.rec)
+    if (p.kind === 'adventurer' && !p.staff && !p.rec.hostile && !p.rec.staying && !isHostile(state, p.rec) && !list.includes(p.rec)) list.push(p.rec)
   }
   return list
 }
@@ -413,7 +414,7 @@ function openCells(area: Area, from: { x: number; y: number } | null, min: numbe
  * 地下城遇到的一定是冒險者，可能是一支隊伍，也可能是惡人。用固定亂數，不影響遊戲的亂數。
  */
 export function spawnVisitors(state: GameState, area: Area, from: { x: number; y: number } | null) {
-  if (area.kind === 'settlement') return
+  if (area.kind === 'settlement' || area.kind === 'home') return
   const day = state.time.day
   const dungeon = area.kind === 'dungeon'
   const cfg = dungeon ? population.visitors.dungeon : population.visitors.outskirts

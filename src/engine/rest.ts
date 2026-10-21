@@ -8,11 +8,12 @@
 
 import { mod, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
-import { classDef, companionRules, locationById, regionById, wildEncounters, type DungeonLayerId } from './data'
+import { classDef, companionRules, homeRules, locationById, regionById, wildEncounters, type DungeonLayerId } from './data'
 import { currentArea, currentCell, DUNGEON_LAYERS } from './grid'
+import { comfortOf, hasBed, homeOfArea } from './homes'
 import { formatMoney } from './money'
 import { clearInviteCooldowns } from './companions'
-import { addAffinity, isBound, isFugitive, leaderGroup, leaderOf, leaveParty, pcOf, punish, recapturePlayer, removeCondition } from './party'
+import { addAffinity, addCondition, isBound, isFugitive, leaderGroup, leaderOf, leaveParty, pcOf, punish, recapturePlayer, removeCondition } from './party'
 import { roll, withBonus, type Rng } from './rng'
 import { contractTerms } from './slavery'
 import { bestTool } from './tools'
@@ -44,9 +45,14 @@ function minutesBetween(a: GameTime, b: GameTime): number {
 }
 
 /** 不能長休的原因；可以時回傳 null */
-export function longRestBlocked(state: GameState, place: 'inn' | 'safe'): string | null {
+export function longRestBlocked(state: GameState, place: RestPlace): string | null {
   if (state.combat) return '戰鬥中'
   const cell = currentCell(state)
+  if (place === 'home') {
+    const home = homeOfArea(state, currentArea(state))
+    if (!home) return '要在自己的房子裡'
+    if (!hasBed(home)) return '家裡還沒有床'
+  }
   if (place === 'inn' && cell.kind !== 'inn') return '要在旅店才能長休'
   if (place === 'safe' && cell.kind !== 'safe') return '要在安全房才能長休'
   if (place === 'safe' && cell.done) return '這間安全房已經長休過了'
@@ -79,7 +85,7 @@ function ambushChance(state: GameState): number {
   if (currentCell(state).kind === 'safe') return 0
   const base = companionRules.rest.ambush[area.kind] ?? 0
   // 露營類的工具（帳篷）：在城外紮營休息，被襲擊的機率減半
-  return area.kind !== 'settlement' && bestTool(state, 'camp') ? base / 2 : base
+  return area.kind !== 'settlement' && area.kind !== 'home' && bestTool(state, 'camp') ? base / 2 : base
 }
 
 /** 自動決定要花幾顆生命骰：還差半顆骰以上的傷就繼續花 */
@@ -136,7 +142,10 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
 }
 
 /** 長休：旅店（付費，到隔天早上）或安全房（每人 1 份乾糧，8 小時）。 */
-export function longRest(state: GameState, place: 'inn' | 'safe'): Report {
+/** 長休的地方：旅店、地下城的安全房、自己的房子（要有床） */
+export type RestPlace = 'inn' | 'safe' | 'home'
+
+export function longRest(state: GameState, place: RestPlace): Report {
   const blocked = longRestBlocked(state, place)
   if (blocked) throw new Error(blocked)
   if (state.standoff) throw new Error('先處理眼前的對峙')
@@ -152,6 +161,10 @@ export function longRest(state: GameState, place: 'inn' | 'safe'): Report {
     scene = `${locationById(state.location).name}的旅店`
     report.changes.money_cc = -cost
     costText = `，花費 ${formatMoney(cost)}${isFugitive(state) ? '（頸上的印記讓老闆加了價）' : ''}`
+  } else if (place === 'home') {
+    const home = homeOfArea(state, area)!
+    hours = Math.max(hours, (24 - state.time.hour + 8) % 24 || 24)
+    scene = `自己的房子「${home.name}」`
   } else {
     const need = state.party.length
     const have = state.inventory.find((i) => i.name === '乾糧')?.qty ?? 0
@@ -177,13 +190,17 @@ export function longRest(state: GameState, place: 'inn' | 'safe'): Report {
       if (companionRules.conditions[id]?.clears === 'long_rest') removeCondition(m, id, report)
     }
   }
+  // 在舒適的家裡睡：睡得香甜
+  const home = place === 'home' ? homeOfArea(state, area) : undefined
+  const rested = !!home && comfortOf(home) >= homeRules.comfort_rested
+  if (rested) for (const m of state.party) addCondition(m, 'well_rested', report)
   clearInviteCooldowns(state)
-  const checks = restChecks(state, report, place)
+  const checks = restChecks(state, report, place === 'safe' ? 'safe' : 'inn')
   state.lastLongRest = { ...report.time.end }
   report.outcome = {
     result: 'success',
-    summary: [`在${scene}好好睡了一覺${costText}。`, ...checks].join(''),
-    tags: ['長休', ...(place === 'safe' ? ['安全房'] : [])],
+    summary: [`在${scene}好好睡了一覺${costText}。`, ...(rested ? ['家裡佈置得很舒服，大家都睡得很香甜。'] : []), ...checks].join(''),
+    tags: ['長休', ...(place === 'safe' ? ['安全房'] : place === 'home' ? ['在家'] : [])],
   }
   return commitReport(state, report)
 }

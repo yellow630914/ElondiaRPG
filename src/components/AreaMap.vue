@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
-import { locationById } from '@/engine/data'
+import { itemDef, locationById } from '@/engine/data'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 
@@ -14,6 +14,10 @@ const ICON = CELL_ICON
 const EVENT_ICON = { special: '⭐', master: '⛓️', advanced: '✨' }
 
 function icon(cell: Cell): string {
+  // 房子：家具、樓梯、門；城裡買下的房子
+  if (cell.furniture) return itemDef(cell.furniture)?.furniture?.icon ?? '🪑'
+  if (cell.dir) return { up: '⬆️', down: '⬇️', out: '🚪' }[cell.dir]
+  if (cell.home) return '🏠'
   if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap', 'chest'].includes(cell.kind)) return ''
   if (cell.kind === 'trap') return ''
   if (cell.kind === 'resource' && cell.item && /礦|錢/.test(cell.item)) return '💎'
@@ -27,6 +31,10 @@ function icon(cell: Cell): string {
 }
 
 function label(cell: Cell): string {
+  if (cell.furniture) return `家具：${cell.furniture}`
+  if (cell.dir) return { up: '往樓上', down: '往樓下', out: '出門' }[cell.dir]
+  if (cell.home) return `你的房子：${game.state?.homes?.[cell.home]?.name ?? ''}`
+  if (cell.kind === 'lot') return '待售的房子'
   if (cell.kind === 'trap' && !cell.done) return '道路'
   if (cell.kind === 'trap') return '已觸發的陷阱'
   if (cell.kind === 'quest' && cell.storyNode) return '特殊任務的任務點'
@@ -159,6 +167,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .cell.encounter:not(.done), .cell.elite:not(.done), .cell.boss:not(.done) { background: #4b2723; }
 .cell.safe { background: #4d3a1d; }
 .cell.quest { background: #4b4320; }
+.cell.yard { background: #2f3f26; }
+.cell.lot { background: #4a4030; }
 .cell.step { border-color: var(--accent); cursor: pointer; }
 .cell.step:hover { background-color: #5a4a33; }
 .cell.here { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }

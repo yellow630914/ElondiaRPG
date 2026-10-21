@@ -242,7 +242,7 @@ export function invitable(state: GameState): NpcRecord[] {
     .filter((r) => !inParty.has(r.id) && r.affinity >= min && !state.flags[`invite_wait:${r.id}`])
     .map((r) => npcRecord(state, r.id))
     // 開店中的店主、公會職員：得顧店，不能邀請入隊
-    .filter((rec): rec is NpcRecord => !!rec && presentHere(state, rec.id) && !isShopStaff(rec))
+    .filter((rec): rec is NpcRecord => !!rec && presentHere(state, rec.id) && !isShopStaff(rec) && !rec.staying)
 }
 
 export function inviteDc(state: GameState, npcId: string): number {
@@ -391,7 +391,7 @@ export function rejoinAway(state: GameState): Report | undefined {
   const away = state.party.filter((m) => m.status.includes('away'))
   if (!away.length || state.combat) return undefined
   const area = currentArea(state)
-  if (area.kind !== 'settlement' && currentCell(state).kind !== 'safe') return undefined
+  if (area.kind !== 'settlement' && area.kind !== 'home' && currentCell(state).kind !== 'safe') return undefined
   const report = socialReport(state, 0, area.name, 'event')
   for (const m of away) removeCondition(m, 'away', report)
   report.outcome = { result: 'neutral', summary: `${away.map((m) => m.name).join('、')}在這裡等著你，重新歸隊。`, tags: ['歸隊'] }
@@ -700,7 +700,7 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       if (target && target !== 'guests' && !state.party.some((m) => m.id === target && !m.isPlayer)) throw new Error('隊伍裡沒有這個人')
       const rec = target && target !== 'guests' ? npcRecord(state, target) : undefined
       const rel = rec ? state.relationships?.[rec.id] : undefined
-      const where = atInn ? `${locationById(state.location).name}的旅店` : `${currentArea(state).name}的安全房`
+      const where = atInn ? `${locationById(state.location).name}的旅店` : currentArea(state).kind === 'home' ? `自己的房子（${currentArea(state).name}）` : `${currentArea(state).name}的安全房`
       return {
         dc: (actionRulesBase('rest_talk')) - (rel ? Math.floor(rel.affinity / 25) : 0),
         targetName: target === 'guests' ? '同旅館的旅客' : rec?.name ?? '夥伴們',

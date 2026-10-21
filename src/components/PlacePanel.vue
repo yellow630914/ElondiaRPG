@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FoldSection from './FoldSection.vue'
+import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { mod } from '@/engine/character'
 import { attrName, geography, locationById } from '@/engine/data'
@@ -123,8 +124,10 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
 
 <template>
     <div class="place">
-      <!-- 目前所在格子 -->
-      <section v-if="area.kind !== 'road'" class="panel">
+      <!-- 待售的空地、自己的房子 -->
+      <HomePanel />
+      <!-- 目前所在格子（房子裡由上面的房屋區塊顯示） -->
+      <section v-if="area.kind !== 'road' && area.kind !== 'home'" class="panel">
         <h3>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
 
         <template v-if="cell.kind === 'inn'">

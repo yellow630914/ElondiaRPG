@@ -25,6 +25,7 @@ import { gateCheck, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
+import { overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
 import { bestTool } from './tools'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
@@ -37,6 +38,7 @@ export type CellKind =
   | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe' | 'chest'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
   | 'road' | 'waypoint' | 'arrive' | 'event' | 'merchant'
+  | 'lot' | 'yard'
 
 export interface Cell {
   kind: CellKind
@@ -63,6 +65,13 @@ export interface Cell {
   town?: string
   /** 情報的事件點（冒險筆記的情報 id） */
   intel?: string
+  /** 待售的空地（lot）的 id；買下之後是房子的門（link），記房子的 id */
+  lot?: string
+  home?: string
+  /** 房子裡的通道：樓梯往上、往下，或出門 */
+  dir?: 'up' | 'down' | 'out'
+  /** 房子裡擺的家具（物品名稱） */
+  furniture?: string
 }
 
 /** 旅途格子上的事件：auto 原本的旅途事件、normal 普通事件、advanced 高階事件、special 特殊任務的開頭、master 主人的事件 */
@@ -82,8 +91,8 @@ export interface Area {
   key: string
   location: string
   name: string
-  /** road：旅途（單行道）；side：旅途或事件帶進去的臨時地圖（洞窟、遺跡、驛站） */
-  kind: 'settlement' | 'wild' | 'dungeon' | 'road' | 'side'
+  /** road：旅途（單行道）；side：旅途或事件帶進去的臨時地圖（洞窟、遺跡、驛站）；home：玩家的房子 */
+  kind: 'settlement' | 'wild' | 'dungeon' | 'road' | 'side' | 'home'
   /** 臨時地圖的範本（travel_events.json 的 side_maps） */
   template?: string
   /** 聚落區塊所屬的地區（貴族區、王城）；沒有時為一般區域 */
@@ -99,6 +108,8 @@ export interface Area {
   day?: number
   /** 光線（見 light.ts）；沒有時依區域種類推算 */
   lighting?: Lighting
+  /** 房子的哪一層：basement 地下室、ground 一樓（含院子）、upper 樓上 */
+  homeFloor?: 'basement' | 'ground' | 'upper'
 }
 
 export interface Position {
@@ -109,7 +120,7 @@ export interface Position {
   prev?: { x: number; y: number }
 }
 
-interface BlockDef { id: string; name: string; grid: string[]; links?: Record<string, string>; zone?: Zone }
+export interface BlockDef { id: string; name: string; grid: string[]; links?: Record<string, string>; zone?: Zone }
 
 /** 地區：決定 NPC 出現在哪裡（見 docs/NPC_SYSTEM.md 第 5 節） */
 export type Zone = 'town' | 'noble' | 'palace' | 'temple' | 'brothel' | 'outskirts' | 'dungeon'
@@ -151,6 +162,7 @@ export const CELL_NAME: Record<CellKind, string> = {
   encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房', chest: '寶箱',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
   road: '路', waypoint: '途經', arrive: '目的地', event: '事件', merchant: '流浪商人',
+  lot: '待售的房子', yard: '院子',
 }
 
 /** 地圖與場所標題用的圖示：每一種設施都要有 */
@@ -160,6 +172,7 @@ export const CELL_ICON: Partial<Record<CellKind, string>> = {
   encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
   stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
   waypoint: '🏘️', arrive: '🏁', event: '❔', merchant: '🧳',
+  lot: '🪧',
 }
 
 /** 格子的名稱（關閉成人向時，娼館顯示為按摩店） */
@@ -172,14 +185,14 @@ export const DUNGEON_LAYERS = maps.generation.dungeon.layers
 
 // ---- 區域 ----
 
-function blocksFor(loc: Location): BlockDef[] {
+export function blocksFor(loc: Location): BlockDef[] {
   const custom = maps.maps[loc.id]
   if (custom) return custom.blocks
   const template = maps.templates[maps.template_by_type[loc.type] ?? 'town'] ?? maps.templates.town!
   return template.blocks
 }
 
-function settlementKey(locationId: string, blockId: string) {
+export function settlementKey(locationId: string, blockId: string) {
   return `${locationId}/${blockId}`
 }
 
@@ -266,11 +279,18 @@ function findChar(block: BlockDef, ch: string): { x: number; y: number } | null 
 export function getArea(state: GameState, key: string): Area {
   const stored = state.areas?.[key]
   if (stored) return stored
+  // 玩家的房子：存在房子的資料裡
+  if (key.startsWith('home/')) {
+    const area = state.homes?.[key.split('/')[1]!]?.areas[key]
+    if (!area) throw new Error(`unknown area: ${key}`)
+    return area
+  }
   const [locationId, blockId] = key.split('/') as [string, string]
   const loc = locationById(locationId)
   const block = blocksFor(loc).find((b) => b.id === blockId)
   if (!block) throw new Error(`unknown area: ${key}`)
-  return buildBlock(loc, block)
+  // 待售的空地與買下的房子（依存檔，疊在固定地圖上）
+  return overlayLots(state, buildBlock(loc, block))
 }
 
 export function cellAt(area: Area, x: number, y: number): Cell | undefined {
@@ -299,11 +319,11 @@ export function currentCell(state: GameState): Cell {
 
 export function isRevealed(area: Area, x: number, y: number): boolean {
   // 聚落與旅途整張看得到（旅途的事件出發時就擲好了）
-  return area.kind === 'settlement' || area.kind === 'road' || (area.revealed?.includes(y * area.width + x) ?? false)
+  return area.kind === 'settlement' || area.kind === 'home' || area.kind === 'road' || (area.revealed?.includes(y * area.width + x) ?? false)
 }
 
 export function reveal(area: Area, x: number, y: number, radius = 1) {
-  if (area.kind === 'settlement') return
+  if (area.kind === 'settlement' || area.kind === 'home') return
   const set = new Set(area.revealed ?? [])
   for (let dy = -radius; dy <= radius; dy++) {
     for (let dx = -radius; dx <= radius; dx++) {
@@ -435,7 +455,7 @@ export function generateOutskirts(state: GameState, loc: Location, rng: Rng): Ar
  */
 export function ensureQuestTargets(state: GameState, area: Area, rng: Rng, table: EncounterGroup[]) {
   const layer = area.kind === 'dungeon' ? DUNGEON_LAYERS[area.layer ?? 0]?.id : undefined
-  if (area.kind === 'settlement') return
+  if (area.kind === 'settlement' || area.kind === 'home') return
   const exit = area.cells.findIndex((c) => c.kind === 'exit' || c.kind === 'stairs_up')
   const keep = new Set([exit, exit - area.width])
   for (const t of questTargets(state, area.location, layer)) {
@@ -681,7 +701,7 @@ export type StepResult = { report?: Report; combat?: CombatState }
 
 function stepMinutes(area: Area): number {
   const s = maps.generation.step_minutes
-  return area.kind === 'settlement' ? s.settlement : area.kind === 'wild' ? s.wild : s.dungeon
+  return area.kind === 'settlement' || area.kind === 'home' ? s.settlement : area.kind === 'wild' ? s.wild : s.dungeon
 }
 
 /** 往上下左右移動一格，觸發走進格子的內容。 */
