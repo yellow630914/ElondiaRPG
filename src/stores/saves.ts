@@ -5,7 +5,9 @@
 // 進行中的遊戲以前存在 localStorage（elondia.save 等），第一次啟動新版時會搬進 IndexedDB。
 
 import { locationById } from '@/engine/data'
+import type { ContentMods } from '@/engine/mods'
 import type { GameState } from '@/engine/types'
+import type { PortraitFile } from './portraits'
 
 export type SlotKind = 'manual' | 'quick' | 'auto'
 
@@ -13,6 +15,10 @@ export interface SaveData {
   state: GameState
   narrations?: Record<string, unknown>
   usage?: Record<string, unknown>
+  /** 存檔當時這個瀏覽器的自訂內容（「🛠️ 內容」）；匯入時可以合併 */
+  content?: ContentMods
+  /** 匯出時選擇附上的形象圖：角色 id → 圖片 */
+  portraits?: Record<string, PortraitFile>
 }
 
 /** 存檔列表顯示用的摘要（不含整份存檔，列表載入比較快） */
@@ -30,6 +36,8 @@ export interface SlotMeta {
   time: GameState['time']
   reports: number
   party: number
+  /** 這一局的種子（形象圖依種子保存；舊的存檔欄位沒有） */
+  seed?: number
 }
 
 export const QUICK_SLOT = 'quick'
@@ -42,7 +50,7 @@ export function slotMeta(id: string, name: string, kind: SlotKind, data: SaveDat
   return {
     id, name, kind, savedAt,
     pcName: pc.name, race: pc.race, cls: pc.class, level: pc.level,
-    location: s.location, time: { ...s.time }, reports: s.reports.length, party: s.party.length,
+    location: s.location, time: { ...s.time }, reports: s.reports.length, party: s.party.length, seed: s.seed,
   }
 }
 
@@ -61,7 +69,11 @@ export function slotTitle(m: SlotMeta): string {
 export function parseSaveFile(text: string): SaveData {
   const data = JSON.parse(text) as Partial<SaveData>
   if (!data.state?.party?.length || !Array.isArray(data.state.reports)) throw new Error('這不是《埃隆迪亞大陸》的存檔')
-  return { state: data.state, narrations: data.narrations ?? {}, usage: data.usage ?? {} }
+  return {
+    state: data.state, narrations: data.narrations ?? {}, usage: data.usage ?? {},
+    ...(data.content && typeof data.content === 'object' ? { content: data.content } : {}),
+    ...(data.portraits && typeof data.portraits === 'object' ? { portraits: data.portraits } : {}),
+  }
 }
 
 export function saveFileName(m: Pick<SlotMeta, 'pcName' | 'time'>): string {

@@ -32,7 +32,7 @@ function resetService() {
     <h2>🎨 插圖生成</h2>
     <p class="small muted">
       用來生成角色的形象插圖（隊伍與人物卡上的「🎨 生成形象圖」）。API key 只存在這個瀏覽器，請求直接從瀏覽器送往你選擇的服務。
-      圖片存在這個瀏覽器的 IndexedDB，不會放進存檔檔案。
+      圖片存在這個瀏覽器的 IndexedDB；匯出存檔時可以選擇附上。
     </p>
     <div class="form">
       <label>生圖服務

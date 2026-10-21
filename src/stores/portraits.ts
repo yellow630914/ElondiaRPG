@@ -1,4 +1,5 @@
-// 角色的形象插圖：存在這個瀏覽器的 IndexedDB（圖片太大，放不進 localStorage，也不放進存檔）。
+// 角色的形象插圖：存在這個瀏覽器的 IndexedDB（圖片太大，放不進 localStorage）。
+// 匯出存檔時可以選擇附上（轉成 data URL）；沒有任何存檔用到的局（種子）的圖會被清掉。
 // 依「這一局（種子）＋角色 id」保存，所以不同存檔的主角不會互相蓋掉。
 
 import { defineStore } from 'pinia'
@@ -57,6 +58,27 @@ async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBReq
 /** 這一局、這個角色的圖片 key */
 export function portraitKey(state: Pick<GameState, 'seed'>, id: string): string {
   return `${state.seed}:${id}`
+}
+
+/** 放進匯出存檔的形象圖：圖片轉成 data URL */
+export interface PortraitFile extends Omit<PortraitRecord, 'blob'> {
+  data: string
+}
+
+async function toDataUrl(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  let bin = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return `data:${blob.type || 'image/png'};base64,${btoa(bin)}`
+}
+
+function fromDataUrl(url: string): Blob {
+  const m = /^data:([^;,]*)(;base64)?,(.*)$/s.exec(url)
+  if (!m || !m[2] || !m[1]!.startsWith('image/')) throw new Error('形象圖的資料壞掉了')
+  const bin = atob(m[3]!)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return new Blob([bytes], { type: m[1] })
 }
 
 export const usePortraits = defineStore('portraits', () => {
@@ -149,6 +171,58 @@ export const usePortraits = defineStore('portraits', () => {
     }
   }
 
+  // ---- 跟著存檔匯出、匯入；清理沒有存檔用到的圖 ----
+
+  async function allKeys(): Promise<string[]> {
+    return (await tx<IDBValidKey[]>('readonly', (s) => s.getAllKeys())).map(String)
+  }
+
+  /** 這一局（種子）的圖片數量 */
+  async function countFor(seed: number): Promise<number> {
+    try {
+      return (await allKeys()).filter((k) => k.startsWith(`${seed}:`)).length
+    } catch {
+      return 0
+    }
+  }
+
+  /** 這一局的所有形象圖：角色 id → 圖片 */
+  async function exportFor(seed: number): Promise<Record<string, PortraitFile>> {
+    const out: Record<string, PortraitFile> = {}
+    for (const key of (await allKeys()).filter((k) => k.startsWith(`${seed}:`))) {
+      const rec = await tx<PortraitRecord | undefined>('readonly', (s) => s.get(key))
+      if (!rec?.blob) continue
+      const { blob, ...meta } = rec
+      out[key.slice(`${seed}:`.length)] = { ...meta, data: await toDataUrl(blob) }
+    }
+    return out
+  }
+
+  /** 還原匯入存檔裡的形象圖（同一個角色已經有圖時換成檔案裡的）；回傳還原的張數 */
+  async function importFor(seed: number, files: Record<string, PortraitFile>): Promise<number> {
+    let n = 0
+    for (const [id, f] of Object.entries(files)) {
+      if (!id || typeof f?.data !== 'string') continue
+      const { data, ...meta } = f
+      await put(`${seed}:${id}`, { ...meta, blob: fromDataUrl(data), time: Number(meta.time) || Date.now() })
+      n++
+    }
+    return n
+  }
+
+  /** 刪掉不屬於這些局（種子）的圖；回傳刪掉的張數 */
+  async function pruneExcept(seeds: Set<number>): Promise<number> {
+    const keep = new Set([...seeds].map(String))
+    let n = 0
+    for (const key of await allKeys()) {
+      if (keep.has(key.split(':')[0]!)) continue
+      await tx('readwrite', (s) => s.delete(key))
+      if (key in urls.value) show(key, undefined)
+      n++
+    }
+    return n
+  }
+
   function cancel(key: string) {
     controllers.get(key)?.abort()
   }
@@ -157,5 +231,5 @@ export const usePortraits = defineStore('portraits', () => {
     if (jobs.value[key]?.stage === 'error') delete jobs.value[key]
   }
 
-  return { urls, records, jobs, load, upload, remove, describe, generate, cancel, clearError }
+  return { urls, records, jobs, load, upload, remove, describe, generate, cancel, clearError, countFor, exportFor, importFor, pruneExcept }
 })

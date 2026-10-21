@@ -16,6 +16,32 @@ import { useGame } from './game'
 
 const KEY = 'elondia.content'
 
+type Section = Exclude<keyof ContentMods, 'version'>
+const MOD_SECTIONS: Section[] = ['abilities', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
+export const MOD_SECTION_NAMES: Record<Section, string> = {
+  abilities: '技能', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
+}
+
+export interface ModsDiffEntry {
+  key: string
+  section: Section
+  id: string
+  label: string
+}
+
+export interface ModsDiff {
+  incoming: ContentMods
+  added: ModsDiffEntry[]
+  changed: ModsDiffEntry[]
+  same: number
+}
+
+function modLabel(section: Section, id: string, v: unknown): string {
+  const o = v as { name?: string; title?: string }
+  const name = section === 'items' ? id : o.title ?? o.name ?? id
+  return `${MOD_SECTION_NAMES[section]}「${name}」`
+}
+
 function load(): ContentMods {
   try {
     const raw = localStorage.getItem(KEY)
@@ -267,6 +293,40 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  /**
+   * 和匯入存檔附上的自訂內容比較：新增的、和這個瀏覽器不同的、相同的。
+   * 每一項的 key 是「區塊:id」（例如 stories:lost_ring）
+   */
+  function diffMods(raw: unknown): ModsDiff {
+    const incoming = normalizeMods(raw)
+    // normalizeMods 會先登錄自建的能力與底材：比較完恢復成目前的內容
+    problems.value = applyContent(mods.value)
+    const diff: ModsDiff = { incoming, added: [], changed: [], same: 0 }
+    for (const section of MOD_SECTIONS) {
+      const mine = mods.value[section] as Record<string, unknown>
+      for (const [id, v] of Object.entries(incoming[section] as Record<string, unknown>)) {
+        const entry = { key: `${section}:${id}`, section, id, label: modLabel(section, id, v) }
+        if (!(id in mine)) diff.added.push(entry)
+        else if (JSON.stringify(mine[id]) !== JSON.stringify(v)) diff.changed.push(entry)
+        else diff.same++
+      }
+    }
+    return diff
+  }
+
+  /** 合併：加入新增的，take 裡的（和這個瀏覽器不同的項目）換成檔案的；這個瀏覽器其他的內容不動 */
+  function mergeMods(diff: ModsDiff, take: string[] = []): number {
+    const want = new Set([...diff.added.map((e) => e.key), ...take])
+    let n = 0
+    for (const e of [...diff.added, ...diff.changed]) {
+      if (!want.has(e.key)) continue
+      ;(mods.value[e.section] as Record<string, unknown>)[e.id] = (diff.incoming[e.section] as Record<string, unknown>)[e.id]
+      n++
+    }
+    if (n) save()
+    return n
+  }
+
   function resetAll() {
     mods.value = emptyMods()
     save()
@@ -279,6 +339,6 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, saveStory, deleteStory, restoreStory, knownFlags,
     saveAbility, deleteAbility, restoreAbility,
-    exportMods, importMods, resetAll,
+    exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

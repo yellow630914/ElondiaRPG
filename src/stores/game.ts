@@ -30,6 +30,9 @@ import {
 } from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
 import { providerInfo, type ProviderId, type TokenUsage } from '@/narrator/providerInfo'
+import type { ContentMods } from '@/engine/mods'
+import { useContent, type ModsDiff } from './content'
+import { usePortraits } from './portraits'
 import { usePrompts } from './prompts'
 import { AI_FEATURES, useSettings, type AiFeature } from './settings'
 import {
@@ -107,6 +110,18 @@ export interface NarrationState {
   judgeThinking?: string
   /** 只是為了存判定的思考過程，還沒有敘事 */
   placeholder?: boolean
+}
+
+export interface ImportPreview {
+  meta: SlotMeta
+  /** 附上的自訂內容和這個瀏覽器的差異；沒有附上時是 null */
+  diff: ModsDiff | null
+  portraits: number
+}
+
+/** 自訂內容的項目數 */
+function modCount(m: ContentMods): number {
+  return Object.values(m).reduce((n, v) => n + (v && typeof v === 'object' ? Object.keys(v).length : 0), 0)
 }
 
 /** 移動之後：附近有敵對的冒險者時開始對峙 */
@@ -294,10 +309,32 @@ export const useGame = defineStore('game', () => {
     noticeTimer = setTimeout(() => (notice.value = null), 2500)
   }
 
+  /** 目前的遊戲；存檔欄位與匯出的檔案也附上當時的自訂內容（沒有自訂內容時不附） */
   function snapshot(): SaveData | null {
     if (!state.value) return null
     const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
-    return JSON.parse(JSON.stringify({ state: state.value, narrations: finished, usage: usage.value })) as SaveData
+    const content = currentContent()
+    return JSON.parse(JSON.stringify({ state: state.value, narrations: finished, usage: usage.value, ...(content ? { content } : {}) })) as SaveData
+  }
+
+  function currentContent(): ContentMods | undefined {
+    const mods = useContent().mods
+    return modCount(mods) ? (JSON.parse(JSON.stringify(mods)) as ContentMods) : undefined
+  }
+
+  /** 清掉沒有任何存檔（含進行中的遊戲）用到的形象圖；讀不到存檔列表時不清 */
+  async function prunePortraits(): Promise<number> {
+    try {
+      const seeds = new Set<number>()
+      if (state.value) seeds.add(state.value.seed)
+      for (const m of await slotStore().list()) {
+        const seed = m.seed ?? (await slotStore().get(m.id))?.state.seed
+        if (seed !== undefined) seeds.add(seed)
+      }
+      return await usePortraits().pruneExcept(seeds)
+    } catch {
+      return 0
+    }
   }
 
   async function refreshSlots() {
@@ -313,6 +350,8 @@ export const useGame = defineStore('game', () => {
     if (!data) throw new Error('沒有進行中的遊戲')
     await slotStore().put(slotMeta(id, name, kind, data), data)
     await refreshSlots()
+    // 覆寫掉的欄位可能是某一局唯一的存檔
+    void prunePortraits()
   }
 
   /** 手動存檔：給 id 時覆寫那個欄位 */
@@ -388,6 +427,8 @@ export const useGame = defineStore('game', () => {
   async function deleteSlot(id: string) {
     await slotStore().remove(id)
     await refreshSlots()
+    const n = await prunePortraits()
+    if (n) flash(`🗑️ 已刪除存檔，並清掉 ${n} 張沒有存檔用到的形象圖`)
   }
 
   async function renameSlot(id: string, name: string) {
@@ -395,21 +436,59 @@ export const useGame = defineStore('game', () => {
     await refreshSlots()
   }
 
-  /** 匯出成檔案：回傳檔名與內容（目前的遊戲或某個欄位） */
-  async function exportFile(id?: string): Promise<{ name: string; text: string } | null> {
+  /**
+   * 匯出成檔案：回傳檔名與內容（目前的遊戲或某個欄位）。
+   * 附上自訂內容（欄位存檔時的；舊的欄位沒有時用這個瀏覽器目前的），可以選擇附上這一局的形象圖
+   */
+  async function exportFile(id?: string, opts: { content?: boolean; portraits?: boolean } = {}): Promise<{ name: string; text: string } | null> {
     const data = id ? await slotStore().get(id) : snapshot()
     if (!data) return null
+    if (opts.content === false) delete data.content
+    else if (!data.content) {
+      const content = currentContent()
+      if (content) data.content = content
+    }
+    delete data.portraits
+    if (opts.portraits) {
+      const portraits = await usePortraits().exportFor(data.state.seed)
+      if (Object.keys(portraits).length) data.portraits = portraits
+    }
     return { name: saveFileName(slotMeta('', '', 'manual', data)), text: JSON.stringify(data, null, 2) }
   }
 
-  /** 匯入檔案：存成一個新的手動存檔欄位（不會直接讀取） */
-  async function importFile(text: string, fileName = '匯入的存檔') {
+  /** 匯入前的檢查：存檔摘要、附上的自訂內容和這個瀏覽器的差異、附上幾張形象圖 */
+  function previewImport(text: string, fileName = '匯入的存檔'): ImportPreview {
+    const data = parseSaveFile(text)
+    return {
+      meta: slotMeta('', fileName.replace(/\.json$/i, ''), 'manual', data),
+      diff: data.content ? useContent().diffMods(data.content) : null,
+      portraits: Object.keys(data.portraits ?? {}).length,
+    }
+  }
+
+  /**
+   * 匯入檔案：存成一個新的手動存檔欄位（不會直接讀取）。
+   * merge：合併附上的自訂內容（take 是和這個瀏覽器不同、要換成檔案的項目）；portraits：還原附上的形象圖
+   */
+  async function importFile(text: string, fileName = '匯入的存檔', opts: { merge?: boolean; take?: string[]; portraits?: boolean } = {}) {
     try {
       const data = parseSaveFile(text)
+      const portraits = data.portraits
+      delete data.portraits
+      const notes: string[] = []
+      if (opts.merge && data.content) {
+        const n = useContent().mergeMods(useContent().diffMods(data.content), opts.take)
+        if (n) notes.push(`合併 ${n} 項自訂內容`)
+      }
       const meta = slotMeta(`m-${Date.now().toString(36)}`, fileName.replace(/\.json$/i, ''), 'manual', data)
       await slotStore().put(meta, data)
+      // 先有存檔欄位再還原圖片，清理孤兒圖片時才不會被刪掉
+      if (opts.portraits && portraits) {
+        const n = await usePortraits().importFor(data.state.seed, portraits)
+        if (n) notes.push(`還原 ${n} 張形象圖`)
+      }
       await refreshSlots()
-      flash('📥 已匯入，可以在存檔列表讀取')
+      flash(`📥 已匯入${notes.length ? `（${notes.join('，')}）` : ''}，可以在存檔列表讀取`)
     } catch (e) {
       error.value = `匯入失敗：${e instanceof Error ? e.message : String(e)}`
     }
@@ -428,6 +507,8 @@ export const useGame = defineStore('game', () => {
     usage.value = {}
     error.value = null
     save()
+    // 上一局沒有存檔的話，它的形象圖就用不到了
+    void prunePortraits()
   }
 
   function reset() {
@@ -640,7 +721,7 @@ export const useGame = defineStore('game', () => {
   return {
     state, narrations, error, saveWarning, flushed, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump,
     usageCollector, originOf,
-    refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, importFile,
+    refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
     perform, judge, flavorRoster, hire, flavorShop, startNegotiation,
     // 商店、談判、行囊
