@@ -11,6 +11,7 @@
 
 import type { AdultScene } from './content'
 import { setupCraft, setupMake } from './craft'
+import { setupProduce } from './recipes'
 import { isShopStaff } from './crafting'
 import { setupStoryCheck } from './story'
 import { setupDefeatEvent } from './defeat'
@@ -647,6 +648,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupCraft(state, target)
     case 'make':
       return setupMake(state, target)
+    case 'produce':
+      return setupProduce(state, target)
     case 'story':
       return setupStoryCheck(state, target)
     case 'defeat_event':

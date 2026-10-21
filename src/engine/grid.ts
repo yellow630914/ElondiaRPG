@@ -29,7 +29,7 @@ import { overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
 import { bestTool } from './tools'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
-import type { Character, GameState, Report } from './types'
+import type { Character, GameState, GameTime, Report } from './types'
 
 export type CellKind =
   | 'floor' | 'wall' | 'water'
@@ -72,6 +72,8 @@ export interface Cell {
   dir?: 'up' | 'down' | 'out'
   /** 房子裡擺的家具（物品名稱） */
   furniture?: string
+  /** 苗圃上種的東西：種子與播種的時間（見 garden.ts） */
+  crop?: { seed: string; planted: GameTime }
 }
 
 /** 旅途格子上的事件：auto 原本的旅途事件、normal 普通事件、advanced 高階事件、special 特殊任務的開頭、master 主人的事件 */

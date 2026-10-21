@@ -1,11 +1,13 @@
 {
-  "$comment": "工藝（見 docs/CRAFTING.md）。五種工藝各自有等級（1～max_level）與經驗：等級 N 可以處理第 N 級以下的材料。自己動手（行動 make）：做的人擲 attr 檢定，再加工藝等級 × level_bonus；DC 照 gear.json 的 craft.dc；第一級材料自己買，費用 = 底材價格 × tier1_cost_ratio（另乘地點物價），第二級以上要自備打造材料（和委託一樣）。工具：材料等級對應 tool_tier（1 低階＝隨身工具組，任何地方；2 中階＝攜帶式工坊，只能在旅店、安全房、自己的房子展開，或在對應的店租用工坊；3 高階＝房子裡的工作台，之後的房屋系統）。經驗 = 材料等級 × xp[成功程度]，升級需要 xp_to_next[目前等級 - 1]。店主的工藝等級依聚落規模 shop_levels 隨機。夥伴：自願加入且親密度達到 companion.min_affinity、或奴隸才肯動手；雇傭的不幫忙。開店中的店主不能邀請入隊。dismiss_penalty：入隊 days 天內遣散，對方親密度 affinity，這座城的物價 × price_mult 持續 notoriety_days 天。",
+  "$comment": "工藝（見 docs/CRAFTING.md）。七種工藝（鍛造、木工、製革、裁縫、珠寶處理裝備的材料；煉金、烹飪只走配方）各自有等級（1～max_level）與經驗：等級 N 可以處理第 N 級以下的材料。自己動手（行動 make）：做的人擲 attr 檢定，再加工藝等級 × level_bonus；DC 照 gear.json 的 craft.dc；第一級材料自己買，費用 = 底材價格 × tier1_cost_ratio（另乘地點物價），第二級以上要自備打造材料（和委託一樣）。工具：材料等級對應 tool_tier（1 低階＝隨身工具組，任何地方；2 中階＝攜帶式工坊，只能在旅店、安全房、自己的房子展開，或在對應的店租用工坊；3 高階＝房子裡的工作台，之後的房屋系統）。經驗 = 材料等級 × xp[成功程度]，升級需要 xp_to_next[目前等級 - 1]。店主的工藝等級依聚落規模 shop_levels 隨機。夥伴：自願加入且親密度達到 companion.min_affinity、或奴隸才肯動手；雇傭的不幫忙。開店中的店主不能邀請入隊。dismiss_penalty：入隊 days 天內遣散，對方親密度 affinity，這座城的物價 × price_mult 持續 notoriety_days 天。",
   "skills": {
     "smithing": { "name": "鍛造", "kinds": ["metal"], "attr": "str", "shop": "smithy" },
     "woodworking": { "name": "木工", "kinds": ["wood"], "attr": "dex", "shop": "smithy" },
     "leatherwork": { "name": "製革", "kinds": ["leather"], "attr": "dex", "shop": "tailor" },
     "tailoring": { "name": "裁縫", "kinds": ["cloth"], "attr": "dex", "shop": "tailor" },
-    "jewelcraft": { "name": "珠寶", "kinds": ["jewel"], "attr": "int", "shop": "jeweler" }
+    "jewelcraft": { "name": "珠寶", "kinds": ["jewel"], "attr": "int", "shop": "jeweler" },
+    "alchemy": { "name": "煉金", "kinds": [], "attr": "int", "shop": "magic" },
+    "cooking": { "name": "烹飪", "kinds": [], "attr": "dex", "shop": "tavern" }
   },
   "max_level": 5,
   "level_bonus": 1,
@@ -18,5 +20,13 @@
   "self": { "hours": 8, "tier1_cost_ratio": 0.5 },
   "shop_levels": { "village": [1, 2], "outpost": [1, 2], "fortress": [2, 2], "town": [2, 3], "port": [2, 3], "city": [3, 4], "capital": [4, 5] },
   "companion": { "min_affinity": 30 },
+  "recipe": {
+    "$comment": "配方（物品的 recipe，見 docs/CRAFTING.md 第 6 節）：做的人擲工藝的屬性檢定，加工藝等級；DC 依配方等級 dc[等級 - 1]；工具階級依 tool_tier。一次可以做 max_batches 批（材料、費用、時間都乘批數，只擲一次）。成果：大成功多做 critical_bonus 比例（無條件進位，至少 1 份）、成功照配方、部分成功只有 partial_ratio（無條件進位）、失敗材料損失 lost_on_fail（無條件進位）、大失敗材料全部損失；費用不論結果都照付。經驗 = 配方等級 × xp[成功程度]（和打造一樣，不乘批數）。",
+    "dc": [10, 12, 14, 16, 18],
+    "max_batches": 5,
+    "critical_bonus": 0.5,
+    "partial_ratio": 0.5,
+    "lost_on_fail": 0.5
+  },
   "dismiss_penalty": { "days": 3, "affinity": -20, "price_mult": 1.1, "notoriety_days": 7 }
 }

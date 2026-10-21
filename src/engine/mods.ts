@@ -9,10 +9,10 @@
 
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
-  stories, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart,
+  stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart,
 } from './data'
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -626,10 +626,42 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     const places = (Array.isArray(f.places) ? f.places : []).filter((p): p is FurniturePlace => p === 'indoor' || p === 'yard' || p === 'basement')
     out.furniture = {
       places: places.length ? [...new Set(places)] : ['indoor'],
-      ...(f.function === 'bed' || f.function === 'workbench' ? { function: f.function } : {}),
+      ...(f.function === 'bed' || f.function === 'workbench' || f.function === 'garden' ? { function: f.function } : {}),
       ...(f.function === 'workbench' ? { craft: CRAFT_IDS.includes(f.craft as never) ? f.craft : 'smithing' } : {}),
       ...(int(f.comfort, 0, 10, 0) ? { comfort: int(f.comfort, 0, 10, 0) } : {}),
       ...(typeof f.icon === 'string' && f.icon.trim() ? { icon: [...f.icon.trim()].slice(0, 2).join('') } : {}),
+    }
+  }
+  // 配方：怎麼做出這件物品（裝備走打造，不用配方）；材料不能是自己，同名的合併
+  if (category !== 'equipment' && raw.recipe) {
+    const r: Partial<RecipeSpec> = raw.recipe
+    const inputs = new Map<string, number>()
+    for (const x of Array.isArray(r.inputs) ? r.inputs : []) {
+      const n = cleanItemName(x?.name)
+      if (n && n !== out.name && (inputs.has(n) || inputs.size < 6)) inputs.set(n, Math.min(99, (inputs.get(n) ?? 0) + int(x?.qty, 1, 99, 1)))
+    }
+    if (inputs.size) {
+      const qty = int(r.qty, 1, 20, 1)
+      const cost = int(r.cost_cc, 0, 1e7, 0)
+      out.recipe = {
+        craft: CRAFT_IDS.includes(r.craft as never) ? r.craft! : 'alchemy',
+        level: int(r.level, 1, craftRules.max_level, 1),
+        inputs: [...inputs].map(([n, q]) => ({ name: n, qty: q })),
+        ...(qty > 1 ? { qty } : {}),
+        ...(cost ? { cost_cc: cost } : {}),
+        hours: int(r.hours, 1, 48, 2),
+      }
+    }
+  }
+  // 種子：種在苗圃上長出什麼（材料才能當種子）
+  if (category === 'material' && raw.seed) {
+    const sd: Partial<SeedSpec> = raw.seed
+    const yields = [...new Set((Array.isArray(sd.yields) ? sd.yields : []).map(cleanItemName).filter((n) => n && n !== out.name))].slice(0, 5)
+    if (yields.length) {
+      const lo = int(sd.qty?.[0], 1, 20, 1)
+      const hi = int(sd.qty?.[1], 1, 20, lo)
+      const place: FurniturePlace = sd.place === 'basement' || sd.place === 'indoor' ? sd.place : 'yard'
+      out.seed = { yields, qty: [Math.min(lo, hi), Math.max(lo, hi)], days: int(sd.days, 1, 30, 3), place }
     }
   }
   // 光源與燃料：每一份能照亮幾格

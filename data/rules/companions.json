@@ -108,6 +108,12 @@
    "group": "meal", "rank": 4, "combat_temp_hp": 12, "combat_mods": { "hit": 1 }, "check_penalty": -1,
    "clears": "long_rest"
   },
+  "fed_legend": {
+   "name": "傳說料理",
+   "desc": "吃了一頓只有自己能做出來的大餐，渾身是勁。下次長休前，每場戰鬥開始時獲得 16 點暫時生命，命中與傷害 +1，所有檢定 +1。",
+   "group": "meal", "rank": 5, "combat_temp_hp": 16, "combat_mods": { "hit": 1, "damage": 1 }, "check_penalty": -1,
+   "clears": "long_rest"
+  },
   "cheered": {
    "name": "興致高昂",
    "desc": "喝了點酒，膽子也大了。下次長休前魅力檢定 +1；再喝會變成微醺。",

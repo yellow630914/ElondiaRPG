@@ -25,6 +25,7 @@ import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
 import * as road from '@/engine/road'
 import * as homes from '@/engine/homes'
+import * as garden from '@/engine/garden'
 import type { DefeatLoot, GameState, GearSlot, Report } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
@@ -828,6 +829,19 @@ export const useGame = defineStore('game', () => {
     }),
     stayHome: (id: string) => run((s) => homes.stayHome(s, grid.currentArea(s), id)),
     takeResident: (id: string) => run((s) => homes.leaveWithResident(s, grid.currentArea(s), id)),
+    // 苗圃（garden.ts）：站在苗圃上播種、收成、拔掉
+    plant: (seed: string) => run((s) => {
+      const p = grid.position(s)
+      garden.plant(s, grid.currentArea(s), p.x, p.y, seed)
+    }),
+    harvest: () => run((s) => {
+      const p = grid.position(s)
+      return garden.harvest(s, grid.currentArea(s), p.x, p.y)
+    }, { narrate: false }),
+    uproot: () => run((s) => {
+      const p = grid.position(s)
+      garden.uproot(s, grid.currentArea(s), p.x, p.y)
+    }),
     /** 地下城的緊急撤退（失敗會被追上打一場） */
     retreat: () => run(grid.retreat),
     /** 這個存檔的規則 */

@@ -88,6 +88,8 @@
     "craft": { "name": "委託打造", "attr": "int", "hours": 8, "effects": ["affinity", "relationship_text", "flag", "gear"],
       "$comment": "在鐵匠鋪、裁縫店、珠寶店委託工匠打造裝備（gear.json 的 craft）：DC 與工錢依材料；店主的工藝等級要夠（crafts.json 的 shop_levels），比需要的高時檢定有加值；成品依成功程度。gear：AI 可以替成品取名、寫描述、挑附魔（稀有度與附魔點數依成功程度夾住）" },
     "make": { "name": "親手製作", "attr": "str", "hours": 8, "effects": ["affinity", "relationship_text", "flag", "gear"],
-      "$comment": "主角或肯幫忙的夥伴自己動手打造裝備（crafts.json）：做的人擲檢定（屬性依工藝），加工藝等級；要有對應階級的工具；成品和委託一樣依成功程度，做的人得到工藝經驗。target 為「做的人的 id@底材:材料|輔料…」" }
+      "$comment": "主角或肯幫忙的夥伴自己動手打造裝備（crafts.json）：做的人擲檢定（屬性依工藝），加工藝等級；要有對應階級的工具；成品和委託一樣依成功程度，做的人得到工藝經驗。target 為「做的人的 id@底材:材料|輔料…」" },
+    "produce": { "name": "依配方製作", "attr": "int", "hours": 2, "effects": ["affinity", "relationship_text", "flag"],
+      "$comment": "主角或肯幫忙的夥伴依物品的配方製作藥劑、料理、家具、工具（crafts.json 的 recipe）：做的人擲檢定（屬性依工藝），加工藝等級；DC 與工具階級依配方等級；成品份數依成功程度，做的人得到工藝經驗。target 為「做的人的 id@物品名稱*批數」" }
   }
 }

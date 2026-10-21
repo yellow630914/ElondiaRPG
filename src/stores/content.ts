@@ -166,6 +166,17 @@ export const useContent = defineStore('content', () => {
       e.loot = to ? e.loot.map((l) => (l.item === from ? { ...l, item: to } : l)) : e.loot.filter((l) => l.item !== from)
       if (!e.loot.length) delete e.loot
     }
+    // 其他物品的配方材料與種子長出的作物
+    for (const it of Object.values(mods.value.items)) {
+      if (it.recipe?.inputs.some((x) => x.name === from)) {
+        it.recipe.inputs = to ? it.recipe.inputs.map((x) => (x.name === from ? { ...x, name: to } : x)) : it.recipe.inputs.filter((x) => x.name !== from)
+        if (!it.recipe.inputs.length) delete it.recipe
+      }
+      if (it.seed?.yields.includes(from)) {
+        it.seed.yields = to ? it.seed.yields.map((y) => (y === from ? to : y)) : it.seed.yields.filter((y) => y !== from)
+        if (!it.seed.yields.length) delete it.seed
+      }
+    }
     if (!to) return
     for (const s of Object.values(mods.value.stories)) {
       const lists = [s.rewards, ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).map((o) => o?.effects)]

@@ -1,6 +1,8 @@
 // 物品的顯示資訊：分類圖示、一行說明（行囊與商店共用）
 
-import { itemDef, itemRules, type ItemCategory } from '@/engine/data'
+import { craftRules, itemDef, itemRules, type ItemCategory } from '@/engine/data'
+import { seedSummary } from '@/engine/garden'
+import { furnitureSummary } from '@/engine/homes'
 import { gearRules, gearSpecOf, gearSummary } from '@/engine/gear'
 import { intelSummary, isIntelItem, useSummary } from '@/engine/inventory'
 import { toolSummary } from '@/engine/tools'
@@ -33,7 +35,9 @@ export function itemEffect(state: GameState, name: string): string {
   const spec = gearSpecOf(state, name)
   const forgeNames = [...new Set((def?.forge?.materials ?? []).map((m) => gearRules.materials[m]?.name).filter(Boolean))]
   const forge = forgeNames.length ? `可打造${forgeNames.join('、')}` : ''
-  return [spec ? gearSummary(spec) : '', useSummary(def?.use), toolSummary(def?.tool), isIntelItem(state, name) ? intelSummary(def?.intel) : '', forge]
+  const recipe = def?.recipe ? `配方：${craftRules.skills[def.recipe.craft].name} Lv.${def.recipe.level}` : ''
+  return [spec ? gearSummary(spec) : '', useSummary(def?.use), toolSummary(def?.tool), isIntelItem(state, name) ? intelSummary(def?.intel) : '', forge,
+    furnitureSummary(def?.furniture), seedSummary(def?.seed), recipe]
     .filter(Boolean).join('・')
 }
 

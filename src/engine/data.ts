@@ -801,7 +801,7 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'defeat_event' | 'story'
+  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'defeat_event' | 'story'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'
 export const actionRules = actionsJson as unknown as {
@@ -953,6 +953,32 @@ export interface ItemDef {
   tool?: ItemTool
   /** 情報：解讀之後得到什麼（沒有時是附近隨機的事件點） */
   intel?: ItemIntel
+  /** 配方：怎麼做出這件物品（見 docs/CRAFTING.md 第 6 節） */
+  recipe?: RecipeSpec
+  /** 種子：種在房子的苗圃會長出什麼（見 docs/HOMES.md） */
+  seed?: SeedSpec
+}
+
+/** 配方：用哪種工藝的幾級、哪些材料，做出幾份這件物品 */
+export interface RecipeSpec {
+  craft: CraftId
+  /** 需要的工藝等級（1～5）；也決定 DC 與工具階級 */
+  level: number
+  inputs: { name: string; qty: number }[]
+  /** 一批做出幾份（預設 1） */
+  qty?: number
+  /** 一批另外要買的東西（瓶子、溶劑、基本食材……），乘地點物價 */
+  cost_cc?: number
+  /** 一批花幾小時（預設 2） */
+  hours?: number
+}
+
+/** 種子：種在苗圃（place）上，days 天後收成 yields，數量在 qty 之間；yields 有好幾種時隨機一種 */
+export interface SeedSpec {
+  yields: string[]
+  qty: [number, number]
+  days: number
+  place: FurniturePlace
 }
 
 /**
@@ -1112,11 +1138,11 @@ export function isSettlement(loc: Location): boolean {
 
 // ---- 工藝（crafts.json，見 docs/CRAFTING.md） ----
 
-export type CraftId = 'smithing' | 'woodworking' | 'leatherwork' | 'tailoring' | 'jewelcraft'
+export type CraftId = 'smithing' | 'woodworking' | 'leatherwork' | 'tailoring' | 'jewelcraft' | 'alchemy' | 'cooking'
 
 export interface CraftSkillDef {
   name: string
-  /** 處理的材料種類（gear.json 的 materials.kind） */
+  /** 處理的材料種類（gear.json 的 materials.kind）；煉金、烹飪沒有，只走配方 */
   kinds: string[]
   attr: AttrId
   /** 可以租工坊、委託打造的店 */
@@ -1136,6 +1162,7 @@ export const craftRules = craftsJson as unknown as {
   self: { hours: number; tier1_cost_ratio: number }
   shop_levels: Record<string, [number, number]>
   companion: { min_affinity: number }
+  recipe: { dc: number[]; max_batches: number; critical_bonus: number; partial_ratio: number; lost_on_fail: number }
   dismiss_penalty: { days: number; affinity: number; price_mult: number; notoriety_days: number }
 }
 
@@ -1147,8 +1174,8 @@ export type FurniturePlace = 'indoor' | 'yard' | 'basement'
 
 export interface FurnitureSpec {
   places: FurniturePlace[]
-  /** bed：在家長休；workbench：高階工作台（craft） */
-  function?: 'bed' | 'workbench'
+  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃 */
+  function?: 'bed' | 'workbench' | 'garden'
   craft?: CraftId
   comfort?: number
   icon?: string

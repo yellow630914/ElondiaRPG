@@ -6,7 +6,7 @@
 // - 夥伴可以留在家裡（不算離隊）：不佔隊伍人數、不參加戰鬥，回家時可以帶上。
 
 import { snapshot } from './character'
-import { combatRules, homeRules, itemDef, locationById, type FurniturePlace, type HomeDistrict } from './data'
+import { combatRules, craftRules, homeRules, itemDef, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
 import { blocksFor, placeAt, position, settlementKey, type Area, type Cell } from './grid'
 import { npcRecord, registerNpc } from './npcs'
 import { partyRoom } from './party'
@@ -295,7 +295,7 @@ export function renameHome(state: GameState, id: string, name: string) {
   for (const a of Object.values(home.areas)) a.name = a.name.replace(old, n)
 }
 
-function homeReport(state: GameState, kind: Report['kind'], hours: number, scene: string): Report {
+export function homeReport(state: GameState, kind: Report['kind'], hours: number, scene: string): Report {
   const start = { ...state.time }
   const loc = locationById(state.location)
   return {
@@ -325,6 +325,13 @@ export function placeOf(area: Area, cell: Cell): FurniturePlace | undefined {
 }
 
 export const PLACE_NAME: Record<FurniturePlace, string> = { indoor: '室內', yard: '院子', basement: '地下室' }
+
+/** 家具的一行說明：功能、舒適度、能放的地方 */
+export function furnitureSummary(f: FurnitureSpec | undefined): string {
+  if (!f) return ''
+  const fn = f.function === 'bed' ? '床' : f.function === 'workbench' ? `${f.craft ? craftRules.skills[f.craft].name : ''}的高階工作台` : f.function === 'garden' ? '苗圃' : ''
+  return [fn, f.comfort ? `舒適 +${f.comfort}` : '', `放在${f.places.map((p) => PLACE_NAME[p]).join('、')}`].filter(Boolean).join('，')
+}
 
 /** 房子裡所有的家具 */
 export function furnitureIn(home: Home): { name: string; area: string; x: number; y: number }[] {
@@ -372,6 +379,7 @@ export function takeFurniture(state: GameState, area: Area, x: number, y: number
   if (!homeOfArea(state, area)) throw new Error('只能在自己的房子裡收家具')
   const cell = area.cells[y * area.width + x]
   if (!cell?.furniture) throw new Error('這一格沒有家具')
+  if (cell.crop) throw new Error('苗圃上還種著東西，先收成或拔掉')
   addItem(state.inventory, cell.furniture, 1)
   delete cell.furniture
 }

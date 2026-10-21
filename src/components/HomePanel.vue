@@ -5,6 +5,7 @@ import { currentArea, currentCell } from '@/engine/grid'
 import {
   comfortOf, describeHome, furnitureIn, hasBed, homeOfArea, lotHere, lotPrice, PLACE_NAME, placeOf, residents, stayRefusal,
 } from '@/engine/homes'
+import { cropStatus, plotPlace, seedsFor } from '@/engine/garden'
 import { formatMoney } from '@/engine/money'
 import { useGame } from '@/stores/game'
 import FoldSection from './FoldSection.vue'
@@ -43,6 +44,26 @@ const companions = computed(() => s.value.party.filter((m) => !m.isPlayer))
 const partyFull = computed(() => s.value.party.filter((m) => m.bond !== 'guest').length >= combatRules.party_max)
 const floorName = (key: string) => home.value?.areas[key]?.name.split('・').at(-1) ?? ''
 
+// 苗圃：播種、收成、拔掉
+const plot = computed(() => (home.value ? plotPlace(area.value, cell.value) : undefined))
+const crop = computed(() => cropStatus(s.value, cell.value))
+const seeds = computed(() => seedsFor(s.value, area.value, cell.value))
+const seedPick = ref('')
+const plots = computed(() => {
+  if (!home.value) return { total: 0, ripe: 0 }
+  const cells = Object.values(home.value.areas).flatMap((a) => a.cells.filter((c) => plotPlace(a, c)))
+  return { total: cells.length, ripe: cells.filter((c) => cropStatus(s.value, c)?.ready).length }
+})
+const waitText = (h: number) => (h >= 24 ? `約 ${Math.ceil(h / 24)} 天` : `${h} 小時`)
+function plantIt() {
+  if (!seedPick.value) return
+  game.plant(seedPick.value)
+  seedPick.value = ''
+}
+function uprootIt() {
+  if (crop.value && confirm(`拔掉還沒成熟的${crop.value.seed}？種子不會退回。`)) game.uproot()
+}
+
 function placeIt() {
   if (!pick.value) return
   game.placeFurniture(pick.value)
@@ -70,12 +91,12 @@ function rename() {
       <h3>🏠 {{ home.name }}</h3>
       <button class="small" title="改名" @click="rename">✏️</button>
     </div>
-    <p class="muted">{{ area.name.split('・').at(-1) }}・舒適度 {{ comfort }}／{{ homeRules.comfort_rested }}<template v-if="comfort >= homeRules.comfort_rested">（在家長休會睡得香甜）</template>・{{ hasBed(home) ? '有床，可以在家長休' : '還沒有床' }}<template v-if="benches.length">・工作台：{{ benches.join('、') }}</template></p>
+    <p class="muted">{{ area.name.split('・').at(-1) }}・舒適度 {{ comfort }}／{{ homeRules.comfort_rested }}<template v-if="comfort >= homeRules.comfort_rested">（在家長休會睡得香甜）</template>・{{ hasBed(home) ? '有床，可以在家長休' : '還沒有床' }}<template v-if="benches.length">・工作台：{{ benches.join('、') }}</template><template v-if="plots.total">・苗圃 {{ plots.total }} 塊<template v-if="plots.ripe">（{{ plots.ripe }} 塊可以收成）</template></template></p>
 
     <div class="spot">
       <template v-if="cell.furniture">
         <span>這一格：{{ itemDef(cell.furniture)?.furniture?.icon ?? '🪑' }} {{ cell.furniture }}</span>
-        <button class="small" @click="game.takeFurniture()">收起</button>
+        <button v-if="!cell.crop" class="small" @click="game.takeFurniture()">收起</button>
       </template>
       <template v-else-if="place">
         <span>這一格（{{ PLACE_NAME[place] }}）是空的</span>
@@ -89,6 +110,22 @@ function rename() {
         <span v-else class="muted">行囊裡沒有能放在{{ PLACE_NAME[place] }}的家具（雜貨店、鐵匠鋪、裁縫店、珠寶店有賣）。</span>
       </template>
       <span v-else class="muted">站在空的地板或院子上可以擺家具。</span>
+    </div>
+
+    <div v-if="plot" class="spot">
+      <template v-if="crop">
+        <span>{{ crop.ready ? '🌾' : '🌿' }} {{ crop.seed }}（會長出{{ crop.spec.yields.join('或') }}）：{{ crop.ready ? '可以收成了' : `還要${waitText(crop.hoursLeft)}` }}</span>
+        <button v-if="crop.ready" class="primary small" @click="game.harvest()">收成</button>
+        <button v-else class="small" @click="uprootIt">拔掉</button>
+      </template>
+      <template v-else-if="seeds.length">
+        <select v-model="seedPick">
+          <option value="">播種…</option>
+          <option v-for="sd in seeds" :key="sd.name" :value="sd.name">{{ sd.name }}（{{ sd.qty }}）</option>
+        </select>
+        <button class="small" :disabled="!seedPick" @click="plantIt">播種</button>
+      </template>
+      <span v-else class="muted">行囊裡沒有能種在{{ PLACE_NAME[plot] }}苗圃的種子（雜貨店、神殿、魔法物品店有賣）。</span>
     </div>
 
     <FoldSection id="home.people" title="👥 看家的夥伴" :count="staying.length">

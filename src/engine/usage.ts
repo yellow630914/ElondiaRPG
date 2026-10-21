@@ -49,7 +49,11 @@ export function itemUsage(name: string, state?: GameState | null): string[] {
   for (const s of stories) {
     if (storyEffects(s).some((e) => e.type === 'item' && e.name === name)) out.push(`特殊任務「${s.title}」的獎勵`)
   }
-  for (const it of itemRules.items) if (it.tool?.fuel === name) out.push(`「${it.name}」的燃料`)
+  for (const it of itemRules.items) {
+    if (it.tool?.fuel === name) out.push(`「${it.name}」的燃料`)
+    if (it.recipe?.inputs.some((x) => x.name === name)) out.push(`「${it.name}」的配方材料`)
+    if (it.seed?.yields.includes(name)) out.push(`「${it.name}」長出的作物`)
+  }
   if (state) {
     const have = state.inventory.find((i) => i.name === name && i.qty > 0)
     if (have) out.push(`目前存檔的行囊（×${have.qty}）`)
@@ -57,7 +61,10 @@ export function itemUsage(name: string, state?: GameState | null): string[] {
       if (Object.values(c.gear ?? {}).some((g) => g?.name === name)) out.push(`目前存檔「${c.name}」身上的裝備`)
     }
     for (const q of activeQuests(state)) if (q.item === name) out.push(`進行中的委託「${q.title}」`)
-    for (const h of Object.values(state.homes ?? {})) if (furnitureIn(h).some((f) => f.name === name)) out.push(`目前存檔的房子「${h.name}」裡的家具`)
+    for (const h of Object.values(state.homes ?? {})) {
+      if (furnitureIn(h).some((f) => f.name === name)) out.push(`目前存檔的房子「${h.name}」裡的家具`)
+      if (Object.values(h.areas).some((a) => a.cells.some((c) => c.crop?.seed === name))) out.push(`目前存檔的房子「${h.name}」苗圃上種著`)
+    }
   }
   return out
 }
@@ -134,5 +141,8 @@ export function renameItemInState(state: GameState, from: string, to: string) {
   }
   for (const c of characters(state)) for (const g of Object.values(c.gear ?? {})) if (g?.name === from) g.name = to
   for (const q of state.quests) if (q.item === from) q.item = to
-  for (const h of Object.values(state.homes ?? {})) for (const a of Object.values(h.areas)) for (const c of a.cells) if (c.furniture === from) c.furniture = to
+  for (const h of Object.values(state.homes ?? {})) for (const a of Object.values(h.areas)) for (const c of a.cells) {
+    if (c.furniture === from) c.furniture = to
+    if (c.crop?.seed === from) c.crop.seed = to
+  }
 }

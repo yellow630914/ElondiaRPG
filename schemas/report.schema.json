@@ -160,7 +160,7 @@
             "required": ["actor", "craft", "amount"],
             "properties": {
               "actor": { "type": "string" },
-              "craft": { "enum": ["smithing", "woodworking", "leatherwork", "tailoring", "jewelcraft"] },
+              "craft": { "enum": ["smithing", "woodworking", "leatherwork", "tailoring", "jewelcraft", "alchemy", "cooking"] },
               "amount": { "type": "integer" },
               "level": { "type": "integer" }
             }

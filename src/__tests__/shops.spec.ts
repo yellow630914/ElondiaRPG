@@ -61,7 +61,10 @@ describe('shop types', () => {
     const cat = (c: string) => deals.filter((d) => itemDef(d.title)?.category === c)
     expect(cat('scroll').length).toBeGreaterThanOrEqual(10)
     expect(cat('consumable').length).toBe(shopRules.types.magic.random!.consumables)
-    expect(cat('material').length).toBe(shopRules.types.magic.random!.materials)
+    // 隨機的材料，加上魔法物品店本來就賣的（孢子之類的種子）
+    const own = cat('material').filter((d) => itemDef(d.title)!.tags.includes('magic'))
+    expect(own.length).toBeGreaterThan(0)
+    expect(cat('material').length - own.length).toBe(shopRules.types.magic.random!.materials)
   })
 
   it('sells event points and quest leads at the informant', () => {

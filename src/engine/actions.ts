@@ -24,6 +24,7 @@ import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
 import { applyCraft, applyMake, craftPart, parseCraftTarget } from './craft'
+import { applyProduce } from './recipes'
 import { currentArea } from './grid'
 import { memberOrResident } from './homes'
 import { adultContent, type AdultScene } from './content'
@@ -374,7 +375,7 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
   return {
     schema_version: '0.1',
     report_id: newReportId(state),
-    kind: p.kind === 'free' || p.kind === 'craft' || p.kind === 'make' ? 'action' : 'social',
+    kind: p.kind === 'free' || p.kind === 'craft' || p.kind === 'make' || p.kind === 'produce' ? 'action' : 'social',
     time: { start, end: addHours(start, hours) },
     location: { at: state.location, region: loc.region, scene: p.scene },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
@@ -497,6 +498,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'patron': return applyPatron(state, report, p.target, degree)
     case 'craft': return applyCraft(state, report, p.target!, degree, crafted)
     case 'make': return applyMake(state, report, p.target!, degree, crafted)
+    case 'produce': return applyProduce(state, report, p.target!, degree)
     case 'defeat_event': return applyDefeatResponse(state, report, degree)
     case 'story': return applyStoryCheck(state, report, p.target!, degree)
     case 'free':

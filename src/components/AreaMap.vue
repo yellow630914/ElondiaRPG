@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
 import { itemDef, locationById } from '@/engine/data'
+import { cropStatus } from '@/engine/garden'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 
@@ -15,6 +16,8 @@ const EVENT_ICON = { special: '⭐', master: '⛓️', advanced: '✨' }
 
 function icon(cell: Cell): string {
   // 房子：家具、樓梯、門；城裡買下的房子
+  // 苗圃上的作物：成熟 🌾、還在長 🌿
+  if (cell.crop && game.state) return cropStatus(game.state, cell)?.ready ? '🌾' : '🌿'
   if (cell.furniture) return itemDef(cell.furniture)?.furniture?.icon ?? '🪑'
   if (cell.dir) return { up: '⬆️', down: '⬇️', out: '🚪' }[cell.dir]
   if (cell.home) return '🏠'
@@ -31,6 +34,10 @@ function icon(cell: Cell): string {
 }
 
 function label(cell: Cell): string {
+  if (cell.crop && game.state) {
+    const c = cropStatus(game.state, cell)
+    return `${cell.furniture}：種著${cell.crop.seed}${c?.ready ? '，可以收成了' : `，還要 ${c?.hoursLeft ?? 0} 小時`}`
+  }
   if (cell.furniture) return `家具：${cell.furniture}`
   if (cell.dir) return { up: '往樓上', down: '往樓下', out: '出門' }[cell.dir]
   if (cell.home) return `你的房子：${game.state?.homes?.[cell.home]?.name ?? ''}`

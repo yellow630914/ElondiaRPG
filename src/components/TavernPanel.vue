@@ -56,7 +56,7 @@ const menu = computed(() => {
   return mealMenu(s.value)
 })
 // 隊伍現在的用餐與喝酒狀態
-const MEAL_CONDITIONS = new Set(['fed_light', 'fed_well', 'fed_fine', 'fed_feast', 'cheered', 'tipsy'])
+const MEAL_CONDITIONS = new Set(['fed_light', 'fed_well', 'fed_fine', 'fed_feast', 'fed_legend', 'cheered', 'tipsy'])
 const fed = computed(() => s.value.party
   .map((m) => ({ name: m.name, list: m.status.filter((c) => MEAL_CONDITIONS.has(c)).map(conditionName) }))
   .filter((x) => x.list.length))

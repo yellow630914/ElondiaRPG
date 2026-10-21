@@ -96,7 +96,7 @@ const toolText = computed(() => toolSummary(draft.value.tool))
 // 家具
 const furn = computed(() => (draft.value.furniture ??= { places: ['indoor'] }))
 function setFurnFunction(v: string) {
-  if (v === 'bed' || v === 'workbench') furn.value.function = v
+  if (v === 'bed' || v === 'workbench' || v === 'garden') furn.value.function = v
   else delete furn.value.function
   if (v === 'workbench') furn.value.craft ??= 'smithing'
   else delete furn.value.craft
@@ -104,6 +104,20 @@ function setFurnFunction(v: string) {
 function toggleFurnPlace(p: FurniturePlace) {
   const list = furn.value.places
   furn.value.places = list.includes(p) ? (list.length > 1 ? list.filter((x) => x !== p) : list) : [...list, p]
+}
+
+// 配方（怎麼做出這件物品）與種子（種在苗圃長出什麼）
+const itemNames = computed(() => {
+  void content.version
+  return itemRules.items.map((i) => i.name).filter((n) => n !== props.name)
+})
+function toggleRecipe(on: boolean) {
+  if (on) draft.value.recipe = { craft: 'alchemy', level: 1, inputs: [{ name: '', qty: 1 }], hours: 2 }
+  else delete draft.value.recipe
+}
+function toggleSeed(on: boolean) {
+  if (on) draft.value.seed = { yields: [''], qty: [1, 2], days: 3, place: 'yard' }
+  else delete draft.value.seed
 }
 
 // ---- 情報 ----
@@ -387,6 +401,7 @@ function remove() {
             <option value="">裝飾（只有舒適度）</option>
             <option value="bed">床（在家長休）</option>
             <option value="workbench">高階工作台</option>
+            <option value="garden">苗圃（可以播種）</option>
           </select>
         </label>
         <label v-if="furn.function === 'workbench'">工藝
@@ -403,8 +418,55 @@ function remove() {
           <input type="checkbox" :checked="furn.places.includes(p)" @change="toggleFurnPlace(p)" /> {{ PLACE_NAME[p] }}
         </label>
       </div>
-      <p class="small muted">家具擺在自己房子的格子上。床讓你在家長休；舒適度加總達到 {{ homeRules.comfort_rested }} 時，在家長休後睡得香甜；高階工作台讓這種工藝能處理第四、五級的材料。</p>
+      <p class="small muted">家具擺在自己房子的格子上。床讓你在家長休；舒適度加總達到 {{ homeRules.comfort_rested }} 時，在家長休後睡得香甜；高階工作台讓這種工藝能處理第四、五級的材料；苗圃可以種下種子（種子的「能種在」要和苗圃擺的地方一樣）。</p>
     </fieldset>
+
+    <fieldset v-if="draft.category !== 'equipment'">
+      <legend><label class="check"><input type="checkbox" :checked="!!draft.recipe" @change="toggleRecipe(($event.target as HTMLInputElement).checked)" /> 配方：可以自己做出來</label></legend>
+      <template v-if="draft.recipe">
+        <div class="grid">
+          <label>工藝
+            <select v-model="draft.recipe.craft">
+              <option v-for="c in CRAFT_IDS" :key="c" :value="c">{{ craftRules.skills[c].name }}</option>
+            </select>
+          </label>
+          <label>需要的等級 <input v-model.number="draft.recipe.level" type="number" min="1" :max="craftRules.max_level" /></label>
+          <label>一批做出幾份 <input v-model.number="draft.recipe.qty" type="number" min="1" max="20" placeholder="1" /></label>
+          <label>一批另外的花費（{{ formatMoney(draft.recipe.cost_cc ?? 0) }}） <input v-model.number="draft.recipe.cost_cc" type="number" min="0" placeholder="0" /></label>
+          <label>一批幾小時 <input v-model.number="draft.recipe.hours" type="number" min="1" max="48" /></label>
+        </div>
+        <div v-for="(x, i) in draft.recipe.inputs" :key="i" class="row">
+          <input v-model="x.name" list="recipe-items" placeholder="材料名稱" />
+          ×<input v-model.number="x.qty" type="number" min="1" max="99" class="qty" />
+          <button class="small" :disabled="draft.recipe.inputs.length <= 1" @click="draft.recipe.inputs.splice(i, 1)">刪除</button>
+        </div>
+        <button v-if="draft.recipe.inputs.length < 6" class="small" @click="draft.recipe.inputs.push({ name: '', qty: 1 })">＋ 材料</button>
+        <p class="small muted">做的人擲{{ craftRules.skills[draft.recipe.craft].name }}的屬性檢定，加工藝等級；DC {{ craftRules.recipe.dc[(draft.recipe.level || 1) - 1] }}，工具要{{ craftRules.tool_tier_names[craftRules.tool_tier[(draft.recipe.level || 1) - 1]! - 1] }}。材料最多 6 種；沒填名稱的材料不會存。</p>
+      </template>
+    </fieldset>
+
+    <fieldset v-if="draft.category === 'material'">
+      <legend><label class="check"><input type="checkbox" :checked="!!draft.seed" @change="toggleSeed(($event.target as HTMLInputElement).checked)" /> 種子：可以種在苗圃</label></legend>
+      <template v-if="draft.seed">
+        <div class="grid">
+          <label>能種在
+            <select v-model="draft.seed.place">
+              <option v-for="p in (['yard', 'basement', 'indoor'] as const)" :key="p" :value="p">{{ PLACE_NAME[p] }}的苗圃</option>
+            </select>
+          </label>
+          <label>幾天成熟 <input v-model.number="draft.seed.days" type="number" min="1" max="30" /></label>
+          <label>收成最少 <input v-model.number="draft.seed.qty[0]" type="number" min="1" max="20" /></label>
+          <label>收成最多 <input v-model.number="draft.seed.qty[1]" type="number" min="1" max="20" /></label>
+        </div>
+        <div v-for="(_, i) in draft.seed.yields" :key="i" class="row">
+          <input v-model="draft.seed.yields[i]" list="recipe-items" placeholder="長出的物品" />
+          <button class="small" :disabled="draft.seed.yields.length <= 1" @click="draft.seed.yields.splice(i, 1)">刪除</button>
+        </div>
+        <button v-if="draft.seed.yields.length < 5" class="small" @click="draft.seed.yields.push('')">＋ 作物</button>
+        <p class="small muted">有好幾種作物時，收成時隨機長出其中一種。</p>
+      </template>
+    </fieldset>
+    <datalist id="recipe-items"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
 
     <fieldset v-if="draft.category === 'info'">
       <legend>情報內容（{{ intelText }}）</legend>
