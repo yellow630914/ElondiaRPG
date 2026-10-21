@@ -133,6 +133,8 @@ export interface StoryStart {
   price?: number
   /** 主角至少要幾級 */
   min_level?: number
+  /** npc：這位角色對主角的親密度至少要多少（沒見過面算 0） */
+  min_affinity?: number
   /** 劇情旗標的條件 */
   requires?: StoryCond
   /** 開頭的事件描述（旅途、情報商的開頭；沒有時用任務的簡介） */

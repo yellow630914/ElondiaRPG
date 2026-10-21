@@ -217,6 +217,7 @@ function start(v: unknown): StoryStart {
   const out: StoryStart = { kind }
   if (isLoc(s.location) && (kind === 'guild' || kind === 'informant')) out.location = s.location
   if (kind === 'npc' && str(s.npc, 60)) out.npc = str(s.npc, 60)
+  if (kind === 'npc' && typeof s.min_affinity === 'number' && Number.isFinite(s.min_affinity)) out.min_affinity = int(s.min_affinity, -100, 100, 0)
   if (kind === 'travel') {
     out.chance = Math.round(num(s.chance, 0.01, 1, 0.2) * 100) / 100
     const regions = (s.regions ?? []).filter((r) => geography.regions.some((g) => g.id === r))

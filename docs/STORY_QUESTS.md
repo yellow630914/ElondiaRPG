@@ -36,6 +36,7 @@
     "chance": 0.2, "regions": [],    // travel：每段旅程遇到的機率、只在前往這些地區時
     "price": 120,                    // informant：情報的價格
     "min_level": 1,
+    "min_affinity": 30,              // npc：這位角色的親密度至少多少才會拜託你（沒見過面算 0；不寫＝不限）
     "requires": { "flags": [], "flags_none": [] },
     "text": "開頭的事件描述"
   },

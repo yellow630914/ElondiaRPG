@@ -8,6 +8,7 @@ import { currentArea, currentCell, enterLocation, goOutskirts, standOn } from '@
 import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
 import { npcRecord, registerNpc } from '@/engine/npcs'
 import { newGame } from '@/engine/state'
+import { ensureRelationship, setAffinity } from '@/engine/social'
 import { abandonStory, activeNodes, nodesHere, playNode, startStory, storyOffersHere } from '@/engine/story'
 import { hasFlag } from '@/engine/storyFlags'
 import { flagUsage, newStory, sanitizeStory, storyIssues } from '@/engine/storyMods'
@@ -45,6 +46,22 @@ describe('special quests', () => {
     const p = state.position!
     registerNpc(state, { ...npcRecord(state, 'npc_selene')!, at: { area: p.area, x: p.x, y: p.y, until: state.time.day } })
     expect(storyOffersHere(state).map((s) => s.id)).toContain('lost_relic')
+  })
+
+  it('needs enough affinity with the fixed NPC when the start sets a threshold', () => {
+    const state = game()
+    standOn(state, 'temple')
+    const p = state.position!
+    registerNpc(state, { ...npcRecord(state, 'npc_selene')!, at: { area: p.area, x: p.x, y: p.y, until: state.time.day } })
+    const def = stories.find((s) => s.id === 'lost_relic')!
+    applyContent(normalizeMods({ ...emptyMods(), stories: { lost_relic: sanitizeStory('lost_relic', { ...def, start: { ...def.start, min_affinity: 30 } }, false) } }))
+    expect(stories.find((s) => s.id === 'lost_relic')!.start.min_affinity).toBe(30)
+    expect(storyOffersHere(state).map((s) => s.id)).not.toContain('lost_relic')
+    ensureRelationship(state, npcRecord(state, 'npc_selene')!)
+    setAffinity(state, 'npc_selene', 30)
+    expect(storyOffersHere(state).map((s) => s.id)).toContain('lost_relic')
+    // 不是 NPC 開頭時不保留
+    expect(sanitizeStory('y', { ...def, start: { kind: 'guild', location: 'soriel', min_affinity: 30 } }, true).start.min_affinity).toBeUndefined()
   })
 
   it('plays the whole chain: story, check, combat and choice, with a quest companion', () => {

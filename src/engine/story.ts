@@ -50,6 +50,8 @@ function parseRef(ref: string): { def: StoryDef; node: StoryNode } {
 export function canStart(state: GameState, def: StoryDef): boolean {
   if (state.stories?.[def.id]) return false
   if (def.start.min_level && pcOf(state).level < def.start.min_level) return false
+  if (def.start.kind === 'npc' && def.start.npc && def.start.min_affinity !== undefined
+    && (state.relationships?.[def.start.npc]?.affinity ?? 0) < def.start.min_affinity) return false
   return condMet(state, def.start.requires)
 }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { affinityStage } from '@/engine/character'
 import { geography, npcs as namedNpcs, stories, type StoryNode } from '@/engine/data'
 import { RANK_ORDER } from '@/engine/materialQuests'
 import { placeText } from '@/engine/story'
@@ -73,10 +74,16 @@ function removeNode(i: number) {
 }
 function setStartKind(kind: StoryMod['start']['kind']) {
   draft.value.start = { ...draft.value.start, kind }
+  if (kind !== 'npc') delete draft.value.start.min_affinity
   if (kind === 'npc') draft.value.start.npc ??= namedNpcs[0]?.id
   if (kind === 'guild') draft.value.start.location ??= 'soriel'
   if (kind === 'travel') draft.value.start.chance ??= 0.2
   if (kind === 'informant') draft.value.start.price ??= 100
+}
+
+function setMinAffinity(v: string) {
+  if (v.trim() === '' || !Number.isFinite(Number(v))) delete draft.value.start.min_affinity
+  else draft.value.start.min_affinity = Math.max(-100, Math.min(100, Math.round(Number(v))))
 }
 
 // ---- 動作 ----
@@ -152,6 +159,13 @@ function remove() {
           <select v-model="draft.start.npc">
             <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
           </select>
+        </label>
+        <label v-if="draft.start.kind === 'npc'">親密度至少
+          <input
+            type="number" min="-100" max="100" placeholder="不限" :value="draft.start.min_affinity ?? ''"
+            @input="setMinAffinity(($event.target as HTMLInputElement).value)"
+          />
+          <span v-if="draft.start.min_affinity !== undefined" class="small muted">（{{ affinityStage(draft.start.min_affinity) }}以上；沒見過面算 0）</span>
         </label>
         <label v-if="draft.start.kind === 'travel'">每段旅程遇到的機率（%）
           <input type="number" min="1" max="100" :value="Math.round((draft.start.chance ?? 0.2) * 100)" @input="draft.start.chance = Number(($event.target as HTMLInputElement).value) / 100" />
