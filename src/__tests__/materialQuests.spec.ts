@@ -22,9 +22,10 @@ function take(state: GameState, match: (q: Quest) => boolean): Quest {
     state.time.day = day
     const q = guildQuests(state).find((x) => x.status === 'available' && match(x))
     if (q) {
-      state.party[0]!.level = 20
+      const rank = state.guild!.rank
+      state.guild!.rank = 'S'
       acceptQuest(state, q.id)
-      state.party[0]!.level = 1
+      state.guild!.rank = rank
       return q
     }
   }

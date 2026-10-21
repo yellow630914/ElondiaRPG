@@ -8,6 +8,7 @@ import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
 import { canAcceptRank, guildQuests, questTemplate, templeCost } from '@/engine/town'
+import { examQuest, isExam, promotionStatus } from '@/engine/guild'
 import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, questProgressText, rewardFor } from '@/engine/materialQuests'
 import { bestTool } from '@/engine/tools'
 import { MODE_NAME } from '@/engine/travel'
@@ -52,6 +53,8 @@ function refreshQuests() {
   quests.value = guildQuests(s.value)
 }
 
+const promo = computed(() => promotionStatus(s.value))
+const exam = computed(() => examQuest(s.value))
 const activeQuests = computed(() => s.value.quests.filter((q) => q.status === 'accepted' || q.status === 'ready'))
 // 材料委託可以過量交付：選要交幾份（預設全部）
 const turnInQty = ref<Record<string, number>>({})
@@ -156,12 +159,19 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         </template>
 
         <template v-else-if="cell.kind === 'guild'">
+          <div class="guild-rank small">
+            <div>
+              🏅 你是 <strong>{{ promo.rank }} 級</strong>冒險者・功績 {{ promo.merit }}<template v-if="promo.next">・升 {{ promo.next }} 級需要功績 {{ promo.needMerit }}、等級 {{ promo.needLevel }}</template>
+            </div>
+            <div v-if="exam" class="hot">📜 晉升考核：{{ exam.title }}（{{ exam.status === 'available' ? '在委託板上，可以接取' : exam.status === 'ready' ? '完成了，可以交付' : '進行中' }}）</div>
+            <div v-else-if="promo.next" class="muted">功績與等級都夠了，公會就會發晉升考核；通過才升階。交付委託（依委託階級）、打倒地下城層主、完成特殊任務都有功績。</div>
+          </div>
           <FoldSection id="guild.board" title="📋 委託板" :count="quests.length">
           <ul class="plain">
             <li class="muted small">委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。</li>
             <li v-if="quests.length === 0" class="muted small">目前沒有委託。</li>
             <li v-for="q in quests" :key="q.id">
-              <div><span class="tag">{{ q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>
+              <div><span class="tag" :class="{ hot: isExam(q) }">{{ isExam(q) ? `晉升 ${q.rank}` : q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>
               <div class="small muted">
                 報酬 {{ formatMoney(q.reward_cc) }}<template v-if="isMaterialQuest(q) && (q.max ?? q.goal) > q.goal">（可以過量交付到 {{ q.max }}{{ isCollectQuest(q) ? ' 份' : ' 次' }}，報酬依比例增加）</template>
                 <span v-if="q.status !== 'available'">・{{ questProgressText(s, q) }}</span>
@@ -169,9 +179,9 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
               <button
                 v-if="q.status === 'available'"
                 class="small"
-                :disabled="!canAcceptRank(s, q.rank)"
+                :disabled="!canAcceptRank(s, q.rank, q)"
                 @click="game.acceptQuest(q.id); refreshQuests()"
-              >{{ canAcceptRank(s, q.rank) ? '接取' : '階級不足' }}</button>
+              >{{ canAcceptRank(s, q.rank, q) ? '接取' : '階級不足' }}</button>
               <template v-else-if="canTurnIn(s, q)">
                 <input
                   v-if="isMaterialQuest(q) && deliverable(s, q) > q.goal"
@@ -297,6 +307,9 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
 </template>
 
 <style scoped>
+.guild-rank { display: grid; gap: 2px; padding: 6px 8px; border: 1px dashed var(--accent); border-radius: var(--radius); margin-bottom: 6px; }
+.guild-rank .hot { color: var(--accent); }
+.tag.hot { border-color: var(--accent); color: var(--accent); }
 .lock-methods { display: flex; flex-wrap: wrap; gap: 4px; }
 .tavern-trade { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 6px; }
 .qty { width: 56px; }

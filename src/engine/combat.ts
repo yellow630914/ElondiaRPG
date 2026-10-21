@@ -25,6 +25,10 @@ import { rollDefeatEvent } from './defeat'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { advanceBossHunts } from './materialQuests'
+import { bossMerit } from './guild'
+import { lightingRules } from './light'
+import { defeatLoss } from './expedition'
+import { formatMoney } from './money'
 import { applyStoryCombat, refreshStoryMarkers } from './story'
 import { finishIntel, intelBounty, intelById } from './intel'
 import { applyEffects } from './effects'
@@ -130,6 +134,8 @@ export interface CombatState {
   scene?: string
   /** 由格子觸發的戰鬥：獲勝時清除這一格 */
   cell?: { area: string; x: number; y: number }
+  /** 在黑暗中又沒有光 */
+  dark?: boolean
 }
 
 export interface CombatOptions {
@@ -144,6 +150,8 @@ export interface CombatOptions {
   allies?: string[]
   /** 先手：party = 主角偷襲成功，enemy = 對方先手 */
   surprise?: 'party' | 'enemy'
+  /** 在黑暗中又沒有光：隊伍命中降低（maps.json 的 lighting.dark.hit） */
+  dark?: boolean
 }
 
 const COMBAT_MINUTES_PER_ROUND = 1
@@ -188,6 +196,8 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       if (!rec || rec.dead || state.party.some((m) => m.id === id)) continue
       fighters.push({ ...fromCharacter(characterFor(state, rec), rng), side: 'party', npcId: rec.id, ally: true })
     }
+    // 黑暗中又沒有光：隊伍這邊看不清楚，命中降低（怪物習慣黑暗）
+    if (opts.dark) for (const f of fighters) if (f.side === 'party') f.baseMods.hit = (f.baseMods.hit ?? 0) + lightingRules.dark.hit
     // 先手：被偷襲的一方排在最後
     if (opts.surprise) for (const f of fighters) if (f.side !== opts.surprise) f.initiative -= 100
     const order = [...fighters]
@@ -210,6 +220,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       ...(opts.story ? { story: opts.story } : {}),
       ...(opts.scene ? { scene: opts.scene } : {}),
       ...(opts.cell ? { cell: opts.cell } : {}),
+      ...(opts.dark ? { dark: true } : {}),
     }
     state.combat = combat
     if (!beginTurn(combat, rng)) endTurn(combat, rng)
@@ -1432,8 +1443,13 @@ export function finishCombat(state: GameState): Report {
       }
     }
   })
-  // 戰敗：損失一成的錢；有人搬來救兵時不損失
-  if (combat.status === 'defeat' && !rescued) money = -Math.floor(state.money_cc * 0.1)
+  // 戰敗：損失一成的錢；有人搬來救兵時不損失。在地下城裡：這趟撿到的東西依存檔規則失去
+  let lost: { items: ItemDelta[]; money: number } = { items: [], money: 0 }
+  if (combat.status === 'defeat' && !rescued) {
+    money = -Math.floor(state.money_cc * 0.1)
+    lost = withRng(state, (rng) => defeatLoss(state, rng, combat.location))
+    money += Math.max(lost.money, -(state.money_cc + money))
+  }
   settleNpcFoes(state, foes, victory)
 
   for (const member of state.party) {
@@ -1452,6 +1468,9 @@ export function finishCombat(state: GameState): Report {
   const fighters = state.party.filter((m) => !isNoncombatant(m))
   const share = fighters.length > 0 ? Math.floor(xpTotal / fighters.length) : 0
   const quest = victory ? advanceQuest(state, combat) : undefined
+  // 打倒地下城的層主：公會功績
+  const cellHere = combat.cell ? state.areas?.[combat.cell.area]?.cells[combat.cell.y * (state.areas?.[combat.cell.area]?.width ?? 0) + combat.cell.x] : undefined
+  const merit = victory && cellHere?.kind === 'boss' && state.areas?.[combat.cell!.area]?.kind === 'dungeon' ? bossMerit() : 0
   const resultName = { victory: '勝利', defeat: '戰敗', fled: '撤退', ongoing: '' }[combat.status]
   const end = addHours(combat.startTime, (combat.round * COMBAT_MINUTES_PER_ROUND) / 60 + (rescued ? nc.rescue_hours : 0))
   const scene = combat.scene ?? loc.name
@@ -1471,14 +1490,15 @@ export function finishCombat(state: GameState): Report {
       summary: `在${scene}與${foes.map((f) => f.name).join('、')}交戰，${resultName}（${combat.round} 回合）。${fates.map((x) => x.rescue
         ? `${x.name}先逃開去搬救兵，${nc.rescue_hours} 小時後帶人回來救了你們。`
         : `${x.name}逃到安全的地方等你。`).join('')}`,
-      tags: [...tagsFor(combat), ...(rescued ? ['搬救兵'] : [])],
+      tags: [...tagsFor(combat), ...(rescued ? ['搬救兵'] : []), ...(lost.items.length || lost.money ? ['失去戰利品'] : [])],
     },
     changes: {
       ...(money ? { money_cc: money } : {}),
       ...(share > 0 ? { xp: fighters.map((m) => ({ actor: m.id, amount: share })) } : {}),
       ...(items.length ? { items_gained: items } : {}),
-      ...(combat.itemsUsed ? { items_lost: Object.entries(combat.itemsUsed).map(([name, qty]) => ({ name, qty })) } : {}),
+      ...(combat.itemsUsed || lost.items.length ? { items_lost: [...Object.entries(combat.itemsUsed ?? {}).map(([name, qty]) => ({ name, qty })), ...lost.items] } : {}),
       ...(affinity.length ? { affinity } : {}),
+      ...(merit ? { merit } : {}),
       ...(victory && combat.cell ? { flags: { [`cleared:${combat.cell.area}:${combat.cell.x},${combat.cell.y}`]: true } } : {}),
     },
     narration: {
@@ -1486,6 +1506,10 @@ export function finishCombat(state: GameState): Report {
       ...(combat.intent ? { player_intent: combat.intent } : {}),
     },
     lore_keys: [loc.name, regionById(loc.region).name, ...new Set(foes.map((f) => enemies[f.defId!]?.name ?? f.name))],
+  }
+  if (lost.items.length || lost.money) {
+    const what = [...lost.items.map((i) => `${i.name}×${i.qty}`), ...(lost.money ? [formatMoney(-lost.money)] : [])].join('、')
+    report.outcome.summary += `被救出去之前，這趟撿到的東西掉了：${what}。`
   }
   // 逃跑的人暫時離隊：回到聚落或安全房時歸隊
   for (const x of fates) {
@@ -1537,6 +1561,7 @@ function settleNpcFoes(state: GameState, foes: Combatant[], victory: boolean) {
 
 function tagsFor(combat: CombatState): string[] {
   const tags = new Set<string>()
+  if (combat.dark) tags.add('黑暗中')
   for (const t of combat.timeline) {
     if (t.result === 'critical') tags.add('幸運一擊')
     if (t.result === 'fumble') tags.add('大失敗')

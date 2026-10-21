@@ -6,6 +6,7 @@
 
 import { locationById } from '@/engine/data'
 import type { ContentMods } from '@/engine/mods'
+import { assertSchema } from '@/engine/state'
 import type { GameState } from '@/engine/types'
 import type { PortraitFile } from './portraits'
 
@@ -69,6 +70,7 @@ export function slotTitle(m: SlotMeta): string {
 export function parseSaveFile(text: string): SaveData {
   const data = JSON.parse(text) as Partial<SaveData>
   if (!data.state?.party?.length || !Array.isArray(data.state.reports)) throw new Error('這不是《埃隆迪亞大陸》的存檔')
+  assertSchema(data.state)
   return {
     state: data.state, narrations: data.narrations ?? {}, usage: data.usage ?? {},
     ...(data.content && typeof data.content === 'object' ? { content: data.content } : {}),

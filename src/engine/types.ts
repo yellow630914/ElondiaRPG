@@ -93,6 +93,10 @@ export interface Changes {
   master_share_cc?: number
   /** 法術環、生命骰、每次休息可用次數的增減 */
   resources?: ResourceChange[]
+  /** 主角得到的公會功績點 */
+  merit?: number
+  /** 通過晉升考核 */
+  rank_up?: { from: GuildRank; to: GuildRank }
 }
 
 export interface ResourceChange {
@@ -474,8 +478,44 @@ export interface InventoryItem {
   quality?: string
 }
 
+/** 冒險者公會的階級與功績（只有主角；隊友的階級依等級換算） */
+export interface GuildState {
+  rank: GuildRank
+  /** 累積的功績點（晉升後不歸零） */
+  merit: number
+  /** 已發出的晉升考核委託 id */
+  exam?: string
+}
+
+/** 戰敗時這趟探索撿到的東西：保留、失去一半、全部失去 */
+export type DefeatLoot = 'keep' | 'half' | 'all'
+
+/** 這個存檔的規則（開新遊戲時選，之後可以在設定裡改） */
+export interface GameOptions {
+  defeatLoot: DefeatLoot
+}
+
+/** 這一趟地下城探索（進入地下城時開始，離開時結束） */
+export interface Expedition {
+  location: string
+  started: GameTime
+  /** 到過最深的層（0 = 周邊） */
+  deepest: number
+  /** 這趟撿到、還沒帶出地下城的物品與錢（戰敗時依規則失去） */
+  loot: InventoryItem[]
+  money_cc: number
+}
+
+/** 正在燒的光源：物品名稱與還能照亮幾格 */
+export interface LightState {
+  item: string
+  left: number
+}
+
 export interface GameState {
   version: 1
+  /** 存檔格式的版本（見 state.ts 的 SAVE_SCHEMA；舊存檔沒有，視為 1） */
+  schema?: number
   seed: number
   rngState: number
   time: Required<GameTime>
@@ -502,6 +542,16 @@ export interface GameState {
   memories?: Memory[]
   /** 共同記憶的規則版本（見 social.ts 的 MEMORY_RULES_VERSION；舊存檔沒有） */
   memoryRules?: number
+  /** 主角在冒險者公會的階級與功績 */
+  guild?: GuildState
+  /** 這個存檔的規則 */
+  options?: GameOptions
+  /** 進行中的地下城探索 */
+  expedition?: Expedition
+  /** 正在燒的光源 */
+  light?: LightState
+  /** 緊急撤退被追上的戰鬥：獲勝後撤出地下城 */
+  retreating?: boolean
   /** 登場過的 NPC（含生成的） */
   npcs?: Record<string, NpcRecord>
   /** 各地點的 NPC 名單（第一次進入時建立，見 engine/population.ts） */

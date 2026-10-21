@@ -48,6 +48,7 @@ export function itemUsage(name: string, state?: GameState | null): string[] {
   for (const s of stories) {
     if (storyEffects(s).some((e) => e.type === 'item' && e.name === name)) out.push(`特殊任務「${s.title}」的獎勵`)
   }
+  for (const it of itemRules.items) if (it.tool?.fuel === name) out.push(`「${it.name}」的燃料`)
   if (state) {
     const have = state.inventory.find((i) => i.name === name && i.qty > 0)
     if (have) out.push(`目前存檔的行囊（×${have.qty}）`)

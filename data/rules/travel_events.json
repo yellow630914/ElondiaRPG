@@ -122,9 +122,9 @@
   ],
   "side_maps": {
     "$comment": "臨時地圖：cave、ruins 是隨機挖出的小洞窟（遭遇用這段路的城郊遭遇表，強一點），waystation 是固定的驛站（安全房可以長休、有雜貨商、可能遇到冒險者）。從出口離開就回到旅途。",
-    "cave": { "name": "神秘洞窟", "size": [7, 7], "carve_steps": 26, "encounters": [1, 2], "elites": 1, "traps": [0, 1], "resources": [1, 2], "chests": [1, 1], "chest_layer": "shallow" },
-    "ruins": { "name": "遺跡廢墟", "size": [8, 8], "carve_steps": 34, "encounters": [2, 3], "elites": 0, "traps": [1, 2], "resources": [0, 1], "chests": [2, 2], "chest_layer": "middle" },
-    "waystation": {
+    "cave": { "lighting": "dark", "name": "神秘洞窟", "size": [7, 7], "carve_steps": 26, "encounters": [1, 2], "elites": 1, "traps": [0, 1], "resources": [1, 2], "chests": [1, 1], "chest_layer": "shallow" },
+    "ruins": { "lighting": "daylight", "name": "遺跡廢墟", "size": [8, 8], "carve_steps": 34, "encounters": [2, 3], "elites": 0, "traps": [1, 2], "resources": [0, 1], "chests": [2, 2], "chest_layer": "middle" },
+    "waystation": { "lighting": "lit",
       "name": "驛站",
       "grid": [
         "#######",

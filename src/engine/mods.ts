@@ -611,6 +611,14 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (category === 'gear' && raw.tool && TOOL_KINDS.includes(raw.tool.kind)) {
     const def = itemRules.tools[raw.tool.kind]
     out.tool = { kind: raw.tool.kind, ...(def.bonus !== undefined ? { bonus: int(raw.tool.bonus ?? def.bonus, 1, def.max ?? 10, def.bonus) } : {}) }
+    // 照明：燒另一種物品（油燈的燈油）
+    const fuel = typeof raw.tool.fuel === 'string' ? cleanItemName(raw.tool.fuel) : ''
+    if (raw.tool.kind === 'light' && fuel && fuel !== name) out.tool.fuel = fuel
+  }
+  // 光源與燃料：每一份能照亮幾格
+  if (category === 'gear' && raw.burns !== undefined && raw.burns !== null && String(raw.burns) !== '') {
+    const b = int(raw.burns, 0, 999, 0)
+    if (b) out.burns = b
   }
   if (custom) out.custom = true
   if (raw.chests) {

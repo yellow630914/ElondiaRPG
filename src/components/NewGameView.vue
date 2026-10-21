@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { DEFEAT_LOOT_NAME } from '@/engine/expedition'
+import type { DefeatLoot } from '@/engine/types'
 import { apMaxFor, apRegenFor, baseAttrs, luckyThreshold, maxHpFor, mod, slotMaxFor } from '@/engine/character'
 import { abilities, ATTR_IDS, attributeRules, combatClasses as classes, geography, isSettlement, locationById, type AttrId } from '@/engine/data'
 import { GENDER_IDS, genderName, raceName, tagDef } from '@/engine/data'
@@ -80,8 +82,12 @@ function start() {
     appearance: appearance.value,
     background: background.value,
     ...(s ? { slave: s } : {}),
+    options: { defeatLoot: defeatLoot.value },
   })
 }
+
+/** 這個存檔的規則：在地下城戰敗時，這趟撿到的東西 */
+const defeatLoot = ref<DefeatLoot>('half')
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 </script>
@@ -120,6 +126,12 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
           </select>
         </label>
         <p class="small muted">{{ birthplaceInfo }}</p>
+        <label>在地下城戰敗時，這趟撿到的東西
+          <select v-model="defeatLoot">
+            <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
+        <p class="small muted">這趟探索撿到、還沒帶出地下城的物品與錢；之後可以在 ⚙️ 設定裡改。</p>
       </div>
 
       <div>

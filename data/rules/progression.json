@@ -52,14 +52,21 @@
     }
   ],
   "guild_ranks": [
-    { "rank": "F", "levels": [1, 2], "desc": "實習級，送貨、偵查等入門任務" },
-    { "rank": "E", "levels": [3, 4], "desc": "新手級，需團隊協作或導師指導" },
-    { "rank": "D", "levels": [5, 6], "desc": "普通級，公會主力" },
-    { "rank": "C", "levels": [7, 8], "desc": "中堅級，能獨當一面" },
-    { "rank": "B", "levels": [9, 10], "desc": "資深級，團隊核心" },
-    { "rank": "A", "levels": [11, 12], "desc": "精英級，能應對區域性危機" },
-    { "rank": "S", "levels": [13, 14], "desc": "傳奇級，影響國家或大陸命運" }
+    { "rank": "F", "levels": [1, 2], "merit": 0, "desc": "實習級，送貨、偵查等入門任務" },
+    { "rank": "E", "levels": [3, 4], "merit": 6, "desc": "新手級，需團隊協作或導師指導" },
+    { "rank": "D", "levels": [5, 6], "merit": 20, "desc": "普通級，公會主力" },
+    { "rank": "C", "levels": [7, 8], "merit": 45, "desc": "中堅級，能獨當一面" },
+    { "rank": "B", "levels": [9, 10], "merit": 90, "desc": "資深級，團隊核心" },
+    { "rank": "A", "levels": [11, 12], "merit": 160, "desc": "精英級，能應對區域性危機" },
+    { "rank": "S", "levels": [13, 14], "merit": 260, "desc": "傳奇級，影響國家或大陸命運" }
   ],
+  "guild_merit": {
+    "$comment": "公會功績（見 docs/GUILD_RANKS.md）：交付委託依委託階級 F～S 得 quest 的點數；打倒地下城的層主得 boss；完成特殊任務得 story（任務資料的 merit 可以覆蓋）。功績達到下一階的 merit、等級達到下一階 levels 的下限時，公會發晉升考核：討伐階級相符的層主（找不到時改成清剿地下城 exam_clears 次），通過才升階。考核的報酬是下一階報酬範圍的下限。",
+    "quest": [1, 2, 3, 5, 8, 12, 18],
+    "boss": 2,
+    "story": 5,
+    "exam_clears": 3
+  },
   "guild_rules": {
     "accept_quest": "只能接取同級或更低等級任務；組隊時可接高一級任務",
     "promotion": "完成同級或更高等級任務達一定數量，並獲公會高層認可",

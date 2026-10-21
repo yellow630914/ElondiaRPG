@@ -8,6 +8,7 @@
 
 import { snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
+import { storyMerit } from './guild'
 import {
   locationById, npcs as namedNpcs, regionById, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome,
 } from './data'
@@ -355,6 +356,7 @@ function finishStory(state: GameState, report: Report, progress: StoryProgress, 
   progress.status = status
   progress.ended = { ...state.time }
   report.story = { id: def.id, title: def.title, ...(report.story?.node ? { node: report.story.node } : {}), status }
+  if (status === 'completed') report.changes.merit = (report.changes.merit ?? 0) + (def.merit ?? storyMerit())
   if (status === 'completed' && def.rewards?.length) {
     const notes = applyEffects(state, report, def.rewards)
     const money = def.rewards.filter((r) => r.type === 'money').reduce((s, r) => s + (r as { amount: number }).amount, 0)

@@ -5,6 +5,7 @@ import {
   mod, proficiency, rerollsLeft, slotMaxFor, weaponFor, xpToNext,
 } from '@/engine/character'
 import { abilityApCost } from '@/engine/combat'
+import { playerRank } from '@/engine/guild'
 import {
   abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName,
   damageTypeName, genderName, locationById, raceName, slaveryRules, type AbilityDef,
@@ -91,7 +92,7 @@ function affinityText(m: Character): string {
     <section v-for="m in s.party" :key="m.id" class="panel member">
       <div class="row" style="justify-content: space-between">
         <h2><NameTag :id="m.id" /><span v-if="m.isPlayer" class="tag pc">主角</span></h2>
-        <span class="tag">{{ guildRankFor(m.level) }} 級</span>
+        <span class="tag" :title="m.isPlayer ? '冒險者公會的階級（功績與晉升考核）' : '依等級換算的階級'">{{ m.isPlayer ? playerRank(s) : guildRankFor(m.level) }} 級</span>
       </div>
       <div class="small muted">
         <template v-if="m.gender">{{ genderName(m.gender) }}・</template>{{ raceName(m.race) }}・{{ className(m.class) }}・Lv.{{ m.level }}（經驗 {{ m.xp }}/{{ xpToNext(m.level) }}）

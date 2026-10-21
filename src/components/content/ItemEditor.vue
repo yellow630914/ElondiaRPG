@@ -337,7 +337,14 @@ function remove() {
         <label v-if="draft.tool && itemRules.tools[draft.tool.kind].bonus !== undefined">加值
           <input v-model.number="draft.tool.bonus" type="number" min="1" :max="itemRules.tools[draft.tool.kind].max ?? 10" />
         </label>
+        <label v-if="draft.tool?.kind === 'light'">燒什麼
+          <input v-model="draft.tool.fuel" placeholder="空白：燒自己（火把）或不會燒（照明石）" />
+        </label>
+        <label>能照亮幾格（燃料、火把每一份；0 = 不是燃料）
+          <input v-model.number="draft.burns" type="number" min="0" max="999" />
+        </label>
       </div>
+      <p class="small muted">照明：在黑暗的地方每走一格燒掉一點。「燒什麼」填燃料物品的名稱（例如油燈燒燈油，燈油本身要填能照亮幾格）；空白而且有「能照亮幾格」時燒掉工具本身（火把）；都沒有時不會燒掉（魔法照明石）。</p>
       <p class="small muted">行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。</p>
     </fieldset>
 

@@ -89,6 +89,8 @@ export function startJourney(state: GameState, destination: string, intent?: str
   }
   delete state.roadEvent
   delete state.side
+  // 離開地下城：這趟探索撿到的東西算是帶出來了
+  delete state.expedition
   state.areas = {}
   storeArea(state, area)
   placeAt(state, area, 0, 0)

@@ -112,6 +112,9 @@ describe('the road', () => {
     const done = playNode(state, 'overturned_wagon:home') as Report
     valid(done)
     expect(state.stories!.overturned_wagon!.status).toBe('completed')
+    // 完成特殊任務：公會功績
+    expect(done.changes.merit).toBe(5)
+    expect(state.guild!.merit).toBe(5)
     // 接下任務、每一步與完成都記進冒險記憶
     const memories = state.memories!.filter((m) => m.report && state.reports.find((x) => x.report_id === m.report)?.story?.id === 'overturned_wagon')
     expect(memories.map((m) => m.importance)).toEqual([2, 1, 3])

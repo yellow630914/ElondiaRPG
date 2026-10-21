@@ -249,6 +249,8 @@ export function sanitizeStory(id: string, raw: Partial<StoryMod>, custom: boolea
     nodes: (raw.nodes ?? []).slice(0, 60).map((n, i) => node(n, i, used)),
   }
   if (raw.rank && RANK_ORDER.includes(raw.rank)) out.rank = raw.rank
+  // 完成時的公會功績：空白時用預設（progression.json 的 guild_merit.story）
+  if (raw.merit !== undefined && raw.merit !== null && String(raw.merit) !== '') out.merit = Math.round(num(raw.merit, 0, 100, 0))
   const sf = flags(raw.start_flags)
   if (sf.length) out.start_flags = sf
   const rewards = sanitizeEffects(raw.rewards)

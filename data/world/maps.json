@@ -1065,6 +1065,29 @@
     "capital": "capital", "city": "city", "port": "port",
     "town": "town", "village": "town", "outpost": "town", "fortress": "town"
   },
+  "lighting": {
+    "$comment": "光線（見 docs/DUNGEON_DESIGN.md 第 4 節）：lit＝一直有光；daylight＝白天（day_hours）有光、晚上黑暗；dark＝一直黑暗。聚落一直有光；近郊照 wild；地下城每層照 dungeon_layers，個別地下城可以在 locations 覆蓋（周邊、淺層、中層、深層）；臨時地圖照 travel_events.json 的 side_maps.lighting（沒寫時固定地圖有光、其他黑暗）。黑暗又沒有光源時：視野只剩腳下（sight 格）、戰鬥中隊伍命中 hit、察覺陷阱的 DC 加 trap_dc。",
+    "day_hours": [6, 18],
+    "dark": { "sight": 0, "hit": -2, "trap_dc": 3 },
+    "wild": "daylight",
+    "dungeon_layers": ["daylight", "dark", "dark", "dark"],
+    "locations": {
+      "mist_abbey": ["daylight", "daylight", "dark", "dark"],
+      "giants_spine": ["daylight", "daylight", "daylight", "dark"],
+      "thorn_corridor": ["daylight", "daylight", "daylight", "dark"],
+      "echo_canyon": ["daylight", "daylight", "dark", "dark"],
+      "echo_rift": ["daylight", "daylight", "dark", "dark"],
+      "verdant_hollow": ["daylight", "daylight", "dark", "dark"],
+      "skull_isle": ["daylight", "daylight", "dark", "dark"],
+      "quicksand_temple": ["daylight", "daylight", "dark", "dark"],
+      "hell_greenhouse": ["daylight", "lit", "lit", "dark"],
+      "ember_rift": ["daylight", "lit", "lit", "lit"]
+    }
+  },
+  "expedition": {
+    "$comment": "地下城探索（見 docs/DUNGEON_DESIGN.md 第 6 節）。緊急撤退：不在安全房時，隊伍中 attr 最高的人帶路檢定，DC = dc_base + dc_per_layer × 層數（周邊 0）+ 黑暗又沒有光時 2；成功直接回到入口，失敗被這一層的魔物追上打一場（打贏就撤出）。撤退花費 hours_per_layer × (層數 + 1) 小時。戰敗時這趟撿到的東西依存檔規則（保留、失去一半、全部失去）。",
+    "retreat": { "attr": "dex", "dc_base": 10, "dc_per_layer": 2, "hours_per_layer": 2 }
+  },
   "generation": {
     "$comment": "隨機格子。wild = 城鎮近郊；dungeon = 冒險區域的四層（周邊、淺層、中層、深層）。數量為 [最少, 最多]（chests 為寶箱，內容見 gear.json 的 chests）。step_minutes 為每走一格花費的時間。",
     "step_minutes": { "settlement": 5, "wild": 15, "dungeon": 10 },

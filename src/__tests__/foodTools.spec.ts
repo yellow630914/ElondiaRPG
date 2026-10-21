@@ -111,11 +111,14 @@ describe('tool templates', () => {
     const state = game()
     state.location = 'whisper_crypt'
     enterLocation(state)
-    const area = currentArea(state)
-    expect(sight(state, area)).toBe(1)
+    // 周邊白天有光：1 格；淺層一片漆黑：沒有光源只看得到腳下
+    expect(sight(state, currentArea(state))).toBe(1)
+    const dark = { ...currentArea(state), layer: 1, lighting: undefined }
+    expect(sight(state, dark)).toBe(0)
     addItem(state.inventory, '火把（10 根）', 1)
+    expect(sight(state, dark)).toBe(2)
     addItem(state.inventory, '魔法照明石', 1)
-    expect(sight(state, area)).toBe(3)
+    expect(sight(state, dark)).toBe(3)
   })
 
   it('adds the trap pole to spotting traps', () => {

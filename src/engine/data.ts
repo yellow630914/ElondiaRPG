@@ -222,6 +222,8 @@ export interface StoryDef {
   nodes: StoryNode[]
   /** 完成時的報酬 */
   rewards?: RewardEffect[]
+  /** 完成時的公會功績（沒有時用 progression.json 的 guild_merit.story） */
+  merit?: number
 }
 
 /** 內建的特殊任務；內容頁籤的修改套用在這份清單上 */
@@ -239,7 +241,8 @@ export const npcs = (npcsJson as unknown as { npcs: NpcDef[] }).npcs
 
 export const progression = progressionJson as unknown as {
   life_tiers: { tier: number; levels: [number, number]; max_skill_quality: SkillQuality }[]
-  guild_ranks: { rank: GuildRank; levels: [number, number]; desc: string }[]
+  guild_ranks: { rank: GuildRank; levels: [number, number]; merit: number; desc: string }[]
+  guild_merit: { quest: number[]; boss: number; story: number; exam_clears: number }
   classes: { id: string; name: string; power: string[] }[]
   races: { id: string; name: string; home: string }[]
   affinity: { min: number; max: number; initial: number; stages: { range: [number, number]; name: string }[] }
@@ -932,6 +935,8 @@ export interface ItemDef {
   tags: string[]
   desc?: string
   use?: ItemUse
+  /** 光源與燃料：每一份在黑暗中能照亮幾格（火把一捆、一瓶燈油） */
+  burns?: number
   /** 裝備：底材 × 材料（gear.json） */
   gear?: GearSpec
   /** 打造材料：可以做成哪些材料（gear.json 的 materials） */
@@ -962,7 +967,12 @@ export interface ItemIntel {
 }
 
 export type ToolKind = 'lockpick' | 'trap' | 'light' | 'travel' | 'camp' | 'hone'
-export interface ItemTool { kind: ToolKind; bonus?: number }
+export interface ItemTool {
+  kind: ToolKind
+  bonus?: number
+  /** 照明：燒的是哪種物品（油燈的燈油）；沒有時燒工具本身（有 burns 時）或不會燒掉 */
+  fuel?: string
+}
 export interface ToolDef { name: string; desc: string; bonus?: number; max?: number; condition?: string }
 export interface MealDef { id: string; name: string; condition: string; min_location?: string }
 export const itemRules = itemsJson as unknown as {

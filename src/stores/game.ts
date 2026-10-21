@@ -24,7 +24,7 @@ import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
 import * as road from '@/engine/road'
-import type { GameState, GearSlot, Report } from '@/engine/types'
+import type { DefeatLoot, GameState, GearSlot, Report } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
@@ -162,11 +162,20 @@ function load(s: GameState): GameState {
 export const useGame = defineStore('game', () => {
   const boot = takePreloaded()
   const saved = parseJson<GameState>(boot.state)
-  const state = ref<GameState | null>(saved ? load(saved) : null)
+  let bootError: string | null = null
+  const state = ref<GameState | null>(null)
+  if (saved) {
+    try {
+      state.value = load(saved)
+    } catch (e) {
+      // 讀不了（例如來自比較新的版本）：不要蓋掉它，先開空白的畫面並說明原因
+      bootError = `讀取進行中的遊戲失敗：${e instanceof Error ? e.message : String(e)}（開新遊戲或讀取存檔會蓋掉它）`
+    }
+  }
   const narrations = ref<Record<string, NarrationState>>(parseJson(boot.narrations) ?? {})
   /** token 用量：日誌 id（或 OTHER_USAGE）→ 累計 */
   const usage = ref<Record<string, UsageEntry>>(parseJson(boot.usage) ?? {})
-  const error = ref<string | null>(null)
+  const error = ref<string | null>(bootError)
   /** 自動保存失敗：一直顯示到下一次保存成功 */
   const saveWarning = ref<string | null>(null)
   /** AI 正在判定主動行動 */
@@ -194,9 +203,11 @@ export const useGame = defineStore('game', () => {
   let writing: Promise<void> | null = null
 
   function save() {
+    // 沒有進行中的遊戲（例如啟動時讀不了）：不要拿空的資料蓋掉原本的存檔
+    if (!state.value) return
     const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
     pendingWrite = {
-      ...(state.value ? { state: JSON.stringify(state.value) } : {}),
+      state: JSON.stringify(state.value),
       narrations: JSON.stringify(finished),
       usage: JSON.stringify(usage.value),
     }
@@ -803,6 +814,14 @@ export const useGame = defineStore('game', () => {
     },
     goOutskirts: () => run((s) => grid.goOutskirts(s) ?? encounters.checkHostiles(s)),
     returnToTown: () => run(grid.returnToTown),
+    /** 地下城的緊急撤退（失敗會被追上打一場） */
+    retreat: () => run(grid.retreat),
+    /** 這個存檔的規則 */
+    setDefeatLoot: (rule: DefeatLoot) => {
+      if (!state.value) return
+      state.value.options = { ...(state.value.options ?? { defeatLoot: 'half' }), defeatLoot: rule }
+      save()
+    },
     descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s))),
     ascend: () => run((s) => (grid.ascend(s), encounters.checkHostiles(s))),
     // 對峙：避開、現身、偷襲或開戰、付過路費（蒙混與威嚇是主動行動）

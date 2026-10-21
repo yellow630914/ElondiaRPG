@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { geography, npcs as namedNpcs, stories, type StoryNode } from '@/engine/data'
+import { storyMerit } from '@/engine/guild'
 import { RANK_ORDER } from '@/engine/materialQuests'
 import { placeText } from '@/engine/story'
 import { builtinStory, flagUsage, NODE_KINDS, newNode, START_KINDS, storyIssues, type StoryMod } from '@/engine/storyMods'
@@ -157,6 +158,7 @@ function remove() {
             <option v-for="r in RANK_ORDER" :key="r" :value="r">{{ r }}</option>
           </select>
         </label>
+        <label>完成時的公會功績 <input v-model.number="draft.merit" type="number" min="0" max="100" :placeholder="`預設 ${storyMerit()}`" /></label>
       </div>
       <label class="block">簡介（冒險筆記與接任務時看到） <textarea v-model="draft.summary" rows="2" maxlength="300" /></label>
     </fieldset>

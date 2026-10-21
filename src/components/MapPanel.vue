@@ -6,6 +6,7 @@ import { currentArea, DUNGEON_LAYERS } from '@/engine/grid'
 import { useGame } from '@/stores/game'
 import AppDialog from './AppDialog.vue'
 import AreaMap from './AreaMap.vue'
+import ExpeditionBar from './ExpeditionBar.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -28,6 +29,7 @@ const showWorldMap = ref(false)
       </div>
       <button class="small" @click="showWorldMap = true">🗺️ 世界地圖</button>
     </div>
+    <ExpeditionBar />
     <AreaMap />
   </section>
 

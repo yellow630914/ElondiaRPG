@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { DEFEAT_LOOT_NAME, defeatLootRule } from '@/engine/expedition'
+import type { DefeatLoot } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
 import ImageSettings from './ImageSettings.vue'
@@ -55,6 +57,18 @@ function doReset() {
       </template>
       <template v-else>主動行動：由「{{ settings.sourceFor('judge').name }}」判定時順便寫出經過（每次一次呼叫）。</template>
     </p>
+  </section>
+
+  <section v-if="game.state" class="panel">
+    <h2>🎲 這個存檔的規則</h2>
+    <div class="form">
+      <label>在地下城戰敗時，這趟探索撿到、還沒帶出去的物品與錢
+        <select :value="defeatLootRule(game.state)" @change="game.setDefeatLoot(($event.target as HTMLSelectElement).value as DefeatLoot)">
+          <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
+        </select>
+      </label>
+      <p class="small muted">離開地下城（啟程旅行）就算帶出去了。這個規則存在存檔裡，每個存檔可以不一樣。</p>
+    </div>
   </section>
 
   <ImageSettings />

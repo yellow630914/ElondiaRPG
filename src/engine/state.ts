@@ -1,11 +1,13 @@
 // 遊戲狀態、時間與報告提交。
 
-import { baseAttrs, createPlayer, gainXp, recalc } from './character'
+import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
 import { abilities, attributeRules, classDef, locationById, type Attrs } from './data'
+import { noteLoot } from './expedition'
+import { addMerit, applyRankUp } from './guild'
 import { contractTerms, type SlaveStart } from './slavery'
 import { backfillEventMemories, ensureRelationship, MEMORY_RULES_VERSION, recordMemory, setAffinity } from './social'
 import { Rng } from './rng'
-import type { Character, EquippedGear, GameState, GameTime, InventoryItem, Report } from './types'
+import type { Character, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, Report } from './types'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
@@ -23,6 +25,8 @@ export interface NewGameOptions {
   background?: string
   /** 以奴隸身分開始（主人與印記，見 engine/slavery.ts） */
   slave?: SlaveStart
+  /** 這個存檔的規則（沒有時用預設） */
+  options?: Partial<GameOptions>
 }
 
 /** 各種族的預設出生地 */
@@ -63,6 +67,9 @@ export function newGame(opts: NewGameOptions): GameState {
     relationships: {},
     memories: [],
     memoryRules: MEMORY_RULES_VERSION,
+    schema: SAVE_SCHEMA,
+    guild: { rank: 'F', merit: 0 },
+    options: { ...defaultOptions(), ...opts.options },
   }
 }
 
@@ -88,7 +95,35 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
   }
 }
 
+/**
+ * 存檔格式的版本。改了存檔的結構時：版本加一，並在 SCHEMA_STEPS 加一個轉換步驟（舊存檔讀入時依序執行）。
+ * 1：這個機制之前的所有存檔（由 migrate 前半的各項檢查補齊）
+ * 2：公會階級與功績（guild）、存檔規則（options）
+ */
+export const SAVE_SCHEMA = 2
+
+const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
+  [2, (s) => {
+    // 以前的階級由等級換算：沿用換算出來的階級，功績從 0 開始
+    s.guild ??= { rank: guildRankFor(player(s).level), merit: 0 }
+    s.options ??= defaultOptions()
+    // 正在地下城裡：從現在開始記這趟探索
+    if (locationById(s.location).type === 'dungeon' && !s.road) s.expedition ??= { location: s.location, started: { ...s.time }, deepest: 0, loot: [], money_cc: 0 }
+  }],
+]
+
+export function defaultOptions(): GameOptions {
+  return { defeatLoot: 'half' }
+}
+
+/** 存檔來自比較新的遊戲版本時丟出錯誤（不要硬讀，避免把存檔弄壞） */
+export function assertSchema(state: Pick<GameState, 'schema'>) {
+  const v = state.schema ?? 1
+  if (v > SAVE_SCHEMA) throw new Error(`這個存檔來自比較新版本的遊戲（存檔格式 ${v}，目前支援到 ${SAVE_SCHEMA}），請更新遊戲後再讀取`)
+}
+
 export function migrate(state: GameState): GameState {
+  assertSchema(state)
   // 「飾品」類別已經拿掉（併入裝備）：AI 自創的飾品改成雜物
   for (const c of Object.values(state.customItems ?? {})) if (c.category === 'valuable') c.category = 'gear'
   for (const m of state.party) migrateJewelry(m.gear as Record<string, EquippedGear | undefined>, state.inventory)
@@ -139,6 +174,12 @@ export function migrate(state: GameState): GameState {
   state.npcs ??= {}
   state.suggestions ??= []
   pruneAbilities(state)
+  // 依存檔格式的版本依序轉換
+  for (const [v, step] of SCHEMA_STEPS) {
+    if ((state.schema ?? 1) >= v) continue
+    step(state)
+    state.schema = v
+  }
   return state
 }
 
@@ -243,6 +284,13 @@ export function commitReport(state: GameState, report: Report): Report {
   for (const a of c.affinity ?? []) setAffinity(state, a.npc, a.after)
   for (const r of c.reputation ?? []) state.reputation[r.faction] = (state.reputation[r.faction] ?? 0) + r.delta
   if (c.flags) Object.assign(state.flags, c.flags)
+  // 地下城探索：這趟撿到的東西記下來（戰敗時依規則失去）
+  noteLoot(state, report)
+  if (c.merit) addMerit(state, c.merit)
+  if (c.rank_up) applyRankUp(state, c.rank_up.to)
+  // 主角的階級是公會給的（隊友依等級換算）
+  const pcSnap = report.party.find((p) => p.id === player(state).id)
+  if (pcSnap && state.guild) pcSnap.rank = state.guild.rank
 
   if (c.xp?.length) {
     withRng(state, (rng) => {

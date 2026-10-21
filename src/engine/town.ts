@@ -1,6 +1,7 @@
 // 城鎮行動：旅店休息、酒館招募、公會委託、補給、升級選技能。
 
-import { abilityQuality, guildRankFor, proficiency, rerollAbilityChoices, snapshot } from './character'
+import { abilityQuality, proficiency, rerollAbilityChoices, snapshot } from './character'
+import { dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit } from './guild'
 import { startCombat, type CombatState } from './combat'
 import {
   abilityDef, attributeRules, combatRules, dungeonEncounters, economy, itemDef, locationById, npcs, regionById,
@@ -160,8 +161,10 @@ export function questTemplate(quest: Quest): TownQuestTemplate | undefined {
   return quest.template ? townQuestTemplates[quest.template] : undefined
 }
 
-export function canAcceptRank(state: GameState, rank: GuildRank): boolean {
-  const mine = RANK_ORDER.indexOf(guildRankFor(player(state).level))
+export function canAcceptRank(state: GameState, rank: GuildRank, quest?: Pick<Quest, 'flags'>): boolean {
+  // 晉升考核本來就是下一階的委託
+  if (quest && isExam(quest)) return true
+  const mine = RANK_ORDER.indexOf(playerRank(state))
   const target = RANK_ORDER.indexOf(rank)
   // 只能接同級或更低；組隊時可接高一級
   return target <= mine || (state.party.length > 1 && target === mine + 1)
@@ -176,12 +179,14 @@ export function guildQuests(state: GameState): Quest[] {
   if (locationById(state.location).type === 'dungeon') return []
   const boardKey = `guild_board:${state.location}`
   const posted = Number(state.flags[boardKey] ?? 0)
+  // 功績與等級夠了：公會發晉升考核（不會被委託板的更新撤下）
+  postExam(state)
   if (posted && state.time.day - posted < townQuestsRefreshDays) {
     return state.quests.filter((q) => q.giver === state.location && q.status !== 'completed')
   }
-  // 委託板更新：沒人接的舊委託撤下（談過報酬的保留），談到一半的談判也一併結束
+  // 委託板更新：沒人接的舊委託撤下（談過報酬與晉升考核的保留），談到一半的談判也一併結束
   const expired = new Set(
-    state.quests.filter((q) => q.giver === state.location && q.status === 'available' && q.flags?.negotiated === undefined).map((q) => q.id),
+    state.quests.filter((q) => q.giver === state.location && q.status === 'available' && q.flags?.negotiated === undefined && !isExam(q)).map((q) => q.id),
   )
   state.quests = state.quests.filter((q) => !expired.has(q.id))
   for (const n of state.negotiations ?? []) if (n.quest && expired.has(n.quest)) n.status = 'done'
@@ -225,7 +230,7 @@ export function acceptQuest(state: GameState, questId: string): Report {
   assertNotFugitive(state, '公會')
   const quest = state.quests.find((q) => q.id === questId && q.status === 'available')
   if (!quest) throw new Error('找不到這個委託')
-  if (!canAcceptRank(state, quest.rank)) throw new Error('公會階級不足，無法接取')
+  if (!canAcceptRank(state, quest.rank, quest)) throw new Error('公會階級不足，無法接取')
   quest.status = 'accepted'
   const report = baseReport(state, 'quest', 0.5)
   report.location.scene = `${locationById(state.location).name}的冒險者公會`
@@ -316,8 +321,22 @@ export function turnInQuest(state: GameState, questId: string, count?: number): 
   ]
   const notes = applyEffects(state, report, effects)
   if (notes.length) report.outcome.summary += notes.join('；')
+  if (isExam(quest)) {
+    // 通過晉升考核：升階
+    const from = playerRank(state)
+    report.changes.rank_up = { from, to: quest.rank }
+    report.outcome.summary += `通過晉升考核，成為 ${quest.rank} 級冒險者。`
+    report.outcome.tags = [...(report.outcome.tags ?? []), '晉升']
+  } else {
+    report.changes.merit = questMerit(quest.rank)
+    report.outcome.summary += `公會功績 +${report.changes.merit}。`
+  }
   report.lore_keys!.push('冒險者公會')
-  return commitReport(state, report)
+  const committed = commitReport(state, report)
+  if (!isExam(quest) && promotionStatus(state).eligible && !examQuest(state)) {
+    committed.outcome.summary += `功績已經足夠，公會願意讓你參加 ${promotionStatus(state).next} 級的晉升考核。`
+  }
+  return committed
 }
 
 /**
@@ -329,6 +348,7 @@ export function abandonQuest(state: GameState, questId: string): Report {
   const quest = state.quests.find((q) => q.id === questId && (q.status === 'accepted' || q.status === 'ready'))
   if (!quest) throw new Error('沒有進行中的這個委託')
   state.quests = state.quests.filter((q) => q !== quest)
+  dropExam(state, quest.id)
   const report = baseReport(state, 'quest', 0)
   report.quest = { id: quest.id, title: quest.title, rank: quest.rank, status: 'abandoned' }
   report.outcome = { result: 'neutral', summary: `放棄了委託「${quest.title}」，公會對你的評價稍微下降。`, tags: ['放棄委託'] }

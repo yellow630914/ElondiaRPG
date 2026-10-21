@@ -151,6 +151,13 @@
           }
         },
         "flags": { "type": "object", "additionalProperties": true },
+        "merit": { "type": "integer", "description": "主角得到的冒險者公會功績點" },
+        "rank_up": {
+          "type": "object",
+          "description": "通過晉升考核，主角的公會階級提升",
+          "required": ["from", "to"],
+          "properties": { "from": { "enum": ["F", "E", "D", "C", "B", "A", "S"] }, "to": { "enum": ["F", "E", "D", "C", "B", "A", "S"] } }
+        },
         "companions": {
           "type": "array",
           "description": "夥伴的進出：入隊、離隊、獲釋、成為奴隸、逃亡、被抓回。npc 為 pc 時是主角本人。",

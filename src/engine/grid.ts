@@ -24,7 +24,9 @@ import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
 import { roll, withBonus, type Rng } from './rng'
-import { bestTool, toolBonus } from './tools'
+import { attemptRetreat, reachLayer, startExpedition } from './expedition'
+import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
+import { bestTool } from './tools'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Character, GameState, Report } from './types'
 
@@ -95,6 +97,8 @@ export interface Area {
   revealed?: number[]
   /** 生成的日期（近郊每天重新生成） */
   day?: number
+  /** 光線（見 light.ts）；沒有時依區域種類推算 */
+  lighting?: Lighting
 }
 
 export interface Position {
@@ -354,7 +358,7 @@ function chestLock(rng: Rng, spec: LayerGen): { lock?: number } {
 
 /** 看得到幾格：地下城與臨時地圖帶著照明類的工具看得更遠 */
 export function sight(state: GameState, area: Area): number {
-  return 1 + (area.kind === 'dungeon' || area.kind === 'side' ? toolBonus(state, 'light') : 0)
+  return sightIn(state, area)
 }
 
 /** 抵達地點（旅行後或開新遊戲）：城鎮站在城門，冒險區域站在周邊的入口。 */
@@ -363,6 +367,8 @@ export function enterLocation(state: GameState) {
   // 隨機區域在離開後作廢，下次進入重新生成
   state.areas = {}
   if (loc.type === 'dungeon') {
+    // 進入地下城：開始一趟新的探索
+    startExpedition(state, loc.id)
     const area = withRng(state, (rng) => generateLayer(state, loc, 0, rng))
     storeArea(state, area)
     const entry = findKind(area, 'exit')!
@@ -370,6 +376,7 @@ export function enterLocation(state: GameState) {
     placeAt(state, area, entry.x, entry.y)
     return
   }
+  delete state.expedition
   const blocks = blocksFor(loc)
   const gateBlock = blocks.find((b) => b.grid.some((row) => row.includes('E'))) ?? blocks[0]!
   const area = buildBlock(loc, gateBlock)
@@ -482,7 +489,7 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   const cells: Cell[] = Array.from({ length: width * height }, () => ({ kind: 'wall' }) as Cell)
   const area: Area = {
     key: layerKey(loc.id, layer), location: loc.id, name: `${loc.name}・${spec.name}`, kind: 'dungeon', layer,
-    width, height, cells, revealed: [],
+    width, height, cells, revealed: [], lighting: layerLighting(loc.id, layer),
   }
   // 隨機漫步挖出通道
   let x = Math.floor(width / 2)
@@ -566,6 +573,8 @@ export interface SideMapDef {
   legend?: Record<string, CellKind>
   /** 可能遇到冒險者 */
   visitors?: boolean
+  /** 光線（沒寫時固定地圖有光、其他黑暗） */
+  lighting?: Lighting
 }
 
 /**
@@ -576,12 +585,12 @@ export function generateSide(state: GameState, key: string, template: string, de
   if (def.grid) {
     const width = def.grid[0]!.length
     const cells = def.grid.join('').split('').map((ch) => ({ kind: def.legend?.[ch] ?? 'floor' }) as Cell)
-    return { key, location, name: def.name, kind: 'side', template, width, height: def.grid.length, cells, revealed: [] }
+    return { key, location, name: def.name, kind: 'side', template, width, height: def.grid.length, cells, revealed: [], lighting: def.lighting ?? 'lit' }
   }
   const [width, height] = def.size ?? [7, 7]
   const layer = Math.max(0, DUNGEON_LAYERS.findIndex((l) => l.id === (def.chest_layer ?? 'outskirts')))
   const cells: Cell[] = Array.from({ length: width * height }, () => ({ kind: 'wall' }) as Cell)
-  const area: Area = { key, location, name: def.name, kind: 'side', template, layer, width, height, cells, revealed: [] }
+  const area: Area = { key, location, name: def.name, kind: 'side', template, layer, width, height, cells, revealed: [], lighting: def.lighting ?? 'dark' }
   let x = Math.floor(width / 2)
   let y = height - 1
   const start = y * width + x
@@ -695,6 +704,8 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   }
   state.time = addHours(state.time, stepMinutes(area) / 60)
   state.position = { area: area.key, x: nx, y: ny, prev: { x: p.x, y: p.y } }
+  // 黑暗的地方：每走一格燒掉一點光源
+  burnStep(state, area)
   reveal(area, nx, ny, sight(state, area))
   return enterCell(state, area, nx, ny, cell!)
 }
@@ -769,7 +780,7 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
       }
       cell.group = group
       const scene = area.name
-      return { combat: startCombat(state, group, { scene, cell: { area: area.key, x, y } }) }
+      return { combat: startCombat(state, group, { scene, cell: { area: area.key, x, y }, dark: inDarkness(state, area) }) }
     }
     case 'trap': {
       if (cell.done) return {}
@@ -822,7 +833,10 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   const tool = bestTool(state, 'trap')
   const dice = withBonus('1d20', mod(scout.attrs.dex) + (tool?.bonus ?? 0))
   const r = withRng(state, (rng) => roll(rng, dice))
-  const success = r.total >= spec.trap_dc
+  // 黑暗又沒有光：更難察覺
+  const dark = inDarkness(state, area)
+  const dc = spec.trap_dc + (dark ? lightingRules.dark.trap_dc : 0)
+  const success = r.total >= dc
   const effects: NonNullable<Report['timeline']>[number]['effects'] = []
   if (!success) {
     const dmg = withRng(state, (rng) => roll(rng, spec.trap_damage).total)
@@ -831,14 +845,14 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   }
   report.kind = 'event'
   report.timeline = [{
-    seq: 1, actor: scout.id, action: `靈巧檢定・察覺陷阱${tool ? `（${tool.name} +${tool.bonus}）` : ''}`,
-    roll: { dice, value: r.total, dc: spec.trap_dc }, result: success ? 'success' : 'fail', effects,
+    seq: 1, actor: scout.id, action: `靈巧檢定・察覺陷阱${tool ? `（${tool.name} +${tool.bonus}）` : ''}${dark ? '（一片漆黑）' : ''}`,
+    roll: { dice, value: r.total, dc }, result: success ? 'success' : 'fail', effects,
   }]
   report.party = state.party.map((m, i) => snapshot(m, before[i], player(state)))
   report.outcome = {
     result: success ? 'success' : 'failure',
     summary: success ? `${scout.name}及時察覺${area.name}的陷阱。` : `${scout.name}觸發了${area.name}的陷阱。`,
-    tags: ['陷阱'],
+    tags: ['陷阱', ...(dark ? ['黑暗'] : [])],
   }
   report.lore_keys!.push(loc.name)
   return commitReport(state, report)
@@ -1039,6 +1053,7 @@ export function descend(state: GameState) {
   }
   const up = findKind(target, 'stairs_up')!
   placeAt(state, target, up.x, up.y)
+  reachLayer(state, next)
 }
 
 /** 走上行階梯回到上一層的下行階梯。 */
@@ -1056,6 +1071,14 @@ export function afterCombat(state: GameState, report: Report) {
   clearQuestMarkers(state)
   const result = report.outcome.result
   const p = state.position
+  // 緊急撤退被追上：打贏就撤出地下城
+  const retreating = state.retreating
+  delete state.retreating
+  if (retreating && result === 'victory' && p) {
+    applyPendingMove(state)
+    placeAtEntrance(state)
+    return
+  }
   if (!p) return
   const area = state.areas?.[p.area]
   if (result === 'victory' && area) {
@@ -1096,10 +1119,42 @@ export function afterDefeat(state: GameState) {
   } else if (area?.kind === 'road') {
     // 旅途上倒下：留在原地，醒來繼續趕路
   } else if (loc.type === 'dungeon') {
+    // 被救出地下城：這趟探索結束（撿到的東西在戰報裡已經依規則失去），重新進入
     enterLocation(state)
   } else if (area?.kind === 'wild') {
     enterTownGate(state)
   }
+}
+
+/** 回到地下城周邊的入口（撤退成功） */
+function placeAtEntrance(state: GameState) {
+  const area = getArea(state, layerKey(state.location, 0))
+  const exit = findKind(area, 'exit')!
+  placeAt(state, area, exit.x, exit.y)
+}
+
+/**
+ * 緊急撤退：在地下城任何地方撤回周邊的入口。站在安全房不用檢定；
+ * 否則檢定，失敗被追上打一場（打贏就撤出，見 afterCombat）
+ */
+export function retreat(state: GameState): StepResult {
+  if (state.combat) throw new Error('戰鬥進行中')
+  assertNoStandoff(state)
+  const area = currentArea(state)
+  if (area.kind !== 'dungeon') throw new Error('只有在地下城裡才能撤退')
+  if ((area.layer ?? 0) === 0 && currentCell(state).kind === 'exit') throw new Error('已經在入口了')
+  const r = attemptRetreat(state, area, currentCell(state).kind === 'safe')
+  if (r.escaped) {
+    placeAtEntrance(state)
+    return { report: r.report }
+  }
+  if (!r.pursuit) {
+    // 這一層沒有遭遇表：甩掉了
+    placeAtEntrance(state)
+    return { report: r.report }
+  }
+  state.retreating = true
+  return { report: r.report, combat: startCombat(state, r.pursuit.group, { scene: r.pursuit.scene, surprise: 'enemy', dark: inDarkness(state, area) }) }
 }
 
 /** 可以啟程旅行的位置：城門或冒險區域周邊的出口。 */
