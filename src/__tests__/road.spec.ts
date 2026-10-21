@@ -5,7 +5,7 @@ import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat } from '@/engine/combat'
 import { afterCombat, currentArea, currentCell, enterLocation, move, standOn } from '@/engine/grid'
 import { answerRoadEvent, leaveSide, ROAD_KEY, startJourney } from '@/engine/road'
-import { newGame } from '@/engine/state'
+import { migrate, newGame } from '@/engine/state'
 import { nodesHere, playNode } from '@/engine/story'
 import { hasFlag } from '@/engine/storyFlags'
 import type { GameState, Report } from '@/engine/types'
@@ -112,6 +112,29 @@ describe('the road', () => {
     const done = playNode(state, 'overturned_wagon:home') as Report
     valid(done)
     expect(state.stories!.overturned_wagon!.status).toBe('completed')
+    // 接下任務、每一步與完成都記進冒險記憶
+    const memories = state.memories!.filter((m) => m.report && state.reports.find((x) => x.report_id === m.report)?.story?.id === 'overturned_wagon')
+    expect(memories.map((m) => m.importance)).toEqual([2, 1, 3])
+    expect(memories[0]!.summary).toContain('翻覆的篷車')
+  })
+
+  it('fills in event memories that older saves never recorded', () => {
+    const state = game()
+    startJourney(state, 'albena')
+    const road = state.areas![ROAD_KEY]!
+    road.cells[1] = { ...road.cells[1]!, kind: 'event', event: { tier: 'special', story: 'overturned_wagon' } }
+    move(state, 1, 0)
+    const started = state.reports.at(-1)!
+    // 舊版存檔：事件沒有記憶，也沒有記憶規則的版本
+    const old = JSON.parse(JSON.stringify(state)) as GameState
+    old.memories = old.memories!.filter((m) => m.report !== started.report_id)
+    delete old.memoryRules
+    const loaded = migrate(old)
+    expect(loaded.memories!.some((m) => m.report === started.report_id)).toBe(true)
+    expect(loaded.memoryRules).toBe(2)
+    // 再讀一次不會重複
+    const again = migrate(JSON.parse(JSON.stringify(loaded)))
+    expect(again.memories!.filter((m) => m.report === started.report_id)).toHaveLength(1)
   })
 
   it('can follow the trail into a cave with the rescue as a quest point', () => {

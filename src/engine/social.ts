@@ -151,13 +151,34 @@ function memoryImportance(report: Report): Memory['importance'] | null {
       return report.check.degree === 'critical' || report.check.degree === 'fumble' ? 2 : 1
     case 'rest':
       return report.changes.companions?.length ? 2 : null
+    case 'event':
+      return eventImportance(report)
     default:
       return null
   }
 }
 
+/** 事件報告（特殊任務、旅途事件、陷阱、寶箱、戰敗事件……）的重要程度 */
+function eventImportance(report: Report): Memory['importance'] | null {
+  const tags = report.outcome.tags ?? []
+  // 吃頓飯不值得記
+  if (tags.includes('用餐')) return null
+  const dramatic = report.check?.degree === 'critical' || report.check?.degree === 'fumble'
+  switch (report.story?.status) {
+    case 'completed':
+      return 3
+    case 'started':
+    case 'failed':
+      return 2
+    case 'progress':
+      return dramatic || report.changes.affinity?.length ? 2 : 1
+  }
+  if (report.narration?.mode === 'defeat_event' || tags.includes('主人') || tags.includes('高階事件')) return 2
+  return dramatic ? 2 : 1
+}
+
 /** 由報告自動建立記憶（在 commitReport 時呼叫）。 */
-export function recordMemory(state: GameState, report: Report): Memory | null {
+export function recordMemory(state: GameState, report: Report, opts: { compact?: boolean } = {}): Memory | null {
   const importance = memoryImportance(report)
   if (importance === null || !report.outcome.summary) return null
   const memory: Memory = {
@@ -171,12 +192,39 @@ export function recordMemory(state: GameState, report: Report): Memory | null {
     report: report.report_id,
   }
   ;(state.memories ??= []).push(memory)
-  compactMemories(state)
+  if (opts.compact !== false) compactMemories(state)
   for (const id of memory.participants) {
     const rel = relationsOf(state)[id]
-    if (rel) rel.lastSeen = { time: { ...report.time.end }, location: memory.location }
+    // 補記舊報告時，不要蓋掉比較新的「最後見面」
+    if (rel && !(rel.lastSeen && timeOrder(rel.lastSeen.time) > timeOrder(report.time.end))) {
+      rel.lastSeen = { time: { ...report.time.end }, location: memory.location }
+    }
   }
   return memory
+}
+
+function timeOrder(t: GameTime): number {
+  return (t.day * 24 + (t.hour ?? 0)) * 60 + (t.minute ?? 0)
+}
+
+/** 記憶規則的版本：2 開始事件（特殊任務、旅途事件……）也會記 */
+export const MEMORY_RULES_VERSION = 2
+
+/** 舊存檔沒有記下事件：由過去的事件報告補上，依時間排好 */
+export function backfillEventMemories(state: GameState): number {
+  if ((state.memoryRules ?? 1) >= MEMORY_RULES_VERSION) return 0
+  const have = new Set((state.memories ?? []).map((m) => m.report).filter(Boolean))
+  let added = 0
+  for (const r of state.reports) {
+    if (r.kind !== 'event' || have.has(r.report_id)) continue
+    if (recordMemory(state, r, { compact: false })) added++
+  }
+  state.memories = (state.memories ?? []).map((m, i) => ({ m, i }))
+    .sort((a, b) => timeOrder(a.m.time) - timeOrder(b.m.time) || a.i - b.i)
+    .map((x) => x.m)
+  compactMemories(state)
+  state.memoryRules = MEMORY_RULES_VERSION
+  return added
 }
 
 export function addMemory(state: GameState, m: Omit<Memory, 'id'>): Memory {

@@ -500,6 +500,8 @@ export interface GameState {
   relationships?: Record<string, Relationship>
   /** 共同記憶 */
   memories?: Memory[]
+  /** 共同記憶的規則版本（見 social.ts 的 MEMORY_RULES_VERSION；舊存檔沒有） */
+  memoryRules?: number
   /** 登場過的 NPC（含生成的） */
   npcs?: Record<string, NpcRecord>
   /** 各地點的 NPC 名單（第一次進入時建立，見 engine/population.ts） */

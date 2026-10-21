@@ -3,7 +3,7 @@
 import { baseAttrs, createPlayer, gainXp, recalc } from './character'
 import { abilities, attributeRules, classDef, locationById, type Attrs } from './data'
 import { contractTerms, type SlaveStart } from './slavery'
-import { ensureRelationship, recordMemory, setAffinity } from './social'
+import { backfillEventMemories, ensureRelationship, MEMORY_RULES_VERSION, recordMemory, setAffinity } from './social'
 import { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GameTime, InventoryItem, Report } from './types'
 
@@ -62,6 +62,7 @@ export function newGame(opts: NewGameOptions): GameState {
     nextReportNo: 1,
     relationships: {},
     memories: [],
+    memoryRules: MEMORY_RULES_VERSION,
   }
 }
 
@@ -127,7 +128,9 @@ export function migrate(state: GameState): GameState {
   if (!state.memories) {
     state.memories = []
     for (const r of state.reports) recordMemory(state, r)
+    state.memoryRules = MEMORY_RULES_VERSION
   }
+  backfillEventMemories(state)
   // v3 之前沒有夥伴系統：原本的隊友都是雇傭的
   for (const m of state.party) {
     m.hitDiceUsed ??= 0
