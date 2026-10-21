@@ -64,6 +64,7 @@ export const LAYER_NAME: Record<(typeof STORY_LAYERS)[number], string> = { outsk
 /** 任務的效果可以用的種類 */
 export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
+  start_story: '開始特殊任務',
 }
 
 const isLoc = (id: unknown) => typeof id === 'string' && geography.locations.some((l) => l.id === id)
@@ -128,6 +129,11 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       case 'hp': {
         const ratio = Math.round(num(x.ratio, -0.9, 1, 0) * 100) / 100
         if (ratio) out.push({ type: 'hp', target: 'pc', ratio })
+        break
+      }
+      case 'start_story': {
+        const id = str(x.story, 80)
+        if (id) out.push({ type: 'start_story', story: id })
         break
       }
     }
@@ -337,6 +343,12 @@ export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string
       out.push(`效果裡的角色 ${e.npc} 不存在`)
     }
     if (e.type === 'start_story' && !others.some((s) => s.id === e.story)) out.push(`效果要開始的特殊任務 ${e.story} 不存在`)
+    if (e.type === 'start_story' && e.story === def.id) out.push('效果要開始的是這個任務自己')
+  }
+  if (def.start.kind === 'manual') {
+    const starters = others.filter((s) => s.id !== def.id && [...(s.rewards ?? []), ...s.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.effects ?? []))]
+      .some((e) => e.type === 'start_story' && e.story === def.id))
+    if (!starters.length) out.push('開頭是「只由其他事件開啟」，但沒有任何任務用「開始特殊任務」效果開啟它')
   }
   for (const n of def.nodes) {
     const t = `任務點「${n.title}」`

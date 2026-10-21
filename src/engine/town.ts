@@ -320,6 +320,24 @@ export function turnInQuest(state: GameState, questId: string, count?: number): 
   return commitReport(state, report)
 }
 
+/**
+ * 放棄接下的委託（在哪裡都可以）：委託從清單拿掉，公會聲望 -1。
+ * 目標怪物或物品被自訂內容刪掉時，這是唯一能脫身的辦法。
+ */
+export function abandonQuest(state: GameState, questId: string): Report {
+  if (state.combat) throw new Error('戰鬥中不能這麼做')
+  const quest = state.quests.find((q) => q.id === questId && (q.status === 'accepted' || q.status === 'ready'))
+  if (!quest) throw new Error('沒有進行中的這個委託')
+  state.quests = state.quests.filter((q) => q !== quest)
+  const report = baseReport(state, 'quest', 0)
+  report.quest = { id: quest.id, title: quest.title, rank: quest.rank, status: 'abandoned' }
+  report.outcome = { result: 'neutral', summary: `放棄了委託「${quest.title}」，公會對你的評價稍微下降。`, tags: ['放棄委託'] }
+  report.changes.reputation = [{ faction: 'guild', delta: -1 }]
+  report.narration = { length: 'short' }
+  report.lore_keys!.push('冒險者公會')
+  return commitReport(state, report)
+}
+
 // ---- 升級 ----
 
 /** 重抽升級時的能力選項（不推進時間，也不產生報告） */

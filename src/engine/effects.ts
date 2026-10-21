@@ -19,7 +19,7 @@ import { withRng } from './state'
 import { gearKnown, registerGear } from './gear'
 import type { GameState, GearSpec, Intel, NpcRecord, Report } from './types'
 import { addIntel } from './intel'
-import { startStory } from './story'
+import { startStory, storyDef } from './story'
 
 export type NpcRef = string | NpcSpec
 
@@ -296,8 +296,24 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         break
       }
       case 'start_story': {
+        const def = storyDef(e.story)
+        if (!def) {
+          notes.push('（要開始的特殊任務已經不存在）')
+          break
+        }
+        if (state.stories?.[e.story]) {
+          notes.push(`特殊任務「${def.title}」已經開始過了`)
+          break
+        }
+        // 特殊任務的結果接著開始另一個任務：另外一則日誌（這一則是原本任務的經過）
+        if (report.story) {
+          startStory(state, e.story)
+          notes.push(`開始特殊任務「${def.title}」`)
+          break
+        }
+        // 情報商賣的任務消息：記在冒險筆記的情報
         startStory(state, e.story, { report })
-        addIntel(state, { kind: 'story', story: e.story, title: report.story?.title ?? e.story, text: report.outcome.summary ?? '' })
+        addIntel(state, { kind: 'story', story: e.story, title: def.title, text: report.outcome.summary ?? '' })
         break
       }
     }

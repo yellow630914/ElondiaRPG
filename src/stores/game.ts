@@ -643,6 +643,7 @@ export const useGame = defineStore('game', () => {
       if (report && withTalk) await perform({ kind: 'rest_talk', text: talk!.text, ...(talk!.target ? { target: talk!.target } : {}) })
       return report
     },
+    abandonQuest: (id: string) => run((s) => town.abandonQuest(s, id)),
     buyRations: (qty: number) => run((s) => town.buyRations(s, qty)),
     recruit: (id: string) => run((s) => town.recruit(s, id)),
     dismiss: (id: string) => run((s) => town.dismiss(s, id)),

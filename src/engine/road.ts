@@ -8,10 +8,10 @@
 
 import { mod, proficiency, snapshot } from './character'
 import { startCombat } from './combat'
-import { locationById, regionById, slaveryRules, stories, wildEncounters, type AttrId, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
+import { enemies, locationById, regionById, slaveryRules, stories, wildEncounters, type AttrId, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
 import { applyEffects } from './effects'
 import {
-  assertNoStandoff, currentArea, ensureQuestTargets, findKind, generateSide, placeAt, position, reveal, storeArea,
+  assertNoStandoff, currentArea, ensureQuestTargets, findKind, generateSide, placeAt, position, reveal, storeArea, substituteGroup,
   type Area, type Cell, type SideMapDef, type StepResult,
 } from './grid'
 import { isBound, pcOf } from './party'
@@ -187,6 +187,15 @@ export function roadMove(state: GameState, dx: number, dy: number): StepResult {
   if (cell.kind === 'arrive') return { report: finishJourney(state) }
   if (cell.done) return {}
   if (cell.kind === 'encounter' && cell.group?.length) {
+    // 整組怪物都被自訂內容刪掉：換成這段路現在的遭遇
+    if (!cell.group.some(([id]) => !!enemies[id])) {
+      const group = substituteGroup(state, area, 'encounter', locationById(road.to).region)
+      if (!group.length) {
+        cell.done = true
+        return {}
+      }
+      cell.group = group
+    }
     return { combat: startCombat(state, cell.group, { scene: `${area.name}・${MODE_NAME[road.modes[cell.road!.leg] as RouteMode]}`, cell: { area: area.key, x, y: 0 } }) }
   }
   if (cell.event) return triggerEvent(state, road, area, x, cell)

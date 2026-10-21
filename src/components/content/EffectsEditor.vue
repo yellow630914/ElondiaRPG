@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { abilities, geography, itemRules, npcs as namedNpcs } from '@/engine/data'
+import { abilities, geography, itemRules, npcs as namedNpcs, stories } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
 import { STORY_EFFECTS } from '@/engine/storyMods'
@@ -13,6 +13,10 @@ const list = computed(() => model.value ?? [])
 const items = computed(() => {
   void content.version
   return itemRules.items.map((i) => i.name)
+})
+const storyList = computed(() => {
+  void content.version
+  return [...stories].sort((a, b) => Number(b.start.kind === 'manual') - Number(a.start.kind === 'manual'))
 })
 const factions = [...new Set(geography.locations.map((l) => l.faction).filter(Boolean))] as string[]
 type Row = Record<string, unknown> & { type: RewardEffect['type'] }
@@ -29,6 +33,7 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   ability: () => ({ type: 'ability', target: 'pc', choices: 3 }),
   companion: () => ({ type: 'companion', npc: namedNpcs[0]?.id ?? '', mode: 'voluntary' }),
   hp: () => ({ type: 'hp', target: 'pc', ratio: -0.2 }),
+  start_story: () => ({ type: 'start_story', story: stories.find((s) => s.start.kind === 'manual')?.id ?? stories[0]?.id ?? '' }),
 }
 function add(type: RewardEffect['type']) {
   model.value = [...list.value, DEFAULTS[type]!()]
@@ -91,6 +96,12 @@ function setBase(r: Row, base: string) {
           <option :value="undefined">升級時的三選一</option>
           <option v-for="a in Object.values(abilities)" :key="a.id" :value="a.id">{{ a.name }}</option>
         </select>
+      </template>
+      <template v-else-if="r.type === 'start_story'">
+        <select v-model="r.story" class="grow">
+          <option v-for="s in storyList" :key="s.id" :value="s.id">{{ s.title }}{{ s.start.kind === 'manual' ? '（只由其他事件開啟）' : '' }}</option>
+        </select>
+        <span class="small muted">已經開始過就略過；不看接取條件</span>
       </template>
       <template v-else-if="r.type === 'hp'">
         <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）

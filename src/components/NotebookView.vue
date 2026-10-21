@@ -26,6 +26,10 @@ function where(q: Quest): string {
   return `${locationById(q.target).name}・${questTemplate(q)?.scene.split('{town}').join(locationById(q.target).name) ?? '城內'}`
 }
 
+function abandonQuest(q: Quest) {
+  if (confirm(`放棄委託「${q.title}」？公會聲望 -1。`)) game.abandonQuest(q.id)
+}
+
 // ---- 特殊任務 ----
 const myStories = computed(() => {
   void s.value.time.minute
@@ -70,6 +74,7 @@ const counts = computed(() => ({
         <div class="row">
           <span class="tag">{{ q.rank }}</span><span class="tag">{{ AREA[q.area] }}</span><b class="grow">{{ q.title }}</b>
           <span v-if="canTurnIn(s, q)" class="tag ok">可以交付</span>
+          <button class="small" @click="abandonQuest(q)">放棄</button>
         </div>
         <div class="small">進度：{{ questProgressText(s, q) }}・報酬 {{ formatMoney(q.reward_cc) }}{{ isMaterialQuest(q) && (q.max ?? q.goal) > q.goal ? '（可以多交，報酬依數量增加）' : '' }}</div>
         <div class="small muted">

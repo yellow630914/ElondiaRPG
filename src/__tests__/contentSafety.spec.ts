@@ -3,13 +3,13 @@ import { createPinia, setActivePinia } from 'pinia'
 import { applyEffects } from '@/engine/effects'
 import { enemies, itemDef, stories } from '@/engine/data'
 import { gearBonuses, gearRules, gearSummary, randomGear, startingGear, syncGear } from '@/engine/gear'
-import { enterLocation } from '@/engine/grid'
+import { currentArea, enterLocation, moveTo, standOn, substituteGroup } from '@/engine/grid'
 import { applyContent, emptyMods, newBase, newEnemy, newMaterial, newNpc, normalizeMods, sanitizeBase, sanitizeMaterial } from '@/engine/mods'
 import { Rng } from '@/engine/rng'
 import { newGame } from '@/engine/state'
-import { pruneStories, startStory } from '@/engine/story'
+import { playNode, pruneStories, startStory } from '@/engine/story'
 import { newStory, sanitizeStory, storyIssues } from '@/engine/storyMods'
-import { buyRations } from '@/engine/town'
+import { abandonQuest, buyRations } from '@/engine/town'
 import { gearUsage, npcUsage, storyUsage } from '@/engine/usage'
 import type { GameState, Report } from '@/engine/types'
 import { useContent } from '@/stores/content'
@@ -179,5 +179,63 @@ describe('other restrictions', () => {
   it('lists the save and other content in gear usage', () => {
     const state = game()
     expect(gearUsage('material', 'iron', state).some((u) => u.includes('目前存檔'))).toBe(true)
+  })
+})
+
+/** 進地下城，把主角旁邊的一格改成指定的內容，再走上去 */
+function stepOntoDungeonCell(state: GameState, cell: Record<string, unknown>) {
+  state.location = 'whisper_crypt'
+  enterLocation(state)
+  const area = currentArea(state)
+  const p = state.position!
+  const [dx, dy] = ([[1, 0], [-1, 0], [0, 1], [0, -1]] as const).find(([dx, dy]) => {
+    const c = area.cells[(p.y + dy) * area.width + p.x + dx]
+    return p.x + dx >= 0 && p.y + dy >= 0 && p.x + dx < area.width && p.y + dy < area.height && c && c.kind !== 'wall' && c.kind !== 'water'
+  })!
+  const i = (p.y + dy) * area.width + p.x + dx
+  area.cells[i] = cell as never
+  return { area, i, result: moveTo(state, p.x + dx, p.y + dy) }
+}
+
+describe('getting unstuck from deleted content', () => {
+  it('lets you abandon a general quest whose target no longer exists', () => {
+    const state = game()
+    state.quests.push({
+      id: 'q_gone', title: '討伐消失的怪物', rank: 'F', kind: 'boss_hunt', area: 'dungeon', giver: 'soriel', target: 'whisper_crypt',
+      goal: 1, progress: 0, reward_cc: 100, monster: 'mod_enemy_gone', status: 'accepted',
+    } as never)
+    const r = abandonQuest(state, 'q_gone')
+    expect(r.quest?.status).toBe('abandoned')
+    expect(state.quests.some((q) => q.id === 'q_gone')).toBe(false)
+    expect(r.changes.reputation).toEqual([{ faction: 'guild', delta: -1 }])
+    expect(() => abandonQuest(state, 'q_gone')).toThrow('沒有進行中')
+  })
+
+  it('replaces a deleted elite or boss on an already generated map instead of skipping it', () => {
+    const state = game()
+    const { area, i, result } = stepOntoDungeonCell(state, { kind: 'elite', group: [['mod_enemy_gone', 2]] })
+    expect(result.combat).toBeDefined()
+    expect(area.cells[i]!.group!.every(([id]) => !!enemies[id])).toBe(true)
+    expect(state.combat!.combatants.filter((c) => c.side === 'enemy').length).toBeGreaterThanOrEqual(2)
+    delete state.combat
+    expect(substituteGroup(state, area, 'boss').every(([id]) => !!enemies[id])).toBe(true)
+  })
+
+  it('starts another special quest from an outcome, once', () => {
+    const b = sanitizeStory('mod_story_next', { ...newStory('mod_story_next'), start: { kind: 'manual' } }, true)
+    const a = newStory('mod_story_first')
+    a.nodes[0] = { ...a.nodes[0]!, success: { complete: true, effects: [{ type: 'start_story', story: 'mod_story_next' }] } }
+    const sa = sanitizeStory('mod_story_first', a, true)
+    expect(sa.nodes[0]!.success!.effects).toEqual([{ type: 'start_story', story: 'mod_story_next' }])
+    expect(storyIssues(b, [b]).some((x) => x.includes('只由其他事件開啟'))).toBe(true)
+    applyContent(normalizeMods({ ...emptyMods(), stories: { mod_story_first: sa, mod_story_next: b } }))
+    expect(storyIssues(b).some((x) => x.includes('只由其他事件開啟'))).toBe(false)
+    const state = game()
+    startStory(state, 'mod_story_first')
+    standOn(state, 'tavern')
+    const r = playNode(state, 'mod_story_first:n1') as Report
+    expect(r.story?.id).toBe('mod_story_first')
+    expect(state.stories?.mod_story_next?.status).toBe('active')
+    expect(applyEffects(state, emptyReport(state), [{ type: 'start_story', story: 'mod_story_next' }])).toEqual(['特殊任務「新的特殊任務」已經開始過了'])
   })
 })

@@ -714,6 +714,25 @@ export function moveTo(state: GameState, x: number, y: number): StepResult {
   return move(state, x - p.x, y - p.y)
 }
 
+/**
+ * 遭遇格上的怪物整組都被刪掉時的替代：這個地方現在的遭遇表。
+ * 層主換成這一層現在的層主，強敵換成最強的一組再多一隻，一般遭遇隨機挑一組。找不到時回傳空的。
+ */
+export function substituteGroup(state: GameState, area: Area, kind: 'encounter' | 'elite' | 'boss', region?: string): EncounterGroup {
+  const loc = locationById(area.location)
+  const valid = (g: EncounterGroup | undefined): g is EncounterGroup => !!g?.length && g.every(([id]) => !!enemies[id])
+  const layer = area.kind === 'dungeon' ? DUNGEON_LAYERS[area.layer ?? 0]?.id as DungeonLayerId : undefined
+  if (kind === 'boss' && layer && layer !== 'outskirts') {
+    const boss = dungeonEncounters[loc.id]?.bosses?.[layer] ?? dungeonEncounters[loc.id]?.boss
+    if (valid(boss)) return boss
+  }
+  const table = ((layer ? dungeonEncounters[loc.id]?.[layer] : undefined) ?? wildEncounters(region ?? loc.region)).filter(valid)
+  if (!table.length) return []
+  if (kind === 'encounter') return withRng(state, (rng) => rng.pick(table))
+  const strongest = [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0]!
+  return strongest.map(([id, n], i) => [id, i === 0 ? n + 1 : n] as [string, number])
+}
+
 function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cell): StepResult {
   const loc = locationById(area.location)
   switch (cell.kind) {
@@ -726,12 +745,15 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
     case 'elite':
     case 'boss': {
       if (cell.done || !cell.group?.length) return {}
-      // 玩家刪掉的自建怪物：格子視為已清除
-      const group = cell.group.filter(([id]) => !!enemies[id])
+      // 玩家刪掉的自建怪物：拿掉不存在的；整組都沒了就換成這裡現在的遭遇（層主、強敵照原本的強度）
+      let group = cell.group.filter(([id]) => !!enemies[id])
+      if (!group.length) group = substituteGroup(state, area, cell.kind)
       if (!group.length) {
         cell.done = true
+        if (cell.intel) finishIntel(state, cell.intel)
         return {}
       }
+      cell.group = group
       const scene = area.name
       return { combat: startCombat(state, group, { scene, cell: { area: area.key, x, y } }) }
     }
