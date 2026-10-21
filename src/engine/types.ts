@@ -544,6 +544,20 @@ export interface LightState {
   left: number
 }
 
+/** 封存的日誌：完整的報告（隊伍快照、經過、變化）拿掉，只留看得懂發生什麼事的部分 */
+export interface LogArchiveEntry {
+  id: string
+  kind: Report['kind']
+  time: GameTime
+  /** 地點與場景 */
+  scene: string
+  summary: string
+  /** AI 寫的經過（有寫過時） */
+  story?: string
+  /** 這則日誌用掉的 token（輸入＋輸出；用量本身合計在封存的用量裡） */
+  tokens?: number
+}
+
 export interface GameState {
   version: 1
   /** 存檔格式的版本（見 state.ts 的 SAVE_SCHEMA；舊存檔沒有，視為 1） */
@@ -561,6 +575,8 @@ export interface GameState {
   reputation: Record<string, number>
   flags: Record<string, unknown>
   reports: Report[]
+  /** 封存的舊日誌：只留簡述與 AI 寫的經過（見 docs/SAVES.md 第 6 節） */
+  logArchive?: LogArchiveEntry[]
   nextReportNo: number
   /** 進行中的戰鬥 */
   combat?: CombatState

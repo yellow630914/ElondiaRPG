@@ -1,7 +1,7 @@
 // 商店與交易。說明見 docs/TRADE.md。
 //
 // - 每間店（雜貨店、神殿、酒館、鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商）每天有一份交易清單。每筆交易 = 付出（金錢、物品、時間）＋ 得到（報酬模板的效果，可複合）。
-//   AI 判定開啟時清單由 AI 依商店類型生成（程式驗證、補上價格下限），否則依物品目錄與 specials 生成。
+//   AI 判定開啟時，AI 依商店類型另外設計幾筆「今日特別商品」（程式驗證、補上價格下限），加在依物品目錄與 specials 生成的平常商品前面。
 // - 一般交易（買、賣）直接計算，不需要 AI。
 // - 主角想殺價、交涉時才是主動行動（bargain）：成功程度決定這筆交易的價格倍率。
 // - 價格 = 目錄價 × 地點倍率；購買時再扣親密度折扣（每點 0.2%，最多 10%）與談判得到的長期折扣。
@@ -354,7 +354,7 @@ const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : N
 /**
  * 驗證 AI 生成的交易清單：效果只能是這種店允許的種類，數值夾在上限內，
  * 價格不低於內容價值的 price_floor_ratio（目錄物品、自創物品、夥伴依各自的價格表）。
- * 驗證後的清單 = AI 的交易 + specials + 乾糧（雜貨店），取代規則清單。
+ * AI 的交易是「今日特別商品」：加在平常的商品（規則清單，含 specials）前面，不取代它們。
  */
 export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): number {
   const shop = shopState(state, type)
@@ -453,9 +453,8 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
     deals.push({ id: `ai:${state.time.day}:${i}`, title, ...(clip(d.desc, 80) ? { desc: clip(d.desc, 80) } : {}), gives, gets, stock })
   }
   if (!deals.length) return 0
-  const extras = def.specials.map(specialDeal)
-  if (type === 'general') extras.unshift(itemDeal(state, '乾糧', 20))
-  shop.deals = [...deals, ...extras]
+  // 平常的商品照賣（保留今天已經買掉的庫存）
+  shop.deals = [...deals, ...shop.deals.filter((d) => !d.id.startsWith('ai:'))]
   shop.source = 'ai'
   return deals.length
 }

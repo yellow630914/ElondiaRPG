@@ -89,7 +89,7 @@ function sell(name: string, have: number) {
         <template v-if="keeper">{{ keeperTitle(type) }}：<NameTag :id="keeper.id" /><span class="muted">・{{ keeper.personality }}</span></template>
         <span v-if="off" class="tag ok">折扣 {{ off }}%</span>
         <span v-if="loading" class="muted">・AI 正在準備今天的商品…</span>
-        <span v-else-if="shop?.source === 'ai'" class="muted">・今天的清單由 AI 設計</span>
+        <span v-else-if="shop?.source === 'ai'" class="muted">・今天有 AI 準備的特別商品</span>
       </div>
       <strong class="money">💰 {{ formatMoney(s.money_cc) }}</strong>
     </div>

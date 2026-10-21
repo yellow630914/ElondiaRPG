@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-// 可以折疊的清單區塊：標題點一下收起或展開；收起的狀態記在這個瀏覽器（下次打開還是收起）
+// 可以折疊的清單區塊：標題點一下收起或展開；狀態記在這個瀏覽器（true = 收起，false = 展開；沒有記錄時依 closed）
 const props = withDefaults(defineProps<{
   /** 記住折疊狀態用的 key（例如 tavern.candidates） */
   id: string
@@ -9,7 +9,9 @@ const props = withDefaults(defineProps<{
   /** 標題後面顯示的數量 */
   count?: number
   level?: 'h3' | 'h4'
-}>(), { level: 'h4', count: undefined })
+  /** 沒有記錄時預設收起 */
+  closed?: boolean
+}>(), { level: 'h4', count: undefined, closed: false })
 
 const KEY = 'elondia.folds'
 
@@ -21,14 +23,14 @@ function readFolds(): Record<string, boolean> {
   }
 }
 
-const open = ref(!readFolds()[props.id])
+const open = ref(!(readFolds()[props.id] ?? props.closed))
 
 function toggle() {
   open.value = !open.value
   try {
     const folds = readFolds()
-    if (open.value) delete folds[props.id]
-    else folds[props.id] = true
+    if (open.value === !props.closed) delete folds[props.id]
+    else folds[props.id] = !open.value
     localStorage.setItem(KEY, JSON.stringify(folds))
   } catch {
     // 記不住也沒關係

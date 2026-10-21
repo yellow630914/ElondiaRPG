@@ -158,8 +158,8 @@ onBeforeUnmount(() => {
         <StandoffPanel v-if="game.state.standoff && !game.state.pendingAction" />
         <DefeatEventPanel v-if="game.state.pendingDefeat && !game.state.pendingAction" />
         <MasterEventPanel v-if="game.state.pendingMasterEvent && !game.state.pendingAction" />
-        <ActionPanel />
         <RestPanel />
+        <ActionPanel />
         <IntentPanel />
       </template>
     </aside>

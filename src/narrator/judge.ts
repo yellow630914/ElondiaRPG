@@ -356,15 +356,15 @@ export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
     gear: `{"type":"gear","base":"<底材 id>","material":"<材料 id>","name":"<≤20 字，可以不填>","desc":"<≤80 字>","rarity":"common/uncommon/rare/epic/legendary","enchants":{"mods":{"hit":1}}}（特製裝備，程式依組成定價：材料的建議等級不超過 ${pc.level + 2}，稀有度最多比材料原本的高一級，附魔在稀有度的點數內。底材：${Object.entries(gearRules.bases).map(([id, b]) => `${id}（${b.name}）`).join('、')}；材料（要和底材同類）：${Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level + 2).map(([id, m]) => `${id}（${m.name}）`).join('、')}）`,
     companion: `{"type":"companion","mode":"hired 或 voluntary${slaveryRules.markets[state.location] ? ' 或 slave' : ''}","npc":{"name":"","race":"human","class":"fighter","level":1,"personality":"","appearance":"","background":""}}（等級不超過 ${pc.level + 1}）`,
   }
-  const system = `你是奇幻 RPG《埃隆迪亞大陸》的商店設計者。請為這間店設計今天的交易清單，只輸出一個 JSON 物件。
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的商店設計者。請為這間店設計今天的「特別商品」，只輸出一個 JSON 物件。目錄裡的商品平常就在賣，會照常列出，你設計的交易會加在它們前面。
 
 規則：
 1. 每筆交易 = gives（主角付出：{"type":"money","amount":${CURRENCY.name}}、{"type":"item","name":"…","qty":1}、{"type":"hours","amount":小時}）＋ gets（主角得到，可以組合多種）。
-2. 交易要符合店的類型、城鎮的風土與店主的性格；除了單純買東西，也可以有組合交易（例如買甜點附贈店主的好感、付錢換情報、幫忙做事換報酬）。
+2. 交易要符合店的類型、城鎮的風土與店主的性格；不要只是把目錄裡的東西照原價再賣一次。可以是目錄沒有的物品、特價或組合交易（例如買甜點附贈店主的好感、付錢換情報、幫忙做事換報酬）。
 3. ${currencyRule()}價格參考世界書：一般城鎮物價為基準，繁華都市或偏遠地區 ±30%。目錄裡的物品照目錄價格；自創物品依類別的價格區間：${ranges}。程式會把過低的價格調回下限。
 4. gets 只能用下面列出的種類：
 ${def.ai_effects.map((t) => `- ${docs[t] ?? t}`).join('\n')}
-5. 設計 5～8 筆，stock 為今天能交易的次數（1～5）。
+5. 設計 3～6 筆，stock 為今天能交易的次數（1～5）。
 6. 只輸出 JSON：{"deals":[{"title":"≤12 字","desc":"≤40 字","gives":[…],"gets":[…],"stock":1}]}`
   const user = `城鎮：${loc.name}（${geography.regions.find((r) => r.id === loc.region)?.name ?? ''}，${loc.type}${loc.faction ? `，${geography.factions.find((f) => f.id === loc.faction)?.name ?? loc.faction}` : ''}）
 商店：${def.name}

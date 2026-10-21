@@ -104,9 +104,9 @@ describe('shops', () => {
     expect(() => prepareAction(state, { kind: 'bargain', target: `general|${deal.id}`, text: '' })).toThrow('交涉過')
   })
 
-  it('validates an AI-made list: floors prices, caps effects, keeps rations and specials', () => {
+  it('validates an AI-made list: floors prices, caps effects, keeps the normal goods and specials', () => {
     const state = game(5)
-    shopState(state, 'tavern')
+    const normal = shopState(state, 'tavern').deals.map((d) => d.id)
     const n = applyAiDeals(state, 'tavern', {
       deals: [
         { title: '老闆的私藏蜂蜜酒', gives: [{ type: 'money', amount: 1 }], gets: [{ type: 'item', name: '蜂蜜酒', qty: 1, category: 'food', price_cc: 40, desc: '甜而不膩' }, { type: 'affinity', npc: 'keeper', delta: 50 }] },
@@ -128,6 +128,8 @@ describe('shops', () => {
     const slave = shop.deals[2]!
     expect(slave.gives[0]!.amount).toBeGreaterThanOrEqual(Math.ceil(800 * 1.15 * 0.8))
     expect(shop.deals.some((d) => d.id === 'special:round')).toBe(true)
+    // 平常的商品照賣，AI 的特別商品加在前面
+    expect(shop.deals.slice(3).map((d) => d.id)).toEqual(normal)
 
     state.money_cc = 5000
     buyDeal(state, 'tavern', drunk.id)

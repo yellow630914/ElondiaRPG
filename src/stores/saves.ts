@@ -51,7 +51,7 @@ export function slotMeta(id: string, name: string, kind: SlotKind, data: SaveDat
   return {
     id, name, kind, savedAt,
     pcName: pc.name, race: pc.race, cls: pc.class, level: pc.level,
-    location: s.location, time: { ...s.time }, reports: s.reports.length, party: s.party.length, seed: s.seed,
+    location: s.location, time: { ...s.time }, reports: s.reports.length + (s.logArchive?.length ?? 0), party: s.party.length, seed: s.seed,
   }
 }
 

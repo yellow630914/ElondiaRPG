@@ -69,6 +69,8 @@ interface SavedSettings {
   aiJudge: boolean
   /** 升級時的能力三選一，每組可以重抽的次數 */
   abilityRerolls: number
+  /** 完整保留最近幾則日誌（更早的封存，見 docs/SAVES.md 第 6 節） */
+  logKeep: number
   adult: boolean
   language: 'zh-Hant' | 'zh-Hans'
   loreBudget: number
@@ -102,6 +104,7 @@ function defaults(): SavedSettings {
     aiNarration: false,
     aiJudge: false,
     abilityRerolls: progression.ability_rerolls,
+    logKeep: 200,
     adult: false,
     language: 'zh-Hant',
     loreBudget: 12000,
@@ -146,6 +149,7 @@ export const useSettings = defineStore('settings', () => {
   const aiNarration = ref(initial.aiNarration)
   const aiJudge = ref(initial.aiJudge)
   const abilityRerolls = ref(initial.abilityRerolls)
+  const logKeep = ref(initial.logKeep)
   const adult = ref(initial.adult)
   // 引擎的成人向開關（娼館／按摩店等名稱、成人向事件）
   watch(adult, setAdultContent, { immediate: true })
@@ -153,7 +157,7 @@ export const useSettings = defineStore('settings', () => {
   const loreBudget = ref(initial.loreBudget)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, adult, language, loreBudget],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, logKeep, adult, language, loreBudget],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -163,6 +167,7 @@ export const useSettings = defineStore('settings', () => {
         aiNarration: aiNarration.value,
         aiJudge: aiJudge.value,
         abilityRerolls: abilityRerolls.value,
+        logKeep: logKeep.value,
         adult: adult.value,
         language: language.value,
         loreBudget: loreBudget.value,
@@ -219,9 +224,11 @@ export const useSettings = defineStore('settings', () => {
 
   /** 重抽次數（夾在 0～99） */
   const rerollLimit = () => Math.max(0, Math.min(99, Math.floor(Number(abilityRerolls.value) || 0)))
+  /** 完整保留的日誌數（夾在 50～5000） */
+  const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, adult, language, loreBudget,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, logKeep, logKeepLimit, adult, language, loreBudget,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, copySource,
   }
 })

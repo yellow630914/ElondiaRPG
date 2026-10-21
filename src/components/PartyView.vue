@@ -20,6 +20,7 @@ import { useSettings } from '@/stores/settings'
 import StatBar from './StatBar.vue'
 import NameTag from './NameTag.vue'
 import PortraitBox from './PortraitBox.vue'
+import FoldSection from './FoldSection.vue'
 
 const QUALITY_NAME: Record<string, string> = {
   common: '普通', uncommon: '優良', rare: '稀有', epic: '史詩', legendary: '傳說', mythic: '神話',
@@ -106,72 +107,77 @@ function affinityText(m: Character): string {
       </div>
       <StatBar kind="hp" :value="m.hp" :max="m.maxHp" />
       <div class="small muted">生命骰 d{{ hitDie(m) }} 剩 {{ hitDiceLeft(m) }}/{{ m.level }}</div>
-      <div v-if="contractFor(m)" class="contract small">
-        <strong>{{ contractFor(m)!.def.name }}</strong>（主人 {{ contractFor(m)!.masterName || '無主' }}）
-        <div>{{ contractFor(m)!.def.mark }}</div>
-        <ul class="plain">
-          <li v-for="f in contractFor(m)!.def.functions" :key="f" class="muted">・{{ (slaveryRules.functions as Record<string, string>)[f] }}</li>
-          <li v-for="e in contractFor(m)!.def.side_effects" :key="e" class="muted">・副作用：{{ e }}</li>
-        </ul>
-        <div class="muted">
-          收益歸主人 {{ Math.round(contractFor(m)!.def.income_share * 100) }}%・談判 DC {{ contractFor(m)!.def.negotiate_dc }}・逃離 DC {{ contractFor(m)!.def.escape_dc }}・出城 DC {{ contractFor(m)!.def.exit_dc }}
+      <FoldSection v-if="contractFor(m)" id="party.contract" :title="`⛓️ ${contractFor(m)!.def.name}`">
+        <div class="contract small">
+          <div>主人 {{ contractFor(m)!.masterName || '無主' }}</div>
+          <div>{{ contractFor(m)!.def.mark }}</div>
+          <ul class="plain">
+            <li v-for="f in contractFor(m)!.def.functions" :key="f" class="muted">・{{ (slaveryRules.functions as Record<string, string>)[f] }}</li>
+            <li v-for="e in contractFor(m)!.def.side_effects" :key="e" class="muted">・副作用：{{ e }}</li>
+          </ul>
+          <div class="muted">
+            收益歸主人 {{ Math.round(contractFor(m)!.def.income_share * 100) }}%・談判 DC {{ contractFor(m)!.def.negotiate_dc }}・逃離 DC {{ contractFor(m)!.def.escape_dc }}・出城 DC {{ contractFor(m)!.def.exit_dc }}
+          </div>
+          <div class="muted">目前的服從懲罰：-{{ contractFor(m)!.obedience }}</div>
+          <button v-if="m.contract?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
         </div>
-        <div class="muted">目前的服從懲罰：-{{ contractFor(m)!.obedience }}</div>
-        <button v-if="m.contract?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
-      </div>
+      </FoldSection>
 
-      <table class="attrs small">
-        <tr v-for="a in attributeRules.attributes" :key="a.id">
-          <th :title="a.desc">{{ a.name }}</th>
-          <td class="num">{{ m.attrs[a.id] }}</td>
-          <td class="muted">({{ signed(mod(m.attrs[a.id])) }})</td>
-          <td>
-            <button v-if="m.attrPoints > 0" class="small" :disabled="inCombat" @click="game.spendAttr(m.id, a.id)">＋</button>
-          </td>
-        </tr>
-      </table>
       <p v-if="m.attrPoints > 0" class="small" style="color: var(--accent)">可分配屬性點：{{ m.attrPoints }}</p>
+      <FoldSection id="party.stats" title="📊 屬性與戰鬥數值">
+        <table class="attrs small">
+          <tr v-for="a in attributeRules.attributes" :key="a.id">
+            <th :title="a.desc">{{ a.name }}</th>
+            <td class="num">{{ m.attrs[a.id] }}</td>
+            <td class="muted">({{ signed(mod(m.attrs[a.id])) }})</td>
+            <td>
+              <button v-if="m.attrPoints > 0" class="small" :disabled="inCombat" @click="game.spendAttr(m.id, a.id)">＋</button>
+            </td>
+          </tr>
+        </table>
 
-      <p v-if="isNoncombatant(m)" class="small muted">🧺 無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>
-      <ul v-else class="plain small stats">
-        <li>行動點 {{ apMaxFor(m.level, m.attrs) }}（每回合 +{{ apRegenFor(m.level) }}）</li>
-        <li>法術環 {{ slotsText(m) }}</li>
-        <li v-if="classDef(m.class).caster !== 'none'">施法屬性 {{ attrName(castingAttr(m.class)) }}・熟練 +{{ proficiency(m.level) }}</li>
-        <li>幸運一擊 自然骰 {{ luckyThreshold(m.attrs, gearAffinities(m).mods.crit ?? 0) }} 以上・迴避骰下限 {{ evadeFloor(m.attrs) }}</li>
-        <li>武器 {{ weaponFor(m).name }}（{{ weaponFor(m).dice }} {{ damageTypeName(weaponFor(m).type) }}・{{ attrName(weaponFor(m).attr) }}）</li>
-        <li>防具 {{ armorDef(m.armor).name }}（迴避 {{ signed(armorDef(m.armor).evade) }}・物理減傷 {{ armorDef(m.armor).dr }}）</li>
-        <li>傷害倍率 {{ affinityText(m) }}</li>
-        <li>天賦【{{ attributeRules.races[m.race]?.talent.name }}】{{ attributeRules.races[m.race]?.talent.desc }}</li>
-      </ul>
-      <details v-if="!isNoncombatant(m) || m.gear" class="gear small" open>
-        <summary>🛡️ 裝備</summary>
-        <ul class="plain">
-          <li v-for="slot in SLOTS" :key="slot" class="row">
-            <span class="muted slot">{{ slotName(slot) }}</span>
-            <template v-if="m.gear?.[slot]">
-              <span :title="gearSummary(m.gear[slot]!.spec)">{{ m.gear[slot]!.name }}</span>
-              <span class="muted">{{ gearSummary(m.gear[slot]!.spec) }}</span>
-              <button class="small" :disabled="inCombat" @click="game.unequipItem(m.id, slot)">卸下</button>
-            </template>
-            <span v-else class="muted">—</span>
-          </li>
+        <p v-if="isNoncombatant(m)" class="small muted">🧺 無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>
+        <ul v-else class="plain small stats">
+          <li>行動點 {{ apMaxFor(m.level, m.attrs) }}（每回合 +{{ apRegenFor(m.level) }}）</li>
+          <li>法術環 {{ slotsText(m) }}</li>
+          <li v-if="classDef(m.class).caster !== 'none'">施法屬性 {{ attrName(castingAttr(m.class)) }}・熟練 +{{ proficiency(m.level) }}</li>
+          <li>幸運一擊 自然骰 {{ luckyThreshold(m.attrs, gearAffinities(m).mods.crit ?? 0) }} 以上・迴避骰下限 {{ evadeFloor(m.attrs) }}</li>
+          <li>武器 {{ weaponFor(m).name }}（{{ weaponFor(m).dice }} {{ damageTypeName(weaponFor(m).type) }}・{{ attrName(weaponFor(m).attr) }}）</li>
+          <li>防具 {{ armorDef(m.armor).name }}（迴避 {{ signed(armorDef(m.armor).evade) }}・物理減傷 {{ armorDef(m.armor).dr }}）</li>
+          <li>傷害倍率 {{ affinityText(m) }}</li>
+          <li>天賦【{{ attributeRules.races[m.race]?.talent.name }}】{{ attributeRules.races[m.race]?.talent.desc }}</li>
         </ul>
-      </details>
-      <p v-if="m.personality" class="small">{{ m.personality }}</p>
-      <div v-if="m.isPlayer" class="small profile">
-        <template v-if="!editingProfile">
-          <div><span class="muted">性別</span> {{ m.gender || '—' }}<template v-if="m.birthplace">・<span class="muted">出身</span> {{ locationById(m.birthplace).name }}</template></div>
-          <div v-if="m.appearance"><span class="muted">外貌</span> {{ m.appearance }}</div>
-          <div v-if="m.background"><span class="muted">背景</span> {{ m.background }}</div>
-          <button class="small" @click="startProfile(m)">編輯設定</button>
-        </template>
-        <form v-else class="profile-edit" @submit.prevent="saveProfile">
-          <label>性別<input v-model="profile.gender" maxlength="20" /></label>
-          <label>外貌<textarea v-model="profile.appearance" rows="3" maxlength="400" /></label>
-          <label>背景<textarea v-model="profile.background" rows="4" maxlength="800" /></label>
-          <div class="row"><button class="small primary" type="submit">儲存</button><button class="small" type="button" @click="editingProfile = false">取消</button></div>
-        </form>
-      </div>
+      </FoldSection>
+      <FoldSection v-if="!isNoncombatant(m) || m.gear" id="party.gear" title="🛡️ 裝備" :count="SLOTS.filter((x) => m.gear?.[x]).length">
+          <ul class="plain gear small">
+            <li v-for="slot in SLOTS" :key="slot" class="row">
+              <span class="muted slot">{{ slotName(slot) }}</span>
+              <template v-if="m.gear?.[slot]">
+                <span :title="gearSummary(m.gear[slot]!.spec)">{{ m.gear[slot]!.name }}</span>
+                <span class="muted">{{ gearSummary(m.gear[slot]!.spec) }}</span>
+                <button class="small" :disabled="inCombat" @click="game.unequipItem(m.id, slot)">卸下</button>
+              </template>
+              <span v-else class="muted">—</span>
+            </li>
+          </ul>
+      </FoldSection>
+      <FoldSection v-if="m.personality || m.isPlayer" id="party.profile" title="📝 角色設定" closed>
+        <p v-if="m.personality" class="small">{{ m.personality }}</p>
+        <div v-if="m.isPlayer" class="small profile">
+          <template v-if="!editingProfile">
+            <div><span class="muted">性別</span> {{ m.gender || '—' }}<template v-if="m.birthplace">・<span class="muted">出身</span> {{ locationById(m.birthplace).name }}</template></div>
+            <div v-if="m.appearance"><span class="muted">外貌</span> {{ m.appearance }}</div>
+            <div v-if="m.background"><span class="muted">背景</span> {{ m.background }}</div>
+            <button class="small" @click="startProfile(m)">編輯設定</button>
+          </template>
+          <form v-else class="profile-edit" @submit.prevent="saveProfile">
+            <label>性別<input v-model="profile.gender" maxlength="20" /></label>
+            <label>外貌<textarea v-model="profile.appearance" rows="3" maxlength="400" /></label>
+            <label>背景<textarea v-model="profile.background" rows="4" maxlength="800" /></label>
+            <div class="row"><button class="small primary" type="submit">儲存</button><button class="small" type="button" @click="editingProfile = false">取消</button></div>
+          </form>
+        </div>
+      </FoldSection>
 
       <div v-if="m.pendingAbilityChoices?.length" class="choose">
         <div class="row" style="justify-content: space-between">
@@ -193,16 +199,18 @@ function affinityText(m: Character): string {
         </div>
       </div>
 
-      <div v-for="g in isNoncombatant(m) ? [] : grouped(m)" :key="g.type" class="abilities">
-        <h3 class="small">{{ TYPE_NAME[g.type] }}</h3>
-        <ul class="plain small">
-          <li v-for="a in g.items" :key="a.id">
-            <strong>{{ a.name }}</strong>
-            <span class="muted">【{{ QUALITY_NAME[abilityQuality(a)] }}】{{ abilityMeta(a) }}</span>
-            <div class="muted">{{ a.desc }}</div>
-          </li>
-        </ul>
-      </div>
+      <FoldSection v-if="!isNoncombatant(m) && m.abilities.length" id="party.abilities" title="✨ 能力" :count="m.abilities.length" closed>
+        <div v-for="g in grouped(m)" :key="g.type" class="abilities">
+          <h3 class="small">{{ TYPE_NAME[g.type] }}</h3>
+          <ul class="plain small">
+            <li v-for="a in g.items" :key="a.id">
+              <strong>{{ a.name }}</strong>
+              <span class="muted">【{{ QUALITY_NAME[abilityQuality(a)] }}】{{ abilityMeta(a) }}</span>
+              <div class="muted">{{ a.desc }}</div>
+            </li>
+          </ul>
+        </div>
+      </FoldSection>
 
       <button
         v-if="!m.isPlayer && !m.group && m.bond !== 'slave' && m.bond !== 'guest'"

@@ -37,10 +37,13 @@ import { useContent, type ModsDiff } from './content'
 import { usePortraits } from './portraits'
 import { usePrompts } from './prompts'
 import { AI_FEATURES, useSettings, type AiFeature } from './settings'
+import { archiveOldReports } from './logArchive'
 import {
   AUTO_SLOTS, currentStore, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, takePreloaded,
   type CurrentData, type SaveData, type SlotMeta,
 } from './saves'
+
+export { ARCHIVE_USAGE } from './logArchive'
 
 /** 不屬於任何一則日誌的 AI 呼叫（酒館候選人、商店清單、談判方式、失敗的判定） */
 export const OTHER_USAGE = '_other'
@@ -244,6 +247,8 @@ export const useGame = defineStore('game', () => {
     error.value = null
     try {
       const result = fn(state.value)
+      // 日誌太長時把舊的封存（token 用量另外合計，見 logArchive.ts）
+      archiveOldReports(state.value, useSettings().logKeepLimit(), narrations.value, usage.value)
       save()
       const settings = useSettings()
       const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
