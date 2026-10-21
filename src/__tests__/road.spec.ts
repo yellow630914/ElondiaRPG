@@ -3,7 +3,7 @@ import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat } from '@/engine/combat'
-import { afterCombat, currentArea, currentCell, enterLocation, move, standOn } from '@/engine/grid'
+import { afterCombat, blockedMove, currentArea, currentCell, enterLocation, move, standOn } from '@/engine/grid'
 import { answerRoadEvent, leaveSide, ROAD_KEY, startJourney } from '@/engine/road'
 import { migrate, newGame } from '@/engine/state'
 import { nodesHere, playNode } from '@/engine/story'
@@ -116,6 +116,18 @@ describe('the road', () => {
     const memories = state.memories!.filter((m) => m.report && state.reports.find((x) => x.report_id === m.report)?.story?.id === 'overturned_wagon')
     expect(memories.map((m) => m.importance)).toEqual([2, 1, 3])
     expect(memories[0]!.summary).toContain('翻覆的篷車')
+  })
+
+  it('turns going backwards or past the end into a quiet tip instead of an error', () => {
+    const state = game()
+    startJourney(state, 'albena')
+    expect(blockedMove(state, -1, 0)).toBe('旅途只能往前走')
+    expect(blockedMove(state, 0, 1)).toBe('旅途只能往前走')
+    expect(blockedMove(state, 1, 0)).toBeNull()
+    state.position!.x = state.areas![ROAD_KEY]!.cells.length - 1
+    expect(blockedMove(state, 1, 0)).toBe('已經走到底了')
+    state.standoff = {} as never
+    expect(blockedMove(state, 1, 0)).toBe('先處理眼前的對峙')
   })
 
   it('fills in event memories that older saves never recorded', () => {

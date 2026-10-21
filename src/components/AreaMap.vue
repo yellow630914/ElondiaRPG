@@ -102,7 +102,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 <template>
   <div class="map-wrap">
     <Transition name="bump-tip">
-      <span v-if="bumping" class="bump-tip small">那邊走不過去</span>
+      <span v-if="bumping" class="bump-tip small">{{ game.bumpText || '那邊走不過去' }}</span>
     </Transition>
     <div class="map" :style="{ '--w': area.width }">
       <template v-for="row in rows" :key="row[0]!.y">

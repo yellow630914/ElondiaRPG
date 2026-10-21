@@ -193,7 +193,7 @@ describe('tool templates', () => {
       const y = p.y + dy
       return x < 0 || y < 0 || x >= area.width || y >= area.height || ['wall', 'water'].includes(area.cells[y * area.width + x]!.kind)
     })
-    if (wall) expect(blockedMove(state, wall[0], wall[1])).toBe(true)
+    if (wall) expect(blockedMove(state, wall[0], wall[1])).toBe('那邊走不過去')
     const open = dirs.find(([dx, dy]) => !blockedMove(state, dx, dy))
     expect(open).toBeDefined()
   })

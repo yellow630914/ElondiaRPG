@@ -699,13 +699,27 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   return enterCell(state, area, nx, ny, cell!)
 }
 
-/** 往這個方向是牆、水或地圖外（旅途不算：那裡有自己的規則） */
-export function blockedMove(state: GameState, dx: number, dy: number): boolean {
-  if (Math.abs(dx) + Math.abs(dy) !== 1) return false
+/**
+ * 不算錯誤的「走不了」：撞牆、旅途往回走或走到底、眼前有事要先處理。回傳給玩家的簡短提示（null 表示可以走）；
+ * 地圖輕輕晃一下並顯示提示，不跳出錯誤訊息
+ */
+export function blockedMove(state: GameState, dx: number, dy: number): string | null {
+  if (Math.abs(dx) + Math.abs(dy) !== 1) return null
+  // 眼前有要先處理的事（面板已經顯示了）
+  try {
+    assertNoStandoff(state)
+  } catch (e) {
+    return (e as Error).message
+  }
   const area = currentArea(state)
-  if (area.kind === 'road') return false
   const p = position(state)
-  return !walkable(cellAt(area, p.x + dx, p.y + dy))
+  if (area.kind === 'road') {
+    if (dx !== 1 || dy !== 0) return '旅途只能往前走'
+    if (state.roadEvent) return '先決定怎麼應付眼前的事'
+    if (!area.cells[p.x + 1]) return '已經走到底了'
+    return null
+  }
+  return walkable(cellAt(area, p.x + dx, p.y + dy)) ? null : '那邊走不過去'
 }
 
 /** 移動到指定格子（只能是相鄰格）。 */

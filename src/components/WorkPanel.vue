@@ -43,7 +43,7 @@ function work() {
 </template>
 
 <style scoped>
-.work { margin-top: 8px; display: grid; gap: 4px; }
+.work { margin-top: 8px; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .work input:not([type]) { width: 100%; }
 .check { display: inline-flex; gap: 4px; align-items: center; margin-right: 8px; }
 </style>

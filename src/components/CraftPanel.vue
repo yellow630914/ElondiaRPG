@@ -92,7 +92,7 @@ function craft() {
 </template>
 
 <style scoped>
-.craft { margin-top: 8px; display: grid; gap: 4px; }
+.craft { margin-top: 8px; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .craft input:not([type]) { width: 100%; }
 .craft p { margin: 0; }
 .aux { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }

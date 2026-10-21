@@ -83,9 +83,9 @@ function play(ref: string, option?: number) {
 </template>
 
 <style scoped>
-.story-panel { display: grid; gap: 8px; }
+.story-panel { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
 .story-panel h3 { margin: 0; }
-.card { border: 1px dashed var(--accent); border-radius: var(--radius); padding: 6px 8px; display: grid; gap: 4px; }
+.card { border: 1px dashed var(--accent); border-radius: var(--radius); padding: 6px 8px; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .card p { margin: 0; line-height: 1.6; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .grow { width: 100%; }

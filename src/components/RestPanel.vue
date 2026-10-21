@@ -80,7 +80,7 @@ async function doLongRest(where: 'inn' | 'safe') {
 
 <style scoped>
 .dice { margin: 4px 0; }
-.talk { display: grid; gap: 4px; margin-top: 6px; }
+.talk { display: grid; gap: 4px; margin-top: 6px; grid-template-columns: minmax(0, 1fr); }
 .talk label { display: grid; gap: 2px; }
 .talk textarea { width: 100%; }
 .talk p { margin: 0; }

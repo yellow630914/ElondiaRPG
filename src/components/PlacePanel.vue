@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoldSection from './FoldSection.vue'
 import { computed, ref, watch } from 'vue'
 import { mod } from '@/engine/character'
 import { attrName, geography, locationById } from '@/engine/data'
@@ -155,8 +156,9 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         </template>
 
         <template v-else-if="cell.kind === 'guild'">
+          <FoldSection id="guild.board" title="📋 委託板" :count="quests.length">
           <ul class="plain">
-            <li class="muted small">📋 委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。</li>
+            <li class="muted small">委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。</li>
             <li v-if="quests.length === 0" class="muted small">目前沒有委託。</li>
             <li v-for="q in quests" :key="q.id">
               <div><span class="tag">{{ q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>
@@ -189,6 +191,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
               <span v-else-if="q.flags?.negotiated" class="small muted">（已談過報酬）</span>
             </li>
           </ul>
+          </FoldSection>
         </template>
 
         <template v-else-if="cell.kind === 'gate'">
@@ -257,7 +260,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
       <StoryPanel />
 
       <section v-if="activeQuests.length" class="panel">
-        <h3>📜 進行中的委託</h3>
+        <FoldSection id="quests.active" title="📜 進行中的委託" :count="activeQuests.length" level="h3">
         <ul class="plain small">
           <li v-for="q in activeQuests" :key="q.id">
             <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ questProgressText(s, q) }}）
@@ -271,6 +274,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
             >打聽門路</button>
           </li>
         </ul>
+        </FoldSection>
       </section>
 
       <section v-if="canTravelHere(s)" class="panel">

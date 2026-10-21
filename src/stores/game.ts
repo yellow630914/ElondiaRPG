@@ -181,6 +181,8 @@ export const useGame = defineStore('game', () => {
   const notice = ref<string | null>(null)
   /** 往過不去的方向移動的次數（地圖用來播放撞牆的動畫） */
   const bump = ref(0)
+  /** 撞牆時的提示（「那邊走不過去」「旅途只能往前走」……） */
+  const bumpText = ref('')
   let noticeTimer: ReturnType<typeof setTimeout> | undefined
   const controllers = new Map<string, AbortController>()
 
@@ -719,7 +721,7 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, saveWarning, flushed, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump,
+    state, narrations, error, saveWarning, flushed, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
@@ -791,7 +793,9 @@ export const useGame = defineStore('game', () => {
     pickLock: (method: grid.LockMethod) => run((s) => grid.pickLock(s, method)),
     move: (dx: number, dy: number) => {
       // 撞牆不算錯誤：地圖上輕輕晃一下就好（不跳出錯誤訊息、不推動版面）
-      if (state.value && !state.value.combat && grid.blockedMove(state.value, dx, dy)) {
+      const blocked = state.value && !state.value.combat ? grid.blockedMove(state.value, dx, dy) : null
+      if (blocked) {
+        bumpText.value = blocked
         bump.value++
         return undefined
       }

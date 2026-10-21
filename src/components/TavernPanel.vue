@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoldSection from './FoldSection.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { mod } from '@/engine/character'
 import { askingFor, invitable, marketsHere, partyOffersHere, waitChance } from '@/engine/companions'
@@ -76,7 +77,7 @@ const showBlack = ref(false)
 
 <template>
   <div class="tavern">
-    <h4>🍲 用餐</h4>
+    <FoldSection id="tavern.meals" title="🍲 用餐">
     <p class="small muted">全隊一起吃（價格是每人）。吃完的狀態到下次長休前有效；同時只保留最好的一餐，喝酒喝多了會微醺。</p>
     <div class="menu">
       <button
@@ -87,11 +88,12 @@ const showBlack = ref(false)
       </button>
     </div>
     <p v-if="fed.length" class="small muted">{{ fed.map((x) => `${x.name}：${x.list.join('、')}`).join('；') }}</p>
+    </FoldSection>
 
     <p v-if="bound" class="small muted">身為奴隸，你只能在一旁看著主人和別人談話。</p>
 
     <template v-else>
-      <h4>🧑‍🤝‍🧑 候選冒險者</h4>
+      <FoldSection id="tavern.candidates" title="🧑‍🤝‍🧑 候選冒險者" :count="visible.length">
       <p class="small muted">今天在城裡、可以雇用的冒險者（在右側「這裡的人」也能直接雇用）。出價低於要價時要談判；出價的影響最大，運氣好甚至能免費雇到人。</p>
       <p v-if="visible.length === 0" class="muted small">今天城裡沒有可以雇用的冒險者。</p>
       <ul class="plain">
@@ -119,8 +121,9 @@ const showBlack = ref(false)
         </li>
       </ul>
       <p v-if="partyFull" class="small muted">隊伍已滿（{{ combatRules.party_max }} 人）。</p>
+      </FoldSection>
 
-      <h4>🚩 加入別人的隊伍</h4>
+      <FoldSection id="tavern.offers" title="🚩 加入別人的隊伍" :count="leader ? undefined : offersHere.length">
       <p v-if="leader" class="small muted">你正跟著{{ leader.name }}的隊伍。想離開的話，到地圖下方的「👥 隊伍」選擇離隊方式，會在下次休息時進行。</p>
       <template v-else>
         <p class="small muted">在酒館等其他隊伍邀請（{{ companionRules.wait_party.hours }} 小時，機率約 {{ chance }}%，受魅力與等級影響）。對方可能付簽約金給你。</p>
@@ -137,9 +140,9 @@ const showBlack = ref(false)
           </li>
         </ul>
       </template>
+      </FoldSection>
 
-      <template v-if="inviteList.length">
-        <h4>✉️ 邀請認識的人</h4>
+      <FoldSection v-if="inviteList.length" id="tavern.invite" title="✉️ 邀請認識的人" :count="inviteList.length">
         <p class="small muted">需要親密度與魅力檢定。被婉拒後，要等下次長休才能再邀請。</p>
         <input v-model="inviteText" class="wide small" placeholder="邀請的方式（選填）" />
         <ul class="plain small">
@@ -148,7 +151,7 @@ const showBlack = ref(false)
             <button class="small" :disabled="partyFull || game.judging" @click="game.perform({ kind: 'invite', target: r.id, text: inviteText }); inviteText = ''">邀請</button>
           </li>
         </ul>
-      </template>
+      </FoldSection>
 
       <h4>🕶️ 黑市</h4>
       <template v-if="blackKnown">
@@ -165,7 +168,7 @@ const showBlack = ref(false)
 </template>
 
 <style scoped>
-.tavern { display: grid; gap: 6px; }
+.tavern { display: grid; gap: 6px; grid-template-columns: minmax(0, 1fr); }
 .tavern > button { justify-self: start; }
 h4 { margin: 10px 0 2px; color: var(--accent-2); font-size: 0.95rem; }
 .cand { border-top: 1px solid var(--border); padding: 6px 0; display: grid; gap: 2px; }

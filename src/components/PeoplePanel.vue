@@ -12,6 +12,7 @@ import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import JudgeToggle from './JudgeToggle.vue'
+import FoldSection from './FoldSection.vue'
 import NameTag from './NameTag.vue'
 
 // 這裡的人：和主角同一個地點、同一個地區的 NPC（見 docs/NPC_SYSTEM.md 第 7 節）
@@ -132,8 +133,7 @@ async function hire(id: string) {
     <p v-if="!people.length" class="small muted">這裡現在沒有別人。</p>
 
     <div class="groups">
-    <div v-for="g in groups" :key="g.title" class="group">
-      <h4>{{ g.title }}</h4>
+    <FoldSection v-for="g in groups" :id="`people.${g.title}`" :key="g.title" class="group" :title="g.title" :count="g.items.length">
       <ul class="plain">
         <li v-for="p in g.items" :key="p.rec.id" :class="{ open: open === p.rec.id, far: p.dist > 1 }">
           <div class="row line" @click="open = open === p.rec.id ? null : p.rec.id">
@@ -198,7 +198,7 @@ async function hire(id: string) {
           </div>
         </li>
       </ul>
-    </div>
+    </FoldSection>
     </div>
     <p v-if="partyFull" class="small muted">隊伍已滿（{{ combatRules.party_max }} 人），不能再雇人。</p>
   </section>
@@ -208,13 +208,13 @@ async function hire(id: string) {
 .people .head { justify-content: space-between; }
 .people h3 { margin: 0; }
 .groups { max-height: 460px; overflow-y: auto; padding-right: 4px; }
-.group h4 { margin: 8px 0 2px; color: var(--accent-2); font-size: 0.9rem; }
+.group :deep(.fold-head) { margin: 8px 0 2px; font-size: 0.9rem; }
 .line { gap: 6px; cursor: pointer; }
 .known { color: var(--accent); }
 .bad { color: var(--danger); border-color: var(--danger); }
 li.far .line { opacity: 0.7; }
 li.open { background: var(--panel-2); border-radius: 6px; padding: 6px; }
-.detail { display: grid; gap: 4px; margin-top: 4px; }
+.detail { display: grid; gap: 4px; margin-top: 4px; grid-template-columns: minmax(0, 1fr); }
 .detail input, .detail select { min-width: 0; }
 .detail > input { width: 100%; }
 .hire { display: grid; gap: 4px; padding: 6px; border: 1px dashed var(--border); border-radius: 6px; }

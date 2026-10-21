@@ -63,7 +63,7 @@ function free(id: string) {
 <style scoped>
 .nego { border-color: var(--accent-2); }
 .results { display: grid; gap: 2px; margin: 4px 0; }
-.options { display: grid; gap: 4px; }
+.options { display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .option { display: grid; text-align: left; }
 h4 { margin: 8px 0 4px; color: var(--accent-2); }
 textarea { width: 100%; }

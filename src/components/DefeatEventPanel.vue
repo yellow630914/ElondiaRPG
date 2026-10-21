@@ -58,7 +58,7 @@ function respond() {
 .defeat-event { border-color: var(--danger); }
 .head { justify-content: space-between; }
 .head h3 { margin: 0; }
-.options { display: grid; gap: 4px; margin: 6px 0; }
+.options { display: grid; gap: 4px; margin: 6px 0; grid-template-columns: minmax(0, 1fr); }
 .options button { text-align: left; }
 textarea { width: 100%; margin: 6px 0; }
 </style>

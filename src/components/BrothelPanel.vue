@@ -71,7 +71,7 @@ function seekMadam() {
 </template>
 
 <style scoped>
-.brothel { display: grid; gap: 4px; }
+.brothel { display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .brothel input { width: 100%; }
 h4 { margin: 6px 0 0; color: var(--accent-2); font-size: 0.95rem; }
 .mark { color: var(--accent-2); }

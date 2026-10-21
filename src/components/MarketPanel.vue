@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FoldSection from './FoldSection.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { marketsHere, selfSaleChance, type MarketKind } from '@/engine/companions'
 import { className, combatRules, contractDef, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
@@ -64,7 +65,7 @@ function sellSelf() {
 
 <template>
   <div v-if="market" class="market">
-    <h4>⛓️ {{ market.name }}</h4>
+    <FoldSection :id="`market.${kind}`" :title="`⛓️ ${market.name}`" :count="stock.length">
     <p class="small muted">
       {{ kind === 'black' ? '不公開的買賣，價格較低，也有精靈這類在公開市場買不到的人，但風險自負。' : '合法的奴隸市場。' }}
       買下時可以選擇要刻上的契約印記（也可以自訂），之後奴隸不會因為親密度低而離隊，你對他的主動行動都有優勢。可以殺價或用其他方式影響價格（每人每天一次）。
@@ -101,6 +102,7 @@ function sellSelf() {
       </li>
     </ul>
     <p v-if="stock.length === 0" class="small muted">今天沒有貨了。</p>
+    </FoldSection>
 
     <details v-if="!bound" class="small">
       <summary>{{ enslaved ? '登記出售自己（找新主人）' : '登記出售自己' }}</summary>

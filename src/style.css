@@ -55,7 +55,11 @@ input, select, textarea {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 8px;
+  /* 選項很長（例如能力名稱）時不要把整個面板撐開：可以縮、不超過容器 */
+  min-width: 0;
+  max-width: 100%;
 }
+select { text-overflow: ellipsis; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
 .panel {
