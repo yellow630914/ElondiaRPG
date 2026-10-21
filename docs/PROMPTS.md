@@ -31,6 +31,21 @@
 - **哪些日誌自動寫出經過**：設定的「AI 細節描述」底下可以分種類開關（主動行動、戰鬥、旅行、事件與委託、休息、交流、交易；預設交易以外都開）。AI 判定的主動行動只看「主動行動」這個開關，不受「AI 細節描述」總開關影響。任何日誌都可以手動按「✍️ 寫出經過」。
 - 舊版的單一服務設定會變成「來源 1」，來源 2、3 先複製一份（只要改模型就好）。
 
+### 思考（reasoning）與思考過程
+
+每個模型來源可以設定**思考強度**（預設＝不送參數、關閉、低、中、高），以及要不要**在日誌顯示思考過程**（預設開啟）。各家的寫法不同（程式在 `src/narrator/providerInfo.ts`）：
+
+| 服務 | 送出的參數 | 思考過程 |
+|---|---|---|
+| Anthropic | Claude 5 系列與 4.6 之後：`thinking: {type: "adaptive", display: "summarized"}`＋`output_config.effort`（關閉送 `disabled`；Opus 5.5 不能關閉）；舊模型：`thinking.budget_tokens`（2048／8192／16384） | `thinking_delta` |
+| OpenAI | `reasoning_effort`（關閉＝minimal） | 不回傳 |
+| Gemini | `thinkingConfig.thinkingBudget`（Gemini 3 用 `thinkingLevel`）、`includeThoughts` | `thought` 為 true 的部分 |
+| OpenAI 相容格式 | 依「參數格式」：`reasoning_effort`、`thinking.type`（智譜 GLM、Kimi）、`reasoning.effort`（OpenRouter）、`enable_thinking`（通義千問）；自動時依 Base URL 判斷 | `reasoning_content`（DeepSeek、GLM、千問）或 `reasoning`（OpenRouter） |
+
+OpenAI 相容格式另外可以填**自訂請求參數**（JSON 物件），直接加進請求，用來補上服務要求的其他欄位。Base URL 的預設選項多了智譜 GLM（BigModel、Z.ai）、通義千問（DashScope）與 Moonshot。
+
+服務有回傳思考過程時，日誌卡片上會多一個摺疊的「💭 思考過程」，判定與敘事分開顯示（存在 `elondia.narrations` 的 `thinking` 與 `judgeThinking`）。
+
 ## 2. 排列順序與快取
 
 各家服務都會快取「和上一次相同的開頭」：開頭一樣的部分，第二次起計費便宜很多、回應也比較快。所以提示詞依「多久變一次」排列，不太變動的放前面，常變動的放後面：

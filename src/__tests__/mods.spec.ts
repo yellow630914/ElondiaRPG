@@ -124,3 +124,17 @@ describe('content store', () => {
     c.resetAll()
   })
 })
+
+describe('content filters', () => {
+  it('indexes where monsters appear and how items are obtained', async () => {
+    const { enemyPlaceIndex, itemSourceIndex } = await import('@/engine/mods')
+    const places = enemyPlaceIndex()
+    expect(places.get('wolf')?.has('wild:north')).toBe(true)
+    expect(places.get('smuggler_boss')?.has('dungeon:snake_creek')).toBe(true)
+    const sources = itemSourceIndex()
+    expect(sources.get('藥草')?.has('gather:wild')).toBe(true)
+    expect(sources.get('狼皮')?.has('drop')).toBe(true)
+    expect(sources.get('鐵礦石')?.has('gather:dungeon')).toBe(true)
+    expect([...sources.values()].every((s) => s.size > 0)).toBe(true)
+  })
+})

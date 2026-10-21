@@ -2,7 +2,10 @@
 import { computed, ref } from 'vue'
 import { className, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, stories } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
-import { builtinBase, builtinEnemy, builtinMaterial, builtinNpc, ENEMY_KINDS, newBase, newEnemy, newItem, newMaterial, newModId, newNpc } from '@/engine/mods'
+import {
+  builtinBase, builtinEnemy, builtinMaterial, builtinNpc, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions, ITEM_SOURCE_NAME, itemSourceIndex,
+  newBase, newEnemy, newItem, newMaterial, newModId, newNpc,
+} from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -30,6 +33,28 @@ const sub = ref<Sub>('enemies')
 const search = ref('')
 const filter = ref<'all' | 'custom' | 'edited'>('all')
 const category = ref('')
+// 怪物：種類、出現地點、等級；物品：取得方式
+const enemyKind = ref('')
+const enemyPlace = ref('')
+const enemyLevel = ref('')
+const itemSource = ref('')
+const LEVEL_BANDS: Record<string, [number, number]> = { '1-2': [1, 2], '3-4': [3, 4], '5-6': [5, 6], '7-8': [7, 8], '9-10': [9, 10], '11+': [11, 99] }
+const placeOptions = enemyPlaceOptions()
+const places = computed(() => {
+  void content.version
+  return enemyPlaceIndex()
+})
+const sources = computed(() => {
+  void content.version
+  return itemSourceIndex()
+})
+function resetFilters() {
+  category.value = ''
+  enemyKind.value = ''
+  enemyPlace.value = ''
+  enemyLevel.value = ''
+  itemSource.value = ''
+}
 const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', npcs: '', stories: '' })
 
 const KINDS: Record<string, string> = { metal: '金屬', leather: '皮革', cloth: '布料', wood: '木材', jewel: '寶石' }
@@ -44,12 +69,17 @@ const rows = computed<Row[]>(() => {
   const q = search.value.trim()
   let list: Row[] = []
   if (sub.value === 'enemies') {
+    const band = LEVEL_BANDS[enemyLevel.value]
     list = Object.values(enemies)
+      .filter((e) => !enemyKind.value || (e.kind ?? '') === enemyKind.value)
+      .filter((e) => !band || (e.level >= band[0] && e.level <= band[1]))
+      .filter((e) => !enemyPlace.value || (enemyPlace.value === 'none' ? !places.value.get(e.id)?.size : !!places.value.get(e.id)?.has(enemyPlace.value)))
       .sort((a, b) => (m.enemies[a.id]?.custom ? -1 : 0) - (m.enemies[b.id]?.custom ? -1 : 0) || a.level - b.level)
       .map((e) => ({ key: e.id, name: e.name, note: `${e.level} 級・${ENEMY_KINDS[e.kind ?? ''] ?? ''}`, status: st(!!m.enemies[e.id], !builtinEnemy(e.id)) }))
   } else if (sub.value === 'items') {
     list = itemRules.items
       .filter((i) => !category.value || i.category === category.value)
+      .filter((i) => !itemSource.value || !!sources.value.get(i.name)?.has(itemSource.value))
       .map((i) => ({ key: i.name, name: i.name, note: `${itemRules.categories[i.category]}・${formatMoney(i.price_cc)}`, status: st(!!m.items[i.name], !!m.items[i.name]?.custom) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'stories') {
@@ -198,7 +228,7 @@ function resetAll() {
 <template>
   <div class="content-view">
     <nav class="subs row">
-      <button v-for="t in SUBS" :key="t.id" :class="{ active: sub === t.id }" @click="sub = t.id; category = ''">{{ t.label }}</button>
+      <button v-for="t in SUBS" :key="t.id" :class="{ active: sub === t.id }" @click="sub = t.id; resetFilters()">{{ t.label }}</button>
       <span class="spacer" />
       <span class="small muted">{{ counts[sub] }}</span>
     </nav>
@@ -222,10 +252,32 @@ function resetAll() {
             <option value="edited">修改過的內建</option>
           </select>
         </div>
-        <select v-if="sub === 'items'" v-model="category">
-          <option value="">所有類別</option>
-          <option v-for="(n, k) in itemRules.categories" :key="k" :value="k">{{ n }}</option>
-        </select>
+        <div v-if="sub === 'items'" class="row">
+          <select v-model="category" class="grow">
+            <option value="">所有類別</option>
+            <option v-for="(n, k) in itemRules.categories" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="itemSource" class="grow">
+            <option value="">所有取得方式</option>
+            <option v-for="(n, k) in ITEM_SOURCE_NAME" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </div>
+        <div v-if="sub === 'enemies'" class="row">
+          <select v-model="enemyKind" class="grow">
+            <option value="">所有種類</option>
+            <option v-for="(n, k) in ENEMY_KINDS" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="enemyLevel">
+            <option value="">所有等級</option>
+            <option v-for="(_, k) in LEVEL_BANDS" :key="k" :value="k">{{ k }} 級</option>
+          </select>
+          <select v-model="enemyPlace" class="grow">
+            <option value="">所有出現地點</option>
+            <option v-for="p in placeOptions" :key="p.key" :value="p.key">{{ p.label }}</option>
+            <option value="none">沒有出現地點</option>
+          </select>
+        </div>
+        <p v-if="sub === 'enemies' || sub === 'items'" class="small muted count">符合 {{ rows.length }} 項</p>
         <ul class="plain rows">
           <li v-for="r in rows" :key="r.key" :class="{ active: current === r.key }" @click="select(r.key)">
             <span class="name">{{ r.name }}</span>
@@ -271,6 +323,7 @@ function resetAll() {
 @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
 .list-panel { display: grid; gap: 6px; position: sticky; top: 8px; }
 .grow { flex: 1; min-width: 100px; }
+.count { margin: 0; }
 .rows { max-height: 70vh; overflow: auto; margin: 0; padding: 0; list-style: none; }
 .rows li { display: flex; gap: 6px; align-items: center; padding: 3px 6px; border-radius: var(--radius); cursor: pointer; }
 .rows li:hover { background: var(--panel-2); }

@@ -3,10 +3,12 @@
 
 // 各家 SDK 在用到時才載入，只會下載玩家選用的那一家
 import type { Prompt } from './prompt'
-import type { ProviderConfig, ProviderId, TokenUsage } from './providerInfo'
+import { anthropicThinking, geminiThinking, openAIReasoningBody, type ProviderConfig, type ProviderId, type TokenUsage } from './providerInfo'
 
 export type { ProviderConfig, ProviderId, TokenUsage }
 export type UsageCallback = (usage: TokenUsage) => void
+/** 模型的思考過程（服務有回傳時，逐段呼叫） */
+export type ThinkingCallback = (text: string) => void
 
 export class NarrationRefusedError extends Error {
   constructor(detail?: string) {
@@ -18,25 +20,26 @@ export class NarrationRefusedError extends Error {
 const CLAUDE_FALLBACK_MODELS = new Set(['claude-opus-5-5', 'claude-opus-5', 'claude-fable-5-1', 'claude-sonnet-5-5'])
 const CLAUDE_DEFAULT_MAX_TOKENS = 64000
 
-/** 以串流方式產生敘事，逐段回傳文字。服務回報 token 用量時呼叫 onUsage。 */
+/** 以串流方式產生敘事，逐段回傳文字。服務回報 token 用量時呼叫 onUsage，回傳思考過程時呼叫 onThinking。 */
 export async function* streamNarration(
   provider: ProviderId,
   config: ProviderConfig,
   prompt: Prompt,
   signal?: AbortSignal,
   onUsage?: UsageCallback,
+  onThinking?: ThinkingCallback,
 ): AsyncGenerator<string> {
   if (!config.model) throw new Error('請先在設定中選擇模型')
   switch (provider) {
     case 'anthropic':
-      yield* streamAnthropic(config, prompt, signal, onUsage)
+      yield* streamAnthropic(config, prompt, signal, onUsage, onThinking)
       return
     case 'openai':
     case 'openai_compatible':
-      yield* streamOpenAI(provider, config, prompt, signal, onUsage)
+      yield* streamOpenAI(provider, config, prompt, signal, onUsage, onThinking)
       return
     case 'gemini':
-      yield* streamGemini(config, prompt, signal, onUsage)
+      yield* streamGemini(config, prompt, signal, onUsage, onThinking)
       return
   }
 }
@@ -51,25 +54,33 @@ async function geminiClient(config: ProviderConfig) {
   return new GoogleGenAI({ apiKey: config.apiKey })
 }
 
-async function* streamAnthropic(config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback) {
+async function* streamAnthropic(config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback) {
   const client = await anthropicClient(config)
+  const thinking = anthropicThinking(config)
+  const budget = (thinking.thinking as { budget_tokens?: number } | undefined)?.budget_tokens ?? 0
   const params = {
     model: config.model,
-    max_tokens: config.maxTokens ?? CLAUDE_DEFAULT_MAX_TOKENS,
+    // 指定思考預算的舊模型：max_tokens 要比預算大
+    max_tokens: Math.max(config.maxTokens ?? CLAUDE_DEFAULT_MAX_TOKENS, budget ? budget + 4096 : 0),
+    ...thinking,
     // system 只放不太變動的內容（規則、常駐世界書、文風），在這裡設快取斷點：
     // 下一次請求的 system 相同時直接讀快取，輸入費用與延遲都會下降
     system: [{ type: 'text' as const, text: prompt.system, cache_control: { type: 'ephemeral' as const } }],
     messages: [{ role: 'user' as const, content: prompt.user }],
   }
   // 支援的模型開啟伺服器端備援：被安全分類器拒絕時，自動改由建議的備援模型完成
+  // 思考參數（display、output_config）依模型而定，SDK 的型別不一定跟得上，交給服務檢查
+  type Params = Parameters<typeof client.messages.stream>[0]
   const stream = CLAUDE_FALLBACK_MODELS.has(config.model)
     ? client.beta.messages.stream(
-        { ...params, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' },
+        { ...(params as Params), betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' } as Parameters<typeof client.beta.messages.stream>[0],
         { signal },
       )
-    : client.messages.stream(params, { signal })
+    : client.messages.stream(params as Params, { signal })
   for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') yield event.delta.text
+    if (event.type !== 'content_block_delta') continue
+    if (event.delta.type === 'text_delta') yield event.delta.text
+    else if (event.delta.type === 'thinking_delta' && event.delta.thinking) onThinking?.(event.delta.thinking)
   }
   const final = await stream.finalMessage()
   const u = final.usage
@@ -93,11 +104,14 @@ async function openAIClient(provider: ProviderId, config: ProviderConfig) {
   })
 }
 
-async function* streamOpenAI(provider: ProviderId, config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback) {
+async function* streamOpenAI(provider: ProviderId, config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback) {
   if (provider === 'openai_compatible' && !config.baseURL) throw new Error('請填寫 Base URL')
   const client = await openAIClient(provider, config)
+  // 思考參數與自訂參數：各家的欄位不同，直接放進請求內容
+  const extra = openAIReasoningBody(provider, config)
   const stream = await client.chat.completions.create(
     {
+      ...extra,
       model: config.model,
       messages: [
         { role: 'system', content: prompt.system },
@@ -122,19 +136,25 @@ async function* streamOpenAI(provider: ProviderId, config: ProviderConfig, promp
         cached: chunk.usage.prompt_tokens_details?.cached_tokens ?? 0,
       })
     }
-    const text = chunk.choices[0]?.delta?.content
+    const delta = chunk.choices[0]?.delta as { content?: string | null; reasoning_content?: string; reasoning?: string } | undefined
+    // 思考過程：DeepSeek、GLM、千問是 reasoning_content，OpenRouter 是 reasoning
+    const thought = delta?.reasoning_content ?? delta?.reasoning
+    if (thought) onThinking?.(thought)
+    const text = delta?.content
     if (text) yield text
     if (chunk.choices[0]?.finish_reason === 'content_filter') throw new NarrationRefusedError('content_filter')
   }
 }
 
-async function* streamGemini(config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback) {
+async function* streamGemini(config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback) {
   const ai = await geminiClient(config)
+  const thinkingConfig = geminiThinking(config)
   const stream = await ai.models.generateContentStream({
     model: config.model,
     contents: prompt.user,
     config: {
       systemInstruction: prompt.system,
+      ...(thinkingConfig ? { thinkingConfig } : {}),
       ...(config.maxTokens ? { maxOutputTokens: config.maxTokens } : {}),
       ...(signal ? { abortSignal: signal } : {}),
     },
@@ -144,7 +164,12 @@ async function* streamGemini(config: ProviderConfig, prompt: Prompt, signal?: Ab
     // 每一段都帶著累計的用量，取最後一段
     const m = chunk.usageMetadata
     if (m) usage = { input: m.promptTokenCount ?? 0, output: (m.candidatesTokenCount ?? 0) + (m.thoughtsTokenCount ?? 0), cached: m.cachedContentTokenCount ?? 0 }
-    if (chunk.text) yield chunk.text
+    // 思考摘要是 thought 為 true 的部分，其餘是正文
+    for (const part of chunk.candidates?.[0]?.content?.parts ?? []) {
+      if (!part.text) continue
+      if (part.thought) onThinking?.(part.text)
+      else yield part.text
+    }
     if (chunk.promptFeedback?.blockReason) throw new NarrationRefusedError(String(chunk.promptFeedback.blockReason))
   }
   if (usage) onUsage?.(usage)
@@ -181,9 +206,9 @@ export async function listModels(provider: ProviderId, config: ProviderConfig): 
 
 /** 不串流顯示、只要完整文字時使用（AI 判定、角色潤飾）。 */
 export async function completeText(
-  provider: ProviderId, config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback,
+  provider: ProviderId, config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback,
 ): Promise<string> {
   let text = ''
-  for await (const chunk of streamNarration(provider, config, prompt, signal, onUsage)) text += chunk
+  for await (const chunk of streamNarration(provider, config, prompt, signal, onUsage, onThinking)) text += chunk
   return text
 }

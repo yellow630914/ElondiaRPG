@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { providerInfo, PROVIDERS, type ProviderId } from '@/narrator/providerInfo'
+import {
+  guessReasoningFormat, parseExtraBody, providerInfo, PROVIDERS, REASONING_FORMATS, REASONING_LEVELS, type ProviderId, type ReasoningLevel,
+} from '@/narrator/providerInfo'
 import { AI_FEATURES, useSettings } from '@/stores/settings'
 
 // 一個模型來源的設定：服務、key、模型、最大輸出 tokens
@@ -43,6 +45,37 @@ function pickModel(e: Event) {
 function onMaxTokens(e: Event) {
   const v = Number((e.target as HTMLInputElement).value)
   cfg.value.maxTokens = v > 0 ? v : undefined
+}
+
+// ---- 思考（推理） ----
+const reasoning = computed({
+  get: () => cfg.value.reasoning ?? '',
+  set: (v: string) => {
+    if (v) cfg.value.reasoning = v as ReasoningLevel
+    else delete cfg.value.reasoning
+  },
+})
+const showThinking = computed({
+  get: () => cfg.value.showThinking !== false,
+  set: (v: boolean) => {
+    if (v) delete cfg.value.showThinking
+    else cfg.value.showThinking = false
+  },
+})
+const guessed = computed(() => REASONING_FORMATS.find((f) => f.id === guessReasoningFormat(cfg.value.baseURL))?.name ?? '')
+const extraError = computed(() => {
+  try {
+    parseExtraBody(cfg.value.extraBody)
+    return ''
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e)
+  }
+})
+const REASONING_NOTE: Record<ProviderId, string> = {
+  anthropic: 'Claude 5 系列與 4.6 之後的模型用自適應思考（強度是 effort）；舊模型用思考預算。Opus 5.5 不能關閉思考。',
+  openai: 'reasoning_effort（推理模型才有效；關閉對應 minimal）。OpenAI 不回傳思考內容。',
+  gemini: 'thinkingBudget（Gemini 3 用 thinkingLevel）；部分 Pro 模型不能關閉思考。',
+  openai_compatible: '各家的參數不同，依下方的「參數格式」送出；服務要求的其他參數可以寫在「自訂請求參數」。',
 }
 
 function copyFrom(e: Event) {
@@ -119,6 +152,31 @@ function copyFrom(e: Event) {
       最大輸出 tokens（選填，留空用服務預設值）
       <input type="number" min="0" :value="cfg.maxTokens ?? ''" style="width: 140px" @input="onMaxTokens" />
     </label>
+
+    <fieldset class="reasoning">
+      <legend>思考（reasoning）</legend>
+      <label>
+        思考強度
+        <select v-model="reasoning">
+          <option v-for="r in REASONING_LEVELS" :key="r.id" :value="r.id">{{ r.name }}</option>
+        </select>
+      </label>
+      <p class="small muted">{{ REASONING_NOTE[source.provider] }}</p>
+      <label v-if="source.provider === 'openai_compatible'">
+        參數格式
+        <select v-model="cfg.reasoningFormat">
+          <option v-for="f in REASONING_FORMATS" :key="f.id" :value="f.id === 'auto' ? undefined : f.id">{{ f.name }}</option>
+        </select>
+        <span v-if="!cfg.reasoningFormat || cfg.reasoningFormat === 'auto'" class="small muted">目前判斷為：{{ guessed }}</span>
+      </label>
+      <label class="check"><input v-model="showThinking" type="checkbox" /> 在日誌顯示思考過程（摺疊；服務有回傳時）</label>
+      <label v-if="source.provider === 'openai_compatible'">
+        自訂請求參數（JSON，選填；會直接加進請求，例如 {"thinking": {"type": "enabled"}}）
+        <textarea v-model="cfg.extraBody" rows="2" spellcheck="false" placeholder='{"reasoning": {"enabled": true}}' />
+        <span v-if="extraError" class="small" style="color: var(--danger)">{{ extraError }}</span>
+      </label>
+    </fieldset>
+
     <p class="small" :style="{ color: settings.sourceReady(index) ? 'var(--good)' : 'var(--muted)' }">
       {{ settings.sourceReady(index) ? '✓ 設定完成' : '尚未完成設定' }}・{{ used.length ? `用於：${used.join('、')}` : '目前沒有功能使用這個來源' }}
     </p>
@@ -129,4 +187,8 @@ function copyFrom(e: Event) {
 .form { display: grid; gap: 12px; max-width: 560px; }
 .form label, .form .field { display: grid; gap: 4px; }
 .grow { flex: 1; }
+.reasoning { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; display: grid; gap: 8px; }
+.reasoning legend { color: var(--accent); padding: 0 4px; }
+.reasoning textarea { width: 100%; font-family: monospace; }
+label.check { display: inline-flex !important; gap: 6px; align-items: center; }
 </style>

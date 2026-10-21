@@ -104,6 +104,12 @@ export interface NarrationState {
   /** 玩家手動要求的（AI 細節描述關閉時也顯示） */
   manual?: boolean
   error?: string
+  /** 寫敘事時模型的思考過程（服務有回傳時） */
+  thinking?: string
+  /** AI 判定時模型的思考過程 */
+  judgeThinking?: string
+  /** 只是為了存判定的思考過程，還沒有敘事 */
+  placeholder?: boolean
 }
 
 /** 移動之後：附近有敵對的冒險者時開始對峙 */
@@ -437,14 +443,17 @@ export const useGame = defineStore('game', () => {
     controllers.get(report.report_id)?.abort()
     const controller = new AbortController()
     controllers.set(report.report_id, controller)
-    narrations.value[report.report_id] = { text: '', status: 'streaming', ...(opts.manual ? { manual: true } : {}) }
+    // 判定時的思考過程留著
+    const judgeThinking = narrations.value[report.report_id]?.judgeThinking
+    narrations.value[report.report_id] = { text: '', status: 'streaming', ...(opts.manual ? { manual: true } : {}), ...(judgeThinking ? { judgeThinking } : {}) }
     const entry = narrations.value[report.report_id]!
     try {
       const prompt = await promptFor(report)
       const { streamNarration } = await import('@/narrator/providers')
       const src = settings.sourceFor('narration')
       const onUsage = (u: TokenUsage) => addUsage(report.report_id, u, originOf('narration', src))
-      for await (const chunk of streamNarration(src.provider, src.config, prompt, controller.signal, onUsage)) {
+      const onThinking = (t: string) => { entry.thinking = (entry.thinking ?? '') + t }
+      for await (const chunk of streamNarration(src.provider, src.config, prompt, controller.signal, onUsage, onThinking)) {
         entry.text += chunk
       }
       // 正文後面的人際關係更新提議：取出來等玩家確認
@@ -490,7 +499,8 @@ export const useGame = defineStore('game', () => {
     try {
       const { completeText } = await import('@/narrator/providers')
       const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
-      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts).prompt, undefined, collector.onUsage)
+      let thinking = ''
+      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts).prompt, undefined, collector.onUsage, (t) => { thinking += t })
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型
       if (opts.splitNarrative) delete judgment.narrative
@@ -499,6 +509,12 @@ export const useGame = defineStore('game', () => {
       const report = run((st) => actions.resolveAction(st, judgment), { narrate: !judgment.narrative })
       collector.flush(report?.report_id ?? OTHER_USAGE)
       if (report && judgment.narrative) narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+      // 判定的思考過程：記在這則日誌（還沒有敘事時先放一個空的）
+      if (report && thinking.trim()) {
+        const entry = narrations.value[report.report_id]
+        if (entry) entry.judgeThinking = thinking.trim()
+        else narrations.value[report.report_id] = { text: '', status: 'done', placeholder: true, judgeThinking: thinking.trim() }
+      }
       save()
     } catch (e) {
       collector.flush(OTHER_USAGE)

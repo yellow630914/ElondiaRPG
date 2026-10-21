@@ -2,6 +2,15 @@
 
 export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'openai_compatible'
 
+/** 思考（推理）的強度；沒有設定時不送參數，用服務與模型的預設 */
+export type ReasoningLevel = 'off' | 'low' | 'medium' | 'high'
+/**
+ * OpenAI 相容格式的思考參數（各家不一樣）：
+ * reasoning_effort（OpenAI 的寫法）、thinking（智譜 GLM、Kimi：thinking.type）、openrouter（reasoning.effort）、
+ * enable_thinking（通義千問）、none（不送）；auto 依 Base URL 猜。
+ */
+export type ReasoningFormat = 'auto' | 'reasoning_effort' | 'thinking' | 'openrouter' | 'enable_thinking' | 'none'
+
 export interface ProviderConfig {
   apiKey: string
   model: string
@@ -9,7 +18,32 @@ export interface ProviderConfig {
   baseURL?: string
   /** 留空則用各服務預設值 */
   maxTokens?: number
+  /** 思考的強度（沒有設定時用預設） */
+  reasoning?: ReasoningLevel
+  /** OpenAI 相容格式：思考參數的寫法 */
+  reasoningFormat?: ReasoningFormat
+  /** 要求服務回傳思考過程（顯示在日誌裡，摺疊起來）；預設開啟 */
+  showThinking?: boolean
+  /** OpenAI 相容格式：額外加進請求的參數（JSON 物件） */
+  extraBody?: string
 }
+
+export const REASONING_LEVELS: { id: ReasoningLevel | ''; name: string }[] = [
+  { id: '', name: '預設（不指定）' },
+  { id: 'off', name: '關閉思考' },
+  { id: 'low', name: '低' },
+  { id: 'medium', name: '中' },
+  { id: 'high', name: '高' },
+]
+
+export const REASONING_FORMATS: { id: ReasoningFormat; name: string }[] = [
+  { id: 'auto', name: '自動（依 Base URL 判斷）' },
+  { id: 'reasoning_effort', name: 'reasoning_effort（OpenAI 寫法）' },
+  { id: 'thinking', name: 'thinking.type（智譜 GLM、Kimi）' },
+  { id: 'openrouter', name: 'reasoning.effort（OpenRouter）' },
+  { id: 'enable_thinking', name: 'enable_thinking（通義千問）' },
+  { id: 'none', name: '不送思考參數' },
+]
 
 export interface ProviderInfo {
   id: ProviderId
@@ -59,6 +93,10 @@ export const PROVIDERS: ProviderInfo[] = [
     presets: [
       { name: 'OpenRouter', baseURL: 'https://openrouter.ai/api/v1' },
       { name: 'DeepSeek', baseURL: 'https://api.deepseek.com' },
+      { name: '智譜 GLM（BigModel）', baseURL: 'https://open.bigmodel.cn/api/paas/v4' },
+      { name: '智譜 GLM（Z.ai 國際）', baseURL: 'https://api.z.ai/api/paas/v4' },
+      { name: '通義千問（DashScope）', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1' },
+      { name: 'Moonshot（Kimi）', baseURL: 'https://api.moonshot.cn/v1' },
       { name: 'Ollama（本機）', baseURL: 'http://localhost:11434/v1' },
       { name: 'LM Studio（本機）', baseURL: 'http://localhost:1234/v1' },
     ],
@@ -76,4 +114,99 @@ export interface TokenUsage {
   output: number
   /** 輸入中從提示詞快取讀取的部分 */
   cached?: number
+}
+
+// ---- 思考參數（各家的寫法） ----
+
+/** OpenAI 相容格式：依 Base URL 猜思考參數的寫法 */
+export function guessReasoningFormat(baseURL = ''): Exclude<ReasoningFormat, 'auto'> {
+  const u = baseURL.toLowerCase()
+  if (u.includes('openrouter.ai')) return 'openrouter'
+  if (u.includes('bigmodel.cn') || u.includes('z.ai') || u.includes('moonshot')) return 'thinking'
+  if (u.includes('dashscope')) return 'enable_thinking'
+  if (u.includes('deepseek')) return 'none'
+  return 'reasoning_effort'
+}
+
+/** 自訂參數（JSON 物件）；格式不對時丟出錯誤 */
+export function parseExtraBody(text?: string): Record<string, unknown> {
+  if (!text?.trim()) return {}
+  let v: unknown
+  try {
+    v = JSON.parse(text)
+  } catch {
+    throw new Error('自訂請求參數不是有效的 JSON')
+  }
+  if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('自訂請求參數要是 JSON 物件，例如 {"thinking": {"type": "enabled"}}')
+  return v as Record<string, unknown>
+}
+
+/** OpenAI 與相容格式：加進請求的思考參數（加上自訂參數） */
+export function openAIReasoningBody(provider: ProviderId, config: ProviderConfig): Record<string, unknown> {
+  const level = config.reasoning
+  const show = config.showThinking !== false
+  let body: Record<string, unknown> = {}
+  if (provider === 'openai') {
+    // OpenAI 的 Chat Completions 不回傳思考內容，只能調強度
+    if (level) body = { reasoning_effort: level === 'off' ? 'minimal' : level }
+    return body
+  }
+  const format = !config.reasoningFormat || config.reasoningFormat === 'auto' ? guessReasoningFormat(config.baseURL) : config.reasoningFormat
+  switch (format) {
+    case 'reasoning_effort':
+      if (level && level !== 'off') body = { reasoning_effort: level }
+      break
+    case 'thinking':
+      if (level) body = { thinking: { type: level === 'off' ? 'disabled' : 'enabled' } }
+      break
+    case 'openrouter':
+      if (level === 'off') body = { reasoning: { enabled: false } }
+      else if (level) body = { reasoning: { effort: level, ...(show ? {} : { exclude: true }) } }
+      else if (!show) body = { reasoning: { exclude: true } }
+      break
+    case 'enable_thinking':
+      if (level) body = { enable_thinking: level !== 'off' }
+      break
+  }
+  return { ...body, ...parseExtraBody(config.extraBody) }
+}
+
+/** Claude：自適應思考的模型（Claude 5 系列、4.6 之後） */
+const CLAUDE_ADAPTIVE = /claude-(opus|sonnet|haiku|fable|mythos)-(5|4-[6-9])/
+/** 預設就會思考的模型（Claude 5 系列） */
+const CLAUDE_THINKS_BY_DEFAULT = /claude-(opus|sonnet|haiku|fable|mythos)-5/
+/** 不能關閉思考的模型 */
+const CLAUDE_ALWAYS_THINKS = /claude-(opus-5-5|fable|mythos)/
+const CLAUDE_BUDGET: Record<Exclude<ReasoningLevel, 'off'>, number> = { low: 2048, medium: 8192, high: 16384 }
+
+/** Claude：思考的參數（thinking、output_config.effort）；回傳空物件時不送 */
+export function anthropicThinking(config: ProviderConfig): Record<string, unknown> {
+  const level = config.reasoning
+  const show = config.showThinking !== false
+  const model = config.model
+  if (CLAUDE_ADAPTIVE.test(model)) {
+    if (level === 'off') return CLAUDE_ALWAYS_THINKS.test(model) ? {} : { thinking: { type: 'disabled' } }
+    // 思考內容預設不回傳（display: omitted），要顯示時要求摘要
+    const thinking = level || CLAUDE_THINKS_BY_DEFAULT.test(model) ? { thinking: { type: 'adaptive', display: show ? 'summarized' : 'omitted' } } : {}
+    return { ...thinking, ...(level ? { output_config: { effort: level } } : {}) }
+  }
+  // 舊的模型：指定思考的預算（要小於 max_tokens）
+  if (!level || level === 'off') return {}
+  return { thinking: { type: 'enabled', budget_tokens: CLAUDE_BUDGET[level] } }
+}
+
+const GEMINI_BUDGET: Record<ReasoningLevel, number> = { off: 0, low: 1024, medium: 8192, high: 24576 }
+
+/** Gemini：thinkingConfig（includeThoughts 回傳思考摘要；Gemini 3 用 thinkingLevel） */
+export function geminiThinking(config: ProviderConfig): Record<string, unknown> | undefined {
+  const level = config.reasoning
+  const show = config.showThinking !== false
+  if (!level && !show) return undefined
+  const out: Record<string, unknown> = {}
+  if (show && level !== 'off') out.includeThoughts = true
+  if (level) {
+    if (/gemini-3/.test(config.model)) out.thinkingLevel = level === 'high' || level === 'medium' ? 'high' : 'low'
+    else out.thinkingBudget = GEMINI_BUDGET[level]
+  }
+  return Object.keys(out).length ? out : undefined
 }

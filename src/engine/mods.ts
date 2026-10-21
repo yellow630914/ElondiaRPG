@@ -11,7 +11,7 @@ import mapsJson from '@data/world/maps.json'
 import {
   abilities, attributeRules, ATTR_IDS, classes, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
-  type EnemyDef, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef,
+  type EnemyDef, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
 } from './data'
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -228,6 +228,58 @@ export function itemSources(name: string) {
   }
   const gather: GatherPlace[] = (['wild', 'dungeon'] as const).filter((g) => maps.generation[g].resource_items.includes(name))
   return { drops, chests, gather }
+}
+
+// ---- 篩選用的索引（內容頁籤） ----
+
+/** 每隻怪物出現的地方：wild:地區（城郊）、dungeon:地點（任何一層或層主） */
+export function enemyPlaceIndex(): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>()
+  const add = (id: string, key: string) => {
+    let set = out.get(id)
+    if (!set) out.set(id, (set = new Set()))
+    set.add(key)
+  }
+  for (const r of geography.regions) for (const g of wildEncounters(r.id)) for (const [id] of g) add(id, `wild:${r.id}`)
+  for (const [loc, t] of Object.entries(dungeonEncounters)) {
+    for (const layer of CHEST_LAYERS) for (const g of t[layer] ?? []) for (const [id] of g) add(id, `dungeon:${loc}`)
+    const bosses: (EncounterGroup | undefined)[] = [t.boss, ...Object.values(t.bosses ?? {})]
+    for (const g of bosses) for (const [id] of g ?? []) add(id, `dungeon:${loc}`)
+  }
+  return out
+}
+
+/** 篩選怪物的出現地點：城郊各地區、各座地下城 */
+export function enemyPlaceOptions(): { key: string; label: string }[] {
+  return [
+    ...geography.regions.map((r) => ({ key: `wild:${r.id}`, label: `城郊・${r.name}` })),
+    ...geography.locations.filter((l) => l.type === 'dungeon' && dungeonEncounters[l.id]).map((l) => ({ key: `dungeon:${l.id}`, label: `地下城・${l.name}` })),
+  ]
+}
+
+/** 物品的取得方式 */
+export const ITEM_SOURCE_NAME: Record<string, string> = {
+  'shop:general': '雜貨店', 'shop:temple': '神殿', 'shop:tavern': '酒館', 'shop:smith': '鐵匠鋪', 'shop:tailor': '裁縫店',
+  'shop:jeweler': '珠寶店', 'shop:magic': '魔法物品店', 'shop:info': '情報商',
+  chest: '寶箱', 'gather:wild': '近郊採集', 'gather:dungeon': '地下城採集', drop: '怪物掉落', event: '事件獎勵', forge: '打造材料', none: '沒有取得方式',
+}
+
+/** 每個物品的取得方式（ITEM_SOURCE_NAME 的 key） */
+export function itemSourceIndex(): Map<string, Set<string>> {
+  const drops = new Set(Object.values(enemies).flatMap((e) => (e.loot ?? []).map((l) => l.item)))
+  const chests = new Set(CHEST_LAYERS.flatMap((l) => (gearRules.chests[l]?.items ?? []).map(([n]) => n)))
+  const out = new Map<string, Set<string>>()
+  for (const i of itemRules.items) {
+    const set = new Set<string>(i.tags.map((t) => `shop:${t}`))
+    if (chests.has(i.name)) set.add('chest')
+    for (const g of ['wild', 'dungeon'] as const) if (maps.generation[g].resource_items.includes(i.name)) set.add(`gather:${g}`)
+    if (drops.has(i.name)) set.add('drop')
+    if (i.event) set.add('event')
+    if (i.forge?.materials.length) set.add('forge')
+    if (!set.size) set.add('none')
+    out.set(i.name, set)
+  }
+  return out
 }
 
 // ---- 套用 ----

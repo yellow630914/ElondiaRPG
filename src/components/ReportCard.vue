@@ -16,7 +16,13 @@ const KIND_NAME: Record<Report['kind'], string> = {
   travel: '🧳 旅行', combat: '⚔️ 戰鬥', action: '🎲 行動', event: '✨ 事件', quest: '📜 委託', rest: '🛏️ 休息', trade: '🪙 交易', social: '💬 交流',
 }
 
-const narration = computed(() => game.narrations[props.report.report_id])
+const entry = computed(() => game.narrations[props.report.report_id])
+// 只存了判定的思考過程的空項目不算敘事
+const narration = computed(() => (entry.value?.placeholder ? undefined : entry.value))
+const thinking = computed(() => [
+  ...(entry.value?.judgeThinking ? [{ label: '判定', text: entry.value.judgeThinking }] : []),
+  ...(entry.value?.thinking ? [{ label: '敘事', text: entry.value.thinking }] : []),
+])
 // 關閉 AI 細節描述時不顯示敘事，改顯示戰報或事件簡述（已生成的敘事仍保留，重新開啟後會再出現）
 // AI 判定的主動行動：AI 直接寫出的經過一律顯示
 const showStory = computed(() => !!narration.value && (settings.aiNarration || !!narration.value.manual || props.report.check?.source === 'ai'))
@@ -47,6 +53,14 @@ async function copyPrompt() {
     </header>
     <p>{{ report.outcome.summary }}</p>
     <p v-if="check" class="small check">🎲 {{ check }}<template v-if="report.check?.twist"><br /><span>✨ 出乎預料：{{ report.check.twist }}</span></template><template v-if="report.check?.rationale"><br /><span class="muted">判定理由：{{ report.check.rationale }}</span></template></p>
+
+    <details v-if="thinking.length" class="thinking small">
+      <summary>💭 思考過程（{{ thinking.map((t) => t.label).join('、') }}）<span v-if="narration?.status === 'streaming' && !narration.text" class="muted">・思考中……</span></summary>
+      <div v-for="t in thinking" :key="t.label" class="thought">
+        <b v-if="thinking.length > 1">{{ t.label }}</b>
+        <pre>{{ t.text }}</pre>
+      </div>
+    </details>
 
     <div v-if="showStory && narration" class="story">
       <div class="narration">{{ visibleNarration(narration.text) }}<span v-if="narration.status === 'streaming'" class="cursor">▌</span></div>
@@ -92,6 +106,9 @@ async function copyPrompt() {
 
 <style scoped>
 .story { border-left: 3px solid var(--accent); padding: 4px 12px; margin: 8px 0; background: #0002; }
+.thinking { margin: 6px 0; color: var(--muted, #aaa); }
+.thinking summary { cursor: pointer; }
+.thought pre { white-space: pre-wrap; word-break: break-word; font-family: inherit; line-height: 1.6; margin: 4px 0 8px; padding: 6px 10px; border-left: 2px dashed var(--border); max-height: 360px; overflow: auto; }
 .cursor { animation: blink 1s steps(1) infinite; color: var(--accent); }
 @keyframes blink { 50% { opacity: 0; } }
 .battle-report { border-left: 3px solid var(--accent-2); padding: 4px 12px; margin: 8px 0; background: #0002; }

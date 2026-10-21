@@ -56,6 +56,21 @@ describe('ReportCard', () => {
     const wrapper = mount(ReportCard, { props: { report: combat }, global: { plugins: [pinia] } })
     expect(wrapper.find('.tokens .origin').text()).toContain('敘事正文・寫作用（OpenAI gpt-test）')
   })
+
+  it('folds the thinking of the judge and the narration, and ignores a thinking-only entry', () => {
+    const pinia = setup(true)
+    const game = useGame()
+    game.narrations[trip.report_id] = { text: '', status: 'done', placeholder: true, judgeThinking: '骰值不高，但對方心情好。' }
+    let wrapper = mount(ReportCard, { props: { report: trip }, global: { plugins: [pinia] } })
+    expect(wrapper.find('.story').exists()).toBe(false)
+    expect(wrapper.find('details.thinking').text()).toContain('判定')
+    game.narrations[combat.report_id]!.thinking = '先寫水聲，再寫蛇。'
+    wrapper = mount(ReportCard, { props: { report: combat }, global: { plugins: [pinia] } })
+    expect(wrapper.find('details.thinking').exists()).toBe(true)
+    expect(wrapper.find('details.thinking').attributes('open')).toBeUndefined()
+    expect(wrapper.find('.thought pre').text()).toContain('先寫水聲')
+    expect(wrapper.find('.story').text()).toContain('水聲')
+  })
 })
 
 describe('settings migration', () => {
