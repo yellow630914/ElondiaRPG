@@ -8,6 +8,8 @@ import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
+import NotebookView from '@/components/NotebookView.vue'
+import { canTurnIn } from '@/engine/materialQuests'
 import RoadPanel from '@/components/RoadPanel.vue'
 import CombatView from '@/components/CombatView.vue'
 import IntentPanel from '@/components/IntentPanel.vue'
@@ -57,6 +59,9 @@ const tab = ref<Tab>('adventure')
 const showSettings = ref(false)
 const showParty = ref(false)
 const showRelations = ref(false)
+const showNotebook = ref(false)
+/** 可以回公會交付的委託 */
+const readyQuests = computed(() => (game.state ? game.state.quests.filter((q) => canTurnIn(game.state!, q)).length : 0))
 const showSaves = ref(false)
 
 function askQuickLoad() {
@@ -122,6 +127,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         <button @click="showRelations = true">
           💞 關係 <span v-if="suggestionCount" class="tag hot">{{ suggestionCount }} 則提議</span>
         </button>
+        <button @click="showNotebook = true">
+          📒 筆記 <span v-if="readyQuests" class="tag hot">{{ readyQuests }} 件可交付</span>
+        </button>
       </section>
       <template v-if="!inCombat">
         <StandoffPanel v-if="game.state.standoff && !game.state.pendingAction" />
@@ -149,6 +157,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   </AppDialog>
   <AppDialog :open="showRelations" title="人際關係與冒險記憶" icon="💞" width="1200px" @close="showRelations = false">
     <RelationsView />
+  </AppDialog>
+  <AppDialog :open="showNotebook" title="冒險筆記" icon="📒" width="900px" @close="showNotebook = false">
+    <NotebookView />
   </AppDialog>
   <AppDialog :open="showSaves" title="存檔與讀檔" icon="💾" width="860px" @close="showSaves = false">
     <SaveDialog @loaded="showSaves = false" />
@@ -195,8 +206,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .center { grid-area: center; min-width: 0; }
 .right { grid-area: right; }
 .game.combat { grid-template-areas: 'left center center'; }
-.quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.quick button { padding: 10px; font-size: 1rem; }
+.quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.quick button { padding: 10px 4px; font-size: 1rem; }
 .tag.hot { color: var(--accent); border-color: var(--accent); }
 
 @media (max-width: 1380px) {
