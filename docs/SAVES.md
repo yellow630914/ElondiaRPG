@@ -1,5 +1,7 @@
 # 存檔
 
+> 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[CONTENT_EDITOR](CONTENT_EDITOR.md)（世界與自訂內容）、[CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md)（讀檔時的清理）、[PORTRAITS](PORTRAITS.md)（形象圖）。各系統新增的存檔欄位記在第 5 節。
+
 程式：`src/stores/saves.ts`（儲存位置、檔案格式）、`src/stores/game.ts`（存檔、讀檔、匯出、匯入）、`src/components/SaveDialog.vue`。
 
 ## 1. 存在哪裡
@@ -9,7 +11,7 @@
 | 進行中的遊戲 | IndexedDB `elondia` 的 `current`（`state`、`narrations`、`usage` 三筆 JSON 文字） | 每次動作後自動保存 |
 | 存檔欄位（手動、快速、自動 ×3） | IndexedDB `elondia` 的 `slot_meta`、`slot_data` | 欄位存了當時的自訂內容 |
 | 形象圖 | IndexedDB `elondia-portraits` | 依「種子:角色 id」保存，見 [PORTRAITS.md](PORTRAITS.md) |
-| 世界（自訂內容）、模型來源、插圖設定、提示詞組 | localStorage（`elondia.worlds`、`elondia.settings`、`elondia.image`、`elondia.promptSets`） | 跟著瀏覽器走；存檔記住用哪個世界，見 [CONTENT_EDITOR.md](CONTENT_EDITOR.md) 第 0 節 |
+| 世界（自訂內容）、模型來源、插圖設定、提示詞組、自動存檔輪替的位置 | localStorage（`elondia.worlds`、`elondia.settings`、`elondia.image`、`elondia.promptSets`、`elondia.autoIndex`） | 跟著瀏覽器走；存檔記住用哪個世界，見 [CONTENT_EDITOR.md](CONTENT_EDITOR.md) 第 0 節 |
 
 瀏覽器不支援 IndexedDB 時（或打不開時）改存在 localStorage。
 
@@ -52,10 +54,10 @@
 
 匯入的存檔會加到列表（手動存檔），不會直接讀取。檔案附有自訂內容或形象圖時，先顯示匯入面板：
 
-- **合併自訂內容**（預設勾選）：
-  - 這個瀏覽器沒有的項目：新增。
-  - 和這個瀏覽器不同的項目：逐項勾選要不要換成存檔裡的版本，沒勾的保留自己的。
-  - 相同的略過；這個瀏覽器其他的自訂內容不會變動（不是「取代全部」，那是「🛠️ 內容」頁籤的匯入）。
+- **合併自訂內容**（預設勾選）：合併進**目前作用中的世界**（原版世界不能合併；不看存檔記的是哪個世界，見 [KNOWN_ISSUES](KNOWN_ISSUES.md)）。
+  - 這個世界沒有的項目：新增。
+  - 和這個世界不同的項目：逐項勾選要不要換成存檔裡的版本，沒勾的保留自己的。
+  - 相同的略過；這個世界其他的自訂內容不會變動（不是「取代全部」，那是「🛠️ 內容」頁籤的匯入）。
   - 不合併時提醒：存檔用到的自訂怪物、物品、角色或任務可能不會出現或無法使用（讀檔時的容錯見 [CONTENT_DEPENDENCIES.md](CONTENT_DEPENDENCIES.md)）。
 - **還原形象圖**（預設勾選）：同一個角色已經有圖時換成檔案裡的。圖片不會留在存檔欄位裡。
 

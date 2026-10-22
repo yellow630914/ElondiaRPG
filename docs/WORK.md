@@ -1,6 +1,7 @@
-# 工作與娼館 v0.1
+# 工作與娼館
 
-規則在 `data/rules/work.json`，程式在 `src/engine/work.ts`、`src/engine/brothel.ts`、`src/engine/content.ts`。
+> 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[ACTIONS](ACTIONS.md)（工作與消費是主動行動）、[COMPANIONS](COMPANIONS.md)（奴隸、主人的突發事件、契約印記）、[NPC_SYSTEM](NPC_SYSTEM.md)（娼妓標籤）。
+> 規則在 `data/rules/work.json`，程式在 `src/engine/work.ts`、`src/engine/brothel.ts`、`src/engine/content.ts`。
 
 ## 1. 工作
 

@@ -1,5 +1,6 @@
 # 角色形象插圖
 
+> 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[PROMPTS](PROMPTS.md)（預處理用的模型來源與功能分配）、[SAVES](SAVES.md)（匯出、匯入、清理）。
 > 程式：`src/narrator/imageInfo.ts`（服務模板、提示詞、預處理指示）、`src/narrator/imageProviders.ts`（送出請求）、`src/stores/image.ts`（設定）、`src/stores/portraits.ts`（保存與生成）、`src/components/ImageSettings.vue`、`src/components/PortraitBox.vue`。
 
 隊伍視窗的每位成員、人際關係裡登場過的人都有一格形象圖：可以「🎨 生成形象圖」、「📁 上傳」自己的圖片、刪除，點圖片放大。
@@ -49,8 +50,7 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 ## 4. 保存
 
 - 圖片存在這個瀏覽器的 IndexedDB（`elondia-portraits`），太大放不進 localStorage，也不放進存檔欄位。
-- 匯出存檔時可以勾選「附上形象圖」：這一局所有角色的圖轉成 data URL 放進檔案（檔案會大很多）；匯入時可以選擇還原。見 [SAVES.md](SAVES.md)。
-- 沒有任何存檔用到的圖會自動清掉：刪除存檔欄位、覆寫存檔欄位、開新遊戲時，檢查進行中的遊戲與所有存檔欄位的種子，不屬於任何一個的圖刪除。
+- 匯出時附上形象圖、匯入時還原、沒有存檔用到的圖自動清掉：見 [SAVES.md](SAVES.md) 第 2～4 節。
 - 依「這一局（存檔的種子）＋角色 id」保存，不同存檔的主角不會互相蓋掉。
 - 生成中可以取消；出錯時顯示原因（例如還沒設定 key、服務回應 401、CORS 被擋）。
 

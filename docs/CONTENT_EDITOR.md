@@ -1,6 +1,7 @@
 # 自訂內容（🛠️ 內容頁籤）
 
-> 狀態：已實作。程式在 `src/engine/mods.ts`（覆寫的整理與套用）、`src/stores/content.ts`（保存）、`src/components/ContentView.vue` 與 `src/components/content/`（編輯畫面）。
+> 上層：[GAME_DESIGN](GAME_DESIGN.md)。下層：[CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md)（內容之間的引用與刪除保護）。各種內容的遊戲規則：怪物 [MONSTERS](MONSTERS.md)／[COMBAT_SYSTEM](COMBAT_SYSTEM.md)、物品與裝備 [ITEMS](ITEMS.md)、特殊任務與固定 NPC 的劇情條件 [STORY_QUESTS](STORY_QUESTS.md)、NPC [NPC_SYSTEM](NPC_SYSTEM.md)。
+> 程式在 `src/engine/mods.ts`（覆寫的整理與套用）、`src/stores/content.ts`（保存）、`src/components/ContentView.vue` 與 `src/components/content/`（編輯畫面）。
 
 在首頁的「🌍 世界管理」（或遊戲中上方的「🛠️ 內容」）新增或修改怪物、物品、裝備底材、材料、技能、固定 NPC 與特殊任務。
 
@@ -31,7 +32,7 @@
 | 掉落物 | 物品、機率、數量 |
 | 出現地點 | 城郊（各地區）、各地下城的周邊／淺層／中層／深層、層主（取代原本的層主）。每一組是遭遇表裡的一個選項，遭遇時從所有選項平均抽一個；權重是放幾組。內建怪物可以從內建的遭遇表移除（遭遇表不會被清空） |
 
-刪掉自建怪物時，已經生成在地圖上的那種怪物會消失（格子視為已清除）。
+刪掉自建怪物時，已經生成在地圖上的那種怪物會換成這個地方現在的遭遇（見 [CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) 第 5 節）。
 
 ## 2. 物品
 
@@ -45,7 +46,7 @@
 
 **怪物掉落的設定存在怪物身上**：在物品這邊設定掉落，改的是那隻怪物的掉落物（和怪物編輯頁是同一份），所以物品「恢復預設」不會一起恢復掉落。
 
-刪掉自建物品時，行囊裡已有的會變成無法使用的雜物，怪物也不再掉落。
+刪掉自建物品的限制見 [CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) 第 2 節；其他存檔行囊裡已有的會變成無法使用的雜物，怪物也不再掉落。
 
 ## 3. 裝備底材與材料
 
@@ -82,6 +83,6 @@
 
 ## 5. 套用的方式
 
-覆寫存成一份 `ContentMods`：內建項目存整份修改後的資料，自建項目存整份資料並標上 `custom`。`applyContent` 先把遊戲資料還原成內建的樣子（模組載入時的快照），再依序套上材料、底材、產生的制式裝備、物品（寶箱與採集表）、怪物與出現地點。每次修改都重新套用一次；開啟遊戲時在讀檔之前先套用。
+覆寫存成一份 `ContentMods`：內建項目存整份修改後的資料，自建項目存整份資料並標上 `custom`。`applyContent` 先把遊戲資料還原成內建的樣子（模組載入時的快照），再依序套上能力、材料、底材、產生的制式裝備（並重新定價）、物品（寶箱與採集表）、怪物、出現地點、固定 NPC 與特殊任務。每次修改都重新套用一次；開啟遊戲時在讀檔之前先套用。
 
 儲存與匯入時每一項都會整理：數值夾在合理範圍，不存在的技能、狀態、傷害屬性、遭遇表會被拿掉。套用時出錯的項目略過，並在頁面上方列出原因。

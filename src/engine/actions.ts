@@ -7,7 +7,7 @@
 // 3. resolveAction：採用 AI 的成功程度，套用機制結果（雇傭、殺價、邀請、談判、逃離……）
 //    與夾住上限的 AI 效果，產生報告；AI 寫的經過直接作為這份報告的敘事。
 //    AI 關閉時依規則：預設屬性、參考 DC 與骰值決定成功程度。
-// 說明見 docs/RELATIONSHIP_MEMORY.md 第 5 節。
+// 說明見 docs/ACTIONS.md。
 
 import { mod, proficiency, snapshot } from './character'
 import { computeDegree, DEGREE_NAME } from './checks'

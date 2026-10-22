@@ -1,5 +1,5 @@
 {
-  "$comment": "主動行動：擲骰先發生，程式算出參考 DC；再把完整資料與骰值交給 AI，由 AI 決定成功與否（骰值只是參考，可以出乎預料）並直接寫出結果。AI 標示的 DC 夾在參考值 ±dc_adjust；AI 提出的效果只能是 kinds.effects 中的種類，數值夾在 caps 內。AI 關閉時用 attr 與參考 DC 依 degrees 判定。說明見 docs/RELATIONSHIP_MEMORY.md 第 5 節。",
+  "$comment": "主動行動：擲骰先發生，程式算出參考 DC；再把完整資料與骰值交給 AI，由 AI 決定成功與否（骰值只是參考，可以出乎預料）並直接寫出結果。AI 標示的 DC 夾在參考值 ±dc_adjust；AI 提出的效果只能是 kinds.effects 中的種類，數值夾在 caps 內。AI 關閉時用 attr 與參考 DC 依 degrees 判定。說明見 docs/ACTIONS.md。",
   "version": 1,
   "dc_adjust": 3,
   "degrees": {
