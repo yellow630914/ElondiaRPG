@@ -38,6 +38,7 @@
 | 系統 | 文件 | 主要程式 |
 |---|---|---|
 | 屬性、資源、戰鬥、能力、狀態、敵人 AI、戰敗 | [COMBAT_SYSTEM](COMBAT_SYSTEM.md) | `character.ts`、`combat.ts`、`defeat.ts` |
+| 特質（被動，影響所有檢定與戰鬥） | [PERKS](PERKS.md) | `perks.ts`、`perkActions.ts` |
 | 效果（報酬／後果模板） | [EFFECTS](EFFECTS.md) | `effects.ts` |
 | 主動行動（擲骰 → AI 判定） | [ACTIONS](ACTIONS.md) | `actions.ts`、`checks.ts`、`narrator/judge.ts` |
 | 地點、聚落、走格子 | [WORLD](WORLD.md) | `world.ts`、`grid.ts` |

@@ -1,8 +1,9 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
+import { hasPerk, offerPerks } from './perks'
 import { snapshot } from './character'
 import {
-  attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, regionById, shopRules, statusDef, stories, townQuestTemplates,
+  attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates,
   type ItemIntel, type ItemUse,
 } from './data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, slotName, slotsFor, syncGear } from './gear'
@@ -102,7 +103,7 @@ export function readIntelItem(state: GameState, name: string): Report {
 
 export function canUse(name: string): boolean {
   const use = itemDef(name)?.use
-  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition)) || !!toolDef(itemDef(name)?.tool)?.condition
+  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length)) || !!toolDef(itemDef(name)?.tool)?.condition
 }
 
 /** 消耗品效果的一行說明 */
@@ -110,6 +111,7 @@ export function useSummary(use?: ItemUse): string {
   if (!use) return ''
   const parts: string[] = []
   if (use.condition) parts.push(`「${conditionName(use.condition)}」：${companionRules.conditions[use.condition]?.desc ?? ''}`)
+  if (use.perks?.length) parts.push(`讀了有機會學會特質：${use.perks.map((id) => perkDef(id)?.name ?? id).join('、')}`)
   if (use.revive) parts.push(`救起倒下的隊友（${Math.round(use.revive * 100)}% 生命）`)
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
@@ -147,7 +149,14 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
     return commitReport(state, report)
   }
   if (!def?.use) throw new Error('這個東西不能使用')
-  if (def.use.condition) {
+  if (def.use.perks?.length) {
+    // 書籍：讀完得到一次學特質的機會（從書裡的特質選一個，或寫說法交給 AI）
+    const options = def.use.perks.filter((id) => !hasPerk(m, id))
+    if (!options.length) throw new Error(`${m.name}已經學會書裡的特質了`)
+    offerPerks(m, `讀了「${name}」`, options)
+    report.time.end = addHours(report.time.start, 4)
+    text = `讀完之後，有機會學會：${options.map((id) => perkDef(id)?.name ?? id).join('、')}`
+  } else if (def.use.condition) {
     const got = gainCondition(m, def.use.condition, report)
     if (!got) throw new Error(`${m.name}${companionRules.conditions[def.use.condition]?.group === 'meal' ? '已經吃得比這更好了' : '已經喝不下了'}`)
     text = `得到「${conditionName(got)}」`

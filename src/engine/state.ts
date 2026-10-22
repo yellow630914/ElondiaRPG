@@ -1,7 +1,8 @@
 // 遊戲狀態、時間與報告提交。
 
+import { sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
-import { abilities, attributeRules, classDef, locationById, setSaveItems, type Attrs } from './data'
+import { abilities, attributeRules, classDef, locationById, perkDef, setSaveItems, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, type SlaveStart } from './slavery'
@@ -25,6 +26,9 @@ export interface NewGameOptions {
   background?: string
   /** 以奴隸身分開始（主人與印記，見 engine/slavery.ts） */
   slave?: SlaveStart
+  /** 建立角色時選的特質（perks.json 的 id）與自訂的特質（docs/PERKS.md） */
+  perks?: string[]
+  customPerks?: unknown[]
   /** 這個存檔的規則（沒有時用預設） */
   options?: Partial<GameOptions>
 }
@@ -49,6 +53,11 @@ export function newGame(opts: NewGameOptions): GameState {
   if (gender) pc.gender = gender
   if (appearance) pc.appearance = appearance
   if (background) pc.background = background
+  // 特質：清單裡的照選，自訂的整理過才收
+  const picked = [...new Set(opts.perks ?? [])].filter((id) => !!perkDef(id))
+  if (picked.length) pc.perks = picked
+  const custom = (opts.customPerks ?? []).map((raw, i) => sanitizePerk(raw, `c-start-${i + 1}`)).filter((p): p is PerkDef => !!p)
+  if (custom.length) pc.customPerks = custom
   // 換成新存檔：沒有自創的物品
   setSaveItems([])
   return {

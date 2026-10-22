@@ -10,6 +10,7 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 ├─ 基礎規則（被大多數系統依賴）
 │   ├─ COMBAT_SYSTEM      屬性、資源、戰鬥、能力、狀態、敵人 AI、戰敗
 │   │   └─ MONSTERS       怪物一覽（enemies.json 的整理）
+│   ├─ PERKS              特質：一直生效的被動，影響所有檢定與戰鬥
 │   ├─ EFFECTS            效果：事件、委託、交易、主動行動共用的後果模板
 │   └─ ACTIONS            主動行動：擲骰 → AI 判定 → 程式夾住後果
 │
@@ -58,6 +59,10 @@ flowchart TD
   GD[GAME_DESIGN 總綱]
   CB[COMBAT_SYSTEM] --> MO[MONSTERS]
   EF[EFFECTS]
+  PK[PERKS] --> CB
+  PK --> AC
+  PK --> EF
+  AC --> PK
   AC[ACTIONS] --> EF
   AC --> RM[RELATIONSHIP_MEMORY]
   AC --> PR[PROMPTS]
@@ -106,10 +111,10 @@ flowchart TD
   SV[SAVES] --> CE
   SV --> PO
 
-  GD -.-> CB & EF & AC & WO & GU & TR & NP & CO & SQ & PR & CE & SV
+  GD -.-> CB & PK & EF & AC & WO & GU & TR & NP & CO & SQ & PR & CE & SV
 ```
 
-**樞紐**：`EFFECTS` 與 `ACTIONS` 被最多系統依賴，改它們的格式或上限時，要一起看 GUILD、TRADE、COMPANIONS、STORY_QUESTS、WORK、CRAFTING、NPC_SYSTEM。
+**樞紐**：`EFFECTS`、`ACTIONS` 與 `PERKS`（所有檢定都經過 `checkModifiers`）被最多系統依賴，改它們的格式或上限時，要一起看 GUILD、TRADE、COMPANIONS、STORY_QUESTS、WORK、CRAFTING、NPC_SYSTEM。
 
 ## 3. 文件一覽
 
@@ -118,6 +123,7 @@ flowchart TD
 | [GAME_DESIGN](GAME_DESIGN.md) | 總綱 | — |
 | [COMBAT_SYSTEM](COMBAT_SYSTEM.md) | 戰鬥與角色數值；第 9 節是各職業能力清單 | `character.ts`、`combat.ts`、`defeat.ts` |
 | [MONSTERS](MONSTERS.md) | 怪物一覽（資料整理） | `data/rules/enemies.json` |
+| [PERKS](PERKS.md) | 特質（被動） | `perks.ts`、`perkActions.ts` |
 | [EFFECTS](EFFECTS.md) | 效果種類 | `effects.ts` |
 | [ACTIONS](ACTIONS.md) | 主動行動 | `actions.ts`、`checks.ts`、`narrator/judge.ts` |
 | [WORLD](WORLD.md) | 地點、聚落、走格子 | `world.ts`、`grid.ts` |

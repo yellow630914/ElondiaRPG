@@ -6,6 +6,7 @@
 // - 途經的地點與目的地各有一格；走到目的地才產生整趟旅程的旅行報告（花費、乾糧、時間軸）。
 // - 事件的結果可以帶進臨時地圖（side_map，出口回到原本的地方），或改去別的地點（travel_to）。
 
+import { checkBonus } from './perks'
 import { mod, proficiency, snapshot } from './character'
 import { startCombat } from './combat'
 import { enemies, locationById, regionById, slaveryRules, stories, wildEncounters, type AttrId, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
@@ -217,7 +218,7 @@ function spendDay(state: GameState, road: RoadState, cell: Cell) {
 /** 隊伍裡最擅長這個屬性的人的檢定修正 */
 function bestBonus(state: GameState, attr: AttrId): { name: string; bonus: number } {
   const best = [...state.party].filter((m) => m.hp > 0).sort((a, b) => b.attrs[attr] - a.attrs[attr])[0] ?? pcOf(state)
-  return { name: best.name, bonus: mod(best.attrs[attr]) + proficiency(best.level) }
+  return { name: best.name, bonus: mod(best.attrs[attr]) + proficiency(best.level) + checkBonus(best, { context: 'road', attr }) }
 }
 
 function roll(state: GameState, check: StoryCheck, natural: number): { ok: boolean; entry: Omit<TimelineEntry, 'seq'> } {

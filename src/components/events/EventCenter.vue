@@ -7,6 +7,7 @@ import MasterEventPanel from '../MasterEventPanel.vue'
 import StandoffPanel from '../StandoffPanel.vue'
 import LevelUpPanel from './LevelUpPanel.vue'
 import MarkingPanel from './MarkingPanel.vue'
+import PerkOfferPanel from './PerkOfferPanel.vue'
 import RoadEventPanel from './RoadEventPanel.vue'
 import SuggestionPanel from './SuggestionPanel.vue'
 import { activeEvents, eventDialogOpen, snoozed } from './eventQueue'
@@ -56,6 +57,7 @@ function openParty() {
       <RoadEventPanel v-else-if="current.kind === 'road'" />
       <SuggestionPanel v-else-if="current.kind === 'suggestion'" :id="current.ref!" />
       <LevelUpPanel v-else-if="current.kind === 'levelup'" :id="current.ref!" @open-party="openParty" />
+      <PerkOfferPanel v-else-if="current.kind === 'perk'" :refid="current.ref!" />
 
       <div class="row foot">
         <span v-if="current.blocking" class="small muted">這件事要先處理，才能繼續移動或休息。可以先關掉視窗看看周圍，上方的 🔔 可以再打開。</span>

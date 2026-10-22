@@ -7,6 +7,8 @@
 // applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
+import { perkDef } from './data'
+import { grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, learnable, learnAbility } from './character'
 import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
@@ -84,11 +86,18 @@ export type RewardEffect =
   | { type: 'strict'; delta: number }
   /** 離家期限延長幾小時（主人的事件用） */
   | { type: 'home_extend'; hours: number }
+  /**
+   * 特質：給一次取得的機會（從 perk 與 options 選一個，也可以寫說法交給 AI）。target 預設主角；source 是機會的來源說明。
+   * direct：直接學會 perk，不給選擇。
+   */
+  | { type: 'perk'; perk?: string; options?: string[]; target?: string; source?: string; direct?: boolean }
+  /** 失去特質 */
+  | { type: 'lose_perk'; perk: string; target?: string }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
-  'intel', 'start_story', 'master_home', 'strict', 'home_extend',
+  'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -266,6 +275,25 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         if (e.delta > 0) notes.push('之後被看得更緊')
         else if (e.delta < 0) notes.push('看管放寬了一些')
         break
+      case 'perk': {
+        const who = memberOrPc(state, e.target ?? 'pc')
+        if (!who) break
+        if (e.direct && e.perk) {
+          const got = grantPerk(who, e.perk, report)
+          if (got) notes.push(`${who.name}學會了特質【${got.name}】`)
+          break
+        }
+        const options = [...(e.perk ? [e.perk] : []), ...(e.options ?? [])]
+        const offer = offerPerks(who, e.source ?? '事件', options)
+        if (offer) notes.push(offer.options.length ? `${who.name}有機會學會特質：${offer.options.map((id) => perkDef(id)?.name ?? id).join('、')}` : `${who.name}有機會學會一個特質`)
+        break
+      }
+      case 'lose_perk': {
+        const who = memberOrPc(state, e.target ?? 'pc')
+        const lost = who && losePerk(who, e.perk, report)
+        if (lost) notes.push(`${who!.name}失去了特質【${lost.name}】`)
+        break
+      }
       case 'home_extend':
         extendDeadline(state, e.hours)
         notes.push(`離家的期限多了 ${Math.round((e.hours / 24) * 10) / 10} 天`)

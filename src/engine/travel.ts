@@ -1,6 +1,7 @@
 // 旅行：沿最短路徑前進，逐日結算消耗與旅途事件，最後產生一份旅行報告。
 // 旅途事件目前都是非戰鬥事件；遭遇戰需要中斷旅程，留待之後實作。
 
+import { checkBonus } from './perks'
 import { proficiency, snapshot } from './character'
 import { locationById, regionById, slaveryRules, type RouteMode } from './data'
 import { roll, withBonus, type Rng } from './rng'
@@ -168,7 +169,8 @@ export function resolveEvent(rng: Rng, ev: TravelEvent, members: Character[], ti
     return { seq, time, actor: 'pc', action: ev.action, result: 'none', effects: [{ type: 'note', text: ev.text }] }
   }
   const leader = members[0]!
-  const bonus = proficiency(leader.level)
+  // 非戰鬥狀態與特質（例如識途老馬）
+  const bonus = proficiency(leader.level) + checkBonus(leader, { context: 'travel' })
   const r = roll(rng, withBonus('1d20', bonus))
   const success = r.total >= ev.dc
   const effects: Effect[] = [{ type: 'note', text: success ? ev.text : (ev.failText ?? ev.text) }]
