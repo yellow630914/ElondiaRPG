@@ -65,7 +65,7 @@ function invent() {
 <template>
   <div class="invent small">
     <p class="muted">
-      描述想做的東西，放進材料試做。{{ aiOn ? 'AI 會依描述與材料設計成品' : '沒有開啟 AI 判定時，會仿照同級的現成配方做一件「特製」品' }}；
+      寫下做法，放進材料試做。{{ aiOn ? 'AI 會依做法與材料設計成品並取名' : '沒有開啟 AI 判定時，會仿照同級的現成配方做一件「特製」品' }}，做好之後可以在日誌或配方清單上改名；
       強度依擲骰：大成功稍強（最多到高一級的現成配方）、成功和同級相當、部分成功稍弱。做出東西時記成新的配方（只在這個存檔），之後可以在「依配方製作」重複做。
     </p>
     <div class="row">
@@ -125,7 +125,9 @@ function invent() {
     <p class="muted">大成功：稍強，多做一半・成功：同級，照設計的份數・部分成功：稍弱，份數一半・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
     <p v-if="plan.blocked" class="muted">⚠ {{ plan.blocked }}</p>
     <template v-else>
-      <textarea v-model="text" rows="3" maxlength="400" placeholder="想做什麼：例如「用火蜥鱗片和硫磺做一瓶砸下去會噴火的藥瓶」「加了蜂蜜的旅行用肉乾，吃了渾身是勁」" />
+      <label class="field">做法（不用取名，名字由 AI 依做法與材料決定）
+        <textarea v-model="text" rows="3" maxlength="400" placeholder="例如「把硫磺磨成粉，和藥草汁一起封進陶瓶，瓶口塞一條浸了油的布」「肉抹上蜂蜜和鹽，掛在爐邊慢慢烘乾」" />
+      </label>
       <AbilityPicker v-model="use" />
       <button class="small" :disabled="game.judging || !!s.pendingAction || !text.trim()" @click="invent">💡 {{ crafter.isPlayer ? '試做看看' : `請${crafter.name}試做` }}</button>
     </template>

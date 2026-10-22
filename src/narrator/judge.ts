@@ -205,7 +205,7 @@ function inventionDoc(state: GameState, p: ActionPending): string {
   }
   return `
 <invention>
-這是自創配方：玩家在 <action> 描述想做的東西，請依描述與材料設計成品，放在輸出 JSON 的 "invention" 欄位：
+這是自創配方：玩家在 <action> 寫的是做法（怎麼處理材料），沒有取名；請依做法與材料設計成品並取一個貼切的名字（不要用材料名直接拼湊），放在輸出 JSON 的 "invention" 欄位：
 {"name":"<成品名稱 ≤12 字>","desc":"<≤60 字>","qty":<一批做出幾份>,${formats[req.category]}}
 類別：${INVENT_CATEGORY_NAME[req.category]}；工藝：${craftRules.skills[req.craft].name} Lv.${req.level}；材料：${req.inputs.map((x) => `${x.name}×${x.qty}`).join('、')}。
 強度依你決定的 degree：大成功稍強、成功和同級相當、部分成功稍弱（數值約七成五），失敗與大失敗做不出東西。程式會依 degree 把超過的數值降到上限、拿掉不能用的效果，請照 degree 設計：
@@ -213,7 +213,7 @@ function inventionDoc(state: GameState, p: ActionPending): string {
 ${capsText(normal).map((t) => `- ${t}`).join('\n')}
 大成功的上限（${capsSource(caps)}）：
 ${capsText(caps).map((t) => `- ${t}`).join('\n')}
-效果要符合描述與材料的特性（例如火蜥鱗片偏火焰、冰晶偏寒冷）；描述做不到的部分照上限內最接近的做。失敗與大失敗不會做出東西，但仍要填 invention（程式會忽略）。
+效果要符合做法與材料的特性（例如火蜥鱗片偏火焰、冰晶偏寒冷）；做不到的部分照上限內最接近的做。失敗與大失敗不會做出東西，但仍要填 invention（程式會忽略）。
 </invention>`
 }
 

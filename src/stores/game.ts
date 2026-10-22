@@ -902,6 +902,8 @@ export const useGame = defineStore('game', () => {
     takeResident: (id: string) => run((s) => homes.leaveWithResident(s, grid.currentArea(s), id)),
     /** 忘記自創的配方（invention.ts） */
     forgetInvention: (name: string) => run((s) => invention.forgetInvention(s, name)),
+    /** 自創物品改名（回傳新的名字） */
+    renameInvention: (from: string, to: string) => run((s) => invention.renameInvention(s, from, to)),
     // 苗圃（garden.ts）：站在苗圃上播種、收成、拔掉
     plant: (seed: string) => run((s) => {
       const p = grid.position(s)

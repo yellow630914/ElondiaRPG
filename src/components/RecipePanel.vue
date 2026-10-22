@@ -34,6 +34,15 @@ const skill = computed(() => (plan.value ? craftRules.skills[plan.value.recipe.c
 const text = ref('')
 const use = ref('')
 
+function rename() {
+  const from = plan.value?.name
+  if (!from) return
+  const to = prompt('自創物品的名字（配方也跟著改）', from)
+  if (!to || to.trim() === from) return
+  const name = game.renameInvention(from, to)
+  if (name) picked.value = name
+}
+
 function forget() {
   if (plan.value && confirm(`忘記「${plan.value.name}」的配方？做好的成品會留著，但之後不能再做。`)) game.forgetInvention(plan.value.name)
 }
@@ -75,7 +84,7 @@ function produce() {
     <template v-if="plan && skill">
       <p>
         <b>{{ plan.name }}</b>　<span class="muted">{{ itemEffect(s, plan.name) }}</span>
-        <template v-if="s.inventions?.[plan.name]">　<span class="tag">💡 自創</span> <button class="small" @click="forget">忘記這個配方</button></template>
+        <template v-if="s.inventions?.[plan.name]">　<span class="tag">💡 自創</span> <button class="small" @click="rename">✏️ 改名</button> <button class="small" @click="forget">忘記這個配方</button></template>
       </p>
       <p v-if="itemText(s, plan.name)" class="muted">{{ itemText(s, plan.name) }}</p>
       <p class="muted">

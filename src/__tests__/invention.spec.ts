@@ -4,7 +4,7 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, type Judgment } from '@/engine/actions'
 import { craftRules, itemDef, itemRules } from '@/engine/data'
 import { enterLocation } from '@/engine/grid'
-import { capsText, diceAvg, diceForAvg, forgetInvention, inventCaps, inventPlan, inventTarget, sanitizeDesign, type InventRequest } from '@/engine/invention'
+import { capsText, diceAvg, diceForAvg, forgetInvention, inventedIn, renameInvention, inventCaps, inventPlan, inventTarget, sanitizeDesign, type InventRequest } from '@/engine/invention'
 import { recipeItems, recipePlan } from '@/engine/recipes'
 import { buildActionPrompt } from '@/narrator/judge'
 import { addItem, migrate, newGame } from '@/engine/state'
@@ -222,5 +222,28 @@ describe('inventing', () => {
     if (u.heal) expect(diceAvg(u.heal)).toBeLessThanOrEqual(caps.heal!.avg)
     if (u.damage) expect(diceAvg(u.damage.dice)).toBeLessThanOrEqual(caps.damage!.avg)
     if (u.apply) expect(u.apply.turns).toBeLessThanOrEqual(caps.applies[u.apply.status]!)
+  })
+
+  it('lets the player rename an invention after it is made', () => {
+    const state = game()
+    addItem(state.inventory, '炊具組', 1)
+    addItem(state.inventory, '野莓', 2)
+    const req: InventRequest = { craft: 'cooking', level: 1, category: 'food', inputs: [{ name: '野莓', qty: 1 }] }
+    prepareAction(state, { kind: 'invent', target: inventTarget('pc', req), text: '把野莓壓成泥，包進麵皮烤到焦脆' })
+    const r = resolveAction(state, { attr: 'dex', dc: state.pendingAction!.base_dc, degree: 'success', effects: [], relationship_updates: [], invention: { name: '莓果焦餅', qty: 1, use: { condition: 'fed_light' } } })
+    expect(inventedIn(state, r)).toBe('莓果焦餅')
+    // 用這個做別的自創配方
+    state.inventions!['莓果焦餅禮盒'] = { ...state.inventions!['莓果焦餅']!, name: '莓果焦餅禮盒', recipe: { craft: 'cooking', level: 1, inputs: [{ name: '莓果焦餅', qty: 2 }] } }
+    expect(() => renameInvention(state, '莓果焦餅', '乾糧')).toThrow('已經有')
+    expect(() => renameInvention(state, '莓果焦餅', '  ')).toThrow('空的')
+    expect(renameInvention(state, '莓果焦餅', '外婆的莓果餅|*')).toBe('外婆的莓果餅')
+    expect(itemDef('莓果焦餅')).toBeUndefined()
+    expect(itemDef('外婆的莓果餅')?.use).toEqual({ condition: 'fed_light' })
+    expect(qty(state, '外婆的莓果餅')).toBe(1)
+    expect(state.inventions!['莓果焦餅禮盒']!.recipe!.inputs[0]!.name).toBe('外婆的莓果餅')
+    expect(recipeItems().some((x) => x.name === '外婆的莓果餅')).toBe(true)
+    // 日誌上的按鈕：改過名之後就不再出現
+    expect(inventedIn(state, r)).toBeUndefined()
+    expect(() => renameInvention(state, '乾糧', '新乾糧')).toThrow('不是自創')
   })
 })

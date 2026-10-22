@@ -6,6 +6,7 @@ import type { Report } from '@/engine/types'
 import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
 import { visibleNarration } from '@/narrator/judge'
 import { usageFeatureName, usageSourceLabel, useGame } from '@/stores/game'
+import { inventedIn } from '@/engine/invention'
 import { useSettings } from '@/stores/settings'
 
 const props = defineProps<{ report: Report }>()
@@ -31,6 +32,17 @@ const names = computed(() => actorNames(props.report))
 const changes = computed(() => describeChanges(props.report))
 const check = computed(() => describeCheck(props.report))
 const tokens = computed(() => game.usage[props.report.report_id])
+// 自創配方做出來的東西：可以改名（AI 取的名字不喜歡時）
+const invented = computed(() => (game.state ? inventedIn(game.state, props.report) : undefined))
+function renameInvented() {
+  const from = invented.value
+  if (!from) return
+  const to = prompt('幫自創的物品取個名字（配方也跟著改）', from)
+  if (to && to.trim() !== from) {
+    const name = game.renameInvention(from, to)
+    if (name) game.flash(`✏️ 改名為「${name}」`)
+  }
+}
 const showRaw = ref(false)
 const copied = ref(false)
 
@@ -52,6 +64,7 @@ async function copyPrompt() {
       <span class="small muted">{{ formatTime(report.time.start) }}</span>
     </header>
     <p>{{ report.outcome.summary }}</p>
+    <p v-if="invented" class="small"><button class="small" @click="renameInvented">✏️ 幫「{{ invented }}」改名</button></p>
     <p v-if="check" class="small check">🎲 {{ check }}<template v-if="report.check?.twist"><br /><span>✨ 出乎預料：{{ report.check.twist }}</span></template><template v-if="report.check?.rationale"><br /><span class="muted">判定理由：{{ report.check.rationale }}</span></template></p>
 
     <details v-if="thinking.length" class="thinking small">

@@ -15,6 +15,7 @@ import { currentArea } from './grid'
 import { memberOrResident } from './homes'
 import { formatMoney } from './money'
 import { lostQty, producedQty } from './recipes'
+import { renameItemInState } from './usage'
 import { withRng } from './state'
 import { locationMult } from './trade'
 import type { Character, GameState, Report } from './types'
@@ -503,6 +504,34 @@ export function applyInvent(state: GameState, report: Report, target: string, de
     text += `${crafter.name}的${craftName(req.craft)}經驗 +${xp}${level ? `，升到 Lv.${level}` : ''}。`
   }
   return text
+}
+
+/**
+ * 自創物品改名（做好之後玩家可以改）：行囊、身上、房子裡的家具與其他自創配方的材料一起改。
+ * 名字不能和現有的物品重複；回傳新的名字
+ */
+export function renameInvention(state: GameState, from: string, to: string): string {
+  const def = state.inventions?.[from]
+  if (!def) throw new Error('這不是自創的物品')
+  const name = cleanName(to)
+  if (!name) throw new Error('名字不能是空的')
+  if (name === from) return from
+  if (itemDef(name) || state.customItems?.[name] || state.inventions?.[name]) throw new Error(`已經有叫「${name}」的物品`)
+  delete state.inventions![from]
+  def.name = name
+  state.inventions![name] = def
+  for (const other of Object.values(state.inventions!)) {
+    for (const x of other.recipe?.inputs ?? []) if (x.name === from) x.name = name
+  }
+  renameItemInState(state, from, name)
+  setSaveItems(Object.values(state.inventions!))
+  return name
+}
+
+/** 這份報告自創出來、現在還叫原本名字的物品（給日誌的改名按鈕） */
+export function inventedIn(state: GameState, report: Report): string | undefined {
+  if (!report.outcome.tags?.includes('自創配方')) return undefined
+  return report.changes.items_gained?.find((i) => state.inventions?.[i.name])?.name
 }
 
 /** 忘記自創的配方（物品留著，只是不能再做） */
