@@ -1,5 +1,5 @@
 {
-  "$comment": "房屋（見 docs/HOMES.md）。每座聚落有幾塊待售的空地（lots 依聚落規模；從地圖上挑臨街的建築格，同一座城一直一樣）。房屋的規格依地段：聚落規模對應 by_location，貴族區的空地是 noble。floors：地上幾層（1 = 平房）；basement：有沒有地下室；size：每層的寬高（含外牆）；yard：院子的深度（格，地面層下方，0 = 沒有院子）；rooms：每層隔成幾間。買下時生成地圖，存進存檔。家具：items.json 的 furniture 類別，furniture.places 是能放的地方（indoor 室內、yard 院子、basement 地下室）；comfort 加總達到 comfort_rested 時，在家長休後睡得香甜（well_rested）。床讓你在家免費長休。",
+  "$comment": "房屋（見 docs/HOMES.md）。每座聚落有幾塊待售的空地（lots 依聚落規模；從地圖上挑臨街的建築格，不夠時用臨街的街道格（街屋）補，同一座城一直一樣）。房屋的規格依地段：聚落規模對應 by_location，貴族區的空地是 noble。floors：地上幾層（1 = 平房）；basement：有沒有地下室；size：每層的寬高（含外牆）；yard：院子的深度（格，地面層下方，0 = 沒有院子）；rooms：每層隔成幾間。買下時生成地圖，存進存檔。家具：items.json 的 furniture 類別，furniture.places 是能放的地方（indoor 室內、yard 院子、basement 地下室）；comfort 加總達到 comfort_rested 時，在家長休後睡得香甜（well_rested）。床讓你在家免費長休。",
   "districts": {
     "cottage": { "name": "小屋", "price_cc": 2500, "floors": 1, "basement": false, "size": [9, 7], "yard": 2, "rooms": [2, 3] },
     "townhouse": { "name": "連棟房屋", "price_cc": 6000, "floors": 2, "basement": false, "size": [9, 7], "yard": 1, "rooms": [2, 3] },

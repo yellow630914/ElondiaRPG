@@ -38,32 +38,45 @@ function hash(text: string): number {
 
 const lotCache = new Map<string, Lot[]>()
 
-/** 這座聚落待售的空地（從地圖挑臨街、不在外牆上的建築格；王城不賣） */
+/** 這座聚落待售的空地（從地圖挑臨街、不在外牆上的建築格；不夠時用街屋（街道格）補；王城不賣） */
 export function lotsOf(locationId: string): Lot[] {
   const cached = lotCache.get(locationId)
   if (cached) return cached
   const loc = locationById(locationId)
   if (loc.type === 'dungeon') return []
-  const candidates: (Lot & { order: number })[] = []
+  type Candidate = Lot & { order: number }
+  const buildings: Candidate[] = []
+  const streets: Candidate[] = []
   for (const b of blocksFor(loc)) {
     if (b.zone === 'palace') continue
     const h = b.grid.length
     const w = b.grid[0]!.length
     for (let y = 1; y < h - 1; y++) {
       for (let x = 1; x < w - 1; x++) {
-        if (b.grid[y]![x] !== '#') continue
+        const ch = b.grid[y]![x]
+        if (ch !== '#' && ch !== '.') continue
         const street = ([[0, 1], [0, -1], [1, 0], [-1, 0]] as const).map(([dx, dy]) => ({ x: x + dx, y: y + dy })).find((p) => b.grid[p.y]?.[p.x] === '.')
         if (!street) continue
         const district = b.zone === 'noble' ? homeRules.noble : homeRules.by_location[loc.type] ?? 'cottage'
-        candidates.push({ id: `${loc.id}:${b.id}:${x},${y}`, location: loc.id, area: settlementKey(loc.id, b.id), x, y, street, district, order: hash(`${loc.id}:${b.id}:${x},${y}`) })
+        const id = `${loc.id}:${b.id}:${x},${y}`
+        ;(ch === '#' ? buildings : streets).push({ id, location: loc.id, area: settlementKey(loc.id, b.id), x, y, street, district, order: hash(id) })
       }
     }
   }
-  candidates.sort((a, b) => a.order - b.order)
+  buildings.sort((a, b) => a.order - b.order)
+  streets.sort((a, b) => a.order - b.order)
   const want = homeRules.lots[loc.type] ?? 1
-  // 有貴族區的城市：其中一塊在貴族區
-  const noble = candidates.find((c) => c.district === homeRules.noble)
-  const picked = [...(noble ? [noble] : []), ...candidates.filter((c) => c !== noble)].slice(0, want)
+  // 有貴族區的城市：其中一塊在貴族區（貴族區沒有建築格時用街屋）
+  const isNoble = (c: Candidate) => c.district === homeRules.noble
+  const noble = buildings.find(isNoble) ?? streets.find(isNoble)
+  const picked: Candidate[] = []
+  // 街屋不能蓋在別塊空地的門口，門口也不能是別塊空地
+  for (const c of [...(noble ? [noble] : []), ...buildings, ...streets]) {
+    if (picked.length >= want) break
+    if (picked.includes(c)) continue
+    if (picked.some((o) => o.area === c.area && ((o.street.x === c.x && o.street.y === c.y) || (o.x === c.street.x && o.y === c.street.y)))) continue
+    picked.push(c)
+  }
   const lots = picked.map(({ order: _o, ...lot }) => lot)
   lotCache.set(locationId, lots)
   return lots

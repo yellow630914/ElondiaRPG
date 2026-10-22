@@ -42,7 +42,7 @@ function freeLots(state: GameState, city: string) {
   return lotsOf(city).filter((l) => !homeOnLot(state, l.id))
 }
 
-/** 主人的家在哪座城：主人登錄的地點（聚落），否則主角現在所在的聚落；都沒有空地時是最近的、有空地的聚落 */
+/** 主人的家在哪座城：主人登錄的地點（聚落），否則主角現在所在的聚落；空地都被買走時是最近的、有空地的聚落 */
 function homeCity(state: GameState, master: NpcRecord): string | undefined {
   const ok = (id: string | undefined) => {
     if (!id) return false
@@ -54,7 +54,7 @@ function homeCity(state: GameState, master: NpcRecord): string | undefined {
   }
   const first = [master.location, state.location].find(ok)
   if (first) return first
-  // 那座城沒有空地：住在最近的、有空地的聚落
+  // 那座城的空地都被買走：住在最近的、有空地的聚落
   const from = master.location ?? state.location
   return reachable(from).find((r) => ok(r.id))?.id
 }
