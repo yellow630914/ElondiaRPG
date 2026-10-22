@@ -26,6 +26,37 @@ export interface ProviderConfig {
   showThinking?: boolean
   /** OpenAI 相容格式：額外加進請求的參數（JSON 物件） */
   extraBody?: string
+  /** OpenAI 相容格式：在 system 訊息標上快取斷點（cache_control）；沒有設定時自動判斷 */
+  cacheMark?: CacheMark
+}
+
+/**
+ * 快取標記：有些服務不會自動快取，要在訊息內容上標出斷點（cache_control）才會寫入快取，
+ * 例如 OpenRouter 上的 Gemini 與 Claude、阿里雲百煉的通義千問顯式快取。DeepSeek、OpenAI 等會自動快取，不必標。
+ * auto 依模型名稱與 Base URL 判斷；on_1h 是保留一小時（只有 Claude 支援，寫入費用較高）。
+ */
+export type CacheMark = 'auto' | 'on' | 'on_1h' | 'off'
+
+export const CACHE_MARKS: { id: CacheMark; name: string }[] = [
+  { id: 'auto', name: '自動（依模型判斷）' },
+  { id: 'on', name: '標記（cache_control，約 5 分鐘）' },
+  { id: 'on_1h', name: '標記，保留 1 小時（只有 Claude 支援）' },
+  { id: 'off', name: '不標記（服務會自動快取時）' },
+]
+
+/** 自動判斷：Gemini、Claude（例如 OpenRouter 的 google/gemini-…、anthropic/claude-…），或百煉上的千問 */
+export function guessCacheMark(config: Pick<ProviderConfig, 'model' | 'baseURL'>): boolean {
+  const model = config.model.toLowerCase()
+  if (/gemini|claude|anthropic/.test(model)) return true
+  return /dashscope|aliyuncs/.test(config.baseURL ?? '') && /qwen/.test(model)
+}
+
+/** 這次請求要不要標快取斷點、保留多久（只用在 OpenAI 相容格式） */
+export function cacheMarkFor(provider: ProviderId, config: ProviderConfig): { ttl?: '1h' } | null {
+  if (provider !== 'openai_compatible') return null
+  const mark = config.cacheMark ?? 'auto'
+  if (mark === 'off' || (mark === 'auto' && !guessCacheMark(config))) return null
+  return mark === 'on_1h' ? { ttl: '1h' } : {}
 }
 
 export const REASONING_LEVELS: { id: ReasoningLevel | ''; name: string }[] = [

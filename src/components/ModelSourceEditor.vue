@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import {
-  guessReasoningFormat, parseExtraBody, providerInfo, PROVIDERS, REASONING_FORMATS, REASONING_LEVELS, type ProviderId, type ReasoningLevel,
+  CACHE_MARKS, guessCacheMark, guessReasoningFormat, parseExtraBody, providerInfo, PROVIDERS, REASONING_FORMATS, REASONING_LEVELS, type ProviderId, type ReasoningLevel,
 } from '@/narrator/providerInfo'
 import { AI_FEATURES, useSettings } from '@/stores/settings'
 
@@ -63,6 +63,8 @@ const showThinking = computed({
   },
 })
 const guessed = computed(() => REASONING_FORMATS.find((f) => f.id === guessReasoningFormat(cfg.value.baseURL))?.name ?? '')
+// 快取標記：自動時依模型判斷
+const cacheGuess = computed(() => (guessCacheMark(cfg.value) ? '標記（這個模型要手動標記才會快取）' : '不標記（這個模型會自動快取，或不支援）'))
 const extraError = computed(() => {
   try {
     parseExtraBody(cfg.value.extraBody)
@@ -174,6 +176,17 @@ function copyFrom(e: Event) {
         自訂請求參數（JSON，選填；會直接加進請求，例如 {"thinking": {"type": "enabled"}}）
         <textarea v-model="cfg.extraBody" rows="2" spellcheck="false" placeholder='{"reasoning": {"enabled": true}}' />
         <span v-if="extraError" class="small" style="color: var(--danger)">{{ extraError }}</span>
+      </label>
+      <label v-if="source.provider === 'openai_compatible'">
+        提示詞快取標記
+        <select v-model="cfg.cacheMark">
+          <option v-for="c in CACHE_MARKS" :key="c.id" :value="c.id === 'auto' ? undefined : c.id">{{ c.name }}</option>
+        </select>
+        <span v-if="!cfg.cacheMark || cfg.cacheMark === 'auto'" class="small muted">目前判斷為：{{ cacheGuess }}</span>
+        <span class="small muted">
+          有些服務要在請求裡標出快取斷點（cache_control）才會快取，例如 OpenRouter 上的 Gemini 與 Claude、阿里雲百煉的通義千問；DeepSeek、OpenAI 會自動快取。
+          標在不太變動的 system 部分；Gemini 要 system 超過約 4096 tokens 才會寫入快取，判定請求的 system 較短，通常只有敘事請求用得到。命中時日誌的用量會顯示「快取」。
+        </span>
       </label>
     </fieldset>
 

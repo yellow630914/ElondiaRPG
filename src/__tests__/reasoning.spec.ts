@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { anthropicThinking, geminiThinking, guessReasoningFormat, openAIReasoningBody, type ProviderConfig } from '@/narrator/providerInfo'
+import {
+  anthropicThinking, cacheMarkFor, geminiThinking, guessReasoningFormat, openAIReasoningBody, type CacheMark, type ProviderConfig,
+} from '@/narrator/providerInfo'
+import { openAIMessages } from '@/narrator/providers'
 
 const cfg = (patch: Partial<ProviderConfig>): ProviderConfig => ({ apiKey: 'k', model: 'm', ...patch })
 
@@ -42,5 +45,32 @@ describe('reasoning parameters', () => {
     expect(geminiThinking(cfg({ model: 'gemini-flash-latest' }))).toEqual({ includeThoughts: true })
     expect(geminiThinking(cfg({ model: 'gemini-2.5-flash', reasoning: 'off' }))).toEqual({ thinkingBudget: 0 })
     expect(geminiThinking(cfg({ model: 'gemini-3-pro', reasoning: 'high', showThinking: false }))).toEqual({ thinkingLevel: 'high' })
+  })
+})
+
+describe('prompt cache marks', () => {
+  const prompt = { system: '規則與常駐世界書', user: '這次的事件' }
+  const or = (model: string, cacheMark?: CacheMark) => ({ apiKey: 'k', model, baseURL: 'https://openrouter.ai/api/v1', ...(cacheMark ? { cacheMark } : {}) })
+
+  it('marks Gemini and Claude on OpenAI-compatible services automatically, not DeepSeek', () => {
+    expect(cacheMarkFor('openai_compatible', or('google/gemini-2.5-flash'))).toEqual({})
+    expect(cacheMarkFor('openai_compatible', or('anthropic/claude-sonnet-5-5'))).toEqual({})
+    expect(cacheMarkFor('openai_compatible', or('deepseek/deepseek-chat'))).toBeNull()
+    expect(cacheMarkFor('openai_compatible', { apiKey: 'k', model: 'qwen-plus', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1' })).toEqual({})
+    // 手動設定蓋過自動判斷；OpenAI 與其他格式不標
+    expect(cacheMarkFor('openai_compatible', or('deepseek/deepseek-chat', 'on'))).toEqual({})
+    expect(cacheMarkFor('openai_compatible', or('google/gemini-2.5-pro', 'off'))).toBeNull()
+    expect(cacheMarkFor('openai_compatible', or('anthropic/claude-opus-5', 'on_1h'))).toEqual({ ttl: '1h' })
+    expect(cacheMarkFor('openai', { apiKey: 'k', model: 'gpt-5', cacheMark: 'on' })).toBeNull()
+  })
+
+  it('puts the breakpoint at the end of the system message', () => {
+    const marked = openAIMessages('openai_compatible', or('google/gemini-2.5-flash'), prompt) as unknown as { role: string; content: unknown }[]
+    expect(marked[0]).toEqual({ role: 'system', content: [{ type: 'text', text: '規則與常駐世界書', cache_control: { type: 'ephemeral' } }] })
+    expect(marked[1]).toEqual({ role: 'user', content: '這次的事件' })
+    const plain = openAIMessages('openai_compatible', or('deepseek/deepseek-chat'), prompt) as unknown as { role: string; content: unknown }[]
+    expect(plain[0]).toEqual({ role: 'system', content: '規則與常駐世界書' })
+    const hour = openAIMessages('openai_compatible', or('anthropic/claude-opus-5', 'on_1h'), prompt) as unknown as { content: { cache_control: unknown }[] }[]
+    expect(hour[0]!.content[0]!.cache_control).toEqual({ type: 'ephemeral', ttl: '1h' })
   })
 })

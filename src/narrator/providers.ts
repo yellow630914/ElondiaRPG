@@ -3,7 +3,7 @@
 
 // 各家 SDK 在用到時才載入，只會下載玩家選用的那一家
 import type { Prompt } from './prompt'
-import { anthropicThinking, geminiThinking, openAIReasoningBody, type ProviderConfig, type ProviderId, type TokenUsage } from './providerInfo'
+import { anthropicThinking, cacheMarkFor, geminiThinking, openAIReasoningBody, type ProviderConfig, type ProviderId, type TokenUsage } from './providerInfo'
 
 export type { ProviderConfig, ProviderId, TokenUsage }
 export type UsageCallback = (usage: TokenUsage) => void
@@ -113,10 +113,7 @@ async function* streamOpenAI(provider: ProviderId, config: ProviderConfig, promp
     {
       ...extra,
       model: config.model,
-      messages: [
-        { role: 'system', content: prompt.system },
-        { role: 'user', content: prompt.user },
-      ],
+      messages: openAIMessages(provider, config, prompt),
       stream: true,
       // OpenAI 要明確要求才會在最後一段回報用量；相容服務不一定支援這個參數，有回報時才記錄
       ...(provider === 'openai' ? { stream_options: { include_usage: true } } : {}),
@@ -144,6 +141,20 @@ async function* streamOpenAI(provider: ProviderId, config: ProviderConfig, promp
     if (text) yield text
     if (chunk.choices[0]?.finish_reason === 'content_filter') throw new NarrationRefusedError('content_filter')
   }
+}
+
+/**
+ * OpenAI 格式的訊息。需要手動標記快取的服務（見 providerInfo.ts 的 cacheMarkFor）：
+ * system 改成內容陣列，在結尾標上 cache_control 斷點；system 只放不太變動的內容，下一次請求就能讀快取
+ */
+export function openAIMessages(provider: ProviderId, config: ProviderConfig, prompt: Prompt) {
+  const mark = cacheMarkFor(provider, config)
+  // SDK 的型別沒有 cache_control（OpenRouter、百煉的擴充），整個訊息陣列交給服務檢查
+  type Messages = { role: 'system' | 'user'; content: string }[]
+  const system = mark
+    ? { role: 'system', content: [{ type: 'text', text: prompt.system, cache_control: { type: 'ephemeral', ...mark } }] }
+    : { role: 'system', content: prompt.system }
+  return [system, { role: 'user', content: prompt.user }] as unknown as Messages
 }
 
 async function* streamGemini(config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback) {

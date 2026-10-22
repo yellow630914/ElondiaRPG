@@ -72,7 +72,13 @@ user（後段：每次不同）
 
 - 以前放在 system 的視角、篇幅（隨報告改變）、判定的參考 DC、效果上限（隨主角等級改變）與可學能力清單，都移到後段，system 在同一局裡保持一字不差。
 - Anthropic：在 system 尾端設定快取斷點（`cache_control: {type: "ephemeral"}`）。前段要超過約 1024～4096 tokens（依模型）才會被快取，5 分鐘內沒有再用就會失效。敘事請求帶常駐世界書，前段約 6000 tokens；判定請求不帶世界書時前段約 1000 tokens，可能不夠長而不會被快取。
-- OpenAI、Gemini：自動快取相同的開頭，不需要額外設定。
+- OpenAI、DeepSeek、直連的 Gemini（2.5 之後的模型）：自動快取相同的開頭，不需要額外設定。
+- **手動標記（OpenAI 相容格式）**：有些服務要在請求裡標出快取斷點才會快取，例如 OpenRouter 上的 Gemini 與 Claude、阿里雲百煉的通義千問顯式快取。模型來源的「提示詞快取標記」（`cacheMark`）設定要不要標：
+  - 自動（預設）：模型名稱有 gemini、claude、anthropic，或 Base URL 是百煉而模型是千問時標記；其他（例如 DeepSeek）不標。
+  - 標記：system 改成內容陣列，在尾端加上 `cache_control: {type: "ephemeral"}`（`src/narrator/providers.ts` 的 `openAIMessages`）。
+  - 標記並保留 1 小時：加上 `ttl: "1h"`（只有 Claude 支援，寫入費用較高）。
+  - 不標記：服務會自動快取，或不認得這個欄位而報錯時。
+  - Gemini 經 OpenRouter 只認最後一個斷點，而且前段要超過約 4096 tokens 才會寫入快取（約 5 分鐘有效）：敘事請求的前段夠長，判定請求通常不夠。
 - 每則日誌下方的 token 統計會標示讀到快取的數量（服務有回報時），並依功能與來源（模型來源名稱、服務、模型）分開列出；日誌上方列出本局依來源的合計。來源記在用量上（`elondia.usage` 的 `by`），之後改了設定也不影響舊紀錄。
 - 前段任何一個字改變（開關文風、修改常駐世界書），快取就要重新建立一次；常常要換的指示請放在「其他提示詞（後段）」。
 
