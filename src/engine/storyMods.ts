@@ -61,7 +61,7 @@ export const WHERE_NAME: Record<StoryWhere, string> = {
 }
 export const NODE_KINDS: Record<StoryNode['kind'], string> = { story: '劇情', check: '判定', combat: '戰鬥', choice: '選擇' }
 /** 任務點可以指定的設施 */
-export const STORY_CELLS: CellKind[] = ['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant']
+export const STORY_CELLS: CellKind[] = ['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver']
 export const STORY_LAYERS = ['outskirts', 'shallow', 'middle', 'deep'] as const
 export const LAYER_NAME: Record<(typeof STORY_LAYERS)[number], string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層' }
 /** 任務的效果可以用的種類 */

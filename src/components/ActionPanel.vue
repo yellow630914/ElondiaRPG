@@ -86,7 +86,9 @@ const houseRefused = computed(() => houseRefusedToday(s.value))
 // 逃亡或無主：找到主人、投靠新主人、解除印記
 const whereabouts = computed(() => masterWhereabouts(s.value))
 const nearMaster = computed(() => masterNearby(s.value))
-const offers = computed(() => unmarkOffers(s.value))
+const offers = computed(() => unmarkOffers(s.value).filter((o) => !o.place))
+// 請法師拆誓約印記（紋樣留下來變成普通刺青）
+const oathOffers = computed(() => unmarkOffers(s.value).filter((o) => o.place))
 const seekTarget = ref('')
 const seekTargets = computed(() => {
   if (!enslaved.value || bound.value) return []
@@ -193,7 +195,17 @@ const pendingMark = computed(() => s.value.pendingMark)
           <br /><span class="muted">{{ o.desc }}</span>
         </li>
       </ul>
-      <p v-else class="small muted">要解除印記：到神殿、在知道黑市的城鎮找酒館裡的刻印師，或請身邊（或隊伍裡）的法師。</p>
+      <p v-else class="small muted">要解除印記：到神殿（要有聲望，便宜）、王都與有黑市的城市的刻印師（很貴），或請身邊（或隊伍裡）的法師（契約解除，紋樣留下來變成普通刺青）。</p>
+      <hr />
+    </template>
+    <template v-if="oathOffers.length">
+      <ul class="plain small offers">
+        <li v-for="o in oathOffers" :key="o.target">
+          <strong>{{ o.name }}</strong>（{{ o.helper }}）・{{ attrName(o.attr) }} DC {{ o.dc }}・{{ o.fee_cc ? formatMoney(o.fee_cc) : '免費' }}
+          <button class="small" :disabled="game.judging || s.money_cc < o.fee_cc" @click="doFreedom('unmark', o.target)">拆掉誓約</button>
+          <br /><span class="muted">{{ o.desc }}</span>
+        </li>
+      </ul>
       <hr />
     </template>
     <p class="small muted">

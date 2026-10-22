@@ -4,7 +4,7 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
 import { buySlave, marketStock, offerSelf, pickBuyer, rejoinAway } from '@/engine/companions'
 import { finishCombat, startCombat } from '@/engine/combat'
-import { slaveryRules } from '@/engine/data'
+import { locationById, slaveryRules } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
 import { enterLocation, goOutskirts, move, standOn } from '@/engine/grid'
 import { isBound, isEnslaved, isFugitive, isNoncombatant, leaderOf } from '@/engine/party'
@@ -16,7 +16,7 @@ import {
 } from '@/engine/slavery'
 import { commitReport, newGame } from '@/engine/state'
 import type { GameState, Report } from '@/engine/types'
-import { contractOf } from '@/engine/tattoos'
+import { contractOf, tattooAt, tattoosOf } from '@/engine/tattoos'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
@@ -284,27 +284,36 @@ describe('after escaping: the old master, a new master, removing the mark', () =
     startAsSlave(state, { master: { type: 'none' }, mark: 'labor' })
     standOn(state, 'temple')
     state.money_cc = 100000
+    // 神殿只替有聲望的人做
+    expect(unmarkOffers(state).some((o) => o.service === 'temple')).toBe(false)
+    const faction = locationById(state.location).faction!
+    state.reputation[faction] = slaveryRules.unmark.services.temple.min_reputation!
     const offer = unmarkOffers(state).find((o) => o.service === 'temple')!
     const strength = markStrength(contractOf(state.party[0]!)!)
-    expect(offer).toMatchObject({ dc: strength - 4, fee_cc: strength * 150 })
+    expect(offer).toMatchObject({ dc: strength - 4, fee_cc: strength * slaveryRules.unmark.services.temple.price_per_point })
     act(state, { kind: 'unmark', target: 'temple', text: '' }, 15)
     expect(isEnslaved(state)).toBe(false)
     expect(state.money_cc).toBe(100000 - offer.fee_cc)
 
     const f = fugitive()
     standOn(f.state, 'temple')
+    f.state.reputation[locationById(f.state.location).faction!] = 99
     expect(unmarkOffers(f.state).find((o) => o.service === 'temple')!.dc).toBe(markStrength(contractOf(f.state.party[0]!)!) - 4 + 2)
   })
 
-  it('a black-market marker may sell you out to your master', () => {
-    const { state, master } = fugitive('labor', 3, 'soriel')
-    standOn(state, 'tavern')
-    state.flags['black_market:soriel'] = true
+  it('a mark carver burns the mark off at a high price, and hurts on a fumble', () => {
+    const { state } = fugitive('labor', 3, 'soriel')
+    standOn(state, 'carver')
     state.money_cc = 100000
-    expect(unmarkOffers(state).map((o) => o.service)).toContain('black')
-    act(state, { kind: 'unmark', target: 'black', text: '' }, 1)
-    expect(isBound(state)).toBe(true)
-    expect(leaderOf(state)?.id).toBe(master)
+    const offer = unmarkOffers(state).find((o) => o.service === 'carver')!
+    expect(offer.fee_cc).toBe(markStrength(contractOf(state.party[0]!)!) * slaveryRules.unmark.services.carver.price_per_point)
+    const hp = state.party[0]!.hp
+    act(state, { kind: 'unmark', target: 'carver', text: '' }, 1)
+    expect(isEnslaved(state)).toBe(true)
+    expect(state.party[0]!.hp).toBeLessThan(hp)
+    act(state, { kind: 'unmark', target: 'carver', text: '' }, 20)
+    expect(isEnslaved(state)).toBe(false)
+    expect(tattoosOf(state.party[0]!)).toEqual([])
   })
 
   it('a wizard in the party unpicks the mark for free, easier on arcane marks', () => {
@@ -318,6 +327,8 @@ describe('after escaping: the old master, a new master, removing the mark', () =
     expect(offer).toMatchObject({ fee_cc: 0, target: `mage:${wiz.id}`, dc: markStrength(contractOf(state.party[0]!)!) - 3 - 3 })
     act(state, { kind: 'unmark', target: offer.target, text: '' }, 20)
     expect(isEnslaved(state)).toBe(false)
+    // 紋樣留下來變成普通刺青
+    expect(tattooAt(state.party[0]!, 'neck')).toMatchObject({ kind: 'plain', name: '魔導束縛契約', by: wiz.name })
   })
 
   it('lets the AI free the player or hand them to a new master, within limits', () => {

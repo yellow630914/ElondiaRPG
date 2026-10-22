@@ -10,7 +10,8 @@ import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
 import { adultContent, adultScene, safeText } from './content'
-import { clearContract, contractOf, isTattooPlace, placeName, setContract } from './tattoos'
+import { addTattoo, contractOf, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
+import { reputationOf } from './security'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
@@ -23,7 +24,7 @@ import { addStrict, atMasterHome, extendDeadline, overdueChance, sendToMasterHom
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
-import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report } from './types'
+import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
 
 // ---- 印記條款 ----
@@ -716,12 +717,12 @@ export function remarkByMadam(state: GameState, master: Pick<NpcRecord, 'tags'>)
   return true
 }
 
-// 解除印記：神殿、黑市刻印師、法師
+// 解除印記：神殿、刻印師、法師（法師把契約或誓約拆掉，紋樣留下來變成普通刺青）
 
 export type UnmarkServiceId = keyof typeof slaveryRules.unmark.services
 
 export interface UnmarkOffer {
-  /** 主動行動的 target：服務 id，法師為 mage:<id> */
+  /** 主動行動的 target：服務 id，法師為 mage:<id>；拆誓約印記再加 @<部位> */
   target: string
   service: UnmarkServiceId
   name: string
@@ -731,6 +732,8 @@ export interface UnmarkOffer {
   fee_cc: number
   /** 法師的名字 */
   helper?: string
+  /** 拆的是這個部位的誓約印記（沒有時是奴隸印記） */
+  place?: TattooPlace
 }
 
 /** 印記強度：談判與逃離 DC 的平均，加上目前的服從懲罰 */
@@ -739,42 +742,71 @@ export function markStrength(c: ContractRef): number {
   return Math.round((t.negotiate_dc + t.escape_dc) / 2) + c.obedience
 }
 
+/** 誓約印記的強度：10 + 加的總點數 × 2 */
+export function oathStrength(t: Tattoo): number {
+  return 10 + Object.values(t.attrs ?? {}).filter((v) => (v ?? 0) > 0).reduce((sum, v) => sum + v!, 0) * 2
+}
+
 function blackMarketKnown(state: GameState): boolean {
   return !!slaveryRules.markets[state.location]?.black && !!state.flags[`black_market:${state.location}`]
 }
 
-/** 現在找得到的解除印記服務（被主人帶著時沒有） */
+/** 這個服務在這裡的聲望夠不夠（神殿） */
+export function unmarkRepOk(state: GameState, def: UnmarkServiceDef): boolean {
+  return !def.min_reputation || reputationOf(state, locationById(state.location).faction) >= def.min_reputation
+}
+
+/** 身邊（隊伍裡或附近）有這些職業的人 */
+function castersFor(state: GameState, def: UnmarkServiceDef) {
+  return [
+    ...state.party.filter((m) => !m.isPlayer && def.classes?.includes(m.class)).map((m) => ({ id: m.id, name: m.name, free: true })),
+    ...nearbyPeople(state).filter((p) => def.classes?.includes(p.rec.class) && !isHostile(state, p.rec)).map((p) => ({ id: p.rec.id, name: p.rec.name, free: false })),
+  ]
+}
+
+/** 現在找得到的解除印記服務：奴隸印記（被主人帶著時沒有），以及請法師拆誓約印記 */
 export function unmarkOffers(state: GameState): UnmarkOffer[] {
   const pc = pcOf(state)
   const contract = contractOf(pc)
-  if (!contract || isBound(state) || state.pendingMark) return []
-  const u = slaveryRules.unmark
-  const strength = markStrength(contract)
-  const sealed = contractTerms(contract).functions.includes('spell_seal')
-  const cell = currentCell(state).kind
   const out: UnmarkOffer[] = []
+  const u = slaveryRules.unmark
+  const cell = currentCell(state).kind
+  if (contract && !isBound(state) && !state.pendingMark) {
+    const strength = markStrength(contract)
+    const sealed = contractTerms(contract).functions.includes('spell_seal')
+    for (const [id, def] of Object.entries(u.services) as [UnmarkServiceId, UnmarkServiceDef][]) {
+      const base = { service: id, name: def.name, desc: def.desc, attr: def.attr }
+      const dc = strength - def.dc_offset + (isFugitive(state) ? def.fugitive_dc ?? 0 : 0) - (sealed ? def.arcane_bonus ?? 0 : 0)
+      const fee = strength * def.price_per_point
+      if (!unmarkRepOk(state, def)) continue
+      if (def.where === 'cell' && cell === def.cell) out.push({ ...base, target: id, dc, fee_cc: fee })
+      if (def.where === 'black_market' && cell === def.cell && blackMarketKnown(state)) out.push({ ...base, target: id, dc, fee_cc: fee })
+      if (def.where === 'caster') for (const c of castersFor(state, def)) out.push({ ...base, target: `mage:${c.id}`, dc, fee_cc: c.free ? 0 : fee, helper: c.name })
+    }
+  }
+  // 誓約印記：只有會轉換的服務（法師）能拆，紋樣留下來
   for (const [id, def] of Object.entries(u.services) as [UnmarkServiceId, UnmarkServiceDef][]) {
-    const base = { service: id, name: def.name, desc: def.desc, attr: def.attr }
-    const dc = strength - def.dc_offset + (isFugitive(state) ? def.fugitive_dc ?? 0 : 0) - (sealed ? def.arcane_bonus ?? 0 : 0)
-    const fee = strength * def.price_per_point
-    if (def.where === 'cell' && cell === def.cell) out.push({ ...base, target: id, dc, fee_cc: fee })
-    if (def.where === 'black_market' && cell === def.cell && blackMarketKnown(state)) out.push({ ...base, target: id, dc, fee_cc: fee })
-    if (def.where === 'caster') {
-      const casters = [
-        ...state.party.filter((m) => !m.isPlayer && def.classes?.includes(m.class)).map((m) => ({ id: m.id, name: m.name, free: true })),
-        ...nearbyPeople(state).filter((p) => def.classes?.includes(p.rec.class) && !isHostile(state, p.rec)).map((p) => ({ id: p.rec.id, name: p.rec.name, free: false })),
-      ]
-      for (const c of casters) out.push({ ...base, target: `mage:${c.id}`, dc, fee_cc: c.free ? 0 : fee, helper: c.name })
+    if (!def.convert || def.where !== 'caster' || state.pendingMark) continue
+    for (const t of tattoosOf(pc).filter((x) => x.kind === 'oath')) {
+      const strength = oathStrength(t)
+      for (const c of castersFor(state, def)) {
+        out.push({
+          service: id, name: `${def.name}：${placeName(t.place)}的${tattooName(t)}`, desc: '拆掉誓約的術式（屬性的加減消失），紋樣留下來變成普通刺青。',
+          attr: def.attr, target: `mage:${c.id}@${t.place}`, dc: strength - def.dc_offset, fee_cc: c.free ? 0 : strength * def.price_per_point, helper: c.name, place: t.place,
+        })
+      }
     }
   }
   return out
 }
 
 function unmarkOffer(state: GameState, target?: string): UnmarkOffer {
-  if (isBound(state)) throw new Error('被主人帶著時，要先談判或逃離')
-  if (!contractOf(pcOf(state))) throw new Error('你身上沒有契約印記')
+  if (!target?.includes('@')) {
+    if (isBound(state)) throw new Error('被主人帶著時，要先談判或逃離')
+    if (!contractOf(pcOf(state))) throw new Error('你身上沒有契約印記')
+  }
   const offer = unmarkOffers(state).find((o) => o.target === target)
-  if (!offer) throw new Error('這裡沒有人能解除你的印記')
+  if (!offer) throw new Error(target?.includes('@') ? '這裡沒有人能拆這個誓約印記' : '這裡沒有人能解除你的印記')
   return offer
 }
 
@@ -784,12 +816,14 @@ export function setupUnmark(state: GameState, target?: string) {
   const def = slaveryRules.unmark.services[o.service]
   const fee = (d: Degree) => Math.round(o.fee_cc * slaveryRules.unmark.fee_ratio[d])
   const bad = def.fumble === 'betray' ? '被出賣給主人（有主人時當場被抓回去）' : `術式反噬，失去 ${Math.round((def.backlash_hp_ratio ?? 0) * 100)}% 生命值`
+  const done = o.place ? '誓約的術式被拆掉，紋樣留下來' : def.convert ? '契約解除，紋樣留下來變成普通刺青' : '印記被抹去'
   return {
     attr: o.attr, dc: o.dc, targetName: o.helper ?? o.name, situational: [],
     scene: `${currentArea(state).name}・${o.name}`,
     outcomes: {
-      critical: `印記被抹去（收費 ${fee('critical')}）`, success: `印記被抹去（收費 ${fee('success')}）`,
-      partial: `印記淡了一些，服從懲罰 -1（收費 ${fee('partial')}）`, fail: `沒有成功（收費 ${fee('fail')}）`,
+      critical: `${done}（收費 ${fee('critical')}）`, success: `${done}（收費 ${fee('success')}）`,
+      partial: o.place ? `術式鬆動了，但沒有拆掉（收費 ${fee('partial')}）` : `印記淡了一些，服從懲罰 -1（收費 ${fee('partial')}）`,
+      fail: `沒有成功（收費 ${fee('fail')}）`,
       fumble: `${bad}（收費 ${fee('fumble')}）`,
     } as Partial<Record<Degree, string>>,
   }
@@ -799,16 +833,42 @@ export function applyUnmark(state: GameState, report: Report, target: string, de
   const o = unmarkOffer(state, target)
   const def = slaveryRules.unmark.services[o.service]
   const pc = pcOf(state)
-  const c = contractOf(pc)!
   const fee = Math.min(state.money_cc, Math.round(o.fee_cc * slaveryRules.unmark.fee_ratio[degree]))
   const lines: string[] = []
   if (fee > 0) applyEffects(state, report, [{ type: 'money', amount: -fee }])
+  const who = o.helper ?? o.name
+  if (o.place) {
+    // 拆誓約印記
+    const t = tattooAt(pc, o.place)!
+    if (degree === 'critical' || degree === 'success') {
+      const name = t.name ?? ''
+      delete t.attrs
+      t.kind = 'plain'
+      ;(report.changes.tattoos ??= []).push({ actor: 'pc', place: t.place, kind: 'oath', name, added: false })
+      lines.push(`${who}拆掉了${placeName(t.place)}的${name}的術式，屬性的加減消失了，紋樣留了下來。`)
+    } else if (degree === 'partial') lines.push('誓約的術式鬆動了一下，又穩了回去。')
+    else if (degree === 'fail') lines.push('誓約的術式紋絲不動。')
+    else {
+      const loss = Math.max(1, Math.ceil(pc.maxHp * (def.backlash_hp_ratio ?? 0.2)))
+      setHp(state, pc, pc.hp - loss, report)
+      lines.push(`誓約的術式反噬，失去 ${loss} 點生命值。`)
+    }
+    if (fee > 0) lines.push(`付了 ${formatMoney(fee)}。`)
+    return lines.join('')
+  }
+  const c = contractOf(pc)!
   switch (degree) {
     case 'critical':
-    case 'success':
+    case 'success': {
+      const terms = contractTerms(c)
       freePlayer(state, report, o.name)
-      lines.push(`${o.helper ?? o.name}抹去了你${placeName(c.terms.place)}的${contractTerms(c).name}，你恢復了自由。`)
+      if (def.convert) {
+        // 契約拆掉，紋樣留下來變成普通刺青
+        addTattoo(pc, { kind: 'plain', place: c.terms.place, name: terms.name, desc: terms.mark, by: who }, state.time)
+        lines.push(`${who}拆掉了${placeName(c.terms.place)}的${terms.name}的術式，你恢復了自由；紋樣留了下來，只是普通的刺青了。`)
+      } else lines.push(`${who}抹去了你${placeName(c.terms.place)}的${terms.name}，你恢復了自由。`)
       break
+    }
     case 'partial':
       c.obedience = Math.max(0, c.obedience - 1)
       lines.push('印記淡了一些，但沒有完全消失。')
@@ -819,7 +879,7 @@ export function applyUnmark(state: GameState, report: Report, target: string, de
     case 'fumble':
       if (def.fumble === 'betray' && masterOf(state) && !masterOf(state)!.dead) {
         recapturePlayer(state, report)
-        lines.push(`刻印師把你出賣給了${c.masterName}。`, punish(state, 'heavy', report))
+        lines.push(`${who}把你出賣給了${c.masterName}。`, punish(state, 'heavy', report))
       } else {
         const loss = Math.max(1, Math.ceil(pc.maxHp * (def.backlash_hp_ratio ?? 0.2)))
         setHp(state, pc, pc.hp - loss, report)

@@ -26,11 +26,12 @@ import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/charact
 import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
+import * as tattooShop from '@/engine/tattooShop'
 import * as road from '@/engine/road'
 import * as homes from '@/engine/homes'
 import * as garden from '@/engine/garden'
 import * as invention from '@/engine/invention'
-import type { DefeatLoot, GameState, GearSlot, Report } from '@/engine/types'
+import type { DefeatLoot, GameState, GearSlot, Report, TattooPlace } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
@@ -892,6 +893,8 @@ export const useGame = defineStore('game', () => {
     acceptQuest: (id: string) => run((s) => town.acceptQuest(s, id)),
     turnInQuest: (id: string, count?: number) => run((s) => town.turnInQuest(s, id, count)),
     templeHeal: () => run(town.templeHeal),
+    inkTattoo: (order: tattooShop.InkOrder) => run((s) => tattooShop.inkTattoo(s, order)),
+    washTattoo: (place: TattooPlace) => run((s) => tattooShop.washTattoo(s, place)),
     chooseAbility: (member: string, ability: string) => run((s) => town.chooseAbility(s, member, ability)),
     rerollAbility: (member: string) => run((s) => town.rerollAbility(s, member, useSettings().rerollLimit())),
     spendAttr: (member: string, attr: AttrId) =>

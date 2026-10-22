@@ -22,6 +22,7 @@ import MarketPanel from './MarketPanel.vue'
 import NegotiationPanel from './NegotiationPanel.vue'
 import StoryPanel from './StoryPanel.vue'
 import ShopPanel from './ShopPanel.vue'
+import TattooPanel from './TattooPanel.vue'
 import TavernPanel from './TavernPanel.vue'
 import WorkPanel from './WorkPanel.vue'
 import TrainPanel from './TrainPanel.vue'
@@ -150,6 +151,20 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
             治療（{{ formatMoney(templeCost(s)) }}）
           </button>
           <ShopPanel :key="`temple-${s.location}-${s.time.day}`" type="temple" />
+          <details class="tavern-trade">
+            <summary class="small">🧼 洗刺青（要有聲望）</summary>
+            <TattooPanel shop="temple" />
+          </details>
+        </template>
+
+        <template v-else-if="cell.kind === 'tattoo'">
+          <p class="muted small">刺普通刺青（只是外觀），也替人洗掉普通刺青。</p>
+          <TattooPanel shop="parlor" />
+        </template>
+
+        <template v-else-if="cell.kind === 'carver'">
+          <p class="muted small">刻誓約印記（屬性有加有減），也洗普通刺青與誓約印記；身上有奴隸印記時，可以付高價請刻印師燒掉（見主動行動的解除印記）。</p>
+          <TattooPanel shop="carver" />
         </template>
 
         <template v-else-if="cell.kind === 'shop'">

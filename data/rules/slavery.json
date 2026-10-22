@@ -212,16 +212,16 @@
   },
 
   "unmark": {
-    "$comment": "找人解除契約印記（無主或逃亡時；被主人帶著時要先談判或逃離）。印記強度 = round((談判 DC + 逃離 DC) / 2) + 目前的服從懲罰；DC = 強度 − dc_offset（魔力封印的印記對法師再 − arcane_bonus）；費用 = 強度 × price_per_point，依成功程度收 fee_ratio。大成功與成功解除印記，部分成功服從懲罰 −1。大失敗：backlash 扣生命值比例，betray 被出賣給主人（有主人時當場被抓回去）。",
+    "$comment": "找人解除契約印記（無主或逃亡時；被主人帶著時要先談判或逃離）。convert：解除契約但紋樣留下來變成普通刺青（法師；也能拆誓約印記，強度 = 10 + 加的總點數 × 2）。min_reputation：要在這裡的勢力有這麼多聲望。印記強度 = round((談判 DC + 逃離 DC) / 2) + 目前的服從懲罰；DC = 強度 − dc_offset（魔力封印的印記對法師再 − arcane_bonus）；費用 = 強度 × price_per_point，依成功程度收 fee_ratio。大成功與成功解除印記，部分成功服從懲罰 −1。大失敗：backlash 扣生命值比例，betray 被出賣給主人（有主人時當場被抓回去）。",
     "hours": 2,
     "fee_ratio": { "critical": 0.5, "success": 1, "partial": 0.5, "fail": 0.5, "fumble": 0.5 },
     "services": {
-      "temple": { "name": "神殿解咒", "where": "cell", "cell": "temple", "attr": "fai", "dc_offset": 4, "price_per_point": 150, "fugitive_dc": 2, "fumble": "backlash", "backlash_hp_ratio": 0.2,
-        "desc": "祭司以聖印淨化契約之力。逃亡奴隸會被冷眼相待（DC +2）。" },
-      "black": { "name": "黑市刻印師", "where": "black_market", "cell": "tavern", "attr": "str", "dc_offset": 2, "price_per_point": 80, "fumble": "betray", "backlash_hp_ratio": 0.3,
-        "desc": "在酒館裡透過黑市找人用燒灼的方式刮掉印記：便宜，但要咬牙忍住；大失敗時會被出賣給主人。" },
-      "mage": { "name": "法師解構", "where": "caster", "classes": ["wizard"], "attr": "int", "dc_offset": 3, "arcane_bonus": 3, "price_per_point": 120, "fumble": "backlash", "backlash_hp_ratio": 0.3,
-        "desc": "請身邊的法師拆解印記的術式，對魔導束縛特別有效；隊伍裡的法師不收錢。" }
+      "temple": { "name": "神殿解咒", "where": "cell", "cell": "temple", "attr": "fai", "dc_offset": 4, "price_per_point": 60, "min_reputation": 10, "fugitive_dc": 2, "fumble": "backlash", "backlash_hp_ratio": 0.2,
+        "desc": "祭司以聖印淨化契約之力：便宜，但只替在這個勢力有聲望（10 以上）的人做。逃亡奴隸會被冷眼相待（DC +2）。" },
+      "carver": { "name": "刻印師", "where": "cell", "cell": "carver", "attr": "str", "dc_offset": 2, "price_per_point": 250, "fumble": "backlash", "backlash_hp_ratio": 0.3,
+        "desc": "刻印師用燒灼的方式把印記連同術式刮掉：要價很高，還要咬牙忍住。" },
+      "mage": { "name": "法師解構", "where": "caster", "classes": ["wizard"], "attr": "int", "dc_offset": 3, "arcane_bonus": 3, "price_per_point": 120, "convert": true, "fumble": "backlash", "backlash_hp_ratio": 0.3,
+        "desc": "請身邊的法師拆解印記的術式：契約解除，但紋樣留下來變成普通刺青。對魔導束縛特別有效；隊伍裡的法師不收錢。誓約印記也可以這樣拆掉。" }
     }
   },
 

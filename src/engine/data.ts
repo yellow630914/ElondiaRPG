@@ -802,7 +802,7 @@ export const slaveryRules = slaveryJson as unknown as {
     kinds: Record<'adventurer' | 'commoner', { dc: number; market: number }>
     tags: Record<string, { dc: number; chance: number; public: number; black: number; negotiate?: number }>
   }
-  unmark: { hours: number; fee_ratio: Record<Degree, number>; services: Record<'temple' | 'black' | 'mage', UnmarkServiceDef> }
+  unmark: { hours: number; fee_ratio: Record<Degree, number>; services: Record<'temple' | 'carver' | 'mage', UnmarkServiceDef> }
   safe_spots: string[]
   marking: { attr: AttrId; base: number; severity: string[] }
   master_events: {
@@ -865,6 +865,10 @@ export interface UnmarkServiceDef {
   /** 逃亡奴隸的 DC 增加 */
   fugitive_dc?: number
   price_per_point: number
+  /** 要在這裡的勢力有這麼多聲望 */
+  min_reputation?: number
+  /** 解除契約但紋樣留下來變成普通刺青（也能拆誓約印記） */
+  convert?: boolean
   fumble: 'backlash' | 'betray'
   backlash_hp_ratio?: number
 }

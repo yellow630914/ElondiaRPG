@@ -29,7 +29,7 @@ export const RATION_CC = 5
 export const QUEST_RANGE_DAYS = 7
 
 
-function baseReport(state: GameState, kind: Report['kind'], hours: number): Report {
+export function baseReport(state: GameState, kind: Report['kind'], hours: number): Report {
   const start = { ...state.time }
   const loc = locationById(state.location)
   const pc = player(state)

@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { prepareAction, resolveAction } from '@/engine/actions'
 import { attrsOf, attrSources } from '@/engine/character'
 import { marketStock } from '@/engine/companions'
-import { slaveryRules } from '@/engine/data'
+import { geography, isSettlement, locationById, slaveryRules } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
-import { enterLocation } from '@/engine/grid'
+import { blockKeys, enterLocation, getArea, standOn } from '@/engine/grid'
 import { pcOf } from '@/engine/party'
-import { contractKind, contractTerms, deriveFunctions, startAsSlave, termsFromTemplate } from '@/engine/slavery'
+import { contractKind, contractTerms, deriveFunctions, masterCandidates, oathStrength, startAsSlave, termsFromTemplate, unmarkOffers } from '@/engine/slavery'
+import { characterFor, registerNpc } from '@/engine/npcs'
+import { inkPrice, inkTattoo, tattooShop, washTattoo } from '@/engine/tattooShop'
 import { migrate, newGame } from '@/engine/state'
 import { sanitizeEffects } from '@/engine/storyMods'
 import {
@@ -174,5 +177,71 @@ describe('old saves', () => {
     expect(pc.contract).toBeUndefined()
     expect(slaveMarkOf(pc)).toMatchObject({ kind: 'slave', place: 'neck' })
     expect(contractOf(pc)).toMatchObject({ kind: 'combat', obedience: 4, terms: termsFromTemplate('combat') })
+  })
+})
+
+describe('tattoo shops', () => {
+  it('stand in the cities, and mark carvers in the capitals and black-market towns', () => {
+    for (const loc of geography.locations) {
+      const kinds = new Set(blockKeys(loc.id).flatMap((k) => (isSettlement(loc) ? getArea(game(), k).cells.map((c) => c.kind) : [])))
+      if (['capital', 'city', 'port'].includes(loc.type)) expect(kinds.has('tattoo'), loc.id).toBe(true)
+      if (loc.type === 'capital' || slaveryRules.markets[loc.id]?.black) expect(kinds.has('carver'), loc.id).toBe(true)
+    }
+  })
+
+  it('ink plain tattoos at the parlor and oath marks at the carver, for a price', () => {
+    const state = game()
+    const pc = pcOf(state)
+    state.money_cc = 100000
+    standOn(state, 'tattoo')
+    inkTattoo(state, { template: 'lotus', place: 'hips' })
+    expect(tattooAt(pc, 'hips')).toMatchObject({ kind: 'plain', name: '蓮花', by: '刺青店' })
+    expect(state.money_cc).toBe(100000 - tattooShop('parlor').ink!)
+    expect(() => inkTattoo(state, { template: 'oath_sage', place: 'chest' })).toThrow('只刺普通刺青')
+    expect(inkPrice('parlor', { kind: 'plain' })).toBe(tattooShop('parlor').ink! + tattooShop('parlor').custom_extra!)
+
+    standOn(state, 'carver')
+    const before = state.money_cc
+    inkTattoo(state, { template: 'oath_berserker', place: 'back' })
+    expect(state.money_cc).toBe(before - 3 * tattooShop('carver').oath_per_point!)
+    expect(() => inkTattoo(state, { kind: 'oath', name: '亂誓', desc: '', place: 'chest', attrs: { str: 3, int: -1 } })).toThrow('總和')
+    inkTattoo(state, { kind: 'oath', name: '海誓', desc: '浪紋', place: 'chest', attrs: { cha: 2, str: -2 } })
+    expect(tattooAt(pc, 'chest')!.attrs).toEqual({ str: -2, cha: 2 })
+  })
+
+  it('wash tattoos by what each shop takes; the temple wants reputation', () => {
+    const state = game()
+    const pc = pcOf(state)
+    state.money_cc = 100000
+    addTattoo(pc, tattooFromTemplate('lotus', pc, 'hips'), state.time)
+    addTattoo(pc, tattooFromTemplate('oath_sage', pc, 'chest'), state.time)
+    standOn(state, 'tattoo')
+    expect(() => washTattoo(state, 'chest')).toThrow('不洗誓約印記')
+    washTattoo(state, 'hips')
+    expect(tattooAt(pc, 'hips')).toBeUndefined()
+    standOn(state, 'temple')
+    expect(() => washTattoo(state, 'chest')).toThrow('聲望')
+    state.reputation[locationById(state.location).faction!] = tattooShop('temple').min_reputation!
+    const before = state.money_cc
+    washTattoo(state, 'chest')
+    expect(state.money_cc).toBe(before - tattooShop('temple').remove.oath!)
+    expect(attrsOf(pc)).toEqual(pc.attrs)
+  })
+
+  it('let a wizard unpick an oath, leaving the ink as a plain tattoo', () => {
+    const state = game()
+    const pc = pcOf(state)
+    addTattoo(pc, tattooFromTemplate('oath_shadow', pc, 'back'), state.time)
+    const wiz = { ...masterCandidates('rhineburg', 11)[0]!, class: 'wizard' }
+    registerNpc(state, wiz)
+    state.party.push({ ...characterFor(state, wiz), bond: 'voluntary' })
+    const offer = unmarkOffers(state).find((o) => o.place === 'back')!
+    expect(offer).toMatchObject({ fee_cc: 0, target: `mage:${wiz.id}@back`, dc: oathStrength(tattooAt(pc, 'back')!) - 3 })
+    prepareAction(state, { kind: 'unmark', target: offer.target, text: '' })
+    state.pendingAction!.natural = 20
+    resolveAction(state, null)
+    expect(tattooAt(pc, 'back')).toMatchObject({ kind: 'plain', name: '影行之誓' })
+    expect(tattooAt(pc, 'back')!.attrs).toBeUndefined()
+    expect(attrsOf(pc)).toEqual(pc.attrs)
   })
 })

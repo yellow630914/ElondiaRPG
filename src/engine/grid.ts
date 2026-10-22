@@ -36,7 +36,7 @@ import type { Character, GameState, GameTime, Report } from './types'
 export type CellKind =
   | 'floor' | 'wall' | 'water'
   | 'inn' | 'guild' | 'tavern' | 'shop' | 'temple' | 'gate' | 'link' | 'brothel'
-  | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant'
+  | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'tattoo' | 'carver'
   | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe' | 'chest'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
   | 'road' | 'waypoint' | 'arrive' | 'event' | 'merchant'
@@ -162,7 +162,7 @@ const maps = mapsJson as unknown as {
 export const CELL_NAME: Record<CellKind, string> = {
   floor: '道路', wall: '牆', water: '水道',
   inn: '旅店', guild: '冒險者公會', tavern: '酒館', shop: '雜貨店', temple: '神殿', gate: '城門', link: '通道', brothel: '娼館',
-  smithy: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', informant: '情報商',
+  smithy: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', informant: '情報商', tattoo: '刺青店', carver: '刻印師',
   encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房', chest: '寶箱',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
   road: '路', waypoint: '途經', arrive: '目的地', event: '事件', merchant: '流浪商人',
@@ -172,7 +172,7 @@ export const CELL_NAME: Record<CellKind, string> = {
 /** 地圖與場所標題用的圖示：每一種設施都要有 */
 export const CELL_ICON: Partial<Record<CellKind, string>> = {
   inn: '🛏️', guild: '🏛️', tavern: '🍺', shop: '🛒', temple: '⛪', gate: '🚪', link: '➡️', brothel: '🏮',
-  smithy: '⚒️', tailor: '🧵', jeweler: '💍', magic: '🔮', informant: '🕵️',
+  smithy: '⚒️', tailor: '🧵', jeweler: '💍', magic: '🔮', informant: '🕵️', tattoo: '🖋️', carver: '🔏',
   encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
   stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
   waypoint: '🏘️', arrive: '🏁', event: '❔', merchant: '🧳',

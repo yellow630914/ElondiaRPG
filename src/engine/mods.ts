@@ -1174,7 +1174,7 @@ export function abilityUsage(id: string, state?: GameState | null): string[] {
 // ---- 特質 ----
 
 /** 可以學特質的設施 */
-export const TRAIN_CELLS = ['inn', 'guild', 'tavern', 'shop', 'temple', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'brothel'] as const
+export const TRAIN_CELLS = ['inn', 'guild', 'tavern', 'shop', 'temple', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver', 'brothel'] as const
 
 /**
  * 內容編輯器的效果範圍：比玩家自訂的寬。抗性可以是弱點（像魔族的神聖 ×1.25，用來平衡強項）；
