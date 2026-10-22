@@ -2,7 +2,7 @@
 // 檢查兩種地方：其他內容（任務、固定 NPC、物品……），以及目前載入的存檔。
 // 其他存檔要等讀檔時才知道；讀檔時的清理見 state.ts 的 migrate。
 
-import { itemRules, npcs as namedNpcs, stories, type StoryDef, type StoryOutcome } from './data'
+import { itemRules, npcs as namedNpcs, perkRules, stories, type StoryDef, type StoryOutcome } from './data'
 import type { RewardEffect } from './effects'
 import { gearSpecOf } from './gear'
 import { furnitureIn } from './homes'
@@ -126,6 +126,29 @@ export function storyUsage(id: string, state?: GameState | null): string[] {
     if (s.id !== id && storyEffects(s).some((e) => e.type === 'start_story' && e.story === id)) out.push(`特殊任務「${s.title}」的效果`)
   }
   if (state?.stories?.[id]?.status === 'active') out.push('目前存檔正在進行這個任務（先放棄或完成）')
+  return out
+}
+
+// ---- 特質 ----
+
+/** 哪些地方用到這個特質：固定 NPC 的特質清單、特殊任務的效果、書籍、其他特質的互斥、目前存檔的角色 */
+export function perkUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  for (const n of namedNpcs) if (n.perks?.includes(id)) out.push(`固定 NPC「${n.name}」的特質`)
+  for (const s of stories) {
+    if (storyEffects(s).some((e) => (e.type === 'perk' && (e.perk === id || e.options?.includes(id))) || (e.type === 'lose_perk' && e.perk === id))) {
+      out.push(`特殊任務「${s.title}」的效果`)
+    }
+  }
+  for (const i of itemRules.items) if (i.use?.perks?.includes(id)) out.push(`書籍「${i.name}」`)
+  for (const p of perkRules.perks) if (p.id !== id && p.exclusive?.includes(id)) out.push(`特質「${p.name}」的互斥`)
+  if (state) {
+    for (const c of characters(state)) {
+      if (c.perks?.includes(id)) out.push(`目前存檔的「${c.name}」`)
+      else if (c.perkOffers?.some((o) => o.options.includes(id))) out.push(`目前存檔的「${c.name}」學特質的機會`)
+    }
+    for (const r of Object.values(state.npcs ?? {})) if (!r.character && r.perks?.includes(id)) out.push(`目前存檔登場的「${r.name}」`)
+  }
   return out
 }
 

@@ -45,7 +45,8 @@ describe('perk data', () => {
         for (const k of e.check.kinds ?? []) expect(actionRules.kinds[k], `${p.id} ${k}`).toBeTruthy()
         for (const a of e.check.attrs ?? []) expect(ATTR_IDS).toContain(a)
       }
-      expect(perkPower(p), p.id).toBeGreaterThan(0)
+      // 種族特質（人類的適應力）可以沒有額外效果
+      if (!p.race) expect(perkPower(p), p.id).toBeGreaterThan(0)
     }
     const books = itemRules.items.filter((i) => i.use?.perks)
     expect(books.length).toBeGreaterThanOrEqual(5)
@@ -104,7 +105,7 @@ describe('getting perks', () => {
     expect(pc.customPerks![0]).toMatchObject({ id: 'c-start-1', name: '酒館之子', custom: true })
     // 數值夾在範圍內
     expect(pc.customPerks![0]!.effects).toEqual([{ check: { kinds: ['chat'] }, bonus: 3 }, { combat: { hit: 2 } }])
-    expect(perksOf(pc).map((p) => p.name)).toEqual(['幸運兒', '打架好手', '酒館之子'])
+    expect(perksOf(pc).map((p) => p.name)).toEqual(['適應力', '幸運兒', '打架好手', '酒館之子'])
   })
 
   it('offers three perks at the right levels', () => {

@@ -126,22 +126,21 @@ export function weaponFor(c: Pick<Character, 'weapon' | 'level'>): WeaponDef {
   return { ...w, dice }
 }
 
-/** 種族天賦 + 防具類型 + 身上所有裝備（材料、附魔）+ 特質帶來的傷害倍率加減與戰鬥修正 */
+/** 防具類型 + 身上所有裝備（材料、附魔）+ 特質（包括種族特質）帶來的傷害倍率加減與戰鬥修正 */
 export function gearAffinities(c: Pick<Character, 'race' | 'armor' | 'gear' | 'perks' | 'customPerks'>): { resist: AffinityMap; offense: AffinityMap; mods: Mods } {
-  const talent = attributeRules.races[c.race]?.talent
   const armor = armorDef(c.armor)
   const gear = gearBonuses(c)
-  // 特質：一直生效的戰鬥修正、抗性與增傷
+  // 特質（包括依種族自動擁有的種族特質）：一直生效的戰鬥修正、抗性與增傷
   const perks = perkCombat(c)
   const resist: AffinityMap = {}
   const offense: AffinityMap = {}
-  for (const src of [talent?.resist, armor.resist, gear.resist, perks.resist]) {
+  for (const src of [armor.resist, gear.resist, perks.resist]) {
     for (const [k, v] of Object.entries(src ?? {})) resist[k] = (resist[k] ?? 0) + (v ?? 0)
   }
-  for (const src of [talent?.offense, armor.offense, gear.offense, perks.offense]) {
+  for (const src of [armor.offense, gear.offense, perks.offense]) {
     for (const [k, v] of Object.entries(src ?? {})) offense[k] = (offense[k] ?? 0) + (v ?? 0)
   }
-  const mods: Mods = { ...(talent?.mods ?? {}) }
+  const mods: Mods = {}
   for (const src of [gear.mods, perks.mods]) {
     for (const [k, v] of Object.entries(src)) mods[k as keyof Mods] = (mods[k as keyof Mods] ?? 0) + (v ?? 0)
   }

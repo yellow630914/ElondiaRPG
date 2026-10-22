@@ -1,7 +1,7 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import {
-  abilities, ATTR_IDS, enemies, geography, itemDef, npcs as namedNpcs, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, enemies, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere,
 } from './data'
 import type { RewardEffect } from './effects'
@@ -140,7 +140,7 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       }
       case 'perk': {
         // 取得特質的機會：提供的特質（清單裡的 id），可以寫說法交給 AI；direct 直接學會第一個
-        const ids = [...new Set([typeof x.perk === 'string' ? x.perk : '', ...strArr(x.options)])].filter((id) => !!perkDef(id)).slice(0, 6)
+        const ids = [...new Set([typeof x.perk === 'string' ? x.perk : '', ...strArr(x.options)])].filter((id) => isChoosablePerk(id)).slice(0, 6)
         if (!ids.length) break
         const [first, ...rest] = ids
         out.push({ type: 'perk', perk: first!, ...(rest.length ? { options: rest } : {}), ...(x.direct ? { direct: true } : {}) })

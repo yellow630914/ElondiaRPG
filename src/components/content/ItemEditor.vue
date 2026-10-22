@@ -9,7 +9,7 @@ import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
-import { CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
+import { choosablePerks, CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
 import { PLACE_NAME } from '@/engine/homes'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -324,6 +324,13 @@ function remove() {
         <span class="small">解除：</span>
         <label v-for="s in debuffs" :key="s.id" class="check small"><input type="checkbox" :checked="use.cleanse?.includes(s.id)" @change="use.cleanse = toggle(use.cleanse, s.id, ($event.target as HTMLInputElement).checked)" /> {{ s.name }}</label>
       </div>
+      <details v-if="draft.category === 'consumable'" class="small">
+        <summary>📖 書籍：讀完有機會學會的特質（{{ use.perks?.length ?? 0 }}，最多 6 個）</summary>
+        <p class="muted">讀完時從勾選的特質選一個學（也可以寫說法交給 AI）。種族特質不能從書裡學。</p>
+        <label v-for="p in choosablePerks()" :key="p.id" class="check" :title="p.desc">
+          <input type="checkbox" :checked="use.perks?.includes(p.id)" :disabled="!use.perks?.includes(p.id) && (use.perks?.length ?? 0) >= 6" @change="use.perks = toggle(use.perks, p.id, ($event.target as HTMLInputElement).checked)" /> {{ p.name }}
+        </label>
+      </details>
       <div class="grid">
         <label>投擲傷害（骰子）<input :value="use.damage?.dice ?? ''" placeholder="2d6" @change="use.damage = ($event.target as HTMLInputElement).value ? { dice: ($event.target as HTMLInputElement).value, type: use.damage?.type ?? 'fire' } : undefined" /></label>
         <label v-if="use.damage">傷害類型

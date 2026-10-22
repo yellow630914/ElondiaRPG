@@ -291,7 +291,6 @@ export interface RaceDef {
   name: string
   emoji: string
   bonus: Partial<Attrs>
-  talent: { name: string; desc: string; resist?: AffinityMap; offense?: AffinityMap; mods?: Mods }
 }
 
 export const attributeRules = attributesJson as unknown as {
@@ -1303,6 +1302,8 @@ export interface PerkDef {
   effects: PerkEffect[]
   /** 缺陷（保留：目前沒有缺陷，效果可以是負的） */
   flaw?: boolean
+  /** 種族特質（原本的種族天賦）：這個種族的角色自動擁有，不寫進存檔；不能選、不能學、不會失去 */
+  race?: string
   requires?: { races?: string[]; classes?: string[] }
   /** 和這些特質互斥 */
   exclusive?: string[]
@@ -1326,5 +1327,16 @@ export const perkRules = perksJson as unknown as {
 /** 清單裡的特質 */
 export function perkDef(id: string): PerkDef | undefined {
   return perkRules.perks.find((p) => p.id === id)
+}
+
+/** 可以取得的特質（建角、升級、事件、訓練、書籍、NPC 的特質清單）：種族特質除外 */
+export function choosablePerks(): PerkDef[] {
+  return perkRules.perks.filter((p) => !p.race)
+}
+
+/** 可以取得的特質 id（種族特質與不存在的回傳 false） */
+export function isChoosablePerk(id: string): boolean {
+  const p = perkDef(id)
+  return !!p && !p.race
 }
 
