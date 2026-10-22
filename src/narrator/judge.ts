@@ -7,8 +7,9 @@ import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from
 import {
   geography, genderName, itemDef, itemRules, tagDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
-  abilityDef, armorDef, weaponDef,
+  abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses,
 } from '@/engine/data'
+import { capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarget, type InventCategory } from '@/engine/invention'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
 import { itemCategory } from '@/engine/trade'
@@ -181,13 +182,35 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
   }
   // 主角不是奴隸時，不提供和契約有關的效果
   const list = kind.effects.filter((e) => pc.contract || (e !== 'release' && e !== 'change_master'))
-  return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>`
+  return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>${p.kind === 'invent' ? inventionDoc(state, p) : ''}`
 }
 
 /** 玩家設定為「事件可能出現」的物品：AI 判定時可以當成報酬 */
 function eventItems(): string {
   const list = itemRules.items.filter((i) => i.event).slice(0, 30)
   return list.length ? `。合理時可以給這些特殊物品：${list.map((i) => `${i.name}${i.desc ? `（${i.desc.slice(0, 30)}）` : ''}`).join('、')}` : ''
+}
+
+/** 自創配方：AI 在 invention 欄位設計成品，程式依上限夾住 */
+function inventionDoc(state: GameState, p: ActionPending): string {
+  const { req } = parseInventTarget(state, p.target)
+  const caps = inventCaps(req.craft, req.level, req.category)
+  if (!caps) return ''
+  const st = (ids: string[]) => ids.map((id) => `${id}（${statuses[id]?.name ?? id}）`).join('、')
+  const formats: Record<InventCategory, string> = {
+    consumable: `"use":{"heal":"2d4+2","slot":1,"cleanse":["poisoned"],"status":{"id":"<狀態 id>","turns":3},"temp_hp":0,"ap":0,"revive":0,"damage":{"dice":"2d6","type":"<傷害類型 id>"},"apply":{"status":"<狀態 id>","turns":2,"save":"dex","dc":12},"area":"one"}（只填用得到的欄位）。可用的狀態 id：給自己 ${st(Object.keys(caps.statuses)) || '無'}；解除 ${st(caps.cleanse) || '無'}；施加 ${st(Object.keys(caps.applies)) || '無'}。傷害類型 id：${damageTypes.types.map((t) => t.id).join('、')}`,
+    food: `"use":{"condition":"<狀態 id>"}。可用：${caps.conditions.map((c) => `${c}（${companionRules.conditions[c]?.name ?? c}）`).join('、')}`,
+    furniture: `"furniture":{"comfort":1,"bed":false,"places":["indoor","yard","basement"],"icon":"<一個表情符號>"}`,
+  }
+  return `
+<invention>
+這是自創配方：玩家在 <action> 描述想做的東西，請依描述與材料設計成品，放在輸出 JSON 的 "invention" 欄位：
+{"name":"<成品名稱 ≤12 字>","desc":"<≤60 字>","qty":<一批做出幾份>,${formats[req.category]}}
+類別：${INVENT_CATEGORY_NAME[req.category]}；工藝：${craftRules.skills[req.craft].name} Lv.${req.level}；材料：${req.inputs.map((x) => `${x.name}×${x.qty}`).join('、')}。
+上限（同一種工藝第 ${caps.top} 級以內的現成配方：${caps.refs.slice(0, 12).join('、')}），超過的會被程式降到上限，不能用的效果會被拿掉：
+${capsText(caps).map((t) => `- ${t}`).join('\n')}
+效果要符合描述與材料的特性（例如火蜥鱗片偏火焰、冰晶偏寒冷）；描述做不到的部分照上限內最接近的做。失敗與大失敗不會做出東西，但仍要填 invention（程式會忽略）。
+</invention>`
 }
 
 /** gear 效果的說明：打造時是成品；自由行動時是事件得到的裝備 */

@@ -1,0 +1,181 @@
+import { describe, expect, it } from 'vitest'
+import Ajv2020 from 'ajv/dist/2020'
+import schema from '../../schemas/report.schema.json'
+import { prepareAction, resolveAction, type Judgment } from '@/engine/actions'
+import { craftRules, itemDef, itemRules } from '@/engine/data'
+import { enterLocation } from '@/engine/grid'
+import { capsText, diceAvg, forgetInvention, inventCaps, inventPlan, inventTarget, sanitizeDesign, type InventRequest } from '@/engine/invention'
+import { recipeItems, recipePlan } from '@/engine/recipes'
+import { buildActionPrompt } from '@/narrator/judge'
+import { addItem, migrate, newGame } from '@/engine/state'
+import { locationMult } from '@/engine/trade'
+import type { GameState, Report } from '@/engine/types'
+
+const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
+const valid = (r: Report) => expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
+
+function game(): GameState {
+  const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'soriel' })
+  enterLocation(state)
+  state.money_cc = 100000
+  state.inventory = []
+  return state
+}
+const pc = (state: GameState) => state.party[0]!
+const qty = (state: GameState, name: string) => state.inventory.find((i) => i.name === name)?.qty ?? 0
+const potion: InventRequest = { craft: 'alchemy', level: 1, category: 'consumable', inputs: [{ name: '藥草', qty: 2 }] }
+
+describe('invention caps', () => {
+  it('follow the built-in recipes of the same craft one level up', () => {
+    const caps = inventCaps('alchemy', 1, 'consumable')!
+    expect(caps.top).toBe(2)
+    expect(caps.heal).toEqual({ avg: 7, dice: '2d4+2' })
+    expect(caps.slot).toBe(1)
+    expect(caps.cleanse).toEqual(['poisoned'])
+    expect(caps.statuses).toEqual({ potion_poison_ward: 5 })
+    expect(caps.damage?.avg).toBe(7)
+    expect(Object.keys(caps.applies).sort()).toEqual(['burning', 'chilled'])
+    expect(caps.areaAll).toBe(false)
+    expect(caps.revive).toBeUndefined()
+    // 價格照同級（含以下）最貴的現成配方
+    expect(caps.price).toBe(itemDef('微弱治療藥劑')!.price_cc)
+    // 第 4 級可以參考到第 5 級：復甦
+    expect(inventCaps('alchemy', 4, 'consumable')!.revive).toBe(0.3)
+    expect(inventCaps('alchemy', 5, 'consumable')!.top).toBe(craftRules.max_level)
+    expect(capsText(caps).join('\n')).toContain('2d4+2')
+  })
+
+  it('lets cooking reach one meal rank higher and furniture use every craft', () => {
+    expect(inventCaps('cooking', 1, 'food')!.conditions.at(-1)).toBe('fed_well')
+    expect(inventCaps('cooking', 4, 'food')!.conditions.at(-1)).toBe('fed_legend')
+    const furn = inventCaps('leatherwork', 1, 'furniture')!
+    expect(furn.comfort).toBe(2)
+    expect(furn.bed).toBe(true)
+    expect(inventCaps('alchemy', 1, 'furniture')).toBeUndefined()
+    expect(inventCaps('cooking', 1, 'consumable')).toBeUndefined()
+  })
+})
+
+describe('AI designs', () => {
+  it('are clamped into the caps', () => {
+    const caps = inventCaps('alchemy', 1, 'consumable')!
+    const d = sanitizeDesign({
+      name: '龍血|萬能藥*', desc: '喝了就好', qty: 9,
+      use: { heal: '10d10', slot: 3, cleanse: ['poisoned', 'burning'], status: { id: 'potion_fire_ward', turns: 9 } },
+    }, caps)!
+    expect(d.name).toBe('龍血萬能藥')
+    expect(d.qty).toBe(1)
+    // 回復降到上限，法術環降到 1，效果最多兩種（解除排在後面被拿掉），不能用的狀態拿掉
+    expect(d.use).toEqual({ heal: '2d4+2', slot: 1 })
+    const bomb = sanitizeDesign({ name: '雷鳴瓶', use: { damage: { dice: '8d6', type: 'thunder' }, apply: { status: 'chilled', turns: 5, save: 'dex', dc: 20 }, area: 'all' } }, caps)!
+    expect(bomb.use).toEqual({ damage: { dice: '2d6', type: 'thunder' }, apply: { status: 'chilled', turns: 2, save: 'dex', dc: 12 }, area: 'one', combat_only: true })
+    expect(sanitizeDesign({ name: '白開水', use: {} }, caps)).toBeUndefined()
+    expect(diceAvg('3d6+1')).toBe(11.5)
+  })
+
+  it('pick the best allowed meal and clamp furniture comfort', () => {
+    expect(sanitizeDesign({ name: '神仙湯', qty: 9, use: { condition: 'fed_legend' } }, inventCaps('cooking', 2, 'food')!)).toEqual({ name: '神仙湯', qty: 3, use: { condition: 'fed_fine' } })
+    const chair = sanitizeDesign({ name: '搖椅', furniture: { comfort: 9, places: ['indoor', 'roof'], icon: '🪑🪑🪑' } }, inventCaps('woodworking', 1, 'furniture')!)
+    expect(chair).toEqual({ name: '搖椅', qty: 1, furniture: { places: ['indoor'], comfort: 2, icon: '🪑🪑' } })
+  })
+})
+
+describe('inventing', () => {
+  it('charges the missing material value and needs the right level and tools', () => {
+    const state = game()
+    expect(inventPlan(state, potion, pc(state)).blocked).toContain('低階')
+    addItem(state.inventory, '煉金工具組', 1)
+    expect(inventPlan(state, potion, pc(state)).blocked).toContain('藥草不夠')
+    addItem(state.inventory, '藥草', 2)
+    const plan = inventPlan(state, potion, pc(state))
+    expect(plan.blocked).toBeUndefined()
+    expect(plan.inputValue).toBe(24)
+    expect(plan.cost).toBe(Math.round((340 * itemRules.sell_ratio - 24) * locationMult(state)))
+    expect(plan.dc).toBe(craftRules.recipe.dc[0]! + craftRules.invention.dc_bonus)
+    expect(inventPlan(state, { ...potion, level: 2 }, pc(state)).blocked).toContain('Lv.1')
+    expect(inventPlan(state, { ...potion, category: 'food' }, pc(state)).blocked).toContain('不能做料理')
+  })
+
+  it('copies a same-level recipe without AI and saves it as a new recipe in this save only', () => {
+    const state = game()
+    addItem(state.inventory, '煉金工具組', 1)
+    addItem(state.inventory, '藥草', 2)
+    prepareAction(state, { kind: 'invent', target: inventTarget('pc', potion), text: '' })
+    state.pendingAction!.natural = 20
+    const r = resolveAction(state, null)
+    valid(r)
+    const name = Object.keys(state.inventions!)[0]!
+    expect(name.startsWith('特製')).toBe(true)
+    expect(qty(state, name)).toBe(2)
+    expect(qty(state, '藥草')).toBe(0)
+    expect(itemDef(name)?.recipe).toMatchObject({ craft: 'alchemy', level: 1, inputs: [{ name: '藥草', qty: 2 }] })
+    expect(recipeItems('alchemy').find((x) => x.name === name)?.invented).toBe(true)
+    // 之後照配方再做：材料價值不夠的部分是花費，不能拿來賺錢
+    addItem(state.inventory, '藥草', 2)
+    const again = recipePlan(state, name, 1, pc(state))
+    expect(again.blocked).toBeUndefined()
+    expect(24 + (itemDef(name)!.recipe!.cost_cc ?? 0)).toBeGreaterThanOrEqual(itemDef(name)!.price_cc * itemRules.sell_ratio)
+    expect(r.changes.craft_xp?.[0]).toMatchObject({ craft: 'alchemy', amount: 3 })
+
+    // 讀回這個存檔還在；開新遊戲就沒有了
+    const saved = JSON.parse(JSON.stringify(state)) as GameState
+    game()
+    expect(itemDef(name)).toBeUndefined()
+    migrate(saved)
+    expect(itemDef(name)?.use).toBeDefined()
+    forgetInvention(saved, name)
+    expect(recipeItems().some((x) => x.name === name)).toBe(false)
+    expect(itemDef(name)).toBeDefined()
+  })
+
+  it('uses the AI design, clamped, and adds supplies for every portion', () => {
+    const state = game()
+    addItem(state.inventory, '炊具組', 1)
+    addItem(state.inventory, '野莓', 1)
+    const req: InventRequest = { craft: 'cooking', level: 1, category: 'food', inputs: [{ name: '野莓', qty: 1 }] }
+    prepareAction(state, { kind: 'invent', target: inventTarget('pc', req), text: '烤一盤莓果塔' })
+    const money = state.money_cc
+    const judgment: Judgment = {
+      attr: 'dex', dc: state.pendingAction!.base_dc, degree: 'success', effects: [], relationship_updates: [],
+      invention: { name: '野莓塔', desc: '酥脆的塔皮', qty: 3, use: { condition: 'fed_feast' } },
+    }
+    const r = resolveAction(state, judgment)
+    valid(r)
+    const def = itemDef('野莓塔')!
+    expect(def.use).toEqual({ condition: 'fed_well' })
+    expect(def.recipe?.qty).toBe(3)
+    expect(qty(state, '野莓塔')).toBe(3)
+    // 三份的價值要由材料加花費撐起來
+    const gap = Math.ceil(def.price_cc * itemRules.sell_ratio * 3) - itemDef('野莓')!.price_cc
+    expect(gap).toBeGreaterThan(0)
+    expect(def.recipe?.cost_cc).toBe(gap)
+    expect(state.money_cc).toBe(money - Math.round(gap * locationMult(state)))
+  })
+
+  it('loses materials on a failure and records nothing', () => {
+    const state = game()
+    addItem(state.inventory, '煉金工具組', 1)
+    addItem(state.inventory, '藥草', 4)
+    pc(state).attrs.int = 6
+    prepareAction(state, { kind: 'invent', target: inventTarget('pc', { ...potion, inputs: [{ name: '藥草', qty: 4 }] }), text: '' })
+    state.pendingAction!.natural = 2
+    const r = resolveAction(state, null)
+    valid(r)
+    expect(['fail', 'fumble']).toContain(r.check?.degree)
+    expect(state.inventions ?? {}).toEqual({})
+    expect(qty(state, '藥草')).toBeLessThan(4)
+  })
+
+  it('tells the AI the design format and the caps', () => {
+    const state = game()
+    addItem(state.inventory, '煉金工具組', 1)
+    addItem(state.inventory, '藥草', 2)
+    const p = prepareAction(state, { kind: 'invent', target: inventTarget('pc', potion), text: '一瓶回魔又解毒的藥' })
+    const prompt = buildActionPrompt(state, p, '')
+    const all = `${prompt.system}\n${prompt.user}`
+    expect(all).toContain('<invention>')
+    expect(all).toContain('"invention"')
+    expect(all).toContain('2d4+2')
+    expect(all).toContain('potion_poison_ward')
+  })
+})

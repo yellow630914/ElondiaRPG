@@ -1,7 +1,7 @@
 // 遊戲狀態、時間與報告提交。
 
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
-import { abilities, attributeRules, classDef, locationById, type Attrs } from './data'
+import { abilities, attributeRules, classDef, locationById, setSaveItems, type Attrs } from './data'
 import { noteLoot } from './expedition'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, type SlaveStart } from './slavery'
@@ -49,6 +49,8 @@ export function newGame(opts: NewGameOptions): GameState {
   if (gender) pc.gender = gender
   if (appearance) pc.appearance = appearance
   if (background) pc.background = background
+  // 換成新存檔：沒有自創的物品
+  setSaveItems([])
   return {
     version: 1,
     seed,
@@ -185,6 +187,8 @@ export function migrate(state: GameState): GameState {
     step(state)
     state.schema = v
   }
+  // 這個存檔自創的物品
+  setSaveItems(Object.values(state.inventions ?? {}))
   return state
 }
 

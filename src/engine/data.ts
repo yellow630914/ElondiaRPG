@@ -801,7 +801,7 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'defeat_event' | 'story'
+  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'
 export const actionRules = actionsJson as unknown as {
@@ -1024,7 +1024,17 @@ export function reindexItems() {
   for (const i of itemRules.items) itemIndex.set(i.name, i)
 }
 export function itemDef(name: string): ItemDef | undefined {
-  return itemIndex.get(name)
+  return itemIndex.get(name) ?? saveItemIndex.get(name)
+}
+
+// 這個存檔自創的物品（自創配方，見 invention.ts）：不在物品目錄裡，讀檔、開新遊戲時換成那個存檔的
+const saveItemIndex = new Map<string, ItemDef>()
+export function setSaveItems(items: ItemDef[]) {
+  saveItemIndex.clear()
+  for (const i of items) saveItemIndex.set(i.name, i)
+}
+export function saveItems(): ItemDef[] {
+  return [...saveItemIndex.values()]
 }
 
 export type ShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer'
@@ -1163,6 +1173,7 @@ export const craftRules = craftsJson as unknown as {
   shop_levels: Record<string, [number, number]>
   companion: { min_affinity: number }
   recipe: { dc: number[]; max_batches: number; critical_bonus: number; partial_ratio: number; lost_on_fail: number }
+  invention: { categories: Record<CraftId, ItemCategory[]>; dc_bonus: number; hours: number; max_effects: number; max_inputs: number }
   dismiss_penalty: { days: number; affinity: number; price_mult: number; notoriety_days: number }
 }
 

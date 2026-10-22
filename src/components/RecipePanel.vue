@@ -34,6 +34,10 @@ const skill = computed(() => (plan.value ? craftRules.skills[plan.value.recipe.c
 const text = ref('')
 const use = ref('')
 
+function forget() {
+  if (plan.value && confirm(`忘記「${plan.value.name}」的配方？做好的成品會留著，但之後不能再做。`)) game.forgetInvention(plan.value.name)
+}
+
 function produce() {
   if (!plan.value) return
   const u = parseUse(use.value)
@@ -63,13 +67,16 @@ function produce() {
     </div>
     <select v-if="rows.length" :value="name" @change="picked = ($event.target as HTMLSelectElement).value">
       <optgroup v-for="g in groups" :key="g.craft" :label="craftRules.skills[g.craft].name">
-        <option v-for="r in g.rows" :key="r.name" :value="r.name">{{ r.blocked ? '✗' : '✓' }} Lv.{{ r.recipe.level }} {{ r.name }}{{ (r.recipe.qty ?? 1) > 1 ? ` ×${r.recipe.qty}` : '' }}</option>
+        <option v-for="r in g.rows" :key="r.name" :value="r.name">{{ r.blocked ? '✗' : '✓' }} Lv.{{ r.recipe.level }} {{ r.invented ? '💡' : '' }}{{ r.name }}{{ (r.recipe.qty ?? 1) > 1 ? ` ×${r.recipe.qty}` : '' }}</option>
       </optgroup>
     </select>
     <p v-else class="muted">沒有做得出來的東西。</p>
 
     <template v-if="plan && skill">
-      <p><b>{{ plan.name }}</b>　<span class="muted">{{ itemEffect(s, plan.name) }}</span></p>
+      <p>
+        <b>{{ plan.name }}</b>　<span class="muted">{{ itemEffect(s, plan.name) }}</span>
+        <template v-if="s.inventions?.[plan.name]">　<span class="tag">💡 自創</span> <button class="small" @click="forget">忘記這個配方</button></template>
+      </p>
       <p v-if="itemText(s, plan.name)" class="muted">{{ itemText(s, plan.name) }}</p>
       <p class="muted">
         {{ skill.name }} Lv.{{ plan.recipe.level }}（{{ crafter.name }} Lv.{{ plan.level }}）・{{ attrName(skill.attr) }}檢定 +{{ plan.level * craftRules.level_bonus }}・DC {{ plan.dc }}・約 {{ plan.hours }} 小時

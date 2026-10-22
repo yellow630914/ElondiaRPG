@@ -2,7 +2,7 @@
 // 用工藝依配方做出藥劑、料理、家具、工具。和自己動手打造一樣：做的人擲工藝的屬性檢定加工藝等級，
 // 要有對應階級的工具（配方等級決定），成功時得到工藝經驗。走主動行動 produce（target = 「做的人的 id@物品名稱*批數」）。
 
-import { craftRules, itemDef, itemRules, locationById, type CraftId, type Degree, type RecipeSpec } from './data'
+import { craftRules, itemDef, itemRules, locationById, saveItems, type CraftId, type Degree, type ItemDef, type RecipeSpec } from './data'
 import { crafterRefusal, craftName, craftXpFor, gainCraftXp, skillOf, toolAccess, toolTierFor, toolTierName, type ToolAccess } from './crafting'
 import { applyEffects, type RewardEffect } from './effects'
 import { currentArea } from './grid'
@@ -12,8 +12,11 @@ import { locationMult } from './trade'
 import type { Character, GameState, Report } from './types'
 
 /** 有配方的物品（包含自訂內容） */
-export function recipeItems(craft?: CraftId): { name: string; recipe: RecipeSpec }[] {
-  return itemRules.items.filter((i) => i.recipe && (!craft || i.recipe.craft === craft)).map((i) => ({ name: i.name, recipe: i.recipe! }))
+export function recipeItems(craft?: CraftId): { name: string; recipe: RecipeSpec; invented?: boolean }[] {
+  const list = (items: ItemDef[], invented: boolean) => items.filter((i) => i.recipe && (!craft || i.recipe.craft === craft))
+    .map((i) => ({ name: i.name, recipe: i.recipe!, ...(invented ? { invented } : {}) }))
+  // 這個存檔自創的配方也算
+  return [...list(itemRules.items, false), ...list(saveItems(), true)]
 }
 
 export function recipeOf(name: string): RecipeSpec | undefined {

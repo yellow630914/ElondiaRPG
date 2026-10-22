@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, HomeDistrict, Mods, NpcDef } from './data'
+import type { AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, HomeDistrict, ItemDef, Mods, NpcDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -659,6 +659,8 @@ export interface GameState {
   shops?: Record<string, ShopState>
   /** AI 自創的物品（可以再賣回商店） */
   customItems?: Record<string, { category: string; price_cc: number; desc?: string; gear?: GearSpec }>
+  /** 這個存檔自創的物品（自創配方，見 invention.ts）：完整的物品定義，配方在 recipe */
+  inventions?: Record<string, ItemDef>
   /** 進行中與結束的談判 */
   negotiations?: Negotiation[]
 }

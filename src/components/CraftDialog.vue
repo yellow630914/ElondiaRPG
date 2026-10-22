@@ -5,13 +5,14 @@ import { CRAFT_IDS, crafters, skillOf, xpToNext } from '@/engine/crafting'
 import { useGame } from '@/stores/game'
 import CraftPanel from './CraftPanel.vue'
 import RecipePanel from './RecipePanel.vue'
+import InventPanel from './InventPanel.vue'
 
 // 工藝：隊伍的七種工藝等級，自己動手打造裝備，以及依配方製作（crafts.json，見 docs/CRAFTING.md）
 const emit = defineEmits<{ close: [] }>()
 const game = useGame()
 const s = computed(() => game.state!)
 const who = computed(() => crafters(s.value))
-const tab = ref<'gear' | 'recipe'>('recipe')
+const tab = ref<'gear' | 'recipe' | 'invent'>('recipe')
 </script>
 
 <template>
@@ -38,9 +39,11 @@ const tab = ref<'gear' | 'recipe'>('recipe')
     </p>
     <div class="tabs">
       <button :class="{ active: tab === 'recipe' }" class="small" @click="tab = 'recipe'">📜 依配方製作</button>
+      <button :class="{ active: tab === 'invent' }" class="small" @click="tab = 'invent'">💡 自創配方</button>
       <button :class="{ active: tab === 'gear' }" class="small" @click="tab = 'gear'">🔨 打造裝備</button>
     </div>
     <RecipePanel v-if="tab === 'recipe'" @started="emit('close')" />
+    <InventPanel v-else-if="tab === 'invent'" @started="emit('close')" />
     <template v-else>
       <p class="small muted">等級 N 可以處理第 N 級以下的裝備材料（鍛造、木工、製革、裁縫、珠寶）。</p>
       <CraftPanel mode="make" @started="emit('close')" />

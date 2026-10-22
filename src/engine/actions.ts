@@ -25,6 +25,7 @@ import { applyPatron } from './brothel'
 import { applyWork } from './work'
 import { applyCraft, applyMake, craftPart, parseCraftTarget } from './craft'
 import { applyProduce } from './recipes'
+import { applyInvent } from './invention'
 import { currentArea } from './grid'
 import { memberOrResident } from './homes'
 import { adultContent, type AdultScene } from './content'
@@ -104,6 +105,8 @@ export interface Judgment {
   adult_scene?: string
   effects: RewardEffect[]
   relationship_updates: RelationshipUpdate[]
+  /** 自創配方：AI 設計的成品（程式在結算時夾進上限，見 invention.ts） */
+  invention?: Record<string, unknown>
 }
 
 export { computeDegree, DEGREE_NAME }
@@ -361,6 +364,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
     ...(adultContent() && clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
+    ...(p.kind === 'invent' && r.invention && typeof r.invention === 'object' ? { invention: r.invention as Record<string, unknown> } : {}),
     effects,
     relationship_updates: updates,
   }
@@ -375,7 +379,7 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
   return {
     schema_version: '0.1',
     report_id: newReportId(state),
-    kind: p.kind === 'free' || p.kind === 'craft' || p.kind === 'make' || p.kind === 'produce' ? 'action' : 'social',
+    kind: p.kind === 'free' || p.kind === 'craft' || p.kind === 'make' || p.kind === 'produce' || p.kind === 'invent' ? 'action' : 'social',
     time: { start, end: addHours(start, hours) },
     location: { at: state.location, region: loc.region, scene: p.scene },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
@@ -435,7 +439,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   // 打造：AI 提出的成品交給打造的機制處理（不另外給一件）
   const crafted = p.kind === 'craft' || p.kind === 'make' ? judgment?.effects.find((e) => e.type === 'gear') : undefined
   if (crafted && judgment) judgment.effects = judgment.effects.filter((e) => e !== crafted)
-  const mechanical = applyMechanics(state, report, p, degree, crafted as Extract<RewardEffect, { type: 'gear' }> | undefined)
+  const mechanical = applyMechanics(state, report, p, degree, crafted as Extract<RewardEffect, { type: 'gear' }> | undefined, judgment?.invention)
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
   if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
   if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }
@@ -468,7 +472,7 @@ export function adultSceneFor(p: ActionPending, degree: Degree, judgment: Judgme
   return judgment?.adult_scene
 }
 
-function applyMechanics(state: GameState, report: Report, p: ActionPending, degree: Degree, crafted?: Extract<RewardEffect, { type: 'gear' }>): string {
+function applyMechanics(state: GameState, report: Report, p: ActionPending, degree: Degree, crafted?: Extract<RewardEffect, { type: 'gear' }>, invention?: unknown): string {
   switch (p.kind) {
     case 'hire': return applyHire(state, report, p.target!, p.offer_cc ?? 0, degree)
     case 'haggle': {
@@ -499,6 +503,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'craft': return applyCraft(state, report, p.target!, degree, crafted)
     case 'make': return applyMake(state, report, p.target!, degree, crafted)
     case 'produce': return applyProduce(state, report, p.target!, degree)
+    case 'invent': return applyInvent(state, report, p.target!, degree, invention)
     case 'defeat_event': return applyDefeatResponse(state, report, degree)
     case 'story': return applyStoryCheck(state, report, p.target!, degree)
     case 'free':

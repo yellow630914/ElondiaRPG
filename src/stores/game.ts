@@ -26,6 +26,7 @@ import * as town from '@/engine/town'
 import * as road from '@/engine/road'
 import * as homes from '@/engine/homes'
 import * as garden from '@/engine/garden'
+import * as invention from '@/engine/invention'
 import type { DefeatLoot, GameState, GearSlot, Report } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
@@ -834,6 +835,8 @@ export const useGame = defineStore('game', () => {
     }),
     stayHome: (id: string) => run((s) => homes.stayHome(s, grid.currentArea(s), id)),
     takeResident: (id: string) => run((s) => homes.leaveWithResident(s, grid.currentArea(s), id)),
+    /** 忘記自創的配方（invention.ts） */
+    forgetInvention: (name: string) => run((s) => invention.forgetInvention(s, name)),
     // 苗圃（garden.ts）：站在苗圃上播種、收成、拔掉
     plant: (seed: string) => run((s) => {
       const p = grid.position(s)

@@ -19,6 +19,17 @@
   "workshop_rent": { "per_hour_cc": 6 },
   "self": { "hours": 8, "tier1_cost_ratio": 0.5 },
   "shop_levels": { "village": [1, 2], "outpost": [1, 2], "fortress": [2, 2], "town": [2, 3], "port": [2, 3], "city": [3, 4], "capital": [4, 5] },
+  "invention": {
+    "$comment": "自創配方（見 docs/CRAFTING.md 第 7 節）：選工藝、等級（不超過做的人的工藝等級）、類別與材料，描述想做的東西，AI 設計成品。效果的種類與強度不超過同一種工藝高一級的現成配方（家具的舒適度與床看所有工藝的家具配方）；價格照同級的現成配方，材料價值不到價格 × 收購比例的部分當作另外的花費。DC = 配方的 DC + dc_bonus；categories：每種工藝能做的類別；max_effects：效果最多幾種。",
+    "categories": {
+      "alchemy": ["consumable"], "cooking": ["food"], "tailoring": ["consumable", "furniture"],
+      "smithing": ["furniture"], "woodworking": ["furniture"], "leatherwork": ["furniture"], "jewelcraft": ["furniture"]
+    },
+    "dc_bonus": 2,
+    "hours": 4,
+    "max_effects": 2,
+    "max_inputs": 6
+  },
   "companion": { "min_affinity": 30 },
   "recipe": {
     "$comment": "配方（物品的 recipe，見 docs/CRAFTING.md 第 6 節）：做的人擲工藝的屬性檢定，加工藝等級；DC 依配方等級 dc[等級 - 1]；工具階級依 tool_tier。一次可以做 max_batches 批（材料、費用、時間都乘批數，只擲一次）。成果：大成功多做 critical_bonus 比例（無條件進位，至少 1 份）、成功照配方、部分成功只有 partial_ratio（無條件進位）、失敗材料損失 lost_on_fail（無條件進位）、大失敗材料全部損失；費用不論結果都照付。經驗 = 配方等級 × xp[成功程度]（和打造一樣，不乘批數）。",
