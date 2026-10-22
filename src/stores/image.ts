@@ -1,11 +1,11 @@
-// 插圖生成的設定：用哪個生圖服務（各自的 key 與參數）、形象插圖的提示詞、要不要先轉成 Danbooru 標籤。
+// 插圖生成的設定：用哪個生圖服務（各自的 key 與參數）、形象插圖的提示詞、生圖提示詞的預處理（內建與自訂的指示）。
 // 和模型來源一樣只存在這個瀏覽器的 localStorage。
 
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import {
-  DEFAULT_PORTRAIT_TEMPLATE, DEFAULT_STYLE, DEFAULT_TAG_INSTRUCTIONS, IMAGE_SERVICES, imageServiceInfo,
-  type ImageServiceConfig, type ImageServiceId,
+  BUILTIN_PREPROCESSORS, DEFAULT_PORTRAIT_TEMPLATE, DEFAULT_STYLE, DEFAULT_TAG_INSTRUCTIONS, IMAGE_SERVICES, imageServiceInfo,
+  type ImagePreprocessor, type ImageServiceConfig, type ImageServiceId,
 } from '@/narrator/imageInfo'
 import {
   comfyServer, fetchComfyOptions, newPreset, presetFromLegacy, presetFromWorkflow, presetIssues, sanitizePreset,
@@ -17,14 +17,14 @@ const KEY = 'elondia.image'
 interface SavedImageSettings {
   service: ImageServiceId
   configs: Record<ImageServiceId, ImageServiceConfig>
-  /** 各服務要不要先請大語言模型把描述轉成 Danbooru 標籤（轉完直接送出標籤，不再套提示詞） */
-  danbooru: Record<ImageServiceId, boolean>
+  /** 各服務用哪一份預處理指示（空字串是不預處理；預處理後直接送出結果，不再套提示詞模板） */
+  preprocess: Record<ImageServiceId, string>
+  /** 玩家自己建立的預處理指示 */
+  preprocessors: ImagePreprocessor[]
   /** 形象插圖的提示詞模板（{name} 等代號） */
   template: string
   /** 畫風（模板的 {style}） */
   style: string
-  /** 標籤轉換的指示 */
-  tagInstructions: string
   /** ComfyUI 的設定組合（每個主模一組）與目前用的那一組 */
   comfyPresets: ComfyPreset[]
   comfyActive: string
@@ -38,10 +38,10 @@ function defaults(): SavedImageSettings {
   return {
     service: 'openai',
     configs: defaultConfigs(),
-    danbooru: Object.fromEntries(IMAGE_SERVICES.map((s) => [s.id, s.danbooru])) as Record<ImageServiceId, boolean>,
+    preprocess: Object.fromEntries(IMAGE_SERVICES.map((s) => [s.id, s.preprocess])) as Record<ImageServiceId, string>,
+    preprocessors: [],
     template: DEFAULT_PORTRAIT_TEMPLATE,
     style: DEFAULT_STYLE,
-    tagInstructions: DEFAULT_TAG_INSTRUCTIONS,
     comfyPresets: [],
     comfyActive: '',
   }
@@ -66,19 +66,61 @@ function load(): SavedImageSettings {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return { ...base, ...presetsOf(loadPresets(null, base.configs.comfyui)) }
-    const saved = JSON.parse(raw) as Partial<SavedImageSettings>
+    const saved = JSON.parse(raw) as Partial<SavedImageSettings> & LegacyImageSettings
     const configs = defaultConfigs()
     for (const id of Object.keys(configs) as ImageServiceId[]) configs[id] = { ...configs[id], ...saved.configs?.[id] }
     return {
       ...base, ...saved,
       service: IMAGE_SERVICES.some((s) => s.id === saved.service) ? saved.service! : base.service,
       configs,
-      danbooru: { ...base.danbooru, ...saved.danbooru },
+      ...loadPreprocess(saved, base),
       ...presetsOf(loadPresets(saved, configs.comfyui)),
     }
   } catch {
     return { ...base, ...presetsOf(loadPresets(null, base.configs.comfyui)) }
   }
+}
+
+/** 舊版：各服務勾選「先轉成 Danbooru 標籤」，指示只有一份（可以修改） */
+interface LegacyImageSettings {
+  danbooru?: Partial<Record<ImageServiceId, boolean>>
+  tagInstructions?: string
+}
+
+const OUTPUTS = ['tags', 'text'] as const
+
+function sanitizePreprocessor(p: Partial<ImagePreprocessor>, i: number): ImagePreprocessor {
+  return {
+    id: typeof p.id === 'string' && p.id && !BUILTIN_PREPROCESSORS.some((b) => b.id === p.id) ? p.id : `c-${i + 1}`,
+    name: String(p.name || '自訂的預處理').slice(0, 30),
+    instructions: String(p.instructions ?? ''),
+    output: OUTPUTS.includes(p.output as never) ? p.output! : 'text',
+  }
+}
+
+/** 預處理的設定：舊版的勾選轉成「Danbooru 標籤」；改過的指示變成一份自訂的 */
+function loadPreprocess(saved: Partial<SavedImageSettings> & LegacyImageSettings, base: SavedImageSettings): Pick<SavedImageSettings, 'preprocess' | 'preprocessors'> {
+  const preprocessors = (Array.isArray(saved.preprocessors) ? saved.preprocessors : []).map(sanitizePreprocessor)
+  const known = (id: string) => !id || BUILTIN_PREPROCESSORS.some((b) => b.id === id) || preprocessors.some((p) => p.id === id)
+  if (saved.preprocess) {
+    const preprocess = { ...base.preprocess }
+    for (const id of Object.keys(preprocess) as ImageServiceId[]) {
+      const v = saved.preprocess[id]
+      if (typeof v === 'string' && known(v)) preprocess[id] = v
+    }
+    return { preprocess, preprocessors }
+  }
+  if (!saved.danbooru) return { preprocess: base.preprocess, preprocessors }
+  let tagId = 'danbooru'
+  if (saved.tagInstructions && saved.tagInstructions.trim() !== DEFAULT_TAG_INSTRUCTIONS.trim()) {
+    tagId = 'c-legacy'
+    preprocessors.push({ id: tagId, name: 'Danbooru 標籤（自訂）', instructions: saved.tagInstructions, output: 'tags' })
+  }
+  const preprocess = { ...base.preprocess }
+  for (const id of Object.keys(preprocess) as ImageServiceId[]) {
+    if (saved.danbooru[id] !== undefined) preprocess[id] = saved.danbooru[id] ? tagId : ''
+  }
+  return { preprocess, preprocessors }
 }
 
 const presetsOf = (x: { presets: ComfyPreset[]; active: string }) => ({ comfyPresets: x.presets, comfyActive: x.active })
@@ -87,10 +129,10 @@ export const useImageSettings = defineStore('image', () => {
   const initial = load()
   const service = ref(initial.service)
   const configs = ref(initial.configs)
-  const danbooru = ref(initial.danbooru)
+  const preprocess = ref(initial.preprocess)
+  const preprocessors = ref<ImagePreprocessor[]>(initial.preprocessors)
   const template = ref(initial.template)
   const style = ref(initial.style)
-  const tagInstructions = ref(initial.tagInstructions)
   const comfyPresets = ref<ComfyPreset[]>(initial.comfyPresets)
   const comfyActive = ref(initial.comfyActive)
   /** 從 ComfyUI 讀到的清單（不保存，每次開啟設定時再讀） */
@@ -98,10 +140,10 @@ export const useImageSettings = defineStore('image', () => {
   const comfyLoading = ref(false)
   const comfyError = ref<string | null>(null)
 
-  watch([service, configs, danbooru, template, style, tagInstructions, comfyPresets, comfyActive], () => {
+  watch([service, configs, preprocess, preprocessors, template, style, comfyPresets, comfyActive], () => {
     const data: SavedImageSettings = {
-      service: service.value, configs: configs.value, danbooru: danbooru.value,
-      template: template.value, style: style.value, tagInstructions: tagInstructions.value,
+      service: service.value, configs: configs.value, preprocess: preprocess.value, preprocessors: preprocessors.value,
+      template: template.value, style: style.value,
       comfyPresets: comfyPresets.value, comfyActive: comfyActive.value,
     }
     try {
@@ -188,8 +230,45 @@ export const useImageSettings = defineStore('image', () => {
     configs.value[id] = { apiKey: configs.value[id].apiKey, ...imageServiceInfo(id).defaults }
   }
 
+  // ---- 生圖提示詞的預處理 ----
+
+  /** 內建的在前，再來是自訂的 */
+  function allPreprocessors(): ImagePreprocessor[] {
+    return [...BUILTIN_PREPROCESSORS, ...preprocessors.value]
+  }
+
+  /** 這個服務用的預處理指示（不預處理時是 undefined） */
+  function preprocessorFor(id: ImageServiceId = service.value): ImagePreprocessor | undefined {
+    const pick = preprocess.value[id]
+    return pick ? allPreprocessors().find((p) => p.id === pick) : undefined
+  }
+
+  /** 新增一份自訂的指示（可以從現有的複製），並讓目前的服務改用它 */
+  function addPreprocessor(copyFrom?: ImagePreprocessor): ImagePreprocessor {
+    let n = preprocessors.value.length + 1
+    while (preprocessors.value.some((p) => p.id === `c-${n}`)) n++
+    const p: ImagePreprocessor = {
+      id: `c-${n}`,
+      name: (copyFrom ? `${copyFrom.name}（自訂）` : '自訂的預處理').slice(0, 30),
+      instructions: copyFrom?.instructions ?? '',
+      output: copyFrom?.output ?? 'text',
+    }
+    preprocessors.value.push(p)
+    preprocess.value[service.value] = p.id
+    return p
+  }
+
+  /** 刪掉自訂的指示；用它的服務改成不預處理 */
+  function removePreprocessor(id: string) {
+    preprocessors.value = preprocessors.value.filter((p) => p.id !== id)
+    for (const s of Object.keys(preprocess.value) as ImageServiceId[]) {
+      if (preprocess.value[s] === id) preprocess.value[s] = ''
+    }
+  }
+
   return {
-    service, configs, danbooru, template, style, tagInstructions, config, ready, resetService,
+    service, configs, preprocess, preprocessors, template, style, config, ready, resetService,
+    allPreprocessors, preprocessorFor, addPreprocessor, removePreprocessor,
     comfyPresets, comfyActive, comfyOptions, comfyLoading, comfyError,
     preset, addPreset, duplicatePreset, removePreset, importPreset, loadComfyOptions,
   }

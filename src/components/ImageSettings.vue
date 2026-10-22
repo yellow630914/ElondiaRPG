@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { DEFAULT_PORTRAIT_TEMPLATE, DEFAULT_STYLE, DEFAULT_TAG_INSTRUCTIONS, IMAGE_SERVICES, imageServiceInfo } from '@/narrator/imageInfo'
+import { DEFAULT_PORTRAIT_TEMPLATE, DEFAULT_STYLE, IMAGE_SERVICES, imageServiceInfo } from '@/narrator/imageInfo'
 import { useImageSettings } from '@/stores/image'
 import { useSettings } from '@/stores/settings'
 import ComfySettings from './ComfySettings.vue'
 
-// 插圖生成的設定：生圖服務、形象插圖的提示詞、Danbooru 標籤轉換
+// 插圖生成的設定：生圖服務、形象插圖的提示詞、生圖提示詞預處理（內建或自訂的指示）
 const image = useImageSettings()
 const settings = useSettings()
 const info = computed(() => imageServiceInfo(image.service))
@@ -22,6 +22,16 @@ const sizeKey = computed({
 })
 const tagSource = computed(() => settings.sourceFor('tags'))
 const tagReady = computed(() => settings.sourceReady(tagSource.value.index))
+// 目前服務用的預處理指示；自訂的可以直接修改
+const pre = computed(() => image.preprocessorFor())
+const custom = computed(() => image.preprocessors.find((p) => p.id === pre.value?.id))
+
+function removePreprocessor() {
+  const p = custom.value
+  if (!p) return
+  const users = IMAGE_SERVICES.filter((s) => image.preprocess[s.id] === p.id).map((s) => s.name)
+  if (confirm(`刪除預處理指示「${p.name}」？${users.length ? `（${users.join('、')} 會改成不預處理）` : ''}`)) image.removePreprocessor(p.id)
+}
 
 function resetService() {
   if (confirm(`把 ${info.value.name} 的參數恢復預設？（API key 會保留）`)) image.resetService(image.service)
@@ -69,12 +79,49 @@ function resetService() {
       </label>
       <div v-if="image.service !== 'comfyui'" class="row"><button class="small" @click="resetService">↩️ 這個服務的參數恢復預設</button></div>
 
-      <label class="check"><input v-model="image.danbooru[image.service]" type="checkbox" /> 先轉成 Danbooru 標籤</label>
-      <p class="small muted">
-        勾選時，先把角色的描述交給大語言模型（「🔀 功能分配」的「插圖標籤轉換」，目前是「{{ tagSource.name }}」）轉成 Danbooru 標籤，
-        再把標籤直接送給生圖服務，不再套用提示詞模板與畫風。NovelAI 與動漫風格的 Stable Diffusion 模型通常只看得懂標籤。
-        <span v-if="image.danbooru[image.service] && !tagReady" class="warn-text">這個來源還沒設定好。</span>
-      </p>
+      <fieldset class="pre">
+        <legend>生圖提示詞預處理</legend>
+        <p class="small muted">
+          生圖前先把角色的描述交給大語言模型（「🔀 功能分配」的「插圖提示詞預處理」，目前是「{{ tagSource.name }}」），
+          依選的指示改寫成生圖服務看得懂的格式（例如 Danbooru 標籤、英文描述、JSON），再把結果直接送出，不再套用提示詞模板與畫風。
+          每個生圖服務各自選；NovelAI 與動漫風格的 Stable Diffusion 模型通常只看得懂 Danbooru 標籤。
+          <span v-if="pre && !tagReady" class="warn-text">這個來源還沒設定好。</span>
+        </p>
+        <label>{{ info.name }} 用的預處理
+          <select v-model="image.preprocess[image.service]">
+            <option value="">不預處理（套用提示詞模板）</option>
+            <optgroup label="內建">
+              <option v-for="p in image.allPreprocessors().filter((x) => x.builtin)" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </optgroup>
+            <optgroup v-if="image.preprocessors.length" label="自訂">
+              <option v-for="p in image.preprocessors" :key="p.id" :value="p.id">{{ p.name }}</option>
+            </optgroup>
+          </select>
+        </label>
+        <template v-if="custom">
+          <label>名稱 <input v-model="custom.name" maxlength="30" /></label>
+          <label>回覆的整理方式
+            <select v-model="custom.output">
+              <option value="tags">整理成標籤（拿掉說明、換行改逗號、去掉重複）</option>
+              <option value="text">原樣送出（只拿掉程式碼框）</option>
+            </select>
+          </label>
+          <label>指示（交給大語言模型的 system）
+            <textarea v-model="custom.instructions" rows="9" class="mono" spellcheck="false" />
+          </label>
+        </template>
+        <details v-else-if="pre">
+          <summary class="small">「{{ pre.name }}」的指示（內建，不能修改；複製成自訂的再改）</summary>
+          <textarea :value="pre.instructions" rows="9" class="mono" readonly />
+          <p class="small muted">回覆的整理方式：{{ pre.output === 'tags' ? '整理成標籤' : '原樣送出' }}</p>
+        </details>
+        <p v-if="pre" class="small muted">沒有開啟成人向時，會另外加上「不要加入裸露、性暗示或血腥的內容」。</p>
+        <div class="row">
+          <button v-if="pre" class="small" @click="image.addPreprocessor(pre)">📋 複製成自訂</button>
+          <button class="small" @click="image.addPreprocessor()">＋ 新增預處理指示</button>
+          <button v-if="custom" class="small" @click="removePreprocessor">🗑️ 刪除這份指示</button>
+        </div>
+      </fieldset>
 
       <label>畫風（模板的 {style}） <input v-model="image.style" /></label>
       <div class="row"><button class="small" :disabled="image.style === DEFAULT_STYLE" @click="image.style = DEFAULT_STYLE">畫風恢復預設</button></div>
@@ -83,12 +130,6 @@ function resetService() {
         <p class="small muted">代號：{name} {gender} {race} {role} {level} {appearance} {personality} {background} {gear} {style}。代號的值是空的那一行會整行拿掉。</p>
         <textarea v-model="image.template" rows="9" class="mono" spellcheck="false" />
         <div class="row"><button class="small" :disabled="image.template === DEFAULT_PORTRAIT_TEMPLATE" @click="image.template = DEFAULT_PORTRAIT_TEMPLATE">恢復預設</button></div>
-      </details>
-      <details>
-        <summary class="small">Danbooru 標籤轉換的指示（交給大語言模型）</summary>
-        <textarea v-model="image.tagInstructions" rows="9" class="mono" spellcheck="false" />
-        <p class="small muted">沒有開啟成人向時，會另外加上「不要裸露、性暗示或血腥的標籤」。</p>
-        <div class="row"><button class="small" :disabled="image.tagInstructions === DEFAULT_TAG_INSTRUCTIONS" @click="image.tagInstructions = DEFAULT_TAG_INSTRUCTIONS">恢復預設</button></div>
       </details>
       <p class="small" :class="image.ready() ? 'ok-text' : 'warn-text'">{{ image.ready() ? '🟢 可以生成插圖' : image.service === 'comfyui' ? '⚪ 還沒設定好（需要網址，以及選好這組設定的模型）' : '⚪ 還沒設定好（需要網址與 API key）' }}</p>
     </div>
@@ -106,4 +147,7 @@ function resetService() {
 .warn-text { color: var(--danger); }
 .ok-text { color: var(--accent); }
 details textarea { width: 100%; margin-top: 4px; }
+.pre { display: grid; gap: 8px; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; }
+.pre legend { padding: 0 4px; }
+.pre p { margin: 0; }
 </style>

@@ -1,4 +1,4 @@
-// 插圖生成：服務的模板（ChatGPT、NovelAI、ComfyUI）、角色形象插圖的提示詞、Danbooru 標籤轉換的提示詞。
+// 插圖生成：服務的模板（ChatGPT、NovelAI、ComfyUI）、角色形象插圖的提示詞、生圖提示詞的預處理（交給大語言模型改寫）。
 // 送出請求的程式在 imageProviders.ts；設定存在瀏覽器（stores/image.ts），見 docs/PORTRAITS.md。
 
 import { className, genderName, raceName } from '@/engine/data'
@@ -35,8 +35,8 @@ export interface ImageServiceInfo {
   /** 預設的設定 */
   defaults: Omit<ImageServiceConfig, 'apiKey'>
   keyOptional?: boolean
-  /** 這個服務適合 Danbooru 標籤（預設勾選轉換） */
-  danbooru: boolean
+  /** 預設用哪一份預處理指示（空字串是不預處理） */
+  preprocess: string
   /** 設定畫面的說明 */
   note: string
   /** 可以選的尺寸（寬 × 高） */
@@ -67,7 +67,7 @@ export const IMAGE_SERVICES: ImageServiceInfo[] = [
     id: 'openai',
     name: 'ChatGPT（OpenAI 圖片 API）',
     defaults: { baseURL: 'https://api.openai.com/v1', model: 'gpt-image-1', width: 1024, height: 1536, steps: 0, scale: 0, sampler: '', negative: '', workflow: '', extra: '' },
-    danbooru: false,
+    preprocess: '',
     note: '用 OpenAI 的 /images/generations。看得懂一般的句子描述（不需要 Danbooru 標籤）；不支援負面提示詞。也可以填相容的服務網址。',
     sizes: [[1024, 1536], [1024, 1024], [1536, 1024]],
   },
@@ -78,8 +78,8 @@ export const IMAGE_SERVICES: ImageServiceInfo[] = [
       baseURL: 'https://image.novelai.net', model: 'nai-diffusion-4-5-full', width: 832, height: 1216, steps: 28, scale: 5,
       sampler: 'k_euler_ancestral', negative: NEGATIVE, workflow: '', extra: '',
     },
-    danbooru: true,
-    note: '用 NovelAI 的 /ai/generate-image（key 是帳號設定裡的 Persistent API Token）。動漫模型只看得懂 Danbooru 標籤，建議勾選標籤轉換。瀏覽器直接呼叫被擋（CORS）時，把網址換成自己的轉送代理。',
+    preprocess: 'danbooru',
+    note: '用 NovelAI 的 /ai/generate-image（key 是帳號設定裡的 Persistent API Token）。動漫模型只看得懂 Danbooru 標籤，建議用「Danbooru 標籤」預處理。瀏覽器直接呼叫被擋（CORS）時，把網址換成自己的轉送代理。',
     sizes: [[832, 1216], [1024, 1024], [1216, 832]],
   },
   {
@@ -90,7 +90,7 @@ export const IMAGE_SERVICES: ImageServiceInfo[] = [
       sampler: 'euler_ancestral', negative: NEGATIVE, workflow: DEFAULT_COMFY_WORKFLOW, extra: '',
     },
     keyOptional: true,
-    danbooru: true,
+    preprocess: 'danbooru',
     note: '送出工作流程到 /prompt，等算完再下載圖片。ComfyUI 啟動時要加 --enable-cors-header。每個主模存成一組設定：Checkpoint 或 UNet（模型、文字編碼器、VAE 分開載入）模式只用 ComfyUI 內建的節點，可以加多個 LoRA 與高解析修復；也可以貼上自己的工作流程。按「讀取 ComfyUI 清單」可以直接選伺服器上的檔案，「從工作流程匯入」可以把跑得動的工作流程變成一組設定。',
     sizes: [[832, 1216], [1024, 1024], [1216, 832], [512, 768]],
   },
@@ -173,9 +173,24 @@ export function portraitPrompt(subject: PortraitSubject, template: string, style
     .join('\n')
 }
 
-// ---- Danbooru 標籤 ----
+// ---- 生圖提示詞預處理 ----
+// 送給生圖服務之前，先請大語言模型照一份「預處理指示」改寫角色描述：轉成 Danbooru 標籤、英文句子、JSON……
+// 指示有內建的幾份，玩家也可以自己建立；output 決定怎麼整理模型的回覆。
 
-/** 預設的標籤轉換指示（交給大語言模型） */
+/** 模型回覆的整理方式：tags 整理成逗號分隔的標籤（去掉重複）；text 只拿掉程式碼框與前後空白，原樣送出（句子、JSON） */
+export type PreprocessOutput = 'tags' | 'text'
+
+export interface ImagePreprocessor {
+  id: string
+  name: string
+  /** 交給大語言模型的指示（system） */
+  instructions: string
+  output: PreprocessOutput
+  /** 內建的（不能修改，可以複製成自訂的） */
+  builtin?: boolean
+}
+
+/** 預設的 Danbooru 標籤指示 */
 export const DEFAULT_TAG_INSTRUCTIONS = [
   '你是 AI 繪圖提示詞的轉換器。把使用者給的角色形象描述轉成 Danbooru 標籤格式的提示詞，給動漫風格的生圖模型（NovelAI、Stable Diffusion 的動漫模型等）使用。',
   '規則：',
@@ -186,10 +201,43 @@ export const DEFAULT_TAG_INSTRUCTIONS = [
   '5. 大約 20～40 個標籤。',
 ].join('\n')
 
-/** 交給大語言模型的轉換請求 */
-export function tagPrompt(semantic: string, instructions: string, adult: boolean): Prompt {
-  const safety = adult ? '' : '\n6. 不要加入裸露、性暗示或血腥的標籤。'
+/** 內建的預處理指示 */
+export const BUILTIN_PREPROCESSORS: ImagePreprocessor[] = [
+  { id: 'danbooru', name: 'Danbooru 標籤', output: 'tags', builtin: true, instructions: DEFAULT_TAG_INSTRUCTIONS },
+  {
+    id: 'english', name: '英文自然語言描述', output: 'text', builtin: true,
+    instructions: [
+      '你是 AI 繪圖提示詞的改寫器。把使用者給的角色形象描述改寫成一段給生圖模型（DALL·E、Flux、SDXL 的寫實模型等）用的英文描述。',
+      '規則：',
+      '1. 只輸出描述本身，一段英文，不要任何說明、引號或程式碼框。',
+      '2. 先寫主體（人物、性別、年齡感、種族特徵），再寫外貌、服裝與裝備、表情與姿勢，最後寫構圖、光線與背景。',
+      '3. 用具體的視覺詞彙；描述沒寫到的細節可以依角色設定合理補上，不要和描述衝突。',
+      '4. 不要寫出角色名字或作品名稱。',
+      '5. 大約 60～120 個英文單字。',
+    ].join('\n'),
+  },
+  {
+    id: 'json', name: 'JSON 結構化', output: 'text', builtin: true,
+    instructions: [
+      '你是 AI 繪圖提示詞的轉換器。把使用者給的角色形象描述轉成給生圖模型用的 JSON。',
+      '規則：',
+      '1. 只輸出一個 JSON 物件，不要任何說明或程式碼框。',
+      '2. 欄位（值都用英文）：{"subject": "人物與性別", "appearance": "髮型、髮色、眼睛、體型、種族特徵", "outfit": "服裝與裝備", "expression": "表情", "pose": "姿勢", "composition": "構圖", "background": "背景", "style": "畫風", "quality": "畫質詞"}。',
+      '3. 描述沒寫到的細節可以依角色設定合理補上，不要和描述衝突；不要寫出角色名字或作品名稱。',
+    ].join('\n'),
+  },
+]
+
+/** 交給大語言模型的預處理請求 */
+export function preprocessPrompt(semantic: string, instructions: string, adult: boolean): Prompt {
+  const safety = adult ? '' : '\n另外：不要加入裸露、性暗示或血腥的內容。'
   return { system: `${instructions.trim()}${safety}`, user: `角色形象描述：\n${semantic}` }
+}
+
+/** 依整理方式處理模型的回覆 */
+export function cleanPreprocessed(text: string, output: PreprocessOutput): string {
+  if (output === 'tags') return cleanTags(text)
+  return text.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim()
 }
 
 /** 整理模型回傳的標籤：拿掉程式碼框與說明，換行改成逗號，去掉重複 */

@@ -1,6 +1,6 @@
 # 角色形象插圖
 
-> 程式：`src/narrator/imageInfo.ts`（服務模板、提示詞、標籤轉換）、`src/narrator/imageProviders.ts`（送出請求）、`src/stores/image.ts`（設定）、`src/stores/portraits.ts`（保存與生成）、`src/components/ImageSettings.vue`、`src/components/PortraitBox.vue`。
+> 程式：`src/narrator/imageInfo.ts`（服務模板、提示詞、預處理指示）、`src/narrator/imageProviders.ts`（送出請求）、`src/stores/image.ts`（設定）、`src/stores/portraits.ts`（保存與生成）、`src/components/ImageSettings.vue`、`src/components/PortraitBox.vue`。
 
 隊伍視窗的每位成員、人際關係裡登場過的人都有一格形象圖：可以「🎨 生成形象圖」、「📁 上傳」自己的圖片、刪除，點圖片放大。
 
@@ -11,7 +11,7 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 | 模板 | 請求 | 預設 | 注意 |
 |---|---|---|---|
 | ChatGPT（OpenAI 圖片 API） | `POST {網址}/images/generations`，回傳 base64 或網址 | `gpt-image-1`、1024 × 1536 | 看得懂一般句子；不支援負面提示詞；也可以填相容的服務網址 |
-| NovelAI | `POST {網址}/ai/generate-image`，回傳 ZIP（裡面是 PNG） | `nai-diffusion-4-5-full`、832 × 1216、28 步、CFG 5、`k_euler_ancestral` | key 是 Persistent API Token；只看得懂 Danbooru 標籤；瀏覽器被擋（CORS）時換成自己的轉送代理 |
+| NovelAI | `POST {網址}/ai/generate-image`，回傳 ZIP（裡面是 PNG） | `nai-diffusion-4-5-full`、832 × 1216、28 步、CFG 5、`k_euler_ancestral` | key 是 Persistent API Token；只看得懂 Danbooru 標籤（預設用「Danbooru 標籤」預處理）；瀏覽器被擋（CORS）時換成自己的轉送代理 |
 | ComfyUI（自架） | `POST {網址}/prompt` 送出工作流程 → 輪詢 `/history/{id}` → `GET /view` 下載 | `http://127.0.0.1:8188`、832 × 1216 | 啟動時加 `--enable-cors-header`；模型與參數放在「設定組合」，見下方第 5 節 |
 
 - **參數**：尺寸、步數、CFG、取樣器、負面提示詞（OpenAI 以外）。**額外參數**是一個 JSON 物件，合併進請求（NovelAI 合併進 `parameters`），例如 OpenAI 的 `{"quality": "high"}`。
@@ -21,16 +21,30 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 
 **形象插圖的提示詞模板**（可以修改、恢復預設）把角色的資料填進去：`{name}` `{gender}` `{race}` `{role}`（職業或身分）`{level}` `{appearance}` `{personality}` `{background}` `{gear}`（身上的裝備）`{style}`（畫風）。代號的值是空的那一行整行拿掉。預設模板是英文的框架（單人、上半身、面向觀眾、簡單背景、不要文字與浮水印），角色的外貌等描述照原文填入。
 
-## 3. Danbooru 標籤轉換
+## 3. 生圖提示詞預處理
 
-很多動漫風格的生圖模型只看得懂 Danbooru 標籤。勾選「先轉成 Danbooru 標籤」（NovelAI 與 ComfyUI 預設勾選）時：
+不同的生圖模型吃的提示詞格式不一樣：NovelAI 與動漫風格的 Stable Diffusion 模型只看得懂 Danbooru 標籤，有些模型或自架的工作流程要英文句子或 JSON。「生圖提示詞預處理」在送出前請大語言模型依一份**預處理指示**改寫描述。每個生圖服務各自選用哪一份（`elondia.image` 的 `preprocess`；NovelAI 與 ComfyUI 預設「Danbooru 標籤」，ChatGPT 預設不預處理）：
 
 1. 依模板組成語意描述。
-2. 交給大語言模型（「🔀 功能分配」的「插圖標籤轉換」用哪個模型來源）轉成標籤：一行英文、逗號分隔，依「人數與性別 → 外貌 → 服裝 → 表情姿勢 → 構圖 → 背景 → 畫質」排列，20～40 個。轉換的指示可以修改；沒有開啟成人向時另外要求不要裸露、性暗示或血腥的標籤。
-3. 整理模型的回答（拿掉程式碼框與說明、換行改逗號、去掉重複）。
-4. **標籤直接送給生圖服務**，不再套用提示詞模板與畫風。
+2. 交給大語言模型（「🔀 功能分配」的「插圖提示詞預處理」用哪個模型來源）：system 是選的指示，user 是角色形象描述。沒有開啟成人向時，指示後面另外加上「不要加入裸露、性暗示或血腥的內容」。
+3. 依指示的**整理方式**處理回答：
+   - **整理成標籤**：拿掉程式碼框與「Tags:」之類的說明、換行改逗號、去掉重複。
+   - **原樣送出**：只拿掉程式碼框（適合英文句子、JSON）。
+4. **結果直接送給生圖服務**，不再套用提示詞模板與畫風。
 
-轉換的 token 用量記在日誌的「其他」用量（功能是「插圖標籤轉換」）。形象圖的「提示詞」摺疊區塊可以看到送出的標籤、轉換前的描述；還沒生成時顯示會送出的描述。
+### 預處理指示
+
+| 內建 | 整理方式 | 內容 |
+|---|---|---|
+| Danbooru 標籤 | 整理成標籤 | 一行英文標籤，依「人數與性別 → 外貌 → 服裝 → 表情姿勢 → 構圖 → 背景 → 畫質」排列，20～40 個 |
+| 英文自然語言描述 | 原樣送出 | 一段 60～120 字的英文描述（主體 → 外貌、服裝 → 表情姿勢 → 構圖、光線、背景），給 DALL·E、Flux、寫實模型 |
+| JSON 結構化 | 原樣送出 | 一個 JSON 物件：`subject` `appearance` `outfit` `expression` `pose` `composition` `background` `style` `quality` |
+
+- 內建的指示不能修改；「📋 複製成自訂」複製一份再改。「＋ 新增預處理指示」建立空白的一份。自訂的指示有名稱、整理方式與指示內容，存在 `elondia.image` 的 `preprocessors`。
+- 刪除自訂的指示時，用它的服務改成不預處理。
+- 舊版的「先轉成 Danbooru 標籤」勾選自動換成「Danbooru 標籤」；改過的轉換指示變成一份自訂的「Danbooru 標籤（自訂）」。
+
+預處理的 token 用量記在日誌的「其他」用量（功能是「插圖提示詞預處理」）。形象圖的「提示詞」摺疊區塊可以看到送出的提示詞、預處理前的描述；還沒生成時顯示會送出的描述與會用的預處理。
 
 ## 4. 保存
 

@@ -16,7 +16,7 @@ export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: bo
   { id: 'roster', name: '居民潤飾', desc: '第一次到一個地點時，設計居民的名字、外貌與性格（JSON）', prose: false },
   { id: 'shop', name: '商店清單', desc: '第一次進店時設計今天的交易清單（JSON）', prose: false },
   { id: 'negotiation', name: '談判方式', desc: '開始談判時設計可以採取的方式（JSON）', prose: false },
-  { id: 'tags', name: '插圖標籤轉換', desc: '生成形象插圖前，把角色描述轉成 Danbooru 標籤（插圖設定勾選「轉成 Danbooru 標籤」時才用）', prose: false },
+  { id: 'tags', name: '插圖提示詞預處理', desc: '生成形象插圖前，依選的預處理指示改寫角色描述（例如轉成 Danbooru 標籤、JSON）；插圖設定選了「生圖提示詞預處理」時才用', prose: false },
 ]
 
 /** 模型來源：一組服務、key 與模型。每個來源對各服務各自保存設定，切換服務不會弄丟 key。 */

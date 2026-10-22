@@ -4,7 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { enterLocation } from '@/engine/grid'
 import { newGame } from '@/engine/state'
 import {
-  cleanTags, DEFAULT_COMFY_WORKFLOW, DEFAULT_PORTRAIT_TEMPLATE, IMAGE_SERVICES, portraitPrompt, portraitSubject, tagPrompt,
+  BUILTIN_PREPROCESSORS, cleanPreprocessed, cleanTags, DEFAULT_COMFY_WORKFLOW, DEFAULT_PORTRAIT_TEMPLATE, DEFAULT_TAG_INSTRUCTIONS, IMAGE_SERVICES,
+  portraitPrompt, portraitSubject, preprocessPrompt,
   type ImageServiceConfig, type ImageServiceId,
 } from '@/narrator/imageInfo'
 import { fillWorkflow, firstZipEntry, generateImage, novelAIBody, openAIBody } from '@/narrator/imageProviders'
@@ -77,11 +78,17 @@ describe('portrait prompts', () => {
     expect(portraitSubject(state, 'nobody')).toBeUndefined()
   })
 
-  it('asks a language model for Danbooru tags and cleans the answer', () => {
-    const p = tagPrompt('a girl', '轉成標籤', false)
+  it('preprocesses the description with the chosen instructions and cleans the answer', () => {
+    const p = preprocessPrompt('a girl', '轉成標籤', false)
+    expect(p.system).toMatch(/^轉成標籤/)
     expect(p.system).toContain('不要加入裸露')
-    expect(tagPrompt('a girl', '轉成標籤', true).system).not.toContain('不要加入裸露')
+    expect(p.user).toContain('a girl')
+    expect(preprocessPrompt('a girl', '轉成標籤', true).system).not.toContain('不要加入裸露')
     expect(cleanTags('```\nTags: 1girl, long hair，silver hair\nlong hair, "green eyes"\n```')).toBe('1girl, long hair, silver hair, green eyes')
+    expect(cleanPreprocessed('```\nTags: 1girl, long hair\n```', 'tags')).toBe('1girl, long hair')
+    // 原樣送出：只拿掉程式碼框，JSON 保持原樣
+    expect(cleanPreprocessed('```json\n{"subject": "1girl"}\n```', 'text')).toBe('{"subject": "1girl"}')
+    expect(BUILTIN_PREPROCESSORS.map((b) => b.id)).toEqual(['danbooru', 'english', 'json'])
   })
 })
 
@@ -159,5 +166,61 @@ describe('portrait store', () => {
     expect(job?.stage).toBe('error')
     expect(job?.error).toContain('還沒設定好')
     expect(job?.semantic).toContain('艾倫')
+  })
+})
+
+describe('image prompt preprocessing settings', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+  })
+
+  it('defaults to Danbooru tags for NovelAI and ComfyUI only', () => {
+    const image = useImageSettings()
+    expect(image.preprocess).toMatchObject({ openai: '', novelai: 'danbooru', comfyui: 'danbooru' })
+    image.service = 'openai'
+    expect(image.preprocessorFor()).toBeUndefined()
+    expect(image.preprocessorFor('novelai')?.name).toBe('Danbooru 標籤')
+  })
+
+  it('migrates the old Danbooru checkbox and edited instructions', () => {
+    localStorage.setItem('elondia.image', JSON.stringify({ danbooru: { openai: true, novelai: false } }))
+    let image = useImageSettings()
+    expect(image.preprocess).toMatchObject({ openai: 'danbooru', novelai: '', comfyui: 'danbooru' })
+    expect(image.preprocessors).toEqual([])
+
+    localStorage.setItem('elondia.image', JSON.stringify({ danbooru: { novelai: true }, tagInstructions: '只輸出 JSON' }))
+    setActivePinia(createPinia())
+    image = useImageSettings()
+    expect(image.preprocessors).toEqual([{ id: 'c-legacy', name: 'Danbooru 標籤（自訂）', instructions: '只輸出 JSON', output: 'tags' }])
+    expect(image.preprocess.novelai).toBe('c-legacy')
+    // 沒改過的指示不另外建一份
+    localStorage.setItem('elondia.image', JSON.stringify({ danbooru: { novelai: true }, tagInstructions: DEFAULT_TAG_INSTRUCTIONS }))
+    setActivePinia(createPinia())
+    expect(useImageSettings().preprocessors).toEqual([])
+  })
+
+  it('adds, copies and removes custom instructions', async () => {
+    const image = useImageSettings()
+    image.service = 'comfyui'
+    const copy = image.addPreprocessor(image.preprocessorFor())
+    expect(copy).toMatchObject({ id: 'c-1', name: 'Danbooru 標籤（自訂）', output: 'tags' })
+    expect(image.preprocess.comfyui).toBe('c-1')
+    image.service = 'openai'
+    const fresh = image.addPreprocessor()
+    fresh.name = 'JSON for my model'
+    expect(image.preprocess.openai).toBe('c-2')
+    await new Promise((r) => setTimeout(r, 0))
+    // 存起來，下次讀得回來；不認得的選擇改回預設
+    const saved = JSON.parse(localStorage.getItem('elondia.image')!)
+    saved.preprocess.novelai = 'gone'
+    localStorage.setItem('elondia.image', JSON.stringify(saved))
+    setActivePinia(createPinia())
+    const again = useImageSettings()
+    expect(again.preprocessors.map((p) => p.name)).toEqual(['Danbooru 標籤（自訂）', 'JSON for my model'])
+    expect(again.preprocess).toMatchObject({ openai: 'c-2', novelai: 'danbooru', comfyui: 'c-1' })
+    again.removePreprocessor('c-1')
+    expect(again.preprocess.comfyui).toBe('')
+    expect(again.preprocessors.map((p) => p.id)).toEqual(['c-2'])
   })
 })

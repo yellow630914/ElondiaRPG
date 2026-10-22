@@ -4,7 +4,7 @@
 
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { cleanTags, portraitPrompt, portraitSubject, tagPrompt } from '@/narrator/imageInfo'
+import { cleanPreprocessed, portraitPrompt, portraitSubject, preprocessPrompt } from '@/narrator/imageInfo'
 import { generateImage } from '@/narrator/imageProviders'
 import type { GameState } from '@/engine/types'
 import { OTHER_USAGE, useGame } from './game'
@@ -18,13 +18,13 @@ export interface PortraitRecord {
   blob: Blob
   /** 生成時送出的提示詞（上傳的圖片沒有） */
   prompt?: string
-  /** 轉成 Danbooru 標籤時的語意描述 */
+  /** 有預處理時，預處理前的語意描述 */
   semantic?: string
   service?: string
   time: number
 }
 
-/** 正在生成：轉換標籤、生成圖片，或出錯 */
+/** 正在生成：預處理提示詞（stage tags）、生成圖片，或出錯 */
 export interface PortraitJob {
   stage: 'tags' | 'image' | 'error'
   error?: string
@@ -133,7 +133,7 @@ export const usePortraits = defineStore('portraits', () => {
     return portraitPrompt(subject, image.template, image.style)
   }
 
-  /** 生成形象插圖：組成描述 →（勾選時）請大語言模型轉成 Danbooru 標籤 → 送給生圖服務 */
+  /** 生成形象插圖：組成描述 →（選了預處理時）請大語言模型依指示改寫 → 送給生圖服務 */
   async function generate(state: GameState, id: string) {
     const key = portraitKey(state, id)
     if (jobs.value[key] && jobs.value[key]!.stage !== 'error') return
@@ -147,15 +147,16 @@ export const usePortraits = defineStore('portraits', () => {
     try {
       if (!image.ready()) throw new Error('插圖生成還沒設定好（⚙️ 設定 → 🎨 插圖生成）')
       let prompt = job.semantic!
-      if (image.danbooru[image.service]) {
+      const pre = image.preprocessorFor(image.service)
+      if (pre) {
         const src = settings.sourceFor('tags')
-        if (!settings.sourceReady(src.index)) throw new Error(`「插圖標籤轉換」的模型來源（${src.name}）還沒設定好`)
+        if (!settings.sourceReady(src.index)) throw new Error(`「插圖提示詞預處理」的模型來源（${src.name}）還沒設定好`)
         const collector = game.usageCollector(game.originOf('tags', src))
         const { completeText } = await import('@/narrator/providers')
-        const text = await completeText(src.provider, src.config, tagPrompt(prompt, image.tagInstructions, settings.adult), controller.signal, collector.onUsage)
+        const text = await completeText(src.provider, src.config, preprocessPrompt(prompt, pre.instructions, settings.adult), controller.signal, collector.onUsage)
         collector.flush(OTHER_USAGE)
-        prompt = cleanTags(text)
-        if (!prompt) throw new Error('模型沒有回傳標籤')
+        prompt = cleanPreprocessed(text, pre.output)
+        if (!prompt) throw new Error(`模型沒有回傳預處理的結果（${pre.name}）`)
         jobs.value[key] = { ...jobs.value[key]!, tags: prompt }
       }
       jobs.value[key] = { ...jobs.value[key]!, stage: 'image' }

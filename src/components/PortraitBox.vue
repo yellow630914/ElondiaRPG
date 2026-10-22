@@ -49,7 +49,7 @@ async function onFile(e: Event) {
 function remove() {
   if (confirm('刪除這張形象圖？')) void portraits.remove(key.value)
 }
-const STAGE = { tags: '轉換成 Danbooru 標籤中…', image: '生成圖片中…', error: '' }
+const STAGE = { tags: '預處理提示詞中…', image: '生成圖片中…', error: '' }
 </script>
 
 <template>
@@ -75,12 +75,12 @@ const STAGE = { tags: '轉換成 Danbooru 標籤中…', image: '生成圖片中
     </div>
     <details v-if="size === 'large' && (record?.prompt || job?.tags || preview)" class="small prompt">
       <summary>提示詞</summary>
-      <template v-if="job?.tags"><b>標籤：</b><pre>{{ job.tags }}</pre></template>
+      <template v-if="job?.tags"><b>預處理後：</b><pre>{{ job.tags }}</pre></template>
       <template v-if="record?.prompt">
-        <b>{{ record.semantic ? '上次送出的標籤' : '上次送出的提示詞' }}：</b><pre>{{ record.prompt }}</pre>
-        <template v-if="record.semantic"><b>轉換前的描述：</b><pre>{{ record.semantic }}</pre></template>
+        <b>{{ record.semantic ? '上次送出的提示詞（預處理後）' : '上次送出的提示詞' }}：</b><pre>{{ record.prompt }}</pre>
+        <template v-if="record.semantic"><b>預處理前的描述：</b><pre>{{ record.semantic }}</pre></template>
       </template>
-      <template v-else-if="preview"><b>會送出的描述{{ image.danbooru[image.service] ? '（會先轉成標籤）' : '' }}：</b><pre>{{ preview }}</pre></template>
+      <template v-else-if="preview"><b>會送出的描述{{ image.preprocessorFor() ? `（會先預處理：${image.preprocessorFor()!.name}）` : '' }}：</b><pre>{{ preview }}</pre></template>
     </details>
     <div v-if="zoom && url" class="zoom" @click="zoom = false"><img :src="url" alt="形象圖" /></div>
   </div>
