@@ -744,11 +744,6 @@ function decayThreat(combat: CombatState) {
   for (const c of combat.combatants) c.threat = Math.round((c.threat ?? 0) * combatRules.threat.decay * 10) / 10
 }
 
-/** 敵人選目標的權重：floor + 仇恨值（不是絕對的，只影響機率） */
-export function targetWeight(c: Combatant): number {
-  return combatRules.threat.floor + (c.threat ?? 0)
-}
-
 /**
  * 某個敵人眼中，這個目標的權重：floor + 仇恨 × 對仇恨的在意程度（特徵的 focus），
  * 再依偏好調整（飢餓、嗜血挑虛弱的；狡猾挑施法者）。
@@ -772,11 +767,29 @@ export function pickByThreat(rng: Rng, foes: Combatant[], actor?: Combatant): Co
   return foes[foes.length - 1]!
 }
 
-/** 在敵人眼中，每位隊員被選為目標的機率（給畫面顯示） */
+/**
+ * 每位隊員被敵人選為目標的機率（給畫面顯示）：和實際選目標一樣——被嘲諷的敵人只打嘲諷者，
+ * 其他依 targetWeightFor（特徵的 focus、偏好虛弱者、偏好施法者）加權；對每個還能行動的敵人各算一次，取平均。
+ */
 export function threatShares(combat: CombatState): Record<string, number> {
   const party = combat.combatants.filter((c) => c.side === 'party' && isActive(c))
-  const total = party.reduce((s, c) => s + targetWeight(c), 0)
-  return Object.fromEntries(party.map((c) => [c.id, total ? targetWeight(c) / total : 0]))
+  const enemies = combat.combatants.filter((c) => c.side === 'enemy' && isActive(c))
+  const out: Record<string, number> = Object.fromEntries(party.map((c) => [c.id, 0]))
+  if (!party.length) return out
+  const viewers = enemies.length ? enemies : [undefined]
+  for (const actor of viewers) {
+    const foes = actor ? foesOf(combat, actor) : party
+    const taunt = actor?.statuses.find((s) => statusDef(s.id).control === 'taunt')
+    const taunter = taunt && foes.find((f) => f.id === taunt.source)
+    if (taunter) {
+      out[taunter.id] = (out[taunter.id] ?? 0) + 1
+      continue
+    }
+    const total = foes.reduce((s, f) => s + targetWeightFor(actor, f), 0)
+    for (const f of foes) if (f.id in out) out[f.id] = out[f.id]! + (total ? targetWeightFor(actor, f) / total : 0)
+  }
+  for (const id of Object.keys(out)) out[id] = out[id]! / viewers.length
+  return out
 }
 
 function noteAffinity(combat: CombatState, id: string, delta: number, reason: string) {
