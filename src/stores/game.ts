@@ -36,7 +36,7 @@ import {
 import type { Prompt } from '@/narrator/prompt'
 import { providerInfo, type ProviderId, type TokenUsage } from '@/narrator/providerInfo'
 import type { ContentMods } from '@/engine/mods'
-import { useContent, type ModsDiff } from './content'
+import { useContent, VANILLA, VANILLA_NAME, type WorldRef } from './content'
 import { usePortraits } from './portraits'
 import { usePrompts } from './prompts'
 import { AI_FEATURES, useSettings, type AiFeature } from './settings'
@@ -122,8 +122,12 @@ export interface NarrationState {
 
 export interface ImportPreview {
   meta: SlotMeta
-  /** 附上的自訂內容和這個瀏覽器的差異；沒有附上時是 null */
-  diff: ModsDiff | null
+  /** 存檔用的世界 */
+  world?: WorldRef
+  /** 首頁匯入時會用附帶的內容建立的新世界名稱 */
+  newWorld?: string
+  /** 遊戲中匯入、世界不同：不能匯入的原因 */
+  blocked?: string
   portraits: number
 }
 
@@ -515,16 +519,24 @@ export const useGame = defineStore('game', () => {
 
   /**
    * 匯出成檔案：回傳檔名與內容（目前的遊戲或某個欄位）。
-   * 附上自訂內容（欄位存檔時的；舊的欄位沒有時用這個瀏覽器目前的），可以選擇附上這一局的形象圖
+   * 記下存檔用的世界（id 與名字）；附上那個世界的自訂內容（欄位存檔時的；舊的欄位沒有時用這個瀏覽器裡那個世界的），
+   * 原版世界的存檔不附內容。可以選擇附上這一局的形象圖
    */
   async function exportFile(id?: string, opts: { content?: boolean; portraits?: boolean } = {}): Promise<{ name: string; text: string } | null> {
     const data = id ? await slotStore().get(id) : snapshot()
     if (!data) return null
-    if (opts.content === false) delete data.content
-    else if (!data.content) {
-      const content = currentContent()
-      if (content) data.content = content
+    const content = useContent()
+    const world = data.state.world
+    if (world?.id === VANILLA) {
+      // 原版世界：標明是原版，不附任何自訂內容
+      data.state.world = { id: VANILLA, name: VANILLA_NAME }
+      delete data.content
+    } else if (opts.content === false) delete data.content
+    else if (!data.content && world) {
+      const w = content.worlds.find((x) => x.id === world.id)
+      if (w && modCount(w.mods)) data.content = JSON.parse(JSON.stringify(w.mods)) as ContentMods
     }
+    if (world && world.id !== VANILLA) data.state.world = { id: world.id, name: content.worlds.find((x) => x.id === world.id)?.name ?? world.name }
     delete data.portraits
     if (opts.portraits) {
       const portraits = await usePortraits().exportFor(data.state.seed)
@@ -533,32 +545,47 @@ export const useGame = defineStore('game', () => {
     return { name: saveFileName(slotMeta('', '', 'manual', data)), text: JSON.stringify(data, null, 2) }
   }
 
-  /** 匯入前的檢查：存檔摘要、附上的自訂內容和這個瀏覽器的差異、附上幾張形象圖 */
+  /** 遊戲中只能匯入同一個世界的存檔（不同的世界要回首頁匯入）；可以時回傳 undefined */
+  function importBlocked(data: SaveData): string | undefined {
+    if (!state.value) return undefined
+    const content = useContent()
+    const want = data.state.world?.id ?? content.active
+    if (want === content.active) return undefined
+    return `這個存檔用的世界「${data.state.world?.name ?? want}」和目前的世界「${content.activeName}」不同，請回首頁匯入`
+  }
+
+  /** 匯入前的檢查：存檔摘要、用的世界（首頁匯入時會不會建立新的世界）、遊戲中能不能匯入、附上幾張形象圖 */
   function previewImport(text: string, fileName = '匯入的存檔'): ImportPreview {
     const data = parseSaveFile(text)
+    const blocked = importBlocked(data)
+    const plan = state.value ? {} : useContent().worldForImport(data.state.world, data.content, true)
     return {
       meta: slotMeta('', fileName.replace(/\.json$/i, ''), 'manual', data),
-      diff: data.content ? useContent().diffMods(data.content) : null,
+      ...(data.state.world ? { world: data.state.world } : {}),
+      ...(plan.created ? { newWorld: plan.created } : {}),
+      ...(blocked ? { blocked } : {}),
       portraits: Object.keys(data.portraits ?? {}).length,
     }
   }
 
   /**
    * 匯入檔案：存成一個新的手動存檔欄位（不會直接讀取）。
-   * merge：合併附上的自訂內容（take 是和這個瀏覽器不同、要換成檔案的項目）；portraits：還原附上的形象圖
+   * 遊戲中只能匯入同一個世界的存檔；首頁匯入時，附了自訂內容而且世界不同（或不存在）時，用附帶的內容建立新的世界。
+   * portraits：還原附上的形象圖
    */
-  async function importFile(text: string, fileName = '匯入的存檔', opts: { merge?: boolean; take?: string[]; portraits?: boolean } = {}) {
+  async function importFile(text: string, fileName = '匯入的存檔', opts: { portraits?: boolean } = {}) {
     try {
       const data = parseSaveFile(text)
+      const blocked = importBlocked(data)
+      if (blocked) throw new Error(blocked)
       const portraits = data.portraits
       delete data.portraits
       const notes: string[] = []
-      if (opts.merge && data.content) {
-        // 原版世界不能改：不合併（讀這個存檔時會用附上的內容還原它的世界）
-        if (useContent().readOnly) notes.push('目前是原版世界，沒有合併自訂內容')
-        else {
-          const n = useContent().mergeMods(useContent().diffMods(data.content), opts.take)
-          if (n) notes.push(`合併 ${n} 項自訂內容到「${useContent().activeName}」`)
+      if (!state.value) {
+        const plan = useContent().worldForImport(data.state.world, data.content)
+        if (plan.created && plan.ref) {
+          data.state.world = plan.ref
+          notes.push(`用存檔附帶的自訂內容建立了世界「${plan.created}」`)
         }
       }
       const meta = slotMeta(`m-${Date.now().toString(36)}`, fileName.replace(/\.json$/i, ''), 'manual', data)

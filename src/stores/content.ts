@@ -213,6 +213,27 @@ export const useContent = defineStore('content', () => {
     return { id: VANILLA, name: VANILLA_NAME, note: `存檔用的世界「${ref.name}」已經不在了，改用原版世界` }
   }
 
+  /**
+   * 首頁匯入存檔時，存檔要用哪個世界：附了自訂內容、而且它的世界在這個瀏覽器不存在或內容不同時，
+   * 用附帶的內容建立一個新的世界（名稱用存檔世界的名字，同名時後面加 4 位亂數），存檔改指向它。
+   * 沒有附內容、原版世界、或世界相同時照舊。dryRun 時只算出結果、不建立。
+   */
+  function worldForImport(ref: WorldRef | undefined, content: ContentMods | undefined, dryRun = false): { ref?: WorldRef; created?: string } {
+    if (!content || !ref || ref.id === VANILLA) return { ref }
+    const incoming = normalizeMods(JSON.parse(JSON.stringify(content)))
+    // normalizeMods 會先登錄自建的能力與底材：比較完恢復成目前的內容
+    apply()
+    if (!modTotal(incoming)) return { ref }
+    const existing = worlds.value.find((w) => w.id === ref.id)
+    if (existing && JSON.stringify(existing.mods) === JSON.stringify(incoming)) return { ref }
+    const taken = new Set([VANILLA_NAME, ...worlds.value.map((w) => w.name)])
+    let name = (ref.name || '匯入的世界').slice(0, 25)
+    while (taken.has(name)) name = `${(ref.name || '匯入的世界').slice(0, 25)}${Math.floor(1000 + Math.random() * 9000)}`
+    if (dryRun) return { ref, created: name }
+    const id = createWorld(name, undefined, incoming)
+    return { ref: { id, name }, created: name }
+  }
+
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
   type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk'
@@ -541,7 +562,7 @@ export const useContent = defineStore('content', () => {
 
   return {
     mods, problems, version, usageOf,
-    worlds, active, activeName, readOnly, worldName, switchWorld, createWorld, renameWorld, deleteWorld, enterWorld,
+    worlds, active, activeName, readOnly, worldName, switchWorld, createWorld, renameWorld, deleteWorld, enterWorld, worldForImport,
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
