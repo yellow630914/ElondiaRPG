@@ -37,7 +37,7 @@
     { "id": "ironforge", "name": "鐵爐堡", "region": "north", "type": "capital", "faction": "dwarf_clans" },
     { "id": "greyrock", "name": "灰岩堡壘", "region": "north", "type": "fortress", "faction": "dwarf_clans" },
     { "id": "windhammer", "name": "風錘村", "region": "north", "type": "village", "faction": null, "races": { "human": 8, "dwarf": 2 }, "note": "人類山民部落的村落，夾在灰岩堡壘與古樹森林之間；不在地圖上" },
-    { "id": "snowridge", "name": "雪嵴哨站", "region": "north", "type": "outpost", "faction": "dwarf_clans", "note": "世界書與地圖分別寫作「雪嵴」「雪脊」" },
+    { "id": "snowridge", "name": "雪嵴哨站", "region": "north", "type": "outpost", "faction": "dwarf_clans", "note": "舊版世界書與地圖寫作「雪脊」，已統一為「雪嵴」" },
     { "id": "redemption_pit", "name": "深贖之穴", "region": "north", "type": "dungeon" },
     { "id": "echo_rift", "name": "回聲裂谷", "region": "north", "type": "dungeon" },
     { "id": "giants_spine", "name": "巨人之嵴", "region": "north", "type": "dungeon" },
