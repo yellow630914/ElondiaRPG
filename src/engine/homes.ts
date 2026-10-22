@@ -14,6 +14,7 @@ import type { Rng } from './rng'
 import { addHours, addItem, commitReport, newReportId, player, removeItem, withRng } from './state'
 import { locationMult } from './trade'
 import { formatMoney } from './money'
+import { resolveMasterHome } from './homeResolver'
 import type { Character, GameState, Home, Report } from './types'
 
 // ---- 空地 ----
@@ -114,17 +115,12 @@ export function manorOf(locationId: string): Manor | undefined {
   return found ?? undefined
 }
 
-// 主人的家不存進 state.homes（由 masterHome.ts 依存檔即時產生）：homes.ts 不能直接 import masterHome.ts（循環），由它在載入時登記
-let currentMasterHomeOf: (state: GameState) => Home | undefined = () => undefined
-export function setMasterHomeResolver(fn: (state: GameState) => Home | undefined) {
-  currentMasterHomeOf = fn
-}
-
 /** 依 id 找房子：自己買的（state.homes）或目前主人的家 */
 export function homeById(state: GameState, id: string): Home | undefined {
   const own = state.homes?.[id]
   if (own) return own
-  const master = currentMasterHomeOf(state)
+  // 主人的家不存進 state.homes，由 masterHome.ts 依存檔即時產生（見 homeResolver.ts）
+  const master = resolveMasterHome(state)
   return master?.id === id ? master : undefined
 }
 
@@ -141,7 +137,7 @@ export function overlayLots(state: GameState, area: Area): Area {
     if (!homeOnLot(state, lot.id)) area.cells[i] = { kind: 'lot', lot: lot.id }
   }
   // 自己的房子與主人的家：門變成通往一樓的通道（主人的家疊在民宅格上；不是主人的家時民宅不能進入）
-  const master = currentMasterHomeOf(state)
+  const master = resolveMasterHome(state)
   for (const home of [...Object.values(state.homes ?? {}), ...(master ? [master] : [])]) {
     if (home.lot.area !== area.key) continue
     const ground = home.floors.find((k) => home.areas[k]?.homeFloor === 'ground')!

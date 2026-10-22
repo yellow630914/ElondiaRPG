@@ -63,7 +63,8 @@ describe('perk content', () => {
     expect(flaw.effects).toEqual([{ check: {}, bonus: -3 }, { combat: { hit: -2, evade: 3 } }])
     const plain = sanitizePerkMod('mod_perk_n', raw, true)!
     expect(plain.flaw).toBeUndefined()
-    expect(plain.effects).toEqual([{ check: {}, bonus: 1 }, { combat: { evade: 3 } }])
+    // 不是缺陷：負的檢定加值與戰鬥修正拿掉（不翻成正的）
+    expect(plain.effects).toEqual([{ combat: { evade: 3 } }])
     expect(sanitizePerkMod('race_elf', { ...perkDef('race_elf')!, flaw: true }, false)!.flaw).toBeUndefined()
     // 存成自建的缺陷之後照樣生效
     const c = editableWorld()

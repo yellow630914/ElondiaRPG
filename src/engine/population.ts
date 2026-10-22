@@ -487,10 +487,14 @@ export function unflavored(state: GameState, locId: string): NpcRecord[] {
     .filter((r): r is NpcRecord => !!r?.generated && !r.flavored && !state.relationships?.[r.id])
 }
 
-export function applyRosterFlavor(state: GameState, locId: string, flavors: NpcFlavor[]) {
+/**
+ * 套用 AI 潤飾的文字。sent：送給 AI 的人（buildRosterPrompt 當時的 unflavored）；
+ * 等 AI 回應的這段時間名單可能變了，只標記真的送出去的人，新搬來的人留到下次。
+ */
+export function applyRosterFlavor(state: GameState, locId: string, flavors: NpcFlavor[], sent?: string[]) {
   const roster = state.rosters?.[locId]
   if (!roster) return
-  const list = unflavored(state, locId)
+  const list = unflavored(state, locId).filter((r) => !sent || sent.includes(r.id))
   const ids = new Set(list.map((r) => r.id))
   const clip = (s: unknown, n: number) => (typeof s === 'string' ? s.trim().slice(0, n) : '')
   const usedNames = new Set([...Object.values(state.npcs ?? {}).map((n) => n.name), ...namedNpcs.map((n) => n.name), ...state.party.map((m) => m.name)])

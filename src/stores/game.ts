@@ -14,6 +14,7 @@ import { classes, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
+import * as masterHome from '@/engine/masterHome'
 import * as population from '@/engine/population'
 import * as encounters from '@/engine/encounters'
 import * as security from '@/engine/security'
@@ -157,6 +158,8 @@ function load(s: GameState): GameState {
   story.pruneStories(s)
   // 武器與防具類型由裝備決定（自訂內容可能改過底材）
   for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
+  // 主人的家：先對齊格局（舊格局的樓層、超出範圍的座標改到一樓出口），再檢查位置
+  masterHome.syncMasterHome(s)
   // 地圖改版後舊的區塊可能不存在了：回到這個地點的城門
   if (s.position) {
     try {
@@ -583,9 +586,9 @@ export const useGame = defineStore('game', () => {
       const notes: string[] = []
       if (!state.value) {
         const plan = useContent().worldForImport(data.state.world, data.content)
-        if (plan.created && plan.ref) {
+        if (plan.ref && (plan.created || plan.reused)) {
           data.state.world = plan.ref
-          notes.push(`用存檔附帶的自訂內容建立了世界「${plan.created}」`)
+          notes.push(plan.created ? `用存檔附帶的自訂內容建立了世界「${plan.created}」` : `存檔附帶的自訂內容和世界「${plan.reused}」相同，改用這個世界`)
         }
       }
       const meta = slotMeta(`m-${Date.now().toString(36)}`, fileName.replace(/\.json$/i, ''), 'manual', data)
@@ -777,12 +780,13 @@ export const useGame = defineStore('game', () => {
     // 還沒潤飾過的人（第一次來，或名單變動搬來了新居民）
     const prompt = buildRosterPrompt(s, loc)
     if (!prompt) return
+    const sent = population.unflavored(s, loc).map((r) => r.id)
     flavoring.add(loc)
     try {
       const { completeText } = await import('@/narrator/providers')
       const src = settings.sourceFor('roster')
       const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(OTHER_USAGE, u, originOf('roster', src)))) as { npcs?: population.NpcFlavor[] }
-      run((st) => population.applyRosterFlavor(st, loc, Array.isArray(raw.npcs) ? raw.npcs : []))
+      run((st) => population.applyRosterFlavor(st, loc, Array.isArray(raw.npcs) ? raw.npcs : [], sent))
     } catch (e) {
       error.value = `AI 潤飾居民失敗：${e instanceof Error ? e.message : String(e)}（先用預設的名字與設定）`
     } finally {

@@ -113,26 +113,44 @@ describe('exported saves carry custom content and portraits', () => {
     // 首頁：世界存在而且內容一樣，照舊指向它
     g.state = null
     expect(g.previewImport(text).newWorld).toBeUndefined()
-    // 世界的內容改過：用附帶的內容建立新世界，同名時加 4 位亂數
+    // 世界的內容改過：用附帶的內容建立新世界，同名時加 4 位數字（預覽的名稱就是實際建立的）
     c.switchWorld(moonlight)
     c.saveItem('月光草', { category: 'material', price_cc: 9, tags: [], custom: true })
     const worlds = c.worlds.length
-    expect(g.previewImport(text).newWorld).toMatch(/^月光世界\d{4}$/)
+    const preview = g.previewImport(text).newWorld
+    expect(preview).toMatch(/^月光世界\d{4}$/)
     await g.importFile(text, 'save.json')
     expect(c.worlds).toHaveLength(worlds + 1)
     const created = c.worlds.at(-1)!
-    expect(created.name).toMatch(/^月光世界\d{4}$/)
+    expect(created.name).toBe(preview)
     expect(created.mods.items['月光草']!.price_cc).toBe(5)
     const slot = await (await import('@/stores/saves')).slotStore().get(g.slots.find((m) => m.name === 'save')!.id)
     expect(slot!.state.world).toEqual({ id: created.id, name: created.name })
     // 目前的世界沒有被動到
     expect(c.worlds.find((w) => w.id === moonlight)!.mods.items['月光草']!.price_cc).toBe(9)
+    // 同一個檔案再匯入一次：沿用剛建立的世界，不再多建一個
+    expect(g.previewImport(text).newWorld).toBeUndefined()
+    await g.importFile(text, 'again.json')
+    expect(c.worlds).toHaveLength(worlds + 1)
+    const again = await (await import('@/stores/saves')).slotStore().get(g.slots.find((m) => m.name === 'again')!.id)
+    expect(again!.state.world).toEqual({ id: created.id, name: created.name })
 
     // 世界不存在：用存檔世界的名字建立
     c.deleteWorld(moonlight)
     c.deleteWorld(created.id)
     await g.importFile(text, 'save2.json')
     expect(c.worlds.at(-1)!.name).toBe('月光世界')
+
+    // 沒有記世界的舊匯出檔，但附了自訂內容：一樣建立新的世界，內容不會被丟掉
+    const legacy = JSON.parse(text)
+    delete legacy.state.world
+    legacy.content.items['月光草'].price_cc = 7
+    await g.importFile(JSON.stringify(legacy), 'legacy.json')
+    const made = c.worlds.at(-1)!
+    expect(made.name).toBe('匯入的世界')
+    expect(made.mods.items['月光草']!.price_cc).toBe(7)
+    const old = await (await import('@/stores/saves')).slotStore().get(g.slots.find((m) => m.name === 'legacy')!.id)
+    expect(old!.state.world).toEqual({ id: made.id, name: '匯入的世界' })
   })
 
   it('restores bundled portraits and cleans up portraits no save uses', async () => {

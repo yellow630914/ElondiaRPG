@@ -48,8 +48,9 @@ function minutesBetween(a: GameTime, b: GameTime): number {
 // 兩次長休的最短間隔（小時）：預設 companions.json 的 long_rest_gap_hours，設定的「遊戲規則」可以改（引擎不讀設定，由畫面呼叫）
 let longRestGap = companionRules.rest.long_rest_gap_hours
 
-export function setLongRestGap(hours: number) {
-  const h = Number(hours)
+export function setLongRestGap(hours: number | string | null | undefined) {
+  // 設定欄清空時（v-model.number 給的是空字串）用預設，不要當成 0 小時
+  const h = hours === '' || hours === null || hours === undefined ? NaN : Number(hours)
   longRestGap = Number.isFinite(h) ? Math.max(0, Math.min(24, h)) : companionRules.rest.long_rest_gap_hours
 }
 

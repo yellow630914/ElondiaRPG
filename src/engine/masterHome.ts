@@ -8,7 +8,8 @@
 
 import { homeRules, locationById, npcTags, slaveryRules, type Degree, type HouseholdPattern } from './data'
 import { currentArea, getArea, placeAt, position, type Area } from './grid'
-import { generateHome, homeOfArea, manorOf, setMasterHomeResolver } from './homes'
+import { generateHome, homeOfArea, manorOf } from './homes'
+import { setMasterHomeResolver } from './homeResolver'
 import { generateNpc, npcRecord, weightedPick } from './npcs'
 import { addAffinity, isBound, pcOf, punish } from './party'
 import { contractTerms } from './slavery'
@@ -73,7 +74,7 @@ function buildMasterHome(state: GameState): Home | undefined {
   const manor = manorOf(m.location)
   if (!manor) return undefined
   const master = npcRecord(state, m.master)
-  const district = districtFor(master, m.location)
+  const district = m.district && homeRules.districts[m.district] ? m.district : districtFor(master, m.location)
   const id = masterHomeId(m.master)
   const key = `${id}:${m.location}:${district}`
   let home = layoutCache.get(key)
@@ -189,10 +190,16 @@ function placeHousehold(home: Home, people: { rec: NpcRecord; place: 'family' | 
   }
 }
 
+/** 這個位置在房子裡：那一層存在，座標也在那一層的範圍內 */
+function insideHome(home: Home, p: { area: string; x: number; y: number }): boolean {
+  const a = home.areas[p.area]
+  return !!a && p.x >= 0 && p.y >= 0 && p.x < a.width && p.y < a.height
+}
+
 /** 家裡的人站的地方不在這棟房子裡（舊存檔、房子的規格變了）：重新安排位置 */
 function fixHouseholdSpots(state: GameState, home: Home) {
   const people = householdOf(state, home)
-  if (people.every((r) => !r.at || !!home.areas[r.at.area])) return
+  if (people.every((r) => !r.at || insideHome(home, r.at))) return
   const place = (r: NpcRecord): 'family' | 'servant' | 'slave' => (r.tags?.includes('slave') ? 'slave' : r.occupation?.startsWith(`${npcRecord(state, home.master!)?.name ?? ''}的`) ? 'family' : 'servant')
   placeHousehold(home, people.map((rec) => ({ rec, place: place(rec) })), new Rng(hash(`${state.seed}:${home.master}:spots`)))
 }
@@ -215,7 +222,7 @@ export function syncMasterHome(state: GameState): Home | undefined {
     if (!master) return undefined
     c.home ??= homeCity(state, master)
     if (!c.home || !manorOf(c.home)) return undefined
-    state.masterHome = { master: master.id, location: c.home, household: [] }
+    state.masterHome = { master: master.id, location: c.home, household: [], district: districtFor(master, c.home) }
     const home = buildMasterHome(state)!
     state.masterHome.household = generateHousehold(state, home, master)
     home.household = state.masterHome.household
@@ -230,9 +237,9 @@ export function syncMasterHome(state: GameState): Home | undefined {
     state.flags[`household:${master.id}`] = true
   }
   fixHouseholdSpots(state, home)
-  // 人在舊格局的房子裡：站到一樓的出口
+  // 人在舊格局的房子裡（那一層不在了，或座標在這一層外面）：站到一樓的出口
   const p = state.position
-  if (p?.area.startsWith(`home/${home.id}/`) && !home.areas[p.area]) {
+  if (p?.area.startsWith(`home/${home.id}/`) && !insideHome(home, p)) {
     const at = entrance(home)
     placeAt(state, at.area, at.x, at.y)
   }

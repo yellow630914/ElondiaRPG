@@ -135,7 +135,8 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
     // 主人的家以前疊在一塊空地上、地圖存在 homes：改成那座城的民宅，家裡的人照舊（站的位置在讀檔後的 syncMasterHome 對齊）
     for (const [id, home] of Object.entries(s.homes ?? {})) {
       if (!home.master && !id.startsWith('m-')) continue
-      if (home.master && !s.masterHome) s.masterHome = { master: home.master, location: home.location, household: home.household ?? [] }
+      // 沿用舊房子的規格：主角、家裡的人站的位置都是照那個格局記的（例如首都的貴族宅邸有三樓）
+      if (home.master && !s.masterHome) s.masterHome = { master: home.master, location: home.location, household: home.household ?? [], ...(home.district ? { district: home.district } : {}) }
       delete s.homes![id]
     }
   }],

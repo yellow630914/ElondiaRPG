@@ -637,7 +637,13 @@ export interface GameState {
    * 主人的家（主角有主人時）：主人是誰、在哪座城、家裡的人。房子是那座城固定地圖上的民宅（manor），
    * 地圖依聚落規模固定生成，不存進存檔（見 engine/masterHome.ts）。
    */
-  masterHome?: { master: string; location: string; household: string[] }
+  masterHome?: {
+    master: string
+    location: string
+    household: string[]
+    /** 房子的規格：決定主人的家時記下（舊存檔沿用舊的房子的規格），之後主人的標籤變了也不換格局 */
+    district?: HomeDistrict
+  }
   /** 登場過的 NPC（含生成的） */
   npcs?: Record<string, NpcRecord>
   /** 各地點的 NPC 名單（第一次進入時建立，見 engine/population.ts） */

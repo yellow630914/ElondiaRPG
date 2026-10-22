@@ -161,6 +161,9 @@ describe('B11: the long-rest gap', () => {
     expect(longRestBlocked(state, 'inn')).toBeNull()
     setLongRestGap(99)
     expect(longRestBlocked(state, 'inn')).toContain('至少隔 24 小時')
+    // 設定欄清空：用預設的 16 小時，不是 0
+    setLongRestGap('')
+    expect(longRestBlocked(state, 'inn')).toContain('至少隔 16 小時')
   })
 })
 

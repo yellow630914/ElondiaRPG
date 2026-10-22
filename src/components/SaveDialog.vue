@@ -149,7 +149,7 @@ function skipImport() {
       <h3>📥 匯入「{{ pending.name }}」</h3>
       <p class="small muted">{{ slotTitle(pending.preview.meta) }}<span v-if="queue.length > 1">（還有 {{ queue.length - 1 }} 個檔案）</span></p>
       <p v-if="pending.preview.newWorld" class="small">
-        🌍 這個存檔用的世界「{{ pending.preview.world?.name }}」和這個瀏覽器的不同（或不存在）：會用存檔附帶的自訂內容建立新的世界「{{ pending.preview.newWorld }}」，存檔改用它。目前的世界不會變動。
+        🌍 這個存檔用的世界「{{ pending.preview.world?.name ?? '沒有記錄' }}」和這個瀏覽器的不同（或不存在）：會用存檔附帶的自訂內容建立新的世界「{{ pending.preview.newWorld }}」，存檔改用它。目前的世界不會變動。
       </p>
       <label v-if="pending.preview.portraits" class="check">
         <input v-model="withPortraitsIn" type="checkbox" /> 還原形象圖（{{ pending.preview.portraits }} 張）

@@ -211,7 +211,7 @@ ${options.map((d) => `- ${d.name}：${d.desc}（強度 ${perkPower(d)}）`).join
 - contexts：${contexts}。
 - kinds（主動行動）：${kinds}。
 - combat：戰鬥修正 hit、evade、save、damage、dr、ap_regen、crit（1～2）；resist：傷害倍率（-0.25 = ×0.75）。
-- 只能設計好處：不能設計缺陷（負的加值、弱點會被程式拿掉或改成最小的正值）。
+- 只能設計好處：不能設計缺陷（負的加值、弱點會被程式拿掉）。
 - 最多 ${perkRules.custom.effects} 個效果。強度上限依 degree：大成功 ${cap(delta.critical ?? 1)}、成功 ${cap(delta.success ?? 0)}、部分成功 ${cap(delta.partial ?? -1)}（範圍越廣、加值越大越強；超過時程式從最後一個效果開始減弱）。失敗與大失敗不會學到（仍要填 perk，程式會忽略）。
 </perk_pitch>`
 }

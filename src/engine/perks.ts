@@ -145,7 +145,7 @@ export interface PerkLimits {
   threat?: [number, number]
 }
 
-/** 整理特質的效果：未知的欄位拿掉，數值夾在範圍內（範圍不含負數時，檢定與戰鬥修正只收正數；0 拿掉） */
+/** 整理特質的效果：未知的欄位拿掉，數值夾在範圍內；檢定加值與戰鬥修正的正負號不在範圍內的拿掉（不翻成另一邊），0 也拿掉 */
 export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
   const effects: PerkEffect[] = []
   const quarter = (v: unknown, [lo, hi]: [number, number]) => Math.round(Math.max(lo, Math.min(hi, Number(v) || 0)) * 4) / 4
@@ -162,8 +162,11 @@ export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
       if (contexts.length) check.contexts = contexts
       if (kinds.length) check.kinds = kinds
       if (tags.length) check.vs_tags = tags
-      const bonus = clampInt(e.bonus, c.check_bonus)
-      if (bonus) effects.push({ check, bonus })
+      const n = Number(e.bonus)
+      if (n && (n > 0 ? c.check_bonus[1] > 0 : c.check_bonus[0] < 0)) {
+        const bonus = clampInt(n, c.check_bonus)
+        if (bonus) effects.push({ check, bonus })
+      }
     } else if (e.combat && typeof e.combat === 'object') {
       const mods: Mods = {}
       for (const k of MOD_KEYS) {

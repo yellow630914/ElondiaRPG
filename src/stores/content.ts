@@ -215,20 +215,30 @@ export const useContent = defineStore('content', () => {
 
   /**
    * 首頁匯入存檔時，存檔要用哪個世界：附了自訂內容、而且它的世界在這個瀏覽器不存在或內容不同時，
-   * 用附帶的內容建立一個新的世界（名稱用存檔世界的名字，同名時後面加 4 位亂數），存檔改指向它。
-   * 沒有附內容、原版世界、或世界相同時照舊。dryRun 時只算出結果、不建立。
+   * 用附帶的內容建立一個新的世界（名稱用存檔世界的名字，同名時後面加 4 位數字），存檔改指向它。
+   * - 已經有內容完全相同的世界（例如同一個檔案匯入第二次）：沿用那個世界（reused），不再建立。
+   * - 沒有記世界的舊匯出檔、但附了自訂內容：一樣建立新的世界（名稱「匯入的世界」）。
+   * - 沒有附內容、原版世界、或世界相同時照舊。
+   * 尾碼依內容固定算出來（不是亂數），dryRun（只算出結果、不建立）和正式匯入的名稱一樣。
    */
-  function worldForImport(ref: WorldRef | undefined, content: ContentMods | undefined, dryRun = false): { ref?: WorldRef; created?: string } {
-    if (!content || !ref || ref.id === VANILLA) return { ref }
+  function worldForImport(ref: WorldRef | undefined, content: ContentMods | undefined, dryRun = false): { ref?: WorldRef; created?: string; reused?: string } {
+    if (!content || ref?.id === VANILLA) return { ref }
     const incoming = normalizeMods(JSON.parse(JSON.stringify(content)))
     // normalizeMods 會先登錄自建的能力與底材：比較完恢復成目前的內容
     apply()
     if (!modTotal(incoming)) return { ref }
-    const existing = worlds.value.find((w) => w.id === ref.id)
-    if (existing && JSON.stringify(existing.mods) === JSON.stringify(incoming)) return { ref }
+    const text = JSON.stringify(incoming)
+    const same = (w: { mods: ContentMods }) => JSON.stringify(w.mods) === text
+    const existing = ref && worlds.value.find((w) => w.id === ref.id)
+    if (existing && same(existing)) return { ref }
+    const twin = worlds.value.find(same)
+    if (twin) return { ref: { id: twin.id, name: twin.name }, reused: twin.name }
     const taken = new Set([VANILLA_NAME, ...worlds.value.map((w) => w.name)])
-    let name = (ref.name || '匯入的世界').slice(0, 25)
-    while (taken.has(name)) name = `${(ref.name || '匯入的世界').slice(0, 25)}${Math.floor(1000 + Math.random() * 9000)}`
+    const base = (ref?.name || '匯入的世界').slice(0, 25)
+    let name = base
+    let h = 2166136261
+    for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619) >>> 0
+    for (let n = 0; taken.has(name); n++) name = `${base}${1000 + ((h + n) % 9000)}`
     if (dryRun) return { ref, created: name }
     const id = createWorld(name, undefined, incoming)
     return { ref: { id, name }, created: name }

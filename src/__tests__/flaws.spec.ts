@@ -100,7 +100,8 @@ describe('character creation', () => {
     const state = game({ customPerks: [{ name: '暈船', flaw: true, effects: [{ check: { contexts: ['travel'] }, bonus: 2 }, { combat: { hit: -9 } }, { resist: { cold: 0.5 } }] }] })
     const p = pcOf(state).customPerks![0]!
     expect(p.flaw).toBe(true)
-    expect(p.effects).toEqual([{ check: { contexts: ['travel'] }, bonus: -1 }, { combat: { hit: -2 } }, { resist: { cold: 0.5 } }])
+    // 正的加值不會翻成負的，直接拿掉；其他夾在範圍內
+    expect(p.effects).toEqual([{ combat: { hit: -2 } }, { resist: { cold: 0.5 } }])
     expect(perkPower(p)).toBeLessThan(0)
   })
 })
@@ -148,8 +149,11 @@ describe('getting and overcoming flaws', () => {
   })
 
   it('cannot be designed by the AI in a pitch', () => {
-    expect(sanitizePerk({ name: '酒鬼', flaw: true, effects: [{ check: {}, bonus: -2 }] }, 'c-x')).toMatchObject({ effects: [{ check: {}, bonus: 1 }] })
-    expect(sanitizePerk({ name: '酒鬼', flaw: true, effects: [{ check: {}, bonus: -2 }] }, 'c-x')!.flaw).toBeUndefined()
+    // 只有壞處的設計：效果全部拿掉，不成立
+    expect(sanitizePerk({ name: '酒鬼', flaw: true, effects: [{ check: {}, bonus: -2 }] }, 'c-x')).toBeUndefined()
+    const mixed = sanitizePerk({ name: '酒鬼', flaw: true, effects: [{ check: {}, bonus: -2 }, { check: { kinds: ['chat'] }, bonus: 2 }] }, 'c-x')!
+    expect(mixed.flaw).toBeUndefined()
+    expect(mixed.effects).toEqual([{ check: { kinds: ['chat'] }, bonus: 2 }])
     const state = game()
     const offer = offerPerks(pcOf(state), '測試', ['pathfinder'])!
     applyPitch(state, blank(state), pitchTarget('pc', offer.id), 'success', { name: '壞習慣', flaw: true, effects: [{ check: { contexts: ['travel'] }, bonus: -2 }] })

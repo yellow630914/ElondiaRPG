@@ -244,6 +244,15 @@ describe('tavern hiring', () => {
     const prompt = buildRosterPrompt(state, 'soriel')!
     expect(prompt.user).toContain(newcomer)
     expect(prompt.user.match(/- id: /g)).toHaveLength(1)
+    // AI 回應之前又搬來一位：只標記送出去的人，新來的留到下次
+    const late = roster.members.find((id) => id.startsWith('cmn_') && id !== newcomer)!
+    const sent = [newcomer]
+    delete state.npcs![late]!.flavored
+    applyRosterFlavor(state, 'soriel', [], sent)
+    expect(state.npcs![newcomer]!.flavored).toBe(true)
+    expect(state.npcs![late]!.flavored).toBeUndefined()
+    expect(buildRosterPrompt(state, 'soriel')!.user).toContain(late)
+    applyRosterFlavor(state, 'soriel', [])
     // 舊存檔：整份名單潤飾過 → 上面的人都算潤飾過
     for (const id of roster.members) delete state.npcs![id]?.flavored
     roster.flavored = true

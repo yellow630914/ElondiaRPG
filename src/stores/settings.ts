@@ -176,7 +176,8 @@ export const useSettings = defineStore('settings', () => {
         aiNarration: aiNarration.value,
         aiJudge: aiJudge.value,
         abilityRerolls: abilityRerolls.value,
-        longRestGap: longRestGap.value,
+        // 欄位清空時存成預設，下次打開設定不會是空的
+        longRestGap: typeof longRestGap.value === 'number' && Number.isFinite(longRestGap.value) ? longRestGap.value : companionRules.rest.long_rest_gap_hours,
         logKeep: logKeep.value,
         adult: adult.value,
         language: language.value,

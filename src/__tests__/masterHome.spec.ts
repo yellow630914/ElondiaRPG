@@ -8,7 +8,7 @@ import { applyEffects } from '@/engine/effects'
 import { currentArea, enterLocation, getArea, move, position, standOn } from '@/engine/grid'
 import { buyHome, homeOnLot, lotsOf, manorOf } from '@/engine/homes'
 import {
-  allowedDays, applyLeave, atMasterHome, currentMasterHome, homeDeadline, householdOf, leaveDc, mayLeaveHouse, overdueChance, sendToMasterHome, strictPoints,
+  allowedDays, applyLeave, atMasterHome, currentMasterHome, homeDeadline, householdOf, leaveDc, mayLeaveHouse, overdueChance, sendToMasterHome, strictPoints, syncMasterHome,
 } from '@/engine/masterHome'
 import { peopleHere } from '@/engine/population'
 import { generateNpc, registerNpc } from '@/engine/npcs'
@@ -136,9 +136,54 @@ describe("the master's house", () => {
     old.schema = 3
     const loaded = migrate(old)
     expect(loaded.homes).toEqual({})
-    expect(loaded.masterHome).toEqual({ master: master.id, location: 'rhineburg', household: people })
+    expect(loaded.masterHome).toEqual({ master: master.id, location: 'rhineburg', household: people, district: home.district })
     expect(householdOf(loaded).map((r) => r.id)).toEqual(people)
     expect(lotsOf('rhineburg').some((l) => l.id === lot.id && !homeOnLot(loaded, l.id))).toBe(true)
+  })
+
+  it("keeps an old save's house layout, so whoever stood inside is still inside (schema 3 → 4)", () => {
+    // 舊版：主人沒有身分標籤時，規格看空地的地段（首都、城市的第一塊空地常在貴族區 → 三層的豪宅）
+    const { state, master } = slave()
+    const home = currentMasterHome(state)!
+    expect(home.district).toBe('manor')
+    const top = home.floors.map((k) => home.areas[k]!).find((a) => a.homeFloor === 'upper' && a.key.endsWith('/F3'))!
+    expect(top).toBeTruthy()
+    const old = JSON.parse(JSON.stringify(state)) as GameState
+    delete old.npcs![master.id]!.tags
+    old.homes = { [`m-${master.id}`]: JSON.parse(JSON.stringify(home)) }
+    delete old.masterHome
+    old.schema = 3
+    // 站在三樓
+    old.position = { area: top.key, x: 2, y: 2 }
+    const loaded = migrate(JSON.parse(JSON.stringify(old)))
+    expect(loaded.masterHome!.district).toBe('manor')
+    syncMasterHome(loaded)
+    expect(loaded.position).toEqual({ area: top.key, x: 2, y: 2 })
+    expect(() => getArea(loaded, top.key)).not.toThrow()
+    // 一樓的出口（豪宅比較寬）
+    const ground = home.areas[home.floors.find((k) => home.areas[k]!.homeFloor === 'ground')!]!
+    const exit = ground.cells.findIndex((c) => c.dir === 'out')
+    old.position = { area: ground.key, x: exit % ground.width, y: Math.floor(exit / ground.width) }
+    const loaded2 = migrate(JSON.parse(JSON.stringify(old)))
+    syncMasterHome(loaded2)
+    expect(loaded2.position).toEqual(old.position)
+    expect(currentArea(loaded2).cells[exit]!.dir).toBe('out')
+  })
+
+  it('moves you and the household back inside when a stored spot is outside the house', () => {
+    const { state } = slave()
+    const home = currentMasterHome(state)!
+    const ground = home.areas[home.floors.find((k) => home.areas[k]!.homeFloor === 'ground')!]!
+    // 格局對不上（例如規格不同）：座標在這一層外面
+    state.position = { area: ground.key, x: ground.width + 3, y: ground.height + 3 }
+    const person = householdOf(state)[0]!
+    person.at = { area: ground.key, x: ground.width + 5, y: 1, until: 1e9 }
+    syncMasterHome(state)
+    const p = state.position!
+    expect(p.area).toBe(ground.key)
+    expect(p.x < ground.width && p.y < ground.height).toBe(true)
+    expect(ground.cells[p.y * ground.width + p.x]!.dir).toBe('out')
+    expect(person.at!.x < ground.width || person.at!.area !== ground.key).toBe(true)
   })
 
   it('gives bought houses ids that never collide', () => {
