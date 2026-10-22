@@ -27,10 +27,8 @@ import RelationsView from '@/components/RelationsView.vue'
 import RestPanel from '@/components/RestPanel.vue'
 import SaveDialog from '@/components/SaveDialog.vue'
 import SettingsView from '@/components/SettingsView.vue'
-import MasterEventPanel from '@/components/MasterEventPanel.vue'
-import DefeatEventPanel from '@/components/DefeatEventPanel.vue'
-import StandoffPanel from '@/components/StandoffPanel.vue'
-import SuggestionToast from '@/components/SuggestionToast.vue'
+import EventCenter from '@/components/events/EventCenter.vue'
+import { activeEvents, eventDialogOpen, pendingEvents } from '@/components/events/eventQueue'
 
 // 提示詞頁籤會載入整本世界書，切過去時才載入
 const PromptsView = defineAsyncComponent(() => import('@/components/PromptsView.vue'))
@@ -42,6 +40,9 @@ const settings = useSettings()
 const inCombat = computed(() => !!game.state?.combat)
 const pendingSkills = computed(() => game.state?.party.some((m) => m.pendingAbilityChoices?.length || m.attrPoints > 0) ?? false)
 const suggestionCount = computed(() => game.state?.suggestions?.length ?? 0)
+// 需要回應的事件（事件視窗關著時在上方提醒）
+const eventCount = computed(() => pendingEvents(game.state).length)
+const blockingEvent = computed(() => activeEvents(game.state).some((e) => e.blocking))
 // 通緝與這裡的衛兵警戒
 const crime = computed(() => {
   const s = game.state
@@ -136,6 +137,7 @@ onBeforeUnmount(() => {
       <span v-if="crime" class="crime" :title="crime.title">{{ crime.text }}</span>
     </div>
     <div class="row top-buttons">
+      <button v-if="eventCount" class="small events" :class="{ hot: blockingEvent }" title="需要你處理的事" @click="eventDialogOpen = true">🔔 {{ eventCount }} 件待處理</button>
       <button v-if="game.state" class="small" title="快速存檔（F8 / Ctrl+S）" @click="game.quickSave()">⚡ 快存</button>
       <button v-if="game.state" class="small" title="快速讀檔（F9）" @click="askQuickLoad">⚡ 快讀</button>
       <button v-if="game.state" title="存檔與讀檔" @click="showSaves = true">💾 存讀檔</button>
@@ -189,9 +191,6 @@ onBeforeUnmount(() => {
         <button @click="showCraft = true">🛠️ 工藝</button>
       </section>
       <template v-if="!inCombat">
-        <StandoffPanel v-if="game.state.standoff && !game.state.pendingAction" />
-        <DefeatEventPanel v-if="game.state.pendingDefeat && !game.state.pendingAction" />
-        <MasterEventPanel v-if="game.state.pendingMasterEvent && !game.state.pendingAction" />
         <RestPanel />
         <ActionPanel />
         <IntentPanel />
@@ -231,7 +230,7 @@ onBeforeUnmount(() => {
     <SettingsView />
   </AppDialog>
 
-  <SuggestionToast v-if="game.state && !showRelations" @open-relations="tab = 'adventure'; showRelations = true" />
+  <EventCenter v-if="game.state" @open-party="tab = 'adventure'; showParty = true" @open-relations="tab = 'adventure'; showRelations = true" />
 </template>
 
 <style scoped>
@@ -247,6 +246,9 @@ onBeforeUnmount(() => {
 .top h1 { font-size: 1.4rem; color: var(--accent); letter-spacing: 0.1em; margin: 0; }
 .status { gap: 16px; color: var(--muted); }
 .crime { color: var(--danger); }
+.events { border-color: var(--accent); color: var(--accent); }
+.events.hot { border-color: var(--danger); color: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.55; } }
 .tabs { gap: 6px; }
 .tabs button.active { border-color: var(--accent); color: var(--accent); }
 .top-buttons { margin-left: auto; gap: 6px; }

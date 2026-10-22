@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { attrName, locationById } from '@/engine/data'
+import { locationById } from '@/engine/data'
 import { currentArea, currentCell } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { roadProgress, roadTemplate } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { useGame } from '@/stores/game'
+import { eventDialogOpen } from './events/eventQueue'
 
 // 旅途：單行道一格一天往前走；事件出發時就擲好放在格子上（❔ 事件、⚔️ 戰鬥）
 const game = useGame()
@@ -38,13 +39,8 @@ const legs = computed(() => [...new Set((s.value.road?.modes ?? []).map((m) => M
     </ul>
 
     <div v-if="pending" class="event">
-      <b>{{ pending.title }}</b>
-      <p class="small">{{ pending.text }}</p>
-      <div class="row">
-        <button v-for="(o, i) in pending.options ?? []" :key="i" class="small" :disabled="game.judging" @click="game.answerRoadEvent(i)">
-          {{ o.label }}<template v-if="o.check">（{{ attrName(o.check.attr) }}・DC {{ o.check.dc }}）</template>
-        </button>
-      </div>
+      <b>🧭 {{ pending.title }}</b>
+      <button class="small primary" @click="eventDialogOpen = true">🔔 決定怎麼應付</button>
     </div>
 
     <p v-else-if="area.kind !== 'road'" class="small">目前在{{ area.name }}：從出口離開就回到旅途。</p>

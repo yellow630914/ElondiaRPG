@@ -8,14 +8,14 @@ import { npcTitle } from '@/engine/npcs'
 import { isHostile, peopleHere } from '@/engine/population'
 import { isBound, isEnslaved, isFugitive } from '@/engine/party'
 import {
-  atSafeSpot, contractTerms, markSummary, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, unmarkOffers, type MarkChoice,
+  atSafeSpot, contractTerms, markSummary, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, unmarkOffers,
 } from '@/engine/slavery'
 import { currentArea } from '@/engine/grid'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import { useSettings } from '@/stores/settings'
 import JudgeToggle from './JudgeToggle.vue'
-import MarkPicker from './MarkPicker.vue'
+import { eventDialogOpen } from './events/eventQueue'
 
 const game = useGame()
 const settings = useSettings()
@@ -95,12 +95,6 @@ function doFreedom(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_retu
 
 // ---- 刻印 ----
 const pendingMark = computed(() => s.value.pendingMark)
-const markText = ref('')
-const markChoice = ref<MarkChoice>('labor')
-function doMarking() {
-  void game.perform({ kind: 'marking', text: markText.value })
-  markText.value = ''
-}
 </script>
 
 <template>
@@ -135,26 +129,8 @@ function doMarking() {
 
   <section v-else-if="pendingMark" class="panel pending">
     <h3>🔥 刻下契約印記</h3>
-    <template v-if="!pendingMark.rolled">
-      <p class="small">
-        {{ contract?.masterName || '主人' }}打算刻下<strong>{{ contractDef(pendingMark.intended).name }}</strong>：{{ contractDef(pendingMark.intended).mark }}
-      </p>
-      <p class="small muted">
-        刻印前還有一次機會（{{ attrName(slaveryRules.marking.attr) }}檢定）：描述你的態度與做法，AI 會依此決定能選哪些印記，或依你的行為描寫印記的樣子。
-        大成功可以自訂印記；失敗會換成更重的印記。
-      </p>
-      <textarea v-model="markText" rows="2" placeholder="例如：低頭順從，懇求用最輕的印記；或趁刻印師分心時掙扎" />
-      <button class="small primary" :disabled="game.judging" @click="doMarking">面對刻印</button>
-    </template>
-    <template v-else>
-      <p v-if="pendingMark.suggestion?.name || pendingMark.suggestion?.mark" class="small mark">
-        依你的行為，印記會是：{{ pendingMark.suggestion.name }} {{ pendingMark.suggestion.mark }}
-        <span class="muted">（選模板時套用這段名稱與描述，數值依模板）</span>
-      </p>
-      <p class="small muted">選擇要刻上的印記{{ pendingMark.custom ? '，或自訂' : '' }}：</p>
-      <MarkPicker :key="pendingMark.allowed?.join()" v-model="markChoice" :allowed="pendingMark.allowed" :allow-custom="pendingMark.custom" :base="pendingMark.intended" />
-      <button class="small primary" @click="game.chooseMark(markChoice)">刻下</button>
-    </template>
+    <p class="small">要先面對刻印，才能做別的事。</p>
+    <button class="small primary" @click="eventDialogOpen = true">🔔 開啟事件視窗</button>
   </section>
 
   <section v-else class="panel action-panel">
