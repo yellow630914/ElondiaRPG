@@ -1,5 +1,5 @@
 {
-  "$comment": "特質（被動）：一直生效的能力，影響檢定與戰鬥。說明見 docs/PERKS.md。effects：check 檢定加值（filter 寫在 check：attrs 屬性、contexts 檢定的情境、kinds 主動行動的種類、vs_tags 對象的標籤；同一欄位是「或」，不同欄位是「且」；沒寫的欄位不限）、combat 戰鬥修正（hit、evade、save、damage、dr、ap_regen、crit、threat）、resist 受到的傷害倍率加減（負數是抗性）、offense 造成的傷害倍率加減。flaw：缺陷（保留，目前沒有）。requires：只有這些種族或職業可以選。train：可以在這些設施花錢學（price_cc、hours、attr、dc）。npc：NPC 生成時抽到的權重（weight）與更容易抽到的標籤或職業（tags、classes）。",
+  "$comment": "特質（被動）：一直生效的能力，影響檢定與戰鬥。說明見 docs/PERKS.md。effects：check 檢定加值（filter 寫在 check：attrs 屬性、contexts 檢定的情境、kinds 主動行動的種類、vs_tags 對象的標籤；同一欄位是「或」，不同欄位是「且」；沒寫的欄位不限）、combat 戰鬥修正（hit、evade、save、damage、dr、ap_regen、crit、threat）、resist 受到的傷害倍率加減（負數是抗性）、offense 造成的傷害倍率加減。flaw：缺陷（保留，目前沒有）。requires：只有這些種族或職業可以選。race：種族特質（原本的種族天賦），這個種族的角色自動擁有，不寫進存檔；不能在建角、升級時選，不能受訓、從書裡學，也不會失去。train：可以在這些設施花錢學（price_cc、hours、attr、dc）。npc：NPC 生成時抽到的權重（weight）與更容易抽到的標籤或職業（tags、classes）。",
   "version": 1,
   "contexts": {
     "action": "主動行動",
@@ -132,6 +132,15 @@
       "train": { "cells": ["temple"], "price_cc": 200, "hours": 8, "attr": "fai", "dc": 11 }, "npc": { "weight": 1, "tags": ["priest", "good"] } },
     { "id": "kind_heart", "name": "古道熱腸", "desc": "長休時的互動、聊天 +1；對好人的檢定 +2。",
       "effects": [{ "check": { "kinds": ["rest_talk", "chat"] }, "bonus": 1 }, { "check": { "vs_tags": ["good"] }, "bonus": 2 }],
-      "npc": { "weight": 1, "tags": ["good"] } }
+      "npc": { "weight": 1, "tags": ["good"] } },
+    { "id": "race_human", "name": "適應力", "race": "human", "desc": "全屬性 +1（已經算在人類的種族加值裡）。", "effects": [] },
+    { "id": "race_elf", "name": "星辰之裔", "race": "elf", "desc": "心靈傷害 ×0.75。", "effects": [{ "resist": { "psychic": -0.25 } }] },
+    { "id": "race_dwarf", "name": "熔爐之軀", "race": "dwarf", "desc": "毒素傷害 ×0.5、火焰傷害 ×0.75；身形結實顯眼，仇恨 +10%。",
+      "effects": [{ "resist": { "poison": -0.5, "fire": -0.25 } }, { "combat": { "threat": 0.1 } }] },
+    { "id": "race_demon", "name": "荒原血脈", "race": "demon", "desc": "火焰 ×0.5、暗影 ×0.75，但神聖傷害 ×1.25；魔族的氣息惹人注目，仇恨 +10%。",
+      "effects": [{ "resist": { "fire": -0.5, "necrotic": -0.25, "radiant": 0.25 } }, { "combat": { "threat": 0.1 } }] },
+    { "id": "race_catfolk", "name": "貓之反射", "race": "catfolk", "desc": "迴避 +1、幸運一擊閾值 -1；身手輕巧不易被盯上，仇恨 -15%。",
+      "effects": [{ "combat": { "evade": 1, "crit": 1, "threat": -0.15 } }] },
+    { "id": "race_yulin", "name": "潮汐之鱗", "race": "yulin", "desc": "寒冰 ×0.5，但閃電傷害 ×1.25。", "effects": [{ "resist": { "cold": -0.5, "lightning": 0.25 } }] }
   ]
 }

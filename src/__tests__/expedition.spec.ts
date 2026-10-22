@@ -13,6 +13,9 @@ import { startJourney } from '@/engine/road'
 import { addItem, assertSchema, commitReport, migrate, newGame, newReportId, SAVE_SCHEMA, withRng } from '@/engine/state'
 import { abandonQuest, acceptQuest, canAcceptRank, guildQuests, turnInQuest } from '@/engine/town'
 import { locationById } from '@/engine/data'
+import { mod, proficiency } from '@/engine/character'
+import { checkBonus } from '@/engine/perks'
+import { withBonus } from '@/engine/rng'
 import { standOn } from '@/engine/grid'
 import type { GameState, Report } from '@/engine/types'
 import { parseSaveFile } from '@/stores/saves'
@@ -302,9 +305,15 @@ describe('expedition', () => {
     inDungeon(s2, 1)
     stepAside(s2)
     expeditionRules.retreat.dc_base = 100
+    s2.party[0]!.level = 7
     const r = retreat(s2)
     valid(r.report!)
     expect(r.report!.outcome.tags).toContain('被追上')
+    // 帶路的人：屬性＋熟練加值＋特質
+    const guide = s2.party[0]!
+    const modifier = mod(guide.attrs[expeditionRules.retreat.attr]) + proficiency(7) + checkBonus(guide, { context: 'retreat', attr: expeditionRules.retreat.attr })
+    expect(r.report!.check!.modifier).toBe(modifier)
+    expect(r.report!.timeline![0]!.roll!.dice).toBe(withBonus('1d20', modifier))
     expect(r.combat).toBeDefined()
     expect(s2.retreating).toBe(true)
     // 打贏就撤出

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { perkRules, type PerkDef } from '@/engine/data'
+import { choosablePerks, perkRules, type PerkDef } from '@/engine/data'
+import { racePerks } from '@/engine/perks'
 import PerkBuilder from './PerkBuilder.vue'
 
 // 建立角色時的特質：清單裡的不限數量任選，也可以自訂
 const perks = defineModel<string[]>('perks', { required: true })
 const custom = defineModel<PerkDef[]>('custom', { required: true })
 const props = defineProps<{ race: string; cls: string }>()
-const list = computed(() => perkRules.perks.filter((p) =>
+const list = computed(() => choosablePerks().filter((p) =>
   !p.flaw && (!p.requires?.races?.length || p.requires.races.includes(props.race)) && (!p.requires?.classes?.length || p.requires.classes.includes(props.cls))))
 
 function toggle(id: string) {
@@ -24,6 +25,11 @@ function blocked(p: PerkDef): boolean {
     <h3 class="small">🌟 特質（已選 {{ perks.length + custom.length }}）</h3>
     <p class="small muted">特質一直生效，影響檢定與戰鬥。建立角色時不限數量；之後可以靠升級、事件、特殊任務、受訓與書籍學會更多。</p>
     <div class="grid">
+      <!-- 種族特質：依種族自動擁有，不能取消 -->
+      <label v-for="p in racePerks(race)" :key="p.id" class="perk small on" :title="p.desc">
+        <input type="checkbox" checked disabled />
+        <span><b>{{ p.name }}</b> <span class="tag">種族</span><br /><span class="muted">{{ p.desc }}</span></span>
+      </label>
       <label v-for="p in list" :key="p.id" class="perk small" :class="{ on: perks.includes(p.id) }" :title="p.desc">
         <input type="checkbox" :checked="perks.includes(p.id)" :disabled="blocked(p)" @change="toggle(p.id)" />
         <span><b>{{ p.name }}</b><br /><span class="muted">{{ p.desc }}</span></span>

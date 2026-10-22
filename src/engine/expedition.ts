@@ -4,13 +4,13 @@
 
 import { checkBonus } from './perks'
 import mapsJson from '@data/world/maps.json'
-import { mod, snapshot } from './character'
+import { mod, proficiency, snapshot } from './character'
 import { computeDegree } from './checks'
 import { dungeonEncounters, locationById, regionById, type DungeonLayerId } from './data'
 import { inDarkness } from './light'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Area } from './grid'
-import type { Rng } from './rng'
+import { withBonus, type Rng } from './rng'
 import type { DefeatLoot, GameState, ItemDelta, Report } from './types'
 
 interface RetreatRules {
@@ -127,14 +127,14 @@ export function attemptRetreat(state: GameState, area: Area, safe: boolean): Ret
     const table = dungeonEncounters[loc.id]?.[LAYER_IDS[layer] ?? 'shallow'] ?? []
     return { natural, rolled: table.length ? rng.pick(table) : undefined }
   })
-  const modifier = mod(guide.attrs[r.attr]) + checkBonus(guide, { context: 'retreat', attr: r.attr })
+  const modifier = mod(guide.attrs[r.attr]) + proficiency(guide.level) + checkBonus(guide, { context: 'retreat', attr: r.attr })
   const total = natural + modifier
   const degree = computeDegree(natural, total, dc)
   const ok = degree === 'success' || degree === 'critical'
   report.check = { action: '撤出地下城', attr: r.attr, base_dc: dc, dc, natural, modifier, total, degree, source: 'rules' }
   report.timeline = [{
     seq: 1, time: start, actor: guide.id, action: `${guide.name}帶路撤退（靈巧檢定）`,
-    roll: { dice: '1d20', value: total, dc }, result: ok ? 'success' : 'fail',
+    roll: { dice: withBonus('1d20', modifier), value: total, dc }, result: ok ? 'success' : 'fail',
   }]
   if (ok) {
     report.outcome.summary = `${guide.name}帶著大家避開魔物，從${area.name}撤出${loc.name}，花了大約 ${hours} 小時。`

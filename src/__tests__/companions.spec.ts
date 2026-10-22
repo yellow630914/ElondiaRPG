@@ -8,6 +8,9 @@ import {
   tavernCandidates, waitForParty,
 } from '@/engine/companions'
 import { contractDef, slaveryRules } from '@/engine/data'
+import { mod, proficiency } from '@/engine/character'
+import { checkBonus } from '@/engine/perks'
+import { withBonus } from '@/engine/rng'
 import { applyEffects } from '@/engine/effects'
 import { enterLocation, standOn } from '@/engine/grid'
 import { generateNpc, npcKind, npcRecord, slavePrice } from '@/engine/npcs'
@@ -271,8 +274,11 @@ describe('joining another party', () => {
     const state = offered()
     acceptPartyOffer(state, state.partyOffers![0]!.id)
     requestLeave(state, 'sneak')
+    const me = state.party.find((m) => m.isPlayer)!
+    me.level = 5
     const r = shortRest(state) as Report
     expect(r.timeline?.[0]?.action).toBe('趁夜偷偷離開')
+    expect(r.timeline?.[0]?.roll?.dice).toBe(withBonus('1d20', mod(me.attrs.dex) + proficiency(5) + checkBonus(me, { context: 'stealth', attr: 'dex' })))
     expect(leaderOf(state)).toBeUndefined()
   })
 })

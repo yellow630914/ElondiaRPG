@@ -10,14 +10,15 @@
 import mapsJson from '@data/world/maps.json'
 import {
   abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
-  npcs as namedNpcs, npcTags, perkDef, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
+  npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
-  stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart,
+  stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
 } from './data'
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
+import { cleanPerkEffects, describeEffects, type PerkLimits } from './perks'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
@@ -66,6 +67,9 @@ export interface AbilityMod extends AbilityDef {
   custom?: boolean
 }
 
+/** 特質：內建的（包括種族特質）可以修改，自建的沒有被使用時可以刪除。custom 是內容編輯器自建的（和角色身上的自訂特質不同） */
+export type PerkMod = PerkDef
+
 export interface ContentMods {
   version: 1
   enemies: Record<string, EnemyMod>
@@ -75,10 +79,11 @@ export interface ContentMods {
   npcs: Record<string, NpcMod>
   stories: Record<string, StoryMod>
   abilities: Record<string, AbilityMod>
+  perks: Record<string, PerkMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -99,6 +104,12 @@ const snapshot = {
   gather: { wild: [...maps.generation.wild.resource_items], dungeon: [...maps.generation.dungeon.resource_items] },
   npcs: clone(namedNpcs),
   abilities: clone(abilities),
+  perks: clone(perkRules.perks),
+}
+
+export function builtinPerk(id: string): PerkDef | undefined {
+  const p = snapshot.perks.find((x) => x.id === id)
+  return p ? clone(p) : undefined
 }
 
 export function builtinAbility(id: string): AbilityDef | undefined {
@@ -144,6 +155,7 @@ function restore() {
   maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon)
   namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs))
   replaceRecord(abilities, snapshot.abilities)
+  perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
 }
 
@@ -352,6 +364,8 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('能力', mods.abilities, (id, m) => {
     abilities[id] = { ...strip(m, ['custom']), id }
   })
+  // 特質在能力之後、固定 NPC 之前（物品的書籍、固定 NPC 的特質清單會用到）
+  tryEach('特質', mods.perks, (id, m) => registerPerk(id, m))
   tryEach('材料', mods.materials, (id, m) => {
     gearRules.materials[id] = strip(m, ['custom'])
   })
@@ -555,7 +569,7 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   const out: ItemUse = {}
   if (u.condition && companionRules.conditions[u.condition]) out.condition = u.condition
   // 書籍：可以學的特質（清單裡的）
-  const perks = (Array.isArray(u.perks) ? u.perks : []).filter((id) => typeof id === 'string' && !!perkDef(id)).slice(0, 6)
+  const perks = (Array.isArray(u.perks) ? u.perks : []).filter((id) => typeof id === 'string' && isChoosablePerk(id)).slice(0, 6)
   if (perks.length) out.perks = perks
   if (u.heal && DICE.test(String(u.heal).replace(/\s+/g, ''))) out.heal = String(u.heal).replace(/\s+/g, '')
   if (u.slot) out.slot = int(u.slot, 1, 9, 1)
@@ -788,6 +802,12 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
   for (const [id, a] of Object.entries(out.abilities)) if (a.custom && !abilities[id]) abilities[id] = { ...strip(a, ['custom']), id }
+  // 物品（書籍）、固定 NPC、任務與其他特質的整理會檢查特質存不存在：先把自建的特質登錄進去
+  for (const [id, v] of Object.entries(r.perks ?? {})) {
+    const p = sanitizePerkMod(id, v, !!v.custom || !builtinPerk(id))
+    if (p) out.perks[id] = p
+  }
+  for (const [id, p] of Object.entries(out.perks)) if (p.custom && !perkDef(id)) registerPerk(id, p)
   for (const [id, v] of Object.entries(r.materials ?? {})) out.materials[id] = sanitizeMaterial(v, !!v.custom || !snapshot.materials[id], id)
   for (const [id, v] of Object.entries(r.bases ?? {})) out.bases[id] = sanitizeBase(v, !!v.custom || !snapshot.bases[id], id)
   // 物品、固定 NPC 與任務的裝備組成會檢查底材與材料存不存在：先把自建的登錄進去（之後 applyContent 會重新套用一次）
@@ -875,7 +895,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   const abil = (raw.abilities ?? []).filter((a) => !!abilities[a])
   if (abil.length) out.abilities = [...new Set(abil)]
   // 特質：清單裡的（沒寫時依 id 固定地抽）
-  if (Array.isArray(raw.perks)) out.perks = [...new Set(raw.perks.filter((p) => typeof p === 'string' && !!perkDef(p)))]
+  if (Array.isArray(raw.perks)) out.perks = [...new Set(raw.perks.filter((p) => typeof p === 'string' && isChoosablePerk(p)))]
   if (raw.gear) {
     const g: NonNullable<NpcDef['gear']> = {}
     for (const slot of GEAR_SLOTS) {
@@ -1036,6 +1056,64 @@ export function abilityUsage(id: string, state?: GameState | null): string[] {
     }
   }
   return out
+}
+
+// ---- 特質 ----
+
+/** 可以學特質的設施 */
+export const TRAIN_CELLS = ['inn', 'guild', 'tavern', 'shop', 'temple', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'brothel'] as const
+
+/** 內容編輯器的效果範圍：比玩家自訂的寬，但還不開放負的加值（缺陷還沒做）；種族特質可以有弱點 */
+export function perkEditorLimits(race: boolean): PerkLimits {
+  return { effects: 6, check_bonus: [1, 5], combat: [1, 3], resist: [-0.75, race ? 0.5 : 0], offense: [0, 0.5], threat: [-0.5, 0.5] }
+}
+
+function registerPerk(id: string, m: PerkMod) {
+  const def = { ...strip(m, ['custom']), id }
+  const i = perkRules.perks.findIndex((p) => p.id === id)
+  if (i >= 0) perkRules.perks[i] = def
+  else perkRules.perks.push(def)
+}
+
+/** 整理特質（內容編輯器、匯入）：數值用 cleanPerkEffects 夾在範圍內；種族只沿用內建的，自建的不能是種族特質 */
+export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boolean): PerkMod | undefined {
+  const race = custom ? undefined : builtinPerk(id)?.race
+  const c = perkRules.custom
+  const name = String(raw.name ?? '').trim().slice(0, c.name_chars)
+  const effects = cleanPerkEffects(raw.effects, perkEditorLimits(!!race))
+  const out: PerkMod = {
+    id, name: name || '新的特質', desc: String(raw.desc ?? '').trim().slice(0, c.desc_chars) || (effects.length ? describeEffects(effects) : ''), effects,
+  }
+  if (race) out.race = race
+  const races = (raw.requires?.races ?? []).filter((r) => !!attributeRules.races[r])
+  const cls = (raw.requires?.classes ?? []).filter((k) => !!classes[k])
+  if (!race && (races.length || cls.length)) out.requires = { ...(races.length ? { races } : {}), ...(cls.length ? { classes: cls } : {}) }
+  const ex = [...new Set(raw.exclusive ?? [])].filter((x) => x !== id && isChoosablePerk(x))
+  if (!race && ex.length) out.exclusive = ex
+  if (!race && raw.train && Array.isArray(raw.train.cells)) {
+    const cells = raw.train.cells.filter((x) => (TRAIN_CELLS as readonly string[]).includes(x))
+    if (cells.length) {
+      out.train = {
+        cells,
+        price_cc: Math.round(num(raw.train.price_cc, 0, 1e6, 300)),
+        hours: Math.round(num(raw.train.hours, 1, 72, 8)),
+        attr: ATTR_IDS.includes(raw.train.attr) ? raw.train.attr : 'str',
+        dc: Math.round(num(raw.train.dc, 5, 30, 12)),
+      }
+    }
+  }
+  if (!race && raw.npc) {
+    const weight = Math.round(num(raw.npc.weight, 0, 10, 0))
+    const tags = (raw.npc.tags ?? []).filter((t) => !!npcTags.tags[t])
+    const ncls = (raw.npc.classes ?? []).filter((k) => !!classes[k])
+    if (weight > 0) out.npc = { weight, ...(tags.length ? { tags } : {}), ...(ncls.length ? { classes: ncls } : {}) }
+  }
+  if (custom) out.custom = true
+  return out
+}
+
+export function newPerk(id: string): PerkMod {
+  return { id, name: '新的特質', desc: '', effects: [{ check: { attrs: ['str'] }, bonus: 1 }], custom: true }
 }
 
 export function newNpc(id: string): NpcMod {

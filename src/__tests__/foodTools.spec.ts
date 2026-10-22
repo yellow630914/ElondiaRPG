@@ -3,7 +3,10 @@ import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction } from '@/engine/actions'
 import { startCombat } from '@/engine/combat'
-import { blockedMove, currentArea, enterLocation, moveTo, pickLock, sight, standOn } from '@/engine/grid'
+import { blockedMove, currentArea, currentCell, enterLocation, moveTo, pickLock, sight, standOn } from '@/engine/grid'
+import { mod, proficiency } from '@/engine/character'
+import { checkBonus, checkModifiers } from '@/engine/perks'
+import { withBonus } from '@/engine/rng'
 import { useItem } from '@/engine/inventory'
 import { eatMeal, mealMenu } from '@/engine/meals'
 import { applyContent, emptyMods, normalizeMods, sanitizeItem } from '@/engine/mods'
@@ -119,6 +122,23 @@ describe('tool templates', () => {
     expect(sight(state, dark)).toBe(2)
     addItem(state.inventory, '魔法照明石', 1)
     expect(sight(state, dark)).toBe(3)
+  })
+
+  it('adds proficiency to spotting traps and picking locks', () => {
+    const state = game()
+    const me = pc(state)
+    me.level = 9
+    const trap = stepOntoDungeonCell(state, { kind: 'trap' }).result.report!
+    expect(trap.timeline![0]!.roll!.dice).toBe(withBonus('1d20', mod(me.attrs.dex) + proficiency(9) + checkBonus(me, { context: 'trap', attr: 'dex' })))
+    const s2 = game()
+    pc(s2).level = 9
+    stepOntoDungeonCell(s2, { kind: 'chest', level: 1, lock: 30 })
+    for (const m of ['dex', 'str', 'int'] as const) {
+      const r = pickLock(s2, m)
+      const extra = checkModifiers(pc(s2), { context: 'lock', attr: m }).reduce((s, x) => s + x.value, 0)
+      expect(r.timeline![0]!.roll!.dice, m).toBe(withBonus('1d20', mod(pc(s2).attrs[m]) + proficiency(9) + extra))
+      if (!currentCell(s2).lock) break
+    }
   })
 
   it('adds the trap pole to spotting traps', () => {

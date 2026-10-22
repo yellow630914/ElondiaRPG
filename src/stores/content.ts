@@ -8,12 +8,12 @@ import { computed, ref } from 'vue'
 import { enemies, itemDef, npcs as namedNpcs, stories } from '@/engine/data'
 import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
 import {
-  abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, dropBrokenStories, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeEnemy,
+  abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
 } from '@/engine/mods'
-import { pruneAbilities } from '@/engine/state'
+import { pruneAbilities, prunePerks } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
-import { enemyUsage, gearUsage, itemUsage, npcUsage, renameItemInState, storyUsage } from '@/engine/usage'
+import { enemyUsage, gearUsage, itemUsage, npcUsage, perkUsage, renameItemInState, storyUsage } from '@/engine/usage'
 import { useGame } from './game'
 
 /** 舊版只有一套自訂內容 */
@@ -40,9 +40,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['abilities', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
+const MOD_SECTIONS: Section[] = ['abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  abilities: '技能', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
+  abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
 }
 
 export interface ModsDiffEntry {
@@ -145,6 +145,7 @@ export const useContent = defineStore('content', () => {
     const game = useGame()
     if (game.state) {
       pruneAbilities(game.state)
+      prunePerks(game.state)
       pruneStories(game.state)
     }
     version.value++
@@ -214,7 +215,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -226,6 +227,7 @@ export const useContent = defineStore('content', () => {
       case 'npc': return npcUsage(key, state)
       case 'story': return storyUsage(key, state)
       case 'ability': return abilityUsage(key, state)
+      case 'perk': return perkUsage(key, state)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -429,6 +431,26 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 特質 ----
+
+  function savePerk(id: string, draft: Partial<PerkMod>) {
+    const p = sanitizePerkMod(id, draft, !builtinPerk(id))
+    if (!p) throw new Error('特質的內容不完整')
+    mods.value.perks[id] = p
+    save()
+  }
+  /** 自建、而且沒有被任何地方用到的特質才能刪 */
+  function deletePerk(id: string) {
+    if (!mods.value.perks[id]?.custom) throw new Error('內建的特質不能刪除')
+    assertUnused('perk', id)
+    delete mods.value.perks[id]
+    save()
+  }
+  function restorePerk(id: string) {
+    if (!mods.value.perks[id]?.custom) delete mods.value.perks[id]
+    save()
+  }
+
   /** 內容頁籤裡用過的劇情旗標（自動完成用） */
   function knownFlags(): string[] {
     const set = new Set<string>()
@@ -517,7 +539,7 @@ export const useContent = defineStore('content', () => {
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
-    saveNpc, deleteNpc, restoreNpc, saveStory, deleteStory, restoreStory, knownFlags,
+    saveNpc, deleteNpc, restoreNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }

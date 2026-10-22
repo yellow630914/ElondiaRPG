@@ -9,7 +9,7 @@
 import { checkBonus, checkModifiers, modifierNote } from './perks'
 import { safeText } from './content'
 import mapsJson from '@data/world/maps.json'
-import { mod, snapshot } from './character'
+import { mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
   attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, wildEncounters,
@@ -859,7 +859,7 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   const scout = [...state.party].filter((m) => m.hp > 0).sort((a, b) => b.attrs.dex - a.attrs.dex)[0] ?? player(state)
   const before = state.party.map((m) => ({ ...m }))
   const tool = bestTool(state, 'trap')
-  const dice = withBonus('1d20', mod(scout.attrs.dex) + (tool?.bonus ?? 0) + checkBonus(scout, { context: 'trap', attr: 'dex' }))
+  const dice = withBonus('1d20', mod(scout.attrs.dex) + proficiency(scout.level) + (tool?.bonus ?? 0) + checkBonus(scout, { context: 'trap', attr: 'dex' }))
   const r = withRng(state, (rng) => roll(rng, dice))
   // 黑暗又沒有光：更難察覺
   const dark = inDarkness(state, area)
@@ -925,7 +925,7 @@ function pickLockAt(state: GameState, area: Area, cell: Cell, method: LockMethod
   const tool = method === 'dex' ? bestTool(state, 'lockpick') : undefined
   const dc = cell.lock!
   const extra = checkModifiers(picker, { context: 'lock', attr: method })
-  const dice = withBonus('1d20', mod(picker.attrs[method]) + (tool?.bonus ?? 0) + extra.reduce((s, x) => s + x.value, 0))
+  const dice = withBonus('1d20', mod(picker.attrs[method]) + proficiency(picker.level) + (tool?.bonus ?? 0) + extra.reduce((s, x) => s + x.value, 0))
   const r = withRng(state, (rng) => roll(rng, dice))
   const natural = r.rolls[0] ?? 10
   const success = natural === 20 || (natural !== 1 && r.total >= dc)

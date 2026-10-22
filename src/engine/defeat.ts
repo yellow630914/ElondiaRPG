@@ -44,6 +44,7 @@ export function rollDefeatEvent(state: GameState, rng: Rng, report: Report, foes
   if (!eligible.length) return false
   const r = rules()
   const pc = pcOf(state)
+  // 刻意不加熟練加值：這不是主角的技能檢定，而是看外表與氣質能不能引起敵人的興趣
   const dice = withBonus('1d20', mod(pc.attrs[r.check.attr]))
   const res = roll(rng, dice)
   const hit = res.total >= r.check.dc

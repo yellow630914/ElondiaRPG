@@ -2,7 +2,7 @@
 
 import { sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
-import { abilities, attributeRules, classDef, locationById, perkDef, setSaveItems, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, isChoosablePerk, locationById, setSaveItems, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, type SlaveStart } from './slavery'
@@ -54,7 +54,7 @@ export function newGame(opts: NewGameOptions): GameState {
   if (appearance) pc.appearance = appearance
   if (background) pc.background = background
   // 特質：清單裡的照選，自訂的整理過才收
-  const picked = [...new Set(opts.perks ?? [])].filter((id) => !!perkDef(id))
+  const picked = [...new Set(opts.perks ?? [])].filter(isChoosablePerk)
   if (picked.length) pc.perks = picked
   const custom = (opts.customPerks ?? []).map((raw, i) => sanitizePerk(raw, `c-start-${i + 1}`)).filter((p): p is PerkDef => !!p)
   if (custom.length) pc.customPerks = custom
@@ -190,6 +190,7 @@ export function migrate(state: GameState): GameState {
   state.npcs ??= {}
   state.suggestions ??= []
   pruneAbilities(state)
+  prunePerks(state)
   // 依存檔格式的版本依序轉換
   for (const [v, step] of SCHEMA_STEPS) {
     if ((state.schema ?? 1) >= v) continue
@@ -214,6 +215,22 @@ export function pruneAbilities(state: GameState) {
   }
   // 進行中的戰鬥
   for (const x of state.combat?.combatants ?? []) if (x.abilities.some((id) => !known(id))) x.abilities = x.abilities.filter(known)
+}
+
+/**
+ * 自訂內容刪掉的特質：從角色身上、學特質的機會與登場過的人身上拿掉（讀檔時，以及自訂內容改變之後）。
+ * 種族特質依種族計算、自訂特質寫在角色身上，都不受影響。
+ */
+export function prunePerks(state: GameState) {
+  for (const c of [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((x): x is Character => !!x)]) {
+    if (c.perks?.some((id) => !isChoosablePerk(id))) c.perks = c.perks.filter(isChoosablePerk)
+    if (c.perkOffers?.length) {
+      // 機會裡不存在的選項拿掉；沒有選項又不能寫說法的機會整個拿掉
+      c.perkOffers = c.perkOffers.map((o) => ({ ...o, options: o.options.filter(isChoosablePerk) })).filter((o) => o.options.length || o.pitch)
+      if (!c.perkOffers.length) delete c.perkOffers
+    }
+  }
+  for (const r of Object.values(state.npcs ?? {})) if (r.perks?.some((id) => !isChoosablePerk(id))) r.perks = r.perks.filter(isChoosablePerk)
 }
 
 export function player(state: GameState) {

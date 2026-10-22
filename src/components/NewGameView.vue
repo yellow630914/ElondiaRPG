@@ -14,6 +14,7 @@ import { slotTitle } from '@/stores/saves'
 import MarkPicker from './MarkPicker.vue'
 import PerkPicker from './PerkPicker.vue'
 import type { PerkDef } from '@/engine/data'
+import { racePerks } from '@/engine/perks'
 import NameTag from './NameTag.vue'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
@@ -62,7 +63,7 @@ const base = computed(() => baseAttrs(classId.value, race.value))
 const attrs = computed(() => Object.fromEntries(ATTR_IDS.map((a) => [a, base.value[a] + bonus[a]])) as Record<AttrId, number>)
 const spent = computed(() => ATTR_IDS.reduce((s, a) => s + bonus[a], 0))
 const cls = computed(() => classes[classId.value]!)
-const talent = computed(() => attributeRules.races[race.value]!.talent)
+const racePerk = computed(() => racePerks(race.value)[0])
 
 watch([race, classId], () => ATTR_IDS.forEach((a) => (bonus[a] = 0)))
 
@@ -137,7 +138,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
             <option v-for="(r, id) in attributeRules.races" :key="id" :value="id">{{ r.name }}</option>
           </select>
         </label>
-        <p class="small muted">天賦【{{ talent.name }}】{{ talent.desc }}</p>
+        <p v-if="racePerk" class="small muted">種族特質【{{ racePerk.name }}】{{ racePerk.desc }}</p>
         <label>
           職業
           <select v-model="classId">

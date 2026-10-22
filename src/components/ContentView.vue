@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, stories } from '@/engine/data'
+import { abilities, className, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, perkDef, perkRules, stories } from '@/engine/data'
+import { perkPower } from '@/engine/perks'
 import { gearRules } from '@/engine/gear'
 import {
-  ABILITY_TYPES, abilityClasses, builtinAbility, builtinBase, builtinEnemy, builtinMaterial, builtinNpc, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions,
-  ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc,
+  ABILITY_TYPES, abilityClasses, builtinAbility, builtinBase, builtinEnemy, builtinMaterial, builtinNpc, builtinPerk, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions,
+  ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk,
 } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { useContent } from '@/stores/content'
@@ -16,17 +17,19 @@ import EnemyEditor from './content/EnemyEditor.vue'
 import GearEditor from './content/GearEditor.vue'
 import ItemEditor from './content/ItemEditor.vue'
 import NpcEditor from './content/NpcEditor.vue'
+import PerkEditor from './content/PerkEditor.vue'
 import StoryEditor from './content/StoryEditor.vue'
 import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'npcs' | 'stories'
+type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'perks' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
   { id: 'items', label: '🎒 物品' },
   { id: 'bases', label: '🗡️ 裝備底材' },
   { id: 'materials', label: '💎 材料' },
   { id: 'abilities', label: '✨ 技能' },
+  { id: 'perks', label: '🌟 特質' },
   { id: 'npcs', label: '🧑 固定 NPC' },
   { id: 'stories', label: '⭐ 特殊任務' },
 ]
@@ -60,7 +63,7 @@ function resetFilters() {
   abilityType.value = ''
   abilityClass.value = ''
 }
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', npcs: '', stories: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', perks: '', npcs: '', stories: '' })
 // 技能：種類、職業
 const abilityType = ref('')
 const abilityClass = ref('')
@@ -101,6 +104,10 @@ const rows = computed<Row[]>(() => {
         sort: a.type === 'skill' ? a.unlock ?? 1 : a.type === 'spell' ? 20 + (a.circle ?? 1) : 0,
       }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+  } else if (sub.value === 'perks') {
+    list = perkRules.perks
+      .map((p) => ({ key: p.id, name: p.name, note: p.race ? '種族' : `強度 ${perkPower(p)}${p.train ? '・可受訓' : ''}`, status: st(!!m.perks[p.id], !builtinPerk(p.id)), sort: p.race ? 1 : 0 }))
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'stories') {
     list = stories
       .map((d) => ({ key: d.id, name: d.title, note: `${START_KINDS[d.start.kind]}・${d.nodes.length} 個任務點`, status: st(!!m.stories[d.id], !builtinStory(d.id)) }))
@@ -125,7 +132,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), perks: n(m.perks), npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -134,7 +141,7 @@ const current = computed(() => {
   if (!key) return ''
   const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
     : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? stories.some((d) => d.id === key)
-    : sub.value === 'abilities' ? !!abilities[key] : !!gearRules.materials[key]
+    : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'perks' ? !!perkDef(key) : !!gearRules.materials[key]
   return exists ? key : ''
 })
 
@@ -160,6 +167,10 @@ function create() {
     } else if (sub.value === 'abilities') {
       const id = newModId('ability')
       content.saveAbility(id, newAbility(id))
+      select(id)
+    } else if (sub.value === 'perks') {
+      const id = newModId('perk')
+      content.savePerk(id, newPerk(id))
       select(id)
     } else if (sub.value === 'stories') {
       const id = newModId('story')
@@ -203,6 +214,13 @@ function duplicate() {
       // 開頭旗標換成新任務自己的（和原本的重複算錯誤）
       content.saveStory(id, copyStory(content.mods.stories[key] ?? stories.find((d) => d.id === key)!, id))
       select(id)
+    } else if (sub.value === 'perks') {
+      // 複製種族特質會變成一般的特質
+      const id = newModId('perk')
+      const src = JSON.parse(JSON.stringify(content.mods.perks[key] ?? perkDef(key)))
+      delete src.race
+      content.savePerk(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
+      select(id)
     } else if (sub.value === 'abilities') {
       const id = newModId('ability')
       const src = JSON.parse(JSON.stringify(content.mods.abilities[key] ?? abilities[key]))
@@ -229,7 +247,7 @@ function duplicate() {
   }
 }
 
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', perks: '＋ 新增特質', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
 // ---- 匯出、匯入、重設 ----
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -334,6 +352,7 @@ function resetAll() {
         <EnemyEditor v-else-if="sub === 'enemies'" :id="current" :key="`e-${current}`" @deleted="select('')" />
         <ItemEditor v-else-if="sub === 'items'" :key="`i-${current}`" :name="current" @renamed="select" @deleted="select('')" />
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
+        <PerkEditor v-else-if="sub === 'perks'" :id="current" :key="`p-${current}`" @deleted="select('')" />
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
         <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" @open="select" />
         <GearEditor v-else-if="sub === 'bases'" :id="current" :key="`b-${current}`" kind="base" @deleted="select('')" />

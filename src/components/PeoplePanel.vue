@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { npcPerksOf } from '@/engine/perks'
-import { perkDef } from '@/engine/data'
+import { npcPerksOf, perksOf } from '@/engine/perks'
 import { computed, reactive, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { askingFor } from '@/engine/companions'
@@ -151,7 +150,7 @@ async function hire(id: string) {
             <div class="muted">{{ genderName(p.rec.gender) }}・{{ raceName(p.rec.race) }}<template v-if="p.rec.lineage">（{{ p.rec.lineage }}）</template>・{{ npcTitle(p.rec) }} Lv.{{ p.rec.level }}</div>
             <div v-if="p.rec.appearance" class="muted">{{ p.rec.appearance }}</div>
             <div v-if="rel(p.rec.id)" class="muted">{{ p.rec.personality }}</div>
-            <div v-if="rel(p.rec.id) && npcPerksOf(p.rec).length" class="muted">🌟 {{ npcPerksOf(p.rec).map((id) => perkDef(id)?.name).join('、') }}</div>
+            <div v-if="rel(p.rec.id)" class="muted">🌟 {{ perksOf({ perks: npcPerksOf(p.rec), race: p.rec.race }).map((x) => x.name).join('、') }}</div>
             <div v-if="rel(p.rec.id)?.toPlayer" class="muted">與你：{{ rel(p.rec.id)!.toPlayer }}</div>
 
             <p v-if="p.dist > 1" class="muted">{{ whereIs(p) }}。走到旁邊（相鄰的格子）才能互動。</p>
