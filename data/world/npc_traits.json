@@ -83,7 +83,21 @@
       {"t": "平頭，削得極短", "body": ["masc"]},
       {"t": "剃得精光的光頭", "tags": ["bald"], "body": ["masc"], "omit": ["hair_color"]},
       {"t": "長髮，紮成雙馬尾", "tags": ["cute"], "body": ["fem", "andro"]},
-      {"t": "鮑伯頭，剛好齊肩", "body": ["fem", "andro"]}
+      {"t": "鮑伯頭，剛好齊肩", "body": ["fem", "andro"]},
+      {"t": "長髮，編成蓬鬆的側辮垂在胸前", "body": ["fem", "andro"]},
+      {"t": "長髮，紮成低馬尾搭在肩上", "body": ["fem", "andro"]},
+      {"t": "長髮，挽成慵懶的低髮髻", "body": ["fem", "andro"]},
+      {"t": "長髮，頭頂盤著兩個小圓髻", "tags": ["cute"], "body": ["fem", "andro"]},
+      {"t": "及腰長髮，髮尾微微捲起", "body": ["fem", "andro"]},
+      {"t": "長直髮，留著整齊的瀏海", "tags": ["cute"], "body": ["fem", "andro"]},
+      {"t": "長髮，半紮半披，繫著緞帶", "tags": ["cute"], "body": ["fem", "andro"]},
+      {"t": "波浪長捲髮，蓬鬆地垂在背後", "body": ["fem", "andro"]},
+      {"t": "短髮，耳側留著兩綹長鬢髮", "body": ["fem", "andro"]},
+      {"t": "及肩短髮，髮尾向內捲", "body": ["fem", "andro"]},
+      {"t": "長髮，編成髮辮繞在頭頂，像一頂冠冕", "body": ["fem", "andro"]},
+      {"t": "長髮，用一支髮簪鬆鬆綰起", "body": ["fem", "andro"]},
+      {"t": "長髮，編成兩條麻花辮", "tags": ["cute"], "body": ["fem", "andro"]},
+      {"t": "長髮，綁成高高的丸子頭", "tags": ["cute"], "body": ["fem", "andro"]}
     ],
     "chest": [
       {"t": "胸膛寬厚", "tags": ["big"], "not": ["petite"], "body": ["masc"]},
