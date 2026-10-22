@@ -39,6 +39,8 @@ export interface SlotMeta {
   party: number
   /** 這一局的種子（形象圖依種子保存；舊的存檔欄位沒有） */
   seed?: number
+  /** 這一局用的世界 */
+  world?: string
 }
 
 export const QUICK_SLOT = 'quick'
@@ -52,6 +54,7 @@ export function slotMeta(id: string, name: string, kind: SlotKind, data: SaveDat
     id, name, kind, savedAt,
     pcName: pc.name, race: pc.race, cls: pc.class, level: pc.level,
     location: s.location, time: { ...s.time }, reports: s.reports.length + (s.logArchive?.length ?? 0), party: s.party.length, seed: s.seed,
+    ...(s.world ? { world: s.world.name } : {}),
   }
 }
 

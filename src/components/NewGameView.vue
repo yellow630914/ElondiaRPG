@@ -9,11 +9,23 @@ import { npcTitle } from '@/engine/npcs'
 import { masterCandidates, type MarkChoice, type MasterSpec, type SlaveStart } from '@/engine/slavery'
 import { DEFAULT_BIRTHPLACE } from '@/engine/state'
 import { useGame } from '@/stores/game'
+import { modTotal, useContent, VANILLA, VANILLA_NAME } from '@/stores/content'
+import { slotTitle } from '@/stores/saves'
 import MarkPicker from './MarkPicker.vue'
 import NameTag from './NameTag.vue'
 
-const emit = defineEmits<{ settings: []; saves: [] }>()
+const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
+const content = useContent()
+
+// 世界：開新遊戲時決定，開始後不能換（換世界會重新整理這個畫面，自訂的種族、能力、NPC 才會跟著變）
+function pickWorld(id: string) {
+  try {
+    content.switchWorld(id)
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+  }
+}
 
 const name = ref('')
 const race = ref('human')
@@ -75,6 +87,9 @@ function slaveStart(): SlaveStart | undefined {
 }
 
 function start() {
+  // 進行中的遊戲會被蓋掉：提醒（會先備份到自動存檔欄位）
+  const cur = game.resumeMeta
+  if (cur && !confirm(`進行中的遊戲（${slotTitle(cur)}）會被新的冒險蓋掉。\n它會先備份到自動存檔欄位，之後可以從「讀取存檔」找回。確定開新遊戲？`)) return
   const s = slaveStart()
   game.start(name.value.trim() || '旅人', race.value, classId.value, { ...bonus }, {
     birthplace: birthplace.value,
@@ -83,7 +98,7 @@ function start() {
     background: background.value,
     ...(s ? { slave: s } : {}),
     options: { defeatLoot: defeatLoot.value },
-  })
+  }, content.active)
 }
 
 /** 這個存檔的規則：在地下城戰敗時，這趟撿到的東西 */
@@ -95,6 +110,15 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 <template>
   <section class="panel">
     <h2>建立角色</h2>
+    <div class="row world">
+      <label>🌍 世界
+        <select :value="content.active" @change="pickWorld(($event.target as HTMLSelectElement).value)">
+          <option :value="VANILLA">{{ VANILLA_NAME }}</option>
+          <option v-for="w in content.worlds" :key="w.id" :value="w.id">{{ w.name }}（{{ modTotal(w.mods) }} 項自訂內容）</option>
+        </select>
+      </label>
+      <span class="small muted">這一局用哪一套自訂內容；開始後不能換。請先選世界再建立角色（換世界會重新整理這個畫面）。</span>
+    </div>
     <p class="muted small">你將以 F 級冒險者的身分，從出生地出發。性別、外貌與背景會交給 AI，作為描寫主角的依據。</p>
     <div class="layout">
       <div class="form">
@@ -212,7 +236,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
     </div>
     <div class="row">
       <button class="primary" @click="start">開始冒險</button>
-      <button @click="emit('saves')">📂 讀取存檔</button>
+      <button @click="emit('home')">← 回首頁</button>
       <button @click="emit('settings')">AI 設定</button>
     </div>
   </section>
@@ -220,6 +244,8 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 </template>
 
 <style scoped>
+.world { gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+.world label { display: flex; gap: 6px; align-items: center; }
 .layout { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 24px; margin: 12px 0; }
 .form { display: grid; gap: 8px; align-content: start; }
 .form label { display: grid; gap: 4px; }

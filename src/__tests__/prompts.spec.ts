@@ -190,7 +190,8 @@ describe('prompts store', () => {
     e.content = '多寫雨聲。'
     prompts.moveEntry('styles', e.id, -1)
     await new Promise((r) => setTimeout(r, 0))
-    expect(JSON.parse(localStorage.getItem('elondia.prompts')!).styles.at(-2).content).toBe('多寫雨聲。')
+    const saved = JSON.parse(localStorage.getItem('elondia.promptSets')!) as { active: string; sets: { id: string; config: { styles: { content: string }[] } }[] }
+    expect(saved.sets.find((x) => x.id === saved.active)!.config.styles.at(-2)!.content).toBe('多寫雨聲。')
 
     const g = useGame()
     g.start('艾倫', 'human', 'fighter')

@@ -1,5 +1,5 @@
 // 提示詞設定：文風條目、其他提示詞條目、世界書的覆寫與新增條目。
-// 跟著瀏覽器走（所有存檔共用），存在 localStorage。
+// 可以同時存有好幾套（提示詞管理），隨時切換；跟著瀏覽器走（所有存檔共用），存在 localStorage。
 
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef, watch } from 'vue'
@@ -11,32 +11,103 @@ import {
 } from '@/narrator/promptConfig'
 import { useSettings } from './settings'
 
-const KEY = 'elondia.prompts'
+/** 舊版只有一套 */
+const LEGACY_KEY = 'elondia.prompts'
+const SETS_KEY = 'elondia.promptSets'
+
+export interface PromptSet {
+  id: string
+  name: string
+  config: PromptConfig
+}
+
+interface SetsFile {
+  active: string
+  sets: PromptSet[]
+}
 
 export type EntryList = 'styles' | 'custom'
 
-function load(): PromptConfig {
+function newSetId() {
+  return `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+}
+
+/** 讀出所有提示詞組；舊版的設定變成「預設」 */
+function loadSets(): SetsFile {
   try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? normalizeConfig(JSON.parse(raw)) : defaultPromptConfig()
+    const raw = localStorage.getItem(SETS_KEY)
+    if (raw) {
+      const f = JSON.parse(raw) as Partial<SetsFile>
+      const sets = (Array.isArray(f.sets) ? f.sets : [])
+        .filter((x): x is PromptSet => !!x && typeof x.id === 'string')
+        .map((x) => ({ id: x.id, name: String(x.name || '未命名').slice(0, 30), config: normalizeConfig(x.config) }))
+      if (sets.length) return { active: sets.some((x) => x.id === f.active) ? f.active! : sets[0]!.id, sets }
+    }
+    const legacy = localStorage.getItem(LEGACY_KEY)
+    return { active: 'p-default', sets: [{ id: 'p-default', name: '預設', config: legacy ? normalizeConfig(JSON.parse(legacy)) : defaultPromptConfig() }] }
   } catch {
-    return defaultPromptConfig()
+    return { active: 'p-default', sets: [{ id: 'p-default', name: '預設', config: defaultPromptConfig() }] }
   }
 }
 
 export const usePrompts = defineStore('prompts', () => {
-  const config = ref<PromptConfig>(load())
+  const initial = loadSets()
+  const sets = ref<PromptSet[]>(initial.sets)
+  const active = ref(initial.active)
+  // 目前用的一組（編輯畫面與組合提示詞都讀這個）
+  const config = ref<PromptConfig>(initial.sets.find((x) => x.id === initial.active)!.config)
+  function persist() {
+    try {
+      localStorage.setItem(SETS_KEY, JSON.stringify({ active: active.value, sets: sets.value }))
+    } catch {
+      // 寫不進去時只在本次有效
+    }
+  }
   watch(
     config,
     (c) => {
-      try {
-        localStorage.setItem(KEY, JSON.stringify(c))
-      } catch {
-        // 寫不進去時只在本次有效
-      }
+      const cur = sets.value.find((x) => x.id === active.value)
+      if (cur) cur.config = c
+      persist()
     },
     { deep: true },
   )
+
+  // ---- 提示詞組 ----
+
+  const activeName = computed(() => sets.value.find((x) => x.id === active.value)?.name ?? '')
+
+  /** 切到另一組（隨時可以，下一次呼叫 AI 就用新的） */
+  function switchSet(id: string) {
+    const target = sets.value.find((x) => x.id === id)
+    if (!target || id === active.value) return
+    active.value = id
+    config.value = target.config
+    persist()
+  }
+
+  /** 新的一組：複製另一組（不給時用預設內容） */
+  function createSet(name: string, copyFrom?: string): string {
+    const from = sets.value.find((x) => x.id === copyFrom)?.config
+    const id = newSetId()
+    sets.value.push({ id, name: name.trim().slice(0, 30) || '新的提示詞組', config: from ? normalizeConfig(JSON.parse(JSON.stringify(from))) : defaultPromptConfig() })
+    persist()
+    return id
+  }
+
+  function renameSet(id: string, name: string) {
+    const x = sets.value.find((y) => y.id === id)
+    if (!x || !name.trim()) return
+    x.name = name.trim().slice(0, 30)
+    persist()
+  }
+
+  function deleteSet(id: string) {
+    if (sets.value.length <= 1) throw new Error('至少要留一組提示詞')
+    sets.value = sets.value.filter((x) => x.id !== id)
+    if (active.value === id) switchSet(sets.value[0]!.id)
+    else persist()
+  }
 
   // 世界書與繁簡轉換字典很大，用到時才載入
   const book = shallowRef<Worldbook | null>(null)
@@ -229,6 +300,7 @@ export const usePrompts = defineStore('prompts', () => {
 
   return {
     config, book, items, ensureLoaded, composeOptions,
+    sets, active, activeName, switchSet, createSet, renameSet, deleteSet,
     addEntry, duplicateEntry, removeEntry, moveEntry, restoreEntry, restorePresets, presetOf,
     isCustomLore, updateLore, resetLore, addLore, removeLore,
     exportEntries, importEntries, exportLore, importLore,

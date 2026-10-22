@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { editableWorld } from './testWorld'
 import { createPinia, setActivePinia } from 'pinia'
 import { applyEffects } from '@/engine/effects'
 import { enemies, itemDef, stories } from '@/engine/data'
@@ -35,7 +36,7 @@ afterEach(() => applyContent(emptyMods()))
 
 describe('deleting content that is still used', () => {
   it('blocks deleting a custom base, material, enemy, NPC or story while something uses it', () => {
-    const c = useContent()
+    const c = editableWorld()
     const g = useGame()
     g.state = game()
     c.saveMaterial('mod_mat_a', { ...newMaterial(), name: '星鋼' }, true)
@@ -69,7 +70,7 @@ describe('deleting content that is still used', () => {
   })
 
   it('renames a custom item everywhere it can, and blocks deleting one the save still holds', () => {
-    const c = useContent()
+    const c = editableWorld()
     const g = useGame()
     g.state = game()
     c.saveItem('月光草', { category: 'material', price_cc: 5, tags: [], custom: true })
@@ -157,7 +158,7 @@ describe('missing content does not crash the game', () => {
 
 describe('other restrictions', () => {
   it('charges rations at the catalog price', () => {
-    const c = useContent()
+    const c = editableWorld()
     c.saveItem('乾糧', { ...itemDef('乾糧')!, price_cc: 12 })
     const state = game()
     buyRations(state, 2)

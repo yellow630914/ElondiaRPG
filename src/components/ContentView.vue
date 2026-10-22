@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import WorldBar from './WorldBar.vue'
 import { abilities, className, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, stories } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import {
@@ -255,6 +256,7 @@ function resetAll() {
 
 <template>
   <div class="content-view">
+    <WorldBar />
     <nav class="subs row">
       <button v-for="t in SUBS" :key="t.id" :class="{ active: sub === t.id }" @click="sub = t.id; resetFilters()">{{ t.label }}</button>
       <span class="spacer" />
@@ -262,7 +264,7 @@ function resetAll() {
     </nav>
     <p class="small muted note">
       在這裡新增或修改怪物、物品、裝備底材、材料、技能、固定 NPC 與特殊任務。內建的項目可以修改（隨時「恢復預設」），不能刪除；自建的項目可以刪除（技能要沒有被用到）。
-      修改存在這個瀏覽器，所有存檔共用，儲存後立刻生效（已經生成的地圖、商店清單要等下次重新生成）。
+      修改存在目前的世界裡（用這個世界的存檔都會受影響），儲存後立刻生效（已經生成的地圖、商店清單要等下次重新生成）。
     </p>
     <p v-if="content.problems.length" class="small warn-text">有些自訂內容沒辦法套用：{{ content.problems.join('；') }}</p>
 

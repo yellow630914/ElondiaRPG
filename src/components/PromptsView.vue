@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
+import PromptSetBar from './PromptSetBar.vue'
 import type { Composed } from '@/narrator/compose'
 import { LORE_STATUS_NAME, type LoreItem, type LoreMode, type LoreSelection } from '@/narrator/lore'
 import { estimateTokens } from '@/narrator/promptConfig'
@@ -251,6 +252,7 @@ function resetAll() {
 
 <template>
   <div class="prompts">
+    <PromptSetBar />
     <nav class="subs row">
       <button v-for="t in SUBS" :key="t.id" :class="{ active: sub === t.id }" @click="sub = t.id">{{ t.label }}</button>
       <span class="spacer" />

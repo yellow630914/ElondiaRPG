@@ -9,11 +9,18 @@
 | 進行中的遊戲 | IndexedDB `elondia` 的 `current`（`state`、`narrations`、`usage` 三筆 JSON 文字） | 每次動作後自動保存 |
 | 存檔欄位（手動、快速、自動 ×3） | IndexedDB `elondia` 的 `slot_meta`、`slot_data` | 欄位存了當時的自訂內容 |
 | 形象圖 | IndexedDB `elondia-portraits` | 依「種子:角色 id」保存，見 [PORTRAITS.md](PORTRAITS.md) |
-| 自訂內容、模型來源、插圖設定、提示詞 | localStorage（`elondia.content`、`elondia.settings`、`elondia.image`、`elondia.prompts`） | 跟著瀏覽器走，所有存檔共用 |
+| 世界（自訂內容）、模型來源、插圖設定、提示詞組 | localStorage（`elondia.worlds`、`elondia.settings`、`elondia.image`、`elondia.promptSets`） | 跟著瀏覽器走；存檔記住用哪個世界，見 [CONTENT_EDITOR.md](CONTENT_EDITOR.md) 第 0 節 |
 
 瀏覽器不支援 IndexedDB 時（或打不開時）改存在 localStorage。
 
-### 進行中的遊戲
+### 首頁與進行中的遊戲
+
+- 打開遊戲先到**首頁**：▶ 繼續（有進行中的遊戲時，顯示角色、地點、天數與世界）、🆕 開新遊戲、📂 讀取存檔、🌍 世界管理、🧩 提示詞管理、⚙️ 設定。
+- **啟動時不會自動進入遊戲**：只讀出進行中的遊戲放著，按「繼續」才載入（並切到它的世界）。遊戲中按右上角「🏠 首頁」會存好進度回到首頁。
+- 開新遊戲或從首頁讀取存檔，會蓋掉還沒繼續的遊戲：先提醒，確定後把它**備份到自動存檔欄位**（「自動存檔（開新遊戲前）」「自動存檔（讀檔前）」），之後可以從讀取存檔找回。遊戲中讀檔照舊先自動存一份。
+- F9 快速讀檔只在遊戲中有效（首頁要從「讀取存檔」讀，才會先提醒）。
+
+### 進行中的遊戲的儲存
 
 - 以前存在 localStorage（`elondia.save`、`elondia.narrations`、`elondia.usage`，上限約 5MB，玩久了會滿）。新版啟動時（`main.ts` 的 `preloadCurrent`，掛上畫面之前）把它們搬進 IndexedDB，成功後刪掉 localStorage 的舊資料。
 - 寫入是非同步的：寫到一半又有新的動作時，只保留最新的一份，這次寫完再寫（不會排一長串）。

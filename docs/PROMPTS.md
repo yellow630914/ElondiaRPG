@@ -1,6 +1,8 @@
 # 發給 AI 的提示詞結構
 
-> 這份文件整理所有送給 AI 的請求。程式碼在 `src/narrator/prompt.ts`（敘事）、`src/narrator/judge.ts`（判定與生成）、`src/narrator/lore.ts`（世界書）、`src/narrator/promptConfig.ts`（文風與其他提示詞）、`src/narrator/compose.ts`（依設定組合）。玩家在遊戲上方的「🧩 提示詞」頁籤調整與預覽。
+> 這份文件整理所有送給 AI 的請求。程式碼在 `src/narrator/prompt.ts`（敘事）、`src/narrator/judge.ts`（判定與生成）、`src/narrator/lore.ts`（世界書）、`src/narrator/promptConfig.ts`（文風與其他提示詞）、`src/narrator/compose.ts`（依設定組合）。玩家在首頁的「🧩 提示詞管理」（或遊戲中上方的「🧩 提示詞」頁籤）調整與預覽。
+>
+> **提示詞組**：可以同時存有好幾組提示詞（每一組有自己的文風、其他提示詞與世界書的修改），用最上方的「🧩 提示詞組」新增（從預設內容開始）、複製、改名、刪除（至少留一組）與切換。**隨時可以切換**，遊戲中也可以，下一次呼叫 AI 就用新的一組。存在 localStorage 的 `elondia.promptSets`；舊版的設定（`elondia.prompts`）第一次啟動時變成「預設」這一組。
 
 ## 1. 六種請求
 

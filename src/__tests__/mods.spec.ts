@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { editableWorld } from './testWorld'
 import { finishCombat, startCombat } from '@/engine/combat'
 import { dungeonEncounters, enemies, equipment, itemDef, itemRules, wildEncounters } from '@/engine/data'
 import { gearRules, gearStats } from '@/engine/gear'
@@ -99,10 +100,9 @@ describe('custom items and gear', () => {
 describe('content store', () => {
   it('applies right away, protects built-ins and keeps references on rename', async () => {
     const { createPinia, setActivePinia } = await import('pinia')
-    const { useContent } = await import('@/stores/content')
     localStorage.clear()
     setActivePinia(createPinia())
-    const c = useContent()
+    const c = editableWorld()
     c.saveEnemy('goblin', { ...enemies.goblin!, hp: 77 })
     expect(enemies.goblin!.hp).toBe(77)
     c.restoreEnemy('goblin')
@@ -120,7 +120,8 @@ describe('content store', () => {
     expect(() => c.saveItem('新東西', { category: 'food', price_cc: 1, tags: [], custom: true }, '乾糧')).toThrow('已經有')
     c.deleteItem('星之露')
     expect(enemies.wolf!.loot?.some((l) => l.item === '星之露')).toBe(false)
-    expect(JSON.parse(localStorage.getItem('elondia.content')!).items['星之露']).toBeUndefined()
+    const saved = JSON.parse(localStorage.getItem('elondia.worlds')!) as { active: string; worlds: { id: string; mods: { items: Record<string, unknown> } }[] }
+    expect(saved.worlds.find((w) => w.id === saved.active)!.mods.items['星之露']).toBeUndefined()
     c.resetAll()
   })
 })

@@ -96,7 +96,12 @@ describe('current game storage', () => {
     expect(store.data.state).toContain('艾倫')
     expect(localStorage.getItem('elondia.save')).toBeNull()
     setActivePinia(createPinia())
-    expect(useGame().state!.party[0]!.name).toBe('艾倫')
+    // 啟動時不會自動進入遊戲：首頁按「繼續」才載入
+    const next = useGame()
+    expect(next.state).toBeNull()
+    expect(next.resumeMeta?.pcName).toBe('艾倫')
+    expect(next.continueGame()).toBe(true)
+    expect(next.state!.party[0]!.name).toBe('艾倫')
   })
 
   it('warns when the auto-save cannot be written, until a later save succeeds', async () => {

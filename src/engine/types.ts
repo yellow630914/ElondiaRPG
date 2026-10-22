@@ -659,6 +659,8 @@ export interface GameState {
   shops?: Record<string, ShopState>
   /** AI 自創的物品（可以再賣回商店） */
   customItems?: Record<string, { category: string; price_cc: number; desc?: string; gear?: GearSpec }>
+  /** 這個存檔用的世界（自訂內容的一套，見 stores/content.ts）；開新遊戲時決定，之後不能換 */
+  world?: { id: string; name: string }
   /** 這個存檔自創的物品（自創配方，見 invention.ts）：完整的物品定義，配方在 recipe */
   inventions?: Record<string, ItemDef>
   /** 進行中與結束的談判 */

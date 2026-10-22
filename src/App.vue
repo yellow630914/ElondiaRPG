@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { locationById } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import { alertLevel, factionName } from '@/engine/security'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
+import { useContent } from '@/stores/content'
+import HomeView from '@/components/HomeView.vue'
 import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import NotebookView from '@/components/NotebookView.vue'
@@ -58,6 +60,25 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 const tab = ref<Tab>('adventure')
 
+// 沒有載入遊戲時：首頁與它的幾個畫面（開新遊戲、世界管理、提示詞管理）
+type Screen = 'home' | 'new' | 'worlds' | 'prompts'
+const screen = ref<Screen>('home')
+const content = useContent()
+// 進入遊戲時切到冒險頁；回到首頁時從首頁開始
+watch(() => !!game.state, (inGame) => {
+  if (inGame) {
+    tab.value = 'adventure'
+    showSaves.value = false
+  } else screen.value = 'home'
+})
+async function goHome() {
+  closeDialogs()
+  await game.toHome()
+}
+function closeDialogs() {
+  showParty.value = showInventory.value = showRelations.value = showNotebook.value = showCraft.value = showSaves.value = showSettings.value = false
+}
+
 const showSettings = ref(false)
 const showParty = ref(false)
 const showInventory = ref(false)
@@ -78,7 +99,7 @@ function onKey(e: KeyboardEvent) {
   if (e.key === 'F8' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's')) {
     e.preventDefault()
     if (game.state) void game.quickSave()
-  } else if (e.key === 'F9' && !typing) {
+  } else if (e.key === 'F9' && !typing && game.state) {
     e.preventDefault()
     askQuickLoad()
   }
@@ -102,8 +123,11 @@ onBeforeUnmount(() => {
 <template>
   <header class="top">
     <h1>⚔️ 埃隆迪亞大陸</h1>
-    <nav class="row tabs">
+    <nav v-if="game.state" class="row tabs">
       <button v-for="t in TABS" :key="t.id" :class="{ active: tab === t.id }" @click="tab = t.id">{{ t.label }}</button>
+    </nav>
+    <nav v-else-if="screen !== 'home'" class="row tabs">
+      <button @click="screen = 'home'">← 首頁</button>
     </nav>
     <div v-if="game.state" class="row status small">
       <span>📅 {{ formatTime(game.state.time) }}</span>
@@ -114,8 +138,9 @@ onBeforeUnmount(() => {
     <div class="row top-buttons">
       <button v-if="game.state" class="small" title="快速存檔（F8 / Ctrl+S）" @click="game.quickSave()">⚡ 快存</button>
       <button v-if="game.state" class="small" title="快速讀檔（F9）" @click="askQuickLoad">⚡ 快讀</button>
-      <button title="存檔與讀檔" @click="showSaves = true">💾 存讀檔</button>
+      <button v-if="game.state" title="存檔與讀檔" @click="showSaves = true">💾 存讀檔</button>
       <button title="設定" @click="showSettings = true">⚙️ 設定</button>
+      <button v-if="game.state" title="存好進度，回到首頁" @click="goHome">🏠 首頁</button>
     </div>
   </header>
   <Transition name="fade">
@@ -132,12 +157,21 @@ onBeforeUnmount(() => {
     <button class="small" style="margin-left: auto" @click="game.error = null">✕</button>
   </div>
 
-  <PromptsView v-if="tab === 'prompts'" />
-  <ContentView v-if="tab === 'content'" />
+  <template v-if="!game.state">
+    <HomeView
+      v-if="screen === 'home'"
+      @new="screen = 'new'" @load="showSaves = true" @worlds="screen = 'worlds'" @prompts="screen = 'prompts'" @settings="showSettings = true"
+    />
+    <!-- 換世界時重畫，自訂的種族、能力、NPC 才會跟著變 -->
+    <NewGameView v-else-if="screen === 'new'" :key="content.active" @settings="showSettings = true" @home="screen = 'home'" />
+    <ContentView v-else-if="screen === 'worlds'" />
+    <PromptsView v-else-if="screen === 'prompts'" />
+  </template>
 
-  <NewGameView v-if="!game.state" v-show="tab === 'adventure'" @settings="showSettings = true" @saves="showSaves = true" />
+  <PromptsView v-if="game.state && tab === 'prompts'" />
+  <ContentView v-if="game.state && tab === 'content'" />
 
-  <main v-else v-show="tab === 'adventure'" :key="settings.adult ? 'adult' : 'safe'" class="game" :class="{ combat: inCombat }">
+  <main v-if="game.state" v-show="tab === 'adventure'" :key="settings.adult ? 'adult' : 'safe'" class="game" :class="{ combat: inCombat }">
     <aside class="left">
       <MapPanel />
       <RoadPanel v-if="game.state.road && !inCombat" />

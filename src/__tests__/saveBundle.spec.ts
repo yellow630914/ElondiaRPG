@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto'
+import { editableWorld } from './testWorld'
 import { Blob as NodeBlob } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
@@ -38,14 +39,19 @@ describe('current game in IndexedDB', () => {
     expect(localStorage.getItem('elondia.save')).toBeNull()
     await preloadCurrent()
     setActivePinia(createPinia())
-    expect(useGame().state!.party[0]!.name).toBe('艾倫')
+    // 啟動時不會自動進入遊戲：首頁按「繼續」才載入
+    const next = useGame()
+    expect(next.state).toBeNull()
+    expect(next.resumeMeta?.pcName).toBe('艾倫')
+    expect(next.continueGame()).toBe(true)
+    expect(next.state!.party[0]!.name).toBe('艾倫')
   })
 })
 
 describe('exported saves carry custom content and portraits', () => {
   it('bundles the custom content and, when asked, this game’s portraits', async () => {
     const g = useGame()
-    const c = useContent()
+    const c = editableWorld()
     c.saveItem('月光草', { category: 'material', price_cc: 5, tags: [], custom: true })
     g.start('艾倫', 'human', 'fighter')
     const portraits = usePortraits()
@@ -65,7 +71,7 @@ describe('exported saves carry custom content and portraits', () => {
 
   it('merges the bundled content on import: adds what is missing, keeps or takes what differs', async () => {
     const g = useGame()
-    const c = useContent()
+    const c = editableWorld()
     c.saveItem('月光草', { category: 'material', price_cc: 5, tags: [], custom: true })
     c.saveEnemy('mod_wolf', { ...newEnemy('mod_wolf'), name: '影狼' })
     g.start('艾倫', 'human', 'fighter')

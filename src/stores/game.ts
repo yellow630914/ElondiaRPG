@@ -166,22 +166,25 @@ function load(s: GameState): GameState {
 }
 
 export const useGame = defineStore('game', () => {
+  // 進行中的遊戲（自動保存的那一份）：啟動時只讀出來放著，在首頁按「繼續」才載入
   const boot = takePreloaded()
-  const saved = parseJson<GameState>(boot.state)
-  let bootError: string | null = null
-  const state = ref<GameState | null>(null)
-  if (saved) {
+  const resume = ref<CurrentData | null>(boot.state ? boot : null)
+  /** 「繼續」按鈕上的摘要（讀不了時 null） */
+  const resumeMeta = computed<SlotMeta | null>(() => {
+    if (!resume.value?.state) return null
     try {
-      state.value = load(saved)
-    } catch (e) {
-      // 讀不了（例如來自比較新的版本）：不要蓋掉它，先開空白的畫面並說明原因
-      bootError = `讀取進行中的遊戲失敗：${e instanceof Error ? e.message : String(e)}（開新遊戲或讀取存檔會蓋掉它）`
+      return slotMeta('current', '進行中的遊戲', 'auto', { state: JSON.parse(resume.value.state) as GameState })
+    } catch {
+      return null
     }
-  }
-  const narrations = ref<Record<string, NarrationState>>(parseJson(boot.narrations) ?? {})
+  })
+  const state = ref<GameState | null>(null)
+  const narrations = ref<Record<string, NarrationState>>({})
   /** token 用量：日誌 id（或 OTHER_USAGE）→ 累計 */
-  const usage = ref<Record<string, UsageEntry>>(parseJson(boot.usage) ?? {})
-  const error = ref<string | null>(bootError)
+  const usage = ref<Record<string, UsageEntry>>({})
+  const error = ref<string | null>(null)
+  /** 有進行中的遊戲（已經載入，或還沒按「繼續」） */
+  const hasProgress = computed(() => !!state.value || !!resume.value)
   /** 自動保存失敗：一直顯示到下一次保存成功 */
   const saveWarning = ref<string | null>(null)
   /** AI 正在判定主動行動 */
@@ -366,8 +369,8 @@ export const useGame = defineStore('game', () => {
     }
   }
 
-  async function writeSlot(id: string, name: string, kind: SlotMeta['kind']) {
-    const data = snapshot()
+  async function writeSlot(id: string, name: string, kind: SlotMeta['kind'], given?: SaveData) {
+    const data = given ?? snapshot()
     if (!data) throw new Error('沒有進行中的遊戲')
     await slotStore().put(slotMeta(id, name, kind, data), data)
     await refreshSlots()
@@ -398,8 +401,8 @@ export const useGame = defineStore('game', () => {
   }
 
   /** 自動存檔：在長休、抵達目的地、讀檔前保存，循環使用 AUTO_SLOTS 個欄位 */
-  async function autoSave(reason: string) {
-    if (!state.value) return
+  async function autoSave(reason: string, given?: SaveData) {
+    if (!state.value && !given) return
     let n = 0
     try {
       n = (Number(localStorage.getItem('elondia.autoIndex') ?? 0) + 1) % AUTO_SLOTS
@@ -408,19 +411,69 @@ export const useGame = defineStore('game', () => {
       // 無痕模式等情況下照樣存在第 0 格
     }
     try {
-      await writeSlot(`auto-${n}`, `自動存檔（${reason}）`, 'auto')
+      await writeSlot(`auto-${n}`, `自動存檔（${reason}）`, 'auto', given)
     } catch {
       // 自動存檔失敗不打斷遊戲
     }
   }
 
-  function applySnapshot(data: SaveData) {
+  /** 還沒按「繼續」的遊戲要被蓋掉前：先存進自動存檔欄位（不用載入） */
+  async function backupResume(reason: string) {
+    const r = resume.value
+    resume.value = null
+    if (!r?.state) return
+    try {
+      await autoSave(reason, { state: JSON.parse(r.state) as GameState, narrations: parseJson(r.narrations) ?? {}, usage: parseJson(r.usage) ?? {} })
+    } catch {
+      // 備份失敗不擋住開新遊戲或讀檔
+    }
+  }
+
+  /** 載入一份遊戲：先切到它的世界，再補上新欄位 */
+  function enter(data: SaveData) {
     for (const c of controllers.values()) c.abort()
+    const world = useContent().enterWorld(data.state.world, data.content)
     state.value = load(data.state)
+    state.value.world = { id: world.id, name: world.name }
     narrations.value = (data.narrations ?? {}) as Record<string, NarrationState>
     usage.value = (data.usage ?? {}) as Record<string, UsageEntry>
     error.value = null
+    if (world.note) flash(world.note)
     save()
+  }
+
+  function applySnapshot(data: SaveData) {
+    enter(data)
+  }
+
+  /** 首頁的「繼續」：載入進行中的遊戲 */
+  function continueGame(): boolean {
+    const r = resume.value
+    if (!r?.state) return false
+    try {
+      enter({ state: JSON.parse(r.state) as GameState, narrations: parseJson(r.narrations) ?? {}, usage: parseJson(r.usage) ?? {} })
+      resume.value = null
+      return true
+    } catch (e) {
+      // 讀不了（例如來自比較新的版本）：不要蓋掉它，說明原因
+      state.value = null
+      error.value = `讀取進行中的遊戲失敗：${e instanceof Error ? e.message : String(e)}（開新遊戲或讀取存檔會蓋掉它，蓋掉前會先存一份到自動存檔）`
+      return false
+    }
+  }
+
+  /** 回到首頁：存好進度，之後按「繼續」再載入 */
+  async function toHome() {
+    if (!state.value) return
+    for (const c of controllers.values()) c.abort()
+    save()
+    await flushed()
+    const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
+    resume.value = { state: JSON.stringify(state.value), narrations: JSON.stringify(finished), usage: JSON.stringify(usage.value) }
+    state.value = null
+    narrations.value = {}
+    usage.value = {}
+    error.value = null
   }
 
   /** 讀檔：先把目前的進度自動存一份，免得誤讀 */
@@ -429,6 +482,7 @@ export const useGame = defineStore('game', () => {
       const data = await slotStore().get(id)
       if (!data) throw new Error('找不到這個存檔')
       if (state.value) await autoSave('讀檔前')
+      await backupResume('讀檔前')
       applySnapshot(data)
       flash('📂 已讀取存檔')
     } catch (e) {
@@ -498,8 +552,12 @@ export const useGame = defineStore('game', () => {
       delete data.portraits
       const notes: string[] = []
       if (opts.merge && data.content) {
-        const n = useContent().mergeMods(useContent().diffMods(data.content), opts.take)
-        if (n) notes.push(`合併 ${n} 項自訂內容`)
+        // 原版世界不能改：不合併（讀這個存檔時會用附上的內容還原它的世界）
+        if (useContent().readOnly) notes.push('目前是原版世界，沒有合併自訂內容')
+        else {
+          const n = useContent().mergeMods(useContent().diffMods(data.content), opts.take)
+          if (n) notes.push(`合併 ${n} 項自訂內容到「${useContent().activeName}」`)
+        }
       }
       const meta = slotMeta(`m-${Date.now().toString(36)}`, fileName.replace(/\.json$/i, ''), 'manual', data)
       await slotStore().put(meta, data)
@@ -519,8 +577,14 @@ export const useGame = defineStore('game', () => {
     return typeof x === 'object' && x !== null && 'report' in x && isReport((x as { report: unknown }).report)
   }
 
-  function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>, profile: Omit<NewGameOptions, 'name' | 'race' | 'classId' | 'bonus' | 'seed'> = {}) {
+  /** 開新遊戲；world：用哪個世界（不給時用目前的） */
+  function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>, profile: Omit<NewGameOptions, 'name' | 'race' | 'classId' | 'bonus' | 'seed'> = {}, world?: string) {
+    const content = useContent()
+    if (world !== undefined && world !== content.active) content.switchWorld(world)
+    // 還沒繼續的遊戲會被蓋掉：先備份
+    void backupResume('開新遊戲前')
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
+    state.value.world = { id: content.active, name: content.activeName }
     grid.enterLocation(state.value)
     population.ensureRoster(state.value, state.value.location)
     if (profile.slave) slavery.startAsSlave(state.value, profile.slave)
@@ -535,6 +599,7 @@ export const useGame = defineStore('game', () => {
   function reset() {
     for (const c of controllers.values()) c.abort()
     state.value = null
+    resume.value = null
     narrations.value = {}
     usage.value = {}
     pendingWrite = null
@@ -740,7 +805,7 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
-    state, narrations, error, saveWarning, flushed, pc, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText,
+    state, narrations, error, saveWarning, flushed, pc, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,

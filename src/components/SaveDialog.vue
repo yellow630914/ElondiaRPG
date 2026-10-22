@@ -46,6 +46,9 @@ async function overwrite(m: SlotMeta) {
 
 async function load(m: SlotMeta) {
   if (game.state && !confirm(`讀取「${m.name}」？目前的進度會先自動存一份。`)) return
+  // 首頁：還沒繼續的遊戲會被蓋掉
+  const cur = game.resumeMeta
+  if (!game.state && cur && !confirm(`讀取「${m.name}」會蓋掉進行中的遊戲（${slotTitle(cur)}）。\n它會先備份到自動存檔欄位，之後可以再讀回來。確定讀取？`)) return
   await game.loadSlot(m.id)
   if (game.state) emit('loaded')
 }
@@ -195,7 +198,7 @@ const listText = (labels: string[]) => labels.length > 12 ? `${labels.slice(0, 1
             </div>
             <div class="small">
               <NameTag :name="m.pcName" :race="m.race" :cls="m.cls" />
-              <span class="muted"> Lv.{{ m.level }}・{{ placeName(m.location) }}・{{ formatTime(m.time) }}・{{ m.party }} 人・{{ m.reports }} 則日誌</span>
+              <span class="muted"> Lv.{{ m.level }}・{{ placeName(m.location) }}・{{ formatTime(m.time) }}・{{ m.party }} 人・{{ m.reports }} 則日誌<template v-if="m.world">・🌍 {{ m.world }}</template></span>
             </div>
             <div class="small muted">存於 {{ when(m.savedAt) }}</div>
           </div>

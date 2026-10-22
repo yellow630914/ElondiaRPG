@@ -1,8 +1,10 @@
 // 自訂內容：怪物、物品、裝備底材與材料的新增與修改（「🛠️ 內容」頁籤）。
-// 跟著瀏覽器走（所有存檔共用），存在 localStorage；每次修改後立刻（同步）重新套用到遊戲資料，表單才讀得到新的值。
+// 世界（見 docs/CONTENT_EDITOR.md 第 1 節）：可以同時存有好幾套自訂內容，另有不能修改的「原版世界」。
+// 開新遊戲時選一個世界，存檔記住它（state.world）；讀檔、繼續時自動切到那個世界，遊戲進行中不能切換。
+// 存在 localStorage；每次修改後立刻（同步）重新套用到遊戲資料，表單才讀得到新的值。
 
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { enemies, itemDef, npcs as namedNpcs, stories } from '@/engine/data'
 import { builtinStory, flagUsage, sanitizeStory, type StoryMod } from '@/engine/storyMods'
 import {
@@ -14,7 +16,28 @@ import { pruneStories } from '@/engine/story'
 import { enemyUsage, gearUsage, itemUsage, npcUsage, renameItemInState, storyUsage } from '@/engine/usage'
 import { useGame } from './game'
 
-const KEY = 'elondia.content'
+/** 舊版只有一套自訂內容 */
+const LEGACY_KEY = 'elondia.content'
+const WORLDS_KEY = 'elondia.worlds'
+/** 原版世界：沒有任何自訂內容，不能修改 */
+export const VANILLA = 'vanilla'
+export const VANILLA_NAME = '原版世界'
+
+export interface World {
+  id: string
+  name: string
+  mods: ContentMods
+  /** 最後修改的時間（毫秒） */
+  updated: number
+}
+
+interface WorldsFile {
+  active: string
+  worlds: World[]
+}
+
+/** 存檔記住的世界 */
+export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
 const MOD_SECTIONS: Section[] = ['abilities', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
@@ -42,27 +65,81 @@ function modLabel(section: Section, id: string, v: unknown): string {
   return `${MOD_SECTION_NAMES[section]}「${name}」`
 }
 
-function load(): ContentMods {
+/** 讀出所有世界；舊版的自訂內容（有內容時）變成「我的世界」 */
+function loadWorlds(): WorldsFile {
   try {
-    const raw = localStorage.getItem(KEY)
-    return raw ? normalizeMods(JSON.parse(raw)) : emptyMods()
+    const raw = localStorage.getItem(WORLDS_KEY)
+    if (raw) {
+      const f = JSON.parse(raw) as Partial<WorldsFile>
+      const worlds = (Array.isArray(f.worlds) ? f.worlds : [])
+        .filter((w): w is World => !!w && typeof w.id === 'string' && w.id !== VANILLA)
+        .map((w) => ({ id: w.id, name: String(w.name || '未命名的世界').slice(0, 30), mods: normalizeMods(w.mods), updated: Number(w.updated) || 0 }))
+      return { active: worlds.some((w) => w.id === f.active) ? f.active! : VANILLA, worlds }
+    }
+    const legacy = localStorage.getItem(LEGACY_KEY)
+    const mods = legacy ? normalizeMods(JSON.parse(legacy)) : emptyMods()
+    if (modTotal(mods)) return { active: 'w-mine', worlds: [{ id: 'w-mine', name: '我的世界', mods, updated: Date.now() }] }
   } catch {
-    return emptyMods()
+    // 讀不了：從原版開始
   }
+  return { active: VANILLA, worlds: [] }
 }
 
-/** 啟動時（建立其他 store 之前）先套用，讀檔與開新遊戲才會看到自訂內容 */
+/** 一套自訂內容有幾項 */
+export function modTotal(m: ContentMods): number {
+  return MOD_SECTIONS.reduce((n, k) => n + Object.keys(m[k] ?? {}).length, 0)
+}
+
+function activeMods(f: WorldsFile): ContentMods {
+  return f.worlds.find((w) => w.id === f.active)?.mods ?? emptyMods()
+}
+
+/** 啟動時（建立其他 store 之前）先套用目前的世界，讀檔與開新遊戲才會看到自訂內容 */
 export function initContent(): string[] {
-  return applyContent(load())
+  return applyContent(activeMods(loadWorlds()))
 }
 
 export const useContent = defineStore('content', () => {
-  const mods = ref<ContentMods>(load())
+  const initial = loadWorlds()
+  const worlds = ref<World[]>(initial.worlds)
+  const active = ref(initial.active)
+  const mods = ref<ContentMods>(activeMods(initial))
   const problems = ref<string[]>([])
   /** 遊戲資料不是響應式的：每次套用後加一，讓畫面重新計算 */
   const version = ref(0)
+  const readOnly = computed(() => active.value === VANILLA)
+  const activeName = computed(() => worldName(active.value))
+
+  function worldName(id: string): string {
+    return id === VANILLA ? VANILLA_NAME : worlds.value.find((w) => w.id === id)?.name ?? '（已刪除的世界）'
+  }
+
+  function persist() {
+    try {
+      localStorage.setItem(WORLDS_KEY, JSON.stringify({ active: active.value, worlds: worlds.value }))
+    } catch {
+      // 寫不進去時只在本次有效
+    }
+  }
+
+  /** 套用目前世界的內容（不存檔） */
+  function apply() {
+    problems.value = applyContent(mods.value)
+    version.value++
+  }
 
   function save() {
+    // 原版世界不能改：丟掉這次的修改
+    if (readOnly.value) {
+      mods.value = emptyMods()
+      apply()
+      throw new Error('原版世界不能修改：先在世界管理建立一個新的世界')
+    }
+    const w = worlds.value.find((x) => x.id === active.value)
+    if (w) {
+      w.mods = mods.value
+      w.updated = Date.now()
+    }
     problems.value = applyContent(mods.value)
     // 被拿掉的能力（匯入、全部恢復預設）：從目前存檔的角色身上拿掉
     const game = useGame()
@@ -71,11 +148,68 @@ export const useContent = defineStore('content', () => {
       pruneStories(game.state)
     }
     version.value++
-    try {
-      localStorage.setItem(KEY, JSON.stringify(mods.value))
-    } catch {
-      // 寫不進去時只在本次有效
+    persist()
+  }
+
+  // ---- 世界 ----
+
+  /** 切到另一個世界（遊戲進行中不能切換） */
+  function switchWorld(id: string) {
+    if (useGame().state) throw new Error('遊戲進行中不能切換世界：回到首頁再切換')
+    useWorld(id)
+  }
+
+  function useWorld(id: string) {
+    const w = worlds.value.find((x) => x.id === id)
+    active.value = w ? w.id : VANILLA
+    mods.value = w ? w.mods : emptyMods()
+    apply()
+    persist()
+  }
+
+  /** 新的世界：複製另一個世界的內容（不給時是空的，等於從原版開始） */
+  function createWorld(name: string, copyFrom?: string, content?: ContentMods): string {
+    const from = content ?? worlds.value.find((w) => w.id === copyFrom)?.mods
+    const id = `w-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
+    worlds.value.push({ id, name: name.trim().slice(0, 30) || '新的世界', mods: from ? normalizeMods(JSON.parse(JSON.stringify(from))) : emptyMods(), updated: Date.now() })
+    // normalizeMods 會先登錄自建的能力與底材：恢復成目前的內容
+    apply()
+    persist()
+    return id
+  }
+
+  function renameWorld(id: string, name: string) {
+    const w = worlds.value.find((x) => x.id === id)
+    if (!w || !name.trim()) return
+    w.name = name.trim().slice(0, 30)
+    persist()
+  }
+
+  function deleteWorld(id: string) {
+    if (id === VANILLA) throw new Error('原版世界不能刪除')
+    if (useGame().state && id === active.value) throw new Error('進行中的遊戲正在用這個世界')
+    worlds.value = worlds.value.filter((w) => w.id !== id)
+    if (active.value === id) useWorld(VANILLA)
+    else persist()
+  }
+
+  /**
+   * 讀檔、繼續時切到存檔的世界（不檢查遊戲是否進行中）。存檔沒有記世界（舊存檔）時沿用目前的；
+   * 世界被刪掉了，存檔附有當時的內容時還原成一個新的世界，否則改用原版世界。回傳實際用的世界與說明
+   */
+  function enterWorld(ref: WorldRef | undefined, snapshot?: ContentMods): WorldRef & { note?: string } {
+    if (!ref) return { id: active.value, name: activeName.value }
+    if (ref.id === VANILLA || worlds.value.some((w) => w.id === ref.id)) {
+      if (ref.id !== active.value) useWorld(ref.id)
+      return { id: ref.id, name: worldName(ref.id) }
     }
+    if (snapshot && modTotal(normalizeMods(snapshot))) {
+      const id = createWorld(`${ref.name}（從存檔還原）`, undefined, snapshot)
+      useWorld(id)
+      return { id, name: worldName(id), note: `存檔用的世界「${ref.name}」已經不在了，用存檔附上的內容還原成「${worldName(id)}」` }
+    }
+    useWorld(VANILLA)
+    return { id: VANILLA, name: VANILLA_NAME, note: `存檔用的世界「${ref.name}」已經不在了，改用原版世界` }
   }
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
@@ -299,9 +433,13 @@ export const useContent = defineStore('content', () => {
     return JSON.stringify({ type: 'elondia-content', ...mods.value }, null, 2)
   }
 
-  function importMods(text: string) {
-    mods.value = normalizeMods(JSON.parse(text))
+  /** 匯入內容檔：asNew 時建立成新的世界，否則取代目前世界的內容 */
+  function importMods(text: string, asNew?: string): string | undefined {
+    const incoming = normalizeMods(JSON.parse(text))
+    if (asNew !== undefined) return createWorld(asNew || '匯入的世界', undefined, incoming)
+    mods.value = incoming
     save()
+    return undefined
   }
 
   /**
@@ -345,6 +483,7 @@ export const useContent = defineStore('content', () => {
 
   return {
     mods, problems, version, usageOf,
+    worlds, active, activeName, readOnly, worldName, switchWorld, createWorld, renameWorld, deleteWorld, enterWorld,
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
