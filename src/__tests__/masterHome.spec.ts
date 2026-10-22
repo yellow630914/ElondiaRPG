@@ -8,11 +8,13 @@ import { applyEffects } from '@/engine/effects'
 import { currentArea, enterLocation, getArea, move, position, standOn } from '@/engine/grid'
 import { homeOnLot, lotsOf } from '@/engine/homes'
 import {
-  allowedDays, applyLeave, atMasterHome, currentMasterHome, homeDeadline, leaveDc, mayLeaveHouse, overdueChance, sendToMasterHome, strictPoints,
+  allowedDays, applyLeave, atMasterHome, currentMasterHome, homeDeadline, householdOf, leaveDc, mayLeaveHouse, overdueChance, sendToMasterHome, strictPoints,
 } from '@/engine/masterHome'
+import { peopleHere } from '@/engine/population'
 import { generateNpc, registerNpc } from '@/engine/npcs'
 import { isBound, isEnslaved, joinParty, leaderOf, pcOf, playerEscapes, recapturePlayer } from '@/engine/party'
 import { isHostile, pickTags } from '@/engine/population'
+import { changeMaster } from '@/engine/party'
 import { Rng } from '@/engine/rng'
 import { answerMasterEvent, eventFits, masterCandidates, permitDc, startAsSlave, startMasterEvent } from '@/engine/slavery'
 import { addHours, newGame, withRng } from '@/engine/state'
@@ -175,6 +177,75 @@ describe("the master's house", () => {
     applyEffects(state, blank(state), [{ type: 'free', npc: 'pc' }])
     expect(isEnslaved(state)).toBe(false)
     expect(Object.values(state.homes ?? {}).some((h) => h.master)).toBe(false)
+  })
+})
+
+describe("the people in the master's house", () => {
+  /** 主人自訂、在指定的城市；回傳家與家裡的人 */
+  function household(seed: number, location: string) {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed, birthplace: location })
+    enterLocation(state)
+    startAsSlave(state, { master: { type: 'custom', spec: { name: '維克多', level: 5 } }, mark: 'labor' })
+    const home = currentMasterHome(state)!
+    return { state, home, people: householdOf(state, home) }
+  }
+  const kindOf = (r: NpcRecord) => (r.occupation?.match(/的(妻子|丈夫|伴侶)$/) ? 'spouse' : r.occupation?.match(/的(兒子|女兒|孩子)$/) ? 'child' : r.tags?.includes('slave') ? 'slave' : 'servant')
+
+  it('a small house has only a partner, only children or only slaves', () => {
+    const seen = new Set<string>()
+    for (let seed = 1; seed <= 30; seed++) {
+      const { home, people } = household(seed, 'sunscorch')
+      expect(home.district).toBe('cottage')
+      const kinds = new Set(people.map(kindOf))
+      expect(kinds.size).toBe(1)
+      seen.add([...kinds][0]!)
+    }
+    expect([...seen].sort()).toEqual(['child', 'slave', 'spouse'])
+  })
+
+  it('lives in the nearest town with a free lot when the home town has none', () => {
+    const { home } = household(1, 'mosswhisper')
+    expect(home.location).not.toBe('mosswhisper')
+    expect(lotsOf(home.location).length).toBeGreaterThan(0)
+  })
+
+  it('a bigger house has servants and slaves, and children take a race from the adults', () => {
+    for (let seed = 1; seed <= 10; seed++) {
+      const { state, home, people } = household(seed, 'rhineburg')
+      expect(home.district).toBe('house')
+      const kinds = people.map(kindOf)
+      expect(kinds.filter((k) => k === 'servant').length).toBeGreaterThanOrEqual(1)
+      expect(kinds.filter((k) => k === 'slave').length).toBeGreaterThanOrEqual(1)
+      const master = state.npcs![pcOf(state).contract!.master]!
+      const adults = new Set([master.race, ...people.filter((r) => kindOf(r) !== 'child').map((r) => r.race)])
+      for (const c of people.filter((r) => kindOf(r) === 'child')) expect(adults.has(c.race)).toBe(true)
+      // 每個人都站在房子裡，走進去就看得到
+      for (const r of people) expect(r.at!.area.startsWith(`home/${home.id}/`)).toBe(true)
+    }
+  })
+
+  it('stays the same people for the same master, and the house looks the same for every master', () => {
+    const a = household(5, 'rhineburg')
+    const b = household(5, 'rhineburg')
+    expect(b.people.map((r) => r.name)).toEqual(a.people.map((r) => r.name))
+    const other = household(6, 'rhineburg')
+    const floor = (h: typeof a.home) => h.floors.map((k) => h.areas[k]!.cells.map((c) => c.kind).join(''))
+    expect(floor(other.home)).toEqual(floor(a.home))
+    // 走進去：家裡的人在「這裡的人」裡
+    sendToMasterHome(a.state, blank(a.state))
+    const f = a.people.find((r) => r.at!.area === position(a.state).area)
+    if (f) expect(peopleHere(a.state).some((p) => p.rec.id === f.id)).toBe(true)
+  })
+
+  it('a new master brings a new household', () => {
+    const { state, people } = household(5, 'rhineburg')
+    const rec = withRng(state, (rng) => generateNpc(state, rng, { level: 6, kind: 'adventurer', location: state.location }))
+    registerNpc(state, rec)
+    changeMaster(state, rec, blank(state))
+    for (const r of people) expect(state.npcs?.[r.id]).toBeUndefined()
+    const now = householdOf(state)
+    expect(now.length).toBeGreaterThan(0)
+    expect(now.every((r) => r.id.startsWith(`hh_${rec.id}_`))).toBe(true)
   })
 })
 

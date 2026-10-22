@@ -3,18 +3,19 @@
 // - 主人照舊帶著主角行動，但離家太久會想回家：允許離家的天數依印記、主人的親密度與標籤；逾期後可能發生「主人要回家」事件。
 // - 在主人的家裡要出門，先過出門檢定（主人今天同意才走得出大門）。
 // - 逃亡後被找到、逾期被帶回家：直接回到主人的家，而且「嚴加看管」，之後出門與出城都更難。
+// - 家裡的人（伴侶、子女、僕人、奴隸）依房子的規模生成；同一位主人一直是同一批人，換主人就換一批。
 
-import { locationById, slaveryRules, type Degree } from './data'
+import { locationById, npcTags, slaveryRules, type Degree, type HouseholdPattern } from './data'
 import { currentArea, getArea, placeAt, position, type Area } from './grid'
 import { generateHome, homeOfArea, homeOnLot, lotsOf } from './homes'
-import { npcRecord } from './npcs'
+import { generateNpc, npcRecord, weightedPick } from './npcs'
 import { addAffinity, isBound, pcOf, punish } from './party'
 import { contractTerms } from './slavery'
 import { Rng } from './rng'
 import { addHours } from './state'
 import { arrive, daysToHours } from './travel'
 import type { ContractRef, GameState, GameTime, Home, NpcRecord, Report } from './types'
-import { shortestPath } from './world'
+import { reachable, shortestPath } from './world'
 
 const rules = () => slaveryRules.master_home
 
@@ -41,20 +42,21 @@ function freeLots(state: GameState, city: string) {
   return lotsOf(city).filter((l) => !homeOnLot(state, l.id))
 }
 
-/** 主人的家在哪座城：主人登錄的地點（聚落），否則主角現在所在的聚落 */
+/** 主人的家在哪座城：主人登錄的地點（聚落），否則主角現在所在的聚落；都沒有空地時是最近的、有空地的聚落 */
 function homeCity(state: GameState, master: NpcRecord): string | undefined {
-  for (const id of [master.location, state.location]) {
-    if (!id) continue
-    const loc = (() => {
-      try {
-        return locationById(id)
-      } catch {
-        return undefined
-      }
-    })()
-    if (loc && loc.type !== 'dungeon' && freeLots(state, id).length) return id
+  const ok = (id: string | undefined) => {
+    if (!id) return false
+    try {
+      return locationById(id).type !== 'dungeon' && freeLots(state, id).length > 0
+    } catch {
+      return false
+    }
   }
-  return undefined
+  const first = [master.location, state.location].find(ok)
+  if (first) return first
+  // 那座城沒有空地：住在最近的、有空地的聚落
+  const from = master.location ?? state.location
+  return reachable(from).find((r) => ok(r.id))?.id
 }
 
 /** 目前主人的家（還沒建立時沒有） */
@@ -74,8 +76,83 @@ function dropStale(state: GameState, keep?: string) {
   for (const home of Object.values(state.homes ?? {})) {
     if (!home.master || home.master === keep) continue
     if (position(state).area.startsWith(`home/${home.id}/`)) placeAt(state, getArea(state, home.lot.area), home.lot.street.x, home.lot.street.y)
+    dropHousehold(state, home)
     delete state.homes![home.id]
   }
+}
+
+/** 舊主人家裡的人：認識的留著（之後住在那座城裡），不認識的拿掉 */
+function dropHousehold(state: GameState, home: Home) {
+  const known = new Set([...Object.keys(state.relationships ?? {}), ...(state.memories ?? []).flatMap((m) => m.participants)])
+  for (const id of home.household ?? []) {
+    const rec = state.npcs?.[id]
+    if (!rec) continue
+    if (known.has(id)) delete rec.at
+    else delete state.npcs![id]
+  }
+}
+
+// ---- 家裡的人 ----
+
+const TITLE: Record<'spouse' | 'child', Record<string, string>> = {
+  spouse: { male: '丈夫', female: '妻子' },
+  child: { male: '兒子', female: '女兒' },
+}
+
+/**
+ * 生成主人家裡的人（slavery.json 的 master_home.household）：依房子的規格抽一種組成，再生成伴侶、僕人、奴隸與子女。
+ * 子女的種族從家裡的大人（主人、伴侶、僕人、奴隸）之中抽。用主人自己的種子，同一位主人一直是同一批人。
+ * 每個人站在房子裡固定的一格：伴侶與子女在樓上（沒有樓上時在一樓），僕人在一樓，奴隸在地下室（沒有時在一樓）。
+ */
+function generateHousehold(state: GameState, home: Home, master: NpcRecord): string[] {
+  const h = rules().household
+  const rng = new Rng(hash(`${state.seed}:${master.id}:household`))
+  const pattern = weightedPick(rng, Object.fromEntries(h.patterns[home.district].map((p, i) => [String(i), p.weight]))) as string
+  const p: HouseholdPattern = h.patterns[home.district][Number(pattern)]!
+  const count = (r?: [number, number]) => (r ? rng.int(r[0], r[1]) : 0)
+  const [lo, hi] = npcTags.kinds.commoner.level ?? [1, 3]
+  let n = 0
+  const make = (spec: Parameters<typeof generateNpc>[2]) => generateNpc(state, rng, { kind: 'commoner', location: home.location, level: rng.int(lo, hi), ...spec, id: `hh_${master.id}_${++n}` })
+  const people: { rec: NpcRecord; place: 'family' | 'servant' | 'slave' }[] = []
+  if (p.spouse && rng.chance(p.spouse)) {
+    const inherit = (master.tags ?? []).filter((t) => h.spouse_inherits.includes(t))
+    const rec = make({ ...(rng.chance(h.spouse_same_race) ? { race: master.race } : {}), tags: inherit.length ? inherit : ['commoner'] })
+    rec.occupation = `${master.name}的${TITLE.spouse[rec.gender ?? ''] ?? '伴侶'}`
+    people.push({ rec, place: 'family' })
+  }
+  for (let i = count(p.servants); i > 0; i--) people.push({ rec: make({ tags: ['commoner'], occupation: rng.pick(h.servant_jobs) }), place: 'servant' })
+  for (let i = count(p.slaves); i > 0; i--) people.push({ rec: make({ tags: ['slave'], occupation: rng.pick(h.slave_jobs) }), place: 'slave' })
+  // 子女：種族從家裡的大人之中抽
+  const races = [master.race, ...people.map((x) => x.rec.race)]
+  for (let i = count(p.children); i > 0; i--) {
+    const rec = make({ race: rng.pick(races), level: 1, tags: master.tags?.some((t) => h.spouse_inherits.includes(t)) ? master.tags.filter((t) => h.spouse_inherits.includes(t)) : ['commoner'] })
+    rec.occupation = `${master.name}的${TITLE.child[rec.gender ?? ''] ?? '孩子'}`
+    people.push({ rec, place: 'family' })
+  }
+  // 站的位置
+  const floors = home.floors.map((k) => home.areas[k]!)
+  const upper = floors.filter((a) => a.homeFloor === 'upper')
+  const ground = floors.filter((a) => a.homeFloor === 'ground')
+  const basement = floors.filter((a) => a.homeFloor === 'basement')
+  const used = new Set<string>()
+  const spot = (areas: Area[]) => {
+    const free = areas.flatMap((a) => a.cells.map((c, i) => ({ a, c, i }))).filter(({ a, c, i }) => c.kind === 'floor' && !c.furniture && !used.has(`${a.key}:${i}`))
+    if (!free.length) return undefined
+    const pick = rng.pick(free)
+    used.add(`${pick.a.key}:${pick.i}`)
+    return { area: pick.a.key, x: pick.i % pick.a.width, y: Math.floor(pick.i / pick.a.width), until: 1e9 }
+  }
+  for (const { rec, place } of people) {
+    const prefer = place === 'family' ? (upper.length ? upper : ground) : place === 'slave' ? (basement.length ? basement : ground) : ground
+    const at = spot(prefer) ?? spot(floors)
+    if (at) rec.at = at
+  }
+  return people.map((x) => x.rec.id)
+}
+
+/** 主人家裡的人 */
+export function householdOf(state: GameState, home: Home | undefined = currentMasterHome(state)): NpcRecord[] {
+  return (home?.household ?? []).map((id) => state.npcs?.[id]).filter((r): r is NpcRecord => !!r && !r.dead)
 }
 
 /** 主人的身分決定房子的規格（沒寫的依空地的地段） */
@@ -97,8 +174,12 @@ export function syncMasterHome(state: GameState): Home | undefined {
   if (!c?.master) return undefined
   const id = masterHomeId(c.master)
   const existing = state.homes?.[id]
-  if (existing) return existing
   const master = npcRecord(state, c.master)
+  if (existing) {
+    // 舊存檔的房子還沒有人：補上
+    if (!existing.household && master) existing.household = generateHousehold(state, existing, master)
+    return existing
+  }
   if (!master) return undefined
   c.home ??= homeCity(state, master)
   if (!c.home) return undefined
@@ -109,11 +190,12 @@ export function syncMasterHome(state: GameState): Home | undefined {
     id, name: `${master.name}的家`, location: c.home, district: districtFor(master, lot.district),
     lot: { area: lot.area, x: lot.x, y: lot.y, street: lot.street }, bought: { ...state.time }, price_cc: 0, master: master.id,
   }
-  // 用自己的種子生成（同一位主人的家長得一樣，也不動到遊戲的亂數）
-  const home: Home = { ...base, ...generateHome(base, new Rng(hash(`${state.seed}:${master.id}`))) }
+  // 格局：同樣規格的主人的家都長一樣（不動到遊戲的亂數）；住的人依主人而不同
+  const home: Home = { ...base, ...generateHome(base, new Rng(hash(`master-home:${base.district}`))) }
   // 出口通往門口的街道
   for (const a of Object.values(home.areas)) for (const cell of a.cells) if (cell.dir === 'out') cell.link = { area: lot.area, ...lot.street }
   ;(state.homes ??= {})[id] = home
+  home.household = generateHousehold(state, home, master)
   return home
 }
 
@@ -296,7 +378,8 @@ export function masterHomeSummary(state: GameState): string {
   const d = homeDeadline(state)
   const home = d?.home ?? currentMasterHome(state)
   if (!home) return ''
-  const where = `${contractOf(state)?.masterName ?? '主人'}的家在${locationById(home.location).name}`
+  const people = householdOf(state, home).map((r) => `${r.occupation ?? ''}${r.name}`)
+  const where = `${contractOf(state)?.masterName ?? '主人'}的家在${locationById(home.location).name}${people.length ? `（家裡還有：${people.join('、')}）` : ''}`
   if (!d) return `${where}。`
   if (d.atHome) return `${where}，現在在家裡；出門後允許離家約 ${d.days} 天。`
   const left = d.hoursLeft / 24

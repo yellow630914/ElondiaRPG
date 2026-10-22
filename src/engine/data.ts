@@ -731,6 +731,13 @@ export const slaveryRules = slaveryJson as unknown as {
     strict: { found: number; overdue: number; decay_days: number; max: number }
     overdue: { base: number; per_day: number; max: number }
     district: Record<string, HomeDistrict>
+    household: {
+      patterns: Record<HomeDistrict, HouseholdPattern[]>
+      spouse_same_race: number
+      spouse_inherits: string[]
+      servant_jobs: string[]
+      slave_jobs: string[]
+    }
   }
   fugitive_master: { return: { attr: AttrId; base: number; affinity_step: number }; negotiate_dc_bonus: number }
   seek_master: { attr: AttrId; base: number; affinity_step: number }
@@ -746,6 +753,15 @@ export const slaveryRules = slaveryJson as unknown as {
     free_dc: number; free_outcomes: Record<Degree, RewardEffect[]>
     events: MasterEventDef[]
   }
+}
+
+/** 主人家裡的人的一種組成：spouse 是伴侶出現的機率，其他是人數範圍 */
+export interface HouseholdPattern {
+  weight: number
+  spouse?: number
+  children?: [number, number]
+  servants?: [number, number]
+  slaves?: [number, number]
 }
 
 export interface MasterEventDef {

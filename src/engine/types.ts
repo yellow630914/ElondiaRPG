@@ -510,6 +510,8 @@ export interface Home {
   areas: Record<string, Area>
   /** 主人的家（主角是奴隸時）：主人的 id；不是主角的房子，不能擺家具、留守、改名 */
   master?: string
+  /** 主人的家裡的人（伴侶、子女、僕人、奴隸）的 NPC id */
+  household?: string[]
 }
 
 /** 一種工藝的等級與累積的經驗 */
