@@ -4,10 +4,11 @@
 // 酒館候選人、其他隊伍、奴隸市場的角色則由程式生成（名字、外貌、性格可再交給 AI 潤飾）。
 // NPC 不在隊伍時，角色資料（等級、經驗、能力）保存在 NpcRecord.character，再次入隊時沿用。
 
+import { npcPerksOf, perksOf } from './perks'
 import { createNpc, lifeTier } from './character'
 import { safeText } from './content'
 import {
-  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, slaveryRules, tagDef,
+  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, perkDef, slaveryRules, tagDef,
   type Haunt, type NpcKind,
 } from './data'
 import { Rng } from './rng'
@@ -213,10 +214,12 @@ export function npcTitle(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 
 }
 
 /** 給 AI 的身分說明：類型、職業或職業描述、標籤 */
-export function npcIdentity(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 'tags' | 'lineage'>): string {
+export function npcIdentity(rec: Pick<NpcRecord, 'id' | 'kind' | 'class' | 'occupation' | 'tags' | 'lineage' | 'perks' | 'race' | 'character'>): string {
   const kind = npcKind(rec) === 'adventurer' ? '冒險者' : '普通人'
   const tags = (rec.tags ?? []).map((t) => tagDef(t)).filter(Boolean).map((t) => `${t!.name}（${t!.ai_hint}）`)
-  return [`${kind}・${npcTitle(rec)}`, ...(rec.lineage ? [`出身：${rec.lineage}`] : []), ...tags].join('；')
+  // 特質：同行過的用角色資料（可能學了新的），否則依 NPC 資料
+  const perks = (rec.character ? perksOf(rec.character) : npcPerksOf(rec).map((id) => perkDef(id)!)).map((p) => `特質【${p.name}】${p.desc}`)
+  return [`${kind}・${npcTitle(rec)}`, ...(rec.lineage ? [`出身：${rec.lineage}`] : []), ...tags, ...perks].join('；')
 }
 
 /** 取得 NPC 的角色資料：之前同行過就沿用，否則依等級生成。 */

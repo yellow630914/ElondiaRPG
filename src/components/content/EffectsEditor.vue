@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { abilities, contractDef, geography, itemRules, npcs as namedNpcs, slaveryRules, stories, tagDef } from '@/engine/data'
+import { abilities, contractDef, geography, itemRules, npcs as namedNpcs, perkRules, slaveryRules, stories, tagDef } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
 import { STORY_EFFECTS } from '@/engine/storyMods'
@@ -35,6 +35,19 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   hp: () => ({ type: 'hp', target: 'pc', ratio: -0.2 }),
   start_story: () => ({ type: 'start_story', story: stories.find((s) => s.start.kind === 'manual')?.id ?? stories[0]?.id ?? '' }),
   enslave_player: () => ({ type: 'enslave_player', random: {}, contract: 'labor' }),
+  perk: () => ({ type: 'perk', perk: perkRules.perks[0]!.id }),
+  lose_perk: () => ({ type: 'lose_perk', perk: perkRules.perks[0]!.id }),
+}
+// 特質的機會：第一個特質加上其他選項
+function perkOptions(r: Row): string[] {
+  return (r.options as string[] | undefined) ?? []
+}
+function setPerkOption(r: Row, i: number, id: string) {
+  const list = [...perkOptions(r)]
+  if (id) list[i] = id
+  else list.splice(i, 1)
+  if (list.length) r.options = list
+  else delete r.options
 }
 // 主角淪為奴隸：固定 NPC 當主人，或隨機生成（可以指定身分）
 const contracts = Object.keys(slaveryRules.contracts)
@@ -142,6 +155,23 @@ function setBase(r: Row, base: string) {
           <option v-for="c in contracts" :key="c" :value="c">{{ contractDef(c).name }}</option>
         </select>
         <span class="small muted">之後還有刻印檢定；已經是奴隸時改成換主人（印記沿用）；老鴇一律刻娼妓契約</span>
+      </template>
+      <template v-else-if="r.type === 'perk' || r.type === 'lose_perk'">
+        <select v-model="r.perk">
+          <option v-for="p in perkRules.perks" :key="p.id" :value="p.id">{{ p.name }}</option>
+        </select>
+        <template v-if="r.type === 'perk'">
+          <select v-for="(id, i) in perkOptions(r)" :key="i" :value="id" @change="setPerkOption(r, i, ($event.target as HTMLSelectElement).value)">
+            <option value="">（拿掉）</option>
+            <option v-for="p in perkRules.perks" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+          <select v-if="!r.direct && perkOptions(r).length < 5" :value="''" @change="setPerkOption(r, perkOptions(r).length, ($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
+            <option value="">＋ 再提供一個…</option>
+            <option v-for="p in perkRules.perks" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+          <label class="check small"><input v-model="r.direct" type="checkbox" /> 直接學會（不給選擇）</label>
+          <span v-if="!r.direct" class="small muted">玩家從中選一個，或寫一段說法擲骰交給 AI</span>
+        </template>
       </template>
       <template v-else-if="r.type === 'hp'">
         <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）

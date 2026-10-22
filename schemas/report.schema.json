@@ -196,6 +196,11 @@
             "properties": { "actor": { "type": "string" }, "condition": { "type": "string" }, "added": { "type": "boolean" } }
           }
         },
+        "perks": {
+          "type": "array",
+          "description": "特質的增減（學會或失去）。",
+          "items": { "type": "object", "required": ["actor", "perk", "name", "added"], "properties": { "actor": { "type": "string" }, "perk": { "type": "string" }, "name": { "type": "string" }, "added": { "type": "boolean" } } }
+        },
         "hit_dice": {
           "type": "array",
           "description": "短休花費、長休回復的生命骰。",

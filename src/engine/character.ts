@@ -1,6 +1,7 @@
 // 角色：屬性、三資源（生命值、行動點、法術環）的推導、升級與能力學習。
 // 公式說明見 docs/COMBAT_SYSTEM.md，數值在 data/rules/combat.json。
 
+import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks'
 import {
   abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
@@ -125,21 +126,25 @@ export function weaponFor(c: Pick<Character, 'weapon' | 'level'>): WeaponDef {
   return { ...w, dice }
 }
 
-/** 種族天賦 + 防具類型 + 身上所有裝備（材料、附魔）帶來的傷害倍率加減與戰鬥修正 */
-export function gearAffinities(c: Pick<Character, 'race' | 'armor' | 'gear'>): { resist: AffinityMap; offense: AffinityMap; mods: Mods } {
+/** 種族天賦 + 防具類型 + 身上所有裝備（材料、附魔）+ 特質帶來的傷害倍率加減與戰鬥修正 */
+export function gearAffinities(c: Pick<Character, 'race' | 'armor' | 'gear' | 'perks' | 'customPerks'>): { resist: AffinityMap; offense: AffinityMap; mods: Mods } {
   const talent = attributeRules.races[c.race]?.talent
   const armor = armorDef(c.armor)
   const gear = gearBonuses(c)
+  // 特質：一直生效的戰鬥修正、抗性與增傷
+  const perks = perkCombat(c)
   const resist: AffinityMap = {}
   const offense: AffinityMap = {}
-  for (const src of [talent?.resist, armor.resist, gear.resist]) {
+  for (const src of [talent?.resist, armor.resist, gear.resist, perks.resist]) {
     for (const [k, v] of Object.entries(src ?? {})) resist[k] = (resist[k] ?? 0) + (v ?? 0)
   }
-  for (const src of [talent?.offense, armor.offense, gear.offense]) {
+  for (const src of [talent?.offense, armor.offense, gear.offense, perks.offense]) {
     for (const [k, v] of Object.entries(src ?? {})) offense[k] = (offense[k] ?? 0) + (v ?? 0)
   }
   const mods: Mods = { ...(talent?.mods ?? {}) }
-  for (const [k, v] of Object.entries(gear.mods)) mods[k as keyof Mods] = (mods[k as keyof Mods] ?? 0) + (v ?? 0)
+  for (const src of [gear.mods, perks.mods]) {
+    for (const [k, v] of Object.entries(src)) mods[k as keyof Mods] = (mods[k as keyof Mods] ?? 0) + (v ?? 0)
+  }
   return { resist, offense, mods }
 }
 
@@ -225,6 +230,9 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
   }
   if (def.appearance) c.appearance = def.appearance
   if (def.background) c.background = def.background
+  // 特質：資料裡指定的，沒有時依 id 固定地抽
+  const perks = npcPerksOf(def)
+  if (perks.length) c.perks = [...new Set(perks)]
   syncGear(c, classDef(c.class).weapon)
   recalc(c)
   c.hp = c.maxHp
@@ -306,6 +314,8 @@ export function gainXp(c: Character, amount: number, rng: Rng): number {
     recalc(c)
     const choices = abilityChoices(c, rng)
     if (choices.length > 0) c.pendingAbilityChoices = [...(c.pendingAbilityChoices ?? []), choices]
+    // 特質：到了特定等級多一次三選一（perks.json 的 levelup）
+    levelUpPerkOffer(c, c.level, rng)
   }
   return gained
 }
@@ -352,6 +362,7 @@ export function protagonistText(c: Character, birthplaceName?: string): string {
     `${c.name}｜${c.gender ? `${c.gender}｜` : ''}${attributeRules.races[c.race]?.name ?? c.race}・${classDef(c.class).name} Lv.${c.level}${birthplaceName ? `｜出身：${birthplaceName}` : ''}`,
     c.appearance ? `外貌：${c.appearance}` : '',
     c.background ? `背景：${c.background}` : '',
+    perksOf(c).length ? `特質：${perksOf(c).map((p) => p.name).join('、')}` : '',
   ]
   return lines.filter(Boolean).join('\n')
 }

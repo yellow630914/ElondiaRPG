@@ -9,6 +9,9 @@
 //    AI 關閉時依規則：預設屬性、參考 DC 與骰值決定成功程度。
 // 說明見 docs/RELATIONSHIP_MEMORY.md 第 5 節。
 
+import { applyPitch, applyTrain, pruneOffers } from './perkActions'
+import { parsePitchTarget } from './perks'
+import { checkModifiers } from './perks'
 import { mod, proficiency, snapshot } from './character'
 import { computeDegree, DEGREE_NAME } from './checks'
 import {
@@ -36,7 +39,7 @@ import { applyPendingMove } from './road'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
 import { npcRecord, type NpcSpec } from './npcs'
 import { presentHere } from './population'
-import { addAffinity, conditionModifiers, pcOf } from './party'
+import { addAffinity, pcOf } from './party'
 import { applyNegotiationOutcome } from './negotiation'
 import { addSuggestions } from './social'
 import { applyBargain } from './trade'
@@ -108,6 +111,8 @@ export interface Judgment {
   relationship_updates: RelationshipUpdate[]
   /** 自創配方：AI 設計的成品（程式在結算時夾進上限，見 invention.ts） */
   invention?: Record<string, unknown>
+  /** 爭取特質：AI 設計的特質（程式依成功程度夾住強度，見 perkActions.ts） */
+  perk?: Record<string, unknown>
 }
 
 export { computeDegree, DEGREE_NAME }
@@ -128,7 +133,9 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item)
   // 擲檢定的人：通常是主角；夥伴動手製作時是那位夥伴
   const pc = (setup.actor && memberOrResident(state, currentArea(state), setup.actor)) || pcOf(state)
-  const situational = [...setup.situational, ...conditionModifiers(pc, setup.attr ?? kind.attr)].filter((x) => x.value !== 0)
+  // 情境修正：這次行動的特殊情況，加上非戰鬥狀態與特質（對象的標籤也算，例如「對貴族 +1」）
+  const vsTags = (input.target && npcRecord(state, input.target)?.tags) || undefined
+  const situational = [...setup.situational, ...checkModifiers(pc, { context: 'action', kind: input.kind, attr: setup.attr ?? kind.attr, ...(vsTags ? { vsTags } : {}) })].filter((x) => x.value !== 0)
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
   let used: AbilityUse | undefined
   let user: Character | undefined
@@ -366,6 +373,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
     ...(adultContent() && clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
     ...(p.kind === 'invent' && r.invention && typeof r.invention === 'object' ? { invention: r.invention as Record<string, unknown> } : {}),
+    ...(p.kind === 'perk_pitch' && r.perk && typeof r.perk === 'object' ? { perk: r.perk as Record<string, unknown> } : {}),
     effects,
     relationship_updates: updates,
   }
@@ -440,7 +448,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   // 打造：AI 提出的成品交給打造的機制處理（不另外給一件）
   const crafted = p.kind === 'craft' || p.kind === 'make' ? judgment?.effects.find((e) => e.type === 'gear') : undefined
   if (crafted && judgment) judgment.effects = judgment.effects.filter((e) => e !== crafted)
-  const mechanical = applyMechanics(state, report, p, degree, crafted as Extract<RewardEffect, { type: 'gear' }> | undefined, judgment?.invention)
+  const mechanical = applyMechanics(state, report, p, degree, crafted as Extract<RewardEffect, { type: 'gear' }> | undefined, judgment?.invention ?? judgment?.perk)
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
   if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
   if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }
@@ -506,6 +514,12 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'make': return applyMake(state, report, p.target!, degree, crafted)
     case 'produce': return applyProduce(state, report, p.target!, degree)
     case 'invent': return applyInvent(state, report, p.target!, degree, invention)
+    case 'train': return applyTrain(state, report, p.target!, degree)
+    case 'perk_pitch': {
+      const text = applyPitch(state, report, p.target!, degree, invention)
+      pruneOffers(state.party.find((m) => m.id === parsePitchTarget(p.target).member)!)
+      return text
+    }
     case 'defeat_event': return applyDefeatResponse(state, report, degree)
     case 'story': return applyStoryCheck(state, report, p.target!, degree)
     case 'free':

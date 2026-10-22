@@ -1,7 +1,7 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import {
-  abilities, ATTR_IDS, enemies, geography, itemDef, npcs as namedNpcs, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, enemies, geography, itemDef, npcs as namedNpcs, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere,
 } from './data'
 import type { RewardEffect } from './effects'
@@ -45,6 +45,7 @@ const num = (v: unknown, lo: number, hi: number, d: number) => {
 }
 const int = (v: unknown, lo: number, hi: number, d: number) => Math.round(num(v, lo, hi, d))
 const str = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
+const strArr = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [])
 const flags = (v: unknown) => [...new Set((Array.isArray(v) ? v : []).map(cleanFlag).filter(Boolean))]
 /** id：英數與底線 */
 export const cleanId = (v: unknown, d: string) => (typeof v === 'string' ? v.trim().replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 40) : '') || d
@@ -64,7 +65,7 @@ export const LAYER_NAME: Record<(typeof STORY_LAYERS)[number], string> = { outsk
 /** 任務的效果可以用的種類 */
 export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
-  start_story: '開始特殊任務', enslave_player: '主角淪為奴隸',
+  start_story: '開始特殊任務', enslave_player: '主角淪為奴隸', perk: '特質（取得的機會）', lose_perk: '失去特質',
 }
 
 const isLoc = (id: unknown) => typeof id === 'string' && geography.locations.some((l) => l.id === id)
@@ -134,6 +135,18 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       case 'start_story': {
         const id = str(x.story, 80)
         if (id) out.push({ type: 'start_story', story: id })
+        break
+      }
+      case 'perk': {
+        // 取得特質的機會：提供的特質（清單裡的 id），可以寫說法交給 AI；direct 直接學會第一個
+        const ids = [...new Set([typeof x.perk === 'string' ? x.perk : '', ...strArr(x.options)])].filter((id) => !!perkDef(id)).slice(0, 6)
+        if (!ids.length) break
+        const [first, ...rest] = ids
+        out.push({ type: 'perk', perk: first!, ...(rest.length ? { options: rest } : {}), ...(x.direct ? { direct: true } : {}) })
+        break
+      }
+      case 'lose_perk': {
+        if (typeof x.perk === 'string' && x.perk) out.push({ type: 'lose_perk', perk: str(x.perk, 60) })
         break
       }
       case 'enslave_player': {
@@ -355,6 +368,7 @@ export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string
     }
     if (e.type === 'start_story' && !others.some((s) => s.id === e.story)) out.push(`效果要開始的特殊任務 ${e.story} 不存在`)
     if (e.type === 'enslave_player' && typeof e.master === 'string' && !npcIds.has(e.master)) out.push(`效果裡的主人 ${e.master} 不存在`)
+    if (e.type === 'perk') for (const id of [e.perk, ...(e.options ?? [])]) if (id && !perkDef(id)) out.push(`效果裡的特質 ${id} 不存在`)
     if (e.type === 'start_story' && e.story === def.id) out.push('效果要開始的是這個任務自己')
   }
   if (def.start.kind === 'manual') {

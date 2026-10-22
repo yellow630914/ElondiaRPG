@@ -5,6 +5,7 @@
 // - 自己描述做法：主動行動（kind = negotiation），擲骰後交給 AI 判定。
 // 兩種做法的結果都套用同一張結果表；部分成功時可以再談一次（最多 max_attempts 次）。
 
+import { checkModifiers, modifierNote } from './perks'
 import { mod, proficiency, snapshot } from './character'
 import { computeDegree, DEGREE_NAME } from './checks'
 import {
@@ -14,7 +15,7 @@ import {
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { generateNpc, npcRecord } from './npcs'
-import { conditionPenalty, pcOf } from './party'
+import { pcOf } from './party'
 import { roll } from './rng'
 import { ensureRelationship } from './social'
 import { currentCell } from './grid'
@@ -173,7 +174,9 @@ export function chooseOption(state: GameState, id: string, optionId: string): Re
   const pc = pcOf(state)
   ensureRelationship(state, npcRecord(state, n.counterpart)!)
   const natural = withRng(state, (rng) => roll(rng, '1d20').total)
-  const modifier = mod(pc.attrs[o.attr]) + proficiency(pc.level) - conditionPenalty(pc, o.attr)
+  // 非戰鬥狀態與特質（對方的標籤也算）
+  const extra = checkModifiers(pc, { context: 'negotiation', attr: o.attr, vsTags: npcRecord(state, n.counterpart)?.tags ?? [] })
+  const modifier = mod(pc.attrs[o.attr]) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0)
   const total = natural + modifier
   const degree = computeDegree(natural, total, o.dc)
   const report = negotiationReport(state, n, actionRules.kinds.negotiation.hours)
@@ -181,7 +184,7 @@ export function chooseOption(state: GameState, id: string, optionId: string): Re
   const check: CheckInfo = { action: `${n.title}：${o.label}`, attr: o.attr, base_dc: n.base_dc, dc: o.dc, natural, modifier, total, degree, source: 'rules' }
   report.check = check
   report.timeline = [{
-    seq: 1, time: report.time.start, actor: 'pc', action: o.label, target: n.counterpart,
+    seq: 1, time: report.time.start, actor: 'pc', action: `${o.label}${modifierNote(extra)}`, target: n.counterpart,
     roll: { dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc: o.dc }, result: degree,
   }]
   report.narration = { ...report.narration, player_intent: o.label }

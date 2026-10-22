@@ -7,7 +7,7 @@ import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from
 import {
   geography, genderName, itemDef, itemRules, tagDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
-  abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses,
+  abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses, perkDef, perkRules, type PerkDef,
 } from '@/engine/data'
 import { capsSource, capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarget, type InventCategory } from '@/engine/invention'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
@@ -19,6 +19,7 @@ import { craftPart, craftRarity, parseCraftTarget } from '@/engine/craft'
 import { gearName, gearRules, rarityName, rarityPoints } from '@/engine/gear'
 import { contractTerms, markSummary } from '@/engine/slavery'
 import { masterHomeSummary } from '@/engine/masterHome'
+import { parsePitchTarget, perkNames, perkPower, pitchCap } from '@/engine/perks'
 import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
 import type { GameState, Negotiation } from '@/engine/types'
@@ -73,9 +74,11 @@ function pcDetail(state: GameState): string {
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${pc.attrs[a]}`).join('、')
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
   const home = pc.contract ? masterHomeSummary(state) : ''
+  // 特質：程式已經算進檢定的加值（情境修正），這裡讓 AI 判定時參考角色的特長
+  const perks = perkNames(pc)
   const contract = pc.contract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pc.contract)}${home ? `\n${home}` : ''}` : ''
   const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
-  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${contract}`
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${contract}`
 }
 
 function targetDetail(state: GameState, p: ActionPending): string {
@@ -184,7 +187,32 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
   }
   // 主角不是奴隸時，不提供和契約有關的效果
   const list = kind.effects.filter((e) => pc.contract || (e !== 'release' && e !== 'change_master'))
-  return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>${p.kind === 'invent' ? inventionDoc(state, p) : ''}`
+  return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>${p.kind === 'invent' ? inventionDoc(state, p) : ''}${p.kind === 'perk_pitch' ? pitchDoc(state, p) : ''}`
+}
+
+/** 爭取特質：AI 判斷說法合不合理，並在 perk 欄位設計特質；程式依 degree 夾住強度 */
+function pitchDoc(state: GameState, p: ActionPending): string {
+  const { member, offer } = parsePitchTarget(p.target)
+  const m = state.party.find((x) => x.id === member)
+  const o = m?.perkOffers?.find((x) => x.id === offer)
+  if (!m || !o) return ''
+  const options = o.options.map((id) => perkDef(id)).filter((d): d is PerkDef => !!d)
+  const contexts = Object.entries(perkRules.contexts).map(([k, v]) => `${k}（${v}）`).join('、')
+  const kinds = Object.entries(actionRules.kinds).map(([k, v]) => `${k}（${v.name}）`).join('、')
+  const delta = perkRules.pitch.power_delta
+  const cap = (d: number) => pitchCap(o, d)
+  return `
+<perk_pitch>
+這是取得特質的機會（${o.source}），對象是${m.name}。原本提供的特質：
+${options.map((d) => `- ${d.name}：${d.desc}（強度 ${perkPower(d)}）`).join('\n') || '- （沒有）'}
+玩家不選這些，在 <action> 寫了一段說法，想得到別的特質。請依這段說法和${m.name}的經歷、這次機會的來源判斷合不合理（不合理、離題、想一步登天時給失敗），並在輸出 JSON 的 "perk" 欄位設計特質：
+{"name":"<≤12 字>","desc":"<≤60 字，寫出效果>","effects":[{"check":{"attrs":["cha"],"contexts":["gate"],"kinds":["haggle"],"vs_tags":["noble"]},"bonus":2},{"combat":{"hit":1}},{"resist":{"fire":-0.25}}]}
+- check：檢定加值 1～3，適用範圍用 attrs（${ATTR_IDS.join('、')}）、contexts、kinds、vs_tags 限定（同一欄位是「或」、不同欄位是「且」；全部不寫＝所有檢定，非常強）。
+- contexts：${contexts}。
+- kinds（主動行動）：${kinds}。
+- combat：戰鬥修正 hit、evade、save、damage、dr、ap_regen、crit（1～2）；resist：傷害倍率（-0.25 = ×0.75）。
+- 最多 ${perkRules.custom.effects} 個效果。強度上限依 degree：大成功 ${cap(delta.critical ?? 1)}、成功 ${cap(delta.success ?? 0)}、部分成功 ${cap(delta.partial ?? -1)}（範圍越廣、加值越大越強；超過時程式從最後一個效果開始減弱）。失敗與大失敗不會學到（仍要填 perk，程式會忽略）。
+</perk_pitch>`
 }
 
 /** 玩家設定為「事件可能出現」的物品：AI 判定時可以當成報酬 */

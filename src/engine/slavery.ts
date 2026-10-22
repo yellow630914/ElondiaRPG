@@ -5,6 +5,7 @@
 // - 主角身為奴隸：出城、旅行前要主人同意（檢定依印記的 exit_dc）；成為奴隸時有刻印檢定，結果決定能選哪些印記；
 //   移動與旅行時可能遇到主人的突發事件：主角從三種回應選一個，或自己輸入回應交給 AI 判定。
 
+import { checkModifiers, modifierNote } from './perks'
 import { lifeTier, mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
@@ -487,10 +488,12 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   }
   let effects = forMaster(o.effects, c.master)
   if (o.check) {
-    const dice = withBonus('1d20', mod(pc.attrs[o.check.attr]) + proficiency(pc.level))
+    // 非戰鬥狀態與特質（主人的標籤也算）
+    const extra = checkModifiers(pc, { context: 'master_event', attr: o.check.attr, vsTags: npcRecord(state, c.master)?.tags ?? [] })
+    const dice = withBonus('1d20', mod(pc.attrs[o.check.attr]) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
     const r = withRng(state, (rng) => roll(rng, dice))
     const ok = r.total >= o.check.dc
-    report.timeline = [{ seq: 1, time: start, actor: 'pc', action: o.label, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
+    report.timeline = [{ seq: 1, time: start, actor: 'pc', action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
     effects = [...effects, ...forMaster(ok ? o.effects_success : o.fail_effects, c.master)]
     report.outcome.result = ok ? 'success' : 'failure'
     const after = ok ? o.success : o.fail

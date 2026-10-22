@@ -1,5 +1,6 @@
 // 衛兵警戒、通緝、罰金與聲望（見 docs/NPC_SYSTEM.md 第 9 節，規則在 data/rules/security.json）。
 
+import { checkModifiers } from './perks'
 import securityJson from '@data/rules/security.json'
 import { mod, proficiency, snapshot } from './character'
 import { economy, geography, locationById, regionById } from './data'
@@ -167,7 +168,8 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
   }
   const pc = pcOf(state)
   const attr = mod(pc.attrs.dex) >= mod(pc.attrs.cha) ? 'dex' : 'cha'
-  const dice = withBonus('1d20', mod(pc.attrs[attr]) + proficiency(pc.level))
+  const extra = checkModifiers(pc, { context: 'gate', attr })
+  const dice = withBonus('1d20', mod(pc.attrs[attr]) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
   const dc = securityRules.alert.gate_dc_base + securityRules.alert.gate_dc_per_level * level
   const r = withRng(state, (rng) => roll(rng, dice))
   const ok = r.total >= dc

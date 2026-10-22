@@ -1,13 +1,13 @@
 // 需要玩家回應的事件，用同一個格式排成佇列，在事件視窗（EventCenter.vue）裡一件一件處理：
 // - 擋住行動的（戰敗後的處境、對峙、刻印、主人的要求、旅途事件）：不處理就不能移動、休息；排在前面
-// - 可以晚點處理的（AI 提議的關係變化、升級）：可以按「稍後」
+// - 可以晚點處理的（AI 提議的關係變化、升級、取得特質的機會）：可以按「稍後」
 // 有新的事件時事件視窗自動打開；關掉之後畫面上方顯示「🔔 N 件待處理」。
 
 import { ref } from 'vue'
 import { roadTemplate } from '@/engine/road'
 import type { GameState } from '@/engine/types'
 
-export type GameEventKind = 'defeat' | 'standoff' | 'mark' | 'master' | 'road' | 'suggestion' | 'levelup'
+export type GameEventKind = 'defeat' | 'standoff' | 'mark' | 'master' | 'road' | 'suggestion' | 'levelup' | 'perk'
 
 export interface GameEvent {
   /** 同一件事一直是同一個 id（用來判斷是不是新的事件、記住「稍後」） */
@@ -17,7 +17,7 @@ export interface GameEvent {
   title: string
   /** 不處理就不能移動、休息 */
   blocking: boolean
-  /** 關係變化：哪一則提議；升級：哪一位隊員 */
+  /** 關係變化：哪一則提議；升級：哪一位隊員；特質：「隊員 id:機會 id」 */
   ref?: string
 }
 
@@ -57,6 +57,11 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     if (!choices && !(m.attrPoints > 0)) continue
     const what = [choices ? `選擇 ${choices} 項能力` : '', m.attrPoints > 0 ? `分配 ${m.attrPoints} 點屬性` : ''].filter(Boolean).join('、')
     out.push({ id: `levelup:${m.id}:${m.level}:${choices}:${m.attrPoints}`, kind: 'levelup', icon: '⬆️', title: `${m.name}升級了：${what}`, blocking: false, ref: m.id })
+  }
+  for (const m of state.party) {
+    for (const o of m.perkOffers ?? []) {
+      out.push({ id: `perk:${m.id}:${o.id}:${o.pitched ? 1 : 0}`, kind: 'perk', icon: '🌟', title: `${m.name}有機會學會特質（${o.source}）`, blocking: false, ref: `${m.id}:${o.id}` })
+    }
   }
   return out
 }

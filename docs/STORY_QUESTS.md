@@ -78,6 +78,8 @@
 
 任務結束（完成、失敗或放棄）時，這個任務帶來的任務同行夥伴都會離隊。
 
+**特質**：`{ "type": "perk", "perk": "veteran", "options": ["diplomat"] }` 給主角一次學特質的機會（從這幾個選一個，或寫說法擲骰交給 AI 爭取別的；來源寫成這個特殊任務），`"direct": true` 直接學會；`{ "type": "lose_perk", "perk": "<id>" }` 失去特質。見 [`PERKS.md`](PERKS.md)。
+
 **主角淪為奴隸**（只有特殊任務能用）：
 - 固定 NPC 當主人：`{ "type": "enslave_player", "master": "npc_selene", "contract": "labor" }`
 - 隨機的 NPC 當主人：`{ "type": "enslave_player", "random": { "tag": "noble" }, "contract": "combat" }`（`tag` 是主人的身分標籤，不寫＝依奴隸市場的權重抽；在目前的地點生成，比主角高 1～4 級）

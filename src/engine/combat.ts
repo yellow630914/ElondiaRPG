@@ -8,12 +8,13 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { checkBonus, perkModifiers } from './perks'
 import {
   apMaxFor, apRegenFor, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency,
   slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
+  abilityDef, armorDef, ATTR_IDS, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
   locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
@@ -80,6 +81,8 @@ export interface Combatant {
   castingAttr: AttrId
   statuses: StatusInstance[]
   initiative: number
+  /** 特質帶來的各屬性豁免加值 */
+  saveBonus?: Partial<Record<AttrId, number>>
   usedTurn: Record<string, number>
   usedCombat: Record<string, number>
   usedRest: Record<string, number>
@@ -263,7 +266,9 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
     resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),
     statuses: [],
-    initiative: roll(rng, '1d20').total + mod(c.attrs.dex),
+    // 特質：先攻與各屬性豁免的加值
+    initiative: roll(rng, '1d20').total + mod(c.attrs.dex) + checkBonus(c, { context: 'initiative', attr: 'dex' }),
+    saveBonus: Object.fromEntries(ATTR_IDS.map((a) => [a, perkModifiers(c, { context: 'save', attr: a }).reduce((s, x) => s + x.value, 0)])) as Partial<Record<AttrId, number>>,
     usedTurn: {}, usedCombat: {}, usedRest: { ...c.usesPerRest },
   }
 }
@@ -889,7 +894,7 @@ function applyHpLoss(combat: CombatState, rng: Rng, target: Combatant, amount: n
   }
   if (target.concentration) {
     const dc = Math.max(combatRules.concentration.min_dc, Math.floor(amount / 2))
-    const save = d20(rng, 0) + mod(target.attrs[combatRules.concentration.attr])
+    const save = d20(rng, 0) + mod(target.attrs[combatRules.concentration.attr]) + (target.saveBonus?.[combatRules.concentration.attr] ?? 0)
     if (save < dc) dropConcentration(combat, target, effects)
   }
 }
@@ -943,7 +948,7 @@ function saveDc(actor: Combatant, a: AbilityDef): number {
 function savingThrow(rng: Rng, target: Combatant, attr: AttrId, dc: number) {
   const f = rollFactors(target, 'save')
   const natural = d20(rng, Math.sign(f.adv - f.dis))
-  const bonus = mod(target.attrs[attr]) + modsOf(target).save
+  const bonus = mod(target.attrs[attr]) + modsOf(target).save + (target.saveBonus?.[attr] ?? 0)
   const total = natural + bonus + rollLuck(rng, f.luck)
   consume(target, f.used)
   return { success: total >= dc, roll: { dice: withBonus('1d20', bonus), value: total, dc } }

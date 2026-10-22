@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia'
+import * as perkActions from '@/engine/perkActions'
+import { pitchTarget } from '@/engine/perks'
 import { computed, ref } from 'vue'
 import * as actions from '@/engine/actions'
 import * as combat from '@/engine/combat'
@@ -906,6 +908,11 @@ export const useGame = defineStore('game', () => {
     stayHome: (id: string) => run((s) => homes.stayHome(s, grid.currentArea(s), id)),
     takeResident: (id: string) => run((s) => homes.leaveWithResident(s, grid.currentArea(s), id)),
     /** 忘記自創的配方（invention.ts） */
+    // 特質：從機會選一個、放棄、寫說法交給 AI、受訓（docs/PERKS.md）
+    learnPerk: (member: string, offer: string, perk: string) => run((s) => perkActions.learnFromOffer(s, member, offer, perk)),
+    declinePerk: (member: string, offer: string) => run((s) => perkActions.declineOffer(s, member, offer)),
+    pitchPerk: (member: string, offer: string, text: string) => perform({ kind: 'perk_pitch', target: pitchTarget(member, offer), text }),
+    train: (perk: string, text: string) => perform({ kind: 'train', target: perk, text }),
     forgetInvention: (name: string) => run((s) => invention.forgetInvention(s, name)),
     /** 自創物品改名（回傳新的名字） */
     renameInvention: (from: string, to: string) => run((s) => invention.renameInvention(s, from, to)),
