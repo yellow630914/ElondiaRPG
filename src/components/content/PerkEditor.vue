@@ -56,7 +56,7 @@ const kindOf = (e: PerkEffect): EffectKind => ('check' in e ? 'check' : 'combat'
 
 function addEffect(kind: EffectKind) {
   const list = draft.value.effects
-  if (list.length >= limits.value.effects) return
+  if (list.length >= limits.effects) return
   if (kind === 'check') list.push({ check: {}, bonus: 1 })
   else if (kind === 'combat') list.push({ combat: { hit: 1 } })
   else if (kind === 'resist') list.push({ resist: { [dmgTypes[0]![0]]: -0.25 } })
