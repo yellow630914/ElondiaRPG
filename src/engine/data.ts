@@ -1321,14 +1321,14 @@ export interface PerkDef {
   name: string
   desc: string
   effects: PerkEffect[]
-  /** 缺陷（保留：目前沒有缺陷，效果可以是負的） */
+  /** 缺陷：效果是負的（檢定減值、戰鬥減值、弱點）；不能從機會學，事件直接給，受訓（train）是克服它 */
   flaw?: boolean
   /** 種族特質（原本的種族天賦）：這個種族的角色自動擁有，不寫進存檔；不能選、不能學、不會失去 */
   race?: string
   requires?: { races?: string[]; classes?: string[] }
   /** 和這些特質互斥 */
   exclusive?: string[]
-  /** 可以在這些設施花錢學 */
+  /** 可以在這些設施花錢學（缺陷：花錢克服） */
   train?: { cells: string[]; price_cc: number; hours: number; attr: AttrId; dc: number }
   /** NPC 生成時抽到的權重與更容易抽到的標籤、職業 */
   npc?: { weight?: number; tags?: string[]; classes?: string[] }
@@ -1339,9 +1339,13 @@ export interface PerkDef {
 export const perkRules = perksJson as unknown as {
   contexts: Record<CheckContext, string>
   levelup: { levels: number[]; choices: number }
-  npc: { chances: number[]; tag_mult: number; class_mult: number }
+  npc: { chances: number[]; flaw_chance: number; tag_mult: number; class_mult: number }
+  creation: { slots: number; max_flaws: number; slots_per_flaw: number }
   pitch: { attr: AttrId; dc: number; hours: number; power_delta: Partial<Record<Degree, number>> }
-  custom: { name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }
+  custom: {
+    name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number]
+    flaw: { check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }
+  }
   perks: PerkDef[]
 }
 

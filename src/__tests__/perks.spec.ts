@@ -46,7 +46,8 @@ describe('perk data', () => {
         for (const a of e.check.attrs ?? []) expect(ATTR_IDS).toContain(a)
       }
       // 種族特質（人類的適應力）可以沒有額外效果
-      if (!p.race) expect(perkPower(p), p.id).toBeGreaterThan(0)
+      if (p.flaw) expect(perkPower(p), p.id).toBeLessThan(0)
+      else if (!p.race) expect(perkPower(p), p.id).toBeGreaterThan(0)
     }
     const books = itemRules.items.filter((i) => i.use?.perks)
     expect(books.length).toBeGreaterThanOrEqual(5)

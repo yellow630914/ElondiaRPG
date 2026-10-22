@@ -31,8 +31,8 @@
 | `hit_dice` | 生命骰：`delta` 負數花掉、正數回復 |
 | `intel` | 情報：在近郊或地下城的某一層放一個事件點，記在冒險筆記（見 [TRAVEL_EVENTS](TRAVEL_EVENTS.md) 第 5 節） |
 | `start_story` | 開始一個特殊任務 |
-| `perk` | 給一次學特質的機會（`options` 選一個，或寫說法交給 AI 爭取別的）；`direct: true` 直接學會（見 [PERKS](PERKS.md)） |
-| `lose_perk` | 失去特質 |
+| `perk` | 給一次學特質的機會（`options` 選一個，或寫說法交給 AI 爭取別的）；`direct: true` 直接學會；`perk` 是缺陷時一律直接染上（見 [PERKS](PERKS.md) 3.2 節） |
+| `lose_perk` | 失去特質（缺陷：克服） |
 | `enslave_player` | 主角淪為奴隸（只有特殊任務能用；見 [STORY_QUESTS](STORY_QUESTS.md)） |
 | `mark` | 刻印時提議的印記名稱與描述（只是文字，數值依模板） |
 | `free` | 解除契約：`npc` 為 `pc` 時是主角獲釋 |

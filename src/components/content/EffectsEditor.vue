@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { abilities, contractDef, geography, itemRules, npcs as namedNpcs, choosablePerks, slaveryRules, stories, tagDef } from '@/engine/data'
+import { abilities, contractDef, geography, itemRules, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
 import { STORY_EFFECTS } from '@/engine/storyMods'
@@ -158,16 +158,18 @@ function setBase(r: Row, base: string) {
       </template>
       <template v-else-if="r.type === 'perk' || r.type === 'lose_perk'">
         <select v-model="r.perk">
-          <option v-for="p in choosablePerks()" :key="p.id" :value="p.id">{{ p.name }}</option>
+          <option v-for="p in choosablePerks()" :key="p.id" :value="p.id">{{ p.name }}{{ p.flaw ? '（缺陷）' : '' }}</option>
         </select>
-        <template v-if="r.type === 'perk'">
+        <span v-if="r.type === 'perk' && perkDef(String(r.perk ?? ''))?.flaw" class="small muted">缺陷：直接染上（不是機會，不能選也不能爭取）</span>
+        <span v-else-if="r.type === 'lose_perk' && perkDef(String(r.perk ?? ''))?.flaw" class="small muted">克服這個缺陷</span>
+        <template v-if="r.type === 'perk' && !perkDef(String(r.perk ?? ''))?.flaw">
           <select v-for="(id, i) in perkOptions(r)" :key="i" :value="id" @change="setPerkOption(r, i, ($event.target as HTMLSelectElement).value)">
             <option value="">（拿掉）</option>
-            <option v-for="p in choosablePerks()" :key="p.id" :value="p.id">{{ p.name }}</option>
+            <option v-for="p in choosablePerks().filter((x) => !x.flaw)" :key="p.id" :value="p.id">{{ p.name }}</option>
           </select>
           <select v-if="!r.direct && perkOptions(r).length < 5" :value="''" @change="setPerkOption(r, perkOptions(r).length, ($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
             <option value="">＋ 再提供一個…</option>
-            <option v-for="p in choosablePerks()" :key="p.id" :value="p.id">{{ p.name }}</option>
+            <option v-for="p in choosablePerks().filter((x) => !x.flaw)" :key="p.id" :value="p.id">{{ p.name }}</option>
           </select>
           <label class="check small"><input v-model="r.direct" type="checkbox" /> 直接學會（不給選擇）</label>
           <span v-if="!r.direct" class="small muted">玩家從中選一個，或寫一段說法擲骰交給 AI</span>

@@ -1,5 +1,6 @@
 // 特質的主動行動（見 docs/PERKS.md）：
 // - train：在公會、神殿、酒館等設施花錢花時間受訓；成功時得到一次學這個特質的機會（也可以改寫說法交給 AI）。
+//   身上的缺陷有 train 時，受訓是克服它：成功就拿掉這個缺陷。
 // - perk_pitch：在取得特質的機會上（升級、事件、特殊任務、訓練、物品），不選提供的特質，寫一段說法擲骰交給 AI；
 //   AI 依說法合不合理決定成功程度並設計特質（perk 欄位），程式依成功程度把強度夾在提供的特質附近。只有這些場合可以用。
 
@@ -9,7 +10,7 @@ import { formatMoney } from './money'
 import { pcOf } from './party'
 import { snapshot } from './character'
 import {
-  dropOffer, grantPerk, offerPerks, parsePitchTarget, perkPower, pitchCap, sanitizePerk, takeOffer, trainablePerks, trainingFee,
+  dropOffer, grantPerk, losePerk, offerPerks, overcomablePerks, parsePitchTarget, perkPower, pitchCap, sanitizePerk, takeOffer, trainablePerks, trainingFee,
 } from './perks'
 import { addHours, commitReport, newReportId } from './state'
 import type { Character, GameState, PerkOffer, Report } from './types'
@@ -24,8 +25,9 @@ function memberOf(state: GameState, id: string): Character {
 
 function trainDef(state: GameState, perkId?: string) {
   const cell = currentCell(state).kind
-  const def = trainablePerks(pcOf(state), cell).find((p) => p.id === perkId)
-  if (!def?.train) throw new Error('這裡學不到這個特質')
+  const pc = pcOf(state)
+  const def = [...trainablePerks(pc, cell), ...overcomablePerks(pc, cell)].find((p) => p.id === perkId)
+  if (!def?.train) throw new Error(perkId && perkDef(perkId)?.flaw ? '這裡沒辦法克服這個缺陷' : '這裡學不到這個特質')
   return { def, train: def.train, cell }
 }
 
@@ -35,8 +37,11 @@ export function setupTrain(state: GameState, target?: string) {
   const fee = (d: Degree) => formatMoney(trainingFee(train.price_cc, d))
   return {
     attr: train.attr, dc: train.dc, hours: train.hours, situational: [],
-    scene: `${locationById(state.location).name}的${CELL_NAME[cell as keyof typeof CELL_NAME] ?? cell}・學習特質【${def.name}】`,
-    outcomes: {
+    scene: `${locationById(state.location).name}的${CELL_NAME[cell as keyof typeof CELL_NAME] ?? cell}・${def.flaw ? `克服缺陷【${def.name}】` : `學習特質【${def.name}】`}`,
+    outcomes: def.flaw ? {
+      critical: `克服了缺陷（學費打對折：${fee('critical')}）`, success: `克服了缺陷（學費 ${fee('success')}）`, partial: `克服了缺陷（學費 ${fee('partial')}）`,
+      fail: `還是改不掉（學費收一半：${fee('fail')}）`, fumble: `還是改不掉（學費照收：${fee('fumble')}）`,
+    } as Partial<Record<Degree, string>> : {
       critical: `學會的機會（學費打對折：${fee('critical')}）`, success: `學會的機會（學費 ${fee('success')}）`, partial: `學會的機會（學費 ${fee('partial')}）`,
       fail: `沒學會（學費收一半：${fee('fail')}）`, fumble: `沒學會（學費照收：${fee('fumble')}）`,
     } as Partial<Record<Degree, string>>,
@@ -47,6 +52,11 @@ export function applyTrain(state: GameState, report: Report, target: string, deg
   const { def, train } = trainDef(state, target)
   const fee = Math.min(state.money_cc, trainingFee(train.price_cc, degree))
   report.changes.money_cc = (report.changes.money_cc ?? 0) - fee
+  if (def.flaw) {
+    if (degree === 'fail' || degree === 'fumble') return `花了 ${formatMoney(fee)}，【${def.name}】的毛病還是改不掉。`
+    losePerk(pcOf(state), def.id, report)
+    return `花了 ${formatMoney(fee)}，克服了缺陷【${def.name}】。`
+  }
   if (degree === 'fail' || degree === 'fumble') return `花了 ${formatMoney(fee)}，還是沒抓到【${def.name}】的訣竅。`
   // 學會的機會：可以直接學，也可以改寫說法交給 AI
   offerPerks(pcOf(state), `在${currentArea(state).name}受訓`, [def.id])

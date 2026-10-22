@@ -327,7 +327,7 @@ function remove() {
       <details v-if="draft.category === 'consumable'" class="small">
         <summary>📖 書籍：讀完有機會學會的特質（{{ use.perks?.length ?? 0 }}，最多 6 個）</summary>
         <p class="muted">讀完時從勾選的特質選一個學（也可以寫說法交給 AI）。種族特質不能從書裡學。</p>
-        <label v-for="p in choosablePerks()" :key="p.id" class="check" :title="p.desc">
+        <label v-for="p in choosablePerks().filter((x) => !x.flaw)" :key="p.id" class="check" :title="p.desc">
           <input type="checkbox" :checked="use.perks?.includes(p.id)" :disabled="!use.perks?.includes(p.id) && (use.perks?.length ?? 0) >= 6" @change="use.perks = toggle(use.perks, p.id, ($event.target as HTMLInputElement).checked)" /> {{ p.name }}
         </label>
       </details>

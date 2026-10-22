@@ -1067,8 +1067,9 @@ export const TRAIN_CELLS = ['inn', 'guild', 'tavern', 'shop', 'temple', 'smithy'
  * 內容編輯器的效果範圍：比玩家自訂的寬。抗性可以是弱點（像魔族的神聖 ×1.25，用來平衡強項）；
  * 檢定與戰鬥修正還不開放負的加值（缺陷之後再做）
  */
-export function perkEditorLimits(): PerkLimits {
-  return { effects: 6, check_bonus: [1, 5], combat: [1, 3], resist: [-0.75, 0.5], offense: [0, 0.5], threat: [-0.5, 0.5] }
+/** 內容編輯器的數值範圍；缺陷（flaw）才能有負的檢定加值與戰鬥修正 */
+export function perkEditorLimits(flaw = false): PerkLimits {
+  return { effects: 6, check_bonus: flaw ? [-5, 5] : [1, 5], combat: flaw ? [-3, 3] : [1, 3], resist: [-0.75, 0.5], offense: [flaw ? -0.5 : 0, 0.5], threat: [-0.5, 0.5] }
 }
 
 function registerPerk(id: string, m: PerkMod) {
@@ -1078,16 +1079,18 @@ function registerPerk(id: string, m: PerkMod) {
   else perkRules.perks.push(def)
 }
 
-/** 整理特質（內容編輯器、匯入）：數值用 cleanPerkEffects 夾在範圍內；種族只沿用內建的，自建的不能是種族特質 */
+/** 整理特質（內容編輯器、匯入）：數值用 cleanPerkEffects 夾在範圍內；種族只沿用內建的，自建的不能是種族特質；種族特質不能是缺陷 */
 export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boolean): PerkMod | undefined {
   const race = custom ? undefined : builtinPerk(id)?.race
   const c = perkRules.custom
   const name = String(raw.name ?? '').trim().slice(0, c.name_chars)
-  const effects = cleanPerkEffects(raw.effects, perkEditorLimits())
+  const flaw = !race && raw.flaw === true
+  const effects = cleanPerkEffects(raw.effects, perkEditorLimits(flaw))
   const out: PerkMod = {
     id, name: name || '新的特質', desc: String(raw.desc ?? '').trim().slice(0, c.desc_chars) || (effects.length ? describeEffects(effects) : ''), effects,
   }
   if (race) out.race = race
+  if (flaw) out.flaw = true
   const races = (raw.requires?.races ?? []).filter((r) => !!attributeRules.races[r])
   const cls = (raw.requires?.classes ?? []).filter((k) => !!classes[k])
   if (!race && (races.length || cls.length)) out.requires = { ...(races.length ? { races } : {}), ...(cls.length ? { classes: cls } : {}) }

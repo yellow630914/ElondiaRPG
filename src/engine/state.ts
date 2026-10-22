@@ -1,8 +1,8 @@
 // 遊戲狀態、時間與報告提交。
 
-import { sanitizePerk } from './perks'
+import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
-import { abilities, attributeRules, classDef, isChoosablePerk, locationById, setSaveItems, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, type SlaveStart } from './slavery'
@@ -54,9 +54,13 @@ export function newGame(opts: NewGameOptions): GameState {
   if (appearance) pc.appearance = appearance
   if (background) pc.background = background
   // 特質：清單裡的照選，自訂的整理過才收
-  const picked = [...new Set(opts.perks ?? [])].filter(isChoosablePerk)
+  // 缺陷最多兩個、每個換一個一般特質的名額（perks.json 的 creation），多的從後面拿掉
+  const listed = [...new Set(opts.perks ?? [])].filter(isChoosablePerk).map((id) => perkDef(id)!)
+  const created = (opts.customPerks ?? []).map((raw, i) => sanitizePerk(raw, `c-start-${i + 1}`, undefined, true)).filter((p): p is PerkDef => !!p)
+  const fitted = fitCreationPerks([...listed, ...created])
+  const picked = listed.filter((p) => fitted.includes(p)).map((p) => p.id)
   if (picked.length) pc.perks = picked
-  const custom = (opts.customPerks ?? []).map((raw, i) => sanitizePerk(raw, `c-start-${i + 1}`)).filter((p): p is PerkDef => !!p)
+  const custom = created.filter((p) => fitted.includes(p))
   if (custom.length) pc.customPerks = custom
   // 換成新存檔：沒有自創的物品
   setSaveItems([])

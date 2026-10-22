@@ -361,7 +361,7 @@ export function protagonistText(c: Character, birthplaceName?: string): string {
     `${c.name}｜${c.gender ? `${c.gender}｜` : ''}${attributeRules.races[c.race]?.name ?? c.race}・${classDef(c.class).name} Lv.${c.level}${birthplaceName ? `｜出身：${birthplaceName}` : ''}`,
     c.appearance ? `外貌：${c.appearance}` : '',
     c.background ? `背景：${c.background}` : '',
-    perksOf(c).length ? `特質：${perksOf(c).map((p) => p.name).join('、')}` : '',
+    perksOf(c).length ? `特質：${perksOf(c).map((p) => (p.flaw ? `${p.name}（缺陷）` : p.name)).join('、')}` : '',
   ]
   return lines.filter(Boolean).join('\n')
 }

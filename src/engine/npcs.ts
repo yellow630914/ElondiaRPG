@@ -220,7 +220,7 @@ export function npcIdentity(rec: Pick<NpcRecord, 'id' | 'kind' | 'class' | 'occu
   const kind = npcKind(rec) === 'adventurer' ? '冒險者' : '普通人'
   const tags = (rec.tags ?? []).map((t) => tagDef(t)).filter(Boolean).map((t) => `${t!.name}（${t!.ai_hint}）`)
   // 特質：同行過的用角色資料（可能學了新的），否則依 NPC 資料
-  const perks = (rec.character ? perksOf(rec.character) : perksOf({ perks: npcPerksOf(rec), race: rec.race })).map((p) => `特質【${p.name}】${p.desc}`)
+  const perks = (rec.character ? perksOf(rec.character) : perksOf({ perks: npcPerksOf(rec), race: rec.race })).map((p) => `${p.flaw ? '缺陷' : '特質'}【${p.name}】${p.desc}`)
   return [`${kind}・${npcTitle(rec)}`, ...(rec.lineage ? [`出身：${rec.lineage}`] : []), ...tags, ...perks].join('；')
 }
 

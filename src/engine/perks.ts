@@ -3,6 +3,8 @@
 // - 所有檢定都透過 checkModifiers 取得加減（非戰鬥狀態 + 特質），日誌與判定資料會逐條列出。
 // - 取得：建立角色時任選（也能自訂）；之後由升級、事件、特殊任務、訓練、物品提供「機會」（PerkOffer），
 //   從提供的特質選一個，或寫一段說法擲骰交給 AI 判斷（見 actions.ts 的 perk_pitch）。也可能失去。
+// - 缺陷（flaw）：負的效果。建立角色時最多選兩個、每個換一個一般特質的名額；事件直接給（不是機會），
+//   受訓或事件的 lose_perk 克服。AI 設計的特質不能是缺陷。
 
 import {
   actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
@@ -53,7 +55,7 @@ export function perkModifiers(c: PerkHolder, ctx: CheckCtx): { label: string; va
   for (const p of perksOf(c)) {
     let value = 0
     for (const e of p.effects) if ('check' in e && matches(e.check, ctx)) value += e.bonus
-    if (value) out.push({ label: `特質【${p.name}】`, value })
+    if (value) out.push({ label: `${p.flaw ? '缺陷' : '特質'}【${p.name}】`, value })
   }
   return out
 }
@@ -101,17 +103,18 @@ function breadth(f: CheckFilter): number {
   return parts.length ? Math.min(4, ...parts) : 4
 }
 
+/** 效果的強度：好處是正的，壞處（負的加值、弱點）是負的 */
 function effectPower(e: PerkEffect): number {
-  if ('check' in e) return Math.max(0, e.bonus) * breadth(e.check)
+  if ('check' in e) return e.bonus * breadth(e.check)
   if ('combat' in e) {
     // 戰鬥修正比照附魔的點數，再加倍（一直生效）；仇恨不算
-    return Object.entries(e.combat).reduce((s, [k, v]) => s + (k === 'threat' ? 0 : Math.max(0, v ?? 0) * (gearRules.enchant_costs[k] ?? 1) * 2), 0)
+    return Object.entries(e.combat).reduce((s, [k, v]) => s + (k === 'threat' ? 0 : (v ?? 0) * (gearRules.enchant_costs[k] ?? 1) * 2), 0)
   }
-  if ('resist' in e) return Object.values(e.resist).reduce((s: number, v) => s + Math.max(0, -(v ?? 0)) * 4, 0)
-  return Object.values(e.offense).reduce((s: number, v) => s + Math.max(0, v ?? 0) * 4, 0)
+  if ('resist' in e) return Object.values(e.resist).reduce((s: number, v) => s - (v ?? 0) * 4, 0)
+  return Object.values(e.offense).reduce((s: number, v) => s + (v ?? 0) * 4, 0)
 }
 
-/** 特質的強度（約略）：比較用 */
+/** 特質的強度（約略）：比較用；缺陷是負的（大約抵銷一個一般特質） */
 export function perkPower(p: Pick<PerkDef, 'effects'>): number {
   return Math.round(p.effects.reduce((s, e) => s + effectPower(e), 0) * 2) / 2
 }
@@ -142,7 +145,7 @@ export interface PerkLimits {
   threat?: [number, number]
 }
 
-/** 整理特質的效果：未知的欄位拿掉，數值夾在範圍內（檢定與戰鬥修正只收正數） */
+/** 整理特質的效果：未知的欄位拿掉，數值夾在範圍內（範圍不含負數時，檢定與戰鬥修正只收正數；0 拿掉） */
 export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
   const effects: PerkEffect[] = []
   const quarter = (v: unknown, [lo, hi]: [number, number]) => Math.round(Math.max(lo, Math.min(hi, Number(v) || 0)) * 4) / 4
@@ -159,12 +162,18 @@ export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
       if (contexts.length) check.contexts = contexts
       if (kinds.length) check.kinds = kinds
       if (tags.length) check.vs_tags = tags
-      effects.push({ check, bonus: clampInt(e.bonus, c.check_bonus) })
+      const bonus = clampInt(e.bonus, c.check_bonus)
+      if (bonus) effects.push({ check, bonus })
     } else if (e.combat && typeof e.combat === 'object') {
       const mods: Mods = {}
       for (const k of MOD_KEYS) {
         const v = (e.combat as Record<string, unknown>)[k]
-        if (v !== undefined && Number(v) > 0) mods[k] = clampInt(v, c.combat)
+        // 正負號不在範圍內的（例如一般特質的負值）拿掉，不翻成另一邊
+        const n = Number(v)
+        if (v !== undefined && n && (n > 0 ? c.combat[1] > 0 : c.combat[0] < 0)) {
+          const m = clampInt(n, c.combat)
+          if (m) mods[k] = m
+        }
       }
       const t = (e.combat as Record<string, unknown>).threat
       if (c.threat && t !== undefined && Number(t)) mods.threat = Math.round(Math.max(c.threat[0], Math.min(c.threat[1], Number(t))) * 100) / 100
@@ -191,14 +200,16 @@ export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
 /**
  * 整理自訂（玩家輸入、AI 設計）的特質：名稱、描述、效果都夾在 perks.json 的 custom 範圍內。
  * maxPower：強度上限（AI 設計的特質）；超過時從最後一個效果開始減弱、拿掉。
+ * allowFlaw：可以是缺陷（建立角色時自訂）；缺陷只收負的效果（custom.flaw 的範圍）。AI 設計的特質不能是缺陷。
  */
-export function sanitizePerk(raw: unknown, id: string, maxPower?: number): PerkDef | undefined {
+export function sanitizePerk(raw: unknown, id: string, maxPower?: number, allowFlaw = false): PerkDef | undefined {
   if (!raw || typeof raw !== 'object') return undefined
   const r = raw as Partial<PerkDef> & { effects?: unknown }
   const c = perkRules.custom
   const name = String(r.name ?? '').trim().slice(0, c.name_chars)
   if (!name) return undefined
-  const effects = cleanPerkEffects(r.effects, c)
+  const flaw = allowFlaw && r.flaw === true
+  const effects = cleanPerkEffects(r.effects, flaw ? { effects: c.effects, ...c.flaw } : c)
   if (!effects.length) return undefined
   // 強度上限：從最後一個效果開始減弱
   while (maxPower !== undefined && perkPower({ effects }) > maxPower && effects.length) {
@@ -217,7 +228,7 @@ export function sanitizePerk(raw: unknown, id: string, maxPower?: number): PerkD
     } else effects.pop()
   }
   if (!effects.length) return undefined
-  return { id, name, desc: String(r.desc ?? '').trim().slice(0, c.desc_chars) || describeEffects(effects), effects, custom: true }
+  return { id, name, desc: String(r.desc ?? '').trim().slice(0, c.desc_chars) || describeEffects(effects), effects, ...(flaw ? { flaw: true } : {}), custom: true }
 }
 
 /** 效果寫成一段說明（自訂的特質沒寫描述時用） */
@@ -234,7 +245,7 @@ export function describeEffects(effects: PerkEffect[]): string {
   }
   return effects.map((e) => {
     if ('check' in e) return `${scope(e.check)} ${e.bonus >= 0 ? '+' : ''}${e.bonus}`
-    if ('combat' in e) return `戰鬥${Object.entries(e.combat).map(([k, v]) => `${COMBAT_NAME[k] ?? k} +${v}`).join('、')}`
+    if ('combat' in e) return `戰鬥${Object.entries(e.combat).map(([k, v]) => `${COMBAT_NAME[k] ?? k} ${(v ?? 0) >= 0 ? '+' : ''}${v}`).join('、')}`
     if ('resist' in e) return Object.entries(e.resist).map(([k, v]) => `${damageTypeName(k)}傷害 ×${1 + (v ?? 0)}`).join('、')
     return Object.entries(e.offense).map(([k, v]) => `造成的${damageTypeName(k)}傷害 ×${1 + (v ?? 0)}`).join('、')
   }).join('；') + '。'
@@ -280,9 +291,9 @@ export function learnablePerks(c: Character): PerkDef[] {
   })
 }
 
-/** 新的取得特質的機會（options 會去掉已經有的） */
+/** 新的取得特質的機會（options 會去掉已經有的；缺陷不是機會，見 effects 的 perk） */
 export function offerPerks(c: Character, source: string, options: string[], pitch = true): PerkOffer | undefined {
-  const usable = [...new Set(options)].filter((id) => isChoosablePerk(id) && !hasPerk(c, id))
+  const usable = [...new Set(options)].filter((id) => isChoosablePerk(id) && !perkDef(id)?.flaw && !hasPerk(c, id))
   if (!usable.length && !pitch) return undefined
   const n = (c.perkOffers ?? []).reduce((m, o) => Math.max(m, Number(o.id.split('-')[1]) || 0), 0) + 1
   const offer: PerkOffer = { id: `po-${n}`, source, options: usable, ...(pitch ? { pitch: true } : {}) }
@@ -330,10 +341,9 @@ export function pitchCap(offer: PerkOffer, delta: number): number {
 export function rollNpcPerks(rng: Rng, who: { tags?: string[]; class?: string; race?: string }): string[] {
   const r = perkRules.npc
   const out: string[] = []
-  for (const chance of r.chances) {
-    if (!rng.chance(chance)) break
+  const pick = (flaw: boolean): string | undefined => {
     const pool = choosablePerks()
-      .filter((p) => !out.includes(p.id) && !p.flaw && (p.npc?.weight ?? 0) > 0)
+      .filter((p) => !out.includes(p.id) && !!p.flaw === flaw && (p.npc?.weight ?? 0) > 0)
       .filter((p) => (!p.requires?.races?.length || p.requires.races.includes(who.race ?? '')) && (!p.requires?.classes?.length || p.requires.classes.includes(who.class ?? '')))
       .filter((p) => !out.some((o) => perkDef(o)?.exclusive?.includes(p.id) || p.exclusive?.includes(o)))
       .map((p) => {
@@ -343,10 +353,20 @@ export function rollNpcPerks(rng: Rng, who: { tags?: string[]; class?: string; r
         return { id: p.id, w }
       })
     const total = pool.reduce((s, x) => s + x.w, 0)
-    if (!total) break
+    if (!total) return undefined
     let roll = rng.next() * total
-    const pick = pool.find((x) => (roll -= x.w) < 0) ?? pool[pool.length - 1]!
-    out.push(pick.id)
+    return (pool.find((x) => (roll -= x.w) < 0) ?? pool[pool.length - 1]!).id
+  }
+  for (const chance of r.chances) {
+    if (!rng.chance(chance)) break
+    const id = pick(false)
+    if (!id) break
+    out.push(id)
+  }
+  // 缺陷另外抽（在一般特質之後擲，不影響原本抽到的特質）
+  if (rng.chance(r.flaw_chance ?? 0)) {
+    const id = pick(true)
+    if (id) out.push(id)
   }
   return out
 }
@@ -359,9 +379,41 @@ export function npcPerksOf(rec: { id: string; perks?: string[]; tags?: string[];
   return rollNpcPerks(new RngImpl(h), rec)
 }
 
-/** 特質的名字清單（給 AI 與畫面） */
+/** 特質的名字清單（給 AI 與畫面）；缺陷標明 */
 export function perkNames(c: PerkHolder): string {
-  return perksOf(c).map((p) => `${p.name}（${p.desc}）`).join('；')
+  return perksOf(c).map((p) => `${p.name}（${p.flaw ? '缺陷：' : ''}${p.desc}）`).join('；')
+}
+
+// ---- 建立角色：缺陷換名額 ----
+
+export interface CreationPerks {
+  /** 選了幾個缺陷、幾個一般特質（種族特質不算） */
+  flaws: number
+  normal: number
+  /** 一般特質的名額（null = 不限） */
+  slots: number | null
+  error?: string
+}
+
+/** 建立角色時選的特質：缺陷最多 creation.max_flaws 個，每個多 slots_per_flaw 個一般特質的名額 */
+export function creationPerks(picked: Pick<PerkDef, 'flaw' | 'race'>[]): CreationPerks {
+  const r = perkRules.creation
+  const own = picked.filter((p) => !p.race)
+  const flaws = own.filter((p) => p.flaw).length
+  const normal = own.length - flaws
+  const slots = r.slots > 0 ? r.slots + Math.min(flaws, r.max_flaws) * r.slots_per_flaw : null
+  const error = flaws > r.max_flaws ? `缺陷最多選 ${r.max_flaws} 個`
+    : slots !== null && normal > slots ? `一般特質最多 ${slots} 個（每選一個缺陷多 ${r.slots_per_flaw} 個名額）` : undefined
+  return { flaws, normal, slots, ...(error ? { error } : {}) }
+}
+
+/** 照建立角色的規則整理：多的缺陷、超過名額的一般特質從後面拿掉 */
+export function fitCreationPerks<T extends Pick<PerkDef, 'flaw' | 'race'>>(picked: T[]): T[] {
+  const flaws = picked.filter((x) => x.flaw && !x.race).slice(0, perkRules.creation.max_flaws)
+  const slots = creationPerks(flaws).slots
+  const normal = picked.filter((x) => !x.flaw && !x.race)
+  const keep = new Set([...flaws, ...(slots === null ? normal : normal.slice(0, slots))])
+  return picked.filter((p) => keep.has(p))
 }
 
 // ---- 訓練：在設施花錢、花時間學（主動行動 train） ----
@@ -369,6 +421,11 @@ export function perkNames(c: PerkHolder): string {
 /** 這一格可以學的特質（perks.json 的 train.cells） */
 export function trainablePerks(c: Character, cell: string): PerkDef[] {
   return learnablePerks(c).filter((p) => p.train?.cells.includes(cell))
+}
+
+/** 這一格可以克服的缺陷（身上有、而且 train.cells 有這一格） */
+export function overcomablePerks(c: Character, cell: string): PerkDef[] {
+  return perksOf(c).filter((p) => p.flaw && !p.race && p.train?.cells.includes(cell))
 }
 
 /** 受訓的費用：大成功打對折，失敗收一半，大失敗照收 */

@@ -5,8 +5,17 @@ import { perkPower, sanitizePerk } from '@/engine/perks'
 import type { PerkDef } from '@/engine/data'
 
 // 自訂特質：名稱、描述與最多幾個效果（檢定加值、戰鬥修正、抗性）。建立角色時用
+// 勾「缺陷」時效果是負的（檢定減值、戰鬥減值、弱點，範圍見 perks.json 的 custom.flaw）
 const emit = defineEmits<{ add: [perk: PerkDef] }>()
+const props = defineProps<{ allowFlaw?: boolean }>()
 const c = perkRules.custom
+const flaw = ref(false)
+/** 輸入的是大小（正數），缺陷時換成負的 */
+const range = computed(() => {
+  const f = flaw.value ? c.flaw : c
+  const mag = (r: [number, number]) => [Math.min(Math.abs(r[0]), Math.abs(r[1])), Math.max(Math.abs(r[0]), Math.abs(r[1]))] as [number, number]
+  return { check: mag(f.check_bonus), combat: mag(f.combat) }
+})
 
 type Scope = 'all' | 'attr' | 'context' | 'kind' | 'tag'
 interface Row { type: 'check' | 'combat' | 'resist'; scope: Scope; value: string; bonus: number; stat: string; amount: number; dmg: string; resist: number }
@@ -35,21 +44,25 @@ function setScope(r: Row, scope: Scope) {
   r.value = scopeValues(scope)[0]?.[0] ?? ''
 }
 
-const draft = computed(() => sanitizePerk({
-  name: name.value, desc: desc.value,
-  effects: rows.map((r) => {
-    if (r.type === 'combat') return { combat: { [r.stat]: r.amount } }
-    if (r.type === 'resist') return { resist: { [r.dmg]: r.resist } }
-    const key = { all: '', attr: 'attrs', context: 'contexts', kind: 'kinds', tag: 'vs_tags' }[r.scope]
-    return { check: key ? { [key]: [r.value] } : {}, bonus: r.bonus }
-  }),
-}, `c-${Date.now().toString(36)}`))
+const draft = computed(() => {
+  const sign = flaw.value ? -1 : 1
+  return sanitizePerk({
+    name: name.value, desc: desc.value, flaw: flaw.value,
+    effects: rows.map((r) => {
+      if (r.type === 'combat') return { combat: { [r.stat]: sign * Math.abs(r.amount) } }
+      if (r.type === 'resist') return { resist: { [r.dmg]: sign * Math.abs(r.resist) * -1 } }
+      const key = { all: '', attr: 'attrs', context: 'contexts', kind: 'kinds', tag: 'vs_tags' }[r.scope]
+      return { check: key ? { [key]: [r.value] } : {}, bonus: sign * Math.abs(r.bonus) }
+    }),
+  }, `c-${Date.now().toString(36)}`, undefined, props.allowFlaw)
+})
 
 function add() {
   if (!draft.value) return
   emit('add', draft.value)
   name.value = ''
   desc.value = ''
+  flaw.value = false
   rows.splice(0)
 }
 </script>
@@ -59,6 +72,7 @@ function add() {
     <div class="row">
       <label>名稱 <input v-model="name" :maxlength="c.name_chars" placeholder="例如：酒館之子" /></label>
       <label class="grow">描述（選填，沒寫時依效果自動產生）<input v-model="desc" :maxlength="c.desc_chars" /></label>
+      <label v-if="allowFlaw" class="check"><input v-model="flaw" type="checkbox" /> 缺陷（效果是負的）</label>
     </div>
     <div v-for="(r, i) in rows" :key="i" class="row effect">
       <select v-model="r.type">
@@ -77,22 +91,23 @@ function add() {
         <select v-if="r.scope !== 'all'" v-model="r.value">
           <option v-for="[k, n] in scopeValues(r.scope)" :key="k" :value="k">{{ n }}</option>
         </select>
-        +<input v-model.number="r.bonus" type="number" :min="c.check_bonus[0]" :max="c.check_bonus[1]" class="num" />
+        {{ flaw ? '−' : '+' }}<input v-model.number="r.bonus" type="number" :min="range.check[0]" :max="range.check[1]" class="num" />
       </template>
       <template v-else-if="r.type === 'combat'">
         <select v-model="r.stat"><option v-for="(n, k) in COMBAT" :key="k" :value="k">{{ n }}</option></select>
-        +<input v-model.number="r.amount" type="number" :min="c.combat[0]" :max="c.combat[1]" class="num" />
+        {{ flaw ? '−' : '+' }}<input v-model.number="r.amount" type="number" :min="range.combat[0]" :max="range.combat[1]" class="num" />
       </template>
       <template v-else>
         <select v-model="r.dmg"><option v-for="[k, n] in dmgTypes" :key="k" :value="k">{{ n }}</option></select>
-        <select v-model.number="r.resist"><option :value="-0.25">傷害 ×0.75</option><option :value="-0.5">傷害 ×0.5</option></select>
+        <select v-if="flaw" v-model.number="r.resist"><option :value="-0.25">傷害 ×1.25</option><option :value="-0.5">傷害 ×1.5</option></select>
+        <select v-else v-model.number="r.resist"><option :value="-0.25">傷害 ×0.75</option><option :value="-0.5">傷害 ×0.5</option></select>
       </template>
       <button class="small x" @click="rows.splice(i, 1)">×</button>
     </div>
     <div class="row">
       <button class="small" :disabled="rows.length >= c.effects" @click="addRow">＋ 效果（最多 {{ c.effects }} 個）</button>
       <span v-if="draft" class="muted">{{ draft.desc }}（強度 {{ perkPower(draft) }}）</span>
-      <button class="small primary" :disabled="!draft" @click="add">加入這個特質</button>
+      <button class="small primary" :disabled="!draft" @click="add">{{ flaw ? '加入這個缺陷' : '加入這個特質' }}</button>
     </div>
   </div>
 </template>
