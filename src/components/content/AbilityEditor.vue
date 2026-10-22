@@ -36,7 +36,11 @@ const edited = computed(() => builtin.value && !!content.mods.abilities[props.id
 
 // ---- 選項 ----
 const damageIds = damageTypes.types.map((t) => t.id)
-const statusList = Object.entries(statuses).map(([id, s]) => ({ id, ...s }))
+// 自建的狀態儲存之後也要列進來
+const statusList = computed(() => {
+  void content.version
+  return Object.entries(statuses).map(([id, s]) => ({ id, ...s }))
+})
 const classList = abilityClasses()
 const TO: Record<NonNullable<ApplyDef['to']>, string> = { target: '目標', self: '自己', allies: '所有隊友', enemies: '所有敵人' }
 const ON: Record<NonNullable<ApplyDef['on']>, string> = { hit: '命中時', fail: '豁免失敗時', always: '一定' }
@@ -64,7 +68,7 @@ function setDamageSource(d: DamagePart, weapon: boolean) {
   }
 }
 function addApply() {
-  ;(draft.value.apply ??= []).push({ status: statusList[0]!.id, turns: 2 })
+  ;(draft.value.apply ??= []).push({ status: statusList.value[0]!.id, turns: 2 })
 }
 function setScale(d: DamagePart, dice: string) {
   if (dice) d.scale = { dice, per: d.scale?.per ?? 4 }
@@ -231,7 +235,8 @@ function remove() {
         <select :value="a.to ?? 'target'" @change="a.to = ($event.target as HTMLSelectElement).value as ApplyDef['to']">
           <option v-for="(n, k) in TO" :key="k" :value="k">給{{ n }}</option>
         </select>
-        <select :value="a.on ?? 'always'" @change="a.on = ($event.target as HTMLSelectElement).value as ApplyDef['on']">
+        <!-- 沒寫時依結算方式：命中骰是命中時、豁免是豁免失敗時、必中是一定 -->
+        <select :value="a.on ?? (draft.resolve === 'attack' ? 'hit' : draft.resolve === 'save' ? 'fail' : 'always')" @change="a.on = ($event.target as HTMLSelectElement).value as ApplyDef['on']">
           <option v-for="(n, k) in ON" :key="k" :value="k">{{ n }}</option>
         </select>
         <select :value="a.save ?? ''" @change="a.save = (($event.target as HTMLSelectElement).value || undefined) as AttrId | undefined">

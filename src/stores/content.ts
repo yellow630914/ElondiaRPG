@@ -10,8 +10,9 @@ import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, typ
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
+  builtinStatus, sanitizeStatus, statusUsage, type StatusMod,
 } from '@/engine/mods'
-import { pruneAbilities, prunePerks } from '@/engine/state'
+import { pruneAbilities, prunePerks, pruneStatuses } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
 import { enemyUsage, gearUsage, itemUsage, npcUsage, perkUsage, renameItemInState, storyUsage } from '@/engine/usage'
 import { useGame } from './game'
@@ -40,9 +41,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
+const MOD_SECTIONS: Section[] = ['statuses', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
+  statuses: '狀態', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
 }
 
 export interface ModsDiffEntry {
@@ -144,6 +145,7 @@ export const useContent = defineStore('content', () => {
     // 被拿掉的能力（匯入、全部恢復預設）：從目前存檔的角色身上拿掉
     const game = useGame()
     if (game.state) {
+      pruneStatuses(game.state)
       pruneAbilities(game.state)
       prunePerks(game.state)
       pruneStories(game.state)
@@ -246,7 +248,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -259,6 +261,7 @@ export const useContent = defineStore('content', () => {
       case 'story': return storyUsage(key, state)
       case 'ability': return abilityUsage(key, state)
       case 'perk': return perkUsage(key, state)
+      case 'status': return statusUsage(key, state)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -464,6 +467,24 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 狀態（BUFF／DEBUFF） ----
+
+  function saveStatus(id: string, draft: Partial<StatusMod>) {
+    mods.value.statuses[id] = sanitizeStatus(id, draft, !builtinStatus(id))
+    save()
+  }
+  /** 自建、而且沒有被任何地方用到的狀態才能刪 */
+  function deleteStatus(id: string) {
+    if (!mods.value.statuses[id]?.custom) throw new Error('內建的狀態不能刪除')
+    assertUnused('status', id)
+    delete mods.value.statuses[id]
+    save()
+  }
+  function restoreStatus(id: string) {
+    if (!mods.value.statuses[id]?.custom) delete mods.value.statuses[id]
+    save()
+  }
+
   // ---- 特質 ----
 
   function savePerk(id: string, draft: Partial<PerkMod>) {
@@ -577,7 +598,7 @@ export const useContent = defineStore('content', () => {
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
-    saveAbility, deleteAbility, restoreAbility,
+    saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

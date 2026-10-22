@@ -2,7 +2,7 @@
 
 import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
-import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, type SlaveStart } from './slavery'
@@ -214,6 +214,7 @@ export function migrate(state: GameState): GameState {
   }
   state.npcs ??= {}
   state.suggestions ??= []
+  pruneStatuses(state)
   pruneAbilities(state)
   prunePerks(state)
   // 依存檔格式的版本依序轉換
@@ -225,6 +226,11 @@ export function migrate(state: GameState): GameState {
   // 這個存檔自創的物品
   setSaveItems(Object.values(state.inventions ?? {}))
   return state
+}
+
+/** 自訂內容刪掉的狀態：從進行中的戰鬥拿掉（讀檔時，以及自訂內容改變之後） */
+export function pruneStatuses(state: GameState) {
+  for (const x of state.combat?.combatants ?? []) if (x.statuses.some((s) => !statuses[s.id])) x.statuses = x.statuses.filter((s) => !!statuses[s.id])
 }
 
 /** 自訂內容刪掉的能力：從角色身上拿掉（讀檔時，以及自訂內容改變之後） */

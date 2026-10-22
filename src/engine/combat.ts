@@ -1115,9 +1115,14 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
         dealt += effects.filter((e) => e.type === 'damage').reduce((sum, e) => sum + (e.amount ?? 0), 0)
         applyStatuses(combat, rng, actor, a, target, 'always', effects)
       }
-      // 只對自己生效的狀態（例如魯莽猛擊的破綻）在第一次結算時套用
-      if (a.resolve !== 'auto' && h === 0 && target === targets[0]) {
-        applyStatuses(combat, rng, actor, { ...a, apply: (a.apply ?? []).filter((x) => x.on === 'always') }, null, 'always', effects)
+      // 不論命中與否都套用的狀態（on: always）：給自己、全隊、全體敵人的（例如魯莽猛擊的破綻）在第一個目標結算時套用一次；
+      // 給目標的每個目標各套用一次
+      if (a.resolve !== 'auto' && h === 0) {
+        const always = (a.apply ?? []).filter((x) => x.on === 'always')
+        const once = always.filter((x) => (x.to ?? 'target') !== 'target')
+        const each = always.filter((x) => (x.to ?? 'target') === 'target')
+        if (once.length && target === targets[0]) applyStatuses(combat, rng, actor, { ...a, apply: once }, null, 'always', effects)
+        if (each.length) applyStatuses(combat, rng, actor, { ...a, apply: each }, target, 'always', effects)
       }
       push(combat, {
         actor: actor.id, action: label, target: target.id,

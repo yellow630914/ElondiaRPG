@@ -7,7 +7,7 @@ import {
 } from '@/engine/combat'
 import { luckyThreshold } from '@/engine/character'
 import { safeText } from '@/engine/content'
-import { abilityDef, combatRules, damageTypeName, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
+import { abilityDef, combatRules, damageTypeName, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { describeEntry } from '@/narrator/describe'
 import { useGame } from '@/stores/game'
 import StatBar from './StatBar.vue'
@@ -106,7 +106,7 @@ function slotsText(c: Combatant): string {
 
 function statusTitle(id: string): string {
   const def = statusDef(id)
-  return `${def.kind === 'buff' ? '增益' : '減益'}：${def.name}`
+  return `${def.kind === 'buff' ? '增益' : '減益'}：${def.name}（${describeStatus(def)}）`
 }
 
 watch(
@@ -177,7 +177,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
             <span v-for="t in c.traits" :key="t" class="tag trait" :title="safeText(monsterTraits.traits[t]?.desc ?? '')">{{ safeText(monsterTraits.traits[t]?.name ?? t) }}</span>
           </div>
           <div class="small">
-            <span v-for="st in c.statuses" :key="st.id" class="tag" :class="statusDef(st.id).kind">
+            <span v-for="st in c.statuses" :key="st.id" class="tag" :class="statusDef(st.id).kind" :title="statusTitle(st.id)">
               {{ statusDef(st.id).name }}{{ st.turns < 99 ? ` ${st.turns}` : '' }}
             </span>
           </div>

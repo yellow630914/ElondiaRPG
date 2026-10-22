@@ -422,6 +422,39 @@ export function statusDef(id: string): StatusDef {
   return s
 }
 
+const STATUS_MOD_NAME: Record<string, string> = { hit: '命中', evade: '迴避', save: '豁免', damage: '武器傷害', dr: '減傷', ap_regen: '行動點回復', crit: '幸運一擊閾值 -', threat: '仇恨' }
+const ROLL_NAME: Record<LuckRoll, string> = { attack: '攻擊', evade: '迴避', save: '豁免' }
+const CONTROL_NAME: Record<Control, string> = { stun: '暈眩（跳過回合、無法迴避）', silence: '無法施法與戲法', no_cast: '無法施法', taunt: '只能攻擊施放者', confuse: '隨機攻擊任何人' }
+const SPECIAL_NAME: Record<NonNullable<StatusDef['special']>, string> = { undying: '致命傷保留 1 HP', halve_next: '下一次受到的傷害減半', reduce_next: '下一次物理傷害減去一個數值' }
+
+/** 狀態的效果寫成一段說明（內容編輯器的預覽、戰鬥畫面的提示） */
+export function describeStatus(s: StatusDef): string {
+  const parts: string[] = []
+  for (const [k, v] of Object.entries(s.mods ?? {})) {
+    if (!v) continue
+    if (k === 'threat') parts.push(`仇恨 ${v > 0 ? '+' : ''}${Math.round(v * 100)}%`)
+    else if (k === 'crit') parts.push(`幸運一擊閾值 ${v > 0 ? '-' : '+'}${Math.abs(v)}`)
+    else parts.push(`${STATUS_MOD_NAME[k] ?? k} ${v > 0 ? '+' : ''}${v}`)
+  }
+  const rolls = (r?: LuckRoll[]) => (r ?? []).map((x) => ROLL_NAME[x]).join('、')
+  if (s.luck && s.luck_on?.length) parts.push(`${rolls(s.luck_on)}${s.luck.startsWith('-') ? ` ${s.luck}` : ` +${s.luck}`}`)
+  if (s.advantage?.length) parts.push(`${rolls(s.advantage)}優勢`)
+  if (s.disadvantage?.length) parts.push(`${rolls(s.disadvantage)}劣勢`)
+  if (s.attacked_advantage) parts.push('被攻擊時對方優勢')
+  if (s.attacked_disadvantage) parts.push('被攻擊時對方劣勢')
+  for (const [k, v] of Object.entries(s.resist ?? {})) if (v) parts.push(`受到的${damageTypeName(k)}傷害 ×${Math.round((1 + v) * 100) / 100}`)
+  for (const [k, v] of Object.entries(s.offense ?? {})) if (v) parts.push(`造成的${damageTypeName(k)}傷害 ×${Math.round((1 + v) * 100) / 100}`)
+  if (s.dot) parts.push(`每回合 ${s.dot.dice} ${damageTypeName(s.dot.type)}傷害`)
+  if (s.hot) parts.push(`每回合回復 ${s.hot} HP`)
+  if (s.pulse) parts.push(`每回合對隨機敵人 ${s.pulse.dice}${s.pulse.mod ? ' + 屬性調整值' : ''} ${damageTypeName(s.pulse.type)}傷害`)
+  if (s.on_hit?.status) parts.push(`武器命中時使目標${statuses[s.on_hit.status]?.name ?? s.on_hit.status} ${s.on_hit.turns ?? 1} 回合`)
+  else if (s.on_hit?.dice) parts.push(`武器命中時附加 ${s.on_hit.dice} ${damageTypeName(s.on_hit.type ?? '')}傷害`)
+  if (s.control) parts.push(CONTROL_NAME[s.control])
+  if (s.special) parts.push(SPECIAL_NAME[s.special])
+  if (s.charges) parts.push(`生效 ${s.charges} 次後消失`)
+  return parts.join('；') || '沒有效果'
+}
+
 // ---- 技能、法術、戲法 ----
 
 export type AbilityType = 'skill' | 'spell' | 'cantrip'

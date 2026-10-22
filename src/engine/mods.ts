@@ -13,6 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
+  type Control, type LuckRoll, type StatusDef,
 } from './data'
 import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -70,6 +71,11 @@ export interface AbilityMod extends AbilityDef {
 /** 特質：內建的（包括種族特質）可以修改，自建的沒有被使用時可以刪除。custom 是內容編輯器自建的（和角色身上的自訂特質不同） */
 export type PerkMod = PerkDef
 
+/** 狀態（BUFF／DEBUFF，statuses.json）：內建的可以修改，自建的沒有被使用時可以刪除 */
+export interface StatusMod extends StatusDef {
+  custom?: boolean
+}
+
 export interface ContentMods {
   version: 1
   enemies: Record<string, EnemyMod>
@@ -80,10 +86,12 @@ export interface ContentMods {
   stories: Record<string, StoryMod>
   abilities: Record<string, AbilityMod>
   perks: Record<string, PerkMod>
+  /** 舊的自訂內容沒有這一欄（讀取時補上） */
+  statuses: Record<string, StatusMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -105,6 +113,11 @@ const snapshot = {
   npcs: clone(namedNpcs),
   abilities: clone(abilities),
   perks: clone(perkRules.perks),
+  statuses: clone(statuses),
+}
+
+export function builtinStatus(id: string): StatusDef | undefined {
+  return snapshot.statuses[id] ? clone(snapshot.statuses[id]!) : undefined
 }
 
 export function builtinPerk(id: string): PerkDef | undefined {
@@ -154,6 +167,7 @@ function restore() {
   maps.generation.wild.resource_items.splice(0, Infinity, ...snapshot.gather.wild)
   maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon)
   namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs))
+  replaceRecord(statuses, snapshot.statuses)
   replaceRecord(abilities, snapshot.abilities)
   perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
@@ -360,6 +374,10 @@ export function applyContent(mods: ContentMods): string[] {
       }
     }
   }
+  // 狀態最先：能力、物品、其他狀態的命中附加都會用到
+  tryEach('狀態', mods.statuses ?? {}, (id, m) => {
+    statuses[id] = strip(m, ['custom'])
+  })
   // 能力先套用：怪物、固定 NPC、職業都會用到
   tryEach('能力', mods.abilities, (id, m) => {
     abilities[id] = { ...strip(m, ['custom']), id }
@@ -799,6 +817,10 @@ export function normalizeMods(raw: unknown): ContentMods {
   const out = emptyMods()
   if (!raw || typeof raw !== 'object') return out
   const r = raw as Partial<ContentMods>
+  // 狀態最先：能力、物品與其他狀態的命中附加會檢查狀態存不存在（自建的狀態彼此也可以互相引用）
+  const statusIds = new Set([...Object.keys(statuses), ...Object.keys(r.statuses ?? {})])
+  for (const [id, v] of Object.entries(r.statuses ?? {})) out.statuses[id] = sanitizeStatus(id, v, !!v.custom || !snapshot.statuses[id], statusIds)
+  for (const [id, s] of Object.entries(out.statuses)) if (s.custom && !statuses[id]) statuses[id] = strip(s, ['custom'])
   for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
   for (const [id, a] of Object.entries(out.abilities)) if (a.custom && !abilities[id]) abilities[id] = { ...strip(a, ['custom']), id }
@@ -1025,6 +1047,91 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.hp_limit) out.hp_limit = int(raw.hp_limit, 1, 9999, 30)
   if (raw.threat) out.threat = int(raw.threat, -50, 50, 0)
   if (custom) out.custom = true
+  return out
+}
+
+// ---- 狀態（BUFF／DEBUFF） ----
+
+export const STATUS_CONTROLS: Record<Control, string> = {
+  stun: '暈眩（跳過回合、無法迴避）', silence: '沉默（無法施法與戲法）', no_cast: '無法施法', taunt: '嘲諷（只能攻擊施放者）', confuse: '困惑（隨機攻擊任何人）',
+}
+export const STATUS_SPECIALS: Record<NonNullable<StatusDef['special']>, string> = {
+  undying: '致命傷保留 1 HP', halve_next: '下一次受到的傷害減半', reduce_next: '下一次物理傷害減去數值（由施放的能力決定）',
+}
+export const LUCK_ROLLS: Record<LuckRoll, string> = { attack: '攻擊', evade: '迴避', save: '豁免' }
+
+function rolls(v: unknown): LuckRoll[] | undefined {
+  const list = [...new Set((Array.isArray(v) ? v : []).filter((x): x is LuckRoll => typeof x === 'string' && x in LUCK_ROLLS))]
+  return list.length ? list : undefined
+}
+
+/**
+ * 整理狀態：數值夾在範圍內，未知的欄位拿掉。known：命中附加的狀態可以用的 id（預設是目前所有的狀態）。
+ * 不能附加自己（會一直疊下去）。
+ */
+export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: boolean, known?: Set<string>): StatusMod {
+  const out: StatusMod = { name: str(raw.name, 10) || '新的狀態', kind: raw.kind === 'debuff' ? 'debuff' : 'buff' }
+  const m = mods(raw.mods, -10, 10)
+  if (m) out.mods = m
+  const luck = str(raw.luck, 10).replace(/\s+/g, '')
+  const luckOn = rolls(raw.luck_on)
+  if (/^-?\d{0,2}d\d{1,3}$/.test(luck) && luckOn) {
+    out.luck = luck
+    out.luck_on = luckOn
+  }
+  const adv = rolls(raw.advantage)
+  if (adv) out.advantage = adv
+  const dis = rolls(raw.disadvantage)
+  if (dis) out.disadvantage = dis
+  if (raw.attacked_advantage) out.attacked_advantage = true
+  if (raw.attacked_disadvantage) out.attacked_disadvantage = true
+  const res = affinity(raw.resist)
+  if (res) out.resist = res
+  const off = affinity(raw.offense)
+  if (off) out.offense = off
+  const typed = (v: unknown) => {
+    const d = v as { dice?: unknown; type?: unknown } | undefined
+    if (!d || typeof d !== 'object') return undefined
+    const dd = str(d.dice, 12).replace(/\s+/g, '')
+    return DICE.test(dd) && DAMAGE_IDS().includes(String(d.type)) ? { dice: dd, type: String(d.type) } : undefined
+  }
+  const dot = typed(raw.dot)
+  if (dot) out.dot = dot
+  const hot = str(raw.hot, 12).replace(/\s+/g, '')
+  if (DICE.test(hot)) out.hot = hot
+  const pulse = typed(raw.pulse)
+  if (pulse) out.pulse = { ...pulse, ...(raw.pulse?.mod ? { mod: true } : {}) }
+  if (raw.on_hit && typeof raw.on_hit === 'object') {
+    const ids = known ?? new Set(Object.keys(statuses))
+    const hit = typed(raw.on_hit)
+    const st = raw.on_hit.status && raw.on_hit.status !== id && ids.has(raw.on_hit.status) ? raw.on_hit.status : undefined
+    if (st) out.on_hit = { status: st, turns: int(raw.on_hit.turns, 1, 20, 2) }
+    else if (hit) out.on_hit = hit
+  }
+  if (raw.control && raw.control in STATUS_CONTROLS) out.control = raw.control
+  if (raw.special && raw.special in STATUS_SPECIALS) out.special = raw.special
+  if (raw.charges) out.charges = int(raw.charges, 1, 10, 1)
+  if (custom) out.custom = true
+  return out
+}
+
+export function newStatus(kind: 'buff' | 'debuff' = 'buff'): StatusMod {
+  return kind === 'buff' ? { name: '新的增益', kind, mods: { hit: 1 }, custom: true } : { name: '新的減益', kind, mods: { evade: -1 }, custom: true }
+}
+
+/**
+ * 哪些地方用到這個狀態（刪除前檢查）：能力（附加的狀態）、其他狀態的命中附加、物品（使用時得到、解除、對目標施加），
+ * 以及目前存檔進行中的戰鬥。
+ */
+export function statusUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  for (const a of Object.values(abilities)) if (a.apply?.some((x) => x.status === id)) out.push(`能力「${a.name}」`)
+  for (const [sid, s] of Object.entries(statuses)) if (sid !== id && s.on_hit?.status === id) out.push(`狀態「${s.name}」的命中附加`)
+  for (const i of itemRules.items) {
+    const u = i.use
+    if (u && (u.status?.id === id || u.cleanse?.includes(id) || u.apply?.status === id)) out.push(`物品「${i.name}」`)
+  }
+  for (const c of state?.combat?.combatants ?? []) if (c.statuses.some((x) => x.id === id)) out.push(`目前存檔的戰鬥中的「${c.name}」`)
   return out
 }
 
