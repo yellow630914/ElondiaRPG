@@ -4,7 +4,7 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, type Judgment } from '@/engine/actions'
 import { craftRules, itemDef, itemRules } from '@/engine/data'
 import { enterLocation } from '@/engine/grid'
-import { capsText, diceAvg, forgetInvention, inventCaps, inventPlan, inventTarget, sanitizeDesign, type InventRequest } from '@/engine/invention'
+import { capsText, diceAvg, diceForAvg, forgetInvention, inventCaps, inventPlan, inventTarget, sanitizeDesign, type InventRequest } from '@/engine/invention'
 import { recipeItems, recipePlan } from '@/engine/recipes'
 import { buildActionPrompt } from '@/narrator/judge'
 import { addItem, migrate, newGame } from '@/engine/state'
@@ -43,6 +43,25 @@ describe('invention caps', () => {
     expect(inventCaps('alchemy', 4, 'consumable')!.revive).toBe(0.3)
     expect(inventCaps('alchemy', 5, 'consumable')!.top).toBe(craftRules.max_level)
     expect(capsText(caps).join('\n')).toContain('2d4+2')
+  })
+
+  it('depend on the roll: stronger on a critical, same level on a success, weaker on a partial', () => {
+    const crit = inventCaps('alchemy', 3, 'consumable', 'critical')!
+    const ok = inventCaps('alchemy', 3, 'consumable', 'success')!
+    const weak = inventCaps('alchemy', 3, 'consumable', 'partial')!
+    expect([crit.top, ok.top, weak.top]).toEqual([4, 3, 3])
+    expect(crit.heal!.avg).toBeGreaterThanOrEqual(ok.heal!.avg)
+    expect(weak.heal!.avg).toBeLessThan(ok.heal!.avg)
+    expect(weak.heal!.avg).toBeGreaterThanOrEqual(ok.heal!.avg * 0.6)
+    expect(crit.ap).toBe(2)
+    expect(ok.ap).toBeUndefined()
+    expect(weak.statuses.potion_fire_ward).toBeLessThan(ok.statuses.potion_fire_ward!)
+    expect(weak.saveDc).toBe(ok.saveDc! - 2)
+    // 料理：成功到同級最好的，部分成功再降一階
+    expect(inventCaps('cooking', 2, 'food', 'success')!.conditions.at(-1)).toBe('fed_well')
+    expect(inventCaps('cooking', 2, 'food', 'partial')!.conditions.at(-1)).toBe('fed_light')
+    expect(diceForAvg(14)).toBe('6d4')
+    expect(diceForAvg(5.25)).toBe('2d4')
   })
 
   it('lets cooking reach one meal rank higher and furniture use every craft', () => {
@@ -142,7 +161,8 @@ describe('inventing', () => {
     const r = resolveAction(state, judgment)
     valid(r)
     const def = itemDef('野莓塔')!
-    expect(def.use).toEqual({ condition: 'fed_well' })
+    // 成功：和同級的現成配方相當（烹飪 Lv.1 最好是果腹）
+    expect(def.use).toEqual({ condition: 'fed_light' })
     expect(def.recipe?.qty).toBe(3)
     expect(qty(state, '野莓塔')).toBe(3)
     // 三份的價值要由材料加花費撐起來
@@ -177,5 +197,30 @@ describe('inventing', () => {
     expect(all).toContain('"invention"')
     expect(all).toContain('2d4+2')
     expect(all).toContain('potion_poison_ward')
+  })
+
+  it('copies a recipe one level up on a critical and weakens the copy on a partial', () => {
+    const run = (natural: number, int: number) => {
+      const state = game()
+      addItem(state.inventory, '煉金工具組', 1)
+      addItem(state.inventory, '藥草', 2)
+      pc(state).attrs.int = int
+      prepareAction(state, { kind: 'invent', target: inventTarget('pc', potion), text: '' })
+      state.pendingAction!.natural = natural
+      const r = resolveAction(state, null)
+      return { degree: r.check!.degree, def: Object.values(state.inventions ?? {})[0] }
+    }
+    const crit = run(20, 10)
+    expect(crit.degree).toBe('critical')
+    const ref = itemDef(crit.def!.name.replace('特製', ''))!
+    expect(ref.recipe!.level).toBe(2)
+    // 部分成功：DC 12 差一點（總值 10）
+    const weak = run(7, 10)
+    expect(weak.degree).toBe('partial')
+    const caps = inventCaps('alchemy', 1, 'consumable', 'partial')!
+    const u = weak.def!.use!
+    if (u.heal) expect(diceAvg(u.heal)).toBeLessThanOrEqual(caps.heal!.avg)
+    if (u.damage) expect(diceAvg(u.damage.dice)).toBeLessThanOrEqual(caps.damage!.avg)
+    if (u.apply) expect(u.apply.turns).toBeLessThanOrEqual(caps.applies[u.apply.status]!)
   })
 })

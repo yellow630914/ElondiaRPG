@@ -2,7 +2,10 @@
 import { computed, ref } from 'vue'
 import { attrName, craftRules, itemDef, type CraftId } from '@/engine/data'
 import { CRAFT_IDS, crafters, skillOf, toolTierFor, toolTierName } from '@/engine/crafting'
-import { capsText, INVENT_CATEGORY_NAME, inventCategories, inventPlan, inventTarget, type InventCategory, type InventRequest } from '@/engine/invention'
+import {
+  capsSource, capsText, INVENT_CATEGORY_NAME, INVENT_GRADE_NAME, inventCaps, inventCategories, inventPlan, inventTarget,
+  type InventCategory, type InventGrade, type InventRequest,
+} from '@/engine/invention'
 import { formatMoney } from '@/engine/money'
 import { parseUse, useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
@@ -39,6 +42,11 @@ function addInput() {
 
 const req = computed<InventRequest>(() => ({ craft: craft.value, level: level.value, category: category.value, inputs: inputs.value }))
 const plan = computed(() => inventPlan(s.value, req.value, crafter.value))
+// 強度依擲骰：各成功程度的上限
+const GRADES: InventGrade[] = ['success', 'critical', 'partial']
+const grades = computed(() => GRADES.map((g) => ({ grade: g, caps: inventCaps(craft.value, level.value, category.value, g) })).filter((x) => x.caps))
+const gradeShown = ref<InventGrade>('success')
+const shownCaps = computed(() => grades.value.find((x) => x.grade === gradeShown.value)?.caps ?? grades.value[0]?.caps)
 const skill = computed(() => craftRules.skills[craft.value])
 const aiOn = computed(() => settings.aiJudge && settings.ready('judge'))
 const text = ref('')
@@ -58,7 +66,7 @@ function invent() {
   <div class="invent small">
     <p class="muted">
       描述想做的東西，放進材料試做。{{ aiOn ? 'AI 會依描述與材料設計成品' : '沒有開啟 AI 判定時，會仿照同級的現成配方做一件「特製」品' }}；
-      強度可以比同級的現成配方稍強，但不超過高一級的。做出東西時記成新的配方（只在這個存檔），之後可以在「依配方製作」重複做。
+      強度依擲骰：大成功稍強（最多到高一級的現成配方）、成功和同級相當、部分成功稍弱。做出東西時記成新的配方（只在這個存檔），之後可以在「依配方製作」重複做。
     </p>
     <div class="row">
       <label class="field">誰來做
@@ -83,10 +91,14 @@ function invent() {
       </label>
     </div>
 
-    <div v-if="plan.caps" class="caps">
-      <strong>上限（參考 {{ skill.name }} 第 {{ plan.caps.top }} 級以內的現成配方）</strong>
+    <div v-if="shownCaps" class="caps">
+      <div class="row grades">
+        <strong>強度上限</strong>
+        <button v-for="x in grades" :key="x.grade" class="small" :class="{ active: shownCaps === x.caps }" @click="gradeShown = x.grade">{{ INVENT_GRADE_NAME[x.grade] }}</button>
+      </div>
+      <p class="muted">參考{{ capsSource(shownCaps) }}</p>
       <ul class="plain">
-        <li v-for="t in capsText(plan.caps)" :key="t">・{{ t }}</li>
+        <li v-for="t in capsText(shownCaps)" :key="t">・{{ t }}</li>
       </ul>
     </div>
 
@@ -110,7 +122,7 @@ function invent() {
     <p class="muted">
       {{ attrName(skill.attr) }}檢定 +{{ plan.skill * craftRules.level_bonus }}・DC {{ plan.dc }}・約 {{ plan.hours }} 小時・工具：要{{ toolTierName(toolTierFor(level)) }}，現在 {{ plan.tool.source }}
     </p>
-    <p class="muted">大成功：多做一半・成功：照設計的份數・部分成功：一半・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
+    <p class="muted">大成功：稍強，多做一半・成功：同級，照設計的份數・部分成功：稍弱，份數一半・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
     <p v-if="plan.blocked" class="muted">⚠ {{ plan.blocked }}</p>
     <template v-else>
       <textarea v-model="text" rows="3" maxlength="400" placeholder="想做什麼：例如「用火蜥鱗片和硫磺做一瓶砸下去會噴火的藥瓶」「加了蜂蜜的旅行用肉乾，吃了渾身是勁」" />
@@ -128,6 +140,8 @@ function invent() {
 .field { display: grid; gap: 2px; }
 .caps { padding: 6px 8px; border: 1px dashed var(--border); border-radius: 6px; }
 .caps ul { margin: 2px 0 0; }
+.grades { align-items: center; gap: 4px; }
+.grades .active { border-color: var(--accent); color: var(--accent); }
 .inputs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .qty { width: 46px; }
 .x { padding: 0 4px; }

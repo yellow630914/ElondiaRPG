@@ -9,7 +9,7 @@ import {
   actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses,
 } from '@/engine/data'
-import { capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarget, type InventCategory } from '@/engine/invention'
+import { capsSource, capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarget, type InventCategory } from '@/engine/invention'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
 import { itemCategory } from '@/engine/trade'
@@ -194,8 +194,9 @@ function eventItems(): string {
 /** 自創配方：AI 在 invention 欄位設計成品，程式依上限夾住 */
 function inventionDoc(state: GameState, p: ActionPending): string {
   const { req } = parseInventTarget(state, p.target)
-  const caps = inventCaps(req.craft, req.level, req.category)
-  if (!caps) return ''
+  const caps = inventCaps(req.craft, req.level, req.category, 'critical')
+  const normal = inventCaps(req.craft, req.level, req.category, 'success')
+  if (!caps || !normal) return ''
   const st = (ids: string[]) => ids.map((id) => `${id}（${statuses[id]?.name ?? id}）`).join('、')
   const formats: Record<InventCategory, string> = {
     consumable: `"use":{"heal":"2d4+2","slot":1,"cleanse":["poisoned"],"status":{"id":"<狀態 id>","turns":3},"temp_hp":0,"ap":0,"revive":0,"damage":{"dice":"2d6","type":"<傷害類型 id>"},"apply":{"status":"<狀態 id>","turns":2,"save":"dex","dc":12},"area":"one"}（只填用得到的欄位）。可用的狀態 id：給自己 ${st(Object.keys(caps.statuses)) || '無'}；解除 ${st(caps.cleanse) || '無'}；施加 ${st(Object.keys(caps.applies)) || '無'}。傷害類型 id：${damageTypes.types.map((t) => t.id).join('、')}`,
@@ -207,7 +208,10 @@ function inventionDoc(state: GameState, p: ActionPending): string {
 這是自創配方：玩家在 <action> 描述想做的東西，請依描述與材料設計成品，放在輸出 JSON 的 "invention" 欄位：
 {"name":"<成品名稱 ≤12 字>","desc":"<≤60 字>","qty":<一批做出幾份>,${formats[req.category]}}
 類別：${INVENT_CATEGORY_NAME[req.category]}；工藝：${craftRules.skills[req.craft].name} Lv.${req.level}；材料：${req.inputs.map((x) => `${x.name}×${x.qty}`).join('、')}。
-上限（同一種工藝第 ${caps.top} 級以內的現成配方：${caps.refs.slice(0, 12).join('、')}），超過的會被程式降到上限，不能用的效果會被拿掉：
+強度依你決定的 degree：大成功稍強、成功和同級相當、部分成功稍弱（數值約七成五），失敗與大失敗做不出東西。程式會依 degree 把超過的數值降到上限、拿掉不能用的效果，請照 degree 設計：
+成功的上限（${capsSource(normal)}：${normal.refs.slice(0, 10).join('、')}）：
+${capsText(normal).map((t) => `- ${t}`).join('\n')}
+大成功的上限（${capsSource(caps)}）：
 ${capsText(caps).map((t) => `- ${t}`).join('\n')}
 效果要符合描述與材料的特性（例如火蜥鱗片偏火焰、冰晶偏寒冷）；描述做不到的部分照上限內最接近的做。失敗與大失敗不會做出東西，但仍要填 invention（程式會忽略）。
 </invention>`

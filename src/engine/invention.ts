@@ -1,7 +1,7 @@
 // 自創配方（crafts.json 的 invention，見 docs/CRAFTING.md 第 7 節）：
 // 選工藝、等級、類別與材料，描述想做的東西，擲檢定（行動 invent）；AI 判定開啟時由 AI 設計成品，否則仿照同級的現成配方。
-// - 強度：效果的種類與數值不超過同一種工藝「高一級」的現成配方（家具看所有工藝的家具配方），
-//   所以可以比同級的現成配方稍強，但不超過一級。
+// - 強度依擲骰：大成功不超過同一種工藝「高一級」的現成配方（稍強）、成功不超過同級的、部分成功是同級的七成五（稍弱）；
+//   家具看所有工藝的家具配方。
 // - 價格照同級的現成配方；材料價值不到「價格 × 收購比例 × 份數」的部分當作另外的花費，不能拿來賺錢。
 // - 做出來的物品登錄在這個存檔（state.inventions），配方跟著物品，之後可以在「依配方製作」重複做。
 
@@ -29,10 +29,23 @@ export function inventCategories(craft: CraftId): InventCategory[] {
 
 // ---- 上限 ----
 
+/** 成品的強度等級：依成功程度 */
+export type InventGrade = 'critical' | 'success' | 'partial'
+export const INVENT_GRADE_NAME: Record<InventGrade, string> = { critical: '大成功', success: '成功', partial: '部分成功' }
+/** 部分成功的強度倍率 */
+export const WEAK_SCALE = 0.75
+
+export function gradeOf(degree: Degree): InventGrade | undefined {
+  return degree === 'critical' || degree === 'success' || degree === 'partial' ? degree : undefined
+}
+
 export interface InventCaps {
   craft: CraftId
   level: number
   category: InventCategory
+  grade: InventGrade
+  /** 數值的倍率（部分成功 0.75） */
+  scale: number
   /** 參考到第幾級的現成配方（高一級，最多到最高級） */
   top: number
   /** 參考的現成配方 */
@@ -79,18 +92,35 @@ function referenceItems(craft: CraftId, category: InventCategory, top: number): 
   })
 }
 
-/** 自創的上限：同一種工藝高一級的現成配方（沒有這個類別的現成配方時 undefined） */
-export function inventCaps(craft: CraftId, level: number, category: InventCategory): InventCaps | undefined {
+/** 平均約為 avg 的骰子（nd4+m） */
+export function diceForAvg(avg: number): string {
+  const n = Math.max(1, Math.round(avg / 2.5))
+  const bonus = Math.max(0, Math.round(avg - n * 2.5))
+  return `${n}d4${bonus ? `+${bonus}` : ''}`
+}
+
+/**
+ * 自創的上限（沒有這個類別的現成配方時 undefined）。依強度等級：
+ * 大成功參考同一種工藝高一級（最多到最高級）以內的現成配方，成功參考同級以內的，部分成功再打七五折。
+ * 同級以內還沒有這個類別的配方時，參考高一級的再打七五折。
+ */
+export function inventCaps(craft: CraftId, level: number, category: InventCategory, grade: InventGrade = 'critical'): InventCaps | undefined {
   if (!inventCategories(craft).includes(category)) return undefined
-  const top = Math.min(level + 1, craftRules.max_level)
-  const refs = referenceItems(craft, category, top)
+  let top = grade === 'critical' ? Math.min(level + 1, craftRules.max_level) : level
+  let scale = grade === 'partial' ? WEAK_SCALE : 1
+  let refs = referenceItems(craft, category, top)
+  if (!refs.length && grade !== 'critical') {
+    top = Math.min(level + 1, craftRules.max_level)
+    scale *= WEAK_SCALE
+    refs = referenceItems(craft, category, top)
+  }
   if (!refs.length) return undefined
   // 價格與時間看同級（含以下）的現成配方；沒有時看最便宜的那個
   const same = refs.filter((i) => i.recipe!.level <= level)
   const priced = same.length ? same : [refs.reduce((a, b) => (a.price_cc <= b.price_cc ? a : b))]
   const priceRef = priced.reduce((a, b) => (a.price_cc >= b.price_cc ? a : b))
   const caps: InventCaps = {
-    craft, level, category, top, refs: refs.map((i) => i.name),
+    craft, level, category, grade, scale, top, refs: refs.map((i) => i.name),
     price: priceRef.price_cc, qty: Math.max(1, ...refs.map((i) => i.recipe!.qty ?? 1)), hours: Math.max(...priced.map((i) => i.recipe!.hours ?? 2)),
     cleanse: [], cleanseMax: 0, statuses: {}, applies: {}, areaAll: false, escape: false, conditions: [], comfort: 0, bed: false,
   }
@@ -118,7 +148,34 @@ export function inventCaps(craft: CraftId, level: number, category: InventCatego
   }
   const rank = (c: string) => companionRules.conditions[c]?.rank ?? 0
   caps.conditions.sort((a, b) => rank(a) - rank(b))
-  return caps
+  return scale < 1 ? weaken(caps, scale) : caps
+}
+
+/** 稍弱的上限：數值乘倍率（整數至少留 1），料理降一階 */
+function weaken(caps: InventCaps, scale: number): InventCaps {
+  const n = (v: number | undefined) => (v === undefined ? undefined : Math.max(1, Math.floor(v * scale)))
+  const dice = (d: { avg: number; dice: string } | undefined) => {
+    if (!d) return undefined
+    const x = diceForAvg(d.avg * scale)
+    return { avg: diceAvg(x), dice: x }
+  }
+  const turns = (r: Record<string, number>) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, n(v)!]))
+  return {
+    ...caps,
+    heal: dice(caps.heal), damage: dice(caps.damage),
+    slot: n(caps.slot), tempHp: n(caps.tempHp), ap: n(caps.ap),
+    revive: caps.revive === undefined ? undefined : Math.round(caps.revive * scale * 100) / 100,
+    cleanseMax: caps.cleanseMax ? n(caps.cleanseMax)! : 0,
+    statuses: turns(caps.statuses), applies: turns(caps.applies),
+    saveDc: caps.saveDc === undefined ? undefined : caps.saveDc - 2,
+    conditions: caps.conditions.length > 1 ? caps.conditions.slice(0, -1) : caps.conditions,
+    comfort: caps.comfort ? n(caps.comfort)! : 0,
+  }
+}
+
+/** 上限參考的是哪些現成配方（一句話） */
+export function capsSource(caps: InventCaps): string {
+  return `${craftName(caps.craft)}第 ${caps.top} 級以內的現成配方${caps.scale < 1 ? `，數值 ×${Math.round(caps.scale * 100)}%` : ''}`
 }
 
 /** 上限的說明（給玩家與 AI 看） */
@@ -370,26 +427,26 @@ export function setupInvent(state: GameState, target?: string) {
     scene: `${locationById(state.location).name}・${crafter.isPlayer ? '' : `由${crafter.name}`}自創${skill.name} Lv.${req.level} 的${INVENT_CATEGORY_NAME[req.category]}（${plan.tool.source}，材料 ${used}）`,
     targetName: `自創的${INVENT_CATEGORY_NAME[req.category]}`,
     outcomes: {
-      critical: '做出成品並多做一半，記成新的配方',
-      success: '做出成品，記成新的配方',
-      partial: '只做出一半的份數，配方還是記下來了',
+      critical: '成品稍強（上限到高一級的現成配方），多做一半，記成新的配方',
+      success: '成品和同級的現成配方相當，記成新的配方',
+      partial: '成品稍弱（同級的七成五），只做出一半的份數，配方還是記下來了',
       fail: '沒做成，材料損失一半，費用照付',
       fumble: '搞砸了，材料全部損失，費用照付',
     } as Partial<Record<Degree, string>>,
   }
 }
 
-/** 沒有 AI 的設計時：仿照同級（含以下）最高級的現成配方 */
+/** 沒有 AI 的設計時：仿照上限參考的最高級的現成配方（大成功是高一級的；部分成功再夾進打折的上限） */
 function templateDesign(state: GameState, caps: InventCaps): InventionDesign {
-  const refs = referenceItems(caps.craft, caps.category, caps.level)
-  const pool = refs.length ? refs : referenceItems(caps.craft, caps.category, caps.top)
+  const pool = referenceItems(caps.craft, caps.category, caps.top)
   const best = Math.max(...pool.map((i) => i.recipe!.level))
   const pick = withRng(state, (rng) => rng.pick(pool.filter((i) => i.recipe!.level === best)))
-  return {
+  const copy: InventionDesign = {
     name: `特製${pick.name}`.slice(0, 12), qty: pick.recipe!.qty ?? 1, ...(pick.desc ? { desc: pick.desc } : {}),
     ...(pick.use ? { use: JSON.parse(JSON.stringify(pick.use)) as ItemUse } : {}),
     ...(pick.furniture ? { furniture: JSON.parse(JSON.stringify(pick.furniture)) as ItemDef['furniture'] } : {}),
   }
+  return (caps.scale < 1 ? sanitizeDesign(copy, caps) : undefined) ?? copy
 }
 
 /** 名字和現有的物品重複時加上編號 */
@@ -403,7 +460,9 @@ function freeName(state: GameState, name: string): string {
 export function applyInvent(state: GameState, report: Report, target: string, degree: Degree, raw?: unknown): string {
   const { crafter, req } = parseInventTarget(state, target)
   const plan = inventPlan(state, req, crafter)
-  const caps = plan.caps
+  const grade = gradeOf(degree)
+  // 強度依成功程度：大成功稍強、成功同級、部分成功稍弱（失敗時只用來算花費）
+  const caps = (grade ? inventCaps(req.craft, req.level, req.category, grade) : undefined) ?? plan.caps
   if (!caps) return '這次的自創沒有可以參考的配方，什麼也沒做出來。'
   const design = (raw !== undefined ? sanitizeDesign(raw, caps) : undefined) ?? templateDesign(state, caps)
   const made = producedQty(design.qty, degree)
@@ -431,7 +490,8 @@ export function applyInvent(state: GameState, report: Report, target: string, de
     ;(state.inventions ??= {})[name] = def
     setSaveItems(Object.values(state.inventions))
     effects.push({ type: 'item', name, qty: made })
-    text = `${fee ? `花了 ${formatMoney(fee)}，` : ''}自創了「${name}」，做出 ${made} 份，配方記下來了（${craftName(req.craft)} Lv.${req.level}）。`
+    const strength = caps.grade === 'critical' ? '做得比預期還好' : caps.grade === 'partial' ? '效果比預期弱了一些' : '照預期做出來了'
+    text = `${fee ? `花了 ${formatMoney(fee)}，` : ''}自創了「${name}」（${strength}），做出 ${made} 份，配方記下來了（${craftName(req.craft)} Lv.${req.level}）。`
   } else {
     text = `${fee ? `花了 ${formatMoney(fee)}，` : ''}${degree === 'fail' ? '沒做成，損失了一半的材料' : '搞砸了，材料全部損失'}。`
   }
