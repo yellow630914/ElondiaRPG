@@ -51,9 +51,9 @@ describe('perk content', () => {
     expect(perkDef('race_elf')).toMatchObject({ race: 'elf', effects: [{ resist: { psychic: -0.5 } }] })
     expect(perkDef('race_elf')!.requires).toBeUndefined()
     expect(perkCombat({ race: 'elf' }).resist.psychic).toBe(-0.5)
-    // 種族特質可以保留弱點；一般特質不行
+    // 抗性可以是弱點（種族特質原本就有，自建的特質也可以用來平衡強項），最多 +0.5
     expect(sanitizePerkMod('race_demon', perkDef('race_demon')!, false)!.effects).toEqual(perkDef('race_demon')!.effects)
-    expect(sanitizePerkMod('mod_perk_w', { name: '弱點', effects: [{ resist: { radiant: 0.25, fire: -0.25 } }] }, true)!.effects).toEqual([{ resist: { fire: -0.25 } }])
+    expect(sanitizePerkMod('mod_perk_w', { name: '弱點', effects: [{ resist: { radiant: 0.25, fire: -0.25, cold: 2 } }] }, true)!.effects).toEqual([{ resist: { radiant: 0.25, fire: -0.25, cold: 0.5 } }])
   })
 
   it('does not open flaws or negative bonuses yet', () => {

@@ -1063,9 +1063,12 @@ export function abilityUsage(id: string, state?: GameState | null): string[] {
 /** 可以學特質的設施 */
 export const TRAIN_CELLS = ['inn', 'guild', 'tavern', 'shop', 'temple', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'brothel'] as const
 
-/** 內容編輯器的效果範圍：比玩家自訂的寬，但還不開放負的加值（缺陷還沒做）；種族特質可以有弱點 */
-export function perkEditorLimits(race: boolean): PerkLimits {
-  return { effects: 6, check_bonus: [1, 5], combat: [1, 3], resist: [-0.75, race ? 0.5 : 0], offense: [0, 0.5], threat: [-0.5, 0.5] }
+/**
+ * 內容編輯器的效果範圍：比玩家自訂的寬。抗性可以是弱點（像魔族的神聖 ×1.25，用來平衡強項）；
+ * 檢定與戰鬥修正還不開放負的加值（缺陷之後再做）
+ */
+export function perkEditorLimits(): PerkLimits {
+  return { effects: 6, check_bonus: [1, 5], combat: [1, 3], resist: [-0.75, 0.5], offense: [0, 0.5], threat: [-0.5, 0.5] }
 }
 
 function registerPerk(id: string, m: PerkMod) {
@@ -1080,7 +1083,7 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   const race = custom ? undefined : builtinPerk(id)?.race
   const c = perkRules.custom
   const name = String(raw.name ?? '').trim().slice(0, c.name_chars)
-  const effects = cleanPerkEffects(raw.effects, perkEditorLimits(!!race))
+  const effects = cleanPerkEffects(raw.effects, perkEditorLimits())
   const out: PerkMod = {
     id, name: name || '新的特質', desc: String(raw.desc ?? '').trim().slice(0, c.desc_chars) || (effects.length ? describeEffects(effects) : ''), effects,
   }

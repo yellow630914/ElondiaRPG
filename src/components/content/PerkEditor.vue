@@ -12,7 +12,7 @@ import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 
 // 特質的編輯表單：效果（檢定加值、戰鬥修正、抗性、增傷）、條件、互斥、訓練、NPC 的權重。
-// 種族特質只能改名稱、描述與效果（依種族自動擁有）。還不開放缺陷與負的加值。
+// 種族特質只能改名稱、描述與效果（依種族自動擁有）。抗性可以是弱點；檢定與戰鬥修正還不開放負的加值（缺陷之後再做）。
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()
 const content = useContent()
@@ -32,7 +32,7 @@ const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
 const builtin = computed(() => !!builtinPerk(props.id))
 const edited = computed(() => builtin.value && !!content.mods.perks[props.id])
 const race = computed(() => !!draft.value.race)
-const limits = computed(() => perkEditorLimits(race.value))
+const limits = perkEditorLimits()
 const usage = computed(() => {
   void content.version
   void game.state?.time.minute
@@ -56,7 +56,7 @@ const kindOf = (e: PerkEffect): EffectKind => ('check' in e ? 'check' : 'combat'
 
 function addEffect(kind: EffectKind) {
   const list = draft.value.effects
-  if (list.length >= limits.value.effects) return
+  if (list.length >= limits.effects) return
   if (kind === 'check') list.push({ check: {}, bonus: 1 })
   else if (kind === 'combat') list.push({ combat: { hit: 1 } })
   else if (kind === 'resist') list.push({ resist: { [dmgTypes[0]![0]]: -0.25 } })
@@ -160,7 +160,7 @@ function remove() {
     </div>
     <p class="small muted">id：{{ id }}・強度約 {{ perkPower(draft) }}</p>
     <p v-if="race" class="small muted">
-      種族特質：{{ attributeRules.races[draft.race!]?.name }}的角色自動擁有（不寫進存檔），不能選、受訓或從書裡學，也不會失去；可以改名稱、描述與效果，抗性可以是弱點（傷害倍率變高）。
+      種族特質：{{ attributeRules.races[draft.race!]?.name }}的角色自動擁有（不寫進存檔），不能選、受訓或從書裡學，也不會失去；可以改名稱、描述與效果。
     </p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 
@@ -176,7 +176,7 @@ function remove() {
       <legend>效果（最多 {{ limits.effects }} 個）</legend>
       <p class="small muted">
         檢定加值 {{ limits.check_bonus[0] }}～{{ limits.check_bonus[1] }}、戰鬥修正 {{ limits.combat[0] }}～{{ limits.combat[1] }}（仇恨倍率 {{ limits.threat![0] }}～{{ limits.threat![1] }}）、
-        抗性 {{ limits.resist[0] }}～{{ limits.resist[1] }}、增傷 0～{{ limits.offense![1] }}。缺陷與負的加值還沒開放。
+        抗性 {{ limits.resist[0] }}～+{{ limits.resist[1] }}（正的是弱點，可以用來平衡強項）、增傷 0～{{ limits.offense![1] }}。檢定與戰鬥修正還不開放負的加值。
       </p>
       <div v-for="(e, i) in draft.effects" :key="i" class="effect">
         <div class="row">
