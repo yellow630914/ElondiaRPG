@@ -260,7 +260,7 @@ describe('appearance and personality', () => {
     }
   })
 
-  it('gives femboys feminine looks without a chest or a heavy build, and makes heavy builds rarer for women', async () => {
+  it('gives femboys feminine looks without a chest, a heavy or a huge build, and makes heavy builds rarer for women', async () => {
     const { rollLook, npcTraits } = await import('@/engine/traits')
     const { Rng } = await import('@/engine/rng')
     const rng = new Rng(11)
@@ -272,6 +272,7 @@ describe('appearance and personality', () => {
         if (gender === 'femboy') {
           expect(d.parts.chest).toBeUndefined()
           expect(d.tags).not.toContain('heavy')
+          expect(d.parts.build).not.toBe('魁梧壯碩')
           // 陰柔的詞條：不會抽到只給陽剛體型的選項
           for (const t of Object.values(d.parts)) expect(masc.has(t), t).toBe(false)
         }

@@ -3,8 +3,8 @@
   "version": 1,
   "body_by_gender": {"male": "masc", "female": "fem", "femboy": "fem", "ts": "fem", "futa": "fem"},
   "gender_rules": {
-    "$comment": "依性別調整外貌的抽法（在體型之外）：omit = 不抽的部位；exclude = 不會出現的標籤；tag_weight = 帶這個標籤的選項權重乘上倍率（例如 heavy 是圓潤福態）。偽娘用陰柔的詞條，但沒有胸部、不會圓潤福態；女性、TS、扶她比較少圓潤福態",
-    "femboy": { "omit": ["chest"], "exclude": ["heavy"] },
+    "$comment": "依性別調整外貌的抽法（在體型之外）：omit = 不抽的部位；exclude = 不會出現的標籤；tag_weight = 帶這個標籤的選項權重乘上倍率（例如 heavy 是圓潤福態）。偽娘用陰柔的詞條，但沒有胸部、不會圓潤福態或魁梧壯碩（huge）；女性、TS、扶她比較少圓潤福態",
+    "femboy": { "omit": ["chest"], "exclude": ["heavy", "huge"] },
     "female": { "tag_weight": { "heavy": 0.3 } },
     "ts": { "tag_weight": { "heavy": 0.3 } },
     "futa": { "tag_weight": { "heavy": 0.3 } }
