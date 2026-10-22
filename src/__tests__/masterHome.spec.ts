@@ -6,7 +6,7 @@ import { negotiateDc } from '@/engine/companions'
 import { npcTags, slaveryRules, tagDcMod } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
 import { currentArea, enterLocation, getArea, move, position, standOn } from '@/engine/grid'
-import { homeOnLot, lotsOf } from '@/engine/homes'
+import { buyHome, homeOnLot, lotsOf } from '@/engine/homes'
 import {
   allowedDays, applyLeave, atMasterHome, currentMasterHome, homeDeadline, householdOf, leaveDc, mayLeaveHouse, overdueChance, sendToMasterHome, strictPoints,
 } from '@/engine/masterHome'
@@ -204,7 +204,13 @@ describe("the people in the master's house", () => {
   })
 
   it('lives in the nearest town with a free lot when the home town has none', () => {
-    const { home } = household(1, 'mosswhisper')
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 1, birthplace: 'mosswhisper' })
+    enterLocation(state)
+    // 村裡唯一的空地已經被主角買下
+    state.money_cc = 100000
+    for (const lot of lotsOf('mosswhisper')) buyHome(state, lot.id)
+    startAsSlave(state, { master: { type: 'custom', spec: { name: '維克多', level: 5 } }, mark: 'labor' })
+    const home = currentMasterHome(state)!
     expect(home.location).not.toBe('mosswhisper')
     expect(lotsOf(home.location).length).toBeGreaterThan(0)
   })

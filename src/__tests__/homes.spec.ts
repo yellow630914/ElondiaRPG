@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { toolAccess } from '@/engine/crafting'
-import { homeRules, locationById } from '@/engine/data'
-import { currentArea, currentCell, enterLocation, getArea, moveTo, placeAt, position, type Area } from '@/engine/grid'
+import { geography, homeRules, locationById } from '@/engine/data'
+import { blocksFor, currentArea, currentCell, enterLocation, getArea, moveTo, placeAt, position, settlementKey, type Area } from '@/engine/grid'
 import {
   buyHome, comfortOf, furnitureIn, generateHome, hasBed, homeOfArea, leaveWithResident, lotById, lotPrice, lotsOf, memberOrResident,
   placeFurniture, renameHome, residents, stayHome, takeFurniture, workbenchFor,
@@ -73,6 +73,18 @@ describe('lots', () => {
       expect(area.cells[lot.y * area.width + lot.x]).toMatchObject({ kind: 'lot', lot: lot.id })
       expect(area.cells[lot.street.y * area.width + lot.street.x]!.kind).not.toBe('wall')
       expect(lotById(game(), lot.id)).toEqual(lot)
+    }
+  })
+
+  it('every settlement offers its full count', () => {
+    for (const loc of geography.locations.filter((l) => l.type !== 'dungeon')) {
+      const lots = lotsOf(loc.id)
+      expect(lots.length, loc.id).toBe(homeRules.lots[loc.type])
+      expect(new Set(lots.map((l) => l.id)).size, loc.id).toBe(lots.length)
+      for (const lot of lots) {
+        const grid = blocksFor(loc).find((b) => settlementKey(loc.id, b.id) === lot.area)!.grid
+        expect(grid[lot.street.y]![lot.street.x], loc.id).toBe('.')
+      }
     }
   })
 })
