@@ -713,6 +713,8 @@ export interface Deal {
   /** 今天還能交易幾次 */
   stock: number
   haggled?: boolean
+  /** 氛圍性的交易：給 AI 的提示（見 shops.json 的 flavor） */
+  flavor?: string
 }
 
 export interface ShopState {

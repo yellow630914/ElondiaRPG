@@ -14,6 +14,7 @@ import { addHours, masterTake, newGame } from '@/engine/state'
 import type { GameState, Report } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { formatMoney } from '@/engine/money'
+import { buyDeal, shopState } from '@/engine/trade'
 import { editableWorld } from './testWorld'
 
 beforeEach(() => {
@@ -183,5 +184,21 @@ describe('L7: the suggested rank of a special quest is checked when taking it', 
     state.guild!.rank = 'C'
     expect(storyRankOk(state, { rank: 'D' })).toBe(true)
     expect(storyRankOk(state, {})).toBe(true)
+  })
+})
+
+describe('L5: buying a rumor from the bartender is just atmosphere', () => {
+  it('raises the bartender\'s affinity and leaves a memory, with no flag and no real lead', () => {
+    const state = game(2)
+    const shop = shopState(state, 'tavern')
+    const report = buyDeal(state, 'tavern', 'special:rumor')
+    expect(state.flags?.rumor).toBeUndefined()
+    expect(state.relationships![shop.keeper]!.affinity).toBe(2)
+    expect(report.kind).toBe('social')
+    expect(report.narration?.focus?.join('')).toContain('雞毛蒜皮')
+    expect(report.narration?.focus?.join('')).toContain('不要寫出有用的情報')
+    expect(JSON.stringify(state.memories ?? {})).toContain('街頭巷尾的閒話')
+    // 每天只有一份
+    expect(() => buyDeal(state, 'tavern', 'special:rumor')).toThrow('沒有了')
   })
 })

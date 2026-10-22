@@ -1,5 +1,5 @@
 {
-  "$comment": "商店類型與交易清單。每份交易 = 付出（gives：金錢、物品、時間）＋ 得到（gets：報酬模板的效果，可複合）。清單每天每間店生成一次：AI 判定開啟時由 AI 依商店類型生成，否則依 catalog 與 specials 生成。一般交易直接計算，不需要 AI；只有主角主動交涉時才檢定。npc 寫 keeper 代表店主、party 代表每位隊友。",
+  "$comment": "商店類型與交易清單。每份交易 = 付出（gives：金錢、物品、時間）＋ 得到（gets：報酬模板的效果，可複合）。清單每天每間店生成一次：AI 判定開啟時由 AI 依商店類型生成，否則依 catalog 與 specials 生成。一般交易直接計算，不需要 AI；只有主角主動交涉時才檢定。npc 寫 keeper 代表店主、party 代表每位隊友。specials 可以加 flavor：只是氛圍的交易（請客、閒聊、幫忙幹活），把這段描述交給 AI 寫成日常的場景，不會寫出情報或其他後果。",
   "version": 1,
   "location_price_mult": { "capital": 1.15, "city": 1.1, "port": 1.0, "town": 1.0, "village": 1.2, "outpost": 1.25, "fortress": 1.2 },
   "location_rank": { "village": 0, "outpost": 0, "fortress": 0, "town": 1, "port": 1, "city": 2, "capital": 3 },
@@ -22,7 +22,8 @@
       "ai_effects": ["item", "affinity", "flag", "memory"],
       "specials": [
         { "id": "haul", "title": "幫店主搬貨", "desc": "花一個小時搬貨，換一點工錢。", "gives": [{ "type": "hours", "amount": 1 }],
-          "gets": [{ "type": "money", "amount": 10 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1 }
+          "gets": [{ "type": "money", "amount": 10 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1,
+          "flavor": "搬貨時店主一邊指揮一邊抱怨進貨的價錢、聊些街坊的家常" }
       ]
     },
     "temple": {
@@ -48,7 +49,8 @@
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
       "specials": [
         { "id": "bellows", "title": "幫鐵匠拉風箱", "desc": "在爐火旁幹一個小時的活，換一點工錢。", "gives": [{ "type": "hours", "amount": 1 }],
-          "gets": [{ "type": "money", "amount": 12 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1 }
+          "gets": [{ "type": "money", "amount": 12 }, { "type": "affinity", "npc": "keeper", "delta": 2 }], "stock": 1,
+          "flavor": "拉風箱時鐵匠聊起打鐵的門道和最近的生意" }
       ]
     },
     "tailor": {
@@ -60,7 +62,8 @@
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
       "specials": [
         { "id": "mend", "title": "請裁縫縫補衣物", "desc": "把隊伍的衣物都補好，看起來體面多了。", "gives": [{ "type": "money", "amount": 20 }],
-          "gets": [{ "type": "affinity", "npc": "keeper", "delta": 1 }, { "type": "affinity", "npc": "party", "delta": 1 }], "stock": 1 }
+          "gets": [{ "type": "affinity", "npc": "keeper", "delta": 1 }, { "type": "affinity", "npc": "party", "delta": 1 }], "stock": 1,
+          "flavor": "裁縫一邊縫補一邊閒聊鎮上的流行與客人的八卦" }
       ]
     },
     "jeweler": {
@@ -72,7 +75,8 @@
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
       "specials": [
         { "id": "appraise", "title": "請珠寶商鑑定", "desc": "珠寶商替你看看身上的東西值多少，順便聊聊。", "gives": [{ "type": "money", "amount": 30 }],
-          "gets": [{ "type": "affinity", "npc": "keeper", "delta": 2 }, { "type": "memory", "summary": "請珠寶商鑑定了身上的東西。", "importance": 1 }], "stock": 1 }
+          "gets": [{ "type": "affinity", "npc": "keeper", "delta": 2 }, { "type": "memory", "summary": "請珠寶商鑑定了身上的東西。", "importance": 1 }], "stock": 1,
+          "flavor": "珠寶商鑑定時順口聊起寶石的來歷和行情" }
       ]
     },
     "magic": {
@@ -116,9 +120,11 @@
       "ai_effects": ["item", "affinity", "flag", "memory", "companion"],
       "specials": [
         { "id": "round", "title": "請全場喝一杯", "desc": "隊友們都很開心。", "gives": [{ "type": "money", "amount": 30 }],
-          "gets": [{ "type": "affinity", "npc": "party", "delta": 2 }, { "type": "affinity", "npc": "keeper", "delta": 1 }], "stock": 1 },
-        { "id": "rumor", "title": "向酒保買情報", "desc": "打聽附近的消息。", "gives": [{ "type": "money", "amount": 100 }],
-          "gets": [{ "type": "flag", "key": "rumor", "value": true }, { "type": "memory", "summary": "從酒保那裡打聽到附近的消息。", "importance": 1 }], "stock": 1 }
+          "gets": [{ "type": "affinity", "npc": "party", "delta": 2 }, { "type": "affinity", "npc": "keeper", "delta": 1 }], "stock": 1,
+          "flavor": "大家舉杯起鬨，酒館熱鬧了一陣子，有人唱起走調的歌" },
+        { "id": "rumor", "title": "向酒保買情報", "desc": "請酒保聊聊最近的消息（多半是街頭巷尾的閒話）。", "gives": [{ "type": "money", "amount": 30 }],
+          "gets": [{ "type": "affinity", "npc": "keeper", "delta": 2 }, { "type": "memory", "summary": "聽酒保聊了一陣街頭巷尾的閒話。", "importance": 1 }], "stock": 1,
+          "flavor": "酒保說的都是雞毛蒜皮的小道消息" }
       ]
     }
   }

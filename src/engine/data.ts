@@ -1116,7 +1116,11 @@ export function saveItems(): ItemDef[] {
 
 export type ShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer'
 export interface DealCost { type: 'money' | 'item' | 'hours'; amount?: number; name?: string; qty?: number }
-export interface ShopSpecial { id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number }
+export interface ShopSpecial {
+  id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number
+  /** 氛圍性的交易：給 AI 的提示（帶進這次交易的敘事，寫成無關緊要的日常，例如酒保的閒話） */
+  flavor?: string
+}
 export interface ShopTypeDef {
   name: string
   cell: string

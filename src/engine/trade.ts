@@ -9,7 +9,7 @@
 import { snapshot } from './character'
 import {
   companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
-  stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType, type ShopTypeDef,
+  stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopSpecial, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
@@ -162,8 +162,11 @@ function infoDeals(state: GameState, info: NonNullable<ShopTypeDef['info']>): De
   return deals
 }
 
-function specialDeal(sp: { id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number }): Deal {
-  return { id: `special:${sp.id}`, title: sp.title, ...(sp.desc ? { desc: sp.desc } : {}), gives: sp.gives.map((g) => ({ ...g })), gets: sp.gets.map((g) => ({ ...g })), stock: sp.stock }
+function specialDeal(sp: ShopSpecial): Deal {
+  return {
+    id: `special:${sp.id}`, title: sp.title, ...(sp.desc ? { desc: sp.desc } : {}), gives: sp.gives.map((g) => ({ ...g })), gets: sp.gets.map((g) => ({ ...g })), stock: sp.stock,
+    ...(sp.flavor ? { flavor: sp.flavor } : {}),
+  }
 }
 
 /** 今天這間店的狀態（第一次查看時生成）。 */
@@ -280,6 +283,11 @@ export function buyDeal(state: GameState, type: ShopType, dealId: string, qty = 
   // 有人入隊、得到報酬以外的後果時，值得交給 AI 描寫
   if (deal.gets.some((g) => g.type === 'companion' || g.type === 'memory')) report.kind = 'social'
   if (deal.gets.some((g) => g.type === 'start_story')) report.kind = 'event'
+  // 氛圍性的交易：提示 AI 寫成無關緊要的日常（不要捏造有用的情報或後果）
+  if (deal.flavor) {
+    report.kind = 'social'
+    report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), `氛圍：${deal.flavor}（只是日常的氣氛，不要寫出有用的情報、線索或其他後果）`] }
+  }
   return commitReport(state, report)
 }
 
