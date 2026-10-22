@@ -56,10 +56,20 @@ describe('perk content', () => {
     expect(sanitizePerkMod('mod_perk_w', { name: '弱點', effects: [{ resist: { radiant: 0.25, fire: -0.25, cold: 2 } }] }, true)!.effects).toEqual([{ resist: { radiant: 0.25, fire: -0.25, cold: 0.5 } }])
   })
 
-  it('does not open flaws or negative bonuses yet', () => {
-    const p = sanitizePerkMod('mod_perk_n', { name: '負的', flaw: true, effects: [{ check: {}, bonus: -3 }, { combat: { hit: -2, evade: 9 } }] }, true)!
-    expect(p.flaw).toBeUndefined()
-    expect(p.effects).toEqual([{ check: {}, bonus: 1 }, { combat: { evade: 3 } }])
+  it('allows negative bonuses only on flaws, and race perks cannot be flaws', () => {
+    const raw = { name: '負的', effects: [{ check: {}, bonus: -3 }, { combat: { hit: -2, evade: 9 } }] }
+    const flaw = sanitizePerkMod('mod_perk_n', { ...raw, flaw: true }, true)!
+    expect(flaw.flaw).toBe(true)
+    expect(flaw.effects).toEqual([{ check: {}, bonus: -3 }, { combat: { hit: -2, evade: 3 } }])
+    const plain = sanitizePerkMod('mod_perk_n', raw, true)!
+    expect(plain.flaw).toBeUndefined()
+    expect(plain.effects).toEqual([{ check: {}, bonus: 1 }, { combat: { evade: 3 } }])
+    expect(sanitizePerkMod('race_elf', { ...perkDef('race_elf')!, flaw: true }, false)!.flaw).toBeUndefined()
+    // 存成自建的缺陷之後照樣生效
+    const c = editableWorld()
+    c.savePerk('mod_perk_n', { ...newPerk('mod_perk_n'), ...raw, flaw: true })
+    expect(perkDef('mod_perk_n')!.flaw).toBe(true)
+    expect(perkCombat({ perks: ['mod_perk_n'] }).mods.hit).toBe(-2)
   })
 
   it('blocks deleting a custom perk while something uses it, and lists the places', () => {

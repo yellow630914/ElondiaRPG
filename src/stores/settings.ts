@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { setAdultContent } from '@/engine/content'
-import { progression } from '@/engine/data'
+import { companionRules, progression } from '@/engine/data'
+import { setLongRestGap } from '@/engine/rest'
 import type { Report } from '@/engine/types'
 import { PROVIDERS, type ProviderConfig, type ProviderId } from '@/narrator/providerInfo'
 
@@ -70,6 +71,8 @@ interface SavedSettings {
   aiJudge: boolean
   /** 升級時的能力三選一，每組可以重抽的次數 */
   abilityRerolls: number
+  /** 兩次長休至少隔幾小時（0～24） */
+  longRestGap: number
   /** 完整保留最近幾則日誌（更早的封存，見 docs/SAVES.md 第 6 節） */
   logKeep: number
   adult: boolean
@@ -105,6 +108,7 @@ function defaults(): SavedSettings {
     aiNarration: false,
     aiJudge: false,
     abilityRerolls: progression.ability_rerolls,
+    longRestGap: companionRules.rest.long_rest_gap_hours,
     logKeep: 200,
     adult: false,
     language: 'zh-Hant',
@@ -151,6 +155,9 @@ export const useSettings = defineStore('settings', () => {
   const aiNarration = ref(initial.aiNarration)
   const aiJudge = ref(initial.aiJudge)
   const abilityRerolls = ref(initial.abilityRerolls)
+  const longRestGap = ref(initial.longRestGap)
+  // 引擎的長休間隔
+  watch(longRestGap, (h) => setLongRestGap(h), { immediate: true })
   const logKeep = ref(initial.logKeep)
   const adult = ref(initial.adult)
   // 引擎的成人向開關（娼館／按摩店等名稱、成人向事件）
@@ -159,7 +166,7 @@ export const useSettings = defineStore('settings', () => {
   const loreBudget = ref(initial.loreBudget)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, logKeep, adult, language, loreBudget],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, logKeep, adult, language, loreBudget],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -169,6 +176,7 @@ export const useSettings = defineStore('settings', () => {
         aiNarration: aiNarration.value,
         aiJudge: aiJudge.value,
         abilityRerolls: abilityRerolls.value,
+        longRestGap: longRestGap.value,
         logKeep: logKeep.value,
         adult: adult.value,
         language: language.value,
@@ -235,7 +243,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, logKeep, logKeepLimit, adult, language, loreBudget,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, logKeep, logKeepLimit, adult, language, loreBudget,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })

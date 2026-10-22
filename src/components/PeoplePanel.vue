@@ -26,7 +26,8 @@ const groups = computed(() => [
   { title: '🧺 普通人', items: people.value.filter((p) => !p.staff && p.kind === 'commoner') },
 ].filter((g) => g.items.length))
 const where = computed(() => currentArea(s.value).name)
-const busy = computed(() => !!s.value.pendingAction || game.judging)
+// 等待判定、或有擋住行動的事件（刻印、主人的要求、戰敗事件）時，互動按鈕停用
+const busy = computed(() => !!s.value.pendingAction || game.judging || !!s.value.pendingMark || !!s.value.pendingMasterEvent || !!s.value.pendingDefeat)
 
 // 換了地點：請 AI 潤飾這裡的居民（AI 判定開啟時，每個地點一次）
 watch(() => s.value.location, () => void game.flavorRoster(), { immediate: true })
@@ -150,7 +151,7 @@ async function hire(id: string) {
             <div class="muted">{{ genderName(p.rec.gender) }}・{{ raceName(p.rec.race) }}<template v-if="p.rec.lineage">（{{ p.rec.lineage }}）</template>・{{ npcTitle(p.rec) }} Lv.{{ p.rec.level }}</div>
             <div v-if="p.rec.appearance" class="muted">{{ p.rec.appearance }}</div>
             <div v-if="rel(p.rec.id)" class="muted">{{ p.rec.personality }}</div>
-            <div v-if="rel(p.rec.id)" class="muted">🌟 {{ perksOf({ perks: npcPerksOf(p.rec), race: p.rec.race }).map((x) => x.name).join('、') }}</div>
+            <div v-if="rel(p.rec.id)" class="muted">🌟 {{ perksOf({ perks: npcPerksOf(p.rec), race: p.rec.race }).map((x) => (x.flaw ? `${x.name}（缺陷）` : x.name)).join('、') }}</div>
             <div v-if="rel(p.rec.id)?.toPlayer" class="muted">與你：{{ rel(p.rec.id)!.toPlayer }}</div>
 
             <p v-if="p.dist > 1" class="muted">{{ whereIs(p) }}。走到旁邊（相鄰的格子）才能互動。</p>

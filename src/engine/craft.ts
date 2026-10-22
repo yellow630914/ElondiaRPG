@@ -8,7 +8,7 @@ import {
   crafterRefusal, craftForKind, craftName, craftXpFor, gainCraftXp, keeperCraftLevel, skillOf, toolAccess, toolTierFor, toolTierName, type ToolAccess,
 } from './crafting'
 import { npcRecord } from './npcs'
-import { locationMult } from './trade'
+import { locationMult, shopPlace } from './trade'
 import { applyEffects, type RewardEffect } from './effects'
 import { gearName, gearRules, type MaterialKind, rarityName, rarityPoints, registerGear, rollEnchants, sanitizeGearSpec, shiftRarity } from './gear'
 import { CELL_NAME, currentArea, currentCell, type CellKind } from './grid'
@@ -172,7 +172,7 @@ function selfCost(state: GameState, base: string, tier: number, craft: CraftId, 
 }
 
 function keeperId(state: GameState, shop: string): string {
-  return `keeper_${state.location}_${shop}`
+  return `keeper_${shopPlace(state).id}_${shop}`
 }
 
 /**

@@ -80,18 +80,13 @@ async function exportSlot(id?: string) {
   }
 }
 
-// 匯入：附有自訂內容或形象圖時先讓玩家決定要不要合併、還原（多個檔案時一個一個來）
+// 匯入：遊戲中只能匯入同一個世界的存檔；附帶形象圖或會建立新的世界時先讓玩家確認（多個檔案時一個一個來）
 interface PendingImport { text: string; name: string; preview: ImportPreview }
 const queue = ref<PendingImport[]>([])
 const pending = computed(() => queue.value[0])
-const merge = ref(true)
-const take = ref<string[]>([])
 const withPortraitsIn = ref(true)
-const hasDiff = computed(() => !!pending.value?.preview.diff && (pending.value.preview.diff.added.length + pending.value.preview.diff.changed.length) > 0)
 
 function resetChoices() {
-  merge.value = true
-  take.value = []
   withPortraitsIn.value = true
 }
 
@@ -101,8 +96,8 @@ async function onFile(e: Event) {
     const text = await f.text()
     try {
       const preview = game.previewImport(text, f.name)
-      const d = preview.diff
-      if ((d && d.added.length + d.changed.length) || preview.portraits) queue.value.push({ text, name: f.name, preview })
+      if (preview.blocked) game.error = `匯入失敗：${preview.blocked}`
+      else if (preview.newWorld || preview.portraits) queue.value.push({ text, name: f.name, preview })
       else await game.importFile(text, f.name)
     } catch (err) {
       game.error = `匯入失敗：${err instanceof Error ? err.message : String(err)}`
@@ -115,7 +110,7 @@ async function onFile(e: Event) {
 async function confirmImport() {
   const p = pending.value
   if (!p) return
-  await game.importFile(p.text, p.name, { merge: hasDiff.value && merge.value, take: take.value, portraits: withPortraitsIn.value })
+  await game.importFile(p.text, p.name, { portraits: withPortraitsIn.value })
   queue.value.shift()
   resetChoices()
 }
@@ -125,7 +120,6 @@ function skipImport() {
   resetChoices()
 }
 
-const listText = (labels: string[]) => labels.length > 12 ? `${labels.slice(0, 12).join('、')} 等 ${labels.length} 項` : labels.join('、')
 </script>
 
 <template>
@@ -143,7 +137,7 @@ const listText = (labels: string[]) => labels.length > 12 ? `${labels.slice(0, 1
     <div class="row tools">
       <button class="small" @click="fileInput?.click()">📥 匯入存檔檔案</button>
       <input ref="fileInput" type="file" accept=".json,application/json" multiple hidden @change="onFile" />
-      <span class="small muted">匯入的存檔會加到列表，不會直接讀取。</span>
+      <span class="small muted">匯入的存檔會加到列表，不會直接讀取。遊戲中只能匯入同一個世界的存檔，其他世界的請回首頁匯入。</span>
     </div>
     <div class="row tools small">
       <span class="muted">匯出時附上：</span>
@@ -154,24 +148,9 @@ const listText = (labels: string[]) => labels.length > 12 ? `${labels.slice(0, 1
     <section v-if="pending" class="panel importing">
       <h3>📥 匯入「{{ pending.name }}」</h3>
       <p class="small muted">{{ slotTitle(pending.preview.meta) }}<span v-if="queue.length > 1">（還有 {{ queue.length - 1 }} 個檔案）</span></p>
-      <template v-if="hasDiff">
-        <label class="check"><input v-model="merge" type="checkbox" /> 合併存檔附上的自訂內容</label>
-        <div v-if="merge" class="small merge">
-          <p v-if="pending.preview.diff!.added.length">
-            會新增（這個瀏覽器沒有）：{{ listText(pending.preview.diff!.added.map((e) => e.label)) }}
-          </p>
-          <div v-if="pending.preview.diff!.changed.length">
-            <p>和這個瀏覽器不同（勾選的換成存檔裡的版本，沒勾的保留你的）：</p>
-            <label v-for="e in pending.preview.diff!.changed" :key="e.key" class="check">
-              <input v-model="take" type="checkbox" :value="e.key" /> {{ e.label }}
-            </label>
-          </div>
-          <p class="muted">
-            <template v-if="pending.preview.diff!.same">相同的 {{ pending.preview.diff!.same }} 項略過；</template>這個瀏覽器其他的自訂內容不會變動。
-          </p>
-        </div>
-        <p v-else class="small warn-text">不合併時，這個存檔用到的自訂怪物、物品、角色或任務可能不會出現或無法使用。</p>
-      </template>
+      <p v-if="pending.preview.newWorld" class="small">
+        🌍 這個存檔用的世界「{{ pending.preview.world?.name }}」和這個瀏覽器的不同（或不存在）：會用存檔附帶的自訂內容建立新的世界「{{ pending.preview.newWorld }}」，存檔改用它。目前的世界不會變動。
+      </p>
       <label v-if="pending.preview.portraits" class="check">
         <input v-model="withPortraitsIn" type="checkbox" /> 還原形象圖（{{ pending.preview.portraits }} 張）
       </label>
@@ -227,7 +206,5 @@ h3 { margin: 6px 0 2px; }
 .importing { display: grid; gap: 6px; border-color: var(--accent); }
 .importing h3 { margin: 0; }
 .importing p { margin: 0; }
-.merge { display: grid; gap: 4px; padding-left: 20px; }
-.merge .check { display: flex; }
 .warn-text { color: var(--danger); }
 </style>

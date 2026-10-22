@@ -80,7 +80,6 @@ const counts = computed(() => ({
         <div class="small muted">
           地點：{{ where(q) }}<template v-if="q.monster">・目標：{{ enemies[q.monster]?.name ?? q.monster }}</template>・交付：{{ locationById(q.giver).name }}的冒險者公會
           <span v-if="q.flags?.lead" class="tag">有線索 +5</span>
-          <span v-if="q.flags?.suspicious" class="tag">消息走漏 -2</span>
         </div>
       </div>
       <details v-if="finished.length" class="history">

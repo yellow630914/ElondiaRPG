@@ -77,6 +77,28 @@ describe('threat', () => {
     expect(mateHits).toBeLessThan(400)
   })
 
+  it('shows the same odds the enemies use: focus, preferences and taunts, averaged over the enemies', () => {
+    const state = fight()
+    const combat = state.combat!
+    const pc = combatant(combat, 'pc')
+    const mate = combatant(combat, 'mate')
+    const foes = combat.combatants.filter((c) => c.side === 'enemy')
+    pc.threat = 0
+    mate.threat = 40
+    // 不在乎仇恨（focus 0）的敵人：兩人機率一樣
+    for (const f of foes) f.ai = { ...f.ai, focus: 0 }
+    expect(threatShares(combat).pc).toBeCloseTo(0.5)
+    // 偏好虛弱者：受傷的人比較容易被盯上
+    for (const f of foes) f.ai = { ...f.ai, focus: 0, prefer: 'weakest' }
+    pc.hp = 1
+    expect(threatShares(combat).pc).toBeGreaterThan(0.6)
+    // 被嘲諷的敵人只打嘲諷者
+    for (const f of foes) f.statuses.push({ id: 'taunted', turns: 2, source: 'mate' } as never)
+    const shares = threatShares(combat)
+    expect(shares.mate).toBeCloseTo(1)
+    expect(shares.pc).toBeCloseTo(0)
+  })
+
   it('lets abilities add or shed threat', () => {
     const state = fight({ class: 'rogue' })
     const rogue = makeCurrent(state, 'mate')

@@ -124,7 +124,9 @@ describe('prompt order for caching', () => {
     expect(a.prompt.system).toContain('<worldbook>')
     expect(a.prompt.user).toContain('<effects_allowed>')
     expect(a.prompt.sections!.map((x) => x.key).slice(0, 4)).toEqual(['rules', 'style', 'format', 'lore_constant'])
-    expect(a.prompt.system).toContain('9. narrative 的文風')
+    expect(a.prompt.system).toContain('10. 文風（narrative）')
+    // 規則的「9.」只出現一次（文風接續成第 10 條）
+    expect(a.prompt.system.match(/^9\./gm)).toHaveLength(1)
     expect(b.lore!.states[6]!.status).toBe('triggered')
   })
 })

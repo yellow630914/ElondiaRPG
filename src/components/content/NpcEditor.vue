@@ -281,7 +281,7 @@ function remove() {
       <div class="row">
         <select v-model="pickPerk">
           <option value="">指定特質…</option>
-          <option v-for="p in choosablePerks()" :key="p.id" :value="p.id">{{ p.name }}：{{ p.desc.slice(0, 40) }}</option>
+          <option v-for="p in choosablePerks()" :key="p.id" :value="p.id">{{ p.name }}{{ p.flaw ? '（缺陷）' : '' }}：{{ p.desc.slice(0, 40) }}</option>
         </select>
         <button class="small" :disabled="!pickPerk" @click="addPerk">＋ 加入</button>
         <button v-if="draft.perks" class="small" @click="delete draft.perks">恢復隨機</button>

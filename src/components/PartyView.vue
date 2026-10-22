@@ -150,7 +150,7 @@ function affinityText(m: Character): string {
       </FoldSection>
       <FoldSection id="party.perks" title="🌟 特質" :count="perksOf(m).length">
         <ul class="plain small">
-          <li v-for="p in perksOf(m)" :key="p.id"><span v-if="p.race" class="tag">種族</span>【{{ p.name }}】{{ p.desc }}<span v-if="p.custom" class="muted">（自訂）</span></li>
+          <li v-for="p in perksOf(m)" :key="p.id"><span v-if="p.race" class="tag">種族</span><span v-if="p.flaw" class="tag">缺陷</span>【{{ p.name }}】{{ p.desc }}<span v-if="p.custom" class="muted">（自訂）</span></li>
           <li v-if="!perksOf(m).length" class="muted">還沒有特質。可以靠升級、事件、特殊任務、受訓與書籍學會。</li>
           <li v-if="m.perkOffers?.length" class="muted">有 {{ m.perkOffers.length }} 次學特質的機會，在事件視窗（🔔）選擇。</li>
         </ul>

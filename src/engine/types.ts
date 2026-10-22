@@ -304,6 +304,8 @@ export interface MarkTerms {
 /** 遊戲中登場的 NPC（含程式生成的）；不在隊伍時保存角色資料，再次入隊時沿用 */
 export interface NpcRecord extends NpcDef {
   generated?: boolean
+  /** 程式生成的文字已經請 AI 潤飾過（名單的潤飾，每個人一次） */
+  flavored?: boolean
   background?: string
   /** 平常待的設施（格子種類，例如 tavern、shop、inn）；沒有時在整個聚落都找得到 */
   spot?: string
@@ -428,7 +430,7 @@ export interface Roster {
   members: string[]
   /** 建立的日期 */
   day: number
-  /** AI 已經潤飾過名字、外貌與性格 */
+  /** 舊存檔：整份名單潤飾過（讀檔時改記在每個人的 flavored） */
   flavored?: boolean
   /** 上次檢查名單變動的日期 */
   updated?: number
@@ -527,7 +529,7 @@ export interface Home {
   floors: string[]
   /** 各層的地圖（不放在 state.areas：那裡每次旅行都會清空） */
   areas: Record<string, Area>
-  /** 主人的家（主角是奴隸時）：主人的 id；不是主角的房子，不能擺家具、留守、改名 */
+  /** 主人的家（主角是奴隸時，不在 state.homes，由 masterHome.ts 即時產生）：主人的 id；不能擺家具、留守、改名 */
   master?: string
   /** 主人的家裡的人（伴侶、子女、僕人、奴隸）的 NPC id */
   household?: string[]
@@ -631,6 +633,11 @@ export interface GameState {
   retreating?: boolean
   /** 買下的房子：id → 房子 */
   homes?: Record<string, Home>
+  /**
+   * 主人的家（主角有主人時）：主人是誰、在哪座城、家裡的人。房子是那座城固定地圖上的民宅（manor），
+   * 地圖依聚落規模固定生成，不存進存檔（見 engine/masterHome.ts）。
+   */
+  masterHome?: { master: string; location: string; household: string[] }
   /** 登場過的 NPC（含生成的） */
   npcs?: Record<string, NpcRecord>
   /** 各地點的 NPC 名單（第一次進入時建立，見 engine/population.ts） */
@@ -708,6 +715,8 @@ export interface Deal {
   /** 今天還能交易幾次 */
   stock: number
   haggled?: boolean
+  /** 氛圍性的交易：給 AI 的提示（見 shops.json 的 flavor） */
+  flavor?: string
 }
 
 export interface ShopState {

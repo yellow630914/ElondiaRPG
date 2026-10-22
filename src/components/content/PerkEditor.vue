@@ -12,7 +12,7 @@ import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 
 // 特質的編輯表單：效果（檢定加值、戰鬥修正、抗性、增傷）、條件、互斥、訓練、NPC 的權重。
-// 種族特質只能改名稱、描述與效果（依種族自動擁有）。抗性可以是弱點；檢定與戰鬥修正還不開放負的加值（缺陷之後再做）。
+// 種族特質只能改名稱、描述與效果（依種族自動擁有）。抗性可以是弱點；勾了「缺陷」的特質才能有負的檢定加值與戰鬥修正。
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()
 const content = useContent()
@@ -32,7 +32,7 @@ const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
 const builtin = computed(() => !!builtinPerk(props.id))
 const edited = computed(() => builtin.value && !!content.mods.perks[props.id])
 const race = computed(() => !!draft.value.race)
-const limits = perkEditorLimits()
+const limits = computed(() => perkEditorLimits(!!draft.value.flaw))
 const usage = computed(() => {
   void content.version
   void game.state?.time.minute
@@ -56,8 +56,8 @@ const kindOf = (e: PerkEffect): EffectKind => ('check' in e ? 'check' : 'combat'
 
 function addEffect(kind: EffectKind) {
   const list = draft.value.effects
-  if (list.length >= limits.effects) return
-  if (kind === 'check') list.push({ check: {}, bonus: 1 })
+  if (list.length >= limits.value.effects) return
+  if (kind === 'check') list.push({ check: {}, bonus: draft.value.flaw ? -1 : 1 })
   else if (kind === 'combat') list.push({ combat: { hit: 1 } })
   else if (kind === 'resist') list.push({ resist: { [dmgTypes[0]![0]]: -0.25 } })
   else list.push({ offense: { [dmgTypes[0]![0]]: 0.25 } })
@@ -168,6 +168,7 @@ function remove() {
       <legend>基本</legend>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="perkRules.custom.name_chars" /></label>
+        <label v-if="!race" class="check"><input v-model="draft.flaw" type="checkbox" /> 缺陷（負的效果；不會出現在學特質的機會裡，事件直接給，受訓是克服它）</label>
       </div>
       <label class="block">描述（玩家與 AI 看到的；空白時依效果產生：{{ auto }}） <textarea v-model="draft.desc" rows="2" :maxlength="perkRules.custom.desc_chars" /></label>
     </fieldset>
@@ -176,7 +177,7 @@ function remove() {
       <legend>效果（最多 {{ limits.effects }} 個）</legend>
       <p class="small muted">
         檢定加值 {{ limits.check_bonus[0] }}～{{ limits.check_bonus[1] }}、戰鬥修正 {{ limits.combat[0] }}～{{ limits.combat[1] }}（仇恨倍率 {{ limits.threat![0] }}～{{ limits.threat![1] }}）、
-        抗性 {{ limits.resist[0] }}～+{{ limits.resist[1] }}（正的是弱點，可以用來平衡強項）、增傷 0～{{ limits.offense![1] }}。檢定與戰鬥修正還不開放負的加值。
+        抗性 {{ limits.resist[0] }}～+{{ limits.resist[1] }}（正的是弱點，可以用來平衡強項）、增傷 {{ limits.offense![0] }}～{{ limits.offense![1] }}。{{ draft.flaw ? '缺陷可以有負的檢定加值與戰鬥修正。' : '負的檢定加值與戰鬥修正要勾「缺陷」。' }}
       </p>
       <div v-for="(e, i) in draft.effects" :key="i" class="effect">
         <div class="row">
@@ -203,7 +204,7 @@ function remove() {
         <div v-else-if="'combat' in e" class="grid">
           <label v-for="(n, k) in COMBAT" :key="k">{{ n }}
             <input
-              type="number" :step="k === 'threat' ? 0.05 : 1" :min="k === 'threat' ? limits.threat![0] : 0" :max="k === 'threat' ? limits.threat![1] : limits.combat[1]"
+              type="number" :step="k === 'threat' ? 0.05 : 1" :min="k === 'threat' ? limits.threat![0] : Math.min(0, limits.combat[0])" :max="k === 'threat' ? limits.threat![1] : limits.combat[1]"
               :value="e.combat[k] ?? ''" placeholder="—" @input="setCombat(e.combat, k, ($event.target as HTMLInputElement).value)"
             />
           </label>

@@ -43,7 +43,7 @@ import { setupWork } from './work'
 import { currentArea, currentCell } from './grid'
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
-import { addHours, commitReport, newReportId, withRng } from './state'
+import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
 import type { GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 
 function socialReport(state: GameState, hours: number, scene: string, kind: Report['kind'] = 'social'): Report {
@@ -451,9 +451,11 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
     changeMaster(state, deal.master, report, `在${def.name}被買下`)
     remarkByMadam(state, deal.master)
     report.changes.money_cc = share
+    // 身上已經有印記：賣身錢照新主人契約的「收益歸屬」被抽走一部分，當作被奴隸商人抽走了（摘要寫實際拿到的）
+    const kept = share - masterTake(state, share)
     report.outcome = {
       result: 'success',
-      summary: `${who}以 ${formatMoney(deal.price)} 買下了你，成為你的新主人；你拿到 ${formatMoney(share)}。頸上的印記沿用。`,
+      summary: `${who}以 ${formatMoney(deal.price)} 買下了你，成為你的新主人。成交價 ${formatMoney(deal.price)}，你只拿到 ${formatMoney(kept)}，其餘被抽走了。頸上的印記沿用。`,
       tags: ['換了主人'],
     }
     report.narration = { pov: 'second_person', length: 'medium', focus: ['新主人的模樣與態度'] }

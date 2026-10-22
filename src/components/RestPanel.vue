@@ -4,7 +4,7 @@ import { classEmoji, companionRules, raceEmoji } from '@/engine/data'
 import { currentArea, currentCell } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
-import { autoHitDice, hitDiceLeft, hitDie, innCost, longRestBlocked, type RestPlace } from '@/engine/rest'
+import { autoHitDice, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, waitText, type RestPlace } from '@/engine/rest'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import JudgeToggle from './JudgeToggle.vue'
@@ -17,6 +17,8 @@ const rations = computed(() => s.value.inventory.find((i) => i.name === '乾糧'
 const ambush = computed(() => (cell.value.kind === 'safe' ? 0 : companionRules.rest.ambush[area.value.kind] ?? 0))
 const place = computed(() => (cell.value.kind === 'inn' ? 'inn' : cell.value.kind === 'safe' ? 'safe' : area.value.kind === 'home' ? 'home' : null))
 const blocked = computed(() => (place.value ? longRestBlocked(s.value, place.value) : null))
+// 長休倒數（跟著遊戲時間更新）
+const wait = computed(() => longRestWait(s.value))
 const leaveMode = computed(() => s.value.pendingLeave?.mode)
 const lowAffinity = computed(() =>
   s.value.party.filter((m) => !m.isPlayer && m.bond !== 'slave' && (m.affinity ?? 0) <= companionRules.leave_threshold),
@@ -48,7 +50,7 @@ async function doLongRest(where: RestPlace) {
     <button class="small" @click="game.shortRest()">☕ 短休</button>
 
     <template v-if="place === 'inn'">
-      <p class="small muted">長休（住到隔天早上）：生命值、法術環全滿，回復一半生命骰。24 小時內只能長休一次。</p>
+      <p class="small muted">長休（住到隔天早上）：生命值、法術環全滿，回復一半生命骰。兩次長休至少隔 {{ longRestGapHours() }} 小時。</p>
       <button :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')">🌙 長休（{{ formatMoney(innCost(s)) }}）</button>
     </template>
     <template v-else-if="place === 'safe'">
@@ -61,6 +63,7 @@ async function doLongRest(where: RestPlace) {
     </template>
     <p v-else class="small muted">長休要在旅店、地下城的安全房或自己的房子。</p>
     <p v-if="blocked && place" class="small muted">{{ blocked }}</p>
+    <p v-else-if="wait > 0" class="small muted">⏳ 還要 {{ waitText(wait) }}才能再長休。</p>
     <div v-if="place && !blocked" class="talk small">
       <label>
         長休時想做什麼？（選填，主動行動）

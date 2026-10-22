@@ -16,15 +16,16 @@
     "quest_reward": 0.5
   },
   "quest_rewards_cc": {
-    "$comment": "B/A/S 為團隊合計，且需帶領麾下勢力；耗時為世界書所述。",
-    "F": { "range": [30, 50], "party": "solo", "duration_days": [0, 1] },
-    "E": { "range": [30, 50], "party": "solo", "duration_days": [0, 1] },
-    "D_solo": { "range": [80, 160], "party": "solo", "duration_days": [0, 1] },
-    "C_solo": { "range": [80, 160], "party": "solo", "duration_days": [0, 1] },
-    "C_team": { "range": [720, 1420], "party": "team_3plus", "duration_days": [2, 4] },
-    "B": { "range": [5400, 10800], "party": "team_3plus", "duration_days": [7, 14] },
-    "A": { "range": [80000, 160000], "party": "team_3plus", "duration_days": [30, 30] },
-    "S": { "range": [4000000, 5000000], "party": "leader", "duration_days": [90, 180], "alt_reward": "爵位/領地" }
+    "$comment": "委託報酬（白鸛幣）。solo 是單人任務；team 是團隊任務的合計：團隊以 team_size 人計，平分後約是同階單人任務的 team_mult 倍（team ≈ solo × team_mult × team_size）。leader 是 S 級「單人主導、帶領麾下勢力」的任務（另可選爵位、領地）。程式依 use 決定公會發的委託用哪一種：F～C 用單人版，B、A 用團隊合計，S 用 leader。耗時為世界書所述。",
+    "team_size": 3,
+    "team_mult": 1.5,
+    "F": { "solo": [30, 50], "use": "solo", "duration_days": [0, 1] },
+    "E": { "solo": [50, 90], "use": "solo", "duration_days": [0, 1] },
+    "D": { "solo": [80, 160], "team": [360, 720], "use": "solo", "duration_days": [0, 1] },
+    "C": { "solo": [150, 300], "team": [680, 1350], "use": "solo", "duration_days": [2, 4] },
+    "B": { "solo": [300, 600], "team": [1350, 2700], "use": "team", "duration_days": [7, 14] },
+    "A": { "solo": [600, 1200], "team": [2700, 5400], "use": "team", "duration_days": [30, 30] },
+    "S": { "solo": [1200, 2400], "leader": [5400, 10800], "use": "leader", "duration_days": [90, 180], "alt_reward": "爵位、領地" }
   },
   "lodging_cc_per_night": {
     "dormitory": [3, 4],

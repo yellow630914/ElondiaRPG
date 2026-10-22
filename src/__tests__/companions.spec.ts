@@ -19,7 +19,7 @@ import { hitDiceLeft, longRest, shortRest } from '@/engine/rest'
 import { acceptSuggestion, addMemory, addSuggestions, compactMemories, editMemory, ensureRelationship, setAffinity } from '@/engine/social'
 import { applyRosterFlavor } from '@/engine/population'
 import { chooseMark } from '@/engine/slavery'
-import { addHours, commitReport, newGame, withRng } from '@/engine/state'
+import { addHours, commitReport, migrate, newGame, withRng } from '@/engine/state'
 import { acceptQuest, guildQuests, recruit } from '@/engine/town'
 import type { GameState, Report } from '@/engine/types'
 import { buildActionPrompt, buildRosterPrompt, extractJson, splitSuggestions, visibleNarration } from '@/narrator/judge'
@@ -121,7 +121,7 @@ describe('short and long rests', () => {
     expectValid(night)
     expect(pc.hp).toBe(pc.maxHp)
     expect(pc.hitDiceUsed).toBe(0)
-    expect(() => longRest(state, 'inn')).toThrow('24 小時內')
+    expect(() => longRest(state, 'inn')).toThrow('還要 16 小時才能再長休')
   })
 
   it('can be ambushed while resting in the wild', () => {
@@ -228,8 +228,29 @@ describe('tavern hiring', () => {
     expect(state.npcs![gen!]).toMatchObject({ name: '星落', occupation: '占星師', class: '' })
     expect(state.npcs![known!]!.name).toBe(before)
     expect(state.npcs!.npc_lina).toBeUndefined()
-    expect(state.rosters!.soriel!.flavored).toBe(true)
+    expect(state.npcs![gen!]!.flavored).toBe(true)
     expect(buildRosterPrompt(state, 'soriel')).toBeNull()
+  })
+
+  it('flavors newcomers who moved in later, and keeps old flavored rosters as they are (L8)', () => {
+    const state = game(10)
+    tavernCandidates(state)
+    const roster = state.rosters!.soriel!
+    applyRosterFlavor(state, 'soriel', [])
+    expect(buildRosterPrompt(state, 'soriel')).toBeNull()
+    // 名單變動搬來一位新居民：只問他
+    const newcomer = roster.members.find((id) => id.startsWith('cmn_'))!
+    delete state.npcs![newcomer]!.flavored
+    const prompt = buildRosterPrompt(state, 'soriel')!
+    expect(prompt.user).toContain(newcomer)
+    expect(prompt.user.match(/- id: /g)).toHaveLength(1)
+    // 舊存檔：整份名單潤飾過 → 上面的人都算潤飾過
+    for (const id of roster.members) delete state.npcs![id]?.flavored
+    roster.flavored = true
+    state.schema = 4
+    const loaded = migrate(JSON.parse(JSON.stringify(state)))
+    expect(loaded.rosters!.soriel!.flavored).toBeUndefined()
+    expect(buildRosterPrompt(loaded, 'soriel')).toBeNull()
   })
 })
 

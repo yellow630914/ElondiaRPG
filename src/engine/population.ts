@@ -478,19 +478,20 @@ export function pruneNpcs(state: GameState) {
 /** AI 潤飾的文字（名字、外貌、性格、背景，普通人還有職業描述）；數值不變 */
 export interface NpcFlavor { id: string; name?: string; appearance?: string; personality?: string; background?: string; occupation?: string }
 
-/** 名單上還沒潤飾過的人：生成的、還不認識的 */
+/** 名單上還沒潤飾過的人：生成的、還不認識的（名單變動搬來的新居民也算，到這裡時再潤飾一次） */
 export function unflavored(state: GameState, locId: string): NpcRecord[] {
   const roster = state.rosters?.[locId]
-  if (!roster || roster.flavored) return []
+  if (!roster) return []
   return roster.members
     .map((id) => state.npcs?.[id])
-    .filter((r): r is NpcRecord => !!r?.generated && !state.relationships?.[r.id])
+    .filter((r): r is NpcRecord => !!r?.generated && !r.flavored && !state.relationships?.[r.id])
 }
 
 export function applyRosterFlavor(state: GameState, locId: string, flavors: NpcFlavor[]) {
   const roster = state.rosters?.[locId]
   if (!roster) return
-  const ids = new Set(unflavored(state, locId).map((r) => r.id))
+  const list = unflavored(state, locId)
+  const ids = new Set(list.map((r) => r.id))
   const clip = (s: unknown, n: number) => (typeof s === 'string' ? s.trim().slice(0, n) : '')
   const usedNames = new Set([...Object.values(state.npcs ?? {}).map((n) => n.name), ...namedNpcs.map((n) => n.name), ...state.party.map((m) => m.name)])
   for (const f of flavors) {
@@ -508,5 +509,6 @@ export function applyRosterFlavor(state: GameState, locId: string, flavors: NpcF
     const occupation = clip(f.occupation, 12)
     if (occupation && npcKind(rec) === 'commoner') rec.occupation = occupation
   }
-  roster.flavored = true
+  // 交給 AI 的人都算潤飾過（AI 漏掉的人保留原本的文字，不再重問）
+  for (const rec of list) rec.flavored = true
 }

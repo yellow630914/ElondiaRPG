@@ -320,6 +320,9 @@ describe('expedition', () => {
     for (const c of s2.combat!.combatants) if (c.side === 'enemy') c.hp = 0
     s2.combat!.status = 'victory'
     const won = finishCombat(s2)
+    // 打贏追兵就撤出：當作戰術性撤退（不補撤退的時間）
+    expect(won.outcome.tags).toContain('戰術性撤退')
+    expect(won.outcome.summary).toContain('戰術性撤退')
     afterCombat(s2, won)
     expect(s2.retreating).toBeUndefined()
     expect(currentArea(s2).layer).toBe(0)

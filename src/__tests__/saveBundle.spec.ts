@@ -3,9 +3,8 @@ import { editableWorld } from './testWorld'
 import { Blob as NodeBlob } from 'node:buffer'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { itemDef } from '@/engine/data'
-import { applyContent, emptyMods, newEnemy } from '@/engine/mods'
-import { useContent } from '@/stores/content'
+import { applyContent, emptyMods } from '@/engine/mods'
+import { useContent, VANILLA, VANILLA_NAME } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { portraitKey, usePortraits } from '@/stores/portraits'
 import { currentStore, preloadCurrent } from '@/stores/saves'
@@ -69,30 +68,71 @@ describe('exported saves carry custom content and portraits', () => {
     expect(full.portraits.pc.data).toMatch(/^data:image\/png;base64,/)
   })
 
-  it('merges the bundled content on import: adds what is missing, keeps or takes what differs', async () => {
+  it('records the world name, and exports a vanilla save without any content', async () => {
     const g = useGame()
     const c = editableWorld()
+    c.renameWorld(c.active, '月光世界')
     c.saveItem('月光草', { category: 'material', price_cc: 5, tags: [], custom: true })
-    c.saveEnemy('mod_wolf', { ...newEnemy('mod_wolf'), name: '影狼' })
+    g.start('艾倫', 'human', 'fighter')
+    const own = JSON.parse((await g.exportFile())!.text)
+    expect(own.state.world).toEqual({ id: c.active, name: '月光世界' })
+    expect(own.content.items['月光草']).toBeTruthy()
+    // 原版世界的存檔：標明原版、不附目前世界的內容
+    await g.saveToSlot('月光')
+    g.state = null
+    g.start('貝拉', 'elf', 'ranger', undefined, {}, VANILLA)
+    await g.saveToSlot('原版')
+    g.state = null
+    c.switchWorld(c.worlds[0]!.id)
+    const slot = g.slots.find((m) => m.name === '原版')!
+    const vanilla = JSON.parse((await g.exportFile(slot.id))!.text)
+    expect(vanilla.state.world).toEqual({ id: VANILLA, name: VANILLA_NAME })
+    expect(vanilla.content).toBeUndefined()
+  })
+
+  it('refuses an in-game import from another world, and turns a home import into a new world', async () => {
+    const g = useGame()
+    const c = editableWorld()
+    c.renameWorld(c.active, '月光世界')
+    c.saveItem('月光草', { category: 'material', price_cc: 5, tags: [], custom: true })
     g.start('艾倫', 'human', 'fighter')
     const text = (await g.exportFile())!.text
+    const moonlight = c.active
 
-    // 另一個瀏覽器：沒有月光草，影狼改過
-    c.resetAll()
-    c.saveEnemy('mod_wolf', { ...newEnemy('mod_wolf'), name: '我的影狼' })
-    const preview = g.previewImport(text, 'save.json')
-    expect(preview.diff!.added.map((e) => e.label)).toEqual(['物品「月光草」'])
-    expect(preview.diff!.changed.map((e) => e.key)).toEqual(['enemies:mod_wolf'])
+    // 另一個世界的遊戲中：拒絕，請回首頁匯入
+    g.state = null
+    c.switchWorld(c.createWorld('別的世界'))
+    g.start('貝拉', 'elf', 'ranger')
+    expect(g.previewImport(text).blocked).toContain('請回首頁匯入')
+    const before = g.slots.length
+    await g.importFile(text, 'save.json')
+    expect(g.error).toContain('請回首頁匯入')
+    expect(g.slots).toHaveLength(before)
+    g.error = null
 
-    // 只新增，不換掉自己的影狼
-    await g.importFile(text, 'save.json', { merge: true })
-    expect(itemDef('月光草')).toBeDefined()
-    expect(c.mods.enemies.mod_wolf!.name).toBe('我的影狼')
-    expect(g.notice).toContain('合併 1 項自訂內容')
-    // 換成存檔的版本
-    await g.importFile(text, 'save.json', { merge: true, take: ['enemies:mod_wolf'] })
-    expect(c.mods.enemies.mod_wolf!.name).toBe('影狼')
-    expect(g.slots).toHaveLength(2)
+    // 首頁：世界存在而且內容一樣，照舊指向它
+    g.state = null
+    expect(g.previewImport(text).newWorld).toBeUndefined()
+    // 世界的內容改過：用附帶的內容建立新世界，同名時加 4 位亂數
+    c.switchWorld(moonlight)
+    c.saveItem('月光草', { category: 'material', price_cc: 9, tags: [], custom: true })
+    const worlds = c.worlds.length
+    expect(g.previewImport(text).newWorld).toMatch(/^月光世界\d{4}$/)
+    await g.importFile(text, 'save.json')
+    expect(c.worlds).toHaveLength(worlds + 1)
+    const created = c.worlds.at(-1)!
+    expect(created.name).toMatch(/^月光世界\d{4}$/)
+    expect(created.mods.items['月光草']!.price_cc).toBe(5)
+    const slot = await (await import('@/stores/saves')).slotStore().get(g.slots.find((m) => m.name === 'save')!.id)
+    expect(slot!.state.world).toEqual({ id: created.id, name: created.name })
+    // 目前的世界沒有被動到
+    expect(c.worlds.find((w) => w.id === moonlight)!.mods.items['月光草']!.price_cc).toBe(9)
+
+    // 世界不存在：用存檔世界的名字建立
+    c.deleteWorld(moonlight)
+    c.deleteWorld(created.id)
+    await g.importFile(text, 'save2.json')
+    expect(c.worlds.at(-1)!.name).toBe('月光世界')
   })
 
   it('restores bundled portraits and cleans up portraits no save uses', async () => {

@@ -40,6 +40,8 @@
     "price_factor": { "critical": 0.7, "success": 0.85, "partial": 0.95, "fail": 1.0, "fumble": 1.1 }
   },
 
+  "$comment_track_place_mult": "逃亡奴隸休息時被契約印記追蹤到的機率倍率（契約的 recapture_chance × 倍率）：旅店人多眼雜比較容易被找到，自己的房子比較隱密；沒列的地方（短休、安全房）是 1。",
+  "track_place_mult": { "inn": 1.5, "home": 0.5 },
   "self_sale": {
     "$comment": "主角在市場登記出售自己。買家出現機率 = base + per_cha_mod × mod(魅力) + per_level × 等級；主角拿到成交價的 share（賣身錢）。幾乎無法主動影響。",
     "hours": 6,

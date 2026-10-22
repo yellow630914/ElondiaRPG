@@ -9,10 +9,11 @@
 import { snapshot } from './character'
 import {
   companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
-  stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopType, type ShopTypeDef,
+  stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopSpecial, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
+import { findKind } from './grid'
 import { gearName, gearPrice, gearRules, randomGear, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
 import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { addAffinity, pcOf } from './party'
@@ -30,8 +31,28 @@ export function shopTypeForCell(cellKind: string): ShopType | null {
   return CELL_SHOP[cellKind] ?? null
 }
 
+/** 商店屬於哪裡：平常是所在的聚落；旅途上的驛站自成一處（每條路線一間，來回同一間），物價與貨色照偏遠聚落 */
+export interface ShopPlace {
+  id: string
+  /** 聚落類型（物價倍率、貨色） */
+  type: string
+  name: string
+  waystation?: boolean
+}
+
+export function shopPlace(state: GameState): ShopPlace {
+  if (state.side?.area === WAYSTATION_AREA) {
+    const ends = state.road ? [state.road.from, state.road.to].sort() : [state.location]
+    return { id: `ws_${ends.join('_')}`, type: shopRules.waystation.price_as, name: shopRules.waystation.name, waystation: true }
+  }
+  const loc = locationById(state.location)
+  return { id: loc.id, type: loc.type, name: loc.name }
+}
+
+const WAYSTATION_AREA = 'side/waystation'
+
 export function shopKey(state: GameState, type: ShopType): string {
-  return `${state.location}/${type}`
+  return `${shopPlace(state).id}/${type}`
 }
 
 function typeOf(key: string): ShopType {
@@ -39,7 +60,7 @@ function typeOf(key: string): ShopType {
 }
 
 export function locationMult(state: GameState): number {
-  return (shopRules.location_price_mult[locationById(state.location).type] ?? 1) * notorietyMult(state)
+  return (shopRules.location_price_mult[shopPlace(state).type] ?? 1) * notorietyMult(state)
 }
 
 /** 剛遣散入隊沒多久的夥伴：這座城的物價暫時上漲（crafts.json 的 dismiss_penalty） */
@@ -57,14 +78,35 @@ export function locationRank(type: string): number {
 
 /** 店主：每間店固定一位，第一次查看時生成 */
 function keeperFor(state: GameState, type: ShopType): string {
-  const id = `keeper_${state.location}_${type}`
-  if (npcRecord(state, id)) return id
-  const def = shopRules.types[type]
-  // 店主是普通人：神殿是神官，其他是商人
-  withRng(state, (rng) => generateNpc(state, rng, {
-    id, kind: 'commoner', tags: [type === 'temple' ? 'priest' : 'merchant'], occupation: def.keeper.title, level: rng.int(1, 4),
-  }))
+  const place = shopPlace(state)
+  const id = `keeper_${place.id}_${type}`
+  if (!npcRecord(state, id)) {
+    const def = shopRules.types[type]
+    // 店主是普通人：神殿是神官，其他是商人
+    const rec = withRng(state, (rng) => generateNpc(state, rng, {
+      id, kind: 'commoner', tags: [type === 'temple' ? 'priest' : 'merchant'], occupation: def.keeper.title, level: rng.int(1, 4),
+    }))
+    // 驛站的店主不住在城裡：只在驛站裡（進驛站時站到店的格子上）
+    if (place.waystation) rec.spot = 'waystation'
+  }
+  if (place.waystation) placeWaystationKeeper(state, id)
   return id
+}
+
+/** 驛站的店主站在店的格子上（今天；別條路線的驛站店主不在這裡） */
+function placeWaystationKeeper(state: GameState, id: string) {
+  const area = state.areas?.[WAYSTATION_AREA]
+  const cell = area && findKind(area, 'shop')
+  if (!cell) return
+  for (const r of Object.values(state.npcs ?? {})) {
+    if (r.id !== id && r.at?.area === WAYSTATION_AREA && r.spot === 'waystation') delete r.at
+  }
+  npcRecord(state, id)!.at = { area: WAYSTATION_AREA, x: cell.x, y: cell.y, until: state.time.day }
+}
+
+/** 進驛站時：這條路線的雜貨商已經認識的話，站到店裡 */
+export function enterWaystation(state: GameState) {
+  keeperFor(state, 'general')
 }
 
 export function keeperTitle(type: ShopType): string {
@@ -96,7 +138,7 @@ function itemDeal(state: GameState, name: string, stock: number, markup = 1): De
 /** 規則生成的清單：目錄裡這種店賣的東西（依聚落規模），加上 specials。 */
 function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const def = shopRules.types[type]
-  const rank = locationRank(locationById(state.location).type)
+  const rank = locationRank(shopPlace(state).type)
   const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && locationRank(i.min_location ?? 'village') <= rank)
   return withRng(state, (rng) => {
     const deals: Deal[] = []
@@ -105,7 +147,8 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
     for (const i of available) {
       if (i.category === 'equipment') continue
       const stock = i.category === 'food' || i.category === 'gear' ? 20 : rng.int(2, 5)
-      // 材料的目錄價是收購價：店裡賣的時候加成（避免買進賣出套利）
+      // 材料的目錄價是收購價：店裡賣的時候加成。殺價、親密度與聲望疊起來時，買進賣出仍可能小賺：
+      // 這是刻意允許的（主角很能說，賺到錢也合理），不另外擋
       deals.push(itemDeal(state, i.name, stock, i.category === 'material' ? def.random?.material_markup ?? MATERIAL_MARKUP : 1))
     }
     // 裝備：稀有的材料比較少出現（第一級最常見，精金極少）
@@ -161,8 +204,11 @@ function infoDeals(state: GameState, info: NonNullable<ShopTypeDef['info']>): De
   return deals
 }
 
-function specialDeal(sp: { id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number }): Deal {
-  return { id: `special:${sp.id}`, title: sp.title, ...(sp.desc ? { desc: sp.desc } : {}), gives: sp.gives.map((g) => ({ ...g })), gets: sp.gets.map((g) => ({ ...g })), stock: sp.stock }
+function specialDeal(sp: ShopSpecial): Deal {
+  return {
+    id: `special:${sp.id}`, title: sp.title, ...(sp.desc ? { desc: sp.desc } : {}), gives: sp.gives.map((g) => ({ ...g })), gets: sp.gets.map((g) => ({ ...g })), stock: sp.stock,
+    ...(sp.flavor ? { flavor: sp.flavor } : {}),
+  }
 }
 
 /** 今天這間店的狀態（第一次查看時生成）。 */
@@ -209,6 +255,7 @@ export function sellPrice(state: GameState, key: string, name: string): number |
 function tradeReport(state: GameState, key: string, hours: number): Report {
   const start = { ...state.time }
   const loc = locationById(state.location)
+  const place = shopPlace(state)
   const pc = pcOf(state)
   const type = typeOf(key)
   return {
@@ -216,7 +263,7 @@ function tradeReport(state: GameState, key: string, hours: number): Report {
     report_id: newReportId(state),
     kind: 'trade',
     time: { start, end: addHours(start, hours) },
-    location: { at: state.location, region: loc.region, scene: `${loc.name}的${shopRules.types[type].name}` },
+    location: { at: state.location, region: loc.region, scene: `${place.name}的${shopRules.types[type].name}` },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
     outcome: { result: 'success' },
     changes: {},
@@ -279,6 +326,11 @@ export function buyDeal(state: GameState, type: ShopType, dealId: string, qty = 
   // 有人入隊、得到報酬以外的後果時，值得交給 AI 描寫
   if (deal.gets.some((g) => g.type === 'companion' || g.type === 'memory')) report.kind = 'social'
   if (deal.gets.some((g) => g.type === 'start_story')) report.kind = 'event'
+  // 氛圍性的交易：提示 AI 寫成無關緊要的日常（不要捏造有用的情報或後果）
+  if (deal.flavor) {
+    report.kind = 'social'
+    report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), `氛圍：${deal.flavor}（只是日常的氣氛，不要寫出有用的情報、線索或其他後果）`] }
+  }
   return commitReport(state, report)
 }
 
@@ -362,7 +414,7 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
   const caps = shopRules.ai_caps
   const pc = pcOf(state)
   const mult = locationMult(state)
-  const allowSlaves = !!slaveryRules.markets[state.location]
+  const allowSlaves = !shopPlace(state).waystation && !!slaveryRules.markets[state.location]
   const list = Array.isArray((raw as { deals?: unknown })?.deals) ? (raw as { deals: unknown[] }).deals : []
   const deals: Deal[] = []
   for (const [i, r] of list.entries()) {
@@ -477,7 +529,7 @@ export function effectText(state: GameState, e: RewardEffect, keeper?: string): 
     case 'memory': return '一段記憶'
     case 'condition': return `${e.add ? '獲得' : '解除'}「${companionRules.conditions[e.condition]?.name ?? e.condition}」`
     case 'quest_reward': return `委託報酬 ${e.percent > 0 ? '+' : ''}${e.percent}%`
-    case 'quest_flag': return e.key === 'lead' ? '委託線索（檢定 +5）' : e.key === 'suspicious' ? '消息走漏（檢定 -2）' : '委託旗標'
+    case 'quest_flag': return e.key === 'lead' ? '委託線索（檢定 +5）' : '委託旗標'
     case 'hp': return '生命值變化'
     case 'intel': return `情報：${e.intel.title}`
     case 'start_story': return `開始特殊任務「${stories.find((d) => d.id === e.story)?.title ?? e.story}」`

@@ -222,7 +222,7 @@ export interface StoryDef {
   id: string
   title: string
   summary: string
-  /** 建議的公會等級（顯示用；公會接取時檢查） */
+  /** 建議的公會階級：接取時檢查（同級或更低，組隊時可以高一級；story.ts 的 storyRankOk） */
   rank?: GuildRank
   start: StoryStart
   /** 開始時成立的旗標（任務鏈的第一個旗標） */
@@ -257,10 +257,23 @@ export const progression = progressionJson as unknown as {
   power_gap_attitude: { by_diff: Record<string, string>; clamp: [number, number] }
   ability_rerolls: number
 }
+/** 一個公會階級的委託報酬（economy.json 的 quest_rewards_cc） */
+export interface QuestReward {
+  solo: [number, number]
+  /** 團隊任務的合計 */
+  team?: [number, number]
+  /** S 級：單人主導、帶領麾下勢力 */
+  leader?: [number, number]
+  /** 公會發的委託用哪一種 */
+  use: 'solo' | 'team' | 'leader'
+  duration_days: [number, number]
+  alt_reward?: string
+}
+
 export const economy = economyJson as unknown as {
   /** 一般人每天的生活費（罰金、禮物價值的基準） */
   commoner_living_cc_per_day: number
-  quest_rewards_cc: Record<string, { range: [number, number]; party: string; duration_days: [number, number] }>
+  quest_rewards_cc: { team_size: number; team_mult: number } & Record<string, QuestReward>
   lodging_cc_per_night: Record<string, [number, number]>
   meals_cc: Record<string, number | [number, number]>
 }
@@ -714,6 +727,8 @@ export const slaveryRules = slaveryJson as unknown as {
   black_market_search: { attr: AttrId; dc: number; hours: number }
   haggle: { attr: AttrId; base: number; black_market_bonus: number; price_factor: Record<Degree, number> }
   self_sale: { hours: number; base: number; per_cha_mod: number; per_level: number; max: number; share: number; contract_weights: Record<string, number> }
+  /** 逃亡時在不同地方休息，被契約印記追蹤到的機率倍率（沒列的地方 1） */
+  track_place_mult: Partial<Record<string, number>>
   contracts: Record<string, ContractDef>
   functions: Record<ContractFunction, string>
   freedom: {
@@ -1101,7 +1116,11 @@ export function saveItems(): ItemDef[] {
 
 export type ShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer'
 export interface DealCost { type: 'money' | 'item' | 'hours'; amount?: number; name?: string; qty?: number }
-export interface ShopSpecial { id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number }
+export interface ShopSpecial {
+  id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number
+  /** 氛圍性的交易：給 AI 的提示（帶進這次交易的敘事，寫成無關緊要的日常，例如酒保的閒話） */
+  flavor?: string
+}
 export interface ShopTypeDef {
   name: string
   cell: string
@@ -1120,6 +1139,8 @@ export interface ShopTypeDef {
 export const shopRules = shopsJson as unknown as {
   location_price_mult: Record<string, number>
   location_rank: Record<string, number>
+  /** 旅途上的驛站：物價與貨色照哪種聚落算 */
+  waystation: { price_as: string; name: string }
   affinity_discount_per_point: number
   max_affinity_discount: number
   max_deals: number
@@ -1300,14 +1321,14 @@ export interface PerkDef {
   name: string
   desc: string
   effects: PerkEffect[]
-  /** 缺陷（保留：目前沒有缺陷，效果可以是負的） */
+  /** 缺陷：效果是負的（檢定減值、戰鬥減值、弱點）；不能從機會學，事件直接給，受訓（train）是克服它 */
   flaw?: boolean
   /** 種族特質（原本的種族天賦）：這個種族的角色自動擁有，不寫進存檔；不能選、不能學、不會失去 */
   race?: string
   requires?: { races?: string[]; classes?: string[] }
   /** 和這些特質互斥 */
   exclusive?: string[]
-  /** 可以在這些設施花錢學 */
+  /** 可以在這些設施花錢學（缺陷：花錢克服） */
   train?: { cells: string[]; price_cc: number; hours: number; attr: AttrId; dc: number }
   /** NPC 生成時抽到的權重與更容易抽到的標籤、職業 */
   npc?: { weight?: number; tags?: string[]; classes?: string[] }
@@ -1318,9 +1339,13 @@ export interface PerkDef {
 export const perkRules = perksJson as unknown as {
   contexts: Record<CheckContext, string>
   levelup: { levels: number[]; choices: number }
-  npc: { chances: number[]; tag_mult: number; class_mult: number }
+  npc: { chances: number[]; flaw_chance: number; tag_mult: number; class_mult: number }
+  creation: { slots: number; max_flaws: number; slots_per_flaw: number }
   pitch: { attr: AttrId; dc: number; hours: number; power_delta: Partial<Record<Degree, number>> }
-  custom: { name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }
+  custom: {
+    name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number]
+    flaw: { check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }
+  }
   perks: PerkDef[]
 }
 

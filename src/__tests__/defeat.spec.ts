@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import worldbook from '../../data/worldbook/elondia.worldbook.json'
 import schema from '../../schemas/report.schema.json'
+import { buildActionPrompt } from '@/narrator/judge'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat, startCombat } from '@/engine/combat'
 import { setAdultContent } from '@/engine/content'
@@ -63,6 +64,11 @@ describe('defeat event', () => {
 
     const money = state.money_cc
     prepareAction(state, { kind: 'defeat_event', target: 'opt:1', text: rules.options[1]!.label })
+    // 判定請求：戰敗事件規則放在 system 的最後（常駐世界書、前段提示詞之後），前面可以共用快取
+    const judge = buildActionPrompt(state, state.pendingAction!, '', { narrative: true, adult: true, lore: { constant: [{ comment: '常駐', content: '世界觀' }], triggered: [] } as never })
+    const system = judge.sections!.filter((x) => x.part === 'system').map((x) => x.key)
+    expect(system.indexOf('defeat')).toBeGreaterThan(system.indexOf('lore_constant'))
+    expect(system.slice(-2)).toEqual(['defeat', 'scene'])
     state.pendingAction!.natural = 1
     const after = resolveAction(state, null)
     expect(validate(after), JSON.stringify(validate.errors)).toBe(true)

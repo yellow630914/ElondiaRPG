@@ -62,7 +62,7 @@ export type RewardEffect =
   | { type: 'change_master'; master: NpcRef | null; reason?: string }
   /** 委託報酬按百分比調整（談判的結果） */
   | { type: 'quest_reward'; quest: string; percent: number }
-  /** 任務旗標，例如 lead（委託檢定 +5）、suspicious（-2） */
+  /** 任務旗標，例如 lead（委託檢定 +5，情報商與情報物品給的線索） */
   | { type: 'quest_flag'; quest: string; key: string; value: unknown }
   /**
    * 技能報酬：學會新能力。ability 指定能力（id 或名稱，必須是目前可以學的）；沒指定或不能學時隨機挑一項。
@@ -278,9 +278,10 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'perk': {
         const who = memberOrPc(state, e.target ?? 'pc')
         if (!who) break
-        if (e.direct && e.perk) {
+        // 缺陷不是機會：直接染上
+        if (e.perk && (e.direct || perkDef(e.perk)?.flaw)) {
           const got = grantPerk(who, e.perk, report)
-          if (got) notes.push(`${who.name}學會了特質【${got.name}】`)
+          if (got) notes.push(got.flaw ? `${who.name}多了一個缺陷【${got.name}】` : `${who.name}學會了特質【${got.name}】`)
           break
         }
         const options = [...(e.perk ? [e.perk] : []), ...(e.options ?? [])]
@@ -291,7 +292,7 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'lose_perk': {
         const who = memberOrPc(state, e.target ?? 'pc')
         const lost = who && losePerk(who, e.perk, report)
-        if (lost) notes.push(`${who!.name}失去了特質【${lost.name}】`)
+        if (lost) notes.push(lost.flaw ? `${who!.name}克服了缺陷【${lost.name}】` : `${who!.name}失去了特質【${lost.name}】`)
         break
       }
       case 'home_extend':

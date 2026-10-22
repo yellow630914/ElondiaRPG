@@ -1,8 +1,8 @@
 // 遊戲狀態、時間與報告提交。
 
-import { sanitizePerk } from './perks'
+import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
-import { abilities, attributeRules, classDef, isChoosablePerk, locationById, setSaveItems, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, type SlaveStart } from './slavery'
@@ -54,9 +54,13 @@ export function newGame(opts: NewGameOptions): GameState {
   if (appearance) pc.appearance = appearance
   if (background) pc.background = background
   // 特質：清單裡的照選，自訂的整理過才收
-  const picked = [...new Set(opts.perks ?? [])].filter(isChoosablePerk)
+  // 缺陷最多兩個、每個換一個一般特質的名額（perks.json 的 creation），多的從後面拿掉
+  const listed = [...new Set(opts.perks ?? [])].filter(isChoosablePerk).map((id) => perkDef(id)!)
+  const created = (opts.customPerks ?? []).map((raw, i) => sanitizePerk(raw, `c-start-${i + 1}`, undefined, true)).filter((p): p is PerkDef => !!p)
+  const fitted = fitCreationPerks([...listed, ...created])
+  const picked = listed.filter((p) => fitted.includes(p)).map((p) => p.id)
   if (picked.length) pc.perks = picked
-  const custom = (opts.customPerks ?? []).map((raw, i) => sanitizePerk(raw, `c-start-${i + 1}`)).filter((p): p is PerkDef => !!p)
+  const custom = created.filter((p) => fitted.includes(p))
   if (custom.length) pc.customPerks = custom
   // 換成新存檔：沒有自創的物品
   setSaveItems([])
@@ -112,8 +116,9 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 1：這個機制之前的所有存檔（由 migrate 前半的各項檢查補齊）
  * 2：公會階級與功績（guild）、存檔規則（options）
  * 3：房屋（homes；留守的夥伴記在 NPC 登錄的 staying）
+ * 4：主人的家改成固定設施（民宅）：從 homes 拿掉 m- 開頭的那棟，改記在 masterHome（主人、城市、家裡的人）
  */
-export const SAVE_SCHEMA = 3
+export const SAVE_SCHEMA = 5
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -125,6 +130,25 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   }],
   [3, (s) => {
     s.homes ??= {}
+  }],
+  [4, (s) => {
+    // 主人的家以前疊在一塊空地上、地圖存在 homes：改成那座城的民宅，家裡的人照舊（站的位置在讀檔後的 syncMasterHome 對齊）
+    for (const [id, home] of Object.entries(s.homes ?? {})) {
+      if (!home.master && !id.startsWith('m-')) continue
+      if (home.master && !s.masterHome) s.masterHome = { master: home.master, location: home.location, household: home.household ?? [] }
+      delete s.homes![id]
+    }
+  }],
+  [5, (s) => {
+    // 名單的潤飾改成記在每個人身上：整份潤飾過的名單，上面的人都算潤飾過
+    for (const roster of Object.values(s.rosters ?? {})) {
+      if (!roster.flavored) continue
+      for (const id of roster.members) {
+        const rec = s.npcs?.[id]
+        if (rec?.generated) rec.flavored = true
+      }
+      delete roster.flavored
+    }
   }],
 ]
 
@@ -233,6 +257,14 @@ export function prunePerks(state: GameState) {
   for (const r of Object.values(state.npcs ?? {})) if (r.perks?.some((id) => !isChoosablePerk(id))) r.perks = r.perks.filter(isChoosablePerk)
 }
 
+/** 主角賺到 amount 時，依奴隸契約的「收益歸屬」被主人拿走多少（逃亡中、沒有主人、契約沒有這項功能時是 0） */
+export function masterTake(state: GameState, amount: number): number {
+  const pc = state.party.find((m) => m.isPlayer)
+  if (!pc?.contract || !pc.contract.master || pc.status.includes('fugitive') || amount <= 0) return 0
+  const def = contractTerms(pc.contract)
+  return def.functions.includes('income') ? Math.floor(amount * def.income_share) : 0
+}
+
 export function player(state: GameState) {
   const pc = state.party.find((c) => c.isPlayer)
   if (!pc) throw new Error('no player character')
@@ -304,10 +336,8 @@ export function commitReport(state: GameState, report: Report): Report {
     if (snap.hp) member.hp = Math.max(0, Math.min(member.maxHp, snap.hp[1]))
   }
   // 奴隸契約「收益歸屬」：主角賺到的錢有一部分歸主人（成為奴隸的那份報告除外）
-  const pc = state.party.find((m) => m.isPlayer)
-  if (pc?.contract && !pc.status.includes('fugitive') && (c.money_cc ?? 0) > 0 && !c.companions?.some((x) => x.npc === 'pc' && x.change === 'enslaved')) {
-    const def = contractTerms(pc.contract)
-    const taken = pc.contract.master && def.functions.includes('income') ? Math.floor(c.money_cc! * def.income_share) : 0
+  if ((c.money_cc ?? 0) > 0 && !c.companions?.some((x) => x.npc === 'pc' && x.change === 'enslaved')) {
+    const taken = masterTake(state, c.money_cc!)
     if (taken > 0) {
       c.money_cc! -= taken
       c.master_share_cc = taken
