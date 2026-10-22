@@ -27,6 +27,7 @@ import workJson from '@data/rules/work.json'
 import storiesJson from '@data/rules/stories.json'
 import craftsJson from '@data/rules/crafts.json'
 import homesJson from '@data/rules/homes.json'
+import perksJson from '@data/rules/perks.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
 import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality } from './types'
@@ -95,6 +96,8 @@ export interface NpcDef {
   attrs?: Partial<Attrs>
   /** 會的能力（取代依職業隨機學的能力） */
   abilities?: string[]
+  /** 特質（data/rules/perks.json 的 id；生成的 NPC 隨機抽，固定 NPC 可以在內容頁籤指定） */
+  perks?: string[]
   /** 初始裝備（取代依等級隨機生成的裝備；沒寫的欄位空著） */
   gear?: Partial<Record<GearSlot, GearSpec>>
   /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
@@ -838,6 +841,7 @@ export function contractDef(id: string): ContractDef {
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
   | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story'
+  | 'train' | 'perk_pitch'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'
 export const actionRules = actionsJson as unknown as {
@@ -965,6 +969,8 @@ export type ItemCategory = 'food' | 'consumable' | 'gear' | 'material' | 'scroll
 export interface ItemUse {
   /** 吃喝：得到這個非戰鬥狀態（companions.json 的 conditions），只能在戰鬥以外使用 */
   condition?: string
+  /** 書籍：讀了之後有機會學會其中一個特質（perks.json 的 id；也可以寫說法交給 AI） */
+  perks?: string[]
   heal?: string
   slot?: number
   cleanse?: string[]
@@ -1265,3 +1271,57 @@ export const homeRules = homesJson as unknown as {
   lots: Record<string, number>
   comfort_rested: number
 }
+
+// ---- 特質（被動，data/rules/perks.json，見 docs/PERKS.md） ----
+
+/** 檢定的情境：主動行動以外的檢定各有一種 */
+export type CheckContext =
+  | 'action' | 'negotiation' | 'master_event' | 'gate' | 'trap' | 'lock' | 'travel' | 'road' | 'quest' | 'retreat' | 'stealth'
+  | 'initiative' | 'save'
+
+/** 檢定加值適用的範圍：同一欄位是「或」，不同欄位是「且」；沒寫的欄位不限 */
+export interface CheckFilter {
+  attrs?: AttrId[]
+  contexts?: CheckContext[]
+  kinds?: ActionKind[]
+  vs_tags?: string[]
+}
+
+export type PerkEffect =
+  | { check: CheckFilter; bonus: number }
+  | { combat: Mods }
+  | { resist: AffinityMap }
+  | { offense: AffinityMap }
+
+export interface PerkDef {
+  id: string
+  name: string
+  desc: string
+  effects: PerkEffect[]
+  /** 缺陷（保留：目前沒有缺陷，效果可以是負的） */
+  flaw?: boolean
+  requires?: { races?: string[]; classes?: string[] }
+  /** 和這些特質互斥 */
+  exclusive?: string[]
+  /** 可以在這些設施花錢學 */
+  train?: { cells: string[]; price_cc: number; hours: number; attr: AttrId; dc: number }
+  /** NPC 生成時抽到的權重與更容易抽到的標籤、職業 */
+  npc?: { weight?: number; tags?: string[]; classes?: string[] }
+  /** 玩家自訂或 AI 設計的（不在清單裡） */
+  custom?: boolean
+}
+
+export const perkRules = perksJson as unknown as {
+  contexts: Record<CheckContext, string>
+  levelup: { levels: number[]; choices: number }
+  npc: { chances: number[]; tag_mult: number; class_mult: number }
+  pitch: { attr: AttrId; dc: number; hours: number; power_delta: Partial<Record<Degree, number>> }
+  custom: { name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }
+  perks: PerkDef[]
+}
+
+/** 清單裡的特質 */
+export function perkDef(id: string): PerkDef | undefined {
+  return perkRules.perks.find((p) => p.id === id)
+}
+

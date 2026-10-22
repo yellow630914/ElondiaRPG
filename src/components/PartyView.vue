@@ -11,6 +11,7 @@ import {
   damageTypeName, genderName, locationById, raceName, slaveryRules, type AbilityDef,
 } from '@/engine/data'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
+import { perksOf } from '@/engine/perks'
 import { contractTerms } from '@/engine/slavery'
 import { gearSummary, SLOTS, slotName } from '@/engine/gear'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
@@ -146,6 +147,13 @@ function affinityText(m: Character): string {
           <li>防具 {{ armorDef(m.armor).name }}（迴避 {{ signed(armorDef(m.armor).evade) }}・物理減傷 {{ armorDef(m.armor).dr }}）</li>
           <li>傷害倍率 {{ affinityText(m) }}</li>
           <li>天賦【{{ attributeRules.races[m.race]?.talent.name }}】{{ attributeRules.races[m.race]?.talent.desc }}</li>
+        </ul>
+      </FoldSection>
+      <FoldSection id="party.perks" title="🌟 特質" :count="perksOf(m).length">
+        <ul class="plain small">
+          <li v-for="p in perksOf(m)" :key="p.id">【{{ p.name }}】{{ p.desc }}<span v-if="p.custom" class="muted">（自訂）</span></li>
+          <li v-if="!perksOf(m).length" class="muted">還沒有特質。可以靠升級、事件、特殊任務、受訓與書籍學會。</li>
+          <li v-if="m.perkOffers?.length" class="muted">有 {{ m.perkOffers.length }} 次學特質的機會，在事件視窗（🔔）選擇。</li>
         </ul>
       </FoldSection>
       <FoldSection v-if="!isNoncombatant(m) || m.gear" id="party.gear" title="🛡️ 裝備" :count="SLOTS.filter((x) => m.gear?.[x]).length">

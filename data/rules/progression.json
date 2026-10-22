@@ -61,7 +61,7 @@
     { "rank": "S", "levels": [13, 14], "merit": 260, "desc": "傳奇級，影響國家或大陸命運" }
   ],
   "guild_merit": {
-    "$comment": "公會功績（見 docs/GUILD_RANKS.md）：交付委託依委託階級 F～S 得 quest 的點數；打倒地下城的層主得 boss；完成特殊任務得 story（任務資料的 merit 可以覆蓋）。功績達到下一階的 merit、等級達到下一階 levels 的下限時，公會發晉升考核：討伐階級相符的層主（找不到時改成清剿地下城 exam_clears 次），通過才升階。考核的報酬是下一階報酬範圍的下限。",
+    "$comment": "公會功績（見 docs/GUILD.md）：交付委託依委託階級 F～S 得 quest 的點數；打倒地下城的層主得 boss；完成特殊任務得 story（任務資料的 merit 可以覆蓋）。功績達到下一階的 merit、等級達到下一階 levels 的下限時，公會發晉升考核：討伐階級相符的層主（找不到時改成清剿地下城 exam_clears 次），通過才升階。考核的報酬是下一階報酬範圍的下限。",
     "quest": [1, 2, 3, 5, 8, 12, 18],
     "boss": 2,
     "story": 5,

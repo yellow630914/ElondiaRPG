@@ -9,6 +9,7 @@
 // 需要檢定的部分（雇傭談判、殺價、邀請、打聽黑市、談判解除契約、逃離）走主動行動（actions.ts），
 // 這裡提供參考 DC、各成功程度的機制結果，以及套用結果的函式。
 
+import { setupPitch, setupTrain } from './perkActions'
 import { setupLeave } from './masterHome'
 import type { AdultScene } from './content'
 import { setupCraft, setupMake } from './craft'
@@ -649,6 +650,10 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupUnmark(state, target)
     case 'work':
       return setupWork(state, target)
+    case 'train':
+      return setupTrain(state, target)
+    case 'perk_pitch':
+      return setupPitch(state, target)
     case 'patron':
       return setupPatron(state, target)
     case 'craft':

@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, HomeDistrict, ItemDef, Mods, NpcDef } from './data'
+import type { AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, HomeDistrict, ItemDef, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -87,6 +87,8 @@ export interface Changes {
   companions?: CompanionChange[]
   /** 非戰鬥狀態（奴隸印記、逃亡、受罰）的增減 */
   conditions?: { actor: string; condition: string; added: boolean }[]
+  /** 特質的增減 */
+  perks?: { actor: string; perk: string; name: string; added: boolean }[]
   /** 短休花費／長休回復的生命骰 */
   hit_dice?: { actor: string; spent?: number; regained?: number; healed?: number }[]
   /** 奴隸契約「收益歸屬」被主人拿走的金錢 */
@@ -238,6 +240,23 @@ export interface Character {
   crafts?: Partial<Record<CraftId, CraftSkill>>
   /** 入隊的時間（入隊沒多久就遣散有懲罰） */
   joined?: GameTime
+  /** 特質（data/rules/perks.json 的 id） */
+  perks?: string[]
+  /** 自訂或 AI 設計的特質（不在清單裡，id 以 c- 開頭） */
+  customPerks?: PerkDef[]
+  /** 等著選的特質（升級、事件、特殊任務、訓練、物品） */
+  perkOffers?: PerkOffer[]
+}
+
+/** 一次取得特質的機會：從 options 選一個，或寫一段說法交給 AI 判斷（pitch） */
+export interface PerkOffer {
+  id: string
+  /** 從哪裡來（升到 6 級、特殊任務「…」、在公會受訓、讀了「…」） */
+  source: string
+  options: string[]
+  /** 可以寫說法交給 AI（只在開啟 AI 判定時）；已經試過一次時 pitched */
+  pitch?: boolean
+  pitched?: boolean
 }
 
 export interface ContractRef {

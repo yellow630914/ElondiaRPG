@@ -10,7 +10,7 @@
 import mapsJson from '@data/world/maps.json'
 import {
   abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
-  npcs as namedNpcs, npcTags, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
+  npcs as namedNpcs, npcTags, perkDef, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart,
 } from './data'
@@ -531,6 +531,9 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   if (!u || typeof u !== 'object') return undefined
   const out: ItemUse = {}
   if (u.condition && companionRules.conditions[u.condition]) out.condition = u.condition
+  // 書籍：可以學的特質（清單裡的）
+  const perks = (Array.isArray(u.perks) ? u.perks : []).filter((id) => typeof id === 'string' && !!perkDef(id)).slice(0, 6)
+  if (perks.length) out.perks = perks
   if (u.heal && DICE.test(String(u.heal).replace(/\s+/g, ''))) out.heal = String(u.heal).replace(/\s+/g, '')
   if (u.slot) out.slot = int(u.slot, 1, 9, 1)
   const cleanse = (u.cleanse ?? []).filter((s) => !!statuses[s])
@@ -848,6 +851,8 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   }
   const abil = (raw.abilities ?? []).filter((a) => !!abilities[a])
   if (abil.length) out.abilities = [...new Set(abil)]
+  // 特質：清單裡的（沒寫時依 id 固定地抽）
+  if (Array.isArray(raw.perks)) out.perks = [...new Set(raw.perks.filter((p) => typeof p === 'string' && !!perkDef(p)))]
   if (raw.gear) {
     const g: NonNullable<NpcDef['gear']> = {}
     for (const slot of GEAR_SLOTS) {

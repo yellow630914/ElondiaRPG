@@ -24,6 +24,8 @@ import StoryPanel from './StoryPanel.vue'
 import ShopPanel from './ShopPanel.vue'
 import TavernPanel from './TavernPanel.vue'
 import WorkPanel from './WorkPanel.vue'
+import TrainPanel from './TrainPanel.vue'
+import { checkBonus } from '@/engine/perks'
 import CraftPanel from './CraftPanel.vue'
 
 const game = useGame()
@@ -34,7 +36,8 @@ const cell = computed(() => currentCell(s.value))
 const lockTool = computed(() => bestTool(s.value, 'lockpick'))
 const LOCK_ICON: Record<LockMethod, string> = { dex: '🔓', str: '💪', int: '🧠' }
 function lockBonus(k: LockMethod): number {
-  return mod(lockPicker(s.value, k).attrs[k]) + (k === 'dex' ? lockTool.value?.bonus ?? 0 : 0)
+  const picker = lockPicker(s.value, k)
+  return mod(picker.attrs[k]) + (k === 'dex' ? lockTool.value?.bonus ?? 0 : 0) + checkBonus(picker, { context: 'lock', attr: k })
 }
 const signed = (n: number) => (n >= 0 ? `+${n}` : String(n))
 const intent = computed({ get: () => game.intent, set: (v: string) => (game.intent = v) })
@@ -261,6 +264,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         <p v-else class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
 
         <WorkPanel :key="`${area.key}-${cell.kind}`" />
+        <TrainPanel :key="`train-${area.key}-${cell.kind}`" />
         <CraftPanel :key="`craft-${area.key}-${cell.kind}`" />
 
         <div v-for="q in runnableHere" :key="q.id" class="quest-here">

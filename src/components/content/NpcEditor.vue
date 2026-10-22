@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { perkDef, perkRules } from '@/engine/data'
+import { npcPerksOf } from '@/engine/perks'
 import { computed, ref, watch } from 'vue'
 import { createNpc } from '@/engine/character'
 import {
@@ -77,6 +79,17 @@ function addAbility() {
 function removeAbility(id: string) {
   draft.value.abilities = (draft.value.abilities ?? []).filter((a) => a !== id)
   if (!draft.value.abilities.length) delete draft.value.abilities
+}
+// 特質：指定時取代依 id 抽的（空的清單＝沒有特質）
+const pickPerk = ref('')
+function addPerk() {
+  if (!pickPerk.value) return
+  const list = (draft.value.perks ??= [])
+  if (!list.includes(pickPerk.value)) list.push(pickPerk.value)
+  pickPerk.value = ''
+}
+function removePerk(id: string) {
+  draft.value.perks = (draft.value.perks ?? []).filter((p) => p !== id)
 }
 const SLOTS = Object.keys(gearRules.slots) as GearSlot[]
 const customGear = computed({
@@ -259,6 +272,19 @@ function remove() {
           </optgroup>
         </select>
         <button class="small" :disabled="!pickAbility" @click="addAbility">＋ 加入</button>
+      </div>
+      <div class="chips">
+        <span v-for="id in draft.perks ?? []" :key="id" class="tag chip" :title="perkDef(id)?.desc">🌟 {{ perkDef(id)?.name ?? id }} <button class="x" @click="removePerk(id)">×</button></span>
+        <span v-if="!draft.perks" class="small muted">特質：依 id 固定地抽（{{ npcPerksOf(draft).map((id) => perkDef(id)?.name).join('、') || '無' }}）</span>
+        <span v-else-if="!draft.perks.length" class="small muted">特質：沒有</span>
+      </div>
+      <div class="row">
+        <select v-model="pickPerk">
+          <option value="">指定特質…</option>
+          <option v-for="p in perkRules.perks" :key="p.id" :value="p.id">{{ p.name }}：{{ p.desc.slice(0, 40) }}</option>
+        </select>
+        <button class="small" :disabled="!pickPerk" @click="addPerk">＋ 加入</button>
+        <button v-if="draft.perks" class="small" @click="delete draft.perks">恢復隨機</button>
       </div>
       <label class="check small"><input v-model="customGear" type="checkbox" /> 指定初始裝備（不勾時依等級隨機生成）</label>
       <template v-if="draft.gear">

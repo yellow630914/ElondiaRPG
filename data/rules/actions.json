@@ -1,5 +1,5 @@
 {
-  "$comment": "主動行動：擲骰先發生，程式算出參考 DC；再把完整資料與骰值交給 AI，由 AI 決定成功與否（骰值只是參考，可以出乎預料）並直接寫出結果。AI 標示的 DC 夾在參考值 ±dc_adjust；AI 提出的效果只能是 kinds.effects 中的種類，數值夾在 caps 內。AI 關閉時用 attr 與參考 DC 依 degrees 判定。說明見 docs/RELATIONSHIP_MEMORY.md 第 5 節。",
+  "$comment": "主動行動：擲骰先發生，程式算出參考 DC；再把完整資料與骰值交給 AI，由 AI 決定成功與否（骰值只是參考，可以出乎預料）並直接寫出結果。AI 標示的 DC 夾在參考值 ±dc_adjust；AI 提出的效果只能是 kinds.effects 中的種類，數值夾在 caps 內。AI 關閉時用 attr 與參考 DC 依 degrees 判定。說明見 docs/ACTIONS.md。",
   "version": 1,
   "dc_adjust": 3,
   "degrees": {
@@ -93,6 +93,10 @@
       "$comment": "主角或肯幫忙的夥伴自己動手打造裝備（crafts.json）：做的人擲檢定（屬性依工藝），加工藝等級；要有對應階級的工具；成品和委託一樣依成功程度，做的人得到工藝經驗。target 為「做的人的 id@底材:材料|輔料…」" },
     "produce": { "name": "依配方製作", "attr": "int", "hours": 2, "effects": ["affinity", "relationship_text", "flag"],
       "$comment": "主角或肯幫忙的夥伴依物品的配方製作藥劑、料理、家具、工具（crafts.json 的 recipe）：做的人擲檢定（屬性依工藝），加工藝等級；DC 與工具階級依配方等級；成品份數依成功程度，做的人得到工藝經驗。target 為「做的人的 id@物品名稱*批數」" },
+    "train": { "name": "受訓", "attr": "int", "hours": 8, "effects": ["affinity", "relationship_text", "flag"],
+      "$comment": "在公會、神殿、酒館等設施花錢學特質（perks.json 的 train）：成功時得到一次學這個特質的機會。屬性、DC、時數、學費依特質" },
+    "perk_pitch": { "name": "爭取特質", "attr": "cha", "hours": 0.25, "effects": ["relationship_text", "flag"],
+      "$comment": "在取得特質的機會上（升級、事件、特殊任務、訓練、物品），不選提供的特質，寫一段說法擲骰交給 AI 判斷合不合理，AI 在 perk 欄位設計特質（強度依成功程度夾在提供的特質附近，見 perks.json 的 pitch）。只在這些場合可以用" },
     "invent": { "name": "自創配方", "attr": "int", "hours": 4, "effects": ["affinity", "relationship_text", "flag"],
       "$comment": "主角或肯幫忙的夥伴依描述試做新東西（crafts.json 的 invention）：做的人擲工藝的屬性檢定，加工藝等級；DC 是配方的 DC + 2。AI 在 invention 欄位設計成品，程式夾進同一種工藝高一級的現成配方的上限；成功程度決定份數，做出東西時記成新的配方。target 為「做的人的 id@工藝:等級:類別|材料*數量|…」" }
   }

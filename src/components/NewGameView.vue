@@ -12,6 +12,8 @@ import { useGame } from '@/stores/game'
 import { modTotal, useContent, VANILLA, VANILLA_NAME } from '@/stores/content'
 import { slotTitle } from '@/stores/saves'
 import MarkPicker from './MarkPicker.vue'
+import PerkPicker from './PerkPicker.vue'
+import type { PerkDef } from '@/engine/data'
 import NameTag from './NameTag.vue'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
@@ -37,6 +39,9 @@ const gender = ref('')
 const appearance = ref('')
 const background = ref('')
 const importText = ref('')
+// 特質：清單裡的任選，也可以自訂
+const perks = ref<string[]>([])
+const customPerks = ref<PerkDef[]>([])
 
 // 出生地：所有聚落，依地區分組；換種族時改成該種族的預設故鄉
 const regions = computed(() =>
@@ -97,6 +102,8 @@ function start() {
     appearance: appearance.value,
     background: background.value,
     ...(s ? { slave: s } : {}),
+    ...(perks.value.length ? { perks: [...perks.value] } : {}),
+    ...(customPerks.value.length ? { customPerks: customPerks.value.map((p) => ({ ...p })) } : {}),
     options: { defeatLoot: defeatLoot.value },
   }, content.active)
 }
@@ -193,6 +200,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
         <textarea v-model="background" rows="4" maxlength="800" placeholder="例如：河谷鎮鐵匠的次子，為了尋找失蹤的哥哥而成為冒險者；不太會說謊，對魔族有說不出口的心結。" />
       </label>
     </div>
+    <PerkPicker v-model:perks="perks" v-model:custom="customPerks" :race="race" :cls="classId" />
     <div class="slave">
       <label class="check"><input v-model="slave" type="checkbox" /> ⛓️ 以奴隸身分開始</label>
       <template v-if="slave">

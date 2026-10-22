@@ -1,5 +1,6 @@
 // 城鎮行動：旅店休息、酒館招募、公會委託、補給、升級選技能。
 
+import { checkBonus } from './perks'
 import { abilityQuality, proficiency, rerollAbilityChoices, snapshot } from './character'
 import { dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit } from './guild'
 import { startCombat, type CombatState } from './combat'
@@ -284,7 +285,7 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   if (tpl.dc !== undefined) {
     const pc = player(state)
     // 任務旗標：打聽到線索 +5，消息走漏 -2
-    const bonus = (quest.flags?.lead ? 5 : 0) - (quest.flags?.suspicious ? 2 : 0)
+    const bonus = (quest.flags?.lead ? 5 : 0) - (quest.flags?.suspicious ? 2 : 0) + checkBonus(pc, { context: 'quest' })
     const dice = withBonus('1d20', proficiency(pc.level) + bonus)
     const r = withRng(state, (rng) => roll(rng, dice))
     success = r.total >= tpl.dc

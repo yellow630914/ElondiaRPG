@@ -2,6 +2,7 @@
 // 戰敗時依這個存檔的規則（options.defeatLoot）失去一部分。離開地下城（啟程旅行）就算帶出去了。
 // 不在安全房也可以緊急撤退：檢定成功直接回到入口，失敗被追上打一場，打贏才撤得出去。
 
+import { checkBonus } from './perks'
 import mapsJson from '@data/world/maps.json'
 import { mod, snapshot } from './character'
 import { computeDegree } from './checks'
@@ -126,7 +127,7 @@ export function attemptRetreat(state: GameState, area: Area, safe: boolean): Ret
     const table = dungeonEncounters[loc.id]?.[LAYER_IDS[layer] ?? 'shallow'] ?? []
     return { natural, rolled: table.length ? rng.pick(table) : undefined }
   })
-  const modifier = mod(guide.attrs[r.attr])
+  const modifier = mod(guide.attrs[r.attr]) + checkBonus(guide, { context: 'retreat', attr: r.attr })
   const total = natural + modifier
   const degree = computeDegree(natural, total, dc)
   const ok = degree === 'success' || degree === 'critical'

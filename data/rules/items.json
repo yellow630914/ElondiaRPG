@@ -608,6 +608,12 @@
     {"name": "藥草種子", "category": "material", "price_cc": 6, "tags": ["general", "temple"], "seed": {"yields": ["藥草"], "qty": [2, 3], "days": 4, "place": "yard"}, "desc": "種在菜圃，四天後就能收成藥草。"},
     {"name": "莓果苗", "category": "material", "price_cc": 3, "tags": ["general"], "seed": {"yields": ["野莓"], "qty": [2, 4], "days": 3, "place": "yard"}, "desc": "種在菜圃，三天後結出野莓。"},
     {"name": "菇菌孢子", "category": "material", "price_cc": 15, "tags": ["magic", "general"], "seed": {"yields": ["夜光蘑菇"], "qty": [1, 2], "days": 5, "place": "basement"}, "desc": "撒在地下室的菇床上，五天後長出夜光蘑菇。"},
-    {"name": "苔蘚孢子", "category": "material", "price_cc": 6, "tags": ["magic"], "seed": {"yields": ["熒光苔蘚"], "qty": [2, 3], "days": 4, "place": "basement"}, "desc": "撒在地下室的菇床上，四天後長滿熒光苔蘚。"}
+    {"name": "苔蘚孢子", "category": "material", "price_cc": 6, "tags": ["magic"], "seed": {"yields": ["熒光苔蘚"], "qty": [2, 3], "days": 4, "place": "basement"}, "desc": "撒在地下室的菇床上，四天後長滿熒光苔蘚。"},
+    {"name": "《說話之道》", "category": "consumable", "price_cc": 600, "tags": ["general"], "use": {"perks": ["silver_tongue", "charming", "diplomat"]}, "desc": "一本談吐與交際的小冊子，讀完（約 4 小時）有機會學會能言善道、討人喜歡或折衝樽俎。"},
+    {"name": "《機關圖解》", "category": "consumable", "price_cc": 550, "tags": ["info"], "use": {"perks": ["trap_sense", "light_fingers", "shadow"]}, "desc": "盜賊公會流出的手抄本，畫滿陷阱與鎖的構造，讀完有機會學會機關老手、妙手空空或來去無蹤。"},
+    {"name": "《行旅手札》", "category": "consumable", "price_cc": 450, "tags": ["general", "tavern"], "use": {"perks": ["pathfinder", "survivor", "watchful"]}, "desc": "老行商寫下的旅途心得，讀完有機會學會識途老馬、野外求生或眼觀四方。"},
+    {"name": "《戰技精要》", "category": "consumable", "price_cc": 900, "tags": ["smith"], "use": {"perks": ["brawler", "thick_skin", "nimble", "veteran"]}, "desc": "退役傭兵團長的筆記，讀完有機會學會打架好手、皮糙肉厚、身手矯健或老練冒險者。"},
+    {"name": "《聖典抄本》", "category": "consumable", "price_cc": 600, "tags": ["temple"], "use": {"perks": ["devout", "iron_will", "temple_friend", "kind_heart"]}, "desc": "神殿抄寫的經文，讀完有機會學會虔誠、意志堅定、神職人緣或古道熱腸。"},
+    {"name": "《博物志》", "category": "consumable", "price_cc": 700, "tags": ["magic"], "use": {"perks": ["scholar", "artisan", "merchant_eye"]}, "desc": "學者整理的百科全書，讀完有機會學會博學、巧手或生意頭腦。"}
   ]
 }

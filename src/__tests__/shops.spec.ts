@@ -60,7 +60,9 @@ describe('shop types', () => {
     const deals = shopState(state, 'magic').deals
     const cat = (c: string) => deals.filter((d) => itemDef(d.title)?.category === c)
     expect(cat('scroll').length).toBeGreaterThanOrEqual(10)
-    expect(cat('consumable').length).toBe(shopRules.types.magic.random!.consumables)
+    // 隨機的藥水，加上店裡本來就賣的書（讀了可以學特質）
+    expect(cat('consumable').filter((d) => !itemDef(d.title)!.use?.perks).length).toBe(shopRules.types.magic.random!.consumables)
+    expect(cat('consumable').some((d) => itemDef(d.title)!.use?.perks?.length)).toBe(true)
     // 隨機的材料，加上魔法物品店本來就賣的（孢子之類的種子）
     const own = cat('material').filter((d) => itemDef(d.title)!.tags.includes('magic'))
     expect(own.length).toBeGreaterThan(0)

@@ -12,7 +12,7 @@ import { storyMerit } from './guild'
 import {
   locationById, npcs as namedNpcs, regionById, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome,
 } from './data'
-import { applyEffects } from './effects'
+import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, type Area, type CellKind } from './grid'
 import { formatMoney } from './money'
 import { npcRecord } from './npcs'
@@ -320,7 +320,9 @@ function resolveOutcome(
   if (outcome.text) lines.push(outcome.text)
   setFlags(report, outcome.set_flags, true)
   setFlags(report, outcome.clear_flags, false)
-  const notes = outcome.effects?.length ? applyEffects(state, report, outcome.effects) : []
+  // 特質的機會：來源寫成這個特殊任務
+  const sourced = (list: RewardEffect[]) => list.map((e) => (e.type === 'perk' && !e.source ? { ...e, source: `特殊任務「${def.title}」` } : e))
+  const notes = outcome.effects?.length ? applyEffects(state, report, sourced(outcome.effects)) : []
   if (notes.length) lines.push(notes.join('，') + '。')
   if (outcome.join) {
     const rec = npcRecord(state, outcome.join)
@@ -358,7 +360,7 @@ function finishStory(state: GameState, report: Report, progress: StoryProgress, 
   report.story = { id: def.id, title: def.title, ...(report.story?.node ? { node: report.story.node } : {}), status }
   if (status === 'completed') report.changes.merit = (report.changes.merit ?? 0) + (def.merit ?? storyMerit())
   if (status === 'completed' && def.rewards?.length) {
-    const notes = applyEffects(state, report, def.rewards)
+    const notes = applyEffects(state, report, def.rewards.map((e) => (e.type === 'perk' && !e.source ? { ...e, source: `完成特殊任務「${def.title}」` } : e)))
     const money = def.rewards.filter((r) => r.type === 'money').reduce((s, r) => s + (r as { amount: number }).amount, 0)
     lines.push(`完成特殊任務「${def.title}」${money ? `，得到 ${formatMoney(money)}` : ''}${notes.length ? `：${notes.join('，')}` : ''}。`)
   } else {

@@ -67,23 +67,12 @@ pnpm build             # 型別檢查 + 建置到 dist/
 
 | 路徑 | 說明 |
 |---|---|
-| [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 遊戲設計：架構、走格子、旅行、城鎮、AI 敘事管線、待決定事項 |
-| [`docs/COMBAT_SYSTEM.md`](docs/COMBAT_SYSTEM.md) | 戰鬥系統：屬性、三資源、命中與迴避、幸運一擊、傷害屬性、BUFF、各職業能力清單 |
-| [`docs/QUEST_EVENT_DESIGN.md`](docs/QUEST_EVENT_DESIGN.md) | 任務／事件生成系統與 AI 權責劃分（提案） |
-| [`docs/RELATIONSHIP_MEMORY.md`](docs/RELATIONSHIP_MEMORY.md) | 人際關係與共同記憶系統、主動行動（擲骰後由 AI 判定並寫出結果） |
-| [`docs/COMPANIONS.md`](docs/COMPANIONS.md) | 報酬模板、新增夥伴的五種方式、離隊規則、奴隸契約印記、短休與長休 |
-| [`docs/TRADE.md`](docs/TRADE.md) | 物品目錄、交易清單、價格、交涉與談判 |
-| [`docs/ITEMS.md`](docs/ITEMS.md) | 物品與裝備：取得管道、11 個裝備欄位、稀有度與附魔、材料與底材、制式裝備、寶箱、委託打造、消耗品 |
-| [`docs/CONTENT_EDITOR.md`](docs/CONTENT_EDITOR.md) | 🛠️ 內容頁籤：自己新增、修改怪物、物品、裝備底材與材料（出現地點、掉落、商店、寶箱、事件） |
-| [`docs/MONSTERS.md`](docs/MONSTERS.md) | 怪物一覽：到處都有的、各地區城郊、每座地下城各層的小怪與三隻層主；技能、抗性、可否發情、掉落 |
-| [`docs/WORK.md`](docs/WORK.md) | 工作（各設施換錢）、娼館（消費、被迫工作、老鴇、娼妓契約）、成人向開關的換詞 |
-| [`docs/NPC_SYSTEM.md`](docs/NPC_SYSTEM.md) | NPC 系統重作方案（名單、標籤、活躍地點、互動、警戒與通緝；設計中） |
-| [`docs/PROMPTS.md`](docs/PROMPTS.md) | 發給 AI 的提示詞結構（敘事、判定、生成）、排列順序與快取、提示詞頁籤 |
-| [`docs/PORTRAITS.md`](docs/PORTRAITS.md) | 角色形象插圖：生圖服務（ChatGPT、NovelAI、ComfyUI）、提示詞模板、Danbooru 標籤轉換、圖片保存 |
-| [`docs/DUNGEON_DESIGN.md`](docs/DUNGEON_DESIGN.md) | 地下城分層探索（周邊 → 淺層 → 中層 → 深層），含實作狀態 |
-| [`docs/WORLD_NOTES.md`](docs/WORLD_NOTES.md) | 世界書與地圖之間的不一致與缺漏 |
+| [`docs/README.md`](docs/README.md) | **文件地圖**：所有設計文件的階層、依賴關係與一覽 |
+| [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 總綱：核心原則、遊戲迴圈、報告格式、AI 敘事管線、系統地圖 |
+| [`docs/OPEN_QUESTIONS.md`](docs/OPEN_QUESTIONS.md) | 待決定事項（集中在這裡） |
+| [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) | 程式中發現的 Bug 與不合理之處 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema） |
 | [`examples/reports/`](examples/reports/) | 範例報告：戰鬥、旅行 |
 | [`data/world/`](data/world/) | 區域、勢力、地點、路線天數、城鎮格子地圖、可招募 NPC、生成 NPC 的素材 |
-| [`data/rules/`](data/rules/) | 屬性、職業、戰鬥規則、傷害屬性、狀態、能力、裝備（`equipment.json` 武器與防具類型、`gear.json` 欄位、材料、底材、打造與寶箱）、敵人、經濟、委託、夥伴與休息、奴隸契約、主動行動、物品、商店、談判 |
+| [`data/rules/`](data/rules/) | 屬性、職業、等級成長與公會（`progression.json`）、戰鬥規則、傷害屬性、狀態、能力、怪物與怪物特徵、裝備（`equipment.json` 武器與防具類型、`gear.json` 欄位、材料、底材、打造與寶箱）、經濟、委託、特殊任務、旅途事件、夥伴與休息、奴隸契約、主動行動、物品、商店、談判、工藝、房屋、工作、NPC 標籤與名單、警戒與通緝 |
 | [`data/worldbook/elondia.worldbook.json`](data/worldbook/elondia.worldbook.json) | 原始世界書（SillyTavern 格式） |
