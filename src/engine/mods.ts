@@ -13,7 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -21,6 +21,8 @@ import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
 import { cleanPerkEffects, describeEffects, type PerkLimits } from './perks'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
+import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
+import { tattooRules, type TattooTemplate } from './tattoos'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
 export type ChestLayer = 'outskirts' | 'shallow' | 'middle' | 'deep'
@@ -88,10 +90,16 @@ export interface ContentMods {
   perks: Record<string, PerkMod>
   /** 舊的自訂內容沒有這一欄（讀取時補上） */
   statuses: Record<string, StatusMod>
+  /** 刺青圖樣（普通刺青、誓約印記） */
+  tattoos: Record<string, TattooMod>
+  /** 奴隸印記的模板 */
+  marks: Record<string, MarkMod>
+  /** 印記的用途與權重（只有 rules 一筆） */
+  markRules: Record<string, MarkRulesMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -114,6 +122,22 @@ const snapshot = {
   abilities: clone(abilities),
   perks: clone(perkRules.perks),
   statuses: clone(statuses),
+  tattoos: clone(tattooRules.templates),
+  marks: clone(slaveryRules.contracts),
+  markRules: clone(currentMarkRules()),
+}
+
+export function builtinTattoo(id: string): TattooTemplate | undefined {
+  return snapshot.tattoos[id] ? clone(snapshot.tattoos[id]!) : undefined
+}
+
+export function builtinMark(id: string): ContractDef | undefined {
+  return snapshot.marks[id] ? clone(snapshot.marks[id]!) : undefined
+}
+
+/** 內建的印記設定 */
+export function builtinMarkRules(): MarkRulesMod {
+  return clone(snapshot.markRules)
 }
 
 export function builtinStatus(id: string): StatusDef | undefined {
@@ -168,6 +192,9 @@ function restore() {
   maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon)
   namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs))
   replaceRecord(statuses, snapshot.statuses)
+  replaceRecord(tattooRules.templates, snapshot.tattoos)
+  replaceRecord(slaveryRules.contracts, snapshot.marks)
+  applyMarkRules(clone(snapshot.markRules))
   replaceRecord(abilities, snapshot.abilities)
   perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
@@ -378,6 +405,14 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('狀態', mods.statuses ?? {}, (id, m) => {
     statuses[id] = strip(m, ['custom'])
   })
+  // 刺青與奴隸印記：事件、特殊任務會用到
+  tryEach('刺青圖樣', mods.tattoos ?? {}, (id, m) => {
+    tattooRules.templates[id] = strip(m, ['custom'])
+  })
+  tryEach('奴隸印記', mods.marks ?? {}, (id, m) => {
+    slaveryRules.contracts[id] = strip(m, ['custom'])
+  })
+  tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)))))
   // 能力先套用：怪物、固定 NPC、職業都會用到
   tryEach('能力', mods.abilities, (id, m) => {
     abilities[id] = { ...strip(m, ['custom']), id }
@@ -827,6 +862,15 @@ export function normalizeMods(raw: unknown): ContentMods {
   const statusIds = new Set([...Object.keys(statuses), ...Object.keys(r.statuses ?? {})])
   for (const [id, v] of Object.entries(r.statuses ?? {})) out.statuses[id] = sanitizeStatus(id, v, !!v.custom || !snapshot.statuses[id], statusIds)
   for (const [id, s] of Object.entries(out.statuses)) if (s.custom && !statuses[id]) statuses[id] = strip(s, ['custom'])
+  // 刺青圖樣與奴隸印記：特殊任務的效果會檢查存不存在，先登錄自建的
+  for (const [id, v] of Object.entries(r.tattoos ?? {})) {
+    const t = sanitizeTattooMod(v, !!v.custom || !snapshot.tattoos[id])
+    if (t) out.tattoos[id] = t
+  }
+  for (const [id, t] of Object.entries(out.tattoos)) if (t.custom && !tattooRules.templates[id]) tattooRules.templates[id] = strip(t, ['custom'])
+  for (const [id, v] of Object.entries(r.marks ?? {})) out.marks[id] = sanitizeMarkMod(v, !!v.custom || !snapshot.marks[id])
+  for (const [id, m] of Object.entries(out.marks)) if (m.custom && !slaveryRules.contracts[id]) slaveryRules.contracts[id] = strip(m, ['custom'])
+  if (r.markRules?.rules) out.markRules.rules = sanitizeMarkRules(r.markRules.rules, new Set([...Object.keys(snapshot.marks), ...Object.keys(out.marks)]))
   for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
   for (const [id, a] of Object.entries(out.abilities)) if (a.custom && !abilities[id]) abilities[id] = { ...strip(a, ['custom']), id }

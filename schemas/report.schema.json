@@ -201,6 +201,14 @@
           "description": "特質的增減（學會或失去）。",
           "items": { "type": "object", "required": ["actor", "perk", "name", "added"], "properties": { "actor": { "type": "string" }, "perk": { "type": "string" }, "name": { "type": "string" }, "added": { "type": "boolean" } } }
         },
+        "tattoos": {
+          "type": "array",
+          "description": "刺上或洗掉的刺青（普通刺青、誓約印記；奴隸印記記在 companions 的 enslaved / freed）。",
+          "items": {
+            "type": "object", "required": ["actor", "place", "kind", "name", "added"],
+            "properties": { "actor": { "type": "string" }, "place": { "type": "string" }, "kind": { "enum": ["slave", "oath", "plain"] }, "name": { "type": "string" }, "added": { "type": "boolean" } }
+          }
+        },
         "hit_dice": {
           "type": "array",
           "description": "短休花費、長休回復的生命骰。",

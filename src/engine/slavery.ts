@@ -10,7 +10,7 @@ import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
 import { adultContent, adultScene, safeText } from './content'
-import { addTattoo, contractOf, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
+import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
 import { reputationOf } from './security'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
@@ -442,6 +442,8 @@ export function eventFits(state: GameState, master: Pick<NpcRecord, 'id' | 'tags
   if (e.tags?.length && !e.tags.some((t) => tags.includes(t))) return false
   if (e.tags_none?.some((t) => tags.includes(t))) return false
   if (e.at_home !== undefined && e.at_home !== atMasterHome(state)) return false
+  // 主人刺青只刺在空著的部位
+  if (e.free_place && !freePlaces(pcOf(state)).length) return false
   return true
 }
 
@@ -461,8 +463,14 @@ function pickEvent(rng: Rng, list: MasterEventDef[]): MasterEventDef {
 }
 
 /** 把事件的效果裡的 master 換成主人的 id */
-function forMaster(effects: RewardEffect[] | undefined, master: string): RewardEffect[] {
-  return (effects ?? []).map((e) => ('npc' in e && e.npc === 'master' ? { ...e, npc: master } : e) as RewardEffect)
+/** 事件效果裡的 master 換成主人的 id；刺青的名稱、外觀與刺的人裡的 {master} 換成主人的名字 */
+function forMaster(effects: RewardEffect[] | undefined, master: string, masterName = '主人'): RewardEffect[] {
+  const sub = (x: string) => x.split('{master}').join(masterName)
+  return (effects ?? []).map((e) => {
+    if ('npc' in e && e.npc === 'master') return { ...e, npc: master } as RewardEffect
+    if (e.type === 'tattoo') return { ...e, ...(e.name ? { name: sub(e.name) } : {}), ...(e.text ? { text: sub(e.text) } : {}), ...(e.by ? { by: sub(e.by) } : {}) }
+    return e
+  })
 }
 
 function withMaster(state: GameState, s: string): string {
@@ -506,7 +514,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     narration: { pov: 'second_person', length: 'short', focus: [`${c.masterName}的突發要求`, `主角的回應：${safeText(o.label)}`] },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
-  let effects = forMaster(o.effects, c.master)
+  let effects = forMaster(o.effects, c.master, c.masterName)
   if (o.check) {
     // 非戰鬥狀態與特質（主人的標籤也算）
     const extra = checkModifiers(pc, { context: 'master_event', attr: o.check.attr, vsTags: npcRecord(state, c.master)?.tags ?? [] })
@@ -514,7 +522,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     const r = withRng(state, (rng) => roll(rng, dice))
     const ok = r.total >= o.check.dc
     report.timeline = [{ seq: 1, time: start, actor: 'pc', action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
-    effects = [...effects, ...forMaster(ok ? o.effects_success : o.fail_effects, c.master)]
+    effects = [...effects, ...forMaster(ok ? o.effects_success : o.fail_effects, c.master, c.masterName)]
     report.outcome.result = ok ? 'success' : 'failure'
     const after = ok ? o.success : o.fail
     if (after) report.outcome.summary += withMaster(state, after)
@@ -568,7 +576,7 @@ export function applyMasterEventResponse(state: GameState, report: Report, degre
 export function masterEventDefaults(state: GameState, report: Report, degree: Degree): string[] {
   const c = contractOf(pcOf(state))
   if (!c?.master) return []
-  return applyEffects(state, report, affordable(state, forMaster(slaveryRules.master_events.free_outcomes[degree], c.master)))
+  return applyEffects(state, report, affordable(state, forMaster(slaveryRules.master_events.free_outcomes[degree], c.master, c.masterName)))
 }
 
 // ---- 逃亡之後：找到主人、投靠新主人、解除印記 ----

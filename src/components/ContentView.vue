@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, describeStatus, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, perkDef, perkRules, statuses, stories } from '@/engine/data'
+import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, perkDef, perkRules, slaveryRules, statuses, stories } from '@/engine/data'
+import { newMark, newTattooTemplate } from '@/engine/tattooMods'
+import { oathText, placeName, tattooRules } from '@/engine/tattoos'
 import { perkPower } from '@/engine/perks'
 import { gearRules } from '@/engine/gear'
 import {
   ABILITY_TYPES, abilityClasses, builtinAbility, builtinBase, builtinEnemy, builtinMaterial, builtinNpc, builtinPerk, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions,
   ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk, builtinStatus, newStatus,
+  builtinMark, builtinTattoo,
 } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { useContent } from '@/stores/content'
@@ -20,10 +23,13 @@ import NpcEditor from './content/NpcEditor.vue'
 import PerkEditor from './content/PerkEditor.vue'
 import StatusEditor from './content/StatusEditor.vue'
 import StoryEditor from './content/StoryEditor.vue'
+import TattooEditor from './content/TattooEditor.vue'
+import MarkEditor from './content/MarkEditor.vue'
+import MarkRulesEditor from './content/MarkRulesEditor.vue'
 import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'npcs' | 'stories'
+type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
   { id: 'items', label: '🎒 物品' },
@@ -32,6 +38,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'abilities', label: '✨ 技能' },
   { id: 'statuses', label: '🌀 狀態' },
   { id: 'perks', label: '🌟 特質' },
+  { id: 'tattoos', label: '🖋️ 刺青' },
   { id: 'npcs', label: '🧑 固定 NPC' },
   { id: 'stories', label: '⭐ 特殊任務' },
 ]
@@ -65,8 +72,11 @@ function resetFilters() {
   abilityType.value = ''
   abilityClass.value = ''
   statusKind.value = ''
+  tattooKind.value = ''
 }
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', npcs: '', stories: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', npcs: '', stories: '' })
+// 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
+const tattooKind = ref('')
 // 狀態：增益、減益
 const statusKind = ref('')
 /** 清單上的效果簡述：第一項效果，太長就截斷（完整的在編輯畫面） */
@@ -124,6 +134,16 @@ const rows = computed<Row[]>(() => {
     list = perkRules.perks
       .map((p) => ({ key: p.id, name: p.name, note: p.race ? '種族' : `強度 ${perkPower(p)}${p.train ? '・可受訓' : ''}`, status: st(!!m.perks[p.id], !builtinPerk(p.id)), sort: p.race ? 1 : 0 }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+  } else if (sub.value === 'tattoos') {
+    const k = tattooKind.value
+    const tats = Object.entries(tattooRules.templates)
+      .filter(([, t]) => !k || t.kind === k)
+      .map(([id, t]) => ({ key: `t:${id}`, name: `${t.kind === 'oath' ? '📜' : '🖋️'} ${t.name}`, note: t.kind === 'oath' ? oathText(t.attrs ?? {}) : (t.places ?? []).map(placeName).slice(0, 3).join('、'), status: st(!!m.tattoos?.[id], !builtinTattoo(id)), sort: t.kind === 'oath' ? 1 : 0 }))
+    const marks = !k || k === 'slave'
+      ? Object.keys(slaveryRules.contracts).map((id) => ({ key: `m:${id}`, name: `⛓️ ${contractDef(id).name}`, note: placeName(contractDef(id).place), status: st(!!m.marks?.[id], !builtinMark(id)), sort: 2 }))
+      : []
+    const rules = !k || k === 'slave' ? [{ key: 'rules', name: '⚙️ 印記設定', note: '用途、輕重順序、權重', status: st(!!m.markRules?.rules, false), sort: 3 }] : []
+    list = [...tats, ...marks, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'stories') {
     list = stories
       .map((d) => ({ key: d.id, name: d.title, note: `${START_KINDS[d.start.kind]}・${d.nodes.length} 個任務點`, status: st(!!m.stories[d.id], !builtinStory(d.id)) }))
@@ -148,7 +168,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -157,7 +177,9 @@ const current = computed(() => {
   if (!key) return ''
   const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
     : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? stories.some((d) => d.id === key)
-    : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key) : !!gearRules.materials[key]
+    : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key)
+    : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
+    : !!gearRules.materials[key]
   return exists ? key : ''
 })
 
@@ -192,6 +214,16 @@ function create() {
       const id = newModId('perk')
       content.savePerk(id, newPerk(id))
       select(id)
+    } else if (sub.value === 'tattoos') {
+      if (tattooKind.value === 'slave') {
+        const id = newModId('mark')
+        content.saveMark(id, newMark())
+        select(`m:${id}`)
+      } else {
+        const id = newModId('tattoo')
+        content.saveTattoo(id, newTattooTemplate(tattooKind.value === 'oath' ? 'oath' : 'plain'))
+        select(`t:${id}`)
+      }
     } else if (sub.value === 'stories') {
       const id = newModId('story')
       content.saveStory(id, newStory(id))
@@ -241,6 +273,20 @@ function duplicate() {
       delete src.race
       content.savePerk(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
       select(id)
+    } else if (sub.value === 'tattoos') {
+      if (key === 'rules') return
+      const raw = key.slice(2)
+      if (key.startsWith('t:')) {
+        const id = newModId('tattoo')
+        const src = JSON.parse(JSON.stringify(content.mods.tattoos?.[raw] ?? tattooRules.templates[raw]))
+        content.saveTattoo(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
+        select(`t:${id}`)
+      } else {
+        const id = newModId('mark')
+        const src = JSON.parse(JSON.stringify(content.mods.marks?.[raw] ?? slaveryRules.contracts[raw]))
+        content.saveMark(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
+        select(`m:${id}`)
+      }
     } else if (sub.value === 'statuses') {
       const id = newModId('status')
       const src = JSON.parse(JSON.stringify(content.mods.statuses[key] ?? statuses[key]))
@@ -272,7 +318,7 @@ function duplicate() {
   }
 }
 
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
 // ---- 匯出、匯入、重設 ----
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -306,7 +352,7 @@ function resetAll() {
       <span class="small muted">{{ counts[sub] }}</span>
     </nav>
     <p class="small muted note">
-      在這裡新增或修改怪物、物品、裝備底材、材料、技能、狀態（BUFF／DEBUFF）、特質、固定 NPC 與特殊任務。內建的項目可以修改（隨時「恢復預設」），不能刪除；自建的項目沒有被用到時可以刪除。
+      在這裡新增或修改怪物、物品、裝備底材、材料、技能、狀態（BUFF／DEBUFF）、特質、刺青（圖樣與奴隸印記）、固定 NPC 與特殊任務。內建的項目可以修改（隨時「恢復預設」），不能刪除；自建的項目沒有被用到時可以刪除。
       修改存在目前的世界裡（用這個世界的存檔都會受影響），儲存後立刻生效（已經生成的地圖、商店清單要等下次重新生成）。
     </p>
     <p v-if="content.problems.length" class="small warn-text">有些自訂內容沒辦法套用：{{ content.problems.join('；') }}</p>
@@ -357,6 +403,14 @@ function resetAll() {
             <option value="debuff">🔴 減益（DEBUFF）</option>
           </select>
         </div>
+        <div v-if="sub === 'tattoos'" class="row">
+          <select v-model="tattooKind" class="grow">
+            <option value="">所有刺青與印記</option>
+            <option value="plain">🖋️ 普通刺青</option>
+            <option value="oath">📜 誓約印記</option>
+            <option value="slave">⛓️ 奴隸印記與印記設定</option>
+          </select>
+        </div>
         <div v-if="sub === 'abilities'" class="row">
           <select v-model="abilityType" class="grow">
             <option value="">所有種類</option>
@@ -386,6 +440,11 @@ function resetAll() {
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
         <StatusEditor v-else-if="sub === 'statuses'" :id="current" :key="`s-${current}`" @deleted="select('')" />
         <PerkEditor v-else-if="sub === 'perks'" :id="current" :key="`p-${current}`" @deleted="select('')" />
+        <template v-else-if="sub === 'tattoos'">
+          <MarkRulesEditor v-if="current === 'rules'" key="rules" />
+          <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />
+          <MarkEditor v-else :id="current.slice(2)" :key="current" @deleted="select('')" />
+        </template>
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
         <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" @open="select" />
         <GearEditor v-else-if="sub === 'bases'" :id="current" :key="`b-${current}`" kind="base" @deleted="select('')" />

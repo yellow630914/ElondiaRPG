@@ -849,6 +849,8 @@ export interface MasterEventDef {
   at_home?: boolean
   /** 離家逾期時的「主人要回家」事件：不在一般事件的抽選裡 */
   overdue?: boolean
+  /** 主角身上還有空著的部位時才發生（主人要替主角刺青） */
+  free_place?: boolean
 }
 
 export interface UnmarkServiceDef {

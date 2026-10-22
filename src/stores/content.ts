@@ -10,8 +10,10 @@ import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, typ
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
-  builtinStatus, sanitizeStatus, statusUsage, type StatusMod,
+  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinTattoo, builtinMark,
 } from '@/engine/mods'
+import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
+import { slaveryRules } from '@/engine/data'
 import { pruneAbilities, prunePerks, pruneStatuses } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
 import { enemyUsage, gearUsage, itemUsage, npcUsage, perkUsage, renameItemInState, storyUsage } from '@/engine/usage'
@@ -41,9 +43,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
+const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
+  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
 }
 
 export interface ModsDiffEntry {
@@ -62,6 +64,7 @@ export interface ModsDiff {
 
 function modLabel(section: Section, id: string, v: unknown): string {
   const o = v as { name?: string; title?: string }
+  if (section === 'markRules') return MOD_SECTION_NAMES[section]
   const name = section === 'items' ? id : o.title ?? o.name ?? id
   return `${MOD_SECTION_NAMES[section]}「${name}」`
 }
@@ -248,7 +251,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -262,6 +265,8 @@ export const useContent = defineStore('content', () => {
       case 'ability': return abilityUsage(key, state)
       case 'perk': return perkUsage(key, state)
       case 'status': return statusUsage(key, state)
+      case 'tattoo': return tattooUsage(key)
+      case 'mark': return markUsage(key)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -485,6 +490,47 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 刺青圖樣、奴隸印記與印記設定 ----
+
+  function saveTattoo(id: string, draft: Partial<TattooMod>) {
+    const t = sanitizeTattooMod(draft, !builtinTattoo(id))
+    if (!t) throw new Error('誓約的加減不合規則（有加有減、加總為 0）')
+    ;(mods.value.tattoos ??= {})[id] = t
+    save()
+  }
+  function deleteTattoo(id: string) {
+    if (!mods.value.tattoos?.[id]?.custom) throw new Error('內建的刺青圖樣不能刪除')
+    assertUnused('tattoo', id)
+    delete mods.value.tattoos[id]
+    save()
+  }
+  function restoreTattoo(id: string) {
+    if (!mods.value.tattoos?.[id]?.custom) delete mods.value.tattoos?.[id]
+    save()
+  }
+  function saveMark(id: string, draft: Partial<MarkMod>) {
+    ;(mods.value.marks ??= {})[id] = sanitizeMarkMod(draft, !builtinMark(id))
+    save()
+  }
+  function deleteMark(id: string) {
+    if (!mods.value.marks?.[id]?.custom) throw new Error('內建的奴隸印記不能刪除')
+    assertUnused('mark', id)
+    delete mods.value.marks[id]
+    save()
+  }
+  function restoreMark(id: string) {
+    if (!mods.value.marks?.[id]?.custom) delete mods.value.marks?.[id]
+    save()
+  }
+  function saveMarkRules(draft: Partial<MarkRulesMod>) {
+    ;(mods.value.markRules ??= {}).rules = sanitizeMarkRules(draft, new Set(Object.keys(slaveryRules.contracts)))
+    save()
+  }
+  function restoreMarkRules() {
+    delete mods.value.markRules?.rules
+    save()
+  }
+
   // ---- 特質 ----
 
   function savePerk(id: string, draft: Partial<PerkMod>) {
@@ -599,6 +645,7 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
+    saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

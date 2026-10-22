@@ -42,7 +42,10 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   remove_tattoo: () => ({ type: 'remove_tattoo', kind: 'plain' }),
 }
 // 刺青：圖樣，或自己描述（誓約要填屬性的加減）
-const tattooTemplates = Object.entries(tattooRules.templates)
+const tattooTemplates = computed(() => {
+  void content.version
+  return Object.entries(tattooRules.templates)
+})
 function tattooMode(r: Row): string {
   return typeof r.template === 'string' ? r.template : `custom:${r.kind === 'oath' ? 'oath' : 'plain'}`
 }
@@ -81,7 +84,10 @@ function setPerkOption(r: Row, i: number, id: string) {
   else delete r.options
 }
 // 主角淪為奴隸：固定 NPC 當主人，或隨機生成（可以指定身分）
-const contracts = Object.keys(slaveryRules.contracts)
+const contracts = computed(() => {
+  void content.version
+  return Object.keys(slaveryRules.contracts)
+})
 const masterTags = Object.keys(slaveryRules.master_tags.tags)
 function masterMode(r: Row): 'fixed' | 'random' {
   return typeof r.master === 'string' ? 'fixed' : 'random'

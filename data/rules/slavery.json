@@ -412,6 +412,40 @@
         { "label": "請主人講講路上的見聞", "result": "{master}滔滔不絕地講到半夜，你聽得入迷。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "聽故事" }, { "type": "condition", "target": "pc", "condition": "cheered", "add": true }] },
         { "label": "說不知道", "result": "{master}嘆了口氣，自己收起了地圖。", "effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "不用心" }] }
       ] },
+      { "id": "ink_crest", "weight": 2, "free_place": true, "text": "{master}叫來一位刺青師，說要在你身上刺個記號，讓人一看就知道你是誰的人。", "hours": 2, "options": [
+        { "label": "乖乖讓人刺", "result": "針一下一下扎進皮膚，你咬牙忍著，直到圖樣完成。",
+          "effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}的記號", "text": "一枚刻著{master}名字縮寫的小紋章，線條俐落。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "乖乖接受刺青" }] },
+        { "label": "請求刺個好看一點的圖樣", "check": { "attr": "cha", "dc": 13 },
+          "success": "{master}想了想，讓刺青師改刺一隻展翅的蝴蝶。", "fail": "{master}不耐煩地揮揮手：「照原本的刺。」",
+          "effects_success": [{ "type": "tattoo", "template": "butterfly", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "討了個好看的圖樣" }],
+          "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}的記號", "text": "一枚刻著{master}名字縮寫的小紋章，線條俐落。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "討價還價" }] },
+        { "label": "掙扎不讓刺", "check": { "attr": "str", "dc": 15 },
+          "success": "你掙開按住你的手，{master}嘆了口氣，這次作罷。", "fail": "你被按在椅子上，刺青師照樣刺完了。",
+          "effects_success": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "抗拒刺青" }],
+          "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}的記號", "text": "一枚刻著{master}名字縮寫的小紋章，邊緣因為掙扎有些歪斜。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "抗拒刺青" }] }
+      ] },
+      { "id": "villain_ink", "weight": 2, "tags": ["villain"], "free_place": true, "text": "{master}喝得半醉，把你拖到黑巷裡的刺青攤：「給我的東西刺上我的標記。」", "hours": 1.5, "options": [
+        { "label": "不吭聲地讓人刺", "result": "粗糙的針扎得你直冒冷汗，攤子老闆刺完一朵咬在骷髏嘴裡的玫瑰。",
+          "effects": [{ "type": "tattoo", "template": "skull_rose", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "沒有反抗" }] },
+        { "label": "趁他醉了矇混過去", "check": { "attr": "dex", "dc": 14 },
+          "success": "你塞了點錢給攤子老闆，只刺了幾道淡淡的線，{master}醉得看不出差別。", "fail": "{master}一把抓住你，盯著老闆刺完。",
+          "effects_success": [{ "type": "money", "amount": -20 }],
+          "fail_effects": [{ "type": "tattoo", "template": "skull_rose", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "想矇混過去" }] },
+        { "label": "當面拒絕", "result": "{master}罵罵咧咧地甩了你一巴掌，最後還是讓人刺了。",
+          "effects": [{ "type": "tattoo", "template": "skull_rose", "by": "{master}" }, { "type": "hp", "target": "pc", "ratio": -0.1 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "當面頂撞" }] }
+      ] },
+      { "id": "noble_crest", "weight": 2, "tags": ["noble", "royal"], "free_place": true, "text": "{master}說府上的僕役都要刺上家族的徽記，今天輪到你了。", "hours": 2, "options": [
+        { "label": "恭敬地接受", "result": "府上的刺青師手法細膩，徽記刺得端正漂亮。",
+          "effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}家的徽記", "text": "一面精細的家族徽記，四周繞著細小的藤紋。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "恭敬地接受家紋" }] },
+        { "label": "請求刺在不顯眼的地方", "check": { "attr": "cha", "dc": 12 },
+          "success": "{master}點頭答應，徽記刺在衣服遮得住的大腿上。", "fail": "{master}冷冷地說：「徽記就是要給人看的。」",
+          "effects_success": [{ "type": "tattoo", "kind": "plain", "name": "{master}家的徽記", "text": "一面小小的家族徽記，平時被衣物遮住。", "place": "left_thigh", "by": "{master}" }],
+          "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}家的徽記", "text": "一面精細的家族徽記，四周繞著細小的藤紋。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "嫌家紋丟人" }] },
+        { "label": "以出身為由拒絕", "check": { "attr": "cha", "dc": 16 },
+          "success": "{master}聽完你的說法，竟然同意你不必刺。", "fail": "{master}不為所動，徽記還是刺上了。",
+          "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "拒絕家紋" }],
+          "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}家的徽記", "text": "一面精細的家族徽記，四周繞著細小的藤紋。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕家紋" }] }
+      ] },
       { "id": "home_chores", "weight": 3, "at_home": true, "text": "{master}要你把整棟房子從裡到外打掃乾淨。", "hours": 3, "options": [
         { "label": "照做", "result": "你忙到天黑，屋子亮得能照出人影。", "effects": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "勤快" }] },
         { "label": "偷懶，只掃看得見的地方", "check": { "attr": "dex", "dc": 13 }, "success": "{master}巡了一圈，沒看出破綻。", "fail": "{master}在床底下摸出一把灰。", "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "偷懶" }], "hours": 1.5 },

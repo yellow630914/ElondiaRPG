@@ -6,7 +6,11 @@ import { geography, isSettlement, locationById, slaveryRules } from '@/engine/da
 import { applyEffects } from '@/engine/effects'
 import { blockKeys, enterLocation, getArea, standOn } from '@/engine/grid'
 import { pcOf } from '@/engine/party'
-import { contractKind, contractTerms, deriveFunctions, masterCandidates, oathStrength, startAsSlave, termsFromTemplate, unmarkOffers } from '@/engine/slavery'
+import {
+  answerMasterEvent, contractKind, contractTerms, deriveFunctions, eventFits, masterCandidates, oathStrength, startAsSlave, startMasterEvent, termsFromTemplate, unmarkOffers,
+} from '@/engine/slavery'
+import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
+import { markUsage, tattooUsage } from '@/engine/tattooMods'
 import { characterFor, registerNpc } from '@/engine/npcs'
 import { inkPrice, inkTattoo, tattooShop, washTattoo } from '@/engine/tattooShop'
 import { migrate, newGame } from '@/engine/state'
@@ -243,5 +247,76 @@ describe('tattoo shops', () => {
     expect(tattooAt(pc, 'back')).toMatchObject({ kind: 'plain', name: '影行之誓' })
     expect(tattooAt(pc, 'back')!.attrs).toBeUndefined()
     expect(attrsOf(pc)).toEqual(pc.attrs)
+  })
+})
+
+describe('masters ink their slaves', () => {
+  function enslaved(): GameState {
+    const state = game()
+    const [rec] = masterCandidates('rhineburg', 3)
+    startAsSlave(state, { master: { type: 'candidate', rec: rec! }, mark: 'labor' })
+    return state
+  }
+  const crest = () => slaveryRules.master_events.events.find((e) => e.id === 'ink_crest')!
+
+  it('only on a bare place, with the master named', () => {
+    const state = enslaved()
+    const pc = pcOf(state)
+    const master = contractOf(pc)!
+    expect(eventFits(state, { id: master.master, tags: [] }, crest())).toBe(true)
+    startMasterEvent(state, crest())
+    answerMasterEvent(state, 0)
+    const t = tattoosOf(pc).find((x) => x.kind === 'plain')!
+    expect(t).toMatchObject({ name: `${master.masterName}的記號`, by: master.masterName })
+    expect(t.place).not.toBe('neck')
+    // 身上都刺滿了：不會再有主人刺青的事件
+    for (const p of freePlaces(pc)) addTattoo(pc, { kind: 'plain', place: p, name: '填', desc: '' }, state.time)
+    expect(eventFits(state, { id: master.master, tags: [] }, crest())).toBe(false)
+  })
+
+  it('never ink over an existing tattoo', () => {
+    const state = enslaved()
+    const pc = pcOf(state)
+    addTattoo(pc, { kind: 'plain', place: 'left_thigh', name: '舊刺青', desc: '' }, state.time)
+    const notes = applyEffects(state, blank(state), [{ type: 'tattoo', kind: 'plain', name: '徽記', text: '', place: 'left_thigh' }])
+    expect(notes.join('')).toContain('沒有刺上')
+    expect(tattooAt(pc, 'left_thigh')!.name).toBe('舊刺青')
+  })
+})
+
+describe('tattoo content', () => {
+  afterEach(() => applyContent(emptyMods()))
+
+  it('adds custom templates and marks, and drops unbalanced oaths', () => {
+    const m = normalizeMods({
+      tattoos: {
+        mod_tattoo_a: { kind: 'oath', name: '星誓', desc: '星紋', attrs: { int: 2, str: -2 }, custom: true },
+        mod_tattoo_b: { kind: 'oath', name: '壞誓', desc: '', attrs: { int: 3 }, custom: true },
+      },
+      marks: { mod_mark_a: { name: '鐵環印', mark: '腳踝上的鐵環紋', place: 'left_calf', income_share: 2, negotiate_dc: 34, escape_dc: 40, exit_dc: 3, recapture_chance: 0.9, escape_effects: { hp_ratio: 0.5 }, obedience_penalty: 12, side_effects: ['走路時叮噹作響'], custom: true } },
+      markRules: { rules: { roles: { default: 'mod_mark_a', madam: 'nope' }, market_contracts: { public: { mod_mark_a: 5, ghost: 9 }, black: {} }, severity: ['mod_mark_a', 'labor', 'ghost'], self_sale: { labor: 1 } } },
+    })
+    expect(Object.keys(m.tattoos)).toEqual(['mod_tattoo_a'])
+    expect(m.marks.mod_mark_a).toMatchObject({ income_share: 1, negotiate_dc: 34, escape_dc: 35, exit_dc: 5, recapture_chance: 0.8, obedience_penalty: 10, place: 'left_calf' })
+    expect(m.markRules.rules).toMatchObject({ roles: { default: 'mod_mark_a', madam: 'brothel' }, severity: ['mod_mark_a', 'labor'], market_contracts: { public: { mod_mark_a: 5 } } })
+    applyContent(m)
+    expect(tattooRules.templates.mod_tattoo_a!.name).toBe('星誓')
+    expect(slaveryRules.roles.default).toBe('mod_mark_a')
+    expect(termsFromTemplate('mod_mark_a')).toMatchObject({ place: 'left_calf', functions: expect.arrayContaining(['tether', 'tracking', 'income']) })
+    // 新刻的印記照新模板，刻在它的部位
+    const state = game()
+    startAsSlave(state, { master: { type: 'none' }, mark: slaveryRules.roles.default })
+    expect(slaveMarkOf(pcOf(state))!.place).toBe('left_calf')
+    expect(markUsage('mod_mark_a')).toEqual(expect.arrayContaining(['印記設定：預設的印記', '印記設定：刻印檢定的輕重順序', '印記設定：奴隸市場的權重']))
+    // 恢復內建
+    applyContent(emptyMods())
+    expect(slaveryRules.roles.default).toBe('labor')
+    expect(slaveryRules.contracts.mod_mark_a).toBeUndefined()
+    expect(tattooRules.templates.mod_tattoo_a).toBeUndefined()
+  })
+
+  it('knows where built-in templates are used', () => {
+    expect(tattooUsage('butterfly')).toContain('主人的事件「ink_crest」')
+    expect(markUsage('brothel')).toContain('印記設定：老鴇刻的印記')
   })
 })
