@@ -30,10 +30,14 @@ export function isCollectQuest(q: Pick<Quest, 'kind'>): boolean {
   return q.kind === 'gather_wild' || q.kind === 'gather_dungeon' || q.kind === 'drop_wild' || q.kind === 'drop_dungeon'
 }
 
-export function rewardRange(rank: GuildRank): [number, number] {
-  const table = economy.quest_rewards_cc
-  const entry = table[rank] ?? table[`${rank}_solo`]
-  return entry?.range ?? [30, 50]
+/**
+ * 委託報酬的範圍（economy.json 的 quest_rewards_cc）：預設用這一階的 use（F～C 單人、B、A 團隊合計、S 主導），
+ * 也可以指定 solo / team / leader（沒有那一種時用單人）
+ */
+export function rewardRange(rank: GuildRank, kind?: 'solo' | 'team' | 'leader'): [number, number] {
+  const entry = economy.quest_rewards_cc[rank]
+  if (!entry) return [30, 50]
+  return entry[kind ?? entry.use] ?? entry.solo
 }
 
 /** 怪物等級對應的公會等級，夾在範圍內 */

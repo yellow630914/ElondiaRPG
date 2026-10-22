@@ -12,7 +12,6 @@
 
 | # | 問題 | 說明 | 位置 |
 |---|---|---|---|
-| L2 | **委託報酬表的階級落差** | E 與 F 同為 30–50；C 用 `C_solo`，和 D 同為 80–160；B 直接跳到 5,400–10,800。`economy.json` 註明 B 以上是「團隊合計」，程式卻不分人數照付 | `materialQuests.ts` 的 `rewardRange`、`economy.json` |
 | L4 | **旅途驛站的雜貨商就是出發城鎮的雜貨店** | 旅途中 `state.location` 仍是出發地，驛站的商店對到 `出發地/general`：同一位店主、同一份庫存、同樣的折扣與物價 | `travel_events.json` 的 `side_maps.waystation`、`trade.ts` |
 | L5 | **酒館「向酒保買情報」付 100 白鸛沒有實質效果** | 給的旗標 `rumor` 沒有地方讀取，記憶是固定的一句話，每天都能重複買 | `shops.json` |
 | L6 | **「打聽委託的門路」可以對非檢定型委託談** | 拿到的線索用不上，但「塞點錢」照樣付 50 白鸛 | `negotiation.ts` |

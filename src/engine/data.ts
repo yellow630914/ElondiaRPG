@@ -257,10 +257,23 @@ export const progression = progressionJson as unknown as {
   power_gap_attitude: { by_diff: Record<string, string>; clamp: [number, number] }
   ability_rerolls: number
 }
+/** 一個公會階級的委託報酬（economy.json 的 quest_rewards_cc） */
+export interface QuestReward {
+  solo: [number, number]
+  /** 團隊任務的合計 */
+  team?: [number, number]
+  /** S 級：單人主導、帶領麾下勢力 */
+  leader?: [number, number]
+  /** 公會發的委託用哪一種 */
+  use: 'solo' | 'team' | 'leader'
+  duration_days: [number, number]
+  alt_reward?: string
+}
+
 export const economy = economyJson as unknown as {
   /** 一般人每天的生活費（罰金、禮物價值的基準） */
   commoner_living_cc_per_day: number
-  quest_rewards_cc: Record<string, { range: [number, number]; party: string; duration_days: [number, number] }>
+  quest_rewards_cc: { team_size: number; team_mult: number } & Record<string, QuestReward>
   lodging_cc_per_night: Record<string, [number, number]>
   meals_cc: Record<string, number | [number, number]>
 }

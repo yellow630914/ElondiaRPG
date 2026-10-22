@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
-import { enemies, materialQuestRules } from '@/engine/data'
+import { economy, enemies, materialQuestRules } from '@/engine/data'
 import { enterLocation, generateLayer, goOutskirts, standOn } from '@/engine/grid'
-import { advanceBossHunts, canTurnIn, deliverable, rankForLevel, RANK_ORDER, rewardFor } from '@/engine/materialQuests'
+import { advanceBossHunts, canTurnIn, deliverable, rankForLevel, RANK_ORDER, rewardFor, rewardRange } from '@/engine/materialQuests'
 import { locationById } from '@/engine/data'
 import { newGame, withRng } from '@/engine/state'
 import { acceptQuest, guildQuests, turnInQuest } from '@/engine/town'
@@ -37,6 +37,28 @@ function give(state: GameState, name: string, qty: number) {
   if (it) it.qty += qty
   else state.inventory.push({ name, qty })
 }
+
+describe('quest reward table', () => {
+  it('rises smoothly by rank: teams are paid as a total that splits to about 1.5× the solo pay', () => {
+    const t = economy.quest_rewards_cc
+    let prev = 0
+    for (const rank of RANK_ORDER) {
+      const [lo, hi] = rewardRange(rank)
+      expect(hi, rank).toBeGreaterThan(lo)
+      // 每人分到的：團隊合計 ÷ 人數（S 是主導者自己拿）
+      const each = t[rank]!.use === 'team' ? lo / t.team_size : lo
+      if (prev) expect(each / prev, rank).toBeLessThanOrEqual(6)
+      expect(each, rank).toBeGreaterThan(prev)
+      prev = each
+      const team = t[rank]!.team
+      if (team) expect(team[0] / (t[rank]!.solo[0] * t.team_mult * t.team_size)).toBeCloseTo(1, 0)
+    }
+    // 以前 C（80）→ B（5400）差了快 70 倍
+    expect(rewardRange('B')[0] / rewardRange('C')[0]).toBeLessThan(10)
+    expect(rewardRange('C', 'team')).toEqual(t.C!.team)
+    expect(rewardRange('B', 'solo')).toEqual(t.B!.solo)
+  })
+})
 
 describe('material quests', () => {
   it('post gathering and drop quests with the right ranks and a 3x cap', () => {
