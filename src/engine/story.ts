@@ -8,7 +8,8 @@
 
 import { snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
-import { storyMerit } from './guild'
+import { playerRank, storyMerit } from './guild'
+import { RANK_ORDER } from './materialQuests'
 import {
   locationById, npcs as namedNpcs, regionById, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome,
 } from './data'
@@ -47,9 +48,18 @@ function parseRef(ref: string): { def: StoryDef; node: StoryNode } {
 
 // ---- 開始 ----
 
-/** 還沒開始、條件也符合（等級、劇情旗標） */
+/** 建議的公會階級：和公會委託一樣，同級或更低，組隊（2 人以上）時可以高一級；沒寫時不限 */
+export function storyRankOk(state: GameState, def: Pick<StoryDef, 'rank'>): boolean {
+  if (!def.rank) return true
+  const mine = RANK_ORDER.indexOf(playerRank(state))
+  const target = RANK_ORDER.indexOf(def.rank)
+  return target <= mine || (state.party.length > 1 && target === mine + 1)
+}
+
+/** 還沒開始、條件也符合（建議階級、等級、劇情旗標）。公會、固定 NPC、情報商、旅途的開頭都用這個檢查 */
 export function canStart(state: GameState, def: StoryDef): boolean {
   if (state.stories?.[def.id]) return false
+  if (!storyRankOk(state, def)) return false
   if (def.start.min_level && pcOf(state).level < def.start.min_level) return false
   if (def.start.kind === 'npc' && def.start.npc && def.start.min_affinity !== undefined
     && (state.relationships?.[def.start.npc]?.affinity ?? 0) < def.start.min_affinity) return false

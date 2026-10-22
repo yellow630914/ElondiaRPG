@@ -478,7 +478,7 @@ export function effectText(state: GameState, e: RewardEffect, keeper?: string): 
     case 'memory': return '一段記憶'
     case 'condition': return `${e.add ? '獲得' : '解除'}「${companionRules.conditions[e.condition]?.name ?? e.condition}」`
     case 'quest_reward': return `委託報酬 ${e.percent > 0 ? '+' : ''}${e.percent}%`
-    case 'quest_flag': return e.key === 'lead' ? '委託線索（檢定 +5）' : e.key === 'suspicious' ? '消息走漏（檢定 -2）' : '委託旗標'
+    case 'quest_flag': return e.key === 'lead' ? '委託線索（檢定 +5）' : '委託旗標'
     case 'hp': return '生命值變化'
     case 'intel': return `情報：${e.intel.title}`
     case 'start_story': return `開始特殊任務「${stories.find((d) => d.id === e.story)?.title ?? e.story}」`

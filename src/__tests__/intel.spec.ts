@@ -19,6 +19,8 @@ function game(): GameState {
   const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 6, birthplace: 'soriel' })
   enterLocation(state)
   state.money_cc = 20000
+  // 內建的情報商任務建議 E 級
+  state.guild!.rank = 'E'
   return state
 }
 

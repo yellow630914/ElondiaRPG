@@ -17,7 +17,7 @@
 | `xp` | 經驗值（全隊或指定成員） |
 | `flag` | 劇情旗標 |
 | `quest_reward` | 委託報酬按百分比調整（談判的結果） |
-| `quest_flag` | 委託的任務旗標，例如 `lead`（委託檢定 +5）、`suspicious`（−2）、`negotiated` |
+| `quest_flag` | 委託的任務旗標，例如 `lead`（委託檢定 +5，情報商與情報物品給的線索）、`negotiated` |
 | `ability` | 技能報酬：學會新能力。可指定能力（id 或名稱，必須是目前可以學的，否則隨機挑一項）、給一次「N 選一」的學習機會（`choices`），或加上取得機率（`chance`）。記錄在報告的 `skills_gained`，來源為 `insight` |
 | `companion` | 新增夥伴：`voluntary` 自願、`hired` 雇傭、`slave` 奴隸（可指定契約）。對象可以是已登場的 NPC，也可以是一份規格（名字、種族、職業、等級……），程式會生成並登錄。隊伍滿了時不會出錯，報告註明「想加入，但隊伍已滿」 |
 | `join_party` | 主角加入別人的隊伍（隊長、隊員，可附簽約金） |

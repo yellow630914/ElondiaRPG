@@ -289,13 +289,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
           <li v-for="q in activeQuests" :key="q.id">
             <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ questProgressText(s, q) }}）
             <span v-if="q.flags?.lead" class="tag">有線索 +5</span>
-            <span v-if="q.flags?.suspicious" class="tag">消息走漏 -2</span>
             <div class="muted">{{ questWhere(q) }}</div>
-            <button
-              v-if="!canNegotiate(s, 'quest_lead', { quest: q.id }) && questTemplate(q)?.dc !== undefined"
-              class="small"
-              @click="game.startNegotiation('quest_lead', { quest: q.id })"
-            >打聽門路</button>
           </li>
         </ul>
         </FoldSection>

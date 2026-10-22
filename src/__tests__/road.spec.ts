@@ -19,6 +19,8 @@ function game(seed = 3): GameState {
   standOn(state, 'gate')
   state.money_cc = 2000
   state.inventory.push({ name: '乾糧', qty: 20 })
+  // 內建的旅途任務建議 E 級
+  state.guild!.rank = 'E'
   return state
 }
 

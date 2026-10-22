@@ -64,18 +64,13 @@ function validate(state: GameState, template: string, ctx: NegotiationContext): 
   if (!tpl) throw new Error('沒有這種談判')
   const done = (state.negotiations ?? []).find((n) => n.template === template && n.status === 'done' && n.quest === ctx.quest && n.shop === (ctx.shop ? shopKey(state, ctx.shop) : undefined))
   if (done) throw new Error('已經談過了')
-  if (template === 'quest_reward' || template === 'quest_lead') {
+  if (template === 'quest_reward') {
     const quest = state.quests.find((q) => q.id === ctx.quest)
     if (!quest) throw new Error('找不到這個委託')
     if (quest.giver !== state.location) throw new Error('要在發布委託的城鎮談')
-    if (template === 'quest_reward') {
-      if (quest.status !== 'available' && quest.status !== 'accepted') throw new Error('這個委託已經不能談了')
-      if (quest.flags?.negotiated !== undefined) throw new Error('報酬已經談過了')
-      if (currentCell(state).kind !== 'guild') throw new Error('要在冒險者公會談')
-    } else {
-      if (quest.status !== 'accepted' || quest.area === 'dungeon') throw new Error('只有接下的城內／近郊委託可以打聽')
-      if (quest.flags?.lead || quest.flags?.suspicious) throw new Error('已經打聽過了')
-    }
+    if (quest.status !== 'available' && quest.status !== 'accepted') throw new Error('這個委託已經不能談了')
+    if (quest.flags?.negotiated !== undefined) throw new Error('報酬已經談過了')
+    if (currentCell(state).kind !== 'guild') throw new Error('要在冒險者公會談')
     return { tpl, quest }
   }
   if (template === 'shop_discount') {

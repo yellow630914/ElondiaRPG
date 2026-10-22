@@ -62,7 +62,7 @@ export type RewardEffect =
   | { type: 'change_master'; master: NpcRef | null; reason?: string }
   /** 委託報酬按百分比調整（談判的結果） */
   | { type: 'quest_reward'; quest: string; percent: number }
-  /** 任務旗標，例如 lead（委託檢定 +5）、suspicious（-2） */
+  /** 任務旗標，例如 lead（委託檢定 +5，情報商與情報物品給的線索） */
   | { type: 'quest_flag'; quest: string; key: string; value: unknown }
   /**
    * 技能報酬：學會新能力。ability 指定能力（id 或名稱，必須是目前可以學的）；沒指定或不能學時隨機挑一項。

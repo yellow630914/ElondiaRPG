@@ -222,7 +222,7 @@ export interface StoryDef {
   id: string
   title: string
   summary: string
-  /** 建議的公會等級（顯示用；公會接取時檢查） */
+  /** 建議的公會階級：接取時檢查（同級或更低，組隊時可以高一級；story.ts 的 storyRankOk） */
   rank?: GuildRank
   start: StoryStart
   /** 開始時成立的旗標（任務鏈的第一個旗標） */

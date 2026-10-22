@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { offerSelf } from '@/engine/companions'
-import { itemDef, slaveryRules } from '@/engine/data'
+import { itemDef, slaveryRules, stories } from '@/engine/data'
+import { canStart, storyRankOk } from '@/engine/story'
+import { recruit } from '@/engine/town'
 import { enterLocation, standOn } from '@/engine/grid'
 import { applyContent, emptyMods, newNpc } from '@/engine/mods'
 import { isFugitive, leaderOf, playerEscapes } from '@/engine/party'
@@ -165,5 +167,21 @@ describe('B13: flag suggestions', () => {
     const flags = useContent().knownFlags()
     expect(flags).toContain('moved_to_port')
     expect(flags).toContain('still_home')
+  })
+})
+
+describe('L7: the suggested rank of a special quest is checked when taking it', () => {
+  it('works like guild quests: same rank or lower, one higher with a party', () => {
+    const state = game()
+    const def = { ...stories.find((s) => s.id === 'overturned_wagon')!, rank: 'E' as const }
+    expect(state.guild!.rank).toBe('F')
+    expect(storyRankOk(state, def)).toBe(false)
+    expect(canStart(state, def)).toBe(false)
+    recruit(state, 'npc_lina')
+    expect(storyRankOk(state, def)).toBe(true)
+    expect(storyRankOk(state, { rank: 'D' })).toBe(false)
+    state.guild!.rank = 'C'
+    expect(storyRankOk(state, { rank: 'D' })).toBe(true)
+    expect(storyRankOk(state, {})).toBe(true)
   })
 })

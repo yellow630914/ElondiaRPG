@@ -24,26 +24,6 @@
         "fumble": { "text": "惹惱公會：報酬 -10%，公會聲望 -1", "effects": [{ "type": "quest_reward", "quest": "{quest_id}", "percent": -10 }, { "type": "reputation", "faction": "guild", "delta": -1 }, { "type": "quest_flag", "quest": "{quest_id}", "key": "negotiated", "value": false }] }
       }
     },
-    "quest_lead": {
-      "title": "打聽委託的門路",
-      "goal": "找知情的人問出「{quest}」的線索。",
-      "counterpart": "informant",
-      "base": 12,
-      "rank_dc": 0,
-      "options": [
-        { "label": "請對方喝一杯慢慢聊", "attr": "cha", "dc": -2, "cost_cc": 10 },
-        { "label": "從對方的話裡推敲線索", "attr": "int", "dc": 0 },
-        { "label": "直接施壓", "attr": "str", "dc": 2 },
-        { "label": "塞點錢", "attr": "cha", "dc": -4, "cost_cc": 50 }
-      ],
-      "outcomes": {
-        "critical": { "text": "得到確切的線索（委託檢定 +5）與一點經驗", "effects": [{ "type": "quest_flag", "quest": "{quest_id}", "key": "lead", "value": true }, { "type": "xp", "amount": 5 }] },
-        "success": { "text": "得到線索（委託檢定 +5）", "effects": [{ "type": "quest_flag", "quest": "{quest_id}", "key": "lead", "value": true }] },
-        "partial": { "text": "對方欲言又止，可以再問一次", "effects": [] },
-        "fail": { "text": "沒問出什麼", "effects": [] },
-        "fumble": { "text": "消息走漏（委託檢定 -2）", "effects": [{ "type": "quest_flag", "quest": "{quest_id}", "key": "suspicious", "value": true }] }
-      }
-    },
     "shop_discount": {
       "title": "談長期折扣",
       "goal": "讓{keeper}以後給你打折。",

@@ -201,17 +201,16 @@ describe('negotiation', () => {
     expect(n.status).toBe('done')
   })
 
-  it('sets a quest flag that helps the quest check', () => {
+  it('no longer offers "asking around for a lead"; a lead from the informant still helps the quest check', () => {
     const state = game(10)
     state.quests.push({
       id: 'q-test', title: '找回錢袋', rank: 'F', kind: 'search', area: 'town', template: 'lost_purse',
       giver: 'soriel', target: 'soriel', goal: 1, progress: 0, reward_cc: 40, status: 'accepted',
     })
-    const n = startNegotiation(state, 'quest_lead', { quest: 'q-test' })
-    prepareAction(state, { kind: 'negotiation', target: n.id, text: '請他喝一杯' })
-    resolveAction(state, sanitizeJudgment(state, state.pendingAction!, { degree: 'success', effects: [] }))
+    expect(() => startNegotiation(state, 'quest_lead', { quest: 'q-test' })).toThrow('沒有這種談判')
+    // 情報商賣的線索（委託旗標 lead）
     const quest = state.quests.find((q) => q.id === 'q-test')!
-    expect(quest.flags?.lead).toBe(true)
+    quest.flags = { lead: true }
     standOn(state, 'shop')
     const r = doTownQuest(state, 'q-test') as Report
     // 熟練 +2，線索 +5

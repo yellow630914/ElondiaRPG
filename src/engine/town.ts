@@ -281,7 +281,7 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   if (tpl.dc !== undefined) {
     const pc = player(state)
     // 任務旗標：打聽到線索 +5，消息走漏 -2
-    const bonus = (quest.flags?.lead ? 5 : 0) - (quest.flags?.suspicious ? 2 : 0) + checkBonus(pc, { context: 'quest' })
+    const bonus = (quest.flags?.lead ? 5 : 0) + checkBonus(pc, { context: 'quest' })
     const dice = withBonus('1d20', proficiency(pc.level) + bonus)
     const r = withRng(state, (rng) => roll(rng, dice))
     success = r.total >= tpl.dc
