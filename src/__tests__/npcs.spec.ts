@@ -260,6 +260,18 @@ describe('appearance and personality', () => {
     }
   })
 
+  it('never opens the height and the build with the same word', async () => {
+    const { rollLook, npcTraits } = await import('@/engine/traits')
+    const { Rng } = await import('@/engine/rng')
+    const rng = new Rng(17)
+    for (const race of Object.keys(npcTraits.races)) {
+      for (let i = 0; i < 400; i++) {
+        const d = rollLook(rng, { race, gender: ['male', 'female', 'femboy', 'unknown'][i % 4]!, kind: 'commoner', location: 'soriel', used: new Set() }).detail
+        if (d.parts.height && d.parts.build) expect(d.parts.build.slice(0, 2), `${d.parts.height}、${d.parts.build}`).not.toBe(d.parts.height.slice(0, 2))
+      }
+    }
+  })
+
   it('gives femboys feminine looks without a chest, a heavy or a huge build, and makes heavy builds rarer for women', async () => {
     const { rollLook, npcTraits } = await import('@/engine/traits')
     const { Rng } = await import('@/engine/rng')

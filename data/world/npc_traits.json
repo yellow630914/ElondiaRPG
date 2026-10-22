@@ -24,7 +24,7 @@
     ],
     "build": [
       {"t": "骨架纖細", "tags": ["slim"], "not": ["big", "heavy"]},
-      {"t": "身形精瘦", "tags": ["slim", "fit"], "not": ["heavy"]},
+      {"t": "體格精瘦", "tags": ["slim", "fit"], "not": ["heavy"]},
       {"t": "勻稱結實", "tags": ["fit"], "not": ["heavy"]},
       {"t": "肩寬背厚", "tags": ["big"], "not": ["slim", "petite"], "body": ["masc"]},
       {"t": "魁梧壯碩", "tags": ["big", "huge"], "not": ["slim", "petite"], "body": ["masc", "fem"]},
