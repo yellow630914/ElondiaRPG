@@ -304,6 +304,8 @@ export interface MarkTerms {
 /** 遊戲中登場的 NPC（含程式生成的）；不在隊伍時保存角色資料，再次入隊時沿用 */
 export interface NpcRecord extends NpcDef {
   generated?: boolean
+  /** 程式生成的文字已經請 AI 潤飾過（名單的潤飾，每個人一次） */
+  flavored?: boolean
   background?: string
   /** 平常待的設施（格子種類，例如 tavern、shop、inn）；沒有時在整個聚落都找得到 */
   spot?: string
@@ -428,7 +430,7 @@ export interface Roster {
   members: string[]
   /** 建立的日期 */
   day: number
-  /** AI 已經潤飾過名字、外貌與性格 */
+  /** 舊存檔：整份名單潤飾過（讀檔時改記在每個人的 flavored） */
   flavored?: boolean
   /** 上次檢查名單變動的日期 */
   updated?: number

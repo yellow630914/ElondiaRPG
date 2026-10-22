@@ -114,7 +114,7 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 3：房屋（homes；留守的夥伴記在 NPC 登錄的 staying）
  * 4：主人的家改成固定設施（民宅）：從 homes 拿掉 m- 開頭的那棟，改記在 masterHome（主人、城市、家裡的人）
  */
-export const SAVE_SCHEMA = 4
+export const SAVE_SCHEMA = 5
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -133,6 +133,17 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
       if (!home.master && !id.startsWith('m-')) continue
       if (home.master && !s.masterHome) s.masterHome = { master: home.master, location: home.location, household: home.household ?? [] }
       delete s.homes![id]
+    }
+  }],
+  [5, (s) => {
+    // 名單的潤飾改成記在每個人身上：整份潤飾過的名單，上面的人都算潤飾過
+    for (const roster of Object.values(s.rosters ?? {})) {
+      if (!roster.flavored) continue
+      for (const id of roster.members) {
+        const rec = s.npcs?.[id]
+        if (rec?.generated) rec.flavored = true
+      }
+      delete roster.flavored
     }
   }],
 ]

@@ -766,19 +766,17 @@ export const useGame = defineStore('game', () => {
     }
   }
 
-  /** 地點的名單：AI 開啟時請 AI 潤飾名字、外貌、性格與背景（每個地點一次） */
+  /** 地點的名單：AI 開啟時請 AI 潤飾名字、外貌、性格與背景（每個人一次；到了這裡才潤飾還沒潤飾過的人） */
   async function flavorRoster() {
     const s = state.value
     const settings = useSettings()
     if (!s || !settings.aiJudge || !settings.ready('roster')) return
     const loc = s.location
     const roster = s.rosters?.[loc]
-    if (!roster || roster.flavored || flavoring.has(loc)) return
+    if (!roster || flavoring.has(loc)) return
+    // 還沒潤飾過的人（第一次來，或名單變動搬來了新居民）
     const prompt = buildRosterPrompt(s, loc)
-    if (!prompt) {
-      roster.flavored = true
-      return
-    }
+    if (!prompt) return
     flavoring.add(loc)
     try {
       const { completeText } = await import('@/narrator/providers')
