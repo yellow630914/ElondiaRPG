@@ -24,6 +24,27 @@ const usageSplit = computed(() => {
     other: sum((k) => k === OTHER_USAGE),
   }
 })
+// 用量明細預設收起；展開與否記在這個瀏覽器（和 FoldSection 共用 elondia.folds）
+const FOLDS = 'elondia.folds'
+function readFolds(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(FOLDS) ?? '{}') as Record<string, boolean>
+  } catch {
+    return {}
+  }
+}
+const usageOpen = ref(readFolds()['log.usage'] === false)
+function onUsageToggle(e: Event) {
+  usageOpen.value = (e.target as HTMLDetailsElement).open
+  try {
+    const folds = readFolds()
+    if (usageOpen.value) folds['log.usage'] = false
+    else delete folds['log.usage']
+    localStorage.setItem(FOLDS, JSON.stringify(folds))
+  } catch {
+    // 記不住也沒關係
+  }
+}
 
 // 封存的舊日誌（只留簡述與 AI 寫的經過）：載入完目前的日誌之後才能展開
 const archive = computed(() => (game.state?.logArchive ?? []).filter((e) => !(hideTrade.value && e.kind === 'trade')))
@@ -61,17 +82,20 @@ onMounted(() => toBottom(true))
       <label class="small"><input v-model="settings.aiNarration" type="checkbox" /> ✨ AI 細節描述</label>
       <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易紀錄</label>
     </header>
-    <p v-if="game.totalUsage.calls" class="small muted usage">
-      🔢 本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens
-      （輸入 {{ formatTokens(game.totalUsage.input) }}<template v-if="game.totalUsage.cached">，其中快取 {{ formatTokens(game.totalUsage.cached) }}</template>・輸出 {{ formatTokens(game.totalUsage.output) }}・{{ game.totalUsage.calls }} 次呼叫）
-      <br />其中 日誌 {{ formatTokens(usageSplit.log) }}<template v-if="usageSplit.archive">・已封存的日誌 {{ formatTokens(usageSplit.archive) }}</template><template v-if="usageSplit.other">・其他（酒館候選人、商店清單、談判方式等）{{ formatTokens(usageSplit.other) }}</template>
-    </p>
-    <ul v-if="game.usageBySource.length" class="small muted sources" title="依模型來源（服務與模型）分開的用量">
-      <li v-for="(u, i) in game.usageBySource" :key="i">
-        {{ usageSourceLabel(u) }}：{{ formatTokens(u.input + u.output) }} tokens
-        （輸入 {{ formatTokens(u.input) }}<template v-if="u.cached">，快取 {{ formatTokens(u.cached) }}</template>・輸出 {{ formatTokens(u.output) }}・{{ u.calls }} 次<template v-if="u.features.length">・{{ u.features.map(usageFeatureName).join('、') }}</template>）
-      </li>
-    </ul>
+    <!-- token 用量：平常只顯示總數，點開看明細（展開與否記在這個瀏覽器） -->
+    <details v-if="game.totalUsage.calls" class="small muted usage" :open="usageOpen" @toggle="onUsageToggle">
+      <summary>🔢 本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens・{{ game.totalUsage.calls }} 次呼叫</summary>
+      <p class="detail">
+        輸入 {{ formatTokens(game.totalUsage.input) }}<template v-if="game.totalUsage.cached">，其中快取 {{ formatTokens(game.totalUsage.cached) }}</template>・輸出 {{ formatTokens(game.totalUsage.output) }}
+        <br />其中 日誌 {{ formatTokens(usageSplit.log) }}<template v-if="usageSplit.archive">・已封存的日誌 {{ formatTokens(usageSplit.archive) }}</template><template v-if="usageSplit.other">・其他（酒館候選人、商店清單、談判方式等）{{ formatTokens(usageSplit.other) }}</template>
+      </p>
+      <ul v-if="game.usageBySource.length" class="sources" title="依模型來源（服務與模型）分開的用量">
+        <li v-for="(u, i) in game.usageBySource" :key="i">
+          {{ usageSourceLabel(u) }}：{{ formatTokens(u.input + u.output) }} tokens
+          （輸入 {{ formatTokens(u.input) }}<template v-if="u.cached">，快取 {{ formatTokens(u.cached) }}</template>・輸出 {{ formatTokens(u.output) }}・{{ u.calls }} 次<template v-if="u.features.length">・{{ u.features.map(usageFeatureName).join('、') }}</template>）
+        </li>
+      </ul>
+    </details>
     <div ref="feed" class="feed">
       <button v-if="all.length > reports.length" class="small more" @click="shown += PAGE">⬆️ 載入更早的紀錄（還有 {{ all.length - reports.length }} 筆）</button>
       <template v-else-if="archive.length">
@@ -97,7 +121,9 @@ onMounted(() => toBottom(true))
 .log-head { gap: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
 .log-head h2 { margin: 0; }
 .usage { margin: 6px 0 0; }
-.sources { margin: 2px 0 0; padding-left: 22px; }
+.usage summary { cursor: pointer; }
+.usage .detail { margin: 2px 0 0 18px; }
+.sources { margin: 2px 0 0; padding-left: 36px; }
 .spacer { flex: 1; }
 .feed {
   overflow-y: auto;

@@ -108,12 +108,14 @@ async function copyPrompt() {
       <button class="small" @click="showRaw = !showRaw">{{ showRaw ? '隱藏' : '顯示' }}報告 JSON</button>
     </div>
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
-    <p v-if="tokens" class="small muted tokens" title="這則日誌的 AI 呼叫（判定、敘事）用掉的 token">
-      🔢 輸入 {{ formatTokens(tokens.input) }}<template v-if="tokens.cached">（快取 {{ formatTokens(tokens.cached) }}）</template>・輸出 {{ formatTokens(tokens.output) }} tokens<template v-if="tokens.calls > 1">（{{ tokens.calls }} 次呼叫）</template>
+    <!-- 這則日誌用掉的 token：平常只顯示總數，點開看輸入、輸出、快取與各次呼叫 -->
+    <details v-if="tokens" class="small muted tokens" title="這則日誌的 AI 呼叫（判定、敘事）用掉的 token">
+      <summary>🔢 {{ formatTokens(tokens.input + tokens.output) }} tokens<template v-if="tokens.calls > 1">（{{ tokens.calls }} 次呼叫）</template></summary>
+      輸入 {{ formatTokens(tokens.input) }}<template v-if="tokens.cached">（快取 {{ formatTokens(tokens.cached) }}）</template>・輸出 {{ formatTokens(tokens.output) }}
       <template v-for="(p, i) in tokens.by ?? []" :key="i">
         <br /><span class="origin">{{ usageFeatureName(p.feature) }}・{{ usageSourceLabel(p) }}：輸入 {{ formatTokens(p.input) }}<template v-if="p.cached">（快取 {{ formatTokens(p.cached) }}）</template>・輸出 {{ formatTokens(p.output) }}<template v-if="p.calls > 1">（{{ p.calls }} 次）</template></span>
       </template>
-    </p>
+    </details>
   </article>
 </template>
 
@@ -133,5 +135,6 @@ async function copyPrompt() {
 details summary { cursor: pointer; color: var(--accent-2); }
 .check { color: var(--accent-2); margin: 0 0 8px; }
 .tokens { margin: 6px 0 0; text-align: right; }
+.tokens summary { cursor: pointer; list-style-position: inside; }
 .tokens .origin { opacity: .85; }
 </style>
