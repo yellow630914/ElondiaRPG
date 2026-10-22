@@ -12,7 +12,7 @@ import {
 import { capsSource, capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarget, type InventCategory } from '@/engine/invention'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
-import { itemCategory } from '@/engine/trade'
+import { itemCategory, shopKey, shopPlace } from '@/engine/trade'
 import { toolSummary } from '@/engine/tools'
 import { intelSummary } from '@/engine/inventory'
 import { craftPart, craftRarity, parseCraftTarget } from '@/engine/craft'
@@ -394,7 +394,7 @@ export function visibleNarration(text: string): string {
 /** 商店的交易清單：AI 依商店類型、城鎮與店主生成，程式再驗證價格與效果（見 engine/trade.ts）。 */
 export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
   const def = shopRules.types[type]
-  const shop = state.shops?.[`${state.location}/${type}`]
+  const shop = state.shops?.[shopKey(state, type)]
   const keeper = shop ? npcRecord(state, shop.keeper) : undefined
   const loc = locationById(state.location)
   const pc = state.party.find((m) => m.isPlayer)!
@@ -413,7 +413,7 @@ export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
     reputation: `{"type":"reputation","faction":"local","delta":<±${shopRules.ai_caps.reputation}>}`,
     condition: '{"type":"condition","condition":"blessed"}（神殿祝福：下次長休前檢定 +1）',
     gear: `{"type":"gear","base":"<底材 id>","material":"<材料 id>","name":"<≤20 字，可以不填>","desc":"<≤80 字>","rarity":"common/uncommon/rare/epic/legendary","enchants":{"mods":{"hit":1}}}（特製裝備，程式依組成定價：材料的建議等級不超過 ${pc.level + 2}，稀有度最多比材料原本的高一級，附魔在稀有度的點數內。底材：${Object.entries(gearRules.bases).map(([id, b]) => `${id}（${b.name}）`).join('、')}；材料（要和底材同類）：${Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level + 2).map(([id, m]) => `${id}（${m.name}）`).join('、')}）`,
-    companion: `{"type":"companion","mode":"hired 或 voluntary${slaveryRules.markets[state.location] ? ' 或 slave' : ''}","npc":{"name":"","race":"human","class":"fighter","level":1,"personality":"","appearance":"","background":""}}（等級不超過 ${pc.level + 1}）`,
+    companion: `{"type":"companion","mode":"hired 或 voluntary${slaveryRules.markets[state.location] && !shopPlace(state).waystation ? ' 或 slave' : ''}","npc":{"name":"","race":"human","class":"fighter","level":1,"personality":"","appearance":"","background":""}}（等級不超過 ${pc.level + 1}）`,
   }
   const system = `你是奇幻 RPG《埃隆迪亞大陸》的商店設計者。請為這間店設計今天的「特別商品」，只輸出一個 JSON 物件。目錄裡的商品平常就在賣，會照常列出，你設計的交易會加在它們前面。
 
@@ -425,7 +425,8 @@ export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
 ${def.ai_effects.map((t) => `- ${docs[t] ?? t}`).join('\n')}
 5. 設計 3～6 筆，stock 為今天能交易的次數（1～5）。
 6. 只輸出 JSON：{"deals":[{"title":"≤12 字","desc":"≤40 字","gives":[…],"gets":[…],"stock":1}]}`
-  const user = `城鎮：${loc.name}（${geography.regions.find((r) => r.id === loc.region)?.name ?? ''}，${loc.type}${loc.faction ? `，${geography.factions.find((f) => f.id === loc.faction)?.name ?? loc.faction}` : ''}）
+  const place = shopPlace(state)
+  const user = `${place.waystation ? `地點：${loc.name}附近旅途上的${place.name}（偏遠的歇腳處，貨色少、價格高）\n` : ''}城鎮：${loc.name}（${geography.regions.find((r) => r.id === loc.region)?.name ?? ''}，${loc.type}${loc.faction ? `，${geography.factions.find((f) => f.id === loc.faction)?.name ?? loc.faction}` : ''}）
 商店：${def.name}
 ${keeper ? `${def.keeper.title}：${keeper.name}（${raceName(keeper.race)}）｜${keeper.personality}｜${keeper.appearance ?? ''}` : ''}
 主角：${pc.name} Lv.${pc.level}，持有 ${formatMoney(state.money_cc)}

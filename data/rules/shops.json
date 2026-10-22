@@ -2,6 +2,7 @@
   "$comment": "商店類型與交易清單。每份交易 = 付出（gives：金錢、物品、時間）＋ 得到（gets：報酬模板的效果，可複合）。清單每天每間店生成一次：AI 判定開啟時由 AI 依商店類型生成，否則依 catalog 與 specials 生成。一般交易直接計算，不需要 AI；只有主角主動交涉時才檢定。npc 寫 keeper 代表店主、party 代表每位隊友。specials 可以加 flavor：只是氛圍的交易（請客、閒聊、幫忙幹活），把這段描述交給 AI 寫成日常的場景，不會寫出情報或其他後果。",
   "version": 1,
   "location_price_mult": { "capital": 1.15, "city": 1.1, "port": 1.0, "town": 1.0, "village": 1.2, "outpost": 1.25, "fortress": 1.2 },
+  "waystation": { "$comment": "旅途上的驛站（travel_events.json 的 side_maps.waystation）：雜貨商自成一間店，每條路線一間（來回同一間），有自己的店主與庫存；物價與貨色照這種聚落算（偏遠聚落）", "price_as": "outpost", "name": "驛站" },
   "location_rank": { "village": 0, "outpost": 0, "fortress": 0, "town": 1, "port": 1, "city": 2, "capital": 3 },
   "affinity_discount_per_point": 0.002,
   "max_affinity_discount": 0.1,

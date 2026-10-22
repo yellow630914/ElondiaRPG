@@ -1139,6 +1139,8 @@ export interface ShopTypeDef {
 export const shopRules = shopsJson as unknown as {
   location_price_mult: Record<string, number>
   location_rank: Record<string, number>
+  /** 旅途上的驛站：物價與貨色照哪種聚落算 */
+  waystation: { price_as: string; name: string }
   affinity_discount_per_point: number
   max_affinity_discount: number
   max_deals: number

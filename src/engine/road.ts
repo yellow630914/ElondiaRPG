@@ -27,6 +27,7 @@ import { toolBonus } from './tools'
 import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
 import { shortestPath } from './world'
+import { enterWaystation } from './trade'
 import travelEventsJson from '@data/rules/travel_events.json'
 
 // ---- 資料 ----
@@ -452,6 +453,7 @@ export function enterSide(state: GameState, template: string): Area {
   state.side = { area: key, back: { area: back.area, x: back.x, y: back.y } }
   const exit = findKind(area, 'exit') ?? { x: 0, y: 0 }
   if (def.visitors) spawnVisitors(state, area, exit)
+  if (template === 'waystation') enterWaystation(state)
   placeAt(state, area, exit.x, exit.y)
   return area
 }

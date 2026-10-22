@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { offerSelf } from '@/engine/companions'
-import { itemDef, slaveryRules, stories } from '@/engine/data'
+import { itemDef, shopRules, slaveryRules, stories } from '@/engine/data'
 import { canStart, storyRankOk } from '@/engine/story'
 import { recruit } from '@/engine/town'
-import { enterLocation, standOn } from '@/engine/grid'
+import { currentArea, enterLocation, standOn } from '@/engine/grid'
 import { applyContent, emptyMods, newNpc } from '@/engine/mods'
 import { isFugitive, leaderOf, playerEscapes } from '@/engine/party'
 import { longRest, longRestBlocked, restChecks, setLongRestGap, shortRest } from '@/engine/rest'
@@ -14,7 +14,10 @@ import { addHours, masterTake, newGame } from '@/engine/state'
 import type { GameState, Report } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { formatMoney } from '@/engine/money'
-import { buyDeal, shopState } from '@/engine/trade'
+import { buyDeal, locationMult, shopKey, shopPlace, shopState } from '@/engine/trade'
+import { answerRoadEvent, enterSide, leaveSide, startJourney } from '@/engine/road'
+import { allNpcs, areaOf, peopleHere } from '@/engine/population'
+import { npcRecord, npcSpot } from '@/engine/npcs'
 import { editableWorld } from './testWorld'
 
 beforeEach(() => {
@@ -200,5 +203,44 @@ describe('L5: buying a rumor from the bartender is just atmosphere', () => {
     expect(JSON.stringify(state.memories ?? {})).toContain('街頭巷尾的閒話')
     // 每天只有一份
     expect(() => buyDeal(state, 'tavern', 'special:rumor')).toThrow('沒有了')
+  })
+})
+
+describe('L4: the waystation general store is its own shop', () => {
+  it('has its own key, keeper, stock and remote prices, and the keeper stays out of the town', () => {
+    const state = game()
+    const town = shopState(state, 'general')
+    const townKey = shopKey(state, 'general')
+    const townMult = locationMult(state)
+    startJourney(state, 'rivervale')
+    state.roadEvent = { x: state.position!.x, template: 'waystation' }
+    answerRoadEvent(state, 0)
+    expect(shopPlace(state).waystation).toBe(true)
+    const key = shopKey(state, 'general')
+    expect(key).not.toBe(townKey)
+    const shop = shopState(state, 'general')
+    expect(shop.keeper).not.toBe(town.keeper)
+    expect(locationMult(state)).toBe(shopRules.location_price_mult.outpost)
+    expect(locationMult(state)).not.toBe(townMult)
+    // 店主站在驛站的店裡
+    const at = peopleHere(state).find((p) => p.rec.id === shop.keeper)
+    expect(at && currentArea(state).cells[at.y * currentArea(state).width + at.x]!.kind).toBe('shop')
+    // 在驛站買東西不會動到城裡的庫存
+    const before = town.deals.find((d) => d.id === 'item:乾糧')!.stock
+    buyDeal(state, 'general', 'item:乾糧')
+    expect(state.shops![townKey]!.deals.find((d) => d.id === 'item:乾糧')!.stock).toBe(before)
+    leaveSide(state)
+    // 回頭走同一條路線：同一間驛站、同一位店主
+    const keeper = shop.keeper
+    state.road = { ...state.road!, from: state.road!.to, to: state.road!.from }
+    enterSide(state, 'waystation')
+    expect(shopState(state, 'general').keeper).toBe(keeper)
+    // 店主不會出現在出發城鎮的雜貨店
+    leaveSide(state)
+    delete state.road
+    state.location = 'soriel'
+    enterLocation(state)
+    expect(npcSpot(npcRecord(state, keeper)!)).toBe('waystation')
+    expect(allNpcs(state).filter((r) => areaOf(state, r)?.startsWith('soriel')).map((r) => r.id)).not.toContain(keeper)
   })
 })

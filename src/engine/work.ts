@@ -12,6 +12,7 @@ import { npcRecord } from './npcs'
 import { addAffinity, isFugitive } from './party'
 import type { Character } from './types'
 import type { GameState, Report } from './types'
+import { shopPlace } from './trade'
 
 /** 現在站的設施有沒有工作可做 */
 export function jobHere(state: GameState): (JobDef & { cell: string }) | undefined {
@@ -52,7 +53,7 @@ export function workPay(job: JobDef, hours: number, degree: Degree): number {
 
 /** 雇主：這個設施的店主（有登場過的話） */
 function employer(state: GameState, cell: string): string | undefined {
-  const id = `keeper_${state.location}_${cell === 'shop' ? 'general' : cell}`
+  const id = `keeper_${shopPlace(state).id}_${cell === 'shop' ? 'general' : cell}`
   return npcRecord(state, id) ? id : undefined
 }
 
