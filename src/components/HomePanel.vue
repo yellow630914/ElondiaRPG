@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { combatRules, craftRules, homeRules, itemDef } from '@/engine/data'
 import { currentArea, currentCell } from '@/engine/grid'
 import {
-  comfortOf, describeHome, furnitureIn, hasBed, homeOfArea, lotHere, lotPrice, PLACE_NAME, placeOf, residents, stayRefusal,
+  comfortOf, describeHome, furnitureIn, hasBed, homeOfArea, lotHere, lotPrice, ownHomeOfArea, PLACE_NAME, placeOf, residents, stayRefusal,
 } from '@/engine/homes'
 import { cropStatus, plotPlace, seedsFor } from '@/engine/garden'
 import { formatMoney } from '@/engine/money'
@@ -28,8 +28,14 @@ function buy() {
   newName.value = ''
 }
 
+// ---- 主人的家（主角是奴隸時，見 docs/COMPANIONS.md 第 3.4 節） ----
+const masterHome = computed(() => {
+  const h = homeOfArea(s.value, area.value)
+  return h?.master ? h : undefined
+})
+
 // ---- 自己的房子 ----
-const home = computed(() => homeOfArea(s.value, area.value))
+const home = computed(() => ownHomeOfArea(s.value, area.value))
 const place = computed(() => placeOf(area.value, cell.value))
 const choices = computed(() => s.value.inventory.filter((i) => {
   const f = itemDef(i.name)?.furniture
@@ -84,6 +90,11 @@ function rename() {
       <input v-model="newName" maxlength="16" placeholder="房子的名字（選填）" />
       <button class="primary small" :disabled="s.money_cc < price" @click="buy">買下（{{ formatMoney(price) }}）</button>
     </div>
+  </section>
+
+  <section v-else-if="masterHome" class="panel home small">
+    <h3>🏚️ {{ masterHome.name }}</h3>
+    <p class="muted">{{ area.name.split('・').at(-1) }}・{{ describeHome(masterHome) }}。這是主人的家：可以在這裡長休（睡在下人房），也可以和主人談判；不能擺家具或讓人留下。出門前要主人同意（主動行動）。</p>
   </section>
 
   <section v-else-if="home" class="panel home small">

@@ -168,7 +168,7 @@ describe('tavern hiring', () => {
     const count = Object.keys(state.npcs!).length
     expect(tavernCandidates(state).map((c) => c.npc)).toEqual(list.map((c) => c.npc))
     expect(Object.keys(state.npcs!).length).toBe(count)
-    expect(state.rosters!.soriel!.members.length).toBe(24)
+    expect(state.rosters!.soriel!.members.length).toBe(26)
   })
 
   it('hires at the asking price without a check', () => {

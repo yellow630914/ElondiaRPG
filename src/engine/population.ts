@@ -6,7 +6,7 @@
 //   不需要另外存檔，重新整理也不會變。
 // - 店主、公會職員等職員沒有活躍地點，固定待在自己的設施；舊資料（沒有活躍地點）沿用同樣的規則。
 
-import { geography, locationById, npcs as namedNpcs, npcTags, population, type Haunt, type Location, type NpcKind } from './data'
+import { geography, locationById, npcs as namedNpcs, npcTags, population, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
 import {
   currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
 } from './grid'
@@ -28,10 +28,11 @@ export function pickTags(rng: Rng, kind: NpcKind, loc: Location): string[] {
     const weights = Object.fromEntries(usable.map(([id, t]) => [id, t.commoner_weight ?? 0]))
     tags.push(weightedPick(rng, weights))
   } else {
-    for (const [id, t] of usable) if (t.adventurer_chance && rng.next() < t.adventurer_chance) tags.push(id)
+    // 互斥的標籤（好人與惡人）不會同時擁有
+    for (const [id, t] of usable) if (t.adventurer_chance && rng.next() < t.adventurer_chance && !tags.some((x) => tagsExclusive(x, id))) tags.push(id)
   }
   for (const [id, t] of usable) {
-    if (tags.length && !tags.includes(id) && t.extra_chance && rng.next() < t.extra_chance) tags.push(id)
+    if (tags.length && !tags.includes(id) && t.extra_chance && rng.next() < t.extra_chance && !tags.some((x) => tagsExclusive(x, id))) tags.push(id)
   }
   return tags
 }
@@ -337,6 +338,8 @@ export function hireable(state: GameState): NpcRecord[] {
 export function isHostile(state: GameState, rec: NpcRecord, areaKind = currentArea(state).kind): boolean {
   if (rec.hostile) return true
   if (areaKind === 'settlement' || npcKind(rec) !== 'adventurer') return false
+  // 好人：被攻擊過才會動手
+  if (rec.tags?.some((t) => npcTags.tags[t]?.never_hostile)) return false
   const affinity = state.relationships?.[rec.id]?.affinity
   return !!rec.tags?.includes('villain') || (affinity !== undefined && affinity <= population.hostility.affinity)
 }
@@ -448,7 +451,7 @@ export function spawnVisitors(state: GameState, area: Area, from: { x: number; y
   const near = [spot, ...cells.filter((i) => i !== spot && Math.abs((i % area.width) - (spot % area.width)) <= 1 && Math.abs(Math.floor(i / area.width) - Math.floor(spot / area.width)) <= 1)]
   for (let n = 0; n < size; n++) {
     const rec = generateResident(state, rng, home, kind, 'vis')
-    if (villain && !rec.tags?.includes('villain')) rec.tags = [...(rec.tags ?? []), 'villain']
+    if (villain && !rec.tags?.includes('villain')) rec.tags = [...(rec.tags ?? []).filter((t) => !tagsExclusive(t, 'villain')), 'villain']
     if (group) rec.group = group
     place(rec, near[n % near.length]!)
   }

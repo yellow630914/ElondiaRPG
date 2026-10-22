@@ -4,7 +4,7 @@
 
 import { lifeTier } from './character'
 import { startCombat } from './combat'
-import { actionRules, economy, itemDef, itemRules, locationById, tagDef, type ActionKind, type Degree } from './data'
+import { actionRules, economy, itemDef, itemRules, locationById, npcTags, tagDcMod, tagDef, type ActionKind, type Degree } from './data'
 import { currentArea } from './grid'
 import { formatMoney } from './money'
 import { npcKind, npcRecord, npcTitle, registerNpc } from './npcs'
@@ -84,6 +84,8 @@ export function setupInteraction(state: GameState, kind: InteractionKind, target
   const rel = state.relationships?.[rec.id]
   let dc = (def.base ?? 12) + 2 * Math.max(0, lifeTier(rec.level) - lifeTier(pc.level))
   if (rel) dc -= Math.floor(rel.affinity / 25)
+  // 標籤的修正（例如好人比較好相處）
+  dc += tagDcMod(rec, kind)
   const situational: { label: string; value: number }[] = []
   if (kind === 'flatter' && def.status_dc) {
     const gap = wealthOf(rec) - 2
@@ -151,7 +153,7 @@ function applySteal(state: GameState, report: Report, rec: NpcRecord, degree: De
     addAffinity(state, report, rec.id, c.affinity, '偷竊被發現')
     // 冒險者被抓到偷東西會翻臉
     if (degree === 'fumble' && npcKind(rec) === 'adventurer') (state.npcs?.[rec.id] ?? registerNpc(state, { ...rec })).hostile = true
-    const notes = consequences(state, report, [{ location: state.location, alert: currentArea(state).kind === 'settlement' ? c.alert : 0, reputation: c.reputation }])
+    const notes = consequences(state, report, [{ location: state.location, alert: currentArea(state).kind === 'settlement' ? c.alert : 0, reputation: c.reputation + crimeReputation(rec) }])
     return [`${rec.name}${degree === 'fumble' ? '當場抓住了你的手' : '察覺你想偷東西'}。`, ...notes].join('')
   }
   return withRng(state, (rng) => {
@@ -169,6 +171,11 @@ function applySteal(state: GameState, report: Report, rec: NpcRecord, degree: De
     report.changes.money_cc = (report.changes.money_cc ?? 0) + money
     return `從${rec.name}身上偷到 ${formatMoney(money)}。`
   })
+}
+
+/** 對好人等犯罪被發現時，額外的聲望變化（標籤的 crime_reputation） */
+function crimeReputation(rec: NpcRecord): number {
+  return (rec.tags ?? []).reduce((sum, t) => sum + (npcTags.tags[t]?.crime_reputation ?? 0), 0)
 }
 
 // ---- 偷襲 ----
@@ -202,7 +209,7 @@ function applyAttack(state: GameState, report: Report, rec: NpcRecord, degree: D
     const haunts = [...new Set((rec.haunts ?? []).map((h) => h.location))]
       .filter((id) => id !== state.location && locationById(id).type !== 'dungeon')
     notes.push(...consequences(state, report, [
-      { location: state.location, alert: guarded ? a.alert_here : 0, reputation: a.reputation_here },
+      { location: state.location, alert: guarded ? a.alert_here : 0, reputation: a.reputation_here + crimeReputation(rec) },
       ...haunts.map((id) => ({ location: id, alert: a.alert_haunts, reputation: a.reputation_haunts })),
     ]))
   }

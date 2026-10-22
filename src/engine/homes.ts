@@ -287,7 +287,7 @@ export function describeHome(home: Pick<Home, 'district'>): string {
 
 export function renameHome(state: GameState, id: string, name: string) {
   const home = state.homes?.[id]
-  if (!home) throw new Error('沒有這棟房子')
+  if (!home || home.master) throw new Error('沒有這棟房子')
   const n = name.trim().slice(0, 16)
   if (!n) return
   const old = home.name
@@ -315,6 +315,12 @@ export function homeReport(state: GameState, kind: Report['kind'], hours: number
 /** 這個區域是哪一棟房子 */
 export function homeOfArea(state: GameState, area: Pick<Area, 'key' | 'kind'>): Home | undefined {
   return area.kind === 'home' ? state.homes?.[area.key.split('/')[1]!] : undefined
+}
+
+/** 主角自己的房子（不是主人的家） */
+export function ownHomeOfArea(state: GameState, area: Pick<Area, 'key' | 'kind'>): Home | undefined {
+  const home = homeOfArea(state, area)
+  return home && !home.master ? home : undefined
 }
 
 /** 格子屬於哪一種擺放的地方 */
@@ -361,7 +367,7 @@ export function workbenchFor(home: Home, craft: string): string | undefined {
 
 /** 擺家具：站在空的地板或院子上，從行囊拿出來 */
 export function placeFurniture(state: GameState, area: Area, x: number, y: number, name: string) {
-  if (!homeOfArea(state, area)) throw new Error('只能在自己的房子裡擺家具')
+  if (!ownHomeOfArea(state, area)) throw new Error('只能在自己的房子裡擺家具')
   const cell = area.cells[y * area.width + x]
   const spec = itemDef(name)?.furniture
   if (!cell || !spec) throw new Error('這不是家具')
@@ -376,7 +382,7 @@ export function placeFurniture(state: GameState, area: Area, x: number, y: numbe
 
 /** 收起家具：放回行囊 */
 export function takeFurniture(state: GameState, area: Area, x: number, y: number) {
-  if (!homeOfArea(state, area)) throw new Error('只能在自己的房子裡收家具')
+  if (!ownHomeOfArea(state, area)) throw new Error('只能在自己的房子裡收家具')
   const cell = area.cells[y * area.width + x]
   if (!cell?.furniture) throw new Error('這一格沒有家具')
   if (cell.crop) throw new Error('苗圃上還種著東西，先收成或拔掉')
@@ -407,7 +413,7 @@ export function stayRefusal(m: Character): string | undefined {
 
 /** 讓隊員留在家裡（不算離隊：羈絆、契約、親密度都保留） */
 export function stayHome(state: GameState, area: Area, memberId: string): Report {
-  const home = homeOfArea(state, area)
+  const home = ownHomeOfArea(state, area)
   if (!home) throw new Error('要在自己的房子裡')
   const m = state.party.find((x) => x.id === memberId)
   if (!m) throw new Error('隊伍中沒有這位角色')

@@ -723,11 +723,20 @@ export const slaveryRules = slaveryJson as unknown as {
     name_chars: number; mark_chars: number; side_effect_chars: number; side_effects: number
   }
   master_permit: { attr: AttrId; hours: number; affinity_step: number }
+  master_home: {
+    days: { pivot_exit_dc: number; per_dc: number; min: number; max: number; affinity_step: number }
+    tag_days: Record<string, number>
+    tag_mult: Record<string, number>
+    leave: { attr: AttrId; base: number; hours: number; affinity_step: number }
+    strict: { found: number; overdue: number; decay_days: number; max: number }
+    overdue: { base: number; per_day: number; max: number }
+    district: Record<string, HomeDistrict>
+  }
   fugitive_master: { return: { attr: AttrId; base: number; affinity_step: number }; negotiate_dc_bonus: number }
   seek_master: { attr: AttrId; base: number; affinity_step: number }
   master_tags: {
     kinds: Record<'adventurer' | 'commoner', { dc: number; market: number }>
-    tags: Record<string, { dc: number; chance: number; public: number; black: number }>
+    tags: Record<string, { dc: number; chance: number; public: number; black: number; negotiate?: number }>
   }
   unmark: { hours: number; fee_ratio: Record<Degree, number>; services: Record<'temple' | 'black' | 'mage', UnmarkServiceDef> }
   safe_spots: string[]
@@ -756,6 +765,17 @@ export interface MasterEventDef {
   chance?: number
   /** 成人向的親密場景是什麼（{master} 換成主人的名字）：回應帶 adult_scene 時，敘事要詳細描寫 */
   scene?: string
+  /** 只在主人的親密度在這個範圍時發生（含） */
+  affinity_min?: number
+  affinity_max?: number
+  /** 主人有其中一個標籤時才發生 */
+  tags?: string[]
+  /** 主人有其中一個標籤時不發生 */
+  tags_none?: string[]
+  /** 只在主人的家裡（at_home: true）或不在家時（false）發生 */
+  at_home?: boolean
+  /** 離家逾期時的「主人要回家」事件：不在一般事件的抽選裡 */
+  overdue?: boolean
 }
 
 export interface UnmarkServiceDef {
@@ -800,7 +820,7 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
-  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'marking' | 'master_event'
+  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
   | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'
@@ -845,6 +865,24 @@ export interface NpcTagDef {
   wealth: number
   occupations?: string[]
   ai_hint: string
+  /** 互斥的標籤（不會同時擁有） */
+  exclusive?: string[]
+  /** 和帶這個標籤的人互動時的參考 DC 修正 */
+  dc_mods?: Partial<Record<'chat' | 'gift' | 'flatter' | 'hire' | 'invite', number>>
+  /** 不會因關係差而在野外動手（被攻擊過才會） */
+  never_hostile?: boolean
+  /** 對他犯罪被發現時，額外的聲望變化 */
+  crime_reputation?: number
+}
+
+/** 標籤的 DC 修正：所有標籤相加 */
+export function tagDcMod(rec: { tags?: string[] }, key: keyof NonNullable<NpcTagDef['dc_mods']>): number {
+  return (rec.tags ?? []).reduce((sum, t) => sum + (npcTags.tags[t]?.dc_mods?.[key] ?? 0), 0)
+}
+
+/** 兩個標籤互斥嗎（任何一方寫了就算） */
+export function tagsExclusive(a: string, b: string): boolean {
+  return !!npcTags.tags[a]?.exclusive?.includes(b) || !!npcTags.tags[b]?.exclusive?.includes(a)
 }
 export const npcTags = npcTagsJson as unknown as {
   kinds: Record<NpcKind, { name: string; zone_weights: Record<string, number>; level?: [number, number]; dungeon_haunts?: [number, number] }>

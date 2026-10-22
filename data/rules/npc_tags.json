@@ -1,5 +1,5 @@
 {
-  "$comment": "NPC 標籤：決定活躍地點、生成機率，並給 AI 當作身分參考。kinds = 適用的 NPC 類型（commoner 普通人、adventurer 冒險者）。commoner_weight = 普通人的主要標籤權重（每位普通人抽一個主要標籤）；adventurer_chance = 冒險者帶這個標籤的機率（各自獨立）；extra_chance = 已有其他標籤時再加上這個標籤的機率（例如商人＋旅人 = 行商）。location_types = 只在這些類型的地點生成（沒寫為全部）。zone_weights 覆寫該 NPC 在各地區的權重（town 一般、noble 貴族區、palace 王城、temple 神殿、outskirts 近郊、dungeon 地下城）；地點沒有的地區會併入 town。haunt_extra = 除了所屬地點，再加入幾個相鄰的地點（沿道路，權重 haunt_extra_weight）。occupations 是普通人的職業描述；wealth 是財富等級（1 平民～4 皇族，送禮與偷竊用）。說明見 docs/NPC_SYSTEM.md 第 4 節。",
+  "$comment": "NPC 標籤：決定活躍地點、生成機率，並給 AI 當作身分參考。kinds = 適用的 NPC 類型（commoner 普通人、adventurer 冒險者）。commoner_weight = 普通人的主要標籤權重（每位普通人抽一個主要標籤）；adventurer_chance = 冒險者帶這個標籤的機率（各自獨立）；extra_chance = 已有其他標籤時再加上這個標籤的機率（例如商人＋旅人 = 行商）。location_types = 只在這些類型的地點生成（沒寫為全部）。zone_weights 覆寫該 NPC 在各地區的權重（town 一般、noble 貴族區、palace 王城、temple 神殿、outskirts 近郊、dungeon 地下城）；地點沒有的地區會併入 town。haunt_extra = 除了所屬地點，再加入幾個相鄰的地點（沿道路，權重 haunt_extra_weight）。occupations 是普通人的職業描述；wealth 是財富等級（1 平民～4 皇族，送禮與偷竊用）。exclusive = 互斥的標籤（不會同時擁有）；dc_mods = 和帶這個標籤的人互動時的參考 DC 修正（chat、gift、flatter、hire、invite）；never_hostile = 不會因關係差而在野外動手；crime_reputation = 對他犯罪被發現時額外的聲望變化。說明見 docs/NPC_SYSTEM.md 第 4 節。",
   "version": 1,
   "kinds": {
     "commoner": {
@@ -80,6 +80,17 @@
       "wealth": 3,
       "occupations": ["主教", "大主教", "樞機"],
       "ai_hint": "教會的高階神職者，握有宗教與政治影響力"
+    },
+    "good": {
+      "$comment": "好人：心地善良、樂於助人。和惡人互斥（exclusive）。dc_mods：和他互動的參考 DC 修正（聊天、送禮、獻媚、雇傭、邀請入隊都比較容易）；never_hostile：不會因為關係差就在野外動手（被攻擊過才會）；crime_reputation：偷他的東西被發現、當著人偷襲他時，聲望再多扣這麼多。當主人時的效果見 slavery.json（master_tags、master_home、master_events 的 tags）。",
+      "name": "好人", "emoji": "🕊️", "kinds": ["commoner", "adventurer"],
+      "commoner_weight": 6, "adventurer_chance": 0.12,
+      "exclusive": ["villain"],
+      "wealth": 1,
+      "dc_mods": { "chat": -2, "gift": -1, "flatter": -1, "hire": -2, "invite": -2 },
+      "never_hostile": true,
+      "crime_reputation": -1,
+      "ai_hint": "心地善良、樂於助人的好人：待人寬厚、願意幫助弱者（包括奴隸與落難的人），討厭欺凌與不義；但不是傻子，被騙或被傷害也會生氣"
     },
     "villain": {
       "name": "惡人", "emoji": "🗡️", "kinds": ["adventurer"],

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { abilities, geography, itemRules, npcs as namedNpcs, stories } from '@/engine/data'
+import { abilities, contractDef, geography, itemRules, npcs as namedNpcs, slaveryRules, stories, tagDef } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
 import { STORY_EFFECTS } from '@/engine/storyMods'
@@ -34,6 +34,28 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   companion: () => ({ type: 'companion', npc: namedNpcs[0]?.id ?? '', mode: 'voluntary' }),
   hp: () => ({ type: 'hp', target: 'pc', ratio: -0.2 }),
   start_story: () => ({ type: 'start_story', story: stories.find((s) => s.start.kind === 'manual')?.id ?? stories[0]?.id ?? '' }),
+  enslave_player: () => ({ type: 'enslave_player', random: {}, contract: 'labor' }),
+}
+// 主角淪為奴隸：固定 NPC 當主人，或隨機生成（可以指定身分）
+const contracts = Object.keys(slaveryRules.contracts)
+const masterTags = Object.keys(slaveryRules.master_tags.tags)
+function masterMode(r: Row): 'fixed' | 'random' {
+  return typeof r.master === 'string' ? 'fixed' : 'random'
+}
+function setMasterMode(r: Row, mode: string) {
+  if (mode === 'fixed') {
+    delete r.random
+    r.master = namedNpcs[0]?.id ?? ''
+  } else {
+    delete r.master
+    r.random = {}
+  }
+}
+function randomTag(r: Row): string {
+  return (r.random as { tag?: string } | undefined)?.tag ?? ''
+}
+function setRandomTag(r: Row, tag: string) {
+  r.random = tag ? { tag } : {}
 }
 function add(type: RewardEffect['type']) {
   model.value = [...list.value, DEFAULTS[type]!()]
@@ -102,6 +124,24 @@ function setBase(r: Row, base: string) {
           <option v-for="s in storyList" :key="s.id" :value="s.id">{{ s.title }}{{ s.start.kind === 'manual' ? '（只由其他事件開啟）' : '' }}</option>
         </select>
         <span class="small muted">已經開始過就略過；不看接取條件</span>
+      </template>
+      <template v-else-if="r.type === 'enslave_player'">
+        <select :value="masterMode(r)" @change="setMasterMode(r, ($event.target as HTMLSelectElement).value)">
+          <option value="fixed">固定 NPC 當主人</option>
+          <option value="random">隨機的 NPC 當主人</option>
+        </select>
+        <select v-if="masterMode(r) === 'fixed'" v-model="r.master">
+          <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
+        </select>
+        <select v-else :value="randomTag(r)" @change="setRandomTag(r, ($event.target as HTMLSelectElement).value)">
+          <option value="">任何身分（依奴隸市場的權重）</option>
+          <option v-for="t in masterTags" :key="t" :value="t">{{ tagDef(t)?.name ?? t }}</option>
+        </select>
+        打算刻
+        <select v-model="r.contract">
+          <option v-for="c in contracts" :key="c" :value="c">{{ contractDef(c).name }}</option>
+        </select>
+        <span class="small muted">之後還有刻印檢定；已經是奴隸時改成換主人（印記沿用）；老鴇一律刻娼妓契約</span>
       </template>
       <template v-else-if="r.type === 'hp'">
         <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）

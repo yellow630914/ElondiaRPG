@@ -20,6 +20,8 @@ import { gearKnown, registerGear } from './gear'
 import type { GameState, GearSpec, Intel, NpcRecord, Report } from './types'
 import { addIntel } from './intel'
 import { startStory, storyDef } from './story'
+import { randomMaster } from './slavery'
+import { addStrict, extendDeadline, sendToMasterHome } from './masterHome'
 
 export type NpcRef = string | NpcSpec
 
@@ -45,7 +47,11 @@ export type RewardEffect =
   | { type: 'slot'; target: string; delta: number; circle?: number }
   /** 生命骰：delta < 0 花掉，> 0 回復 */
   | { type: 'hit_dice'; target: string; delta: number }
-  | { type: 'enslave_player'; master: NpcRef; contract: string; members?: NpcRef[] }
+  /**
+   * 主角淪為奴隸（只有特殊任務可以用）：master 指定主人（固定 NPC 的 id 或規格）；沒有時 random 生成一位隨機的主人
+   * （tag：主人的身分標籤，不寫＝依公開市場的權重抽）。主角已經是奴隸時改成換主人，印記沿用。
+   */
+  | { type: 'enslave_player'; master?: NpcRef; random?: { tag?: string }; contract: string; members?: NpcRef[] }
   /** 刻印時提議的印記名稱與描述（只是文字，數值依模板） */
   | { type: 'mark'; name?: string; text?: string }
   /** 解除契約：npc 為 pc 時是主角獲釋 */
@@ -72,11 +78,17 @@ export type RewardEffect =
   | { type: 'intel'; intel: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> }
   /** 開始一個特殊任務（情報商賣的任務消息） */
   | { type: 'start_story'; story: string }
+  /** 主人把主角帶回主人的家（主人的事件用） */
+  | { type: 'master_home' }
+  /** 嚴加看管的點數（正數加重，負數放寬；主人的事件用） */
+  | { type: 'strict'; delta: number }
+  /** 離家期限延長幾小時（主人的事件用） */
+  | { type: 'home_extend'; hours: number }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
-  'intel', 'start_story',
+  'intel', 'start_story', 'master_home', 'strict', 'home_extend',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -219,11 +231,19 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         break
       }
       case 'enslave_player': {
-        const master = resolveNpc(state, e.master)
+        const master = e.master ? resolveNpc(state, e.master) : randomMaster(state, e.random?.tag)
+        if (pcOf(state).contract) {
+          // 已經是奴隸：換主人，印記沿用
+          changeMaster(state, master, report, '特殊任務')
+          notes.push(`${master.name}成為主角的新主人`)
+          break
+        }
         const members = (e.members ?? []).map((m) => resolveNpc(state, m))
-        enslavePlayer(state, master, e.contract, report, members)
+        const contract = master.tags?.includes('prostitute') ? 'brothel' : e.contract
+        enslavePlayer(state, master, contract, report, members)
         // 刻印前還有一次檢定：主角的表現決定最後刻上哪一種印記
-        state.pendingMark = { intended: e.contract }
+        state.pendingMark = { intended: contract }
+        notes.push(`主角成為${master.name}的奴隸`)
         break
       }
       case 'mark': {
@@ -236,6 +256,20 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         notes.push(master ? `${master.name}成為主角的新主人` : '主角變成無主的奴隸')
         break
       }
+      case 'master_home': {
+        const line = sendToMasterHome(state, report)
+        if (line) notes.push(line.replace(/。$/, ''))
+        break
+      }
+      case 'strict':
+        addStrict(state, e.delta)
+        if (e.delta > 0) notes.push('之後被看得更緊')
+        else if (e.delta < 0) notes.push('看管放寬了一些')
+        break
+      case 'home_extend':
+        extendDeadline(state, e.hours)
+        notes.push(`離家的期限多了 ${Math.round((e.hours / 24) * 10) / 10} 天`)
+        break
       case 'free':
         if (e.npc === 'pc') freePlayer(state, report)
         else freeSlave(state, e.npc, report)

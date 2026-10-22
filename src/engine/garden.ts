@@ -4,7 +4,7 @@
 
 import { itemDef, type FurniturePlace, type SeedSpec } from './data'
 import type { Area, Cell } from './grid'
-import { homeOfArea, homeReport, PLACE_NAME, placeOf } from './homes'
+import { homeOfArea, homeReport, ownHomeOfArea, PLACE_NAME, placeOf } from './homes'
 import { commitReport, removeItem, withRng } from './state'
 import type { GameState, GameTime, Report } from './types'
 
@@ -50,7 +50,7 @@ export function cropStatus(state: GameState, cell: Cell): CropStatus | undefined
 }
 
 function plotAt(state: GameState, area: Area, x: number, y: number): Cell {
-  if (!homeOfArea(state, area)) throw new Error('只能在自己的房子裡種東西')
+  if (!ownHomeOfArea(state, area)) throw new Error('只能在自己的房子裡種東西')
   const cell = area.cells[y * area.width + x]
   if (!cell || !plotPlace(area, cell)) throw new Error('這一格不是苗圃')
   return cell

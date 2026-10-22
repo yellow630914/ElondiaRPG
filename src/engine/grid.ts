@@ -23,6 +23,7 @@ import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
+import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { overlayLots } from './homes'
@@ -723,6 +724,8 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   if (cell!.kind === 'link') {
     const blocked = zoneEntryBlock(state, getArea(state, cell!.link!.area).zone)
     if (blocked) throw new Error(blocked)
+    // 主人的家：走出大門前要主人同意
+    if (cell!.dir === 'out' && atMasterHome(state, area)) assertMayLeaveHouse(state)
   }
   state.time = addHours(state.time, stepMinutes(area) / 60)
   state.position = { area: area.key, x: nx, y: ny, prev: { x: p.x, y: p.y } }
@@ -786,6 +789,8 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
     case 'link': {
       const target = getArea(state, cell.link!.area)
       placeAt(state, target, cell.link!.x, cell.link!.y)
+      // 走進或走出主人的家：離家期限重新算
+      touchMasterHome(state, area, target)
       return {}
     }
     case 'encounter':

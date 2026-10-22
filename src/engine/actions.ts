@@ -19,6 +19,7 @@ import {
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
+import { applyLeave } from './masterHome'
 import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, applySeekMaster, applyUnmark, masterEventDefaults } from './slavery'
 import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
@@ -493,8 +494,9 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'bluff':
     case 'intimidate': return applyStandoff(state, degree)
     case 'master_permit': return applyPermit(state, report, degree)
+    case 'master_leave': return applyLeave(state, report, degree)
     case 'marking': return applyMarking(state, degree)
-    case 'master_event': applyMasterEventResponse(state); return ''
+    case 'master_event': return applyMasterEventResponse(state, report, degree)
     case 'master_return': return applyReturn(state, report, degree)
     case 'seek_master': return applySeekMaster(state, report, p.target!, degree)
     case 'unmark': return applyUnmark(state, report, p.target!, degree)

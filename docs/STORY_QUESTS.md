@@ -66,7 +66,7 @@
 {
   "text": "發生的事",
   "set_flags": ["relic_found"], "clear_flags": [],
-  "effects": [{ "type": "money", "amount": 150 }],  // 金錢、物品、裝備、經驗、聲望、親密度、記憶、能力、正式入隊、生命值、開始特殊任務
+  "effects": [{ "type": "money", "amount": 150 }],  // 金錢、物品、裝備、經驗、聲望、親密度、記憶、能力、正式入隊、生命值、開始特殊任務、主角淪為奴隸
   "join": "npc_selene",      // 固定 NPC 以「任務同行」加入（不佔隊伍名額）
   "leave": "npc_selene",     // 任務同行離開
   "complete": true,          // 完成任務（發完成報酬）；或 "fail_quest": true 任務失敗
@@ -77,6 +77,12 @@
 ```
 
 任務結束（完成、失敗或放棄）時，這個任務帶來的任務同行夥伴都會離隊。
+
+**主角淪為奴隸**（只有特殊任務能用）：
+- 固定 NPC 當主人：`{ "type": "enslave_player", "master": "npc_selene", "contract": "labor" }`
+- 隨機的 NPC 當主人：`{ "type": "enslave_player", "random": { "tag": "noble" }, "contract": "combat" }`（`tag` 是主人的身分標籤，不寫＝依奴隸市場的權重抽；在目前的地點生成，比主角高 1～4 級）
+
+`contract` 是主人打算刻的印記（勞役 labor、戰奴 combat、魔導束縛 arcane、娼妓 brothel），之後照樣有刻印檢定；主角原本的同伴（包括任務同行）會分開；已經是奴隸時改成換主人（印記沿用）。主人會在自己的城市有一棟房子（見 [`COMPANIONS.md`](COMPANIONS.md) 第 3.4 節）。編輯器的「＋ 效果…」選「主角淪為奴隸」，再選「固定 NPC 當主人」或「隨機的 NPC 當主人」；檢查任務鏈會提醒不存在的主人。
 
 **開始特殊任務**（`{ "type": "start_story", "story": "id" }`）：在結果裡接著開啟另一個特殊任務（另外一則日誌）。不看接取條件；已經開始過就略過。開頭是「只由其他事件開啟」（`manual`）的任務要靠它開始，「檢查任務鏈」會提醒沒有任何任務開啟它的情況。
 

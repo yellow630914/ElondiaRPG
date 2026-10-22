@@ -11,6 +11,7 @@ import { assertNoStandoff, currentArea, enterLocation, placeOutside } from './gr
 import { arrivalCheck, gateCheck } from './security'
 import { rejoinAway } from './companions'
 import { assertMasterAllows, maybeMasterEvent, type MasterEventOptions } from './slavery'
+import { syncMasterHome } from './masterHome'
 import { ensureRoster, pruneNpcs, refreshRosters } from './population'
 
 /** 官道沿途有旅店：每人每天食宿 */
@@ -158,6 +159,8 @@ export function arrive(state: GameState) {
   if (!arrivalCheck(state)) placeOutside(state)
   // 戰敗時逃開的同伴在聚落等著
   rejoinAway(state)
+  // 主人的家（主角有主人時；舊存檔第一次抵達時建立）
+  syncMasterHome(state)
 }
 
 export function resolveEvent(rng: Rng, ev: TravelEvent, members: Character[], time: Report['time']['start'], seq: number): TimelineEntry {

@@ -68,6 +68,8 @@
       "$comment": "只能攻擊冒險者。規則見 data/rules/security.json 的 attack" },
     "master_permit": { "name": "請求主人同意", "attr": "cha", "hours": 0.25, "effects": ["relationship_text", "flag", "affinity"],
       "$comment": "身為奴隸時出城或旅行前，向主人請求同意。DC 見 slavery.json 的 master_permit（依印記的 exit_dc）" },
+    "master_leave": { "name": "請求主人讓你出門", "attr": "cha", "hours": 0.25, "effects": ["relationship_text", "flag", "affinity"],
+      "$comment": "在主人的家裡要出門前，向主人請求同意。DC 見 slavery.json 的 master_home.leave（服從懲罰、嚴加看管、主人親密度）" },
     "marking": { "name": "刻印", "attr": "cha", "hours": 0.5, "effects": ["relationship_text", "flag", "mark"],
       "$comment": "成為奴隸時的刻印檢定，結果決定可以選的印記（見 slavery.json 的 marking）。mark：AI 依主角的行為提議印記的名稱與描述（只是文字，數值依模板）" },
     "master_event": { "name": "回應主人", "attr": "cha", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag", "hp", "money", "item", "release"],

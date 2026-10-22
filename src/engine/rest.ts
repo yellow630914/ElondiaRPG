@@ -8,7 +8,7 @@
 
 import { mod, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
-import { classDef, companionRules, homeRules, locationById, regionById, wildEncounters, type DungeonLayerId } from './data'
+import { classDef, companionRules, homeRules, locationById, regionById, slaveryRules, wildEncounters, type DungeonLayerId } from './data'
 import { currentArea, currentCell, DUNGEON_LAYERS } from './grid'
 import { comfortOf, hasBed, homeOfArea } from './homes'
 import { formatMoney } from './money'
@@ -51,7 +51,8 @@ export function longRestBlocked(state: GameState, place: RestPlace): string | nu
   if (place === 'home') {
     const home = homeOfArea(state, currentArea(state))
     if (!home) return '要在自己的房子裡'
-    if (!hasBed(home)) return '家裡還沒有床'
+    // 主人的家：睡在下人房，不用自己的床
+    if (!home.master && !hasBed(home)) return '家裡還沒有床'
   }
   if (place === 'inn' && cell.kind !== 'inn') return '要在旅店才能長休'
   if (place === 'safe' && cell.kind !== 'safe') return '要在安全房才能長休'
@@ -164,7 +165,7 @@ export function longRest(state: GameState, place: RestPlace): Report {
   } else if (place === 'home') {
     const home = homeOfArea(state, area)!
     hours = Math.max(hours, (24 - state.time.hour + 8) % 24 || 24)
-    scene = `自己的房子「${home.name}」`
+    scene = home.master ? `主人的家「${home.name}」` : `自己的房子「${home.name}」`
   } else {
     const need = state.party.length
     const have = state.inventory.find((i) => i.name === '乾糧')?.qty ?? 0
@@ -249,8 +250,9 @@ export function restChecks(state: GameState, report: Report, place: 'short' | 'i
       const mult = place === 'inn' ? 1.5 : 1
       const caught = withRng(state, (rng) => rng.chance(def.recapture_chance * mult))
       if (caught) {
-        recapturePlayer(state, report)
-        lines.push(`${pc.contract.masterName}循著契約印記找到了你。`, punish(state, 'heavy', report))
+        // 被找到：直接帶回主人的家，之後嚴加看管
+        const sent = recapturePlayer(state, report, slaveryRules.master_home.strict.found)
+        lines.push(`${pc.contract.masterName}循著契約印記找到了你。`, punish(state, 'heavy', report), sent)
       }
     }
   }

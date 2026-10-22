@@ -11,6 +11,7 @@ import {
   atSafeSpot, contractTerms, markSummary, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, unmarkOffers,
 } from '@/engine/slavery'
 import { currentArea } from '@/engine/grid'
+import { atMasterHome, houseRefusedToday, leaveDc, masterHomeSummary, mayLeaveHouse, strictPoints } from '@/engine/masterHome'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import { useSettings } from '@/stores/settings'
@@ -75,6 +76,12 @@ const inTown = computed(() => currentArea(s.value).kind === 'settlement')
 const permitted = computed(() => masterAllows(s.value))
 const refused = computed(() => masterRefusedToday(s.value))
 const freedomText = ref('')
+// 主人的家：離家期限、嚴加看管、出門要主人同意
+const homeLine = computed(() => masterHomeSummary(s.value))
+const strict = computed(() => strictPoints(s.value))
+const atHome = computed(() => atMasterHome(s.value))
+const mayLeave = computed(() => mayLeaveHouse(s.value))
+const houseRefused = computed(() => houseRefusedToday(s.value))
 // 逃亡或無主：找到主人、投靠新主人、解除印記
 const whereabouts = computed(() => masterWhereabouts(s.value))
 const nearMaster = computed(() => masterNearby(s.value))
@@ -86,7 +93,7 @@ const seekTargets = computed(() => {
     .filter((p) => p.dist <= 1 && p.rec.id !== contract.value?.master && !p.rec.tags?.includes('slave') && !isHostile(s.value, p.rec))
     .map((p) => ({ id: p.rec.id, name: `${label(p.rec.id, p.rec.name)}・${npcTitle(p.rec)}・DC ${seekMasterDc(s.value, p.rec)}${p.kind === 'commoner' ? '・不戰鬥' : ''}` }))
 })
-function doFreedom(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_return' | 'seek_master' | 'unmark', target?: string) {
+function doFreedom(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_leave' | 'master_return' | 'seek_master' | 'unmark', target?: string) {
   const u = parseUse(use.value)
   void game.perform({ kind, text: freedomText.value, ...(target ? { target } : {}), ...(u ? { use: u } : {}) })
   freedomText.value = ''
@@ -140,17 +147,22 @@ const pendingMark = computed(() => s.value.pendingMark)
     </div>
     <template v-if="contract && bound">
       <p class="small mark pre">⛓️ {{ contract.summary }}</p>
+      <p v-if="homeLine" class="small muted">🏚️ {{ homeLine }}<template v-if="strict">（嚴加看管 {{ strict }} 點：出門與出城的 DC +{{ strict }}）</template></p>
+      <p v-if="atHome" class="small muted">
+        {{ mayLeave ? `${contract.masterName}今天同意你出門。` : houseRefused ? `${contract.masterName}今天不准你出門。` : `要走出大門，先請求${contract.masterName}同意（${attrName(slaveryRules.master_home.leave.attr)}檢定，參考 DC ${leaveDc(s)}）。` }}
+      </p>
       <p v-if="inTown" class="small muted">
         {{ permitted ? `${contract.masterName}今天同意你出城。` : refused ? `${contract.masterName}今天不准你離開這座城。` : `出城或旅行前要先請求${contract.masterName}同意（${attrName(slaveryRules.master_permit.attr)}檢定，印記越重越難）。` }}
       </p>
       <textarea v-model="freedomText" rows="2" placeholder="描述你打算怎麼說服主人、用什麼理由請求出城，或怎麼逃走" />
       <AbilityPicker v-model="use" />
       <div class="row">
+        <button v-if="atHome && !mayLeave" class="small" :disabled="houseRefused || game.judging" @click="doFreedom('master_leave')">請求主人讓你出門</button>
         <button v-if="inTown && !permitted" class="small" :disabled="refused || game.judging" @click="doFreedom('master_permit')">請求主人同意出城</button>
-        <button class="small" :disabled="!safe || game.judging" :title="safe ? '' : '要在旅店、安全房或神殿才能談判'" @click="doFreedom('negotiate')">談判解除契約</button>
+        <button class="small" :disabled="!safe || game.judging" :title="safe ? '' : '要在旅店、安全房、神殿或主人的家才能談判'" @click="doFreedom('negotiate')">談判解除契約</button>
         <button class="small danger" :disabled="game.judging" @click="doFreedom('escape')">逃離主人</button>
       </div>
-      <p v-if="!safe" class="small muted">和主人談判要在安全的地方（旅店、安全房或神殿）；逃離隨時都可以。</p>
+      <p v-if="!safe" class="small muted">和主人談判要在安全的地方（旅店、安全房、神殿或主人的家）；逃離隨時都可以。</p>
       <hr />
     </template>
     <template v-else-if="contract && enslaved">

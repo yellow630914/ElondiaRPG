@@ -18,6 +18,7 @@ import { intelSummary } from '@/engine/inventory'
 import { craftPart, craftRarity, parseCraftTarget } from '@/engine/craft'
 import { gearName, gearRules, rarityName, rarityPoints } from '@/engine/gear'
 import { contractTerms, markSummary } from '@/engine/slavery'
+import { masterHomeSummary } from '@/engine/masterHome'
 import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
 import type { GameState, Negotiation } from '@/engine/types'
@@ -71,7 +72,8 @@ function pcDetail(state: GameState): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${pc.attrs[a]}`).join('、')
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
-  const contract = pc.contract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pc.contract)}` : ''
+  const home = pc.contract ? masterHomeSummary(state) : ''
+  const contract = pc.contract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pc.contract)}${home ? `\n${home}` : ''}` : ''
   const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
   return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${contract}`
 }

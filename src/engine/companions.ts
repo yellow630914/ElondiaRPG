@@ -9,6 +9,7 @@
 // 需要檢定的部分（雇傭談判、殺價、邀請、打聽黑市、談判解除契約、逃離）走主動行動（actions.ts），
 // 這裡提供參考 DC、各成功程度的機制結果，以及套用結果的函式。
 
+import { setupLeave } from './masterHome'
 import type { AdultScene } from './content'
 import { setupCraft, setupMake } from './craft'
 import { setupProduce } from './recipes'
@@ -19,7 +20,7 @@ import { setupDefeatEvent } from './defeat'
 import { lifeTier, mod, snapshot } from './character'
 import {
   actionRules, combatRules, companionRules, contractDef, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
-  tagDef, type ActionKind, type AttrId, type Degree, type MarketDef, type NpcKind,
+  tagDcMod, tagDef, type ActionKind, type AttrId, type Degree, type MarketDef, type NpcKind,
 } from './data'
 import type { Rng } from './rng'
 import { formatMoney } from './money'
@@ -98,7 +99,7 @@ export function hireDc(state: GameState, npcId: string, offer: number): number {
   const h = companionRules.tavern.hire
   const asking = askingFor(c)
   const ratio = asking > 0 ? Math.max(0, Math.min(1, offer / asking)) : 1
-  const dc = h.base + Math.ceil(h.fee_weight * (1 - ratio)) + h.level_gap * Math.max(0, rec.level - pcOf(state).level)
+  const dc = h.base + Math.ceil(h.fee_weight * (1 - ratio)) + h.level_gap * Math.max(0, rec.level - pcOf(state).level) + tagDcMod(rec, 'hire')
   return Math.max(h.min, Math.min(h.max, dc))
 }
 
@@ -252,7 +253,7 @@ export function inviteDc(state: GameState, npcId: string): number {
   const rec = npcRecord(state, npcId)
   if (!rel || !rec) throw new Error('你不認識這個人')
   const i = companionRules.invite
-  return i.base - Math.floor(rel.affinity / i.affinity_step) + i.level_gap * Math.max(0, rec.level - pcOf(state).level)
+  return i.base - Math.floor(rel.affinity / i.affinity_step) + i.level_gap * Math.max(0, rec.level - pcOf(state).level) + tagDcMod(rec, 'invite')
 }
 
 export function validateInvite(state: GameState, npcId: string) {
@@ -480,7 +481,10 @@ export function negotiateDc(state: GameState): number {
   const bonus = state.flags['negotiate_bonus'] ? 2 : 0
   // 逃亡後當面談判：主人還在氣頭上
   const angry = fugitive ? slaveryRules.fugitive_master.negotiate_dc_bonus : 0
-  return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus + angry
+  // 主人的身分：好人比較願意放手，惡人不肯
+  const tags = npcRecord(state, pc.contract.master)?.tags ?? []
+  const who = tags.reduce((sum, t) => sum + (slaveryRules.master_tags.tags[t]?.negotiate ?? 0), 0)
+  return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus + angry + who
 }
 
 export function escapeDc(state: GameState): number {
@@ -517,8 +521,8 @@ export function applyNegotiate(state: GameState, report: Report, degree: Degree)
       return `${master}拒絕了。${punish(state, 'light', report)}`
     case 'fumble':
       if (isFugitive(state)) {
-        recapturePlayer(state, report)
-        return `${master}一把抓住了你。${punish(state, 'heavy', report)}`
+        const sent = recapturePlayer(state, report, slaveryRules.master_home.strict.found)
+        return `${master}一把抓住了你。${punish(state, 'heavy', report)}${sent}`
       }
       return `${master}勃然大怒。${punish(state, 'heavy', report)}`
   }
@@ -631,6 +635,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
     }
     case 'master_permit':
       return setupPermit(state)
+    case 'master_leave':
+      return setupLeave(state)
     case 'marking':
       return setupMarking(state)
     case 'master_event':

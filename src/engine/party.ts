@@ -8,6 +8,7 @@ import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
 import { contractTerms, makeContract, type MarkChoice } from './slavery'
 import type { Character, CompanionChange, ContractRef, GameState, MarkTerms, NpcRecord, Report } from './types'
+import { addStrict, sendToMasterHome, syncMasterHome } from './masterHome'
 
 const JOIN_TEXT: Record<Bond, string> = {
   hired: '在酒館受雇加入隊伍的冒險夥伴。',
@@ -208,6 +209,8 @@ export function enslavePlayer(state: GameState, master: NpcRecord | null, contra
   pc.contract = makeContract(contract, master?.id ?? '', master?.name ?? '', state.time)
   addCondition(pc, 'slave_mark', report)
   recordChange(report, { npc: 'pc', name: pc.name, change: 'enslaved', reason: `${contractTerms(pc.contract).name}，${master ? `主人：${master.name}` : '無主'}` })
+  // 主人在自己的城市有一棟房子（離家期限從現在算起）
+  syncMasterHome(state)
 }
 
 /** 解除主角的契約（談判成功、事件獎勵）。主人仍在隊伍中，關係變成普通的隊長與隊員。 */
@@ -218,6 +221,8 @@ export function freePlayer(state: GameState, report?: Report, reason?: string) {
   removeCondition(pc, 'slave_mark', report)
   removeCondition(pc, 'fugitive', report)
   recordChange(report, { npc: 'pc', name: pc.name, change: 'freed', ...(reason ? { reason } : {}) })
+  // 不再是主人的家：拿掉（人在裡面時站到門口）
+  syncMasterHome(state)
 }
 
 /** 解除 NPC 奴隸的契約：變成自願同行的同伴，親密度上升。 */
@@ -240,14 +245,17 @@ export function playerEscapes(state: GameState, report?: Report) {
   recordChange(report, { npc: 'pc', name: pc.name, change: 'escaped', reason: `逃離${pc.contract.masterName}` })
 }
 
-/** 逃亡奴隸被主人找到：主人回到隊伍（隊伍滿了就讓最後入隊的同伴離開）。 */
-export function recapturePlayer(state: GameState, report?: Report) {
+/**
+ * 逃亡奴隸被主人找到（或自己回去）：主人回到隊伍（隊伍滿了就讓最後入隊的同伴離開），把主角帶回主人的家。
+ * strict：之後嚴加看管的點數（出門與出城更難）。回傳被帶回家的說明。
+ */
+export function recapturePlayer(state: GameState, report?: Report, strict = 0): string {
   const pc = pcOf(state)
   const contract = pc.contract
-  if (!contract) return
+  if (!contract) return ''
   const master = npcRecord(state, contract.master)
   removeCondition(pc, 'fugitive', report)
-  if (!master) return
+  if (!master) return ''
   while (partyRoom(state) < 1) {
     const last = [...state.party].reverse().find((m) => !m.isPlayer)
     if (!last) break
@@ -255,6 +263,8 @@ export function recapturePlayer(state: GameState, report?: Report) {
   }
   joinParty(state, master, 'leader', report, { group: master.id })
   recordChange(report, { npc: 'pc', name: pc.name, change: 'recaptured', reason: `被${master.name}找到` })
+  addStrict(state, strict)
+  return report ? sendToMasterHome(state, report) : ''
 }
 
 /**
@@ -274,7 +284,9 @@ export function changeMaster(state: GameState, master: NpcRecord | null, report?
   }
   removeCondition(pc, 'fugitive', report)
   const old = c.masterName || '無主'
-  pc.contract = { ...c, master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } }
+  // 新主人有自己的家與規矩：離家期限、嚴加看管重新算
+  const { home: _home, homeAt: _at, strict: _strict, ...rest } = c
+  pc.contract = { ...rest, master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } }
   if (master && !state.npcs?.[master.id]) registerNpc(state, master)
   if (master) {
     while (partyRoom(state) < 1) {
@@ -290,6 +302,7 @@ export function changeMaster(state: GameState, master: NpcRecord | null, report?
     rel.toPlayer = '主角的主人。'
   }
   recordChange(report, { npc: 'pc', name: pc.name, change: 'transferred', reason: `${old} → ${master?.name ?? '無主'}${reason ? `（${reason}）` : ''}` })
+  syncMasterHome(state)
 }
 
 /** 懲罰：扣生命值、親密度，重罰時服從懲罰加重。 */

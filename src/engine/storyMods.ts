@@ -1,7 +1,7 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import {
-  abilities, ATTR_IDS, enemies, geography, itemDef, npcs as namedNpcs, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, enemies, geography, itemDef, npcs as namedNpcs, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere,
 } from './data'
 import type { RewardEffect } from './effects'
@@ -64,7 +64,7 @@ export const LAYER_NAME: Record<(typeof STORY_LAYERS)[number], string> = { outsk
 /** 任務的效果可以用的種類 */
 export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
-  start_story: '開始特殊任務',
+  start_story: '開始特殊任務', enslave_player: '主角淪為奴隸',
 }
 
 const isLoc = (id: unknown) => typeof id === 'string' && geography.locations.some((l) => l.id === id)
@@ -134,6 +134,15 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       case 'start_story': {
         const id = str(x.story, 80)
         if (id) out.push({ type: 'start_story', story: id })
+        break
+      }
+      case 'enslave_player': {
+        // 主人：固定 NPC（id），或隨機生成（可以指定身分標籤）；印記是主人打算刻的模板，之後還有刻印檢定
+        const contract = typeof x.contract === 'string' && slaveryRules.contracts[x.contract] ? x.contract : 'labor'
+        const master = typeof x.master === 'string' ? str(x.master, 60) : ''
+        const r = x.random && typeof x.random === 'object' ? x.random as { tag?: unknown } : {}
+        const tag = typeof r.tag === 'string' && slaveryRules.master_tags.tags[r.tag] ? r.tag : undefined
+        out.push(master ? { type: 'enslave_player', master, contract } : { type: 'enslave_player', random: tag ? { tag } : {}, contract })
         break
       }
     }
@@ -345,6 +354,7 @@ export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string
       out.push(`效果裡的角色 ${e.npc} 不存在`)
     }
     if (e.type === 'start_story' && !others.some((s) => s.id === e.story)) out.push(`效果要開始的特殊任務 ${e.story} 不存在`)
+    if (e.type === 'enslave_player' && typeof e.master === 'string' && !npcIds.has(e.master)) out.push(`效果裡的主人 ${e.master} 不存在`)
     if (e.type === 'start_story' && e.story === def.id) out.push('效果要開始的是這個任務自己')
   }
   if (def.start.kind === 'manual') {

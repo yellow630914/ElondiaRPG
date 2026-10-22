@@ -251,6 +251,12 @@ export interface ContractRef {
   since: GameTime
   /** 這枚印記的條款（自訂的印記，或刻印時決定的版本）；沒有時用模板的值 */
   terms?: MarkTerms
+  /** 主人的家在哪座城（第一次需要時決定） */
+  home?: string
+  /** 上次待在主人的家裡的時間（離家期限從這裡算；沒有時從 since 算） */
+  homeAt?: GameTime
+  /** 嚴加看管：逃亡被找到、逾期被帶回家時加重，讓出門與出城更難；since 起每隔幾天減一點 */
+  strict?: { points: number; since: GameTime }
 }
 
 /** 契約印記的條款：名稱、描述與各項數值（描述會給 AI 判定與寫正文） */
@@ -502,6 +508,8 @@ export interface Home {
   floors: string[]
   /** 各層的地圖（不放在 state.areas：那裡每次旅行都會清空） */
   areas: Record<string, Area>
+  /** 主人的家（主角是奴隸時）：主人的 id；不是主角的房子，不能擺家具、留守、改名 */
+  master?: string
 }
 
 /** 一種工藝的等級與累積的經驗 */
@@ -637,6 +645,9 @@ export interface GameState {
   /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */
   masterPass?: Record<string, number>
   masterRefuse?: Record<string, number>
+  /** 在主人的家裡：主人今天同意出門／拒絕的日子 */
+  masterHousePass?: number
+  masterHouseRefuse?: number
   /** 上一次主人突發事件的時間（小時數，避免太頻繁） */
   lastMasterEvent?: number
   /** 和敵對冒險者的對峙（見 engine/encounters.ts） */

@@ -20,7 +20,7 @@ function icon(cell: Cell): string {
   if (cell.crop && game.state) return cropStatus(game.state, cell)?.ready ? '🌾' : '🌿'
   if (cell.furniture) return itemDef(cell.furniture)?.furniture?.icon ?? '🪑'
   if (cell.dir) return { up: '⬆️', down: '⬇️', out: '🚪' }[cell.dir]
-  if (cell.home) return '🏠'
+  if (cell.home) return game.state?.homes?.[cell.home]?.master ? '🏚️' : '🏠'
   if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap', 'chest'].includes(cell.kind)) return ''
   if (cell.kind === 'trap') return ''
   if (cell.kind === 'resource' && cell.item && /礦|錢/.test(cell.item)) return '💎'
@@ -40,7 +40,10 @@ function label(cell: Cell): string {
   }
   if (cell.furniture) return `家具：${cell.furniture}`
   if (cell.dir) return { up: '往樓上', down: '往樓下', out: '出門' }[cell.dir]
-  if (cell.home) return `你的房子：${game.state?.homes?.[cell.home]?.name ?? ''}`
+  if (cell.home) {
+    const h = game.state?.homes?.[cell.home]
+    return h?.master ? `主人的家：${h.name}` : `你的房子：${h?.name ?? ''}`
+  }
   if (cell.kind === 'lot') return '待售的房子'
   if (cell.kind === 'trap' && !cell.done) return '道路'
   if (cell.kind === 'trap') return '已觸發的陷阱'

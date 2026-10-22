@@ -6,22 +6,23 @@
 //   移動與旅行時可能遇到主人的突發事件：主角從三種回應選一個，或自己輸入回應交給 AI 判定。
 
 import { lifeTier, mod, proficiency, snapshot } from './character'
-import { contractDef, locationById, regionById, slaveryRules, type AttrId, type ContractDef, type MasterEventDef, type UnmarkServiceDef } from './data'
+import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
 import { adultContent, adultScene, safeText } from './content'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
-import { generateNpc, npcKind, npcRecord, registerNpc } from './npcs'
+import { generateNpc, npcKind, npcRecord, registerNpc, weightedPick } from './npcs'
 import {
   addAffinity, changeMaster, enslavePlayer, freePlayer, isBound, isEnslaved, isFugitive, pcOf, punish, recapturePlayer, setHp,
 } from './party'
 import { areaOf, isHostile, nearbyPeople, presentHere } from './population'
+import { addStrict, atMasterHome, extendDeadline, overdueChance, sendToMasterHome, strictPoints, syncMasterHome } from './masterHome'
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
 import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report } from './types'
-import type { Degree } from './data'
+import type { Degree, NpcKind } from './data'
 
 // ---- 印記條款 ----
 
@@ -111,14 +112,38 @@ export function markSummary(c: ContractRef): string {
  * 建立角色時可以選的主人：依出生地生成幾位（不影響之後的遊戲）。
  * 主人會帶著主角一起行動、一起戰鬥，所以都是冒險者，身分用標籤區分（貴族、神官、惡人……）。
  */
-export function masterCandidates(birthplace: string, seed: number, count = 4): NpcRecord[] {
+export function masterCandidates(birthplace: string, seed: number, count = 5): NpcRecord[] {
   const tmp = newGame({ name: '_', race: 'human', classId: 'fighter', seed, birthplace })
   const loc = locationById(birthplace)
-  const tags = [['noble'], ['traveler'], ['priest'], ['villain']]
+  const tags = [['noble'], ['traveler'], ['priest'], ['villain'], ['good']]
   return withRng(tmp, (rng) => tags.slice(0, count).map((t, i) => generateNpc(tmp, rng, {
     id: `mst_start_${i + 1}`, kind: 'adventurer', tags: t, level: rng.int(3, 8), location: loc.id,
     ...(loc.faction ? { faction: loc.faction } : {}),
   }, 'mst')))
+}
+
+/** 主人可以有的身分標籤（slavery.json 的 master_tags） */
+export function masterTagIds(): string[] {
+  return Object.keys(slaveryRules.master_tags.tags)
+}
+
+/**
+ * 隨機生成一位主人（特殊任務的「隨機的主人」）：在目前的地點、比主角高 1～4 級。
+ * tag 指定身分（不寫＝依公開市場出價的權重抽）；娼妓標籤是老鴇（店主兼娼妓）。
+ */
+export function randomMaster(state: GameState, tag?: string): NpcRecord {
+  const t = slaveryRules.master_tags
+  const pc = pcOf(state)
+  return withRng(state, (rng) => {
+    const picked = tag && t.tags[tag] ? tag : weightedPick(rng, Object.fromEntries(Object.entries(t.tags).map(([id, x]) => [id, x.public])))
+    const kinds = (tagDef(picked)?.kinds ?? ['adventurer']) as NpcKind[]
+    const kind = weightedPick(rng, Object.fromEntries(kinds.map((k) => [k, t.kinds[k].market]))) as NpcKind
+    const madam = picked === 'prostitute'
+    return registerNpc(state, generateNpc(state, rng, {
+      level: Math.min(20, pc.level + rng.int(1, 4)), kind, location: state.location,
+      tags: madam ? ['prostitute', 'merchant'] : [picked], ...(madam ? { occupation: '老鴇' } : {}),
+    }, 'mst'))
+  })
 }
 
 /** 自訂的主人 */
@@ -209,7 +234,7 @@ export function assertMasterAllows(state: GameState) {
 export function permitDc(state: GameState): number {
   const c = pcOf(state).contract!
   const aff = state.relationships?.[c.master]?.affinity ?? 0
-  return contractTerms(c).exit_dc + c.obedience - Math.floor(aff / slaveryRules.master_permit.affinity_step)
+  return contractTerms(c).exit_dc + c.obedience + strictPoints(state) - Math.floor(aff / slaveryRules.master_permit.affinity_step)
 }
 
 export function setupPermit(state: GameState) {
@@ -369,13 +394,34 @@ export function maybeMasterEvent(state: GameState, chance: number, opts: MasterE
   const ev = slaveryRules.master_events
   const now = hoursOf(state.time)
   if (state.lastMasterEvent !== undefined && now - state.lastMasterEvent < ev.cooldown_hours) return undefined
-  const events = ev.events.filter((e) => opts.adult || !e.adult)
+  // 主人的家（舊存檔第一次走動時建立）
+  syncMasterHome(state)
+  // 主人的標籤在 NPC 登錄裡
+  const rec = npcRecord(state, master.id) ?? { id: master.id }
+  const events = ev.events.filter((e) => (opts.adult || !e.adult) && eventFits(state, rec, e))
+  // 離家太久：主人想回家（逾期越久越容易），先擲
+  const overdue = events.filter((e) => e.overdue)
+  const home = overdueChance(state)
   // 經過特定設施（娼館）時的事件：有自己的機率，先擲；沒發生才擲一般的事件
   const local = events.filter((e) => e.cell === 'brothel' && nearBrothel(state))
-  const picked = withRng(state, (rng) => local.find((e) => rng.chance(e.chance ?? 0))
-    ?? (rng.chance(chance) ? pickEvent(rng, events.filter((e) => !e.cell)) : undefined))
+  const general = events.filter((e) => !e.cell && !e.overdue)
+  const picked = withRng(state, (rng) => (overdue.length && rng.chance(home) ? pickEvent(rng, overdue) : undefined)
+    ?? local.find((e) => rng.chance(e.chance ?? 0))
+    ?? (general.length && rng.chance(chance) ? pickEvent(rng, general) : undefined))
   if (!picked) return undefined
   return startMasterEvent(state, picked)
+}
+
+/** 事件的條件：主人的親密度、標籤、在不在主人的家裡 */
+export function eventFits(state: GameState, master: Pick<NpcRecord, 'id' | 'tags'>, e: MasterEventDef): boolean {
+  const aff = state.relationships?.[master.id]?.affinity ?? 0
+  if (e.affinity_min !== undefined && aff < e.affinity_min) return false
+  if (e.affinity_max !== undefined && aff > e.affinity_max) return false
+  const tags = master.tags ?? []
+  if (e.tags?.length && !e.tags.some((t) => tags.includes(t))) return false
+  if (e.tags_none?.some((t) => tags.includes(t))) return false
+  if (e.at_home !== undefined && e.at_home !== atMasterHome(state)) return false
+  return true
 }
 
 export function startMasterEvent(state: GameState, e: MasterEventDef): PendingMasterEvent {
@@ -479,8 +525,20 @@ export function setupMasterEvent(state: GameState) {
   }
 }
 
-export function applyMasterEventResponse(state: GameState) {
+/**
+ * 自己輸入的回應判定完：結束事件。「主人要回家」事件：成功以上主人多寬限一天，
+ * 部分成功乖乖被帶回家，失敗以下被帶回家而且嚴加看管。
+ */
+export function applyMasterEventResponse(state: GameState, report: Report, degree: Degree): string {
+  const e = slaveryRules.master_events.events.find((x) => x.id === state.pendingMasterEvent?.id)
   delete state.pendingMasterEvent
+  if (!e?.overdue) return ''
+  if (degree === 'critical' || degree === 'success') {
+    extendDeadline(state, 24)
+    return `${pcOf(state).contract?.masterName ?? '主人'}答應再多待一天。`
+  }
+  if (degree === 'fail' || degree === 'fumble') addStrict(state, slaveryRules.master_home.strict.overdue)
+  return sendToMasterHome(state, report)
 }
 
 /** 沒有 AI 判定時，自己輸入的回應依成功程度的效果 */
@@ -535,22 +593,23 @@ export function setupReturn(state: GameState) {
 
 export function applyReturn(state: GameState, report: Report, degree: Degree): string {
   const c = pcOf(state).contract!
-  recapturePlayer(state, report)
+  // 主動回去：一樣被帶回主人的家；除了大成功，之後都會被看得緊一點
+  const sent = recapturePlayer(state, report, degree === 'critical' ? 0 : slaveryRules.master_home.strict.overdue)
   switch (degree) {
     case 'critical':
       addAffinity(state, report, c.master, 2, '主動回來')
-      return `${c.masterName}沒有追究，讓你回到身邊。`
+      return `${c.masterName}沒有追究，讓你回到身邊。${sent}`
     case 'success':
       addAffinity(state, report, c.master, -2, '逃跑過')
-      return `${c.masterName}收回了你，只冷冷看了你一眼。`
+      return `${c.masterName}收回了你，只冷冷看了你一眼。${sent}`
     case 'partial':
-      return `${c.masterName}收回了你。${punish(state, 'light', report)}`
+      return `${c.masterName}收回了你。${punish(state, 'light', report)}${sent}`
     case 'fail':
-      return `${c.masterName}收回了你。${punish(state, 'heavy', report)}`
+      return `${c.masterName}收回了你。${punish(state, 'heavy', report)}${sent}`
     case 'fumble': {
       const line = punish(state, 'heavy', report)
       c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
-      return `${c.masterName}收回了你，怒氣未消。${line}`
+      return `${c.masterName}收回了你，怒氣未消。${line}${sent}`
     }
   }
 }
@@ -751,5 +810,5 @@ export function applyUnmark(state: GameState, report: Report, target: string, de
 
 /** 談判只能在安全的地方（旅店、安全房、神殿） */
 export function atSafeSpot(state: GameState): boolean {
-  return slaveryRules.safe_spots.includes(currentCell(state).kind)
+  return slaveryRules.safe_spots.includes(currentCell(state).kind) || atMasterHome(state)
 }
