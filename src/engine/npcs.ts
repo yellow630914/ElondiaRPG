@@ -136,7 +136,9 @@ export { weightedPick }
 
 /** 各地區生成 NPC 的種族比例 */
 function raceWeights(location: string): Record<string, number> {
-  const region = locationById(location).region
+  const loc = locationById(location)
+  if (loc.races) return Object.fromEntries(Object.entries(loc.races).filter(([r]) => attributeRules.races[r]))
+  const region = loc.region
   const base: Record<string, number> = { human: 6, catfolk: 2, dwarf: 2, demon: 1, elf: 1, yulin: 1 }
   if (region === 'south') Object.assign(base, { demon: 6, human: 3 })
   if (region === 'north') Object.assign(base, { dwarf: 6 })

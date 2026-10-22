@@ -24,7 +24,7 @@ import { canStart, ensureStoryMarkers, startStory } from './story'
 import { flagKey } from './storyFlags'
 import { gateCheck } from './security'
 import { toolBonus } from './tools'
-import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, ROAD_DAILY_CC, rollLegDays, SEA_FARE_CC } from './travel'
+import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
 import { shortestPath } from './world'
 import travelEventsJson from '@data/rules/travel_events.json'
@@ -79,7 +79,7 @@ export function startJourney(state: GameState, destination: string, intent?: str
   }
   const from = state.location
   const area = withRng(state, (rng) => buildRoad(state, from, destination, path.legs, rng))
-  const seaFare = path.legs.filter((l) => l.mode === 'sea').length * SEA_FARE_CC * state.party.length
+  const seaFare = path.legs.reduce((sum, l) => sum + legFare(l), 0) * state.party.length
   state.road = {
     from, to: destination, start: { ...state.time }, modes: path.legs.map((l) => l.mode), hours: 0,
     money: -seaFare,

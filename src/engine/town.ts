@@ -15,7 +15,8 @@ import { clearQuestMarkers } from './grid'
 import { innCost, longRest } from './rest'
 import { applyEffects, type RewardEffect } from './effects'
 import {
-  canTurnIn, deliverable, isCollectQuest, isMaterialQuest, postDungeonQuests, postWildQuests, RANK_ORDER, rewardFor, rewardRange,
+  canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, layerRanks, postDungeonQuests, postWildQuests, RANK_ORDER, rewardFor,
+  rewardRange,
 } from './materialQuests'
 import { formatMoney } from './money'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
@@ -162,14 +163,6 @@ function hoursBetween(a: { day: number; hour?: number }, b: { day: number; hour?
 
 // ---- 冒險者公會 ----
 
-/** 冒險區域只發 E 級以上的委託。難度範圍如 "E-D"：只需清剿一次的取下限，兩次以上取上限。 */
-function questRank(dungeonId: string, goal: number): GuildRank {
-  const [low, high] = (locationById(dungeonId).rank ?? 'E').split('-')
-  const rank = goal > 1 ? (high ?? low) : low
-  const index = RANK_ORDER.indexOf(rank as GuildRank)
-  return RANK_ORDER[Math.max(index, RANK_ORDER.indexOf('E'))]!
-}
-
 function townText(text: string, townId: string): string {
   return text.split('{town}').join(locationById(townId).name)
 }
@@ -225,14 +218,17 @@ export function guildQuests(state: GameState): Quest[] {
       const path = shortestPath(state.location, id)
       return path !== null && path.days[1] <= QUEST_RANGE_DAYS
     })
+    // 清剿委託指定一層：階級看那一層的怪物（layerRank），在那一層或更深處獲勝都算
     for (const target of targets) {
+      const layers = layerRanks(target)
+      if (!layers.length) continue
+      const { layer, rank } = rng.pick(layers)
       const goal = rng.int(1, 3)
-      const rank = questRank(target, goal)
       const [lo, hi] = rewardRange(rank)
       state.quests.push({
         id: `q-${state.location}-${state.time.day}-${target}`,
-        title: `清剿${locationById(target).name}的魔物（${goal} 次）`,
-        rank, kind: 'clear_dungeon', area: 'dungeon',
+        title: `清剿${locationById(target).name}${layerName(layer)}的魔物（${goal} 次）`,
+        rank, kind: 'clear_dungeon', area: 'dungeon', layer,
         giver: state.location, target, goal, progress: 0,
         reward_cc: Math.round(rng.int(lo, hi) * (1 + (goal - 1) * 0.5)),
         status: 'available',

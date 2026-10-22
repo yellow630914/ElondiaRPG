@@ -9,7 +9,8 @@ import { blockKeys, CELL_NAME, settlementArea, type CellKind } from './grid'
 import { gearKnown } from './gear'
 import { RANK_ORDER } from './materialQuests'
 import { sanitizeCond, sanitizeGearSpecLoose } from './mods'
-import { cleanFlag } from './storyFlags'
+import { cleanFlag, condMet, hasFlag } from './storyFlags'
+import type { GameState } from './types'
 import { travelEvents } from './road'
 
 export interface StoryMod extends StoryDef {
@@ -332,71 +333,148 @@ export function flagUsage(def: StoryDef): FlagUse[] {
   return [...map.values()].sort((a, b) => a.flag.localeCompare(b.flag))
 }
 
-/** 任務鏈可能的問題（不擋儲存，只是提醒） */
 /** 這個聚落有沒有這種設施 */
 function hasFacility(location: string, kind: CellKind): boolean {
   return blockKeys(location).some((k) => settlementArea(k)?.cells.some((c) => c.kind === kind))
 }
 
-export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string[] {
-  const out: string[] = []
+/**
+ * 任務鏈的問題（docs/CONTENT_DEPENDENCIES.md）：
+ * - errors：一定會壞的（引用的東西不存在、沒有結果會完成任務、地點類型不對、設施不存在、戰鬥沒有敵人、
+ *   選擇沒有選項、開頭旗標和別的任務重複、效果開始自己），擋儲存與匯入
+ * - warnings：可能沒問題的（需要的旗標沒有地方設定——可能來自 AI 或別的任務；只由其他事件開啟卻沒人開啟），只提醒
+ */
+export interface StoryProblems { errors: string[]; warnings: string[] }
+
+export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryProblems {
+  const err: string[] = []
+  const warn: string[] = []
   const npcIds = new Set(namedNpcs.map((n) => n.id))
   const externalSets = new Set(others.filter((s) => s.id !== def.id).flatMap((s) => [...(s.start_flags ?? []), ...s.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.set_flags ?? []))]))
   const usage = flagUsage(def)
   for (const u of usage) {
     if (u.requiredBy.length && !u.setBy.length && !u.flag.startsWith('ai:') && !externalSets.has(u.flag)) {
-      out.push(`旗標 🚩${u.flag} 沒有任何地方會設定，需要它的「${u.requiredBy.join('」「')}」永遠不會出現`)
+      warn.push(`旗標 🚩${u.flag} 在任務裡沒有地方會設定（可能由 AI 判定或其他任務設定），否則需要它的「${u.requiredBy.join('」「')}」不會出現`)
     }
   }
-  if (!def.nodes.some((n) => outcomesOf(n).some(({ o }) => o.complete))) out.push('沒有任何結果會完成任務（勾選「完成任務」）')
-  if (def.start.kind === 'npc' && (!def.start.npc || !npcIds.has(def.start.npc))) out.push('開頭的固定 NPC 不存在')
-  if ((def.start.kind === 'guild') && !def.start.location) out.push('沒有指定哪座城鎮的公會')
-  if (def.start.kind === 'guild' && def.start.location && !hasFacility(def.start.location, 'guild')) out.push('開頭的城鎮沒有冒險者公會')
-  if (def.start.kind === 'informant' && def.start.location && !hasFacility(def.start.location, 'informant')) out.push('開頭的城鎮沒有情報商')
+  if (!def.nodes.some((n) => outcomesOf(n).some(({ o }) => o.complete))) err.push('沒有任何結果會完成任務（勾選「完成任務」）')
+  if (def.start.kind === 'npc' && (!def.start.npc || !npcIds.has(def.start.npc))) err.push('開頭的固定 NPC 不存在')
+  if ((def.start.kind === 'guild') && !def.start.location) err.push('沒有指定哪座城鎮的公會')
+  if (def.start.kind === 'guild' && def.start.location && !hasFacility(def.start.location, 'guild')) err.push('開頭的城鎮沒有冒險者公會')
+  if (def.start.kind === 'informant' && def.start.location && !hasFacility(def.start.location, 'informant')) err.push('開頭的城鎮沒有情報商')
   // 開頭的旗標和其他任務一樣（例如複製來的任務）：兩個任務會互相觸發對方的任務點
   for (const f of def.start_flags ?? []) {
     const other = others.find((s) => s.id !== def.id && (s.start_flags ?? []).includes(f))
-    if (other) out.push(`開頭的旗標 🚩${f} 也是「${other.title}」的開頭旗標，兩個任務的任務點會互相觸發（請改名）`)
+    if (other) err.push(`開頭的旗標 🚩${f} 也是「${other.title}」的開頭旗標，兩個任務的任務點會互相觸發（請改名）`)
   }
   // 效果裡用到的東西要存在
   const effects = [...(def.rewards ?? []), ...def.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.effects ?? []))]
   for (const e of effects) {
-    if (e.type === 'item' && e.qty > 0 && !itemDef(e.name)) out.push(`效果裡的物品「${e.name}」不存在`)
-    if (e.type === 'gear' && !gearKnown(e.spec)) out.push('效果裡的裝備：底材或材料不存在')
+    if (e.type === 'item' && e.qty > 0 && !itemDef(e.name)) err.push(`效果裡的物品「${e.name}」不存在`)
+    if (e.type === 'gear' && !gearKnown(e.spec)) err.push('效果裡的裝備：底材或材料不存在')
     if ((e.type === 'affinity' || e.type === 'companion') && typeof e.npc === 'string' && e.npc !== 'keeper' && e.npc !== 'party' && !npcIds.has(e.npc)) {
-      out.push(`效果裡的角色 ${e.npc} 不存在`)
+      err.push(`效果裡的角色 ${e.npc} 不存在`)
     }
-    if (e.type === 'start_story' && !others.some((s) => s.id === e.story)) out.push(`效果要開始的特殊任務 ${e.story} 不存在`)
-    if (e.type === 'enslave_player' && typeof e.master === 'string' && !npcIds.has(e.master)) out.push(`效果裡的主人 ${e.master} 不存在`)
-    if (e.type === 'perk') for (const id of [e.perk, ...(e.options ?? [])]) if (id && !perkDef(id)) out.push(`效果裡的特質 ${id} 不存在`)
-    if (e.type === 'start_story' && e.story === def.id) out.push('效果要開始的是這個任務自己')
+    if (e.type === 'start_story' && !others.some((s) => s.id === e.story)) err.push(`效果要開始的特殊任務 ${e.story} 不存在`)
+    if (e.type === 'enslave_player' && typeof e.master === 'string' && !npcIds.has(e.master)) err.push(`效果裡的主人 ${e.master} 不存在`)
+    if (e.type === 'perk') for (const id of [e.perk, ...(e.options ?? [])]) if (id && !perkDef(id)) err.push(`效果裡的特質 ${id} 不存在`)
+    if (e.type === 'start_story' && e.story === def.id) err.push('效果要開始的是這個任務自己')
   }
   if (def.start.kind === 'manual') {
     const starters = others.filter((s) => s.id !== def.id && [...(s.rewards ?? []), ...s.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.effects ?? []))]
       .some((e) => e.type === 'start_story' && e.story === def.id))
-    if (!starters.length) out.push('開頭是「只由其他事件開啟」，但沒有任何任務用「開始特殊任務」效果開啟它')
+    if (!starters.length) warn.push('開頭是「只由其他事件開啟」，但沒有任何任務用「開始特殊任務」效果開啟它')
   }
   for (const n of def.nodes) {
     const t = `任務點「${n.title}」`
-    if (n.at.where !== 'npc' && n.at.where !== 'road' && n.at.where !== 'side' && !n.at.location) out.push(`${t}沒有指定地點`)
-    if (n.at.where === 'npc' && (!n.at.npc || !npcIds.has(n.at.npc))) out.push(`${t}的固定 NPC 不存在`)
-    if (n.at.where === 'outskirts' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type === 'dungeon') out.push(`${t}：地下城沒有近郊，請改成「地下城某一層」`)
-    if (n.at.where === 'dungeon' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type !== 'dungeon') out.push(`${t}：選的地點不是地下城`)
-    if ((n.at.where === 'settlement' || n.at.where === 'cell') && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type === 'dungeon') out.push(`${t}：選的地點不是聚落`)
-    if (n.kind === 'combat' && !n.enemies?.length && !n.foes?.length) out.push(`${t}是戰鬥，但沒有敵人`)
-    for (const [id] of n.enemies ?? []) if (!enemies[id]) out.push(`${t}的怪物 ${id} 不存在`)
-    for (const id of n.foes ?? []) if (!npcIds.has(id)) out.push(`${t}的敵對角色 ${id} 不存在`)
-    for (const id of n.allies ?? []) if (!npcIds.has(id)) out.push(`${t}的友方角色 ${id} 不存在`)
-    for (const id of n.allies ?? []) if (n.foes?.includes(id)) out.push(`${t}：${id} 同時是友方與敵對角色`)
-    if (n.kind === 'choice' && !n.options?.length) out.push(`${t}是選擇，但沒有選項`)
+    if (n.at.where !== 'npc' && n.at.where !== 'road' && n.at.where !== 'side' && !n.at.location) err.push(`${t}沒有指定地點`)
+    if (n.at.where === 'npc' && (!n.at.npc || !npcIds.has(n.at.npc))) err.push(`${t}的固定 NPC 不存在`)
+    if (n.at.where === 'outskirts' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type === 'dungeon') err.push(`${t}：地下城沒有近郊，請改成「地下城某一層」`)
+    if (n.at.where === 'dungeon' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type !== 'dungeon') err.push(`${t}：選的地點不是地下城`)
+    if ((n.at.where === 'settlement' || n.at.where === 'cell') && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type === 'dungeon') err.push(`${t}：選的地點不是聚落`)
+    if (n.kind === 'combat' && !n.enemies?.length && !n.foes?.length) err.push(`${t}是戰鬥，但沒有敵人`)
+    for (const [id] of n.enemies ?? []) if (!enemies[id]) err.push(`${t}的怪物 ${id} 不存在`)
+    for (const id of n.foes ?? []) if (!npcIds.has(id)) err.push(`${t}的敵對角色 ${id} 不存在`)
+    for (const id of n.allies ?? []) if (!npcIds.has(id)) err.push(`${t}的友方角色 ${id} 不存在`)
+    for (const id of n.allies ?? []) if (n.foes?.includes(id)) err.push(`${t}：${id} 同時是友方與敵對角色`)
+    if (n.kind === 'choice' && !n.options?.length) err.push(`${t}是選擇，但沒有選項`)
     for (const { o } of outcomesOf(n)) {
-      if (o.join && !npcIds.has(o.join)) out.push(`${t}要同行的角色 ${o.join} 不存在`)
-      if (o.leave && !npcIds.has(o.leave)) out.push(`${t}要離開的角色 ${o.leave} 不存在`)
+      if (o.join && !npcIds.has(o.join)) err.push(`${t}要同行的角色 ${o.join} 不存在`)
+      if (o.leave && !npcIds.has(o.leave)) err.push(`${t}要離開的角色 ${o.leave} 不存在`)
     }
-    if (n.at.where === 'cell' && n.at.cell && !(n.at.cell in CELL_NAME)) out.push(`${t}的設施不存在`)
+    if (n.at.where === 'cell' && n.at.cell && !(n.at.cell in CELL_NAME)) err.push(`${t}的設施不存在`)
     else if (n.at.where === 'cell' && n.at.cell && n.at.location && !hasFacility(n.at.location, n.at.cell as CellKind)) {
-      out.push(`${t}：${geography.locations.find((l) => l.id === n.at.location)?.name ?? n.at.location}沒有${CELL_NAME[n.at.cell as CellKind] ?? n.at.cell}`)
+      err.push(`${t}：${geography.locations.find((l) => l.id === n.at.location)?.name ?? n.at.location}沒有${CELL_NAME[n.at.cell as CellKind] ?? n.at.cell}`)
     }
   }
+  return { errors: err, warnings: warn }
+}
+
+/** 所有問題（錯誤在前） */
+export function storyIssues(def: StoryDef, others: StoryDef[] = stories): string[] {
+  const c = storyCheck(def, others)
+  return [...c.errors, ...c.warnings]
+}
+
+/**
+ * 目前的存檔正在進行這個任務時，這次修改會不會弄壞它的進度（擋儲存）：
+ * - 完成過的任務點 id 被改掉或刪掉
+ * - 修改前還有解鎖、沒完成的任務點，修改後一個都沒有，而且其他進行中任務解鎖的任務點也沒有結果會設定（或清除）它們缺的旗標
+ * 回傳原因；沒有問題（或存檔沒在進行這個任務）時是空陣列。
+ */
+export function progressBreaks(state: GameState, before: StoryDef | undefined, after: StoryDef): string[] {
+  const p = state.stories?.[after.id]
+  if (!p || p.status !== 'active') return []
+  const out: string[] = []
+  for (const id of p.done) {
+    if (after.nodes.some((n) => n.id === id)) continue
+    const title = before?.nodes.find((n) => n.id === id)?.title
+    out.push(`完成過的任務點${title ? `「${title}」` : ''}（id ${id}）被改名或刪除了：這個存檔記錄的進度會對不上`)
+  }
+  const open = (d: StoryDef) => d.nodes.filter((n) => !p.done.includes(n.id) && condMet(state, n.requires))
+  if (before && open(before).length && !open(after).length) {
+    const sets = new Set<string>()
+    const clears = new Set<string>()
+    for (const q of Object.values(state.stories ?? {})) {
+      if (q.status !== 'active' || q.id === after.id) continue
+      const d = stories.find((s) => s.id === q.id)
+      for (const n of d?.nodes ?? []) {
+        if (q.done.includes(n.id) || !condMet(state, n.requires)) continue
+        for (const { o } of outcomesOf(n)) {
+          for (const f of o.set_flags ?? []) sets.add(f)
+          for (const f of o.clear_flags ?? []) clears.add(f)
+        }
+      }
+    }
+    const later = after.nodes.some((n) => !p.done.includes(n.id)
+      && (n.requires?.flags ?? []).every((f) => hasFlag(state, f) || sets.has(f) || f.startsWith('ai:'))
+      && (n.requires?.flags_none ?? []).every((f) => !hasFlag(state, f) || clears.has(f)))
+    if (!later) out.push('修改後，這個存檔的任務沒有任何能進行的任務點，其他進行中的任務也不會設定它們需要的旗標：任務會卡住')
+  }
   return out
+}
+
+/** 複製成新任務：開頭旗標換成新任務自己的（不然兩個任務會互相觸發），其他內容照抄 */
+export function copyStory(src: StoryDef, id: string, title = `${src.title}（複製）`): StoryMod {
+  const map = new Map<string, string>()
+  for (const f of src.start_flags ?? []) {
+    map.set(f, (f.startsWith(src.id) ? `${id}${f.slice(src.id.length)}` : `${id}_${f}`).slice(0, 40))
+  }
+  const ren = (list?: string[]) => list?.map((f) => map.get(f) ?? f)
+  const cond = (c?: StoryCond) => c && { ...c, ...(c.flags ? { flags: ren(c.flags) } : {}), ...(c.flags_none ? { flags_none: ren(c.flags_none) } : {}) }
+  const outcome = (o?: StoryOutcome) => o && { ...o, ...(o.set_flags ? { set_flags: ren(o.set_flags) } : {}), ...(o.clear_flags ? { clear_flags: ren(o.clear_flags) } : {}) }
+  const copy = clone(src) as StoryMod
+  copy.id = id
+  copy.title = title.slice(0, 30)
+  copy.custom = true
+  if (copy.start_flags) copy.start_flags = ren(copy.start_flags)
+  if (copy.start.requires) copy.start.requires = cond(copy.start.requires)
+  copy.nodes = copy.nodes.map((n) => ({
+    ...n,
+    ...(n.requires ? { requires: cond(n.requires) } : {}),
+    ...(n.success ? { success: outcome(n.success) } : {}),
+    ...(n.fail ? { fail: outcome(n.fail) } : {}),
+    ...(n.options ? { options: n.options.map((o) => ({ ...o, ...(o.success ? { success: outcome(o.success) } : {}), ...(o.fail ? { fail: outcome(o.fail) } : {}) })) } : {}),
+  }))
+  return copy
 }

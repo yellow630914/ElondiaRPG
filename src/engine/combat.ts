@@ -25,7 +25,7 @@ import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { rollDefeatEvent } from './defeat'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
-import { advanceBossHunts } from './materialQuests'
+import { advanceBossHunts, clearCounts, LAYER_IDS } from './materialQuests'
 import { bossMerit } from './guild'
 import { lightingRules } from './light'
 import { defeatLoss } from './expedition'
@@ -1582,9 +1582,12 @@ function advanceQuest(state: GameState, combat: CombatState): Report['quest'] | 
   // 討伐層主的委託：打倒的怪物裡有目標就記一次（和清剿委託分開算）
   const defeated = combat.combatants.filter((c) => c.side === 'enemy' && c.hp <= 0 && c.defId).map((c) => c.defId!)
   const hunts = advanceBossHunts(state, combat.location, defeated)
+  // 清剿委託：在指定的那一層或更深處獲勝才算
+  const area = state.areas?.[combat.cell?.area ?? state.position?.area ?? '']
+  const layer = area?.kind === 'dungeon' ? LAYER_IDS[area.layer ?? 0] : undefined
   const quest = combat.questId
     ? state.quests.find((q) => q.id === combat.questId && q.status === 'accepted')
-    : state.quests.find((q) => q.status === 'accepted' && q.kind === 'clear_dungeon' && q.target === combat.location)
+    : state.quests.find((q) => q.status === 'accepted' && q.kind === 'clear_dungeon' && q.target === combat.location && clearCounts(q, layer))
   if (!quest) {
     const h = hunts[0]
     return h ? { id: h.id, title: h.title, rank: h.rank, status: 'progress' } : undefined

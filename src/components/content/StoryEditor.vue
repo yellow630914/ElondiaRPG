@@ -4,8 +4,9 @@ import { affinityStage } from '@/engine/character'
 import { geography, npcs as namedNpcs, stories, type StoryNode } from '@/engine/data'
 import { storyMerit } from '@/engine/guild'
 import { RANK_ORDER } from '@/engine/materialQuests'
-import { placeText } from '@/engine/story'
-import { builtinStory, flagUsage, NODE_KINDS, newNode, START_KINDS, storyIssues, type StoryMod } from '@/engine/storyMods'
+import { placeText, storyDef } from '@/engine/story'
+import { newModId } from '@/engine/mods'
+import { builtinStory, copyStory, flagUsage, NODE_KINDS, newNode, progressBreaks, START_KINDS, storyCheck, type StoryMod } from '@/engine/storyMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import EffectsEditor from './EffectsEditor.vue'
@@ -15,7 +16,7 @@ import UsageNote from './UsageNote.vue'
 
 // 特殊任務的編輯表單：開頭、任務點（依劇情旗標解鎖）、完成報酬；下方檢查任務鏈與旗標的流向
 const props = defineProps<{ id: string }>()
-const emit = defineEmits<{ deleted: [] }>()
+const emit = defineEmits<{ deleted: []; open: [id: string] }>()
 const content = useContent()
 const game = useGame()
 
@@ -39,7 +40,17 @@ const edited = computed(() => builtin.value && !!content.mods.stories[props.id])
 const settlements = geography.locations.filter((l) => l.type !== 'dungeon')
 const startReq = computed(() => (draft.value.start.requires ??= {}))
 const open = ref<number | null>(0)
-const issues = computed(() => storyIssues(draft.value))
+// 錯誤擋儲存，警告只提醒（storyCheck）
+const check = computed(() => {
+  void content.version
+  return storyCheck(draft.value)
+})
+// 目前的存檔正在進行這個任務、這次修改會弄壞它的進度：擋儲存，改成複製或放棄進度
+const breaks = computed(() => {
+  void content.version
+  void game.state?.time.minute
+  return dirty.value && game.state ? progressBreaks(game.state, storyDef(props.id), draft.value) : []
+})
 const flags = computed(() => flagUsage(draft.value))
 const ICON: Record<StoryNode['kind'], string> = { story: '📜', check: '🎲', combat: '⚔️', choice: '🔀' }
 
@@ -102,6 +113,27 @@ function save() {
 function discard() {
   draft.value = current()
 }
+/** 進度會壞掉時：把修改後的內容存成新的任務，原本的任務不動 */
+function saveAsCopy() {
+  const id = newModId('story')
+  try {
+    content.saveStory(id, copyStory(draft.value, id))
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+    return
+  }
+  draft.value = current()
+  saved.value = snap(draft.value)
+  game.flash('已複製成新的任務，原本的任務沒有改')
+  emit('open', id)
+}
+/** 進度會壞掉時：放棄這個存檔裡的任務進度（同冒險筆記的放棄），再儲存 */
+function abandonAndSave() {
+  if (!confirm(`放棄目前存檔裡「${draft.value.title}」的進度後儲存？放棄後這個存檔不能再接這個任務。`)) return
+  game.abandonStory(props.id)
+  if (game.state?.stories?.[props.id]?.status === 'active') return
+  save()
+}
 function restore() {
   if (!confirm(`把「${draft.value.title}」恢復成內建的樣子？`)) return
   content.restoreStory(props.id)
@@ -137,7 +169,10 @@ function remove() {
       <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
       <span v-if="dirty" class="tag warn">未儲存</span>
       <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
+      <button
+        class="small primary" :disabled="!dirty || check.errors.length > 0 || breaks.length > 0"
+        :title="check.errors.length ? '任務鏈有錯誤，修正後才能儲存' : breaks.length ? '這次修改會弄壞目前存檔的任務進度' : ''" @click="save"
+      >💾 儲存</button>
       <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
       <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
       <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
@@ -146,6 +181,16 @@ function remove() {
     <p v-if="progress?.status === 'active'" class="small warn-text">
       目前的存檔正在進行這個任務（完成了 {{ progress.done.length }} 個任務點）：完成過的任務點 id 不能改；改旗標名稱或解鎖條件可能讓這個存檔的任務卡住。
     </p>
+    <div v-if="breaks.length" class="block-note">
+      <p class="small warn-text">⛔ 目前的存檔正在進行這個任務，這次修改會弄壞它的進度，不能直接儲存：</p>
+      <ul class="small warn-text">
+        <li v-for="(x, i) in breaks" :key="i">{{ x }}</li>
+      </ul>
+      <div class="row">
+        <button class="small" :disabled="check.errors.length > 0" @click="saveAsCopy">📄 複製成新任務再改</button>
+        <button class="small danger" :disabled="check.errors.length > 0" @click="abandonAndSave">放棄這個存檔的任務進度後儲存</button>
+      </div>
+    </div>
     <p class="small muted">id：{{ id }}・旗標名稱只用在劇情（存成 story:名稱）；以 ai: 開頭的名稱讀 AI 判定寫下的旗標。</p>
 
     <fieldset>
@@ -235,10 +280,19 @@ function remove() {
 
     <fieldset>
       <legend>檢查任務鏈</legend>
-      <p v-if="!issues.length" class="small">✅ 沒有發現問題。</p>
-      <ul v-else class="small warn-text">
-        <li v-for="(x, i) in issues" :key="i">{{ x }}</li>
-      </ul>
+      <p v-if="!check.errors.length && !check.warnings.length" class="small">✅ 沒有發現問題。</p>
+      <template v-if="check.errors.length">
+        <p class="small warn-text">⛔ 錯誤（修正後才能儲存）：</p>
+        <ul class="small warn-text">
+          <li v-for="(x, i) in check.errors" :key="i">{{ x }}</li>
+        </ul>
+      </template>
+      <template v-if="check.warnings.length">
+        <p class="small muted">⚠️ 提醒（可以儲存）：</p>
+        <ul class="small muted">
+          <li v-for="(x, i) in check.warnings" :key="i">{{ x }}</li>
+        </ul>
+      </template>
       <table v-if="flags.length" class="flags small">
         <thead><tr><th>旗標</th><th>設定</th><th>清除</th><th>需要它</th><th>需要它不成立</th></tr></thead>
         <tbody>
@@ -257,6 +311,7 @@ function remove() {
 
 <style scoped src="./editor.css"></style>
 <style scoped>
+.block-note { border: 1px solid var(--danger); border-radius: var(--radius); padding: 6px 8px; }
 .node-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 6px; display: grid; gap: 6px; }
 .node-card.open { border-color: var(--accent); }
 .node-head { cursor: pointer; gap: 6px; }

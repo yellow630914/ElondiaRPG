@@ -42,6 +42,32 @@ export function rankForLevel(level: number, [lo, hi]: [GuildRank, GuildRank]): G
   return RANK_ORDER[Math.max(RANK_ORDER.indexOf(lo), Math.min(RANK_ORDER.indexOf(hi), i))]!
 }
 
+/** 清剿委託的最低階級 */
+export const CLEAR_MIN_RANK: GuildRank = 'E'
+
+/**
+ * 地下城某一層的階級：這一層遭遇表裡一般怪物（不含層主）的最高等級，用和討伐、掉落委託相同的換算，
+ * 最低 E 級。地下城沒有整座的階級（docs/DUNGEON_DESIGN.md）。這一層沒有怪物時回傳 undefined。
+ */
+export function layerRank(dungeon: string, layer: DungeonLayerId): GuildRank | undefined {
+  const levels = monstersIn(dungeonEncounters[dungeon]?.[layer] ?? []).map((id) => enemies[id]!.level)
+  if (!levels.length) return undefined
+  return rankForLevel(Math.max(...levels), [CLEAR_MIN_RANK, 'S'])
+}
+
+/** 地下城每一層（周邊除外）的階級，給地圖與考核用 */
+export function layerRanks(dungeon: string): { layer: 'shallow' | 'middle' | 'deep'; rank: GuildRank }[] {
+  return (['shallow', 'middle', 'deep'] as const)
+    .map((layer) => ({ layer, rank: layerRank(dungeon, layer) }))
+    .filter((r): r is { layer: 'shallow' | 'middle' | 'deep'; rank: GuildRank } => !!r.rank)
+}
+
+/** 這場勝利算不算這個清剿委託：指定那一層或更深；舊存檔沒記層數的，哪一層都算 */
+export function clearCounts(q: Pick<Quest, 'layer'>, layer: DungeonLayerId | undefined): boolean {
+  if (!q.layer) return true
+  return layer !== undefined && LAYER_IDS.indexOf(layer) >= LAYER_IDS.indexOf(q.layer)
+}
+
 /** 行囊裡有幾份這個委託要的材料 */
 export function questHave(state: GameState, q: Quest): number {
   return q.item ? state.inventory.find((i) => i.name === q.item)?.qty ?? 0 : 0

@@ -45,7 +45,8 @@ export interface Location {
   region: string
   type: LocationType
   faction?: string | null
-  rank?: string
+  /** 這個地點生成 NPC 的種族權重；沒寫時用所屬地區的預設 */
+  races?: Record<string, number>
   note?: string
 }
 export interface Route {
@@ -54,6 +55,8 @@ export interface Route {
   days: [number, number] | null
   mode: RouteMode
   estimated?: boolean
+  /** 這段路每人收的船資（白鸛）；沒寫時海路每段 SEA_FARE_CC、其他路不收 */
+  fare?: number
   note?: string
 }
 

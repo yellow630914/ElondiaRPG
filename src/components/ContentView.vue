@@ -17,7 +17,7 @@ import GearEditor from './content/GearEditor.vue'
 import ItemEditor from './content/ItemEditor.vue'
 import NpcEditor from './content/NpcEditor.vue'
 import StoryEditor from './content/StoryEditor.vue'
-import { builtinStory, newStory, START_KINDS } from '@/engine/storyMods'
+import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
 type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'npcs' | 'stories'
@@ -200,8 +200,8 @@ function duplicate() {
       select(name)
     } else if (sub.value === 'stories') {
       const id = newModId('story')
-      const src = JSON.parse(JSON.stringify(content.mods.stories[key] ?? stories.find((d) => d.id === key)))
-      content.saveStory(id, { ...src, title: `${src.title}（複製）`.slice(0, 30), custom: true })
+      // 開頭旗標換成新任務自己的（和原本的重複算錯誤）
+      content.saveStory(id, copyStory(content.mods.stories[key] ?? stories.find((d) => d.id === key)!, id))
       select(id)
     } else if (sub.value === 'abilities') {
       const id = newModId('ability')
@@ -335,7 +335,7 @@ function resetAll() {
         <ItemEditor v-else-if="sub === 'items'" :key="`i-${current}`" :name="current" @renamed="select" @deleted="select('')" />
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
-        <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" />
+        <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" @open="select" />
         <GearEditor v-else-if="sub === 'bases'" :id="current" :key="`b-${current}`" kind="base" @deleted="select('')" />
         <GearEditor v-else :id="current" :key="`m-${current}`" kind="material" @deleted="select('')" />
       </section>

@@ -6,9 +6,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { enemies, itemDef, npcs as namedNpcs, stories } from '@/engine/data'
-import { builtinStory, flagUsage, sanitizeStory, type StoryMod } from '@/engine/storyMods'
+import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
 import {
-  abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeEnemy,
+  abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, dropBrokenStories, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
 } from '@/engine/mods'
 import { pruneAbilities } from '@/engine/state'
@@ -386,8 +386,18 @@ export const useContent = defineStore('content', () => {
 
   // ---- 特殊任務 ----
 
+  /**
+   * 儲存特殊任務。有錯誤（storyCheck 的 errors）時不存；目前的存檔正在進行這個任務、
+   * 而這次修改會弄壞它的進度時（progressBreaks）也不存——先在編輯器選「複製成新任務」或「放棄這個存檔的任務進度」。
+   */
   function saveStory(id: string, draft: Partial<StoryMod>) {
-    mods.value.stories[id] = sanitizeStory(id, draft, !builtinStory(id))
+    const next = sanitizeStory(id, draft, !builtinStory(id))
+    const check = storyCheck(next)
+    if (check.errors.length) throw new Error(`特殊任務有錯誤，不能儲存：${check.errors.join('；')}`)
+    const state = useGame().state
+    const breaks = state ? progressBreaks(state, stories.find((s) => s.id === id), next) : []
+    if (breaks.length) throw new Error(`目前的存檔正在進行這個任務，這次修改會弄壞它的進度：${breaks.join('；')}`)
+    mods.value.stories[id] = next
     save()
   }
   function deleteStory(id: string) {
@@ -436,9 +446,19 @@ export const useContent = defineStore('content', () => {
   /** 匯入內容檔：asNew 時建立成新的世界，否則取代目前世界的內容 */
   function importMods(text: string, asNew?: string): string | undefined {
     const incoming = normalizeMods(JSON.parse(text))
-    if (asNew !== undefined) return createWorld(asNew || '匯入的世界', undefined, incoming)
+    // 有錯誤的特殊任務不匯入（dropBrokenStories 會套用 incoming：之後一定要重新套用）
+    const dropped = dropBrokenStories(incoming)
+    if (asNew !== undefined) {
+      const id = createWorld(asNew || '匯入的世界', undefined, incoming)
+      problems.value = [...problems.value, ...dropped]
+      return id
+    }
     mods.value = incoming
-    save()
+    try {
+      save()
+    } finally {
+      problems.value = [...problems.value, ...dropped]
+    }
     return undefined
   }
 
@@ -467,12 +487,22 @@ export const useContent = defineStore('content', () => {
   function mergeMods(diff: ModsDiff, take: string[] = []): number {
     const want = new Set([...diff.added.map((e) => e.key), ...take])
     let n = 0
+    const merged = new Set<string>()
+    const before: Record<string, StoryMod> = {}
     for (const e of [...diff.added, ...diff.changed]) {
       if (!want.has(e.key)) continue
+      if (e.section === 'stories') {
+        merged.add(e.id)
+        if (mods.value.stories[e.id]) before[e.id] = mods.value.stories[e.id]!
+      }
       ;(mods.value[e.section] as Record<string, unknown>)[e.id] = (diff.incoming[e.section] as Record<string, unknown>)[e.id]
       n++
     }
+    // 合併進來的特殊任務有錯誤時不收：保留這個瀏覽器原本的版本
+    const dropped = merged.size ? dropBrokenStories(mods.value, merged) : []
+    for (const id of merged) if (!mods.value.stories[id] && before[id]) mods.value.stories[id] = before[id]!
     if (n) save()
+    problems.value = [...problems.value, ...dropped]
     return n
   }
 

@@ -3,7 +3,7 @@
 
 import { guildRankFor } from './character'
 import { dungeonEncounters, enemies, locationById, progression } from './data'
-import { RANK_ORDER, rewardRange } from './materialQuests'
+import { layerName, layerRanks, RANK_ORDER, rewardRange } from './materialQuests'
 import { shortestPath } from './world'
 import type { GameState, GuildRank, GuildState, Quest } from './types'
 
@@ -70,7 +70,7 @@ export function examQuest(state: GameState): Quest | undefined {
 
 /**
  * 在公會發晉升考核（符合資格、還沒有考核時）：討伐階級相符的層主，優先找近的地下城；
- * 找不到時改成清剿階級最接近的地下城
+ * 找不到時改成清剿階級最接近的某座地下城的某一層
  */
 export function postExam(state: GameState): Quest | undefined {
   const g = guildOf(state)
@@ -97,17 +97,15 @@ export function postExam(state: GameState): Quest | undefined {
       title: `晉升考核（${target} 級）：討伐${locationById(best.loc).name}的${enemies[best.id]!.name}`,
     }
   } else {
-    // 沒有相符的層主：清剿階級最接近的地下城
-    const dungeons = Object.keys(dungeonEncounters).sort((a, b) => {
-      const ra = Math.abs(RANK_ORDER.indexOf((locationById(a).rank ?? 'E').split('-').at(-1) as GuildRank) - want)
-      const rb = Math.abs(RANK_ORDER.indexOf((locationById(b).rank ?? 'E').split('-').at(-1) as GuildRank) - want)
-      return ra - rb || distance(a) - distance(b)
-    })
-    if (!dungeons.length) return undefined
-    const loc = dungeons[0]!
+    // 沒有相符的層主：清剿階級最接近的某座地下城的某一層
+    const layers = Object.keys(dungeonEncounters)
+      .flatMap((loc) => layerRanks(loc).map((r) => ({ loc, layer: r.layer, gap: Math.abs(RANK_ORDER.indexOf(r.rank) - want) })))
+      .sort((a, b) => a.gap - b.gap || distance(a.loc) - distance(b.loc))
+    const pick = layers[0]
+    if (!pick) return undefined
     quest = {
-      ...common, kind: 'clear_dungeon', area: 'dungeon', target: loc, goal: merit().exam_clears,
-      title: `晉升考核（${target} 級）：清剿${locationById(loc).name}的魔物（${merit().exam_clears} 次）`,
+      ...common, kind: 'clear_dungeon', area: 'dungeon', target: pick.loc, layer: pick.layer, goal: merit().exam_clears,
+      title: `晉升考核（${target} 級）：清剿${locationById(pick.loc).name}${layerName(pick.layer)}的魔物（${merit().exam_clears} 次）`,
     }
   }
   state.quests.push(quest)

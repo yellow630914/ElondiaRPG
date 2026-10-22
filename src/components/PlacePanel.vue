@@ -10,9 +10,9 @@ import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
 import { canAcceptRank, guildQuests, questTemplate, templeCost } from '@/engine/town'
 import { examQuest, isExam, promotionStatus } from '@/engine/guild'
-import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, questProgressText, rewardFor } from '@/engine/materialQuests'
+import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, layerRanks, questProgressText, rewardFor } from '@/engine/materialQuests'
 import { bestTool } from '@/engine/tools'
-import { MODE_NAME } from '@/engine/travel'
+import { legFare, MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
 import { useGame } from '@/stores/game'
@@ -103,7 +103,14 @@ function daysText(days: [number, number]) {
 function routeText(path: Path) {
   const modes = [...new Set(path.legs.map((l) => MODE_NAME[l.mode]))].join('/')
   const via = path.legs.slice(0, -1).map((l) => locationById(l.to).name)
-  return via.length ? `${modes}・經${via.join('、')}` : modes
+  const fare = path.legs.reduce((sum, l) => sum + legFare(l), 0)
+  const text = via.length ? `${modes}・經${via.join('、')}` : modes
+  return fare > 0 ? `${text}・船資每人 ${formatMoney(fare)}` : text
+}
+
+/** 地下城各層的階級，例如「淺層 E・中層 D・深層 C」 */
+function layerRankText(id: string) {
+  return layerRanks(id).map((r) => `${layerName(r.layer)} ${r.rank}`).join('・')
 }
 
 function go(id: string) {
@@ -302,7 +309,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         <li v-for="d in g.items" :key="d.id" class="row" style="justify-content: space-between">
           <span>
             {{ locationById(d.id).name }}
-            <span v-if="locationById(d.id).type === 'dungeon'" class="tag">冒險區域</span>
+            <span v-if="locationById(d.id).type === 'dungeon'" class="tag" :title="layerRankText(d.id)">冒險區域・{{ layerRankText(d.id) }}</span>
             <span class="small muted">・{{ daysText(d.path.days) }}・{{ routeText(d.path) }}</span>
           </span>
           <button class="small" @click="go(d.id)">前往</button>

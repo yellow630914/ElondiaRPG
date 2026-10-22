@@ -7,6 +7,7 @@ export interface Leg {
   to: string
   days: [number, number]
   mode: RouteMode
+  fare?: number
 }
 
 export interface Path {
@@ -57,7 +58,7 @@ export function shortestPath(from: string, to: string): Path | null {
   const legs: Leg[] = []
   for (let node = to; node !== from; ) {
     const edge = prev.get(node)!
-    legs.unshift({ from: edge.from, to: node, days: edge.route.days, mode: edge.route.mode })
+    legs.unshift({ from: edge.from, to: node, days: edge.route.days, mode: edge.route.mode, ...(edge.route.fare !== undefined ? { fare: edge.route.fare } : {}) })
     node = edge.from
   }
   const days: [number, number] = [

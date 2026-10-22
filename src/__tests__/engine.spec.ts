@@ -2,15 +2,19 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { startCombat } from '@/engine/combat'
-import { enterLocation, standOn } from '@/engine/grid'
+import { enterLocation, generateLayer, standOn, storeArea } from '@/engine/grid'
 import { fightToEnd } from './helpers/fight'
 import { formatMoney } from '@/engine/money'
 import { Rng, roll } from '@/engine/rng'
-import { newGame } from '@/engine/state'
+import { newGame, withRng } from '@/engine/state'
 import { acceptQuest, canAcceptRank, doTownQuest, guildQuests, recruit, rest, turnInQuest } from '@/engine/town'
 import { travel } from '@/engine/travel'
 import type { GameState, Quest, QuestKind, Report } from '@/engine/types'
-import { shortestPath } from '@/engine/world'
+import { reachable, shortestPath } from '@/engine/world'
+import { lotsOf } from '@/engine/homes'
+import { ensureRoster } from '@/engine/population'
+import { clearCounts, layerName, layerRank, rankForLevel } from '@/engine/materialQuests'
+import { geography, locationById } from '@/engine/data'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
@@ -39,8 +43,26 @@ describe('world', () => {
     expect(shortestPath('dawnlight', 'tidehaven')?.days).toEqual([4, 4])
   })
 
-  it('returns null for unreachable places', () => {
-    expect(shortestPath('soriel', 'canglue')).toBeNull()
+  it('adds the windhammer and rotmarsh villages with a lot, a roster and local races', () => {
+    for (const id of ['windhammer', 'rotmarsh']) {
+      expect(lotsOf(id), id).toHaveLength(1)
+      const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 3, birthplace: id })
+      const roster = ensureRoster(state, id)!
+      expect(roster.members.length, id).toBeGreaterThan(0)
+      if (id === 'windhammer') {
+        const races = roster.members.map((m) => state.npcs![m]!.race)
+        expect(races.filter((r) => r === 'human').length).toBeGreaterThan(races.length / 2)
+      }
+    }
+    expect(shortestPath('greyrock', 'windspeak')?.legs.map((l) => l.to)).toEqual(['windhammer', 'windspeak'])
+    expect(shortestPath('bloodplume', 'rotmarsh')?.days).toEqual([3, 3])
+  })
+
+  it('connects every place on the map', () => {
+    for (const l of geography.locations) expect(shortestPath('soriel', l.id), l.id).not.toBeNull()
+    expect(shortestPath('canglue', 'tidehaven')?.legs[0]?.fare).toBe(80)
+    expect(shortestPath('coral_bay', 'canglue')?.legs[0]?.fare).toBe(0)
+    expect(shortestPath('ashport', 'coral_bay')?.days).toEqual([3, 4])
   })
 })
 
@@ -121,6 +143,44 @@ describe('quests', () => {
     expect(dungeonQuests.every((q) => q.rank !== 'F')).toBe(true)
   })
 
+  it('ranks clear quests by the layer they target, like boss hunts on the same layer', () => {
+    for (const target of ['skull_isle', 'giants_spine']) {
+      const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 8, birthplace: target === 'skull_isle' ? 'tidehaven' : 'greyrock' })
+      let seen = 0
+      for (let day = 1; day < 60; day++) {
+        state.time.day = day
+        state.quests = state.quests.filter((q) => q.status !== 'available')
+        for (const q of guildQuests(state).filter((x) => x.target === target)) {
+          if (q.kind !== 'clear_dungeon') continue
+          expect(q.layer, q.title).toBeDefined()
+          expect(q.title).toContain(layerName(q.layer!))
+          expect(q.rank).toBe(layerRank(target, q.layer!))
+          // 和同一層的層主討伐換算方式一致：不會再出現 A 級
+          expect(['E', 'D', 'C']).toContain(q.rank)
+          seen++
+        }
+      }
+      expect(seen, target).toBeGreaterThan(0)
+    }
+    expect(layerRank('skull_isle', 'deep')).toBe(rankForLevel(7, ['E', 'S']))
+    expect(layerRank('snake_creek', 'shallow')).toBe('E')
+  })
+
+  it('counts clear wins on the target layer or deeper; old quests without a layer count anywhere', () => {
+    expect(clearCounts({ layer: 'middle' }, 'shallow')).toBe(false)
+    expect(clearCounts({ layer: 'middle' }, 'middle')).toBe(true)
+    expect(clearCounts({ layer: 'middle' }, 'deep')).toBe(true)
+    expect(clearCounts({ layer: 'middle' }, undefined)).toBe(false)
+    expect(clearCounts({}, 'outskirts')).toBe(true)
+    expect(clearCounts({}, undefined)).toBe(true)
+  })
+
+  it('lets a yulin born in canglue travel and take dungeon quests', () => {
+    const state = newGame({ name: '測試者', race: 'yulin', classId: 'fighter', seed: 8, birthplace: 'canglue' })
+    expect(reachable('canglue').length).toBeGreaterThan(10)
+    expect(guildQuests(state).some((q) => q.kind === 'clear_dungeon')).toBe(true)
+  })
+
   it('completes a combat quest in the outskirts and pays out', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'barbarian', seed: 12 })
     const quest = findQuest(state, (q) => q.kind === 'hunt' || q.kind === 'pest')
@@ -167,6 +227,12 @@ describe('quests', () => {
     state.location = 'albena'
     expectValid(acceptQuest(state, quest.id))
     state.location = 'snake_creek'
+    enterLocation(state)
+    // 清剿委託指定一層：站到那一層才算
+    const layer = ['outskirts', 'shallow', 'middle', 'deep'].indexOf(quest.layer!)
+    const area = withRng(state, (rng) => generateLayer(state, locationById('snake_creek'), layer, rng))
+    storeArea(state, area)
+    state.position = { ...state.position!, area: area.key }
     for (let fights = 0; quest.progress < quest.goal && fights < 20; fights++) {
       for (const m of state.party) m.hp = m.maxHp
       startCombat(state, [['giant_rat', 1]])

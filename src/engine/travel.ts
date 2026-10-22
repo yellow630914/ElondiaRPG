@@ -7,7 +7,7 @@ import { locationById, regionById, slaveryRules, type RouteMode } from './data'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Character, Effect, GameState, Report, TimelineEntry } from './types'
-import { shortestPath } from './world'
+import { shortestPath, type Leg } from './world'
 import { assertNoStandoff, currentArea, enterLocation, placeOutside } from './grid'
 import { arrivalCheck, gateCheck } from './security'
 import { rejoinAway } from './companions'
@@ -17,8 +17,13 @@ import { ensureRoster, pruneNpcs, refreshRosters } from './population'
 
 /** 官道沿途有旅店：每人每天食宿 */
 export const ROAD_DAILY_CC = 15
-/** 海路船資：每人每段 */
+/** 海路船資：每人每段（路線有 fare 時用路線的） */
 export const SEA_FARE_CC = 50
+
+/** 這段路每人的船資 */
+export function legFare(leg: Pick<Leg, 'mode' | 'fare'>): number {
+  return leg.fare ?? (leg.mode === 'sea' ? SEA_FARE_CC : 0)
+}
 export const RATION = '乾糧'
 
 export const MODE_NAME: Record<RouteMode, string> = {
@@ -98,7 +103,7 @@ export function travel(state: GameState, destination: string, intent?: string, e
     timeline.push({ seq: seq++, time: start, actor: 'pc', action: `出發・前往${locationById(destination).name}`, result: 'none' })
     for (const leg of path.legs) {
       const days = rollLegDays(rng, leg.days)
-      if (leg.mode === 'sea') money -= SEA_FARE_CC * members.length
+      money -= legFare(leg) * members.length
       const fullDays = Math.max(1, Math.ceil(days))
       for (let d = 0; d < fullDays; d++) {
         const dayTime = addHours(start, hours + d * 24 + 12)

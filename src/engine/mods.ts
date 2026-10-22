@@ -18,7 +18,7 @@ import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type Materi
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
-import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, type StoryMod } from './storyMods'
+import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
 export type ChestLayer = 'outskirts' | 'shallow' | 'middle' | 'deep'
@@ -417,6 +417,29 @@ export function applyContent(mods: ContentMods): string[] {
   })
   tryEach('特殊任務', mods.stories, (id, m) => applyStoryMod(id, m))
   return problems
+}
+
+/**
+ * 匯入的內容：有錯誤（storyCheck 的 errors）的特殊任務不收，從 mods 拿掉（only 給時只檢查這些 id）。
+ * 拿掉一個任務可能讓別的任務變成有錯誤（例如開始它的效果），所以反覆檢查到沒有為止。
+ * 會套用 mods（呼叫的人之後要重新套用目前的內容）。回傳說明。
+ */
+export function dropBrokenStories(mods: ContentMods, only?: Set<string>): string[] {
+  const out: string[] = []
+  for (let round = 0; round < 10; round++) {
+    applyContent(mods)
+    const bad = Object.keys(mods.stories)
+      .filter((id) => !only || only.has(id))
+      .map((id) => ({ id, def: stories.find((s) => s.id === id) }))
+      .map(({ id, def }) => ({ id, title: def?.title ?? id, errors: def ? storyCheck(def).errors : [] }))
+      .filter((b) => b.errors.length)
+    if (!bad.length) break
+    for (const b of bad) {
+      out.push(`特殊任務「${b.title}」有錯誤，沒有匯入：${b.errors.join('；')}`)
+      delete mods.stories[b.id]
+    }
+  }
+  return out
 }
 
 // ---- 整理（儲存與匯入時） ----

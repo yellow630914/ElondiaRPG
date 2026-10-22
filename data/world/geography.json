@@ -1,5 +1,5 @@
 {
-  "$comment": "埃隆迪亞大陸地理資料。來源：世界書條目「區域地理地標相對位置」「區域-*」與世界地圖。days 為 [最少, 最多] 天數（陸路馬車或步行估算，海路以順風無風暴為前提）；estimated=true 表示世界書未給數字、由地圖推估，需要設計者確認。",
+  "$comment": "埃隆迪亞大陸地理資料。來源：世界書條目「區域地理地標相對位置」「區域-*」與世界地圖。days 為 [最少, 最多] 天數（陸路馬車或步行估算，海路以順風無風暴為前提）；estimated=true 表示世界書未給數字、由地圖推估，需要設計者確認。fare：這段路每人收的船資（白鸛）；沒寫時海路每段 50、其他路不收。races：這個地點生成 NPC 的種族權重，蓋過所屬地區的預設。地下城沒有整座的階級：難度看每一層的怪物等級（docs/DUNGEON_DESIGN.md）。",
   "version": 1,
   "regions": [
     { "id": "central", "name": "中央平原與丘陵地帶", "climate": "溫和、河流密布", "dominant": "human_alliance", "danger": 1 },
@@ -30,45 +30,47 @@
     { "id": "albena", "name": "阿爾貝納", "region": "central", "type": "city", "faction": "aude_federation" },
     { "id": "rivervale", "name": "河谷鎮", "region": "central", "type": "town", "faction": "human_alliance", "note": "中立談判地" },
     { "id": "coast_ferry", "name": "沿海渡口", "region": "central", "type": "port", "faction": "dawn_kingdom", "note": "僅見於地圖" },
-    { "id": "whisper_crypt", "name": "低語墓穴", "region": "central", "type": "dungeon", "rank": "E-D", "estimated_rank": true },
-    { "id": "snake_creek", "name": "蛇溪洞窟", "region": "central", "type": "dungeon", "rank": "E-D", "estimated_rank": true },
-    { "id": "mist_abbey", "name": "晨霧修道院遺址", "region": "central", "type": "dungeon", "rank": "D-C", "estimated_rank": true },
+    { "id": "whisper_crypt", "name": "低語墓穴", "region": "central", "type": "dungeon" },
+    { "id": "snake_creek", "name": "蛇溪洞窟", "region": "central", "type": "dungeon" },
+    { "id": "mist_abbey", "name": "晨霧修道院遺址", "region": "central", "type": "dungeon" },
 
     { "id": "ironforge", "name": "鐵爐堡", "region": "north", "type": "capital", "faction": "dwarf_clans" },
     { "id": "greyrock", "name": "灰岩堡壘", "region": "north", "type": "fortress", "faction": "dwarf_clans" },
+    { "id": "windhammer", "name": "風錘村", "region": "north", "type": "village", "faction": null, "races": { "human": 8, "dwarf": 2 }, "note": "人類山民部落的村落，夾在灰岩堡壘與古樹森林之間；不在地圖上" },
     { "id": "snowridge", "name": "雪嵴哨站", "region": "north", "type": "outpost", "faction": "dwarf_clans", "note": "世界書與地圖分別寫作「雪嵴」「雪脊」" },
-    { "id": "redemption_pit", "name": "深贖之穴", "region": "north", "type": "dungeon", "rank": "C-B", "estimated_rank": true },
-    { "id": "echo_rift", "name": "回聲裂谷", "region": "north", "type": "dungeon", "rank": "C-B", "estimated_rank": true },
-    { "id": "giants_spine", "name": "巨人之嵴", "region": "north", "type": "dungeon", "rank": "A", "estimated_rank": true },
+    { "id": "redemption_pit", "name": "深贖之穴", "region": "north", "type": "dungeon" },
+    { "id": "echo_rift", "name": "回聲裂谷", "region": "north", "type": "dungeon" },
+    { "id": "giants_spine", "name": "巨人之嵴", "region": "north", "type": "dungeon" },
 
     { "id": "bloodplume", "name": "血羽城堡", "region": "south", "type": "capital", "faction": "demon_council" },
     { "id": "moltenhold", "name": "熔火堡壘", "region": "south", "type": "fortress", "faction": "demon_council" },
     { "id": "shadow_vale", "name": "陰影之谷", "region": "south", "type": "city", "faction": "demon_council" },
     { "id": "bone_hills", "name": "獸骨荒丘", "region": "south", "type": "outpost", "faction": "demon_council", "note": "與中央平原之間的前線" },
     { "id": "silent_tomb", "name": "寂墓聖堂", "region": "south", "type": "city", "faction": "demon_council" },
+    { "id": "rotmarsh", "name": "腐沼村", "region": "south", "type": "village", "faction": "demon_council", "note": "荒原東南的沼澤低地，血羽城堡往灰港鎮的半途；世界書只列名，位置與描述為本專案補寫" },
     { "id": "ashport", "name": "灰港鎮", "region": "south", "type": "port", "faction": null, "note": "中立聚落，荒原唯一穩定對外商路" },
-    { "id": "ember_rift", "name": "餘燼裂隙", "region": "south", "type": "dungeon", "rank": "B-A", "estimated_rank": true },
-    { "id": "bloodrock_cave", "name": "血岩深穴", "region": "south", "type": "dungeon", "rank": "B-A", "estimated_rank": true },
-    { "id": "hell_greenhouse", "name": "地獄溫室", "region": "south", "type": "dungeon", "rank": "B", "estimated_rank": true },
+    { "id": "ember_rift", "name": "餘燼裂隙", "region": "south", "type": "dungeon" },
+    { "id": "bloodrock_cave", "name": "血岩深穴", "region": "south", "type": "dungeon" },
+    { "id": "hell_greenhouse", "name": "地獄溫室", "region": "south", "type": "dungeon" },
 
     { "id": "silvermoon", "name": "銀月城", "region": "forest", "type": "capital", "faction": "elf_court" },
     { "id": "mosswhisper", "name": "苔語村", "region": "forest", "type": "village", "faction": "elf_court" },
     { "id": "windspeak", "name": "風語崗哨", "region": "forest", "type": "outpost", "faction": "elf_court", "note": "外來者進入森林的主要哨點" },
-    { "id": "moonshadow_roots", "name": "月影根穴", "region": "forest", "type": "dungeon", "rank": "B", "estimated_rank": true },
-    { "id": "thorn_corridor", "name": "荊棘迴廊", "region": "forest", "type": "dungeon", "rank": "C", "estimated_rank": true, "wandering": true },
-    { "id": "verdant_hollow", "name": "翠影空洞", "region": "forest", "type": "dungeon", "rank": "B", "estimated_rank": true },
+    { "id": "moonshadow_roots", "name": "月影根穴", "region": "forest", "type": "dungeon" },
+    { "id": "thorn_corridor", "name": "荊棘迴廊", "region": "forest", "type": "dungeon", "wandering": true },
+    { "id": "verdant_hollow", "name": "翠影空洞", "region": "forest", "type": "dungeon" },
 
     { "id": "tidehaven", "name": "潮汐港", "region": "east_sea", "type": "capital", "faction": "seven_tides", "note": "位於風痕島" },
     { "id": "coral_bay", "name": "珊瑚灣鎮", "region": "east_sea", "type": "town", "faction": "seven_tides" },
     { "id": "canglue", "name": "滄月闕", "region": "east_sea", "type": "capital", "faction": "four_seasons", "note": "海底都城，需玉璘族引導穿越結界；不在地圖上" },
-    { "id": "tidefall_cave", "name": "潮隕洞窟", "region": "east_sea", "type": "dungeon", "rank": "C-B", "estimated_rank": true },
-    { "id": "skull_isle", "name": "骷髏潮島", "region": "east_sea", "type": "dungeon", "rank": "A", "estimated_rank": true },
+    { "id": "tidefall_cave", "name": "潮隕洞窟", "region": "east_sea", "type": "dungeon" },
+    { "id": "skull_isle", "name": "骷髏潮島", "region": "east_sea", "type": "dungeon" },
 
     { "id": "sandcastle", "name": "沙堡營地", "region": "west", "type": "town", "faction": "wild_tribes", "note": "冒險者公會常駐聯絡站" },
     { "id": "sunscorch", "name": "烈日草原", "region": "west", "type": "village", "faction": "wild_tribes", "note": "赤鬃部落；不在地圖上" },
     { "id": "stilltide_oasis", "name": "靜潮綠洲", "region": "west", "type": "village", "faction": "wild_tribes", "note": "月尾部落；不在地圖上" },
-    { "id": "echo_canyon", "name": "回音峽谷", "region": "west", "type": "dungeon", "rank": "C-B", "estimated_rank": true, "note": "夜爪部落；不在地圖上" },
-    { "id": "quicksand_temple", "name": "流沙聖殿", "region": "west", "type": "dungeon", "rank": "B-A", "estimated_rank": true }
+    { "id": "echo_canyon", "name": "回音峽谷", "region": "west", "type": "dungeon", "note": "夜爪部落；不在地圖上" },
+    { "id": "quicksand_temple", "name": "流沙聖殿", "region": "west", "type": "dungeon" }
   ],
   "routes": [
     { "a": "soriel", "b": "rhineburg", "days": [5, 5], "mode": "road" },
@@ -89,6 +91,8 @@
     { "a": "ironforge", "b": "greyrock", "days": [3, 3], "mode": "trail" },
     { "a": "ironforge", "b": "redemption_pit", "days": [0.5, 0.5], "mode": "trail" },
     { "a": "ironforge", "b": "echo_rift", "days": [4, 4], "mode": "trail" },
+    { "a": "greyrock", "b": "windhammer", "days": [2, 2], "mode": "trail", "estimated": true },
+    { "a": "windhammer", "b": "windspeak", "days": [2, 2], "mode": "trail", "estimated": true },
     { "a": "greyrock", "b": "giants_spine", "days": [5, 5], "mode": "wild", "note": "需嚮導" },
 
     { "a": "soriel", "b": "bone_hills", "days": [6, 7], "mode": "wild", "note": "索里耶爾→血羽城堡合計 9~10 天，多為無人區" },
@@ -100,7 +104,9 @@
     { "a": "bloodplume", "b": "ember_rift", "days": [0, 0], "mode": "underground", "note": "城堡地底即入口" },
     { "a": "bloodplume", "b": "hell_greenhouse", "days": [0.5, 0.5], "mode": "wild" },
     { "a": "silent_tomb", "b": "bloodrock_cave", "days": [1, 1], "mode": "wild" },
-    { "a": "ashport", "b": "coral_bay", "days": null, "mode": "sea", "note": "地圖有航線、世界書未給天數" },
+    { "a": "bloodplume", "b": "rotmarsh", "days": [3, 3], "mode": "wild", "estimated": true },
+    { "a": "rotmarsh", "b": "ashport", "days": [2, 2], "mode": "wild", "estimated": true, "note": "與血羽城堡→灰港鎮的 5 天直路相同" },
+    { "a": "ashport", "b": "coral_bay", "days": [3, 4], "mode": "sea", "estimated": true, "note": "地圖有航線、世界書未給天數" },
 
     { "a": "rhineburg", "b": "windspeak", "days": [1, 2], "mode": "road", "estimated": true, "note": "由索里耶爾→銀月城 8~9 天反推" },
     { "a": "windspeak", "b": "silvermoon", "days": [2, 2], "mode": "trail" },
@@ -112,10 +118,15 @@
     { "a": "tidehaven", "b": "coral_bay", "days": [1, 1], "mode": "sea" },
     { "a": "coral_bay", "b": "tidefall_cave", "days": [0.5, 0.5], "mode": "dive" },
     { "a": "tidehaven", "b": "skull_isle", "days": [6, 6], "mode": "sea" },
-    { "a": "tidehaven", "b": "canglue", "days": null, "mode": "dive", "note": "由深潮席安排渡訪船次" },
-    { "a": "coral_bay", "b": "canglue", "days": null, "mode": "dive" },
+    { "a": "tidehaven", "b": "canglue", "days": [0.5, 1], "mode": "dive", "estimated": true, "fare": 80, "note": "由深潮席安排渡訪船次，收船資" },
+    { "a": "coral_bay", "b": "canglue", "days": [0.5, 0.5], "mode": "dive", "estimated": true, "fare": 0, "note": "自行潛下，不收費" },
 
     { "a": "mosswhisper", "b": "sandcastle", "days": [3, 3], "mode": "wild" },
+    { "a": "mosswhisper", "b": "sunscorch", "days": [2, 2], "mode": "wild", "estimated": true },
+    { "a": "sunscorch", "b": "sandcastle", "days": [2, 2], "mode": "wild", "estimated": true },
+    { "a": "sandcastle", "b": "stilltide_oasis", "days": [2, 3], "mode": "wild", "estimated": true },
+    { "a": "sunscorch", "b": "stilltide_oasis", "days": [3, 3], "mode": "wild", "estimated": true },
+    { "a": "sandcastle", "b": "echo_canyon", "days": [2, 2], "mode": "wild", "estimated": true },
     { "a": "sandcastle", "b": "quicksand_temple", "days": [2, 2], "mode": "wild" }
   ]
 }
