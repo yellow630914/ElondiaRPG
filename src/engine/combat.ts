@@ -10,8 +10,7 @@
 
 import { checkBonus, perkModifiers } from './perks'
 import {
-  apMaxFor, apRegenFor, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency,
-  slotMaxFor, slotsLeft, snapshot, weaponFor,
+  apMaxFor, apRegenFor, attrOf, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
   abilityDef, armorDef, ATTR_IDS, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
@@ -240,7 +239,7 @@ function spellCap(c: Character): number {
 function fromCharacter(c: Character, rng: Rng): Combatant {
   const gear = gearAffinities(c)
   const armor = armorDef(c.armor)
-  const apMax = apMaxFor(c.level, c.attrs)
+  const apMax = apMaxFor(c.level, attrsOf(c))
   const cls = classDef(c.class).threat ?? { start: 0, mult: 1 }
   // 防具與武器的類型、其他裝備（盾牌等）的仇恨加減
   const threatMult = cls.mult * (1 + (armor.threat ?? 0) + (weaponFor(c).threat ?? 0) + gearBonuses(c).threat)
@@ -255,19 +254,19 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
   }
   return {
     threat: Math.round(cls.start * threatMult * (1 + (gear.mods.threat ?? 0))), threatMult,
-    id: c.id, name: c.name, side: 'party', level: c.level, attrs: { ...c.attrs }, prof: proficiency(c.level),
+    id: c.id, name: c.name, side: 'party', level: c.level, attrs: attrsOf(c), prof: proficiency(c.level),
     hp: c.hp, maxHp: c.maxHp, tempHp,
     ap: apMax, apMax, apRegen: apRegenFor(c.level),
     // 魔導束縛契約：只能施放 spell_cap 環以下的法術
     slots: slotsLeft(c).slice(0, spellCap(c)),
-    slotMax: slotMaxFor(c.class, c.level, c.attrs).slice(0, spellCap(c)),
+    slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, spellCap(c)),
     abilities: [...c.abilities],
     weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr,
     resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),
     statuses: [],
     // 特質：先攻與各屬性豁免的加值
-    initiative: roll(rng, '1d20').total + mod(c.attrs.dex) + checkBonus(c, { context: 'initiative', attr: 'dex' }),
+    initiative: roll(rng, '1d20').total + mod(attrOf(c, 'dex')) + checkBonus(c, { context: 'initiative', attr: 'dex' }),
     saveBonus: Object.fromEntries(ATTR_IDS.map((a) => [a, perkModifiers(c, { context: 'save', attr: a }).reduce((s, x) => s + x.value, 0)])) as Partial<Record<AttrId, number>>,
     usedTurn: {}, usedCombat: {}, usedRest: { ...c.usesPerRest },
   }

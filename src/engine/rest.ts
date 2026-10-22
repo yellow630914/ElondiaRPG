@@ -7,7 +7,7 @@
 // - 每次休息結束時進行離隊檢查（見 restChecks）。
 
 import { checkBonus } from './perks'
-import { mod, proficiency, snapshot } from './character'
+import { attrOf, mod, proficiency, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
 import { classDef, companionRules, homeRules, locationById, regionById, slaveryRules, wildEncounters, type DungeonLayerId } from './data'
 import { currentArea, currentCell, DUNGEON_LAYERS } from './grid'
@@ -37,7 +37,7 @@ export function hitDiceLeft(c: Character): number {
 }
 
 function hitDieBonus(c: Character): number {
-  return mod(c.attrs.str) + mod(c.attrs.fai)
+  return mod(attrOf(c, 'str')) + mod(attrOf(c, 'fai'))
 }
 
 function minutesBetween(a: GameTime, b: GameTime): number {
@@ -303,7 +303,7 @@ function leaveOthersParty(state: GameState, report: Report, head: Character, gro
     delta = rules.affinity.formal
     line = `你向${head.name}正式道別，離開了這支隊伍。`
   } else {
-    const dice = withBonus('1d20', mod(pc.attrs.dex) + proficiency(pc.level) + checkBonus(pc, { context: 'stealth', attr: 'dex' }))
+    const dice = withBonus('1d20', mod(attrOf(pc, 'dex')) + proficiency(pc.level) + checkBonus(pc, { context: 'stealth', attr: 'dex' }))
     const r = roll(rng, dice)
     const dc = rules.sneak_base + Math.floor(head.level / 2)
     const ok = r.total >= dc

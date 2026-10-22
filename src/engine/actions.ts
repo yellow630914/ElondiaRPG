@@ -12,7 +12,7 @@
 import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
 import { checkModifiers } from './perks'
-import { mod, proficiency, snapshot } from './character'
+import { attrOf, mod, proficiency, snapshot } from './character'
 import { computeDegree, DEGREE_NAME } from './checks'
 import {
   applyBlackMarket, applyEscape, applyHaggle, applyHire, applyInvite, applyNegotiate, setupFor, type MarketKind,
@@ -160,7 +160,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     base_dc: setup.dc,
     attr: setup.attr ?? kind.attr,
     ...(setup.hours ? { hours: setup.hours } : {}),
-    modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(pc.attrs[a]) + proficiency(pc.level)])) as Record<AttrId, number>,
+    modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(attrOf(pc, a)) + proficiency(pc.level)])) as Record<AttrId, number>,
     ...(setup.actor && !pc.isPlayer ? { actor: pc.id } : {}),
     situational,
     outcomes: setup.outcomes,

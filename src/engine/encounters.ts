@@ -5,7 +5,7 @@
 //    被發現：蒙混（魅力）、威嚇（力量，依雙方等級修正）、付過路費、或開戰。
 
 import { checkBonus } from './perks'
-import { mod, proficiency, snapshot } from './character'
+import { attrOf, mod, proficiency, snapshot } from './character'
 import { locationById, population, regionById, type Degree } from './data'
 import { startCombat, type CombatState } from './combat'
 import { currentArea } from './grid'
@@ -60,7 +60,7 @@ export function checkHostiles(state: GameState): Report | undefined {
   const maxLevel = Math.max(...foes.map((r) => r.level))
   const dc = 10 + Math.floor(maxLevel / 2) + (foes.length - 1)
   const pc = pcOf(state)
-  const bonus = mod(pc.attrs.dex) + proficiency(pc.level) + checkBonus(pc, { context: 'stealth', attr: 'dex' })
+  const bonus = mod(attrOf(pc, 'dex')) + proficiency(pc.level) + checkBonus(pc, { context: 'stealth', attr: 'dex' })
   const dice = withBonus('1d20', bonus)
   const r = withRng(state, (rng) => roll(rng, dice))
   const detected = r.total < dc

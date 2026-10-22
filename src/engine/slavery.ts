@@ -6,7 +6,7 @@
 //   移動與旅行時可能遇到主人的突發事件：主角從三種回應選一個，或自己輸入回應交給 AI 判定。
 
 import { checkModifiers, modifierNote } from './perks'
-import { lifeTier, mod, proficiency, snapshot } from './character'
+import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
 import { adultContent, adultScene, safeText } from './content'
@@ -490,7 +490,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   if (o.check) {
     // 非戰鬥狀態與特質（主人的標籤也算）
     const extra = checkModifiers(pc, { context: 'master_event', attr: o.check.attr, vsTags: npcRecord(state, c.master)?.tags ?? [] })
-    const dice = withBonus('1d20', mod(pc.attrs[o.check.attr]) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
+    const dice = withBonus('1d20', mod(attrOf(pc, o.check.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
     const r = withRng(state, (rng) => roll(rng, dice))
     const ok = r.total >= o.check.dc
     report.timeline = [{ seq: 1, time: start, actor: 'pc', action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]

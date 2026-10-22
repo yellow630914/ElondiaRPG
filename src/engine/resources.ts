@@ -1,7 +1,7 @@
 // 隊伍資源的增減：法術環、生命骰、每次休息可用的能力次數。
 // 事件、委託、主動行動都透過這裡改動資源，並把變化記在報告的 changes.resources。
 
-import { slotMaxFor, slotsLeft } from './character'
+import { attrsOf, slotMaxFor, slotsLeft } from './character'
 import { abilityDef, type AbilityDef } from './data'
 import type { Character, Report, ResourceChange } from './types'
 
@@ -23,7 +23,7 @@ export function spendSlot(c: Character, minCircle = 1): number | null {
 
 /** 回復一個不超過 maxCircle 環、已用掉的法術環（回復最高的）；沒有時回傳 null */
 export function restoreSlot(c: Character, maxCircle = 9): number | null {
-  const max = slotMaxFor(c.class, c.level, c.attrs)
+  const max = slotMaxFor(c.class, c.level, attrsOf(c))
   for (let i = Math.min(maxCircle, max.length) - 1; i >= 0; i--) {
     if ((c.slotsUsed[i] ?? 0) > 0) {
       c.slotsUsed[i]! -= 1

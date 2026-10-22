@@ -2,7 +2,7 @@
 import FoldSection from './FoldSection.vue'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
-import { mod } from '@/engine/character'
+import { attrOf, mod } from '@/engine/character'
 import { attrName, geography, locationById } from '@/engine/data'
 import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
@@ -37,7 +37,7 @@ const lockTool = computed(() => bestTool(s.value, 'lockpick'))
 const LOCK_ICON: Record<LockMethod, string> = { dex: '🔓', str: '💪', int: '🧠' }
 function lockBonus(k: LockMethod): number {
   const picker = lockPicker(s.value, k)
-  return mod(picker.attrs[k]) + (k === 'dex' ? lockTool.value?.bonus ?? 0 : 0) + checkBonus(picker, { context: 'lock', attr: k })
+  return mod(attrOf(picker, k)) + (k === 'dex' ? lockTool.value?.bonus ?? 0 : 0) + checkBonus(picker, { context: 'lock', attr: k })
 }
 const signed = (n: number) => (n >= 0 ? `+${n}` : String(n))
 const intent = computed({ get: () => game.intent, set: (v: string) => (game.intent = v) })

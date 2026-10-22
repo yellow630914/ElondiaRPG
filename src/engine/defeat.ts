@@ -6,7 +6,7 @@
 // 3. 結果依成功程度：可能再損失一些錢、驚魂未定；之後和一般戰敗一樣（地下城回到入口、近郊回到城門）。
 // 設定關閉成人向時不會發生；已經在等待回應時關閉，可以直接略過。
 
-import { mod } from './character'
+import { attrOf, mod } from './character'
 import { adultContent, adultScene } from './content'
 import { combatRules, locationById, regionById, type AttrId, type Degree } from './data'
 import { applyEffects } from './effects'
@@ -45,7 +45,7 @@ export function rollDefeatEvent(state: GameState, rng: Rng, report: Report, foes
   const r = rules()
   const pc = pcOf(state)
   // 刻意不加熟練加值：這不是主角的技能檢定，而是看外表與氣質能不能引起敵人的興趣
-  const dice = withBonus('1d20', mod(pc.attrs[r.check.attr]))
+  const dice = withBonus('1d20', mod(attrOf(pc, r.check.attr)))
   const res = roll(rng, dice)
   const hit = res.total >= r.check.dc
   const entry: TimelineEntry = {

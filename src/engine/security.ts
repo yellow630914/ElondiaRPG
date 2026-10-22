@@ -2,7 +2,7 @@
 
 import { checkModifiers } from './perks'
 import securityJson from '@data/rules/security.json'
-import { mod, proficiency, snapshot } from './character'
+import { attrOf, mod, proficiency, snapshot } from './character'
 import { economy, geography, locationById, regionById } from './data'
 import { formatMoney } from './money'
 import { pcOf } from './party'
@@ -167,9 +167,9 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
     return { ok: false, reason: `衛兵記得你，今天不會放你過去；繳交罰金 ${formatMoney(alertFine(state, locId))} 就能通過。` }
   }
   const pc = pcOf(state)
-  const attr = mod(pc.attrs.dex) >= mod(pc.attrs.cha) ? 'dex' : 'cha'
+  const attr = mod(attrOf(pc, 'dex')) >= mod(attrOf(pc, 'cha')) ? 'dex' : 'cha'
   const extra = checkModifiers(pc, { context: 'gate', attr })
-  const dice = withBonus('1d20', mod(pc.attrs[attr]) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
+  const dice = withBonus('1d20', mod(attrOf(pc, attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
   const dc = securityRules.alert.gate_dc_base + securityRules.alert.gate_dc_per_level * level
   const r = withRng(state, (rng) => roll(rng, dice))
   const ok = r.total >= dc

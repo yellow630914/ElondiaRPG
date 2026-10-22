@@ -52,6 +52,46 @@ export function powerGapAttitude(observerLevel: number, targetLevel: number): st
   return by_diff[String(diff)] ?? '對等'
 }
 
+// ---- 有效屬性 ----
+//
+// c.attrs 是基礎屬性：建角與升級時分配、受 attributes.json 的上限限制，配點與升級只改它。
+// 其他地方（檢定、戰鬥、生命值、行動點、法術環）一律讀 attrsOf(c)：基礎屬性加上各種來源的加減
+// （例如之後的誓約印記），夾在 score.min～score.max。來源移除時不需要把加減扣回去。
+
+/** 屬性加減的一個來源：名稱與各屬性的加減 */
+export interface AttrSource { label: string; attrs: Partial<Attrs> }
+export type AttrProvider = (c: Character) => AttrSource[]
+
+const attrProviders: AttrProvider[] = []
+
+/** 登記一種屬性加減的來源（回傳取消登記的函式） */
+export function addAttrProvider(p: AttrProvider): () => void {
+  attrProviders.push(p)
+  return () => {
+    const i = attrProviders.indexOf(p)
+    if (i >= 0) attrProviders.splice(i, 1)
+  }
+}
+
+/** 角色身上所有的屬性加減（給畫面與 AI 說明來源） */
+export function attrSources(c: Character): AttrSource[] {
+  return attrProviders.flatMap((p) => p(c)).filter((s) => ATTR_IDS.some((a) => s.attrs[a]))
+}
+
+/** 有效屬性：基礎屬性加上所有來源的加減 */
+export function attrsOf(c: Character): Attrs {
+  const out = { ...c.attrs }
+  const { min, max } = attributeRules.score
+  for (const s of attrSources(c)) for (const a of ATTR_IDS) out[a] += s.attrs[a] ?? 0
+  for (const a of ATTR_IDS) out[a] = Math.max(min, Math.min(max, out[a]))
+  return out
+}
+
+/** 一項屬性的有效值 */
+export function attrOf(c: Character, a: AttrId): number {
+  return attrsOf(c)[a]
+}
+
 // ---- 三資源 ----
 
 /** 生命值 = base + 等級 × max(下限, per_level + mod(力量) + mod(信仰)) */
@@ -87,12 +127,12 @@ export function slotMaxFor(classId: string, level: number, attrs: Attrs): number
   return slots
 }
 
-export function maxCircle(c: Pick<Character, 'class' | 'level' | 'attrs'>): number {
-  return slotMaxFor(c.class, c.level, c.attrs).length
+export function maxCircle(c: Character): number {
+  return slotMaxFor(c.class, c.level, attrsOf(c)).length
 }
 
 export function slotsLeft(c: Character): number[] {
-  return slotMaxFor(c.class, c.level, c.attrs).map((n, i) => Math.max(0, n - (c.slotsUsed[i] ?? 0)))
+  return slotMaxFor(c.class, c.level, attrsOf(c)).map((n, i) => Math.max(0, n - (c.slotsUsed[i] ?? 0)))
 }
 
 export function maxCantrips(level: number): number {
@@ -161,7 +201,7 @@ export function baseAttrs(classId: string, race: string): Attrs {
 /** 依等級與屬性重算推導值（目前只有最大生命值），生命值不超過上限。 */
 export function recalc(c: Character): Character {
   const before = c.maxHp
-  c.maxHp = maxHpFor(c.level, c.attrs)
+  c.maxHp = maxHpFor(c.level, attrsOf(c))
   if (c.maxHp > before) c.hp += c.maxHp - before
   c.hp = Math.min(c.hp, c.maxHp)
   return c

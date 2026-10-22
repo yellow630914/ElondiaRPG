@@ -4,7 +4,7 @@
 
 import { checkBonus } from './perks'
 import mapsJson from '@data/world/maps.json'
-import { mod, proficiency, snapshot } from './character'
+import { attrOf, mod, proficiency, snapshot } from './character'
 import { computeDegree } from './checks'
 import { dungeonEncounters, locationById, regionById, type DungeonLayerId } from './data'
 import { inDarkness } from './light'
@@ -102,7 +102,7 @@ export function attemptRetreat(state: GameState, area: Area, safe: boolean): Ret
   const r = expeditionRules.retreat
   const layer = area.layer ?? 0
   const loc = locationById(area.location)
-  const guide = [...state.party].filter((m) => m.hp > 0).sort((a, b) => b.attrs[r.attr] - a.attrs[r.attr])[0] ?? player(state)
+  const guide = [...state.party].filter((m) => m.hp > 0).sort((a, b) => attrOf(b, r.attr) - attrOf(a, r.attr))[0] ?? player(state)
   const dc = retreatDc(state, area)
   const start = { ...state.time }
   const hours = r.hours_per_layer * (layer + 1)
@@ -127,7 +127,7 @@ export function attemptRetreat(state: GameState, area: Area, safe: boolean): Ret
     const table = dungeonEncounters[loc.id]?.[LAYER_IDS[layer] ?? 'shallow'] ?? []
     return { natural, rolled: table.length ? rng.pick(table) : undefined }
   })
-  const modifier = mod(guide.attrs[r.attr]) + proficiency(guide.level) + checkBonus(guide, { context: 'retreat', attr: r.attr })
+  const modifier = mod(attrOf(guide, r.attr)) + proficiency(guide.level) + checkBonus(guide, { context: 'retreat', attr: r.attr })
   const total = natural + modifier
   const degree = computeDegree(natural, total, dc)
   const ok = degree === 'success' || degree === 'critical'

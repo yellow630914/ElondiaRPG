@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { attrOf } from '@/engine/character'
 import { attrName, workRules } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { isBound, isFugitive } from '@/engine/party'
@@ -37,7 +38,7 @@ function work() {
     <label v-if="slaves.length" class="who">誰去做
       <select v-model="picked">
         <option value="">你自己</option>
-        <option v-for="m in slaves" :key="m.id" :value="m.id">派{{ m.name }}去（{{ attrName(job.attr) }} {{ m.attrs[job.attr] }}，工錢歸你）</option>
+        <option v-for="m in slaves" :key="m.id" :value="m.id">派{{ m.name }}去（{{ attrName(job.attr) }} {{ attrOf(m, job.attr) }}，工錢歸你）</option>
       </select>
     </label>
     <p v-if="blocked && !worker" class="muted">這裡的人認出了你頸上的契約印記，不肯雇你。</p>

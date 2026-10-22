@@ -2,7 +2,7 @@
 // 主動行動：擲骰先發生，AI 拿到完整資料與骰值，自己決定成功與否（可以出乎預料）並直接寫出經過。
 // AI 只回傳 JSON；程式負責驗證、夾住數值與套用（見 src/engine/actions.ts）。
 
-import { affinityStage, learnable, lifeTier, snapshot } from '@/engine/character'
+import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
 import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
   geography, genderName, itemDef, itemRules, tagDef, shopRules, slaveryRules, type ShopType,
@@ -71,7 +71,7 @@ export function inventoryLines(state: GameState, max = 40): string {
 
 function pcDetail(state: GameState): string {
   const pc = state.party.find((m) => m.isPlayer)!
-  const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${pc.attrs[a]}`).join('、')
+  const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${attrOf(pc, a)}`).join('、')
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
   const home = pc.contract ? masterHomeSummary(state) : ''
   // 特質：程式已經算進檢定的加值（情境修正），這裡讓 AI 判定時參考角色的特長

@@ -18,7 +18,7 @@ import { setupInvent } from './invention'
 import { isShopStaff } from './crafting'
 import { setupStoryCheck } from './story'
 import { setupDefeatEvent } from './defeat'
-import { lifeTier, mod, snapshot } from './character'
+import { attrOf, lifeTier, mod, snapshot } from './character'
 import {
   actionRules, combatRules, companionRules, contractDef, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
   tagDcMod, tagDef, type ActionKind, type AttrId, type Degree, type MarketDef, type NpcKind,
@@ -168,7 +168,7 @@ export function applyHire(state: GameState, report: Report, npcId: string, offer
 export function waitChance(state: GameState): number {
   const w = companionRules.wait_party
   const pc = pcOf(state)
-  return Math.max(0.05, Math.min(w.max, w.base + w.per_cha_mod * mod(pc.attrs.cha) + w.per_level * pc.level))
+  return Math.max(0.05, Math.min(w.max, w.base + w.per_cha_mod * mod(attrOf(pc, 'cha')) + w.per_level * pc.level))
 }
 
 export function partyOffersHere(state: GameState): PartyOffer[] {
@@ -189,8 +189,8 @@ export function waitForParty(state: GameState): Report {
     const leader = generateNpc(state, rng, { level }, 'pty')
     const memberCount = rng.int(0, Math.min(2, partyRoom(state) - 1))
     const members = Array.from({ length: memberCount }, () => generateNpc(state, rng, { level: Math.max(1, level - rng.int(0, 2)) }, 'pty'))
-    const payChance = w.pay_chance + w.pay_chance_per_cha_mod * Math.max(0, mod(pc.attrs.cha))
-    const pay = rng.chance(payChance) ? Math.round((w.pay_per_level * pc.level * (1 + Math.max(0, mod(pc.attrs.cha)) * 0.25)) / 5) * 5 : 0
+    const payChance = w.pay_chance + w.pay_chance_per_cha_mod * Math.max(0, mod(attrOf(pc, 'cha')))
+    const pay = rng.chance(payChance) ? Math.round((w.pay_per_level * pc.level * (1 + Math.max(0, mod(attrOf(pc, 'cha'))) * 0.25)) / 5) * 5 : 0
     return { id: `po-${leader.id}`, leader: leader.id, members: members.map((m) => m.id), pay_cc: pay, location: state.location, day: state.time.day }
   })
   if (offer) {
@@ -387,7 +387,7 @@ export function applyBlackMarket(state: GameState, report: Report, degree: Degre
 export function selfSaleChance(state: GameState): number {
   const s = slaveryRules.self_sale
   const pc = pcOf(state)
-  return Math.max(0.05, Math.min(s.max, s.base + s.per_cha_mod * mod(pc.attrs.cha) + s.per_level * pc.level))
+  return Math.max(0.05, Math.min(s.max, s.base + s.per_cha_mod * mod(attrOf(pc, 'cha')) + s.per_level * pc.level))
 }
 
 /** 戰敗時逃開的隊員：回到聚落或安全房時，在這裡等著你，重新歸隊（生命值維持戰敗時的一半） */

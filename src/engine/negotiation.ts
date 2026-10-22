@@ -6,7 +6,7 @@
 // 兩種做法的結果都套用同一張結果表；部分成功時可以再談一次（最多 max_attempts 次）。
 
 import { checkModifiers, modifierNote } from './perks'
-import { mod, proficiency, snapshot } from './character'
+import { attrOf, mod, proficiency, snapshot } from './character'
 import { computeDegree, DEGREE_NAME } from './checks'
 import {
   actionRules, ATTR_IDS, attrName, locationById, negotiationRules, regionById,
@@ -171,7 +171,7 @@ export function chooseOption(state: GameState, id: string, optionId: string): Re
   const natural = withRng(state, (rng) => roll(rng, '1d20').total)
   // 非戰鬥狀態與特質（對方的標籤也算）
   const extra = checkModifiers(pc, { context: 'negotiation', attr: o.attr, vsTags: npcRecord(state, n.counterpart)?.tags ?? [] })
-  const modifier = mod(pc.attrs[o.attr]) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0)
+  const modifier = mod(attrOf(pc, o.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0)
   const total = natural + modifier
   const degree = computeDegree(natural, total, o.dc)
   const report = negotiationReport(state, n, actionRules.kinds.negotiation.hours)

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import {
-  abilityQuality, apMaxFor, apRegenFor, castingAttr, evadeFloor, gearAffinities, guildRankFor, luckyThreshold,
+  abilityQuality, apMaxFor, apRegenFor, attrSources, attrsOf, castingAttr, evadeFloor, gearAffinities, guildRankFor, luckyThreshold,
   mod, proficiency, rerollsLeft, slotMaxFor, weaponFor, xpToNext,
 } from '@/engine/character'
 import { abilityApCost } from '@/engine/combat'
 import { playerRank } from '@/engine/guild'
 import {
   abilityDef, armorDef, attributeRules, attrName, className, classDef, companionRules, conditionName,
-  damageTypeName, genderName, locationById, raceName, slaveryRules, type AbilityDef,
+  damageTypeName, genderName, locationById, raceName, slaveryRules, type AbilityDef, type AttrId,
 } from '@/engine/data'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
@@ -76,9 +76,15 @@ function abilityMeta(a: AbilityDef): string {
 }
 
 function slotsText(m: Character): string {
-  const max = slotMaxFor(m.class, m.level, m.attrs)
+  const max = slotMaxFor(m.class, m.level, attrsOf(m))
   if (!max.length) return '無'
   return max.map((n, i) => `${i + 1}環 ${Math.max(0, n - (m.slotsUsed[i] ?? 0))}/${n}`).join('、')
+}
+
+/** 屬性的來源說明：基礎值與每一項加減（沒有加減時為空） */
+function attrNote(m: Character, a: AttrId): string {
+  const parts = attrSources(m).filter((s) => s.attrs[a]).map((s) => `${s.label} ${signed(s.attrs[a]!)}`)
+  return parts.length ? `基礎 ${m.attrs[a]}・${parts.join('・')}` : ''
 }
 
 function affinityText(m: Character): string {
@@ -129,8 +135,9 @@ function affinityText(m: Character): string {
         <table class="attrs small">
           <tr v-for="a in attributeRules.attributes" :key="a.id">
             <th :title="a.desc">{{ a.name }}</th>
-            <td class="num">{{ m.attrs[a.id] }}</td>
-            <td class="muted">({{ signed(mod(m.attrs[a.id])) }})</td>
+            <td class="num" :class="{ changed: attrNote(m, a.id) }" :title="attrNote(m, a.id)">{{ attrsOf(m)[a.id] }}</td>
+            <td class="muted">({{ signed(mod(attrsOf(m)[a.id])) }})</td>
+            <td v-if="attrNote(m, a.id)" class="muted">基礎 {{ m.attrs[a.id] }}</td>
             <td>
               <button v-if="m.attrPoints > 0" class="small" :disabled="inCombat" @click="game.spendAttr(m.id, a.id)">＋</button>
             </td>
@@ -139,10 +146,10 @@ function affinityText(m: Character): string {
 
         <p v-if="isNoncombatant(m)" class="small muted">🧺 無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>
         <ul v-else class="plain small stats">
-          <li>行動點 {{ apMaxFor(m.level, m.attrs) }}（每回合 +{{ apRegenFor(m.level) }}）</li>
+          <li>行動點 {{ apMaxFor(m.level, attrsOf(m)) }}（每回合 +{{ apRegenFor(m.level) }}）</li>
           <li>法術環 {{ slotsText(m) }}</li>
           <li v-if="classDef(m.class).caster !== 'none'">施法屬性 {{ attrName(castingAttr(m.class)) }}・熟練 +{{ proficiency(m.level) }}</li>
-          <li>幸運一擊 自然骰 {{ luckyThreshold(m.attrs, gearAffinities(m).mods.crit ?? 0) }} 以上・迴避骰下限 {{ evadeFloor(m.attrs) }}</li>
+          <li>幸運一擊 自然骰 {{ luckyThreshold(attrsOf(m), gearAffinities(m).mods.crit ?? 0) }} 以上・迴避骰下限 {{ evadeFloor(attrsOf(m)) }}</li>
           <li>武器 {{ weaponFor(m).name }}（{{ weaponFor(m).dice }} {{ damageTypeName(weaponFor(m).type) }}・{{ attrName(weaponFor(m).attr) }}）</li>
           <li>防具 {{ armorDef(m.armor).name }}（迴避 {{ signed(armorDef(m.armor).evade) }}・物理減傷 {{ armorDef(m.armor).dr }}）</li>
           <li>傷害倍率 {{ affinityText(m) }}</li>
@@ -250,6 +257,7 @@ function affinityText(m: Character): string {
 .attrs th { text-align: left; padding-right: 12px; font-weight: normal; cursor: help; }
 .attrs td { padding: 1px 6px; }
 .attrs .num { font-weight: 600; text-align: right; min-width: 2em; }
+.attrs .num.changed { color: var(--accent); cursor: help; }
 .stats li { padding: 2px 0; border: none; }
 .choose { padding: 8px; border: 1px dashed var(--accent); border-radius: 6px; }
 .options { display: grid; gap: 6px; margin-top: 6px; }
