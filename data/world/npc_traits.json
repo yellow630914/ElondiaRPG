@@ -142,14 +142,30 @@
       {"t": "腰身緊實", "tags": ["fit"], "not": ["heavy"]},
       {"t": "腰圍粗壯", "tags": ["big"], "not": ["slim", "petite"]},
       {"t": "柳腰不盈一握", "tags": ["slim"], "not": ["heavy", "big"], "body": ["fem", "andro"]},
-      {"t": "小腹微凸", "tags": ["soft"], "not": ["fit", "slim"]}
+      {"t": "小腹微凸", "tags": ["soft"], "not": ["fit", "slim"]},
+      {"t": "腰肢纖柔，走起路來輕輕擺動", "tags": ["slim"], "not": ["heavy", "big"], "body": ["fem", "andro"]},
+      {"t": "腰線收得極細，襯得臀部更圓", "tags": ["slim", "curvy"], "not": ["heavy", "big", "petite"], "body": ["fem", "andro"]},
+      {"t": "腰側有兩個淺淺的腰窩", "not": ["heavy"], "body": ["fem", "andro"]},
+      {"t": "腰身柔軟，帶著一點肉感", "tags": ["soft"], "not": ["slim", "fit"], "body": ["fem", "andro"]},
+      {"t": "纖腰上繫著細細的腰鏈", "tags": ["slim"], "not": ["heavy", "big"], "body": ["fem", "andro"]},
+      {"t": "平坦的小腹，隱約可見線條", "tags": ["fit"], "not": ["heavy", "soft"], "body": ["fem", "andro"]},
+      {"t": "腰臀比例勻稱", "body": ["fem", "andro"]},
+      {"t": "腰身柔韌，扭動時格外靈活", "tags": ["agile"], "not": ["heavy"], "body": ["fem", "andro"]}
     ],
     "hips": [
       {"t": "臀部緊實", "tags": ["fit"]},
       {"t": "窄臀", "not": ["curvy"], "body": ["masc", "andro"]},
       {"t": "髖部寬闊", "tags": ["curvy"], "not": ["petite"], "body": ["fem"]},
       {"t": "臀線圓潤", "tags": ["curvy"], "body": ["fem", "andro"]},
-      {"t": "骨盆略寬", "body": ["masc"]}
+      {"t": "骨盆略寬", "body": ["masc"]},
+      {"t": "臀部豐滿挺翹", "tags": ["curvy"], "not": ["petite"], "body": ["fem", "andro"]},
+      {"t": "蜜桃般圓翹的臀部", "tags": ["curvy"], "not": ["petite"], "body": ["fem", "andro"]},
+      {"t": "臀型小巧緊緻", "not": ["curvy"], "body": ["fem", "andro"]},
+      {"t": "腰臀曲線起伏分明", "tags": ["curvy"], "not": ["heavy"], "body": ["fem", "andro"]},
+      {"t": "骨盆纖細，臀部窄小", "tags": ["slim"], "not": ["curvy"], "body": ["fem", "andro"]},
+      {"t": "臀部柔軟豐腴", "tags": ["soft", "curvy"], "not": ["fit", "slim"], "body": ["fem", "andro"]},
+      {"t": "走路時臀部輕輕搖擺", "tags": ["curvy"], "body": ["fem", "andro"]},
+      {"t": "臀線緊實上翹", "tags": ["fit"], "not": ["soft"], "body": ["fem", "andro"]}
     ],
     "legs": [
       {"t": "修長的雙腿", "tags": ["long_legs"], "not": ["short"]},
@@ -158,7 +174,14 @@
       {"t": "纖細的腿", "tags": ["slim"], "not": ["big"]},
       {"t": "一雙 O 型腿"},
       {"t": "大腿上有道疤", "tags": ["scarred"]},
-      {"t": "走路略有點外八"}
+      {"t": "走路略有點外八"},
+      {"t": "一雙筆直勻稱的長腿", "tags": ["long_legs"], "not": ["short"], "body": ["fem", "andro"]},
+      {"t": "白皙光滑的雙腿", "not": ["weathered"], "body": ["fem", "andro"]},
+      {"t": "大腿豐腴，膝蓋小巧", "tags": ["soft", "curvy"], "not": ["slim"], "body": ["fem", "andro"]},
+      {"t": "腿型纖細筆直", "tags": ["slim"], "not": ["big"], "body": ["fem", "andro"]},
+      {"t": "小腿線條優美", "body": ["fem", "andro"]},
+      {"t": "大腿肉感十足", "tags": ["soft"], "not": ["slim"], "body": ["fem", "andro"]},
+      {"t": "雙腿修長，走起路來像貓步", "tags": ["long_legs"], "not": ["short"], "body": ["fem", "andro"]}
     ],
     "feet": [
       {"t": "小巧的腳"},
@@ -166,7 +189,14 @@
       {"t": "走路有點跛", "tags": ["limp"], "not": ["agile"]},
       {"t": "腳步輕盈", "tags": ["agile"], "not": ["limp", "heavy"]},
       {"t": "腳底滿是老繭"},
-      {"t": "習慣踮著腳走路"}
+      {"t": "習慣踮著腳走路"},
+      {"t": "腳踝纖細", "not": ["big"], "body": ["fem", "andro"]},
+      {"t": "腳趾圓潤，塗著淡色的蔻丹", "body": ["fem", "andro"]},
+      {"t": "足弓秀氣", "body": ["fem", "andro"]},
+      {"t": "一雙白嫩的小腳", "not": ["weathered"], "body": ["fem", "andro"]},
+      {"t": "腳踝上戴著細細的腳鍊", "body": ["fem", "andro"]},
+      {"t": "走路時步子細碎", "body": ["fem", "andro"]},
+      {"t": "習慣赤著腳走路", "body": ["fem", "andro"]}
     ]
   },
   "personality": {
