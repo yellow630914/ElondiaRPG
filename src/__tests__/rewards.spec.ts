@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { nextTick } from 'vue'
 import { prepareAction, sanitizeJudgment } from '@/engine/actions'
 import { gainXp, learnable, rerollsLeft } from '@/engine/character'
 import { abilityDef } from '@/engine/data'
@@ -206,5 +207,46 @@ describe('model sources', () => {
     const narrationCall = vi.mocked(providers.streamNarration).mock.calls[0]!
     expect(narrationCall[0]).toBe('anthropic')
     expect(narrationCall[1]).toMatchObject({ model: 'claude-opus-5-5' })
+  })
+
+  it('sends adult scenes to their own source, even when the judge wrote the narrative', async () => {
+    const { useSettings } = await import('@/stores/settings')
+    const { useGame } = await import('@/stores/game')
+    const providers = await import('@/narrator/providers')
+    const settings = useSettings()
+    settings.sources[0]!.configs.anthropic = { apiKey: 'x', model: 'claude-opus-5-5' }
+    settings.sources[2]!.provider = 'gemini'
+    settings.sources[2]!.configs.gemini = { apiKey: 'AIza', model: 'gemini-pro-latest' }
+    settings.adult = true
+    await nextTick()
+    expect(settings.routes.adult).toBe(0)
+    settings.routes.adult = 2
+    settings.aiJudge = true
+    settings.judgeWritesNarrative = true
+    expect(settings.splitJudgeNarrative()).toBe(false)
+    vi.mocked(providers.completeText).mockResolvedValueOnce(JSON.stringify({ degree: 'success', summary: '共度一夜。', narrative: '判定寫的經過。', adult_scene: '和莉娜共度一夜', effects: [] }))
+    const g = useGame()
+    g.start('艾倫', 'human', 'fighter')
+    standOn(g.state!, 'tavern')
+    g.recruit('npc_lina')
+    await g.perform({ kind: 'free', target: 'npc_lina', text: '邀她回房' })
+    await new Promise((r) => setTimeout(r, 0))
+    const report = g.state!.reports.at(-1)!
+    expect(report.narration?.adult_scene).toBe('和莉娜共度一夜')
+    expect(settings.narrationFeature(report)).toBe('adult')
+    // 判定寫的經過不採用，交給成人場景正文的來源重寫
+    expect(g.narrations[report.report_id]?.text).not.toBe('判定寫的經過。')
+    const call = vi.mocked(providers.streamNarration).mock.calls[0]!
+    expect(call[0]).toBe('gemini')
+    expect((call[2] as { system: string }).system).toContain('<adult_scene>')
+    // 成人向關閉時一律用敘事正文
+    settings.adult = false
+    expect(settings.narrationFeature(report)).toBe('narration')
+  })
+
+  it('gives old settings an adult route matching narration', async () => {
+    localStorage.setItem('elondia.settings', JSON.stringify({ routes: { narration: 1, judge: 2 } }))
+    const { useSettings } = await import('@/stores/settings')
+    expect(useSettings().routes).toMatchObject({ narration: 1, adult: 1, judge: 2 })
   })
 })

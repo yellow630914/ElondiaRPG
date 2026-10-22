@@ -8,10 +8,11 @@ import { PROVIDERS, type ProviderConfig, type ProviderId } from '@/narrator/prov
 const KEY = 'elondia.settings'
 
 /** 會呼叫 AI 的功能（見 docs/PROMPTS.md 第 1 節） */
-export type AiFeature = 'narration' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'tags'
+export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'tags'
 
 export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: boolean }[] = [
   { id: 'narration', name: '敘事正文', desc: '所有日誌的詳細經過：戰鬥、旅行、事件，以及主動行動判定之後的經過；也可以在每則日誌手動生成', prose: true },
+  { id: 'adult', name: '成人場景正文', desc: '成人向開啟時，帶親密場景的日誌（娼館、主人的邀約、戰敗後的遭遇、AI 判定認為有親密場景的行動）改用這個來源寫經過；提示詞用套用到「成人場景」的文風與其他提示詞', prose: true },
   { id: 'judge', name: '主動行動判定', desc: '看骰值決定成敗與後果，只回傳 JSON；經過交給「敘事正文」（除非下方勾選「判定時順便寫出經過」）', prose: false },
   { id: 'roster', name: '居民潤飾', desc: '第一次到一個地點時，設計居民的名字、外貌與性格（JSON）', prose: false },
   { id: 'shop', name: '商店清單', desc: '第一次進店時設計今天的交易清單（JSON）', prose: false },
@@ -131,7 +132,8 @@ function load(): SavedSettings {
       const s = sources![i] ?? cloneSource(sources![0] ?? base.sources[0]!, `來源 ${i + 1}`)
       return { name: s.name || `來源 ${i + 1}`, provider: s.provider ?? 'anthropic', configs: { ...defaultConfigs(), ...s.configs } }
     })
-    const routes = { ...defaultRoutes(), ...saved.routes }
+    // 舊版沒有「成人場景正文」：和敘事正文用同一個來源
+    const routes = { ...defaultRoutes(), ...(saved.routes ? { adult: saved.routes.narration ?? 0 } : {}), ...saved.routes }
     for (const k of Object.keys(routes) as AiFeature[]) if (!(routes[k] >= 0 && routes[k] < SOURCE_COUNT)) routes[k] = 0
     const { autoNarrate: _a, provider: _p, configs: _c, ...rest } = saved
     return { ...base, ...rest, aiNarration, sources, routes, narrateKinds: { ...base.narrateKinds, ...saved.narrateKinds } }
@@ -208,6 +210,11 @@ export const useSettings = defineStore('settings', () => {
   /** 判定只回傳 JSON，經過交給敘事正文：預設如此；只有勾選「順便寫出經過」而且同一個來源時才合併 */
   const splitJudgeNarrative = () => !judgeWritesNarrative.value || sourceIndex('judge') !== sourceIndex('narration')
 
+  /** 寫這則日誌的經過用哪個功能的來源：帶親密場景（成人向開啟時）用「成人場景正文」 */
+  function narrationFeature(report: Report): 'narration' | 'adult' {
+    return adult.value && report.narration?.adult_scene ? 'adult' : 'narration'
+  }
+
   /** 這則日誌要不要自動寫出經過：AI 判定的主動行動只看種類開關，其他還要開啟 AI 細節描述 */
   function autoNarrates(report: Report): boolean {
     const kind = narrateKindOf(report)
@@ -229,6 +236,6 @@ export const useSettings = defineStore('settings', () => {
 
   return {
     sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, logKeep, logKeepLimit, adult, language, loreBudget,
-    sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, copySource,
+    sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })

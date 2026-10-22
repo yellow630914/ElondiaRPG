@@ -1,7 +1,7 @@
 // 組合敘事提示詞。
 //
 // 為了讓提示詞快取（prompt caching）命中，內容依「多久變一次」排列：
-//   system（前段，同一局幾乎不變）：敘事規則（文風是最後一條）→ 常駐世界書 → 其他提示詞
+//   system（前段，同一局幾乎不變）：敘事規則（文風是最後一條）→ 常駐世界書 → 其他提示詞 →（只有部分日誌）戰敗事件規則、成人場景規則
 //   user（後段，每次不同）：主角設定 → 這次觸發的世界書 → 人際關係與記憶 → 報告 → 後段提示詞 → 本次要求
 // 會隨報告改變的視角、篇幅都放在最後的「本次要求」，不放進 system。
 
@@ -202,11 +202,12 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
   return assemble([
     { key: 'rules', title: '敘事規則', part: 'system', text: rules },
     ...(inline ? [] : [style]),
-    // 成人向的戰敗事件：另外一套規則，接在敘事規則之後
+    ...sharedSystemSections({ instructions: opts.instructions, constantLore: constant }),
+    // 只有部分日誌才有的規則放在 system 的最後：前面的規則、文風、常駐世界書和一般日誌一樣，可以共用快取
+    // 成人向的戰敗事件：另外一套規則
     { key: 'defeat', title: '戰敗事件規則', part: 'system', text: report.narration?.mode ? fillDefeatRules(opts.defeatRules, opts.playerName) : '' },
     // 成人向的親密場景：要求在正文詳細描寫經過
     { key: 'scene', title: '成人場景規則', part: 'system', text: scene ? fillSceneRules(opts.sceneRules, opts.playerName) : '' },
-    ...sharedSystemSections({ instructions: opts.instructions, constantLore: constant }),
     { key: 'protagonist', title: '主角設定', part: 'user', text: opts.protagonist ? `<protagonist>\n${opts.protagonist}\n</protagonist>` : '' },
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },
     { key: 'context', title: '人際關係與冒險記憶', part: 'user', text: opts.context ?? '' },

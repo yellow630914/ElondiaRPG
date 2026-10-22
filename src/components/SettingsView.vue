@@ -65,10 +65,10 @@ function doReset() {
 
     <section class="panel">
       <h2>🔀 功能分配</h2>
-      <p class="small muted">只有「敘事正文」會寫出日誌裡的正文，適合用寫作能力好的模型；其他功能只輸出 JSON，可以改用便宜、快速的模型。</p>
+      <p class="small muted">只有「敘事正文」{{ settings.adult ? '與「成人場景正文」' : '' }}會寫出日誌裡的正文，適合用寫作能力好的模型；其他功能只輸出 JSON，可以改用便宜、快速的模型。</p>
       <table class="routes small">
         <tbody>
-          <tr v-for="f in AI_FEATURES" :key="f.id">
+          <tr v-for="f in AI_FEATURES.filter((x) => x.id !== 'adult' || settings.adult)" :key="f.id">
             <td class="name">{{ f.prose ? '✍️' : '🧮' }} {{ f.name }}</td>
             <td>
               <select v-model.number="settings.routes[f.id]">

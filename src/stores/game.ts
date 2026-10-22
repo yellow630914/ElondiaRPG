@@ -259,7 +259,7 @@ export const useGame = defineStore('game', () => {
       // 自動存檔：長休、抵達目的地
       if (report?.kind === 'rest' && report.outcome.tags?.includes('長休')) void autoSave('長休')
       if (report?.kind === 'travel' && report.outcome.result === 'arrived') void autoSave('抵達')
-      if (opts.narrate !== false && report && settings.autoNarrates(report) && settings.ready('narration')) {
+      if (opts.narrate !== false && report && settings.autoNarrates(report) && settings.ready(settings.narrationFeature(report))) {
         void narrate(report)
       }
       return result
@@ -645,7 +645,7 @@ export const useGame = defineStore('game', () => {
     return { ...composeJudge(st, pending, opts), sample: !s.pendingAction }
   }
 
-  /** 請「敘事正文」的模型寫出這則日誌的經過。manual：玩家在日誌上手動要求（AI 細節描述關閉時也顯示） */
+  /** 請「敘事正文」（帶親密場景時是「成人場景正文」）的模型寫出這則日誌的經過。manual：玩家在日誌上手動要求（AI 細節描述關閉時也顯示） */
   async function narrate(report: Report, opts: { manual?: boolean } = {}) {
     const settings = useSettings()
     controllers.get(report.report_id)?.abort()
@@ -658,8 +658,9 @@ export const useGame = defineStore('game', () => {
     try {
       const prompt = await promptFor(report)
       const { streamNarration } = await import('@/narrator/providers')
-      const src = settings.sourceFor('narration')
-      const onUsage = (u: TokenUsage) => addUsage(report.report_id, u, originOf('narration', src))
+      const feature = settings.narrationFeature(report)
+      const src = settings.sourceFor(feature)
+      const onUsage = (u: TokenUsage) => addUsage(report.report_id, u, originOf(feature, src))
       const onThinking = (t: string) => { entry.thinking = (entry.thinking ?? '') + t }
       for await (const chunk of streamNarration(src.provider, src.config, prompt, controller.signal, onUsage, onThinking)) {
         entry.text += chunk
@@ -716,7 +717,11 @@ export const useGame = defineStore('game', () => {
       // 勾選「判定時順便寫出經過」而且同一個來源時，直接採用判定寫的經過，省一次呼叫。
       const report = run((st) => actions.resolveAction(st, judgment), { narrate: !judgment.narrative })
       collector.flush(report?.report_id ?? OTHER_USAGE)
-      if (report && judgment.narrative) narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+      // 判定寫了經過，結果卻是親密場景、而「成人場景正文」用另一個來源：不採用，交給那個來源重寫
+      const rewrite = !!report && !!judgment.narrative && settings.narrationFeature(report) === 'adult' && settings.sourceIndex('adult') !== settings.sourceIndex('judge')
+      if (report && rewrite) {
+        if (settings.autoNarrates(report) && settings.ready('adult')) void narrate(report)
+      } else if (report && judgment.narrative) narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
       // 判定的思考過程：記在這則日誌（還沒有敘事時先放一個空的）
       if (report && thinking.trim()) {
         const entry = narrations.value[report.report_id]

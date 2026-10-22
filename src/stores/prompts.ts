@@ -142,8 +142,8 @@ export const usePrompts = defineStore('prompts', () => {
 
   function addEntry(list: EntryList): PromptEntry {
     const e: PromptEntry = list === 'styles'
-      ? { id: newId('style'), name: '新的文風', content: '', enabled: true, targets: ['narration', 'judge'] }
-      : { id: newId('custom'), name: '新的提示詞', content: '', enabled: true, targets: ['narration', 'judge'], position: 'system' }
+      ? { id: newId('style'), name: '新的文風', content: '', enabled: true, targets: ['narration', 'adult', 'judge'] }
+      : { id: newId('custom'), name: '新的提示詞', content: '', enabled: true, targets: ['narration', 'adult', 'judge'], position: 'system' }
     config.value[list].push(e)
     return e
   }

@@ -7,8 +7,8 @@ import * as social from '@/engine/social'
 import type { GameState, Report } from '@/engine/types'
 import { actionLoreText, buildActionPrompt } from './judge'
 import { loreForReport, pickLore, type LoreItem, type LoreSelection } from './lore'
-import { buildPrompt, type Prompt } from './prompt'
-import { activeEntries, type PromptConfig } from './promptConfig'
+import { adultSceneOf, buildPrompt, type Prompt } from './prompt'
+import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
 
 export interface ComposeOptions {
   config: PromptConfig
@@ -49,19 +49,26 @@ export function judgeContext(state: GameState, p: ActionPending): string {
   return social.formatContext(state, social.selectContext(state, { participants, location: state.location }))
 }
 
+/** 這則日誌的敘事屬於哪一種：帶親密場景（成人向開啟時）是「成人場景」 */
+export function narrationTarget(report: Report, adult: boolean): Extract<PromptTarget, 'narration' | 'adult'> {
+  return adultSceneOf(report, adult) ? 'adult' : 'narration'
+}
+
 export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions): Composed {
   const name = playerName(state)
   const lore = loreForReport(o.lore, report, { adult: o.adult, budgetChars: o.budgetChars, playerName: name })
   const protagonist = protagonistOf(state)
   const context = narrationContext(state, report)
+  // 成人場景的敘事用套用到「成人場景」的條目
+  const target = narrationTarget(report, o.adult)
   const prompt = buildPrompt(report, lore, {
     playerName: name,
     language: o.language,
     ...(protagonist ? { protagonist } : {}),
     ...(context ? { context } : {}),
-    styles: activeEntries(o.config.styles, 'narration', name),
-    instructions: activeEntries(o.config.custom, 'narration', name, 'system'),
-    endNotes: activeEntries(o.config.custom, 'narration', name, 'end'),
+    styles: activeEntries(o.config.styles, target, name, { adult: o.adult }),
+    instructions: activeEntries(o.config.custom, target, name, { position: 'system', adult: o.adult }),
+    endNotes: activeEntries(o.config.custom, target, name, { position: 'end', adult: o.adult }),
     ...(o.config.narrationRules ? { rules: o.config.narrationRules } : {}),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
@@ -78,9 +85,9 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
   const prompt = buildActionPrompt(state, p, judgeContext(state, p), {
     language: o.language,
     narrative: !o.splitNarrative,
-    styles: activeEntries(o.config.styles, 'judge', name),
-    instructions: activeEntries(o.config.custom, 'judge', name, 'system'),
-    endNotes: activeEntries(o.config.custom, 'judge', name, 'end'),
+    styles: activeEntries(o.config.styles, 'judge', name, { adult: o.adult }),
+    instructions: activeEntries(o.config.custom, 'judge', name, { position: 'system', adult: o.adult }),
+    endNotes: activeEntries(o.config.custom, 'judge', name, { position: 'end', adult: o.adult }),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
     adult: o.adult,

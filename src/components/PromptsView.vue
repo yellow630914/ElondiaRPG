@@ -433,7 +433,10 @@ function resetAll() {
       <p v-else-if="previewKind === 'judge' && !judge" class="muted">戰鬥中不能預覽判定。</p>
       <template v-else-if="preview">
         <p v-if="previewKind === 'judge' && judge?.sample" class="small muted">目前沒有等待判定的行動，以一個範例「自由行動」預覽（骰值是範例，不影響遊戲）。</p>
-        <p v-if="previewKind === 'narration'" class="small muted">以上方選的日誌重新生成敘事時，會送出下面的內容。</p>
+        <p v-if="previewKind === 'narration'" class="small muted">
+          以上方選的日誌重新生成敘事時，會送出下面的內容。
+          <template v-if="report && settings.narrationFeature(report) === 'adult'">這則日誌帶親密場景：用套用到「成人場景」的條目，由「成人場景正文」的來源（{{ settings.sourceFor('adult').name }}）撰寫。</template>
+        </p>
         <table class="sections small">
           <thead><tr><th>#</th><th>區塊</th><th>位置</th><th>字數</th><th>約 tokens</th></tr></thead>
           <tbody>

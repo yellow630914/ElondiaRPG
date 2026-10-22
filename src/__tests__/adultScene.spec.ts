@@ -12,7 +12,7 @@ import { ensureRoster } from '@/engine/population'
 import { answerMasterEvent, masterCandidates, startAsSlave, startMasterEvent } from '@/engine/slavery'
 import { newGame, withRng } from '@/engine/state'
 import type { GameState, Report } from '@/engine/types'
-import { composeJudge, composeNarration } from '@/narrator/compose'
+import { composeJudge, composeNarration, narrationTarget } from '@/narrator/compose'
 import { loreItems, type Worldbook } from '@/narrator/lore'
 import { defaultPromptConfig } from '@/narrator/promptConfig'
 
@@ -143,5 +143,32 @@ describe('adult scenes', () => {
     const away = respond(20)
     expect(away.check?.degree).toBe('critical')
     expect(away.narration?.adult_scene).toBeUndefined()
+  })
+
+  it('uses the adult-scene entries and keeps the shared prefix cacheable', () => {
+    setAdultContent(true)
+    const state = game()
+    standOn(state, 'brothel')
+    state.money_cc = 100
+    const scene = act(state, { kind: 'patron', text: '' }, 20)
+    const plain: Report = { ...scene, narration: { ...scene.narration, adult_scene: undefined } }
+    delete plain.narration!.adult_scene
+    const o = options()
+    o.config.styles = [
+      { id: 's1', name: '共用文風', content: '共用的文風', enabled: true, targets: ['narration', 'adult'] },
+      { id: 's2', name: '成人文風', content: '成人場景專用的文風', enabled: true, targets: ['adult'], adult: true },
+    ]
+    expect(narrationTarget(scene, true)).toBe('adult')
+    expect(narrationTarget(scene, false)).toBe('narration')
+    const a = composeNarration(state, scene, o).prompt.system
+    const n = composeNarration(state, plain, o).prompt.system
+    expect(a).toContain('成人場景專用的文風')
+    expect(n).not.toContain('成人場景專用的文風')
+    // 文風相同時，一般日誌的 system 是成人場景的開頭：成人場景規則放在最後，前面可以共用快取
+    o.config.styles = [o.config.styles[0]!]
+    const shared = composeNarration(state, plain, o).prompt.system
+    const withScene = composeNarration(state, scene, o).prompt.system
+    expect(withScene.startsWith(shared)).toBe(true)
+    expect(withScene.slice(shared.length)).toContain('<adult_scene>')
   })
 })

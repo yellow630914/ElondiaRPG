@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { estimateTokens, TARGET_NAME, type PromptEntry, type PromptTarget } from '@/narrator/promptConfig'
+import { estimateTokens, PROMPT_TARGETS, TARGET_NAME, type PromptEntry, type PromptTarget } from '@/narrator/promptConfig'
 import { useGame } from '@/stores/game'
 import { usePrompts, type EntryList } from '@/stores/prompts'
+import { useSettings } from '@/stores/settings'
 import { dateStamp, download } from './download'
 
 const props = defineProps<{ list: EntryList }>()
 const prompts = usePrompts()
 const game = useGame()
+const settings = useSettings()
 const fileInput = ref<HTMLInputElement | null>(null)
 const label = computed(() => (props.list === 'styles' ? '文風' : '提示詞'))
 
@@ -35,7 +37,7 @@ async function onImport(e: Event) {
 }
 const entries = computed(() => prompts.config[props.list])
 const open = ref<string | null>(null)
-const TARGETS: PromptTarget[] = ['narration', 'judge']
+const TARGETS = PROMPT_TARGETS
 
 function toggleTarget(e: PromptEntry, t: PromptTarget) {
   e.targets = e.targets.includes(t) ? e.targets.filter((x) => x !== t) : [...e.targets, t]
@@ -64,6 +66,7 @@ function changed(e: PromptEntry): boolean {
         <strong class="name" @click="open = open === e.id ? null : e.id">{{ e.name || '未命名' }}</strong>
         <span v-for="t in TARGETS" :key="t" class="tag" :class="{ dim: !e.targets.includes(t) }">{{ TARGET_NAME[t] }}</span>
         <span v-if="list === 'custom'" class="tag">{{ (e.position ?? 'system') === 'system' ? '前段' : '後段' }}</span>
+        <span v-if="e.adult" class="tag" :class="{ dim: !settings.adult }" :title="settings.adult ? '成人向：已開啟成人向，會送出' : '成人向：設定沒有開啟成人向，不會送出'">🔞 成人向</span>
         <span v-if="e.preset" class="tag" :title="changed(e) ? '內建條目，已修改' : '內建條目'">內建{{ changed(e) ? '・已改' : '' }}</span>
         <span class="small muted">{{ e.content.length }} 字・約 {{ estimateTokens(e.content) }} tokens</span>
         <span class="tools row">
@@ -82,7 +85,9 @@ function changed(e: PromptEntry): boolean {
             <label class="check"><input v-model="e.position" type="radio" value="system" /> 前段（常駐，可快取）</label>
             <label class="check"><input v-model="e.position" type="radio" value="end" /> 後段（每次請求的最後）</label>
           </template>
+          ｜<label class="check" title="只在設定開啟成人向時送出"><input :checked="!!e.adult" type="checkbox" @change="e.adult = ($event.target as HTMLInputElement).checked || undefined" /> 🔞 成人向</label>
         </div>
+        <p class="small muted">「成人場景」：帶親密場景的日誌（成人向開啟時）改用套用到這裡的條目，不套用「敘事」的。勾選「成人向」的條目只在設定開啟成人向時送出。</p>
         <textarea v-model="e.content" rows="8" placeholder="寫給 AI 的指示。可以用 {{player}} 代表主角名字。" />
         <div class="row">
           <button class="small" @click="prompts.duplicateEntry(list, e.id)">複製</button>
@@ -115,6 +120,7 @@ function changed(e: PromptEntry): boolean {
 .editor { display: grid; gap: 8px; margin: 8px 0 4px; }
 .editor label { display: grid; gap: 4px; }
 .editor label.check { display: inline-flex; gap: 4px; align-items: center; }
+.editor p { margin: 0; }
 .editor textarea { width: 100%; font-family: inherit; line-height: 1.6; }
 .switch input { width: 16px; height: 16px; }
 .spacer { flex: 1; }

@@ -10,7 +10,7 @@ import { recruit } from '@/engine/town'
 import type { Report } from '@/engine/types'
 import { composeJudge, composeNarration, type ComposeOptions } from '@/narrator/compose'
 import { loreForReport, loreItems, type Worldbook } from '@/narrator/lore'
-import { activeEntries, defaultPromptConfig, normalizeConfig } from '@/narrator/promptConfig'
+import { activeEntries, defaultPromptConfig, normalizeConfig, parseEntryFile } from '@/narrator/promptConfig'
 import { styleLead } from '@/narrator/prompt'
 
 const book = worldbook as unknown as Worldbook
@@ -172,7 +172,29 @@ describe('prompt config', () => {
     expect(c.styles[0]).toMatchObject({ name: 'x', enabled: true, targets: ['judge'] })
     expect(c.custom[0]!.position).toBe('system')
     expect(c.loreInJudge).toBe(false)
-    expect(activeEntries(c.styles, 'narration', '艾倫')).toEqual([])
+    expect(activeEntries(c.styles, 'narration', '艾倫', { adult: true })).toEqual([])
+  })
+
+  it('adds the adult-scene target to old entries that applied to narration', () => {
+    const old = normalizeConfig({ styles: [{ name: 'a', content: 'x', targets: ['narration', 'judge'] }, { name: 'b', content: 'y', targets: ['judge'] }] })
+    expect(old.version).toBe(2)
+    expect(old.styles.map((e) => e.targets)).toEqual([['narration', 'adult', 'judge'], ['judge']])
+    // version 2：玩家拿掉的成人場景不會加回來
+    const now = normalizeConfig({ version: 2, styles: [{ name: 'a', content: 'x', targets: ['narration'] }] })
+    expect(now.styles[0]!.targets).toEqual(['narration'])
+    expect(parseEntryFile('styles', JSON.stringify([{ name: 'a', content: 'x', targets: ['narration'] }]))[0]!.targets).toEqual(['narration', 'adult'])
+  })
+
+  it('sends adult entries only with the adult setting on', () => {
+    const list = normalizeConfig({ version: 2, styles: [
+      { name: '一般', content: 'x', targets: ['narration'] },
+      { name: '成人', content: 'y', targets: ['narration', 'adult'], adult: true },
+    ] }).styles
+    expect(list[1]!.adult).toBe(true)
+    expect(list[0]!.adult).toBeUndefined()
+    expect(activeEntries(list, 'narration', '艾倫', { adult: false }).map((e) => e.name)).toEqual(['一般'])
+    expect(activeEntries(list, 'narration', '艾倫', { adult: true }).map((e) => e.name)).toEqual(['一般', '成人'])
+    expect(activeEntries(list, 'adult', '艾倫', { adult: true }).map((e) => e.name)).toEqual(['成人'])
   })
 })
 
