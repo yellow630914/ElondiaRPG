@@ -16,10 +16,13 @@ import PerkPicker from './PerkPicker.vue'
 import type { PerkDef } from '@/engine/data'
 import { racePerks } from '@/engine/perks'
 import NameTag from './NameTag.vue'
+import { creationCost, creationPiece, creationSlots, gearRules, gearSummary, slotName, type CreationGear } from '@/engine/gear'
+import { useSettings } from '@/stores/settings'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
 const content = useContent()
+const settings = useSettings()
 
 // 世界：開新遊戲時決定，開始後不能換（換世界會重新整理這個畫面，自訂的種族、能力、NPC 才會跟著變）
 function pickWorld(id: string) {
@@ -73,6 +76,36 @@ function add(a: AttrId, d: number) {
   bonus[a] = next
 }
 
+// ---- 起始裝備：職業模板之上，用材料等級點數挑（gear.ts 的 creationGear） ----
+const gearSlots = computed(() => creationSlots(classId.value, race.value))
+const gearPicks = reactive<Record<string, { base: string; tier: number }>>({})
+const maxTier = gearRules.creation.max_tier
+const tiers = Array.from({ length: maxTier }, (_, i) => i + 1)
+function resetGear() {
+  for (const k of Object.keys(gearPicks)) delete gearPicks[k]
+  const start = gearRules.classes[classId.value]?.start ?? {}
+  for (const s of gearSlots.value) gearPicks[s.slot] = { base: s.template ? start[s.slot] ?? '' : '', tier: 1 }
+}
+watch(gearSlots, resetGear, { immediate: true })
+const twoHanded = computed(() => !!gearRules.bases[gearPicks.main_hand?.base ?? '']?.two_handed)
+const gearChoice = computed<CreationGear>(() => {
+  const out: CreationGear = {}
+  for (const s of gearSlots.value) {
+    const p = gearPicks[s.slot]
+    if (!p?.base || (s.slot === 'off_hand' && twoHanded.value)) continue
+    out[s.slot] = { base: p.base, tier: p.tier }
+  }
+  return out
+})
+const gearBudget = computed(() => settings.gearBudget())
+const gearSpent = computed(() => creationCost(classId.value, gearChoice.value))
+const gearOver = computed(() => gearSpent.value > gearBudget.value)
+const slotCost = (slot: string, template: boolean) => {
+  const p = gearChoice.value[slot as keyof CreationGear]
+  return p ? (template ? p.tier - 1 : p.tier) : 0
+}
+const preview = (base: string, tier: number) => creationPiece(base, tier)
+
 // ---- 奴隸出身 ----
 const slave = ref(false)
 const masterMode = ref<'candidate' | 'custom' | 'none'>('candidate')
@@ -96,6 +129,10 @@ function start() {
   // 進行中的遊戲會被蓋掉：提醒（會先備份到自動存檔欄位）
   const cur = game.resumeMeta
   if (cur && !confirm(`進行中的遊戲（${slotTitle(cur)}）會被新的冒險蓋掉。\n它會先備份到自動存檔欄位，之後可以從「讀取存檔」找回。確定開新遊戲？`)) return
+  if (gearOver.value) {
+    game.error = `起始裝備超過預算（${gearSpent.value}／${gearBudget.value} 點）`
+    return
+  }
   const s = slaveStart()
   game.start(name.value.trim() || '旅人', race.value, classId.value, { ...bonus }, {
     birthplace: birthplace.value,
@@ -105,6 +142,8 @@ function start() {
     ...(s ? { slave: s } : {}),
     ...(perks.value.length ? { perks: [...perks.value] } : {}),
     ...(customPerks.value.length ? { customPerks: customPerks.value.map((p) => ({ ...p })) } : {}),
+    gear: { ...gearChoice.value },
+    gearBudget: gearBudget.value,
     options: { defeatLoot: defeatLoot.value },
   }, content.active)
 }
@@ -202,6 +241,40 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
       </label>
     </div>
     <PerkPicker v-model:perks="perks" v-model:custom="customPerks" :race="race" :cls="classId" />
+    <details class="gear-pick">
+      <summary>
+        🛡️ 起始裝備（預算 <strong :class="{ over: gearOver }">{{ gearSpent }}／{{ gearBudget }}</strong> 點）
+      </summary>
+      <p class="small muted">
+        職業的基本配備免費（第 1 級材料）；可以換成清單裡的其他底材。把材料往上升一級花 1 點，其他欄位另外加裝備花它的材料等級（最多第 {{ maxTier }} 級）。
+        預算在 ⚙️ 設定的「遊戲規則」裡調整。
+      </p>
+      <table class="small gear-table">
+        <tr v-for="s in gearSlots" :key="s.slot" :class="{ off: s.slot === 'off_hand' && twoHanded }">
+          <th>{{ slotName(s.slot) }}<span v-if="s.template" class="muted">（基本）</span></th>
+          <td>
+            <select v-model="gearPicks[s.slot]!.base" :disabled="s.slot === 'off_hand' && twoHanded">
+              <option v-if="!s.template" value="">（不裝備）</option>
+              <option v-for="b in s.bases" :key="b" :value="b">{{ gearRules.bases[b]?.name ?? b }}</option>
+            </select>
+          </td>
+          <td>
+            <select v-model.number="gearPicks[s.slot]!.tier" :disabled="!gearPicks[s.slot]!.base || (s.slot === 'off_hand' && twoHanded)">
+              <option v-for="t in tiers" :key="t" :value="t">第 {{ t }} 級</option>
+            </select>
+          </td>
+          <td class="muted">
+            <template v-if="s.slot === 'off_hand' && twoHanded">雙手武器，不能拿副手</template>
+            <template v-else-if="gearPicks[s.slot]!.base">
+              <span :title="gearSummary(preview(gearPicks[s.slot]!.base, gearPicks[s.slot]!.tier).spec)">{{ preview(gearPicks[s.slot]!.base, gearPicks[s.slot]!.tier).name }}</span>
+            </template>
+          </td>
+          <td class="num">{{ slotCost(s.slot, s.template) ? `${slotCost(s.slot, s.template)} 點` : '' }}</td>
+        </tr>
+      </table>
+      <p v-if="gearOver" class="small over">超過預算 {{ gearSpent - gearBudget }} 點，開始冒險前請降低材料等級或拿掉幾件。</p>
+      <button class="small" type="button" @click="resetGear">還原成基本配備</button>
+    </details>
     <div class="slave">
       <label class="check"><input v-model="slave" type="checkbox" /> ⛓️ 以奴隸身分開始</label>
       <template v-if="slave">
@@ -244,7 +317,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
       </template>
     </div>
     <div class="row">
-      <button class="primary" @click="start">開始冒險</button>
+      <button class="primary" :disabled="gearOver" @click="start">開始冒險</button>
       <button @click="emit('home')">← 回首頁</button>
       <button @click="emit('settings')">AI 設定</button>
     </div>
@@ -269,6 +342,13 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
   .profile { grid-template-columns: 1fr; }
 }
 .derived li { padding: 3px 0; }
+.gear-pick { margin-bottom: 12px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: var(--radius); }
+.gear-pick summary { cursor: pointer; }
+.gear-table th { text-align: left; font-weight: normal; padding-right: 8px; white-space: nowrap; }
+.gear-table td { padding: 2px 6px; }
+.gear-table .num { text-align: right; white-space: nowrap; }
+.gear-table tr.off { opacity: 0.6; }
+.over { color: var(--danger); }
 .slave { display: grid; gap: 8px; margin-bottom: 12px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: var(--radius); }
 .slave label.check { display: inline-flex; gap: 4px; align-items: center; }
 .masters { display: grid; gap: 6px; }

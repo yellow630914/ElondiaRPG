@@ -77,6 +77,7 @@ export const gearRules = gearJson as unknown as {
     units: Record<string, number>; lost_on_fail: number
     aux: { max_kinds: number; max_qty: number; chance_per_value: number; max_chance: number; elements: Record<string, string[]> }
   }
+  creation: { default_budget: number; max_budget: number; max_tier: number }
   loadout: {
     top: number; below: number; lower: number; legendary: number
     pieces_base: number; pieces_per_level: number
@@ -289,6 +290,91 @@ export function startingGear(classId: string): Partial<Record<GearSlot, Equipped
   const t = gearRules.classes[classId]
   const out: Partial<Record<GearSlot, EquippedGear>> = {}
   for (const [slot, base] of Object.entries(t?.start ?? {})) out[slot as GearSlot] = piece(base, 1)
+  return out
+}
+
+// ---- 建立角色時挑裝備 ----
+
+/** 建角時一個欄位的選擇：底材與材料等級 */
+export interface CreationPick { base: string; tier: number }
+export type CreationGear = Partial<Record<GearSlot, CreationPick>>
+
+export interface CreationSlot {
+  slot: GearSlot
+  /** 職業模板的欄位：一定有裝備，第一級材料免費；其他欄位可以空著 */
+  template: boolean
+  /** 可以選的底材 */
+  bases: string[]
+}
+
+/**
+ * 建角時各欄位可以選的底材：主手、副手、上身是職業模板（gear.json 的 classes：main、off、body 清單），
+ * 職業清單是空的欄位（武僧的主手）不能選；其他欄位可以放任何能放進去的底材，但護具不能比職業的 pieces 重。
+ * 種族封住的欄位不列。
+ */
+const ARMOR_WEIGHT: Record<string, number> = { cloth: 0, leather: 1, metal: 2 }
+
+export function creationSlots(classId: string, race?: string): CreationSlot[] {
+  const t = gearRules.classes[classId] ?? gearRules.classes.fighter!
+  const blocked = new Set(race ? gearRules.races[race]?.blocked ?? [] : [])
+  const listed: Partial<Record<GearSlot, string[]>> = { main_hand: t.main, off_hand: t.off, body: t.body }
+  const out: CreationSlot[] = []
+  for (const slot of SLOTS) {
+    if (blocked.has(slot)) continue
+    const fromClass = listed[slot]
+    if (fromClass) {
+      const bases = fromClass.filter((b) => gearRules.bases[b])
+      if (bases.length) out.push({ slot, template: !!t.start[slot], bases })
+      continue
+    }
+    // 頭、腿等護具：不能比職業的護甲類型重（布 < 皮革 < 金屬）；飾品不限
+    const bases = Object.entries(gearRules.bases)
+      .filter(([, b]) => baseFits(b.slot, slot) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
+      .map(([id]) => id)
+    if (bases.length) out.push({ slot, template: false, bases })
+  }
+  return out
+}
+
+/** 建角畫面預覽用：這個底材做成某一級材料的裝備 */
+export function creationPiece(base: string, tier: number): EquippedGear {
+  return piece(base, tier)
+}
+
+/** 選擇花的預算：模板欄位每升一級材料 1 點；其他欄位花材料等級 */
+export function creationCost(classId: string, choice: CreationGear): number {
+  const template = new Set(creationSlots(classId).filter((s) => s.template).map((s) => s.slot))
+  let cost = 0
+  for (const [slot, pick] of Object.entries(choice)) {
+    if (!pick) continue
+    cost += template.has(slot as GearSlot) ? Math.max(0, pick.tier - 1) : pick.tier
+  }
+  return cost
+}
+
+/**
+ * 依建角的選擇產生起始裝備：檢查底材在這個欄位的清單裡、材料等級在 1～max_tier、雙手武器不帶副手、
+ * 花費不超過預算。模板欄位沒選時用職業的起始底材（第一級材料）。不合法時丟錯
+ */
+export function creationGear(classId: string, choice: CreationGear, budget: number, race?: string): Partial<Record<GearSlot, EquippedGear>> {
+  const slots = creationSlots(classId, race)
+  const t = gearRules.classes[classId] ?? gearRules.classes.fighter!
+  const maxTier = gearRules.creation.max_tier
+  const picks: CreationGear = {}
+  for (const s of slots) {
+    const pick = choice[s.slot] ?? (s.template ? { base: t.start[s.slot]!, tier: 1 } : undefined)
+    if (!pick) continue
+    if (!s.bases.includes(pick.base)) throw new Error(`${slotName(s.slot)}不能選${gearRules.bases[pick.base]?.name ?? pick.base}`)
+    const tier = Math.round(pick.tier)
+    if (!(tier >= 1 && tier <= maxTier)) throw new Error(`建角時材料最多到第 ${maxTier} 級`)
+    picks[s.slot] = { base: pick.base, tier }
+  }
+  for (const slot of Object.keys(choice)) if (!slots.some((s) => s.slot === slot) && choice[slot as GearSlot]) throw new Error(`${slotName(slot as GearSlot)}不能選`)
+  if (picks.main_hand && gearRules.bases[picks.main_hand.base]?.two_handed) delete picks.off_hand
+  const cost = creationCost(classId, picks)
+  if (cost > budget) throw new Error(`裝備的預算不夠（要 ${cost} 點，只有 ${budget} 點）`)
+  const out: Partial<Record<GearSlot, EquippedGear>> = {}
+  for (const [slot, pick] of Object.entries(picks)) out[slot as GearSlot] = piece(pick!.base, pick!.tier)
   return out
 }
 

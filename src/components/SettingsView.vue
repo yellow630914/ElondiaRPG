@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { DEFEAT_LOOT_NAME, defeatLootRule } from '@/engine/expedition'
 import type { DefeatLoot } from '@/engine/types'
 import { companionRules } from '@/engine/data'
+import { gearRules } from '@/engine/gear'
 import { useGame } from '@/stores/game'
 import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
 import ImageSettings from './ImageSettings.vue'
@@ -164,6 +165,11 @@ function doReset() {
           <input v-model.number="settings.longRestGap" type="number" min="0" max="24" style="width: 100px" />
         </label>
         <p class="small muted">0～24，預設 {{ companionRules.rest.long_rest_gap_hours }}。從上次長休結束時算起。</p>
+        <label>
+          建角時挑裝備的預算（材料等級點數）
+          <input v-model.number="settings.creationGearBudget" type="number" min="0" :max="gearRules.creation.max_budget" style="width: 100px" />
+        </label>
+        <p class="small muted">0～{{ gearRules.creation.max_budget }}，預設 {{ gearRules.creation.default_budget }}。職業的基本配備免費；把模板裝備換成更好的材料每升一級花 1 點，另外加的裝備花它的材料等級（第 {{ gearRules.creation.max_tier }} 級以內）。只影響之後建立的角色。</p>
       </div>
     </section>
 

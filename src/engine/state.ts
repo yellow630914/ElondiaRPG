@@ -4,6 +4,7 @@ import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
 import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
+import { creationGear, gearRules, syncGear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, type SlaveStart } from './slavery'
 import { backfillEventMemories, ensureRelationship, MEMORY_RULES_VERSION, recordMemory, setAffinity } from './social'
@@ -31,6 +32,9 @@ export interface NewGameOptions {
   customPerks?: unknown[]
   /** 這個存檔的規則（沒有時用預設） */
   options?: Partial<GameOptions>
+  /** 建角時挑的裝備（沒有時用職業的起始裝備）與預算（材料等級點數，見 gear.ts 的 creationGear） */
+  gear?: CreationGear
+  gearBudget?: number
 }
 
 /** 各種族的預設出生地 */
@@ -50,6 +54,11 @@ export function newGame(opts: NewGameOptions): GameState {
   const gender = clip(opts.gender, 20)
   const appearance = clip(opts.appearance, 400)
   const background = clip(opts.background, 800)
+  // 建角時挑的裝備：不合法時（例如預算不夠）丟錯，畫面上會先擋下來
+  if (opts.gear) {
+    pc.gear = creationGear(opts.classId, opts.gear, Math.max(0, opts.gearBudget ?? gearRules.creation.default_budget), opts.race)
+    syncGear(pc, classDef(opts.classId).weapon)
+  }
   if (gender) pc.gender = gender
   if (appearance) pc.appearance = appearance
   if (background) pc.background = background

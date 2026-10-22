@@ -9,6 +9,11 @@
   },
   "slot_groups": { "ring": ["ring_1", "ring_2"], "piercing": ["piercing_1", "piercing_2"] },
 
+  "creation": {
+    "$comment": "建立角色時的裝備：職業模板的欄位（主手、副手、上身）可以換成職業清單裡的其他底材；另外有一筆以材料等級計的預算（預設值，可以在設定的遊戲規則調整）：模板欄位每升一級材料花 1 點，其他空的欄位加一件裝備花它的材料等級。材料最高 max_tier 級，只有制式裝備（普通稀有度、沒有附魔）",
+    "default_budget": 3, "max_budget": 20, "max_tier": 3
+  },
+
   "rarities": {
     "common": { "name": "普通", "enchant_points": 0 },
     "uncommon": { "name": "優良", "enchant_points": 1 },
