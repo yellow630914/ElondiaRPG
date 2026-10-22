@@ -1,7 +1,14 @@
 {
   "$comment": "NPC 的名字、外貌與性格素材（依世界書的種族條目整理）。外貌由多個部位組成（parts），性格由多個象限組成（personality.axes）；每個 NPC 至少有一項外貌（features 種族特徵）與一項性格來自種族或血統（lineages），其他部位與象限隨機。選項可以是字串或物件：t = 文字；tags = 標籤；not = 不能同時出現的標籤（外貌與性格共用，用來避免矛盾）；body = 只適用的體型（masc 陽剛、fem 陰柔、andro 中性；依性別決定，見 body_by_gender）；omit = 選了這項就略過的部位（例如光頭不寫髮色）。種族的 parts 會和共用的選項混在一起抽（種族的權重較高），force 的部位只從種族（或血統）的選項抽，血統的 force 優先。lineages 是種族下的血統、部族或氏族：home 是常出現的地點，名字可以帶上 surname。",
   "version": 1,
-  "body_by_gender": {"male": "masc", "female": "fem", "femboy": "andro", "ts": "fem", "futa": "fem"},
+  "body_by_gender": {"male": "masc", "female": "fem", "femboy": "fem", "ts": "fem", "futa": "fem"},
+  "gender_rules": {
+    "$comment": "依性別調整外貌的抽法（在體型之外）：omit = 不抽的部位；exclude = 不會出現的標籤；tag_weight = 帶這個標籤的選項權重乘上倍率（例如 heavy 是圓潤福態）。偽娘用陰柔的詞條，但沒有胸部、不會圓潤福態；女性、TS、扶她比較少圓潤福態",
+    "femboy": { "omit": ["chest"], "exclude": ["heavy"] },
+    "female": { "tag_weight": { "heavy": 0.3 } },
+    "ts": { "tag_weight": { "heavy": 0.3 } },
+    "futa": { "tag_weight": { "heavy": 0.3 } }
+  },
   "part_order": ["height", "build", "eyes", "face", "hair_color", "hair_style", "chest", "waist", "hips", "legs", "feet"],
   "part_names": {"height": "身高", "build": "壯碩程度", "eyes": "眼睛", "face": "面部", "hair_color": "髮色", "hair_style": "髮型", "chest": "胸部", "waist": "腰身", "hips": "髖臀", "legs": "腿部", "feet": "足部"},
   "race_part_weight": 3,

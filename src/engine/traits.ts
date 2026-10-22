@@ -4,6 +4,7 @@
 //   再加上一項種族特徵（貓耳、尖耳、鰓裂、角與翅膀……）與服裝。
 // - 性格由多個象限組成：社交、處事、待人、情緒、嗜好；至少一項來自種族或血統（部族、氏族、派系）。
 // - 選項帶有標籤與互斥標籤（外貌與性格共用），抽的時候避開矛盾（例如嬌小又魁梧、沉默寡言又愛吹噓）。
+// - 性別決定體型（陽剛、陰柔、中性），gender_rules 再依性別略過部位、排除標籤或調整權重（例如偽娘沒有胸部）。
 
 import traitsJson from '@data/world/npc_traits.json'
 import type { NpcKind } from './data'
@@ -49,8 +50,16 @@ interface RaceTraits {
   lineages?: LineageDef[]
 }
 
+/** 依性別調整外貌的抽法（npc_traits.json 的 gender_rules） */
+interface GenderRule {
+  omit?: string[]
+  exclude?: string[]
+  tag_weight?: Record<string, number>
+}
+
 export const npcTraits = traitsJson as unknown as {
   body_by_gender: Record<string, Body>
+  gender_rules: Record<string, GenderRule>
   part_order: string[]
   part_names: Record<string, string>
   race_part_weight: number
@@ -75,6 +84,8 @@ class Picks {
   constructor(
     readonly body: Body,
     exclude: string[] = [],
+    /** 帶這些標籤的選項權重乘上倍率 */
+    readonly tagWeight: Record<string, number> = {},
   ) {
     for (const t of exclude) this.banned.add(t)
   }
@@ -95,7 +106,11 @@ class Picks {
 
   /** 從加權的選項中抽一個符合條件的；沒有時回傳 undefined */
   pick(rng: Rng, pools: { options: Option[]; weight: number }[]): string | undefined {
-    const list = pools.flatMap((p) => p.options.map((o) => ({ o: def(o), w: p.weight }))).filter((x) => this.ok(x.o))
+    const list = pools
+      .flatMap((p) => p.options.map((o) => ({ o: def(o), w: p.weight })))
+      .filter((x) => this.ok(x.o))
+      .map((x) => ({ ...x, w: (x.o.tags ?? []).reduce((w, t) => w * (this.tagWeight[t] ?? 1), x.w) }))
+      .filter((x) => x.w > 0)
     if (!list.length) return undefined
     const total = list.reduce((s, x) => s + x.w, 0)
     let r = rng.next() * total
@@ -170,7 +185,9 @@ export function rollLook(rng: Rng, spec: LookSpec): Look {
   const race = raceOf(spec.race)
   const body: Body = race.body ?? npcTraits.body_by_gender[spec.gender] ?? rng.pick(['masc', 'fem', 'andro'] as Body[])
   const lineage = pickLineage(rng, race, spec.location)
-  const picks = new Picks(body, race.exclude)
+  const rule = npcTraits.gender_rules?.[spec.gender] ?? {}
+  const picks = new Picks(body, [...(race.exclude ?? []), ...(rule.exclude ?? [])], rule.tag_weight)
+  for (const p of rule.omit ?? []) picks.omitted.add(p)
   const w = npcTraits.race_part_weight
 
   // ---- 性格：先放一項來自種族或血統的，再補齊其他象限 ----

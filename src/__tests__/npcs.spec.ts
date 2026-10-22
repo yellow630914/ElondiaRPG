@@ -259,4 +259,28 @@ describe('appearance and personality', () => {
       }
     }
   })
+
+  it('gives femboys feminine looks without a chest or a heavy build, and makes heavy builds rarer for women', async () => {
+    const { rollLook, npcTraits } = await import('@/engine/traits')
+    const { Rng } = await import('@/engine/rng')
+    const rng = new Rng(11)
+    const masc = new Set(Object.values(npcTraits.parts).flat().filter((o) => typeof o !== 'string' && o.body && !o.body.includes('fem')).map((o) => (o as { t: string }).t))
+    const heavyShare = (gender: string) => {
+      let heavy = 0
+      for (let i = 0; i < 3000; i++) {
+        const d = rollLook(rng, { race: 'human', gender, kind: 'commoner', location: 'soriel', used: new Set() }).detail
+        if (gender === 'femboy') {
+          expect(d.parts.chest).toBeUndefined()
+          expect(d.tags).not.toContain('heavy')
+          // 陰柔的詞條：不會抽到只給陽剛體型的選項
+          for (const t of Object.values(d.parts)) expect(masc.has(t), t).toBe(false)
+        }
+        if (d.tags.includes('heavy')) heavy++
+      }
+      return heavy / 3000
+    }
+    expect(heavyShare('femboy')).toBe(0)
+    const male = heavyShare('male')
+    for (const g of ['female', 'ts', 'futa']) expect(heavyShare(g), g).toBeLessThan(male / 2)
+  })
 })
