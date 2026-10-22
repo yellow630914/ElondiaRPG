@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
 import { itemDef, locationById } from '@/engine/data'
 import { cropStatus } from '@/engine/garden'
+import { homeById } from '@/engine/homes'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 
@@ -20,7 +21,7 @@ function icon(cell: Cell): string {
   if (cell.crop && game.state) return cropStatus(game.state, cell)?.ready ? '🌾' : '🌿'
   if (cell.furniture) return itemDef(cell.furniture)?.furniture?.icon ?? '🪑'
   if (cell.dir) return { up: '⬆️', down: '⬇️', out: '🚪' }[cell.dir]
-  if (cell.home) return game.state?.homes?.[cell.home]?.master ? '🏚️' : '🏠'
+  if (cell.home) return game.state && homeById(game.state, cell.home)?.master ? '🏚️' : '🏠'
   if (cell.done && ['encounter', 'elite', 'boss', 'resource', 'trap', 'chest'].includes(cell.kind)) return ''
   if (cell.kind === 'trap') return ''
   if (cell.kind === 'resource' && cell.item && /礦|錢/.test(cell.item)) return '💎'
@@ -41,10 +42,11 @@ function label(cell: Cell): string {
   if (cell.furniture) return `家具：${cell.furniture}`
   if (cell.dir) return { up: '往樓上', down: '往樓下', out: '出門' }[cell.dir]
   if (cell.home) {
-    const h = game.state?.homes?.[cell.home]
+    const h = game.state ? homeById(game.state, cell.home) : undefined
     return h?.master ? `主人的家：${h.name}` : `你的房子：${h?.name ?? ''}`
   }
   if (cell.kind === 'lot') return '待售的房子'
+  if (cell.kind === 'manor') return '民宅（大門緊閉，不能進入）'
   if (cell.kind === 'trap' && !cell.done) return '道路'
   if (cell.kind === 'trap') return '已觸發的陷阱'
   if (cell.kind === 'quest' && cell.storyNode) return '特殊任務的任務點'

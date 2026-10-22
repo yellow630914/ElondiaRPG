@@ -82,6 +82,52 @@ export function lotsOf(locationId: string): Lot[] {
   return lots
 }
 
+// ---- 主人的家（固定設施 manor） ----
+
+/** 每座聚落固定地圖上的「民宅」格（maps.json 的 H）：主角有主人、主人的家在這座城時就是主人的家 */
+export interface Manor {
+  location: string
+  area: string
+  x: number
+  y: number
+  /** 門口的街道 */
+  street: { x: number; y: number }
+}
+
+const manorCache = new Map<string, Manor | null>()
+
+export function manorOf(locationId: string): Manor | undefined {
+  if (manorCache.has(locationId)) return manorCache.get(locationId) ?? undefined
+  let found: Manor | null = null
+  const loc = locationById(locationId)
+  if (loc.type !== 'dungeon') {
+    for (const b of blocksFor(loc)) {
+      const y = b.grid.findIndex((row) => row.includes('H'))
+      if (y < 0) continue
+      const x = b.grid[y]!.indexOf('H')
+      const street = ([[0, 1], [0, -1], [1, 0], [-1, 0]] as const).map(([dx, dy]) => ({ x: x + dx, y: y + dy })).find((p) => b.grid[p.y]?.[p.x] === '.')
+      if (street) found = { location: loc.id, area: settlementKey(loc.id, b.id), x, y, street }
+      break
+    }
+  }
+  manorCache.set(locationId, found)
+  return found ?? undefined
+}
+
+// 主人的家不存進 state.homes（由 masterHome.ts 依存檔即時產生）：homes.ts 不能直接 import masterHome.ts（循環），由它在載入時登記
+let currentMasterHomeOf: (state: GameState) => Home | undefined = () => undefined
+export function setMasterHomeResolver(fn: (state: GameState) => Home | undefined) {
+  currentMasterHomeOf = fn
+}
+
+/** 依 id 找房子：自己買的（state.homes）或目前主人的家 */
+export function homeById(state: GameState, id: string): Home | undefined {
+  const own = state.homes?.[id]
+  if (own) return own
+  const master = currentMasterHomeOf(state)
+  return master?.id === id ? master : undefined
+}
+
 /** 這塊空地上的房子（買下的） */
 export function homeOnLot(state: GameState, lotId: string): Home | undefined {
   return Object.values(state.homes ?? {}).find((h) => `${h.location}:${h.lot.area.split('/')[1]}:${h.lot.x},${h.lot.y}` === lotId)
@@ -94,7 +140,9 @@ export function overlayLots(state: GameState, area: Area): Area {
     const i = lot.y * area.width + lot.x
     if (!homeOnLot(state, lot.id)) area.cells[i] = { kind: 'lot', lot: lot.id }
   }
-  for (const home of Object.values(state.homes ?? {})) {
+  // 自己的房子與主人的家：門變成通往一樓的通道（主人的家疊在民宅格上；不是主人的家時民宅不能進入）
+  const master = currentMasterHomeOf(state)
+  for (const home of [...Object.values(state.homes ?? {}), ...(master ? [master] : [])]) {
     if (home.lot.area !== area.key) continue
     const ground = home.floors.find((k) => home.areas[k]?.homeFloor === 'ground')!
     const entry = homeExit(home)
@@ -266,7 +314,9 @@ export function buyHome(state: GameState, lotId: string, name?: string): Report 
   if (state.money_cc < price) throw new Error(`錢不夠（需要 ${formatMoney(price)}）`)
   const def = homeRules.districts[lot.district]
   const loc = locationById(lot.location)
-  const id = `h${Object.keys(state.homes ?? {}).length + 1}-${lot.location}`
+  // 編號取現有最大號 +1（以前用房屋總數 +1，賣掉或拿掉一棟之後會撞號）
+  const n = Math.max(0, ...Object.keys(state.homes ?? {}).map((k) => Number(/^h(\d+)/.exec(k)?.[1] ?? 0))) + 1
+  const id = `h${n}-${lot.location}`
   const base: Omit<Home, 'floors' | 'areas'> = {
     id, name: name?.trim().slice(0, 16) || `${loc.name}的${def.name}`, location: lot.location, district: lot.district,
     lot: { area: lot.area, x: lot.x, y: lot.y, street: lot.street }, bought: { ...state.time }, price_cc: price,
@@ -327,7 +377,7 @@ export function homeReport(state: GameState, kind: Report['kind'], hours: number
 
 /** 這個區域是哪一棟房子 */
 export function homeOfArea(state: GameState, area: Pick<Area, 'key' | 'kind'>): Home | undefined {
-  return area.kind === 'home' ? state.homes?.[area.key.split('/')[1]!] : undefined
+  return area.kind === 'home' ? homeById(state, area.key.split('/')[1]!) : undefined
 }
 
 /** 主角自己的房子（不是主人的家） */

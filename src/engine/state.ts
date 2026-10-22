@@ -112,8 +112,9 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 1：這個機制之前的所有存檔（由 migrate 前半的各項檢查補齊）
  * 2：公會階級與功績（guild）、存檔規則（options）
  * 3：房屋（homes；留守的夥伴記在 NPC 登錄的 staying）
+ * 4：主人的家改成固定設施（民宅）：從 homes 拿掉 m- 開頭的那棟，改記在 masterHome（主人、城市、家裡的人）
  */
-export const SAVE_SCHEMA = 3
+export const SAVE_SCHEMA = 4
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -125,6 +126,14 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   }],
   [3, (s) => {
     s.homes ??= {}
+  }],
+  [4, (s) => {
+    // 主人的家以前疊在一塊空地上、地圖存在 homes：改成那座城的民宅，家裡的人照舊（站的位置在讀檔後的 syncMasterHome 對齊）
+    for (const [id, home] of Object.entries(s.homes ?? {})) {
+      if (!home.master && !id.startsWith('m-')) continue
+      if (home.master && !s.masterHome) s.masterHome = { master: home.master, location: home.location, household: home.household ?? [] }
+      delete s.homes![id]
+    }
   }],
 ]
 

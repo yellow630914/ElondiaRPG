@@ -27,7 +27,7 @@ import { assertMasterAllows } from './slavery'
 import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
-import { overlayLots } from './homes'
+import { homeById, overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
 import { bestTool } from './tools'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
@@ -40,7 +40,7 @@ export type CellKind =
   | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe' | 'chest'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
   | 'road' | 'waypoint' | 'arrive' | 'event' | 'merchant'
-  | 'lot' | 'yard'
+  | 'lot' | 'yard' | 'manor'
 
 export interface Cell {
   kind: CellKind
@@ -166,7 +166,7 @@ export const CELL_NAME: Record<CellKind, string> = {
   encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房', chest: '寶箱',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
   road: '路', waypoint: '途經', arrive: '目的地', event: '事件', merchant: '流浪商人',
-  lot: '待售的房子', yard: '院子',
+  lot: '待售的房子', yard: '院子', manor: '民宅',
 }
 
 /** 地圖與場所標題用的圖示：每一種設施都要有 */
@@ -176,7 +176,7 @@ export const CELL_ICON: Partial<Record<CellKind, string>> = {
   encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
   stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
   waypoint: '🏘️', arrive: '🏁', event: '❔', merchant: '🧳',
-  lot: '🪧',
+  lot: '🪧', manor: '🏚️',
 }
 
 /** 格子的名稱（關閉成人向時，娼館顯示為按摩店） */
@@ -184,7 +184,8 @@ export function cellName(kind: CellKind): string {
   return safeText(CELL_NAME[kind])
 }
 
-const WALKABLE_BLOCKERS: CellKind[] = ['wall', 'water']
+// 民宅：不是主人的家時不能進入（是主人的家時疊成通往屋內的通道）
+const WALKABLE_BLOCKERS: CellKind[] = ['wall', 'water', 'manor']
 export const DUNGEON_LAYERS = maps.generation.dungeon.layers
 
 // ---- 區域 ----
@@ -285,7 +286,7 @@ export function getArea(state: GameState, key: string): Area {
   if (stored) return stored
   // 玩家的房子：存在房子的資料裡
   if (key.startsWith('home/')) {
-    const area = state.homes?.[key.split('/')[1]!]?.areas[key]
+    const area = homeById(state, key.split('/')[1]!)?.areas[key]
     if (!area) throw new Error(`unknown area: ${key}`)
     return area
   }
