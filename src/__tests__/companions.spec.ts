@@ -121,7 +121,7 @@ describe('short and long rests', () => {
     expectValid(night)
     expect(pc.hp).toBe(pc.maxHp)
     expect(pc.hitDiceUsed).toBe(0)
-    expect(() => longRest(state, 'inn')).toThrow('24 小時內')
+    expect(() => longRest(state, 'inn')).toThrow('還要 16 小時才能再長休')
   })
 
   it('can be ambushed while resting in the wild', () => {

@@ -1538,6 +1538,11 @@ export function finishCombat(state: GameState): Report {
     report.outcome.summary = `${report.outcome.summary ?? ''}照著情報打倒了盤踞的魔物${notes.length ? `：${notes.join('，')}` : ''}。`
     report.outcome.tags = [...(report.outcome.tags ?? []), '情報']
   }
+  // 緊急撤退被追上而打贏：殺出一條路撤回入口，算戰術性撤退（不另外補撤退的時間）
+  if (victory && state.retreating) {
+    report.outcome.summary = `${report.outcome.summary ?? ''}擊退追兵後，一行人趁勢撤回了入口（戰術性撤退）。`
+    report.outcome.tags = [...(report.outcome.tags ?? []), '戰術性撤退']
+  }
   delete state.combat
   const committed = commitReport(state, report)
   if (combat.story) refreshStoryMarkers(state)

@@ -312,6 +312,8 @@ export const useContent = defineStore('content', () => {
         it.seed.yields = to ? it.seed.yields.map((y) => (y === from ? to : y)) : it.seed.yields.filter((y) => y !== from)
         if (!it.seed.yields.length) delete it.seed
       }
+      // 工具的燃料（例如油燈的燈油）
+      if (to && it.tool?.fuel === from) it.tool.fuel = to
     }
     if (!to) return
     for (const s of Object.values(mods.value.stories)) {
@@ -454,7 +456,11 @@ export const useContent = defineStore('content', () => {
   /** 內容頁籤裡用過的劇情旗標（自動完成用） */
   function knownFlags(): string[] {
     const set = new Set<string>()
-    for (const n of namedNpcs) for (const f of [...(n.requires?.flags ?? []), ...(n.requires?.flags_none ?? [])]) set.add(f)
+    for (const n of namedNpcs) {
+      for (const f of [...(n.requires?.flags ?? []), ...(n.requires?.flags_none ?? [])]) set.add(f)
+      // 「依劇情旗標改變出沒」的每一組條件
+      for (const st of n.stages ?? []) for (const f of [...(st.requires?.flags ?? []), ...(st.requires?.flags_none ?? [])]) set.add(f)
+    }
     for (const s of stories) for (const u of flagUsage(s)) set.add(u.flag)
     return [...set].sort()
   }

@@ -714,6 +714,8 @@ export const slaveryRules = slaveryJson as unknown as {
   black_market_search: { attr: AttrId; dc: number; hours: number }
   haggle: { attr: AttrId; base: number; black_market_bonus: number; price_factor: Record<Degree, number> }
   self_sale: { hours: number; base: number; per_cha_mod: number; per_level: number; max: number; share: number; contract_weights: Record<string, number> }
+  /** 逃亡時在不同地方休息，被契約印記追蹤到的機率倍率（沒列的地方 1） */
+  track_place_mult: Partial<Record<string, number>>
   contracts: Record<string, ContractDef>
   functions: Record<ContractFunction, string>
   freedom: {

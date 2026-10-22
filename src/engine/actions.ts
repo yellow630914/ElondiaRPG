@@ -126,6 +126,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   if (state.pendingAction) throw new Error('還有一個行動等待判定')
   if (state.pendingMasterEvent && input.kind !== 'master_event') throw new Error('先回應主人的要求')
   if (state.pendingDefeat && input.kind !== 'defeat_event') throw new Error('先應付眼前的處境')
+  // 刻印之前只能做刻印本身
+  if (state.pendingMark && input.kind !== 'marking') throw new Error('先完成契約印記的刻印')
   const kind = actionRules.kinds[input.kind]
   if (!kind) throw new Error('沒有這種行動')
   const text = input.text.trim().slice(0, 400)

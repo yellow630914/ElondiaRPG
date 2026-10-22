@@ -233,6 +233,14 @@ export function prunePerks(state: GameState) {
   for (const r of Object.values(state.npcs ?? {})) if (r.perks?.some((id) => !isChoosablePerk(id))) r.perks = r.perks.filter(isChoosablePerk)
 }
 
+/** 主角賺到 amount 時，依奴隸契約的「收益歸屬」被主人拿走多少（逃亡中、沒有主人、契約沒有這項功能時是 0） */
+export function masterTake(state: GameState, amount: number): number {
+  const pc = state.party.find((m) => m.isPlayer)
+  if (!pc?.contract || !pc.contract.master || pc.status.includes('fugitive') || amount <= 0) return 0
+  const def = contractTerms(pc.contract)
+  return def.functions.includes('income') ? Math.floor(amount * def.income_share) : 0
+}
+
 export function player(state: GameState) {
   const pc = state.party.find((c) => c.isPlayer)
   if (!pc) throw new Error('no player character')
@@ -304,10 +312,8 @@ export function commitReport(state: GameState, report: Report): Report {
     if (snap.hp) member.hp = Math.max(0, Math.min(member.maxHp, snap.hp[1]))
   }
   // 奴隸契約「收益歸屬」：主角賺到的錢有一部分歸主人（成為奴隸的那份報告除外）
-  const pc = state.party.find((m) => m.isPlayer)
-  if (pc?.contract && !pc.status.includes('fugitive') && (c.money_cc ?? 0) > 0 && !c.companions?.some((x) => x.npc === 'pc' && x.change === 'enslaved')) {
-    const def = contractTerms(pc.contract)
-    const taken = pc.contract.master && def.functions.includes('income') ? Math.floor(c.money_cc! * def.income_share) : 0
+  if ((c.money_cc ?? 0) > 0 && !c.companions?.some((x) => x.npc === 'pc' && x.change === 'enslaved')) {
+    const taken = masterTake(state, c.money_cc!)
     if (taken > 0) {
       c.money_cc! -= taken
       c.master_share_cc = taken

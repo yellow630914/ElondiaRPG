@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { DEFEAT_LOOT_NAME, defeatLootRule } from '@/engine/expedition'
 import type { DefeatLoot } from '@/engine/types'
+import { companionRules } from '@/engine/data'
 import { useGame } from '@/stores/game'
 import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
 import ImageSettings from './ImageSettings.vue'
@@ -158,6 +159,11 @@ function doReset() {
           <input v-model.number="settings.abilityRerolls" type="number" min="0" max="99" style="width: 100px" />
         </label>
         <p class="small muted">0 表示不能重抽。只影響之後的重抽，已經用掉的次數照算。</p>
+        <label>
+          兩次長休至少隔幾小時
+          <input v-model.number="settings.longRestGap" type="number" min="0" max="24" style="width: 100px" />
+        </label>
+        <p class="small muted">0～24，預設 {{ companionRules.rest.long_rest_gap_hours }}。從上次長休結束時算起。</p>
       </div>
     </section>
 

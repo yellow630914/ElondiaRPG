@@ -105,7 +105,8 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
     for (const i of available) {
       if (i.category === 'equipment') continue
       const stock = i.category === 'food' || i.category === 'gear' ? 20 : rng.int(2, 5)
-      // 材料的目錄價是收購價：店裡賣的時候加成（避免買進賣出套利）
+      // 材料的目錄價是收購價：店裡賣的時候加成。殺價、親密度與聲望疊起來時，買進賣出仍可能小賺：
+      // 這是刻意允許的（主角很能說，賺到錢也合理），不另外擋
       deals.push(itemDeal(state, i.name, stock, i.category === 'material' ? def.random?.material_markup ?? MATERIAL_MARKUP : 1))
     }
     // 裝備：稀有的材料比較少出現（第一級最常見，精金極少）

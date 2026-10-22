@@ -3,7 +3,7 @@
 // - 短休：1 小時，戰鬥以外幾乎都可以。每位隊員可以花生命骰回復生命值（每顆 = 生命骰 + mod(力量) + mod(信仰)，至少 1）。
 //   荒野與地下城（安全房以外）有機率在休息時被襲擊。
 // - 長休：8 小時，只能在旅店或安全點（地下城的安全房）。生命值與法術環全滿、每次休息的能力重置、
-//   回復一半的生命骰（至少 1），解除「受罰」。24 小時內只能長休一次。
+//   回復一半的生命骰（至少 1），解除「受罰」。兩次長休至少隔 long_rest_gap_hours 小時（預設 16，設定裡可以改）。
 // - 每次休息結束時進行離隊檢查（見 restChecks）。
 
 import { checkBonus } from './perks'
@@ -45,9 +45,45 @@ function minutesBetween(a: GameTime, b: GameTime): number {
   return t(b) - t(a)
 }
 
+// 兩次長休的最短間隔（小時）：預設 companions.json 的 long_rest_gap_hours，設定的「遊戲規則」可以改（引擎不讀設定，由畫面呼叫）
+let longRestGap = companionRules.rest.long_rest_gap_hours
+
+export function setLongRestGap(hours: number) {
+  const h = Number(hours)
+  longRestGap = Number.isFinite(h) ? Math.max(0, Math.min(24, h)) : companionRules.rest.long_rest_gap_hours
+}
+
+export function longRestGapHours(): number {
+  return longRestGap
+}
+
+/** 還要幾分鐘才能再長休（0＝現在就可以） */
+export function longRestWait(state: GameState): number {
+  if (!state.lastLongRest) return 0
+  return Math.max(0, Math.ceil(longRestGap * 60 - minutesBetween(state.lastLongRest, state.time)))
+}
+
+/** 「還要 X 小時 Y 分」 */
+export function waitText(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return [h ? `${h} 小時` : '', m ? `${m} 分` : ''].filter(Boolean).join(' ') || '0 分'
+}
+
+/** 擋住休息（短休、長休）的事件：對峙、刻印、主人的要求、戰敗事件；沒有時回傳 null */
+export function restEventBlock(state: GameState): string | null {
+  if (state.standoff) return '先處理眼前的對峙'
+  if (state.pendingMark) return '先完成契約印記的刻印'
+  if (state.pendingMasterEvent) return '先回應主人的要求'
+  if (state.pendingDefeat) return '先應付眼前的處境'
+  return null
+}
+
 /** 不能長休的原因；可以時回傳 null */
 export function longRestBlocked(state: GameState, place: RestPlace): string | null {
   if (state.combat) return '戰鬥中'
+  const event = restEventBlock(state)
+  if (event) return event
   const cell = currentCell(state)
   if (place === 'home') {
     const home = homeOfArea(state, currentArea(state))
@@ -58,9 +94,8 @@ export function longRestBlocked(state: GameState, place: RestPlace): string | nu
   if (place === 'inn' && cell.kind !== 'inn') return '要在旅店才能長休'
   if (place === 'safe' && cell.kind !== 'safe') return '要在安全房才能長休'
   if (place === 'safe' && cell.done) return '這間安全房已經長休過了'
-  if (state.lastLongRest && minutesBetween(state.lastLongRest, state.time) < companionRules.rest.long_rest_gap_hours * 60) {
-    return '24 小時內只能長休一次'
-  }
+  const wait = longRestWait(state)
+  if (wait > 0) return `還要 ${waitText(wait)}才能再長休（兩次長休至少隔 ${longRestGap} 小時）`
   return null
 }
 
@@ -108,10 +143,8 @@ export function autoHitDice(c: Character): number {
  */
 export function shortRest(state: GameState, spend?: Record<string, number>): Report | CombatState {
   if (state.combat) throw new Error('戰鬥中不能休息')
-  if (state.standoff) throw new Error('先處理眼前的對峙')
-  if (state.pendingMark) throw new Error('先完成契約印記的刻印')
-  if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
-  if (state.pendingDefeat) throw new Error('先應付眼前的處境')
+  const event = restEventBlock(state)
+  if (event) throw new Error(event)
   const area = currentArea(state)
   const ambushed = withRng(state, (rng) => rng.chance(ambushChance(state)))
   if (ambushed) {
@@ -150,7 +183,6 @@ export type RestPlace = 'inn' | 'safe' | 'home'
 export function longRest(state: GameState, place: RestPlace): Report {
   const blocked = longRestBlocked(state, place)
   if (blocked) throw new Error(blocked)
-  if (state.standoff) throw new Error('先處理眼前的對峙')
   const area = currentArea(state)
   let hours = companionRules.rest.long_hours
   let scene = `${area.name}的安全房`
@@ -197,7 +229,7 @@ export function longRest(state: GameState, place: RestPlace): Report {
   const rested = !!home && comfortOf(home) >= homeRules.comfort_rested
   if (rested) for (const m of state.party) addCondition(m, 'well_rested', report)
   clearInviteCooldowns(state)
-  const checks = restChecks(state, report, place === 'safe' ? 'safe' : 'inn')
+  const checks = restChecks(state, report, place)
   state.lastLongRest = { ...report.time.end }
   report.outcome = {
     result: 'success',
@@ -216,7 +248,7 @@ export function longRest(state: GameState, place: RestPlace): Report {
  * 3. 逃亡奴隸：契約有追蹤功能時，有機率被主人找到。
  * 回傳要加進報告簡述的句子。
  */
-export function restChecks(state: GameState, report: Report, place: 'short' | 'inn' | 'safe'): string[] {
+export function restChecks(state: GameState, report: Report, place: 'short' | RestPlace): string[] {
   const lines: string[] = []
   const threshold = companionRules.leave_threshold
   const leader = leaderOf(state)
@@ -248,7 +280,8 @@ export function restChecks(state: GameState, report: Report, place: 'short' | 'i
   if (pc.contract && isFugitive(state)) {
     const def = contractTerms(pc.contract)
     if (def.functions.includes('tracking')) {
-      const mult = place === 'inn' ? 1.5 : 1
+      // 被找到的機率依休息的地方（slavery.json 的 track_place_mult）：旅店高、自己的房子低
+      const mult = slaveryRules.track_place_mult[place] ?? 1
       const caught = withRng(state, (rng) => rng.chance(def.recapture_chance * mult))
       if (caught) {
         // 被找到：直接帶回主人的家，之後嚴加看管

@@ -26,7 +26,8 @@ const groups = computed(() => [
   { title: '🧺 普通人', items: people.value.filter((p) => !p.staff && p.kind === 'commoner') },
 ].filter((g) => g.items.length))
 const where = computed(() => currentArea(s.value).name)
-const busy = computed(() => !!s.value.pendingAction || game.judging)
+// 等待判定、或有擋住行動的事件（刻印、主人的要求、戰敗事件）時，互動按鈕停用
+const busy = computed(() => !!s.value.pendingAction || game.judging || !!s.value.pendingMark || !!s.value.pendingMasterEvent || !!s.value.pendingDefeat)
 
 // 換了地點：請 AI 潤飾這裡的居民（AI 判定開啟時，每個地點一次）
 watch(() => s.value.location, () => void game.flavorRoster(), { immediate: true })

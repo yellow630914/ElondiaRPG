@@ -73,6 +73,10 @@ export function rollLegDays(rng: Rng, [min, max]: [number, number]): number {
   return min + rng.int(0, steps) / 2
 }
 
+/**
+ * 路程天數換成小時：整天算 24 小時（含夜宿），半天只算 6 小時——
+ * 不能要人一天趕 24 小時的路，半天的路程就是白天走一段（刻意的，不是 Bug）。
+ */
 export function daysToHours(days: number): number {
   return Math.floor(days) * 24 + (days % 1) * 12
 }
