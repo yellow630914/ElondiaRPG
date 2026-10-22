@@ -1,6 +1,6 @@
 // NPC 的名字、外貌與性格（素材在 data/world/npc_traits.json，依世界書的種族條目整理）。
 //
-// - 外貌由多個部位組成：身高、壯碩程度、眼睛、面部、髮色、髮型、胸部、腰身、髖臀、腿部、足部，
+// - 外貌由多個部位組成：身高、壯碩程度、眼睛、面部、髮色、髮型、胸部（大小）、胸型、腰身、髖臀、腿部、足部，
 //   再加上一項種族特徵（貓耳、尖耳、鰓裂、角與翅膀……）與服裝。
 // - 性格由多個象限組成：社交、處事、待人、情緒、嗜好；至少一項來自種族或血統（部族、氏族、派系）。
 // - 選項帶有標籤與互斥標籤（外貌與性格共用），抽的時候避開矛盾（例如嬌小又魁梧、沉默寡言又愛吹噓）。
@@ -239,7 +239,9 @@ export function rollLook(rng: Rng, spec: LookSpec): Look {
     join(features, '，'),
     join([parts.face, parts.eyes], '，'),
     hair,
-    join([parts.chest, parts.waist, parts.hips], '、'),
+    // 胸部（大小與胸型）一句，腰身、髖臀一句
+    join([parts.chest, parts.chest_shape], '，'),
+    join([parts.waist, parts.hips], '、'),
     join([parts.legs, parts.feet], '，'),
   ].filter(Boolean)
   const appearance = `${sentences.join('；')}。${spec.outfit ? `${spec.outfit}。` : ''}`

@@ -271,11 +271,15 @@ describe('appearance and personality', () => {
         const d = rollLook(rng, { race: 'human', gender, kind: 'commoner', location: 'soriel', used: new Set() }).detail
         if (gender === 'femboy') {
           expect(d.parts.chest).toBeUndefined()
+          expect(d.parts.chest_shape).toBeUndefined()
           expect(d.tags).not.toContain('heavy')
           expect(d.parts.build).not.toBe('魁梧壯碩')
           // 陰柔的詞條：不會抽到只給陽剛體型的選項
           for (const t of Object.values(d.parts)) expect(masc.has(t), t).toBe(false)
         }
+        if (gender === 'male') expect(d.parts.chest_shape).toBeUndefined()
+        // 胸型配合大小：小的不會有水滴形、深溝或下垂
+        if (d.tags.includes('small_chest')) expect(['胸型呈水滴狀，下緣飽滿', '胸前擠出一道深深的溝壑', '胸型柔軟，微微下垂']).not.toContain(d.parts.chest_shape)
         if (d.tags.includes('heavy')) heavy++
       }
       return heavy / 3000

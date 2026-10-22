@@ -4,13 +4,13 @@
   "body_by_gender": {"male": "masc", "female": "fem", "femboy": "fem", "ts": "fem", "futa": "fem"},
   "gender_rules": {
     "$comment": "依性別調整外貌的抽法（在體型之外）：omit = 不抽的部位；exclude = 不會出現的標籤；tag_weight = 帶這個標籤的選項權重乘上倍率（例如 heavy 是圓潤福態）。偽娘用陰柔的詞條，但沒有胸部、不會圓潤福態或魁梧壯碩（huge）；女性、TS、扶她比較少圓潤福態",
-    "femboy": { "omit": ["chest"], "exclude": ["heavy", "huge"] },
+    "femboy": { "omit": ["chest", "chest_shape"], "exclude": ["heavy", "huge"] },
     "female": { "tag_weight": { "heavy": 0.3 } },
     "ts": { "tag_weight": { "heavy": 0.3 } },
     "futa": { "tag_weight": { "heavy": 0.3 } }
   },
-  "part_order": ["height", "build", "eyes", "face", "hair_color", "hair_style", "chest", "waist", "hips", "legs", "feet"],
-  "part_names": {"height": "身高", "build": "壯碩程度", "eyes": "眼睛", "face": "面部", "hair_color": "髮色", "hair_style": "髮型", "chest": "胸部", "waist": "腰身", "hips": "髖臀", "legs": "腿部", "feet": "足部"},
+  "part_order": ["height", "build", "eyes", "face", "hair_color", "hair_style", "chest", "chest_shape", "waist", "hips", "legs", "feet"],
+  "part_names": {"height": "身高", "build": "壯碩程度", "eyes": "眼睛", "face": "面部", "hair_color": "髮色", "hair_style": "髮型", "chest": "胸部", "chest_shape": "胸型", "waist": "腰身", "hips": "髖臀", "legs": "腿部", "feet": "足部"},
   "race_part_weight": 3,
   "parts": {
     "height": [
@@ -59,7 +59,21 @@
       {"t": "飽經風霜的面容", "tags": ["weathered"], "not": ["young"]},
       {"t": "下巴留著修剪整齊的短鬚", "tags": ["beard"], "body": ["masc"]},
       {"t": "滿臉濃密的絡腮鬍", "tags": ["beard"], "body": ["masc"]},
-      {"t": "蒼白而精緻的臉龐", "tags": ["pale"], "not": ["weathered"]}
+      {"t": "蒼白而精緻的臉龐", "tags": ["pale"], "not": ["weathered"]},
+      {"t": "柳葉眉，眉眼溫婉", "body": ["fem", "andro"]},
+      {"t": "瓜子臉，下巴尖巧", "body": ["fem", "andro"]},
+      {"t": "圓潤的蘋果肌，笑起來很甜", "tags": ["cute"], "body": ["fem", "andro"]},
+      {"t": "小巧的鼻子，嘴唇豐潤", "body": ["fem", "andro"]},
+      {"t": "長而捲翹的睫毛", "body": ["fem", "andro"]},
+      {"t": "臉頰總帶著淡淡的紅暈", "tags": ["cute"], "body": ["fem", "andro"]},
+      {"t": "唇色嫣紅，像點了胭脂", "body": ["fem", "andro"]},
+      {"t": "眼角一顆淚痣", "body": ["fem", "andro"]},
+      {"t": "五官精緻小巧", "body": ["fem", "andro"]},
+      {"t": "輪廓柔和的臉龐", "body": ["fem", "andro"]},
+      {"t": "笑起來有兩個淺淺的酒窩", "tags": ["smile"], "not": ["gloomy", "cold"], "body": ["fem", "andro"]},
+      {"t": "眉眼間帶著幾分嫵媚", "body": ["fem", "andro"]},
+      {"t": "眉峰微挑，秀氣裡透著英氣", "body": ["fem", "andro"]},
+      {"t": "唇角有顆小小的美人痣", "body": ["fem", "andro"]}
     ],
     "hair_color": [
       "烏黑",
@@ -104,9 +118,24 @@
       {"t": "胸口平坦", "body": ["masc", "andro"]},
       {"t": "胸前有道舊傷", "tags": ["scarred"], "body": ["masc"]},
       {"t": "胸部豐滿", "tags": ["curvy"], "not": ["petite"], "body": ["fem"]},
-      {"t": "胸部小巧", "body": ["fem", "andro"]},
-      {"t": "胸型勻稱", "body": ["fem"]},
-      {"t": "胸前沉甸甸的", "tags": ["curvy"], "not": ["petite", "slim"], "body": ["fem"]}
+      {"t": "胸部小巧", "tags": ["small_chest"], "body": ["fem", "andro"]},
+      {"t": "胸部大小適中", "body": ["fem"]},
+      {"t": "胸前沉甸甸的", "tags": ["curvy"], "not": ["petite", "slim"], "body": ["fem"]},
+      {"t": "胸部只是微微隆起", "tags": ["small_chest"], "body": ["fem"]},
+      {"t": "一手剛好可以握住的胸部", "body": ["fem"]},
+      {"t": "胸部飽滿得幾乎撐開衣襟", "tags": ["curvy", "busty"], "not": ["petite", "slim"], "body": ["fem"]},
+      {"t": "胸前一片平坦，像個少年", "tags": ["small_chest", "flat"], "not": ["curvy"], "body": ["fem"]}
+    ],
+    "chest_shape": [
+      {"t": "胸型渾圓挺翹", "not": ["flat"], "body": ["fem"]},
+      {"t": "胸型呈水滴狀，下緣飽滿", "not": ["small_chest"], "body": ["fem"]},
+      {"t": "胸型尖挺", "not": ["flat"], "body": ["fem"]},
+      {"t": "雙峰略微向兩側外擴", "not": ["flat"], "body": ["fem"]},
+      {"t": "胸型柔軟，微微下垂", "not": ["small_chest", "young"], "body": ["fem"]},
+      {"t": "胸型緊實高聳", "tags": ["fit"], "not": ["flat", "soft"], "body": ["fem"]},
+      {"t": "胸前擠出一道深深的溝壑", "not": ["small_chest"], "body": ["fem"]},
+      {"t": "胸型小巧玲瓏", "not": ["curvy"], "body": ["fem"]},
+      {"t": "胸型勻稱", "body": ["fem"]}
     ],
     "waist": [
       {"t": "腰身纖細", "tags": ["slim"], "not": ["heavy"]},
