@@ -7,7 +7,7 @@ import {
   acceptPartyOffer, buySlave, hireAtAsking, marketStock, offerSelf, requestLeave, releaseSlave,
   tavernCandidates, waitForParty,
 } from '@/engine/companions'
-import { contractDef, slaveryRules } from '@/engine/data'
+import { contractDef, population, slaveryRules } from '@/engine/data'
 import { mod, proficiency } from '@/engine/character'
 import { checkBonus } from '@/engine/perks'
 import { withBonus } from '@/engine/rng'
@@ -171,7 +171,13 @@ describe('tavern hiring', () => {
     const count = Object.keys(state.npcs!).length
     expect(tavernCandidates(state).map((c) => c.npc)).toEqual(list.map((c) => c.npc))
     expect(Object.keys(state.npcs!).length).toBe(count)
-    expect(state.rosters!.soriel!.members.length).toBe(26)
+    // 王都 12 + 12 人，有娼館所以再補到至少 3 位娼妓（補的人數依抽到的身分而定）
+    const members = state.rosters!.soriel!.members
+    const size = population.roster.capital!
+    const extra = members.slice(size.adventurer + size.commoner)
+    expect(extra.every((id) => npcRecord(state, id)!.tags?.includes('prostitute'))).toBe(true)
+    expect(members.filter((id) => npcRecord(state, id)!.tags?.includes('prostitute')).length).toBeGreaterThanOrEqual(population.brothel_workers)
+    expect(extra.length).toBeLessThanOrEqual(population.brothel_workers)
   })
 
   it('hires at the asking price without a check', () => {
