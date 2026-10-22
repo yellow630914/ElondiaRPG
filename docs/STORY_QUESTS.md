@@ -84,6 +84,8 @@
 
 **特質**：`{ "type": "perk", "perk": "veteran", "options": ["diplomat"] }` 給主角一次學特質的機會（從這幾個選一個，或寫說法擲骰交給 AI 爭取別的；來源寫成這個特殊任務），`"direct": true` 直接學會；`{ "type": "lose_perk", "perk": "<id>" }` 失去特質。見 [`PERKS.md`](PERKS.md)。
 
+**刺青**：`{ "type": "tattoo", "template": "lotus" }`（圖樣，可以加 `place`、`by`），或自己描述 `{ "type": "tattoo", "kind": "oath", "name": "…", "text": "…", "attrs": { "str": 2, "int": -2 } }`；`{ "type": "remove_tattoo", "kind": "plain" }` 洗掉。見 [`TATTOOS.md`](TATTOOS.md)。
+
 **主角淪為奴隸**（只有特殊任務能用）：
 - 固定 NPC 當主人：`{ "type": "enslave_player", "master": "npc_selene", "contract": "labor" }`
 - 隨機的 NPC 當主人：`{ "type": "enslave_player", "random": { "tag": "noble" }, "contract": "combat" }`（`tag` 是主人的身分標籤，不寫＝依奴隸市場的權重抽；在目前的地點生成，比主角高 1～4 級）

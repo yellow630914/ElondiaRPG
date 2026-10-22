@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { madamHere, patronPrice } from '@/engine/brothel'
 import { safeText } from '@/engine/content'
-import { contractDef, raceName } from '@/engine/data'
+import { contractDef, raceName, slaveryRules } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcTitle } from '@/engine/npcs'
 import { isBound, isEnslaved } from '@/engine/party'
@@ -63,7 +63,7 @@ function seekMadam() {
     <template v-if="marked && madam">
       <h4>{{ safeText('請老鴇收留') }}</h4>
       <p class="muted">
-        {{ safeText(`你身上有印記卻沒有人帶著：可以請${madam.name}收下你（魅力，DC ${seekMasterDc(s, madam)}）。老鴇會把印記改刻成${contractDef('brothel').name}，收入九成歸她。`) }}
+        {{ safeText(`你身上有印記卻沒有人帶著：可以請${madam.name}收下你（魅力，DC ${seekMasterDc(s, madam)}）。老鴇會把印記改刻成${contractDef(slaveryRules.roles.madam).name}，收入九成歸她。`) }}
       </p>
       <button class="small" :disabled="busy" @click="seekMadam">{{ safeText(`請${madam.name}收留`) }}</button>
     </template>

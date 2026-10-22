@@ -4,7 +4,7 @@ import { DEFEAT_LOOT_NAME } from '@/engine/expedition'
 import type { DefeatLoot } from '@/engine/types'
 import { apMaxFor, apRegenFor, baseAttrs, luckyThreshold, maxHpFor, mod, slotMaxFor } from '@/engine/character'
 import { abilities, ATTR_IDS, attributeRules, combatClasses as classes, geography, isSettlement, locationById, type AttrId } from '@/engine/data'
-import { GENDER_IDS, genderName, raceName, tagDef } from '@/engine/data'
+import { GENDER_IDS, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
 import { npcTitle } from '@/engine/npcs'
 import { masterCandidates, type MarkChoice, type MasterSpec, type SlaveStart } from '@/engine/slavery'
 import { DEFAULT_BIRTHPLACE } from '@/engine/state'
@@ -113,7 +113,7 @@ const masterSeed = ref(Math.floor(Math.random() * 2 ** 31))
 const candidates = computed(() => masterCandidates(birthplace.value, masterSeed.value))
 const pickedMaster = ref(0)
 const customMaster = reactive<MasterSpec>({ name: '', gender: 'male', race: 'human', class: 'fighter', level: 5, personality: '', appearance: '' })
-const mark = ref<MarkChoice>('labor')
+const mark = ref<MarkChoice>(slaveryRules.roles.default)
 
 function slaveStart(): SlaveStart | undefined {
   if (!slave.value) return undefined
@@ -278,7 +278,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
     <div class="slave">
       <label class="check"><input v-model="slave" type="checkbox" /> ⛓️ 以奴隸身分開始</label>
       <template v-if="slave">
-        <p class="small muted">頸上刻著契約印記。有主人時，主人會帶著你一起行動：出城與旅行要先得到主人同意，賺到的錢有一部分歸主人；可以在安全的地方談判，或隨時嘗試逃離。</p>
+        <p class="small muted">身上刻著契約印記（部位依印記）。有主人時，主人會帶著你一起行動：出城與旅行要先得到主人同意，賺到的錢有一部分歸主人；可以在安全的地方談判，或隨時嘗試逃離。</p>
         <div class="row small">
           主人：
           <label class="check"><input v-model="masterMode" type="radio" value="candidate" /> 從名單挑選</label>

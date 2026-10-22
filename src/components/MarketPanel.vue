@@ -55,7 +55,7 @@ function haggle(l: SlaveListing) {
 
 function sellSelf() {
   const msg = enslaved.value
-    ? '登記出售自己：買下你的人會成為新主人，頸上的印記沿用。確定嗎？'
+    ? '登記出售自己：買下你的人會成為新主人，身上的印記沿用。確定嗎？'
     : '登記出售自己：買家主要看你的魅力與等級，你幾乎無法影響結果。被買下後要過一次刻印檢定，決定刻上哪一種契約印記；原本的同伴會離開。確定嗎？'
   if (confirm(msg)) {
     game.offerSelf(props.kind)
@@ -108,8 +108,8 @@ function sellSelf() {
       <summary>{{ enslaved ? '登記出售自己（找新主人）' : '登記出售自己' }}</summary>
       <p class="muted">
         等 {{ slaveryRules.self_sale.hours }} 小時，有買家的機率約 {{ Math.round(selfSaleChance(s) * 100) }}%（主要看魅力與等級，再依出價的人的身分增減）。
-        成交後你拿到成交價的 {{ Math.round(slaveryRules.self_sale.share * 100) }}%<template v-if="enslaved">，但頸上有印記：這筆錢還會照新主人契約的「收益歸屬」被抽走一部分（當作被奴隸商人抽走了）</template>。
-        <template v-if="enslaved">買下你的人成為新主人，頸上的印記沿用；逃亡狀態解除。</template>
+        成交後你拿到成交價的 {{ Math.round(slaveryRules.self_sale.share * 100) }}%<template v-if="enslaved">，但身上有印記：這筆錢還會照新主人契約的「收益歸屬」被抽走一部分（當作被奴隸商人抽走了）</template>。
+        <template v-if="enslaved">買下你的人成為新主人，身上的印記沿用；逃亡狀態解除。</template>
         <template v-else>之後由主人帶領；要恢復自由只能談判或逃離。</template>
         普通人主人會同行，但不參與戰鬥。隊伍必須只剩你一人。
       </p>

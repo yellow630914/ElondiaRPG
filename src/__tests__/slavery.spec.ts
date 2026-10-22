@@ -16,6 +16,7 @@ import {
 } from '@/engine/slavery'
 import { commitReport, newGame } from '@/engine/state'
 import type { GameState, Report } from '@/engine/types'
+import { contractOf } from '@/engine/tattoos'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
@@ -59,8 +60,8 @@ describe('starting as a slave', () => {
     expect(validate(r)).toBe(true)
     expect(leaderOf(state)?.id).toBe(rec!.id)
     expect(isBound(state)).toBe(true)
-    expect(state.party[0]!.contract).toMatchObject({ kind: 'combat', master: rec!.id })
-    expect(markSummary(state.party[0]!.contract!)).toContain('出城 DC 14')
+    expect(contractOf(state.party[0]!)).toMatchObject({ kind: 'combat', master: rec!.id })
+    expect(markSummary(contractOf(state.party[0]!)!)).toContain('出城 DC 14')
   })
 
   it('can design the master and the mark', () => {
@@ -71,7 +72,7 @@ describe('starting as a slave', () => {
     })
     const master = leaderOf(state)!
     expect(master).toMatchObject({ name: '維克多', race: 'demon', class: 'wizard', level: 6 })
-    expect(contractTerms(state.party[0]!.contract!)).toMatchObject({ name: '黑薔薇印', exit_dc: 10, income_share: 0.3 })
+    expect(contractTerms(contractOf(state.party[0]!)!)).toMatchObject({ name: '黑薔薇印', exit_dc: 10, income_share: 0.3 })
   })
 
   it('may have no master: the mark stays but nobody holds the leash', () => {
@@ -188,7 +189,7 @@ describe('marking when enslaved', () => {
     expect(state.pendingMark?.custom).toBe(true)
     chooseMark(state, { name: '細鏈', mark: '手腕上一圈細細的銀鏈紋', exit_dc: 8 })
     expect(state.pendingMark).toBeUndefined()
-    expect(contractTerms(state.party[0]!.contract!)).toMatchObject({ name: '細鏈', exit_dc: 8 })
+    expect(contractTerms(contractOf(state.party[0]!)!)).toMatchObject({ name: '細鏈', exit_dc: 8 })
   })
 
   it('a fumble brings the heaviest mark; the AI may describe it from your behaviour', () => {
@@ -200,7 +201,7 @@ describe('marking when enslaved', () => {
     expect(state.pendingMark?.allowed).toEqual(['arcane'])
     expect(() => chooseMark(state, 'labor')).toThrow('不能選')
     chooseMark(state, 'arcane')
-    const c = state.party[0]!.contract!
+    const c = contractOf(state.party[0]!)!
     expect(contractTerms(c)).toMatchObject({ name: '咬痕之印', mark: '頸側一道帶著齒痕形狀的紫色法陣', exit_dc: 16 })
     expect(c.obedience).toBe(slaveryRules.contracts.arcane!.obedience_penalty + 1)
   })
@@ -213,7 +214,7 @@ describe('slave companions', () => {
     const l = marketStock(state, 'public')[0]!
     buySlave(state, 'public', l.npc, { name: '家紋', mark: '肩上一枚主角家的紋章', income_share: 0, exit_dc: 5 })
     const slave = state.party.find((m) => m.id === l.npc)!
-    expect(contractTerms(slave.contract!)).toMatchObject({ name: '家紋', income_share: 0 })
+    expect(contractTerms(contractOf(slave)!)).toMatchObject({ name: '家紋', income_share: 0 })
     const p = prepareAction(state, { kind: 'free', target: slave.id, text: '要他老實交代來歷' })
     expect(p.rolls).toHaveLength(2)
     expect(p.natural).toBe(Math.max(...p.rolls!))
@@ -275,7 +276,7 @@ describe('after escaping: the old master, a new master, removing the mark', () =
     expect(r.changes.companions?.some((c) => c.change === 'transferred')).toBe(true)
     expect(isBound(state)).toBe(true)
     expect(leaderOf(state)?.id).toBe(rec!.id)
-    expect(state.party[0]!.contract).toMatchObject({ kind: 'combat', master: rec!.id })
+    expect(contractOf(state.party[0]!)).toMatchObject({ kind: 'combat', master: rec!.id })
   })
 
   it('removes the mark at the temple for a fee; fugitives are eyed coldly', () => {
@@ -284,7 +285,7 @@ describe('after escaping: the old master, a new master, removing the mark', () =
     standOn(state, 'temple')
     state.money_cc = 100000
     const offer = unmarkOffers(state).find((o) => o.service === 'temple')!
-    const strength = markStrength(state.party[0]!.contract!)
+    const strength = markStrength(contractOf(state.party[0]!)!)
     expect(offer).toMatchObject({ dc: strength - 4, fee_cc: strength * 150 })
     act(state, { kind: 'unmark', target: 'temple', text: '' }, 15)
     expect(isEnslaved(state)).toBe(false)
@@ -292,7 +293,7 @@ describe('after escaping: the old master, a new master, removing the mark', () =
 
     const f = fugitive()
     standOn(f.state, 'temple')
-    expect(unmarkOffers(f.state).find((o) => o.service === 'temple')!.dc).toBe(markStrength(f.state.party[0]!.contract!) - 4 + 2)
+    expect(unmarkOffers(f.state).find((o) => o.service === 'temple')!.dc).toBe(markStrength(contractOf(f.state.party[0]!)!) - 4 + 2)
   })
 
   it('a black-market marker may sell you out to your master', () => {
@@ -314,7 +315,7 @@ describe('after escaping: the old master, a new master, removing the mark', () =
     registerNpc(state, wiz)
     state.party.push({ ...characterFor(state, wiz), bond: 'voluntary' })
     const offer = unmarkOffers(state).find((o) => o.service === 'mage')!
-    expect(offer).toMatchObject({ fee_cc: 0, target: `mage:${wiz.id}`, dc: markStrength(state.party[0]!.contract!) - 3 - 3 })
+    expect(offer).toMatchObject({ fee_cc: 0, target: `mage:${wiz.id}`, dc: markStrength(contractOf(state.party[0]!)!) - 3 - 3 })
     act(state, { kind: 'unmark', target: offer.target, text: '' }, 20)
     expect(isEnslaved(state)).toBe(false)
   })
@@ -429,7 +430,7 @@ describe('who becomes the new master depends on who they are', () => {
       expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
       expect(state.pendingMark).toBeUndefined()
       expect(isBound(state)).toBe(true)
-      expect(state.party[0]!.contract!.kind).toBe('combat')
+      expect(contractOf(state.party[0]!)!.kind).toBe('combat')
       expect(r.changes.companions?.some((c) => c.change === 'transferred')).toBe(true)
       return
     }

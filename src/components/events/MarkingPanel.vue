@@ -4,14 +4,15 @@ import { attrName, contractDef, slaveryRules } from '@/engine/data'
 import type { MarkChoice } from '@/engine/slavery'
 import { useGame } from '@/stores/game'
 import MarkPicker from '../MarkPicker.vue'
+import { contractOf } from '@/engine/tattoos'
 
 // 刻下契約印記：刻印前還有一次檢定，之後選擇要刻的印記
 const game = useGame()
 const s = computed(() => game.state!)
 const pendingMark = computed(() => s.value.pendingMark!)
-const master = computed(() => s.value.party.find((m) => m.isPlayer)?.contract?.masterName || '主人')
+const master = computed(() => contractOf(s.value.party.find((m) => m.isPlayer))?.masterName || '主人')
 const markText = ref('')
-const markChoice = ref<MarkChoice>('labor')
+const markChoice = ref<MarkChoice>(slaveryRules.roles.default)
 function doMarking() {
   void game.perform({ kind: 'marking', text: markText.value })
   markText.value = ''

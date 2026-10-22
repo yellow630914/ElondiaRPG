@@ -7,7 +7,7 @@
 // applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
-import { perkDef } from './data'
+import { perkDef, slaveryRules, type AttrId } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, learnable, learnAbility } from './character'
 import { formatMoney } from './money'
@@ -19,11 +19,12 @@ import {
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
 import { gearKnown, registerGear } from './gear'
-import type { GameState, GearSpec, Intel, NpcRecord, Report } from './types'
+import type { GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
 import { startStory, storyDef } from './story'
-import { randomMaster } from './slavery'
+import { contractKind, randomMaster } from './slavery'
 import { addStrict, extendDeadline, sendToMasterHome } from './masterHome'
+import { addTattoo, contractOf, freePlaces, oathText, placeName, removeTattoo, tattooFromTemplate, tattooKindName, tattoosOf, type NewTattoo } from './tattoos'
 
 export type NpcRef = string | NpcSpec
 
@@ -93,11 +94,18 @@ export type RewardEffect =
   | { type: 'perk'; perk?: string; options?: string[]; target?: string; source?: string; direct?: boolean }
   /** 失去特質 */
   | { type: 'lose_perk'; perk: string; target?: string }
+  /**
+   * 刺青（主角）：圖樣（tattoos.json 的 templates），或自己描述（kind、name、text；誓約要 attrs）。
+   * place 沒寫時挑圖樣建議的部位裡空著的（都滿了就任何空的部位）；部位已經有刺青、誓約不合規則或太多時不刺。by 是誰刺的
+   */
+  | { type: 'tattoo'; template?: string; kind?: 'plain' | 'oath'; name?: string; text?: string; attrs?: Partial<Record<AttrId, number>>; place?: TattooPlace; by?: string }
+  /** 洗掉主角的刺青：指定部位，或某一種（plain / oath）全部；奴隸印記不能用這個（解除契約用 free） */
+  | { type: 'remove_tattoo'; place?: TattooPlace; kind?: 'plain' | 'oath' }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
-  'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk',
+  'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -176,7 +184,7 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           notes.push(`${rec.name}想加入，但隊伍已滿`)
           break
         }
-        if (e.mode === 'slave' && pcOf(state).contract) {
+        if (e.mode === 'slave' && contractOf(pcOf(state))) {
           notes.push(`身為奴隸，無法擁有奴隸`)
           break
         }
@@ -241,14 +249,14 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       }
       case 'enslave_player': {
         const master = e.master ? resolveNpc(state, e.master) : randomMaster(state, e.random?.tag)
-        if (pcOf(state).contract) {
+        if (contractOf(pcOf(state))) {
           // 已經是奴隸：換主人，印記沿用
           changeMaster(state, master, report, '特殊任務')
           notes.push(`${master.name}成為主角的新主人`)
           break
         }
         const members = (e.members ?? []).map((m) => resolveNpc(state, m))
-        const contract = master.tags?.includes('prostitute') ? 'brothel' : e.contract
+        const contract = contractKind(master.tags?.includes('prostitute') ? slaveryRules.roles.madam : e.contract)
         enslavePlayer(state, master, contract, report, members)
         // 刻印前還有一次檢定：主角的表現決定最後刻上哪一種印記
         state.pendingMark = { intended: contract }
@@ -293,6 +301,31 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         const who = memberOrPc(state, e.target ?? 'pc')
         const lost = who && losePerk(who, e.perk, report)
         if (lost) notes.push(lost.flaw ? `${who!.name}克服了缺陷【${lost.name}】` : `${who!.name}失去了特質【${lost.name}】`)
+        break
+      }
+      case 'tattoo': {
+        const pc = pcOf(state)
+        try {
+          const t: NewTattoo = e.template
+            ? tattooFromTemplate(e.template, pc, e.place)
+            : { kind: e.kind ?? 'plain', place: e.place ?? freePlaces(pc)[0]!, name: e.name || '刺青', desc: e.text ?? '', ...(e.attrs ? { attrs: e.attrs } : {}) }
+          const added = addTattoo(pc, { ...t, ...(e.by ? { by: e.by } : {}) }, state.time)
+          ;(report.changes.tattoos ??= []).push({ actor: 'pc', place: added.place, kind: added.kind, name: added.name ?? '', added: true })
+          notes.push(`主角的${placeName(added.place)}多了${tattooKindName(added.kind)}【${added.name}】${added.attrs ? `（${oathText(added.attrs)}）` : ''}`)
+        } catch (err) {
+          notes.push(`沒有刺上刺青（${err instanceof Error ? err.message : String(err)}）`)
+        }
+        break
+      }
+      case 'remove_tattoo': {
+        const pc = pcOf(state)
+        const places = e.place ? [e.place] : tattoosOf(pc).filter((t) => t.kind === e.kind).map((t) => t.place)
+        for (const place of places) {
+          const t = removeTattoo(pc, place)
+          if (!t) continue
+          ;(report.changes.tattoos ??= []).push({ actor: 'pc', place, kind: t.kind, name: t.name ?? '', added: false })
+          notes.push(`主角${placeName(place)}的${tattooKindName(t.kind)}【${t.name}】被洗掉了`)
+        }
         break
       }
       case 'home_extend':

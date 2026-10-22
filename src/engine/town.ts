@@ -58,9 +58,9 @@ export function rest(state: GameState): Report {
   return longRest(state, 'inn')
 }
 
-/** 逃亡奴隸頸上的印記會被官方機構認出 */
+/** 逃亡奴隸身上的印記會被官方機構認出 */
 function assertNotFugitive(state: GameState, place: string) {
-  if (isFugitive(state)) throw new Error(`${place}的人認出了你頸上的契約印記，拒絕接待`)
+  if (isFugitive(state)) throw new Error(`${place}的人認出了你身上的契約印記，拒絕接待`)
 }
 
 // ---- 神殿 ----

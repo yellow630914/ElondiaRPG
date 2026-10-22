@@ -6,6 +6,7 @@
 import { ref } from 'vue'
 import { roadTemplate } from '@/engine/road'
 import type { GameState } from '@/engine/types'
+import { contractOf } from '@/engine/tattoos'
 
 export type GameEventKind = 'defeat' | 'standoff' | 'mark' | 'master' | 'road' | 'suggestion' | 'levelup' | 'perk'
 
@@ -43,7 +44,7 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     if (state.standoff) out.push({ id: `standoff:${hash(state.standoff)}`, kind: 'standoff', icon: '⚠️', title: '對峙', blocking: true })
     if (state.pendingMark) out.push({ id: `mark:${hash(state.pendingMark)}`, kind: 'mark', icon: '🔥', title: '刻下契約印記', blocking: true })
     if (state.pendingMasterEvent) {
-      const master = state.party.find((m) => m.isPlayer)?.contract?.masterName || '主人'
+      const master = contractOf(state.party.find((m) => m.isPlayer))?.masterName || '主人'
       out.push({ id: `master:${hash(state.pendingMasterEvent)}`, kind: 'master', icon: '⛓️', title: `${master}的要求`, blocking: true })
     }
     if (state.roadEvent) out.push({ id: `road:${state.roadEvent.x}:${state.roadEvent.template}`, kind: 'road', icon: '🧭', title: roadTemplate(state.roadEvent.template)?.title ?? '旅途上的事', blocking: true })

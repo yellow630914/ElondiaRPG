@@ -7,6 +7,7 @@ import type { RewardEffect } from './effects'
 import { gearSpecOf } from './gear'
 import { furnitureIn } from './homes'
 import type { Character, GameState, GearSpec } from './types'
+import { contractOf } from './tattoos'
 
 /** 一個特殊任務的所有結果（任務點的成功、失敗與各選項） */
 export function storyOutcomes(s: StoryDef): StoryOutcome[] {
@@ -112,7 +113,7 @@ export function npcUsage(id: string, state?: GameState | null): string[] {
   if (state) {
     const m = state.party.find((x) => x.id === id)
     if (m) out.push(`目前存檔的隊伍（${m.name}）`)
-    if (state.party.some((x) => x.contract?.master === id)) out.push('目前存檔的主人（奴隸契約）')
+    if (state.party.some((x) => contractOf(x)?.master === id)) out.push('目前存檔的主人（奴隸契約）')
   }
   return out
 }

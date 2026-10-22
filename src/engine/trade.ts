@@ -478,7 +478,7 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
         gets.push({
           type: 'companion', mode,
           npc: { name: clip(spec.name, 12), race, class: cls, level, personality: clip(spec.personality, 80), appearance: clip(spec.appearance, 100), background: clip(spec.background, 100) },
-          ...(mode === 'slave' ? { contract: 'labor' } : {}),
+          ...(mode === 'slave' ? { contract: slaveryRules.roles.default } : {}),
         })
       }
     }

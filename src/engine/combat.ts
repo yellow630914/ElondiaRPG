@@ -37,6 +37,7 @@ import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
   ActorState, Character, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
 } from './types'
+import { contractOf } from './tattoos'
 
 export interface StatusInstance {
   id: string
@@ -232,7 +233,8 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
 }
 
 function spellCap(c: Character): number {
-  const cap = c.contract ? contractTerms(c.contract).spell_cap : undefined
+  const contract = contractOf(c)
+  const cap = contract ? contractTerms(contract).spell_cap : undefined
   return cap ?? 9
 }
 

@@ -21,6 +21,7 @@ import { addHours, migrate, newGame, withRng } from '@/engine/state'
 import { sanitizeEffects } from '@/engine/storyMods'
 import type { GameState, NpcRecord, Report } from '@/engine/types'
 import { workers, workTarget } from '@/engine/work'
+import { contractOf } from '@/engine/tattoos'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
@@ -70,9 +71,9 @@ describe('special quests can enslave the protagonist', () => {
     expect(master.level).toBeGreaterThan(pcOf(state).level)
     expect(state.pendingMark).toEqual({ intended: 'labor' })
     // 已經是奴隸：換主人，印記沿用
-    const before = pcOf(state).contract!.kind
+    const before = contractOf(pcOf(state))!.kind
     applyEffects(state, blank(state), [{ type: 'enslave_player', master: 'npc_selene', contract: 'arcane' }])
-    expect(pcOf(state).contract).toMatchObject({ master: 'npc_selene', kind: before })
+    expect(contractOf(pcOf(state))).toMatchObject({ master: 'npc_selene', kind: before })
   })
 })
 
@@ -314,7 +315,7 @@ describe("the people in the master's house", () => {
       const kinds = people.map(kindOf)
       expect(kinds.filter((k) => k === 'servant').length).toBeGreaterThanOrEqual(1)
       expect(kinds.filter((k) => k === 'slave').length).toBeGreaterThanOrEqual(1)
-      const master = state.npcs![pcOf(state).contract!.master]!
+      const master = state.npcs![contractOf(pcOf(state))!.master]!
       const adults = new Set([master.race, ...people.filter((r) => kindOf(r) !== 'child').map((r) => r.race)])
       for (const c of people.filter((r) => kindOf(r) === 'child')) expect(adults.has(c.race)).toBe(true)
       // 每個人都站在房子裡，走進去就看得到

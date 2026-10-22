@@ -30,7 +30,7 @@ import homesJson from '@data/rules/homes.json'
 import perksJson from '@data/rules/perks.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
-import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality } from './types'
+import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality, TattooPlace } from './types'
 
 // ---- 地理 ----
 
@@ -737,7 +737,7 @@ export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 
 export interface ContractDef {
   name: string
   mark: string
-  functions: ContractFunction[]
+  place: TattooPlace
   obedience_penalty: number
   income_share: number
   spell_cap?: number
@@ -762,6 +762,10 @@ export const slaveryRules = slaveryJson as unknown as {
   self_sale: { hours: number; base: number; per_cha_mod: number; per_level: number; max: number; share: number; contract_weights: Record<string, number> }
   /** 逃亡時在不同地方休息，被契約印記追蹤到的機率倍率（沒列的地方 1） */
   track_place_mult: Partial<Record<string, number>>
+  /** 印記模板的用途：default 沒有指定時、madam 老鴇與娼妓主人 */
+  roles: { default: string; madam: string }
+  /** 奴隸市場上的印記（權重） */
+  market_contracts: { public: Record<string, number>; black: Record<string, number> }
   contracts: Record<string, ContractDef>
   functions: Record<ContractFunction, string>
   freedom: {
@@ -882,7 +886,8 @@ export interface MasterEventOption {
 }
 
 export function contractDef(id: string): ContractDef {
-  const c = slaveryRules.contracts[id]
+  // 沒有這個模板（例如自訂內容刪掉了）：用預設的
+  const c = slaveryRules.contracts[id] ?? slaveryRules.contracts[slaveryRules.roles.default]
   if (!c) throw new Error(`unknown contract: ${id}`)
   // 關閉成人向時，娼妓契約顯示為技師契約
   return adultContent() ? c : { ...c, name: safeText(c.name), mark: safeText(c.mark), side_effects: c.side_effects.map(safeText) }

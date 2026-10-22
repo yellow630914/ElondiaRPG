@@ -29,7 +29,7 @@ import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { hireable, presentHere } from './population'
 import { setupStandoff } from './encounters'
 import {
-  atSafeSpot, contractTerms, masterNearby, remarkByMadam, setupMarking, setupMasterEvent, setupPermit, setupReturn, setupSeekMaster, setupUnmark, startMarking,
+  atSafeSpot, contractTerms, masterNearby, remarkByMadam, setupMarking, setupMasterEvent, setupPermit, setupReturn, setupSeekMaster, setupUnmark, startMarking, termsFromTemplate, contractKind,
   type MarkChoice,
 } from './slavery'
 import { setupInteraction } from './interactions'
@@ -45,6 +45,7 @@ import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
 import type { GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
+import { contractOf, placeName } from './tattoos'
 
 function socialReport(state: GameState, hours: number, scene: string, kind: Report['kind'] = 'social'): Report {
   const start = { ...state.time }
@@ -314,7 +315,7 @@ export function marketStock(state: GameState, kind: MarketKind): SlaveListing[] 
       if (kind === 'public' && slaveryRules.black_market_only.includes(race)) race = 'human'
       const level = Math.max(1, Math.min(20, pc.level + rng.int(-2, 1)))
       const rec = generateNpc(state, rng, { race, level, background: rng.pick(npcPool.slave_backgrounds) }, 'slv')
-      const contract = weightedPick(rng, kind === 'black' ? { labor: 4, combat: 3, arcane: 3 } : { labor: 6, combat: 3, arcane: 1 })
+      const contract = contractKind(weightedPick(rng, slaveryRules.market_contracts[kind]))
       return { npc: rec.id, price_cc: slavePrice(rec, def.price_mult, rng), contract }
     })
   })
@@ -341,8 +342,8 @@ export function buySlave(state: GameState, kind: MarketKind, npcId: string, mark
   report.changes.money_cc = -l.price_cc
   const markets = state.markets![`${state.location}/${kind}`]!
   markets.stock = markets.stock.filter((x) => x.npc !== npcId)
-  const c = contractTerms(member.contract!)
-  report.outcome.summary = `在${def.name}以 ${formatMoney(l.price_cc)} 買下${rec.name}，在頸上刻下${c.name}的印記：${c.mark}`
+  const c = contractTerms(contractOf(member)!)
+  report.outcome.summary = `在${def.name}以 ${formatMoney(l.price_cc)} 買下${rec.name}，在${placeName(c.place)}刻下${c.name}的印記：${c.mark}`
   report.narration = { pov: 'second_person', length: 'short', focus: [`${rec.name}的身世與第一印象`, '契約印記'] }
   if (kind === 'black') report.outcome.tags = ['黑市']
   return commitReport(state, report)
@@ -436,7 +437,7 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
       level: Math.min(20, pc.level + rng.int(1, 4)), kind: buyer.kind,
       tags: madam ? ['prostitute', 'merchant'] : [buyer.tag], ...(madam ? { occupation: '老鴇' } : {}),
     }, 'mst')
-    const contract = madam ? 'brothel' : weightedPick(rng, s.contract_weights)
+    const contract = contractKind(madam ? slaveryRules.roles.madam : weightedPick(rng, s.contract_weights))
     const price = slavePrice(pc, def.price_mult, rng)
     return { master, contract, price }
   })
@@ -455,7 +456,7 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
     const kept = share - masterTake(state, share)
     report.outcome = {
       result: 'success',
-      summary: `${who}以 ${formatMoney(deal.price)} 買下了你，成為你的新主人。成交價 ${formatMoney(deal.price)}，你只拿到 ${formatMoney(kept)}，其餘被抽走了。頸上的印記沿用。`,
+      summary: `${who}以 ${formatMoney(deal.price)} 買下了你，成為你的新主人。成交價 ${formatMoney(deal.price)}，你只拿到 ${formatMoney(kept)}，其餘被抽走了。身上的印記沿用。`,
       tags: ['換了主人'],
     }
     report.narration = { pov: 'second_person', length: 'medium', focus: ['新主人的模樣與態度'] }
@@ -467,7 +468,7 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
   report.changes.money_cc = share
   report.outcome = {
     result: 'success',
-    summary: `${who}以 ${formatMoney(deal.price)} 買下了你，你拿到 ${formatMoney(share)} 的賣身錢。${deal.master.name}打算在你頸上刻下${contractDef(deal.contract).name}。`,
+    summary: `${who}以 ${formatMoney(deal.price)} 買下了你，你拿到 ${formatMoney(share)} 的賣身錢。${deal.master.name}打算在你${placeName(contractDef(deal.contract).place)}刻下${contractDef(deal.contract).name}。`,
     tags: ['成為奴隸'],
   }
   report.narration = { pov: 'second_person', length: 'medium', focus: ['主人的模樣與態度', '即將刻下契約印記'] }
@@ -477,48 +478,51 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
 /** 主角的談判 DC：契約越強越難，主人的親密度越高越容易。 */
 export function negotiateDc(state: GameState): number {
   const pc = pcOf(state)
-  const fugitive = isFugitive(state) && !!pc.contract?.master
-  if (!pc.contract || (!isBound(state) && !fugitive)) throw new Error('你不是被主人帶著的奴隸')
-  const def = contractTerms(pc.contract)
-  const masterAff = state.relationships?.[pc.contract.master]?.affinity ?? 0
+  const contract = contractOf(pc)
+  const fugitive = isFugitive(state) && !!contract?.master
+  if (!contract || (!isBound(state) && !fugitive)) throw new Error('你不是被主人帶著的奴隸')
+  const def = contractTerms(contract)
+  const masterAff = state.relationships?.[contract.master]?.affinity ?? 0
   const bonus = state.flags['negotiate_bonus'] ? 2 : 0
   // 逃亡後當面談判：主人還在氣頭上
   const angry = fugitive ? slaveryRules.fugitive_master.negotiate_dc_bonus : 0
   // 主人的身分：好人比較願意放手，惡人不肯
-  const tags = npcRecord(state, pc.contract.master)?.tags ?? []
+  const tags = npcRecord(state, contract.master)?.tags ?? []
   const who = tags.reduce((sum, t) => sum + (slaveryRules.master_tags.tags[t]?.negotiate ?? 0), 0)
   return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus + angry + who
 }
 
 export function escapeDc(state: GameState): number {
   const pc = pcOf(state)
-  if (!pc.contract || !isBound(state)) throw new Error('你不是被主人帶著的奴隸')
-  return contractTerms(pc.contract).escape_dc
+  const contract = contractOf(pc)
+  if (!contract || !isBound(state)) throw new Error('你不是被主人帶著的奴隸')
+  return contractTerms(contract).escape_dc
 }
 
 /** 對主人的檢定都受到服從懲罰 */
 export function obediencePenalty(state: GameState): number {
   const pc = pcOf(state)
-  return pc.contract && isBound(state) ? pc.contract.obedience : 0
+  const contract = contractOf(pc)
+  return contract && isBound(state) ? contract.obedience : 0
 }
 
 export function applyNegotiate(state: GameState, report: Report, degree: Degree): string {
   const pc = pcOf(state)
-  const master = pc.contract!.masterName
+  const master = contractOf(pc)!.masterName
   switch (degree) {
     case 'critical':
     case 'success':
-      if (degree === 'critical') addAffinity(state, report, pc.contract!.master, 5, '被說服')
+      if (degree === 'critical') addAffinity(state, report, contractOf(pc)!.master, 5, '被說服')
       freePlayer(state, report, '談判成功')
       delete state.flags['negotiate_bonus']
       ;(report.changes.flags ??= {}).negotiate_bonus = false
-      return `${master}抹去了你頸上的契約印記，你恢復了自由。`
+      return `${master}抹去了你身上的契約印記，你恢復了自由。`
     case 'partial':
       ;(report.changes.flags ??= {}).negotiate_bonus = true
       return `${master}沒有答應，但似乎有些動搖（下次談判較容易）。`
     case 'fail':
       if (isFugitive(state)) {
-        addAffinity(state, report, pc.contract!.master, -5, '逃跑後還想談條件')
+        addAffinity(state, report, contractOf(pc)!.master, -5, '逃跑後還想談條件')
         return `${master}拒絕了，轉身離開。`
       }
       return `${master}拒絕了。${punish(state, 'light', report)}`
@@ -533,8 +537,8 @@ export function applyNegotiate(state: GameState, report: Report, degree: Degree)
 
 export function applyEscape(state: GameState, report: Report, degree: Degree): string {
   const pc = pcOf(state)
-  const def = contractTerms(pc.contract!)
-  const master = pc.contract!.masterName
+  const def = contractTerms(contractOf(pc)!)
+  const master = contractOf(pc)!.masterName
   if (degree === 'critical' || degree === 'success' || degree === 'partial') {
     const mult = degree === 'critical' ? 0.5 : degree === 'partial' ? 2 : 1
     const loss = Math.ceil(pc.maxHp * def.escape_hp_ratio * mult)
@@ -554,7 +558,7 @@ export function releaseSlave(state: GameState, npcId: string): Report {
   if (!m) throw new Error('隊伍中沒有這位奴隸')
   const report = socialReport(state, 0.5, locationById(state.location).name)
   freeSlave(state, npcId, report)
-  report.outcome.summary = `解除了${m.name}的奴隸契約，抹去頸上的印記。`
+  report.outcome.summary = `解除了${m.name}的奴隸契約，抹去身上的印記。`
   report.narration = { pov: 'second_person', length: 'short', focus: [`${m.name}的反應`] }
   return commitReport(state, report)
 }
@@ -673,15 +677,15 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
     case 'negotiate': {
       if (isFugitive(state)) {
         // 逃亡奴隸找到了主人：當面談判，不必在安全的地方，但 DC 較高
-        if (!masterNearby(state)) throw new Error(`${pc.contract?.masterName ?? '主人'}不在你身邊`)
+        if (!masterNearby(state)) throw new Error(`${contractOf(pc)?.masterName ?? '主人'}不在你身邊`)
         return {
-          dc: negotiateDc(state), targetName: pc.contract!.masterName, situational: [],
+          dc: negotiateDc(state), targetName: contractOf(pc)!.masterName, situational: [],
           scene: `${locationById(state.location).name}・找到逃離的主人`,
           outcomes: { critical: '主人抹去契約，恢復自由（主人親密度 +5）', success: '主人抹去契約，恢復自由', partial: '主人動搖（下次談判 DC -2）', fail: '主人拒絕（親密度 -5）', fumble: '被主人當場抓回去，嚴厲懲罰' },
         }
       }
       if (!atSafeSpot(state)) throw new Error('和主人談判要在安全的地方（旅店、安全房或神殿）')
-      const master = pc.contract?.masterName
+      const master = contractOf(pc)?.masterName
       return {
         dc: negotiateDc(state), targetName: master, situational: [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }],
         scene: locationById(state.location).name,
@@ -689,9 +693,9 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       }
     }
     case 'escape': {
-      const def = contractTerms(pc.contract ?? { kind: 'labor' })
+      const def = contractTerms(contractOf(pc) ?? { terms: termsFromTemplate(slaveryRules.roles.default) })
       return {
-        dc: escapeDc(state), targetName: pc.contract?.masterName, situational: [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }],
+        dc: escapeDc(state), targetName: contractOf(pc)?.masterName, situational: [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }],
         scene: locationById(state.location).name,
         outcomes: {
           critical: `逃走，契約仍在（成為逃亡奴隸）；印記反噬減半`,
@@ -736,7 +740,7 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       // 對認識之前的人（例如店主）行動，就算認識了
       if (rec) ensureRelationship(state, rec)
       const rel = target ? state.relationships?.[target] : undefined
-      const situational = isBound(state) && target && target === pc.contract?.master ? [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }] : []
+      const situational = isBound(state) && target && target === contractOf(pc)?.master ? [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }] : []
       let dc = 12
       if (rec) dc += 2 * Math.max(0, lifeTier(rec.level) - lifeTier(pc.level))
       if (rel) dc -= Math.floor(rel.affinity / 25)

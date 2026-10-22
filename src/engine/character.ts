@@ -7,6 +7,7 @@ import {
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
 } from './data'
 import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGear } from './gear'
+import { tattoosOf, tattooSummary } from './tattoos'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
 
@@ -56,7 +57,7 @@ export function powerGapAttitude(observerLevel: number, targetLevel: number): st
 //
 // c.attrs 是基礎屬性：建角與升級時分配、受 attributes.json 的上限限制，配點與升級只改它。
 // 其他地方（檢定、戰鬥、生命值、行動點、法術環）一律讀 attrsOf(c)：基礎屬性加上各種來源的加減
-// （例如之後的誓約印記），夾在 score.min～score.max。來源移除時不需要把加減扣回去。
+// （誓約印記，以及用 addAttrProvider 登記的），夾在 score.min～score.max。來源移除時不需要把加減扣回去。
 
 /** 屬性加減的一個來源：名稱與各屬性的加減 */
 export interface AttrSource { label: string; attrs: Partial<Attrs> }
@@ -73,9 +74,10 @@ export function addAttrProvider(p: AttrProvider): () => void {
   }
 }
 
-/** 角色身上所有的屬性加減（給畫面與 AI 說明來源） */
+/** 角色身上所有的屬性加減（給畫面與 AI 說明來源）：誓約印記，加上登記的來源 */
 export function attrSources(c: Character): AttrSource[] {
-  return attrProviders.flatMap((p) => p(c)).filter((s) => ATTR_IDS.some((a) => s.attrs[a]))
+  const oaths = (c.tattoos ?? []).filter((t) => t.kind === 'oath' && t.attrs).map((t) => ({ label: `誓約印記【${t.name ?? ''}】`, attrs: t.attrs! }))
+  return [...oaths, ...attrProviders.flatMap((p) => p(c))].filter((s) => ATTR_IDS.some((a) => s.attrs[a]))
 }
 
 /** 有效屬性：基礎屬性加上所有來源的加減 */
@@ -402,6 +404,7 @@ export function protagonistText(c: Character, birthplaceName?: string): string {
     c.appearance ? `外貌：${c.appearance}` : '',
     c.background ? `背景：${c.background}` : '',
     perksOf(c).length ? `特質：${perksOf(c).map((p) => (p.flaw ? `${p.name}（缺陷）` : p.name)).join('、')}` : '',
+    tattoosOf(c).length ? `刺青：\n${tattooSummary(c)}` : '',
   ]
   return lines.filter(Boolean).join('\n')
 }

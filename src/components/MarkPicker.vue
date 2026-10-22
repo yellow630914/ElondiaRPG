@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { slaveryRules } from '@/engine/data'
-import { sanitizeTerms, termsFromTemplate, type MarkChoice } from '@/engine/slavery'
+import { sanitizeTerms, templateTerms, type MarkChoice } from '@/engine/slavery'
+import { placeName, TATTOO_PLACES } from '@/engine/tattoos'
 import type { MarkTerms } from '@/engine/types'
 
-// 選擇契約印記：模板（勞役、戰奴、魔導束縛）或自訂（名稱、描述與各項數值）
+// 選擇契約印記：模板（勞役、戰奴、魔導束縛）或自訂（名稱、描述、部位與各項數值）
 const props = defineProps<{ allowed?: string[]; allowCustom?: boolean; base?: string }>()
 const model = defineModel<MarkChoice>({ required: true })
 
@@ -15,7 +16,7 @@ const mode = ref<string>(
     : templates.value.includes(model.value) ? model.value : templates.value[0] ?? (props.allowCustom ? 'custom' : model.value),
 )
 const r = slaveryRules.custom_mark
-const custom = reactive<MarkTerms>(termsFromTemplate(props.base ?? templates.value[0] ?? 'labor'))
+const custom = reactive<MarkTerms>(templateTerms(props.base ?? templates.value[0] ?? slaveryRules.roles.default))
 const sideText = ref(custom.side_effects.join('\n'))
 
 watch([mode, custom, sideText], () => {
@@ -31,7 +32,7 @@ function summary(t: MarkTerms): string {
 
 /** 從模板開始改 */
 function startFrom(id: string) {
-  Object.assign(custom, termsFromTemplate(id))
+  Object.assign(custom, templateTerms(id))
   sideText.value = custom.side_effects.join('\n')
   mode.value = 'custom'
 }
@@ -42,8 +43,8 @@ function startFrom(id: string) {
     <label v-for="id in templates" :key="id" class="option">
       <input v-model="mode" type="radio" :value="id" />
       <span>
-        <strong>{{ termsFromTemplate(id).name }}</strong>：{{ termsFromTemplate(id).mark }}
-        <span class="muted"><br />{{ summary(termsFromTemplate(id)) }}<br />{{ termsFromTemplate(id).side_effects.join('；') }}</span>
+        <strong>{{ templateTerms(id).name }}</strong>（{{ placeName(templateTerms(id).place) }}）：{{ templateTerms(id).mark }}
+        <span class="muted"><br />{{ summary(templateTerms(id)) }}<br />{{ templateTerms(id).side_effects.join('；') }}</span>
       </span>
     </label>
     <template v-if="allowCustom">
@@ -54,10 +55,13 @@ function startFrom(id: string) {
       <div v-if="mode === 'custom'" class="custom">
         <div class="row">
           <span class="muted">從模板開始：</span>
-          <button v-for="id in Object.keys(slaveryRules.contracts)" :key="id" class="small" type="button" @click="startFrom(id)">{{ termsFromTemplate(id).name }}</button>
+          <button v-for="id in Object.keys(slaveryRules.contracts)" :key="id" class="small" type="button" @click="startFrom(id)">{{ templateTerms(id).name }}</button>
         </div>
         <label>名稱 <input v-model="custom.name" :maxlength="r.name_chars" /></label>
         <label>描述（印記的樣子與感覺，會交給 AI 描寫）<textarea v-model="custom.mark" rows="2" :maxlength="r.mark_chars" /></label>
+        <label>部位（原本的刺青會被蓋掉）
+          <select v-model="custom.place"><option v-for="p in TATTOO_PLACES" :key="p" :value="p">{{ placeName(p) }}</option></select>
+        </label>
         <div class="nums">
           <label>收益歸主人 <input v-model.number="custom.income_share" type="number" step="0.05" :min="r.income_share[0]" :max="r.income_share[1]" /></label>
           <label>談判 DC <input v-model.number="custom.negotiate_dc" type="number" :min="r.negotiate_dc[0]" :max="r.negotiate_dc[1]" /></label>

@@ -18,11 +18,12 @@ import { isFugitive, leaderOf } from '@/engine/party'
 import { hitDiceLeft, longRest, shortRest } from '@/engine/rest'
 import { acceptSuggestion, addMemory, addSuggestions, compactMemories, editMemory, ensureRelationship, setAffinity } from '@/engine/social'
 import { applyRosterFlavor } from '@/engine/population'
-import { chooseMark } from '@/engine/slavery'
+import { chooseMark, termsFromTemplate } from '@/engine/slavery'
 import { addHours, commitReport, migrate, newGame, withRng } from '@/engine/state'
 import { acceptQuest, guildQuests, recruit } from '@/engine/town'
 import type { GameState, Report } from '@/engine/types'
 import { buildActionPrompt, buildRosterPrompt, extractJson, splitSuggestions, visibleNarration } from '@/narrator/judge'
+import { contractOf } from '@/engine/tattoos'
 
 const ajv = new Ajv2020({ strict: false })
 const validate = ajv.compile(schema)
@@ -86,7 +87,7 @@ describe('reward template', () => {
     commitReport(state, report)
     const slave = state.party.find((m) => m.name === '俘虜')!
     expect(slave.bond).toBe('slave')
-    expect(slave.contract).toMatchObject({ kind: 'combat', master: 'pc', obedience: contractDef('combat').obedience_penalty })
+    expect(contractOf(slave)).toMatchObject({ kind: 'combat', master: 'pc', obedience: contractDef('combat').obedience_penalty })
     expect(slave.status).toContain('slave_mark')
     expect(state.relationships![slave.id]!.affinity).toBe(-10)
   })
@@ -350,7 +351,7 @@ describe('slave markets', () => {
 
     releaseSlave(state, slave.id)
     expect(slave.bond).toBe('voluntary')
-    expect(slave.contract).toBeUndefined()
+    expect(contractOf(slave)).toBeUndefined()
     expect(state.relationships![slave.id]!.affinity).toBe(-10 + 15)
   })
 
@@ -370,7 +371,7 @@ describe('the player as a slave', () => {
       const state = game(seed, { location: 'rhineburg', cha: 16 })
       offerSelf(state, 'public')
       // 這些測試要的是會帶著主角行動的主人（普通人主人留在城裡，見 slavery.spec）
-      if (state.party[0]!.contract && leaderOf(state)) {
+      if (contractOf(state.party[0]!) && leaderOf(state)) {
         // 刻印檢定：部分成功 = 主人原本打算的印記
         prepareAction(state, { kind: 'marking', text: '' })
         forceRoll(state, 10)
@@ -386,7 +387,7 @@ describe('the player as a slave', () => {
     const state = enslaved()
     const pc = state.party[0]!
     const master = leaderOf(state)!
-    expect(pc.contract?.master).toBe(master.id)
+    expect(contractOf(pc)?.master).toBe(master.id)
     expect(pc.status).toContain('slave_mark')
     expect(state.money_cc).toBeGreaterThan(500)
     expect(() => tavernCandidates(state) && hireAtAsking(state, tavernCandidates(state)[0]!.npc)).toThrow('身為奴隸')
@@ -395,7 +396,7 @@ describe('the player as a slave', () => {
     applyEffects(state, report, [{ type: 'money', amount: 100 }])
     const money = state.money_cc
     commitReport(state, report)
-    const share = contractDef(pc.contract!.kind).income_share
+    const share = contractDef(contractOf(pc)!.kind).income_share
     expect(state.money_cc).toBe(money + 100 - Math.floor(100 * share))
     expect(report.changes.master_share_cc).toBe(Math.floor(100 * share))
   })
@@ -409,7 +410,7 @@ describe('the player as a slave', () => {
     forceRoll(state, 20)
     const report = resolveAction(state, null)
     expectValid(report)
-    expect(state.party[0]!.contract).toBeUndefined()
+    expect(contractOf(state.party[0]!)).toBeUndefined()
     expect(state.party[0]!.status).not.toContain('slave_mark')
     expect(report.changes.companions?.some((c) => c.npc === 'pc' && c.change === 'freed')).toBe(true)
     // 主人還在，變成普通的隊長
@@ -419,13 +420,13 @@ describe('the player as a slave', () => {
   it('escapes as a fugitive whom official institutions refuse, and may be recaptured at rests', () => {
     const state = enslaved()
     const pc = state.party[0]!
-    pc.contract!.kind = 'arcane'
+    Object.assign(contractOf(pc)!, { kind: 'arcane', terms: termsFromTemplate('arcane') })
     prepareAction(state, { kind: 'escape', text: '趁主人喝醉時從後門溜走' })
     forceRoll(state, 20)
     resolveAction(state, null)
     expect(isFugitive(state)).toBe(true)
     expect(leaderOf(state)).toBeUndefined()
-    expect(pc.contract).toBeTruthy()
+    expect(contractOf(pc)).toBeTruthy()
     standOn(state, 'guild')
     expect(() => acceptQuest(state, guildQuests(state)[0]!.id)).toThrow('契約印記')
 
@@ -435,7 +436,7 @@ describe('the player as a slave', () => {
       caught = !isFugitive(state)
     }
     expect(caught).toBe(true)
-    expect(leaderOf(state)?.id).toBe(pc.contract!.master)
+    expect(leaderOf(state)?.id).toBe(contractOf(pc)!.master)
     expect(pc.status).toContain('punished')
   })
 
@@ -449,7 +450,7 @@ describe('the player as a slave', () => {
     expect(report.check?.degree).toBe('fumble')
     expect(pc.hp).toBeLessThan(hp)
     expect(pc.status).toContain('punished')
-    expect(pc.contract!.obedience).toBe(contractDef(pc.contract!.kind).obedience_penalty + 1)
+    expect(contractOf(pc)!.obedience).toBe(contractDef(contractOf(pc)!.kind).obedience_penalty + 1)
   })
 
   it('seals spells above the contract cap in combat', () => {

@@ -19,6 +19,7 @@ import { answerRoadEvent, enterSide, leaveSide, startJourney } from '@/engine/ro
 import { allNpcs, areaOf, peopleHere } from '@/engine/population'
 import { npcRecord, npcSpot } from '@/engine/npcs'
 import { editableWorld } from './testWorld'
+import { contractOf } from '@/engine/tattoos'
 
 beforeEach(() => {
   localStorage.clear()
@@ -51,7 +52,7 @@ function enslaved(): GameState {
     state.location = 'rhineburg'
     enterLocation(state)
     offerSelf(state, 'public')
-    if (!state.party[0]!.contract || !leaderOf(state)) continue
+    if (!contractOf(state.party[0]!) || !leaderOf(state)) continue
     prepareAction(state, { kind: 'marking', text: '' })
     state.pendingAction!.natural = 10
     resolveAction(state, null)
@@ -126,7 +127,7 @@ describe('B6: being tracked down while resting', () => {
     const state = enslaved()
     // 逃亡中、契約一定找得到：家裡的倍率改成 0 就不會被找到，旅店照樣會
     playerEscapes(state)
-    state.party[0]!.contract!.terms = { ...state.party[0]!.contract!.terms, recapture_chance: 1, functions: ['tracking'] } as never
+    contractOf(state.party[0]!)!.terms = { ...contractOf(state.party[0]!)!.terms, recapture_chance: 1, functions: ['tracking'] } as never
     const keep = { ...slaveryRules.track_place_mult }
     slaveryRules.track_place_mult.home = 0
     try {

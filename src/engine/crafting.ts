@@ -9,6 +9,7 @@ import { gearRules, type MaterialKind } from './gear'
 import { currentArea, currentCell } from './grid'
 import { homeOfArea, residentsHere, workbenchFor } from './homes'
 import type { Character, CraftSkill, GameState, NpcRecord } from './types'
+import { contractOf } from './tattoos'
 
 export { CRAFT_IDS }
 
@@ -85,7 +86,7 @@ export function crafterRefusal(state: GameState, m: Character): string | undefin
   if (m.isPlayer) return undefined
   if (m.hp <= 0) return '倒下了'
   if (m.status.includes('away')) return '暫時離隊'
-  if (m.bond === 'slave') return m.contract?.master === 'pc' ? undefined : '不是你的奴隸'
+  if (m.bond === 'slave') return contractOf(m)?.master === 'pc' ? undefined : '不是你的奴隸'
   if (m.bond !== 'voluntary') return m.bond === 'hired' ? '雇傭的夥伴不幫忙做工藝' : '不是你的夥伴'
   if ((m.affinity ?? 0) < craftRules.companion.min_affinity) return `親密度要 ${craftRules.companion.min_affinity} 以上`
   return undefined

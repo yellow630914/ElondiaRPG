@@ -1,0 +1,59 @@
+{
+  "$comment": "刺青（docs/TATTOOS.md）：身上 11 個部位各一個。三種：奴隸印記（契約，模板在 slavery.json 的 contracts，place 是刻在哪裡）、誓約印記（屬性有加有減，加總為 0）、普通刺青（只是外觀）。templates 是普通刺青與誓約印記的圖樣；places 是建議的部位（沒寫時任何部位都可以）。",
+  "version": 1,
+  "places": {
+    "neck": "頸部",
+    "left_arm": "左臂",
+    "right_arm": "右臂",
+    "chest": "胸口",
+    "back": "背部",
+    "belly": "小腹",
+    "hips": "臀部",
+    "left_thigh": "左大腿",
+    "right_thigh": "右大腿",
+    "left_calf": "左小腿",
+    "right_calf": "右小腿"
+  },
+  "kinds": {
+    "slave": "奴隸印記",
+    "oath": "誓約印記",
+    "plain": "普通刺青"
+  },
+  "oath": {
+    "$comment": "誓約印記的平衡規則：最多動 max_attrs 項屬性，每項 ±1～±max_change，有加有減而且加總為 0；每個角色最多 max_per_character 個。",
+    "max_attrs": 3,
+    "max_change": 3,
+    "max_per_character": 2
+  },
+  "templates": {
+    "thorn_vine": { "kind": "plain", "name": "荊棘藤蔓", "desc": "一圈纏繞的黑色荊棘藤蔓，刺尖處點著細小的紅。", "places": ["left_arm", "right_arm", "left_calf", "right_calf"] },
+    "spread_hawk": { "kind": "plain", "name": "展翅之鷹", "desc": "一隻張開雙翼的鷹，羽毛層層分明，眼神銳利。", "places": ["back", "chest"] },
+    "coiled_dragon": { "kind": "plain", "name": "盤龍", "desc": "一條盤繞的長龍，鱗片以青墨細細描出，龍首朝向肩頭。", "places": ["back", "left_arm", "right_arm"] },
+    "lotus": { "kind": "plain", "name": "蓮花", "desc": "一朵盛開的蓮花，花瓣從淡粉漸層到白。", "places": ["belly", "hips", "back", "neck"] },
+    "butterfly": { "kind": "plain", "name": "蝴蝶", "desc": "一對彩翼的蝴蝶，翅膀上的紋路像在輕輕顫動。", "places": ["hips", "belly", "left_thigh", "right_thigh", "neck"] },
+    "skull_rose": { "kind": "plain", "name": "骷髏與玫瑰", "desc": "一顆骷髏咬著帶刺的玫瑰，花瓣是暗紅色。", "places": ["left_arm", "right_arm", "chest"] },
+    "moon_phases": { "kind": "plain", "name": "月相", "desc": "一排從新月到滿月的月相，中間點綴著細小的星。", "places": ["neck", "back", "left_arm", "right_arm"] },
+    "wolf_head": { "kind": "plain", "name": "狼首", "desc": "一顆仰頭長嚎的狼首，毛髮用粗獷的線條刺成。", "places": ["chest", "left_arm", "right_arm", "back"] },
+    "tribal_band": { "kind": "plain", "name": "部族環紋", "desc": "一圈粗黑的部族紋樣，線條銳利對稱。", "places": ["left_arm", "right_arm", "left_calf", "right_calf", "left_thigh", "right_thigh"] },
+    "anchor_wave": { "kind": "plain", "name": "海浪與錨", "desc": "一支纏著繩索的船錨，底下捲著浪花。", "places": ["left_arm", "right_arm", "left_calf", "right_calf"] },
+    "old_script": { "kind": "plain", "name": "古文銘句", "desc": "一行細小的古文字，據說是一句祈求平安的老話。", "places": ["chest", "neck", "left_thigh", "right_thigh", "left_arm", "right_arm"] },
+    "serpent": { "kind": "plain", "name": "纏蛇", "desc": "一條細長的蛇從腳踝往上盤繞，蛇信微吐。", "places": ["left_calf", "right_calf", "left_thigh", "right_thigh", "left_arm", "right_arm"] },
+    "heart_name": { "kind": "plain", "name": "心與名字", "desc": "一顆紅心，緞帶上刺著某個人的名字。", "places": ["chest", "left_arm", "right_arm", "hips"] },
+    "flames": { "kind": "plain", "name": "火焰", "desc": "一簇向上竄的火焰，從橘紅漸層到金黃。", "places": ["back", "left_calf", "right_calf", "left_arm", "right_arm"] },
+    "phoenix_feather": { "kind": "plain", "name": "鳳羽", "desc": "幾根修長的鳳凰羽毛，末端泛著金色。", "places": ["back", "hips", "left_thigh", "right_thigh"] },
+    "mercenary_crest": { "kind": "plain", "name": "傭兵團徽", "desc": "一面交叉長矛的盾形徽記，邊角有些褪色。", "places": ["left_arm", "right_arm", "chest"] },
+    "twin_fish": { "kind": "plain", "name": "雙魚", "desc": "兩尾首尾相接的魚，圍成一個圓。", "places": ["belly", "back", "hips"] },
+    "flower_garland": { "kind": "plain", "name": "花環", "desc": "一圈小花串成的花環，像繫在身上的緞帶。", "places": ["neck", "left_thigh", "right_thigh", "left_calf", "right_calf"] },
+
+    "oath_berserker": { "kind": "oath", "name": "狂戰之誓", "desc": "一道血紅的獸爪紋，發誓以力量回應一切，代價是冷靜與口才。", "places": ["back", "chest", "left_arm", "right_arm"], "attrs": { "str": 3, "int": -2, "cha": -1 } },
+    "oath_shadow": { "kind": "oath", "name": "影行之誓", "desc": "一道細長的黑色影紋，發誓永遠走在暗處，不再與人親近。", "places": ["back", "left_calf", "right_calf", "neck"], "attrs": { "dex": 3, "cha": -2, "str": -1 } },
+    "oath_sage": { "kind": "oath", "name": "賢者之誓", "desc": "一圈藍色的星盤紋，發誓把一生交給知識，身體日漸單薄。", "places": ["chest", "neck", "left_arm", "right_arm"], "attrs": { "int": 3, "str": -2, "dex": -1 } },
+    "oath_devout": { "kind": "oath", "name": "苦修之誓", "desc": "一枚金色的聖印紋，發誓侍奉神明、遠離世俗的往來。", "places": ["chest", "back", "neck"], "attrs": { "fai": 3, "cha": -2, "dex": -1 } },
+    "oath_charm": { "kind": "oath", "name": "魅惑之誓", "desc": "一朵紫色的曼陀羅紋，發誓以魅力換取一切，信念卻逐漸動搖。", "places": ["hips", "belly", "neck", "left_thigh", "right_thigh"], "attrs": { "cha": 3, "fai": -2, "str": -1 } },
+    "oath_bulwark": { "kind": "oath", "name": "鐵壁之誓", "desc": "一面方盾形的鐵灰紋，發誓成為同伴的城牆，腳步從此沉重。", "places": ["back", "chest", "left_arm", "right_arm"], "attrs": { "str": 2, "fai": 1, "dex": -3 } },
+    "oath_quicksilver": { "kind": "oath", "name": "水銀之誓", "desc": "一道流動的銀色紋路，發誓以速度與機智取勝，放棄蠻力。", "places": ["left_arm", "right_arm", "left_calf", "right_calf"], "attrs": { "dex": 2, "int": 1, "str": -3 } },
+    "oath_ascetic": { "kind": "oath", "name": "斷念之誓", "desc": "一圈灰白的念珠紋，發誓斷絕人情，只留下信仰與體魄。", "places": ["neck", "chest", "back"], "attrs": { "fai": 2, "str": 1, "cha": -3 } },
+    "oath_heretic": { "kind": "oath", "name": "叛神之誓", "desc": "一枚倒置的聖印，發誓不再仰賴神明，只相信自己的頭腦與口舌。", "places": ["back", "left_thigh", "right_thigh", "belly"], "attrs": { "int": 2, "cha": 1, "fai": -3 } },
+    "oath_wild": { "kind": "oath", "name": "野性之誓", "desc": "一道獸牙狀的綠色紋，發誓回歸山野，遺忘書本與禮數。", "places": ["left_arm", "right_arm", "left_thigh", "right_thigh", "back"], "attrs": { "str": 1, "dex": 1, "int": -2 } }
+  }
+}

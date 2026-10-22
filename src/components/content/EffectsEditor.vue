@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { abilities, contractDef, geography, itemRules, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
+import { abilities, ATTR_IDS, attrName, contractDef, geography, itemRules, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
 import { STORY_EFFECTS } from '@/engine/storyMods'
+import { oathError, oathText, TATTOO_PLACES, placeName, tattooKindName, tattooRules } from '@/engine/tattoos'
 import { useContent } from '@/stores/content'
 
 // 效果的清單（任務點的結果、完成的報酬）：金錢、物品、裝備、經驗、聲望、親密度、記憶、能力、入隊、生命值
@@ -34,9 +35,39 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   companion: () => ({ type: 'companion', npc: namedNpcs[0]?.id ?? '', mode: 'voluntary' }),
   hp: () => ({ type: 'hp', target: 'pc', ratio: -0.2 }),
   start_story: () => ({ type: 'start_story', story: stories.find((s) => s.start.kind === 'manual')?.id ?? stories[0]?.id ?? '' }),
-  enslave_player: () => ({ type: 'enslave_player', random: {}, contract: 'labor' }),
+  enslave_player: () => ({ type: 'enslave_player', random: {}, contract: slaveryRules.roles.default }),
   perk: () => ({ type: 'perk', perk: choosablePerks()[0]!.id }),
   lose_perk: () => ({ type: 'lose_perk', perk: choosablePerks()[0]!.id }),
+  tattoo: () => ({ type: 'tattoo', template: Object.keys(tattooRules.templates)[0]! }),
+  remove_tattoo: () => ({ type: 'remove_tattoo', kind: 'plain' }),
+}
+// 刺青：圖樣，或自己描述（誓約要填屬性的加減）
+const tattooTemplates = Object.entries(tattooRules.templates)
+function tattooMode(r: Row): string {
+  return typeof r.template === 'string' ? r.template : `custom:${r.kind === 'oath' ? 'oath' : 'plain'}`
+}
+function setTattooMode(r: Row, mode: string) {
+  for (const k of ['template', 'kind', 'name', 'text', 'attrs']) delete r[k]
+  if (mode.startsWith('custom:')) Object.assign(r, { kind: mode.slice(7), name: '', text: '', ...(mode === 'custom:oath' ? { attrs: {} } : {}) })
+  else r.template = mode
+}
+function oathAttrs(r: Row): Record<string, number> {
+  return (r.attrs ??= {}) as Record<string, number>
+}
+function setOathAttr(r: Row, a: string, v: number) {
+  const attrs = { ...oathAttrs(r) }
+  if (v) attrs[a] = v
+  else delete attrs[a]
+  r.attrs = attrs
+}
+function removeTattooMode(r: Row): string {
+  return typeof r.place === 'string' ? r.place : `kind:${r.kind ?? 'plain'}`
+}
+function setRemoveTattooMode(r: Row, mode: string) {
+  delete r.place
+  delete r.kind
+  if (mode.startsWith('kind:')) r.kind = mode.slice(5)
+  else r.place = mode
 }
 // 特質的機會：第一個特質加上其他選項
 function perkOptions(r: Row): string[] {
@@ -174,6 +205,39 @@ function setBase(r: Row, base: string) {
           <label class="check small"><input v-model="r.direct" type="checkbox" /> 直接學會（不給選擇）</label>
           <span v-if="!r.direct" class="small muted">玩家從中選一個，或寫一段說法擲骰交給 AI</span>
         </template>
+      </template>
+      <template v-else-if="r.type === 'tattoo'">
+        <select :value="tattooMode(r)" @change="setTattooMode(r, ($event.target as HTMLSelectElement).value)">
+          <optgroup v-for="k in (['plain', 'oath'] as const)" :key="k" :label="tattooKindName(k)">
+            <option v-for="[id, t] in tattooTemplates.filter(([, x]) => x.kind === k)" :key="id" :value="id">{{ t.name }}{{ t.attrs ? `（${oathText(t.attrs)}）` : '' }}</option>
+          </optgroup>
+          <option value="custom:plain">自己描述（普通刺青）</option>
+          <option value="custom:oath">自己描述（誓約印記）</option>
+        </select>
+        <select :value="r.place ?? ''" @change="($event.target as HTMLSelectElement).value ? (r.place = ($event.target as HTMLSelectElement).value) : delete r.place">
+          <option value="">部位：圖樣建議的空位</option>
+          <option v-for="p in TATTOO_PLACES" :key="p" :value="p">{{ placeName(p) }}</option>
+        </select>
+        <template v-if="typeof r.template !== 'string'">
+          <input v-model="r.name" maxlength="20" placeholder="名稱" />
+          <input v-model="r.text" class="grow" maxlength="160" placeholder="外觀描述" />
+          <template v-if="r.kind === 'oath'">
+            <label v-for="a in ATTR_IDS" :key="a" class="small">{{ attrName(a) }}
+              <input type="number" class="num" min="-3" max="3" :value="oathAttrs(r)[a] ?? 0" @input="setOathAttr(r, a, Number(($event.target as HTMLInputElement).value))" />
+            </label>
+            <span class="small" :class="oathError(oathAttrs(r)) ? 'warn' : 'muted'">{{ oathError(oathAttrs(r)) ?? '加減平衡' }}</span>
+          </template>
+        </template>
+        <input v-model="r.by" maxlength="20" placeholder="誰刺的（選填）" />
+        <span class="small muted">部位已經有刺青、身上沒有空位或誓約太多時不刺</span>
+      </template>
+      <template v-else-if="r.type === 'remove_tattoo'">
+        <select :value="removeTattooMode(r)" @change="setRemoveTattooMode(r, ($event.target as HTMLSelectElement).value)">
+          <option value="kind:plain">所有普通刺青</option>
+          <option value="kind:oath">所有誓約印記</option>
+          <option v-for="p in TATTOO_PLACES" :key="p" :value="p">{{ placeName(p) }}的刺青</option>
+        </select>
+        <span class="small muted">奴隸印記不會被洗掉（要解除契約）</span>
       </template>
       <template v-else-if="r.type === 'hp'">
         <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）

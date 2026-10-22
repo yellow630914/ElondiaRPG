@@ -25,6 +25,7 @@ import { unflavored } from '@/engine/population'
 import type { GameState, Negotiation } from '@/engine/types'
 import { assemble, endNotesSection, fillDefeatRules, fillSceneRules, LANGUAGE_NAME, loreText, sharedSystemSections, styleLead, styleSection, type LoreLike, type Prompt } from './prompt'
 import type { PromptEntry } from './promptConfig'
+import { contractOf, tattoosOf, tattooSummary } from '@/engine/tattoos'
 
 /** 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。 */
 export function extractJson(text: string): unknown {
@@ -46,7 +47,8 @@ export function partyLines(state: GameState): string {
     const s = snapshot(m, undefined, pc)
     const bond = m.isPlayer ? '主角' : m.bond ? companionRules.bonds[m.bond] : '同伴'
     const conds = m.status.map(conditionName).join('、')
-    const mark = m.contract && !m.isPlayer ? `｜印記：${contractTerms(m.contract).name}（${contractTerms(m.contract).mark}）` : ''
+    const c = contractOf(m)
+    const mark = c && !m.isPlayer ? `｜印記：${contractTerms(c).name}（${contractTerms(c).mark}）` : ''
     return `- ${m.name}（${bond}${m.gender ? `・${genderName(m.gender)}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
   }).join('\n')
 }
@@ -73,12 +75,14 @@ function pcDetail(state: GameState): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${attrOf(pc, a)}`).join('、')
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
-  const home = pc.contract ? masterHomeSummary(state) : ''
+  const pcContract = contractOf(pc)
+  const home = pcContract ? masterHomeSummary(state) : ''
   // 特質：程式已經算進檢定的加值（情境修正），這裡讓 AI 判定時參考角色的特長
   const perks = perkNames(pc)
-  const contract = pc.contract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pc.contract)}${home ? `\n${home}` : ''}` : ''
+  const tattoos = tattoosOf(pc).length ? `\n刺青（誓約印記的屬性已算進上面的屬性）：\n${tattooSummary(pc)}` : ''
+  const contract = pcContract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pcContract)}${home ? `\n${home}` : ''}` : ''
   const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
-  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${contract}`
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${contract}`
 }
 
 function targetDetail(state: GameState, p: ActionPending): string {
@@ -186,7 +190,7 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     gear: gearDoc(state, p),
   }
   // 主角不是奴隸時，不提供和契約有關的效果
-  const list = kind.effects.filter((e) => pc.contract || (e !== 'release' && e !== 'change_master'))
+  const list = kind.effects.filter((e) => contractOf(pc) || (e !== 'release' && e !== 'change_master'))
   return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>${p.kind === 'invent' ? inventionDoc(state, p) : ''}${p.kind === 'perk_pitch' ? pitchDoc(state, p) : ''}`
 }
 

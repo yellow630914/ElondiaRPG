@@ -7,6 +7,7 @@ import { isBound, isFugitive } from '@/engine/party'
 import { jobHere, workers, workPay, workTarget } from '@/engine/work'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import { contractOf } from '@/engine/tattoos'
 
 // 在設施上工作換錢（data/rules/work.json）
 const game = useGame()
@@ -16,7 +17,7 @@ const hours = ref(workRules.hours[1] ?? 4)
 const text = ref('')
 const use = ref('')
 const blocked = computed(() => !!job.value?.official && isFugitive(s.value))
-const share = computed(() => (isBound(s.value) ? s.value.party.find((m) => m.isPlayer)?.contract : undefined))
+const share = computed(() => (isBound(s.value) ? contractOf(s.value.party.find((m) => m.isPlayer)) : undefined))
 // 誰去做：主角自己，或派自己的奴隸（由奴隸擲檢定，工錢歸主角）
 const slaves = computed(() => workers(s.value))
 const picked = ref('')
@@ -41,7 +42,7 @@ function work() {
         <option v-for="m in slaves" :key="m.id" :value="m.id">派{{ m.name }}去（{{ attrName(job.attr) }} {{ attrOf(m, job.attr) }}，工錢歸你）</option>
       </select>
     </label>
-    <p v-if="blocked && !worker" class="muted">這裡的人認出了你頸上的契約印記，不肯雇你。</p>
+    <p v-if="blocked && !worker" class="muted">這裡的人認出了你身上的契約印記，不肯雇你。</p>
     <template v-else>
       <div class="row">
         <label v-for="h in workRules.hours" :key="h" class="check"><input v-model="hours" type="radio" :value="h" /> {{ h }} 小時（約 {{ formatMoney(workPay(job, h, 'success')) }}）</label>

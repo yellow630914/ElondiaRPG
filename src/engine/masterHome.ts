@@ -13,6 +13,7 @@ import { setMasterHomeResolver } from './homeResolver'
 import { generateNpc, npcRecord, weightedPick } from './npcs'
 import { addAffinity, isBound, pcOf, punish } from './party'
 import { contractTerms } from './slavery'
+import { contractOf } from './tattoos'
 import { Rng } from './rng'
 import { addHours } from './state'
 import { arrive, daysToHours } from './travel'
@@ -31,8 +32,8 @@ function hash(text: string): number {
   return h
 }
 
-function contractOf(state: GameState): ContractRef | undefined {
-  return pcOf(state).contract
+function pcContract(state: GameState): ContractRef | undefined {
+  return contractOf(pcOf(state))
 }
 
 export function masterHomeId(master: string): string {
@@ -95,7 +96,7 @@ function buildMasterHome(state: GameState): Home | undefined {
 
 /** 目前主人的家（主角有主人、而且已經決定了主人的家時） */
 export function currentMasterHome(state: GameState): Home | undefined {
-  const c = contractOf(state)
+  const c = pcContract(state)
   return c?.master && state.masterHome?.master === c.master ? buildMasterHome(state) : undefined
 }
 
@@ -104,7 +105,7 @@ setMasterHomeResolver(currentMasterHome)
 /** 現在站在主人的家裡 */
 export function atMasterHome(state: GameState, area: Pick<Area, 'key' | 'kind'> = currentArea(state)): boolean {
   const home = homeOfArea(state, area)
-  return !!home?.master && home.master === contractOf(state)?.master
+  return !!home?.master && home.master === pcContract(state)?.master
 }
 
 /** 拿掉不是現任主人的家（換主人、獲釋時）；人還在裡面就站到門口的街上 */
@@ -214,7 +215,7 @@ export function householdOf(state: GameState, home: Home | undefined = currentMa
  * 第一次需要時決定在哪座城（那座城的民宅就是主人的家）並生成家裡的人；找不到民宅時沒有房子（也就沒有離家期限）。
  */
 export function syncMasterHome(state: GameState): Home | undefined {
-  const c = contractOf(state)
+  const c = pcContract(state)
   dropStale(state, c?.master || undefined)
   if (!c?.master) return undefined
   const master = npcRecord(state, c.master)
@@ -257,7 +258,7 @@ function entrance(home: Home): { area: Area; x: number; y: number } {
 
 /** 允許離家的天數：(印記基本天數 + 親密度加成 + 標籤天數) × 標籤倍率，夾在 min～max（以半天為單位） */
 export function allowedDays(state: GameState): number {
-  const c = contractOf(state)
+  const c = pcContract(state)
   if (!c?.master) return 0
   const r = rules()
   let days = Math.max(0, (r.days.pivot_exit_dc - contractTerms(c).exit_dc) * r.days.per_dc)
@@ -286,7 +287,7 @@ export interface HomeDeadline {
 export function homeDeadline(state: GameState): HomeDeadline | undefined {
   if (!isBound(state)) return undefined
   const home = currentMasterHome(state)
-  const c = contractOf(state)!
+  const c = pcContract(state)!
   if (!home) return undefined
   const days = allowedDays(state)
   const atHome = atMasterHome(state)
@@ -311,14 +312,14 @@ export function overdueChance(state: GameState): number {
 
 /** 走進或走出主人的家：離家期限重新算 */
 export function touchMasterHome(state: GameState, from: Pick<Area, 'key' | 'kind'>, to: Pick<Area, 'key' | 'kind'>) {
-  const c = contractOf(state)
+  const c = pcContract(state)
   if (!c?.master || (!atMasterHome(state, from) && !atMasterHome(state, to))) return
   c.homeAt = { ...state.time }
 }
 
 /** 延長期限（主人寬限幾天） */
 export function extendDeadline(state: GameState, hours: number) {
-  const c = contractOf(state)
+  const c = pcContract(state)
   if (!c?.master) return
   c.homeAt = addHours(c.homeAt ?? c.since, hours)
 }
@@ -327,14 +328,14 @@ export function extendDeadline(state: GameState, hours: number) {
 
 /** 目前嚴加看管的點數（每 decay_days 天減 1 點） */
 export function strictPoints(state: GameState): number {
-  const s = contractOf(state)?.strict
+  const s = pcContract(state)?.strict
   if (!s) return 0
   const days = (hoursOf(state.time) - hoursOf(s.since)) / 24
   return Math.max(0, s.points - Math.floor(days / rules().strict.decay_days))
 }
 
 export function addStrict(state: GameState, n: number) {
-  const c = contractOf(state)
+  const c = pcContract(state)
   if (!c || !n) return
   c.strict = { points: Math.max(0, Math.min(rules().strict.max, strictPoints(state) + n)), since: { ...state.time } }
 }
@@ -358,7 +359,7 @@ export function sendToMasterHome(state: GameState, report: Report): string {
   report.time.end = addHours(report.time.end, hours)
   const at = entrance(home)
   placeAt(state, at.area, at.x, at.y)
-  const c = contractOf(state)!
+  const c = pcContract(state)!
   c.homeAt = { ...report.time.end }
   const days = Math.round((hours / 24) * 10) / 10
   return `被帶回${locationById(home.location).name}的「${home.name}」${hours ? `（路上約 ${days} 天）` : ''}。`
@@ -379,13 +380,13 @@ export function houseRefusedToday(state: GameState): boolean {
 /** 要走出主人家的大門時檢查 */
 export function assertMayLeaveHouse(state: GameState) {
   if (mayLeaveHouse(state)) return
-  const name = contractOf(state)!.masterName
+  const name = pcContract(state)!.masterName
   if (houseRefusedToday(state)) throw new Error(`${name}今天不准你出門。`)
   throw new Error(`要出門，先請求${name}同意（在主動行動裡「請求主人讓你出門」）。`)
 }
 
 export function leaveDc(state: GameState): number {
-  const c = contractOf(state)!
+  const c = pcContract(state)!
   const l = rules().leave
   const aff = state.relationships?.[c.master]?.affinity ?? 0
   return l.base + c.obedience + strictPoints(state) - Math.floor(aff / l.affinity_step)
@@ -395,7 +396,7 @@ export function setupLeave(state: GameState) {
   if (!isBound(state) || !atMasterHome(state)) throw new Error('只有在主人的家裡才需要請求出門')
   if (mayLeaveHouse(state)) throw new Error('主人今天已經同意你出門了')
   if (houseRefusedToday(state)) throw new Error('主人今天已經拒絕了，明天再問')
-  const c = contractOf(state)!
+  const c = pcContract(state)!
   const strict = strictPoints(state)
   return {
     attr: rules().leave.attr, dc: leaveDc(state), hours: rules().leave.hours, targetName: c.masterName,
@@ -409,7 +410,7 @@ export function setupLeave(state: GameState) {
 }
 
 export function applyLeave(state: GameState, report: Report, degree: Degree): string {
-  const c = contractOf(state)!
+  const c = pcContract(state)!
   if (degree === 'critical' || degree === 'success' || degree === 'partial') {
     state.masterHousePass = state.time.day
     if (degree === 'critical') addAffinity(state, report, c.master, 1, '主人心情不錯')
@@ -426,7 +427,7 @@ export function masterHomeSummary(state: GameState): string {
   const home = d?.home ?? currentMasterHome(state)
   if (!home) return ''
   const people = householdOf(state, home).map((r) => `${r.occupation ?? ''}${r.name}`)
-  const where = `${contractOf(state)?.masterName ?? '主人'}的家在${locationById(home.location).name}${people.length ? `（家裡還有：${people.join('、')}）` : ''}`
+  const where = `${pcContract(state)?.masterName ?? '主人'}的家在${locationById(home.location).name}${people.length ? `（家裡還有：${people.join('、')}）` : ''}`
   if (!d) return `${where}。`
   if (d.atHome) return `${where}，現在在家裡；出門後允許離家約 ${d.days} 天。`
   const left = d.hoursLeft / 24

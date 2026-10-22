@@ -6,10 +6,11 @@ import { abilities, attributeRules, classDef, isChoosablePerk, locationById, per
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
-import { contractTerms, type SlaveStart } from './slavery'
+import { contractTerms, termsFromTemplate, type SlaveStart } from './slavery'
 import { backfillEventMemories, ensureRelationship, MEMORY_RULES_VERSION, recordMemory, setAffinity } from './social'
 import { Rng } from './rng'
-import type { Character, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, Report } from './types'
+import type { Character, ContractRef, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, MarkTerms, Report } from './types'
+import { contractOf, setContract } from './tattoos'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
@@ -126,8 +127,10 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 2：公會階級與功績（guild）、存檔規則（options）
  * 3：房屋（homes；留守的夥伴記在 NPC 登錄的 staying）
  * 4：主人的家改成固定設施（民宅）：從 homes 拿掉 m- 開頭的那棟，改記在 masterHome（主人、城市、家裡的人）
+ * 5：名單的潤飾記在每個人身上（flavored）
+ * 6：刺青：奴隸契約搬進刺青清單（tattoos 的奴隸印記），條款一律存一份、加上部位
  */
-export const SAVE_SCHEMA = 5
+export const SAVE_SCHEMA = 6
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -160,7 +163,20 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
       delete roster.flavored
     }
   }],
+  [6, (s) => {
+    for (const c of [...s.party, ...Object.values(s.npcs ?? {}).map((r) => r.character)]) migrateContract(c)
+  }],
 ]
+
+/** 舊的契約（角色身上的 contract）改成刺青清單裡的奴隸印記 */
+function migrateContract(c: Character | undefined) {
+  const old = (c as (Character & { contract?: ContractRef & { terms?: MarkTerms } }) | undefined)?.contract
+  if (!c || !old) return
+  delete (c as { contract?: unknown }).contract
+  const base = termsFromTemplate(old.kind)
+  const terms: MarkTerms = old.terms ? { ...base, ...old.terms, place: old.terms.place ?? base.place } : base
+  setContract(c, { ...old, terms })
+}
 
 export function defaultOptions(): GameOptions {
   return { defeatLoot: 'half' }
@@ -276,8 +292,9 @@ export function prunePerks(state: GameState) {
 /** 主角賺到 amount 時，依奴隸契約的「收益歸屬」被主人拿走多少（逃亡中、沒有主人、契約沒有這項功能時是 0） */
 export function masterTake(state: GameState, amount: number): number {
   const pc = state.party.find((m) => m.isPlayer)
-  if (!pc?.contract || !pc.contract.master || pc.status.includes('fugitive') || amount <= 0) return 0
-  const def = contractTerms(pc.contract)
+  const contract = contractOf(pc)
+  if (!pc || !contract?.master || pc.status.includes('fugitive') || amount <= 0) return 0
+  const def = contractTerms(contract)
   return def.functions.includes('income') ? Math.floor(amount * def.income_share) : 0
 }
 

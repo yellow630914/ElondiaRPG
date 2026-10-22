@@ -47,6 +47,7 @@ import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { useAbilityOutOfCombat, type AbilityUse } from './resources'
 import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, ResourceChange } from './types'
+import { contractOf } from './tattoos'
 
 export interface ActionInput {
   kind: ActionKind
@@ -148,7 +149,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     situational.push({ label: `${user.name}的【${used.ability.name}】`, value: used.bonus })
   }
   // 對自己的奴隸行動：奴隸抗拒時處於劣勢，主角擲兩次取較高的
-  const ownSlave = !!input.target && state.party.some((m) => m.id === input.target && m.bond === 'slave' && m.contract?.master === 'pc')
+  const ownSlave = !!input.target && state.party.some((m) => m.id === input.target && m.bond === 'slave' && contractOf(m)?.master === 'pc')
   const rolls = withRng(state, (rng) => (ownSlave ? [roll(rng, '1d20').total, roll(rng, '1d20').total] : [roll(rng, '1d20').total]))
   const natural = Math.max(...rolls)
   const pending: ActionPending = {
@@ -303,15 +304,15 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
       }
       case 'free': {
         // 解除主角的契約：只在大成功時採用；自由行動要有對象（例如施術者、願意出手的大人物）
-        if (degree !== 'critical' || !pc.contract || state.pendingMark || effects.some((y) => y.type === 'free')) break
+        if (degree !== 'critical' || !contractOf(pc) || state.pendingMark || effects.some((y) => y.type === 'free')) break
         if (p.kind === 'free' && !p.target) break
         effects.push({ type: 'free', npc: 'pc' })
         break
       }
       case 'change_master': {
         // 對象成為主角的新主人：成功以上、主角是奴隸、對象就是這次行動的對象而且在身邊
-        if (!degree || !['critical', 'success'].includes(degree) || !pc.contract || state.pendingMark || !p.target) break
-        if (String(x.npc ?? p.target) !== p.target || p.target === pc.contract.master || effects.some((y) => y.type === 'change_master')) break
+        if (!degree || !['critical', 'success'].includes(degree) || !contractOf(pc) || state.pendingMark || !p.target) break
+        if (String(x.npc ?? p.target) !== p.target || p.target === contractOf(pc)!.master || effects.some((y) => y.type === 'change_master')) break
         const rec = npcRecord(state, p.target)
         if (!rec || rec.dead || !presentHere(state, rec.id)) break
         effects.push({ type: 'change_master', master: rec.id })

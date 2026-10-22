@@ -22,6 +22,7 @@ import StatBar from './StatBar.vue'
 import NameTag from './NameTag.vue'
 import PortraitBox from './PortraitBox.vue'
 import FoldSection from './FoldSection.vue'
+import { contractOf, oathText, placeName, tattooDesc, tattooKindName, tattooName, tattoosOf } from '@/engine/tattoos'
 
 const QUALITY_NAME: Record<string, string> = {
   common: '普通', uncommon: '優良', rare: '稀有', epic: '史詩', legendary: '傳說', mythic: '神話',
@@ -53,7 +54,8 @@ function saveProfile() {
 const bound = computed(() => isBound(s.value))
 
 function contractFor(m: Character) {
-  return m.contract ? { ...m.contract, def: contractTerms(m.contract) } : null
+  const c = contractOf(m)
+  return c ? { ...c, def: contractTerms(c) } : null
 }
 
 function grouped(m: Character) {
@@ -126,8 +128,19 @@ function affinityText(m: Character): string {
             收益歸主人 {{ Math.round(contractFor(m)!.def.income_share * 100) }}%・談判 DC {{ contractFor(m)!.def.negotiate_dc }}・逃離 DC {{ contractFor(m)!.def.escape_dc }}・出城 DC {{ contractFor(m)!.def.exit_dc }}
           </div>
           <div class="muted">目前的服從懲罰：-{{ contractFor(m)!.obedience }}</div>
-          <button v-if="m.contract?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
+          <button v-if="contractOf(m)?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
         </div>
+      </FoldSection>
+
+      <FoldSection v-if="tattoosOf(m).length" id="party.tattoos" :title="`🖋️ 刺青（${tattoosOf(m).length}）`">
+        <ul class="plain small tattoos">
+          <li v-for="t in tattoosOf(m)" :key="t.place">
+            <strong>{{ placeName(t.place) }}</strong>
+            <span class="tag" :class="t.kind">{{ tattooKindName(t.kind) }}</span>
+            【{{ tattooName(t) }}】<span v-if="t.kind === 'oath' && t.attrs" class="oath">{{ oathText(t.attrs) }}</span>
+            <div class="muted">{{ tattooDesc(t) }}<template v-if="t.by">（{{ t.by }}刺的）</template></div>
+          </li>
+        </ul>
       </FoldSection>
 
       <p v-if="m.attrPoints > 0" class="small" style="color: var(--accent)">可分配屬性點：{{ m.attrPoints }}</p>
@@ -257,6 +270,10 @@ function affinityText(m: Character): string {
 .attrs th { text-align: left; padding-right: 12px; font-weight: normal; cursor: help; }
 .attrs td { padding: 1px 6px; }
 .attrs .num { font-weight: 600; text-align: right; min-width: 2em; }
+.tattoos li { padding: 2px 0; }
+.tattoos .tag.slave { border-color: var(--danger); }
+.tattoos .tag.oath { border-color: var(--accent); }
+.tattoos .oath { color: var(--accent); margin-left: 4px; }
 .attrs .num.changed { color: var(--accent); cursor: help; }
 .stats li { padding: 2px 0; border: none; }
 .choose { padding: 8px; border: 1px dashed var(--accent); border-radius: 6px; }

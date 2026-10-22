@@ -15,6 +15,7 @@ import { Rng } from './rng'
 import { condMet } from './storyFlags'
 import { allyPlacement } from './story'
 import type { GameState, NpcRecord, Roster } from './types'
+import { contractOf } from './tattoos'
 
 // ---- 生成 ----
 
@@ -466,7 +467,7 @@ export function pruneNpcs(state: GameState) {
     ...(state.memories ?? []).flatMap((m) => m.participants),
     ...Object.values(state.markets ?? {}).flatMap((m) => m.stock.map((x) => x.npc)),
     ...(state.partyOffers ?? []).flatMap((o) => [o.leader, ...o.members]),
-    ...state.party.flatMap((m) => (m.contract ? [m.contract.master] : [])),
+    ...state.party.flatMap((m) => (contractOf(m) ? [contractOf(m)!.master] : [])),
   ])
   for (const [id, rec] of Object.entries(state.npcs ?? {})) {
     if (rec.generated && /^(tav|slv|pty|vis)_/.test(id) && !keep.has(id) && !(rec.at && rec.at.until >= state.time.day)) delete state.npcs![id]

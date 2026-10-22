@@ -136,6 +136,7 @@ flowchart TD
 | [CRAFTING](CRAFTING.md) | 工藝 | `crafting.ts`、`craft.ts`、`recipes.ts`、`invention.ts` |
 | [WORK](WORK.md) | 工作與娼館 | `work.ts`、`brothel.ts`、`content.ts` |
 | [NPC_SYSTEM](NPC_SYSTEM.md) | NPC | `population.ts`、`interactions.ts`、`encounters.ts`、`security.ts` |
+| [TATTOOS](TATTOOS.md) | 刺青（奴隸印記、誓約印記、普通刺青） | `tattoos.ts` |
 | [COMPANIONS](COMPANIONS.md) | 夥伴與奴隸 | `companions.ts`、`party.ts`、`rest.ts`、`slavery.ts`、`masterHome.ts` |
 | [RELATIONSHIP_MEMORY](RELATIONSHIP_MEMORY.md) | 關係與記憶 | `social.ts` |
 | [STORY_QUESTS](STORY_QUESTS.md) | 特殊任務 | `story.ts`、`storyFlags.ts`、`storyMods.ts` |

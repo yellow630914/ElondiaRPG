@@ -53,11 +53,24 @@
     "contract_weights": { "labor": 6, "combat": 3, "arcane": 1 }
   },
 
+  "roles": {
+    "$comment": "印記模板的用途：default 是沒有指定時用的（買奴隸、AI 交易清單、劇情沒寫的時候），madam 是老鴇收下主角、主人是娼妓、自賣給老鴇時刻的。",
+    "default": "labor",
+    "madam": "brothel"
+  },
+
+  "market_contracts": {
+    "$comment": "奴隸市場上的奴隸身上是哪一種印記（權重）：public 公開市場、black 黑市。",
+    "public": { "labor": 6, "combat": 3, "arcane": 1 },
+    "black": { "labor": 4, "combat": 3, "arcane": 3 }
+  },
+
+  "$comment_contracts": "奴隸印記的模板：刻印時把條款存一份在角色身上（之後改模板只影響之後刻的）。place 是刻在哪個部位（tattoos.json 的 places）。功能依數值推得：收益比例 > 0 有收益歸屬、被找到的機率 > 0 有追蹤、逃離反噬 ≥ 30% 有距離束縛、有 spell_cap 有魔力封印；身分標示與服從一定有。",
   "contracts": {
     "labor": {
       "name": "勞役契約",
       "mark": "頸側一圈暗紅色的荊棘紋，主人的名字以細小的古文字刻在紋路之間。",
-      "functions": ["identity", "obedience", "income", "tracking"],
+      "place": "neck",
       "obedience_penalty": 2,
       "income_share": 0.5,
       "negotiate_dc": 18,
@@ -70,7 +83,7 @@
     "combat": {
       "name": "戰奴契約",
       "mark": "頸後一枚交叉雙劍的黑色烙印，延伸出鎖鏈狀的紋路繞過喉頭。",
-      "functions": ["identity", "obedience", "income", "tether", "tracking"],
+      "place": "neck",
       "obedience_penalty": 3,
       "income_share": 1.0,
       "negotiate_dc": 20,
@@ -83,7 +96,7 @@
     "arcane": {
       "name": "魔導束縛契約",
       "mark": "喉頭正中一枚淡紫色的法陣，會隨主人的魔力脈動。",
-      "functions": ["identity", "obedience", "income", "tracking", "spell_seal"],
+      "place": "neck",
       "obedience_penalty": 5,
       "income_share": 1.0,
       "spell_cap": 1,
@@ -98,7 +111,7 @@
       "$comment": "娼妓契約（關閉成人向時顯示為技師契約）。世界書：奴隸身分的妓女收入九成要上繳。老鴇收下主角時會改刻這種印記。",
       "name": "娼妓契約",
       "mark": "小腹上一朵半開的緋紅花紋，花蕊裡刻著主人的名字。",
-      "functions": ["identity", "obedience", "income", "tracking"],
+      "place": "belly",
       "obedience_penalty": 3,
       "income_share": 0.9,
       "negotiate_dc": 19,

@@ -89,6 +89,8 @@ export interface Changes {
   conditions?: { actor: string; condition: string; added: boolean }[]
   /** 特質的增減 */
   perks?: { actor: string; perk: string; name: string; added: boolean }[]
+  /** 刺上或洗掉的刺青（奴隸印記另外記在 companions 的 enslaved / freed） */
+  tattoos?: { actor: string; place: TattooPlace; kind: TattooKind; name: string; added: boolean }[]
   /** 短休花費／長休回復的生命骰 */
   hit_dice?: { actor: string; spent?: number; regained?: number; healed?: number }[]
   /** 奴隸契約「收益歸屬」被主人拿走的金錢 */
@@ -233,8 +235,8 @@ export interface Character {
   bond?: Bond
   /** 隊長的 id：跟著別人的隊伍一起行動的成員（bond = leader / ally） */
   group?: string
-  /** 奴隸契約；主角也可能有（主人是 NPC） */
-  contract?: ContractRef
+  /** 身上的刺青（每個部位一個；奴隸印記也是其中一種，契約掛在它上面，見 engine/tattoos.ts） */
+  tattoos?: Tattoo[]
   /** 已花掉的生命骰（總數 = 等級） */
   hitDiceUsed?: number
   /** 性別：主角是自由輸入的文字；NPC 是性別 id（見 npc_pool.json） */
@@ -274,8 +276,8 @@ export interface ContractRef {
   /** 目前的服從懲罰（受罰可能加重） */
   obedience: number
   since: GameTime
-  /** 這枚印記的條款（自訂的印記，或刻印時決定的版本）；沒有時用模板的值 */
-  terms?: MarkTerms
+  /** 這枚印記的條款：刻印時存一份（模板或自訂），之後改模板不影響 */
+  terms: MarkTerms
   /** 主人的家在哪座城（第一次需要時決定） */
   home?: string
   /** 上次待在主人的家裡的時間（離家期限從這裡算；沒有時從 since 算） */
@@ -284,11 +286,35 @@ export interface ContractRef {
   strict?: { points: number; since: GameTime }
 }
 
+export type TattooPlace = 'neck' | 'left_arm' | 'right_arm' | 'chest' | 'back' | 'belly' | 'hips' | 'left_thigh' | 'right_thigh' | 'left_calf' | 'right_calf'
+/** 奴隸印記、誓約印記、普通刺青 */
+export type TattooKind = 'slave' | 'oath' | 'plain'
+
+/** 身上的一個刺青 */
+export interface Tattoo {
+  kind: TattooKind
+  place: TattooPlace
+  /** 普通刺青與誓約印記：名稱與外觀（刺上時存一份）；奴隸印記看契約的條款 */
+  name?: string
+  desc?: string
+  /** 從哪個圖樣刺的（tattoos.json 的 templates）；自己描述的沒有 */
+  template?: string
+  /** 誓約印記：屬性的加減（加總為 0） */
+  attrs?: Partial<Record<'str' | 'dex' | 'int' | 'fai' | 'cha', number>>
+  /** 奴隸印記：契約 */
+  contract?: ContractRef
+  since: GameTime
+  /** 誰刺的（主人、刺青師、事件的說明） */
+  by?: string
+}
+
 /** 契約印記的條款：名稱、描述與各項數值（描述會給 AI 判定與寫正文） */
 export interface MarkTerms {
   name: string
   /** 印記的外觀與感覺 */
   mark: string
+  /** 刻在哪個部位 */
+  place: TattooPlace
   /** 收益歸屬：主角賺到的錢歸主人的比例（0～1） */
   income_share: number
   negotiate_dc: number

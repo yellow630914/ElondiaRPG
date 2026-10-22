@@ -7,6 +7,7 @@ import { characterFor, npcRecord, registerNpc } from './npcs'
 import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
 import { contractTerms, makeContract, type MarkChoice } from './slavery'
+import { clearContract, contractOf, setContract } from './tattoos'
 import type { Character, CompanionChange, ContractRef, GameState, MarkTerms, NpcRecord, Report } from './types'
 import { addStrict, sendToMasterHome, syncMasterHome } from './masterHome'
 
@@ -36,7 +37,7 @@ export function leaderOf(state: GameState): Character | undefined {
 }
 
 export function isEnslaved(state: GameState): boolean {
-  return !!pcOf(state).contract
+  return !!contractOf(pcOf(state))
 }
 
 export function isFugitive(state: GameState): boolean {
@@ -45,7 +46,7 @@ export function isFugitive(state: GameState): boolean {
 
 /** 主角被主人帶著（有契約、有主人、沒有逃亡） */
 export function isBound(state: GameState): boolean {
-  return isEnslaved(state) && !!pcOf(state).contract!.master && !isFugitive(state)
+  return isEnslaved(state) && !!contractOf(pcOf(state))!.master && !isFugitive(state)
 }
 
 export function assertFree(state: GameState, what = '這麼做') {
@@ -75,14 +76,14 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
   if (rel.toPlayer === '初次見面。') rel.toPlayer = JOIN_TEXT[bond]
   const member = characterFor(state, rec)
   delete member.group
-  delete member.contract
+  clearContract(member)
   member.status = member.status.filter((s) => s !== 'slave_mark')
   member.bond = bond
   member.affinity = rel.affinity
   member.joined = { ...state.time }
   if (opts.group) member.group = opts.group
   if (bond === 'slave') {
-    member.contract = makeContract(opts.contract ?? 'labor', 'pc', pcOf(state).name, state.time)
+    setContract(member, makeContract(opts.contract ?? slaveryRules.roles.default, 'pc', pcOf(state).name, state.time), state.time, pcOf(state).name)
     member.status.push('slave_mark')
   }
   if (state.npcs?.[rec.id]) delete state.npcs[rec.id]!.character
@@ -192,11 +193,11 @@ export function isNoncombatant(c: Pick<Character, 'class'>): boolean {
 
 /**
  * 主角成為奴隸：原本的同伴與主角分開（離隊），主人與他的隊員入隊。
- * 主角頸上刻下契約印記。
+ * 主角身上刻下契約印記（部位依條款）。
  */
 export function enslavePlayer(state: GameState, master: NpcRecord | null, contract: MarkChoice, report?: Report, members: NpcRecord[] = []) {
   const pc = pcOf(state)
-  if (pc.contract) throw new Error('主角已經是奴隸了')
+  if (contractOf(pc)) throw new Error('主角已經是奴隸了')
   for (const m of [...state.party]) if (!m.isPlayer) leaveParty(state, m.id, report, '與主角分開')
   delete state.pendingLeave
   state.partyOffers = []
@@ -206,9 +207,10 @@ export function enslavePlayer(state: GameState, master: NpcRecord | null, contra
     for (const m of members) if (partyRoom(state) > 0) joinParty(state, m, 'ally', report, { group: master.id })
   }
   // 無主：契約印記還在，但沒有人帶著主角
-  pc.contract = makeContract(contract, master?.id ?? '', master?.name ?? '', state.time)
+  const made = makeContract(contract, master?.id ?? '', master?.name ?? '', state.time)
+  setContract(pc, made, state.time, master?.name)
   addCondition(pc, 'slave_mark', report)
-  recordChange(report, { npc: 'pc', name: pc.name, change: 'enslaved', reason: `${contractTerms(pc.contract).name}，${master ? `主人：${master.name}` : '無主'}` })
+  recordChange(report, { npc: 'pc', name: pc.name, change: 'enslaved', reason: `${contractTerms(made).name}，${master ? `主人：${master.name}` : '無主'}` })
   // 主人在自己的城市有一棟房子（離家期限從現在算起）
   syncMasterHome(state)
 }
@@ -216,8 +218,7 @@ export function enslavePlayer(state: GameState, master: NpcRecord | null, contra
 /** 解除主角的契約（談判成功、事件獎勵）。主人仍在隊伍中，關係變成普通的隊長與隊員。 */
 export function freePlayer(state: GameState, report?: Report, reason?: string) {
   const pc = pcOf(state)
-  if (!pc.contract) return
-  delete pc.contract
+  if (!clearContract(pc)) return
   removeCondition(pc, 'slave_mark', report)
   removeCondition(pc, 'fugitive', report)
   recordChange(report, { npc: 'pc', name: pc.name, change: 'freed', ...(reason ? { reason } : {}) })
@@ -229,7 +230,7 @@ export function freePlayer(state: GameState, report?: Report, reason?: string) {
 export function freeSlave(state: GameState, id: string, report: Report) {
   const m = state.party.find((x) => x.id === id && x.bond === 'slave')
   if (!m) throw new Error('隊伍中沒有這位奴隸')
-  delete m.contract
+  clearContract(m)
   m.bond = 'voluntary'
   removeCondition(m, 'slave_mark', report)
   addAffinity(state, report, id, slaveryRules.release_affinity, '解除契約')
@@ -239,10 +240,10 @@ export function freeSlave(state: GameState, id: string, report: Report) {
 /** 主角逃離主人：主人與他的隊員離隊，主角成為逃亡奴隸，契約仍在。 */
 export function playerEscapes(state: GameState, report?: Report) {
   const pc = pcOf(state)
-  if (!pc.contract) throw new Error('主角不是奴隸')
+  if (!contractOf(pc)) throw new Error('主角不是奴隸')
   for (const m of leaderGroup(state)) leaveParty(state, m.id, report, '主角逃走了')
   addCondition(pc, 'fugitive', report)
-  recordChange(report, { npc: 'pc', name: pc.name, change: 'escaped', reason: `逃離${pc.contract.masterName}` })
+  recordChange(report, { npc: 'pc', name: pc.name, change: 'escaped', reason: `逃離${contractOf(pc)!.masterName}` })
 }
 
 /**
@@ -251,7 +252,7 @@ export function playerEscapes(state: GameState, report?: Report) {
  */
 export function recapturePlayer(state: GameState, report?: Report, strict = 0): string {
   const pc = pcOf(state)
-  const contract = pc.contract
+  const contract = contractOf(pc)
   if (!contract) return ''
   const master = npcRecord(state, contract.master)
   removeCondition(pc, 'fugitive', report)
@@ -274,7 +275,7 @@ export function recapturePlayer(state: GameState, report?: Report, strict = 0): 
  */
 export function changeMaster(state: GameState, master: NpcRecord | null, report?: Report, reason?: string) {
   const pc = pcOf(state)
-  const c = pc.contract
+  const c = contractOf(pc)
   if (!c) throw new Error('主角不是奴隸')
   if (master?.id === c.master && isBound(state)) return
   // 新主人原本就在隊伍裡（同伴、原主人的隊員）：先離隊，再以隊長身分回來
@@ -285,8 +286,10 @@ export function changeMaster(state: GameState, master: NpcRecord | null, report?
   removeCondition(pc, 'fugitive', report)
   const old = c.masterName || '無主'
   // 新主人有自己的家與規矩：離家期限、嚴加看管重新算
-  const { home: _home, homeAt: _at, strict: _strict, ...rest } = c
-  pc.contract = { ...rest, master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } }
+  delete c.home
+  delete c.homeAt
+  delete c.strict
+  Object.assign(c, { master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } })
   if (master && !state.npcs?.[master.id]) registerNpc(state, master)
   if (master) {
     while (partyRoom(state) < 1) {
@@ -312,7 +315,7 @@ export function punish(state: GameState, severity: 'light' | 'heavy', report: Re
   const loss = Math.max(1, Math.ceil(pc.maxHp * p.hp_ratio))
   setHp(state, pc, pc.hp - loss, report)
   addCondition(pc, 'punished', report)
-  const contract = pc.contract
+  const contract = contractOf(pc)
   if (contract) {
     if (state.relationships?.[contract.master]) addAffinity(state, report, contract.master, p.affinity, '受罰')
     if (p.obedience) contract.obedience = Math.min(slaveryRules.freedom.obedience_max, contract.obedience + p.obedience)
@@ -329,6 +332,3 @@ export function setHp(state: GameState, c: Character, hp: number, report?: Repor
   if (snap) snap.hp = [snap.hp?.[0] ?? before, c.hp, c.maxHp]
 }
 
-export function contractOf(c: Character): (ContractRef & { def: MarkTerms }) | undefined {
-  return c.contract ? { ...c.contract, def: contractTerms(c.contract) } : undefined
-}

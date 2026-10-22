@@ -20,6 +20,7 @@ import { contractTerms } from './slavery'
 import { bestTool } from './tools'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Character, GameState, GameTime, Report } from './types'
+import { contractOf } from './tattoos'
 
 export const INN_CC_PER_PERSON = 15
 
@@ -195,7 +196,7 @@ export function longRest(state: GameState, place: RestPlace): Report {
     hours = Math.max(hours, (24 - state.time.hour + 8) % 24 || 24)
     scene = `${locationById(state.location).name}的旅店`
     report.changes.money_cc = -cost
-    costText = `，花費 ${formatMoney(cost)}${isFugitive(state) ? '（頸上的印記讓老闆加了價）' : ''}`
+    costText = `，花費 ${formatMoney(cost)}${isFugitive(state) ? '（身上的印記讓老闆加了價）' : ''}`
   } else if (place === 'home') {
     const home = homeOfArea(state, area)!
     hours = Math.max(hours, (24 - state.time.hour + 8) % 24 || 24)
@@ -278,8 +279,9 @@ export function restChecks(state: GameState, report: Report, place: 'short' | Re
   }
 
   const pc = pcOf(state)
-  if (pc.contract && isFugitive(state)) {
-    const def = contractTerms(pc.contract)
+  const contract = contractOf(pc)
+  if (contract && isFugitive(state)) {
+    const def = contractTerms(contract)
     if (def.functions.includes('tracking')) {
       // 被找到的機率依休息的地方（slavery.json 的 track_place_mult）：旅店高、自己的房子低
       const mult = slaveryRules.track_place_mult[place] ?? 1
@@ -287,7 +289,7 @@ export function restChecks(state: GameState, report: Report, place: 'short' | Re
       if (caught) {
         // 被找到：直接帶回主人的家，之後嚴加看管
         const sent = recapturePlayer(state, report, slaveryRules.master_home.strict.found)
-        lines.push(`${pc.contract.masterName}循著契約印記找到了你。`, punish(state, 'heavy', report), sent)
+        lines.push(`${contract.masterName}循著契約印記找到了你。`, punish(state, 'heavy', report), sent)
       }
     }
   }

@@ -7,9 +7,10 @@
 
 import { checkModifiers, modifierNote } from './perks'
 import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
-import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type MasterEventDef, type UnmarkServiceDef } from './data'
+import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
 import { adultContent, adultScene, safeText } from './content'
+import { clearContract, contractOf, isTattooPlace, placeName, setContract } from './tattoos'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
@@ -27,11 +28,29 @@ import type { Degree, NpcKind } from './data'
 
 // ---- 印記條款 ----
 
+/** 印記模板的 id：沒有這個模板時（例如自訂內容刪掉了）用預設的（slavery.json 的 roles.default） */
+export function contractKind(kind: string): string {
+  return slaveryRules.contracts[kind] ? kind : slaveryRules.roles.default
+}
+
+/** 依數值推得的功能：身分標示與服從一定有；收益比例 > 0 有收益歸屬、被找到 > 0 有追蹤、反噬 ≥ 30% 有距離束縛、有法術環上限有魔力封印 */
+export function deriveFunctions(t: Omit<MarkTerms, 'functions'>): ContractFunction[] {
+  return [
+    'identity', 'obedience',
+    ...(t.income_share > 0 ? ['income' as const] : []),
+    ...(t.recapture_chance > 0 ? ['tracking' as const] : []),
+    ...(t.escape_hp_ratio >= 0.3 ? ['tether' as const] : []),
+    ...(t.spell_cap !== undefined ? ['spell_seal' as const] : []),
+  ]
+}
+
+/** 模板的條款（原始文字，不依成人向開關替換；顯示時由 contractTerms 處理） */
 export function termsFromTemplate(kind: string): MarkTerms {
-  const d: ContractDef = contractDef(kind)
-  return {
+  const d: ContractDef = slaveryRules.contracts[contractKind(kind)]!
+  const t: Omit<MarkTerms, 'functions'> = {
     name: d.name,
     mark: d.mark,
+    place: isTattooPlace(d.place) ? d.place : 'neck',
     income_share: d.income_share,
     negotiate_dc: d.negotiate_dc,
     escape_dc: d.escape_dc,
@@ -40,18 +59,24 @@ export function termsFromTemplate(kind: string): MarkTerms {
     escape_hp_ratio: d.escape_effects.hp_ratio,
     obedience_penalty: d.obedience_penalty,
     side_effects: [...d.side_effects],
-    functions: [...d.functions],
     ...(d.spell_cap !== undefined ? { spell_cap: d.spell_cap } : {}),
   }
+  return { ...t, functions: deriveFunctions(t) }
 }
 
-/** 契約實際的條款：刻印時決定的版本，或模板 */
-export function contractTerms(c: Pick<ContractRef, 'kind' | 'terms'>): MarkTerms {
-  return c.terms ?? termsFromTemplate(c.kind)
+/** 模板的條款，給畫面顯示（關閉成人向時文字換成一般用語） */
+export function templateTerms(kind: string): MarkTerms {
+  return contractTerms({ terms: termsFromTemplate(kind) })
 }
 
-/** 自訂印記：文字截斷、數值夾在範圍內；功能依數值推得 */
-export function sanitizeTerms(raw: Partial<MarkTerms>, base: MarkTerms = termsFromTemplate('labor')): MarkTerms {
+/** 契約的條款（刻印時存的那一份）；關閉成人向時文字換成一般用語 */
+export function contractTerms(c: Pick<ContractRef, 'terms'>): MarkTerms {
+  const t = c.terms
+  return adultContent() ? t : { ...t, name: safeText(t.name), mark: safeText(t.mark), side_effects: t.side_effects.map(safeText) }
+}
+
+/** 自訂印記：文字截斷、數值夾在範圍內；功能依數值推得。魔力封印只有從有封印的模板改起、而且有給上限時才有 */
+export function sanitizeTerms(raw: Partial<MarkTerms>, base: MarkTerms = termsFromTemplate(slaveryRules.roles.default)): MarkTerms {
   const r = slaveryRules.custom_mark
   const num = (k: keyof typeof r & keyof MarkTerms, round: boolean) => {
     const range = r[k] as [number, number]
@@ -60,9 +85,11 @@ export function sanitizeTerms(raw: Partial<MarkTerms>, base: MarkTerms = termsFr
     return round ? Math.round(x) : Math.round(x * 100) / 100
   }
   const text = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
-  const terms: MarkTerms = {
+  const sealed = base.spell_cap !== undefined && raw.spell_cap !== undefined && Number.isFinite(Number(raw.spell_cap))
+  const terms: Omit<MarkTerms, 'functions'> = {
     name: text(raw.name, r.name_chars) || base.name,
     mark: text(raw.mark, r.mark_chars) || base.mark,
+    place: isTattooPlace(raw.place) ? raw.place : base.place,
     income_share: num('income_share', false),
     negotiate_dc: num('negotiate_dc', true),
     escape_dc: num('escape_dc', true),
@@ -72,17 +99,9 @@ export function sanitizeTerms(raw: Partial<MarkTerms>, base: MarkTerms = termsFr
     obedience_penalty: num('obedience_penalty', true),
     side_effects: (Array.isArray(raw.side_effects) ? raw.side_effects : base.side_effects)
       .map((s) => text(s, r.side_effect_chars)).filter(Boolean).slice(0, r.side_effects),
-    functions: [],
+    ...(sealed ? { spell_cap: Math.max(0, Math.min(9, Math.round(Number(raw.spell_cap)))) } : {}),
   }
-  terms.functions = [
-    'identity', 'obedience',
-    ...(terms.income_share > 0 ? ['income'] : []),
-    ...(terms.recapture_chance > 0 ? ['tracking'] : []),
-    ...(terms.escape_hp_ratio >= 0.3 ? ['tether'] : []),
-    ...(base.spell_cap !== undefined && raw.spell_cap !== undefined ? ['spell_seal'] : []),
-  ]
-  if (terms.functions.includes('spell_seal')) terms.spell_cap = Math.max(0, Math.min(9, Math.round(Number(raw.spell_cap))))
-  return terms
+  return { ...terms, functions: deriveFunctions(terms) }
 }
 
 /** 印記的選擇：模板 id，或自訂的條款 */
@@ -90,9 +109,9 @@ export type MarkChoice = string | Partial<MarkTerms>
 
 /** 建立契約（主人可以是空字串＝無主） */
 export function makeContract(choice: MarkChoice, master: string, masterName: string, time: GameTime): ContractRef {
-  const kind = typeof choice === 'string' ? choice : 'custom'
-  const terms = typeof choice === 'string' ? termsFromTemplate(choice) : sanitizeTerms(choice)
-  return { kind, master, masterName, obedience: terms.obedience_penalty, since: { ...time }, ...(kind === 'custom' ? { terms } : {}) }
+  const kind = typeof choice === 'string' ? contractKind(choice) : 'custom'
+  const terms = typeof choice === 'string' ? termsFromTemplate(kind) : sanitizeTerms(choice)
+  return { kind, master, masterName, obedience: terms.obedience_penalty, since: { ...time }, terms }
 }
 
 /** 給 AI 與畫面的印記說明 */
@@ -194,18 +213,18 @@ export function startAsSlave(state: GameState, s: SlaveStart): Report {
     party: [],
     outcome: { result: 'neutral', summary: '' },
     changes: {},
-    narration: { pov: 'second_person', length: 'medium', focus: ['主角身為奴隸的處境', '頸上的契約印記'] },
+    narration: { pov: 'second_person', length: 'medium', focus: ['主角身為奴隸的處境', '身上的契約印記'] },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
   enslavePlayer(state, master, s.mark, report)
   if (master && state.relationships?.[master.id]) state.relationships[master.id]!.toPlayer = '主角的主人。'
   report.party = state.party.map((m) => snapshot(m, undefined, pc))
-  const t = contractTerms(pc.contract!)
+  const t = contractTerms(contractOf(pc)!)
   report.outcome = {
     result: 'neutral',
     summary: master
-      ? `你是${master.name}的奴隸，頸上刻著${t.name}：${t.mark}`
-      : `你頸上刻著${t.name}：${t.mark}——但你的主人已經不在了，沒有人能命令你，印記卻還在。`,
+      ? `你是${master.name}的奴隸，${placeName(t.place)}刻著${t.name}：${t.mark}`
+      : `你的${placeName(t.place)}刻著${t.name}：${t.mark}——但你的主人已經不在了，沒有人能命令你，印記卻還在。`,
     tags: ['奴隸出身'],
   }
   return commitReport(state, report)
@@ -227,13 +246,13 @@ export function masterRefusedToday(state: GameState): boolean {
 /** 出城前檢查：需要主人同意時丟出說明 */
 export function assertMasterAllows(state: GameState) {
   if (masterAllows(state)) return
-  const name = pcOf(state).contract!.masterName
+  const name = contractOf(pcOf(state))!.masterName
   if (masterRefusedToday(state)) throw new Error(`${name}今天不准你離開這座城。`)
   throw new Error(`身為奴隸，出城前要先請求${name}同意（在主動行動裡「請求主人同意」）。`)
 }
 
 export function permitDc(state: GameState): number {
-  const c = pcOf(state).contract!
+  const c = contractOf(pcOf(state))!
   const aff = state.relationships?.[c.master]?.affinity ?? 0
   return contractTerms(c).exit_dc + c.obedience + strictPoints(state) - Math.floor(aff / slaveryRules.master_permit.affinity_step)
 }
@@ -243,7 +262,7 @@ export function setupPermit(state: GameState) {
   if (currentArea(state).kind !== 'settlement') throw new Error('只有要出城時才需要主人同意')
   if (masterAllows(state)) throw new Error('主人今天已經同意你出城了')
   if (masterRefusedToday(state)) throw new Error('主人今天已經拒絕了，明天再問')
-  const c = pcOf(state).contract!
+  const c = contractOf(pcOf(state))!
   return {
     dc: permitDc(state), targetName: c.masterName, situational: [], scene: `${locationById(state.location).name}・向主人請求出城`,
     outcomes: {
@@ -254,7 +273,7 @@ export function setupPermit(state: GameState) {
 }
 
 export function applyPermit(state: GameState, report: Report, degree: Degree): string {
-  const c = pcOf(state).contract!
+  const c = contractOf(pcOf(state))!
   const day = state.time.day
   if (degree === 'critical' || degree === 'success' || degree === 'partial') {
     ;(state.masterPass ??= {})[state.location] = day
@@ -276,7 +295,7 @@ export function startMarking(state: GameState, intended: string) {
 export function setupMarking(state: GameState) {
   const pm = state.pendingMark
   if (!pm || pm.rolled) throw new Error('現在沒有在刻印')
-  const c = pcOf(state).contract!
+  const c = contractOf(pcOf(state))!
   const master = state.party.find((m) => m.id === c.master)
   const sev = slaveryRules.marking.severity
   const heavier = sev[Math.min(sev.length - 1, sev.indexOf(pm.intended) + 1)]!
@@ -313,7 +332,7 @@ export function applyMarking(state: GameState, degree: Degree): string {
     pm.allowed = degree === 'critical' ? [...sev, pm.intended] : degree === 'success' ? [pm.intended, sev[0]!] : [pm.intended]
     if (degree === 'critical') pm.custom = true
     if (degree === 'fumble') {
-      const c = pcOf(state).contract
+      const c = contractOf(pcOf(state))
       if (c) c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
     }
     return { critical: '刻印的人被你說動了，讓你自己決定印記的樣子。', success: '你爭取到選擇印記的餘地。', partial: '主人照原本的打算刻印。', fail: '主人照原本的打算刻印。', fumble: '主人勃然大怒，下手更重。' }[degree]
@@ -334,7 +353,7 @@ export function applyMarking(state: GameState, degree: Degree): string {
       return '主人被惹惱了，改用更重的印記。'
     case 'fumble': {
       pm.allowed = [sev.at(-1)!]
-      const c = pcOf(state).contract
+      const c = contractOf(pcOf(state))
       if (c) c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
       return '主人勃然大怒，刻下最重的印記。'
     }
@@ -348,7 +367,7 @@ export function chooseMark(state: GameState, choice: MarkChoice): Report {
   if (typeof choice === 'string' && !pm.allowed.includes(choice)) throw new Error('不能選這個印記')
   if (typeof choice !== 'string' && !pm.custom) throw new Error('不能自訂印記')
   const pc = pcOf(state)
-  const old = pc.contract!
+  const old = contractOf(pc)!
   const next = makeContract(choice, old.master, old.masterName, old.since)
   // 刻印前後受罰加重的服從懲罰保留
   next.obedience = Math.min(slaveryRules.freedom.obedience_max, next.obedience + Math.max(0, old.obedience - contractTerms(old).obedience_penalty))
@@ -356,7 +375,7 @@ export function chooseMark(state: GameState, choice: MarkChoice): Report {
     const t = termsFromTemplate(choice)
     next.terms = { ...t, ...(pm.suggestion.name ? { name: pm.suggestion.name } : {}), ...(pm.suggestion.mark ? { mark: pm.suggestion.mark } : {}) }
   }
-  pc.contract = next
+  setContract(pc, next, state.time, old.masterName)
   delete state.pendingMark
   const loc = locationById(state.location)
   const start = { ...state.time }
@@ -367,7 +386,7 @@ export function chooseMark(state: GameState, choice: MarkChoice): Report {
     time: { start, end: addHours(start, 0.5) },
     location: { at: state.location, region: loc.region, scene: `${loc.name}・刻下契約印記` },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', summary: `頸上刻下了${contractTerms(next).name}：${contractTerms(next).mark}`, tags: ['契約印記'] },
+    outcome: { result: 'neutral', summary: `${placeName(next.terms.place)}刻下了${contractTerms(next).name}：${contractTerms(next).mark}`, tags: ['契約印記'] },
     changes: {},
     narration: { pov: 'second_person', length: 'short', focus: ['印記刻下的過程與感覺'] },
     lore_keys: [loc.name, regionById(loc.region).name],
@@ -390,7 +409,7 @@ export interface MasterEventOptions {
 export function maybeMasterEvent(state: GameState, chance: number, opts: MasterEventOptions = {}): PendingMasterEvent | undefined {
   if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent) return undefined
   // 主人不在身邊（戰敗時逃開了）時沒有突發事件
-  const master = state.party.find((m) => m.id === pcOf(state).contract!.master)
+  const master = state.party.find((m) => m.id === contractOf(pcOf(state))!.master)
   if (!master || master.status.includes('away')) return undefined
   const ev = slaveryRules.master_events
   const now = hoursOf(state.time)
@@ -446,7 +465,7 @@ function forMaster(effects: RewardEffect[] | undefined, master: string): RewardE
 }
 
 function withMaster(state: GameState, s: string): string {
-  return safeText(s.split('{master}').join(pcOf(state).contract?.masterName ?? '主人'))
+  return safeText(s.split('{master}').join(contractOf(pcOf(state))?.masterName ?? '主人'))
 }
 
 /** 等待回應的事件定義 */
@@ -470,7 +489,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   const o = e.options[index]
   if (!o) throw new Error('沒有這個選項')
   const pc = pcOf(state)
-  const c = pc.contract!
+  const c = contractOf(pc)!
   const area = currentArea(state)
   const loc = locationById(area.location)
   const start = { ...state.time }
@@ -515,7 +534,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
 /** 自己輸入回應（主動行動 master_event） */
 export function setupMasterEvent(state: GameState) {
   const e = pendingEventDef(state)
-  const c = pcOf(state).contract!
+  const c = contractOf(pcOf(state))!
   return {
     // 可能進入親密場景的事件：自己描述的回應由 AI 判定是否進入
     ...(e.scene ? adultScene(withMaster(state, e.scene), []) : {}),
@@ -538,7 +557,7 @@ export function applyMasterEventResponse(state: GameState, report: Report, degre
   if (!e?.overdue) return ''
   if (degree === 'critical' || degree === 'success') {
     extendDeadline(state, 24)
-    return `${pcOf(state).contract?.masterName ?? '主人'}答應再多待一天。`
+    return `${contractOf(pcOf(state))?.masterName ?? '主人'}答應再多待一天。`
   }
   if (degree === 'fail' || degree === 'fumble') addStrict(state, slaveryRules.master_home.strict.overdue)
   return sendToMasterHome(state, report)
@@ -546,7 +565,7 @@ export function applyMasterEventResponse(state: GameState, report: Report, degre
 
 /** 沒有 AI 判定時，自己輸入的回應依成功程度的效果 */
 export function masterEventDefaults(state: GameState, report: Report, degree: Degree): string[] {
-  const c = pcOf(state).contract
+  const c = contractOf(pcOf(state))
   if (!c?.master) return []
   return applyEffects(state, report, affordable(state, forMaster(slaveryRules.master_events.free_outcomes[degree], c.master)))
 }
@@ -555,7 +574,7 @@ export function masterEventDefaults(state: GameState, report: Report, degree: De
 
 /** 主角契約上的主人（無主時沒有） */
 export function masterOf(state: GameState): NpcRecord | undefined {
-  const c = pcOf(state).contract
+  const c = contractOf(pcOf(state))
   return c?.master ? npcRecord(state, c.master) : undefined
 }
 
@@ -567,7 +586,7 @@ export function masterNearby(state: GameState): boolean {
 
 /** 逃亡奴隸的主人今天在哪裡（印記隱約感應得到） */
 export function masterWhereabouts(state: GameState): string | undefined {
-  const c = pcOf(state).contract
+  const c = contractOf(pcOf(state))
   if (!c?.master || !isFugitive(state)) return undefined
   const rec = npcRecord(state, c.master)
   if (!rec || rec.dead) return `${c.masterName}已經不在人世了。`
@@ -580,7 +599,7 @@ export function masterWhereabouts(state: GameState): string | undefined {
 
 export function setupReturn(state: GameState) {
   if (!isFugitive(state)) throw new Error('你不是逃亡奴隸')
-  const c = pcOf(state).contract!
+  const c = contractOf(pcOf(state))!
   if (!masterNearby(state)) throw new Error(`${c.masterName}不在你身邊`)
   const r = slaveryRules.fugitive_master.return
   const aff = state.relationships?.[c.master]?.affinity ?? 0
@@ -595,7 +614,7 @@ export function setupReturn(state: GameState) {
 }
 
 export function applyReturn(state: GameState, report: Report, degree: Degree): string {
-  const c = pcOf(state).contract!
+  const c = contractOf(pcOf(state))!
   // 主動回去：一樣被帶回主人的家；除了大成功，之後都會被看得緊一點
   const sent = recapturePlayer(state, report, degree === 'critical' ? 0 : slaveryRules.master_home.strict.overdue)
   switch (degree) {
@@ -623,7 +642,7 @@ function seekTarget(state: GameState, target?: string): NpcRecord {
   if (isBound(state)) throw new Error('你已經有主人帶著了')
   const rec = target ? npcRecord(state, target) : undefined
   if (!rec || rec.dead) throw new Error('要投靠誰？')
-  if (rec.id === pcOf(state).contract!.master) throw new Error('要回到原本的主人身邊，請用「回到主人身邊」')
+  if (rec.id === contractOf(pcOf(state))!.master) throw new Error('要回到原本的主人身邊，請用「回到主人身邊」')
   if (state.party.some((m) => m.id === rec.id)) throw new Error('要請同伴當主人，請用自由行動')
   if (!presentHere(state, rec.id)) throw new Error('對方不在身邊')
   if (rec.tags?.includes('slave')) throw new Error(`${rec.name}自己也是奴隸`)
@@ -648,7 +667,7 @@ export function setupSeekMaster(state: GameState, target?: string) {
   const rec = seekTarget(state, target)
   ensureRelationship(state, rec)
   const stays = (npcKind(rec) === 'commoner' ? '（普通人主人同行，但不參與戰鬥）' : '')
-    + (isMadam(rec) ? safeText(`（老鴇會把印記改刻成${contractDef('brothel').name}）`) : '')
+    + (isMadam(rec) ? safeText(`（老鴇會把印記改刻成${contractDef(slaveryRules.roles.madam).name}）`) : '')
   return {
     dc: seekMasterDc(state, rec), targetName: rec.name, situational: [],
     scene: `${currentArea(state).name}・請${rec.name}收下自己`,
@@ -666,12 +685,12 @@ export function applySeekMaster(state: GameState, report: Report, target: string
     case 'success': {
       changeMaster(state, rec, report, '投靠')
       const remarked = remarkByMadam(state, rec)
-      const c = pcOf(state).contract!
+      const c = contractOf(pcOf(state))!
       if (degree === 'critical') {
         c.obedience = Math.max(0, c.obedience - 1)
         addAffinity(state, report, rec.id, 3, '收下了主角')
       }
-      return `${rec.name}收下了你，成為你的新主人。${remarked ? safeText(`${rec.name}把你的印記改刻成了${contractDef('brothel').name}。`) : ''}`
+      return `${rec.name}收下了你，成為你的新主人。${remarked ? safeText(`${rec.name}把你的印記改刻成了${contractDef(slaveryRules.roles.madam).name}。`) : ''}`
     }
     case 'partial':
       addAffinity(state, report, rec.id, 1, '對主角有些好感')
@@ -685,15 +704,15 @@ export function applySeekMaster(state: GameState, report: Report, target: string
   }
 }
 
-/** 老鴇收下主角：改刻娼妓契約（服從懲罰至少是娼妓契約的） */
+/** 老鴇收下主角：改刻老鴇用的印記（slavery.json 的 roles.madam；服從懲罰至少是那個模板的） */
 export function remarkByMadam(state: GameState, master: Pick<NpcRecord, 'tags'>): boolean {
   if (!isMadam(master)) return false
   const pc = pcOf(state)
-  const c = pc.contract
-  if (!c || (c.kind === 'brothel' && !c.terms)) return false
-  const next: ContractRef = { ...c, kind: 'brothel', obedience: Math.max(c.obedience, contractDef('brothel').obedience_penalty) }
-  delete next.terms
-  pc.contract = next
+  const c = contractOf(pc)
+  const kind = contractKind(slaveryRules.roles.madam)
+  if (!c || c.kind === kind) return false
+  const terms = termsFromTemplate(kind)
+  setContract(pc, { ...c, kind, terms, obedience: Math.max(c.obedience, terms.obedience_penalty) }, state.time)
   return true
 }
 
@@ -727,10 +746,11 @@ function blackMarketKnown(state: GameState): boolean {
 /** 現在找得到的解除印記服務（被主人帶著時沒有） */
 export function unmarkOffers(state: GameState): UnmarkOffer[] {
   const pc = pcOf(state)
-  if (!pc.contract || isBound(state) || state.pendingMark) return []
+  const contract = contractOf(pc)
+  if (!contract || isBound(state) || state.pendingMark) return []
   const u = slaveryRules.unmark
-  const strength = markStrength(pc.contract)
-  const sealed = contractTerms(pc.contract).functions.includes('spell_seal')
+  const strength = markStrength(contract)
+  const sealed = contractTerms(contract).functions.includes('spell_seal')
   const cell = currentCell(state).kind
   const out: UnmarkOffer[] = []
   for (const [id, def] of Object.entries(u.services) as [UnmarkServiceId, UnmarkServiceDef][]) {
@@ -752,7 +772,7 @@ export function unmarkOffers(state: GameState): UnmarkOffer[] {
 
 function unmarkOffer(state: GameState, target?: string): UnmarkOffer {
   if (isBound(state)) throw new Error('被主人帶著時，要先談判或逃離')
-  if (!pcOf(state).contract) throw new Error('你身上沒有契約印記')
+  if (!contractOf(pcOf(state))) throw new Error('你身上沒有契約印記')
   const offer = unmarkOffers(state).find((o) => o.target === target)
   if (!offer) throw new Error('這裡沒有人能解除你的印記')
   return offer
@@ -779,7 +799,7 @@ export function applyUnmark(state: GameState, report: Report, target: string, de
   const o = unmarkOffer(state, target)
   const def = slaveryRules.unmark.services[o.service]
   const pc = pcOf(state)
-  const c = pc.contract!
+  const c = contractOf(pc)!
   const fee = Math.min(state.money_cc, Math.round(o.fee_cc * slaveryRules.unmark.fee_ratio[degree]))
   const lines: string[] = []
   if (fee > 0) applyEffects(state, report, [{ type: 'money', amount: -fee }])
@@ -787,7 +807,7 @@ export function applyUnmark(state: GameState, report: Report, target: string, de
     case 'critical':
     case 'success':
       freePlayer(state, report, o.name)
-      lines.push(`${o.helper ?? o.name}抹去了你頸上的${contractTerms(c).name}，你恢復了自由。`)
+      lines.push(`${o.helper ?? o.name}抹去了你${placeName(c.terms.place)}的${contractTerms(c).name}，你恢復了自由。`)
       break
     case 'partial':
       c.obedience = Math.max(0, c.obedience - 1)

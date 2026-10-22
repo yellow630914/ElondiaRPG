@@ -17,6 +17,7 @@ import AbilityPicker from './AbilityPicker.vue'
 import { useSettings } from '@/stores/settings'
 import JudgeToggle from './JudgeToggle.vue'
 import { eventDialogOpen } from './events/eventQueue'
+import { contractOf } from '@/engine/tattoos'
 
 const game = useGame()
 const settings = useSettings()
@@ -67,7 +68,7 @@ const bound = computed(() => isBound(s.value))
 const fugitive = computed(() => isFugitive(s.value))
 const enslaved = computed(() => isEnslaved(s.value))
 const contract = computed(() => {
-  const c = s.value.party.find((m) => m.isPlayer)?.contract
+  const c = contractOf(s.value.party.find((m) => m.isPlayer))
   return c ? { ...c, def: contractTerms(c), summary: markSummary(c) } : null
 })
 const safe = computed(() => atSafeSpot(s.value))

@@ -12,6 +12,7 @@ import { sanitizeCond, sanitizeGearSpecLoose } from './mods'
 import { cleanFlag, condMet, hasFlag } from './storyFlags'
 import type { GameState } from './types'
 import { travelEvents } from './road'
+import { isTattooPlace, oathError, tattooTemplate } from './tattoos'
 
 export interface StoryMod extends StoryDef {
   custom?: boolean
@@ -66,7 +67,7 @@ export const LAYER_NAME: Record<(typeof STORY_LAYERS)[number], string> = { outsk
 /** 任務的效果可以用的種類 */
 export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
-  start_story: '開始特殊任務', enslave_player: '主角淪為奴隸', perk: '特質（取得的機會）', lose_perk: '失去特質',
+  start_story: '開始特殊任務', enslave_player: '主角淪為奴隸', perk: '特質（取得的機會）', lose_perk: '失去特質', tattoo: '刺青', remove_tattoo: '洗掉刺青',
 }
 
 const isLoc = (id: unknown) => typeof id === 'string' && geography.locations.some((l) => l.id === id)
@@ -150,9 +151,32 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
         if (typeof x.perk === 'string' && x.perk) out.push({ type: 'lose_perk', perk: str(x.perk, 60) })
         break
       }
+      case 'tattoo': {
+        // 圖樣，或自己描述（誓約的加減不合規則就不收）
+        const place = isTattooPlace(x.place) ? { place: x.place } : {}
+        const by = str(x.by, 20)
+        if (typeof x.template === 'string' && tattooTemplate(x.template)) {
+          out.push({ type: 'tattoo', template: x.template, ...place, ...(by ? { by } : {}) })
+          break
+        }
+        const kind = x.kind === 'oath' ? 'oath' : 'plain'
+        const name = str(x.name, 20)
+        if (!name) break
+        const attrs = kind === 'oath' && x.attrs && typeof x.attrs === 'object'
+          ? Object.fromEntries(ATTR_IDS.map((a) => [a, Math.round(Number((x.attrs as Record<string, unknown>)[a]) || 0)]).filter(([, v]) => v)) as Partial<Record<AttrId, number>>
+          : undefined
+        if (kind === 'oath' && oathError(attrs)) break
+        out.push({ type: 'tattoo', kind, name, text: str(x.text, 160), ...(attrs ? { attrs } : {}), ...place, ...(by ? { by } : {}) })
+        break
+      }
+      case 'remove_tattoo': {
+        if (isTattooPlace(x.place)) out.push({ type: 'remove_tattoo', place: x.place })
+        else if (x.kind === 'plain' || x.kind === 'oath') out.push({ type: 'remove_tattoo', kind: x.kind })
+        break
+      }
       case 'enslave_player': {
         // 主人：固定 NPC（id），或隨機生成（可以指定身分標籤）；印記是主人打算刻的模板，之後還有刻印檢定
-        const contract = typeof x.contract === 'string' && slaveryRules.contracts[x.contract] ? x.contract : 'labor'
+        const contract = typeof x.contract === 'string' && slaveryRules.contracts[x.contract] ? x.contract : slaveryRules.roles.default
         const master = typeof x.master === 'string' ? str(x.master, 60) : ''
         const r = x.random && typeof x.random === 'object' ? x.random as { tag?: unknown } : {}
         const tag = typeof r.tag === 'string' && slaveryRules.master_tags.tags[r.tag] ? r.tag : undefined

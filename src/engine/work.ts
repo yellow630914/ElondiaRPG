@@ -13,6 +13,7 @@ import { addAffinity, isFugitive } from './party'
 import type { Character } from './types'
 import type { GameState, Report } from './types'
 import { shopPlace } from './trade'
+import { contractOf } from './tattoos'
 
 /** 現在站的設施有沒有工作可做 */
 export function jobHere(state: GameState): (JobDef & { cell: string }) | undefined {
@@ -23,7 +24,7 @@ export function jobHere(state: GameState): (JobDef & { cell: string }) | undefin
 
 /** 可以派去工作的人：主角自己的奴隸（在隊伍裡、沒有暫時離隊） */
 export function workers(state: GameState): Character[] {
-  return state.party.filter((m) => m.bond === 'slave' && m.contract?.master === 'pc' && !m.status.includes('away'))
+  return state.party.filter((m) => m.bond === 'slave' && contractOf(m)?.master === 'pc' && !m.status.includes('away'))
 }
 
 /** 主動行動的 target：「時數」或「時數:奴隸 id」 */
@@ -61,7 +62,7 @@ export function setupWork(state: GameState, target?: string) {
   const job = jobHere(state)
   if (!job) throw new Error('這裡沒有工作可做')
   const worker = workerOf(state, target)
-  if (!worker && job.official && isFugitive(state)) throw new Error(`${currentArea(state).name}的人認出了你頸上的契約印記，不肯雇你`)
+  if (!worker && job.official && isFugitive(state)) throw new Error(`${currentArea(state).name}的人認出了你身上的契約印記，不肯雇你`)
   const hours = hoursOf(target)
   const boss = employer(state, job.cell)
   const pay = (d: Degree) => formatMoney(workPay(job, hours, d))

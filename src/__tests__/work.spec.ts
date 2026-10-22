@@ -12,6 +12,7 @@ import { ensureRoster } from '@/engine/population'
 import { answerMasterEvent, masterCandidates, maybeMasterEvent, startAsSlave, startMarking } from '@/engine/slavery'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
+import { contractOf } from '@/engine/tattoos'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
@@ -125,9 +126,9 @@ describe('the brothel', () => {
     expect(isBound(state)).toBe(true)
     expect(leaderOf(state)?.id).toBe(madam.id)
     expect(isNoncombatant(leaderOf(state)!)).toBe(true)
-    expect(state.party[0]!.contract).toMatchObject({ kind: 'brothel', master: madam.id })
+    expect(contractOf(state.party[0]!)).toMatchObject({ kind: 'brothel', master: madam.id })
     // 大成功：服從懲罰 -1
-    expect(state.party[0]!.contract!.obedience).toBe(slaveryRules.contracts.brothel!.obedience_penalty - 1)
+    expect(contractOf(state.party[0]!)!.obedience).toBe(slaveryRules.contracts.brothel!.obedience_penalty - 1)
   })
 
   it('marks with the brothel contract when that is what the master intends', () => {

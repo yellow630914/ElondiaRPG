@@ -6,13 +6,14 @@ import { pendingEventDef } from '@/engine/slavery'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import JudgeToggle from './JudgeToggle.vue'
+import { contractOf } from '@/engine/tattoos'
 
 // 主人的突發事件：三選一，或自己輸入回應（見 docs/COMPANIONS.md 2.4）
 const game = useGame()
 const s = computed(() => game.state!)
 const ev = computed(() => s.value.pendingMasterEvent!)
 const def = computed(() => pendingEventDef(s.value))
-const master = computed(() => s.value.party.find((m) => m.isPlayer)?.contract?.masterName ?? '主人')
+const master = computed(() => contractOf(s.value.party.find((m) => m.isPlayer))?.masterName ?? '主人')
 const busy = computed(() => game.judging || !!s.value.pendingAction)
 const text = ref('')
 const use = ref('')
