@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, HomeDistrict, ItemDef, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, HomeDistrict, ItemDef, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -181,6 +181,11 @@ export interface GearSpec {
   /** 沒有時用材料的稀有度 */
   rarity?: string
   enchants?: { mods?: Mods; resist?: AffinityMap; offense?: AffinityMap }
+  /**
+   * 獨特物品的檢定加值（和附魔分開，一件只有一種，可以疊加）：只寫在內容資料裡的獨特物品，
+   * 不能打造、不能購買，只能從特殊事件或寶箱得到（見 docs/ITEMS.md 第 3.1 節）
+   */
+  unique?: { check: CheckFilter; bonus: number }
 }
 
 /** 穿在身上的裝備：物品名稱與組成（自帶組成，不必回頭查存檔） */

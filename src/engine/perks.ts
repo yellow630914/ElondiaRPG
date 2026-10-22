@@ -60,9 +60,19 @@ export function perkModifiers(c: PerkHolder, ctx: CheckCtx): { label: string; va
   return out
 }
 
-/** 檢定的情境修正：非戰鬥狀態 + 特質（正數是加值） */
+/** 身上獨特裝備的檢定加值（每件一行；同樣的加值可以疊加） */
+export function gearCheckModifiers(c: Pick<Character, 'gear'>, ctx: CheckCtx): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = []
+  for (const g of Object.values(c.gear ?? {})) {
+    const u = g?.spec.unique
+    if (u && matches(u.check, ctx)) out.push({ label: `獨特裝備【${g!.name}】`, value: u.bonus })
+  }
+  return out
+}
+
+/** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備（正數是加值） */
 export function checkModifiers(c: Character, ctx: CheckCtx): { label: string; value: number }[] {
-  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx)].filter((x) => x.value !== 0)
+  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...gearCheckModifiers(c, ctx)].filter((x) => x.value !== 0)
 }
 
 /** 檢定的情境修正總和 */

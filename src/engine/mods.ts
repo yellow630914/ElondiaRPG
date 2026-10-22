@@ -625,8 +625,14 @@ export function sanitizeGearSpecLoose(g: GearSpec | undefined): GearSpec | undef
     const e = { ...(mods(g.enchants.mods, -5, 5) ? { mods: mods(g.enchants.mods, -5, 5) } : {}), ...(affinity(g.enchants.resist) ? { resist: affinity(g.enchants.resist) } : {}), ...(affinity(g.enchants.offense) ? { offense: affinity(g.enchants.offense) } : {}) }
     if (Object.keys(e).length) out.enchants = e
   }
+  // 獨特物品的檢定加值：一種（一組篩選條件），+1～+3
+  const u = g.unique ? cleanPerkEffects([g.unique], UNIQUE_LIMITS)[0] : undefined
+  if (u && 'check' in u) out.unique = { check: u.check, bonus: u.bonus }
   return out
 }
+
+/** 獨特物品的檢定加值範圍 */
+export const UNIQUE_LIMITS: PerkLimits = { effects: 1, check_bonus: [1, 3], combat: [1, 1], resist: [0, 0] }
 
 /** 物品名稱：最多 20 字，拿掉打造指令用的分隔符號（| 與 *） */
 export function cleanItemName(v: unknown): string {

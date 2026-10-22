@@ -8,6 +8,7 @@
 
 import gearJson from '@data/rules/gear.json'
 import { armorDef, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, type AffinityMap, type AttrId, type Mods } from './data'
+import { describeEffects } from './perks'
 import type { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
 
@@ -360,6 +361,7 @@ export function gearSummary(spec: GearSpec): string {
   const off = Object.entries(s.offense).filter(([, v]) => v).map(([k, v]) => `${damageTypeName(k)}攻擊 ×${Math.round((1 + v!) * 100) / 100}`)
   const all = [...bonus, ...res, ...off, ...(s.threat ? [`仇恨 ${signed(Math.round(s.threat * 100))}%`] : [])]
   if (all.length) parts.push(all.join('、'))
+  if (spec.unique) parts.push(`獨特：${describeEffects([spec.unique]).replace(/。$/, '')}`)
   return parts.join('・')
 }
 

@@ -139,7 +139,8 @@ function itemDeal(state: GameState, name: string, stock: number, markup = 1): De
 function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const def = shopRules.types[type]
   const rank = locationRank(shopPlace(state).type)
-  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && locationRank(i.min_location ?? 'village') <= rank)
+  // 獨特物品不在商店賣（只能從特殊事件或寶箱得到）
+  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !i.gear?.unique && locationRank(i.min_location ?? 'village') <= rank)
   return withRng(state, (rng) => {
     const deals: Deal[] = []
     const equipment = available.filter((i) => i.category === 'equipment')
@@ -431,7 +432,8 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
       if (t === 'item') {
         const name = clip(x.name, 20)
         const qty = Math.max(1, Math.min(20, Math.round(num(x.qty) || 1)))
-        if (!name) continue
+        // 獨特物品不能買
+        if (!name || itemDef(name)?.gear?.unique) continue
         let price = itemValue(state, name)
         if (price === undefined) {
           const cat = String(x.category) as ItemCategory

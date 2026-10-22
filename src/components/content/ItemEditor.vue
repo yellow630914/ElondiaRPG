@@ -5,6 +5,7 @@ import {
   type AttrId, type ItemIntel, type ItemUse, type ToolKind,
 } from '@/engine/data'
 import { gearPrice, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
+import { actionRules, npcTags, perkRules } from '@/engine/data'
 import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -173,6 +174,25 @@ function setEnchantMod(k: string, v: number) {
   enchantMods.value = { ...enchantMods.value, [k]: v || undefined }
 }
 const MOD_NAME: Record<string, string> = { hit: '命中', damage: '傷害', evade: '迴避', dr: '減傷', save: '豁免', crit: '幸運一擊', ap_regen: '行動點回復' }
+// ---- 獨特物品的檢定加值（一種，可以疊加；不能打造、購買，只能從特殊事件或寶箱得到） ----
+const uniqueContexts = Object.entries(perkRules.contexts)
+const uniqueKinds = Object.entries(actionRules.kinds).map(([k, v]) => [k, v.name] as const)
+const uniqueTags = Object.entries(npcTags.tags).map(([k, v]) => [k, v.name] as const)
+function setUnique(on: boolean) {
+  if (!draft.value.gear) return
+  if (on) draft.value.gear.unique = { check: { contexts: ['lock'] }, bonus: 1 }
+  else delete draft.value.gear.unique
+}
+function toggleUniqueFilter(key: 'attrs' | 'contexts' | 'kinds' | 'vs_tags', value: string, on: boolean) {
+  const u = draft.value.gear?.unique
+  if (!u) return
+  const set = new Set<string>((u.check[key] as string[] | undefined) ?? [])
+  if (on) set.add(value)
+  else set.delete(value)
+  if (set.size) (u.check as Record<string, string[]>)[key] = [...set]
+  else delete u.check[key]
+}
+
 const gearText = computed(() => {
   const g = sanitizeGearSpecLoose(draft.value.gear)
   return g ? gearSummary(g) : '底材與材料的類型要一致'
@@ -549,6 +569,28 @@ function remove() {
         <button class="small" @click="priceFromGear">依組成定價</button>
       </div>
       <p class="small muted">這裡設定的數值不受稀有度的附魔點數限制（那是給打造、寶箱與 AI 生成的裝備用的）。</p>
+      <template v-if="draft.gear">
+        <label class="check small">
+          <input type="checkbox" :checked="!!draft.gear.unique" @change="setUnique(($event.target as HTMLInputElement).checked)" />
+          獨特物品：帶一種檢定加值（和附魔分開、可以和其他加值疊加）。不會在商店賣、不能打造，要放進寶箱或特殊任務的效果才拿得到
+        </label>
+        <div v-if="draft.gear.unique" class="unique small">
+          <label>檢定加值 <input v-model.number="draft.gear.unique.bonus" type="number" min="1" max="3" class="num" /></label>
+          <span class="muted">勾選篩選條件：同一欄是「或」，不同欄是「且」，都不勾就是所有檢定。</span>
+          <details><summary>屬性（{{ draft.gear.unique.check.attrs?.length ?? 0 }}）</summary>
+            <label v-for="a in ATTR_IDS" :key="a" class="check"><input type="checkbox" :checked="draft.gear.unique.check.attrs?.includes(a)" @change="toggleUniqueFilter('attrs', a, ($event.target as HTMLInputElement).checked)" /> {{ attrName(a) }}</label>
+          </details>
+          <details><summary>情境（{{ draft.gear.unique.check.contexts?.length ?? 0 }}）</summary>
+            <label v-for="[k, n] in uniqueContexts" :key="k" class="check"><input type="checkbox" :checked="draft.gear.unique.check.contexts?.includes(k as never)" @change="toggleUniqueFilter('contexts', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
+          </details>
+          <details><summary>主動行動（{{ draft.gear.unique.check.kinds?.length ?? 0 }}）</summary>
+            <label v-for="[k, n] in uniqueKinds" :key="k" class="check"><input type="checkbox" :checked="draft.gear.unique.check.kinds?.includes(k as never)" @change="toggleUniqueFilter('kinds', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
+          </details>
+          <details><summary>對象的標籤（{{ draft.gear.unique.check.vs_tags?.length ?? 0 }}）</summary>
+            <label v-for="[k, n] in uniqueTags" :key="k" class="check"><input type="checkbox" :checked="draft.gear.unique.check.vs_tags?.includes(k)" @change="toggleUniqueFilter('vs_tags', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
+          </details>
+        </div>
+      </template>
     </fieldset>
 
     <fieldset v-if="draft.category === 'material'">
