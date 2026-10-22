@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { toolAccess } from '@/engine/crafting'
-import { homeRules, locationById } from '@/engine/data'
-import { currentArea, currentCell, enterLocation, getArea, moveTo, placeAt, position, type Area } from '@/engine/grid'
+import { geography, homeRules, locationById } from '@/engine/data'
+import { blocksFor, currentArea, currentCell, enterLocation, getArea, moveTo, placeAt, position, settlementKey, type Area } from '@/engine/grid'
 import {
   buyHome, comfortOf, furnitureIn, generateHome, hasBed, homeOfArea, leaveWithResident, lotById, lotPrice, lotsOf, memberOrResident,
   placeFurniture, renameHome, residents, stayHome, takeFurniture, workbenchFor,
@@ -74,6 +74,32 @@ describe('lots', () => {
       expect(area.cells[lot.street.y * area.width + lot.street.x]!.kind).not.toBe('wall')
       expect(lotById(game(), lot.id)).toEqual(lot)
     }
+  })
+
+  it('every settlement offers its full count, with one in the noble quarter when it has one', () => {
+    for (const loc of geography.locations.filter((l) => l.type !== 'dungeon')) {
+      const lots = lotsOf(loc.id)
+      expect(lots.length, loc.id).toBe(homeRules.lots[loc.type])
+      expect(new Set(lots.map((l) => l.id)).size, loc.id).toBe(lots.length)
+      const noble = blocksFor(loc).some((b) => b.zone === 'noble')
+      expect(lots.some((l) => l.district === homeRules.noble), loc.id).toBe(noble)
+      for (const lot of lots) {
+        const grid = blocksFor(loc).find((b) => settlementKey(loc.id, b.id) === lot.area)!.grid
+        expect(grid[lot.street.y]![lot.street.x], loc.id).toBe('.')
+        // 門口不是別塊空地
+        expect(lots.some((o) => o.area === lot.area && o.x === lot.street.x && o.y === lot.street.y), loc.id).toBe(false)
+      }
+    }
+  })
+
+  it('fills in with street houses only where buildings run short, keeping the other lots', () => {
+    // 建築格夠的城市：空地和以前一樣（存檔裡的空地 id 不變）
+    expect(lotsOf('rhineburg').map((l) => l.id)).toEqual(['rhineburg:noble:8,4', 'rhineburg:gate:8,2', 'rhineburg:noble:8,2', 'rhineburg:gate:4,2'])
+    // 貴族區沒有建築格：補一塊街屋在貴族區，其餘照舊
+    const [street, ...rest] = lotsOf('soriel')
+    expect(street!.area).toBe('soriel/sanctum')
+    expect(blocksFor(locationById('soriel')).find((b) => b.id === 'sanctum')!.grid[street!.y]![street!.x]).toBe('.')
+    expect(rest.map((l) => l.id)).toEqual(['soriel:market:8,2', 'soriel:market:8,4', 'soriel:harbor:2,4'])
   })
 })
 
