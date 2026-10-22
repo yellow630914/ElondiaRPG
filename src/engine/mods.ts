@@ -15,7 +15,7 @@ import {
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
   type Control, type LuckRoll, type StatusDef,
 } from './data'
-import { gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
+import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
@@ -744,7 +744,7 @@ const SCALES = ['full', 'half', 'up', 'third', 'third_up', 'res']
 
 export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string): BaseMod {
   const kind = (['metal', 'leather', 'cloth', 'wood', 'jewel'] as const).includes(raw.kind as 'metal') ? raw.kind! : 'metal'
-  const slots = [...Object.keys(gearRules.slots).filter((s) => !s.startsWith('ring')), 'ring']
+  const slots = Object.keys(baseSlots())
   const slot = slots.includes(raw.slot as string) ? raw.slot! : 'main_hand'
   const out: BaseMod = { slot, name: str(raw.name, 12) || '未命名的底材', kind, price: int(raw.price, 1, 1e7, 100) }
   if (raw.two_handed && slot === 'main_hand') out.two_handed = true
@@ -925,7 +925,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
       const base = spec && gearRules.bases[spec.base]
       if (!spec || !base) continue
       // 底材要放得進這個欄位（戒指放兩個戒指欄）
-      if (base.slot === slot || (base.slot === 'ring' && slot.startsWith('ring'))) g[slot] = spec
+      if (baseFits(base.slot, slot)) g[slot] = spec
     }
     if (Object.keys(g).length) out.gear = g
   }

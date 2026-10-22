@@ -172,6 +172,7 @@ export interface Report {
 
 /** 裝備欄位（gear.json 的 slots） */
 export type GearSlot = 'main_hand' | 'off_hand' | 'head' | 'body' | 'legs' | 'wrists' | 'feet' | 'belt' | 'accessory' | 'ring_1' | 'ring_2'
+  | 'piercing_1' | 'piercing_2' | 'leg_accessory'
 
 /** 一件裝備的組成：底材 × 材料（＋稀有度與附魔） */
 export interface GearSpec {

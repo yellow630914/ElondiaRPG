@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
 import { canCraftHere, craftKindsHere, craftPlan, craftRarity, craftTarget, makeTarget, type AuxItem } from '@/engine/craft'
 import { crafters, skillOf, toolTierFor, toolTierName } from '@/engine/crafting'
-import { gearName, gearRules, gearSummary, rarityName, rarityPoints, slotName } from '@/engine/gear'
+import { baseSlotName, gearName, gearRules, gearSummary, rarityName, rarityPoints, type BaseSlot } from '@/engine/gear'
 import { formatMoney } from '@/engine/money'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
@@ -47,7 +47,7 @@ const plan = computed(() => craftPlan(s.value, base.value, mat.value, aux.value,
 const skill = computed(() => craftRules.skills[plan.value.craft])
 const text = ref('')
 const use = ref('')
-const slotLabel = (slot: string) => (slot === 'ring' ? '戒指' : slotName(slot as never))
+const slotLabel = (slot: string) => baseSlotName(slot as BaseSlot)
 
 function craft() {
   const u = parseUse(use.value)

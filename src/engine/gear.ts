@@ -1,4 +1,4 @@
-// 裝備：11 個欄位、底材 × 材料、稀有度與附魔（data/rules/gear.json）。
+// 裝備：14 個欄位、底材 × 材料、稀有度與附魔（data/rules/gear.json）。
 //
 // - 一件裝備的數值由組成（GearSpec）推算：底材決定欄位、武器或防具類型與固定數值，材料的 bonus 依 scale 成長，
 //   附魔在稀有度的點數內加減。制式裝備（items.json）、打造與事件生成的裝備（customItems）都用同一套公式。
@@ -27,8 +27,11 @@ export interface MaterialDef {
   desc?: string
 }
 
+/** 底材放的位置：一個欄位，或一組欄位（ring 兩個戒指、piercing 兩個穿孔飾品，見 gear.json 的 slot_groups） */
+export type BaseSlot = GearSlot | 'ring' | 'piercing'
+
 export interface BaseDef {
-  slot: GearSlot | 'ring'
+  slot: BaseSlot
   name: string
   kind: MaterialKind
   weapon?: string
@@ -82,9 +85,30 @@ export const gearRules = gearJson as unknown as {
 
 export const SLOTS = Object.keys(gearRules.slots) as GearSlot[]
 const PIECE_SLOTS: GearSlot[] = ['head', 'legs', 'wrists', 'feet', 'belt']
-const JEWELRY: { slot: GearSlot; group: 'accessory' | 'ring' }[] = [
+const JEWELRY: { slot: GearSlot; group: 'accessory' | 'ring' | 'piercing' | 'leg_accessory' }[] = [
   { slot: 'accessory', group: 'accessory' }, { slot: 'ring_1', group: 'ring' }, { slot: 'ring_2', group: 'ring' },
+  { slot: 'piercing_1', group: 'piercing' }, { slot: 'piercing_2', group: 'piercing' }, { slot: 'leg_accessory', group: 'leg_accessory' },
 ]
+
+/** 底材位置的名稱（一組欄位用第一個欄位的名稱，例如「戒指」「穿孔飾品」） */
+export function baseSlotName(slot: BaseSlot): string {
+  const group = gearRules.slot_groups[slot]
+  return gearRules.slots[(group?.[0] ?? slot) as GearSlot] ?? slot
+}
+
+/** 這種底材能不能放進這個欄位 */
+export function baseFits(baseSlot: BaseSlot, slot: GearSlot): boolean {
+  return baseSlot === slot || !!gearRules.slot_groups[baseSlot]?.includes(slot)
+}
+
+/** 底材可以選的位置（欄位，一組欄位用組名）與名稱：底材編輯器用 */
+export function baseSlots(): Record<BaseSlot, string> {
+  const grouped = new Set(Object.values(gearRules.slot_groups).flat())
+  const out: Partial<Record<BaseSlot, string>> = {}
+  for (const s of SLOTS) if (!grouped.has(s)) out[s] = gearRules.slots[s]
+  for (const [g, list] of Object.entries(gearRules.slot_groups)) out[g as BaseSlot] = gearRules.slots[list[0]!]
+  return out as Record<BaseSlot, string>
+}
 
 export function slotName(slot: GearSlot): string {
   return gearRules.slots[slot]
@@ -106,7 +130,7 @@ function scaled(s: Scale, bonus: number): number {
 }
 
 export interface GearStats {
-  slot: GearSlot | 'ring'
+  slot: BaseSlot
   base: BaseDef
   material: MaterialDef
   rarity: string
@@ -288,6 +312,8 @@ const PIECE_BASES: Record<MaterialKind, Partial<Record<GearSlot, string>>> = {
 const JEWELRY_BASES = {
   accessory: ['amulet_ward', 'amulet_iron', 'pendant_fire', 'pendant_cold', 'pendant_lightning', 'pendant_poison', 'pendant_shadow', 'pendant_mind'],
   ring: ['ring_precision', 'ring_guard', 'ring_fortune', 'ring_swift'],
+  piercing: ['earring_hawk', 'earring_calm', 'navel_ember', 'navel_vigor'],
+  leg_accessory: ['anklet_wind', 'anklet_bell', 'thigh_band', 'thigh_sheath'],
 }
 
 /** 夥伴與敵對冒險者：依職業模板與等級生成一套裝備 */
@@ -320,7 +346,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 export function gearSummary(spec: GearSpec): string {
   if (!gearKnown(spec)) return '（已失效：底材或材料不存在，沒有效果）'
   const s = gearStats(spec)
-  const parts = [rarityName(s.rarity), s.slot === 'ring' ? '戒指' : slotName(s.slot)]
+  const parts = [rarityName(s.rarity), baseSlotName(s.slot)]
   if (s.weapon) {
     const w = weaponDef(s.weapon)
     parts.push(`${w.dice} ${damageTypeName(w.type)}${s.two_handed ? '（雙手）' : ''}`)

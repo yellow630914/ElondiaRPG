@@ -1,12 +1,13 @@
 {
-  "$comment": "裝備模板。角色（主角、夥伴、敵對冒險者，所有種族共用）有 11 個欄位。一件裝備 = 底材（base：決定欄位、武器或防具類型、固定數值、隨材料成長的數值）＋ 材料（material：等級 tier、成長值 bonus、稀有度、價格倍率、建議等級）＋ 附魔（enchants，只有打造、事件或特殊物品才有）。數值依 scale 由材料的 bonus 推算：full = bonus、half = floor(bonus/2)、up = ceil(bonus/2)、third = floor(bonus/3)、res = -0.15 × bonus（抗性）。商店與敵人掉落的『制式裝備』是 base × material 的組合（scripts 產生到 items.json）。附魔點數依稀有度（enchant_points）：命中、傷害、迴避、減傷、豁免、幸運一擊每 +1 = 1 點，行動點回復 +1 = 2 點，抗性或屬性攻擊加成每 0.25 = 1 點，仇恨每 ±0.1 = 1 點。",
+  "$comment": "裝備模板。角色（主角、夥伴、敵對冒險者，所有種族共用）有 14 個欄位（穿孔飾品兩格：耳環、臍環；腿部飾品一格：腳鍊、腿環）。一件裝備 = 底材（base：決定欄位、武器或防具類型、固定數值、隨材料成長的數值）＋ 材料（material：等級 tier、成長值 bonus、稀有度、價格倍率、建議等級）＋ 附魔（enchants，只有打造、事件或特殊物品才有）。數值依 scale 由材料的 bonus 推算：full = bonus、half = floor(bonus/2)、up = ceil(bonus/2)、third = floor(bonus/3)、res = -0.15 × bonus（抗性）。商店與敵人掉落的『制式裝備』是 base × material 的組合（scripts 產生到 items.json）。附魔點數依稀有度（enchant_points）：命中、傷害、迴避、減傷、豁免、幸運一擊每 +1 = 1 點，行動點回復 +1 = 2 點，抗性或屬性攻擊加成每 0.25 = 1 點，仇恨每 ±0.1 = 1 點。",
   "version": 1,
 
   "slots": {
     "main_hand": "主手", "off_hand": "副手", "head": "頭部", "body": "上身", "legs": "下身",
-    "wrists": "手腕", "feet": "鞋子", "belt": "腰帶", "accessory": "首飾", "ring_1": "戒指", "ring_2": "戒指"
+    "wrists": "手腕", "feet": "鞋子", "belt": "腰帶", "accessory": "首飾", "ring_1": "戒指", "ring_2": "戒指",
+    "piercing_1": "穿孔飾品", "piercing_2": "穿孔飾品", "leg_accessory": "腿部飾品"
   },
-  "slot_groups": { "ring": ["ring_1", "ring_2"] },
+  "slot_groups": { "ring": ["ring_1", "ring_2"], "piercing": ["piercing_1", "piercing_2"] },
 
   "rarities": {
     "common": { "name": "普通", "enchant_points": 0 },
@@ -100,7 +101,15 @@
     "pendant_lightning": { "slot": "accessory", "name": "抗雷項鍊", "kind": "jewel", "price": 90, "resist_scale": { "lightning": "res" } },
     "pendant_poison": { "slot": "accessory", "name": "抗毒項鍊", "kind": "jewel", "price": 90, "resist_scale": { "poison": "res" } },
     "pendant_shadow": { "slot": "accessory", "name": "驅暗項鍊", "kind": "jewel", "price": 110, "resist_scale": { "necrotic": "res" } },
-    "pendant_mind":   { "slot": "accessory", "name": "明心項鍊", "kind": "jewel", "price": 110, "resist_scale": { "psychic": "res" } }
+    "pendant_mind":   { "slot": "accessory", "name": "明心項鍊", "kind": "jewel", "price": 110, "resist_scale": { "psychic": "res" } },
+    "earring_hawk": { "slot": "piercing", "name": "鷹眼耳環", "kind": "jewel", "price": 100, "scale": { "hit": "third_up" }, "desc": "耳垂上的小環，據說讓人看得更準。" },
+    "earring_calm": { "slot": "piercing", "name": "靜心耳墜", "kind": "jewel", "price": 90, "resist_scale": { "psychic": "res" }, "desc": "垂在耳下的墜子，輕輕晃動時心神也跟著沉靜。" },
+    "navel_ember":  { "slot": "piercing", "name": "炎紋臍環", "kind": "jewel", "price": 90, "resist_scale": { "fire": "res" }, "desc": "刻著火焰紋路的臍環，貼著肌膚微微發暖。" },
+    "navel_vigor":  { "slot": "piercing", "name": "活力臍釘", "kind": "jewel", "price": 260, "scale": { "ap_regen": "third" }, "desc": "嵌在肚臍上的小釘，好材料做的能讓人回氣更快。" },
+    "anklet_wind":  { "slot": "leg_accessory", "name": "疾風腳鍊", "kind": "jewel", "price": 160, "scale": { "evade": "third_up" }, "desc": "繫在腳踝上的細鍊，走起路來輕得像風。" },
+    "anklet_bell":  { "slot": "leg_accessory", "name": "鈴音腳鍊", "kind": "jewel", "price": 100, "scale": { "save": "third_up" }, "desc": "綴著小鈴的腳鍊，鈴聲能讓人保持清醒。" },
+    "thigh_band":   { "slot": "leg_accessory", "name": "鐵縛腿環", "kind": "jewel", "price": 140, "scale": { "dr": "third_up" }, "desc": "緊束在大腿上的硬環，護住要害。" },
+    "thigh_sheath": { "slot": "leg_accessory", "name": "藏刃腿環", "kind": "jewel", "price": 150, "scale": { "damage": "third_up" }, "desc": "大腿上的皮環，內側藏著一把小刀。" }
   },
 
   "classes": {
@@ -130,7 +139,7 @@
     "attr": "int",
     "fee": [1, 2, 3, 4, 5],
     "dc": [10, 12, 14, 16, 18],
-    "units": { "main_hand": 2, "two_handed": 3, "off_hand": 2, "head": 1, "body": 3, "legs": 2, "wrists": 1, "feet": 1, "belt": 1, "accessory": 1, "ring": 1 },
+    "units": { "main_hand": 2, "two_handed": 3, "off_hand": 2, "head": 1, "body": 3, "legs": 2, "wrists": 1, "feet": 1, "belt": 1, "accessory": 1, "ring": 1, "piercing": 1, "leg_accessory": 1 },
     "lost_on_fail": 0.5,
     "aux": {
       "$comment": "輔料：任何材料都可以加進去（最多 max_kinds 種、每種 max_qty 個），不論結果都會用掉。輔料的總價值 ÷（底價 × 材料倍率）× chance_per_value 是成品稀有度再高一級的機率（上限 max_chance；部分成功時改成照成功做）。名稱或描述裡的字決定附魔的屬性方向（elements）。",

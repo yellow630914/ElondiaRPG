@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ATTR_IDS, attrName, damageTypeName, damageTypes, equipment, itemRules } from '@/engine/data'
-import { gearRules, gearSummary, rarityName, RARITY_ORDER, slotName } from '@/engine/gear'
+import { baseSlots, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
 import { builtinBase, builtinMaterial, type BaseMod, type MaterialMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import type { GearSlot } from '@/engine/types'
@@ -18,10 +18,7 @@ const game = useGame()
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 const KINDS: Record<string, string> = { metal: '金屬', leather: '皮革', cloth: '布料', wood: '木材', jewel: '寶石' }
-const SLOTS: Record<string, string> = Object.fromEntries([
-  ...Object.keys(gearRules.slots).filter((s) => !s.startsWith('ring')).map((s) => [s, slotName(s as GearSlot)]),
-  ['ring', '戒指'],
-])
+const SLOTS: Record<string, string> = baseSlots()
 const MOD_NAME: Record<string, string> = { hit: '命中', damage: '傷害', evade: '迴避', dr: '減傷', save: '豁免', crit: '幸運一擊', ap_regen: '行動點回復' }
 const SCALE_NAME: Record<string, string> = { full: '材料加成全部', half: '一半（捨去）', up: '一半（進位）', third: '三分之一（捨去）', third_up: '三分之一（進位）' }
 const damageIds = damageTypes.types.map((t) => t.id)
