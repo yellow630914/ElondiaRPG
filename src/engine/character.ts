@@ -74,10 +74,22 @@ export function addAttrProvider(p: AttrProvider): () => void {
   }
 }
 
-/** 角色身上所有的屬性加減（給畫面與 AI 說明來源）：誓約印記，加上登記的來源 */
+/** 裝備給的屬性加減：每件一個來源；同一項合計超過上限（gear.json 的 attrs.cap）時加一項扣回來 */
+function gearAttrSources(c: Character): AttrSource[] {
+  const list = Object.values(c.gear ?? {}).filter((g) => g?.spec.attrs).map((g) => ({ label: `裝備【${g!.name}】`, attrs: g!.spec.attrs! }))
+  const cap = gearRules.attrs.cap
+  const over: Partial<Attrs> = {}
+  for (const a of ATTR_IDS) {
+    const sum = list.reduce((s, x) => s + (x.attrs[a] ?? 0), 0)
+    if (Math.abs(sum) > cap) over[a] = Math.sign(sum) * cap - sum
+  }
+  return Object.keys(over).length ? [...list, { label: `裝備的加減上限 ±${cap}`, attrs: over }] : list
+}
+
+/** 角色身上所有的屬性加減（給畫面與 AI 說明來源）：誓約印記、裝備，加上登記的來源 */
 export function attrSources(c: Character): AttrSource[] {
   const oaths = (c.tattoos ?? []).filter((t) => t.kind === 'oath' && t.attrs).map((t) => ({ label: `誓約印記【${t.name ?? ''}】`, attrs: t.attrs! }))
-  return [...oaths, ...attrProviders.flatMap((p) => p(c))].filter((s) => ATTR_IDS.some((a) => s.attrs[a]))
+  return [...oaths, ...gearAttrSources(c), ...attrProviders.flatMap((p) => p(c))].filter((s) => ATTR_IDS.some((a) => s.attrs[a]))
 }
 
 /** 有效屬性：基礎屬性加上所有來源的加減 */

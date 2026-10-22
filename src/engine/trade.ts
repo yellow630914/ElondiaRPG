@@ -27,6 +27,11 @@ const CELL_SHOP: Record<string, ShopType> = {
   shop: 'general', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant',
 }
 
+/** 不在商店上架的物品：獨特物品、有屬性加減的裝備、主人強制裝備的東西 */
+export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'>): boolean {
+  return !!i.gear?.unique || !!i.gear?.attrs || !!i.master_force
+}
+
 export function shopTypeForCell(cellKind: string): ShopType | null {
   return CELL_SHOP[cellKind] ?? null
 }
@@ -139,8 +144,8 @@ function itemDeal(state: GameState, name: string, stock: number, markup = 1): De
 function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const def = shopRules.types[type]
   const rank = locationRank(shopPlace(state).type)
-  // 獨特物品不在商店賣（只能從特殊事件或寶箱得到）
-  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !i.gear?.unique && locationRank(i.min_location ?? 'village') <= rank)
+  // 獨特物品、有屬性加減的裝備、主人強制裝備的東西不在商店賣（只能從事件、寶箱或主人得到）
+  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank)
   return withRng(state, (rng) => {
     const deals: Deal[] = []
     const equipment = available.filter((i) => i.category === 'equipment')
@@ -432,8 +437,9 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
       if (t === 'item') {
         const name = clip(x.name, 20)
         const qty = Math.max(1, Math.min(20, Math.round(num(x.qty) || 1)))
-        // 獨特物品不能買
-        if (!name || itemDef(name)?.gear?.unique) continue
+        // 獨特物品、有屬性加減的裝備、主人強制裝備的東西不能買
+        const known = name ? itemDef(name) : undefined
+        if (!name || (known && notForSale(known))) continue
         let price = itemValue(state, name)
         if (price === undefined) {
           const cat = String(x.category) as ItemCategory

@@ -35,6 +35,7 @@
 | `lose_perk` | 失去特質（缺陷：克服） |
 | `tattoo` | 主角刺青：圖樣或自己描述（普通刺青、誓約印記），可以指定部位（見 [TATTOOS](TATTOOS.md) 第 5 節） |
 | `remove_tattoo` | 洗掉主角的刺青：指定部位，或某一種全部（奴隸印記不受影響） |
+| `force_equip` | 主人強制主角裝上一件「主人會強制裝備」的物品並鎖住（`npc` 是主人，主人的事件寫 `master`；`item` 沒寫時依主人的身分隨機挑；見 [ITEMS](ITEMS.md) 3.2 節） |
 | `enslave_player` | 主角淪為奴隸（只有特殊任務能用；見 [STORY_QUESTS](STORY_QUESTS.md)） |
 | `mark` | 刻印時提議的印記名稱與描述（只是文字，數值依模板） |
 | `free` | 解除契約：`npc` 為 `pc` 時是主角獲釋 |

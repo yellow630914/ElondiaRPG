@@ -446,6 +446,40 @@
           "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "拒絕家紋" }],
           "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}家的徽記", "text": "一面精細的家族徽記，四周繞著細小的藤紋。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕家紋" }] }
       ] },
+      { "id": "force_gear", "weight": 2, "forced_gear": true, "text": "{master}拿出一件東西丟到你面前：「從今天起，你就戴著這個。」", "hours": 0.5, "options": [
+        { "label": "乖乖戴上", "result": "冰冷的扣環扣上，發出一聲輕響。{master}滿意地點點頭。",
+          "effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "乖乖戴上" }] },
+        { "label": "請求再等一陣子", "check": { "attr": "cha", "dc": 14 },
+          "success": "{master}想了想：「也好，看你這陣子的表現。」暫時收了起來。", "fail": "{master}冷冷地看著你：「不是在跟你商量。」",
+          "effects_success": [],
+          "fail_effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "討價還價" }] },
+        { "label": "拒絕", "check": { "attr": "str", "dc": 15 },
+          "success": "你把東西推了回去，{master}臉色一沉，這次沒有硬來。", "fail": "你被按住，扣環還是扣上了。",
+          "effects_success": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "拒絕戴上" }],
+          "fail_effects": [{ "type": "force_equip", "npc": "master" }, { "type": "hp", "target": "pc", "ratio": -0.1 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕戴上" }] }
+      ] },
+      { "id": "villain_gear", "weight": 2, "tags": ["villain"], "forced_gear": true, "text": "{master}和同夥喝得正開心，笑著把一副刑具丟到你腳邊：「戴上，讓大家看看。」", "hours": 0.5, "options": [
+        { "label": "低著頭戴上", "result": "四周響起一陣哄笑，{master}拍了拍你的頭。",
+          "effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "聽話" }] },
+        { "label": "裝傻拖延", "check": { "attr": "cha", "dc": 13 },
+          "success": "你陪著說笑，等到{master}喝茫了，早就忘了這回事。", "fail": "{master}一把揪住你，當著眾人的面替你扣上。",
+          "effects_success": [],
+          "fail_effects": [{ "type": "force_equip", "npc": "master" }, { "type": "strict", "delta": 1 }] },
+        { "label": "當面頂撞", "result": "{master}甩了你一巴掌，最後還是讓人把東西扣上了。",
+          "effects": [{ "type": "force_equip", "npc": "master" }, { "type": "hp", "target": "pc", "ratio": -0.1 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "當面頂撞" }] }
+      ] },
+      { "id": "noble_gear", "weight": 2, "tags": ["noble", "royal", "bishop"], "forced_gear": true, "text": "{master}說府上的人出門都要戴著府裡的標記，叫人替你送來了一件。", "hours": 0.5, "options": [
+        { "label": "恭敬地戴上", "result": "東西做工精細，戴上之後府裡的人看你的眼神也不一樣了。",
+          "effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "恭敬地戴上" }] },
+        { "label": "請求只在府外戴", "check": { "attr": "cha", "dc": 13 },
+          "success": "{master}覺得有理，說等需要出門時再說。", "fail": "{master}皺眉：「府裡府外都一樣。」",
+          "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "說話得體" }],
+          "fail_effects": [{ "type": "force_equip", "npc": "master" }] },
+        { "label": "以出身為由拒絕", "check": { "attr": "cha", "dc": 16 },
+          "success": "{master}聽完，竟然准你不必戴。", "fail": "{master}不為所動。",
+          "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "拒絕府裡的規矩" }],
+          "fail_effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕府裡的規矩" }] }
+      ] },
       { "id": "home_chores", "weight": 3, "at_home": true, "text": "{master}要你把整棟房子從裡到外打掃乾淨。", "hours": 3, "options": [
         { "label": "照做", "result": "你忙到天黑，屋子亮得能照出人影。", "effects": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "勤快" }] },
         { "label": "偷懶，只掃看得見的地方", "check": { "attr": "dex", "dc": 13 }, "success": "{master}巡了一圈，沒看出破綻。", "fail": "{master}在床底下摸出一把灰。", "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "偷懶" }], "hours": 1.5 },

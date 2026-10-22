@@ -219,6 +219,8 @@ export function enslavePlayer(state: GameState, master: NpcRecord | null, contra
 export function freePlayer(state: GameState, report?: Report, reason?: string) {
   const pc = pcOf(state)
   if (!clearContract(pc)) return
+  // 主人強制裝上的東西：契約解除後可以拿下了
+  for (const g of Object.values(pc.gear ?? {})) if (g) delete g.locked
   removeCondition(pc, 'slave_mark', report)
   removeCondition(pc, 'fugitive', report)
   recordChange(report, { npc: 'pc', name: pc.name, change: 'freed', ...(reason ? { reason } : {}) })

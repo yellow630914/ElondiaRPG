@@ -15,6 +15,7 @@ import { perksOf } from '@/engine/perks'
 import { contractTerms } from '@/engine/slavery'
 import { gearSummary, SLOTS, slotName } from '@/engine/gear'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
+import { lockedGear } from '@/engine/inventory'
 import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
@@ -180,9 +181,12 @@ function affinityText(m: Character): string {
             <li v-for="slot in SLOTS" :key="slot" class="row">
               <span class="muted slot">{{ slotName(slot) }}</span>
               <template v-if="m.gear?.[slot]">
-                <span :title="gearSummary(m.gear[slot]!.spec)">{{ m.gear[slot]!.name }}</span>
+                <span :title="gearSummary(m.gear[slot]!.spec)">{{ lockedGear(m, slot) ? '🔒 ' : '' }}{{ m.gear[slot]!.name }}</span>
                 <span class="muted">{{ gearSummary(m.gear[slot]!.spec) }}</span>
-                <button class="small" :disabled="inCombat" @click="game.unequipItem(m.id, slot)">卸下</button>
+                <button
+                  class="small" :disabled="inCombat || !!lockedGear(m, slot)"
+                  :title="lockedGear(m, slot) ? '主人強制戴上的，契約還在時不能拿下' : ''" @click="game.unequipItem(m.id, slot)"
+                >卸下</button>
               </template>
               <span v-else class="muted">—</span>
             </li>

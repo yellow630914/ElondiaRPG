@@ -1,7 +1,7 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
 import { hasPerk, offerPerks } from './perks'
-import { snapshot } from './character'
+import { recalc, snapshot } from './character'
 import {
   attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates,
   type ItemIntel, type ItemUse,
@@ -13,7 +13,8 @@ import { toolDef } from './tools'
 import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { startStory } from './story'
-import type { Character, GameState, GearSlot, Report } from './types'
+import type { Character, EquippedGear, GameState, GearSlot, GearSpec, Report } from './types'
+import { contractOf } from './tattoos'
 
 function itemReport(state: GameState, hours: number): Report {
   const start = { ...state.time }
@@ -181,21 +182,39 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
  * 穿上裝備：放進指定的欄位（沒指定時挑第一個空的、可以放的欄位）。
  * 雙手武器會空出副手；換下來的裝備放回行囊。
  */
-export function equipItem(state: GameState, name: string, memberId: string, slot?: GearSlot): Report {
-  take(state, name)
-  const spec = gearSpecOf(state, name)
-  if (!spec) throw new Error('這個東西不能裝備')
-  if (!gearKnown(spec)) throw new Error('這件裝備的底材或材料已經不存在，不能裝備')
-  const m = member(state, memberId)
-  const options = slotsFor(spec).filter((x) => !(gearRules.races[m.race]?.blocked ?? []).includes(x))
-  if (!options.length) throw new Error(`${m.name}無法使用這個欄位`)
-  if (slot && !options.includes(slot)) throw new Error(`${name}不能放在${slotName(slot)}`)
+/** 主人強制裝上、契約還在時不能拿下的裝備 */
+export function lockedGear(m: Character, slot: GearSlot): EquippedGear | undefined {
+  const g = m.gear?.[slot]
+  return g?.locked && contractOf(m) ? g : undefined
+}
+
+function assertUnlocked(m: Character, slot: GearSlot) {
+  const g = lockedGear(m, slot)
+  if (g) throw new Error(`${g.name}是主人強制戴上的，契約還在時不能拿下`)
+}
+
+/** 這件裝備能放的欄位（種族封住的、被主人鎖住的不算） */
+export function freeSlotsFor(m: Character, spec: GearSpec): GearSlot[] {
+  return slotsFor(spec).filter((x) => !(gearRules.races[m.race]?.blocked ?? []).includes(x) && !lockedGear(m, x))
+}
+
+/**
+ * 把裝備穿到角色身上（不經過行囊）：回傳穿上的欄位與換下來的裝備名稱（放回行囊由呼叫的地方處理）。
+ * locked：主人強制裝上的（主人的 id）。換了裝備之後重算生命值上限（裝備可能有屬性加減）
+ */
+export function putOn(m: Character, name: string, spec: GearSpec, slot?: GearSlot, locked?: string): { target: GearSlot; back: string[] } {
+  const all = slotsFor(spec).filter((x) => !(gearRules.races[m.race]?.blocked ?? []).includes(x))
+  if (!all.length) throw new Error(`${m.name}無法使用這個欄位`)
+  if (slot && !all.includes(slot)) throw new Error(`${name}不能放在${slotName(slot)}`)
+  if (slot) assertUnlocked(m, slot)
+  const options = freeSlotsFor(m, spec)
+  if (!options.length) assertUnlocked(m, all[0]!)
   const gear = (m.gear ??= {})
   const target = slot ?? options.find((x) => !gear[x]) ?? options[0]!
   const stats = gearStats(spec)
   const main = gear.main_hand
   if (target === 'off_hand' && main && gearKnown(main.spec) && gearStats(main.spec).two_handed) throw new Error(`${main.name}要用雙手，副手空不出來`)
-  const report = itemReport(state, 0.1)
+  if (target === 'main_hand' && stats.two_handed && gear.off_hand) assertUnlocked(m, 'off_hand')
   const back: string[] = []
   const removed = gear[target]
   if (removed) back.push(removed.name)
@@ -203,8 +222,20 @@ export function equipItem(state: GameState, name: string, memberId: string, slot
     back.push(gear.off_hand.name)
     delete gear.off_hand
   }
-  gear[target] = { name, spec }
+  gear[target] = { name, spec, ...(locked ? { locked } : {}) }
   syncGear(m, classDef(m.class).weapon)
+  recalc(m)
+  return { target, back }
+}
+
+export function equipItem(state: GameState, name: string, memberId: string, slot?: GearSlot): Report {
+  take(state, name)
+  const spec = gearSpecOf(state, name)
+  if (!spec) throw new Error('這個東西不能裝備')
+  if (!gearKnown(spec)) throw new Error('這件裝備的底材或材料已經不存在，不能裝備')
+  const m = member(state, memberId)
+  const report = itemReport(state, 0.1)
+  const { target, back } = putOn(m, name, spec, slot)
   report.changes.items_lost = [{ name, qty: 1 }]
   if (back.length) report.changes.items_gained = back.map((n) => ({ name: n, qty: 1, owner: 'pc' }))
   report.outcome.summary = `${m.name}在${slotName(target)}裝上了${name}${back.length ? `，把${back.join('、')}收進行囊` : ''}。`
@@ -217,8 +248,10 @@ export function unequipItem(state: GameState, memberId: string, slot: GearSlot):
   const m = member(state, memberId)
   const g = m.gear?.[slot]
   if (!g) throw new Error(`${slotName(slot)}沒有裝備`)
+  assertUnlocked(m, slot)
   delete m.gear![slot]
   syncGear(m, classDef(m.class).weapon)
+  recalc(m)
   const report = itemReport(state, 0.1)
   report.changes.items_gained = [{ name: g.name, qty: 1, owner: 'pc' }]
   report.outcome.summary = `${m.name}卸下了${g.name}。`

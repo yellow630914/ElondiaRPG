@@ -23,6 +23,7 @@ import type { GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from 
 import { addIntel } from './intel'
 import { startStory, storyDef } from './story'
 import { contractKind, randomMaster } from './slavery'
+import { forceEquip } from './forcedGear'
 import { addStrict, extendDeadline, sendToMasterHome } from './masterHome'
 import { addTattoo, contractOf, freePlaces, oathText, placeName, removeTattoo, tattooFromTemplate, tattooKindName, tattoosOf, type NewTattoo } from './tattoos'
 
@@ -101,11 +102,13 @@ export type RewardEffect =
   | { type: 'tattoo'; template?: string; kind?: 'plain' | 'oath'; name?: string; text?: string; attrs?: Partial<Record<AttrId, number>>; place?: TattooPlace; by?: string }
   /** 洗掉主角的刺青：指定部位，或某一種（plain / oath）全部；奴隸印記不能用這個（解除契約用 free） */
   | { type: 'remove_tattoo'; place?: TattooPlace; kind?: 'plain' | 'oath' }
+  /** 主人強制主角裝上一件裝備並鎖住（npc 是主人；item 沒寫時從主人會用的裡面隨機挑，見 forcedGear.ts） */
+  | { type: 'force_equip'; npc: string; item?: string }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
-  'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo',
+  'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -315,6 +318,11 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         } catch (err) {
           notes.push(`沒有刺上刺青（${err instanceof Error ? err.message : String(err)}）`)
         }
+        break
+      }
+      case 'force_equip': {
+        const line = forceEquip(state, report, e.npc, e.item)
+        notes.push(line || '主人沒有挑到要你戴的東西')
         break
       }
       case 'remove_tattoo': {

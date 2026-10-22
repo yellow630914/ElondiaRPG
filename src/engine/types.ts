@@ -188,12 +188,16 @@ export interface GearSpec {
    * 不能打造、不能購買，只能從特殊事件或寶箱得到（見 docs/ITEMS.md 第 3.1 節）
    */
   unique?: { check: CheckFilter; bonus: number }
+  /** 屬性的加減（每項 ±1～±3；只有內容資料裡的裝備會有，不能打造、不在商店上架；見 docs/ITEMS.md 第 3.2 節） */
+  attrs?: Partial<Record<'str' | 'dex' | 'int' | 'fai' | 'cha', number>>
 }
 
 /** 穿在身上的裝備：物品名稱與組成（自帶組成，不必回頭查存檔） */
 export interface EquippedGear {
   name: string
   spec: GearSpec
+  /** 主人強制裝上的（主人的 id）：契約還在時不能卸下，也不能在這個欄位換別的 */
+  locked?: string
 }
 
 export interface Character {

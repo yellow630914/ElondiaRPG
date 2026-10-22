@@ -851,6 +851,8 @@ export interface MasterEventDef {
   overdue?: boolean
   /** 主角身上還有空著的部位時才發生（主人要替主角刺青） */
   free_place?: boolean
+  /** 有這位主人會強制主角裝上的東西時才發生（items.json 的 master_force） */
+  forced_gear?: boolean
 }
 
 export interface UnmarkServiceDef {
@@ -1078,6 +1080,8 @@ export interface ItemDef {
   recipe?: RecipeSpec
   /** 種子：種在房子的苗圃會長出什麼（見 docs/HOMES.md） */
   seed?: SeedSpec
+  /** 主人會強制主角裝上這件裝備（主人的事件 force_equip）；tags：只有這些身分的主人會用（沒有時任何主人） */
+  master_force?: { tags?: string[] }
 }
 
 /** 配方：用哪種工藝的幾級、哪些材料，做出幾份這件物品 */

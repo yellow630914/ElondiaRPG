@@ -7,7 +7,7 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, type AffinityMap, type AttrId, type Mods } from './data'
+import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, type AffinityMap, type AttrId, type Mods } from './data'
 import { describeEffects } from './perks'
 import type { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
@@ -78,6 +78,7 @@ export const gearRules = gearJson as unknown as {
     aux: { max_kinds: number; max_qty: number; chance_per_value: number; max_chance: number; elements: Record<string, string[]> }
   }
   creation: { default_budget: number; max_budget: number; max_tier: number }
+  attrs: { max_change: number; cap: number }
   loadout: {
     top: number; below: number; lower: number; legendary: number
     pieces_base: number; pieces_per_level: number
@@ -448,6 +449,7 @@ export function gearSummary(spec: GearSpec): string {
   const all = [...bonus, ...res, ...off, ...(s.threat ? [`仇恨 ${signed(Math.round(s.threat * 100))}%`] : [])]
   if (all.length) parts.push(all.join('、'))
   if (spec.unique) parts.push(`獨特：${describeEffects([spec.unique]).replace(/。$/, '')}`)
+  if (spec.attrs) parts.push(Object.entries(spec.attrs).filter(([, v]) => v).map(([k, v]) => `${attrName(k as AttrId)} ${signed(v!)}`).join('、'))
   return parts.join('・')
 }
 

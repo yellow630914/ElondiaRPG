@@ -80,9 +80,11 @@ function pcDetail(state: GameState): string {
   // 特質：程式已經算進檢定的加值（情境修正），這裡讓 AI 判定時參考角色的特長
   const perks = perkNames(pc)
   const tattoos = tattoosOf(pc).length ? `\n刺青（誓約印記的屬性已算進上面的屬性）：\n${tattooSummary(pc)}` : ''
+  const forced = Object.values(pc.gear ?? {}).filter((g) => g?.locked && pcContract).map((g) => g!.name)
+  const locked = forced.length ? `\n主人強制戴上、拿不下來的：${forced.join('、')}` : ''
   const contract = pcContract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pcContract)}${home ? `\n${home}` : ''}` : ''
   const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
-  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${contract}`
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}`
 }
 
 function targetDetail(state: GameState, p: ActionPending): string {

@@ -663,6 +663,12 @@ export function sanitizeGearSpecLoose(g: GearSpec | undefined): GearSpec | undef
   // 獨特物品的檢定加值：一種（一組篩選條件），+1～+3
   const u = g.unique ? cleanPerkEffects([g.unique], UNIQUE_LIMITS)[0] : undefined
   if (u && 'check' in u) out.unique = { check: u.check, bonus: u.bonus }
+  // 屬性的加減：每項 ±max_change
+  if (g.attrs && typeof g.attrs === 'object') {
+    const max = gearRules.attrs.max_change
+    const attrs = Object.fromEntries(ATTR_IDS.map((a) => [a, int(g.attrs?.[a], -max, max, 0)]).filter(([, v]) => v))
+    if (Object.keys(attrs).length) out.attrs = attrs
+  }
   return out
 }
 
@@ -688,6 +694,11 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (use) out.use = use
   const gear = category === 'equipment' ? sanitizeGearSpecLoose(raw.gear) : undefined
   if (gear) out.gear = gear
+  // 主人會強制裝備：只有裝備；身分標籤只留主人可以有的
+  if (gear && raw.master_force) {
+    const tags = (raw.master_force.tags ?? []).filter((t) => !!slaveryRules.master_tags.tags[t])
+    out.master_force = tags.length ? { tags: [...new Set(tags)] } : {}
+  }
   const forge = (raw.forge?.materials ?? []).filter((m) => !!gearRules.materials[m])
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true

@@ -5,7 +5,7 @@ import {
   type AttrId, type ItemIntel, type ItemUse, type ToolKind,
 } from '@/engine/data'
 import { gearPrice, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
-import { actionRules, npcTags, perkRules } from '@/engine/data'
+import { actionRules, npcTags, perkRules, slaveryRules, tagDef } from '@/engine/data'
 import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -191,6 +191,32 @@ function toggleUniqueFilter(key: 'attrs' | 'contexts' | 'kinds' | 'vs_tags', val
   else set.delete(value)
   if (set.size) (u.check as Record<string, string[]>)[key] = [...set]
   else delete u.check[key]
+}
+
+// ---- 屬性的加減（只有內容資料裡的裝備；不在商店上架）與主人強制裝備 ----
+const attrMax = gearRules.attrs.max_change
+function setGearAttr(a: string, v: number) {
+  const g = draft.value.gear
+  if (!g) return
+  const attrs = { ...(g.attrs ?? {}) } as Record<string, number>
+  if (v) attrs[a] = Math.max(-attrMax, Math.min(attrMax, Math.round(v)))
+  else delete attrs[a]
+  if (Object.keys(attrs).length) g.attrs = attrs
+  else delete g.attrs
+}
+const masterTags = Object.keys(slaveryRules.master_tags.tags)
+function setMasterForce(on: boolean) {
+  if (on) draft.value.master_force = {}
+  else delete draft.value.master_force
+}
+function toggleMasterTag(t: string, on: boolean) {
+  const f = draft.value.master_force
+  if (!f) return
+  const set = new Set(f.tags ?? [])
+  if (on) set.add(t)
+  else set.delete(t)
+  if (set.size) f.tags = [...set]
+  else delete f.tags
 }
 
 const gearText = computed(() => {
@@ -590,6 +616,23 @@ function remove() {
             <label v-for="[k, n] in uniqueTags" :key="k" class="check"><input type="checkbox" :checked="draft.gear.unique.check.vs_tags?.includes(k)" @change="toggleUniqueFilter('vs_tags', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
           </details>
         </div>
+        <div class="row small">
+          <span>屬性加減（每項 ±{{ attrMax }}；身上裝備的同一項合計最多 ±{{ gearRules.attrs.cap }}）：</span>
+          <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }}
+            <input type="number" class="num" :min="-attrMax" :max="attrMax" :value="draft.gear.attrs?.[a] ?? 0" @input="setGearAttr(a, Number(($event.target as HTMLInputElement).value))" />
+          </label>
+        </div>
+        <label class="check small">
+          <input type="checkbox" :checked="!!draft.master_force" @change="setMasterForce(($event.target as HTMLInputElement).checked)" />
+          主人會強制裝備：主角是奴隸時，主人的事件可能挑這件替主角裝上，契約還在時拿不下來
+        </label>
+        <div v-if="draft.master_force" class="row small">
+          <span class="muted">只有這些身分的主人會用（都不勾＝任何主人）：</span>
+          <label v-for="t in masterTags" :key="t" class="check">
+            <input type="checkbox" :checked="draft.master_force.tags?.includes(t)" @change="toggleMasterTag(t, ($event.target as HTMLInputElement).checked)" /> {{ tagDef(t)?.name ?? t }}
+          </label>
+        </div>
+        <p v-if="draft.gear.attrs || draft.master_force" class="small muted">有屬性加減或主人會強制裝備的東西不在商店上架、AI 交易也不會賣。</p>
       </template>
     </fieldset>
 

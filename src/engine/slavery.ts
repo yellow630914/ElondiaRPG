@@ -12,6 +12,7 @@ import { isMadam, nearBrothel } from './brothel'
 import { adultContent, adultScene, safeText } from './content'
 import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
 import { reputationOf } from './security'
+import { forcedGearPool } from './forcedGear'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
@@ -444,6 +445,8 @@ export function eventFits(state: GameState, master: Pick<NpcRecord, 'id' | 'tags
   if (e.at_home !== undefined && e.at_home !== atMasterHome(state)) return false
   // 主人刺青只刺在空著的部位
   if (e.free_place && !freePlaces(pcOf(state)).length) return false
+  // 主人強制裝備：要有這位主人會用、主角還能戴上的東西
+  if (e.forced_gear && !forcedGearPool(state, tags).length) return false
   return true
 }
 
