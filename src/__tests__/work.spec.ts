@@ -72,6 +72,25 @@ describe('working', () => {
     expect(() => prepareAction(state, { kind: 'work', target: '4', text: '' })).toThrow('沒有工作')
   })
 
+  it('settles money by the AI\'s amount instead of adding it to the wage', () => {
+    const state = game()
+    standOn(state, 'tavern')
+    const money = state.money_cc
+    prepareAction(state, { kind: 'work', target: '4', text: '專心招呼熟客' })
+    state.pendingAction!.natural = 20
+    const r = resolveAction(state, { attr: 'cha', dc: 10, degree: 'success', effects: [{ type: 'money', amount: 12 }], relationship_updates: [] })
+    expect(state.money_cc - money).toBe(4 * 3)
+    expect(r.changes.money_cc).toBe(4 * 3)
+
+    // AI 給了不同的金額（例如小費）：以 AI 的為準
+    const before = state.money_cc
+    prepareAction(state, { kind: 'work', target: '4', text: '專心招呼熟客' })
+    state.pendingAction!.natural = 20
+    const tipped = resolveAction(state, { attr: 'cha', dc: 10, degree: 'success', effects: [{ type: 'money', amount: 20 }], relationship_updates: [] })
+    expect(state.money_cc - before).toBe(20)
+    expect(tipped.outcome.summary).toContain('規則原本是')
+  })
+
   it('pays the master their share when the player is bound', () => {
     const state = game()
     const [rec] = masterCandidates('soriel', 3)

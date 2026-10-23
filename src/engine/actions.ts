@@ -469,8 +469,18 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   // 打造：AI 提出的成品交給打造的機制處理（不另外給一件）
   const crafted = p.kind === 'craft' || p.kind === 'make' ? judgment?.effects.find((e) => e.type === 'gear') : undefined
   if (crafted && judgment) judgment.effects = judgment.effects.filter((e) => e !== crafted)
+  const moneyBefore = report.changes.money_cc ?? 0
   const mechanical = applyMechanics(state, report, p, degree, crafted as Extract<RewardEffect, { type: 'gear' }> | undefined, judgment?.invention ?? judgment?.perk)
+  // 機制結算過金錢（工資、消費、雇用費……）而 AI 也給了金錢時，以 AI 的金額為準，取代機制那筆，不重複計算
+  const mechanicalMoney = (report.changes.money_cc ?? 0) - moneyBefore
+  const aiMoney = judgment?.effects.filter((e) => e.type === 'money').reduce((s, e) => s + Math.round(e.amount), 0) ?? 0
+  const replaced = judgment && mechanicalMoney && judgment.effects.some((e) => e.type === 'money')
+  if (replaced) {
+    if (moneyBefore) report.changes.money_cc = moneyBefore
+    else delete report.changes.money_cc
+  }
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
+  if (replaced && aiMoney !== mechanicalMoney) notes.push(`金錢照判定結算為 ${formatMoney(aiMoney)}（規則原本是 ${formatMoney(mechanicalMoney)}）。`)
   if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
   if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }
   if (judgment?.adjusted?.length) report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), ...judgment.adjusted.map((t) => `${t}；經過要照實際結算的數字寫`)] }
