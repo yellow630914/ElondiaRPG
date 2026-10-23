@@ -5,6 +5,7 @@ import travelExample from '../../examples/reports/travel-rivervale-snowridge.jso
 import type { Report } from '@/engine/types'
 import { selectLore, type Worldbook } from '@/narrator/lore'
 import { buildPrompt } from '@/narrator/prompt'
+import { describeEntry } from '@/narrator/describe'
 
 const book = worldbook as unknown as Worldbook
 const combat = combatExample as unknown as Report
@@ -60,5 +61,15 @@ describe('buildPrompt', () => {
     expect(p.user).toContain('蛇溪洞窟')
     expect(p.user).toContain('遊俠')
     expect(p.user).toContain('優先保護莉娜')
+  })
+})
+
+describe('combat log lines', () => {
+  it('spells out saving throws so the numbers do not read backwards', () => {
+    const names = { a: '瑟琳', b: '巨鼠' }
+    expect(describeEntry({ seq: 1, actor: 'a', target: 'b', action: '聖焰', roll: { value: 22, dc: 13, save: true }, result: 'fail' }, names))
+      .toBe('瑟琳：聖焰 → 巨鼠（豁免 22 / DC 13） 失敗')
+    expect(describeEntry({ seq: 2, actor: 'a', target: 'b', action: '戰鎚', roll: { value: 14, dc: 9 }, result: 'success' }, names))
+      .toBe('瑟琳：戰鎚 → 巨鼠（14 vs 9） 成功')
   })
 })

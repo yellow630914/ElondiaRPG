@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { affinityStage } from '@/engine/character'
-import { locationById } from '@/engine/data'
+import { locationById, npcs } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import type { Memory, Relationship } from '@/engine/social'
 import { useGame } from '@/stores/game'
@@ -29,7 +29,8 @@ const pcName = computed(() => s.value.party.find((m) => m.isPlayer)?.name ?? '�
 
 function nameOf(id: string): string {
   if (id === 'pc') return pcName.value
-  return s.value.relationships?.[id]?.name ?? id
+  // 還沒認識的人：從存檔裡的 NPC 或固定 NPC 名單找名字
+  return s.value.relationships?.[id]?.name ?? s.value.npcs?.[id]?.name ?? npcs.find((n) => n.id === id)?.name ?? id
 }
 
 // ---- 人際關係編輯 ----
@@ -165,7 +166,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
           <div v-for="(o, i) in draft.others" :key="i" class="row">
             <select v-model="o.id">
               <option v-for="other in rels.filter((x) => x.id !== r.id)" :key="other.id" :value="other.id">{{ other.name }}</option>
-              <option v-if="!rels.some((x) => x.id === o.id)" :value="o.id">{{ o.id }}</option>
+              <option v-if="!rels.some((x) => x.id === o.id)" :value="o.id">{{ nameOf(o.id) }}</option>
             </select>
             <input v-model="o.text" style="flex: 1" />
             <button type="button" class="small" @click="draft.others.splice(i, 1)">刪除</button>

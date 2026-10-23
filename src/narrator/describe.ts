@@ -36,7 +36,10 @@ const RESULT_TEXT: Record<TimelineEntry['result'], string> = {
 export function describeEntry(t: TimelineEntry, names: Record<string, string>): string {
   const actor = names[t.actor] ?? t.actor
   const target = t.target ? ` → ${names[t.target] ?? t.target}` : ''
-  const rollText = t.roll?.value !== undefined ? `（${t.roll.value}${t.roll.dc !== undefined ? ` vs ${t.roll.dc}` : ''}）` : ''
+  // 豁免類的招式：數字是目標的豁免對施放者的 DC，寫清楚免得看起來勝負顛倒
+  const rollText = t.roll?.value === undefined ? ''
+    : t.roll.save && t.roll.dc !== undefined ? `（豁免 ${t.roll.value} / DC ${t.roll.dc}）`
+    : `（${t.roll.value}${t.roll.dc !== undefined ? ` vs ${t.roll.dc}` : ''}）`
   const effects = (t.effects ?? []).map((e) => describeEffect(e, names)).filter(Boolean).join('，')
   const head = t.round ? `第${t.round}回合 ` : ''
   return `${head}${actor}：${t.action}${target}${rollText} ${RESULT_TEXT[t.result]}${effects ? `｜${effects}` : ''}`.trim()

@@ -45,6 +45,13 @@ function pathTo(area: Area, from: { x: number; y: number }, match: (x: number, y
   return null
 }
 
+/** 從某格出發能走到的格子數 */
+function pathCount(area: Area, from: { x: number; y: number }) {
+  let count = 0
+  pathTo(area, from, () => { count++; return false })
+  return count
+}
+
 function walkTo(state: GameState, kind: string, avoid = ['encounter', 'elite', 'boss', 'trap', 'link']) {
   const area = currentArea(state)
   const steps = pathTo(area, position(state), (x, y) => cellAt(area, x, y)!.kind === kind, avoid)
@@ -117,6 +124,16 @@ describe('outskirts', () => {
     expect(isRevealed(area, 0, 0)).toBe(false)
     returnToTown(state)
     expect(currentCell(state).kind).toBe('gate')
+  })
+
+  it('never walls the gate in: most of the outskirts are reachable from the exit', () => {
+    for (let seed = 1; seed <= 300; seed++) {
+      const state = game(seed)
+      goOutskirts(state)
+      const area = currentArea(state)
+      const reachable = pathCount(area, position(state))
+      expect(reachable, `seed ${seed}`).toBeGreaterThanOrEqual(Math.floor(area.cells.length / 3))
+    }
   })
 
   it('places markers for accepted outskirts quests', () => {

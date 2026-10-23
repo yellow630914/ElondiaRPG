@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, type Cell } from '@/engine/grid'
+import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, sight, type Cell } from '@/engine/grid'
 import { itemDef, locationById } from '@/engine/data'
 import { cropStatus } from '@/engine/garden'
 import { homeById } from '@/engine/homes'
@@ -79,7 +79,8 @@ const rows = computed(() =>
       const adjacent = Math.abs(pos.value.x - x) + Math.abs(pos.value.y - y) === 1
       const blocked = cell.kind === 'wall' || cell.kind === 'water'
       const who = seen ? people.value.get(`${x},${y}`) ?? [] : []
-      return { x, y, cell, seen, here, who, canStep: adjacent && seen && !blocked }
+      // 沒看過的相鄰格也能點：摸黑往前走，走不過去就跳「那邊走不過去」
+      return { x, y, cell, seen, here, who, canStep: adjacent && (!seen || !blocked) }
     }),
   ),
 )
@@ -97,8 +98,12 @@ watch(() => game.bump, () => {
 })
 onBeforeUnmount(() => clearTimeout(bumpTimer))
 
+// 一片漆黑時（視野 0）地圖右上角常駐提示：走路揭不開迷霧，提醒先點火把或等天亮
+const dark = computed(() => sight(game.state!, area.value) <= 0)
+
 function step(x: number, y: number) {
-  game.moveTo(x, y)
+  // 和方向鍵同一條路：走不過去時只晃一下、跳提示
+  game.move(x - pos.value.x, y - pos.value.y)
 }
 
 const KEYS: Record<string, [number, number]> = {
@@ -123,6 +128,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   <div class="map-wrap">
     <Transition name="bump-tip">
       <span v-if="bumping" class="bump-tip small">{{ game.bumpText || '那邊走不過去' }}</span>
+      <span v-else-if="dark" class="bump-tip small">一片漆黑：走路不會揭開地圖，先點火把或等天亮</span>
     </Transition>
     <div class="map" :style="{ '--w': area.width }">
       <template v-for="row in rows" :key="row[0]!.y">

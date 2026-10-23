@@ -83,6 +83,13 @@ function questWhere(q: Quest): string {
   return `地點：${locationById(q.target).name}的${cellName(questSpot(q) as CellKind) || questSpot(q)}`
 }
 
+/** 按鈕上的耗時：驅除、討伐直接開打，時間照戰鬥回合算，不是範本上的小時數 */
+function questTime(q: Quest): string {
+  const tpl = questTemplate(q)
+  if (tpl?.kind === 'pest' || tpl?.kind === 'hunt') return '直接進入戰鬥'
+  return `約 ${tpl?.hours ?? 1} 小時`
+}
+
 function runQuest(id: string) {
   game.doTownQuest(id, intent.value || undefined)
   intent.value = ''
@@ -149,7 +156,9 @@ const shopDesc = computed(() => {
       <HomePanel />
       <!-- 目前所在格子（房子裡由上面的房屋區塊顯示） -->
       <section v-if="area.kind !== 'road' && area.kind !== 'home'" class="panel">
-        <h3>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
+        <!-- 特殊任務的任務點和地圖上一樣是 ⭐，不要顯示成委託地點 -->
+        <h3 v-if="cell.storyNode">⭐ 特殊任務的任務點</h3>
+        <h3 v-else>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
         <p v-if="shopDesc" class="muted small">{{ shopDesc }}</p>
 
         <template v-if="cell.kind === 'inn'">
@@ -295,7 +304,7 @@ const shopDesc = computed(() => {
 
         <LandmarkPanel v-else-if="landmarkDef(cell.kind)" :key="`lm-${area.key}-${cell.kind}`" />
 
-        <p v-else class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
+        <p v-else-if="!cell.storyNode" class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
 
         <WorkPanel :key="`${area.key}-${cell.kind}`" />
         <TrainPanel v-if="!closedHere(s)" :key="`train-${area.key}-${cell.kind}`" />
@@ -303,7 +312,7 @@ const shopDesc = computed(() => {
 
         <div v-for="q in runnableHere" :key="q.id" class="quest-here">
           <div class="small"><span class="tag">{{ q.rank }}</span> {{ q.title }}</div>
-          <button class="small primary" @click="runQuest(q.id)">執行委託（約 {{ questTemplate(q)?.hours ?? 1 }} 小時）</button>
+          <button class="small primary" @click="runQuest(q.id)">執行委託（{{ questTime(q) }}）</button>
         </div>
       </section>
 

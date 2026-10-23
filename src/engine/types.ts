@@ -54,7 +54,8 @@ export interface TimelineEntry {
   actor: string
   action: string
   target?: string
-  roll?: { dice?: string; value?: number; dc?: number }
+  /** save：value 是目標的豁免、dc 是施放者的豁免難度（其他時候 value 是行動者的骰值） */
+  roll?: { dice?: string; value?: number; dc?: number; save?: boolean }
   result: RollResult
   effects?: Effect[]
 }

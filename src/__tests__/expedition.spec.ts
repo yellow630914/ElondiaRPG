@@ -84,6 +84,15 @@ describe('save schema', () => {
     expect(up.guild).toEqual({ rank: 'D', merit: 0 })
     expect(up.options).toEqual({ defeatLoot: 'half' })
 
+    // 金屬腰帶改名：行囊與身上的舊名稱跟著改
+    const belt = JSON.parse(JSON.stringify(state)) as GameState
+    belt.schema = 6
+    belt.inventory.push({ name: '鋼鐵腰帶', qty: 1 })
+    belt.party[0]!.gear = { ...belt.party[0]!.gear, belt: { name: '鐵鐵腰帶', spec: { base: 'girdle', material: 'iron' } } }
+    const renamed = migrate(belt)
+    expect(renamed.inventory.find((i) => i.name === '鋼護腰')?.qty).toBe(1)
+    expect(renamed.party[0]!.gear?.belt?.name).toBe('鐵護腰')
+
     const future = { ...state, schema: SAVE_SCHEMA + 1 }
     expect(() => assertSchema(future)).toThrow('比較新版本')
     expect(() => migrate(JSON.parse(JSON.stringify(future)))).toThrow('比較新版本')

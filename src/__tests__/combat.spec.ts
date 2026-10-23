@@ -160,6 +160,26 @@ describe('combat rules', () => {
     }
   })
 
+  it('logs the damage actually taken, after armor', () => {
+    const state = stateWith('fighter')
+    startCombat(state, [['goblin', 1]])
+    const goblin = state.combat!.combatants.find((c) => c.side === 'enemy')!
+    goblin.hp = 999
+    goblin.maxHp = 999
+    goblin.armorDr = 3
+    const pc = makeCurrent(state, 'pc')
+    for (let i = 0; i < 20; i++) {
+      goblin.statuses = [{ id: 'stunned', turns: 5, source: 'pc' }]
+      pc.ap = 10
+      makeCurrent(state, 'pc')
+      const before = goblin.hp
+      act(state, { type: 'attack', target: goblin.id })
+      const entry = state.combat!.timeline.filter((t) => t.actor === 'pc').at(-1)!
+      const logged = (entry.effects ?? []).filter((e) => e.type === 'damage' && e.target === goblin.id).reduce((n, e) => n + (e.amount ?? 0), 0)
+      expect(logged).toBe(before - goblin.hp)
+    }
+  })
+
   it('drops the previous concentration spell when casting a new one', () => {
     const state = stateWith('cleric', 3)
     startCombat(state, [['goblin', 2]])

@@ -476,6 +476,8 @@ export function generateOutskirts(state: GameState, loc: Location, rng: Rng): Ar
   }
   const gateIndex = (height - 1) * width + Math.floor(width / 2)
   cells[gateIndex] = { kind: 'exit' }
+  // 從城門往上開一條路到地圖中央，避免城門被隨機障礙物圍住、整張圖只剩幾格能走
+  for (let y = height - 2; y >= Math.floor(height / 2); y--) cells[y * width + Math.floor(width / 2)] = { kind: 'floor' }
   ensureConnected(area, gateIndex)
   const used = new Set([gateIndex, gateIndex - width])
   const table = wildEncounters(loc.region)

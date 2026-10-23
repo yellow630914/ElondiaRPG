@@ -860,6 +860,7 @@ function dealDamage(
 ): number {
   let physical = 0
   let other = 0
+  const parts: { effect: Effect; physical: boolean }[] = []
   for (const r of rolls) {
     const off = attacker ? offenseMult(attacker, r.type) : 1
     const def = defenseMult(target, r.type)
@@ -869,10 +870,12 @@ function dealDamage(
     if (isPhysical) physical += amount
     else other += amount
     const m = off * def
-    effects.push({
+    const effect: Effect = {
       type: 'damage', target: target.id, amount, element: damageTypeName(r.type),
       ...(Math.abs(m - 1) > 0.001 ? { text: `${multLabel(def) || '加成'} ×${Math.round(m * 100) / 100}` } : {}),
-    })
+    }
+    effects.push(effect)
+    parts.push({ effect, physical: isPhysical })
   }
   const deflect = hasSpecial(target, 'reduce_next')
   if (deflect && physical > 0) {
@@ -889,8 +892,23 @@ function dealDamage(
     consume(target, [uncanny])
     effects.push({ type: 'note', target: target.id, text: '閃避本能：傷害減半' })
   }
+  settleDamageParts(parts, total)
   applyHpLoss(combat, rng, target, total, effects)
   return total
+}
+
+/** 戰報記實際扣掉的傷害：減傷、偏轉、減半先從物理傷害扣，扣掉的部分寫在說明裡 */
+function settleDamageParts(parts: { effect: Effect; physical: boolean }[], total: number) {
+  let diff = parts.reduce((sum, p) => sum + (p.effect.amount ?? 0), 0) - total
+  if (diff < 0 && parts[0]) parts[0].effect.amount = (parts[0].effect.amount ?? 0) - diff
+  for (const p of [...parts.filter((x) => x.physical), ...parts.filter((x) => !x.physical)]) {
+    if (diff <= 0) break
+    const cut = Math.min(diff, p.effect.amount ?? 0)
+    if (cut <= 0) continue
+    p.effect.amount = (p.effect.amount ?? 0) - cut
+    p.effect.text = [p.effect.text, `減傷 -${cut}`].filter(Boolean).join('，')
+    diff -= cut
+  }
 }
 
 function applyHpLoss(combat: CombatState, rng: Rng, target: Combatant, amount: number, effects: Effect[]) {
@@ -970,7 +988,7 @@ function savingThrow(rng: Rng, target: Combatant, attr: AttrId, dc: number) {
   const bonus = mod(target.attrs[attr]) + modsOf(target).save + (target.saveBonus?.[attr] ?? 0)
   const total = natural + bonus + rollLuck(rng, f.luck)
   consume(target, f.used)
-  return { success: total >= dc, roll: { dice: withBonus('1d20', bonus), value: total, dc } }
+  return { success: total >= dc, roll: { dice: withBonus('1d20', bonus), value: total, dc, save: true } }
 }
 
 // ---- 武器攻擊與能力 ----

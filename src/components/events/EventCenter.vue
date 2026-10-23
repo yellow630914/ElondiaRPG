@@ -10,7 +10,7 @@ import MarkingPanel from './MarkingPanel.vue'
 import PerkOfferPanel from './PerkOfferPanel.vue'
 import RoadEventPanel from './RoadEventPanel.vue'
 import SuggestionPanel from './SuggestionPanel.vue'
-import { activeEvents, eventDialogOpen, snoozed } from './eventQueue'
+import { activeEvents, eventDialogOpen, snoozed, type GameEvent } from './eventQueue'
 
 // 事件視窗：需要回應的事件（見 eventQueue.ts）一件一件處理。有新的事件時自動打開；
 // 擋住行動的事件排在前面，不能「稍後」；關掉視窗後畫面上方顯示待處理的件數，移動或休息被擋住時再打開
@@ -20,10 +20,20 @@ const events = computed(() => activeEvents(game.state))
 const current = computed(() => events.value[0])
 const next = computed(() => events.value.slice(1))
 
-// 出現新的事件就打開
+// 出現新的事件就打開；升級選了一部分（剩下的能力或屬性點變少）不算新的事件，免得蓋住正在用的隊伍視窗
 const seen = ref(new Set<string>())
+const levelUpLeft = new Map<string, number>()
+function isFresh(e: GameEvent): boolean {
+  if (e.kind !== 'levelup') return !seen.value.has(e.id)
+  const [, member, level, choices, points] = e.id.split(':')
+  const key = `${member}:${level}`
+  const left = Number(choices) + Number(points)
+  const before = levelUpLeft.get(key)
+  levelUpLeft.set(key, left)
+  return before === undefined || left > before
+}
 watch(events, (list) => {
-  const fresh = list.filter((e) => !seen.value.has(e.id))
+  const fresh = list.filter(isFresh)
   if (fresh.length) {
     seen.value = new Set([...seen.value, ...fresh.map((e) => e.id)])
     eventDialogOpen.value = true

@@ -101,7 +101,7 @@
     "boots":        { "slot": "feet", "name": "皮靴", "kind": "leather", "price": 20, "scale": { "evade": "up" } },
     "shoes":        { "slot": "feet", "name": "布鞋", "kind": "cloth", "price": 8, "scale": { "evade": "half" } },
 
-    "girdle":       { "slot": "belt", "name": "鐵腰帶", "kind": "metal", "price": 120, "scale": { "dr": "half", "damage": "third" } },
+    "girdle":       { "slot": "belt", "name": "護腰", "kind": "metal", "price": 120, "scale": { "dr": "half", "damage": "third" } },
     "belt":         { "slot": "belt", "name": "皮腰帶", "kind": "leather", "price": 12, "scale": { "damage": "half", "hit": "third" } },
     "sash":         { "slot": "belt", "name": "腰帶", "kind": "cloth", "price": 25, "scale": { "save": "half" } },
 

@@ -76,7 +76,8 @@
             "properties": {
               "dice": { "type": "string", "examples": ["1d20+5"] },
               "value": { "type": "integer" },
-              "dc": { "type": "integer" }
+              "dc": { "type": "integer" },
+              "save": { "type": "boolean", "description": "豁免：value 是目標的豁免，dc 是施放者的豁免難度" }
             }
           },
           "result": { "enum": ["success", "critical", "fail", "fumble", "partial", "none"] },

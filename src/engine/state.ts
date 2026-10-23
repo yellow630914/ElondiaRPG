@@ -129,8 +129,9 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 4：主人的家改成固定設施（民宅）：從 homes 拿掉 m- 開頭的那棟，改記在 masterHome（主人、城市、家裡的人）
  * 5：名單的潤飾記在每個人身上（flavored）
  * 6：刺青：奴隸契約搬進刺青清單（tattoos 的奴隸印記），條款一律存一份、加上部位
+ * 7：金屬腰帶的底材改名（鐵腰帶 → 護腰，免得變成「鐵鐵腰帶」）：行囊、裝備、商店裡的舊名稱跟著改
  */
-export const SAVE_SCHEMA = 6
+export const SAVE_SCHEMA = 7
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -166,7 +167,20 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [6, (s) => {
     for (const c of [...s.party, ...Object.values(s.npcs ?? {}).map((r) => r.character)]) migrateContract(c)
   }],
+  [7, (s) => {
+    renameValues(s, { 鐵鐵腰帶: '鐵護腰', 鋼鐵腰帶: '鋼護腰', 秘銀鐵腰帶: '秘銀護腰', 精金鐵腰帶: '精金護腰', 星隕鐵鐵腰帶: '星隕鐵護腰' })
+  }],
 ]
+
+/** 把存檔裡剛好等於舊名稱的字串換成新名稱（物品名稱散在行囊、裝備、商店與戰利品裡） */
+function renameValues(node: unknown, names: Record<string, string>) {
+  if (!node || typeof node !== 'object') return
+  const obj = node as Record<string, unknown>
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'string' && names[v]) obj[k] = names[v]
+    else renameValues(v, names)
+  }
+}
 
 /** 舊的契約（角色身上的 contract）改成刺青清單裡的奴隸印記 */
 function migrateContract(c: Character | undefined) {

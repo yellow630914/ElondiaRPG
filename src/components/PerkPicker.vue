@@ -80,5 +80,6 @@ function addCustom(p: PerkDef) {
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px; }
 .perk { display: flex; gap: 6px; align-items: flex-start; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
 .perk.on { border-color: var(--accent); }
+.perk input { flex-shrink: 0; } /* 說明換行時勾選框不要被擠扁 */
 .row { display: flex; gap: 6px; align-items: center; justify-content: space-between; }
 </style>
