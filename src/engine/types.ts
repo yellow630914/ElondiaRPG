@@ -749,6 +749,8 @@ export interface GameState {
   suggestions?: RelationSuggestion[]
   /** 各商店今天的交易清單；鍵為 城鎮/商店類型 */
   shops?: Record<string, ShopState>
+  /** AI 替商店取的名字、描述與店主的招呼語（每間店一次，跨天保留）；鍵為 地點/店型（旅店是 地點/inn） */
+  shopNames?: Record<string, { name?: string; desc?: string; greeting?: string }>
   /** 城鎮的特色地標：上次參訪、探索是第幾天（見 landmarks.ts） */
   landmarks?: Record<string, { visited?: number; explored?: number }>
   /** AI 自創的物品（可以再賣回商店） */

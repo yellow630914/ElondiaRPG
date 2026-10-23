@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { shopDef, type ShopType } from '@/engine/data'
+import type { ShopType } from '@/engine/data'
 import { canNegotiate } from '@/engine/negotiation'
 import { npcRecord } from '@/engine/npcs'
-import { discount, isItemDeal, keeperTitle, sellPrice, shopKey } from '@/engine/trade'
+import { discount, isItemDeal, keeperTitle, sellPrice, shopKey, shopPlace } from '@/engine/trade'
+import { shopTitle } from '@/engine/shopNames'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import AppDialog from './AppDialog.vue'
 import ShopDialog from './items/ShopDialog.vue'
 import NameTag from './NameTag.vue'
+import GameIcon from './ui/GameIcon.vue'
 
 const props = defineProps<{ type: ShopType }>()
 const game = useGame()
@@ -45,7 +47,7 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
 <template>
   <div class="shop">
     <div class="row" style="justify-content: space-between">
-      <h4>🪙 {{ shopDef(type).name }}的交易</h4>
+      <h4><GameIcon name="coins" :size="14" /> 今天的交易</h4>
       <span class="small muted">
         <template v-if="loading">AI 正在準備今天的商品…</template>
         <template v-else-if="shop?.source === 'ai'">今天有 AI 準備的特別商品</template>
@@ -59,9 +61,9 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
     <p class="small">
       今天有 {{ counts.items }} 樣商品{{ counts.special ? `、${counts.special} 筆特別交易` : '' }}<template v-if="sellable">・行囊裡有 {{ sellable }} 種東西可以賣</template>。
     </p>
-    <button class="primary open" @click="showDialog = true">🛒 進入交易</button>
+    <button class="primary open" @click="showDialog = true"><GameIcon name="store" :size="15" /> 進入交易</button>
 
-    <AppDialog :open="showDialog" :title="shopDef(type).name" icon="store" width="1180px" @close="showDialog = false">
+    <AppDialog :open="showDialog" :title="shopTitle(s, shopPlace(s).id, type).name" icon="store" width="1180px" @close="showDialog = false">
       <ShopDialog :type="type" :loading="loading" />
     </AppDialog>
 
@@ -76,6 +78,6 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
 
 <style scoped>
 .shop { display: grid; gap: 6px; margin-top: 6px; }
-h4 { margin: 0; color: var(--accent-2); font-size: 0.95rem; }
+h4 { margin: 0; color: var(--accent-2); font-size: 0.95rem; display: flex; align-items: center; gap: 4px; }
 .open { justify-self: start; }
 </style>

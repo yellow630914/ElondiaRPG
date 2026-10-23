@@ -33,6 +33,9 @@ import TrainPanel from './TrainPanel.vue'
 import { checkBonus } from '@/engine/perks'
 import CraftPanel from './CraftPanel.vue'
 import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
+import { shopKindName, shopTitle, type NamedShop } from '@/engine/shopNames'
+import { shopPlace, shopTypeForCell } from '@/engine/trade'
 import { CELL_GAME_ICON, RANK_COLOR } from './ui/cellIcons'
 
 const game = useGame()
@@ -158,7 +161,16 @@ const shopHere = computed<ShopType | null>(() => {
   if ((SHOPS as readonly string[]).includes(k)) return k as (typeof SHOPS)[number]
   return isCustomShopId(k) && shopRules.types[k] ? k : null
 })
-// 商店的說明（shops.json 的 desc，內容頁籤可以改）
+// 店名、描述與招呼語（旅店也有）：見 engine/shopNames.ts
+const named = computed<NamedShop | null>(() => {
+  void content.version
+  return cell.value.kind === 'inn' ? 'inn' : shopTypeForCell(cell.value.kind)
+})
+const title = computed(() => {
+  void s.value.shopNames
+  return named.value ? shopTitle(s.value, shopPlace(s.value).id, named.value) : null
+})
+// 商店的說明（shops.json 的 desc，內容頁籤可以改）：店名有自己的描述時收進「?」
 const shopDesc = computed(() => {
   void content.version
   return Object.values(shopRules.types).find((t) => t.cell === cell.value.kind)?.desc ?? landmarkDef(cell.value.kind)?.desc ?? ''
@@ -177,9 +189,15 @@ const shopDesc = computed(() => {
           <GameIcon v-if="CELL_GAME_ICON[cell.kind]" :name="CELL_GAME_ICON[cell.kind]!" :size="18" />
           <span v-else-if="ICON[cell.kind]">{{ ICON[cell.kind] }}</span>
           <GameIcon v-else name="pin" :size="18" />
-          {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}
+          {{ title ? title.name : cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}
+          <span v-if="title && named && title.name !== shopKindName(named)" class="tag">{{ shopKindName(named) }}</span>
+          <Hint v-if="title && shopDesc && title.desc" :text="shopDesc" />
         </h3>
-        <p v-if="shopDesc" class="muted small">{{ shopDesc }}</p>
+        <template v-if="title && title.desc">
+          <p class="shop-desc">{{ title.desc }}</p>
+          <p v-if="title.greeting" class="greeting small">「{{ title.greeting }}」</p>
+        </template>
+        <p v-else-if="shopDesc" class="muted small">{{ shopDesc }}</p>
         <p v-if="specialDef" class="muted small">{{ specialDef.name }}：{{ specialDef.desc }}</p>
 
         <template v-if="cell.kind === 'inn'">
@@ -396,6 +414,9 @@ const shopDesc = computed(() => {
 details summary { cursor: pointer; padding: 4px 0; color: var(--accent-2); }
 .place-title { display: flex; align-items: center; gap: 6px; }
 .place-title :deep(.game-icon) { color: var(--accent); }
+.place-title .tag { font-weight: normal; letter-spacing: 0; }
+.shop-desc { margin: 0 0 4px; font-family: var(--font-story); color: var(--text); opacity: 0.9; font-size: var(--fs-sm); line-height: 1.8; }
+.greeting { margin: 0 0 8px; padding-left: 10px; border-left: 2px solid var(--gold-lo); color: var(--muted); font-family: var(--font-story); }
 .dest { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .dest td { padding: 6px 4px; border-bottom: 1px solid #ffffff0a; vertical-align: middle; }
 .dest .n { font-weight: 600; }

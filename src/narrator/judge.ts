@@ -13,6 +13,7 @@ import { capsSource, capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarg
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
 import { itemCategory, shopKey, shopPlace } from '@/engine/trade'
+import { shopTitle, wantsAiTitle } from '@/engine/shopNames'
 import { toolSummary } from '@/engine/tools'
 import { intelSummary } from '@/engine/inventory'
 import { craftPart, craftRarity, parseCraftTarget } from '@/engine/craft'
@@ -401,6 +402,9 @@ export function visibleNarration(text: string): string {
 /** 商店的交易清單：AI 依商店類型、城鎮與店主生成，程式再驗證價格與效果（見 engine/trade.ts）。 */
 export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
   const def = shopDef(type)
+  const place = shopPlace(state)
+  // 還沒有正式店名時，請 AI 順便取（參考規則生成的名字）
+  const title = wantsAiTitle(state, place.id, type) ? shopTitle(state, place.id, type) : undefined
   const shop = state.shops?.[shopKey(state, type)]
   const keeper = shop ? npcRecord(state, shop.keeper) : undefined
   const loc = locationById(state.location)
@@ -431,10 +435,10 @@ export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
 4. gets 只能用下面列出的種類：
 ${def.ai_effects.map((t) => `- ${docs[t] ?? t}`).join('\n')}
 5. 設計 3～6 筆，stock 為今天能交易的次數（1～5）。
-6. 只輸出 JSON：{"deals":[{"title":"≤12 字","desc":"≤40 字","gives":[…],"gets":[…],"stock":1}]}`
-  const place = shopPlace(state)
+${title ? `6. 這間店還沒有正式的店名：請順便取一個，放在 "shop"：{"name":"≤10 字的店名（含店型，例如「金麥酒館」）","desc":"≤40 字，店裡的樣子與氣氛","greeting":"≤30 字，店主招呼客人的一句話"}。要符合城鎮的風土與店主的性格。
+7. 只輸出 JSON：{"shop":{…},"deals":[{"title":"≤12 字","desc":"≤40 字","gives":[…],"gets":[…],"stock":1}]}` : `6. 只輸出 JSON：{"deals":[{"title":"≤12 字","desc":"≤40 字","gives":[…],"gets":[…],"stock":1}]}`}`
   const user = `${place.waystation ? `地點：${loc.name}附近旅途上的${place.name}（偏遠的歇腳處，貨色少、價格高）\n` : ''}城鎮：${loc.name}（${geography.regions.find((r) => r.id === loc.region)?.name ?? ''}，${loc.type}${loc.faction ? `，${geography.factions.find((f) => f.id === loc.faction)?.name ?? loc.faction}` : ''}）
-商店：${def.name}
+商店：${def.name}${title ? `（暫定名稱：${title.name}）` : `：${shopTitle(state, place.id, type).name}`}
 ${keeper ? `${def.keeper.title}：${keeper.name}（${raceName(keeper.race)}）｜${keeper.personality}｜${keeper.appearance ?? ''}` : ''}
 主角：${pc.name} Lv.${pc.level}，持有 ${formatMoney(state.money_cc)}
 目錄（這間店平常賣的東西與價格）：

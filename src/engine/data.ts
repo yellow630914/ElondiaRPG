@@ -1430,6 +1430,16 @@ export const shopRules = shopsJson as unknown as {
   ai_caps: { affinity: number; reputation: number; price_floor_ratio: number; deals: number; stock: number }
   bargain: { base: number; price_factor: Record<Degree, number> }
   types: Record<ShopType, ShopTypeDef>
+  /** 店名與描述的生成規則（見 shopNames.ts） */
+  naming: ShopNaming
+}
+/** 店名的字詞：地區 → 字詞、氛圍，可以改店型的後綴；手寫覆寫依地點 */
+export interface ShopNaming {
+  suffix: Record<string, string[]>
+  regions: Record<string, { words: string[]; air: string[]; suffix?: Record<string, string[]> }>
+  desc: Record<string, string[]>
+  greeting: Record<string, string[]>
+  overrides: Record<string, Record<string, { name?: string; desc?: string; greeting?: string }>>
 }
 
 export interface NegotiationOutcome { text: string; effects: RewardEffect[] }
