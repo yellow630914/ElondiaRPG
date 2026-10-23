@@ -19,6 +19,8 @@ import { builtinLandmark, landmarkUsage, sanitizeLandmarkMod, type LandmarkMod }
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import { pruneSpecialMaps } from '@/engine/specialMaps'
 import { pruneRoadEvent } from '@/engine/road'
+import { makeWorldPackage, parseWorldFile } from '@/engine/worldPackage'
+import { usePrompts } from './prompts'
 import { pruneTownEvent } from '@/engine/townEvents'
 import { builtinTravelEvent, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from '@/engine/travelEventMods'
 import { computePlacements, sanitizeShopMod, shopUsage, type ShopMod } from '@/engine/shopMods'
@@ -42,6 +44,8 @@ export interface World {
   mods: ContentMods
   /** 最後修改的時間（毫秒） */
   updated: number
+  /** 綁定的提示詞組：切換到這個世界時一起切換（世界包匯入時綁定，也可以在世界管理改） */
+  promptSet?: string
 }
 
 interface WorldsFile {
@@ -185,6 +189,43 @@ export const useContent = defineStore('content', () => {
     mods.value = w ? w.mods : emptyMods()
     apply()
     persist()
+    // 綁定的提示詞組跟著切換（那一組被刪掉時不動）
+    const prompts = usePrompts()
+    if (w?.promptSet && prompts.sets.some((x) => x.id === w.promptSet)) prompts.switchSet(w.promptSet)
+  }
+
+  /** 世界綁定（或解除）提示詞組 */
+  function linkPromptSet(worldId: string, setId: string | undefined) {
+    const w = worlds.value.find((x) => x.id === worldId)
+    if (!w) throw new Error('原版世界不能綁定提示詞組')
+    if (setId) w.promptSet = setId
+    else delete w.promptSet
+    persist()
+  }
+
+  /**
+   * 匯入世界包或內容檔，建立成新的世界（worldgen/README.md）：世界包帶著提示詞時，另外建立一組提示詞並綁定。
+   * 有錯誤的特殊任務不匯入（和匯入內容檔一樣）。回傳新世界的 id 與說明
+   */
+  function importWorld(text: string, fallbackName: string): { id: string; promptSet?: string; dropped: string[] } {
+    const file = parseWorldFile(JSON.parse(text))
+    const name = file.name || fallbackName || '匯入的世界'
+    const incoming = normalizeMods(file.content)
+    const dropped = dropBrokenStories(incoming)
+    const id = createWorld(name, undefined, incoming)
+    problems.value = [...problems.value, ...dropped]
+    if (!file.prompts) return { id, dropped }
+    const setId = usePrompts().createSetFrom(worldName(id), file.prompts)
+    linkPromptSet(id, setId)
+    return { id, promptSet: setId, dropped }
+  }
+
+  /** 目前世界的世界包：內容，加上綁定的提示詞組（沒有綁定時用目前用的那一組） */
+  function exportWorld(desc?: string): string {
+    const prompts = usePrompts()
+    const w = worlds.value.find((x) => x.id === active.value)
+    const config = (w?.promptSet && prompts.setConfig(w.promptSet)) || prompts.config
+    return JSON.stringify(makeWorldPackage(activeName.value, mods.value, config, desc), null, 2)
   }
 
   /** 新的世界：複製另一個世界的內容（不給時是空的，等於從原版開始） */
@@ -739,7 +780,8 @@ export const useContent = defineStore('content', () => {
 
   /** 匯入內容檔：asNew 時建立成新的世界，否則取代目前世界的內容 */
   function importMods(text: string, asNew?: string): string | undefined {
-    const incoming = normalizeMods(JSON.parse(text))
+    // 世界包也收：只取內容（提示詞要用「匯入世界包」）
+    const incoming = normalizeMods(parseWorldFile(JSON.parse(text)).content)
     // 有錯誤的特殊任務不匯入（dropBrokenStories 會套用 incoming：之後一定要重新套用）
     const dropped = dropBrokenStories(incoming)
     if (asNew !== undefined) {
@@ -807,7 +849,7 @@ export const useContent = defineStore('content', () => {
 
   return {
     mods, problems, version, usageOf,
-    worlds, active, activeName, readOnly, worldName, switchWorld, createWorld, renameWorld, deleteWorld, enterWorld, worldForImport,
+    worlds, active, activeName, readOnly, worldName, switchWorld, createWorld, linkPromptSet, importWorld, exportWorld, renameWorld, deleteWorld, enterWorld, worldForImport,
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
