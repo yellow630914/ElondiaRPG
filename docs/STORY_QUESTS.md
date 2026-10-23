@@ -33,6 +33,7 @@
   "summary": "冒險筆記上的簡介",
   "rank": "F",                       // 建議的公會階級：接取時檢查（同級或更低，組隊時可以高一級）
   "merit": 5,                        // 完成時的公會功績（不寫＝5，見 GUILD）
+  "time_limit": 10,                  // 期限：開始後幾天內要完成（不寫＝不限）；過了就失敗，任務同行的夥伴離隊，冒險筆記寫「⏳ 剩 N 天」
   "start": {
     "kind": "npc",                   // guild 公會、npc 固定 NPC、travel 旅途事件、informant 情報商、manual 只由其他事件開啟
     "npc": "npc_selene",             // npc：這位角色在身邊時可以接

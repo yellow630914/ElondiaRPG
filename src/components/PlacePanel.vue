@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FoldSection from './FoldSection.vue'
+import { deadlineText, questDeadlineDays } from '@/engine/deadlines'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
@@ -233,7 +234,9 @@ const shopDesc = computed(() => {
               <div><span class="tag" :class="{ hot: isExam(q) }">{{ isExam(q) ? `晉升 ${q.rank}` : q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>
               <div class="small muted">
                 報酬 {{ formatMoney(q.reward_cc) }}<template v-if="isMaterialQuest(q) && (q.max ?? q.goal) > q.goal">（可以過量交付到 {{ q.max }}{{ isCollectQuest(q) ? ' 份' : ' 次' }}，報酬依比例增加）</template>
+                <span v-if="q.status === 'available' && questDeadlineDays(q) !== undefined">・期限 {{ questDeadlineDays(q) }} 天</span>
                 <span v-if="q.status !== 'available'">・{{ questProgressText(s, q) }}</span>
+                <span v-if="q.status === 'accepted' && q.deadline">・⏳ {{ deadlineText(s, q.deadline) }}</span>
               </div>
               <button
                 v-if="q.status === 'available'"

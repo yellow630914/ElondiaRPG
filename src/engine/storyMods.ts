@@ -322,6 +322,9 @@ export function sanitizeStory(id: string, raw: Partial<StoryMod>, custom: boolea
   if (raw.rank && RANK_ORDER.includes(raw.rank)) out.rank = raw.rank
   // 完成時的公會功績：空白時用預設（progression.json 的 guild_merit.story）
   if (raw.merit !== undefined && raw.merit !== null && String(raw.merit) !== '') out.merit = Math.round(num(raw.merit, 0, 100, 0))
+  // 期限（天）：空白或 0 是不限
+  const limit = Math.round(num(raw.time_limit, 0, 365, 0))
+  if (limit > 0) out.time_limit = limit
   const sf = flags(raw.start_flags)
   if (sf.length) out.start_flags = sf
   const rewards = sanitizeEffects(raw.rewards)

@@ -17,7 +17,12 @@ const content = useContent()
 const game = useGame()
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T
-const current = (): TravelEventMod => clone(content.mods.travelEvents?.[props.id] ?? (travelEvents.templates.find((t) => t.id === props.id) as TravelEventMod))
+// requires 先放一個空的（表單綁定用；儲存時空的條件會被拿掉），才不會一打開就顯示「未儲存」
+const current = (): TravelEventMod => {
+  const t = clone(content.mods.travelEvents?.[props.id] ?? (travelEvents.templates.find((x) => x.id === props.id) as TravelEventMod))
+  t.requires ??= {}
+  return t
+}
 const draft = ref<TravelEventMod>(current())
 const saved = ref(JSON.stringify(draft.value))
 watch(() => props.id, () => reset())
@@ -30,7 +35,7 @@ const builtin = computed(() => !!builtinTravelEvent(props.id))
 const edited = computed(() => builtin.value && !!content.mods.travelEvents?.[props.id])
 const town = computed(() => draft.value.scope === 'town')
 const warnings = computed(() => travelEventWarnings(draft.value))
-const requires = computed(() => (draft.value.requires ??= {}))
+const requires = computed(() => draft.value.requires!)
 const categories = computed(() => travelEvents.town?.categories ?? {})
 const settlements = geography.locations.filter((l) => l.type !== 'dungeon')
 const cellLabel = (c: string) => cellName(c as CellKind)
@@ -133,7 +138,7 @@ function remove() {
         </label>
         <label v-if="town">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.town?.repeat_days ?? 7)" /></label>
       </div>
-      <label class="wide">描述（給玩家與 AI）<textarea v-model="draft.text" rows="2" maxlength="400" /></label>
+      <label class="block">描述（給玩家與 AI）<textarea v-model="draft.text" rows="3" maxlength="400" /></label>
     </fieldset>
 
     <fieldset v-if="!town">

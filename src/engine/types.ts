@@ -150,7 +150,7 @@ export interface Report {
   location: { at: string; to?: string; region?: string; scene?: string; weather?: string }
   party: ActorState[]
   others?: ActorState[]
-  quest?: { id?: string; title?: string; rank?: GuildRank; status?: 'accepted' | 'progress' | 'completed' | 'failed' | 'abandoned' }
+  quest?: { id?: string; title?: string; rank?: GuildRank; status?: 'accepted' | 'progress' | 'completed' | 'failed' | 'abandoned' | 'expired' }
   /** 特殊任務：哪個任務、哪個任務點 */
   story?: { id: string; title: string; node?: string; status: 'started' | 'progress' | 'completed' | 'failed' }
   timeline?: TimelineEntry[]
@@ -544,6 +544,8 @@ export interface Quest {
   /** 交付時實際交了多少（完成後記錄） */
   delivered?: number
   status: 'available' | 'accepted' | 'ready' | 'completed'
+  /** 期限（接下時決定）：過了還沒完成目標就逾期失敗；目標達成（ready）之後不會逾期 */
+  deadline?: GameTime
   /** 任務旗標（談判、事件的結果），例如 lead：委託檢定 +5 */
   flags?: Record<string, unknown>
 }

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
+import * as deadlines from '@/engine/deadlines'
 import { pitchTarget } from '@/engine/perks'
 import { computed, ref, toRaw } from 'vue'
 import * as actions from '@/engine/actions'
@@ -273,6 +274,8 @@ export const useGame = defineStore('game', () => {
     const before = snapshotState(state.value)
     try {
       const result = fn(state.value)
+      // 期限：逾期的委託與特殊任務（各自產生報告）
+      deadlines.expireDeadlines(state.value)
       // 日誌太長時把舊的封存（token 用量另外合計，見 logArchive.ts）
       archiveOldReports(state.value, useSettings().logKeepLimit(), narrations.value, usage.value)
       save()

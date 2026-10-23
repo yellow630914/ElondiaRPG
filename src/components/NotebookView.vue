@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { deadlineText, hoursLeft, storyDeadline } from '@/engine/deadlines'
 import { computed, ref } from 'vue'
 import { enemies, locationById, stories } from '@/engine/data'
 import { expireIntel, intelPlace } from '@/engine/intel'
@@ -74,6 +75,7 @@ const counts = computed(() => ({
         <div class="row">
           <span class="tag">{{ q.rank }}</span><span class="tag">{{ AREA[q.area] }}</span><b class="grow">{{ q.title }}</b>
           <span v-if="canTurnIn(s, q)" class="tag ok">可以交付</span>
+          <span v-else-if="q.deadline" class="tag" :class="{ warn: hoursLeft(s, q.deadline) < 24 }" :title="`期限：第 ${q.deadline.day} 天 ${q.deadline.hour ?? 0} 時`">⏳ {{ deadlineText(s, q.deadline) }}</span>
           <button class="small" @click="abandonQuest(q)">放棄</button>
         </div>
         <div class="small">進度：{{ questProgressText(s, q) }}・報酬 {{ formatMoney(q.reward_cc) }}{{ isMaterialQuest(q) && (q.max ?? q.goal) > q.goal ? '（可以多交，報酬依數量增加）' : '' }}</div>
@@ -96,6 +98,7 @@ const counts = computed(() => ({
         <div class="row">
           <span v-if="def!.rank" class="tag">{{ def!.rank }}</span>
           <b class="grow">{{ def!.title }}</b>
+          <span v-if="p.status === 'active' && storyDeadline(s, p.id)" class="tag" :class="{ warn: hoursLeft(s, storyDeadline(s, p.id)!) < 24 }">⏳ {{ deadlineText(s, storyDeadline(s, p.id)) }}</span>
           <span class="tag" :class="{ ok: p.status === 'completed' }">{{ p.status === 'active' ? '進行中' : p.status === 'completed' ? '✅ 完成' : '❌ 失敗' }}</span>
           <button v-if="p.status === 'active'" class="small" @click="abandon(p.id, def!.title)">放棄</button>
         </div>

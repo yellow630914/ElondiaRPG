@@ -2,6 +2,7 @@
 
 import { checkBonus } from './perks'
 import { abilityQuality, proficiency, rerollAbilityChoices, snapshot } from './character'
+import { setQuestDeadline } from './deadlines'
 import { dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit } from './guild'
 import { startCombat, type CombatState } from './combat'
 import {
@@ -266,10 +267,11 @@ export function acceptQuest(state: GameState, questId: string): Report {
   if (!quest) throw new Error('找不到這個委託')
   if (!canAcceptRank(state, quest.rank, quest)) throw new Error('公會階級不足，無法接取')
   quest.status = 'accepted'
+  setQuestDeadline(state, quest)
   const report = baseReport(state, 'quest', 0.5)
   report.location.scene = `${locationById(state.location).name}的冒險者公會`
   report.quest = { id: quest.id, title: quest.title, rank: quest.rank, status: 'accepted' }
-  report.outcome.summary = `接下 ${quest.rank} 級委託「${quest.title}」，報酬 ${formatMoney(quest.reward_cc)}。`
+  report.outcome.summary = `接下 ${quest.rank} 級委託「${quest.title}」，報酬 ${formatMoney(quest.reward_cc)}${quest.deadline ? `，期限到第 ${quest.deadline.day} 天 ${quest.deadline.hour} 時` : ''}。`
   report.lore_keys!.push(locationById(quest.target).name, '冒險者公會')
   return commitReport(state, report)
 }

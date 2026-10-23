@@ -415,6 +415,22 @@ export function abandonStory(state: GameState, id: string): Report {
   return committed
 }
 
+/** 過了期限（time_limit）的任務：失敗（deadlines.ts） */
+export function expireStory(state: GameState, id: string): Report {
+  const progress = state.stories?.[id]
+  const def = storyDef(id)
+  if (!progress || progress.status !== 'active' || !def) throw new Error('沒有進行中的這個任務')
+  const report = storyReport(state, def, 'failed', 0)
+  const lines: string[] = []
+  finishStory(state, report, progress, def, 'failed', lines)
+  log(progress, state, '過了期限')
+  report.outcome = { ...report.outcome, result: 'failure', summary: `特殊任務「${def.title}」過了期限，失敗了。${lines.slice(1).join('')}`, tags: [...new Set([...(report.outcome.tags ?? []), '任務逾期'])] }
+  report.narration = { length: 'short' }
+  const committed = commitReport(state, report)
+  refreshStoryMarkers(state)
+  return committed
+}
+
 // ---- 近郊與地下城的任務點（⭐） ----
 
 function layerId(area: Area): DungeonLayerId | undefined {
