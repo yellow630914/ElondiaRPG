@@ -16,7 +16,8 @@
 
 | 要做的事 | 先讀 |
 |---|---|
-| 從頭生成一個世界 | [WORLD_GUIDE.md](WORLD_GUIDE.md)（依序生成的步驟）＋ [templates/world-template.md](templates/world-template.md)（玩家填的設定） |
+| 從頭生成一個世界 | [WORLD_GUIDE.md](WORLD_GUIDE.md)（依序生成的步驟）＋ [templates/world-template.md](templates/world-template.md)（玩家填的設定）；範例 [worlds/elondia-plus](worlds/elondia-plus/README.md) |
+| 引擎目前做不到的寫法 | [docs/KNOWN_ISSUES](../docs/KNOWN_ISSUES.md) 第 5 節 |
 | 新增或修改某一種內容 | `guides/` 對應的那一份（格式、欄位、範圍、範例） |
 | 檢查平衡 | [balance/README.md](balance/README.md)，再看對應的那一份 |
 | 設計固定 NPC | [design/npc-design.md](design/npc-design.md) |
@@ -51,4 +52,5 @@
 - [ ] 每隻新怪物都有出現地點（或特殊任務用到），每位固定 NPC 都找得到（活躍地點、固定格子、地標或店）
 - [ ] 每條特殊任務都有開頭的方式、會完成，旗標前後接得起來
 - [ ] 新的人物、地點、勢力、傳聞都寫進了世界書（提示詞），沒有和原本的設定矛盾
-- [ ] 資料夾裡有規劃清單（`npcs.md`、`stories.md`……）與 `check-report.md`，方便玩家看懂這個世界多了什麼
+- [ ] 資料夾裡有規劃（`plan.md`）、規劃清單（`npcs.md`、`stories.md`……）與 `check-report.md`，方便玩家看懂這個世界多了什麼
+- [ ] 大量的內容由 `scripts/` 的腳本產生，重跑腳本與 `build-world.mjs` 能得到同一份 `world.json`

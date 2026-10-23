@@ -27,20 +27,20 @@ worldgen/
   WORLD_GUIDE.md         世界生成指南（依序生成）
   templates/             玩家填寫的世界模板
   worlds/
-    elondia-plus/        艾隆迪亞擴充：規劃清單、世界包、檢查報告
+    elondia-plus/        艾隆迪亞擴充：規劃清單、產生腳本、分檔、世界包、檢查報告
 ```
 
 ## 順序
 
-| # | 內容 | 對應 |
-|---|---|---|
-| 0a | 世界檢查工具：`WORLD=<世界包或內容檔> npx vitest run src/__tests__/worldCheck.spec.ts`，產出 `check-report.md` | 平衡自檢的前提 |
-| 0b | 世界包：格式、匯入（建立世界＋提示詞組並綁定）、匯出 | 決定 3 |
-| 1 | `README.md`、`guides/` | 第 1、8 點 |
-| 2 | `balance/` | 第 2 點 |
-| 3 | 艾隆迪亞的固定 NPC：先寫清單，再做成內容 | 第 3 點 |
-| 4 | `design/npc-design.md` | 第 4 點 |
-| 5 | 艾隆迪亞的特殊任務：先寫清單，再做成內容 | 第 5 點 |
-| 6 | `design/story-design.md` | 第 6 點 |
-| 7 | `WORLD_GUIDE.md`、`templates/` | 第 7 點 |
-| 8 | 世界書與提示詞：依新內容補寫條目，產出新的提示詞組，打包成世界包 | 第 9 點 |
+| # | 內容 | 對應 | 狀態 |
+|---|---|---|---|
+| 0a | 世界檢查工具：`WORLD=<世界包或內容檔> npx vitest run src/__tests__/worldCheck.spec.ts`，產出 `check-report.md` | 平衡自檢的前提 | ✅ |
+| 0b | 世界包：格式、匯入（建立世界＋提示詞組並綁定）、匯出 | 決定 3 | ✅ |
+| 1 | `README.md`、`guides/` | 第 1、8 點 | ✅ |
+| 2 | `balance/` | 第 2 點 | ✅ |
+| 3 | 艾隆迪亞的固定 NPC：先寫清單，再做成內容 | 第 3 點 | ✅ |
+| 4 | `design/npc-design.md` | 第 4 點 | ✅ |
+| 5 | 艾隆迪亞的特殊任務：先寫清單，再做成內容 | 第 5 點 | ✅ |
+| 6 | `design/story-design.md` | 第 6 點 | ✅ |
+| 7 | `WORLD_GUIDE.md`、`templates/` | 第 7 點 | ✅ |
+| 8 | 世界書與提示詞：依新內容補寫條目，產出新的提示詞組，打包成世界包 | 第 9 點 | ✅ |
