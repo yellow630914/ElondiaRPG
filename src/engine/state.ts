@@ -2,6 +2,7 @@
 
 import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
+import { pruneSpecialMaps } from './specialMaps'
 import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, type CreationGear } from './gear'
@@ -293,6 +294,8 @@ export function migrate(state: GameState): GameState {
   }
   // 這個存檔自創的物品
   setSaveItems(Object.values(state.inventions ?? {}))
+  // 這個世界沒有的特殊地圖
+  pruneSpecialMaps(state)
   return state
 }
 

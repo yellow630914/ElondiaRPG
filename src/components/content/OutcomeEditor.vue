@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { geography, npcs as namedNpcs, type StoryOutcome } from '@/engine/data'
+import { geography, npcs as namedNpcs, specialMaps, type StoryOutcome } from '@/engine/data'
 import { travelEvents } from '@/engine/road'
 import { SIDE_MAPS } from '@/engine/storyMods'
 import EffectsEditor from './EffectsEditor.vue'
@@ -54,6 +54,11 @@ const end = computed({
         <select v-model="o.side_map">
           <option :value="undefined">（無）</option>
           <option v-for="k in SIDE_MAPS()" :key="k" :value="k">{{ travelEvents.side_maps[k]!.name }}</option>
+        </select>
+        傳送到特殊地圖
+        <select v-model="o.special_map">
+          <option :value="undefined">（無）</option>
+          <option v-for="m in Object.values(specialMaps)" :key="m.id" :value="m.id">{{ m.name }}</option>
         </select>
         改去別的地點
         <select v-model="o.travel_to">

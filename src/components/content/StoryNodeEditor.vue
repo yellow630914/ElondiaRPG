@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, type StoryNode, type StoryOption } from '@/engine/data'
+import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
 import { cellName, type CellKind } from '@/engine/grid'
 import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
 import { travelEvents } from '@/engine/road'
@@ -39,6 +39,7 @@ function setWhere(w: StoryNode['at']['where']) {
     node.value.at.location = 'soriel'
   }
   if (w === 'npc') node.value.at.npc ??= namedNpcs[0]?.id
+  if (w === 'special') node.value.at.special_map ??= Object.keys(specialMaps)[0]
 }
 function addOption() {
   ;(node.value.options ??= []).push({ label: '新的選項', success: {} })
@@ -77,7 +78,7 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
           <option v-for="(n, k) in WHERE_NAME" :key="k" :value="k">{{ n }}</option>
         </select>
       </label>
-      <label v-if="where !== 'road' && where !== 'side'">{{ where === 'npc' ? '地點（選填：只在這裡）' : '地點' }}
+      <label v-if="where !== 'road' && where !== 'side' && where !== 'special'">{{ where === 'npc' ? '地點（選填：只在這裡）' : '地點' }}
         <select v-model="node.at.location">
           <option v-if="where === 'npc'" :value="undefined">（跟著角色走）</option>
           <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
@@ -99,6 +100,11 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
           <option v-for="k in SIDE_MAPS()" :key="k" :value="k">{{ travelEvents.side_maps[k]!.name }}</option>
         </select>
       </label>
+      <label v-if="where === 'special'">哪一張特殊地圖
+        <select v-model="node.at.special_map">
+          <option v-for="m in Object.values(specialMaps)" :key="m.id" :value="m.id">{{ m.name }}</option>
+        </select>
+      </label>
       <label v-if="where === 'npc'">固定 NPC
         <select v-model="node.at.npc">
           <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
@@ -114,7 +120,7 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
       </label>
     </div>
     <p v-if="node.allies?.length" class="small muted">
-      解鎖時，勾選的角色會站在{{ ['outskirts', 'dungeon', 'side'].includes(where) ? ' ⭐ 旁邊' : where === 'npc' || where === 'road' ? '這裡' : '設施上' }}（不管平常的出沒與出現條件）；戰鬥時站在你這邊（由你操作），AI 判定與寫經過時也知道他們在場。要在成功後一起走，結果裡用「任務同行」。
+      解鎖時，勾選的角色會站在{{ ['outskirts', 'dungeon', 'side', 'special'].includes(where) ? ' ⭐ 旁邊' : where === 'npc' || where === 'road' ? '這裡' : '設施上' }}（不管平常的出沒與出現條件）；戰鬥時站在你這邊（由你操作），AI 判定與寫經過時也知道他們在場。要在成功後一起走，結果裡用「任務同行」。
     </p>
 
     <template v-if="node.kind === 'check' && node.check">

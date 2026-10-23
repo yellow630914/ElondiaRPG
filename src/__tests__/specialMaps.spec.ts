@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { specialMaps, stories, type SpecialMapDef, type StoryDef } from '@/engine/data'
 import { afterDefeat, cellAt, currentArea, currentCell, enterLocation, getArea, move, placeAt, position } from '@/engine/grid'
 import { applyPendingMove, queueMove } from '@/engine/road'
-import { enterSpecial, leaveSpecial } from '@/engine/specialMaps'
+import { enterSpecial, leaveSpecial, pruneSpecialMaps } from '@/engine/specialMaps'
+import { sanitizeSpecialMapMod, specialMapUsage } from '@/engine/specialMapMods'
+import { applyContent, emptyMods } from '@/engine/mods'
 import { commitReport, newGame, newReportId } from '@/engine/state'
 import { nodesHere, refreshStoryMarkers, startStory } from '@/engine/story'
 import { setFlag } from '@/engine/storyFlags'
@@ -152,5 +154,49 @@ describe('special maps', () => {
     } finally {
       def.grid = grid
     }
+  })
+})
+
+describe('special map mods', () => {
+  it('cleans a custom map: unknown characters become walls, bad connections are dropped', () => {
+    const m = sanitizeSpecialMapMod('sm_test_a', {
+      name: '測試', location: 'rhineburg', desc: '說明', grid: ['#?.#', '#.E'],
+      connections: [
+        { at: { x: 2, y: 0 }, to: { area: 'rhineburg/lower', x: 5, y: 6 } },
+        { at: { x: 1, y: 1 }, to: { area: 'rhineburg/lower', x: 5, y: 5 } },
+        { at: { x: 9, y: 9 }, to: { area: 'rhineburg/lower', x: 4, y: 1 } },
+        { at: { x: 1, y: 0 }, to: { area: 'sm/sm_test_b', x: 0, y: 0 } },
+      ],
+    }, { sm_test_b: { grid: ['.#', '##'] } })
+    expect(m.grid).toEqual(['##.#', '#.E#', '####'])
+    expect(m.connections).toEqual([
+      { at: { x: 2, y: 0 }, to: { area: 'rhineburg/lower', x: 5, y: 6 } },
+      { at: { x: 1, y: 0 }, to: { area: 'sm/sm_test_b', x: 0, y: 0 } },
+    ])
+    expect(m.custom).toBe(true)
+    expect(() => sanitizeSpecialMapMod('bad id', {})).toThrow('sm_')
+  })
+
+  it('applies custom maps from content mods and sends a player out of a removed one', () => {
+    const state = inRhineburg()
+    const mods = { ...emptyMods(), specialMaps: { sm_test_mod: { id: 'sm_test_mod', name: '自建的地窖', location: 'rhineburg', desc: '測試', grid: ['#E#', '#.#'], custom: true } } }
+    try {
+      expect(applyContent(mods)).toEqual([])
+      expect(specialMaps.sm_test_mod?.name).toBe('自建的地窖')
+      enterSpecial(state, 'sm_test_mod')
+      expect(currentArea(state).key).toBe('sm/sm_test_mod')
+      applyContent(emptyMods())
+      expect(specialMaps.sm_test_mod).toBeUndefined()
+      pruneSpecialMaps(state)
+      expect(currentArea(state).kind).toBe('settlement')
+      expect(state.areas?.['sm/sm_test_mod']).toBeUndefined()
+    } finally {
+      applyContent(emptyMods())
+    }
+  })
+
+  it('lists story points, teleports and connections that use a map', () => {
+    expect(specialMapUsage('sm_rhineburg_cistern')).toContain('特殊地圖「萊茵堡下水道」的通道')
+    expect(specialMapUsage('sm_rhineburg_sewer')).toEqual([])
   })
 })

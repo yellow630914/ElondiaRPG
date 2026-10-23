@@ -20,6 +20,15 @@ export function specialArea(state: GameState, id: string): Area {
   if (!area || area.version !== specialVersion(def)) {
     area = withRng(state, (rng) => generateSpecial(state, def, rng))
     storeArea(state, area)
+    // 地圖改過、主角正站在裡面：站的格子不在了或變成牆時，移到入口
+    const p = state.position
+    if (p?.area === key) {
+      const cell = area.cells[p.y * area.width + p.x]
+      if (p.x >= area.width || p.y >= area.height || !cell || cell.kind === 'wall' || cell.kind === 'water') {
+        const e = entryOf(area, def)
+        state.position = { area: key, x: e.x, y: e.y }
+      }
+    }
   }
   // 名稱、地點、光線改了不用重新生成
   area.name = def.name
@@ -126,6 +135,25 @@ export function enterSpecial(state: GameState, id: string) {
   const pos = entryOf(area, def)
   arriveIn(state, def)
   placeAt(state, area, pos.x, pos.y)
+}
+
+/** 自訂內容拿掉的特殊地圖：存檔裡的地圖作廢；正站在裡面時送回現在的地點（讀檔時，以及自訂內容改變之後） */
+export function pruneSpecialMaps(state: GameState) {
+  for (const key of Object.keys(state.areas ?? {})) {
+    if (key.startsWith('sm/') && !specialMaps[key.slice(3)]) delete state.areas![key]
+  }
+  if (state.special) state.special.visited = state.special.visited.filter((id) => !!specialMaps[id])
+  const at = state.position?.area
+  if (at?.startsWith('sm/') && !specialMaps[at.slice(3)]) {
+    const back = state.special?.back
+    const backOk = back && (!back.area.startsWith('sm/') || !!specialMaps[back.area.slice(3)])
+    const location = state.special?.location
+    delete state.special
+    if (backOk) {
+      state.location = location ?? state.location
+      state.position = { ...back }
+    } else enterLocation(state)
+  }
 }
 
 /** 從出口離開：回到從外面進來前的位置；沒有時到所屬地點 */

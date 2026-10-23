@@ -13,7 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -24,6 +24,7 @@ import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck,
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
+import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, type SpecialMapMod } from './specialMapMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
@@ -103,10 +104,11 @@ export interface ContentMods {
   shops: Record<string, ShopMod>
   /** 城鎮的特色地標：內建的整份覆蓋，自建的 custom */
   landmarks: Record<string, LandmarkMod>
+  specialMaps: Record<string, SpecialMapMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -204,6 +206,7 @@ function restore() {
   applyMarkRules(clone(snapshot.markRules))
   restoreShops()
   restoreLandmarks()
+  restoreSpecialMaps()
   replaceRecord(abilities, snapshot.abilities)
   perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
@@ -425,6 +428,9 @@ export function applyContent(mods: ContentMods): string[] {
   })
   tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)))))
   tryEach('地標', mods.landmarks ?? {}, (id, m) => applyLandmarkMod(id, sanitizeLandmarkMod(id, m)))
+  // 特殊地圖：商店、固定 NPC、特殊任務會用到；互相接的通道要先知道所有自建的地圖
+  const knownMaps = { ...specialMaps, ...(mods.specialMaps ?? {}) }
+  tryEach('特殊地圖', mods.specialMaps ?? {}, (id, m) => applySpecialMapMod(id, sanitizeSpecialMapMod(id, m, knownMaps)))
   tryEach('商店', mods.shops ?? {}, (id, m) => applyShopMod(id, m))
   // 商店的位置：移動內建的店、擺自建的店（擺不上去的略過）
   tryEach('商店的位置', { all: mods.shops ?? {} }, (_id, all) => applyShopPlacements(all))
@@ -935,6 +941,16 @@ export function normalizeMods(raw: unknown): ContentMods {
     }
   }
   for (const [id, l] of Object.entries(out.landmarks)) if (l.custom && !landmarks[id]) applyLandmarkMod(id, l)
+  // 特殊地圖：特殊任務會檢查存不存在，先登錄自建的
+  const knownMaps = { ...specialMaps, ...(r.specialMaps ?? {}) }
+  for (const [id, v] of Object.entries(r.specialMaps ?? {})) {
+    try {
+      out.specialMaps[id] = sanitizeSpecialMapMod(id, v, knownMaps)
+    } catch {
+      // id 不對的：略過
+    }
+  }
+  for (const [id, m] of Object.entries(out.specialMaps)) if (m.custom && !specialMaps[id]) applySpecialMapMod(id, m)
   // 商店的固定清單會檢查物品：自建的物品還沒登錄，一起算
   const listable = (n: string) => (out.items[n] ? !notForSale(out.items[n]!) : canListItem(n))
   for (const [id, v] of Object.entries(r.shops ?? {})) {

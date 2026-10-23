@@ -5,7 +5,7 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { enemies, itemDef, npcs as namedNpcs, stories } from '@/engine/data'
+import { enemies, itemDef, npcs as namedNpcs, specialMaps, stories } from '@/engine/data'
 import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
@@ -16,6 +16,8 @@ import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tatto
 import { perkRules, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { npcModFromState } from '@/engine/promoteNpc'
 import { builtinLandmark, landmarkUsage, sanitizeLandmarkMod, type LandmarkMod } from '@/engine/landmarkMods'
+import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
+import { pruneSpecialMaps } from '@/engine/specialMaps'
 import { computePlacements, sanitizeShopMod, shopUsage, type ShopMod } from '@/engine/shopMods'
 import { settlementArea } from '@/engine/grid'
 import type { GameState } from '@/engine/types'
@@ -48,9 +50,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
+const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
+  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
 }
 
 export interface ModsDiffEntry {
@@ -158,6 +160,7 @@ export const useContent = defineStore('content', () => {
       pruneAbilities(game.state)
       prunePerks(game.state)
       pruneStories(game.state)
+      pruneSpecialMaps(game.state)
     }
     version.value++
     persist()
@@ -257,7 +260,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark' | 'shop' | 'landmark'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -275,6 +278,7 @@ export const useContent = defineStore('content', () => {
       case 'mark': return markUsage(key)
       case 'shop': return shopUsage(key)
       case 'landmark': return landmarkUsage(key)
+      case 'specialMap': return specialMapUsage(key)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -637,6 +641,29 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 特殊地圖 ----
+
+  function saveSpecialMap(id: string, draft: Partial<SpecialMapMod>) {
+    const m = sanitizeSpecialMapMod(id, draft, { ...specialMaps, ...(mods.value.specialMaps ?? {}) })
+    mods.value.specialMaps ??= {}
+    const base = builtinSpecialMap(id)
+    if (base && JSON.stringify(m) === JSON.stringify(sanitizeSpecialMapMod(id, base))) delete mods.value.specialMaps[id]
+    else mods.value.specialMaps[id] = m
+    save()
+  }
+  function restoreSpecialMap(id: string) {
+    if (mods.value.specialMaps?.[id]?.custom) return
+    delete mods.value.specialMaps?.[id]
+    save()
+  }
+  /** 自建、而且沒有被用到的地圖才能刪 */
+  function deleteSpecialMap(id: string) {
+    if (!mods.value.specialMaps?.[id]?.custom) throw new Error('內建的特殊地圖不能刪除')
+    assertUnused('specialMap', id)
+    delete mods.value.specialMaps[id]
+    save()
+  }
+
   // ---- 特質 ----
 
   function savePerk(id: string, draft: Partial<PerkMod>) {
@@ -751,7 +778,7 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
-    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

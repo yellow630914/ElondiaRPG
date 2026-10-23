@@ -1,0 +1,375 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, itemRules, locationById, specialMapLegend, specialMaps, type EncounterGroup, type SpecialConnection } from '@/engine/data'
+import { CELL_ICON, cellName, settlementArea, type CellKind } from '@/engine/grid'
+import { builtinSpecialMap, LIGHTINGS, MAP_CHARS, mapSize, SPECIAL_MAP_LIMITS, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
+import type { CellRef } from '@/engine/shopMods'
+import { useContent } from '@/stores/content'
+import { useGame } from '@/stores/game'
+import CellPicker from './CellPicker.vue'
+import UsageNote from './UsageNote.vue'
+
+// 特殊地圖的編輯表單：基本資料（所屬地點、給 AI 的描述、光線、刷新）、版面（畫格子或隨機挖）、
+// 額外的隨機內容、遭遇表與採集物、通道（接到城鎮區塊的牆或別張特殊地圖）。內建的不能刪除
+const props = defineProps<{ id: string }>()
+const emit = defineEmits<{ deleted: [] }>()
+const content = useContent()
+const game = useGame()
+const L = SPECIAL_MAP_LIMITS
+
+const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
+type Conn = SpecialConnection & { flagsText: string; flagsNoneText: string }
+type Draft = SpecialMapMod & { mode: 'fixed' | 'random'; conns: Conn[] }
+function current(): Draft {
+  void content.version
+  const d = clone(specialMaps[props.id]!) as SpecialMapMod
+  return {
+    ...d,
+    mode: d.grid?.length ? 'fixed' : 'random',
+    conns: (d.connections ?? []).map((c) => ({ ...c, flagsText: (c.requires?.flags ?? []).join('、'), flagsNoneText: (c.requires?.flags_none ?? []).join('、') })),
+  }
+}
+const draft = ref<Draft>(current())
+const saved = ref(JSON.stringify(draft.value))
+function reset() {
+  draft.value = current()
+  saved.value = JSON.stringify(draft.value)
+  tool.value = '#'
+}
+watch(() => props.id, reset)
+const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
+const builtin = computed(() => !!builtinSpecialMap(props.id))
+const edited = computed(() => builtin.value && !!content.mods.specialMaps?.[props.id])
+const usage = computed(() => {
+  void content.version
+  return specialMapUsage(props.id)
+})
+
+// ---- 版面 ----
+const legend = specialMapLegend as Record<string, CellKind>
+const palette = MAP_CHARS.map((ch) => ({ ch, kind: legend[ch]!, name: cellName(legend[ch]!), icon: CELL_ICON[legend[ch]!] ?? '' }))
+/** 畫筆：一種格子、設定入口，或設定第幾個通道的位置 */
+const tool = ref<string>('#')
+const painting = ref(false)
+const size = computed(() => mapSize(draft.value))
+function setMode(mode: 'fixed' | 'random') {
+  draft.value.mode = mode
+  if (mode === 'fixed' && !draft.value.grid?.length) {
+    const [w, h] = draft.value.size ?? [9, 7]
+    draft.value.grid = Array.from({ length: h }, (_, y) => (y === 0 || y === h - 1 ? '#'.repeat(w) : `#${'.'.repeat(w - 2)}#`))
+    draft.value.grid[h - 1] = `${'#'.repeat(Math.floor(w / 2))}E${'#'.repeat(w - Math.floor(w / 2) - 1)}`
+  }
+  if (mode === 'random') draft.value.size ??= [size.value[0], size.value[1]]
+}
+function resize(w: number, h: number) {
+  w = Math.max(L.size[0], Math.min(L.size[1], Math.round(w) || 3))
+  h = Math.max(L.size[0], Math.min(L.size[1], Math.round(h) || 3))
+  if (draft.value.mode === 'random') {
+    draft.value.size = [w, h]
+    return
+  }
+  const old = draft.value.grid ?? []
+  draft.value.grid = Array.from({ length: h }, (_, y) => Array.from({ length: w }, (_, x) => old[y]?.[x] ?? '#').join(''))
+}
+function charAt(x: number, y: number) {
+  return draft.value.grid?.[y]?.[x] ?? '#'
+}
+function paint(x: number, y: number) {
+  const t = tool.value
+  if (t === 'entry') {
+    draft.value.entry = { x, y }
+    return
+  }
+  if (t.startsWith('conn:')) {
+    const c = draft.value.conns[Number(t.slice(5))]
+    if (c) c.at = { x, y }
+    tool.value = '#'
+    return
+  }
+  const row = [...(draft.value.grid?.[y] ?? '')]
+  row[x] = t
+  draft.value.grid![y] = row.join('')
+}
+function down(x: number, y: number) {
+  painting.value = !tool.value.startsWith('conn:') && tool.value !== 'entry'
+  paint(x, y)
+}
+function enter(x: number, y: number) {
+  if (painting.value) paint(x, y)
+}
+function markerAt(x: number, y: number): string {
+  const i = draft.value.conns.findIndex((c) => c.at.x === x && c.at.y === y)
+  if (i >= 0) return `🔗${i + 1}`
+  if (draft.value.entry && draft.value.entry.x === x && draft.value.entry.y === y) return '📍'
+  return ''
+}
+
+// ---- 遭遇表與採集物 ----
+const monsterList = computed(() => {
+  void content.version
+  return Object.values(enemies).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name))
+})
+function addGroup() {
+  ;(draft.value.table ??= []).push([[monsterList.value[0]!.id, 1]])
+}
+function removeGroup(i: number) {
+  draft.value.table!.splice(i, 1)
+  if (!draft.value.table!.length) delete draft.value.table
+}
+function addMonster(g: EncounterGroup) {
+  if (g.length < L.group_types) g.push([monsterList.value[0]!.id, 1])
+}
+const itemNames = computed(() => {
+  void content.version
+  return itemRules.items.map((i) => i.name)
+})
+const pickItem = ref('')
+function addItem() {
+  const n = pickItem.value.trim()
+  if (!n || !itemNames.value.includes(n)) return
+  const list = (draft.value.resource_items ??= [])
+  if (!list.includes(n) && list.length < L.items) list.push(n)
+  pickItem.value = ''
+}
+function rangeOf(k: 'encounters' | 'traps' | 'resources' | 'chests', i: 0 | 1): number {
+  return draft.value[k]?.[i] ?? 0
+}
+function setRange(k: 'encounters' | 'traps' | 'resources' | 'chests', i: 0 | 1, v: number) {
+  const r: [number, number] = [...(draft.value[k] ?? [0, 0])] as [number, number]
+  r[i] = Math.max(0, Math.round(v) || 0)
+  if (r[0] || r[1]) draft.value[k] = r
+  else delete draft.value[k]
+}
+
+// ---- 通道 ----
+const otherMaps = computed(() => {
+  void content.version
+  return Object.values(specialMaps).filter((m) => m.id !== props.id)
+})
+function addConn() {
+  if (draft.value.conns.length >= L.connections) return
+  draft.value.conns.push({ at: { x: 0, y: 0 }, to: { area: '', x: 0, y: 0 }, flagsText: '', flagsNoneText: '' })
+  tool.value = `conn:${draft.value.conns.length - 1}`
+}
+function connKind(c: Conn): 'town' | 'map' {
+  return c.to.area.startsWith('sm/') ? 'map' : 'town'
+}
+function setConnKind(c: Conn, kind: 'town' | 'map') {
+  c.to = kind === 'map' ? { area: otherMaps.value[0] ? `sm/${otherMaps.value[0].id}` : '', x: 0, y: 0 } : { area: '', x: 0, y: 0 }
+}
+function townRef(c: Conn): CellRef | null {
+  return c.to.area && !c.to.area.startsWith('sm/') ? { area: c.to.area, x: c.to.x, y: c.to.y } : null
+}
+function pickTown(c: Conn, r: CellRef | null) {
+  if (r) c.to = { area: r.area, x: r.x, y: r.y }
+}
+function targetGrid(c: Conn): string[] {
+  return specialMaps[c.to.area.slice(3)]?.grid ?? []
+}
+function townText(c: Conn) {
+  const a = settlementArea(c.to.area, false)
+  return a ? `${locationById(a.location).name}・${a.name}（${c.to.x}, ${c.to.y}）` : '還沒選'
+}
+const splitFlags = (t: string) => t.split(/[、,，\s]+/).map((x) => x.trim()).filter(Boolean)
+
+function save() {
+  try {
+    const { mode, conns, ...m } = draft.value
+    if (mode === 'random') {
+      delete m.grid
+      m.size ??= [9, 7]
+    } else delete m.size
+    m.connections = conns.filter((c) => c.to.area).map((c) => ({
+      at: c.at, to: c.to,
+      ...(splitFlags(c.flagsText).length || splitFlags(c.flagsNoneText).length ? { requires: { flags: splitFlags(c.flagsText), flags_none: splitFlags(c.flagsNoneText) } } : {}),
+    }))
+    const want = m.connections.length
+    content.saveSpecialMap(props.id, m)
+    const got = specialMaps[props.id]?.connections?.length ?? 0
+    reset()
+    game.flash(got < want ? `已儲存，但有 ${want - got} 個通道不合規則被拿掉（城鎮那一頭要是牆或水、座標要在地圖裡、只有固定地圖可以設通道）` : `已儲存「${specialMaps[props.id]?.name}」`)
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+  }
+}
+function restore() {
+  if (!confirm(`把「${draft.value.name}」恢復成內建的樣子？`)) return
+  content.restoreSpecialMap(props.id)
+  reset()
+}
+function remove() {
+  if (!confirm(`刪除自建的特殊地圖「${draft.value.name}」？存檔裡的這張地圖也會作廢。`)) return
+  try {
+    content.deleteSpecialMap(props.id)
+    emit('deleted')
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+  }
+}
+</script>
+
+<template>
+  <div class="editor" @mouseup="painting = false" @mouseleave="painting = false">
+    <div class="row head">
+      <h3>🗺️ {{ draft.name }}</h3>
+      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
+      <span v-if="dirty" class="tag warn">未儲存</span>
+      <span class="spacer" />
+      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
+      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
+      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
+      <button v-else class="small warn" :disabled="usage.length > 0" @click="remove">🗑️ 刪除</button>
+    </div>
+    <p class="small muted">
+      id：{{ id }}。特殊地圖可以被特殊任務的事件傳送進來、放任務點，或用通道接到城鎮區塊的牆、別張特殊地圖。
+      裡面只能在安全點（或旅店格）長休，不能直接出發旅行；從出口離開回到進來前的地方，倒下時被送回所屬地點。改了版面或內容的設定，存檔裡的這張地圖會重新生成。
+    </p>
+    <UsageNote :usage="usage" :deletable="!builtin" />
+
+    <fieldset>
+      <legend>基本</legend>
+      <div class="grid">
+        <label>名稱 <input v-model="draft.name" :maxlength="L.name_chars" /></label>
+        <label>所屬地點
+          <select v-model="draft.location">
+            <option v-for="l in geography.locations" :key="l.id" :value="l.id">{{ l.name }}</option>
+          </select>
+        </label>
+        <label>光線
+          <select v-model="draft.lighting"><option v-for="(n, k) in LIGHTINGS" :key="k" :value="k">{{ n }}</option></select>
+        </label>
+        <label>陷阱、寶箱比照
+          <select v-model="draft.layer"><option v-for="l in DUNGEON_LAYER_IDS" :key="l" :value="l">地下城{{ DUNGEON_LAYER_NAME[l] }}</option></select>
+        </label>
+      </div>
+      <label class="block">給 AI 的描述（外觀、氣氛、危險；在裡面的每一則日誌都會帶上）<textarea v-model="draft.desc" rows="3" :maxlength="L.desc_chars" /></label>
+      <label class="check small"><input v-model="draft.refresh" type="checkbox" /> 會刷新：離開這片特殊地圖之後再進來，遭遇、資源與寶箱全部重來（沒勾時打過、採過的一直保持）</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>版面</legend>
+      <div class="row small">
+        <label class="check"><input type="radio" :checked="draft.mode === 'fixed'" @change="setMode('fixed')" /> 固定地圖（自己畫）</label>
+        <label class="check"><input type="radio" :checked="draft.mode === 'random'" @change="setMode('random')" /> 隨機地圖（從下方中央的出口挖出通道）</label>
+        <label>寬 <input type="number" :value="size[0]" :min="L.size[0]" :max="L.size[1]" @change="resize(Number(($event.target as HTMLInputElement).value), size[1])" /></label>
+        <label>高 <input type="number" :value="size[1]" :min="L.size[0]" :max="L.size[1]" @change="resize(size[0], Number(($event.target as HTMLInputElement).value))" /></label>
+        <label v-if="draft.mode === 'random'">挖幾步 <input v-model.number="draft.carve_steps" type="number" :min="L.carve[0]" :max="L.carve[1]" :placeholder="String(size[0] * size[1])" /></label>
+      </div>
+      <template v-if="draft.mode === 'fixed'">
+        <div class="row small palette">
+          <button v-for="p in palette" :key="p.ch" class="small" :class="{ primary: tool === p.ch }" :title="p.name" @click="tool = p.ch">{{ p.icon || p.ch }} {{ p.name }}</button>
+          <button class="small" :class="{ primary: tool === 'entry' }" title="被事件傳送進來時站的位置" @click="tool = 'entry'">📍 入口</button>
+        </div>
+        <p v-if="tool.startsWith('conn:')" class="small warn-text">點地圖上的一格，當作通道 {{ Number(tool.slice(5)) + 1 }} 在這張地圖的位置。</p>
+        <div class="cells" :style="{ gridTemplateColumns: `repeat(${size[0]}, 24px)` }">
+          <template v-for="y in size[1]" :key="y">
+            <button
+              v-for="x in size[0]" :key="`${x}-${y}`" class="cell" :class="legend[charAt(x - 1, y - 1)]"
+              :title="`(${x - 1}, ${y - 1}) ${cellName(legend[charAt(x - 1, y - 1)] ?? 'wall')}`"
+              @mousedown.prevent="down(x - 1, y - 1)" @mouseenter="enter(x - 1, y - 1)"
+            >{{ markerAt(x - 1, y - 1) || CELL_ICON[legend[charAt(x - 1, y - 1)] ?? 'wall'] || '' }}</button>
+          </template>
+        </div>
+        <p class="small muted">選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；沒有出口時只能從通道進出。</p>
+      </template>
+    </fieldset>
+
+    <fieldset>
+      <legend>額外的隨機內容（撒在空地上，最少～最多）</legend>
+      <div class="grid">
+        <label v-for="[k, n] in ([['encounters', '遭遇'], ['traps', '陷阱'], ['resources', '資源'], ['chests', '寶箱']] as const)" :key="k">{{ n }}
+          <span class="row">
+            <input type="number" min="0" :max="L.count[1]" :value="rangeOf(k, 0)" @change="setRange(k, 0, Number(($event.target as HTMLInputElement).value))" />～
+            <input type="number" min="0" :max="L.count[1]" :value="rangeOf(k, 1)" @change="setRange(k, 1, Number(($event.target as HTMLInputElement).value))" />
+          </span>
+        </label>
+        <label>強敵 <input v-model.number="draft.elites" type="number" min="0" :max="L.elites[1]" /></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>遭遇表（選填）</legend>
+      <p class="small muted">空白時：所屬地點是地下城就用「陷阱、寶箱比照」那一層的遭遇，其他用地區的城郊遭遇表。強敵是最強的一組再多一隻。</p>
+      <div v-for="(g, gi) in draft.table ?? []" :key="gi" class="row small">
+        <span>第 {{ gi + 1 }} 組：</span>
+        <span v-for="(m, mi) in g" :key="mi" class="row">
+          <select v-model="m[0]"><option v-for="e in monsterList" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option></select>
+          ×<input v-model.number="m[1]" type="number" :min="L.group_count[0]" :max="L.group_count[1]" style="width: 3.5em" />
+          <button class="x" @click="g.splice(mi, 1); if (!g.length) removeGroup(gi)">×</button>
+        </span>
+        <button class="small" :disabled="g.length >= L.group_types" @click="addMonster(g)">＋ 怪物</button>
+        <button class="small warn" @click="removeGroup(gi)">刪除這組</button>
+      </div>
+      <button class="small" :disabled="(draft.table?.length ?? 0) >= L.table" @click="addGroup">＋ 新增一組</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>採集物（選填）</legend>
+      <div class="chips">
+        <span v-for="(n, i) in draft.resource_items ?? []" :key="n" class="tag chip">{{ n }} <button class="x" @click="draft.resource_items!.splice(i, 1)">×</button></span>
+        <span v-if="!draft.resource_items?.length" class="small muted">（沒有時用地下城的採集表）</span>
+      </div>
+      <div class="row">
+        <input v-model="pickItem" list="sm-items" placeholder="物品名稱" @keydown.enter="addItem" />
+        <datalist id="sm-items"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
+        <button class="small" @click="addItem">＋ 加入</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>通道</legend>
+      <p v-if="draft.mode !== 'fixed'" class="small muted">只有固定地圖可以設定通道；隨機地圖只能由事件傳送進來。</p>
+      <template v-else>
+        <p class="small muted">通道把這張地圖的一格和另一張地圖（城鎮區塊的牆或水、或別張特殊地圖的任一格）接起來，打開時兩頭都變成通道、互相走得過去。寫了旗標的話，旗標成立才打開。</p>
+        <div v-for="(c, ci) in draft.conns" :key="ci" class="conn">
+          <div class="row small">
+            <strong>通道 {{ ci + 1 }}</strong>
+            <span>這張地圖的（{{ c.at.x }}, {{ c.at.y }}）</span>
+            <button class="small" :class="{ primary: tool === `conn:${ci}` }" @click="tool = `conn:${ci}`">在地圖上選</button>
+            <span>接到</span>
+            <label class="check"><input type="radio" :checked="connKind(c) === 'town'" @change="setConnKind(c, 'town')" /> 城鎮區塊</label>
+            <label class="check"><input type="radio" :checked="connKind(c) === 'map'" :disabled="!otherMaps.length" @change="setConnKind(c, 'map')" /> 特殊地圖</label>
+            <span class="spacer" />
+            <button class="small warn" @click="draft.conns.splice(ci, 1); tool = '#'">刪除</button>
+          </div>
+          <template v-if="connKind(c) === 'town'">
+            <p class="small">城鎮那一頭：{{ townText(c) }}</p>
+            <CellPicker :model-value="townRef(c)" :location="draft.location" marker="🔗" walls @update:model-value="pickTown(c, $event)" />
+          </template>
+          <template v-else>
+            <label class="small">地圖
+              <select v-model="c.to.area"><option v-for="m in otherMaps" :key="m.id" :value="`sm/${m.id}`">{{ m.name }}</option></select>
+            </label>
+            <div v-if="targetGrid(c).length" class="cells small-cells" :style="{ gridTemplateColumns: `repeat(${Math.max(...targetGrid(c).map((r) => r.length))}, 18px)` }">
+              <template v-for="(row, ty) in targetGrid(c)" :key="ty">
+                <button
+                  v-for="(ch, tx) in [...row]" :key="`${tx}-${ty}`" class="cell" :class="[legend[ch], { picked: c.to.x === tx && c.to.y === ty }]"
+                  @click="c.to.x = tx; c.to.y = ty"
+                >{{ c.to.x === tx && c.to.y === ty ? '🔗' : CELL_ICON[legend[ch] ?? 'wall'] || '' }}</button>
+              </template>
+            </div>
+            <p v-else class="small muted">那張是隨機地圖，沒辦法接通道。</p>
+          </template>
+          <div class="grid small">
+            <label>要有這些旗標才打開 <input v-model="c.flagsText" placeholder="用頓號分隔，可以不填" /></label>
+            <label>有這些旗標時關閉 <input v-model="c.flagsNoneText" placeholder="可以不填" /></label>
+          </div>
+        </div>
+        <button class="small" :disabled="draft.conns.length >= L.connections" @click="addConn">＋ 新增通道</button>
+      </template>
+    </fieldset>
+  </div>
+</template>
+
+<style scoped src="./editor.css"></style>
+<style scoped>
+.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; user-select: none; }
+.cell { width: 24px; height: 24px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
+.small-cells .cell { width: 18px; height: 18px; font-size: 10px; }
+.cell.wall { background: var(--border); }
+.cell.water { background: #2a4a6a; }
+.cell.picked { outline: 2px solid var(--accent); }
+.palette { flex-wrap: wrap; gap: 4px; }
+.conn { border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px; display: grid; gap: 6px; }
+.warn-text { color: var(--accent); }
+</style>
