@@ -4,6 +4,7 @@
 import { className, genderName, raceName } from '@/engine/data'
 import { gearName } from '@/engine/gear'
 import { npcRecord, npcTitle } from '@/engine/npcs'
+import { placeName, tattooDesc, tattooName, tattoosOf } from '@/engine/tattoos'
 import type { GameState } from '@/engine/types'
 import type { Prompt } from './prompt'
 
@@ -115,6 +116,8 @@ export interface PortraitSubject {
   personality: string
   background: string
   gear: string[]
+  /** 刺青與印記：「部位：名稱（外觀）」 */
+  tattoos: string[]
 }
 
 /** 隊伍成員或登場過的 NPC 的形象資料 */
@@ -139,6 +142,11 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
     personality: m?.personality ?? rec?.personality ?? '',
     background: m?.background ?? rec?.background ?? '',
     gear: [...gear, ...defGear],
+    tattoos: tattoosOf(m ?? rec?.character).map((t) => {
+      const name = tattooName(t)
+      const desc = tattooDesc(t).slice(0, 60)
+      return `${placeName(t.place)}：${name || desc}${name && desc ? `（${desc}）` : ''}`
+    }),
   }
 }
 
@@ -148,6 +156,7 @@ export const DEFAULT_PORTRAIT_TEMPLATE = [
   'Character: {name}, {gender} {race}, {role}.',
   'Appearance: {appearance}',
   'Outfit and equipment: {gear}',
+  'Tattoos and marks: {tattoos}',
   'Personality, shown through expression and pose: {personality}',
   'Background story hints: {background}',
   'Composition: upper body, facing the viewer, simple softly lit fantasy background, only one person, no text, no watermark.',
@@ -161,7 +170,7 @@ export function portraitPrompt(subject: PortraitSubject, template: string, style
   const values: Record<string, string> = {
     name: subject.name, gender: subject.gender, race: subject.race, role: subject.role,
     level: subject.level ? String(subject.level) : '', appearance: subject.appearance, personality: subject.personality,
-    background: subject.background.slice(0, 200), gear: subject.gear.join('、'), style,
+    background: subject.background.slice(0, 200), gear: subject.gear.join('、'), tattoos: (subject.tattoos ?? []).join('；'), style,
   }
   return template
     .split('\n')

@@ -70,6 +70,12 @@ describe('portrait prompts', () => {
     expect(text).toContain('Art style: watercolor')
     expect(text).not.toContain('Personality')
     expect(text).not.toContain('{')
+    // 沒有刺青時整行拿掉；有刺青時寫出部位、名稱與外觀
+    expect(text).not.toContain('Tattoos')
+    const inked = portraitPrompt({ ...subject, tattoos: ['左手臂：荊棘之環（纏繞手臂的黑色荊棘）'] }, DEFAULT_PORTRAIT_TEMPLATE, 'watercolor')
+    expect(inked).toContain('Tattoos and marks: 左手臂：荊棘之環（纏繞手臂的黑色荊棘）')
+    state.party[0]!.tattoos = [{ kind: 'plain', place: 'left_arm', name: '荊棘之環', desc: '纏繞手臂的黑色荊棘', since: { ...state.time } } as never]
+    expect(portraitSubject(state, 'pc')!.tattoos).toEqual([expect.stringContaining('荊棘之環（纏繞手臂的黑色荊棘）')])
   })
 
   it('describes a fixed NPC too', () => {
