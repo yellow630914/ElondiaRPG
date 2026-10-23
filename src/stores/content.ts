@@ -18,6 +18,9 @@ import { npcModFromState } from '@/engine/promoteNpc'
 import { builtinLandmark, landmarkUsage, sanitizeLandmarkMod, type LandmarkMod } from '@/engine/landmarkMods'
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import { pruneSpecialMaps } from '@/engine/specialMaps'
+import { pruneRoadEvent } from '@/engine/road'
+import { pruneTownEvent } from '@/engine/townEvents'
+import { builtinTravelEvent, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from '@/engine/travelEventMods'
 import { computePlacements, sanitizeShopMod, shopUsage, type ShopMod } from '@/engine/shopMods'
 import { settlementArea } from '@/engine/grid'
 import type { GameState } from '@/engine/types'
@@ -50,9 +53,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
+const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
+  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定',
 }
 
 export interface ModsDiffEntry {
@@ -161,6 +164,8 @@ export const useContent = defineStore('content', () => {
       prunePerks(game.state)
       pruneStories(game.state)
       pruneSpecialMaps(game.state)
+      pruneRoadEvent(game.state)
+      pruneTownEvent(game.state)
     }
     version.value++
     persist()
@@ -664,6 +669,36 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 旅途與城鎮事件 ----
+
+  function saveTravelEvent(id: string, draft: Partial<TravelEventMod>) {
+    const base = builtinTravelEvent(id)
+    const m = sanitizeTravelEvent(id, draft, !base)
+    mods.value.travelEvents ??= {}
+    if (base && JSON.stringify(m) === JSON.stringify(sanitizeTravelEvent(id, base, false))) delete mods.value.travelEvents[id]
+    else mods.value.travelEvents[id] = m
+    save()
+  }
+  function restoreTravelEvent(id: string) {
+    if (mods.value.travelEvents?.[id]?.custom) return
+    delete mods.value.travelEvents?.[id]
+    save()
+  }
+  /** 自建的事件隨時可以刪（等待中的事件作廢） */
+  function deleteTravelEvent(id: string) {
+    if (!mods.value.travelEvents?.[id]?.custom) throw new Error('內建的事件不能刪除')
+    delete mods.value.travelEvents[id]
+    save()
+  }
+  function saveEventRules(draft: Partial<EventRulesMod>) {
+    ;(mods.value.eventRules ??= {}).rules = sanitizeEventRules(draft)
+    save()
+  }
+  function restoreEventRules() {
+    delete mods.value.eventRules?.rules
+    save()
+  }
+
   // ---- 特質 ----
 
   function savePerk(id: string, draft: Partial<PerkMod>) {
@@ -779,6 +814,7 @@ export const useContent = defineStore('content', () => {
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveEventRules, restoreEventRules,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

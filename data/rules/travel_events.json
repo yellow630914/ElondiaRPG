@@ -1,12 +1,12 @@
 {
-  "$comment": "旅途的事件（見 docs/TRAVEL_EVENTS.md）。出發時把旅途畫成一條單行道（每天一格），先擲好每一格的事件。chance：各種路段每天發生事件的機率；weights：事件的種類（auto 原本的旅途事件與自動判定、choice 普通選擇、combat 戰鬥、advanced 高階事件：可能進入臨時地圖）。特殊事件（特殊任務的開頭，stories.json 的 start.kind = travel）與主人的事件（身為奴隸時）另外擲。templates 的 kind：check（出發時就擲好的檢定，走到時直接揭曉）、choice（選項，選項可以有檢定）；advanced 的 check 是先擲好的檢定，成功時才出現選項。結果的格式和特殊任務相同，另外可以用 side_map（進入臨時地圖）與 travel_to（改去別的地點）。",
+  "$comment": "旅途的事件（見 docs/TRAVEL_EVENTS.md）。出發時把旅途畫成一條單行道（每天一格），先擲好每一格的事件。chance：各種路段每天發生事件的機率；weights：事件的種類（auto 原本的旅途事件與自動判定、choice 普通選擇、combat 戰鬥、advanced 高階事件：可能進入臨時地圖）。特殊事件（特殊任務的開頭，stories.json 的 start.kind = travel）與主人的事件（身為奴隸時）另外擲。templates 的 kind：check（出發時就擲好的檢定，走到時直接揭曉）、choice（選項，選項可以有檢定）；advanced 的 check 是先擲好的檢定，成功時才出現選項。結果的格式和特殊任務相同，另外可以用 side_map（進入臨時地圖）與 travel_to（改去別的地點）。 scope: town 的模板是城鎮事件（走上設施時，cells 設施、location_types 聚落規模、locations 地點篩選；town 是機率與冷卻）。category 是分類（城鎮事件依最近出現過的分類降低權重），requires 是劇情旗標的條件。",
   "version": 1,
   "chance": { "road": 0.3, "trail": 0.45, "wild": 0.55, "sea": 0.3, "dive": 0.25, "underground": 0.4 },
   "weights": { "auto": 4, "choice": 3, "combat": 2, "advanced": 1.5 },
   "combat_modes": ["road", "trail", "wild", "underground"],
   "templates": [
     {
-      "id": "stuck_wagon", "tier": "normal", "kind": "choice", "modes": ["road", "trail"],
+      "id": "stuck_wagon", "tier": "normal", "kind": "choice", "category": "social", "modes": ["road", "trail"],
       "title": "陷在泥裡的馬車",
       "text": "一輛商隊的馬車陷在泥濘裡，車夫急得滿頭大汗，朝你們揮手求助。",
       "options": [
@@ -17,7 +17,7 @@
       ]
     },
     {
-      "id": "wounded_traveler", "tier": "normal", "kind": "choice",
+      "id": "wounded_traveler", "tier": "normal", "kind": "choice", "category": "social",
       "title": "受傷的旅人",
       "text": "路邊坐著一個受傷的旅人，腿上的傷口還在滲血。",
       "options": [
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "id": "shady_peddler", "tier": "normal", "kind": "choice", "modes": ["road"],
+      "id": "shady_peddler", "tier": "normal", "kind": "choice", "category": "commerce", "modes": ["road"],
       "title": "兜售藥水的行商",
       "text": "一個行商攔住你們，兜售「包治百病」的藥水，瓶子上的封蠟看起來很新。",
       "options": [
@@ -41,7 +41,7 @@
       ]
     },
     {
-      "id": "roadside_shrine", "tier": "normal", "kind": "choice", "modes": ["trail", "wild"],
+      "id": "roadside_shrine", "tier": "normal", "kind": "choice", "category": "omen", "modes": ["trail", "wild"],
       "title": "荒廢的小祠",
       "text": "路旁有一座荒廢的小祠，石像的臉已經被風雨磨平，供桌上還散落著幾枚古錢。",
       "options": [
@@ -55,7 +55,7 @@
       ]
     },
     {
-      "id": "ship_dice", "tier": "normal", "kind": "choice", "modes": ["sea"],
+      "id": "ship_dice", "tier": "normal", "kind": "choice", "category": "opportunity", "modes": ["sea"],
       "title": "甲板上的骰局",
       "text": "幾個水手在甲板上擲骰子，笑著邀你下注。",
       "options": [
@@ -66,7 +66,7 @@
       ]
     },
     {
-      "id": "herb_patch", "tier": "normal", "kind": "check", "modes": ["trail", "wild", "road"],
+      "id": "herb_patch", "tier": "normal", "kind": "check", "category": "opportunity", "modes": ["trail", "wild", "road"],
       "title": "路邊的草藥",
       "text": "路邊長著一片草藥。",
       "check": { "attr": "int", "dc": 11 },
@@ -74,7 +74,7 @@
       "fail": { "text": "分不清哪些能用，只好作罷。" }
     },
     {
-      "id": "glint_in_rut", "tier": "normal", "kind": "check", "modes": ["road"],
+      "id": "glint_in_rut", "tier": "normal", "kind": "check", "category": "opportunity", "modes": ["road"],
       "title": "車轍裡的反光",
       "text": "車轍裡有東西在反光。",
       "check": { "attr": "dex", "dc": 10 },
@@ -82,7 +82,7 @@
       "fail": { "text": "只是一片碎玻璃。" }
     },
     {
-      "id": "beast_tracks", "tier": "normal", "kind": "check", "modes": ["wild", "trail"],
+      "id": "beast_tracks", "tier": "normal", "kind": "check", "category": "trouble", "modes": ["wild", "trail"],
       "title": "獸群的足跡",
       "text": "地上滿是新鮮的獸群足跡。",
       "check": { "attr": "int", "dc": 12 },
@@ -90,7 +90,7 @@
       "fail": { "text": "你們一頭撞進了獸群的地盤，狼狽地逃了出來。", "effects": [{ "type": "hp", "target": "pc", "ratio": -0.1 }] }
     },
     {
-      "id": "hidden_cave", "tier": "advanced", "kind": "check", "modes": ["trail", "wild", "underground"],
+      "id": "hidden_cave", "tier": "advanced", "kind": "check", "category": "opportunity", "modes": ["trail", "wild", "underground"],
       "title": "岩壁上的裂縫",
       "text": "岩壁上有一道不起眼的裂縫，裡面隱約有風吹出來。",
       "check": { "attr": "int", "dc": 12 },
@@ -102,7 +102,7 @@
       ]
     },
     {
-      "id": "old_ruins", "tier": "advanced", "kind": "choice", "modes": ["wild", "trail", "road"],
+      "id": "old_ruins", "tier": "advanced", "kind": "choice", "category": "opportunity", "modes": ["wild", "trail", "road"],
       "title": "半截石柱",
       "text": "地平線上露出半截石柱，附近的草地下埋著整齊的石板，看起來是一座古代遺跡。",
       "options": [
@@ -111,15 +111,273 @@
       ]
     },
     {
-      "id": "waystation", "tier": "advanced", "kind": "choice", "modes": ["road", "trail"],
+      "id": "waystation", "tier": "advanced", "kind": "choice", "category": "commerce", "modes": ["road", "trail"],
       "title": "路邊的驛站",
       "text": "前方有一座驛站，炊煙裊裊，門口拴著幾匹馬，還有行商在擺攤。",
       "options": [
         { "label": "進去歇腳", "success": { "text": "你們推開了驛站的門。", "side_map": "waystation" } },
         { "label": "繼續趕路", "success": { "text": "你們沒有停留。" } }
       ]
+    },
+    {
+      "id":  "drowning_sailor", "tier":  "normal", "kind":  "choice", "modes":  ["sea"], "category":  "social",
+      "title": "落水的水手",
+      "text": "一陣大浪打上甲板，一名年輕水手被捲進海裡，在浪間掙扎著呼救。",
+      "options": [
+        {"label": "拋出繩索把他拉上來", "check": {"attr": "str", "dc": 12}, "success": {"text": "你死命拽住繩子，把他拖回了甲板。船長拍拍你的肩，塞給你一點酒錢。", "effects": [{"type": "xp", "amount": 25}, {"type": "money", "amount": 20}]}, "fail": {"text": "繩子在你掌心磨出血痕，最後是其他水手合力才把人救上來。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.1}]}},
+        {"label": "大聲呼叫船員", "success": {"text": "水手們放下小艇，總算把人撈了回來。"}}
+      ]
+    },
+    {
+      "id":  "gull_flock", "tier":  "normal", "kind":  "check", "modes":  ["sea"], "category":  "omen",
+      "title": "盤旋的海鳥",
+      "text": "一大群海鳥在船頭盤旋，時而俯衝入水。",
+      "check": {"attr": "int", "dc": 11},
+      "success": {"text": "你看出海鳥追著魚群，也就看出了海流的方向，和舵手聊了一路。", "effects": [{"type": "xp", "amount": 15}]},
+      "fail": {"text": "你盯著海面看太久，暈船暈得厲害。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.05}]}
+    },
+    {
+      "id":  "pearl_bed", "tier":  "normal", "kind":  "check", "modes":  ["dive"], "category":  "opportunity",
+      "title": "發光的蚌床",
+      "text": "水底的岩縫裡鋪著一片蚌床，有幾枚蚌殼微微張開，透出柔和的光。",
+      "check": {"attr": "dex", "dc": 12},
+      "success": {"text": "你趁蚌殼張開的瞬間撬下一枚，裡面卡著幾片閃亮的鱗片和一點碎珠。", "effects": [{"type": "item", "name": "深海鱗片", "qty": 1}, {"type": "money", "amount": 30}]},
+      "fail": {"text": "蚌殼猛地合上，夾得你手指發麻，還嗆了一口水。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.1}]}
+    },
+    {
+      "id":  "glowing_moss", "tier":  "normal", "kind":  "check", "modes":  ["underground"], "category":  "opportunity",
+      "title": "岩壁上的微光",
+      "text": "隧道的岩壁上爬滿了發出淡綠微光的苔蘚。",
+      "check": {"attr": "int", "dc": 12},
+      "success": {"text": "你認出這是能入藥的熒光苔蘚，小心地刮了一些下來。", "effects": [{"type": "item", "name": "熒光苔蘚", "qty": 2}]},
+      "fail": {"text": "你分不清哪些能用，只好繼續趕路。"}
+    },
+    {
+      "id":  "collapsed_tunnel", "tier":  "normal", "kind":  "choice", "modes":  ["underground"], "category":  "trouble",
+      "title": "坍塌的通道",
+      "text": "前方的通道塌了一半，碎石堆到了腰際，縫隙裡還有風吹過來。",
+      "options": [
+        {"label": "搬開落石", "check": {"attr": "str", "dc": 13}, "success": {"text": "你們一塊塊搬開石頭，清出一條能過人的路。", "effects": [{"type": "xp", "amount": 20}]}, "fail": {"text": "一塊鬆動的石頭砸在你肩上。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.15}]}},
+        {"label": "從縫隙擠過去", "check": {"attr": "dex", "dc": 12}, "success": {"text": "你側身鑽過縫隙，其他人也跟著擠了過來。"}, "fail": {"text": "尖銳的岩角劃破了你的手臂。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.1}]}}
+      ]
+    },
+    {
+      "id":  "pilgrim_band", "tier":  "normal", "kind":  "choice", "modes":  ["road"], "category":  "social",
+      "title": "朝聖的隊伍",
+      "text": "一隊身披白袍的朝聖者唱著聖歌從對面走來，領頭的修士向你們點頭致意。",
+      "options": [
+        {"label": "和他們同行一段", "check": {"attr": "cha", "dc": 11}, "success": {"text": "修士聊起各地的見聞，分別時送了你一瓶聖水。", "effects": [{"type": "item", "name": "聖水", "qty": 1}, {"type": "xp", "amount": 10}]}, "fail": {"text": "你們聊不太起來，走了一段就分開了。"}},
+        {"label": "布施 20 白鸛幣", "success": {"text": "修士為你們祝禱，說會在聖環前替你們祈求平安。", "effects": [{"type": "money", "amount": -20}, {"type": "reputation", "faction": "holy_ring", "delta": 1}]}},
+        {"label": "讓到路邊", "success": {"text": "歌聲漸漸遠去。"}}
+      ]
+    },
+    {
+      "id":  "toll_bandits", "tier":  "normal", "kind":  "choice", "modes":  ["road", "trail"], "category":  "trouble",
+      "title": "收買路錢的人",
+      "text": "幾個拿著棍棒的漢子橫在路中間，說這段路是他們修的，過路要交錢。",
+      "options": [
+        {"label": "付 50 白鸛幣", "success": {"text": "他們收了錢，讓開了路。", "effects": [{"type": "money", "amount": -50}]}},
+        {"label": "威嚇他們", "check": {"attr": "cha", "dc": 14}, "success": {"text": "你冷冷地掃了他們一眼，幾個人互看一眼，悻悻地讓開了。", "effects": [{"type": "xp", "amount": 15}]}, "fail": {"text": "他們惱羞成怒，一陣推搡後搶走了一點錢。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.1}, {"type": "money", "amount": -30}]}},
+        {"label": "趁他們不注意衝過去", "check": {"attr": "dex", "dc": 13}, "success": {"text": "你們一溜煙跑過了路障，身後只剩叫罵聲。"}, "fail": {"text": "一根棍子狠狠掃中了你的背。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.15}]}}
+      ]
+    },
+    {
+      "id":  "broken_bridge", "tier":  "normal", "kind":  "check", "modes":  ["trail", "wild"], "category":  "trouble",
+      "title": "斷了一半的吊橋",
+      "text": "橫跨溪谷的吊橋斷了好幾塊木板，繩索在風裡晃得厲害。",
+      "check": {"attr": "dex", "dc": 12},
+      "success": {"text": "你踩著剩下的木板穩穩走了過去，再把大家一個個接過來。", "effects": [{"type": "xp", "amount": 15}]},
+      "fail": {"text": "一塊木板在腳下斷裂，你攀住繩索才沒掉下去，背包裡的乾糧卻掉進了溪裡。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.1}, {"type": "item", "name": "乾糧", "qty": -1}]}
+    },
+    {
+      "id":  "merchant_caravan", "tier":  "normal", "kind":  "choice", "modes":  ["road"], "category":  "commerce",
+      "title": "紮營的商隊",
+      "text": "傍晚時你們追上一支紮營的商隊，篝火旁的商人招手要你們過去坐坐。",
+      "options": [
+        {"label": "交換路上的消息", "check": {"attr": "int", "dc": 11}, "success": {"text": "你們聊得投機，商人把一份行程表抄給了你。", "effects": [{"type": "item", "name": "商隊的行程表", "qty": 1}]}, "fail": {"text": "商人對你們的消息興趣缺缺。"}},
+        {"label": "幫忙守夜", "success": {"text": "你們輪流守了一夜，平安無事。商人天亮時付了一點酬勞。", "effects": [{"type": "money", "amount": 40}]}},
+        {"label": "繼續趕路", "success": {"text": "你們謝過好意，繼續上路。"}}
+      ]
+    },
+    {
+      "id":  "night_howls", "tier":  "normal", "kind":  "check", "modes":  ["wild", "trail"], "category":  "omen",
+      "title": "夜裡的狼嚎",
+      "text": "入夜後四周響起此起彼落的狼嚎，聲音越來越近。",
+      "check": {"attr": "int", "dc": 12},
+      "success": {"text": "你提早升起篝火、安排輪班守夜，狼群在火光外徘徊了一陣就散了。", "effects": [{"type": "xp", "amount": 10}]},
+      "fail": {"text": "你們一夜沒睡好，天亮時還被膽大的野狼咬了一口。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.1}]}
+    },
+    {
+      "id":  "abandoned_camp", "tier":  "advanced", "kind":  "check", "modes":  ["wild", "trail"], "category":  "opportunity",
+      "title": "被棄置的營地",
+      "text": "路旁有一處被匆忙棄置的營地，帳篷還沒收，鍋裡的湯早就涼了。",
+      "check": {"attr": "int", "dc": 13},
+      "success": {"text": "你在泥地上找到拖行的痕跡，一路通往山腳的一個洞口。"},
+      "fail": {"text": "營地裡什麼也沒留下，你們沒多停留。"},
+      "options": [
+        {"label": "循著痕跡進洞", "success": {"text": "你們點起火把，彎腰鑽進了洞口。", "side_map": "cave"}},
+        {"label": "繼續趕路", "success": {"text": "你們決定不多管閒事。"}}
+      ]
+    },
+    {
+      "id":  "tavern_arm_wrestle", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["tavern"], "category":  "opportunity",
+      "title": "酒館的腕力賽",
+      "text": "酒館中央的桌子圍滿了人，一個壯漢連贏了好幾場，正拍著桌子找下一個挑戰者。",
+      "options": [
+        {"label": "下場挑戰", "check": {"attr": "str", "dc": 13}, "success": {"text": "你一鼓作氣把他的手壓上桌面，全場歡聲雷動，賭金歸你。", "effects": [{"type": "money", "amount": 40}, {"type": "xp", "amount": 10}]}, "fail": {"text": "你的手被壓得死死的，只好掏錢付了輸的賭金。", "effects": [{"type": "money", "amount": -20}]}},
+        {"label": "在旁邊下注 30 白鸛幣", "check": {"attr": "cha", "dc": 12}, "success": {"text": "你押對了人，贏回一倍。", "effects": [{"type": "money", "amount": 30}]}, "fail": {"text": "你押的人輸了。", "effects": [{"type": "money", "amount": -30}]}},
+        {"label": "看看就好", "success": {"text": "你端著酒看完了熱鬧。"}}
+      ]
+    },
+    {
+      "id":  "drunk_brawl", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["tavern", "inn"], "category":  "trouble",
+      "title": "醉漢鬧事",
+      "text": "兩個醉漢為了一杯酒吵了起來，眼看就要掀桌子。",
+      "options": [
+        {"label": "上前勸架", "check": {"attr": "cha", "dc": 13}, "success": {"text": "你三言兩語把兩人勸開，店主感激地向你點頭。", "effects": [{"type": "reputation", "faction": "local", "delta": 1}]}, "fail": {"text": "你被其中一人推了一把，撞在桌角上。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.1}]}},
+        {"label": "把鬧事的拖出去", "check": {"attr": "str", "dc": 12}, "success": {"text": "你一手一個把他們拎到門外，酒客們紛紛叫好。", "effects": [{"type": "xp", "amount": 15}]}, "fail": {"text": "醉漢的拳頭比你想的重。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.1}]}},
+        {"label": "躲到角落", "success": {"text": "你端著酒杯挪到角落，看他們打成一團。"}}
+      ]
+    },
+    {
+      "id":  "bard_rumor", "scope":  "town", "tier":  "normal", "kind":  "check", "cells":  ["tavern"], "category":  "omen",
+      "title": "吟遊詩人的新歌",
+      "text": "吟遊詩人唱起一首新編的歌謠，歌詞裡提到某處的懸賞。",
+      "check": {"attr": "int", "dc": 11},
+      "success": {"text": "你聽出歌詞裡的地名和賞金，散場後向詩人要了一份抄好的告示。", "effects": [{"type": "item", "name": "懸賞告示", "qty": 1}]},
+      "fail": {"text": "歌很好聽，但你沒聽出什麼門道。"}
+    },
+    {
+      "id":  "tavern_free_round", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["tavern"], "category":  "social",
+      "title": "熱鬧的晚上",
+      "text": "今晚酒館格外熱鬧，有人起鬨要新來的冒險者請大家喝一輪。",
+      "options": [
+        {"label": "請全場喝一輪（40 白鸛幣）", "success": {"text": "酒杯碰在一起，大家記住了你的名字。", "effects": [{"type": "money", "amount": -40}, {"type": "reputation", "faction": "local", "delta": 2}, {"type": "xp", "amount": 10}]}},
+        {"label": "笑著推辭", "success": {"text": "你舉杯致意，眾人也就不再起鬨。"}}
+      ]
+    },
+    {
+      "id":  "guild_novice", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["guild"], "category":  "social",
+      "title": "迷惘的新人",
+      "text": "公會大廳裡，一個剛登記的新人捧著委託單發愁，不知道該從哪裡下手。",
+      "options": [
+        {"label": "指點他幾句", "check": {"attr": "int", "dc": 11}, "success": {"text": "你教他怎麼挑委託、怎麼準備補給，他千恩萬謝。", "effects": [{"type": "xp", "amount": 20}, {"type": "reputation", "faction": "guild", "delta": 1}]}, "fail": {"text": "你說得太多太雜，他聽得更迷糊了。"}},
+        {"label": "借他 30 白鸛幣買裝備", "success": {"text": "他紅著眼眶說一定會還，櫃台的職員也看在眼裡。", "effects": [{"type": "money", "amount": -30}, {"type": "reputation", "faction": "guild", "delta": 1}]}},
+        {"label": "不打擾", "success": {"text": "你從他身邊走過。"}}
+      ]
+    },
+    {
+      "id":  "guild_notice_board", "scope":  "town", "tier":  "normal", "kind":  "check", "cells":  ["guild"], "category":  "opportunity",
+      "title": "告示板的角落",
+      "text": "公會告示板的角落釘著一張被其他委託蓋住的舊告示。",
+      "check": {"attr": "int", "dc": 12},
+      "success": {"text": "你把它小心地揭下來，是一份還沒人接的懸賞。", "effects": [{"type": "item", "name": "懸賞告示", "qty": 1}]},
+      "fail": {"text": "告示已經褪色得看不清了。"}
+    },
+    {
+      "id":  "temple_alms", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["temple"], "category":  "social",
+      "title": "神殿的施粥",
+      "text": "神殿前排著長長的人龍，祭司們正在施粥，看起來人手不太夠。",
+      "options": [
+        {"label": "幫忙照顧病人", "check": {"attr": "fai", "dc": 12}, "success": {"text": "你忙了半天，幾位病人的氣色好了些，祭司特地向你道謝。", "effects": [{"type": "xp", "amount": 20}, {"type": "reputation", "faction": "holy_ring", "delta": 1}]}, "fail": {"text": "你笨手笨腳，被祭司客氣地請去搬柴。"}},
+        {"label": "捐 30 白鸛幣", "success": {"text": "祭司為你祝禱，一股暖意流過全身。", "effects": [{"type": "money", "amount": -30}, {"type": "reputation", "faction": "holy_ring", "delta": 1}, {"type": "hp", "target": "pc", "ratio": 0.1}]}},
+        {"label": "離開", "success": {"text": "你從人龍旁邊走過。"}}
+      ]
+    },
+    {
+      "id":  "temple_omen", "scope":  "town", "tier":  "normal", "kind":  "check", "cells":  ["temple"], "category":  "omen",
+      "title": "燭火的預兆",
+      "text": "你經過祭壇時，所有的燭火同時朝你的方向傾斜了一下。",
+      "check": {"attr": "fai", "dc": 13},
+      "success": {"text": "一位老祭司說這是神明的眷顧，為你做了一次祝福。", "effects": [{"type": "hp", "target": "pc", "ratio": 0.2}]},
+      "fail": {"text": "燭火很快就恢復了平靜，大概只是一陣風。"}
+    },
+    {
+      "id":  "shop_short_change", "scope":  "town", "tier":  "normal", "kind":  "check", "cells":  ["shop", "smithy", "tailor", "jeweler"], "category":  "trouble",
+      "title": "找錯的零錢",
+      "text": "結帳時店員手忙腳亂，零錢數得飛快。",
+      "check": {"attr": "int", "dc": 12},
+      "success": {"text": "你發現他多找了錢，提醒了他一聲。老闆在後頭聽見了，對你另眼相看。", "effects": [{"type": "reputation", "faction": "local", "delta": 1}]},
+      "fail": {"text": "走出店門你才發現零錢少了一些。", "effects": [{"type": "money", "amount": -15}]}
+    },
+    {
+      "id":  "shop_bulk_sale", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["shop"], "category":  "commerce",
+      "title": "清倉的火把",
+      "text": "雜貨店老闆在門口堆了一箱受潮又曬乾的火把，喊著半價清倉。",
+      "options": [
+        {"label": "買一捆（20 白鸛幣）", "success": {"text": "你挑了一捆看起來還能用的。", "effects": [{"type": "money", "amount": -20}, {"type": "item", "name": "火把（10 根）", "qty": 1}]}},
+        {"label": "不需要", "success": {"text": "你搖搖頭走進店裡。"}}
+      ]
+    },
+    {
+      "id":  "gate_inspection", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["gate"], "location_types":  ["capital", "city", "fortress"], "category":  "trouble",
+      "title": "嚴格的盤查",
+      "text": "城門的衛兵今天特別嚴格，把你們攔下來仔細翻查行李。",
+      "options": [
+        {"label": "配合檢查", "success": {"text": "折騰了好一陣，衛兵才揮手放行。"}},
+        {"label": "塞 20 白鸛幣給衛兵", "success": {"text": "衛兵若無其事地收下，草草看了兩眼就放行了。", "effects": [{"type": "money", "amount": -20}]}},
+        {"label": "據理力爭", "check": {"attr": "cha", "dc": 13}, "success": {"text": "你說得有理有據，隊長出面道了歉。", "effects": [{"type": "reputation", "faction": "local", "delta": 1}]}, "fail": {"text": "衛兵被你惹惱，以「妨礙公務」罰了錢。", "effects": [{"type": "money", "amount": -30}]}}
+      ]
+    },
+    {
+      "id":  "gate_refugees", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["gate"], "category":  "social",
+      "title": "城門外的難民",
+      "text": "城門外擠著一群逃難的人，一個孩子怯生生地望著你手上的行囊。",
+      "options": [
+        {"label": "分一份乾糧", "success": {"text": "孩子接過乾糧，躲到母親身後偷偷看你。", "effects": [{"type": "item", "name": "乾糧", "qty": -1}, {"type": "xp", "amount": 15}, {"type": "reputation", "faction": "local", "delta": 1}]}},
+        {"label": "告訴他們神殿在施粥", "success": {"text": "那位母親向你道謝，帶著孩子往神殿走去。"}},
+        {"label": "走過去", "success": {"text": "你沒有停下腳步。"}}
+      ]
+    },
+    {
+      "id":  "smithy_apprentice", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["smithy"], "category":  "commerce",
+      "title": "忙不過來的鐵匠",
+      "text": "鐵匠鋪接了一大批軍械訂單，學徒拉風箱拉到滿頭大汗。",
+      "options": [
+        {"label": "幫忙拉風箱", "check": {"attr": "str", "dc": 12}, "success": {"text": "你拉了一個下午，鐵匠送你一塊上好的磨刀石。", "effects": [{"type": "item", "name": "磨刀石", "qty": 1}, {"type": "xp", "amount": 10}]}, "fail": {"text": "火星濺到你手上，燙出一個水泡。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.05}]}},
+        {"label": "不打擾", "success": {"text": "你等學徒得空了再來。"}}
+      ]
+    },
+    {
+      "id":  "inn_lost_letter", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["inn"], "category":  "social",
+      "title": "遺落的信",
+      "text": "你在旅店的樓梯上撿到一封封好的信，收件人就住在城裡。",
+      "options": [
+        {"label": "親自送過去", "check": {"attr": "cha", "dc": 11}, "success": {"text": "收件人是位老婦人，等這封信等了好久，堅持要你收下謝禮。", "effects": [{"type": "money", "amount": 25}, {"type": "xp", "amount": 15}]}, "fail": {"text": "你找了半天才找到地方，對方只淡淡地道了聲謝。"}},
+        {"label": "交給櫃台", "success": {"text": "櫃台說會轉交。"}}
+      ]
+    },
+    {
+      "id":  "informant_freebie", "scope":  "town", "tier":  "normal", "kind":  "check", "cells":  ["informant"], "category":  "opportunity",
+      "title": "情報商的試探",
+      "text": "情報商打量你一番，說可以先送你一份消息，就看你識不識貨。",
+      "check": {"attr": "cha", "dc": 13},
+      "success": {"text": "你說得頭頭是道，他滿意地把一份商隊的行程表推了過來。", "effects": [{"type": "item", "name": "商隊的行程表", "qty": 1}]},
+      "fail": {"text": "他搖搖頭，說你還不是他的客人。"}
+    },
+    {
+      "id":  "magic_misfire", "scope":  "town", "tier":  "normal", "kind":  "check", "cells":  ["magic"], "category":  "omen",
+      "title": "失控的展示品",
+      "text": "魔法物品店的展示架上，一顆水晶突然嗡嗡作響，迸出一串火花。",
+      "check": {"attr": "dex", "dc": 12},
+      "success": {"text": "你眼明手快地蓋上布罩，店主鬆了口氣，送你一瓶藥劑壓驚。", "effects": [{"type": "item", "name": "微弱法力恢復藥劑", "qty": 1}]},
+      "fail": {"text": "火花燎過你的袖子，留下一股焦味。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.05}]}
+    },
+    {
+      "id":  "village_harvest", "scope":  "town", "tier":  "normal", "kind":  "choice", "cells":  ["inn", "tavern", "gate", "shop"], "location_types":  ["village"], "category":  "social",
+      "title": "缺人手的收成",
+      "text": "村裡正趕著收成，村長到處拜託路過的人幫忙。",
+      "options": [
+        {"label": "下田幫忙", "check": {"attr": "str", "dc": 11}, "success": {"text": "你忙到傍晚，村民塞給你一籃剛採的野莓。", "effects": [{"type": "item", "name": "野莓", "qty": 2}, {"type": "xp", "amount": 15}, {"type": "reputation", "faction": "local", "delta": 1}]}, "fail": {"text": "你累得腰都直不起來。", "effects": [{"type": "hp", "target": "pc", "ratio": -0.05}]}},
+        {"label": "婉拒", "success": {"text": "村長失望地去找下一個人。"}}
+      ]
     }
   ],
+  "town": {
+    "$comment": "城鎮事件（事件導演，見 docs/TRAVEL_EVENTS.md 第 6 節）：走上聚落裡的設施時，冷卻過了就依 chance 遇到一件事；同一事件 repeat_days 天內不重複（事件可以用 cooldown_days 另訂）；最近 recent_size 次出現過的分類，每出現一次權重乘上 recent_penalty。",
+    "chance": 0.12, "cooldown_hours": 12, "repeat_days": 10, "recent_penalty": 0.35, "recent_size": 4,
+    "categories": {"social": "人情", "trouble": "麻煩", "opportunity": "機會", "omen": "傳聞與異象", "commerce": "買賣"}
+  },
   "side_maps": {
     "$comment": "臨時地圖：cave、ruins 是隨機挖出的小洞窟（遭遇用這段路的城郊遭遇表，強一點），waystation 是固定的驛站（安全房可以長休、有雜貨商、可能遇到冒險者）。從出口離開就回到旅途。",
     "cave": { "lighting": "dark", "name": "神秘洞窟", "size": [7, 7], "carve_steps": 26, "encounters": [1, 2], "elites": 1, "traps": [0, 1], "resources": [1, 2], "chests": [1, 1], "chest_layer": "shallow" },

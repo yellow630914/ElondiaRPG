@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
+import * as townEvents from '@/engine/townEvents'
 import { pitchTarget } from '@/engine/perks'
-import { computed, ref } from 'vue'
+import { computed, ref, toRaw } from 'vue'
 import * as actions from '@/engine/actions'
 import * as combat from '@/engine/combat'
 import * as companions from '@/engine/companions'
@@ -152,6 +153,9 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   if (back) return { report: back }
   // 旅途上主人的事件出發時就放在格子上了
   if (!s.road || s.side) slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance, { adult: useSettings().adult })
+  // 城鎮事件（事件導演）：走上設施時可能遇到一件事
+  const town = townEvents.maybeTownEvent(s)
+  if (town.report) return { report: town.report }
   return r
 }
 
@@ -160,6 +164,9 @@ function load(s: GameState): GameState {
   migrate(s)
   // 自訂內容刪掉的特殊任務：中斷，任務同行的夥伴離隊
   story.pruneStories(s)
+  // 自訂內容刪掉的事件：等待中的作廢
+  road.pruneRoadEvent(s)
+  townEvents.pruneTownEvent(s)
   // 武器與防具類型由裝備決定（自訂內容可能改過底材）
   for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
   // 主人的家：先對齊格局（舊格局的樓層、超出範圍的座標改到一樓出口），再檢查位置
@@ -262,6 +269,8 @@ export const useGame = defineStore('game', () => {
   function run<T>(fn: (s: GameState) => T, opts: { narrate?: boolean } = {}): T | undefined {
     if (!state.value) return undefined
     error.value = null
+    // 動作中途出錯時還原成動作之前的狀態（不會留下改到一半的存檔）
+    const before = snapshotState(state.value)
     try {
       const result = fn(state.value)
       // 日誌太長時把舊的封存（token 用量另外合計，見 logArchive.ts）
@@ -277,8 +286,18 @@ export const useGame = defineStore('game', () => {
       }
       return result
     } catch (e) {
+      state.value = before
       error.value = e instanceof Error ? e.message : String(e)
       return undefined
+    }
+  }
+
+  /** 動作前的一份複本（裡面混進響應式物件時改用 JSON） */
+  function snapshotState(s: GameState): GameState {
+    try {
+      return structuredClone(toRaw(s))
+    } catch {
+      return JSON.parse(JSON.stringify(s)) as GameState
     }
   }
 
@@ -846,6 +865,8 @@ export const useGame = defineStore('game', () => {
   }
 
   return {
+    /** 在動作的保護下改狀態：出錯時還原、顯示訊息（測試與少數元件用） */
+    runAction: run,
     state, narrations, error, saveWarning, flushed, pc, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
@@ -878,6 +899,7 @@ export const useGame = defineStore('game', () => {
       return {}
     }),
     answerRoadEvent: (i: number) => run((s) => road.answerRoadEvent(s, i)),
+    answerTownEvent: (i: number) => run((s) => townEvents.answerTownEvent(s, i)),
     leaveSide: () => run((s) => road.leaveSide(s)),
     leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s)),
     rest: () => run(town.rest),

@@ -196,6 +196,11 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
   return out
 }
 
+/** 整理一個結果（旅途與城鎮事件也用） */
+export function sanitizeOutcome(v: unknown): StoryOutcome | undefined {
+  return outcome(v)
+}
+
 function outcome(v: unknown): StoryOutcome | undefined {
   if (!v || typeof v !== 'object') return undefined
   const o = v as Partial<StoryOutcome>

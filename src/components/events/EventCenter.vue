@@ -65,6 +65,7 @@ function openParty() {
       <MarkingPanel v-else-if="current.kind === 'mark'" />
       <MasterEventPanel v-else-if="current.kind === 'master'" />
       <RoadEventPanel v-else-if="current.kind === 'road'" />
+      <RoadEventPanel v-else-if="current.kind === 'town'" town />
       <SuggestionPanel v-else-if="current.kind === 'suggestion'" :id="current.ref!" />
       <LevelUpPanel v-else-if="current.kind === 'levelup'" :id="current.ref!" @open-party="openParty" />
       <PerkOfferPanel v-else-if="current.kind === 'perk'" :refid="current.ref!" />

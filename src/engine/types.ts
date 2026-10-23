@@ -709,6 +709,10 @@ export interface GameState {
   road?: RoadState
   /** 旅途上等待回應的事件（選擇、高階事件） */
   roadEvent?: { x: number; template: string }
+  /** 城鎮裡等待回應的事件（townEvents.ts） */
+  townEvent?: { template: string }
+  /** 城鎮事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子、最近的種類 */
+  townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
   /** 在臨時地圖裡：離開時回到的位置 */
   side?: { area: string; back: { area: string; x: number; y: number } }
   /** 在特殊地圖裡：從外面進來前的位置與地點（從出口離開時回到那裡），走過的需要刷新的地圖 */

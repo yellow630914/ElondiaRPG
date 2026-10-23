@@ -1,7 +1,8 @@
 # 旅途與旅途事件
 
 > 上層：[WORLD](WORLD.md)（地點與路線）。依賴：[EFFECTS](EFFECTS.md)（事件結果）、[STORY_QUESTS](STORY_QUESTS.md)（旅途上的任務開頭）、[COMPANIONS](COMPANIONS.md) 2.4 節（主人的事件）、[DUNGEON_DESIGN](DUNGEON_DESIGN.md)（臨時地圖沿用地下城的生成與寶箱）、[MONSTERS](MONSTERS.md)（城郊遭遇表）。
-> 程式：`src/engine/road.ts`（旅途地圖與事件）、`src/engine/travel.ts`（路程天數、抵達）、`src/engine/intel.ts`（情報）；資料：`data/rules/travel_events.json`、`data/rules/shops.json` 的 `info`。
+> 程式：`src/engine/road.ts`（旅途地圖與事件）、`src/engine/townEvents.ts`（城鎮事件）、`src/engine/travelEventMods.ts`（內容編輯器）、`src/engine/travel.ts`（路程天數、抵達）、`src/engine/intel.ts`（情報）；資料：`data/rules/travel_events.json`、`data/rules/shops.json` 的 `info`。
+> 事件與事件設定都可以在「🌍 世界 → 🎲 事件」修改或新增（見 [CONTENT_EDITOR](CONTENT_EDITOR.md) 3.97 節）。
 
 ## 1. 旅途是一條單行道
 
@@ -29,6 +30,9 @@
 | ⛓️ | 主人的事件 | 身為奴隸被主人帶著時，依 `slavery.json` 的 `travel_chance` 放一個 |
 
 檢定由隊伍裡最擅長那個屬性的人來擲（1d20＋屬性調整值＋熟練＋旅途類工具的加值）；原本的天候求生檢定固定用力量。
+
+- 模板可以寫 `requires`（劇情旗標的條件），不成立時出發時不會抽到。`category` 是分類（旅途上只是標記，城鎮事件用來平衡）。
+- 內建的普通事件涵蓋各種路段：海路（落水的水手、盤旋的海鳥、骰局）、潛水（發光的蚌床）、地底（岩壁上的微光、坍塌的通道）、官道（朝聖的隊伍、收買路錢的人、紮營的商隊、可疑的行商）、山道與荒野（斷了一半的吊橋、夜裡的狼嚎、獸群的足跡、荒廢的小祠）；高階的有岩壁上的裂縫、被棄置的營地（洞窟）、半截石柱（遺跡）、路邊的驛站。
 
 ## 3. 臨時地圖
 
@@ -70,3 +74,16 @@
 **情報物品**（行囊的「🔍 解讀」）也能得到同樣的情報：事件點、特殊任務的消息、委託的線索，見 [`ITEMS.md`](ITEMS.md) 第 7 節「情報」。
 
 另外還是可以打聽進行中委託的線索（只有要檢定的委託，檢定 +5）。原本只寫進記憶的「地下城層主」「城郊魔物」情報改成了事件點（強敵的描述會帶上弱點）。
+
+## 6. 城鎮事件（事件導演）
+
+在聚落裡走上設施（旅店、公會、酒館、雜貨店、神殿、城門、娼館、鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商、刺青店、雕刻師，以及自建的商店）時，可能遇到一件事（`townEvents.ts`，store 的 `afterMove` 呼叫）。
+
+- **模板**：和旅途事件放在一起（`templates`，`scope: town`），格式相同；另外用 `cells`（設施）、`location_types`（聚落規模）、`locations`（地點）、`requires`（劇情旗標）篩選，沒寫的不限。城鎮事件沒有高階。
+- **機率與冷卻**（`travel_events.json` 的 `town`）：冷卻過了（兩次城鎮事件至少隔 `cooldown_hours` 小時）才擲 `chance`；同一個事件 `repeat_days` 天內不再出現（事件可以用 `cooldown_days` 另訂）。
+- **類型平衡**：記住最近 `recent_size` 次的分類，候選事件的分類每出現過一次，權重就乘一次 `recent_penalty`（預設 0.35），所以不會一直遇到同一類的事。分類：人情（social）、麻煩（trouble）、機會（opportunity）、傳聞與異象（omen）、買賣（commerce）。
+- **揭曉**：檢定的事件馬上擲骰，產生一份報告；選擇的事件放進事件視窗（`state.townEvent`，🏘️），回應之前不能移動。檢定照主動行動的加值算（不加旅途類工具）。
+- 結果的移動（臨時地圖、特殊地圖、改去別的地點）和旅途事件一樣，在報告提交之後執行；臨時地圖從出口離開回到城裡。
+- 紀錄存在 `state.townEvents`：上一次的時間、每個事件上次出現的日子、最近的分類。出發旅行時等待中的城鎮事件作廢。
+- 內建 17 件：酒館（腕力賽、醉漢鬧事、吟遊詩人的新歌、熱鬧的晚上）、公會（迷惘的新人、告示板的角落）、神殿（施粥、燭火的預兆）、商店（找錯的零錢、清倉的火把）、城門（嚴格的盤查：主城、城市與要塞；城門外的難民）、鐵匠鋪、旅店（遺落的信）、情報商、魔法物品店，以及村莊限定的「缺人手的收成」。
+

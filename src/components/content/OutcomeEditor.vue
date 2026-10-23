@@ -6,9 +6,10 @@ import { SIDE_MAPS } from '@/engine/storyMods'
 import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
 
-// 任務點的一個結果：文字、劇情旗標、效果、任務同行的夥伴、完成或失敗
+// 任務點的一個結果：文字、劇情旗標、效果、任務同行的夥伴、完成或失敗。
+// 旅途與城鎮事件（event）只用文字、旗標、移動與效果
 const model = defineModel<StoryOutcome | undefined>()
-const props = defineProps<{ label: string; optional?: boolean }>()
+const props = defineProps<{ label: string; optional?: boolean; event?: boolean }>()
 const o = computed(() => model.value)
 
 function enable(on: boolean) {
@@ -31,13 +32,13 @@ const end = computed({
     <label class="check small head">
       <input v-if="props.optional" type="checkbox" :checked="!!o" @change="enable(($event.target as HTMLInputElement).checked)" />
       <b>{{ label }}</b>
-      <span v-if="props.optional && !o" class="muted">（沒有寫結果：任務點保持開放，可以再試）</span>
+      <span v-if="props.optional && !o" class="muted">{{ props.event ? '（沒有寫結果：什麼也沒發生）' : '（沒有寫結果：任務點保持開放，可以再試）' }}</span>
     </label>
     <template v-if="o">
       <label class="block small">發生的事（給玩家與 AI）<textarea v-model="o.text" rows="2" maxlength="400" /></label>
       <div class="row small">設定旗標 <FlagInput v-model="o.set_flags" /></div>
       <div class="row small">清除旗標 <FlagInput v-model="o.clear_flags" /></div>
-      <div class="row small">
+      <div v-if="!props.event" class="row small">
         同行加入
         <select v-model="o.join">
           <option :value="undefined">（無）</option>
@@ -67,7 +68,7 @@ const end = computed({
         </select>
       </div>
       <EffectsEditor v-model="o.effects" />
-      <div class="row small">
+      <div v-if="!props.event" class="row small">
         <select v-model="end">
           <option value="">任務繼續</option>
           <option value="complete">✅ 完成任務（發完成報酬）</option>
