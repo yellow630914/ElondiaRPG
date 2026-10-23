@@ -57,7 +57,7 @@ type Tab = 'adventure' | 'prompts' | 'content'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'adventure', label: '🗺️ 冒險' },
   { id: 'prompts', label: '🧩 提示詞' },
-  { id: 'content', label: '🛠️ 內容' },
+  { id: 'content', label: '🌍 世界' },
 ]
 const tab = ref<Tab>('adventure')
 

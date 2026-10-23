@@ -16,7 +16,7 @@ export interface SaveData {
   state: GameState
   narrations?: Record<string, unknown>
   usage?: Record<string, unknown>
-  /** 存檔當時這個瀏覽器的自訂內容（「🛠️ 內容」）；匯入時可以合併 */
+  /** 存檔當時這個瀏覽器的自訂內容（「🌍 世界」）；匯入時可以合併 */
   content?: ContentMods
   /** 匯出時選擇附上的形象圖：角色 id → 圖片 */
   portraits?: Record<string, PortraitFile>

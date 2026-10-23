@@ -9,7 +9,7 @@
 import { checkBonus } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat } from './combat'
-import { enemies, locationById, regionById, slaveryRules, specialMaps, stories, wildEncounters, type AttrId, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
+import { enemies, locationById, regionById, slaveryRules, specialMaps, stories, wildEncounters, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryCond, type StoryOutcome } from './data'
 import { applyEffects } from './effects'
 import {
   assertNoStandoff, clearAreas, currentArea, ensureQuestTargets, findKind, generateSide, placeAt, position, reveal, storeArea, substituteGroup,
@@ -21,7 +21,7 @@ import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { canStart, ensureStoryMarkers, startStory } from './story'
-import { flagKey } from './storyFlags'
+import { condMet, flagKey } from './storyFlags'
 import { gateCheck } from './security'
 import { toolBonus } from './tools'
 import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
@@ -34,11 +34,27 @@ import travelEventsJson from '@data/rules/travel_events.json'
 // ---- 資料 ----
 
 export interface RoadOption { label: string; check?: StoryCheck; success?: StoryOutcome; fail?: StoryOutcome }
+/** 事件發生的地方：旅途上（預設），或城鎮的設施上（townEvents.ts） */
+export type EventScope = 'road' | 'town'
 export interface RoadTemplate {
   id: string
+  scope?: EventScope
   tier: 'normal' | 'advanced'
   kind: 'check' | 'choice'
+  /** 旅途：哪些路段（沒有時任何路段） */
   modes?: RouteMode[]
+  /** 城鎮：哪些設施（設施種類或自建商店的 id；沒有時任何設施） */
+  cells?: string[]
+  /** 城鎮：哪些聚落規模（沒有時任何規模） */
+  location_types?: LocationType[]
+  /** 城鎮：只在這些地點（沒有時任何地點） */
+  locations?: string[]
+  /** 種類（城鎮事件依最近發生過的種類降低權重） */
+  category?: string
+  /** 劇情旗標的條件 */
+  requires?: StoryCond
+  /** 同一個事件隔多少天才會再出現（城鎮；沒有時用 town.repeat_days） */
+  cooldown_days?: number
   title: string
   text: string
   check?: StoryCheck
@@ -52,10 +68,30 @@ export const travelEvents = travelEventsJson as unknown as {
   combat_modes: RouteMode[]
   templates: RoadTemplate[]
   side_maps: Record<string, SideMapDef>
+  /** 城鎮事件（事件導演）：走上設施時的機率、兩次事件之間的冷卻、同一事件多久不重複、種類 */
+  town: TownEventRules
+}
+export interface TownEventRules {
+  chance: number
+  cooldown_hours: number
+  repeat_days: number
+  /** 最近發生過的種類，權重乘上這個數（每出現一次乘一次） */
+  recent_penalty: number
+  /** 記住最近幾次的種類 */
+  recent_size: number
+  categories: Record<string, string>
 }
 
 export function roadTemplate(id: string): RoadTemplate | undefined {
   return travelEvents.templates.find((t) => t.id === id)
+}
+
+/** 自訂內容拿掉的事件：旅途上等待中的事件作廢（那一格算是過了） */
+export function pruneRoadEvent(state: GameState) {
+  if (!state.roadEvent || roadTemplate(state.roadEvent.template)) return
+  const cell = state.areas?.[ROAD_KEY]?.cells[state.roadEvent.x]
+  if (cell) cell.done = true
+  delete state.roadEvent
 }
 
 export const ROAD_KEY = 'road'
@@ -91,6 +127,7 @@ export function startJourney(state: GameState, destination: string, intent?: str
     ...(opts.adult ? { adult: true } : {}),
   }
   delete state.roadEvent
+  delete state.townEvent
   delete state.side
   // 離開地下城：這趟探索撿到的東西算是帶出來了
   delete state.expedition
@@ -122,7 +159,7 @@ function buildRoad(state: GameState, from: string, to: string, legs: { from: str
     const cell = cells[i]!
     const mode = legs[cell.road!.leg]!.mode
     if (!rng.chance(travelEvents.chance[mode] ?? EVENT_CHANCE[mode])) continue
-    const fits = (t: RoadTemplate) => !t.modes || t.modes.includes(mode)
+    const fits = (t: RoadTemplate) => (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && condMet(state, t.requires)
     const checks = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'check' && fits(t))
     const choices = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'choice' && fits(t))
     const advanced = travelEvents.templates.filter((t) => t.tier === 'advanced' && fits(t))
@@ -218,16 +255,17 @@ function spendDay(state: GameState, road: RoadState, cell: Cell) {
 }
 
 /** 隊伍裡最擅長這個屬性的人的檢定修正 */
-function bestBonus(state: GameState, attr: AttrId): { name: string; bonus: number } {
+function bestBonus(state: GameState, attr: AttrId, context: 'road' | 'action'): { name: string; bonus: number } {
   const best = [...state.party].filter((m) => m.hp > 0).sort((a, b) => attrOf(b, attr) - attrOf(a, attr))[0] ?? pcOf(state)
-  return { name: best.name, bonus: mod(attrOf(best, attr)) + proficiency(best.level) + checkBonus(best, { context: 'road', attr }) }
+  return { name: best.name, bonus: mod(attrOf(best, attr)) + proficiency(best.level) + checkBonus(best, { context, attr }) }
 }
 
-function roll(state: GameState, check: StoryCheck, natural: number): { ok: boolean; entry: Omit<TimelineEntry, 'seq'> } {
-  const best = bestBonus(state, check.attr)
+/** 事件的檢定：隊伍裡最擅長那個屬性的人來擲。旅途上另加旅途類工具；城鎮事件（scope town）照主動行動算 */
+export function roll(state: GameState, check: StoryCheck, natural: number, scope: EventScope = 'road'): { ok: boolean; entry: Omit<TimelineEntry, 'seq'> } {
+  const best = bestBonus(state, check.attr, scope === 'town' ? 'action' : 'road')
   const name = best.name
   // 旅途類的工具（地圖、指南針）讓旅途事件的檢定容易一點
-  const bonus = best.bonus + toolBonus(state, 'travel')
+  const bonus = best.bonus + (scope === 'town' ? 0 : toolBonus(state, 'travel'))
   const total = natural + bonus
   const ok = natural === 20 || (natural !== 1 && total >= check.dc)
   return { ok, entry: { time: { ...state.time }, actor: 'pc', action: `${name}的檢定`, roll: { dice: `1d20${bonus >= 0 ? '+' : ''}${bonus}`, value: total, dc: check.dc }, result: ok ? 'success' : 'fail' } }

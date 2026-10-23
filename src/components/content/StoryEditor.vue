@@ -204,6 +204,7 @@ function remove() {
           </select>
         </label>
         <label>完成時的公會功績 <input v-model.number="draft.merit" type="number" min="0" max="100" :placeholder="`預設 ${storyMerit()}`" /></label>
+        <label>期限（開始後幾天內要完成，空白不限）<input v-model.number="draft.time_limit" type="number" min="0" max="365" placeholder="不限" /></label>
       </div>
       <label class="block">簡介（冒險筆記與接任務時看到） <textarea v-model="draft.summary" rows="2" maxlength="300" /></label>
     </fieldset>

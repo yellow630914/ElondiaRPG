@@ -172,6 +172,9 @@ export interface StoryPlace {
   side_map?: string
   /** special：哪一張特殊地圖 */
   special_map?: string
+  /** special：固定地圖上的確切格子（沒有時隨機放在一格空地） */
+  x?: number
+  y?: number
 }
 
 export interface StoryCheck { attr: AttrId; dc: number }
@@ -243,6 +246,8 @@ export interface StoryDef {
   rewards?: RewardEffect[]
   /** 完成時的公會功績（沒有時用 progression.json 的 guild_merit.story） */
   merit?: number
+  /** 期限：開始後幾天內要完成，過了就失敗（沒有時不限） */
+  time_limit?: number
 }
 
 /** 內建的特殊任務；內容頁籤的修改套用在這份清單上 */
@@ -851,8 +856,11 @@ export interface MaterialQuestRules {
   drop_dungeon: MaterialQuestDef
   boss_hunt: MaterialQuestDef
 }
-const townQuestsData = townQuestsJson as unknown as { per_town: number; refresh_days: number; templates: TownQuestTemplate[]; material_quests: MaterialQuestRules }
+/** 委託的期限（天）：城內、近郊固定天數；地下城另加來回路程（per_travel_day × 單程最多天數），最多 max 天 */
+export interface QuestDeadlineRules { town: number; outskirts: number; dungeon: number; per_travel_day: number; max: number }
+const townQuestsData = townQuestsJson as unknown as { per_town: number; refresh_days: number; templates: TownQuestTemplate[]; material_quests: MaterialQuestRules; deadline_days?: QuestDeadlineRules }
 export const materialQuestRules = townQuestsData.material_quests
+export const questDeadlineRules: QuestDeadlineRules | undefined = townQuestsData.deadline_days
 export const townQuestsPerTown = townQuestsData.per_town
 export const townQuestsRefreshDays = townQuestsData.refresh_days
 export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.fromEntries(

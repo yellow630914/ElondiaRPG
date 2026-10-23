@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
-import { cellName, type CellKind } from '@/engine/grid'
+import { CELL_ICON, cellName, type CellKind } from '@/engine/grid'
+import { specialPreview, storySpotProblem } from '@/engine/specialMapMods'
 import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
 import { travelEvents } from '@/engine/road'
 import FlagInput from './FlagInput.vue'
@@ -40,6 +41,25 @@ function setWhere(w: StoryNode['at']['where']) {
   }
   if (w === 'npc') node.value.at.npc ??= namedNpcs[0]?.id
   if (w === 'special') node.value.at.special_map ??= Object.keys(specialMaps)[0]
+}
+// 特殊地圖：固定地圖可以指定 ⭐ 的確切格子（沒指定時隨機放在一格空地）
+const spotMap = computed(() => (where.value === 'special' && node.value.at.special_map ? specialPreview(node.value.at.special_map) : undefined))
+const spotPicked = computed(() => (spotMap.value && node.value.at.x !== undefined && node.value.at.y !== undefined ? node.value.at.y * spotMap.value.width + node.value.at.x : -1))
+const spotProblem = computed(() => (spotPicked.value >= 0 ? storySpotProblem(node.value.at.special_map!, node.value.at.x!, node.value.at.y!) : undefined))
+const spotOk = (i: number) => !!spotMap.value && !storySpotProblem(node.value.at.special_map!, i % spotMap.value.width, Math.floor(i / spotMap.value.width))
+function pickSpot(i: number) {
+  const m = spotMap.value
+  if (!m || !spotOk(i)) return
+  node.value.at.x = i % m.width
+  node.value.at.y = Math.floor(i / m.width)
+}
+function clearSpot() {
+  delete node.value.at.x
+  delete node.value.at.y
+}
+function setSpecialMap(id: string) {
+  node.value.at.special_map = id
+  clearSpot()
 }
 function addOption() {
   ;(node.value.options ??= []).push({ label: '新的選項', success: {} })
@@ -101,8 +121,8 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
         </select>
       </label>
       <label v-if="where === 'special'">哪一張特殊地圖
-        <select v-model="node.at.special_map">
-          <option v-for="m in Object.values(specialMaps)" :key="m.id" :value="m.id">{{ m.name }}</option>
+        <select :value="node.at.special_map" @change="setSpecialMap(($event.target as HTMLSelectElement).value)">
+          <option v-for="m in Object.values(specialMaps)" :key="m.id" :value="m.id">{{ m.name }}{{ m.grid?.length ? '' : '（隨機地圖）' }}</option>
         </select>
       </label>
       <label v-if="where === 'npc'">固定 NPC
@@ -111,6 +131,22 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
         </select>
       </label>
     </div>
+    <template v-if="where === 'special'">
+      <template v-if="spotMap">
+        <p class="small muted">
+          ⭐ 的位置：{{ spotPicked >= 0 ? `（${node.at.x}, ${node.at.y}）${cellName(spotMap.cells[spotPicked]!.kind)}` : '隨機一格空地' }}。點一格指定（空地、遭遇、資源、寶箱、陷阱；入口與通道端點不行）。
+          <button v-if="spotPicked >= 0" class="small" @click="clearSpot">改回隨機</button>
+        </p>
+        <p v-if="spotProblem" class="small warn-text">那一格：{{ spotProblem }}，遊戲裡會隨機放在一格空地。</p>
+        <div class="cells" :style="{ gridTemplateColumns: `repeat(${spotMap.width}, 22px)` }">
+          <button
+            v-for="(c, i) in spotMap.cells" :key="i" class="cell" :class="[c.kind, { picked: i === spotPicked, off: !spotOk(i) }]"
+            :title="cellName(c.kind)" @click="pickSpot(i)"
+          >{{ i === spotPicked ? '⭐' : CELL_ICON[c.kind] ?? '' }}</button>
+        </div>
+      </template>
+      <p v-else class="small muted">隨機地圖：⭐ 隨機放在一格空地（不能指定格子）。</p>
+    </template>
     <div class="row small">解鎖需要旗標 <FlagInput v-model="requires.flags" placeholder="全部成立才解鎖" /></div>
     <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
     <div class="row checks small">
@@ -177,5 +213,11 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
 <style scoped src="./editor.css"></style>
 <style scoped>
 .node { display: grid; gap: 6px; }
+.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; }
+.cell { width: 22px; height: 22px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
+.cell.wall { background: var(--border); }
+.cell.water { background: #2a4a6a; }
+.cell.off { cursor: default; opacity: 0.6; }
+.cell.picked { outline: 2px solid var(--accent); opacity: 1; }
 .option { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 </style>

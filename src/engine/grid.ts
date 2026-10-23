@@ -862,6 +862,7 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   if (state.combat) throw new Error('戰鬥進行中')
   assertNoStandoff(state)
   if (Math.abs(dx) + Math.abs(dy) !== 1) throw new Error('一次只能移動一格')
+  if (state.townEvent) throw new Error('先決定怎麼應付眼前的事')
   const p = position(state)
   const area = currentArea(state)
   // 旅途：單行道，一格一天
@@ -897,6 +898,7 @@ export function blockedMove(state: GameState, dx: number, dy: number): string | 
   } catch (e) {
     return (e as Error).message
   }
+  if (state.townEvent) return '先決定怎麼應付眼前的事'
   const area = currentArea(state)
   const p = position(state)
   if (area.kind === 'road') {

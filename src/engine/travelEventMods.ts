@@ -1,0 +1,194 @@
+// 旅途事件與城鎮事件的自訂內容（docs/TRAVEL_EVENTS.md、docs/CONTENT_EDITOR.md）。
+// 內建的事件可以改、不能刪；自建的事件沒有被用到的地方，隨時可以刪（等待中的事件會作廢）。
+// 另外一筆「事件設定」（key 是 rules）：旅途各種路段的機率、事件種類的權重，城鎮事件的機率與冷卻。
+
+import { ATTR_IDS, geography, shopRules, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
+import { sanitizeCond } from './mods'
+import { travelEvents, type RoadOption, type RoadTemplate, type TownEventRules } from './road'
+import { sanitizeOutcome } from './storyMods'
+import { TOWN_EVENT_CELLS } from './townEvents'
+import { MODE_NAME } from './travel'
+
+export interface TravelEventMod extends RoadTemplate {
+  custom?: boolean
+}
+
+/** 事件設定（只有一筆） */
+export interface EventRulesMod {
+  chance: Partial<Record<RouteMode, number>>
+  weights: { auto: number; choice: number; combat: number; advanced: number }
+  town: TownEventRules
+}
+
+export const EVENT_LIMITS = { title_chars: 20, text_chars: 400, label_chars: 30, options: 5, cooldown_days: [0, 60] } as const
+export const ROUTE_MODES = Object.keys(MODE_NAME) as RouteMode[]
+export const LOCATION_TYPE_NAME: Record<Exclude<LocationType, 'dungeon'>, string> = {
+  capital: '主城', city: '城市', town: '城鎮', village: '村莊', port: '港口', outpost: '哨站', fortress: '要塞',
+}
+
+const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
+const str = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
+const num = (v: unknown, lo: number, hi: number, d: number, digits = 2) => {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return d
+  const f = 10 ** digits
+  return Math.round(Math.max(lo, Math.min(hi, n)) * f) / f
+}
+
+/** 內建事件與設定的快照（模組載入時） */
+const snapshot = { templates: clone(travelEvents.templates), rules: rulesOf() }
+
+function rulesOf(): EventRulesMod {
+  return clone({ chance: travelEvents.chance, weights: travelEvents.weights, town: travelEvents.town })
+}
+
+export function builtinTravelEvent(id: string): RoadTemplate | undefined {
+  const t = snapshot.templates.find((x) => x.id === id)
+  return t ? clone(t) : undefined
+}
+
+export function builtinEventRules(): EventRulesMod {
+  return clone(snapshot.rules)
+}
+
+/** 城鎮事件可以指定的設施：內建的設施，加上自建的商店 */
+export function townEventCells(): string[] {
+  return [...TOWN_EVENT_CELLS, ...Object.entries(shopRules.types).filter(([, d]) => d.custom).map(([id]) => id)]
+}
+
+function check(v: unknown): StoryCheck | undefined {
+  if (!v || typeof v !== 'object') return undefined
+  const c = v as Partial<StoryCheck>
+  return { attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr! : 'int', dc: Math.round(num(c.dc, 1, 40, 12)) }
+}
+
+/** 事件的結果：特殊任務的結果，拿掉只有任務用得到的（完成、失敗、再來一次、任務同行） */
+function outcome(v: unknown): StoryOutcome | undefined {
+  const o = sanitizeOutcome(v)
+  if (!o) return undefined
+  delete o.complete
+  delete o.fail_quest
+  delete o.retry
+  delete o.join
+  delete o.leave
+  return Object.keys(o).length ? o : undefined
+}
+
+function pick<T extends string>(v: unknown, allowed: readonly T[]): T[] {
+  return [...new Set((Array.isArray(v) ? v : []).filter((x): x is T => allowed.includes(x as T)))]
+}
+
+/** 整理一個事件。城鎮事件沒有高階（不會進臨時地圖的「發現」），選擇的事件至少要有一個選項 */
+export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, custom: boolean): TravelEventMod {
+  const L = EVENT_LIMITS
+  const scope = raw.scope === 'town' ? 'town' : 'road'
+  const kind = raw.kind === 'check' ? 'check' : 'choice'
+  const out: TravelEventMod = {
+    id,
+    ...(scope === 'town' ? { scope } : {}),
+    tier: scope === 'road' && raw.tier === 'advanced' ? 'advanced' : 'normal',
+    kind,
+    title: str(raw.title, L.title_chars) || '新的事件',
+    text: str(raw.text, L.text_chars),
+  }
+  if (scope === 'road') {
+    const modes = pick(raw.modes, ROUTE_MODES)
+    if (modes.length) out.modes = modes
+  } else {
+    const cells = pick(raw.cells, townEventCells())
+    if (cells.length) out.cells = cells
+    const types = pick(raw.location_types, Object.keys(LOCATION_TYPE_NAME) as LocationType[])
+    if (types.length) out.location_types = types
+    const locs = pick(raw.locations, geography.locations.filter((l) => l.type !== 'dungeon').map((l) => l.id))
+    if (locs.length) out.locations = locs
+    if (raw.cooldown_days !== undefined && raw.cooldown_days !== null && String(raw.cooldown_days) !== '') out.cooldown_days = Math.round(num(raw.cooldown_days, ...L.cooldown_days, 7))
+  }
+  if (typeof raw.category === 'string' && travelEvents.town?.categories[raw.category]) out.category = raw.category
+  const req = sanitizeCond(raw.requires)
+  if (req) out.requires = req
+  if (kind === 'check') {
+    out.check = check(raw.check) ?? { attr: 'int', dc: 12 }
+    const s = outcome(raw.success)
+    if (s) out.success = s
+    const f = outcome(raw.fail)
+    if (f) out.fail = f
+  }
+  // 選擇的事件；高階的檢定事件成功之後也接著選
+  if (kind === 'choice' || out.tier === 'advanced') {
+    const options = (Array.isArray(raw.options) ? raw.options : []).slice(0, L.options).map((o): RoadOption => {
+      const opt: RoadOption = { label: str(o?.label, L.label_chars) || '選項' }
+      const c = check(o?.check)
+      if (c) opt.check = c
+      const s = outcome(o?.success)
+      if (s) opt.success = s
+      const f = c ? outcome(o?.fail) : undefined
+      if (f) opt.fail = f
+      return opt
+    })
+    if (options.length) out.options = options
+    else if (kind === 'choice') out.options = [{ label: '離開', success: { text: '你沒有多管。' } }]
+  }
+  if (custom) out.custom = true
+  return out
+}
+
+export function newTravelEvent(id: string, scope: 'road' | 'town' = 'road'): TravelEventMod {
+  return sanitizeTravelEvent(id, {
+    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : '新的旅途事件', text: '',
+    options: [{ label: '答應', success: { text: '' } }, { label: '離開', success: { text: '你沒有多管。' } }],
+  }, true)
+}
+
+export function sanitizeEventRules(raw: Partial<EventRulesMod>): EventRulesMod {
+  const base = builtinEventRules()
+  const chance = Object.fromEntries(ROUTE_MODES.map((m) => [m, num(raw.chance?.[m], 0, 1, base.chance[m] ?? 0.3)])) as EventRulesMod['chance']
+  const w = raw.weights ?? base.weights
+  const weights = {
+    auto: num(w.auto, 0, 20, base.weights.auto, 1), choice: num(w.choice, 0, 20, base.weights.choice, 1),
+    combat: num(w.combat, 0, 20, base.weights.combat, 1), advanced: num(w.advanced, 0, 20, base.weights.advanced, 1),
+  }
+  const t = raw.town ?? base.town
+  const town: TownEventRules = {
+    chance: num(t.chance, 0, 1, base.town.chance),
+    cooldown_hours: num(t.cooldown_hours, 0, 168, base.town.cooldown_hours, 1),
+    repeat_days: Math.round(num(t.repeat_days, 0, 60, base.town.repeat_days)),
+    recent_penalty: num(t.recent_penalty, 0, 1, base.town.recent_penalty),
+    recent_size: Math.round(num(t.recent_size, 0, 10, base.town.recent_size)),
+    categories: base.town.categories,
+  }
+  return { chance, weights, town }
+}
+
+/** 把事件與設定還原成內建的樣子（自建的拿掉） */
+export function restoreTravelEvents() {
+  travelEvents.templates.splice(0, travelEvents.templates.length, ...clone(snapshot.templates))
+  const r = builtinEventRules()
+  travelEvents.chance = r.chance
+  travelEvents.weights = r.weights
+  travelEvents.town = r.town
+}
+
+export function applyTravelEvent(id: string, m: TravelEventMod) {
+  const { custom: _custom, ...def } = clone(m)
+  const i = travelEvents.templates.findIndex((t) => t.id === id)
+  if (i >= 0) travelEvents.templates[i] = { ...def, id }
+  else travelEvents.templates.push({ ...def, id })
+}
+
+export function applyEventRules(r: EventRulesMod) {
+  travelEvents.chance = clone(r.chance)
+  travelEvents.weights = clone(r.weights)
+  travelEvents.town = clone(r.town)
+}
+
+export function currentEventRules(): EventRulesMod {
+  return rulesOf()
+}
+
+/** 事件的檢查：可能沒問題、只提醒的地方 */
+export function travelEventWarnings(t: RoadTemplate): string[] {
+  const out: string[] = []
+  if (!t.text) out.push('沒有描述')
+  if (t.tier === 'advanced' && t.kind === 'check' && !t.options?.length) out.push('高階的檢定事件成功後沒有選項')
+  return out
+}

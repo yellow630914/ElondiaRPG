@@ -2,10 +2,11 @@
 // 刺青店刺普通刺青、刻印師刻誓約印記；洗刺青：刺青店只洗普通刺青，刻印師與神殿都能洗（神殿便宜但要聲望）。
 // 奴隸印記的解除另外走解除印記（slavery.ts 的 unmarkOffers，有檢定）。
 
+import { recalc } from './character'
 import { locationById } from './data'
 import { currentCell } from './grid'
 import { formatMoney } from './money'
-import { isFugitive, pcOf } from './party'
+import { isFugitive, pcOf, setHp } from './party'
 import { reputationOf } from './security'
 import { commitReport } from './state'
 import { addTattoo, oathError, placeName, removeTattoo, tattooAt, tattooError, tattooKindName, tattooRules, tattooTemplate, type NewTattoo } from './tattoos'
@@ -96,6 +97,9 @@ export function inkTattoo(state: GameState, order: InkOrder): Report {
   if (state.money_cc < price) throw new Error(`錢不夠（要 ${formatMoney(price)}）`)
   const report = shopReport(state, shop)
   const added = addTattoo(pc, { ...t, by: tattooShop(shop).name }, state.time)
+  // 誓約印記改了力量、信仰，生命上限跟著變
+  recalc(pc)
+  setHp(state, pc, pc.hp, report)
   report.changes.money_cc = -price
   report.changes.tattoos = [{ actor: 'pc', place: added.place, kind: added.kind, name: added.name ?? '', added: true }]
   report.outcome.summary = `在${placeName(added.place)}刺上了${tattooKindName(added.kind)}【${added.name}】，花了 ${formatMoney(price)}。`
@@ -118,6 +122,8 @@ export function washTattoo(state: GameState, place: TattooPlace): Report {
   if (state.money_cc < price) throw new Error(`錢不夠（要 ${formatMoney(price)}）`)
   const report = shopReport(state, shop)
   removeTattoo(pc, place)
+  recalc(pc)
+  setHp(state, pc, pc.hp, report)
   report.changes.money_cc = -price
   report.changes.tattoos = [{ actor: 'pc', place, kind: t.kind, name: t.name ?? '', added: false }]
   report.outcome.summary = `洗掉了${placeName(place)}的${tattooKindName(t.kind)}【${t.name}】，花了 ${formatMoney(price)}。`

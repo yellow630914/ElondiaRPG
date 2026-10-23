@@ -1,4 +1,4 @@
-// 玩家自訂內容：新增或修改怪物、物品、裝備底材與材料（「🛠️ 內容」頁籤）。
+// 玩家自訂內容：新增或修改怪物、物品、裝備底材與材料（「🌍 世界」頁籤）。
 //
 // - 修改存成一份覆寫（ContentMods）：內建項目存整份修改後的資料，自建項目存整份資料並標上 custom。
 // - applyContent 先把遊戲資料還原成內建的樣子（模組載入時的快照），再套上覆寫，所以隨時可以重新套用或恢復預設。
@@ -25,6 +25,7 @@ import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, s
 import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
+import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
@@ -105,10 +106,13 @@ export interface ContentMods {
   /** 城鎮的特色地標：內建的整份覆蓋，自建的 custom */
   landmarks: Record<string, LandmarkMod>
   specialMaps: Record<string, SpecialMapMod>
+  /** 旅途事件與城鎮事件（整份）；eventRules 只有一筆 rules：路段機率、種類權重、城鎮事件的機率與冷卻 */
+  travelEvents: Record<string, TravelEventMod>
+  eventRules: Record<string, EventRulesMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -207,6 +211,7 @@ function restore() {
   restoreShops()
   restoreLandmarks()
   restoreSpecialMaps()
+  restoreTravelEvents()
   replaceRecord(abilities, snapshot.abilities)
   perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
@@ -504,6 +509,9 @@ export function applyContent(mods: ContentMods): string[] {
     else namedNpcs.push(def)
   })
   tryEach('特殊任務', mods.stories, (id, m) => applyStoryMod(id, m))
+  // 旅途與城鎮事件（物品、特殊地圖、商店都套用之後：結果與設施會用到）
+  tryEach('事件', mods.travelEvents ?? {}, (id, m) => applyTravelEvent(id, sanitizeTravelEvent(id, m, !!m.custom)))
+  tryEach('事件設定', mods.eventRules ?? {}, (_id, m) => applyEventRules(sanitizeEventRules(m)))
   return problems
 }
 
@@ -963,6 +971,10 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, v] of Object.entries(r.enemies ?? {})) out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id])
   for (const [id, v] of Object.entries(r.npcs ?? {})) out.npcs[id] = sanitizeNpc(id, v, !!v.custom || !builtinNpc(id))
   for (const [id, v] of Object.entries(r.stories ?? {})) out.stories[id] = sanitizeStory(id, v, !!v.custom || !builtinStory(id))
+  for (const [id, v] of Object.entries(r.travelEvents ?? {})) {
+    if (typeof id === 'string' && id.length <= 60) out.travelEvents[id] = sanitizeTravelEvent(id, v, !!v.custom || !builtinTravelEvent(id))
+  }
+  if (r.eventRules?.rules) out.eventRules.rules = sanitizeEventRules(r.eventRules.rules)
   return out
 }
 

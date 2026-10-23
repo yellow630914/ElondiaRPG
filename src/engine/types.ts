@@ -150,7 +150,7 @@ export interface Report {
   location: { at: string; to?: string; region?: string; scene?: string; weather?: string }
   party: ActorState[]
   others?: ActorState[]
-  quest?: { id?: string; title?: string; rank?: GuildRank; status?: 'accepted' | 'progress' | 'completed' | 'failed' | 'abandoned' }
+  quest?: { id?: string; title?: string; rank?: GuildRank; status?: 'accepted' | 'progress' | 'completed' | 'failed' | 'abandoned' | 'expired' }
   /** 特殊任務：哪個任務、哪個任務點 */
   story?: { id: string; title: string; node?: string; status: 'started' | 'progress' | 'completed' | 'failed' }
   timeline?: TimelineEntry[]
@@ -544,6 +544,8 @@ export interface Quest {
   /** 交付時實際交了多少（完成後記錄） */
   delivered?: number
   status: 'available' | 'accepted' | 'ready' | 'completed'
+  /** 期限（接下時決定）：過了還沒完成目標就逾期失敗；目標達成（ready）之後不會逾期 */
+  deadline?: GameTime
   /** 任務旗標（談判、事件的結果），例如 lead：委託檢定 +5 */
   flags?: Record<string, unknown>
 }
@@ -709,6 +711,10 @@ export interface GameState {
   road?: RoadState
   /** 旅途上等待回應的事件（選擇、高階事件） */
   roadEvent?: { x: number; template: string }
+  /** 城鎮裡等待回應的事件（townEvents.ts） */
+  townEvent?: { template: string }
+  /** 城鎮事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子、最近的種類 */
+  townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
   /** 在臨時地圖裡：離開時回到的位置 */
   side?: { area: string; back: { area: string; x: number; y: number } }
   /** 在特殊地圖裡：從外面進來前的位置與地點（從出口離開時回到那裡），走過的需要刷新的地圖 */

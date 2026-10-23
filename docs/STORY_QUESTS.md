@@ -4,7 +4,7 @@
 
 公會的**一般委託**由系統生成（見 [GUILD](GUILD.md)）。**特殊任務**是人工編寫的任務鏈：有故事線、固定的 NPC、獨特的報酬，要到多個地點、經過多次判定，依結果走向不同的分支。
 
-- 資料：`data/rules/stories.json`（內建）＋「🛠️ 內容 → ⭐ 特殊任務」的自訂內容（存在目前的「世界」，用同一個世界的存檔共用，可以匯出、匯入；見 [CONTENT_EDITOR](CONTENT_EDITOR.md) 第 0 節）。
+- 資料：`data/rules/stories.json`（內建）＋「🌍 世界 → ⭐ 特殊任務」的自訂內容（存在目前的「世界」，用同一個世界的存檔共用，可以匯出、匯入；見 [CONTENT_EDITOR](CONTENT_EDITOR.md) 第 0 節）。
 - 程式：`src/engine/story.ts`（進行任務）、`src/engine/storyMods.ts`（整理、檢查）、`src/engine/storyFlags.ts`（劇情旗標）。
 - 內建的範例：「失竊的聖環徽記」（瑟琳），四個任務點分別示範劇情、判定、戰鬥、選擇，以及任務同行；「翻覆的篷車」示範旅途上的開頭、臨時地圖與改道（見 [`TRAVEL_EVENTS.md`](TRAVEL_EVENTS.md)）；「走私者的帳本」示範情報商的開頭。
 
@@ -33,6 +33,7 @@
   "summary": "冒險筆記上的簡介",
   "rank": "F",                       // 建議的公會階級：接取時檢查（同級或更低，組隊時可以高一級）
   "merit": 5,                        // 完成時的公會功績（不寫＝5，見 GUILD）
+  "time_limit": 10,                  // 期限：開始後幾天內要完成（不寫＝不限）；過了就失敗，任務同行的夥伴離隊，冒險筆記寫「⏳ 剩 N 天」
   "start": {
     "kind": "npc",                   // guild 公會、npc 固定 NPC、travel 旅途事件、informant 情報商、manual 只由其他事件開啟
     "npc": "npc_selene",             // npc：這位角色在身邊時可以接
@@ -55,7 +56,7 @@
 | 欄位 | 說明 |
 |---|---|
 | `id`、`title`、`text` | id（英數）、冒險筆記上的目標、觸發時的事件描述（也交給 AI） |
-| `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施、自建的商店或城鎮的特色地標上（`at.cell`，地標見 [LANDMARKS](LANDMARKS.md)）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`）、`road` 旅途上、`side` 臨時地圖裡的 ⭐（`at.side_map`）、`special` 特殊地圖裡的 ⭐（`at.special_map`，見 [SPECIAL_MAPS](SPECIAL_MAPS.md)） |
+| `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施、自建的商店或城鎮的特色地標上（`at.cell`，地標見 [LANDMARKS](LANDMARKS.md)）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`）、`road` 旅途上、`side` 臨時地圖裡的 ⭐（`at.side_map`）、`special` 特殊地圖裡的 ⭐（`at.special_map`；固定地圖可以再用 `at.x`、`at.y` 指定確切的格子，見 [SPECIAL_MAPS](SPECIAL_MAPS.md) 第 6 節） |
 | `at.location` | 地點 id（`npc` 可以不寫，跟著角色走） |
 | `requires` | 解鎖的旗標條件 |
 | `allies` | 在場的友方固定 NPC（id 的清單，任何種類的任務點都可以用）：解鎖之後站在 ⭐ 旁邊，或站在設施上（`cell`；`settlement` 在城門），不管他平常的出沒與出現條件；戰鬥時站在你這邊（由你操作，生命值不留到戰鬥之後）；AI 判定與寫經過時知道他們在場（`report.others`） |
@@ -117,7 +118,7 @@
 
 如果 A 之後要搬家，在固定 NPC 的「依劇情旗標改變出沒」加一組需要 🚩`a_rescued` 的設定（見 [`CONTENT_EDITOR.md`](CONTENT_EDITOR.md) 第 4 節）。
 
-## 3. 編輯器（🛠️ 內容 → ⭐ 特殊任務）
+## 3. 編輯器（🌍 世界 → ⭐ 特殊任務）
 
 - **基本與開頭**：名稱、簡介、建議等級（接取時檢查，和公會委託一樣：主角的公會階級同級或更高，組隊 2 人以上時可以低一級；公會、固定 NPC、情報商的開頭不符合時不出現，旅途開頭不符合時不放進旅途）；從哪裡開始、接取條件、開頭的事件描述、開頭的旗標。
 - **任務點清單**：每一列顯示種類、地點、需要的旗標（需要 🚩）、會設定的旗標（→ 🚩）、會不會完成（✅）或失敗（❌）任務。點開編輯；可以上下移動、複製、刪除。

@@ -8,6 +8,7 @@
 
 import { snapshot } from './character'
 import { endpointsIn } from './specialMaps'
+import { storySpotProblem } from './specialMapMods'
 import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
@@ -414,6 +415,22 @@ export function abandonStory(state: GameState, id: string): Report {
   return committed
 }
 
+/** 過了期限（time_limit）的任務：失敗（deadlines.ts） */
+export function expireStory(state: GameState, id: string): Report {
+  const progress = state.stories?.[id]
+  const def = storyDef(id)
+  if (!progress || progress.status !== 'active' || !def) throw new Error('沒有進行中的這個任務')
+  const report = storyReport(state, def, 'failed', 0)
+  const lines: string[] = []
+  finishStory(state, report, progress, def, 'failed', lines)
+  log(progress, state, '過了期限')
+  report.outcome = { ...report.outcome, result: 'failure', summary: `特殊任務「${def.title}」過了期限，失敗了。${lines.slice(1).join('')}`, tags: [...new Set([...(report.outcome.tags ?? []), '任務逾期'])] }
+  report.narration = { length: 'short' }
+  const committed = commitReport(state, report)
+  refreshStoryMarkers(state)
+  return committed
+}
+
 // ---- 近郊與地下城的任務點（⭐） ----
 
 function layerId(area: Area): DungeonLayerId | undefined {
@@ -439,6 +456,15 @@ export function ensureStoryMarkers(state: GameState, area: Area, rng: Rng) {
   const avoid = new Set(area.kind === 'special' ? endpointsIn(area.key).map((e) => e.y * area.width + e.x) : [])
   for (const ref of markersFor(state, area)) {
     if (have.has(ref)) continue
+    // 固定地圖上指定了格子：放在那一格（不行的格子改成隨機）
+    const at = activeNodes(state).find((n) => n.ref === ref)?.node.at
+    if (area.kind === 'special' && at?.x !== undefined && at.y !== undefined && !storySpotProblem(area.special ?? '', at.x, at.y)) {
+      const i = at.y * area.width + at.x
+      if (!area.cells[i]?.storyNode) {
+        area.cells[i] = { kind: 'quest' as CellKind, storyNode: ref }
+        continue
+      }
+    }
     const free = area.cells.map((c, i) => (c.kind === 'floor' && i !== entry && i !== entry - area.width && !avoid.has(i) ? i : -1)).filter((i) => i >= 0)
     if (!free.length) return
     const i = free[rng.int(0, free.length - 1)]!

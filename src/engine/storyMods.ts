@@ -13,6 +13,7 @@ import { cleanFlag, condMet, hasFlag } from './storyFlags'
 import type { GameState } from './types'
 import { travelEvents } from './road'
 import { isTattooPlace, oathError, tattooTemplate } from './tattoos'
+import { mapSize, storySpotProblem } from './specialMapMods'
 
 export interface StoryMod extends StoryDef {
   custom?: boolean
@@ -195,6 +196,11 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
   return out
 }
 
+/** 整理一個結果（旅途與城鎮事件也用） */
+export function sanitizeOutcome(v: unknown): StoryOutcome | undefined {
+  return outcome(v)
+}
+
 function outcome(v: unknown): StoryOutcome | undefined {
   if (!v || typeof v !== 'object') return undefined
   const o = v as Partial<StoryOutcome>
@@ -230,7 +236,15 @@ function place(v: unknown): StoryPlace {
   if (where === 'dungeon') out.layer = STORY_LAYERS.includes(p.layer as never) ? p.layer : 'outskirts'
   if (where === 'npc' && str(p.npc, 60)) out.npc = str(p.npc, 60)
   if (where === 'side' && typeof p.side_map === 'string' && SIDE_MAPS().includes(p.side_map)) out.side_map = p.side_map
-  if (where === 'special') out.special_map = typeof p.special_map === 'string' && specialMaps[p.special_map] ? p.special_map : Object.keys(specialMaps)[0]
+  if (where === 'special') {
+    out.special_map = typeof p.special_map === 'string' && specialMaps[p.special_map] ? p.special_map : Object.keys(specialMaps)[0]
+    // 固定地圖的確切格子（是不是走得到的格子由 storyCheck 提醒，遊戲裡不行時改成隨機）
+    const size = out.special_map && specialMaps[out.special_map]?.grid?.length ? mapSize(specialMaps[out.special_map]!) : undefined
+    if (size && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x! >= 0 && p.y! >= 0 && p.x! < size[0] && p.y! < size[1]) {
+      out.x = p.x
+      out.y = p.y
+    }
+  }
   if (where === 'road' || where === 'side' || where === 'special') delete out.location
   return out
 }
@@ -308,6 +322,9 @@ export function sanitizeStory(id: string, raw: Partial<StoryMod>, custom: boolea
   if (raw.rank && RANK_ORDER.includes(raw.rank)) out.rank = raw.rank
   // 完成時的公會功績：空白時用預設（progression.json 的 guild_merit.story）
   if (raw.merit !== undefined && raw.merit !== null && String(raw.merit) !== '') out.merit = Math.round(num(raw.merit, 0, 100, 0))
+  // 期限（天）：空白或 0 是不限
+  const limit = Math.round(num(raw.time_limit, 0, 365, 0))
+  if (limit > 0) out.time_limit = limit
   const sf = flags(raw.start_flags)
   if (sf.length) out.start_flags = sf
   const rewards = sanitizeEffects(raw.rewards)
@@ -423,6 +440,10 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     const t = `任務點「${n.title}」`
     if (n.at.where !== 'npc' && n.at.where !== 'road' && n.at.where !== 'side' && n.at.where !== 'special' && !n.at.location) err.push(`${t}沒有指定地點`)
     if (n.at.where === 'special' && (!n.at.special_map || !specialMaps[n.at.special_map])) err.push(`${t}的特殊地圖不存在`)
+    else if (n.at.where === 'special' && n.at.x !== undefined && n.at.y !== undefined) {
+      const why = storySpotProblem(n.at.special_map!, n.at.x, n.at.y)
+      if (why) warn.push(`${t}指定的格子（${n.at.x}, ${n.at.y}）：${why}，遊戲裡會隨機放在一格空地`)
+    }
     if (n.at.where === 'npc' && (!n.at.npc || !npcIds.has(n.at.npc))) err.push(`${t}的固定 NPC 不存在`)
     if (n.at.where === 'outskirts' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type === 'dungeon') err.push(`${t}：地下城沒有近郊，請改成「地下城某一層」`)
     if (n.at.where === 'dungeon' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type !== 'dungeon') err.push(`${t}：選的地點不是地下城`)
