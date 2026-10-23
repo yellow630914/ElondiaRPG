@@ -1,0 +1,100 @@
+{
+  "_comment": [
+    "ComfyUI /prompt API 格式的像素生成範本（Anima 底模）。",
+    "重點：Anima 走 Qwen 架構，必須用 UNETLoader + CLIPLoader + VAELoader 三件組，",
+    "不能用 CheckpointLoaderSimple。LoRA 路徑必須含 ANI\\ 或 IL\\ 子資料夾前綴。",
+    "節點 9 的 text、節點 11 的 width/height、節點 12 的 seed 為每次生成要替換的欄位。",
+    "本機實測：1024x1024 / 24 steps / cfg 6.0 約 30 秒一張（RTX 5070 Ti）。"
+  ],
+
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "anima_aestheticV11.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen_3_06b_base.safetensors",
+      "type": "stable_diffusion"
+    }
+  },
+
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "qwen_image_vae.safetensors"
+    }
+  },
+
+  "4": {
+    "class_type": "LoraLoader",
+    "inputs": {
+      "lora_name": "ANI\\pixel-AnimaB_V10-V1-CAME.safetensors",
+      "strength_model": 1.0,
+      "strength_clip": 1.0,
+      "model": ["1", 0],
+      "clip": ["2", 0]
+    }
+  },
+
+  "9": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "pixel art, pix_merge, REPLACE_WITH_SUBJECT, simple background, limited palette",
+      "clip": ["4", 1]
+    }
+  },
+
+  "10": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "lowres, blurry, jpeg artifacts, text, signature, watermark, username, bad anatomy, worst quality, low quality, realistic, 3d, smooth shading, anti-aliasing",
+      "clip": ["4", 1]
+    }
+  },
+
+  "11": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "batch_size": 1
+    }
+  },
+
+  "12": {
+    "class_type": "KSampler",
+    "inputs": {
+      "seed": 0,
+      "steps": 24,
+      "cfg": 6.0,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "normal",
+      "denoise": 1.0,
+      "model": ["4", 0],
+      "positive": ["9", 0],
+      "negative": ["10", 0],
+      "latent_image": ["11", 0]
+    }
+  },
+
+  "13": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": ["12", 0],
+      "vae": ["3", 0]
+    }
+  },
+
+  "14": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "filename_prefix": "pixel_asset",
+      "images": ["13", 0]
+    }
+  }
+}
