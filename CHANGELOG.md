@@ -2,7 +2,7 @@
 
 ## v0.1.0（2026-10-23）
 
-第一個公開版本。線上遊玩：https://yellow630914.github.io/ElondiaRPG/
+第一個公開版本。下載 Release 的 zip，解開後用靜態網頁伺服器開啟（見 README）。
 
 **遊戲**
 

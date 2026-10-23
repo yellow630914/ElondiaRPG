@@ -1,0 +1,41 @@
+# 發布：推送版本 tag（v0.1.0 這類）時跑測試、建置，建立 GitHub Release，
+# 附上建置好的 zip 與 CHANGELOG.md 裡那一版的說明。平常推送不會觸發。
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:unit --run
+      - run: pnpm build
+      - name: Zip the build
+        run: cd dist && zip -qr "../ElondiaRPG-${GITHUB_REF_NAME}.zip" .
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="${GITHUB_REF_NAME}" '
+            /^## / { on = (index($0, v) > 0); next }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || echo "見 CHANGELOG.md" > notes.md
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: 埃隆迪亞大陸 ${{ github.ref_name }}
+          body_path: notes.md
+          files: ElondiaRPG-*.zip

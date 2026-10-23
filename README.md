@@ -6,11 +6,11 @@
 
 ## 遊玩
 
-**線上遊玩：https://yellow630914.github.io/ElondiaRPG/**（目前版本 v0.1.0，更新內容見 [CHANGELOG](CHANGELOG.md)）
+目前版本 v0.1.0（更新內容見 [CHANGELOG](CHANGELOG.md)）。
 
+- 從 [Releases](https://github.com/yellow630914/ElondiaRPG/releases) 下載 zip，解開後用任何靜態網頁伺服器開啟（例如在資料夾裡執行 `npx serve` 或 `python -m http.server`）。**不能直接雙擊 `index.html`**：瀏覽器不允許從檔案載入模組。也可以照下面「自己建置」用 `pnpm dev` 執行。
 - 存檔、世界與設定都存在你自己的瀏覽器裡（換瀏覽器或清除網站資料就不見了，記得用「💾 存讀檔」匯出備份）。
 - 要 AI 寫敘事時，在「⚙️ 設定」填入自己的 API key：key 只存在這台瀏覽器，請求直接從瀏覽器送到你選的服務。
-- 也可以從 [Releases](https://github.com/yellow630914/ElondiaRPG/releases) 下載 zip，解開後用任何靜態網頁伺服器開啟（例如在資料夾裡執行 `npx serve` 或 `python -m http.server`）。**不能直接雙擊 `index.html`**：瀏覽器不允許從檔案載入模組。
 
 ## 自己建置
 
@@ -22,10 +22,10 @@ cd ElondiaRPG
 pnpm install
 pnpm dev               # 開發伺服器
 pnpm test:unit --run   # 測試
-pnpm build             # 型別檢查 + 建置到 dist/（相對路徑，放在任何路徑底下都能用）
+pnpm build             # 型別檢查 + 建置到 dist/（相對路徑，放在任何網頁伺服器的任何路徑底下都能用）
 ```
 
-推送到正式分支時，GitHub Actions 會跑測試、建置並部署到 GitHub Pages；推送版本 tag（`v0.1.0` 這類）時另外建立 GitHub Release 並附上 zip（`.github/workflows/deploy.yml`）。
+推送版本 tag（`v0.1.0` 這類）時，GitHub Actions 會跑測試、建置，建立 GitHub Release 並附上 zip（`.github/workflows/release.yml`）；平常推送不會觸發。
 
 開發伺服器啟動後，用瀏覽器打開終端機顯示的網址（預設 http://localhost:5173）。
 
