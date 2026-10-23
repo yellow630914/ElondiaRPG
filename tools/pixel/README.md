@@ -27,4 +27,6 @@ python_embeded\python.exe -I tools\pixel\process.py --outline
 `process.py` 會把低彩度的像素分成 4 群，對到 `ramp` 的 4 階灰；其他像素對到 `fixed` 的固定色。
 遊戲執行時把 `ramp` 的 4 階換成材質的 4 階（`palette.json` 的 `materials`）。總覽圖的第二列就是換色後的預覽。
 
+立繪的胸像與部件要用 `--keep-frame`：整張畫布直接縮小，不裁到物件再置中，所有圖層才會對齊（見 `docs/comfy/portrait-spec.md`）。
+
 常用的調整參數：`--tol`（去背容差，預設 12）、`--min-hole`（hollow 物件多大的封閉區域算孔）、`--sat`（多低的彩度算可換色）、`--margin`（留白）、`--outline`（外圍加 1px 深色描邊）。

@@ -157,7 +157,9 @@ def recolor_preview(arr, pal, material):
 
 def process_one(path, item, pal, args):
     img = remove_background(Image.open(path), args.tol, item.get('hollow', False), args.min_hole)
-    img = crop_square(img, args.margin)
+    # 胸像等要對齊的圖層：保留整張畫布（不裁到物件），所有圖都同一個構圖
+    if not args.keep_frame:
+        img = crop_square(img, args.margin)
     inner = args.size - (2 if args.outline else 0)
     rgb, opaque = downscale(img, inner)
     arr = quantize(rgb, opaque, pal, item.get('recolor'), args.sat)
@@ -204,6 +206,7 @@ def main():
     ap.add_argument('--margin', type=float, default=0.06, help='物件四周留白的比例')
     ap.add_argument('--sat', type=float, default=0.18, help='recolor 圖示中低於這個彩度的像素算「可換色」')
     ap.add_argument('--outline', action='store_true', help='外圍加 1px 深色描邊')
+    ap.add_argument('--keep-frame', action='store_true', help='保留整張畫布、不裁到物件再置中（胸像與立繪部件用，構圖要固定）')
     ap.add_argument('--scale', type=int, default=4, help='總覽圖的放大倍數')
     ap.add_argument('--export', action='store_true')
     args = ap.parse_args()
