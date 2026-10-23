@@ -93,6 +93,15 @@ describe('save schema', () => {
     expect(renamed.inventory.find((i) => i.name === '鋼護腰')?.qty).toBe(1)
     expect(renamed.party[0]!.gear?.belt?.name).toBe('鐵護腰')
 
+    // 金屬靴子改名：同上
+    const boots = JSON.parse(JSON.stringify(state)) as GameState
+    boots.schema = 7
+    boots.inventory.push({ name: '星隕鐵鐵靴', qty: 1 })
+    boots.party[0]!.gear = { ...boots.party[0]!.gear, feet: { name: '秘銀鐵靴', spec: { base: 'sabatons', material: 'mithril' } } }
+    const reshod = migrate(boots)
+    expect(reshod.inventory.find((i) => i.name === '星隕鐵戰靴')?.qty).toBe(1)
+    expect(reshod.party[0]!.gear?.feet?.name).toBe('秘銀戰靴')
+
     const future = { ...state, schema: SAVE_SCHEMA + 1 }
     expect(() => assertSchema(future)).toThrow('比較新版本')
     expect(() => migrate(JSON.parse(JSON.stringify(future)))).toThrow('比較新版本')

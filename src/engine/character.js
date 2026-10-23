@@ -1,0 +1,413 @@
+// 角色：屬性、三資源（生命值、行動點、法術環）的推導、升級與能力學習。
+// 公式說明見 docs/COMBAT_SYSTEM.md，數值在 data/rules/combat.json。
+import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks';
+import { abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef, } from './data';
+import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGear } from './gear';
+import { tattoosOf, tattooSummary } from './tattoos';
+const QUALITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
+// ---- 基本換算 ----
+/** 屬性調整值 = floor((屬性值 - 10) / 2) */
+export function mod(score) {
+    return Math.floor((score - 10) / 2);
+}
+export function proficiency(level) {
+    const { base, every_levels } = combatRules.proficiency;
+    return base + Math.floor((level - 1) / every_levels);
+}
+export function lifeTier(level) {
+    return progression.life_tiers.find((t) => level >= t.levels[0] && level <= t.levels[1])?.tier ?? 1;
+}
+export function maxSkillQuality(level) {
+    return progression.life_tiers.find((t) => t.tier === lifeTier(level))?.max_skill_quality ?? 'common';
+}
+export function guildRankFor(level) {
+    const ranks = progression.guild_ranks;
+    return ranks.find((r) => level >= r.levels[0] && level <= r.levels[1])?.rank ?? ranks[ranks.length - 1].rank;
+}
+export function xpToNext(level) {
+    return combatRules.xp_to_next_level_per_level * level;
+}
+export function affinityStage(value) {
+    return progression.affinity.stages.find((s) => value >= s.range[0] && value <= s.range[1])?.name ?? '';
+}
+/** 角色扮演指導第一層：觀察者對目標的基準態度（以生命層級差計算）。 */
+export function powerGapAttitude(observerLevel, targetLevel) {
+    const { by_diff, clamp } = progression.power_gap_attitude;
+    const diff = Math.max(clamp[0], Math.min(clamp[1], lifeTier(observerLevel) - lifeTier(targetLevel)));
+    return by_diff[String(diff)] ?? '對等';
+}
+const attrProviders = [];
+/** 登記一種屬性加減的來源（回傳取消登記的函式） */
+export function addAttrProvider(p) {
+    attrProviders.push(p);
+    return () => {
+        const i = attrProviders.indexOf(p);
+        if (i >= 0)
+            attrProviders.splice(i, 1);
+    };
+}
+/** 裝備給的屬性加減：每件一個來源；同一項合計超過上限（gear.json 的 attrs.cap）時加一項扣回來 */
+function gearAttrSources(c) {
+    const list = Object.values(c.gear ?? {}).filter((g) => g?.spec.attrs).map((g) => ({ label: `裝備【${g.name}】`, attrs: g.spec.attrs }));
+    const cap = gearRules.attrs.cap;
+    const over = {};
+    for (const a of ATTR_IDS) {
+        const sum = list.reduce((s, x) => s + (x.attrs[a] ?? 0), 0);
+        if (Math.abs(sum) > cap)
+            over[a] = Math.sign(sum) * cap - sum;
+    }
+    return Object.keys(over).length ? [...list, { label: `裝備的加減上限 ±${cap}`, attrs: over }] : list;
+}
+/** 角色身上所有的屬性加減（給畫面與 AI 說明來源）：誓約印記、裝備，加上登記的來源 */
+export function attrSources(c) {
+    const oaths = (c.tattoos ?? []).filter((t) => t.kind === 'oath' && t.attrs).map((t) => ({ label: `誓約印記【${t.name ?? ''}】`, attrs: t.attrs }));
+    return [...oaths, ...gearAttrSources(c), ...attrProviders.flatMap((p) => p(c))].filter((s) => ATTR_IDS.some((a) => s.attrs[a]));
+}
+/** 有效屬性：基礎屬性加上所有來源的加減 */
+export function attrsOf(c) {
+    const out = { ...c.attrs };
+    const { min, max } = attributeRules.score;
+    for (const s of attrSources(c))
+        for (const a of ATTR_IDS)
+            out[a] += s.attrs[a] ?? 0;
+    for (const a of ATTR_IDS)
+        out[a] = Math.max(min, Math.min(max, out[a]));
+    return out;
+}
+/** 一項屬性的有效值 */
+export function attrOf(c, a) {
+    return attrsOf(c)[a];
+}
+// ---- 三資源 ----
+/** 生命值 = base + 等級 × max(下限, per_level + mod(力量) + mod(信仰)) */
+export function maxHpFor(level, attrs) {
+    const r = combatRules.hp;
+    return r.base + level * Math.max(r.min_per_level, r.per_level + mod(attrs.str) + mod(attrs.fai));
+}
+/** 行動點上限 = base + floor(等級 / 5) + floor((mod(靈巧) + mod(魅力)) / 2)，至少 min */
+export function apMaxFor(level, attrs) {
+    const r = combatRules.ap;
+    return Math.max(r.min, r.base + Math.floor(level / r.every_levels) + Math.floor((mod(attrs.dex) + mod(attrs.cha)) / 2));
+}
+/** 每回合回復的行動點 */
+export function apRegenFor(level) {
+    const r = combatRules.ap;
+    return r.regen + Math.floor(level / r.regen_every_levels);
+}
+/** 法術環上限（索引 0 = 1 環）。依職業的施法者類型查表，再加上智力與信仰帶來的額外法術環。 */
+export function slotMaxFor(classId, level, attrs) {
+    const cls = classDef(classId);
+    if (cls.caster === 'none')
+        return [];
+    const table = combatRules.spell_slots;
+    const casterLevel = cls.caster === 'full' ? level : Math.ceil(level / 2);
+    let slots = [...(table.full[String(Math.max(1, Math.min(20, casterLevel)))] ?? [])];
+    if (cls.caster === 'half')
+        slots = slots.slice(0, table.half_max_circle);
+    const s = mod(attrs.int) + mod(attrs.fai);
+    for (let c = 1; c <= table.bonus_max_circle; c++) {
+        if ((slots[c - 1] ?? 0) > 0 && s >= 2 * c)
+            slots[c - 1] += 1;
+    }
+    return slots;
+}
+export function maxCircle(c) {
+    return slotMaxFor(c.class, c.level, attrsOf(c)).length;
+}
+export function slotsLeft(c) {
+    return slotMaxFor(c.class, c.level, attrsOf(c)).map((n, i) => Math.max(0, n - (c.slotsUsed[i] ?? 0)));
+}
+export function maxCantrips(level) {
+    const r = combatRules.cantrip;
+    return r.known_base + Math.floor(level / r.known_every_levels);
+}
+// ---- 戰鬥屬性 ----
+export function castingAttr(classId) {
+    return classDef(classId).casting ?? classDef(classId).priority[0];
+}
+/** 幸運一擊閾值（自然骰 ≥ 此值）。屬性造成的下限為 attr_floor；crit 修正另外扣除，最低到 floor。 */
+export function luckyThreshold(attrs, critBonus = 0) {
+    const r = combatRules.lucky;
+    const fromAttrs = Math.max(r.attr_floor, r.base - Math.floor((mod(attrs.dex) + mod(attrs.cha)) / 3));
+    return Math.max(r.floor, fromAttrs - critBonus);
+}
+/** 迴避骰的下限：1 + max(0, mod(靈巧)) */
+export function evadeFloor(attrs) {
+    return combatRules.hit.evade_floor_base + Math.max(0, mod(attrs.dex));
+}
+export function weaponFor(c) {
+    const w = weaponDef(c.weapon);
+    if (!w.scale)
+        return w;
+    let dice = w.dice;
+    for (const [lvl, d] of Object.entries(w.scale))
+        if (c.level >= Number(lvl))
+            dice = d;
+    return { ...w, dice };
+}
+/** 防具類型 + 身上所有裝備（材料、附魔）+ 特質（包括種族特質）帶來的傷害倍率加減與戰鬥修正 */
+export function gearAffinities(c) {
+    const armor = armorDef(c.armor);
+    const gear = gearBonuses(c);
+    // 特質（包括依種族自動擁有的種族特質）：一直生效的戰鬥修正、抗性與增傷
+    const perks = perkCombat(c);
+    const resist = {};
+    const offense = {};
+    for (const src of [armor.resist, gear.resist, perks.resist]) {
+        for (const [k, v] of Object.entries(src ?? {}))
+            resist[k] = (resist[k] ?? 0) + (v ?? 0);
+    }
+    for (const src of [armor.offense, gear.offense, perks.offense]) {
+        for (const [k, v] of Object.entries(src ?? {}))
+            offense[k] = (offense[k] ?? 0) + (v ?? 0);
+    }
+    const mods = {};
+    for (const src of [gear.mods, perks.mods]) {
+        for (const [k, v] of Object.entries(src))
+            mods[k] = (mods[k] ?? 0) + (v ?? 0);
+    }
+    return { resist, offense, mods };
+}
+// ---- 建立角色 ----
+/** 職業基礎陣列依優先順序分配，再加種族加值。 */
+export function baseAttrs(classId, race) {
+    const array = attributeRules.creation.array;
+    const attrs = Object.fromEntries(ATTR_IDS.map((a) => [a, 10]));
+    classDef(classId).priority.forEach((a, i) => (attrs[a] = array[i] ?? 10));
+    for (const [a, v] of Object.entries(attributeRules.races[race]?.bonus ?? {}))
+        attrs[a] += v ?? 0;
+    return attrs;
+}
+/** 依等級與屬性重算推導值（目前只有最大生命值），生命值不超過上限。 */
+export function recalc(c) {
+    const before = c.maxHp;
+    c.maxHp = maxHpFor(c.level, attrsOf(c));
+    if (c.maxHp > before)
+        c.hp += c.maxHp - before;
+    c.hp = Math.min(c.hp, c.maxHp);
+    return c;
+}
+function baseCharacter(id, name, race, classId, attrs) {
+    const cls = classDef(classId);
+    const maxHp = maxHpFor(1, attrs);
+    return {
+        id, name, race, class: classId, level: 1, xp: 0,
+        attrs, attrPoints: 0,
+        hp: maxHp, maxHp,
+        slotsUsed: [], usesPerRest: {},
+        abilities: [...cls.start],
+        weapon: cls.weapon, armor: cls.armor,
+        status: [],
+    };
+}
+/** bonus：建角時自由分配的屬性點（合計不超過 creation.bonus_points，單項不超過 max_score）。 */
+export function createPlayer(name, race, classId, bonus = {}) {
+    const attrs = baseAttrs(classId, race);
+    const { bonus_points, max_score } = attributeRules.creation;
+    let budget = bonus_points;
+    for (const a of ATTR_IDS) {
+        const add = Math.max(0, Math.min(bonus[a] ?? 0, budget, max_score - attrs[a]));
+        attrs[a] += add;
+        budget -= add;
+    }
+    const c = { ...baseCharacter('pc', name, race, classId, attrs), isPlayer: true };
+    // 主角從職業的基本配備開始（第一級材料）
+    c.gear = startingGear(classId);
+    syncGear(c, classDef(classId).weapon);
+    return c;
+}
+/** NPC 依等級自動成長：屬性點加在主屬性，能力依名字決定的固定順序挑選。 */
+export function createNpc(def, rng) {
+    const c = {
+        ...baseCharacter(def.id, def.name, def.race, def.class, baseAttrs(def.class, def.race)),
+        personality: def.personality,
+        ...(def.faction ? { faction: def.faction } : {}),
+        ...(def.gender ? { gender: def.gender } : {}),
+        affinity: progression.affinity.initial,
+    };
+    while (c.level < def.level) {
+        c.level += 1;
+        c.attrs[classDef(c.class).priority[0]] += attributeRules.level_up_points;
+        const choice = abilityChoices(c, rng)[0];
+        if (choice)
+            c.abilities.push(choice);
+    }
+    // 夥伴與敵對冒險者：依等級即時生成裝備
+    c.gear = generateLoadout(c.class, c.level, rng, c.race);
+    // 固定 NPC：內容頁籤設定的屬性、能力與裝備取代生成的
+    for (const a of ATTR_IDS) {
+        const v = def.attrs?.[a];
+        if (v)
+            c.attrs[a] = v;
+    }
+    if (def.abilities?.length)
+        c.abilities = [...new Set(def.abilities.filter((id) => !!abilityTable[id]))];
+    if (def.gear) {
+        c.gear = {};
+        for (const [slot, spec] of Object.entries(def.gear)) {
+            if (spec && gearRules.bases[spec.base] && gearRules.materials[spec.material])
+                c.gear[slot] = { name: gearName(spec), spec: { ...spec } };
+        }
+    }
+    if (def.appearance)
+        c.appearance = def.appearance;
+    if (def.background)
+        c.background = def.background;
+    // 特質：資料裡指定的，沒有時依 id 固定地抽
+    const perks = npcPerksOf(def);
+    if (perks.length)
+        c.perks = [...new Set(perks)];
+    syncGear(c, classDef(c.class).weapon);
+    recalc(c);
+    c.hp = c.maxHp;
+    return c;
+}
+// ---- 能力學習 ----
+export function abilityQuality(a) {
+    if (a.type === 'cantrip')
+        return 'common';
+    if (a.type === 'spell')
+        return combatRules.quality_by_circle[(a.circle ?? 1) - 1] ?? 'legendary';
+    const lvl = a.unlock ?? 1;
+    return combatRules.quality_by_level.find((q) => lvl >= q.levels[0] && lvl <= q.levels[1])?.quality ?? 'legendary';
+}
+/** 目前可以學的能力：技能看解鎖等級、法術看是否擁有該環、戲法看可學數量；品質不超過生命層級上限。 */
+export function learnable(c) {
+    const cap = QUALITY_ORDER.indexOf(maxSkillQuality(c.level));
+    const circles = maxCircle(c);
+    const cantripsKnown = c.abilities.filter((id) => classAbilities(c.class).find((a) => a.id === id)?.type === 'cantrip').length;
+    return classAbilities(c.class).filter((a) => {
+        if (c.abilities.includes(a.id))
+            return false;
+        if (QUALITY_ORDER.indexOf(abilityQuality(a)) > cap)
+            return false;
+        if (a.type === 'skill')
+            return (a.unlock ?? 1) <= c.level;
+        if (a.type === 'spell')
+            return (a.circle ?? 1) <= circles;
+        return cantripsKnown < maxCantrips(c.level);
+    });
+}
+/** 升級時的能力三選一 */
+export function abilityChoices(c, rng, count = 3) {
+    const pool = learnable(c);
+    const picked = [];
+    while (picked.length < count && pool.length > 0) {
+        picked.push(pool.splice(rng.int(0, pool.length - 1), 1)[0].id);
+    }
+    return picked;
+}
+/** 這組能力選項還能重抽幾次。max 為每組的重抽上限（玩家可在設定中調整，預設見 progression.json）。 */
+export function rerollsLeft(c, max = progression.ability_rerolls) {
+    return c.pendingAbilityChoices?.length ? Math.max(0, max - (c.abilityRerollsUsed ?? 0)) : 0;
+}
+/** 重抽升級時的能力三選一：盡量換成目前沒出現的能力。 */
+export function rerollAbilityChoices(c, rng, max = progression.ability_rerolls) {
+    const current = c.pendingAbilityChoices?.[0];
+    if (!current)
+        throw new Error('沒有待選的能力');
+    if (rerollsLeft(c, max) <= 0)
+        throw new Error('這次升級已經不能再重抽了');
+    const fresh = learnable(c).filter((a) => !current.includes(a.id));
+    if (!fresh.length)
+        throw new Error('沒有其他可以學的能力了');
+    const picked = [];
+    while (picked.length < current.length && fresh.length)
+        picked.push(fresh.splice(rng.int(0, fresh.length - 1), 1)[0].id);
+    // 新的能力不夠三個時，用原本的選項補上
+    for (const id of current)
+        if (picked.length < current.length && !picked.includes(id))
+            picked.push(id);
+    c.pendingAbilityChoices[0] = picked;
+    c.abilityRerollsUsed = (c.abilityRerollsUsed ?? 0) + 1;
+    return picked;
+}
+/** 學會一項能力（事件、任務的技能報酬）。必須是這個職業的能力且尚未學會。 */
+export function learnAbility(c, id) {
+    const a = classAbilities(c.class).find((x) => x.id === id);
+    if (!a)
+        throw new Error('這個職業學不了這項能力');
+    if (c.abilities.includes(id))
+        throw new Error('已經學會了');
+    c.abilities.push(id);
+    return a;
+}
+/** 加經驗值並處理升級；回傳升了幾級。會直接修改角色。 */
+export function gainXp(c, amount, rng) {
+    c.xp += amount;
+    let gained = 0;
+    while (c.level < 20 && c.xp >= xpToNext(c.level)) {
+        c.xp -= xpToNext(c.level);
+        c.level += 1;
+        gained += 1;
+        c.attrPoints += attributeRules.level_up_points;
+        recalc(c);
+        const choices = abilityChoices(c, rng);
+        if (choices.length > 0)
+            c.pendingAbilityChoices = [...(c.pendingAbilityChoices ?? []), choices];
+        // 特質：到了特定等級多一次三選一（perks.json 的 levelup）
+        levelUpPerkOffer(c, c.level, rng);
+    }
+    return gained;
+}
+/** 分配一點屬性點 */
+export function spendAttrPoint(c, attr) {
+    if (c.attrPoints <= 0)
+        throw new Error('沒有可分配的屬性點');
+    if (c.attrs[attr] >= attributeRules.score.max)
+        throw new Error('屬性已達上限');
+    c.attrs[attr] += 1;
+    c.attrPoints -= 1;
+    recalc(c);
+}
+// ---- 報告 ----
+/**
+ * 報告用的角色快照。player 傳入時，NPC 隊友會附上對主角的態度
+ * （角色扮演指導：實力差 → 親密值；立場與性格交給 AI 依 personality 演繹）。
+ */
+export function snapshot(c, before, player) {
+    const b = before ?? c;
+    const state = {
+        id: c.id,
+        name: c.name,
+        race: c.race,
+        class: c.class,
+        level: c.level,
+        rank: guildRankFor(c.level),
+        hp: [b.hp, c.hp, c.maxHp],
+        status: [...c.status],
+        equipment: c.gear ? Object.values(c.gear).filter((g) => !!g).map((g) => g.name) : [weaponDef(c.weapon).name, armorDef(c.armor).name],
+    };
+    if (c.personality)
+        state.personality = c.personality;
+    if (c.gender)
+        state.gender = genderName(c.gender);
+    if (player && !c.isPlayer && c.affinity !== undefined) {
+        state.attitude = `${powerGapAttitude(c.level, player.level)} / ${affinityStage(c.affinity)}`;
+    }
+    return state;
+}
+/** 主角的設定（性別、出身、外貌、背景），交給 AI 參考。 */
+export function protagonistText(c, birthplaceName) {
+    const lines = [
+        `${c.name}｜${c.gender ? `${c.gender}｜` : ''}${attributeRules.races[c.race]?.name ?? c.race}・${classDef(c.class).name} Lv.${c.level}${birthplaceName ? `｜出身：${birthplaceName}` : ''}`,
+        c.appearance ? `外貌：${c.appearance}` : '',
+        c.background ? `背景：${c.background}` : '',
+        perksOf(c).length ? `特質：${perksOf(c).map((p) => (p.flaw ? `${p.name}（缺陷）` : p.name)).join('、')}` : '',
+        tattoosOf(c).length ? `刺青：\n${tattooSummary(c)}` : '',
+    ];
+    return lines.filter(Boolean).join('\n');
+}
+/** 修改主角設定（名字以外的文字欄位） */
+export function editProfile(c, patch) {
+    for (const k of ['gender', 'appearance', 'background']) {
+        const v = patch[k];
+        if (v === undefined)
+            continue;
+        const t = v.trim().slice(0, k === 'background' ? 800 : k === 'appearance' ? 400 : 20);
+        if (t)
+            c[k] = t;
+        else
+            delete c[k];
+    }
+}

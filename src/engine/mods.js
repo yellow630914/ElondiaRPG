@@ -1,0 +1,1471 @@
+// 玩家自訂內容：新增或修改怪物、物品、裝備底材與材料（「🛠️ 內容」頁籤）。
+//
+// - 修改存成一份覆寫（ContentMods）：內建項目存整份修改後的資料，自建項目存整份資料並標上 custom。
+// - applyContent 先把遊戲資料還原成內建的樣子（模組載入時的快照），再套上覆寫，所以隨時可以重新套用或恢復預設。
+// - 怪物的出現地點（spawns / exclude）寫進城郊與地下城的遭遇表；物品的寶箱、採集設定寫進對應的表；
+//   掉落物以怪物的 loot 為準（在物品這邊設定掉落時，改的是那隻怪物）。
+// - 自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備。
+// 說明見 docs/CONTENT_EDITOR.md。
+import mapsJson from '@data/world/maps.json';
+import { abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits, npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, wildEncounters, stories, slaveryRules, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, } from './data';
+import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER } from './gear';
+import { settlementArea, ZONES } from './grid';
+import { cleanFlag } from './storyFlags';
+import { TOOL_KINDS } from './tools';
+import { cleanPerkEffects, describeEffects } from './perks';
+import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck } from './storyMods';
+import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod } from './tattooMods';
+import { tattooRules } from './tattoos';
+import { applyLandmarkMod, restoreLandmarks, sanitizeLandmarkMod } from './landmarkMods';
+import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod } from './shopMods';
+import { notForSale } from './trade';
+export const CHEST_LAYERS = DUNGEON_LAYER_IDS;
+export function emptyMods() {
+    return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {} };
+}
+// ---- 內建資料的快照（模組載入時） ----
+const clone = (v) => JSON.parse(JSON.stringify(v));
+const maps = mapsJson;
+const snapshot = {
+    enemies: clone(enemies),
+    dungeon: clone(dungeonEncounters),
+    wild: clone(wildEncounterTables),
+    items: clone(itemRules.items),
+    bases: clone(gearRules.bases),
+    materials: clone(gearRules.materials),
+    chests: clone(gearRules.chests),
+    weapons: clone(equipment.weapons),
+    armors: clone(equipment.armors),
+    gather: { wild: [...maps.generation.wild.resource_items], dungeon: [...maps.generation.dungeon.resource_items] },
+    npcs: clone(namedNpcs),
+    abilities: clone(abilities),
+    perks: clone(perkRules.perks),
+    statuses: clone(statuses),
+    tattoos: clone(tattooRules.templates),
+    marks: clone(slaveryRules.contracts),
+    markRules: clone(currentMarkRules()),
+};
+export function builtinTattoo(id) {
+    return snapshot.tattoos[id] ? clone(snapshot.tattoos[id]) : undefined;
+}
+export function builtinMark(id) {
+    return snapshot.marks[id] ? clone(snapshot.marks[id]) : undefined;
+}
+/** 內建的印記設定 */
+export function builtinMarkRules() {
+    return clone(snapshot.markRules);
+}
+export function builtinStatus(id) {
+    return snapshot.statuses[id] ? clone(snapshot.statuses[id]) : undefined;
+}
+export function builtinPerk(id) {
+    const p = snapshot.perks.find((x) => x.id === id);
+    return p ? clone(p) : undefined;
+}
+export function builtinAbility(id) {
+    return snapshot.abilities[id] ? clone(snapshot.abilities[id]) : undefined;
+}
+export function builtinNpc(id) {
+    const n = snapshot.npcs.find((x) => x.id === id);
+    return n ? clone(n) : undefined;
+}
+export function builtinEnemy(id) {
+    return snapshot.enemies[id] ? clone(snapshot.enemies[id]) : undefined;
+}
+export function builtinItem(name) {
+    const i = snapshot.items.find((x) => x.name === name);
+    return i ? clone(i) : undefined;
+}
+export function builtinBase(id) {
+    return snapshot.bases[id] ? clone(snapshot.bases[id]) : undefined;
+}
+export function builtinMaterial(id) {
+    return snapshot.materials[id] ? clone(snapshot.materials[id]) : undefined;
+}
+function replaceRecord(target, source) {
+    for (const k of Object.keys(target))
+        delete target[k];
+    for (const [k, v] of Object.entries(source))
+        target[k] = clone(v);
+}
+/** 把遊戲資料還原成內建的樣子 */
+function restore() {
+    replaceRecord(enemies, snapshot.enemies);
+    replaceRecord(dungeonEncounters, snapshot.dungeon);
+    replaceRecord(wildEncounterTables, snapshot.wild);
+    itemRules.items.splice(0, itemRules.items.length, ...clone(snapshot.items));
+    replaceRecord(gearRules.bases, snapshot.bases);
+    replaceRecord(gearRules.materials, snapshot.materials);
+    replaceRecord(gearRules.chests, snapshot.chests);
+    replaceRecord(equipment.weapons, snapshot.weapons);
+    replaceRecord(equipment.armors, snapshot.armors);
+    maps.generation.wild.resource_items.splice(0, Infinity, ...snapshot.gather.wild);
+    maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon);
+    namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs));
+    replaceRecord(statuses, snapshot.statuses);
+    replaceRecord(tattooRules.templates, snapshot.tattoos);
+    replaceRecord(slaveryRules.contracts, snapshot.marks);
+    applyMarkRules(clone(snapshot.markRules));
+    restoreShops();
+    restoreLandmarks();
+    replaceRecord(abilities, snapshot.abilities);
+    perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks));
+    restoreStories();
+}
+// ---- 遭遇表 ----
+const LAYER_NAME = DUNGEON_LAYER_NAME;
+const BOSS_LAYERS = BOSS_LAYER_IDS;
+/** 可以放怪物的遭遇表 */
+export function tableOptions() {
+    const out = [];
+    for (const r of geography.regions)
+        out.push({ key: `wild:${r.id}`, label: `城郊・${r.name}` });
+    for (const loc of geography.locations.filter((l) => l.type === 'dungeon' && dungeonEncounters[l.id])) {
+        // 底層只有寫了底層的地下城才有
+        const has = (layer) => layer !== 'abyss' || !!dungeonEncounters[loc.id].abyss?.length;
+        for (const layer of CHEST_LAYERS.filter(has))
+            out.push({ key: `dungeon:${loc.id}:${layer}`, label: `${loc.name}・${LAYER_NAME[layer]}` });
+        for (const layer of BOSS_LAYERS.filter(has))
+            out.push({ key: `boss:${loc.id}:${layer}`, label: `${loc.name}・${LAYER_NAME[layer]}層主（取代原本的層主）` });
+    }
+    return out;
+}
+export function tableLabel(key) {
+    return tableOptions().find((t) => t.key === key)?.label ?? key;
+}
+/** 遭遇表本身（boss 以外） */
+function tableGroups(key) {
+    const [kind, a, b] = key.split(':');
+    if (kind === 'wild') {
+        const t = wildEncounterTables[a];
+        return Array.isArray(t) ? t : undefined;
+    }
+    if (kind === 'dungeon')
+        return dungeonEncounters[a]?.[b];
+    return undefined;
+}
+/** 這隻怪物目前出現在哪些遭遇表（套用覆寫後） */
+export function placementsOf(id) {
+    const out = [];
+    for (const t of tableOptions()) {
+        if (t.key.startsWith('boss:')) {
+            const [, loc, layer] = t.key.split(':');
+            const g = dungeonEncounters[loc]?.bosses?.[layer];
+            if (g?.[0]?.[0] === id)
+                out.push({ key: t.key, label: t.label.replace('（取代原本的層主）', ''), groups: 1 });
+            continue;
+        }
+        const n = (tableGroups(t.key) ?? []).filter((g) => g.some(([e]) => e === id)).length;
+        if (n)
+            out.push({ key: t.key, label: t.label, groups: n });
+    }
+    return out;
+}
+/** 內建遭遇表裡有這隻怪物的地方（不含層主），給「從遭遇表移除」用 */
+export function builtinPlacementsOf(id) {
+    const out = [];
+    for (const t of tableOptions()) {
+        const [kind, a, b] = t.key.split(':');
+        const groups = kind === 'wild' ? snapshot.wild[a] : kind === 'dungeon' ? snapshot.dungeon[a]?.[b] : undefined;
+        if (Array.isArray(groups) && groups.some((g) => g.some(([e]) => e === id)))
+            out.push(t);
+    }
+    return out;
+}
+function applyPlacements(id, m) {
+    for (const key of m.exclude ?? []) {
+        const groups = tableGroups(key);
+        if (!groups)
+            continue;
+        const kept = groups.filter((g) => !g.some(([e]) => e === id));
+        // 遭遇表不能變成空的
+        if (kept.length)
+            groups.splice(0, groups.length, ...kept);
+    }
+    for (const p of m.spawns ?? []) {
+        const count = Math.max(1, Math.min(6, Math.round(p.count) || 1));
+        if (p.table.startsWith('boss:')) {
+            const [, loc, layer] = p.table.split(':');
+            const d = dungeonEncounters[loc];
+            if (!d)
+                continue;
+            (d.bosses ??= {})[layer] = [[id, count]];
+            if (layer === 'deep')
+                d.boss = [[id, count]];
+            continue;
+        }
+        const groups = tableGroups(p.table);
+        if (!groups)
+            continue;
+        for (let i = 0; i < Math.max(1, Math.min(5, Math.round(p.weight ?? 1))); i++)
+            groups.push([[id, count]]);
+    }
+}
+// ---- 物品的來源 ----
+/** 這個物品目前從哪裡來（套用覆寫後） */
+export function itemSources(name) {
+    const drops = Object.values(enemies)
+        .flatMap((e) => (e.loot ?? []).filter((l) => l.item === name).map((l) => ({ enemy: e.id, chance: l.chance, qty: l.qty ?? 1 })));
+    const chests = {};
+    for (const layer of CHEST_LAYERS) {
+        const hit = gearRules.chests[layer]?.items.find(([n]) => n === name);
+        if (hit)
+            chests[layer] = hit[1];
+    }
+    const gather = ['wild', 'dungeon'].filter((g) => maps.generation[g].resource_items.includes(name));
+    return { drops, chests, gather };
+}
+// ---- 篩選用的索引（內容頁籤） ----
+/** 每隻怪物出現的地方：wild:地區（城郊）、dungeon:地點（任何一層或層主） */
+export function enemyPlaceIndex() {
+    const out = new Map();
+    const add = (id, key) => {
+        let set = out.get(id);
+        if (!set)
+            out.set(id, (set = new Set()));
+        set.add(key);
+    };
+    for (const r of geography.regions)
+        for (const g of wildEncounters(r.id))
+            for (const [id] of g)
+                add(id, `wild:${r.id}`);
+    for (const [loc, t] of Object.entries(dungeonEncounters)) {
+        for (const layer of CHEST_LAYERS)
+            for (const g of t[layer] ?? [])
+                for (const [id] of g)
+                    add(id, `dungeon:${loc}`);
+        const bosses = [t.boss, ...Object.values(t.bosses ?? {})];
+        for (const g of bosses)
+            for (const [id] of g ?? [])
+                add(id, `dungeon:${loc}`);
+    }
+    return out;
+}
+/** 篩選怪物的出現地點：城郊各地區、各座地下城 */
+export function enemyPlaceOptions() {
+    return [
+        ...geography.regions.map((r) => ({ key: `wild:${r.id}`, label: `城郊・${r.name}` })),
+        ...geography.locations.filter((l) => l.type === 'dungeon' && dungeonEncounters[l.id]).map((l) => ({ key: `dungeon:${l.id}`, label: `地下城・${l.name}` })),
+    ];
+}
+/** 物品的取得方式 */
+export const ITEM_SOURCE_NAME = {
+    'shop:general': '雜貨店', 'shop:temple': '神殿', 'shop:tavern': '酒館', 'shop:smith': '鐵匠鋪', 'shop:tailor': '裁縫店',
+    'shop:jeweler': '珠寶店', 'shop:magic': '魔法物品店', 'shop:info': '情報商',
+    chest: '寶箱', 'gather:wild': '近郊採集', 'gather:dungeon': '地下城採集', drop: '怪物掉落', event: '事件獎勵', forge: '打造材料', none: '沒有取得方式',
+};
+/** 每個物品的取得方式（ITEM_SOURCE_NAME 的 key） */
+export function itemSourceIndex() {
+    const drops = new Set(Object.values(enemies).flatMap((e) => (e.loot ?? []).map((l) => l.item)));
+    const chests = new Set(CHEST_LAYERS.flatMap((l) => (gearRules.chests[l]?.items ?? []).map(([n]) => n)));
+    const out = new Map();
+    for (const i of itemRules.items) {
+        const set = new Set(i.tags.map((t) => `shop:${t}`));
+        if (chests.has(i.name))
+            set.add('chest');
+        for (const g of ['wild', 'dungeon'])
+            if (maps.generation[g].resource_items.includes(i.name))
+                set.add(`gather:${g}`);
+        if (drops.has(i.name))
+            set.add('drop');
+        if (i.event)
+            set.add('event');
+        if (i.forge?.materials.length)
+            set.add('forge');
+        if (!set.size)
+            set.add('none');
+        out.set(i.name, set);
+    }
+    return out;
+}
+// ---- 套用 ----
+const strip = (v, keys) => {
+    const c = clone(v);
+    for (const k of keys)
+        delete c[k];
+    return c;
+};
+const LOC_BY_TIER = { 3: 'city', 4: 'capital' };
+/** 裝備在哪種店賣：金屬與木材是鐵匠鋪，皮革與布料是裁縫店，寶石是珠寶店 */
+export const GEAR_SHOP = { metal: 'smith', wood: 'smith', leather: 'tailor', cloth: 'tailor', jewel: 'jeweler' };
+/** 自建的底材或材料：產生「底材 × 同類材料」的制式裝備（已有同名物品時略過） */
+function generateCatalog(mods) {
+    const names = new Set(itemRules.items.map((i) => i.name));
+    for (const [bid, b] of Object.entries(gearRules.bases)) {
+        for (const [mid, m] of Object.entries(gearRules.materials)) {
+            if (b.restraint || m.kind !== b.kind || (!mods.bases[bid]?.custom && !mods.materials[mid]?.custom))
+                continue;
+            const spec = { base: bid, material: mid };
+            const name = gearName(spec);
+            if (names.has(name))
+                continue;
+            names.add(name);
+            itemRules.items.push({
+                name, category: 'equipment', price_cc: gearPrice(spec), tags: m.tier <= 4 ? [GEAR_SHOP[m.kind]] : [], gear: spec,
+                ...(LOC_BY_TIER[m.tier] ? { min_location: LOC_BY_TIER[m.tier] } : {}),
+                ...(b.desc || m.desc ? { desc: `${b.desc ?? ''}${m.desc ?? ''}` } : {}),
+            });
+        }
+    }
+}
+/** 內建制式裝備的價格跟著修改過的底材或材料重新計算 */
+function repriceCatalog(mods) {
+    for (const i of itemRules.items) {
+        if (!i.gear || mods.items[i.name])
+            continue;
+        if (mods.bases[i.gear.base] || mods.materials[i.gear.material])
+            i.price_cc = gearPrice(i.gear);
+    }
+}
+/** 把覆寫套用到遊戲資料（先還原成內建的樣子）。壞掉的項目略過，回傳略過的原因 */
+export function applyContent(mods) {
+    restore();
+    const problems = [];
+    const tryEach = (label, list, fn) => {
+        for (const [k, v] of Object.entries(list)) {
+            try {
+                fn(k, v);
+            }
+            catch (e) {
+                problems.push(`${label}「${k}」：${e instanceof Error ? e.message : String(e)}`);
+            }
+        }
+    };
+    // 狀態最先：能力、物品、其他狀態的命中附加都會用到
+    tryEach('狀態', mods.statuses ?? {}, (id, m) => {
+        statuses[id] = strip(m, ['custom']);
+    });
+    // 刺青與奴隸印記：事件、特殊任務會用到
+    tryEach('刺青圖樣', mods.tattoos ?? {}, (id, m) => {
+        tattooRules.templates[id] = strip(m, ['custom']);
+    });
+    tryEach('奴隸印記', mods.marks ?? {}, (id, m) => {
+        slaveryRules.contracts[id] = strip(m, ['custom']);
+    });
+    tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)))));
+    tryEach('地標', mods.landmarks ?? {}, (id, m) => applyLandmarkMod(id, sanitizeLandmarkMod(id, m)));
+    tryEach('商店', mods.shops ?? {}, (id, m) => applyShopMod(id, m));
+    // 商店的位置：移動內建的店、擺自建的店（擺不上去的略過）
+    tryEach('商店的位置', { all: mods.shops ?? {} }, (_id, all) => applyShopPlacements(all));
+    // 能力先套用：怪物、固定 NPC、職業都會用到
+    tryEach('能力', mods.abilities, (id, m) => {
+        abilities[id] = { ...strip(m, ['custom']), id };
+    });
+    // 特質在能力之後、固定 NPC 之前（物品的書籍、固定 NPC 的特質清單會用到）
+    tryEach('特質', mods.perks, (id, m) => registerPerk(id, m));
+    tryEach('材料', mods.materials, (id, m) => {
+        gearRules.materials[id] = strip(m, ['custom']);
+    });
+    tryEach('底材', mods.bases, (id, b) => {
+        const base = strip(b, ['custom', 'weaponDef', 'armorDef']);
+        // 內建底材直接改它的武器或防具類型（職業、NPC 用到同一種類型的也一起改）；自建底材另外登錄一種
+        if (b.weaponDef) {
+            const wid = snapshot.bases[id]?.weapon ?? `w_${id}`;
+            equipment.weapons[wid] = { ...(snapshot.weapons[wid] ?? {}), ...clone(b.weaponDef) };
+            base.weapon = wid;
+        }
+        if (b.armorDef) {
+            const aid = snapshot.bases[id]?.armor ?? `a_${id}`;
+            equipment.armors[aid] = { ...(snapshot.armors[aid] ?? {}), ...clone(b.armorDef) };
+            base.armor = aid;
+        }
+        gearRules.bases[id] = base;
+    });
+    generateCatalog(mods);
+    repriceCatalog(mods);
+    tryEach('物品', mods.items, (name, m) => {
+        const def = strip(m, ['custom', 'chests', 'gather']);
+        def.name = name;
+        // 底材或材料被刪掉的裝備：拿掉組成（變成一般物品）
+        if (def.gear && (gearRules.bases[def.gear.base]?.kind === undefined || gearRules.bases[def.gear.base].kind !== gearRules.materials[def.gear.material]?.kind))
+            delete def.gear;
+        // 被刪掉的材料：拿掉打造的連結
+        if (def.forge) {
+            const forge = def.forge.materials.filter((x) => !!gearRules.materials[x]);
+            if (forge.length)
+                def.forge = { materials: forge };
+            else
+                delete def.forge;
+        }
+        const i = itemRules.items.findIndex((x) => x.name === name);
+        if (i >= 0)
+            itemRules.items[i] = def;
+        else
+            itemRules.items.push(def);
+        if (m.chests) {
+            for (const layer of CHEST_LAYERS) {
+                const t = gearRules.chests[layer];
+                if (!t)
+                    continue;
+                t.items = t.items.filter(([n]) => n !== name);
+                const p = m.chests[layer];
+                if (p)
+                    t.items.push([name, p]);
+            }
+        }
+        if (m.gather) {
+            for (const g of ['wild', 'dungeon']) {
+                const list = maps.generation[g].resource_items;
+                const has = list.includes(name);
+                if (m.gather.includes(g) && !has)
+                    list.push(name);
+                if (!m.gather.includes(g) && has)
+                    list.splice(list.indexOf(name), 1);
+            }
+        }
+    });
+    reindexItems();
+    tryEach('怪物', mods.enemies, (id, m) => {
+        enemies[id] = { ...strip(m, ['custom', 'spawns', 'exclude']), id };
+    });
+    tryEach('怪物的出現地點', mods.enemies, (id, m) => applyPlacements(id, m));
+    tryEach('固定 NPC', mods.npcs, (id, m) => {
+        const def = { ...strip(m, ['custom']), id };
+        const i = namedNpcs.findIndex((n) => n.id === id);
+        if (i >= 0)
+            namedNpcs[i] = def;
+        else
+            namedNpcs.push(def);
+    });
+    tryEach('特殊任務', mods.stories, (id, m) => applyStoryMod(id, m));
+    return problems;
+}
+/**
+ * 匯入的內容：有錯誤（storyCheck 的 errors）的特殊任務不收，從 mods 拿掉（only 給時只檢查這些 id）。
+ * 拿掉一個任務可能讓別的任務變成有錯誤（例如開始它的效果），所以反覆檢查到沒有為止。
+ * 會套用 mods（呼叫的人之後要重新套用目前的內容）。回傳說明。
+ */
+export function dropBrokenStories(mods, only) {
+    const out = [];
+    for (let round = 0; round < 10; round++) {
+        applyContent(mods);
+        const bad = Object.keys(mods.stories)
+            .filter((id) => !only || only.has(id))
+            .map((id) => ({ id, def: stories.find((s) => s.id === id) }))
+            .map(({ id, def }) => ({ id, title: def?.title ?? id, errors: def ? storyCheck(def).errors : [] }))
+            .filter((b) => b.errors.length);
+        if (!bad.length)
+            break;
+        for (const b of bad) {
+            out.push(`特殊任務「${b.title}」有錯誤，沒有匯入：${b.errors.join('；')}`);
+            delete mods.stories[b.id];
+        }
+    }
+    return out;
+}
+// ---- 整理（儲存與匯入時） ----
+const num = (v, lo, hi, d) => {
+    // 空白的欄位用預設值（不要變成 0 再被夾到最小值）
+    if (v === '' || v === null || v === undefined)
+        return d;
+    const n = typeof v === 'number' ? v : Number(v);
+    return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d;
+};
+const int = (v, lo, hi, d) => Math.round(num(v, lo, hi, d));
+const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+const DICE = /^\d{0,2}d\d{1,3}([+-]\d{1,3})?$/;
+const dice = (v, d) => {
+    const s = str(v, 12).replace(/\s+/g, '');
+    return DICE.test(s) ? s : d;
+};
+export function parseDice(v) {
+    const m = /^(\d+)d(\d+)(?:\+(\d+))?$/.exec(v.replace(/\s+/g, ''));
+    return m ? { count: Number(m[1]), sides: Number(m[2]), bonus: Number(m[3] ?? 0) } : { count: 1, sides: 6, bonus: 0 };
+}
+export function formatDice(d) {
+    const count = Math.max(1, Math.min(20, Math.round(d.count) || 1));
+    const sides = Math.max(2, Math.min(100, Math.round(d.sides) || 6));
+    const bonus = Math.max(0, Math.min(99, Math.round(d.bonus) || 0));
+    return `${count}d${sides}${bonus ? `+${bonus}` : ''}`;
+}
+const DAMAGE_IDS = () => damageTypes.types.map((t) => t.id);
+const AFFINITY_KEYS = () => [...DAMAGE_IDS(), ...Object.keys(damageTypes.groups), 'all'];
+const MOD_KEYS = ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit', 'threat'];
+function affinity(v) {
+    if (!v || typeof v !== 'object')
+        return undefined;
+    const out = {};
+    for (const [k, x] of Object.entries(v)) {
+        if (!AFFINITY_KEYS().includes(k))
+            continue;
+        const n = Math.round(num(x, -1, 2, 0) * 100) / 100;
+        if (n)
+            out[k] = n;
+    }
+    return Object.keys(out).length ? out : undefined;
+}
+function mods(v, lo = -10, hi = 10) {
+    if (!v || typeof v !== 'object')
+        return undefined;
+    const out = {};
+    for (const k of MOD_KEYS) {
+        const x = v[k];
+        if (x === undefined || x === '')
+            continue;
+        const n = k === 'threat' ? Math.round(num(x, -1, 2, 0) * 100) / 100 : int(x, lo, hi, 0);
+        if (n)
+            out[k] = n;
+    }
+    return Object.keys(out).length ? out : undefined;
+}
+export const ENEMY_KINDS = {
+    beast: '野獸', humanoid: '人形', undead: '不死', spirit: '靈體', construct: '構裝', plant: '植物', demon: '魔族', elemental: '元素', fey: '妖精',
+};
+export function sanitizeEnemy(id, raw, custom) {
+    const attrs = Object.fromEntries(ATTR_IDS.map((a) => [a, int(raw.attrs?.[a], 1, 30, 10)]));
+    const w = raw.weapon ?? { dice: '1d6', type: 'slashing', attr: 'str' };
+    const loot = (raw.loot ?? [])
+        .map((l) => ({ item: str(l.item, 30), chance: Math.round(num(l.chance, 0, 1, 0.5) * 100) / 100, qty: int(l.qty, 1, 20, 1) }))
+        .filter((l) => l.item && l.chance > 0)
+        .map(({ qty, ...l }) => (qty > 1 ? { ...l, qty } : l));
+    const money = raw.money_cc && raw.money_cc.length === 2 ? [int(raw.money_cc[0], 0, 1e6, 0), int(raw.money_cc[1], 0, 1e6, 0)] : undefined;
+    const spawns = (raw.spawns ?? [])
+        .filter((p) => p && typeof p.table === 'string' && tableOptions().some((t) => t.key === p.table))
+        .map((p) => ({ table: p.table, count: int(p.count, 1, 6, 1), ...(int(p.weight, 1, 5, 1) > 1 ? { weight: int(p.weight, 1, 5, 1) } : {}) }));
+    const out = {
+        id,
+        name: str(raw.name, 20) || '未命名的怪物',
+        level: int(raw.level, 1, 30, 1),
+        attrs,
+        hp: int(raw.hp, 1, 9999, 10),
+        ap: int(raw.ap, 1, 12, 3),
+        weapon: { dice: formatDice(parseDice(String(w.dice ?? ''))), type: DAMAGE_IDS().includes(w.type) ? w.type : 'slashing', attr: ATTR_IDS.includes(w.attr) ? w.attr : 'str' },
+        evade: int(raw.evade, -10, 20, 0),
+        dr: int(raw.dr, 0, 30, 0),
+        xp: int(raw.xp, 0, 99999, 25),
+    };
+    const res = affinity(raw.resist);
+    if (res)
+        out.resist = res;
+    const off = affinity(raw.offense);
+    if (off)
+        out.offense = off;
+    // 怪物沒有法術環：只能用技能與戲法
+    const abil = (raw.abilities ?? []).filter((a) => !!abilities[a] && abilities[a].type !== 'spell');
+    if (abil.length)
+        out.abilities = [...new Set(abil)];
+    // 生命低於 X% 才能用的技能：只留還在技能清單上的
+    const gates = Object.entries(raw.ability_hp_below ?? {})
+        .filter(([a]) => out.abilities?.includes(a))
+        .map(([a, v]) => [a, int(v, 1, 99, 50)]);
+    if (gates.length)
+        out.ability_hp_below = Object.fromEntries(gates);
+    if (money && (money[0] || money[1]))
+        out.money_cc = [Math.min(...money), Math.max(...money)];
+    if (loot.length)
+        out.loot = loot;
+    if (raw.kind && ENEMY_KINDS[raw.kind])
+        out.kind = raw.kind;
+    if (raw.armed)
+        out.armed = true;
+    if (raw.rut)
+        out.rut = true;
+    const traits = (raw.traits ?? []).filter((t) => !!monsterTraits.traits[t]);
+    if (traits.length)
+        out.traits = traits;
+    if (str(raw.desc, 200))
+        out.desc = str(raw.desc, 200);
+    if (raw.habitats?.length)
+        out.habitats = raw.habitats;
+    if (custom)
+        out.custom = true;
+    if (spawns.length)
+        out.spawns = spawns;
+    const exclude = (raw.exclude ?? []).filter((k) => typeof k === 'string');
+    if (exclude.length)
+        out.exclude = [...new Set(exclude)];
+    return out;
+}
+const CATEGORIES = ['food', 'consumable', 'gear', 'material', 'scroll', 'equipment', 'info', 'furniture'];
+export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info'];
+const LOCATIONS = ['village', 'town', 'city', 'capital'];
+function sanitizeUse(u) {
+    if (!u || typeof u !== 'object')
+        return undefined;
+    const out = {};
+    if (u.condition && companionRules.conditions[u.condition])
+        out.condition = u.condition;
+    // 書籍：可以學的特質（清單裡的）
+    const perks = (Array.isArray(u.perks) ? u.perks : []).filter((id) => typeof id === 'string' && isChoosablePerk(id)).slice(0, 6);
+    if (perks.length)
+        out.perks = perks;
+    if (u.heal && DICE.test(String(u.heal).replace(/\s+/g, '')))
+        out.heal = String(u.heal).replace(/\s+/g, '');
+    if (u.slot)
+        out.slot = int(u.slot, 1, 9, 1);
+    const cleanse = (u.cleanse ?? []).filter((s) => !!statuses[s]);
+    if (cleanse.length)
+        out.cleanse = cleanse;
+    if (u.status?.id && statuses[u.status.id])
+        out.status = { id: u.status.id, turns: int(u.status.turns, 1, 20, 3) };
+    if (u.temp_hp)
+        out.temp_hp = int(u.temp_hp, 1, 999, 10);
+    if (u.ap)
+        out.ap = int(u.ap, 1, 10, 1);
+    if (u.revive)
+        out.revive = Math.round(num(u.revive, 0.01, 1, 0.3) * 100) / 100;
+    if (u.damage?.dice && DICE.test(String(u.damage.dice).replace(/\s+/g, ''))) {
+        out.damage = { dice: String(u.damage.dice).replace(/\s+/g, ''), type: DAMAGE_IDS().includes(u.damage.type) ? u.damage.type : 'fire' };
+    }
+    if (u.apply?.status && statuses[u.apply.status]) {
+        out.apply = {
+            status: u.apply.status, turns: int(u.apply.turns, 1, 20, 2),
+            ...(u.apply.save && ATTR_IDS.includes(u.apply.save) ? { save: u.apply.save, dc: int(u.apply.dc, 5, 30, 12) } : {}),
+        };
+    }
+    if (u.save?.attr && ATTR_IDS.includes(u.save.attr) && (out.damage || out.apply))
+        out.save = { attr: u.save.attr, dc: int(u.save.dc, 5, 30, 13) };
+    if (u.escape)
+        out.escape = true;
+    if ((out.damage || out.apply) && u.area === 'all')
+        out.area = 'all';
+    else if (out.damage || out.apply)
+        out.area = 'one';
+    if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.revive || out.cleanse || out.escape) {
+        if (!(out.heal || out.slot) || u.combat_only)
+            out.combat_only = true;
+    }
+    return Object.keys(out).length ? out : undefined;
+}
+export function sanitizeGearSpecLoose(g) {
+    if (!g || !gearRules.bases[g.base] || !gearRules.materials[g.material])
+        return undefined;
+    if (gearRules.bases[g.base].kind !== gearRules.materials[g.material].kind)
+        return undefined;
+    const out = { base: g.base, material: g.material };
+    if (g.rarity && RARITY_ORDER.includes(g.rarity) && g.rarity !== gearRules.materials[g.material].rarity)
+        out.rarity = g.rarity;
+    if (g.enchants) {
+        const e = { ...(mods(g.enchants.mods, -5, 5) ? { mods: mods(g.enchants.mods, -5, 5) } : {}), ...(affinity(g.enchants.resist) ? { resist: affinity(g.enchants.resist) } : {}), ...(affinity(g.enchants.offense) ? { offense: affinity(g.enchants.offense) } : {}) };
+        if (Object.keys(e).length)
+            out.enchants = e;
+    }
+    // 獨特物品的檢定加值：一種（一組篩選條件），+1～+3
+    const u = g.unique ? cleanPerkEffects([g.unique], UNIQUE_LIMITS)[0] : undefined;
+    if (u && 'check' in u)
+        out.unique = { check: u.check, bonus: u.bonus };
+    // 屬性的加減：每項 ±max_change
+    if (g.attrs && typeof g.attrs === 'object') {
+        const max = gearRules.attrs.max_change;
+        const attrs = Object.fromEntries(ATTR_IDS.map((a) => [a, int(g.attrs?.[a], -max, max, 0)]).filter(([, v]) => v));
+        if (Object.keys(attrs).length)
+            out.attrs = attrs;
+    }
+    return out;
+}
+/** 獨特物品的檢定加值範圍 */
+export const UNIQUE_LIMITS = { effects: 1, check_bonus: [1, 3], combat: [1, 1], resist: [0, 0] };
+/** 物品名稱：最多 20 字，拿掉打造指令用的分隔符號（| 與 *） */
+export function cleanItemName(v) {
+    return str(v, 40).replace(/[|*]/g, '').trim().slice(0, 20);
+}
+export function sanitizeItem(name, raw, custom) {
+    const category = CATEGORIES.includes(raw.category) ? raw.category : 'material';
+    const out = {
+        name: cleanItemName(name) || '未命名的物品',
+        category,
+        price_cc: int(raw.price_cc, 0, 1e8, 10),
+        tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t)),
+    };
+    if (str(raw.desc, 200))
+        out.desc = str(raw.desc, 200);
+    if (raw.min_location && LOCATIONS.includes(raw.min_location) && raw.min_location !== 'village')
+        out.min_location = raw.min_location;
+    const use = sanitizeUse(raw.use);
+    if (use)
+        out.use = use;
+    const gear = category === 'equipment' ? sanitizeGearSpecLoose(raw.gear) : undefined;
+    if (gear)
+        out.gear = gear;
+    // 主人會強制裝備：只有裝備；身分標籤只留主人可以有的
+    if (gear && raw.master_force) {
+        const tags = (raw.master_force.tags ?? []).filter((t) => !!slaveryRules.master_tags.tags[t]);
+        out.master_force = tags.length ? { tags: [...new Set(tags)] } : {};
+    }
+    const forge = (raw.forge?.materials ?? []).filter((m) => !!gearRules.materials[m]);
+    if (forge.length)
+        out.forge = { materials: [...new Set(forge)] };
+    if (raw.event)
+        out.event = true;
+    if (category === 'info' && raw.intel) {
+        const it = raw.intel;
+        const kind = ['point', 'story', 'lead'].includes(it.kind) ? it.kind : 'point';
+        const intel = { kind };
+        if (kind === 'point') {
+            if (it.event && ['combat', 'chest', 'merchant'].includes(it.event))
+                intel.event = it.event;
+            const loc = geography.locations.find((l) => l.id === it.location);
+            if (loc) {
+                intel.location = loc.id;
+                if (loc.type === 'dungeon' && it.layer && CHEST_LAYERS.includes(it.layer))
+                    intel.layer = it.layer;
+            }
+            if (it.days)
+                intel.days = int(it.days, 1, 30, 5);
+        }
+        if (kind === 'story' && str(it.story, 80))
+            intel.story = str(it.story, 80);
+        out.intel = intel;
+    }
+    if (category === 'gear' && raw.tool && TOOL_KINDS.includes(raw.tool.kind)) {
+        const def = itemRules.tools[raw.tool.kind];
+        out.tool = { kind: raw.tool.kind, ...(def.bonus !== undefined ? { bonus: int(raw.tool.bonus ?? def.bonus, 1, def.max ?? 10, def.bonus) } : {}) };
+        // 工藝工具：哪種工藝、低階或中階（高階是房子裡的工作台，不能是隨身物品）
+        if (raw.tool.kind === 'craft') {
+            out.tool.craft = CRAFT_IDS.includes(raw.tool.craft) ? raw.tool.craft : 'smithing';
+            out.tool.tier = raw.tool.tier === 2 ? 2 : 1;
+        }
+        // 照明：燒另一種物品（油燈的燈油）
+        const fuel = typeof raw.tool.fuel === 'string' ? cleanItemName(raw.tool.fuel) : '';
+        if (raw.tool.kind === 'light' && fuel && fuel !== name)
+            out.tool.fuel = fuel;
+    }
+    // 家具：能放的地方、功能、舒適度
+    if (category === 'furniture') {
+        const f = raw.furniture ?? {};
+        const places = (Array.isArray(f.places) ? f.places : []).filter((p) => p === 'indoor' || p === 'yard' || p === 'basement');
+        out.furniture = {
+            places: places.length ? [...new Set(places)] : ['indoor'],
+            ...(f.function === 'bed' || f.function === 'workbench' || f.function === 'garden' ? { function: f.function } : {}),
+            ...(f.function === 'workbench' ? { craft: CRAFT_IDS.includes(f.craft) ? f.craft : 'smithing' } : {}),
+            ...(int(f.comfort, 0, 10, 0) ? { comfort: int(f.comfort, 0, 10, 0) } : {}),
+            ...(typeof f.icon === 'string' && f.icon.trim() ? { icon: [...f.icon.trim()].slice(0, 2).join('') } : {}),
+        };
+    }
+    // 配方：怎麼做出這件物品（裝備走打造，不用配方）；材料不能是自己，同名的合併
+    if (category !== 'equipment' && raw.recipe) {
+        const r = raw.recipe;
+        const inputs = new Map();
+        for (const x of Array.isArray(r.inputs) ? r.inputs : []) {
+            const n = cleanItemName(x?.name);
+            if (n && n !== out.name && (inputs.has(n) || inputs.size < 6))
+                inputs.set(n, Math.min(99, (inputs.get(n) ?? 0) + int(x?.qty, 1, 99, 1)));
+        }
+        if (inputs.size) {
+            const qty = int(r.qty, 1, 20, 1);
+            const cost = int(r.cost_cc, 0, 1e7, 0);
+            out.recipe = {
+                craft: CRAFT_IDS.includes(r.craft) ? r.craft : 'alchemy',
+                level: int(r.level, 1, craftRules.max_level, 1),
+                inputs: [...inputs].map(([n, q]) => ({ name: n, qty: q })),
+                ...(qty > 1 ? { qty } : {}),
+                ...(cost ? { cost_cc: cost } : {}),
+                hours: int(r.hours, 1, 48, 2),
+            };
+        }
+    }
+    // 種子：種在苗圃上長出什麼（材料才能當種子）
+    if (category === 'material' && raw.seed) {
+        const sd = raw.seed;
+        const yields = [...new Set((Array.isArray(sd.yields) ? sd.yields : []).map(cleanItemName).filter((n) => n && n !== out.name))].slice(0, 5);
+        if (yields.length) {
+            const lo = int(sd.qty?.[0], 1, 20, 1);
+            const hi = int(sd.qty?.[1], 1, 20, lo);
+            const place = sd.place === 'basement' || sd.place === 'indoor' ? sd.place : 'yard';
+            out.seed = { yields, qty: [Math.min(lo, hi), Math.max(lo, hi)], days: int(sd.days, 1, 30, 3), place };
+        }
+    }
+    // 光源與燃料：每一份能照亮幾格
+    if (category === 'gear' && raw.burns !== undefined && raw.burns !== null && String(raw.burns) !== '') {
+        const b = int(raw.burns, 0, 999, 0);
+        if (b)
+            out.burns = b;
+    }
+    if (custom)
+        out.custom = true;
+    if (raw.chests) {
+        const c = {};
+        for (const l of CHEST_LAYERS) {
+            const p = Math.round(num(raw.chests[l], 0, 1, 0) * 100) / 100;
+            if (p)
+                c[l] = p;
+        }
+        out.chests = c;
+    }
+    if (raw.gather)
+        out.gather = raw.gather.filter((g) => g === 'wild' || g === 'dungeon');
+    return out;
+}
+const SCALES = ['full', 'half', 'up', 'third', 'third_up', 'res'];
+export function sanitizeBase(raw, custom, id) {
+    const kind = ['metal', 'leather', 'cloth', 'wood', 'jewel'].includes(raw.kind) ? raw.kind : 'metal';
+    const slots = Object.keys(baseSlots());
+    const slot = slots.includes(raw.slot) ? raw.slot : 'main_hand';
+    const out = { slot, name: str(raw.name, 12) || '未命名的底材', kind, price: int(raw.price, 1, 1e7, 100) };
+    if (raw.two_handed && slot === 'main_hand')
+        out.two_handed = true;
+    const stats = mods(raw.stats);
+    if (stats)
+        out.stats = stats;
+    if (raw.threat)
+        out.threat = Math.round(num(raw.threat, -1, 1, 0) * 100) / 100;
+    const scale = {};
+    for (const [k, v] of Object.entries(raw.scale ?? {}))
+        if (MOD_KEYS.includes(k) && SCALES.includes(v))
+            scale[k] = v;
+    if (Object.keys(scale).length)
+        out.scale = scale;
+    const rs = {};
+    for (const [k, v] of Object.entries(raw.resist_scale ?? {}))
+        if (AFFINITY_KEYS().includes(k) && SCALES.includes(v))
+            rs[k] = v;
+    if (Object.keys(rs).length)
+        out.resist_scale = rs;
+    if (str(raw.desc, 120))
+        out.desc = str(raw.desc, 120);
+    if (slot === 'main_hand') {
+        const w = raw.weaponDef ?? (raw.weapon ? equipment.weapons[raw.weapon] : undefined);
+        if (w) {
+            out.weaponDef = {
+                name: str(w.name, 12) || out.name, dice: dice(w.dice, '1d6'), type: DAMAGE_IDS().includes(w.type) ? w.type : 'slashing',
+                attr: ATTR_IDS.includes(w.attr) ? w.attr : 'str', ...(w.scale ? { scale: w.scale } : {}), ...(w.threat ? { threat: w.threat } : {}),
+            };
+        }
+        else if (raw.weapon && snapshot.weapons[raw.weapon]) {
+            out.weapon = raw.weapon;
+        }
+    }
+    if (slot === 'body') {
+        const a = raw.armorDef ?? (raw.armor ? equipment.armors[raw.armor] : undefined);
+        if (a) {
+            out.armorDef = {
+                name: str(a.name, 12) || out.name, evade: int(a.evade, -10, 10, 0), dr: int(a.dr, 0, 20, 0),
+                ...(affinity(a.resist) ? { resist: affinity(a.resist) } : {}), ...(affinity(a.offense) ? { offense: affinity(a.offense) } : {}),
+                ...(a.threat ? { threat: Math.round(num(a.threat, -1, 1, 0) * 100) / 100 } : {}),
+            };
+        }
+    }
+    if (custom)
+        out.custom = true;
+    // 內建底材的欄位、材料類型、雙手、是不是束縛用不能改：存檔裡的裝備、職業的起始武器與制式裝備都靠它們
+    const builtin = !custom && id ? snapshot.bases[id] : undefined;
+    if (builtin) {
+        out.slot = builtin.slot;
+        out.kind = builtin.kind;
+        if (builtin.two_handed)
+            out.two_handed = true;
+        else
+            delete out.two_handed;
+    }
+    // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
+    const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body';
+    if (restraint) {
+        out.restraint = true;
+        for (const k of ['stats', 'scale', 'resist_scale', 'threat', 'weapon', 'weaponDef', 'armor', 'armorDef', 'two_handed'])
+            delete out[k];
+    }
+    return out;
+}
+export function sanitizeMaterial(raw, custom, id) {
+    const kind = ['metal', 'leather', 'cloth', 'wood', 'jewel'].includes(raw.kind) ? raw.kind : 'metal';
+    const out = {
+        kind, name: str(raw.name, 8) || '未命名', tier: int(raw.tier, 1, 5, 1), bonus: int(raw.bonus, 0, 10, 0),
+        rarity: RARITY_ORDER.includes(raw.rarity) ? raw.rarity : 'common', level: int(raw.level, 1, 30, 1), price: Math.max(0.1, num(raw.price, 0.1, 1e5, 1)),
+    };
+    const armor = mods(raw.armor, -5, 5);
+    if (armor)
+        out.armor = armor;
+    const res = affinity(raw.resist);
+    if (res)
+        out.resist = res;
+    if (str(raw.desc, 120))
+        out.desc = str(raw.desc, 120);
+    if (custom)
+        out.custom = true;
+    // 內建材料的類型與等級不能改：隨機裝備、起始裝備與 NPC 的配備依「類型 × 等級」找材料
+    const builtin = !custom && id ? snapshot.materials[id] : undefined;
+    if (builtin) {
+        out.kind = builtin.kind;
+        out.tier = builtin.tier;
+    }
+    return out;
+}
+/** 讀取保存的設定或匯入的檔案：整理每一項，壞掉的略過 */
+export function normalizeMods(raw) {
+    const out = emptyMods();
+    if (!raw || typeof raw !== 'object')
+        return out;
+    const r = raw;
+    // 狀態最先：能力、物品與其他狀態的命中附加會檢查狀態存不存在（自建的狀態彼此也可以互相引用）
+    const statusIds = new Set([...Object.keys(statuses), ...Object.keys(r.statuses ?? {})]);
+    for (const [id, v] of Object.entries(r.statuses ?? {}))
+        out.statuses[id] = sanitizeStatus(id, v, !!v.custom || !snapshot.statuses[id], statusIds);
+    for (const [id, s] of Object.entries(out.statuses))
+        if (s.custom && !statuses[id])
+            statuses[id] = strip(s, ['custom']);
+    // 刺青圖樣與奴隸印記：特殊任務的效果會檢查存不存在，先登錄自建的
+    for (const [id, v] of Object.entries(r.tattoos ?? {})) {
+        const t = sanitizeTattooMod(v, !!v.custom || !snapshot.tattoos[id]);
+        if (t)
+            out.tattoos[id] = t;
+    }
+    for (const [id, t] of Object.entries(out.tattoos))
+        if (t.custom && !tattooRules.templates[id])
+            tattooRules.templates[id] = strip(t, ['custom']);
+    for (const [id, v] of Object.entries(r.marks ?? {}))
+        out.marks[id] = sanitizeMarkMod(v, !!v.custom || !snapshot.marks[id]);
+    for (const [id, m] of Object.entries(out.marks))
+        if (m.custom && !slaveryRules.contracts[id])
+            slaveryRules.contracts[id] = strip(m, ['custom']);
+    if (r.markRules?.rules)
+        out.markRules.rules = sanitizeMarkRules(r.markRules.rules, new Set([...Object.keys(snapshot.marks), ...Object.keys(out.marks)]));
+    for (const [id, v] of Object.entries(r.abilities ?? {}))
+        out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id]);
+    // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
+    for (const [id, a] of Object.entries(out.abilities))
+        if (a.custom && !abilities[id])
+            abilities[id] = { ...strip(a, ['custom']), id };
+    // 物品（書籍）、固定 NPC、任務與其他特質的整理會檢查特質存不存在：先把自建的特質登錄進去
+    for (const [id, v] of Object.entries(r.perks ?? {})) {
+        const p = sanitizePerkMod(id, v, !!v.custom || !builtinPerk(id));
+        if (p)
+            out.perks[id] = p;
+    }
+    for (const [id, p] of Object.entries(out.perks))
+        if (p.custom && !perkDef(id))
+            registerPerk(id, p);
+    for (const [id, v] of Object.entries(r.materials ?? {}))
+        out.materials[id] = sanitizeMaterial(v, !!v.custom || !snapshot.materials[id], id);
+    for (const [id, v] of Object.entries(r.bases ?? {}))
+        out.bases[id] = sanitizeBase(v, !!v.custom || !snapshot.bases[id], id);
+    // 物品、固定 NPC 與任務的裝備組成會檢查底材與材料存不存在：先把自建的登錄進去（之後 applyContent 會重新套用一次）
+    for (const [id, m] of Object.entries(out.materials))
+        if (m.custom && !gearRules.materials[id])
+            gearRules.materials[id] = strip(m, ['custom']);
+    for (const [id, b] of Object.entries(out.bases))
+        if (b.custom && !gearRules.bases[id])
+            gearRules.bases[id] = strip(b, ['custom', 'weaponDef', 'armorDef']);
+    for (const [raw, v] of Object.entries(r.items ?? {})) {
+        const name = cleanItemName(raw);
+        if (name)
+            out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name));
+    }
+    // 地標：固定 NPC 與特殊任務的任務點會檢查存不存在，先登錄自建的
+    for (const [id, v] of Object.entries(r.landmarks ?? {})) {
+        try {
+            out.landmarks[id] = sanitizeLandmarkMod(id, v);
+        }
+        catch {
+            // 位置或 id 不對的：略過
+        }
+    }
+    for (const [id, l] of Object.entries(out.landmarks))
+        if (l.custom && !landmarks[id])
+            applyLandmarkMod(id, l);
+    // 商店的固定清單會檢查物品：自建的物品還沒登錄，一起算
+    const listable = (n) => (out.items[n] ? !notForSale(out.items[n]) : canListItem(n));
+    for (const [id, v] of Object.entries(r.shops ?? {})) {
+        try {
+            out.shops[id] = sanitizeShopMod(id, v, listable);
+        }
+        catch {
+            // 不存在的店（例如之後的版本拿掉了）：略過
+        }
+    }
+    for (const [id, v] of Object.entries(r.enemies ?? {}))
+        out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id]);
+    for (const [id, v] of Object.entries(r.npcs ?? {}))
+        out.npcs[id] = sanitizeNpc(id, v, !!v.custom || !builtinNpc(id));
+    for (const [id, v] of Object.entries(r.stories ?? {}))
+        out.stories[id] = sanitizeStory(id, v, !!v.custom || !builtinStory(id));
+    return out;
+}
+// ---- 固定 NPC ----
+const GEAR_SLOTS = Object.keys(gearRules.slots);
+function settlementIds() {
+    return geography.locations.filter((l) => l.type !== 'dungeon').map((l) => l.id);
+}
+/** 劇情旗標的條件：名稱整理過、去掉重複 */
+function cond(v) {
+    if (!v || typeof v !== 'object')
+        return undefined;
+    const r = v;
+    const list = (x) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))];
+    const flags = list(r.flags);
+    const none = list(r.flags_none);
+    return flags.length || none.length ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}) } : undefined;
+}
+export { cond as sanitizeCond };
+function cleanHaunts(v) {
+    return (v ?? [])
+        .filter((h) => h && geography.locations.some((l) => l.id === h.location) && ZONES.includes(h.zone))
+        .map((h) => ({ location: h.location, zone: h.zone, weight: Math.round(num(h.weight, 0.01, 10, 1) * 100) / 100 }));
+}
+/** 固定的格子：聚落的區塊、走得到的格子 */
+function cleanFixed(v) {
+    if (!v || typeof v.area !== 'string')
+        return undefined;
+    const area = settlementArea(v.area);
+    if (!area)
+        return undefined;
+    const x = int(v.x, 0, area.width - 1, 0);
+    const y = int(v.y, 0, area.height - 1, 0);
+    const kind = area.cells[y * area.width + x]?.kind;
+    return kind && kind !== 'wall' && kind !== 'water' ? { area: area.key, x, y } : undefined;
+}
+export function sanitizeNpc(id, raw, custom) {
+    const kind = raw.kind === 'commoner' ? 'commoner' : 'adventurer';
+    const cls = kind === 'commoner' ? '' : raw.class && classes[raw.class] && !classes[raw.class].noncombat ? raw.class : 'fighter';
+    const location = settlementIds().includes(raw.location ?? '') ? raw.location : 'soriel';
+    const out = {
+        id,
+        name: str(raw.name, 12) || '未命名',
+        race: raw.race && attributeRules.races[raw.race] ? raw.race : 'human',
+        class: cls,
+        level: int(raw.level, 1, 20, 1),
+        location,
+        hire_cc: int(raw.hire_cc, 0, 1e7, kind === 'commoner' ? 0 : 100),
+        personality: str(raw.personality, 160) || '沉默寡言。',
+        kind,
+    };
+    if (raw.gender && GENDER_IDS.includes(raw.gender))
+        out.gender = raw.gender;
+    if (str(raw.appearance, 240))
+        out.appearance = str(raw.appearance, 240);
+    if (str(raw.background, 400))
+        out.background = str(raw.background, 400);
+    if (str(raw.faction, 30))
+        out.faction = str(raw.faction, 30);
+    if (str(raw.occupation, 12))
+        out.occupation = str(raw.occupation, 12);
+    if (str(raw.lineage, 30))
+        out.lineage = str(raw.lineage, 30);
+    const tags = (raw.tags ?? []).filter((t) => !!npcTags.tags[t]);
+    if (tags.length)
+        out.tags = [...new Set(tags)];
+    const haunts = cleanHaunts(raw.haunts);
+    if (haunts.length)
+        out.haunts = haunts;
+    if (raw.relations && typeof raw.relations === 'object') {
+        const rel = Object.fromEntries(Object.entries(raw.relations).map(([k, v]) => [k, str(v, 160)]).filter(([, v]) => v));
+        if (Object.keys(rel).length)
+            out.relations = rel;
+    }
+    if (raw.attrs) {
+        const a = Object.fromEntries(ATTR_IDS.map((k) => [k, raw.attrs?.[k] ? int(raw.attrs[k], 1, 30, 10) : 0]).filter(([, v]) => v));
+        if (Object.keys(a).length)
+            out.attrs = a;
+    }
+    const abil = (raw.abilities ?? []).filter((a) => !!abilities[a]);
+    if (abil.length)
+        out.abilities = [...new Set(abil)];
+    // 特質：清單裡的（沒寫時依 id 固定地抽）
+    if (Array.isArray(raw.perks))
+        out.perks = [...new Set(raw.perks.filter((p) => typeof p === 'string' && isChoosablePerk(p)))];
+    if (raw.gear) {
+        const g = {};
+        for (const slot of GEAR_SLOTS) {
+            const spec = sanitizeGearSpecLoose(raw.gear[slot]);
+            const base = spec && gearRules.bases[spec.base];
+            if (!spec || !base)
+                continue;
+            // 底材要放得進這個欄位（戒指放兩個戒指欄）
+            if (baseFits(base.slot, slot))
+                g[slot] = spec;
+        }
+        if (Object.keys(g).length)
+            out.gear = g;
+    }
+    const fixed = cleanFixed(raw.fixed);
+    if (fixed)
+        out.fixed = fixed;
+    if (raw.keeper && isKeeperShop(raw.keeper))
+        out.keeper = raw.keeper;
+    // 待在所屬地點的地標
+    if (typeof raw.landmark === 'string' && landmarks[raw.landmark]?.location === location)
+        out.landmark = raw.landmark;
+    const req = cond(raw.requires);
+    if (req)
+        out.requires = req;
+    // 依劇情旗標改變出沒：沒有條件的設定沒有意義，拿掉
+    const stages = (raw.stages ?? []).flatMap((st) => {
+        const r = cond(st?.requires);
+        if (!r)
+            return [];
+        const h = cleanHaunts(st.haunts);
+        const f = cleanFixed(st.fixed);
+        return [{ requires: r, location: settlementIds().includes(st.location) ? st.location : location, ...(h.length ? { haunts: h } : {}), ...(f ? { fixed: f } : {}) }];
+    });
+    if (stages.length)
+        out.stages = stages;
+    if (custom)
+        out.custom = true;
+    return out;
+}
+// ---- 能力 ----
+export const ABILITY_TYPES = { skill: '技能', spell: '法術', cantrip: '戲法' };
+export const ABILITY_TARGETS = {
+    enemy: '一名敵人', ally: '一名隊友', ally_or_downed: '一名隊友（可救起倒下的）', self: '自己',
+    all_enemies: '所有敵人', all_allies: '所有隊友', random_enemies: '隨機敵人（數次）',
+};
+export const ABILITY_RESOLVES = { attack: '命中骰對迴避', save: '目標豁免', auto: '必中' };
+/** 可以學這個能力的職業（monster：怪物用） */
+export function abilityClasses() {
+    return [...Object.keys(classes).filter((c) => !classes[c].noncombat), 'monster'];
+}
+function damagePart(v) {
+    if (!v || typeof v !== 'object')
+        return undefined;
+    const p = v;
+    const out = {};
+    if (p.weapon)
+        out.weapon = true;
+    else if (p.dice && DICE.test(String(p.dice).replace(/\s+/g, '')))
+        out.dice = String(p.dice).replace(/\s+/g, '');
+    if (!out.weapon && !out.dice)
+        return undefined;
+    if (p.type && DAMAGE_IDS().includes(p.type))
+        out.type = p.type;
+    if (p.mod)
+        out.mod = true;
+    if (p.scale?.dice && DICE.test(String(p.scale.dice)))
+        out.scale = { dice: String(p.scale.dice), per: int(p.scale.per, 1, 20, 4) };
+    return out;
+}
+function applyDef(v) {
+    if (!v || typeof v !== 'object')
+        return undefined;
+    const a = v;
+    if (!a.status || !statuses[a.status])
+        return undefined;
+    const out = { status: a.status, turns: int(a.turns, 1, 20, 2) };
+    if (a.to && ['target', 'self', 'allies', 'enemies'].includes(a.to))
+        out.to = a.to;
+    if (a.on && ['hit', 'fail', 'always'].includes(a.on))
+        out.on = a.on;
+    if (a.save && ATTR_IDS.includes(a.save))
+        out.save = a.save;
+    if (a.value && typeof a.value === 'object') {
+        const val = {};
+        if (a.value.dice && DICE.test(String(a.value.dice)))
+            val.dice = String(a.value.dice);
+        if (a.value.mod)
+            val.mod = true;
+        if (a.value.level)
+            val.level = true;
+        if (a.value.flat)
+            val.flat = int(a.value.flat, -50, 50, 0);
+        if (Object.keys(val).length)
+            out.value = val;
+    }
+    return out;
+}
+export function sanitizeAbility(id, raw, custom) {
+    const type = Object.keys(ABILITY_TYPES).includes(raw.type) ? raw.type : 'skill';
+    const target = Object.keys(ABILITY_TARGETS).includes(raw.target) ? raw.target : 'enemy';
+    const resolve = Object.keys(ABILITY_RESOLVES).includes(raw.resolve) ? raw.resolve : 'auto';
+    const allowed = abilityClasses();
+    const out = {
+        id,
+        name: str(raw.name, 16) || '新的能力',
+        type,
+        classes: [...new Set((raw.classes ?? []).filter((c) => allowed.includes(c)))],
+        target,
+        resolve,
+        desc: str(raw.desc, 200),
+    };
+    if (type === 'skill')
+        out.unlock = int(raw.unlock, 1, 20, 1);
+    if (type === 'spell')
+        out.circle = int(raw.circle, 1, 9, 1);
+    if (raw.ap !== undefined && raw.ap !== null && String(raw.ap) !== '')
+        out.ap = int(raw.ap, 0, 12, 2);
+    if (raw.attr === 'casting' || ATTR_IDS.includes(raw.attr))
+        out.attr = raw.attr;
+    if (target === 'random_enemies')
+        out.count = int(raw.count, 1, 10, 3);
+    if (resolve === 'save') {
+        out.save = ATTR_IDS.includes(raw.save) ? raw.save : 'dex';
+        out.on_save = raw.on_save === 'none' ? 'none' : 'half';
+    }
+    const damage = (raw.damage ?? []).slice(0, 4).map(damagePart).filter((d) => !!d);
+    if (damage.length)
+        out.damage = damage;
+    if (raw.mult !== undefined && raw.mult !== null && String(raw.mult) !== '' && Number(raw.mult) !== 1)
+        out.mult = Math.round(num(raw.mult, 0.1, 5, 1) * 100) / 100;
+    if (raw.hits && int(raw.hits, 1, 6, 1) > 1)
+        out.hits = int(raw.hits, 1, 6, 1);
+    if (raw.hit)
+        out.hit = int(raw.hit, -10, 10, 0);
+    if (raw.adv)
+        out.adv = true;
+    if (raw.crit)
+        out.crit = int(raw.crit, 1, 5, 1);
+    if (raw.heal && typeof raw.heal === 'object') {
+        const h = {};
+        if (raw.heal.dice && DICE.test(String(raw.heal.dice)))
+            h.dice = String(raw.heal.dice);
+        if (raw.heal.mod)
+            h.mod = true;
+        if (raw.heal.level)
+            h.level = true;
+        if (raw.heal.flat)
+            h.flat = int(raw.heal.flat, 1, 999, 1);
+        if (raw.heal.full)
+            h.full = true;
+        if (Object.keys(h).length)
+            out.heal = h;
+    }
+    if (raw.shield && (raw.shield.flat || raw.shield.level)) {
+        out.shield = { ...(raw.shield.flat ? { flat: int(raw.shield.flat, 1, 999, 5) } : {}), ...(raw.shield.level ? { level: int(raw.shield.level, 1, 10, 1) } : {}) };
+    }
+    const apply = (raw.apply ?? []).slice(0, 4).map(applyDef).filter((a) => !!a);
+    if (apply.length)
+        out.apply = apply;
+    if (raw.ap_gain)
+        out.ap_gain = int(raw.ap_gain, 1, 10, 1);
+    if (raw.ap_gain_on_hit)
+        out.ap_gain_on_hit = int(raw.ap_gain_on_hit, 1, 10, 1);
+    if (raw.uses) {
+        const u = {};
+        for (const k of ['per_turn', 'per_combat', 'per_rest'])
+            if (raw.uses[k])
+                u[k] = int(raw.uses[k], 1, 10, 1);
+        if (Object.keys(u).length)
+            out.uses = u;
+    }
+    for (const k of ['concentration', 'cleanse', 'recover_slot', 'kill'])
+        if (raw[k])
+            out[k] = true;
+    if (raw.lifesteal)
+        out.lifesteal = Math.round(num(raw.lifesteal, 0.05, 1, 0.5) * 100) / 100;
+    if (raw.hp_limit)
+        out.hp_limit = int(raw.hp_limit, 1, 9999, 30);
+    if (raw.threat)
+        out.threat = int(raw.threat, -50, 50, 0);
+    if (custom)
+        out.custom = true;
+    return out;
+}
+// ---- 狀態（BUFF／DEBUFF） ----
+export const STATUS_CONTROLS = {
+    stun: '暈眩（跳過回合、無法迴避）', silence: '沉默（無法施法與戲法）', no_cast: '無法施法', taunt: '嘲諷（只能攻擊施放者）', confuse: '困惑（隨機攻擊任何人）',
+};
+export const STATUS_SPECIALS = {
+    undying: '致命傷保留 1 HP', halve_next: '下一次受到的傷害減半', reduce_next: '下一次物理傷害減去數值（由施放的能力決定）',
+};
+export const LUCK_ROLLS = { attack: '攻擊', evade: '迴避', save: '豁免' };
+function rolls(v) {
+    const list = [...new Set((Array.isArray(v) ? v : []).filter((x) => typeof x === 'string' && x in LUCK_ROLLS))];
+    return list.length ? list : undefined;
+}
+/**
+ * 整理狀態：數值夾在範圍內，未知的欄位拿掉。known：命中附加的狀態可以用的 id（預設是目前所有的狀態）。
+ * 不能附加自己（會一直疊下去）。
+ */
+export function sanitizeStatus(id, raw, custom, known) {
+    const out = { name: str(raw.name, 10) || '新的狀態', kind: raw.kind === 'debuff' ? 'debuff' : 'buff' };
+    const m = mods(raw.mods, -10, 10);
+    if (m)
+        out.mods = m;
+    const luck = str(raw.luck, 10).replace(/\s+/g, '');
+    const luckOn = rolls(raw.luck_on);
+    if (/^-?\d{0,2}d\d{1,3}$/.test(luck) && luckOn) {
+        out.luck = luck;
+        out.luck_on = luckOn;
+    }
+    const adv = rolls(raw.advantage);
+    if (adv)
+        out.advantage = adv;
+    const dis = rolls(raw.disadvantage);
+    if (dis)
+        out.disadvantage = dis;
+    if (raw.attacked_advantage)
+        out.attacked_advantage = true;
+    if (raw.attacked_disadvantage)
+        out.attacked_disadvantage = true;
+    const res = affinity(raw.resist);
+    if (res)
+        out.resist = res;
+    const off = affinity(raw.offense);
+    if (off)
+        out.offense = off;
+    const typed = (v) => {
+        const d = v;
+        if (!d || typeof d !== 'object')
+            return undefined;
+        const dd = str(d.dice, 12).replace(/\s+/g, '');
+        return DICE.test(dd) && DAMAGE_IDS().includes(String(d.type)) ? { dice: dd, type: String(d.type) } : undefined;
+    };
+    const dot = typed(raw.dot);
+    if (dot)
+        out.dot = dot;
+    const hot = str(raw.hot, 12).replace(/\s+/g, '');
+    if (DICE.test(hot))
+        out.hot = hot;
+    const pulse = typed(raw.pulse);
+    if (pulse)
+        out.pulse = { ...pulse, ...(raw.pulse?.mod ? { mod: true } : {}) };
+    if (raw.on_hit && typeof raw.on_hit === 'object') {
+        const ids = known ?? new Set(Object.keys(statuses));
+        const hit = typed(raw.on_hit);
+        const st = raw.on_hit.status && raw.on_hit.status !== id && ids.has(raw.on_hit.status) ? raw.on_hit.status : undefined;
+        if (st)
+            out.on_hit = { status: st, turns: int(raw.on_hit.turns, 1, 20, 2) };
+        else if (hit)
+            out.on_hit = hit;
+    }
+    if (raw.control && raw.control in STATUS_CONTROLS)
+        out.control = raw.control;
+    if (raw.special && raw.special in STATUS_SPECIALS)
+        out.special = raw.special;
+    if (raw.charges)
+        out.charges = int(raw.charges, 1, 10, 1);
+    if (custom)
+        out.custom = true;
+    return out;
+}
+export function newStatus(kind = 'buff') {
+    return kind === 'buff' ? { name: '新的增益', kind, mods: { hit: 1 }, custom: true } : { name: '新的減益', kind, mods: { evade: -1 }, custom: true };
+}
+/**
+ * 哪些地方用到這個狀態（刪除前檢查）：能力（附加的狀態）、其他狀態的命中附加、物品（使用時得到、解除、對目標施加），
+ * 以及目前存檔進行中的戰鬥。
+ */
+export function statusUsage(id, state) {
+    const out = [];
+    for (const a of Object.values(abilities))
+        if (a.apply?.some((x) => x.status === id))
+            out.push(`能力「${a.name}」`);
+    for (const [sid, s] of Object.entries(statuses))
+        if (sid !== id && s.on_hit?.status === id)
+            out.push(`狀態「${s.name}」的命中附加`);
+    for (const i of itemRules.items) {
+        const u = i.use;
+        if (u && (u.status?.id === id || u.cleanse?.includes(id) || u.apply?.status === id))
+            out.push(`物品「${i.name}」`);
+    }
+    for (const c of state?.combat?.combatants ?? [])
+        if (c.statuses.some((x) => x.id === id))
+            out.push(`目前存檔的戰鬥中的「${c.name}」`);
+    return out;
+}
+export function newAbility(id) {
+    return {
+        id, name: '新的技能', type: 'skill', classes: ['fighter'], unlock: 1, ap: 2, attr: 'str', target: 'enemy', resolve: 'attack',
+        damage: [{ weapon: true }], desc: '', custom: true,
+    };
+}
+/**
+ * 哪些地方用到這個能力（刪除前檢查）：職業的初始能力、怪物、固定 NPC、特殊任務的獎勵，
+ * 以及目前存檔裡的角色（隊伍與登場過的人）。
+ */
+export function abilityUsage(id, state) {
+    const out = [];
+    for (const [cid, c] of Object.entries(classes))
+        if (c.start?.includes(id))
+            out.push(`職業「${c.name ?? cid}」的初始能力`);
+    for (const e of Object.values(enemies))
+        if (e.abilities?.includes(id))
+            out.push(`怪物「${e.name}」`);
+    for (const n of namedNpcs)
+        if (n.abilities?.includes(id))
+            out.push(`固定 NPC「${n.name}」`);
+    for (const s of stories) {
+        const effects = [...(s.rewards ?? []), ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])].flatMap((o) => o?.effects ?? []))];
+        if (effects.some((e) => e.type === 'ability' && e.ability === id))
+            out.push(`特殊任務「${s.title}」的獎勵`);
+    }
+    if (state) {
+        const who = [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((c) => !!c)];
+        for (const c of who) {
+            if (c.abilities?.includes(id))
+                out.push(`目前存檔的「${c.name}」`);
+            else if (c.pendingAbilityChoices?.some((set) => set.includes(id)))
+                out.push(`目前存檔的「${c.name}」升級時的選項`);
+        }
+    }
+    return out;
+}
+// ---- 特質 ----
+/** 可以學特質的設施 */
+export const TRAIN_CELLS = ['inn', 'guild', 'tavern', 'shop', 'temple', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver', 'brothel'];
+/**
+ * 內容編輯器的效果範圍：比玩家自訂的寬。抗性可以是弱點（像魔族的神聖 ×1.25，用來平衡強項）；
+ * 檢定與戰鬥修正還不開放負的加值（缺陷之後再做）
+ */
+/** 內容編輯器的數值範圍；缺陷（flaw）才能有負的檢定加值與戰鬥修正 */
+export function perkEditorLimits(flaw = false) {
+    return { effects: 6, check_bonus: flaw ? [-5, 5] : [1, 5], combat: flaw ? [-3, 3] : [1, 3], resist: [-0.75, 0.5], offense: [flaw ? -0.5 : 0, 0.5], threat: [-0.5, 0.5] };
+}
+function registerPerk(id, m) {
+    const def = { ...strip(m, ['custom']), id };
+    const i = perkRules.perks.findIndex((p) => p.id === id);
+    if (i >= 0)
+        perkRules.perks[i] = def;
+    else
+        perkRules.perks.push(def);
+}
+/** 整理特質（內容編輯器、匯入）：數值用 cleanPerkEffects 夾在範圍內；種族只沿用內建的，自建的不能是種族特質；種族特質不能是缺陷 */
+export function sanitizePerkMod(id, raw, custom) {
+    const race = custom ? undefined : builtinPerk(id)?.race;
+    const c = perkRules.custom;
+    const name = String(raw.name ?? '').trim().slice(0, c.name_chars);
+    const flaw = !race && raw.flaw === true;
+    const effects = cleanPerkEffects(raw.effects, perkEditorLimits(flaw));
+    const out = {
+        id, name: name || '新的特質', desc: String(raw.desc ?? '').trim().slice(0, c.desc_chars) || (effects.length ? describeEffects(effects) : ''), effects,
+    };
+    if (race)
+        out.race = race;
+    if (flaw)
+        out.flaw = true;
+    const races = (raw.requires?.races ?? []).filter((r) => !!attributeRules.races[r]);
+    const cls = (raw.requires?.classes ?? []).filter((k) => !!classes[k]);
+    if (!race && (races.length || cls.length))
+        out.requires = { ...(races.length ? { races } : {}), ...(cls.length ? { classes: cls } : {}) };
+    const ex = [...new Set(raw.exclusive ?? [])].filter((x) => x !== id && isChoosablePerk(x));
+    if (!race && ex.length)
+        out.exclusive = ex;
+    if (!race && raw.train && Array.isArray(raw.train.cells)) {
+        const cells = [...new Set(raw.train.cells.filter((x) => TRAIN_CELLS.includes(x) || isCustomShopId(x) || isLandmarkId(x)))];
+        if (cells.length) {
+            out.train = {
+                cells,
+                price_cc: Math.round(num(raw.train.price_cc, 0, 1e6, 300)),
+                hours: Math.round(num(raw.train.hours, 1, 72, 8)),
+                attr: ATTR_IDS.includes(raw.train.attr) ? raw.train.attr : 'str',
+                dc: Math.round(num(raw.train.dc, 5, 30, 12)),
+            };
+        }
+    }
+    if (!race && raw.npc) {
+        const weight = Math.round(num(raw.npc.weight, 0, 10, 0));
+        const tags = (raw.npc.tags ?? []).filter((t) => !!npcTags.tags[t]);
+        const ncls = (raw.npc.classes ?? []).filter((k) => !!classes[k]);
+        if (weight > 0)
+            out.npc = { weight, ...(tags.length ? { tags } : {}), ...(ncls.length ? { classes: ncls } : {}) };
+    }
+    if (custom)
+        out.custom = true;
+    return out;
+}
+export function newPerk(id) {
+    return { id, name: '新的特質', desc: '', effects: [{ check: { attrs: ['str'] }, bonus: 1 }], custom: true };
+}
+export function newNpc(id) {
+    return {
+        id, name: '新的角色', race: 'human', class: 'fighter', level: 3, location: 'soriel', hire_cc: 200, kind: 'adventurer',
+        gender: 'male', personality: '沉默寡言，但很可靠。', appearance: '', haunts: [{ location: 'soriel', zone: 'town', weight: 1 }], custom: true,
+    };
+}
+/** 新的 id（自建項目） */
+export function newModId(prefix) {
+    return `mod_${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+}
+/** 新怪物的預設值 */
+export function newEnemy(id) {
+    return {
+        id, name: '新的怪物', level: 1, attrs: { str: 12, dex: 12, int: 6, fai: 10, cha: 6 }, hp: 12, ap: 3,
+        weapon: { dice: '1d6', type: 'slashing', attr: 'str' }, evade: 0, dr: 0, xp: 35, kind: 'beast', custom: true,
+    };
+}
+export function newItem(name) {
+    return { name, category: 'material', price_cc: 10, tags: [], custom: true };
+}
+export function newBase() {
+    return { slot: 'main_hand', name: '新的武器', kind: 'metal', price: 200, weaponDef: { name: '新的武器', dice: '1d8', type: 'slashing', attr: 'str' }, scale: { damage: 'full', hit: 'half' }, custom: true };
+}
+export function newMaterial() {
+    return { kind: 'metal', name: '新材料', tier: 2, bonus: 1, rarity: 'uncommon', level: 3, price: 3, custom: true };
+}

@@ -97,7 +97,7 @@
     "bracers":      { "slot": "wrists", "name": "皮護腕", "kind": "leather", "price": 40, "scale": { "hit": "up" } },
     "wraps":        { "slot": "wrists", "name": "纏腕布", "kind": "cloth", "price": 10, "scale": { "crit": "third", "save": "half" } },
 
-    "sabatons":     { "slot": "feet", "name": "鐵靴", "kind": "metal", "price": 250, "scale": { "dr": "half" } },
+    "sabatons":     { "slot": "feet", "name": "戰靴", "kind": "metal", "price": 250, "scale": { "dr": "half" } },
     "boots":        { "slot": "feet", "name": "皮靴", "kind": "leather", "price": 20, "scale": { "evade": "up" } },
     "shoes":        { "slot": "feet", "name": "布鞋", "kind": "cloth", "price": 8, "scale": { "evade": "half" } },
 

@@ -130,8 +130,9 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 5：名單的潤飾記在每個人身上（flavored）
  * 6：刺青：奴隸契約搬進刺青清單（tattoos 的奴隸印記），條款一律存一份、加上部位
  * 7：金屬腰帶的底材改名（鐵腰帶 → 護腰，免得變成「鐵鐵腰帶」）：行囊、裝備、商店裡的舊名稱跟著改
+ * 8：金屬靴子的底材改名（鐵靴 → 戰靴，免得變成「鐵鐵靴」）：同上
  */
-export const SAVE_SCHEMA = 7
+export const SAVE_SCHEMA = 8
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -169,6 +170,9 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   }],
   [7, (s) => {
     renameValues(s, { 鐵鐵腰帶: '鐵護腰', 鋼鐵腰帶: '鋼護腰', 秘銀鐵腰帶: '秘銀護腰', 精金鐵腰帶: '精金護腰', 星隕鐵鐵腰帶: '星隕鐵護腰' })
+  }],
+  [8, (s) => {
+    renameValues(s, { 鐵鐵靴: '鐵戰靴', 鋼鐵靴: '鋼戰靴', 秘銀鐵靴: '秘銀戰靴', 精金鐵靴: '精金戰靴', 星隕鐵鐵靴: '星隕鐵戰靴' })
   }],
 ]
 
