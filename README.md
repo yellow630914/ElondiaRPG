@@ -106,4 +106,4 @@ pnpm build             # 型別檢查 + 建置到 dist/（相對路徑，放在�
 
 ## 授權
 
-程式與遊戲內容以 [MIT 授權](LICENSE) 釋出。隨遊戲打包的字型（Noto Serif TC、霞鶩文楷 TC）為 SIL Open Font License 1.1，介面圖示 Pixelarticons 為 MIT；遊戲首頁的「素材授權與致謝」有完整清單。
+程式與遊戲內容以 [MIT 授權](LICENSE) 釋出。隨遊戲打包的字型（Noto Serif TC、Noto Serif SC、霞鶩文楷 TC）為 SIL Open Font License 1.1，介面圖示 Pixelarticons 為 MIT；遊戲首頁的「素材授權與致謝」有完整清單。

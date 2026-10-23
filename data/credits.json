@@ -19,6 +19,7 @@
       "title": "字型",
       "items": [
         { "name": "Noto Serif TC", "author": "Google", "license": "OFL 1.1", "url": "https://fonts.google.com/noto/specimen/Noto+Serif+TC", "use": "內文與標題", "note": "隨遊戲打包（Fontsource 的切片版本）" },
+        { "name": "Noto Serif SC", "author": "Google", "license": "OFL 1.1", "url": "https://fonts.google.com/noto/specimen/Noto+Serif+SC", "use": "繁體字型缺的簡體字", "note": "隨遊戲打包（Fontsource 的切片版本）" },
         { "name": "霞鶩文楷 TC（LXGW WenKai TC）", "author": "LXGW", "license": "OFL 1.1", "url": "https://github.com/lxgw/LxgwWenkaiTC", "use": "敘事正文", "note": "隨遊戲打包（Fontsource 的切片版本）" }
       ]
     },

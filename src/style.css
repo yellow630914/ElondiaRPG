@@ -44,8 +44,8 @@
   --fs-md: 0.95rem;
   --fs-lg: 1.1rem;
   --fs-xl: 1.35rem;
-  --font-body: 'Noto Serif TC', 'Noto Serif CJK TC', 'PMingLiU', 'Microsoft JhengHei', serif;
-  --font-story: 'LXGW WenKai TC', 'Noto Serif TC', 'Noto Serif CJK TC', serif;
+  --font-body: 'Noto Serif TC', 'Noto Serif SC', 'Noto Serif CJK TC', 'PMingLiU', 'Microsoft JhengHei', serif;
+  --font-story: 'LXGW WenKai TC', 'Noto Serif TC', 'Noto Serif SC', 'Noto Serif CJK TC', serif;
 
   /* 金框的四個角（像素風的 L 形紋飾） */
   --corner-tl: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' shape-rendering='crispEdges'><path fill='%23c99a45' d='M0 0h10v2H2v8H0z'/><path fill='%23f0d083' d='M4 4h2v2H4z'/></svg>");

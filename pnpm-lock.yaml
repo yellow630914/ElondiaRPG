@@ -14,6 +14,9 @@ importers:
       '@fontsource/lxgw-wenkai-tc':
         specifier: 5.3.1
         version: 5.3.1
+      '@fontsource/noto-serif-sc':
+        specifier: 5.3.1
+        version: 5.3.1
       '@fontsource/noto-serif-tc':
         specifier: 5.3.1
         version: 5.3.1
@@ -236,6 +239,9 @@ packages:
 
   '@fontsource/lxgw-wenkai-tc@5.3.1':
     resolution: {integrity: sha512-oulAMD2B40s+em16ZgcawwoVcBLBackzByuNzOg6D99J4G5Jjf6QyDvQFHWt3lIy3GgzQGGiU9mjIUvx5k7r4A==}
+
+  '@fontsource/noto-serif-sc@5.3.1':
+    resolution: {integrity: sha512-nIK2HyNGcUi2TGwIfrk2MItkh0O3Y5+TI8iPfPSzoNY6uyXYfQ9qqch8czk3aa1VhV4EU52uwCYCe1UDKJELpg==}
 
   '@fontsource/noto-serif-tc@5.3.1':
     resolution: {integrity: sha512-bX+7aXbMU9IyncD2v00P4E+aciwQl2e9F9qmHp3H3By+hQVh6bwa4rR2RD0QP/Vtt+9mwgjEPzsnEKb2oyIxog==}
@@ -1590,6 +1596,8 @@ snapshots:
       '@babel/helper-validator-identifier': 7.29.7
 
   '@fontsource/lxgw-wenkai-tc@5.3.1': {}
+
+  '@fontsource/noto-serif-sc@5.3.1': {}
 
   '@fontsource/noto-serif-tc@5.3.1': {}
 

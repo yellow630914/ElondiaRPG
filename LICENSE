@@ -24,7 +24,7 @@ SOFTWARE.
 
 Third-party assets bundled with the game keep their own licenses:
 
-- Noto Serif TC (Google) and LXGW WenKai TC (LXGW): SIL Open Font License 1.1,
+- Noto Serif TC, Noto Serif SC (Google) and LXGW WenKai TC (LXGW): SIL Open Font License 1.1,
   bundled through the @fontsource packages.
 - Pixelarticons (Gerrit Halfmann): MIT License.
 
