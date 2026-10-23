@@ -3,6 +3,13 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import { initContent } from './stores/content'
 import { preloadCurrent } from './stores/saves'
+// 字型隨遊戲打包（不連 Google Fonts）：依 unicode-range 切片，瀏覽器只下載畫面上用到的字
+import '@fontsource/noto-serif-tc/400.css'
+import '@fontsource/noto-serif-tc/600.css'
+import '@fontsource/noto-serif-tc/700.css'
+import '@fontsource/noto-serif-tc/900.css'
+import '@fontsource/lxgw-wenkai-tc/400.css'
+import '@fontsource/lxgw-wenkai-tc/700.css'
 import './style.css'
 
 // 自訂內容（怪物、物品、裝備）要在讀檔之前套用

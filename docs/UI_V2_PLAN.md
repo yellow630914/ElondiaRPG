@@ -13,7 +13,7 @@
 | 檔案 | 內容 |
 |---|---|
 | `src/style.css` | 顏色 token（皮革、金、羊皮紙、墨色、稀有度色）、字級（xs～xl）、`.frame` 金框、`.parchment` 羊皮紙、按鈕／Chip／條的樣式 |
-| `index.html` | 載入 Noto Serif TC（內文）、霞鶩文楷 TC（敘事正文），沒網路時退回系統字型 |
+| `src/main.ts` | 載入 Noto Serif TC（內文）、霞鶩文楷 TC（敘事正文）：隨遊戲打包（`@fontsource`），不連外部 |
 | `src/components/ui/Hint.vue` | 「?」說明：滑鼠移上去或點擊時顯示羊皮紙小框，取代各處的整段說明與原生 `title` |
 | `src/components/ui/GameIcon.vue` | 介面圖示（Pixelarticons，MIT），用 SVG sprite；取代介面上的 emoji |
 | `src/components/ui/Chip.vue`、`StatGrid.vue` | 標籤與 key-value 表格 |
@@ -122,10 +122,10 @@
 - 刺青清單可以用鍵盤選；短休按鈕直接標出被襲擊的機率；非戰鬥人員開到能力分頁時回到屬性分頁；驛站的交易場景不再寫成「驛站的驛站」；只有戰鬥修正的狀況也分好壞上色。
 - 物品圖示：複製內建武器的自建底材用那種武器的圖；交易視窗的特別交易圖示在羊皮紙裡看得見；上傳的像素圖縮放時保持銳利；類別圖示存不進瀏覽器時不再顯示成功。
 
-還沒處理、要決定的：字型的載入方式、上傳的圖示讓存檔變大（[KNOWN_ISSUES](KNOWN_ISSUES.md) Q3、Q4）。
+字型改成隨遊戲打包（見下方「需要決定的問題」2）。還沒處理、要決定的：上傳的圖示讓存檔變大（[KNOWN_ISSUES](KNOWN_ISSUES.md) Q4）。
 
 ## 需要決定的問題
 
 1. **地圖格**：先用程式生成的像素圖塊（樣稿那種），之後再考慮用 ComfyUI 生成一套 tileset？
-2. **字型**：從 Google Fonts 載入，沒網路時退回系統字型。中文字型自己打包會有 10MB 以上，不建議。
+2. **字型**：~~從 Google Fonts 載入~~ 已改成隨遊戲打包（`@fontsource/noto-serif-tc`、`@fontsource/lxgw-wenkai-tc`）。字型依 unicode-range 切成幾百個小檔，建置輸出約多 50 MB，但瀏覽器只下載畫面上用到的字（開一場新遊戲約 80 個小檔）；連不上外部網路也能正常顯示。
 3. **順序**：先做 P0＋P1，做完截圖給你看，再繼續 P2？
