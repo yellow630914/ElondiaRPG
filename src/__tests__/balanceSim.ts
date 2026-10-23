@@ -101,6 +101,8 @@ export interface FightRow {
   rounds: number
   /** 獲勝時隊伍剩下的生命比例（全隊合計） */
   hpLeft: number
+  /** 所有場次的平均剩下生命（輸了算 0）：調整層主輸出用的指標 */
+  hpAll: number
   /** 獲勝時平均倒下幾人 */
   downed: number
 }
@@ -145,8 +147,34 @@ export function bossFights(trials: number, levelOffset = 0): FightRow[] {
       rows.push({
         dungeon, layer, boss, name: enemies[boss]!.name, bossLevel: enemies[boss]!.level, partyLevel: level, hp: enemies[boss]!.hp,
         win: r2(wins.length / trials), rounds: r2(avg(rs.map((r) => r.rounds))),
-        hpLeft: r2(avg(wins.map((r) => r.hpLeft))), downed: r2(avg(wins.map((r) => r.downed))),
+        hpLeft: r2(avg(wins.map((r) => r.hpLeft))), hpAll: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))), downed: r2(avg(wins.map((r) => r.downed))),
       })
+    }
+  }
+  return rows
+}
+
+export interface GroupRow { dungeon: string; layer: string; group: string; level: number; win: number; rounds: number; hpLeft: number; downed: number }
+
+/** 抽測一般遭遇：每座地下城每一層抽 perLayer 組（隊伍等級 = 那一組怪物的最高等級 + levelOffset） */
+export function layerFights(trials: number, perLayer = 2, levelOffset = 0): GroupRow[] {
+  const rows: GroupRow[] = []
+  const rng = new Rng(77)
+  for (const [dungeon, enc] of Object.entries(dungeonEncounters)) {
+    for (const layer of ['outskirts', 'shallow', 'middle', 'deep', 'abyss'] as const) {
+      const table = enc[layer] ?? []
+      const picks = [...table].sort(() => rng.next() - 0.5).slice(0, perLayer)
+      for (const group of picks) {
+        const level = Math.max(1, Math.max(...group.map(([id]) => enemies[id]?.level ?? 1)) + levelOffset)
+        const rs = Array.from({ length: trials }, (_, t) => fight(group, level, 3000 + t))
+        const wins = rs.filter((r) => r.win)
+        const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
+        const r2 = (n: number) => Math.round(n * 100) / 100
+        rows.push({
+          dungeon, layer, group: group.map(([id, n]) => `${enemies[id]?.name ?? id}×${n}`).join('、'), level,
+          win: r2(wins.length / trials), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(wins.map((r) => r.hpLeft))), downed: r2(avg(wins.map((r) => r.downed))),
+        })
+      }
     }
   }
   return rows

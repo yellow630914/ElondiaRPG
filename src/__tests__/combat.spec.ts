@@ -180,7 +180,8 @@ describe('combat rules', () => {
     for (const a of Object.values(abilities)) {
       const classId = a.classes.find((c) => c !== 'monster') ?? 'fighter'
       const state = stateWith(classId, 20, used + 1)
-      startCombat(state, [['crypt_general', 1], ['goblin', 2]])
+      // 不用層主：層主的傷害加成可能在輪到主角之前就把人打倒
+      startCombat(state, [['crypt_wight', 1], ['goblin', 2]])
       const pc = makeCurrent(state, 'pc')
       pc.hp = Math.floor(pc.maxHp / 2)
       pc.abilities.push(a.id)
