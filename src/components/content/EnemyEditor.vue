@@ -175,7 +175,7 @@ function remove() {
         <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }} <input v-model.number="draft.attrs[a]" type="number" min="1" max="30" /></label>
       </div>
       <div class="grid">
-        <label>攻擊骰（{x}d{y}+{z}）
+        <label class="dice-field">攻擊骰（{x}d{y}+{z}）
           <span class="pair dice">
             <input type="number" min="1" max="20" :value="dice.count" title="骰子數量 x" @change="setDice('count', $event)" />d
             <input type="number" min="2" max="100" :value="dice.sides" title="骰子面數 y" @change="setDice('sides', $event)" />+

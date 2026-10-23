@@ -15,12 +15,14 @@ textarea { font-family: inherit; line-height: 1.5; }
 .checks { gap: 4px 12px; }
 label.check { display: inline-flex; gap: 4px; align-items: center; }
 .grow { flex: 1; min-width: 140px; }
-.num { width: 64px; }
+.num { width: 84px; min-width: 84px; }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .chip { display: inline-flex; gap: 4px; align-items: center; }
 .x { padding: 0 4px; line-height: 1.2; }
 .warn { color: var(--danger); border-color: var(--danger); }
 .warn-text { color: var(--danger); }
 .summary { background: var(--panel-2); border-radius: var(--radius); padding: 4px 8px; }
-.pair.dice input { width: 52px; }
+.pair.dice input { width: auto; flex: 1 1 0; min-width: 44px; }
+/* 攻擊骰（三格數字）佔兩欄，不會蓋到旁邊的欄位 */
+.grid label.dice-field { grid-column: span 2; }
 .qty { width: 64px; }

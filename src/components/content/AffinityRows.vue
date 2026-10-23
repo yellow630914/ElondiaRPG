@@ -47,5 +47,5 @@ function add() {
 <style scoped>
 .aff { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
 .row-item { display: inline-flex; gap: 4px; align-items: center; border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 4px; }
-.row-item input { width: 64px; }
+.row-item input { width: 84px; min-width: 84px; }
 </style>
