@@ -23,7 +23,7 @@ import StatBar from './StatBar.vue'
 import NameTag from './NameTag.vue'
 import PortraitBox from './PortraitBox.vue'
 import FoldSection from './FoldSection.vue'
-import { contractOf, oathText, placeName, tattooDesc, tattooKindName, tattooName, tattoosOf } from '@/engine/tattoos'
+import { contractOf, oathText, placeName, TATTOO_PLACES, tattooAt, tattooDesc, tattooKindName, tattooName, tattoosOf } from '@/engine/tattoos'
 
 const QUALITY_NAME: Record<string, string> = {
   common: '普通', uncommon: '優良', rare: '稀有', epic: '史詩', legendary: '傳說', mythic: '神話',
@@ -133,17 +133,6 @@ function affinityText(m: Character): string {
         </div>
       </FoldSection>
 
-      <FoldSection v-if="tattoosOf(m).length" id="party.tattoos" :title="`🖋️ 刺青（${tattoosOf(m).length}）`">
-        <ul class="plain small tattoos">
-          <li v-for="t in tattoosOf(m)" :key="t.place">
-            <strong>{{ placeName(t.place) }}</strong>
-            <span class="tag" :class="t.kind">{{ tattooKindName(t.kind) }}</span>
-            【{{ tattooName(t) }}】<span v-if="t.kind === 'oath' && t.attrs" class="oath">{{ oathText(t.attrs) }}</span>
-            <div class="muted">{{ tattooDesc(t) }}<template v-if="t.by">（{{ t.by }}刺的）</template></div>
-          </li>
-        </ul>
-      </FoldSection>
-
       <p v-if="m.attrPoints > 0" class="small" style="color: var(--accent)">可分配屬性點：{{ m.attrPoints }}</p>
       <FoldSection id="party.stats" title="📊 屬性與戰鬥數值">
         <table class="attrs small">
@@ -191,6 +180,21 @@ function affinityText(m: Character): string {
               <span v-else class="muted">—</span>
             </li>
           </ul>
+      </FoldSection>
+      <FoldSection id="party.tattoos" title="🖋️ 刺青" :count="tattoosOf(m).length">
+          <ul class="plain gear tattoos small">
+            <li v-for="p in TATTOO_PLACES" :key="p" class="row">
+              <span class="muted slot">{{ placeName(p) }}</span>
+              <template v-if="tattooAt(m, p)">
+                <span class="tag" :class="tattooAt(m, p)!.kind">{{ tattooKindName(tattooAt(m, p)!.kind) }}</span>
+                <span :title="tattooDesc(tattooAt(m, p)!)">{{ tattooName(tattooAt(m, p)!) }}</span>
+                <span v-if="tattooAt(m, p)!.kind === 'oath' && tattooAt(m, p)!.attrs" class="oath-attrs">{{ oathText(tattooAt(m, p)!.attrs!) }}</span>
+                <span class="muted desc">{{ tattooDesc(tattooAt(m, p)!) }}<template v-if="tattooAt(m, p)!.by">（{{ tattooAt(m, p)!.by }}刺的）</template></span>
+              </template>
+              <span v-else class="muted">—</span>
+            </li>
+          </ul>
+          <p v-if="m.isPlayer" class="small muted">刺青店刺普通刺青、刻印師刻誓約印記；洗刺青到刺青店、刻印師或神殿。奴隸印記要解除契約才能去掉。</p>
       </FoldSection>
       <FoldSection v-if="m.personality || m.isPlayer" id="party.profile" title="📝 角色設定" closed>
         <p v-if="m.personality" class="small">{{ m.personality }}</p>
@@ -274,10 +278,12 @@ function affinityText(m: Character): string {
 .attrs th { text-align: left; padding-right: 12px; font-weight: normal; cursor: help; }
 .attrs td { padding: 1px 6px; }
 .attrs .num { font-weight: 600; text-align: right; min-width: 2em; }
-.tattoos li { padding: 2px 0; }
+.tattoos li { align-items: baseline; }
+.tattoos .slot { min-width: 4.5em; }
+.tattoos .desc, .tattoos .oath-attrs { flex: 1 1 100%; padding-left: 4.5em; }
 .tattoos .tag.slave { border-color: var(--danger); }
 .tattoos .tag.oath { border-color: var(--accent); }
-.tattoos .oath { color: var(--accent); margin-left: 4px; }
+.tattoos .oath-attrs { color: var(--accent); }
 .attrs .num.changed { color: var(--accent); cursor: help; }
 .stats li { padding: 2px 0; border: none; }
 .choose { padding: 8px; border: 1px dashed var(--accent); border-radius: 6px; }
