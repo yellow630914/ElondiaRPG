@@ -13,7 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, landmarks,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -23,6 +23,7 @@ import { cleanPerkEffects, describeEffects, type PerkLimits } from './perks'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
+import { applyLandmarkMod, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
@@ -100,10 +101,12 @@ export interface ContentMods {
   markRules: Record<string, MarkRulesMod>
   /** 商店（內建的店只能改部分欄位） */
   shops: Record<string, ShopMod>
+  /** 城鎮的特色地標：內建的整份覆蓋，自建的 custom */
+  landmarks: Record<string, LandmarkMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -200,6 +203,7 @@ function restore() {
   replaceRecord(slaveryRules.contracts, snapshot.marks)
   applyMarkRules(clone(snapshot.markRules))
   restoreShops()
+  restoreLandmarks()
   replaceRecord(abilities, snapshot.abilities)
   perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
@@ -418,6 +422,7 @@ export function applyContent(mods: ContentMods): string[] {
     slaveryRules.contracts[id] = strip(m, ['custom'])
   })
   tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)))))
+  tryEach('地標', mods.landmarks ?? {}, (id, m) => applyLandmarkMod(id, sanitizeLandmarkMod(id, m)))
   tryEach('商店', mods.shops ?? {}, (id, m) => applyShopMod(id, m))
   // 商店的位置：移動內建的店、擺自建的店（擺不上去的略過）
   tryEach('商店的位置', { all: mods.shops ?? {} }, (_id, all) => applyShopPlacements(all))
@@ -914,6 +919,15 @@ export function normalizeMods(raw: unknown): ContentMods {
     const name = cleanItemName(raw)
     if (name) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
   }
+  // 地標：固定 NPC 與特殊任務的任務點會檢查存不存在，先登錄自建的
+  for (const [id, v] of Object.entries(r.landmarks ?? {})) {
+    try {
+      out.landmarks[id] = sanitizeLandmarkMod(id, v)
+    } catch {
+      // 位置或 id 不對的：略過
+    }
+  }
+  for (const [id, l] of Object.entries(out.landmarks)) if (l.custom && !landmarks[id]) applyLandmarkMod(id, l)
   // 商店的固定清單會檢查物品：自建的物品還沒登錄，一起算
   const listable = (n: string) => (out.items[n] ? !notForSale(out.items[n]!) : canListItem(n))
   for (const [id, v] of Object.entries(r.shops ?? {})) {
@@ -1016,6 +1030,8 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   const fixed = cleanFixed(raw.fixed)
   if (fixed) out.fixed = fixed
   if (raw.keeper && isKeeperShop(raw.keeper)) out.keeper = raw.keeper
+  // 待在所屬地點的地標
+  if (typeof raw.landmark === 'string' && landmarks[raw.landmark]?.location === location) out.landmark = raw.landmark
   const req = cond(raw.requires)
   if (req) out.requires = req
   // 依劇情旗標改變出沒：沒有條件的設定沒有意義，拿掉

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ATTR_IDS, attrName, enemies, geography, npcs as namedNpcs, type StoryNode, type StoryOption } from '@/engine/data'
-import { cellName } from '@/engine/grid'
+import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, type StoryNode, type StoryOption } from '@/engine/data'
+import { cellName, type CellKind } from '@/engine/grid'
 import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
 import { travelEvents } from '@/engine/road'
 import FlagInput from './FlagInput.vue'
@@ -15,6 +15,12 @@ const where = computed(() => node.value.at.where)
 const locations = computed(() => geography.locations.filter((l) =>
   where.value === 'dungeon' ? l.type === 'dungeon' : where.value === 'npc' ? true : l.type !== 'dungeon'))
 const requires = computed(() => (node.value.requires ??= {}))
+// 設施、自建的商店，加上這個地點的特色地標
+const cellOptions = computed(() => [
+  ...STORY_CELLS,
+  ...Object.values(shopRules.types).filter((d) => d.custom).map((d) => d.cell as CellKind),
+  ...landmarksIn(node.value.at.location ?? '').map((l) => l.id as CellKind),
+])
 const enemyList = computed(() => Object.values(enemies).sort((a, b) => a.level - b.level))
 
 function setKind(kind: StoryNode['kind']) {
@@ -79,7 +85,7 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
       </label>
       <label v-if="where === 'cell'">設施
         <select v-model="node.at.cell">
-          <option v-for="c in STORY_CELLS" :key="c" :value="c">{{ cellName(c) }}</option>
+          <option v-for="c in cellOptions" :key="c" :value="c">{{ cellName(c) }}</option>
         </select>
       </label>
       <label v-if="where === 'dungeon'">哪一層

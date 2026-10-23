@@ -65,6 +65,8 @@ const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 function syncPlacement(rec: NpcRecord, def: NpcRecord, stage: number | undefined) {
   if (def.requires) rec.requires = clone(def.requires)
   else delete rec.requires
+  if (def.landmark) rec.landmark = def.landmark
+  else delete rec.landmark
   const st = stage !== undefined ? def.stages?.[stage] : undefined
   if (st) {
     // 搬到新的地方

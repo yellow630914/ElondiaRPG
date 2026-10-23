@@ -28,6 +28,7 @@ import storiesJson from '@data/rules/stories.json'
 import craftsJson from '@data/rules/crafts.json'
 import homesJson from '@data/rules/homes.json'
 import perksJson from '@data/rules/perks.json'
+import landmarksJson from '@data/world/landmarks.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
 import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality, TattooPlace } from './types'
@@ -105,6 +106,8 @@ export interface NpcDef {
   gear?: Partial<Record<GearSlot, GearSpec>>
   /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
   fixed?: { area: string; x: number; y: number }
+  /** 待在所屬地點的某個地標（站在地標那一格，地標搬家時跟著走）；有這個欄位時不看 fixed 與活躍地點 */
+  landmark?: string
   /** 擔任所屬地點這種店的店主（shops.json 的店種，流浪商人除外）：取代自動生成的店主 */
   keeper?: string
   /** 只在劇情旗標符合時出現（特殊任務用，見 story.ts） */
@@ -248,6 +251,46 @@ export interface Haunt {
   weight: number
 }
 export const npcs = (npcsJson as unknown as { npcs: NpcDef[] }).npcs
+
+// ---- 城鎮的特色地標（docs/LANDMARKS.md） ----
+
+/** 地標的 id：lm_ 開頭（小寫英文、數字、底線），地圖格子的種類就是這個 id */
+export type LandmarkId = `lm_${string}`
+export const LANDMARK_ID = /^lm_[a-z0-9_]+$/
+export function isLandmarkId(id: string): id is LandmarkId {
+  return LANDMARK_ID.test(id)
+}
+export interface LandmarkTypeDef {
+  name: string
+  /** 生成居民的分布：一般人、冒險者站在這種地標的權重；帶這些標籤的人另外的權重 */
+  npc: { commoner?: number; adventurer?: number; tags?: Record<string, number> }
+}
+export interface LandmarkDef {
+  id: string
+  name: string
+  emoji: string
+  /** 所在的聚落 */
+  location: string
+  /** 在聚落的哪一格（區塊 key 與座標，要是道路） */
+  at: { area: string; x: number; y: number }
+  /** 地點面板的說明 */
+  desc: string
+  /** 交給 AI 的氛圍（站在這裡行動時） */
+  scene?: string
+  /** 類型（landmarks.json 的 types）：居民的分布、公會委託的標的 */
+  types: string[]
+}
+const landmarksData = landmarksJson as unknown as { types: Record<string, LandmarkTypeDef>; landmarks: LandmarkDef[] }
+export const landmarkTypes = landmarksData.types
+/** 目前的地標（內容編輯器會改、加、刪） */
+export const landmarks: Record<string, LandmarkDef> = Object.fromEntries(landmarksData.landmarks.map((l) => [l.id, l]))
+export function landmarkDef(id: string): LandmarkDef | undefined {
+  return isLandmarkId(id) ? landmarks[id] : undefined
+}
+/** 某個聚落的地標 */
+export function landmarksIn(location: string): LandmarkDef[] {
+  return Object.values(landmarks).filter((l) => l.location === location)
+}
 
 export const progression = progressionJson as unknown as {
   life_tiers: { tier: number; levels: [number, number]; max_skill_quality: SkillQuality }[]

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, perkDef, perkRules, shopRules, slaveryRules, statuses, stories, type ShopType } from '@/engine/data'
+import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkDef, perkRules, shopRules, slaveryRules, statuses, stories, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
+import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { newMark, newTattooTemplate } from '@/engine/tattooMods'
 import { oathText, placeName, tattooRules } from '@/engine/tattoos'
 import { perkPower } from '@/engine/perks'
@@ -26,12 +27,13 @@ import StatusEditor from './content/StatusEditor.vue'
 import StoryEditor from './content/StoryEditor.vue'
 import TattooEditor from './content/TattooEditor.vue'
 import ShopEditor from './content/ShopEditor.vue'
+import LandmarkEditor from './content/LandmarkEditor.vue'
 import MarkEditor from './content/MarkEditor.vue'
 import MarkRulesEditor from './content/MarkRulesEditor.vue'
 import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'shops' | 'npcs' | 'stories'
+type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'shops' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
   { id: 'items', label: '🎒 物品' },
@@ -41,6 +43,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'statuses', label: '🌀 狀態' },
   { id: 'perks', label: '🌟 特質' },
   { id: 'tattoos', label: '🖋️ 刺青' },
+  { id: 'landmarks', label: '🏛️ 地標' },
   { id: 'shops', label: '🏪 商店' },
   { id: 'npcs', label: '🧑 固定 NPC' },
   { id: 'stories', label: '⭐ 特殊任務' },
@@ -77,7 +80,7 @@ function resetFilters() {
   statusKind.value = ''
   tattooKind.value = ''
 }
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', shops: '', npcs: '', stories: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', shops: '', npcs: '', stories: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
 const tattooKind = ref('')
 // 狀態：增益、減益
@@ -147,6 +150,10 @@ const rows = computed<Row[]>(() => {
       : []
     const rules = !k || k === 'slave' ? [{ key: 'rules', name: '⚙️ 印記設定', note: '用途、輕重順序、權重', status: st(!!m.markRules?.rules, false), sort: 3 }] : []
     list = [...tats, ...marks, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+  } else if (sub.value === 'landmarks') {
+    list = Object.values(landmarks)
+      .map((l) => ({ key: l.id, name: `${l.emoji} ${l.name}`, note: `${locationById(l.location).name}・${l.types.map((t) => landmarkTypes[t]?.name).join('、')}`, status: st(!!m.landmarks?.[l.id], !builtinLandmark(l.id)) }))
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'shops') {
     list = Object.entries(shopRules.types)
       .map(([id, d]) => ({ key: id, name: `${d.emoji} ${d.name}`, note: d.custom ? `${m.shops?.[id]?.places?.length ?? 0} 處・${d.keeper.title}` : d.keeper.title, status: st(!!m.shops?.[id], !!d.custom) }))
@@ -175,7 +182,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), shops: n(m.shops ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), shops: n(m.shops ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -186,6 +193,7 @@ const current = computed(() => {
     : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? stories.some((d) => d.id === key)
     : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key)
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
+    : sub.value === 'landmarks' ? !!landmarks[key]
     : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
     : !!gearRules.materials[key]
   return exists ? key : ''
@@ -232,6 +240,10 @@ function create() {
         content.saveTattoo(id, newTattooTemplate(tattooKind.value === 'oath' ? 'oath' : 'plain'))
         select(`t:${id}`)
       }
+    } else if (sub.value === 'landmarks') {
+      const id = newLandmarkId()
+      content.saveLandmark(id, newLandmark(id, game.state && locationById(game.state.location).type !== 'dungeon' ? game.state.location : undefined))
+      select(id)
     } else if (sub.value === 'shops') {
       const id = newShopId()
       content.saveShop(id, newShop())
@@ -273,6 +285,12 @@ function duplicate() {
       for (let i = 2; itemDef(name) || game.state?.customItems?.[name]; i++) name = `${key.slice(0, 15)}（複製${i}）`
       content.saveItem(name, { ...JSON.parse(JSON.stringify(itemDef(key))), custom: true })
       select(name)
+    } else if (sub.value === 'landmarks') {
+      // 複製：同一個聚落另一格空地
+      const id = newLandmarkId()
+      const src = landmarks[key]!
+      content.saveLandmark(id, { ...JSON.parse(JSON.stringify(src)), ...newLandmark(id, src.location), name: `${src.name}2`.slice(0, 12), emoji: src.emoji, desc: src.desc, types: [...src.types], ...(src.scene ? { scene: src.scene } : {}) })
+      select(id)
     } else if (sub.value === 'shops') {
       // 複製內建的店不會帶走專屬功能與位置
       const id = newShopId()
@@ -335,7 +353,7 @@ function duplicate() {
   }
 }
 
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', shops: '＋ 新增商店', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', shops: '＋ 新增商店', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
 // ---- 匯出、匯入、重設 ----
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -458,6 +476,7 @@ function resetAll() {
         <StatusEditor v-else-if="sub === 'statuses'" :id="current" :key="`s-${current}`" @deleted="select('')" />
         <PerkEditor v-else-if="sub === 'perks'" :id="current" :key="`p-${current}`" @deleted="select('')" />
         <ShopEditor v-else-if="sub === 'shops'" :id="current" :key="`shop-${current}`" @deleted="select('')" />
+        <LandmarkEditor v-else-if="sub === 'landmarks'" :id="current" :key="`lm-${current}`" @deleted="select('')" />
         <template v-else-if="sub === 'tattoos'">
           <MarkRulesEditor v-if="current === 'rules'" key="rules" />
           <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />

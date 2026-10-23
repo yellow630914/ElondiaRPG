@@ -230,7 +230,7 @@ function setKeeper(v: string) {
 
     <fieldset>
       <legend>出現的地方</legend>
-      <NpcPlacementEditor v-model="draft" />
+      <NpcPlacementEditor v-model="draft" allow-landmark />
       <div class="row">
         <label class="small">擔任店主
           <select :value="draft.keeper ?? ''" @change="setKeeper(($event.target as HTMLSelectElement).value)">

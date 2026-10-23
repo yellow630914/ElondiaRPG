@@ -175,6 +175,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .cell.water { background: #1f3346; }
 .cell.fog { background: #0c0b09; }
 .cell.inn, .cell.guild, .cell.tavern, .cell.shop, .cell.temple, .cell[class*="shop_"] { background: #4a3b26; }
+.cell[class*="lm_"] { background: #3d3350; }
 .cell.gate, .cell.exit, .cell.link, .cell.stairs_down, .cell.stairs_up { background: #2f4036; }
 .cell.encounter:not(.done), .cell.elite:not(.done), .cell.boss:not(.done) { background: #4b2723; }
 .cell.safe { background: #4d3a1d; }

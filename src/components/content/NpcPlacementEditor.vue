@@ -1,21 +1,26 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { geography, regionById, type Haunt } from '@/engine/data'
+import { geography, landmarkDef, landmarksIn, regionById, type Haunt } from '@/engine/data'
 import { blockKeys, CELL_ICON, cellName, settlementArea, ZONES, type Zone } from '@/engine/grid'
 
 // 固定 NPC 出沒的地方：所屬地點，加上活躍地點或固定在聚落的一格（預設的設定與「依劇情旗標改變出沒」共用）
-export interface Placement { location: string; haunts?: Haunt[]; fixed?: { area: string; x: number; y: number } }
+export interface Placement { location: string; haunts?: Haunt[]; fixed?: { area: string; x: number; y: number }; landmark?: string }
 const target = defineModel<Placement>({ required: true })
+// 預設的設定可以「待在地標」（依劇情旗標改變出沒的各組不行）
+const props = defineProps<{ allowLandmark?: boolean }>()
+const landmarkList = computed(() => landmarksIn(target.value.location))
 
 const ZONE_NAME: Record<Zone, string> = { town: '城區', noble: '貴族區', palace: '王城', temple: '神殿', brothel: '娼館', outskirts: '近郊', dungeon: '地下城' }
 const settlements = geography.locations.filter((l) => l.type !== 'dungeon')
 const places = geography.locations
 
 const mode = computed({
-  get: () => (target.value.fixed ? 'fixed' : 'haunts'),
+  get: () => (target.value.landmark ? 'landmark' : target.value.fixed ? 'fixed' : 'haunts'),
   set: (v: string) => {
+    delete target.value.landmark
     if (v === 'fixed') setBlock(blockKeys(target.value.location)[0]!)
     else delete target.value.fixed
+    if (v === 'landmark') target.value.landmark = landmarkList.value[0]?.id
   },
 })
 const blocks = computed(() => blockKeys(target.value.location).map((k) => ({ key: k, area: settlementArea(k)! })).filter((b) => b.area))
@@ -36,6 +41,10 @@ function setBlock(key: string) {
 // 換了所屬地點：固定的格子跟著換到那裡的第一個區塊，在原本地點的活躍地點也一起搬過去
 watch(() => target.value.location, (loc, old) => {
   if (target.value.fixed && !blockKeys(loc).includes(target.value.fixed.area)) setBlock(blockKeys(loc)[0]!)
+  if (target.value.landmark && landmarkDef(target.value.landmark)?.location !== loc) {
+    if (landmarkList.value.length) target.value.landmark = landmarkList.value[0]!.id
+    else delete target.value.landmark
+  }
   for (const h of target.value.haunts ?? []) if (h.location === old) h.location = loc
 })
 function addHaunt() {
@@ -56,9 +65,16 @@ const picked = computed(() => (target.value.fixed && block.value ? target.value.
         <select v-model="mode">
           <option value="haunts">活躍地點（每天依權重決定在哪裡）</option>
           <option value="fixed">固定在聚落的一格</option>
+          <option v-if="props.allowLandmark" value="landmark" :disabled="!landmarkList.length">待在地標{{ landmarkList.length ? '' : '（這裡沒有地標）' }}</option>
+        </select>
+      </label>
+      <label v-if="mode === 'landmark'">地標
+        <select v-model="target.landmark">
+          <option v-for="l in landmarkList" :key="l.id" :value="l.id">{{ l.emoji }} {{ l.name }}</option>
         </select>
       </label>
     </div>
+    <p v-if="mode === 'landmark'" class="small muted">站在地標那一格；地標搬家時跟著走。</p>
     <template v-if="mode === 'haunts'">
       <div v-for="(h, i) in target.haunts ?? []" :key="i" class="row">
         <select v-model="h.location" class="grow">

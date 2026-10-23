@@ -6,7 +6,7 @@
 //   不需要另外存檔，重新整理也不會變。
 // - 店主、公會職員等職員沒有活躍地點，固定待在自己的設施；舊資料（沒有活躍地點）沿用同樣的規則。
 
-import { geography, locationById, npcs as namedNpcs, npcTags, population, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
+import { geography, landmarkDef, landmarkTypes, locationById, npcs as namedNpcs, npcTags, population, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
 import {
   currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
 } from './grid'
@@ -216,7 +216,8 @@ export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day): 
   if (!visibleNpc(state, rec)) return undefined
   if (rec.at && day <= rec.at.until) return rec.at.area
   // 固定 NPC：站在指定的格子
-  if (rec.fixed) return rec.fixed.area
+  const fixed = fixedCell(rec)
+  if (fixed) return fixed.area
   const today = whereToday(rec, day)
   if (today) {
     const loc = locationById(today.location)
@@ -237,6 +238,28 @@ export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day): 
   return pickBlock(rec, day, blocks.filter((b) => b.zone === 'town').map((b) => b.key))
 }
 
+/** 地標的格子：依地標的類型（landmarks.json 的 types）決定生成的人站在這裡的權重，取各類型裡最高的 */
+function landmarkWeight(kind: string, who: NpcKind, tags: string[]): number {
+  const l = landmarkDef(kind)
+  if (!l) return 0
+  let w = 0
+  for (const t of l.types) {
+    const npc = landmarkTypes[t]?.npc
+    if (!npc) continue
+    w = Math.max(w, npc[who] ?? 0, ...tags.map((g) => npc.tags?.[g] ?? 0))
+  }
+  return w
+}
+
+/** 固定站的格子：待在地標的人站在地標上（依劇情旗標搬走時看那一組的設定） */
+export function fixedCell(rec: NpcRecord): { area: string; x: number; y: number } | undefined {
+  if (rec.landmark && rec.stage === undefined) {
+    const l = landmarkDef(rec.landmark)
+    if (l) return l.at
+  }
+  return rec.fixed
+}
+
 // 隨機的人在格子上的分佈：冒險者常在酒館與公會，普通人多在街上；神官在神殿
 const CELL_WEIGHTS: Record<NpcKind, Partial<Record<CellKind, number>>> = {
   adventurer: { tavern: 6, guild: 4, inn: 2, floor: 1, shop: 1, temple: 0.5, resource: 1, quest: 1, safe: 2 },
@@ -254,7 +277,8 @@ export function npcCell(state: GameState, rec: NpcRecord, area: Area): { x: numb
   const ally = allyPlacement(state, rec.id)
   if (ally?.area === area.key) return { x: ally.x, y: ally.y }
   if (rec.at && rec.at.area === area.key && state.time.day <= rec.at.until) return { x: rec.at.x, y: rec.at.y }
-  if (rec.fixed?.area === area.key && rec.fixed.x < area.width && rec.fixed.y < area.height) return { x: rec.fixed.x, y: rec.fixed.y }
+  const fixed = fixedCell(rec)
+  if (fixed?.area === area.key && fixed.x < area.width && fixed.y < area.height) return { x: fixed.x, y: fixed.y }
   const spot = !rec.haunts?.length ? npcSpot(rec) : undefined
   if (spot) return findKind(area, spot as CellKind)
   const weights: Partial<Record<CellKind, number>> = { ...CELL_WEIGHTS[npcKind(rec)] }
@@ -262,7 +286,7 @@ export function npcCell(state: GameState, rec: NpcRecord, area: Area): { x: numb
   const slot = Math.floor((state.time.hour ?? 0) / 6)
   const rng = new Rng(hashString(`${rec.id}@${state.time.day}#${slot}@${area.key}`))
   const options = Object.fromEntries(
-    area.cells.map((c, i) => [String(i), weights[c.kind] ?? 0] as const).filter(([, w]) => w > 0),
+    area.cells.map((c, i) => [String(i), weights[c.kind] ?? landmarkWeight(c.kind, npcKind(rec), rec.tags ?? [])] as const).filter(([, w]) => w > 0),
   )
   if (!Object.keys(options).length) return null
   const i = Number(weightedPick(rng, options))
@@ -315,7 +339,8 @@ export function adventurersInTown(state: GameState): NpcRecord[] {
     // 留在你家看家的夥伴不算
     if (inParty.has(rec.id) || npcKind(rec) !== 'adventurer' || rec.hostile || rec.staying) return false
     if (rec.dead || !visibleNpc(state, rec)) return false
-    if (rec.fixed) return rec.fixed.area.split('/')[0] === state.location
+    const fixed = fixedCell(rec)
+    if (fixed) return fixed.area.split('/')[0] === state.location
     const today = whereToday(rec, state.time.day)
     if (today) return today.location === state.location && today.zone !== 'outskirts' && today.zone !== 'dungeon'
     // 舊資料：離隊後回到酒館的人

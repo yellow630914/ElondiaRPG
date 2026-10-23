@@ -1,7 +1,7 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import {
-  abilities, ATTR_IDS, enemies, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere,
 } from './data'
 import type { RewardEffect } from './effects'
@@ -217,7 +217,8 @@ function place(v: unknown): StoryPlace {
   const where: StoryWhere = (Object.keys(WHERE_NAME) as StoryWhere[]).includes(p.where as StoryWhere) ? p.where! : 'settlement'
   const out: StoryPlace = { where }
   if (isLoc(p.location)) out.location = p.location
-  if (where === 'cell') out.cell = STORY_CELLS.includes(p.cell as CellKind) ? p.cell : 'tavern'
+  // 設施、自建的商店或城鎮的特色地標（地標要在這個地點）
+  if (where === 'cell') out.cell = STORY_CELLS.includes(p.cell as CellKind) || isCustomShopId(p.cell ?? '') || (isLandmarkId(p.cell ?? '') && (!out.location || landmarks[p.cell!]?.location === out.location)) ? p.cell : 'tavern'
   if (where === 'dungeon') out.layer = STORY_LAYERS.includes(p.layer as never) ? p.layer : 'outskirts'
   if (where === 'npc' && str(p.npc, 60)) out.npc = str(p.npc, 60)
   if (where === 'side' && typeof p.side_map === 'string' && SIDE_MAPS().includes(p.side_map)) out.side_map = p.side_map
@@ -426,7 +427,7 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
       if (o.join && !npcIds.has(o.join)) err.push(`${t}要同行的角色 ${o.join} 不存在`)
       if (o.leave && !npcIds.has(o.leave)) err.push(`${t}要離開的角色 ${o.leave} 不存在`)
     }
-    if (n.at.where === 'cell' && n.at.cell && !(n.at.cell in CELL_NAME)) err.push(`${t}的設施不存在`)
+    if (n.at.where === 'cell' && n.at.cell && !(n.at.cell in CELL_NAME) && !shopRules.types[n.at.cell as ShopType] && !landmarks[n.at.cell]) err.push(`${t}的設施不存在`)
     else if (n.at.where === 'cell' && n.at.cell && n.at.location && !hasFacility(n.at.location, n.at.cell as CellKind)) {
       err.push(`${t}：${geography.locations.find((l) => l.id === n.at.location)?.name ?? n.at.location}沒有${CELL_NAME[n.at.cell as CellKind] ?? n.at.cell}`)
     }

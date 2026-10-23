@@ -3,7 +3,7 @@ import FoldSection from './FoldSection.vue'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, geography, isCustomShopId, locationById, shopRules, type ShopType } from '@/engine/data'
+import { attrName, geography, isCustomShopId, landmarkDef, locationById, shopRules, type ShopType } from '@/engine/data'
 import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
@@ -138,7 +138,7 @@ const shopHere = computed<ShopType | null>(() => {
 // 商店的說明（shops.json 的 desc，內容頁籤可以改）
 const shopDesc = computed(() => {
   void content.version
-  return Object.values(shopRules.types).find((t) => t.cell === cell.value.kind)?.desc ?? ''
+  return Object.values(shopRules.types).find((t) => t.cell === cell.value.kind)?.desc ?? landmarkDef(cell.value.kind)?.desc ?? ''
 })
 </script>
 

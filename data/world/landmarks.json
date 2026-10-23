@@ -1,0 +1,841 @@
+{
+ "$comment": "城鎮的特色地標（docs/LANDMARKS.md）。地標是聚落地圖上的一格（at：區塊 key 與座標，要是道路），格子的種類就是地標的 id（lm_ 開頭）。types 是地標的類型：生成居民的分布（npc：一般人、冒險者的權重，tags：帶這些標籤的人的權重）與公會委託的標的都看類型。資料來源：世界書各區域條目的「特色建築」，沒有寫到的聚落由本專案補寫。",
+ "version": 1,
+ "types": {
+  "holy": {
+   "name": "聖地",
+   "npc": {
+    "commoner": 1,
+    "adventurer": 0.5,
+    "tags": {
+     "priest": 6,
+     "bishop": 6,
+     "good": 1
+    }
+   }
+  },
+  "academy": {
+   "name": "學院",
+   "npc": {
+    "commoner": 1,
+    "adventurer": 1,
+    "tags": {
+     "noble": 2
+    }
+   }
+  },
+  "official": {
+   "name": "官府・議會",
+   "npc": {
+    "commoner": 0.5,
+    "adventurer": 0.3,
+    "tags": {
+     "noble": 4,
+     "royal": 3
+    }
+   }
+  },
+  "military": {
+   "name": "軍事・校場",
+   "npc": {
+    "commoner": 0.5,
+    "adventurer": 2
+   }
+  },
+  "market": {
+   "name": "市集・交易",
+   "npc": {
+    "commoner": 2,
+    "adventurer": 1,
+    "tags": {
+     "merchant": 4,
+     "traveler": 2,
+     "villain": 1
+    }
+   }
+  },
+  "workshop": {
+   "name": "工坊",
+   "npc": {
+    "commoner": 1.5,
+    "adventurer": 0.5
+   }
+  },
+  "harbor": {
+   "name": "碼頭・渡口",
+   "npc": {
+    "commoner": 1.5,
+    "adventurer": 1,
+    "tags": {
+     "traveler": 3,
+     "merchant": 2
+    }
+   }
+  },
+  "monument": {
+   "name": "古蹟",
+   "npc": {
+    "commoner": 1,
+    "adventurer": 1,
+    "tags": {
+     "traveler": 2
+    }
+   }
+  },
+  "nature": {
+   "name": "自然",
+   "npc": {
+    "commoner": 1,
+    "adventurer": 0.5
+   }
+  },
+  "haunted": {
+   "name": "陰森之地",
+   "npc": {
+    "commoner": 0.3,
+    "adventurer": 0.5,
+    "tags": {
+     "villain": 2
+    }
+   }
+  }
+ },
+ "landmarks": [
+  {
+   "id": "lm_knight_academy",
+   "name": "騎士學院",
+   "emoji": "🛡️",
+   "location": "rhineburg",
+   "at": {
+    "area": "rhineburg/gate",
+    "x": 4,
+    "y": 1
+   },
+   "types": [
+    "military",
+    "academy"
+   ],
+   "desc": "培養騎士的主要機構，教導騎士的思想與戰鬥技巧。",
+   "scene": "校場上傳來整齊的喊聲與鐵器碰撞聲，見習騎士在教官的口令下操練。"
+  },
+  {
+   "id": "lm_imperial_armory",
+   "name": "帝國軍械院",
+   "emoji": "⚙️",
+   "location": "rhineburg",
+   "at": {
+    "area": "rhineburg/avenue",
+    "x": 8,
+    "y": 5
+   },
+   "types": [
+    "workshop",
+    "military"
+   ],
+   "desc": "據傳矮人技師與人類工匠在此共同打造「龍息鎧」。",
+   "scene": "高牆後終日傳出鍛打聲，衛兵盤查每一個靠近大門的人。"
+  },
+  {
+   "id": "lm_dawn_sanctum",
+   "name": "晨曦聖殿",
+   "emoji": "🌅",
+   "location": "dawnlight",
+   "at": {
+    "area": "dawnlight/noble",
+    "x": 4,
+    "y": 5
+   },
+   "types": [
+    "holy"
+   ],
+   "desc": "據傳建於一位光明聖者隕落之地，祭壇上依然留有微光。",
+   "scene": "白石殿堂裡迴盪著聖歌，祭壇上的微光在晨間最為明亮。"
+  },
+  {
+   "id": "lm_healers_academy",
+   "name": "治癒者學院",
+   "emoji": "⚕️",
+   "location": "dawnlight",
+   "at": {
+    "area": "dawnlight/plaza",
+    "x": 2,
+    "y": 5
+   },
+   "types": [
+    "academy",
+    "holy"
+   ],
+   "desc": "培養大陸上最優秀的光系魔法師與醫師。",
+   "scene": "穿白袍的學徒捧著藥草與典籍來回奔走，空氣裡有淡淡的草藥香。"
+  },
+  {
+   "id": "lm_windoath_tower",
+   "name": "風誓塔",
+   "emoji": "🗼",
+   "location": "albena",
+   "at": {
+    "area": "albena/river",
+    "x": 2,
+    "y": 3
+   },
+   "types": [
+    "official",
+    "monument"
+   ],
+   "desc": "七議席議會召開之地，每一任議員都要在高塔頂端立下「公正誓約」。",
+   "scene": "塔頂的風終年不停，塔下常有等著向議員陳情的人。"
+  },
+  {
+   "id": "lm_free_market",
+   "name": "自由集市",
+   "emoji": "💰",
+   "location": "albena",
+   "at": {
+    "area": "albena/market",
+    "x": 4,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "傳聞只要有足夠的金幣，連惡魔契約都能在這裡成交。",
+   "scene": "各族商人的叫賣聲混成一片，帳篷間藏著不少見不得光的買賣。"
+  },
+  {
+   "id": "lm_holy_ring_cathedral",
+   "name": "聖環主殿",
+   "emoji": "✨",
+   "location": "soriel",
+   "at": {
+    "area": "soriel/sanctum",
+    "x": 1,
+    "y": 5
+   },
+   "types": [
+    "holy",
+    "official"
+   ],
+   "desc": "據傳建在「原初聖徒」升天之處，由教皇親自主持儀式。",
+   "scene": "環形的殿堂莊嚴肅穆，朝聖者排成長列等候祈福。"
+  },
+  {
+   "id": "lm_judgment_cloister",
+   "name": "審判迴廊",
+   "emoji": "⚖️",
+   "location": "soriel",
+   "at": {
+    "area": "soriel/sanctum",
+    "x": 9,
+    "y": 5
+   },
+   "types": [
+    "holy",
+    "official",
+    "haunted"
+   ],
+   "desc": "教廷審訊與審判的聖所，傳說「真理之鏡」能照出靈魂的污點。",
+   "scene": "迴廊陰冷安靜，審判官的腳步聲在石壁間迴響。"
+  },
+  {
+   "id": "lm_silverscale_inn",
+   "name": "銀鱗旅店",
+   "emoji": "🐟",
+   "location": "rivervale",
+   "at": {
+    "area": "rivervale/bank",
+    "x": 3,
+    "y": 5
+   },
+   "types": [
+    "monument",
+    "market"
+   ],
+   "desc": "河谷鎮的老旅店，據說有間祕密地下室，曾接待過魔族使者。",
+   "scene": "老闆對地下室的事總是笑而不答，常客裡混著各國的探子。"
+  },
+  {
+   "id": "lm_old_stone_bridge",
+   "name": "舊石橋",
+   "emoji": "🌉",
+   "location": "rivervale",
+   "at": {
+    "area": "rivervale/bank",
+    "x": 5,
+    "y": 5
+   },
+   "types": [
+    "monument",
+    "nature"
+   ],
+   "desc": "「聯盟最古老的石橋」，象徵和平；據傳在橋上發的誓會受「流水之靈」見證。",
+   "scene": "河水在橋下潺潺流過，橋欄上刻滿歷代的誓言。"
+  },
+  {
+   "id": "lm_heartfire_forge",
+   "name": "心火熔源",
+   "emoji": "🔥",
+   "location": "ironforge",
+   "at": {
+    "area": "ironforge/forge",
+    "x": 2,
+    "y": 5
+   },
+   "types": [
+    "workshop",
+    "holy"
+   ],
+   "desc": "鐵爐堡的主爐，日夜不滅，象徵矮人精神與技藝之永恆。",
+   "scene": "熱浪撲面而來，矮人工匠對著爐火低聲祝禱後才開始工作。"
+  },
+  {
+   "id": "lm_elder_hall",
+   "name": "長老石廳",
+   "emoji": "🏛️",
+   "location": "ironforge",
+   "at": {
+    "area": "ironforge/noble",
+    "x": 4,
+    "y": 5
+   },
+   "types": [
+    "official"
+   ],
+   "desc": "鐵爐堡的長老在此議事，石壁上刻滿各氏族的族譜與功績。",
+   "scene": "厚重的石門半掩，裡面傳出長老們用古矮人語爭論的聲音。"
+  },
+  {
+   "id": "lm_everlit_beacon",
+   "name": "長明烽火",
+   "emoji": "🔦",
+   "location": "snowridge",
+   "at": {
+    "area": "snowridge/main",
+    "x": 3,
+    "y": 3
+   },
+   "types": [
+    "military",
+    "monument"
+   ],
+   "desc": "關牆最高處的烽火台終年不熄，風雪中為迷路的旅人指路；改燃藍焰便是向鐵爐堡示警。",
+   "scene": "烽火在風雪裡劈啪作響，守備隊員輪流添柴。"
+  },
+  {
+   "id": "lm_crimson_throne",
+   "name": "赤焰王座廳",
+   "emoji": "👑",
+   "location": "bloodplume",
+   "at": {
+    "area": "bloodplume/palace",
+    "x": 4,
+    "y": 1
+   },
+   "types": [
+    "official"
+   ],
+   "desc": "莉莎爾的居所與議會核心，傳聞王座由一位墮落龍王的脊骨製成。",
+   "scene": "黑曜石大廳裡魔焰靜靜燃燒，侍衛的目光冷得像刀。"
+  },
+  {
+   "id": "lm_blood_oath_valley",
+   "name": "血誓碑谷",
+   "emoji": "🪦",
+   "location": "bloodplume",
+   "at": {
+    "area": "bloodplume/noble",
+    "x": 3,
+    "y": 1
+   },
+   "types": [
+    "monument",
+    "official"
+   ],
+   "desc": "每位領主在此立誓效忠議會，碑上銘刻其真名；違誓者將被魔焰焚心。",
+   "scene": "成排的黑碑上刻滿名字，有幾塊碑面被燒得焦黑。"
+  },
+  {
+   "id": "lm_thousand_forges",
+   "name": "千爐工坊",
+   "emoji": "⚒️",
+   "location": "moltenhold",
+   "at": {
+    "area": "moltenhold/keep",
+    "x": 4,
+    "y": 3
+   },
+   "types": [
+    "workshop"
+   ],
+   "desc": "數百座巨大熔爐同時運轉，冶煉出的金屬會發出魔族特有的「嗡鳴」。",
+   "scene": "嗡鳴聲與鍛打聲震耳欲聾，工匠赤著上身在熔爐間穿梭。"
+  },
+  {
+   "id": "lm_soulmelt_well",
+   "name": "熔魂井",
+   "emoji": "🌋",
+   "location": "moltenhold",
+   "at": {
+    "area": "moltenhold/keep",
+    "x": 3,
+    "y": 2
+   },
+   "types": [
+    "holy",
+    "haunted"
+   ],
+   "desc": "祭祀陣亡戰士的熔金井，傳說能用死者的靈魂淬煉兵器。",
+   "scene": "井口翻騰著熔金，祭司一邊誦念戰士的名字一邊投下祭品。"
+  },
+  {
+   "id": "lm_golem_arena",
+   "name": "機偶校場",
+   "emoji": "🤖",
+   "location": "moltenhold",
+   "at": {
+    "area": "moltenhold/bridge",
+    "x": 6,
+    "y": 5
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "新鑄的地獄機偶與魔兵在此與死囚角鬥試煉，通過者才編入議會軍團。",
+   "scene": "看台上的領主們交頭接耳，場中的機偶發出刺耳的金屬聲。"
+  },
+  {
+   "id": "lm_evernight_tower",
+   "name": "永夜塔",
+   "emoji": "🌑",
+   "location": "shadow_vale",
+   "at": {
+    "area": "shadow_vale/low",
+    "x": 4,
+    "y": 1
+   },
+   "types": [
+    "official",
+    "haunted"
+   ],
+   "desc": "谷中的王宮，塔內無燈卻永不陷於黑暗。",
+   "scene": "塔身吞沒了周圍的光，靠近時會聽見若有似無的低語。"
+  },
+  {
+   "id": "lm_nightmare_maze",
+   "name": "夢魘迷堂",
+   "emoji": "🌀",
+   "location": "shadow_vale",
+   "at": {
+    "area": "shadow_vale/market",
+    "x": 5,
+    "y": 5
+   },
+   "types": [
+    "holy",
+    "haunted"
+   ],
+   "desc": "以幻術摺疊的神殿，據說連神祇的目光都無法窺見其中的真相。",
+   "scene": "迷堂的入口每次看都不太一樣，裡面的走廊似乎比外觀長得多。"
+  },
+  {
+   "id": "lm_bone_king_hall",
+   "name": "骨王殿",
+   "emoji": "💀",
+   "location": "bone_hills",
+   "at": {
+    "area": "bone_hills/main",
+    "x": 3,
+    "y": 1
+   },
+   "types": [
+    "official",
+    "monument"
+   ],
+   "desc": "由遠古巨龍的骸骨搭建而成，是部族酋長的王座。",
+   "scene": "巨大的肋骨撐起殿頂，風穿過骨縫發出低沉的嗚咽。"
+  },
+  {
+   "id": "lm_blood_trial_ground",
+   "name": "鮮血試煉場",
+   "emoji": "🩸",
+   "location": "bone_hills",
+   "at": {
+    "area": "bone_hills/main",
+    "x": 5,
+    "y": 1
+   },
+   "types": [
+    "military",
+    "holy"
+   ],
+   "desc": "每逢新月，戰士們在此獻血以求戰靈庇佑。",
+   "scene": "沙地被血染成暗紅，戰士們在場邊磨著獠牙與刀刃。"
+  },
+  {
+   "id": "lm_silent_corridor",
+   "name": "無聲長廊",
+   "emoji": "🕯️",
+   "location": "silent_tomb",
+   "at": {
+    "area": "silent_tomb/cathedral",
+    "x": 3,
+    "y": 5
+   },
+   "types": [
+    "holy",
+    "haunted"
+   ],
+   "desc": "死者的靈魂在此迴盪，唯有能聽見其低語的人才有資格成為祭司。",
+   "scene": "長廊裡一點聲音也沒有，連自己的腳步聲都聽不見。"
+  },
+  {
+   "id": "lm_ember_tower",
+   "name": "遺火塔",
+   "emoji": "🤍",
+   "location": "silent_tomb",
+   "at": {
+    "area": "silent_tomb/market",
+    "x": 4,
+    "y": 2
+   },
+   "types": [
+    "holy",
+    "monument"
+   ],
+   "desc": "永燃的白焰象徵靈魂不滅，是魔族罕見的「淨化聖火」。",
+   "scene": "白焰安靜地燃燒，灰燼修會的修士在塔下低頭默禱。"
+  },
+  {
+   "id": "lm_abyss_exchange",
+   "name": "深淵交易所",
+   "emoji": "📜",
+   "location": "ashport",
+   "at": {
+    "area": "ashport/market",
+    "x": 4,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "任何契約都能在此成交，甚至包括靈魂與時間。",
+   "scene": "交易所裡的人都壓低聲音說話，契約的墨跡帶著血晶石的紅光。"
+  },
+  {
+   "id": "lm_greysail_pier",
+   "name": "灰帆碼頭",
+   "emoji": "⚓",
+   "location": "ashport",
+   "at": {
+    "area": "ashport/port",
+    "x": 7,
+    "y": 5
+   },
+   "types": [
+    "harbor",
+    "haunted"
+   ],
+   "desc": "據傳有一艘永不靠岸的船，載著被放逐的領主靈魂。",
+   "scene": "霧裡偶爾看得見一面灰帆，碼頭工人總是避開不看。"
+  },
+  {
+   "id": "lm_reef_light_pillar",
+   "name": "礁光柱",
+   "emoji": "💡",
+   "location": "canglue",
+   "at": {
+    "area": "canglue/gate",
+    "x": 4,
+    "y": 2
+   },
+   "types": [
+    "monument"
+   ],
+   "desc": "環繞都城的巨型珊瑚燈塔，終年發出柔光以維繫隔水結界，是玉璘族工匠代代維護的心血。",
+   "scene": "柔光透過結界灑落，看得見外面的魚群在水牆後游過。"
+  },
+  {
+   "id": "lm_tide_mirror",
+   "name": "潮鏡台",
+   "emoji": "🪞",
+   "location": "canglue",
+   "at": {
+    "area": "canglue/market",
+    "x": 5,
+    "y": 1
+   },
+   "types": [
+    "holy",
+    "monument"
+   ],
+   "desc": "都城的核心廣場，傳說滿月之夜台面會映出下一任潮主的身影；「挑潮祭」與四時慶典都在此舉行。",
+   "scene": "玉盤般的礁石台面光滑如鏡，玉璘族在台邊宴飲賽舞。"
+  },
+  {
+   "id": "lm_four_seasons_gallery",
+   "name": "四時迴廊",
+   "emoji": "🐚",
+   "location": "canglue",
+   "at": {
+    "area": "canglue/palace",
+    "x": 4,
+    "y": 1
+   },
+   "types": [
+    "monument",
+    "official"
+   ],
+   "desc": "連通四座宮闕的貝殼長廊，廊壁鑲嵌著歷代潮主的畫像與詩篇。",
+   "scene": "貝殼的廊壁映著七彩的光，偶爾有人駐足吟誦壁上的詩。"
+  },
+  {
+   "id": "lm_sandcastle_keep",
+   "name": "沙堡",
+   "emoji": "🏰",
+   "location": "sandcastle",
+   "at": {
+    "area": "sandcastle/camp",
+    "x": 3,
+    "y": 2
+   },
+   "types": [
+    "official",
+    "military"
+   ],
+   "desc": "營地的核心建築，兼作瞭望塔、倉庫與談判廳，堡頂掛著沙痕部落贈予的駝骨風鈴。",
+   "scene": "風鈴在熱風裡叮噹作響，佣兵與部落族人在堡門口談生意。"
+  },
+  {
+   "id": "lm_tent_ring_bazaar",
+   "name": "帳環市集",
+   "emoji": "⛺",
+   "location": "sandcastle",
+   "at": {
+    "area": "sandcastle/bazaar",
+    "x": 7,
+    "y": 5
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "環繞沙堡搭建的帳篷集市，白日喧鬧如城，夜晚隨部族遷移的鼓聲收攤。",
+   "scene": "香料與皮革的氣味混在一起，貓魅族商人用尾巴招攬客人。"
+  },
+  {
+   "id": "lm_redmane_council",
+   "name": "赤鬃議帳",
+   "emoji": "🦁",
+   "location": "sunscorch",
+   "at": {
+    "area": "sunscorch/main",
+    "x": 4,
+    "y": 1
+   },
+   "types": [
+    "official"
+   ],
+   "desc": "部落長老議事的巨型獸皮帳篷，帳頂懸掛歷代戰功者的鬃毛與獸角。",
+   "scene": "帳內燒著乾草，長老們盤腿而坐，談的多半是狩獵與決鬥。"
+  },
+  {
+   "id": "lm_stillspring_altar",
+   "name": "靜泉祭壇",
+   "emoji": "💧",
+   "location": "stilltide_oasis",
+   "at": {
+    "area": "stilltide_oasis/main",
+    "x": 4,
+    "y": 3
+   },
+   "types": [
+    "holy",
+    "nature"
+   ],
+   "desc": "供奉祖靈與月神的水畔祭壇，傳聞滿月之夜以泉水占卜最為靈驗。",
+   "scene": "泉面映著淡淡的銀藍微光，月尾部落的祭司在壇前輕聲吟唱。"
+  },
+  {
+   "id": "lm_moonlight_mother",
+   "name": "月輝之母",
+   "emoji": "🌳",
+   "location": "silvermoon",
+   "at": {
+    "area": "silvermoon/noble",
+    "x": 1,
+    "y": 5
+   },
+   "types": [
+    "nature",
+    "holy"
+   ],
+   "desc": "承載整座王都的巨樹，樹幹寬闊如山；白銀藤蔓在夜裡散發月光。",
+   "scene": "樹皮溫暖而微微脈動，精靈經過時都會伸手輕觸。"
+  },
+  {
+   "id": "lm_spring_of_life",
+   "name": "生命之泉",
+   "emoji": "⛲",
+   "location": "silvermoon",
+   "at": {
+    "area": "silvermoon/market",
+    "x": 5,
+    "y": 5
+   },
+   "types": [
+    "nature",
+    "holy"
+   ],
+   "desc": "與樹根相連的泉水，為全城提供魔力流通，以治癒之力聞名。",
+   "scene": "泉水清澈見底，水面不時浮起細小的光點。"
+  },
+  {
+   "id": "lm_seven_tides_hall",
+   "name": "七潮議會廳",
+   "emoji": "🏛️",
+   "location": "tidehaven",
+   "at": {
+    "area": "tidehaven/noble",
+    "x": 4,
+    "y": 2
+   },
+   "types": [
+    "official"
+   ],
+   "desc": "潮汐港沒有國王，港內事務都在這裡由七潮議會裁決。",
+   "scene": "議會廳外擠滿等著申訴的船東與商人，大門上刻著七道浪紋。"
+  },
+  {
+   "id": "lm_deep_tide_pier",
+   "name": "深潮席渡口",
+   "emoji": "⛵",
+   "location": "tidehaven",
+   "at": {
+    "area": "tidehaven/docks",
+    "x": 3,
+    "y": 4
+   },
+   "types": [
+    "harbor"
+   ],
+   "desc": "七潮議會的深潮席在此安排前往滄月闕的渡訪船次與嚮導。",
+   "scene": "渡口邊停著幾艘掛著玉璘族旗幟的船，嚮導在登記訪客的名字。"
+  },
+  {
+   "id": "lm_sea_spirit_shrine",
+   "name": "海靈祠",
+   "emoji": "🐚",
+   "location": "coral_bay",
+   "at": {
+    "area": "coral_bay/town",
+    "x": 3,
+    "y": 1
+   },
+   "types": [
+    "holy",
+    "nature"
+   ],
+   "desc": "鎮民供奉海靈與風母的小祠，出海前都會來這裡祈求平安。",
+   "scene": "祠前擺滿珍珠與珊瑚的供品，海風吹動掛在簷下的貝殼。"
+  },
+  {
+   "id": "lm_ferry_lighthouse",
+   "name": "渡口燈塔",
+   "emoji": "🗼",
+   "location": "coast_ferry",
+   "at": {
+    "area": "coast_ferry/ferry",
+    "x": 5,
+    "y": 3
+   },
+   "types": [
+    "harbor",
+    "monument"
+   ],
+   "desc": "守護沿海航道的老燈塔，夜裡的燈火是渡船回航的依靠。",
+   "scene": "燈塔守夜人坐在門口補漁網，牆上記滿了歷年的潮汐。"
+  },
+  {
+   "id": "lm_granite_rampart",
+   "name": "花崗岩城牆",
+   "emoji": "🧱",
+   "location": "greyrock",
+   "at": {
+    "area": "greyrock/outer",
+    "x": 4,
+    "y": 3
+   },
+   "types": [
+    "military",
+    "monument"
+   ],
+   "desc": "以天然花崗岩鑄成的層層城牆，守衛通往矮人王國的山口，幾乎不可能被攻陷。",
+   "scene": "城牆上的矮人守衛來回巡邏，牆面布滿歷代攻城留下的痕跡。"
+  },
+  {
+   "id": "lm_wind_hammer",
+   "name": "風錘",
+   "emoji": "🔨",
+   "location": "windhammer",
+   "at": {
+    "area": "windhammer/main",
+    "x": 2,
+    "y": 4
+   },
+   "types": [
+    "monument"
+   ],
+   "desc": "村口的巨大石錘，山風吹過錘身的孔洞時會發出低沉的鳴響，村名由此而來。",
+   "scene": "石錘在風中嗡嗡低鳴，山民說聽得懂它的人就懂得山的脾氣。"
+  },
+  {
+   "id": "lm_mire_herb_beds",
+   "name": "變異藥沼",
+   "emoji": "🍄",
+   "location": "rotmarsh",
+   "at": {
+    "area": "rotmarsh/main",
+    "x": 4,
+    "y": 4
+   },
+   "types": [
+    "nature",
+    "haunted"
+   ],
+   "desc": "沼地裡長著能入藥也能致命的變異植物，村民靠採集維生。",
+   "scene": "毒霧貼著水面飄動，泥沼裡不時冒出氣泡。"
+  },
+  {
+   "id": "lm_whispering_ring",
+   "name": "森語之環",
+   "emoji": "🌿",
+   "location": "mosswhisper",
+   "at": {
+    "area": "mosswhisper/main",
+    "x": 2,
+    "y": 4
+   },
+   "types": [
+    "nature",
+    "holy"
+   ],
+   "desc": "苔語村舉行「森語儀式」的林間空地，村民在此與樹木交流、傾聽風的低語。",
+   "scene": "環狀排列的古樹下鋪滿苔蘚，風吹過時像有人在耳邊說話。"
+  },
+  {
+   "id": "lm_star_platform",
+   "name": "浮石觀星台",
+   "emoji": "✨",
+   "location": "windspeak",
+   "at": {
+    "area": "windspeak/main",
+    "x": 1,
+    "y": 4
+   },
+   "types": [
+    "holy",
+    "military"
+   ],
+   "desc": "藤橋與浮石台之間的觀星與祈風聖地，風鈴聲被認為能把亡者的靈魂送上天穹。",
+   "scene": "夜裡星光格外清楚，遊俠們在台邊擦拭弓弦。"
+  }
+ ]
+}

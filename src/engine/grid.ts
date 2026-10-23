@@ -12,7 +12,7 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters,
+  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType,
 } from './data'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
@@ -43,6 +43,8 @@ export type CellKind =
   | 'lot' | 'yard' | 'manor'
   /** 自建的商店：格子的種類就是商店的 id（shop_ 開頭） */
   | `shop_${string}`
+  /** 城鎮的特色地標：格子的種類就是地標的 id（lm_ 開頭） */
+  | `lm_${string}`
 
 export interface Cell {
   kind: CellKind
@@ -180,10 +182,12 @@ export const CELL_ICON: Partial<Record<CellKind, string>> = {
   waypoint: '🏘️', arrive: '🏁', event: '❔', merchant: '🧳',
   lot: '🪧', manor: '🏚️',
 }
+// 地標的圖示（內容編輯器改了會重設）
+for (const l of Object.values(landmarks)) CELL_ICON[l.id as CellKind] = l.emoji
 
 /** 格子的名稱（關閉成人向時，娼館顯示為按摩店） */
 export function cellName(kind: CellKind): string {
-  return safeText(CELL_NAME[kind] ?? shopRules.types[kind as ShopType]?.name ?? '')
+  return safeText(CELL_NAME[kind] ?? shopRules.types[kind as ShopType]?.name ?? landmarkDef(kind)?.name ?? '')
 }
 
 // ---- 世界設定擺的商店 ----
@@ -194,6 +198,10 @@ let cellOverrides: Record<string, Record<number, CellKind>> = {}
 
 export function setCellOverrides(map: Record<string, Record<number, CellKind>>) {
   cellOverrides = map
+  blockKinds.clear()
+}
+/** 地標改了位置或增減時：清掉各區塊設施的快取 */
+export function invalidateBlocks() {
   blockKinds.clear()
 }
 /** 各聚落區塊有哪些設施（settlementBlocks 用；換位置時清掉） */
@@ -285,8 +293,15 @@ function buildBlock(loc: Location, block: BlockDef, overlay = true): Area {
       }
     }
   }
-  const over = overlay ? cellOverrides[settlementKey(loc.id, block.id)] : undefined
+  const key = settlementKey(loc.id, block.id)
+  const over = overlay ? cellOverrides[key] : undefined
   for (const [i, kind] of Object.entries(over ?? {})) if (cells[Number(i)]) cells[Number(i)] = { kind }
+  // 城鎮的特色地標：擺在道路上（被別的東西佔住時不顯示）
+  for (const l of Object.values(landmarks)) {
+    if (l.at.area !== key || l.at.x >= width || l.at.y >= height) continue
+    const i = l.at.y * width + l.at.x
+    if (cells[i]?.kind === 'floor') cells[i] = { kind: l.id as CellKind }
+  }
   return {
     key: settlementKey(loc.id, block.id),
     location: loc.id,

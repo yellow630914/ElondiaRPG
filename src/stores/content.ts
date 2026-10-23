@@ -15,6 +15,7 @@ import {
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { perkRules, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { npcModFromState } from '@/engine/promoteNpc'
+import { builtinLandmark, landmarkUsage, sanitizeLandmarkMod, type LandmarkMod } from '@/engine/landmarkMods'
 import { computePlacements, sanitizeShopMod, shopUsage, type ShopMod } from '@/engine/shopMods'
 import { settlementArea } from '@/engine/grid'
 import type { GameState } from '@/engine/types'
@@ -47,9 +48,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
+const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
+  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
 }
 
 export interface ModsDiffEntry {
@@ -256,7 +257,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark' | 'shop'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark' | 'shop' | 'landmark'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -273,6 +274,7 @@ export const useContent = defineStore('content', () => {
       case 'tattoo': return tattooUsage(key)
       case 'mark': return markUsage(key)
       case 'shop': return shopUsage(key)
+      case 'landmark': return landmarkUsage(key)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -603,6 +605,34 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 地標 ----
+
+  /** 存地標：位置要是那個聚落的一格空地（道路），或這個地標現在的格子 */
+  function saveLandmark(id: string, draft: Partial<LandmarkMod>) {
+    const m = sanitizeLandmarkMod(id, draft)
+    const area = settlementArea(m.at.area)
+    const kind = area?.cells[m.at.y * area.width + m.at.x]?.kind
+    if (kind !== 'floor' && kind !== id) throw new Error(`${area?.name ?? m.at.area}（${m.at.x}, ${m.at.y}）不是空地（道路）`)
+    mods.value.landmarks ??= {}
+    const base = builtinLandmark(id)
+    if (base && JSON.stringify(m) === JSON.stringify(sanitizeLandmarkMod(id, base))) delete mods.value.landmarks[id]
+    else mods.value.landmarks[id] = m
+    save()
+  }
+  function restoreLandmark(id: string) {
+    if (mods.value.landmarks?.[id]?.custom) return
+    delete mods.value.landmarks?.[id]
+    save()
+  }
+  /** 自建、而且沒有被用到的地標才能刪；在這裡受訓的特質一起拿掉這個地點 */
+  function deleteLandmark(id: string) {
+    if (!mods.value.landmarks?.[id]?.custom) throw new Error('內建的地標不能刪除')
+    assertUnused('landmark', id)
+    setShopTraining(id, [])
+    delete mods.value.landmarks[id]
+    save()
+  }
+
   // ---- 特質 ----
 
   function savePerk(id: string, draft: Partial<PerkMod>) {
@@ -717,7 +747,7 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
-    saveShop, setShopTraining, restoreShop, deleteShop, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

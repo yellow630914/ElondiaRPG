@@ -32,6 +32,7 @@
 - 區塊標示地區 `zone`（一般 `town`、貴族區 `noble`、王城 `palace`），NPC 的出沒與進入限制依地區（見 [NPC_SYSTEM](NPC_SYSTEM.md) 第 5 節）。
 - 設施都是地圖上的格子，要走過去才能使用：旅店、公會、酒館、雜貨店、神殿、鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商、刺青店、刻印師、娼館（刺青見 [TATTOOS](TATTOOS.md)）。
 - 每座聚落另有一棟**民宅**（`H`，`manor`）：主角的主人住在這座城時是主人的家，否則大門緊閉、不能進入（見 [COMPANIONS](COMPANIONS.md) 3.4 節）。
+- 城鎮的特色地標（[LANDMARKS](LANDMARKS.md)）也是疊在道路上的一格（`data/world/landmarks.json`）。
 - 內容編輯器可以把內建的商店搬到同一個聚落的另一格空地，或在空地上擺自建的商店（[CONTENT_EDITOR](CONTENT_EDITOR.md) §3.8）；建立區塊時疊上去（`grid.ts` 的 `setCellOverrides`），不改 `maps.json`。
 - `templates` 是沒有專屬地圖時的備用範本。舊存檔站在已經不存在的區塊時，讀檔後回到這個地點的城門。地圖格子依面板寬度縮放。
 

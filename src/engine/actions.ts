@@ -9,6 +9,7 @@
 //    AI 關閉時依規則：預設屬性、參考 DC 與骰值決定成功程度。
 // 說明見 docs/ACTIONS.md。
 
+import { withLandmark } from './landmarks'
 import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
 import { checkModifiers } from './perks'
@@ -167,7 +168,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     outcomes: setup.outcomes,
     ...(setup.targetName ? { targetName: setup.targetName } : {}),
     ...(setup.adultScene ? { adultScene: setup.adultScene } : {}),
-    scene: setup.scene,
+    // 站在地標上：場景帶上地標的氛圍
+    scene: withLandmark(state, setup.scene),
     time: { ...state.time },
     location: state.location,
     ...(used?.change ? { spent: [used.change] } : {}),
