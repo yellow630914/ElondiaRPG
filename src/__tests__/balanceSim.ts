@@ -1,7 +1,7 @@
 // 戰鬥耐打度的模擬（docs/MONSTERS.md「耐打度」）：4 人隊伍（戰士、遊蕩者、牧師、法師）用和怪物同等級的角色
 // （依職業學的技能、依等級生成的裝備），打一隻去掉弱點（保留抗性）與特徵、血量無限的怪物，量平均每一擊的傷害與每回合的傷害。
 // 隊員的打法：能用的傷害技能挑環數最高的，沒有就普通攻擊，行動點不夠就結束回合。
-import { abilityDef, dungeonEncounters, enemies, type EncounterGroup } from '@/engine/data'
+import { abilityDef, dungeonEncounters, enemies, geography, wildEncounters, type EncounterGroup } from '@/engine/data'
 import { createNpc } from '@/engine/character'
 import { act, chooseAction, currentActor, isActive, startCombat, usableAbilities, type Combatant } from '@/engine/combat'
 import { Rng } from '@/engine/rng'
@@ -10,9 +10,9 @@ import { newGame } from '@/engine/state'
 export const PARTY = ['fighter', 'rogue', 'cleric', 'wizard']
 const ROUNDS = 3
 
-function party(level: number, seed: number) {
+function party(level: number, seed: number, classes: string[] = PARTY) {
   const rng = new Rng(seed)
-  return PARTY.map((cls, i) => {
+  return classes.map((cls, i) => {
     const c = createNpc({ id: `p${i}`, name: cls, race: 'human', class: cls, level, location: 'soriel', hire_cc: 0, personality: '' } as never, rng)
     if (i === 0) c.isPlayer = true
     return c
@@ -107,9 +107,9 @@ export interface FightRow {
   downed: number
 }
 
-function fight(group: EncounterGroup, level: number, seed: number) {
+function fight(group: EncounterGroup, level: number, seed: number, classes: string[] = PARTY) {
   const state = newGame({ name: 'x', race: 'human', classId: 'fighter', seed })
-  state.party = party(level, seed)
+  state.party = party(level, seed, classes)
   const rng = new Rng(seed * 7 + 1)
   const combat = startCombat(state, group)
   for (let guard = 0; combat.status === 'ongoing' && combat.round <= 30 && guard < 3000; guard++) {
@@ -180,16 +180,42 @@ export function layerFights(trials: number, perLayer = 2, levelOffset = 0): Grou
   return rows
 }
 
-export interface MinionRow { id: string; name: string; level: number; win: number; rounds: number; hpLeft: number }
+/**
+ * 小怪輸出的測試隊伍：依怪物出現的最淺區域（郊外 1 人、周邊 2 人固定一名戰士、淺層 3 人固定一名牧師），
+ * 其餘隊員從遊蕩者、戰士、法師輪替；只在中層以下出現的照 4 人隊伍。
+ */
+export const AREA_PARTIES = {
+  wild: [['rogue'], ['fighter'], ['wizard']],
+  outskirts: [['fighter', 'rogue'], ['fighter', 'fighter'], ['fighter', 'wizard']],
+  shallow: [['cleric', 'rogue', 'fighter'], ['cleric', 'rogue', 'wizard'], ['cleric', 'fighter', 'wizard']],
+  full: [PARTY],
+} as const
+export type MinionArea = keyof typeof AREA_PARTIES
 
-/** 每種小怪兩隻一組，打同等級的隊伍：調整小怪輸出用（目標每場掉 10～15% 生命） */
+/** 怪物出現的最淺區域：城郊遭遇表算郊外，再來是地下城的周邊、淺層 */
+export function minionArea(id: string): MinionArea {
+  const has = (groups: EncounterGroup[] | undefined) => !!groups?.some((g) => g.some(([m]) => m === id))
+  if (geography.regions.some((r) => has(wildEncounters(r.id)))) return 'wild'
+  const tables = Object.values(dungeonEncounters)
+  if (tables.some((e) => has(e.outskirts))) return 'outskirts'
+  if (tables.some((e) => has(e.shallow))) return 'shallow'
+  return 'full'
+}
+
+export interface MinionRow { id: string; name: string; level: number; area: MinionArea; win: number; rounds: number; hpLeft: number }
+
+/** 每種小怪兩隻一組，打同等級、依出現區域組成的隊伍（每種隊伍各 trials 場）：調整小怪輸出用（目標每場掉 10～15% 生命） */
+export function minionFight(id: string, trials: number): MinionRow {
+  const m = enemies[id]!
+  const area = minionArea(id)
+  const rs = AREA_PARTIES[area].flatMap((classes) => Array.from({ length: trials }, (_, t) => fight([[m.id, 2]], m.level, 4000 + t, [...classes])))
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
+  const r2 = (n: number) => Math.round(n * 1000) / 1000
+  // 輸了算剩 0
+  return { id: m.id, name: m.name, level: m.level, area, win: r2(rs.filter((r) => r.win).length / rs.length), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))) }
+}
+
 export function minionFights(trials: number): MinionRow[] {
   const bosses = bossIds()
-  return Object.values(enemies).filter((m) => !bosses.has(m.id)).map((m) => {
-    const rs = Array.from({ length: trials }, (_, t) => fight([[m.id, 2]], m.level, 4000 + t))
-    const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
-    const r2 = (n: number) => Math.round(n * 1000) / 1000
-    // 輸了算剩 0
-    return { id: m.id, name: m.name, level: m.level, win: r2(rs.filter((r) => r.win).length / trials), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))) }
-  })
+  return Object.values(enemies).filter((m) => !bosses.has(m.id)).map((m) => minionFight(m.id, trials))
 }
