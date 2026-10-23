@@ -442,6 +442,7 @@ export const combatRules = combatJson as unknown as {
   action_costs: { weapon_attack: number; defend: number; flee: number; item: number; spell_by_circle: number[] }
   defend: { evade: number }
   flee_dc: number
+  boss: { control_turns: number; immune_turns: number }
   hit: { evade_floor_base: number }
   lucky: { base: number; attr_floor: number; floor: number }
   save: { dc_base: number }
@@ -684,6 +685,10 @@ export interface DungeonEncounters {
 /** 這座地下城有幾層（有底層時 5 層） */
 export function dungeonDepth(id: string): number {
   return dungeonEncounters[id]?.abyss?.length ? 5 : 4
+}
+/** 這隻怪物是不是某座地下城某一層的層主（含內容編輯放上去的層主） */
+export function isLayerBoss(id: string): boolean {
+  return Object.values(dungeonEncounters).some((e) => e.boss?.[0]?.[0] === id || Object.values(e.bosses ?? {}).some((g) => g?.[0]?.[0] === id))
 }
 const enemiesData = enemiesJson as unknown as {
   enemies: EnemyDef[]

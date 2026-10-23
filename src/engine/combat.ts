@@ -13,7 +13,7 @@ import {
   apMaxFor, apRegenFor, attrOf, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, ATTR_IDS, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, itemDef,
+  abilityDef, armorDef, ATTR_IDS, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
   locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
@@ -93,6 +93,10 @@ export interface Combatant {
   defId?: string
   /** 生命降到這個百分比以下才能用的技能（怪物資料的 ability_hp_below） */
   hpGates?: Record<string, number>
+  /** 層主：不逃跑，控制效果最多 1 回合，被控制後免疫控制一回合（combat.json 的 boss） */
+  boss?: boolean
+  /** 層主的控制保護：還剩幾個自己的回合不能再被控制 */
+  controlGuard?: number
   /** 敵對的 NPC（冒險者）的 id */
   npcId?: string
   /** 仇恨值：越高越容易被敵人選為目標（見 combat.json 的 threat） */
@@ -292,6 +296,7 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 
     usedTurn: {}, usedCombat: {}, usedRest: {},
     defId, threat: 0, threatMult: 1,
     ...(def.ability_hp_below && Object.keys(def.ability_hp_below).length ? { hpGates: { ...def.ability_hp_below } } : {}),
+    ...(isLayerBoss(defId) ? { boss: true } : {}),
   }
   applyTraits(c, rollTraits(rng, def, bonus))
   return c
@@ -520,7 +525,15 @@ export function multLabel(m: number): string {
   return damageTypes.labels.find((l) => m <= l.max)?.name ?? ''
 }
 
-function addStatus(c: Combatant, inst: StatusInstance) {
+/** 加上狀態；層主抵抗了控制時回傳 false（不加） */
+function addStatus(c: Combatant, inst: StatusInstance): boolean {
+  const def = statusDef(inst.id)
+  if (c.boss && def.control && def.kind === 'debuff') {
+    // 層主：控制最多 1 回合，被控制後到下一個自己的回合結束前都免疫控制
+    if ((c.controlGuard ?? 0) > 0) return false
+    inst = { ...inst, turns: Math.min(inst.turns, combatRules.boss.control_turns) }
+    c.controlGuard = combatRules.boss.control_turns + combatRules.boss.immune_turns
+  }
   const existing = c.statuses.find((s) => s.id === inst.id)
   if (existing) {
     existing.turns = Math.max(existing.turns, inst.turns)
@@ -532,6 +545,13 @@ function addStatus(c: Combatant, inst: StatusInstance) {
   } else {
     c.statuses.push(inst)
   }
+  return true
+}
+
+/** 對敵人加狀態並記到戰報；層主抵抗控制時記一筆說明 */
+function inflict(target: Combatant, inst: StatusInstance, effects: Effect[]) {
+  if (addStatus(target, inst)) effects.push({ type: 'status_add', target: target.id, status: statusDef(inst.id).name })
+  else effects.push({ type: 'note', target: target.id, text: `${statusDef(inst.id).name}：層主抵抗了控制` })
 }
 
 function dropConcentration(combat: CombatState, caster: Combatant, effects?: Effect[]) {
@@ -673,8 +693,7 @@ function useItem(combat: CombatState, rng: Rng, actor: Combatant, name: string, 
       if (save) saved = savingThrow(rng, t, save.attr, save.dc).success
       if (use.damage) dealDamage(combat, rng, null, t, [{ amount: dmg, type: use.damage.type, weapon: false }], effects, { half: saved })
       if (use.apply && !saved && isActive(t)) {
-        addStatus(t, { id: use.apply.status, turns: use.apply.turns, source: actor.id })
-        effects.push({ type: 'status_add', target: t.id, status: statusDef(use.apply.status).name })
+        inflict(t, { id: use.apply.status, turns: use.apply.turns, source: actor.id }, effects)
       } else if (saved) {
         effects.push({ type: 'note', target: t.id, text: '豁免成功' })
       }
@@ -1002,8 +1021,7 @@ function onHitExtras(actor: Combatant, target: Combatant, rng: Rng, effects: Eff
     if (!hit) continue
     if (hit.dice && hit.type) extra.push({ amount: rollDice(rng, hit.dice, 1), type: hit.type, weapon: false })
     if (hit.status) {
-      addStatus(target, { id: hit.status, turns: hit.turns ?? 1, source: actor.id })
-      effects.push({ type: 'status_add', target: target.id, status: statusDef(hit.status).name })
+      inflict(target, { id: hit.status, turns: hit.turns ?? 1, source: actor.id }, effects)
     }
     if (statusDef(s.id).charges !== undefined) used.push(s)
   }
@@ -1074,13 +1092,12 @@ function applyStatuses(
         }
       }
       const def = statusDef(ap.status)
-      addStatus(r, {
+      inflict(r, {
         id: ap.status, turns: ap.turns, source: actor.id,
         ...(def.charges !== undefined ? { charges: def.charges } : {}),
         ...(ap.value ? { value: applyValue(rng, actor, a, ap.value) } : {}),
         ...(a.concentration ? { conc: `${actor.id}:${a.id}` } : {}),
-      })
-      effects.push({ type: 'status_add', target: r.id, status: def.name })
+      }, effects)
     }
   }
 }
@@ -1277,6 +1294,7 @@ function beginTurn(combat: CombatState, rng: Rng): boolean {
     if (s.turns > 0) s.turns -= 1
   }
   actor.statuses = actor.statuses.filter((s) => s.turns > 0)
+  if (actor.controlGuard) actor.controlGuard -= 1
   checkEnd(combat)
   if (canAct && isActive(actor) && combat.status === 'ongoing' && controls(actor).has('confuse')) {
     // 困惑：隨機攻擊任何一個人，然後結束回合
@@ -1333,7 +1351,8 @@ function enemyTurn(combat: CombatState, actor: Combatant, rng: Rng) {
 
 export function wantsToFlee(actor: Combatant): boolean {
   const below = actor.ai?.flee_below
-  return !!below && !actor.ai?.never_flee && actor.hp / Math.max(1, actor.maxHp) < below
+  // 層主守著自己的層，不逃跑
+  return !!below && !actor.boss && !actor.ai?.never_flee && actor.hp / Math.max(1, actor.maxHp) < below
 }
 
 const hpRatio = (c: Combatant) => c.hp / Math.max(1, c.maxHp)

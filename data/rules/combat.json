@@ -23,6 +23,10 @@
   },
   "defend": { "evade": 3 },
   "flee_dc": 12,
+  "boss": {
+    "$comment": "地下城的層主：不逃跑；控制（暈眩、困惑、嘲諷、沉默這類有 control 的減益）在層主身上最多 control_turns 回合，被控制之後再 immune_turns 回合免疫控制（不能連續控制），期間的控制直接無效。",
+    "control_turns": 1, "immune_turns": 1
+  },
 
   "hit": {
     "$comment": "命中骰 = 1d20 + 熟練加值 + mod(能力屬性) + 修正。迴避骰 = 1d20（下限 = 1 + max(0, mod(靈巧))）+ floor(mod(靈巧) / 2) + 防具迴避 + 修正。命中骰 ≥ 迴避骰即命中；自然骰 1 必定失手。",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  abilityApCost, act, combatant, currentActor, defenseMult, startCombat, unusableReason, type Combatant,
+  abilityApCost, act, combatant, currentActor, defenseMult, startCombat, unusableReason, wantsToFlee, type Combatant,
 } from '@/engine/combat'
 import {
   apMaxFor, apRegenFor, baseAttrs, createPlayer, luckyThreshold, maxHpFor, slotMaxFor, evadeFloor, learnable,
@@ -114,6 +114,52 @@ describe('resources', () => {
 })
 
 describe('combat rules', () => {
+  it('lets a layer boss be controlled for one turn at most, then shrugs off control until it has acted', () => {
+    const state = stateWith('fighter', 20, 5)
+    startCombat(state, [['crypt_general', 1], ['goblin', 1]])
+    const combat = state.combat!
+    const boss = combat.combatants.find((c) => c.defId === 'crypt_general')!
+    const goblin = combat.combatants.find((c) => c.defId === 'goblin')!
+    expect(boss.boss).toBe(true)
+    expect(goblin.boss).toBeUndefined()
+    boss.hp = boss.maxHp = 5000
+    boss.attrs.str = 1
+    boss.weapon = { ...boss.weapon, dice: '1d1' }
+    const pc = makeCurrent(state, 'pc')
+    pc.abilities.push('shield_bash')
+    let stuns = 0
+    let resisted = 0
+    for (let i = 0; i < 12 && combat.status === 'ongoing'; i++) {
+      makeCurrent(state, 'pc').ap = 30
+      const before = combat.timeline.length
+      act(state, { type: 'ability', ability: 'shield_bash', target: boss.id })
+      for (const t of combat.timeline.slice(before)) {
+        for (const e of t.effects ?? []) {
+          if (e.target !== boss.id) continue
+          if (e.type === 'status_add') stuns++
+          if (e.type === 'note' && e.text?.includes('層主抵抗了控制')) resisted++
+        }
+      }
+      const stun = boss.statuses.find((x) => x.id === 'stunned')
+      if (stun) expect(stun.turns).toBe(1)
+    }
+    // 主角的回合沒結束，層主一直沒行動：只會被暈一次，之後的都被抵抗
+    expect(stuns).toBe(1)
+    expect(resisted).toBeGreaterThan(0)
+  })
+
+  it('never lets a layer boss flee', () => {
+    const state = stateWith('fighter', 5)
+    startCombat(state, [['crypt_general', 1], ['goblin', 1]])
+    for (const c of state.combat!.combatants.filter((x) => x.side === 'enemy')) {
+      c.ai = { flee_below: 0.9 }
+      c.hp = 1
+    }
+    const [boss, goblin] = ['crypt_general', 'goblin'].map((id) => state.combat!.combatants.find((c) => c.defId === id)!)
+    expect(wantsToFlee(boss!)).toBe(false)
+    expect(wantsToFlee(goblin!)).toBe(true)
+  })
+
   it('applies damage-type affinities: skeletons resist piercing but are weak to bludgeoning', () => {
     const state = stateWith('fighter')
     state.location = 'whisper_crypt'
