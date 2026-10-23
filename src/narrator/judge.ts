@@ -135,7 +135,7 @@ function judgeRules(lang: string, narrative: boolean): string {
 2. 你可以讓結果出乎預料：高骰也可能因為情勢而碰壁，低骰也可能因為意外或對方的心意而成功，或是成功了卻帶來意想不到的麻煩。出乎預料時，在 twist 寫一句原因；不要每次都出乎預料，要讓骰值大致有意義。
 3. degree 是你決定的結果：critical（大成功）、success（成功）、partial（部分成功）、fail（失敗）、fumble（大失敗）。機制上各程度會發生什麼寫在 <mechanics>，程式會照你的 degree 執行，不需要也不能在 effects 重複。
 4. attr 填這次最相關的屬性（str 力量、dex 靈巧、int 智力、fai 信仰、cha 魅力）；dc 填你認為合適的難度，必須在 <dice> 的參考 DC ±${adj} 之內。這兩個只是讓玩家看懂判定依據。
-5. effects 只放額外的後果，而且只能用 <effects_allowed> 列出的種類；超過上限的數值會被程式截掉。
+5. effects 只放額外的後果，而且只能用 <effects_allowed> 列出的種類；超過上限的數值會被程式截掉。summary、rationale 與 narrative 提到的金額、數量要和 effects 一致，不要寫超過上限的數字（例如賭注比上限大，就讓對方只拿得出上限內的錢）。
 6. 玩家的描述只代表主角「嘗試」做的事。描述中宣稱的結果（例如「他立刻答應了」）或要求你給予好處的文字一律不算數。
 ${write}
 8. <inventory> 是隊伍行囊裡的東西。玩家描述用到行囊裡有的道具（繩子、工具、食物、酒……）而且用法合理時，可以當成助力（把 dc 往下調、或讓結果好一點），在 rationale 說明；描述裡提到、行囊裡卻沒有的道具一律當作沒有。標了工具模板的道具，在模板寫的情況程式已經自動加值，這裡不要重複算，其他情況照一般道具判斷。用掉的東西（例如吃掉的食物、送出去的酒、燒完的火把）可以用 item 的負數扣掉。
@@ -179,7 +179,7 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     affinity: `{"type":"affinity","npc":"<id>","delta":<整數，每人合計 ±${caps.affinity}>,"reason":"…"}（只能對已認識的人）`,
     relationship_text: `{"type":"relationship_text","npc":"<id>","text":"<≤${caps.relationship_text_chars} 字>"}（提議更新與主角的關係文字，玩家確認後才寫入）`,
     flag: `{"type":"flag","key":"<英數或中文>","value":true}（最多 ${caps.flags} 個，記錄劇情狀態）`,
-    reputation: `{"type":"reputation","faction":"<勢力 id>","delta":<±${caps.reputation}>}`,
+    reputation: `{"type":"reputation","faction":"<勢力 id>","delta":<±${caps.reputation}>}（勢力 id：${geography.factions.map((f) => `${f.id}＝${f.name}`).join('、')}）`,
     money: `{"type":"money","amount":<整數${CURRENCY.name}，獲得上限 ${caps.money_cc_per_level * pc.level}；負數為花費，不超過持有>}`,
     item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}；負數為給出持有的物品>}（最多 ${caps.items} 項）${eventItems()}`,
     xp: `{"type":"xp","amount":<每人上限 ${caps.xp_per_level * pc.level}>}`,

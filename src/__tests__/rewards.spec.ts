@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
-import { prepareAction, sanitizeJudgment } from '@/engine/actions'
+import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
 import { gainXp, learnable, rerollsLeft } from '@/engine/character'
 import { abilityDef } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
@@ -76,6 +76,52 @@ describe('ability reward', () => {
     expect(sanitizeJudgment(state, p, { degree: 'success', effects }).effects).toEqual([])
     expect(sanitizeJudgment(state, p, { degree: 'critical', effects }).effects).toEqual([{ type: 'ability', target: 'pc' }])
     expect(abilityDef(state.party[0]!.abilities[0]!)).toBeTruthy()
+  })
+})
+
+describe('AI effects stay within what the party has', () => {
+  function pending(state: GameState) {
+    state.money_cc = 100
+    state.inventory.push({ name: '治療藥劑', qty: 2 })
+    return prepareAction(state, { kind: 'free', text: '試試看' })
+  }
+
+  it('never spends more money than the party holds, even over several entries', () => {
+    const state = game(3, 'fighter')
+    const p = pending(state)
+    const spend = (amounts: number[]) => sanitizeJudgment(state, p, { degree: 'fail', effects: amounts.map((amount) => ({ type: 'money', amount })) }).effects
+    expect(spend([-100, -100])).toEqual([{ type: 'money', amount: -100 }])
+    expect(spend([-60, -60])).toEqual([{ type: 'money', amount: -60 }, { type: 'money', amount: -40 }])
+    // 先賺再花：賺到的也可以花掉
+    expect(spend([30, -200])).toEqual([{ type: 'money', amount: 30 }, { type: 'money', amount: -130 }])
+  })
+
+  it('gives away no more of an item than the party holds, even over several entries', () => {
+    const state = game(3, 'fighter')
+    const p = pending(state)
+    const effects = [{ type: 'item', name: '治療藥劑', qty: -2 }, { type: 'item', name: '治療藥劑', qty: -2 }]
+    expect(sanitizeJudgment(state, p, { degree: 'fail', effects }).effects).toEqual([{ type: 'item', name: '治療藥劑', qty: -2 }])
+  })
+
+  it('keeps reputation changes to known factions, by id or name', () => {
+    const state = game(3, 'fighter')
+    const p = pending(state)
+    const rep = (faction: string) => sanitizeJudgment(state, p, { degree: 'success', effects: [{ type: 'reputation', faction, delta: 1 }] }).effects
+    expect(rep('holy_ring')).toEqual([{ type: 'reputation', faction: 'holy_ring', delta: 1 }])
+    expect(rep('聖環教廷')).toEqual([{ type: 'reputation', faction: 'holy_ring', delta: 1 }])
+    expect(rep('亂寫的勢力')).toEqual([])
+  })
+
+  it('tells the writer when a proposed amount was cut down', () => {
+    const state = game(3, 'fighter')
+    const p = pending(state)
+    const j = sanitizeJudgment(state, p, { degree: 'success', effects: [{ type: 'money', amount: 1000 }, { type: 'item', name: '金幣袋', qty: 5 }] })
+    expect(j.adjusted).toHaveLength(2)
+    expect(j.adjusted![0]).toContain('超過上限')
+    expect(sanitizeJudgment(state, p, { degree: 'success', effects: [{ type: 'money', amount: 10 }] }).adjusted).toBeUndefined()
+    // 寫手拿到實際結算的數字
+    expect(resolveAction(state, j).narration?.focus?.filter((f) => f.includes('超過上限'))).toHaveLength(2)
+    expect(state.money_cc).toBe(100 + 30 * state.party[0]!.level)
   })
 })
 
