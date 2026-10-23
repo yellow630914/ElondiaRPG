@@ -643,6 +643,8 @@ export interface EnemyDef {
   resist?: AffinityMap
   offense?: AffinityMap
   abilities?: string[]
+  /** 生命降到這個百分比（1～99）以下才能用的技能：技能 id → 百分比；沒寫的技能隨時能用 */
+  ability_hp_below?: Record<string, number>
   xp: number
   habitats?: string[]
   money_cc?: [number, number]

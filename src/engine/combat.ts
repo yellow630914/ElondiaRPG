@@ -91,6 +91,8 @@ export interface Combatant {
   fled?: boolean
   /** 敵人的資料 id */
   defId?: string
+  /** 生命降到這個百分比以下才能用的技能（怪物資料的 ability_hp_below） */
+  hpGates?: Record<string, number>
   /** 敵對的 NPC（冒險者）的 id */
   npcId?: string
   /** 仇恨值：越高越容易被敵人選為目標（見 combat.json 的 threat） */
@@ -289,6 +291,7 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 
     initiative: roll(rng, '1d20').total + mod(def.attrs.dex),
     usedTurn: {}, usedCombat: {}, usedRest: {},
     defId, threat: 0, threatMult: 1,
+    ...(def.ability_hp_below && Object.keys(def.ability_hp_below).length ? { hpGates: { ...def.ability_hp_below } } : {}),
   }
   applyTraits(c, rollTraits(rng, def, bonus))
   return c
@@ -403,6 +406,8 @@ export function validTargets(combat: CombatState, actorId: string, a?: AbilityDe
 export function unusableReason(combat: CombatState, actor: Combatant, abilityId: string): string | null {
   const a = abilityDef(abilityId)
   if (!actor.abilities.includes(a.id)) return '尚未學會'
+  const gate = actor.hpGates?.[a.id]
+  if (gate !== undefined && actor.hp * 100 > actor.maxHp * gate) return `生命降到 ${gate}% 以下才能用`
   const control = controls(actor)
   if ((a.type === 'spell' || a.type === 'cantrip') && (control.has('silence') || control.has('no_cast'))) return '無法施法'
   if (a.type === 'cantrip' && actor.usedTurn[CANTRIP_KEY]) return '本回合已用過戲法'
@@ -1362,6 +1367,8 @@ export function chooseAction(combat: CombatState, rng: Rng, actor: Combatant, ta
     options.push({ ability: a, score: (foes.length >= 2 ? 2 + 0.7 * (foes.length - 1) : 1) + limited })
   }
   if (!options.length) return null
+  // 生命低時才解開的技能（狂暴、垂死反撲）：解開了就比較想用
+  for (const o of options) if (actor.hpGates?.[o.ability.id] !== undefined) o.score += 1
   // 武器攻擊是基準分 2；依分數平方加權抽選
   const weaponScore = actor.ap >= combatRules.action_costs.weapon_attack ? 2 : 0
   const total = options.reduce((s, o) => s + o.score ** 2, 0) + weaponScore ** 2

@@ -26,3 +26,5 @@ label.check { display: inline-flex; gap: 4px; align-items: center; }
 /* 攻擊骰（三格數字）佔兩欄，不會蓋到旁邊的欄位 */
 .grid label.dice-field { grid-column: span 2; }
 .qty { width: 64px; }
+.chip .gate { display: inline-flex; gap: 2px; align-items: center; opacity: 0.8; }
+.chip .gate input { width: 3.2em; padding: 0 2px; }

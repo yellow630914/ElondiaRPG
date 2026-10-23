@@ -612,6 +612,11 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   // 怪物沒有法術環：只能用技能與戲法
   const abil = (raw.abilities ?? []).filter((a) => !!abilities[a] && abilities[a]!.type !== 'spell')
   if (abil.length) out.abilities = [...new Set(abil)]
+  // 生命低於 X% 才能用的技能：只留還在技能清單上的
+  const gates = Object.entries(raw.ability_hp_below ?? {})
+    .filter(([a]) => out.abilities?.includes(a))
+    .map(([a, v]) => [a, int(v, 1, 99, 50)] as const)
+  if (gates.length) out.ability_hp_below = Object.fromEntries(gates)
   if (money && (money[0] || money[1])) out.money_cc = [Math.min(...money), Math.max(...money)]
   if (loot.length) out.loot = loot
   if (raw.kind && ENEMY_KINDS[raw.kind]) out.kind = raw.kind

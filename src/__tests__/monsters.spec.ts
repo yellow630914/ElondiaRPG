@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  act, applyTraits, chooseAction, combatant, rollTraits, startCombat, wantsToFlee, type Combatant,
+  act, applyTraits, chooseAction, combatant, rollTraits, startCombat, unusableReason, wantsToFlee, type Combatant,
 } from '@/engine/combat'
 import { abilities, dungeonEncounters, enemies, geography, itemDef, monsterTraits, wildEncounters } from '@/engine/data'
 import { afterCombat, cellAt, currentArea, descend } from '@/engine/grid'
@@ -131,13 +131,32 @@ describe('enemy AI', () => {
     const rng = new Rng(2)
     for (let i = 0; i < 30; i++) expect(chooseAction(state.combat!, rng, crab, combatant(state.combat!, 'pc'), false)?.ability.id).not.toBe('harden')
   })
+
+  it('keeps an HP-gated skill locked until the monster is hurt enough', () => {
+    const def = enemies.crypt_general!
+    def.ability_hp_below = { wraith_wail: 50 }
+    try {
+      const state = fightWith([['crypt_general', 1]])
+      const general = foe(state, 'crypt_general')
+      general.hp = general.maxHp
+      general.ap = general.apMax
+      expect(general.hpGates).toEqual({ wraith_wail: 50 })
+      expect(unusableReason(state.combat!, general, 'wraith_wail')).toBe('生命降到 50% 以下才能用')
+      const rng = new Rng(3)
+      for (let i = 0; i < 30; i++) expect(chooseAction(state.combat!, rng, general, combatant(state.combat!, 'pc'), false)?.ability.id).not.toBe('wraith_wail')
+      general.hp = Math.floor(general.maxHp / 2)
+      expect(unusableReason(state.combat!, general, 'wraith_wail')).toBeNull()
+    } finally {
+      delete def.ability_hp_below
+    }
+  })
 })
 
 describe('every encounter', () => {
   it('fights to the end without errors or stalls', () => {
     const groups: [string, number][][] = []
     for (const t of Object.values(dungeonEncounters)) {
-      groups.push(...t.outskirts, ...t.shallow, ...t.middle, ...t.deep, ...Object.values(t.bosses ?? {}))
+      groups.push(...t.outskirts, ...t.shallow, ...t.middle, ...t.deep, ...(t.abyss ?? []), ...Object.values(t.bosses ?? {}))
     }
     for (const region of geography.regions) groups.push(...wildEncounters(region.id))
     for (const [n, group] of groups.entries()) {

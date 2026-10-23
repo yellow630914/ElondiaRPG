@@ -53,6 +53,16 @@ function addAbility() {
 }
 function removeAbility(id: string) {
   draft.value.abilities = (draft.value.abilities ?? []).filter((a) => a !== id)
+  setGate(id, '')
+}
+/** 生命低於 X% 才能用：空白 = 隨時能用 */
+function setGate(id: string, v: string) {
+  const gates = { ...(draft.value.ability_hp_below ?? {}) }
+  const n = Math.round(Number(v))
+  if (v !== '' && Number.isFinite(n)) gates[id] = Math.max(1, Math.min(99, n))
+  else delete gates[id]
+  if (Object.keys(gates).length) draft.value.ability_hp_below = gates
+  else delete draft.value.ability_hp_below
 }
 
 function addLoot() {
@@ -206,7 +216,15 @@ function remove() {
       <legend>技能</legend>
       <div class="chips">
         <span v-for="a in draft.abilities ?? []" :key="a" class="tag chip" :title="abilities[a]?.desc">
-          {{ abilities[a]?.name ?? a }} <button class="x" @click="removeAbility(a)">×</button>
+          {{ abilities[a]?.name ?? a }}
+          <label class="small gate" title="生命降到這個百分比以下才能用；空白是隨時能用">
+            生命 ≤
+            <input
+              type="number" min="1" max="99" placeholder="—" :value="draft.ability_hp_below?.[a] ?? ''"
+              @change="setGate(a, ($event.target as HTMLInputElement).value)"
+            />%
+          </label>
+          <button class="x" @click="removeAbility(a)">×</button>
         </span>
         <span v-if="!draft.abilities?.length" class="small muted">（只用普通攻擊）</span>
       </div>
@@ -222,7 +240,7 @@ function remove() {
         </select>
         <button class="small" :disabled="!pickAbility" @click="addAbility">＋ 加入</button>
       </div>
-      <p class="small muted">怪物沒有法術環，所以不能用法術。</p>
+      <p class="small muted">怪物沒有法術環，所以不能用法術。「生命 ≤ X%」填了的技能要等生命降到那裡才能用（狂暴、垂死反撲），解開後 AI 會比較想用；空白是隨時能用。</p>
       <div class="row checks">
         <span class="small">固定特徵：</span>
         <label v-for="(t, id) in monsterTraits.traits" :key="id" class="check small" :title="t.desc">

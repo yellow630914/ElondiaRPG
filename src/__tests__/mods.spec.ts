@@ -58,6 +58,12 @@ describe('custom monsters', () => {
     const e = sanitizeEnemy('x', { name: '', level: 999, hp: -5, weapon: { dice: 'abc', type: 'nope', attr: 'str' }, resist: { fire: -5, bogus: 1 } }, true)
     expect(e).toMatchObject({ name: '未命名的怪物', level: 30, hp: 1, weapon: { dice: '1d6', type: 'slashing' }, resist: { fire: -1 }, custom: true })
   })
+
+  it('keeps HP gates only for skills the monster has, clamped to 1-99', () => {
+    const e = sanitizeEnemy('x', { abilities: ['rend', 'charge'], ability_hp_below: { rend: 150, charge: 30, venom_bite: 40 } }, true)
+    expect(e.ability_hp_below).toEqual({ rend: 99, charge: 30 })
+    expect(sanitizeEnemy('x', { abilities: ['rend'], ability_hp_below: { venom_bite: 40 } }, true).ability_hp_below).toBeUndefined()
+  })
 })
 
 describe('custom items and gear', () => {
