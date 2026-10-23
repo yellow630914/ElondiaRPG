@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useGame } from '@/stores/game'
 import GameIcon from './ui/GameIcon.vue'
 import { ICON_PATHS, type IconName } from './ui/iconPaths'
 
 // 以原生 <dialog> 實作的對話框（羊皮紙樣式）：Esc 或點背景關閉。
 // icon 可以是介面圖示的名稱（見 ui/iconPaths.ts），也可以是 emoji。
-const props = withDefaults(defineProps<{ open: boolean; title: string; icon?: string; width?: string }>(), { width: '960px', icon: undefined })
+const props = withDefaults(defineProps<{ open: boolean; title: string; icon?: string; width?: string; inlineError?: boolean }>(), { width: '960px', icon: undefined })
 const emit = defineEmits<{ close: [] }>()
 const el = ref<HTMLDialogElement | null>(null)
 
@@ -20,6 +21,15 @@ function sync() {
 
 watch(() => props.open, () => nextTick(sync))
 onMounted(sync)
+
+// 對話框在瀏覽器的最上層，頁面上的東西都被蓋住：
+// - 錯誤訊息在對話框裡也顯示一份（inline 時表示裡面的內容自己會顯示，例如交易視窗）
+// - 在對話框裡開始了談判或等待中的行動（它們在頁面上）時，關掉對話框讓玩家看得到
+const game = useGame()
+const busy = computed(() => (game.state?.negotiations?.length ?? 0) + (game.state?.pendingAction ? 1 : 0))
+watch(busy, (now, before) => {
+  if (props.open && now > before) emit('close')
+})
 
 function onClick(e: MouseEvent) {
   // 點到對話框外的背景才關閉
@@ -39,6 +49,10 @@ function onClick(e: MouseEvent) {
         <button class="close ghost" aria-label="關閉" @click="emit('close')"><GameIcon name="close" :size="16" /></button>
       </header>
       <div class="dialog-body">
+        <p v-if="open && game.error && !inlineError" class="dialog-error small row">
+          <GameIcon name="warning" :size="14" /> {{ game.error }}
+          <button class="small ghost" style="margin-left: auto" aria-label="關閉" @click="game.error = null"><GameIcon name="close" :size="12" /></button>
+        </p>
         <slot v-if="open" />
       </div>
     </div>
@@ -71,4 +85,5 @@ function onClick(e: MouseEvent) {
 .close { margin-left: auto; width: 30px; height: 30px; padding: 0; display: grid; place-items: center; border-color: #8a6a3a; color: #5b3a1e; }
 .close:hover:not(:disabled) { background: #7a4a1e; color: var(--parchment); }
 .dialog-body { padding: 14px 18px 18px; overflow-y: auto; }
+.dialog-error { color: var(--danger); margin: 0 0 10px; }
 </style>

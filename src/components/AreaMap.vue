@@ -155,6 +155,8 @@ const KEYS: Record<string, [number, number]> = {
 function onKey(e: KeyboardEvent) {
   const target = e.target as HTMLElement | null
   if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+  // 開著對話框時方向鍵留給對話框（捲動、選項），不移動隊伍
+  if (target?.closest?.('dialog') || document.querySelector('dialog[open]')) return
   const dir = KEYS[e.key]
   if (!dir || game.state?.combat) return
   e.preventDefault()

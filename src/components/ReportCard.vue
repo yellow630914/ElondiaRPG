@@ -193,6 +193,8 @@ async function copyPrompt() {
 .battle-report .timeline { color: var(--text); }
 .timeline { display: grid; gap: 2px; padding: 6px 0; color: var(--muted); }
 .changes { margin: 8px 0 2px; gap: 5px; }
+/* 變化的標籤可能帶著 AI 寫的原因：允許換行，不要撐破卡片 */
+.changes .tag { white-space: normal; height: auto; }
 .raw { max-height: 320px; overflow: auto; background: var(--bg); padding: 8px; border-radius: 3px; }
 details.steps summary, details.thinking summary { cursor: pointer; color: var(--accent-2); }
 .tokens { margin: 6px 0 0; text-align: right; }

@@ -162,7 +162,7 @@ function canDismiss(m: Character) {
 </template>
 
 <style scoped>
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr)); gap: 16px; }
 .card {
   position: relative; display: grid; gap: 8px; align-content: start; padding: 14px;
   background: #fff8e440; border: 1px solid var(--border); border-radius: 2px; box-shadow: inset 0 0 0 3px #fff6dd55, 0 2px 4px #6a4a2a33;

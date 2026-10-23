@@ -47,7 +47,10 @@ const current = computed(() => tattooAt(m.value, selected.value))
       <p v-else class="muted small">這個部位沒有刺青。</p>
 
       <ul class="plain list small">
-        <li v-for="p in TATTOO_PLACES" :key="p" :class="{ sel: selected === p }" @click="selected = p">
+        <li
+          v-for="p in TATTOO_PLACES" :key="p" :class="{ sel: selected === p }" role="button" tabindex="0"
+          @click="selected = p" @keydown.enter.prevent="selected = p" @keydown.space.prevent="selected = p"
+        >
           <span class="muted place">{{ placeName(p) }}</span>
           <span v-if="tattooAt(m, p)">{{ tattooName(tattooAt(m, p)!) }}</span>
           <span v-else class="muted">—</span>
@@ -62,6 +65,7 @@ const current = computed(() => tattooAt(m.value, selected.value))
 
 <style scoped>
 .tattoo { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 700px) { .tattoo { grid-template-columns: minmax(0, 1fr); } }
 .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; background: #3a2a1a; border: 3px solid #2a1a0e; box-shadow: inset 0 0 0 1px #c99a45, inset 0 0 30px #000; }
 figure { margin: 0; text-align: center; }
 figcaption { font-size: var(--fs-xs); color: #9a8768; letter-spacing: 0.2em; }

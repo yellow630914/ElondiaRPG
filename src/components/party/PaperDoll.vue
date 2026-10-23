@@ -193,4 +193,5 @@ const totals = computed(() => {
 .delta.up { color: var(--good); } .delta.down { color: var(--danger); }
 .warn { color: var(--danger); margin-top: 2px; }
 @media (max-width: 1000px) { .equip { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) { .doll { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); padding: 10px 4px; } }
 </style>

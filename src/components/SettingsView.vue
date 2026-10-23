@@ -127,7 +127,7 @@ function doReset() {
           </select>
         </label>
         <label>
-          <span class="lab">世界書注入字數上限 <Hint @click.prevent text="文風、世界書條目與其他提示詞在畫面上方的「提示詞」頁籤調整，也可以在那裡預覽送出的內容。" /></span>
+          <span class="lab">世界書注入字數上限 <Hint text="文風、世界書條目與其他提示詞在畫面上方的「提示詞」頁籤調整，也可以在那裡預覽送出的內容。" /></span>
           <input v-model.number="settings.loreBudget" type="number" min="2000" step="1000" style="width: 140px" />
         </label>
         <label class="check">
@@ -143,7 +143,7 @@ function doReset() {
     <section v-if="game.state" class="panel">
       <h2 class="head"><GameIcon name="d20" :size="20" />這個存檔的規則</h2>
       <div class="form">
-        <label><span class="lab">在地下城戰敗時，這趟探索撿到、還沒帶出去的物品與錢 <Hint @click.prevent text="離開地下城（啟程旅行）就算帶出去了。這個規則存在存檔裡，每個存檔可以不一樣。" /></span>
+        <label><span class="lab">在地下城戰敗時，這趟探索撿到、還沒帶出去的物品與錢 <Hint text="離開地下城（啟程旅行）就算帶出去了。這個規則存在存檔裡，每個存檔可以不一樣。" /></span>
           <select :value="defeatLootRule(game.state)" @change="game.setDefeatLoot(($event.target as HTMLSelectElement).value as DefeatLoot)">
             <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
           </select>
@@ -155,15 +155,15 @@ function doReset() {
       <h2 class="head"><GameIcon name="sliders" :size="20" />遊戲規則</h2>
       <div class="form">
         <label>
-          <span class="lab">升級時能力三選一的重抽次數（每組） <Hint @click.prevent text="0 表示不能重抽。只影響之後的重抽，已經用掉的次數照算。" /></span>
+          <span class="lab">升級時能力三選一的重抽次數（每組） <Hint text="0 表示不能重抽。只影響之後的重抽，已經用掉的次數照算。" /></span>
           <input v-model.number="settings.abilityRerolls" type="number" min="0" max="99" style="width: 100px" />
         </label>
         <label>
-          <span class="lab">兩次長休至少隔幾小時 <Hint @click.prevent :text="`0～24，預設 ${companionRules.rest.long_rest_gap_hours}。從上次長休結束時算起。`" /></span>
+          <span class="lab">兩次長休至少隔幾小時 <Hint :text="`0～24，預設 ${companionRules.rest.long_rest_gap_hours}。從上次長休結束時算起。`" /></span>
           <input v-model.number="settings.longRestGap" type="number" min="0" max="24" style="width: 100px" />
         </label>
         <label>
-          <span class="lab">建角時挑裝備的預算（材料等級點數） <Hint @click.prevent :text="`0～${gearRules.creation.max_budget}，預設 ${gearRules.creation.default_budget}。職業的基本配備免費；把模板裝備換成更好的材料每升一級花 1 點，另外加的裝備花它的材料等級（第 ${gearRules.creation.max_tier} 級以內）。只影響之後建立的角色。`" /></span>
+          <span class="lab">建角時挑裝備的預算（材料等級點數） <Hint :text="`0～${gearRules.creation.max_budget}，預設 ${gearRules.creation.default_budget}。職業的基本配備免費；把模板裝備換成更好的材料每升一級花 1 點，另外加的裝備花它的材料等級（第 ${gearRules.creation.max_tier} 級以內）。只影響之後建立的角色。`" /></span>
           <input v-model.number="settings.creationGearBudget" type="number" min="0" :max="gearRules.creation.max_budget" style="width: 100px" />
         </label>
       </div>
@@ -182,7 +182,7 @@ function doReset() {
     <h3 class="head"><GameIcon name="book" :size="17" />日誌瘦身</h3>
     <div class="form">
       <label>
-        <span class="lab">完整保留最近幾則日誌 <Hint @click.prevent text="超過時，更早的日誌每 50 則整理一次：只留時間、地點、簡述與 AI 寫的經過（在日誌最上方「顯示封存的舊紀錄」），隊伍快照、經過的時間軸與變化清單拿掉，讓存檔不會越來越大。token 用量不會因此變少：封存的日誌的用量另外合計，日誌上方會分開顯示。" /></span>
+        <span class="lab">完整保留最近幾則日誌 <Hint text="超過時，更早的日誌每 50 則整理一次：只留時間、地點、簡述與 AI 寫的經過（在日誌最上方「顯示封存的舊紀錄」），隊伍快照、經過的時間軸與變化清單拿掉，讓存檔不會越來越大。token 用量不會因此變少：封存的日誌的用量另外合計，日誌上方會分開顯示。" /></span>
         <input v-model.number="settings.logKeep" type="number" min="50" max="5000" step="50" style="width: 120px" />
       </label>
       <p v-if="game.state" class="small muted">目前：{{ game.state.reports.length }} 則完整的日誌、{{ game.state.logArchive?.length ?? 0 }} 則封存的紀錄。</p>

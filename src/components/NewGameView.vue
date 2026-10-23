@@ -198,7 +198,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
           </select>
         </label>
         <p class="small muted">{{ birthplaceInfo }}</p>
-        <label><span class="lab">在地下城戰敗時，這趟撿到的東西 <Hint @click.prevent text="這趟探索撿到、還沒帶出地下城的物品與錢；之後可以在「設定」裡改。" /></span>
+        <label><span class="lab">在地下城戰敗時，這趟撿到的東西 <Hint text="這趟探索撿到、還沒帶出地下城的物品與錢；之後可以在「設定」裡改。" /></span>
           <select v-model="defeatLoot">
             <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
           </select>

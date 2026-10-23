@@ -7,6 +7,8 @@ import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { isBound, leaderOf } from '@/engine/party'
+import { canNegotiate } from '@/engine/negotiation'
+import { discount, keeperTitle, shopKey } from '@/engine/trade'
 import type { TavernCandidate } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import MarketPanel from './MarketPanel.vue'
@@ -104,16 +106,33 @@ const menuItems = computed<MenuItem[]>(() => {
     items.push({ id: 'black', icon: 'eye', label: blackKnown.value ? '黑市' : '打聽黑市', detail: blackKnown.value ? '不公開的奴隸買賣' : '魅力檢定，約 2 小時' })
   }
   items.push({ id: 'trade', icon: 'coins', label: '酒館的交易', detail: tradeLoading.value ? 'AI 正在準備今天的特別交易…' : '餐點以外的交易：情報、請客、幫忙……' })
+  // 長期折扣（和其他商店一樣，見 ShopPanel）
+  items.push({
+    id: 'discount', icon: 'hand', label: '談長期折扣', disabled: !!discountBlocked.value,
+    detail: discountBlocked.value ?? (off.value ? `目前享有 ${off.value}% 折扣` : '和老闆談一個長期的折扣'),
+    badge: off.value ? `${off.value}%` : '', tone: 'good',
+  })
   return items
 })
+const keeper = computed(() => {
+  const shop = s.value.shops?.[shopKey(s.value, 'tavern')]
+  return shop && shop.day === s.value.time.day ? npcRecord(s.value, shop.keeper) : undefined
+})
+const off = computed(() => Math.round(discount(s.value, shopKey(s.value, 'tavern')) * 100))
+const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { shop: 'tavern' }))
+function pick(id: string) {
+  if (id === 'discount') game.startNegotiation('shop_discount', { shop: 'tavern' })
+  else section.value = id as Section
+}
 const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒險者', offers: '加入別人的隊伍', invite: '邀請認識的人', black: '黑市', trade: '酒館的交易' }
 </script>
 <template>
   <div class="tavern">
     <p v-if="bound" class="small muted">身為奴隸，你只能在一旁看著主人和別人談話。</p>
-    <BuildingMenu :items="menuItems" @pick="(id) => (section = id as Section)" />
+    <p v-if="keeper" class="small muted keeper">{{ keeperTitle('tavern') }}：<NameTag :id="keeper.id" />・{{ keeper.personality }}</p>
+    <BuildingMenu :items="menuItems" @pick="pick" />
 
-    <AppDialog :open="section !== null" :title="section ? TITLES[section] : ''" icon="mug" :width="section === 'trade' ? '1180px' : section === 'black' ? '980px' : '900px'" @close="section = null">
+    <AppDialog :open="section !== null" :title="section ? TITLES[section] : ''" icon="mug" :inline-error="section === 'trade'" :width="section === 'trade' ? '1180px' : section === 'black' ? '980px' : '900px'" @close="section = null">
       <template #head>
         <Hint v-if="section === 'meals'" text="全隊一起吃（價格是每人）。吃完的狀態到下次長休前有效；同時只保留最好的一餐，喝酒喝多了會微醺。" />
         <Hint v-else-if="section === 'recruit'" text="今天在城裡、可以雇用的冒險者（在右側「這裡的人」也能直接雇用）。出價低於要價時要談判；出價的影響最大，運氣好甚至能免費雇到人。" />

@@ -181,7 +181,7 @@ function copyFrom(e: Event) {
       </label>
       <label v-if="source.provider === 'openai_compatible'">
         <span class="lab">提示詞快取標記
-          <Hint @click.prevent :width="320" text="有些服務要在請求裡標出快取斷點（cache_control）才會快取，例如 OpenRouter 上的 Gemini 與 Claude、阿里雲百煉的通義千問；DeepSeek、OpenAI 會自動快取。標在不太變動的 system 部分；Gemini 要 system 超過約 4096 tokens 才會寫入快取，判定請求的 system 較短，通常只有敘事請求用得到。命中時日誌的用量會顯示「快取」。" />
+          <Hint :width="320" text="有些服務要在請求裡標出快取斷點（cache_control）才會快取，例如 OpenRouter 上的 Gemini 與 Claude、阿里雲百煉的通義千問；DeepSeek、OpenAI 會自動快取。標在不太變動的 system 部分；Gemini 要 system 超過約 4096 tokens 才會寫入快取，判定請求的 system 較短，通常只有敘事請求用得到。命中時日誌的用量會顯示「快取」。" />
         </span>
         <select v-model="cfg.cacheMark">
           <option v-for="c in CACHE_MARKS" :key="c.id" :value="c.id === 'auto' ? undefined : c.id">{{ c.name }}</option>

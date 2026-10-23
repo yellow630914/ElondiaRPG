@@ -290,12 +290,15 @@ function tradeReport(state: GameState, key: string, hours: number): Report {
   const place = shopPlace(state)
   const pc = pcOf(state)
   const type = typeOf(key)
+  // 驛站的店名就是驛站：不要寫成「驛站的驛站」
+  const title = shopTitle(state, place.id, type).name
+  const scene = title === place.name ? title : `${place.name}的${title}`
   return {
     schema_version: '0.1',
     report_id: newReportId(state),
     kind: 'trade',
     time: { start, end: addHours(start, hours) },
-    location: { at: state.location, region: loc.region, scene: `${place.name}的${shopTitle(state, place.id, type).name}` },
+    location: { at: state.location, region: loc.region, scene },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
     outcome: { result: 'success' },
     changes: {},

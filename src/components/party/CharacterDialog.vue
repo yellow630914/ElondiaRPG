@@ -28,9 +28,10 @@ const s = computed(() => game.state!)
 const inCombat = computed(() => !!s.value.combat)
 const m = computed(() => s.value.party.find((x) => x.id === props.member) ?? s.value.party[0]!)
 const tabs = computed(() => CHAR_TABS.filter((t) => !isNoncombatant(m.value) || (t.id !== 'abilities' && (t.id !== 'gear' || !!m.value.gear))))
-watch(tabs, (list) => {
-  if (!list.some((t) => t.id === props.tab)) emit('update:tab', 'stats')
-})
+// 分頁不適用這個角色時（例如非戰鬥人員的能力）回到「屬性與戰鬥」：開啟、換角色、換分頁時都檢查
+watch([tabs, () => props.tab, () => props.open], () => {
+  if (props.open && !tabs.value.some((t) => t.id === props.tab)) emit('update:tab', 'stats')
+}, { immediate: true })
 
 const combat = computed<StatItem[]>(() => {
   const x = m.value

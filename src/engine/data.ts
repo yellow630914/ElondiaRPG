@@ -922,7 +922,10 @@ export function conditionTone(id: string): 'good' | 'bad' | 'plain' {
   const c = companionRules.conditions[id]
   if (c) {
     if ((c.check_penalty ?? 0) > 0) return 'bad'
-    return (c.check_penalty ?? 0) < 0 || c.combat_temp_hp || c.group ? 'good' : 'plain'
+    // 戰鬥修正（命中、傷害、減傷……；仇恨值不算好壞）加總的正負
+    const combat = Object.entries(c.combat_mods ?? {}).reduce((t, [k, v]) => (k === 'threat' ? t : t + (v ?? 0)), 0)
+    if (combat < 0) return 'bad'
+    return (c.check_penalty ?? 0) < 0 || c.combat_temp_hp || c.group || combat > 0 ? 'good' : 'plain'
   }
   const st = statuses[id]
   return st ? (st.kind === 'buff' ? 'good' : 'bad') : 'plain'
