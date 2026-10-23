@@ -68,6 +68,30 @@ describe('exported saves carry custom content and portraits', () => {
     expect(full.portraits.pc.data).toMatch(/^data:image\/png;base64,/)
   })
 
+  it('leaves uploaded icons out of save slots and exports, and still recognises the same world on import', async () => {
+    const g = useGame()
+    const c = editableWorld()
+    const ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+    c.saveItem('月光草', { category: 'material', price_cc: 5, tags: [], custom: true, icon: ICON })
+    c.saveCategoryIcon('food', ICON)
+    expect(c.mods.items['月光草']!.icon).toBe(ICON)
+    g.start('艾倫', 'human', 'fighter')
+    await g.saveToSlot('有圖示')
+    const slot = g.slots.find((m) => m.name === '有圖示')!
+    // 存檔欄位本身也不帶
+    const { slotStore } = await import('@/stores/saves')
+    expect(JSON.stringify((await slotStore().get(slot.id))!.content)).not.toContain('data:image')
+    const text = (await g.exportFile(slot.id))!.text
+    expect(text).not.toContain('data:image')
+    const out = JSON.parse(text)
+    expect(out.content.items['月光草']).toMatchObject({ custom: true })
+    expect(out.content.categoryIcons).toEqual({})
+    // 世界本身的圖示還在；首頁匯入同一個世界的存檔時不會因為少了圖示而另建世界
+    expect(c.mods.items['月光草']!.icon).toBe(ICON)
+    g.state = null
+    expect(g.previewImport(text).newWorld).toBeUndefined()
+  })
+
   it('records the world name, and exports a vanilla save without any content', async () => {
     const g = useGame()
     const c = editableWorld()

@@ -14,7 +14,7 @@ import {
 } from '@/engine/mods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { itemRules, perkRules, shopRules, slaveryRules, type ItemCategory, type ShopType } from '@/engine/data'
-import { sanitizeIcon } from '@/engine/itemIcons'
+import { sanitizeIcon, withoutIcons } from '@/engine/itemIcons'
 import { npcModFromState } from '@/engine/promoteNpc'
 import { builtinLandmark, landmarkSpotProblem, landmarkUsage, sanitizeLandmarkMod, type LandmarkMod } from '@/engine/landmarkMods'
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
@@ -294,8 +294,9 @@ export const useContent = defineStore('content', () => {
     // normalizeMods 會先登錄自建的能力與底材：比較完恢復成目前的內容
     apply()
     if (!modTotal(incoming)) return { ref }
-    const text = JSON.stringify(incoming)
-    const same = (w: { mods: ContentMods }) => JSON.stringify(w.mods) === text
+    // 存檔不帶上傳的圖示：比較時不看圖示（同一個世界有圖示也算相同）
+    const text = JSON.stringify(withoutIcons(incoming))
+    const same = (w: { mods: ContentMods }) => JSON.stringify(withoutIcons(w.mods)) === text
     const existing = ref && worlds.value.find((w) => w.id === ref.id)
     if (existing && same(existing)) return { ref }
     const twin = worlds.value.find(same)

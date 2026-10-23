@@ -48,6 +48,7 @@ import { usePortraits } from './portraits'
 import { usePrompts } from './prompts'
 import { AI_FEATURES, useSettings, type AiFeature } from './settings'
 import { archiveOldReports } from './logArchive'
+import { withoutIcons } from '@/engine/itemIcons'
 import {
   AUTO_SLOTS, currentStore, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, takePreloaded,
   type CurrentData, type SaveData, type SlotMeta,
@@ -368,7 +369,7 @@ export const useGame = defineStore('game', () => {
     noticeTimer = setTimeout(() => (notice.value = null), 2500)
   }
 
-  /** 目前的遊戲；存檔欄位與匯出的檔案也附上當時的自訂內容（沒有自訂內容時不附） */
+  /** 目前的遊戲；存檔欄位與匯出的檔案也附上當時的自訂內容（沒有自訂內容時不附；上傳的圖示不附） */
   function snapshot(): SaveData | null {
     if (!state.value) return null
     const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
@@ -377,8 +378,8 @@ export const useGame = defineStore('game', () => {
   }
 
   function currentContent(): ContentMods | undefined {
-    const mods = useContent().mods
-    return modCount(mods) ? (JSON.parse(JSON.stringify(mods)) as ContentMods) : undefined
+    const mods = withoutIcons(useContent().mods)
+    return modCount(mods) ? mods : undefined
   }
 
   /** 清掉沒有任何存檔（含進行中的遊戲）用到的形象圖；讀不到存檔列表時不清 */
@@ -563,8 +564,8 @@ export const useGame = defineStore('game', () => {
     } else if (opts.content === false) delete data.content
     else if (!data.content && world) {
       const w = content.worlds.find((x) => x.id === world.id)
-      if (w && modCount(w.mods)) data.content = JSON.parse(JSON.stringify(w.mods)) as ContentMods
-    }
+      if (w && modCount(withoutIcons(w.mods))) data.content = withoutIcons(w.mods)
+    } else if (data.content) data.content = withoutIcons(data.content)
     if (world && world.id !== VANILLA) data.state.world = { id: world.id, name: content.worlds.find((x) => x.id === world.id)?.name ?? world.name }
     delete data.portraits
     if (opts.portraits) {

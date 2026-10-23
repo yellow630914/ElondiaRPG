@@ -9,6 +9,7 @@
 import { itemDef, type ItemCategory } from './data'
 import { gearRules, gearSpecOf } from './gear'
 import type { GameState, GearSpec } from './types'
+import type { ContentMods } from './mods'
 
 /** 上傳的圖縮到這個邊長以內 */
 export const ICON_PX = 48
@@ -52,4 +53,16 @@ export function itemIconSource(state: Pick<GameState, 'customItems'> | undefined
   const gear = spec ?? gearSpecOf(state, name)
   if (gear && gearRules.bases[gear.base]) return gearIconSource(gear)
   return categoryIconSource(def?.category ?? (state?.customItems?.[name]?.category as ItemCategory | undefined))
+}
+
+/**
+ * 自訂內容去掉上傳的圖示（物品、底材、類別）：存檔欄位與匯出的存檔不帶圖示，免得每個存檔都變大。
+ * 圖示只存在世界裡（世界包會帶著）；存檔的世界不在了、用存檔附的內容還原時，就沒有圖示（用內建的圖）。回傳新的物件
+ */
+export function withoutIcons(mods: ContentMods): ContentMods {
+  const out = JSON.parse(JSON.stringify(mods)) as ContentMods
+  for (const v of Object.values(out.items ?? {})) delete v.icon
+  for (const v of Object.values(out.bases ?? {})) delete v.icon
+  out.categoryIcons = {}
+  return out
 }
