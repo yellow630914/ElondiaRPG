@@ -398,6 +398,6 @@
     "south": [[["ash_hyena", 2]], [["brimstone_imp", 2]], [["ash_hyena", 1], ["brimstone_imp", 1]], [["bandit", 2]], [["ash_hyena", 1], ["bandit", 1]], [["brimstone_imp", 1], ["bandit", 1]]],
     "forest": [[["canopy_spider", 2]], [["mist_sprite", 2]], [["wolf", 2]], [["slime", 2]], [["canopy_spider", 1], ["mist_sprite", 1]], [["wolf", 1], ["slime", 1]], [["canopy_spider", 1], ["wolf", 1]]],
     "east_sea": [[["reef_crab", 2]], [["fishman_raider", 2]], [["reef_crab", 1], ["fishman_raider", 1]], [["slime", 2]], [["fishman_raider", 1], ["slime", 1]], [["reef_crab", 1], ["slime", 1]]],
-    "west": [[["sand_scorpion", 1]], [["dune_jackal", 3]], [["sand_scorpion", 1], ["dune_jackal", 2]], [["bandit", 2]], [["dune_jackal", 1], ["bandit", 1]], [["sand_scorpion", 1], ["bandit", 1]]]
+    "west": [[["sand_scorpion", 1]], [["dune_jackal", 2]], [["sand_scorpion", 1], ["dune_jackal", 1]], [["bandit", 2]], [["dune_jackal", 1], ["bandit", 1]], [["sand_scorpion", 1], ["bandit", 1]]]
   }
 }
