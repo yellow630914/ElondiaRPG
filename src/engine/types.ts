@@ -740,6 +740,8 @@ export interface GameState {
   suggestions?: RelationSuggestion[]
   /** 各商店今天的交易清單；鍵為 城鎮/商店類型 */
   shops?: Record<string, ShopState>
+  /** 城鎮的特色地標：上次參訪、探索是第幾天（見 landmarks.ts） */
+  landmarks?: Record<string, { visited?: number; explored?: number }>
   /** AI 自創的物品（可以再賣回商店） */
   customItems?: Record<string, { category: string; price_cc: number; desc?: string; gear?: GearSpec }>
   /** 這個存檔用的世界（自訂內容的一套，見 stores/content.ts）；開新遊戲時決定，之後不能換 */

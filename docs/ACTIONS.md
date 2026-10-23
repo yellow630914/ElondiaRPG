@@ -62,6 +62,7 @@
 | 工作 | 工作 `work`、娼館消費 `patron` |
 | 工藝 | 委託打造 `craft`、親手製作 `make`、依配方製作 `produce`、自創配方 `invent` |
 | 特質 | 受訓 `train`、爭取特質 `perk_pitch`（見 [PERKS](PERKS.md) 第 4 節） |
+| 地標 | 探索 `explore`（見 [LANDMARKS](LANDMARKS.md) 第 5 節） |
 | 其他 | 特殊任務的判定 `story`、戰敗後的處境 `defeat_event` |
 
 各行動的參考 DC 寫在各系統的文件裡。自由行動的參考 DC 是 12（有對象時 + 2 × 生命層級差 − ⌊親密度／25⌋）。

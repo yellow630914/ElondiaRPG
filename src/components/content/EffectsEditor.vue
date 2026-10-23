@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { abilities, ATTR_IDS, attrName, contractDef, geography, itemRules, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
+import { abilities, ATTR_IDS, attrName, conditionName, contractDef, geography, itemRules, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
-import { STORY_EFFECTS } from '@/engine/storyMods'
+import { EFFECT_CONDITIONS, STORY_EFFECTS } from '@/engine/storyMods'
 import { oathError, oathText, TATTOO_PLACES, placeName, tattooKindName, tattooRules } from '@/engine/tattoos'
 import { useContent } from '@/stores/content'
 
 // 效果的清單（任務點的結果、完成的報酬）：金錢、物品、裝備、經驗、聲望、親密度、記憶、能力、入隊、生命值
 const model = defineModel<RewardEffect[] | undefined>()
+// 只開放某些效果（例如地標的參訪不能讓主角淪為奴隸）；沒有時全部
+const props = defineProps<{ types?: RewardEffect['type'][] }>()
+const effectOptions = computed(() => Object.entries(STORY_EFFECTS).filter(([t]) => !props.types || props.types.includes(t as RewardEffect['type'])))
+const conditionList = EFFECT_CONDITIONS().map((k) => [k, conditionName(k)] as const)
 const content = useContent()
 const list = computed(() => model.value ?? [])
 const items = computed(() => {
@@ -34,6 +38,7 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   ability: () => ({ type: 'ability', target: 'pc', choices: 3 }),
   companion: () => ({ type: 'companion', npc: namedNpcs[0]?.id ?? '', mode: 'voluntary' }),
   hp: () => ({ type: 'hp', target: 'pc', ratio: -0.2 }),
+  condition: () => ({ type: 'condition', target: 'pc', condition: 'blessed', add: true }),
   start_story: () => ({ type: 'start_story', story: stories.find((s) => s.start.kind === 'manual')?.id ?? stories[0]?.id ?? '' }),
   enslave_player: () => ({ type: 'enslave_player', random: {}, contract: slaveryRules.roles.default }),
   perk: () => ({ type: 'perk', perk: choosablePerks()[0]!.id }),
@@ -245,6 +250,11 @@ function setBase(r: Row, base: string) {
         </select>
         <span class="small muted">奴隸印記不會被洗掉（要解除契約）</span>
       </template>
+      <template v-else-if="r.type === 'condition'">
+        <select v-model="r.add"><option :value="true">得到</option><option :value="false">去掉</option></select>
+        <select v-model="r.condition"><option v-for="[k, n] in conditionList" :key="k" :value="k">{{ n }}</option></select>
+        <span class="small muted">（主角；多半到下次長休）</span>
+      </template>
       <template v-else-if="r.type === 'hp'">
         <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）
       </template>
@@ -252,7 +262,7 @@ function setBase(r: Row, base: string) {
     </div>
     <select class="small" :value="''" @change="add(($event.target as HTMLSelectElement).value as RewardEffect['type']); ($event.target as HTMLSelectElement).value = ''">
       <option value="">＋ 效果…</option>
-      <option v-for="(n, t) in STORY_EFFECTS" :key="t" :value="t">{{ n }}</option>
+      <option v-for="[t, n] in effectOptions" :key="t" :value="t">{{ n }}</option>
     </select>
   </div>
 </template>

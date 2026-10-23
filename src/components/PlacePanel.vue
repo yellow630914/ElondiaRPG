@@ -23,6 +23,8 @@ import MarketPanel from './MarketPanel.vue'
 import NegotiationPanel from './NegotiationPanel.vue'
 import StoryPanel from './StoryPanel.vue'
 import ShopPanel from './ShopPanel.vue'
+import LandmarkPanel from './LandmarkPanel.vue'
+import { closedHere } from '@/engine/landmarks'
 import TattooPanel from './TattooPanel.vue'
 import TavernPanel from './TavernPanel.vue'
 import WorkPanel from './WorkPanel.vue'
@@ -291,10 +293,12 @@ const shopDesc = computed(() => {
           </div>
         </template>
 
+        <LandmarkPanel v-else-if="landmarkDef(cell.kind)" :key="`lm-${area.key}-${cell.kind}`" />
+
         <p v-else class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
 
         <WorkPanel :key="`${area.key}-${cell.kind}`" />
-        <TrainPanel :key="`train-${area.key}-${cell.kind}`" />
+        <TrainPanel v-if="!closedHere(s)" :key="`train-${area.key}-${cell.kind}`" />
         <CraftPanel :key="`craft-${area.key}-${cell.kind}`" />
 
         <div v-for="q in runnableHere" :key="q.id" class="quest-here">

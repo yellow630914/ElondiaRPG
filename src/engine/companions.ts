@@ -40,6 +40,7 @@ import {
 import { negotiationSetup } from './negotiation'
 import { setupPatron } from './brothel'
 import { setupWork } from './work'
+import { setupExplore } from './landmarks'
 import { currentArea, currentCell } from './grid'
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
@@ -658,6 +659,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupWork(state, target)
     case 'train':
       return setupTrain(state, target)
+    case 'explore':
+      return setupExplore(state)
     case 'perk_pitch':
       return setupPitch(state, target)
     case 'patron':

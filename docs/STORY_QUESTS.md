@@ -86,6 +86,8 @@
 
 **刺青**：`{ "type": "tattoo", "template": "lotus" }`（圖樣，可以加 `place`、`by`），或自己描述 `{ "type": "tattoo", "kind": "oath", "name": "…", "text": "…", "attrs": { "str": 2, "int": -2 } }`；`{ "type": "remove_tattoo", "kind": "plain" }` 洗掉。見 [`TATTOOS.md`](TATTOOS.md)。
 
+**非戰鬥狀態**：`{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }`（祝福、放鬆、興致高昂、磨利……，多半到下次長休；奴隸印記、逃亡、暫時離隊不能用）。
+
 **主角淪為奴隸**（只有特殊任務能用）：
 - 固定 NPC 當主人：`{ "type": "enslave_player", "master": "npc_selene", "contract": "labor" }`
 - 隨機的 NPC 當主人：`{ "type": "enslave_player", "random": { "tag": "noble" }, "contract": "combat" }`（`tag` 是主人的身分標籤，不寫＝依奴隸市場的權重抽；在目前的地點生成，比主角高 1～4 級）

@@ -5,7 +5,8 @@
 //   AI 依說法合不合理決定成功程度並設計特質（perk 欄位），程式依成功程度把強度夾在提供的特質附近。只有這些場合可以用。
 
 import { locationById, perkDef, perkRules, type Degree } from './data'
-import { currentArea, currentCell, CELL_NAME } from './grid'
+import { cellName, currentArea, currentCell } from './grid'
+import { closedHere } from './landmarks'
 import { formatMoney } from './money'
 import { pcOf } from './party'
 import { snapshot } from './character'
@@ -24,6 +25,8 @@ function memberOf(state: GameState, id: string): Character {
 // ---- 訓練 ----
 
 function trainDef(state: GameState, perkId?: string) {
+  const closed = closedHere(state)
+  if (closed) throw new Error(closed)
   const cell = currentCell(state).kind
   const pc = pcOf(state)
   const def = [...trainablePerks(pc, cell), ...overcomablePerks(pc, cell)].find((p) => p.id === perkId)
@@ -37,7 +40,7 @@ export function setupTrain(state: GameState, target?: string) {
   const fee = (d: Degree) => formatMoney(trainingFee(train.price_cc, d))
   return {
     attr: train.attr, dc: train.dc, hours: train.hours, situational: [],
-    scene: `${locationById(state.location).name}的${CELL_NAME[cell as keyof typeof CELL_NAME] ?? cell}・${def.flaw ? `克服缺陷【${def.name}】` : `學習特質【${def.name}】`}`,
+    scene: `${locationById(state.location).name}的${cellName(cell)}・${def.flaw ? `克服缺陷【${def.name}】` : `學習特質【${def.name}】`}`,
     outcomes: def.flaw ? {
       critical: `克服了缺陷（學費打對折：${fee('critical')}）`, success: `克服了缺陷（學費 ${fee('success')}）`, partial: `克服了缺陷（學費 ${fee('partial')}）`,
       fail: `還是改不掉（學費收一半：${fee('fail')}）`, fumble: `還是改不掉（學費照收：${fee('fumble')}）`,

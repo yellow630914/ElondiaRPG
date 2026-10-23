@@ -279,6 +279,47 @@ export interface LandmarkDef {
   scene?: string
   /** 類型（landmarks.json 的 types）：居民的分布、公會委託的標的 */
   types: string[]
+  /** 開放的條件；不開放時不能參訪、探索、打工、受訓（委託照樣可以做） */
+  open?: LandmarkOpen
+  /** 參訪：付錢或花時間，得到效果；隔幾天才能再來 */
+  visit?: LandmarkVisit
+  /** 探索：主動行動的檢定，成功得到效果；隔幾天才能再試 */
+  explore?: LandmarkExplore
+  /** 在這裡打工（和設施的工作一樣，見 work.ts） */
+  work?: { attr: AttrId; dc: number; rate_cc: number; desc: string }
+}
+export interface LandmarkOpen {
+  /** 只在白天（6～18 時）或只在夜裡開放 */
+  hours?: 'day' | 'night'
+  /** 劇情旗標：這些成立（而且那些不成立）時才開放 */
+  flags?: string[]
+  flags_none?: string[]
+  /** 在這裡的勢力至少要有這麼多聲望 */
+  min_reputation?: number
+  /** 官方場所：逃亡奴隸不能用 */
+  official?: boolean
+}
+export interface LandmarkVisit {
+  title: string
+  desc?: string
+  money_cc?: number
+  hours?: number
+  effects: RewardEffect[]
+  /** 隔幾天才能再參訪（預設 1：每天一次） */
+  cooldown_days?: number
+}
+export interface LandmarkExplore {
+  title: string
+  desc?: string
+  attr: AttrId
+  dc: number
+  hours: number
+  /** 成功（含大成功）得到的效果 */
+  effects: RewardEffect[]
+  /** 大成功另外得到的效果 */
+  critical?: RewardEffect[]
+  /** 隔幾天才能再試（預設 7） */
+  cooldown_days?: number
 }
 const landmarksData = landmarksJson as unknown as { types: Record<string, LandmarkTypeDef>; landmarks: LandmarkDef[] }
 export const landmarkTypes = landmarksData.types
@@ -951,7 +992,7 @@ export function contractDef(id: string): ContractDef {
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
   | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story'
-  | 'train' | 'perk_pitch'
+  | 'train' | 'perk_pitch' | 'explore'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'
 export const actionRules = actionsJson as unknown as {
@@ -1064,6 +1105,14 @@ export const workRules = workJson as unknown as {
       discount: number; overcharge: number; pickpocket_ratio: number; affinity: Record<Degree, number>
     }
   }
+}
+/** 地標的打工（work.json 的 jobs 以格子的種類為 key，地標的格子種類就是它的 id） */
+export function landmarkJob(l: LandmarkDef): JobDef | undefined {
+  return l.work ? { name: `${l.name}的雜務`, attr: l.work.attr, dc: l.work.dc, rate_cc: l.work.rate_cc, desc: l.work.desc } : undefined
+}
+for (const l of Object.values(landmarks)) {
+  const job = landmarkJob(l)
+  if (job) workRules.jobs[l.id] = job
 }
 
 // ---- 物品、商店、談判 ----

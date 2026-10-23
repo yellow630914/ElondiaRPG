@@ -594,6 +594,10 @@ export const useContent = defineStore('content', () => {
       const next = JSON.parse(JSON.stringify(mods.value.perks[p.id] ?? p)) as PerkMod
       const cells = (p.train?.cells ?? []).filter((c) => c !== cell)
       if (want.has(p.id)) cells.push(cell)
+      // 照內建的順序排（加回去的和內建一樣時不另外存）
+      const order = builtinPerk(p.id)?.train?.cells ?? []
+      const rank = (c: string) => (order.includes(c) ? order.indexOf(c) : order.length)
+      cells.sort((a, b) => rank(a) - rank(b))
       next.train = { ...train, cells }
       if (!cells.length) delete next.train
       const custom = !builtinPerk(p.id)

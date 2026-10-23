@@ -212,7 +212,7 @@ function remove() {
       <div v-for="(f, i) in draft.fixed" :key="i" class="row">
         <input v-model="f.item" class="grow" list="shop-items" placeholder="物品名稱" />
         <label class="check small">每天 <input v-model.number="f.stock" class="qty" type="number" :min="SHOP_LIMITS.stock[0]" :max="SHOP_LIMITS.stock[1]" /> 份</label>
-        <label class="check small">價格 <input v-model.number="f.price" class="num" type="number" :min="SHOP_LIMITS.price[0]" :placeholder="catalogPrice(f.item) || '目錄價'" /> 銅</label>
+        <label class="check small">價格 <input v-model.number="f.price" class="num" type="number" :min="SHOP_LIMITS.price[0]" :placeholder="catalogPrice(f.item) || '目錄價'" /> 白鸛</label>
         <span v-if="f.item.trim() && !canListItem(f.item.trim())" class="small warn-text">不能賣</span>
         <button class="small x" title="移除" @click="draft.fixed.splice(i, 1)">✕</button>
       </div>
@@ -236,7 +236,7 @@ function remove() {
             <input v-else :value="attrName(draft.work.attr)" disabled />
           </label>
           <label>DC <input v-model.number="draft.work.dc" type="number" :min="SHOP_LIMITS.work_dc[0]" :max="SHOP_LIMITS.work_dc[1]" /></label>
-          <label>時薪（銅） <input v-model.number="draft.work.rate_cc" type="number" :min="SHOP_LIMITS.rate_cc[0]" :max="SHOP_LIMITS.rate_cc[1]" /></label>
+          <label>時薪（白鸛） <input v-model.number="draft.work.rate_cc" type="number" :min="SHOP_LIMITS.rate_cc[0]" :max="SHOP_LIMITS.rate_cc[1]" /></label>
         </div>
         <label class="block">描述 <textarea v-model="draft.work.desc" rows="2" :maxlength="SHOP_LIMITS.desc_chars" /></label>
       </template>

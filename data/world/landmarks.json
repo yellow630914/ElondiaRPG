@@ -1,5 +1,5 @@
 {
- "$comment": "城鎮的特色地標（docs/LANDMARKS.md）。地標是聚落地圖上的一格（at：區塊 key 與座標，要是道路），格子的種類就是地標的 id（lm_ 開頭）。types 是地標的類型：生成居民的分布（npc：一般人、冒險者的權重，tags：帶這些標籤的人的權重）與公會委託的標的都看類型。資料來源：世界書各區域條目的「特色建築」，沒有寫到的聚落由本專案補寫。",
+ "$comment": "城鎮的特色地標（docs/LANDMARKS.md）。地標是聚落地圖上的一格（at：區塊 key 與座標，要是道路），格子的種類就是地標的 id（lm_ 開頭）。types 是地標的類型：生成居民的分布（npc：一般人、冒險者的權重，tags：帶這些標籤的人的權重）與公會委託的標的都看類型。資料來源：世界書各區域條目的「特色建築」，沒有寫到的聚落由本專案補寫。 open：開放的條件（hours: day/night、flags、flags_none、min_reputation、official）；visit：參訪（花錢、花時間，得到效果；cooldown_days 預設 1）；explore：探索（主動行動的檢定，成功得到 effects，大成功另外 critical；cooldown_days 預設 7）；work：打工（和設施的工作一樣）。受訓寫在 perks.json 的 train.cells。",
  "version": 1,
  "types": {
   "holy": {
@@ -116,7 +116,33 @@
     "academy"
    ],
    "desc": "培養騎士的主要機構，教導騎士的思想與戰鬥技巧。",
-   "scene": "校場上傳來整齊的喊聲與鐵器碰撞聲，見習騎士在教官的口令下操練。"
+   "scene": "校場上傳來整齊的喊聲與鐵器碰撞聲，見習騎士在教官的口令下操練。",
+   "open": {
+    "official": true
+   },
+   "work": {
+    "attr": "str",
+    "dc": 12,
+    "rate_cc": 4,
+    "desc": "替見習騎士整理裝備、餵馬、搬運訓練用的木樁。"
+   },
+   "explore": {
+    "title": "旁聽戰術課",
+    "attr": "int",
+    "dc": 13,
+    "hours": 3,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 30
+     },
+     {
+      "type": "memory",
+      "summary": "在騎士學院旁聽了一堂戰術課。",
+      "importance": 1
+     }
+    ]
+   }
   },
   {
    "id": "lm_imperial_armory",
@@ -133,7 +159,35 @@
     "military"
    ],
    "desc": "據傳矮人技師與人類工匠在此共同打造「龍息鎧」。",
-   "scene": "高牆後終日傳出鍛打聲，衛兵盤查每一個靠近大門的人。"
+   "scene": "高牆後終日傳出鍛打聲，衛兵盤查每一個靠近大門的人。",
+   "open": {
+    "official": true,
+    "min_reputation": 10
+   },
+   "work": {
+    "attr": "str",
+    "dc": 13,
+    "rate_cc": 5,
+    "desc": "在鍛造間搬運鋼料、拉風箱。"
+   },
+   "explore": {
+    "title": "打聽龍息鎧的消息",
+    "attr": "cha",
+    "dc": 15,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 40
+     },
+     {
+      "type": "memory",
+      "summary": "從軍械院的工匠口中打聽到龍息鎧的消息。",
+      "importance": 2
+     }
+    ],
+    "cooldown_days": 14
+   }
   },
   {
    "id": "lm_dawn_sanctum",
@@ -149,7 +203,23 @@
     "holy"
    ],
    "desc": "據傳建於一位光明聖者隕落之地，祭壇上依然留有微光。",
-   "scene": "白石殿堂裡迴盪著聖歌，祭壇上的微光在晨間最為明亮。"
+   "scene": "白石殿堂裡迴盪著聖歌，祭壇上的微光在晨間最為明亮。",
+   "open": {
+    "hours": "day"
+   },
+   "visit": {
+    "title": "在祭壇前祈禱",
+    "money_cc": 20,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ]
+   }
   },
   {
    "id": "lm_healers_academy",
@@ -166,7 +236,19 @@
     "holy"
    ],
    "desc": "培養大陸上最優秀的光系魔法師與醫師。",
-   "scene": "穿白袍的學徒捧著藥草與典籍來回奔走，空氣裡有淡淡的草藥香。"
+   "scene": "穿白袍的學徒捧著藥草與典籍來回奔走，空氣裡有淡淡的草藥香。",
+   "visit": {
+    "title": "請學徒處理傷勢",
+    "money_cc": 30,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "hp",
+      "target": "pc",
+      "ratio": 0.5
+     }
+    ]
+   }
   },
   {
    "id": "lm_windoath_tower",
@@ -183,7 +265,25 @@
     "monument"
    ],
    "desc": "七議席議會召開之地，每一任議員都要在高塔頂端立下「公正誓約」。",
-   "scene": "塔頂的風終年不停，塔下常有等著向議員陳情的人。"
+   "scene": "塔頂的風終年不停，塔下常有等著向議員陳情的人。",
+   "visit": {
+    "title": "在塔下立誓",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "memory",
+      "summary": "在風誓塔下立下了誓言。",
+      "importance": 1
+     },
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ],
+    "cooldown_days": 30
+   }
   },
   {
    "id": "lm_free_market",
@@ -199,7 +299,33 @@
     "market"
    ],
    "desc": "傳聞只要有足夠的金幣，連惡魔契約都能在這裡成交。",
-   "scene": "各族商人的叫賣聲混成一片，帳篷間藏著不少見不得光的買賣。"
+   "scene": "各族商人的叫賣聲混成一片，帳篷間藏著不少見不得光的買賣。",
+   "work": {
+    "attr": "cha",
+    "dc": 11,
+    "rate_cc": 3,
+    "desc": "替攤商叫賣、看攤子。"
+   },
+   "explore": {
+    "title": "在攤位間挖寶",
+    "attr": "cha",
+    "dc": 13,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "money",
+      "amount": 40
+     }
+    ],
+    "critical": [
+     {
+      "type": "item",
+      "name": "治療藥劑",
+      "qty": 1
+     }
+    ],
+    "cooldown_days": 3
+   }
   },
   {
    "id": "lm_holy_ring_cathedral",
@@ -216,7 +342,29 @@
     "official"
    ],
    "desc": "據傳建在「原初聖徒」升天之處，由教皇親自主持儀式。",
-   "scene": "環形的殿堂莊嚴肅穆，朝聖者排成長列等候祈福。"
+   "scene": "環形的殿堂莊嚴肅穆，朝聖者排成長列等候祈福。",
+   "open": {
+    "hours": "day",
+    "official": true
+   },
+   "visit": {
+    "title": "參加祈福儀式",
+    "money_cc": 50,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     },
+     {
+      "type": "memory",
+      "summary": "在聖環主殿參加了祈福儀式。",
+      "importance": 1
+     }
+    ]
+   }
   },
   {
    "id": "lm_judgment_cloister",
@@ -234,7 +382,29 @@
     "haunted"
    ],
    "desc": "教廷審訊與審判的聖所，傳說「真理之鏡」能照出靈魂的污點。",
-   "scene": "迴廊陰冷安靜，審判官的腳步聲在石壁間迴響。"
+   "scene": "迴廊陰冷安靜，審判官的腳步聲在石壁間迴響。",
+   "open": {
+    "official": true,
+    "min_reputation": 20
+   },
+   "explore": {
+    "title": "照一照真理之鏡",
+    "attr": "fai",
+    "dc": 14,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 50
+     },
+     {
+      "type": "memory",
+      "summary": "在審判迴廊照了真理之鏡。",
+      "importance": 2
+     }
+    ],
+    "cooldown_days": 30
+   }
   },
   {
    "id": "lm_silverscale_inn",
@@ -251,7 +421,25 @@
     "market"
    ],
    "desc": "河谷鎮的老旅店，據說有間祕密地下室，曾接待過魔族使者。",
-   "scene": "老闆對地下室的事總是笑而不答，常客裡混著各國的探子。"
+   "scene": "老闆對地下室的事總是笑而不答，常客裡混著各國的探子。",
+   "explore": {
+    "title": "找出祕密地下室",
+    "attr": "int",
+    "dc": 15,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "money",
+      "amount": 60
+     },
+     {
+      "type": "memory",
+      "summary": "找到了銀鱗旅店的祕密地下室。",
+      "importance": 2
+     }
+    ],
+    "cooldown_days": 14
+   }
   },
   {
    "id": "lm_old_stone_bridge",
@@ -268,7 +456,25 @@
     "nature"
    ],
    "desc": "「聯盟最古老的石橋」，象徵和平；據傳在橋上發的誓會受「流水之靈」見證。",
-   "scene": "河水在橋下潺潺流過，橋欄上刻滿歷代的誓言。"
+   "scene": "河水在橋下潺潺流過，橋欄上刻滿歷代的誓言。",
+   "visit": {
+    "title": "在橋上立誓",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "memory",
+      "summary": "在舊石橋上立下了誓言，願流水之靈見證。",
+      "importance": 1
+     },
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ],
+    "cooldown_days": 30
+   }
   },
   {
    "id": "lm_heartfire_forge",
@@ -285,7 +491,25 @@
     "holy"
    ],
    "desc": "鐵爐堡的主爐，日夜不滅，象徵矮人精神與技藝之永恆。",
-   "scene": "熱浪撲面而來，矮人工匠對著爐火低聲祝禱後才開始工作。"
+   "scene": "熱浪撲面而來，矮人工匠對著爐火低聲祝禱後才開始工作。",
+   "visit": {
+    "title": "向主爐祝禱",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "honed",
+      "add": true
+     }
+    ]
+   },
+   "work": {
+    "attr": "str",
+    "dc": 13,
+    "rate_cc": 5,
+    "desc": "替主爐添燃料、搬運礦石。"
+   }
   },
   {
    "id": "lm_elder_hall",
@@ -301,7 +525,30 @@
     "official"
    ],
    "desc": "鐵爐堡的長老在此議事，石壁上刻滿各氏族的族譜與功績。",
-   "scene": "厚重的石門半掩，裡面傳出長老們用古矮人語爭論的聲音。"
+   "scene": "厚重的石門半掩，裡面傳出長老們用古矮人語爭論的聲音。",
+   "open": {
+    "official": true,
+    "min_reputation": 15
+   },
+   "explore": {
+    "title": "旁聽長老議事",
+    "attr": "int",
+    "dc": 14,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "reputation",
+      "faction": "local",
+      "delta": 1
+     },
+     {
+      "type": "memory",
+      "summary": "旁聽了鐵爐堡長老的議事。",
+      "importance": 1
+     }
+    ],
+    "cooldown_days": 14
+   }
   },
   {
    "id": "lm_everlit_beacon",
@@ -318,7 +565,13 @@
     "monument"
    ],
    "desc": "關牆最高處的烽火台終年不熄，風雪中為迷路的旅人指路；改燃藍焰便是向鐵爐堡示警。",
-   "scene": "烽火在風雪裡劈啪作響，守備隊員輪流添柴。"
+   "scene": "烽火在風雪裡劈啪作響，守備隊員輪流添柴。",
+   "work": {
+    "attr": "str",
+    "dc": 11,
+    "rate_cc": 4,
+    "desc": "替烽火添柴、在風雪裡搬運補給。"
+   }
   },
   {
    "id": "lm_crimson_throne",
@@ -334,7 +587,11 @@
     "official"
    ],
    "desc": "莉莎爾的居所與議會核心，傳聞王座由一位墮落龍王的脊骨製成。",
-   "scene": "黑曜石大廳裡魔焰靜靜燃燒，侍衛的目光冷得像刀。"
+   "scene": "黑曜石大廳裡魔焰靜靜燃燒，侍衛的目光冷得像刀。",
+   "open": {
+    "official": true,
+    "min_reputation": 30
+   }
   },
   {
    "id": "lm_blood_oath_valley",
@@ -351,7 +608,25 @@
     "official"
    ],
    "desc": "每位領主在此立誓效忠議會，碑上銘刻其真名；違誓者將被魔焰焚心。",
-   "scene": "成排的黑碑上刻滿名字，有幾塊碑面被燒得焦黑。"
+   "scene": "成排的黑碑上刻滿名字，有幾塊碑面被燒得焦黑。",
+   "explore": {
+    "title": "辨讀碑上的真名",
+    "attr": "int",
+    "dc": 14,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 40
+     },
+     {
+      "type": "memory",
+      "summary": "在血誓碑谷辨讀了幾個領主的真名。",
+      "importance": 2
+     }
+    ],
+    "cooldown_days": 14
+   }
   },
   {
    "id": "lm_thousand_forges",
@@ -367,7 +642,13 @@
     "workshop"
    ],
    "desc": "數百座巨大熔爐同時運轉，冶煉出的金屬會發出魔族特有的「嗡鳴」。",
-   "scene": "嗡鳴聲與鍛打聲震耳欲聾，工匠赤著上身在熔爐間穿梭。"
+   "scene": "嗡鳴聲與鍛打聲震耳欲聾，工匠赤著上身在熔爐間穿梭。",
+   "work": {
+    "attr": "str",
+    "dc": 13,
+    "rate_cc": 6,
+    "desc": "在熔爐間幫工，忍受震耳的嗡鳴。"
+   }
   },
   {
    "id": "lm_soulmelt_well",
@@ -384,7 +665,20 @@
     "haunted"
    ],
    "desc": "祭祀陣亡戰士的熔金井，傳說能用死者的靈魂淬煉兵器。",
-   "scene": "井口翻騰著熔金，祭司一邊誦念戰士的名字一邊投下祭品。"
+   "scene": "井口翻騰著熔金，祭司一邊誦念戰士的名字一邊投下祭品。",
+   "visit": {
+    "title": "為陣亡者獻祭",
+    "money_cc": 30,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "honed",
+      "add": true
+     }
+    ]
+   }
   },
   {
    "id": "lm_golem_arena",
@@ -400,7 +694,30 @@
     "military"
    ],
    "desc": "新鑄的地獄機偶與魔兵在此與死囚角鬥試煉，通過者才編入議會軍團。",
-   "scene": "看台上的領主們交頭接耳，場中的機偶發出刺耳的金屬聲。"
+   "scene": "看台上的領主們交頭接耳，場中的機偶發出刺耳的金屬聲。",
+   "explore": {
+    "title": "上場與機偶試煉",
+    "attr": "str",
+    "dc": 15,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "money",
+      "amount": 120
+     },
+     {
+      "type": "xp",
+      "amount": 60
+     }
+    ],
+    "critical": [
+     {
+      "type": "reputation",
+      "faction": "local",
+      "delta": 1
+     }
+    ]
+   }
   },
   {
    "id": "lm_evernight_tower",
@@ -417,7 +734,12 @@
     "haunted"
    ],
    "desc": "谷中的王宮，塔內無燈卻永不陷於黑暗。",
-   "scene": "塔身吞沒了周圍的光，靠近時會聽見若有似無的低語。"
+   "scene": "塔身吞沒了周圍的光，靠近時會聽見若有似無的低語。",
+   "open": {
+    "official": true,
+    "min_reputation": 25,
+    "hours": "night"
+   }
   },
   {
    "id": "lm_nightmare_maze",
@@ -434,7 +756,28 @@
     "haunted"
    ],
    "desc": "以幻術摺疊的神殿，據說連神祇的目光都無法窺見其中的真相。",
-   "scene": "迷堂的入口每次看都不太一樣，裡面的走廊似乎比外觀長得多。"
+   "scene": "迷堂的入口每次看都不太一樣，裡面的走廊似乎比外觀長得多。",
+   "open": {
+    "hours": "night"
+   },
+   "explore": {
+    "title": "在迷堂裡尋路",
+    "attr": "int",
+    "dc": 16,
+    "hours": 3,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 80
+     },
+     {
+      "type": "memory",
+      "summary": "走出了夢魘迷堂。",
+      "importance": 2
+     }
+    ],
+    "cooldown_days": 14
+   }
   },
   {
    "id": "lm_bone_king_hall",
@@ -451,7 +794,10 @@
     "monument"
    ],
    "desc": "由遠古巨龍的骸骨搭建而成，是部族酋長的王座。",
-   "scene": "巨大的肋骨撐起殿頂，風穿過骨縫發出低沉的嗚咽。"
+   "scene": "巨大的肋骨撐起殿頂，風穿過骨縫發出低沉的嗚咽。",
+   "open": {
+    "official": true
+   }
   },
   {
    "id": "lm_blood_trial_ground",
@@ -468,7 +814,24 @@
     "holy"
    ],
    "desc": "每逢新月，戰士們在此獻血以求戰靈庇佑。",
-   "scene": "沙地被血染成暗紅，戰士們在場邊磨著獠牙與刀刃。"
+   "scene": "沙地被血染成暗紅，戰士們在場邊磨著獠牙與刀刃。",
+   "visit": {
+    "title": "獻血求戰靈庇佑",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "hp",
+      "target": "pc",
+      "ratio": -0.1
+     },
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "honed",
+      "add": true
+     }
+    ]
+   }
   },
   {
    "id": "lm_silent_corridor",
@@ -485,7 +848,25 @@
     "haunted"
    ],
    "desc": "死者的靈魂在此迴盪，唯有能聽見其低語的人才有資格成為祭司。",
-   "scene": "長廊裡一點聲音也沒有，連自己的腳步聲都聽不見。"
+   "scene": "長廊裡一點聲音也沒有，連自己的腳步聲都聽不見。",
+   "explore": {
+    "title": "傾聽亡者的低語",
+    "attr": "fai",
+    "dc": 15,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 60
+     },
+     {
+      "type": "memory",
+      "summary": "在無聲長廊聽見了亡者的低語。",
+      "importance": 2
+     }
+    ],
+    "cooldown_days": 14
+   }
   },
   {
    "id": "lm_ember_tower",
@@ -502,7 +883,20 @@
     "monument"
    ],
    "desc": "永燃的白焰象徵靈魂不滅，是魔族罕見的「淨化聖火」。",
-   "scene": "白焰安靜地燃燒，灰燼修會的修士在塔下低頭默禱。"
+   "scene": "白焰安靜地燃燒，灰燼修會的修士在塔下低頭默禱。",
+   "visit": {
+    "title": "在白焰前默禱",
+    "money_cc": 10,
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ]
+   }
   },
   {
    "id": "lm_abyss_exchange",
@@ -518,7 +912,26 @@
     "market"
    ],
    "desc": "任何契約都能在此成交，甚至包括靈魂與時間。",
-   "scene": "交易所裡的人都壓低聲音說話，契約的墨跡帶著血晶石的紅光。"
+   "scene": "交易所裡的人都壓低聲音說話，契約的墨跡帶著血晶石的紅光。",
+   "explore": {
+    "title": "打探見不得光的交易",
+    "attr": "cha",
+    "dc": 14,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "money",
+      "amount": 80
+     }
+    ],
+    "critical": [
+     {
+      "type": "memory",
+      "summary": "在深淵交易所聽說了一樁驚人的契約。",
+      "importance": 2
+     }
+    ]
+   }
   },
   {
    "id": "lm_greysail_pier",
@@ -535,7 +948,13 @@
     "haunted"
    ],
    "desc": "據傳有一艘永不靠岸的船，載著被放逐的領主靈魂。",
-   "scene": "霧裡偶爾看得見一面灰帆，碼頭工人總是避開不看。"
+   "scene": "霧裡偶爾看得見一面灰帆，碼頭工人總是避開不看。",
+   "work": {
+    "attr": "str",
+    "dc": 11,
+    "rate_cc": 3,
+    "desc": "在霧裡替船隻卸貨。"
+   }
   },
   {
    "id": "lm_reef_light_pillar",
@@ -551,7 +970,25 @@
     "monument"
    ],
    "desc": "環繞都城的巨型珊瑚燈塔，終年發出柔光以維繫隔水結界，是玉璘族工匠代代維護的心血。",
-   "scene": "柔光透過結界灑落，看得見外面的魚群在水牆後游過。"
+   "scene": "柔光透過結界灑落，看得見外面的魚群在水牆後游過。",
+   "visit": {
+    "title": "看著結界外的海",
+    "hours": 1,
+    "effects": [
+     {
+      "type": "memory",
+      "summary": "在礁光柱下看著結界外的魚群游過。",
+      "importance": 1
+     },
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ],
+    "cooldown_days": 7
+   }
   },
   {
    "id": "lm_tide_mirror",
@@ -568,7 +1005,20 @@
     "monument"
    ],
    "desc": "都城的核心廣場，傳說滿月之夜台面會映出下一任潮主的身影；「挑潮祭」與四時慶典都在此舉行。",
-   "scene": "玉盤般的礁石台面光滑如鏡，玉璘族在台邊宴飲賽舞。"
+   "scene": "玉盤般的礁石台面光滑如鏡，玉璘族在台邊宴飲賽舞。",
+   "visit": {
+    "title": "加入宴飲賽舞",
+    "money_cc": 20,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ]
+   }
   },
   {
    "id": "lm_four_seasons_gallery",
@@ -585,7 +1035,24 @@
     "official"
    ],
    "desc": "連通四座宮闕的貝殼長廊，廊壁鑲嵌著歷代潮主的畫像與詩篇。",
-   "scene": "貝殼的廊壁映著七彩的光，偶爾有人駐足吟誦壁上的詩。"
+   "scene": "貝殼的廊壁映著七彩的光，偶爾有人駐足吟誦壁上的詩。",
+   "explore": {
+    "title": "吟誦壁上的詩",
+    "attr": "cha",
+    "dc": 12,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 30
+     },
+     {
+      "type": "memory",
+      "summary": "在四時迴廊吟誦了歷代潮主的詩篇。",
+      "importance": 1
+     }
+    ]
+   }
   },
   {
    "id": "lm_sandcastle_keep",
@@ -602,7 +1069,13 @@
     "military"
    ],
    "desc": "營地的核心建築，兼作瞭望塔、倉庫與談判廳，堡頂掛著沙痕部落贈予的駝骨風鈴。",
-   "scene": "風鈴在熱風裡叮噹作響，佣兵與部落族人在堡門口談生意。"
+   "scene": "風鈴在熱風裡叮噹作響，佣兵與部落族人在堡門口談生意。",
+   "work": {
+    "attr": "cha",
+    "dc": 11,
+    "rate_cc": 4,
+    "desc": "替商隊與部落傳話、記帳。"
+   }
   },
   {
    "id": "lm_tent_ring_bazaar",
@@ -618,7 +1091,23 @@
     "market"
    ],
    "desc": "環繞沙堡搭建的帳篷集市，白日喧鬧如城，夜晚隨部族遷移的鼓聲收攤。",
-   "scene": "香料與皮革的氣味混在一起，貓魅族商人用尾巴招攬客人。"
+   "scene": "香料與皮革的氣味混在一起，貓魅族商人用尾巴招攬客人。",
+   "open": {
+    "hours": "day"
+   },
+   "explore": {
+    "title": "在帳篷間挖寶",
+    "attr": "cha",
+    "dc": 12,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "money",
+      "amount": 40
+     }
+    ],
+    "cooldown_days": 3
+   }
   },
   {
    "id": "lm_redmane_council",
@@ -634,7 +1123,29 @@
     "official"
    ],
    "desc": "部落長老議事的巨型獸皮帳篷，帳頂懸掛歷代戰功者的鬃毛與獸角。",
-   "scene": "帳內燒著乾草，長老們盤腿而坐，談的多半是狩獵與決鬥。"
+   "scene": "帳內燒著乾草，長老們盤腿而坐，談的多半是狩獵與決鬥。",
+   "open": {
+    "official": true
+   },
+   "explore": {
+    "title": "旁聽長老議事",
+    "attr": "cha",
+    "dc": 13,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "reputation",
+      "faction": "local",
+      "delta": 1
+     },
+     {
+      "type": "memory",
+      "summary": "在赤鬃議帳旁聽了長老的議事。",
+      "importance": 1
+     }
+    ],
+    "cooldown_days": 14
+   }
   },
   {
    "id": "lm_stillspring_altar",
@@ -651,7 +1162,23 @@
     "nature"
    ],
    "desc": "供奉祖靈與月神的水畔祭壇，傳聞滿月之夜以泉水占卜最為靈驗。",
-   "scene": "泉面映著淡淡的銀藍微光，月尾部落的祭司在壇前輕聲吟唱。"
+   "scene": "泉面映著淡淡的銀藍微光，月尾部落的祭司在壇前輕聲吟唱。",
+   "open": {
+    "hours": "night"
+   },
+   "visit": {
+    "title": "以泉水占卜",
+    "money_cc": 15,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ]
+   }
   },
   {
    "id": "lm_moonlight_mother",
@@ -668,7 +1195,22 @@
     "holy"
    ],
    "desc": "承載整座王都的巨樹，樹幹寬闊如山；白銀藤蔓在夜裡散發月光。",
-   "scene": "樹皮溫暖而微微脈動，精靈經過時都會伸手輕觸。"
+   "scene": "樹皮溫暖而微微脈動，精靈經過時都會伸手輕觸。",
+   "open": {
+    "min_reputation": 10
+   },
+   "visit": {
+    "title": "輕觸月輝之母",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ]
+   }
   },
   {
    "id": "lm_spring_of_life",
@@ -685,7 +1227,19 @@
     "holy"
    ],
    "desc": "與樹根相連的泉水，為全城提供魔力流通，以治癒之力聞名。",
-   "scene": "泉水清澈見底，水面不時浮起細小的光點。"
+   "scene": "泉水清澈見底，水面不時浮起細小的光點。",
+   "visit": {
+    "title": "飲用生命之泉",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "hp",
+      "target": "pc",
+      "ratio": 0.5
+     }
+    ],
+    "cooldown_days": 3
+   }
   },
   {
    "id": "lm_seven_tides_hall",
@@ -701,7 +1255,10 @@
     "official"
    ],
    "desc": "潮汐港沒有國王，港內事務都在這裡由七潮議會裁決。",
-   "scene": "議會廳外擠滿等著申訴的船東與商人，大門上刻著七道浪紋。"
+   "scene": "議會廳外擠滿等著申訴的船東與商人，大門上刻著七道浪紋。",
+   "open": {
+    "official": true
+   }
   },
   {
    "id": "lm_deep_tide_pier",
@@ -717,7 +1274,13 @@
     "harbor"
    ],
    "desc": "七潮議會的深潮席在此安排前往滄月闕的渡訪船次與嚮導。",
-   "scene": "渡口邊停著幾艘掛著玉璘族旗幟的船，嚮導在登記訪客的名字。"
+   "scene": "渡口邊停著幾艘掛著玉璘族旗幟的船，嚮導在登記訪客的名字。",
+   "work": {
+    "attr": "cha",
+    "dc": 11,
+    "rate_cc": 4,
+    "desc": "替深潮席招呼訪客、登記名字。"
+   }
   },
   {
    "id": "lm_sea_spirit_shrine",
@@ -734,7 +1297,20 @@
     "nature"
    ],
    "desc": "鎮民供奉海靈與風母的小祠，出海前都會來這裡祈求平安。",
-   "scene": "祠前擺滿珍珠與珊瑚的供品，海風吹動掛在簷下的貝殼。"
+   "scene": "祠前擺滿珍珠與珊瑚的供品，海風吹動掛在簷下的貝殼。",
+   "visit": {
+    "title": "祈求出海平安",
+    "money_cc": 10,
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ]
+   }
   },
   {
    "id": "lm_ferry_lighthouse",
@@ -751,7 +1327,13 @@
     "monument"
    ],
    "desc": "守護沿海航道的老燈塔，夜裡的燈火是渡船回航的依靠。",
-   "scene": "燈塔守夜人坐在門口補漁網，牆上記滿了歷年的潮汐。"
+   "scene": "燈塔守夜人坐在門口補漁網，牆上記滿了歷年的潮汐。",
+   "work": {
+    "attr": "str",
+    "dc": 10,
+    "rate_cc": 3,
+    "desc": "替守夜人補漁網、搬燈油。"
+   }
   },
   {
    "id": "lm_granite_rampart",
@@ -768,7 +1350,13 @@
     "monument"
    ],
    "desc": "以天然花崗岩鑄成的層層城牆，守衛通往矮人王國的山口，幾乎不可能被攻陷。",
-   "scene": "城牆上的矮人守衛來回巡邏，牆面布滿歷代攻城留下的痕跡。"
+   "scene": "城牆上的矮人守衛來回巡邏，牆面布滿歷代攻城留下的痕跡。",
+   "work": {
+    "attr": "str",
+    "dc": 12,
+    "rate_cc": 4,
+    "desc": "幫守衛修補城牆。"
+   }
   },
   {
    "id": "lm_wind_hammer",
@@ -784,7 +1372,25 @@
     "monument"
    ],
    "desc": "村口的巨大石錘，山風吹過錘身的孔洞時會發出低沉的鳴響，村名由此而來。",
-   "scene": "石錘在風中嗡嗡低鳴，山民說聽得懂它的人就懂得山的脾氣。"
+   "scene": "石錘在風中嗡嗡低鳴，山民說聽得懂它的人就懂得山的脾氣。",
+   "visit": {
+    "title": "聆聽風錘的鳴響",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "memory",
+      "summary": "聽懂了一點風錘的鳴響。",
+      "importance": 1
+     },
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ],
+    "cooldown_days": 7
+   }
   },
   {
    "id": "lm_mire_herb_beds",
@@ -801,7 +1407,28 @@
     "haunted"
    ],
    "desc": "沼地裡長著能入藥也能致命的變異植物，村民靠採集維生。",
-   "scene": "毒霧貼著水面飄動，泥沼裡不時冒出氣泡。"
+   "scene": "毒霧貼著水面飄動，泥沼裡不時冒出氣泡。",
+   "explore": {
+    "title": "採集變異藥草",
+    "attr": "int",
+    "dc": 13,
+    "hours": 3,
+    "effects": [
+     {
+      "type": "item",
+      "name": "藥草",
+      "qty": 3
+     }
+    ],
+    "critical": [
+     {
+      "type": "item",
+      "name": "治療藥劑",
+      "qty": 1
+     }
+    ],
+    "cooldown_days": 3
+   }
   },
   {
    "id": "lm_whispering_ring",
@@ -818,7 +1445,25 @@
     "holy"
    ],
    "desc": "苔語村舉行「森語儀式」的林間空地，村民在此與樹木交流、傾聽風的低語。",
-   "scene": "環狀排列的古樹下鋪滿苔蘚，風吹過時像有人在耳邊說話。"
+   "scene": "環狀排列的古樹下鋪滿苔蘚，風吹過時像有人在耳邊說話。",
+   "visit": {
+    "title": "參加森語儀式",
+    "hours": 2,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     },
+     {
+      "type": "memory",
+      "summary": "在森語之環參加了森語儀式。",
+      "importance": 1
+     }
+    ],
+    "cooldown_days": 7
+   }
   },
   {
    "id": "lm_star_platform",
@@ -835,7 +1480,22 @@
     "military"
    ],
    "desc": "藤橋與浮石台之間的觀星與祈風聖地，風鈴聲被認為能把亡者的靈魂送上天穹。",
-   "scene": "夜裡星光格外清楚，遊俠們在台邊擦拭弓弦。"
+   "scene": "夜裡星光格外清楚，遊俠們在台邊擦拭弓弦。",
+   "open": {
+    "hours": "night"
+   },
+   "visit": {
+    "title": "觀星祈風",
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ]
+   }
   }
  ]
 }

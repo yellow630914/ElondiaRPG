@@ -1,11 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import Ajv2020 from 'ajv/dist/2020'
+import schema from '../../schemas/report.schema.json'
+import { prepareAction, resolveAction } from '@/engine/actions'
 import mapsJson from '@data/world/maps.json'
 import { geography, landmarks, landmarkTypes, townQuestTemplates } from '@/engine/data'
 import { CELL_ICON, cellName, currentCell, enterLocation, getArea, questRunnableHere, settlementArea, standOn } from '@/engine/grid'
 import { acceptQuest, guildQuests, questScene, questSpot } from '@/engine/town'
-import { builtinLandmark, newLandmark } from '@/engine/landmarkMods'
-import { landmarkHere, withLandmark } from '@/engine/landmarks'
+import { builtinLandmark, newLandmark, sanitizeLandmarkMod } from '@/engine/landmarkMods'
+import { applyExplore, blockedReason, closedHere, landmarkHere, setupExplore, visitLandmark, withLandmark } from '@/engine/landmarks'
+import { trainablePerks } from '@/engine/perks'
+import { setFlag } from '@/engine/storyFlags'
+import { jobHere } from '@/engine/work'
+import type { Report } from '@/engine/types'
 import { applyContent, emptyMods, newNpc, normalizeMods } from '@/engine/mods'
 import { npcRecord } from '@/engine/npcs'
 import { fixedCell } from '@/engine/population'
@@ -160,5 +167,103 @@ describe('guild quests at landmarks', () => {
       state.time.day = d
       for (const q of guildQuests(state)) expect(['lm_scholar_errand', 'lm_sparring', 'lm_ore_delivery']).not.toContain(q.template)
     }
+  })
+})
+
+describe('landmark functions', () => {
+  const at = (state: ReturnType<typeof game>, id: string, hour = 10) => {
+    state.time.hour = hour
+    expect(standOn(state, id as never)).toBe(true)
+  }
+
+  it('open only when the conditions hold', () => {
+    const state = game('dawnlight')
+    at(state, 'lm_dawn_sanctum', 22)
+    expect(closedHere(state)).toContain('只在白天')
+    state.time.hour = 10
+    expect(closedHere(state)).toBeUndefined()
+    // 聲望不夠、逃亡奴隸
+    const s2 = game('rhineburg')
+    at(s2, 'lm_imperial_armory')
+    expect(closedHere(s2)).toContain('聲望')
+    s2.reputation.rhine_empire = 10
+    expect(closedHere(s2)).toBeUndefined()
+    s2.party[0]!.status.push('fugitive')
+    expect(closedHere(s2)).toContain('契約印記')
+    // 劇情旗標
+    applyContent(normalizeMods({ ...emptyMods(), landmarks: { lm_old_stone_bridge: { ...builtinLandmark('lm_old_stone_bridge')!, open: { flags: ['bridge_open'] } } } }))
+    const s3 = game('rivervale')
+    at(s3, 'lm_old_stone_bridge')
+    expect(closedHere(s3)).toContain('現在不開放')
+    setFlag(s3, 'bridge_open')
+    expect(closedHere(s3)).toBeUndefined()
+  })
+
+  it('visit: pay, gain the effects, then wait for the cooldown', () => {
+    const state = game('dawnlight')
+    at(state, 'lm_dawn_sanctum')
+    state.money_cc = 100
+    visitLandmark(state)
+    expect(state.money_cc).toBe(80)
+    expect(state.party[0]!.status).toContain('blessed')
+    expect(blockedReason(state, 'visit')).toContain('天後')
+    state.time.day += 1
+    expect(blockedReason(state, 'visit')).toBeUndefined()
+    state.money_cc = 5
+    expect(blockedReason(state, 'visit')).toContain('錢不夠')
+    expect(() => visitLandmark(state)).toThrow('錢不夠')
+  })
+
+  it('explore: a check whose success gives the effects, then a cooldown', () => {
+    const state = game('albena')
+    at(state, 'lm_free_market')
+    const setup = setupExplore(state)
+    expect(setup).toMatchObject({ attr: 'cha', dc: 13, hours: 2 })
+    const money = state.money_cc
+    const report = { changes: {} } as Report
+    applyExplore(state, report, 'success')
+    expect(report.changes.money_cc).toBe(40)
+    expect(blockedReason(state, 'explore')).toContain('3 天後')
+    expect(() => setupExplore(state)).toThrow('天後')
+    expect(state.money_cc).toBe(money)
+  })
+
+  it('work and training at landmarks, closed landmarks have neither', () => {
+    const state = game('ashport')
+    at(state, 'lm_greysail_pier')
+    expect(jobHere(state)).toMatchObject({ name: '灰帆碼頭的雜務', attr: 'str', dc: 11 })
+    const s2 = game()
+    at(s2, 'lm_knight_academy')
+    expect(trainablePerks(s2.party[0]!, 'lm_knight_academy').map((p) => p.id)).toContain('brawler')
+    expect(jobHere(s2)).toBeDefined()
+    s2.party[0]!.status.push('fugitive')
+    expect(jobHere(s2)).toBeUndefined()
+  })
+
+  it('sanitize keeps only landmark-safe effects, and the built-in data is already clean', () => {
+    const m = sanitizeLandmarkMod('lm_dawn_sanctum', {
+      ...builtinLandmark('lm_dawn_sanctum')!,
+      visit: { title: '祈禱', effects: [{ type: 'enslave_player', contract: 'x' } as never, { type: 'condition', target: 'pc', condition: 'blessed', add: true }], hours: 99 },
+      explore: { title: '', attr: 'int', dc: 12, hours: 1, effects: [] },
+      work: { attr: 'bogus' as never, dc: 50, rate_cc: 9, desc: '' },
+    })
+    expect(m.visit).toEqual({ title: '祈禱', effects: [{ type: 'condition', target: 'pc', condition: 'blessed', add: true }], hours: 24 })
+    expect(m.explore).toBeUndefined()
+    expect(m.work).toEqual({ attr: 'cha', dc: 30, rate_cc: 9, desc: '在這裡幫忙。' })
+    for (const l of Object.values(landmarks)) expect(sanitizeLandmarkMod(l.id, l), l.id).toEqual(l)
+  })
+
+  it('explore runs as an action and its report matches the schema', () => {
+    const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
+    const state = game('albena')
+    at(state, 'lm_free_market')
+    const money = state.money_cc
+    prepareAction(state, { kind: 'explore', text: '' })
+    expect(state.pendingAction!.scene).toContain('自由集市')
+    state.pendingAction!.natural = 20
+    const r = resolveAction(state, null)
+    expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
+    expect(state.money_cc).toBeGreaterThan(money)
+    expect(state.landmarks?.lm_free_market?.explored).toBe(state.time.day)
   })
 })

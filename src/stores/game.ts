@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
 import { pitchTarget } from '@/engine/perks'
 import { computed, ref } from 'vue'
@@ -894,6 +895,8 @@ export const useGame = defineStore('game', () => {
     acceptQuest: (id: string) => run((s) => town.acceptQuest(s, id)),
     turnInQuest: (id: string, count?: number) => run((s) => town.turnInQuest(s, id, count)),
     templeHeal: () => run(town.templeHeal),
+    /** 參訪站著的地標 */
+    visitLandmark: () => run(visitLandmark),
     /** 把生成的人存成固定 NPC（存進目前的世界） */
     promoteNpc: (id: string) => run((s) => {
       useContent().promoteNpc(s, id)

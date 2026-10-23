@@ -14,9 +14,12 @@ import type { Character } from './types'
 import type { GameState, Report } from './types'
 import { shopPlace } from './trade'
 import { contractOf } from './tattoos'
+import { closedHere } from './landmarks'
 
 /** 現在站的設施有沒有工作可做 */
 export function jobHere(state: GameState): (JobDef & { cell: string }) | undefined {
+  // 不開放的地標沒有工作
+  if (closedHere(state)) return undefined
   const cell = currentCell(state).kind
   const job = workRules.jobs[cell]
   return job ? { ...job, name: safeText(job.name), desc: safeText(job.desc), cell } : undefined

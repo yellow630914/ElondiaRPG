@@ -95,6 +95,8 @@
       "$comment": "主角或肯幫忙的夥伴依物品的配方製作藥劑、料理、家具、工具（crafts.json 的 recipe）：做的人擲檢定（屬性依工藝），加工藝等級；DC 與工具階級依配方等級；成品份數依成功程度，做的人得到工藝經驗。target 為「做的人的 id@物品名稱*批數」" },
     "train": { "name": "受訓", "attr": "int", "hours": 8, "effects": ["affinity", "relationship_text", "flag"],
       "$comment": "在公會、神殿、酒館等設施花錢學特質（perks.json 的 train）：成功時得到一次學這個特質的機會。屬性、DC、時數、學費依特質" },
+    "explore": { "name": "探索地標", "attr": "int", "hours": 2, "effects": ["flag", "hp", "item"],
+      "$comment": "在城鎮的特色地標上探索（landmarks.json 的 explore）：屬性、DC、時數依地標；成功時得到地標設定的效果，大成功另外的效果；隔幾天才能再試" },
     "perk_pitch": { "name": "爭取特質", "attr": "cha", "hours": 0.25, "effects": ["relationship_text", "flag"],
       "$comment": "在取得特質的機會上（升級、事件、特殊任務、訓練、物品），不選提供的特質，寫一段說法擲骰交給 AI 判斷合不合理，AI 在 perk 欄位設計特質（強度依成功程度夾在提供的特質附近，見 perks.json 的 pitch）。只在這些場合可以用" },
     "invent": { "name": "自創配方", "attr": "int", "hours": 4, "effects": ["affinity", "relationship_text", "flag"],

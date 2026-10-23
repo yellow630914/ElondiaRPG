@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { perkDef, shopRules, workRules } from '@/engine/data'
 import { CELL_ICON, enterLocation } from '@/engine/grid'
-import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
+import { applyContent, builtinPerk, emptyMods, normalizeMods } from '@/engine/mods'
 import { npcRecord } from '@/engine/npcs'
 import { sanitizeShopMod } from '@/engine/shopMods'
 import { newGame } from '@/engine/state'
@@ -76,7 +76,7 @@ describe('built-in shop edits', () => {
   it('set which perks the shop trains, stored on the perks', () => {
     const c = editableWorld()
     c.setShopTraining('temple', ['iron_will', 'devout', 'artisan'])
-    expect(perkDef('artisan')!.train!.cells).toEqual(['smithy', 'tailor', 'jeweler', 'temple'])
+    expect(perkDef('artisan')!.train!.cells).toEqual([...builtinPerk('artisan')!.train!.cells, 'temple'])
     expect(Object.keys(useContent().mods.perks).sort()).toEqual(['artisan', 'flaw_drunkard', 'flaw_old_wound', 'temple_friend'])
     // 拿掉最後一個地點就不能受訓；加回去沿用內建的設定，和內建一樣的不再另外存
     expect(perkDef('temple_friend')!.train).toBeUndefined()

@@ -9,7 +9,7 @@
 //    AI 關閉時依規則：預設屬性、參考 DC 與骰值決定成功程度。
 // 說明見 docs/ACTIONS.md。
 
-import { withLandmark } from './landmarks'
+import { applyExplore, withLandmark } from './landmarks'
 import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
 import { checkModifiers } from './perks'
@@ -520,6 +520,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'produce': return applyProduce(state, report, p.target!, degree)
     case 'invent': return applyInvent(state, report, p.target!, degree, invention)
     case 'train': return applyTrain(state, report, p.target!, degree)
+    case 'explore': return applyExplore(state, report, degree)
     case 'perk_pitch': {
       const text = applyPitch(state, report, p.target!, degree, invention)
       pruneOffers(state.party.find((m) => m.id === parsePitchTarget(p.target).member)!)

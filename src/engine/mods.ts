@@ -13,7 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, landmarks,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -1305,7 +1305,7 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   const ex = [...new Set(raw.exclusive ?? [])].filter((x) => x !== id && isChoosablePerk(x))
   if (!race && ex.length) out.exclusive = ex
   if (!race && raw.train && Array.isArray(raw.train.cells)) {
-    const cells = [...new Set(raw.train.cells.filter((x) => (TRAIN_CELLS as readonly string[]).includes(x) || isCustomShopId(x)))]
+    const cells = [...new Set(raw.train.cells.filter((x) => (TRAIN_CELLS as readonly string[]).includes(x) || isCustomShopId(x) || isLandmarkId(x)))]
     if (cells.length) {
       out.train = {
         cells,

@@ -1,7 +1,7 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import {
-  abilities, ATTR_IDS, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, companionRules, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere,
 } from './data'
 import type { RewardEffect } from './effects'
@@ -68,7 +68,10 @@ export const LAYER_NAME: Record<(typeof STORY_LAYERS)[number], string> = { outsk
 export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
   start_story: '開始特殊任務', enslave_player: '主角淪為奴隸', perk: '特質（取得的機會）', lose_perk: '失去特質', tattoo: '刺青', remove_tattoo: '洗掉刺青',
+  condition: '非戰鬥狀態',
 }
+/** 可以用效果給予或拿掉的非戰鬥狀態（奴隸印記、逃亡、暫時離隊由程式管理） */
+export const EFFECT_CONDITIONS = () => Object.keys(companionRules.conditions).filter((k) => !k.startsWith('$') && !['slave_mark', 'fugitive', 'away'].includes(k))
 
 const isLoc = (id: unknown) => typeof id === 'string' && geography.locations.some((l) => l.id === id)
 
@@ -127,6 +130,10 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       }
       case 'companion': {
         if (str(x.npc, 60)) out.push({ type: 'companion', npc: str(x.npc, 60), mode: x.mode === 'hired' ? 'hired' : 'voluntary' })
+        break
+      }
+      case 'condition': {
+        if (typeof x.condition === 'string' && EFFECT_CONDITIONS().includes(x.condition)) out.push({ type: 'condition', target: 'pc', condition: x.condition, add: x.add !== false })
         break
       }
       case 'hp': {

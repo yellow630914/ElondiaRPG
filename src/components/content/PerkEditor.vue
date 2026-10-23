@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import {
-  actionRules, ATTR_IDS, attributeRules, attrName, choosablePerks, className, combatClasses, damageTypes, npcTags, perkRules, shopRules,
+  actionRules, ATTR_IDS, attributeRules, attrName, choosablePerks, className, combatClasses, damageTypes, landmarks, npcTags, perkRules, shopRules,
   type AffinityMap, type AttrId, type CheckFilter, type Mods, type PerkEffect,
 } from '@/engine/data'
 import { builtinPerk, perkEditorLimits, TRAIN_CELLS, type PerkMod } from '@/engine/mods'
@@ -16,10 +16,12 @@ import UsageNote from './UsageNote.vue'
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()
 const content = useContent()
-// 受訓的地點：設施，加上自建的商店
+// 受訓的地點：設施，加上自建的商店與已經設定的地標
 const trainCells = computed<CellKind[]>(() => {
   void content.version
-  return [...TRAIN_CELLS, ...Object.values(shopRules.types).filter((d) => d.custom).map((d) => d.cell as CellKind)]
+  // 地標很多：只列出這個特質已經設定的（在地標頁勾選）
+  const lms = (draft.value.train?.cells ?? []).filter((c) => landmarks[c])
+  return [...TRAIN_CELLS, ...Object.values(shopRules.types).filter((d) => d.custom).map((d) => d.cell as CellKind), ...(lms as CellKind[])]
 })
 const game = useGame()
 
