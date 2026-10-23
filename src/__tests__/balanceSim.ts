@@ -1,5 +1,5 @@
 // 戰鬥耐打度的模擬（docs/MONSTERS.md「耐打度」）：4 人隊伍（戰士、遊蕩者、牧師、法師）用和怪物同等級的角色
-// （依職業學的技能、依等級生成的裝備），打一隻去掉弱點與特徵、血量無限的怪物，量平均每一擊的傷害與每回合的傷害。
+// （依職業學的技能、依等級生成的裝備），打一隻去掉弱點（保留抗性）與特徵、血量無限的怪物，量平均每一擊的傷害與每回合的傷害。
 // 隊員的打法：能用的傷害技能挑環數最高的，沒有就普通攻擊，行動點不夠就結束回合。
 import { abilityDef, dungeonEncounters, enemies, type EncounterGroup } from '@/engine/data'
 import { createNpc } from '@/engine/character'
@@ -36,7 +36,8 @@ function trial(monster: string, level: number, seed: number) {
   e.attrs = { ...def.attrs }
   e.armorDr = def.dr
   e.armorEvade = def.evade
-  e.resist = Object.fromEntries(Object.entries(def.resist ?? {}).filter(([, v]) => (v as number) > 0))
+  // 抗性留著（負數），弱點拿掉（正數）
+  e.resist = Object.fromEntries(Object.entries(def.resist ?? {}).filter(([, v]) => (v as number) < 0))
   e.statuses = []
   e.baseMods = {}
   e.weapon = { ...e.weapon, dice: '1d1' }
