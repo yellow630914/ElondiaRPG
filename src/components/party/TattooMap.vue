@@ -2,21 +2,18 @@
 import { computed, ref, watch } from 'vue'
 import type { Character, TattooPlace } from '@/engine/types'
 import { oathText, placeName, TATTOO_PLACES, tattooAt, tattooDesc, tattooKindName, tattooName } from '@/engine/tattoos'
+import { bodyOf } from '@/engine/traits'
 import Hint from '../ui/Hint.vue'
+import BodyFigure from './BodyFigure.vue'
+import { BODY_SHAPES } from './bodyShapes'
 
 // 刺青的部位圖：正面與背面的人形，有刺青的部位打點；點部位看說明
 const props = defineProps<{ member: Character }>()
 const m = computed(() => props.member)
 
-// 各部位在人形上的位置（viewBox 100×220）與在哪一面
-const SPOT: Record<string, { x: number; y: number; side: 'front' | 'back' }> = {
-  neck: { x: 50, y: 40, side: 'front' }, chest: { x: 50, y: 58, side: 'front' }, belly: { x: 50, y: 88, side: 'front' },
-  left_arm: { x: 80, y: 74, side: 'front' }, right_arm: { x: 20, y: 74, side: 'front' },
-  left_thigh: { x: 59, y: 140, side: 'front' }, right_thigh: { x: 41, y: 140, side: 'front' },
-  left_calf: { x: 60, y: 185, side: 'front' }, right_calf: { x: 40, y: 185, side: 'front' },
-  back: { x: 50, y: 66, side: 'back' }, hips: { x: 50, y: 112, side: 'back' },
-}
-const spotOf = (p: TattooPlace) => SPOT[p] ?? { x: 50, y: 100, side: 'front' as const }
+// 人形依身形換輪廓，部位的位置跟著換
+const body = computed(() => bodyOf(m.value.race, m.value.gender))
+const spotOf = (p: TattooPlace) => BODY_SHAPES[body.value].spots[p] ?? { x: 50, y: 100, side: 'front' as const }
 
 const first = () => TATTOO_PLACES.find((p) => tattooAt(m.value, p)) ?? TATTOO_PLACES[0]!
 const selected = ref<TattooPlace>(first())
@@ -28,16 +25,14 @@ const current = computed(() => tattooAt(m.value, selected.value))
   <div class="tattoo">
     <div class="figs">
       <figure v-for="side in ['front', 'back'] as const" :key="side">
-        <svg viewBox="0 0 100 220" aria-hidden="true">
-          <path class="body" d="M38 38 Q50 44 62 38 L80 48 Q84 52 84 60 L88 110 L80 112 L74 66 L70 100 L72 130 L66 210 L54 210 L51 140 L49 140 L46 210 L34 210 L28 130 L30 100 L26 66 L20 112 L12 110 L16 60 Q16 52 20 48 Z" />
-          <circle class="body" cx="50" cy="22" r="14" />
+        <BodyFigure :body="body" :back="side === 'back'">
           <template v-for="p in TATTOO_PLACES" :key="p">
             <g v-if="spotOf(p).side === side" class="spot" :class="{ on: tattooAt(m, p), sel: selected === p, [tattooAt(m, p)?.kind ?? '']: true }" @click="selected = p">
               <circle :cx="spotOf(p).x" :cy="spotOf(p).y" r="6" />
               <title>{{ placeName(p) }}{{ tattooAt(m, p) ? `：${tattooName(tattooAt(m, p)!)}` : '' }}</title>
             </g>
           </template>
-        </svg>
+        </BodyFigure>
         <figcaption>{{ side === 'front' ? '正面' : '背面' }}</figcaption>
       </figure>
     </div>
@@ -70,8 +65,6 @@ const current = computed(() => tattooAt(m.value, selected.value))
 .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; background: #3a2a1a; border: 3px solid #2a1a0e; box-shadow: inset 0 0 0 1px #c99a45, inset 0 0 30px #000; }
 figure { margin: 0; text-align: center; }
 figcaption { font-size: var(--fs-xs); color: #9a8768; letter-spacing: 0.2em; }
-svg { width: 100%; }
-.body { fill: #c99a4522; stroke: #c99a4588; stroke-width: 1.2; }
 .spot { cursor: pointer; }
 .spot circle { fill: #0000; stroke: #9a876866; stroke-width: 1; stroke-dasharray: 2 2; }
 .spot:hover circle { stroke: #f0d083; }

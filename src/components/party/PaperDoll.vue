@@ -6,7 +6,9 @@ import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rar
 import { lockedGear } from '@/engine/inventory'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import { bodyOf } from '@/engine/traits'
 import GameIcon from '../ui/GameIcon.vue'
+import BodyFigure from './BodyFigure.vue'
 import { signed, SLOT_ICON } from './memberInfo'
 
 // 裝備的紙娃娃：欄位排在人形兩側；點欄位列出行囊中能裝的物品，可以直接換上或卸下
@@ -93,10 +95,7 @@ const totals = computed(() => {
         </button>
       </div>
       <div class="fig">
-        <svg viewBox="0 0 100 220" aria-hidden="true">
-          <path d="M38 38 Q50 44 62 38 L80 48 Q84 52 84 60 L88 110 L80 112 L74 66 L70 100 L72 130 L66 210 L54 210 L51 140 L49 140 L46 210 L34 210 L28 130 L30 100 L26 66 L20 112 L12 110 L16 60 Q16 52 20 48 Z" />
-          <circle cx="50" cy="22" r="14" />
-        </svg>
+        <BodyFigure :body="bodyOf(m.race, m.gender)" />
       </div>
       <div class="totals"><span v-for="t in totals" :key="t" class="tag">{{ t }}</span></div>
     </div>
@@ -164,7 +163,7 @@ const totals = computed(() => {
 .in { font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .slot:not(.filled) .in { color: #6a5a44; }
 .fig { display: grid; place-items: center; }
-.fig svg { width: 100%; max-width: 120px; fill: #c99a4526; stroke: #c99a4588; stroke-width: 1.2; }
+.fig :deep(.body-figure) { max-width: 120px; }
 .totals { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; }
 .totals .tag { background: #0006; color: #c9b796; border-color: #ffffff24; }
 /* 稀有度 */
