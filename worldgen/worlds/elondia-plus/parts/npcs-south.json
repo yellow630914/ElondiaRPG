@@ -1,0 +1,458 @@
+{
+ "npcs": {
+  "mod_npc_lisar": {
+   "id": "mod_npc_lisar",
+   "name": "「赤翼之君」莉莎爾",
+   "gender": "female",
+   "race": "demon",
+   "level": 18,
+   "location": "bloodplume",
+   "personality": "冷靜、驕傲、極有耐心；推行「秩序中的力量」，以律法整合荒原。對人類既好奇又警惕。",
+   "appearance": "高挑的魅魔，肌膚緋紅透亮，赤紅雙翼如烈焰般舒展，頭戴黑曜冠環。",
+   "background": "魔王，魔族領主議會的統治者，赤翼宮廷之主。她在混戰中崛起，終結了荒原千年的內鬥，建立起魔族史上罕見的律法體系。據說她的王座是用一位墮落龍王的脊骨做成的。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "wizard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "魅魔（赤翼宮廷）",
+   "tags": [
+    "royal"
+   ],
+   "relations": {
+    "mod_npc_veronica": "最信任的總管",
+    "mod_npc_valkas_moltencast": "忠誠但難以駕馭的劍",
+    "mod_npc_grom_shatterhorn": "最大的反對者",
+    "mod_npc_noctis": "她的眼睛與耳朵"
+   },
+   "landmark": "lm_crimson_throne"
+  },
+  "mod_npc_veronica": {
+   "id": "mod_npc_veronica",
+   "name": "薇洛妮卡",
+   "gender": "female",
+   "race": "demon",
+   "level": 12,
+   "location": "bloodplume",
+   "personality": "笑裡藏刀、說話甜得發膩；替莉莎爾處理所有不能讓人看見的事。",
+   "appearance": "蜜金色肌膚的魅魔，一身黑紅色宮廷禮服，隨時拿著一本記滿名字的小冊子。",
+   "background": "赤翼宮廷的總管兼議會書記長。議會裡每一位領主的弱點，都記在她的小冊子上。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "bard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "魅魔（赤翼宮廷）",
+   "tags": [
+    "noble"
+   ],
+   "relations": {
+    "mod_npc_lisar": "她願意為之而死的人"
+   },
+   "haunts": [
+    {
+     "location": "bloodplume",
+     "zone": "palace",
+     "weight": 3
+    },
+    {
+     "location": "bloodplume",
+     "zone": "noble",
+     "weight": 2
+    }
+   ]
+  },
+  "mod_npc_carlton_silent": {
+   "id": "mod_npc_carlton_silent",
+   "name": "卡爾頓",
+   "gender": "male",
+   "race": "demon",
+   "level": 10,
+   "location": "bloodplume",
+   "personality": "從不說話，只用手語溝通；對誓言的重視近乎狂熱。",
+   "appearance": "高大枯瘦的魔族，嘴唇被一道符文縫線封住，雙手沾滿碑石的粉塵。",
+   "background": "血誓碑谷的守碑人，替立誓效忠議會的領主刻下真名。他自願封住自己的嘴，以示「刻在碑上的才是真話」。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "cleric",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "tags": [
+    "priest"
+   ],
+   "landmark": "lm_blood_oath_valley"
+  },
+  "mod_npc_valkas_moltencast": {
+   "id": "mod_npc_valkas_moltencast",
+   "name": "瓦爾卡斯・熔鑄",
+   "gender": "male",
+   "race": "demon",
+   "level": 15,
+   "location": "moltenhold",
+   "personality": "豪邁、暴躁、戰鬥狂；效忠莉莎爾，卻對律法的束縛越來越不耐煩。",
+   "appearance": "鐵塔般的炎魔，炭黑龜裂的皮膚下透出熔岩的光，背著一把灰燼巨槍。",
+   "background": "鐵血熔鑄家族家主、炎獄軍團統帥。他說議會的律法讓戰士生鏽，私下和獸骨荒丘的格羅姆有來往。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "barbarian",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "炎魔（炎獄軍團）",
+   "tags": [
+    "noble"
+   ],
+   "relations": {
+    "mod_npc_ignis_forge": "女兒，他唯一會讓步的人",
+    "mod_npc_lisar": "他的君主，也是他的枷鎖",
+    "mod_npc_grom_shatterhorn": "危險的酒友"
+   },
+   "haunts": [
+    {
+     "location": "moltenhold",
+     "zone": "palace",
+     "weight": 3
+    },
+    {
+     "location": "moltenhold",
+     "zone": "town",
+     "weight": 1
+    }
+   ]
+  },
+  "mod_npc_ignis_forge": {
+   "id": "mod_npc_ignis_forge",
+   "name": "伊格妮絲",
+   "gender": "female",
+   "race": "demon",
+   "level": 10,
+   "location": "moltenhold",
+   "personality": "工作狂、討厭被打擾，能聽懂金屬的「嗡鳴」；比父親冷靜得多。",
+   "appearance": "體態精悍的炎魔女子，髮絲像餘燼一樣明滅，戴著厚重的皮手套。",
+   "background": "千爐工坊的總監，負責議會軍團所有的武器與機偶。她認為父親的好戰會毀了家族。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "fighter",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "炎魔（炎獄軍團）",
+   "relations": {
+    "mod_npc_valkas_moltencast": "父親"
+   },
+   "landmark": "lm_thousand_forges"
+  },
+  "mod_npc_gren_ironjaw": {
+   "id": "mod_npc_gren_ironjaw",
+   "name": "「鐵顎」格倫",
+   "gender": "male",
+   "race": "demon",
+   "level": 9,
+   "location": "moltenhold",
+   "personality": "粗魯、愛下注、愛熱鬧；欣賞任何敢上場的人，不分種族。",
+   "appearance": "下巴裝著一塊鐵板的魔族壯漢，嗓門大得能蓋過熔爐。",
+   "background": "機偶校場的主持人，負責讓死囚與新鑄的機偶對決。他說校場是熔火堡壘唯一公平的地方。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "fighter",
+   "hire_cc": 1275,
+   "faction": "魔族領主議會",
+   "landmark": "lm_golem_arena"
+  },
+  "mod_npc_samir_soulwell": {
+   "id": "mod_npc_samir_soulwell",
+   "name": "薩米爾",
+   "gender": "male",
+   "race": "demon",
+   "level": 8,
+   "location": "moltenhold",
+   "personality": "陰鬱、溫柔，說話很輕；記得每一位被他淬進兵器的戰士的名字。",
+   "appearance": "瘦削的魔族，灰袍上別滿了小小的金屬名牌。",
+   "background": "熔魂井的守井人，替陣亡戰士的靈魂淬兵。他相信靈魂在兵器裡會繼續戰鬥，也相信有些靈魂想要安息。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "cleric",
+   "hire_cc": 1060,
+   "faction": "魔族領主議會",
+   "tags": [
+    "priest",
+    "good"
+   ],
+   "landmark": "lm_soulmelt_well"
+  },
+  "mod_npc_noctis": {
+   "id": "mod_npc_noctis",
+   "name": "諾克緹絲",
+   "gender": "female",
+   "race": "demon",
+   "level": 15,
+   "location": "shadow_vale",
+   "personality": "神出鬼沒，說話永遠只說一半；喜歡看別人猜她的意思。",
+   "appearance": "墨藍微光的影魔，戴著無面面具與漆黑絲帶，雙眸如鬼火。",
+   "background": "暗影氏族（虛影氏族）之主，議會的情報與暗殺網之首。傳說她能行走於夢與實之間。她支持莉莎爾，但沒有人知道那是因為忠誠還是因為有利可圖。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "rogue",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "影魔（暗影氏族）",
+   "tags": [
+    "noble"
+   ],
+   "relations": {
+    "mod_npc_lisar": "她選擇支持的王",
+    "mod_npc_morphe": "她的夢境顧問"
+   },
+   "landmark": "lm_evernight_tower"
+  },
+  "mod_npc_morphe": {
+   "id": "mod_npc_morphe",
+   "name": "莫菲",
+   "gender": "unknown",
+   "race": "demon",
+   "level": 11,
+   "location": "shadow_vale",
+   "personality": "恍惚、詩意，常常分不清自己是醒是夢；說的話一半是預言一半是囈語。",
+   "appearance": "輕盈如煙的影魔，身形總是有點模糊，像隔著一層霧。",
+   "background": "夢魘迷堂的幻術師，以幻術折疊神殿。據說夢境之龍索利安曾在迷堂裡現身，而莫菲是唯一記得那個夢的人。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "wizard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "影魔（暗影氏族）",
+   "relations": {
+    "mod_npc_noctis": "主人"
+   },
+   "landmark": "lm_nightmare_maze"
+  },
+  "mod_npc_grom_shatterhorn": {
+   "id": "mod_npc_grom_shatterhorn",
+   "name": "格羅姆・碎角",
+   "gender": "male",
+   "race": "demon",
+   "level": 15,
+   "location": "bone_hills",
+   "personality": "豪邁、記仇、說一不二；認為律法讓魔族變軟弱，寧可戰死也不願跪著活。",
+   "appearance": "魁梧如戰獸的獸人，灰褐皮膚上滿是刺青，左角斷了一截，獠牙上套著金環。",
+   "background": "血角氏族（狂牙部族）酋長，議會最大的反對派。他的王座是遠古巨龍的骸骨搭成的。他不怕莉莎爾，只尊敬能打倒他的人。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "barbarian",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "獸人（血角氏族）",
+   "tags": [
+    "noble"
+   ],
+   "relations": {
+    "mod_npc_lisar": "他不承認的王",
+    "mod_npc_valkas_moltencast": "能一起喝酒的人",
+    "mod_npc_ulma_bloodtrial": "他最得力的戰士"
+   },
+   "landmark": "lm_bone_king_hall"
+  },
+  "mod_npc_ulma_bloodtrial": {
+   "id": "mod_npc_ulma_bloodtrial",
+   "name": "烏爾瑪",
+   "gender": "female",
+   "race": "demon",
+   "level": 10,
+   "location": "bone_hills",
+   "personality": "直率、尊敬強者，不分種族；說話跟揮斧頭一樣乾脆。",
+   "appearance": "苔綠色皮膚的獸人女戰士，角細長彎曲，雙手各握一把手斧。",
+   "background": "鮮血試煉場的場主，新月時主持血祭。她說只要能在試煉場站到最後，連人類都可以成為血角的戰士。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "barbarian",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "獸人（血角氏族）",
+   "relations": {
+    "mod_npc_grom_shatterhorn": "酋長"
+   },
+   "landmark": "lm_blood_trial_ground"
+  },
+  "mod_npc_aetherion": {
+   "id": "mod_npc_aetherion",
+   "name": "艾瑟里昂",
+   "gender": "male",
+   "race": "demon",
+   "level": 15,
+   "location": "silent_tomb",
+   "personality": "古老、平靜，對生死毫無執著；說話慢得像在數心跳。",
+   "appearance": "灰白如枯骨的死靈魔族，眼窩深陷，周身繚繞冷霧，頭戴白骨王冠。",
+   "background": "灰燼修會（幽冥典儀會）大祭司，主持魔族的葬儀與古老預言。他預言過莉莎爾的崛起，最近卻閉口不談下一個預言。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "cleric",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "魔族領主議會",
+   "lineage": "死靈（幽冥典儀會）",
+   "tags": [
+    "bishop",
+    "priest"
+   ],
+   "relations": {
+    "mod_npc_lila_listener": "他看中的繼承人"
+   },
+   "landmark": "lm_ember_tower"
+  },
+  "mod_npc_lila_listener": {
+   "id": "mod_npc_lila_listener",
+   "name": "莉菈",
+   "gender": "female",
+   "race": "demon",
+   "level": 5,
+   "location": "silent_tomb",
+   "personality": "膽小又好奇，聽得見死者的低語；最想做的事是去看看外面的世界。",
+   "appearance": "纖瘦的死靈少女，灰白的頭髮綁著紫色緞帶，總是側著頭像在聽什麼。",
+   "background": "無聲長廊的見習祭司。她能聽見死者的低語，被大祭司選為繼承人，但她偷偷收集人類商人帶來的旅行書。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "cleric",
+   "hire_cc": 535,
+   "faction": "魔族領主議會",
+   "lineage": "死靈（幽冥典儀會）",
+   "tags": [
+    "priest",
+    "good"
+   ],
+   "relations": {
+    "mod_npc_aetherion": "老師"
+   },
+   "landmark": "lm_silent_corridor"
+  },
+  "mod_npc_morg_herbwife": {
+   "id": "mod_npc_morg_herbwife",
+   "name": "莫格婆婆",
+   "gender": "female",
+   "race": "demon",
+   "level": 7,
+   "location": "rotmarsh",
+   "personality": "刻薄、愛罵人，卻會替窮人免費治病；最討厭氏族的那一套。",
+   "appearance": "佝僂的老魔族，皮膚上長著苔斑，背著一個裝滿怪草的竹簍。",
+   "background": "腐沼村的藥婆，被氏族放逐的老魔族。沼地裡能入藥也能致命的植物，她每一種都認得。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "druid",
+   "hire_cc": 865,
+   "tags": [
+    "good"
+   ],
+   "landmark": "lm_mire_herb_beds"
+  },
+  "mod_npc_nick_halfdemon": {
+   "id": "mod_npc_nick_halfdemon",
+   "name": "尼克",
+   "gender": "male",
+   "race": "demon",
+   "level": 4,
+   "location": "rotmarsh",
+   "personality": "機靈、愛吹牛、怕痛；一心想去人類的城市看看。",
+   "appearance": "瘦小的半魔少年，頭上的小角藏在帽子底下，手腳很快。",
+   "background": "從某個氏族逃出來的半魔小賊，靠替商隊跑腿和順手牽羊過活。他聽說人類的城市裡沒人在乎你有沒有角。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "rogue",
+   "hire_cc": 400,
+   "lineage": "半魔",
+   "tags": [
+    "traveler"
+   ],
+   "haunts": [
+    {
+     "location": "rotmarsh",
+     "zone": "town",
+     "weight": 3
+    },
+    {
+     "location": "ashport",
+     "zone": "town",
+     "weight": 1
+    }
+   ]
+  },
+  "mod_npc_vespa": {
+   "id": "mod_npc_vespa",
+   "name": "維斯帕",
+   "gender": "female",
+   "race": "demon",
+   "level": 12,
+   "location": "ashport",
+   "personality": "優雅、守信，價錢永遠合理得可怕；從不問買家要拿貨去做什麼。",
+   "appearance": "穿黑色長裙的半魔女子，一隻眼睛是人類的褐色，另一隻是魔族的金色。",
+   "background": "深淵交易所的主人，連靈魂與時間都敢買賣。灰港鎮無王無律，她的規矩就是律法。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "rogue",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "深淵交易所",
+   "lineage": "半魔",
+   "tags": [
+    "merchant"
+   ],
+   "relations": {
+    "mod_npc_faceless_salo": "人類世界的生意夥伴"
+   },
+   "landmark": "lm_abyss_exchange"
+  },
+  "mod_npc_captain_hagen": {
+   "id": "mod_npc_captain_hagen",
+   "name": "哈根船長",
+   "gender": "male",
+   "race": "human",
+   "level": 7,
+   "location": "ashport",
+   "personality": "固執、愛講鬼故事，堅稱自己見過「永不靠岸的船」；沒人信他，他也不在乎。",
+   "appearance": "獨眼的老船長，鬍子被海風吹成鹽白色，手裡總拿著一個空酒瓶。",
+   "background": "在灰港鎮靠岸二十年的人類船長。他說那艘船上載著被放逐的領主靈魂，而他的大副就在船上。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "fighter",
+   "hire_cc": 865,
+   "tags": [
+    "traveler"
+   ],
+   "landmark": "lm_greysail_pier"
+  },
+  "mod_npc_sebastian_eger": {
+   "id": "mod_npc_sebastian_eger",
+   "name": "塞巴斯欽・馮・艾格",
+   "gender": "male",
+   "race": "human",
+   "level": 6,
+   "location": "ashport",
+   "personality": "風度翩翩、玩世不恭，嘴上掛著帝國貴族的禮儀，心裡什麼都不信。",
+   "appearance": "穿褪色貴族禮服的中年人類，佩劍的劍鞘上還留著被刮掉的家徽。",
+   "background": "被萊茵帝國放逐的流亡貴族，靠替魔族與人類牽線過活。他說自己是被宰相陷害的，但沒有人知道真相。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "rogue",
+   "hire_cc": 690,
+   "tags": [
+    "noble",
+    "traveler"
+   ],
+   "relations": {
+    "mod_npc_eleanora_rhine": "放逐他的人——至少他是這麼說的"
+   },
+   "haunts": [
+    {
+     "location": "ashport",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  }
+ }
+}

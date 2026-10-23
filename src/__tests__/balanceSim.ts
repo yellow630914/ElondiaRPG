@@ -133,10 +133,12 @@ function fight(group: EncounterGroup, level: number, seed: number, classes: stri
 }
 
 /** 每座地下城每一層的層主戰（隊伍等級 = 層主等級 + levelOffset） */
-export function bossFights(trials: number, levelOffset = 0): FightRow[] {
+export function bossFights(trials: number, levelOffset = 0, only?: { dungeon: string; layer: string }): FightRow[] {
   const rows: FightRow[] = []
   for (const [dungeon, enc] of Object.entries(dungeonEncounters)) {
+    if (only && dungeon !== only.dungeon) continue
     for (const [layer, group] of Object.entries(enc.bosses ?? {})) {
+      if (only && layer !== only.layer) continue
       const boss = group?.[0]?.[0]
       if (!group || !boss || !enemies[boss]) continue
       const level = Math.max(1, enemies[boss]!.level + levelOffset)

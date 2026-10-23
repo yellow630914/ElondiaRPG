@@ -95,6 +95,19 @@ export const usePrompts = defineStore('prompts', () => {
     return id
   }
 
+  /** 新的一組：用一份設定（世界包帶來的），回傳 id */
+  function createSetFrom(name: string, raw: unknown): string {
+    const id = newSetId()
+    sets.value.push({ id, name: name.trim().slice(0, 30) || '新的提示詞組', config: normalizeConfig(JSON.parse(JSON.stringify(raw))) })
+    persist()
+    return id
+  }
+
+  /** 某一組的設定（匯出世界包用） */
+  function setConfig(id: string): PromptConfig | undefined {
+    return sets.value.find((x) => x.id === id)?.config
+  }
+
   function renameSet(id: string, name: string) {
     const x = sets.value.find((y) => y.id === id)
     if (!x || !name.trim()) return
@@ -300,7 +313,7 @@ export const usePrompts = defineStore('prompts', () => {
 
   return {
     config, book, items, ensureLoaded, composeOptions,
-    sets, active, activeName, switchSet, createSet, renameSet, deleteSet,
+    sets, active, activeName, switchSet, createSet, createSetFrom, setConfig, renameSet, deleteSet,
     addEntry, duplicateEntry, removeEntry, moveEntry, restoreEntry, restorePresets, presetOf,
     isCustomLore, updateLore, resetLore, addLore, removeLore,
     exportEntries, importEntries, exportLore, importLore,

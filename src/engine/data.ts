@@ -81,6 +81,8 @@ export interface NpcDef {
   level: number
   location: string
   hire_cc: number
+  /** 不受雇用（統治者、機構首長……）：不出現在雇用候選、不能談雇用；特殊任務的「任務同行」不受影響 */
+  unhireable?: boolean
   personality: string
   faction?: string
   appearance?: string

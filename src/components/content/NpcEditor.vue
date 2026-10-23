@@ -213,7 +213,8 @@ function setKeeper(v: string) {
         </label>
         <label v-else>職業描述 <input v-model="draft.occupation" maxlength="12" placeholder="鐵匠、修女……" /></label>
         <label>等級 <input v-model.number="draft.level" type="number" min="1" max="20" /></label>
-        <label v-if="draft.kind !== 'commoner'">雇傭要價（白鸛幣） <input v-model.number="draft.hire_cc" type="number" min="0" /></label>
+        <label v-if="draft.kind !== 'commoner'">雇傭要價（白鸛幣） <input v-model.number="draft.hire_cc" type="number" min="0" :disabled="draft.unhireable" /></label>
+        <label v-if="draft.kind !== 'commoner'" class="check" title="統治者、機構首長這類不會跟著冒險者走的人；特殊任務的「任務同行」不受影響"><input v-model="draft.unhireable" type="checkbox" /> 不受雇用</label>
         <label>勢力 <input v-model="draft.faction" maxlength="30" /></label>
         <label>出身 <input v-model="draft.lineage" maxlength="30" placeholder="部族、氏族……" /></label>
       </div>
