@@ -1,9 +1,9 @@
-# 自訂內容（🛠️ 內容頁籤）
+# 自訂內容（🌍 世界頁籤）
 
 > 上層：[GAME_DESIGN](GAME_DESIGN.md)。下層：[CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md)（內容之間的引用與刪除保護）。各種內容的遊戲規則：怪物 [MONSTERS](MONSTERS.md)／[COMBAT_SYSTEM](COMBAT_SYSTEM.md)、物品與裝備 [ITEMS](ITEMS.md)、特殊任務與固定 NPC 的劇情條件 [STORY_QUESTS](STORY_QUESTS.md)、NPC [NPC_SYSTEM](NPC_SYSTEM.md)。
 > 程式在 `src/engine/mods.ts`（覆寫的整理與套用）、`src/stores/content.ts`（保存）、`src/components/ContentView.vue` 與 `src/components/content/`（編輯畫面）。
 
-在首頁的「🌍 世界管理」（或遊戲中上方的「🛠️ 內容」）新增或修改怪物、物品、裝備底材、材料、技能、特質、固定 NPC 與特殊任務。
+在首頁的「🌍 世界管理」（或遊戲中上方的「🌍 世界」）新增或修改怪物、物品、裝備底材、材料、技能、特質、固定 NPC 與特殊任務。
 
 ## 0. 世界
 

@@ -510,7 +510,7 @@ function resetAll() {
     </div>
 
     <div class="row footer small">
-      <span class="muted">自訂內容存在這個瀏覽器，所有存檔共用。</span>
+      <span class="muted">這些內容屬於世界「{{ content.activeName }}」，用這個世界的存檔共用。</span>
       <span class="spacer" />
       <button class="small" @click="exportAll">📤 匯出自訂內容</button>
       <button class="small" title="會取代目前所有的自訂內容" @click="fileInput?.click()">📥 匯入自訂內容</button>

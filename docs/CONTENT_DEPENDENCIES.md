@@ -3,7 +3,7 @@
 > 上層：[CONTENT_EDITOR](CONTENT_EDITOR.md)。相關：[SAVES](SAVES.md)（讀檔時的清理）、[STORY_QUESTS](STORY_QUESTS.md)（檢查任務鏈）。
 > 程式：`src/engine/usage.ts`（引用檢查）、`src/engine/mods.ts`（整理與套用）、`src/stores/content.ts`（刪除、改名）、`src/engine/state.ts` 的 `migrate`／`pruneAbilities`／`prunePerks`、`src/engine/story.ts` 的 `pruneStories`。
 
-自訂內容（🛠️ 內容）可以新增、修改、刪除；存檔在內容改變之後還會繼續用。這份文件列出各種內容互相用到的地方，以及刪掉或改壞時的保護。
+自訂內容（🌍 世界）可以新增、修改、刪除；存檔在內容改變之後還會繼續用。這份文件列出各種內容互相用到的地方，以及刪掉或改壞時的保護。
 
 ## 1. 依賴關係
 
