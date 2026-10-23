@@ -569,12 +569,13 @@ const DAMAGE_IDS = () => damageTypes.types.map((t) => t.id)
 const AFFINITY_KEYS = () => [...DAMAGE_IDS(), ...Object.keys(damageTypes.groups), 'all']
 const MOD_KEYS: (keyof Mods)[] = ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit', 'threat']
 
-function affinity(v: unknown): Record<string, number> | undefined {
+/** 抗性或攻擊加成：每項 -1～hi（裝備、特質用 2；怪物的攻擊加成到 7，也就是 ×8，見 docs/MONSTERS.md 層主的輸出） */
+function affinity(v: unknown, hi = 2): Record<string, number> | undefined {
   if (!v || typeof v !== 'object') return undefined
   const out: Record<string, number> = {}
   for (const [k, x] of Object.entries(v)) {
     if (!AFFINITY_KEYS().includes(k)) continue
-    const n = Math.round(num(x, -1, 2, 0) * 100) / 100
+    const n = Math.round(num(x, -1, hi, 0) * 100) / 100
     if (n) out[k] = n
   }
   return Object.keys(out).length ? out : undefined
@@ -621,7 +622,7 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   }
   const res = affinity(raw.resist)
   if (res) out.resist = res
-  const off = affinity(raw.offense)
+  const off = affinity(raw.offense, 7)
   if (off) out.offense = off
   // 怪物沒有法術環：只能用技能與戲法
   const abil = (raw.abilities ?? []).filter((a) => !!abilities[a] && abilities[a]!.type !== 'spell')

@@ -4,7 +4,7 @@ import { damageTypeName, damageTypes } from '@/engine/data'
 
 // 傷害倍率的加減（抗性、攻擊加成）：每列一種傷害屬性或群組
 const model = defineModel<Partial<Record<string, number>> | undefined>()
-defineProps<{ label: string }>()
+const props = withDefaults(defineProps<{ label: string; max?: number }>(), { max: 2 })
 
 const keys = [...damageTypes.types.map((t) => t.id), ...Object.keys(damageTypes.groups), 'all']
 const name = (k: string) => (k === 'all' ? '全部' : damageTypeName(k))
@@ -36,7 +36,7 @@ function add() {
       <select :value="k" @change="set(k, ($event.target as HTMLSelectElement).value, v)">
         <option v-for="o in keys" :key="o" :value="o">{{ name(o) }}</option>
       </select>
-      <input type="number" step="0.25" min="-1" max="2" :value="v" @change="set(k, k, Number(($event.target as HTMLInputElement).value))" />
+      <input type="number" step="0.25" :min="-1" :max="props.max" :value="v" @change="set(k, k, Number(($event.target as HTMLInputElement).value))" />
       <span class="small muted">×{{ Math.max(0, Math.round((1 + v) * 100) / 100) }}</span>
       <button class="small" @click="remove(k)">×</button>
     </span>
