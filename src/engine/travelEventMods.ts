@@ -62,7 +62,8 @@ function check(v: unknown): StoryCheck | undefined {
   return { attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr! : 'int', dc: Math.round(num(c.dc, 1, 40, 12)) }
 }
 
-/** 事件的結果：特殊任務的結果，拿掉只有任務用得到的（完成、失敗、再來一次、任務同行） */
+/** 事件的結果：特殊任務的結果，拿掉只有任務用得到的（完成、失敗、再來一次、任務同行）。
+ * 事件不能讓主角淪為奴隸（只留給特殊任務），也不能直接把隊伍送進地下城（不花時間就開始探索） */
 function outcome(v: unknown): StoryOutcome | undefined {
   const o = sanitizeOutcome(v)
   if (!o) return undefined
@@ -71,6 +72,11 @@ function outcome(v: unknown): StoryOutcome | undefined {
   delete o.retry
   delete o.join
   delete o.leave
+  if (o.effects) {
+    o.effects = o.effects.filter((e) => e.type !== 'enslave_player')
+    if (!o.effects.length) delete o.effects
+  }
+  if (o.travel_to && geography.locations.find((l) => l.id === o.travel_to)?.type === 'dungeon') delete o.travel_to
   return Object.keys(o).length ? o : undefined
 }
 

@@ -100,7 +100,7 @@ function restore() {
         <tr v-for="id in ids" :key="id">
           <th>{{ name(id) }}</th>
           <td v-for="w in WEIGHTS" :key="w.key">
-            <input type="number" min="0" max="100" style="width: 64px" :value="weights(w.key)[id] ?? 0" @input="setWeight(w.key, id, Number(($event.target as HTMLInputElement).value))" />
+            <input type="number" min="0" max="100" step="0.1" style="width: 64px" :value="weights(w.key)[id] ?? 0" @input="setWeight(w.key, id, Number(($event.target as HTMLInputElement).value))" />
           </td>
         </tr>
       </table>

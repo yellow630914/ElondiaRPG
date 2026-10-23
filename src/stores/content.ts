@@ -10,12 +10,12 @@ import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, typ
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
-  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinTattoo, builtinMark,
+  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinTattoo, builtinMark, builtinMarkRules,
 } from '@/engine/mods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { perkRules, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { npcModFromState } from '@/engine/promoteNpc'
-import { builtinLandmark, landmarkUsage, sanitizeLandmarkMod, type LandmarkMod } from '@/engine/landmarkMods'
+import { builtinLandmark, landmarkSpotProblem, landmarkUsage, sanitizeLandmarkMod, type LandmarkMod } from '@/engine/landmarkMods'
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import { pruneSpecialMaps } from '@/engine/specialMaps'
 import { pruneRoadEvent } from '@/engine/road'
@@ -594,7 +594,7 @@ export const useContent = defineStore('content', () => {
     save()
   }
   function saveMarkRules(draft: Partial<MarkRulesMod>) {
-    ;(mods.value.markRules ??= {}).rules = sanitizeMarkRules(draft, new Set(Object.keys(slaveryRules.contracts)))
+    ;(mods.value.markRules ??= {}).rules = sanitizeMarkRules(draft, new Set(Object.keys(slaveryRules.contracts)), builtinMarkRules())
     save()
   }
   function restoreMarkRules() {
@@ -664,9 +664,8 @@ export const useContent = defineStore('content', () => {
   /** 存地標：位置要是那個聚落的一格空地（道路），或這個地標現在的格子 */
   function saveLandmark(id: string, draft: Partial<LandmarkMod>) {
     const m = sanitizeLandmarkMod(id, draft)
-    const area = settlementArea(m.at.area)
-    const kind = area?.cells[m.at.y * area.width + m.at.x]?.kind
-    if (kind !== 'floor' && kind !== id) throw new Error(`${area?.name ?? m.at.area}（${m.at.x}, ${m.at.y}）不是空地（道路）`)
+    const why = landmarkSpotProblem(id, m.at)
+    if (why) throw new Error(`${settlementArea(m.at.area)?.name ?? m.at.area}（${m.at.x}, ${m.at.y}）${why}`)
     mods.value.landmarks ??= {}
     const base = builtinLandmark(id)
     if (base && JSON.stringify(m) === JSON.stringify(sanitizeLandmarkMod(id, base))) delete mods.value.landmarks[id]

@@ -6,6 +6,7 @@ import {
   type DungeonLayerId, type EncounterGroup, type ShopType, type SpecialConnection, type SpecialMapDef,
 } from './data'
 import { settlementArea, type CellKind } from './grid'
+import { isLotCell } from './homes'
 import type { Lighting } from './light'
 import { cleanFlag } from './storyFlags'
 
@@ -137,10 +138,10 @@ export function sanitizeSpecialMapMod(
       if (!size) continue
       const { x, y } = c.to
       if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= size[0] || y >= size[1]) continue
-      // 城鎮那一頭要是牆或水
+      // 城鎮那一頭要是牆或水，而且不能是待售的空地（遊戲裡會變成空地，通道只剩單向）
       if (!area.startsWith('sm/')) {
         const kind = settlementArea(area, false)?.cells[y * size[0] + x]?.kind
-        if (kind !== 'wall' && kind !== 'water') continue
+        if ((kind !== 'wall' && kind !== 'water') || isLotCell(area, x, y)) continue
       }
       const conn: SpecialConnection = { at: { x: c.at.x, y: c.at.y }, to: { area, x, y } }
       const flags = [...new Set((c.requires?.flags ?? []).map(cleanFlag).filter(Boolean))].slice(0, L.flags)

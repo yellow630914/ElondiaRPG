@@ -23,7 +23,7 @@ import { cleanPerkEffects, describeEffects, type PerkLimits } from './perks'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
-import { applyLandmarkMod, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
+import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
@@ -35,7 +35,13 @@ export const CHEST_LAYERS: ChestLayer[] = DUNGEON_LAYER_IDS
 export type GatherPlace = 'wild' | 'dungeon'
 
 /** 怪物出現的地方：table 為遭遇表（wild:地區、dungeon:地點:層、boss:地點:層），count 為一組幾隻，weight 為放幾組（越多越常遇到） */
-export interface Placement { table: string; count: number; weight?: number }
+export interface Placement {
+  table: string
+  count: number
+  weight?: number
+  /** 層主（boss: 開頭的表）的護衛：預設沒有（層主單獨出場，平衡也是這樣算的） */
+  guards?: [string, number][]
+}
 
 export interface EnemyMod extends EnemyDef {
   custom?: boolean
@@ -291,8 +297,9 @@ function applyPlacements(id: string, m: EnemyMod) {
       const [, loc, layer] = p.table.split(':')
       const d = dungeonEncounters[loc!]
       if (!d) continue
-      ;(d.bosses ??= {})[layer as 'shallow'] = [[id, count]]
-      if (layer === 'deep') d.boss = [[id, count]]
+      const group: [string, number][] = [[id, count], ...(p.guards ?? []).filter(([g]) => !!enemies[g])]
+      ;(d.bosses ??= {})[layer as 'shallow'] = group
+      if (layer === 'deep') d.boss = clone(group)
       continue
     }
     const groups = tableGroups(p.table)
@@ -441,11 +448,19 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('奴隸印記', mods.marks ?? {}, (id, m) => {
     slaveryRules.contracts[id] = strip(m, ['custom'])
   })
-  tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)))))
-  tryEach('地標', mods.landmarks ?? {}, (id, m) => applyLandmarkMod(id, sanitizeLandmarkMod(id, m)))
+  tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)), builtinMarkRules())))
+  tryEach('地標', mods.landmarks ?? {}, (id, m) => {
+    const l = sanitizeLandmarkMod(id, m)
+    applyLandmarkMod(id, l)
+    // 擺不上去的照樣套用（引用它的 NPC、任務才不會失效），但要讓作者知道
+    const why = landmarkSpotProblem(id, l.at)
+    if (why) problems.push(`地標「${l.name}」的位置（${l.at.x}, ${l.at.y}）${why}，地圖上不會出現`)
+  })
   tryEach('商店', mods.shops ?? {}, (id, m) => applyShopMod(id, m))
   // 商店的位置：移動內建的店、擺自建的店（擺不上去的略過）
-  tryEach('商店的位置', { all: mods.shops ?? {} }, (_id, all) => applyShopPlacements(all))
+  tryEach('商店的位置', { all: mods.shops ?? {} }, (_id, all) => {
+    for (const r of applyShopPlacements(all)) problems.push(`商店「${(shopRules.types as Record<string, { name: string } | undefined>)[r.shop]?.name ?? r.shop}」的位置（${r.at.area} ${r.at.x}, ${r.at.y}）：${r.reason}`)
+  })
   // 特殊地圖（商店之後：可以擺自建的店）：固定 NPC、特殊任務會用到；互相接的通道要先知道所有自建的地圖
   const knownMaps = { ...specialMaps, ...(mods.specialMaps ?? {}) }
   // 遭遇表與資源：物品、怪物在後面才套用，這一包裡的先算存在
@@ -609,7 +624,8 @@ export const ENEMY_KINDS: Record<string, string> = {
   beast: '野獸', humanoid: '人形', undead: '不死', spirit: '靈體', construct: '構裝', plant: '植物', demon: '魔族', elemental: '元素', fey: '妖精',
 }
 
-export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolean): EnemyMod {
+/** knownEnemy：層主護衛的怪物算不算存在（匯入時同一包裡的新怪物也算） */
+export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolean, knownEnemy: (id: string) => boolean = (x) => !!enemies[x]): EnemyMod {
   const attrs = Object.fromEntries(ATTR_IDS.map((a) => [a, int(raw.attrs?.[a], 1, 30, 10)])) as EnemyDef['attrs']
   const w = raw.weapon ?? { dice: '1d6', type: 'slashing', attr: 'str' as AttrId }
   const loot = (raw.loot ?? [])
@@ -619,7 +635,18 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   const money = raw.money_cc && raw.money_cc.length === 2 ? [int(raw.money_cc[0], 0, 1e6, 0), int(raw.money_cc[1], 0, 1e6, 0)] as [number, number] : undefined
   const spawns = (raw.spawns ?? [])
     .filter((p) => p && typeof p.table === 'string' && tableOptions().some((t) => t.key === p.table))
-    .map((p) => ({ table: p.table, count: int(p.count, 1, 6, 1), ...(int(p.weight, 1, 5, 1) > 1 ? { weight: int(p.weight, 1, 5, 1) } : {}) }))
+    .map((p) => {
+      const out: Placement = { table: p.table, count: int(p.count, 1, 6, 1), ...(int(p.weight, 1, 5, 1) > 1 ? { weight: int(p.weight, 1, 5, 1) } : {}) }
+      if (p.table.startsWith('boss:')) {
+        delete out.weight
+        const guards = (Array.isArray(p.guards) ? p.guards : [])
+          .filter((g): g is [string, number] => Array.isArray(g) && typeof g[0] === 'string' && g[0] !== id && knownEnemy(g[0]))
+          .slice(0, 2)
+          .map(([g, n]) => [g, int(n, 1, 4, 1)] as [string, number])
+        if (guards.length) out.guards = guards
+      }
+      return out
+    })
   const out: EnemyMod = {
     id,
     name: str(raw.name, 20) || '未命名的怪物',
@@ -937,7 +964,7 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, t] of Object.entries(out.tattoos)) if (t.custom && !tattooRules.templates[id]) tattooRules.templates[id] = strip(t, ['custom'])
   for (const [id, v] of Object.entries(r.marks ?? {})) out.marks[id] = sanitizeMarkMod(v, !!v.custom || !snapshot.marks[id])
   for (const [id, m] of Object.entries(out.marks)) if (m.custom && !slaveryRules.contracts[id]) slaveryRules.contracts[id] = strip(m, ['custom'])
-  if (r.markRules?.rules) out.markRules.rules = sanitizeMarkRules(r.markRules.rules, new Set([...Object.keys(snapshot.marks), ...Object.keys(out.marks)]))
+  if (r.markRules?.rules) out.markRules.rules = sanitizeMarkRules(r.markRules.rules, new Set([...Object.keys(snapshot.marks), ...Object.keys(out.marks)]), builtinMarkRules())
   for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
   for (const [id, a] of Object.entries(out.abilities)) if (a.custom && !abilities[id]) abilities[id] = { ...strip(a, ['custom']), id }
@@ -989,7 +1016,7 @@ export function normalizeMods(raw: unknown): ContentMods {
       // 不存在的店（例如之後的版本拿掉了）：略過
     }
   }
-  for (const [id, v] of Object.entries(r.enemies ?? {})) out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id])
+  for (const [id, v] of Object.entries(r.enemies ?? {})) out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id], (x) => !!enemies[x] || !!r.enemies?.[x])
   for (const [id, v] of Object.entries(r.npcs ?? {})) out.npcs[id] = sanitizeNpc(id, v, !!v.custom || !builtinNpc(id))
   for (const [id, v] of Object.entries(r.stories ?? {})) out.stories[id] = sanitizeStory(id, v, !!v.custom || !builtinStory(id))
   // 城鎮事件的設施可以是同一包裡的自建商店（還沒套用）

@@ -128,13 +128,12 @@ export function currentMarkRules(): MarkRulesMod {
   }
 }
 
-/** 整理印記設定：只留存在的模板；權重 0～100；輕重順序至少一個 */
-export function sanitizeMarkRules(raw: Partial<MarkRulesMod>, known: Set<string>): MarkRulesMod {
-  const base = currentMarkRules()
+/** 整理印記設定：只留存在的模板；權重 0～100（保留兩位小數，抽選依比例）；輕重順序至少一個。沒寫的欄位用 base（原版的設定） */
+export function sanitizeMarkRules(raw: Partial<MarkRulesMod>, known: Set<string>, base: MarkRulesMod = currentMarkRules()): MarkRulesMod {
   const id = (v: unknown, fallback: string) => (typeof v === 'string' && known.has(v) ? v : known.has(fallback) ? fallback : [...known][0]!)
   const weights = (v: unknown, fallback: Record<string, number>) => {
     const src = v && typeof v === 'object' ? v as Record<string, unknown> : fallback
-    const out = Object.fromEntries(Object.entries(src).filter(([k]) => known.has(k)).map(([k, w]) => [k, clamp(w, [0, 100], 0)]).filter(([, w]) => w))
+    const out = Object.fromEntries(Object.entries(src).filter(([k]) => known.has(k)).map(([k, w]) => [k, clamp(w, [0, 100], 0, false)]).filter(([, w]) => w))
     return Object.keys(out).length ? out : { [id(undefined, base.roles.default)]: 1 }
   }
   const severity = [...new Set((Array.isArray(raw.severity) ? raw.severity : base.severity).filter((x): x is string => typeof x === 'string' && known.has(x)))]

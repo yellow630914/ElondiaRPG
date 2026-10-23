@@ -38,6 +38,12 @@ const itemNames = computed(() => {
   return itemRules.items.map((i) => i.name)
 })
 const tables = tableOptions()
+// 層主的護衛（預設沒有：層主單獨出場，平衡也是這樣算的）
+const guardOptions = computed(() => Object.values(enemies).filter((e) => e.id !== props.id).sort((a, b) => a.level - b.level))
+function setGuard(s: Placement, id: string) {
+  if (id) s.guards = [[id, s.guards?.[0]?.[1] ?? 1]]
+  else delete s.guards
+}
 const builtinPlaces = computed(() => builtinPlacementsOf(props.id))
 const nowPlaces = computed(() => {
   void content.version
@@ -273,13 +279,22 @@ function remove() {
           </label>
         </div>
       </template>
-      <p class="small muted">另外加入：每一組是遭遇表裡的一個選項（遭遇時從所有選項平均抽一個），權重是放幾組。層主會取代原本的層主。</p>
+      <p class="small muted">另外加入：每一組是遭遇表裡的一個選項（遭遇時從所有選項平均抽一個），權重是放幾組。層主會取代原本的層主（包括原本的護衛）；要護衛時另外選。</p>
       <div v-for="(s, i) in draft.spawns ?? []" :key="i" class="row">
         <select v-model="s.table" class="grow">
           <option v-for="t in tables" :key="t.key" :value="t.key">{{ t.label }}</option>
         </select>
         <label class="small">一組 <input v-model.number="s.count" class="num" type="number" min="1" max="6" /> 隻</label>
         <label v-if="!s.table.startsWith('boss:')" class="small">權重 <input v-model.number="s.weight" class="num" type="number" min="1" max="5" placeholder="1" /></label>
+        <template v-else>
+          <label class="small">護衛
+            <select :value="s.guards?.[0]?.[0] ?? ''" @change="setGuard(s, ($event.target as HTMLSelectElement).value)">
+              <option value="">（沒有）</option>
+              <option v-for="e in guardOptions" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option>
+            </select>
+          </label>
+          <label v-if="s.guards?.length" class="small"><input v-model.number="s.guards[0]![1]" class="num" type="number" min="1" max="4" /> 隻</label>
+        </template>
         <button class="small" @click="draft.spawns!.splice(i, 1)">移除</button>
       </div>
       <button class="small" @click="addSpawn">＋ 出現地點</button>

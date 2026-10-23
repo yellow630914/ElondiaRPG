@@ -9,6 +9,7 @@ import {
 } from './data'
 import { blockKeys, CELL_ICON, setCellOverrides, settlementArea, type CellKind } from './grid'
 import { notForSale } from './trade'
+import { isLotCell } from './homes'
 
 export interface CellRef { area: string; x: number; y: number }
 
@@ -324,8 +325,9 @@ export function computePlacements(shops: Record<string, ShopMod>): PlacementResu
   const place = (shop: string, kind: CellKind, at: CellRef): boolean => {
     const a = kindsOf(at.area)
     const key = `${at.area}:${index(at)}`
-    if (a.kinds[index(at)] !== 'floor' || taken.has(key)) {
-      rejected.push({ shop, at, reason: taken.has(key) ? '那一格已經擺了別的店' : '那一格不是空地（道路）' })
+    const reason = taken.has(key) ? '那一格已經擺了別的店' : a.kinds[index(at)] !== 'floor' ? '那一格不是空地（道路）' : isLotCell(at.area, at.x, at.y) ? '那一格是待售的空地' : undefined
+    if (reason) {
+      rejected.push({ shop, at, reason })
       return false
     }
     a.kinds[index(at)] = kind
@@ -349,9 +351,11 @@ export function computePlacements(shops: Record<string, ShopMod>): PlacementResu
   return { overrides, rejected }
 }
 
-/** 套用所有商店的位置（擺不上去的略過） */
-export function applyShopPlacements(shops: Record<string, ShopMod>) {
-  setCellOverrides(computePlacements(shops).overrides)
+/** 套用所有商店的位置（擺不上去的略過），回傳擺不上去的與原因 */
+export function applyShopPlacements(shops: Record<string, ShopMod>): PlacementResult['rejected'] {
+  const r = computePlacements(shops)
+  setCellOverrides(r.overrides)
+  return r.rejected
 }
 
 /** 內建商店原本在哪些格子（所有聚落） */

@@ -6,7 +6,7 @@
 // - 夥伴可以留在家裡（不算離隊）：不佔隊伍人數、不參加戰鬥，回家時可以帶上。
 
 import { snapshot } from './character'
-import { combatRules, craftRules, homeRules, itemDef, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
+import { combatRules, craftRules, geography, homeRules, itemDef, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
 import { blocksFor, placeAt, position, settlementKey, type Area, type Cell } from './grid'
 import { npcRecord, registerNpc } from './npcs'
 import { partyRoom } from './party'
@@ -81,6 +81,13 @@ export function lotsOf(locationId: string): Lot[] {
   const lots = picked.map(({ order: _o, ...lot }) => lot)
   lotCache.set(locationId, lots)
   return lots
+}
+
+/** 這一格是不是待售的空地（遊戲裡會被空地蓋掉：地標、商店、特殊地圖的通道都不能放在這裡） */
+export function isLotCell(area: string, x: number, y: number): boolean {
+  const location = area.split('/')[0]!
+  if (!geography.locations.some((l) => l.id === location)) return false
+  return lotsOf(location).some((l) => l.area === area && l.x === x && l.y === y)
 }
 
 // ---- 主人的家（固定設施 manor） ----

@@ -8,9 +8,19 @@ import { cleanFlag } from './storyFlags'
 import { sanitizeEffects } from './storyMods'
 import type { RewardEffect } from './effects'
 import { blockKeys, CELL_ICON, invalidateBlocks, settlementArea, type CellKind } from './grid'
+import { isLotCell } from './homes'
 
 export interface LandmarkMod extends LandmarkDef {
   custom?: boolean
+}
+
+/** 地標的格子有什麼問題：要是道路（或已經是這個地標），而且不能是待售的空地；沒問題時回傳 undefined */
+export function landmarkSpotProblem(id: string, at: { area: string; x: number; y: number }): string | undefined {
+  const area = settlementArea(at.area)
+  const kind = area?.cells[at.y * area.width + at.x]?.kind
+  if (kind !== 'floor' && kind !== id) return '不是空地（道路）'
+  if (isLotCell(at.area, at.x, at.y)) return '是待售的空地（會被空地蓋掉）'
+  return undefined
 }
 
 export const LANDMARK_LIMITS = {

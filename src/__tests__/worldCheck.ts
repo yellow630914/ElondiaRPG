@@ -6,7 +6,8 @@
 // 3. 一致性：名稱重複、沒有出現地點的怪物、沒有出沒地點的固定 NPC……
 // 4. 平衡：怪物的耐打度與戰鬥模擬、技能的傷害、物品的價格、特質強度、特殊任務的報酬。
 // 5. 提示詞：世界書的修改與新增條目。
-import { abilities, dungeonEncounters, enemies, isLayerBoss, itemRules, npcs as namedNpcs, perkRules, stories, type AbilityDef, type DamagePart, type ItemDef } from '@/engine/data'
+import { abilities, dungeonEncounters, enemies, isLayerBoss, itemDef, itemRules, locationById, npcs as namedNpcs, perkRules, stories, type AbilityDef, type DamagePart, type ItemDef } from '@/engine/data'
+import { blockKeys, settlementArea } from '@/engine/grid'
 import { rewardRange } from '@/engine/materialQuests'
 import type { GuildRank } from '@/engine/types'
 import { gearPrice } from '@/engine/gear'
@@ -142,6 +143,30 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
     }
   }
   for (const k of Object.keys(rawContent)) if (k !== 'version' && !(SECTIONS as readonly string[]).includes(k)) add('warn', '整理', `不認得的欄位「${k}」（會被忽略）`)
+  // 整理時加上去的限制（差異只比寫了的欄位，這些要另外說）
+  for (const [nm, it] of Object.entries(rawContent.items ?? {})) {
+    const use = (it as { use?: { combat_only?: boolean } }).use
+    if (use && !use.combat_only && mods.items[nm]?.use?.combat_only) add('info', '整理', `物品「${nm}」的使用效果只能在戰鬥中用（戰鬥外只支援治療、法術位、狀況與特質），整理時加上了 combat_only`)
+  }
+  // 特殊任務與事件不支援的效果：整理時會拿掉，說明替代的寫法
+  const ALT: Record<string, string> = {
+    flag: '用結果的 set_flags／clear_flags', meet: '用 affinity 效果或 npc 任務點（認識那位 NPC）', intel: '用情報商（start.kind: informant）或旅途事件開頭',
+    join_party: '任務中用結果的 join（任務同行），結束後用 companion 效果正式入隊', enslave_player: '事件不能讓主角淪為奴隸，只有特殊任務可以',
+  }
+  const unsupported = (where: string, v: unknown, event: boolean) => {
+    if (!v || typeof v !== 'object') return
+    if (Array.isArray(v)) return v.forEach((x) => unsupported(where, x, event))
+    for (const [k, x] of Object.entries(v)) {
+      if ((k === 'effects' || k === 'rewards') && Array.isArray(x)) {
+        for (const e of x as { type?: string }[]) {
+          const t = e?.type ?? ''
+          if (ALT[t] && (t !== 'enslave_player' || event)) add('warn', '整理', `${where}的效果「${t}」不支援，整理時拿掉了：${ALT[t]}`)
+        }
+      } else unsupported(where, x, event)
+    }
+  }
+  for (const [id, s] of Object.entries(rawContent.stories ?? {})) unsupported(`特殊任務「${id}」`, s, false)
+  for (const [id, e] of Object.entries(rawContent.travelEvents ?? {})) unsupported(`事件「${id}」`, e, true)
 
   // 2. 套用：有錯誤的特殊任務匯入時不收
   const dropped = dropBrokenStories(mods)
@@ -172,6 +197,19 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
     if (e.custom && builtinEnemyNames.has(e.name)) add('warn', '怪物', `「${e.name}」和內建怪物同名`)
     if ((enemyNames.get(e.name) ?? 0) > 1 && e.custom) add('warn', '怪物', `名字重複：「${e.name}」`)
     if (e.custom && !e.spawns?.length && !storyFoes.has(id) && !placed.has(id)) add('warn', '怪物', `「${e.name}」沒有出現地點，也沒有特殊任務用到：遊戲裡遇不到`)
+  }
+
+  // 引用的物品與商店（整理時不拿掉，以免之後的版本新增的東西被誤刪；這裡套用之後檢查，同一包的新物品算數）
+  for (const id of Object.keys(mods.enemies)) {
+    for (const l of enemies[id]?.loot ?? []) if (!itemDef(l.item)) add('warn', '怪物', `「${enemies[id]!.name}」的掉落「${l.item}」不存在：打贏後會拿到沒有定義的物品`)
+  }
+  for (const [nm, it] of Object.entries(mods.items)) {
+    for (const x of it.recipe?.inputs ?? []) if (!itemDef(x.name)) add('warn', '物品', `「${nm}」的配方材料「${x.name}」不存在：永遠做不出來`)
+  }
+  for (const [id, n] of Object.entries(mods.npcs)) {
+    if (!n.keeper) continue
+    const here = blockKeys(n.location).some((k) => settlementArea(k)?.cells.some((c) => c.kind === n.keeper))
+    if (!here) add('warn', '固定 NPC', `「${n.name}」（${id}）顧的店「${n.keeper}」不在${locationById(n.location).name}：他不會出現`)
   }
 
   // 4. 平衡：怪物

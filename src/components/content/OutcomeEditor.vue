@@ -2,7 +2,8 @@
 import { computed } from 'vue'
 import { geography, npcs as namedNpcs, specialMaps, type StoryOutcome } from '@/engine/data'
 import { travelEvents } from '@/engine/road'
-import { SIDE_MAPS } from '@/engine/storyMods'
+import { SIDE_MAPS, STORY_EFFECTS } from '@/engine/storyMods'
+import type { RewardEffect } from '@/engine/effects'
 import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
 
@@ -11,6 +12,8 @@ import FlagInput from './FlagInput.vue'
 const model = defineModel<StoryOutcome | undefined>()
 const props = defineProps<{ label: string; optional?: boolean; event?: boolean }>()
 const o = computed(() => model.value)
+// 事件不能讓主角淪為奴隸（只有特殊任務可以）
+const EVENT_EFFECTS = (Object.keys(STORY_EFFECTS) as RewardEffect['type'][]).filter((t) => t !== 'enslave_player')
 
 function enable(on: boolean) {
   model.value = on ? {} : undefined
@@ -64,10 +67,10 @@ const end = computed({
         改去別的地點
         <select v-model="o.travel_to">
           <option :value="undefined">（無）</option>
-          <option v-for="l in geography.locations" :key="l.id" :value="l.id">{{ l.name }}</option>
+          <option v-for="l in geography.locations.filter((x) => !props.event || x.type !== 'dungeon')" :key="l.id" :value="l.id">{{ l.name }}</option>
         </select>
       </div>
-      <EffectsEditor v-model="o.effects" />
+      <EffectsEditor v-model="o.effects" :types="props.event ? EVENT_EFFECTS : undefined" />
       <div v-if="!props.event" class="row small">
         <select v-model="end">
           <option value="">任務繼續</option>
