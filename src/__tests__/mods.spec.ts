@@ -4,7 +4,7 @@ import { finishCombat, startCombat } from '@/engine/combat'
 import { dungeonEncounters, enemies, equipment, itemDef, itemRules, wildEncounters } from '@/engine/data'
 import { gearRules, gearStats } from '@/engine/gear'
 import {
-  applyContent, emptyMods, itemSources, newBase, newEnemy, newMaterial, normalizeMods, placementsOf, sanitizeEnemy, sanitizeItem,
+  applyContent, builtinEnemy, emptyMods, itemSources, newBase, newEnemy, newMaterial, normalizeMods, placementsOf, sanitizeEnemy, sanitizeItem,
   type ContentMods,
 } from '@/engine/mods'
 import { newGame } from '@/engine/state'
@@ -51,7 +51,7 @@ describe('custom monsters', () => {
     expect(enemies.goblin!.hp).toBe(99)
     expect(wildEncounters('central').some((g) => g.some(([id]) => id === 'goblin'))).toBe(false)
     applyContent(emptyMods())
-    expect(enemies.goblin!.hp).toBe(9)
+    expect(enemies.goblin!.hp).toBe(builtinEnemy('goblin')!.hp)
   })
 
   it('clamps numbers and drops unknown references', () => {
@@ -106,7 +106,7 @@ describe('content store', () => {
     c.saveEnemy('goblin', { ...enemies.goblin!, hp: 77 })
     expect(enemies.goblin!.hp).toBe(77)
     c.restoreEnemy('goblin')
-    expect(enemies.goblin!.hp).toBe(9)
+    expect(enemies.goblin!.hp).toBe(builtinEnemy('goblin')!.hp)
     expect(() => c.deleteEnemy('goblin')).toThrow('不能刪除')
     expect(() => c.deleteItem('乾糧')).toThrow('不能刪除')
 

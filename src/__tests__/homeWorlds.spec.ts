@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { enemies } from '@/engine/data'
-import { applyContent, emptyMods } from '@/engine/mods'
+import { applyContent, builtinEnemy, emptyMods } from '@/engine/mods'
 import { useContent, VANILLA } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
@@ -43,13 +43,13 @@ describe('worlds', () => {
     const c = useContent()
     expect(c.active).toBe(VANILLA)
     expect(() => c.saveEnemy('goblin', { ...enemies.goblin!, hp: 50 })).toThrow('原版世界不能修改')
-    expect(enemies.goblin!.hp).toBe(9)
+    expect(enemies.goblin!.hp).toBe(builtinEnemy('goblin')!.hp)
     const id = c.createWorld('哥布林強化版')
     c.switchWorld(id)
     c.saveEnemy('goblin', { ...enemies.goblin!, hp: 50 })
     expect(enemies.goblin!.hp).toBe(50)
     c.switchWorld(VANILLA)
-    expect(enemies.goblin!.hp).toBe(9)
+    expect(enemies.goblin!.hp).toBe(builtinEnemy('goblin')!.hp)
     // 複製一份，原本的不受影響
     const copy = c.createWorld('複製', id)
     c.switchWorld(copy)
@@ -88,7 +88,7 @@ describe('worlds', () => {
     expect(g.state).toBeNull()
     expect(g.resumeMeta?.world).toBe('強化世界')
     c.switchWorld(VANILLA)
-    expect(enemies.goblin!.hp).toBe(9)
+    expect(enemies.goblin!.hp).toBe(builtinEnemy('goblin')!.hp)
     expect(g.continueGame()).toBe(true)
     expect(c.active).toBe(id)
     expect(enemies.goblin!.hp).toBe(44)
