@@ -746,8 +746,9 @@ export const useGame = defineStore('game', () => {
       let thinking = ''
       const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts).prompt, undefined, collector.onUsage, (t) => { thinking += t })
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
-      // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型
-      if (opts.splitNarrative) delete judgment.narrative
+      // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型；
+      // 數值被程式截掉時也不採用（判定寫的是截掉前的數字），交給寫手照實際結算的數字重寫
+      if (opts.splitNarrative || judgment.adjusted?.length) delete judgment.narrative
       // 預設：判定只回傳 JSON，經過交給「敘事正文」依報告撰寫（和其他日誌一樣）。
       // 勾選「判定時順便寫出經過」而且同一個來源時，直接採用判定寫的經過，省一次呼叫。
       const report = run((st) => actions.resolveAction(st, judgment), { narrate: !judgment.narrative })

@@ -232,7 +232,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       ...(opts.dark ? { dark: true } : {}),
     }
     state.combat = combat
-    if (!beginTurn(combat, rng)) endTurn(combat, rng)
+    if (!beginTurn(combat, rng)) nextTurn(combat, rng)
     runEnemyTurns(combat, rng)
     return combat
   })
@@ -901,37 +901,58 @@ function dealDamage(
     effects.push(effect)
     parts.push({ effect, physical: isPhysical })
   }
+  // 戰報的每一筆傷害照實際扣掉的寫：各種減免依序扣，說明寫在扣到的那一筆
   const deflect = hasSpecial(target, 'reduce_next')
+  let deflected = 0
   if (deflect && physical > 0) {
-    const reduced = Math.min(physical, deflect.value ?? 0)
-    physical -= reduced
+    deflected = Math.min(physical, deflect.value ?? 0)
+    physical -= deflected
     consume(target, [deflect])
-    effects.push({ type: 'note', target: target.id, text: `偏轉 -${reduced}` })
   }
-  physical = Math.max(0, physical - target.armorDr)
-  let total = Math.max(0, physical + other - modsOf(target).dr)
+  const armorCut = Math.min(physical, target.armorDr)
+  physical -= armorCut
+  const sum = physical + other
+  let total = Math.max(0, sum - modsOf(target).dr)
+  const statusCut = sum - total
   const uncanny = hasSpecial(target, 'halve_next')
+  let halved = 0
   if (uncanny && total > 0) {
-    total = Math.floor(total / 2)
+    halved = total - Math.floor(total / 2)
+    total -= halved
     consume(target, [uncanny])
     effects.push({ type: 'note', target: target.id, text: '閃避本能：傷害減半' })
   }
-  settleDamageParts(parts, total)
+  settleDamageParts(parts, [
+    { amount: deflected, physical: true, label: '偏轉' },
+    { amount: armorCut, physical: true, label: '減傷' },
+    { amount: statusCut, physical: false, label: '減傷' },
+    { amount: halved, physical: false, label: '減半' },
+  ])
   applyHpLoss(combat, rng, target, total, effects)
   return total
 }
 
-/** 戰報記實際扣掉的傷害：減傷、偏轉、減半先從物理傷害扣，扣掉的部分寫在說明裡 */
-function settleDamageParts(parts: { effect: Effect; physical: boolean }[], total: number) {
-  let diff = parts.reduce((sum, p) => sum + (p.effect.amount ?? 0), 0) - total
-  if (diff < 0 && parts[0]) parts[0].effect.amount = (parts[0].effect.amount ?? 0) - diff
-  for (const p of [...parts.filter((x) => x.physical), ...parts.filter((x) => !x.physical)]) {
-    if (diff <= 0) break
-    const cut = Math.min(diff, p.effect.amount ?? 0)
-    if (cut <= 0) continue
-    p.effect.amount = (p.effect.amount ?? 0) - cut
-    p.effect.text = [p.effect.text, `減傷 -${cut}`].filter(Boolean).join('，')
-    diff -= cut
+/**
+ * 戰報記實際扣掉的傷害：依序套用各種減免（physical 的只扣物理那幾筆，其他的先扣物理再扣其他屬性），
+ * 扣掉的部分寫在那一筆的說明裡。負的減傷（受到的傷害變多）加在第一筆有傷害的上。
+ */
+function settleDamageParts(parts: { effect: Effect; physical: boolean }[], cuts: { amount: number; physical: boolean; label: string }[]) {
+  for (const c of cuts) {
+    if (c.amount < 0) {
+      const p = parts.find((x) => (x.effect.amount ?? 0) > 0) ?? parts[0]
+      if (p) p.effect.amount = (p.effect.amount ?? 0) - c.amount
+      continue
+    }
+    let left = c.amount
+    const order = c.physical ? parts.filter((x) => x.physical) : [...parts.filter((x) => x.physical), ...parts.filter((x) => !x.physical)]
+    for (const p of order) {
+      if (left <= 0) break
+      const cut = Math.min(left, p.effect.amount ?? 0)
+      if (cut <= 0) continue
+      p.effect.amount = (p.effect.amount ?? 0) - cut
+      p.effect.text = [p.effect.text, `${c.label} -${cut}`].filter(Boolean).join('，')
+      left -= cut
+    }
   }
 }
 
@@ -1248,7 +1269,21 @@ function checkEnd(combat: CombatState) {
 
 function endTurn(combat: CombatState, rng: Rng) {
   const actor = currentActor(combat)
-  if (actor) actor.ap = Math.min(actor.ap, actor.apMax)
+  if (actor) {
+    actor.ap = Math.min(actor.ap, actor.apMax)
+    closeTurn(actor)
+  }
+  nextTurn(combat, rng)
+}
+
+/** 這位角色的回合結束：到期的控制（撐過了這個回合）拿掉，層主的控制保護少一回合 */
+function closeTurn(actor: Combatant) {
+  actor.statuses = actor.statuses.filter((s) => s.turns > 0)
+  if (actor.controlGuard) actor.controlGuard -= 1
+}
+
+/** 輪到下一個能行動的角色 */
+function nextTurn(combat: CombatState, rng: Rng) {
   if (combat.status !== 'ongoing') return
   for (let guard = 0; guard < combat.order.length * 2; guard++) {
     combat.turn += 1
@@ -1262,10 +1297,19 @@ function endTurn(combat: CombatState, rng: Rng) {
   }
 }
 
-/** 回合開始：回復行動點、處理持續效果與控制；回傳這位角色本回合能否行動。 */
+/** 回合開始：回復行動點、處理持續效果與控制；回傳這位角色本回合能否行動。不能行動時這個回合就此結束。 */
 function beginTurn(combat: CombatState, rng: Rng): boolean {
   const actor = currentActor(combat)
   if (!actor || !isActive(actor)) return false
+  const acts = startTurn(combat, rng, actor)
+  if (!acts) closeTurn(actor)
+  return acts
+}
+
+/** 會在自己的回合中才查看的控制（嘲諷、沉默、困惑）：最後一回合到期後還要撐過這個回合 */
+const LINGERING_CONTROL = new Set(['taunt', 'silence', 'confuse'])
+
+function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
   actor.usedTurn = {}
   actor.ap = Math.min(actor.apMax, actor.ap + Math.max(0, actor.apRegen + modsOf(actor).ap_regen))
   let canAct = true
@@ -1298,8 +1342,7 @@ function beginTurn(combat: CombatState, rng: Rng): boolean {
     }
     if (s.turns > 0) s.turns -= 1
   }
-  actor.statuses = actor.statuses.filter((s) => s.turns > 0)
-  if (actor.controlGuard) actor.controlGuard -= 1
+  actor.statuses = actor.statuses.filter((s) => s.turns > 0 || LINGERING_CONTROL.has(statusDef(s.id).control ?? ''))
   checkEnd(combat)
   if (canAct && isActive(actor) && combat.status === 'ongoing' && controls(actor).has('confuse')) {
     // 困惑：隨機攻擊任何一個人，然後結束回合

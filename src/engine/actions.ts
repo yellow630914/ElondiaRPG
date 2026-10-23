@@ -216,8 +216,9 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   let flags = 0
   let money = 0
   const adjusted: string[] = []
-  // 同一樣物品這次已經給出去的數量（AI 可能分兩筆給出同一樣東西）
+  // 同一樣物品這次已經給出去、拿到的數量（AI 可能分兩筆寫同一樣東西）
   const given = new Map<string, number>()
+  const got = new Map<string, number>()
   for (const e of Array.isArray(r.effects) ? r.effects : []) {
     if (!e || typeof e !== 'object') continue
     const x = e as Record<string, unknown>
@@ -280,13 +281,25 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
       case 'item': {
         const name = clipText(x.name, 20)
         const qty = num(x.qty)
-        if (!name || Number.isNaN(qty) || items >= caps.items) break
+        if (!name || Number.isNaN(qty)) break
         const q = Math.round(qty)
-        const have = (state.inventory.find((i) => i.name === name)?.qty ?? 0) - (given.get(name) ?? 0)
-        const n = q > 0 ? Math.min(q, caps.item_qty) : -Math.min(-q, Math.max(0, have))
-        if (q > caps.item_qty) adjusted.push(`${name}只得到 ${n} 個（提議的 ${q} 個超過上限）`)
+        if (!q) break
+        if (items >= caps.items) {
+          adjusted.push(`${name}沒有算進去（一次最多 ${caps.items} 筆物品）`)
+          break
+        }
+        let n: number
+        if (q > 0) {
+          n = Math.min(q, Math.max(0, caps.item_qty - (got.get(name) ?? 0)))
+          if (n < q) adjusted.push(`${name}只得到 ${n} 個（提議的 ${q} 個超過上限）`)
+        } else {
+          const have = (state.inventory.find((i) => i.name === name)?.qty ?? 0) - (given.get(name) ?? 0)
+          n = -Math.min(-q, Math.max(0, have))
+          if (-n < -q) adjusted.push(`${name}只交得出 ${-n} 個（提議交出 ${-q} 個，身上不夠）`)
+        }
         if (n) {
           if (n < 0) given.set(name, (given.get(name) ?? 0) - n)
+          else got.set(name, (got.get(name) ?? 0) + n)
           effects.push({ type, name, qty: n })
           items++
         }

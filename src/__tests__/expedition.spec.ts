@@ -102,6 +102,15 @@ describe('save schema', () => {
     expect(reshod.inventory.find((i) => i.name === '星隕鐵戰靴')?.qty).toBe(1)
     expect(reshod.party[0]!.gear?.feet?.name).toBe('秘銀戰靴')
 
+    // 自訂裝備（稀有度前綴、編號）：名稱與自訂物品的鍵一起改
+    const custom = JSON.parse(JSON.stringify(state)) as GameState
+    custom.schema = 8
+    custom.customItems = { '優良鐵鐵靴（2）': { category: 'equipment', price_cc: 100, gear: { base: 'sabatons', material: 'iron', rarity: 'fine' } as never } }
+    custom.inventory.push({ name: '優良鐵鐵靴（2）', qty: 1 }, { name: '精製秘銀鐵腰帶', qty: 1 })
+    const fixed = migrate(custom)
+    expect(Object.keys(fixed.customItems ?? {})).toEqual(['優良鐵戰靴（2）'])
+    expect(fixed.inventory.map((i) => i.name)).toEqual(expect.arrayContaining(['優良鐵戰靴（2）', '精製秘銀護腰']))
+
     const future = { ...state, schema: SAVE_SCHEMA + 1 }
     expect(() => assertSchema(future)).toThrow('比較新版本')
     expect(() => migrate(JSON.parse(JSON.stringify(future)))).toThrow('比較新版本')

@@ -372,7 +372,8 @@ export function queryForReport(state: GameState, report: Report): ContextQuery {
 
 // ---- 給 AI 的文字 ----
 
-function nameOf(state: GameState, id: string): string {
+/** 人的名字：主角、認識的人、隊員、存檔裡的 NPC、固定 NPC，都找不到就回傳 id */
+export function nameOf(state: GameState, id: string): string {
   if (id === 'pc') return state.party.find((m) => m.isPlayer)?.name ?? '主角'
   return relationsOf(state)[id]?.name ?? state.party.find((m) => m.id === id)?.name
     ?? state.npcs?.[id]?.name ?? npcs.find((n) => n.id === id)?.name ?? id

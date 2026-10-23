@@ -103,6 +103,17 @@ describe('AI effects stay within what the party has', () => {
     expect(sanitizeJudgment(state, p, { degree: 'fail', effects }).effects).toEqual([{ type: 'item', name: '治療藥劑', qty: -2 }])
   })
 
+  it('caps repeated grants of one item together and reports every cut', () => {
+    const state = game(3, 'fighter')
+    const p = pending(state)
+    const twice = sanitizeJudgment(state, p, { degree: 'success', effects: [{ type: 'item', name: '繩子', qty: 1 }, { type: 'item', name: '繩子', qty: 1 }] })
+    expect(twice.effects).toEqual([{ type: 'item', name: '繩子', qty: 1 }])
+    expect(twice.adjusted).toEqual(['繩子只得到 0 個（提議的 1 個超過上限）'])
+    const giveAway = sanitizeJudgment(state, p, { degree: 'fail', effects: [{ type: 'item', name: '治療藥劑', qty: -3 }] })
+    expect(giveAway.effects).toEqual([{ type: 'item', name: '治療藥劑', qty: -2 }])
+    expect(giveAway.adjusted?.[0]).toContain('身上不夠')
+  })
+
   it('keeps reputation changes to known factions, by id or name', () => {
     const state = game(3, 'fighter')
     const p = pending(state)

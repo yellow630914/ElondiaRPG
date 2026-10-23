@@ -131,8 +131,9 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 6：刺青：奴隸契約搬進刺青清單（tattoos 的奴隸印記），條款一律存一份、加上部位
  * 7：金屬腰帶的底材改名（鐵腰帶 → 護腰，免得變成「鐵鐵腰帶」）：行囊、裝備、商店裡的舊名稱跟著改
  * 8：金屬靴子的底材改名（鐵靴 → 戰靴，免得變成「鐵鐵靴」）：同上
+ * 9：7、8 只換掉剛好等於制式名稱的字串；這一步連帶稀有度前綴、編號的自訂裝備（優良鐵鐵靴、精製秘銀鐵腰帶（2）……）一起改，自訂物品的鍵也跟著改
  */
-export const SAVE_SCHEMA = 8
+export const SAVE_SCHEMA = 9
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -174,7 +175,31 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [8, (s) => {
     renameValues(s, { 鐵鐵靴: '鐵戰靴', 鋼鐵靴: '鋼戰靴', 秘銀鐵靴: '秘銀戰靴', 精金鐵靴: '精金戰靴', 星隕鐵鐵靴: '星隕鐵戰靴' })
   }],
+  [9, (s) => {
+    const fix = (v: string) => v.replace(/(星隕鐵|秘銀|精金|鐵|鋼)鐵(靴|腰帶)/g, (_, m: string, b: string) => `${m}${b === '靴' ? '戰靴' : '護腰'}`)
+    rewriteStrings(s, fix)
+  }],
 ]
+
+/** 存檔裡所有字串（值與物件的鍵）都套用 fix：自訂物品以名稱當鍵，鍵和值要一起改 */
+function rewriteStrings(node: unknown, fix: (v: string) => string) {
+  if (!node || typeof node !== 'object') return
+  if (Array.isArray(node)) {
+    node.forEach((v, i) => {
+      if (typeof v === 'string') node[i] = fix(v)
+      else rewriteStrings(v, fix)
+    })
+    return
+  }
+  const obj = node as Record<string, unknown>
+  for (const [k, v] of Object.entries(obj)) {
+    const key = fix(k)
+    const value = typeof v === 'string' ? fix(v) : v
+    if (typeof v !== 'string') rewriteStrings(v, fix)
+    if (key !== k) delete obj[k]
+    obj[key] = value
+  }
+}
 
 /** 把存檔裡剛好等於舊名稱的字串換成新名稱（物品名稱散在行囊、裝備、商店與戰利品裡） */
 function renameValues(node: unknown, names: Record<string, string>) {

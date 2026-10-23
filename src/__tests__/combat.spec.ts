@@ -162,6 +162,24 @@ describe('combat rules', () => {
     expect(c.baseMods.dr ?? 0).toBe((gearAffinities(pc).mods.dr ?? 0) - fromGear)
   })
 
+  it('lets a one-turn control last through the target\'s next turn, bosses included', () => {
+    for (const foe of ['goblin', 'crypt_general']) {
+      const state = stateWith('fighter', 10, 4)
+      startCombat(state, [[foe, 1]])
+      const combat = state.combat!
+      const enemy = combat.combatants.find((c) => c.side === 'enemy')!
+      enemy.hp = enemy.maxHp = 5000
+      enemy.statuses.push({ id: 'confused', turns: 1, source: 'pc' })
+      makeCurrent(state, 'pc')
+      const before = combat.timeline.length
+      act(state, { type: 'end_turn' })
+      const acted = combat.timeline.slice(before).filter((t) => t.actor === enemy.id)
+      expect(acted[0]?.action, foe).toBe('困惑中胡亂攻擊')
+      // 撐過那個回合之後就拿掉
+      expect(enemy.statuses.some((x) => x.id === 'confused'), foe).toBe(false)
+    }
+  })
+
   it('never lets a layer boss flee', () => {
     const state = stateWith('fighter', 5)
     startCombat(state, [['crypt_general', 1], ['goblin', 1]])
@@ -238,6 +256,33 @@ describe('combat rules', () => {
       const logged = (entry.effects ?? []).filter((e) => e.type === 'damage' && e.target === goblin.id).reduce((n, e) => n + (e.amount ?? 0), 0)
       expect(logged).toBe(before - goblin.hp)
     }
+  })
+
+  it('logs each reduction once, on the hits it actually cut', () => {
+    const state = stateWith('fighter', 5)
+    startCombat(state, [['goblin', 1]])
+    const goblin = state.combat!.combatants.find((c) => c.side === 'enemy')!
+    goblin.hp = goblin.maxHp = 999
+    const pc = makeCurrent(state, 'pc')
+    let deflects = 0
+    for (let i = 0; i < 20; i++) {
+      goblin.statuses = [
+        { id: 'stunned', turns: 5, source: 'pc' },
+        { id: 'deflecting', turns: 5, source: goblin.id, charges: 1, value: 2 },
+        { id: 'uncanny', turns: 5, source: goblin.id, charges: 1 },
+      ]
+      pc.ap = 10
+      makeCurrent(state, 'pc')
+      const before = goblin.hp
+      act(state, { type: 'attack', target: goblin.id })
+      const entry = state.combat!.timeline.filter((t) => t.actor === 'pc').at(-1)!
+      const hits = (entry.effects ?? []).filter((e) => e.type === 'damage' && e.target === goblin.id)
+      expect(hits.reduce((n, e) => n + (e.amount ?? 0), 0)).toBe(before - goblin.hp)
+      if (hits.some((e) => e.text?.includes('偏轉 -'))) deflects++
+      // 偏轉只寫在傷害那一筆，不再另外記一筆說明
+      expect((entry.effects ?? []).some((e) => e.type === 'note' && e.text?.startsWith('偏轉'))).toBe(false)
+    }
+    expect(deflects).toBeGreaterThan(0)
   })
 
   it('drops the previous concentration spell when casting a new one', () => {

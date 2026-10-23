@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { affinityStage } from '@/engine/character'
-import { locationById, npcs } from '@/engine/data'
+import { locationById } from '@/engine/data'
 import { formatTime } from '@/engine/state'
-import type { Memory, Relationship } from '@/engine/social'
+import { nameOf as npcName, type Memory, type Relationship } from '@/engine/social'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import { canPromote } from '@/engine/promoteNpc'
@@ -28,9 +28,7 @@ const rels = computed(() => Object.values(s.value.relationships ?? {}))
 const pcName = computed(() => s.value.party.find((m) => m.isPlayer)?.name ?? '主角')
 
 function nameOf(id: string): string {
-  if (id === 'pc') return pcName.value
-  // 還沒認識的人：從存檔裡的 NPC 或固定 NPC 名單找名字
-  return s.value.relationships?.[id]?.name ?? s.value.npcs?.[id]?.name ?? npcs.find((n) => n.id === id)?.name ?? id
+  return npcName(s.value, id)
 }
 
 // ---- 人際關係編輯 ----
