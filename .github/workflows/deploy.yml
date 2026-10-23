@@ -1,0 +1,83 @@
+# 建置並發布：
+# - 推送到正式分支：跑測試、建置，部署到 GitHub Pages（https://yellow630914.github.io/ElondiaRPG/）
+# - 推送版本 tag（v0.1.0 這類）：另外建立 GitHub Release，附上建置好的 zip 與 CHANGELOG.md 裡那一版的說明
+# 第一次使用前要在 repo 的 Settings → Pages 把 Source 設成「GitHub Actions」。
+name: Build and deploy
+
+on:
+  push:
+    branches: [main, claude/admiring-tesla-zzw8ii]
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:unit --run
+      - run: pnpm build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Zip the build for the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: cd dist && zip -qr "../ElondiaRPG-${GITHUB_REF_NAME}.zip" .
+      - uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: release-zip
+          path: ElondiaRPG-*.zip
+
+  deploy:
+    # 只從分支部署（Pages 環境預設只允許預設分支）；tag 只建立 Release
+    if: startsWith(github.ref, 'refs/heads/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-zip
+      - name: Release notes from CHANGELOG.md
+        run: |
+          awk -v v="${GITHUB_REF_NAME}" '
+            /^## / { on = (index($0, v) > 0); next }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || echo "見 CHANGELOG.md" > notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: 埃隆迪亞大陸 ${{ github.ref_name }}
+          body_path: notes.md
+          files: ElondiaRPG-*.zip
