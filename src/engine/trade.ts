@@ -104,7 +104,7 @@ export function keeperFor(state: GameState, type: ShopType): string {
     const def = shopRules.types[type]
     // 店主是普通人：神殿是神官，其他是商人
     const rec = withRng(state, (rng) => generateNpc(state, rng, {
-      id, kind: 'commoner', tags: [type === 'temple' ? 'priest' : 'merchant'], occupation: def.keeper.title, level: rng.int(1, 4),
+      id, kind: 'commoner', tags: def.keeper.tags?.length ? [...def.keeper.tags] : [type === 'temple' ? 'priest' : 'merchant'], occupation: def.keeper.title, level: rng.int(1, 4),
     }))
     // 驛站的店主不住在城裡：只在驛站裡（進驛站時站到店的格子上）
     if (place.waystation) rec.spot = 'waystation'

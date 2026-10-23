@@ -10,7 +10,7 @@ import * as trade from '@/engine/trade'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
 import * as meals from '@/engine/meals'
-import { classes, slaveryRules, type ShopType } from '@/engine/data'
+import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
@@ -801,7 +801,7 @@ export const useGame = defineStore('game', () => {
   async function flavorShop(type: ShopType) {
     const s = state.value
     const settings = useSettings()
-    if (!s || !settings.aiJudge || !settings.ready('shop')) return
+    if (!s || !settings.aiJudge || !settings.ready('shop') || shopRules.types[type]?.ai === false) return
     const shop = trade.shopState(s, type)
     if (shop.aiTried || shop.source === 'ai') return
     shop.aiTried = true

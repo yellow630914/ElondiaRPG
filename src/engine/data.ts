@@ -1176,7 +1176,14 @@ export interface ShopSpecial {
 export interface ShopTypeDef {
   name: string
   cell: string
-  keeper: { classes: string[]; title: string }
+  /** 地圖與標題的圖示 */
+  emoji: string
+  /** 商店畫面的說明 */
+  desc: string
+  /** AI 判定開啟時，請 AI 設計今天的特別商品 */
+  ai: boolean
+  /** 店主：職稱與身分標籤（生成店主時用；classes 保留給 AI 參考） */
+  keeper: { classes: string[]; title: string; tags?: string[] }
   catalog_tag: string
   buys: ItemCategory[]
   ai_effects: RewardEffect['type'][]

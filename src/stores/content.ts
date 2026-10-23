@@ -13,8 +13,9 @@ import {
   builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinTattoo, builtinMark,
 } from '@/engine/mods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
-import { slaveryRules } from '@/engine/data'
+import { shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { npcModFromState } from '@/engine/promoteNpc'
+import { sanitizeShopMod, type ShopMod } from '@/engine/shopMods'
 import type { GameState } from '@/engine/types'
 import { pruneAbilities, prunePerks, pruneStatuses } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
@@ -45,9 +46,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
+const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
+  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務',
 }
 
 export interface ModsDiffEntry {
@@ -67,6 +68,7 @@ export interface ModsDiff {
 function modLabel(section: Section, id: string, v: unknown): string {
   const o = v as { name?: string; title?: string }
   if (section === 'markRules') return MOD_SECTION_NAMES[section]
+  if (section === 'shops') return `${MOD_SECTION_NAMES[section]}「${shopRules.types[id as ShopType]?.name ?? id}」`
   const name = section === 'items' ? id : o.title ?? o.name ?? id
   return `${MOD_SECTION_NAMES[section]}「${name}」`
 }
@@ -540,6 +542,20 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 商店 ----
+
+  function saveShop(id: string, draft: Partial<ShopMod>) {
+    const m = sanitizeShopMod(id, draft)
+    mods.value.shops ??= {}
+    if (Object.keys(m).length) mods.value.shops[id] = m
+    else delete mods.value.shops[id]
+    save()
+  }
+  function restoreShop(id: string) {
+    delete mods.value.shops?.[id]
+    save()
+  }
+
   // ---- 特質 ----
 
   function savePerk(id: string, draft: Partial<PerkMod>) {
@@ -654,7 +670,7 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
-    saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveShop, restoreShop, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

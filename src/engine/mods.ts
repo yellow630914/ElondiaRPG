@@ -23,6 +23,7 @@ import { cleanPerkEffects, describeEffects, type PerkLimits } from './perks'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
+import { applyShopMod, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
 export type ChestLayer = 'outskirts' | 'shallow' | 'middle' | 'deep'
@@ -96,10 +97,12 @@ export interface ContentMods {
   marks: Record<string, MarkMod>
   /** 印記的用途與權重（只有 rules 一筆） */
   markRules: Record<string, MarkRulesMod>
+  /** 商店（內建的店只能改部分欄位） */
+  shops: Record<string, ShopMod>
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -195,6 +198,7 @@ function restore() {
   replaceRecord(tattooRules.templates, snapshot.tattoos)
   replaceRecord(slaveryRules.contracts, snapshot.marks)
   applyMarkRules(clone(snapshot.markRules))
+  restoreShops()
   replaceRecord(abilities, snapshot.abilities)
   perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
@@ -413,6 +417,7 @@ export function applyContent(mods: ContentMods): string[] {
     slaveryRules.contracts[id] = strip(m, ['custom'])
   })
   tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)))))
+  tryEach('商店', mods.shops ?? {}, (id, m) => applyShopMod(id, m))
   // 能力先套用：怪物、固定 NPC、職業都會用到
   tryEach('能力', mods.abilities, (id, m) => {
     abilities[id] = { ...strip(m, ['custom']), id }
@@ -887,6 +892,13 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, t] of Object.entries(out.tattoos)) if (t.custom && !tattooRules.templates[id]) tattooRules.templates[id] = strip(t, ['custom'])
   for (const [id, v] of Object.entries(r.marks ?? {})) out.marks[id] = sanitizeMarkMod(v, !!v.custom || !snapshot.marks[id])
   for (const [id, m] of Object.entries(out.marks)) if (m.custom && !slaveryRules.contracts[id]) slaveryRules.contracts[id] = strip(m, ['custom'])
+  for (const [id, v] of Object.entries(r.shops ?? {})) {
+    try {
+      out.shops[id] = sanitizeShopMod(id, v)
+    } catch {
+      // 不存在的店（例如之後的版本拿掉了）：略過
+    }
+  }
   if (r.markRules?.rules) out.markRules.rules = sanitizeMarkRules(r.markRules.rules, new Set([...Object.keys(snapshot.marks), ...Object.keys(out.marks)]))
   for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）

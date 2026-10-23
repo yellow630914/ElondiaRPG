@@ -3,7 +3,7 @@ import FoldSection from './FoldSection.vue'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, geography, locationById } from '@/engine/data'
+import { attrName, geography, locationById, shopRules } from '@/engine/data'
 import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
@@ -16,6 +16,7 @@ import { legFare, MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
 import { reachable, type Path } from '@/engine/world'
 import { useGame } from '@/stores/game'
+import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import GuardStatus from './GuardStatus.vue'
 import MarketPanel from './MarketPanel.vue'
@@ -30,6 +31,7 @@ import { checkBonus } from '@/engine/perks'
 import CraftPanel from './CraftPanel.vue'
 
 const game = useGame()
+const content = useContent()
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
@@ -119,18 +121,19 @@ function go(id: string) {
   intent.value = ''
 }
 
-const ICON: Partial<Record<string, string>> = { ...CELL_ICON, floor: '🧭' }
+const ICON = computed<Partial<Record<string, string>>>(() => {
+  void content.version
+  return { ...CELL_ICON, floor: '🧭' }
+})
 
 // 鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商：各自的交易清單
 const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant'] as const
 const shopHere = computed(() => (SHOPS as readonly string[]).includes(cell.value.kind) ? (cell.value.kind as (typeof SHOPS)[number]) : null)
-const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
-  smithy: '金屬與木製的武器、防具；也接金屬、木材的打造委託。',
-  tailor: '皮革與布料的衣物、護具；也接皮革、布料的打造委託。',
-  jeweler: '戒指、項鍊、護符、法器寶珠與寶石材料；也接飾品的打造委託。',
-  magic: '各種卷軸，另外每天進一批不一樣的藥劑與材料。',
-  informant: '賣情報：附近近郊或地下城的事件點（盤踞的強敵、藏寶處、流浪商人），有時還有特殊任務的消息；也能打聽進行中委託的線索。買到的情報記在冒險筆記。',
-}
+// 商店的說明（shops.json 的 desc，內容頁籤可以改）
+const shopDesc = computed(() => {
+  void content.version
+  return Object.values(shopRules.types).find((t) => t.cell === cell.value.kind)?.desc ?? ''
+})
 </script>
 
 <template>
@@ -140,6 +143,7 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
       <!-- 目前所在格子（房子裡由上面的房屋區塊顯示） -->
       <section v-if="area.kind !== 'road' && area.kind !== 'home'" class="panel">
         <h3>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
+        <p v-if="shopDesc" class="muted small">{{ shopDesc }}</p>
 
         <template v-if="cell.kind === 'inn'">
           <p class="muted small">可以在這裡長休（見下方「休息」）。</p>
@@ -174,7 +178,6 @@ const SHOP_NOTE: Record<(typeof SHOPS)[number], string> = {
         </template>
 
         <template v-else-if="shopHere">
-          <p class="muted small">{{ SHOP_NOTE[shopHere] }}</p>
           <ShopPanel :key="`${shopHere}-${s.location}-${s.time.day}`" :type="shopHere" />
         </template>
 

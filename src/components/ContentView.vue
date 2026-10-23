@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, perkDef, perkRules, slaveryRules, statuses, stories } from '@/engine/data'
+import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, perkDef, perkRules, shopRules, slaveryRules, statuses, stories, type ShopType } from '@/engine/data'
 import { newMark, newTattooTemplate } from '@/engine/tattooMods'
 import { oathText, placeName, tattooRules } from '@/engine/tattoos'
 import { perkPower } from '@/engine/perks'
@@ -24,12 +24,13 @@ import PerkEditor from './content/PerkEditor.vue'
 import StatusEditor from './content/StatusEditor.vue'
 import StoryEditor from './content/StoryEditor.vue'
 import TattooEditor from './content/TattooEditor.vue'
+import ShopEditor from './content/ShopEditor.vue'
 import MarkEditor from './content/MarkEditor.vue'
 import MarkRulesEditor from './content/MarkRulesEditor.vue'
 import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'npcs' | 'stories'
+type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'shops' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
   { id: 'items', label: '🎒 物品' },
@@ -39,6 +40,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'statuses', label: '🌀 狀態' },
   { id: 'perks', label: '🌟 特質' },
   { id: 'tattoos', label: '🖋️ 刺青' },
+  { id: 'shops', label: '🏪 商店' },
   { id: 'npcs', label: '🧑 固定 NPC' },
   { id: 'stories', label: '⭐ 特殊任務' },
 ]
@@ -74,7 +76,7 @@ function resetFilters() {
   statusKind.value = ''
   tattooKind.value = ''
 }
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', npcs: '', stories: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', shops: '', npcs: '', stories: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
 const tattooKind = ref('')
 // 狀態：增益、減益
@@ -144,6 +146,8 @@ const rows = computed<Row[]>(() => {
       : []
     const rules = !k || k === 'slave' ? [{ key: 'rules', name: '⚙️ 印記設定', note: '用途、輕重順序、權重', status: st(!!m.markRules?.rules, false), sort: 3 }] : []
     list = [...tats, ...marks, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+  } else if (sub.value === 'shops') {
+    list = Object.entries(shopRules.types).map(([id, d]) => ({ key: id, name: `${d.emoji} ${d.name}`, note: d.keeper.title, status: st(!!m.shops?.[id], false) }))
   } else if (sub.value === 'stories') {
     list = stories
       .map((d) => ({ key: d.id, name: d.title, note: `${START_KINDS[d.start.kind]}・${d.nodes.length} 個任務點`, status: st(!!m.stories[d.id], !builtinStory(d.id)) }))
@@ -168,7 +172,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), shops: `修改 ${Object.keys(m.shops ?? {}).length}`, npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -178,6 +182,7 @@ const current = computed(() => {
   const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
     : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? stories.some((d) => d.id === key)
     : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key)
+    : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
     : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
     : !!gearRules.materials[key]
   return exists ? key : ''
@@ -318,7 +323,7 @@ function duplicate() {
   }
 }
 
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', shops: '＋ 新增商店', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
 // ---- 匯出、匯入、重設 ----
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -360,8 +365,8 @@ function resetAll() {
     <div class="layout">
       <section class="panel list-panel">
         <div class="row">
-          <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+          <button class="small primary" :disabled="sub === 'shops'" :title="sub === 'shops' ? '自建商店還沒開放' : ''" @click="create">{{ NEW_LABEL[sub] }}</button>
+          <button class="small" :disabled="!current || sub === 'shops'" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
         </div>
         <div class="row">
           <input v-model="search" placeholder="搜尋名稱" class="grow" />
@@ -440,6 +445,7 @@ function resetAll() {
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
         <StatusEditor v-else-if="sub === 'statuses'" :id="current" :key="`s-${current}`" @deleted="select('')" />
         <PerkEditor v-else-if="sub === 'perks'" :id="current" :key="`p-${current}`" @deleted="select('')" />
+        <ShopEditor v-else-if="sub === 'shops'" :id="current" :key="`shop-${current}`" />
         <template v-else-if="sub === 'tattoos'">
           <MarkRulesEditor v-if="current === 'rules'" key="rules" />
           <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />
