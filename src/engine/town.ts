@@ -5,7 +5,7 @@ import { abilityQuality, proficiency, rerollAbilityChoices, snapshot } from './c
 import { dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit } from './guild'
 import { startCombat, type CombatState } from './combat'
 import {
-  craftRules, abilityDef, attributeRules, combatRules, dungeonEncounters, economy, itemDef, locationById, npcs, regionById,
+  craftRules, abilityDef, attributeRules, combatRules, dungeonEncounters, economy, itemDef, landmarkDef, landmarksIn, locationById, npcs, regionById,
   townQuestsPerTown, townQuestsRefreshDays, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
 import { roll, withBonus } from './rng'
@@ -171,6 +171,24 @@ export function questTemplate(quest: Quest): TownQuestTemplate | undefined {
   return quest.template ? townQuestTemplates[quest.template] : undefined
 }
 
+/** 城內委託的執行地點：地標（還在的話），否則是範本的設施 */
+export function questSpot(quest: Quest): string {
+  if (quest.landmark && landmarkDef(quest.landmark)) return quest.landmark
+  return questTemplate(quest)?.spot ?? 'guild'
+}
+
+/** 委託的場景：{town} 換成城鎮，{landmark} 換成地標的名字 */
+export function questScene(quest: Quest): string {
+  const tpl = questTemplate(quest)
+  const name = (quest.landmark && landmarkDef(quest.landmark)?.name) || '城裡'
+  return townText(tpl?.scene ?? '{town}', quest.target).split('{landmark}').join(name)
+}
+
+/** 這座城裡符合類型的地標 */
+function landmarksFor(townId: string, types: string[]) {
+  return landmarksIn(townId).filter((l) => l.types.some((t) => types.includes(t)))
+}
+
 export function canAcceptRank(state: GameState, rank: GuildRank, quest?: Pick<Quest, 'flags'>): boolean {
   // 晉升考核本來就是下一階的委託
   if (quest && isExam(quest)) return true
@@ -202,13 +220,16 @@ export function guildQuests(state: GameState): Quest[] {
   for (const n of state.negotiations ?? []) if (n.quest && expired.has(n.quest)) n.status = 'done'
   state.flags[boardKey] = state.time.day
   withRng(state, (rng) => {
-    const pool = Object.values(townQuestTemplates)
+    // 以地標為標的的範本：城裡要有符合類型的地標
+    const pool = Object.values(townQuestTemplates).filter((t) => !t.landmark || landmarksFor(state.location, t.landmark).length)
     for (let i = 0; i < townQuestsPerTown && pool.length > 0; i++) {
       const tpl = pool.splice(rng.int(0, pool.length - 1), 1)[0]!
+      const lm = tpl.landmark ? rng.pick(landmarksFor(state.location, tpl.landmark)) : undefined
       state.quests.push({
         id: `q-${state.location}-${state.time.day}-${tpl.id}`,
-        title: townText(tpl.title, state.location),
+        title: townText(tpl.title, state.location).split('{landmark}').join(lm?.name ?? ''),
         rank: 'F', kind: tpl.kind, area: tpl.area, template: tpl.id,
+        ...(lm ? { landmark: lm.id } : {}),
         giver: state.location, target: state.location, goal: 1, progress: 0,
         reward_cc: rng.int(tpl.reward_cc[0], tpl.reward_cc[1]),
         status: 'available',
@@ -262,7 +283,7 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   const tpl = quest && questTemplate(quest)
   if (!quest || !tpl) throw new Error('找不到這個委託')
   if (quest.giver !== state.location) throw new Error(`這是${locationById(quest.giver).name}的委託`)
-  const scene = townText(tpl.scene, state.location)
+  const scene = questScene(quest)
 
   if (tpl.kind === 'pest' || tpl.kind === 'hunt') {
     return startCombat(state, tpl.encounter, { questId: quest.id, scene, ...(intent ? { intent } : {}) })

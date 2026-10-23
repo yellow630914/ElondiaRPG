@@ -1,7 +1,7 @@
 {
   "$comment": "F 級委託範本：地點在城內 (town) 或城鎮近郊 (outskirts)，不需要旅行。城內委託要走到 spot 指定的設施格子（tavern / shop / gate / inn / guild）執行；近郊委託會在近郊地圖上標出委託地點。{town} 會換成城鎮名稱。kind：pest / hunt = 戰鬥；search / gather / patrol = 檢定（1d20 + 熟練加值 ≥ dc，失敗可再試）；delivery = 花時間即可完成。encounter_chance 為檢定前遭遇敵人的機率，遭遇時改為戰鬥，委託維持進行中。報酬依世界書 F 級 3-5 銀幣（30-50 白鸛幣）。rewards 為交付時的額外報酬（報酬模板），例如有機率領悟新能力（type: ability）。",
   "version": 1,
-  "per_town": 3,
+  "per_town": 4,
   "refresh_days": 1,
   "$comment_refresh": "公會委託板每 refresh_days 天更新一次：沒人接的委託撤下（談過報酬的保留），換上新的一批。已接下的委託不受影響。",
   "material_quests": {
@@ -62,6 +62,28 @@
       "title": "偵查{town}近郊商道的異狀", "scene": "{town}近郊的商道",
       "hours": 3, "dc": 12, "encounter_chance": 0.2, "encounter": [["wolf", 2]], "reward_cc": [35, 50],
       "rewards": [{ "type": "ability", "target": "pc", "chance": 0.15 }]
-    }
+    },
+    { "$comment": "以下是以城鎮特色地標為標的的委託：landmark 是地標的類型，發布時從這座城裡符合的地標挑一個，{landmark} 換成地標的名字，執行地點就是那個地標；城裡沒有符合的地標時不會出（docs/LANDMARKS.md 第 4 節）",
+      "id": "lm_vermin", "landmark": ["monument", "haunted", "workshop", "harbor"], "kind": "pest", "area": "town", "title": "清除{landmark}地下的巨鼠", "scene": "{town}・{landmark}的地窖",
+      "hours": 2, "encounter": [["giant_rat", 3]], "reward_cc": [35, 50] },
+    { "id": "lm_night_watch", "landmark": ["holy", "monument", "official"], "kind": "patrol", "area": "town", "title": "在{landmark}守夜", "scene": "{town}・夜裡的{landmark}",
+      "hours": 6, "dc": 11, "encounter_chance": 0.25, "encounter": [["bandit", 1]], "reward_cc": [40, 50] },
+    { "id": "lm_strange_noise", "landmark": ["haunted", "monument", "holy"], "kind": "search", "area": "town", "title": "調查{landmark}夜裡的怪聲", "scene": "{town}・{landmark}",
+      "hours": 3, "dc": 12, "encounter_chance": 0.3, "encounter": [["grave_rat", 1], ["ghoul", 1]], "reward_cc": [40, 50],
+      "rewards": [{ "type": "ability", "target": "pc", "chance": 0.15 }] },
+    { "id": "lm_scholar_errand", "landmark": ["academy"], "kind": "search", "area": "town", "title": "替{landmark}的學者找齊資料", "scene": "{town}・{landmark}的書庫",
+      "hours": 4, "dc": 12, "reward_cc": [35, 45], "rewards": [{ "type": "ability", "target": "pc", "chance": 0.2 }] },
+    { "id": "lm_unload", "landmark": ["harbor", "market"], "kind": "delivery", "area": "town", "title": "在{landmark}幫忙卸貨", "scene": "{town}・{landmark}",
+      "hours": 4, "reward_cc": [30, 40] },
+    { "id": "lm_pickpocket", "landmark": ["market"], "kind": "search", "area": "town", "title": "揪出在{landmark}出沒的扒手", "scene": "{town}・人潮擁擠的{landmark}",
+      "hours": 3, "dc": 12, "encounter_chance": 0.3, "encounter": [["bandit", 1]], "reward_cc": [35, 50] },
+    { "id": "lm_ore_delivery", "landmark": ["workshop"], "kind": "delivery", "area": "town", "title": "替{landmark}搬運礦石與燃料", "scene": "{town}・{landmark}",
+      "hours": 3, "reward_cc": [30, 40] },
+    { "id": "lm_ceremony_guard", "landmark": ["holy", "official"], "kind": "patrol", "area": "town", "title": "維持{landmark}儀式的秩序", "scene": "{town}・{landmark}",
+      "hours": 4, "dc": 10, "reward_cc": [35, 45] },
+    { "id": "lm_sparring", "landmark": ["military"], "kind": "patrol", "area": "town", "title": "在{landmark}擔任陪練對手", "scene": "{town}・{landmark}的練武場",
+      "hours": 3, "dc": 12, "reward_cc": [35, 50], "rewards": [{ "type": "ability", "target": "pc", "chance": 0.2 }] },
+    { "id": "lm_herb_survey", "landmark": ["nature"], "kind": "gather", "area": "town", "title": "在{landmark}一帶採集藥草", "scene": "{town}・{landmark}",
+      "hours": 3, "dc": 10, "item": "藥草", "qty": 2, "reward_cc": [30, 45] }
   ]
 }

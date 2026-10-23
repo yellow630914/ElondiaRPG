@@ -14,7 +14,7 @@ import { reachable, shortestPath } from '@/engine/world'
 import { lotsOf } from '@/engine/homes'
 import { ensureRoster } from '@/engine/population'
 import { clearCounts, layerName, layerRank, rankForLevel } from '@/engine/materialQuests'
-import { geography, locationById } from '@/engine/data'
+import { geography, locationById, townQuestsPerTown } from '@/engine/data'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
@@ -137,7 +137,7 @@ describe('quests', () => {
     const quests = guildQuests(state)
     const townQuests = quests.filter((q) => q.template)
     const dungeonQuests = quests.filter((q) => q.kind === 'clear_dungeon')
-    expect(townQuests.length).toBe(3)
+    expect(townQuests.length).toBe(townQuestsPerTown)
     expect(townQuests.every((q) => q.rank === 'F' && q.target === 'soriel')).toBe(true)
     expect(dungeonQuests.length).toBeGreaterThan(0)
     expect(dungeonQuests.every((q) => q.rank !== 'F')).toBe(true)

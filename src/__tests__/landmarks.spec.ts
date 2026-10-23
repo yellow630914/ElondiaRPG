@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import mapsJson from '@data/world/maps.json'
-import { geography, landmarks, landmarkTypes } from '@/engine/data'
-import { CELL_ICON, cellName, currentCell, enterLocation, getArea, settlementArea, standOn } from '@/engine/grid'
+import { geography, landmarks, landmarkTypes, townQuestTemplates } from '@/engine/data'
+import { CELL_ICON, cellName, currentCell, enterLocation, getArea, questRunnableHere, settlementArea, standOn } from '@/engine/grid'
+import { acceptQuest, guildQuests, questScene, questSpot } from '@/engine/town'
 import { builtinLandmark, newLandmark } from '@/engine/landmarkMods'
 import { landmarkHere, withLandmark } from '@/engine/landmarks'
 import { applyContent, emptyMods, newNpc, normalizeMods } from '@/engine/mods'
@@ -125,5 +126,39 @@ describe('editing landmarks', () => {
     expect(getArea(state, at.area).cells[at.y * getArea(state, at.area).width + at.x]!.kind).toBe('lm_test2')
     expect(standOn(state, 'lm_test2')).toBe(true)
     expect(currentCell(state).kind).toBe('lm_test2')
+  })
+})
+
+describe('guild quests at landmarks', () => {
+  it('pick a landmark of a matching type in town, name it in the title, and run there', () => {
+    const state = game()
+    let quest = guildQuests(state).find((q) => q.landmark)
+    for (let d = 2; !quest && d < 60; d++) {
+      state.quests = []
+      state.time.day = d
+      quest = guildQuests(state).find((q) => q.landmark)
+    }
+    expect(quest).toBeDefined()
+    const l = landmarks[quest!.landmark!]!
+    const tpl = townQuestTemplates[quest!.template!]!
+    expect(l.location).toBe('rhineburg')
+    expect(l.types.some((t) => tpl.landmark!.includes(t))).toBe(true)
+    expect(quest!.title).toContain(l.name)
+    expect(questSpot(quest!)).toBe(l.id)
+    expect(questScene(quest!)).toContain(l.name)
+    acceptQuest(state, quest!.id)
+    expect(questRunnableHere(state, { ...quest!, spot: questSpot(quest!) })).toBe(false)
+    standOn(state, l.id as never)
+    expect(questRunnableHere(state, { ...quest!, spot: questSpot(quest!) })).toBe(true)
+  })
+
+  it('are not posted in towns without a matching landmark', () => {
+    // 河谷鎮只有古蹟、市集、自然類的地標：沒有學院與軍事的委託
+    const state = game('rivervale')
+    for (let d = 1; d < 40; d++) {
+      state.quests = []
+      state.time.day = d
+      for (const q of guildQuests(state)) expect(['lm_scholar_errand', 'lm_sparring', 'lm_ore_delivery']).not.toContain(q.template)
+    }
   })
 })

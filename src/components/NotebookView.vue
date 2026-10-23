@@ -6,7 +6,7 @@ import { canTurnIn, isMaterialQuest, layerName, questProgressText } from '@/engi
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import { activeNodes, placeText } from '@/engine/story'
-import { questTemplate } from '@/engine/town'
+import { questScene, questTemplate } from '@/engine/town'
 import type { Quest } from '@/engine/types'
 import { useGame } from '@/stores/game'
 
@@ -23,7 +23,7 @@ const finished = computed(() => s.value.quests.filter((q) => q.status === 'compl
 function where(q: Quest): string {
   if (q.area === 'dungeon') return `${locationById(q.target).name}${q.layer ? `・${layerName(q.layer)}` : ''}`
   if (q.area === 'outskirts') return `${locationById(q.target).name}近郊`
-  return `${locationById(q.target).name}・${questTemplate(q)?.scene.split('{town}').join(locationById(q.target).name) ?? '城內'}`
+  return questTemplate(q) ? questScene(q) : `${locationById(q.target).name}・城內`
 }
 
 function abandonQuest(q: Quest) {

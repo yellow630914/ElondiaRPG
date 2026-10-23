@@ -86,11 +86,12 @@ describe('settlements', () => {
 
   it('checks the quest spot before running town quests', () => {
     const state = game(3)
-    let quest = guildQuests(state).find((q) => q.area === 'town')
+    // 以地標為標的的委託另外測（landmarks.spec.ts）
+    let quest = guildQuests(state).find((q) => q.area === 'town' && !q.landmark)
     for (let d = 2; !quest && d < 30; d++) {
       state.quests = []
       state.time.day = d
-      quest = guildQuests(state).find((q) => q.area === 'town')
+      quest = guildQuests(state).find((q) => q.area === 'town' && !q.landmark)
     }
     acceptQuest(state, quest!.id)
     const spot = { cellar_rats: 'tavern', lost_purse: 'shop', apothecary_delivery: 'shop', night_patrol: 'gate' }[quest!.template!]!

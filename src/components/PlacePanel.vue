@@ -4,11 +4,11 @@ import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
 import { attrName, geography, isCustomShopId, landmarkDef, locationById, shopRules, type ShopType } from '@/engine/data'
-import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type LockMethod } from '@/engine/grid'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
-import { canAcceptRank, guildQuests, questTemplate, templeCost } from '@/engine/town'
+import { canAcceptRank, guildQuests, questSpot, questTemplate, templeCost } from '@/engine/town'
 import { examQuest, isExam, promotionStatus } from '@/engine/guild'
 import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, layerRanks, questProgressText, rewardFor } from '@/engine/materialQuests'
 import { bestTool } from '@/engine/tools'
@@ -70,7 +70,7 @@ function turnIn(q: Quest) {
   refreshQuests()
 }
 const runnableHere = computed(() =>
-  activeQuests.value.filter((q) => q.status === 'accepted' && q.area !== 'dungeon' && questRunnableHere(s.value, { ...q, spot: questTemplate(q)?.spot })),
+  activeQuests.value.filter((q) => q.status === 'accepted' && q.area !== 'dungeon' && questRunnableHere(s.value, { ...q, spot: questSpot(q) })),
 )
 
 function questWhere(q: Quest): string {
@@ -78,8 +78,7 @@ function questWhere(q: Quest): string {
   if (q.area === 'dungeon') return `目標：${locationById(q.target).name}${q.layer ? `・${layerName(q.layer)}` : ''}`
   if (isMaterialQuest(q)) return `地點：${locationById(q.target).name}近郊（${isCollectQuest(q) && q.monster ? '打倒牠們' : '採集點'}）`
   if (q.area === 'outskirts') return `地點：${locationById(q.target).name}近郊（地圖上的 ❗）`
-  const spot = questTemplate(q)?.spot ?? 'guild'
-  return `地點：${locationById(q.target).name}的${(spot in CELL_NAME ? cellName(spot as keyof typeof CELL_NAME) : spot)}`
+  return `地點：${locationById(q.target).name}的${cellName(questSpot(q) as CellKind) || questSpot(q)}`
 }
 
 function runQuest(id: string) {

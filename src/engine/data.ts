@@ -688,6 +688,8 @@ export interface TownQuestTemplate {
   scene: string
   /** 城內委託的執行地點（設施種類） */
   spot?: string
+  /** 以城鎮的特色地標為標的：地標的類型（發布時挑一個符合的地標，{landmark} 換成它的名字，執行地點就是它） */
+  landmark?: string[]
   hours: number
   dc?: number
   item?: string

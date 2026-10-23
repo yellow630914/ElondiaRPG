@@ -524,6 +524,8 @@ export interface Quest {
   area: 'town' | 'outskirts' | 'dungeon'
   /** 城內／近郊委託的範本 id（data/rules/town_quests.json） */
   template?: string
+  /** 以地標為標的的城內委託：哪個地標（執行地點） */
+  landmark?: string
   /** 發布委託的城鎮，也是交付地點 */
   giver: string
   /** 執行地點；城內／近郊委託就是發布的城鎮 */
