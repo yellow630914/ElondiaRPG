@@ -3,6 +3,7 @@ import before from './fixtures/race_combat.json'
 import { attributeRules, choosablePerks, classes } from '@/engine/data'
 import { gearAffinities } from '@/engine/character'
 import { startCombat } from '@/engine/combat'
+import { gearBonuses } from '@/engine/gear'
 import { sanitizeItem, sanitizeNpc } from '@/engine/mods'
 import { grantPerk, learnablePerks, losePerk, offerPerks, perksOf, racePerks, rollNpcPerks } from '@/engine/perks'
 import { Rng } from '@/engine/rng'
@@ -38,7 +39,10 @@ describe('race talents as race perks', () => {
           continue
         }
         const cb = s.combat!.combatants.find((x) => x.id === 'pc')!
-        const now = { g, threat: cb.threat, threatMult: cb.threatMult, resist: cb.resist, offense: cb.offense, baseMods: cb.baseMods }
+        // 裝備的減傷後來改成只擋物理（算在 armorDr），比對時加回去
+        const gearDr = gearBonuses(c).mods.dr ?? 0
+        const baseMods = gearDr ? { ...cb.baseMods, dr: (cb.baseMods.dr ?? 0) + gearDr } : cb.baseMods
+        const now = { g, threat: cb.threat, threatMult: cb.threatMult, resist: cb.resist, offense: cb.offense, baseMods }
         expect(JSON.parse(JSON.stringify(now)), `${race}/${cls}`).toEqual(snapshot[`${race}/${cls}`])
         n++
       }

@@ -3,12 +3,14 @@ import {
   abilityApCost, act, combatant, currentActor, defenseMult, startCombat, unusableReason, wantsToFlee, type Combatant,
 } from '@/engine/combat'
 import {
-  apMaxFor, apRegenFor, baseAttrs, createPlayer, luckyThreshold, maxHpFor, slotMaxFor, evadeFloor, learnable,
+  apMaxFor, apRegenFor, baseAttrs, createPlayer, gearAffinities, luckyThreshold, maxHpFor, slotMaxFor, evadeFloor, learnable,
 } from '@/engine/character'
 import {
   abilities, ATTR_IDS, classes, combatClasses, damageTypes, enemies, statuses, dungeonEncounters, weaponDef, armorDef,
 } from '@/engine/data'
 import { newGame } from '@/engine/state'
+import { gearBonuses, generateLoadout } from '@/engine/gear'
+import { Rng } from '@/engine/rng'
 import type { GameState } from '@/engine/types'
 
 function stateWith(classId: string, level = 1, seed = 1): GameState {
@@ -146,6 +148,18 @@ describe('combat rules', () => {
     // 主角的回合沒結束，層主一直沒行動：只會被暈一次，之後的都被抵抗
     expect(stuns).toBe(1)
     expect(resisted).toBeGreaterThan(0)
+  })
+
+  it('counts damage reduction from gear against physical damage only', () => {
+    const state = stateWith('fighter', 13)
+    const pc = state.party[0]!
+    pc.gear = generateLoadout('fighter', 13, new Rng(3))
+    const fromGear = gearBonuses(pc).mods.dr ?? 0
+    expect(fromGear).toBeGreaterThan(0)
+    startCombat(state, [['goblin', 1]])
+    const c = combatant(state.combat!, 'pc')
+    expect(c.armorDr).toBe(armorDef(pc.armor).dr + fromGear)
+    expect(c.baseMods.dr ?? 0).toBe((gearAffinities(pc).mods.dr ?? 0) - fromGear)
   })
 
   it('never lets a layer boss flee', () => {

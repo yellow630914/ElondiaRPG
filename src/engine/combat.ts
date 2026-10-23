@@ -250,9 +250,14 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
   const apMax = apMaxFor(c.level, attrsOf(c))
   const cls = classDef(c.class).threat ?? { start: 0, mult: 1 }
   // 防具與武器的類型、其他裝備（盾牌等）的仇恨加減
-  const threatMult = cls.mult * (1 + (armor.threat ?? 0) + (weaponFor(c).threat ?? 0) + gearBonuses(c).threat)
+  const worn = gearBonuses(c)
+  const threatMult = cls.mult * (1 + (armor.threat ?? 0) + (weaponFor(c).threat ?? 0) + worn.threat)
+  // 裝備（盾、部位防具、飾品、材料與附魔）的減傷和身體防具一樣只擋物理；特質與狀態的減傷擋所有傷害
+  const gearDr = worn.mods.dr ?? 0
   // 非戰鬥狀態（用餐、喝酒、磨利武器……）帶進戰鬥的加減與暫時生命
   const mods: Mods = { ...gear.mods }
+  if (gearDr) mods.dr = (mods.dr ?? 0) - gearDr
+  if (mods.dr === 0) delete mods.dr
   let tempHp = 0
   for (const s of c.status) {
     const def = companionRules.conditions[s]
@@ -269,7 +274,7 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
     slots: slotsLeft(c).slice(0, spellCap(c)),
     slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, spellCap(c)),
     abilities: [...c.abilities],
-    weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr,
+    weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr + gearDr,
     resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),
     statuses: [],
