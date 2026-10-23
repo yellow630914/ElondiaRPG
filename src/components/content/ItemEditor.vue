@@ -472,7 +472,7 @@ function remove() {
           </select>
         </label>
         <label>舒適度 <input v-model.number="furn.comfort" type="number" min="0" max="10" /></label>
-        <label>圖示 <input v-model="furn.icon" maxlength="4" placeholder="🪑" /></label>
+        <label>地圖符號 <input v-model="furn.icon" title="擺在家裡時，地圖格上顯示的 emoji" maxlength="4" placeholder="🪑" /></label>
       </div>
       <div class="row small">
         <span>能放在：</span>

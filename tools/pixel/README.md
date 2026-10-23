@@ -1,6 +1,8 @@
 # 像素素材管線
 
-用本機的 ComfyUI 生成像素素材，再用腳本整理成遊戲能用的圖。腳本只用 Pillow 和 numpy，ComfyUI portable 內建的 Python 就能跑，不需要安裝任何節點。
+用本機的 ComfyUI 生成像素素材，再用腳本整理成遊戲能用的圖。
+
+> 物品圖示已經不用這條管線產生（太耗時間）：遊戲內建的是手畫的類別與底材圖（`src/components/items/itemArt.ts`），玩家可以在世界編輯器上傳圖片覆蓋，見 `docs/ITEMS.md` 第 8 節。`icons.json` 與 `generate.py` 留著備用（例如場景圖）。腳本只用 Pillow 和 numpy，ComfyUI portable 內建的 Python 就能跑，不需要安裝任何節點。
 
 | 檔案 | 用途 |
 |---|---|

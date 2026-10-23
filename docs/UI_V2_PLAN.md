@@ -4,7 +4,7 @@
 素材管線見 `tools/pixel/README.md`，立繪規格見 `docs/comfy/portrait-spec.md`。
 
 分 8 個階段，每個階段各自 commit、跑型別檢查與測試、截圖確認後再進下一階段。
-**P0～P2、P4 不依賴美術素材，可以馬上開始**；P3、P5、P6 要等 ComfyUI 的素材。
+**P0～P2、P4 不依賴美術素材，可以馬上開始**；P5 的場景圖要等 ComfyUI 的素材（沒有時用色塊）。P3 改成自己畫的圖示＋玩家上傳，P6 擱置。
 
 ---
 
@@ -46,19 +46,18 @@
 
 請離隊伍、離隊方式、契約、升級選能力都保留，搬到對應的分頁或卡片上。
 
-## P3 物品圖示（改資料與邏輯）
+## P3 物品圖示（改資料與邏輯）—— 已改方案
+
+原本打算用 ComfyUI 替每個物品產生像素圖示，太耗時間，改成：內建只做類別與底材的圖（自己畫的像素圖），玩家可以上傳圖片覆蓋。說明見 [ITEMS](ITEMS.md) 第 8 節。
 
 | 檔案 | 內容 |
 |---|---|
-| `src/assets/icons/*.png` | 挑好的 32×32 圖示（`process.py --export` 的輸出） |
-| `data/rules/items.json` | 材料新增 `kind`（草藥、礦石、毛皮、骨牙…約 27 種，先依名稱關鍵字自動分類，再人工抽查）；任何物品可加選填的 `icon` |
-| `data/rules/gear.json` | 每種底材加 `icon`（例如 `longsword` → `gear_longsword`，四種戒指共用 `gear_ring`）；材質加換色用的 4 階色 |
-| `src/engine/icons.ts`（新） | `itemIcon(state, name)`：物品的 `icon` → 裝備底材＋材質換色 → 材料 `kind` → 消耗品等依名稱規則 → 分類預設 |
-| `src/components/ui/ItemIcon.vue`（新） | 顯示圖示；需要換色時用 canvas 把 ramp 的 4 階換成材質色，結果快取 |
-| `src/components/items/itemInfo.ts`、`InventoryView.vue`、`ShopDialog.vue` 等 | 改用 `ItemIcon`，取代 `CATEGORY_ICON` 的 emoji |
-| `src/narrator/judge.ts` | AI 自創物品的提示詞附上可用的圖示代號，讓 AI 回傳 `icon` |
-| `src/components/content/ItemEditor.vue`、`GearEditor.vue` | 圖示選擇器 |
-| `src/engine/types.ts` | `customItems` 加選填 `icon`（舊存檔沒有就走預設，不需要遷移） |
+| `src/components/items/itemArt.ts`（新） | 自己畫的 12×12 像素圖：類別 3 張（食物、雜物、材料）＋底材 43 張 |
+| `src/components/items/itemIcon.ts`（新） | 類別、底材對到哪一張圖；自建底材依武器類型、欄位與材料類型挑 |
+| `src/engine/itemIcons.ts`（新） | 查找順序：物品上傳的圖 → 底材上傳的圖 → 內建底材圖 → 類別上傳的圖 → 內建類別圖；整理上傳的 data URL |
+| `src/components/items/ItemIcon.vue`（新） | 顯示圖示；取代行囊、商店的類別 emoji，紙娃娃與隊伍卡的欄位圖示 |
+| `src/engine/data.ts`、`gear.ts`、`mods.ts` | 物品、底材加選填 `icon`；世界內容加 `categoryIcons` |
+| `src/components/content/IconField.vue`、`iconUpload.ts`、`CategoryIconsEditor.vue`（新） | 上傳欄位（縮到 48×48 以內）；物品頁、底材頁、類別圖示頁 |
 
 ## P4 店名與描述（改資料與邏輯）
 

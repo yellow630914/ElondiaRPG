@@ -1,4 +1,4 @@
-// 物品圖示的資料面：玩家在世界裡上傳的圖（data URL）與查找順序。說明見 docs/ITEMS.md 第 7 節。
+// 物品圖示的資料面：玩家在世界裡上傳的圖（data URL）與查找順序。說明見 docs/ITEMS.md 第 8 節。
 // 內建的像素圖（類別、底材）在 components/items/itemArt.ts，這裡只決定「用哪一個」。
 //
 // 查找順序：
