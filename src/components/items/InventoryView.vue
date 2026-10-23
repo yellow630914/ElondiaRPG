@@ -6,6 +6,7 @@ import { formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/trade'
 import { useGame } from '@/stores/game'
 import { CATEGORY_ICON, CATEGORY_ORDER, categoryIcon, categoryName, categoryOf, itemEffect, itemText } from './itemInfo'
+import GameIcon from '../ui/GameIcon.vue'
 
 // 行囊：依類別篩選，使用、裝備（戰鬥以外）
 const game = useGame()
@@ -30,7 +31,7 @@ const value = (name: string) => itemValue(s.value, name)
 <template>
   <div class="inventory">
     <div class="row head">
-      <span>💰 {{ formatMoney(s.money_cc) }}</span>
+      <span class="money"><GameIcon name="coins" :size="16" />{{ formatMoney(s.money_cc) }}</span>
       <span class="small muted">共 {{ items.length }} 種物品・全隊共用</span>
     </div>
     <nav class="row tabs">
@@ -53,7 +54,7 @@ const value = (name: string) => itemValue(s.value, name)
         <div v-if="itemEffect(s, i.name)" class="small effect">{{ itemEffect(s, i.name) }}</div>
         <div v-if="itemText(s, i.name)" class="small muted">{{ itemText(s, i.name) }}</div>
         <div v-if="isIntelItem(s, i.name)" class="row actions">
-          <button class="small" :disabled="inCombat" title="記進冒險筆記（和向情報商買情報一樣），用掉這件情報" @click="game.readIntel(i.name)">🔍 解讀</button>
+          <button class="small" :disabled="inCombat" title="記進冒險筆記（和向情報商買情報一樣），用掉這件情報" @click="game.readIntel(i.name)"><GameIcon name="search" :size="13" /> 解讀</button>
         </div>
         <div v-else-if="canUse(i.name) || canEquip(s, i.name)" class="row actions">
           <select :value="target[i.name] ?? s.party[0]?.id" class="small" @change="target[i.name] = ($event.target as HTMLSelectElement).value">
@@ -69,6 +70,8 @@ const value = (name: string) => itemValue(s.value, name)
 </template>
 
 <style scoped>
+.money { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.money :deep(.game-icon) { color: var(--accent); }
 .inventory { display: grid; gap: 8px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .head { justify-content: space-between; }

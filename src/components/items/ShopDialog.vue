@@ -8,6 +8,7 @@ import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from '../NameTag.vue'
 import { CATEGORY_ICON, CATEGORY_ORDER, categoryIcon, categoryName, categoryOf, itemEffect, itemText } from './itemInfo'
+import GameIcon from '../ui/GameIcon.vue'
 
 // 商店的交易視窗：左邊是店裡的商品，右邊是行囊（可以賣的標出收購價）
 const props = defineProps<{ type: ShopType; loading?: boolean }>()
@@ -91,15 +92,15 @@ function sell(name: string, have: number) {
         <span v-if="loading" class="muted">・AI 正在準備今天的商品…</span>
         <span v-else-if="shop?.source === 'ai'" class="muted">・今天有 AI 準備的特別商品</span>
       </div>
-      <strong class="money">💰 {{ formatMoney(s.money_cc) }}</strong>
+      <strong class="money"><GameIcon name="coins" :size="16" />{{ formatMoney(s.money_cc) }}</strong>
     </div>
-    <p v-if="game.error" class="error small">⚠️ {{ game.error }}</p>
-    <p v-else-if="last" class="last small">✔ {{ last }}</p>
+    <p v-if="game.error" class="error small"><GameIcon name="warning" :size="13" /> {{ game.error }}</p>
+    <p v-else-if="last" class="last small"><GameIcon name="check" :size="13" /> {{ last }}</p>
 
     <div class="cols">
       <!-- 店裡的商品 -->
       <section class="col">
-        <h3>🏪 店裡的商品</h3>
+        <h3 class="head"><GameIcon name="store" :size="17" />店裡的商品</h3>
         <nav class="row chips">
           <button class="small" :class="{ active: filter === 'all' }" @click="filter = 'all'">全部 {{ deals.length }}</button>
           <button v-for="g in groups" :key="g" class="small" :class="{ active: filter === g }" @click="filter = g">{{ groupName(g) }}</button>
@@ -108,7 +109,8 @@ function sell(name: string, have: number) {
         <ul class="plain list">
           <li v-for="d in shownDeals" :key="d.id" class="entry">
             <div class="row top">
-              <span class="icon">{{ isItemDeal(d) ? categoryIcon(s, itemName(d)) : '✨' }}</span>
+              <span v-if="isItemDeal(d)" class="icon">{{ categoryIcon(s, itemName(d)) }}</span>
+              <GameIcon v-else name="sparkles" :size="16" class="icon special" />
               <strong class="grow">{{ d.title }}</strong>
               <span class="price">{{ costText(s, key, d) }}</span>
             </div>
@@ -140,7 +142,7 @@ function sell(name: string, have: number) {
 
       <!-- 行囊 -->
       <section class="col">
-        <h3>🎒 你的行囊</h3>
+        <h3 class="head"><GameIcon name="backpack" :size="17" />你的行囊</h3>
         <div class="row small">
           <span class="muted">這間店收：{{ buysText || '不收東西' }}</span>
           <span class="grow" />
@@ -177,6 +179,9 @@ function sell(name: string, have: number) {
 </template>
 
 <style scoped>
+.head { display: flex; align-items: center; gap: 6px; }
+.head :deep(.game-icon), .money :deep(.game-icon) { color: var(--accent); }
+.icon.special { color: var(--accent); }
 .shop-dialog { display: grid; gap: 10px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .shop-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }

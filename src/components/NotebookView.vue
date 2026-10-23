@@ -10,6 +10,7 @@ import { activeNodes, placeText } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
 import type { Quest } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import GameIcon from './ui/GameIcon.vue'
 
 // 冒險筆記：一般委託、特殊任務（目前的目標與經過）、情報
 const game = useGame()
@@ -64,9 +65,9 @@ const counts = computed(() => ({
 <template>
   <div class="notebook">
     <nav class="row tabs">
-      <button :class="{ active: tab === 'quests' }" @click="tab = 'quests'">📜 一般委託 <span v-if="counts.quests" class="tag">{{ counts.quests }}</span></button>
-      <button :class="{ active: tab === 'stories' }" @click="tab = 'stories'">⭐ 特殊任務 <span v-if="counts.stories" class="tag">{{ counts.stories }}</span></button>
-      <button :class="{ active: tab === 'intel' }" @click="tab = 'intel'">🕵️ 情報 <span v-if="counts.intel" class="tag">{{ counts.intel }}</span></button>
+      <button :class="{ active: tab === 'quests' }" @click="tab = 'quests'"><GameIcon name="scroll" :size="15" />一般委託 <span v-if="counts.quests" class="tag">{{ counts.quests }}</span></button>
+      <button :class="{ active: tab === 'stories' }" @click="tab = 'stories'"><GameIcon name="star" :size="15" />特殊任務 <span v-if="counts.stories" class="tag">{{ counts.stories }}</span></button>
+      <button :class="{ active: tab === 'intel' }" @click="tab = 'intel'"><GameIcon name="eye" :size="15" />情報 <span v-if="counts.intel" class="tag">{{ counts.intel }}</span></button>
     </nav>
 
     <template v-if="tab === 'quests'">
@@ -75,7 +76,7 @@ const counts = computed(() => ({
         <div class="row">
           <span class="tag">{{ q.rank }}</span><span class="tag">{{ AREA[q.area] }}</span><b class="grow">{{ q.title }}</b>
           <span v-if="canTurnIn(s, q)" class="tag ok">可以交付</span>
-          <span v-else-if="q.deadline" class="tag" :class="{ warn: hoursLeft(s, q.deadline) < 24 }" :title="`期限：第 ${q.deadline.day} 天 ${q.deadline.hour ?? 0} 時`">⏳ {{ deadlineText(s, q.deadline) }}</span>
+          <span v-else-if="q.deadline" class="tag" :class="{ warn: hoursLeft(s, q.deadline) < 24 }" :title="`期限：第 ${q.deadline.day} 天 ${q.deadline.hour ?? 0} 時`"><GameIcon name="hourglass" :size="12" />{{ deadlineText(s, q.deadline) }}</span>
           <button class="small" @click="abandonQuest(q)">放棄</button>
         </div>
         <div class="small">進度：{{ questProgressText(s, q) }}・報酬 {{ formatMoney(q.reward_cc) }}{{ isMaterialQuest(q) && (q.max ?? q.goal) > q.goal ? '（可以多交，報酬依數量增加）' : '' }}</div>
@@ -98,15 +99,15 @@ const counts = computed(() => ({
         <div class="row">
           <span v-if="def!.rank" class="tag">{{ def!.rank }}</span>
           <b class="grow">{{ def!.title }}</b>
-          <span v-if="p.status === 'active' && storyDeadline(s, p.id)" class="tag" :class="{ warn: hoursLeft(s, storyDeadline(s, p.id)!) < 24 }">⏳ {{ deadlineText(s, storyDeadline(s, p.id)) }}</span>
-          <span class="tag" :class="{ ok: p.status === 'completed' }">{{ p.status === 'active' ? '進行中' : p.status === 'completed' ? '✅ 完成' : '❌ 失敗' }}</span>
+          <span v-if="p.status === 'active' && storyDeadline(s, p.id)" class="tag" :class="{ warn: hoursLeft(s, storyDeadline(s, p.id)!) < 24 }"><GameIcon name="hourglass" :size="12" />{{ deadlineText(s, storyDeadline(s, p.id)) }}</span>
+          <span class="tag" :class="{ ok: p.status === 'completed' }">{{ p.status === 'active' ? '進行中' : p.status === 'completed' ? '完成' : '失敗' }}</span>
           <button v-if="p.status === 'active'" class="small" @click="abandon(p.id, def!.title)">放棄</button>
         </div>
         <p class="small">{{ def!.summary }}</p>
         <div v-if="p.status === 'active'" class="small">
           <b>目前的目標</b>
           <ul class="plain goals">
-            <li v-for="g in goals" :key="g.ref">🎯 {{ g.node.title }} <span class="muted">（{{ placeText(g.node, s) }}）</span></li>
+            <li v-for="g in goals" :key="g.ref"><GameIcon name="target" :size="12" /> {{ g.node.title }} <span class="muted">（{{ placeText(g.node, s) }}）</span></li>
             <li v-if="!goals.length" class="muted">（現在沒有可以進行的目標）</li>
           </ul>
         </div>
@@ -120,10 +121,10 @@ const counts = computed(() => ({
     </template>
 
     <template v-else>
-      <p v-if="!intel.length" class="muted">還沒有買過情報。情報商（🕵️）賣附近的事件點與特殊任務的消息。</p>
+      <p v-if="!intel.length" class="muted">還沒有買過情報。情報商賣附近的事件點與特殊任務的消息。</p>
       <div v-for="it in intel" :key="it.id" class="card" :class="it.status">
         <div class="row">
-          <b class="grow">{{ it.kind === 'story' ? '⭐ ' : '' }}{{ it.title }}</b>
+          <b class="grow"><GameIcon v-if="it.kind === 'story'" name="star" :size="13" /> {{ it.title }}</b>
           <span v-if="it.event" class="tag">{{ EVENT[it.event] }}</span>
           <span class="tag" :class="{ ok: it.status === 'active' }">{{ STATUS[it.status] }}</span>
         </div>
@@ -140,6 +141,7 @@ const counts = computed(() => ({
 <style scoped>
 .notebook { display: grid; gap: 8px; }
 .tabs { gap: 6px; }
+.tabs button { display: inline-flex; align-items: center; gap: 6px; }
 .tabs button.active { border-color: var(--accent); color: var(--accent); }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .grow { flex: 1; min-width: 120px; }
@@ -147,6 +149,8 @@ const counts = computed(() => ({
 .card p { margin: 0; line-height: 1.6; }
 .card.completed, .card.failed, .card.done, .card.expired { opacity: 0.65; }
 .tag.ok { border-color: var(--accent); color: var(--accent); }
+.tag.warn { border-color: var(--danger); color: var(--danger); }
+.goals :deep(.game-icon) { color: var(--accent); }
 .goals, .log { margin: 2px 0 0; display: grid; gap: 2px; }
 .history summary { cursor: pointer; color: var(--accent-2); }
 </style>

@@ -9,6 +9,8 @@ import NameTag from './NameTag.vue'
 import { canPromote } from '@/engine/promoteNpc'
 import { useContent, VANILLA_NAME } from '@/stores/content'
 import PortraitBox from './PortraitBox.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 const game = useGame()
 const content = useContent()
@@ -109,8 +111,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
 <template>
   <div class="layout">
     <section class="panel">
-      <h2>💞 人際關係</h2>
-      <p class="small muted">主角認識的角色。親密度由遊戲中的互動決定；外貌與關係描述可以自行編輯，會在相關事件中提供給 AI 參考。</p>
+      <h2 class="head"><GameIcon name="heart" :size="20" />人際關係 <Hint text="主角認識的角色。親密度由遊戲中的互動決定；外貌與關係描述可以自行編輯，會在相關事件中提供給 AI 參考。" /></h2>
       <p v-if="rels.length === 0" class="muted small">還沒有認識任何人。到酒館招募夥伴吧。</p>
 
       <div v-if="suggestions.length" class="suggestions">
@@ -152,7 +153,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
               v-if="promotable(r.id)" class="small" :disabled="content.readOnly"
               :title="content.readOnly ? `${VANILLA_NAME}不能修改：要先建立自己的世界，再用那個世界開始遊戲` : '把這個人目前的樣子（能力值、技能、特質、裝備、出沒的地方）存進目前的世界，之後可以在內容頁籤編輯；親密度與記憶延續'"
               @click="promote(r.id, r.name)"
-            >📌 存成固定 NPC</button>
+            ><GameIcon name="bookmark" :size="13" /> 存成固定 NPC</button>
           </div>
         </template>
 
@@ -184,8 +185,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
     </section>
 
     <section class="panel">
-      <h2>🗂️ 冒險記憶</h2>
-      <p class="small muted">主角經歷過的事件。生成文本時，會依參與人、地點與時間找出相關的記憶交給 AI。釘選的記憶一定會被找到。</p>
+      <h2 class="head"><GameIcon name="notes" :size="20" />冒險記憶 <Hint text="主角經歷過的事件。生成文本時，會依參與人、地點與時間找出相關的記憶交給 AI。釘選的記憶一定會被找到。" /></h2>
 
       <div class="row filters small">
         <select v-model="filterPerson">
@@ -229,7 +229,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
               @click="game.editMemory(m.id, { importance: ((m.importance % 3) + 1) as Memory['importance'] })"
             >{{ STARS[m.importance] }}</button>
             <button class="small" :class="{ pinned: m.pinned }" @click="game.editMemory(m.id, { pinned: !m.pinned })">
-              {{ m.pinned ? '已釘選' : '釘選' }}
+              <GameIcon name="bookmark" :size="12" /> {{ m.pinned ? '已釘選' : '釘選' }}
             </button>
           </div>
           <div v-if="editingMemory !== m.id" class="summary" @click="editSummary(m)">{{ m.summary }}</div>
@@ -245,6 +245,8 @@ const suggestionDraft = reactive<Record<string, string>>({})
 </template>
 
 <style scoped>
+.head { display: flex; align-items: center; gap: 6px; }
+.head :deep(.game-icon) { color: var(--accent); }
 .layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.2fr); gap: 14px; align-items: start; }
 .rel { border-top: 1px solid var(--border); padding: 10px 0; display: grid; gap: 6px; }
 .affinity { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--danger), #5a4a33 50%, var(--good)); }
