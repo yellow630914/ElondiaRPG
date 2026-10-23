@@ -19,7 +19,9 @@ import IntentPanel from '@/components/IntentPanel.vue'
 import LogView from '@/components/LogView.vue'
 import MapPanel from '@/components/MapPanel.vue'
 import NewGameView from '@/components/NewGameView.vue'
-import PartyView from '@/components/PartyView.vue'
+import PartyCards from '@/components/party/PartyCards.vue'
+import CharacterDialog from '@/components/party/CharacterDialog.vue'
+import type { CharTab } from '@/components/party/memberInfo'
 import InventoryView from '@/components/items/InventoryView.vue'
 import PeoplePanel from '@/components/PeoplePanel.vue'
 import PlacePanel from '@/components/PlacePanel.vue'
@@ -80,7 +82,7 @@ async function goHome() {
   await game.toHome()
 }
 function closeDialogs() {
-  showParty.value = showInventory.value = showRelations.value = showNotebook.value = showCraft.value = showSaves.value = showSettings.value = false
+  charOpen.value = showParty.value = showInventory.value = showRelations.value = showNotebook.value = showCraft.value = showSaves.value = showSettings.value = false
 }
 
 const showSettings = ref(false)
@@ -92,6 +94,22 @@ const showCraft = ref(false)
 /** 可以回公會交付的委託 */
 const readyQuests = computed(() => (game.state ? game.state.quests.filter((q) => canTurnIn(game.state!, q)).length : 0))
 const showSaves = ref(false)
+// 角色詳情（分頁）：從角色卡或地圖下方的隊伍卡打開
+const charOpen = ref(false)
+const charMember = ref('')
+const charTab = ref<CharTab>('stats')
+function openCharacter(member: string, tab: CharTab) {
+  charMember.value = member
+  charTab.value = tab
+  charOpen.value = true
+}
+/** 事件視窗要打開隊伍：指定了人（升級）就直接開他的角色詳情，有能力要選時開能力分頁 */
+function onOpenParty(id?: string) {
+  tab.value = 'adventure'
+  const m = id ? game.state?.party.find((x) => x.id === id) : undefined
+  if (m) openCharacter(m.id, m.pendingAbilityChoices?.length ? 'abilities' : 'stats')
+  else showParty.value = true
+}
 // 白天（6～18 點）顯示太陽，晚上顯示月亮
 const daytime = computed(() => { const h = game.state?.time.hour ?? 12; return h >= 6 && h < 18 })
 const clock = computed(() => (game.state ? formatTime(game.state.time).split(' ').at(-1) : ''))
@@ -182,7 +200,7 @@ onBeforeUnmount(() => {
   <main v-if="game.state" v-show="tab === 'adventure'" :key="settings.adult ? 'adult' : 'safe'" class="game" :class="{ combat: inCombat }">
     <aside class="left">
       <MapPanel />
-      <PartyStrip @open="showParty = true" />
+      <PartyStrip @open="openCharacter" />
       <RoadPanel v-if="game.state.road && !inCombat" />
       <template v-if="!inCombat">
         <RestPanel />
@@ -210,8 +228,9 @@ onBeforeUnmount(() => {
   </main>
 
   <AppDialog :open="showParty" title="隊伍" icon="users" width="1200px" @close="showParty = false">
-    <PartyView />
+    <PartyCards @detail="openCharacter" />
   </AppDialog>
+  <CharacterDialog v-if="game.state" v-model:member="charMember" v-model:tab="charTab" :open="charOpen" @close="charOpen = false" />
   <AppDialog :open="showInventory" title="行囊" icon="backpack" width="1000px" @close="showInventory = false">
     <InventoryView />
   </AppDialog>
@@ -231,7 +250,7 @@ onBeforeUnmount(() => {
     <SettingsView />
   </AppDialog>
 
-  <EventCenter v-if="game.state" @open-party="tab = 'adventure'; showParty = true" @open-relations="tab = 'adventure'; showRelations = true" />
+  <EventCenter v-if="game.state" @open-party="onOpenParty" @open-relations="tab = 'adventure'; showRelations = true" />
 </template>
 
 <style scoped>

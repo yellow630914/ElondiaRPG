@@ -14,7 +14,7 @@ import { activeEvents, eventDialogOpen, snoozed, type GameEvent } from './eventQ
 
 // 事件視窗：需要回應的事件（見 eventQueue.ts）一件一件處理。有新的事件時自動打開；
 // 擋住行動的事件排在前面，不能「稍後」；關掉視窗後畫面上方顯示待處理的件數，移動或休息被擋住時再打開
-const emit = defineEmits<{ 'open-party': []; 'open-relations': [] }>()
+const emit = defineEmits<{ 'open-party': [member?: string]; 'open-relations': [] }>()
 const game = useGame()
 const events = computed(() => activeEvents(game.state))
 const current = computed(() => events.value[0])
@@ -51,9 +51,9 @@ function later() {
   if (!e || e.blocking) return
   snoozed.value = new Set([...snoozed.value, e.id])
 }
-function openParty() {
+function openParty(member?: string) {
   eventDialogOpen.value = false
-  emit('open-party')
+  emit('open-party', member)
 }
 </script>
 

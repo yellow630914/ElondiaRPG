@@ -432,7 +432,7 @@ export function generateLoadout(classId: string, level: number, rng: Rng, race?:
   return out
 }
 
-const MOD_NAME: Record<string, string> = {
+export const MOD_NAME: Record<string, string> = {
   hit: '命中', damage: '傷害', evade: '迴避', dr: '減傷', save: '豁免', crit: '幸運一擊', ap_regen: '行動點回復',
 }
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
