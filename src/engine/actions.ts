@@ -19,7 +19,7 @@ import {
   applyBlackMarket, applyEscape, applyHaggle, applyHire, applyInvite, applyNegotiate, setupFor, type MarketKind,
 } from './companions'
 import {
-  actionRules, ATTR_IDS, attrName, locationById, regionById, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
+  actionRules, ATTR_IDS, attrName, geography, locationById, regionById, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
@@ -47,6 +47,7 @@ import { applyBargain } from './trade'
 import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { useAbilityOutOfCombat, type AbilityUse } from './resources'
+import { formatMoney } from './money'
 import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, ResourceChange } from './types'
 import { contractOf } from './tattoos'
 
@@ -111,6 +112,8 @@ export interface Judgment {
   adult_scene?: string
   effects: RewardEffect[]
   relationship_updates: RelationshipUpdate[]
+  /** 被程式截掉的數值（AI 提議的超過上限）：交給寫手，敘事照實際結算的數字寫 */
+  adjusted?: string[]
   /** 自創配方：AI 設計的成品（程式在結算時夾進上限，見 invention.ts） */
   invention?: Record<string, unknown>
   /** 爭取特質：AI 設計的特質（程式依成功程度夾住強度，見 perkActions.ts） */
@@ -212,6 +215,9 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   let items = 0
   let flags = 0
   let money = 0
+  const adjusted: string[] = []
+  // 同一樣物品這次已經給出去的數量（AI 可能分兩筆給出同一樣東西）
+  const given = new Map<string, number>()
   for (const e of Array.isArray(r.effects) ? r.effects : []) {
     if (!e || typeof e !== 'object') continue
     const x = e as Record<string, unknown>
@@ -245,7 +251,9 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         break
       }
       case 'reputation': {
-        const faction = clipText(x.faction, 30)
+        // 只認得遊戲裡的勢力（id 或名稱），亂填的名字不會變成讀不到的新聲望
+        const name = clipText(x.faction, 30)
+        const faction = geography.factions.find((f) => f.id === name || f.name === name)?.id
         const delta = num(x.delta)
         if (!faction || Number.isNaN(delta)) break
         const d = clamp(Math.round(delta), -caps.reputation, caps.reputation)
@@ -256,8 +264,13 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         const amount = num(x.amount)
         if (Number.isNaN(amount)) break
         const cap = caps.money_cc_per_level * pc.level
-        // 只能賺取上限內的錢；花錢不能超過持有的金額
-        const a = clamp(Math.round(amount), -Math.max(0, state.money_cc - money), cap - Math.max(0, money))
+        // 只能賺取上限內的錢；花錢不能超過持有的金額（money 是這次前面幾筆的合計）
+        const a = clamp(Math.round(amount), -Math.max(0, state.money_cc + money), cap - Math.max(0, money))
+        if (a !== Math.round(amount)) {
+          adjusted.push(amount > 0
+            ? `金錢只拿到 ${formatMoney(a)}（提議的 ${formatMoney(Math.round(amount))} 超過上限）`
+            : `只付得出 ${formatMoney(-a)}（提議付 ${formatMoney(-Math.round(amount))}，身上的錢不夠）`)
+        }
         if (a) {
           money += a
           effects.push({ type, amount: a })
@@ -269,9 +282,11 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         const qty = num(x.qty)
         if (!name || Number.isNaN(qty) || items >= caps.items) break
         const q = Math.round(qty)
-        const have = state.inventory.find((i) => i.name === name)?.qty ?? 0
-        const n = q > 0 ? Math.min(q, caps.item_qty) : -Math.min(-q, have)
+        const have = (state.inventory.find((i) => i.name === name)?.qty ?? 0) - (given.get(name) ?? 0)
+        const n = q > 0 ? Math.min(q, caps.item_qty) : -Math.min(-q, Math.max(0, have))
+        if (q > caps.item_qty) adjusted.push(`${name}只得到 ${n} 個（提議的 ${q} 個超過上限）`)
         if (n) {
+          if (n < 0) given.set(name, (given.get(name) ?? 0) - n)
           effects.push({ type, name, qty: n })
           items++
         }
@@ -381,6 +396,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     ...(p.kind === 'perk_pitch' && r.perk && typeof r.perk === 'object' ? { perk: r.perk as Record<string, unknown> } : {}),
     effects,
     relationship_updates: updates,
+    ...(adjusted.length ? { adjusted } : {}),
   }
 }
 
@@ -457,6 +473,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
   if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
   if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }
+  if (judgment?.adjusted?.length) report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), ...judgment.adjusted.map((t) => `${t}；經過要照實際結算的數字寫`)] }
   const scene = adultSceneFor(p, degree, judgment)
   if (scene) report.narration = { ...report.narration, length: report.narration?.length === 'long' ? 'long' : 'medium', adult_scene: scene }
   const success = degree === 'critical' || degree === 'success'

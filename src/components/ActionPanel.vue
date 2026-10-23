@@ -61,6 +61,8 @@ function doFree() {
   void game.perform({ kind: 'free', text: text.value, ...(target.value ? { target: target.value } : {}), ...(u ? { use: u } : {}) })
   text.value = ''
   use.value = ''
+  // 對象每次重選：不然下一個沒有對象的行動會被算在上一個人身上
+  target.value = ''
 }
 
 // ---- 奴隸身分 ----
