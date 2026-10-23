@@ -10,9 +10,11 @@ import { useSettings } from '@/stores/settings'
 import AppDialog from './AppDialog.vue'
 import ShopDialog from './items/ShopDialog.vue'
 import NameTag from './NameTag.vue'
-import GameIcon from './ui/GameIcon.vue'
+import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
 
-const props = defineProps<{ type: ShopType }>()
+// 商店的選單：進入交易、談長期折扣，加上地點面板給的其他項目（神殿治療、洗刺青、市場……），那些點了交給上層
+const props = withDefaults(defineProps<{ type: ShopType; extra?: MenuItem[] }>(), { extra: () => [] })
+const emit = defineEmits<{ extra: [id: string] }>()
 const game = useGame()
 const settings = useSettings()
 const s = computed(() => game.state!)
@@ -42,42 +44,38 @@ const counts = computed(() => {
 })
 const sellable = computed(() => s.value.inventory.filter((i) => sellPrice(s.value, key.value, i.name) !== null).length)
 const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { shop: props.type }))
+
+const items = computed<MenuItem[]>(() => [
+  {
+    id: 'trade', icon: 'store', label: '進入交易',
+    detail: `今天有 ${counts.value.items} 樣商品${counts.value.special ? `、${counts.value.special} 筆特別交易` : ''}${sellable.value ? `・行囊裡有 ${sellable.value} 種東西可以賣` : ''}`,
+    badge: loading.value ? 'AI 準備中…' : shop.value?.source === 'ai' ? '特別商品' : '', tone: 'gold',
+  },
+  {
+    id: 'discount', icon: 'hand', label: '談長期折扣', disabled: !!discountBlocked.value,
+    detail: discountBlocked.value ?? (off.value ? `目前享有 ${off.value}% 折扣` : '和店主談一個長期的折扣'),
+    badge: off.value ? `${off.value}%` : '', tone: 'good',
+  },
+  ...props.extra,
+])
+function pick(id: string) {
+  if (id === 'trade') showDialog.value = true
+  else if (id === 'discount') game.startNegotiation('shop_discount', { shop: props.type })
+  else emit('extra', id)
+}
 </script>
 
 <template>
   <div class="shop">
-    <div class="row" style="justify-content: space-between">
-      <h4><GameIcon name="coins" :size="14" /> 今天的交易</h4>
-      <span class="small muted">
-        <template v-if="loading">AI 正在準備今天的商品…</template>
-        <template v-else-if="shop?.source === 'ai'">今天有 AI 準備的特別商品</template>
-      </span>
-    </div>
-    <p v-if="keeper" class="small muted">
-      {{ keeperTitle(type) }}：<NameTag :id="keeper.id" />・{{ keeper.personality }}
-      <template v-if="off">（你享有 {{ off }}% 折扣）</template>
-    </p>
-
-    <p class="small">
-      今天有 {{ counts.items }} 樣商品{{ counts.special ? `、${counts.special} 筆特別交易` : '' }}<template v-if="sellable">・行囊裡有 {{ sellable }} 種東西可以賣</template>。
-    </p>
-    <button class="primary open" @click="showDialog = true"><GameIcon name="store" :size="15" /> 進入交易</button>
-
+    <p v-if="keeper" class="small muted keeper">{{ keeperTitle(type) }}：<NameTag :id="keeper.id" />・{{ keeper.personality }}</p>
+    <BuildingMenu :items="items" @pick="pick" />
     <AppDialog :open="showDialog" :title="shopTitle(s, shopPlace(s).id, type).name" icon="store" width="1180px" @close="showDialog = false">
       <ShopDialog :type="type" :loading="loading" />
     </AppDialog>
-
-    <div class="row small">
-      <button class="small" :disabled="!!discountBlocked" :title="discountBlocked ?? ''" @click="game.startNegotiation('shop_discount', { shop: type })">
-        談長期折扣
-      </button>
-      <span v-if="discountBlocked" class="muted">{{ discountBlocked }}</span>
-    </div>
   </div>
 </template>
 
 <style scoped>
-.shop { display: grid; gap: 6px; margin-top: 6px; }
-h4 { margin: 0; color: var(--accent-2); font-size: 0.95rem; display: flex; align-items: center; gap: 4px; }
-.open { justify-self: start; }
+.shop { display: grid; gap: 4px; margin-top: 4px; }
+.keeper { margin: 0; }
 </style>

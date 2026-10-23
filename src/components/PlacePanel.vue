@@ -34,6 +34,9 @@ import { checkBonus } from '@/engine/perks'
 import CraftPanel from './CraftPanel.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import AppDialog from './AppDialog.vue'
+import SceneBanner from './place/SceneBanner.vue'
+import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
 import { shopKindName, shopTitle, type NamedShop } from '@/engine/shopNames'
 import { shopPlace, shopTypeForCell } from '@/engine/trade'
 import { CELL_GAME_ICON, RANK_COLOR } from './ui/cellIcons'
@@ -170,6 +173,35 @@ const title = computed(() => {
   void s.value.shopNames
   return named.value ? shopTitle(s.value, shopPlace(s.value).id, named.value) : null
 })
+// 有場景橫幅的建築：有店名的店、旅店、公會
+const banner = computed(() => {
+  if (title.value && named.value) return { kind: named.value, name: title.value.name, tag: title.value.name !== shopKindName(named.value) ? shopKindName(named.value) : '' }
+  if (cell.value.kind === 'guild') return { kind: 'guild', name: cellName('guild'), tag: '' }
+  return null
+})
+// 神殿、雜貨店選單的其他項目（交易與折扣以外）
+const extraOpen = ref<'wash' | 'market' | null>(null)
+const templeMenu = computed<MenuItem[]>(() => [
+  {
+    id: 'heal', icon: 'heart', label: '神殿治療', detail: '受傷的隊員 HP 回滿（不回復法術環）',
+    badge: templeCost(s.value) ? formatMoney(templeCost(s.value)) : '不需要', disabled: templeCost(s.value) === 0 || s.value.money_cc < templeCost(s.value),
+  },
+  { id: 'wash', icon: 'feather', label: '洗刺青', detail: '要有聲望；奴隸印記要解除契約才能去掉' },
+])
+const marketName = computed(() => marketsHere(s.value).find((m) => m.kind === 'public')?.def.name ?? '市場')
+const generalMenu = computed<MenuItem[]>(() => (publicMarket.value ? [{ id: 'market', icon: 'users', label: marketName.value, detail: '公開的奴隸買賣' }] : []))
+function onExtra(id: string) {
+  if (id === 'heal') game.templeHeal()
+  else if (id === 'wash' || id === 'market') extraOpen.value = id
+}
+// 公會的選單：委託板在對話框裡
+const showBoard = ref(false)
+const guildMenu = computed<MenuItem[]>(() => [{
+  id: 'board', icon: 'scroll', label: '委託板',
+  detail: `${quests.value.filter((q) => q.status === 'available').length} 件可以接取${activeQuests.value.length ? `・進行中 ${activeQuests.value.length} 件` : ''}`,
+  badge: quests.value.filter((q) => canTurnIn(s.value, q)).length ? `${quests.value.filter((q) => canTurnIn(s.value, q)).length} 件可交付` : quests.value.length,
+  tone: quests.value.some((q) => canTurnIn(s.value, q)) ? 'gold' : undefined,
+}])
 // 商店的說明（shops.json 的 desc，內容頁籤可以改）：店名有自己的描述時收進「?」
 const shopDesc = computed(() => {
   void content.version
@@ -185,6 +217,9 @@ const shopDesc = computed(() => {
       <section v-if="area.kind !== 'road' && area.kind !== 'home'" class="panel">
         <!-- 特殊任務的任務點和地圖上一樣是 ⭐，不要顯示成委託地點 -->
         <h3 v-if="cell.storyNode" class="place-title"><GameIcon name="star" :size="18" />特殊任務的任務點</h3>
+        <SceneBanner v-else-if="banner" :kind="banner.kind" :name="banner.name" :tag="banner.tag" :icon="CELL_GAME_ICON[cell.kind]">
+          <Hint v-if="shopDesc && title?.desc" :text="shopDesc" />
+        </SceneBanner>
         <h3 v-else class="place-title">
           <GameIcon v-if="CELL_GAME_ICON[cell.kind]" :name="CELL_GAME_ICON[cell.kind]!" :size="18" />
           <span v-else-if="ICON[cell.kind]">{{ ICON[cell.kind] }}</span>
@@ -205,15 +240,10 @@ const shopDesc = computed(() => {
         </template>
 
         <template v-else-if="cell.kind === 'temple'">
-          <p class="muted small">接受神殿治療：受傷的隊員 HP 回滿（不回復法術環）。</p>
-          <button :disabled="templeCost(s) === 0 || s.money_cc < templeCost(s)" @click="game.templeHeal()">
-            治療（{{ formatMoney(templeCost(s)) }}）
-          </button>
-          <ShopPanel :key="`temple-${s.location}-${s.time.day}`" type="temple" />
-          <details class="tavern-trade">
-            <summary class="small">洗刺青（要有聲望）</summary>
+          <ShopPanel :key="`temple-${s.location}-${s.time.day}`" type="temple" :extra="templeMenu" @extra="onExtra" />
+          <AppDialog :open="extraOpen === 'wash'" title="洗刺青" icon="feather" width="760px" @close="extraOpen = null">
             <TattooPanel shop="temple" />
-          </details>
+          </AppDialog>
         </template>
 
         <template v-else-if="cell.kind === 'tattoo'">
@@ -227,9 +257,11 @@ const shopDesc = computed(() => {
         </template>
 
         <template v-else-if="cell.kind === 'shop'">
-          <p class="muted small">乾糧可以吃來果腹（戰鬥開始時有一點暫時生命）；地下城的安全房長休每人要一份。目前持有 {{ rations }} 份。</p>
-          <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" />
-          <MarketPanel v-if="publicMarket" kind="public" />
+          <p class="muted small">乾糧持有 {{ rations }} 份 <Hint text="乾糧可以吃來果腹（戰鬥開始時有一點暫時生命）；地下城的安全房長休每人要一份。" /></p>
+          <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" :extra="generalMenu" @extra="onExtra" />
+          <AppDialog :open="extraOpen === 'market'" :title="marketName" icon="users" width="980px" @close="extraOpen = null">
+            <MarketPanel kind="public" />
+          </AppDialog>
         </template>
 
         <template v-else-if="shopHere">
@@ -238,10 +270,6 @@ const shopDesc = computed(() => {
 
         <template v-else-if="cell.kind === 'tavern'">
           <TavernPanel :key="`${s.location}-${s.time.day}`" />
-          <details class="tavern-trade">
-            <summary class="small">酒館的交易（餐點、情報……）</summary>
-            <ShopPanel :key="`tavern-${s.location}-${s.time.day}`" type="tavern" />
-          </details>
         </template>
 
         <template v-else-if="cell.kind === 'guild'">
@@ -252,9 +280,10 @@ const shopDesc = computed(() => {
             <div v-if="exam" class="hot"><GameIcon name="scroll" :size="14" /> 晉升考核：{{ exam.title }}（{{ exam.status === 'available' ? '在委託板上，可以接取' : exam.status === 'ready' ? '完成了，可以交付' : '進行中' }}）</div>
             <div v-else-if="promo.next" class="muted">功績與等級都夠了，公會就會發晉升考核；通過才升階。交付委託（依委託階級）、打倒地下城層主、完成特殊任務都有功績。</div>
           </div>
-          <FoldSection id="guild.board" title="委託板" :count="quests.length">
-          <ul class="plain">
-            <li class="muted small">委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。</li>
+          <BuildingMenu :items="guildMenu" @pick="showBoard = true" />
+          <AppDialog :open="showBoard" title="委託板" icon="scroll" width="900px" @close="showBoard = false">
+          <template #head><Hint text="委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。" /></template>
+          <ul class="plain board">
             <li v-if="quests.length === 0" class="muted small">目前沒有委託。</li>
             <li v-for="q in quests" :key="q.id">
               <div><span class="tag" :class="{ hot: isExam(q) }">{{ isExam(q) ? `晉升 ${q.rank}` : q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>
@@ -289,7 +318,7 @@ const shopDesc = computed(() => {
               <span v-else-if="q.flags?.negotiated" class="small muted">（已談過報酬）</span>
             </li>
           </ul>
-          </FoldSection>
+          </AppDialog>
         </template>
 
         <template v-else-if="cell.kind === 'gate'">
@@ -406,9 +435,10 @@ const shopDesc = computed(() => {
 <style scoped>
 .guild-rank { display: grid; gap: 2px; padding: 6px 8px; border: 1px dashed var(--accent); border-radius: var(--radius); margin-bottom: 6px; }
 .guild-rank .hot { color: var(--accent); }
+.board > li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 4px; }
+.board > li > div { flex-basis: 100%; }
 .tag.hot { border-color: var(--accent); color: var(--accent); }
 .lock-methods { display: flex; flex-wrap: wrap; gap: 4px; }
-.tavern-trade { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 6px; }
 .qty { width: 56px; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
 details summary { cursor: pointer; padding: 4px 0; color: var(--accent-2); }
