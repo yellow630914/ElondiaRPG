@@ -55,7 +55,7 @@
 | 欄位 | 說明 |
 |---|---|
 | `id`、`title`、`text` | id（英數）、冒險筆記上的目標、觸發時的事件描述（也交給 AI） |
-| `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施、自建的商店或城鎮的特色地標上（`at.cell`，地標見 [LANDMARKS](LANDMARKS.md)）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`）、`road` 旅途上、`side` 臨時地圖裡的 ⭐（`at.side_map`） |
+| `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施、自建的商店或城鎮的特色地標上（`at.cell`，地標見 [LANDMARKS](LANDMARKS.md)）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`）、`road` 旅途上、`side` 臨時地圖裡的 ⭐（`at.side_map`）、`special` 特殊地圖裡的 ⭐（`at.special_map`，見 [SPECIAL_MAPS](SPECIAL_MAPS.md)） |
 | `at.location` | 地點 id（`npc` 可以不寫，跟著角色走） |
 | `requires` | 解鎖的旗標條件 |
 | `allies` | 在場的友方固定 NPC（id 的清單，任何種類的任務點都可以用）：解鎖之後站在 ⭐ 旁邊，或站在設施上（`cell`；`settlement` 在城門），不管他平常的出沒與出現條件；戰鬥時站在你這邊（由你操作，生命值不留到戰鬥之後）；AI 判定與寫經過時知道他們在場（`report.others`） |
@@ -76,6 +76,7 @@
   "complete": true,          // 完成任務（發完成報酬）；或 "fail_quest": true 任務失敗
   "retry": false,            // true：這個任務點不結束，之後可以再來
   "side_map": "cave",        // 進入臨時地圖（洞窟、遺跡、驛站），出口回到原本的地方
+  "special_map": "sm_rhineburg_sewer", // 傳送到特殊地圖的入口（從出口離開回到原本的地方，倒下送回地圖的所屬地點）
   "travel_to": "rivervale"   // 改去別的地點（旅途中直接抵達，不在旅途時被帶過去）
 }
 ```

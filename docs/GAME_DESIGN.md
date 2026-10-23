@@ -50,6 +50,7 @@
 | 物品與裝備 | [ITEMS](ITEMS.md) | `gear.ts`、`inventory.ts`、`tools.ts` |
 | 刺青（奴隸印記、誓約印記、普通刺青） | [TATTOOS](TATTOOS.md) | `tattoos.ts` |
 | 城鎮的特色地標 | [LANDMARKS](LANDMARKS.md) | `landmarks.ts` |
+| 特殊地圖 | [SPECIAL_MAPS](SPECIAL_MAPS.md) | `specialMaps.ts` |
 | 工藝 | [CRAFTING](CRAFTING.md) | `crafting.ts`、`craft.ts`、`recipes.ts`、`invention.ts` |
 | 房屋與種植 | [HOMES](HOMES.md) | `homes.ts`、`garden.ts` |
 | 工作與娼館 | [WORK](WORK.md) | `work.ts`、`brothel.ts` |
