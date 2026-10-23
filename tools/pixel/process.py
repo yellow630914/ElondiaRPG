@@ -29,7 +29,24 @@ def hex_rgb(h):
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def remove_background(img, tol):
+def fill_holes(work, bg, tol, min_area):
+    """hollow 的物件：被物件圍住的背景色區域（戒指的孔）也標成背景；太小的區域當成反光，留著。"""
+    keep = (1, 2, 3)
+    for _ in range(300):
+        a = np.asarray(work).astype(int)
+        cand = (np.abs(a - bg).max(axis=-1) <= tol) & ~np.all(a == MARK, axis=-1) & ~np.all(a == keep, axis=-1)
+        pts = np.argwhere(cand)
+        if not len(pts):
+            return
+        y, x = pts[0]
+        probe = (4, 5, 6)
+        ImageDraw.floodfill(work, (int(x), int(y)), probe, thresh=tol)
+        region = np.all(np.asarray(work) == probe, axis=-1)
+        fill = MARK if region.sum() >= min_area else keep
+        ImageDraw.floodfill(work, (int(x), int(y)), fill, thresh=0)
+
+
+def remove_background(img, tol, hollow=False, min_hole=0.0008):
     """從四邊每隔一段距離 flood fill 和背景相近的顏色，回傳 RGBA（背景透明）。"""
     rgb = img.convert('RGB')
     a = np.asarray(rgb).astype(int)
@@ -44,6 +61,8 @@ def remove_background(img, tol):
         px = work.getpixel(s)
         if px != MARK and np.abs(np.array(px) - bg).max() <= tol:
             ImageDraw.floodfill(work, s, MARK, thresh=tol)
+    if hollow:
+        fill_holes(work, bg, tol, int(w * h * min_hole))
     m = np.all(np.asarray(work) == MARK, axis=-1)
     out = np.dstack([np.asarray(rgb), np.where(m, 0, 255).astype(np.uint8)])
     return Image.fromarray(out, 'RGBA')
@@ -137,7 +156,7 @@ def recolor_preview(arr, pal, material):
 
 
 def process_one(path, item, pal, args):
-    img = remove_background(Image.open(path), args.tol)
+    img = remove_background(Image.open(path), args.tol, item.get('hollow', False), args.min_hole)
     img = crop_square(img, args.margin)
     inner = args.size - (2 if args.outline else 0)
     rgb, opaque = downscale(img, inner)
@@ -180,7 +199,8 @@ def main():
     ap.add_argument('--sheets', default=str(HERE / 'sheets'))
     ap.add_argument('--only', default='')
     ap.add_argument('--size', type=int, default=0, help='輸出尺寸，預設用 icons.json 的 size')
-    ap.add_argument('--tol', type=int, default=38, help='去背的顏色容差（0～255）')
+    ap.add_argument('--tol', type=int, default=12, help='去背的顏色容差（0～255）；背景是純白，太大會吃掉玻璃瓶身')
+    ap.add_argument('--min-hole', type=float, default=0.0008, help='hollow 物件：封閉的背景色區域至少佔全圖這個比例才算孔（更小的當成反光）')
     ap.add_argument('--margin', type=float, default=0.06, help='物件四周留白的比例')
     ap.add_argument('--sat', type=float, default=0.18, help='recolor 圖示中低於這個彩度的像素算「可換色」')
     ap.add_argument('--outline', action='store_true', help='外圍加 1px 深色描邊')
