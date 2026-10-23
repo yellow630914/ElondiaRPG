@@ -179,3 +179,17 @@ export function layerFights(trials: number, perLayer = 2, levelOffset = 0): Grou
   }
   return rows
 }
+
+export interface MinionRow { id: string; name: string; level: number; win: number; rounds: number; hpLeft: number }
+
+/** 每種小怪兩隻一組，打同等級的隊伍：調整小怪輸出用（目標每場掉 10～15% 生命） */
+export function minionFights(trials: number): MinionRow[] {
+  const bosses = bossIds()
+  return Object.values(enemies).filter((m) => !bosses.has(m.id)).map((m) => {
+    const rs = Array.from({ length: trials }, (_, t) => fight([[m.id, 2]], m.level, 4000 + t))
+    const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
+    const r2 = (n: number) => Math.round(n * 1000) / 1000
+    // 輸了算剩 0
+    return { id: m.id, name: m.name, level: m.level, win: r2(rs.filter((r) => r.win).length / trials), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))) }
+  })
+}
