@@ -76,8 +76,8 @@ describe('material quests', () => {
         }
         if (q.kind === 'drop_wild') expect(['F', 'E']).toContain(q.rank)
         if (q.kind === 'drop_dungeon' || q.kind === 'boss_hunt') {
-          expect(RANK_ORDER.indexOf(q.rank)).toBeLessThanOrEqual(RANK_ORDER.indexOf('B'))
-          expect(q.rank).toBe(rankForLevel(enemies[q.monster!]!.level, ['F', 'B']))
+          expect(RANK_ORDER.indexOf(q.rank)).toBeLessThanOrEqual(RANK_ORDER.indexOf('A'))
+          expect(q.rank).toBe(rankForLevel(enemies[q.monster!]!.level, ['F', 'A']))
         }
         if (q.kind.startsWith('gather_') || q.kind.startsWith('drop_') || q.kind === 'boss_hunt') {
           expect(q.max).toBe(q.goal * materialQuestRules.max_multiplier)

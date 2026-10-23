@@ -155,8 +155,8 @@ describe('quests', () => {
           expect(q.layer, q.title).toBeDefined()
           expect(q.title).toContain(layerName(q.layer!))
           expect(q.rank).toBe(layerRank(target, q.layer!))
-          // 和同一層的層主討伐換算方式一致：不會再出現 A 級
-          expect(['E', 'D', 'C']).toContain(q.rank)
+          // 和同一層的層主討伐換算方式一致：淺層到深層是 E～C，底層才是 A 級
+          expect(q.layer === 'abyss' ? ['A'] : ['E', 'D', 'C']).toContain(q.rank)
           seen++
         }
       }

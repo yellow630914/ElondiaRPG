@@ -1,7 +1,7 @@
 // 材料與討伐委託（系統生成的一般委託，data/rules/town_quests.json 的 material_quests）：
 // - gather_wild：近郊採集點的材料（F 級）；gather_dungeon：地下城周邊採集點的材料（E 級）
-// - drop_wild：近郊怪物掉落的材料（F～E 級）；drop_dungeon：地下城怪物掉落的材料（F～B 級，依怪物等級）
-// - boss_hunt：討伐地下城的層主（F～B 級，依層主等級）
+// - drop_wild：近郊怪物掉落的材料（F～E 級）；drop_dungeon：地下城怪物掉落的材料（F～A 級，依怪物等級）
+// - boss_hunt：討伐地下城的層主（F～A 級，依層主等級）
 // 材料委託在公會交付行囊裡的材料，可以過量交付到 max 份；討伐委託記錄打倒的次數，最多算到 max 次。
 // 帶著委託進入近郊或地下城的那一層時，grid.ts 會確保有足量的採集點或戰鬥點（questTargets）。
 
@@ -209,7 +209,7 @@ function dungeonQuest(state: GameState, rng: Rng, kind: MaterialQuestKind, targe
     if (!unique.length) return undefined
     const { m, item, layer } = rng.pick(unique)
     const goal = qtyFor(rng, r.drop_dungeon.qty)
-    const rank = rankForLevel(enemies[m]!.level, r.drop_dungeon.ranks ?? ['F', 'B'])
+    const rank = rankForLevel(enemies[m]!.level, r.drop_dungeon.ranks ?? ['F', 'A'])
     return {
       ...base(state, kind, target, goal), id: `q-${tag}-dd`, layer, monster: m,
       title: `收集${dname}${LAYER_NAME[layer]}${enemies[m]!.name}的${item}（${goal} 份）`, rank, item, reward_cc: reward(rng, rank, item, goal),
@@ -222,7 +222,7 @@ function dungeonQuest(state: GameState, rng: Rng, kind: MaterialQuestKind, targe
     if (!bosses.length) return undefined
     const { layer, id } = rng.pick(bosses)
     const goal = qtyFor(rng, r.boss_hunt.qty)
-    const rank = rankForLevel(enemies[id]!.level, r.boss_hunt.ranks ?? ['F', 'B'])
+    const rank = rankForLevel(enemies[id]!.level, r.boss_hunt.ranks ?? ['F', 'A'])
     return {
       ...base(state, kind, target, goal), id: `q-${tag}-bh`, layer, monster: id,
       title: `討伐${dname}${LAYER_NAME[layer]}的層主${enemies[id]!.name}${goal > 1 ? `（${goal} 次）` : ''}`, rank,

@@ -15,8 +15,8 @@
     "gather_wild": { "rank": "F", "qty": [3, 5] },
     "gather_dungeon": { "rank": "E", "layer": "outskirts", "qty": [2, 4] },
     "drop_wild": { "ranks": ["F", "E"], "qty": [2, 4] },
-    "drop_dungeon": { "ranks": ["F", "B"], "qty": [2, 4] },
-    "boss_hunt": { "ranks": ["F", "B"], "qty": [1, 1], "reward_mult": 1.5 }
+    "drop_dungeon": { "ranks": ["F", "A"], "qty": [2, 4] },
+    "boss_hunt": { "ranks": ["F", "A"], "qty": [1, 1], "reward_mult": 1.5 }
   },
   "templates": [
     {

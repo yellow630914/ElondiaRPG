@@ -509,8 +509,8 @@ export interface RelationSuggestion {
  * pest、hunt、search、gather、patrol、delivery：F 級城內／近郊委託的範本（pest、hunt 是戰鬥；search、gather、patrol 是檢定；delivery 花時間即可）。
  * 材料委託（交付 goal 份，最多 max 份，報酬依交付的份數）：
  * - gather_wild：近郊採集點的材料（F 級）；gather_dungeon：地下城周邊採集點的材料（E 級）
- * - drop_wild：近郊怪物掉落的材料（F～E 級）；drop_dungeon：地下城怪物掉落的材料（F～B 級，依怪物等級）
- * boss_hunt：討伐地下城的層主 goal 次，最多 max 次（F～B 級，依層主等級）。
+ * - drop_wild：近郊怪物掉落的材料（F～E 級）；drop_dungeon：地下城怪物掉落的材料（F～A 級，依怪物等級）
+ * boss_hunt：討伐地下城的層主 goal 次，最多 max 次（F～A 級，依層主等級）。
  */
 export type QuestKind =
   | 'clear_dungeon' | 'pest' | 'hunt' | 'search' | 'gather' | 'patrol' | 'delivery'
