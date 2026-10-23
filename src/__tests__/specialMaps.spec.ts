@@ -3,7 +3,8 @@ import { specialMaps, stories, type SpecialMapDef, type StoryDef } from '@/engin
 import { afterDefeat, cellAt, currentArea, currentCell, enterLocation, getArea, move, placeAt, position } from '@/engine/grid'
 import { applyPendingMove, queueMove } from '@/engine/road'
 import { enterSpecial, leaveSpecial, pruneSpecialMaps } from '@/engine/specialMaps'
-import { sanitizeSpecialMapMod, specialMapUsage } from '@/engine/specialMapMods'
+import { sanitizeSpecialMapMod, specialMapUsage, storySpotProblem } from '@/engine/specialMapMods'
+import { sanitizeStory, storyCheck } from '@/engine/storyMods'
 import { applyContent, emptyMods, sanitizeNpc } from '@/engine/mods'
 import { shopUsage } from '@/engine/shopMods'
 import { shopTypeForCell } from '@/engine/trade'
@@ -142,6 +143,40 @@ describe('special maps', () => {
       expect(commitReport(state, report).location.scene).toContain('帝國時代的地下蓄水池')
     } finally {
       stories.splice(stories.indexOf(story), 1)
+    }
+  })
+
+  it('puts a story point on the exact cell of a fixed map', () => {
+    expect(storySpotProblem('sm_rhineburg_cistern', 4, 4)).toBeUndefined()
+    expect(storySpotProblem('sm_rhineburg_cistern', 2, 2)).toContain('不是空地')
+    expect(storySpotProblem('sm_rhineburg_cistern', 1, 0)).toContain('通道')
+    expect(storySpotProblem('sm_rhineburg_sewer', 4, 0)).toBeTruthy()
+    expect(storySpotProblem('sm_rhineburg_cistern', 9, 0)).toContain('超出')
+    const nodes = (at: object) => [{ id: 'n1', title: '找到失物', text: '', kind: 'story', at: { where: 'special', special_map: 'sm_rhineburg_cistern', ...at }, success: { complete: true } }]
+    const raw = { title: '蓄水池的寶箱', summary: '', rank: 'F', start: { kind: 'manual' } }
+    // 整理：範圍內的格子留下，超出的拿掉；走不到的格子只提醒
+    expect(sanitizeStory('t', { ...raw, nodes: nodes({ x: 4, y: 4 }) } as never, true).nodes[0]!.at).toMatchObject({ x: 4, y: 4 })
+    expect(sanitizeStory('t', { ...raw, nodes: nodes({ x: 40, y: 4 }) } as never, true).nodes[0]!.at.x).toBeUndefined()
+    const water = sanitizeStory('t', { ...raw, nodes: nodes({ x: 2, y: 2 }) } as never, true)
+    expect(storyCheck(water).errors).toEqual([])
+    expect(storyCheck(water).warnings.join()).toContain('隨機')
+    const state = inRhineburg()
+    const story = { ...sanitizeStory('test_spot', { ...raw, nodes: nodes({ x: 4, y: 4 }) } as never, true), id: 'test_spot' } as StoryDef
+    const bad = { ...water, id: 'test_spot2' } as StoryDef
+    stories.push(story, bad)
+    try {
+      startStory(state, 'test_spot')
+      startStory(state, 'test_spot2')
+      enterSpecial(state, 'sm_rhineburg_cistern')
+      const area = currentArea(state)
+      expect(area.cells[4 * area.width + 4]).toMatchObject({ kind: 'quest', storyNode: 'test_spot:n1' })
+      // 走不到的格子：改成隨機的一格空地
+      const i = area.cells.findIndex((c) => c.storyNode === 'test_spot2:n1')
+      expect(i).toBeGreaterThanOrEqual(0)
+      expect(i).not.toBe(2 * area.width + 2)
+    } finally {
+      stories.splice(stories.indexOf(story), 1)
+      stories.splice(stories.indexOf(bad), 1)
     }
   })
 

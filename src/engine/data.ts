@@ -172,6 +172,9 @@ export interface StoryPlace {
   side_map?: string
   /** special：哪一張特殊地圖 */
   special_map?: string
+  /** special：固定地圖上的確切格子（沒有時隨機放在一格空地） */
+  x?: number
+  y?: number
 }
 
 export interface StoryCheck { attr: AttrId; dc: number }

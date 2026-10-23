@@ -13,6 +13,7 @@ import { cleanFlag, condMet, hasFlag } from './storyFlags'
 import type { GameState } from './types'
 import { travelEvents } from './road'
 import { isTattooPlace, oathError, tattooTemplate } from './tattoos'
+import { mapSize, storySpotProblem } from './specialMapMods'
 
 export interface StoryMod extends StoryDef {
   custom?: boolean
@@ -230,7 +231,15 @@ function place(v: unknown): StoryPlace {
   if (where === 'dungeon') out.layer = STORY_LAYERS.includes(p.layer as never) ? p.layer : 'outskirts'
   if (where === 'npc' && str(p.npc, 60)) out.npc = str(p.npc, 60)
   if (where === 'side' && typeof p.side_map === 'string' && SIDE_MAPS().includes(p.side_map)) out.side_map = p.side_map
-  if (where === 'special') out.special_map = typeof p.special_map === 'string' && specialMaps[p.special_map] ? p.special_map : Object.keys(specialMaps)[0]
+  if (where === 'special') {
+    out.special_map = typeof p.special_map === 'string' && specialMaps[p.special_map] ? p.special_map : Object.keys(specialMaps)[0]
+    // 固定地圖的確切格子（是不是走得到的格子由 storyCheck 提醒，遊戲裡不行時改成隨機）
+    const size = out.special_map && specialMaps[out.special_map]?.grid?.length ? mapSize(specialMaps[out.special_map]!) : undefined
+    if (size && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x! >= 0 && p.y! >= 0 && p.x! < size[0] && p.y! < size[1]) {
+      out.x = p.x
+      out.y = p.y
+    }
+  }
   if (where === 'road' || where === 'side' || where === 'special') delete out.location
   return out
 }
@@ -423,6 +432,10 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     const t = `任務點「${n.title}」`
     if (n.at.where !== 'npc' && n.at.where !== 'road' && n.at.where !== 'side' && n.at.where !== 'special' && !n.at.location) err.push(`${t}沒有指定地點`)
     if (n.at.where === 'special' && (!n.at.special_map || !specialMaps[n.at.special_map])) err.push(`${t}的特殊地圖不存在`)
+    else if (n.at.where === 'special' && n.at.x !== undefined && n.at.y !== undefined) {
+      const why = storySpotProblem(n.at.special_map!, n.at.x, n.at.y)
+      if (why) warn.push(`${t}指定的格子（${n.at.x}, ${n.at.y}）：${why}，遊戲裡會隨機放在一格空地`)
+    }
     if (n.at.where === 'npc' && (!n.at.npc || !npcIds.has(n.at.npc))) err.push(`${t}的固定 NPC 不存在`)
     if (n.at.where === 'outskirts' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type === 'dungeon') err.push(`${t}：地下城沒有近郊，請改成「地下城某一層」`)
     if (n.at.where === 'dungeon' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type !== 'dungeon') err.push(`${t}：選的地點不是地下城`)

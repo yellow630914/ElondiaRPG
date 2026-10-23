@@ -191,6 +191,29 @@ export function specialMapUsage(id: string): string[] {
   return [...new Set(out)]
 }
 
+/** 任務點（⭐）可以指定的格子種類：空地與固定的遭遇、強敵、資源、寶箱、陷阱 */
+const STORY_SPOT_KINDS = new Set<string>(['floor', 'encounter', 'elite', 'resource', 'chest', 'trap'])
+
+/**
+ * 任務點能不能放在固定地圖的這一格：不行時回傳原因（隨機地圖、超出範圍、不是空地或固定內容、入口、通道的端點）。
+ * 不行的格子在遊戲裡改成隨機放在一格空地。
+ */
+export function storySpotProblem(id: string, x: number, y: number): string | undefined {
+  const def = specialMaps[id]
+  const map = specialPreview(id)
+  if (!def || !map) return '隨機地圖不能指定格子'
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x >= map.width || y >= map.height) return '格子超出地圖'
+  if (!STORY_SPOT_KINDS.has(map.cells[y * map.width + x]!.kind)) return '那一格不是空地（或遭遇、資源、寶箱、陷阱）'
+  if (def.entry && def.entry.x === x && def.entry.y === y) return '那一格是入口'
+  const key = specialKey(id)
+  const ends = [
+    ...(def.connections ?? []).map((c) => c.at),
+    ...Object.values(specialMaps).flatMap((d) => (d.connections ?? []).filter((c) => c.to.area === key).map((c) => c.to)),
+  ]
+  if (ends.some((e) => e.x === x && e.y === y)) return '那一格是通道的端點'
+  return undefined
+}
+
 /** 固定地圖的樣子（不含隨機的內容；商店照擺的位置）：固定 NPC 選格子、檢查位置用。隨機地圖沒有固定的樣子 */
 export function specialPreview(id: string): { key: string; name: string; width: number; height: number; cells: { kind: CellKind }[] } | undefined {
   const def = specialMaps[id]

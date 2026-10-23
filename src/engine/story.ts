@@ -8,6 +8,7 @@
 
 import { snapshot } from './character'
 import { endpointsIn } from './specialMaps'
+import { storySpotProblem } from './specialMapMods'
 import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
@@ -439,6 +440,15 @@ export function ensureStoryMarkers(state: GameState, area: Area, rng: Rng) {
   const avoid = new Set(area.kind === 'special' ? endpointsIn(area.key).map((e) => e.y * area.width + e.x) : [])
   for (const ref of markersFor(state, area)) {
     if (have.has(ref)) continue
+    // 固定地圖上指定了格子：放在那一格（不行的格子改成隨機）
+    const at = activeNodes(state).find((n) => n.ref === ref)?.node.at
+    if (area.kind === 'special' && at?.x !== undefined && at.y !== undefined && !storySpotProblem(area.special ?? '', at.x, at.y)) {
+      const i = at.y * area.width + at.x
+      if (!area.cells[i]?.storyNode) {
+        area.cells[i] = { kind: 'quest' as CellKind, storyNode: ref }
+        continue
+      }
+    }
     const free = area.cells.map((c, i) => (c.kind === 'floor' && i !== entry && i !== entry - area.width && !avoid.has(i) ? i : -1)).filter((i) => i >= 0)
     if (!free.length) return
     const i = free[rng.int(0, free.length - 1)]!
