@@ -2,10 +2,10 @@
 // 內建的地圖每一項都可以改、不能刪；自建的地圖沒有被用到時可以刪。
 
 import {
-  DUNGEON_LAYER_IDS, enemies, geography, isSpecialMapId, itemDef, npcs as namedNpcs, specialKey, specialMapLegend, specialMaps, stories,
-  type DungeonLayerId, type EncounterGroup, type SpecialConnection, type SpecialMapDef,
+  DUNGEON_LAYER_IDS, enemies, geography, isSpecialMapId, itemDef, npcs as namedNpcs, shopRules, specialKey, specialMapLegend, specialMaps, stories,
+  type DungeonLayerId, type EncounterGroup, type ShopType, type SpecialConnection, type SpecialMapDef,
 } from './data'
-import { settlementArea } from './grid'
+import { settlementArea, type CellKind } from './grid'
 import type { Lighting } from './light'
 import { cleanFlag } from './storyFlags'
 
@@ -15,7 +15,7 @@ export interface SpecialMapMod extends SpecialMapDef {
 
 export const SPECIAL_MAP_LIMITS = {
   name_chars: 16, desc_chars: 300, size: [3, 20], carve: [5, 400], count: [0, 20], elites: [0, 5],
-  connections: 8, table: 8, group_types: 4, group_count: [1, 6], items: 6, flags: 4,
+  connections: 8, table: 8, group_types: 4, group_count: [1, 6], items: 6, flags: 4, shops: 8,
 } as const
 export const LIGHTINGS: Record<Lighting, string> = { lit: '一直有光', daylight: '白天有光', dark: '黑暗' }
 /** 固定地圖可以畫的格子（共用的圖例） */
@@ -72,7 +72,9 @@ function targetSize(area: string, known: Record<string, Pick<SpecialMapDef, 'gri
  * 整理特殊地圖。known 是同一批一起整理的地圖（匯入時互相接的通道），沒有時只認得目前的地圖。
  * 通道只有固定地圖可以設定；接到城鎮時那一格要是牆或水。
  */
-export function sanitizeSpecialMapMod(id: string, raw: Partial<SpecialMapMod>, known: Record<string, Pick<SpecialMapDef, 'grid' | 'size'>> = {}): SpecialMapMod {
+export function sanitizeSpecialMapMod(
+  id: string, raw: Partial<SpecialMapMod>, known: Record<string, Pick<SpecialMapDef, 'grid' | 'size'>> = {}, shopIds: Set<string> = new Set(Object.keys(shopRules.types)),
+): SpecialMapMod {
   if (!isSpecialMapId(id)) throw new Error('特殊地圖的 id 要是 sm_ 開頭（小寫英數與底線）')
   const L = SPECIAL_MAP_LIMITS
   const base = builtinSpecialMap(id)
@@ -145,6 +147,14 @@ export function sanitizeSpecialMapMod(id: string, raw: Partial<SpecialMapMod>, k
       connections.push(conn)
     }
     if (connections.length) out.connections = connections
+    // 商店：存在的店種，一格一家
+    const shops: NonNullable<SpecialMapDef['shops']> = []
+    for (const s of (Array.isArray(raw.shops) ? raw.shops : []).slice(0, L.shops)) {
+      if (!s || typeof s.shop !== 'string' || !shopIds.has(s.shop) || s.shop === 'wanderer' || !inside(s)) continue
+      if (shops.some((x) => x.x === s.x && x.y === s.y)) continue
+      shops.push({ shop: s.shop, x: s.x, y: s.y })
+    }
+    if (shops.length) out.shops = shops
   }
   if (!base) out.custom = true
   return out
@@ -174,6 +184,23 @@ export function specialMapUsage(id: string): string[] {
   for (const def of Object.values(specialMaps)) {
     if (def.id !== id && def.connections?.some((c) => c.to.area === specialKey(id))) out.push(`特殊地圖「${def.name}」的通道`)
   }
-  for (const n of namedNpcs) if ((n as { special_map?: string }).special_map === id) out.push(`固定 NPC「${n.name}」待在這裡`)
+  const key = specialKey(id)
+  for (const n of namedNpcs) {
+    if (n.fixed?.area === key || n.stages?.some((st) => st.fixed?.area === key)) out.push(`固定 NPC「${n.name}」待在這裡`)
+  }
   return [...new Set(out)]
+}
+
+/** 固定地圖的樣子（不含隨機的內容；商店照擺的位置）：固定 NPC 選格子、檢查位置用。隨機地圖沒有固定的樣子 */
+export function specialPreview(id: string): { key: string; name: string; width: number; height: number; cells: { kind: CellKind }[] } | undefined {
+  const def = specialMaps[id]
+  if (!def?.grid?.length) return undefined
+  const legend = { ...specialMapLegend, ...(def.legend ?? {}) }
+  const [width, height] = mapSize(def)
+  const cells = def.grid.flatMap((row) => Array.from({ length: width }, (_, x) => ({ kind: (legend[row[x] ?? '#'] ?? 'wall') as CellKind })))
+  for (const s of def.shops ?? []) {
+    const t = shopRules.types[s.shop as ShopType]
+    if (t && s.x < width && s.y < height) cells[s.y * width + s.x] = { kind: (t.custom ? s.shop : t.cell) as CellKind }
+  }
+  return { key: specialKey(id), name: def.name, width, height, cells }
 }

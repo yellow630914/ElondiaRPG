@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { geography, landmarkDef, landmarksIn, regionById, type Haunt } from '@/engine/data'
+import { geography, landmarkDef, landmarksIn, regionById, specialMaps, type Haunt } from '@/engine/data'
+import { specialPreview } from '@/engine/specialMapMods'
 import { blockKeys, CELL_ICON, cellName, settlementArea, ZONES, type Zone } from '@/engine/grid'
 
 // 固定 NPC 出沒的地方：所屬地點，加上活躍地點或固定在聚落的一格（預設的設定與「依劇情旗標改變出沒」共用）
@@ -14,17 +15,21 @@ const ZONE_NAME: Record<Zone, string> = { town: '城區', noble: '貴族區', pa
 const settlements = geography.locations.filter((l) => l.type !== 'dungeon')
 const places = geography.locations
 
+// 固定地圖的特殊地圖（隨機地圖沒有固定的格子）
+const fixedMaps = computed(() => Object.values(specialMaps).filter((m) => m.grid?.length))
 const mode = computed({
-  get: () => (target.value.landmark ? 'landmark' : target.value.fixed ? 'fixed' : 'haunts'),
+  get: () => (target.value.landmark ? 'landmark' : target.value.fixed?.area.startsWith('sm/') ? 'special' : target.value.fixed ? 'fixed' : 'haunts'),
   set: (v: string) => {
     delete target.value.landmark
     if (v === 'fixed') setBlock(blockKeys(target.value.location)[0]!)
+    else if (v === 'special') setBlock(`sm/${fixedMaps.value[0]?.id}`)
     else delete target.value.fixed
     if (v === 'landmark') target.value.landmark = landmarkList.value[0]?.id
   },
 })
 const blocks = computed(() => blockKeys(target.value.location).map((k) => ({ key: k, area: settlementArea(k)! })).filter((b) => b.area))
-const block = computed(() => (target.value.fixed ? settlementArea(target.value.fixed.area) : undefined))
+const areaOf = (key: string) => (key.startsWith('sm/') ? specialPreview(key.slice(3)) : settlementArea(key))
+const block = computed(() => (target.value.fixed ? areaOf(target.value.fixed.area) : undefined))
 function pickCell(i: number) {
   const a = block.value
   if (!a || !target.value.fixed) return
@@ -34,13 +39,13 @@ function pickCell(i: number) {
 }
 function setBlock(key: string) {
   target.value.fixed = { area: key, x: 0, y: 0 }
-  const a = settlementArea(key)
+  const a = areaOf(key)
   const i = a?.cells.findIndex((c) => c.kind !== 'wall' && c.kind !== 'water') ?? -1
   if (a && i >= 0) target.value.fixed = { area: key, x: i % a.width, y: Math.floor(i / a.width) }
 }
 // 換了所屬地點：固定的格子跟著換到那裡的第一個區塊，在原本地點的活躍地點也一起搬過去
 watch(() => target.value.location, (loc, old) => {
-  if (target.value.fixed && !blockKeys(loc).includes(target.value.fixed.area)) setBlock(blockKeys(loc)[0]!)
+  if (target.value.fixed && !target.value.fixed.area.startsWith('sm/') && !blockKeys(loc).includes(target.value.fixed.area)) setBlock(blockKeys(loc)[0]!)
   if (target.value.landmark && landmarkDef(target.value.landmark)?.location !== loc) {
     if (landmarkList.value.length) target.value.landmark = landmarkList.value[0]!.id
     else delete target.value.landmark
@@ -65,6 +70,7 @@ const picked = computed(() => (target.value.fixed && block.value ? target.value.
         <select v-model="mode">
           <option value="haunts">活躍地點（每天依權重決定在哪裡）</option>
           <option value="fixed">固定在聚落的一格</option>
+          <option value="special" :disabled="!fixedMaps.length">固定在特殊地圖的一格</option>
           <option v-if="props.allowLandmark" value="landmark" :disabled="!landmarkList.length">待在地標{{ landmarkList.length ? '' : '（這裡沒有地標）' }}</option>
         </select>
       </label>
@@ -90,7 +96,12 @@ const picked = computed(() => (target.value.fixed && block.value ? target.value.
       <p v-if="!target.haunts?.length" class="small muted">沒有活躍地點時，要認識之後才找得到（在所屬地點的城區）。</p>
     </template>
     <template v-else-if="target.fixed">
-      <label class="small">區塊
+      <label v-if="mode === 'special'" class="small">特殊地圖
+        <select :value="target.fixed.area" @change="setBlock(($event.target as HTMLSelectElement).value)">
+          <option v-for="m in fixedMaps" :key="m.id" :value="`sm/${m.id}`">{{ m.name }}</option>
+        </select>
+      </label>
+      <label v-else class="small">區塊
         <select :value="target.fixed.area" @change="setBlock(($event.target as HTMLSelectElement).value)">
           <option v-for="b in blocks" :key="b.key" :value="b.key">{{ b.area.name }}</option>
         </select>

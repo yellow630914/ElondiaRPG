@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, itemRules, locationById, specialMapLegend, specialMaps, type EncounterGroup, type SpecialConnection } from '@/engine/data'
+import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, itemRules, locationById, shopRules, specialMapLegend, specialMaps, type EncounterGroup, type ShopType, type SpecialConnection } from '@/engine/data'
 import { CELL_ICON, cellName, settlementArea, type CellKind } from '@/engine/grid'
 import { builtinSpecialMap, LIGHTINGS, MAP_CHARS, mapSize, SPECIAL_MAP_LIMITS, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import type { CellRef } from '@/engine/shopMods'
@@ -86,12 +86,18 @@ function paint(x: number, y: number) {
     tool.value = '#'
     return
   }
+  if (t.startsWith('shop:')) {
+    const s = draft.value.shops?.[Number(t.slice(5))]
+    if (s) Object.assign(s, { x, y })
+    tool.value = '#'
+    return
+  }
   const row = [...(draft.value.grid?.[y] ?? '')]
   row[x] = t
   draft.value.grid![y] = row.join('')
 }
 function down(x: number, y: number) {
-  painting.value = !tool.value.startsWith('conn:') && tool.value !== 'entry'
+  painting.value = !tool.value.startsWith('conn:') && !tool.value.startsWith('shop:') && tool.value !== 'entry'
   paint(x, y)
 }
 function enter(x: number, y: number) {
@@ -100,6 +106,8 @@ function enter(x: number, y: number) {
 function markerAt(x: number, y: number): string {
   const i = draft.value.conns.findIndex((c) => c.at.x === x && c.at.y === y)
   if (i >= 0) return `🔗${i + 1}`
+  const s = draft.value.shops?.find((sh) => sh.x === x && sh.y === y)
+  if (s) return shopRules.types[s.shop as ShopType]?.emoji ?? '🏪'
   if (draft.value.entry && draft.value.entry.x === x && draft.value.entry.y === y) return '📍'
   return ''
 }
@@ -139,6 +147,23 @@ function setRange(k: 'encounters' | 'traps' | 'resources' | 'chests', i: 0 | 1, 
   r[i] = Math.max(0, Math.round(v) || 0)
   if (r[0] || r[1]) draft.value[k] = r
   else delete draft.value[k]
+}
+
+// ---- 商店 ----
+const shopList = computed(() => {
+  void content.version
+  return Object.entries(shopRules.types).filter(([id]) => id !== 'wanderer').map(([id, t]) => ({ id, name: `${t.emoji} ${t.name}` }))
+})
+function addShop() {
+  const list = (draft.value.shops ??= [])
+  if (list.length >= L.shops) return
+  list.push({ shop: 'general', x: 0, y: 0 })
+  tool.value = `shop:${list.length - 1}`
+}
+function removeShop(i: number) {
+  draft.value.shops!.splice(i, 1)
+  if (!draft.value.shops!.length) delete draft.value.shops
+  tool.value = '#'
 }
 
 // ---- 通道 ----
@@ -261,6 +286,7 @@ function remove() {
           <button class="small" :class="{ primary: tool === 'entry' }" title="被事件傳送進來時站的位置" @click="tool = 'entry'">📍 入口</button>
         </div>
         <p v-if="tool.startsWith('conn:')" class="small warn-text">點地圖上的一格，當作通道 {{ Number(tool.slice(5)) + 1 }} 在這張地圖的位置。</p>
+        <p v-if="tool.startsWith('shop:')" class="small warn-text">點地圖上的一格擺這家店。</p>
         <div class="cells" :style="{ gridTemplateColumns: `repeat(${size[0]}, 24px)` }">
           <template v-for="y in size[1]" :key="y">
             <button
@@ -314,6 +340,21 @@ function remove() {
         <datalist id="sm-items"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
         <button class="small" @click="addItem">＋ 加入</button>
       </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>商店</legend>
+      <p v-if="draft.mode !== 'fixed'" class="small muted">只有固定地圖可以擺商店。</p>
+      <template v-else>
+        <p class="small muted">擺在這張地圖上的店（內建店種或自建的店），站上去就能交易；物價與貨色照所屬地點。</p>
+        <div v-for="(s, si) in draft.shops ?? []" :key="si" class="row small">
+          <select v-model="s.shop"><option v-for="o in shopList" :key="o.id" :value="o.id">{{ o.name }}</option></select>
+          <span>在（{{ s.x }}, {{ s.y }}）</span>
+          <button class="small" :class="{ primary: tool === `shop:${si}` }" @click="tool = `shop:${si}`">在地圖上選</button>
+          <button class="small warn" @click="removeShop(si)">刪除</button>
+        </div>
+        <button class="small" :disabled="(draft.shops?.length ?? 0) >= L.shops" @click="addShop">＋ 擺一家店</button>
+      </template>
     </fieldset>
 
     <fieldset>

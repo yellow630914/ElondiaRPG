@@ -774,8 +774,14 @@ export function generateSpecial(state: GameState, def: SpecialMapDef, rng: Rng):
     key: specialKey(def.id), location: def.location, name: def.name, kind: 'special', special: def.id, layer,
     width, height, cells, revealed: [], lighting: def.lighting ?? 'dark', version: specialVersion(def),
   }
-  // 通道（自己的與別張地圖接過來的）與入口的格子不放隨機內容
+  // 商店：店種的格子（自建商店的格子就是它的 id）
+  for (const s of def.shops ?? []) {
+    const kind = (shopRules.types[s.shop as ShopType]?.custom ? s.shop : shopRules.types[s.shop as ShopType]?.cell) as CellKind | undefined
+    if (kind && s.x < width && s.y < height) cells[s.y * width + s.x] = { kind }
+  }
+  // 通道（自己的與別張地圖接過來的）、入口與商店的格子不放隨機內容
   const used = new Set<number>([
+    ...(def.shops ?? []).map((s) => s.y * width + s.x),
     ...endpointsIn(area.key).map((e) => e.y * width + e.x),
     ...(def.entry ? [def.entry.y * width + def.entry.x] : []),
     ...cells.map((c, i) => (c.kind === 'exit' ? i : -1)).filter((i) => i >= 0),

@@ -4,7 +4,7 @@
 // 自建的店（id 是 shop_ 開頭，地圖格子的種類就是 id）每一項都可以改，擺在聚落的格子上；沒有專屬功能。
 
 import {
-  ATTR_IDS, geography, isCustomShopId, itemDef, itemRules, npcs as namedNpcs, npcTags, shopRules, workRules,
+  ATTR_IDS, geography, isCustomShopId, itemDef, itemRules, npcs as namedNpcs, npcTags, shopRules, specialMaps, workRules,
   type AttrId, type ItemCategory, type JobDef, type ShopFixedDeal, type ShopType, type ShopTypeDef,
 } from './data'
 import { blockKeys, CELL_ICON, setCellOverrides, settlementArea, type CellKind } from './grid'
@@ -373,5 +373,8 @@ export function builtinCells(id: string): CellRef[] {
 
 /** 哪些地方用到這家自建商店：擔任店主的固定 NPC（受訓的特質刪除時一起拿掉，不擋） */
 export function shopUsage(id: string): string[] {
-  return namedNpcs.filter((n) => n.keeper === id).map((n) => `固定 NPC「${n.name}」擔任店主`)
+  return [
+    ...namedNpcs.filter((n) => n.keeper === id).map((n) => `固定 NPC「${n.name}」擔任店主`),
+    ...Object.values(specialMaps).filter((m) => m.shops?.some((s) => s.shop === id)).map((m) => `特殊地圖「${m.name}」擺了這家店`),
+  ]
 }

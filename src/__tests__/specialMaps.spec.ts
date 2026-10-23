@@ -4,7 +4,11 @@ import { afterDefeat, cellAt, currentArea, currentCell, enterLocation, getArea, 
 import { applyPendingMove, queueMove } from '@/engine/road'
 import { enterSpecial, leaveSpecial, pruneSpecialMaps } from '@/engine/specialMaps'
 import { sanitizeSpecialMapMod, specialMapUsage } from '@/engine/specialMapMods'
-import { applyContent, emptyMods } from '@/engine/mods'
+import { applyContent, emptyMods, sanitizeNpc } from '@/engine/mods'
+import { shopUsage } from '@/engine/shopMods'
+import { shopTypeForCell } from '@/engine/trade'
+import { npcRecord } from '@/engine/npcs'
+import { areaOf, npcCell } from '@/engine/population'
 import { commitReport, newGame, newReportId } from '@/engine/state'
 import { nodesHere, refreshStoryMarkers, startStory } from '@/engine/story'
 import { setFlag } from '@/engine/storyFlags'
@@ -198,5 +202,35 @@ describe('special map mods', () => {
   it('lists story points, teleports and connections that use a map', () => {
     expect(specialMapUsage('sm_rhineburg_cistern')).toContain('特殊地圖「萊茵堡下水道」的通道')
     expect(specialMapUsage('sm_rhineburg_sewer')).toEqual([])
+  })
+})
+
+describe('shops and fixed NPCs on special maps', () => {
+  it('places shops on a fixed map, keeps only known shops and lists the map as using the shop', () => {
+    const m = sanitizeSpecialMapMod('sm_test_market', {
+      name: '地下市集', location: 'rhineburg', desc: '', grid: ['#####', '#...#', '##E##'],
+      shops: [{ shop: 'smithy', x: 1, y: 1 }, { shop: 'nope', x: 2, y: 1 }, { shop: 'wanderer', x: 3, y: 1 }, { shop: 'general', x: 1, y: 1 }, { shop: 'magic', x: 9, y: 9 }],
+    })
+    expect(m.shops).toEqual([{ shop: 'smithy', x: 1, y: 1 }])
+    addMap({ ...m, shops: [{ shop: 'smithy', x: 1, y: 1 }, { shop: 'general', x: 3, y: 1 }] })
+    const state = inRhineburg()
+    enterSpecial(state, 'sm_test_market')
+    const area = currentArea(state)
+    expect(cellAt(area, 1, 1)?.kind).toBe('smithy')
+    expect(shopTypeForCell(cellAt(area, 3, 1)!.kind)).toBe('general')
+    expect(shopUsage('smithy')).toContain('特殊地圖「地下市集」擺了這家店')
+  })
+
+  it('lets a fixed NPC stand on a cell of a fixed special map', () => {
+    const npc = sanitizeNpc('npc_test_sewer', { name: '下水道的老人', location: 'rhineburg', fixed: { area: CISTERN, x: 2, y: 1 } }, true)
+    expect(npc.fixed).toEqual({ area: CISTERN, x: 2, y: 1 })
+    // 牆不能站
+    expect(sanitizeNpc('npc_test_sewer', { name: '下水道的老人', location: 'rhineburg', fixed: { area: CISTERN, x: 0, y: 0 } }, true).fixed).toBeUndefined()
+    const state = inRhineburg()
+    const rec = npcRecord(state, 'npc_lina')!
+    rec.fixed = { area: CISTERN, x: 2, y: 1 }
+    expect(areaOf(state, rec)).toBe(CISTERN)
+    enterSpecial(state, 'sm_rhineburg_cistern')
+    expect(npcCell(state, rec, currentArea(state))).toEqual({ x: 2, y: 1 })
   })
 })

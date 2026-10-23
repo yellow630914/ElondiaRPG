@@ -378,6 +378,8 @@ export interface SpecialMapDef {
   /** 被事件傳送進來時站的位置（沒寫時是出口，再沒有就是第一格空地） */
   entry?: { x: number; y: number }
   connections?: SpecialConnection[]
+  /** 擺在地圖上的商店（shops.json 的店種或自建商店的 id；只有固定地圖） */
+  shops?: { shop: string; x: number; y: number }[]
 }
 /** 格子種類的名稱（和 grid.ts 的 CellKind 相同，這裡用字串避免循環引用） */
 export type CellKindName = string

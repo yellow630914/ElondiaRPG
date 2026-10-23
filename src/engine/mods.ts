@@ -13,7 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -24,7 +24,7 @@ import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck,
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
-import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, type SpecialMapMod } from './specialMapMods'
+import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
@@ -428,12 +428,12 @@ export function applyContent(mods: ContentMods): string[] {
   })
   tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)))))
   tryEach('地標', mods.landmarks ?? {}, (id, m) => applyLandmarkMod(id, sanitizeLandmarkMod(id, m)))
-  // 特殊地圖：商店、固定 NPC、特殊任務會用到；互相接的通道要先知道所有自建的地圖
-  const knownMaps = { ...specialMaps, ...(mods.specialMaps ?? {}) }
-  tryEach('特殊地圖', mods.specialMaps ?? {}, (id, m) => applySpecialMapMod(id, sanitizeSpecialMapMod(id, m, knownMaps)))
   tryEach('商店', mods.shops ?? {}, (id, m) => applyShopMod(id, m))
   // 商店的位置：移動內建的店、擺自建的店（擺不上去的略過）
   tryEach('商店的位置', { all: mods.shops ?? {} }, (_id, all) => applyShopPlacements(all))
+  // 特殊地圖（商店之後：可以擺自建的店）：固定 NPC、特殊任務會用到；互相接的通道要先知道所有自建的地圖
+  const knownMaps = { ...specialMaps, ...(mods.specialMaps ?? {}) }
+  tryEach('特殊地圖', mods.specialMaps ?? {}, (id, m) => applySpecialMapMod(id, sanitizeSpecialMapMod(id, m, knownMaps)))
   // 能力先套用：怪物、固定 NPC、職業都會用到
   tryEach('能力', mods.abilities, (id, m) => {
     abilities[id] = { ...strip(m, ['custom']), id }
@@ -945,7 +945,7 @@ export function normalizeMods(raw: unknown): ContentMods {
   const knownMaps = { ...specialMaps, ...(r.specialMaps ?? {}) }
   for (const [id, v] of Object.entries(r.specialMaps ?? {})) {
     try {
-      out.specialMaps[id] = sanitizeSpecialMapMod(id, v, knownMaps)
+      out.specialMaps[id] = sanitizeSpecialMapMod(id, v, knownMaps, new Set([...Object.keys(shopRules.types), ...Object.keys(r.shops ?? {})]))
     } catch {
       // id 不對的：略過
     }
@@ -991,10 +991,10 @@ function cleanHaunts(v: NpcDef['haunts']): NonNullable<NpcDef['haunts']> {
     .map((h) => ({ location: h.location, zone: h.zone, weight: Math.round(num(h.weight, 0.01, 10, 1) * 100) / 100 }))
 }
 
-/** 固定的格子：聚落的區塊、走得到的格子 */
+/** 固定的格子：聚落的區塊或固定的特殊地圖、走得到的格子 */
 function cleanFixed(v: NpcDef['fixed']): NpcDef['fixed'] {
   if (!v || typeof v.area !== 'string') return undefined
-  const area = settlementArea(v.area)
+  const area = v.area.startsWith('sm/') ? specialPreview(v.area.slice(3)) : settlementArea(v.area)
   if (!area) return undefined
   const x = int(v.x, 0, area.width - 1, 0)
   const y = int(v.y, 0, area.height - 1, 0)
