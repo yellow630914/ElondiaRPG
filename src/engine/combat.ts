@@ -13,9 +13,9 @@ import {
   apMaxFor, apRegenFor, attrOf, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, ATTR_IDS, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, enemies, itemDef,
+  abilityDef, armorDef, ATTR_IDS, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, itemDef,
   locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
-  type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type EncounterGroup,
+  type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
 } from './data'
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
@@ -163,7 +163,7 @@ const CANTRIP_KEY = '__cantrip'
 // ---- 開始戰鬥 ----
 
 /** 冒險區域某一層的遭遇組合；沒有分層資料時退回荒野遭遇表。 */
-export function encounterFor(locationId: string, rng: Rng, layer: 'outskirts' | 'shallow' | 'middle' | 'deep' = 'shallow'): EncounterGroup {
+export function encounterFor(locationId: string, rng: Rng, layer: DungeonLayerId = 'shallow'): EncounterGroup {
   const table = dungeonEncounters[locationId]?.[layer]
   if (table?.length) return rng.pick(table)
   return rng.pick(wildEncounters(locationById(locationId).region))
@@ -304,7 +304,7 @@ function traitBonus(state: GameState, opts: CombatOptions): number {
   if (!area) return b.wild ?? 0
   const cell = opts.cell ? area.cells[opts.cell.y * area.width + opts.cell.x] : undefined
   if (cell?.kind === 'boss') return b.boss ?? 0
-  if (area.kind === 'dungeon') return b[(['outskirts', 'shallow', 'middle', 'deep'] as const)[area.layer ?? 0] ?? 'deep'] ?? 0
+  if (area.kind === 'dungeon') return b[DUNGEON_LAYER_IDS[area.layer ?? 0] ?? 'deep'] ?? b.deep ?? 0
   return b.wild ?? 0
 }
 

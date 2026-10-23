@@ -660,16 +660,28 @@ export interface EnemyDef {
   desc?: string
 }
 export type EncounterGroup = [string, number][]
-export type DungeonLayerId = 'outskirts' | 'shallow' | 'middle' | 'deep'
+export type DungeonLayerId = 'outskirts' | 'shallow' | 'middle' | 'deep' | 'abyss'
+/** 地下城的各層，由淺到深（底層只有寫了 abyss 的地下城才有） */
+export const DUNGEON_LAYER_IDS: DungeonLayerId[] = ['outskirts', 'shallow', 'middle', 'deep', 'abyss']
+/** 有層主的層 */
+export type BossLayerId = Exclude<DungeonLayerId, 'outskirts'>
+export const BOSS_LAYER_IDS: BossLayerId[] = ['shallow', 'middle', 'deep', 'abyss']
+export const DUNGEON_LAYER_NAME: Record<DungeonLayerId, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層', abyss: '底層' }
 export interface DungeonEncounters {
   outskirts: EncounterGroup[]
   shallow: EncounterGroup[]
   middle: EncounterGroup[]
   deep: EncounterGroup[]
+  /** 底層（A 級）：有寫的地下城，深層的層主改成守著往下的階梯，底層是最終層主 */
+  abyss?: EncounterGroup[]
   /** 深層的層主（舊資料） */
   boss: EncounterGroup
-  /** 各層的層主：淺層、中層守著往下的階梯，深層是最終層主 */
-  bosses?: Partial<Record<'shallow' | 'middle' | 'deep', EncounterGroup>>
+  /** 各層的層主：淺層、中層（與有底層時的深層）守著往下的階梯，最深的一層是最終層主 */
+  bosses?: Partial<Record<BossLayerId, EncounterGroup>>
+}
+/** 這座地下城有幾層（有底層時 5 層） */
+export function dungeonDepth(id: string): number {
+  return dungeonEncounters[id]?.abyss?.length ? 5 : 4
 }
 const enemiesData = enemiesJson as unknown as {
   enemies: EnemyDef[]

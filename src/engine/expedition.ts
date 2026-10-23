@@ -6,7 +6,7 @@ import { checkBonus } from './perks'
 import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { computeDegree } from './checks'
-import { dungeonEncounters, locationById, regionById, type DungeonLayerId } from './data'
+import { DUNGEON_LAYER_IDS, dungeonEncounters, locationById, regionById, type DungeonLayerId } from './data'
 import { inDarkness } from './light'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Area } from './grid'
@@ -81,7 +81,7 @@ export function defeatLoss(state: GameState, rng: Rng, location: string): { item
 
 // ---- 緊急撤退 ----
 
-const LAYER_IDS: DungeonLayerId[] = ['outskirts', 'shallow', 'middle', 'deep']
+const LAYER_IDS: DungeonLayerId[] = DUNGEON_LAYER_IDS
 
 /** 撤退檢定的 DC（站在安全房不用檢定） */
 export function retreatDc(state: GameState, area: Area): number {

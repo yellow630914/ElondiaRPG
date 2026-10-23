@@ -2,7 +2,7 @@
 
 import {
   abilities, ATTR_IDS, companionRules, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
-  type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere,
+  type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
 } from './data'
 import type { RewardEffect } from './effects'
 import { blockKeys, CELL_NAME, settlementArea, type CellKind } from './grid'
@@ -62,8 +62,8 @@ export const WHERE_NAME: Record<StoryWhere, string> = {
 export const NODE_KINDS: Record<StoryNode['kind'], string> = { story: '劇情', check: '判定', combat: '戰鬥', choice: '選擇' }
 /** 任務點可以指定的設施 */
 export const STORY_CELLS: CellKind[] = ['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver']
-export const STORY_LAYERS = ['outskirts', 'shallow', 'middle', 'deep'] as const
-export const LAYER_NAME: Record<(typeof STORY_LAYERS)[number], string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層' }
+export const STORY_LAYERS = DUNGEON_LAYER_IDS
+export const LAYER_NAME = DUNGEON_LAYER_NAME
 /** 任務的效果可以用的種類 */
 export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',

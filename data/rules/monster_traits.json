@@ -5,7 +5,7 @@
   "roll": {
     "chance": 0.3,
     "max": 2,
-    "bonus": { "wild": 0, "outskirts": 0, "shallow": 0.05, "middle": 0.1, "deep": 0.15, "boss": 0.2 }
+    "bonus": { "wild": 0, "outskirts": 0, "shallow": 0.05, "middle": 0.1, "deep": 0.15, "abyss": 0.2, "boss": 0.2 }
   },
 
   "traits": {

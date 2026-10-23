@@ -5,7 +5,7 @@ import {
   type AttrId, type ItemIntel, type ItemUse, type ToolKind,
 } from '@/engine/data'
 import { gearPrice, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
-import { actionRules, npcTags, perkRules, slaveryRules, tagDef } from '@/engine/data'
+import { actionRules, DUNGEON_LAYER_NAME, npcTags, perkRules, slaveryRules, tagDef } from '@/engine/data'
 import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -66,7 +66,7 @@ const enemyList = computed(() => {
   void content.version
   return Object.values(enemies).sort((a, b) => a.level - b.level)
 })
-const LAYER: Record<ChestLayer, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層' }
+const LAYER: Record<ChestLayer, string> = DUNGEON_LAYER_NAME
 const SHOPS: Record<string, string> = { general: '雜貨店', temple: '神殿', tavern: '酒館', smith: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', info: '情報商' }
 const LOCS: Record<string, string> = { village: '任何聚落', town: '城鎮以上', city: '城市以上', capital: '王都' }
 const bases = computed(() => {

@@ -8,7 +8,7 @@
 import { guildRankFor } from './character'
 import {
   dungeonEncounters, economy, enemies, itemDef, locationById, materialQuestRules, wildEncounters,
-  type DungeonLayerId, type EncounterGroup, type MaterialQuestKind,
+  type DungeonLayerId, type EncounterGroup, type MaterialQuestKind, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type BossLayerId,
 } from './data'
 import type { Rng } from './rng'
 import type { GameState, GuildRank, Quest } from './types'
@@ -16,8 +16,8 @@ import mapsJson from '@data/world/maps.json'
 
 export const RANK_ORDER: GuildRank[] = ['F', 'E', 'D', 'C', 'B', 'A', 'S']
 export const MATERIAL_KINDS: MaterialQuestKind[] = ['gather_wild', 'gather_dungeon', 'drop_wild', 'drop_dungeon', 'boss_hunt']
-export const LAYER_IDS: DungeonLayerId[] = ['outskirts', 'shallow', 'middle', 'deep']
-const LAYER_NAME: Record<DungeonLayerId, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層' }
+export const LAYER_IDS: DungeonLayerId[] = DUNGEON_LAYER_IDS
+const LAYER_NAME = DUNGEON_LAYER_NAME
 
 const maps = mapsJson as unknown as { generation: { wild: { resource_items: string[] }; dungeon: { resource_items: string[] } } }
 
@@ -60,10 +60,10 @@ export function layerRank(dungeon: string, layer: DungeonLayerId): GuildRank | u
 }
 
 /** 地下城每一層（周邊除外）的階級，給地圖與考核用 */
-export function layerRanks(dungeon: string): { layer: 'shallow' | 'middle' | 'deep'; rank: GuildRank }[] {
-  return (['shallow', 'middle', 'deep'] as const)
+export function layerRanks(dungeon: string): { layer: BossLayerId; rank: GuildRank }[] {
+  return BOSS_LAYER_IDS
     .map((layer) => ({ layer, rank: layerRank(dungeon, layer) }))
-    .filter((r): r is { layer: 'shallow' | 'middle' | 'deep'; rank: GuildRank } => !!r.rank)
+    .filter((r): r is { layer: BossLayerId; rank: GuildRank } => !!r.rank)
 }
 
 /** 這場勝利算不算這個清剿委託：指定那一層或更深；舊存檔沒記層數的，哪一層都算 */
@@ -216,9 +216,9 @@ function dungeonQuest(state: GameState, rng: Rng, kind: MaterialQuestKind, targe
     }
   }
   if (kind === 'boss_hunt') {
-    const bosses = (['shallow', 'middle', 'deep'] as const)
+    const bosses = BOSS_LAYER_IDS
       .map((layer) => ({ layer, id: (enc.bosses?.[layer] ?? (layer === 'deep' ? enc.boss : undefined))?.[0]?.[0] }))
-      .filter((b): b is { layer: 'shallow' | 'middle' | 'deep'; id: string } => !!b.id && !!enemies[b.id])
+      .filter((b): b is { layer: BossLayerId; id: string } => !!b.id && !!enemies[b.id])
     if (!bosses.length) return undefined
     const { layer, id } = rng.pick(bosses)
     const goal = qtyFor(rng, r.boss_hunt.qty)

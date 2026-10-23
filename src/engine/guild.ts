@@ -2,7 +2,7 @@
 // 功績與等級都夠了，公會發晉升考核委託；通過考核才升階。隊友的階級仍依等級換算。
 
 import { guildRankFor } from './character'
-import { dungeonEncounters, enemies, locationById, progression } from './data'
+import { dungeonEncounters, enemies, locationById, progression, BOSS_LAYER_IDS, type BossLayerId } from './data'
 import { layerName, layerRanks, RANK_ORDER, rewardRange } from './materialQuests'
 import { shortestPath } from './world'
 import type { GameState, GuildRank, GuildState, Quest } from './types'
@@ -81,10 +81,10 @@ export function postExam(state: GameState): Quest | undefined {
   const want = RANK_ORDER.indexOf(target)
   const distance = (id: string) => shortestPath(state.location, id)?.days[1] ?? 999
   const bosses = Object.entries(dungeonEncounters).flatMap(([loc, enc]) =>
-    (['shallow', 'middle', 'deep'] as const).map((layer) => {
+    BOSS_LAYER_IDS.map((layer) => {
       const id = (enc.bosses?.[layer] ?? (layer === 'deep' ? enc.boss : undefined))?.[0]?.[0]
       return id && enemies[id] ? { loc, layer, id, gap: Math.abs(RANK_ORDER.indexOf(guildRankFor(enemies[id]!.level)) - want) } : undefined
-    }).filter((b): b is { loc: string; layer: 'shallow' | 'middle' | 'deep'; id: string; gap: number } => !!b))
+    }).filter((b): b is { loc: string; layer: BossLayerId; id: string; gap: number } => !!b))
   bosses.sort((a, b) => a.gap - b.gap || distance(a.loc) - distance(b.loc))
   const reward = rewardRange(target)[0]
   const id = `exam-${target}-${state.time.day}-${state.nextReportNo}`

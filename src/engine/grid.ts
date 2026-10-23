@@ -12,7 +12,7 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks,
+  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType,
 } from './data'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
@@ -579,9 +579,11 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   }
   // 最遠的格子放階梯或層主
   const far = farthest(area, start)
-  // 深層：最終層主；淺層、中層：層主守著往下的階梯（沒有層主資料時直接是階梯）
-  const bossGroup = dungeonEncounters[loc.id]?.bosses?.[spec.id as 'shallow' | 'middle' | 'deep'] ?? (spec.boss ? dungeonEncounters[loc.id]?.boss : undefined)
-  cells[far] = spec.boss
+  // 最深的一層（有底層時是底層，否則是深層）：最終層主；其他層：層主守著往下的階梯（沒有層主資料時直接是階梯）
+  const enc = dungeonEncounters[loc.id]
+  const last = layer >= dungeonDepth(loc.id) - 1
+  const bossGroup = enc?.bosses?.[spec.id as BossLayerId] ?? (spec.id === 'deep' ? enc?.boss : undefined)
+  cells[far] = last
     ? { kind: 'boss', group: bossGroup ?? [] }
     : spec.guard && bossGroup?.length
       ? { kind: 'boss', group: bossGroup, then: 'stairs_down' }

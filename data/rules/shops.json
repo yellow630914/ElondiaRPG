@@ -119,7 +119,7 @@
       "catalog_tag": "info",
       "buys": ["info"],
       "ai_effects": ["memory", "flag", "affinity", "item"],
-      "info": { "point_prices": [60, 80, 120, 180, 260], "points_per_day": 3, "valid_days": 5, "quest_price": 80, "$comment": "情報分兩種（見 docs/TRAVEL_EVENTS.md 第 5 節）：事件點（在這座城的近郊或 7 天內的地下城某一層放一個事件：盤踞的強敵、藏寶處、流浪商人；價格依層數：近郊、周邊、淺層、中層、深層；valid_days 天內有效），以及特殊任務的消息（stories.json 的 start.kind = informant）。另外還賣進行中委託的線索（委託檢定 +5）。" },
+      "info": { "point_prices": [60, 80, 120, 180, 260, 360], "points_per_day": 3, "valid_days": 5, "quest_price": 80, "$comment": "情報分兩種（見 docs/TRAVEL_EVENTS.md 第 5 節）：事件點（在這座城的近郊或 7 天內的地下城某一層放一個事件：盤踞的強敵、藏寶處、流浪商人；價格依層數：近郊、周邊、淺層、中層、深層、底層；valid_days 天內有效），以及特殊任務的消息（stories.json 的 start.kind = informant）。另外還賣進行中委託的線索（委託檢定 +5）。" },
       "specials": []
     },
     "wanderer": {

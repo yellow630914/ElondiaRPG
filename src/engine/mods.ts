@@ -13,7 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -28,8 +28,8 @@ import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeS
 import { notForSale } from './trade'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
-export type ChestLayer = 'outskirts' | 'shallow' | 'middle' | 'deep'
-export const CHEST_LAYERS: ChestLayer[] = ['outskirts', 'shallow', 'middle', 'deep']
+export type ChestLayer = DungeonLayerId
+export const CHEST_LAYERS: ChestLayer[] = DUNGEON_LAYER_IDS
 export type GatherPlace = 'wild' | 'dungeon'
 
 /** 怪物出現的地方：table 為遭遇表（wild:地區、dungeon:地點:層、boss:地點:層），count 為一組幾隻，weight 為放幾組（越多越常遇到） */
@@ -211,16 +211,18 @@ function restore() {
 
 // ---- 遭遇表 ----
 
-const LAYER_NAME: Record<ChestLayer, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層' }
-const BOSS_LAYERS = ['shallow', 'middle', 'deep'] as const
+const LAYER_NAME = DUNGEON_LAYER_NAME
+const BOSS_LAYERS = BOSS_LAYER_IDS
 
 /** 可以放怪物的遭遇表 */
 export function tableOptions(): { key: string; label: string }[] {
   const out: { key: string; label: string }[] = []
   for (const r of geography.regions) out.push({ key: `wild:${r.id}`, label: `城郊・${r.name}` })
   for (const loc of geography.locations.filter((l) => l.type === 'dungeon' && dungeonEncounters[l.id])) {
-    for (const layer of CHEST_LAYERS) out.push({ key: `dungeon:${loc.id}:${layer}`, label: `${loc.name}・${LAYER_NAME[layer]}` })
-    for (const layer of BOSS_LAYERS) out.push({ key: `boss:${loc.id}:${layer}`, label: `${loc.name}・${LAYER_NAME[layer]}層主（取代原本的層主）` })
+    // 底層只有寫了底層的地下城才有
+    const has = (layer: ChestLayer) => layer !== 'abyss' || !!dungeonEncounters[loc.id]!.abyss?.length
+    for (const layer of CHEST_LAYERS.filter(has)) out.push({ key: `dungeon:${loc.id}:${layer}`, label: `${loc.name}・${LAYER_NAME[layer]}` })
+    for (const layer of BOSS_LAYERS.filter(has)) out.push({ key: `boss:${loc.id}:${layer}`, label: `${loc.name}・${LAYER_NAME[layer]}層主（取代原本的層主）` })
   }
   return out
 }

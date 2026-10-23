@@ -197,9 +197,9 @@ export function allNpcs(state: GameState): NpcRecord[] {
   return out
 }
 
-/** 地下城的活躍地點：今天在第幾層 */
+/** 地下城的活躍地點：今天在第幾層（周邊到深層；底層是 A 級的地方，不會遇到一般冒險者） */
 function layerOf(rec: Pick<NpcRecord, 'id'>, day: number): number {
-  return hashString(`${rec.id}@${day}:layer`) % DUNGEON_LAYERS.length
+  return hashString(`${rec.id}@${day}:layer`) % Math.min(4, DUNGEON_LAYERS.length)
 }
 
 function pickBlock(rec: Pick<NpcRecord, 'id'>, day: number, keys: string[]): string | undefined {

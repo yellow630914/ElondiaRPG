@@ -11,7 +11,7 @@ import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
 import {
-  locationById, npcs as namedNpcs, regionById, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome,
+  locationById, npcs as namedNpcs, regionById, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, type Area, type CellKind } from './grid'
@@ -196,7 +196,7 @@ function active(state: GameState, ref: string): ActiveNode & { progress: StoryPr
 export function placeText(n: StoryNode, state?: GameState): string {
   const at = n.at
   const loc = at.location ? locationById(at.location).name : ''
-  const LAYER: Record<DungeonLayerId, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層' }
+  const LAYER = DUNGEON_LAYER_NAME
   switch (at.where) {
     case 'settlement': return loc
     case 'cell': return `${loc}的${at.cell ? cellName(at.cell as CellKind) : '某處'}`

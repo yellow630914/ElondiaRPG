@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, HomeDistrict, ItemDef, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -373,7 +373,7 @@ export interface Intel {
   time: GameTime
   /** point：哪個地點、哪一層（沒有時是近郊）、什麼事件 */
   location?: string
-  layer?: 'outskirts' | 'shallow' | 'middle' | 'deep'
+  layer?: DungeonLayerId
   event?: 'combat' | 'chest' | 'merchant'
   /** combat：要打的怪物；chest、combat：寶物的等級 */
   group?: [string, number][]
@@ -537,7 +537,7 @@ export interface Quest {
   /** 材料委託：要交的材料；討伐、掉落委託：目標怪物（enemies 的 id）與牠出現的那一層 */
   item?: string
   monster?: string
-  layer?: 'outskirts' | 'shallow' | 'middle' | 'deep'
+  layer?: DungeonLayerId
   /** 可以過量交付：最多交付（或討伐）的數量；報酬依實際數量比例增加 */
   max?: number
   /** 交付時實際交了多少（完成後記錄） */

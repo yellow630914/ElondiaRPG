@@ -5,7 +5,7 @@
 
 import {
   damageTypeName, dungeonEncounters, enemies, geography, locationById, stories, wildEncounters,
-  type DungeonLayerId, type EncounterGroup,
+  type DungeonLayerId, type EncounterGroup, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
 } from './data'
 import type { RewardEffect } from './effects'
 import { DUNGEON_LAYERS, type Area } from './grid'
@@ -15,8 +15,8 @@ import { canStart } from './story'
 import type { GameState, Intel } from './types'
 import { shortestPath } from './world'
 
-const LAYER_NAME: Record<DungeonLayerId, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層' }
-const LAYERS: DungeonLayerId[] = ['outskirts', 'shallow', 'middle', 'deep']
+const LAYER_NAME = DUNGEON_LAYER_NAME
+const LAYERS = DUNGEON_LAYER_IDS
 
 export function addIntel(state: GameState, spec: Omit<Intel, 'id' | 'from' | 'time' | 'status'>): Intel {
   const list = (state.intel ??= [])
@@ -114,7 +114,7 @@ function strongest(table: EncounterGroup[]): EncounterGroup {
   return [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
 }
 
-/** 可以放事件點的地方：tier 0 是近郊，1～4 是地下城的周邊、淺層、中層、深層 */
+/** 可以放事件點的地方：tier 0 是近郊，1～5 是地下城的周邊、淺層、中層、深層、底層 */
 export interface PointPlace { location: string; layer?: DungeonLayerId; table: EncounterGroup[]; tier: number }
 
 /** 附近可以放事件點的地方：這座城鎮的近郊，加上 7 天內可以到的地下城的每一層 */
