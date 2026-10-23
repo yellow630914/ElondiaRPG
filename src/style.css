@@ -141,6 +141,9 @@ button {
 }
 button:hover:not(:disabled) { border-color: var(--btn-hover); color: var(--btn-hover); }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
+/* 鍵盤操作時才顯示焦點框（金色），滑鼠點完不留框 */
+button:focus { outline: none; }
+button:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
 button.primary { background: var(--primary-bg); color: var(--primary-text); border-color: var(--primary-border); font-weight: 700; }
 button.primary:hover:not(:disabled) { color: var(--primary-text); filter: brightness(1.08); }
 button.danger { color: var(--danger); border-color: var(--danger); }
