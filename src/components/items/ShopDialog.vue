@@ -7,7 +7,8 @@ import { costText, dealMoney, discount, effectText, isItemDeal, keeperTitle, sel
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from '../NameTag.vue'
-import { CATEGORY_ICON, CATEGORY_ORDER, categoryIcon, categoryName, categoryOf, itemEffect, itemText } from './itemInfo'
+import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
+import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
 
 // 商店的交易視窗：左邊是店裡的商品，右邊是行囊（可以賣的標出收購價）
@@ -36,7 +37,7 @@ const groups = computed(() => {
 })
 const filter = ref<Group | 'all'>('all')
 const shownDeals = computed(() => deals.value.filter((d) => filter.value === 'all' || groupOf(d) === filter.value))
-const groupName = (g: Group) => (g === 'special' ? '✨ 特別交易' : `${CATEGORY_ICON[g]} ${itemRules.categories[g]}`)
+const groupName = (g: Group) => (g === 'special' ? '特別交易' : itemRules.categories[g])
 
 const buyQty = reactive<Record<string, number>>({})
 const qtyOf = (d: Deal) => Math.max(1, Math.min(d.stock, Math.floor(buyQty[d.id] ?? 1) || 1))
@@ -103,14 +104,16 @@ function sell(name: string, have: number) {
         <h3 class="head"><GameIcon name="store" :size="17" />店裡的商品</h3>
         <nav class="row chips">
           <button class="small" :class="{ active: filter === 'all' }" @click="filter = 'all'">全部 {{ deals.length }}</button>
-          <button v-for="g in groups" :key="g" class="small" :class="{ active: filter === g }" @click="filter = g">{{ groupName(g) }}</button>
+          <button v-for="g in groups" :key="g" class="small" :class="{ active: filter === g }" @click="filter = g">
+            <GameIcon v-if="g === 'special'" name="sparkles" :size="14" /><ItemIcon v-else :category="g" :size="14" /> {{ groupName(g) }}
+          </button>
         </nav>
         <p v-if="!deals.length" class="small muted">今天沒有東西可以買了。</p>
         <ul class="plain list">
           <li v-for="d in shownDeals" :key="d.id" class="entry">
             <div class="row top">
-              <span v-if="isItemDeal(d)" class="icon">{{ categoryIcon(s, itemName(d)) }}</span>
-              <GameIcon v-else name="sparkles" :size="16" class="icon special" />
+              <span v-if="isItemDeal(d)" class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="24" /></span>
+              <span v-else class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
               <strong class="grow">{{ d.title }}</strong>
               <span class="price">{{ costText(s, key, d) }}</span>
             </div>
@@ -152,7 +155,7 @@ function sell(name: string, have: number) {
         <ul class="plain list">
           <li v-for="i in bag" :key="i.name" class="entry" :class="{ dim: i.price === null }">
             <div class="row top">
-              <span class="icon">{{ categoryIcon(s, i.name) }}</span>
+              <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="24" /></span>
               <strong class="grow">{{ i.name }}</strong>
               <span class="qty">×{{ i.qty }}</span>
             </div>
@@ -181,7 +184,6 @@ function sell(name: string, have: number) {
 <style scoped>
 .head { display: flex; align-items: center; gap: 6px; }
 .head :deep(.game-icon), .money :deep(.game-icon) { color: var(--accent); }
-.icon.special { color: var(--accent); }
 .shop-dialog { display: grid; gap: 10px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .shop-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
@@ -199,7 +201,6 @@ function sell(name: string, have: number) {
 .entry { border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; display: grid; gap: 2px; background: var(--panel); }
 .entry.dim { opacity: 0.55; }
 .top { flex-wrap: nowrap; }
-.icon { font-size: 1.15rem; }
 .grow { flex: 1; min-width: 0; }
 .price { font-weight: 600; white-space: nowrap; }
 .qty { font-weight: 600; color: var(--accent-2); }

@@ -5,7 +5,8 @@ import { canEquip, canUse, isIntelItem } from '@/engine/inventory'
 import { formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/trade'
 import { useGame } from '@/stores/game'
-import { CATEGORY_ICON, CATEGORY_ORDER, categoryIcon, categoryName, categoryOf, itemEffect, itemText } from './itemInfo'
+import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
+import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
 
 // 行囊：依類別篩選，使用、裝備（戰鬥以外）
@@ -38,7 +39,7 @@ const value = (name: string) => itemValue(s.value, name)
       <button class="small" :class="{ active: filter === 'all' }" @click="filter = 'all'">全部 {{ items.length }}</button>
       <template v-for="c in CATEGORY_ORDER" :key="c">
         <button v-if="counts[c]" class="small" :class="{ active: filter === c }" @click="filter = c">
-          {{ CATEGORY_ICON[c] }} {{ itemRules.categories[c] }} {{ counts[c] }}
+          <ItemIcon :category="c" :size="14" /> {{ itemRules.categories[c] }} {{ counts[c] }}
         </button>
       </template>
     </nav>
@@ -46,7 +47,7 @@ const value = (name: string) => itemValue(s.value, name)
     <ul class="plain grid">
       <li v-for="i in shown" :key="i.name" class="item">
         <div class="row top">
-          <span class="icon">{{ categoryIcon(s, i.name) }}</span>
+          <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="24" /></span>
           <strong class="grow">{{ i.name }}</strong>
           <span class="qty">×{{ i.qty }}</span>
         </div>
@@ -80,7 +81,6 @@ const value = (name: string) => itemValue(s.value, name)
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin: 0; }
 .item { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; display: grid; gap: 3px; align-content: start; background: var(--panel); }
 .top { flex-wrap: nowrap; }
-.icon { font-size: 1.2rem; }
 .grow { flex: 1; min-width: 0; }
 .qty { font-weight: 600; color: var(--accent-2); }
 .effect { color: var(--accent); }

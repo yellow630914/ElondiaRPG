@@ -1285,6 +1285,8 @@ export interface ItemDef {
   seed?: SeedSpec
   /** 主人會強制主角裝上這件裝備（主人的事件 force_equip）；tags：只有這些身分的主人會用（沒有時任何主人） */
   master_force?: { tags?: string[] }
+  /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用底材或類別的圖示 */
+  icon?: string
 }
 
 /** 配方：用哪種工藝的幾級、哪些材料，做出幾份這件物品 */

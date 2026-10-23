@@ -8,6 +8,8 @@ import type { GearSlot } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
+import IconField from './IconField.vue'
+import { baseArt, refPath } from '../items/itemIcon'
 import UsageNote from './UsageNote.vue'
 
 // 裝備底材與材料的編輯表單
@@ -47,6 +49,8 @@ function reset() {
 }
 watch(() => [props.kind, props.id], reset)
 const dirty = computed(() => text() !== saved.value)
+/** 沒有上傳圖時用的內建底材圖（自建底材依武器類型、欄位與材料類型挑） */
+const baseFallback = computed(() => ({ kind: 'path' as const, path: refPath(baseArt(props.id, base.value)) }))
 const builtin = computed(() => (props.kind === 'base' ? !!builtinBase(props.id) : !!builtinMaterial(props.id)))
 const edited = computed(() => builtin.value && !!(props.kind === 'base' ? content.mods.bases[props.id] : content.mods.materials[props.id]))
 
@@ -136,6 +140,7 @@ function remove() {
         </div>
         <label v-if="base.slot === 'main_hand'" class="check small"><input v-model="base.two_handed" type="checkbox" :disabled="builtin" /> 雙手武器（空出副手）</label>
         <label class="block">描述 <input v-model="base.desc" maxlength="120" /></label>
+        <div class="block icon-row"><span>圖示</span><IconField v-model="base.icon" :fallback="baseFallback" hint="用這個底材做的裝備都用這張圖（物品自己有上傳圖時用物品的）。上傳的圖會縮到 48×48 以內，存在這個世界裡。" /></div>
         <label v-if="base.slot !== 'main_hand' && base.slot !== 'body'" class="check small">
           <input v-model="base.restraint" type="checkbox" :disabled="builtin" /> 束縛用（項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減，給「主人會強制裝備」的物品用
         </label>

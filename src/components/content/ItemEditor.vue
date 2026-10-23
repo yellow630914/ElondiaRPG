@@ -12,9 +12,11 @@ import { formatMoney } from '@/engine/money'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
 import { choosablePerks, CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
 import { PLACE_NAME } from '@/engine/homes'
+import { categoryIconSource, gearIconSource } from '@/engine/itemIcons'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
+import IconField from './IconField.vue'
 import UsageNote from './UsageNote.vue'
 
 // 物品的編輯表單：基本資料、出現的地方（商店、掉落、寶箱、採集、事件）、消耗品效果、裝備組成
@@ -72,6 +74,12 @@ const LOCS: Record<string, string> = { village: '任何聚落', town: '城鎮以
 const bases = computed(() => {
   void content.version
   return Object.entries(gearRules.bases)
+})
+/** 沒有上傳圖時用的：裝備用底材的圖，其他用類別的圖 */
+const iconFallback = computed(() => {
+  void content.version
+  const base = draft.value.category === 'equipment' ? draft.value.gear?.base : undefined
+  return base && gearRules.bases[base] ? gearIconSource({ base }) : categoryIconSource(draft.value.category)
 })
 const materials = computed(() => {
   void content.version
@@ -304,6 +312,7 @@ function remove() {
         <label>價格（{{ formatMoney(draft.price_cc) }}）<input v-model.number="draft.price_cc" type="number" min="0" /></label>
       </div>
       <label class="block">描述 <textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
+      <div class="block icon-row"><span>圖示</span><IconField v-model="draft.icon" :fallback="iconFallback" /></div>
       <p v-if="draft.category === 'material'" class="small muted">材料的價格是商人的收購價（全額收購）；其他物品賣出時是一半。</p>
     </fieldset>
 

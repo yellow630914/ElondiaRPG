@@ -46,6 +46,8 @@ export interface BaseDef {
   desc?: string
   /** 束縛用的底材（主人強制裝備的項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡 */
   restraint?: boolean
+  /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用內建的底材圖 */
+  icon?: string
 }
 
 /** 可以打造、隨機生成的底材（不含束縛用的） */

@@ -8,6 +8,7 @@ import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { bodyOf } from '@/engine/traits'
 import GameIcon from '../ui/GameIcon.vue'
+import ItemIcon from '../items/ItemIcon.vue'
 import BodyFigure from './BodyFigure.vue'
 import { signed, SLOT_ICON } from './memberInfo'
 
@@ -90,7 +91,10 @@ const totals = computed(() => {
           :title="blocked(slot) ? `${slotName(slot)}：這個種族無法使用` : m.gear?.[slot] ? `${m.gear[slot]!.name}\n${gearSummary(m.gear[slot]!.spec)}` : slotName(slot)"
           @click="selected = slot"
         >
-          <span class="box"><GameIcon :name="lockedGear(m, slot) ? 'lock' : SLOT_ICON[slot]" :size="20" /></span>
+          <span class="box">
+            <ItemIcon v-if="m.gear?.[slot] && !lockedGear(m, slot)" :name="m.gear[slot]!.name" :spec="m.gear[slot]!.spec" :size="24" />
+            <GameIcon v-else :name="lockedGear(m, slot) ? 'lock' : SLOT_ICON[slot]" :size="20" />
+          </span>
           <span class="txt"><span class="sn">{{ slotName(slot) }}</span><span class="in">{{ blocked(slot) ? '無法使用' : m.gear?.[slot]?.name ?? '—' }}</span></span>
         </button>
       </div>
@@ -103,7 +107,7 @@ const totals = computed(() => {
     <div class="picker">
       <h4><GameIcon :name="SLOT_ICON[selected]" :size="16" />{{ slotName(selected) }}</h4>
       <div v-if="current" class="current">
-        <span class="gear-ic big" :class="`r-${rarityOf(current.spec)}`"><GameIcon :name="SLOT_ICON[selected]" :size="26" /></span>
+        <span class="gear-ic big" :class="`r-${rarityOf(current.spec)}`"><ItemIcon :name="current.name" :spec="current.spec" :size="36" /></span>
         <div>
           <div class="iname" :class="`r-${rarityOf(current.spec)}`">{{ current.name }} <span class="tag">{{ rarityName(rarityOf(current.spec)) }}</span></div>
           <div class="chips"><span v-for="c in chips(current.spec)" :key="c" class="tag">{{ c }}</span></div>
@@ -122,7 +126,7 @@ const totals = computed(() => {
       </div>
       <div class="list">
         <div v-for="c in candidates" :key="c.name" class="irow">
-          <span class="gear-ic" :class="`r-${rarityOf(c.spec)}`"><GameIcon :name="SLOT_ICON[c.slots[0]!]" :size="20" /></span>
+          <span class="gear-ic" :class="`r-${rarityOf(c.spec)}`"><ItemIcon :name="c.name" :spec="c.spec" :size="28" /></span>
           <div class="body">
             <div class="iname" :class="`r-${rarityOf(c.spec)}`">{{ c.name }}<span v-if="c.qty > 1" class="muted small"> ×{{ c.qty }}</span> <span class="tag">{{ rarityName(rarityOf(c.spec)) }}</span></div>
             <div class="chips">

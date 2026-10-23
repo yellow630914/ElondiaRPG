@@ -1,17 +1,14 @@
-// 物品的顯示資訊：分類圖示、一行說明（行囊與商店共用）
+// 物品的顯示資訊：類別、稀有度、一行說明（行囊與商店共用）。圖示見 ItemIcon.vue
 
 import { craftRules, itemDef, itemRules, type ItemCategory } from '@/engine/data'
 import { seedSummary } from '@/engine/garden'
 import { furnitureSummary } from '@/engine/homes'
-import { gearRules, gearSpecOf, gearSummary } from '@/engine/gear'
+import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary } from '@/engine/gear'
 import { intelSummary, isIntelItem, useSummary } from '@/engine/inventory'
 import { toolSummary } from '@/engine/tools'
 import { itemCategory } from '@/engine/trade'
 import type { GameState } from '@/engine/types'
 
-export const CATEGORY_ICON: Record<ItemCategory, string> = {
-  food: '🍞', consumable: '🧪', scroll: '📜', gear: '🧰', material: '🪨', equipment: '⚔️', info: '🗞️', furniture: '🛋️',
-}
 /** 篩選分頁的順序 */
 export const CATEGORY_ORDER: ItemCategory[] = ['equipment', 'consumable', 'scroll', 'food', 'gear', 'material', 'info', 'furniture']
 
@@ -19,9 +16,10 @@ export function categoryOf(state: GameState, name: string): ItemCategory | undef
   return itemCategory(state, name)
 }
 
-export function categoryIcon(state: GameState, name: string): string {
-  const c = categoryOf(state, name)
-  return c ? CATEGORY_ICON[c] : '📦'
+/** 裝備的稀有度（圖示底框上色用）；不是裝備時是空字串 */
+export function itemRarity(state: GameState, name: string): string {
+  const spec = gearSpecOf(state, name)
+  return spec && gearKnown(spec) ? gearStats(spec).rarity : ''
 }
 
 export function categoryName(state: GameState, name: string): string {

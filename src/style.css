@@ -187,6 +187,17 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .muted { color: var(--muted); }
 .small { font-size: var(--fs-sm); }
 .label { font-size: var(--fs-xs); color: var(--muted); letter-spacing: 0.12em; }
+/* 物品圖示的底框（行囊、商店）；r-<稀有度> 依稀有度上色 */
+.item-tile {
+  width: 34px; height: 34px; flex: none; display: inline-grid; place-items: center; border-radius: 2px;
+  background: #2a1e14; color: #e8d8b8; border: 1px solid #4b3420; box-shadow: inset 0 0 0 1px #c99a4540;
+}
+.item-tile.special { color: var(--gold-hi); }
+.item-tile.r-uncommon { color: var(--r-uncommon); box-shadow: inset 0 0 0 1px var(--r-uncommon); }
+.item-tile.r-rare { color: var(--r-rare); box-shadow: inset 0 0 0 1px var(--r-rare); }
+.item-tile.r-epic { color: var(--r-epic); box-shadow: inset 0 0 0 1px var(--r-epic); }
+.item-tile.r-legendary { color: var(--r-legendary); box-shadow: inset 0 0 0 1px var(--r-legendary); }
+
 .tag {
   display: inline-flex;
   align-items: center;

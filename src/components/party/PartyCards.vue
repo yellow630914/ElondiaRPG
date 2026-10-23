@@ -12,7 +12,8 @@ import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import Avatar from '../ui/Avatar.vue'
 import GameIcon from '../ui/GameIcon.vue'
-import { attrNote, contractFor, SLOT_ICON, spellSlots, type CharTab } from './memberInfo'
+import ItemIcon from '../items/ItemIcon.vue'
+import { attrNote, contractFor, spellSlots, type CharTab } from './memberInfo'
 
 // 隊伍的第一層：每人一張角色卡，細節在角色詳情（CharacterDialog）
 const emit = defineEmits<{ detail: [member: string, tab: CharTab] }>()
@@ -113,7 +114,7 @@ function canDismiss(m: Character) {
         <span class="label">裝備</span>
         <span class="items">
           <span v-for="x in gearList(m)" :key="x.slot" class="gear-ic" :class="`r-${rarityOf(x.g.spec)}`" :title="`${slotName(x.slot)}：${x.g.name}\n${gearSummary(x.g.spec)}`">
-            <GameIcon :name="SLOT_ICON[x.slot]" :size="16" />
+            <ItemIcon :name="x.g.name" :spec="x.g.spec" :size="20" />
           </span>
           <span v-if="!gearList(m).length" class="muted">無</span>
         </span>
