@@ -1,0 +1,2293 @@
+{
+ "type": "elondia-world",
+ "version": 1,
+ "name": "艾隆迪亞擴充",
+ "desc": "在原版艾隆迪亞上補齊各地的固定 NPC（統治者、機構首長、地標人物、鄉間人物）與特殊任務（大陸主線、地區故事線、角色任務線、地下城傳說），並把新的人與事寫進世界書。",
+ "content": {
+  "npcs": {
+   "mod_npc_pope_gregory": {
+    "id": "mod_npc_pope_gregory",
+    "name": "格里高利七世",
+    "gender": "male",
+    "race": "human",
+    "level": 16,
+    "location": "soriel",
+    "personality": "溫和慈祥、說話輕聲細語，卻是教廷裡最老練的權術家；相信教廷才是人類合法性的唯一來源。",
+    "appearance": "白髮白鬚的老人，穿綴有白金環與七芒星的教皇長袍，手上總戴著一枚磨亮的聖環戒。",
+    "background": "出身沒落的小貴族，四十年前以見習修士入教廷，一路爬到教皇之位。他與萊茵帝國皇帝奧托三世為了「誰才是人類的合法權威」明爭暗鬥，表面上卻總是互相祝福。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "聖環教廷",
+    "tags": [
+     "bishop",
+     "priest"
+    ],
+    "relations": {
+     "npc_selene": "見習修女，他記得她的名字，這讓她受寵若驚",
+     "mod_npc_valentin_clay": "教廷的利刃，也是他最擔心哪天會轉向自己的人",
+     "mod_npc_otto_iii": "政敵，也是不得不合作的盟友"
+    },
+    "landmark": "lm_holy_ring_cathedral"
+   },
+   "mod_npc_valentin_clay": {
+    "id": "mod_npc_valentin_clay",
+    "name": "瓦倫汀・克雷",
+    "gender": "male",
+    "race": "human",
+    "level": 13,
+    "location": "soriel",
+    "personality": "不苟言笑、只信證據，對異端毫不留情；教廷裡少數從不收賄的人，也因此樹敵無數。",
+    "appearance": "高瘦、灰眼，黑色審判官斗篷下是磨得發亮的銀甲，腰間掛著鑲在鏡框裡的小鏡子。",
+    "background": "審判迴廊的審判長，「真理之鏡」的守護者。年輕時親手送自己犯了異端罪的兄長上火刑台，從此再也沒有人看過他笑。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "paladin",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "聖環教廷",
+    "tags": [
+     "priest"
+    ],
+    "relations": {
+     "mod_npc_pope_gregory": "他效忠的是教義，不是教皇本人",
+     "mod_npc_isabella_rowan": "嫌她太放縱騎士們"
+    },
+    "landmark": "lm_judgment_cloister"
+   },
+   "mod_npc_isabella_rowan": {
+    "id": "mod_npc_isabella_rowan",
+    "name": "伊莎貝拉・羅恩",
+    "gender": "female",
+    "race": "human",
+    "level": 12,
+    "location": "soriel",
+    "personality": "豪爽直率、愛喝酒、愛打賭，覺得審判廷管太多；對部下護短到近乎蠻橫。",
+    "appearance": "短髮的高大女騎士，左頰一道舊疤，白色披風總是沾著塵土。",
+    "background": "聖殿騎士團長，平民出身，靠戰功升上團長。她帶過的騎士都說她是會替部下擋審判廷公文的人。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "paladin",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "聖環教廷",
+    "tags": [
+     "priest"
+    ],
+    "relations": {
+     "mod_npc_valentin_clay": "互看不順眼，但都承認對方可靠"
+    },
+    "haunts": [
+     {
+      "location": "soriel",
+      "zone": "temple",
+      "weight": 3
+     },
+     {
+      "location": "soriel",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_marcus_fenn": {
+    "id": "mod_npc_marcus_fenn",
+    "name": "馬庫斯・費恩",
+    "gender": "male",
+    "race": "human",
+    "level": 10,
+    "location": "soriel",
+    "personality": "現實、愛講當年勇，對新人很照顧，最怕教廷寄來的公文。",
+    "appearance": "中年壯漢，右手少了兩根手指，戴著冒險者公會的銅章。",
+    "background": "冒險者公會索里耶爾分會長，退休的 B 級冒險者。在聖城經營分會，最頭痛的是夾在教廷與公會規章之間。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "冒險者公會",
+    "relations": {
+     "npc_lina": "他看著長大的新人，總嫌她太衝"
+    },
+    "haunts": [
+     {
+      "location": "soriel",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_old_hannah": {
+    "id": "mod_npc_old_hannah",
+    "name": "漢娜嬤嬤",
+    "gender": "female",
+    "race": "human",
+    "level": 3,
+    "location": "soriel",
+    "personality": "愛聊天、記性好得嚇人，什麼小道消息都聽過，但只說給買蠟燭的人聽。",
+    "appearance": "駝背的老婆婆，圍裙上滴滿蠟油，籃子裡永遠裝著白蠟燭。",
+    "background": "在外環朝聖者區賣蠟燭四十年，看過三任教皇登基。朝聖者在她攤位前說的話，比審判廷的密探知道得還多。",
+    "custom": true,
+    "kind": "commoner",
+    "class": "",
+    "hire_cc": 0,
+    "occupation": "蠟燭小販",
+    "tags": [
+     "commoner",
+     "good"
+    ],
+    "haunts": [
+     {
+      "location": "soriel",
+      "zone": "town",
+      "weight": 4
+     }
+    ]
+   },
+   "mod_npc_otto_iii": {
+    "id": "mod_npc_otto_iii",
+    "name": "奧托三世",
+    "gender": "male",
+    "race": "human",
+    "level": 15,
+    "location": "rhineburg",
+    "personality": "老練的軍人皇帝，重紀律與榮耀，說話簡短、討厭繞圈子；厭惡教廷干政，想讓帝國擺脫聖環的影子。",
+    "appearance": "六十出頭仍挺拔如槍，灰白短鬚，穿樸素的黑色軍裝，只有胸前的金鷹徽章顯示他的身分。",
+    "background": "萊茵帝國皇帝，年輕時親自帶兵平定邊境叛亂。帝國議會是全大陸的政治風向球，而他是那顆球的重心。近年他與教廷的矛盾日漸公開化。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "萊茵帝國",
+    "tags": [
+     "royal",
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_eleanora_rhine": "長女與宰相，他唯一完全信任的人",
+     "mod_npc_pope_gregory": "政敵"
+    },
+    "haunts": [
+     {
+      "location": "rhineburg",
+      "zone": "palace",
+      "weight": 4
+     },
+     {
+      "location": "rhineburg",
+      "zone": "noble",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_eleanora_rhine": {
+    "id": "mod_npc_eleanora_rhine",
+    "name": "艾蕾諾拉・馮・萊茵",
+    "gender": "female",
+    "race": "human",
+    "level": 12,
+    "location": "rhineburg",
+    "personality": "冷靜、精於算計，說話永遠留三分；比父親更懂得和各國周旋，也更不信任任何人。",
+    "appearance": "金髮盤得一絲不亂，穿深藍色宰相長袍，手上的權杖其實是一根法杖。",
+    "background": "奧托三世的長女、帝國宰相。她在法師學院以第一名畢業，卻選擇了政治。帝國的外交、密探與財政都經過她的手。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "萊茵帝國",
+    "tags": [
+     "royal",
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_otto_iii": "父親，也是她最想超越的人",
+     "mod_npc_kaspar_nord": "安插在河谷鎮的眼睛"
+    },
+    "haunts": [
+     {
+      "location": "rhineburg",
+      "zone": "noble",
+      "weight": 3
+     },
+     {
+      "location": "rhineburg",
+      "zone": "palace",
+      "weight": 2
+     }
+    ]
+   },
+   "mod_npc_gottfried_horn": {
+    "id": "mod_npc_gottfried_horn",
+    "name": "戈特弗里德・霍恩",
+    "gender": "male",
+    "race": "human",
+    "level": 13,
+    "location": "rhineburg",
+    "personality": "古板的榮譽主義者，對學生嚴厲但從不放棄任何一個；一生沒說過謊。",
+    "appearance": "光頭、滿臉皺紋的老騎士，總穿著擦得發亮的舊式板甲。",
+    "background": "騎士學院院長，參加過三場戰爭。他說騎士的劍是為了保護弱者，這讓他在重視出身的帝國貴族圈裡不太受歡迎。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "paladin",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "萊茵帝國",
+    "tags": [
+     "noble",
+     "good"
+    ],
+    "landmark": "lm_knight_academy"
+   },
+   "mod_npc_brandt_copperbeard": {
+    "id": "mod_npc_brandt_copperbeard",
+    "name": "布蘭特・銅鬚",
+    "gender": "male",
+    "race": "dwarf",
+    "level": 9,
+    "location": "rhineburg",
+    "personality": "脾氣火爆、嗓門大，對人類工匠又愛又恨；一喝酒就開始講龍息鎧的設計。",
+    "appearance": "紅褐色大鬍子編成三股，皮圍裙被火星燙出無數小洞。",
+    "background": "帝國軍械院的總匠，傳說中「龍息鎧」的主持者。銅鬚氏族派來與人類交流技術的工匠，一待就是二十年。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "hire_cc": 1275,
+    "faction": "矮人氏族聯盟",
+    "lineage": "銅鬚氏族",
+    "relations": {
+     "npc_borin": "堂弟，嫌他退休得太早",
+     "mod_npc_owen_copperbeard": "族叔，每年寫信催他回鐵爐堡"
+    },
+    "landmark": "lm_imperial_armory"
+   },
+   "mod_npc_seraphina_weiss": {
+    "id": "mod_npc_seraphina_weiss",
+    "name": "塞拉菲娜・維斯",
+    "gender": "female",
+    "race": "human",
+    "level": 14,
+    "location": "rhineburg",
+    "personality": "慵懶毒舌的天才，討厭開會，只要話題扯到高維巨龍就會突然精神百倍。",
+    "appearance": "黑長髮隨便紮起，眼下掛著黑眼圈，法師袍上沾著墨水。",
+    "background": "帝國法師學院院長，正在研究龍的「投影現象」。她相信七種龍其實是同一種存在的不同切面，這個理論讓她被教廷盯上。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "萊茵帝國",
+    "relations": {
+     "npc_ael": "常來旁聽的精靈學者，她覺得他太認真",
+     "mod_npc_evenna_starword": "用信件爭論龍的本質的筆友"
+    },
+    "haunts": [
+     {
+      "location": "rhineburg",
+      "zone": "noble",
+      "weight": 3
+     },
+     {
+      "location": "rhineburg",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_rock_the_rat": {
+    "id": "mod_npc_rock_the_rat",
+    "name": "「老鼠」洛克",
+    "gender": "male",
+    "race": "human",
+    "level": 6,
+    "location": "rhineburg",
+    "personality": "膽小又貪財、說話結巴，消息卻靈通得驚人；誰付錢就替誰辦事，從不問理由。",
+    "appearance": "瘦小、尖下巴，披著一件縫滿口袋的破斗篷，身上有股洗不掉的下水道味。",
+    "background": "萊茵堡下水道走私幫的頭目，靠替貴族、商人甚至密探搬運見不得光的東西過活。他知道每一條通往城牆外的暗渠。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "hire_cc": 690,
+    "tags": [
+     "villain"
+    ],
+    "relations": {
+     "mod_npc_kaspar_nord": "常客，出手大方"
+    },
+    "fixed": {
+     "area": "sm/sm_rhineburg_sewer",
+     "x": 2,
+     "y": 1
+    }
+   },
+   "mod_npc_adelaide_ii": {
+    "id": "mod_npc_adelaide_ii",
+    "name": "阿德萊德二世",
+    "gender": "female",
+    "race": "human",
+    "level": 14,
+    "location": "dawnlight",
+    "personality": "熱愛藝術、口才極好，在人前永遠優雅從容；私底下為宮廷的陰謀疲憊不堪，只在音樂裡放鬆。",
+    "appearance": "四十歲上下，銀灰色長髮戴著朝陽紋章的細冠，裙擺上繡著銀羽鳶。",
+    "background": "晨曦王國女王。她在人類諸國聯盟裡以調停者著稱，卻管不住自己宮廷裡的貴族；表兄洛倫佐公爵的野心是她最大的煩惱。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "bard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "晨曦王國",
+    "tags": [
+     "royal",
+     "noble",
+     "good"
+    ],
+    "relations": {
+     "mod_npc_lorenzo_valois": "表兄，她知道他想要什麼",
+     "npc_mira": "她聽過米菈在街頭唱歌，記住了這個名字"
+    },
+    "haunts": [
+     {
+      "location": "dawnlight",
+      "zone": "palace",
+      "weight": 4
+     },
+     {
+      "location": "dawnlight",
+      "zone": "noble",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_lorenzo_valois": {
+    "id": "mod_npc_lorenzo_valois",
+    "name": "洛倫佐・德・瓦洛",
+    "gender": "male",
+    "race": "human",
+    "level": 12,
+    "location": "dawnlight",
+    "personality": "優雅、風趣、野心勃勃，對每個人都和善得過分；暗中拉攏貴族，想架空女王。",
+    "appearance": "修長的中年男子，深紫色禮服，指上戴著七枚不同寶石的戒指。",
+    "background": "公爵、宮廷首席法師，女王的表兄。他認為晨曦王國太軟弱，需要一位真正的領袖。宮廷裡一半的流言都從他的沙龍傳出。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "晨曦王國",
+    "tags": [
+     "noble",
+     "villain"
+    ],
+    "relations": {
+     "mod_npc_adelaide_ii": "表妹，也是擋在他前面的人"
+    },
+    "haunts": [
+     {
+      "location": "dawnlight",
+      "zone": "noble",
+      "weight": 3
+     },
+     {
+      "location": "dawnlight",
+      "zone": "palace",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_eleanor_dawn": {
+    "id": "mod_npc_eleanor_dawn",
+    "name": "艾莉諾・晨光",
+    "gender": "female",
+    "race": "human",
+    "level": 12,
+    "location": "dawnlight",
+    "personality": "溫柔堅定，說話時總是先聽完別人；相信聖殿祭壇上的微光代表聖者仍在守護王國。",
+    "appearance": "金髮編成長辮，白袍上繡著朝陽，眼神清澈得讓人不敢說謊。",
+    "background": "晨曦聖殿的大祭司。她是少數敢當面勸教皇「信仰不該是政治工具」的神職者，因此在索里耶爾不太受歡迎。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "聖環教廷",
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "landmark": "lm_dawn_sanctum"
+   },
+   "mod_npc_tobias_green": {
+    "id": "mod_npc_tobias_green",
+    "name": "托比亞斯・葛林",
+    "gender": "male",
+    "race": "human",
+    "level": 10,
+    "location": "dawnlight",
+    "personality": "老好人、工作狂，常常忘記吃飯；對學生的錯誤很寬容，對病人的痛苦很不寬容。",
+    "appearance": "圓胖的中年人，白袍口袋裡塞滿藥瓶和寫到一半的筆記。",
+    "background": "治癒者學院院長，大陸上最好的醫師之一。他相信治癒術應該教給所有人，不只是貴族和教士。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "晨曦王國",
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "relations": {
+     "npc_selene": "曾經的學生，他記得她背書背到睡著"
+    },
+    "landmark": "lm_healers_academy"
+   },
+   "mod_npc_sean_minstrel": {
+    "id": "mod_npc_sean_minstrel",
+    "name": "席恩",
+    "gender": "male",
+    "race": "human",
+    "level": 6,
+    "location": "dawnlight",
+    "personality": "自負又多情，愛炫技，嘴上不饒人；其實很怕被人超越。",
+    "appearance": "捲髮的年輕樂師，穿華麗的宮廷禮服，魯特琴上綁著不知道哪位小姐送的緞帶。",
+    "background": "宮廷樂師，出身街頭，靠一首獻給女王的歌進了宮。他把同樣在街頭唱歌的米菈當成宿敵。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "bard",
+    "hire_cc": 690,
+    "faction": "晨曦王國",
+    "relations": {
+     "npc_mira": "冤家，嘴上說她的歌太粗糙，其實偷偷學她的旋律"
+    },
+    "haunts": [
+     {
+      "location": "dawnlight",
+      "zone": "town",
+      "weight": 2
+     },
+     {
+      "location": "dawnlight",
+      "zone": "noble",
+      "weight": 2
+     }
+    ]
+   },
+   "mod_npc_constance_wagner": {
+    "id": "mod_npc_constance_wagner",
+    "name": "康斯坦絲・瓦格納",
+    "gender": "female",
+    "race": "human",
+    "level": 9,
+    "location": "albena",
+    "personality": "精明冷靜、言出必行，相信契約勝過刀劍；最討厭別人遲到。",
+    "appearance": "五十歲的女士，灰色套裝，眼鏡掛在細鏈上，隨身帶著一本封面磨損的帳冊。",
+    "background": "七議席議會本屆輪值首席、聯邦最大銀行的主人。她在風誓塔頂立下的「公正誓約」，是她最在意的東西。",
+    "custom": true,
+    "kind": "commoner",
+    "class": "",
+    "hire_cc": 0,
+    "occupation": "議會首席",
+    "faction": "奧德聯邦",
+    "tags": [
+     "noble",
+     "merchant"
+    ],
+    "landmark": "lm_windoath_tower"
+   },
+   "mod_npc_ignaz_goldscale": {
+    "id": "mod_npc_ignaz_goldscale",
+    "name": "伊格納茲・金秤",
+    "gender": "male",
+    "race": "human",
+    "level": 7,
+    "location": "albena",
+    "personality": "笑臉迎人、八面玲瓏，帳算得比誰都清楚；為了生意可以跟任何人握手。",
+    "appearance": "矮胖的商人，金色背心，胸前掛著一把小金秤當作家徽。",
+    "background": "議員、聯邦最大商行的老闆，暗中資助了好幾支冒險者隊伍和傭兵團，換取他們帶回來的情報和遺物。",
+    "custom": true,
+    "kind": "commoner",
+    "class": "",
+    "hire_cc": 0,
+    "occupation": "商行老闆",
+    "faction": "奧德聯邦",
+    "tags": [
+     "noble",
+     "merchant"
+    ],
+    "haunts": [
+     {
+      "location": "albena",
+      "zone": "noble",
+      "weight": 3
+     },
+     {
+      "location": "albena",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_faceless_salo": {
+    "id": "mod_npc_faceless_salo",
+    "name": "「無面」薩洛",
+    "gender": "male",
+    "race": "demon",
+    "level": 9,
+    "location": "albena",
+    "personality": "說話輕柔、從不提高聲音，永遠只談交易；守信到冷酷的地步。",
+    "appearance": "高瘦的半魔，戴一張沒有五官的白瓷面具，指尖是灰黑色的。",
+    "background": "自由集市的掮客，傳說只要有足夠的金幣，他能替你找到任何契約的買家——包括惡魔契約。他是灰港鎮深淵交易所在人類世界的窗口。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "hire_cc": 1275,
+    "faction": "自由集市",
+    "lineage": "半魔",
+    "tags": [
+     "merchant"
+    ],
+    "relations": {
+     "npc_kai": "從小看著他在集市偷東西，偶爾僱他跑腿",
+     "mod_npc_vespa": "生意夥伴"
+    },
+    "landmark": "lm_free_market"
+   },
+   "mod_npc_finia_silverleaf": {
+    "id": "mod_npc_finia_silverleaf",
+    "name": "菲妮雅・銀葉",
+    "gender": "female",
+    "race": "elf",
+    "level": 8,
+    "location": "albena",
+    "personality": "熱情、愛討價還價，對人類的新奇玩意兒毫無抵抗力；新芽同盟的熱心成員。",
+    "appearance": "綠髮的精靈女子，穿人類樣式的商人服裝，耳上戴著好幾個人類工匠做的耳環。",
+    "background": "精靈商館的館主，一百二十歲（以精靈來說還很年輕）。她相信精靈的未來在和外族交流，被翠輝議會視為麻煩人物。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "bard",
+    "hire_cc": 1060,
+    "faction": "精靈王庭",
+    "lineage": "新芽同盟",
+    "tags": [
+     "merchant"
+    ],
+    "relations": {
+     "npc_ael": "表弟，她介紹他去萊茵堡讀書",
+     "mod_npc_kalanthil": "被他當面斥責過「玷污血統」"
+    },
+    "haunts": [
+     {
+      "location": "albena",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_bernard_lockwood": {
+    "id": "mod_npc_bernard_lockwood",
+    "name": "伯納德・洛克伍德",
+    "gender": "male",
+    "race": "human",
+    "level": 10,
+    "location": "albena",
+    "personality": "嘮叨、愛發明，總在找願意試用新魔導具的人；炸過三次自己的工坊。",
+    "appearance": "戴護目鏡的禿頭老人，法師袍下穿著皮圍裙，口袋裡全是齒輪。",
+    "background": "魔導師工會會長。他和矮人「無火之鐵」的發明家有書信往來，夢想造出不靠法師也能運作的魔導機械。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "奧德聯邦",
+    "relations": {
+     "mod_npc_dilia_copperbeard": "筆友，兩人互寄設計圖"
+    },
+    "haunts": [
+     {
+      "location": "albena",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_greta_silverscale": {
+    "id": "mod_npc_greta_silverscale",
+    "name": "格蕾塔・銀鱗",
+    "gender": "female",
+    "race": "human",
+    "level": 5,
+    "location": "rivervale",
+    "personality": "豪爽、口風很緊，誰都能在她店裡喝酒，誰都別想從她嘴裡套話。",
+    "appearance": "豐滿的中年女人，袖子捲到手肘，腰間掛著一大串鑰匙。",
+    "background": "銀鱗旅店的老闆娘，第三代經營者。旅店的秘密地下室曾經接待過魔族使者——那是她父親的決定，她至今仍守著這個秘密。",
+    "custom": true,
+    "kind": "commoner",
+    "class": "",
+    "hire_cc": 0,
+    "occupation": "旅店老闆娘",
+    "tags": [
+     "merchant",
+     "good"
+    ],
+    "relations": {
+     "npc_borin": "常客，酒錢常欠著"
+    },
+    "landmark": "lm_silverscale_inn"
+   },
+   "mod_npc_oswin_bridge": {
+    "id": "mod_npc_oswin_bridge",
+    "name": "奧斯溫",
+    "gender": "male",
+    "race": "human",
+    "level": 7,
+    "location": "rivervale",
+    "personality": "慢條斯理、愛講古，說自己聽得見「流水之靈」；替在橋上發誓的人作見證，從不收錢。",
+    "appearance": "白鬍子的老人，赤腳，手杖上長著青苔。",
+    "background": "舊石橋的守橋人與公證人。兩國使節在河谷鎮談判時，誓約都在他的見證下立下。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "druid",
+    "hire_cc": 865,
+    "tags": [
+     "good"
+    ],
+    "landmark": "lm_old_stone_bridge"
+   },
+   "mod_npc_kaspar_nord": {
+    "id": "mod_npc_kaspar_nord",
+    "name": "卡斯帕・諾德",
+    "gender": "male",
+    "race": "human",
+    "level": 8,
+    "location": "rivervale",
+    "personality": "和善、健談，對什麼都表現出恰到好處的興趣；從不喝醉。",
+    "appearance": "其貌不揚的中年商人，穿著普通的旅行外套，記性好得不像個商人。",
+    "background": "自稱布料商人，其實是帝國宰相艾蕾諾拉的密探，在中立的河谷鎮蒐集晨曦王國的情報。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "hire_cc": 1060,
+    "faction": "萊茵帝國",
+    "tags": [
+     "merchant",
+     "traveler"
+    ],
+    "relations": {
+     "mod_npc_eleanora_rhine": "他的主子",
+     "mod_npc_rock_the_rat": "在萊茵堡替他搬東西的人"
+    },
+    "haunts": [
+     {
+      "location": "rivervale",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_helen_lighthouse": {
+    "id": "mod_npc_helen_lighthouse",
+    "name": "海倫婆婆",
+    "gender": "female",
+    "race": "human",
+    "level": 5,
+    "location": "coast_ferry",
+    "personality": "寡言、固執，看海就知道明天的天氣；對冒失的年輕人特別嚴厲。",
+    "appearance": "皮膚曬得黝黑的老婦人，披著油布斗篷，手裡永遠拿著一支黃銅望遠鏡。",
+    "background": "守渡口燈塔三十年。她的丈夫在一場風暴中隨船沉沒，從那以後她就沒讓燈熄過一個晚上。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "ranger",
+    "hire_cc": 535,
+    "tags": [
+     "good"
+    ],
+    "landmark": "lm_ferry_lighthouse"
+   },
+   "mod_npc_bruno_ferry": {
+    "id": "mod_npc_bruno_ferry",
+    "name": "布魯諾",
+    "gender": "male",
+    "race": "human",
+    "level": 4,
+    "location": "coast_ferry",
+    "personality": "嗓門大、愛賭、愛吹牛，但船開得比誰都穩；欠的賭債比船票錢還多。",
+    "appearance": "光頭大漢，手臂上刺著船錨，總是叼著一根沒點的菸斗。",
+    "background": "沿海渡口的渡船老大，往返晨光城與東海的航線跑了二十年。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "hire_cc": 400,
+    "tags": [
+     "traveler"
+    ],
+    "haunts": [
+     {
+      "location": "coast_ferry",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_beatrice_whitewhale": {
+    "id": "mod_npc_beatrice_whitewhale",
+    "name": "貝雅特麗絲",
+    "gender": "female",
+    "race": "human",
+    "level": 11,
+    "location": "tidehaven",
+    "personality": "豪邁、果斷，精於海戰與談判；一拳打在桌上就是議會的結論。",
+    "appearance": "高大的中年女人，白色長大衣上別著七枚潮紋徽章，腰間掛著一把海軍彎刀。",
+    "background": "七潮議會首席，人稱「白鯨」。前海軍艦長，帶著艦隊打垮過三個海盜王。她治下的潮汐港無王卻有序。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "七潮議會",
+    "tags": [
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_carlos_blacksail": "她抓不到的人",
+     "mod_npc_reno_deeptide": "得力助手，雖然常常喝醉"
+    },
+    "landmark": "lm_seven_tides_hall"
+   },
+   "mod_npc_reno_deeptide": {
+    "id": "mod_npc_reno_deeptide",
+    "name": "雷諾",
+    "gender": "male",
+    "race": "human",
+    "level": 8,
+    "location": "tidehaven",
+    "personality": "隨和、愛熱鬧，和玉璘族處得極好，因此常被宴會灌醉；酒醒了辦事卻很牢靠。",
+    "appearance": "棕色捲髮的年輕人，穿著有珍珠鈕扣的禮服，臉頰總是帶著酒紅。",
+    "background": "深潮席席長，負責安排滄月闕的渡訪船次與嚮導。他說自己是全大陸被玉璘族灌醉最多次的人類。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "bard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "七潮議會",
+    "relations": {
+     "mod_npc_shion_envoy": "他總是在港口找迷路的她",
+     "mod_npc_sakurashio": "潮主，最會灌他酒的人"
+    },
+    "landmark": "lm_deep_tide_pier"
+   },
+   "mod_npc_carlos_blacksail": {
+    "id": "mod_npc_carlos_blacksail",
+    "name": "「黑帆」卡洛斯",
+    "gender": "male",
+    "race": "human",
+    "level": 10,
+    "location": "tidehaven",
+    "personality": "風度翩翩、心狠手辣，對自己人講義氣；最喜歡在議會的眼皮底下做生意。",
+    "appearance": "黑髮黑鬚的英俊男子，一身黑色皮衣，耳上掛著金環。",
+    "background": "走私王，掌握潮汐港一半的地下貿易。據說他的船從骷髏潮島帶回過不該存在的東西。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "hire_cc": 1510,
+    "tags": [
+     "villain",
+     "merchant"
+    ],
+    "relations": {
+     "mod_npc_beatrice_whitewhale": "老對手，他尊敬她"
+    },
+    "haunts": [
+     {
+      "location": "tidehaven",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_shion_envoy": {
+    "id": "mod_npc_shion_envoy",
+    "name": "汐音",
+    "gender": "female",
+    "race": "yulin",
+    "level": 6,
+    "location": "tidehaven",
+    "personality": "天真、迷糊，迷路是日常；對陸地的一切都充滿好奇。",
+    "appearance": "化形上岸的玉璘族少女，幽藍長髮，穿著繡著櫻花的廣袖短衫，耳後的鰓在陽光下閃閃發亮。",
+    "background": "派駐潮汐港的玉璘族使者，負責和深潮席聯絡。她已經在港口迷路了一百多次。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "bard",
+    "hire_cc": 690,
+    "faction": "玉璘四時殿",
+    "lineage": "春潮閣",
+    "relations": {
+     "mod_npc_sakurashio": "姊姊",
+     "mod_npc_reno_deeptide": "總是找到她的人"
+    },
+    "haunts": [
+     {
+      "location": "tidehaven",
+      "zone": "town",
+      "weight": 3
+     },
+     {
+      "location": "coral_bay",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_coral_miko": {
+    "id": "mod_npc_coral_miko",
+    "name": "珊瑚巫女",
+    "gender": "female",
+    "race": "human",
+    "level": 7,
+    "location": "coral_bay",
+    "personality": "安靜、敏感，聽得懂海浪的話；說話時常常停下來聽海。",
+    "appearance": "黑髮及腰的混血海民女子，皮膚上有淡淡的鱗紋，穿白色祭衣。",
+    "background": "海靈祠的巫女，侍奉海靈與風母。她說潮隕洞窟深處的海靈最近變得很不安。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "druid",
+    "hire_cc": 865,
+    "lineage": "混血海民",
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "landmark": "lm_sea_spirit_shrine"
+   },
+   "mod_npc_toma_pearl": {
+    "id": "mod_npc_toma_pearl",
+    "name": "托馬老爹",
+    "gender": "male",
+    "race": "human",
+    "level": 5,
+    "location": "coral_bay",
+    "personality": "樂天、愛唱歌，潛水一口氣能撐很久；最喜歡吹噓他撈到過的大珍珠。",
+    "appearance": "曬得黝黑的老漁夫，只穿一條短褲，脖子上掛著一串珍珠。",
+    "background": "珍珠採集的頭目，和滄月闕的玉璘族是老朋友。他說珊瑚灣的珍珠越來越少了。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "ranger",
+    "hire_cc": 535,
+    "tags": [
+     "good",
+     "merchant"
+    ],
+    "haunts": [
+     {
+      "location": "coral_bay",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_sakurashio": {
+    "id": "mod_npc_sakurashio",
+    "name": "櫻汐",
+    "gender": "female",
+    "race": "yulin",
+    "level": 13,
+    "location": "canglue",
+    "personality": "天真爛漫、超級樂天，把治理都城當成辦宴會；認真起來卻出奇地有魄力。",
+    "appearance": "珊瑚紅長髮插著並蒂珊瑚花，下身玉色鱗尾，穿春潮閣的櫻色廣袖羅裳。",
+    "background": "今年的潮主、春潮閣殿主。她在挑潮祭連勝三屆，族人說她的歌聲能讓結界發亮。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "bard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "玉璘四時殿",
+    "lineage": "春潮閣",
+    "tags": [
+     "royal"
+    ],
+    "relations": {
+     "mod_npc_shion_envoy": "妹妹，她很擔心她在陸地上迷路",
+     "mod_npc_geika": "酒友",
+     "mod_npc_moring": "總是勸她多看看陸地局勢的人"
+    },
+    "landmark": "lm_tide_mirror"
+   },
+   "mod_npc_geika": {
+    "id": "mod_npc_geika",
+    "name": "鯨歌",
+    "gender": "female",
+    "race": "yulin",
+    "level": 11,
+    "location": "canglue",
+    "personality": "豪爽奔放、酒量無底，人緣最廣；宴會上永遠是最後一個倒下的。",
+    "appearance": "深藍短髮的玉璘族，鱗尾上掛著浪紋金鈴，手裡總捧著鯨髭酒樽。",
+    "background": "夏瀾殿主，都城宴會的總籌辦。她牽線四殿之間的往來，也牽線玉璘族與人類商人的生意。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "bard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "玉璘四時殿",
+    "lineage": "夏瀾殿",
+    "relations": {
+     "mod_npc_sakurashio": "酒友"
+    },
+    "haunts": [
+     {
+      "location": "canglue",
+      "zone": "palace",
+      "weight": 2
+     },
+     {
+      "location": "canglue",
+      "zone": "town",
+      "weight": 2
+     }
+    ]
+   },
+   "mod_npc_moring": {
+    "id": "mod_npc_moring",
+    "name": "墨鱗",
+    "gender": "female",
+    "race": "yulin",
+    "level": 11,
+    "location": "canglue",
+    "personality": "沉靜、博學，族中少有的有耐性的人；收集外界的書，最關心陸地局勢。",
+    "appearance": "黑髮盤起插著墨玉筆的玉璘族，鱗尾是罕見的墨色，總是抱著一疊書。",
+    "background": "秋珊苑主。她是四殿中唯一認真研究陸地政治的人，偶爾庇護迷路的人類學者。她覺得族人太不知憂患。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "玉璘四時殿",
+    "lineage": "秋珊苑",
+    "relations": {
+     "mod_npc_sakurashio": "她想讓她多看看陸地局勢"
+    },
+    "landmark": "lm_four_seasons_gallery"
+   },
+   "mod_npc_rigetsu": {
+    "id": "mod_npc_rigetsu",
+    "name": "璃月",
+    "gender": "female",
+    "race": "yulin",
+    "level": 12,
+    "location": "canglue",
+    "personality": "穩重、細緻、內斂；四殿中最不愛熱鬧的一位，卻掌握最大的話語權。",
+    "appearance": "雪白長髮戴著雪玉璜環，鱗尾如冰，衣袖上繡著螺鈿紋樣。",
+    "background": "冬璃宮主，掌管全族的珍寶庫藏。她最近發現庫藏裡少了一件古老的玉璜，卻還沒告訴任何人。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "玉璘四時殿",
+    "lineage": "冬璃宮",
+    "tags": [
+     "noble"
+    ],
+    "haunts": [
+     {
+      "location": "canglue",
+      "zone": "palace",
+      "weight": 3
+     },
+     {
+      "location": "canglue",
+      "zone": "temple",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_raden_granny": {
+    "id": "mod_npc_raden_granny",
+    "name": "螺鈿婆婆",
+    "gender": "female",
+    "race": "yulin",
+    "level": 9,
+    "location": "canglue",
+    "personality": "嘮叨、慈祥，手很巧；說話總是從「我年輕的時候」開始。",
+    "appearance": "白髮的老玉璘族，鱗尾褪成淡玉色，背著一套螺鈿工具。",
+    "background": "維護礁光柱的老匠人，礁光柱的每一道光紋都經過她的手。她最近說結界的光「有點怪」，卻說不出哪裡怪。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "hire_cc": 1275,
+    "faction": "玉璘四時殿",
+    "lineage": "冬璃宮",
+    "tags": [
+     "good"
+    ],
+    "landmark": "lm_reef_light_pillar"
+   },
+   "mod_npc_ithrandil": {
+    "id": "mod_npc_ithrandil",
+    "name": "伊瑟蘭迪爾",
+    "gender": "female",
+    "race": "elf",
+    "level": 17,
+    "location": "silvermoon",
+    "personality": "溫柔、疏離，說話像在吟詩；憂心森林的魔能日漸衰退，卻不願讓外族插手。",
+    "appearance": "銀髮及地的精靈女王，眼瞳是月光般的淡金色，頭戴白銀藤蔓編成的冠。",
+    "background": "精靈王庭的女王，活了一千多年。她見證過巨龍紀元的尾聲，也親眼看著精靈文明一步步陷入遲滯。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "druid",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "精靈王庭",
+    "tags": [
+     "royal"
+    ],
+    "relations": {
+     "mod_npc_kalanthil": "她的議長，也是她的枷鎖",
+     "mod_npc_evenna_starword": "她最信任的觀星者"
+    },
+    "landmark": "lm_moonlight_mother"
+   },
+   "mod_npc_kalanthil": {
+    "id": "mod_npc_kalanthil",
+    "name": "卡蘭西爾",
+    "gender": "male",
+    "race": "elf",
+    "level": 14,
+    "location": "silvermoon",
+    "personality": "保守、驕傲、極有禮貌，禮貌到讓人覺得被輕視；堅信精靈應該遠離外族。",
+    "appearance": "高大的精靈男子，白色長袍上繡著翠綠的藤紋，從不讓任何人站在他上風處。",
+    "background": "翠輝議會議長，傳統派的領袖。他反對與外族往來，認為新芽同盟是精靈衰亡的開始。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "精靈王庭",
+    "lineage": "翠輝議會",
+    "tags": [
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_finia_silverleaf": "他公開斥責過的「叛徒」"
+    },
+    "haunts": [
+     {
+      "location": "silvermoon",
+      "zone": "noble",
+      "weight": 3
+     },
+     {
+      "location": "silvermoon",
+      "zone": "palace",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_evenna_starword": {
+    "id": "mod_npc_evenna_starword",
+    "name": "艾溫娜・星語",
+    "gender": "female",
+    "race": "elf",
+    "level": 13,
+    "location": "silvermoon",
+    "personality": "專注、浪漫，看星星的時間比看人還多；談起星象就停不下來。",
+    "appearance": "黑髮綴滿星形銀飾的精靈，深藍色長袍上繡著星圖。",
+    "background": "星月之環的首席星術師，觀測高維巨龍的投影。她說最近天上多了一顆不該存在的星。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "精靈王庭",
+    "lineage": "星月之環",
+    "relations": {
+     "mod_npc_seraphina_weiss": "人類筆友，兩人為龍的本質吵了十年"
+    },
+    "haunts": [
+     {
+      "location": "silvermoon",
+      "zone": "noble",
+      "weight": 2
+     },
+     {
+      "location": "silvermoon",
+      "zone": "temple",
+      "weight": 2
+     }
+    ]
+   },
+   "mod_npc_seph_mistveil": {
+    "id": "mod_npc_seph_mistveil",
+    "name": "塞夫",
+    "gender": "male",
+    "race": "elf",
+    "level": 12,
+    "location": "silvermoon",
+    "personality": "安靜、有禮，從不說謊——只是不說。連王庭都不確定他替誰做事。",
+    "appearance": "灰髮的暮影精靈，穿一身不起眼的旅人斗篷，臉孔過目即忘。",
+    "background": "迷霧之幕的影行者，潛行於各國之間，維護精靈的利益。他出現在哪裡，哪裡就會有事發生。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "hire_cc": 2040,
+    "faction": "精靈王庭",
+    "lineage": "迷霧之幕",
+    "tags": [
+     "traveler"
+    ],
+    "haunts": [
+     {
+      "location": "silvermoon",
+      "zone": "town",
+      "weight": 1
+     },
+     {
+      "location": "albena",
+      "zone": "town",
+      "weight": 1
+     },
+     {
+      "location": "rhineburg",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_liandra_spring": {
+    "id": "mod_npc_liandra_spring",
+    "name": "莉安德拉",
+    "gender": "female",
+    "race": "elf",
+    "level": 10,
+    "location": "silvermoon",
+    "personality": "安靜、慈悲，對所有生命一視同仁；唯一的固執是不讓任何人汙染泉水。",
+    "appearance": "淡綠長髮的精靈祭司，赤腳踩在泉邊，手上總有一圈水紋般的光。",
+    "background": "生命之泉的守泉祭司，侍奉豐饒女郎蓋亞。她說泉水的魔力這十年少了三成。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "精靈王庭",
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "landmark": "lm_spring_of_life"
+   },
+   "mod_npc_toren_bowyer": {
+    "id": "mod_npc_toren_bowyer",
+    "name": "托倫",
+    "gender": "male",
+    "race": "elf",
+    "level": 7,
+    "location": "silvermoon",
+    "personality": "嘴硬、驕傲，看不起人類的弓；但只要你肯聽，他會教你一整個下午。",
+    "appearance": "褐髮的精靈弓匠，手指上全是弓弦勒出的繭。",
+    "background": "根界的弓匠。他做的長弓在人類世界能賣到天價，但他只賣給「配得上的人」。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "ranger",
+    "hire_cc": 865,
+    "haunts": [
+     {
+      "location": "silvermoon",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_octavia_mossvoice": {
+    "id": "mod_npc_octavia_mossvoice",
+    "name": "奧克塔維亞",
+    "gender": "female",
+    "race": "human",
+    "level": 11,
+    "location": "mosswhisper",
+    "personality": "溫和、耐心，說話慢條斯理；能用歌聲安撫魔獸，也能用歌聲讓人安靜。",
+    "appearance": "頭髮裡長著小花的中年人類女子，穿樹皮與苔蘚編成的長袍。",
+    "background": "森語之環的長老，少數得到精靈認可的人類德魯伊。她主持森語儀式，替精靈與人類在森林邊緣調解。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "druid",
+    "unhireable": true,
+    "hire_cc": 0,
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "relations": {
+     "mod_npc_fenn_apprentice": "她的學徒"
+    },
+    "landmark": "lm_whispering_ring"
+   },
+   "mod_npc_fenn_apprentice": {
+    "id": "mod_npc_fenn_apprentice",
+    "name": "菲恩",
+    "gender": "male",
+    "race": "elf",
+    "level": 3,
+    "location": "mosswhisper",
+    "personality": "好奇、話多、什麼都想摸摸看；正在「月華巡禮」的路上。",
+    "appearance": "年輕的精靈少年，背著一個裝滿標本的布袋，頭髮上常黏著樹葉。",
+    "background": "德魯伊學徒，正在進行精靈成年的「月華巡禮」。他選擇向人類長老學習，讓家族很不高興。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "druid",
+    "hire_cc": 285,
+    "faction": "精靈王庭",
+    "relations": {
+     "mod_npc_octavia_mossvoice": "老師"
+    },
+    "haunts": [
+     {
+      "location": "mosswhisper",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_alado_hawkrider": {
+    "id": "mod_npc_alado_hawkrider",
+    "name": "艾拉朵",
+    "gender": "female",
+    "race": "elf",
+    "level": 12,
+    "location": "windspeak",
+    "personality": "冷靜、話少、反應極快；信任鷹勝過信任人。",
+    "appearance": "短髮的精靈女戰士，肩上停著一隻金色的巨鷹，皮甲上別著羽毛徽章。",
+    "background": "風語崗哨的鷹騎衛隊長，負責監視南方魔族的偵察。她說最近邊境的影子多了。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "ranger",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "精靈王庭",
+    "landmark": "lm_star_platform"
+   },
+   "mod_npc_theron_blind": {
+    "id": "mod_npc_theron_blind",
+    "name": "瑟隆",
+    "gender": "male",
+    "race": "elf",
+    "level": 9,
+    "location": "windspeak",
+    "personality": "慈祥、幽默，靠風鈴聲「看」星象；說盲眼讓他看得更清楚。",
+    "appearance": "雙眼蒙著白布的老精靈，身上掛滿大大小小的風鈴。",
+    "background": "盲眼的老哨兵。他年輕時在一場魔族突襲中失明，從此改為觀星。他說風鈴能把亡者的靈魂送上天穹。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "hire_cc": 1275,
+    "faction": "精靈王庭",
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "haunts": [
+     {
+      "location": "windspeak",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_thorin_ironforge": {
+    "id": "mod_npc_thorin_ironforge",
+    "name": "托林・鐵爐",
+    "gender": "male",
+    "race": "dwarf",
+    "level": 16,
+    "location": "ironforge",
+    "personality": "沉默寡言、一言九鼎；說「是」的時候比說「不」的時候還少。",
+    "appearance": "白鬍子垂到腰帶的老矮人，頭戴山形鐵冠，手上的戰錘柄被握出了凹痕。",
+    "background": "「山之王系」的矮人王，矮人氏族聯盟之首、鍛炎議會的領袖。他在位兩百年，見過三次魔潮，不輕易相信地表的種族。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "矮人氏族聯盟",
+    "lineage": "鐵爐氏族",
+    "tags": [
+     "royal"
+    ],
+    "relations": {
+     "mod_npc_magda_ironforge": "妹妹，唯一敢對他大聲說話的人",
+     "mod_npc_owen_copperbeard": "嫌他太親近人類"
+    },
+    "landmark": "lm_elder_hall"
+   },
+   "mod_npc_magda_ironforge": {
+    "id": "mod_npc_magda_ironforge",
+    "name": "瑪格達・鐵爐",
+    "gender": "female",
+    "race": "dwarf",
+    "level": 12,
+    "location": "ironforge",
+    "personality": "嚴格、對火焰近乎虔誠，脾氣跟熔爐一樣熱；只要是好手藝，她不問出身。",
+    "appearance": "粗壯的女矮人，雙臂布滿燙傷的疤，鬍鬚編成辮子並戴著鐵環。",
+    "background": "心火熔源的主祭兼大匠，侍奉匠藝之神赫斐斯托斯。主爐日夜不滅，她說那是神在呼吸。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "矮人氏族聯盟",
+    "lineage": "鐵爐氏族",
+    "tags": [
+     "priest"
+    ],
+    "relations": {
+     "mod_npc_thorin_ironforge": "哥哥"
+    },
+    "landmark": "lm_heartfire_forge"
+   },
+   "mod_npc_owen_copperbeard": {
+    "id": "mod_npc_owen_copperbeard",
+    "name": "歐文・銅鬚",
+    "gender": "male",
+    "race": "dwarf",
+    "level": 8,
+    "location": "ironforge",
+    "personality": "圓滑、愛說笑，生意頭腦一流；是少數會對人類講笑話的矮人。",
+    "appearance": "紅銅色鬍子打理得油亮，穿著鑲毛邊的商人外套，腰間掛著算盤。",
+    "background": "深鏈契約的代表，推動矮人與人類的貿易與技術交流。保守派罵他是「鏽蝕傳統的油」，他聽了只是哈哈大笑。",
+    "custom": true,
+    "kind": "commoner",
+    "class": "",
+    "hire_cc": 0,
+    "occupation": "貿易代表",
+    "faction": "矮人氏族聯盟",
+    "lineage": "銅鬚氏族",
+    "tags": [
+     "merchant",
+     "noble"
+    ],
+    "relations": {
+     "npc_borin": "姪子",
+     "mod_npc_dilia_copperbeard": "女兒，他為她的發明頭痛不已"
+    },
+    "haunts": [
+     {
+      "location": "ironforge",
+      "zone": "town",
+      "weight": 3
+     },
+     {
+      "location": "ironforge",
+      "zone": "noble",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_dilia_copperbeard": {
+    "id": "mod_npc_dilia_copperbeard",
+    "name": "迪莉婭・銅鬚",
+    "gender": "female",
+    "race": "dwarf",
+    "level": 9,
+    "location": "ironforge",
+    "personality": "急性子、腦袋轉得比嘴快，被保守派視為異端也毫不在乎；最受不了「傳統就是這樣」這句話。",
+    "appearance": "短辮子的年輕女矮人，戴著自製的多層護目鏡，背著一個會冒蒸汽的背包。",
+    "background": "「無火之鐵」的發明家，想用魔導取代傳統鍛造。她的發明在邊境戰爭中立過功，所以議會想封殺她也封殺不了。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "hire_cc": 1275,
+    "faction": "矮人氏族聯盟",
+    "lineage": "銅鬚氏族",
+    "relations": {
+     "mod_npc_owen_copperbeard": "父親",
+     "mod_npc_bernard_lockwood": "阿爾貝納的筆友",
+     "mod_npc_magda_ironforge": "認為她褻瀆了火焰"
+    },
+    "haunts": [
+     {
+      "location": "ironforge",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_balin_greyrock": {
+    "id": "mod_npc_balin_greyrock",
+    "name": "巴爾林・灰岩",
+    "gender": "male",
+    "race": "dwarf",
+    "level": 11,
+    "location": "ironforge",
+    "personality": "固執、莊重，說話像在念誓詞；對祖先與封印的事絕不妥協。",
+    "appearance": "全副岩灰色重甲的矮人，盾上刻著石誓會的封印紋。",
+    "background": "石誓會的守門騎士，守護地底的「封印之門」與祖靈之墓。他說最近封印之門後面傳來敲擊聲，但議會不相信他。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "paladin",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "矮人氏族聯盟",
+    "lineage": "灰岩氏族",
+    "tags": [
+     "priest"
+    ],
+    "haunts": [
+     {
+      "location": "ironforge",
+      "zone": "town",
+      "weight": 2
+     },
+     {
+      "location": "ironforge",
+      "zone": "temple",
+      "weight": 2
+     }
+    ]
+   },
+   "mod_npc_durak_greyrock": {
+    "id": "mod_npc_durak_greyrock",
+    "name": "杜拉克・灰岩",
+    "gender": "female",
+    "race": "dwarf",
+    "level": 13,
+    "location": "greyrock",
+    "personality": "不苟言笑，只相信城牆和自己的兵；欣賞能吃苦的人。",
+    "appearance": "方臉的女矮人將軍，頭盔上插著一根灰色長羽，從不卸甲。",
+    "background": "灰岩堡壘的將軍，「山之盾」。她鎮守通往矮人王國的山口三十年，堡壘從未失守過。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "矮人氏族聯盟",
+    "lineage": "灰岩氏族",
+    "relations": {
+     "mod_npc_hald_greyrock": "姪女，她親手訓練的"
+    },
+    "landmark": "lm_granite_rampart"
+   },
+   "mod_npc_ser_mistone": {
+    "id": "mod_npc_ser_mistone",
+    "name": "瑟爾・迷石",
+    "gender": "unknown",
+    "race": "dwarf",
+    "level": 12,
+    "location": "greyrock",
+    "personality": "說話像謎語、常常答非所問；對石頭說話比對人說話還多。",
+    "appearance": "看不出性別與年紀的矮人，披著布滿符文的灰袍，皮膚泛著淡淡的石色。",
+    "background": "迷石氏族的符文師，從地底「無光之層」上來的神秘人物。據說迷石氏族與地心的存在有交流，而瑟爾是被派上來「看看地面發生了什麼」的人。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "hire_cc": 2040,
+    "faction": "矮人氏族聯盟",
+    "lineage": "迷石氏族",
+    "haunts": [
+     {
+      "location": "greyrock",
+      "zone": "town",
+      "weight": 1
+     },
+     {
+      "location": "ironforge",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_hald_greyrock": {
+    "id": "mod_npc_hald_greyrock",
+    "name": "哈爾德・灰岩",
+    "gender": "female",
+    "race": "dwarf",
+    "level": 8,
+    "location": "snowridge",
+    "personality": "嚴肅負責、做事一板一眼；雪季封山時會親自帶隊去救受困的商隊。",
+    "appearance": "年輕的女矮人，披著白熊皮斗篷，臉頰凍得通紅。",
+    "background": "雪嵴哨站的守備隊長，負責關稅與救援。她最驕傲的是長明烽火從她接手以來一次都沒熄過。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "hire_cc": 1060,
+    "faction": "矮人氏族聯盟",
+    "lineage": "灰岩氏族",
+    "relations": {
+     "mod_npc_durak_greyrock": "姑姑，她崇拜的人"
+    },
+    "landmark": "lm_everlit_beacon"
+   },
+   "mod_npc_anya_sled": {
+    "id": "mod_npc_anya_sled",
+    "name": "安雅",
+    "gender": "female",
+    "race": "human",
+    "level": 5,
+    "location": "snowridge",
+    "personality": "嘴巴很毒、心很軟；認路的本事比說話的本事好一百倍。",
+    "appearance": "綁著兩條麻花辮的年輕女人，裹著好幾層毛皮，鼻頭總是紅的。",
+    "background": "雪橇夫兼嚮導，熟悉雪嵴哨站附近的每一條山路。她的雪橇犬叫「笨蛋」，是她最好的朋友。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "ranger",
+    "hire_cc": 535,
+    "tags": [
+     "traveler",
+     "good"
+    ],
+    "haunts": [
+     {
+      "location": "snowridge",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_old_ironroot": {
+    "id": "mod_npc_old_ironroot",
+    "name": "老鐵根",
+    "gender": "male",
+    "race": "human",
+    "level": 7,
+    "location": "windhammer",
+    "personality": "話少、愛喝酒，年輕時的豪氣還在；最看不慣城裡人的軟弱。",
+    "appearance": "滿頭白髮的壯碩老人，赤裸的胳膊上全是傷疤，腰間別著一把石斧。",
+    "background": "風錘村的村長，年輕時是山民部落最強的戰士。他說風錘的鳴響變了調，是山在警告什麼。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "barbarian",
+    "hire_cc": 865,
+    "tags": [
+     "good"
+    ],
+    "relations": {
+     "mod_npc_liv_hunter": "孫女，他捨不得她離開村子"
+    },
+    "landmark": "lm_wind_hammer"
+   },
+   "mod_npc_liv_hunter": {
+    "id": "mod_npc_liv_hunter",
+    "name": "莉芙",
+    "gender": "female",
+    "race": "human",
+    "level": 4,
+    "location": "windhammer",
+    "personality": "開朗、衝動，夢想去大城市當冒險者；對外地人特別熱情。",
+    "appearance": "紮著馬尾的年輕女獵人，背著一張比她還高的長弓。",
+    "background": "風錘村的年輕獵人。她纏著每一個路過的冒險者講外面的故事，想有一天自己也能成為故事裡的人。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "ranger",
+    "hire_cc": 400,
+    "relations": {
+     "mod_npc_old_ironroot": "爺爺"
+    },
+    "haunts": [
+     {
+      "location": "windhammer",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_lisar": {
+    "id": "mod_npc_lisar",
+    "name": "「赤翼之君」莉莎爾",
+    "gender": "female",
+    "race": "demon",
+    "level": 18,
+    "location": "bloodplume",
+    "personality": "冷靜、驕傲、極有耐心；推行「秩序中的力量」，以律法整合荒原。對人類既好奇又警惕。",
+    "appearance": "高挑的魅魔，肌膚緋紅透亮，赤紅雙翼如烈焰般舒展，頭戴黑曜冠環。",
+    "background": "魔王，魔族領主議會的統治者，赤翼宮廷之主。她在混戰中崛起，終結了荒原千年的內鬥，建立起魔族史上罕見的律法體系。據說她的王座是用一位墮落龍王的脊骨做成的。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "魅魔（赤翼宮廷）",
+    "tags": [
+     "royal"
+    ],
+    "relations": {
+     "mod_npc_veronica": "最信任的總管",
+     "mod_npc_valkas_moltencast": "忠誠但難以駕馭的劍",
+     "mod_npc_grom_shatterhorn": "最大的反對者",
+     "mod_npc_noctis": "她的眼睛與耳朵"
+    },
+    "landmark": "lm_crimson_throne"
+   },
+   "mod_npc_veronica": {
+    "id": "mod_npc_veronica",
+    "name": "薇洛妮卡",
+    "gender": "female",
+    "race": "demon",
+    "level": 12,
+    "location": "bloodplume",
+    "personality": "笑裡藏刀、說話甜得發膩；替莉莎爾處理所有不能讓人看見的事。",
+    "appearance": "蜜金色肌膚的魅魔，一身黑紅色宮廷禮服，隨時拿著一本記滿名字的小冊子。",
+    "background": "赤翼宮廷的總管兼議會書記長。議會裡每一位領主的弱點，都記在她的小冊子上。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "bard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "魅魔（赤翼宮廷）",
+    "tags": [
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_lisar": "她願意為之而死的人"
+    },
+    "haunts": [
+     {
+      "location": "bloodplume",
+      "zone": "palace",
+      "weight": 3
+     },
+     {
+      "location": "bloodplume",
+      "zone": "noble",
+      "weight": 2
+     }
+    ]
+   },
+   "mod_npc_carlton_silent": {
+    "id": "mod_npc_carlton_silent",
+    "name": "卡爾頓",
+    "gender": "male",
+    "race": "demon",
+    "level": 10,
+    "location": "bloodplume",
+    "personality": "從不說話，只用手語溝通；對誓言的重視近乎狂熱。",
+    "appearance": "高大枯瘦的魔族，嘴唇被一道符文縫線封住，雙手沾滿碑石的粉塵。",
+    "background": "血誓碑谷的守碑人，替立誓效忠議會的領主刻下真名。他自願封住自己的嘴，以示「刻在碑上的才是真話」。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "tags": [
+     "priest"
+    ],
+    "landmark": "lm_blood_oath_valley"
+   },
+   "mod_npc_valkas_moltencast": {
+    "id": "mod_npc_valkas_moltencast",
+    "name": "瓦爾卡斯・熔鑄",
+    "gender": "male",
+    "race": "demon",
+    "level": 15,
+    "location": "moltenhold",
+    "personality": "豪邁、暴躁、戰鬥狂；效忠莉莎爾，卻對律法的束縛越來越不耐煩。",
+    "appearance": "鐵塔般的炎魔，炭黑龜裂的皮膚下透出熔岩的光，背著一把灰燼巨槍。",
+    "background": "鐵血熔鑄家族家主、炎獄軍團統帥。他說議會的律法讓戰士生鏽，私下和獸骨荒丘的格羅姆有來往。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "barbarian",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "炎魔（炎獄軍團）",
+    "tags": [
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_ignis_forge": "女兒，他唯一會讓步的人",
+     "mod_npc_lisar": "他的君主，也是他的枷鎖",
+     "mod_npc_grom_shatterhorn": "危險的酒友"
+    },
+    "haunts": [
+     {
+      "location": "moltenhold",
+      "zone": "palace",
+      "weight": 3
+     },
+     {
+      "location": "moltenhold",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_ignis_forge": {
+    "id": "mod_npc_ignis_forge",
+    "name": "伊格妮絲",
+    "gender": "female",
+    "race": "demon",
+    "level": 10,
+    "location": "moltenhold",
+    "personality": "工作狂、討厭被打擾，能聽懂金屬的「嗡鳴」；比父親冷靜得多。",
+    "appearance": "體態精悍的炎魔女子，髮絲像餘燼一樣明滅，戴著厚重的皮手套。",
+    "background": "千爐工坊的總監，負責議會軍團所有的武器與機偶。她認為父親的好戰會毀了家族。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "炎魔（炎獄軍團）",
+    "relations": {
+     "mod_npc_valkas_moltencast": "父親"
+    },
+    "landmark": "lm_thousand_forges"
+   },
+   "mod_npc_gren_ironjaw": {
+    "id": "mod_npc_gren_ironjaw",
+    "name": "「鐵顎」格倫",
+    "gender": "male",
+    "race": "demon",
+    "level": 9,
+    "location": "moltenhold",
+    "personality": "粗魯、愛下注、愛熱鬧；欣賞任何敢上場的人，不分種族。",
+    "appearance": "下巴裝著一塊鐵板的魔族壯漢，嗓門大得能蓋過熔爐。",
+    "background": "機偶校場的主持人，負責讓死囚與新鑄的機偶對決。他說校場是熔火堡壘唯一公平的地方。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "hire_cc": 1275,
+    "faction": "魔族領主議會",
+    "landmark": "lm_golem_arena"
+   },
+   "mod_npc_samir_soulwell": {
+    "id": "mod_npc_samir_soulwell",
+    "name": "薩米爾",
+    "gender": "male",
+    "race": "demon",
+    "level": 8,
+    "location": "moltenhold",
+    "personality": "陰鬱、溫柔，說話很輕；記得每一位被他淬進兵器的戰士的名字。",
+    "appearance": "瘦削的魔族，灰袍上別滿了小小的金屬名牌。",
+    "background": "熔魂井的守井人，替陣亡戰士的靈魂淬兵。他相信靈魂在兵器裡會繼續戰鬥，也相信有些靈魂想要安息。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "hire_cc": 1060,
+    "faction": "魔族領主議會",
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "landmark": "lm_soulmelt_well"
+   },
+   "mod_npc_noctis": {
+    "id": "mod_npc_noctis",
+    "name": "諾克緹絲",
+    "gender": "female",
+    "race": "demon",
+    "level": 15,
+    "location": "shadow_vale",
+    "personality": "神出鬼沒，說話永遠只說一半；喜歡看別人猜她的意思。",
+    "appearance": "墨藍微光的影魔，戴著無面面具與漆黑絲帶，雙眸如鬼火。",
+    "background": "暗影氏族（虛影氏族）之主，議會的情報與暗殺網之首。傳說她能行走於夢與實之間。她支持莉莎爾，但沒有人知道那是因為忠誠還是因為有利可圖。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "影魔（暗影氏族）",
+    "tags": [
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_lisar": "她選擇支持的王",
+     "mod_npc_morphe": "她的夢境顧問"
+    },
+    "landmark": "lm_evernight_tower"
+   },
+   "mod_npc_morphe": {
+    "id": "mod_npc_morphe",
+    "name": "莫菲",
+    "gender": "unknown",
+    "race": "demon",
+    "level": 11,
+    "location": "shadow_vale",
+    "personality": "恍惚、詩意，常常分不清自己是醒是夢；說的話一半是預言一半是囈語。",
+    "appearance": "輕盈如煙的影魔，身形總是有點模糊，像隔著一層霧。",
+    "background": "夢魘迷堂的幻術師，以幻術折疊神殿。據說夢境之龍索利安曾在迷堂裡現身，而莫菲是唯一記得那個夢的人。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "wizard",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "影魔（暗影氏族）",
+    "relations": {
+     "mod_npc_noctis": "主人"
+    },
+    "landmark": "lm_nightmare_maze"
+   },
+   "mod_npc_grom_shatterhorn": {
+    "id": "mod_npc_grom_shatterhorn",
+    "name": "格羅姆・碎角",
+    "gender": "male",
+    "race": "demon",
+    "level": 15,
+    "location": "bone_hills",
+    "personality": "豪邁、記仇、說一不二；認為律法讓魔族變軟弱，寧可戰死也不願跪著活。",
+    "appearance": "魁梧如戰獸的獸人，灰褐皮膚上滿是刺青，左角斷了一截，獠牙上套著金環。",
+    "background": "血角氏族（狂牙部族）酋長，議會最大的反對派。他的王座是遠古巨龍的骸骨搭成的。他不怕莉莎爾，只尊敬能打倒他的人。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "barbarian",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "獸人（血角氏族）",
+    "tags": [
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_lisar": "他不承認的王",
+     "mod_npc_valkas_moltencast": "能一起喝酒的人",
+     "mod_npc_ulma_bloodtrial": "他最得力的戰士"
+    },
+    "landmark": "lm_bone_king_hall"
+   },
+   "mod_npc_ulma_bloodtrial": {
+    "id": "mod_npc_ulma_bloodtrial",
+    "name": "烏爾瑪",
+    "gender": "female",
+    "race": "demon",
+    "level": 10,
+    "location": "bone_hills",
+    "personality": "直率、尊敬強者，不分種族；說話跟揮斧頭一樣乾脆。",
+    "appearance": "苔綠色皮膚的獸人女戰士，角細長彎曲，雙手各握一把手斧。",
+    "background": "鮮血試煉場的場主，新月時主持血祭。她說只要能在試煉場站到最後，連人類都可以成為血角的戰士。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "barbarian",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "獸人（血角氏族）",
+    "relations": {
+     "mod_npc_grom_shatterhorn": "酋長"
+    },
+    "landmark": "lm_blood_trial_ground"
+   },
+   "mod_npc_aetherion": {
+    "id": "mod_npc_aetherion",
+    "name": "艾瑟里昂",
+    "gender": "male",
+    "race": "demon",
+    "level": 15,
+    "location": "silent_tomb",
+    "personality": "古老、平靜，對生死毫無執著；說話慢得像在數心跳。",
+    "appearance": "灰白如枯骨的死靈魔族，眼窩深陷，周身繚繞冷霧，頭戴白骨王冠。",
+    "background": "灰燼修會（幽冥典儀會）大祭司，主持魔族的葬儀與古老預言。他預言過莉莎爾的崛起，最近卻閉口不談下一個預言。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "魔族領主議會",
+    "lineage": "死靈（幽冥典儀會）",
+    "tags": [
+     "bishop",
+     "priest"
+    ],
+    "relations": {
+     "mod_npc_lila_listener": "他看中的繼承人"
+    },
+    "landmark": "lm_ember_tower"
+   },
+   "mod_npc_lila_listener": {
+    "id": "mod_npc_lila_listener",
+    "name": "莉菈",
+    "gender": "female",
+    "race": "demon",
+    "level": 5,
+    "location": "silent_tomb",
+    "personality": "膽小又好奇，聽得見死者的低語；最想做的事是去看看外面的世界。",
+    "appearance": "纖瘦的死靈少女，灰白的頭髮綁著紫色緞帶，總是側著頭像在聽什麼。",
+    "background": "無聲長廊的見習祭司。她能聽見死者的低語，被大祭司選為繼承人，但她偷偷收集人類商人帶來的旅行書。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "hire_cc": 535,
+    "faction": "魔族領主議會",
+    "lineage": "死靈（幽冥典儀會）",
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "relations": {
+     "mod_npc_aetherion": "老師"
+    },
+    "landmark": "lm_silent_corridor"
+   },
+   "mod_npc_morg_herbwife": {
+    "id": "mod_npc_morg_herbwife",
+    "name": "莫格婆婆",
+    "gender": "female",
+    "race": "demon",
+    "level": 7,
+    "location": "rotmarsh",
+    "personality": "刻薄、愛罵人，卻會替窮人免費治病；最討厭氏族的那一套。",
+    "appearance": "佝僂的老魔族，皮膚上長著苔斑，背著一個裝滿怪草的竹簍。",
+    "background": "腐沼村的藥婆，被氏族放逐的老魔族。沼地裡能入藥也能致命的植物，她每一種都認得。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "druid",
+    "hire_cc": 865,
+    "tags": [
+     "good"
+    ],
+    "landmark": "lm_mire_herb_beds"
+   },
+   "mod_npc_nick_halfdemon": {
+    "id": "mod_npc_nick_halfdemon",
+    "name": "尼克",
+    "gender": "male",
+    "race": "demon",
+    "level": 4,
+    "location": "rotmarsh",
+    "personality": "機靈、愛吹牛、怕痛；一心想去人類的城市看看。",
+    "appearance": "瘦小的半魔少年，頭上的小角藏在帽子底下，手腳很快。",
+    "background": "從某個氏族逃出來的半魔小賊，靠替商隊跑腿和順手牽羊過活。他聽說人類的城市裡沒人在乎你有沒有角。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "hire_cc": 400,
+    "lineage": "半魔",
+    "tags": [
+     "traveler"
+    ],
+    "haunts": [
+     {
+      "location": "rotmarsh",
+      "zone": "town",
+      "weight": 3
+     },
+     {
+      "location": "ashport",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_vespa": {
+    "id": "mod_npc_vespa",
+    "name": "維斯帕",
+    "gender": "female",
+    "race": "demon",
+    "level": 12,
+    "location": "ashport",
+    "personality": "優雅、守信，價錢永遠合理得可怕；從不問買家要拿貨去做什麼。",
+    "appearance": "穿黑色長裙的半魔女子，一隻眼睛是人類的褐色，另一隻是魔族的金色。",
+    "background": "深淵交易所的主人，連靈魂與時間都敢買賣。灰港鎮無王無律，她的規矩就是律法。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "深淵交易所",
+    "lineage": "半魔",
+    "tags": [
+     "merchant"
+    ],
+    "relations": {
+     "mod_npc_faceless_salo": "人類世界的生意夥伴"
+    },
+    "landmark": "lm_abyss_exchange"
+   },
+   "mod_npc_captain_hagen": {
+    "id": "mod_npc_captain_hagen",
+    "name": "哈根船長",
+    "gender": "male",
+    "race": "human",
+    "level": 7,
+    "location": "ashport",
+    "personality": "固執、愛講鬼故事，堅稱自己見過「永不靠岸的船」；沒人信他，他也不在乎。",
+    "appearance": "獨眼的老船長，鬍子被海風吹成鹽白色，手裡總拿著一個空酒瓶。",
+    "background": "在灰港鎮靠岸二十年的人類船長。他說那艘船上載著被放逐的領主靈魂，而他的大副就在船上。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "hire_cc": 865,
+    "tags": [
+     "traveler"
+    ],
+    "landmark": "lm_greysail_pier"
+   },
+   "mod_npc_sebastian_eger": {
+    "id": "mod_npc_sebastian_eger",
+    "name": "塞巴斯欽・馮・艾格",
+    "gender": "male",
+    "race": "human",
+    "level": 6,
+    "location": "ashport",
+    "personality": "風度翩翩、玩世不恭，嘴上掛著帝國貴族的禮儀，心裡什麼都不信。",
+    "appearance": "穿褪色貴族禮服的中年人類，佩劍的劍鞘上還留著被刮掉的家徽。",
+    "background": "被萊茵帝國放逐的流亡貴族，靠替魔族與人類牽線過活。他說自己是被宰相陷害的，但沒有人知道真相。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "hire_cc": 690,
+    "tags": [
+     "noble",
+     "traveler"
+    ],
+    "relations": {
+     "mod_npc_eleanora_rhine": "放逐他的人——至少他是這麼說的"
+    },
+    "haunts": [
+     {
+      "location": "ashport",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_naivee": {
+    "id": "mod_npc_naivee",
+    "name": "娜伊薇",
+    "gender": "female",
+    "race": "catfolk",
+    "level": 16,
+    "location": "stilltide_oasis",
+    "personality": "沉靜、溫柔、說話很慢；能在泉水裡看見祖靈，卻看不清自己的未來。",
+    "appearance": "銀灰色貓耳與長尾，尾梢有一撮淺藍，額上畫著月紋，身披綴滿銀鈴的祭袍。",
+    "background": "荒野部落聯盟的大祭禮，出身月尾部落。她在祭風原被四部落推舉為最高領袖，任期終身。赤鬃部落對她的出身頗有微詞。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "druid",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "荒野部落聯盟",
+    "lineage": "月尾部落",
+    "tags": [
+     "royal",
+     "priest"
+    ],
+    "relations": {
+     "mod_npc_kara_redmane": "最強的戰士，也是最不服她的族長",
+     "mod_npc_silverbell": "侍女"
+    },
+    "landmark": "lm_stillspring_altar"
+   },
+   "mod_npc_silverbell": {
+    "id": "mod_npc_silverbell",
+    "name": "銀鈴",
+    "gender": "female",
+    "race": "catfolk",
+    "level": 8,
+    "location": "stilltide_oasis",
+    "personality": "溫婉、細心，占卜很準卻不愛說壞消息；對大祭禮忠心耿耿。",
+    "appearance": "淺藍貓耳的少女，尾巴上綁著銀鈴，手腕纏著占卜用的細繩。",
+    "background": "月尾部落的占卜師，大祭禮的侍女。她最近的占卜總是出現同一個符號：斷裂的月亮。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "cleric",
+    "hire_cc": 1060,
+    "faction": "荒野部落聯盟",
+    "lineage": "月尾部落",
+    "tags": [
+     "priest",
+     "good"
+    ],
+    "relations": {
+     "mod_npc_naivee": "她侍奉的人"
+    },
+    "haunts": [
+     {
+      "location": "stilltide_oasis",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_kara_redmane": {
+    "id": "mod_npc_kara_redmane",
+    "name": "卡菈",
+    "gender": "female",
+    "race": "catfolk",
+    "level": 14,
+    "location": "sunscorch",
+    "personality": "勇猛、直率、好勝；不滿大祭禮總出身月尾，但絕不會用陰謀——她只用拳頭。",
+    "appearance": "赤棕色鬃毛如火焰般的貓魅族女戰士，身上掛滿獸骨與戰利品，尾巴總是豎著。",
+    "background": "赤鬃族長，聯盟最強的戰士。她帶領的狩獵隊能獵下荒野最大的獸群。她想在下一次推舉大典讓赤鬃的人當上大祭禮。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "barbarian",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "荒野部落聯盟",
+    "lineage": "赤鬃部落",
+    "tags": [
+     "noble"
+    ],
+    "relations": {
+     "mod_npc_naivee": "她尊敬但不服的人",
+     "mod_npc_talo_redmane": "兒子，太衝動"
+    },
+    "landmark": "lm_redmane_council"
+   },
+   "mod_npc_talo_redmane": {
+    "id": "mod_npc_talo_redmane",
+    "name": "塔洛",
+    "gender": "male",
+    "race": "catfolk",
+    "level": 7,
+    "location": "sunscorch",
+    "personality": "衝動、熱血、想出頭；崇拜母親，又想證明自己不只是族長的兒子。",
+    "appearance": "赤棕鬃毛的年輕貓魅族，臉上畫著戰紋，背著一把比他還寬的戰斧。",
+    "background": "赤鬃的年輕獵手，想在部族競技裡出頭。母系部落裡男人很難出頭，他偏偏不信。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "barbarian",
+    "hire_cc": 865,
+    "faction": "荒野部落聯盟",
+    "lineage": "赤鬃部落",
+    "relations": {
+     "mod_npc_kara_redmane": "母親"
+    },
+    "haunts": [
+     {
+      "location": "sunscorch",
+      "zone": "town",
+      "weight": 3
+     },
+     {
+      "location": "sandcastle",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_saff_nightclaw": {
+    "id": "mod_npc_saff_nightclaw",
+    "name": "薩芙",
+    "gender": "female",
+    "race": "catfolk",
+    "level": 13,
+    "location": "sandcastle",
+    "personality": "神秘、冷淡、只在夜裡出現；對聯盟的決議表面恭順，實則自成體系。",
+    "appearance": "墨黑貓耳與長尾的女子，束著黑羽束帶，指尖戴著新月形的鋼爪。",
+    "background": "夜爪首領，情報網遍布荒野內外。回音峽谷的試煉之谷是她的部落世代守護的禁地。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "荒野部落聯盟",
+    "lineage": "夜爪部落",
+    "haunts": [
+     {
+      "location": "sandcastle",
+      "zone": "town",
+      "weight": 1
+     },
+     {
+      "location": "sunscorch",
+      "zone": "town",
+      "weight": 1
+     },
+     {
+      "location": "stilltide_oasis",
+      "zone": "town",
+      "weight": 1
+     }
+    ]
+   },
+   "mod_npc_saila_sandmark": {
+    "id": "mod_npc_saila_sandmark",
+    "name": "薩伊拉",
+    "gender": "female",
+    "race": "catfolk",
+    "level": 11,
+    "location": "sandcastle",
+    "personality": "圓融、精明、好客；是「沙堡協議」的守護者，任何糾紛都想用談的解決。",
+    "appearance": "淺沙黃貓耳的中年女子，脖子上掛著沙紋圓環與駝骨掛飾。",
+    "background": "沙痕部落長老，主持帳篷區的日常，與冒險者的守備長共同維持營地的和平。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "ranger",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "荒野部落聯盟",
+    "lineage": "沙痕部落",
+    "relations": {
+     "npc_lina": "姪女，她希望她早點回荒野",
+     "mod_npc_gray_sandkeep": "共事多年的夥伴"
+    },
+    "haunts": [
+     {
+      "location": "sandcastle",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   },
+   "mod_npc_gray_sandkeep": {
+    "id": "mod_npc_gray_sandkeep",
+    "name": "葛雷",
+    "gender": "male",
+    "race": "human",
+    "level": 10,
+    "location": "sandcastle",
+    "personality": "沉穩、可靠、不多話；把營地裡每一個冒險者都當成自己的兵。",
+    "appearance": "曬成古銅色的中年戰士，鎧甲外披著防沙的斗篷，腰間掛著沙痕部落送的駝骨風鈴。",
+    "background": "沙堡的守備長，冒險者的頭頭。他和薩伊拉一起訂下「沙堡協議」，讓人類與貓魅族在營地裡和平共處。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "fighter",
+    "unhireable": true,
+    "hire_cc": 0,
+    "faction": "冒險者公會",
+    "relations": {
+     "mod_npc_saila_sandmark": "共事多年的夥伴"
+    },
+    "landmark": "lm_sandcastle_keep"
+   },
+   "mod_npc_azir_camel": {
+    "id": "mod_npc_azir_camel",
+    "name": "阿茲爾",
+    "gender": "male",
+    "race": "catfolk",
+    "level": 6,
+    "location": "sandcastle",
+    "personality": "愛殺價、愛聊天，什麼都賣；把殺價當成一種藝術。",
+    "appearance": "淺沙色貓耳的駝商，頭纏布巾，腰間掛滿各種小商品。",
+    "background": "帳環市集的駝商，沙痕部落出身。他說自己能賣沙子給沙漠，也真的賣過。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "rogue",
+    "hire_cc": 690,
+    "faction": "荒野部落聯盟",
+    "lineage": "沙痕部落",
+    "tags": [
+     "merchant"
+    ],
+    "landmark": "lm_tent_ring_bazaar"
+   },
+   "mod_npc_tali_liaison": {
+    "id": "mod_npc_tali_liaison",
+    "name": "塔莉",
+    "gender": "female",
+    "race": "human",
+    "level": 7,
+    "location": "sandcastle",
+    "personality": "幹練、愛碎念，對不登記就跑進流沙聖殿的冒險者特別生氣。",
+    "appearance": "戴著防沙眼鏡的年輕女人，揹著一大綑地圖與登記簿。",
+    "background": "冒險者公會的常駐聯絡員，負責流沙聖殿與回音峽谷的探險登記。她手上有一份「沒回來的人」名單。",
+    "custom": true,
+    "kind": "adventurer",
+    "class": "ranger",
+    "hire_cc": 865,
+    "faction": "冒險者公會",
+    "haunts": [
+     {
+      "location": "sandcastle",
+      "zone": "town",
+      "weight": 3
+     }
+    ]
+   }
+  }
+ }
+}

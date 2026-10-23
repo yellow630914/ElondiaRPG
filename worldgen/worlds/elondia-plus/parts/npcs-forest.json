@@ -1,0 +1,274 @@
+{
+ "npcs": {
+  "mod_npc_ithrandil": {
+   "id": "mod_npc_ithrandil",
+   "name": "伊瑟蘭迪爾",
+   "gender": "female",
+   "race": "elf",
+   "level": 17,
+   "location": "silvermoon",
+   "personality": "溫柔、疏離，說話像在吟詩；憂心森林的魔能日漸衰退，卻不願讓外族插手。",
+   "appearance": "銀髮及地的精靈女王，眼瞳是月光般的淡金色，頭戴白銀藤蔓編成的冠。",
+   "background": "精靈王庭的女王，活了一千多年。她見證過巨龍紀元的尾聲，也親眼看著精靈文明一步步陷入遲滯。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "druid",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "精靈王庭",
+   "tags": [
+    "royal"
+   ],
+   "relations": {
+    "mod_npc_kalanthil": "她的議長，也是她的枷鎖",
+    "mod_npc_evenna_starword": "她最信任的觀星者"
+   },
+   "landmark": "lm_moonlight_mother"
+  },
+  "mod_npc_kalanthil": {
+   "id": "mod_npc_kalanthil",
+   "name": "卡蘭西爾",
+   "gender": "male",
+   "race": "elf",
+   "level": 14,
+   "location": "silvermoon",
+   "personality": "保守、驕傲、極有禮貌，禮貌到讓人覺得被輕視；堅信精靈應該遠離外族。",
+   "appearance": "高大的精靈男子，白色長袍上繡著翠綠的藤紋，從不讓任何人站在他上風處。",
+   "background": "翠輝議會議長，傳統派的領袖。他反對與外族往來，認為新芽同盟是精靈衰亡的開始。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "wizard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "精靈王庭",
+   "lineage": "翠輝議會",
+   "tags": [
+    "noble"
+   ],
+   "relations": {
+    "mod_npc_finia_silverleaf": "他公開斥責過的「叛徒」"
+   },
+   "haunts": [
+    {
+     "location": "silvermoon",
+     "zone": "noble",
+     "weight": 3
+    },
+    {
+     "location": "silvermoon",
+     "zone": "palace",
+     "weight": 1
+    }
+   ]
+  },
+  "mod_npc_evenna_starword": {
+   "id": "mod_npc_evenna_starword",
+   "name": "艾溫娜・星語",
+   "gender": "female",
+   "race": "elf",
+   "level": 13,
+   "location": "silvermoon",
+   "personality": "專注、浪漫，看星星的時間比看人還多；談起星象就停不下來。",
+   "appearance": "黑髮綴滿星形銀飾的精靈，深藍色長袍上繡著星圖。",
+   "background": "星月之環的首席星術師，觀測高維巨龍的投影。她說最近天上多了一顆不該存在的星。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "wizard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "精靈王庭",
+   "lineage": "星月之環",
+   "relations": {
+    "mod_npc_seraphina_weiss": "人類筆友，兩人為龍的本質吵了十年"
+   },
+   "haunts": [
+    {
+     "location": "silvermoon",
+     "zone": "noble",
+     "weight": 2
+    },
+    {
+     "location": "silvermoon",
+     "zone": "temple",
+     "weight": 2
+    }
+   ]
+  },
+  "mod_npc_seph_mistveil": {
+   "id": "mod_npc_seph_mistveil",
+   "name": "塞夫",
+   "gender": "male",
+   "race": "elf",
+   "level": 12,
+   "location": "silvermoon",
+   "personality": "安靜、有禮，從不說謊——只是不說。連王庭都不確定他替誰做事。",
+   "appearance": "灰髮的暮影精靈，穿一身不起眼的旅人斗篷，臉孔過目即忘。",
+   "background": "迷霧之幕的影行者，潛行於各國之間，維護精靈的利益。他出現在哪裡，哪裡就會有事發生。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "rogue",
+   "hire_cc": 2040,
+   "faction": "精靈王庭",
+   "lineage": "迷霧之幕",
+   "tags": [
+    "traveler"
+   ],
+   "haunts": [
+    {
+     "location": "silvermoon",
+     "zone": "town",
+     "weight": 1
+    },
+    {
+     "location": "albena",
+     "zone": "town",
+     "weight": 1
+    },
+    {
+     "location": "rhineburg",
+     "zone": "town",
+     "weight": 1
+    }
+   ]
+  },
+  "mod_npc_liandra_spring": {
+   "id": "mod_npc_liandra_spring",
+   "name": "莉安德拉",
+   "gender": "female",
+   "race": "elf",
+   "level": 10,
+   "location": "silvermoon",
+   "personality": "安靜、慈悲，對所有生命一視同仁；唯一的固執是不讓任何人汙染泉水。",
+   "appearance": "淡綠長髮的精靈祭司，赤腳踩在泉邊，手上總有一圈水紋般的光。",
+   "background": "生命之泉的守泉祭司，侍奉豐饒女郎蓋亞。她說泉水的魔力這十年少了三成。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "cleric",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "精靈王庭",
+   "tags": [
+    "priest",
+    "good"
+   ],
+   "landmark": "lm_spring_of_life"
+  },
+  "mod_npc_toren_bowyer": {
+   "id": "mod_npc_toren_bowyer",
+   "name": "托倫",
+   "gender": "male",
+   "race": "elf",
+   "level": 7,
+   "location": "silvermoon",
+   "personality": "嘴硬、驕傲，看不起人類的弓；但只要你肯聽，他會教你一整個下午。",
+   "appearance": "褐髮的精靈弓匠，手指上全是弓弦勒出的繭。",
+   "background": "根界的弓匠。他做的長弓在人類世界能賣到天價，但他只賣給「配得上的人」。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "ranger",
+   "hire_cc": 865,
+   "haunts": [
+    {
+     "location": "silvermoon",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  },
+  "mod_npc_octavia_mossvoice": {
+   "id": "mod_npc_octavia_mossvoice",
+   "name": "奧克塔維亞",
+   "gender": "female",
+   "race": "human",
+   "level": 11,
+   "location": "mosswhisper",
+   "personality": "溫和、耐心，說話慢條斯理；能用歌聲安撫魔獸，也能用歌聲讓人安靜。",
+   "appearance": "頭髮裡長著小花的中年人類女子，穿樹皮與苔蘚編成的長袍。",
+   "background": "森語之環的長老，少數得到精靈認可的人類德魯伊。她主持森語儀式，替精靈與人類在森林邊緣調解。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "druid",
+   "unhireable": true,
+   "hire_cc": 0,
+   "tags": [
+    "priest",
+    "good"
+   ],
+   "relations": {
+    "mod_npc_fenn_apprentice": "她的學徒"
+   },
+   "landmark": "lm_whispering_ring"
+  },
+  "mod_npc_fenn_apprentice": {
+   "id": "mod_npc_fenn_apprentice",
+   "name": "菲恩",
+   "gender": "male",
+   "race": "elf",
+   "level": 3,
+   "location": "mosswhisper",
+   "personality": "好奇、話多、什麼都想摸摸看；正在「月華巡禮」的路上。",
+   "appearance": "年輕的精靈少年，背著一個裝滿標本的布袋，頭髮上常黏著樹葉。",
+   "background": "德魯伊學徒，正在進行精靈成年的「月華巡禮」。他選擇向人類長老學習，讓家族很不高興。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "druid",
+   "hire_cc": 285,
+   "faction": "精靈王庭",
+   "relations": {
+    "mod_npc_octavia_mossvoice": "老師"
+   },
+   "haunts": [
+    {
+     "location": "mosswhisper",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  },
+  "mod_npc_alado_hawkrider": {
+   "id": "mod_npc_alado_hawkrider",
+   "name": "艾拉朵",
+   "gender": "female",
+   "race": "elf",
+   "level": 12,
+   "location": "windspeak",
+   "personality": "冷靜、話少、反應極快；信任鷹勝過信任人。",
+   "appearance": "短髮的精靈女戰士，肩上停著一隻金色的巨鷹，皮甲上別著羽毛徽章。",
+   "background": "風語崗哨的鷹騎衛隊長，負責監視南方魔族的偵察。她說最近邊境的影子多了。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "ranger",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "精靈王庭",
+   "landmark": "lm_star_platform"
+  },
+  "mod_npc_theron_blind": {
+   "id": "mod_npc_theron_blind",
+   "name": "瑟隆",
+   "gender": "male",
+   "race": "elf",
+   "level": 9,
+   "location": "windspeak",
+   "personality": "慈祥、幽默，靠風鈴聲「看」星象；說盲眼讓他看得更清楚。",
+   "appearance": "雙眼蒙著白布的老精靈，身上掛滿大大小小的風鈴。",
+   "background": "盲眼的老哨兵。他年輕時在一場魔族突襲中失明，從此改為觀星。他說風鈴能把亡者的靈魂送上天穹。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "cleric",
+   "hire_cc": 1275,
+   "faction": "精靈王庭",
+   "tags": [
+    "priest",
+    "good"
+   ],
+   "haunts": [
+    {
+     "location": "windspeak",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  }
+ }
+}

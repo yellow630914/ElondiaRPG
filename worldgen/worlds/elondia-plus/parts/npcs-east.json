@@ -1,0 +1,296 @@
+{
+ "npcs": {
+  "mod_npc_beatrice_whitewhale": {
+   "id": "mod_npc_beatrice_whitewhale",
+   "name": "貝雅特麗絲",
+   "gender": "female",
+   "race": "human",
+   "level": 11,
+   "location": "tidehaven",
+   "personality": "豪邁、果斷，精於海戰與談判；一拳打在桌上就是議會的結論。",
+   "appearance": "高大的中年女人，白色長大衣上別著七枚潮紋徽章，腰間掛著一把海軍彎刀。",
+   "background": "七潮議會首席，人稱「白鯨」。前海軍艦長，帶著艦隊打垮過三個海盜王。她治下的潮汐港無王卻有序。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "fighter",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "七潮議會",
+   "tags": [
+    "noble"
+   ],
+   "relations": {
+    "mod_npc_carlos_blacksail": "她抓不到的人",
+    "mod_npc_reno_deeptide": "得力助手，雖然常常喝醉"
+   },
+   "landmark": "lm_seven_tides_hall"
+  },
+  "mod_npc_reno_deeptide": {
+   "id": "mod_npc_reno_deeptide",
+   "name": "雷諾",
+   "gender": "male",
+   "race": "human",
+   "level": 8,
+   "location": "tidehaven",
+   "personality": "隨和、愛熱鬧，和玉璘族處得極好，因此常被宴會灌醉；酒醒了辦事卻很牢靠。",
+   "appearance": "棕色捲髮的年輕人，穿著有珍珠鈕扣的禮服，臉頰總是帶著酒紅。",
+   "background": "深潮席席長，負責安排滄月闕的渡訪船次與嚮導。他說自己是全大陸被玉璘族灌醉最多次的人類。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "bard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "七潮議會",
+   "relations": {
+    "mod_npc_shion_envoy": "他總是在港口找迷路的她",
+    "mod_npc_sakurashio": "潮主，最會灌他酒的人"
+   },
+   "landmark": "lm_deep_tide_pier"
+  },
+  "mod_npc_carlos_blacksail": {
+   "id": "mod_npc_carlos_blacksail",
+   "name": "「黑帆」卡洛斯",
+   "gender": "male",
+   "race": "human",
+   "level": 10,
+   "location": "tidehaven",
+   "personality": "風度翩翩、心狠手辣，對自己人講義氣；最喜歡在議會的眼皮底下做生意。",
+   "appearance": "黑髮黑鬚的英俊男子，一身黑色皮衣，耳上掛著金環。",
+   "background": "走私王，掌握潮汐港一半的地下貿易。據說他的船從骷髏潮島帶回過不該存在的東西。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "rogue",
+   "hire_cc": 1510,
+   "tags": [
+    "villain",
+    "merchant"
+   ],
+   "relations": {
+    "mod_npc_beatrice_whitewhale": "老對手，他尊敬她"
+   },
+   "haunts": [
+    {
+     "location": "tidehaven",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  },
+  "mod_npc_shion_envoy": {
+   "id": "mod_npc_shion_envoy",
+   "name": "汐音",
+   "gender": "female",
+   "race": "yulin",
+   "level": 6,
+   "location": "tidehaven",
+   "personality": "天真、迷糊，迷路是日常；對陸地的一切都充滿好奇。",
+   "appearance": "化形上岸的玉璘族少女，幽藍長髮，穿著繡著櫻花的廣袖短衫，耳後的鰓在陽光下閃閃發亮。",
+   "background": "派駐潮汐港的玉璘族使者，負責和深潮席聯絡。她已經在港口迷路了一百多次。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "bard",
+   "hire_cc": 690,
+   "faction": "玉璘四時殿",
+   "lineage": "春潮閣",
+   "relations": {
+    "mod_npc_sakurashio": "姊姊",
+    "mod_npc_reno_deeptide": "總是找到她的人"
+   },
+   "haunts": [
+    {
+     "location": "tidehaven",
+     "zone": "town",
+     "weight": 3
+    },
+    {
+     "location": "coral_bay",
+     "zone": "town",
+     "weight": 1
+    }
+   ]
+  },
+  "mod_npc_coral_miko": {
+   "id": "mod_npc_coral_miko",
+   "name": "珊瑚巫女",
+   "gender": "female",
+   "race": "human",
+   "level": 7,
+   "location": "coral_bay",
+   "personality": "安靜、敏感，聽得懂海浪的話；說話時常常停下來聽海。",
+   "appearance": "黑髮及腰的混血海民女子，皮膚上有淡淡的鱗紋，穿白色祭衣。",
+   "background": "海靈祠的巫女，侍奉海靈與風母。她說潮隕洞窟深處的海靈最近變得很不安。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "druid",
+   "hire_cc": 865,
+   "lineage": "混血海民",
+   "tags": [
+    "priest",
+    "good"
+   ],
+   "landmark": "lm_sea_spirit_shrine"
+  },
+  "mod_npc_toma_pearl": {
+   "id": "mod_npc_toma_pearl",
+   "name": "托馬老爹",
+   "gender": "male",
+   "race": "human",
+   "level": 5,
+   "location": "coral_bay",
+   "personality": "樂天、愛唱歌，潛水一口氣能撐很久；最喜歡吹噓他撈到過的大珍珠。",
+   "appearance": "曬得黝黑的老漁夫，只穿一條短褲，脖子上掛著一串珍珠。",
+   "background": "珍珠採集的頭目，和滄月闕的玉璘族是老朋友。他說珊瑚灣的珍珠越來越少了。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "ranger",
+   "hire_cc": 535,
+   "tags": [
+    "good",
+    "merchant"
+   ],
+   "haunts": [
+    {
+     "location": "coral_bay",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  },
+  "mod_npc_sakurashio": {
+   "id": "mod_npc_sakurashio",
+   "name": "櫻汐",
+   "gender": "female",
+   "race": "yulin",
+   "level": 13,
+   "location": "canglue",
+   "personality": "天真爛漫、超級樂天，把治理都城當成辦宴會；認真起來卻出奇地有魄力。",
+   "appearance": "珊瑚紅長髮插著並蒂珊瑚花，下身玉色鱗尾，穿春潮閣的櫻色廣袖羅裳。",
+   "background": "今年的潮主、春潮閣殿主。她在挑潮祭連勝三屆，族人說她的歌聲能讓結界發亮。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "bard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "玉璘四時殿",
+   "lineage": "春潮閣",
+   "tags": [
+    "royal"
+   ],
+   "relations": {
+    "mod_npc_shion_envoy": "妹妹，她很擔心她在陸地上迷路",
+    "mod_npc_geika": "酒友",
+    "mod_npc_moring": "總是勸她多看看陸地局勢的人"
+   },
+   "landmark": "lm_tide_mirror"
+  },
+  "mod_npc_geika": {
+   "id": "mod_npc_geika",
+   "name": "鯨歌",
+   "gender": "female",
+   "race": "yulin",
+   "level": 11,
+   "location": "canglue",
+   "personality": "豪爽奔放、酒量無底，人緣最廣；宴會上永遠是最後一個倒下的。",
+   "appearance": "深藍短髮的玉璘族，鱗尾上掛著浪紋金鈴，手裡總捧著鯨髭酒樽。",
+   "background": "夏瀾殿主，都城宴會的總籌辦。她牽線四殿之間的往來，也牽線玉璘族與人類商人的生意。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "bard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "玉璘四時殿",
+   "lineage": "夏瀾殿",
+   "relations": {
+    "mod_npc_sakurashio": "酒友"
+   },
+   "haunts": [
+    {
+     "location": "canglue",
+     "zone": "palace",
+     "weight": 2
+    },
+    {
+     "location": "canglue",
+     "zone": "town",
+     "weight": 2
+    }
+   ]
+  },
+  "mod_npc_moring": {
+   "id": "mod_npc_moring",
+   "name": "墨鱗",
+   "gender": "female",
+   "race": "yulin",
+   "level": 11,
+   "location": "canglue",
+   "personality": "沉靜、博學，族中少有的有耐性的人；收集外界的書，最關心陸地局勢。",
+   "appearance": "黑髮盤起插著墨玉筆的玉璘族，鱗尾是罕見的墨色，總是抱著一疊書。",
+   "background": "秋珊苑主。她是四殿中唯一認真研究陸地政治的人，偶爾庇護迷路的人類學者。她覺得族人太不知憂患。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "wizard",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "玉璘四時殿",
+   "lineage": "秋珊苑",
+   "relations": {
+    "mod_npc_sakurashio": "她想讓她多看看陸地局勢"
+   },
+   "landmark": "lm_four_seasons_gallery"
+  },
+  "mod_npc_rigetsu": {
+   "id": "mod_npc_rigetsu",
+   "name": "璃月",
+   "gender": "female",
+   "race": "yulin",
+   "level": 12,
+   "location": "canglue",
+   "personality": "穩重、細緻、內斂；四殿中最不愛熱鬧的一位，卻掌握最大的話語權。",
+   "appearance": "雪白長髮戴著雪玉璜環，鱗尾如冰，衣袖上繡著螺鈿紋樣。",
+   "background": "冬璃宮主，掌管全族的珍寶庫藏。她最近發現庫藏裡少了一件古老的玉璜，卻還沒告訴任何人。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "cleric",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "玉璘四時殿",
+   "lineage": "冬璃宮",
+   "tags": [
+    "noble"
+   ],
+   "haunts": [
+    {
+     "location": "canglue",
+     "zone": "palace",
+     "weight": 3
+    },
+    {
+     "location": "canglue",
+     "zone": "temple",
+     "weight": 1
+    }
+   ]
+  },
+  "mod_npc_raden_granny": {
+   "id": "mod_npc_raden_granny",
+   "name": "螺鈿婆婆",
+   "gender": "female",
+   "race": "yulin",
+   "level": 9,
+   "location": "canglue",
+   "personality": "嘮叨、慈祥，手很巧；說話總是從「我年輕的時候」開始。",
+   "appearance": "白髮的老玉璘族，鱗尾褪成淡玉色，背著一套螺鈿工具。",
+   "background": "維護礁光柱的老匠人，礁光柱的每一道光紋都經過她的手。她最近說結界的光「有點怪」，卻說不出哪裡怪。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "wizard",
+   "hire_cc": 1275,
+   "faction": "玉璘四時殿",
+   "lineage": "冬璃宮",
+   "tags": [
+    "good"
+   ],
+   "landmark": "lm_reef_light_pillar"
+  }
+ }
+}

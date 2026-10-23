@@ -1,0 +1,249 @@
+{
+ "npcs": {
+  "mod_npc_naivee": {
+   "id": "mod_npc_naivee",
+   "name": "娜伊薇",
+   "gender": "female",
+   "race": "catfolk",
+   "level": 16,
+   "location": "stilltide_oasis",
+   "personality": "沉靜、溫柔、說話很慢；能在泉水裡看見祖靈，卻看不清自己的未來。",
+   "appearance": "銀灰色貓耳與長尾，尾梢有一撮淺藍，額上畫著月紋，身披綴滿銀鈴的祭袍。",
+   "background": "荒野部落聯盟的大祭禮，出身月尾部落。她在祭風原被四部落推舉為最高領袖，任期終身。赤鬃部落對她的出身頗有微詞。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "druid",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "荒野部落聯盟",
+   "lineage": "月尾部落",
+   "tags": [
+    "royal",
+    "priest"
+   ],
+   "relations": {
+    "mod_npc_kara_redmane": "最強的戰士，也是最不服她的族長",
+    "mod_npc_silverbell": "侍女"
+   },
+   "landmark": "lm_stillspring_altar"
+  },
+  "mod_npc_silverbell": {
+   "id": "mod_npc_silverbell",
+   "name": "銀鈴",
+   "gender": "female",
+   "race": "catfolk",
+   "level": 8,
+   "location": "stilltide_oasis",
+   "personality": "溫婉、細心，占卜很準卻不愛說壞消息；對大祭禮忠心耿耿。",
+   "appearance": "淺藍貓耳的少女，尾巴上綁著銀鈴，手腕纏著占卜用的細繩。",
+   "background": "月尾部落的占卜師，大祭禮的侍女。她最近的占卜總是出現同一個符號：斷裂的月亮。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "cleric",
+   "hire_cc": 1060,
+   "faction": "荒野部落聯盟",
+   "lineage": "月尾部落",
+   "tags": [
+    "priest",
+    "good"
+   ],
+   "relations": {
+    "mod_npc_naivee": "她侍奉的人"
+   },
+   "haunts": [
+    {
+     "location": "stilltide_oasis",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  },
+  "mod_npc_kara_redmane": {
+   "id": "mod_npc_kara_redmane",
+   "name": "卡菈",
+   "gender": "female",
+   "race": "catfolk",
+   "level": 14,
+   "location": "sunscorch",
+   "personality": "勇猛、直率、好勝；不滿大祭禮總出身月尾，但絕不會用陰謀——她只用拳頭。",
+   "appearance": "赤棕色鬃毛如火焰般的貓魅族女戰士，身上掛滿獸骨與戰利品，尾巴總是豎著。",
+   "background": "赤鬃族長，聯盟最強的戰士。她帶領的狩獵隊能獵下荒野最大的獸群。她想在下一次推舉大典讓赤鬃的人當上大祭禮。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "barbarian",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "荒野部落聯盟",
+   "lineage": "赤鬃部落",
+   "tags": [
+    "noble"
+   ],
+   "relations": {
+    "mod_npc_naivee": "她尊敬但不服的人",
+    "mod_npc_talo_redmane": "兒子，太衝動"
+   },
+   "landmark": "lm_redmane_council"
+  },
+  "mod_npc_talo_redmane": {
+   "id": "mod_npc_talo_redmane",
+   "name": "塔洛",
+   "gender": "male",
+   "race": "catfolk",
+   "level": 7,
+   "location": "sunscorch",
+   "personality": "衝動、熱血、想出頭；崇拜母親，又想證明自己不只是族長的兒子。",
+   "appearance": "赤棕鬃毛的年輕貓魅族，臉上畫著戰紋，背著一把比他還寬的戰斧。",
+   "background": "赤鬃的年輕獵手，想在部族競技裡出頭。母系部落裡男人很難出頭，他偏偏不信。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "barbarian",
+   "hire_cc": 865,
+   "faction": "荒野部落聯盟",
+   "lineage": "赤鬃部落",
+   "relations": {
+    "mod_npc_kara_redmane": "母親"
+   },
+   "haunts": [
+    {
+     "location": "sunscorch",
+     "zone": "town",
+     "weight": 3
+    },
+    {
+     "location": "sandcastle",
+     "zone": "town",
+     "weight": 1
+    }
+   ]
+  },
+  "mod_npc_saff_nightclaw": {
+   "id": "mod_npc_saff_nightclaw",
+   "name": "薩芙",
+   "gender": "female",
+   "race": "catfolk",
+   "level": 13,
+   "location": "sandcastle",
+   "personality": "神秘、冷淡、只在夜裡出現；對聯盟的決議表面恭順，實則自成體系。",
+   "appearance": "墨黑貓耳與長尾的女子，束著黑羽束帶，指尖戴著新月形的鋼爪。",
+   "background": "夜爪首領，情報網遍布荒野內外。回音峽谷的試煉之谷是她的部落世代守護的禁地。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "rogue",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "荒野部落聯盟",
+   "lineage": "夜爪部落",
+   "haunts": [
+    {
+     "location": "sandcastle",
+     "zone": "town",
+     "weight": 1
+    },
+    {
+     "location": "sunscorch",
+     "zone": "town",
+     "weight": 1
+    },
+    {
+     "location": "stilltide_oasis",
+     "zone": "town",
+     "weight": 1
+    }
+   ]
+  },
+  "mod_npc_saila_sandmark": {
+   "id": "mod_npc_saila_sandmark",
+   "name": "薩伊拉",
+   "gender": "female",
+   "race": "catfolk",
+   "level": 11,
+   "location": "sandcastle",
+   "personality": "圓融、精明、好客；是「沙堡協議」的守護者，任何糾紛都想用談的解決。",
+   "appearance": "淺沙黃貓耳的中年女子，脖子上掛著沙紋圓環與駝骨掛飾。",
+   "background": "沙痕部落長老，主持帳篷區的日常，與冒險者的守備長共同維持營地的和平。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "ranger",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "荒野部落聯盟",
+   "lineage": "沙痕部落",
+   "relations": {
+    "npc_lina": "姪女，她希望她早點回荒野",
+    "mod_npc_gray_sandkeep": "共事多年的夥伴"
+   },
+   "haunts": [
+    {
+     "location": "sandcastle",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  },
+  "mod_npc_gray_sandkeep": {
+   "id": "mod_npc_gray_sandkeep",
+   "name": "葛雷",
+   "gender": "male",
+   "race": "human",
+   "level": 10,
+   "location": "sandcastle",
+   "personality": "沉穩、可靠、不多話；把營地裡每一個冒險者都當成自己的兵。",
+   "appearance": "曬成古銅色的中年戰士，鎧甲外披著防沙的斗篷，腰間掛著沙痕部落送的駝骨風鈴。",
+   "background": "沙堡的守備長，冒險者的頭頭。他和薩伊拉一起訂下「沙堡協議」，讓人類與貓魅族在營地裡和平共處。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "fighter",
+   "unhireable": true,
+   "hire_cc": 0,
+   "faction": "冒險者公會",
+   "relations": {
+    "mod_npc_saila_sandmark": "共事多年的夥伴"
+   },
+   "landmark": "lm_sandcastle_keep"
+  },
+  "mod_npc_azir_camel": {
+   "id": "mod_npc_azir_camel",
+   "name": "阿茲爾",
+   "gender": "male",
+   "race": "catfolk",
+   "level": 6,
+   "location": "sandcastle",
+   "personality": "愛殺價、愛聊天，什麼都賣；把殺價當成一種藝術。",
+   "appearance": "淺沙色貓耳的駝商，頭纏布巾，腰間掛滿各種小商品。",
+   "background": "帳環市集的駝商，沙痕部落出身。他說自己能賣沙子給沙漠，也真的賣過。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "rogue",
+   "hire_cc": 690,
+   "faction": "荒野部落聯盟",
+   "lineage": "沙痕部落",
+   "tags": [
+    "merchant"
+   ],
+   "landmark": "lm_tent_ring_bazaar"
+  },
+  "mod_npc_tali_liaison": {
+   "id": "mod_npc_tali_liaison",
+   "name": "塔莉",
+   "gender": "female",
+   "race": "human",
+   "level": 7,
+   "location": "sandcastle",
+   "personality": "幹練、愛碎念，對不登記就跑進流沙聖殿的冒險者特別生氣。",
+   "appearance": "戴著防沙眼鏡的年輕女人，揹著一大綑地圖與登記簿。",
+   "background": "冒險者公會的常駐聯絡員，負責流沙聖殿與回音峽谷的探險登記。她手上有一份「沒回來的人」名單。",
+   "custom": true,
+   "kind": "adventurer",
+   "class": "ranger",
+   "hire_cc": 865,
+   "faction": "冒險者公會",
+   "haunts": [
+    {
+     "location": "sandcastle",
+     "zone": "town",
+     "weight": 3
+    }
+   ]
+  }
+ }
+}
