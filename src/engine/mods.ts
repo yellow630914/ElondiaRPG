@@ -23,7 +23,8 @@ import { cleanPerkEffects, describeEffects, type PerkLimits } from './perks'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
-import { applyShopMod, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
+import { applyShopMod, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
+import { notForSale } from './trade'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
 export type ChestLayer = 'outskirts' | 'shallow' | 'middle' | 'deep'
@@ -892,13 +893,6 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, t] of Object.entries(out.tattoos)) if (t.custom && !tattooRules.templates[id]) tattooRules.templates[id] = strip(t, ['custom'])
   for (const [id, v] of Object.entries(r.marks ?? {})) out.marks[id] = sanitizeMarkMod(v, !!v.custom || !snapshot.marks[id])
   for (const [id, m] of Object.entries(out.marks)) if (m.custom && !slaveryRules.contracts[id]) slaveryRules.contracts[id] = strip(m, ['custom'])
-  for (const [id, v] of Object.entries(r.shops ?? {})) {
-    try {
-      out.shops[id] = sanitizeShopMod(id, v)
-    } catch {
-      // 不存在的店（例如之後的版本拿掉了）：略過
-    }
-  }
   if (r.markRules?.rules) out.markRules.rules = sanitizeMarkRules(r.markRules.rules, new Set([...Object.keys(snapshot.marks), ...Object.keys(out.marks)]))
   for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
@@ -917,6 +911,15 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [raw, v] of Object.entries(r.items ?? {})) {
     const name = cleanItemName(raw)
     if (name) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
+  }
+  // 商店的固定清單會檢查物品：自建的物品還沒登錄，一起算
+  const listable = (n: string) => (out.items[n] ? !notForSale(out.items[n]!) : canListItem(n))
+  for (const [id, v] of Object.entries(r.shops ?? {})) {
+    try {
+      out.shops[id] = sanitizeShopMod(id, v, listable)
+    } catch {
+      // 不存在的店（例如之後的版本拿掉了）：略過
+    }
   }
   for (const [id, v] of Object.entries(r.enemies ?? {})) out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id])
   for (const [id, v] of Object.entries(r.npcs ?? {})) out.npcs[id] = sanitizeNpc(id, v, !!v.custom || !builtinNpc(id))

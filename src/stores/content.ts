@@ -13,7 +13,7 @@ import {
   builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinTattoo, builtinMark,
 } from '@/engine/mods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
-import { shopRules, slaveryRules, type ShopType } from '@/engine/data'
+import { perkRules, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { npcModFromState } from '@/engine/promoteNpc'
 import { sanitizeShopMod, type ShopMod } from '@/engine/shopMods'
 import type { GameState } from '@/engine/types'
@@ -358,6 +358,12 @@ export const useContent = defineStore('content', () => {
       // 工具的燃料（例如油燈的燈油）
       if (to && it.tool?.fuel === from) it.tool.fuel = to
     }
+    // 商店的固定清單
+    for (const m of Object.values(mods.value.shops ?? {})) {
+      if (!m.fixed?.some((f) => f.item === from)) continue
+      m.fixed = to ? m.fixed.map((f) => (f.item === from ? { ...f, item: to } : f)) : m.fixed.filter((f) => f.item !== from)
+      if (!m.fixed.length) delete m.fixed
+    }
     if (!to) return
     for (const s of Object.values(mods.value.stories)) {
       const lists = [s.rewards, ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).map((o) => o?.effects)]
@@ -556,6 +562,32 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  /**
+   * 這種店的受訓清單：存在各特質的受訓地點（train.cells）上。拿掉最後一個地點的特質不再能受訓；
+   * 加回去時沿用內建的受訓設定（價格、時數、檢定）。和內建一樣的特質不另外存。
+   */
+  function setShopTraining(cell: string, perkIds: string[]) {
+    const want = new Set(perkIds)
+    for (const p of perkRules.perks) {
+      if (p.race) continue
+      const train = p.train ?? builtinPerk(p.id)?.train
+      if (!train) continue
+      const has = !!p.train?.cells.includes(cell)
+      if (has === want.has(p.id)) continue
+      const next = JSON.parse(JSON.stringify(mods.value.perks[p.id] ?? p)) as PerkMod
+      const cells = (p.train?.cells ?? []).filter((c) => c !== cell)
+      if (want.has(p.id)) cells.push(cell)
+      next.train = { ...train, cells }
+      if (!cells.length) delete next.train
+      const custom = !builtinPerk(p.id)
+      const clean = sanitizePerkMod(p.id, next, custom)
+      if (!clean) continue
+      if (!custom && JSON.stringify(clean) === JSON.stringify(sanitizePerkMod(p.id, builtinPerk(p.id)!, false))) delete mods.value.perks[p.id]
+      else mods.value.perks[p.id] = clean
+    }
+    save()
+  }
+
   // ---- 特質 ----
 
   function savePerk(id: string, draft: Partial<PerkMod>) {
@@ -670,7 +702,7 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
-    saveShop, restoreShop, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveShop, setShopTraining, restoreShop, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

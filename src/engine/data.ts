@@ -1194,7 +1194,10 @@ export interface ShopTypeDef {
   info?: { point_prices: number[]; points_per_day: number; valid_days: number; quest_price: number }
   /** 流浪商人：每天幾件隨機的優良裝備 */
   rare_gear?: number
+  /** 固定清單：每天一定上架的物品（世界設定加的；price_cc 沒寫照目錄價） */
+  fixed?: ShopFixedDeal[]
 }
+export interface ShopFixedDeal { item: string; stock: number; price_cc?: number }
 export const shopRules = shopsJson as unknown as {
   location_price_mult: Record<string, number>
   location_rank: Record<string, number>

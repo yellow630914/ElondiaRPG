@@ -2,7 +2,7 @@
 // 檢查兩種地方：其他內容（任務、固定 NPC、物品……），以及目前載入的存檔。
 // 其他存檔要等讀檔時才知道；讀檔時的清理見 state.ts 的 migrate。
 
-import { itemRules, npcs as namedNpcs, perkRules, stories, type StoryDef, type StoryOutcome } from './data'
+import { itemRules, npcs as namedNpcs, perkRules, shopRules, stories, type StoryDef, type StoryOutcome } from './data'
 import type { RewardEffect } from './effects'
 import { gearSpecOf } from './gear'
 import { furnitureIn } from './homes'
@@ -50,6 +50,7 @@ export function itemUsage(name: string, state?: GameState | null): string[] {
   for (const s of stories) {
     if (storyEffects(s).some((e) => e.type === 'item' && e.name === name)) out.push(`特殊任務「${s.title}」的獎勵`)
   }
+  for (const t of Object.values(shopRules.types)) if (t.fixed?.some((f) => f.item === name)) out.push(`商店「${t.name}」的固定清單`)
   for (const it of itemRules.items) {
     if (it.tool?.fuel === name) out.push(`「${it.name}」的燃料`)
     if (it.recipe?.inputs.some((x) => x.name === name)) out.push(`「${it.name}」的配方材料`)

@@ -142,14 +142,14 @@ export function itemCategory(state: GameState, name: string): ItemCategory | und
   return itemDef(name)?.category ?? (state.customItems?.[name]?.category as ItemCategory | undefined)
 }
 
-function itemDeal(state: GameState, name: string, stock: number, markup = 1): Deal {
+function itemDeal(state: GameState, name: string, stock: number, markup = 1, price = itemDef(name)?.price_cc ?? state.customItems![name]!.price_cc): Deal {
   // 目錄裡的物品，或登錄在存檔的裝備（流浪商人的優良裝備）
   const def = itemDef(name) ?? state.customItems![name]!
   return {
     id: `item:${name}`,
     title: name,
     ...(def.desc ? { desc: def.desc } : {}),
-    gives: [{ type: 'money', amount: Math.max(1, Math.round(def.price_cc * markup * locationMult(state))) }],
+    gives: [{ type: 'money', amount: Math.max(1, Math.round(price * markup * locationMult(state))) }],
     gets: [{ type: 'item', name, qty: 1 }],
     stock,
   }
@@ -195,6 +195,15 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
       const spec = randomGear(rng, pcOf(state).level + 2)
       if (spec.rarity === undefined || spec.rarity === 'common') spec.rarity = 'uncommon'
       deals.push(itemDeal(state, registerGear(state, spec), 1))
+    }
+    // 世界設定的固定清單：每天一定上架（和目錄重複的以固定清單為準；寫了價格就不再加成）
+    for (const f of def.fixed ?? []) {
+      const it = itemDef(f.item)
+      if (!it || notForSale(it)) continue
+      const at = deals.findIndex((d) => d.id === `item:${f.item}`)
+      if (at >= 0) deals.splice(at, 1)
+      const markup = f.price_cc === undefined && it.category === 'material' ? def.random?.material_markup ?? MATERIAL_MARKUP : 1
+      deals.push(itemDeal(state, f.item, f.stock, markup, f.price_cc ?? it.price_cc))
     }
     if (def.info) deals.push(...infoDeals(state, def.info))
     for (const sp of def.specials) deals.push(specialDeal(sp))
