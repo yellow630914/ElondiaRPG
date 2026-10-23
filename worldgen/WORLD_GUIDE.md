@@ -101,4 +101,4 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 統治者可以被雇用 | 國王跟著玩家去挖礦 | A、B 層加 `unhireable` |
 | 只做資料、沒寫世界書 | AI 不知道新的人與事，敘事和資料對不起來 | 第 2 節第 9 步 |
 | 手抄內建世界書的原文再改寫 | 抄錯的地方原本的設定就不見了 | 用腳本從 `elondia.worldbook.json` 讀原文再接上新段落 |
-| 引擎目前做不到的寫法 | 匯入時被拿掉，或執行時沒有效果 | 見 [docs/KNOWN_ISSUES](../docs/KNOWN_ISSUES.md) 第 5 節「內容匯入的限制」 |
+| 引擎目前做不到的寫法 | 匯入時被拿掉，或執行時沒有效果 | 見 [docs/KNOWN_ISSUES](../docs/KNOWN_ISSUES.md) 第 5 節「自訂內容與世界包的問題」 |
