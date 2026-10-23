@@ -34,6 +34,7 @@ import { checkBonus } from '@/engine/perks'
 import CraftPanel from './CraftPanel.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import type { IconName } from './ui/iconPaths'
 import AppDialog from './AppDialog.vue'
 import SceneBanner from './place/SceneBanner.vue'
 import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
@@ -59,7 +60,7 @@ const linkName = computed(() => {
   }
 })
 const lockTool = computed(() => bestTool(s.value, 'lockpick'))
-const LOCK_ICON: Record<LockMethod, string> = { dex: '🔓', str: '💪', int: '🧠' }
+const LOCK_ICON: Record<LockMethod, IconName> = { dex: 'unlock', str: 'hand', int: 'lightbulb' }
 function lockBonus(k: LockMethod): number {
   const picker = lockPicker(s.value, k)
   return mod(attrOf(picker, k)) + (k === 'dex' ? lockTool.value?.bonus ?? 0 : 0) + checkBonus(picker, { context: 'lock', attr: k })
@@ -252,7 +253,7 @@ const shopDesc = computed(() => {
         </template>
 
         <template v-else-if="cell.kind === 'carver'">
-          <p class="muted small">刻誓約印記（屬性有加有減），也洗普通刺青與誓約印記；身上有奴隸印記時，可以付高價請刻印師燒掉（見主動行動的解除印記）。</p>
+          <p class="muted small">刻誓約印記，也洗刺青 <Hint text="誓約印記讓屬性有加有減；這裡也洗普通刺青與誓約印記。身上有奴隸印記時，可以付高價請刻印師燒掉（見主動行動的解除印記）。" /></p>
           <TattooPanel shop="carver" />
         </template>
 
@@ -291,7 +292,7 @@ const shopDesc = computed(() => {
                 報酬 {{ formatMoney(q.reward_cc) }}<template v-if="isMaterialQuest(q) && (q.max ?? q.goal) > q.goal">（可以過量交付到 {{ q.max }}{{ isCollectQuest(q) ? ' 份' : ' 次' }}，報酬依比例增加）</template>
                 <span v-if="q.status === 'available' && questDeadlineDays(q) !== undefined">・期限 {{ questDeadlineDays(q) }} 天</span>
                 <span v-if="q.status !== 'available'">・{{ questProgressText(s, q) }}</span>
-                <span v-if="q.status === 'accepted' && q.deadline">・⏳ {{ deadlineText(s, q.deadline) }}</span>
+                <span v-if="q.status === 'accepted' && q.deadline">・<GameIcon name="hourglass" :size="12" /> {{ deadlineText(s, q.deadline) }}</span>
               </div>
               <button
                 v-if="q.status === 'available'"
@@ -373,10 +374,12 @@ const shopDesc = computed(() => {
         </template>
 
         <template v-else-if="cell.kind === 'chest' && !cell.done && cell.lock">
-          <p class="muted small">🔒 上鎖的寶箱（DC {{ cell.lock }}）。選一種方式試著打開，由隊伍中那項屬性最高的人來做；失敗可以再試或換一種，每次 10 分鐘。{{ lockTool ? `開鎖時用${lockTool.name}（+${lockTool.bonus}）。` : '靈巧開鎖時，帶著開鎖類的工具會容易一點。' }}</p>
+          <p class="muted small"><GameIcon name="lock" :size="13" /> 上鎖的寶箱（DC {{ cell.lock }}）<template v-if="lockTool">・開鎖時用{{ lockTool.name }}（+{{ lockTool.bonus }}）</template>
+            <Hint :text="`選一種方式試著打開，由隊伍中那項屬性最高的人來做；失敗可以再試或換一種，每次 10 分鐘。${lockTool ? '' : '靈巧開鎖時，帶著開鎖類的工具會容易一點。'}`" />
+          </p>
           <div class="row lock-methods">
             <button v-for="(m, k) in LOCK_METHODS" :key="k" class="small" @click="game.pickLock(k)">
-              {{ LOCK_ICON[k] }} {{ m.name }} <span class="muted">（{{ attrName(k) }}・{{ lockPicker(s, k).name }} {{ signed(lockBonus(k)) }}）</span>
+              <GameIcon :name="LOCK_ICON[k]" :size="13" /> {{ m.name }} <span class="muted">（{{ attrName(k) }}・{{ lockPicker(s, k).name }} {{ signed(lockBonus(k)) }}）</span>
             </button>
           </div>
         </template>

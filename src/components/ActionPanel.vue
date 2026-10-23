@@ -162,8 +162,8 @@ const pendingMark = computed(() => s.value.pendingMark)
       <Hint :text="`用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，${aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）'}。`" />
     </div>
     <template v-if="contract && bound">
-      <p class="small mark pre">⛓️ {{ contract.summary }}</p>
-      <p v-if="homeLine" class="small muted">🏚️ {{ homeLine }}<template v-if="strict">（嚴加看管 {{ strict }} 點：出門與出城的 DC +{{ strict }}）</template></p>
+      <p class="small mark pre"><GameIcon name="lock" :size="13" /> {{ contract.summary }}</p>
+      <p v-if="homeLine" class="small muted"><GameIcon name="building" :size="13" /> {{ homeLine }}<template v-if="strict">（嚴加看管 {{ strict }} 點：出門與出城的 DC +{{ strict }}）</template></p>
       <p v-if="atHome" class="small muted">
         {{ mayLeave ? `${contract.masterName}今天同意你出門。` : houseRefused ? `${contract.masterName}今天不准你出門。` : `要走出大門，先請求${contract.masterName}同意（${attrName(slaveryRules.master_home.leave.attr)}檢定，參考 DC ${leaveDc(s)}）。` }}
       </p>
@@ -182,12 +182,12 @@ const pendingMark = computed(() => s.value.pendingMark)
       <hr />
     </template>
     <template v-else-if="contract && enslaved">
-      <p class="small mark pre">⛓️ {{ contract.summary }}</p>
+      <p class="small mark pre"><GameIcon name="lock" :size="13" /> {{ contract.summary }}</p>
       <p v-if="fugitive" class="small mark">
         你是逃亡奴隸：公會與神殿不接待你（解除印記除外），旅店加價{{ contract.def.functions.includes('tracking') ? `，每次休息都可能被${contract.masterName}找到` : '' }}。
       </p>
       <p v-else class="small muted">你沒有主人：印記還在，但沒有人牽著鏈子，行動不受限制。</p>
-      <p v-if="whereabouts" class="small muted">🧭 {{ whereabouts }}</p>
+      <p v-if="whereabouts" class="small muted"><GameIcon name="compass" :size="13" /> {{ whereabouts }}</p>
       <textarea v-model="freedomText" rows="2" placeholder="描述你的做法：怎麼向主人認錯或談條件、怎麼請人收下你，或怎麼撐過解除印記的痛" />
       <AbilityPicker v-model="use" />
       <div v-if="nearMaster" class="row">
@@ -208,7 +208,7 @@ const pendingMark = computed(() => s.value.pendingMark)
           <br /><span class="muted">{{ o.desc }}</span>
         </li>
       </ul>
-      <p v-else class="small muted">要解除印記：到神殿（要有聲望，便宜）、王都與有黑市的城市的刻印師（很貴），或請身邊（或隊伍裡）的法師（契約解除，紋樣留下來變成普通刺青）。</p>
+      <p v-else class="small muted">這裡沒有人能解除印記 <Hint text="要解除印記：到神殿（要有聲望，便宜）、王都與有黑市的城市的刻印師（很貴），或請身邊（或隊伍裡）的法師（契約解除，紋樣留下來變成普通刺青）。" /></p>
       <hr />
     </template>
     <template v-if="oathOffers.length">
@@ -231,7 +231,7 @@ const pendingMark = computed(() => s.value.pendingMark)
           <option v-for="t in nearTargets" :key="t.id" :value="t.id">{{ t.name }}・{{ t.note }}</option>
         </optgroup>
         <optgroup v-if="farTargets.length" label="這一區（要先走近）">
-          <option v-for="t in farTargets" :key="t.id" :value="t.id" disabled>{{ t.name }}・{{ t.note }}・📍{{ t.dist }} 格</option>
+          <option v-for="t in farTargets" :key="t.id" :value="t.id" disabled>{{ t.name }}・{{ t.note }}・{{ t.dist }} 格</option>
         </optgroup>
       </select>
       <AbilityPicker v-model="use" />

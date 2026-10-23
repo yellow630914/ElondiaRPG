@@ -10,6 +10,8 @@ import { formatMoney } from '@/engine/money'
 import { parseUse, useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import AbilityPicker from './AbilityPicker.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // 自創配方（crafts.json 的 invention）：選工藝、等級、類別與材料，描述想做的東西；AI 設計成品，強度不超過高一級的現成配方
 const emit = defineEmits<{ started: [] }>()
@@ -64,9 +66,9 @@ function invent() {
 
 <template>
   <div class="invent small">
-    <p class="muted">
-      寫下做法，放進材料試做。{{ aiOn ? 'AI 會依做法與材料設計成品並取名' : '沒有開啟 AI 判定時，會仿照同級的現成配方做一件「特製」品' }}，做好之後可以在日誌或配方清單上改名；
-      強度依擲骰：大成功稍強（最多到高一級的現成配方）、成功和同級相當、部分成功稍弱。做出東西時記成新的配方（只在這個存檔），之後可以在「依配方製作」重複做。
+    <p class="muted intro">
+      寫下做法，放進材料試做。
+      <Hint :text="`${aiOn ? 'AI 會依做法與材料設計成品並取名' : '沒有開啟 AI 判定時，會仿照同級的現成配方做一件「特製」品'}，做好之後可以在日誌或配方清單上改名。\n強度依擲骰：大成功稍強（最多到高一級的現成配方）、成功和同級相當、部分成功稍弱。做出東西時記成新的配方（只在這個存檔），之後可以在「依配方製作」重複做。`" />
     </p>
     <div class="row">
       <label class="field">誰來做
@@ -123,13 +125,13 @@ function invent() {
       {{ attrName(skill.attr) }}檢定 +{{ plan.skill * craftRules.level_bonus }}・DC {{ plan.dc }}・約 {{ plan.hours }} 小時・工具：要{{ toolTierName(toolTierFor(level)) }}，現在 {{ plan.tool.source }}
     </p>
     <p class="muted">大成功：稍強，多做一半・成功：同級，照設計的份數・部分成功：稍弱，份數一半・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
-    <p v-if="plan.blocked" class="muted">⚠ {{ plan.blocked }}</p>
+    <p v-if="plan.blocked" class="warn"><GameIcon name="warning" :size="13" /> {{ plan.blocked }}</p>
     <template v-else>
       <label class="field">做法（不用取名，名字由 AI 依做法與材料決定）
         <textarea v-model="text" rows="3" maxlength="400" placeholder="例如「把硫磺磨成粉，和藥草汁一起封進陶瓶，瓶口塞一條浸了油的布」「肉抹上蜂蜜和鹽，掛在爐邊慢慢烘乾」" />
       </label>
       <AbilityPicker v-model="use" />
-      <button class="small" :disabled="game.judging || !!s.pendingAction || !text.trim()" @click="invent">💡 {{ crafter.isPlayer ? '試做看看' : `請${crafter.name}試做` }}</button>
+      <button class="small" :disabled="game.judging || !!s.pendingAction || !text.trim()" @click="invent"><GameIcon name="lightbulb" :size="13" /> {{ crafter.isPlayer ? '試做看看' : `請${crafter.name}試做` }}</button>
     </template>
   </div>
 </template>
@@ -147,4 +149,6 @@ function invent() {
 .inputs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .qty { width: 46px; }
 .x { padding: 0 4px; }
+.intro { display: flex; align-items: center; gap: 4px; }
+.warn { color: var(--danger); }
 </style>
