@@ -7,7 +7,7 @@ import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary } from '@/engi
 import { intelSummary, isIntelItem, useSummary } from '@/engine/inventory'
 import { toolSummary } from '@/engine/tools'
 import { itemCategory } from '@/engine/trade'
-import type { GameState } from '@/engine/types'
+import type { GameState, GearSpec } from '@/engine/types'
 
 /** 篩選分頁的順序 */
 export const CATEGORY_ORDER: ItemCategory[] = ['equipment', 'consumable', 'scroll', 'food', 'gear', 'material', 'info', 'furniture']
@@ -16,10 +16,13 @@ export function categoryOf(state: GameState, name: string): ItemCategory | undef
   return itemCategory(state, name)
 }
 
-/** 裝備的稀有度（圖示底框上色用）；不是裝備時是空字串 */
-export function itemRarity(state: GameState, name: string): string {
-  const spec = gearSpecOf(state, name)
+/** 裝備組成的稀有度（圖示底框上色用）；不知道的組成或不是裝備時是空字串 */
+export function specRarity(spec: GearSpec | undefined): string {
   return spec && gearKnown(spec) ? gearStats(spec).rarity : ''
+}
+
+export function itemRarity(state: GameState, name: string): string {
+  return specRarity(gearSpecOf(state, name))
 }
 
 export function categoryName(state: GameState, name: string): string {

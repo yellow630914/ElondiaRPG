@@ -7,7 +7,7 @@
 // 3. 類別上傳的圖 → 內建的類別圖
 
 import { itemDef, type ItemCategory } from './data'
-import { gearRules } from './gear'
+import { gearRules, gearSpecOf } from './gear'
 import type { GameState, GearSpec } from './types'
 
 /** 上傳的圖縮到這個邊長以內 */
@@ -49,7 +49,7 @@ export function gearIconSource(spec: Pick<GearSpec, 'base'>): IconSource {
 export function itemIconSource(state: Pick<GameState, 'customItems'> | undefined, name: string, spec?: GearSpec): IconSource {
   const def = itemDef(name)
   if (def?.icon) return { kind: 'image', src: def.icon }
-  const gear = spec ?? def?.gear ?? state?.customItems?.[name]?.gear
+  const gear = spec ?? gearSpecOf(state, name)
   if (gear && gearRules.bases[gear.base]) return gearIconSource(gear)
   return categoryIconSource(def?.category ?? (state?.customItems?.[name]?.category as ItemCategory | undefined))
 }

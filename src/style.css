@@ -192,7 +192,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
   width: 34px; height: 34px; flex: none; display: inline-grid; place-items: center; border-radius: 2px;
   background: #2a1e14; color: #e8d8b8; border: 1px solid #4b3420; box-shadow: inset 0 0 0 1px #c99a4540;
 }
-.item-tile.special { color: var(--gold-hi); }
+.item-tile.special { color: #f0d083; } /* 底框固定是深色：不用 --gold-hi（羊皮紙對話框裡會變成深棕色） */
 .item-tile.r-uncommon { color: var(--r-uncommon); box-shadow: inset 0 0 0 1px var(--r-uncommon); }
 .item-tile.r-rare { color: var(--r-rare); box-shadow: inset 0 0 0 1px var(--r-rare); }
 .item-tile.r-epic { color: var(--r-epic); box-shadow: inset 0 0 0 1px var(--r-epic); }

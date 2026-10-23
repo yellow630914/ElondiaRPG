@@ -18,7 +18,9 @@ const builtin = (c: ItemCategory) => ({ kind: 'path' as const, path: refPath(cat
 function set(c: ItemCategory, icon: string | undefined) {
   try {
     content.saveCategoryIcon(c, icon)
-    game.flash(icon ? `已換上「${itemRules.categories[c]}」的圖示` : `「${itemRules.categories[c]}」換回內建的圖示`)
+    // 存不進瀏覽器（容量滿了）時不要說成功：這次的修改關掉頁面就沒了
+    if (content.persistFailed) game.error = '圖示存不進瀏覽器（容量滿了）：關掉頁面後就會消失。請移除一些圖示，或先匯出世界包備份'
+    else game.flash(icon ? `已換上「${itemRules.categories[c]}」的圖示` : `「${itemRules.categories[c]}」換回內建的圖示`)
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
   }

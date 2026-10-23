@@ -29,5 +29,5 @@ const draw = computed(() => {
 <style scoped>
 .item-icon { flex: none; vertical-align: middle; }
 svg.item-icon { fill: currentColor; shape-rendering: crispEdges; }
-.img { object-fit: contain; }
+.img { object-fit: contain; image-rendering: pixelated; } /* 上傳的像素圖縮放時保持銳利 */
 </style>

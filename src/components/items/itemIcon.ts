@@ -2,6 +2,7 @@
 // 玩家上傳的圖與查找順序在 engine/itemIcons.ts。
 
 import type { ItemCategory } from '@/engine/data'
+import { equipment, type WeaponDef } from '@/engine/data'
 import { gearRules, type BaseDef, type BaseSlot, type MaterialKind } from '@/engine/gear'
 import type { IconSource } from '@/engine/itemIcons'
 import { ICON_PATHS, type IconName } from '../ui/iconPaths'
@@ -59,12 +60,22 @@ const SLOT_ART: Record<BaseSlot, Partial<Record<MaterialKind, IconRef>> & { any:
   leg_accessory: { any: { art: 'anklet' } },
 }
 
+/** 武器的圖：內建的武器類型有自己的圖；自建底材複製來的武器（登錄成 w_<底材>）找骰子與傷害類型相同的內建武器 */
+function weaponArt(w: Pick<WeaponDef, 'dice' | 'type'> | undefined, id?: string): ArtName | undefined {
+  if (id && WEAPON_ART[id]) return WEAPON_ART[id]
+  if (!w) return undefined
+  const same = Object.keys(WEAPON_ART).find((k) => equipment.weapons[k]?.dice === w.dice && equipment.weapons[k]?.type === w.type)
+  return same ? WEAPON_ART[same] : undefined
+}
+
 /** 底材的內建圖：內建底材有自己的圖；自建的依武器類型、欄位與材料類型挑（傳 def 時用它，例如編輯中的草稿） */
-export function baseArt(id: string, def: Pick<BaseDef, 'slot' | 'kind' | 'weapon'> | undefined = gearRules.bases[id]): IconRef {
+export function baseArt(
+  id: string, def: (Pick<BaseDef, 'slot' | 'kind' | 'weapon'> & { weaponDef?: Pick<WeaponDef, 'dice' | 'type'> }) | undefined = gearRules.bases[id],
+): IconRef {
   const builtin = BASE_ART[id]
   if (builtin) return builtin
   if (!def) return UNKNOWN
-  const weapon = def.weapon ? WEAPON_ART[def.weapon] : undefined
+  const weapon = weaponArt(def.weaponDef ?? (def.weapon ? equipment.weapons[def.weapon] : undefined), def.weapon)
   if (weapon && def.slot === 'main_hand') return { art: weapon }
   const s = SLOT_ART[def.slot]
   return s?.[def.kind] ?? s?.any ?? UNKNOWN

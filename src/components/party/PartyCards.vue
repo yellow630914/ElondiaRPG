@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import { affinityStage, apMaxFor, apRegenFor, attrsOf, castingAttr, guildRankFor, mod, proficiency, xpToNext } from '@/engine/character'
 import { playerRank } from '@/engine/guild'
 import { abilityDef, attributeRules, attrName, className, classDef, companionRules, conditionName, conditionTone, genderDef, genderName, raceName } from '@/engine/data'
-import { gearKnown, gearStats, gearSummary, SLOTS, slotName } from '@/engine/gear'
+import { gearSummary, SLOTS, slotName } from '@/engine/gear'
+import { specRarity } from '../items/itemInfo'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
@@ -35,9 +36,7 @@ function rank(m: Character) {
 function gearList(m: Character) {
   return SLOTS.filter((slot) => m.gear?.[slot]).map((slot) => ({ slot, g: m.gear![slot]! }))
 }
-function rarityOf(spec: Parameters<typeof gearSummary>[0]) {
-  return gearKnown(spec) ? gearStats(spec).rarity : ''
-}
+const rarityOf = specRarity
 function canDismiss(m: Character) {
   return !m.isPlayer && !m.group && m.bond !== 'slave' && m.bond !== 'guest'
 }

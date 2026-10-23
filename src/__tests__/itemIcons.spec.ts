@@ -69,5 +69,8 @@ describe('item icons', () => {
     expect(baseArt('custom_y', { slot: 'main_hand', kind: 'metal', weapon: 'dagger' })).toEqual({ art: 'dagger' })
     expect(baseArt('custom_z', { slot: 'ring', kind: 'jewel' })).toEqual({ art: 'ring' })
     expect(sourceDraw({ kind: 'image', src: PNG })).toEqual({ img: PNG })
+    // 複製內建武器的自建底材（整理後變成 weaponDef，登錄成 w_<底材>）：還是用那種武器的圖
+    applyContent(normalizeMods({ ...emptyMods(), bases: { mod_base_knife: { custom: true, name: '短刃', kind: 'metal', price: 50, slot: 'main_hand', weapon: 'dagger' } } } as never))
+    expect(baseArt('mod_base_knife')).toEqual({ art: 'dagger' })
   })
 })

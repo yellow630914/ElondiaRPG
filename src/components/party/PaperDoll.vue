@@ -11,6 +11,7 @@ import GameIcon from '../ui/GameIcon.vue'
 import ItemIcon from '../items/ItemIcon.vue'
 import BodyFigure from './BodyFigure.vue'
 import { signed, SLOT_ICON } from './memberInfo'
+import { specRarity } from '../items/itemInfo'
 
 // 裝備的紙娃娃：欄位排在人形兩側；點欄位列出行囊中能裝的物品，可以直接換上或卸下
 const props = defineProps<{ member: Character }>()
@@ -29,9 +30,7 @@ watch(() => props.member.id, () => (selected.value = 'main_hand'))
 const blocked = (slot: GearSlot) => (gearRules.races[m.value.race]?.blocked ?? []).includes(slot)
 const current = computed(() => m.value.gear?.[selected.value])
 
-function rarityOf(spec: GearSpec | undefined): string {
-  return spec && gearKnown(spec) ? gearStats(spec).rarity : 'common'
-}
+const rarityOf = (spec: GearSpec | undefined) => specRarity(spec) || 'common'
 function chips(spec: GearSpec): string[] {
   return gearSummary(spec).split('・').slice(1)
 }
