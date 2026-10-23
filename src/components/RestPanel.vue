@@ -6,8 +6,9 @@ import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
 import { autoHitDice, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, waitText, type RestPlace } from '@/engine/rest'
 import { useGame } from '@/stores/game'
-import NameTag from './NameTag.vue'
 import JudgeToggle from './JudgeToggle.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -29,56 +30,58 @@ const leader = computed(() => leaderOf(s.value))
 const talkText = ref('')
 const talkTarget = ref('')
 const companions = computed(() => s.value.party.filter((m) => !m.isPlayer))
+const showTalk = ref(false)
 async function doLongRest(where: RestPlace) {
   const text = talkText.value.trim()
   talkText.value = ''
+  showTalk.value = false
   await game.longRest(where, text ? { text, ...(talkTarget.value ? { target: talkTarget.value } : {}) } : undefined)
 }
 </script>
 
 <template>
-  <section class="panel">
-    <h3>🛏️ 休息</h3>
-    <p class="small muted">
-      短休 1 小時：花生命骰回復生命值。<span v-if="ambush">這裡有 {{ Math.round(ambush * 100) }}% 的機率被襲擊。</span>
-    </p>
-    <ul class="plain small dice">
-      <li v-for="m in s.party" :key="m.id">
-        <NameTag :id="m.id" />：生命骰 d{{ hitDie(m) }} × {{ hitDiceLeft(m) }}/{{ m.level }}<span v-if="autoHitDice(m)" class="muted">（會用 {{ autoHitDice(m) }} 顆）</span>
-      </li>
-    </ul>
-    <button class="small" @click="game.shortRest()">☕ 短休</button>
-
-    <template v-if="place === 'inn'">
-      <p class="small muted">長休（住到隔天早上）：生命值、法術環全滿，回復一半生命骰。兩次長休至少隔 {{ longRestGapHours() }} 小時。</p>
-      <button :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')">🌙 長休（{{ formatMoney(innCost(s)) }}）</button>
-    </template>
-    <template v-else-if="place === 'safe'">
-      <p class="small muted">安全房可以長休 8 小時（每人 1 份乾糧，每間一次），短休也不會被襲擊。</p>
-      <button :disabled="!!blocked || rations < s.party.length" @click="doLongRest('safe')">🌙 長休（乾糧 {{ s.party.length }} 份）</button>
-    </template>
-    <template v-else-if="place === 'home'">
-      <p class="small muted">在自己家長休（住到隔天早上，免費），要有床。家具的舒適度夠高時，大家會睡得香甜（下次長休前戰鬥開始時獲得暫時生命、檢定 +1）。</p>
-      <button :disabled="!!blocked" @click="doLongRest('home')">🌙 在家長休</button>
-    </template>
-    <p v-else class="small muted">長休要在旅店、地下城的安全房或自己的房子。</p>
-    <p v-if="blocked && place" class="small muted">{{ blocked }}</p>
-    <p v-else-if="wait > 0" class="small muted">⏳ 還要 {{ waitText(wait) }}才能再長休。</p>
-    <div v-if="place && !blocked" class="talk small">
-      <label>
-        長休時想做什麼？（選填，主動行動）
-        <textarea v-model="talkText" rows="2" :placeholder="place === 'inn' ? '例如：睡前在旅店大廳和其他旅客聊天、陪莉娜看星星' : '例如：守夜時和隊友聊起各自的故鄉'" />
-      </label>
-      <div class="row talk-row">
-      <select v-model="talkTarget">
-        <option value="">👥 全體夥伴</option>
-        <option v-for="m in companions" :key="m.id" :value="m.id">{{ raceEmoji(m.race) }}{{ m.name }}{{ classEmoji(m.class) }}</option>
-        <option v-if="place === 'inn'" value="guests">🏨 同旅館的旅客</option>
-      </select>
-      <JudgeToggle />
-      </div>
-      <p class="muted">有寫互動時，長休和互動會合成一段經過。</p>
+  <section class="panel rest">
+    <h3 class="head">
+      <GameIcon name="bed" :size="16" />休息
+      <Hint>
+        <b>短休</b> 1 小時：花生命骰回復生命值。<template v-if="ambush">這裡有 {{ Math.round(ambush * 100) }}% 的機率被襲擊。</template>
+        <template v-if="place === 'inn'">{{ '\n' }}<b>長休</b>（住到隔天早上）：生命值、法術環全滿，回復一半生命骰。</template>
+        <template v-else-if="place === 'safe'">{{ '\n' }}<b>長休</b>：安全房可以長休 8 小時（每人 1 份乾糧，每間一次），短休也不會被襲擊。</template>
+        <template v-else-if="place === 'home'">{{ '\n' }}<b>長休</b>：在自己家長休（住到隔天早上，免費），要有床。家具的舒適度夠高時，大家會睡得香甜（下次長休前戰鬥開始時獲得暫時生命、檢定 +1）。</template>
+        <template v-else>{{ '\n' }}長休要在旅店、地下城的安全房或自己的房子。</template>
+        {{ '\n' }}兩次長休至少隔 {{ longRestGapHours() }} 小時。
+      </Hint>
+    </h3>
+    <div class="dice">
+      <span
+        v-for="m in s.party" :key="m.id" class="tag"
+        :title="`生命骰 d${hitDie(m)}，剩 ${hitDiceLeft(m)}/${m.level}${autoHitDice(m) ? `，短休會用 ${autoHitDice(m)} 顆` : ''}`"
+      ><GameIcon name="heart" :size="12" />{{ m.name }} d{{ hitDie(m) }} × {{ hitDiceLeft(m) }}</span>
     </div>
+    <div class="btns">
+      <button @click="game.shortRest()"><GameIcon name="mug" :size="15" />短休 <small>1 小時</small></button>
+      <button v-if="place === 'inn'" :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')"><GameIcon name="moon" :size="15" />長休 <small>{{ formatMoney(innCost(s)) }}</small></button>
+      <button v-else-if="place === 'safe'" :disabled="!!blocked || rations < s.party.length" @click="doLongRest('safe')"><GameIcon name="moon" :size="15" />長休 <small>乾糧 {{ s.party.length }} 份</small></button>
+      <button v-else-if="place === 'home'" :disabled="!!blocked" @click="doLongRest('home')"><GameIcon name="moon" :size="15" />在家長休</button>
+      <button v-else disabled title="長休要在旅店、地下城的安全房或自己的房子"><GameIcon name="moon" :size="15" />長休 <small>不在旅店</small></button>
+    </div>
+    <p v-if="blocked && place" class="small muted note">{{ blocked }}</p>
+    <p v-else-if="wait > 0" class="small muted note"><GameIcon name="hourglass" :size="12" /> 還要 {{ waitText(wait) }}才能再長休。</p>
+    <template v-if="place && !blocked">
+      <button v-if="!showTalk" class="link more" @click="showTalk = true"><GameIcon name="plus" :size="12" /> 長休時順便做點什麼…</button>
+      <div v-else class="talk small">
+        <textarea v-model="talkText" rows="2" :placeholder="place === 'inn' ? '例如：睡前在旅店大廳和其他旅客聊天、陪莉娜看星星' : '例如：守夜時和隊友聊起各自的故鄉'" />
+        <div class="row talk-row">
+          <select v-model="talkTarget">
+            <option value="">全體夥伴</option>
+            <option v-for="m in companions" :key="m.id" :value="m.id">{{ raceEmoji(m.race) }}{{ m.name }}{{ classEmoji(m.class) }}</option>
+            <option v-if="place === 'inn'" value="guests">同旅館的旅客</option>
+          </select>
+          <JudgeToggle />
+          <Hint text="長休時想做的事（選填，算主動行動）。有寫互動時，長休和互動會合成一段經過。" />
+        </div>
+      </div>
+    </template>
 
     <p v-if="leaveMode && leader" class="small warn">下次休息時會{{ leaveMode === 'sneak' ? '偷偷離開' : '向' + leader.name + '正式道別並離開' }}隊伍。</p>
     <p v-if="lowAffinity.length" class="small warn">{{ lowAffinity.map((m) => m.name).join('、') }}對你積怨已深，下次休息時會離隊。</p>
@@ -86,11 +89,19 @@ async function doLongRest(where: RestPlace) {
 </template>
 
 <style scoped>
-.dice { margin: 4px 0; }
-.talk { display: grid; gap: 4px; margin-top: 6px; grid-template-columns: minmax(0, 1fr); }
-.talk label { display: grid; gap: 2px; }
+.rest { padding: 12px 14px; }
+.head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.head :deep(.game-icon) { color: var(--accent); }
+.head .hint { margin-left: auto; }
+.dice { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.dice .tag :deep(.game-icon) { color: var(--hp); }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.btns button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 8px; }
+.btns small { color: var(--muted); font-size: var(--fs-xs); }
+.note { margin: 6px 0 0; }
+.more { margin-top: 8px; display: inline-flex; align-items: center; gap: 2px; }
+.talk { display: grid; gap: 4px; margin-top: 8px; grid-template-columns: minmax(0, 1fr); }
 .talk textarea { width: 100%; }
-.talk p { margin: 0; }
 .talk-row { justify-content: space-between; }
-.warn { color: var(--danger); }
+.warn { color: var(--danger); margin: 6px 0 0; }
 </style>

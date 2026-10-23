@@ -32,6 +32,8 @@ import WorkPanel from './WorkPanel.vue'
 import TrainPanel from './TrainPanel.vue'
 import { checkBonus } from '@/engine/perks'
 import CraftPanel from './CraftPanel.vue'
+import GameIcon from './ui/GameIcon.vue'
+import { CELL_GAME_ICON, RANK_COLOR } from './ui/cellIcons'
 
 const game = useGame()
 const content = useContent()
@@ -126,9 +128,10 @@ function daysText(days: [number, number]) {
 function routeText(path: Path) {
   const modes = [...new Set(path.legs.map((l) => MODE_NAME[l.mode]))].join('/')
   const via = path.legs.slice(0, -1).map((l) => locationById(l.to).name)
-  const fare = path.legs.reduce((sum, l) => sum + legFare(l), 0)
-  const text = via.length ? `${modes}・經${via.join('、')}` : modes
-  return fare > 0 ? `${text}・船資每人 ${formatMoney(fare)}` : text
+  return via.length ? `${modes}・經${via.join('、')}` : modes
+}
+function fareOf(path: Path) {
+  return path.legs.reduce((sum, l) => sum + legFare(l), 0)
 }
 
 /** 地下城各層的階級，例如「淺層 E・中層 D・深層 C」 */
@@ -169,8 +172,13 @@ const shopDesc = computed(() => {
       <!-- 目前所在格子（房子裡由上面的房屋區塊顯示） -->
       <section v-if="area.kind !== 'road' && area.kind !== 'home'" class="panel">
         <!-- 特殊任務的任務點和地圖上一樣是 ⭐，不要顯示成委託地點 -->
-        <h3 v-if="cell.storyNode">⭐ 特殊任務的任務點</h3>
-        <h3 v-else>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
+        <h3 v-if="cell.storyNode" class="place-title"><GameIcon name="star" :size="18" />特殊任務的任務點</h3>
+        <h3 v-else class="place-title">
+          <GameIcon v-if="CELL_GAME_ICON[cell.kind]" :name="CELL_GAME_ICON[cell.kind]!" :size="18" />
+          <span v-else-if="ICON[cell.kind]">{{ ICON[cell.kind] }}</span>
+          <GameIcon v-else name="pin" :size="18" />
+          {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}
+        </h3>
         <p v-if="shopDesc" class="muted small">{{ shopDesc }}</p>
         <p v-if="specialDef" class="muted small">{{ specialDef.name }}：{{ specialDef.desc }}</p>
 
@@ -185,7 +193,7 @@ const shopDesc = computed(() => {
           </button>
           <ShopPanel :key="`temple-${s.location}-${s.time.day}`" type="temple" />
           <details class="tavern-trade">
-            <summary class="small">🧼 洗刺青（要有聲望）</summary>
+            <summary class="small">洗刺青（要有聲望）</summary>
             <TattooPanel shop="temple" />
           </details>
         </template>
@@ -221,12 +229,12 @@ const shopDesc = computed(() => {
         <template v-else-if="cell.kind === 'guild'">
           <div class="guild-rank small">
             <div>
-              🏅 你是 <strong>{{ promo.rank }} 級</strong>冒險者・功績 {{ promo.merit }}<template v-if="promo.next">・升 {{ promo.next }} 級需要功績 {{ promo.needMerit }}、等級 {{ promo.needLevel }}</template>
+              <GameIcon name="trophy" :size="14" /> 你是 <strong>{{ promo.rank }} 級</strong>冒險者・功績 {{ promo.merit }}<template v-if="promo.next">・升 {{ promo.next }} 級需要功績 {{ promo.needMerit }}、等級 {{ promo.needLevel }}</template>
             </div>
-            <div v-if="exam" class="hot">📜 晉升考核：{{ exam.title }}（{{ exam.status === 'available' ? '在委託板上，可以接取' : exam.status === 'ready' ? '完成了，可以交付' : '進行中' }}）</div>
+            <div v-if="exam" class="hot"><GameIcon name="scroll" :size="14" /> 晉升考核：{{ exam.title }}（{{ exam.status === 'available' ? '在委託板上，可以接取' : exam.status === 'ready' ? '完成了，可以交付' : '進行中' }}）</div>
             <div v-else-if="promo.next" class="muted">功績與等級都夠了，公會就會發晉升考核；通過才升階。交付委託（依委託階級）、打倒地下城層主、完成特殊任務都有功績。</div>
           </div>
-          <FoldSection id="guild.board" title="📋 委託板" :count="quests.length">
+          <FoldSection id="guild.board" title="委託板" :count="quests.length">
           <ul class="plain">
             <li class="muted small">委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。</li>
             <li v-if="quests.length === 0" class="muted small">目前沒有委託。</li>
@@ -344,7 +352,7 @@ const shopDesc = computed(() => {
       <StoryPanel />
 
       <section v-if="activeQuests.length" class="panel">
-        <FoldSection id="quests.active" title="📜 進行中的委託" :count="activeQuests.length" level="h3">
+        <FoldSection id="quests.active" title="進行中的委託" :count="activeQuests.length" level="h3">
         <ul class="plain small">
           <li v-for="q in activeQuests" :key="q.id">
             <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ questProgressText(s, q) }}）
@@ -356,19 +364,22 @@ const shopDesc = computed(() => {
       </section>
 
       <section v-if="canTravelHere(s)" class="panel">
-        <h3>🧳 啟程旅行</h3>
-    <details v-for="g in destinations" :key="g.region.id" :open="g.region.id === here.region">
-      <summary>{{ g.region.name }}</summary>
-      <ul class="plain">
-        <li v-for="d in g.items" :key="d.id" class="row" style="justify-content: space-between">
-          <span>
-            {{ locationById(d.id).name }}
-            <span v-if="locationById(d.id).type === 'dungeon'" class="tag" :title="layerRankText(d.id)">冒險區域・{{ layerRankText(d.id) }}</span>
-            <span class="small muted">・{{ daysText(d.path.days) }}・{{ routeText(d.path) }}</span>
-          </span>
-          <button class="small" @click="go(d.id)">前往</button>
-        </li>
-      </ul>
+        <h3 class="place-title"><GameIcon name="compass" :size="18" />啟程旅行</h3>
+        <details v-for="g in destinations" :key="g.region.id" :open="g.region.id === here.region" class="region">
+          <summary>{{ g.region.name }} <span class="muted small">（{{ g.items.length }}）</span></summary>
+          <table class="dest">
+            <tr v-for="d in g.items" :key="d.id">
+              <td class="n">
+                {{ locationById(d.id).name }}
+                <span v-if="locationById(d.id).type === 'dungeon'" class="tiers" :title="`冒險區域・${layerRankText(d.id)}`">
+                  <i v-for="r in layerRanks(d.id)" :key="r.layer" :style="{ background: RANK_COLOR[r.rank] }">{{ r.rank }}</i>
+                </span>
+                <div class="route muted">{{ routeText(d.path) }}<template v-if="fareOf(d.path) > 0">・船資每人 {{ formatMoney(fareOf(d.path)) }}</template></div>
+              </td>
+              <td class="days">{{ daysText(d.path.days) }}</td>
+              <td class="go"><button class="small" @click="go(d.id)">前往</button></td>
+            </tr>
+          </table>
         </details>
       </section>
     </div>
@@ -383,4 +394,15 @@ const shopDesc = computed(() => {
 .qty { width: 56px; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
 details summary { cursor: pointer; padding: 4px 0; color: var(--accent-2); }
+.place-title { display: flex; align-items: center; gap: 6px; }
+.place-title :deep(.game-icon) { color: var(--accent); }
+.dest { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.dest td { padding: 6px 4px; border-bottom: 1px solid #ffffff0a; vertical-align: middle; }
+.dest .n { font-weight: 600; }
+.dest .route { font-weight: 400; font-size: var(--fs-xs); }
+.dest .days { white-space: nowrap; color: var(--muted); text-align: right; }
+.dest .go { width: 1%; text-align: right; }
+.dest .go button { white-space: nowrap; }
+.tiers { display: inline-flex; gap: 2px; margin-left: 4px; vertical-align: 1px; }
+.tiers i { font-style: normal; font-size: 10px; width: 15px; line-height: 15px; text-align: center; font-weight: 700; color: #111; }
 </style>

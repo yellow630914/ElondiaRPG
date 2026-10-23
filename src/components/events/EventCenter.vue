@@ -58,7 +58,7 @@ function openParty() {
 </script>
 
 <template>
-  <AppDialog :open="eventDialogOpen && !!current" :title="events.length > 1 ? `需要你處理的事（還有 ${events.length - 1} 件）` : '需要你處理的事'" icon="🔔" width="720px" @close="eventDialogOpen = false">
+  <AppDialog :open="eventDialogOpen && !!current" :title="events.length > 1 ? `需要你處理的事（還有 ${events.length - 1} 件）` : '需要你處理的事'" icon="bell" width="720px" @close="eventDialogOpen = false">
     <div v-if="current" class="event-center">
       <DefeatEventPanel v-if="current.kind === 'defeat'" />
       <StandoffPanel v-else-if="current.kind === 'standoff'" />

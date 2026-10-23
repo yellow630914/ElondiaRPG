@@ -1,0 +1,32 @@
+{
+  "$comment": "遊戲用到的第三方素材與授權。首頁「素材授權與致謝」依這份顯示；新增素材時一併登記（CC BY 等要求標示作者的一定要列）。",
+  "version": 1,
+  "sections": [
+    {
+      "title": "圖示",
+      "items": [
+        {
+          "name": "Pixelarticons",
+          "author": "Gerrit Halfmann",
+          "license": "MIT",
+          "url": "https://github.com/halfmage/pixelarticons",
+          "use": "介面圖示",
+          "note": "Copyright (c) 2019 Gerrit Halfmann. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, subject to the condition that the above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND."
+        }
+      ]
+    },
+    {
+      "title": "字型",
+      "items": [
+        { "name": "Noto Serif TC", "author": "Google", "license": "OFL 1.1", "url": "https://fonts.google.com/noto/specimen/Noto+Serif+TC", "use": "內文與標題" },
+        { "name": "霞鶩文楷 TC（LXGW WenKai TC）", "author": "LXGW", "license": "OFL 1.1", "url": "https://github.com/lxgw/LxgwWenkaiTC", "use": "敘事正文" }
+      ]
+    },
+    {
+      "title": "本專案自製",
+      "items": [
+        { "name": "金框紋飾、羊皮紙紋理、地圖格", "author": "埃隆迪亞大陸", "license": "專案授權", "use": "介面" }
+      ]
+    }
+  ]
+}

@@ -915,6 +915,17 @@ export function conditionName(id: string): string {
   return companionRules.conditions[id]?.name ?? statuses[id]?.name ?? id
 }
 
+/** 狀態是好是壞（介面上色用）：檢定減值是壞的；加值、暫時生命、用餐是好的；戰鬥狀態看 kind */
+export function conditionTone(id: string): 'good' | 'bad' | 'plain' {
+  const c = companionRules.conditions[id]
+  if (c) {
+    if ((c.check_penalty ?? 0) > 0) return 'bad'
+    return (c.check_penalty ?? 0) < 0 || c.combat_temp_hp || c.group ? 'good' : 'plain'
+  }
+  const st = statuses[id]
+  return st ? (st.kind === 'buff' ? 'good' : 'bad') : 'plain'
+}
+
 export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal'
 export interface ContractDef {
   name: string

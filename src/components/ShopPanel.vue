@@ -61,7 +61,7 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
     </p>
     <button class="primary open" @click="showDialog = true">🛒 進入交易</button>
 
-    <AppDialog :open="showDialog" :title="shopDef(type).name" icon="🛒" width="1180px" @close="showDialog = false">
+    <AppDialog :open="showDialog" :title="shopDef(type).name" icon="store" width="1180px" @close="showDialog = false">
       <ShopDialog :type="type" :loading="loading" />
     </AppDialog>
 
