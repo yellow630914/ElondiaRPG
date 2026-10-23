@@ -6,6 +6,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // 相對路徑：建置結果放在任何路徑底下都能用（例如 GitHub Pages 的 https://<帳號>.github.io/ElondiaRPG/）
+  base: './',
   plugins: [
     vue(),
     vueDevTools(),
