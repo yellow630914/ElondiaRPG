@@ -13,7 +13,8 @@ import {
   builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinTattoo, builtinMark, builtinMarkRules,
 } from '@/engine/mods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
-import { perkRules, shopRules, slaveryRules, type ShopType } from '@/engine/data'
+import { itemRules, perkRules, shopRules, slaveryRules, type ItemCategory, type ShopType } from '@/engine/data'
+import { sanitizeIcon } from '@/engine/itemIcons'
 import { npcModFromState } from '@/engine/promoteNpc'
 import { builtinLandmark, landmarkSpotProblem, landmarkUsage, sanitizeLandmarkMod, type LandmarkMod } from '@/engine/landmarkMods'
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
@@ -57,9 +58,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules']
+const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'categoryIcons']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定',
+  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', categoryIcons: '類別圖示',
 }
 
 export interface ModsDiffEntry {
@@ -79,6 +80,7 @@ export interface ModsDiff {
 function modLabel(section: Section, id: string, v: unknown): string {
   const o = v as { name?: string; title?: string }
   if (section === 'markRules') return MOD_SECTION_NAMES[section]
+  if (section === 'categoryIcons') return `${MOD_SECTION_NAMES[section]}「${itemRules.categories[id as ItemCategory] ?? id}」`
   if (section === 'shops') return `${MOD_SECTION_NAMES[section]}「${shopRules.types[id as ShopType]?.name ?? id}」`
   const name = section === 'items' ? id : o.title ?? o.name ?? id
   return `${MOD_SECTION_NAMES[section]}「${name}」`
@@ -133,11 +135,16 @@ export const useContent = defineStore('content', () => {
     return id === VANILLA ? VANILLA_NAME : worlds.value.find((w) => w.id === id)?.name ?? '（已刪除的世界）'
   }
 
+  /** 上次寫進瀏覽器失敗（通常是上傳的圖示太多，超過 localStorage 的容量） */
+  const persistFailed = ref(false)
+
   function persist() {
     try {
       localStorage.setItem(WORLDS_KEY, JSON.stringify({ active: active.value, worlds: worlds.value }))
+      persistFailed.value = false
     } catch {
       // 寫不進去時只在本次有效
+      persistFailed.value = true
     }
   }
 
@@ -739,6 +746,22 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 類別圖示 ----
+
+  /** 換一個類別的圖示（沒有 icon 時換回內建的） */
+  function saveCategoryIcon(category: ItemCategory, icon: string | undefined) {
+    const clean = sanitizeIcon(icon)
+    if (icon && !clean) throw new Error('圖示太大或格式不對')
+    const map = (mods.value.categoryIcons ??= {})
+    if (clean) map[category] = { icon: clean }
+    else delete map[category]
+    save()
+  }
+  function restoreCategoryIcons() {
+    mods.value.categoryIcons = {}
+    save()
+  }
+
   // ---- 特質 ----
 
   function savePerk(id: string, draft: Partial<PerkMod>) {
@@ -855,7 +878,7 @@ export const useContent = defineStore('content', () => {
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
-    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveEventRules, restoreEventRules,
+    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveEventRules, restoreEventRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

@@ -16,6 +16,8 @@ import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import { useSettings } from '@/stores/settings'
 import JudgeToggle from './JudgeToggle.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 import { eventDialogOpen } from './events/eventQueue'
 import { contractOf } from '@/engine/tattoos'
 
@@ -56,11 +58,19 @@ watch([partyTargets, nearTargets], ([party, near]) => {
 }, { immediate: true })
 
 const use = ref('')
+const freeBox = ref<HTMLTextAreaElement | null>(null)
+/** 文字框隨內容長高（最多約 6 行） */
+function grow(e: Event) {
+  const el = e.target as HTMLTextAreaElement
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight + 2, 160)}px`
+}
 function doFree() {
   const u = parseUse(use.value)
   void game.perform({ kind: 'free', text: text.value, ...(target.value ? { target: target.value } : {}), ...(u ? { use: u } : {}) })
   text.value = ''
   use.value = ''
+  if (freeBox.value) freeBox.value.style.height = ''
   // 對象每次重選：不然下一個沒有對象的行動會被算在上一個人身上
   target.value = ''
 }
@@ -111,7 +121,7 @@ const pendingMark = computed(() => s.value.pendingMark)
 
 <template>
   <section v-if="pending" class="panel pending">
-    <h3>🎲 {{ actionRules.kinds[pending.kind].name }}<template v-if="pending.targetName">（{{ pending.targetName }}）</template></h3>
+    <h3><GameIcon name="d20" :size="16" /> {{ actionRules.kinds[pending.kind].name }}<template v-if="pending.targetName">（{{ pending.targetName }}）</template></h3>
     <p v-if="pending.text" class="small">「{{ pending.text }}」</p>
     <p v-if="pending.offer_cc !== undefined" class="small">出價：{{ formatMoney(pending.offer_cc) }}</p>
     <p v-if="pending.item" class="small">禮物：{{ pending.item }}</p>
@@ -140,19 +150,20 @@ const pendingMark = computed(() => s.value.pendingMark)
   </section>
 
   <section v-else-if="pendingMark" class="panel pending">
-    <h3>🔥 刻下契約印記</h3>
+    <h3><GameIcon name="fire" :size="16" /> 刻下契約印記</h3>
     <p class="small">要先面對刻印，才能做別的事。</p>
-    <button class="small primary" @click="eventDialogOpen = true">🔔 開啟事件視窗</button>
+    <button class="small primary" @click="eventDialogOpen = true"><GameIcon name="bell" :size="14" /> 開啟事件視窗</button>
   </section>
 
   <section v-else class="panel action-panel">
     <div class="row head">
-      <h3>🎲 主動行動</h3>
+      <h3><GameIcon name="d20" :size="16" />主動行動</h3>
       <JudgeToggle />
+      <Hint :text="`用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，${aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）'}。`" />
     </div>
     <template v-if="contract && bound">
-      <p class="small mark pre">⛓️ {{ contract.summary }}</p>
-      <p v-if="homeLine" class="small muted">🏚️ {{ homeLine }}<template v-if="strict">（嚴加看管 {{ strict }} 點：出門與出城的 DC +{{ strict }}）</template></p>
+      <p class="small mark pre"><GameIcon name="lock" :size="13" /> {{ contract.summary }}</p>
+      <p v-if="homeLine" class="small muted"><GameIcon name="building" :size="13" /> {{ homeLine }}<template v-if="strict">（嚴加看管 {{ strict }} 點：出門與出城的 DC +{{ strict }}）</template></p>
       <p v-if="atHome" class="small muted">
         {{ mayLeave ? `${contract.masterName}今天同意你出門。` : houseRefused ? `${contract.masterName}今天不准你出門。` : `要走出大門，先請求${contract.masterName}同意（${attrName(slaveryRules.master_home.leave.attr)}檢定，參考 DC ${leaveDc(s)}）。` }}
       </p>
@@ -171,12 +182,12 @@ const pendingMark = computed(() => s.value.pendingMark)
       <hr />
     </template>
     <template v-else-if="contract && enslaved">
-      <p class="small mark pre">⛓️ {{ contract.summary }}</p>
+      <p class="small mark pre"><GameIcon name="lock" :size="13" /> {{ contract.summary }}</p>
       <p v-if="fugitive" class="small mark">
         你是逃亡奴隸：公會與神殿不接待你（解除印記除外），旅店加價{{ contract.def.functions.includes('tracking') ? `，每次休息都可能被${contract.masterName}找到` : '' }}。
       </p>
       <p v-else class="small muted">你沒有主人：印記還在，但沒有人牽著鏈子，行動不受限制。</p>
-      <p v-if="whereabouts" class="small muted">🧭 {{ whereabouts }}</p>
+      <p v-if="whereabouts" class="small muted"><GameIcon name="compass" :size="13" /> {{ whereabouts }}</p>
       <textarea v-model="freedomText" rows="2" placeholder="描述你的做法：怎麼向主人認錯或談條件、怎麼請人收下你，或怎麼撐過解除印記的痛" />
       <AbilityPicker v-model="use" />
       <div v-if="nearMaster" class="row">
@@ -197,7 +208,7 @@ const pendingMark = computed(() => s.value.pendingMark)
           <br /><span class="muted">{{ o.desc }}</span>
         </li>
       </ul>
-      <p v-else class="small muted">要解除印記：到神殿（要有聲望，便宜）、王都與有黑市的城市的刻印師（很貴），或請身邊（或隊伍裡）的法師（契約解除，紋樣留下來變成普通刺青）。</p>
+      <p v-else class="small muted">這裡沒有人能解除印記 <Hint text="要解除印記：到神殿（要有聲望，便宜）、王都與有黑市的城市的刻印師（很貴），或請身邊（或隊伍裡）的法師（契約解除，紋樣留下來變成普通刺青）。" /></p>
       <hr />
     </template>
     <template v-if="oathOffers.length">
@@ -210,11 +221,8 @@ const pendingMark = computed(() => s.value.pendingMark)
       </ul>
       <hr />
     </template>
-    <p class="small muted">
-      用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，{{ aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）' }}。
-    </p>
-    <div class="row">
-      <select v-model="target">
+    <div class="pick">
+      <select v-model="target" title="對象">
         <option value="">（沒有特定對象）</option>
         <optgroup v-if="partyTargets.length" label="隊伍">
           <option v-for="t in partyTargets" :key="t.id" :value="t.id">{{ t.name }}</option>
@@ -223,20 +231,28 @@ const pendingMark = computed(() => s.value.pendingMark)
           <option v-for="t in nearTargets" :key="t.id" :value="t.id">{{ t.name }}・{{ t.note }}</option>
         </optgroup>
         <optgroup v-if="farTargets.length" label="這一區（要先走近）">
-          <option v-for="t in farTargets" :key="t.id" :value="t.id" disabled>{{ t.name }}・{{ t.note }}・📍{{ t.dist }} 格</option>
+          <option v-for="t in farTargets" :key="t.id" :value="t.id" disabled>{{ t.name }}・{{ t.note }}・{{ t.dist }} 格</option>
         </optgroup>
       </select>
+      <AbilityPicker v-model="use" />
     </div>
-    <textarea v-model="text" rows="2" placeholder="例如：買一份甜點給莉娜，順便問她怕水的原因" />
-    <AbilityPicker v-model="use" />
-    <button class="small primary" :disabled="!text.trim() || game.judging" @click="doFree">行動</button>
+    <div class="send">
+      <textarea ref="freeBox" v-model="text" class="free" rows="1" placeholder="例如：買一份甜點給莉娜，順便問她怕水的原因" @input="grow" />
+      <button class="primary" :disabled="!text.trim() || game.judging" @click="doFree">行動</button>
+    </div>
   </section>
 </template>
 
 <style scoped>
 .pending { border-color: var(--accent); }
-.head { justify-content: space-between; }
-.head h3 { margin: 0; }
+.action-panel { padding: 12px 14px; }
+.head { gap: 8px; margin-bottom: 8px; }
+.head h3 { margin: 0; display: flex; align-items: center; gap: 6px; flex: 1; }
+.head h3 :deep(.game-icon) { color: var(--accent); }
+.pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.send { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
+.send textarea.free { margin: 6px 0 0; min-height: 36px; resize: none; overflow-y: auto; }
+.send button { margin-top: 6px; }
 .dice { color: var(--accent); font-size: 1.2rem; }
 .totals { gap: 12px; }
 .totals .def { color: var(--accent); }

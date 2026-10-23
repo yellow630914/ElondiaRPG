@@ -917,6 +917,17 @@ export function conditionName(id: string): string {
   return companionRules.conditions[id]?.name ?? statuses[id]?.name ?? id
 }
 
+/** 狀態是好是壞（介面上色用）：檢定減值是壞的；加值、暫時生命、用餐是好的；戰鬥狀態看 kind */
+export function conditionTone(id: string): 'good' | 'bad' | 'plain' {
+  const c = companionRules.conditions[id]
+  if (c) {
+    if ((c.check_penalty ?? 0) > 0) return 'bad'
+    return (c.check_penalty ?? 0) < 0 || c.combat_temp_hp || c.group ? 'good' : 'plain'
+  }
+  const st = statuses[id]
+  return st ? (st.kind === 'buff' ? 'good' : 'bad') : 'plain'
+}
+
 export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal'
 export interface ContractDef {
   name: string
@@ -1274,6 +1285,8 @@ export interface ItemDef {
   seed?: SeedSpec
   /** 主人會強制主角裝上這件裝備（主人的事件 force_equip）；tags：只有這些身分的主人會用（沒有時任何主人） */
   master_force?: { tags?: string[] }
+  /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用底材或類別的圖示 */
+  icon?: string
 }
 
 /** 配方：用哪種工藝的幾級、哪些材料，做出幾份這件物品 */
@@ -1419,6 +1432,16 @@ export const shopRules = shopsJson as unknown as {
   ai_caps: { affinity: number; reputation: number; price_floor_ratio: number; deals: number; stock: number }
   bargain: { base: number; price_factor: Record<Degree, number> }
   types: Record<ShopType, ShopTypeDef>
+  /** 店名與描述的生成規則（見 shopNames.ts） */
+  naming: ShopNaming
+}
+/** 店名的字詞：地區 → 字詞、氛圍，可以改店型的後綴；手寫覆寫依地點 */
+export interface ShopNaming {
+  suffix: Record<string, string[]>
+  regions: Record<string, { words: string[]; air: string[]; suffix?: Record<string, string[]> }>
+  desc: Record<string, string[]>
+  greeting: Record<string, string[]>
+  overrides: Record<string, Record<string, { name?: string; desc?: string; greeting?: string }>>
 }
 
 export interface NegotiationOutcome { text: string; effects: RewardEffect[] }

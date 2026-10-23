@@ -32,6 +32,15 @@ import WorkPanel from './WorkPanel.vue'
 import TrainPanel from './TrainPanel.vue'
 import { checkBonus } from '@/engine/perks'
 import CraftPanel from './CraftPanel.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
+import type { IconName } from './ui/iconPaths'
+import AppDialog from './AppDialog.vue'
+import SceneBanner from './place/SceneBanner.vue'
+import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
+import { shopKindName, shopTitle, type NamedShop } from '@/engine/shopNames'
+import { shopPlace, shopTypeForCell } from '@/engine/trade'
+import { CELL_GAME_ICON, RANK_COLOR } from './ui/cellIcons'
 
 const game = useGame()
 const content = useContent()
@@ -51,7 +60,7 @@ const linkName = computed(() => {
   }
 })
 const lockTool = computed(() => bestTool(s.value, 'lockpick'))
-const LOCK_ICON: Record<LockMethod, string> = { dex: '🔓', str: '💪', int: '🧠' }
+const LOCK_ICON: Record<LockMethod, IconName> = { dex: 'unlock', str: 'hand', int: 'lightbulb' }
 function lockBonus(k: LockMethod): number {
   const picker = lockPicker(s.value, k)
   return mod(attrOf(picker, k)) + (k === 'dex' ? lockTool.value?.bonus ?? 0 : 0) + checkBonus(picker, { context: 'lock', attr: k })
@@ -126,9 +135,10 @@ function daysText(days: [number, number]) {
 function routeText(path: Path) {
   const modes = [...new Set(path.legs.map((l) => MODE_NAME[l.mode]))].join('/')
   const via = path.legs.slice(0, -1).map((l) => locationById(l.to).name)
-  const fare = path.legs.reduce((sum, l) => sum + legFare(l), 0)
-  const text = via.length ? `${modes}・經${via.join('、')}` : modes
-  return fare > 0 ? `${text}・船資每人 ${formatMoney(fare)}` : text
+  return via.length ? `${modes}・經${via.join('、')}` : modes
+}
+function fareOf(path: Path) {
+  return path.legs.reduce((sum, l) => sum + legFare(l), 0)
 }
 
 /** 地下城各層的階級，例如「淺層 E・中層 D・深層 C」 */
@@ -155,7 +165,45 @@ const shopHere = computed<ShopType | null>(() => {
   if ((SHOPS as readonly string[]).includes(k)) return k as (typeof SHOPS)[number]
   return isCustomShopId(k) && shopRules.types[k] ? k : null
 })
-// 商店的說明（shops.json 的 desc，內容頁籤可以改）
+// 店名、描述與招呼語（旅店也有）：見 engine/shopNames.ts
+const named = computed<NamedShop | null>(() => {
+  void content.version
+  return cell.value.kind === 'inn' ? 'inn' : shopTypeForCell(cell.value.kind)
+})
+const title = computed(() => {
+  void s.value.shopNames
+  return named.value ? shopTitle(s.value, shopPlace(s.value).id, named.value) : null
+})
+// 有場景橫幅的建築：有店名的店、旅店、公會
+const banner = computed(() => {
+  if (title.value && named.value) return { kind: named.value, name: title.value.name, tag: title.value.name !== shopKindName(named.value) ? shopKindName(named.value) : '' }
+  if (cell.value.kind === 'guild') return { kind: 'guild', name: cellName('guild'), tag: '' }
+  return null
+})
+// 神殿、雜貨店選單的其他項目（交易與折扣以外）
+const extraOpen = ref<'wash' | 'market' | null>(null)
+const templeMenu = computed<MenuItem[]>(() => [
+  {
+    id: 'heal', icon: 'heart', label: '神殿治療', detail: '受傷的隊員 HP 回滿（不回復法術環）',
+    badge: templeCost(s.value) ? formatMoney(templeCost(s.value)) : '不需要', disabled: templeCost(s.value) === 0 || s.value.money_cc < templeCost(s.value),
+  },
+  { id: 'wash', icon: 'feather', label: '洗刺青', detail: '要有聲望；奴隸印記要解除契約才能去掉' },
+])
+const marketName = computed(() => marketsHere(s.value).find((m) => m.kind === 'public')?.def.name ?? '市場')
+const generalMenu = computed<MenuItem[]>(() => (publicMarket.value ? [{ id: 'market', icon: 'users', label: marketName.value, detail: '公開的奴隸買賣' }] : []))
+function onExtra(id: string) {
+  if (id === 'heal') game.templeHeal()
+  else if (id === 'wash' || id === 'market') extraOpen.value = id
+}
+// 公會的選單：委託板在對話框裡
+const showBoard = ref(false)
+const guildMenu = computed<MenuItem[]>(() => [{
+  id: 'board', icon: 'scroll', label: '委託板',
+  detail: `${quests.value.filter((q) => q.status === 'available').length} 件可以接取${activeQuests.value.length ? `・進行中 ${activeQuests.value.length} 件` : ''}`,
+  badge: quests.value.filter((q) => canTurnIn(s.value, q)).length ? `${quests.value.filter((q) => canTurnIn(s.value, q)).length} 件可交付` : quests.value.length,
+  tone: quests.value.some((q) => canTurnIn(s.value, q)) ? 'gold' : undefined,
+}])
+// 商店的說明（shops.json 的 desc，內容頁籤可以改）：店名有自己的描述時收進「?」
 const shopDesc = computed(() => {
   void content.version
   return Object.values(shopRules.types).find((t) => t.cell === cell.value.kind)?.desc ?? landmarkDef(cell.value.kind)?.desc ?? ''
@@ -169,9 +217,23 @@ const shopDesc = computed(() => {
       <!-- 目前所在格子（房子裡由上面的房屋區塊顯示） -->
       <section v-if="area.kind !== 'road' && area.kind !== 'home'" class="panel">
         <!-- 特殊任務的任務點和地圖上一樣是 ⭐，不要顯示成委託地點 -->
-        <h3 v-if="cell.storyNode">⭐ 特殊任務的任務點</h3>
-        <h3 v-else>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
-        <p v-if="shopDesc" class="muted small">{{ shopDesc }}</p>
+        <h3 v-if="cell.storyNode" class="place-title"><GameIcon name="star" :size="18" />特殊任務的任務點</h3>
+        <SceneBanner v-else-if="banner" :kind="banner.kind" :name="banner.name" :tag="banner.tag" :icon="CELL_GAME_ICON[cell.kind]">
+          <Hint v-if="shopDesc && title?.desc" :text="shopDesc" />
+        </SceneBanner>
+        <h3 v-else class="place-title">
+          <GameIcon v-if="CELL_GAME_ICON[cell.kind]" :name="CELL_GAME_ICON[cell.kind]!" :size="18" />
+          <span v-else-if="ICON[cell.kind]">{{ ICON[cell.kind] }}</span>
+          <GameIcon v-else name="pin" :size="18" />
+          {{ title ? title.name : cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}
+          <span v-if="title && named && title.name !== shopKindName(named)" class="tag">{{ shopKindName(named) }}</span>
+          <Hint v-if="title && shopDesc && title.desc" :text="shopDesc" />
+        </h3>
+        <template v-if="title && title.desc">
+          <p class="shop-desc">{{ title.desc }}</p>
+          <p v-if="title.greeting" class="greeting small">「{{ title.greeting }}」</p>
+        </template>
+        <p v-else-if="shopDesc" class="muted small">{{ shopDesc }}</p>
         <p v-if="specialDef" class="muted small">{{ specialDef.name }}：{{ specialDef.desc }}</p>
 
         <template v-if="cell.kind === 'inn'">
@@ -179,15 +241,10 @@ const shopDesc = computed(() => {
         </template>
 
         <template v-else-if="cell.kind === 'temple'">
-          <p class="muted small">接受神殿治療：受傷的隊員 HP 回滿（不回復法術環）。</p>
-          <button :disabled="templeCost(s) === 0 || s.money_cc < templeCost(s)" @click="game.templeHeal()">
-            治療（{{ formatMoney(templeCost(s)) }}）
-          </button>
-          <ShopPanel :key="`temple-${s.location}-${s.time.day}`" type="temple" />
-          <details class="tavern-trade">
-            <summary class="small">🧼 洗刺青（要有聲望）</summary>
+          <ShopPanel :key="`temple-${s.location}-${s.time.day}`" type="temple" :extra="templeMenu" @extra="onExtra" />
+          <AppDialog :open="extraOpen === 'wash'" title="洗刺青" icon="feather" width="760px" @close="extraOpen = null">
             <TattooPanel shop="temple" />
-          </details>
+          </AppDialog>
         </template>
 
         <template v-else-if="cell.kind === 'tattoo'">
@@ -196,14 +253,16 @@ const shopDesc = computed(() => {
         </template>
 
         <template v-else-if="cell.kind === 'carver'">
-          <p class="muted small">刻誓約印記（屬性有加有減），也洗普通刺青與誓約印記；身上有奴隸印記時，可以付高價請刻印師燒掉（見主動行動的解除印記）。</p>
+          <p class="muted small">刻誓約印記，也洗刺青 <Hint text="誓約印記讓屬性有加有減；這裡也洗普通刺青與誓約印記。身上有奴隸印記時，可以付高價請刻印師燒掉（見主動行動的解除印記）。" /></p>
           <TattooPanel shop="carver" />
         </template>
 
         <template v-else-if="cell.kind === 'shop'">
-          <p class="muted small">乾糧可以吃來果腹（戰鬥開始時有一點暫時生命）；地下城的安全房長休每人要一份。目前持有 {{ rations }} 份。</p>
-          <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" />
-          <MarketPanel v-if="publicMarket" kind="public" />
+          <p class="muted small">乾糧持有 {{ rations }} 份 <Hint text="乾糧可以吃來果腹（戰鬥開始時有一點暫時生命）；地下城的安全房長休每人要一份。" /></p>
+          <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" :extra="generalMenu" @extra="onExtra" />
+          <AppDialog :open="extraOpen === 'market'" :title="marketName" icon="users" width="980px" @close="extraOpen = null">
+            <MarketPanel kind="public" />
+          </AppDialog>
         </template>
 
         <template v-else-if="shopHere">
@@ -212,23 +271,20 @@ const shopDesc = computed(() => {
 
         <template v-else-if="cell.kind === 'tavern'">
           <TavernPanel :key="`${s.location}-${s.time.day}`" />
-          <details class="tavern-trade">
-            <summary class="small">酒館的交易（餐點、情報……）</summary>
-            <ShopPanel :key="`tavern-${s.location}-${s.time.day}`" type="tavern" />
-          </details>
         </template>
 
         <template v-else-if="cell.kind === 'guild'">
           <div class="guild-rank small">
             <div>
-              🏅 你是 <strong>{{ promo.rank }} 級</strong>冒險者・功績 {{ promo.merit }}<template v-if="promo.next">・升 {{ promo.next }} 級需要功績 {{ promo.needMerit }}、等級 {{ promo.needLevel }}</template>
+              <GameIcon name="trophy" :size="14" /> 你是 <strong>{{ promo.rank }} 級</strong>冒險者・功績 {{ promo.merit }}<template v-if="promo.next">・升 {{ promo.next }} 級需要功績 {{ promo.needMerit }}、等級 {{ promo.needLevel }}</template>
             </div>
-            <div v-if="exam" class="hot">📜 晉升考核：{{ exam.title }}（{{ exam.status === 'available' ? '在委託板上，可以接取' : exam.status === 'ready' ? '完成了，可以交付' : '進行中' }}）</div>
+            <div v-if="exam" class="hot"><GameIcon name="scroll" :size="14" /> 晉升考核：{{ exam.title }}（{{ exam.status === 'available' ? '在委託板上，可以接取' : exam.status === 'ready' ? '完成了，可以交付' : '進行中' }}）</div>
             <div v-else-if="promo.next" class="muted">功績與等級都夠了，公會就會發晉升考核；通過才升階。交付委託（依委託階級）、打倒地下城層主、完成特殊任務都有功績。</div>
           </div>
-          <FoldSection id="guild.board" title="📋 委託板" :count="quests.length">
-          <ul class="plain">
-            <li class="muted small">委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。</li>
+          <BuildingMenu :items="guildMenu" @pick="showBoard = true" />
+          <AppDialog :open="showBoard" title="委託板" icon="scroll" width="900px" @close="showBoard = false">
+          <template #head><Hint text="委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。" /></template>
+          <ul class="plain board">
             <li v-if="quests.length === 0" class="muted small">目前沒有委託。</li>
             <li v-for="q in quests" :key="q.id">
               <div><span class="tag" :class="{ hot: isExam(q) }">{{ isExam(q) ? `晉升 ${q.rank}` : q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}</div>
@@ -236,7 +292,7 @@ const shopDesc = computed(() => {
                 報酬 {{ formatMoney(q.reward_cc) }}<template v-if="isMaterialQuest(q) && (q.max ?? q.goal) > q.goal">（可以過量交付到 {{ q.max }}{{ isCollectQuest(q) ? ' 份' : ' 次' }}，報酬依比例增加）</template>
                 <span v-if="q.status === 'available' && questDeadlineDays(q) !== undefined">・期限 {{ questDeadlineDays(q) }} 天</span>
                 <span v-if="q.status !== 'available'">・{{ questProgressText(s, q) }}</span>
-                <span v-if="q.status === 'accepted' && q.deadline">・⏳ {{ deadlineText(s, q.deadline) }}</span>
+                <span v-if="q.status === 'accepted' && q.deadline">・<GameIcon name="hourglass" :size="12" /> {{ deadlineText(s, q.deadline) }}</span>
               </div>
               <button
                 v-if="q.status === 'available'"
@@ -263,7 +319,7 @@ const shopDesc = computed(() => {
               <span v-else-if="q.flags?.negotiated" class="small muted">（已談過報酬）</span>
             </li>
           </ul>
-          </FoldSection>
+          </AppDialog>
         </template>
 
         <template v-else-if="cell.kind === 'gate'">
@@ -318,10 +374,12 @@ const shopDesc = computed(() => {
         </template>
 
         <template v-else-if="cell.kind === 'chest' && !cell.done && cell.lock">
-          <p class="muted small">🔒 上鎖的寶箱（DC {{ cell.lock }}）。選一種方式試著打開，由隊伍中那項屬性最高的人來做；失敗可以再試或換一種，每次 10 分鐘。{{ lockTool ? `開鎖時用${lockTool.name}（+${lockTool.bonus}）。` : '靈巧開鎖時，帶著開鎖類的工具會容易一點。' }}</p>
+          <p class="muted small"><GameIcon name="lock" :size="13" /> 上鎖的寶箱（DC {{ cell.lock }}）<template v-if="lockTool">・開鎖時用{{ lockTool.name }}（+{{ lockTool.bonus }}）</template>
+            <Hint :text="`選一種方式試著打開，由隊伍中那項屬性最高的人來做；失敗可以再試或換一種，每次 10 分鐘。${lockTool ? '' : '靈巧開鎖時，帶著開鎖類的工具會容易一點。'}`" />
+          </p>
           <div class="row lock-methods">
             <button v-for="(m, k) in LOCK_METHODS" :key="k" class="small" @click="game.pickLock(k)">
-              {{ LOCK_ICON[k] }} {{ m.name }} <span class="muted">（{{ attrName(k) }}・{{ lockPicker(s, k).name }} {{ signed(lockBonus(k)) }}）</span>
+              <GameIcon :name="LOCK_ICON[k]" :size="13" /> {{ m.name }} <span class="muted">（{{ attrName(k) }}・{{ lockPicker(s, k).name }} {{ signed(lockBonus(k)) }}）</span>
             </button>
           </div>
         </template>
@@ -344,7 +402,7 @@ const shopDesc = computed(() => {
       <StoryPanel />
 
       <section v-if="activeQuests.length" class="panel">
-        <FoldSection id="quests.active" title="📜 進行中的委託" :count="activeQuests.length" level="h3">
+        <FoldSection id="quests.active" title="進行中的委託" :count="activeQuests.length" level="h3">
         <ul class="plain small">
           <li v-for="q in activeQuests" :key="q.id">
             <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ questProgressText(s, q) }}）
@@ -356,19 +414,22 @@ const shopDesc = computed(() => {
       </section>
 
       <section v-if="canTravelHere(s)" class="panel">
-        <h3>🧳 啟程旅行</h3>
-    <details v-for="g in destinations" :key="g.region.id" :open="g.region.id === here.region">
-      <summary>{{ g.region.name }}</summary>
-      <ul class="plain">
-        <li v-for="d in g.items" :key="d.id" class="row" style="justify-content: space-between">
-          <span>
-            {{ locationById(d.id).name }}
-            <span v-if="locationById(d.id).type === 'dungeon'" class="tag" :title="layerRankText(d.id)">冒險區域・{{ layerRankText(d.id) }}</span>
-            <span class="small muted">・{{ daysText(d.path.days) }}・{{ routeText(d.path) }}</span>
-          </span>
-          <button class="small" @click="go(d.id)">前往</button>
-        </li>
-      </ul>
+        <h3 class="place-title"><GameIcon name="compass" :size="18" />啟程旅行</h3>
+        <details v-for="g in destinations" :key="g.region.id" :open="g.region.id === here.region" class="region">
+          <summary>{{ g.region.name }} <span class="muted small">（{{ g.items.length }}）</span></summary>
+          <table class="dest">
+            <tr v-for="d in g.items" :key="d.id">
+              <td class="n">
+                {{ locationById(d.id).name }}
+                <span v-if="locationById(d.id).type === 'dungeon'" class="tiers" :title="`冒險區域・${layerRankText(d.id)}`">
+                  <i v-for="r in layerRanks(d.id)" :key="r.layer" :style="{ background: RANK_COLOR[r.rank] }">{{ r.rank }}</i>
+                </span>
+                <div class="route muted">{{ routeText(d.path) }}<template v-if="fareOf(d.path) > 0">・船資每人 {{ formatMoney(fareOf(d.path)) }}</template></div>
+              </td>
+              <td class="days">{{ daysText(d.path.days) }}</td>
+              <td class="go"><button class="small" @click="go(d.id)">前往</button></td>
+            </tr>
+          </table>
         </details>
       </section>
     </div>
@@ -377,10 +438,25 @@ const shopDesc = computed(() => {
 <style scoped>
 .guild-rank { display: grid; gap: 2px; padding: 6px 8px; border: 1px dashed var(--accent); border-radius: var(--radius); margin-bottom: 6px; }
 .guild-rank .hot { color: var(--accent); }
+.board > li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 4px; }
+.board > li > div { flex-basis: 100%; }
 .tag.hot { border-color: var(--accent); color: var(--accent); }
 .lock-methods { display: flex; flex-wrap: wrap; gap: 4px; }
-.tavern-trade { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 6px; }
 .qty { width: 56px; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
 details summary { cursor: pointer; padding: 4px 0; color: var(--accent-2); }
+.place-title { display: flex; align-items: center; gap: 6px; }
+.place-title :deep(.game-icon) { color: var(--accent); }
+.place-title .tag { font-weight: normal; letter-spacing: 0; }
+.shop-desc { margin: 0 0 4px; font-family: var(--font-story); color: var(--text); opacity: 0.9; font-size: var(--fs-sm); line-height: 1.8; }
+.greeting { margin: 0 0 8px; padding-left: 10px; border-left: 2px solid var(--gold-lo); color: var(--muted); font-family: var(--font-story); }
+.dest { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.dest td { padding: 6px 4px; border-bottom: 1px solid #ffffff0a; vertical-align: middle; }
+.dest .n { font-weight: 600; }
+.dest .route { font-weight: 400; font-size: var(--fs-xs); }
+.dest .days { white-space: nowrap; color: var(--muted); text-align: right; }
+.dest .go { width: 1%; text-align: right; }
+.dest .go button { white-space: nowrap; }
+.tiers { display: inline-flex; gap: 2px; margin-left: 4px; vertical-align: 1px; }
+.tiers i { font-style: normal; font-size: 10px; width: 15px; line-height: 15px; text-align: center; font-weight: 700; color: #111; }
 </style>

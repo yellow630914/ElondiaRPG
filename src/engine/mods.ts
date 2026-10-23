@@ -28,6 +28,7 @@ import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialP
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
+import { sanitizeIcon, setCategoryIcons } from './itemIcons'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
 export type ChestLayer = DungeonLayerId
@@ -115,10 +116,17 @@ export interface ContentMods {
   /** 旅途事件與城鎮事件（整份）；eventRules 只有一筆 rules：路段機率、種類權重、城鎮事件的機率與冷卻 */
   travelEvents: Record<string, TravelEventMod>
   eventRules: Record<string, EventRulesMod>
+  /** 類別的圖示（依類別 id；舊的自訂內容沒有這一欄） */
+  categoryIcons: Record<string, CategoryIconMod>
+}
+
+/** 類別的圖示：玩家上傳的圖（data URL），沒有的類別用內建的圖 */
+export interface CategoryIconMod {
+  icon: string
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, categoryIcons: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -218,6 +226,7 @@ function restore() {
   restoreLandmarks()
   restoreSpecialMaps()
   restoreTravelEvents()
+  setCategoryIcons({})
   replaceRecord(abilities, snapshot.abilities)
   perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
@@ -539,6 +548,7 @@ export function applyContent(mods: ContentMods): string[] {
   // 旅途與城鎮事件（物品、特殊地圖、商店都套用之後：結果與設施會用到）
   tryEach('事件', mods.travelEvents ?? {}, (id, m) => applyTravelEvent(id, sanitizeTravelEvent(id, m, !!m.custom)))
   tryEach('事件設定', mods.eventRules ?? {}, (_id, m) => applyEventRules(sanitizeEventRules(m)))
+  setCategoryIcons(Object.fromEntries(Object.entries(mods.categoryIcons ?? {}).map(([k, v]) => [k, v.icon])))
   return problems
 }
 
@@ -763,6 +773,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t)),
   }
   if (str(raw.desc, 200)) out.desc = str(raw.desc, 200)
+  const icon = sanitizeIcon(raw.icon)
+  if (icon) out.icon = icon
   if (raw.min_location && LOCATIONS.includes(raw.min_location) && raw.min_location !== 'village') out.min_location = raw.min_location
   const use = sanitizeUse(raw.use)
   if (use) out.use = use
@@ -886,6 +898,8 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   for (const [k, v] of Object.entries(raw.resist_scale ?? {})) if (AFFINITY_KEYS().includes(k) && SCALES.includes(v)) rs[k] = v
   if (Object.keys(rs).length) out.resist_scale = rs as BaseDef['resist_scale']
   if (str(raw.desc, 120)) out.desc = str(raw.desc, 120)
+  const icon = sanitizeIcon(raw.icon)
+  if (icon) out.icon = icon
   // 指向別的武器、防具類型時複製原版的數值（不是目前世界改過的），名稱用底材的；
   // 內建底材只能指向自己原本的類型（改它的數值用 weaponDef、armorDef）：指向別的會讓所有用到這種類型的職業與 NPC 一起變
   const ref = <T>(id: string | undefined, own: string | undefined, table: Record<string, T>) => (id && (!builtin || id === own) ? table[id] : undefined)
@@ -1025,6 +1039,10 @@ export function normalizeMods(raw: unknown): ContentMods {
     if (typeof id === 'string' && id.length <= 60) out.travelEvents[id] = sanitizeTravelEvent(id, v, !!v.custom || !builtinTravelEvent(id), newShops)
   }
   if (r.eventRules?.rules) out.eventRules.rules = sanitizeEventRules(r.eventRules.rules)
+  for (const [k, v] of Object.entries(r.categoryIcons ?? {})) {
+    const icon = sanitizeIcon(v?.icon)
+    if (icon && CATEGORIES.includes(k as ItemCategory)) out.categoryIcons[k] = { icon }
+  }
   return out
 }
 

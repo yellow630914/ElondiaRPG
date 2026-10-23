@@ -33,7 +33,7 @@ const options = computed(() => {
 
 <template>
   <select v-model="model" class="ability-picker" title="搭配使用的能力會先花掉資源，再換取檢定加值">
-    <option value="">✨ 不搭配能力</option>
+    <option value="">不搭配能力</option>
     <option v-for="o in options" :key="o.value" :value="o.value" :disabled="!o.ok" :title="o.title">{{ o.label }}</option>
   </select>
 </template>

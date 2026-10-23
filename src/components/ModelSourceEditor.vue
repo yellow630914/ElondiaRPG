@@ -4,6 +4,8 @@ import {
   CACHE_MARKS, guessCacheMark, guessReasoningFormat, parseExtraBody, providerInfo, PROVIDERS, REASONING_FORMATS, REASONING_LEVELS, type ProviderId, type ReasoningLevel,
 } from '@/narrator/providerInfo'
 import { AI_FEATURES, useSettings } from '@/stores/settings'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // 一個模型來源的設定：服務、key、模型、最大輸出 tokens
 const props = defineProps<{ index: number }>()
@@ -178,20 +180,18 @@ function copyFrom(e: Event) {
         <span v-if="extraError" class="small" style="color: var(--danger)">{{ extraError }}</span>
       </label>
       <label v-if="source.provider === 'openai_compatible'">
-        提示詞快取標記
+        <span class="lab">提示詞快取標記
+          <Hint @click.prevent :width="320" text="有些服務要在請求裡標出快取斷點（cache_control）才會快取，例如 OpenRouter 上的 Gemini 與 Claude、阿里雲百煉的通義千問；DeepSeek、OpenAI 會自動快取。標在不太變動的 system 部分；Gemini 要 system 超過約 4096 tokens 才會寫入快取，判定請求的 system 較短，通常只有敘事請求用得到。命中時日誌的用量會顯示「快取」。" />
+        </span>
         <select v-model="cfg.cacheMark">
           <option v-for="c in CACHE_MARKS" :key="c.id" :value="c.id === 'auto' ? undefined : c.id">{{ c.name }}</option>
         </select>
         <span v-if="!cfg.cacheMark || cfg.cacheMark === 'auto'" class="small muted">目前判斷為：{{ cacheGuess }}</span>
-        <span class="small muted">
-          有些服務要在請求裡標出快取斷點（cache_control）才會快取，例如 OpenRouter 上的 Gemini 與 Claude、阿里雲百煉的通義千問；DeepSeek、OpenAI 會自動快取。
-          標在不太變動的 system 部分；Gemini 要 system 超過約 4096 tokens 才會寫入快取，判定請求的 system 較短，通常只有敘事請求用得到。命中時日誌的用量會顯示「快取」。
-        </span>
       </label>
     </fieldset>
 
-    <p class="small" :style="{ color: settings.sourceReady(index) ? 'var(--good)' : 'var(--muted)' }">
-      {{ settings.sourceReady(index) ? '✓ 設定完成' : '尚未完成設定' }}・{{ used.length ? `用於：${used.join('、')}` : '目前沒有功能使用這個來源' }}
+    <p class="small status" :style="{ color: settings.sourceReady(index) ? 'var(--good)' : 'var(--muted)' }">
+      <GameIcon v-if="settings.sourceReady(index)" name="check" :size="14" />{{ settings.sourceReady(index) ? '設定完成' : '尚未完成設定' }}・{{ used.length ? `用於：${used.join('、')}` : '目前沒有功能使用這個來源' }}
     </p>
   </div>
 </template>
@@ -203,5 +203,6 @@ function copyFrom(e: Event) {
 .reasoning { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; display: grid; gap: 8px; }
 .reasoning legend { color: var(--accent); padding: 0 4px; }
 .reasoning textarea { width: 100%; font-family: monospace; }
+.lab, .status { display: flex; align-items: center; gap: 4px; }
 label.check { display: inline-flex !important; gap: 6px; align-items: center; }
 </style>

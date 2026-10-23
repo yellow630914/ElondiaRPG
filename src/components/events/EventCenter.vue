@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useGame } from '@/stores/game'
 import AppDialog from '../AppDialog.vue'
+import Hint from '../ui/Hint.vue'
 import DefeatEventPanel from '../DefeatEventPanel.vue'
 import MasterEventPanel from '../MasterEventPanel.vue'
 import StandoffPanel from '../StandoffPanel.vue'
@@ -14,7 +15,7 @@ import { activeEvents, eventDialogOpen, snoozed, type GameEvent } from './eventQ
 
 // 事件視窗：需要回應的事件（見 eventQueue.ts）一件一件處理。有新的事件時自動打開；
 // 擋住行動的事件排在前面，不能「稍後」；關掉視窗後畫面上方顯示待處理的件數，移動或休息被擋住時再打開
-const emit = defineEmits<{ 'open-party': []; 'open-relations': [] }>()
+const emit = defineEmits<{ 'open-party': [member?: string]; 'open-relations': [] }>()
 const game = useGame()
 const events = computed(() => activeEvents(game.state))
 const current = computed(() => events.value[0])
@@ -51,14 +52,14 @@ function later() {
   if (!e || e.blocking) return
   snoozed.value = new Set([...snoozed.value, e.id])
 }
-function openParty() {
+function openParty(member?: string) {
   eventDialogOpen.value = false
-  emit('open-party')
+  emit('open-party', member)
 }
 </script>
 
 <template>
-  <AppDialog :open="eventDialogOpen && !!current" :title="events.length > 1 ? `需要你處理的事（還有 ${events.length - 1} 件）` : '需要你處理的事'" icon="🔔" width="720px" @close="eventDialogOpen = false">
+  <AppDialog :open="eventDialogOpen && !!current" :title="events.length > 1 ? `需要你處理的事（還有 ${events.length - 1} 件）` : '需要你處理的事'" icon="bell" width="720px" @close="eventDialogOpen = false">
     <div v-if="current" class="event-center">
       <DefeatEventPanel v-if="current.kind === 'defeat'" />
       <StandoffPanel v-else-if="current.kind === 'standoff'" />
@@ -71,7 +72,7 @@ function openParty() {
       <PerkOfferPanel v-else-if="current.kind === 'perk'" :refid="current.ref!" />
 
       <div class="row foot">
-        <span v-if="current.blocking" class="small muted">這件事要先處理，才能繼續移動或休息。可以先關掉視窗看看周圍，上方的 🔔 可以再打開。</span>
+        <span v-if="current.blocking" class="small muted">這件事要先處理，才能繼續移動或休息。<Hint text="可以先關掉視窗看看周圍，右上角的「待處理」可以再打開。" /></span>
         <template v-else>
           <button class="small" @click="later">稍後再說</button>
           <button v-if="current.kind === 'suggestion'" class="small" @click="eventDialogOpen = false; emit('open-relations')">開啟人際關係</button>

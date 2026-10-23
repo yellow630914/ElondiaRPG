@@ -8,6 +8,8 @@ import {
 } from '@/engine/tattoos'
 import type { TattooPlace } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // 刺青店（普通刺青）、刻印師（誓約印記）與神殿（只洗）：刺青與洗刺青
 const props = defineProps<{ shop: TattooShopId }>()
@@ -69,12 +71,10 @@ const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'sl
   <div class="tattoo-shop small">
     <p v-if="refusal" class="muted">{{ refusal }}</p>
     <template v-if="kind">
-      <h4>🖋️ 刺{{ tattooKindName(kind) }}</h4>
-      <p class="muted">
-        <template v-if="kind === 'oath'">誓約印記讓一些屬性變強、另一些變弱（加總為 0，每項最多 ±{{ tattooRules.oath.max_change }}、最多動 {{ tattooRules.oath.max_attrs }} 項，每人最多 {{ tattooRules.oath.max_per_character }} 個）。價格依加的總點數。</template>
-        <template v-else>只是外觀，會寫進給 AI 的主角資料。</template>
-        自己描述的圖樣另外加 {{ formatMoney(rules.custom_extra ?? 0) }}。
-      </p>
+      <h4>
+        <GameIcon name="feather" :size="14" />刺{{ tattooKindName(kind) }}
+        <Hint :text="`${kind === 'oath' ? `誓約印記讓一些屬性變強、另一些變弱（加總為 0，每項最多 ±${tattooRules.oath.max_change}、最多動 ${tattooRules.oath.max_attrs} 項，每人最多 ${tattooRules.oath.max_per_character} 個）。價格依加的總點數。` : '只是外觀，會寫進給 AI 的主角資料。'}自己描述的圖樣另外加 ${formatMoney(rules.custom_extra ?? 0)}。`" />
+      </h4>
       <div class="row">
         <select v-model="mode">
           <option v-for="[id, t] in templates" :key="id" :value="id">{{ t.name }}{{ t.attrs ? `（${oathText(t.attrs)}）` : '' }}</option>
@@ -100,7 +100,7 @@ const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'sl
       </div>
     </template>
 
-    <h4>🧼 洗刺青</h4>
+    <h4>洗刺青 <Hint text="奴隸印記要解除契約才能去掉（神殿、刻印師、法師；見「主動行動」的解除印記）。" /></h4>
     <ul v-if="washable.length" class="plain">
       <li v-for="{ t, price: p } in washable" :key="t.place">
         {{ placeName(t.place) }}・{{ tattooKindName(t.kind) }}【{{ tattooName(t) }}】
@@ -109,13 +109,13 @@ const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'sl
       </li>
     </ul>
     <p v-else class="muted">身上沒有可以洗的刺青。</p>
-    <p class="muted">奴隸印記要解除契約才能去掉（神殿、刻印師、法師；見「主動行動」的解除印記）。</p>
   </div>
 </template>
 
 <style scoped>
 .tattoo-shop { display: grid; gap: 6px; }
-.tattoo-shop h4 { margin: 6px 0 0; }
+.tattoo-shop h4 { margin: 6px 0 0; display: flex; align-items: center; gap: 6px; }
+.tattoo-shop h4 :deep(.game-icon) { color: var(--accent); }
 .custom { display: grid; gap: 4px; }
 .custom textarea { width: 100%; }
 .num { width: 52px; }

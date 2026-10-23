@@ -15,15 +15,17 @@ import AbilityPicker from './AbilityPicker.vue'
 import JudgeToggle from './JudgeToggle.vue'
 import FoldSection from './FoldSection.vue'
 import NameTag from './NameTag.vue'
+import Avatar from './ui/Avatar.vue'
+import GameIcon from './ui/GameIcon.vue'
 
 // 這裡的人：和主角同一個地點、同一個地區的 NPC（見 docs/NPC_SYSTEM.md 第 7 節）
 const game = useGame()
 const s = computed(() => game.state!)
 const people = computed(() => peopleHere(s.value))
 const groups = computed(() => [
-  { title: '🏪 店主與職員', items: people.value.filter((p) => p.staff) },
-  { title: '⚔️ 冒險者', items: people.value.filter((p) => !p.staff && p.kind === 'adventurer') },
-  { title: '🧺 普通人', items: people.value.filter((p) => !p.staff && p.kind === 'commoner') },
+  { key: 'staff', title: '店主與職員', items: people.value.filter((p) => p.staff) },
+  { key: 'adventurer', title: '冒險者', items: people.value.filter((p) => !p.staff && p.kind === 'adventurer') },
+  { key: 'commoner', title: '普通人', items: people.value.filter((p) => !p.staff && p.kind === 'commoner') },
 ].filter((g) => g.items.length))
 const where = computed(() => currentArea(s.value).name)
 // 等待判定、或有擋住行動的事件（刻印、主人的要求、戰敗事件）時，互動按鈕停用
@@ -129,53 +131,57 @@ async function hire(id: string) {
 <template>
   <section class="panel people">
     <div class="row head">
-      <h3>👥 這裡的人 <span class="small muted">{{ where }}・{{ people.length }} 人，身邊 {{ people.filter((p) => p.dist <= 1).length }} 人</span></h3>
+      <h3><GameIcon name="users" :size="18" />這裡的人 <span class="sub muted">{{ where }}・{{ people.length }} 人，身邊 {{ people.filter((p) => p.dist <= 1).length }} 人</span></h3>
       <JudgeToggle />
     </div>
     <p v-if="!people.length" class="small muted">這裡現在沒有別人。</p>
 
     <div class="groups">
-    <FoldSection v-for="g in groups" :id="`people.${g.title}`" :key="g.title" class="group" :title="g.title" :count="g.items.length">
+    <FoldSection v-for="g in groups" :id="`people.${g.key}`" :key="g.key" class="group" :title="g.title" :count="g.items.length">
       <ul class="plain">
         <li v-for="p in g.items" :key="p.rec.id" :class="{ open: open === p.rec.id, far: p.dist > 1 }">
           <div class="row line" @click="open = open === p.rec.id ? null : p.rec.id">
+            <Avatar :id="p.rec.id" :size="28" />
             <NameTag :id="p.rec.id" />
             <span class="small muted">{{ npcTitle(p.rec) }}</span>
             <span v-if="hostile(p)" class="tag small bad">敵對</span>
-            <span v-if="p.dist > 1" class="small muted">📍{{ p.dist }} 格</span>
+            <span v-if="p.dist > 1" class="tag">{{ p.dist }} 格</span>
             <span v-for="t in tagsOf(p.rec)" :key="t.name" class="tag small" :title="t.ai_hint">{{ t.emoji }}{{ t.name }}</span>
-            <span v-if="rel(p.rec.id)" class="small known" :title="`親密度 ${rel(p.rec.id)!.affinity}`">💞 {{ affinityStage(rel(p.rec.id)!.affinity) }}</span>
+            <span v-if="rel(p.rec.id)" class="tag known" :title="`親密度 ${rel(p.rec.id)!.affinity}`"><GameIcon name="heart" :size="11" />{{ affinityStage(rel(p.rec.id)!.affinity) }}</span>
           </div>
 
           <div v-if="open === p.rec.id" class="detail small">
             <div class="muted">{{ genderName(p.rec.gender) }}・{{ raceName(p.rec.race) }}<template v-if="p.rec.lineage">（{{ p.rec.lineage }}）</template>・{{ npcTitle(p.rec) }} Lv.{{ p.rec.level }}</div>
             <div v-if="p.rec.appearance" class="muted">{{ p.rec.appearance }}</div>
             <div v-if="rel(p.rec.id)" class="muted">{{ p.rec.personality }}</div>
-            <div v-if="rel(p.rec.id)" class="muted">🌟 {{ perksOf({ perks: npcPerksOf(p.rec), race: p.rec.race }).map((x) => (x.flaw ? `${x.name}（缺陷）` : x.name)).join('、') }}</div>
+            <div v-if="rel(p.rec.id)" class="muted">特質：{{ perksOf({ perks: npcPerksOf(p.rec), race: p.rec.race }).map((x) => (x.flaw ? `${x.name}（缺陷）` : x.name)).join('、') }}</div>
             <div v-if="rel(p.rec.id)?.toPlayer" class="muted">與你：{{ rel(p.rec.id)!.toPlayer }}</div>
 
             <p v-if="p.dist > 1" class="muted">{{ whereIs(p) }}。走到旁邊（相鄰的格子）才能互動。</p>
             <template v-else-if="!hostile(p)">
               <input v-model="text[p.rec.id]" placeholder="想說什麼、怎麼做（選填，會交給 AI 判定）" />
               <AbilityPicker v-model="use" />
-              <div class="row">
-                <button class="small" :disabled="busy" title="魅力檢定：聊得好會拉近關係，也可能聽到消息" @click="interact('chat', p)">💬 聊天</button>
-                <button class="small" :disabled="busy" title="魅力檢定：奉承、討好；失敗會降低親密度，對貴族更難" @click="interact('flatter', p)">🌹 獻媚</button>
-                <button class="small" :disabled="busy" title="在主動行動裡以這個人為對象，自由描述要做的事" @click="toAction(p)">🎲 主動行動</button>
+              <div class="row acts">
+                <button class="small" :disabled="busy" title="魅力檢定：聊得好會拉近關係，也可能聽到消息" @click="interact('chat', p)"><GameIcon name="message" :size="13" />聊天</button>
+                <button class="small" :disabled="busy" title="在主動行動裡以這個人為對象，自由描述要做的事" @click="toAction(p)"><GameIcon name="d20" :size="13" />主動行動</button>
                 <button v-if="p.kind === 'adventurer' && !p.staff" class="small" :disabled="busy || partyFull" @click="startHire(p.rec.id)">
-                  🤝 {{ hiring === p.rec.id ? '收起' : '雇用' }}
+                  <GameIcon name="hand" :size="13" />{{ hiring === p.rec.id ? '收起' : '雇用' }}
                 </button>
-              </div>
-              <div class="row">
-                <button class="small" :disabled="busy" title="靈巧檢定：偷錢或東西；被發現會降低親密度，在城裡還會提高衛兵警戒、降低聲望" @click="interact('steal', p)">🫳 偷竊</button>
-                <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" title="靈巧檢定：成功就先手開戰；被看到會有衛兵與聲望的後果" @click="attack(p)">🗡️ 偷襲</button>
+                <details class="more">
+                  <summary class="small" title="獻媚、偷竊、偷襲" aria-label="更多互動"><GameIcon name="more" :size="16" /></summary>
+                  <div class="more-list">
+                    <button class="small" :disabled="busy" title="魅力檢定：奉承、討好；失敗會降低親密度，對貴族更難" @click="interact('flatter', p)">獻媚</button>
+                    <button class="small" :disabled="busy" title="靈巧檢定：偷錢或東西；被發現會降低親密度，在城裡還會提高衛兵警戒、降低聲望" @click="interact('steal', p)">偷竊</button>
+                    <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" title="靈巧檢定：成功就先手開戰；被看到會有衛兵與聲望的後果" @click="attack(p)">偷襲</button>
+                  </div>
+                </details>
               </div>
               <div class="row">
                 <select v-model="gift[p.rec.id]" class="small">
                   <option :value="undefined">選擇禮物…</option>
                   <option v-for="i in gifts" :key="i.name" :value="i.name">{{ i.name }} ×{{ i.qty }}</option>
                 </select>
-                <button class="small" :disabled="busy || !gift[p.rec.id]" @click="interact('gift', p)">🎁 送禮</button>
+                <button class="small" :disabled="busy || !gift[p.rec.id]" @click="interact('gift', p)"><GameIcon name="gift" :size="13" />送禮</button>
                 <span class="muted">{{ giftHint(p.rec) }}</span>
               </div>
 
@@ -193,9 +199,9 @@ async function hire(id: string) {
             <template v-else>
               <p class="muted">{{ p.rec.name }}對你充滿敵意。</p>
               <div class="row">
-                <button class="small" :disabled="busy" @click="toAction(p)">🎲 主動行動</button>
-                <button class="small" :disabled="busy" @click="interact('steal', p)">🫳 偷竊</button>
-                <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" @click="attack(p)">🗡️ 偷襲</button>
+                <button class="small" :disabled="busy" @click="toAction(p)"><GameIcon name="d20" :size="13" />主動行動</button>
+                <button class="small" :disabled="busy" @click="interact('steal', p)">偷竊</button>
+                <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" @click="attack(p)">偷襲</button>
               </div>
             </template>
           </div>
@@ -209,14 +215,22 @@ async function hire(id: string) {
 
 <style scoped>
 .people .head { justify-content: space-between; }
-.people h3 { margin: 0; }
+.people h3 { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.people h3 :deep(.game-icon) { color: var(--accent); }
+.sub { font-size: var(--fs-xs); font-weight: normal; letter-spacing: 0; }
+.acts button, .detail .row button { display: inline-flex; align-items: center; gap: 4px; }
+.more { position: relative; }
+.more > summary { list-style: none; cursor: pointer; padding: 2px 6px; color: var(--muted); border: 1px solid transparent; border-radius: 3px; }
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary:hover, .more[open] > summary { color: var(--accent); border-color: var(--gold-lo); }
+.more-list { position: absolute; right: 0; top: 28px; z-index: 5; display: grid; gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--gold-lo); border-radius: 3px; box-shadow: 0 8px 20px #000a; }
 .groups { max-height: 460px; overflow-y: auto; padding-right: 4px; }
 .group :deep(.fold-head) { margin: 8px 0 2px; font-size: 0.9rem; }
 .line { gap: 6px; cursor: pointer; }
-.known { color: var(--accent); }
+.known { color: var(--accent); border-color: var(--gold-lo); }
 .bad { color: var(--danger); border-color: var(--danger); }
 li.far .line { opacity: 0.7; }
-li.open { background: var(--panel-2); border-radius: 6px; padding: 6px; }
+li.open { background: #c99a4510; outline: 1px solid var(--gold-lo); border-radius: 3px; padding: 6px; }
 .detail { display: grid; gap: 4px; margin-top: 4px; grid-template-columns: minmax(0, 1fr); }
 .detail input, .detail select { min-width: 0; }
 .detail > input { width: 100%; }

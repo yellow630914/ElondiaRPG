@@ -6,6 +6,8 @@ import { slotTitle, type SlotMeta } from '@/stores/saves'
 import { useGame, type ImportPreview } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import { download } from './download'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 const emit = defineEmits<{ loaded: [] }>()
 const game = useGame()
@@ -16,7 +18,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 onMounted(() => game.refreshSlots())
 
-const KIND: Record<SlotMeta['kind'], string> = { manual: '💾 手動', quick: '⚡ 快速', auto: '🔄 自動' }
+const KIND: Record<SlotMeta['kind'], string> = { manual: '手動', quick: '快速', auto: '自動' }
 const groups = computed(() => [
   { title: '手動存檔', items: game.slots.filter((m) => m.kind === 'manual') },
   { title: '快速存檔與自動存檔', items: game.slots.filter((m) => m.kind !== 'manual') },
@@ -127,17 +129,17 @@ function skipImport() {
     <section v-if="game.state" class="panel new">
       <div class="row">
         <input v-model="newName" placeholder="存檔名稱（選填，例如：進入蛇溪洞窟前）" maxlength="40" @keydown.enter="saveNew" />
-        <button class="primary" @click="saveNew">💾 新增存檔</button>
-        <button @click="game.quickSave()">⚡ 快速存檔</button>
-        <button @click="exportSlot()">📤 匯出目前進度</button>
+        <button class="primary" @click="saveNew"><GameIcon name="save" :size="15" /> 新增存檔</button>
+        <button @click="game.quickSave()"><GameIcon name="zap" :size="15" /> 快速存檔</button>
+        <button @click="exportSlot()"><GameIcon name="upload" :size="15" /> 匯出目前進度</button>
+        <Hint text="快捷鍵：F8 或 Ctrl+S 快速存檔，F9 快速讀檔。長休、抵達目的地與讀檔前會自動存檔（保留最近 3 份）。" />
       </div>
-      <p class="small muted">快捷鍵：F8 或 Ctrl+S 快速存檔，F9 快速讀檔。長休、抵達目的地與讀檔前會自動存檔（保留最近 3 份）。</p>
     </section>
 
     <div class="row tools">
-      <button class="small" @click="fileInput?.click()">📥 匯入存檔檔案</button>
+      <button class="small" @click="fileInput?.click()"><GameIcon name="download" :size="13" /> 匯入存檔檔案</button>
       <input ref="fileInput" type="file" accept=".json,application/json" multiple hidden @change="onFile" />
-      <span class="small muted">匯入的存檔會加到列表，不會直接讀取。遊戲中只能匯入同一個世界的存檔，其他世界的請回首頁匯入。</span>
+      <Hint text="匯入的存檔會加到列表，不會直接讀取。遊戲中只能匯入同一個世界的存檔，其他世界的請回首頁匯入。" />
     </div>
     <div class="row tools small">
       <span class="muted">匯出時附上：</span>
@@ -146,16 +148,16 @@ function skipImport() {
     </div>
 
     <section v-if="pending" class="panel importing">
-      <h3>📥 匯入「{{ pending.name }}」</h3>
+      <h3 class="head"><GameIcon name="download" :size="16" />匯入「{{ pending.name }}」</h3>
       <p class="small muted">{{ slotTitle(pending.preview.meta) }}<span v-if="queue.length > 1">（還有 {{ queue.length - 1 }} 個檔案）</span></p>
       <p v-if="pending.preview.newWorld" class="small">
-        🌍 這個存檔用的世界「{{ pending.preview.world?.name ?? '沒有記錄' }}」和這個瀏覽器的不同（或不存在）：會用存檔附帶的自訂內容建立新的世界「{{ pending.preview.newWorld }}」，存檔改用它。目前的世界不會變動。
+        <GameIcon name="world" :size="13" /> 這個存檔用的世界「{{ pending.preview.world?.name ?? '沒有記錄' }}」和這個瀏覽器的不同（或不存在）：會用存檔附帶的自訂內容建立新的世界「{{ pending.preview.newWorld }}」，存檔改用它。目前的世界不會變動。
       </p>
       <label v-if="pending.preview.portraits" class="check">
         <input v-model="withPortraitsIn" type="checkbox" /> 還原形象圖（{{ pending.preview.portraits }} 張）
       </label>
       <div class="row">
-        <button class="primary" @click="confirmImport">📥 匯入</button>
+        <button class="primary" @click="confirmImport"><GameIcon name="download" :size="15" /> 匯入</button>
         <button @click="skipImport">取消</button>
       </div>
     </section>
@@ -177,12 +179,12 @@ function skipImport() {
             </div>
             <div class="small">
               <NameTag :name="m.pcName" :race="m.race" :cls="m.cls" />
-              <span class="muted"> Lv.{{ m.level }}・{{ placeName(m.location) }}・{{ formatTime(m.time) }}・{{ m.party }} 人・{{ m.reports }} 則日誌<template v-if="m.world">・🌍 {{ m.world }}</template></span>
+              <span class="muted"> Lv.{{ m.level }}・{{ placeName(m.location) }}・{{ formatTime(m.time) }}・{{ m.party }} 人・{{ m.reports }} 則日誌<template v-if="m.world">・世界：{{ m.world }}</template></span>
             </div>
             <div class="small muted">存於 {{ when(m.savedAt) }}</div>
           </div>
           <div class="actions">
-            <button class="small primary" @click="load(m)">📂 讀取</button>
+            <button class="small primary" @click="load(m)"><GameIcon name="folder" :size="13" /> 讀取</button>
             <button v-if="game.state && m.kind === 'manual'" class="small" @click="overwrite(m)">覆寫</button>
             <button v-if="m.kind === 'manual'" class="small" @click="startRename(m)">改名</button>
             <button class="small" @click="exportSlot(m.id)">匯出</button>
@@ -195,6 +197,9 @@ function skipImport() {
 </template>
 
 <style scoped>
+.head { display: flex; align-items: center; gap: 6px; }
+.head :deep(.game-icon) { color: var(--accent); }
+button :deep(.game-icon) { vertical-align: -0.2em; }
 .saves { display: grid; gap: 10px; }
 .new input { flex: 1; min-width: 200px; }
 .new p { margin: 6px 0 0; }

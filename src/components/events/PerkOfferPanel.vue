@@ -4,6 +4,7 @@ import { attrName, perkDef, perkRules } from '@/engine/data'
 import { perkPower } from '@/engine/perks'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
+import GameIcon from '../ui/GameIcon.vue'
 
 // 取得特質的機會（升級、事件、特殊任務、訓練、物品）：從提供的特質選一個，
 // 或寫一段說法擲骰交給 AI 判斷（只在開啟 AI 判定時；每次機會一次）
@@ -32,7 +33,7 @@ function decline() {
 
 <template>
   <section v-if="m && offer" class="panel perk-offer small">
-    <h3>🌟 {{ m.name }}有機會學會特質</h3>
+    <h3 class="title"><GameIcon name="star" :size="16" />{{ m.name }}有機會學會特質</h3>
     <p class="muted">來源：{{ offer.source }}。特質一直生效，影響檢定與戰鬥。</p>
     <ul class="plain options">
       <li v-for="d in options" :key="d!.id" class="row">
@@ -50,7 +51,7 @@ function decline() {
           或者寫一段說法，爭取別的特質（{{ attrName(p.attr) }}檢定，參考 DC {{ p.dc }}）：AI 依說法合不合理判定，大成功可以比提供的稍強、成功一樣強、部分成功弱一點；失敗就只能從上面選。每次機會只能試一次。
         </p>
         <textarea v-model="text" rows="3" maxlength="400" :placeholder="`例如「這幾年跟著商隊跑遍各地，${m.name}比起打架，更懂得怎麼跟人討價還價」`" />
-        <button class="small" :disabled="!text.trim() || game.judging || !!game.state?.pendingAction" @click="pitch">🗣️ 爭取</button>
+        <button class="small" :disabled="!text.trim() || game.judging || !!game.state?.pendingAction" @click="pitch"><GameIcon name="message" :size="13" /> 爭取</button>
       </template>
       <p v-else class="muted">開啟 AI 判定後，可以寫一段說法爭取別的特質。</p>
     </div>
@@ -62,6 +63,8 @@ function decline() {
 <style scoped>
 .perk-offer { display: grid; gap: 6px; grid-template-columns: minmax(0, 1fr); }
 .perk-offer h3, .perk-offer p { margin: 0; }
+.title { display: flex; align-items: center; gap: 6px; }
+.title :deep(.game-icon) { color: var(--accent); }
 .options { display: grid; gap: 4px; margin: 0; padding-bottom: 2px; max-height: none; overflow: visible; }
 .options li { gap: 8px; align-items: center; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; }
 .grow { flex: 1; }

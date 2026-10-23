@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { buildWorkflow, checkWorkflow, COMFY_MODES, comfyServer, presetIssues, type ComfyLora } from '@/narrator/comfy'
 import { useImageSettings } from '@/stores/image'
+import GameIcon from './ui/GameIcon.vue'
 
 // ComfyUI 的設定組合：每個主模一組（Checkpoint、UNet 或自訂工作流程），
 // 清單從 ComfyUI 讀（/object_info），也可以從自己的工作流程匯入
@@ -107,26 +108,26 @@ async function check() {
           <option v-for="x in image.comfyPresets" :key="x.id" :value="x.id">{{ x.name }}</option>
         </select>
       </label>
-      <button class="small" title="新增一組" @click="image.addPreset()">＋ 新增</button>
-      <button class="small" title="複製這一組" @click="image.duplicatePreset()">⧉ 複製</button>
-      <button class="small" :disabled="image.comfyPresets.length <= 1" @click="remove">🗑️</button>
+      <button class="small" title="新增一組" @click="image.addPreset()"><GameIcon name="plus" :size="14" />新增</button>
+      <button class="small" title="複製這一組" @click="image.duplicatePreset()"><GameIcon name="copy" :size="14" />複製</button>
+      <button class="small" title="刪除這一組" aria-label="刪除這一組" :disabled="image.comfyPresets.length <= 1" @click="remove"><GameIcon name="trash" :size="14" /></button>
     </div>
     <label>名稱 <input :value="p.name" maxlength="30" @change="rename" /></label>
 
     <div class="row small">
-      <button class="small" :disabled="image.comfyLoading" @click="image.loadComfyOptions()">🔄 讀取 ComfyUI 清單</button>
+      <button class="small" :disabled="image.comfyLoading" @click="image.loadComfyOptions()"><GameIcon name="refresh" :size="14" />讀取 ComfyUI 清單</button>
       <span v-if="image.comfyLoading" class="muted">讀取中…</span>
       <span v-else-if="image.comfyError" class="warn-text">{{ image.comfyError }}</span>
       <span v-else-if="listSummary" class="muted">{{ listSummary }}</span>
     </div>
 
     <details class="import" :open="importOpen" @toggle="importOpen = ($event.target as HTMLDetailsElement).open">
-      <summary class="small">📥 從工作流程匯入（ComfyUI 選單的「Export (API)」）</summary>
+      <summary class="small"><GameIcon name="download" :size="14" /> 從工作流程匯入（ComfyUI 選單的「Export (API)」）</summary>
       <p class="small muted">讀出主模、文字編碼器、VAE、LoRA、取樣與高解析修復的設定，新增成一組。先讀取 ComfyUI 清單，LoRA 才對得到正確的檔名。</p>
       <textarea v-model="importText" rows="5" class="mono" spellcheck="false" placeholder="貼上 API 格式的工作流程 JSON" />
       <div class="row">
         <button class="small primary" :disabled="!importText.trim()" @click="doImport">匯入</button>
-        <button class="small" @click="fileInput?.click()">📁 選檔案</button>
+        <button class="small" @click="fileInput?.click()"><GameIcon name="folder" :size="14" />選檔案</button>
         <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onImportFile" />
       </div>
     </details>
@@ -184,9 +185,9 @@ async function check() {
         <label class="w">權重 <input v-model.number="l.strength" type="number" step="0.05" /></label>
         <label v-if="l.clip !== undefined" class="w">CLIP <input v-model.number="l.clip" type="number" step="0.05" /></label>
         <button class="small" :title="l.clip === undefined ? '分開設定 CLIP 權重' : 'CLIP 權重跟模型權重相同'" @click="toggleClip(l)">{{ l.clip === undefined ? '分開調 CLIP' : '合併' }}</button>
-        <button class="small" title="移除" @click="p.loras.splice(i, 1)">✕</button>
+        <button class="small" title="移除" aria-label="移除" @click="p.loras.splice(i, 1)"><GameIcon name="close" :size="14" /></button>
       </div>
-      <button class="small" @click="addLora">＋ 加 LoRA</button>
+      <button class="small" @click="addLora"><GameIcon name="plus" :size="14" />加 LoRA</button>
     </fieldset>
 
     <fieldset>
@@ -217,7 +218,7 @@ async function check() {
     <label>負面提示詞 <textarea v-model="p.negative" rows="2" /></label>
 
     <div class="row small">
-      <button class="small" :disabled="checking" @click="check">🧪 檢查設定</button>
+      <button class="small" :disabled="checking" @click="check"><GameIcon name="check" :size="14" />檢查設定</button>
       <span v-if="checking" class="muted">檢查中…</span>
       <span v-else-if="issues.length" class="warn-text">還沒設定好：{{ issues.join('、') }}</span>
     </div>
@@ -259,4 +260,6 @@ legend { padding: 0 4px; color: var(--accent-2); }
 .result.bad, .warn-text { color: var(--danger); }
 .import textarea { margin: 4px 0; }
 .import p { margin: 4px 0; }
+.comfy button { display: inline-flex; align-items: center; gap: 4px; }
+.import summary :deep(.game-icon) { vertical-align: -2px; color: var(--accent); }
 </style>

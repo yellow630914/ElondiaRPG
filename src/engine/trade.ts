@@ -22,6 +22,7 @@ import { reputationBand } from './security'
 import { pointOffers, storyOffers } from './intel'
 import { condMet } from './storyFlags'
 import { addHours, commitReport, newReportId, withRng } from './state'
+import { applyAiTitle, shopTitle } from './shopNames'
 import type { Deal, GameState, NpcRecord, Report, ShopState } from './types'
 
 const CELL_SHOP: Record<string, ShopType> = {
@@ -294,7 +295,7 @@ function tradeReport(state: GameState, key: string, hours: number): Report {
     report_id: newReportId(state),
     kind: 'trade',
     time: { start, end: addHours(start, hours) },
-    location: { at: state.location, region: loc.region, scene: `${place.name}的${shopDef(type).name}` },
+    location: { at: state.location, region: loc.region, scene: `${place.name}的${shopTitle(state, place.id, type).name}` },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
     outcome: { result: 'success' },
     changes: {},
@@ -537,6 +538,8 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
     const stock = Math.max(1, Math.min(caps.stock, Math.round(num(d.stock) || 1)))
     deals.push({ id: `ai:${state.time.day}:${i}`, title, ...(clip(d.desc, 80) ? { desc: clip(d.desc, 80) } : {}), gives, gets, stock })
   }
+  // 店名：AI 順便取的名字、描述與招呼語（每間店一次）
+  applyAiTitle(state, shopPlace(state).id, type, (raw as { shop?: unknown })?.shop)
   if (!deals.length) return 0
   // 平常的商品照賣（保留今天已經買掉的庫存）
   shop.deals = [...deals, ...shop.deals.filter((d) => !d.id.startsWith('ai:'))]

@@ -10,6 +10,7 @@ import { nearbyPeople } from '@/engine/population'
 import { seekMasterDc } from '@/engine/slavery'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import Hint from './ui/Hint.vue'
 
 // 娼館（關閉成人向時是按摩店）：消費、找老鴇當主人
 const game = useGame()
@@ -47,7 +48,7 @@ function seekMadam() {
       <p class="mark">{{ safeText('有主人的奴隸不能在娼館消費。被主人帶著經過時，還可能被推進去接客。') }}</p>
     </template>
     <template v-else>
-      <h4>{{ safeText('消費') }}</h4>
+      <h4>{{ safeText('消費') }} <Hint :text="safeText('魅力檢定：表現好可以打折、身心放鬆（下次長休前檢定 +1）；搞砸了可能被多收錢，甚至被摸走錢袋。')" /></h4>
       <div class="row">
         <select v-model="target">
           <option value="">{{ safeText('交給老鴇安排') }}（{{ formatMoney(patronPrice(s)) }}）</option>
@@ -57,7 +58,6 @@ function seekMadam() {
       <input v-model="text" :placeholder="safeText('想怎麼度過（選填，會交給 AI 判定與描寫）')" />
       <AbilityPicker v-model="use" />
       <button class="small primary" :disabled="busy || s.money_cc < price" @click="patron">消費（{{ formatMoney(price) }}）</button>
-      <p class="muted">{{ safeText('魅力檢定：表現好可以打折、身心放鬆（下次長休前檢定 +1）；搞砸了可能被多收錢，甚至被摸走錢袋。') }}</p>
     </template>
 
     <template v-if="marked && madam">
@@ -73,6 +73,6 @@ function seekMadam() {
 <style scoped>
 .brothel { display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .brothel input { width: 100%; }
-h4 { margin: 6px 0 0; color: var(--accent-2); font-size: 0.95rem; }
+h4 { margin: 6px 0 0; color: var(--accent-2); font-size: 0.95rem; display: flex; align-items: center; gap: 4px; }
 .mark { color: var(--accent-2); }
 </style>

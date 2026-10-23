@@ -6,6 +6,8 @@ import { formatMoney } from '@/engine/money'
 import { producedQty, produceTarget, recipeItems, recipePlan } from '@/engine/recipes'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 import { itemEffect, itemText } from './items/itemInfo'
 
 // 依配方製作（物品的 recipe，crafts.json 的 recipe）：藥劑、料理、家具、工具。做的人擲工藝的屬性檢定加工藝等級
@@ -59,7 +61,6 @@ function produce() {
 
 <template>
   <div class="recipes small">
-    <p class="muted">依配方做藥劑、料理、家具與工具：材料從行囊扣，另外的花費（瓶子、溶劑、基本食材）照地點物價付。做的人擲屬性檢定，加上工藝等級；工具階級依配方等級。成功時做的人得到工藝經驗。</p>
     <div class="row">
       <label class="who">誰來做
         <select v-model="crafterId">
@@ -73,10 +74,11 @@ function produce() {
         </select>
       </label>
       <label class="check"><input v-model="onlyReady" type="checkbox" /> 只看做得出來的</label>
+      <Hint text="依配方做藥劑、料理、家具與工具：材料從行囊扣，另外的花費（瓶子、溶劑、基本食材）照地點物價付。做的人擲屬性檢定，加上工藝等級；工具階級依配方等級。成功時做的人得到工藝經驗。" />
     </div>
     <select v-if="rows.length" :value="name" @change="picked = ($event.target as HTMLSelectElement).value">
       <optgroup v-for="g in groups" :key="g.craft" :label="craftRules.skills[g.craft].name">
-        <option v-for="r in g.rows" :key="r.name" :value="r.name">{{ r.blocked ? '✗' : '✓' }} Lv.{{ r.recipe.level }} {{ r.invented ? '💡' : '' }}{{ r.name }}{{ (r.recipe.qty ?? 1) > 1 ? ` ×${r.recipe.qty}` : '' }}</option>
+        <option v-for="r in g.rows" :key="r.name" :value="r.name">{{ r.blocked ? '✗' : '✓' }} Lv.{{ r.recipe.level }} {{ r.invented ? '★' : '' }}{{ r.name }}{{ (r.recipe.qty ?? 1) > 1 ? ` ×${r.recipe.qty}` : '' }}</option>
       </optgroup>
     </select>
     <p v-else class="muted">沒有做得出來的東西。</p>
@@ -84,7 +86,7 @@ function produce() {
     <template v-if="plan && skill">
       <p>
         <b>{{ plan.name }}</b>　<span class="muted">{{ itemEffect(s, plan.name) }}</span>
-        <template v-if="s.inventions?.[plan.name]">　<span class="tag">💡 自創</span> <button class="small" @click="rename">✏️ 改名</button> <button class="small" @click="forget">忘記這個配方</button></template>
+        <template v-if="s.inventions?.[plan.name]">　<span class="tag"><GameIcon name="lightbulb" :size="12" />自創</span> <button class="small" @click="rename"><GameIcon name="edit" :size="13" /> 改名</button> <button class="small" @click="forget">忘記這個配方</button></template>
       </p>
       <p v-if="itemText(s, plan.name)" class="muted">{{ itemText(s, plan.name) }}</p>
       <p class="muted">
@@ -99,11 +101,11 @@ function produce() {
         <span class="muted">（材料、花費與時間乘批數，只擲一次）</span>
       </label>
       <p class="muted">大成功：{{ producedQty(plan.qty, 'critical') }} 份・成功：{{ plan.qty }} 份・部分成功：{{ producedQty(plan.qty, 'partial') }} 份・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
-      <p v-if="plan.blocked" class="muted">⚠ {{ plan.blocked }}</p>
+      <p v-if="plan.blocked" class="warn"><GameIcon name="warning" :size="13" /> {{ plan.blocked }}</p>
       <template v-else>
         <input v-model="text" placeholder="想怎麼做（選填）：例如加一點蜂蜜讓藥比較好入口" />
         <AbilityPicker v-model="use" />
-        <button class="small" :disabled="game.judging || !!s.pendingAction" @click="produce">📜 {{ crafter.isPlayer ? '動手製作' : `請${crafter.name}製作` }}</button>
+        <button class="small" :disabled="game.judging || !!s.pendingAction" @click="produce"><GameIcon name="scroll" :size="13" /> {{ crafter.isPlayer ? '動手製作' : `請${crafter.name}製作` }}</button>
       </template>
     </template>
   </div>
@@ -117,5 +119,7 @@ function produce() {
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
 .input { margin-right: 6px; }
 .short { color: var(--danger); }
+.warn { color: var(--danger); }
+.row > .hint { align-self: center; }
 .qty { width: 56px; }
 </style>

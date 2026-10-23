@@ -7,6 +7,7 @@ import { isBound, isFugitive } from '@/engine/party'
 import { jobHere, workers, workPay, workTarget } from '@/engine/work'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import GameIcon from './ui/GameIcon.vue'
 import { contractOf } from '@/engine/tattoos'
 
 // 在設施上工作換錢（data/rules/work.json）
@@ -33,7 +34,7 @@ function work() {
 
 <template>
   <details v-if="job" class="work small">
-    <summary>💼 工作：{{ job.name }}</summary>
+    <summary><GameIcon name="briefcase" :size="13" /> 工作：{{ job.name }}</summary>
     <p class="muted">{{ job.desc }} {{ attrName(job.attr) }}檢定，參考 DC {{ job.dc }}；每小時約 {{ formatMoney(job.rate_cc) }}，依表現增減。</p>
     <p v-if="share" class="muted">你被主人帶著：收入依印記歸主人一部分。</p>
     <label v-if="slaves.length" class="who">誰去做
@@ -55,6 +56,7 @@ function work() {
 </template>
 
 <style scoped>
+.work summary { cursor: pointer; color: var(--accent-2); }
 .work { margin-top: 8px; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .work input:not([type]) { width: 100%; }
 .who { display: flex; gap: 6px; align-items: center; }

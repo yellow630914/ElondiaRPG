@@ -4,6 +4,8 @@ import { DEFAULT_PORTRAIT_TEMPLATE, DEFAULT_STYLE, IMAGE_SERVICES, imageServiceI
 import { useImageSettings } from '@/stores/image'
 import { useSettings } from '@/stores/settings'
 import ComfySettings from './ComfySettings.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // 插圖生成的設定：生圖服務、形象插圖的提示詞、生圖提示詞預處理（內建或自訂的指示）
 const image = useImageSettings()
@@ -40,11 +42,10 @@ function resetService() {
 
 <template>
   <section class="panel">
-    <h2>🎨 插圖生成</h2>
-    <p class="small muted">
-      用來生成角色的形象插圖（隊伍與人物卡上的「🎨 生成形象圖」）。API key 只存在這個瀏覽器，請求直接從瀏覽器送往你選擇的服務。
-      圖片存在這個瀏覽器的 IndexedDB；匯出存檔時可以選擇附上。
-    </p>
+    <h2 class="head">
+      <GameIcon name="image" />插圖生成
+      <Hint text="用來生成角色的形象插圖（隊伍與人物卡上的「生成形象圖」）。API key 只存在這個瀏覽器，請求直接從瀏覽器送往你選擇的服務。圖片存在這個瀏覽器的 IndexedDB；匯出存檔時可以選擇附上。" />
+    </h2>
     <div class="form">
       <label>生圖服務
         <select v-model="image.service">
@@ -77,14 +78,15 @@ function resetService() {
       <label>額外參數（JSON，選填；{{ image.service === 'novelai' ? '合併進 parameters' : '合併進請求' }}）
         <textarea v-model="cfg.extra" rows="2" class="mono" spellcheck="false" placeholder='{"quality": "high"}' />
       </label>
-      <div v-if="image.service !== 'comfyui'" class="row"><button class="small" @click="resetService">↩️ 這個服務的參數恢復預設</button></div>
+      <div v-if="image.service !== 'comfyui'" class="row"><button class="small" @click="resetService"><GameIcon name="undo" :size="14" />這個服務的參數恢復預設</button></div>
 
       <fieldset class="pre">
-        <legend>生圖提示詞預處理</legend>
+        <legend class="head">
+          <GameIcon name="wand" :size="16" />生圖提示詞預處理
+          <Hint text="生圖前先把角色的描述交給大語言模型（「功能分配」的「插圖提示詞預處理」），依選的指示改寫成生圖服務看得懂的格式（例如 Danbooru 標籤、英文描述、JSON），再把結果直接送出，不再套用提示詞模板與畫風。每個生圖服務各自選；NovelAI 與動漫風格的 Stable Diffusion 模型通常只看得懂 Danbooru 標籤。" />
+        </legend>
         <p class="small muted">
-          生圖前先把角色的描述交給大語言模型（「🔀 功能分配」的「插圖提示詞預處理」，目前是「{{ tagSource.name }}」），
-          依選的指示改寫成生圖服務看得懂的格式（例如 Danbooru 標籤、英文描述、JSON），再把結果直接送出，不再套用提示詞模板與畫風。
-          每個生圖服務各自選；NovelAI 與動漫風格的 Stable Diffusion 模型通常只看得懂 Danbooru 標籤。
+          改寫用的來源：「{{ tagSource.name }}」
           <span v-if="pre && !tagReady" class="warn-text">這個來源還沒設定好。</span>
         </p>
         <label>{{ info.name }} 用的預處理
@@ -117,9 +119,9 @@ function resetService() {
         </details>
         <p v-if="pre" class="small muted">沒有開啟成人向時，會另外加上「不要加入裸露、性暗示或血腥的內容」。</p>
         <div class="row">
-          <button v-if="pre" class="small" @click="image.addPreprocessor(pre)">📋 複製成自訂</button>
-          <button class="small" @click="image.addPreprocessor()">＋ 新增預處理指示</button>
-          <button v-if="custom" class="small" @click="removePreprocessor">🗑️ 刪除這份指示</button>
+          <button v-if="pre" class="small" @click="image.addPreprocessor(pre)"><GameIcon name="copy" :size="14" />複製成自訂</button>
+          <button class="small" @click="image.addPreprocessor()"><GameIcon name="plus" :size="14" />新增預處理指示</button>
+          <button v-if="custom" class="small" @click="removePreprocessor"><GameIcon name="trash" :size="14" />刪除這份指示</button>
         </div>
       </fieldset>
 
@@ -131,7 +133,9 @@ function resetService() {
         <textarea v-model="image.template" rows="9" class="mono" spellcheck="false" />
         <div class="row"><button class="small" :disabled="image.template === DEFAULT_PORTRAIT_TEMPLATE" @click="image.template = DEFAULT_PORTRAIT_TEMPLATE">恢復預設</button></div>
       </details>
-      <p class="small" :class="image.ready() ? 'ok-text' : 'warn-text'">{{ image.ready() ? '🟢 可以生成插圖' : image.service === 'comfyui' ? '⚪ 還沒設定好（需要網址，以及選好這組設定的模型）' : '⚪ 還沒設定好（需要網址與 API key）' }}</p>
+      <p class="small status" :class="image.ready() ? 'ok-text' : 'warn-text'">
+        <GameIcon :name="image.ready() ? 'check' : 'alert'" :size="14" />{{ image.ready() ? '可以生成插圖' : image.service === 'comfyui' ? '還沒設定好（需要網址，以及選好這組設定的模型）' : '還沒設定好（需要網址與 API key）' }}
+      </p>
     </div>
   </section>
 </template>
@@ -150,4 +154,7 @@ details textarea { width: 100%; margin-top: 4px; }
 .pre { display: grid; gap: 8px; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; }
 .pre legend { padding: 0 4px; }
 .pre p { margin: 0; }
+.head { display: flex; align-items: center; gap: 6px; }
+.head :deep(.game-icon) { color: var(--accent); }
+.row button, .status { display: inline-flex; align-items: center; gap: 4px; }
 </style>

@@ -1,0 +1,1314 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>埃隆迪亞 UI 樣稿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=LXGW+WenKai+TC:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+/* =========================================================
+   設計 token：HD-2D 風（深色皮革／木頭底、金色雕花框、羊皮紙閱讀面）
+   ========================================================= */
+:root {
+  --night: #0f0b08;
+  --leather: #1c1510;
+  --leather-2: #251c15;
+  --wood: #3a2818;
+  --wood-2: #4b3420;
+  --gold: #c99a45;
+  --gold-hi: #f0d083;
+  --gold-lo: #6d5128;
+  --text: #efe4cc;
+  --text-2: #c9b796;
+  --muted: #8f7e63;
+  --parch: #ecdcb6;
+  --parch-2: #dfc896;
+  --parch-edge: #b8955a;
+  --ink: #33231a;
+  --ink-2: #6b5038;
+  --hp: #c8483a;
+  --hp-lo: #5a1c16;
+  --mp: #4a83c9;
+  --xp: #93b860;
+  --good: #7cba6a;
+  --danger: #d8604e;
+  --jade: #7fb5a2;
+  --r-common: #c9c2b2;
+  --r-uncommon: #6fbf5c;
+  --r-rare: #4f93d8;
+  --r-epic: #a66bd6;
+  --r-legend: #e39a3b;
+  --font-body: 'Noto Serif TC', 'Noto Serif CJK TC', 'PMingLiU', serif;
+  --font-story: 'LXGW WenKai TC', 'Noto Serif TC', serif;
+  --fs-xs: 0.75rem; --fs-sm: 0.85rem; --fs-md: 0.95rem; --fs-lg: 1.1rem; --fs-xl: 1.35rem;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 15px;
+  background-color: var(--night);
+  background-image:
+    radial-gradient(ellipse at 50% -10%, #4a331c55 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 120%, #00000099 0%, transparent 60%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.24  0 0 0 0 0.14  0 0 0 0.22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    linear-gradient(180deg, #1a130d, #0f0b08);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+.pix { image-rendering: pixelated; image-rendering: crisp-edges; }
+svg.ic { width: 18px; height: 18px; flex: none; vertical-align: -3px; fill: currentColor; }
+svg.ic.lg { width: 22px; height: 22px; }
+svg.ic.sm { width: 14px; height: 14px; vertical-align: -2px; }
+
+/* ---- 樣稿導覽（不屬於遊戲） ---- */
+.mock-nav {
+  position: sticky; top: 0; z-index: 100; display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  padding: 6px 16px; background: #000c; border-bottom: 1px dashed #555; font-family: system-ui, sans-serif; font-size: 13px;
+}
+.mock-nav b { color: #9cf; margin-right: 6px; }
+.mock-nav button { font: inherit; background: #222; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+.mock-nav button.on { background: #9cf; color: #000; border-color: #9cf; }
+
+#app { max-width: 1720px; margin: 0 auto; padding: 14px 18px 30px; }
+
+/* =========================================================
+   框：金色雕花細框（四角紋飾用多重背景）
+   ========================================================= */
+.frame {
+  --corner: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' shape-rendering='crispEdges'><path fill='%23c99a45' d='M0 0h10v2H2v8H0z'/><path fill='%23f0d083' d='M4 4h2v2H4z'/></svg>");
+  position: relative;
+  background:
+    var(--corner) top 3px left 3px / 14px no-repeat,
+    linear-gradient(180deg, #2a2017f2, #1d1611f2);
+  border: 1px solid var(--gold-lo);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px #00000080, inset 0 1px 0 #ffffff0d, 0 6px 18px #0008;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.frame::before, .frame::after {
+  content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none;
+  background: var(--corner) center / 14px no-repeat;
+}
+.frame::before { top: 3px; right: 3px; transform: scaleX(-1); }
+.frame::after { bottom: 3px; right: 3px; transform: scale(-1, -1); }
+.frame > .corner-bl { position: absolute; left: 3px; bottom: 3px; width: 14px; height: 14px; background: var(--corner) center/14px no-repeat; transform: scaleY(-1); pointer-events: none; }
+
+/* 面板標題：像素圖示 + 金字 + 紋飾分隔線 */
+.ptitle { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+.ptitle h2, .ptitle h3 { margin: 0; font-weight: 900; letter-spacing: .08em; color: var(--gold-hi); text-shadow: 0 1px 0 #000, 0 0 12px #c99a4533; }
+.ptitle h2 { font-size: var(--fs-lg); }
+.ptitle h3 { font-size: var(--fs-md); }
+.ptitle .ic { color: var(--gold); }
+.ptitle .sub { font-size: var(--fs-xs); color: var(--muted); letter-spacing: .04em; font-weight: 400; }
+.ptitle .grow { flex: 1; }
+.rule { height: 9px; margin: 10px 0; background:
+  linear-gradient(90deg, transparent, var(--gold-lo) 20%, var(--gold-lo) 46%, transparent 46%, transparent 54%, var(--gold-lo) 54%, var(--gold-lo) 80%, transparent) center/100% 1px no-repeat;
+  position: relative; }
+.rule::after { content: ''; position: absolute; left: 50%; top: 50%; width: 7px; height: 7px; background: var(--gold); transform: translate(-50%, -50%) rotate(45deg); box-shadow: 0 0 6px #c99a4588; }
+
+/* ---- 文字階層 ---- */
+.label { font-size: var(--fs-xs); color: var(--muted); letter-spacing: .12em; }
+.val { font-weight: 600; font-variant-numeric: tabular-nums; }
+.hint-text { font-size: var(--fs-sm); color: var(--muted); }
+.k { color: var(--muted); }
+
+/* ---- 按鈕 ---- */
+button { font: inherit; cursor: pointer; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+  color: var(--text); background: linear-gradient(180deg, #3b2c1e, #2a1f15);
+  border: 1px solid var(--gold-lo); border-radius: 3px; padding: 5px 12px;
+  box-shadow: inset 0 1px 0 #ffffff14, 0 2px 0 #0008; white-space: nowrap; transition: border-color .15s, color .15s, transform .05s;
+}
+.btn:hover { border-color: var(--gold); color: var(--gold-hi); }
+.btn:active { transform: translateY(1px); }
+.btn.sm { padding: 2px 9px; font-size: var(--fs-sm); }
+.btn.primary { background: linear-gradient(180deg, #e5b75a, #b2822f); color: #22160b; border-color: #f0d083; font-weight: 700; text-shadow: 0 1px 0 #f7dd9a; }
+.btn.primary:hover { color: #000; filter: brightness(1.08); }
+.btn.ghost { background: none; box-shadow: none; border-color: transparent; color: var(--text-2); }
+.btn.ghost:hover { border-color: var(--gold-lo); }
+.btn.icon { padding: 4px; width: 30px; height: 30px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---- Chip / 標籤 ---- */
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-xs); padding: 0 7px; line-height: 20px; border-radius: 2px; border: 1px solid #ffffff1f; background: #0004; color: var(--text-2); white-space: nowrap; }
+.chip.gold { border-color: var(--gold-lo); color: var(--gold-hi); }
+.chip.bad { border-color: #8a3226; color: #f0a090; background: #3a120c66; }
+.chip.good { border-color: #3f6a35; color: #b5e0a2; background: #12260e66; }
+.chip.jade { border-color: #3c6157; color: var(--jade); }
+
+/* ---- ? 說明 ---- */
+.hint { position: relative; display: inline-flex; color: var(--muted); cursor: help; }
+.hint:hover { color: var(--gold-hi); }
+.hint .pop {
+  display: none; position: absolute; z-index: 30; top: calc(100% + 8px); right: -8px; width: 280px;
+  padding: 10px 12px; font-size: var(--fs-sm); line-height: 1.7; color: var(--ink); font-weight: 400; letter-spacing: 0;
+  background: linear-gradient(180deg, var(--parch), var(--parch-2)); border: 1px solid var(--parch-edge); border-radius: 3px;
+  box-shadow: 0 8px 24px #000c; text-shadow: none;
+}
+.hint .pop b { color: #7a3a12; }
+.hint:hover .pop, .hint.show .pop { display: block; }
+
+/* ---- 條 ---- */
+.bar { position: relative; height: 10px; background: #0009; border: 1px solid #000; box-shadow: 0 0 0 1px #ffffff12; }
+.bar > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(180deg, #e6705f, var(--hp) 50%, #99332a); }
+.bar > i::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 7px, #0000002e 7px 8px); }
+.bar.xp { height: 5px; } .bar.xp > i { background: linear-gradient(180deg, #b6d884, var(--xp)); }
+.bar.mp > i { background: linear-gradient(180deg, #78a9e6, var(--mp)); }
+
+input, select, textarea {
+  font: inherit; color: var(--text); background: #0d0a07cc; border: 1px solid #4a3a28; border-radius: 3px; padding: 5px 8px; min-width: 0;
+  box-shadow: inset 0 2px 4px #0008;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); }
+textarea { resize: vertical; width: 100%; }
+.row { display: flex; gap: 8px; align-items: center; }
+.wrap { flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.grow { flex: 1; min-width: 0; }
+
+/* =========================================================
+   頂部 HUD
+   ========================================================= */
+.top { display: flex; align-items: center; gap: 22px; padding: 6px 4px 12px; margin-bottom: 14px; position: relative; }
+.top::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold-lo), var(--gold), var(--gold-lo), transparent); }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo .ic { width: 26px; height: 26px; color: var(--gold); filter: drop-shadow(0 0 6px #c99a4566); }
+.logo h1 { margin: 0; font-size: 1.45rem; font-weight: 900; letter-spacing: .22em;
+  background: linear-gradient(180deg, #fff1c6, #e2b45a 55%, #a87528); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 0 #000) drop-shadow(0 0 10px #c99a4540); }
+.tabs { display: flex; gap: 2px; }
+.tabs button { background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); padding: 6px 12px; display: inline-flex; gap: 6px; align-items: center; }
+.tabs button.on { color: var(--gold-hi); border-bottom-color: var(--gold); }
+.tabs button:hover { color: var(--text); }
+.hud { display: flex; gap: 4px; }
+.hud .cell { display: flex; align-items: center; gap: 7px; padding: 3px 12px; background: #0006; border: 1px solid #ffffff12; border-radius: 2px; }
+.hud .cell .ic { color: var(--gold); }
+.hud .cell .label { letter-spacing: .06em; }
+.hud .money { color: var(--gold-hi); }
+.top .tools { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.bell { position: relative; }
+.badge { position: absolute; top: -5px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--danger); color: #fff; font-size: 11px; line-height: 16px; text-align: center; font-weight: 700; box-shadow: 0 0 0 2px var(--night); font-family: system-ui, sans-serif; }
+
+/* =========================================================
+   三欄
+   ========================================================= */
+.game { display: grid; grid-template-columns: 400px minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
+
+/* ---- 地圖 ---- */
+.map-wrap { position: relative; border: 1px solid #000; box-shadow: 0 0 0 1px var(--gold-lo), 0 0 0 4px #0008; background: #000; line-height: 0; }
+.map-wrap canvas { width: 100%; display: block; }
+.map-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.legend { display: flex; gap: 10px; font-size: var(--fs-xs); color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend i { width: 10px; height: 10px; display: inline-block; border: 1px solid #000; }
+
+/* ---- 迷你隊伍卡 ---- */
+.mini-party { display: grid; gap: 6px; }
+.mini {
+  display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 6px 8px; background: #0005; border: 1px solid #ffffff10; border-radius: 3px; position: relative;
+}
+.mini:hover { border-color: var(--gold-lo); }
+.portrait { width: 46px; height: 46px; border: 1px solid #000; box-shadow: 0 0 0 1px var(--gold-lo); background: radial-gradient(circle at 50% 35%, #5a4a3a, #1d1610); display: grid; place-items: center; overflow: hidden; }
+.portrait img { width: 100%; height: 100%; }
+.mini .name { font-weight: 700; font-size: var(--fs-md); display: flex; gap: 6px; align-items: baseline; }
+.mini .name small { font-weight: 400; color: var(--muted); font-size: var(--fs-xs); }
+.mini .hpline { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.mini .hpline .bar { flex: 1; height: 8px; }
+.mini .hpline .num { font-size: var(--fs-xs); color: var(--text-2); font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
+.mini .acts { display: grid; grid-template-columns: repeat(2, 26px); gap: 3px; }
+.mini .acts button { width: 26px; height: 26px; padding: 0; display: grid; place-items: center; background: #2a1f15; border: 1px solid #4a3a28; color: var(--text-2); border-radius: 2px; }
+.mini .acts button:hover { color: var(--gold-hi); border-color: var(--gold); }
+.mini .lvup { position: absolute; top: -6px; left: 30px; font-size: 10px; padding: 0 5px; background: var(--gold); color: #1a1008; font-weight: 700; border-radius: 2px; line-height: 15px; box-shadow: 0 0 8px #f0d08399; }
+.mini .conds { display: flex; gap: 3px; margin-left: auto; }
+
+/* ---- 精簡的休息 / 主動行動 ---- */
+.compact { padding: 12px 14px; }
+.compact .ptitle { margin-bottom: 8px; }
+.dice-line { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.rest-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.rest-btns .btn { padding: 6px 8px; }
+.rest-btns .btn small { color: var(--muted); font-size: var(--fs-xs); }
+.linkish { background: none; border: none; color: var(--jade); padding: 0; font-size: var(--fs-sm); margin-top: 8px; display: inline-flex; gap: 4px; align-items: center; }
+.linkish:hover { color: var(--gold-hi); }
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+.action-send { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
+.action-send textarea { height: 36px; min-height: 36px; resize: none; }
+.toggle { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-2); }
+.switch { width: 28px; height: 14px; border-radius: 7px; background: #0008; border: 1px solid #4a3a28; position: relative; }
+.switch::after { content: ''; position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.switch.on { border-color: var(--gold); background: #c99a4533; }
+.switch.on::after { left: 15px; background: var(--gold-hi); }
+
+/* =========================================================
+   中欄：工具列 + 日誌
+   ========================================================= */
+.toolbar { display: flex; align-items: stretch; gap: 0; margin-bottom: 12px; padding: 0; overflow: visible; }
+.toolbar .tb {
+  position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 18px; background: none; border: none; color: var(--text-2);
+  border-right: 1px solid #ffffff10; font-size: var(--fs-md);
+}
+.toolbar .tb .ic { color: var(--gold); width: 20px; height: 20px; }
+.toolbar .tb:hover { color: var(--gold-hi); background: #c99a4512; }
+.toolbar .tb .dot { position: absolute; top: 6px; left: 28px; }
+.toolbar .tb .note { font-size: 10px; color: #1a1008; background: var(--gold); border-radius: 2px; padding: 0 4px; line-height: 15px; font-weight: 700; }
+.toolbar .spacer { flex: 1; }
+.toolbar .opts { display: flex; gap: 14px; align-items: center; padding: 0 14px; }
+
+.log { padding: 0; }
+.log-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #ffffff10; }
+.feed { padding: 14px 16px 6px; height: calc(100vh - 230px); min-height: 640px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.feed::-webkit-scrollbar { width: 10px; }
+.feed::-webkit-scrollbar-thumb { background: #4a3a28; border: 2px solid #1d1611; }
+.report { position: relative; padding: 12px 14px 10px 18px; background: #00000040; border: 1px solid #ffffff0d; border-radius: 3px; }
+.report::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--kind, var(--gold)); box-shadow: 0 0 8px var(--kind, var(--gold)); }
+.report.travel { --kind: #8fb3a3; } .report.combat { --kind: #c8483a; } .report.social { --kind: #d79ac0; } .report.trade { --kind: #c9a24a; }
+.report header { display: flex; align-items: center; gap: 8px; }
+.kind { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-xs); letter-spacing: .1em; color: var(--kind); font-weight: 700; }
+.report header .where { font-weight: 700; color: var(--text); }
+.report header .when { margin-left: auto; font-size: var(--fs-xs); color: var(--muted); }
+.report .summary { margin: 6px 0 8px; font-size: var(--fs-md); color: var(--text); font-weight: 600; }
+.check { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; font-size: var(--fs-sm); }
+.d20 { display: inline-grid; place-items: center; width: 28px; height: 28px; font-weight: 900; color: #1a1008; background: var(--gold-hi); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); font-size: 13px; }
+.verdict { font-weight: 900; letter-spacing: .15em; padding: 0 8px; }
+.verdict.ok { color: var(--good); } .verdict.crit { color: var(--gold-hi); text-shadow: 0 0 8px #f0d08388; }
+.story {
+  margin: 8px 0; padding: 14px 18px; color: var(--ink); font-family: var(--font-story); font-size: 1.02rem; line-height: 2;
+  background:
+    radial-gradient(ellipse at center, transparent 55%, #8a6a3a55 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.33  0 0 0 0 0.18  0 0 0 0.16 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    linear-gradient(180deg, var(--parch), var(--parch-2));
+  border-radius: 2px; box-shadow: inset 0 0 0 1px #00000030, 0 2px 6px #0006;
+}
+.story p { margin: 0 0 .5em; text-indent: 2em; }
+.story p:first-child { text-indent: 0; }
+.story p + p { clear: left; }
+.story p:first-child::first-letter { float: left; font-size: 2.6em; line-height: 1; padding: 4px 8px 0 0; color: #7a2e12; font-family: var(--font-body); font-weight: 900; }
+.story .speaker { color: #7a2e12; font-weight: 700; }
+.changes { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.report .more { position: absolute; top: 8px; right: 8px; }
+.report .more + header .when { margin-right: 32px; }
+.battle { font-size: var(--fs-sm); display: grid; gap: 2px; padding: 8px 12px; background: #0005; border-left: 2px solid #c8483a66; margin: 8px 0; color: var(--text-2); }
+.battle .hit { color: #f0a090; } .battle .ally { color: var(--jade); }
+.report.compact-r { padding-top: 8px; padding-bottom: 8px; }
+.report.compact-r .summary { margin: 2px 0 0; font-weight: 400; font-size: var(--fs-sm); color: var(--text-2); }
+
+/* =========================================================
+   右欄：這裡的人 / 地點（建築選單）
+   ========================================================= */
+.npc-group { margin-bottom: 4px; }
+.group-h { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); letter-spacing: .14em; color: var(--jade); margin: 10px 0 4px; }
+.group-h::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, #3c6157, transparent); }
+.npc { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 6px; border-radius: 3px; cursor: pointer; }
+.npc:hover { background: #ffffff08; }
+.npc .av { width: 30px; height: 30px; background: #0006; border: 1px solid #ffffff14; display: grid; place-items: center; }
+.npc .av img { width: 28px; height: 28px; }
+.npc .nm { font-weight: 700; }
+.npc .ti { font-size: var(--fs-xs); color: var(--muted); }
+.npc.far { opacity: .62; }
+.npc.open { background: #c99a4510; outline: 1px solid var(--gold-lo); }
+.npc-detail { grid-column: 1 / -1; display: grid; gap: 6px; padding: 6px 2px 2px; }
+.npc-detail .acts { display: flex; gap: 4px; flex-wrap: wrap; }
+.n-blue { color: #8ab6ef; } .n-pink { color: #e59ac4; } .n-gold { color: var(--gold-hi); }
+
+.building { padding: 0; overflow: hidden; }
+.scene { position: relative; line-height: 0; border-bottom: 1px solid var(--gold-lo); }
+.scene canvas { width: 100%; display: block; }
+.scene .plate { position: absolute; left: 12px; bottom: 10px; line-height: 1.4; }
+.scene .plate h3 { margin: 0; font-size: var(--fs-xl); font-weight: 900; letter-spacing: .2em; color: var(--gold-hi); text-shadow: 0 2px 0 #000, 0 0 10px #000; }
+.scene .plate .sub { font-size: var(--fs-xs); color: var(--text-2); text-shadow: 0 1px 2px #000; }
+.quote { margin: 12px 16px 6px; padding-left: 10px; border-left: 2px solid var(--gold-lo); font-family: var(--font-story); color: var(--text-2); font-size: var(--fs-sm); }
+.quote b { color: var(--gold-hi); font-family: var(--font-body); }
+.menu { list-style: none; margin: 6px 0 0; padding: 0 8px 10px; }
+.menu li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto 14px; gap: 8px; align-items: center; padding: 9px 8px; border-radius: 3px; cursor: pointer; position: relative; }
+.menu li + li { border-top: 1px solid #ffffff0a; }
+.menu li:hover { background: linear-gradient(90deg, #c99a4522, transparent); }
+.menu li:hover::before { content: ''; position: absolute; left: -2px; top: 50%; border: 5px solid transparent; border-left-color: var(--gold-hi); transform: translateY(-50%); }
+.menu .ic { color: var(--gold); }
+.menu .t { font-weight: 600; }
+.menu .d { font-size: var(--fs-xs); color: var(--muted); }
+.menu .chev { color: var(--muted); }
+
+.dest { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.dest td { padding: 6px 4px; border-bottom: 1px solid #ffffff0a; }
+.dest td.n { font-weight: 600; }
+.dest td.r { text-align: right; }
+.tiers { display: inline-flex; gap: 2px; }
+.tiers i { font-style: normal; font-size: 10px; width: 16px; text-align: center; line-height: 16px; font-weight: 700; color: #111; }
+.t-E { background: #8fb36a; } .t-D { background: #c9b64a; } .t-C { background: #d68a3c; } .t-B { background: #c95a3a; } .t-A { background: #a03a6a; color: #fff !important; }
+
+/* =========================================================
+   羊皮紙 Dialog
+   ========================================================= */
+.scrim { position: fixed; inset: 0; background: #000b; z-index: 50; display: none; place-items: center; padding: 30px; }
+.scrim.on { display: grid; }
+.dlg {
+  width: min(var(--w, 1100px), calc(100vw - 40px)); max-height: calc(100vh - 60px); display: flex; flex-direction: column;
+  color: var(--ink); position: relative;
+  background:
+    radial-gradient(ellipse at center, transparent 60%, #7a5a2a66 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.32  0 0 0 0 0.16  0 0 0 0.20 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    linear-gradient(180deg, #f1e3c0, var(--parch) 40%, var(--parch-2));
+  border: 6px solid var(--wood);
+  border-image: linear-gradient(180deg, #5b3f24, #2e1f12) 1;
+  box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #c99a45, inset 0 0 0 3px #00000018, 0 20px 60px #000;
+}
+.dlg-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px 8px; position: relative; }
+.dlg-head::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, #8a6a3a, transparent); }
+.dlg-head h2 { margin: 0; font-size: var(--fs-xl); font-weight: 900; letter-spacing: .2em; color: #4a2a12; }
+.dlg-head .ic { color: #7a4a1e; width: 24px; height: 24px; }
+.dlg-head .x { margin-left: auto; background: none; border: 1px solid #8a6a3a; color: #5b3a1e; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 2px; }
+.dlg-head .x:hover { background: #7a4a1e; color: var(--parch); }
+.dlg-body { padding: 14px 18px 18px; overflow: auto; }
+.dlg .muted { color: var(--ink-2); }
+.dlg .label { color: var(--ink-2); }
+.dlg .btn { background: linear-gradient(180deg, #4b3420, #2f2014); color: var(--parch); border-color: #1f150c; }
+.dlg .btn:hover { color: var(--gold-hi); border-color: var(--gold); }
+.dlg .btn.primary { background: linear-gradient(180deg, #a8452c, #7a2e1a); color: #fbe9c8; border-color: #4a1a0e; text-shadow: 0 1px 0 #000; }
+.dlg .chip { background: #ffffff55; border-color: #a88a5a; color: var(--ink); }
+.dlg .chip.gold { background: #fff3cf; border-color: #b8893b; color: #6a4410; }
+.dlg .chip.bad { background: #f3d4c8; border-color: #b0503a; color: #7a2010; }
+.dlg .chip.jade { background: #d9eadf; border-color: #6a9a86; color: #2e5a4a; }
+.dlg .bar { background: #3a2a1a; border-color: #2a1a0e; box-shadow: none; }
+.dlg .hint { color: #8a6a3a; }
+
+/* ---- 第一層：角色卡 ---- */
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.card { position: relative; padding: 14px; background: #fff8e440; border: 1px solid #b8955a; box-shadow: inset 0 0 0 3px #fff6dd55, 0 2px 4px #6a4a2a33; border-radius: 2px; }
+.card-top { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; }
+.card .pic { width: 112px; height: 140px; border: 3px solid #4b3420; outline: 1px solid #c99a45; outline-offset: -5px; background: radial-gradient(circle at 50% 35%, #8a7050, #3a2a1a); display: grid; place-items: center; }
+.card .pic img { width: 96px; height: 96px; }
+.card h3 { margin: 0; font-size: 1.3rem; font-weight: 900; color: #3a1e0c; letter-spacing: .06em; display: flex; align-items: baseline; gap: 8px; }
+.card .meta { font-size: var(--fs-sm); color: var(--ink-2); margin: 2px 0 8px; }
+.card .rank { position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; display: grid; place-items: center; font-weight: 900; font-size: 1.1rem; color: #fbe9c8; background: radial-gradient(circle, #a8452c, #6a2414); border: 2px solid #c99a45; border-radius: 50%; box-shadow: 0 2px 4px #0006; }
+.vitals { display: grid; gap: 5px; }
+.vitals .row .label { width: 2.2em; }
+.vitals .num { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; min-width: 60px; text-align: right; color: var(--ink); font-weight: 600; }
+.attr5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0 4px; }
+.attr5 div { text-align: center; padding: 4px 0 3px; background: #fff8e488; border: 1px solid #c4a670; border-radius: 2px; }
+.attr5 .label { display: block; letter-spacing: .2em; }
+.attr5 .v { font-size: 1.25rem; font-weight: 900; color: #3a1e0c; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.attr5 .m { font-size: var(--fs-xs); color: #8a4a1e; font-weight: 600; }
+.attr5 .boost .v { color: #a8452c; }
+.combat3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: var(--fs-sm); margin-bottom: 4px; }
+.combat3 > div { display: flex; flex-direction: column; padding: 4px 8px; border-left: 2px solid #c99a45; }
+.slots { display: inline-flex; gap: 3px; }
+.slots i { width: 10px; height: 10px; transform: rotate(45deg); border: 1px solid #4a6aa0; background: #4a83c9; margin: 0 2px; }
+.slots i.used { background: transparent; }
+.sec { display: grid; grid-template-columns: 3.6em minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px dashed #b8955a99; }
+.sec .label { letter-spacing: .2em; }
+.sec .items { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.sec .go { background: none; border: none; color: #8a4a1e; display: inline-flex; align-items: center; font-size: var(--fs-xs); gap: 2px; padding: 2px 0 2px 6px; }
+.sec .go:hover { color: #a8452c; text-decoration: underline; }
+.gear-ic { width: 30px; height: 30px; border: 1px solid #4b3420; background: #3a2a1aee; display: grid; place-items: center; box-shadow: inset 0 0 0 1px #c99a4555; }
+.gear-ic img { width: 24px; height: 24px; }
+.gear-ic.r-uncommon { box-shadow: inset 0 0 0 1px var(--r-uncommon); }
+.gear-ic.r-rare { box-shadow: inset 0 0 0 1px var(--r-rare); }
+.alert-strip { display: flex; align-items: center; gap: 8px; margin: -14px -14px 12px; padding: 6px 14px; background: linear-gradient(90deg, #a8452c, #7a2e1a); color: #fbe9c8; font-size: var(--fs-sm); }
+.alert-strip + .rank { top: 50px; }
+.alert-strip .btn { margin-left: auto; background: #fbe9c8; color: #6a2414; border-color: #fbe9c8; padding: 1px 10px; }
+
+/* ---- 第二層：分頁 Dialog ---- */
+.who { display: flex; gap: 6px; margin-bottom: 12px; }
+.who button { display: flex; align-items: center; gap: 6px; padding: 3px 12px 3px 3px; background: #fff8e455; border: 1px solid #b8955a; color: var(--ink); border-radius: 2px; }
+.who button img { width: 26px; height: 26px; background: #3a2a1a; }
+.who button.on { background: #4b3420; color: var(--parch); border-color: #2a1a0e; box-shadow: 0 0 0 1px #c99a45; }
+.dtabs { display: flex; gap: 2px; border-bottom: 2px solid #4b3420; margin-bottom: 14px; }
+.dtabs button { display: flex; align-items: center; gap: 6px; background: #d9c08c; border: 1px solid #a88a5a; border-bottom: none; color: var(--ink-2); padding: 6px 16px; border-radius: 3px 3px 0 0; margin-bottom: -2px; }
+.dtabs button.on { background: #4b3420; color: var(--gold-hi); border-color: #2a1a0e; }
+.dtabs button .ic { width: 16px; height: 16px; }
+.tabpane { display: none; } .tabpane.on { display: block; }
+
+.statgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+.kv { display: grid; grid-template-columns: 7em minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 7px 0; border-bottom: 1px dotted #b8955a; }
+.kv .v { font-weight: 700; color: #3a1e0c; }
+.attr-table { width: 100%; border-collapse: collapse; }
+.attr-table th { text-align: left; font-weight: 600; padding: 6px 4px; font-size: var(--fs-sm); color: var(--ink-2); border-bottom: 2px solid #4b3420; }
+.attr-table td { padding: 8px 4px; border-bottom: 1px dotted #b8955a; font-variant-numeric: tabular-nums; }
+.attr-table .big { font-size: 1.2rem; font-weight: 900; color: #3a1e0c; }
+.attr-table .src { font-size: var(--fs-xs); color: var(--ink-2); }
+
+/* 紙娃娃 */
+.equip { display: grid; grid-template-columns: 430px minmax(0, 1fr); gap: 18px; }
+.doll { position: relative; display: grid; grid-template-columns: 150px 1fr 150px; gap: 6px; padding: 14px 10px; background: #3a2a1a; border: 3px solid #2a1a0e; box-shadow: inset 0 0 0 1px #c99a45, inset 0 0 30px #000; color: var(--text); }
+.doll .col { display: grid; gap: 6px; align-content: start; }
+.doll .fig { display: grid; place-items: center; }
+.doll .fig svg { width: 100%; max-width: 130px; opacity: .9; }
+.slot { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 6px; align-items: center; padding: 3px; background: #0006; border: 1px solid #ffffff14; border-radius: 2px; cursor: pointer; }
+.col.right .slot { grid-template-columns: minmax(0, 1fr) 38px; text-align: right; }
+.col.right .slot .box { order: 2; }
+.slot .box { width: 38px; height: 38px; display: grid; place-items: center; background: #120d09; border: 1px solid #000; box-shadow: inset 0 0 0 1px #5a4630; }
+.slot .box img { width: 30px; height: 30px; }
+.slot .box .ic { color: #4a3a28; width: 20px; height: 20px; }
+.slot .sn { font-size: 10px; color: var(--muted); letter-spacing: .1em; line-height: 1.3; }
+.slot .in { font-size: var(--fs-xs); color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slot.filled .box { box-shadow: inset 0 0 0 1px var(--gold-lo); }
+.slot.r-uncommon .in { color: var(--r-uncommon); } .slot.r-rare .in { color: var(--r-rare); }
+.slot.sel { border-color: var(--gold-hi); box-shadow: 0 0 0 1px var(--gold-hi), 0 0 12px #f0d08355; }
+.slot:hover { border-color: var(--gold); }
+.slot.locked .box::after { content: '🔒'; }
+.doll .totals { grid-column: 1 / -1; display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
+.doll .totals .chip { background: #0006; color: var(--text-2); border-color: #ffffff24; }
+.picker h4 { margin: 0 0 6px; display: flex; align-items: center; gap: 8px; font-size: var(--fs-md); color: #4a2a12; }
+.current { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; background: #fff8e488; border: 1px solid #b8955a; margin-bottom: 14px; }
+.current .gear-ic { width: 52px; height: 52px; } .current .gear-ic img { width: 44px; height: 44px; }
+.iname { font-weight: 700; color: #3a1e0c; }
+.iname.r-uncommon { color: #2f7a1e; } .iname.r-rare { color: #1f5a9a; }
+.ilist { display: grid; gap: 6px; }
+.irow { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 8px; border: 1px solid #c4a670; background: #fff8e444; border-radius: 2px; }
+.irow:hover { background: #fff8e4aa; border-color: #8a6a3a; }
+.irow .gear-ic { width: 40px; height: 40px; } .irow .gear-ic img { width: 32px; height: 32px; }
+.irow .stats { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+.cmp-up { color: #2f7a1e; font-weight: 700; } .cmp-down { color: #a8452c; font-weight: 700; }
+.filterbar { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+
+/* 酒館招募 */
+.cands { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.cand { padding: 12px; border: 1px solid #b8955a; background: #fff8e444; display: grid; gap: 6px; align-content: start; }
+.cand .head { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; align-items: center; }
+.cand .head .pic { width: 56px; height: 56px; background: #3a2a1a; border: 2px solid #4b3420; display: grid; place-items: center; }
+.cand .head .pic img { width: 48px; height: 48px; }
+.cand .nm { font-weight: 900; font-size: var(--fs-lg); color: #3a1e0c; }
+.cand .bio { font-family: var(--font-story); font-size: var(--fs-sm); color: var(--ink-2); line-height: 1.8; }
+.cand .price { display: flex; align-items: center; justify-content: space-between; padding-top: 6px; border-top: 1px dashed #b8955a; }
+.cand .price b { color: #7a4a1e; font-size: var(--fs-lg); }
+
+/* 首頁 */
+.home { max-width: 560px; margin: 50px auto 0; text-align: center; }
+.home .crest { fill: currentColor; width: 72px; height: 72px; color: var(--gold); filter: drop-shadow(0 0 14px #c99a4588); margin: 0 auto; display: block; }
+.home h1 { margin: 10px 0 4px; font-size: 2.6rem; letter-spacing: .3em; font-weight: 900;
+  background: linear-gradient(180deg, #fff1c6, #e2b45a 55%, #a87528); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 0 #000) drop-shadow(0 0 18px #c99a4555); }
+.home .tag { color: var(--text-2); font-family: var(--font-story); margin-bottom: 26px; }
+.home .menuframe { padding: 20px 26px; text-align: left; }
+.home .mbtn { width: 100%; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 14px; margin-bottom: 8px; text-align: left; }
+.home .mbtn .d { font-size: var(--fs-xs); color: var(--muted); display: block; }
+.home .mbtn.primary .d { color: #4a2e10; }
+.home .foot { margin-top: 14px; display: flex; justify-content: center; gap: 16px; font-size: var(--fs-sm); }
+.credits table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); table-layout: fixed; }
+.credits th:nth-child(1), .credits td:nth-child(1) { width: 38%; }
+.credits th:nth-child(2), .credits td:nth-child(2) { width: 22%; }
+.credits th:nth-child(3), .credits td:nth-child(3) { width: 16%; }
+.credits th { text-align: left; padding: 6px; border-bottom: 2px solid #4b3420; color: var(--ink-2); font-weight: 600; }
+.credits td { padding: 8px 6px; border-bottom: 1px dotted #b8955a; vertical-align: top; }
+.credits td a { color: #7a2e12; }
+.credits .lic { white-space: nowrap; }
+.credits h4 { margin: 16px 0 4px; color: #4a2a12; letter-spacing: .15em; }
+
+.view { display: none; } .view.on { display: block; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+<symbol id="i-sword" viewBox="0 0 24 24"><path d="M11 2h2v2h-2zM9 4h2v12H9zm4 0h2v12h-2zM7 16h10v2H7zm4 2h2v4h-2z"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M4 2h16v2H4zM2 4h2v10H2zm18 0h2v10h-2zM4 14h2v2H4zm2 2h2v2H6zm4 4h4v2h-4zm10-6h-2v2h2zm-2 2h-2v2h2zm-2 2h-2v2h2zm-6 0H8v2h2z"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M13 22h-2v-2h2v2Zm-2-2H9v-2h2v2Zm4 0h-2v-2h2v2Zm-6-2H7v-2h2v2Zm8 0h-2v-2h2v2ZM7 16H5v-2h2v2Zm12 0h-2v-2h2v2ZM5 14H3v-2h2v2Zm16 0h-2v-2h2v2ZM3 12H1V6h2v6Zm20 0h-2V6h2v6ZM13 8h-2V6h2v2ZM5 6H3V4h2v2Zm6 0H9V4h2v2Zm4 0h-2V4h2v2Zm6 0h-2V4h2v2ZM9 4H5V2h4v2Zm10 0h-4V2h4v2Z"/></symbol>
+<symbol id="i-coins" viewBox="0 0 24 24"><path d="M6 2h6v2H6zM4 4h2v2H4zm8 0h2v2h-2zm-8 8h2v2H4zm8 0h2v2h-2zm-6 2h6v2H6zM2 6h2v6H2zm12 0h2v6h-2z"/>
+  <path d="M14 8h4v2h-4zm-4 10h2v2h-2zm8-8h2v2h-2zm-6 10h2v2h-2zm6-2h2v2h-2z"/>
+  <path d="M12 20h6v2h-6zm-4-6h2v4H8zm12-2h2v6h-2zM7 6h4v2H7z"/>
+  <path d="M9 6h2v6H9zm6 8h2v4h-2zm-1-2h3v2h-3z"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><path d="M4 20h2v2H2V6h2v14Zm12 0h2v2h-4v-2h-2v-2h2V8h-2V6h4v14Zm-8 0H6v-2h2v2Zm12 0h-2v-2h2v2ZM10 4h2v2h-2v10h2v2H8V4H6V2h4v2Zm12 14h-2V4h-2V2h4v16ZM6 6H4V4h2v2Zm12 0h-2V4h2v2Z"/></symbol>
+<symbol id="i-script" viewBox="0 0 24 24"><path d="M16 19h2v2H4v-2h10v-2h2v2ZM6 15h8v2H4v2H2v-4h2V5h2v10ZM20 5h2v6h-2v8h-2V5H6V3h14v2Z"/></symbol>
+<symbol id="i-scroll-vertical" viewBox="0 0 24 24"><path d="M21 8h-2V4h2zM5 8H3V4h2zm16 6h-2v-4h2zM5 14H3v-4h2zm16 6h-2v-4h2zM5 20H3v-4h2zm10-2H9v2h6z"/>
+  <path d="M13 2h-2v20h2z"/>
+  <path d="M17 16H7v2h10zM15 6H9V4h6zm2 2H7V6h10z"/></symbol>
+<symbol id="i-potion" viewBox="0 0 24 24"><path d="M8 6h8v2H8zm0-4h8v2H8zm0 6h2v2H8zm6 0h2v2h-2zM6 20h12v2H6zm-2-8h2v8H4zm14 0h2v8h-2zM6 10h2v2H6zm10 0h2v2h-2zM6 4h2v2H6zm10 0h2v2h-2z"/></symbol>
+<symbol id="i-skull" viewBox="0 0 24 24"><path d="M7 20h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zm-6-4h2v4H9zm4 0h2v4h-2zm-8-2h2v6H5zm12 0h2v6h-2z"/>
+  <path d="M3 14h4v2H3zM1 4h2v10H1zm20 0h2v10h-2zM3 2h18v2H3zm14 12h4v2h-4zM8 7h2v4H8zm6 0h2v4h-2z"/></symbol>
+<symbol id="i-crown" viewBox="0 0 24 24"><path d="M3 3h2v12H3zm16 0h2v12h-2zm-8 0h2v2h-2zM9 5h2v2H9zM5 5h2v2H5z"/>
+  <path d="M3 3h2v2H3zm4 4h2v2H7zm6-2h2v2h-2zm2 2h2v2h-2zm2-2h2v2h-2zM5 15h14v2H5zm-2 4h18v2H3z"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M5 20H8V22H3V16H5V20ZM21 22H16V20H19V16H21V22ZM10 20H8V18H10V20ZM16 20H14V18H16V20ZM14 18H10V16H14V18ZM7 16H5V13H7V16ZM19 16H17V13H19V16ZM5 13H3V11H5V13ZM21 13H19V11H21V13ZM9 9H3V11H1V7H9V9ZM23 11H21V9H15V7H23V11ZM11 7H9V3H11V7ZM15 7H13V3H15V7ZM13 3H11V1H13V3Z"/></symbol>
+<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11 1h2v4h-2zm0 22h2v-4h-2zM9 5h2v4H9zm0 14h2v-4H9zm4-14h2v4h-2zm0 14h2v-4h-2zM5 9h4v2H5zm14 0h-4v2h4zM1 11h4v2H1zm22 0h-4v2h4zM5 13h4v2H5zm14 0h-4v2h4zm0-12h2v6h-2z"/>
+  <path d="M17 3h6v2h-6zM3 17h2v2H3zm-2 2h2v2H1zm2 2h2v2H3zm2-2h2v2H5z"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M18 22H8v-2h10v2ZM8 20H6v-2h2v2Zm12 0h-2v-2h2v2ZM6 18H4v-2h2v2Zm16 0h-2v-4h-2v-2h2v-2h2v8ZM4 16H2V6h2v10Zm14 0h-6v-2h6v2Zm-6-2h-2v-2h2v2Zm-2-2H8V6h2v6ZM6 6H4V4h2v2Zm8-2h-2v2h-2V4H6V2h8v2Z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><path d="M13 22h-2v-3h2v3Zm-6-3H5v-2h2v2Zm12 0h-2v-2h2v2Zm-4-2H9v-2h6v2Zm-6-2H7V9h2v6Zm8 0h-2V9h2v6ZM5 13H2v-2h3v2Zm17 0h-3v-2h3v2Zm-7-4H9V7h6v2ZM7 7H5V5h2v2Zm12 0h-2V5h2v2Zm-6-2h-2V2h2v3Z"/></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 13h8v6h2v2h-2v2h-2v-8H2v-4h2v2Zm12 6h-2v-2h2v2Zm2-2h-2v-2h2v2Zm2-2h-2v-2h2v2Zm-6-6h8v4h-2v-2h-8V5h-2V3h2V1h2v8Zm-8 2H4V9h2v2Zm2-2H6V7h2v2Zm2-2H8V5h2v2Z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M9 2h6v2H9zm0 8h6v2H9zm6-6h2v6h-2zM7 4h2v6H7zM4 18h2v4H4zm14 0h2v4h-2zM8 14h8v2H8zm-2 2h2v2H6zm10 0h2v2h-2z"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M5 2h6v2H5zm10 0h4v2h-4zM5 10h6v2H5zm10 0h4v2h-4zm4-6h2v6h-2zm-8 0h2v6h-2zM3 4h2v6H3zM0 18h2v4H0zm14 0h2v4h-2zm8 0h2v4h-2zM4 14h8v2H4zm12 0h4v2h-4zM2 16h2v2H2zm10 0h2v2h-2zm8 0h2v2h-2z"/></symbol>
+<symbol id="i-human" viewBox="0 0 24 24"><path d="M10 2h4v4h-4zM3 7h18v2H3zm6 2h2v7H9zm4 0h2v7h-2zm-4 7h2v6H9zm4 0h2v6h-2zm-2-2h2v2h-2z"/></symbol>
+<symbol id="i-notebook" viewBox="0 0 24 24"><path d="M6 2h14v2H6zm0 18h14v2H6zM20 4h2v16h-2zM4 4h2v16H4z"/>
+  <path d="M2 7h6v2H2zm0 4h6v2H2zm0 4h6v2H2zM16 4h2v16h-2z"/></symbol>
+<symbol id="i-book-open" viewBox="0 0 24 24"><path d="M2 3h9v2H2zM0 19h11v2H0zM13 3h9v2h-9zm0 16h11v2H13zM11 5h2v18h-2zM0 5h2v14H0zm22 0h2v14h-2zm-7 2h5v2h-5zm0 4h5v2h-5zm0 4h2v2h-2z"/></symbol>
+<symbol id="i-library" viewBox="0 0 24 24"><path d="M3 4h2v17H3zm4 4h2v13H7zm4-2h2v15h-2zm4 0h2v5h-2zm2 5h2v5h-2zm2 5h2v5h-2z"/></symbol>
+<symbol id="i-diamond-gem" viewBox="0 0 24 24"><path d="M7 1h10v2H7zM5 3h2v2H5zm12 0h2v2h-2zm2 2h2v2h-2zm0 8h2v2h-2zm-2 2h2v2h-2zm-2 2h2v2h-2zm-2 2h2v2h-2zm-2 2h2v2h-2zm-2-2h2v2H9zm-2-2h2v2H7zm-2-2h2v2H5zm-2-2h2v2H3zm0-8h2v2H3zM1 7h2v6H1zm20 0h2v6h-2zM3 9h18v2H3zm6-6h2v3H9zM7 6h2v3H7zm8 0h2v3h-2zm-8 5h2v2H7zm2 2h2v3H9zm2 3h2v3h-2zm2-3h2v3h-2zm2-2h2v2h-2zm-2-8h2v3h-2z"/></symbol>
+<symbol id="i-shirt" viewBox="0 0 24 24"><path d="M4 3h6v2H4zM2 3h2v8H2zm2 6h4v2H4z"/>
+  <path d="M6 9h2v10H6zm2 10h8v2H8zm8-10h2v10h-2z"/>
+  <path d="M16 9h4v2h-4zm4-6h2v8h-2zm-6 0h6v2h-6zm-4 2h4v2h-4z"/></symbol>
+<symbol id="i-fire" viewBox="0 0 24 24"><path d="M9 2h2v4H9zM7 6h2v2H7zM5 8h2v2H5zm8 2h2v2h-2zm2-2h2v2h-2zm2 2h2v2h-2zm2 2h2v6h-2zM3 10h2v8H3zm8-4h2v4h-2zm6 12h2v2h-2zM7 20h10v2H7zm-2-2h2v2H5zm4-2h6v4H9z"/>
+  <path d="M11 14h2v3h-2z"/></symbol>
+<symbol id="i-tree" viewBox="0 0 24 24"><path d="M6 4h2v2H6zm2-2h8v2H8zm10 4h2v4h-2zm2 4h2v6h-2zm-2 6h2v2h-2zM4 16h2v2H4zm-2-6h2v6H2zm4 8h12v2H6zM4 6h2v4H4z"/>
+  <path d="M11 18h2v4h-2zm5-14h2v2h-2z"/></symbol>
+<symbol id="i-tree-pine" viewBox="0 0 24 24"><path d="M11 2h2v2h-2zM9 4h2v2H9zm4 0h2v2h-2zm2 2h2v2h-2zM7 6h2v2H7zm0 4h2v2H7zm-2 2h2v2H5zm2 2h2v2H7zm-2 2h2v2H5zm-2 2h18v2H3zM13 8h2v2h-2zm2 2h2v2h-2zM9 8h2v2H9zm8 4h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-6 4h2v2h-2z"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 20h16v2H4zm16-10h2v10h-2zM2 10h2v10H2zm2-2h2v2H4zm2-2h2v2H6zm2-2h2v2H8zm2-2h4v2h-4zm4 2h2v2h-2zm2 2h2v2h-2zm2 2h2v2h-2zM8 14h2v6H8zm2-2h4v2h-4zm4 2h2v6h-2z"/></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><path d="M20 22H4V20H6V14H8V20H16V14H18V20H20V22ZM4 20H2V4H4V20ZM22 20H20V6H22V20ZM16 14H8V12H16V14ZM12 10H6V6H12V10ZM20 6H18V4H20V6ZM18 4H4V2H18V4Z"/></symbol>
+<symbol id="i-gift" viewBox="0 0 24 24"><path d="M4 6h16v2H4zM2 8h2v4H2zm2 4h16v2H4zm16-4h2v4h-2zM6 4h2v2H6zm2-2h3v2H8zm3 2h2v2h-2zm2-2h3v2h-3zm3 2h2v2h-2zM4 14h2v6H4zm2 6h12v2H6zm12-6h2v6h-2zm-7-6h2v4h-2zm0 6h2v6h-2z"/></symbol>
+<symbol id="i-message" viewBox="0 0 24 24"><path d="M20 2H4v2h16zm0 14H6v2h14zm2-12h-2v12h2zM4 4H2v18h2zm2 14H4v2h2z"/></symbol>
+<symbol id="i-mug" viewBox="0 0 24 24"><path d="M16 19H6V17H16V19ZM18 11H20V13H18V17H16V7H6V17H4V5H20V7H18V11ZM22 11H20V7H22V11Z"/></symbol>
+<symbol id="i-tools" viewBox="0 0 24 24"><path d="M9 22H7v-2h2v2Zm12-6h2v6h-6v-6h2v-6h2v6Zm-2 2v2h2v-2h-2ZM7 20H5v-8h2v8Zm4 0H9v-8h2v8Zm-6-8H3v-2h2v2Zm8 0h-2v-2h2v2ZM3 10H1V4h2v6Zm12 0h-2V4h2v6Zm4 0h-2V4h2v6Zm4 0h-2V4h2v6ZM7 6h2V2h4v2h-2v4H5V4H3V2h4v4Zm14-2h-2V2h2v2Z"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><path d="M11 18H3V16H11V18ZM23 15H21V18H17V16H19V13H21V11H11V8H13V9H23V15ZM3 16H1V8H3V16ZM17 16H15V15H13V16H11V13H17V16ZM9 14H5V10H9V14ZM11 8H3V6H11V8Z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><path d="M5 8h14v2H5zm0 12h14v2H5zM3 10h2v10H3zm16 0h2v10h-2zM7 4h2v4H7zm2-2h6v2H9zm6 2h2v4h-2z"/></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><path d="M16 20H8v-2h8v2Zm-8-2H4v-2h4v2Zm12 0h-4v-2h4v2ZM4 16H2v-2h2v2Zm10-6h-2v2h2v-2h2v4h-2v2h-4v-2H8v-4h2V8h4v2Zm8 6h-2v-2h2v2ZM2 14H0v-4h2v4Zm22 0h-2v-4h2v4ZM4 10H2V8h2v2Zm18 0h-2V8h2v2ZM8 8H4V6h4v2Zm12 0h-4V6h4v2Zm-4-2H8V4h8v2Z"/></symbol>
+<symbol id="i-hand" viewBox="0 0 24 24"><path d="M21 7h2v5h-2zm-4-2h2v7h-2zm-4-2h2v8h-2zM9 3h2v8H9zM5 5h2v8H5zm14 0h2v2h-2zm-4-2h2v2h-2zm-4-2h2v2h-2zM7 3h2v2H7zm-4 8h2v2H3zm-2 2h2v2H1zm0 2h2v2H1zm2 2h2v2H3zm2 2h2v2H5zm2 2h12v2H7zm12-2h2v2h-2zm2-7h2v7h-2zM5 13h2v2H5zm2 2h2v2H7z"/></symbol>
+<symbol id="i-music" viewBox="0 0 24 24"><path d="M4 12h4v2H4zm-2 2h2v4H2zm2 4h4v2H4zM8 6h2v12H8zm10 0h2v12h-2zm-6 8h2v4h-2zm2-2h4v2h-4zm0 6h4v2h-4zM10 4h8v2h-8z"/></symbol>
+<symbol id="i-feather" viewBox="0 0 24 24"><path d="M2 20h2v2H2zm6-2h6v2H8zm-2-2h2v2H6zm-2 2h2v2H4zm4-4h2v2H8zm2-2h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm0 8h2v2h-2zm2-2h2v2h-2zm2-2h2v2h-2zm2-6h2v6h-2zm-2-2h2v2h-2zM4 10h2v6H4zm2-2h2v2H6zm2-2h2v2H8zm2-2h2v2h-2zm2-2h6v2h-6z"/></symbol>
+<symbol id="i-compass" viewBox="0 0 24 24"><path d="M18 22H6V20H18V22ZM6 20H4V18H6V20ZM20 20H18V18H20V20ZM10 16H12V18H10V19H8V10H10V16ZM4 18H2V6H4V18ZM22 18H20V6H22V18ZM14 16H12V14H14V16ZM16 14H14V8H12V6H14V5H16V14ZM13 13H11V11H13V13ZM12 10H10V8H12V10ZM6 6H4V4H6V6ZM20 6H18V4H20V6ZM18 4H6V2H18V4Z"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 2h2v20H4z"/>
+  <path d="M4 4h16v2H4zm12 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zM4 12h16v2H4z"/></symbol>
+<symbol id="i-bed" viewBox="0 0 24 24"><path d="M2 4h2v16H2zm18 6h2v10h-2z"/>
+  <path d="M2 16h20v2H2zm2-8h16v2H4zm2 2h2v6H6z"/></symbol>
+<symbol id="i-hotel-bed" viewBox="0 0 24 24"><path d="M2 16h10V8h10v2h-8v6h8v-6h2v10h-2v-2H2v2H0V4h2v12Zm7-1H5v-2h4v2Zm-4-2H3V9h2v4Zm6 0H9V9h2v4ZM9 9H5V7h4v2Z"/></symbol>
+<symbol id="i-backpack" viewBox="0 0 24 24"><path d="M5 6h14v2H5zM3 8h2v12H3zm2 12h14v2H5zM19 8h2v12h-2z"/>
+  <path d="M7 16h2v6H7zm8 0h2v6h-2zm-6-2h6v2H9zm-2-4h10v2H7zm1-6h2v2H8zm6 0h2v2h-2zm-4-2h4v2h-4z"/></symbol>
+<symbol id="i-castle" viewBox="0 0 24 24"><path d="M1 8h2v12H1zm2 12h18v2H3zM21 8h2v12h-2zM3 10h18v2H3zm2-8h2v8H5zm12 0h2v8h-2zM7 4h10v2H7zm2-2h2v2H9zm4 0h2v2h-2zM8 16h2v4H8zm2-2h4v2h-4zm4 2h2v4h-2z"/></symbol>
+<symbol id="i-chess" viewBox="0 0 24 24"><path d="M4 2h16v2H4zm0 18h16v2H4zM2 4h2v16H2zm18 0h2v16h-2zM8 4h4v4H8zM4 8h4v4H4zm4 4h4v4H8zm-4 4h4v4H4zM16 4h4v4h-4zm-4 4h4v4h-4zm4 4h4v4h-4zm-4 4h4v4h-4z"/></symbol>
+<symbol id="i-bottle-wine" viewBox="0 0 24 24"><path d="M9 1h6v2H9zm0 2h2v4H9zm4 0h2v4h-2zM7 7h2v2H7zm8 0h2v2h-2zm2 2h2v12h-2zM5 9h2v12H5zm2 12h10v2H7z"/></symbol>
+<symbol id="i-tent" viewBox="0 0 24 24"><path d="M1 19h22v2H1z"/>
+  <path d="M3 17h2v3H3zm2-3h2v3H5zm2-3h2v3H7zm2-3h2v3H9zm2-3h2v3h-2zM9 3h2v2H9zm4 5h2v3h-2zm2 3h2v3h-2zm2 3h2v3h-2zm2 3h2v3h-2zM9 17h2v2H9zm4 0h2v2h-2zm-2-2h2v2h-2zm2-12h2v2h-2z"/></symbol>
+<symbol id="i-store" viewBox="0 0 24 24"><path d="M3 13h2v8H3zm2 8h14v2H5zm14-8h2v8h-2zm-9-2h4v2h-4zm4-2h4v2h-4zm4 2h4v2h-4zM6 9h4v2H6zm-4 2h4v2H2zM0 7h2v4H0zm2-2h2v2H2zm18 0h2v2h-2zm2 2h2v4h-2zM4 3h16v2H4zm6 12h4v2h-4zm-2 2h2v4H8zm6 0h2v4h-2z"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24"><path d="M5 2h14v2H5zm0 18h14v2H5zM3 4h2v16H3zm16 0h2v16h-2zM7 6h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zm-8 4h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2zm-8 4h2v2H7zm4 0h2v2h-2zm-1 4h4v2h-4zm5-4h2v2h-2z"/></symbol>
+<symbol id="i-university" viewBox="0 0 24 24"><path d="M1 10h2v10H1zm2 10h18v2H3zm18-10h2v10h-2zM3 8h4v2H3zm14 0h4v2h-4zM7 6h2v2H7zm2-2h2v2H9zm2-2h2v2h-2zm2 2h2v2h-2zm2 2h2v2h-2zm-4 2h2v2h-2zm-2 2h2v2H9zm2 2h2v2h-2zm2-2h2v2h-2zm-8 3h2v2H5zm0 4h2v2H5zm12 0h2v2h-2zm0-4h2v2h-2zm-8 5h2v2H9zm0-2h6v2H9zm4 2h2v2h-2z"/></symbol>
+<symbol id="i-wand" viewBox="0 0 24 24"><path d="M14 22H12V20H14V22ZM20 22H18V20H20V22ZM5 19H9V21H3V15H5V19ZM18 20H16V18H18V20ZM22 20H20V18H22V20ZM11 19H9V16H11V19ZM20 18H18V16H20V18ZM13 16H11V13H13V16ZM8 15H5V13H8V15ZM11 13H8V11H11V13ZM15 13H13V11H15V13ZM21 13H19V11H21V13ZM4 12H2V10H4V12ZM13 11H11V9H13V11ZM17 11H15V9H17V11ZM15 9H13V7H15V9ZM19 9H17V7H19V9ZM6 8H4V6H6V8ZM17 7H15V5H17V7ZM21 7H19V5H17V3H21V7ZM4 6H2V4H4V6ZM8 6H6V4H8V6ZM13 5H11V3H13V5ZM6 4H4V2H6V4Z"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><path d="M5 1h14v2H5zM3 3h2v2H3zm0 16h2v2H3zm16 0h2v2h-2zm0-16h2v2h-2zm2 2h2v14h-2zM5 21h14v2H5zM1 5h2v14H1zm8 0h6v2H9zM5 9h2v6H5zm4 8h6v2H9zm8-8h2v6h-2zm-6 0h2v2h-2zM7 7h2v2H7zm0 8h2v2H7zm8 0h2v2h-2zm0-8h2v2h-2zm-6 4h2v2H9zm2 2h2v2h-2zm2-2h2v2h-2z"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M16 17H13V19H15V21H9V19H11V17H8V15H16V17ZM18 5H22V11H20V7H18V11H20V13H18V15H16V5H8V15H6V13H4V11H6V7H4V11H2V5H6V3H18V5Z"/></symbol>
+<symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M16 22H8v-2h8v2Zm-8-2H6v-4h2v4Zm10 0h-2v-4h2v4Zm-8-4H8v-2h2v2Zm6 0h-2v-2h2v2Zm-6-6h4v4h-4v-4Zm0 0H8V8h2v2Zm6 0h-2V8h2v2ZM8 8H6V4h2v4Zm10 0h-2V4h2v4Zm-2-4H8V2h8v2Z"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><path d="M5 4h14v2H5zm0 16h14v2H5zM3 10h2v10H3zm0-4h2v2H3zm16 0h2v2h-2zm0 4h2v10h-2zM3 8h18v2H3zm12-6h2v2h-2zM7 2h2v2H7z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><path d="M6 2h12v2H6zM2 6h2v12H2zm18 0h2v12h-2zm-2-2h2v2h-2zM4 4h2v2H4zm2 18h12v-2H6zm12-2h2v-2h-2zM4 20h2v-2H4zm7-14h2v7h-2zm2 7h2v2h-2zm2 2h2v2h-2z"/></symbol>
+<symbol id="i-settings-cog" viewBox="0 0 24 24"><path d="M4 20h3v-2h4v4h2v-4h4v2h-2v4H9v-4H7v2H2v-5h2v3Zm18 2h-5v-2h3v-3h2v5ZM6 11H2v2h4v4H4v-2H0V9h4V7h2v4Zm14-2h4v6h-4v2h-2v-4h4v-2h-4V7h2v2Zm-6 7h-4v-2h4v2Zm-4-2H8v-4h2v4Zm6 0h-2v-4h2v4Zm-2-4h-4V8h4v2ZM7 4H4v3H2V2h5v2Zm8 0h2V2h5v5h-2V4h-3v2h-4V2h-2v4H7V4h2V0h6v4Z"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="M7 19H5V17H7V19ZM19 19H17V17H19V19ZM9 15V17H7V15H9ZM17 17H15V15H17V17ZM11 15H9V13H11V15ZM15 15H13V13H15V15ZM13 13H11V11H13V13ZM11 11H9V9H11V11ZM15 11H13V9H15V11ZM9 9H7V7H9V9ZM17 9H15V7H17V9ZM7 7H5V5H7V7ZM19 7H17V5H19V7Z"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M16 13v-2h-2v2h2Zm-2-2V9h-2v2h2Zm0 4v-2h-2v2h2Zm-2-6V7h-2v2h2Zm0 8v-2h-2v2h2ZM10 7V5H8v2h2Zm0 12v-2H8v2h2Z"/></symbol>
+<symbol id="i-circle-question" viewBox="0 0 24 24"><path d="M18 22H6V20H18V22ZM6 20H4V18H6V20ZM20 20H18V18H20V20ZM4 18H2V6H4V18ZM13 18H11V16H13V18ZM22 18H20V6H22V18ZM15 13H13V15H11V11H15V13ZM17 11H15V8H17V11ZM9 10H7V8H9V10ZM15 8H9V6H15V8ZM6 6H4V4H6V6ZM20 6H18V4H20V6ZM18 4H6V2H18V4Z"/></symbol>
+<symbol id="i-more-horizontal" viewBox="0 0 24 24"><path d="M3 9h2v2H3zm8 0h2v2h-2zm8 0h2v2h-2zM1 11h2v2H1zm8 0h2v2H9zm8 0h2v2h-2zM3 13h2v2H3zm8 0h2v2h-2zm8 0h2v2h-2zM5 11h2v2H5zm8 0h2v2h-2zm8 0h2v2h-2z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M9 2h6v2H9zM7 4h2v2H7zm8 0h2v2h-2zM5 6h2v7H5zm12 0h2v7h-2zM3 13h2v4H3zm16 0h2v4h-2z"/>
+  <path d="M3 15h18v2H3zm5 3h2v2H8zm6 0h2v2h-2zm-4 2h4v2h-4z"/></symbol>
+<symbol id="i-door-closed" viewBox="0 0 24 24"><path d="M3 19h18v2H3zM5 5h2v14H5zm2-2h10v2H7zm10 2h2v14h-2zm-8 6h2v2H9z"/></symbol>
+<symbol id="i-road-sign" viewBox="0 0 24 24"><path d="M2 10h2v2H2zm0 4h2v-2H2zm20-4h-2v2h2zm0 4h-2v-2h2zM4 8h2v2H4zm0 8h2v-2H4zm16-8h-2v2h2zm0 8h-2v-2h2zM6 6h2v2H6zm0 12h2v-2H6zM18 6h-2v2h2zm0 12h-2v-2h2zM8 4h2v2H8zm0 16h2v-2H8zm8-16h-2v2h2zm0 16h-2v-2h2zM10 2h2v2h-2zm0 20h2v-2h-2zm4-20h-2v2h2zm0 20h-2v-2h2zm2-11h2v2h-2zm-2-2h2v6h-2zm-2-2h2v10h-2zm-4 4h2v4H8z"/>
+  <path d="M10 11h3v2h-3z"/></symbol>
+<symbol id="i-waves" viewBox="0 0 24 24"><path d="M2 18h4v-2H2zm0-6h4v-2H2zm0-6h4V4H2zm4 14h4v-2H6zm0-6h4v-2H6zm0-6h4V6H6zm4 10h4v-2h-4zm0-6h4v-2h-4zm0-6h4V4h-4zm4 14h4v-2h-4zm0-6h4v-2h-4zm0-6h4V6h-4zm4 10h4v-2h-4zm0-6h4v-2h-4zm0-6h4V4h-4z"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M1 18h2v4H1zm2-2h2v2H3zm2-2h6v2H5zm6-2h2v2h-2zm-6 6h4v2H5zm4 2h4v2H9zm4-2h4v2h-4zm4-2h2v2h-2zm2-8h2v8h-2zm0-4h2v4h-2zm-2-2h2v2h-2zm-4 2h4v2h-4zM7 6h6v2H7zM5 8h2v2H5zm-2 2h2v4H3z"/></symbol>
+<symbol id="i-wall" viewBox="0 0 24 24"><path d="M4 2h16v2H4zm0 18h16v2H4zM2 4h2v16H2zm18 0h2v16h-2zM4 8h16v2H4zm0 6h16v2H4zM6 4h2v4H6zm2 12h2v4H8zm6-12h2v4h-2zm2 12h2v4h-2zm-5-6h2v4h-2z"/></symbol>
+<symbol id="i-warning-diamond" viewBox="0 0 24 24"><path d="M2 10h2v2H2zm0 4h2v-2H2zm20-4h-2v2h2zm0 4h-2v-2h2zM4 8h2v2H4zm0 8h2v-2H4zm16-8h-2v2h2zm0 8h-2v-2h2zM6 6h2v2H6zm0 12h2v-2H6zM18 6h-2v2h2zm0 12h-2v-2h2zM8 4h2v2H8zm0 16h2v-2H8zm8-16h-2v2h2zm0 16h-2v-2h2zM10 2h2v2h-2zm0 20h2v-2h-2zm4-20h-2v2h2zm0 20h-2v-2h2zm-3-5h2v-2h-2zm0-4h2V7h-2z"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M13 11h7v2h-7v7h-2v-7H4v-2h7V4h2v7Z"/></symbol>
+<symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M7 2h10v2H7zM5 4h2v2H5zm14 0h-2v2h2zM7 17h2v2H7zm2 2h2v2H9zm6-2h2v2h-2zm-2 2h2v2h-2zm-2 2h2v2h-2zm-6-7h2v3H5zm12 0h2v3h-2zM3 6h2v8H3zm18 0h-2v8h2zM10 6h4v2h-4zM8 8h2v4H8zm2 4h4v2h-4zm4-4h2v4h-2z"/></symbol>
+<symbol id="i-info-box" viewBox="0 0 24 24"><path d="M4 2h16v2H4zm0 18h16v2H4zM2 4h2v16H2zm18 0h2v16h-2zm-9 5h2V7h-2zm0 8h2v-6h-2z"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M8 14H7v6H5v-6H2v-2h6v2Zm5 6h-2V10h2v10Zm9-2h-3v2h-2v-2h-1v-2h6v2Zm-3-4h-2V4h2v10ZM7 10H5V4h2v6Zm6-4h2v2H9V6h2V4h2v2Z"/></symbol>
+<symbol id="i-reload" viewBox="0 0 24 24"><path d="M16 4h2v6h-2zm-2-2h2v2h-2zm0 2h2v8h-2zM4 8H2v5h2z"/>
+  <path d="M4 6h16v2H4zm4 14H6v-6h2zm2 2H8v-2h2zm0-2H8v-8h2zm10-4h2v-5h-2z"/>
+  <path d="M20 18H4v-2h16z"/></symbol>
+
+<symbol id="i-d20" viewBox="0 0 24 24"><path d="M11 1h2v2h-2zM9 3h2v2H9zm4 0h2v2h-2zM7 5h2v2H7zm8 0h2v2h-2zM5 7h2v2H5zm12 0h2v2h-2zM3 9h2v6H3zm16 0h2v6h-2zM5 15h2v2H5zm12 0h2v2h-2zM7 17h2v2H7zm8 0h2v2h-2zM9 19h2v2H9zm4 0h2v2h-2zm-2 2h2v2h-2zM9 9h6v2H9zm0 2h2v2H9zm4 0h2v2h-2zm-2 2h2v2h-2z"/></symbol>
+<symbol id="i-figure" viewBox="0 0 100 220"><g fill="none" stroke="#c99a45" stroke-width="1.2" opacity=".55"><circle cx="50" cy="22" r="14"/><path d="M38 38 Q50 44 62 38 L80 48 Q84 52 84 60 L88 110 L80 112 L74 66 L70 100 L72 130 L66 210 L54 210 L51 140 L49 140 L46 210 L34 210 L28 130 L30 100 L26 66 L20 112 L12 110 L16 60 Q16 52 20 48 Z"/></g><g fill="#c99a45" opacity=".18"><circle cx="50" cy="22" r="14"/><path d="M38 38 Q50 44 62 38 L80 48 Q84 52 84 60 L88 110 L80 112 L74 66 L70 100 L72 130 L66 210 L54 210 L51 140 L49 140 L46 210 L34 210 L28 130 L30 100 L26 66 L20 112 L12 110 L16 60 Q16 52 20 48 Z"/></g></symbol>
+</svg>
+
+<nav class="mock-nav">
+  <b>樣稿導覽（非遊戲畫面）</b>
+  <button data-go="main" class="on">① 主畫面</button>
+  <button data-go="party">② 隊伍（第一層卡片）</button>
+  <button data-go="detail-stats">③ 角色詳情・屬性</button>
+  <button data-go="detail-gear">④ 角色詳情・裝備紙娃娃</button>
+  <button data-go="tavern">⑤ 酒館・招募</button>
+  <button data-go="home">⑥ 首頁</button>
+  <button data-go="credits">⑦ 素材授權</button>
+</nav>
+
+<div id="app">
+<!-- ===================================================== 主畫面 -->
+<section class="view on" id="v-game">
+  <header class="top">
+    <div class="logo"><svg class="ic"><use href="#i-sword"/></svg><h1>埃隆迪亞大陸</h1></div>
+    <nav class="tabs">
+      <button class="on"><svg class="ic sm"><use href="#i-map"/></svg>冒險</button>
+      <button><svg class="ic sm"><use href="#i-script"/></svg>提示詞</button>
+      <button><svg class="ic sm"><use href="#i-tools"/></svg>內容</button>
+    </nav>
+    <div class="hud">
+      <div class="cell"><svg class="ic sm"><use href="#i-calendar"/></svg><span class="label">第</span><span class="val">3</span><span class="label">天</span><span class="val">19:40</span><svg class="ic sm" style="color:#8ab6ef"><use href="#i-moon"/></svg></div>
+      <div class="cell"><svg class="ic sm"><use href="#i-map-pin"/></svg><span class="val">索里耶爾</span></div>
+      <div class="cell money"><svg class="ic sm"><use href="#i-coins"/></svg><span class="val">482</span><span class="label">白鶴</span></div>
+    </div>
+    <div class="tools">
+      <button class="btn sm bell" style="border-color:var(--gold);color:var(--gold-hi)"><svg class="ic sm"><use href="#i-bell"/></svg>待處理<span class="badge">2</span></button>
+      <button class="btn ghost icon" title="快速存檔（F8）"><svg class="ic"><use href="#i-save"/></svg></button>
+      <button class="btn ghost icon" title="快速讀檔（F9）"><svg class="ic"><use href="#i-reload"/></svg></button>
+      <button class="btn ghost icon" title="存讀檔"><svg class="ic"><use href="#i-library"/></svg></button>
+      <button class="btn ghost icon" title="設定"><svg class="ic"><use href="#i-settings-cog"/></svg></button>
+      <button class="btn ghost icon" title="回首頁" data-go="home"><svg class="ic"><use href="#i-home"/></svg></button>
+    </div>
+  </header>
+
+  <main class="game">
+    <!-- ======== 左欄 ======== -->
+    <aside>
+      <section class="frame">
+        <span class="corner-bl"></span>
+        <div class="ptitle">
+          <svg class="ic lg"><use href="#i-map-pin"/></svg>
+          <div><h2>外環・朝聖者區</h2><div class="sub">索里耶爾・中央平原與丘陵地帶</div></div>
+          <span class="grow"></span>
+          <button class="btn sm"><svg class="ic sm"><use href="#i-map"/></svg>世界地圖</button>
+        </div>
+        <div class="map-wrap"><canvas id="map" class="pix" width="176" height="112"></canvas></div>
+        <div class="map-foot">
+          <div class="legend"><span><i style="background:#c99a45"></i>你</span><span><i style="background:#8ab6ef"></i>冒險者</span><span><i style="background:#c9c2b2"></i>平民</span></div>
+          <span class="hint"><svg class="ic sm"><use href="#i-circle-question"/></svg><span class="pop">點擊相鄰的格子移動，或用 <b>方向鍵 / WASD</b>。走到建築上就能使用它的功能。</span></span>
+        </div>
+        <div class="rule"></div>
+        <div class="ptitle" style="margin-bottom:6px"><svg class="ic"><use href="#i-users"/></svg><h3>隊伍</h3><span class="sub">2 / 4</span></div>
+        <div class="mini-party">
+          <div class="mini">
+            <span class="lvup">可升級</span>
+            <div class="portrait"><img class="pix" data-sprite="hero" alt="" /></div>
+            <div>
+              <div class="name">艾琳 <small>人類・戰士 Lv.2</small></div>
+              <div class="hpline"><div class="bar"><i style="width:76%"></i></div><span class="num">19/25</span></div>
+            </div>
+            <div class="acts">
+              <button title="屬性與戰鬥數值" data-go="detail-stats"><svg class="ic sm"><use href="#i-sliders"/></svg></button>
+              <button title="特質"><svg class="ic sm"><use href="#i-star"/></svg></button>
+              <button title="裝備" data-go="detail-gear"><svg class="ic sm"><use href="#i-shield"/></svg></button>
+              <button title="能力"><svg class="ic sm"><use href="#i-sparkles"/></svg></button>
+            </div>
+          </div>
+          <div class="mini">
+            <div class="portrait"><img class="pix" data-sprite="mage" alt="" /></div>
+            <div>
+              <div class="name"><span class="n-pink">莉娜</span> <small>精靈・法師 Lv.2</small></div>
+              <div class="hpline"><div class="bar"><i style="width:42%"></i></div><span class="num">6/14</span></div>
+              <div class="row" style="gap:4px;margin-top:3px"><span class="chip bad">中毒</span><span class="chip good">飽足</span></div>
+            </div>
+            <div class="acts">
+              <button title="屬性與戰鬥數值"><svg class="ic sm"><use href="#i-sliders"/></svg></button>
+              <button title="特質"><svg class="ic sm"><use href="#i-star"/></svg></button>
+              <button title="裝備"><svg class="ic sm"><use href="#i-shield"/></svg></button>
+              <button title="能力"><svg class="ic sm"><use href="#i-sparkles"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="frame compact">
+        <span class="corner-bl"></span>
+        <div class="ptitle"><svg class="ic"><use href="#i-bed"/></svg><h3>休息</h3><span class="grow"></span>
+          <span class="hint"><svg class="ic sm"><use href="#i-circle-question"/></svg><span class="pop"><b>短休</b> 1 小時：花生命骰回復生命值。這裡有 15% 機率被襲擊。<br /><b>長休</b> 住到隔天早上：生命值、法術環全滿，回復一半生命骰。兩次長休至少隔 16 小時。</span></span>
+        </div>
+        <div class="dice-line">
+          <span class="chip" title="生命骰 d10，剩 2/2，短休會用 1 顆"><svg class="ic sm"><use href="#i-heart"/></svg>艾琳 d10 × 2</span>
+          <span class="chip" title="生命骰 d6，剩 1/2"><svg class="ic sm"><use href="#i-heart"/></svg>莉娜 d6 × 1</span>
+        </div>
+        <div class="rest-btns">
+          <button class="btn"><svg class="ic sm"><use href="#i-mug"/></svg>短休 <small>1 小時</small></button>
+          <button class="btn"><svg class="ic sm"><use href="#i-moon"/></svg>長休 <small>旅店 30 白鶴</small></button>
+        </div>
+        <button class="linkish"><svg class="ic sm"><use href="#i-plus"/></svg>長休時順便做點什麼…</button>
+      </section>
+
+      <section class="frame compact">
+        <span class="corner-bl"></span>
+        <div class="ptitle"><svg class="ic"><use href="#i-d20"/></svg><h3>主動行動</h3><span class="grow"></span>
+          <span class="toggle"><span class="switch on"></span>AI 判定</span>
+          <span class="hint"><svg class="ic sm"><use href="#i-circle-question"/></svg><span class="pop">用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過。</span></span>
+        </div>
+        <div class="action-grid">
+          <select><option>對象：莉娜</option></select>
+          <select><option>不搭配能力</option></select>
+        </div>
+        <div class="action-send">
+          <textarea placeholder="例如：買一份甜點給莉娜，順便問她怕水的原因"></textarea>
+          <button class="btn primary">行動</button>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ======== 中欄 ======== -->
+    <section>
+      <nav class="frame toolbar">
+        <span class="corner-bl"></span>
+        <button class="tb" data-go="party"><svg class="ic"><use href="#i-users"/></svg>隊伍<span class="note">可升級</span></button>
+        <button class="tb"><svg class="ic"><use href="#i-backpack"/></svg>行囊</button>
+        <button class="tb"><svg class="ic"><use href="#i-heart"/></svg>關係<span class="badge" style="position:static;margin-left:2px">2</span></button>
+        <button class="tb"><svg class="ic"><use href="#i-notebook"/></svg>筆記<span class="badge" style="position:static;margin-left:2px;background:var(--gold);color:#1a1008">1</span></button>
+        <button class="tb"><svg class="ic"><use href="#i-tools"/></svg>工藝</button>
+        <span class="spacer"></span>
+        <div class="opts">
+          <span class="toggle"><span class="switch on"></span>AI 細節描述</span>
+          <span class="toggle"><span class="switch on"></span>隱藏交易</span>
+        </div>
+      </nav>
+
+      <section class="frame log">
+        <span class="corner-bl"></span>
+        <div class="log-head ptitle" style="margin:0">
+          <svg class="ic lg"><use href="#i-book-open"/></svg><h2>冒險日誌</h2><span class="grow"></span>
+          <span class="chip" title="本局 token 用量（點開看明細）">本局 182k tokens</span>
+        </div>
+        <div class="feed">
+          <article class="report travel">
+            <button class="btn ghost icon more" title="更多（重新寫出經過、複製提示詞、報告 JSON）"><svg class="ic"><use href="#i-more-horizontal"/></svg></button>
+            <header><span class="kind"><svg class="ic sm"><use href="#i-road-sign"/></svg>旅行</span><span class="where">河谷鎮 → 索里耶爾</span><span class="when">第 3 天 14:00</span></header>
+            <p class="summary">沿官道走了兩天，在傍晚前抵達索里耶爾的城門。</p>
+            <div class="changes"><span class="chip">−2 乾糧</span><span class="chip">經過 2 天</span></div>
+          </article>
+
+          <article class="report combat">
+            <button class="btn ghost icon more"><svg class="ic"><use href="#i-more-horizontal"/></svg></button>
+            <header><span class="kind"><svg class="ic sm"><use href="#i-sword"/></svg>戰鬥</span><span class="where">索里耶爾近郊</span><span class="when">第 3 天 16:20</span></header>
+            <p class="summary">擊退了三隻灰狼。莉娜被咬傷，傷口開始發黑。</p>
+            <div class="battle">
+              <div><span class="ally">艾琳</span> 揮出長劍 → 灰狼 A <span class="hit">−9</span></div>
+              <div><span class="ally">莉娜</span> 施放【火焰箭】→ 灰狼 B <span class="hit">−12（擊倒）</span></div>
+              <div>灰狼 C 撲咬 → <span class="ally">莉娜</span> <span class="hit">−6・中毒</span></div>
+            </div>
+            <div class="changes"><span class="chip good">+45 經驗</span><span class="chip">狼皮 ×2</span><span class="chip bad">莉娜：中毒</span></div>
+          </article>
+
+          <article class="report social">
+            <button class="btn ghost icon more"><svg class="ic"><use href="#i-more-horizontal"/></svg></button>
+            <header><span class="kind"><svg class="ic sm"><use href="#i-message"/></svg>交流</span><span class="where">金麥酒館</span><span class="when">第 3 天 19:10</span></header>
+            <p class="summary">艾琳買了一份蜂蜜蛋糕給莉娜，想問她為什麼怕水。</p>
+            <div class="check">
+              <span class="d20">14</span><span>自然骰</span><span class="chip">魅力 +1</span><span class="chip">送禮 +2</span><span class="k">＝</span><span class="val">17</span><span class="k">對 DC 15</span><span class="verdict ok">成功</span>
+            </div>
+            <div class="story">
+              <p>酒館裡的爐火燒得正旺。艾琳把那塊淋滿蜂蜜的蛋糕推到莉娜面前時，精靈少女先是愣了一下，接著尖尖的耳朵慢慢紅了起來。</p>
+              <p><span class="speaker">莉娜</span>用叉子戳著蛋糕，好一陣子才開口：「……小時候，村子旁邊的湖結了冰。我追著一隻狐狸跑上去，然後冰裂了。」她抬起頭，勉強笑了笑，「是哥哥把我拉上來的。他後來就一直咳嗽，直到那年冬天結束。」</p>
+            </div>
+            <div class="changes"><span class="chip gold"><svg class="ic sm"><use href="#i-heart"/></svg>莉娜 親密度 +3</span><span class="chip">−8 白鶴</span><span class="chip jade">記憶：莉娜的哥哥</span></div>
+          </article>
+
+          <article class="report trade compact-r">
+            <header><span class="kind"><svg class="ic sm"><use href="#i-coins"/></svg>交易</span><span class="where">金麥酒館</span><span class="when">第 3 天 19:30</span></header>
+            <p class="summary">全隊吃了「旅人燉菜」，獲得「飽足」。 −24 白鶴</p>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <!-- ======== 右欄 ======== -->
+    <aside>
+      <section class="frame">
+        <span class="corner-bl"></span>
+        <div class="ptitle"><svg class="ic lg"><use href="#i-users"/></svg><h2>這裡的人</h2><span class="sub">6 人・身邊 3 人</span><span class="grow"></span><span class="toggle"><span class="switch on"></span>AI</span></div>
+        <div class="group-h"><svg class="ic sm"><use href="#i-store"/></svg>店主與職員</div>
+        <div class="npc">
+          <div class="av"><img class="pix" data-sprite="barkeep" alt="" /></div>
+          <div><span class="nm n-gold">老葛倫</span> <span class="ti">酒館老闆</span></div>
+          <span class="chip gold"><svg class="ic sm"><use href="#i-heart"/></svg>熟識</span>
+        </div>
+        <div class="group-h"><svg class="ic sm"><use href="#i-sword"/></svg>冒險者</div>
+        <div class="npc open">
+          <div class="av"><img class="pix" data-sprite="bard" alt="" /></div>
+          <div><span class="nm n-blue">班奈特</span> <span class="ti">吟遊詩人・Lv.3</span></div>
+          <span class="chip jade">旅人</span>
+          <div class="npc-detail">
+            <div class="hint-text">人類・男・吟遊詩人。總是抱著一把舊魯特琴，衣角沾著各地的泥土。</div>
+            <input placeholder="想說什麼、怎麼做（選填）" />
+            <div class="acts">
+              <button class="btn sm"><svg class="ic sm"><use href="#i-message"/></svg>聊天</button>
+              <button class="btn sm"><svg class="ic sm"><use href="#i-gift"/></svg>送禮</button>
+              <button class="btn sm"><svg class="ic sm"><use href="#i-d20"/></svg>主動行動</button>
+              <button class="btn sm"><svg class="ic sm"><use href="#i-hand"/></svg>雇用</button>
+              <button class="btn sm ghost" title="獻媚・偷竊・偷襲"><svg class="ic sm"><use href="#i-more-horizontal"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div class="npc far">
+          <div class="av"><img class="pix" data-sprite="rogue" alt="" /></div>
+          <div><span class="nm n-blue">賈克</span> <span class="ti">盜賊・Lv.2</span></div>
+          <span class="chip">3 格</span>
+        </div>
+        <div class="group-h"><svg class="ic sm"><use href="#i-user"/></svg>普通人</div>
+        <div class="npc far">
+          <div class="av"><img class="pix" data-sprite="merchant" alt="" /></div>
+          <div><span class="nm n-pink">凱瑟琳</span> <span class="ti">珠寶商</span></div>
+          <span class="chip">2 格</span>
+        </div>
+      </section>
+
+      <section class="frame building">
+        <div class="scene"><canvas id="scene" class="pix" width="190" height="78"></canvas>
+          <div class="plate"><h3>金麥酒館</h3><div class="sub">營業中・今晚有吟遊詩人表演</div></div>
+        </div>
+        <div class="quote"><b>老葛倫：</b>「坐吧，旅人。熱湯、麥酒，還有想找活幹的傢伙——這裡都有。」</div>
+        <ul class="menu">
+          <li><svg class="ic"><use href="#i-mug"/></svg><div><div class="t">用餐</div><div class="d">今晚的菜單 5 道・全隊目前：飽足</div></div><span class="chip good">飽足</span><svg class="ic sm chev"><use href="#i-chevron-right"/></svg></li>
+          <li data-go="tavern"><svg class="ic"><use href="#i-users"/></svg><div><div class="t">招募冒險者</div><div class="d">今天城裡有 3 位可以雇用</div></div><span class="chip gold">3</span><svg class="ic sm chev"><use href="#i-chevron-right"/></svg></li>
+          <li><svg class="ic"><use href="#i-flag"/></svg><div><div class="t">等待組隊</div><div class="d">4 小時・成功率約 35%</div></div><span></span><svg class="ic sm chev"><use href="#i-chevron-right"/></svg></li>
+          <li><svg class="ic"><use href="#i-feather"/></svg><div><div class="t">邀請熟人</div><div class="d">2 位認識的人可以邀請</div></div><span class="chip">2</span><svg class="ic sm chev"><use href="#i-chevron-right"/></svg></li>
+          <li><svg class="ic"><use href="#i-eye"/></svg><div><div class="t">打聽黑市</div><div class="d">魅力檢定・約 2 小時</div></div><span></span><svg class="ic sm chev"><use href="#i-chevron-right"/></svg></li>
+        </ul>
+      </section>
+
+      <section class="frame">
+        <span class="corner-bl"></span>
+        <div class="ptitle"><svg class="ic"><use href="#i-compass"/></svg><h3>啟程旅行</h3><span class="grow"></span><button class="btn sm">在地圖上選擇</button></div>
+        <table class="dest">
+          <tr><td class="n">河谷鎮</td><td class="k">官道</td><td class="r">2 天</td><td class="r"><button class="btn sm">前往</button></td></tr>
+          <tr><td class="n">阿爾貝納</td><td class="k">官道</td><td class="r">4 天</td><td class="r"><button class="btn sm">前往</button></td></tr>
+          <tr><td class="n">晨霧修道院遺址 <div class="tiers"><i class="t-E">E</i><i class="t-D">D</i><i class="t-D">D</i><i class="t-A">A</i></div></td><td class="k">官道/山道</td><td class="r">5.5 天</td><td class="r"><button class="btn sm">前往</button></td></tr>
+          <tr><td class="n">低語墓穴 <div class="tiers"><i class="t-E">E</i><i class="t-E">E</i><i class="t-E">E</i><i class="t-A">A</i></div></td><td class="k">經萊茵堡</td><td class="r">6 天</td><td class="r"><button class="btn sm">前往</button></td></tr>
+        </table>
+        <button class="linkish">顯示其他 12 個地點與 5 個地區…</button>
+      </section>
+    </aside>
+  </main>
+</section>
+
+<!-- ===================================================== 首頁 -->
+<section class="view" id="v-home">
+  <div class="home">
+    <svg class="crest"><use href="#i-sword"/></svg>
+    <h1>埃隆迪亞大陸</h1>
+    <div class="tag">擲骰與規則決定結果，AI 寫出經過。</div>
+    <section class="frame menuframe">
+      <span class="corner-bl"></span>
+      <button class="btn primary mbtn"><svg class="ic lg"><use href="#i-chevron-right"/></svg><span>繼續冒險<span class="d">艾琳 Lv.2・索里耶爾・第 3 天 19:40</span></span><span></span></button>
+      <button class="btn mbtn"><svg class="ic lg"><use href="#i-plus"/></svg><span>開新遊戲</span><span></span></button>
+      <button class="btn mbtn"><svg class="ic lg"><use href="#i-library"/></svg><span>讀取存檔</span><span></span></button>
+      <button class="btn mbtn"><svg class="ic lg"><use href="#i-map"/></svg><span>世界管理<span class="d">目前：預設世界（共 2 個）</span></span><span></span></button>
+      <button class="btn mbtn"><svg class="ic lg"><use href="#i-script"/></svg><span>提示詞管理<span class="d">目前：預設提示詞（共 3 組）</span></span><span></span></button>
+      <button class="btn mbtn"><svg class="ic lg"><use href="#i-settings-cog"/></svg><span>設定</span><span></span></button>
+    </section>
+    <div class="foot">
+      <button class="linkish" data-go="credits"><svg class="ic sm"><use href="#i-info-box"/></svg>素材授權與致謝</button>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ===================================================== Dialog：隊伍（第一層） -->
+<div class="scrim" id="d-party">
+  <div class="dlg" style="--w:1100px">
+    <div class="dlg-head"><svg class="ic"><use href="#i-users"/></svg><h2>隊伍</h2><span class="muted" style="font-size:var(--fs-sm)">2 / 4 人</span><button class="x" data-close><svg class="ic sm"><use href="#i-close"/></svg></button></div>
+    <div class="dlg-body">
+      <div class="cards">
+        <!-- 艾琳 -->
+        <article class="card">
+          <div class="alert-strip"><svg class="ic sm"><use href="#i-sparkles"/></svg>升級了！有 1 項能力可以選擇、2 點屬性可以分配<button class="btn sm">前往</button></div>
+          <div class="rank" title="冒險者公會階級">F</div>
+          <div class="card-top">
+            <div class="pic"><img class="pix" data-sprite="hero" alt="" /></div>
+            <div>
+              <h3>艾琳 <span class="chip gold">主角</span></h3>
+              <div class="meta">女・人類・戰士・Lv.2</div>
+              <div class="vitals">
+                <div class="row"><span class="label">HP</span><div class="bar grow"><i style="width:76%"></i></div><span class="num">19 / 25</span></div>
+                <div class="row"><span class="label">EXP</span><div class="bar xp grow"><i style="width:45%"></i></div><span class="num">135 / 300</span></div>
+              </div>
+              <div class="row wrap" style="gap:4px;margin-top:8px"><span class="chip">生命骰 d10 × 2/2</span></div>
+            </div>
+          </div>
+          <div class="attr5">
+            <div class="boost" title="基礎 16・裝備 +1"><span class="label">力量</span><span class="v">17</span><span class="m">+3</span></div>
+            <div><span class="label">靈巧</span><span class="v">15</span><span class="m">+2</span></div>
+            <div><span class="label">智力</span><span class="v">11</span><span class="m">+0</span></div>
+            <div><span class="label">信仰</span><span class="v">14</span><span class="m">+2</span></div>
+            <div><span class="label">魅力</span><span class="v">13</span><span class="m">+1</span></div>
+          </div>
+          <div class="combat3">
+            <div><span class="label">行動點</span><span class="val">4 <span class="muted" style="font-weight:400">每回合 +2</span></span></div>
+            <div><span class="label">法術環</span><span class="muted">—</span></div>
+            <div><span class="label">施法屬性</span><span class="muted">—</span></div>
+          </div>
+          <div class="sec"><span class="label">特質</span><div class="items"><span class="chip">適應力</span><span class="chip">鋼鐵意志</span></div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+          <div class="sec"><span class="label">裝備</span><div class="items">
+            <span class="gear-ic r-uncommon" title="精鋼長劍"><img class="pix" data-sprite="sword" alt="" /></span>
+            <span class="gear-ic" title="木盾"><img class="pix" data-sprite="shieldItem" alt="" /></span>
+            <span class="gear-ic" title="鍊甲"><img class="pix" data-sprite="armor" alt="" /></span>
+            <span class="gear-ic" title="旅行靴"><img class="pix" data-sprite="boots" alt="" /></span>
+            <span class="gear-ic r-rare" title="藍寶戒指"><img class="pix" data-sprite="ring" alt="" /></span>
+          </div><button class="go" data-go="detail-gear">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+          <div class="sec"><span class="label">刺青</span><div class="items"><span class="chip">左臂・狼紋</span></div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+          <div class="sec"><span class="label">能力</span><div class="items"><span class="chip">順劈</span><span class="chip">重整旗鼓</span><span class="chip">盾擊</span></div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+          <div class="sec"><span class="label">設定</span><div class="items muted" style="font-size:var(--fs-sm)">河谷鎮鐵匠的次子，為了尋找失蹤的哥哥…</div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+        </article>
+
+        <!-- 莉娜 -->
+        <article class="card">
+          <div class="rank" title="依等級換算的階級">F</div>
+          <div class="card-top">
+            <div class="pic"><img class="pix" data-sprite="mage" alt="" /></div>
+            <div>
+              <h3>莉娜 <span class="chip jade">同伴</span></h3>
+              <div class="meta">女・精靈・法師・Lv.2</div>
+              <div class="vitals">
+                <div class="row"><span class="label">HP</span><div class="bar grow"><i style="width:42%"></i></div><span class="num">6 / 14</span></div>
+                <div class="row"><span class="label">EXP</span><div class="bar xp grow"><i style="width:30%"></i></div><span class="num">90 / 300</span></div>
+              </div>
+              <div class="row wrap" style="gap:4px;margin-top:8px"><span class="chip">生命骰 d6 × 1/2</span><span class="chip bad">中毒</span><span class="chip">親密度 42・信賴</span></div>
+            </div>
+          </div>
+          <div class="attr5">
+            <div><span class="label">力量</span><span class="v">8</span><span class="m">−1</span></div>
+            <div><span class="label">靈巧</span><span class="v">14</span><span class="m">+2</span></div>
+            <div class="boost"><span class="label">智力</span><span class="v">17</span><span class="m">+3</span></div>
+            <div><span class="label">信仰</span><span class="v">12</span><span class="m">+1</span></div>
+            <div><span class="label">魅力</span><span class="v">13</span><span class="m">+1</span></div>
+          </div>
+          <div class="combat3">
+            <div><span class="label">行動點</span><span class="val">4 <span class="muted" style="font-weight:400">每回合 +2</span></span></div>
+            <div><span class="label">法術環</span><span><span class="slots"><i></i><i></i><i class="used"></i></span> <span class="muted" style="font-size:var(--fs-xs)">1 環 2/3</span></span></div>
+            <div><span class="label">施法屬性</span><span class="val">智力 <span class="muted" style="font-weight:400">熟練 +2</span></span></div>
+          </div>
+          <div class="sec"><span class="label">特質</span><div class="items"><span class="chip">夜視</span><span class="chip">博學</span><span class="chip bad">怕水（缺陷）</span></div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+          <div class="sec"><span class="label">裝備</span><div class="items">
+            <span class="gear-ic" title="橡木法杖"><img class="pix" data-sprite="staff" alt="" /></span>
+            <span class="gear-ic" title="治療藥水"><img class="pix" data-sprite="potion" alt="" /></span>
+          </div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+          <div class="sec"><span class="label">刺青</span><div class="items muted" style="font-size:var(--fs-sm)">無</div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+          <div class="sec"><span class="label">能力</span><div class="items"><span class="chip">火焰箭</span><span class="chip">護盾術</span><span class="chip">光亮術</span><span class="chip">魔法飛彈</span></div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+          <div class="sec"><span class="label">設定</span><div class="items muted" style="font-size:var(--fs-sm)">安靜、好奇，對古代文字特別著迷…</div><button class="go">詳情<svg class="ic sm"><use href="#i-chevron-right"/></svg></button></div>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================== Dialog：角色詳情（分頁） -->
+<div class="scrim" id="d-detail">
+  <div class="dlg" style="--w:1080px">
+    <div class="dlg-head"><svg class="ic"><use href="#i-user"/></svg><h2>角色詳情</h2><button class="x" data-close><svg class="ic sm"><use href="#i-close"/></svg></button></div>
+    <div class="dlg-body">
+      <div class="who">
+        <button class="on"><img class="pix" data-sprite="hero" alt="" />艾琳</button>
+        <button><img class="pix" data-sprite="mage" alt="" />莉娜</button>
+      </div>
+      <nav class="dtabs">
+        <button data-tab="stats"><svg class="ic"><use href="#i-sliders"/></svg>屬性與戰鬥</button>
+        <button data-tab="perks"><svg class="ic"><use href="#i-star"/></svg>特質</button>
+        <button data-tab="gear"><svg class="ic"><use href="#i-shield"/></svg>裝備</button>
+        <button data-tab="tattoo"><svg class="ic"><use href="#i-feather"/></svg>刺青</button>
+        <button data-tab="profile"><svg class="ic"><use href="#i-notebook"/></svg>角色設定</button>
+        <button data-tab="abilities"><svg class="ic"><use href="#i-sparkles"/></svg>能力</button>
+      </nav>
+
+      <div class="tabpane" data-pane="stats">
+        <div class="statgrid">
+          <div>
+            <table class="attr-table">
+              <tr><th>屬性</th><th>數值</th><th>修正</th><th>來源</th><th></th></tr>
+              <tr><td>力量 <span class="hint"><svg class="ic sm"><use href="#i-circle-question"/></svg><span class="pop">近戰武器的命中與傷害、搬運、破門。</span></span></td><td class="big" style="color:#a8452c">17</td><td>+3</td><td class="src">基礎 16・精鋼長劍 +1</td><td><button class="btn sm">＋</button></td></tr>
+              <tr><td>靈巧</td><td class="big">15</td><td>+2</td><td class="src">—</td><td><button class="btn sm">＋</button></td></tr>
+              <tr><td>智力</td><td class="big">11</td><td>+0</td><td class="src">—</td><td><button class="btn sm">＋</button></td></tr>
+              <tr><td>信仰</td><td class="big">14</td><td>+2</td><td class="src">—</td><td><button class="btn sm">＋</button></td></tr>
+              <tr><td>魅力</td><td class="big">13</td><td>+1</td><td class="src">—</td><td><button class="btn sm">＋</button></td></tr>
+            </table>
+            <p class="muted" style="font-size:var(--fs-sm)">可分配屬性點：<b style="color:#a8452c">2</b></p>
+          </div>
+          <div>
+            <div class="kv"><span class="label">行動點</span><span class="v">4</span><span class="muted">每回合 +2</span></div>
+            <div class="kv"><span class="label">法術環</span><span class="v">—</span><span></span></div>
+            <div class="kv"><span class="label">幸運一擊</span><span class="v">自然骰 19+</span><span class="hint"><svg class="ic sm"><use href="#i-circle-question"/></svg><span class="pop">擲出這個數字以上的自然骰時，傷害加倍。</span></span></div>
+            <div class="kv"><span class="label">迴避骰下限</span><span class="v">3</span><span></span></div>
+            <div class="kv"><span class="label">武器</span><span class="v">精鋼長劍</span><span class="muted">1d8+1 斬擊・力量</span></div>
+            <div class="kv"><span class="label">防具</span><span class="v">鍊甲</span><span class="muted">迴避 −1・物理減傷 2</span></div>
+            <div class="kv"><span class="label">傷害倍率</span><span class="v">斬擊 ×0.75</span><span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpane" data-pane="gear">
+        <div class="equip">
+          <div class="doll">
+            <div class="col left">
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-crown"/></svg></div><div><div class="sn">頭部</div><div class="in muted">—</div></div></div>
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-diamond-gem"/></svg></div><div><div class="sn">首飾</div><div class="in muted">—</div></div></div>
+              <div class="slot filled"><div class="box"><img class="pix" data-sprite="armor" alt="" /></div><div><div class="sn">上身</div><div class="in">鍊甲</div></div></div>
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-hand"/></svg></div><div><div class="sn">手腕</div><div class="in muted">—</div></div></div>
+              <div class="slot filled r-uncommon sel"><div class="box"><img class="pix" data-sprite="sword" alt="" /></div><div><div class="sn">主手</div><div class="in">精鋼長劍</div></div></div>
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-wall"/></svg></div><div><div class="sn">腰帶</div><div class="in muted">—</div></div></div>
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-shirt"/></svg></div><div><div class="sn">下身</div><div class="in muted">—</div></div></div>
+            </div>
+            <div class="fig"><svg viewBox="0 0 100 220"><use href="#i-figure"/></svg></div>
+            <div class="col right">
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-sparkles"/></svg></div><div><div class="sn">穿孔飾品</div><div class="in muted">—</div></div></div>
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-sparkles"/></svg></div><div><div class="sn">穿孔飾品</div><div class="in muted">—</div></div></div>
+              <div class="slot filled r-rare"><div class="box"><img class="pix" data-sprite="ring" alt="" /></div><div><div class="sn">戒指</div><div class="in">藍寶戒指</div></div></div>
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-target"/></svg></div><div><div class="sn">戒指</div><div class="in muted">—</div></div></div>
+              <div class="slot filled"><div class="box"><img class="pix" data-sprite="shieldItem" alt="" /></div><div><div class="sn">副手</div><div class="in">木盾</div></div></div>
+              <div class="slot"><div class="box"><svg class="ic"><use href="#i-sparkles"/></svg></div><div><div class="sn">腿部飾品</div><div class="in muted">—</div></div></div>
+              <div class="slot filled"><div class="box"><img class="pix" data-sprite="boots" alt="" /></div><div><div class="sn">鞋子</div><div class="in">旅行靴</div></div></div>
+            </div>
+            <div class="totals"><span class="chip">命中 +1</span><span class="chip">傷害 1d8+1</span><span class="chip">迴避 −1</span><span class="chip">減傷 2</span><span class="chip">力量 +1</span></div>
+          </div>
+
+          <div class="picker">
+            <h4><svg class="ic"><use href="#i-sword"/></svg>主手</h4>
+            <div class="current">
+              <span class="gear-ic r-uncommon"><img class="pix" data-sprite="sword" alt="" /></span>
+              <div>
+                <div class="iname r-uncommon">精鋼長劍 <span class="chip" style="font-weight:400">優良</span></div>
+                <div class="row wrap" style="gap:4px;margin-top:4px"><span class="chip">1d8 斬擊</span><span class="chip">命中 +1</span><span class="chip gold">力量 +1</span></div>
+              </div>
+              <button class="btn sm">卸下</button>
+            </div>
+            <div class="filterbar"><span class="label">行囊中可以裝在主手的物品</span><span class="grow"></span><label class="muted" style="font-size:var(--fs-xs)"><input type="checkbox" checked /> 只看這個欄位</label></div>
+            <div class="ilist">
+              <div class="irow">
+                <span class="gear-ic"><img class="pix" data-sprite="swordIron" alt="" /></span>
+                <div><div class="iname">鐵長劍</div><div class="stats"><span class="chip">1d8 斬擊</span><span class="cmp-down" style="font-size:var(--fs-xs)">命中 −1　力量 −1</span></div></div>
+                <button class="btn sm">換上</button>
+              </div>
+              <div class="irow">
+                <span class="gear-ic r-rare"><img class="pix" data-sprite="swordGold" alt="" /></span>
+                <div><div class="iname r-rare">晨光細劍 <span class="chip" style="font-weight:400">稀有</span></div><div class="stats"><span class="chip">1d6 穿刺・靈巧</span><span class="cmp-up" style="font-size:var(--fs-xs)">命中 +1　幸運一擊 −1</span></div></div>
+                <button class="btn sm">換上</button>
+              </div>
+              <div class="irow">
+                <span class="gear-ic"><img class="pix" data-sprite="staff" alt="" /></span>
+                <div><div class="iname">橡木法杖</div><div class="stats"><span class="chip">1d6 鈍擊・雙手</span><span class="muted" style="font-size:var(--fs-xs)">會卸下副手的木盾</span></div></div>
+                <button class="btn sm">換上</button>
+              </div>
+            </div>
+            <p class="muted" style="font-size:var(--fs-xs);margin-top:10px">點左邊的欄位切換；之後可以加上「從行囊拖到欄位」。</p>
+          </div>
+        </div>
+      </div>
+      <div class="tabpane" data-pane="perks"><p class="muted">（樣稿略）特質卡片：名稱、來源標籤（種族／缺陷／自訂）、效果說明。</p></div>
+      <div class="tabpane" data-pane="tattoo"><p class="muted">（樣稿略）沿用紙娃娃的人形剪影（正面／背面），在部位上打點，點擊看刺青說明。</p></div>
+      <div class="tabpane" data-pane="profile"><p class="muted">（樣稿略）性別、出身、外貌、背景；主角可以編輯。</p></div>
+      <div class="tabpane" data-pane="abilities"><p class="muted">（樣稿略）依技能／法術／戲法分組的能力卡，品質用顏色邊框，AP 與環數用 Chip。</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================== Dialog：酒館招募 -->
+<div class="scrim" id="d-tavern">
+  <div class="dlg" style="--w:980px">
+    <div class="dlg-head"><svg class="ic"><use href="#i-mug"/></svg><h2>金麥酒館・招募冒險者</h2>
+      <span class="hint" style="margin-left:6px"><svg class="ic sm"><use href="#i-circle-question"/></svg><span class="pop">今天在城裡可以雇用的冒險者（右側「這裡的人」也能直接雇用）。出價低於要價時要談判；出價影響最大，運氣好甚至能免費雇到人。</span></span>
+      <button class="x" data-close><svg class="ic sm"><use href="#i-close"/></svg></button></div>
+    <div class="dlg-body">
+      <div class="cands">
+        <div class="cand">
+          <div class="head"><div class="pic"><img class="pix" data-sprite="bard" alt="" /></div><div><div class="nm">班奈特</div><div class="muted" style="font-size:var(--fs-xs)">男・人類・吟遊詩人 Lv.3</div></div></div>
+          <div class="bio">愛說笑，總是抱著一把舊魯特琴。據說他在每座城都欠了酒錢。</div>
+          <div class="row wrap" style="gap:4px"><span class="chip">治療</span><span class="chip">鼓舞</span></div>
+          <div class="price"><span><span class="label">要價</span> <b>60</b> 白鶴</span><button class="btn sm primary">談雇傭</button></div>
+        </div>
+        <div class="cand">
+          <div class="head"><div class="pic"><img class="pix" data-sprite="rogue" alt="" /></div><div><div class="nm">賈克</div><div class="muted" style="font-size:var(--fs-xs)">男・獸人・盜賊 Lv.2</div></div></div>
+          <div class="bio">沉默寡言，眼神總在打量別人的錢包。手腳非常乾淨。</div>
+          <div class="row wrap" style="gap:4px"><span class="chip">開鎖</span><span class="chip">偷襲</span></div>
+          <div class="price"><span><span class="label">要價</span> <b>45</b> 白鶴 <span class="chip gold">還價</span></span><button class="btn sm primary">談雇傭</button></div>
+        </div>
+        <div class="cand">
+          <div class="head"><div class="pic"><img class="pix" data-sprite="cleric" alt="" /></div><div><div class="nm">瑟拉</div><div class="muted" style="font-size:var(--fs-xs)">女・矮人・牧師 Lv.2</div></div></div>
+          <div class="bio">聖環教廷的見習修女，嗓門比體型大三倍。</div>
+          <div class="row wrap" style="gap:4px"><span class="chip">治療</span><span class="chip">驅邪</span></div>
+          <div class="price"><span class="muted" style="font-size:var(--fs-sm)">今天不想再談了</span><button class="btn sm" disabled>談雇傭</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================== Dialog：素材授權 -->
+<div class="scrim" id="d-credits">
+  <div class="dlg credits" style="--w:820px">
+    <div class="dlg-head"><svg class="ic"><use href="#i-info-box"/></svg><h2>素材授權與致謝</h2><button class="x" data-close><svg class="ic sm"><use href="#i-close"/></svg></button></div>
+    <div class="dlg-body">
+      <p class="muted" style="margin-top:0;font-size:var(--fs-sm)">本遊戲使用了以下第三方素材，依各自授權條款標示作者與來源。清單由 <code>data/credits.json</code> 產生，新增素材時一併登記。</p>
+      <h4>圖示</h4>
+      <table>
+        <tr><th>素材</th><th>作者</th><th>授權</th><th>用途</th></tr>
+        <tr><td><a href="https://github.com/halfmage/pixelarticons">Pixelarticons</a></td><td>Gerrit Halfmann</td><td class="lic"><span class="chip">MIT</span></td><td>介面圖示</td></tr>
+        <tr><td><i class="muted">（範例）某 CC BY 像素圖示包</i></td><td>作者名</td><td class="lic"><span class="chip gold">CC BY 4.0</span></td><td>物品與裝備圖示</td></tr>
+      </table>
+      <h4>字型</h4>
+      <table>
+        <tr><th>素材</th><th>作者</th><th>授權</th><th>用途</th></tr>
+        <tr><td><a href="https://fonts.google.com/noto/specimen/Noto+Serif+TC">Noto Serif TC</a></td><td>Google / Adobe</td><td class="lic"><span class="chip">OFL 1.1</span></td><td>內文、標題</td></tr>
+        <tr><td><a href="https://github.com/lxgw/LxgwWenkaiTC">霞鶩文楷 TC</a></td><td>LXGW</td><td class="lic"><span class="chip">OFL 1.1</span></td><td>敘事正文</td></tr>
+      </table>
+      <h4>自製</h4>
+      <table>
+        <tr><td>地圖格、物品像素圖、紋飾邊框</td><td>本專案</td><td class="lic"><span class="chip jade">專案授權</span></td><td>地圖、物品圖示</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- 像素圖：字元陣列 → canvas ---------- */
+const PAL = {
+  k: '#1a1410', w: '#f4ecd8', s: '#b9c3cf', S: '#6b7686', g: '#e8b84e', G: '#9a6e24', b: '#8a5a30', B: '#4f3019',
+  r: '#cf3f30', R: '#7d1f16', u: '#4a8ad6', U: '#23487a', e: '#62b062', E: '#2f6a33', f: '#f0c49a', F: '#c48a5c',
+  p: '#9a64d0', P: '#5a3480', y: '#f6e27a', h: '#3a2a1a', c: '#d8d0c0', C: '#8a8478', o: '#e07a30',
+}
+const SPR = {
+  sword: [
+    '..............kk', '.............kwk', '............kwsk', '...........kwsk.', '..........kwsk..', '.........kwsk...',
+    '........kwsk....', '..kk...kwsk.....', '..kgk.kwsk......', '...kgkwsk.......', '....kgGk........', '...kbkkgk.......',
+    '..kbk...kgk.....', '.kBk.....kk.....', 'kgk.............', 'kk..............'],
+  shieldItem: [
+    '................', '..kkkkkkkkkkkk..', '.kGbbbbbbbbbbGk.', '.kbbBbbggbbBbbk.', '.kbbBbgyygbBbbk.', '.kbbBbgyygbBbbk.',
+    '.kGGGGGGGGGGGGk.', '.kbbBbbggbbBbbk.', '.kbbBbbggbbBbbk.', '..kbBbbggbbBbk..', '..kbBbbggbbBbk..', '...kbbbggbbbk...',
+    '....kbbggbbk....', '.....kbGGbk.....', '......kkkk......', '................'],
+  armor: [
+    '................', '...kkk....kkk...', '..kSssk..kssSk..', '..kssskkkksssk..', '.kSsssssssssssk.', '.ksswsssssswssk.',
+    '.kSssssssssssSk.', '..kkssssssssskk.', '...kssswwsssk...', '...kSssssssSk...', '...kssssssssk...', '...kSssssssSk...',
+    '...kkGgggggGkk..', '...kssssssssk...', '...kkkkkkkkkk...', '................'],
+  boots: [
+    '................', '...kkkkkk.......', '...kGggGk.......', '...kbbbbk.......', '...kbBbbk.......', '...kbbbbk.......',
+    '...kbBbbk.......', '...kbbbbk.......', '...kbbbbbkk.....', '...kbbbbbbbkk...', '...kbbbbbbbbbk..', '...kbBbbbbbbbk..',
+    '...kBBBBBBBBBk..', '...kkkkkkkkkkk..', '................', '................'],
+  ring: [
+    '................', '......kkkk......', '.....kuwuuk.....', '.....kuuuUk.....', '......kUUk......', '.....kgkkgk.....',
+    '....kgGkkGgk....', '...kgk....kgk...', '...kgk....kGk...', '...kgk....kGk...', '...kgk....kGk...', '....kgk..kGk....',
+    '.....kgGGGk.....', '......kkkk......', '................', '................'],
+  potion: [
+    '................', '......kkkk......', '......kbbk......', '......kBBk......', '.......kk.......', '......kwck......',
+    '......kwck......', '.....kwccck.....', '....kwrrrrck....', '...kwrrwrrrrk...', '...krrwrrrrRk...', '...krrrrrrrRk...',
+    '...kRrrrrrRRk...', '....kRRRRRRk....', '.....kkkkkk.....', '................'],
+  staff: [
+    '..........kkk...', '.........kuwuk..', '.........kuuuk..', '..........kUk...', '.........kgk....', '........kbk.....',
+    '.......kbk......', '......kbk.......', '.....kbk........', '....kbk.........', '...kbk..........', '..kBk...........',
+    '.kBk............', '.kk.............', '................', '................'],
+}
+SPR.swordIron = SPR.sword.map((r) => r.replace(/w/g, 'c').replace(/s/g, 'C').replace(/g/g, 'C').replace(/G/g, 'S'))
+SPR.swordGold = SPR.sword.map((r) => r.replace(/s/g, 'y').replace(/g/g, 'u').replace(/G/g, 'U'))
+// 人物（頭髮 H、衣服 T、皮膚 f）
+const PERSON = [
+  '................', '.....kkkkkk.....', '....kHHHHHHk....', '....kHHHHHHk....', '....kHffffHk....', '....kfkffkfk....',
+  '....kffffffk....', '.....kffffk.....', '....kTTTTTTk....', '...kTTTTTTTTk...', '...kfTTTTTTfk...', '...kfTTggTTfk...',
+  '....kTTTTTTk....', '....kBBkkBBk....', '....kBBk.kBBk...', '....kkk...kkk...']
+function person(hair, tunic) { return PERSON.map((r) => r.replace(/H/g, hair).replace(/T/g, tunic)) }
+Object.assign(SPR, {
+  hero: person('o', 'S'), mage: person('y', 'p'), bard: person('b', 'u'), rogue: person('k', 'E'),
+  merchant: person('R', 'r'), barkeep: person('C', 'b'), cleric: person('F', 'w'),
+})
+function draw(rows, scale = 1) {
+  const c = document.createElement('canvas')
+  c.width = 16 * scale; c.height = 16 * scale
+  const x = c.getContext('2d')
+  rows.forEach((row, j) => [...row].forEach((ch, i) => { if (PAL[ch]) { x.fillStyle = PAL[ch]; x.fillRect(i * scale, j * scale, scale, scale) } }))
+  return c
+}
+document.querySelectorAll('img[data-sprite]').forEach((img) => { img.src = draw(SPR[img.dataset.sprite]).toDataURL() })
+
+/* ---------- 地圖格（程序生成的 16×16 圖塊） ---------- */
+function rng(seed) { return () => ((seed = (seed * 16807) % 2147483647) / 2147483647) }
+function tile(ctx, kind, ox, oy, seed) {
+  const R = rng(seed + 7)
+  const px = (x, y, c) => { ctx.fillStyle = c; ctx.fillRect(ox + x, oy + y, 1, 1) }
+  const fill = (c) => { ctx.fillStyle = c; ctx.fillRect(ox, oy, 16, 16) }
+  if (kind === 'void') { fill('#0d0a08'); for (let i = 0; i < 6; i++) px(R() * 16 | 0, R() * 16 | 0, '#17120d'); return }
+  if (kind === 'wall') { fill('#3c3530'); for (let y = 0; y < 16; y += 4) for (let x = 0; x < 16; x++) px(x, y, '#2a2420'); for (let y = 0; y < 16; y += 4) for (let x = (y / 4) % 2 ? 0 : 4; x < 16; x += 8) for (let k = 0; k < 4; k++) px(x, y + k, '#2a2420'); for (let i = 0; i < 6; i++) px(R() * 16 | 0, R() * 16 | 0, '#4a423b'); return }
+  if (kind === 'ground') {
+    fill('#7a6a52')
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const v = R(); if (v < .12) px(x, y, '#6a5a44'); else if (v > .94) px(x, y, '#8c7b60') }
+    for (let i = 0; i < 3; i++) { const x = R() * 13 | 0, y = R() * 13 | 0; px(x, y, '#5a4c3a'); px(x + 1, y, '#5a4c3a'); px(x, y + 1, '#94836a') }
+    return
+  }
+  if (kind === 'grass') { fill('#4f7a3a'); for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const v = R(); if (v < .14) px(x, y, '#3f6a2e'); else if (v > .9) px(x, y, '#6a9a4a') } return }
+  if (kind === 'water') {
+    fill('#2a5a80')
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (R() < .08) px(x, y, '#244e70')
+    for (let y = 2; y < 16; y += 5) { const s = (R() * 10) | 0; for (let x = s; x < s + 4; x++) px(x % 16, y, '#6aa0c8'); px((s + 4) % 16, y + 1, '#4a80a8') }
+    return
+  }
+  if (kind.startsWith('roof')) {
+    const [a, b2, c2] = kind === 'roofR' ? ['#a04a32', '#7a3422', '#c06a4a'] : kind === 'roofB' ? ['#3d5f8a', '#2a4466', '#5a80aa'] : ['#7a5a2e', '#5a3f1e', '#9a7a44']
+    fill(a)
+    for (let y = 0; y < 11; y += 3) for (let x = 0; x < 16; x++) px(x, y, b2)
+    for (let y = 1; y < 11; y += 3) for (let x = (y % 2) * 2; x < 16; x += 4) px(x, y, c2)
+    ctx.fillStyle = '#c9b48a'; ctx.fillRect(ox, oy + 11, 16, 5)
+    ctx.fillStyle = '#4a3420'; ctx.fillRect(ox + 6, oy + 12, 4, 4)
+    ctx.fillStyle = '#e8c860'; ctx.fillRect(ox + 2, oy + 12, 2, 2); ctx.fillRect(ox + 12, oy + 12, 2, 2)
+    ctx.fillStyle = '#00000055'; ctx.fillRect(ox, oy + 11, 16, 1)
+    return
+  }
+  if (kind === 'gate') { tile(ctx, 'ground', ox, oy, seed); ctx.fillStyle = '#5a4630'; ctx.fillRect(ox + 1, oy + 3, 2, 12); ctx.fillRect(ox + 13, oy + 3, 2, 12); ctx.fillRect(ox + 1, oy + 2, 14, 2); ctx.fillStyle = '#c99a45'; ctx.fillRect(ox + 6, oy + 6, 4, 4); return }
+}
+function drawSpriteAt(ctx, rows, ox, oy) { rows.forEach((row, j) => [...row].forEach((ch, i) => { if (PAL[ch]) { ctx.fillStyle = PAL[ch]; ctx.fillRect(ox + i, oy + j, 1, 1) } })) }
+const MAP = [
+  'vvvvvGvvvvv',
+  'vRgggwgwggB',
+  'vggXgwgwgPg',
+  'GgggggggggG',
+  'vgvgggwgvgv',
+  'vYggwgwgggT',
+  'vvvvvGvvvvv',
+]
+;(function () {
+  const cv = document.getElementById('map'); if (!cv) return
+  const ctx = cv.getContext('2d')
+  const KIND = { v: 'wall', g: 'ground', w: 'water', G: 'gate', R: 'roofR', B: 'roofB', X: 'roofW', P: 'roofR', Y: 'roofW', T: 'roofB' }
+  MAP.forEach((row, y) => [...row].forEach((ch, x) => tile(ctx, KIND[ch] || 'ground', x * 16, y * 16, x * 31 + y * 17 + 3)))
+  // NPC 與主角
+  drawSpriteAt(ctx, SPR.bard, 7 * 16, 3 * 16)
+  drawSpriteAt(ctx, SPR.rogue, 9 * 16, 4 * 16)
+  drawSpriteAt(ctx, SPR.merchant, 1 * 16, 4 * 16)
+  drawSpriteAt(ctx, SPR.hero, 5 * 16, 5 * 16)
+  ctx.strokeStyle = '#f0d083'; ctx.lineWidth = 1; ctx.strokeRect(5 * 16 + .5, 5 * 16 + .5, 15, 15)
+  // 可以走的相鄰格
+  ctx.fillStyle = '#f0d08322'; ;[[4, 5], [6, 5], [5, 4]].forEach(([x, y]) => ctx.fillRect(x * 16, y * 16, 16, 16))
+})()
+
+/* ---------- 酒館場景 ---------- */
+;(function () {
+  const cv = document.getElementById('scene'); if (!cv) return
+  const x = cv.getContext('2d'); const W = cv.width, H = cv.height; const R = rng(42)
+  x.fillStyle = '#3a2414'; x.fillRect(0, 0, W, H)
+  for (let yy = 0; yy < 50; yy += 6) { x.fillStyle = '#2a180c'; x.fillRect(0, yy, W, 1) }
+  for (let i = 0; i < 260; i++) { x.fillStyle = R() < .5 ? '#45301c' : '#311e10'; x.fillRect(R() * W | 0, R() * 50 | 0, 2, 1) }
+  // 窗
+  x.fillStyle = '#1a2a44'; x.fillRect(120, 8, 26, 20); x.fillStyle = '#5a3a1e'; x.fillRect(119, 7, 28, 1); x.fillRect(119, 28, 28, 1); x.fillRect(132, 8, 1, 20); x.fillRect(120, 17, 26, 1)
+  x.fillStyle = '#f6e27a'; x.fillRect(138, 11, 2, 2)
+  // 架子與酒瓶
+  x.fillStyle = '#5a3a1e'; x.fillRect(14, 16, 60, 2); x.fillRect(14, 30, 60, 2)
+  ;['#7a2e1a', '#2e5a2a', '#c9a24a', '#4a3a8a', '#7a2e1a', '#2e5a2a', '#c9a24a'].forEach((c, i) => { x.fillStyle = c; x.fillRect(18 + i * 8, 8, 4, 8); x.fillRect(19 + i * 8, 6, 2, 2); x.fillRect(18 + i * 8, 22, 4, 8) })
+  // 吊燈
+  ;[40, 100, 160].forEach((lx) => { x.fillStyle = '#2a180c'; x.fillRect(lx, 0, 1, 6); x.fillStyle = '#f6c05a'; x.fillRect(lx - 2, 6, 5, 3); x.fillStyle = '#fff2b0'; x.fillRect(lx - 1, 7, 3, 1) })
+  // 地板
+  x.fillStyle = '#24160c'; x.fillRect(0, 50, W, H - 50)
+  for (let xx = 0; xx < W; xx += 12) { x.fillStyle = '#1a0f07'; x.fillRect(xx, 50, 1, H - 50) }
+  // 老闆
+  drawSpriteAt(x, SPR.barkeep, 44, 34)
+  // 櫃台
+  x.fillStyle = '#6a4424'; x.fillRect(0, 46, 110, 4); x.fillStyle = '#4a2c14'; x.fillRect(0, 50, 110, 16); x.fillStyle = '#3a2210'; for (let xx = 4; xx < 110; xx += 14) x.fillRect(xx, 52, 1, 12)
+  x.fillStyle = '#c9a24a'; x.fillRect(70, 41, 4, 5); x.fillStyle = '#fff'; x.fillRect(70, 40, 4, 1)
+  // 酒桶
+  ;[150, 168].forEach((bx) => { x.fillStyle = '#6a4424'; x.fillRect(bx, 48, 14, 18); x.fillStyle = '#2a180c'; x.fillRect(bx, 52, 14, 1); x.fillRect(bx, 61, 14, 1); x.fillStyle = '#8a5a30'; x.fillRect(bx + 2, 48, 2, 18) })
+  drawSpriteAt(x, SPR.bard, 122, 46)
+  // 光暈
+  const g = x.createRadialGradient(100, 10, 2, 100, 10, 90); g.addColorStop(0, '#f6c05a40'); g.addColorStop(1, '#0000'); x.fillStyle = g; x.fillRect(0, 0, W, H)
+  const d = x.createLinearGradient(0, 30, 0, H); d.addColorStop(0, '#0000'); d.addColorStop(1, '#000a'); x.fillStyle = d; x.fillRect(0, 0, W, H)
+})()
+
+/* ---------- 樣稿導覽 ---------- */
+function closeAll() { document.querySelectorAll('.scrim').forEach((s) => s.classList.remove('on')) }
+function tab(name) {
+  document.querySelectorAll('.dtabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === name))
+  document.querySelectorAll('.tabpane').forEach((p) => p.classList.toggle('on', p.dataset.pane === name))
+}
+function go(v) {
+  closeAll()
+  document.querySelectorAll('.mock-nav button').forEach((b) => b.classList.toggle('on', b.dataset.go === v))
+  const home = v === 'home' || v === 'credits'
+  document.getElementById('v-game').classList.toggle('on', !home)
+  document.getElementById('v-home').classList.toggle('on', home)
+  if (v === 'party') document.getElementById('d-party').classList.add('on')
+  if (v.startsWith('detail')) { document.getElementById('d-detail').classList.add('on'); tab(v === 'detail-gear' ? 'gear' : 'stats') }
+  if (v === 'tavern') document.getElementById('d-tavern').classList.add('on')
+  if (v === 'credits') document.getElementById('d-credits').classList.add('on')
+  try { history.replaceState(null, '', '#' + v) } catch {}
+}
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-go]'); if (t) { go(t.dataset.go); return }
+  const c = e.target.closest('[data-close]'); if (c) { closeAll(); return }
+  const tb = e.target.closest('[data-tab]'); if (tb) { tab(tb.dataset.tab); return }
+  if (e.target.classList.contains('scrim')) closeAll()
+})
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll() })
+go(location.hash.slice(1) || 'main')
+</script>
+</body>
+</html>

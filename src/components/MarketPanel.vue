@@ -11,6 +11,7 @@ import type { SlaveListing } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import MarkPicker from './MarkPicker.vue'
 import NameTag from './NameTag.vue'
+import Hint from './ui/Hint.vue'
 
 const props = defineProps<{ kind: MarketKind }>()
 const game = useGame()
@@ -65,11 +66,10 @@ function sellSelf() {
 
 <template>
   <div v-if="market" class="market">
-    <FoldSection :id="`market.${kind}`" :title="`⛓️ ${market.name}`" :count="stock.length">
-    <p class="small muted">
-      {{ kind === 'black' ? '不公開的買賣，價格較低，也有精靈這類在公開市場買不到的人，但風險自負。' : '合法的奴隸市場。' }}
-      買下時可以選擇要刻上的契約印記（也可以自訂），之後奴隸不會因為親密度低而離隊，你對他的主動行動都有優勢。可以殺價或用其他方式影響價格（每人每天一次）。
-    </p>
+    <FoldSection :id="`market.${kind}`" :title="market.name" :count="stock.length">
+      <template #extra>
+        <Hint :text="`${kind === 'black' ? '不公開的買賣，價格較低，也有精靈這類在公開市場買不到的人，但風險自負。' : '合法的奴隸市場。'}\n買下時可以選擇要刻上的契約印記（也可以自訂），之後奴隸不會因為親密度低而離隊，你對他的主動行動都有優勢。可以殺價或用其他方式影響價格（每人每天一次）。`" />
+      </template>
     <ul class="plain">
       <li v-for="l in stock" :key="l.npc" class="item small">
         <template v-if="npcRecord(s, l.npc)">
@@ -106,12 +106,9 @@ function sellSelf() {
 
     <details v-if="!bound" class="small">
       <summary>{{ enslaved ? '登記出售自己（找新主人）' : '登記出售自己' }}</summary>
-      <p class="muted">
-        等 {{ slaveryRules.self_sale.hours }} 小時，有買家的機率約 {{ Math.round(selfSaleChance(s) * 100) }}%（主要看魅力與等級，再依出價的人的身分增減）。
-        成交後你拿到成交價的 {{ Math.round(slaveryRules.self_sale.share * 100) }}%<template v-if="enslaved">，但身上有印記：這筆錢還會照新主人契約的「收益歸屬」被抽走一部分（當作被奴隸商人抽走了）</template>。
-        <template v-if="enslaved">買下你的人成為新主人，身上的印記沿用；逃亡狀態解除。</template>
-        <template v-else>之後由主人帶領；要恢復自由只能談判或逃離。</template>
-        普通人主人會同行，但不參與戰鬥。隊伍必須只剩你一人。
+      <p class="muted self-sale">
+        等 {{ slaveryRules.self_sale.hours }} 小時，有買家的機率約 {{ Math.round(selfSaleChance(s) * 100) }}%；成交後你拿到成交價的 {{ Math.round(slaveryRules.self_sale.share * 100) }}%。隊伍必須只剩你一人。
+        <Hint :text="`機率主要看魅力與等級，再依出價的人的身分增減。${enslaved ? '身上有印記：這筆錢還會照新主人契約的「收益歸屬」被抽走一部分（當作被奴隸商人抽走了）。買下你的人成為新主人，身上的印記沿用；逃亡狀態解除。' : '之後由主人帶領；要恢復自由只能談判或逃離。'}普通人主人會同行，但不參與戰鬥。`" />
       </p>
       <p class="muted">常見的買家：{{ buyers }}</p>
       <button class="small danger" :disabled="s.party.length > 1" @click="sellSelf">登記</button>

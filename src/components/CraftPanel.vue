@@ -7,6 +7,8 @@ import { baseSlotName, gearName, gearRules, gearSummary, rarityName, rarityPoint
 import { formatMoney } from '@/engine/money'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // 打造裝備（data/rules/gear.json 的 craft）：選底材與材料，可以描述想要的樣子。
 // commission：在鐵匠鋪、裁縫店、珠寶店委託店主；make：主角或肯幫忙的夥伴自己動手（crafts.json）
@@ -62,9 +64,15 @@ function craft() {
 
 <template>
   <component :is="make ? 'div' : 'details'" v-if="here" class="craft small">
-    <summary v-if="!make">🔨 委託打造</summary>
-    <p v-if="!make" class="muted">第一級材料由工匠提供；更好的材料要自備（龍鱗、秘銀礦石之類可以打造的材料）。{{ attrName(gearRules.craft.attr) }}檢定，約 {{ gearRules.craft.hours }} 小時。店主的工藝等級要達到材料等級，比需要的高時做得更好。</p>
-    <p v-else class="muted">第一級材料自己買（材料費），更好的材料要自備。做的人擲屬性檢定，加上工藝等級；約 {{ craftRules.self.hours }} 小時。成功時做的人得到工藝經驗。</p>
+    <summary v-if="!make"><GameIcon name="tools" :size="13" /> 委託打造</summary>
+    <p v-if="!make" class="muted intro">
+      {{ attrName(gearRules.craft.attr) }}檢定，約 {{ gearRules.craft.hours }} 小時
+      <Hint text="第一級材料由工匠提供；更好的材料要自備（龍鱗、秘銀礦石之類可以打造的材料）。店主的工藝等級要達到材料等級，比需要的高時做得更好。" />
+    </p>
+    <p v-else class="muted intro">
+      約 {{ craftRules.self.hours }} 小時
+      <Hint text="第一級材料自己買（材料費），更好的材料要自備。做的人擲屬性檢定，加上工藝等級。成功時做的人得到工藝經驗。" />
+    </p>
     <label v-if="make" class="who">誰來做
       <select v-model="crafterId">
         <option v-for="w in who" :key="w.member.id" :value="w.member.id" :disabled="!!w.refusal">{{ w.member.name }}{{ w.refusal ? `（${w.refusal}）` : '' }}</option>
@@ -106,11 +114,11 @@ function craft() {
     <p v-if="aux.length" class="muted">
       輔料價值 {{ formatMoney(plan.auxValue) }}：{{ Math.round(plan.auxChance * 100) }}% 機率品質再高一級（部分成功時照成功做）<template v-if="plan.elements.length">・附魔偏向 {{ plan.elements.map((e) => damageTypeName(e)).join('、') }}</template>
     </p>
-    <p v-if="plan.blocked" class="muted">⚠ {{ plan.blocked }}</p>
+    <p v-if="plan.blocked" class="warn"><GameIcon name="warning" :size="13" /> {{ plan.blocked }}</p>
     <template v-else>
       <input v-model="text" placeholder="想要的樣子（選填）：例如刻上家紋、劍身帶著火焰紋路、取名「破曉」" />
       <AbilityPicker v-model="use" />
-      <button class="small" :disabled="game.judging || !!s.pendingAction" @click="craft">{{ make ? `🛠️ ${crafter.isPlayer ? '親手' : `請${crafter.name}`}打造` : '委託打造' }}</button>
+      <button class="small" :disabled="game.judging || !!s.pendingAction" @click="craft"><GameIcon name="tools" :size="13" /> {{ make ? `${crafter.isPlayer ? '親手' : `請${crafter.name}`}打造` : '委託打造' }}</button>
     </template>
   </component>
 </template>
@@ -123,4 +131,7 @@ function craft() {
 .aux { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .aux .qty { width: 46px; }
 .aux .x { padding: 0 4px; }
+.intro { display: flex; align-items: center; gap: 4px; }
+.warn { color: var(--danger); }
+summary { cursor: pointer; color: var(--accent-2); }
 </style>

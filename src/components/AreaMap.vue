@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, sight, type Cell } from '@/engine/grid'
-import { itemDef, locationById } from '@/engine/data'
+import { isCustomShopId, itemDef, landmarkDef, locationById } from '@/engine/data'
 import { cropStatus } from '@/engine/garden'
 import { homeById } from '@/engine/homes'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
+import GameIcon from './ui/GameIcon.vue'
+import type { IconName } from './ui/iconPaths'
+import { CELL_GAME_ICON } from './ui/cellIcons'
+import { tileUrl, type TileKind } from './ui/tiles'
 
 const game = useGame()
 const area = computed(() => currentArea(game.state!))
@@ -32,6 +36,43 @@ function icon(cell: Cell): string {
   if (cell.kind === 'quest' && cell.storyNode) return '⭐'
   if (cell.kind === 'quest' && !game.state?.quests.some((q) => q.id === cell.questId && q.status === 'accepted')) return ''
   return ICON[cell.kind] ?? ''
+}
+
+/** 用介面圖示畫的格子（其餘的家具、作物等內容自訂的圖示照舊用 emoji） */
+const EVENT_GAME_ICON: Record<string, IconName> = { special: 'star', master: 'lock', advanced: 'sparkles' }
+function gameIcon(cell: Cell): IconName | undefined {
+  const e = icon(cell)
+  if (!e || cell.crop || cell.furniture) return undefined
+  if (cell.dir) return ({ up: 'arrowUp', down: 'arrowDown', out: 'door' } as const)[cell.dir]
+  if (cell.home) return 'home'
+  if (cell.kind === 'quest' && cell.storyNode) return 'star'
+  if (cell.kind === 'event') return EVENT_GAME_ICON[cell.event?.tier ?? ''] ?? 'question'
+  if (cell.kind === 'resource' && e === '💎') return 'gem'
+  return e === ICON[cell.kind] ? CELL_GAME_ICON[cell.kind] : undefined
+}
+const DANGER = new Set(['encounter', 'elite', 'boss'])
+
+// 建築物的屋頂顏色
+const ROOF: Record<string, TileKind> = {
+  inn: 'roof_blue', guild: 'roof_gold', tavern: 'roof_red', shop: 'roof_brown', temple: 'roof_gold', brothel: 'roof_purple',
+  smithy: 'roof_brown', tailor: 'roof_green', jeweler: 'roof_purple', magic: 'roof_purple', informant: 'roof_brown',
+  tattoo: 'roof_green', carver: 'roof_red', manor: 'roof_brown', waypoint: 'roof_red', arrive: 'roof_red',
+}
+function isBuilding(cell: Cell): boolean {
+  return !!ROOF[cell.kind] || isCustomShopId(cell.kind) || !!landmarkDef(cell.kind)
+}
+/** 格子的底圖：牆、水、建築、依區域種類的地面 */
+function tile(cell: Cell, seen: boolean, x: number, y: number): string {
+  const kind = area.value.kind
+  let t: TileKind
+  if (!seen) t = 'void'
+  else if (cell.kind === 'water') t = 'water'
+  else if (cell.kind === 'wall') t = kind === 'dungeon' ? 'wall_dungeon' : kind === 'wild' || kind === 'road' ? 'forest' : 'wall_town'
+  else if (cell.home && kind !== 'home') t = 'roof_blue'
+  else if (isBuilding(cell)) t = ROOF[cell.kind] ?? (landmarkDef(cell.kind) ? 'roof_purple' : 'roof_brown')
+  else if (cell.kind === 'yard' || cell.kind === 'lot' || cell.crop) t = 'grass'
+  else t = kind === 'dungeon' ? 'stone' : kind === 'wild' ? 'grass' : kind === 'road' || kind === 'side' ? 'dirt' : kind === 'home' ? 'wood' : 'cobble'
+  return `url(${tileUrl(t, x, y)})`
 }
 
 function label(cell: Cell): string {
@@ -138,16 +179,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           class="cell"
           :class="[c.seen ? c.cell.kind : 'fog', { here: c.here, step: c.canStep, done: c.cell.done, bump: c.here && bumping }]"
           :disabled="!c.canStep"
-          :title="c.seen ? label(c.cell) + (c.who.length ? `\n👤 ${peopleTitle(c.who)}` : '') : '未探索'"
+          :title="c.seen ? label(c.cell) + (c.who.length ? `\n人：${peopleTitle(c.who)}` : '') : '未探索'"
+          :style="{ backgroundImage: tile(c.cell, c.seen, c.x, c.y) }"
           @click="step(c.x, c.y)"
         >
-          <span v-if="c.here">🧭</span>
-          <span v-else-if="c.seen">{{ icon(c.cell) }}</span>
-          <span v-if="c.who.length" class="npc" :class="{ hostile: c.who.some((p) => isHostile(game.state!, p.rec)), many: c.who.length > 1 }">{{ c.who.length > 1 ? c.who.length : '' }}</span>
+          <span v-if="c.here" class="me"><GameIcon name="user" /></span>
+          <template v-else-if="c.seen">
+            <GameIcon v-if="gameIcon(c.cell)" class="glyph" :class="{ danger: DANGER.has(c.cell.kind) }" :name="gameIcon(c.cell)!" />
+            <span v-else class="emoji">{{ icon(c.cell) }}</span>
+          </template>
+          <span v-if="c.who.length" class="npc" :class="{ hostile: c.who.some((p) => isHostile(game.state!, p.rec)) }"><GameIcon name="user" :size="9" />{{ c.who.length > 1 ? c.who.length : '' }}</span>
         </button>
       </template>
     </div>
-    <p class="small muted hint">點擊相鄰的格子移動，或使用方向鍵 / WASD。</p>
   </div>
 </template>
 
@@ -155,7 +199,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 /* 格子依面板寬度縮放：地圖再寬也不會超出面板（最大 40px） */
 .map-wrap { container-type: inline-size; margin-top: 8px; position: relative; }
 .bump-tip {
-  position: absolute; top: 2px; right: 2px; z-index: 2; pointer-events: none;
+  position: absolute; top: 4px; right: 4px; z-index: 2; pointer-events: none;
   padding: 1px 8px; border-radius: 10px; background: rgba(20, 17, 13, 0.85); color: var(--muted); border: 1px solid var(--border);
 }
 .bump-tip-enter-active, .bump-tip-leave-active { transition: opacity 0.25s; }
@@ -168,35 +212,29 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   80% { transform: translateX(1px); }
 }
 .map {
-  --cell: min(40px, calc((100cqw - (var(--w) - 1) * 2px) / var(--w)));
-  display: grid; gap: 2px; grid-template-columns: repeat(var(--w), var(--cell)); width: max-content; max-width: 100%;
+  --cell: min(40px, calc(100cqw / var(--w)));
+  display: grid; gap: 0; grid-template-columns: repeat(var(--w), var(--cell)); width: max-content; max-width: 100%;
+  border: 1px solid #000; box-shadow: 0 0 0 1px var(--gold-lo), 0 0 0 4px #0008; background: #000;
 }
 .cell {
-  width: var(--cell); height: var(--cell); padding: 0; border-radius: 4px; min-width: 0;
+  position: relative; width: var(--cell); height: var(--cell); padding: 0; border: none; border-radius: 0; min-width: 0;
   display: flex; align-items: center; justify-content: center;
-  font-size: calc(var(--cell) * 0.5); background: #3a3329; border: 1px solid transparent; cursor: default;
+  background-color: #0b0907; background-size: cover; image-rendering: pixelated; cursor: default;
 }
 .cell:disabled { opacity: 1; cursor: default; }
-.cell.wall { background: #15120f; }
-.cell.water { background: #1f3346; }
-.cell.fog { background: #0c0b09; }
-.cell.inn, .cell.guild, .cell.tavern, .cell.shop, .cell.temple, .cell[class*="shop_"] { background: #4a3b26; }
-.cell[class*="lm_"] { background: #3d3350; }
-.cell.gate, .cell.exit, .cell.link, .cell.stairs_down, .cell.stairs_up { background: #2f4036; }
-.cell.encounter:not(.done), .cell.elite:not(.done), .cell.boss:not(.done) { background: #4b2723; }
-.cell.safe { background: #4d3a1d; }
-.cell.quest { background: #4b4320; }
-.cell.yard { background: #2f3f26; }
-.cell.lot { background: #4a4030; }
-.cell.step { border-color: var(--accent); cursor: pointer; }
-.cell.step:hover { background-color: #5a4a33; }
-.cell.here { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
-.hint { margin: 6px 0 0; }
-.cell { position: relative; }
+.cell.done { filter: saturate(0.6); }
+.cell.step { cursor: pointer; }
+.cell.step::after { content: ''; position: absolute; inset: 0; background: #f0d08322; box-shadow: inset 0 0 0 1px #f0d08366; pointer-events: none; }
+.cell.step:hover::after { background: #f0d08344; }
+.cell.here { box-shadow: inset 0 0 0 2px var(--gold-hi), 0 0 10px #f0d08388; z-index: 1; }
+.glyph { width: calc(var(--cell) * 0.55); height: calc(var(--cell) * 0.55); color: var(--gold-hi); filter: drop-shadow(0 1px 0 #000) drop-shadow(0 0 2px #000); }
+.glyph.danger { color: #ff8a70; }
+.emoji { font-size: calc(var(--cell) * 0.5); filter: drop-shadow(0 1px 1px #000); }
+.me { display: grid; place-items: center; width: calc(var(--cell) * 0.7); height: calc(var(--cell) * 0.7); border-radius: 50%; background: radial-gradient(circle, #f0d083, #b8862a); color: #2a1a08; box-shadow: 0 0 8px #f0d083; }
+.me :deep(.game-icon) { width: 70%; height: 70%; }
 .npc {
-  position: absolute; right: 1px; top: 1px; min-width: 9px; height: 9px; border-radius: 5px;
-  background: var(--accent-2); font-size: 8px; line-height: 9px; color: #1b1814; font-weight: 700; padding: 0 1px;
+  position: absolute; right: 1px; top: 1px; display: inline-flex; align-items: center; gap: 1px; height: 12px; padding: 0 2px; border-radius: 2px;
+  background: var(--accent-2); color: #10201a; font: 700 9px/12px system-ui, sans-serif; box-shadow: 0 0 0 1px #000;
 }
-.npc.many { min-width: 12px; height: 12px; line-height: 12px; border-radius: 6px; font-size: 9px; }
-.npc.hostile { background: var(--danger); }
+.npc.hostile { background: var(--danger); color: #fff; }
 </style>

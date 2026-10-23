@@ -1,0 +1,756 @@
+{
+ "$comment": "物品圖示的生成清單。generate.py 依這份逐項送進 ComfyUI；prompt = prefix + subject + suffix。recolor：這張圖要在遊戲裡換色（metal/leather/cloth/wood/jewel/liquid），換色的部分在 subject 裡寫成 plain grey，後處理會把低彩度的像素對到 palette.json 的 ramp。for：這張圖給哪些物品用（說明用）。 hollow：物件中間有孔（戒指、項圈、鎖鏈），封閉的背景色區域也要去掉；沒標的（玻璃瓶）只去掉和邊緣相連的背景。",
+ "size": 32,
+ "prefix": "pixel art, pix_merge, game item icon, single object, centered, isolated, ",
+ "suffix": ", white background, simple background, limited palette, no people, no text",
+ "negative": "lowres, blurry, jpeg artifacts, text, signature, watermark, username, worst quality, low quality, realistic, 3d, photo, smooth shading, anti-aliasing, multiple objects, cropped, hands, person",
+ "icons": [
+  {
+   "key": "gear_collar",
+   "group": "gear",
+   "subject": "a thick metal slave collar ring with a small loop, plain grey metal",
+   "recolor": "metal",
+   "for": "slave_collar",
+   "hollow": true
+  },
+  {
+   "key": "gear_collar_spiked",
+   "group": "gear",
+   "subject": "a leather collar with metal spikes, plain grey leather band, brass spikes",
+   "recolor": "leather",
+   "for": "spiked_collar",
+   "hollow": true
+  },
+  {
+   "key": "gear_choker",
+   "group": "gear",
+   "subject": "a thin cloth choker ribbon with a small brass clasp, plain grey cloth",
+   "recolor": "cloth",
+   "for": "choker",
+   "hollow": true
+  },
+  {
+   "key": "gear_manacles",
+   "group": "gear",
+   "subject": "a pair of metal manacles joined by a short chain, plain grey metal",
+   "recolor": "metal",
+   "for": "manacles",
+   "hollow": true
+  },
+  {
+   "key": "gear_shackles",
+   "group": "gear",
+   "subject": "a pair of heavy ankle shackles with chain, plain grey metal",
+   "recolor": "metal",
+   "for": "shackles",
+   "hollow": true
+  },
+  {
+   "key": "gear_dagger",
+   "group": "gear",
+   "subject": "a dagger held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner, plain grey steel blade, brown leather wrapped grip",
+   "recolor": "metal",
+   "for": "dagger"
+  },
+  {
+   "key": "gear_shortsword",
+   "group": "gear",
+   "subject": "a short sword held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner, plain grey steel blade, brown grip, small crossguard",
+   "recolor": "metal",
+   "for": "shortsword"
+  },
+  {
+   "key": "gear_scimitar",
+   "group": "gear",
+   "subject": "a curved scimitar held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner, plain grey steel blade, brown grip",
+   "recolor": "metal",
+   "for": "scimitar"
+  },
+  {
+   "key": "gear_rapier",
+   "group": "gear",
+   "subject": "a rapier with a thin blade and a swept hilt guard held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner, plain grey steel",
+   "recolor": "metal",
+   "for": "rapier",
+   "hollow": true
+  },
+  {
+   "key": "gear_longsword",
+   "group": "gear",
+   "subject": "a longsword held diagonally across the frame from lower left to upper right, plain grey steel blade, wide crossguard, brown leather grip, round pommel, filling the whole frame corner to corner",
+   "recolor": "metal",
+   "for": "longsword"
+  },
+  {
+   "key": "gear_mace",
+   "group": "gear",
+   "subject": "a flanged mace, plain grey metal head, brown wooden handle",
+   "recolor": "metal",
+   "for": "mace"
+  },
+  {
+   "key": "gear_warhammer",
+   "group": "gear",
+   "subject": "a war hammer, plain grey metal head, brown wooden handle",
+   "recolor": "metal",
+   "for": "warhammer"
+  },
+  {
+   "key": "gear_greataxe",
+   "group": "gear",
+   "subject": "a large double-bladed great axe held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner, plain grey metal blades, brown wooden haft",
+   "recolor": "metal",
+   "for": "greataxe"
+  },
+  {
+   "key": "gear_quarterstaff",
+   "group": "gear",
+   "subject": "a long wooden quarterstaff with metal end caps held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner, plain grey wood",
+   "recolor": "wood",
+   "for": "quarterstaff"
+  },
+  {
+   "key": "gear_spellstaff",
+   "group": "gear",
+   "subject": "a wizard staff held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner, plain grey wood, glowing blue crystal on top",
+   "recolor": "wood",
+   "for": "spellstaff"
+  },
+  {
+   "key": "gear_longbow",
+   "group": "gear",
+   "subject": "a longbow with string held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner, plain grey wood",
+   "recolor": "wood",
+   "for": "longbow"
+  },
+  {
+   "key": "gear_shield",
+   "group": "gear",
+   "subject": "a heater shield, plain grey metal, brown leather strap",
+   "recolor": "metal",
+   "for": "shield"
+  },
+  {
+   "key": "gear_buckler",
+   "group": "gear",
+   "subject": "a small round buckler shield, plain grey leather, brass rim",
+   "recolor": "leather",
+   "for": "buckler"
+  },
+  {
+   "key": "gear_focus",
+   "group": "gear",
+   "subject": "a magic crystal orb on a small stand, plain grey orb, golden stand",
+   "recolor": "jewel",
+   "for": "focus"
+  },
+  {
+   "key": "gear_helm",
+   "group": "gear",
+   "subject": "a knight helmet, plain grey metal",
+   "recolor": "metal",
+   "for": "helm"
+  },
+  {
+   "key": "gear_leather_cap",
+   "group": "gear",
+   "subject": "a leather cap, plain grey leather",
+   "recolor": "leather",
+   "for": "leather_cap"
+  },
+  {
+   "key": "gear_hood",
+   "group": "gear",
+   "subject": "a cloth hood, plain grey cloth",
+   "recolor": "cloth",
+   "for": "hood"
+  },
+  {
+   "key": "gear_plate",
+   "group": "gear",
+   "subject": "a plate armor breastplate, plain grey metal",
+   "recolor": "metal",
+   "for": "plate"
+  },
+  {
+   "key": "gear_chain",
+   "group": "gear",
+   "subject": "a chainmail shirt, plain grey metal rings",
+   "recolor": "metal",
+   "for": "chain"
+  },
+  {
+   "key": "gear_leather_armor",
+   "group": "gear",
+   "subject": "a leather armor vest, plain grey leather, brass buckles",
+   "recolor": "leather",
+   "for": "leather_armor"
+  },
+  {
+   "key": "gear_robe",
+   "group": "gear",
+   "subject": "a long mage robe, plain grey cloth, golden trim",
+   "recolor": "cloth",
+   "for": "robe"
+  },
+  {
+   "key": "gear_monk_robe",
+   "group": "gear",
+   "subject": "a monk robe with a sash, plain grey cloth",
+   "recolor": "cloth",
+   "for": "monk_robe"
+  },
+  {
+   "key": "gear_greaves",
+   "group": "gear",
+   "subject": "metal leg greaves, plain grey metal",
+   "recolor": "metal",
+   "for": "greaves"
+  },
+  {
+   "key": "gear_leather_leggings",
+   "group": "gear",
+   "subject": "leather trousers, plain grey leather",
+   "recolor": "leather",
+   "for": "leather_leggings"
+  },
+  {
+   "key": "gear_trousers",
+   "group": "gear",
+   "subject": "cloth trousers, plain grey cloth",
+   "recolor": "cloth",
+   "for": "trousers"
+  },
+  {
+   "key": "gear_vambraces",
+   "group": "gear",
+   "subject": "a pair of metal vambraces, plain grey metal",
+   "recolor": "metal",
+   "for": "vambraces"
+  },
+  {
+   "key": "gear_bracers",
+   "group": "gear",
+   "subject": "a pair of leather bracers, plain grey leather",
+   "recolor": "leather",
+   "for": "bracers"
+  },
+  {
+   "key": "gear_wraps",
+   "group": "gear",
+   "subject": "rolled cloth hand wraps, plain grey cloth",
+   "recolor": "cloth",
+   "for": "wraps"
+  },
+  {
+   "key": "gear_sabatons",
+   "group": "gear",
+   "subject": "a pair of armored metal boots, plain grey metal",
+   "recolor": "metal",
+   "for": "sabatons"
+  },
+  {
+   "key": "gear_boots",
+   "group": "gear",
+   "subject": "a pair of leather boots, plain grey leather",
+   "recolor": "leather",
+   "for": "boots"
+  },
+  {
+   "key": "gear_shoes",
+   "group": "gear",
+   "subject": "a pair of cloth shoes, plain grey cloth",
+   "recolor": "cloth",
+   "for": "shoes"
+  },
+  {
+   "key": "gear_girdle",
+   "group": "gear",
+   "subject": "a wide armored metal belt, plain grey metal",
+   "recolor": "metal",
+   "for": "girdle"
+  },
+  {
+   "key": "gear_belt",
+   "group": "gear",
+   "subject": "a leather belt with a brass buckle, plain grey leather",
+   "recolor": "leather",
+   "for": "belt"
+  },
+  {
+   "key": "gear_sash",
+   "group": "gear",
+   "subject": "a cloth sash tied in a knot, plain grey cloth",
+   "recolor": "cloth",
+   "for": "sash"
+  },
+  {
+   "key": "gear_ring",
+   "group": "gear",
+   "subject": "a ring seen from the front, circular band with an open hole in the centre, a single red gem mounted on top, plain grey metal band",
+   "recolor": "jewel",
+   "for": "ring_*（四種戒指共用）",
+   "hollow": true
+  },
+  {
+   "key": "gear_amulet",
+   "group": "gear",
+   "subject": "an amulet charm on a cord, plain grey metal medallion",
+   "recolor": "jewel",
+   "for": "amulet_ward, amulet_iron",
+   "hollow": true
+  },
+  {
+   "key": "gear_pendant",
+   "group": "gear",
+   "subject": "a necklace with a teardrop gem pendant, plain grey metal chain",
+   "recolor": "jewel",
+   "for": "pendant_*（六種項鍊共用）",
+   "hollow": true
+  },
+  {
+   "key": "gear_earring",
+   "group": "gear",
+   "subject": "a single drop earring with a small gem, plain grey metal",
+   "recolor": "jewel",
+   "for": "earring_*",
+   "hollow": true
+  },
+  {
+   "key": "gear_navel_ring",
+   "group": "gear",
+   "subject": "a small navel piercing ring with a gem, plain grey metal",
+   "recolor": "jewel",
+   "for": "navel_*",
+   "hollow": true
+  },
+  {
+   "key": "gear_anklet",
+   "group": "gear",
+   "subject": "an anklet chain with a small bell, plain grey metal",
+   "recolor": "jewel",
+   "for": "anklet_*",
+   "hollow": true
+  },
+  {
+   "key": "gear_thigh_band",
+   "group": "gear",
+   "subject": "a thigh band strap with a small hidden knife sheath, plain grey metal",
+   "recolor": "jewel",
+   "for": "thigh_band, thigh_sheath"
+  },
+  {
+   "key": "mat_herb",
+   "group": "material",
+   "subject": "a tied bundle of green medicinal herbs, several leaves and stems fanning out, round compact bundle, large in frame",
+   "for": "藥草、草葉、藤、花"
+  },
+  {
+   "key": "mat_mushroom",
+   "group": "material",
+   "subject": "a glowing mushroom",
+   "for": "蘑菇、菌傘、孢子"
+  },
+  {
+   "key": "mat_ore",
+   "group": "material",
+   "subject": "a chunk of raw ore rock with metal veins",
+   "for": "礦石"
+  },
+  {
+   "key": "mat_ingot",
+   "group": "material",
+   "subject": "a metal ingot bar",
+   "for": "錠"
+  },
+  {
+   "key": "mat_gem",
+   "group": "material",
+   "subject": "a cut gemstone",
+   "for": "寶石、原石"
+  },
+  {
+   "key": "mat_crystal",
+   "group": "material",
+   "subject": "a cluster of glowing magic crystals",
+   "for": "結晶、晶體、晶片"
+  },
+  {
+   "key": "mat_hide",
+   "group": "material",
+   "subject": "a folded animal hide pelt",
+   "for": "皮、毛皮"
+  },
+  {
+   "key": "mat_cloth",
+   "group": "material",
+   "subject": "a rolled bolt of fabric",
+   "for": "布匹、絲、羊毛"
+  },
+  {
+   "key": "mat_wood",
+   "group": "material",
+   "subject": "a stack of wooden logs",
+   "for": "木材、心材、樹枝"
+  },
+  {
+   "key": "mat_scale",
+   "group": "material",
+   "subject": "a large monster scale",
+   "for": "鱗片、蛻皮"
+  },
+  {
+   "key": "mat_bone",
+   "group": "material",
+   "subject": "a monster bone",
+   "for": "骨、骨片"
+  },
+  {
+   "key": "mat_fang",
+   "group": "material",
+   "subject": "a sharp monster fang",
+   "for": "牙、爪、角、毒針"
+  },
+  {
+   "key": "mat_feather",
+   "group": "material",
+   "subject": "a large feather",
+   "for": "羽毛、翼膜、鱗粉"
+  },
+  {
+   "key": "mat_shell",
+   "group": "material",
+   "subject": "a hard insect carapace shell",
+   "for": "甲殼、蟹螯、貝殼"
+  },
+  {
+   "key": "mat_vial",
+   "group": "material",
+   "subject": "a small glass vial of thick liquid",
+   "for": "毒囊、血、凝膠、汁液、腺"
+  },
+  {
+   "key": "mat_core",
+   "group": "material",
+   "subject": "a glowing magical core orb",
+   "for": "核心、心臟、心"
+  },
+  {
+   "key": "mat_ember",
+   "group": "material",
+   "subject": "a floating magic flame ember",
+   "for": "精華、餘燼、火種、殘光"
+  },
+  {
+   "key": "mat_tablet",
+   "group": "material",
+   "subject": "a broken stone tablet fragment with runes",
+   "for": "石板、符石、碎片、封印石"
+  },
+  {
+   "key": "mat_page",
+   "group": "material",
+   "subject": "an old torn parchment page",
+   "for": "殘頁、經卷、日誌、帳本、機關圖"
+  },
+  {
+   "key": "mat_badge",
+   "group": "material",
+   "subject": "a metal insignia badge medal",
+   "for": "徽章、徽記、印章"
+  },
+  {
+   "key": "mat_treasure",
+   "group": "material",
+   "subject": "a golden crown treasure",
+   "for": "金飾、王冠、黃金面具、金幣"
+  },
+  {
+   "key": "mat_relic_blade",
+   "group": "material",
+   "subject": "a broken old sword blade held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner",
+   "for": "佩劍、短刃、魚叉、箭矢等武器殘骸"
+  },
+  {
+   "key": "mat_chain",
+   "group": "material",
+   "subject": "a length of heavy iron chain",
+   "for": "鎖鏈、鐐銬",
+   "hollow": true
+  },
+  {
+   "key": "mat_seed",
+   "group": "material",
+   "subject": "a small pouch of seeds",
+   "for": "種子、苗、孢子（可種的）"
+  },
+  {
+   "key": "mat_eye",
+   "group": "material",
+   "subject": "a monster eyeball",
+   "for": "眼"
+  },
+  {
+   "key": "mat_meat",
+   "group": "material",
+   "subject": "a raw meat chunk",
+   "for": "生肉、熊掌"
+  },
+  {
+   "key": "mat_pouch",
+   "group": "material",
+   "subject": "a small tied cloth sack",
+   "for": "走私貨、錢袋、雜項"
+  },
+  {
+   "key": "use_potion",
+   "group": "consumable",
+   "subject": "a round glass potion bottle with a cork, filled with plain grey liquid",
+   "recolor": "liquid",
+   "for": "各種藥劑（依效果換液體顏色）"
+  },
+  {
+   "key": "use_bandage",
+   "group": "consumable",
+   "subject": "a rolled white bandage",
+   "for": "止血繃帶"
+  },
+  {
+   "key": "use_holy_water",
+   "group": "consumable",
+   "subject": "a small holy water bottle with a golden cross emblem",
+   "for": "聖水"
+  },
+  {
+   "key": "use_flask",
+   "group": "consumable",
+   "subject": "a throwing flask with a burning rag fuse, plain grey liquid",
+   "recolor": "liquid",
+   "for": "火焰瓶、冰霜瓶"
+  },
+  {
+   "key": "use_bomb",
+   "group": "consumable",
+   "subject": "a round black bomb with a lit fuse",
+   "for": "雷光彈、毒煙彈、閃光彈"
+  },
+  {
+   "key": "use_book",
+   "group": "consumable",
+   "subject": "a closed leather-bound book",
+   "for": "技能書《…》"
+  },
+  {
+   "key": "use_scroll",
+   "group": "scroll",
+   "subject": "a rolled magic scroll tied with a ribbon and a red wax seal",
+   "for": "法術卷軸"
+  },
+  {
+   "key": "tool_torch",
+   "group": "tool",
+   "subject": "a lit wooden torch held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner",
+   "for": "火把"
+  },
+  {
+   "key": "tool_rope",
+   "group": "tool",
+   "subject": "a coil of rope",
+   "for": "麻繩",
+   "hollow": true
+  },
+  {
+   "key": "tool_waterskin",
+   "group": "tool",
+   "subject": "a leather waterskin",
+   "for": "水袋"
+  },
+  {
+   "key": "tool_whetstone",
+   "group": "tool",
+   "subject": "a whetstone sharpening stone",
+   "for": "磨刀石"
+  },
+  {
+   "key": "tool_toolkit",
+   "group": "tool",
+   "subject": "an open toolbox with hammer and tools",
+   "for": "各種工具組"
+  },
+  {
+   "key": "tool_workstation",
+   "group": "tool",
+   "subject": "a small portable crafting workbench",
+   "for": "攜帶式鍛爐、木工台、鞣皮架、織機、煉金台、爐灶"
+  },
+  {
+   "key": "tool_tent",
+   "group": "tool",
+   "subject": "a small camping tent",
+   "for": "帳篷"
+  },
+  {
+   "key": "tool_compass",
+   "group": "tool",
+   "subject": "a brass compass",
+   "for": "指南針"
+  },
+  {
+   "key": "tool_lamp",
+   "group": "tool",
+   "subject": "an oil lantern",
+   "for": "油燈"
+  },
+  {
+   "key": "tool_oil",
+   "group": "tool",
+   "subject": "a small oil jar",
+   "for": "燈油"
+  },
+  {
+   "key": "tool_lightstone",
+   "group": "tool",
+   "subject": "a glowing magic light stone",
+   "for": "魔法照明石"
+  },
+  {
+   "key": "tool_map",
+   "group": "tool",
+   "subject": "a rolled map",
+   "for": "地圖"
+  },
+  {
+   "key": "tool_pole",
+   "group": "tool",
+   "subject": "a long wooden probing pole held diagonally across the frame from lower left to upper right, filling the whole frame corner to corner",
+   "for": "探路長竿"
+  },
+  {
+   "key": "tool_lockpick",
+   "group": "tool",
+   "subject": "a set of lockpicks on a ring",
+   "for": "撬鎖工具組",
+   "hollow": true
+  },
+  {
+   "key": "furn_bed",
+   "group": "furniture",
+   "subject": "a wooden bed with a blanket",
+   "for": "床"
+  },
+  {
+   "key": "furn_rug",
+   "group": "furniture",
+   "subject": "a rolled woven rug",
+   "for": "地毯"
+  },
+  {
+   "key": "furn_tapestry",
+   "group": "furniture",
+   "subject": "a hanging woven tapestry",
+   "for": "掛毯"
+  },
+  {
+   "key": "furn_plant",
+   "group": "furniture",
+   "subject": "a potted plant",
+   "for": "盆栽"
+  },
+  {
+   "key": "furn_bookshelf",
+   "group": "furniture",
+   "subject": "a bookshelf full of books",
+   "for": "書架"
+  },
+  {
+   "key": "furn_fireplace",
+   "group": "furniture",
+   "subject": "a stone fireplace with fire",
+   "for": "壁爐"
+  },
+  {
+   "key": "furn_statue",
+   "group": "furniture",
+   "subject": "a small stone statue",
+   "for": "石雕像"
+  },
+  {
+   "key": "furn_fountain",
+   "group": "furniture",
+   "subject": "a small stone fountain",
+   "for": "噴水池"
+  },
+  {
+   "key": "furn_workshop",
+   "group": "furniture",
+   "subject": "a crafting workshop table with tools",
+   "for": "鍛造爐、工坊、工作台、實驗室、大灶"
+  },
+  {
+   "key": "furn_garden",
+   "group": "furniture",
+   "subject": "a small vegetable garden plot",
+   "for": "菜圃、菇床"
+  },
+  {
+   "key": "food_ration",
+   "group": "food",
+   "subject": "a wrapped travel ration of hard bread and jerky",
+   "for": "乾糧"
+  },
+  {
+   "key": "food_bread",
+   "group": "food",
+   "subject": "a loaf of dark bread",
+   "for": "黑麵包"
+  },
+  {
+   "key": "food_stew",
+   "group": "food",
+   "subject": "a bowl of hot stew",
+   "for": "燉肉、濃湯、燉菜"
+  },
+  {
+   "key": "food_ale",
+   "group": "food",
+   "subject": "a wooden mug of foaming ale",
+   "for": "麥酒"
+  },
+  {
+   "key": "food_wine",
+   "group": "food",
+   "subject": "a bottle of wine",
+   "for": "果酒"
+  },
+  {
+   "key": "food_pie",
+   "group": "food",
+   "subject": "a berry pie",
+   "for": "派、甜點"
+  },
+  {
+   "key": "food_feast",
+   "group": "food",
+   "subject": "a big platter of seafood feast",
+   "for": "宴席"
+  },
+  {
+   "key": "info_notice",
+   "group": "info",
+   "subject": "a bounty notice paper",
+   "for": "懸賞告示、行程表"
+  },
+  {
+   "key": "info_letter",
+   "group": "info",
+   "subject": "a sealed old letter",
+   "for": "密信、拓本"
+  },
+  {
+   "key": "info_treasure_map",
+   "group": "info",
+   "subject": "a treasure map with a red X",
+   "for": "藏寶圖"
+  }
+ ]
+}

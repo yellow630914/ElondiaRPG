@@ -5,7 +5,9 @@ import { canEquip, canUse, isIntelItem } from '@/engine/inventory'
 import { formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/trade'
 import { useGame } from '@/stores/game'
-import { CATEGORY_ICON, CATEGORY_ORDER, categoryIcon, categoryName, categoryOf, itemEffect, itemText } from './itemInfo'
+import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
+import ItemIcon from './ItemIcon.vue'
+import GameIcon from '../ui/GameIcon.vue'
 
 // 行囊：依類別篩選，使用、裝備（戰鬥以外）
 const game = useGame()
@@ -30,14 +32,14 @@ const value = (name: string) => itemValue(s.value, name)
 <template>
   <div class="inventory">
     <div class="row head">
-      <span>💰 {{ formatMoney(s.money_cc) }}</span>
+      <span class="money"><GameIcon name="coins" :size="16" />{{ formatMoney(s.money_cc) }}</span>
       <span class="small muted">共 {{ items.length }} 種物品・全隊共用</span>
     </div>
     <nav class="row tabs">
       <button class="small" :class="{ active: filter === 'all' }" @click="filter = 'all'">全部 {{ items.length }}</button>
       <template v-for="c in CATEGORY_ORDER" :key="c">
         <button v-if="counts[c]" class="small" :class="{ active: filter === c }" @click="filter = c">
-          {{ CATEGORY_ICON[c] }} {{ itemRules.categories[c] }} {{ counts[c] }}
+          <ItemIcon :category="c" :size="14" /> {{ itemRules.categories[c] }} {{ counts[c] }}
         </button>
       </template>
     </nav>
@@ -45,7 +47,7 @@ const value = (name: string) => itemValue(s.value, name)
     <ul class="plain grid">
       <li v-for="i in shown" :key="i.name" class="item">
         <div class="row top">
-          <span class="icon">{{ categoryIcon(s, i.name) }}</span>
+          <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="24" /></span>
           <strong class="grow">{{ i.name }}</strong>
           <span class="qty">×{{ i.qty }}</span>
         </div>
@@ -53,7 +55,7 @@ const value = (name: string) => itemValue(s.value, name)
         <div v-if="itemEffect(s, i.name)" class="small effect">{{ itemEffect(s, i.name) }}</div>
         <div v-if="itemText(s, i.name)" class="small muted">{{ itemText(s, i.name) }}</div>
         <div v-if="isIntelItem(s, i.name)" class="row actions">
-          <button class="small" :disabled="inCombat" title="記進冒險筆記（和向情報商買情報一樣），用掉這件情報" @click="game.readIntel(i.name)">🔍 解讀</button>
+          <button class="small" :disabled="inCombat" title="記進冒險筆記（和向情報商買情報一樣），用掉這件情報" @click="game.readIntel(i.name)"><GameIcon name="search" :size="13" /> 解讀</button>
         </div>
         <div v-else-if="canUse(i.name) || canEquip(s, i.name)" class="row actions">
           <select :value="target[i.name] ?? s.party[0]?.id" class="small" @change="target[i.name] = ($event.target as HTMLSelectElement).value">
@@ -69,6 +71,8 @@ const value = (name: string) => itemValue(s.value, name)
 </template>
 
 <style scoped>
+.money { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.money :deep(.game-icon) { color: var(--accent); }
 .inventory { display: grid; gap: 8px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .head { justify-content: space-between; }
@@ -77,7 +81,6 @@ const value = (name: string) => itemValue(s.value, name)
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin: 0; }
 .item { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; display: grid; gap: 3px; align-content: start; background: var(--panel); }
 .top { flex-wrap: nowrap; }
-.icon { font-size: 1.2rem; }
 .grow { flex: 1; min-width: 0; }
 .qty { font-weight: 600; color: var(--accent-2); }
 .effect { color: var(--accent); }

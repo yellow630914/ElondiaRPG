@@ -7,6 +7,7 @@ import { formatTokens } from '@/narrator/describe'
 import { ARCHIVE_USAGE, OTHER_USAGE, usageFeatureName, usageSourceLabel } from '@/stores/game'
 import { formatTime } from '@/engine/state'
 import ReportCard from './ReportCard.vue'
+import GameIcon from './ui/GameIcon.vue'
 
 // 冒險頁中間的日誌：舊的在上、新的在下，有新紀錄時捲到最下面。
 const PAGE = 30
@@ -77,14 +78,14 @@ onMounted(() => toBottom(true))
 <template>
   <section class="panel log">
     <header class="row log-head">
-      <h2>📖 冒險日誌</h2>
+      <h2><GameIcon name="book" :size="20" />冒險日誌</h2>
       <span class="spacer" />
-      <label class="small"><input v-model="settings.aiNarration" type="checkbox" /> ✨ AI 細節描述</label>
+      <label class="small"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述</label>
       <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易紀錄</label>
     </header>
     <!-- token 用量：平常只顯示總數，點開看明細（展開與否記在這個瀏覽器） -->
     <details v-if="game.totalUsage.calls" class="small muted usage" :open="usageOpen" @toggle="onUsageToggle">
-      <summary>🔢 本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens・{{ game.totalUsage.calls }} 次呼叫</summary>
+      <summary>本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens・{{ game.totalUsage.calls }} 次呼叫</summary>
       <p class="detail">
         輸入 {{ formatTokens(game.totalUsage.input) }}<template v-if="game.totalUsage.cached">，其中快取 {{ formatTokens(game.totalUsage.cached) }}</template>・輸出 {{ formatTokens(game.totalUsage.output) }}
         <br />其中 日誌 {{ formatTokens(usageSplit.log) }}<template v-if="usageSplit.archive">・已封存的日誌 {{ formatTokens(usageSplit.archive) }}</template><template v-if="usageSplit.other">・其他（酒館候選人、商店清單、談判方式等）{{ formatTokens(usageSplit.other) }}</template>
@@ -97,13 +98,13 @@ onMounted(() => toBottom(true))
       </ul>
     </details>
     <div ref="feed" class="feed">
-      <button v-if="all.length > reports.length" class="small more" @click="shown += PAGE">⬆️ 載入更早的紀錄（還有 {{ all.length - reports.length }} 筆）</button>
+      <button v-if="all.length > reports.length" class="small more" @click="shown += PAGE">載入更早的紀錄（還有 {{ all.length - reports.length }} 筆）</button>
       <template v-else-if="archive.length">
-        <button v-if="!showArchive" class="small more" @click="showArchive = true">📦 顯示封存的舊紀錄（{{ archive.length }} 筆，只留簡述與經過）</button>
+        <button v-if="!showArchive" class="small more" @click="showArchive = true">顯示封存的舊紀錄（{{ archive.length }} 筆，只留簡述與經過）</button>
         <template v-else>
-          <button v-if="archive.length > archived.length" class="small more" @click="archiveShown += PAGE">⬆️ 載入更早的封存紀錄（還有 {{ archive.length - archived.length }} 筆）</button>
+          <button v-if="archive.length > archived.length" class="small more" @click="archiveShown += PAGE">載入更早的封存紀錄（還有 {{ archive.length - archived.length }} 筆）</button>
           <article v-for="e in archived" :key="e.id" class="archived small">
-            <div class="muted">📦 {{ formatTime(e.time) }}<template v-if="e.scene">・{{ e.scene }}</template><template v-if="e.tokens">・{{ formatTokens(e.tokens) }} tokens</template></div>
+            <div class="muted">{{ formatTime(e.time) }}<template v-if="e.scene">・{{ e.scene }}</template><template v-if="e.tokens">・{{ formatTokens(e.tokens) }} tokens</template></div>
             <div>{{ e.summary }}</div>
             <details v-if="e.story"><summary class="muted">經過</summary><p class="story">{{ e.story }}</p></details>
           </article>
@@ -118,8 +119,11 @@ onMounted(() => toBottom(true))
 
 <style scoped>
 .log { display: flex; flex-direction: column; padding-bottom: 6px; }
+.usage summary { color: var(--muted); }
 .log-head { gap: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-.log-head h2 { margin: 0; }
+.log-head h2 { margin: 0; display: flex; align-items: center; gap: 8px; }
+.log-head h2 :deep(.game-icon) { color: var(--accent); }
+.log-head label { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
 .usage { margin: 6px 0 0; }
 .usage summary { cursor: pointer; }
 .usage .detail { margin: 2px 0 0 18px; }
@@ -127,14 +131,13 @@ onMounted(() => toBottom(true))
 .spacer { flex: 1; }
 .feed {
   overflow-y: auto;
-  height: calc(100vh - 170px);
+  height: calc(100vh - 250px);
   min-height: 420px;
   padding: 10px 4px 0 0;
   display: flex;
   flex-direction: column;
   gap: 0;
 }
-.feed :deep(.panel) { background: var(--panel-2); }
 .more { align-self: center; margin-bottom: 10px; }
 .archived { display: grid; gap: 2px; padding: 6px 8px; margin-bottom: 6px; border-left: 2px solid var(--border); }
 .archived .story { white-space: pre-wrap; margin: 4px 0 0; }

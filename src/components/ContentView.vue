@@ -35,6 +35,8 @@ import MarkRulesEditor from './content/MarkRulesEditor.vue'
 import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
 import TravelEventEditor from './content/TravelEventEditor.vue'
 import EventRulesEditor from './content/EventRulesEditor.vue'
+import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
+import ItemIcon from './items/ItemIcon.vue'
 import { travelEvents } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { builtinTravelEvent, newTravelEvent } from '@/engine/travelEventMods'
@@ -109,6 +111,9 @@ const abilityClass = ref('')
 
 const KINDS: Record<string, string> = { metal: '金屬', leather: '皮革', cloth: '布料', wood: '木材', jewel: '寶石' }
 
+/** 物品頁的「類別圖示」那一列（物品名稱不能有「|」，不會撞名） */
+const ICONS_KEY = '|icons'
+
 type Status = 'custom' | 'edited' | ''
 interface Row { key: string; name: string; note: string; status: Status; sort?: number }
 const st = (has: boolean, custom: boolean): Status => (has ? (custom ? 'custom' : 'edited') : '')
@@ -132,6 +137,8 @@ const rows = computed<Row[]>(() => {
       .filter((i) => !itemSource.value || !!sources.value.get(i.name)?.has(itemSource.value))
       .map((i) => ({ key: i.name, name: i.name, note: `${itemRules.categories[i.category]}・${formatMoney(i.price_cc)}`, status: st(!!m.items[i.name], !!m.items[i.name]?.custom) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
+    // 類別圖示的設定放在最上面（不篩選類別、取得方式時）
+    if (!category.value && !itemSource.value) list.unshift({ key: ICONS_KEY, name: '🖼️ 類別圖示', note: '8 種類別的預設圖示', status: st(Object.keys(m.categoryIcons ?? {}).length > 0, false) })
   } else if (sub.value === 'abilities') {
     list = Object.values(abilities)
       .filter((a) => !abilityType.value || a.type === abilityType.value)
@@ -216,7 +223,7 @@ const current = computed(() => {
   void content.version
   const key = selected.value[sub.value]
   if (!key) return ''
-  const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
+  const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? key === ICONS_KEY || !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
     : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? stories.some((d) => d.id === key)
     : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key)
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
@@ -308,7 +315,7 @@ function create() {
 /** 以目前選的項目為範本複製一份自建項目 */
 function duplicate() {
   const key = current.value
-  if (!key) return
+  if (!key || key === ICONS_KEY) return
   try {
     if (sub.value === 'enemies') {
       const id = newModId('enemy')
@@ -431,6 +438,9 @@ function resetAll() {
 <template>
   <div class="content-view">
     <WorldBar />
+    <p v-if="content.persistFailed" class="persist-warn small">
+      ⚠️ 世界存不進瀏覽器（容量滿了，多半是上傳的圖示太多或太大）：這次的修改只在關掉頁面前有效。請移除一些圖示，或先匯出世界包備份。
+    </p>
     <nav class="subs row">
       <button v-for="t in SUBS" :key="t.id" :class="{ active: sub === t.id }" @click="sub = t.id; resetFilters()">{{ t.label }}</button>
       <span class="spacer" />
@@ -446,7 +456,7 @@ function resetAll() {
       <section class="panel list-panel">
         <div class="row">
           <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+          <button class="small" :disabled="!current || current === ICONS_KEY" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
         </div>
         <div class="row">
           <input v-model="search" placeholder="搜尋名稱" class="grow" />
@@ -516,6 +526,8 @@ function resetAll() {
         <p v-if="sub === 'enemies' || sub === 'items' || sub === 'abilities' || sub === 'statuses'" class="small muted count">符合 {{ rows.length }} 項</p>
         <ul class="plain rows">
           <li v-for="r in rows" :key="r.key" :class="{ active: current === r.key }" @click="select(r.key)">
+            <ItemIcon v-if="sub === 'items' && r.key !== ICONS_KEY" :name="r.key" :size="18" class="row-ic" />
+            <ItemIcon v-else-if="sub === 'bases'" :spec="{ base: r.key, material: '' }" :size="18" class="row-ic" />
             <span class="name">{{ r.name }}</span>
             <span v-if="r.status === 'custom'" class="tag">自建</span>
             <span v-else-if="r.status === 'edited'" class="tag">已修改</span>
@@ -528,6 +540,7 @@ function resetAll() {
       <section class="panel">
         <p v-if="!current" class="muted">從左邊選一個項目，或新增一個。</p>
         <EnemyEditor v-else-if="sub === 'enemies'" :id="current" :key="`e-${current}`" @deleted="select('')" />
+        <CategoryIconsEditor v-else-if="sub === 'items' && current === ICONS_KEY" key="cat-icons" />
         <ItemEditor v-else-if="sub === 'items'" :key="`i-${current}`" :name="current" @renamed="select" @deleted="select('')" />
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
         <StatusEditor v-else-if="sub === 'statuses'" :id="current" :key="`s-${current}`" @deleted="select('')" />
@@ -581,5 +594,7 @@ function resetAll() {
 .rows li.active { background: var(--panel-2); outline: 1px solid var(--accent); }
 .rows .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .note-r { white-space: nowrap; }
+.row-ic { color: var(--accent); }
+.persist-warn { margin: 0; padding: 6px 10px; border: 1px solid var(--danger); border-radius: var(--radius); color: var(--danger); }
 .footer { border-top: 1px solid var(--border); padding-top: 8px; }
 </style>

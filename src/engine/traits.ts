@@ -10,7 +10,7 @@ import traitsJson from '@data/world/npc_traits.json'
 import type { NpcKind } from './data'
 import type { Rng } from './rng'
 
-type Body = 'masc' | 'fem' | 'andro'
+export type Body = 'masc' | 'fem' | 'andro'
 
 interface OptionDef {
   t: string
@@ -149,6 +149,11 @@ export interface Look {
     raceTraits: string[]
     tags: string[]
   }
+}
+
+/** 角色的身形：種族固定的優先，其次看性別；性別未知時當作中性 */
+export function bodyOf(race: string, gender: string | undefined): Body {
+  return raceOf(race).body ?? (gender ? npcTraits.body_by_gender[gender] : undefined) ?? 'andro'
 }
 
 function raceOf(race: string): RaceTraits {

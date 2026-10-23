@@ -18,6 +18,8 @@ import { racePerks } from '@/engine/perks'
 import NameTag from './NameTag.vue'
 import { creationCost, creationPiece, creationSlots, gearRules, gearSummary, slotName, type CreationGear } from '@/engine/gear'
 import { useSettings } from '@/stores/settings'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
@@ -156,17 +158,16 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 
 <template>
   <section class="panel">
-    <h2>建立角色</h2>
+    <h2 class="head"><GameIcon name="userPlus" :size="22" />建立角色 <Hint text="你將以 F 級冒險者的身分，從出生地出發。性別、外貌與背景會交給 AI，作為描寫主角的依據。" /></h2>
     <div class="row world">
-      <label>🌍 世界
+      <label><span class="lab"><GameIcon name="world" :size="14" />世界</span>
         <select :value="content.active" @change="pickWorld(($event.target as HTMLSelectElement).value)">
           <option :value="VANILLA">{{ VANILLA_NAME }}</option>
           <option v-for="w in content.worlds" :key="w.id" :value="w.id">{{ w.name }}（{{ modTotal(w.mods) }} 項自訂內容）</option>
         </select>
       </label>
-      <span class="small muted">這一局用哪一套自訂內容；開始後不能換。請先選世界再建立角色（換世界會重新整理這個畫面）。</span>
+      <Hint text="這一局用哪一套自訂內容；開始後不能換。請先選世界再建立角色（換世界會重新整理這個畫面）。" />
     </div>
-    <p class="muted small">你將以 F 級冒險者的身分，從出生地出發。性別、外貌與背景會交給 AI，作為描寫主角的依據。</p>
     <div class="layout">
       <div class="form">
         <label>名字 <input v-model="name" placeholder="旅人" maxlength="20" /></label>
@@ -197,16 +198,15 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
           </select>
         </label>
         <p class="small muted">{{ birthplaceInfo }}</p>
-        <label>在地下城戰敗時，這趟撿到的東西
+        <label><span class="lab">在地下城戰敗時，這趟撿到的東西 <Hint @click.prevent text="這趟探索撿到、還沒帶出地下城的物品與錢；之後可以在「設定」裡改。" /></span>
           <select v-model="defeatLoot">
             <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
-        <p class="small muted">這趟探索撿到、還沒帶出地下城的物品與錢；之後可以在 ⚙️ 設定裡改。</p>
       </div>
 
       <div>
-        <h3 class="small">屬性（自由點數 {{ bonus_points - spent }}／{{ bonus_points }}）</h3>
+        <h3 class="head small"><GameIcon name="sliders" :size="15" />屬性（自由點數 {{ bonus_points - spent }}／{{ bonus_points }}）</h3>
         <table class="attrs small">
           <tr v-for="a in attributeRules.attributes" :key="a.id">
             <th :title="a.desc">{{ a.name }}</th>
@@ -243,11 +243,11 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
     <PerkPicker v-model:perks="perks" v-model:custom="customPerks" :race="race" :cls="classId" />
     <details class="gear-pick">
       <summary>
-        🛡️ 起始裝備（預算 <strong :class="{ over: gearOver }">{{ gearSpent }}／{{ gearBudget }}</strong> 點）
+        <GameIcon name="shield" :size="15" /> 起始裝備（預算 <strong :class="{ over: gearOver }">{{ gearSpent }}／{{ gearBudget }}</strong> 點）
       </summary>
       <p class="small muted">
         職業的基本配備免費（第 1 級材料）；可以換成清單裡的其他底材。把材料往上升一級花 1 點，其他欄位另外加裝備花它的材料等級（最多第 {{ maxTier }} 級）。
-        預算在 ⚙️ 設定的「遊戲規則」裡調整。
+        預算在「設定」的「遊戲規則」裡調整。
       </p>
       <table class="small gear-table">
         <tr v-for="s in gearSlots" :key="s.slot" :class="{ off: s.slot === 'off_hand' && twoHanded }">
@@ -276,9 +276,11 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
       <button class="small" type="button" @click="resetGear">還原成基本配備</button>
     </details>
     <div class="slave">
-      <label class="check"><input v-model="slave" type="checkbox" /> ⛓️ 以奴隸身分開始</label>
+      <div class="row">
+        <label class="check"><input v-model="slave" type="checkbox" /> <GameIcon name="lock" :size="14" /> 以奴隸身分開始</label>
+        <Hint text="身上刻著契約印記（部位依印記）。有主人時，主人會帶著你一起行動：出城與旅行要先得到主人同意，賺到的錢有一部分歸主人；可以在安全的地方談判，或隨時嘗試逃離。" />
+      </div>
       <template v-if="slave">
-        <p class="small muted">身上刻著契約印記（部位依印記）。有主人時，主人會帶著你一起行動：出城與旅行要先得到主人同意，賺到的錢有一部分歸主人；可以在安全的地方談判，或隨時嘗試逃離。</p>
         <div class="row small">
           主人：
           <label class="check"><input v-model="masterMode" type="radio" value="candidate" /> 從名單挑選</label>
@@ -295,7 +297,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
               <br /><span class="muted">{{ m.appearance }}</span>
             </span>
           </label>
-          <button class="small" type="button" @click="masterSeed = Math.floor(Math.random() * 2 ** 31)">🎲 換一批</button>
+          <button class="small" type="button" @click="masterSeed = Math.floor(Math.random() * 2 ** 31)"><GameIcon name="shuffle" :size="13" /> 換一批</button>
         </div>
         <div v-else-if="masterMode === 'custom'" class="custom-master small">
           <label>名字 <input v-model="customMaster.name" maxlength="12" placeholder="留空則隨機" /></label>
@@ -317,15 +319,19 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
       </template>
     </div>
     <div class="row">
-      <button class="primary" :disabled="gearOver" @click="start">開始冒險</button>
-      <button @click="emit('home')">← 回首頁</button>
-      <button @click="emit('settings')">AI 設定</button>
+      <button class="primary" :disabled="gearOver" @click="start"><GameIcon name="play" :size="15" /> 開始冒險</button>
+      <button @click="emit('home')"><GameIcon name="home" :size="15" /> 回首頁</button>
+      <button @click="emit('settings')"><GameIcon name="settings" :size="15" /> AI 設定</button>
     </div>
   </section>
 
 </template>
 
 <style scoped>
+.head { display: flex; align-items: center; gap: 6px; }
+.head :deep(.game-icon), .lab :deep(.game-icon), summary :deep(.game-icon), .check :deep(.game-icon) { color: var(--accent); }
+.lab { display: inline-flex; align-items: center; gap: 4px; }
+button :deep(.game-icon) { vertical-align: -0.2em; }
 .world { gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
 .world label { display: flex; gap: 6px; align-items: center; }
 .layout { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 24px; margin: 12px 0; }

@@ -4,6 +4,8 @@ import { locationById } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { alertLevel, factionName, fineDue, isWanted, reputationBand, reputationOf, securityRules } from '@/engine/security'
 import { useGame } from '@/stores/game'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // 城門：衛兵警戒、通緝、聲望對價格的影響，以及繳罰金（見 docs/NPC_SYSTEM.md 第 9 節）
 const props = defineProps<{ canPay?: boolean }>()
@@ -22,11 +24,11 @@ const blockedToday = computed(() => s.value.gateBlock?.[loc.value.id] === s.valu
 <template>
   <div class="guard small">
     <p v-if="loc.faction" class="muted">
-      🏳️ {{ factionName(loc.faction) }}的聲望 {{ rep }}<template v-if="band.buy || band.sell">：買入 {{ pct(band.buy) }}、賣出 {{ pct(band.sell) }}</template>
+      <GameIcon name="flag" :size="13" /> {{ factionName(loc.faction) }}的聲望 {{ rep }}<template v-if="band.buy || band.sell">：買入 {{ pct(band.buy) }}、賣出 {{ pct(band.sell) }}</template>
     </p>
-    <p v-if="wanted" class="bad">⛔ 你被{{ factionName(loc.faction!) }}通緝：城門不能檢定，必須繳交罰金（賄賂）才能通過，也不能進入貴族區與王城。</p>
+    <p v-if="wanted" class="bad"><GameIcon name="siren" :size="13" /> 你被{{ factionName(loc.faction!) }}通緝：城門不能檢定，必須繳交罰金（賄賂）才能通過，也不能進入貴族區與王城。</p>
     <p v-else-if="alert" class="warn">
-      🚨 衛兵警戒 {{ alert }} / {{ securityRules.alert.max }}：出入城門要通過盤查（DC {{ securityRules.alert.gate_dc_base + securityRules.alert.gate_dc_per_level * alert }}）<template v-if="blockedToday">；今天已經被攔下，要繳罰金才能通過</template>。警戒每 {{ securityRules.alert.decay_days }} 天降 1。
+      <GameIcon name="siren" :size="13" /> 衛兵警戒 {{ alert }} / {{ securityRules.alert.max }}：出入城門要通過盤查（DC {{ securityRules.alert.gate_dc_base + securityRules.alert.gate_dc_per_level * alert }}）<template v-if="blockedToday">；今天已經被攔下，要繳罰金才能通過</template>。<Hint :text="`警戒每 ${securityRules.alert.decay_days} 天降 1。`" />
     </p>
     <div v-if="due.amount && props.canPay" class="row">
       <button class="small" :class="{ primary: wanted || blockedToday }" :disabled="s.money_cc < due.amount" @click="game.payFine()">
@@ -39,6 +41,7 @@ const blockedToday = computed(() => s.value.gateBlock?.[loc.value.id] === s.valu
 
 <style scoped>
 .guard p { margin: 2px 0; }
+.guard :deep(.game-icon) { vertical-align: -2px; }
 .bad { color: var(--danger); }
 .warn { color: var(--accent); }
 </style>

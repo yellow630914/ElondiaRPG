@@ -4,6 +4,7 @@ import { portraitSubject } from '@/narrator/imageInfo'
 import { useGame } from '@/stores/game'
 import { useImageSettings } from '@/stores/image'
 import { portraitKey, usePortraits } from '@/stores/portraits'
+import GameIcon from './ui/GameIcon.vue'
 
 // 角色的形象插圖：顯示、生成（插圖設定的服務）、上傳、刪除；點圖片放大
 const props = withDefaults(defineProps<{ id: string; size?: 'large' | 'small' }>(), { size: 'large' })
@@ -56,19 +57,19 @@ const STAGE = { tags: '預處理提示詞中…', image: '生成圖片中…', e
   <div class="portrait" :class="size">
     <div class="top">
       <button v-if="url" class="frame" title="點一下放大" @click="zoom = true"><img :src="url" alt="形象圖" /></button>
-      <div v-else class="frame empty">{{ job && job.stage !== 'error' ? '⏳' : '🖼️' }}</div>
+      <div v-else class="frame empty"><GameIcon :name="job && job.stage !== 'error' ? 'hourglass' : 'image'" :size="28" /></div>
       <div class="side">
         <div v-if="job && job.stage !== 'error'" class="small">
           {{ STAGE[job.stage] }}
           <button class="small" @click="portraits.cancel(key)">取消</button>
         </div>
-        <p v-else-if="job?.stage === 'error'" class="small warn-text">⚠️ {{ job.error }}</p>
+        <p v-else-if="job?.stage === 'error'" class="small warn-text"><GameIcon name="warning" :size="13" /> {{ job.error }}</p>
         <div v-if="!job || job.stage === 'error'" class="row">
-          <button v-if="canDescribe" class="small" :title="image.ready() ? '' : '先到 ⚙️ 設定 → 🎨 插圖生成 設定生圖服務'" @click="generate">
-            🎨 {{ url ? '重新生成' : '生成形象圖' }}
+          <button v-if="canDescribe" class="small" :title="image.ready() ? '' : '先到「設定 → 插圖生成」設定生圖服務'" @click="generate">
+            <GameIcon name="image" :size="13" /> {{ url ? '重新生成' : '生成形象圖' }}
           </button>
-          <button class="small" title="上傳自己的圖片" @click="fileInput?.click()">📁 上傳</button>
-          <button v-if="url" class="small" @click="remove">🗑️</button>
+          <button class="small" title="上傳自己的圖片" @click="fileInput?.click()"><GameIcon name="upload" :size="13" /> 上傳</button>
+          <button v-if="url" class="small" title="刪除形象圖" aria-label="刪除形象圖" @click="remove"><GameIcon name="trash" :size="13" /></button>
           <input ref="fileInput" type="file" accept="image/*" hidden @change="onFile" />
         </div>
       </div>
@@ -87,6 +88,8 @@ const STAGE = { tags: '預處理提示詞中…', image: '生成圖片中…', e
 </template>
 
 <style scoped>
+.frame.empty { color: var(--muted); }
+button :deep(.game-icon) { vertical-align: -0.2em; }
 .portrait { display: grid; gap: 6px; }
 .top { display: flex; gap: 10px; align-items: flex-start; }
 .small .top { gap: 6px; }

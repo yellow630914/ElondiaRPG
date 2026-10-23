@@ -23,10 +23,10 @@ export interface Finding { level: Level; section: string; text: string }
 export interface WorldCheckResult { name: string; findings: Finding[]; tables: { title: string; rows: string[][]; head: string[] }[] }
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
-const SECTIONS = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules'] as const
+const SECTIONS = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'categoryIcons'] as const
 const SECTION_NAME: Record<string, string> = {
   statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能',
-  perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定',
+  perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', categoryIcons: '類別圖示',
 }
 
 /** 小怪每場掉的生命（依出現的最淺區域）與層主的目標勝率：docs/MONSTERS.md */
