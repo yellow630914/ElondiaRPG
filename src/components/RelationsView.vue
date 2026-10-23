@@ -6,10 +6,24 @@ import { formatTime } from '@/engine/state'
 import type { Memory, Relationship } from '@/engine/social'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
+import { canPromote } from '@/engine/promoteNpc'
+import { useContent, VANILLA_NAME } from '@/stores/content'
 import PortraitBox from './PortraitBox.vue'
 
 const game = useGame()
+const content = useContent()
 const s = computed(() => game.state!)
+
+// 生成的人存成固定 NPC（存進目前的世界）
+function promotable(id: string): boolean {
+  void content.version
+  return canPromote(s.value, id)
+}
+function promote(id: string, name: string) {
+  if (!confirm(`把「${name}」存成目前世界的固定 NPC？之後可以在內容頁籤的「固定 NPC」編輯。`)) return
+  game.promoteNpc(id)
+  if (!game.error) game.flash(`已把「${name}」存成固定 NPC`)
+}
 const rels = computed(() => Object.values(s.value.relationships ?? {}))
 const pcName = computed(() => s.value.party.find((m) => m.isPlayer)?.name ?? '主角')
 
@@ -133,7 +147,14 @@ const suggestionDraft = reactive<Record<string, string>>({})
             <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
             <template v-if="r.firstMet"><dt>初次見面</dt><dd>{{ formatTime(r.firstMet.time) }}・{{ locationById(r.firstMet.location).name }}</dd></template>
           </dl>
-          <button class="small" @click="startEdit(r)">編輯</button>
+          <div class="row">
+            <button class="small" @click="startEdit(r)">編輯</button>
+            <button
+              v-if="promotable(r.id)" class="small" :disabled="content.readOnly"
+              :title="content.readOnly ? `${VANILLA_NAME}不能修改：要先建立自己的世界，再用那個世界開始遊戲` : '把這個人目前的樣子（能力值、技能、特質、裝備、出沒的地方）存進目前的世界，之後可以在內容頁籤編輯；親密度與記憶延續'"
+              @click="promote(r.id, r.name)"
+            >📌 存成固定 NPC</button>
+          </div>
         </template>
 
         <form v-else class="edit small" @submit.prevent="saveEdit(r.id)">

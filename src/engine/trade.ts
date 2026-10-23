@@ -9,7 +9,7 @@
 import { snapshot } from './character'
 import {
   companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
-  stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopSpecial, type ShopType, type ShopTypeDef,
+  npcs as namedNpcs, stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopSpecial, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
@@ -20,8 +20,9 @@ import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
 import { reputationBand } from './security'
 import { pointOffers, storyOffers } from './intel'
+import { condMet } from './storyFlags'
 import { addHours, commitReport, newReportId, withRng } from './state'
-import type { Deal, GameState, Report, ShopState } from './types'
+import type { Deal, GameState, NpcRecord, Report, ShopState } from './types'
 
 const CELL_SHOP: Record<string, ShopType> = {
   shop: 'general', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant',
@@ -81,9 +82,23 @@ export function locationRank(type: string): number {
   return shopRules.location_rank[type] ?? 1
 }
 
-/** 店主：每間店固定一位，第一次查看時生成 */
-function keeperFor(state: GameState, type: ShopType): string {
+/** 擔任這間店店主的固定 NPC（內容頁籤的「擔任店主」）：要在這個地點、符合劇情旗標、沒有在隊伍裡、還活著 */
+export function fixedKeeper(state: GameState, type: ShopType, placeId = shopPlace(state).id): string | undefined {
+  for (const n of namedNpcs) {
+    if (n.keeper !== type) continue
+    const rec: NpcRecord = npcRecord(state, n.id) ?? n
+    if (rec.location !== placeId || rec.dead || !condMet(state, rec.requires)) continue
+    if (state.party.some((m) => m.id === n.id)) continue
+    return n.id
+  }
+  return undefined
+}
+
+/** 店主：每間店固定一位，第一次查看時生成；有固定 NPC 擔任時用他（他離開時換回生成的店主） */
+export function keeperFor(state: GameState, type: ShopType): string {
   const place = shopPlace(state)
+  const fixed = place.waystation ? undefined : fixedKeeper(state, type, place.id)
+  if (fixed) return fixed
   const id = `keeper_${place.id}_${type}`
   if (!npcRecord(state, id)) {
     const def = shopRules.types[type]

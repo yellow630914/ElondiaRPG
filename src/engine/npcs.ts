@@ -247,6 +247,8 @@ const SHOP_SPOT: Record<string, string> = {
 /** NPC 平常待的設施：店主在自己的店、公會職員在公會，冒險者與知情人在酒館。 */
 export function npcSpot(rec: NpcRecord): string | undefined {
   if (rec.spot) return rec.spot
+  // 擔任店主的固定 NPC：在自己的店
+  if (rec.keeper) return SHOP_SPOT[rec.keeper] ?? 'shop'
   const keeper = /^keeper_.+_(\w+)$/.exec(rec.id)
   if (keeper) return SHOP_SPOT[keeper[1]!] ?? 'shop'
   if (rec.id.startsWith('clerk_')) return 'guild'

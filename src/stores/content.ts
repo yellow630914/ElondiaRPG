@@ -14,6 +14,8 @@ import {
 } from '@/engine/mods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { slaveryRules } from '@/engine/data'
+import { npcModFromState } from '@/engine/promoteNpc'
+import type { GameState } from '@/engine/types'
 import { pruneAbilities, prunePerks, pruneStatuses } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
 import { enemyUsage, gearUsage, itemUsage, npcUsage, perkUsage, renameItemInState, storyUsage } from '@/engine/usage'
@@ -412,6 +414,13 @@ export const useContent = defineStore('content', () => {
 
   // ---- 固定 NPC ----
 
+  /** 把存檔裡生成的人存成固定 NPC（同一個 id，關係與記憶延續；存檔的紀錄由呼叫的地方改，見 game.promoteNpc） */
+  function promoteNpc(state: GameState, id: string) {
+    if (readOnly.value) throw new Error(`${VANILLA_NAME}不能修改：請先在內容頁籤建立自己的世界，再用那個世界開始遊戲`)
+    mods.value.npcs[id] = npcModFromState(state, id)
+    save()
+  }
+
   function saveNpc(id: string, draft: Partial<NpcMod>) {
     mods.value.npcs[id] = sanitizeNpc(id, draft, !builtinNpc(id))
     save()
@@ -643,7 +652,7 @@ export const useContent = defineStore('content', () => {
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
-    saveNpc, deleteNpc, restoreNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
+    saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
     saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     exportMods, importMods, resetAll, diffMods, mergeMods,

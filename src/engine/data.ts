@@ -105,6 +105,8 @@ export interface NpcDef {
   gear?: Partial<Record<GearSlot, GearSpec>>
   /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
   fixed?: { area: string; x: number; y: number }
+  /** 擔任所屬地點這種店的店主（shops.json 的店種，流浪商人除外）：取代自動生成的店主 */
+  keeper?: string
   /** 只在劇情旗標符合時出現（特殊任務用，見 story.ts） */
   requires?: StoryCond
   /** 依劇情旗標改變出沒：由上往下第一組條件成立的設定取代上面的所屬地點、活躍地點與固定格子 */
@@ -1163,6 +1165,8 @@ export function saveItems(): ItemDef[] {
 }
 
 export type ShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer'
+/** 可以指定固定 NPC 擔任店主的店種（流浪商人不是固定的店） */
+export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant']
 export interface DealCost { type: 'money' | 'item' | 'hours'; amount?: number; name?: string; qty?: number }
 export interface ShopSpecial {
   id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number

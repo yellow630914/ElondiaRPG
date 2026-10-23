@@ -3,12 +3,12 @@
 // 也可以用 gear 效果替成品取名、寫描述、挑附魔（程式依成功程度夾住稀有度與附魔點數）。
 // AI 關閉時依規則：成功以上隨機附魔。
 
-import { craftRules as craftSkillRules, itemDef, locationById, type CraftId, type Degree } from './data'
+import { craftRules as craftSkillRules, itemDef, locationById, type CraftId, type Degree, type ShopType } from './data'
 import {
   crafterRefusal, craftForKind, craftName, craftXpFor, gainCraftXp, keeperCraftLevel, skillOf, toolAccess, toolTierFor, toolTierName, type ToolAccess,
 } from './crafting'
 import { npcRecord } from './npcs'
-import { locationMult, shopPlace } from './trade'
+import { keeperFor, locationMult } from './trade'
 import { applyEffects, type RewardEffect } from './effects'
 import { gearName, gearRules, type MaterialKind, rarityName, rarityPoints, registerGear, rollEnchants, sanitizeGearSpec, shiftRarity } from './gear'
 import { CELL_NAME, currentArea, currentCell, type CellKind } from './grid'
@@ -173,7 +173,7 @@ function selfCost(state: GameState, base: string, tier: number, craft: CraftId, 
 }
 
 function keeperId(state: GameState, shop: string): string {
-  return `keeper_${shopPlace(state).id}_${shop}`
+  return keeperFor(state, shop as ShopType)
 }
 
 /**

@@ -13,7 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, KEEPER_SHOPS,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -998,6 +998,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   }
   const fixed = cleanFixed(raw.fixed)
   if (fixed) out.fixed = fixed
+  if (raw.keeper && (KEEPER_SHOPS as string[]).includes(raw.keeper)) out.keeper = raw.keeper
   const req = cond(raw.requires)
   if (req) out.requires = req
   // 依劇情旗標改變出沒：沒有條件的設定沒有意義，拿掉
