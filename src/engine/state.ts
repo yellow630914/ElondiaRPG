@@ -234,6 +234,8 @@ export function assertSchema(state: Pick<GameState, 'schema'>) {
 
 export function migrate(state: GameState): GameState {
   assertSchema(state)
+  // 「本地」聲望以前會直接存成 local（KNOWN_ISSUES W5）：沒有人讀，拿掉
+  if (state.reputation) delete state.reputation.local
   // 「飾品」類別已經拿掉（併入裝備）：AI 自創的飾品改成雜物
   for (const c of Object.values(state.customItems ?? {})) if (c.category === 'valuable') c.category = 'gear'
   for (const m of state.party) migrateJewelry(m.gear as Record<string, EquippedGear | undefined>, state.inventory)

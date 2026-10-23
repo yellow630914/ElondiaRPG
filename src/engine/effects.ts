@@ -7,9 +7,9 @@
 // applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
-import { perkDef, slaveryRules, type AttrId } from './data'
+import { abilities, classAbilities, locationById, perkDef, slaveryRules, type AttrId } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
-import { abilityChoices, abilityQuality, learnable, learnAbility, recalc } from './character'
+import { abilityChoices, abilityQuality, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import { changeHitDice, changeSlots } from './resources'
@@ -161,7 +161,8 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         break
       }
       case 'reputation':
-        if (e.delta) (c.reputation ??= []).push({ faction: e.faction, delta: Math.round(e.delta) })
+        // local：所在地的勢力（和商店交易的 expandTokens 同一條規則），沒有勢力的地方算冒險者公會
+        if (e.delta) (c.reputation ??= []).push({ faction: e.faction === 'local' ? locationById(state.location).faction ?? 'guild' : e.faction, delta: Math.round(e.delta) })
         break
       case 'xp': {
         const targets = e.target ? state.party.filter((m) => m.id === e.target) : state.party
@@ -370,10 +371,32 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           notes.push(`${who.name}得到一次學習新能力的機會（${choices.length} 選一）`)
           break
         }
-        const pool = learnable(who)
         const wanted = e.ability?.trim()
-        let def = wanted ? pool.find((a) => a.id === wanted || a.name === wanted) : undefined
-        if (!def && pool.length) def = withRng(state, (rng) => rng.pick(pool))
+        // 指定的能力：是這個職業的、法術的環階夠就直接學會（不受等級的品質與解鎖限制）；學不了時改成三選一並說明，不隨機換成別的
+        const named = wanted ? abilities[wanted] ?? Object.values(abilities).find((a) => a.name === wanted) : undefined
+        if (named) {
+          if (who.abilities.includes(named.id)) {
+            notes.push(`${who.name}已經會【${named.name}】了`)
+            break
+          }
+          const own = classAbilities(who.class).some((a) => a.id === named.id)
+          if (own && (named.type !== 'spell' || (named.circle ?? 1) <= maxCircle(who))) {
+            learnAbility(who, named.id)
+            ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: named.name, quality: abilityQuality(named), source: 'insight' })
+            notes.push(`${who.name}領悟了【${named.name}】`)
+            break
+          }
+          const choices = withRng(state, (rng) => abilityChoices(who, rng, 3))
+          const why = own ? '環階不夠' : '不是這個職業的能力'
+          if (choices.length) {
+            who.pendingAbilityChoices = [...(who.pendingAbilityChoices ?? []), choices]
+            notes.push(`${who.name}學不了【${named.name}】（${why}），改成一次學習新能力的機會（${choices.length} 選一）`)
+          } else notes.push(`${who.name}學不了【${named.name}】（${why}），也沒有其他可以學的新能力`)
+          break
+        }
+        // 沒有指定：從可以學的能力裡隨機領悟一項
+        const pool = learnable(who)
+        const def = pool.length ? withRng(state, (rng) => rng.pick(pool)) : undefined
         if (!def) {
           notes.push(`${who.name}沒有可以學的新能力`)
           break

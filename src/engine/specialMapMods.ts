@@ -69,11 +69,13 @@ function targetSize(area: string, known: Record<string, Pick<SpecialMapDef, 'gri
 }
 
 /**
- * 整理特殊地圖。known 是同一批一起整理的地圖（匯入時互相接的通道），沒有時只認得目前的地圖。
+ * 整理特殊地圖。known 是同一批一起整理的地圖（匯入時互相接的通道），沒有時只認得目前的地圖；
+ * refs 判斷遭遇表的怪物與資源的物品存不存在（匯入時同一包裡的也算）。
  * 通道只有固定地圖可以設定；接到城鎮時那一格要是牆或水。
  */
 export function sanitizeSpecialMapMod(
   id: string, raw: Partial<SpecialMapMod>, known: Record<string, Pick<SpecialMapDef, 'grid' | 'size'>> = {}, shopIds: Set<string> = new Set(Object.keys(shopRules.types)),
+  refs: { enemy: (id: string) => boolean; item: (name: string) => boolean } = { enemy: (x) => !!enemies[x], item: (n) => !!itemDef(n) },
 ): SpecialMapMod {
   if (!isSpecialMapId(id)) throw new Error('特殊地圖的 id 要是 sm_ 開頭（小寫英數與底線）')
   const L = SPECIAL_MAP_LIMITS
@@ -115,13 +117,13 @@ export function sanitizeSpecialMapMod(
   // 遭遇表：存在的怪物
   const table = (Array.isArray(raw.table) ? raw.table : [])
     .map((g) => (Array.isArray(g) ? g : [])
-      .filter((x): x is [string, number] => Array.isArray(x) && typeof x[0] === 'string' && !!enemies[x[0]])
+      .filter((x): x is [string, number] => Array.isArray(x) && typeof x[0] === 'string' && refs.enemy(x[0]))
       .slice(0, L.group_types)
       .map(([m, n]) => [m, int(n, L.group_count, 1)] as [string, number]))
     .filter((g): g is EncounterGroup => g.length > 0)
     .slice(0, L.table)
   if (table.length) out.table = table
-  const items = [...new Set((Array.isArray(raw.resource_items) ? raw.resource_items : []).filter((n): n is string => typeof n === 'string' && !!itemDef(n)))].slice(0, L.items)
+  const items = [...new Set((Array.isArray(raw.resource_items) ? raw.resource_items : []).filter((n): n is string => typeof n === 'string' && refs.item(n)))].slice(0, L.items)
   if (items.length) out.resource_items = items
   if (inside(raw.entry)) out.entry = { x: raw.entry.x, y: raw.entry.y }
   // 通道（只有固定地圖）

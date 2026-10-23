@@ -237,7 +237,8 @@ function place(v: unknown): StoryPlace {
   if (where === 'npc' && str(p.npc, 60)) out.npc = str(p.npc, 60)
   if (where === 'side' && typeof p.side_map === 'string' && SIDE_MAPS().includes(p.side_map)) out.side_map = p.side_map
   if (where === 'special') {
-    out.special_map = typeof p.special_map === 'string' && specialMaps[p.special_map] ? p.special_map : Object.keys(specialMaps)[0]
+    // 寫錯的名稱照留：storyCheck 會報「特殊地圖不存在」（匯入時整條不收），不換成別張地圖
+    if (str(p.special_map, 60)) out.special_map = str(p.special_map, 60)
     // 固定地圖的確切格子（是不是走得到的格子由 storyCheck 提醒，遊戲裡不行時改成隨機）
     const size = out.special_map && specialMaps[out.special_map]?.grid?.length ? mapSize(specialMaps[out.special_map]!) : undefined
     if (size && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x! >= 0 && p.y! >= 0 && p.x! < size[0] && p.y! < size[1]) {

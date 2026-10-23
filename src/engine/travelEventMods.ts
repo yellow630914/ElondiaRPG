@@ -79,7 +79,8 @@ function pick<T extends string>(v: unknown, allowed: readonly T[]): T[] {
 }
 
 /** 整理一個事件。城鎮事件沒有高階（不會進臨時地圖的「發現」），選擇的事件至少要有一個選項 */
-export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, custom: boolean): TravelEventMod {
+/** extraCells：還沒套用、但同一包裡有的自建商店（匯入時） */
+export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, custom: boolean, extraCells: string[] = []): TravelEventMod {
   const L = EVENT_LIMITS
   const scope = raw.scope === 'town' ? 'town' : 'road'
   const kind = raw.kind === 'check' ? 'check' : 'choice'
@@ -95,7 +96,7 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
     const modes = pick(raw.modes, ROUTE_MODES)
     if (modes.length) out.modes = modes
   } else {
-    const cells = pick(raw.cells, townEventCells())
+    const cells = pick(raw.cells, [...townEventCells(), ...extraCells])
     if (cells.length) out.cells = cells
     const types = pick(raw.location_types, Object.keys(LOCATION_TYPE_NAME) as LocationType[])
     if (types.length) out.location_types = types

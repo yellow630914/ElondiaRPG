@@ -28,7 +28,7 @@ import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, legFare, ROAD_DAI
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
 import { shortestPath } from './world'
 import { enterWaystation } from './trade'
-import { enterSpecial } from './specialMaps'
+import { closeOut, enterSpecial } from './specialMaps'
 import travelEventsJson from '@data/rules/travel_events.json'
 
 // ---- 資料 ----
@@ -516,8 +516,9 @@ export function applyPendingMove(state: GameState) {
     if (state.road) {
       finishJourney(state, m.travel_to)
     } else {
-      // 不在旅途：被帶到那裡
+      // 不在旅途：被帶到那裡（在臨時地圖或特殊地圖裡的話先離開）
       if (state.side) leaveSide(state)
+      if (state.special) closeOut(state)
       state.location = m.travel_to
       arrive(state)
     }

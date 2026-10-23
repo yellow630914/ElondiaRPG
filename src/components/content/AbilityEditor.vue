@@ -211,13 +211,16 @@ function remove() {
     <fieldset>
       <legend>治療與護盾</legend>
       <div class="grid">
-        <label>治療（骰子）<input v-model="draft.heal!.dice" placeholder="1d8" /></label>
-        <label>治療（固定）<input v-model.number="draft.heal!.flat" type="number" min="0" /></label>
-        <label>護盾（暫時生命）<input v-model.number="draft.shield!.flat" type="number" min="0" /></label>
-        <label>護盾（每級）<input v-model.number="draft.shield!.level" type="number" min="0" max="10" /></label>
+        <template v-if="draft.resolve === 'auto'">
+          <label>治療（骰子）<input v-model="draft.heal!.dice" placeholder="1d8" /></label>
+          <label>治療（固定）<input v-model.number="draft.heal!.flat" type="number" min="0" /></label>
+          <label>護盾（暫時生命）<input v-model.number="draft.shield!.flat" type="number" min="0" /></label>
+          <label>護盾（每級）<input v-model.number="draft.shield!.level" type="number" min="0" max="10" /></label>
+        </template>
         <label>吸血（傷害的比例）<input v-model.number="draft.lifesteal" type="number" min="0" max="1" step="0.05" /></label>
       </div>
-      <div class="row checks small">
+      <p v-if="draft.resolve !== 'auto'" class="small muted">治療、護盾、移除負面狀態、回復法術環與直接擊倒只在結算方式是「必中」時有效。</p>
+      <div v-if="draft.resolve === 'auto'" class="row checks small">
         <span>治療另外：</span>
         <label class="check"><input v-model="draft.heal!.mod" type="checkbox" /> 加屬性調整值</label>
         <label class="check"><input v-model="draft.heal!.level" type="checkbox" /> 加等級</label>
@@ -260,9 +263,11 @@ function remove() {
       </div>
       <div class="row checks small">
         <label class="check"><input v-model="draft.concentration" type="checkbox" /> 需要專注</label>
-        <label class="check"><input v-model="draft.cleanse" type="checkbox" /> 移除自己的負面狀態</label>
-        <label class="check"><input v-model="draft.recover_slot" type="checkbox" /> 回復一個法術環</label>
-        <label class="check"><input v-model="draft.kill" type="checkbox" /> 直接擊倒（配合生命值上限）</label>
+        <template v-if="draft.resolve === 'auto'">
+          <label class="check"><input v-model="draft.cleanse" type="checkbox" /> 移除目標的所有負面狀態</label>
+          <label class="check"><input v-model="draft.recover_slot" type="checkbox" /> 回復一個法術環</label>
+          <label class="check"><input v-model="draft.kill" type="checkbox" /> 直接擊倒（配合生命值上限）</label>
+        </template>
       </div>
     </fieldset>
 

@@ -9,7 +9,7 @@
 
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
@@ -381,21 +381,31 @@ const LOC_BY_TIER: Record<number, string> = { 3: 'city', 4: 'capital' }
 export const GEAR_SHOP: Record<string, string> = { metal: 'smith', wood: 'smith', leather: 'tailor', cloth: 'tailor', jewel: 'jeweler' }
 
 /** 自建的底材或材料：產生「底材 × 同類材料」的制式裝備（已有同名物品時略過） */
-function generateCatalog(mods: ContentMods) {
-  const names = new Set(itemRules.items.map((i) => i.name))
+/** 自建的底材或材料自動產生的制式裝備（名稱與組成）；底材與材料要先登錄到 gearRules */
+function generatedGear(mods: Pick<ContentMods, 'bases' | 'materials'>): [string, GearSpec][] {
+  const out: [string, GearSpec][] = []
   for (const [bid, b] of Object.entries(gearRules.bases)) {
     for (const [mid, m] of Object.entries(gearRules.materials)) {
       if (b.restraint || m.kind !== b.kind || (!mods.bases[bid]?.custom && !mods.materials[mid]?.custom)) continue
       const spec: GearSpec = { base: bid, material: mid }
-      const name = gearName(spec)
-      if (names.has(name)) continue
-      names.add(name)
-      itemRules.items.push({
-        name, category: 'equipment', price_cc: gearPrice(spec), tags: m.tier <= 4 ? [GEAR_SHOP[m.kind]!] : [], gear: spec,
-        ...(LOC_BY_TIER[m.tier] ? { min_location: LOC_BY_TIER[m.tier] } : {}),
-        ...(b.desc || m.desc ? { desc: `${b.desc ?? ''}${m.desc ?? ''}` } : {}),
-      })
+      out.push([gearName(spec), spec])
     }
+  }
+  return out
+}
+
+function generateCatalog(mods: ContentMods) {
+  const names = new Set(itemRules.items.map((i) => i.name))
+  for (const [name, spec] of generatedGear(mods)) {
+    if (names.has(name)) continue
+    names.add(name)
+    const b = gearRules.bases[spec.base]!
+    const m = gearRules.materials[spec.material]!
+    itemRules.items.push({
+      name, category: 'equipment', price_cc: gearPrice(spec), tags: m.tier <= 4 ? [GEAR_SHOP[m.kind]!] : [], gear: spec,
+      ...(LOC_BY_TIER[m.tier] ? { min_location: LOC_BY_TIER[m.tier] } : {}),
+      ...(b.desc || m.desc ? { desc: `${b.desc ?? ''}${m.desc ?? ''}` } : {}),
+    })
   }
 }
 
@@ -438,7 +448,9 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('商店的位置', { all: mods.shops ?? {} }, (_id, all) => applyShopPlacements(all))
   // 特殊地圖（商店之後：可以擺自建的店）：固定 NPC、特殊任務會用到；互相接的通道要先知道所有自建的地圖
   const knownMaps = { ...specialMaps, ...(mods.specialMaps ?? {}) }
-  tryEach('特殊地圖', mods.specialMaps ?? {}, (id, m) => applySpecialMapMod(id, sanitizeSpecialMapMod(id, m, knownMaps)))
+  // 遭遇表與資源：物品、怪物在後面才套用，這一包裡的先算存在
+  const refs = { enemy: (x: string) => !!enemies[x] || !!mods.enemies[x], item: (n: string) => !!itemDef(n) || !!mods.items[n] }
+  tryEach('特殊地圖', mods.specialMaps ?? {}, (id, m) => applySpecialMapMod(id, sanitizeSpecialMapMod(id, m, knownMaps, undefined, refs)))
   // 能力先套用：怪物、固定 NPC、職業都會用到
   tryEach('能力', mods.abilities, (id, m) => {
     abilities[id] = { ...strip(m, ['custom']), id }
@@ -832,7 +844,9 @@ const SCALES = ['full', 'half', 'up', 'third', 'third_up', 'res']
 export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string): BaseMod {
   const kind = (['metal', 'leather', 'cloth', 'wood', 'jewel'] as const).includes(raw.kind as 'metal') ? raw.kind! : 'metal'
   const slots = Object.keys(baseSlots())
-  const slot = slots.includes(raw.slot as string) ? raw.slot! : 'main_hand'
+  // 內建底材的部位不能改：先決定，武器與防具的部分才不會因為沒寫 slot 被跳過
+  const builtin = !custom && id ? snapshot.bases[id] : undefined
+  const slot = builtin ? builtin.slot : slots.includes(raw.slot as string) ? raw.slot! : 'main_hand'
   const out: BaseMod = { slot, name: str(raw.name, 12) || '未命名的底材', kind, price: int(raw.price, 1, 1e7, 100) }
   if (raw.two_handed && slot === 'main_hand') out.two_handed = true
   const stats = mods(raw.stats)
@@ -845,22 +859,24 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   for (const [k, v] of Object.entries(raw.resist_scale ?? {})) if (AFFINITY_KEYS().includes(k) && SCALES.includes(v)) rs[k] = v
   if (Object.keys(rs).length) out.resist_scale = rs as BaseDef['resist_scale']
   if (str(raw.desc, 120)) out.desc = str(raw.desc, 120)
+  // 指向別的武器、防具類型時複製原版的數值（不是目前世界改過的），名稱用底材的；
+  // 內建底材只能指向自己原本的類型（改它的數值用 weaponDef、armorDef）：指向別的會讓所有用到這種類型的職業與 NPC 一起變
+  const ref = <T>(id: string | undefined, own: string | undefined, table: Record<string, T>) => (id && (!builtin || id === own) ? table[id] : undefined)
   if (slot === 'main_hand') {
-    const w = raw.weaponDef ?? (raw.weapon ? equipment.weapons[raw.weapon] : undefined)
+    const copied = ref(raw.weapon, builtin?.weapon, snapshot.weapons)
+    const w = raw.weaponDef ?? copied
     if (w) {
       out.weaponDef = {
-        name: str(w.name, 12) || out.name, dice: dice(w.dice, '1d6'), type: DAMAGE_IDS().includes(w.type) ? w.type : 'slashing',
+        name: (raw.weaponDef && str(w.name, 12)) || out.name, dice: dice(w.dice, '1d6'), type: DAMAGE_IDS().includes(w.type) ? w.type : 'slashing',
         attr: ATTR_IDS.includes(w.attr) ? w.attr : 'str', ...(w.scale ? { scale: w.scale } : {}), ...(w.threat ? { threat: w.threat } : {}),
       }
-    } else if (raw.weapon && snapshot.weapons[raw.weapon]) {
-      out.weapon = raw.weapon
     }
   }
   if (slot === 'body') {
-    const a = raw.armorDef ?? (raw.armor ? equipment.armors[raw.armor] : undefined)
+    const a = raw.armorDef ?? ref(raw.armor, builtin?.armor, snapshot.armors)
     if (a) {
       out.armorDef = {
-        name: str(a.name, 12) || out.name, evade: int(a.evade, -10, 10, 0), dr: int(a.dr, 0, 20, 0),
+        name: (raw.armorDef && str(a.name, 12)) || out.name, evade: int(a.evade, -10, 10, 0), dr: int(a.dr, 0, 20, 0),
         ...(affinity(a.resist) ? { resist: affinity(a.resist) } : {}), ...(affinity(a.offense) ? { offense: affinity(a.offense) } : {}),
         ...(a.threat ? { threat: Math.round(num(a.threat, -1, 1, 0) * 100) / 100 } : {}),
       }
@@ -868,7 +884,6 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   }
   if (custom) out.custom = true
   // 內建底材的欄位、材料類型、雙手、是不是束縛用不能改：存檔裡的裝備、職業的起始武器與制式裝備都靠它們
-  const builtin = !custom && id ? snapshot.bases[id] : undefined
   if (builtin) {
     out.slot = builtin.slot
     out.kind = builtin.kind
@@ -927,8 +942,10 @@ export function normalizeMods(raw: unknown): ContentMods {
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
   for (const [id, a] of Object.entries(out.abilities)) if (a.custom && !abilities[id]) abilities[id] = { ...strip(a, ['custom']), id }
   // 物品（書籍）、固定 NPC、任務與其他特質的整理會檢查特質存不存在：先把自建的特質登錄進去
+  // 排斥的對象：已載入的、或同一包裡的非種族特質（還沒登錄也算）
+  const knownPerk = (x: string) => isChoosablePerk(x) || (!!r.perks?.[x] && typeof r.perks[x] === 'object' && !builtinPerk(x)?.race)
   for (const [id, v] of Object.entries(r.perks ?? {})) {
-    const p = sanitizePerkMod(id, v, !!v.custom || !builtinPerk(id))
+    const p = sanitizePerkMod(id, v, !!v.custom || !builtinPerk(id), knownPerk)
     if (p) out.perks[id] = p
   }
   for (const [id, p] of Object.entries(out.perks)) if (p.custom && !perkDef(id)) registerPerk(id, p)
@@ -950,18 +967,21 @@ export function normalizeMods(raw: unknown): ContentMods {
     }
   }
   for (const [id, l] of Object.entries(out.landmarks)) if (l.custom && !landmarks[id]) applyLandmarkMod(id, l)
-  // 特殊地圖：特殊任務會檢查存不存在，先登錄自建的
+  // 特殊地圖：特殊任務會檢查存不存在，先登錄自建的。遭遇表與資源可以用同一包裡的怪物與物品（還沒整理也算）
+  const packageRefs = { enemy: (x: string) => !!enemies[x] || !!r.enemies?.[x], item: (n: string) => !!itemDef(n) || !!out.items[n] }
   const knownMaps = { ...specialMaps, ...(r.specialMaps ?? {}) }
   for (const [id, v] of Object.entries(r.specialMaps ?? {})) {
     try {
-      out.specialMaps[id] = sanitizeSpecialMapMod(id, v, knownMaps, new Set([...Object.keys(shopRules.types), ...Object.keys(r.shops ?? {})]))
+      out.specialMaps[id] = sanitizeSpecialMapMod(id, v, knownMaps, new Set([...Object.keys(shopRules.types), ...Object.keys(r.shops ?? {})]), packageRefs)
     } catch {
       // id 不對的：略過
     }
   }
   for (const [id, m] of Object.entries(out.specialMaps)) if (m.custom && !specialMaps[id]) applySpecialMapMod(id, m)
   // 商店的固定清單會檢查物品：自建的物品還沒登錄，一起算
-  const listable = (n: string) => (out.items[n] ? !notForSale(out.items[n]!) : canListItem(n))
+  // 自建的底材或材料會自動產生裝備（applyContent 才加進目錄）：名稱先算出來
+  const generated = new Set(generatedGear(out).map(([name]) => name))
+  const listable = (n: string) => (out.items[n] ? !notForSale(out.items[n]!) : canListItem(n) || generated.has(n))
   for (const [id, v] of Object.entries(r.shops ?? {})) {
     try {
       out.shops[id] = sanitizeShopMod(id, v, listable)
@@ -972,8 +992,10 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, v] of Object.entries(r.enemies ?? {})) out.enemies[id] = sanitizeEnemy(id, v, !!v.custom || !snapshot.enemies[id])
   for (const [id, v] of Object.entries(r.npcs ?? {})) out.npcs[id] = sanitizeNpc(id, v, !!v.custom || !builtinNpc(id))
   for (const [id, v] of Object.entries(r.stories ?? {})) out.stories[id] = sanitizeStory(id, v, !!v.custom || !builtinStory(id))
+  // 城鎮事件的設施可以是同一包裡的自建商店（還沒套用）
+  const newShops = Object.entries(out.shops).filter(([, s]) => s.custom).map(([id]) => id)
   for (const [id, v] of Object.entries(r.travelEvents ?? {})) {
-    if (typeof id === 'string' && id.length <= 60) out.travelEvents[id] = sanitizeTravelEvent(id, v, !!v.custom || !builtinTravelEvent(id))
+    if (typeof id === 'string' && id.length <= 60) out.travelEvents[id] = sanitizeTravelEvent(id, v, !!v.custom || !builtinTravelEvent(id), newShops)
   }
   if (r.eventRules?.rules) out.eventRules.rules = sanitizeEventRules(r.eventRules.rules)
   return out
@@ -1016,7 +1038,9 @@ function cleanFixed(v: NpcDef['fixed']): NpcDef['fixed'] {
 }
 
 export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): NpcMod {
-  const kind = raw.kind === 'commoner' ? 'commoner' : 'adventurer'
+  // 沒寫 kind：有戰鬥職業的是冒險者，否則是普通人（和 npcs.ts 的 npcKind 同一條規則）
+  const combatClass = !!raw.class && !!classes[raw.class] && !classes[raw.class]!.noncombat
+  const kind = raw.kind === 'commoner' || raw.kind === 'adventurer' ? raw.kind : combatClass ? 'adventurer' : 'commoner'
   const cls = kind === 'commoner' ? '' : raw.class && classes[raw.class] && !classes[raw.class]!.noncombat ? raw.class : 'fighter'
   const location = settlementIds().includes(raw.location ?? '') ? raw.location! : 'soriel'
   const out: NpcMod = {
@@ -1181,6 +1205,8 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
     if (Object.keys(u).length) out.uses = u
   }
   for (const k of ['concentration', 'cleanse', 'recover_slot', 'kill'] as const) if (raw[k]) out[k] = true
+  // 治療、護盾、淨化、回復法術環、直接擊倒只有必中（auto）的結算會處理：其他結算方式拿掉，免得看起來有效
+  if (resolve !== 'auto') for (const k of ['heal', 'shield', 'cleanse', 'recover_slot', 'kill'] as const) delete out[k]
   if (raw.lifesteal) out.lifesteal = Math.round(num(raw.lifesteal, 0.05, 1, 0.5) * 100) / 100
   if (raw.hp_limit) out.hp_limit = int(raw.hp_limit, 1, 9999, 30)
   if (raw.threat) out.threat = int(raw.threat, -50, 50, 0)
@@ -1325,7 +1351,8 @@ function registerPerk(id: string, m: PerkMod) {
 }
 
 /** 整理特質（內容編輯器、匯入）：數值用 cleanPerkEffects 夾在範圍內；種族只沿用內建的，自建的不能是種族特質；種族特質不能是缺陷 */
-export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boolean): PerkMod | undefined {
+/** known：排斥的對象算不算存在（匯入時同一包裡的新特質也算），預設只認得已載入的 */
+export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boolean, known: (id: string) => boolean = isChoosablePerk): PerkMod | undefined {
   const race = custom ? undefined : builtinPerk(id)?.race
   const c = perkRules.custom
   const name = String(raw.name ?? '').trim().slice(0, c.name_chars)
@@ -1339,7 +1366,7 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   const races = (raw.requires?.races ?? []).filter((r) => !!attributeRules.races[r])
   const cls = (raw.requires?.classes ?? []).filter((k) => !!classes[k])
   if (!race && (races.length || cls.length)) out.requires = { ...(races.length ? { races } : {}), ...(cls.length ? { classes: cls } : {}) }
-  const ex = [...new Set(raw.exclusive ?? [])].filter((x) => x !== id && isChoosablePerk(x))
+  const ex = [...new Set(raw.exclusive ?? [])].filter((x) => x !== id && known(x))
   if (!race && ex.length) out.exclusive = ex
   if (!race && raw.train && Array.isArray(raw.train.cells)) {
     const cells = [...new Set(raw.train.cells.filter((x) => (TRAIN_CELLS as readonly string[]).includes(x) || isCustomShopId(x) || isLandmarkId(x)))]

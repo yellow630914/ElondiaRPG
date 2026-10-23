@@ -102,8 +102,8 @@ function arriveIn(state: GameState, def: SpecialMapDef) {
   if (def.refresh && !sp.visited.includes(def.id)) sp.visited.push(def.id)
 }
 
-/** 離開這片特殊地圖：需要刷新的地圖作廢 */
-function closeOut(state: GameState) {
+/** 離開這片特殊地圖（走出去、被傳送走）：需要刷新的地圖作廢 */
+export function closeOut(state: GameState) {
   for (const id of state.special?.visited ?? []) delete state.areas?.[specialKey(id)]
   delete state.special
 }
