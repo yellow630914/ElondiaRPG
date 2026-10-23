@@ -82,7 +82,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 
 ## 4. 交付
 
-1. 用預設的 20 場戰鬥模擬再跑一次檢查（拿掉 `WORLD_TRIALS`），以這次的報告為準。
+1. 用預設的場數再跑一次檢查（拿掉 `WORLD_TRIALS`；每種戰鬥 20 場，層主戰至少 40 場），以這次的報告為準：快速模式下層主勝率超出範圍只是提醒，這一次才算錯誤。
 2. 對照 [README](README.md) 第 3 節的檢查清單。
 3. 告訴玩家：
    - 世界包的位置：`worldgen/worlds/<代號>/world.json`
@@ -101,4 +101,4 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 統治者可以被雇用 | 國王跟著玩家去挖礦 | A、B 層加 `unhireable` |
 | 只做資料、沒寫世界書 | AI 不知道新的人與事，敘事和資料對不起來 | 第 2 節第 9 步 |
 | 手抄內建世界書的原文再改寫 | 抄錯的地方原本的設定就不見了 | 用腳本從 `elondia.worldbook.json` 讀原文再接上新段落 |
-| 引擎目前做不到的寫法 | 匯入時被拿掉，或執行時沒有效果 | 見 [docs/KNOWN_ISSUES](../docs/KNOWN_ISSUES.md) 第 5 節「自訂內容與世界包的問題」 |
+| 用了這種內容不支援的欄位或效果 | 匯入時被拿掉，或執行時沒有效果 | 照各份指南（[README](README.md) 第 2 節）的欄位表寫，讀「常見錯誤」；報告的「整理時改了」與「不支援」的提醒逐條改掉 |

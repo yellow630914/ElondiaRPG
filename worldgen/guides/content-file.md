@@ -72,7 +72,7 @@
 WORLD=worldgen/worlds/<代號>/world.json npx vitest run src/__tests__/worldCheck.spec.ts
 ```
 
-- 報告寫在同一個資料夾的 `check-report.md`（`WORLD_REPORT=路徑` 可以改）。戰鬥模擬的場數用 `WORLD_TRIALS`（預設 20；邊寫邊查時可以用 6 加快，最後用預設值再跑一次）。
+- 報告寫在同一個資料夾的 `check-report.md`（`WORLD_REPORT=路徑` 可以改）。戰鬥模擬的場數用 `WORLD_TRIALS`（預設 20，層主戰至少 40；邊寫邊查時可以用 6 加快，最後用預設值再跑一次）。
 - 有錯誤時測試失敗。錯誤、提醒的意思與怎麼修見 [balance/README](../balance/README.md)。
 
 ## 5. 提示詞（`prompts`）

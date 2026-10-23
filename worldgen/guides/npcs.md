@@ -25,7 +25,7 @@
 | `name` | 字串 | 最多 **12** 字；空的變「未命名」 | 遊戲裡顯示的名字。不要和內建角色同名（檢查會提醒） |
 | `gender` | id | `male`、`female`、`femboy`、`ts`、`futa`、`unknown` | 其他值整欄拿掉。來源：`data/world/npc_pool.json` 的 `genders` |
 | `race` | id | `human`、`elf`、`dwarf`、`demon`、`catfolk`、`yulin` | 其他值變 `human`。來源：`data/rules/attributes.json` 的 `races` |
-| `kind` | 字串 | `adventurer` 冒險者、`commoner` 普通人 | **普通人一定要寫 `"commoner"`**：沒寫或寫錯一律當冒險者 |
+| `kind` | 字串 | `adventurer` 冒險者、`commoner` 普通人 | 一律明寫。沒寫或寫錯時依 `class`：有戰鬥職業的當冒險者，沒有（或 `noncombatant`）的當普通人 |
 | `class` | id | 冒險者：`fighter`、`barbarian`、`paladin`、`ranger`、`rogue`、`monk`、`bard`、`cleric`、`druid`、`wizard` | 冒險者寫其他值（包括 `noncombatant`）變 `fighter`。普通人**不要寫**（一律清成空字串）。來源：`data/rules/classes.json` |
 | `level` | 整數 | 1～20，預設 1 | |
 | `location` | 地點 id | 聚落（`type` 不是 `dungeon` 的地點） | 名單所屬的地點。地下城或不存在的 id 變 `soriel` |
@@ -290,7 +290,7 @@ python3 -c "import json;m=json.load(open('data/world/maps.json'))['maps']['rhine
 
 | 寫法 | 整理後 |
 |---|---|
-| 普通人沒寫 `kind` | 變成冒險者，`class` 沒寫時當戰士（檢查**不會**提醒，因為 `kind` 是補上的預設值） |
+| 沒寫 `kind` | 有戰鬥職業的變成冒險者，沒有的變成普通人（檢查**不會**提醒，因為 `kind` 是補上的預設值）：冒險者忘了寫 `class` 會變成普通人 |
 | 普通人寫了 `class` | 清成空字串 |
 | 冒險者的 `class` 是 `noncombatant` 或不存在 | 變 `fighter` |
 | `name` 超過 12 字、`occupation` 超過 12 字、`personality` 超過 160 字、`appearance` 超過 240 字、`background` 超過 400 字 | 截斷 |
@@ -315,7 +315,7 @@ python3 -c "import json;m=json.load(open('data/world/maps.json'))['maps']['rhine
 - `tags` 的適用類型與互斥（`villain` 給普通人、`good` 和 `villain` 一起寫都會留著）。
 - `abilities` 是不是這個職業的技能。
 - `faction` 是不是勢力 id；`relations` 的 key 是不是存在的角色。
-- `keeper` 的店在所屬地點有沒有（第 3.2 節）；`haunts` 的地區在那個地點有沒有（例如 `palace` 只有王都）。
+- `keeper` 的店在所屬地點有沒有（第 3.2 節；沒有時世界檢查會提醒，但整理不拿掉）；`haunts` 的地區在那個地點有沒有（例如 `palace` 只有王都）。
 - `fixed` 落在通道（數字）上也會留著：選 `.` 或設施格，不要選通道。
 
 ## 7. 相關的系統文件

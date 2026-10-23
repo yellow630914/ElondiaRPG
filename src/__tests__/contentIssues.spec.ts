@@ -1,7 +1,7 @@
 // docs/KNOWN_ISSUES.md 第 5 節修掉的問題（W1～W23）：每條至少一個測試
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { applyContent, builtinMarkRules, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeNpc, type ContentMods } from '@/engine/mods'
+import { applyContent, builtinAbility, builtinMarkRules, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeNpc, type ContentMods } from '@/engine/mods'
 import { applyEffects } from '@/engine/effects'
 import { addHours, migrate, newGame } from '@/engine/state'
 import { enterLocation, settlementArea } from '@/engine/grid'
@@ -16,6 +16,8 @@ import { lotsOf } from '@/engine/homes'
 import { landmarkSpotProblem, newLandmark } from '@/engine/landmarkMods'
 import { sanitizeSpecialMapMod } from '@/engine/specialMapMods'
 import { checkWorld } from './worldCheck'
+import { simParty } from './balanceSim'
+import { abilityApCost } from '@/engine/combat'
 import { townTemplates } from '@/engine/townEvents'
 import { sanitizeTravelEvent } from '@/engine/travelEventMods'
 
@@ -37,7 +39,7 @@ function importAndReload(pkg: Partial<ContentMods>): ContentMods {
 
 describe('W1-W4: references to new content in the same package', () => {
   it('W1 keeps exclusive between two new perks', () => {
-    const perk = (ex: string[]) => ({ custom: true, name: '特質', desc: '', effects: [{ type: 'check', attr: 'str', value: 1 }], exclusive: ex })
+    const perk = (ex: string[]) => ({ custom: true, name: '特質', desc: '', effects: [{ check: { attrs: ['str'] }, bonus: 1 }], exclusive: ex })
     const m = importAndReload({ perks: { mod_perk_a: perk(['mod_perk_b', 'charming']), mod_perk_b: perk(['mod_perk_a']) } as never })
     expect(m.perks.mod_perk_a!.exclusive).toEqual(['mod_perk_b', 'charming'])
     expect(m.perks.mod_perk_b!.exclusive).toEqual(['mod_perk_a'])
@@ -242,5 +244,26 @@ describe('W15-W19: decisions', () => {
     const m = normalizeMods({ ...emptyMods(), markRules: { rules: { market_contracts: { public: { labor: 1.5, combat: 2.5 } } } } } as never)
     expect(m.markRules.rules!.market_contracts.public).toEqual({ labor: 1.5, combat: 2.5 })
     expect(m.markRules.rules!.self_sale).toEqual(builtinMarkRules().self_sale)
+  })
+})
+
+describe('W20-W23: world check tool', () => {
+  it('W20 does not report fields written with their default value', () => {
+    const r = checkWorld({
+      type: 'elondia-content',
+      perks: { mod_perk_d: { custom: true, name: '預設', desc: '力量檢定 +1。', effects: [{ check: { attrs: ['str'] }, bonus: 1 }], flaw: false, exclusive: [] } },
+      travelEvents: { mod_event_d: { custom: true, scope: 'road', kind: 'choice', title: '路上', text: '…', options: [{ label: '好', success: { text: '好' } }] } },
+    }, { trials: 1 })
+    expect(r.findings.filter((f) => f.section === '整理')).toEqual([])
+  })
+
+  it('W21 uses the real action point cost of spells', () => {
+    expect(abilityApCost({ ...builtinAbility('fireball')!, ap: undefined })).toBeGreaterThan(2)
+  })
+
+  it('W23 builds the simulated party without new player abilities', () => {
+    const before = simParty(8, 1).map((c) => c.abilities)
+    applyContent(normalizeMods({ ...emptyMods(), abilities: { mod_ability_leak: { custom: true, name: '外漏', type: 'skill', classes: ['fighter'], unlock: 1, target: 'enemy', resolve: 'attack', damage: [{ dice: '1d6', type: 'slashing' }] } } } as never))
+    expect(simParty(8, 1).map((c) => c.abilities)).toEqual(before)
   })
 })

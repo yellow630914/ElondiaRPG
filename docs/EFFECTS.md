@@ -13,12 +13,12 @@
 | `item` | 物品；qty 負數為失去 |
 | `gear` | 裝備：`spec`（底材 × 材料＋稀有度與附魔，已依 `gear.json` 整理）與選填的 `name`、`desc`；新的裝備登錄在存檔的 `customItems`，制式品沿用目錄名稱（見 [ITEMS](ITEMS.md)） |
 | `affinity` | 某人的親密度增減 |
-| `reputation` | 勢力聲望 |
+| `reputation` | 勢力聲望。`faction: "local"` 是所在地的勢力（沒有勢力的地方算冒險者公會）；交易、地標、事件、特殊任務都一樣 |
 | `xp` | 經驗值（全隊或指定成員） |
 | `flag` | 劇情旗標 |
 | `quest_reward` | 委託報酬按百分比調整（談判的結果） |
 | `quest_flag` | 委託的任務旗標，例如 `lead`（委託檢定 +5，情報商與情報物品給的線索）、`negotiated` |
-| `ability` | 技能報酬：學會新能力。可指定能力（id 或名稱，必須是目前可以學的，否則隨機挑一項）、給一次「N 選一」的學習機會（`choices`），或加上取得機率（`chance`）。記錄在報告的 `skills_gained`，來源為 `insight` |
+| `ability` | 技能報酬：學會新能力。可指定能力（id 或名稱）、給一次「N 選一」的學習機會（`choices`），或加上取得機率（`chance`）。指定的能力是這個職業的、法術的環階夠時直接學會（不受等級的品質與解鎖限制）；已經會了只提示；不是這個職業的或環階不夠時，改成一次三選一並提示原因（不會隨機換成別的）。沒有指定時從目前可以學的隨機挑一項。記錄在報告的 `skills_gained`，來源為 `insight` |
 | `companion` | 新增夥伴：`voluntary` 自願、`hired` 雇傭、`slave` 奴隸（可指定契約）。對象可以是已登場的 NPC，也可以是一份規格（名字、種族、職業、等級……），程式會生成並登錄。隊伍滿了時不會出錯，報告註明「想加入，但隊伍已滿」 |
 | `join_party` | 主角加入別人的隊伍（隊長、隊員，可附簽約金） |
 | `leave` | 某人離隊 |
@@ -36,7 +36,7 @@
 | `tattoo` | 主角刺青：圖樣或自己描述（普通刺青、誓約印記），可以指定部位（見 [TATTOOS](TATTOOS.md) 第 5 節） |
 | `remove_tattoo` | 洗掉主角的刺青：指定部位，或某一種全部（奴隸印記不受影響） |
 | `force_equip` | 主人強制主角裝上一件「主人會強制裝備」的物品並鎖住（`npc` 是主人，主人的事件寫 `master`；`item` 沒寫時依主人的身分隨機挑；見 [ITEMS](ITEMS.md) 3.2 節） |
-| `enslave_player` | 主角淪為奴隸（只有特殊任務能用；見 [STORY_QUESTS](STORY_QUESTS.md)） |
+| `enslave_player` | 主角淪為奴隸（只有特殊任務能用，旅途與城鎮事件寫了會被拿掉；見 [STORY_QUESTS](STORY_QUESTS.md)） |
 | `mark` | 刻印時提議的印記名稱與描述（只是文字，數值依模板） |
 | `free` | 解除契約：`npc` 為 `pc` 時是主角獲釋 |
 | `change_master` | 替換主角的主人（印記沿用）；`master` 為 `null` 時變成無主 |

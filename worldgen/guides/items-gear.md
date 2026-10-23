@@ -31,7 +31,7 @@
 - 名稱是「材料名＋底材名」（霜銀＋長劍＝霜銀長劍）。皮革類：第 1 級只用底材名（皮裘）；底材名以「皮」開頭時省掉那個字（硬皮裘、龍皮裘）。已經有同名物品時不產生。
 - 價格＝估價（沒有附魔）；販售：金屬、木材在鐵匠鋪，皮革、布料在裁縫店，寶石在珠寶店；第 3 級要城市、第 4 級要王都，第 5 級不賣（`tags` 是空的）。描述是底材的 `desc` 接材料的 `desc`。
 - 束縛用（`restraint`）的底材不產生制式裝備。
-- 制式裝備不在 `items` 區塊裡，**商店的固定清單引用不到**（第 6 節）；要放進固定清單、或想改它的描述與價格，就在 `items` 用同一個名稱寫一筆（完整範例的「皮裘」）。
+- 制式裝備不在 `items` 區塊裡，但商店的固定清單可以直接寫它的名稱（同一個檔案裡新增的底材、材料產生的也可以）；想改它的描述與價格，就在 `items` 用同一個名稱寫一筆（完整範例的「皮裘」）。
 
 ### 1.2 物品從哪裡來
 
@@ -109,7 +109,7 @@
 | `save` | 物件 | `{ "attr": 屬性, "dc": 5～30 }` | 投擲的豁免：成功時傷害減半、不受狀態。只在有 `damage` 或 `apply` 時留著 |
 | `area` | 字串 | `one` 一名敵人、`all` 所有敵人 | 只在有 `damage` 或 `apply` 時有意義；不寫是 `one` |
 | `escape` | 布林 | | 全隊立刻脫離戰鬥 |
-| `combat_only` | 布林 | | 只能在戰鬥中用。有 `damage`、`apply`、`status`、`temp_hp`、`ap`、`revive`、`cleanse`、`escape`，而且沒有 `heal`、`slot` 時，整理時一律補上 `true` |
+| `combat_only` | 布林 | | 只能在戰鬥中用。有 `damage`、`apply`、`status`、`temp_hp`、`ap`、`revive`、`cleanse`、`escape`，而且沒有 `heal`、`slot` 時，整理時一律補上 `true`（世界檢查列成說明） |
 
 - 傷害類型：`bludgeoning` 鈍擊、`piercing` 穿刺、`slashing` 斬擊、`fire` 火焰、`cold` 寒冷、`lightning` 閃電、`thunder` 雷鳴、`acid` 酸蝕、`poison` 毒素、`radiant` 神聖、`necrotic` 暗影、`force` 奧術、`psychic` 心靈（`data/rules/damage_types.json`）。
 - 屬性：`str` 力量、`dex` 靈巧、`int` 智力、`fai` 信仰、`cha` 魅力。
@@ -251,7 +251,7 @@
 | `desc` | 字串 | 最多 120 字 | 制式裝備描述的前半 |
 
 - 武器與防具的數值照內建（[ITEMS](../../docs/ITEMS.md) 4.2 節）：單手 1d6～1d8、雙手 1d12；布衣迴避 +1、皮甲迴避 +1 減傷 1、鍊甲迴避 −1 減傷 2、板甲迴避 −3 減傷 4。
-- **修改內建底材**：`slot`、`kind`、`two_handed`、`restraint` 不能改（改了會被改回）。內建資料裡的 `weapon`、`armor`（武器、防具類型的 id）**要換成整份的 `weaponDef`、`armorDef`**（數值查 `data/rules/equipment.json`）：整理時 `weapon`、`armor` 一律拿掉。改內建底材的 `weaponDef` 會一起改到同一種武器（職業的起始武器、NPC）。
+- **修改內建底材**：`slot`、`kind`、`two_handed`、`restraint` 不能改（改了會被改回）。沒寫 `slot` 時用內建的（只改 `armorDef` 也可以）。內建資料裡的 `weapon`、`armor`（武器、防具類型的 id）整理時換成那一種**原版**的數值（`weaponDef`、`armorDef`，名稱用底材的）；只能指向它自己原本的類型，指向別的會被忽略。要改數值就寫整份的 `weaponDef`、`armorDef`（數值查 `data/rules/equipment.json`）。改內建底材的 `weaponDef` 會一起改到同一種武器（職業的起始武器、NPC）。
 
 ## 3. 可以引用什麼
 
@@ -267,7 +267,7 @@
 | `master_force.tags` | 主人的身分 | `data/rules/slavery.json` 的 `master_tags` | 拿掉 |
 | `intel.location` | 地點 | `data/world/geography.json` 的 `locations` | 拿掉 |
 | `intel.story` | 特殊任務 | `data/rules/stories.json`，或 `stories` | **不檢查** |
-| `recipe.inputs[].name`、`seed.yields`、`tool.fuel` | 物品名稱 | `data/rules/items.json`，或 `items` | **不檢查**：寫錯就永遠做不出來、長出不存在的東西 |
+| `recipe.inputs[].name`、`seed.yields`、`tool.fuel` | 物品名稱 | `data/rules/items.json`，或 `items` | **整理時不檢查**：寫錯就永遠做不出來、長出不存在的東西。配方材料不存在時世界檢查會提醒；種子收成與燃料不會 |
 | `unique.check.kinds`、`unique.check.vs_tags` | 主動行動、NPC 標籤 | `src/engine/actions.ts` 的 `ActionKind`、`data/rules/npc_tags.json` | **不檢查**；`attrs`、`contexts` 有檢查（`contexts`：`data/rules/perks.json` 的 `contexts`） |
 
 反過來，物品被這些地方引用：怪物的 `loot`、商店的 `fixed`、特殊任務與事件的 `item` 效果、別的物品的配方與種子、特殊地圖的 `resource_items`。改內建物品不能改名，所以這些引用不會斷。
@@ -422,7 +422,7 @@ python3 -c "import json;print(json.dumps([i for i in json.load(open('data/rules/
 
 這個範例套用之後：
 
-- 自動產生的制式裝備：霜銀 × 內建的 16 種金屬底材（霜銀長劍 2880、霜銀板甲 72000……，城市以上的鐵匠鋪）、鉤刃 × 6 種金屬材料（鐵鉤刃 220、鋼鉤刃 440……；星隕鐵鉤刃不賣）、皮裘 × 5 種皮料（皮裘、硬皮裘、魔獸皮裘……）。「皮裘」另外寫成物品，是為了放進商店的固定清單（[shops](shops.md) 的完整範例）。
+- 自動產生的制式裝備：霜銀 × 內建的 16 種金屬底材（霜銀長劍 2880、霜銀板甲 72000……，城市以上的鐵匠鋪）、鉤刃 × 6 種金屬材料（鐵鉤刃 220、鋼鉤刃 440……；星隕鐵鉤刃不賣）、皮裘 × 5 種皮料（皮裘、硬皮裘、魔獸皮裘……）。「皮裘」另外寫成物品，是為了改它的價格與描述（[shops](shops.md) 的完整範例把它放進固定清單；制式裝備不另外寫也能放）。
 - 霜銀是第 3 級：委託打造要工藝 3 級的工匠（城市一定有，城鎮、港口不一定）與「霜銀礦石」（主手 2 塊、上身 3 塊）。寶箱的隨機裝備仍然用秘銀（同類同級的內建材料），霜銀只從商店、打造、中深層寶箱的礦石與寫好的「霜咬長劍」來。
 - 霜咬長劍：估價 240 × 12 ×（1 + 0.5 × 2 點）= 5760；附魔 2 點，不超過史詩的 4 點。
 - 價格對照：霜苔治療藥的配方成本 3 × 12 + 20 + 150 = 206，不低於賣回的 200；雪原燉鍋 12 + 20 = 32，不低於賣回的 2 × 12.5。
@@ -458,17 +458,16 @@ python3 -c "import json;print(json.dumps([i for i in json.load(open('data/rules/
 | 材料 `name` 超過 8 字、`tier` 超過 5 | 截斷、夾住 |
 | 修改內建材料改了 `kind`、`tier` | 改回內建的 |
 | 底材 `slot` 寫 `ring_1`、`piercing_1` 這類單一欄位 | 變 `main_hand`（戒指寫 `ring`、穿孔飾品寫 `piercing`） |
-| 底材寫 `weapon`、`armor`（武器、防具類型的 id） | 拿掉，換成那一種的 `weaponDef`、`armorDef`（檢查列為改了）。一律直接寫 `weaponDef`、`armorDef` |
+| 底材寫 `weapon`、`armor`（武器、防具類型的 id） | 拿掉，換成那一種原版的 `weaponDef`、`armorDef`，名稱用底材的（檢查列為改了）；修改內建底材時指向別的類型的直接拿掉。一律直接寫 `weaponDef`、`armorDef` |
 | `two_handed` 寫在主手以外；`weaponDef` 寫在主手以外；`armorDef` 寫在上身以外 | 拿掉 |
 | `restraint` 寫在主手或上身底材 | 拿掉 |
 | 修改內建底材改了 `slot`、`kind`、`two_handed` | 改回內建的 |
 
-整理不會列出、要自己注意的：
+整理不會列成「改了」、要自己注意的：
 
-- `use` 有 `cleanse`（或 `status`、`temp_hp`、`ap`、`revive`、`escape`）但沒有 `heal`、`slot` 時，整理**補上** `combat_only: true`：只解毒的解毒劑在戰鬥以外不能用。想在戰鬥以外也能用，配一個小的 `heal`（止血繃帶：`heal` 1d4 ＋ `cleanse`）。
+- `use` 有 `cleanse`（或 `status`、`temp_hp`、`ap`、`revive`、`escape`）但沒有 `heal`、`slot` 時，整理**補上** `combat_only: true`（世界檢查列成說明）：只解毒的解毒劑在戰鬥以外不能用。想在戰鬥以外也能用，配一個小的 `heal`（止血繃帶：`heal` 1d4 ＋ `cleanse`）。
 - 主手底材沒有 `weaponDef`、上身底材沒有 `armorDef`：不會被拿掉，但裝上之後沒有武器骰、沒有防具數值。
-- 配方材料、種子收成、燈的燃料、`intel.story`、獨特物品的 `kinds`／`vs_tags` 不檢查存不存在（第 3 節）。
-- 商店的固定清單引用制式裝備（底材 × 材料自動產生的）會被拿掉：要放進清單就在 `items` 寫一筆同名的（1.1 節）。
+- 種子收成、燈的燃料、`intel.story`、獨特物品的 `kinds`／`vs_tags` 不檢查存不存在（第 3 節）；配方材料不存在時世界檢查只提醒，不會拿掉。
 - 自建材料和內建材料同類同級時，寶箱、掉落、建角與 NPC 的隨機裝備都不會用到它（1.3 節）；新的第 2 級以上材料沒有打造材料就打造不出來。
 - 沒有任何取得方式的物品（沒有 `tags`、`chests`、`gather`、`event`、掉落、固定清單、任務或事件給的、配方或種子）遊戲裡拿不到。
 

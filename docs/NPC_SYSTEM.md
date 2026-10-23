@@ -23,7 +23,7 @@
 
 | 欄位 | 說明 |
 |---|---|
-| `kind` | `commoner` 普通人、`adventurer` 冒險者（沒寫時有職業的算冒險者） |
+| `kind` | `commoner` 普通人、`adventurer` 冒險者（沒寫時有戰鬥職業的算冒險者，否則是普通人） |
 | `class`、`occupation` | 職業；普通人另有職業描述（麵包師、守衛、修女……，給 AI 參考） |
 | `tags` | 標籤，見第 4 節 |
 | `haunts` | 活躍地點 `{ location, zone, weight }`，見第 5 節 |

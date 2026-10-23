@@ -52,22 +52,22 @@
 | `hit` | 整數 | -10～10 | 命中修正（只對 `attack`） |
 | `adv` | `true` | | 命中骰優勢 |
 | `crit` | 整數 | 1～5 | 這一擊的幸運一擊閾值降低多少（COMBAT_SYSTEM 第 4 節） |
-| `heal` | 物件 | 見 2.3 節 | 治療（只在 `resolve: auto` 生效） |
-| `shield` | 物件 | 見 2.3 節 | 臨時生命值（只在 `resolve: auto` 生效） |
+| `heal` | 物件 | 見 2.3 節 | 治療（只能用在 `resolve: auto`） |
+| `shield` | 物件 | 見 2.3 節 | 臨時生命值（只能用在 `resolve: auto`） |
 | `apply` | 陣列 | 最多 4 個 | 施加狀態，見 2.4 節 |
 | `ap_gain` | 整數 | 1～10 | 使用後獲得的行動點 |
 | `ap_gain_on_hit` | 整數 | 1～10 | 有命中時另外獲得的行動點 |
 | `uses` | 物件 | `per_turn`、`per_combat`、`per_rest` 各 1～10 | 每回合、每場戰鬥、每次長休最多幾次（怪物的「每次長休」等於每場） |
 | `concentration` | `true` | | 需要專注：同時只能維持一個，施放新的會取消舊的，受傷時信仰豁免（COMBAT_SYSTEM 第 7 節）。這個能力施加的狀態在專注中斷時消失 |
-| `cleanse` | `true` | | 移除目標身上所有減益（只在 `resolve: auto` 生效；目標是自己時就是淨化自己） |
+| `cleanse` | `true` | | 移除**目標**身上所有減益（只能用在 `resolve: auto`；目標是自己時就是淨化自己） |
 | `lifesteal` | 數字 | 0.05～1，小數 2 位 | 回復造成傷害的這個比例 |
-| `recover_slot` | `true` | | 回復一個用掉的法術環（最高到等級一半的環數；只在 `resolve: auto` 生效）。沒有可回復的時候不能用 |
+| `recover_slot` | `true` | | 回復一個用掉的法術環（最高到等級一半的環數；只能用在 `resolve: auto`）。沒有可回復的時候不能用 |
 | `hp_limit` | 整數 | 1～9999 | 目標生命 ≤ 這個值時，狀態（`apply`）與 `kill` 才有效；不擋傷害 |
-| `kill` | `true` | | 直接擊倒，要配合 `hp_limit`，只在 `resolve: auto` 生效 |
+| `kill` | `true` | | 直接擊倒，要配合 `hp_limit`，只能用在 `resolve: auto` |
 | `desc` | 字串 | 最多 200 字 | 玩家與 AI 看到的說明。照實際數值寫（骰子、回合、次數） |
 | `custom` | `true` | | 新的能力要寫 |
 
-布林欄位（`adv`、`concentration`、`cleanse`、`recover_slot`、`kill`、`heal.mod` 這類）只寫 `true`；數字欄位的 0 與預設值（`mult: 1`、`hits: 1`、`hit: 0`）不要寫：會被拿掉並列在報告裡。
+布林欄位（`adv`、`concentration`、`cleanse`、`recover_slot`、`kill`、`heal.mod` 這類）只寫 `true`；數字欄位的 0 與預設值（`mult: 1`、`hits: 1`、`hit: 0`）不要寫：會被拿掉（`false`、0、空陣列等於沒寫，報告不會列；`mult: 1` 這類會列在報告裡）。
 
 ### 2.1 目標（`target`）
 
@@ -111,7 +111,7 @@
 | `shield.flat` | 整數 1～999 | 臨時生命值的固定值 |
 | `shield.level` | 整數 1～10 | 再加「這個數 × 等級」 |
 
-- **`heal`、`shield`、`cleanse`、`recover_slot`、`kill` 只在 `resolve: auto` 時生效**：寫在 `attack` 或 `save` 的能力上不會被拿掉，但戰鬥中沒有作用。
+- **`heal`、`shield`、`cleanse`、`recover_slot`、`kill` 只能用在 `resolve: auto`**：寫在 `attack` 或 `save` 的能力上會被拿掉（報告列成「整理時改了」）。要「打中再治療自己」改用 `lifesteal`，或拆成兩個能力。
 - 臨時生命值不疊加，取較高的。
 
 ### 2.4 施加狀態（`apply`）
@@ -131,7 +131,7 @@
 
 ### 2.5 數值的上限
 
-世界檢查會比較**玩家能力**每行動點的傷害（武器骰算 1d8、所有敵人算 2 人、隨機目標最多算 3 次，在解鎖等級或「環數 × 2 − 1」級計算；沒寫 `ap` 的以 2 點計算，法術也是），不能超過內建同一級（同一環的法術、同兩級的技能、戲法）最強的 1.25 倍。`classes` 含 `monster` 的不比，由使用它的怪物的模擬檢查。細節與怎麼調見 [balance/abilities.md](../balance/abilities.md)。
+世界檢查會比較**玩家能力**每行動點的傷害（武器骰算 1d8、所有敵人算 2 人、隨機目標最多算 3 次，在解鎖等級或「環數 × 2 − 1」級計算；行動點用遊戲裡實際的消耗：沒寫 `ap` 時技能 2、法術依環數、戲法算 1），不能超過內建同一級（同一環的法術、同兩級的技能、戲法）最強的 1.25 倍。`classes` 含 `monster` 的不比，由使用它的怪物的模擬檢查。細節與怎麼調見 [balance/abilities.md](../balance/abilities.md)。
 
 ## 3. 可以引用什麼
 
@@ -266,12 +266,12 @@
 | `apply` 的 `status` 不存在 | 整項拿掉；`to`、`on` 拼錯的拿掉（用預設） |
 | `turns` 大於 20、`uses` 大於 10、`hits` 大於 6、`mult` 大於 5、`lifesteal` 大於 1、`shield.level` 大於 10 | 夾到上限 |
 | `mult: 1`、`hits: 1`、`hit: 0`、`crit: 0`、`uses.per_turn: 0`、`adv: false` | 拿掉（不要寫預設值） |
+| `heal`、`shield`、`cleanse`、`recover_slot`、`kill` 寫在 `resolve: attack` 或 `save` 的能力上 | 拿掉（只能用在 `auto`） |
 | 超過 4 段傷害、4 個狀態 | 多的拿掉 |
 | `name` 超過 16 字、`desc` 超過 200 字 | 截斷 |
 
 整理時不會改、但戰鬥裡沒有作用的：
 
-- `heal`、`shield`、`cleanse`、`recover_slot`、`kill` 寫在 `resolve: attack` 或 `save` 的能力上。
 - `weapon: true` 那一段寫了 `type` 或 `mod`：武器段永遠用武器的屬性與調整值。要「武器攻擊＋火焰傷害」就另外加一段 `{ "dice": "1d6", "type": "fire" }`。
 - `kill` 沒有 `hp_limit`。
 - `value` 給了不是「減去數值」的狀態。

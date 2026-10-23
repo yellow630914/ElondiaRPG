@@ -89,7 +89,7 @@
 | `dungeon` | `location`（地下城，必填）、`layer` | 地下城某一層的一格 ⭐。`layer` 是 `outskirts` 周邊、`shallow` 淺層、`middle` 中層、`deep` 深層、`abyss` 底層；寫錯或沒寫變 `outskirts` |
 | `road` | — | 旅途上（`travel` 開頭的那段路） |
 | `side` | `side_map`（選填） | 臨時地圖裡的 ⭐：`cave` 神秘洞窟、`ruins` 遺跡廢墟、`waystation` 驛站；不寫＝任何一種。要先由結果的 `side_map` 帶進去 |
-| `special` | `special_map`（必填）、`x`、`y`（選填） | 特殊地圖裡的 ⭐。`special_map` 是 `sm_` 開頭的 id（內建 `sm_rhineburg_sewer` 萊茵堡下水道、`sm_rhineburg_cistern` 萊茵堡古蓄水池，或同一個包的 `specialMaps`）。只有固定地圖能寫 `x`、`y` 指定格子 |
+| `special` | `special_map`（必填）、`x`、`y`（選填） | 特殊地圖裡的 ⭐。`special_map` 是 `sm_` 開頭的 id（內建 `sm_rhineburg_sewer` 萊茵堡下水道、`sm_rhineburg_cistern` 萊茵堡古蓄水池，或同一個包的 `specialMaps`；寫錯或沒寫時整條任務不匯入，6.2 節）。只有固定地圖能寫 `x`、`y` 指定格子 |
 
 - `road`、`side`、`special` 寫了 `location` 會被拿掉。
 - **特殊地圖的確切格子**：`x` 是第幾欄、`y` 是第幾列（從 0 開始，對照 `data/world/special_maps.json` 的 `grid`）。可以選 `.` 道路，或畫在地圖上的 `M` 遭遇、`X` 強敵、`R` 資源、`C` 寶箱、`T` 陷阱（⭐ 取代那一格）；**不能**選入口（`entry`）、通道的端點（這張地圖的 `connections[].at`，和別張地圖接過來的 `to`）、牆、水、出口、安全房、商店。超出地圖的整理時拿掉；格子不行時檢查會提醒，遊戲裡隨機放一格空地。
@@ -109,9 +109,9 @@
 | `retry` | 布林 | | 這個任務點不結束，之後可以再來 |
 | `side_map` | 字串 | `cave`、`ruins`、`waystation` | 進入臨時地圖，出口回到原本的地方 |
 | `special_map` | 特殊地圖 id | 存在的 `sm_` id | 傳送到那張地圖的入口 |
-| `travel_to` | 地點 id | 任何地點 | 改去別的地點（旅途中直接抵達，不在旅途時被帶過去） |
+| `travel_to` | 地點 id | 任何地點 | 改去別的地點（旅途中直接抵達，不在旅途時被帶過去；在臨時地圖或特殊地圖裡時先離開） |
 
-**效果**（`effects` 與 `rewards` 共用）：特殊任務只收下表這幾種，[EFFECTS](../../docs/EFFECTS.md) 的其他種類（`flag`、`meet`、`intel`、`leave`、`join_party`……）整項拿掉。旗標用 `set_flags`，同行用 `join`／`leave`。
+**效果**（`effects` 與 `rewards` 共用）：特殊任務只收下表這幾種，[EFFECTS](../../docs/EFFECTS.md) 的其他種類（`flag`、`meet`、`intel`、`leave`、`join_party`……）整項拿掉，世界檢查會提醒並寫出替代的寫法：旗標用 `set_flags`／`clear_flags`；認識 NPC 用 `affinity` 或 `npc` 任務點；情報用情報商（`start.kind: informant`）或旅途開頭；同行用 `join`／`leave`，結束後要正式入隊用 `companion`。
 
 | `type` | 欄位與範圍 | 說明 |
 |---|---|---|
@@ -119,10 +119,10 @@
 | `item` | `name`：物品名稱（最多 30 字）、`qty`：−99～99，0 不收，不寫＝1 | 得到時物品要存在（`data/rules/items.json` 的 `name`，或同一個包的 `items`） |
 | `gear` | `spec`：裝備規格（同 [npcs](npcs.md) 2.2 節）、`name`（最多 20 字）、`desc`（最多 80 字） | 規格不合整項拿掉 |
 | `xp` | `amount`：0～1000000 | 全隊的經驗值（不能指定成員，`target` 會被拿掉） |
-| `reputation` | `faction`：勢力 id（不檢查，查 `geography.json` 的 `factions`）、`delta`：−20～20 | 聲望 |
+| `reputation` | `faction`：勢力 id（不檢查，查 `geography.json` 的 `factions`），或 `local`（所在地的勢力，沒有時算冒險者公會）；`delta`：−20～20 | 聲望 |
 | `affinity` | `npc`：固定 NPC 的 id、`delta`：−50～50、`reason`（最多 40 字） | 親密度 |
 | `memory` | `summary`（最多 200 字）、`importance`：1～3，不寫＝2 | 共同記憶 |
-| `ability` | `ability`：能力 id；或 `choices`：1～5 | 學會這項能力；不寫或不存在時變成一次「N 選一」（不寫 `choices`＝3）。對象一律是主角 |
+| `ability` | `ability`：能力 id；或 `choices`：1～5 | 學會這項能力：是主角職業的能力（法術要環階夠）時直接學會，不受等級的品質與解鎖限制；已經會了只提示；不是這個職業的或環階不夠時，改成一次三選一並說明原因。不寫或不存在時變成一次「N 選一」（不寫 `choices`＝3）。對象一律是主角 |
 | `companion` | `npc`：固定 NPC 的 id、`mode`：`voluntary` 或 `hired` | 正式入隊。**只能指定固定 NPC**（不能寫一份規格），其他 `mode`（`slave`）變 `voluntary` |
 | `condition` | `condition`：`punished`、`blessed`、`shaken`、`fed_light`、`well_rested`、`fed_well`、`fed_fine`、`fed_feast`、`fed_legend`、`cheered`、`tipsy`、`honed`、`relaxed`；`add`：`false` 時拿掉 | 主角的非戰鬥狀態 |
 | `hp` | `ratio`：−0.9～1 | 主角生命值的比例（`amount` 不收） |
@@ -334,12 +334,11 @@
 | `at.where` 不存在 | 變 `settlement` |
 | `at.cell` 不是設施、`shop_` 或這個地點的地標 | 變 `tavern` |
 | `at.layer` 寫錯 | 變 `outskirts` |
-| `at.special_map` 不存在 | **換成第一張內建的特殊地圖**（不會報錯，只有「整理時改了」看得到） |
 | `at.x`、`at.y` 超出地圖、不是整數，或地圖是隨機地圖 | 拿掉 |
 | `road`、`side`、`special` 寫了 `at.location` | 拿掉 |
 | 結果同時寫 `complete` 與 `fail_quest` | 只留 `complete` |
 | 結果的 `side_map`、`special_map`、`travel_to` 不存在 | 拿掉 |
-| 效果的 `type` 不在 2.5 節的表裡（`flag`、`meet`、`intel`……） | 整項拿掉 |
+| 效果的 `type` 不在 2.5 節的表裡（`flag`、`meet`、`intel`……） | 整項拿掉（`flag`、`meet`、`intel`、`join_party` 會另外提醒替代的寫法） |
 | 效果 `xp` 寫 `target`；`hp` 寫 `amount`；`companion` 的 `npc` 是一份規格、`mode` 是 `slave` | `target` 拿掉；`hp` 整項拿掉；`companion` 整項拿掉、`slave` 變 `voluntary` |
 | 效果 `ability` 的能力不存在；寫了 `chance` | 變成三選一；`chance` 拿掉 |
 | 效果的數值超出範圍（`affinity` ±50、`reputation` ±20、`hp` −0.9～1……） | 夾住；數值是 0 的整項拿掉 |
@@ -355,7 +354,7 @@
 - 開頭旗標和別的任務一樣（包括內建的 `relic_started`、`wagon_found`、`ledger_rumor`）。
 - 效果裡的物品（得到的）、裝備的底材或材料、角色（`affinity`、`companion`）、要開始的任務、主人、特質不存在；`start_story` 開始的是自己。
 - 任務點沒有地點：`settlement`、`cell`、`outskirts`、`dungeon` 沒寫 `location`。
-- `special` 的特殊地圖不存在（通常已被整理換成別張，見 6.1）。
+- `special` 的特殊地圖沒寫或不存在（「特殊地圖不存在」）。
 - `npc` 任務點的角色不存在。
 - 地點類型不對：`outskirts` 選了地下城、`dungeon` 選了聚落、`settlement`／`cell` 選了地下城。
 - `cell` 的設施不存在，或那個地點沒有這種設施（例如風錘村沒有神殿）。

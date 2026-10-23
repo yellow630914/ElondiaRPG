@@ -6,13 +6,14 @@
 // 3. 一致性：名稱重複、沒有出現地點的怪物、沒有出沒地點的固定 NPC……
 // 4. 平衡：怪物的耐打度與戰鬥模擬、技能的傷害、物品的價格、特質強度、特殊任務的報酬。
 // 5. 提示詞：世界書的修改與新增條目。
-import { abilities, dungeonEncounters, enemies, isLayerBoss, itemDef, itemRules, locationById, npcs as namedNpcs, perkRules, stories, type AbilityDef, type DamagePart, type ItemDef } from '@/engine/data'
+import { abilities, dungeonEncounters, enemies, specialMaps, isLayerBoss, itemDef, itemRules, locationById, npcs as namedNpcs, perkRules, stories, type AbilityDef, type DamagePart, type ItemDef } from '@/engine/data'
 import { blockKeys, settlementArea } from '@/engine/grid'
 import { rewardRange } from '@/engine/materialQuests'
 import type { GuildRank } from '@/engine/types'
 import { gearPrice } from '@/engine/gear'
 import { applyContent, dropBrokenStories, emptyMods, normalizeMods, type ContentMods } from '@/engine/mods'
 import { perkPower } from '@/engine/perks'
+import { abilityApCost } from '@/engine/combat'
 import { storyCheck } from '@/engine/storyMods'
 import { parseWorldFile } from '@/engine/worldPackage'
 import { bossFights, bossIds, durability, minionArea, minionFight, type MinionArea } from './balanceSim'
@@ -31,8 +32,13 @@ const SECTION_NAME: Record<string, string> = {
 /** 小怪每場掉的生命（依出現的最淺區域）與層主的目標勝率：docs/MONSTERS.md */
 export const MINION_LOSS: Record<MinionArea, [number, number]> = { wild: [0.25, 0.35], outskirts: [0.2, 0.3], shallow: [0.15, 0.2], full: [0.1, 0.15] }
 export const BOSS_WIN: Record<string, number> = { shallow: 0.8, middle: 0.75, deep: 0.7, abyss: 0.65 }
+/** 層主戰至少跑幾場 */
+export const BOSS_TRIALS = 40
 
 // ---- 1. 整理前後的差異 ----
+
+const isEmptyValue = (v: unknown): boolean =>
+  v === false || v === 0 || v === '' || (Array.isArray(v) && !v.length) || (!!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(isEmptyValue))
 
 function diffPaths(a: unknown, b: unknown, path: string, out: string[]) {
   if (out.length > 40) return
@@ -48,8 +54,9 @@ function diffPaths(a: unknown, b: unknown, path: string, out: string[]) {
     a.forEach((x, i) => diffPaths(x, b[i], `${path}[${i}]`, out))
     return
   }
-  // 沒寫、整理時補上的預設值不算
+  // 沒寫、整理時補上的預設值不算；寫成預設值（false、0、空的、事件的 scope: road）被拿掉也不算
   if (a === undefined) return
+  if (b === undefined && (isEmptyValue(a) || (path.endsWith('scope') && a === 'road'))) return
   const show = (v: unknown) => (v === undefined ? '（沒有）' : JSON.stringify(v).slice(0, 80))
   out.push(`\`${path || '（整筆）'}\`：${show(a)} → ${show(b)}`)
 }
@@ -82,7 +89,7 @@ function abilityBaseline(builtin: Record<string, AbilityDef>): Map<string, numbe
   const out = new Map<string, number>()
   for (const a of Object.values(builtin)) {
     if (!a.damage?.length || a.classes.includes('monster')) continue
-    const per = abilityDamage(a) / Math.max(1, a.ap ?? 2)
+    const per = abilityDamage(a) / Math.max(1, abilityApCost(a))
     const k = tierOf(a)
     out.set(k, Math.max(out.get(k) ?? 0, per))
   }
@@ -193,6 +200,7 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
   const placed = new Set<string>()
   for (const v of Object.values(dungeonEncounters)) for (const t of Object.values(v)) for (const g of (Array.isArray(t) ? t : Object.values(t ?? {})) as unknown[]) for (const x of (g as [string, number][] | undefined) ?? []) if (Array.isArray(x)) placed.add(x[0])
   const storyFoes = new Set(stories.flatMap((s) => s.nodes.flatMap((n) => (n.enemies ?? []).map(([id]) => id))))
+  for (const m of Object.values(specialMaps)) for (const g of m.table ?? []) for (const [id] of g) placed.add(id)
   for (const [id, e] of Object.entries(mods.enemies)) {
     if (e.custom && builtinEnemyNames.has(e.name)) add('warn', '怪物', `「${e.name}」和內建怪物同名`)
     if ((enemyNames.get(e.name) ?? 0) > 1 && e.custom) add('warn', '怪物', `名字重複：「${e.name}」`)
@@ -244,11 +252,12 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
     for (const [layer, group] of Object.entries(enc.bosses ?? {})) {
       const boss = group?.[0]?.[0]
       if (!boss || !mods.enemies[boss]) continue
-      const rows = bossFightRows(dungeon, layer, trials)
+      // 勝率的雜訊大（20 場的標準誤差約 9%）：至少跑 40 場；快速模式（場數少於 20）只提醒、不算錯誤
+      const rows = bossFightRows(dungeon, layer, Math.max(trials, BOSS_TRIALS))
       for (const r of rows) {
         const target = BOSS_WIN[layer] ?? 0.75
         const ok = Math.abs(r.win - target) <= 0.1
-        if (!ok) add('error', '平衡：層主戰', `${dungeon} ${layer} 的層主「${r.name}」勝率 ${pct(r.win)}（目標 ${pct(target)} ±10%）：調整 offense.all`)
+        if (!ok) add(trials < 20 ? 'warn' : 'error', '平衡：層主戰', `${dungeon} ${layer} 的層主「${r.name}」勝率 ${pct(r.win)}（目標 ${pct(target)} ±10%）：調整 offense.all${trials < 20 ? '（快速模式：交付前用預設場數再確認）' : ''}`)
         bossRows.push([r.name, `${dungeon} / ${layer}`, pct(r.win), pct(target), String(r.rounds), ok ? '✅' : '❌'])
       }
     }
@@ -260,7 +269,7 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
   for (const [id, a0] of Object.entries(mods.abilities)) {
     const a = abilities[id]
     if (!a?.damage?.length || a.classes.includes('monster')) continue
-    const per = abilityDamage(a) / Math.max(1, a.ap ?? 2)
+    const per = abilityDamage(a) / Math.max(1, abilityApCost(a))
     const base = baseline.get(tierOf(a))
     if (base && per > base * 1.25) add('error', '平衡：技能', `「${a0.name}」每行動點約 ${per.toFixed(1)} 傷害，內建同級（${tierOf(a)}）最強 ${base.toFixed(1)}：降低骰子、倍率或提高行動點`)
   }

@@ -205,7 +205,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | `effects` | 陣列 | 最多 6 個 | 效果（下表）。每個效果**只能是一種**：`check`、`combat`、`resist`、`offense` |
 | `flaw` | `true` | | 缺陷。不是缺陷就**不要寫這一欄**（`false` 也算多寫） |
 | `requires` | `{ "races", "classes" }` | 種族、職業 id | 只有這些種族或職業可以學。沒有限制就不要寫（空陣列也算多寫） |
-| `exclusive` | 陣列 | 特質 id | 互斥的特質（寫一邊就夠，兩邊都會擋）。見第 2.6 節的限制 |
+| `exclusive` | 陣列 | 特質 id | 互斥的特質（寫一邊就夠，兩邊都會擋） |
 | `train` | 物件 | 見下表 | 可以在哪裡受訓（缺陷：在哪裡花錢克服） |
 | `npc` | `{ "weight", "tags", "classes" }` | `weight` 整數 1～10 | 生成的 NPC 抽到的權重；`tags`（NPC 標籤）×4、`classes`（職業）×3。不寫＝NPC 不會抽到 |
 | `custom` | `true` | | 新的特質一定要寫 |
@@ -254,7 +254,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 **特質引用別人**（要先存在）：
 
 - `requires.races`：`human` `elf` `dwarf` `demon` `catfolk` `yulin`；`requires.classes`、`npc.classes`：`fighter` `barbarian` `paladin` `ranger` `rogue` `monk` `bard` `cleric` `druid` `wizard` `noncombatant`。
-- `exclusive`：內建的特質 id（`data/rules/perks.json`；種族特質不行）。
+- `exclusive`：內建的特質 id（`data/rules/perks.json`；種族特質不行），或同一個檔案裡新增的特質。
 - `train.cells`：自建商店、地標的 id 只檢查格式，**不檢查存不存在**：要確定那家店或那個地標真的在這個世界裡（[shops](shops.md)、[landmarks](landmarks.md)）。
 - `npc.tags`：見上面的 `vs_tags` 清單。
 
@@ -348,7 +348,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 
 | 寫法 | 結果 |
 |---|---|
-| `"flaw": false`、`"requires": { "races": [], "classes": [] }`、`"exclusive": []` | 拿掉（報告會列成「整理時改了」：沒有就不要寫） |
+| `"flaw": false`、`"requires": { "races": [], "classes": [] }`、`"exclusive": []` | 拿掉（等於沒寫，報告不會列出來） |
 | `name` 超過 12 字、`desc` 超過 120 字 | 截掉 |
 | 一般特質寫負的 `bonus` 或負的戰鬥修正 | 那個效果拿掉（不會翻成正的）。要負的就加 `"flaw": true` |
 | `bonus` 超過 5、戰鬥修正超過 3 | 夾到 5、3 |
@@ -358,7 +358,6 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 一般特質寫負的 `offense` | 夾到 0 → 拿掉 |
 | 戰鬥修正寫小數（`1.5`） | 四捨五入 |
 | `effects` 超過 6 個 | 後面的拿掉 |
-| `exclusive` 指到**同一個檔案裡新增的特質** | 拿掉（整理特質時新特質還沒登錄）。只能指內建的；兩個自建特質要互斥，目前做不到，改用 `requires` 錯開 |
 | `train.cells` 寫 `gate`、`road` 等不能受訓的地方 | 拿掉 |
 | `train.cells` 寫不存在的 `shop_…`、`lm_…` | **留著**，但沒有地方可以受訓（不會被發現） |
 | `kinds`、`vs_tags` 寫錯 | **留著**，但永遠不成立（不會被發現） |
@@ -430,10 +429,10 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 |---|---|---|---|
 | `roles.default` | 印記 id | 存在的印記 | 買奴隸、AI 交易清單、劇情沒指定時用的印記（內建 `labor`） |
 | `roles.madam` | 印記 id | 存在的印記 | 老鴇收下主角、主人是娼妓、自賣給老鴇時刻的（內建 `brothel`） |
-| `market_contracts.public` | `{ 印記 id: 權重 }` | 整數 0～100 | 公開奴隸市場上的印記（內建 `labor` 6、`combat` 3、`arcane` 1） |
+| `market_contracts.public` | `{ 印記 id: 權重 }` | 0～100（小數兩位） | 公開奴隸市場上的印記（內建 `labor` 6、`combat` 3、`arcane` 1） |
 | `market_contracts.black` | 同上 | 同上 | 黑市（內建 `labor` 4、`combat` 3、`arcane` 3） |
 | `severity` | 陣列 | 存在的印記 | 刻印檢定由輕到重的順序（內建 `labor`、`combat`、`arcane`） |
-| `self_sale` | `{ 印記 id: 權重 }` | 整數 0～100 | 出售自己時的印記（內建 `labor` 6、`combat` 3、`arcane` 1） |
+| `self_sale` | `{ 印記 id: 權重 }` | 0～100（小數兩位） | 出售自己時的印記（內建 `labor` 6、`combat` 3、`arcane` 1） |
 
 內建的印記 id：`labor` 勞役、`combat` 戰奴、`arcane` 魔導束縛、`brothel` 娼妓。
 
@@ -528,7 +527,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 印記的 DC、`obedience_penalty` 寫小數 | 四捨五入 |
 | `side_effects` 超過 4 項或某項超過 40 字 | 多的拿掉、長的截掉 |
 | `markRules` 的 key 不是 `rules` | 整筆不收 |
-| 權重寫小數（`0.4`） | 四捨五入成整數；變成 0 的拿掉 |
+| 權重寫超過兩位的小數（`0.125`） | 留兩位小數（`0.13`），依比例抽選；0 的拿掉 |
 | 權重或順序裡寫不存在的印記 id | 那一項拿掉；全部被拿掉時改成預設的印記 |
 | 只想加一種印記，卻只寫了 `market_contracts.public: { "mod_mark_x": 2 }` | 公開市場只剩這一種印記：要把內建的權重一起寫上 |
 | `tattoo` 效果的 `template` 指到不存在的圖樣、又沒有 `name` | 那一項效果拿掉 |

@@ -1,7 +1,8 @@
 // 戰鬥耐打度的模擬（docs/MONSTERS.md「耐打度」）：4 人隊伍（戰士、遊蕩者、牧師、法師）用和怪物同等級的角色
 // （依職業學的技能、依等級生成的裝備），打一隻去掉弱點（保留抗性）與特徵、血量無限的怪物，量平均每一擊的傷害與每回合的傷害。
 // 隊員的打法：能用的傷害技能挑環數最高的，沒有就普通攻擊，行動點不夠就結束回合。
-import { abilityDef, dungeonEncounters, enemies, geography, wildEncounters, type EncounterGroup } from '@/engine/data'
+import { abilities, abilityDef, dungeonEncounters, enemies, geography, wildEncounters, type EncounterGroup } from '@/engine/data'
+import { builtinAbility } from '@/engine/mods'
 import { createNpc } from '@/engine/character'
 import { act, chooseAction, currentActor, isActive, startCombat, usableAbilities, type Combatant } from '@/engine/combat'
 import { Rng } from '@/engine/rng'
@@ -10,13 +11,21 @@ import { newGame } from '@/engine/state'
 export const PARTY = ['fighter', 'rogue', 'cleric', 'wizard']
 const ROUNDS = 3
 
-function party(level: number, seed: number, classes: string[] = PARTY) {
+/** 模擬用的隊伍（測試也用） */
+export function simParty(level: number, seed: number, classes: string[] = PARTY) {
   const rng = new Rng(seed)
-  return classes.map((cls, i) => {
-    const c = createNpc({ id: `p${i}`, name: cls, race: 'human', class: cls, level, location: 'soriel', hire_cc: 0, personality: '' } as never, rng)
-    if (i === 0) c.isPlayer = true
-    return c
-  })
+  // 自建的玩家能力不給模擬隊伍學（不然升級時抽到的能力會變，比較的基準跟著動）；改過的內建能力照用
+  const extra = Object.entries(abilities).filter(([id]) => !builtinAbility(id))
+  for (const [id] of extra) delete abilities[id]
+  try {
+    return classes.map((cls, i) => {
+      const c = createNpc({ id: `p${i}`, name: cls, race: 'human', class: cls, level, location: 'soriel', hire_cc: 0, personality: '' } as never, rng)
+      if (i === 0) c.isPlayer = true
+      return c
+    })
+  } finally {
+    for (const [id, a] of extra) abilities[id] = a
+  }
 }
 
 const hitsEnemy = (id: string) => {
@@ -27,7 +36,7 @@ const hitsEnemy = (id: string) => {
 /** 一場模擬（ROUNDS 回合）：造成的傷害與有傷害的出手次數 */
 function trial(monster: string, level: number, seed: number) {
   const state = newGame({ name: 'x', race: 'human', classId: 'fighter', seed })
-  state.party = party(level, seed)
+  state.party = simParty(level, seed)
   const combat = startCombat(state, [[monster, 1]] as EncounterGroup)
   const e = combat.combatants.find((c) => c.side === 'enemy')!
   const def = enemies[monster]!
@@ -109,7 +118,7 @@ export interface FightRow {
 
 function fight(group: EncounterGroup, level: number, seed: number, classes: string[] = PARTY) {
   const state = newGame({ name: 'x', race: 'human', classId: 'fighter', seed })
-  state.party = party(level, seed, classes)
+  state.party = simParty(level, seed, classes)
   const rng = new Rng(seed * 7 + 1)
   const combat = startCombat(state, group)
   for (let guard = 0; combat.status === 'ongoing' && combat.round <= 30 && guard < 3000; guard++) {

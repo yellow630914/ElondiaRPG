@@ -39,7 +39,7 @@
 | `title` | 字串 | **最多 20 字** | 標題 |
 | `text` | 字串 | 最多 400 字 | 描述（玩家與 AI 都看得到）。不要空著 |
 | `modes` | 陣列 | 只有旅途：`road` 官道、`trail` 山道、`wild` 荒野、`sea` 海路、`dive` 潛水、`underground` 地底 | 出現在哪些路段。不寫＝任何路段 |
-| `cells` | 陣列 | 只有城鎮：`inn` 旅店、`guild` 公會、`tavern` 酒館、`shop` 雜貨店、`temple` 神殿、`gate` 城門、`brothel` 娼館、`smithy` 鐵匠鋪、`tailor` 裁縫店、`jeweler` 珠寶店、`magic` 魔法物品店、`informant` 情報商、`tattoo` 刺青店、`carver` 雕刻師 | 走上哪些設施時會發生。不寫＝任何設施 |
+| `cells` | 陣列 | 只有城鎮：`inn` 旅店、`guild` 公會、`tavern` 酒館、`shop` 雜貨店、`temple` 神殿、`gate` 城門、`brothel` 娼館、`smithy` 鐵匠鋪、`tailor` 裁縫店、`jeweler` 珠寶店、`magic` 魔法物品店、`informant` 情報商、`tattoo` 刺青店、`carver` 雕刻師，或自建商店的 id（`shop_…`，同一個檔案裡新增的也可以） | 走上哪些設施時會發生。不寫＝任何設施 |
 | `location_types` | 陣列 | 只有城鎮：`capital` 主城、`city` 城市、`town` 城鎮、`village` 村莊、`port` 港口、`outpost` 哨站、`fortress` 要塞 | 聚落規模。不寫＝不限 |
 | `locations` | 陣列 | 只有城鎮：聚落的地點 id（`data/world/geography.json`，地下城不行） | 只在這些地點。不寫＝不限 |
 | `cooldown_days` | 整數 | 只有城鎮：0～60 | 同一事件隔幾天才會再出現。不寫＝`eventRules` 的 `repeat_days`（內建 10） |
@@ -72,10 +72,10 @@
 | `effects` | 陣列 | 下表 | 效果 |
 | `side_map` | 字串 | `cave` 神秘洞窟、`ruins` 遺跡廢墟、`waystation` 驛站 | 進入臨時地圖，從出口離開回到原本的位置（旅途的那一格，或城裡） |
 | `special_map` | 字串 | 特殊地圖 id（內建 `sm_rhineburg_sewer`、`sm_rhineburg_cistern`，或自建的 `sm_…`，見 [special-maps](special-maps.md)） | 傳送到特殊地圖的入口 |
-| `travel_to` | 字串 | 聚落的地點 id | 改去別的地點：旅途中直接抵達那裡（旅行報告註明改道），在城裡時被帶過去 |
+| `travel_to` | 字串 | 聚落的地點 id | 改去別的地點：旅途中直接抵達那裡（旅行報告註明改道），在城裡（或特殊地圖裡）時被帶過去 |
 
 - 三種移動在報告提交之後才執行。**一個結果只會執行一種**，優先順序 `travel_to` → `side_map` → `special_map`；不要同時寫。
-- `travel_to` 也收地下城的 id，但事件只用聚落。
+- `travel_to` 寫地下城的 id 會被拿掉：事件不能直接把隊伍送進地下城（特殊任務可以）。
 
 **效果**（`effects` 的每一項；完整說明見 [EFFECTS](../../docs/EFFECTS.md)）：
 
@@ -85,7 +85,7 @@
 | `item` | `{ "type": "item", "name": "藥草", "qty": 2 }`：名稱最多 30 字，數量 -99～99（負的是失去）。**名稱不會被檢查**：要是內建或同一個檔案裡新增的物品 |
 | `gear` | `{ "type": "gear", "spec": { "base": "…", "material": "…" }, "name": "…", "desc": "…" }`：底材與材料要存在、種類相符（[items-gear](items-gear.md)） |
 | `xp` | `{ "type": "xp", "amount": 15 }`：0 以上 |
-| `reputation` | `{ "type": "reputation", "faction": "holy_ring", "delta": 1 }`：-20～20；勢力 id 在 `data/world/geography.json` 的 `factions` |
+| `reputation` | `{ "type": "reputation", "faction": "holy_ring", "delta": 1 }`：-20～20；勢力 id 在 `data/world/geography.json` 的 `factions`，`local`＝所在地的勢力（沒有勢力的地方算冒險者公會） |
 | `affinity` | `{ "type": "affinity", "npc": "<固定 NPC id>", "delta": 3, "reason": "…" }`：-50～50 |
 | `memory` | `{ "type": "memory", "summary": "…", "importance": 2 }`：最多 200 字，重要度 1～3 |
 | `ability` | `{ "type": "ability", "ability": "<技能 id>" }`；不存在的 id 會變成 `{ "choices": 3 }`（三選一） |
@@ -98,7 +98,7 @@
 | `tattoo` | `{ "type": "tattoo", "template": "<圖樣 id>", "place": "left_calf", "by": "…" }`，或自己描述（同上第三部分） |
 | `remove_tattoo` | `{ "type": "remove_tattoo", "place": "chest" }` 或 `{ "type": "remove_tattoo", "kind": "plain" }` |
 
-其他種類（`flag`、`meet`、`intel`、`leave`……）會被拿掉：旗標用 `set_flags`。`enslave_player`（主角淪為奴隸）只給特殊任務用，不要放在事件裡。
+其他種類（`flag`、`meet`、`intel`、`join_party`、`enslave_player`、`leave`……）會被拿掉，世界檢查會提醒並寫出替代的寫法：旗標用 `set_flags`／`clear_flags`；認識 NPC 用 `affinity`；情報用情報商或旅途事件開頭的特殊任務；`enslave_player`（主角淪為奴隸）只有特殊任務能用。
 
 ### 2.4 事件設定（`eventRules.rules`）
 
@@ -123,7 +123,7 @@
 | 欄位 | 要存在的東西 | 查哪裡 |
 |---|---|---|
 | `locations`、`travel_to` | 地點 | `data/world/geography.json` |
-| `cells` | 設施種類（上表） | 自建的商店見第 6 節的限制 |
+| `cells` | 設施種類（上表）或自建商店 | [shops](shops.md) |
 | `special_map` | 特殊地圖 | `data/world/special_maps.json`、[special-maps](special-maps.md) |
 | `side_map` | 臨時地圖 | `data/rules/travel_events.json` 的 `side_maps` |
 | `effects` 的 `item`、`gear` | 物品、底材、材料 | [items-gear](items-gear.md) |
@@ -262,7 +262,8 @@
 | 城鎮事件寫 `tier: "advanced"` | 變成 `normal`（城鎮沒有高階） |
 | 城鎮事件寫 `modes`；旅途事件寫 `cells`、`location_types`、`locations`、`cooldown_days` | 拿掉（`scope` 寫錯是最常見的原因） |
 | `cells` 寫 `road`、`home`、地標 id | 拿掉 |
-| `cells` 寫**同一個檔案裡新增的商店**（`shop_…`） | 拿掉（整理事件時新商店還沒登錄）。目前只能用內建的設施，或改用 `locations` 篩選 |
+| `cells` 寫不存在的商店（`shop_…` 拼錯） | 拿掉。**全部被拿掉時 `cells` 變空＝任何設施都會發生**：檢查報告裡看到 `cells` 被改就要修 |
+| 結果的效果寫 `enslave_player`、`travel_to` 寫地下城 | 拿掉（世界檢查會提醒） |
 | `locations` 寫地下城或不存在的地點 | 拿掉 |
 | `cooldown_days` 超過 60 | 夾到 60 |
 | `category` 寫不在清單的分類 | 拿掉 |
