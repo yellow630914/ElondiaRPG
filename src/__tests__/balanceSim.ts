@@ -204,7 +204,7 @@ export function minionArea(id: string): MinionArea {
 
 export interface MinionRow { id: string; name: string; level: number; area: MinionArea; win: number; rounds: number; hpLeft: number }
 
-/** 每種小怪兩隻一組，打同等級、依出現區域組成的隊伍（每種隊伍各 trials 場）：調整小怪輸出用（目標每場掉 10～15% 生命） */
+/** 每種小怪兩隻一組，打同等級、依出現區域組成的隊伍（每種隊伍各 trials 場）：調整小怪輸出用（目標每場掉的生命：城郊 25～35%、周邊 20～30%、淺層 15～20%、中層以下 10～15%） */
 export function minionFight(id: string, trials: number): MinionRow {
   const m = enemies[id]!
   const area = minionArea(id)
