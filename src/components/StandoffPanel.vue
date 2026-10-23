@@ -8,6 +8,7 @@ import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import JudgeToggle from './JudgeToggle.vue'
 import NameTag from './NameTag.vue'
+import GameIcon from './ui/GameIcon.vue'
 
 // 和敵對的冒險者對峙（見 docs/NPC_SYSTEM.md 第 8.1 節）
 const game = useGame()
@@ -29,7 +30,7 @@ function talk(kind: 'bluff' | 'intimidate') {
 <template>
   <section class="panel standoff">
     <div class="row head">
-      <h3>⚠️ 對峙</h3>
+      <h3><GameIcon name="warning" :size="16" />對峙</h3>
       <JudgeToggle />
     </div>
     <ul class="plain small">
@@ -43,9 +44,9 @@ function talk(kind: 'bluff' | 'intimidate') {
     <template v-if="!standoff.detected">
       <p class="small">對方還沒發現你。</p>
       <div class="row">
-        <button class="small" @click="game.avoidFoes()">🤫 悄悄避開</button>
-        <button class="small danger" @click="game.fightFoes()">🗡️ 偷襲（先手）</button>
-        <button class="small" title="之後的蒙混或威嚇檢定 +2" @click="game.revealSelf()">🙋 主動現身</button>
+        <button class="small" @click="game.avoidFoes()"><GameIcon name="eyeOff" :size="13" />悄悄避開</button>
+        <button class="small danger" @click="game.fightFoes()"><GameIcon name="sword" :size="13" />偷襲（先手）</button>
+        <button class="small" title="之後的蒙混或威嚇檢定 +2" @click="game.revealSelf()"><GameIcon name="hand" :size="13" />主動現身</button>
       </div>
     </template>
 
@@ -54,10 +55,10 @@ function talk(kind: 'bluff' | 'intimidate') {
       <textarea v-model="text" rows="2" placeholder="怎麼蒙混或威嚇（選填，會交給 AI 判定）" />
       <AbilityPicker v-model="use" />
       <div class="row">
-        <button class="small" :disabled="busy" title="魅力檢定：成功就放行，失敗開戰" @click="talk('bluff')">🎭 蒙混過關</button>
-        <button class="small" :disabled="busy" title="力量檢定（依雙方等級修正）：成功就放行，失敗開戰" @click="talk('intimidate')">😠 威嚇</button>
-        <button class="small" :disabled="busy || s.money_cc < standoff.demand_cc" @click="game.payToll()">💰 付 {{ formatMoney(standoff.demand_cc) }}</button>
-        <button class="small danger" :disabled="busy" @click="game.fightFoes()">⚔️ 開戰</button>
+        <button class="small" :disabled="busy" title="魅力檢定：成功就放行，失敗開戰" @click="talk('bluff')"><GameIcon name="message" :size="13" />蒙混過關</button>
+        <button class="small" :disabled="busy" title="力量檢定（依雙方等級修正）：成功就放行，失敗開戰" @click="talk('intimidate')"><GameIcon name="zap" :size="13" />威嚇</button>
+        <button class="small" :disabled="busy || s.money_cc < standoff.demand_cc" @click="game.payToll()"><GameIcon name="coins" :size="13" />付 {{ formatMoney(standoff.demand_cc) }}</button>
+        <button class="small danger" :disabled="busy" @click="game.fightFoes()"><GameIcon name="sword" :size="13" />開戰</button>
       </div>
     </template>
   </section>
@@ -66,6 +67,7 @@ function talk(kind: 'bluff' | 'intimidate') {
 <style scoped>
 .standoff { border-color: var(--danger); }
 .standoff .head { justify-content: space-between; }
-.standoff h3 { margin: 0; color: var(--danger); }
+.standoff h3 { margin: 0; color: var(--danger); display: flex; align-items: center; gap: 6px; }
+.standoff .row button { display: inline-flex; align-items: center; gap: 4px; }
 .standoff textarea { width: 100%; }
 </style>

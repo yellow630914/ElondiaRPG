@@ -5,6 +5,8 @@ import { parseUse, useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import AbilityPicker from './AbilityPicker.vue'
 import JudgeToggle from './JudgeToggle.vue'
+import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // 成人向的戰敗事件：敵人圍了上來，三選一或自己描述反應（data/rules/combat.json 的 defeat_event）
 const game = useGame()
@@ -31,7 +33,7 @@ function respond() {
 <template>
   <section class="panel defeat-event">
     <div class="row head">
-      <h3>⚠️ 倒下之後</h3>
+      <h3 class="title"><GameIcon name="warning" :size="16" />倒下之後<Hint v-if="settings.adult" text="結束後和一般戰敗一樣：地下城回到入口、近郊回到城門。" /></h3>
       <JudgeToggle v-if="settings.adult" />
     </div>
     <template v-if="settings.adult">
@@ -45,7 +47,6 @@ function respond() {
       <textarea v-model="text" rows="2" placeholder="例如：假裝昏迷，等最近的那個靠過來時抓起沙子往牠臉上撒" />
       <AbilityPicker v-model="use" />
       <button class="small primary" :disabled="!text.trim() || busy" @click="respond">回應</button>
-      <p class="small muted">結束後和一般戰敗一樣：地下城回到入口、近郊回到城門。</p>
     </template>
     <template v-else>
       <p>你被{{ foes }}打倒了。</p>
@@ -58,6 +59,9 @@ function respond() {
 .defeat-event { border-color: var(--danger); }
 .head { justify-content: space-between; }
 .head h3 { margin: 0; }
+.title { display: flex; align-items: center; gap: 6px; }
+.title :deep(.game-icon) { color: var(--accent); }
+.defeat-event .title :deep(.game-icon) { color: var(--danger); }
 .options { display: grid; gap: 4px; margin: 6px 0; grid-template-columns: minmax(0, 1fr); }
 .options button { text-align: left; }
 textarea { width: 100%; margin: 6px 0; }

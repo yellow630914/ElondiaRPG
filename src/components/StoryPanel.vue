@@ -5,6 +5,7 @@ import { npcRecord } from '@/engine/npcs'
 import { nodesHere, storyOffersHere } from '@/engine/story'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import GameIcon from './ui/GameIcon.vue'
 
 // 特殊任務：這裡可以接的任務（公會、身邊的固定 NPC），以及這裡的任務點
 const game = useGame()
@@ -47,7 +48,7 @@ function play(ref: string, option?: number) {
 
 <template>
   <section v-if="offers.length || nodes.length" class="panel story-panel">
-    <h3>⭐ 特殊任務</h3>
+    <h3 class="title"><GameIcon name="star" :size="16" />特殊任務</h3>
     <div v-for="d in offers" :key="d.id" class="card">
       <div><span v-if="d.rank" class="tag">{{ d.rank }}</span> <b>{{ d.title }}</b></div>
       <p class="small">{{ d.start.text ?? d.summary }}</p>
@@ -62,7 +63,7 @@ function play(ref: string, option?: number) {
         <button class="small primary" :disabled="busy" @click="play(n.ref)">繼續</button>
       </template>
       <template v-else-if="n.node.kind === 'combat'">
-        <p class="small">⚔️ {{ foes(n.node) }}</p>
+        <p class="small"><GameIcon name="sword" :size="13" class="foe" /> {{ foes(n.node) }}</p>
         <button class="small primary" :disabled="busy" @click="play(n.ref)">開始戰鬥</button>
       </template>
       <template v-else>
@@ -85,6 +86,9 @@ function play(ref: string, option?: number) {
 <style scoped>
 .story-panel { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
 .story-panel h3 { margin: 0; }
+.title { display: flex; align-items: center; gap: 6px; }
+.title :deep(.game-icon) { color: var(--accent); }
+.foe { color: var(--danger); vertical-align: -2px; }
 .card { border: 1px dashed var(--accent); border-radius: var(--radius); padding: 6px 8px; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .card p { margin: 0; line-height: 1.6; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; }

@@ -5,6 +5,7 @@ import { currentArea, currentCell, DUNGEON_LAYERS } from '@/engine/grid'
 import { areaLighting, currentLight, isDark, isNight, lightSources } from '@/engine/light'
 import { DEFEAT_LOOT_NAME, defeatLootRule, retreatDc } from '@/engine/expedition'
 import { useGame } from '@/stores/game'
+import GameIcon from './ui/GameIcon.vue'
 
 // 地圖下方的狀態列：光線與光源、地下城這趟探索撿到的東西、緊急撤退
 const game = useGame()
@@ -15,9 +16,9 @@ const show = computed(() => area.value.kind !== 'settlement' && area.value.kind 
 const lighting = computed(() => {
   const l = areaLighting(area.value)
   const dark = isDark(s.value, area.value)
-  if (l === 'lit') return { icon: '💡', text: '有光' }
-  if (l === 'daylight') return dark ? { icon: '🌙', text: '夜裡一片漆黑' } : { icon: '☀️', text: '白天有光' }
-  return { icon: '🌑', text: '黑暗' }
+  if (l === 'lit') return { icon: 'lightbulb' as const, text: '有光' }
+  if (l === 'daylight') return dark ? { icon: 'moon' as const, text: '夜裡一片漆黑' } : { icon: 'sun' as const, text: '白天有光' }
+  return { icon: 'moon' as const, text: '黑暗' }
 })
 const dark = computed(() => isDark(s.value, area.value))
 const light = computed(() => currentLight(s.value))
@@ -40,21 +41,21 @@ function retreat() {
 <template>
   <div v-if="show" class="exp small">
     <div class="row">
-      <span :title="night ? '晚上' : '白天'">{{ lighting.icon }} {{ lighting.text }}</span>
+      <span :title="night ? '晚上' : '白天'"><GameIcon :name="lighting.icon" :size="13" /> {{ lighting.text }}</span>
       <template v-if="dark">
         <span v-if="light" class="ok" :title="light.permanent ? '不會燒掉' : '在黑暗的地方每走一格燒掉一點，燒完自動點下一份'">
-          {{ light.permanent ? '✨' : '🔥' }} {{ light.name }}<template v-if="light.left !== undefined">・還能照 {{ light.left }} 格</template><template v-if="!light.permanent">・備用 {{ spare }} 份</template>
+          <GameIcon :name="light.permanent ? 'sparkles' : 'fire'" :size="13" /> {{ light.name }}<template v-if="light.left !== undefined">・還能照 {{ light.left }} 格</template><template v-if="!light.permanent">・備用 {{ spare }} 份</template>
         </span>
-        <span v-else-if="spare" class="muted" title="在黑暗的地方走一步就會點起來">🔥 走一步就點起光源（備用 {{ spare }} 份）</span>
-        <span v-else class="warn" title="視野只剩腳下、戰鬥中命中降低、陷阱更難察覺">⚠️ 沒有光源</span>
+        <span v-else-if="spare" class="muted" title="在黑暗的地方走一步就會點起來"><GameIcon name="fire" :size="13" /> 走一步就點起光源（備用 {{ spare }} 份）</span>
+        <span v-else class="warn" title="視野只剩腳下、戰鬥中命中降低、陷阱更難察覺"><GameIcon name="warning" :size="13" /> 沒有光源</span>
       </template>
     </div>
     <div v-if="expedition" class="row">
       <span :title="lootTitle || '還沒撿到東西'">
-        🎒 這趟：最深到{{ DUNGEON_LAYERS[expedition.deepest]?.name }}・撿到 {{ lootCount }} 件<template v-if="expedition.money_cc">、{{ formatMoney(expedition.money_cc) }}</template>
+        <GameIcon name="backpack" :size="13" /> 這趟：最深到{{ DUNGEON_LAYERS[expedition.deepest]?.name }}・撿到 {{ lootCount }} 件<template v-if="expedition.money_cc">、{{ formatMoney(expedition.money_cc) }}</template>
       </span>
-      <span class="muted" title="可以在 ⚙️ 設定的「這個存檔的規則」修改">（戰敗時：{{ DEFEAT_LOOT_NAME[defeatLootRule(s)] }}）</span>
-      <button v-if="!atEntrance" class="small" :disabled="busy" @click="retreat">🏃 {{ safe ? '從安全房撤出' : '緊急撤退' }}</button>
+      <span class="muted" title="可以在設定的「這個存檔的規則」修改">（戰敗時：{{ DEFEAT_LOOT_NAME[defeatLootRule(s)] }}）</span>
+      <button v-if="!atEntrance" class="small" :disabled="busy" @click="retreat"><GameIcon name="door" :size="13" /> {{ safe ? '從安全房撤出' : '緊急撤退' }}</button>
     </div>
   </div>
 </template>
@@ -63,5 +64,6 @@ function retreat() {
 .exp { display: grid; gap: 4px; margin-top: 6px; }
 .exp .row { gap: 8px; }
 .ok { color: var(--accent); }
+.exp :deep(.game-icon) { vertical-align: -2px; }
 .warn { color: var(--danger); }
 </style>

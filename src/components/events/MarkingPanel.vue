@@ -4,6 +4,7 @@ import { attrName, contractDef, slaveryRules } from '@/engine/data'
 import type { MarkChoice } from '@/engine/slavery'
 import { useGame } from '@/stores/game'
 import MarkPicker from '../MarkPicker.vue'
+import GameIcon from '../ui/GameIcon.vue'
 import { contractOf } from '@/engine/tattoos'
 
 // 刻下契約印記：刻印前還有一次檢定，之後選擇要刻的印記
@@ -21,7 +22,7 @@ function doMarking() {
 
 <template>
   <section class="panel marking">
-    <h3>🔥 刻下契約印記</h3>
+    <h3 class="title"><GameIcon name="fire" :size="16" />刻下契約印記</h3>
     <template v-if="!pendingMark.rolled">
       <p class="small">
         {{ master }}打算刻下<strong>{{ contractDef(pendingMark.intended).name }}</strong>：{{ contractDef(pendingMark.intended).mark }}
@@ -48,6 +49,8 @@ function doMarking() {
 <style scoped>
 .marking { display: grid; gap: 6px; border-color: var(--accent); }
 .marking h3, .marking p { margin: 0; }
+.title { display: flex; align-items: center; gap: 6px; }
+.title :deep(.game-icon) { color: var(--accent); }
 .marking textarea { width: 100%; }
 .mark { color: var(--accent-2); }
 </style>

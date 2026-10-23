@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useGame } from '@/stores/game'
 import AppDialog from '../AppDialog.vue'
+import Hint from '../ui/Hint.vue'
 import DefeatEventPanel from '../DefeatEventPanel.vue'
 import MasterEventPanel from '../MasterEventPanel.vue'
 import StandoffPanel from '../StandoffPanel.vue'
@@ -71,7 +72,7 @@ function openParty(member?: string) {
       <PerkOfferPanel v-else-if="current.kind === 'perk'" :refid="current.ref!" />
 
       <div class="row foot">
-        <span v-if="current.blocking" class="small muted">這件事要先處理，才能繼續移動或休息。可以先關掉視窗看看周圍，上方的 🔔 可以再打開。</span>
+        <span v-if="current.blocking" class="small muted">這件事要先處理，才能繼續移動或休息。<Hint text="可以先關掉視窗看看周圍，右上角的「待處理」可以再打開。" /></span>
         <template v-else>
           <button class="small" @click="later">稍後再說</button>
           <button v-if="current.kind === 'suggestion'" class="small" @click="eventDialogOpen = false; emit('open-relations')">開啟人際關係</button>

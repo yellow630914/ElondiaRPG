@@ -6,6 +6,7 @@ import { formatMoney } from '@/engine/money'
 import { effectText } from '@/engine/trade'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import GameIcon from './ui/GameIcon.vue'
 
 // 站在城鎮的特色地標上：開放的狀態、參訪、探索（data/world/landmarks.json，見 docs/LANDMARKS.md）
 const game = useGame()
@@ -28,9 +29,9 @@ function explore() {
 
 <template>
   <div v-if="l" class="landmark small">
-    <p v-if="closed" class="warn-text">🚫 {{ closed }}</p>
+    <p v-if="closed" class="warn-text"><GameIcon name="lock" :size="13" /> {{ closed }}</p>
     <div v-if="l.visit" class="item">
-      <div><strong>🙏 {{ l.visit.title }}</strong>
+      <div><strong class="ttl"><GameIcon name="sparkles" :size="13" /> {{ l.visit.title }}</strong>
         <span class="muted">（{{ l.visit.money_cc ? `${formatMoney(l.visit.money_cc)}・` : '' }}{{ l.visit.hours ?? 0.5 }} 小時{{ (l.visit.cooldown_days ?? 1) > 1 ? `・每 ${l.visit.cooldown_days} 天一次` : '・每天一次' }}）</span>
       </div>
       <p v-if="l.visit.desc" class="muted">{{ l.visit.desc }}</p>
@@ -38,7 +39,7 @@ function explore() {
       <button class="small" :disabled="!!visitBlocked || game.judging || !!s.pendingAction" :title="visitBlocked ?? ''" @click="game.visitLandmark()">{{ visitBlocked ?? l.visit.title }}</button>
     </div>
     <details v-if="l.explore" class="item">
-      <summary>🔍 {{ l.explore.title }}（{{ attrName(l.explore.attr) }}檢定，參考 DC {{ l.explore.dc }}・{{ l.explore.hours }} 小時）</summary>
+      <summary><GameIcon name="search" :size="13" /> {{ l.explore.title }}（{{ attrName(l.explore.attr) }}檢定，參考 DC {{ l.explore.dc }}・{{ l.explore.hours }} 小時）</summary>
       <p v-if="l.explore.desc" class="muted">{{ l.explore.desc }}</p>
       <p class="muted">成功：{{ gains(l.explore.effects) || '有所收穫' }}{{ l.explore.critical?.length ? `；大成功另外 ${gains(l.explore.critical)}` : '' }}。{{ (l.explore.cooldown_days ?? 7) }} 天後才能再試。</p>
       <template v-if="!exploreBlocked">
@@ -57,4 +58,7 @@ function explore() {
 .item input { width: 100%; }
 .item p { margin: 0; }
 .warn-text { color: var(--danger); margin: 0; }
+.landmark :deep(.game-icon) { color: var(--accent); vertical-align: -2px; }
+.warn-text :deep(.game-icon) { color: var(--danger); }
+summary { cursor: pointer; }
 </style>

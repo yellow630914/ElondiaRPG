@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useGame } from '@/stores/game'
 import NameTag from '../NameTag.vue'
+import GameIcon from '../ui/GameIcon.vue'
 
 // AI 提議更新人際關係描述：採用、修改後採用，或不採用
 const props = defineProps<{ id: string }>()
@@ -26,14 +27,14 @@ function reject() {
 
 <template>
   <section v-if="current && rel" class="panel suggestion">
-    <h3>💞 <NameTag :id="current.npc" /> 和你的關係有了變化</h3>
+    <h3 class="title"><GameIcon name="heart" :size="16" /><NameTag :id="current.npc" /> 和你的關係有了變化</h3>
     <p class="small muted">目前：{{ rel.toPlayer }}</p>
     <p v-if="!editing" class="small proposal">AI 提議：{{ current.text }}</p>
     <textarea v-else v-model="draft" rows="3" />
     <div class="row">
-      <button class="small primary" @click="accept">✔️ 採用</button>
-      <button class="small" @click="editing = !editing">✏️ {{ editing ? '取消修改' : '修改' }}</button>
-      <button class="small" @click="reject">✖️ 不採用</button>
+      <button class="small primary" @click="accept"><GameIcon name="check" :size="13" /> 採用</button>
+      <button class="small" @click="editing = !editing"><GameIcon name="edit" :size="13" /> {{ editing ? '取消修改' : '修改' }}</button>
+      <button class="small" @click="reject"><GameIcon name="close" :size="13" /> 不採用</button>
     </div>
   </section>
 </template>
@@ -41,6 +42,8 @@ function reject() {
 <style scoped>
 .suggestion { display: grid; gap: 6px; }
 .suggestion h3, .suggestion p { margin: 0; }
+.title { display: flex; align-items: center; gap: 6px; }
+.title :deep(.game-icon) { color: var(--accent); }
 .proposal { color: var(--accent); }
 textarea { width: 100%; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; }

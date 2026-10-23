@@ -12,6 +12,7 @@ import { describeEntry } from '@/narrator/describe'
 import { useGame } from '@/stores/game'
 import StatBar from './StatBar.vue'
 import NameTag from './NameTag.vue'
+import GameIcon from './ui/GameIcon.vue'
 
 const emit = defineEmits<{ finished: [] }>()
 const game = useGame()
@@ -123,13 +124,13 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 <template>
   <section class="panel">
     <div class="row" style="justify-content: space-between">
-      <h2>⚔️ 戰鬥・{{ combat.scene ?? '' }}</h2>
-      <span class="muted">第 {{ combat.round }} 回合</span>
+      <h2 class="title"><GameIcon name="sword" :size="20" />戰鬥・{{ combat.scene ?? '' }}</h2>
+      <span class="tag round">第 {{ combat.round }} 回合</span>
     </div>
 
     <div class="sides">
       <div>
-        <h3>🛡️ 隊伍</h3>
+        <h3 class="title side"><GameIcon name="shield" :size="16" />隊伍</h3>
         <div v-for="c in party" :key="c.id" class="fighter" :class="{ current: actor?.id === c.id, down: !isActive(c) }">
           <div class="row" style="justify-content: space-between">
             <NameTag :id="c.id" />
@@ -143,7 +144,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
             <span v-if="c.tempHp" class="tag">臨時 HP {{ c.tempHp }}</span>
           </div>
           <div v-if="isActive(c)" class="small muted threat" :title="`仇恨值 ${Math.round(c.threat ?? 0)}・累積倍率 ×${threatMultOf(c).toFixed(2)}（職業、裝備、天賦與狀態）。敵人依仇恨加權選目標，不是絕對的。`">
-            🎯 仇恨 {{ Math.round(c.threat ?? 0) }}・被盯上約 {{ Math.round((shares[c.id] ?? 0) * 100) }}%
+            <GameIcon name="target" :size="12" /> 仇恨 {{ Math.round(c.threat ?? 0) }}・被盯上約 {{ Math.round((shares[c.id] ?? 0) * 100) }}%
             <span class="bar"><i :style="{ width: `${Math.round((shares[c.id] ?? 0) * 100)}%` }" /></span>
           </div>
           <div v-if="c.slotMax.length" class="small muted">{{ slotsText(c) }}</div>
@@ -156,7 +157,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
         </div>
       </div>
       <div>
-        <h3>👹 敵人</h3>
+        <h3 class="title side foe"><GameIcon name="skull" :size="16" />敵人</h3>
         <div
           v-for="c in foes"
           :key="c.id"
@@ -189,8 +190,8 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
   <section class="panel">
     <template v-if="combat.status === 'ongoing' && actor">
       <div class="row" style="justify-content: space-between">
-        <h3>{{ actor.name }} 的行動</h3>
-        <span class="small">剩餘 <strong>{{ actor.ap }}</strong> AP</span>
+        <h3 class="title"><GameIcon name="d20" :size="16" />{{ actor.name }} 的行動</h3>
+        <span class="tag ap-left">剩餘 <strong>{{ actor.ap }}</strong> AP</span>
       </div>
       <template v-if="pending">
         <p class="small muted">選擇目標：</p>
@@ -226,7 +227,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
           </div>
         </div>
         <div v-if="items.length" class="group">
-          <h4 class="small muted">🧪 道具（{{ costs.item }} AP）</h4>
+          <h4 class="small muted"><GameIcon name="potion" :size="13" /> 道具（{{ costs.item }} AP）</h4>
           <div class="row">
             <button
               v-for="i in items"
@@ -250,7 +251,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
   </section>
 
   <section class="panel">
-    <h3>📜 戰鬥紀錄</h3>
+    <h3 class="title"><GameIcon name="scroll" :size="16" />戰鬥紀錄</h3>
     <div ref="log" class="log small">
       <div v-for="t in combat.timeline" :key="t.seq">{{ describeEntry(t, names) }}</div>
       <div v-if="combat.timeline.length === 0" class="muted">戰鬥開始。</div>
@@ -260,10 +261,17 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 
 <style scoped>
 .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.fighter { border: 1px solid var(--border); border-radius: 6px; padding: 8px; margin-bottom: 8px; background: var(--panel-2); display: grid; gap: 3px; }
-.fighter.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.title { display: flex; align-items: center; gap: 6px; }
+.title :deep(.game-icon) { color: var(--accent); }
+.side { margin-bottom: 6px; }
+.side.foe, .side.foe :deep(.game-icon) { color: var(--danger); }
+.round { color: var(--gold-hi); border-color: var(--gold-lo); }
+.ap-left strong { color: var(--gold-hi); }
+.fighter { border: 1px solid #ffffff14; border-radius: 3px; padding: 8px; margin-bottom: 8px; background: #0004; display: grid; gap: 3px; transition: border-color 0.15s, box-shadow 0.15s; }
+.fighter.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 10px #f0d08333; }
 .fighter.down { opacity: 0.4; }
-.fighter.targetable { cursor: pointer; border-color: var(--danger); }
+.fighter.targetable { cursor: pointer; border-color: var(--danger); border-style: dashed; }
+.fighter.targetable:hover { box-shadow: 0 0 0 1px var(--danger), 0 0 10px #d8604e44; }
 .ap { gap: 6px; }
 .pips { display: inline-flex; gap: 3px; }
 .pips i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--accent); display: inline-block; }
@@ -274,15 +282,17 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 .tag.resist { border-color: var(--muted); }
 .tag.immune { border-color: var(--danger); color: var(--danger); }
 .basics { margin-bottom: 8px; }
-.group h4 { margin: 8px 0 4px; font-weight: normal; }
-.ability { display: inline-grid; text-align: left; line-height: 1.3; }
+.group h4 { margin: 10px 0 4px; font-weight: normal; color: var(--accent-2); display: flex; align-items: center; gap: 4px; }
+.ability { display: inline-grid; text-align: left; line-height: 1.3; min-width: 120px; }
 .ability .why { color: var(--danger); }
-.log { max-height: 280px; overflow-y: auto; display: grid; gap: 2px; }
+.log { max-height: 280px; overflow-y: auto; display: grid; gap: 0; padding-left: 8px; border-left: 2px solid #c8483a66; }
+.log > div { padding: 2px 0; border-bottom: 1px dotted #ffffff10; }
+.log > div:last-child { color: var(--text); border-bottom: none; }
 @media (max-width: 720px) {
   .sides { grid-template-columns: 1fr; }
 }
 .threat { display: flex; gap: 6px; align-items: center; }
-.threat .bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; max-width: 120px; }
+.threat .bar { flex: 1; height: 4px; background: var(--border); border: none; box-shadow: none; border-radius: 2px; overflow: hidden; max-width: 120px; }
 .threat .bar i { display: block; height: 100%; background: var(--danger); }
 .trait { border-color: var(--accent-2); color: var(--accent-2); }
 </style>
