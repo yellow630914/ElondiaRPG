@@ -44,6 +44,13 @@ export interface BaseDef {
   scale?: Partial<Record<keyof Mods, Scale>>
   resist_scale?: Record<string, Scale>
   desc?: string
+  /** 束縛用的底材（主人強制裝備的項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡 */
+  restraint?: boolean
+}
+
+/** 可以打造、隨機生成的底材（不含束縛用的） */
+export function ordinaryBases(): string[] {
+  return Object.entries(gearRules.bases).filter(([, b]) => !b.restraint).map(([id]) => id)
 }
 
 export interface ClassGearTemplate {
@@ -330,7 +337,7 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
     }
     // 頭、腿等護具：不能比職業的護甲類型重（布 < 皮革 < 金屬）；飾品不限
     const bases = Object.entries(gearRules.bases)
-      .filter(([, b]) => baseFits(b.slot, slot) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
+      .filter(([, b]) => !b.restraint && baseFits(b.slot, slot) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
       .map(([id]) => id)
     if (bases.length) out.push({ slot, template: false, bases })
   }
@@ -542,7 +549,8 @@ export interface GearLimits {
 export function sanitizeGearSpec(raw: unknown, limits: GearLimits): GearSpec | undefined {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
   const base = limits.base ?? findBase(r.base ?? r.slot)
-  if (!base) return undefined
+  // 束縛用的底材不給 AI 用
+  if (!base || gearRules.bases[base]!.restraint) return undefined
   const kind = gearRules.bases[base]!.kind
   let material = limits.material ?? findMaterial(r.material, kind) ?? materialOf(kind, 1)
   if (gearRules.materials[material]!.level > limits.maxLevel) {
@@ -649,7 +657,7 @@ export function rollEnchants(base: string, points: number, rng: Rng, elements: s
 // ---- 寶箱與掉落 ----
 
 /** 依等級隨機生成一件裝備（寶箱、人形怪物的掉落）：底材平均挑，材料依等級，有機會高一級稀有度並附魔 */
-export function randomGear(rng: Rng, level: number, bases = Object.keys(gearRules.bases)): GearSpec {
+export function randomGear(rng: Rng, level: number, bases = ordinaryBases()): GearSpec {
   const base = rng.pick(bases)
   const kind = gearRules.bases[base]!.kind
   const material = materialOf(kind, rollTier(rng, kind, level))

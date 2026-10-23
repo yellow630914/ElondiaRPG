@@ -9,6 +9,7 @@
   },
   "slot_groups": { "ring": ["ring_1", "ring_2"], "piercing": ["piercing_1", "piercing_2"] },
 
+  "$comment_restraint": "底材的 restraint：束縛用的底材（主人強制裝備的項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減。",
   "attrs": {
     "$comment": "裝備的屬性加減（GearSpec.attrs）：只有內容資料裡的裝備會有（編輯器設定、事件給的、主人強制裝備的），不能打造、不在商店上架。每項 ±max_change；身上所有裝備給的同一項屬性合計最多 ±cap。",
     "max_change": 3,
@@ -57,6 +58,11 @@
   },
 
   "bases": {
+    "slave_collar": { "slot": "accessory", "name": "項圈", "kind": "metal", "price": 30, "restraint": true, "desc": "扣在脖子上的金屬環。" },
+    "manacles": { "slot": "wrists", "name": "腕鐐", "kind": "metal", "price": 40, "restraint": true, "desc": "一對用短鍊連著的腕環。" },
+    "shackles": { "slot": "leg_accessory", "name": "腳鐐", "kind": "metal", "price": 30, "restraint": true, "desc": "鎖在腳踝上的金屬環。" },
+    "spiked_collar": { "slot": "accessory", "name": "刺釘項圈", "kind": "leather", "price": 20, "restraint": true, "desc": "釘著短刺的粗皮項圈。" },
+    "choker": { "slot": "accessory", "name": "頸環", "kind": "cloth", "price": 20, "restraint": true, "desc": "貼著脖子的布製頸環。" },
     "dagger":       { "slot": "main_hand", "name": "匕首", "kind": "metal", "weapon": "dagger", "price": 160, "scale": { "damage": "full", "hit": "half" } },
     "shortsword":   { "slot": "main_hand", "name": "短劍", "kind": "metal", "weapon": "shortsword", "price": 180, "scale": { "damage": "full", "hit": "half" } },
     "scimitar":     { "slot": "main_hand", "name": "彎刀", "kind": "metal", "weapon": "scimitar", "price": 200, "scale": { "damage": "full", "hit": "half" } },

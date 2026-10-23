@@ -267,7 +267,7 @@ function gearDoc(state: GameState, p: ActionPending): string {
     return `{"type":"gear","name":"<成品的名字 ≤20 字，可以不填>","desc":"<≤80 字>","enchants":{"mods":{"hit":1}}}（打造的成品：${gearName({ base, material })}，底材與材料固定。稀有度依 degree：${rar}；失敗與大失敗不會做出東西。${auxText}${enchant}）`
   }
   const mats = Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level).map(([id, m]) => `${id}（${m.name}）`).join('、')
-  const bases = Object.entries(gearRules.bases).map(([id, b]) => `${id}（${b.name}）`).join('、')
+  const bases = Object.entries(gearRules.bases).filter(([, b]) => !b.restraint).map(([id, b]) => `${id}（${b.name}）`).join('、')
   return `{"type":"gear","base":"<底材 id>","material":"<材料 id>","name":"<≤20 字，可以不填>","desc":"<≤80 字>","rarity":"common/uncommon/rare/epic/legendary","enchants":{}}（事件中得到一件裝備，例如在遺跡裡找到、別人贈送：只在 degree 為 success 以上而且合理時，最多一件。稀有度不超過材料原本的，大成功可以高一級。底材：${bases}。材料要和底材同類（金屬、皮革、布料、木材、寶石），目前可用：${mats}。${enchant}）`
 }
 
@@ -419,7 +419,7 @@ export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
     memory: '{"type":"memory","summary":"主角得知或經歷的事，一句話"}（情報、傳聞的內容寫在這裡）',
     reputation: `{"type":"reputation","faction":"local","delta":<±${shopRules.ai_caps.reputation}>}`,
     condition: '{"type":"condition","condition":"blessed"}（神殿祝福：下次長休前檢定 +1）',
-    gear: `{"type":"gear","base":"<底材 id>","material":"<材料 id>","name":"<≤20 字，可以不填>","desc":"<≤80 字>","rarity":"common/uncommon/rare/epic/legendary","enchants":{"mods":{"hit":1}}}（特製裝備，程式依組成定價：材料的建議等級不超過 ${pc.level + 2}，稀有度最多比材料原本的高一級，附魔在稀有度的點數內。底材：${Object.entries(gearRules.bases).map(([id, b]) => `${id}（${b.name}）`).join('、')}；材料（要和底材同類）：${Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level + 2).map(([id, m]) => `${id}（${m.name}）`).join('、')}）`,
+    gear: `{"type":"gear","base":"<底材 id>","material":"<材料 id>","name":"<≤20 字，可以不填>","desc":"<≤80 字>","rarity":"common/uncommon/rare/epic/legendary","enchants":{"mods":{"hit":1}}}（特製裝備，程式依組成定價：材料的建議等級不超過 ${pc.level + 2}，稀有度最多比材料原本的高一級，附魔在稀有度的點數內。底材：${Object.entries(gearRules.bases).filter(([, b]) => !b.restraint).map(([id, b]) => `${id}（${b.name}）`).join('、')}；材料（要和底材同類）：${Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level + 2).map(([id, m]) => `${id}（${m.name}）`).join('、')}）`,
     companion: `{"type":"companion","mode":"hired 或 voluntary${slaveryRules.markets[state.location] && !shopPlace(state).waystation ? ' 或 slave' : ''}","npc":{"name":"","race":"human","class":"fighter","level":1,"personality":"","appearance":"","background":""}}（等級不超過 ${pc.level + 1}）`,
   }
   const system = `你是奇幻 RPG《埃隆迪亞大陸》的商店設計者。請為這間店設計今天的「特別商品」，只輸出一個 JSON 物件。目錄裡的商品平常就在賣，會照常列出，你設計的交易會加在它們前面。

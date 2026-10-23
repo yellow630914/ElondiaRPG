@@ -136,6 +136,9 @@ function remove() {
         </div>
         <label v-if="base.slot === 'main_hand'" class="check small"><input v-model="base.two_handed" type="checkbox" :disabled="builtin" /> 雙手武器（空出副手）</label>
         <label class="block">描述 <input v-model="base.desc" maxlength="120" /></label>
+        <label v-if="base.slot !== 'main_hand' && base.slot !== 'body'" class="check small">
+          <input v-model="base.restraint" type="checkbox" :disabled="builtin" /> 束縛用（項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減，給「主人會強制裝備」的物品用
+        </label>
         <p v-if="builtin" class="small muted">內建底材不能改欄位與材料類型；改名只影響之後新打造或生成的裝備，目錄裡的制式裝備沿用原本的名稱。</p>
       </fieldset>
 
@@ -162,7 +165,7 @@ function remove() {
         <AffinityRows v-model="base.armorDef.resist" label="抗性" />
       </fieldset>
 
-      <fieldset>
+      <fieldset v-if="!base.restraint">
         <legend>固定加成與材料成長</legend>
         <p class="small muted">固定加成不論材料都有；材料成長：材料的加成（鐵 0、鋼 1、秘銀 2、精金 4、星隕鐵 6）依比例加到這一項。</p>
         <div class="grid">

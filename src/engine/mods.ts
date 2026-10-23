@@ -366,7 +366,7 @@ function generateCatalog(mods: ContentMods) {
   const names = new Set(itemRules.items.map((i) => i.name))
   for (const [bid, b] of Object.entries(gearRules.bases)) {
     for (const [mid, m] of Object.entries(gearRules.materials)) {
-      if (m.kind !== b.kind || (!mods.bases[bid]?.custom && !mods.materials[mid]?.custom)) continue
+      if (b.restraint || m.kind !== b.kind || (!mods.bases[bid]?.custom && !mods.materials[mid]?.custom)) continue
       const spec: GearSpec = { base: bid, material: mid }
       const name = gearName(spec)
       if (names.has(name)) continue
@@ -832,13 +832,19 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
     }
   }
   if (custom) out.custom = true
-  // 內建底材的欄位、材料類型、雙手不能改：存檔裡的裝備、職業的起始武器與制式裝備都靠它們
+  // 內建底材的欄位、材料類型、雙手、是不是束縛用不能改：存檔裡的裝備、職業的起始武器與制式裝備都靠它們
   const builtin = !custom && id ? snapshot.bases[id] : undefined
   if (builtin) {
     out.slot = builtin.slot
     out.kind = builtin.kind
     if (builtin.two_handed) out.two_handed = true
     else delete out.two_handed
+  }
+  // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
+  const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body'
+  if (restraint) {
+    out.restraint = true
+    for (const k of ['stats', 'scale', 'resist_scale', 'threat', 'weapon', 'weaponDef', 'armor', 'armorDef', 'two_handed'] as const) delete out[k]
   }
   return out
 }

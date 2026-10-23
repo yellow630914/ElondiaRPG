@@ -106,3 +106,33 @@ describe('master forced gear', () => {
     expect(eventFits(state, master, event('force_gear'))).toBe(false)
   })
 })
+
+describe('restraint bases', () => {
+  it('give nothing but the item’s attributes, and stay out of crafting and random gear', async () => {
+    const { gearStats, ordinaryBases, randomGear, creationSlots, sanitizeGearSpec } = await import('@/engine/gear')
+    const { Rng } = await import('@/engine/rng')
+    const restraints = Object.entries(gearRules.bases).filter(([, b]) => b.restraint).map(([id]) => id)
+    expect(restraints).toEqual(['slave_collar', 'manacles', 'shackles', 'spiked_collar', 'choker'])
+    for (const i of itemRules.items.filter((x) => x.master_force)) {
+      expect(restraints, i.name).toContain(i.gear!.base)
+      const s = gearStats(i.gear!)
+      expect(Object.values(s.mods).filter(Boolean), i.name).toEqual([])
+      expect(Object.values(s.resist).filter(Boolean), i.name).toEqual([])
+    }
+    const ordinary = ordinaryBases()
+    for (const id of restraints) expect(ordinary).not.toContain(id)
+    const rng = new Rng(1)
+    for (let n = 0; n < 300; n++) expect(restraints).not.toContain(randomGear(rng, 10).base)
+    for (const s of creationSlots('fighter')) for (const id of restraints) expect(s.bases).not.toContain(id)
+    expect(sanitizeGearSpec({ base: 'slave_collar', material: 'iron' }, { maxLevel: 20 })).toBeUndefined()
+  })
+
+  it('cannot be commissioned', async () => {
+    const state = game()
+    const { prepareAction } = await import('@/engine/actions')
+    const { standOn } = await import('@/engine/grid')
+    standOn(state, 'smithy')
+    state.money_cc = 100000
+    expect(() => prepareAction(state, { kind: 'craft', target: 'slave_collar:iron', text: '' })).toThrow('項圈不能打造')
+  })
+})
