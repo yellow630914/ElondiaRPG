@@ -7,11 +7,12 @@
 // - 每次推進都產生一份報告（report.story），也記在任務的經過（冒險筆記）。
 
 import { snapshot } from './character'
+import { endpointsIn } from './specialMaps'
 import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
 import {
-  locationById, npcs as namedNpcs, regionById, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
+  locationById, npcs as namedNpcs, regionById, specialMaps, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, type Area, type CellKind } from './grid'
@@ -168,10 +169,11 @@ export function activeNodes(state: GameState): ActiveNode[] {
 export function nodeIsHere(state: GameState, n: ActiveNode): boolean {
   const at = n.node.at
   const area = currentArea(state)
-  if (at.location && at.where !== 'npc' && at.where !== 'road' && at.where !== 'side' && area.location !== at.location) return false
+  if (at.location && at.where !== 'npc' && at.where !== 'road' && at.where !== 'side' && at.where !== 'special' && area.location !== at.location) return false
   switch (at.where) {
     case 'road': return area.kind === 'road'
-    case 'side': return currentCell(state).kind === 'quest' && currentCell(state).storyNode === n.ref
+    case 'side':
+    case 'special': return currentCell(state).kind === 'quest' && currentCell(state).storyNode === n.ref
     case 'settlement': return area.kind === 'settlement'
     case 'cell': return area.kind === 'settlement' && currentCell(state).kind === at.cell
     case 'npc': return !!at.npc && presentHere(state, at.npc) && (!at.location || area.location === at.location)
@@ -205,6 +207,7 @@ export function placeText(n: StoryNode, state?: GameState): string {
     case 'dungeon': return `${loc}・${LAYER[at.layer ?? 'outskirts']}（⭐）`
     case 'road': return '旅途上'
     case 'side': return '臨時地圖裡（⭐）'
+    case 'special': return `${specialMaps[at.special_map ?? '']?.name ?? '特殊地圖'}（⭐）`
   }
   return loc
 }
@@ -420,7 +423,8 @@ function layerId(area: Area): DungeonLayerId | undefined {
 /** 這一區該有哪些任務點 */
 function markersFor(state: GameState, area: Area): string[] {
   return activeNodes(state)
-    .filter(({ node }) => (node.at.where === 'side' && area.kind === 'side' && (!node.at.side_map || node.at.side_map === area.template)) || (node.at.location === area.location && (
+    .filter(({ node }) => (node.at.where === 'side' && area.kind === 'side' && (!node.at.side_map || node.at.side_map === area.template))
+      || (node.at.where === 'special' && area.kind === 'special' && node.at.special_map === area.special) || (node.at.location === area.location && (
       (node.at.where === 'outskirts' && area.kind === 'wild') ||
       (node.at.where === 'dungeon' && area.kind === 'dungeon' && (node.at.layer ?? 'outskirts') === layerId(area)))))
     .map((n) => n.ref)
@@ -431,9 +435,11 @@ export function ensureStoryMarkers(state: GameState, area: Area, rng: Rng) {
   if (area.kind === 'settlement' || area.kind === 'home' || area.kind === 'road') return
   const have = new Set(area.cells.map((c) => c.storyNode).filter(Boolean))
   const entry = area.cells.findIndex((c) => c.kind === 'exit' || c.kind === 'stairs_up')
+  // 特殊地圖：通道的端點（關著時是空地）不放任務點
+  const avoid = new Set(area.kind === 'special' ? endpointsIn(area.key).map((e) => e.y * area.width + e.x) : [])
   for (const ref of markersFor(state, area)) {
     if (have.has(ref)) continue
-    const free = area.cells.map((c, i) => (c.kind === 'floor' && i !== entry && i !== entry - area.width ? i : -1)).filter((i) => i >= 0)
+    const free = area.cells.map((c, i) => (c.kind === 'floor' && i !== entry && i !== entry - area.width && !avoid.has(i) ? i : -1)).filter((i) => i >= 0)
     if (!free.length) return
     const i = free[rng.int(0, free.length - 1)]!
     area.cells[i] = { kind: 'quest' as CellKind, storyNode: ref }
@@ -463,7 +469,7 @@ export function allyPlacement(state: GameState, npcId: string): { area: string; 
   for (const n of activeNodes(state)) {
     if (!n.node.allies?.includes(npcId)) continue
     const at = n.node.at
-    if (at.where === 'outskirts' || at.where === 'dungeon' || at.where === 'side') {
+    if (at.where === 'outskirts' || at.where === 'dungeon' || at.where === 'side' || at.where === 'special') {
       for (const area of Object.values(state.areas ?? {})) {
         const i = area.cells.findIndex((c) => c.storyNode === n.ref)
         if (i < 0) continue

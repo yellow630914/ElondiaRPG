@@ -60,7 +60,7 @@
     "short_hours": 1,
     "long_hours": 8,
     "long_rest_gap_hours": 16,
-    "ambush": { "settlement": 0, "home": 0, "wild": 0.15, "dungeon": 0.25, "road": 0.15, "side": 0.2 }
+    "ambush": { "settlement": 0, "home": 0, "wild": 0.15, "dungeon": 0.25, "road": 0.15, "side": 0.2, "special": 0.2 }
   },
 
   "noncombatant": {

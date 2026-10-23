@@ -15,6 +15,7 @@ import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import * as grid from '@/engine/grid'
+import * as specialMaps from '@/engine/specialMaps'
 import * as masterHome from '@/engine/masterHome'
 import * as population from '@/engine/population'
 import * as encounters from '@/engine/encounters'
@@ -878,6 +879,7 @@ export const useGame = defineStore('game', () => {
     }),
     answerRoadEvent: (i: number) => run((s) => road.answerRoadEvent(s, i)),
     leaveSide: () => run((s) => road.leaveSide(s)),
+    leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */

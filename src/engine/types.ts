@@ -711,10 +711,12 @@ export interface GameState {
   roadEvent?: { x: number; template: string }
   /** 在臨時地圖裡：離開時回到的位置 */
   side?: { area: string; back: { area: string; x: number; y: number } }
+  /** 在特殊地圖裡：從外面進來前的位置與地點（從出口離開時回到那裡），走過的需要刷新的地圖 */
+  special?: { back?: { area: string; x: number; y: number }; location: string; visited: string[] }
   /** 冒險筆記的情報 */
   intel?: Intel[]
   /** 事件結果要求的移動（進入臨時地圖、改去別的地點），在報告提交之後執行 */
-  pendingMove?: { side_map?: string; travel_to?: string }
+  pendingMove?: { side_map?: string; special_map?: string; travel_to?: string }
   /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */
   masterPass?: Record<string, number>
   masterRefuse?: Record<string, number>

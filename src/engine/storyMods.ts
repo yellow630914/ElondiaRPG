@@ -1,7 +1,7 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import {
-  abilities, ATTR_IDS, companionRules, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, companionRules, specialMaps, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
 } from './data'
 import type { RewardEffect } from './effects'
@@ -57,7 +57,7 @@ export const START_KINDS: Record<StoryStartKind, string> = {
 }
 export const WHERE_NAME: Record<StoryWhere, string> = {
   settlement: '在聚落裡（任何地方）', cell: '站在聚落的某種設施上', npc: '某位固定 NPC 在身邊', outskirts: '近郊的任務點（⭐）', dungeon: '地下城某一層的任務點（⭐）',
-  road: '旅途上（特殊事件開頭的那段路）', side: '臨時地圖裡的任務點（⭐）',
+  road: '旅途上（特殊事件開頭的那段路）', side: '臨時地圖裡的任務點（⭐）', special: '特殊地圖裡的任務點（⭐）',
 }
 export const NODE_KINDS: Record<StoryNode['kind'], string> = { story: '劇情', check: '判定', combat: '戰鬥', choice: '選擇' }
 /** 任務點可以指定的設施 */
@@ -212,6 +212,7 @@ function outcome(v: unknown): StoryOutcome | undefined {
   else if (o.fail_quest) out.fail_quest = true
   if (o.retry) out.retry = true
   if (typeof o.side_map === 'string' && SIDE_MAPS().includes(o.side_map)) out.side_map = o.side_map
+  if (typeof o.special_map === 'string' && specialMaps[o.special_map]) out.special_map = o.special_map
   if (isLoc(o.travel_to)) out.travel_to = o.travel_to
   return out
 }
@@ -229,7 +230,8 @@ function place(v: unknown): StoryPlace {
   if (where === 'dungeon') out.layer = STORY_LAYERS.includes(p.layer as never) ? p.layer : 'outskirts'
   if (where === 'npc' && str(p.npc, 60)) out.npc = str(p.npc, 60)
   if (where === 'side' && typeof p.side_map === 'string' && SIDE_MAPS().includes(p.side_map)) out.side_map = p.side_map
-  if (where === 'road' || where === 'side') delete out.location
+  if (where === 'special') out.special_map = typeof p.special_map === 'string' && specialMaps[p.special_map] ? p.special_map : Object.keys(specialMaps)[0]
+  if (where === 'road' || where === 'side' || where === 'special') delete out.location
   return out
 }
 
@@ -419,7 +421,8 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
   }
   for (const n of def.nodes) {
     const t = `任務點「${n.title}」`
-    if (n.at.where !== 'npc' && n.at.where !== 'road' && n.at.where !== 'side' && !n.at.location) err.push(`${t}沒有指定地點`)
+    if (n.at.where !== 'npc' && n.at.where !== 'road' && n.at.where !== 'side' && n.at.where !== 'special' && !n.at.location) err.push(`${t}沒有指定地點`)
+    if (n.at.where === 'special' && (!n.at.special_map || !specialMaps[n.at.special_map])) err.push(`${t}的特殊地圖不存在`)
     if (n.at.where === 'npc' && (!n.at.npc || !npcIds.has(n.at.npc))) err.push(`${t}的固定 NPC 不存在`)
     if (n.at.where === 'outskirts' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type === 'dungeon') err.push(`${t}：地下城沒有近郊，請改成「地下城某一層」`)
     if (n.at.where === 'dungeon' && n.at.location && geography.locations.find((l) => l.id === n.at.location)?.type !== 'dungeon') err.push(`${t}：選的地點不是地下城`)

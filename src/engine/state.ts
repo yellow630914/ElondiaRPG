@@ -2,7 +2,7 @@
 
 import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
-import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, statuses, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
@@ -401,6 +401,12 @@ export function removeItem(inv: InventoryItem[], name: string, qty: number): num
  */
 export function commitReport(state: GameState, report: Report): Report {
   const c = report.changes
+  // 在特殊地圖裡：場景帶上地圖的描述（給 AI）
+  const special = specialMapOfKey(state.position?.area)
+  if (special && report.kind !== 'travel' && !(report.location.scene ?? '').includes(special.desc.slice(0, 20))) {
+    const scene = report.location.scene && !report.location.scene.includes(special.name) ? `${report.location.scene}・` : ''
+    report.location.scene = `${scene}${special.name}（${special.desc.slice(0, 120)}）`
+  }
   state.time = { day: report.time.end.day, hour: report.time.end.hour ?? 0, minute: report.time.end.minute ?? 0 }
   if (report.kind === 'travel' && report.outcome.result === 'arrived' && report.location.to) {
     locationById(report.location.to)

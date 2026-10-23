@@ -9,10 +9,10 @@
 import { checkBonus } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat } from './combat'
-import { enemies, locationById, regionById, slaveryRules, stories, wildEncounters, type AttrId, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
+import { enemies, locationById, regionById, slaveryRules, specialMaps, stories, wildEncounters, type AttrId, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
 import { applyEffects } from './effects'
 import {
-  assertNoStandoff, currentArea, ensureQuestTargets, findKind, generateSide, placeAt, position, reveal, storeArea, substituteGroup,
+  assertNoStandoff, clearAreas, currentArea, ensureQuestTargets, findKind, generateSide, placeAt, position, reveal, storeArea, substituteGroup,
   type Area, type Cell, type SideMapDef, type StepResult,
 } from './grid'
 import { isBound, pcOf } from './party'
@@ -28,6 +28,7 @@ import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, legFare, ROAD_DAI
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
 import { shortestPath } from './world'
 import { enterWaystation } from './trade'
+import { enterSpecial } from './specialMaps'
 import travelEventsJson from '@data/rules/travel_events.json'
 
 // ---- 資料 ----
@@ -93,7 +94,7 @@ export function startJourney(state: GameState, destination: string, intent?: str
   delete state.side
   // 離開地下城：這趟探索撿到的東西算是帶出來了
   delete state.expedition
-  state.areas = {}
+  clearAreas(state)
   storeArea(state, area)
   placeAt(state, area, 0, 0)
   return undefined
@@ -352,9 +353,10 @@ export function applyRoadOutcome(state: GameState, report: Report, o: StoryOutco
 }
 
 /** 記下結果要求的移動，報告提交之後再執行 */
-export function queueMove(state: GameState, o: Pick<StoryOutcome, 'side_map' | 'travel_to'>) {
+export function queueMove(state: GameState, o: Pick<StoryOutcome, 'side_map' | 'special_map' | 'travel_to'>) {
   if (o.travel_to && locationExists(o.travel_to)) state.pendingMove = { travel_to: o.travel_to }
   else if (o.side_map && travelEvents.side_maps[o.side_map]) state.pendingMove = { side_map: o.side_map }
+  else if (o.special_map && specialMaps[o.special_map]) state.pendingMove = { special_map: o.special_map }
 }
 
 function locationExists(id: string): boolean {
@@ -483,6 +485,8 @@ export function applyPendingMove(state: GameState) {
     }
   } else if (m.side_map) {
     enterSide(state, m.side_map)
+  } else if (m.special_map) {
+    enterSpecial(state, m.special_map)
   }
 }
 

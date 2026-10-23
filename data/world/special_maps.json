@@ -1,0 +1,50 @@
+{
+  "$comment": "特殊地圖（docs/SPECIAL_MAPS.md）。id 一律 sm_ 開頭。location 是所屬地點（遭遇表的地區、AI 的場景、戰敗後被送回的地方）；desc 給 AI 看。地圖可以是固定的 grid（每個字元依 legend 對應格子），或只寫 size 隨機挖出通道。encounters / elites / traps / resources / chests 是額外隨機撒在空地上的數量；grid 裡的 M（遭遇）、X（強敵）、R（資源）、C（寶箱）、T（陷阱）是固定位置。refresh 為 true 時，離開這片特殊地圖之後再進來，內容（遭遇、資源、寶箱）全部重來；false 時打過、採過的會一直保持。connections：這張地圖的 at 格與另一張地圖（城鎮區塊或特殊地圖）的 to 格互通，requires 的旗標成立時兩端都變成通道；城鎮那一端要是不能走的格子（牆、水），只有固定地圖可以設定。長休只能在安全點（S）或旅店上，裡面不能直接出發旅行。",
+  "version": 1,
+  "legend": {
+    "#": "wall", ".": "floor", "~": "water", "E": "exit", "S": "safe",
+    "M": "encounter", "X": "elite", "R": "resource", "C": "chest", "T": "trap"
+  },
+  "maps": {
+    "sm_rhineburg_sewer": {
+      "name": "萊茵堡下水道",
+      "location": "rhineburg",
+      "desc": "帝國首都地底的舊下水道，石砌拱頂滲著水，污水在中央的渠道裡緩緩流動。巨鼠、盜賊與更糟的東西在這裡出沒，衛兵很少下來。",
+      "lighting": "dark",
+      "refresh": true,
+      "layer": "shallow",
+      "grid": [
+        "####.######",
+        "#M.....T..#",
+        "#.~~~~~~~.#",
+        "#..R.#..M.#",
+        "#.~~~~~~~.#",
+        "#C....X...#",
+        "########.##"
+      ],
+      "resources": [1, 1],
+      "resource_items": ["鼠皮", "古舊骨片"],
+      "entry": { "x": 4, "y": 0 },
+      "connections": [
+        { "at": { "x": 4, "y": 0 }, "to": { "area": "rhineburg/lower", "x": 5, "y": 6 } },
+        { "at": { "x": 8, "y": 6 }, "to": { "area": "sm/sm_rhineburg_cistern", "x": 1, "y": 0 } }
+      ]
+    },
+    "sm_rhineburg_cistern": {
+      "name": "萊茵堡古蓄水池",
+      "location": "rhineburg",
+      "desc": "下水道深處一座帝國時代的地下蓄水池，粗大的石柱撐著穹頂，水面黑得看不見底。角落有一間舊看守室，門還關得上，是少數能安心休息的地方。",
+      "lighting": "dark",
+      "refresh": false,
+      "layer": "middle",
+      "grid": [
+        "#.#######",
+        "#.......#",
+        "#.~.~.~.#",
+        "#.......#",
+        "#S.~C~.X#",
+        "#########"
+      ]
+    }
+  }
+}

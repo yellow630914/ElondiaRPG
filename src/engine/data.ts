@@ -29,9 +29,11 @@ import craftsJson from '@data/rules/crafts.json'
 import homesJson from '@data/rules/homes.json'
 import perksJson from '@data/rules/perks.json'
 import landmarksJson from '@data/world/landmarks.json'
+import specialMapsJson from '@data/world/special_maps.json'
 import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
 import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality, TattooPlace } from './types'
+import type { Lighting } from './light'
 
 // ---- 地理 ----
 
@@ -155,7 +157,7 @@ export interface StoryStart {
 }
 
 /** 任務點在哪裡觸發 */
-export type StoryWhere = 'settlement' | 'cell' | 'npc' | 'outskirts' | 'dungeon' | 'road' | 'side'
+export type StoryWhere = 'settlement' | 'cell' | 'npc' | 'outskirts' | 'dungeon' | 'road' | 'side' | 'special'
 export interface StoryPlace {
   where: StoryWhere
   /** 地點 id（npc 時可以不寫：跟著角色走） */
@@ -168,6 +170,8 @@ export interface StoryPlace {
   npc?: string
   /** side：哪一種臨時地圖（沒有時任何一種） */
   side_map?: string
+  /** special：哪一張特殊地圖 */
+  special_map?: string
 }
 
 export interface StoryCheck { attr: AttrId; dc: number }
@@ -187,6 +191,8 @@ export interface StoryOutcome {
   retry?: boolean
   /** 進入臨時地圖（travel_events.json 的 side_maps），出口回到原本的地方 */
   side_map?: string
+  /** 傳送到特殊地圖（special_maps.json），站在那張地圖的入口 */
+  special_map?: string
   /** 改去別的地點：旅途中直接抵達那裡，不在旅途時被帶到那裡 */
   travel_to?: string
 }
@@ -331,6 +337,65 @@ export function landmarkDef(id: string): LandmarkDef | undefined {
 /** 某個聚落的地標 */
 export function landmarksIn(location: string): LandmarkDef[] {
   return Object.values(landmarks).filter((l) => l.location === location)
+}
+
+// ---- 特殊地圖（data/world/special_maps.json，說明見 docs/SPECIAL_MAPS.md） ----
+
+/** 特殊地圖的一個通道：這張地圖的 at 格與另一張地圖（城鎮區塊或 sm/ 開頭的特殊地圖）的 to 格互通 */
+export interface SpecialConnection {
+  at: { x: number; y: number }
+  to: { area: string; x: number; y: number }
+  /** 這些旗標成立時才打開（沒寫時一直開著） */
+  requires?: StoryCond
+}
+export interface SpecialMapDef {
+  id: string
+  name: string
+  /** 所屬地點：遭遇表的地區、AI 的場景、戰敗後被送回的地方 */
+  location: string
+  /** 給 AI 看的描述（外觀、氣氛、危險） */
+  desc: string
+  lighting?: Lighting
+  /** 離開這片特殊地圖之後再進來，內容全部重來 */
+  refresh?: boolean
+  /** 陷阱、寶箱與所屬地點是地下城時的遭遇，比照哪一層 */
+  layer?: DungeonLayerId
+  /** 固定地圖：每個字元依 legend（沒寫時用共用的 legend）對應格子種類 */
+  grid?: string[]
+  legend?: Record<string, CellKindName>
+  /** 隨機地圖：大小與挖幾步 */
+  size?: [number, number]
+  carve_steps?: number
+  encounters?: [number, number]
+  elites?: number
+  traps?: [number, number]
+  resources?: [number, number]
+  chests?: [number, number]
+  /** 遭遇表（沒寫時：所屬地點是地下城就用那一層，否則用地區的城郊遭遇表） */
+  table?: EncounterGroup[]
+  /** 資源格的採集物（沒寫時用地下城的採集表） */
+  resource_items?: string[]
+  /** 被事件傳送進來時站的位置（沒寫時是出口，再沒有就是第一格空地） */
+  entry?: { x: number; y: number }
+  connections?: SpecialConnection[]
+}
+/** 格子種類的名稱（和 grid.ts 的 CellKind 相同，這裡用字串避免循環引用） */
+export type CellKindName = string
+const specialMapsData = specialMapsJson as unknown as { legend: Record<string, CellKindName>; maps: Record<string, Omit<SpecialMapDef, 'id'>> }
+/** 固定地圖共用的圖例 */
+export const specialMapLegend = specialMapsData.legend
+/** 目前的特殊地圖（內容編輯器會改、加、刪） */
+export const specialMaps: Record<string, SpecialMapDef> = Object.fromEntries(Object.entries(specialMapsData.maps).map(([id, m]) => [id, { ...m, id }]))
+export function isSpecialMapId(id: string): boolean {
+  return /^sm_[a-z0-9_]+$/.test(id)
+}
+/** 特殊地圖的區域 key */
+export function specialKey(id: string): string {
+  return `sm/${id}`
+}
+/** 區域 key 對應的特殊地圖（不是特殊地圖時為 undefined） */
+export function specialMapOfKey(key: string | undefined): SpecialMapDef | undefined {
+  return key?.startsWith('sm/') ? specialMaps[key.slice(3)] : undefined
 }
 
 export const progression = progressionJson as unknown as {
@@ -831,7 +896,7 @@ export const companionRules = companionsJson as unknown as {
   }
   invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number }
   leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
-  rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'home' | 'wild' | 'dungeon' | 'road' | 'side', number> }
+  rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'home' | 'wild' | 'dungeon' | 'road' | 'side' | 'special', number> }
   noncombatant: { defeat_check: { dc: number; affinity_step: number }; rescue_hours: number; return_hp_ratio: number }
   conditions: Record<string, ConditionDef>
 }

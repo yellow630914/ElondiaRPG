@@ -13,8 +13,9 @@ import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
   attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId,
-  type DungeonLayerId, type EncounterGroup, type Location, type ShopType,
+  type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, type SpecialMapDef,
 } from './data'
+import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { questTargets } from './materialQuests'
 import { ensureStoryMarkers } from './story'
@@ -99,8 +100,12 @@ export interface Area {
   key: string
   location: string
   name: string
-  /** road：旅途（單行道）；side：旅途或事件帶進去的臨時地圖（洞窟、遺跡、驛站）；home：玩家的房子 */
-  kind: 'settlement' | 'wild' | 'dungeon' | 'road' | 'side' | 'home'
+  /** road：旅途（單行道）；side：旅途或事件帶進去的臨時地圖（洞窟、遺跡、驛站）；home：玩家的房子；special：特殊地圖 */
+  kind: 'settlement' | 'wild' | 'dungeon' | 'road' | 'side' | 'home' | 'special'
+  /** 特殊地圖的 id（special_maps.json） */
+  special?: string
+  /** 特殊地圖生成時的版本（地圖的定義改過時重新生成） */
+  version?: string
   /** 臨時地圖的範本（travel_events.json 的 side_maps） */
   template?: string
   /** 聚落區塊所屬的地區（貴族區、王城）；沒有時為一般區域 */
@@ -261,7 +266,7 @@ function kindsOfBlock(loc: Location, b: BlockDef): Set<CellKind> {
 export function currentZone(state: GameState): Zone {
   const area = currentArea(state)
   if (area.kind === 'dungeon') return 'dungeon'
-  if (area.kind === 'wild' || area.kind === 'road' || area.kind === 'side') return 'outskirts'
+  if (area.kind === 'wild' || area.kind === 'road' || area.kind === 'side' || area.kind === 'special') return 'outskirts'
   if (currentCell(state).kind === 'temple') return 'temple'
   if (currentCell(state).kind === 'brothel') return 'brothel'
   return area.zone ?? 'town'
@@ -322,6 +327,8 @@ function findChar(block: BlockDef, ch: string): { x: number; y: number } | null 
 
 /** 取得區域：固定地圖即時建立，隨機區域從存檔讀取。 */
 export function getArea(state: GameState, key: string): Area {
+  // 特殊地圖：存在存檔裡（定義改過時重新生成），每次都依旗標套上通道
+  if (key.startsWith('sm/')) return overlayConnections(state, specialArea(state, key.slice(3)))
   const stored = state.areas?.[key]
   if (stored) return stored
   // 玩家的房子：存在房子的資料裡
@@ -334,8 +341,8 @@ export function getArea(state: GameState, key: string): Area {
   const loc = locationById(locationId)
   const block = blocksFor(loc).find((b) => b.id === blockId)
   if (!block) throw new Error(`unknown area: ${key}`)
-  // 待售的空地與買下的房子（依存檔，疊在固定地圖上）
-  return overlayLots(state, buildBlock(loc, block))
+  // 待售的空地與買下的房子（依存檔，疊在固定地圖上）；特殊地圖的通道（依旗標）
+  return overlayConnections(state, overlayLots(state, buildBlock(loc, block)))
 }
 
 export function cellAt(area: Area, x: number, y: number): Cell | undefined {
@@ -376,6 +383,11 @@ export function reveal(area: Area, x: number, y: number, radius = 1) {
     }
   }
   area.revealed = [...set]
+}
+
+/** 拿掉生成的區域（離開地點、出發旅行）；特殊地圖保留在存檔裡 */
+export function clearAreas(state: GameState) {
+  state.areas = Object.fromEntries(Object.entries(state.areas ?? {}).filter(([k]) => k.startsWith('sm/')))
 }
 
 export function storeArea(state: GameState, area: Area) {
@@ -429,8 +441,8 @@ export function sight(state: GameState, area: Area): number {
 /** 抵達地點（旅行後或開新遊戲）：城鎮站在城門，冒險區域站在周邊的入口。 */
 export function enterLocation(state: GameState) {
   const loc = locationById(state.location)
-  // 隨機區域在離開後作廢，下次進入重新生成
-  state.areas = {}
+  // 隨機區域在離開後作廢，下次進入重新生成（特殊地圖保留）
+  clearAreas(state)
   if (loc.type === 'dungeon') {
     // 進入地下城：開始一趟新的探索
     startExpedition(state, loc.id)
@@ -697,6 +709,92 @@ export function generateSide(state: GameState, key: string, template: string, de
   return area
 }
 
+// ---- 特殊地圖（special_maps.json，docs/SPECIAL_MAPS.md） ----
+
+/** 地圖定義的版本：版面與內容的設定改過時，存檔裡的地圖重新生成 */
+export function specialVersion(def: SpecialMapDef): string {
+  const { name: _n, desc: _d, location: _l, connections: _c, entry: _e, refresh: _r, ...layout } = def
+  const text = JSON.stringify(layout)
+  let h = 5381
+  for (let i = 0; i < text.length; i++) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0
+  return h.toString(36)
+}
+
+/** 特殊地圖的遭遇表：自己寫的，或所屬地點的（地下城用 layer 那一層，其他用地區的城郊遭遇表） */
+export function specialTable(def: SpecialMapDef): EncounterGroup[] {
+  const valid = (g: EncounterGroup) => g.length > 0 && g.every(([id]) => !!enemies[id])
+  const own = (def.table ?? []).filter(valid)
+  if (own.length) return own
+  const loc = locationById(def.location)
+  const layer = def.layer ?? 'shallow'
+  return ((loc.type === 'dungeon' ? dungeonEncounters[loc.id]?.[layer] : undefined) ?? wildEncounters(loc.region)).filter(valid)
+}
+
+/** 生成特殊地圖：固定地圖照著畫（M、X、R、C、T 是固定位置的內容），隨機地圖從出口挖出通道；再隨機撒上額外的內容 */
+export function generateSpecial(state: GameState, def: SpecialMapDef, rng: Rng): Area {
+  const legend = { ...specialMapLegend, ...(def.legend ?? {}) }
+  const layer = Math.max(0, DUNGEON_LAYERS.findIndex((l) => l.id === (def.layer ?? 'shallow')))
+  const spec = DUNGEON_LAYERS[layer]!
+  const table = specialTable(def)
+  const strongest = [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
+  const level = Math.max(1, ...table.flat().map(([id]) => (typeof id === 'string' ? enemies[id]?.level ?? 1 : 1)))
+  const items = def.resource_items?.length ? def.resource_items : maps.generation.dungeon.resource_items
+  const content = (kind: string): Cell => {
+    switch (kind) {
+      case 'encounter': return table.length ? { kind: 'encounter', group: rng.pick(table) } : { kind: 'floor' }
+      case 'elite': return strongest.length ? { kind: 'elite', group: strongest.map(([id, n], i) => [id, i === 0 ? n + 1 : n] as [string, number]) } : { kind: 'floor' }
+      case 'resource': return { kind: 'resource', item: rng.pick(items) }
+      case 'chest': return { kind: 'chest', level, ...chestLock(rng, spec) }
+      default: return { kind: kind as CellKind }
+    }
+  }
+  let width: number
+  let height: number
+  let cells: Cell[]
+  if (def.grid?.length) {
+    width = Math.max(...def.grid.map((r) => r.length))
+    height = def.grid.length
+    cells = def.grid.flatMap((row) => Array.from({ length: width }, (_, x) => content(legend[row[x] ?? '#'] ?? 'wall')))
+  } else {
+    ;[width, height] = def.size ?? [9, 7]
+    cells = Array.from({ length: width * height }, () => ({ kind: 'wall' }) as Cell)
+    let x = Math.floor(width / 2)
+    let y = height - 1
+    const start = y * width + x
+    cells[start] = { kind: 'floor' }
+    for (let step = 0; step < (def.carve_steps ?? width * height); step++) {
+      const [dx, dy] = rng.pick([[1, 0], [-1, 0], [0, -1], [0, -1], [0, 1]] as const)
+      x = Math.max(0, Math.min(width - 1, x + dx))
+      y = Math.max(0, Math.min(height - 1, y + dy))
+      cells[y * width + x] = { kind: 'floor' }
+    }
+    cells[start] = { kind: 'exit' }
+  }
+  const area: Area = {
+    key: specialKey(def.id), location: def.location, name: def.name, kind: 'special', special: def.id, layer,
+    width, height, cells, revealed: [], lighting: def.lighting ?? 'dark', version: specialVersion(def),
+  }
+  // 通道（自己的與別張地圖接過來的）與入口的格子不放隨機內容
+  const used = new Set<number>([
+    ...endpointsIn(area.key).map((e) => e.y * width + e.x),
+    ...(def.entry ? [def.entry.y * width + def.entry.x] : []),
+    ...cells.map((c, i) => (c.kind === 'exit' ? i : -1)).filter((i) => i >= 0),
+  ])
+  const scatter = (count: number, kind: string) => {
+    for (const i of randomCells(rng, area, count, used)) {
+      cells[i] = content(kind)
+      used.add(i)
+    }
+  }
+  scatter(def.encounters ? between(rng, def.encounters) : 0, 'encounter')
+  scatter(def.elites ?? 0, 'elite')
+  scatter(def.traps ? between(rng, def.traps) : 0, 'trap')
+  scatter(def.resources ? between(rng, def.resources) : 0, 'resource')
+  scatter(def.chests ? between(rng, def.chests) : 0, 'chest')
+  ensureStoryMarkers(state, area, rng)
+  return area
+}
+
 function neighborsOf(area: Area, i: number): number[] {
   const x = i % area.width
   const y = Math.floor(i / area.width)
@@ -834,6 +932,8 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
   switch (cell.kind) {
     case 'link': {
       const target = getArea(state, cell.link!.area)
+      // 進出特殊地圖：記下回程與地點
+      if (area.kind === 'special' || target.kind === 'special') onAreaChange(state, area, target, { x, y })
       placeAt(state, target, cell.link!.x, cell.link!.y)
       // 走進或走出主人的家：離家期限重新算
       touchMasterHome(state, area, target)
@@ -1190,6 +1290,9 @@ export function afterDefeat(state: GameState) {
   if (area?.kind === 'side') {
     // 臨時地圖裡倒下：被帶回原本的地方（旅途或地圖上）
     leaveSide(state)
+  } else if (area?.kind === 'special') {
+    // 特殊地圖裡倒下：被送回所屬地點
+    specialDefeat(state)
   } else if (area?.kind === 'road') {
     // 旅途上倒下：留在原地，醒來繼續趕路
   } else if (loc.type === 'dungeon') {

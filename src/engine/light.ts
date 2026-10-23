@@ -36,7 +36,8 @@ export function areaLighting(area: Pick<Area, 'kind' | 'location' | 'layer' | 'l
   switch (area.kind) {
     case 'wild': return lightingRules.wild
     case 'dungeon': return layerLighting(area.location, area.layer ?? 0)
-    case 'side': return 'dark'
+    case 'side':
+    case 'special': return 'dark'
     default: return 'lit'
   }
 }

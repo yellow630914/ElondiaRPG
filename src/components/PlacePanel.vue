@@ -3,8 +3,8 @@ import FoldSection from './FoldSection.vue'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, geography, isCustomShopId, landmarkDef, locationById, shopRules, type ShopType } from '@/engine/data'
-import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
+import { attrName, geography, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, type ShopType } from '@/engine/data'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, getArea, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -38,6 +38,17 @@ const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
 const cell = computed(() => currentCell(s.value))
+// 特殊地圖：地圖的描述、通道通往哪裡
+const specialDef = computed(() => (area.value.kind === 'special' ? specialMapOfKey(area.value.key) : undefined))
+const linkName = computed(() => {
+  const to = cell.value.link?.area
+  if (!to) return '別處'
+  try {
+    return getArea(s.value, to).name
+  } catch {
+    return '別處'
+  }
+})
 const lockTool = computed(() => bestTool(s.value, 'lockpick'))
 const LOCK_ICON: Record<LockMethod, string> = { dex: '🔓', str: '💪', int: '🧠' }
 function lockBonus(k: LockMethod): number {
@@ -160,6 +171,7 @@ const shopDesc = computed(() => {
         <h3 v-if="cell.storyNode">⭐ 特殊任務的任務點</h3>
         <h3 v-else>{{ ICON[cell.kind] ?? '📍' }} {{ cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}</h3>
         <p v-if="shopDesc" class="muted small">{{ shopDesc }}</p>
+        <p v-if="specialDef" class="muted small">{{ specialDef.name }}：{{ specialDef.desc }}</p>
 
         <template v-if="cell.kind === 'inn'">
           <p class="muted small">可以在這裡長休（見下方「休息」）。</p>
@@ -265,6 +277,15 @@ const shopDesc = computed(() => {
         <template v-else-if="cell.kind === 'merchant'">
           <p class="muted small">照著情報找到的流浪商人：賣城裡少見的材料、藥劑、卷軸與幾件優良裝備。</p>
           <ShopPanel :key="`wanderer-${s.location}-${s.time.day}`" type="wanderer" />
+        </template>
+
+        <template v-else-if="cell.kind === 'exit' && area.kind === 'special'">
+          <p class="muted small">{{ area.name }}的出口。</p>
+          <button @click="game.leaveSpecial()">離開，回到{{ s.special?.back ? '進來前的地方' : here.name }}</button>
+        </template>
+
+        <template v-else-if="cell.kind === 'link' && area.kind === 'special'">
+          <p class="muted small">通往{{ linkName }}的通道。</p>
         </template>
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'side'">
