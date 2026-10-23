@@ -26,7 +26,7 @@ import {
 import type { Rng } from './rng'
 import { formatMoney } from './money'
 import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
-import { hireable, presentHere } from './population'
+import { hireable, isUnhireable, presentHere } from './population'
 import { setupStandoff } from './encounters'
 import {
   atSafeSpot, contractTerms, masterNearby, remarkByMadam, setupMarking, setupMasterEvent, setupPermit, setupReturn, setupSeekMaster, setupUnmark, startMarking, termsFromTemplate, contractKind,
@@ -108,6 +108,7 @@ export function hireDc(state: GameState, npcId: string, offer: number): number {
 
 function assertCanHire(state: GameState, npcId: string, offer: number) {
   assertFree(state, '雇人')
+  if (isUnhireable(npcId)) throw new Error('對方不會受雇於人')
   const c = candidate(state, npcId)
   if (c.declined) throw new Error('對方今天不想再談了')
   if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)

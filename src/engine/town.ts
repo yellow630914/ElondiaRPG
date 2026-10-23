@@ -111,7 +111,7 @@ export function buyRations(state: GameState, qty: number): Report {
 /** 這座城鎮的具名 NPC（data/world/npcs.json），不含隊伍裡的 */
 export function recruitableHere(state: GameState): NpcDef[] {
   const inParty = new Set(state.party.map((m) => m.id))
-  return npcs.filter((n) => !inParty.has(n.id) && (npcRecord(state, n.id)?.location ?? n.location) === state.location)
+  return npcs.filter((n) => !inParty.has(n.id) && !n.unhireable && (npcRecord(state, n.id)?.location ?? n.location) === state.location)
 }
 
 /** 以要價雇用具名 NPC（酒館候選名單另見 companions.ts）。 */

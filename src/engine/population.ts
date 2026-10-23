@@ -354,7 +354,13 @@ export function hireable(state: GameState): NpcRecord[] {
   for (const p of nearbyPeople(state)) {
     if (p.kind === 'adventurer' && !p.staff && !p.rec.hostile && !p.rec.staying && !isHostile(state, p.rec) && !list.includes(p.rec)) list.push(p.rec)
   }
-  return list
+  // 不受雇用的固定 NPC（統治者……）不列入
+  return list.filter((r) => !isUnhireable(r.id))
+}
+
+/** 這位固定 NPC 不受雇用 */
+export function isUnhireable(id: string): boolean {
+  return !!namedNpcs.find((n) => n.id === id)?.unhireable
 }
 
 /**
