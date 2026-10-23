@@ -9,7 +9,7 @@
 
 import { perkDef, slaveryRules, type AttrId } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
-import { abilityChoices, abilityQuality, learnable, learnAbility } from './character'
+import { abilityChoices, abilityQuality, learnable, learnAbility, recalc } from './character'
 import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import { changeHitDice, changeSlots } from './resources'
@@ -313,6 +313,8 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
             ? tattooFromTemplate(e.template, pc, e.place)
             : { kind: e.kind ?? 'plain', place: e.place ?? freePlaces(pc)[0]!, name: e.name || '刺青', desc: e.text ?? '', ...(e.attrs ? { attrs: e.attrs } : {}) }
           const added = addTattoo(pc, { ...t, ...(e.by ? { by: e.by } : {}) }, state.time)
+          recalc(pc)
+          setHp(state, pc, pc.hp, report)
           ;(report.changes.tattoos ??= []).push({ actor: 'pc', place: added.place, kind: added.kind, name: added.name ?? '', added: true })
           notes.push(`主角的${placeName(added.place)}多了${tattooKindName(added.kind)}【${added.name}】${added.attrs ? `（${oathText(added.attrs)}）` : ''}`)
         } catch (err) {
@@ -331,6 +333,8 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         for (const place of places) {
           const t = removeTattoo(pc, place)
           if (!t) continue
+          recalc(pc)
+          setHp(state, pc, pc.hp, report)
           ;(report.changes.tattoos ??= []).push({ actor: 'pc', place, kind: t.kind, name: t.name ?? '', added: false })
           notes.push(`主角${placeName(place)}的${tattooKindName(t.kind)}【${t.name}】被洗掉了`)
         }

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
-import { attrsOf, attrSources } from '@/engine/character'
+import { attrsOf, attrSources, maxHpFor } from '@/engine/character'
 import { marketStock } from '@/engine/companions'
 import { geography, isSettlement, locationById, slaveryRules } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
@@ -211,6 +211,21 @@ describe('tattoo shops', () => {
     expect(() => inkTattoo(state, { kind: 'oath', name: '亂誓', desc: '', place: 'chest', attrs: { str: 3, int: -1 } })).toThrow('總和')
     inkTattoo(state, { kind: 'oath', name: '海誓', desc: '浪紋', place: 'chest', attrs: { cha: 2, str: -2 } })
     expect(tattooAt(pc, 'chest')!.attrs).toEqual({ str: -2, cha: 2 })
+  })
+
+  it('recompute max HP when an oath mark changes strength', () => {
+    const state = game()
+    const pc = pcOf(state)
+    state.money_cc = 100000
+    const hp = pc.maxHp
+    const current = pc.hp
+    standOn(state, 'carver')
+    inkTattoo(state, { kind: 'oath', name: '力誓', desc: '', place: 'back', attrs: { str: 3, cha: -3 } })
+    expect(pc.maxHp).toBe(maxHpFor(pc.level, attrsOf(pc)))
+    expect(pc.maxHp).toBeGreaterThan(hp)
+    expect(pc.hp - current).toBe(pc.maxHp - hp)
+    washTattoo(state, 'back')
+    expect(pc.maxHp).toBe(hp)
   })
 
   it('wash tattoos by what each shop takes; the temple wants reputation', () => {
