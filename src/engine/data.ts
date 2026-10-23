@@ -1164,9 +1164,25 @@ export function saveItems(): ItemDef[] {
   return [...saveItemIndex.values()]
 }
 
-export type ShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer'
-/** 可以指定固定 NPC 擔任店主的店種（流浪商人不是固定的店） */
+export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer'
+/** 自建的商店：id 是 shop_ 開頭（只有小寫英文與數字），地圖格子的種類就是這個 id */
+export type CustomShopId = `shop_${string}`
+export type ShopType = BuiltinShopType | CustomShopId
+export const CUSTOM_SHOP_ID = /^shop_[a-z0-9]+$/
+export function isCustomShopId(id: string): id is CustomShopId {
+  return CUSTOM_SHOP_ID.test(id)
+}
+/** 可以指定固定 NPC 擔任店主的內建店種（流浪商人不是固定的店）；自建的商店也可以 */
 export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant']
+/** 商店的設定（自建的商店被刪掉時丟出錯誤） */
+export function shopDef(type: ShopType): ShopTypeDef {
+  const d = shopRules.types[type]
+  if (!d) throw new Error(`沒有這家店：${type}`)
+  return d
+}
+export function isKeeperShop(id: string): boolean {
+  return (KEEPER_SHOPS as string[]).includes(id) || isCustomShopId(id)
+}
 export interface DealCost { type: 'money' | 'item' | 'hours'; amount?: number; name?: string; qty?: number }
 export interface ShopSpecial {
   id: string; title: string; desc?: string; gives: DealCost[]; gets: RewardEffect[]; stock: number
@@ -1196,6 +1212,10 @@ export interface ShopTypeDef {
   rare_gear?: number
   /** 固定清單：每天一定上架的物品（世界設定加的；price_cc 沒寫照目錄價） */
   fixed?: ShopFixedDeal[]
+  /** 自建的商店（內容編輯器建立；cell 就是自己的 id） */
+  custom?: boolean
+  /** 自建的商店：接哪些材料類型的打造委託（metal、wood、leather、cloth、jewel） */
+  craft?: string[]
 }
 export interface ShopFixedDeal { item: string; stock: number; price_cc?: number }
 export const shopRules = shopsJson as unknown as {

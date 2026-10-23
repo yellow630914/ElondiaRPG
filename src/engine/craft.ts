@@ -3,7 +3,7 @@
 // 也可以用 gear 效果替成品取名、寫描述、挑附魔（程式依成功程度夾住稀有度與附魔點數）。
 // AI 關閉時依規則：成功以上隨機附魔。
 
-import { craftRules as craftSkillRules, itemDef, locationById, type CraftId, type Degree, type ShopType } from './data'
+import { craftRules as craftSkillRules, isCustomShopId, itemDef, locationById, shopRules, type CraftId, type Degree, type ShopType } from './data'
 import {
   crafterRefusal, craftForKind, craftName, craftXpFor, gainCraftXp, keeperCraftLevel, skillOf, toolAccess, toolTierFor, toolTierName, type ToolAccess,
 } from './crafting'
@@ -64,6 +64,9 @@ export const CRAFT_SHOP: Record<MaterialKind, CellKind> = { metal: 'smithy', woo
 /** 這裡可以打造的材料類型 */
 export function craftKindsHere(state: GameState): MaterialKind[] {
   const cell = currentCell(state).kind
+  // 自建的商店：接哪些材料類型看商店的設定
+  const custom = isCustomShopId(cell) ? shopRules.types[cell] : undefined
+  if (custom) return (custom.craft ?? []) as MaterialKind[]
   return (Object.keys(CRAFT_SHOP) as MaterialKind[]).filter((k) => CRAFT_SHOP[k] === cell)
 }
 
@@ -132,7 +135,8 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
   // 委託：店主的工藝等級決定做得了幾級的材料；自己動手：做的人的等級與工具
   const self = crafter ? selfCost(state, base, tier, craft, mult) : undefined
   const fee = self ? self.materialCost + self.rent : Math.round(gearRules.bases[base]!.price * r.fee[tier - 1]! * mult)
-  const level = crafter ? skillOf(crafter, craft).level : keeperCraftLevel(npcRecord(state, keeperId(state, CRAFT_SHOP[m.kind])) ?? { id: keeperId(state, CRAFT_SHOP[m.kind]) }, craft, loc.type)
+  const shop = craftShop(state, m.kind)
+  const level = crafter ? skillOf(crafter, craft).level : keeperCraftLevel(npcRecord(state, keeperId(state, shop)) ?? { id: keeperId(state, shop) }, craft, loc.type)
   // 輔料：只能是材料，數量要扣掉當作打造材料用掉的
   const a = r.aux
   let auxBlocked: string | undefined
@@ -170,6 +174,12 @@ function selfCost(state: GameState, base: string, tier: number, craft: CraftId, 
   const materialCost = tier === 1 ? Math.round(gearRules.bases[base]!.price * craftSkillRules.self.tier1_cost_ratio * mult) : 0
   const rent = tool.rentPerHour && tool.tier >= toolTierFor(tier) ? tool.rentPerHour * craftSkillRules.self.hours : 0
   return { tool, materialCost, rent }
+}
+
+/** 委託打造找哪家店的店主：站在接這種材料的自建商店時是這家店，否則是內建的店 */
+function craftShop(state: GameState, kind: MaterialKind): string {
+  const cell = currentCell(state).kind
+  return isCustomShopId(cell) && craftKindsHere(state).includes(kind) ? cell : CRAFT_SHOP[kind] === 'shop' ? 'general' : CRAFT_SHOP[kind]
 }
 
 function keeperId(state: GameState, shop: string): string {

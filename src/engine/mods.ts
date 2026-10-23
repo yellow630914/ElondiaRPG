@@ -13,7 +13,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, KEEPER_SHOPS,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -23,7 +23,7 @@ import { cleanPerkEffects, describeEffects, type PerkLimits } from './perks'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
-import { applyShopMod, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
+import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
@@ -419,6 +419,8 @@ export function applyContent(mods: ContentMods): string[] {
   })
   tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)))))
   tryEach('商店', mods.shops ?? {}, (id, m) => applyShopMod(id, m))
+  // 商店的位置：移動內建的店、擺自建的店（擺不上去的略過）
+  tryEach('商店的位置', { all: mods.shops ?? {} }, (_id, all) => applyShopPlacements(all))
   // 能力先套用：怪物、固定 NPC、職業都會用到
   tryEach('能力', mods.abilities, (id, m) => {
     abilities[id] = { ...strip(m, ['custom']), id }
@@ -1013,7 +1015,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   }
   const fixed = cleanFixed(raw.fixed)
   if (fixed) out.fixed = fixed
-  if (raw.keeper && (KEEPER_SHOPS as string[]).includes(raw.keeper)) out.keeper = raw.keeper
+  if (raw.keeper && isKeeperShop(raw.keeper)) out.keeper = raw.keeper
   const req = cond(raw.requires)
   if (req) out.requires = req
   // 依劇情旗標改變出沒：沒有條件的設定沒有意義，拿掉
@@ -1287,7 +1289,7 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   const ex = [...new Set(raw.exclusive ?? [])].filter((x) => x !== id && isChoosablePerk(x))
   if (!race && ex.length) out.exclusive = ex
   if (!race && raw.train && Array.isArray(raw.train.cells)) {
-    const cells = raw.train.cells.filter((x) => (TRAIN_CELLS as readonly string[]).includes(x))
+    const cells = [...new Set(raw.train.cells.filter((x) => (TRAIN_CELLS as readonly string[]).includes(x) || isCustomShopId(x)))]
     if (cells.length) {
       out.train = {
         cells,

@@ -5,7 +5,7 @@
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
 import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
-  geography, genderName, itemDef, itemRules, tagDef, shopRules, slaveryRules, type ShopType,
+  geography, genderName, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses, perkDef, perkRules, type PerkDef,
 } from '@/engine/data'
@@ -400,7 +400,7 @@ export function visibleNarration(text: string): string {
 
 /** 商店的交易清單：AI 依商店類型、城鎮與店主生成，程式再驗證價格與效果（見 engine/trade.ts）。 */
 export function buildShopPrompt(state: GameState, type: ShopType): Prompt {
-  const def = shopRules.types[type]
+  const def = shopDef(type)
   const shop = state.shops?.[shopKey(state, type)]
   const keeper = shop ? npcRecord(state, shop.keeper) : undefined
   const loc = locationById(state.location)

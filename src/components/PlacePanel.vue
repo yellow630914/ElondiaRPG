@@ -3,7 +3,7 @@ import FoldSection from './FoldSection.vue'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, geography, locationById, shopRules } from '@/engine/data'
+import { attrName, geography, isCustomShopId, locationById, shopRules, type ShopType } from '@/engine/data'
 import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
@@ -128,7 +128,13 @@ const ICON = computed<Partial<Record<string, string>>>(() => {
 
 // 鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商：各自的交易清單
 const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant'] as const
-const shopHere = computed(() => (SHOPS as readonly string[]).includes(cell.value.kind) ? (cell.value.kind as (typeof SHOPS)[number]) : null)
+// 自建的商店（內容編輯器擺的）：格子的種類就是商店的 id
+const shopHere = computed<ShopType | null>(() => {
+  void content.version
+  const k = cell.value.kind
+  if ((SHOPS as readonly string[]).includes(k)) return k as (typeof SHOPS)[number]
+  return isCustomShopId(k) && shopRules.types[k] ? k : null
+})
 // 商店的說明（shops.json 的 desc，內容頁籤可以改）
 const shopDesc = computed(() => {
   void content.version

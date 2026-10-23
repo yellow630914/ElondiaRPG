@@ -12,8 +12,8 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, wildEncounters,
-  type DungeonLayerId, type EncounterGroup, type Location,
+  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters,
+  type DungeonLayerId, type EncounterGroup, type Location, type ShopType,
 } from './data'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { questTargets } from './materialQuests'
@@ -41,6 +41,8 @@ export type CellKind =
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
   | 'road' | 'waypoint' | 'arrive' | 'event' | 'merchant'
   | 'lot' | 'yard' | 'manor'
+  /** 自建的商店：格子的種類就是商店的 id（shop_ 開頭） */
+  | `shop_${string}`
 
 export interface Cell {
   kind: CellKind
@@ -181,8 +183,21 @@ export const CELL_ICON: Partial<Record<CellKind, string>> = {
 
 /** 格子的名稱（關閉成人向時，娼館顯示為按摩店） */
 export function cellName(kind: CellKind): string {
-  return safeText(CELL_NAME[kind])
+  return safeText(CELL_NAME[kind] ?? shopRules.types[kind as ShopType]?.name ?? '')
 }
+
+// ---- 世界設定擺的商店 ----
+// 內容編輯器可以移動內建商店的位置、擺自建的商店：套用內容時算好每個區塊要改的格子，建立聚落區塊時疊上去
+
+/** 區塊 key → 格子的 index → 改成的種類 */
+let cellOverrides: Record<string, Record<number, CellKind>> = {}
+
+export function setCellOverrides(map: Record<string, Record<number, CellKind>>) {
+  cellOverrides = map
+  blockKinds.clear()
+}
+/** 各聚落區塊有哪些設施（settlementBlocks 用；換位置時清掉） */
+const blockKinds = new Map<string, Set<CellKind>>()
 
 // 民宅：不是主人的家時不能進入（是主人的家時疊成通往屋內的通道）
 const WALKABLE_BLOCKERS: CellKind[] = ['wall', 'water', 'manor']
@@ -222,8 +237,16 @@ export function settlementBlocks(loc: Location): { key: string; zone: Zone; kind
   return blocksFor(loc).map((b) => ({
     key: settlementKey(loc.id, b.id),
     zone: b.zone ?? 'town',
-    kinds: new Set(b.grid.join('').split('').map((ch) => maps.legend[ch]?.kind).filter((k): k is CellKind => !!k)),
+    // 包含世界設定移動或擺上的商店
+    kinds: kindsOfBlock(loc, b),
   }))
+}
+
+function kindsOfBlock(loc: Location, b: BlockDef): Set<CellKind> {
+  const key = settlementKey(loc.id, b.id)
+  let kinds = blockKinds.get(key)
+  if (!kinds) blockKinds.set(key, (kinds = new Set(buildBlock(loc, b).cells.map((c) => c.kind))))
+  return kinds
 }
 
 /** 主角現在所在的地區：站在神殿格上是神殿，其餘依區域 */
@@ -244,8 +267,8 @@ export function layerKey(locationId: string, layer: number) {
   return `${locationId}/L${layer}`
 }
 
-/** 固定地圖的區塊（每次由資料建立，不存檔） */
-function buildBlock(loc: Location, block: BlockDef): Area {
+/** 固定地圖的區塊（每次由資料建立，不存檔）；overlay 為 false 時不疊世界設定擺的商店 */
+function buildBlock(loc: Location, block: BlockDef, overlay = true): Area {
   const width = block.grid[0]!.length
   const height = block.grid.length
   const cells: Cell[] = []
@@ -262,6 +285,8 @@ function buildBlock(loc: Location, block: BlockDef): Area {
       }
     }
   }
+  const over = overlay ? cellOverrides[settlementKey(loc.id, block.id)] : undefined
+  for (const [i, kind] of Object.entries(over ?? {})) if (cells[Number(i)]) cells[Number(i)] = { kind }
   return {
     key: settlementKey(loc.id, block.id),
     location: loc.id,
@@ -344,12 +369,12 @@ export function storeArea(state: GameState, area: Area) {
 }
 
 /** 聚落的固定區塊（不需要存檔；不是聚落區塊時為 undefined） */
-export function settlementArea(key: string): Area | undefined {
+export function settlementArea(key: string, overlay = true): Area | undefined {
   const [locationId, blockId] = key.split('/') as [string, string]
   const loc = geography.locations.find((l) => l.id === locationId)
   if (!loc || loc.type === 'dungeon') return undefined
   const block = blocksFor(loc).find((b) => b.id === blockId)
-  return block ? buildBlock(loc, block) : undefined
+  return block ? buildBlock(loc, block, overlay) : undefined
 }
 
 /** 聚落所有區塊的 key */

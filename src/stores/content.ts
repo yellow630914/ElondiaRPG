@@ -15,7 +15,8 @@ import {
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { perkRules, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { npcModFromState } from '@/engine/promoteNpc'
-import { sanitizeShopMod, type ShopMod } from '@/engine/shopMods'
+import { computePlacements, sanitizeShopMod, shopUsage, type ShopMod } from '@/engine/shopMods'
+import { settlementArea } from '@/engine/grid'
 import type { GameState } from '@/engine/types'
 import { pruneAbilities, prunePerks, pruneStatuses } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
@@ -255,7 +256,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark' | 'shop'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -271,6 +272,7 @@ export const useContent = defineStore('content', () => {
       case 'status': return statusUsage(key, state)
       case 'tattoo': return tattooUsage(key)
       case 'mark': return markUsage(key)
+      case 'shop': return shopUsage(key)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -550,15 +552,28 @@ export const useContent = defineStore('content', () => {
 
   // ---- 商店 ----
 
+  /** 存商店：位置要擺得上去（空地、沒有別的店），擺不上去就不存 */
   function saveShop(id: string, draft: Partial<ShopMod>) {
     const m = sanitizeShopMod(id, draft)
-    mods.value.shops ??= {}
-    if (Object.keys(m).length) mods.value.shops[id] = m
-    else delete mods.value.shops[id]
+    const next = { ...(mods.value.shops ?? {}), [id]: m }
+    if (!m.custom && !Object.keys(m).length) delete next[id]
+    const bad = computePlacements(next).rejected.find((r) => r.shop === id)
+    if (bad) throw new Error(`${settlementArea(bad.at.area)?.name ?? bad.at.area}（${bad.at.x}, ${bad.at.y}）擺不上去：${bad.reason}`)
+    mods.value.shops = next
     save()
   }
+  /** 內建的店恢復預設（位置也回到原處） */
   function restoreShop(id: string) {
+    if (mods.value.shops?.[id]?.custom) return
     delete mods.value.shops?.[id]
+    save()
+  }
+  /** 自建、而且沒有固定 NPC 擔任店主的商店才能刪；在這裡受訓的特質一起拿掉這個地點 */
+  function deleteShop(id: string) {
+    if (!mods.value.shops?.[id]?.custom) throw new Error('內建的商店不能刪除')
+    assertUnused('shop', id)
+    setShopTraining(id, [])
+    delete mods.value.shops[id]
     save()
   }
 
@@ -702,7 +717,7 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
-    saveShop, setShopTraining, restoreShop, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveShop, setShopTraining, restoreShop, deleteShop, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

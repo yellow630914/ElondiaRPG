@@ -22,6 +22,11 @@ import UsageNote from './UsageNote.vue'
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()
 const content = useContent()
+// 可以擔任店主的店：內建的固定商店與自建的商店
+const keeperShops = computed(() => {
+  void content.version
+  return Object.entries(shopRules.types).filter(([t, d]) => (KEEPER_SHOPS as string[]).includes(t) || d.custom).map(([t, d]) => [t, d.name] as const)
+})
 const game = useGame()
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T
@@ -230,7 +235,7 @@ function setKeeper(v: string) {
         <label class="small">擔任店主
           <select :value="draft.keeper ?? ''" @change="setKeeper(($event.target as HTMLSelectElement).value)">
             <option value="">（不擔任）</option>
-            <option v-for="t in KEEPER_SHOPS" :key="t" :value="t">{{ shopRules.types[t].name }}</option>
+            <option v-for="[t, name] in keeperShops" :key="t" :value="t">{{ name }}</option>
           </select>
         </label>
         <span class="small muted">取代所屬地點那間店自動生成的店主（交易、交涉、委託打造都找他，平常待在店裡）。他在隊伍裡、死亡或劇情旗標不符時，換回生成的店主。</span>

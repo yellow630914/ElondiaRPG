@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { itemRules, shopRules, type ItemCategory, type ShopType } from '@/engine/data'
+import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { costText, dealMoney, discount, effectText, isItemDeal, keeperTitle, sellPrice, shopKey } from '@/engine/trade'
@@ -58,7 +58,7 @@ async function bargain(d: Deal) {
 }
 
 // ---- 行囊 ----
-const buysText = computed(() => shopRules.types[props.type].buys.map((c) => itemRules.categories[c]).join('、'))
+const buysText = computed(() => shopDef(props.type).buys.map((c) => itemRules.categories[c]).join('、'))
 const onlySellable = ref(true)
 const bag = computed(() => s.value.inventory
   .filter((i) => i.qty > 0)

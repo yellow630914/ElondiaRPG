@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { shopRules, type ShopType } from '@/engine/data'
+import { shopDef, type ShopType } from '@/engine/data'
 import { canNegotiate } from '@/engine/negotiation'
 import { npcRecord } from '@/engine/npcs'
 import { discount, isItemDeal, keeperTitle, sellPrice, shopKey } from '@/engine/trade'
@@ -45,7 +45,7 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
 <template>
   <div class="shop">
     <div class="row" style="justify-content: space-between">
-      <h4>🪙 {{ shopRules.types[type].name }}的交易</h4>
+      <h4>🪙 {{ shopDef(type).name }}的交易</h4>
       <span class="small muted">
         <template v-if="loading">AI 正在準備今天的商品…</template>
         <template v-else-if="shop?.source === 'ai'">今天有 AI 準備的特別商品</template>
@@ -61,7 +61,7 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
     </p>
     <button class="primary open" @click="showDialog = true">🛒 進入交易</button>
 
-    <AppDialog :open="showDialog" :title="shopRules.types[type].name" icon="🛒" width="1180px" @close="showDialog = false">
+    <AppDialog :open="showDialog" :title="shopDef(type).name" icon="🛒" width="1180px" @close="showDialog = false">
       <ShopDialog :type="type" :loading="loading" />
     </AppDialog>
 

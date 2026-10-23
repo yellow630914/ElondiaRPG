@@ -8,7 +8,7 @@
 
 import { snapshot } from './character'
 import {
-  companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, shopRules, slaveryRules,
+  companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, isCustomShopId, shopDef, shopRules, slaveryRules,
   npcs as namedNpcs, stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopSpecial, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
@@ -34,6 +34,7 @@ export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'>): boolean {
 }
 
 export function shopTypeForCell(cellKind: string): ShopType | null {
+  if (isCustomShopId(cellKind) && shopRules.types[cellKind]) return cellKind
   return CELL_SHOP[cellKind] ?? null
 }
 
@@ -101,7 +102,7 @@ export function keeperFor(state: GameState, type: ShopType): string {
   if (fixed) return fixed
   const id = `keeper_${place.id}_${type}`
   if (!npcRecord(state, id)) {
-    const def = shopRules.types[type]
+    const def = shopDef(type)
     // 店主是普通人：神殿是神官，其他是商人
     const rec = withRng(state, (rng) => generateNpc(state, rng, {
       id, kind: 'commoner', tags: def.keeper.tags?.length ? [...def.keeper.tags] : [type === 'temple' ? 'priest' : 'merchant'], occupation: def.keeper.title, level: rng.int(1, 4),
@@ -130,7 +131,7 @@ export function enterWaystation(state: GameState) {
 }
 
 export function keeperTitle(type: ShopType): string {
-  return shopRules.types[type].keeper.title
+  return shopDef(type).keeper.title
 }
 
 /** 物品的價值（目錄或 AI 自創物品） */
@@ -157,7 +158,7 @@ function itemDeal(state: GameState, name: string, stock: number, markup = 1, pri
 
 /** 規則生成的清單：目錄裡這種店賣的東西（依聚落規模），加上 specials。 */
 function rulesDeals(state: GameState, type: ShopType): Deal[] {
-  const def = shopRules.types[type]
+  const def = shopDef(type)
   const rank = locationRank(shopPlace(state).type)
   // 獨特物品、有屬性加減的裝備、主人強制裝備的東西不在商店賣（只能從事件、寶箱或主人得到）
   const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank)
@@ -275,7 +276,7 @@ export function sellPrice(state: GameState, key: string, name: string): number |
   const type = typeOf(key)
   const cat = itemCategory(state, name)
   const value = itemValue(state, name)
-  if (!cat || value === undefined || !shopRules.types[type].buys.includes(cat)) return null
+  if (!cat || value === undefined || !shopDef(type).buys.includes(cat)) return null
   const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
   return Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell)))
 }
@@ -293,7 +294,7 @@ function tradeReport(state: GameState, key: string, hours: number): Report {
     report_id: newReportId(state),
     kind: 'trade',
     time: { start, end: addHours(start, hours) },
-    location: { at: state.location, region: loc.region, scene: `${place.name}的${shopRules.types[type].name}` },
+    location: { at: state.location, region: loc.region, scene: `${place.name}的${shopDef(type).name}` },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
     outcome: { result: 'success' },
     changes: {},
@@ -440,7 +441,7 @@ const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : N
  */
 export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): number {
   const shop = shopState(state, type)
-  const def = shopRules.types[type]
+  const def = shopDef(type)
   const caps = shopRules.ai_caps
   const pc = pcOf(state)
   const mult = locationMult(state)

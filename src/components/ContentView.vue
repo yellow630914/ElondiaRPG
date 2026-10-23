@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
 import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, locationById, npcs as namedNpcs, perkDef, perkRules, shopRules, slaveryRules, statuses, stories, type ShopType } from '@/engine/data'
+import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { newMark, newTattooTemplate } from '@/engine/tattooMods'
 import { oathText, placeName, tattooRules } from '@/engine/tattoos'
 import { perkPower } from '@/engine/perks'
@@ -147,7 +148,9 @@ const rows = computed<Row[]>(() => {
     const rules = !k || k === 'slave' ? [{ key: 'rules', name: '⚙️ 印記設定', note: '用途、輕重順序、權重', status: st(!!m.markRules?.rules, false), sort: 3 }] : []
     list = [...tats, ...marks, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'shops') {
-    list = Object.entries(shopRules.types).map(([id, d]) => ({ key: id, name: `${d.emoji} ${d.name}`, note: d.keeper.title, status: st(!!m.shops?.[id], false) }))
+    list = Object.entries(shopRules.types)
+      .map(([id, d]) => ({ key: id, name: `${d.emoji} ${d.name}`, note: d.custom ? `${m.shops?.[id]?.places?.length ?? 0} 處・${d.keeper.title}` : d.keeper.title, status: st(!!m.shops?.[id], !!d.custom) }))
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'stories') {
     list = stories
       .map((d) => ({ key: d.id, name: d.title, note: `${START_KINDS[d.start.kind]}・${d.nodes.length} 個任務點`, status: st(!!m.stories[d.id], !builtinStory(d.id)) }))
@@ -172,7 +175,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), shops: `修改 ${Object.keys(m.shops ?? {}).length}`, npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), shops: n(m.shops ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -229,6 +232,10 @@ function create() {
         content.saveTattoo(id, newTattooTemplate(tattooKind.value === 'oath' ? 'oath' : 'plain'))
         select(`t:${id}`)
       }
+    } else if (sub.value === 'shops') {
+      const id = newShopId()
+      content.saveShop(id, newShop())
+      select(id)
     } else if (sub.value === 'stories') {
       const id = newModId('story')
       content.saveStory(id, newStory(id))
@@ -266,6 +273,11 @@ function duplicate() {
       for (let i = 2; itemDef(name) || game.state?.customItems?.[name]; i++) name = `${key.slice(0, 15)}（複製${i}）`
       content.saveItem(name, { ...JSON.parse(JSON.stringify(itemDef(key))), custom: true })
       select(name)
+    } else if (sub.value === 'shops') {
+      // 複製內建的店不會帶走專屬功能與位置
+      const id = newShopId()
+      content.saveShop(id, shopAsCustom(key))
+      select(id)
     } else if (sub.value === 'stories') {
       const id = newModId('story')
       // 開頭旗標換成新任務自己的（和原本的重複算錯誤）
@@ -365,8 +377,8 @@ function resetAll() {
     <div class="layout">
       <section class="panel list-panel">
         <div class="row">
-          <button class="small primary" :disabled="sub === 'shops'" :title="sub === 'shops' ? '自建商店還沒開放' : ''" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current || sub === 'shops'" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+          <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
+          <button class="small" :disabled="!current" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
         </div>
         <div class="row">
           <input v-model="search" placeholder="搜尋名稱" class="grow" />
@@ -445,7 +457,7 @@ function resetAll() {
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
         <StatusEditor v-else-if="sub === 'statuses'" :id="current" :key="`s-${current}`" @deleted="select('')" />
         <PerkEditor v-else-if="sub === 'perks'" :id="current" :key="`p-${current}`" @deleted="select('')" />
-        <ShopEditor v-else-if="sub === 'shops'" :id="current" :key="`shop-${current}`" />
+        <ShopEditor v-else-if="sub === 'shops'" :id="current" :key="`shop-${current}`" @deleted="select('')" />
         <template v-else-if="sub === 'tattoos'">
           <MarkRulesEditor v-if="current === 'rules'" key="rules" />
           <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />

@@ -8,7 +8,7 @@ import { npcPerksOf, perksOf } from './perks'
 import { createNpc, lifeTier } from './character'
 import { safeText } from './content'
 import {
-  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, locationById, npcPool, npcs as namedNpcs, perkDef, slaveryRules, tagDef,
+  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, npcs as namedNpcs, perkDef, slaveryRules, tagDef,
   type Haunt, type NpcKind,
 } from './data'
 import { Rng } from './rng'
@@ -248,9 +248,10 @@ const SHOP_SPOT: Record<string, string> = {
 export function npcSpot(rec: NpcRecord): string | undefined {
   if (rec.spot) return rec.spot
   // 擔任店主的固定 NPC：在自己的店
-  if (rec.keeper) return SHOP_SPOT[rec.keeper] ?? 'shop'
-  const keeper = /^keeper_.+_(\w+)$/.exec(rec.id)
-  if (keeper) return SHOP_SPOT[keeper[1]!] ?? 'shop'
+  if (rec.keeper) return SHOP_SPOT[rec.keeper] ?? (isCustomShopId(rec.keeper) ? rec.keeper : 'shop')
+  // 生成的店主：keeper_<地點>_<店種>（自建的店種是 shop_xxx）
+  const keeper = /^keeper_.+?_(shop_[a-z0-9]+|[a-z]+)$/.exec(rec.id)
+  if (keeper) return SHOP_SPOT[keeper[1]!] ?? (isCustomShopId(keeper[1]!) ? keeper[1] : 'shop')
   if (rec.id.startsWith('clerk_')) return 'guild'
   if (/^(tav|pty|gen|inf)_/.test(rec.id) || namedNpcs.some((n) => n.id === rec.id)) return 'tavern'
   return undefined

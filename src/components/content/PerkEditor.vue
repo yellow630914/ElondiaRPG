@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import {
-  actionRules, ATTR_IDS, attributeRules, attrName, choosablePerks, className, combatClasses, damageTypes, npcTags, perkRules,
+  actionRules, ATTR_IDS, attributeRules, attrName, choosablePerks, className, combatClasses, damageTypes, npcTags, perkRules, shopRules,
   type AffinityMap, type AttrId, type CheckFilter, type Mods, type PerkEffect,
 } from '@/engine/data'
 import { builtinPerk, perkEditorLimits, TRAIN_CELLS, type PerkMod } from '@/engine/mods'
-import { CELL_NAME } from '@/engine/grid'
+import { cellName, type CellKind } from '@/engine/grid'
 import { describeEffects, perkPower } from '@/engine/perks'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -16,6 +16,11 @@ import UsageNote from './UsageNote.vue'
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()
 const content = useContent()
+// 受訓的地點：設施，加上自建的商店
+const trainCells = computed<CellKind[]>(() => {
+  void content.version
+  return [...TRAIN_CELLS, ...Object.values(shopRules.types).filter((d) => d.custom).map((d) => d.cell as CellKind)]
+})
 const game = useGame()
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T
@@ -258,8 +263,8 @@ function remove() {
         <template v-if="draft.train">
           <div class="row checks small">
             <span>在哪裡學：</span>
-            <label v-for="c in TRAIN_CELLS" :key="c" class="check">
-              <input type="checkbox" :checked="draft.train.cells.includes(c)" @change="draft.train.cells = toggleList(draft.train.cells, c, ($event.target as HTMLInputElement).checked) ?? []" /> {{ CELL_NAME[c] }}
+            <label v-for="c in trainCells" :key="c" class="check">
+              <input type="checkbox" :checked="draft.train.cells.includes(c)" @change="draft.train.cells = toggleList(draft.train.cells, c, ($event.target as HTMLInputElement).checked) ?? []" /> {{ cellName(c) }}
             </label>
           </div>
           <div class="grid">
