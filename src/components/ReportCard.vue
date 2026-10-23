@@ -109,7 +109,7 @@ async function copyPrompt() {
     </details>
 
     <div v-if="showStory && narration" class="story story-paper">
-      <div class="narration">{{ visibleNarration(narration.text) }}<span v-if="narration.status === 'streaming'" class="cursor">▌</span></div>
+      <div class="narration" data-no-convert>{{ visibleNarration(narration.text) }}<span v-if="narration.status === 'streaming'" class="cursor">▌</span></div>
       <p v-if="narration.status === 'error'" class="small err">{{ narration.error }}</p>
       <button v-if="narration.status === 'streaming'" class="small stop" @click="game.cancelNarration(report.report_id)">停止</button>
     </div>

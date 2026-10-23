@@ -10,6 +10,7 @@
 
 - 從 [Releases](https://github.com/yellow630914/ElondiaRPG/releases) 下載 zip，解開後用任何靜態網頁伺服器開啟（例如在資料夾裡執行 `npx serve` 或 `python -m http.server`）。**不能直接雙擊 `index.html`**：瀏覽器不允許從檔案載入模組。也可以照下面「自己建置」用 `pnpm dev` 執行。
 - 存檔、世界與設定都存在你自己的瀏覽器裡（換瀏覽器或清除網站資料就不見了，記得用「💾 存讀檔」匯出備份）。
+- 介面可以切換成簡體中文（「⚙️ 設定」右上角的「介面 / 界面」）；AI 寫的正文用哪一種，由「AI 的輸出語言」決定。見 [`docs/I18N.md`](docs/I18N.md)。
 - 要 AI 寫敘事時，在「⚙️ 設定」填入自己的 API key：key 只存在這台瀏覽器，請求直接從瀏覽器送到你選的服務。除此之外遊戲不連任何外部伺服器（字型也隨遊戲打包）。
 
 ### 畫面
@@ -94,6 +95,7 @@ pnpm build             # 型別檢查 + 建置到 dist/（相對路徑，放在�
 | 路徑 | 說明 |
 |---|---|
 | [`docs/README.md`](docs/README.md) | **文件地圖**：所有設計文件的階層、依賴關係與一覽 |
+| [`docs/I18N.md`](docs/I18N.md) | 介面語言（繁體／簡體中文） |
 | [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 總綱：核心原則、遊戲迴圈、報告格式、AI 敘事管線、系統地圖 |
 | [`docs/OPEN_QUESTIONS.md`](docs/OPEN_QUESTIONS.md) | 待決定事項 |
 | [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) | 程式中發現的 Bug 與不合理之處 |

@@ -50,6 +50,14 @@ function doReset() {
 <template>
   <nav class="row tabs pages">
     <button v-for="p in PAGES" :key="p.id" :class="{ active: page === p.id }" @click="openPage(p.id)"><GameIcon :name="p.icon" :size="15" />{{ p.label }}</button>
+    <!-- 介面語言：選項名稱各用自己的寫法，不轉換 -->
+    <label class="ui-lang small" data-no-convert>
+      <GameIcon name="globe" :size="14" /> 介面 / 界面
+      <select v-model="settings.uiLanguage">
+        <option value="zh-Hant">繁體中文</option>
+        <option value="zh-Hans">简体中文</option>
+      </select>
+    </label>
   </nav>
 
   <template v-if="page === 'models'">
@@ -120,7 +128,7 @@ function doReset() {
 關閉：依規則判定（預設屬性與參考 DC）。" />
         </div>
         <label>
-          輸出語言
+          AI 的輸出語言
           <select v-model="settings.language">
             <option value="zh-Hant">繁體中文</option>
             <option value="zh-Hans">简体中文</option>
@@ -191,6 +199,7 @@ function doReset() {
 </template>
 
 <style scoped>
+.ui-lang { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
 .form { display: grid; gap: 12px; max-width: 560px; }
 .tabs { gap: 6px; margin-bottom: 10px; }
 .tabs button { display: inline-flex; align-items: center; gap: 6px; }

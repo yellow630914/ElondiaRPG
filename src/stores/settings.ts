@@ -6,6 +6,7 @@ import { gearRules } from '@/engine/gear'
 import { setLongRestGap } from '@/engine/rest'
 import type { Report } from '@/engine/types'
 import { PROVIDERS, type ProviderConfig, type ProviderId } from '@/narrator/providerInfo'
+import { applyUiLanguage, type UiLanguage } from '@/i18n/uiScript'
 
 const KEY = 'elondia.settings'
 
@@ -80,6 +81,8 @@ interface SavedSettings {
   logKeep: number
   adult: boolean
   language: 'zh-Hant' | 'zh-Hans'
+  /** 介面語言（畫面上的文字；AI 的輸出語言是 language） */
+  uiLanguage: UiLanguage
   loreBudget: number
 }
 
@@ -116,6 +119,7 @@ function defaults(): SavedSettings {
     logKeep: 200,
     adult: false,
     language: 'zh-Hant',
+    uiLanguage: 'zh-Hant',
     loreBudget: 12000,
   }
 }
@@ -168,10 +172,12 @@ export const useSettings = defineStore('settings', () => {
   // 引擎的成人向開關（娼館／按摩店等名稱、成人向事件）
   watch(adult, setAdultContent, { immediate: true })
   const language = ref(initial.language)
+  const uiLanguage = ref(initial.uiLanguage)
+  watch(uiLanguage, applyUiLanguage, { immediate: true })
   const loreBudget = ref(initial.loreBudget)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, creationGearBudget, logKeep, adult, language, loreBudget],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -187,6 +193,7 @@ export const useSettings = defineStore('settings', () => {
         logKeep: logKeep.value,
         adult: adult.value,
         language: language.value,
+        uiLanguage: uiLanguage.value === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant',
         loreBudget: loreBudget.value,
       }
       try {
@@ -256,7 +263,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, loreBudget,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })
