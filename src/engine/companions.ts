@@ -109,6 +109,7 @@ export function hireDc(state: GameState, npcId: string, offer: number): number {
 function assertCanHire(state: GameState, npcId: string, offer: number) {
   assertFree(state, '雇人')
   if (isUnhireable(npcId)) throw new Error('對方不會受雇於人')
+  if (state.captives?.npcs.includes(npcId)) throw new Error('對方被你制伏在地上，先決定怎麼處置')
   const c = candidate(state, npcId)
   if (c.declined) throw new Error('對方今天不想再談了')
   if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)

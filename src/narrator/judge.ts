@@ -3,7 +3,7 @@
 // AI 只回傳 JSON；程式負責驗證、夾住數值與套用（見 src/engine/actions.ts）。
 
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
-import { computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
+import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
   geography, genderName, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
@@ -101,6 +101,7 @@ function targetDetail(state: GameState, p: ActionPending): string {
     rec.appearance ? `外貌：${rec.appearance}` : '',
     rec.background ? `背景：${rec.background}` : '',
     rel ? `與主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '與主角：素不相識',
+    state.captives?.npcs.includes(rec.id) ? `現況：${CAPTIVE_NOTE}` : '',
   ]
   return lines.filter(Boolean).join('\n')
 }

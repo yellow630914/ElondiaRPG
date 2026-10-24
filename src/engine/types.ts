@@ -473,9 +473,8 @@ export interface Captives {
   location: string
   area: string
   day: number
-  /** 已經劫過財、劫過色的人（每個人各一次） */
-  robbed?: string[]
-  violated?: string[]
+  /** 主角偷襲時沒有人看到：處置不加警戒（聲望照扣） */
+  unseen?: boolean
 }
 
 export interface Roster {

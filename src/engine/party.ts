@@ -62,6 +62,8 @@ export interface JoinOptions {
   contract?: MarkChoice
   group?: string
   reason?: string
+  /** 取代預設的關係文字（例如戰後收為奴隸，不是買來的） */
+  toPlayer?: string
 }
 
 /** NPC 入隊。新認識的角色依入隊方式設定初始親密度。 */
@@ -73,7 +75,8 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
   const known = !!state.relationships?.[rec.id]
   const rel = ensureRelationship(state, rec)
   if (!known) setAffinity(state, rec.id, companionRules.initial_affinity[bond])
-  if (rel.toPlayer === '初次見面。') rel.toPlayer = JOIN_TEXT[bond]
+  if (opts.toPlayer) rel.toPlayer = opts.toPlayer
+  else if (rel.toPlayer === '初次見面。') rel.toPlayer = JOIN_TEXT[bond]
   const member = characterFor(state, rec)
   delete member.group
   clearContract(member)
