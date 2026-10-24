@@ -104,6 +104,8 @@ interface SavedSettings {
   background: boolean
   /** 背景圖的亮度（百分比，20～100；越低越暗，面板上的字越清楚） */
   backgroundBrightness: number
+  /** 有背景圖時面板的不透明度（百分比，40～100；100 = 完全不透） */
+  panelOpacity: number
   loreBudget: number
 }
 
@@ -146,6 +148,7 @@ function defaults(): SavedSettings {
     effects: 'auto',
     background: true,
     backgroundBrightness: 60,
+    panelOpacity: 80,
   }
 }
 
@@ -212,9 +215,10 @@ export const useSettings = defineStore('settings', () => {
   }, { immediate: true })
   const background = ref(initial.background)
   const backgroundBrightness = ref(initial.backgroundBrightness)
+  const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -240,6 +244,7 @@ export const useSettings = defineStore('settings', () => {
         effects: effects.value,
         background: background.value !== false,
         backgroundBrightness: Math.max(20, Math.min(100, Math.round(Number(backgroundBrightness.value) || 60))),
+        panelOpacity: Math.max(40, Math.min(100, Math.round(Number(panelOpacity.value) || 80))),
       }
       try {
         localStorage.setItem(KEY, JSON.stringify(data))
@@ -308,7 +313,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })

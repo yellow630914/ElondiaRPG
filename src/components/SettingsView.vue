@@ -154,7 +154,7 @@ function doReset() {
   </template>
 
   <section v-if="page === 'display'" class="panel">
-    <h2 class="head"><GameIcon name="sparkles" :size="20" />畫面特效</h2>
+    <h2 class="head"><GameIcon name="sparkles" :size="20" />畫面特效與背景</h2>
     <div class="form">
       <label>
         <span class="lab">動畫特效（戰鬥、升級、金錢、地圖、背景氛圍） <Hint text="全部：所有特效，包括受擊抖動、畫面震動、像素碎裂、光粒子、背景的灰塵與飄雪。
@@ -172,6 +172,10 @@ function doReset() {
       <label v-if="settings.background">
         <span class="lab">背景圖亮度 {{ settings.backgroundBrightness }}% <Hint text="越暗，面板上的字越清楚。" /></span>
         <input v-model.number="settings.backgroundBrightness" type="range" min="20" max="100" step="5" />
+      </label>
+      <label v-if="settings.background">
+        <span class="lab">面板不透明度 {{ settings.panelOpacity }}% <Hint text="有背景圖時，面板透出多少背景。越低背景越明顯，面板上的字也越吃力；100% 是完全不透。" /></span>
+        <input v-model.number="settings.panelOpacity" type="range" min="40" max="100" step="5" />
       </label>
     </div>
   </section>

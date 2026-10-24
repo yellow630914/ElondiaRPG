@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 整頁背景圖：放在背景氛圍（晝夜色調、粒子）底下。換地點時舊圖淡出、新圖淡入。
-// 有背景圖時 html[data-bg] 讓面板稍微透明，透出一點背景（style.css）。
+// 有背景圖時 html[data-bg] 讓面板變透明（不透明度 --panel-alpha 依設定），透出背景（style.css）。
 import { computed, watchEffect } from 'vue'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
@@ -12,10 +12,14 @@ const settings = useSettings()
 const url = computed(() => (settings.background ? backgroundFor(game.state) : null))
 const brightness = computed(() => Math.max(20, Math.min(100, Number(settings.backgroundBrightness) || 60)) / 100)
 
+const panelAlpha = computed(() => Math.max(40, Math.min(100, Number(settings.panelOpacity) || 80)) / 100)
+
 watchEffect(() => {
   if (typeof document === 'undefined') return
-  if (url.value) document.documentElement.dataset.bg = 'on'
-  else delete document.documentElement.dataset.bg
+  const root = document.documentElement
+  if (url.value) root.dataset.bg = 'on'
+  else delete root.dataset.bg
+  root.style.setProperty('--panel-alpha', String(panelAlpha.value))
 })
 </script>
 

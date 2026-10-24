@@ -172,12 +172,12 @@ input, select, textarea {
   max-width: 100%;
 }
 .parchment input, .parchment select, .parchment textarea { box-shadow: inset 0 1px 2px #6a4a2a33; }
-input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); box-shadow: none; }
+input[type='checkbox'], input[type='radio'], input[type='range'] { accent-color: var(--accent); box-shadow: none; }
 select { text-overflow: ellipsis; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
-/* 有背景圖時面板稍微透明，透出一點背景（components/fx/BackgroundLayer.vue） */
-html[data-bg] { --frame-bg: linear-gradient(180deg, #2a2017cc, #1d1611cc); }
+/* 有背景圖時面板變透明，透出背景；不透明度 --panel-alpha 由設定決定（components/fx/BackgroundLayer.vue） */
+html[data-bg] { --frame-bg: linear-gradient(180deg, rgb(42 32 23 / var(--panel-alpha, 0.8)), rgb(29 22 17 / var(--panel-alpha, 0.8))); }
 
 /* 面板：金色雕花細框；對話框裡（.parchment）變成淺色卡片 */
 .panel {
