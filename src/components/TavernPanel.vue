@@ -31,7 +31,7 @@ function refresh() {
   candidates.value = game.tavernCandidates()
 }
 
-// 酒館的交易清單與店名（AI 開啟時請 AI 準備今天的特別商品，順便取店名）
+// 酒館的交易清單（AI 開啟時請 AI 準備今天的特別商品）
 const settings = useSettings()
 const tradeLoading = ref(false)
 onMounted(async () => {

@@ -171,8 +171,7 @@ const named = computed<NamedShop | null>(() => {
   return cell.value.kind === 'inn' ? 'inn' : shopTypeForCell(cell.value.kind)
 })
 const title = computed(() => {
-  void s.value.shopNames
-  return named.value ? shopTitle(s.value, shopPlace(s.value).id, named.value) : null
+  return named.value ? shopTitle(shopPlace(s.value).id, named.value) : null
 })
 // 有場景橫幅的建築：有店名的店、旅店、公會
 const banner = computed(() => {

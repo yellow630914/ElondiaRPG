@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { geography, shopRules } from '@/engine/data'
 import { enterLocation } from '@/engine/grid'
-import { newGame } from '@/engine/state'
-import { applyAiTitle, generatedTitle, shopKindName, shopTitle, wantsAiTitle } from '@/engine/shopNames'
+import { migrate, newGame } from '@/engine/state'
+import { generatedTitle, shopKindName, shopTitle } from '@/engine/shopNames'
 import { applyAiDeals, buyDeal, shopState } from '@/engine/trade'
 import type { GameState } from '@/engine/types'
 import { buildShopPrompt } from '@/narrator/judge'
@@ -46,54 +46,36 @@ describe('shop names', () => {
   })
 
   it('prefers hand-written names, field by field', () => {
-    const state = game()
-    expect(shopTitle(state, 'soriel', 'tavern').name).toBe('聖鐘酒館')
+    expect(shopTitle('soriel', 'tavern').name).toBe('聖鐘酒館')
     // 只寫了名字與描述：招呼語用規則生成的
-    const smithy = shopTitle(state, 'soriel', 'smithy')
+    const smithy = shopTitle('soriel', 'smithy')
     expect(smithy.name).toBe('聖環鍛造坊')
     expect(smithy.greeting).toBe(generatedTitle('soriel', 'smithy').greeting)
     expect(shopKindName('inn')).toBe('旅店')
   })
 
-  it('keeps the AI name once and never replaces a hand-written one', () => {
-    const state = game()
-    expect(wantsAiTitle(state, 'albena', 'tavern')).toBe(true)
-    expect(applyAiTitle(state, 'albena', 'tavern', { name: '  老橡木酒館  ', desc: '昏黃的燈下擺著幾張長桌。', greeting: '進來坐！' })).toBe(true)
-    expect(shopTitle(state, 'albena', 'tavern')).toEqual({ name: '老橡木酒館', desc: '昏黃的燈下擺著幾張長桌。', greeting: '進來坐！' })
-    expect(wantsAiTitle(state, 'albena', 'tavern')).toBe(false)
-    expect(applyAiTitle(state, 'albena', 'tavern', { name: '別的名字' })).toBe(false)
-    expect(shopTitle(state, 'albena', 'tavern').name).toBe('老橡木酒館')
-    // 手寫的名字不請 AI 取
-    expect(wantsAiTitle(state, 'soriel', 'tavern')).toBe(false)
-    expect(applyAiTitle(state, 'soriel', 'tavern', { name: 'AI 酒館' })).toBe(false)
-    // 沒有名字就不存；過長的截斷
-    expect(applyAiTitle(state, 'albena', 'smithy', { desc: '只有描述' })).toBe(false)
-    applyAiTitle(state, 'albena', 'smithy', { name: '一二三四五六七八九十十一十二十三' })
-    expect(shopTitle(state, 'albena', 'smithy').name.length).toBeLessThanOrEqual(12)
-  })
-
   it('uses the plain shop name for wandering merchants and waystations', () => {
-    const state = game()
-    expect(shopTitle(state, 'albena', 'wanderer').name).toBe(shopRules.types.wanderer.name)
-    expect(shopTitle(state, 'ws_albena_soriel', 'general').name).toBe(shopRules.waystation.name)
-    expect(wantsAiTitle(state, 'ws_albena_soriel', 'general')).toBe(false)
+    expect(shopTitle('albena', 'wanderer').name).toBe(shopRules.types.wanderer.name)
+    expect(shopTitle('ws_albena_soriel', 'general').name).toBe(shopRules.waystation.name)
   })
 
-  it('asks the AI for a name with the deals, stores it, and uses the name in trade reports', () => {
+  it('never lets the AI rename a shop, and drops names old saves stored', () => {
     const state = game()
     state.location = 'albena'
     enterLocation(state)
     shopState(state, 'general')
-    expect(buildShopPrompt(state, 'general').system).toContain('"shop"')
+    const name = shopTitle('albena', 'general').name
+    expect(buildShopPrompt(state, 'general').system).not.toContain('"shop"')
+    expect(buildShopPrompt(state, 'general').user).toContain(name)
     applyAiDeals(state, 'general', {
-      shop: { name: '河岸商行', desc: '堆滿貨箱的老倉庫。', greeting: '要什麼自己挑。' },
+      shop: { name: 'AI 取的名字', desc: '堆滿貨箱的老倉庫。', greeting: '要什麼自己挑。' },
       deals: [{ title: '旅行套組', gives: [{ type: 'money', amount: 30 }], gets: [{ type: 'item', name: '乾糧', qty: 3 }], stock: 1 }],
     })
-    expect(shopTitle(state, 'albena', 'general').name).toBe('河岸商行')
-    expect(buildShopPrompt(state, 'general').system).not.toContain('"shop"')
-    expect(buildShopPrompt(state, 'general').user).toContain('河岸商行')
+    expect(shopTitle('albena', 'general').name).toBe(name)
     state.money_cc = 10_000
     const report = buyDeal(state, 'general', 'item:乾糧')
-    expect(report.location.scene).toBe('阿爾貝納的河岸商行')
+    expect(report.location.scene).toBe(`阿爾貝納的${name}`)
+    const old = { ...state, shopNames: { 'albena/general': { name: '河岸商行' } } } as GameState
+    expect('shopNames' in migrate(old)).toBe(false)
   })
 })

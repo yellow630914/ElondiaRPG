@@ -69,7 +69,7 @@ function pick(id: string) {
   <div class="shop">
     <p v-if="keeper" class="small muted keeper">{{ keeperTitle(type) }}：<NameTag :id="keeper.id" />・{{ keeper.personality }}</p>
     <BuildingMenu :items="items" @pick="pick" />
-    <AppDialog :open="showDialog" :title="shopTitle(s, shopPlace(s).id, type).name" icon="store" width="1180px" inline-error @close="showDialog = false">
+    <AppDialog :open="showDialog" :title="shopTitle(shopPlace(s).id, type).name" icon="store" width="1180px" inline-error @close="showDialog = false">
       <ShopDialog :type="type" :loading="loading" />
     </AppDialog>
   </div>
