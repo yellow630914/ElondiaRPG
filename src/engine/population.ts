@@ -6,7 +6,7 @@
 //   不需要另外存檔，重新整理也不會變。
 // - 店主、公會職員等職員沒有活躍地點，固定待在自己的設施；舊資料（沒有活躍地點）沿用同樣的規則。
 
-import { geography, landmarkDef, landmarkTypes, locationById, npcs as namedNpcs, npcTags, population, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
+import { combatClasses, geography, landmarkDef, landmarkTypes, locationById, npcs as namedNpcs, npcTags, population, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
 import {
   currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
 } from './grid'
@@ -19,8 +19,11 @@ import { contractOf } from './tattoos'
 
 // ---- 生成 ----
 
-/** 抽標籤：普通人抽一個主要標籤；冒險者每個標籤各自擲機率；最後可能再疊加「旅人」等額外標籤 */
-export function pickTags(rng: Rng, kind: NpcKind, loc: Location): string[] {
+/**
+ * 抽標籤：普通人抽一個主要標籤；冒險者每個標籤各自擲機率（乘上職業的倍率 class_mult，例如聖騎士很少是惡人）；
+ * 最後可能再疊加「旅人」等額外標籤
+ */
+export function pickTags(rng: Rng, kind: NpcKind, loc: Location, cls?: string): string[] {
   const usable = Object.entries(npcTags.tags)
     .filter(([, t]) => t.kinds.includes(kind) && (!t.location_types || t.location_types.includes(loc.type)))
     .filter(([, t]) => !t.requires_zone || zonesOf(loc).includes(t.requires_zone as Zone))
@@ -30,7 +33,10 @@ export function pickTags(rng: Rng, kind: NpcKind, loc: Location): string[] {
     tags.push(weightedPick(rng, weights))
   } else {
     // 互斥的標籤（好人與惡人）不會同時擁有
-    for (const [id, t] of usable) if (t.adventurer_chance && rng.next() < t.adventurer_chance && !tags.some((x) => tagsExclusive(x, id))) tags.push(id)
+    for (const [id, t] of usable) {
+      const chance = Math.min(1, (t.adventurer_chance ?? 0) * (cls ? t.class_mult?.[cls] ?? 1 : 1))
+      if (chance && rng.next() < chance && !tags.some((x) => tagsExclusive(x, id))) tags.push(id)
+    }
   }
   for (const [id, t] of usable) {
     if (tags.length && !tags.includes(id) && t.extra_chance && rng.next() < t.extra_chance && !tags.some((x) => tagsExclusive(x, id))) tags.push(id)
@@ -99,7 +105,9 @@ function round(n: number): number {
 
 /** 生成一位名單上的居民 */
 export function generateResident(state: GameState, rng: Rng, loc: Location, kind: NpcKind, prefix?: string): NpcRecord {
-  const tags = pickTags(rng, kind, loc)
+  // 冒險者先決定職業，標籤的機率依職業調整
+  const cls = kind === 'adventurer' ? rng.pick(Object.keys(combatClasses)) : undefined
+  const tags = pickTags(rng, kind, loc, cls)
   const occupations = tags.flatMap((t) => npcTags.tags[t]?.occupations ?? [])
   let level: number
   if (kind === 'adventurer') {
@@ -111,6 +119,7 @@ export function generateResident(state: GameState, rng: Rng, loc: Location, kind
   }
   return generateNpc(state, rng, {
     kind,
+    ...(cls ? { class: cls } : {}),
     tags,
     level,
     location: loc.id,

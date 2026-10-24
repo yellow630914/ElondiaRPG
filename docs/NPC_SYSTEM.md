@@ -54,7 +54,7 @@
 | 娼妓 | 普通人 | 1 | 娼館 | — | 只出現在有娼館的聚落（`requires_zone`），見 [WORK](WORK.md) 第 2 節 |
 | **好人** | 兩者 | 1 | 城鎮 | 少 | 和惡人互斥；比較好相處（聊天 DC −2、送禮與獻媚 −1、雇傭與邀請入隊 −2）；不會因關係差在野外動手（被攻擊過才會）；偷他東西被發現、當著人偷襲他時聲望再 −1 |
 
-每個標籤在資料裡有：`kinds`（適用類型）、`zone_weights`、`commoner_weight`／`adventurer_chance`／`extra_chance`（生成機率）、`haunt_extra`／`haunt_extra_weight`（額外的活躍地點）、`wealth`（財富等級）、`occupations`、`location_types`（例如皇族只在王都）、`requires_zone`、`ai_hint`（給 AI 的身分說明）。表格裡的「活躍地點數」「稀有度」是概略的說明，實際數值看這些欄位。另外可以有：`exclusive`（互斥的標籤）、`dc_mods`（和他互動的參考 DC 修正：chat、gift、flatter、hire、invite）、`never_hostile`（不會因關係差在野外動手）、`crime_reputation`（對他犯罪被發現時額外的聲望變化）。
+每個標籤在資料裡有：`kinds`（適用類型）、`zone_weights`、`commoner_weight`／`adventurer_chance`／`extra_chance`（生成機率）、`haunt_extra`／`haunt_extra_weight`（額外的活躍地點）、`wealth`（財富等級）、`occupations`、`location_types`（例如皇族只在王都）、`requires_zone`、`ai_hint`（給 AI 的身分說明）。表格裡的「活躍地點數」「稀有度」是概略的說明，實際數值看這些欄位。另外可以有：`exclusive`（互斥的標籤）、`dc_mods`（和他互動的參考 DC 修正：chat、gift、flatter、hire、invite）、`never_hostile`（不會因關係差在野外動手）、`crime_reputation`（對他犯罪被發現時額外的聲望變化）。還有 `class_mult`：依冒險者職業調整 `adventurer_chance` 的倍數（先抽職業再抽標籤）。例如聖騎士抽到惡人的機率 ×0.1、牧師 ×0.3，盜賊 ×2；好人與神職則是聖騎士、牧師比較高。沒寫的職業 ×1。
 
 **好人標籤用在哪些系統**：
 

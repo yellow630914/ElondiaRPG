@@ -1148,6 +1148,8 @@ export interface NpcTagDef {
   kinds: NpcKind[]
   commoner_weight?: number
   adventurer_chance?: number
+  /** 冒險者依職業調整 adventurer_chance 的倍率（沒寫的職業是 1），例如聖騎士很少是惡人 */
+  class_mult?: Record<string, number>
   extra_chance?: number
   location_types?: string[]
   /** 只出現在有這個地區的聚落（例如娼妓只在有娼館的城鎮） */
