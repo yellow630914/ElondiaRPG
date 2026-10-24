@@ -45,6 +45,33 @@ export function describeEntry(t: TimelineEntry, names: Record<string, string>): 
   return `${head}${actor}：${t.action}${target}${rollText} ${RESULT_TEXT[t.result]}${effects ? `｜${effects}` : ''}`.trim()
 }
 
+/** 戰鬥畫面的紀錄行：主句、細節（滑過才看到的倍率與減傷），一個動作打到多個目標時每個目標一行 */
+export interface CombatLogLine { text: string; detail?: string; targets?: { text: string; detail?: string }[] }
+
+export function describeCombatLine(t: TimelineEntry, names: Record<string, string>): CombatLogLine {
+  const actor = names[t.actor] ?? t.actor
+  const target = t.target ? ` → ${names[t.target] ?? t.target}` : ''
+  const rollText = t.roll?.value === undefined ? ''
+    : t.roll.save && t.roll.dc !== undefined ? `（豁免 ${t.roll.value} / DC ${t.roll.dc}）`
+    : `（${t.roll.value}${t.roll.dc !== undefined ? ` vs ${t.roll.dc}` : ''}）`
+  const head = `${actor}：${t.action}${target}${rollText} ${RESULT_TEXT[t.result]}`.trim()
+  // 傷害的倍率與減傷說明拿掉，放進滑鼠提示
+  const plain = (e: Effect) => (e.type === 'damage' ? describeEffect({ ...e, text: undefined }, names) : describeEffect(e, names))
+  const detailOf = (e: Effect) => (e.type === 'damage' && e.text ? `${names[e.target ?? ''] ?? e.target ?? ''}：${e.text}` : undefined)
+  const effects = (t.effects ?? []).filter((e) => describeEffect(e, names))
+  const ids = [...new Set(effects.map((e) => e.target ?? ''))]
+  const joinDetail = (list: Effect[]) => list.map(detailOf).filter(Boolean).join('\n') || undefined
+  if (ids.length > 1) {
+    const targets = ids.map((id) => {
+      const mine = effects.filter((e) => (e.target ?? '') === id)
+      return { text: mine.map(plain).join('，'), detail: joinDetail(mine) }
+    })
+    return { text: head, targets }
+  }
+  const body = effects.map(plain).join('，')
+  return { text: body ? `${head}｜${body}` : head, detail: joinDetail(effects) }
+}
+
 export function describeChanges(report: Report): string[] {
   const c = report.changes
   const names = actorNames(report)
