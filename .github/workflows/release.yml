@@ -1,5 +1,9 @@
-# 發布：推送版本 tag（v0.1.0 這類）時跑測試、建置，建立 GitHub Release，
-# 附上建置好的 zip 與 CHANGELOG.md 裡那一版的說明。平常推送不會觸發。
+# 發布：推送版本 tag（v0.2.0 這類）時跑測試、建置，然後
+#   1. 部署到 GitHub Pages（線上版：https://yellow630914.github.io/ElondiaRPG/）；
+#   2. 建立 GitHub Release，附上本機版 zip（遊戲 + release/local/ 的啟動器）與 CHANGELOG.md 裡那一版的說明。
+# 平常推送不會觸發。手動執行（Actions → Release → Run workflow）只重新部署 Pages，不建立 Release。
+# 第一次使用前，repo 的 Settings → Pages → Source 要選「GitHub Actions」，
+# 並在 Settings → Environments → github-pages 的部署規則加上 tag「v*」（預設只允許預設分支）。
 name: Release
 
 on:
@@ -7,11 +11,15 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -24,17 +32,59 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:unit --run
       - run: pnpm build
-      - name: Zip the build
-        run: cd dist && zip -qr "../ElondiaRPG-${GITHUB_REF_NAME}.zip" .
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Package the local version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          name="ElondiaRPG-${GITHUB_REF_NAME}"
+          mkdir -p "pkg/$name"
+          cp -r dist "pkg/$name/game"
+          cp -a release/local/. "pkg/$name/"
+          chmod +x "pkg/$name/start.sh" "pkg/$name/Start-macOS.command"
+          (cd pkg && zip -qr "../$name.zip" "$name")
       - name: Release notes from CHANGELOG.md
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           awk -v v="${GITHUB_REF_NAME}" '
             /^## / { on = (index($0, v) > 0); next }
             on { print }
           ' CHANGELOG.md > notes.md
           test -s notes.md || echo "見 CHANGELOG.md" > notes.md
-      - uses: softprops/action-gh-release@v2
+          printf '\n---\n\n線上玩：https://yellow630914.github.io/ElondiaRPG/\n\n本機玩：下載下面的 `ElondiaRPG-%s.zip`，解壓後 Windows 雙擊 `Start-Windows.bat`、macOS 右鍵打開 `Start-macOS.command`、Linux 執行 `./start.sh`（說明見 zip 裡的 `README.txt`）。\n' "${GITHUB_REF_NAME}" >> notes.md
+      - uses: actions/upload-artifact@v4
         if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: release
+          path: |
+            ElondiaRPG-*.zip
+            notes.md
+
+  pages:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+      - uses: softprops/action-gh-release@v2
         with:
           name: 埃隆迪亞大陸 ${{ github.ref_name }}
           body_path: notes.md

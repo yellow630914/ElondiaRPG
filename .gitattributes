@@ -1,0 +1,5 @@
+# 本機版啟動器：Windows 的批次檔要 CRLF，macOS / Linux 的腳本要 LF
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.sh text eol=lf
+*.command text eol=lf

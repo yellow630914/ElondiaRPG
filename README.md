@@ -4,14 +4,32 @@
 
 ![埃隆迪亞大陸地圖](assets/map/elondia-map.webp)
 
-## 遊玩
+## 如何開始遊玩
 
-目前版本 v0.1.0（更新內容見 [CHANGELOG](CHANGELOG.md)）。
+目前版本 v0.1.0（更新內容見 [CHANGELOG](CHANGELOG.md)）。有兩種玩法，內容完全一樣：
 
-- 從 [Releases](https://github.com/yellow630914/ElondiaRPG/releases) 下載 zip，解開後用任何靜態網頁伺服器開啟（例如在資料夾裡執行 `npx serve` 或 `python -m http.server`）。**不能直接雙擊 `index.html`**：瀏覽器不允許從檔案載入模組。也可以照下面「自己建置」用 `pnpm dev` 執行。
-- 存檔、世界與設定都存在你自己的瀏覽器裡（換瀏覽器或清除網站資料就不見了，記得用右上角的「存讀檔」匯出備份）。
+### 線上玩（不用安裝）
+
+打開 **<https://yellow630914.github.io/ElondiaRPG/>** 就能玩。每次發布新版本會自動更新。
+
+### 下載到電腦玩（本機版）
+
+1. 到 [Releases](https://github.com/yellow630914/ElondiaRPG/releases) 下載最新的 `ElondiaRPG-v版本.zip`，**整個解壓縮**到任何資料夾。
+2. 依系統開啟：
+   - **Windows**：雙擊 `Start-Windows.bat`。會出現一個黑色視窗並自動打開瀏覽器；遊玩時不要關掉它，關掉就停止遊戲。若跳出「Windows 已保護您的電腦」，按「其他資訊」→「仍要執行」。
+   - **macOS**：第一次在 `Start-macOS.command` 上**按右鍵 →「打開」**，再按一次「打開」（系統會擋下網路下載、沒有簽章的腳本；之後雙擊即可）。需要 Python 3，沒有的話視窗會提示安裝方法。
+   - **Linux**：在資料夾裡執行 `./start.sh`（需要 `python3`）。
+3. 遊戲網址固定是 `http://localhost:8473/`。不能直接雙擊 `game/index.html`：瀏覽器不允許從檔案載入程式模組，所以要經由啟動器開的本機小伺服器（只在你的電腦上，不對外開放）。
+
+也可以照下面「自己建置」用 `pnpm dev` 執行，或把 `game/` 資料夾放到任何靜態網頁伺服器（例如在裡面執行 `npx serve`）。
+
+### 開始之後
+
+- 首頁按「開新遊戲」建立角色（種族、職業、屬性、特質、起始裝備……）；不確定的地方保持預設就能直接開始。
+- **AI 敘事是選用的**：不設定也能玩，行動與戰鬥結束時顯示戰報與簡述。想讓 AI 寫出經過，到「⚙️ 設定」選服務並填入自己的 API key（Anthropic、OpenAI、Gemini 或 OpenAI 相容服務）；key 只存在這台瀏覽器，請求直接從瀏覽器送到你選的服務。
+- **存檔存在瀏覽器裡**，並且跟網址綁在一起：線上版、本機版、不同的瀏覽器各自有各自的存檔；清除網站資料也會不見。要搬移或備份，用右上角的「存讀檔」匯出，再到另一邊匯入。本機版更新到新版本時，解壓到哪裡都可以，用同一個瀏覽器開啟，存檔還在。
 - 介面可以切換成簡體中文（「⚙️ 設定」右上角的「語言」）；AI 寫的正文用哪一種，由「AI 的輸出語言」決定。見 [`docs/I18N.md`](docs/I18N.md)。
-- 要 AI 寫敘事時，在「⚙️ 設定」填入自己的 API key：key 只存在這台瀏覽器，請求直接從瀏覽器送到你選的服務。除此之外遊戲不連任何外部伺服器（字型也隨遊戲打包）。
+- 除了你設定的 AI 服務，遊戲不連任何外部伺服器（字型也隨遊戲打包）。
 
 ### 畫面
 
@@ -88,7 +106,8 @@ pnpm test:unit --run   # 測試
 pnpm build             # 型別檢查 + 建置到 dist/（相對路徑，放在任何網頁伺服器的任何路徑底下都能用）
 ```
 
-- 推送版本 tag（`v0.1.0` 這類）時，GitHub Actions 會跑測試、建置，建立 GitHub Release 並附上 zip（`.github/workflows/release.yml`）；平常推送不會觸發。
+- **發布新版本**：把 `CHANGELOG.md` 的「未發布」改成版本號（例如 `## v0.2.0（2026-10-24）`）、改 `package.json` 的 `version`，提交後推送同名 tag（`git tag v0.2.0 && git push origin v0.2.0`）。GitHub Actions（`.github/workflows/release.yml`）會跑測試、建置，部署到 GitHub Pages，並建立 GitHub Release，附上本機版 zip（建置結果放在 `game/`，加上 `release/local/` 的啟動器與說明）和 CHANGELOG 裡那一版的說明；平常推送不會觸發。
+- 第一次發布前要在 repo 設定：Settings → Pages → Source 選「GitHub Actions」；Settings → Environments → `github-pages` 的 Deployment branches and tags 加上 tag 規則 `v*`（預設只允許預設分支部署）。
 - `pnpm-workspace.yaml` 已經設定好不執行 `@google/genai` 與 `protobufjs` 的安裝腳本（兩者都不需要），所以 `pnpm install` 不會出現 `ERR_PNPM_IGNORED_BUILDS`。
 - 也可以用 npm（`npm install`、`npm run dev`）。`.npmrc` 的 `legacy-peer-deps` 是為了避開 npm 10 在解析 vitest 選用依賴時的錯誤。
 
