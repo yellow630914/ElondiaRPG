@@ -39,7 +39,7 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 ├─ AI 與呈現
 │   ├─ PROMPTS            AI 服務、提示詞結構、快取、世界書注入
 │   ├─ PORTRAITS          角色形象插圖
-│   └─ I18N               介面語言（繁體／簡體中文）
+│   └─ I18N               介面語言與提示詞的繁簡轉換
 │
 ├─ 內容與存檔
 │   ├─ CONTENT_EDITOR     自訂內容與世界
@@ -146,7 +146,7 @@ flowchart TD
 | [EVENTS](EVENTS.md) | 事件視窗 | `components/events/` |
 | [PROMPTS](PROMPTS.md) | 提示詞 | `narrator/` |
 | [PORTRAITS](PORTRAITS.md) | 插圖 | `narrator/imageInfo.ts`、`imageProviders.ts`、`comfy.ts` |
-| [I18N](I18N.md) | 介面語言 | `i18n/uiScript.ts`、`stores/settings.ts` |
+| [I18N](I18N.md) | 介面語言、提示詞的繁簡轉換 | `i18n/uiScript.ts`、`narrator/script.ts`、`script.ts` |
 | [CONTENT_EDITOR](CONTENT_EDITOR.md) | 自訂內容 | `mods.ts`、`stores/content.ts` |
 | [CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) | 內容引用與保護 | `usage.ts`、`mods.ts` |
 | [SAVES](SAVES.md) | 存檔 | `stores/saves.ts`、`stores/game.ts`、`state.ts` |
