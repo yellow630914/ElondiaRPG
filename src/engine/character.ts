@@ -428,7 +428,7 @@ export function editProfile(c: Character, patch: ProfilePatch) {
   for (const k of ['gender', 'appearance', 'background'] as const) {
     const v = patch[k]
     if (v === undefined) continue
-    const t = v.trim().slice(0, k === 'background' ? 800 : k === 'appearance' ? 400 : 20)
+    const t = v.trim().slice(0, k === 'background' ? 800 : k === 'appearance' ? 600 : 20)
     if (t) c[k] = t
     else delete c[k]
   }

@@ -6,7 +6,7 @@ import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rar
 import { lockedGear } from '@/engine/inventory'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
-import { bodyOf } from '@/engine/traits'
+import { characterBody } from '@/engine/look'
 import GameIcon from '../ui/GameIcon.vue'
 import ItemIcon from '../items/ItemIcon.vue'
 import BodyFigure from './BodyFigure.vue'
@@ -98,7 +98,7 @@ const totals = computed(() => {
         </button>
       </div>
       <div class="fig">
-        <BodyFigure :body="bodyOf(m.race, m.gender)" />
+        <BodyFigure :body="characterBody(m)" />
       </div>
       <div class="totals"><span v-for="t in totals" :key="t" class="tag">{{ t }}</span></div>
     </div>

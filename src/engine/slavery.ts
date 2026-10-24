@@ -178,6 +178,21 @@ export interface MasterSpec {
   personality?: string
   appearance?: string
   background?: string
+  /** 身分：冒險者（有職業、一起戰鬥）或普通人（沒有職業、同行但不戰鬥）；不寫是冒險者 */
+  kind?: NpcKind
+  /** 身分標籤（slavery.json 的 master_tags：貴族、商人、惡人……） */
+  tags?: string[]
+  /** 普通人的職業描述（例如「酒館老闆」） */
+  occupation?: string
+}
+
+/** 整理自訂主人的身分與標籤：只收主人可以有的標籤（不能是奴隸），最多 3 個 */
+export function masterSpecIdentity(spec: Pick<MasterSpec, 'kind' | 'tags' | 'occupation'>): { kind: NpcKind; tags: string[]; occupation?: string } {
+  const kind: NpcKind = spec.kind === 'commoner' ? 'commoner' : 'adventurer'
+  const allowed = masterTagIds()
+  const tags = [...new Set((spec.tags ?? []).filter((t) => allowed.includes(t)))].slice(0, 3)
+  const occupation = kind === 'commoner' ? spec.occupation?.trim().slice(0, 12) : undefined
+  return { kind, tags, ...(occupation ? { occupation } : {}) }
 }
 
 /** 建立角色時以奴隸身分開始：主人（生成的候選人、自訂或無主）與印記 */
@@ -192,8 +207,11 @@ export function startAsSlave(state: GameState, s: SlaveStart): Report {
     master = registerNpc(state, { ...s.master.rec, location: state.location })
   } else if (s.master.type === 'custom') {
     const spec = s.master.spec
+    const id = masterSpecIdentity(spec)
     master = withRng(state, (rng) => generateNpc(state, rng, {
-      kind: 'adventurer', location: state.location, level: Math.max(1, Math.min(20, Math.round(spec.level ?? 5))),
+      kind: id.kind, location: state.location, level: Math.max(1, Math.min(20, Math.round(spec.level ?? 5))),
+      ...(id.tags.length ? { tags: id.tags } : {}),
+      ...(id.occupation ? { occupation: id.occupation } : {}),
       ...(spec.name?.trim() ? { name: spec.name.trim().slice(0, 12) } : {}),
       ...(spec.gender ? { gender: spec.gender } : {}),
       ...(spec.race ? { race: spec.race } : {}),

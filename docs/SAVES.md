@@ -13,6 +13,8 @@
 | 形象圖 | IndexedDB `elondia-portraits` | 依「種子:角色 id」保存，見 [PORTRAITS.md](PORTRAITS.md) |
 | 世界（自訂內容）、模型來源、插圖設定、提示詞組、自動存檔輪替的位置 | localStorage（`elondia.worlds`、`elondia.settings`、`elondia.image`、`elondia.promptSets`、`elondia.autoIndex`） | 跟著瀏覽器走；存檔記住用哪個世界，見 [CONTENT_EDITOR.md](CONTENT_EDITOR.md) 第 0 節 |
 
+| 儲存的角色 | localStorage（`elondia.characters`，最多 30 個） | 建立角色畫面的「儲存這個角色」：名字、性別、體態、種族、職業、屬性、出生地、外貌與背景、特質、起始裝備、奴隸出身；同名的覆蓋。「儲存的角色」裡讀取或刪除；讀回時現在的世界沒有的特質、底材、地點會略過（`stores/characterPresets.ts`） |
+
 瀏覽器不支援 IndexedDB 時（或打不開時）改存在 localStorage。
 
 ### 首頁與進行中的遊戲

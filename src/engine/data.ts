@@ -1646,6 +1646,8 @@ export interface PerkDef {
   custom?: boolean
   /** 稀有度（common～legendary）：只決定圖示的顏色；沒寫時依強度 */
   rarity?: string
+  /** 分類（建角時依分類折疊，見 perks.ts 的 PERK_CATEGORIES）；沒寫時依效果推斷 */
+  category?: string
 }
 
 export const perkRules = perksJson as unknown as {

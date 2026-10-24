@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { Character, TattooPlace } from '@/engine/types'
 import { oathText, placeName, TATTOO_PLACES, tattooAt, tattooDesc, tattooKindName, tattooName } from '@/engine/tattoos'
-import { bodyOf } from '@/engine/traits'
+import { characterBody } from '@/engine/look'
 import Hint from '../ui/Hint.vue'
 import BodyFigure from './BodyFigure.vue'
 import { BODY_SHAPES } from './bodyShapes'
@@ -12,7 +12,7 @@ const props = defineProps<{ member: Character }>()
 const m = computed(() => props.member)
 
 // 人形依身形換輪廓，部位的位置跟著換
-const body = computed(() => bodyOf(m.value.race, m.value.gender))
+const body = computed(() => characterBody(m.value))
 const spotOf = (p: TattooPlace) => BODY_SHAPES[body.value].spots[p] ?? { x: 50, y: 100, side: 'front' as const }
 
 const first = () => TATTOO_PLACES.find((p) => tattooAt(m.value, p)) ?? TATTOO_PLACES[0]!

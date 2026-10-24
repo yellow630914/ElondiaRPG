@@ -13,6 +13,8 @@ import { Rng } from './rng'
 import type { Character, ContractRef, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, MarkTerms, Report } from './types'
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
+import { genderId, lookAppearance, sanitizeLook } from './look'
+import { BODIES, bodyOf, type Body } from './traits'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
@@ -28,6 +30,9 @@ export interface NewGameOptions {
   gender?: string
   appearance?: string
   background?: string
+  /** 體型與各部位的體態（見 engine/look.ts）；體態寫在外貌的開頭 */
+  body?: Body
+  look?: Record<string, string>
   /** 以奴隸身分開始（主人與印記，見 engine/slavery.ts） */
   slave?: SlaveStart
   /** 建立角色時選的特質（perks.json 的 id）與自訂的特質（docs/PERKS.md） */
@@ -55,7 +60,9 @@ export function newGame(opts: NewGameOptions): GameState {
   if (loc.faction) pc.faction = loc.faction
   const clip = (s: string | undefined, n: number) => s?.trim().slice(0, n) || undefined
   const gender = clip(opts.gender, 20)
-  const appearance = clip(opts.appearance, 400)
+  const body = opts.body && BODIES.includes(opts.body) ? opts.body : undefined
+  const look = body || opts.look ? sanitizeLook(opts.look, body ?? bodyOf(opts.race, genderId(opts.gender)), opts.race, opts.gender) : {}
+  const appearance = clip(lookAppearance(look, clip(opts.appearance, 400)), 600)
   const background = clip(opts.background, 800)
   // 建角時挑的裝備：不合法時（例如預算不夠）丟錯，畫面上會先擋下來
   if (opts.gear) {
@@ -64,6 +71,7 @@ export function newGame(opts: NewGameOptions): GameState {
   }
   if (gender) pc.gender = gender
   if (appearance) pc.appearance = appearance
+  if (body) pc.body = body
   if (background) pc.background = background
   // 特質：清單裡的照選，自訂的整理過才收
   // 缺陷最多兩個、每個換一個一般特質的名額（perks.json 的 creation），多的從後面拿掉

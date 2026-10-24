@@ -244,6 +244,8 @@ export interface Character {
   tattoos?: Tattoo[]
   /** 已花掉的生命骰（總數 = 等級） */
   hitDiceUsed?: number
+  /** 體型（主角建角時選的；沒有時依種族與性別，見 look.ts） */
+  body?: 'masc' | 'fem' | 'andro'
   /** 性別：主角是自由輸入的文字；NPC 是性別 id（見 npc_pool.json） */
   gender?: string
   appearance?: string

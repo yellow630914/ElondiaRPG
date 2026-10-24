@@ -45,10 +45,10 @@ const changed = (key: NumericRule) => props.modelValue[key] !== undefined && pro
 
 <style scoped>
 .rules { display: grid; gap: 2px; }
-.rule { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px 0; }
+.rule { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; align-items: center; padding: 4px 0; }
 .rule + .rule { border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
-.lab { display: inline-flex; align-items: center; gap: 4px; }
-.val { display: grid; grid-template-columns: 80px 5.5em auto; align-items: center; gap: 6px; }
+.lab { display: inline-flex; align-items: center; gap: 4px; flex: 1 1 11em; min-width: 9em; } /* 窄的時候數值換到下一行，名稱不會被擠成一直行 */
+.val { display: grid; grid-template-columns: 80px 5.5em auto; align-items: center; gap: 6px; margin-left: auto; }
 .unit { font-size: var(--fs-sm); white-space: nowrap; }
 .hidden { visibility: hidden; }
 .changed .lab { color: var(--accent-2); }

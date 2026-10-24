@@ -236,20 +236,9 @@ export function rollLook(rng: Rng, spec: LookSpec): Look {
     const t = picks.pick(rng, pools)
     if (t) parts[part] = t
   }
-  const color = parts.hair_color ? (parts.hair_color.endsWith('的') ? parts.hair_color : `${parts.hair_color}的`) : ''
-  const hair = parts.hair_style ? (picks.omitted.has('hair_color') || !color ? parts.hair_style : `一頭${color}${parts.hair_style}`) : ''
-  const join = (list: (string | undefined)[], sep: string) => list.filter(Boolean).join(sep)
-  const sentences = [
-    join([parts.height, parts.build], '、'),
-    join(features, '，'),
-    join([parts.face, parts.eyes], '，'),
-    hair,
-    // 胸部（大小與胸型）一句，腰身、髖臀一句
-    join([parts.chest, parts.chest_shape], '，'),
-    join([parts.waist, parts.hips], '、'),
-    join([parts.legs, parts.feet], '，'),
-  ].filter(Boolean)
-  const appearance = `${sentences.join('；')}。${spec.outfit ? `${spec.outfit}。` : ''}`
+  // 光頭（omit hair_color）不寫髮色
+  if (picks.omitted.has('hair_color')) delete parts.hair_color
+  const appearance = `${describeLook(parts, features)}${spec.outfit ? `${spec.outfit}。` : ''}`
 
   return {
     name: pickName(rng, race, lineage, spec.gender, body, spec.used),
@@ -264,4 +253,60 @@ export function rollLook(rng: Rng, spec: LookSpec): Look {
       tags: [...picks.tags],
     },
   }
+}
+
+export const BODIES: Body[] = ['masc', 'fem', 'andro']
+export const BODY_NAME: Record<Body, string> = { masc: '陽剛', fem: '陰柔', andro: '中性' }
+
+/** 主角建角時選體態的部位（外貌的部位裡和身形有關的，加上髮型、眼睛、面部） */
+export const LOOK_PARTS = ['height', 'build', 'chest', 'chest_shape', 'waist', 'hips', 'legs', 'feet', 'hair_color', 'hair_style', 'eyes', 'face']
+
+/**
+ * 某個部位可以選的詞條（主角建角時；gender 是性別 id）：通用的加上種族的，依體型篩選；種族固定的部位（矮人的身高）只用種族的；
+ * 種族與性別排除的標籤、性別略過的部位（偽娘沒有胸部）不列。選項之間的互斥不管（玩家自己決定）
+ */
+export function lookOptions(part: string, body: Body, race: string, gender?: string): string[] {
+  const r = raceOf(race)
+  const rule = npcTraits.gender_rules?.[gender ?? ''] ?? {}
+  if (rule.omit?.includes(part)) return []
+  const banned = new Set([...(r.exclude ?? []), ...(rule.exclude ?? [])])
+  const pool = r.force?.[part] ?? [...(npcTraits.parts[part] ?? []), ...(r.parts?.[part] ?? [])]
+  const out = pool.map(def).filter((o) => (!o.body || o.body.includes(body)) && !o.tags?.some((t) => banned.has(t))).map((o) => o.t)
+  return [...new Set(out)]
+}
+
+/** 隨機挑一組體態（主角建角的「隨機」；gender 是性別 id）：照 NPC 的抽法，避開互斥的詞條 */
+export function rollLookParts(rng: Rng, race: string, gender: string, body: Body): Record<string, string> {
+  const rule = npcTraits.gender_rules?.[gender] ?? {}
+  const r = raceOf(race)
+  const picks = new Picks(body, [...(r.exclude ?? []), ...(rule.exclude ?? [])], rule.tag_weight)
+  for (const p of rule.omit ?? []) picks.omitted.add(p)
+  const w = npcTraits.race_part_weight
+  const out: Record<string, string> = {}
+  for (const part of npcTraits.part_order) {
+    if (!LOOK_PARTS.includes(part) || picks.omitted.has(part)) continue
+    const forced = r.force?.[part]
+    const t = picks.pick(rng, forced ? [{ options: forced, weight: 1 }] : [{ options: npcTraits.parts[part] ?? [], weight: 1 }, { options: r.parts?.[part] ?? [], weight: w }])
+    if (t) out[part] = t
+  }
+  if (picks.omitted.has('hair_color')) delete out.hair_color
+  return out
+}
+
+/** 把各部位寫成一段外貌（NPC 與主角共用的寫法） */
+export function describeLook(parts: Record<string, string | undefined>, features: string[] = []): string {
+  const color = parts.hair_color ? (parts.hair_color.endsWith('的') ? parts.hair_color : `${parts.hair_color}的`) : ''
+  const hair = parts.hair_style ? (!color ? parts.hair_style : `一頭${color}${parts.hair_style}`) : ''
+  const join = (list: (string | undefined)[], sep: string) => list.filter(Boolean).join(sep)
+  const sentences = [
+    join([parts.height, parts.build], '、'),
+    join(features, '，'),
+    join([parts.face, parts.eyes], '，'),
+    hair,
+    // 胸部（大小與胸型）一句，腰身、髖臀一句
+    join([parts.chest, parts.chest_shape], '，'),
+    join([parts.waist, parts.hips], '、'),
+    join([parts.legs, parts.feet], '，'),
+  ].filter(Boolean)
+  return sentences.length ? `${sentences.join('；')}。` : ''
 }

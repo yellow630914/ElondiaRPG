@@ -458,3 +458,30 @@ export function parsePitchTarget(target?: string): { member: string; offer: stri
 export function pitchTarget(member: string, offer: string): string {
   return `${member}:${offer}`
 }
+
+// ---- 分類（建角時依分類折疊） ----
+
+export const PERK_CATEGORIES: Record<string, string> = {
+  social: '社交與交易', explore: '探索與潛行', combat: '戰鬥', body: '體質', craft: '學識與技藝', bond: '主從與束縛', other: '其他',
+}
+
+const SOCIAL_KINDS = ['chat', 'gift', 'flatter', 'haggle', 'bargain', 'intimidate', 'bluff', 'hire', 'invite', 'rest_talk', 'black_market', 'patron']
+const EXPLORE_CONTEXTS = ['trap', 'lock', 'travel', 'road', 'stealth', 'retreat']
+const BOND_KINDS = ['escape', 'negotiate', 'marking', 'master_permit', 'master_leave', 'master_event', 'unmark']
+const CRAFT_KINDS = ['craft', 'make', 'produce', 'invent', 'work']
+
+/** 特質的分類：寫了就用，否則依第一個效果推斷（戰鬥修正→戰鬥、抗性與增傷→體質、檢定看屬性、情境與行動） */
+export function perkCategory(p: Pick<PerkDef, 'category' | 'effects'>): string {
+  if (p.category && PERK_CATEGORIES[p.category]) return p.category
+  for (const e of p.effects) {
+    if ('combat' in e) return 'combat'
+    if ('resist' in e || 'offense' in e) return 'body'
+    const c = e.check
+    if (c.kinds?.some((k) => BOND_KINDS.includes(k)) || c.contexts?.includes('master_event')) return 'bond'
+    if (c.kinds?.some((k) => SOCIAL_KINDS.includes(k)) || c.contexts?.some((x) => x === 'negotiation' || x === 'gate') || c.vs_tags?.length || c.attrs?.includes('cha')) return 'social'
+    if (c.contexts?.some((x) => EXPLORE_CONTEXTS.includes(x)) || c.kinds?.includes('steal')) return 'explore'
+    if (c.contexts?.includes('initiative') || c.contexts?.includes('save')) return 'combat'
+    if (c.kinds?.some((k) => CRAFT_KINDS.includes(k)) || c.contexts?.includes('quest') || c.attrs?.length) return 'craft'
+  }
+  return 'other'
+}

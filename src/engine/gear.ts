@@ -346,6 +346,38 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
   return out
 }
 
+/** 建角的裝備目錄裡的一項：某個欄位、某個底材做成某一級材料，與它花的預算 */
+export interface CreationOption extends CreationPick {
+  slot: GearSlot
+  /** 職業的基本配備欄位（第 1 級材料免費） */
+  template: boolean
+  /** 花的預算：基本配備欄位是材料等級 - 1，其他欄位是材料等級 */
+  cost: number
+  name: string
+  spec: GearSpec
+}
+
+/** 欄位的大分類（建角的裝備目錄分頁用） */
+export const SLOT_CATEGORY: Record<GearSlot, 'weapon' | 'armor' | 'accessory'> = {
+  main_hand: 'weapon', off_hand: 'weapon',
+  head: 'armor', body: 'armor', legs: 'armor', wrists: 'armor', feet: 'armor', belt: 'armor',
+  accessory: 'accessory', ring_1: 'accessory', ring_2: 'accessory', piercing_1: 'accessory', piercing_2: 'accessory', leg_accessory: 'accessory',
+}
+
+/** 建角時每個欄位可以選的所有裝備（底材 × 第 1～max_tier 級材料），預算都算好了 */
+export function creationCatalog(classId: string, race?: string): { slot: GearSlot; template: boolean; options: CreationOption[] }[] {
+  const maxTier = gearRules.creation.max_tier
+  return creationSlots(classId, race).map((s) => ({
+    slot: s.slot,
+    template: s.template,
+    options: s.bases.flatMap((base) => Array.from({ length: maxTier }, (_, i) => {
+      const tier = i + 1
+      const p = piece(base, tier)
+      return { slot: s.slot, base, tier, template: s.template, cost: s.template ? tier - 1 : tier, name: p.name, spec: p.spec }
+    })),
+  }))
+}
+
 /** 建角畫面預覽用：這個底材做成某一級材料的裝備 */
 export function creationPiece(base: string, tier: number): EquippedGear {
   return piece(base, tier)

@@ -6,7 +6,7 @@ import {
 } from '@/engine/data'
 import { builtinPerk, perkEditorLimits, TRAIN_CELLS, type PerkMod } from '@/engine/mods'
 import { cellName, type CellKind } from '@/engine/grid'
-import { describeEffects, perkPower } from '@/engine/perks'
+import { describeEffects, perkCategory, perkPower, PERK_CATEGORIES } from '@/engine/perks'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
@@ -34,6 +34,11 @@ function current(): PerkMod {
   return clone(content.mods.perks[props.id] ?? perkRules.perks.find((p) => p.id === props.id)!)
 }
 const draft = ref<PerkMod>(current())
+
+function setCategory(c: string) {
+  if (c) draft.value.category = c
+  else delete draft.value.category
+}
 
 function setRarity(r: string) {
   if (r) draft.value.rarity = r
@@ -188,6 +193,12 @@ function remove() {
       </div>
       <label class="block"><span>描述 <Hint :text="`玩家與 AI 看到的；空白時依效果產生：${auto}`" /></span><textarea v-model="draft.desc" rows="2" :maxlength="perkRules.custom.desc_chars" /></label>
       <div class="grid">
+        <label><span>分類 <Hint text="建立角色時依分類折疊。不選時依效果推斷。" /></span>
+          <select :value="draft.category ?? ''" @change="setCategory(($event.target as HTMLSelectElement).value)">
+            <option value="">依效果（{{ PERK_CATEGORIES[perkCategory({ effects: draft.effects })] }}）</option>
+            <option v-for="(n, k) in PERK_CATEGORIES" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
         <label><span>稀有度 <Hint text="只決定圖示的顏色。沒有指定時依強度：2 以下普通、2～3 優良、3～4 稀有、4～6 史詩、6 以上傳說。" /></span>
           <select :value="draft.rarity ?? ''" @change="setRarity(($event.target as HTMLSelectElement).value)">
             <option value="">依強度（{{ rarityName(perkRarity({ effects: draft.effects })) }}）</option>

@@ -19,7 +19,7 @@ import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
-import { cleanPerkEffects, describeEffects, type PerkLimits } from './perks'
+import { cleanPerkEffects, describeEffects, PERK_CATEGORIES, type PerkLimits } from './perks'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
@@ -1434,6 +1434,7 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
     if (weight > 0) out.npc = { weight, ...(tags.length ? { tags } : {}), ...(ncls.length ? { classes: ncls } : {}) }
   }
   if (raw.rarity && RARITY_ORDER.includes(raw.rarity)) out.rarity = raw.rarity
+  if (raw.category && PERK_CATEGORIES[raw.category]) out.category = raw.category
   if (custom) out.custom = true
   return out
 }

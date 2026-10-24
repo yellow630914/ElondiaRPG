@@ -157,7 +157,7 @@ watch(() => props.member, () => (editingProfile.value = false))
         </template>
         <form v-else class="edit" @submit.prevent="saveProfile">
           <label>性別<input v-model="profile.gender" maxlength="20" /></label>
-          <label>外貌<textarea v-model="profile.appearance" rows="3" maxlength="400" /></label>
+          <label>外貌<textarea v-model="profile.appearance" rows="3" maxlength="600" /></label>
           <label>背景<textarea v-model="profile.background" rows="4" maxlength="800" /></label>
           <div class="row"><button class="small primary" type="submit">儲存</button><button class="small" type="button" @click="editingProfile = false">取消</button></div>
         </form>
