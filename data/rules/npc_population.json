@@ -32,9 +32,9 @@
     "dungeon": { "chance": 0.45, "party_chance": 0.5, "party_size": [2, 3], "villain_chance": 0.3, "reunion_chance": 0.25 }
   },
   "hostility": {
-    "$comment": "在野外與地下城，帶「惡人」標籤、已經敵對、或對主角的親密度 ≤ affinity 的冒險者視為敵對；距離 sight 格以內就會發生對峙（主角先擲潛行，見 docs/NPC_SYSTEM.md 第 8.1 節）。toll_per_level = 對方開價（每個等級，白鸛）；xp_per_level、money_per_level = 擊敗冒險者的經驗與戰利品。",
+    "$comment": "在野外與地下城，帶「惡人」標籤、已經敵對、或對主角的親密度 ≤ affinity 的冒險者視為敵對；距離 sight 格以內（1 = 相鄰，和主動行動的對象距離一樣）就會發生對峙（主角先擲潛行，見 docs/NPC_SYSTEM.md 第 8.1 節）。toll_per_level = 對方開價（每個等級，白鸛）；xp_per_level、money_per_level = 擊敗冒險者的經驗與戰利品。",
     "affinity": -20,
-    "sight": 2,
+    "sight": 1,
     "toll_per_level": 30,
     "xp_per_level": 25,
     "money_per_level": [5, 20]

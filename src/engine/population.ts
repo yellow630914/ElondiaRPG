@@ -328,6 +328,8 @@ export function nearbyPeople(state: GameState): PresentNpc[] {
 /** 角色現在是否在主角身邊：隊友永遠在；其他人要在同一個區域、同一格或相鄰的格子 */
 export function presentHere(state: GameState, id: string): boolean {
   if (state.party.some((m) => m.id === id)) return true
+  // 被制伏、倒在地上等你處置的人：一直在你手上
+  if (state.captives?.npcs.includes(id) && state.captives.area === currentArea(state).key) return true
   return nearbyPeople(state).some((p) => p.rec.id === id)
 }
 

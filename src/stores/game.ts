@@ -1074,10 +1074,8 @@ export const useGame = defineStore('game', () => {
     revealSelf: () => run(encounters.revealSelf),
     fightFoes: () => run((s) => encounters.fightFoes(s)),
     payToll: () => run(encounters.payToll),
-    // 戰後處置被制伏的人：處決、放過、收為奴隸（主動行動走 perform）
-    resolveCaptive: (id: string, choice: captives.CaptiveChoice, text?: string) => run((s) => captives.resolveCaptive(s, id, choice, text)),
-    // 處置之前：劫財、劫色（做完人還在手上）
-    captiveDeed: (id: string, deed: captives.CaptiveDeed, text?: string) => run((s) => captives.captiveDeed(s, id, deed, text)),
+    // 戰後處置被制伏的人：處決、放過、收為奴隸，連同順便做的劫財、劫色寫成一篇（主動行動走 perform）
+    resolveCaptive: (id: string, choice: captives.CaptiveChoice, text?: string, deeds?: captives.CaptiveDeed[]) => run((s) => captives.resolveCaptive(s, id, choice, text, deeds)),
     payFine: () => run(security.payFine),
     restAtSafeRoom: () => run((s) => rest.longRest(s, 'safe')),
     // 夥伴

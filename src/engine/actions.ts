@@ -52,6 +52,9 @@ import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, Resou
 import { contractOf } from './tattoos'
 import { canonicalName } from './script'
 
+/** 對被制伏的人行動時給 AI 的提醒：人還在你手上，處置另外決定 */
+export const CAPTIVE_NOTE = '對象在戰鬥中被主角制伏，倒在地上任主角處置，還沒決定放過、收為奴隸或處決（之後由主角另外決定）。這次行動結束時對方仍在主角手上：不要寫對方離開、被放走、逃走、死亡或加入隊伍'
+
 export interface ActionInput {
   kind: ActionKind
   /** 玩家描述的行為 */
@@ -478,6 +481,9 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     if (restReport?.outcome.summary) {
       report.narration = { ...report.narration, length: 'medium', focus: [`長休的經過：${restReport.outcome.summary}`, '入睡前或清晨與對象的互動', ...(report.narration?.focus ?? [])] }
     }
+  }
+  if (p.target && state.captives?.npcs.includes(p.target)) {
+    report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), CAPTIVE_NOTE] }
   }
   if (p.target && state.relationships?.[p.target]) {
     const rel = state.relationships[p.target]!

@@ -152,6 +152,8 @@ export interface CombatState {
   dark?: boolean
   /** 和冒險者的戰鬥是誰先動手（戰後處置被制伏的人時決定後果） */
   aggressor?: 'party' | 'npc'
+  /** 主角偷襲時沒有人看到（戰後處置不加警戒） */
+  unseen?: boolean
 }
 
 export interface CombatOptions {
@@ -170,6 +172,8 @@ export interface CombatOptions {
   dark?: boolean
   /** 和冒險者的戰鬥是誰先動手：party = 主角偷襲，npc = 對方攔路 */
   aggressor?: 'party' | 'npc'
+  /** 主角偷襲時沒有人看到 */
+  unseen?: boolean
 }
 
 const COMBAT_MINUTES_PER_ROUND = 1
@@ -245,6 +249,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       ...(opts.cell ? { cell: opts.cell } : {}),
       ...(opts.dark ? { dark: true } : {}),
       ...(opts.aggressor ? { aggressor: opts.aggressor } : {}),
+      ...(opts.unseen ? { unseen: true } : {}),
     }
     state.combat = combat
     if (!beginTurn(combat, rng)) nextTurn(combat, rng)
@@ -1731,6 +1736,7 @@ function settleNpcFoes(state: GameState, combat: CombatState, foes: Combatant[],
     state.captives = {
       npcs: captured,
       aggressor: combat.aggressor ?? 'npc',
+      ...(combat.unseen ? { unseen: true } : {}),
       location: state.location,
       area: state.position?.area ?? '',
       day: state.time.day,

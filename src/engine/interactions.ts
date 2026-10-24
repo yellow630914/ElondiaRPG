@@ -70,6 +70,7 @@ export function setupInteraction(state: GameState, kind: InteractionKind, target
   if (!rec) throw new Error('要選一個對象')
   if (state.party.some((m) => m.id === rec.id)) throw new Error('隊友不需要這樣互動，可以用自由行動')
   if (!presentHere(state, rec.id)) throw new Error('對方不在這裡')
+  if (state.captives?.npcs.includes(rec.id)) throw new Error(`${rec.name}被你制伏在地上，先決定怎麼處置`)
   if (kind === 'attack') return setupAttack(state, rec)
   if (kind === 'steal') return setupSteal(state, rec)
   if (rec.hostile) throw new Error(`${rec.name}對你充滿敵意，不想理你`)
@@ -214,7 +215,7 @@ function applyAttack(state: GameState, report: Report, rec: NpcRecord, degree: D
     ]))
   }
   const surprise = degree === 'critical' || degree === 'success' ? 'party' : degree === 'fumble' ? 'enemy' : undefined
-  startCombat(state, undefined, { npcs: [rec.id], scene: currentArea(state).name, aggressor: 'party', ...(surprise ? { surprise } : {}) })
+  startCombat(state, undefined, { npcs: [rec.id], scene: currentArea(state).name, aggressor: 'party', ...(witnessed ? {} : { unseen: true }), ...(surprise ? { surprise } : {}) })
   const lead = surprise === 'party' ? `你搶先對${rec.name}出手。` : surprise === 'enemy' ? `${rec.name}察覺了你的殺意，搶先動手。` : `你和${rec.name}打了起來。`
   return [lead, ...notes].join('')
 }

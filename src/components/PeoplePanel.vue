@@ -69,6 +69,11 @@ function hostile(p: PresentNpc): boolean {
   return isHostile(s.value, p.rec)
 }
 
+/** 被制伏、等你處置的人：只能在戰後處置裡處理 */
+function captive(p: PresentNpc): boolean {
+  return !!s.value.captives?.npcs.includes(p.rec.id)
+}
+
 /** 遠處的人在哪裡：方向與格子 */
 function whereIs(p: PresentNpc): string {
   const me = position(s.value)
@@ -166,7 +171,8 @@ async function hire(id: string) {
             <Avatar :id="p.rec.id" :size="28" />
             <NameTag :id="p.rec.id" />
             <span class="small muted">{{ npcTitle(p.rec) }}</span>
-            <span v-if="hostile(p)" class="tag small bad">敵對</span>
+            <span v-if="captive(p)" class="tag small bad">被制伏</span>
+            <span v-else-if="hostile(p)" class="tag small bad">敵對</span>
             <span v-if="p.dist > 1" class="tag">{{ p.dist }} 格</span>
             <span v-for="t in tagsOf(p.rec)" :key="t.name" class="tag small" :title="t.ai_hint">{{ t.emoji }}{{ t.name }}</span>
             <span v-if="rel(p.rec.id)" class="tag known" :title="`親密度 ${rel(p.rec.id)!.affinity}`"><GameIcon name="heart" :size="11" />{{ affinityStage(rel(p.rec.id)!.affinity) }}</span>
@@ -179,7 +185,8 @@ async function hire(id: string) {
             <div v-if="rel(p.rec.id)" class="muted">特質：{{ perksOf({ perks: npcPerksOf(p.rec), race: p.rec.race }).map((x) => (x.flaw ? `${x.name}（缺陷）` : x.name)).join('、') }}</div>
             <div v-if="rel(p.rec.id)?.toPlayer" class="muted">與你：{{ rel(p.rec.id)!.toPlayer }}</div>
 
-            <p v-if="p.dist > 1" class="muted">{{ whereIs(p) }}。走到旁邊（相鄰的格子）才能互動。</p>
+            <p v-if="captive(p)" class="muted">{{ p.rec.name }}被你制伏在地上，先在「戰後處置」決定怎麼處置（可以審問、劫財、放過、收為奴隸或處決）。</p>
+            <p v-else-if="p.dist > 1" class="muted">{{ whereIs(p) }}。走到旁邊（相鄰的格子）才能互動。</p>
             <template v-else-if="!hostile(p)">
               <input v-model="text[p.rec.id]" placeholder="想說什麼、怎麼做（選填，會交給 AI 判定）" />
               <AbilityPicker v-model="use" />
