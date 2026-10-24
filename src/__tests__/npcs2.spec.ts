@@ -4,7 +4,8 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat } from '@/engine/combat'
 import { avoidFoes, checkHostiles, fightFoes, payToll } from '@/engine/encounters'
-import { resolveCaptive } from '@/engine/captives'
+import { captiveDeed, resolveCaptive } from '@/engine/captives'
+import { setAdultContent } from '@/engine/content'
 import { currentArea, enterLocation, goOutskirts, move, returnToTown, standOn } from '@/engine/grid'
 import { generateNpc, npcRecord } from '@/engine/npcs'
 import { ensureRoster, isHostile, peopleHere, pruneNpcs, refreshRosters, spawnVisitors } from '@/engine/population'
@@ -188,9 +189,39 @@ describe('hostile adventurers', () => {
     state.combat!.status = 'victory'
     finishCombat(state)
     expect(state.captives?.aggressor).toBe('party')
-    resolveCaptive(state, rival.id, 'enslave')
+    const r = resolveCaptive(state, rival.id, 'enslave', '用繩子捆起來，烙上我的家紋')
+    expect(r.narration?.player_intent).toBe('用繩子捆起來，烙上我的家紋')
+    expect(validate(r)).toBe(true)
     expect(alertLevel(state, 'soriel')).toBe(2)
     expect(state.reputation.holy_ring).toBe(-3)
+  })
+
+  it('robs (and, with adult content on, violates) a captive before deciding their fate', () => {
+    const state = outside()
+    const a = beside(state, { tags: ['villain'], level: 2 })
+    checkHostiles(state)
+    fightFoes(state)
+    for (const c of state.combat!.combatants) if (c.side === 'enemy') c.hp = 0
+    state.combat!.status = 'victory'
+    finishCombat(state)
+    const money = state.money_cc
+    const r = captiveDeed(state, a.id, 'rob', '翻遍他的行囊')
+    expect(validate(r)).toBe(true)
+    expect(state.money_cc).toBeGreaterThan(money)
+    expect(state.relationships![a.id]!.affinity).toBeLessThan(0)
+    expect(() => captiveDeed(state, a.id, 'rob')).toThrow('搜刮過')
+    // 劫色只在開啟成人向時
+    setAdultContent(false)
+    expect(() => captiveDeed(state, a.id, 'violate')).toThrow('成人向')
+    setAdultContent(true)
+    const v = captiveDeed(state, a.id, 'violate')
+    expect(v.narration?.adult_scene).toBeTruthy()
+    expect(state.reputation.holy_ring).toBe(-2)
+    setAdultContent(false)
+    // 做完人還在手上，要處置
+    expect(state.captives?.npcs).toEqual([a.id])
+    resolveCaptive(state, a.id, 'release')
+    expect(state.captives).toBeUndefined()
   })
 })
 

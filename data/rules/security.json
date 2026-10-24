@@ -28,9 +28,13 @@
     "reputation_haunts": -1
   },
   "captives": {
-    "$comment": "打贏冒險者後處置被制伏的人（engine/captives.ts）。依誰先動手：party = 主角偷襲，npc = 對方攔路（正當防衛）。alert 只在有衛兵的聚落裡加（這裡的警戒）；reputation 加在這個地點所屬的勢力，對好人等的額外聲望（標籤的 crime_reputation）只在主角先動手時算。放過對方先動手的人：對方欠你一份情，親密度 release_affinity。",
+    "$comment": "打贏冒險者後處置被制伏的人（engine/captives.ts）。依誰先動手：party = 主角偷襲，npc = 對方攔路（正當防衛）。alert 只在有衛兵的聚落裡加（這裡的警戒）；reputation 加在這個地點所屬的勢力，對好人等的額外聲望（標籤的 crime_reputation）只在主角先動手時算。放過對方先動手的人：對方欠你一份情，親密度 release_affinity。劫財（rob）與劫色（violate，只在開啟成人向時）不算處置，做完還是要處置：劫財拿走 rob_money_per_level × 等級 × (0.5～1.5) 白鸛；兩者都會降低對方的親密度（affinity），每個人各一次。",
     "enslave": { "party": { "alert": 2, "reputation": -3 }, "npc": { "alert": 1, "reputation": -1 } },
     "execute": { "party": { "alert": 3, "reputation": -4 }, "npc": { "alert": 0, "reputation": 0 } },
+    "rob": { "party": { "alert": 1, "reputation": -1 }, "npc": { "alert": 0, "reputation": 0 } },
+    "violate": { "party": { "alert": 2, "reputation": -3 }, "npc": { "alert": 1, "reputation": -2 } },
+    "rob_money_per_level": 30,
+    "affinity": { "rob": -10, "violate": -30 },
     "release_affinity": 5
   }
 }

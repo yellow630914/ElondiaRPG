@@ -473,6 +473,9 @@ export interface Captives {
   location: string
   area: string
   day: number
+  /** 已經劫過財、劫過色的人（每個人各一次） */
+  robbed?: string[]
+  violated?: string[]
 }
 
 export interface Roster {
