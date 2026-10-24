@@ -84,23 +84,37 @@ function produce() {
     <p v-else class="muted">沒有做得出來的東西。</p>
 
     <template v-if="plan && skill">
-      <p>
-        <b>{{ plan.name }}</b>　<span class="muted">{{ itemEffect(s, plan.name) }}</span>
-        <template v-if="s.inventions?.[plan.name]">　<span class="tag"><GameIcon name="lightbulb" :size="12" />自創</span> <button class="small" @click="rename"><GameIcon name="edit" :size="13" /> 改名</button> <button class="small" @click="forget">忘記這個配方</button></template>
-      </p>
-      <p v-if="itemText(s, plan.name)" class="muted">{{ itemText(s, plan.name) }}</p>
-      <p class="muted">
-        {{ skill.name }} Lv.{{ plan.recipe.level }}（{{ crafter.name }} Lv.{{ plan.level }}）・{{ attrName(skill.attr) }}檢定 +{{ plan.level * craftRules.level_bonus }}・DC {{ plan.dc }}・約 {{ plan.hours }} 小時
-      </p>
-      <p class="muted">工具：要{{ toolTierName(toolTierFor(plan.recipe.level)) }}，現在 {{ plan.tool.source }}</p>
-      <p>
-        材料：<span v-for="x in plan.inputs" :key="x.name" :class="{ short: x.have < x.need }" class="input">{{ x.name }} {{ x.have }}/{{ x.need }}</span>
-        <template v-if="plan.fee">・花費 {{ formatMoney(plan.fee) }}<span class="muted">{{ plan.rent ? `（含工坊租金 ${formatMoney(plan.rent)}）` : '' }}</span></template>
-      </p>
-      <label class="row">批數 <input v-model.number="batches" type="number" min="1" :max="craftRules.recipe.max_batches" class="qty" />
-        <span class="muted">（材料、花費與時間乘批數，只擲一次）</span>
-      </label>
-      <p class="muted">大成功：{{ producedQty(plan.qty, 'critical') }} 份・成功：{{ plan.qty }} 份・部分成功：{{ producedQty(plan.qty, 'partial') }} 份・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
+      <div class="head">
+        <b class="name">{{ plan.name }}</b>
+        <template v-if="s.inventions?.[plan.name]"><span class="tag"><GameIcon name="lightbulb" :size="12" />自創</span> <button class="small" @click="rename"><GameIcon name="edit" :size="13" /> 改名</button> <button class="small" @click="forget">忘記這個配方</button></template>
+      </div>
+      <p v-if="itemText(s, plan.name)" class="desc">{{ itemText(s, plan.name) }}</p>
+      <table class="kv">
+        <tr v-if="itemEffect(s, plan.name)"><th>效果</th><td>{{ itemEffect(s, plan.name) }}</td></tr>
+        <tr><th>配方</th><td>{{ skill.name }} Lv.{{ plan.recipe.level }}<span class="muted">（{{ crafter.name }}的{{ skill.name }} Lv.{{ plan.level }}）</span></td></tr>
+        <tr><th>檢定</th><td>{{ attrName(skill.attr) }} +{{ plan.level * craftRules.level_bonus }}・DC {{ plan.dc }}</td></tr>
+        <tr><th>時間</th><td>約 {{ plan.hours }} 小時</td></tr>
+        <tr><th>工具</th><td>要{{ toolTierName(toolTierFor(plan.recipe.level)) }}<span class="muted">・現在 {{ plan.tool.source }}</span></td></tr>
+        <tr>
+          <th>材料</th>
+          <td><span v-for="x in plan.inputs" :key="x.name" :class="{ short: x.have < x.need }" class="input">{{ x.name }} {{ x.have }}/{{ x.need }}</span><span v-if="!plan.inputs.length" class="muted">不需要</span></td>
+        </tr>
+        <tr v-if="plan.fee"><th>花費</th><td>{{ formatMoney(plan.fee) }}<span v-if="plan.rent" class="muted">（含工坊租金 {{ formatMoney(plan.rent) }}）</span></td></tr>
+        <tr>
+          <th>批數</th>
+          <td><input v-model.number="batches" type="number" min="1" :max="craftRules.recipe.max_batches" class="qty" /> <span class="muted">材料、花費與時間乘批數，只擲一次</span></td>
+        </tr>
+      </table>
+      <table class="outcomes">
+        <tr><th>大成功</th><th>成功</th><th>部分成功</th><th>失敗</th><th>大失敗</th></tr>
+        <tr>
+          <td>{{ producedQty(plan.qty, 'critical') }} 份</td>
+          <td>{{ plan.qty }} 份</td>
+          <td>{{ producedQty(plan.qty, 'partial') }} 份</td>
+          <td>材料損失一半</td>
+          <td>材料全部損失<span class="muted">（花費照付）</span></td>
+        </tr>
+      </table>
       <p v-if="plan.blocked" class="warn"><GameIcon name="warning" :size="13" /> {{ plan.blocked }}</p>
       <template v-else>
         <input v-model="text" placeholder="想怎麼做（選填）：例如加一點蜂蜜讓藥比較好入口" />
@@ -117,7 +131,17 @@ function produce() {
 .recipes input:not([type]) { width: 100%; }
 .who { display: grid; gap: 2px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
-.input { margin-right: 6px; }
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.name { font-size: 1.05rem; }
+.desc { color: var(--muted); font-family: var(--font-story); }
+table { width: 100%; border-collapse: collapse; }
+.kv th { text-align: left; font-weight: 600; white-space: nowrap; width: 1%; padding: 5px 14px 5px 0; color: var(--muted); vertical-align: top; }
+.kv td { padding: 5px 0; vertical-align: top; }
+.kv tr + tr > * { border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+.input { display: inline-block; margin-right: 10px; }
+.outcomes { margin: 4px 0 2px; text-align: center; font-size: var(--fs-xs); }
+.outcomes th { font-weight: 600; color: var(--muted); padding: 4px; border-bottom: 1px solid var(--border); }
+.outcomes td { padding: 4px; }
 .short { color: var(--danger); }
 .warn { color: var(--danger); }
 .row > .hint { align-self: center; }

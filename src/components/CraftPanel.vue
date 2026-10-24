@@ -7,6 +7,7 @@ import { baseSlotName, gearName, gearRules, gearSummary, rarityName, rarityPoint
 import { formatMoney } from '@/engine/money'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import FoldMenu from './ui/FoldMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
@@ -14,6 +15,10 @@ import Hint from './ui/Hint.vue'
 // commission：在鐵匠鋪、裁縫店、珠寶店委託店主；make：主角或肯幫忙的夥伴自己動手（crafts.json）
 const props = withDefaults(defineProps<{ mode?: 'commission' | 'make' }>(), { mode: 'commission' })
 const make = computed(() => props.mode === 'make')
+// 店裡的委託打造是可以展開的一列；工藝對話框裡直接顯示
+const wrapper = computed(() => (make.value ? {} : {
+  id: 'place.commission', icon: 'tools' as const, label: '委託打造', detail: `${attrName(gearRules.craft.attr)}檢定，約 ${gearRules.craft.hours} 小時`,
+}))
 const emit = defineEmits<{ started: [] }>()
 const game = useGame()
 const s = computed(() => game.state!)
@@ -63,14 +68,13 @@ function craft() {
 </script>
 
 <template>
-  <component :is="make ? 'div' : 'details'" v-if="here" class="craft small">
-    <summary v-if="!make"><GameIcon name="tools" :size="13" /> 委託打造</summary>
+  <component :is="make ? 'div' : FoldMenu" v-if="here" class="craft small" v-bind="wrapper">
     <p v-if="!make" class="muted intro">
-      {{ attrName(gearRules.craft.attr) }}檢定，約 {{ gearRules.craft.hours }} 小時
+      材料與工匠的等級
       <Hint text="第一級材料由工匠提供；更好的材料要自備（龍鱗、秘銀礦石之類可以打造的材料）。店主的工藝等級要達到材料等級，比需要的高時做得更好。" />
     </p>
     <p v-else class="muted intro">
-      約 {{ craftRules.self.hours }} 小時
+      自己打造
       <Hint text="第一級材料自己買（材料費），更好的材料要自備。做的人擲屬性檢定，加上工藝等級。成功時做的人得到工藝經驗。" />
     </p>
     <label v-if="make" class="who">誰來做
@@ -86,16 +90,30 @@ function craft() {
         <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.name }}（{{ rarityName(m.rarity) }}，建議 {{ m.level }} 級）</option>
       </select>
     </div>
-    <p>成品：<b>{{ gearName({ base, material: mat }) }}</b>　{{ gearSummary({ base, material: mat }) }}</p>
-    <p class="muted">
-      {{ skill.name }}：{{ make ? `${crafter.name} Lv.${skillOf(crafter, plan.craft).level}` : `工匠 Lv.${plan.level}` }}（這個材料要 Lv.{{ plan.tier }}）
-      <template v-if="make">・{{ attrName(skill.attr) }}檢定 +{{ plan.level * craftRules.level_bonus }}・工具：要{{ toolTierName(toolTierFor(plan.tier)) }}，現在 {{ plan.tool?.source }}</template>
-    </p>
-    <p class="muted">
-      {{ make ? `花費 ${formatMoney(plan.fee)}${plan.materialCost ? `（材料費 ${formatMoney(plan.materialCost)}）` : ''}${plan.rent ? `（工坊租金 ${formatMoney(plan.rent)}）` : ''}` : `工錢 ${formatMoney(plan.fee)}` }}・DC {{ plan.dc }}
-      <template v-if="plan.units">・打造材料 {{ plan.have }} / {{ plan.units }} 份<template v-if="plan.uses.length">（用掉 {{ plan.uses.map((u) => `${u.name}×${u.qty}`).join('、') }}）</template></template>
-    </p>
-    <p class="muted">大成功：{{ rarityName(craftRarity(mat, 'critical')!) }}（附魔 {{ rarityPoints(craftRarity(mat, 'critical')!) }} 點）・成功：{{ rarityName(craftRarity(mat, 'success')!) }}（{{ rarityPoints(craftRarity(mat, 'success')!) }} 點）・部分成功：沒有附魔・失敗：材料損失一半</p>
+    <table class="kv">
+      <tr><th>成品</th><td><b>{{ gearName({ base, material: mat }) }}</b><div class="muted">{{ gearSummary({ base, material: mat }) }}</div></td></tr>
+      <tr><th>{{ skill.name }}</th><td>{{ make ? `${crafter.name} Lv.${skillOf(crafter, plan.craft).level}` : `工匠 Lv.${plan.level}` }}<span class="muted">（這個材料要 Lv.{{ plan.tier }}）</span></td></tr>
+      <tr><th>檢定</th><td>{{ attrName(make ? skill.attr : gearRules.craft.attr) }}<template v-if="make"> +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</td></tr>
+      <tr><th>時間</th><td>約 {{ make ? craftRules.self.hours : gearRules.craft.hours }} 小時</td></tr>
+      <tr v-if="make"><th>工具</th><td>要{{ toolTierName(toolTierFor(plan.tier)) }}<span class="muted">・現在 {{ plan.tool?.source }}</span></td></tr>
+      <tr>
+        <th>{{ make ? '花費' : '工錢' }}</th>
+        <td>{{ formatMoney(plan.fee) }}<span v-if="make && (plan.materialCost || plan.rent)" class="muted">（{{ [plan.materialCost ? `材料費 ${formatMoney(plan.materialCost)}` : '', plan.rent ? `工坊租金 ${formatMoney(plan.rent)}` : ''].filter(Boolean).join('、') }}）</span></td>
+      </tr>
+      <tr v-if="plan.units">
+        <th>打造材料</th>
+        <td :class="{ short: plan.have < plan.units }">{{ plan.have }} / {{ plan.units }} 份<span v-if="plan.uses.length" class="muted">（用掉 {{ plan.uses.map((u) => `${u.name}×${u.qty}`).join('、') }}）</span></td>
+      </tr>
+    </table>
+    <table class="outcomes">
+      <tr><th>大成功</th><th>成功</th><th>部分成功</th><th>失敗</th></tr>
+      <tr>
+        <td>{{ rarityName(craftRarity(mat, 'critical')!) }}<div class="muted">附魔 {{ rarityPoints(craftRarity(mat, 'critical')!) }} 點</div></td>
+        <td>{{ rarityName(craftRarity(mat, 'success')!) }}<div class="muted">附魔 {{ rarityPoints(craftRarity(mat, 'success')!) }} 點</div></td>
+        <td>沒有附魔</td>
+        <td>材料損失一半</td>
+      </tr>
+    </table>
     <div class="aux">
       <span>輔料（選填，最多 {{ auxRules.max_kinds }} 種，不論結果都會用掉）：</span>
       <span v-for="(a, i) in aux" :key="a.name" class="tag">
@@ -124,7 +142,7 @@ function craft() {
 </template>
 
 <style scoped>
-.craft { margin-top: 8px; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
+.craft { display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .craft input:not([type]) { width: 100%; }
 .who { display: grid; gap: 2px; }
 .craft p { margin: 0; }
@@ -133,5 +151,12 @@ function craft() {
 .aux .x { padding: 0 4px; }
 .intro { display: flex; align-items: center; gap: 4px; }
 .warn { color: var(--danger); }
-summary { cursor: pointer; color: var(--accent-2); }
+table { width: 100%; border-collapse: collapse; }
+.kv th { text-align: left; font-weight: 600; white-space: nowrap; width: 1%; padding: 5px 14px 5px 0; color: var(--muted); vertical-align: top; }
+.kv td { padding: 5px 0; vertical-align: top; }
+.kv tr + tr > * { border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+.short { color: var(--danger); }
+.outcomes { margin: 4px 0 2px; text-align: center; font-size: var(--fs-xs); }
+.outcomes th { font-weight: 600; color: var(--muted); padding: 4px; border-bottom: 1px solid var(--border); }
+.outcomes td { padding: 4px; vertical-align: top; }
 </style>
