@@ -1,7 +1,7 @@
 {
  "npcs": {
-  "mod_npc_lisar": {
-   "id": "mod_npc_lisar",
+  "npc_lisar": {
+   "id": "npc_lisar",
    "name": "「赤翼之君」莉莎爾",
    "gender": "female",
    "race": "demon",
@@ -10,7 +10,6 @@
    "personality": "冷靜、驕傲、極有耐心；推行「秩序中的力量」，以律法整合荒原。對人類既好奇又警惕。",
    "appearance": "高挑的魅魔，肌膚緋紅透亮，赤紅雙翼如烈焰般舒展，頭戴黑曜冠環。",
    "background": "魔王，魔族領主議會的統治者，赤翼宮廷之主。她在混戰中崛起，終結了荒原千年的內鬥，建立起魔族史上罕見的律法體系。據說她的王座是用一位墮落龍王的脊骨做成的。",
-   "custom": true,
    "kind": "adventurer",
    "class": "wizard",
    "unhireable": true,
@@ -49,7 +48,7 @@
     "noble"
    ],
    "relations": {
-    "mod_npc_lisar": "她願意為之而死的人"
+    "npc_lisar": "她願意為之而死的人"
    },
    "haunts": [
     {
@@ -107,7 +106,7 @@
    ],
    "relations": {
     "mod_npc_ignis_forge": "女兒，他唯一會讓步的人",
-    "mod_npc_lisar": "他的君主，也是他的枷鎖",
+    "npc_lisar": "他的君主，也是他的枷鎖",
     "mod_npc_grom_shatterhorn": "危險的酒友"
    },
    "haunts": [
@@ -204,7 +203,7 @@
     "noble"
    ],
    "relations": {
-    "mod_npc_lisar": "她選擇支持的王",
+    "npc_lisar": "她選擇支持的王",
     "mod_npc_morphe": "她的夢境顧問"
    },
    "landmark": "lm_evernight_tower"
@@ -252,7 +251,7 @@
     "noble"
    ],
    "relations": {
-    "mod_npc_lisar": "他不承認的王",
+    "npc_lisar": "他不承認的王",
     "mod_npc_valkas_moltencast": "能一起喝酒的人",
     "mod_npc_ulma_bloodtrial": "他最得力的戰士"
    },

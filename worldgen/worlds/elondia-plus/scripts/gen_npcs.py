@@ -6,7 +6,10 @@ ASK={1:115,2:190,3:285,4:400,5:535,6:690,7:865,8:1060,9:1275,10:1510,11:1765,12:
 def L(i): return {'landmark': i}
 def H(*hs): return {'haunts':[{'location':l,'zone':z,'weight':w} for l,z,w in hs]}
 def npc(id, name, gender, race, cls, level, loc, tier, place, personality, appearance, background, faction=None, lineage=None, tags=None, relations=None, occupation=None, hire=None):
-    e={'id':'mod_npc_'+id,'name':name,'gender':gender,'race':race,'level':level,'location':loc,'personality':personality,'appearance':appearance,'background':background,'custom':True}
+    # npc_ 開頭的是覆寫內建的固定 NPC（例如莉莎爾），其他是新增的
+    builtin=id.startswith('npc_')
+    e={'id':id if builtin else 'mod_npc_'+id,'name':name,'gender':gender,'race':race,'level':level,'location':loc,'personality':personality,'appearance':appearance,'background':background}
+    if not builtin: e['custom']=True
     if cls=='commoner':
         e['kind']='commoner'; e['class']=''; e['hire_cc']=0
         if occupation: e['occupation']=occupation
@@ -214,7 +217,7 @@ regions['north']=[
   relations={'old_ironroot':'爺爺'}),
 ]
 regions['south']=[
- npc('lisar','「赤翼之君」莉莎爾','female','demon','wizard',18,'bloodplume','A',L('lm_crimson_throne'),
+ npc('npc_lisar','「赤翼之君」莉莎爾','female','demon','wizard',18,'bloodplume','A',L('lm_crimson_throne'),
   '冷靜、驕傲、極有耐心；推行「秩序中的力量」，以律法整合荒原。對人類既好奇又警惕。',
   '高挑的魅魔，肌膚緋紅透亮，赤紅雙翼如烈焰般舒展，頭戴黑曜冠環。',
   '魔王，魔族領主議會的統治者，赤翼宮廷之主。她在混戰中崛起，終結了荒原千年的內鬥，建立起魔族史上罕見的律法體系。據說她的王座是用一位墮落龍王的脊骨做成的。',
@@ -223,7 +226,7 @@ regions['south']=[
   '笑裡藏刀、說話甜得發膩；替莉莎爾處理所有不能讓人看見的事。',
   '蜜金色肌膚的魅魔，一身黑紅色宮廷禮服，隨時拿著一本記滿名字的小冊子。',
   '赤翼宮廷的總管兼議會書記長。議會裡每一位領主的弱點，都記在她的小冊子上。',
-  '魔族領主議會', lineage='魅魔（赤翼宮廷）', tags=['noble'], relations={'lisar':'她願意為之而死的人'}),
+  '魔族領主議會', lineage='魅魔（赤翼宮廷）', tags=['noble'], relations={'npc_lisar':'她願意為之而死的人'}),
  npc('carlton_silent','卡爾頓','male','demon','cleric',10,'bloodplume','B',L('lm_blood_oath_valley'),
   '從不說話，只用手語溝通；對誓言的重視近乎狂熱。',
   '高大枯瘦的魔族，嘴唇被一道符文縫線封住，雙手沾滿碑石的粉塵。',
@@ -233,7 +236,7 @@ regions['south']=[
   '豪邁、暴躁、戰鬥狂；效忠莉莎爾，卻對律法的束縛越來越不耐煩。',
   '鐵塔般的炎魔，炭黑龜裂的皮膚下透出熔岩的光，背著一把灰燼巨槍。',
   '鐵血熔鑄家族家主、炎獄軍團統帥。他說議會的律法讓戰士生鏽，私下和獸骨荒丘的格羅姆有來往。',
-  '魔族領主議會', lineage='炎魔（炎獄軍團）', tags=['noble'], relations={'ignis_forge':'女兒，他唯一會讓步的人','lisar':'他的君主，也是他的枷鎖','grom_shatterhorn':'危險的酒友'}),
+  '魔族領主議會', lineage='炎魔（炎獄軍團）', tags=['noble'], relations={'ignis_forge':'女兒，他唯一會讓步的人','npc_lisar':'他的君主，也是他的枷鎖','grom_shatterhorn':'危險的酒友'}),
  npc('ignis_forge','伊格妮絲','female','demon','fighter',10,'moltenhold','B',L('lm_thousand_forges'),
   '工作狂、討厭被打擾，能聽懂金屬的「嗡鳴」；比父親冷靜得多。',
   '體態精悍的炎魔女子，髮絲像餘燼一樣明滅，戴著厚重的皮手套。',
@@ -253,7 +256,7 @@ regions['south']=[
   '神出鬼沒，說話永遠只說一半；喜歡看別人猜她的意思。',
   '墨藍微光的影魔，戴著無面面具與漆黑絲帶，雙眸如鬼火。',
   '暗影氏族（虛影氏族）之主，議會的情報與暗殺網之首。傳說她能行走於夢與實之間。她支持莉莎爾，但沒有人知道那是因為忠誠還是因為有利可圖。',
-  '魔族領主議會', lineage='影魔（暗影氏族）', tags=['noble'], relations={'lisar':'她選擇支持的王','morphe':'她的夢境顧問'}),
+  '魔族領主議會', lineage='影魔（暗影氏族）', tags=['noble'], relations={'npc_lisar':'她選擇支持的王','morphe':'她的夢境顧問'}),
  npc('morphe','莫菲','unknown','demon','wizard',11,'shadow_vale','B',L('lm_nightmare_maze'),
   '恍惚、詩意，常常分不清自己是醒是夢；說的話一半是預言一半是囈語。',
   '輕盈如煙的影魔，身形總是有點模糊，像隔著一層霧。',
@@ -263,7 +266,7 @@ regions['south']=[
   '豪邁、記仇、說一不二；認為律法讓魔族變軟弱，寧可戰死也不願跪著活。',
   '魁梧如戰獸的獸人，灰褐皮膚上滿是刺青，左角斷了一截，獠牙上套著金環。',
   '血角氏族（狂牙部族）酋長，議會最大的反對派。他的王座是遠古巨龍的骸骨搭成的。他不怕莉莎爾，只尊敬能打倒他的人。',
-  '魔族領主議會', lineage='獸人（血角氏族）', tags=['noble'], relations={'lisar':'他不承認的王','valkas_moltencast':'能一起喝酒的人','ulma_bloodtrial':'他最得力的戰士'}),
+  '魔族領主議會', lineage='獸人（血角氏族）', tags=['noble'], relations={'npc_lisar':'他不承認的王','valkas_moltencast':'能一起喝酒的人','ulma_bloodtrial':'他最得力的戰士'}),
  npc('ulma_bloodtrial','烏爾瑪','female','demon','barbarian',10,'bone_hills','B',L('lm_blood_trial_ground'),
   '直率、尊敬強者，不分種族；說話跟揮斧頭一樣乾脆。',
   '苔綠色皮膚的獸人女戰士，角細長彎曲，雙手各握一把手斧。',

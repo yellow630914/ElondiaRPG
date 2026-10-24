@@ -37,6 +37,12 @@
       "haunts": [{ "location": "dawnlight", "zone": "town", "weight": 1 }, { "location": "rivervale", "zone": "town", "weight": 0.4 }, { "location": "soriel", "zone": "town", "weight": 0.3 }],
       "personality": "晨光城的流浪詩人，樂觀愛起鬨，總想把冒險寫成歌。", "faction": "dawn_kingdom",
       "appearance": "栗色捲髮上插著一根銀羽鸢的羽毛，背著一把漆面斑駁的魯特琴，裙擺總沾著旅途的塵土。",
+      "relations": {} },
+    { "id": "npc_lisar", "name": "「赤翼之君」莉莎爾", "gender": "female", "race": "demon", "class": "wizard", "level": 18, "location": "bloodplume", "hire_cc": 0, "unhireable": true,
+      "kind": "adventurer", "tags": ["royal"], "landmark": "lm_crimson_throne", "lineage": "魅魔（赤翼宮廷）",
+      "personality": "冷靜、驕傲、極有耐心；推行「秩序中的力量」，以律法整合荒原。對人類既好奇又警惕，偶爾會為了看清一個人而故意示弱。", "faction": "demon_council",
+      "appearance": "高挑妖嬈的魅魔，肌膚緋紅透亮，赤紅雙翼舒展如烈焰；黑髮及腰，頭戴黑曜冠環，金色豎瞳，眉眼間自帶蠱惑的魅光。一身黑紅相間的宮廷長袍，袖口繡著燃燒的羽紋。",
+      "background": "魔王，魔族領主議會的統治者，赤翼宮廷之主。她在混戰年代崛起，終結了荒原的無盡內鬥，把原始的強權主義改造成「律法化的力量階層」，建立起魔族史上罕見的律法體系。血羽城堡的赤焰王座廳是她的居所與議會核心，傳聞她的王座是用一位墮落龍王的脊骨做成的。",
       "relations": {} }
   ]
 }

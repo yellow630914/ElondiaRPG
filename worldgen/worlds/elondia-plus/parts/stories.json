@@ -1622,7 +1622,7 @@
          },
          {
           "type": "affinity",
-          "npc": "mod_npc_lisar",
+          "npc": "npc_lisar",
           "delta": 5
          }
         ],

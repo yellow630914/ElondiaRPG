@@ -220,7 +220,7 @@ S('bloodhorn_challenge','血角的戰書','C','血角氏族的酋長格羅姆寫
     opt('勸他換個方式',O('格羅姆沉默了很久：「……你說得對，打一場只會讓議會更亂。」他改寫了戰書，要求在議會裡公開辯論。',set_=['horn_letter','horn_debate']),'cha',16,O('格羅姆一拳砸碎了石桌：「別教我怎麼當魔族！」你還是拿到了戰書。',set_=['horn_letter']))]),
   choice('n3','把戰書送到血羽城堡','總管薇洛妮卡攔住你，笑著伸出手：「信給我就好。魔王很忙。」',atnpc('veronica','bloodplume'),req('horn_letter'),[
     opt('交給薇洛妮卡',O('薇洛妮卡讀完，把信折好收進袖子：「辛苦了。你最好在新月之前離開荒原。」',complete=True,eff=[rep('demon_council',1)])),
-    opt('堅持親手交給魔王',O('莉莎爾在王座上讀完信，竟然笑了：「告訴格羅姆，我接受。」血羽城堡的人從此都知道你的名字。',complete=True,eff=[rep('demon_council',3),aff('lisar',5)]),'cha',17,O('衛兵把你架了出去。薇洛妮卡撿起掉在地上的信，對你眨了眨眼。',complete=True))])],
+    opt('堅持親手交給魔王',O('莉莎爾在王座上讀完信，竟然笑了：「告訴格羅姆，我接受。」血羽城堡的人從此都知道你的名字。',complete=True,eff=[rep('demon_council',3),aff('npc_lisar',5)]),'cha',17,O('衛兵把你架了出去。薇洛妮卡撿起掉在地上的信，對你眨了眨眼。',complete=True))])],
   [money(700),xp(900)],group='南境枯萎荒原')
 S('soulwell_cry','熔魂井的哭聲','D','熔魂井的守井人薩米爾說，井裡有些靈魂在哭——它們不想被淬進兵器，只想安息。',
   start_npc('samir_soulwell','薩米爾的聲音很輕：「有一位戰士的靈魂一直在喊一個名字。那個名字的人，死在餘燼裂隙裡。」',min_level=4),
