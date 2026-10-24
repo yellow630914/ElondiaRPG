@@ -4,6 +4,8 @@ import { DEFEAT_LOOT_NAME, defeatLootRule } from '@/engine/expedition'
 import type { DefeatLoot } from '@/engine/types'
 import { companionRules } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
+import type { StepPlace } from '@/engine/grid'
+import mapsJson from '@data/world/maps.json'
 import { useGame } from '@/stores/game'
 import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
 import ImageSettings from './ImageSettings.vue'
@@ -12,6 +14,9 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
 const settings = useSettings()
+// 走一格的時間：三種地方
+const STEP_DEFAULT = mapsJson.generation.step_minutes
+const STEP_PLACES: { id: StepPlace; name: string }[] = [{ id: 'settlement', name: '城鎮' }, { id: 'wild', name: '近郊' }, { id: 'dungeon', name: '冒險區域' }]
 const game = useGame()
 const source = ref(0)
 // 設定分成幾個頁籤（記住上次看的那一頁）
@@ -51,9 +56,9 @@ function doReset() {
   <nav class="row tabs pages">
     <button v-for="p in PAGES" :key="p.id" :class="{ active: page === p.id }" @click="openPage(p.id)"><GameIcon :name="p.icon" :size="15" />{{ p.label }}</button>
     <!-- 介面語言：選項名稱各用自己的寫法，不轉換 -->
-    <label class="ui-lang small" data-no-convert>
-      <GameIcon name="globe" :size="14" /> 介面 / 界面
-      <select v-model="settings.uiLanguage">
+    <label class="ui-lang small">
+      <GameIcon name="globe" :size="14" /> 語言
+      <select v-model="settings.uiLanguage" data-no-convert>
         <option value="zh-Hant">繁體中文</option>
         <option value="zh-Hans">简体中文</option>
       </select>
@@ -170,6 +175,12 @@ function doReset() {
           <span class="lab">兩次長休至少隔幾小時 <Hint :text="`0～24，預設 ${companionRules.rest.long_rest_gap_hours}。從上次長休結束時算起。`" /></span>
           <input v-model.number="settings.longRestGap" type="number" min="0" max="24" style="width: 100px" />
         </label>
+        <div class="field">
+          <span class="lab">走一格花幾分鐘 <Hint :text="`0～60。預設：城鎮 ${STEP_DEFAULT.settlement}、近郊 ${STEP_DEFAULT.wild}、冒險區域 ${STEP_DEFAULT.dungeon} 分鐘。時間影響白天黑夜、光源的燃料與委託的期限。房子裡照城鎮算，特殊地圖照冒險區域算；旅途一格一天，不受影響。`" /></span>
+          <div class="steps">
+            <label v-for="p in STEP_PLACES" :key="p.id">{{ p.name }} <input v-model.number="settings.stepMinutes[p.id]" type="number" min="0" max="60" style="width: 72px" /> 分</label>
+          </div>
+        </div>
         <label>
           <span class="lab">建角時挑裝備的預算（材料等級點數） <Hint :text="`0～${gearRules.creation.max_budget}，預設 ${gearRules.creation.default_budget}。職業的基本配備免費；把模板裝備換成更好的材料每升一級花 1 點，另外加的裝備花它的材料等級（第 ${gearRules.creation.max_tier} 級以內）。只影響之後建立的角色。`" /></span>
           <input v-model.number="settings.creationGearBudget" type="number" min="0" :max="gearRules.creation.max_budget" style="width: 100px" />
@@ -220,4 +231,6 @@ function doReset() {
 .kinds .muted { margin-left: 4px; }
 .form label, .form .field { display: grid; gap: 4px; }
 .form label.check { display: flex; gap: 6px; align-items: center; }
+.steps { display: flex; flex-wrap: wrap; gap: 12px; }
+.form .steps label { display: inline-flex; gap: 6px; align-items: center; }
 </style>

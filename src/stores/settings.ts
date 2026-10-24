@@ -4,6 +4,8 @@ import { setAdultContent } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { setLongRestGap } from '@/engine/rest'
+import { setStepMinutes, type StepPlace } from '@/engine/grid'
+import mapsJson from '@data/world/maps.json'
 import type { Report } from '@/engine/types'
 import { PROVIDERS, type ProviderConfig, type ProviderId } from '@/narrator/providerInfo'
 import { applyUiLanguage, type UiLanguage } from '@/i18n/uiScript'
@@ -75,6 +77,8 @@ interface SavedSettings {
   abilityRerolls: number
   /** 兩次長休至少隔幾小時（0～24） */
   longRestGap: number
+  /** 走一格花幾分鐘（城鎮、近郊、冒險區域，0～60） */
+  stepMinutes: Record<StepPlace, number>
   /** 建角時在職業模板之上挑裝備的預算（材料等級點數，見 docs/ITEMS.md 第 2.1 節） */
   creationGearBudget: number
   /** 完整保留最近幾則日誌（更早的封存，見 docs/SAVES.md 第 6 節） */
@@ -115,6 +119,7 @@ function defaults(): SavedSettings {
     aiJudge: false,
     abilityRerolls: progression.ability_rerolls,
     longRestGap: companionRules.rest.long_rest_gap_hours,
+    stepMinutes: { ...mapsJson.generation.step_minutes },
     creationGearBudget: gearRules.creation.default_budget,
     logKeep: 200,
     adult: false,
@@ -148,7 +153,7 @@ function load(): SavedSettings {
     const routes = { ...defaultRoutes(), ...(saved.routes ? { adult: saved.routes.narration ?? 0 } : {}), ...saved.routes }
     for (const k of Object.keys(routes) as AiFeature[]) if (!(routes[k] >= 0 && routes[k] < SOURCE_COUNT)) routes[k] = 0
     const { autoNarrate: _a, provider: _p, configs: _c, ...rest } = saved
-    return { ...base, ...rest, aiNarration, sources, routes, narrateKinds: { ...base.narrateKinds, ...saved.narrateKinds } }
+    return { ...base, ...rest, aiNarration, sources, routes, narrateKinds: { ...base.narrateKinds, ...saved.narrateKinds }, stepMinutes: { ...base.stepMinutes, ...saved.stepMinutes } }
   } catch {
     return base
   }
@@ -166,6 +171,9 @@ export const useSettings = defineStore('settings', () => {
   const longRestGap = ref(initial.longRestGap)
   // 引擎的長休間隔
   watch(longRestGap, (h) => setLongRestGap(h), { immediate: true })
+  const stepMinutes = ref(initial.stepMinutes)
+  // 引擎走一格的時間
+  watch(stepMinutes, (m) => setStepMinutes(m), { immediate: true, deep: true })
   const creationGearBudget = ref(initial.creationGearBudget)
   const logKeep = ref(initial.logKeep)
   const adult = ref(initial.adult)
@@ -177,7 +185,7 @@ export const useSettings = defineStore('settings', () => {
   const loreBudget = ref(initial.loreBudget)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -189,6 +197,11 @@ export const useSettings = defineStore('settings', () => {
         abilityRerolls: abilityRerolls.value,
         // 欄位清空時存成預設，下次打開設定不會是空的
         longRestGap: typeof longRestGap.value === 'number' && Number.isFinite(longRestGap.value) ? longRestGap.value : companionRules.rest.long_rest_gap_hours,
+        // 清空的欄位存成預設
+        stepMinutes: Object.fromEntries(Object.entries(mapsJson.generation.step_minutes).map(([k, d]) => {
+          const v = stepMinutes.value[k as StepPlace] as number | string
+          return [k, v === '' || !Number.isFinite(Number(v)) ? d : Math.max(0, Math.min(60, Math.round(Number(v))))]
+        })) as Record<StepPlace, number>,
         creationGearBudget: gearBudget(),
         logKeep: logKeep.value,
         adult: adult.value,
@@ -263,7 +276,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })

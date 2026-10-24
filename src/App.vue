@@ -177,11 +177,11 @@ onBeforeUnmount(() => {
     </div>
     <div class="top-buttons">
       <button v-if="eventCount" class="small events" :class="{ hot: blockingEvent }" title="需要你處理的事" @click="eventDialogOpen = true"><GameIcon name="bell" :size="14" />待處理<span class="badge">{{ eventCount }}</span></button>
-      <button v-if="game.state" class="ghost icon" title="快速存檔（F8 / Ctrl+S）" aria-label="快速存檔" @click="game.quickSave()"><GameIcon name="save" /></button>
-      <button v-if="game.state" class="ghost icon" title="快速讀檔（F9）" aria-label="快速讀檔" @click="askQuickLoad"><GameIcon name="load" /></button>
-      <button v-if="game.state" class="ghost icon" title="存檔與讀檔" aria-label="存檔與讀檔" @click="showSaves = true"><GameIcon name="saves" /></button>
-      <button class="ghost icon" title="設定" aria-label="設定" @click="showSettings = true"><GameIcon name="settings" /></button>
-      <button v-if="game.state" class="ghost icon" title="存好進度，回到首頁" aria-label="回到首頁" @click="goHome"><GameIcon name="home" /></button>
+      <button v-if="game.state" class="ghost icon" title="快速存檔（F8 / Ctrl+S）" @click="game.quickSave()"><GameIcon name="save" :size="24" /><span>快存</span></button>
+      <button v-if="game.state" class="ghost icon" title="快速讀檔（F9）" @click="askQuickLoad"><GameIcon name="load" :size="24" /><span>快讀</span></button>
+      <button v-if="game.state" class="ghost icon" title="存檔與讀檔：存檔欄位、匯出與匯入" @click="showSaves = true"><GameIcon name="saves" :size="24" /><span>存讀檔</span></button>
+      <button class="ghost icon" title="設定" @click="showSettings = true"><GameIcon name="settings" :size="24" /><span>設定</span></button>
+      <button v-if="game.state" class="ghost icon" title="存好進度，回到首頁" @click="goHome"><GameIcon name="home" :size="24" /><span>首頁</span></button>
     </div>
   </header>
   <Transition name="fade">
@@ -296,7 +296,8 @@ onBeforeUnmount(() => {
 .hud .night { color: #8ab6ef; }
 .hud .crime, .hud .crime b { color: var(--danger); }
 .top-buttons { margin-left: auto; display: flex; gap: 2px; align-items: center; }
-.top-buttons .icon { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; color: var(--muted); }
+.top-buttons .icon { min-width: 48px; padding: 4px 6px 2px; display: grid; justify-items: center; gap: 2px; color: var(--muted); }
+.top-buttons .icon span { font-size: 11px; line-height: 1.2; white-space: nowrap; }
 .events { display: inline-flex; align-items: center; gap: 4px; border-color: var(--accent); color: var(--gold-hi); margin-right: 6px; }
 .events.hot { border-color: var(--danger); color: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.55; } }

@@ -46,7 +46,7 @@
 
 ## 4. 移動
 
-- 每走一格花費時間：城內 5 分鐘、荒野 15 分鐘、地下城 10 分鐘（`maps.json` 的 `generation.step_minutes`）。
+- 每走一格花費時間：預設城內 5 分鐘、荒野 15 分鐘、地下城 10 分鐘（`maps.json` 的 `generation.step_minutes`）；玩家可以在設定的「遊戲規則」改（0～60 分鐘，存在這個瀏覽器，不跟存檔走）。
 - 走進遭遇格會開始戰鬥；獲勝後格子清除，撤退會退回上一格，戰敗見 [COMBAT_SYSTEM](COMBAT_SYSTEM.md) 8.4 節。
 - 只有在城門或冒險區域的出口才能啟程旅行（見 [TRAVEL_EVENTS](TRAVEL_EVENTS.md)）。
 - 有擋住行動的事件（主人的要求、刻印、對峙……）時不能移動（見 [EVENTS](EVENTS.md)）。

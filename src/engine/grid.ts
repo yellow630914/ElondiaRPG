@@ -852,9 +852,29 @@ function farthest(area: Area, from: number): number {
 
 export type StepResult = { report?: Report; combat?: CombatState }
 
+/** 走一格花的時間（分鐘）分三種地方：城鎮（含房子）、近郊、冒險區域（含特殊地圖）。 */
+export type StepPlace = keyof typeof maps.generation.step_minutes
+
+// 每走一格的分鐘數：預設 maps.json 的 step_minutes，設定的「遊戲規則」可以改（引擎不讀設定，由畫面呼叫）
+let stepOverride: Partial<Record<StepPlace, number>> = {}
+
+/** 設定走一格的分鐘數（0～60；空的或不是數字的用預設） */
+export function setStepMinutes(m: Partial<Record<StepPlace, number | string | null>> | undefined) {
+  stepOverride = {}
+  for (const k of Object.keys(maps.generation.step_minutes) as StepPlace[]) {
+    const raw = m?.[k]
+    const v = raw === '' || raw === null || raw === undefined ? NaN : Number(raw)
+    if (Number.isFinite(v)) stepOverride[k] = Math.max(0, Math.min(60, Math.round(v)))
+  }
+}
+
+/** 各種地方走一格的分鐘數（套用設定之後） */
+export function stepMinutesFor(place: StepPlace): number {
+  return stepOverride[place] ?? maps.generation.step_minutes[place]
+}
+
 function stepMinutes(area: Area): number {
-  const s = maps.generation.step_minutes
-  return area.kind === 'settlement' || area.kind === 'home' ? s.settlement : area.kind === 'wild' ? s.wild : s.dungeon
+  return stepMinutesFor(area.kind === 'settlement' || area.kind === 'home' ? 'settlement' : area.kind === 'wild' ? 'wild' : 'dungeon')
 }
 
 /** 往上下左右移動一格，觸發走進格子的內容。 */
