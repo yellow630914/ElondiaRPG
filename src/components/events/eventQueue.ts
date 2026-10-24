@@ -9,7 +9,7 @@ import { pendingTownEvent } from '@/engine/townEvents'
 import type { GameState } from '@/engine/types'
 import { contractOf } from '@/engine/tattoos'
 
-export type GameEventKind = 'defeat' | 'standoff' | 'mark' | 'master' | 'road' | 'town' | 'suggestion' | 'levelup' | 'perk'
+export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'suggestion' | 'levelup' | 'perk'
 
 export interface GameEvent {
   /** 同一件事一直是同一個 id（用來判斷是不是新的事件、記住「稍後」） */
@@ -43,6 +43,7 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
   if (!state.pendingAction) {
     if (state.pendingDefeat) out.push({ id: `defeat:${hash(state.pendingDefeat)}`, kind: 'defeat', icon: '⚠️', title: '倒下之後', blocking: true })
     if (state.standoff) out.push({ id: `standoff:${hash(state.standoff)}`, kind: 'standoff', icon: '⚠️', title: '對峙', blocking: true })
+    if (state.captives?.npcs.length) out.push({ id: `captives:${hash(state.captives)}`, kind: 'captives', icon: '⛓️', title: '戰後處置', blocking: true })
     if (state.pendingMark) out.push({ id: `mark:${hash(state.pendingMark)}`, kind: 'mark', icon: '🔥', title: '刻下契約印記', blocking: true })
     if (state.pendingMasterEvent) {
       const master = contractOf(state.party.find((m) => m.isPlayer))?.masterName || '主人'

@@ -79,6 +79,7 @@ export function restEventBlock(state: GameState): string | null {
   if (state.pendingMark) return '先完成契約印記的刻印'
   if (state.pendingMasterEvent) return '先回應主人的要求'
   if (state.pendingDefeat) return '先應付眼前的處境'
+  if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
   return null
 }
 

@@ -150,6 +150,8 @@ export interface CombatState {
   cell?: { area: string; x: number; y: number }
   /** 在黑暗中又沒有光 */
   dark?: boolean
+  /** 和冒險者的戰鬥是誰先動手（戰後處置被制伏的人時決定後果） */
+  aggressor?: 'party' | 'npc'
 }
 
 export interface CombatOptions {
@@ -166,6 +168,8 @@ export interface CombatOptions {
   surprise?: 'party' | 'enemy'
   /** 在黑暗中又沒有光：隊伍命中降低（maps.json 的 lighting.dark.hit） */
   dark?: boolean
+  /** 和冒險者的戰鬥是誰先動手：party = 主角偷襲，npc = 對方攔路 */
+  aggressor?: 'party' | 'npc'
 }
 
 const COMBAT_MINUTES_PER_ROUND = 1
@@ -240,6 +244,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       ...(opts.scene ? { scene: opts.scene } : {}),
       ...(opts.cell ? { cell: opts.cell } : {}),
       ...(opts.dark ? { dark: true } : {}),
+      ...(opts.aggressor ? { aggressor: opts.aggressor } : {}),
     }
     state.combat = combat
     if (!beginTurn(combat, rng)) nextTurn(combat, rng)
@@ -1508,6 +1513,8 @@ export function finishCombat(state: GameState): Report {
   const foes = combat.combatants.filter((c) => c.side === 'enemy')
   const defeated = foes.filter((f) => f.hp === 0)
   const victory = combat.status === 'victory'
+  // 打贏冒險者：倒下的人被制伏，等主角處置（特殊任務的戰鬥照任務的結果，不另外處置）
+  const capturing = victory && !combat.story
 
   // 戰敗時，無法戰鬥的隊員依親密度檢定：救助（逃開去搬救兵）或逃跑（回到安全的地方等你）
   const nc = companionRules.noncombatant
@@ -1548,7 +1555,7 @@ export function finishCombat(state: GameState): Report {
   const others: ActorState[] = [...allies, ...foes.map((f): ActorState => ({
     id: f.id, name: f.name, level: f.level,
     hp: [combat.startHp[f.id] ?? f.maxHp, f.hp, f.maxHp],
-    status: f.hp === 0 ? ['死亡'] : f.fled ? ['逃走'] : f.statuses.map((s) => statusDef(s.id).name),
+    status: f.hp === 0 ? [capturing && f.npcId ? '被制伏' : '死亡'] : f.fled ? ['逃走'] : f.statuses.map((s) => statusDef(s.id).name),
   }))]
 
   let money = 0
@@ -1600,7 +1607,7 @@ export function finishCombat(state: GameState): Report {
     lost = withRng(state, (rng) => defeatLoss(state, rng, combat.location))
     money += Math.max(lost.money, -(state.money_cc + money))
   }
-  settleNpcFoes(state, foes, victory)
+  settleNpcFoes(state, combat, foes, victory, capturing)
 
   for (const member of state.party) {
     if (!member.isPlayer && victory && !isNoncombatant(member)) noteAffinity(combat, member.id, 2, '並肩作戰獲勝')
@@ -1694,14 +1701,22 @@ export function finishCombat(state: GameState): Report {
   return committed
 }
 
-/** 和 NPC 戰鬥後：倒下的人死亡（從名單移除），還活著的人敵對 */
-function settleNpcFoes(state: GameState, foes: Combatant[], victory: boolean) {
+/**
+ * 和 NPC 戰鬥後：還活著的人敵對。倒下的人：打贏時（特殊任務的戰鬥除外）被制伏，等主角處置（captives.ts）；
+ * 其他情況死亡（從名單移除）
+ */
+function settleNpcFoes(state: GameState, combat: CombatState, foes: Combatant[], victory: boolean, capturing: boolean) {
+  const captured: string[] = []
   for (const f of foes) {
     if (!f.npcId) continue
     const rec = npcRecord(state, f.npcId)
     if (!rec) continue
     // 具名 NPC 第一次有變化時複製進存檔
     const stored = state.npcs?.[rec.id] ?? registerNpc(state, { ...rec })
+    if (f.hp === 0 && capturing) {
+      captured.push(rec.id)
+      continue
+    }
     if (f.hp === 0) {
       stored.dead = true
       delete stored.at
@@ -1710,6 +1725,15 @@ function settleNpcFoes(state: GameState, foes: Combatant[], victory: boolean) {
       stored.hostile = true
       // 撤退或戰敗：今天不會馬上又打起來
       if (!victory) (state.avoided ??= {})[rec.id] = state.time.day
+    }
+  }
+  if (captured.length) {
+    state.captives = {
+      npcs: captured,
+      aggressor: combat.aggressor ?? 'npc',
+      location: state.location,
+      area: state.position?.area ?? '',
+      day: state.time.day,
     }
   }
 }

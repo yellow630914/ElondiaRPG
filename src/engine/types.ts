@@ -464,6 +464,17 @@ export interface Standoff {
   day: number
 }
 
+/** 和冒險者打贏之後被制伏的人：等主角處置（處決、放過、收為奴隸，或自己寫主動行動）；見 engine/captives.ts */
+export interface Captives {
+  npcs: string[]
+  /** 誰先動手：party = 主角這邊（偷襲）、npc = 對方（敵對冒險者攔路） */
+  aggressor: 'party' | 'npc'
+  /** 在哪個地點、哪一區被制伏（後果依這裡算：有衛兵的聚落才加警戒） */
+  location: string
+  area: string
+  day: number
+}
+
 export interface Roster {
   /** 名單上的 NPC id（不含店主、公會職員等職員） */
   members: string[]
@@ -747,6 +758,8 @@ export interface GameState {
   lastMasterEvent?: number
   /** 和敵對冒險者的對峙（見 engine/encounters.ts） */
   standoff?: Standoff
+  /** 打贏冒險者後被制伏、等主角處置的人（見 engine/captives.ts） */
+  captives?: Captives
   /** 今天已經避開或談妥的敵對 NPC：id → 日期 */
   avoided?: Record<string, number>
   /** 各地點的衛兵警戒：等級與最後一次犯案的日期 */

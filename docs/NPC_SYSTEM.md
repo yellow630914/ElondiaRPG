@@ -174,6 +174,25 @@
 
 非敵對的冒險者：中立遭遇，可以聊天、交易、邀請入隊或忽略。
 
+### 8.2 打贏之後：處置被制伏的人
+
+會和 NPC 打起來的情境（都只限冒險者）：
+- **對峙開戰**（8.1）：敵對的冒險者在野外、地下城攔路，談判失敗或選擇開戰、偷襲——算**對方先動手**（`aggressor: 'npc'`）。
+- **偷襲**（第 8 節「攻擊」）：主角對冒險者出手——算**主角先動手**（`aggressor: 'party'`）。
+- 特殊任務的戰鬥任務點也可能有 NPC（`foes`），但結果照任務走，不另外處置（倒下的人照舊死亡）。
+
+打贏時，倒下的人不再直接死亡，而是被制伏（`state.captives`，`engine/captives.ts`），擋住移動與休息，事件視窗出現「戰後處置」。每個人可以：
+
+| 處置 | 結果 | 後果（`security.json` 的 `captives`） |
+|---|---|---|
+| 主動行動 | 自由描述要對他做的事（審問、搜身、勸降……），交給 AI 判定；之後還是要選下面一種 | 依判定 |
+| 放過 | 留在原地、敵對，今天不會再打起來；對方先動手時，對方欠你一份情（親密度 +5） | 無 |
+| 收為奴隸 | 以奴隸身分加入隊伍（預設契約，要有空位） | 主角先動手：警戒 +2、聲望 -3；對方先動手：警戒 +1、聲望 -1 |
+| 處決 | 死亡（從名單移除） | 主角先動手：警戒 +3、聲望 -4；對方先動手：無 |
+
+- 警戒只在有衛兵的聚落裡加（近郊、地下城沒有）；聲望扣在這個地點所屬的勢力。主角先動手時，對好人等的額外聲望（標籤的 `crime_reputation`）也算。
+- 戰報裡被制伏的人狀態是「被制伏」（不是「死亡」），AI 寫經過時不會寫成死掉。
+
 ## 9. 後果：警戒、聲望、通緝
 
 ### 9.1 警戒（每個地點，0～3）
@@ -266,7 +285,7 @@
 | 近郊、地下城遇到的人、重逢 | `spawnVisitors`（`population.ts`），參數在 `npc_population.json` 的 `visitors` |
 | 敵對判定 | `isHostile`：被攻擊過，或在野外與地下城遇到「惡人」、親密度 ≤ -20 的冒險者 |
 | 對峙與複合檢定 | `src/engine/encounters.ts`、`src/components/StandoffPanel.vue`；蒙混、威嚇是主動行動（`actions.json` 的 `bluff`、`intimidate`） |
-| 和冒險者戰鬥 | `startCombat` 的 `npcs`、`surprise`；倒下的人死亡（從名單移除），活著的人敵對；經驗與戰利品依等級（`hostility`） |
+| 和冒險者戰鬥 | `startCombat` 的 `npcs`、`surprise`、`aggressor`；打贏時倒下的人被制伏、等主角處置（8.2 節），其他情況倒下的人死亡；活著的人敵對；經驗與戰利品依等級（`hostility`） |
 | 偷竊、偷襲 | `src/engine/interactions.ts`，規則在 `data/rules/security.json` 的 `steal`、`attack` |
 | 警戒、通緝、罰金、城門盤查、王城 | `src/engine/security.ts`、`src/components/GuardStatus.vue`（城門與近郊出口） |
 | 聲望影響價格 | `dealMoney`、`sellPrice`（`trade.ts`）乘上 `reputation_bands` 的倍率 |

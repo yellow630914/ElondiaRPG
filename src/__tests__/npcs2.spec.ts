@@ -3,8 +3,9 @@ import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat } from '@/engine/combat'
-import { avoidFoes, checkHostiles, payToll } from '@/engine/encounters'
-import { currentArea, enterLocation, goOutskirts, returnToTown, standOn } from '@/engine/grid'
+import { avoidFoes, checkHostiles, fightFoes, payToll } from '@/engine/encounters'
+import { resolveCaptive } from '@/engine/captives'
+import { currentArea, enterLocation, goOutskirts, move, returnToTown, standOn } from '@/engine/grid'
 import { generateNpc, npcRecord } from '@/engine/npcs'
 import { ensureRoster, isHostile, peopleHere, pruneNpcs, refreshRosters, spawnVisitors } from '@/engine/population'
 import {
@@ -133,14 +134,63 @@ describe('hostile adventurers', () => {
     state.standoff!.detected = true
     act(state, { kind: 'intimidate', target: b.id, text: '' }, 1)
     expect(state.combat?.combatants.find((c) => c.npcId === b.id)).toBeTruthy()
-    // 打贏：對方死亡、拿到戰利品與經驗
+    // 打贏：對方被制伏、拿到戰利品與經驗；處決之後才死亡
     for (const c of state.combat!.combatants) if (c.side === 'enemy') c.hp = 0
     state.combat!.status = 'victory'
     const report = finishCombat(state)
     expect(validate(report)).toBe(true)
     expect(report.changes.money_cc).toBeGreaterThan(0)
+    expect(state.captives).toMatchObject({ npcs: [b.id], aggressor: 'npc' })
+    expect(npcRecord(state, b.id)!.dead).toBeFalsy()
+    expect(() => move(state, 1, 0)).toThrow('處置')
+    const done = resolveCaptive(state, b.id, 'execute')
+    expect(validate(done)).toBe(true)
     expect(npcRecord(state, b.id)!.dead).toBe(true)
+    expect(state.captives).toBeUndefined()
     expect(peopleHere(state).map((p) => p.rec.id)).not.toContain(b.id)
+  })
+
+  it('lets you spare or enslave whoever you beat; who struck first decides the cost', () => {
+    // 對方攔路、在近郊被制伏：收為奴隸沒有衛兵（近郊），聲望 -1
+    const state = outside()
+    const win = () => {
+      checkHostiles(state)
+      fightFoes(state)
+      for (const c of state.combat!.combatants) if (c.side === 'enemy') c.hp = 0
+      state.combat!.status = 'victory'
+      finishCombat(state)
+    }
+    const a = beside(state, { tags: ['villain'], level: 1 })
+    win()
+    expect(state.captives?.npcs).toEqual([a.id])
+    const r = resolveCaptive(state, a.id, 'enslave')
+    expect(validate(r)).toBe(true)
+    expect(state.party.find((m) => m.id === a.id)?.bond).toBe('slave')
+    expect(state.reputation.holy_ring).toBe(-1)
+    expect(alertLevel(state, 'soriel')).toBe(0)
+    // 放過對方先動手的人：對方欠你一份情
+    const b = beside(state, { tags: ['villain'], level: 1 })
+    win()
+    expect(state.captives?.npcs).toEqual([b.id])
+    const before = state.relationships?.[b.id]?.affinity ?? 0
+    resolveCaptive(state, b.id, 'release')
+    expect(state.relationships![b.id]!.affinity).toBeGreaterThan(before)
+    expect(npcRecord(state, b.id)!.dead).toBeFalsy()
+    expect(state.captives).toBeUndefined()
+  })
+
+  it('costs more when you struck first in town', () => {
+    const state = game()
+    const rival = beside(state)
+    act(state, { kind: 'attack', target: rival.id, text: '' }, 20)
+    expect(alertLevel(state, 'soriel')).toBe(0)
+    for (const c of state.combat!.combatants) if (c.side === 'enemy') c.hp = 0
+    state.combat!.status = 'victory'
+    finishCombat(state)
+    expect(state.captives?.aggressor).toBe('party')
+    resolveCaptive(state, rival.id, 'enslave')
+    expect(alertLevel(state, 'soriel')).toBe(2)
+    expect(state.reputation.holy_ring).toBe(-3)
   })
 })
 

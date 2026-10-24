@@ -1216,6 +1216,7 @@ export function assertNoStandoff(state: GameState) {
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
   if (state.pendingDefeat) throw new Error('先應付眼前的處境')
+  if (state.captives?.npcs.length) throw new Error('先決定怎麼處置被制伏的人')
 }
 
 /** 城門盤查：沒過時回傳盤查的紀錄（沒有擲骰時直接說明原因） */

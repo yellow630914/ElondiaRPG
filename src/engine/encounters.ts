@@ -120,7 +120,8 @@ export function fightFoes(state: GameState, surprise?: 'party' | 'enemy'): Comba
   const area = currentArea(state)
   const side = surprise ?? (s.detected ? undefined : 'party')
   endStandoff(state, false)
-  return startCombat(state, undefined, { npcs: foes.map((f) => f.id), scene: area.name, ...(side ? { surprise: side } : {}) })
+  // 敵對的冒險者攔路：就算是主角先偷襲，也算對方挑起的
+  return startCombat(state, undefined, { npcs: foes.map((f) => f.id), scene: area.name, aggressor: 'npc', ...(side ? { surprise: side } : {}) })
 }
 
 /** 付過路費 */

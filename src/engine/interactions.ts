@@ -214,7 +214,7 @@ function applyAttack(state: GameState, report: Report, rec: NpcRecord, degree: D
     ]))
   }
   const surprise = degree === 'critical' || degree === 'success' ? 'party' : degree === 'fumble' ? 'enemy' : undefined
-  startCombat(state, undefined, { npcs: [rec.id], scene: currentArea(state).name, ...(surprise ? { surprise } : {}) })
+  startCombat(state, undefined, { npcs: [rec.id], scene: currentArea(state).name, aggressor: 'party', ...(surprise ? { surprise } : {}) })
   const lead = surprise === 'party' ? `你搶先對${rec.name}出手。` : surprise === 'enemy' ? `${rec.name}察覺了你的殺意，搶先動手。` : `你和${rec.name}打了起來。`
   return [lead, ...notes].join('')
 }

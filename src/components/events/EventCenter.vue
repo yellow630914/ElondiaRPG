@@ -6,6 +6,7 @@ import Hint from '../ui/Hint.vue'
 import DefeatEventPanel from '../DefeatEventPanel.vue'
 import MasterEventPanel from '../MasterEventPanel.vue'
 import StandoffPanel from '../StandoffPanel.vue'
+import CaptivesPanel from '../CaptivesPanel.vue'
 import LevelUpPanel from './LevelUpPanel.vue'
 import MarkingPanel from './MarkingPanel.vue'
 import PerkOfferPanel from './PerkOfferPanel.vue'
@@ -63,6 +64,7 @@ function openParty(member?: string) {
     <div v-if="current" class="event-center">
       <DefeatEventPanel v-if="current.kind === 'defeat'" />
       <StandoffPanel v-else-if="current.kind === 'standoff'" />
+      <CaptivesPanel v-else-if="current.kind === 'captives'" />
       <MarkingPanel v-else-if="current.kind === 'mark'" />
       <MasterEventPanel v-else-if="current.kind === 'master'" />
       <RoadEventPanel v-else-if="current.kind === 'road'" />

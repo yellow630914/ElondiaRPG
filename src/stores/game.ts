@@ -22,6 +22,7 @@ import * as specialMaps from '@/engine/specialMaps'
 import * as masterHome from '@/engine/masterHome'
 import * as population from '@/engine/population'
 import * as encounters from '@/engine/encounters'
+import * as captives from '@/engine/captives'
 import * as security from '@/engine/security'
 import * as slavery from '@/engine/slavery'
 import * as defeat from '@/engine/defeat'
@@ -1073,6 +1074,8 @@ export const useGame = defineStore('game', () => {
     revealSelf: () => run(encounters.revealSelf),
     fightFoes: () => run((s) => encounters.fightFoes(s)),
     payToll: () => run(encounters.payToll),
+    // 戰後處置被制伏的人：處決、放過、收為奴隸（主動行動走 perform）
+    resolveCaptive: (id: string, choice: captives.CaptiveChoice) => run((s) => captives.resolveCaptive(s, id, choice)),
     payFine: () => run(security.payFine),
     restAtSafeRoom: () => run((s) => rest.longRest(s, 'safe')),
     // 夥伴

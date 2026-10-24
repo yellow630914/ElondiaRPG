@@ -241,11 +241,13 @@ async function hire(id: string) {
 .people h3 :deep(.game-icon) { color: var(--accent); }
 .sub { font-size: var(--fs-xs); font-weight: normal; letter-spacing: 0; }
 .acts button, .detail .row button { display: inline-flex; align-items: center; gap: 4px; }
-.more { position: relative; }
+/* 「⋯」：展開時把獻媚、偷竊、偷襲排在旁邊（同一列，放不下就換行），不浮在上面，才不會被摺疊區裁掉 */
+.more { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .more > summary { list-style: none; cursor: pointer; padding: 2px 6px; color: var(--muted); border: 1px solid transparent; border-radius: 3px; }
 .more > summary::-webkit-details-marker { display: none; }
 .more > summary:hover, .more[open] > summary { color: var(--accent); border-color: var(--gold-lo); }
-.more-list { position: absolute; right: 0; top: 28px; z-index: 5; display: grid; gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--gold-lo); border-radius: 3px; box-shadow: 0 8px 20px #000a; }
+.more-list { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.more-list button { white-space: nowrap; }
 .line { gap: 6px; cursor: pointer; flex-wrap: nowrap; min-width: 0; }
 /* 名字太長時省略名字，標籤留在同一行 */
 .line > * { flex-shrink: 0; }
