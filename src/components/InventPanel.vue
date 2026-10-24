@@ -105,7 +105,7 @@ function invent() {
     </div>
 
     <div class="inputs">
-      <span>材料（最多 {{ craftRules.invention.max_inputs }} 種，不論結果都會用掉）：</span>
+      <span>材料（最多 {{ craftRules.invention.max_inputs }} 種） <Hint text="不論結果都會用掉。" />：</span>
       <span v-for="(x, i) in inputs" :key="x.name" class="tag">
         {{ x.name }} ×<input v-model.number="x.qty" type="number" min="1" max="99" class="qty" />
         <button class="x" @click="inputs.splice(i, 1)">×</button>
@@ -127,7 +127,7 @@ function invent() {
     <p class="muted">大成功：稍強，多做一半・成功：同級，照設計的份數・部分成功：稍弱，份數一半・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
     <p v-if="plan.blocked" class="warn"><GameIcon name="warning" :size="13" /> {{ plan.blocked }}</p>
     <template v-else>
-      <label class="field">做法（不用取名，名字由 AI 依做法與材料決定）
+      <label class="field"><span>做法 <Hint text="不用取名，名字由 AI 依做法與材料決定。" /></span>
         <textarea v-model="text" rows="3" maxlength="400" placeholder="例如「把硫磺磨成粉，和藥草汁一起封進陶瓶，瓶口塞一條浸了油的布」「肉抹上蜂蜜和鹽，掛在爐邊慢慢烘乾」" />
       </label>
       <AbilityPicker v-model="use" />

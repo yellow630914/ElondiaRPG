@@ -8,6 +8,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 怪物的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -179,10 +180,10 @@ function remove() {
         </label>
       </div>
       <div class="row checks">
-        <label class="check"><input v-model="draft.armed" type="checkbox" /> 持有裝備（打倒時可能掉裝備）</label>
+        <label class="check"><input v-model="draft.armed" type="checkbox" /> 持有裝備 <Hint text="打倒時可能掉裝備。" /></label>
         <label class="check"><input v-model="draft.rut" type="checkbox" /> 可能擲到「發情」</label>
       </div>
-      <label class="block">描述（給 AI 的外觀與習性）<textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
+      <label class="block"><span>描述 <Hint text="給 AI 的外觀與習性。" /></span><textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
     </fieldset>
 
     <fieldset>
@@ -272,7 +273,7 @@ function remove() {
       <legend>出現地點</legend>
       <p class="small">目前出現在：{{ nowPlaces.map((p) => `${p.label}${p.groups > 1 ? `（${p.groups} 組）` : ''}`).join('、') || '（沒有，不會遇到）' }}</p>
       <template v-if="builtinPlaces.length">
-        <p class="small muted">內建的遭遇表（勾選就從那裡移除；遭遇表不會被清空）：</p>
+        <p class="small muted">內建的遭遇表 <Hint text="勾選就從那裡移除；遭遇表不會被清空。" />：</p>
         <div class="row checks">
           <label v-for="p in builtinPlaces" :key="p.key" class="check small">
             <input type="checkbox" :checked="draft.exclude?.includes(p.key)" @change="toggleExclude(p.key, ($event.target as HTMLInputElement).checked)" /> 移除 {{ p.label }}

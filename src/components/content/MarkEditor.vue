@@ -8,6 +8,7 @@ import { placeName, TATTOO_PLACES } from '@/engine/tattoos'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 奴隸印記模板的編輯表單。刻印時把條款存一份在角色身上，改模板只影響之後刻的
 const props = defineProps<{ id: string }>()
@@ -100,7 +101,7 @@ function remove() {
           <select v-model="draft.place"><option v-for="p in TATTOO_PLACES" :key="p" :value="p">{{ placeName(p) }}</option></select>
         </label>
       </div>
-      <label class="wide">印記的樣子與感覺（會交給 AI 描寫）<textarea v-model="draft.mark" rows="2" :maxlength="L.mark_chars" /></label>
+      <label class="wide"><span>印記的樣子與感覺 <Hint text="會交給 AI 描寫。" /></span><textarea v-model="draft.mark" rows="2" :maxlength="L.mark_chars" /></label>
       <label class="wide">副作用（一行一項，最多 {{ L.side_effects }} 項）<textarea v-model="sideText" rows="3" /></label>
     </fieldset>
     <fieldset>

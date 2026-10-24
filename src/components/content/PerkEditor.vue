@@ -10,6 +10,7 @@ import { describeEffects, perkPower } from '@/engine/perks'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 特質的編輯表單：效果（檢定加值、戰鬥修正、抗性、增傷）、條件、互斥、訓練、NPC 的權重。
 // 種族特質只能改名稱、描述與效果（依種族自動擁有）。抗性可以是弱點；勾了「缺陷」的特質才能有負的檢定加值與戰鬥修正。
@@ -175,9 +176,9 @@ function remove() {
       <legend>基本</legend>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="perkRules.custom.name_chars" /></label>
-        <label v-if="!race" class="check"><input v-model="draft.flaw" type="checkbox" /> 缺陷（負的效果；不會出現在學特質的機會裡，事件直接給，受訓是克服它）</label>
+        <label v-if="!race" class="check"><input v-model="draft.flaw" type="checkbox" /> 缺陷 <Hint text="負的效果；不會出現在學特質的機會裡，事件直接給，受訓是克服它。" /></label>
       </div>
-      <label class="block">描述（玩家與 AI 看到的；空白時依效果產生：{{ auto }}） <textarea v-model="draft.desc" rows="2" :maxlength="perkRules.custom.desc_chars" /></label>
+      <label class="block"><span>描述 <Hint :text="`玩家與 AI 看到的；空白時依效果產生：${auto}`" /></span><textarea v-model="draft.desc" rows="2" :maxlength="perkRules.custom.desc_chars" /></label>
     </fieldset>
 
     <fieldset>

@@ -293,7 +293,7 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
           主人：
           <label class="check"><input v-model="masterMode" type="radio" value="candidate" /> 從名單挑選</label>
           <label class="check"><input v-model="masterMode" type="radio" value="custom" /> 自訂</label>
-          <label class="check"><input v-model="masterMode" type="radio" value="none" /> 無主（主人已經不在了，但印記還在）</label>
+          <label class="check"><input v-model="masterMode" type="radio" value="none" /> 無主 <Hint text="主人已經不在了，但印記還在。" /></label>
         </div>
         <div v-if="masterMode === 'candidate'" class="masters">
           <label v-for="(m, i) in candidates" :key="m.id" class="master small">

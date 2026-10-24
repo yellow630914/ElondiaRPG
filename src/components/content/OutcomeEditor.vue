@@ -6,6 +6,7 @@ import { SIDE_MAPS, STORY_EFFECTS } from '@/engine/storyMods'
 import type { RewardEffect } from '@/engine/effects'
 import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
+import Hint from '../ui/Hint.vue'
 
 // 任務點的一個結果：文字、劇情旗標、效果、任務同行的夥伴、完成或失敗。
 // 旅途與城鎮事件（event）只用文字、旗標、移動與效果
@@ -77,7 +78,7 @@ const end = computed({
           <option value="complete">✅ 完成任務（發完成報酬）</option>
           <option value="fail">❌ 任務失敗</option>
         </select>
-        <label class="check"><input v-model="o.retry" type="checkbox" /> 之後可以再來一次（不結束這個任務點）</label>
+        <label class="check"><input v-model="o.retry" type="checkbox" /> 之後可以再來一次 <Hint text="不結束這個任務點。" /></label>
       </div>
     </template>
   </div>

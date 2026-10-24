@@ -5,6 +5,7 @@ import { builtinMarkRules } from '@/engine/mods'
 import { currentMarkRules, type MarkRulesMod } from '@/engine/tattooMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
+import Hint from '../ui/Hint.vue'
 
 // 印記的用途與權重：預設印記、老鴇的印記、刻印檢定的輕重順序、奴隸市場與自賣的權重
 const content = useContent()
@@ -69,10 +70,10 @@ function restore() {
     <fieldset>
       <legend>用途</legend>
       <div class="grid">
-        <label>預設的印記（買奴隸、AI 交易清單、劇情沒指定時）
+        <label><span>預設的印記 <Hint text="買奴隸、AI 交易清單、劇情沒指定時用的印記。" /></span>
           <select v-model="draft.roles.default"><option v-for="id in ids" :key="id" :value="id">{{ name(id) }}</option></select>
         </label>
-        <label>老鴇刻的印記（老鴇收下主角、娼妓主人、自賣給老鴇）
+        <label><span>老鴇刻的印記 <Hint text="老鴇收下主角、娼妓主人、自賣給老鴇時刻的印記。" /></span>
           <select v-model="draft.roles.madam"><option v-for="id in ids" :key="id" :value="id">{{ name(id) }}</option></select>
         </label>
       </div>

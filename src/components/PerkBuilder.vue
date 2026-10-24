@@ -3,6 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import { actionRules, ATTR_IDS, attrName, damageTypes, npcTags, perkRules, type AttrId, type CheckContext } from '@/engine/data'
 import { perkPower, sanitizePerk } from '@/engine/perks'
 import type { PerkDef } from '@/engine/data'
+import Hint from './ui/Hint.vue'
 
 // 自訂特質：名稱、描述與最多幾個效果（檢定加值、戰鬥修正、抗性）。建立角色時用
 // 勾「缺陷」時效果是負的（檢定減值、戰鬥減值、弱點，範圍見 perks.json 的 custom.flaw）
@@ -71,7 +72,7 @@ function add() {
   <div class="builder small">
     <div class="row">
       <label>名稱 <input v-model="name" :maxlength="c.name_chars" placeholder="例如：酒館之子" /></label>
-      <label class="grow">描述（選填，沒寫時依效果自動產生）<input v-model="desc" :maxlength="c.desc_chars" /></label>
+      <label class="grow"><span>描述（選填） <Hint text="沒寫時依效果自動產生。" /></span><input v-model="desc" :maxlength="c.desc_chars" /></label>
       <label v-if="allowFlaw" class="check"><input v-model="flaw" type="checkbox" /> 缺陷（效果是負的）</label>
     </div>
     <div v-for="(r, i) in rows" :key="i" class="row effect">

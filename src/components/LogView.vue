@@ -8,6 +8,7 @@ import { ARCHIVE_USAGE, OTHER_USAGE, usageFeatureName, usageSourceLabel } from '
 import { formatTime } from '@/engine/state'
 import ReportCard from './ReportCard.vue'
 import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // 冒險頁中間的日誌：舊的在上、新的在下，有新紀錄時捲到最下面。
 const PAGE = 30
@@ -88,7 +89,7 @@ onMounted(() => toBottom(true))
       <summary>本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens・{{ game.totalUsage.calls }} 次呼叫</summary>
       <p class="detail">
         輸入 {{ formatTokens(game.totalUsage.input) }}<template v-if="game.totalUsage.cached">，其中快取 {{ formatTokens(game.totalUsage.cached) }}</template>・輸出 {{ formatTokens(game.totalUsage.output) }}
-        <br />其中 日誌 {{ formatTokens(usageSplit.log) }}<template v-if="usageSplit.archive">・已封存的日誌 {{ formatTokens(usageSplit.archive) }}</template><template v-if="usageSplit.other">・其他（酒館候選人、商店清單、談判方式等）{{ formatTokens(usageSplit.other) }}</template>
+        <br />其中 日誌 {{ formatTokens(usageSplit.log) }}<template v-if="usageSplit.archive">・已封存的日誌 {{ formatTokens(usageSplit.archive) }}</template><template v-if="usageSplit.other">・其他 <Hint text="酒館候選人、商店清單、談判方式等。" /> {{ formatTokens(usageSplit.other) }}</template>
       </p>
       <ul v-if="game.usageBySource.length" class="sources" title="依模型來源（服務與模型）分開的用量">
         <li v-for="(u, i) in game.usageBySource" :key="i">

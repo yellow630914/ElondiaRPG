@@ -89,7 +89,7 @@ const pendingMark = computed(() => s.value.pendingMark)
     <p v-if="pending.item" class="small">禮物：{{ pending.item }}</p>
     <p class="small">
       自然骰 <strong class="dice">{{ pending.natural }}</strong>・參考 DC {{ pending.base_dc }}
-      <span class="muted">（骰值是給 AI 的參考；AI 會依角色、關係與情勢決定結果，可能出乎預料）</span>
+      <Hint text="骰值是給 AI 的參考；AI 會依角色、關係與情勢決定結果，可能出乎預料。" />
     </p>
     <p v-if="pending.situational.length" class="small muted">
       情境修正：<span v-for="x in pending.situational" :key="x.label">{{ x.label }} {{ signed(x.value) }} </span>

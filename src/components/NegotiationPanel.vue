@@ -54,7 +54,7 @@ function free(id: string) {
       </button>
     </div>
 
-    <h4 class="small">或自己描述做法（主動行動，{{ aiOn ? 'AI 看骰值判定' : '依規則判定' }}，參考 DC {{ n.base_dc }}）</h4>
+    <h4 class="small">或自己描述做法（參考 DC {{ n.base_dc }}）<Hint :text="`算主動行動，${aiOn ? 'AI 看骰值判定' : '依規則判定'}。`" /></h4>
     <textarea v-model="text[n.id]" rows="2" placeholder="例如：提起上次幫他找回貨物的事，請他通融" />
     <AbilityPicker v-model="use[n.id]" />
     <button class="small" :disabled="!(text[n.id] ?? '').trim() || game.judging" @click="free(n.id)">談判</button>

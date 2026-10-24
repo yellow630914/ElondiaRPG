@@ -7,6 +7,7 @@ import { oathError, oathText, placeName, TATTOO_PLACES, tattooRules } from '@/en
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 刺青圖樣（普通刺青、誓約印記）的編輯表單。角色身上的刺青是刺上時存的一份，改圖樣只影響之後刺的
 const props = defineProps<{ id: string }>()
@@ -102,7 +103,7 @@ function remove() {
           </select>
         </label>
       </div>
-      <label class="wide">外觀（會交給 AI 描寫）<textarea v-model="draft.desc" rows="2" maxlength="160" /></label>
+      <label class="wide"><span>外觀 <Hint text="會交給 AI 描寫。" /></span><textarea v-model="draft.desc" rows="2" maxlength="160" /></label>
     </fieldset>
     <fieldset v-if="draft.kind === 'oath'">
       <legend>屬性的加減 <span class="small" :class="problem ? 'warn-text' : 'muted'">{{ problem ?? oathText(draft.attrs ?? {}) }}</span></legend>
@@ -113,7 +114,7 @@ function remove() {
       </div>
     </fieldset>
     <fieldset>
-      <legend>建議的部位（沒勾時任何部位都可以）</legend>
+      <legend>建議的部位 <Hint text="沒勾時任何部位都可以。" /></legend>
       <div class="row">
         <label v-for="p in TATTOO_PLACES" :key="p" class="check small">
           <input type="checkbox" :checked="draft.places?.includes(p)" @change="togglePlace(p, ($event.target as HTMLInputElement).checked)" /> {{ placeName(p) }}

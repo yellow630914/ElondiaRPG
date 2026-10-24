@@ -7,6 +7,7 @@ import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAM
 import { travelEvents } from '@/engine/road'
 import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
+import Hint from '../ui/Hint.vue'
 
 // 一個任務點：在哪裡、解鎖的條件、種類（劇情、判定、戰鬥、選擇）、結果
 const node = defineModel<StoryNode>({ required: true })
@@ -83,14 +84,14 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
   <div class="node">
     <div class="grid">
       <label>id <input v-model="node.id" maxlength="40" :disabled="props.lockedId" :title="props.lockedId ? '目前的存檔已經完成這個任務點，id 不能改（改了會再觸發一次）' : ''" /></label>
-      <label>目標（冒險筆記上看到的） <input v-model="node.title" maxlength="40" /></label>
+      <label><span>目標 <Hint text="冒險筆記上看到的。" /></span><input v-model="node.title" maxlength="40" /></label>
       <label>種類
         <select :value="node.kind" @change="setKind(($event.target as HTMLSelectElement).value as StoryNode['kind'])">
           <option v-for="(n, k) in NODE_KINDS" :key="k" :value="k">{{ n }}</option>
         </select>
       </label>
     </div>
-    <label class="block">事件描述（觸發時看到的，也會交給 AI） <textarea v-model="node.text" rows="3" maxlength="600" /></label>
+    <label class="block"><span>事件描述 <Hint text="觸發時看到的，也會交給 AI。" /></span><textarea v-model="node.text" rows="3" maxlength="600" /></label>
 
     <div class="grid">
       <label>在哪裡
@@ -164,7 +165,7 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
         檢定
         <select v-model="node.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
         DC <input v-model.number="node.check.dc" type="number" min="1" max="40" class="num" />
-        <span class="muted">（可以描述做法交給 AI 判定；大成功、成功、部分成功都算成功）</span>
+        <Hint text="可以描述做法交給 AI 判定；大成功、成功、部分成功都算成功。" />
       </div>
       <OutcomeEditor v-model="node.success" label="成功" />
       <OutcomeEditor v-model="node.fail" label="失敗" optional />

@@ -18,6 +18,7 @@ import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
 import IconField from './IconField.vue'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 物品的編輯表單：基本資料、出現的地方（商店、掉落、寶箱、採集、事件）、消耗品效果、裝備組成
 const props = defineProps<{ name: string }>()
@@ -337,7 +338,7 @@ function remove() {
         <label class="check small"><input type="checkbox" :checked="draft.gather?.includes('wild')" @change="setGather('wild', ($event.target as HTMLInputElement).checked)" /> 近郊的資源格</label>
         <label class="check small"><input type="checkbox" :checked="draft.gather?.includes('dungeon')" @change="setGather('dungeon', ($event.target as HTMLInputElement).checked)" /> 地下城的資源格</label>
       </div>
-      <label class="check small"><input v-model="draft.event" type="checkbox" /> 事件：AI 判定主動行動時可以把它當成報酬（提示詞會列出這個物品）</label>
+      <label class="check small"><input v-model="draft.event" type="checkbox" /> 事件：AI 判定主動行動時可以把它當成報酬 <Hint text="提示詞會列出這個物品。" /></label>
       <div>
         <span class="small">怪物掉落：</span>
         <div v-for="(d, i) in drops" :key="i" class="row">
@@ -404,7 +405,7 @@ function remove() {
           </label>
           <label v-if="use.apply.save">豁免 DC <input v-model.number="use.apply.dc" type="number" min="5" max="30" /></label>
         </template>
-        <label v-if="use.damage || use.apply">豁免（成功時傷害減半、不受狀態）
+        <label v-if="use.damage || use.apply"><span>豁免 <Hint text="成功時傷害減半、不受狀態。" /></span>
           <select :value="use.save?.attr ?? ''" @change="use.save = ($event.target as HTMLSelectElement).value ? { attr: ($event.target as HTMLSelectElement).value as AttrId, dc: use.save?.dc ?? 13 } : undefined">
             <option value="">（不能豁免）</option>
             <option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option>
@@ -416,7 +417,7 @@ function remove() {
         </label>
       </div>
       <label class="check small"><input v-model="use.escape" type="checkbox" /> 傳送：全隊立刻脫離戰鬥</label>
-      <label class="check small"><input v-model="use.combat_only" type="checkbox" /> 只能在戰鬥中使用（回復生命、法術環以外的效果一律只能在戰鬥中用）</label>
+      <label class="check small"><input v-model="use.combat_only" type="checkbox" /> 只能在戰鬥中使用 <Hint text="回復生命、法術環以外的效果一律只能在戰鬥中用。" /></label>
     </fieldset>
 
     <fieldset v-if="draft.category === 'gear'">
@@ -447,7 +448,7 @@ function remove() {
         <label v-if="draft.tool?.kind === 'light'">燒什麼
           <input v-model="draft.tool.fuel" placeholder="空白：燒自己（火把）或不會燒（照明石）" />
         </label>
-        <label>能照亮幾格（燃料、火把每一份；0 = 不是燃料）
+        <label><span>能照亮幾格 <Hint text="燃料、火把每一份能照亮幾格；0 = 不是燃料。" /></span>
           <input v-model.number="draft.burns" type="number" min="0" max="999" />
         </label>
       </div>
@@ -607,7 +608,7 @@ function remove() {
       <template v-if="draft.gear">
         <label class="check small">
           <input type="checkbox" :checked="!!draft.gear.unique" @change="setUnique(($event.target as HTMLInputElement).checked)" />
-          獨特物品：帶一種檢定加值（和附魔分開、可以和其他加值疊加）。不會在商店賣、不能打造，要放進寶箱或特殊任務的效果才拿得到
+          獨特物品：帶一種檢定加值。不會在商店賣、不能打造，要放進寶箱或特殊任務的效果才拿得到 <Hint text="這個檢定加值和附魔分開，可以和其他加值疊加。" />
         </label>
         <div v-if="draft.gear.unique" class="unique small">
           <label>檢定加值 <input v-model.number="draft.gear.unique.bonus" type="number" min="1" max="3" class="num" /></label>
@@ -626,7 +627,7 @@ function remove() {
           </details>
         </div>
         <div class="row small">
-          <span>屬性加減（每項 ±{{ attrMax }}；身上裝備的同一項合計最多 ±{{ gearRules.attrs.cap }}）：</span>
+          <span>屬性加減（每項 ±{{ attrMax }}） <Hint :text="`身上裝備的同一項合計最多 ±${gearRules.attrs.cap}。`" />：</span>
           <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }}
             <input type="number" class="num" :min="-attrMax" :max="attrMax" :value="draft.gear.attrs?.[a] ?? 0" @input="setGearAttr(a, Number(($event.target as HTMLInputElement).value))" />
           </label>

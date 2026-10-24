@@ -13,6 +13,7 @@ import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
 import StoryNodeEditor from './StoryNodeEditor.vue'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 特殊任務的編輯表單：開頭、任務點（依劇情旗標解鎖）、完成報酬；下方檢查任務鏈與旗標的流向
 const props = defineProps<{ id: string }>()
@@ -204,9 +205,9 @@ function remove() {
           </select>
         </label>
         <label>完成時的公會功績 <input v-model.number="draft.merit" type="number" min="0" max="100" :placeholder="`預設 ${storyMerit()}`" /></label>
-        <label>期限（開始後幾天內要完成，空白不限）<input v-model.number="draft.time_limit" type="number" min="0" max="365" placeholder="不限" /></label>
+        <label><span>期限 <Hint text="開始後幾天內要完成，空白不限。" /></span><input v-model.number="draft.time_limit" type="number" min="0" max="365" placeholder="不限" /></label>
       </div>
-      <label class="block">簡介（冒險筆記與接任務時看到） <textarea v-model="draft.summary" rows="2" maxlength="300" /></label>
+      <label class="block"><span>簡介 <Hint text="冒險筆記與接任務時看到。" /></span><textarea v-model="draft.summary" rows="2" maxlength="300" /></label>
     </fieldset>
 
     <fieldset>
@@ -223,7 +224,7 @@ function remove() {
             <option v-for="l in settlements" :key="l.id" :value="l.id">{{ l.name }}</option>
           </select>
         </label>
-        <label v-if="draft.start.kind === 'npc'">固定 NPC（在身邊時可以接）
+        <label v-if="draft.start.kind === 'npc'"><span>固定 NPC <Hint text="在身邊時可以接。" /></span>
           <select v-model="draft.start.npc">
             <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
           </select>
@@ -247,10 +248,10 @@ function remove() {
           <input type="checkbox" :checked="draft.start.regions?.includes(r.id)" @change="draft.start.regions = ($event.target as HTMLInputElement).checked ? [...(draft.start.regions ?? []), r.id] : (draft.start.regions ?? []).filter((x) => x !== r.id)" /> {{ r.name }}
         </label>
       </div>
-      <label class="block">開頭的事件描述（旅途、情報商、NPC 拜託時看到；沒有時用簡介） <textarea v-model="draft.start.text" rows="2" maxlength="400" /></label>
+      <label class="block"><span>開頭的事件描述 <Hint text="旅途、情報商、NPC 拜託時看到；沒有時用簡介。" /></span><textarea v-model="draft.start.text" rows="2" maxlength="400" /></label>
       <div class="row small">接取需要旗標 <FlagInput v-model="startReq.flags" /></div>
       <div class="row small">這些旗標成立時不出現 <FlagInput v-model="startReq.flags_none" /></div>
-      <div class="row small">開始時設定的旗標（任務鏈的第一個旗標） <FlagInput v-model="draft.start_flags" /></div>
+      <div class="row small">開始時設定的旗標 <Hint text="任務鏈的第一個旗標。" /> <FlagInput v-model="draft.start_flags" /></div>
     </fieldset>
 
     <fieldset>

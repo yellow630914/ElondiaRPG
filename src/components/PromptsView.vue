@@ -10,6 +10,7 @@ import { usePrompts } from '@/stores/prompts'
 import { useSettings } from '@/stores/settings'
 import PromptEntryList from './PromptEntryList.vue'
 import { dateStamp, download } from './download'
+import Hint from './ui/Hint.vue'
 
 type Sub = 'rules' | 'styles' | 'lore' | 'custom' | 'data' | 'preview'
 const SUBS: { id: Sub; label: string }[] = [
@@ -390,8 +391,8 @@ function resetAll() {
           <div v-if="openLore === it.uid" class="editor">
             <p v-if="it.note" class="small muted">{{ it.note }}</p>
             <label>名稱 <input :value="it.comment" @change="prompts.updateLore(it.uid, { comment: inputValue($event) })" /></label>
-            <label>關鍵字（用逗號或頓號分隔；「關鍵字觸發」時使用）<input :value="keysText(it)" @change="setKeys(it, inputValue($event))" /></label>
-            <label class="check"><input type="checkbox" :checked="it.adult" @change="prompts.updateLore(it.uid, { adult: ($event.target as HTMLInputElement).checked })" /> 成人向（設定開啟才注入）</label>
+            <label><span>關鍵字 <Hint text="用逗號或頓號分隔；「關鍵字觸發」時使用。" /></span><input :value="keysText(it)" @change="setKeys(it, inputValue($event))" /></label>
+            <label class="check"><input type="checkbox" :checked="it.adult" @change="prompts.updateLore(it.uid, { adult: ($event.target as HTMLInputElement).checked })" /> 成人向 <Hint text="設定裡開啟成人向時才注入。" /></label>
             <textarea :value="it.content" rows="10" @change="prompts.updateLore(it.uid, { content: inputValue($event) })" />
             <div class="row">
               <span class="small muted">內容修改在離開輸入框時儲存。</span>

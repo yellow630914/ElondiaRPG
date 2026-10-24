@@ -11,6 +11,7 @@ import AffinityRows from './AffinityRows.vue'
 import IconField from './IconField.vue'
 import { baseArt, refPath } from '../items/itemIcon'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 裝備底材與材料的編輯表單
 const props = defineProps<{ kind: 'base' | 'material'; id: string }>()
@@ -195,7 +196,7 @@ function remove() {
           <label>類型
             <select v-model="mat.kind" :disabled="builtin"><option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option></select>
           </label>
-          <label>等級（1～5，決定打造的工錢與 DC）<input v-model.number="mat.tier" type="number" min="1" max="5" :disabled="builtin" :title="builtin ? '內建材料的等級不能改（隨機裝備依類型與等級找材料）' : ''" /></label>
+          <label><span>等級（1～5） <Hint text="決定打造的工錢與 DC。" /></span><input v-model.number="mat.tier" type="number" min="1" max="5" :disabled="builtin" :title="builtin ? '內建材料的等級不能改（隨機裝備依類型與等級找材料）' : ''" /></label>
           <label>加成 <input v-model.number="mat.bonus" type="number" min="0" max="10" /></label>
           <label>稀有度
             <select v-model="mat.rarity"><option v-for="r in RARITY_ORDER" :key="r" :value="r">{{ rarityName(r) }}</option></select>

@@ -115,7 +115,7 @@ function craft() {
       </tr>
     </table>
     <div class="aux">
-      <span>輔料（選填，最多 {{ auxRules.max_kinds }} 種，不論結果都會用掉）：</span>
+      <span>輔料（選填，最多 {{ auxRules.max_kinds }} 種） <Hint text="不論結果都會用掉。" />：</span>
       <span v-for="(a, i) in aux" :key="a.name" class="tag">
         {{ a.name }} ×<input v-model.number="a.qty" type="number" min="1" :max="auxRules.max_qty" class="qty" />
         <button class="x" @click="aux.splice(i, 1)">×</button>

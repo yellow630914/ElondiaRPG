@@ -4,6 +4,7 @@ import { slaveryRules } from '@/engine/data'
 import { sanitizeTerms, templateTerms, type MarkChoice } from '@/engine/slavery'
 import { placeName, TATTOO_PLACES } from '@/engine/tattoos'
 import type { MarkTerms } from '@/engine/types'
+import Hint from './ui/Hint.vue'
 
 // 選擇契約印記：模板（勞役、戰奴、魔導束縛）或自訂（名稱、描述、部位與各項數值）
 const props = defineProps<{ allowed?: string[]; allowCustom?: boolean; base?: string }>()
@@ -58,8 +59,8 @@ function startFrom(id: string) {
           <button v-for="id in Object.keys(slaveryRules.contracts)" :key="id" class="small" type="button" @click="startFrom(id)">{{ templateTerms(id).name }}</button>
         </div>
         <label>名稱 <input v-model="custom.name" :maxlength="r.name_chars" /></label>
-        <label>描述（印記的樣子與感覺，會交給 AI 描寫）<textarea v-model="custom.mark" rows="2" :maxlength="r.mark_chars" /></label>
-        <label>部位（原本的刺青會被蓋掉）
+        <label><span>描述 <Hint text="印記的樣子與感覺，會交給 AI 描寫。" /></span><textarea v-model="custom.mark" rows="2" :maxlength="r.mark_chars" /></label>
+        <label><span>部位 <Hint text="原本的刺青會被蓋掉。" /></span>
           <select v-model="custom.place"><option v-for="p in TATTOO_PLACES" :key="p" :value="p">{{ placeName(p) }}</option></select>
         </label>
         <div class="nums">

@@ -7,6 +7,7 @@ import {
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 能力（技能、法術、戲法）的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -135,7 +136,7 @@ function remove() {
         <label v-if="draft.type === 'skill'">幾級可以學 <input v-model.number="draft.unlock" type="number" min="1" max="20" /></label>
         <label v-if="draft.type === 'spell'">環數 <input v-model.number="draft.circle" type="number" min="1" max="9" /></label>
         <label>行動點 <input v-model.number="draft.ap" type="number" min="0" max="12" :placeholder="draft.type === 'spell' ? '依環數' : draft.type === 'cantrip' ? '0' : ''" /></label>
-        <label>屬性（命中、傷害、DC）
+        <label><span>屬性 <Hint text="用來算命中、傷害與 DC。" /></span>
           <select :value="draft.attr ?? ''" @change="draft.attr = (($event.target as HTMLSelectElement).value || undefined) as AttrId | 'casting' | undefined">
             <option value="">（不用）</option>
             <option value="casting">施法屬性（依職業）</option>
@@ -266,12 +267,12 @@ function remove() {
         <template v-if="draft.resolve === 'auto'">
           <label class="check"><input v-model="draft.cleanse" type="checkbox" /> 移除目標的所有負面狀態</label>
           <label class="check"><input v-model="draft.recover_slot" type="checkbox" /> 回復一個法術環</label>
-          <label class="check"><input v-model="draft.kill" type="checkbox" /> 直接擊倒（配合生命值上限）</label>
+          <label class="check"><input v-model="draft.kill" type="checkbox" /> 直接擊倒 <Hint text="配合上面的「目標生命值上限」使用。" /></label>
         </template>
       </div>
     </fieldset>
 
-    <label class="block">說明（玩家與 AI 看到的） <textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
+    <label class="block"><span>說明 <Hint text="玩家與 AI 看到的。" /></span><textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
   </div>
 </template>
 

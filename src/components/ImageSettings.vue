@@ -53,7 +53,7 @@ function resetService() {
         </select>
       </label>
       <p class="small muted">{{ info.note }}</p>
-      <label>API key{{ info.keyOptional ? '（選填，有設驗證時才要）' : '' }}
+      <label><span>API key<template v-if="info.keyOptional">（選填） <Hint text="有設驗證時才要。" /></template></span>
         <input v-model="cfg.apiKey" type="password" autocomplete="off" />
       </label>
       <label>服務網址 <input v-model="cfg.baseURL" /></label>
@@ -75,7 +75,7 @@ function resetService() {
         </template>
       </div>
       <label v-if="image.service === 'novelai'">負面提示詞 <textarea v-model="cfg.negative" rows="2" /></label>
-      <label>額外參數（JSON，選填；{{ image.service === 'novelai' ? '合併進 parameters' : '合併進請求' }}）
+      <label><span>額外參數（JSON，選填） <Hint :text="image.service === 'novelai' ? '合併進 parameters。' : '合併進請求。'" /></span>
         <textarea v-model="cfg.extra" rows="2" class="mono" spellcheck="false" placeholder='{"quality": "high"}' />
       </label>
       <div v-if="image.service !== 'comfyui'" class="row"><button class="small" @click="resetService"><GameIcon name="undo" :size="14" />這個服務的參數恢復預設</button></div>
@@ -108,12 +108,12 @@ function resetService() {
               <option value="text">原樣送出（只拿掉程式碼框）</option>
             </select>
           </label>
-          <label>指示（交給大語言模型的 system）
+          <label><span>指示 <Hint text="當作 system 交給大語言模型。" /></span>
             <textarea v-model="custom.instructions" rows="9" class="mono" spellcheck="false" />
           </label>
         </template>
         <details v-else-if="pre">
-          <summary class="small">「{{ pre.name }}」的指示（內建，不能修改；複製成自訂的再改）</summary>
+          <summary class="small">「{{ pre.name }}」的指示 <Hint text="內建，不能修改；複製成自訂的再改。" /></summary>
           <textarea :value="pre.instructions" rows="9" class="mono" readonly />
           <p class="small muted">回覆的整理方式：{{ pre.output === 'tags' ? '整理成標籤' : '原樣送出' }}</p>
         </details>
@@ -125,7 +125,7 @@ function resetService() {
         </div>
       </fieldset>
 
-      <label>畫風（模板的 {style}） <input v-model="image.style" /></label>
+      <label><span>畫風 <Hint text="填進提示詞模板的 {style}。" /></span><input v-model="image.style" /></label>
       <div class="row"><button class="small" :disabled="image.style === DEFAULT_STYLE" @click="image.style = DEFAULT_STYLE">畫風恢復預設</button></div>
       <details>
         <summary class="small">形象插圖的提示詞模板</summary>

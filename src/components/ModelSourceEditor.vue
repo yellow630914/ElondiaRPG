@@ -153,7 +153,7 @@ function copyFrom(e: Event) {
     <p v-if="message" class="small">{{ message }}</p>
 
     <label>
-      最大輸出 tokens（選填，留空用服務預設值）
+      <span class="lab">最大輸出 tokens（選填） <Hint text="留空用服務的預設值。" /></span>
       <input type="number" min="0" :value="cfg.maxTokens ?? ''" style="width: 140px" @input="onMaxTokens" />
     </label>
 
@@ -173,9 +173,9 @@ function copyFrom(e: Event) {
         </select>
         <span v-if="!cfg.reasoningFormat || cfg.reasoningFormat === 'auto'" class="small muted">目前判斷為：{{ guessed }}</span>
       </label>
-      <label class="check"><input v-model="showThinking" type="checkbox" /> 在日誌顯示思考過程（摺疊；服務有回傳時）</label>
+      <label class="check"><input v-model="showThinking" type="checkbox" /> 在日誌顯示思考過程 <Hint text="摺疊顯示；服務有回傳思考過程時才有。" /></label>
       <label v-if="source.provider === 'openai_compatible'">
-        自訂請求參數（JSON，選填；會直接加進請求，例如 {"thinking": {"type": "enabled"}}）
+        <span class="lab">自訂請求參數（JSON，選填） <Hint text='會直接加進請求，例如 {"thinking": {"type": "enabled"}}。' /></span>
         <textarea v-model="cfg.extraBody" rows="2" spellcheck="false" placeholder='{"reasoning": {"enabled": true}}' />
         <span v-if="extraError" class="small" style="color: var(--danger)">{{ extraError }}</span>
       </label>

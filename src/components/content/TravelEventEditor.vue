@@ -9,6 +9,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
+import Hint from '../ui/Hint.vue'
 
 // 旅途事件或城鎮事件的編輯表單：在哪裡出現、檢定或選項、結果
 const props = defineProps<{ id: string }>()
@@ -130,7 +131,7 @@ function remove() {
             <option value="advanced">高階事件（✨，可以帶進臨時地圖）</option>
           </select>
         </label>
-        <label>分類（城鎮事件依最近的分類平衡）
+        <label><span>分類 <Hint text="城鎮事件依最近的分類平衡。" /></span>
           <select v-model="draft.category">
             <option :value="undefined">（無）</option>
             <option v-for="(n, k) in categories" :key="k" :value="k">{{ n }}</option>
@@ -142,7 +143,7 @@ function remove() {
     </fieldset>
 
     <fieldset v-if="!town">
-      <legend>路段（沒勾時任何路段）</legend>
+      <legend>路段 <Hint text="沒勾時任何路段都會出現。" /></legend>
       <div class="row">
         <label v-for="m in ROUTE_MODES" :key="m" class="check small">
           <input type="checkbox" :checked="draft.modes?.includes(m)" @change="toggle<RouteMode>('modes', m, ($event.target as HTMLInputElement).checked)" /> {{ MODE_NAME[m] }}
@@ -150,7 +151,7 @@ function remove() {
       </div>
     </fieldset>
     <fieldset v-else>
-      <legend>出現的地方（每一項沒勾時不限）</legend>
+      <legend>出現的地方 <Hint text="每一項沒勾時不限。" /></legend>
       <div class="row small"><b>設施</b>
         <label v-for="c in townEventCells()" :key="c" class="check">
           <input type="checkbox" :checked="draft.cells?.includes(c)" @change="toggle('cells', c, ($event.target as HTMLInputElement).checked)" /> {{ cellLabel(c) }}
@@ -175,7 +176,7 @@ function remove() {
     </fieldset>
 
     <fieldset v-if="draft.kind === 'check'">
-      <legend>檢定{{ draft.tier === 'advanced' ? '（成功時接著出現下面的選項）' : '' }}</legend>
+      <legend>檢定 <Hint v-if="draft.tier === 'advanced'" text="成功時接著出現下面的選項。" /></legend>
       <div class="row small">
         <select v-model="draft.check!.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
         DC <input v-model.number="draft.check!.dc" type="number" min="1" max="40" class="num" />

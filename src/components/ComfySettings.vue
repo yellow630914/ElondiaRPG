@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { buildWorkflow, checkWorkflow, COMFY_MODES, comfyServer, presetIssues, type ComfyLora } from '@/narrator/comfy'
 import { useImageSettings } from '@/stores/image'
 import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 
 // ComfyUI 的設定組合：每個主模一組（Checkpoint、UNet 或自訂工作流程），
 // 清單從 ComfyUI 讀（/object_info），也可以從自己的工作流程匯入
@@ -122,7 +123,7 @@ async function check() {
     </div>
 
     <details class="import" :open="importOpen" @toggle="importOpen = ($event.target as HTMLDetailsElement).open">
-      <summary class="small"><GameIcon name="download" :size="14" /> 從工作流程匯入（ComfyUI 選單的「Export (API)」）</summary>
+      <summary class="small"><GameIcon name="download" :size="14" /> 從工作流程匯入 <Hint text="貼上 ComfyUI 選單的「Export (API)」匯出的工作流程。" /></summary>
       <p class="small muted">讀出主模、文字編碼器、VAE、LoRA、取樣與高解析修復的設定，新增成一組。先讀取 ComfyUI 清單，LoRA 才對得到正確的檔名。</p>
       <textarea v-model="importText" rows="5" class="mono" spellcheck="false" placeholder="貼上 API 格式的工作流程 JSON" />
       <div class="row">
@@ -144,7 +145,7 @@ async function check() {
 
       <template v-if="p.mode === 'checkpoint'">
         <label>Checkpoint <input v-model="p.checkpoint" list="comfy-ckpt" placeholder="例如 illustriousXL.safetensors" /></label>
-        <label>VAE（選填，空白時用 Checkpoint 內建的） <input v-model="p.vae" list="comfy-vae" /></label>
+        <label><span>VAE（選填） <Hint text="空白時用 Checkpoint 內建的 VAE。" /></span><input v-model="p.vae" list="comfy-vae" /></label>
       </template>
 
       <template v-else-if="p.mode === 'unet'">
@@ -167,7 +168,7 @@ async function check() {
       </template>
 
       <template v-else>
-        <label>工作流程（API 格式 JSON；代號：%prompt% %negative% %width% %height% %seed% %steps% %scale% %sampler% %scheduler% %model%）
+        <label><span>工作流程 <Hint text="API 格式的 JSON。可以用的代號：%prompt% %negative% %width% %height% %seed% %steps% %scale% %sampler% %scheduler% %model%。" /></span>
           <textarea v-model="p.workflow" rows="8" class="mono" spellcheck="false" />
         </label>
         <label>成品圖的節點編號（選填）
@@ -201,7 +202,7 @@ async function check() {
         <label>排程器 <input v-model="p.scheduler" list="comfy-scheduler" /></label>
       </div>
       <template v-if="p.mode !== 'custom'">
-        <label class="check"><input v-model="p.hires.on" type="checkbox" /> 高解析修復（latent 放大後再採樣一次）</label>
+        <label class="check"><input v-model="p.hires.on" type="checkbox" /> 高解析修復 <Hint text="latent 放大後再採樣一次。" /></label>
         <div v-if="p.hires.on" class="grid">
           <label>倍率 <input v-model.number="p.hires.scale" type="number" min="1" max="4" step="0.25" /></label>
           <label>放大方式 <input v-model="p.hires.method" list="comfy-upscale" /></label>
@@ -212,7 +213,7 @@ async function check() {
       </template>
     </fieldset>
 
-    <label>固定前綴標籤（品質、畫風、LoRA 觸發詞；接在角色的提示詞前面）
+    <label><span>固定前綴標籤 <Hint text="品質、畫風、LoRA 觸發詞；接在角色的提示詞前面。" /></span>
       <textarea v-model="p.prefix" rows="2" placeholder="masterpiece, best quality, very aesthetic" />
     </label>
     <label>負面提示詞 <textarea v-model="p.negative" rows="2" /></label>

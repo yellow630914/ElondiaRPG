@@ -10,6 +10,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 城鎮特色地標的編輯表單：名稱、圖示、說明、AI 的氛圍、類型、位置，以及開放條件、參訪、探索、打工與受訓。
 // 內建的不能換聚落、不能刪除
@@ -135,10 +136,10 @@ function remove() {
         <label>名稱 <input v-model="draft.name" :maxlength="LANDMARK_LIMITS.name_chars" /></label>
         <label>圖示 <input v-model="draft.emoji" maxlength="8" /></label>
       </div>
-      <label class="block">說明（站在這裡時顯示）<textarea v-model="draft.desc" rows="2" :maxlength="LANDMARK_LIMITS.desc_chars" /></label>
-      <label class="block">氛圍（站在這裡行動時交給 AI 描寫場景，可以不填）<textarea v-model="draft.scene" rows="2" :maxlength="LANDMARK_LIMITS.scene_chars" /></label>
+      <label class="block"><span>說明 <Hint text="站在這裡時顯示。" /></span><textarea v-model="draft.desc" rows="2" :maxlength="LANDMARK_LIMITS.desc_chars" /></label>
+      <label class="block"><span>氛圍（選填） <Hint text="站在這裡行動時交給 AI 描寫場景。" /></span><textarea v-model="draft.scene" rows="2" :maxlength="LANDMARK_LIMITS.scene_chars" /></label>
       <div class="row checks small">
-        <span class="muted">類型（最多 {{ LANDMARK_LIMITS.types }} 種；決定聚到這裡的居民與公會委託）：</span>
+        <span class="muted">類型（最多 {{ LANDMARK_LIMITS.types }} 種） <Hint text="決定聚到這裡的居民與公會委託。" />：</span>
         <label v-for="[k, n] in typeList" :key="k" class="check">
           <input type="checkbox" :checked="draft.types.includes(k)" :disabled="!draft.types.includes(k) && draft.types.length >= LANDMARK_LIMITS.types" @change="toggleType(k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
         </label>
@@ -166,7 +167,7 @@ function remove() {
         </label>
         <label>至少要有的聲望（這裡的勢力） <input v-model.number="open.min_reputation" type="number" :min="LANDMARK_LIMITS.reputation[0]" :max="LANDMARK_LIMITS.reputation[1]" /></label>
       </div>
-      <label class="check small"><input v-model="open.official" type="checkbox" /> 官方場所（逃亡奴隸不能用）</label>
+      <label class="check small"><input v-model="open.official" type="checkbox" /> 官方場所 <Hint text="逃亡奴隸不能用。" /></label>
       <div class="grid">
         <label>劇情旗標成立時才開放（用頓號分隔） <input v-model="draft.flagsText" /></label>
         <label>這些旗標成立時不開放 <input v-model="draft.flagsNoneText" /></label>
@@ -174,7 +175,7 @@ function remove() {
     </fieldset>
     <fieldset>
       <legend>參訪</legend>
-      <label class="check small"><input type="checkbox" :checked="!!draft.visit" @change="toggleVisit(($event.target as HTMLInputElement).checked)" /> 可以參訪（花錢或時間，得到效果；不用檢定）</label>
+      <label class="check small"><input type="checkbox" :checked="!!draft.visit" @change="toggleVisit(($event.target as HTMLInputElement).checked)" /> 可以參訪 <Hint text="花錢或時間，得到效果；不用檢定。" /></label>
       <template v-if="draft.visit">
         <div class="grid">
           <label>名稱 <input v-model="draft.visit.title" :maxlength="LANDMARK_LIMITS.title_chars" /></label>
@@ -188,7 +189,7 @@ function remove() {
     </fieldset>
     <fieldset>
       <legend>探索</legend>
-      <label class="check small"><input type="checkbox" :checked="!!draft.explore" @change="toggleExplore(($event.target as HTMLInputElement).checked)" /> 可以探索（主動行動的檢定，成功得到效果）</label>
+      <label class="check small"><input type="checkbox" :checked="!!draft.explore" @change="toggleExplore(($event.target as HTMLInputElement).checked)" /> 可以探索 <Hint text="主動行動的檢定，成功得到效果。" /></label>
       <template v-if="draft.explore">
         <div class="grid">
           <label>名稱 <input v-model="draft.explore.title" :maxlength="LANDMARK_LIMITS.title_chars" /></label>
@@ -204,7 +205,7 @@ function remove() {
     </fieldset>
     <fieldset>
       <legend>打工</legend>
-      <label class="check small"><input type="checkbox" :checked="!!draft.work" @change="toggleWork(($event.target as HTMLInputElement).checked)" /> 可以在這裡打工（和設施的工作一樣）</label>
+      <label class="check small"><input type="checkbox" :checked="!!draft.work" @change="toggleWork(($event.target as HTMLInputElement).checked)" /> 可以在這裡打工 <Hint text="和設施的工作一樣。" /></label>
       <template v-if="draft.work">
         <div class="grid">
           <label>屬性 <select v-model="draft.work.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select></label>

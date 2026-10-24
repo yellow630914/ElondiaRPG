@@ -6,6 +6,7 @@ import { gearRules } from '@/engine/gear'
 import { EFFECT_CONDITIONS, STORY_EFFECTS } from '@/engine/storyMods'
 import { oathError, oathText, TATTOO_PLACES, placeName, tattooKindName, tattooRules } from '@/engine/tattoos'
 import { useContent } from '@/stores/content'
+import Hint from '../ui/Hint.vue'
 
 // 效果的清單（任務點的結果、完成的報酬）：金錢、物品、裝備、經驗、聲望、親密度、記憶、能力、入隊、生命值
 const model = defineModel<RewardEffect[] | undefined>()
@@ -202,7 +203,7 @@ function setBase(r: Row, base: string) {
         <select v-model="r.perk">
           <option v-for="p in choosablePerks()" :key="p.id" :value="p.id">{{ p.name }}{{ p.flaw ? '（缺陷）' : '' }}</option>
         </select>
-        <span v-if="r.type === 'perk' && perkDef(String(r.perk ?? ''))?.flaw" class="small muted">缺陷：直接染上（不是機會，不能選也不能爭取）</span>
+        <span v-if="r.type === 'perk' && perkDef(String(r.perk ?? ''))?.flaw" class="small muted">缺陷：直接染上 <Hint text="不是機會，不能選也不能爭取。" /></span>
         <span v-else-if="r.type === 'lose_perk' && perkDef(String(r.perk ?? ''))?.flaw" class="small muted">克服這個缺陷</span>
         <template v-if="r.type === 'perk' && !perkDef(String(r.perk ?? ''))?.flaw">
           <select v-for="(id, i) in perkOptions(r)" :key="i" :value="id" @change="setPerkOption(r, i, ($event.target as HTMLSelectElement).value)">
@@ -253,7 +254,7 @@ function setBase(r: Row, base: string) {
       <template v-else-if="r.type === 'condition'">
         <select v-model="r.add"><option :value="true">得到</option><option :value="false">去掉</option></select>
         <select v-model="r.condition"><option v-for="[k, n] in conditionList" :key="k" :value="k">{{ n }}</option></select>
-        <span class="small muted">（主角；多半到下次長休）</span>
+        <Hint text="對象是主角；多半持續到下次長休。" />
       </template>
       <template v-else-if="r.type === 'hp'">
         <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）

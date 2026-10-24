@@ -11,6 +11,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 商店的編輯表單。內建的店：圖示、描述、AI 特別商品、店主設定、固定清單、收購類別、工作、受訓與位置（只能移動）；
 // 店名、店種、上架的物品類型與店的專屬功能不能改。自建的店每一項都可以改，沒有專屬功能
@@ -182,8 +183,8 @@ function remove() {
         <label v-if="custom">店名 <input v-model="draft.name" :maxlength="SHOP_LIMITS.name_chars" /></label>
         <label>圖示 <input v-model="draft.emoji" maxlength="8" /></label>
       </div>
-      <label class="block">描述（商店畫面上的說明）<textarea v-model="draft.desc" rows="2" :maxlength="SHOP_LIMITS.desc_chars" /></label>
-      <label class="check small"><input v-model="draft.ai" type="checkbox" /> AI 判定開啟時，請 AI 設計今天的特別商品（關掉就只有規則的商品）</label>
+      <label class="block"><span>描述 <Hint text="商店畫面上的說明。" /></span><textarea v-model="draft.desc" rows="2" :maxlength="SHOP_LIMITS.desc_chars" /></label>
+      <label class="check small"><input v-model="draft.ai" type="checkbox" /> AI 判定開啟時，請 AI 設計今天的特別商品 <Hint text="關掉就只有規則的商品。" /></label>
     </fieldset>
     <fieldset>
       <legend>店主</legend>
@@ -191,7 +192,7 @@ function remove() {
         <label>職稱 <input v-model="draft.title" maxlength="8" /></label>
       </div>
       <div class="row small">
-        <span class="muted">身分標籤（生成的店主帶這些標籤）：</span>
+        <span class="muted">身分標籤 <Hint text="生成的店主帶這些標籤。" />：</span>
         <label v-for="[k, n] in tagList" :key="k" class="check"><input type="checkbox" :checked="draft.tags.includes(k)" @change="draft.tags = toggle(draft.tags, k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
       </div>
       <p class="small muted">改了之後，新生成的店主才會用新的職稱與標籤；已經登場的店主不變。要指定某個地點的店主，到「固定 NPC」設定「擔任店主」。</p>
@@ -258,7 +259,7 @@ function remove() {
     <fieldset v-if="custom">
       <legend>委託打造</legend>
       <div class="row checks small">
-        <span class="muted">接這些材料的打造委託（店主的工藝等級照一般店主）：</span>
+        <span class="muted">接這些材料的打造委託 <Hint text="店主的工藝等級照一般店主。" />：</span>
         <label v-for="[k, n] in CRAFT_KINDS" :key="k" class="check"><input type="checkbox" :checked="draft.craft.includes(k)" @change="draft.craft = toggle(draft.craft, k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
       </div>
     </fieldset>

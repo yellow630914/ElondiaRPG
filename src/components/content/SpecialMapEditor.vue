@@ -8,6 +8,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 特殊地圖的編輯表單：基本資料（所屬地點、給 AI 的描述、光線、刷新）、版面（畫格子或隨機挖）、
 // 額外的隨機內容、遭遇表與採集物、通道（接到城鎮區塊的牆或別張特殊地圖）。內建的不能刪除
@@ -267,15 +268,15 @@ function remove() {
           <select v-model="draft.layer"><option v-for="l in DUNGEON_LAYER_IDS" :key="l" :value="l">地下城{{ DUNGEON_LAYER_NAME[l] }}</option></select>
         </label>
       </div>
-      <label class="block">給 AI 的描述（外觀、氣氛、危險；在裡面的每一則日誌都會帶上）<textarea v-model="draft.desc" rows="3" :maxlength="L.desc_chars" /></label>
-      <label class="check small"><input v-model="draft.refresh" type="checkbox" /> 會刷新：離開這片特殊地圖之後再進來，遭遇、資源與寶箱全部重來（沒勾時打過、採過的一直保持）</label>
+      <label class="block"><span>給 AI 的描述 <Hint text="外觀、氣氛、危險；在裡面的每一則日誌都會帶上。" /></span><textarea v-model="draft.desc" rows="3" :maxlength="L.desc_chars" /></label>
+      <label class="check small"><input v-model="draft.refresh" type="checkbox" /> 會刷新：離開這片特殊地圖之後再進來，遭遇、資源與寶箱全部重來 <Hint text="沒勾時打過、採過的一直保持。" /></label>
     </fieldset>
 
     <fieldset>
       <legend>版面</legend>
       <div class="row small">
         <label class="check"><input type="radio" :checked="draft.mode === 'fixed'" @change="setMode('fixed')" /> 固定地圖（自己畫）</label>
-        <label class="check"><input type="radio" :checked="draft.mode === 'random'" @change="setMode('random')" /> 隨機地圖（從下方中央的出口挖出通道）</label>
+        <label class="check"><input type="radio" :checked="draft.mode === 'random'" @change="setMode('random')" /> 隨機地圖 <Hint text="從下方中央的出口挖出通道。" /></label>
         <label>寬 <input type="number" :value="size[0]" :min="L.size[0]" :max="L.size[1]" @change="resize(Number(($event.target as HTMLInputElement).value), size[1])" /></label>
         <label>高 <input type="number" :value="size[1]" :min="L.size[0]" :max="L.size[1]" @change="resize(size[0], Number(($event.target as HTMLInputElement).value))" /></label>
         <label v-if="draft.mode === 'random'">挖幾步 <input v-model.number="draft.carve_steps" type="number" :min="L.carve[0]" :max="L.carve[1]" :placeholder="String(size[0] * size[1])" /></label>
@@ -301,7 +302,7 @@ function remove() {
     </fieldset>
 
     <fieldset>
-      <legend>額外的隨機內容（撒在空地上，最少～最多）</legend>
+      <legend>額外的隨機內容（最少～最多） <Hint text="撒在空地上。" /></legend>
       <div class="grid">
         <label v-for="[k, n] in ([['encounters', '遭遇'], ['traps', '陷阱'], ['resources', '資源'], ['chests', '寶箱']] as const)" :key="k">{{ n }}
           <span class="row">

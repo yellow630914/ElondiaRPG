@@ -17,6 +17,7 @@ import { useGame } from '@/stores/game'
 import FlagInput from './FlagInput.vue'
 import NpcPlacementEditor from './NpcPlacementEditor.vue'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 固定 NPC 的編輯表單：不會因為名單變動消失；可以固定在聚落的某一格、只在劇情旗標符合時出現
 const props = defineProps<{ id: string }>()
@@ -272,7 +273,7 @@ function setKeeper(v: string) {
       <p class="small muted">
         預覽：{{ className(preview.class) }} Lv.{{ preview.level }}・生命 {{ preview.maxHp }}・{{ ATTR_IDS.map((a) => `${attrName(a)} ${preview.attrs[a]}`).join('、') }}
       </p>
-      <label class="check small"><input v-model="customAttrs" type="checkbox" /> 自訂屬性（不勾時依職業、種族與等級決定）</label>
+      <label class="check small"><input v-model="customAttrs" type="checkbox" /> 自訂屬性 <Hint text="不勾時依職業、種族與等級決定。" /></label>
       <div v-if="draft.attrs" class="grid">
         <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }} <input v-model.number="draft.attrs[a]" type="number" min="1" max="30" /></label>
       </div>
@@ -305,7 +306,7 @@ function setKeeper(v: string) {
         <button class="small" :disabled="!pickPerk" @click="addPerk">＋ 加入</button>
         <button v-if="draft.perks" class="small" @click="delete draft.perks">恢復隨機</button>
       </div>
-      <label class="check small"><input v-model="customGear" type="checkbox" /> 指定初始裝備（不勾時依等級隨機生成）</label>
+      <label class="check small"><input v-model="customGear" type="checkbox" /> 指定初始裝備 <Hint text="不勾時依等級隨機生成。" /></label>
       <template v-if="draft.gear">
         <div v-for="slot in SLOTS" :key="slot" class="row">
           <span class="small slot">{{ slotName(slot) }}</span>

@@ -5,6 +5,7 @@ import type { MarkChoice } from '@/engine/slavery'
 import { useGame } from '@/stores/game'
 import MarkPicker from '../MarkPicker.vue'
 import GameIcon from '../ui/GameIcon.vue'
+import Hint from '../ui/Hint.vue'
 import { contractOf } from '@/engine/tattoos'
 
 // 刻下契約印記：刻印前還有一次檢定，之後選擇要刻的印記
@@ -37,7 +38,7 @@ function doMarking() {
     <template v-else>
       <p v-if="pendingMark.suggestion?.name || pendingMark.suggestion?.mark" class="small mark">
         依你的行為，印記會是：{{ pendingMark.suggestion.name }} {{ pendingMark.suggestion.mark }}
-        <span class="muted">（選模板時套用這段名稱與描述，數值依模板）</span>
+        <Hint text="選模板時套用這段名稱與描述，數值依模板。" />
       </p>
       <p class="small muted">選擇要刻上的印記{{ pendingMark.custom ? '，或自訂' : '' }}：</p>
       <MarkPicker :key="pendingMark.allowed?.join()" v-model="markChoice" :allowed="pendingMark.allowed" :allow-custom="pendingMark.custom" :base="pendingMark.intended" />

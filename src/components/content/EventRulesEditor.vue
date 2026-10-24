@@ -4,6 +4,7 @@ import { MODE_NAME } from '@/engine/travel'
 import { currentEventRules, ROUTE_MODES, type EventRulesMod } from '@/engine/travelEventMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
+import Hint from '../ui/Hint.vue'
 
 // 事件設定：旅途各種路段每天發生事件的機率、事件種類的權重；城鎮事件的機率、冷卻與分類平衡
 const content = useContent()
@@ -53,7 +54,7 @@ const WEIGHT_NAME = { auto: '原本的旅途事件與普通檢定', choice: '普
       </div>
     </fieldset>
     <fieldset>
-      <legend>旅途：事件種類的權重（戰鬥只在官道、山道、荒野、地底）</legend>
+      <legend>旅途：事件種類的權重 <Hint text="戰鬥只在官道、山道、荒野、地底。" /></legend>
       <div class="grid">
         <label v-for="(n, k) in WEIGHT_NAME" :key="k">{{ n }} <input v-model.number="draft.weights[k]" type="number" min="0" max="20" step="0.5" class="num" /></label>
       </div>

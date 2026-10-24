@@ -174,7 +174,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
               </div>
               <div v-if="open === c.npc" class="nego small">
                 <label>出價（{{ CURRENCY.short }}）<input v-model.number="offers[c.npc]" type="number" min="0" step="5" /></label>
-                <label>談判方式（選填，會交給 AI 判定）<input v-model="approach[c.npc]" placeholder="例如：答應分他一成戰利品、請他喝酒" /></label>
+                <label><span>談判方式（選填） <Hint text="會交給 AI 判定。" /></span><input v-model="approach[c.npc]" placeholder="例如：答應分他一成戰利品、請他喝酒" /></label>
                 <button class="small primary" :disabled="(offers[c.npc] ?? 0) > s.money_cc || game.judging" @click="hire(c)">
                   {{ (offers[c.npc] ?? 0) >= askingFor(c) ? `雇用（${formatMoney(offers[c.npc] ?? 0)}）` : '提出條件（魅力檢定）' }}
                 </button>
