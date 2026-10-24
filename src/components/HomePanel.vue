@@ -8,7 +8,7 @@ import {
 import { cropStatus, plotPlace, seedsFor } from '@/engine/garden'
 import { formatMoney } from '@/engine/money'
 import { useGame } from '@/stores/game'
-import FoldSection from './FoldSection.vue'
+import FoldMenu from './ui/FoldMenu.vue'
 import NameTag from './NameTag.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
@@ -146,8 +146,8 @@ function rename() {
       <span v-else class="muted">行囊裡沒有能種在{{ PLACE_NAME[plot] }}苗圃的種子（雜貨店、神殿、魔法物品店有賣）。</span>
     </div>
 
-    <FoldSection id="home.people" title="看家的夥伴" :count="staying.length">
-      <template #extra><Hint text="留守不算離隊：羈絆、契約、親密度都保留，不佔隊伍人數，也不參加戰鬥。有工作台時，留在家裡的夥伴也能幫忙做工藝。" /></template>
+    <FoldMenu id="home.people" icon="users" label="看家的夥伴" detail="留守的夥伴不佔隊伍人數，也能幫忙做工藝" :badge="staying.length" open>
+      <p class="small muted">留守不算離隊 <Hint text="留守不算離隊：羈絆、契約、親密度都保留，不佔隊伍人數，也不參加戰鬥。有工作台時，留在家裡的夥伴也能幫忙做工藝。" /></p>
       <ul class="plain">
         <li v-for="m in staying" :key="m.id" class="row">
           <NameTag :id="m.id" />
@@ -161,14 +161,14 @@ function rename() {
           <button class="small" :disabled="!!stayRefusal(m)" :title="stayRefusal(m)" @click="game.stayHome(m.id)">留在家裡</button>
         </li>
       </ul>
-    </FoldSection>
+    </FoldMenu>
 
-    <FoldSection id="home.furniture" title="家具" :count="all.length">
+    <FoldMenu id="home.furniture" icon="sofa" label="家具" detail="擺在這棟房子裡的家具" :badge="all.length">
       <ul class="plain">
         <li v-for="f in all" :key="`${f.area}:${f.x},${f.y}`">{{ itemDef(f.name)?.furniture?.icon }} {{ f.name }} <span class="muted">（{{ floorName(f.area) }}）</span></li>
         <li v-if="!all.length" class="muted">還沒有家具。</li>
       </ul>
-    </FoldSection>
+    </FoldMenu>
   </section>
 </template>
 

@@ -13,7 +13,7 @@ import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import JudgeToggle from './JudgeToggle.vue'
-import FoldSection from './FoldSection.vue'
+import FoldMenu from './ui/FoldMenu.vue'
 import NameTag from './NameTag.vue'
 import Avatar from './ui/Avatar.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -22,11 +22,14 @@ import GameIcon from './ui/GameIcon.vue'
 const game = useGame()
 const s = computed(() => game.state!)
 const people = computed(() => peopleHere(s.value))
-const groups = computed(() => [
-  { key: 'staff', title: '店主與職員', items: people.value.filter((p) => p.staff) },
-  { key: 'adventurer', title: '冒險者', items: people.value.filter((p) => !p.staff && p.kind === 'adventurer') },
-  { key: 'commoner', title: '普通人', items: people.value.filter((p) => !p.staff && p.kind === 'commoner') },
-].filter((g) => g.items.length))
+const groups = computed(() => ([
+  { key: 'staff', title: '店主與職員', icon: 'store', items: people.value.filter((p) => p.staff) },
+  { key: 'adventurer', title: '冒險者', icon: 'sword', items: people.value.filter((p) => !p.staff && p.kind === 'adventurer') },
+  { key: 'commoner', title: '普通人', icon: 'users', items: people.value.filter((p) => !p.staff && p.kind === 'commoner') },
+] as const).filter((g) => g.items.length).map((g) => {
+  const near = g.items.filter((p) => p.dist <= 1).length
+  return { ...g, detail: near ? `身邊 ${near} 人` : '都不在身邊（要先走近）' }
+}))
 const where = computed(() => currentArea(s.value).name)
 // 等待判定、或有擋住行動的事件（刻印、主人的要求、戰敗事件）時，互動按鈕停用
 const busy = computed(() => !!s.value.pendingAction || game.judging || !!s.value.pendingMark || !!s.value.pendingMasterEvent || !!s.value.pendingDefeat)
@@ -137,7 +140,7 @@ async function hire(id: string) {
     <p v-if="!people.length" class="small muted">這裡現在沒有別人。</p>
 
     <div class="groups">
-    <FoldSection v-for="g in groups" :id="`people.${g.key}`" :key="g.key" class="group" :title="g.title" :count="g.items.length">
+    <FoldMenu v-for="g in groups" :id="`people.${g.key}`" :key="g.key" class="group" :icon="g.icon" :label="g.title" :detail="g.detail" :badge="g.items.length" open>
       <ul class="plain">
         <li v-for="p in g.items" :key="p.rec.id" :class="{ open: open === p.rec.id, far: p.dist > 1 }">
           <div class="row line" @click="open = open === p.rec.id ? null : p.rec.id">
@@ -207,7 +210,7 @@ async function hire(id: string) {
           </div>
         </li>
       </ul>
-    </FoldSection>
+    </FoldMenu>
     </div>
     <p v-if="partyFull" class="small muted">隊伍已滿（{{ combatRules.party_max }} 人），不能再雇人。</p>
   </section>
@@ -225,7 +228,6 @@ async function hire(id: string) {
 .more > summary:hover, .more[open] > summary { color: var(--accent); border-color: var(--gold-lo); }
 .more-list { position: absolute; right: 0; top: 28px; z-index: 5; display: grid; gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--gold-lo); border-radius: 3px; box-shadow: 0 8px 20px #000a; }
 .groups { max-height: 460px; overflow-y: auto; padding-right: 4px; }
-.group :deep(.fold-head) { margin: 8px 0 2px; font-size: 0.9rem; }
 .line { gap: 6px; cursor: pointer; }
 .known { color: var(--accent); border-color: var(--gold-lo); }
 .bad { color: var(--danger); border-color: var(--danger); }

@@ -1,21 +1,20 @@
 <script setup lang="ts">
-import FoldSection from './FoldSection.vue'
+import FoldMenu from './ui/FoldMenu.vue'
 import { deadlineText, questDeadlineDays } from '@/engine/deadlines'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, geography, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, type ShopType } from '@/engine/data'
+import { attrName, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, type ShopType } from '@/engine/data'
 import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, getArea, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
 import { canAcceptRank, guildQuests, questSpot, questTemplate, templeCost } from '@/engine/town'
 import { examQuest, isExam, promotionStatus } from '@/engine/guild'
-import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, layerRanks, questProgressText, rewardFor } from '@/engine/materialQuests'
+import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, questProgressText, rewardFor } from '@/engine/materialQuests'
 import { bestTool } from '@/engine/tools'
-import { legFare, MODE_NAME } from '@/engine/travel'
 import type { Quest } from '@/engine/types'
-import { reachable, type Path } from '@/engine/world'
+import { reachable } from '@/engine/world'
 import { useGame } from '@/stores/game'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
@@ -36,11 +35,12 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import type { IconName } from './ui/iconPaths'
 import AppDialog from './AppDialog.vue'
+import TravelDialog from './TravelDialog.vue'
 import SceneBanner from './place/SceneBanner.vue'
 import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
 import { shopKindName, shopTitle, type NamedShop } from '@/engine/shopNames'
 import { shopPlace, shopTypeForCell } from '@/engine/trade'
-import { CELL_GAME_ICON, RANK_COLOR } from './ui/cellIcons'
+import { CELL_GAME_ICON } from './ui/cellIcons'
 
 const game = useGame()
 const content = useContent()
@@ -120,36 +120,13 @@ function runQuest(id: string) {
 const publicMarket = computed(() => marketsHere(s.value).some((m) => m.kind === 'public'))
 const rations = computed(() => s.value.inventory.find((i) => i.name === '乾糧')?.qty ?? 0)
 
-// ---- 旅行 ----
-const destinations = computed(() => {
+// ---- 旅行：目的地在對話框裡（TravelDialog） ----
+const showTravel = ref(false)
+const travelMenu = computed<MenuItem[]>(() => {
   const list = reachable(s.value.location)
-  return geography.regions
-    .map((r) => ({ region: r, items: list.filter((d) => locationById(d.id).region === r.id) }))
-    .filter((g) => g.items.length > 0)
+  const near = list.filter((d) => locationById(d.id).region === here.value.region).length
+  return [{ id: 'travel', icon: 'compass', label: '啟程旅行', detail: `這個地區 ${near} 個・其他地區 ${list.length - near} 個`, badge: list.length }]
 })
-
-function daysText(days: [number, number]) {
-  return days[0] === days[1] ? `${days[0]} 天` : `${days[0]}～${days[1]} 天`
-}
-
-function routeText(path: Path) {
-  const modes = [...new Set(path.legs.map((l) => MODE_NAME[l.mode]))].join('/')
-  const via = path.legs.slice(0, -1).map((l) => locationById(l.to).name)
-  return via.length ? `${modes}・經${via.join('、')}` : modes
-}
-function fareOf(path: Path) {
-  return path.legs.reduce((sum, l) => sum + legFare(l), 0)
-}
-
-/** 地下城各層的階級，例如「淺層 E・中層 D・深層 C」 */
-function layerRankText(id: string) {
-  return layerRanks(id).map((r) => `${layerName(r.layer)} ${r.rank}`).join('・')
-}
-
-function go(id: string) {
-  game.travel(id, intent.value || undefined)
-  intent.value = ''
-}
 
 const ICON = computed<Partial<Record<string, string>>>(() => {
   void content.version
@@ -401,7 +378,7 @@ const shopDesc = computed(() => {
       <StoryPanel />
 
       <section v-if="activeQuests.length" class="panel">
-        <FoldSection id="quests.active" title="進行中的委託" :count="activeQuests.length" level="h3">
+        <FoldMenu id="quests.active" icon="scroll" label="進行中的委託" :detail="activeQuests.some((q) => canTurnIn(s, q)) ? `${activeQuests.filter((q) => canTurnIn(s, q)).length} 件可以交付` : '委託的進度與地點'" :badge="activeQuests.length" :tone="activeQuests.some((q) => canTurnIn(s, q)) ? 'gold' : undefined">
         <ul class="plain small">
           <li v-for="q in activeQuests" :key="q.id">
             <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ questProgressText(s, q) }}）
@@ -409,27 +386,14 @@ const shopDesc = computed(() => {
             <div class="muted">{{ questWhere(q) }}</div>
           </li>
         </ul>
-        </FoldSection>
+        </FoldMenu>
       </section>
 
-      <section v-if="canTravelHere(s)" class="panel">
-        <h3 class="place-title"><GameIcon name="compass" :size="18" />啟程旅行</h3>
-        <details v-for="g in destinations" :key="g.region.id" :open="g.region.id === here.region" class="region">
-          <summary>{{ g.region.name }} <span class="muted small">（{{ g.items.length }}）</span></summary>
-          <table class="dest">
-            <tr v-for="d in g.items" :key="d.id">
-              <td class="n">
-                {{ locationById(d.id).name }}
-                <span v-if="locationById(d.id).type === 'dungeon'" class="tiers" :title="`冒險區域・${layerRankText(d.id)}`">
-                  <i v-for="r in layerRanks(d.id)" :key="r.layer" :style="{ background: RANK_COLOR[r.rank] }">{{ r.rank }}</i>
-                </span>
-                <div class="route muted">{{ routeText(d.path) }}<template v-if="fareOf(d.path) > 0">・船資每人 {{ formatMoney(fareOf(d.path)) }}</template></div>
-              </td>
-              <td class="days">{{ daysText(d.path.days) }}</td>
-              <td class="go"><button class="small" @click="go(d.id)">前往</button></td>
-            </tr>
-          </table>
-        </details>
+      <section v-if="canTravelHere(s)" class="panel travel">
+        <BuildingMenu :items="travelMenu" @pick="showTravel = true" />
+        <AppDialog :open="showTravel" title="啟程旅行" icon="compass" width="860px" @close="showTravel = false">
+          <TravelDialog @close="showTravel = false" />
+        </AppDialog>
       </section>
     </div>
 </template>
@@ -442,20 +406,11 @@ const shopDesc = computed(() => {
 .tag.hot { border-color: var(--accent); color: var(--accent); }
 .lock-methods { display: flex; flex-wrap: wrap; gap: 4px; }
 .qty { width: 56px; }
+.travel :deep(.menu) { margin: 0; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
-details summary { cursor: pointer; padding: 4px 0; color: var(--accent-2); }
 .place-title { display: flex; align-items: center; gap: 6px; }
 .place-title :deep(.game-icon) { color: var(--accent); }
 .place-title .tag { font-weight: normal; letter-spacing: 0; }
 .shop-desc { margin: 0 0 4px; font-family: var(--font-story); color: var(--text); opacity: 0.9; font-size: var(--fs-sm); line-height: 1.8; }
 .greeting { margin: 0 0 8px; padding-left: 10px; border-left: 2px solid var(--gold-lo); color: var(--muted); font-family: var(--font-story); }
-.dest { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
-.dest td { padding: 6px 4px; border-bottom: 1px solid #ffffff0a; vertical-align: middle; }
-.dest .n { font-weight: 600; }
-.dest .route { font-weight: 400; font-size: var(--fs-xs); }
-.dest .days { white-space: nowrap; color: var(--muted); text-align: right; }
-.dest .go { width: 1%; text-align: right; }
-.dest .go button { white-space: nowrap; }
-.tiers { display: inline-flex; gap: 2px; margin-left: 4px; vertical-align: 1px; }
-.tiers i { font-style: normal; font-size: 10px; width: 15px; line-height: 15px; text-align: center; font-weight: 700; color: #111; }
 </style>

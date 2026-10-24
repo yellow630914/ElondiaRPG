@@ -6,6 +6,7 @@ import { formatMoney } from '@/engine/money'
 import { effectText } from '@/engine/trade'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import FoldMenu from './ui/FoldMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 
 // 站在城鎮的特色地標上：開放的狀態、參訪、探索（data/world/landmarks.json，見 docs/LANDMARKS.md）
@@ -38,8 +39,7 @@ function explore() {
       <p v-if="gains(l.visit.effects)" class="muted">得到：{{ gains(l.visit.effects) }}</p>
       <button class="small" :disabled="!!visitBlocked || game.judging || !!s.pendingAction" :title="visitBlocked ?? ''" @click="game.visitLandmark()">{{ visitBlocked ?? l.visit.title }}</button>
     </div>
-    <details v-if="l.explore" class="item">
-      <summary><GameIcon name="search" :size="13" /> {{ l.explore.title }}（{{ attrName(l.explore.attr) }}檢定，參考 DC {{ l.explore.dc }}・{{ l.explore.hours }} 小時）</summary>
+    <FoldMenu v-if="l.explore" :id="`landmark.explore`" class="item" icon="search" :label="l.explore.title" :detail="`${attrName(l.explore.attr)}檢定，參考 DC ${l.explore.dc}・${l.explore.hours} 小時`">
       <p v-if="l.explore.desc" class="muted">{{ l.explore.desc }}</p>
       <p class="muted">成功：{{ gains(l.explore.effects) || '有所收穫' }}{{ l.explore.critical?.length ? `；大成功另外 ${gains(l.explore.critical)}` : '' }}。{{ (l.explore.cooldown_days ?? 7) }} 天後才能再試。</p>
       <template v-if="!exploreBlocked">
@@ -48,7 +48,7 @@ function explore() {
         <button class="small" :disabled="game.judging || !!s.pendingAction" @click="explore">開始</button>
       </template>
       <p v-else class="muted">{{ exploreBlocked }}</p>
-    </details>
+    </FoldMenu>
   </div>
 </template>
 
@@ -60,5 +60,4 @@ function explore() {
 .warn-text { color: var(--danger); margin: 0; }
 .landmark :deep(.game-icon) { color: var(--accent); vertical-align: -2px; }
 .warn-text :deep(.game-icon) { color: var(--danger); }
-summary { cursor: pointer; }
 </style>

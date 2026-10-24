@@ -5,7 +5,7 @@ import { currentCell } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { overcomablePerks, trainablePerks } from '@/engine/perks'
 import { useGame } from '@/stores/game'
-import GameIcon from './ui/GameIcon.vue'
+import FoldMenu from './ui/FoldMenu.vue'
 import Hint from './ui/Hint.vue'
 
 // 受訓：在這個設施花錢、花時間學特質（data/rules/perks.json 的 train）
@@ -23,26 +23,23 @@ function train(id: string) {
 </script>
 
 <template>
-  <details v-if="list.length" class="train small">
-    <summary><GameIcon name="book" :size="13" /> 受訓：學特質（{{ list.length }}）</summary>
-    <p class="muted intro">花錢、花時間受訓 <Hint text="成功時有機會學會（也可以改寫說法爭取別的）；身上的缺陷成功就克服。大成功學費打對折；失敗收一半；大失敗照收。" /></p>
+  <FoldMenu v-if="list.length" id="place.train" class="train" icon="book" label="受訓" detail="花錢、花時間學特質或克服缺陷" :badge="list.length">
+    <p class="muted small intro">花錢、花時間受訓 <Hint text="成功時有機會學會（也可以改寫說法爭取別的）；身上的缺陷成功就克服。大成功學費打對折；失敗收一半；大失敗照收。" /></p>
     <input v-model="text" placeholder="怎麼學（選填，會寫進日誌）：例如每天天沒亮就跟著教官練" />
-    <ul class="plain">
+    <ul class="plain small">
       <li v-for="p in list" :key="p.id" class="row">
         <div class="grow"><span v-if="p.flaw" class="tag">克服缺陷</span><b>{{ p.name }}</b>：{{ p.desc }}<div class="muted">{{ attrName(p.train!.attr) }}檢定 DC {{ p.train!.dc }}・{{ p.train!.hours }} 小時・學費 {{ formatMoney(p.train!.price_cc) }}</div></div>
         <button class="small" :disabled="game.judging || !!s.pendingAction || s.money_cc < p.train!.price_cc" @click="train(p.id)">受訓</button>
       </li>
     </ul>
-  </details>
+  </FoldMenu>
 </template>
 
 <style scoped>
-.train { margin-top: 8px; display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .train input { width: 100%; }
 .train ul { display: grid; gap: 4px; margin: 0; }
 .train li { gap: 8px; align-items: center; }
 .grow { flex: 1; }
-.train summary { cursor: pointer; color: var(--accent-2); }
 .train p { margin: 0; }
 .intro { display: flex; align-items: center; gap: 4px; }
 </style>

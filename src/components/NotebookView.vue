@@ -10,6 +10,7 @@ import { activeNodes, placeText } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
 import type { Quest } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import FoldMenu from './ui/FoldMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 
 // 冒險筆記：一般委託、特殊任務（目前的目標與經過）、情報
@@ -85,12 +86,11 @@ const counts = computed(() => ({
           <span v-if="q.flags?.lead" class="tag">有線索 +5</span>
         </div>
       </div>
-      <details v-if="finished.length" class="history">
-        <summary class="small">完成的委託（最近 {{ finished.length }} 件）</summary>
+      <FoldMenu v-if="finished.length" id="notebook.finished" class="history" icon="check" label="完成的委託" :detail="`最近 ${finished.length} 件`" :badge="finished.length">
         <ul class="plain small muted">
           <li v-for="q in finished" :key="q.id">{{ q.rank }}・{{ q.title }}<template v-if="q.delivered && q.delivered > q.goal">（交了 {{ q.delivered }} 份）</template></li>
         </ul>
-      </details>
+      </FoldMenu>
     </template>
 
     <template v-else-if="tab === 'stories'">
@@ -111,12 +111,11 @@ const counts = computed(() => ({
             <li v-if="!goals.length" class="muted">（現在沒有可以進行的目標）</li>
           </ul>
         </div>
-        <details class="history" :open="p.status === 'active'">
-          <summary class="small">經過（{{ p.log.length }}）</summary>
+        <FoldMenu class="history" icon="notes" label="經過" :detail="p.log.length ? `最近：${p.log.at(-1)!.text.slice(0, 24)}${p.log.at(-1)!.text.length > 24 ? '…' : ''}` : ''" :badge="p.log.length" :open="p.status === 'active'">
           <ul class="plain small log">
             <li v-for="(l, i) in [...p.log].reverse()" :key="i"><span class="muted">{{ formatTime(l.time) }}</span> {{ l.text }}</li>
           </ul>
-        </details>
+        </FoldMenu>
       </div>
     </template>
 
@@ -152,5 +151,4 @@ const counts = computed(() => ({
 .tag.warn { border-color: var(--danger); color: var(--danger); }
 .goals :deep(.game-icon) { color: var(--accent); }
 .goals, .log { margin: 2px 0 0; display: grid; gap: 2px; }
-.history summary { cursor: pointer; color: var(--accent-2); }
 </style>

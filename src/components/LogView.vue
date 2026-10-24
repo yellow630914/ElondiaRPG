@@ -25,7 +25,7 @@ const usageSplit = computed(() => {
     other: sum((k) => k === OTHER_USAGE),
   }
 })
-// 用量明細預設收起；展開與否記在這個瀏覽器（和 FoldSection 共用 elondia.folds）
+// 用量明細預設收起；展開與否記在這個瀏覽器（elondia.folds）
 const FOLDS = 'elondia.folds'
 function readFolds(): Record<string, boolean> {
   try {

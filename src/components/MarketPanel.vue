@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FoldSection from './FoldSection.vue'
+import FoldMenu from './ui/FoldMenu.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { marketsHere, selfSaleChance, type MarketKind } from '@/engine/companions'
 import { className, combatRules, contractDef, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
@@ -66,10 +66,10 @@ function sellSelf() {
 
 <template>
   <div v-if="market" class="market">
-    <FoldSection :id="`market.${kind}`" :title="market.name" :count="stock.length">
-      <template #extra>
-        <Hint :text="`${kind === 'black' ? '不公開的買賣，價格較低，也有精靈這類在公開市場買不到的人，但風險自負。' : '合法的奴隸市場。'}\n買下時可以選擇要刻上的契約印記（也可以自訂），之後奴隸不會因為親密度低而離隊，你對他的主動行動都有優勢。可以殺價或用其他方式影響價格（每人每天一次）。`" />
-      </template>
+    <FoldMenu :id="`market.${kind}`" icon="users" :label="market.name" :detail="kind === 'black' ? '不公開的奴隸買賣：價格較低，風險自負' : '合法的奴隸買賣'" :badge="stock.length" :open="kind === 'public'">
+    <p class="small muted intro">
+      今天的貨 <Hint :text="`${kind === 'black' ? '不公開的買賣，價格較低，也有精靈這類在公開市場買不到的人，但風險自負。' : '合法的奴隸市場。'}\n買下時可以選擇要刻上的契約印記（也可以自訂），之後奴隸不會因為親密度低而離隊，你對他的主動行動都有優勢。可以殺價或用其他方式影響價格（每人每天一次）。`" />
+    </p>
     <ul class="plain">
       <li v-for="l in stock" :key="l.npc" class="item small">
         <template v-if="npcRecord(s, l.npc)">
@@ -102,22 +102,24 @@ function sellSelf() {
       </li>
     </ul>
     <p v-if="stock.length === 0" class="small muted">今天沒有貨了。</p>
-    </FoldSection>
+    </FoldMenu>
 
-    <details v-if="!bound" class="small">
-      <summary>{{ enslaved ? '登記出售自己（找新主人）' : '登記出售自己' }}</summary>
+    <FoldMenu v-if="!bound" class="small" icon="scale" :label="enslaved ? '登記出售自己（找新主人）' : '登記出售自己'" :detail="`等 ${slaveryRules.self_sale.hours} 小時，有買家的機率約 ${Math.round(selfSaleChance(s) * 100)}%`">
       <p class="muted self-sale">
         等 {{ slaveryRules.self_sale.hours }} 小時，有買家的機率約 {{ Math.round(selfSaleChance(s) * 100) }}%；成交後你拿到成交價的 {{ Math.round(slaveryRules.self_sale.share * 100) }}%。隊伍必須只剩你一人。
         <Hint :text="`機率主要看魅力與等級，再依出價的人的身分增減。${enslaved ? '身上有印記：這筆錢還會照新主人契約的「收益歸屬」被抽走一部分（當作被奴隸商人抽走了）。買下你的人成為新主人，身上的印記沿用；逃亡狀態解除。' : '之後由主人帶領；要恢復自由只能談判或逃離。'}普通人主人會同行，但不參與戰鬥。`" />
       </p>
       <p class="muted">常見的買家：{{ buyers }}</p>
-      <button class="small danger" :disabled="s.party.length > 1" @click="sellSelf">登記</button>
-    </details>
+      <button class="small danger go" :disabled="s.party.length > 1" @click="sellSelf">登記</button>
+    </FoldMenu>
   </div>
 </template>
 
 <style scoped>
-.market { display: grid; gap: 6px; margin-top: 6px; }
+.market { display: grid; gap: 0; margin-top: 6px; }
+.market p { margin: 0; }
+.intro { display: flex; align-items: center; gap: 4px; }
+.go { justify-self: start; }
 h4 { margin: 6px 0 0; color: var(--accent-2); font-size: 0.95rem; }
 .pick { display: grid; gap: 4px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
 .item { border-top: 1px solid var(--border); padding: 6px 0; display: grid; gap: 2px; }
