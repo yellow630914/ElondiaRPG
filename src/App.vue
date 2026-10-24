@@ -129,6 +129,14 @@ function onOpenParty(id?: string) {
 const daytime = computed(() => { const h = game.state?.time.hour ?? 12; return h >= 6 && h < 18 })
 const clock = computed(() => (game.state ? formatTime(game.state.time).split(' ').at(-1) : ''))
 
+// 960～1180 寬：只放得下兩欄，右欄（這裡的人、地點）改成左欄的第二個分頁
+const NARROW = '(min-width: 961px) and (max-width: 1180px)'
+const narrow = ref(window.matchMedia(NARROW).matches)
+const sideTab = ref<'map' | 'here'>('map')
+const showLeft = computed(() => !narrow.value || inCombat.value || sideTab.value === 'map')
+const showRight = computed(() => !inCombat.value && (!narrow.value || sideTab.value === 'here'))
+const onNarrow = (e: MediaQueryListEvent) => { narrow.value = e.matches }
+
 function askQuickLoad() {
   if (!game.state || confirm('讀取快速存檔？目前的進度會先自動存一份。')) void game.quickLoad()
 }
@@ -151,10 +159,12 @@ function onLeave(e: BeforeUnloadEvent) {
   e.returnValue = ''
 }
 onMounted(() => {
+  window.matchMedia(NARROW).addEventListener('change', onNarrow)
   window.addEventListener('keydown', onKey)
   window.addEventListener('beforeunload', onLeave)
 })
 onBeforeUnmount(() => {
+  window.matchMedia(NARROW).removeEventListener('change', onNarrow)
   window.removeEventListener('keydown', onKey)
   window.removeEventListener('beforeunload', onLeave)
 })
@@ -213,7 +223,11 @@ onBeforeUnmount(() => {
   <ContentView v-if="game.state && tab === 'content'" />
 
   <main v-if="game.state" v-show="tab === 'adventure'" :key="settings.adult ? 'adult' : 'safe'" class="game" :class="{ combat: inCombat }">
-    <aside class="left">
+    <nav v-if="narrow && !inCombat" class="panel side-tabs">
+      <button :class="{ active: sideTab === 'map' }" @click="sideTab = 'map'"><GameIcon name="map" :size="15" />地圖／隊伍</button>
+      <button :class="{ active: sideTab === 'here' }" @click="sideTab = 'here'"><GameIcon name="users" :size="15" />這裡／地點</button>
+    </nav>
+    <aside v-show="showLeft" class="left">
       <MapPanel />
       <PartyStrip @open="openCharacter" />
       <RoadPanel v-if="game.state.road && !inCombat" />
@@ -237,7 +251,7 @@ onBeforeUnmount(() => {
       <LogView v-else />
     </section>
 
-    <aside v-if="!inCombat" class="right">
+    <aside v-if="!inCombat" v-show="showRight" class="right">
       <PeoplePanel />
       <PlacePanel />
     </aside>
@@ -265,7 +279,7 @@ onBeforeUnmount(() => {
   <AppDialog :open="showSaves" title="存檔與讀檔" icon="saves" width="860px" @close="showSaves = false">
     <SaveDialog @loaded="showSaves = false" />
   </AppDialog>
-  <AppDialog :open="showSettings" title="設定" icon="settings" width="760px" @close="showSettings = false">
+  <AppDialog :open="showSettings" title="設定" icon="settings" width="760px" fixed @close="showSettings = false">
     <SettingsView />
   </AppDialog>
 
@@ -324,8 +338,19 @@ onBeforeUnmount(() => {
 }
 .left { grid-area: left; }
 .center { grid-area: center; min-width: 0; }
-.right { grid-area: right; }
+/* 右欄固定在畫面上、自己捲動：捲右欄不會把地圖和日誌捲走 */
+.right {
+  grid-area: right; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto;
+  overscroll-behavior: contain; scrollbar-width: thin; padding-right: 2px;
+}
 .game.combat { grid-template-areas: 'left center center'; }
+.side-tabs { grid-area: tabs; display: flex; padding: 0; margin: 0; }
+.side-tabs button {
+  flex: 1; display: inline-flex; justify-content: center; align-items: center; gap: 6px; padding: 8px; border: none; border-radius: 0;
+  border-bottom: 2px solid transparent; color: var(--muted);
+}
+.side-tabs button.active { color: var(--gold-hi); border-bottom-color: var(--accent); }
+.side-tabs button :deep(.game-icon) { color: var(--accent); }
 
 /* 日誌上方的工具列 */
 .toolbar { display: flex; flex-wrap: wrap; padding: 0; margin-bottom: 12px; }
@@ -335,13 +360,19 @@ onBeforeUnmount(() => {
 }
 .toolbar button :deep(.game-icon) { color: var(--accent); }
 .toolbar button:hover:not(:disabled) { background: #c99a4512; color: var(--gold-hi); }
-.toolbar .note { font-size: 10px; line-height: 15px; padding: 0 4px; border-radius: 2px; background: var(--accent); color: #1a1008; font-weight: 700; }
+.toolbar .note { font-size: var(--fs-xs); line-height: 16px; padding: 0 4px; border-radius: 2px; background: var(--accent); color: #1a1008; font-weight: 700; }
 
 @media (max-width: 1380px) {
-  .game { grid-template-columns: 400px minmax(0, 1fr); grid-template-areas: 'left center' 'right center'; }
-  .game.combat { grid-template-areas: 'left center'; }
+  .game { grid-template-columns: 320px minmax(0, 1fr) 320px; }
+}
+@media (max-width: 1180px) {
+  .game { grid-template-columns: 340px minmax(0, 1fr); grid-template-areas: 'tabs center' 'left center'; row-gap: 0; }
+  .game.combat { grid-template-areas: 'left center'; row-gap: 16px; }
+  .side-tabs { margin-bottom: 12px; }
+  .right { grid-area: left; position: static; max-height: none; overflow: visible; }
 }
 @media (max-width: 960px) {
   .game, .game.combat { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'left' 'center' 'right'; }
+  .right { grid-area: right; }
 }
 </style>

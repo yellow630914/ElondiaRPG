@@ -162,7 +162,7 @@ const totals = computed(() => {
 .slot.filled .box { color: #e8d8b8; box-shadow: inset 0 0 0 1px #6d5128; }
 .slot.locked .box { color: #d8604e; }
 .txt { display: grid; min-width: 0; line-height: 1.3; }
-.sn { font-size: 10px; color: #9a8768; letter-spacing: 0.1em; }
+.sn { font-size: var(--fs-xs); color: #9a8768; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .in { font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .slot:not(.filled) .in { color: #6a5a44; }
 .fig { display: grid; place-items: center; }

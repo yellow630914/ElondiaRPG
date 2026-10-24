@@ -58,13 +58,15 @@ function grow(e: Event) {
   const el = e.target as HTMLTextAreaElement
   el.style.height = 'auto'
   el.style.height = `${Math.min(el.scrollHeight + 2, 160)}px`
+  // 長到上限之前不顯示捲軸
+  el.style.overflowY = el.scrollHeight + 2 > 160 ? 'auto' : 'hidden'
 }
 function doFree() {
   const u = parseUse(use.value)
   void game.perform({ kind: 'free', text: text.value, ...(target.value ? { target: target.value } : {}), ...(u ? { use: u } : {}) })
   text.value = ''
   use.value = ''
-  if (freeBox.value) freeBox.value.style.height = ''
+  if (freeBox.value) freeBox.value.style.height = freeBox.value.style.overflowY = ''
   // 對象每次重選：不然下一個沒有對象的行動會被算在上一個人身上
   target.value = ''
 }
@@ -163,7 +165,7 @@ const pendingMark = computed(() => s.value.pendingMark)
 .head h3 :deep(.game-icon) { color: var(--accent); }
 .pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .send { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
-.send textarea.free { margin: 6px 0 0; min-height: 36px; resize: none; overflow-y: auto; }
+.send textarea.free { margin: 6px 0 0; min-height: 36px; resize: none; overflow-y: hidden; }
 .send button { margin-top: 6px; }
 .dice { color: var(--accent); font-size: 1.2rem; }
 .totals { gap: 12px; }

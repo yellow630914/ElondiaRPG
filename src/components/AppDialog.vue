@@ -1,3 +1,12 @@
+<script lang="ts">
+// 最近一次操作是滑鼠還是鍵盤（所有對話框共用）
+let lastInputWasPointer = false
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', () => { lastInputWasPointer = true }, true)
+  window.addEventListener('keydown', () => { lastInputWasPointer = false }, true)
+}
+</script>
+
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useGame } from '@/stores/game'
@@ -6,17 +15,28 @@ import { ICON_PATHS, type IconName } from './ui/iconPaths'
 
 // 以原生 <dialog> 實作的對話框（羊皮紙樣式）：Esc 或點背景關閉。
 // icon 可以是介面圖示的名稱（見 ui/iconPaths.ts），也可以是 emoji。
-const props = withDefaults(defineProps<{ open: boolean; title: string; icon?: string; width?: string; inlineError?: boolean }>(), { width: '960px', icon: undefined })
+// fixed：有分頁的對話框固定高度（等於視窗高度），切分頁時標題與分頁列不會跳動
+const props = withDefaults(defineProps<{ open: boolean; title: string; icon?: string; width?: string; inlineError?: boolean; fixed?: boolean }>(), { width: '960px', icon: undefined })
 const emit = defineEmits<{ close: [] }>()
 const el = ref<HTMLDialogElement | null>(null)
 
 const isIconName = (s: string | undefined): s is IconName => !!s && s in ICON_PATHS
 
+// 用滑鼠打開的對話框關掉後，焦點回到原本的按鈕時不要留著焦點框（鍵盤操作時保留）
+let opener: HTMLElement | null = null
 function sync() {
   const d = el.value
   if (!d) return
-  if (props.open && !d.open) d.showModal()
-  else if (!props.open && d.open) d.close()
+  if (props.open && !d.open) {
+    opener = lastInputWasPointer && document.activeElement instanceof HTMLElement ? document.activeElement : null
+    d.showModal()
+  } else if (!props.open && d.open) d.close()
+}
+function onClose() {
+  emit('close')
+  const o = opener
+  opener = null
+  if (o) setTimeout(() => { if (document.activeElement === o) o.blur() })
 }
 
 watch(() => props.open, () => nextTick(sync))
@@ -38,7 +58,7 @@ function onClick(e: MouseEvent) {
 </script>
 
 <template>
-  <dialog ref="el" class="app-dialog parchment paper" :style="{ '--dialog-width': width }" @close="emit('close')" @click="onClick">
+  <dialog ref="el" class="app-dialog parchment paper" :class="{ fixed }" :style="{ '--dialog-width': width }" @close="onClose" @click="onClick">
     <div class="dialog-inner">
       <header class="dialog-head">
         <h2>
@@ -72,6 +92,9 @@ function onClick(e: MouseEvent) {
 }
 .app-dialog::backdrop { background: #000b; }
 .dialog-inner { display: flex; flex-direction: column; max-height: calc(100vh - 52px); }
+.app-dialog.fixed { height: calc(100vh - 40px); }
+.app-dialog.fixed .dialog-inner { height: 100%; }
+.app-dialog.fixed .dialog-body { flex: 1; min-height: 0; }
 .dialog-head {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 16px 8px; position: relative;

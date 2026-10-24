@@ -257,7 +257,9 @@ ul.plain { list-style: none; padding: 0; margin: 0; }
 ul.plain > li { padding: 6px 0; border-bottom: 1px solid var(--border); }
 ul.plain > li:last-child { border-bottom: none; }
 
-.narration { white-space: pre-wrap; line-height: 1.9; }
+.narration { line-height: 1.75; }
+.narration p { margin: 0 0 0.6em; white-space: pre-wrap; }
+.narration p:last-child { margin-bottom: 0; }
 
 /* 敘事正文：羊皮紙底、文楷字 */
 .story-paper {
