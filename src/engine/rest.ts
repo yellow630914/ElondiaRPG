@@ -21,6 +21,7 @@ import { bestTool } from './tools'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Character, GameState, GameTime, Report } from './types'
 import { contractOf } from './tattoos'
+import { gameRule } from './gameRules'
 
 export const INN_CC_PER_PERSON = 15
 
@@ -119,10 +120,12 @@ function restReport(state: GameState, hours: number, scene: string): Report {
   }
 }
 
-function ambushChance(state: GameState): number {
+/** 在這裡休息被襲擊的機率（安全房 0；帳篷減半；套用存檔規則） */
+export function ambushChance(state: GameState): number {
   const area = currentArea(state)
   if (currentCell(state).kind === 'safe') return 0
-  const base = companionRules.rest.ambush[area.kind] ?? 0
+  // 存檔規則的倍率
+  const base = Math.min(1, (companionRules.rest.ambush[area.kind] ?? 0) * gameRule(state, 'ambushMult'))
   // 露營類的工具（帳篷）：在城外紮營休息，被襲擊的機率減半
   return area.kind !== 'settlement' && area.kind !== 'home' && bestTool(state, 'camp') ? base / 2 : base
 }
@@ -154,7 +157,7 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
     const group = withRng(state, (rng) => (layer ? encounterFor(state.location, rng, layer) : rng.pick(wildEncounters(locationById(state.location).region))))
     return startCombat(state, group, { scene: `${area.name}（短休時遭到襲擊）`, intent: '短休時遭到襲擊' })
   }
-  const report = restReport(state, companionRules.rest.short_hours, `${area.name}・短休`)
+  const report = restReport(state, gameRule(state, 'shortRestHours'), `${area.name}・短休`)
   const lines: string[] = []
   withRng(state, (rng) => {
     for (const m of state.party) {
@@ -186,7 +189,7 @@ export function longRest(state: GameState, place: RestPlace): Report {
   const blocked = longRestBlocked(state, place)
   if (blocked) throw new Error(blocked)
   const area = currentArea(state)
-  let hours = companionRules.rest.long_hours
+  let hours = gameRule(state, 'longRestHours')
   let scene = `${area.name}的安全房`
   let costText = ''
   const report = restReport(state, hours, scene)

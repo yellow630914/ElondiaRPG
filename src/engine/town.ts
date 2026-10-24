@@ -23,6 +23,7 @@ import { formatMoney } from './money'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, GuildRank, Quest, Report } from './types'
 import { shortestPath } from './world'
+import { rewardMoney } from './gameRules'
 
 export { INN_CC_PER_PERSON } from './rest'
 export const RATION_CC = 5
@@ -338,7 +339,7 @@ export function turnInQuest(state: GameState, questId: string, count?: number): 
   const most = material ? deliverable(state, quest) : quest.goal
   const n = material ? Math.max(quest.goal, Math.min(most, Math.round(count ?? most))) : quest.goal
   if (material && n > most) throw new Error('數量不夠')
-  const pay = material ? rewardFor(quest, n) : quest.reward_cc
+  const pay = rewardMoney(state, material ? rewardFor(quest, n) : quest.reward_cc)
   quest.status = 'completed'
   if (material) quest.delivered = n
   const report = baseReport(state, 'quest', 0.5)

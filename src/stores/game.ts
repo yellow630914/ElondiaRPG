@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import { visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
@@ -1013,6 +1014,12 @@ export const useGame = defineStore('game', () => {
     setDefeatLoot: (rule: DefeatLoot) => {
       if (!state.value) return
       state.value.options = { ...(state.value.options ?? { defeatLoot: 'half' }), defeatLoot: rule }
+      save()
+    },
+    /** 這個存檔的數值規則（gameRules.ts）：和預設一樣的不存 */
+    setRules: (rules: Partial<Record<NumericRule, unknown>>) => {
+      if (!state.value) return
+      state.value.options = { defeatLoot: state.value.options?.defeatLoot ?? 'half', ...sanitizeRules(rules) }
       save()
     },
     descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s)), { onMap: true }),

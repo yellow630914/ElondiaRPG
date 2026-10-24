@@ -4,7 +4,8 @@ import { classEmoji, companionRules, raceEmoji } from '@/engine/data'
 import { currentArea, currentCell } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
-import { autoHitDice, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, waitText, type RestPlace } from '@/engine/rest'
+import { gameRule } from '@/engine/gameRules'
+import { ambushChance, autoHitDice, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, waitText, type RestPlace } from '@/engine/rest'
 import { useGame } from '@/stores/game'
 import JudgeToggle from './JudgeToggle.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -15,7 +16,9 @@ const s = computed(() => game.state!)
 const cell = computed(() => currentCell(s.value))
 const area = computed(() => currentArea(s.value))
 const rations = computed(() => s.value.inventory.find((i) => i.name === '乾糧')?.qty ?? 0)
-const ambush = computed(() => (cell.value.kind === 'safe' ? 0 : companionRules.rest.ambush[area.value.kind] ?? 0))
+const ambush = computed(() => ambushChance(game.state!))
+const shortHours = computed(() => gameRule(game.state, 'shortRestHours'))
+const longHours = computed(() => gameRule(game.state, 'longRestHours'))
 const place = computed(() => (cell.value.kind === 'inn' ? 'inn' : cell.value.kind === 'safe' ? 'safe' : area.value.kind === 'home' ? 'home' : null))
 const blocked = computed(() => (place.value ? longRestBlocked(s.value, place.value) : null))
 // 長休倒數（跟著遊戲時間更新）
@@ -44,9 +47,9 @@ async function doLongRest(where: RestPlace) {
     <h3 class="head">
       <GameIcon name="bed" :size="16" />休息
       <Hint>
-        <b>短休</b> 1 小時：花生命骰回復生命值。<template v-if="ambush">這裡有 {{ Math.round(ambush * 100) }}% 的機率被襲擊。</template>
+        <b>短休</b> {{ shortHours }} 小時：花生命骰回復生命值。<template v-if="ambush">這裡有 {{ Math.round(ambush * 100) }}% 的機率被襲擊。</template>
         <template v-if="place === 'inn'">{{ '\n' }}<b>長休</b>（住到隔天早上）：生命值、法術環全滿，回復一半生命骰。</template>
-        <template v-else-if="place === 'safe'">{{ '\n' }}<b>長休</b>：安全房可以長休 8 小時（每人 1 份乾糧，每間一次），短休也不會被襲擊。</template>
+        <template v-else-if="place === 'safe'">{{ '\n' }}<b>長休</b>：安全房可以長休 {{ longHours }} 小時（每人 1 份乾糧，每間一次），短休也不會被襲擊。</template>
         <template v-else-if="place === 'home'">{{ '\n' }}<b>長休</b>：在自己家長休（住到隔天早上，免費），要有床。家具的舒適度夠高時，大家會睡得香甜（下次長休前戰鬥開始時獲得暫時生命、檢定 +1）。</template>
         <template v-else>{{ '\n' }}長休要在旅店、地下城的安全房或自己的房子。</template>
         {{ '\n' }}兩次長休至少隔 {{ longRestGapHours() }} 小時。
@@ -59,7 +62,7 @@ async function doLongRest(where: RestPlace) {
       ><GameIcon name="heart" :size="12" />{{ m.name }} d{{ hitDie(m) }} × {{ hitDiceLeft(m) }}</span>
     </div>
     <div class="btns">
-      <button @click="game.shortRest()"><GameIcon name="mug" :size="15" />短休 <small>1 小時{{ ambush ? `・襲擊 ${Math.round(ambush * 100)}%` : '' }}</small></button>
+      <button @click="game.shortRest()"><GameIcon name="mug" :size="15" />短休 <small>{{ shortHours }} 小時{{ ambush ? `・襲擊 ${Math.round(ambush * 100)}%` : '' }}</small></button>
       <button v-if="place === 'inn'" :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')"><GameIcon name="moon" :size="15" />長休 <small>{{ formatMoney(innCost(s)) }}</small></button>
       <button v-else-if="place === 'safe'" :disabled="!!blocked || rations < s.party.length" @click="doLongRest('safe')"><GameIcon name="moon" :size="15" />長休 <small>乾糧 {{ s.party.length }} 份</small></button>
       <button v-else-if="place === 'home'" :disabled="!!blocked" @click="doLongRest('home')"><GameIcon name="moon" :size="15" />在家長休</button>

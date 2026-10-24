@@ -86,11 +86,8 @@ function canDismiss(m: Character) {
         <div><span class="label">行動點</span><span><b>{{ apMaxFor(m.level, attrsOf(m)) }}</b> <small class="muted">每回合 +{{ apRegenFor(m.level) }}</small></span></div>
         <div>
           <span class="label">法術環</span>
-          <span v-if="spellSlots(m).length" class="slots" :title="spellSlots(m).map((x) => `${x.circle}環 ${x.left}/${x.max}`).join('、')">
-            <template v-for="x in spellSlots(m)" :key="x.circle">
-              <i v-for="n in x.max" :key="n" :class="{ used: n > x.left }" />
-              <small class="muted">{{ x.circle }}環</small>
-            </template>
+          <span v-if="spellSlots(m).length" class="slots" title="剩下／上限；長休後全滿">
+            <span v-for="x in spellSlots(m)" :key="x.circle" class="slot" :class="{ empty: !x.left }">{{ x.circle }}環 <b>{{ x.left }}</b>/{{ x.max }}</span>
           </span>
           <span v-else class="muted">—</span>
         </div>
@@ -202,10 +199,10 @@ function canDismiss(m: Character) {
 .nc { margin: 0; }
 .combat3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: var(--fs-sm); }
 .combat3 > div { display: flex; flex-direction: column; padding: 2px 8px; border-left: 2px solid #c99a45; }
-.slots { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px; }
-.slots i { width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid #2f5f99; background: #4a83c9; margin: 0 2px; }
-.slots i.used { background: transparent; }
-.slots small { margin-right: 6px; }
+.slots { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.slot { font-size: var(--fs-xs); line-height: 18px; padding: 0 6px; border: 1px solid var(--chip-border); border-radius: 2px; background: var(--chip-bg); white-space: nowrap; }
+.slot b { color: var(--mp); }
+.slot.empty { opacity: 0.55; }
 .sec {
   display: grid; grid-template-columns: 3.6em minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0;
   border: none; border-top: 1px dashed #b8955a99; border-radius: 0; text-align: left; color: var(--text); background: none;

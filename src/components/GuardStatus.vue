@@ -4,6 +4,7 @@ import { locationById } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { alertLevel, factionName, fineDue, isWanted, reputationBand, reputationOf, securityRules } from '@/engine/security'
 import { useGame } from '@/stores/game'
+import { gameRule } from '@/engine/gameRules'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
@@ -28,7 +29,7 @@ const blockedToday = computed(() => s.value.gateBlock?.[loc.value.id] === s.valu
     </p>
     <p v-if="wanted" class="bad"><GameIcon name="siren" :size="13" /> 你被{{ factionName(loc.faction!) }}通緝：城門不能檢定，必須繳交罰金（賄賂）才能通過，也不能進入貴族區與王城。</p>
     <p v-else-if="alert" class="warn">
-      <GameIcon name="siren" :size="13" /> 衛兵警戒 {{ alert }} / {{ securityRules.alert.max }}：出入城門要通過盤查（DC {{ securityRules.alert.gate_dc_base + securityRules.alert.gate_dc_per_level * alert }}）<template v-if="blockedToday">；今天已經被攔下，要繳罰金才能通過</template>。<Hint :text="`警戒每 ${securityRules.alert.decay_days} 天降 1。`" />
+      <GameIcon name="siren" :size="13" /> 衛兵警戒 {{ alert }} / {{ securityRules.alert.max }}：出入城門要通過盤查（DC {{ securityRules.alert.gate_dc_base + securityRules.alert.gate_dc_per_level * alert }}）<template v-if="blockedToday">；今天已經被攔下，要繳罰金才能通過</template>。<Hint :text="`警戒每 ${gameRule(game.state, 'alertDecayDays')} 天降 1。`" />
     </p>
     <div v-if="due.amount && props.canPay" class="row">
       <button class="small" :class="{ primary: wanted || blockedToday }" :disabled="s.money_cc < due.amount" @click="game.payFine()">

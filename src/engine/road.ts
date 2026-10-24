@@ -30,6 +30,7 @@ import { shortestPath } from './world'
 import { enterWaystation } from './trade'
 import { closeOut, enterSpecial } from './specialMaps'
 import travelEventsJson from '@data/rules/travel_events.json'
+import { gameRule } from './gameRules'
 
 // ---- 資料 ----
 
@@ -158,7 +159,7 @@ function buildRoad(state: GameState, from: string, to: string, legs: { from: str
   for (const i of dayCells) {
     const cell = cells[i]!
     const mode = legs[cell.road!.leg]!.mode
-    if (!rng.chance(travelEvents.chance[mode] ?? EVENT_CHANCE[mode])) continue
+    if (!rng.chance(Math.min(1, (travelEvents.chance[mode] ?? EVENT_CHANCE[mode]) * gameRule(state, 'travelEventMult')))) continue
     const fits = (t: RoadTemplate) => (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && condMet(state, t.requires)
     const checks = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'check' && fits(t))
     const choices = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'choice' && fits(t))

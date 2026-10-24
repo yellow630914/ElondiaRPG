@@ -26,6 +26,7 @@ import { contractKind, randomMaster } from './slavery'
 import { forceEquip } from './forcedGear'
 import { addStrict, extendDeadline, sendToMasterHome } from './masterHome'
 import { addTattoo, contractOf, freePlaces, oathText, placeName, removeTattoo, tattooFromTemplate, tattooKindName, tattoosOf, type NewTattoo } from './tattoos'
+import { rewardMoney } from './gameRules'
 
 export type NpcRef = string | NpcSpec
 
@@ -137,7 +138,8 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
     switch (e.type) {
       case 'money':
         if (!e.amount) break
-        c.money_cc = (c.money_cc ?? 0) + Math.round(e.amount)
+        // 事件與任務給的錢照存檔規則的倍率（付出去的不變）
+        c.money_cc = (c.money_cc ?? 0) + rewardMoney(state, Math.round(e.amount))
         break
       case 'item':
         if (e.qty > 0) (c.items_gained ??= []).push({ name: e.name, qty: e.qty, ...(e.quality ? { quality: e.quality } : {}), owner: 'pc' })

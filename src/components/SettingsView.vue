@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { DEFEAT_LOOT_NAME, defeatLootRule } from '@/engine/expedition'
 import type { DefeatLoot } from '@/engine/types'
 import { companionRules } from '@/engine/data'
@@ -9,6 +9,8 @@ import mapsJson from '@data/world/maps.json'
 import { useGame } from '@/stores/game'
 import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
 import ImageSettings from './ImageSettings.vue'
+import RuleFields from './RuleFields.vue'
+import { RULE_DEFS, type NumericRule } from '@/engine/gameRules'
 import ModelSourceEditor from './ModelSourceEditor.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
@@ -18,6 +20,9 @@ const settings = useSettings()
 const STEP_DEFAULT = mapsJson.generation.step_minutes
 const STEP_PLACES: { id: StepPlace; name: string }[] = [{ id: 'settlement', name: '城鎮' }, { id: 'wild', name: '近郊' }, { id: 'dungeon', name: '冒險區域' }]
 const game = useGame()
+// 這個存檔的數值規則（沒有寫的是預設）
+const saveRules = computed(() => Object.fromEntries((Object.keys(RULE_DEFS) as NumericRule[])
+  .filter((k) => game.state?.options?.[k] !== undefined).map((k) => [k, game.state!.options![k]!])) as Partial<Record<NumericRule, number>>)
 const source = ref(0)
 // 設定分成幾個頁籤（記住上次看的那一頁）
 const PAGES = [
@@ -161,6 +166,7 @@ function doReset() {
             <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
+        <RuleFields :model-value="saveRules" @update:model-value="game.setRules" />
       </div>
     </section>
 

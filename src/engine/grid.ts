@@ -33,6 +33,7 @@ import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Light
 import { bestTool } from './tools'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Character, GameState, GameTime, Report } from './types'
+import { rewardMoney } from './gameRules'
 
 export type CellKind =
   | 'floor' | 'wall' | 'water'
@@ -1063,7 +1064,7 @@ function gather(state: GameState, area: Area, item: string): Report {
   const report = eventReport(state, area, 10)
   report.kind = 'action'
   if (item === '古錢') {
-    const money = withRng(state, (rng) => rng.int(10, 60))
+    const money = rewardMoney(state, withRng(state, (rng) => rng.int(10, 60)))
     report.changes.money_cc = money
     report.outcome = { result: 'success', summary: `在${area.name}找到一些古錢。` }
   } else {
@@ -1161,7 +1162,7 @@ function openChest(state: GameState, area: Area, level: number): Report {
     }
     return rng.int(t.money[0], t.money[1]) * level
   })
-  report.changes.money_cc = money
+  report.changes.money_cc = rewardMoney(state, money)
   if (items.length) report.changes.items_gained = items
   report.outcome = {
     result: 'success',

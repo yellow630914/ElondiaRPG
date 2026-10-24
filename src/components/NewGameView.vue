@@ -20,6 +20,9 @@ import { creationCost, creationPiece, creationSlots, gearRules, gearSummary, slo
 import { useSettings } from '@/stores/settings'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import FoldMenu from './ui/FoldMenu.vue'
+import RuleFields from './RuleFields.vue'
+import { sanitizeRules, type NumericRule } from '@/engine/gameRules'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
@@ -146,12 +149,14 @@ function start() {
     ...(customPerks.value.length ? { customPerks: customPerks.value.map((p) => ({ ...p })) } : {}),
     gear: { ...gearChoice.value },
     gearBudget: gearBudget.value,
-    options: { defeatLoot: defeatLoot.value },
+    options: { defeatLoot: defeatLoot.value, ...sanitizeRules(rules.value) },
   }, content.active)
 }
 
 /** 這個存檔的規則：在地下城戰敗時，這趟撿到的東西 */
 const defeatLoot = ref<DefeatLoot>('half')
+// 其他存檔規則（gameRules.ts）：沒寫的是預設
+const rules = ref<Partial<Record<NumericRule, number>>>({})
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 </script>
@@ -203,6 +208,9 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
             <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
+        <FoldMenu id="newgame.rules" icon="d20" label="更多存檔規則" :detail="Object.keys(rules).length ? `改了 ${Object.keys(rules).length} 項` : '經驗、報酬、休息、旅途、委託期限……（之後可以在設定裡改）'">
+          <RuleFields v-model="rules" />
+        </FoldMenu>
       </div>
 
       <div>

@@ -12,6 +12,7 @@ import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { Area } from './grid'
 import { withBonus, type Rng } from './rng'
 import type { DefeatLoot, GameState, ItemDelta, Report } from './types'
+import { gameRule } from './gameRules'
 
 interface RetreatRules {
   attr: 'dex'
@@ -86,7 +87,7 @@ const LAYER_IDS: DungeonLayerId[] = DUNGEON_LAYER_IDS
 /** 撤退檢定的 DC（站在安全房不用檢定） */
 export function retreatDc(state: GameState, area: Area): number {
   const r = expeditionRules.retreat
-  return r.dc_base + r.dc_per_layer * (area.layer ?? 0) + (inDarkness(state, area) ? 2 : 0)
+  return r.dc_base + r.dc_per_layer * (area.layer ?? 0) + (inDarkness(state, area) ? 2 : 0) + gameRule(state, 'escapeDc')
 }
 
 export interface RetreatResult {

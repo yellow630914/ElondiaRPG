@@ -38,6 +38,7 @@ import type {
   ActorState, Character, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
 } from './types'
 import { contractOf } from './tattoos'
+import { gameRule, rewardMoney } from './gameRules'
 
 export interface StatusInstance {
   id: string
@@ -121,6 +122,8 @@ export type CombatAction =
   | { type: 'item'; item: string; target: string }
 
 export interface CombatState {
+  /** 存檔規則：隊伍撤退的 DC 加減（開戰時記下） */
+  fleeDcMod?: number
   id: string
   location: string
   startTime: Required<GameTime>
@@ -214,6 +217,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       .map((f) => f.id)
     const combat: CombatState = {
       id: `c-${state.nextReportNo}`,
+      ...(gameRule(state, 'escapeDc') ? { fleeDcMod: gameRule(state, 'escapeDc') } : {}),
       location: state.location,
       startTime: { ...state.time },
       round: 1,
@@ -617,9 +621,10 @@ function perform(combat: CombatState, actor: Combatant, action: CombatAction, rn
       actor.ap -= costs.flee
       const dice = withBonus('1d20', proficiency(actor.level) + mod(actor.attrs.dex))
       const r = roll(rng, dice)
-      const ok = r.total >= combatRules.flee_dc
+      const fleeDc = combatRules.flee_dc + (actor.side === 'party' ? combat.fleeDcMod ?? 0 : 0)
+      const ok = r.total >= fleeDc
       push(combat, {
-        actor: actor.id, action: '撤退', roll: { dice, value: r.total, dc: combatRules.flee_dc },
+        actor: actor.id, action: '撤退', roll: { dice, value: r.total, dc: fleeDc },
         result: ok ? 'success' : 'fail',
         effects: ok ? [{ type: 'move', target: actor.id, text: actor.side === 'party' ? '全隊脫離戰鬥' : '逃離戰場' }] : [],
       })
@@ -1559,6 +1564,8 @@ export function finishCombat(state: GameState): Report {
       }
     }
   })
+  // 戰利品的錢照存檔規則的倍率
+  money = rewardMoney(state, money)
   // 戰敗：損失一成的錢；有人搬來救兵時不損失。在地下城裡：這趟撿到的東西依存檔規則失去
   let lost: { items: ItemDelta[]; money: number } = { items: [], money: 0 }
   if (combat.status === 'defeat' && !rescued) {

@@ -597,6 +597,18 @@ export type DefeatLoot = 'keep' | 'half' | 'all'
 /** 這個存檔的規則（開新遊戲時選，之後可以在設定裡改） */
 export interface GameOptions {
   defeatLoot: DefeatLoot
+  /** 以下見 gameRules.ts：沒有時用預設 */
+  xpMult?: number
+  moneyMult?: number
+  ambushMult?: number
+  travelEventMult?: number
+  /** 0 = 委託不限期限 */
+  deadlineMult?: number
+  shortRestHours?: number
+  longRestHours?: number
+  alertDecayDays?: number
+  /** 戰鬥撤退與地下城緊急撤退的 DC 加減 */
+  escapeDc?: number
 }
 
 /** 這一趟地下城探索（進入地下城時開始，離開時結束） */

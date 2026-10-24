@@ -9,6 +9,7 @@ import { pcOf } from './party'
 import { roll, withBonus } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { GameState, Report } from './types'
+import { gameRule } from './gameRules'
 
 export const securityRules = securityJson as unknown as {
   alert: { max: number; decay_days: number; gate_dc_base: number; gate_dc_per_level: number }
@@ -43,7 +44,7 @@ export function reputationBand(state: GameState, locId = state.location) {
 export function alertLevel(state: GameState, locId = state.location): number {
   const a = state.alerts?.[locId]
   if (!a) return 0
-  return Math.max(0, a.level - Math.floor((state.time.day - a.day) / securityRules.alert.decay_days))
+  return Math.max(0, a.level - Math.floor((state.time.day - a.day) / gameRule(state, 'alertDecayDays')))
 }
 
 export function isWanted(state: GameState, faction: string | null | undefined): boolean {

@@ -12,6 +12,7 @@ import { backfillEventMemories, ensureRelationship, MEMORY_RULES_VERSION, record
 import { Rng } from './rng'
 import type { Character, ContractRef, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, MarkTerms, Report } from './types'
 import { contractOf, setContract } from './tattoos'
+import { gameRule } from './gameRules'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
@@ -451,6 +452,8 @@ export function commitReport(state: GameState, report: Report): Report {
       for (const x of c.xp!) {
         const member = state.party.find((m) => m.id === x.actor)
         if (!member || !x.amount) continue
+        // 存檔規則的經驗值倍率：報告裡記下實際得到的量
+        if (x.amount > 0) x.amount = Math.max(1, Math.round(x.amount * gameRule(state, 'xpMult')))
         const from = member.level
         if (gainXp(member, x.amount, rng) > 0) {
           ;(c.level_up ??= []).push({ actor: member.id, from, to: member.level })

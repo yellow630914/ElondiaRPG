@@ -11,23 +11,26 @@ import { expireStory, storyDef } from './story'
 import { baseReport } from './town'
 import type { GameState, GameTime, Quest, Report } from './types'
 import { shortestPath } from './world'
+import { gameRule } from './gameRules'
 
 const hoursOf = (t: GameTime) => t.day * 24 + (t.hour ?? 0) + (t.minute ?? 0) / 60
 
-/** 這件委託有幾天可以完成（沒有設定時 undefined：不限） */
-export function questDeadlineDays(quest: Pick<Quest, 'area' | 'giver' | 'target'>): number | undefined {
+/** 這件委託有幾天可以完成（沒有設定、或存檔規則設成不限時 undefined） */
+export function questDeadlineDays(quest: Pick<Quest, 'area' | 'giver' | 'target'>, state?: Pick<GameState, 'options'> | null): number | undefined {
   const r = questDeadlineRules
-  if (!r) return undefined
-  if (quest.area === 'town') return r.town
-  if (quest.area === 'outskirts') return r.outskirts
+  const mult = gameRule(state, 'deadlineMult')
+  if (!r || mult <= 0) return undefined
+  const scaled = (d: number) => Math.max(1, Math.round(d * mult))
+  if (quest.area === 'town') return scaled(r.town)
+  if (quest.area === 'outskirts') return scaled(r.outskirts)
   const path = shortestPath(quest.giver, quest.target)
   const travel = path ? Math.ceil(path.days[1]) : 0
-  return Math.min(r.max, r.dungeon + r.per_travel_day * travel)
+  return scaled(Math.min(r.max, r.dungeon + r.per_travel_day * travel))
 }
 
 /** 接下委託時記下期限 */
 export function setQuestDeadline(state: GameState, quest: Quest) {
-  const days = questDeadlineDays(quest)
+  const days = questDeadlineDays(quest, state)
   if (days !== undefined) quest.deadline = addHours(state.time, days * 24)
 }
 
