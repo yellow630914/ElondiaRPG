@@ -92,9 +92,12 @@ const areaInfo = computed(() => {
     return null
   }
 })
-watch(() => [stateKey(game.state), areaInfo.value?.key] as const, ([key], old) => {
+// 監看的是字串：陣列每次都是新的，走一步也會觸發，所以只看 key 有沒有變
+watch(() => `${stateKey(game.state)}|${areaInfo.value?.key ?? ''}`, (now, old) => {
   const a = areaInfo.value
-  if (!a || !old || old[0] !== key || !old[1]) return
+  const [save, area] = now.split('|')
+  const [oldSave, oldArea] = (old ?? '').split('|')
+  if (!a || !old || save !== oldSave || !oldArea || area === oldArea) return
   placeCard(a.name, a.name.includes(a.town) ? '' : a.town)
 })
 
