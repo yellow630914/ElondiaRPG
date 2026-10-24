@@ -7,6 +7,7 @@ import { nameOf as npcName, type Memory, type Relationship } from '@/engine/soci
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import { canPromote } from '@/engine/promoteNpc'
+import { npcRecord } from '@/engine/npcs'
 import { useContent, VANILLA_NAME } from '@/stores/content'
 import PortraitBox from './PortraitBox.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -27,6 +28,29 @@ function promote(id: string, name: string) {
   if (!game.error) game.flash(`已把「${name}」存成固定 NPC`)
 }
 const rels = computed(() => Object.values(s.value.relationships ?? {}))
+
+// ---- 篩選：名字、身分、好感、排序 ----
+const relQuery = ref('')
+const relRole = ref<'all' | 'party' | 'merchant' | 'other'>('all')
+const relMood = ref<'all' | 'friendly' | 'neutral' | 'hostile'>('all')
+const relSort = ref<'recent' | 'affinity' | 'name'>('recent')
+const keepers = computed(() => new Set(Object.values(s.value.shops ?? {}).map((x) => x.keeper)))
+function roleOf(r: Relationship): 'party' | 'merchant' | 'other' {
+  if (s.value.party.some((m) => m.id === r.id)) return 'party'
+  if (keepers.value.has(r.id) || npcRecord(s.value, r.id)?.tags?.includes('merchant')) return 'merchant'
+  return 'other'
+}
+const moodOf = (v: number) => (v >= 20 ? 'friendly' : v <= -21 ? 'hostile' : 'neutral')
+const seenAt = (r: Relationship) => { const t = r.lastSeen?.time ?? r.firstMet?.time; return t ? t.day * 1440 + (t.hour ?? 0) * 60 + (t.minute ?? 0) : 0 }
+const shownRels = computed(() => {
+  const q = relQuery.value.trim()
+  const list = rels.value.filter((r) => (!q || r.name.includes(q) || (r.aliases ?? []).some((a) => a.includes(q)))
+    && (relRole.value === 'all' || roleOf(r) === relRole.value)
+    && (relMood.value === 'all' || moodOf(r.affinity) === relMood.value))
+  if (relSort.value === 'affinity') return list.sort((a, b) => b.affinity - a.affinity)
+  if (relSort.value === 'name') return list.sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant'))
+  return list.sort((a, b) => seenAt(b) - seenAt(a))
+})
 const pcName = computed(() => s.value.party.find((m) => m.isPlayer)?.name ?? '主角')
 
 function nameOf(id: string): string {
@@ -113,6 +137,27 @@ const suggestionDraft = reactive<Record<string, string>>({})
     <section class="panel">
       <h2 class="head"><GameIcon name="heart" :size="20" />人際關係 <Hint text="主角認識的角色。親密度由遊戲中的互動決定；外貌與關係描述可以自行編輯，會在相關事件中提供給 AI 參考。" /></h2>
       <p v-if="rels.length === 0" class="muted small">還沒有認識任何人。到酒館招募夥伴吧。</p>
+      <div v-else class="row rel-filter">
+        <input v-model="relQuery" class="small q" type="search" placeholder="搜尋名字" />
+        <select v-model="relRole" class="small" aria-label="身分">
+          <option value="all">全部身分</option>
+          <option value="party">隊友</option>
+          <option value="merchant">商人</option>
+          <option value="other">其他</option>
+        </select>
+        <select v-model="relMood" class="small" aria-label="好感">
+          <option value="all">全部好感</option>
+          <option value="friendly">友善</option>
+          <option value="neutral">普通</option>
+          <option value="hostile">敵對</option>
+        </select>
+        <select v-model="relSort" class="small" aria-label="排序">
+          <option value="recent">最近見面</option>
+          <option value="affinity">好感高到低</option>
+          <option value="name">名字</option>
+        </select>
+        <span class="small muted">{{ shownRels.length }} / {{ rels.length }} 人</span>
+      </div>
 
       <div v-if="suggestions.length" class="suggestions">
         <h3 class="small">AI 提議更新「與{{ pcName }}的關係」</h3>
@@ -126,7 +171,8 @@ const suggestionDraft = reactive<Record<string, string>>({})
         </div>
       </div>
 
-      <article v-for="r in rels" :key="r.id" class="rel">
+      <p v-if="rels.length && !shownRels.length" class="muted small">沒有符合的人。</p>
+      <article v-for="r in shownRels" :key="r.id" class="rel">
         <div class="row" style="justify-content: space-between">
           <NameTag :id="r.id" />
           <span class="small">{{ affinityStage(r.affinity) }}（{{ r.affinity }}）</span>
@@ -246,6 +292,9 @@ const suggestionDraft = reactive<Record<string, string>>({})
 
 <style scoped>
 .head { display: flex; align-items: center; gap: 6px; }
+.rel-filter { gap: 6px; margin-bottom: 8px; position: sticky; top: -14px; z-index: 2; padding: 6px 0; background: inherit; }
+.rel-filter .q { flex: 1 1 7em; min-width: 7em; }
+.rel-filter > span { white-space: nowrap; }
 .head :deep(.game-icon) { color: var(--accent); }
 .layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.2fr); gap: 14px; align-items: start; }
 .rel { border-top: 1px solid var(--border); padding: 10px 0; display: grid; gap: 6px; }

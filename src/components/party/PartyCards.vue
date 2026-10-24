@@ -62,46 +62,46 @@ function canDismiss(m: Character) {
           <div class="meta"><template v-if="m.gender">{{ genderName(m.gender) }}・</template>{{ raceName(m.race) }}・{{ className(m.class) }}・Lv.{{ m.level }}</div>
           <div class="vital"><span class="label">HP</span><div class="bar hp"><span :style="{ width: pct(m.hp, m.maxHp) }" /></div><span class="num">{{ m.hp }} / {{ m.maxHp }}</span></div>
           <div class="vital"><span class="label">EXP</span><div class="bar xp"><span :style="{ width: pct(m.xp, xpToNext(m.level)) }" /></div><span class="num">{{ m.xp }} / {{ xpToNext(m.level) }}</span></div>
-          <div class="chips">
-            <span class="tag" title="生命骰：短休時用來回復生命值">生命骰 d{{ hitDie(m) }} × {{ hitDiceLeft(m) }}/{{ m.level }}</span>
-            <span v-if="!m.isPlayer && m.affinity !== undefined" class="tag" :title="`親密度 ${m.affinity}`"><GameIcon name="heart" :size="11" />{{ affinityStage(m.affinity) }}</span>
-            <span v-if="m.group && m.bond !== 'leader'" class="tag">{{ s.party.find((x) => x.id === m.group)?.name }}的隊伍</span>
-            <span v-if="contractFor(m)" class="tag bad" :title="contractFor(m)!.def.mark"><GameIcon name="lock" :size="11" />{{ contractFor(m)!.def.name }}</span>
-            <span v-for="c in m.status" :key="c" class="tag" :class="conditionTone(c)" :title="companionRules.conditions[c]?.desc">{{ conditionName(c) }}</span>
+          <div class="attr5">
+            <button
+              v-for="a in attributeRules.attributes" :key="a.id" class="ghost" :class="{ boost: attrNote(m, a.id) }"
+              :title="attrNote(m, a.id) || a.desc" @click="emit('detail', m.id, 'stats')"
+            >
+              <span class="label">{{ a.name }}</span>
+              <b>{{ attrsOf(m)[a.id] }}</b><small>{{ mod(attrsOf(m)[a.id]) >= 0 ? '+' : '' }}{{ mod(attrsOf(m)[a.id]) }}</small>
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="attr5">
-        <button
-          v-for="a in attributeRules.attributes" :key="a.id" class="ghost" :class="{ boost: attrNote(m, a.id) }"
-          :title="attrNote(m, a.id) || a.desc" @click="emit('detail', m.id, 'stats')"
-        >
-          <span class="label">{{ a.name }}</span>
-          <b>{{ attrsOf(m)[a.id] }}</b><small>{{ mod(attrsOf(m)[a.id]) >= 0 ? '+' : '' }}{{ mod(attrsOf(m)[a.id]) }}</small>
-        </button>
+      <div class="chips">
+        <span class="tag" title="生命骰：短休時用來回復生命值">生命骰 d{{ hitDie(m) }} × {{ hitDiceLeft(m) }}/{{ m.level }}</span>
+        <span v-if="!m.isPlayer && m.affinity !== undefined" class="tag" :title="`親密度 ${m.affinity}`"><GameIcon name="heart" :size="11" />{{ affinityStage(m.affinity) }}</span>
+        <span v-if="m.group && m.bond !== 'leader'" class="tag">{{ s.party.find((x) => x.id === m.group)?.name }}的隊伍</span>
+        <span v-if="contractFor(m)" class="tag bad" :title="contractFor(m)!.def.mark"><GameIcon name="lock" :size="11" />{{ contractFor(m)!.def.name }}</span>
+        <span v-for="c in m.status" :key="c" class="tag" :class="conditionTone(c)" :title="companionRules.conditions[c]?.desc">{{ conditionName(c) }}</span>
       </div>
       <p v-if="isNoncombatant(m)" class="small muted nc">無法戰鬥：同行但不參與戰鬥、不分經驗。</p>
       <div v-else class="combat3">
         <div><span class="label">行動點</span><span><b>{{ apMaxFor(m.level, attrsOf(m)) }}</b> <small class="muted">每回合 +{{ apRegenFor(m.level) }}</small></span></div>
         <div>
-          <span class="label">法術環</span>
+        <span class="label">法術環</span>
           <span v-if="spellSlots(m).length" class="slots" title="剩下／上限；長休後全滿">
             <span v-for="x in spellSlots(m)" :key="x.circle" class="slot" :class="{ empty: !x.left }">{{ x.circle }}環 <b>{{ x.left }}</b>/{{ x.max }}</span>
           </span>
-          <span v-else class="muted">—</span>
+        <span v-else class="muted">—</span>
         </div>
         <div>
-          <span class="label">施法屬性</span>
+        <span class="label">施法屬性</span>
           <span v-if="classDef(m.class).caster !== 'none'"><b>{{ attrName(castingAttr(m.class)) }}</b> <small class="muted">熟練 +{{ proficiency(m.level) }}</small></span>
-          <span v-else class="muted">—</span>
+        <span v-else class="muted">—</span>
         </div>
       </div>
 
       <button class="sec ghost" @click="emit('detail', m.id, 'perks')">
         <span class="label">特質</span>
         <span class="items">
-          <span v-for="p in perksOf(m)" :key="p.id" class="tag" :class="{ bad: p.flaw }" :title="p.desc">{{ p.name }}<template v-if="p.flaw">（缺陷）</template></span>
+        <span v-for="p in perksOf(m)" :key="p.id" class="tag" :class="{ bad: p.flaw }" :title="p.desc">{{ p.name }}<template v-if="p.flaw">（缺陷）</template></span>
           <span v-if="!perksOf(m).length" class="muted">無</span>
         </span>
         <span class="go">詳情<GameIcon name="right" :size="12" /></span>
@@ -119,7 +119,7 @@ function canDismiss(m: Character) {
       <button class="sec ghost" @click="emit('detail', m.id, 'tattoos')">
         <span class="label">刺青</span>
         <span class="items">
-          <span v-for="t in tattoosOf(m)" :key="t.place" class="tag" :class="{ bad: t.kind === 'slave' }">{{ placeName(t.place) }}・{{ tattooName(t) }}</span>
+        <span v-for="t in tattoosOf(m)" :key="t.place" class="tag" :class="{ bad: t.kind === 'slave' }">{{ placeName(t.place) }}・{{ tattooName(t) }}</span>
           <span v-if="!tattoosOf(m).length" class="muted">無</span>
         </span>
         <span class="go">詳情<GameIcon name="right" :size="12" /></span>
@@ -127,7 +127,7 @@ function canDismiss(m: Character) {
       <button v-if="!isNoncombatant(m) && m.abilities.length" class="sec ghost" @click="emit('detail', m.id, 'abilities')">
         <span class="label">能力</span>
         <span class="items">
-          <span v-for="id in m.abilities.slice(0, 8)" :key="id" class="tag" :title="abilityDef(id).desc">{{ abilityDef(id).name }}</span>
+        <span v-for="id in m.abilities.slice(0, 8)" :key="id" class="tag" :title="abilityDef(id).desc">{{ abilityDef(id).name }}</span>
           <span v-if="m.abilities.length > 8" class="muted small">等 {{ m.abilities.length }} 項</span>
         </span>
         <span class="go">詳情<GameIcon name="right" :size="12" /></span>
@@ -161,7 +161,7 @@ function canDismiss(m: Character) {
 <style scoped>
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr)); gap: 16px; }
 .card {
-  position: relative; display: grid; gap: 8px; align-content: start; padding: 14px;
+  position: relative; display: grid; gap: 6px; align-content: start; padding: 14px;
   background: #fff8e440; border: 1px solid var(--border); border-radius: 2px; box-shadow: inset 0 0 0 3px #fff6dd55, 0 2px 4px #6a4a2a33;
 }
 .alert {
@@ -175,36 +175,37 @@ function canDismiss(m: Character) {
   border: 2px solid #c99a45; border-radius: 50%; box-shadow: 0 2px 4px #0006;
 }
 .alert ~ .rank { top: 48px; }
-.top { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; }
+.top { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: start; }
 .pic { padding: 0; border: 3px solid #4b3420; outline: 1px solid #c99a45; outline-offset: -5px; background: #3a2a1a; width: 112px; height: 112px; display: grid; place-items: center; }
 .pic :deep(.avatar) { box-shadow: none; border: none; }
 .who { min-width: 0; padding-right: 44px; }
 .who h3 { margin: 0; font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.meta { font-size: var(--fs-sm); color: var(--muted); margin: 2px 0 6px; }
+.meta { font-size: var(--fs-sm); color: var(--muted); margin: 0 0 4px; }
 .vital { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) 5.5em; gap: 6px; align-items: center; margin-bottom: 3px; }
 .vital .num { font-size: var(--fs-sm); text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .bar.xp { height: 6px; }
 .bar.xp > span { background: linear-gradient(180deg, #b6d884, #7ea050); }
-.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .tag.gold { color: #7a4a10; border-color: #b8893b; background: #fff3cf; }
 .tag.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
 .tag.good { color: var(--good); border-color: color-mix(in srgb, var(--good) 55%, transparent); }
-.attr5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.attr5 button { display: grid; justify-items: center; gap: 0; padding: 4px 0 3px; background: #fff8e488; border: 1px solid #c4a670; border-radius: 2px; color: var(--text); }
+.attr5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-top: 5px; }
+.attr5 button { display: grid; justify-items: center; gap: 0; padding: 2px 0 1px; background: #fff8e488; border: 1px solid #c4a670; border-radius: 2px; color: var(--text); }
 .attr5 button:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
-.attr5 .label { letter-spacing: 0.2em; }
-.attr5 b { font-size: 1.25rem; font-weight: 900; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.attr5 .label { letter-spacing: 0.2em; font-size: var(--fs-xs); line-height: 1.3; }
+.attr5 b { font-size: 1.15rem; font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .attr5 small { font-size: var(--fs-xs); color: #8a4a1e; font-weight: 700; }
 .attr5 .boost b { color: #a8452c; }
 .nc { margin: 0; }
-.combat3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: var(--fs-sm); }
-.combat3 > div { display: flex; flex-direction: column; padding: 2px 8px; border-left: 2px solid #c99a45; }
+.combat3 { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--fs-sm); }
+.combat3 > div { display: flex; align-items: baseline; gap: 6px; padding: 0 0 0 8px; border-left: 2px solid #c99a45; }
+.combat3 .label { color: var(--muted); }
 .slots { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .slot { font-size: var(--fs-xs); line-height: 18px; padding: 0 6px; border: 1px solid var(--chip-border); border-radius: 2px; background: var(--chip-bg); white-space: nowrap; }
 .slot b { color: var(--mp); }
 .slot.empty { opacity: 0.55; }
 .sec {
-  display: grid; grid-template-columns: 3.6em minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 0;
+  display: grid; grid-template-columns: 3.6em minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 3px 0;
   border: none; border-top: 1px dashed #b8955a99; border-radius: 0; text-align: left; color: var(--text); background: none;
 }
 .sec:hover:not(:disabled) { background: #7a5a2a0d; border-color: #b8955a99; color: var(--text); }
@@ -212,7 +213,7 @@ function canDismiss(m: Character) {
 .sec .items { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0; font-size: var(--fs-sm); }
 .sec .ellipsis { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sec .go { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-xs); color: var(--accent); }
-.gear-ic { width: 28px; height: 28px; display: grid; place-items: center; background: #3a2a1aee; color: #e8d8b8; border: 1px solid #4b3420; box-shadow: inset 0 0 0 1px #c99a4555; }
+.gear-ic { width: 26px; height: 26px; display: grid; place-items: center; background: #3a2a1aee; color: #e8d8b8; border: 1px solid #4b3420; box-shadow: inset 0 0 0 1px #c99a4555; }
 .gear-ic.r-uncommon { box-shadow: inset 0 0 0 1px var(--r-uncommon); color: var(--r-uncommon); }
 .gear-ic.r-rare { box-shadow: inset 0 0 0 1px var(--r-rare); color: var(--r-rare); }
 .gear-ic.r-epic { box-shadow: inset 0 0 0 1px var(--r-epic); color: var(--r-epic); }
