@@ -10,7 +10,7 @@ import { safeText } from '@/engine/content'
 import { abilityDef, combatRules, damageTypeName, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { describeCombatLine } from '@/narrator/describe'
 import { banner, fxOn, flash, floatText, screenFlash, screenShake, shake, shatter } from '@/fx/fx'
-import { BUFF_COLOR, CRIT_COLOR, DEBUFF_COLOR, HEAL_COLOR, MISS_COLOR, cuesFor, unplayedHpDelta } from '@/fx/combatFx'
+import { BUFF_COLOR, CRIT_COLOR, DEBUFF_COLOR, HEAL_COLOR, MISS_COLOR, PHYSICAL_COLOR, cuesFor, unplayedHpDelta } from '@/fx/combatFx'
 import type { TimelineEntry } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
@@ -138,7 +138,7 @@ function play(t: TimelineEntry) {
         const el = cards.get(cue.target)
         floatText(el, cue.amount > 0 ? `-${cue.amount}` : '0', { color: cue.amount > 0 ? cue.color : MISS_COLOR, big: cue.crit })
         if (cue.amount > 0) shake(el, cue.crit ? 2 : 1)
-        flash(el, cue.area || cue.color !== '#f4ece0' ? cue.color : '#ff5a4a', cue.crit)
+        flash(el, cue.area || cue.color !== PHYSICAL_COLOR ? cue.color : '#ff5a4a', cue.crit)
         break
       }
       case 'heal': {
