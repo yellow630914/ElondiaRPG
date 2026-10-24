@@ -86,6 +86,7 @@ function label(cell: Cell): string {
     const h = game.state ? homeById(game.state, cell.home) : undefined
     return h?.master ? `主人的家：${h.name}` : `你的房子：${h?.name ?? ''}`
   }
+  if (cell.kind === 'boss' && cell.name) return cell.done ? `${cell.name}（已打倒）` : cell.name
   if (cell.kind === 'lot') return '待售的房子'
   if (cell.kind === 'manor') return '民宅（大門緊閉，不能進入）'
   if (cell.kind === 'trap' && !cell.done) return '道路'

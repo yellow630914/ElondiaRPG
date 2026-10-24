@@ -65,6 +65,8 @@ export interface Cell {
   lock?: number
   /** 打倒守在這裡的層主後，格子變成這種設施（淺層、中層的層主守著往下的階梯） */
   then?: CellKind
+  /** 特殊地圖的 BOSS 格：地圖上與戰鬥場景顯示的名字 */
+  name?: string
   /** 旅途的一格：第幾段路、走這一格花幾小時 */
   road?: { leg: number; hours: number; paid?: boolean }
   /** 旅途的事件（出發時就擲好） */
@@ -740,10 +742,21 @@ export function generateSpecial(state: GameState, def: SpecialMapDef, rng: Rng):
   const strongest = [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
   const level = Math.max(1, ...table.flat().map(([id]) => (typeof id === 'string' ? enemies[id]?.level ?? 1 : 1)))
   const items = def.resource_items?.length ? def.resource_items : maps.generation.dungeon.resource_items
-  const content = (kind: string): Cell => {
+  const elite = (): Cell => (strongest.length ? { kind: 'elite', group: strongest.map(([id, n], i) => [id, i === 0 ? n + 1 : n] as [string, number]) } : { kind: 'floor' })
+  const content = (kind: string, x = -1, y = -1): Cell => {
     switch (kind) {
       case 'encounter': return table.length ? { kind: 'encounter', group: rng.pick(table) } : { kind: 'floor' }
-      case 'elite': return strongest.length ? { kind: 'elite', group: strongest.map(([id, n], i) => [id, i === 0 ? n + 1 : n] as [string, number]) } : { kind: 'floor' }
+      case 'elite': return elite()
+      case 'boss': {
+        // BOSS 格：照設定的怪物；沒設定（或怪物都被刪了）時照強敵的規則
+        const b = def.bosses?.find((x2) => x2.x === x && x2.y === y)
+        const group = b?.group.filter(([id]) => !!enemies[id]) ?? []
+        if (!group.length) {
+          const e = elite()
+          return e.group ? { ...e, kind: 'boss', name: b?.name || 'BOSS' } : e
+        }
+        return { kind: 'boss', group, name: b?.name || 'BOSS' }
+      }
       case 'resource': return { kind: 'resource', item: rng.pick(items) }
       case 'chest': return { kind: 'chest', level, ...chestLock(rng, spec) }
       default: return { kind: kind as CellKind }
@@ -755,7 +768,7 @@ export function generateSpecial(state: GameState, def: SpecialMapDef, rng: Rng):
   if (def.grid?.length) {
     width = Math.max(...def.grid.map((r) => r.length))
     height = def.grid.length
-    cells = def.grid.flatMap((row) => Array.from({ length: width }, (_, x) => content(legend[row[x] ?? '#'] ?? 'wall')))
+    cells = def.grid.flatMap((row, y) => Array.from({ length: width }, (_, x) => content(legend[row[x] ?? '#'] ?? 'wall', x, y)))
   } else {
     ;[width, height] = def.size ?? [9, 7]
     cells = Array.from({ length: width * height }, () => ({ kind: 'wall' }) as Cell)
@@ -981,7 +994,8 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
         return {}
       }
       cell.group = group
-      const scene = area.name
+      // 特殊地圖的 BOSS 格：場景帶上 BOSS 的名字
+      const scene = cell.kind === 'boss' && cell.name ? `${area.name}・${cell.name}` : area.name
       return { combat: startCombat(state, group, { scene, cell: { area: area.key, x, y }, dark: inDarkness(state, area) }) }
     }
     case 'trap': {

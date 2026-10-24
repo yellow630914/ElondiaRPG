@@ -3,7 +3,7 @@
   "version": 1,
   "legend": {
     "#": "wall", ".": "floor", "~": "water", "E": "exit", "S": "safe",
-    "M": "encounter", "X": "elite", "R": "resource", "C": "chest", "T": "trap"
+    "M": "encounter", "X": "elite", "B": "boss", "R": "resource", "C": "chest", "T": "trap"
   },
   "maps": {
     "sm_rhineburg_sewer": {

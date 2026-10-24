@@ -355,6 +355,14 @@ export interface SpecialConnection {
   /** 這些旗標成立時才打開（沒寫時一直開著） */
   requires?: StoryCond
 }
+/** 特殊地圖的一格 BOSS：守在 (x, y) 的怪物（一組），name 是地圖上與戰鬥場景顯示的名字（選填） */
+export interface SpecialBoss {
+  x: number
+  y: number
+  group: EncounterGroup
+  name?: string
+}
+
 export interface SpecialMapDef {
   id: string
   name: string
@@ -387,6 +395,8 @@ export interface SpecialMapDef {
   connections?: SpecialConnection[]
   /** 擺在地圖上的商店（shops.json 的店種或自建商店的 id；只有固定地圖） */
   shops?: { shop: string; x: number; y: number }[]
+  /** BOSS 格（地圖上的 B）各自的怪物與名字（只有固定地圖；沒設定的 B 格照強敵的規則） */
+  bosses?: SpecialBoss[]
 }
 /** 格子種類的名稱（和 grid.ts 的 CellKind 相同，這裡用字串避免循環引用） */
 export type CellKindName = string

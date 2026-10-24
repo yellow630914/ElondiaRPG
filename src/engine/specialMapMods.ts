@@ -16,7 +16,7 @@ export interface SpecialMapMod extends SpecialMapDef {
 
 export const SPECIAL_MAP_LIMITS = {
   name_chars: 16, desc_chars: 300, size: [3, 20], carve: [5, 400], count: [0, 20], elites: [0, 5],
-  connections: 8, table: 8, group_types: 4, group_count: [1, 6], items: 6, flags: 4, shops: 8,
+  connections: 8, table: 8, group_types: 4, group_count: [1, 6], items: 6, flags: 4, shops: 8, bosses: 8, boss_name_chars: 12,
 } as const
 export const LIGHTINGS: Record<Lighting, string> = { lit: '一直有光', daylight: '白天有光', dark: '黑暗' }
 /** 固定地圖可以畫的格子（共用的圖例） */
@@ -116,11 +116,12 @@ export function sanitizeSpecialMapMod(
   const elites = int(raw.elites, L.elites, 0)
   if (elites) out.elites = elites
   // 遭遇表：存在的怪物
+  const cleanGroup = (g: unknown): EncounterGroup => (Array.isArray(g) ? g : [])
+    .filter((x): x is [string, number] => Array.isArray(x) && typeof x[0] === 'string' && refs.enemy(x[0]))
+    .slice(0, L.group_types)
+    .map(([m, n]) => [m, int(n, L.group_count, 1)] as [string, number])
   const table = (Array.isArray(raw.table) ? raw.table : [])
-    .map((g) => (Array.isArray(g) ? g : [])
-      .filter((x): x is [string, number] => Array.isArray(x) && typeof x[0] === 'string' && refs.enemy(x[0]))
-      .slice(0, L.group_types)
-      .map(([m, n]) => [m, int(n, L.group_count, 1)] as [string, number]))
+    .map(cleanGroup)
     .filter((g): g is EncounterGroup => g.length > 0)
     .slice(0, L.table)
   if (table.length) out.table = table
@@ -158,6 +159,16 @@ export function sanitizeSpecialMapMod(
       shops.push({ shop: s.shop, x: s.x, y: s.y })
     }
     if (shops.length) out.shops = shops
+    // BOSS 格：只留畫在地圖上的 B 格，一格一組
+    const legend = { ...specialMapLegend, ...(raw.legend ?? {}) }
+    const bosses: NonNullable<SpecialMapDef['bosses']> = []
+    for (const b of (Array.isArray(raw.bosses) ? raw.bosses : []).slice(0, L.bosses)) {
+      if (!b || !inside(b) || legend[out.grid[b.y]![b.x]!] !== 'boss' || bosses.some((x) => x.x === b.x && x.y === b.y)) continue
+      const group = cleanGroup(b.group)
+      const name = str(b.name, L.boss_name_chars)
+      if (group.length || name) bosses.push({ x: b.x, y: b.y, group, ...(name ? { name } : {}) })
+    }
+    if (bosses.length) out.bosses = bosses
   }
   if (!base) out.custom = true
   return out

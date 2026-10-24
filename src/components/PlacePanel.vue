@@ -201,7 +201,7 @@ const shopDesc = computed(() => {
           <GameIcon v-if="CELL_GAME_ICON[cell.kind]" :name="CELL_GAME_ICON[cell.kind]!" :size="18" />
           <span v-else-if="ICON[cell.kind]">{{ ICON[cell.kind] }}</span>
           <GameIcon v-else name="pin" :size="18" />
-          {{ title ? title.name : cell.kind === 'wall' ? '道路' : cellName(cell.kind) }}
+          {{ title ? title.name : cell.kind === 'wall' ? '道路' : cell.kind === 'boss' && cell.name ? cell.name : cellName(cell.kind) }}
           <span v-if="title && named && title.name !== shopKindName(named)" class="tag">{{ shopKindName(named) }}</span>
           <Hint v-if="title && shopDesc && title.desc" :text="shopDesc" />
         </h3>

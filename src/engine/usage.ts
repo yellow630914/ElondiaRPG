@@ -2,7 +2,7 @@
 // 檢查兩種地方：其他內容（任務、固定 NPC、物品……），以及目前載入的存檔。
 // 其他存檔要等讀檔時才知道；讀檔時的清理見 state.ts 的 migrate。
 
-import { itemRules, npcs as namedNpcs, perkRules, shopRules, stories, type StoryDef, type StoryOutcome } from './data'
+import { itemRules, npcs as namedNpcs, perkRules, shopRules, specialMaps, stories, type StoryDef, type StoryOutcome } from './data'
 import type { RewardEffect } from './effects'
 import { gearSpecOf } from './gear'
 import { furnitureIn } from './homes'
@@ -34,6 +34,9 @@ export function enemyUsage(id: string, state?: GameState | null): string[] {
   const out: string[] = []
   for (const s of stories) {
     for (const n of s.nodes) if (n.enemies?.some(([e]) => e === id)) out.push(`特殊任務「${s.title}」的任務點「${n.title}」`)
+  }
+  for (const m of Object.values(specialMaps)) {
+    if (m.bosses?.some((b) => b.group.some(([e]) => e === id))) out.push(`特殊地圖「${m.name}」的 BOSS 格`)
   }
   if (state) {
     for (const q of activeQuests(state)) if (q.monster === id) out.push(`進行中的委託「${q.title}」`)

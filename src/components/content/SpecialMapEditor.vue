@@ -48,7 +48,9 @@ const usage = computed(() => {
 
 // ---- 版面 ----
 const legend = specialMapLegend as Record<string, CellKind>
-const palette = MAP_CHARS.map((ch) => ({ ch, kind: legend[ch]!, name: cellName(legend[ch]!), icon: CELL_ICON[legend[ch]!] ?? '' }))
+// BOSS 格在特殊地圖叫「BOSS」（地下城的同一種格子是層主）
+const paletteName = (k: CellKind) => (k === 'boss' ? 'BOSS' : cellName(k))
+const palette = MAP_CHARS.map((ch) => ({ ch, kind: legend[ch]!, name: paletteName(legend[ch]!), icon: CELL_ICON[legend[ch]!] ?? '' }))
 /** 畫筆：一種格子、設定入口，或設定第幾個通道的位置 */
 const tool = ref<string>('#')
 const painting = ref(false)
@@ -110,6 +112,7 @@ function markerAt(x: number, y: number): string {
   const s = draft.value.shops?.find((sh) => sh.x === x && sh.y === y)
   if (s) return shopRules.types[s.shop as ShopType]?.emoji ?? '🏪'
   if (draft.value.entry && draft.value.entry.x === x && draft.value.entry.y === y) return '📍'
+  if (legend[charAt(x, y)] === 'boss') return `👑${bossCells.value.findIndex((b) => b.x === x && b.y === y) + 1}`
   return ''
 }
 
@@ -124,6 +127,45 @@ function addGroup() {
 function removeGroup(i: number) {
   draft.value.table!.splice(i, 1)
   if (!draft.value.table!.length) delete draft.value.table
+}
+// ---- BOSS 格：地圖上每一格 B 各自的怪物與名字 ----
+const bossCells = computed(() => {
+  if (draft.value.mode !== 'fixed') return []
+  const out: { x: number; y: number }[] = []
+  ;(draft.value.grid ?? []).forEach((row, y) => [...row].forEach((ch, x) => { if (legend[ch] === 'boss') out.push({ x, y }) }))
+  return out
+})
+function bossAt(x: number, y: number) {
+  return draft.value.bosses?.find((b) => b.x === x && b.y === y)
+}
+function editBoss(x: number, y: number) {
+  const list = (draft.value.bosses ??= [])
+  let b = list.find((v) => v.x === x && v.y === y)
+  if (!b) {
+    b = { x, y, group: [[monsterList.value[0]!.id, 1]] }
+    list.push(b)
+  }
+  return b
+}
+function addBossMonster(x: number, y: number) {
+  const b = bossAt(x, y)
+  if (!b) editBoss(x, y)
+  else if (b.group.length < L.group_types) b.group.push([monsterList.value[0]!.id, 1])
+}
+function removeBossMonster(x: number, y: number, i: number) {
+  const b = bossAt(x, y)
+  if (!b) return
+  b.group.splice(i, 1)
+  if (!b.group.length && !b.name) draft.value.bosses = draft.value.bosses!.filter((v) => v !== b)
+}
+function setBossName(x: number, y: number, name: string) {
+  let b = bossAt(x, y)
+  if (!b) {
+    b = { x, y, group: [] }
+    ;(draft.value.bosses ??= []).push(b)
+  }
+  if (name.trim()) b.name = name
+  else delete b.name
 }
 function addMonster(g: EncounterGroup) {
   if (g.length < L.group_types) g.push([monsterList.value[0]!.id, 1])
@@ -205,6 +247,11 @@ function save() {
       delete m.grid
       m.size ??= [9, 7]
     } else delete m.size
+    // BOSS 格：只留還畫在地圖上的
+    if (m.bosses) {
+      m.bosses = m.bosses.filter((b) => bossCells.value.some((c) => c.x === b.x && c.y === b.y))
+      if (!m.bosses.length) delete m.bosses
+    }
     m.connections = conns.filter((c) => c.to.area).map((c) => ({
       at: c.at, to: c.to,
       ...(splitFlags(c.flagsText).length || splitFlags(c.flagsNoneText).length ? { requires: { flags: splitFlags(c.flagsText), flags_none: splitFlags(c.flagsNoneText) } } : {}),
@@ -297,7 +344,7 @@ function remove() {
             >{{ markerAt(x - 1, y - 1) || CELL_ICON[legend[charAt(x - 1, y - 1)] ?? 'wall'] || '' }}</button>
           </template>
         </div>
-        <p class="small muted">選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；沒有出口時只能從通道進出。</p>
+        <p class="small muted">選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；BOSS 格的怪物在下方「BOSS 格」指定；沒有出口時只能從通道進出。</p>
       </template>
     </fieldset>
 
@@ -328,6 +375,25 @@ function remove() {
         <button class="small warn" @click="removeGroup(gi)">刪除這組</button>
       </div>
       <button class="small" :disabled="(draft.table?.length ?? 0) >= L.table" @click="addGroup">＋ 新增一組</button>
+    </fieldset>
+
+    <fieldset v-if="draft.mode === 'fixed'">
+      <legend>BOSS 格 <Hint text="在版面用「BOSS」畫上的格子，每一格各自指定守在那裡的怪物（一組，最多 4 種）與名字。名字顯示在地圖與戰鬥的場景；沒指定怪物時照強敵的規則（遭遇表最大的一組再多一隻）。打倒之後不再出現（會刷新的地圖再進來時重來）。" /></legend>
+      <p v-if="!bossCells.length" class="small muted">版面上還沒有 BOSS 格。選上面的「👑 BOSS」在地圖上畫一格。</p>
+      <div v-for="(c, bi) in bossCells" :key="`${c.x},${c.y}`" class="row small boss">
+        <strong>👑{{ bi + 1 }}</strong>
+        <span class="muted">（{{ c.x }}, {{ c.y }}）</span>
+        <input :value="bossAt(c.x, c.y)?.name ?? ''" :maxlength="L.boss_name_chars" placeholder="名字（選填，例如 下水道之王）" style="width: 13em" @change="setBossName(c.x, c.y, ($event.target as HTMLInputElement).value)" />
+        <template v-if="bossAt(c.x, c.y)?.group.length">
+          <span v-for="(m, mi) in bossAt(c.x, c.y)!.group" :key="mi" class="row">
+            <select v-model="m[0]"><option v-for="e in monsterList" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option></select>
+            ×<input v-model.number="m[1]" type="number" :min="L.group_count[0]" :max="L.group_count[1]" style="width: 3.5em" />
+            <button class="x" @click="removeBossMonster(c.x, c.y, mi)">×</button>
+          </span>
+        </template>
+        <span v-else class="warn-text">沒指定怪物：照強敵的規則</span>
+        <button class="small" :disabled="(bossAt(c.x, c.y)?.group.length ?? 0) >= L.group_types" @click="addBossMonster(c.x, c.y)">＋ 怪物</button>
+      </div>
     </fieldset>
 
     <fieldset>
@@ -414,4 +480,5 @@ function remove() {
 .palette { flex-wrap: wrap; gap: 4px; }
 .conn { border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px; display: grid; gap: 6px; }
 .warn-text { color: var(--accent); }
+.boss { flex-wrap: wrap; align-items: center; gap: 4px 6px; border-top: 1px dashed var(--border); padding-top: 4px; }
 </style>
