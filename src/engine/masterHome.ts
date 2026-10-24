@@ -382,7 +382,7 @@ export function assertMayLeaveHouse(state: GameState) {
   if (mayLeaveHouse(state)) return
   const name = pcContract(state)!.masterName
   if (houseRefusedToday(state)) throw new Error(`${name}今天不准你出門。`)
-  throw new Error(`要出門，先請求${name}同意（在主動行動裡「請求主人讓你出門」）。`)
+  throw new Error(`要出門，先請求${name}同意（工具列的「契約」→「請求主人讓你出門」）。`)
 }
 
 export function leaveDc(state: GameState): number {

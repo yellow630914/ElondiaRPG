@@ -250,7 +250,7 @@ export function assertMasterAllows(state: GameState) {
   if (masterAllows(state)) return
   const name = contractOf(pcOf(state))!.masterName
   if (masterRefusedToday(state)) throw new Error(`${name}今天不准你離開這座城。`)
-  throw new Error(`身為奴隸，出城前要先請求${name}同意（在主動行動裡「請求主人同意」）。`)
+  throw new Error(`身為奴隸，出城前要先請求${name}同意（工具列的「契約」→「請求主人同意出城」）。`)
 }
 
 export function permitDc(state: GameState): number {

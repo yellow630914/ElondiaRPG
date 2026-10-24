@@ -4,6 +4,10 @@ import { locationById } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import { alertLevel, factionName } from '@/engine/security'
+import { currentArea } from '@/engine/grid'
+import { atMasterHome, houseRefusedToday, mayLeaveHouse } from '@/engine/masterHome'
+import { isBound, isEnslaved } from '@/engine/party'
+import { masterAllows, masterRefusedToday } from '@/engine/slavery'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import { useContent } from '@/stores/content'
@@ -12,6 +16,7 @@ import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import NotebookView from '@/components/NotebookView.vue'
 import CraftDialog from '@/components/CraftDialog.vue'
+import ContractDialog from '@/components/ContractDialog.vue'
 import { canTurnIn } from '@/engine/materialQuests'
 import RoadPanel from '@/components/RoadPanel.vue'
 import CombatView from '@/components/CombatView.vue'
@@ -82,7 +87,7 @@ async function goHome() {
   await game.toHome()
 }
 function closeDialogs() {
-  charOpen.value = showParty.value = showInventory.value = showRelations.value = showNotebook.value = showCraft.value = showSaves.value = showSettings.value = false
+  charOpen.value = showParty.value = showInventory.value = showRelations.value = showNotebook.value = showCraft.value = showContract.value = showSaves.value = showSettings.value = false
 }
 
 const showSettings = ref(false)
@@ -91,6 +96,16 @@ const showInventory = ref(false)
 const showRelations = ref(false)
 const showNotebook = ref(false)
 const showCraft = ref(false)
+/** 奴隸契約（主角身上有契約印記時才有這個按鈕） */
+const showContract = ref(false)
+const enslaved = computed(() => (game.state ? isEnslaved(game.state) : false))
+/** 現在可以請求主人讓你出門或出城（按鈕上提示一下） */
+const canAskMaster = computed(() => {
+  const s = game.state
+  if (!s || !isBound(s)) return false
+  if (atMasterHome(s)) return !mayLeaveHouse(s) && !houseRefusedToday(s)
+  return currentArea(s).kind === 'settlement' && !masterAllows(s) && !masterRefusedToday(s)
+})
 /** 可以回公會交付的委託 */
 const readyQuests = computed(() => (game.state ? game.state.quests.filter((q) => canTurnIn(game.state!, q)).length : 0))
 const showSaves = ref(false)
@@ -216,6 +231,7 @@ onBeforeUnmount(() => {
         <button class="ghost" :title="suggestionCount ? `${suggestionCount} 則提議` : ''" @click="showRelations = true"><GameIcon name="heart" :size="20" />關係<span v-if="suggestionCount" class="badge">{{ suggestionCount }}</span></button>
         <button class="ghost" :title="readyQuests ? `${readyQuests} 件委託可以交付` : ''" @click="showNotebook = true"><GameIcon name="notebook" :size="20" />筆記<span v-if="readyQuests" class="badge gold">{{ readyQuests }}</span></button>
         <button class="ghost" @click="showCraft = true"><GameIcon name="tools" :size="20" />工藝</button>
+        <button v-if="enslaved" class="ghost" :title="canAskMaster ? '可以請求主人讓你出門或出城' : ''" @click="showContract = true"><GameIcon name="lock" :size="20" />契約<span v-if="canAskMaster" class="note">可請求</span></button>
       </nav>
       <CombatView v-if="inCombat" />
       <LogView v-else />
@@ -242,6 +258,9 @@ onBeforeUnmount(() => {
   </AppDialog>
   <AppDialog :open="showCraft" title="工藝" icon="tools" width="760px" @close="showCraft = false">
     <CraftDialog @close="showCraft = false" />
+  </AppDialog>
+  <AppDialog :open="showContract && enslaved" title="奴隸契約" icon="lock" width="640px" @close="showContract = false">
+    <ContractDialog @close="showContract = false" />
   </AppDialog>
   <AppDialog :open="showSaves" title="存檔與讀檔" icon="saves" width="860px" @close="showSaves = false">
     <SaveDialog @loaded="showSaves = false" />

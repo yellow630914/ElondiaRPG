@@ -149,7 +149,7 @@ function canDismiss(m: Character) {
 
   <section v-if="leader" class="panel leader">
     <h3><GameIcon name="flag" :size="16" /> {{ leader.name }}的隊伍</h3>
-    <p v-if="bound" class="small muted">你是{{ leader.name }}的奴隸，不能自行離隊；只能在左側的「主動行動」中談判或逃離。</p>
+    <p v-if="bound" class="small muted">你是{{ leader.name }}的奴隸，不能自行離隊；只能在工具列的「契約」裡談判或逃離。</p>
     <template v-else>
       <p class="small muted">你是這支隊伍的隊員。離隊會在下次休息（短休或長休）時進行：正式道別比較體面；偷偷離開要過靈巧檢定，被發現會很尷尬。</p>
       <div class="row">
