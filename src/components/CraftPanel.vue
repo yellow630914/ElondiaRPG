@@ -2,12 +2,13 @@
 import { computed, ref } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
 import { canCraftHere, craftKindsHere, craftPlan, craftRarity, craftTarget, makeTarget, type AuxItem } from '@/engine/craft'
-import { crafters, skillOf, toolTierFor, toolTierName } from '@/engine/crafting'
+import { crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import { baseSlotName, gearName, gearRules, gearSummary, rarityName, rarityPoints, type BaseSlot } from '@/engine/gear'
 import { formatMoney } from '@/engine/money'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
-import FoldMenu from './ui/FoldMenu.vue'
+import AppDialog from './AppDialog.vue'
+import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import ContentIcon from './icons/ContentIcon.vue'
@@ -16,10 +17,11 @@ import ContentIcon from './icons/ContentIcon.vue'
 // commission：在鐵匠鋪、裁縫店、珠寶店委託店主；make：主角或肯幫忙的夥伴自己動手（crafts.json）
 const props = withDefaults(defineProps<{ mode?: 'commission' | 'make' }>(), { mode: 'commission' })
 const make = computed(() => props.mode === 'make')
-// 店裡的委託打造是可以展開的一列；工藝對話框裡直接顯示
-const wrapper = computed(() => (make.value ? {} : {
-  id: 'place.commission', icon: 'tools' as const, label: '委託打造', detail: `${attrName(gearRules.craft.attr)}檢定，約 ${gearRules.craft.hours} 小時`,
+// 店裡的委託打造是選單的一列，點了打開對話框；工藝對話框裡直接顯示
+const menuItem = computed<MenuItem>(() => ({
+  id: 'commission', icon: 'tools', label: '委託打造', detail: `${attrName(gearRules.craft.attr)}檢定，約 ${gearRules.craft.hours} 小時`,
 }))
+const open = ref(false)
 const emit = defineEmits<{ started: [] }>()
 const game = useGame()
 const s = computed(() => game.state!)
@@ -64,12 +66,20 @@ function craft() {
   text.value = ''
   aux.value = []
   use.value = ''
+  open.value = false
   emit('started')
 }
 </script>
 
 <template>
-  <component :is="make ? 'div' : FoldMenu" v-if="here" class="craft small" v-bind="wrapper">
+  <BuildingMenu v-if="!make && here" :items="[menuItem]" @pick="open = true" />
+  <component
+    :is="make ? 'div' : AppDialog"
+    v-if="here"
+    v-bind="make ? {} : { open, title: '委託打造', icon: 'tools', width: '760px' }"
+    v-on="make ? {} : { close: () => (open = false) }"
+  >
+  <div class="craft small">
     <p v-if="!make" class="muted intro">
       材料與工匠的等級
       <Hint text="第一級材料由工匠提供；更好的材料要自備（龍鱗、秘銀礦石之類可以打造的材料）。店主的工藝等級要達到材料等級，比需要的高時做得更好。" />
@@ -78,26 +88,37 @@ function craft() {
       自己打造
       <Hint text="第一級材料自己買（材料費），更好的材料要自備。做的人擲屬性檢定，加上工藝等級。成功時做的人得到工藝經驗。" />
     </p>
-    <label v-if="make" class="who">誰來做
-      <select v-model="crafterId">
-        <option v-for="w in who" :key="w.member.id" :value="w.member.id" :disabled="!!w.refusal">{{ w.member.name }}{{ w.refusal ? `（${w.refusal}）` : '' }}</option>
-      </select>
-    </label>
-    <div class="row">
-      <select v-model="base">
-        <option v-for="b in bases" :key="b.id" :value="b.id">{{ slotLabel(b.slot) }}・{{ b.name }}</option>
-      </select>
-      <ContentIcon kind="material" :id="mat" :size="20" />
-      <select :value="mat" @change="material = ($event.target as HTMLSelectElement).value">
-        <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.name }}（{{ rarityName(m.rarity) }}，建議 {{ m.level }} 級）</option>
-      </select>
-    </div>
     <table class="kv">
+      <tr v-if="make">
+        <th>誰來做</th>
+        <td>
+          <select v-model="crafterId">
+            <option v-for="w in who" :key="w.member.id" :value="w.member.id" :disabled="!!w.refusal">{{ w.member.name }}{{ w.refusal ? `（${w.refusal}）` : '' }}</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th>底材</th>
+        <td>
+          <select v-model="base">
+            <option v-for="b in bases" :key="b.id" :value="b.id">{{ slotLabel(b.slot) }}・{{ b.name }}</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <th>材料</th>
+        <td class="pick">
+          <ContentIcon kind="material" :id="mat" :size="20" />
+          <select :value="mat" @change="material = ($event.target as HTMLSelectElement).value">
+            <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.name }}（{{ rarityName(m.rarity) }}，建議 {{ m.level }} 級）</option>
+          </select>
+        </td>
+      </tr>
       <tr><th>成品</th><td><b>{{ gearName({ base, material: mat }) }}</b><div class="muted">{{ gearSummary({ base, material: mat }) }}</div></td></tr>
       <tr><th>{{ skill.name }}</th><td>{{ make ? `${crafter.name} Lv.${skillOf(crafter, plan.craft).level}` : `工匠 Lv.${plan.level}` }}<span class="muted">（這個材料要 Lv.{{ plan.tier }}）</span></td></tr>
       <tr><th>檢定</th><td>{{ attrName(make ? skill.attr : gearRules.craft.attr) }}<template v-if="make"> +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</td></tr>
       <tr><th>時間</th><td>約 {{ make ? craftRules.self.hours : gearRules.craft.hours }} 小時</td></tr>
-      <tr v-if="make"><th>工具</th><td>要{{ toolTierName(toolTierFor(plan.tier)) }}<span class="muted">・現在 {{ plan.tool?.source }}</span></td></tr>
+      <tr v-if="make"><th>工具</th><td>要{{ toolTierName(toolTierFor(plan.tier)) }} <Hint :text="toolWhere(plan.craft, toolTierFor(plan.tier))" /><span class="muted">・現在 {{ plan.tool?.source }}</span></td></tr>
       <tr>
         <th>{{ make ? '花費' : '工錢' }}</th>
         <td>{{ formatMoney(plan.fee) }}<span v-if="make && (plan.materialCost || plan.rent)" class="muted">（{{ [plan.materialCost ? `材料費 ${formatMoney(plan.materialCost)}` : '', plan.rent ? `工坊租金 ${formatMoney(plan.rent)}` : ''].filter(Boolean).join('、') }}）</span></td>
@@ -105,6 +126,28 @@ function craft() {
       <tr v-if="plan.units">
         <th>打造材料</th>
         <td :class="{ short: plan.have < plan.units }">{{ plan.have }} / {{ plan.units }} 份<span v-if="plan.uses.length" class="muted">（用掉 {{ plan.uses.map((u) => `${u.name}×${u.qty}`).join('、') }}）</span></td>
+      </tr>
+      <tr>
+        <th>輔料 <Hint :text="`選填，最多 ${auxRules.max_kinds} 種；不論結果都會用掉。`" /></th>
+        <td>
+          <div class="aux">
+            <span v-for="(a, i) in aux" :key="a.name" class="tag">
+              {{ a.name }} ×<input v-model.number="a.qty" type="number" min="1" :max="auxRules.max_qty" class="qty" />
+              <button class="x" @click="aux.splice(i, 1)">×</button>
+            </span>
+            <template v-if="aux.length < auxRules.max_kinds && auxOptions.length">
+              <select v-model="auxPick">
+                <option value="">加入材料…</option>
+                <option v-for="i in auxOptions" :key="i.name" :value="i.name">{{ i.name }}（持有 {{ i.qty }}）</option>
+              </select>
+              <button class="small" :disabled="!auxPick" @click="addAux">＋</button>
+            </template>
+            <span v-else-if="!aux.length" class="muted">行囊裡沒有材料。</span>
+          </div>
+          <div v-if="aux.length" class="muted">
+            輔料價值 {{ formatMoney(plan.auxValue) }}：{{ Math.round(plan.auxChance * 100) }}% 機率品質再高一級（部分成功時照成功做）<template v-if="plan.elements.length">・附魔偏向 {{ plan.elements.map((e) => damageTypeName(e)).join('、') }}</template>
+          </div>
+        </td>
       </tr>
     </table>
     <table class="outcomes">
@@ -116,37 +159,21 @@ function craft() {
         <td>材料損失一半</td>
       </tr>
     </table>
-    <div class="aux">
-      <span>輔料（選填，最多 {{ auxRules.max_kinds }} 種） <Hint text="不論結果都會用掉。" />：</span>
-      <span v-for="(a, i) in aux" :key="a.name" class="tag">
-        {{ a.name }} ×<input v-model.number="a.qty" type="number" min="1" :max="auxRules.max_qty" class="qty" />
-        <button class="x" @click="aux.splice(i, 1)">×</button>
-      </span>
-      <template v-if="aux.length < auxRules.max_kinds && auxOptions.length">
-        <select v-model="auxPick">
-          <option value="">加入材料…</option>
-          <option v-for="i in auxOptions" :key="i.name" :value="i.name">{{ i.name }}（持有 {{ i.qty }}）</option>
-        </select>
-        <button class="small" :disabled="!auxPick" @click="addAux">＋</button>
-      </template>
-      <span v-else-if="!aux.length" class="muted">行囊裡沒有材料。</span>
-    </div>
-    <p v-if="aux.length" class="muted">
-      輔料價值 {{ formatMoney(plan.auxValue) }}：{{ Math.round(plan.auxChance * 100) }}% 機率品質再高一級（部分成功時照成功做）<template v-if="plan.elements.length">・附魔偏向 {{ plan.elements.map((e) => damageTypeName(e)).join('、') }}</template>
-    </p>
-    <p v-if="plan.blocked" class="warn"><GameIcon name="warning" :size="13" /> {{ plan.blocked }}</p>
+    <ul v-if="plan.blocked" class="warn blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
     <template v-else>
       <input v-model="text" placeholder="想要的樣子（選填）：例如刻上家紋、劍身帶著火焰紋路、取名「破曉」" />
       <AbilityPicker v-model="use" />
       <button class="small" :disabled="game.judging || !!s.pendingAction" @click="craft"><GameIcon name="tools" :size="13" /> {{ make ? `${crafter.isPlayer ? '親手' : `請${crafter.name}`}打造` : '委託打造' }}</button>
     </template>
+  </div>
   </component>
 </template>
 
 <style scoped>
 .craft { display: grid; gap: 4px; grid-template-columns: minmax(0, 1fr); }
 .craft input:not([type]) { width: 100%; }
-.who { display: grid; gap: 2px; }
+.pick { display: flex; gap: 6px; align-items: center; }
+.kv select { max-width: 100%; }
 .craft p { margin: 0; }
 .aux { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .aux .qty { width: 46px; }
@@ -161,4 +188,6 @@ table { width: 100%; border-collapse: collapse; }
 .outcomes { margin: 4px 0 2px; text-align: center; font-size: var(--fs-xs); }
 .outcomes th { font-weight: 600; color: var(--muted); padding: 4px; border-bottom: 1px solid var(--border); }
 .outcomes td { padding: 4px; vertical-align: top; }
+.blockers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.blockers li { display: flex; gap: 4px; align-items: baseline; }
 </style>

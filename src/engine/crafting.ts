@@ -4,9 +4,9 @@
 //   高階工作台（房子，之後的房屋系統）。
 // - 夥伴：自願加入而且親密度夠、或奴隸才肯幫忙；雇傭的不幫忙。
 
-import { craftRules, CRAFT_IDS, itemDef, locationById, type CraftId, type Degree } from './data'
+import { craftRules, CRAFT_IDS, itemDef, itemRules, locationById, type CraftId, type Degree } from './data'
 import { gearRules, type MaterialKind } from './gear'
-import { currentArea, currentCell } from './grid'
+import { cellName, currentArea, currentCell } from './grid'
 import { homeOfArea, residentsHere, workbenchFor } from './homes'
 import type { Character, CraftSkill, GameState, NpcRecord } from './types'
 import { contractOf } from './tattoos'
@@ -121,8 +121,11 @@ export function atSafePoint(state: GameState): boolean {
   return craftRules.safe_points.includes(currentCell(state).kind) || currentArea(state).kind === 'home'
 }
 
-/** 這裡做這種工藝能用的工具 */
-export function toolAccess(state: GameState, id: CraftId): ToolAccess {
+/**
+ * 這裡做這種工藝能用的工具。need：要做的東西需要的工具階級；
+ * 自己的工具不夠 need 時，站在對應的店才改成租用店裡的工坊（自己的工具夠用就不收租金）
+ */
+export function toolAccess(state: GameState, id: CraftId, need = 2): ToolAccess {
   let best: ToolAccess = { tier: 0, source: '沒有工具' }
   for (const i of state.inventory) {
     const t = itemDef(i.name)?.tool
@@ -131,8 +134,8 @@ export function toolAccess(state: GameState, id: CraftId): ToolAccess {
     const tier = t.tier === 2 && !atSafePoint(state) ? 1 : (t.tier ?? 1)
     if (tier > best.tier) best = { tier, source: tier === 2 ? `展開${i.name}` : i.name }
   }
-  // 在對應的店：可以租用店裡的工坊（中階）
-  if (best.tier < 2 && currentCell(state).kind === craftRules.skills[id].shop) {
+  // 在對應的店：自己的工具不夠時可以租用店裡的工坊（中階）
+  if (best.tier < Math.min(need, 2) && currentCell(state).kind === craftRules.skills[id].shop) {
     best = { tier: 2, source: '租用店裡的工坊', rentPerHour: craftRules.workshop_rent.per_hour_cc }
   }
   // 自己的房子：攜帶式工坊可以展開；有這種工藝的高階工作台時是高階
@@ -148,20 +151,22 @@ export function toolTierName(tier: number): string {
   return craftRules.tool_tier_names[tier - 1] ?? '沒有工具'
 }
 
-/** 材料的工藝等級需求與種類（給畫面用） */
-export function materialNeeds(material: string): { craft: CraftId; tier: number; toolTier: number } | undefined {
-  const m = gearRules.materials[material]
-  if (!m) return undefined
-  return { craft: craftForKind(m.kind), tier: m.tier, toolTier: toolTierFor(m.tier) }
+/** 可以租這種工藝工坊的店（格子名稱，例如鐵匠鋪） */
+export function rentShopName(id: CraftId): string {
+  return cellName(craftRules.skills[id].shop as Parameters<typeof cellName>[0])
 }
 
-/** 這位角色的工藝等級做不做得了這個材料 */
-export function levelEnough(c: Pick<Character, 'crafts'>, material: string): boolean {
-  const n = materialNeeds(material)
-  return !!n && skillOf(c, n.craft).level >= n.tier
+/** 這種工藝的某個工具階級去哪裡取得（卡住的訊息與「?」說明用） */
+export function toolWhere(id: CraftId, tier: number): string {
+  const named = (t: number) => itemRules.items.find((d) => d.tool?.kind === 'craft' && d.tool.craft === id && (d.tool.tier ?? 1) === t)?.name
+  const rent = `到${rentShopName(id)}租用工坊（每小時 ${craftRules.workshop_rent.per_hour_cc} 白鸛）`
+  if (tier <= 1) return named(1) ? `帶著${named(1)}（任何地方都能用），或${rent}` : rent
+  if (tier === 2) return named(2) ? `${rent}，或在旅店、安全房、自己的房子展開${named(2)}` : rent
+  const bench = itemRules.items.find((d) => d.furniture?.function === 'workbench' && d.furniture.craft === id)?.name
+  return `在自己的房子裡擺${bench ?? `${craftName(id)}的高階工作台`}`
 }
 
-/** 地點的規模（店主等級用） */
-export function locationType(state: GameState): string {
-  return locationById(state.location).type
+/** 工具不夠時的訊息：要什麼工具、現在用的是什麼、去哪裡取得 */
+export function toolBlocker(id: CraftId, need: number, tool: ToolAccess): string {
+  return `要用${craftName(id)}的${toolTierName(need)}（現在：${tool.source}）：${toolWhere(id, need)}`
 }

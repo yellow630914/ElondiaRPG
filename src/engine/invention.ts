@@ -9,7 +9,7 @@ import {
   ATTR_IDS, companionRules, craftRules, damageTypes, itemDef, itemRules, locationById, setSaveItems, statuses,
   type AttrId, type CraftId, type Degree, type FurniturePlace, type ItemCategory, type ItemDef, type ItemUse,
 } from './data'
-import { crafterRefusal, craftName, craftXpFor, gainCraftXp, skillOf, toolAccess, toolTierFor, toolTierName, type ToolAccess } from './crafting'
+import { crafterRefusal, craftName, craftXpFor, gainCraftXp, skillOf, toolAccess, toolBlocker, toolTierFor, type ToolAccess } from './crafting'
 import { applyEffects, type RewardEffect } from './effects'
 import { currentArea } from './grid'
 import { memberOrResident } from './homes'
@@ -378,7 +378,10 @@ export interface InventPlan {
   /** 做的人的工藝等級 */
   skill: number
   tool: ToolAccess
+  /** 做不了的原因（全部列出，用「；」接起來） */
   blocked?: string
+  /** 做不了的原因，一條一條 */
+  blockers: string[]
 }
 
 /** 材料價值不到「價格 × 收購比例 × 份數」的差額（基準價，還沒乘地點物價） */
@@ -391,25 +394,27 @@ export function inventPlan(state: GameState, req: InventRequest, crafter: Charac
   const inputs = req.inputs.map((x) => ({ name: x.name, need: x.qty, have: state.inventory.find((i) => i.name === x.name)?.qty ?? 0 }))
   const inputValue = req.inputs.reduce((s, x) => s + (itemDef(x.name)?.price_cc ?? 0) * x.qty, 0)
   const hours = craftRules.invention.hours
-  const tool = toolAccess(state, req.craft)
   const needTier = toolTierFor(req.level)
+  const tool = toolAccess(state, req.craft, needTier)
   const cost = caps ? Math.round(supplyGap(caps, inputValue, 1) * locationMult(state)) : 0
   const rent = tool.rentPerHour && tool.tier >= needTier ? tool.rentPerHour * hours : 0
   const skill = skillOf(crafter, req.craft).level
-  const short = inputs.find((x) => x.have < x.need)
-  let blocked: string | undefined
-  if (!inventCategories(req.craft).includes(req.category)) blocked = `${craftName(req.craft)}不能做${INVENT_CATEGORY_NAME[req.category] ?? '這種東西'}`
-  else if (!caps) blocked = `第 ${req.level} 級以內還沒有可以參考的${craftName(req.craft)}${INVENT_CATEGORY_NAME[req.category]}配方`
-  else if (skill < req.level) blocked = `${crafter.name}的${craftName(req.craft)}只有 Lv.${skill}（要 Lv.${req.level}）`
-  else if (tool.tier < needTier) blocked = `要用${craftName(req.craft)}的${toolTierName(needTier)}（現在：${tool.source}）`
-  else if (!inputs.length) blocked = '至少要放一種材料'
-  else if (inputs.length > craftRules.invention.max_inputs) blocked = `材料最多 ${craftRules.invention.max_inputs} 種`
-  else if (inputs.some((x) => itemDef(x.name)?.category === 'equipment')) blocked = '裝備不能當材料'
-  else if (short) blocked = `${short.name}不夠（需要 ${short.need}，持有 ${short.have}）`
-  else if (state.money_cc < cost + rent) blocked = `費用不夠（需要 ${formatMoney(cost + rent)}）`
+  // 做不了的原因全部列出來（種類不對、沒有參考配方時其他的就不用看了）
+  const blockers: string[] = []
+  if (!inventCategories(req.craft).includes(req.category)) blockers.push(`${craftName(req.craft)}不能做${INVENT_CATEGORY_NAME[req.category] ?? '這種東西'}`)
+  else if (!caps) blockers.push(`第 ${req.level} 級以內還沒有可以參考的${craftName(req.craft)}${INVENT_CATEGORY_NAME[req.category]}配方`)
+  else {
+    if (skill < req.level) blockers.push(`${crafter.name}的${craftName(req.craft)}只有 Lv.${skill}（要 Lv.${req.level}）`)
+    if (tool.tier < needTier) blockers.push(toolBlocker(req.craft, needTier, tool))
+    if (!inputs.length) blockers.push('至少要放一種材料')
+    if (inputs.length > craftRules.invention.max_inputs) blockers.push(`材料最多 ${craftRules.invention.max_inputs} 種`)
+    if (inputs.some((x) => itemDef(x.name)?.category === 'equipment')) blockers.push('裝備不能當材料')
+    for (const x of inputs) if (x.have < x.need) blockers.push(`${x.name}不夠（需要 ${x.need}，持有 ${x.have}）`)
+    if (state.money_cc < cost + rent) blockers.push(`費用不夠（需要 ${formatMoney(cost + rent)}）`)
+  }
   return {
     ...(caps ? { caps } : {}), inputs, inputValue, cost, rent, fee: cost + rent,
-    dc: (craftRules.recipe.dc[req.level - 1] ?? 18) + craftRules.invention.dc_bonus, hours, skill, tool, ...(blocked ? { blocked } : {}),
+    dc: (craftRules.recipe.dc[req.level - 1] ?? 18) + craftRules.invention.dc_bonus, hours, skill, tool, blockers, ...(blockers.length ? { blocked: blockers.join('；') } : {}),
   }
 }
 
