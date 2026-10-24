@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, watch } from 'vue'
+import { floatText, pillar } from '@/fx/fx'
+import { lastSeen, stateKey } from '@/fx/seen'
 import { className, combatRules, companionRules, conditionName, conditionTone, describeStatus, genderDef, raceName, statusDef } from '@/engine/data'
 import { isActive } from '@/engine/combat'
 import { useGame } from '@/stores/game'
@@ -24,19 +26,39 @@ const hpOf = (m: { id: string; hp: number; maxHp: number }) => {
   const c = fighter(m.id)
   return c ? { hp: c.hp, max: c.maxHp, down: !isActive(c), fled: !!c.fled, statuses: c.statuses } : { hp: m.hp, max: m.maxHp, down: false, fled: false, statuses: [] }
 }
+// 升級：那位隊員的小卡升起金色光柱、飄出「升級！」（讀檔、換存檔時不播）
+const cards = new Map<string, Element>()
+function cardRef(id: string, el: unknown) {
+  if (el instanceof Element) cards.set(id, el)
+  else cards.delete(id)
+}
+watch(() => party.value.map((m) => `${m.id}:${m.level}`).join(','), async () => {
+  const save = stateKey(game.state)
+  const ups = party.value.filter((m) => {
+    const prev = lastSeen(`level:${save}:${m.id}`, m.level)
+    return prev !== undefined && m.level > prev
+  })
+  if (!ups.length) return
+  await nextTick()
+  for (const m of ups) {
+    const el = cards.get(m.id)
+    pillar(el)
+    floatText(el, `升級！Lv.${m.level}`, { color: '#ffd34d', top: true, delay: 150 })
+  }
+}, { immediate: true })
 const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (v / max) * 100)) : 0}%`
 </script>
 
 <template>
   <section class="panel party-strip">
     <h3 class="head"><GameIcon name="users" :size="16" />隊伍 <span class="muted count">{{ party.length }} / {{ combatRules.party_max }}</span></h3>
-    <div v-for="m in party" :key="m.id" class="mini" :class="{ down: hpOf(m).down }">
+    <div v-for="m in party" :key="m.id" :ref="(el) => cardRef(m.id, el)" class="mini" :class="{ down: hpOf(m).down }">
       <span v-if="m.pendingAbilityChoices?.length || m.attrPoints > 0" class="lvup">可升級</span>
       <Avatar :id="m.id" :size="44" />
       <div class="info">
         <div class="name">
           <b :style="{ color: genderDef(m.gender)?.color }">{{ m.name }}</b>
-          <small>{{ raceName(m.race) }}・{{ className(m.class) }} Lv.{{ m.level }}</small>
+          <small>{{ raceName(m.race) }}・{{ className(m.class) }} Lv.<span :key="m.level" class="lv">{{ m.level }}</span></small>
           <span v-if="hpOf(m).down" class="tag bad state">{{ hpOf(m).fled ? '撤離' : '倒下' }}</span>
         </div>
         <div class="hp" :title="`HP ${hpOf(m).hp} / ${hpOf(m).max}`">
@@ -73,7 +95,12 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
 .lvup {
   position: absolute; top: -7px; left: 26px; z-index: 1; font-size: var(--fs-xs); line-height: 16px; padding: 0 5px; border-radius: 2px;
   background: var(--accent); color: #1a1008; font-weight: 700; box-shadow: 0 0 8px #f0d08399;
+  animation: badge-hop 0.5s steps(5, end);
 }
+/* 「可升級」出現時跳一下；等級數字翻動一次 */
+@keyframes badge-hop { 0% { transform: translateY(6px) scale(0.6); opacity: 0; } 50% { transform: translateY(-4px) scale(1.1); opacity: 1; } }
+.lv { display: inline-block; animation: lv-flip 0.4s steps(4, end); }
+@keyframes lv-flip { from { transform: rotateX(90deg); color: var(--gold-hi); } }
 .name { display: flex; gap: 6px; align-items: baseline; min-width: 0; }
 .name b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; min-width: 3em; }
 .name small { color: var(--muted); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 100; }

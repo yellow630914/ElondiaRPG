@@ -51,7 +51,7 @@ function toggle() {
       <span v-if="badge !== undefined && badge !== ''" class="tag" :class="tone">{{ badge }}</span>
       <GameIcon name="right" :size="14" class="chev" />
     </button>
-    <div v-if="expanded" class="fold-body"><slot /></div>
+    <div v-if="expanded" class="fold-body unfold"><slot /></div>
   </div>
 </template>
 

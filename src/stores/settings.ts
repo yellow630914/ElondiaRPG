@@ -12,6 +12,17 @@ import { applyUiLanguage, type UiLanguage } from '@/i18n/uiScript'
 
 const KEY = 'elondia.settings'
 
+/** 畫面特效：全部、精簡（只留飄字、HP 殘影與橫幅）、關閉 */
+export type FxLevel = 'full' | 'lite' | 'off'
+/** 系統開了「減少動態效果」時預設精簡 */
+function reducedMotion(): boolean {
+  try {
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
+}
+
 /** 會呼叫 AI 的功能（見 docs/PROMPTS.md 第 1 節） */
 export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'tags'
 
@@ -87,6 +98,8 @@ interface SavedSettings {
   language: 'zh-Hant' | 'zh-Hans'
   /** 介面語言（畫面上的文字；AI 的輸出語言是 language） */
   uiLanguage: UiLanguage
+  /** 畫面特效；auto 跟著系統的「減少動態效果」 */
+  effects: FxLevel | 'auto'
   loreBudget: number
 }
 
@@ -126,6 +139,7 @@ function defaults(): SavedSettings {
     language: 'zh-Hant',
     uiLanguage: 'zh-Hant',
     loreBudget: 12000,
+    effects: 'auto',
   }
 }
 
@@ -183,9 +197,16 @@ export const useSettings = defineStore('settings', () => {
   const uiLanguage = ref(initial.uiLanguage)
   watch(uiLanguage, applyUiLanguage, { immediate: true })
   const loreBudget = ref(initial.loreBudget)
+  const effects = ref(initial.effects)
+  /** 實際用的特效等級 */
+  const effectsLevel = (): FxLevel => (effects.value === 'auto' ? (reducedMotion() ? 'lite' : 'full') : effects.value)
+  // 樣式表用 html[data-fx] 決定播哪些 CSS 動畫
+  watch(effects, () => {
+    if (typeof document !== 'undefined') document.documentElement.dataset.fx = effectsLevel()
+  }, { immediate: true })
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget, effects],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -208,6 +229,7 @@ export const useSettings = defineStore('settings', () => {
         language: language.value,
         uiLanguage: uiLanguage.value === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant',
         loreBudget: loreBudget.value,
+        effects: effects.value,
       }
       try {
         localStorage.setItem(KEY, JSON.stringify(data))
@@ -276,7 +298,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget, effects, effectsLevel,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })

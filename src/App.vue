@@ -37,6 +37,9 @@ import SettingsView from '@/components/SettingsView.vue'
 import EventCenter from '@/components/events/EventCenter.vue'
 import PartyStrip from '@/components/PartyStrip.vue'
 import GameIcon from '@/components/ui/GameIcon.vue'
+import AmbientLayer from '@/components/fx/AmbientLayer.vue'
+import { edgePulse, floatText, placeCard, tween } from '@/fx/fx'
+import { stateKey } from '@/fx/seen'
 import type { IconName } from '@/components/ui/iconPaths'
 import { activeEvents, eventDialogOpen, pendingEvents } from '@/components/events/eventQueue'
 
@@ -61,6 +64,37 @@ const crime = computed(() => {
   if (wanted.length) return { text: '通緝中', title: `被${wanted.map(factionName).join('、')}通緝` }
   const level = alertLevel(s)
   return level ? { text: `警戒 ${level}`, title: `${locationById(s.location).name}的衛兵警戒 ${level}` } : null
+})
+
+// ── 特效：金錢滾動與飄字、通緝或警戒升高時畫面邊緣紅一下、換區域時的地名卡（讀檔不算）
+const moneyEl = ref<HTMLElement | null>(null)
+const moneyShown = ref(game.state?.money_cc ?? 0)
+let stopMoney = () => {}
+watch(() => [stateKey(game.state), game.state?.money_cc ?? 0] as const, ([key, v], old) => {
+  stopMoney()
+  const delta = old && old[0] === key ? v - old[1] : 0
+  if (!delta) { moneyShown.value = v; return }
+  floatText(moneyEl.value, `${delta > 0 ? '+' : '−'}${formatMoney(Math.abs(delta))}`, { color: delta > 0 ? '#ffd34d' : '#ff7a66' })
+  stopMoney = tween(moneyShown.value, v, 600, (x) => (moneyShown.value = x))
+})
+const crimeLevel = computed(() => (game.state ? Object.keys(game.state.wanted ?? {}).length * 10 + alertLevel(game.state) : 0))
+watch(() => [stateKey(game.state), crimeLevel.value] as const, ([key, v], old) => {
+  if (old && old[0] === key && v > old[1]) edgePulse()
+})
+const areaInfo = computed(() => {
+  const s = game.state
+  if (!s) return null
+  try {
+    const a = currentArea(s)
+    return { key: a.key, name: a.name, town: locationById(s.location).name }
+  } catch {
+    return null
+  }
+})
+watch(() => [stateKey(game.state), areaInfo.value?.key] as const, ([key], old) => {
+  const a = areaInfo.value
+  if (!a || !old || old[0] !== key || !old[1]) return
+  placeCard(a.name, a.name.includes(a.town) ? '' : a.town)
 })
 
 type Tab = 'adventure' | 'prompts' | 'content'
@@ -182,11 +216,11 @@ onBeforeUnmount(() => {
     <div v-if="game.state" class="hud">
       <span class="cell" title="遊戲時間"><GameIcon name="calendar" :size="15" /><span class="label">第</span><b>{{ game.state.time.day }}</b><span class="label">天</span><b>{{ clock }}</b><GameIcon :name="daytime ? 'sun' : 'moon'" :size="15" :class="daytime ? 'sun' : 'night'" /></span>
       <span class="cell" title="所在地點"><GameIcon name="pin" :size="15" /><b>{{ locationById(game.state.location).name }}</b></span>
-      <span class="cell money" title="持有金錢"><GameIcon name="coins" :size="15" /><b>{{ formatMoney(game.state.money_cc) }}</b></span>
-      <span v-if="crime" class="cell crime" :title="crime.title"><GameIcon name="siren" :size="15" /><b>{{ crime.text }}</b></span>
+      <span ref="moneyEl" class="cell money" title="持有金錢"><GameIcon name="coins" :size="15" /><b>{{ formatMoney(moneyShown) }}</b></span>
+      <span v-if="crime" :key="crime.text" class="cell crime" :title="crime.title"><GameIcon name="siren" :size="15" /><b>{{ crime.text }}</b></span>
     </div>
     <div class="top-buttons">
-      <button v-if="eventCount" class="small events" :class="{ hot: blockingEvent }" title="需要你處理的事" @click="eventDialogOpen = true"><GameIcon name="bell" :size="14" />待處理<span class="badge">{{ eventCount }}</span></button>
+      <button v-if="eventCount" class="small events" :class="{ hot: blockingEvent }" title="需要你處理的事" @click="eventDialogOpen = true"><GameIcon :key="eventCount" name="bell" :size="14" class="bell" />待處理<span class="badge">{{ eventCount }}</span></button>
       <button v-if="game.state" class="ghost icon" title="快速存檔（F8 / Ctrl+S）" @click="game.quickSave()"><GameIcon name="save" :size="24" /><span>快存</span></button>
       <button v-if="game.state" class="ghost icon" title="快速讀檔（F9）" @click="askQuickLoad"><GameIcon name="load" :size="24" /><span>快讀</span></button>
       <button v-if="game.state" class="ghost icon" title="存檔與讀檔：存檔欄位、匯出與匯入" @click="showSaves = true"><GameIcon name="saves" :size="24" /><span>存讀檔</span></button>
@@ -194,7 +228,8 @@ onBeforeUnmount(() => {
       <button v-if="game.state" class="ghost icon" title="存好進度，回到首頁" @click="goHome"><GameIcon name="home" :size="24" /><span>首頁</span></button>
     </div>
   </header>
-  <Transition name="fade">
+  <AmbientLayer v-if="game.state" />
+  <Transition name="notice">
     <div v-if="game.notice" class="notice">{{ game.notice }}</div>
   </Transition>
 
@@ -328,6 +363,15 @@ onBeforeUnmount(() => {
 .save-warning { position: sticky; top: 0; z-index: 50; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+/* 上方通知：淡入並往下滑 */
+.notice-enter-active, .notice-leave-active { transition: opacity 0.2s, transform 0.2s steps(4, end); }
+.notice-enter-from, .notice-leave-to { opacity: 0; transform: translate(-50%, -10px); }
+/* 「待處理」多了一件：鈴鐺搖兩下 */
+.events .bell { animation: bell 0.6s steps(6, end); transform-origin: 50% 10%; }
+@keyframes bell { 15% { transform: rotate(18deg); } 35% { transform: rotate(-16deg); } 55% { transform: rotate(10deg); } 75% { transform: rotate(-6deg); } }
+/* 通緝、警戒出現或升級：標籤閃一下 */
+.hud .crime { animation: crime-in 0.5s steps(5, end); }
+@keyframes crime-in { from { box-shadow: 0 0 0 2px var(--danger), 0 0 14px var(--danger); } }
 
 .game {
   display: grid;

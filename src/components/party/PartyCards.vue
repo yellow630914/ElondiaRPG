@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
+import { lastSeen, stateKey } from '@/fx/seen'
 import { affinityStage, apMaxFor, apRegenFor, attrsOf, castingAttr, guildRankFor, mod, proficiency, xpToNext } from '@/engine/character'
 import { playerRank } from '@/engine/guild'
 import { abilityDef, attributeRules, attrName, className, classDef, companionRules, conditionName, conditionTone, genderDef, genderName, raceName } from '@/engine/data'
@@ -37,6 +38,17 @@ function gearList(m: Character) {
   return SLOTS.filter((slot) => m.gear?.[slot]).map((slot) => ({ slot, g: m.gear![slot]! }))
 }
 const rarityOf = specRarity
+// ── 特效：EXP 條從上次打開時的值漲到現在（升級了就從 0 漲）；公會階級變了就像蓋章一樣蓋上去
+const xpFrom = reactive<Record<string, string>>({})
+const stamped = reactive<Record<string, boolean>>({})
+for (const m of s.value.party) {
+  const key = `${stateKey(game.state)}:${m.id}`
+  const prev = lastSeen(`xp:${key}`, { level: m.level, xp: m.xp })
+  if (prev && (prev.level !== m.level || prev.xp !== m.xp)) xpFrom[m.id] = prev.level === m.level ? pct(prev.xp, xpToNext(m.level)) : '0%'
+  const r = lastSeen(`rank:${key}`, rank(m))
+  if (r !== undefined && r !== rank(m)) stamped[m.id] = true
+}
+onMounted(() => requestAnimationFrame(() => requestAnimationFrame(() => { for (const k of Object.keys(xpFrom)) delete xpFrom[k] })))
 function canDismiss(m: Character) {
   return !m.isPlayer && !m.group && m.bond !== 'slave' && m.bond !== 'guest'
 }
@@ -49,7 +61,7 @@ function canDismiss(m: Character) {
         <GameIcon name="sparkles" :size="15" />{{ levelUpText(m) }}
         <button class="small" @click="emit('detail', m.id, m.pendingAbilityChoices?.length ? 'abilities' : 'stats')">前往</button>
       </div>
-      <span class="rank" :title="m.isPlayer ? '冒險者公會的階級（功績與晉升考核）' : '依等級換算的階級'">{{ rank(m) }}</span>
+      <span class="rank" :class="{ stamp: stamped[m.id] }" :title="m.isPlayer ? '冒險者公會的階級（功績與晉升考核）' : '依等級換算的階級'">{{ rank(m) }}</span>
 
       <div class="top">
         <button class="pic ghost" title="角色設定與形象圖" @click="emit('detail', m.id, 'profile')"><Avatar :id="m.id" :size="104" /></button>
@@ -61,7 +73,7 @@ function canDismiss(m: Character) {
           </h3>
           <div class="meta"><template v-if="m.gender">{{ genderName(m.gender) }}・</template>{{ raceName(m.race) }}・{{ className(m.class) }}・Lv.{{ m.level }}</div>
           <div class="vital"><span class="label">HP</span><div class="bar hp"><span :style="{ width: pct(m.hp, m.maxHp) }" /></div><span class="num">{{ m.hp }} / {{ m.maxHp }}</span></div>
-          <div class="vital"><span class="label">EXP</span><div class="bar xp"><span :style="{ width: pct(m.xp, xpToNext(m.level)) }" /></div><span class="num">{{ m.xp }} / {{ xpToNext(m.level) }}</span></div>
+          <div class="vital"><span class="label">EXP</span><div class="bar xp"><span :style="{ width: xpFrom[m.id] ?? pct(m.xp, xpToNext(m.level)) }" /></div><span class="num">{{ m.xp }} / {{ xpToNext(m.level) }}</span></div>
           <div class="attr5">
             <button
               v-for="a in attributeRules.attributes" :key="a.id" class="ghost" :class="{ boost: attrNote(m, a.id) }"
@@ -184,7 +196,9 @@ function canDismiss(m: Character) {
 .vital { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) 5.5em; gap: 6px; align-items: center; margin-bottom: 3px; }
 .vital .num { font-size: var(--fs-sm); text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .bar.xp { height: 6px; }
-.bar.xp > span { background: linear-gradient(180deg, #b6d884, #7ea050); }
+.bar.xp > span { background: linear-gradient(180deg, #b6d884, #7ea050); transition: width 0.9s steps(12, end) 0.2s; }
+.rank.stamp { animation: stamp 0.45s steps(5, end) 0.2s both; }
+@keyframes stamp { from { transform: scale(2.4) rotate(-12deg); opacity: 0; } 70% { transform: scale(0.92) rotate(2deg); opacity: 1; } }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .tag.gold { color: #7a4a10; border-color: #b8893b; background: #fff3cf; }
 .tag.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
