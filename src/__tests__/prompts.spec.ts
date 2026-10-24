@@ -78,10 +78,11 @@ describe('prompt order for caching', () => {
     expect(a.user.trim().endsWith('請依照上述報告寫出這次事件的詳細經過。')).toBe(true)
     expect(a.system).not.toContain('約 500～900 字')
     const keys = a.sections!.map((s) => s.key)
-    // 文風緊接在規則後面，當作規則的最後一條，排在世界書前面
-    expect(keys.slice(0, 3)).toEqual(['rules', 'style', 'lore_constant'])
-    expect(a.system).toContain('9. 如果提供了 <relationships>')
-    expect(a.system).toMatch(/<\/relationship_updates>；沒有明顯改變就不要輸出這一段。\n10\. 文風/)
+    // 預設規則有 {{style}}：文風放在硬性規則的最後一條（規則區塊裡），排在世界書前面
+    expect(keys.slice(0, 2)).toEqual(['rules', 'lore_constant'])
+    expect(a.system).toContain('10. 如果提供了 <relationships>')
+    expect(a.system).toMatch(/<\/relationship_updates>；沒有明顯改變就不要輸出這一段。\n11\. 文風/)
+    expect(a.system.indexOf('11. 文風')).toBeLessThan(a.system.indexOf('</hard_rules>'))
     expect(keys.indexOf('report')).toBeLessThan(keys.indexOf('request'))
     const parts = a.sections!.map((s) => s.part).join(',')
     expect(parts).toMatch(/^(system,)+(user,?)+$/)
@@ -135,9 +136,10 @@ describe('narration rules', () => {
   it('uses the default rules until the player edits them, and restores them', () => {
     const state = game()
     const def = composeNarration(state, combat, options()).prompt
-    expect(def.system).toContain('6. 使用繁體中文。')
-    expect(def.system).toContain('10. 文風')
-    expect(def.system).not.toContain('{{')
+    expect(def.system).toContain('7. 使用繁體中文。')
+    expect(def.system).toContain('11. 文風')
+    // 規則本身列了「{{...}}」當作禁止輸出的例子；只檢查佔位符都換掉了
+    expect(def.system).not.toMatch(/\{\{(language|player|currency|style)\}\}/)
     const config = { ...defaultPromptConfig(), narrationRules: '你是說書人，{{player}}是主角。\n1. 用{{language}}。\n2. 每段不超過三句。' }
     const edited = composeNarration(state, combat, options({ config })).prompt
     expect(edited.system).toContain('你是說書人，艾倫是主角。\n1. 用繁體中文。')
@@ -247,10 +249,10 @@ describe('import and export', () => {
     const all = prompts.exportEntries('styles')
     const enabled = JSON.parse(prompts.exportEntries('styles', true))
     expect(enabled.type).toBe('elondia-styles')
-    expect(enabled.entries.map((x: { name: string }) => x.name)).toEqual(['埃隆迪亞・史詩奇幻', '雨夜'])
+    expect(enabled.entries.map((x: { name: string }) => x.name)).toEqual(['埃隆迪亞・史詩奇幻', '共通層・直白肉體（NSFW 底座）', '日輕第一視角・吐槽與心跳', '肥膩肉感・濃稠與氣味', '淫語・台詞的色情匯報', '雨夜'])
 
     prompts.resetAll()
-    expect(prompts.importEntries('styles', all)).toEqual({ added: 1, skipped: 4 })
+    expect(prompts.importEntries('styles', all)).toEqual({ added: 1, skipped: 12 })
     const imported = prompts.config.styles.at(-1)!
     expect(imported).toMatchObject({ name: '雨夜', content: '多寫雨聲。', targets: ['narration'] })
     expect(imported.preset).toBeUndefined()

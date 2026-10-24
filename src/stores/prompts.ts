@@ -191,7 +191,10 @@ export const usePrompts = defineStore('prompts', () => {
   function restoreEntry(list: EntryList, id: string) {
     const e = config.value[list].find((x) => x.id === id)
     const p = e && presetOf(list, e)
-    if (e && p) Object.assign(e, { name: p.name, content: p.content, targets: [...p.targets], ...(p.position ? { position: p.position } : {}) })
+    if (!e || !p) return
+    Object.assign(e, { name: p.name, content: p.content, targets: [...p.targets], ...(p.position ? { position: p.position } : {}) })
+    if (p.adult) e.adult = true
+    else delete e.adult
   }
 
   /** 把被刪掉的內建條目加回來 */
