@@ -131,3 +131,17 @@ describe('character creation catalogs', () => {
     expect(agree / list.length).toBeGreaterThan(0.7)
   })
 })
+
+describe('changing the body type later', () => {
+  it('the profile edit sets or clears the body type of the paper doll', async () => {
+    const { editProfile } = await import('@/engine/character')
+    const { characterBody } = await import('@/engine/look')
+    const pc = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 1, gender: '男' }).party[0]!
+    expect(characterBody(pc)).toBe('masc')
+    editProfile(pc, { body: 'fem' })
+    expect(characterBody(pc)).toBe('fem')
+    editProfile(pc, { body: 'nope' as never })
+    expect(pc.body).toBeUndefined()
+    expect(characterBody(pc)).toBe('masc')
+  })
+})

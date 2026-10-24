@@ -10,6 +10,9 @@ import { contractOf } from '@/engine/tattoos'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import AppDialog from '../AppDialog.vue'
+import BodyFigure from './BodyFigure.vue'
+import { characterBody } from '@/engine/look'
+import { BODIES, BODY_NAME, type Body } from '@/engine/traits'
 import ContentIcon from '../icons/ContentIcon.vue'
 import PortraitBox from '../PortraitBox.vue'
 import Avatar from '../ui/Avatar.vue'
@@ -52,9 +55,10 @@ const combat = computed<StatItem[]>(() => {
 
 // ---- 主角設定 ----
 const editingProfile = ref(false)
-const profile = reactive({ gender: '', appearance: '', background: '' })
+const profile = reactive<{ gender: string; appearance: string; background: string; body: Body | '' }>({ gender: '', appearance: '', background: '', body: '' })
 function startProfile() {
   profile.gender = m.value.gender ?? ''
+  profile.body = m.value.body ?? ''
   profile.appearance = m.value.appearance ?? ''
   profile.background = m.value.background ?? ''
   editingProfile.value = true
@@ -149,6 +153,7 @@ watch(() => props.member, () => (editingProfile.value = false))
           <dl class="kv">
             <template v-if="m.personality"><dt>個性</dt><dd>{{ m.personality }}</dd></template>
             <template v-if="m.gender"><dt>性別</dt><dd>{{ m.gender }}</dd></template>
+            <template v-if="m.isPlayer"><dt>體型</dt><dd>{{ BODY_NAME[characterBody(m)] }}<span v-if="!m.body" class="muted">（依種族與性別）</span></dd></template>
             <template v-if="m.birthplace"><dt>出身</dt><dd>{{ locationById(m.birthplace).name }}</dd></template>
             <template v-if="m.appearance"><dt>外貌</dt><dd>{{ m.appearance }}</dd></template>
             <template v-if="m.background"><dt>背景</dt><dd>{{ m.background }}</dd></template>
@@ -157,6 +162,15 @@ watch(() => props.member, () => (editingProfile.value = false))
         </template>
         <form v-else class="edit" @submit.prevent="saveProfile">
           <label>性別<input v-model="profile.gender" maxlength="20" /></label>
+          <div class="body-pick">
+            <label>體型 <Hint text="裝備欄與刺青的人形圖用哪一種輪廓；不選時依種族與性別。" />
+              <select v-model="profile.body">
+                <option value="">依種族與性別（{{ BODY_NAME[characterBody({ race: m.race, gender: profile.gender })] }}）</option>
+                <option v-for="b in BODIES" :key="b" :value="b">{{ BODY_NAME[b] }}</option>
+              </select>
+            </label>
+            <span class="fig"><BodyFigure :body="profile.body || characterBody({ race: m.race, gender: profile.gender })" /></span>
+          </div>
           <label>外貌<textarea v-model="profile.appearance" rows="3" maxlength="600" /></label>
           <label>背景<textarea v-model="profile.background" rows="4" maxlength="800" /></label>
           <div class="row"><button class="small primary" type="submit">儲存</button><button class="small" type="button" @click="editingProfile = false">取消</button></div>
@@ -237,4 +251,6 @@ watch(() => props.member, () => (editingProfile.value = false))
 .edit label { display: grid; gap: 2px; }
 .edit textarea { width: 100%; }
 @media (max-width: 900px) { .pane.two, .profile { grid-template-columns: minmax(0, 1fr); } }
+.body-pick { display: flex; gap: 10px; align-items: center; }
+.body-pick .fig { width: 44px; flex: none; }
 </style>

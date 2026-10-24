@@ -6,6 +6,7 @@ import { genderId } from '@/engine/look'
 import { Rng } from '@/engine/rng'
 import { BODIES, BODY_NAME, bodyOf, describeLook, LOOK_PARTS, lookOptions, npcTraits, rollLookParts, type Body } from '@/engine/traits'
 import Hint from './ui/Hint.vue'
+import BodyFigure from './party/BodyFigure.vue'
 import GameIcon from './ui/GameIcon.vue'
 
 const props = defineProps<{ race: string; gender: string }>()
@@ -45,7 +46,8 @@ function randomize() {
           <option v-for="b in BODIES" :key="b" :value="b">{{ BODY_NAME[b] }}</option>
         </select>
       </label>
-      <Hint text="決定可以選的部位詞條，以及角色視窗的人形圖。各部位不選就不寫；選了的會寫在外貌的開頭，交給 AI 描寫主角。" />
+      <span class="fig" title="裝備欄與刺青的人形圖"><BodyFigure :body="effective" /></span>
+      <Hint text="決定裝備欄與刺青的人形圖（小人）的輪廓，以及可以選的部位詞條。各部位不選就不寫；選了的會寫在外貌的開頭，交給 AI 描寫主角。" />
       <button type="button" class="small" @click="randomize"><GameIcon name="shuffle" :size="13" /> 隨機一組</button>
       <button type="button" class="small ghost" :disabled="!Object.keys(look).length" @click="look = {}">清除</button>
     </div>
@@ -65,6 +67,7 @@ function randomize() {
 <style scoped>
 .look { display: grid; gap: 6px; }
 .top { gap: 8px; }
+.fig { width: 30px; flex: none; display: inline-block; }
 .lab { display: inline-flex; gap: 6px; align-items: center; }
 .parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); column-gap: 16px; }
 .part { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); align-items: center; gap: 6px; padding: 2px 0; }

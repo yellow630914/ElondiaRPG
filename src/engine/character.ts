@@ -421,10 +421,17 @@ export function protagonistText(c: Character, birthplaceName?: string): string {
   return lines.filter(Boolean).join('\n')
 }
 
-export type ProfilePatch = Partial<Pick<Character, 'gender' | 'appearance' | 'background'>>
+export type ProfilePatch = Partial<Pick<Character, 'gender' | 'appearance' | 'background'>> & {
+  /** 體型（裝備欄、刺青的人形圖）；空字串＝依種族與性別 */
+  body?: Character['body'] | ''
+}
 
-/** 修改主角設定（名字以外的文字欄位） */
+/** 修改主角設定（名字以外的文字欄位與體型） */
 export function editProfile(c: Character, patch: ProfilePatch) {
+  if (patch.body !== undefined) {
+    if (patch.body === 'masc' || patch.body === 'fem' || patch.body === 'andro') c.body = patch.body
+    else delete c.body
+  }
   for (const k of ['gender', 'appearance', 'background'] as const) {
     const v = patch[k]
     if (v === undefined) continue
