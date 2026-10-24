@@ -96,6 +96,8 @@ export interface Combatant {
   hpGates?: Record<string, number>
   /** 層主：不逃跑，控制效果最多 1 回合，被控制後免疫控制一回合（combat.json 的 boss） */
   boss?: boolean
+  /** 以 BOSS 出場：在 BOSS 格（層主格、特殊地圖的 BOSS 格）的第一組怪物；戰鬥畫面加金框 */
+  headliner?: boolean
   /** 層主的控制保護：還剩幾個自己的回合不能再被控制 */
   controlGuard?: number
   /** 敵對的 NPC（冒險者）的 id */
@@ -191,14 +193,18 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     for (const [id, n] of enemyGroup) counts[id] = (counts[id] ?? 0) + n
     const seen: Record<string, number> = {}
     const bonus = traitBonus(state, opts)
+    // BOSS 格：第一組是 BOSS（層主，或特殊地圖 BOSS 格指定的第一種怪物），其他是護衛
+    const headliner = bossCellOf(state, opts) ? enemyGroup[0]?.[0] : undefined
     let idx = 1
-    for (const [defId, n] of enemyGroup) {
+    enemyGroup.forEach(([defId, n], g) => {
       for (let i = 0; i < n; i++) {
         seen[defId] = (seen[defId] ?? 0) + 1
         const suffix = counts[defId]! > 1 ? ` ${String.fromCharCode(64 + seen[defId]!)}` : ''
-        fighters.push(fromEnemy(`e${idx++}`, defId, suffix, rng, bonus))
+        const f = fromEnemy(`e${idx++}`, defId, suffix, rng, bonus)
+        if (g === 0 && defId === headliner) f.headliner = true
+        fighters.push(f)
       }
-    }
+    })
     for (const rec of npcs) {
       fighters.push({ ...fromCharacter(characterFor(state, rec), rng), side: 'enemy', npcId: rec.id })
     }
@@ -312,6 +318,12 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 
 }
 
 // ---- 怪物的特徵與狀態 ----
+
+/** 這場戰鬥是不是在 BOSS 格（層主格、特殊地圖的 BOSS 格）開打的 */
+function bossCellOf(state: GameState, opts: CombatOptions): boolean {
+  const area = opts.cell ? state.areas?.[opts.cell.area] : undefined
+  return !!area && area.cells[opts.cell!.y * area.width + opts.cell!.x]?.kind === 'boss'
+}
 
 /** 開戰的位置讓特徵比較容易出現：冒險區域越深越容易，層主最容易 */
 function traitBonus(state: GameState, opts: CombatOptions): number {

@@ -49,6 +49,33 @@ describe('special map BOSS cells', () => {
     placeAt(state, getArea(state, area.key), 1, 2)
     const r = move(state, 0, -1)
     expect(r.combat?.scene).toBe('BOSS 測試・下水道之王')
+    // 以 BOSS 出場：戰鬥畫面加金框
+    expect(r.combat!.combatants.filter((c) => c.side === 'enemy').map((c) => !!c.headliner)).toEqual([true])
     expect(enemyUsage(strong!.id)).toContain('特殊地圖「BOSS 測試」的 BOSS 格')
+  })
+})
+
+describe('monsters that appear as a boss', () => {
+  it('marks only the first group of a boss cell, not the guards or ordinary fights', async () => {
+    const { startCombat } = await import('@/engine/combat')
+    const { enterLocation } = await import('@/engine/grid')
+    const def: SpecialMapDef = {
+      id: 'sm_test_boss2', name: 'BOSS 測試', location: 'rhineburg', desc: '', lighting: 'lit', grid,
+      table: [[[weak!.id, 2]]],
+      bosses: [{ x: 1, y: 1, group: [[strong!.id, 1], [weak!.id, 2]], name: '王' }],
+    }
+    specialMaps[def.id] = def
+    extra.push(def.id)
+    const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 3, birthplace: 'rhineburg' })
+    enterSpecial(state, def.id)
+    const area = currentArea(state)
+    placeAt(state, getArea(state, area.key), 1, 2)
+    const combat = move(state, 0, -1).combat!
+    const foes = combat.combatants.filter((c) => c.side === 'enemy')
+    expect(foes.map((c) => [c.defId === strong!.id, !!c.headliner])).toEqual([[true, true], [false, false], [false, false]])
+    // 一般遭遇：沒有金框
+    const plain = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 3, birthplace: 'rhineburg' })
+    enterLocation(plain)
+    expect(startCombat(plain, [[strong!.id, 1]]).combatants.some((c) => c.headliner)).toBe(false)
   })
 })

@@ -219,10 +219,11 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
             v-for="c in foes"
             :key="c.id"
             class="fighter"
-            :class="{ current: actor?.id === c.id, down: !isActive(c), targetable: pending && isTarget(c), dim: pending && !isTarget(c) }"
+            :class="{ current: actor?.id === c.id, down: !isActive(c), targetable: pending && isTarget(c), dim: pending && !isTarget(c), headliner: c.headliner }"
             @click="pending && isTarget(c) && chooseTarget(c.id)"
           >
             <div class="l1">
+              <span v-if="c.headliner" class="crown" title="以 BOSS 出場"><GameIcon name="crown" :size="14" /></span>
               <strong class="fname foe-name"><ContentIcon v-if="c.defId" kind="monster" :id="c.defId" :size="22" />{{ c.name }}</strong>
               <span class="small muted">Lv.{{ c.level }}</span>
               <span v-if="downText(c)" class="tag bad state">{{ downText(c) }}</span>
@@ -346,6 +347,15 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 .fighter.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 10px #f0d08333; }
 .fighter.down { opacity: 0.4; }
 .fighter.dim { opacity: 0.35; }
+/* 以 BOSS 出場的怪物：金色邊框 */
+.fighter.headliner {
+  border: 2px solid #e2b04a; padding: 4px 7px;
+  background: linear-gradient(180deg, #e2b04a1f, #0004 60%);
+  box-shadow: 0 0 0 1px #6d5128, 0 0 12px #f0d08355, inset 0 0 0 1px #f0d08333;
+}
+.fighter.headliner.current { box-shadow: 0 0 0 1px var(--accent), 0 0 16px #f0d083aa; }
+.fighter.headliner .fname { color: var(--gold-hi); }
+.crown { display: inline-flex; color: var(--gold-hi); flex: none; }
 .fighter.targetable { cursor: pointer; border-color: var(--gold-hi); border-style: dashed; box-shadow: 0 0 8px #f0d08355; opacity: 1; }
 .fighter.targetable:hover { box-shadow: 0 0 0 1px var(--gold-hi), 0 0 14px #f0d08399; }
 .l1, .l2 { display: flex; align-items: center; gap: 6px; min-width: 0; }
