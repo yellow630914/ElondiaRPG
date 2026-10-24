@@ -37,6 +37,7 @@ import TravelEventEditor from './content/TravelEventEditor.vue'
 import EventRulesEditor from './content/EventRulesEditor.vue'
 import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
 import ItemIcon from './items/ItemIcon.vue'
+import ContentIcon from './icons/ContentIcon.vue'
 import { travelEvents } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { builtinTravelEvent, newTravelEvent } from '@/engine/travelEventMods'
@@ -528,6 +529,10 @@ function resetAll() {
           <li v-for="r in rows" :key="r.key" :class="{ active: current === r.key }" @click="select(r.key)">
             <ItemIcon v-if="sub === 'items' && r.key !== ICONS_KEY" :name="r.key" :size="18" class="row-ic" />
             <ItemIcon v-else-if="sub === 'bases'" :spec="{ base: r.key, material: '' }" :size="18" class="row-ic" />
+            <ContentIcon v-else-if="sub === 'enemies'" kind="monster" :id="r.key" :size="16" class="row-ic" />
+            <ContentIcon v-else-if="sub === 'abilities'" kind="ability" :id="r.key" :size="16" class="row-ic" />
+            <ContentIcon v-else-if="sub === 'materials'" kind="material" :id="r.key" :size="16" class="row-ic" />
+            <ContentIcon v-else-if="sub === 'perks'" kind="perk" :id="r.key" :size="16" class="row-ic" />
             <span class="name">{{ r.name }}</span>
             <span v-if="r.status === 'custom'" class="tag">自建</span>
             <span v-else-if="r.status === 'edited'" class="tag">已修改</span>

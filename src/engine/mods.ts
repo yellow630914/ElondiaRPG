@@ -689,6 +689,8 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   const traits = (raw.traits ?? []).filter((t) => !!monsterTraits.traits[t])
   if (traits.length) out.traits = traits
   if (str(raw.desc, 200)) out.desc = str(raw.desc, 200)
+  const icon = sanitizeIcon(raw.icon)
+  if (icon) out.icon = icon
   if (raw.habitats?.length) out.habitats = raw.habitats
   if (custom) out.custom = true
   if (spawns.length) out.spawns = spawns
@@ -1431,6 +1433,7 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
     const ncls = (raw.npc.classes ?? []).filter((k) => !!classes[k])
     if (weight > 0) out.npc = { weight, ...(tags.length ? { tags } : {}), ...(ncls.length ? { classes: ncls } : {}) }
   }
+  if (raw.rarity && RARITY_ORDER.includes(raw.rarity)) out.rarity = raw.rarity
   if (custom) out.custom = true
   return out
 }

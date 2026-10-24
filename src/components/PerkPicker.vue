@@ -4,6 +4,7 @@ import { choosablePerks, perkRules, type PerkDef } from '@/engine/data'
 import { creationPerks, racePerks } from '@/engine/perks'
 import PerkBuilder from './PerkBuilder.vue'
 import GameIcon from './ui/GameIcon.vue'
+import ContentIcon from './icons/ContentIcon.vue'
 import Hint from './ui/Hint.vue'
 
 // 建立角色時的特質：清單裡的任選（perks.json 的 creation.slots 不是 0 時有名額），也可以自訂。
@@ -45,10 +46,12 @@ function addCustom(p: PerkDef) {
       <!-- 種族特質：依種族自動擁有，不能取消 -->
       <label v-for="p in racePerks(race)" :key="p.id" class="perk small on" :title="p.desc">
         <input type="checkbox" checked disabled />
+        <ContentIcon kind="perk" :def="p" :size="18" />
         <span><b>{{ p.name }}</b> <span class="tag">種族</span><br /><span class="muted">{{ p.desc }}</span></span>
       </label>
       <label v-for="p in list" :key="p.id" class="perk small" :class="{ on: perks.includes(p.id) }" :title="p.desc">
         <input type="checkbox" :checked="perks.includes(p.id)" :disabled="blocked(p)" @change="toggle(p.id)" />
+        <ContentIcon kind="perk" :def="p" :size="18" />
         <span><b>{{ p.name }}</b><br /><span class="muted">{{ p.desc }}</span></span>
       </label>
     </div>
@@ -58,6 +61,7 @@ function addCustom(p: PerkDef) {
       <div class="grid">
         <label v-for="p in flaws" :key="p.id" class="perk small" :class="{ on: perks.includes(p.id) }" :title="p.desc">
           <input type="checkbox" :checked="perks.includes(p.id)" :disabled="blocked(p)" @change="toggle(p.id)" />
+          <ContentIcon kind="perk" :def="p" :size="18" />
           <span><b>{{ p.name }}</b> <span class="tag">缺陷</span><br /><span class="muted">{{ p.desc }}</span></span>
         </label>
       </div>

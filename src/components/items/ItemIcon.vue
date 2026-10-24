@@ -23,7 +23,7 @@ const draw = computed(() => {
 
 <template>
   <img v-if="'img' in draw" class="item-icon img" :src="draw.img" :width="size" :height="size" alt="" draggable="false" />
-  <svg v-else class="item-icon" :width="size" :height="size" viewBox="0 0 24 24" aria-hidden="true"><path :d="draw.path" /></svg>
+  <svg v-else class="item-icon" :width="size" :height="size" viewBox="0 0 24 24" aria-hidden="true"><path :d="draw.path" :style="draw.color ? { fill: draw.color } : undefined" /></svg>
 </template>
 
 <style scoped>

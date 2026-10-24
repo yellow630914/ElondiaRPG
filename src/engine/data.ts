@@ -745,6 +745,8 @@ export interface EnemyDef {
   traits?: string[]
   /** 給 AI 的一句描述（外觀與習性） */
   desc?: string
+  /** 上傳的圖示（data URL，只給這一隻怪物）；沒有時依種類與等級用內建的圖 */
+  icon?: string
 }
 export type EncounterGroup = [string, number][]
 export type DungeonLayerId = 'outskirts' | 'shallow' | 'middle' | 'deep' | 'abyss'
@@ -1642,6 +1644,8 @@ export interface PerkDef {
   npc?: { weight?: number; tags?: string[]; classes?: string[] }
   /** 玩家自訂或 AI 設計的（不在清單裡） */
   custom?: boolean
+  /** 稀有度（common～legendary）：只決定圖示的顏色；沒寫時依強度 */
+  rarity?: string
 }
 
 export const perkRules = perksJson as unknown as {

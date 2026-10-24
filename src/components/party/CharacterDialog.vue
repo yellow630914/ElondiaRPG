@@ -10,6 +10,7 @@ import { contractOf } from '@/engine/tattoos'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import AppDialog from '../AppDialog.vue'
+import ContentIcon from '../icons/ContentIcon.vue'
 import PortraitBox from '../PortraitBox.vue'
 import Avatar from '../ui/Avatar.vue'
 import GameIcon from '../ui/GameIcon.vue'
@@ -107,6 +108,7 @@ watch(() => props.member, () => (editingProfile.value = false))
       <div class="perks">
         <article v-for="p in perksOf(m)" :key="p.id" class="perk" :class="{ flaw: p.flaw }">
           <header>
+            <ContentIcon kind="perk" :def="p" :size="20" />
             <b>{{ p.name }}</b>
             <span v-if="p.race" class="tag">種族</span><span v-if="p.flaw" class="tag bad">缺陷</span><span v-if="p.custom" class="tag">自訂</span>
           </header>
@@ -171,7 +173,7 @@ watch(() => props.member, () => (editingProfile.value = false))
         </div>
         <div class="options">
           <button v-for="id in m.pendingAbilityChoices[0]" :key="id" class="option" :disabled="inCombat" @click="game.chooseAbility(m.id, id)">
-            <b>{{ abilityDef(id).name }}</b>
+            <b class="ab-name"><ContentIcon kind="ability" :id="id" :size="18" />{{ abilityDef(id).name }}</b>
             <span class="muted small">{{ TYPE_NAME[abilityDef(id).type] }}【{{ QUALITY_NAME[abilityQuality(abilityDef(id))] }}】・{{ abilityMeta(abilityDef(id)) }}</span>
             <span class="small">{{ abilityDef(id).desc }}</span>
           </button>
@@ -181,7 +183,7 @@ watch(() => props.member, () => (editingProfile.value = false))
         <h4>{{ TYPE_NAME[g.type] }}</h4>
         <div class="abilities">
           <article v-for="a in g.items" :key="a.id" class="ability" :class="`q-${abilityQuality(a)}`">
-            <header><b>{{ a.name }}</b><span class="tag">{{ QUALITY_NAME[abilityQuality(a)] }}</span></header>
+            <header><ContentIcon kind="ability" :def="a" :size="20" /><b>{{ a.name }}</b><span class="tag">{{ QUALITY_NAME[abilityQuality(a)] }}</span></header>
             <div class="meta small muted">{{ abilityMeta(a) }}</div>
             <p class="small">{{ a.desc }}</p>
           </article>
@@ -213,6 +215,7 @@ watch(() => props.member, () => (editingProfile.value = false))
 .perk.flaw { border-left-color: var(--danger); }
 .perk header, .ability header { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .perk p, .ability p { margin: 4px 0 0; }
+.ab-name { display: inline-flex; align-items: center; gap: 4px; }
 .tag.bad { color: var(--danger); border-color: var(--danger); }
 .ability.q-uncommon { border-left-color: #2f7a1e; } .ability.q-rare { border-left-color: #1f5a9a; }
 .ability.q-epic { border-left-color: #6a3a9a; } .ability.q-legendary, .ability.q-mythic { border-left-color: #a86a10; }

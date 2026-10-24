@@ -6,6 +6,7 @@ import { equipment, type WeaponDef } from '@/engine/data'
 import { gearRules, type BaseDef, type BaseSlot, type MaterialKind } from '@/engine/gear'
 import type { IconSource } from '@/engine/itemIcons'
 import { ICON_PATHS, type IconName } from '../ui/iconPaths'
+import { materialDraw } from '../icons/materialArt'
 import { artPath, type ArtName } from './itemArt'
 
 /** 一張內建的圖：自己畫的或介面圖示 */
@@ -91,11 +92,15 @@ export function refPath(ref: IconRef): string {
 }
 
 /** 要畫的圖示：IconSource，或直接給內建圖的 path（編輯器預覽還沒儲存的草稿） */
-export type DrawSource = IconSource | { kind: 'path'; path: string }
+export type DrawSource = IconSource | { kind: 'path'; path: string; color?: string }
 
-/** 圖示來源要畫的東西：圖片網址或 SVG path */
-export function sourceDraw(src: DrawSource): { img: string } | { path: string } {
+/** 圖示來源要畫的東西：圖片網址或 SVG path（color 沒給時用文字顏色） */
+export function sourceDraw(src: DrawSource): { img: string } | { path: string; color?: string } {
   if (src.kind === 'image') return { img: src.src }
-  if (src.kind === 'path') return { path: src.path }
-  return { path: refPath(src.kind === 'base' ? baseArt(src.base) : categoryArt(src.category)) }
+  if (src.kind === 'path') return { path: src.path, color: src.color }
+  if (src.kind === 'material') {
+    const m = gearRules.materials[src.material]
+    if (m) return materialDraw(m)
+  }
+  return { path: refPath(src.kind === 'base' ? baseArt(src.base) : categoryArt(src.kind === 'category' ? src.category : 'material')) }
 }

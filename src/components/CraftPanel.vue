@@ -10,6 +10,7 @@ import AbilityPicker from './AbilityPicker.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import ContentIcon from './icons/ContentIcon.vue'
 
 // 打造裝備（data/rules/gear.json 的 craft）：選底材與材料，可以描述想要的樣子。
 // commission：在鐵匠鋪、裁縫店、珠寶店委託店主；make：主角或肯幫忙的夥伴自己動手（crafts.json）
@@ -86,6 +87,7 @@ function craft() {
       <select v-model="base">
         <option v-for="b in bases" :key="b.id" :value="b.id">{{ slotLabel(b.slot) }}・{{ b.name }}</option>
       </select>
+      <ContentIcon kind="material" :id="mat" :size="20" />
       <select :value="mat" @change="material = ($event.target as HTMLSelectElement).value">
         <option v-for="m in materials" :key="m.id" :value="m.id">{{ m.name }}（{{ rarityName(m.rarity) }}，建議 {{ m.level }} 級）</option>
       </select>

@@ -8,6 +8,8 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import ContentIcon from '../icons/ContentIcon.vue'
+import { abilityGlyph, abilityGlyphName } from '../icons/abilityArt'
 
 // 能力（技能、法術、戲法）的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -153,6 +155,14 @@ function remove() {
         </label>
       </div>
       <p class="small muted">技能依等級學；法術要有那一環的法術環，花一個法術環；戲法不花行動點、每回合一次。怪物不能用法術。</p>
+      <div class="block icon-row">
+        <span>圖示</span>
+        <div class="row">
+          <ContentIcon kind="ability" :def="draft" :size="36" /><ContentIcon kind="ability" :def="draft" :size="20" />
+          <span class="small muted">外框依種類、中間的圖與顏色依屬性（{{ abilityGlyphName(abilityGlyph(draft)) }}）自動決定；暫時不能上傳。</span>
+          <Hint text="屬性：第一個寫了傷害屬性的傷害；只有武器傷害的算「武器」；沒有傷害的依治療、護盾，或對敵人（削弱）、對自己與隊友（強化）。" />
+        </div>
+      </div>
     </fieldset>
 
     <fieldset>

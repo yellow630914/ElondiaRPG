@@ -5,6 +5,7 @@ import { perkPower } from '@/engine/perks'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import GameIcon from '../ui/GameIcon.vue'
+import ContentIcon from '../icons/ContentIcon.vue'
 
 // 取得特質的機會（升級、事件、特殊任務、訓練、物品）：從提供的特質選一個，
 // 或寫一段說法擲骰交給 AI 判斷（只在開啟 AI 判定時；每次機會一次）
@@ -37,6 +38,7 @@ function decline() {
     <p class="muted">來源：{{ offer.source }}。特質一直生效，影響檢定與戰鬥。</p>
     <ul class="plain options">
       <li v-for="d in options" :key="d!.id" class="row">
+        <ContentIcon kind="perk" :def="d!" :size="24" />
         <div class="grow">
           <b>{{ d!.name }}</b> <span class="muted">（強度 {{ perkPower(d!) }}）</span>
           <div class="muted">{{ d!.desc }}</div>

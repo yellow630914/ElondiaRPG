@@ -8,6 +8,9 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
 import UsageNote from './UsageNote.vue'
+import IconField from './IconField.vue'
+import { MONSTER_BAND_COLOR, MONSTER_BAND_LEVELS, monsterArtPath, monsterBand } from '../icons/monsterArt'
+import type { DrawSource } from '../items/itemIcon'
 import Hint from '../ui/Hint.vue'
 
 // 怪物的編輯表單：存檔前是草稿，按「儲存」才套用
@@ -27,6 +30,11 @@ watch(() => props.id, () => {
   saved.value = JSON.stringify(draft.value)
 })
 const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
+// 沒有上傳時的內建圖（依草稿的種類與等級）
+const iconFallback = computed<DrawSource>(() => {
+  const band = monsterBand(draft.value.level)
+  return { kind: 'path', path: monsterArtPath(draft.value.kind, band), color: MONSTER_BAND_COLOR[band] }
+})
 const builtin = computed(() => !!builtinEnemy(props.id))
 const edited = computed(() => builtin.value && !!content.mods.enemies[props.id])
 
@@ -178,6 +186,10 @@ function remove() {
         <label>金錢（最少～最多）
           <span class="pair"><input v-model.number="money[0]" type="number" min="0" /> ～ <input v-model.number="money[1]" type="number" min="0" /></span>
         </label>
+      </div>
+      <div class="block icon-row">
+        <span>圖示</span>
+        <IconField v-model="draft.icon" :fallback="iconFallback" :hint="`只給這隻怪物用（不能設定到整個種類）。沒有上傳時依種類與等級用內建的圖：每 ${MONSTER_BAND_LEVELS} 級一個區間，顏色越後面越紅。上傳的圖會縮到 48×48 以內，存在這個世界裡。`" />
       </div>
       <div class="row checks">
         <label class="check"><input v-model="draft.armed" type="checkbox" /> 持有裝備 <Hint text="打倒時可能掉裝備。" /></label>

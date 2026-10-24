@@ -11,6 +11,9 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import ContentIcon from '../icons/ContentIcon.vue'
+import { perkRarity } from '../icons/perkArt'
+import { RARITY_ORDER, rarityName } from '@/engine/gear'
 
 // 特質的編輯表單：效果（檢定加值、戰鬥修正、抗性、增傷）、條件、互斥、訓練、NPC 的權重。
 // 種族特質只能改名稱、描述與效果（依種族自動擁有）。抗性可以是弱點；勾了「缺陷」的特質才能有負的檢定加值與戰鬥修正。
@@ -31,6 +34,11 @@ function current(): PerkMod {
   return clone(content.mods.perks[props.id] ?? perkRules.perks.find((p) => p.id === props.id)!)
 }
 const draft = ref<PerkMod>(current())
+
+function setRarity(r: string) {
+  if (r) draft.value.rarity = r
+  else delete draft.value.rarity
+}
 const saved = ref(JSON.stringify(draft.value))
 watch(() => props.id, () => {
   draft.value = current()
@@ -179,6 +187,21 @@ function remove() {
         <label v-if="!race" class="check"><input v-model="draft.flaw" type="checkbox" /> 缺陷 <Hint text="負的效果；不會出現在學特質的機會裡，事件直接給，受訓是克服它。" /></label>
       </div>
       <label class="block"><span>描述 <Hint :text="`玩家與 AI 看到的；空白時依效果產生：${auto}`" /></span><textarea v-model="draft.desc" rows="2" :maxlength="perkRules.custom.desc_chars" /></label>
+      <div class="grid">
+        <label><span>稀有度 <Hint text="只決定圖示的顏色。沒有指定時依強度：2 以下普通、2～3 優良、3～4 稀有、4～6 史詩、6 以上傳說。" /></span>
+          <select :value="draft.rarity ?? ''" @change="setRarity(($event.target as HTMLSelectElement).value)">
+            <option value="">依強度（{{ rarityName(perkRarity({ effects: draft.effects })) }}）</option>
+            <option v-for="r in RARITY_ORDER" :key="r" :value="r">{{ rarityName(r) }}</option>
+          </select>
+        </label>
+      </div>
+      <div class="block icon-row">
+        <span>圖示</span>
+        <div class="row">
+          <ContentIcon kind="perk" :def="draft" :size="36" /><ContentIcon kind="perk" :def="draft" :size="20" />
+          <span class="small muted">{{ draft.flaw ? '缺陷：裂開的徽章、向下的箭紋' : '徽章、向上的箭紋' }}，箭紋依強度（{{ perkPower(draft) }}），顏色依稀有度；暫時不能上傳。</span>
+        </div>
+      </div>
     </fieldset>
 
     <fieldset>

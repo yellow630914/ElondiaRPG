@@ -48,7 +48,8 @@
   "train": { "cells": ["tavern"], "price_cc": 300, "hours": 8, "attr": "cha", "dc": 12 },   // 可以在哪裡受訓
   "npc": { "weight": 2, "tags": ["merchant"], "classes": ["bard"] },                         // NPC 抽到的權重
   "flaw": false,                                 // 缺陷：效果是負的（見 3.2 節）
-  "race": "elf"                                  // 種族特質：這個種族自動擁有（見 3.1 節）
+  "race": "elf",                                 // 種族特質：這個種族自動擁有（見 3.1 節）
+  "rarity": "rare"                               // 選填：只決定圖示的顏色；不寫時依強度（見 ITEMS 8.1 節）
 }
 ```
 

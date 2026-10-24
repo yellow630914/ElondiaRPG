@@ -2,6 +2,8 @@
 // 「#」是實心格，「.」是空格；圖會自動置中，不用對齊格子的中央。
 // 要加圖示時照同樣格式補上，再到 itemIcon.ts 的對照表指過來。
 
+import { pixelPath } from '../ui/pixelArt'
+
 const ART = {
   // ---- 類別 ----
   bread: `
@@ -464,28 +466,7 @@ const ART = {
 export type ArtName = keyof typeof ART
 export const ART_NAMES = Object.keys(ART) as ArtName[]
 
-const cache = new Map<ArtName, string>()
-
 /** 圖的 SVG path（24×24，置中） */
 export function artPath(name: ArtName): string {
-  const hit = cache.get(name)
-  if (hit) return hit
-  const rows = ART[name].split('\n').filter((r) => r.length)
-  const w = Math.max(...rows.map((r) => r.length))
-  const ox = Math.floor((24 - w * 2) / 2)
-  const oy = Math.floor((24 - rows.length * 2) / 2)
-  // 每一列把連續的實心格合成一個長方形
-  const parts: string[] = []
-  rows.forEach((row, y) => {
-    for (let x = 0; x < row.length; x++) {
-      if (row[x] !== '#') continue
-      let end = x
-      while (row[end + 1] === '#') end++
-      parts.push(`M${ox + x * 2} ${oy + y * 2}h${(end - x + 1) * 2}v2h-${(end - x + 1) * 2}z`)
-      x = end
-    }
-  })
-  const d = parts.join('')
-  cache.set(name, d)
-  return d
+  return pixelPath(ART[name])
 }

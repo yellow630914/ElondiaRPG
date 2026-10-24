@@ -13,6 +13,7 @@ import { useGame } from '@/stores/game'
 import StatBar from './StatBar.vue'
 import NameTag from './NameTag.vue'
 import GameIcon from './ui/GameIcon.vue'
+import ContentIcon from './icons/ContentIcon.vue'
 
 const emit = defineEmits<{ finished: [] }>()
 const game = useGame()
@@ -166,7 +167,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
           @click="targets.some((t) => t.id === c.id) && chooseTarget(c.id)"
         >
           <div class="row" style="justify-content: space-between">
-            <strong>{{ c.name }}</strong>
+            <strong class="foe-name"><ContentIcon v-if="c.defId" kind="monster" :id="c.defId" :size="28" />{{ c.name }}</strong>
             <span class="small muted">Lv.{{ c.level }}{{ c.fled ? '・已逃走' : c.hp === 0 ? '・倒下' : '' }}</span>
           </div>
           <StatBar kind="hp" :value="c.hp" :max="c.maxHp" />
@@ -220,7 +221,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
               class="ability"
               @click="choose(a)"
             >
-              {{ a.name }}
+              <span class="an"><ContentIcon kind="ability" :def="a" :size="18" />{{ a.name }}</span>
               <span class="small muted">{{ costText(a) }}</span>
               <span v-if="reason(a)" class="small why">{{ reason(a) }}</span>
             </button>
@@ -285,6 +286,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 .group h4 { margin: 10px 0 4px; font-weight: normal; color: var(--accent-2); display: flex; align-items: center; gap: 4px; }
 .ability { display: inline-grid; text-align: left; line-height: 1.3; min-width: 120px; }
 .ability .why { color: var(--danger); }
+.ability .an, .foe-name { display: inline-flex; align-items: center; gap: 4px; }
 .log { max-height: 280px; overflow-y: auto; display: grid; gap: 0; padding-left: 8px; border-left: 2px solid #c8483a66; }
 .log > div { padding: 2px 0; border-bottom: 1px dotted #ffffff10; }
 .log > div:last-child { color: var(--text); border-bottom: none; }

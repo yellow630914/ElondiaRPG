@@ -4,7 +4,8 @@
 // 查找順序：
 // 1. 物品自己上傳的圖（物品目錄的 icon）
 // 2. 裝備：底材上傳的圖 → 內建的底材圖
-// 3. 類別上傳的圖 → 內建的類別圖
+// 3. 打造材料（寫了 forge 的材料類物品）：第一個對應材料的內建圖（components/icons/materialArt.ts）
+// 4. 類別上傳的圖 → 內建的類別圖
 
 import { itemDef, type ItemCategory } from './data'
 import { gearRules, gearSpecOf } from './gear'
@@ -30,11 +31,12 @@ export function setCategoryIcons(icons: Partial<Record<ItemCategory, string>>) {
   Object.assign(categoryIcons, icons)
 }
 
-/** 要顯示的圖示：上傳的圖、內建的底材圖或內建的類別圖 */
+/** 要顯示的圖示：上傳的圖、內建的底材圖、內建的材料圖（打造材料）或內建的類別圖 */
 export type IconSource =
   | { kind: 'image'; src: string }
   | { kind: 'base'; base: string }
   | { kind: 'category'; category?: ItemCategory }
+  | { kind: 'material'; material: string }
 
 export function categoryIconSource(category: ItemCategory | undefined): IconSource {
   const src = category ? categoryIcons[category] : undefined
@@ -52,17 +54,21 @@ export function itemIconSource(state: Pick<GameState, 'customItems'> | undefined
   if (def?.icon) return { kind: 'image', src: def.icon }
   const gear = spec ?? gearSpecOf(state, name)
   if (gear && gearRules.bases[gear.base]) return gearIconSource(gear)
+  // 打造材料：用第一個對應材料的內建圖（依材料的類型、等級與稀有度）
+  const forge = def?.category === 'material' ? def.forge?.materials.find((m) => !!gearRules.materials[m]) : undefined
+  if (forge) return { kind: 'material', material: forge }
   return categoryIconSource(def?.category ?? (state?.customItems?.[name]?.category as ItemCategory | undefined))
 }
 
 /**
- * 自訂內容去掉上傳的圖示（物品、底材、類別）：存檔欄位與匯出的存檔不帶圖示，免得每個存檔都變大。
+ * 自訂內容去掉上傳的圖示（物品、底材、類別、怪物）：存檔欄位與匯出的存檔不帶圖示，免得每個存檔都變大。
  * 圖示只存在世界裡（世界包會帶著）；存檔的世界不在了、用存檔附的內容還原時，就沒有圖示（用內建的圖）。回傳新的物件
  */
 export function withoutIcons(mods: ContentMods): ContentMods {
   const out = JSON.parse(JSON.stringify(mods)) as ContentMods
   for (const v of Object.values(out.items ?? {})) delete v.icon
   for (const v of Object.values(out.bases ?? {})) delete v.icon
+  for (const v of Object.values(out.enemies ?? {})) delete v.icon
   out.categoryIcons = {}
   return out
 }

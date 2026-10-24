@@ -9,6 +9,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
 import IconField from './IconField.vue'
+import ContentIcon from '../icons/ContentIcon.vue'
 import { baseArt, refPath } from '../items/itemIcon'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
@@ -208,6 +209,13 @@ function remove() {
         </div>
         <AffinityRows v-model="mat.resist" label="防具與飾品的抗性" />
         <label class="block">描述 <input v-model="mat.desc" maxlength="120" /></label>
+        <div class="block icon-row">
+          <span>圖示</span>
+          <div class="row">
+            <ContentIcon kind="material" :def="mat" :size="36" /><ContentIcon kind="material" :def="mat" :size="20" />
+            <span class="small muted">依類型與等級自動決定，顏色依稀有度；暫時不能上傳。</span>
+          </div>
+        </div>
       </fieldset>
     </template>
 
