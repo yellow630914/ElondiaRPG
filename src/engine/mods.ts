@@ -15,7 +15,7 @@ import {
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
   type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
 } from './data'
-import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, type BaseDef, type MaterialDef } from './gear'
+import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
@@ -227,6 +227,7 @@ function restore() {
   restoreSpecialMaps()
   restoreTravelEvents()
   setCategoryIcons({})
+  setCustomGear([], [])
   replaceRecord(abilities, snapshot.abilities)
   perkRules.perks.splice(0, perkRules.perks.length, ...clone(snapshot.perks))
   restoreStories()
@@ -549,6 +550,11 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('事件', mods.travelEvents ?? {}, (id, m) => applyTravelEvent(id, sanitizeTravelEvent(id, m, !!m.custom)))
   tryEach('事件設定', mods.eventRules ?? {}, (_id, m) => applyEventRules(sanitizeEventRules(m)))
   setCategoryIcons(Object.fromEntries(Object.entries(mods.categoryIcons ?? {}).map(([k, v]) => [k, v.icon])))
+  // 自建的底材與裝備：建角時也能選
+  setCustomGear(
+    Object.entries(mods.bases).filter(([id, b]) => b.custom && gearRules.bases[id]).map(([id]) => id),
+    Object.entries(mods.items).filter(([n, m]) => m.custom && itemDef(n)?.gear).map(([n]) => n),
+  )
   return problems
 }
 

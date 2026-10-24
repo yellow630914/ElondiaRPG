@@ -305,9 +305,42 @@ export function startingGear(classId: string): Partial<Record<GearSlot, Equipped
 
 // ---- 建立角色時挑裝備 ----
 
-/** 建角時一個欄位的選擇：底材與材料等級 */
-export interface CreationPick { base: string; tier: number }
+/** 建角時一個欄位的選擇：底材與材料等級；item 是世界裡自建的裝備（物品名稱，底材與材料照它的組成） */
+export interface CreationPick { base: string; tier: number; item?: string }
 export type CreationGear = Partial<Record<GearSlot, CreationPick>>
+
+/** 世界裡自建的底材與裝備物品（applyContent 登錄）：建角時也能選 */
+const customGear = { bases: new Set<string>(), items: new Set<string>() }
+
+export function setCustomGear(bases: string[], items: string[]) {
+  customGear.bases = new Set(bases)
+  customGear.items = new Set(items)
+}
+
+/** 建角可以選的自建裝備：還在物品目錄、有組成、不是束縛用或主人會強制裝備的東西 */
+function creationItem(name: string) {
+  if (!customGear.items.has(name)) return undefined
+  const def = itemDef(name)
+  const g = def?.gear
+  if (!def || def.category !== 'equipment' || !g || def.master_force || def.event) return undefined
+  const base = gearRules.bases[g.base]
+  const mat = gearRules.materials[g.material]
+  if (!base || !mat || base.restraint || base.kind !== mat.kind) return undefined
+  return { def, spec: g, base, mat }
+}
+
+/**
+ * 自建裝備花的預算：材料等級，加上稀有度比材料本來高出的附魔點數、獨特效果 1 點、屬性加值（只算正的）。
+ * 不是基本配備，第 1 級也要付錢
+ */
+export function creationItemCost(name: string): number {
+  const x = creationItem(name)
+  if (!x) return 0
+  const points = (r: string | undefined) => gearRules.rarities[r ?? '']?.enchant_points ?? 0
+  const extra = Math.max(0, points(x.spec.rarity ?? x.mat.rarity) - points(x.mat.rarity))
+  const attrs = Object.values(x.spec.attrs ?? {}).reduce((sum: number, v) => sum + Math.max(0, v ?? 0), 0)
+  return x.mat.tier + extra + (x.spec.unique ? 1 : 0) + attrs
+}
 
 export interface CreationSlot {
   slot: GearSlot
@@ -333,7 +366,14 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
     if (blocked.has(slot)) continue
     const fromClass = listed[slot]
     if (fromClass) {
-      const bases = fromClass.filter((b) => gearRules.bases[b])
+      // 職業清單，加上世界裡自建、放得進這個欄位的底材（護甲不能比職業的護甲類型重；清單是空的欄位不加）
+      const custom = fromClass.length
+        ? [...customGear.bases].filter((id) => {
+          const b = gearRules.bases[id]
+          return !!b && !b.restraint && baseFits(b.slot, slot) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
+        })
+        : []
+      const bases = [...new Set([...fromClass, ...custom])].filter((b) => gearRules.bases[b])
       if (bases.length) out.push({ slot, template: !!t.start[slot], bases })
       continue
     }
@@ -349,6 +389,8 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
 /** 建角的裝備目錄裡的一項：某個欄位、某個底材做成某一級材料，與它花的預算 */
 export interface CreationOption extends CreationPick {
   slot: GearSlot
+  /** 世界裡自建的（底材或裝備） */
+  custom?: boolean
   /** 職業的基本配備欄位（第 1 級材料免費） */
   template: boolean
   /** 花的預算：基本配備欄位是材料等級 - 1，其他欄位是材料等級 */
@@ -370,11 +412,19 @@ export function creationCatalog(classId: string, race?: string): { slot: GearSlo
   return creationSlots(classId, race).map((s) => ({
     slot: s.slot,
     template: s.template,
-    options: s.bases.flatMap((base) => Array.from({ length: maxTier }, (_, i) => {
-      const tier = i + 1
-      const p = piece(base, tier)
-      return { slot: s.slot, base, tier, template: s.template, cost: s.template ? tier - 1 : tier, name: p.name, spec: p.spec }
-    })),
+    options: [
+      // 自建的裝備物品排最前面
+      ...[...customGear.items].flatMap((name): CreationOption[] => {
+        const x = creationItem(name)
+        if (!x || !s.bases.includes(x.spec.base)) return []
+        return [{ slot: s.slot, base: x.spec.base, tier: x.mat.tier, item: name, custom: true, template: s.template, cost: creationItemCost(name), name, spec: JSON.parse(JSON.stringify(x.spec)) as GearSpec }]
+      }),
+      ...s.bases.flatMap((base) => Array.from({ length: maxTier }, (_, i) => {
+        const tier = i + 1
+        const p = piece(base, tier)
+        return { slot: s.slot, base, tier, template: s.template, cost: s.template ? tier - 1 : tier, name: p.name, spec: p.spec, ...(customGear.bases.has(base) ? { custom: true } : {}) }
+      })),
+    ],
   }))
 }
 
@@ -389,7 +439,8 @@ export function creationCost(classId: string, choice: CreationGear): number {
   let cost = 0
   for (const [slot, pick] of Object.entries(choice)) {
     if (!pick) continue
-    cost += template.has(slot as GearSlot) ? Math.max(0, pick.tier - 1) : pick.tier
+    if (pick.item) cost += creationItemCost(pick.item)
+    else cost += template.has(slot as GearSlot) ? Math.max(0, pick.tier - 1) : pick.tier
   }
   return cost
 }
@@ -406,6 +457,13 @@ export function creationGear(classId: string, choice: CreationGear, budget: numb
   for (const s of slots) {
     const pick = choice[s.slot] ?? (s.template ? { base: t.start[s.slot]!, tier: 1 } : undefined)
     if (!pick) continue
+    if (pick.item) {
+      const x = creationItem(pick.item)
+      if (!x) throw new Error(`「${pick.item}」不能當起始裝備`)
+      if (!s.bases.includes(x.spec.base)) throw new Error(`${slotName(s.slot)}不能選「${pick.item}」`)
+      picks[s.slot] = { base: x.spec.base, tier: x.mat.tier, item: pick.item }
+      continue
+    }
     if (!s.bases.includes(pick.base)) throw new Error(`${slotName(s.slot)}不能選${gearRules.bases[pick.base]?.name ?? pick.base}`)
     const tier = Math.round(pick.tier)
     if (!(tier >= 1 && tier <= maxTier)) throw new Error(`建角時材料最多到第 ${maxTier} 級`)
@@ -416,7 +474,9 @@ export function creationGear(classId: string, choice: CreationGear, budget: numb
   const cost = creationCost(classId, picks)
   if (cost > budget) throw new Error(`裝備的預算不夠（要 ${cost} 點，只有 ${budget} 點）`)
   const out: Partial<Record<GearSlot, EquippedGear>> = {}
-  for (const [slot, pick] of Object.entries(picks)) out[slot as GearSlot] = piece(pick!.base, pick!.tier)
+  for (const [slot, pick] of Object.entries(picks)) {
+    out[slot as GearSlot] = pick!.item ? { name: pick!.item, spec: JSON.parse(JSON.stringify(creationItem(pick!.item)!.spec)) as GearSpec } : piece(pick!.base, pick!.tier)
+  }
   return out
 }
 

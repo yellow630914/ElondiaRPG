@@ -136,17 +136,22 @@ const gearChoice = computed<CreationGear>(() => {
   for (const s of gearSlots.value) {
     const p = gear.value[s.slot]
     if (!p?.base || !s.bases.includes(p.base) || (s.slot === 'off_hand' && twoHanded.value)) continue
-    out[s.slot] = { base: p.base, tier: p.tier }
+    // 自建的裝備：還在目錄裡才帶走（世界換了、物品被刪掉時拿掉）
+    if (p.item && !catalog.value.find((c) => c.slot === s.slot)?.options.some((o) => o.item === p.item)) continue
+    out[s.slot] = { base: p.base, tier: p.tier, ...(p.item ? { item: p.item } : {}) }
   }
   return out
 })
 const gearBudget = computed(() => settings.gearBudget())
 const gearSpent = computed(() => creationCost(classId.value, gearChoice.value))
 const gearOver = computed(() => gearSpent.value > gearBudget.value)
+const catalog = computed(() => {
+  void content.version
+  return creationCatalog(classId.value, race.value)
+})
 const gearRows = computed(() => {
-  const catalog = creationCatalog(classId.value, race.value)
   return Object.entries(gearChoice.value).map(([slot, p]) => {
-    const o = catalog.find((c) => c.slot === slot)?.options.find((x) => x.base === p!.base && x.tier === p!.tier)
+    const o = catalog.value.find((c) => c.slot === slot)?.options.find((x) => (p!.item ? x.item === p!.item : !x.item && x.base === p!.base && x.tier === p!.tier))
     return { slot: slot as GearSlot, option: o }
   }).filter((r) => r.option)
 })
@@ -417,7 +422,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
         <tbody>
           <tr v-for="r in gearRows" :key="r.slot">
             <th>{{ slotName(r.slot) }}</th>
-            <td class="name"><span class="item-tile"><ItemIcon :spec="r.option!.spec" :size="18" /></span>{{ r.option!.name }}</td>
+            <td class="name"><span class="item-tile"><ItemIcon :name="r.option!.item" :spec="r.option!.spec" :size="18" /></span>{{ r.option!.name }}<span v-if="r.option!.item" class="tag">自建</span></td>
             <td class="muted small">{{ gearSummary(r.option!.spec) }}</td>
             <td class="num">{{ r.option!.cost ? `${r.option!.cost} 點` : '免費' }}</td>
           </tr>

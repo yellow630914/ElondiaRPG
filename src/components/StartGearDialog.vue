@@ -2,9 +2,10 @@
 // 建立角色的起始裝備：依分類（武器、防具、飾品）與欄位列出能選的所有裝備，每一件的性能與預算都算好了。
 // 職業的基本配備（第 1 級材料）不花預算；基本配備欄位升級材料花「等級 - 1」，其他欄位加裝備花材料等級（gear.ts 的 creationCatalog）。
 import { computed, ref } from 'vue'
-import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
+import { armorDef, attrName, damageTypeName, weaponDef, type AttrId } from '@/engine/data'
+import { describeEffects } from '@/engine/perks'
 import {
-  creationCatalog, gearRules, gearStats, MOD_NAME, rarityName, SLOT_CATEGORY, slotName, type CreationGear, type CreationOption,
+  creationCatalog, creationCost, gearRules, gearStats, MOD_NAME, rarityName, SLOT_CATEGORY, slotName, type CreationGear, type CreationOption, type CreationPick,
 } from '@/engine/gear'
 import type { GearSlot } from '@/engine/types'
 import AppDialog from './AppDialog.vue'
@@ -37,16 +38,17 @@ function pickCategory(c: Category) {
 
 const twoHanded = computed(() => !!gearRules.bases[picks.value.main_hand?.base ?? '']?.two_handed)
 const blockedSlot = (s: GearSlot) => s === 'off_hand' && twoHanded.value
-const isPicked = (o: CreationOption) => picks.value[o.slot]?.base === o.base && picks.value[o.slot]?.tier === o.tier
+/** 同一件：自建的裝備比物品名稱，制式品比底材與材料等級 */
+const samePick = (p: CreationPick | undefined, o: Pick<CreationOption, 'base' | 'tier' | 'item'>) => !!p && (o.item ? p.item === o.item : !p.item && p.base === o.base && p.tier === o.tier)
+const isPicked = (o: CreationOption) => samePick(picks.value[o.slot], o)
+const asPick = (o: CreationOption): CreationPick => ({ base: o.base, tier: o.tier, ...(o.item ? { item: o.item } : {}) })
 /** 換成這一件之後的總花費 */
 function costIf(o: CreationOption): number {
-  const now = picks.value[o.slot]
-  const before = now ? (current.value?.template ? now.tier - 1 : now.tier) : 0
-  return props.spent - before + o.cost
+  return creationCost(props.classId, { ...picks.value, [o.slot]: asPick(o) })
 }
 
 function choose(o: CreationOption) {
-  picks.value = { ...picks.value, [o.slot]: { base: o.base, tier: o.tier } }
+  picks.value = { ...picks.value, [o.slot]: asPick(o) }
 }
 function clear(s: GearSlot) {
   const next = { ...picks.value }
@@ -54,7 +56,11 @@ function clear(s: GearSlot) {
   picks.value = next
 }
 
-const options = computed(() => (current.value?.options ?? []).filter((o) => !tierFilter.value || o.tier === tierFilter.value))
+const onlyCustom = ref(false)
+const hasCustom = computed(() => catalog.value.some((s) => s.options.some((o) => o.custom)))
+const options = computed(() => (current.value?.options ?? [])
+  .filter((o) => !tierFilter.value || o.tier === tierFilter.value)
+  .filter((o) => !onlyCustom.value || o.custom))
 
 // ---- 性能 ----
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
@@ -76,6 +82,8 @@ function bonusOf(o: CreationOption): string {
     ...Object.entries(s.mods).filter(([, v]) => v).map(([k, v]) => `${MOD_NAME[k] ?? k} ${signed(v!)}`),
     ...Object.entries(s.resist).filter(([, v]) => v).map(([k, v]) => `${damageTypeName(k)} ×${Math.round((1 + v!) * 100) / 100}`),
     ...Object.entries(s.offense).filter(([, v]) => v).map(([k, v]) => `${damageTypeName(k)}攻擊 ×${Math.round((1 + v!) * 100) / 100}`),
+    ...Object.entries(o.spec.attrs ?? {}).filter(([, v]) => v).map(([k, v]) => `${attrName(k as AttrId)} ${signed(v!)}`),
+    ...(o.spec.unique ? [`獨特：${describeEffects([o.spec.unique]).replace(/。$/, '')}`] : []),
   ].join('、')
 }
 const materialOf = (o: CreationOption) => gearRules.materials[o.spec.material]
@@ -83,7 +91,7 @@ const materialOf = (o: CreationOption) => gearRules.materials[o.spec.material]
 /** 下方的清單：每個欄位現在選的 */
 const summary = computed(() => catalog.value.map((s) => {
   const p = picks.value[s.slot]
-  const o = p ? s.options.find((x) => x.base === p.base && x.tier === p.tier) : undefined
+  const o = p ? s.options.find((x) => samePick(p, x)) : undefined
   return { slot: s.slot, template: s.template, option: o, blocked: blockedSlot(s.slot) }
 }))
 </script>
@@ -93,7 +101,7 @@ const summary = computed(() => catalog.value.map((s) => {
     <div class="gear-dialog">
       <div class="budget row">
         <span>預算 <strong :class="{ over: spent > budget }">{{ spent }} / {{ budget }}</strong> 點</span>
-        <span class="small muted">職業的基本配備（第 1 級材料）免費；基本配備升級材料花「等級 - 1」，其他欄位的裝備花它的材料等級（最多第 {{ maxTier }} 級）。預算在「設定」的遊戲規則裡調整。</span>
+        <span class="small muted">職業的基本配備（第 1 級材料）免費；基本配備升級材料花「等級 - 1」，其他欄位的裝備花它的材料等級（最多第 {{ maxTier }} 級）。世界裡自建的裝備花材料等級，加上稀有度多出的附魔點數、獨特效果 1 點與屬性加值。預算在「設定」的遊戲規則裡調整。</span>
       </div>
       <nav class="tabs">
         <button v-for="c in CATEGORIES" :key="c.id" class="small" :class="{ on: category === c.id }" @click="pickCategory(c.id)">{{ c.name }}</button>
@@ -105,6 +113,7 @@ const summary = computed(() => catalog.value.map((s) => {
         >
           {{ slotName(s.slot) }}<span v-if="s.template" class="muted">（基本）</span>
         </button>
+        <label v-if="hasCustom" class="small check only-custom"><input v-model="onlyCustom" type="checkbox" /> 只看自建</label>
         <label class="small tier-filter">材料等級
           <select v-model.number="tierFilter">
             <option :value="0">全部</option>
@@ -124,12 +133,12 @@ const summary = computed(() => catalog.value.map((s) => {
               <td class="num">0</td>
             </tr>
             <tr
-              v-for="o in options" :key="`${o.base}-${o.tier}`"
+              v-for="o in options" :key="o.item ? `i:${o.item}` : `${o.base}-${o.tier}`"
               :class="{ on: isPicked(o), over: !isPicked(o) && costIf(o) > budget }"
               @click="choose(o)"
             >
               <td class="pick"><input type="radio" :checked="isPicked(o)" @click.stop="choose(o)" /></td>
-              <td class="name"><span class="item-tile" :class="`r-${materialOf(o)?.rarity}`"><ItemIcon :spec="o.spec" :size="20" /></span>{{ o.name }}</td>
+              <td class="name"><span class="item-tile" :class="`r-${o.spec.rarity ?? materialOf(o)?.rarity}`"><ItemIcon :name="o.item" :spec="o.spec" :size="20" /></span>{{ o.name }}<span v-if="o.custom" class="tag">{{ o.item ? '自建裝備' : '自建底材' }}</span></td>
               <td class="nowrap"><ContentIcon kind="material" :id="o.spec.material" :size="14" /> {{ materialOf(o)?.name }}<span class="muted">（{{ o.tier }} 級・{{ rarityName(materialOf(o)?.rarity ?? 'common') }}）</span></td>
               <td class="nowrap">{{ attackOf(o) }}</td>
               <td class="nowrap">{{ defenseOf(o) }}</td>
@@ -164,6 +173,8 @@ const summary = computed(() => catalog.value.map((s) => {
 .tabs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .tabs button.on { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .tabs button.has:not(.on)::after { content: '●'; font-size: 8px; margin-left: 3px; color: var(--accent); vertical-align: 2px; }
+.only-custom { margin-left: auto; display: inline-flex; gap: 4px; align-items: center; }
+.only-custom + .tier-filter { margin-left: 8px; }
 .tier-filter { margin-left: auto; display: inline-flex; gap: 4px; align-items: center; }
 .scroll { max-height: 46vh; overflow: auto; border: 1px solid var(--border); border-radius: 2px; }
 .catalog { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
