@@ -283,3 +283,35 @@ ul.plain > li:last-child { border-bottom: none; }
 @media (max-width: 720px) {
   #app { padding: 10px; }
 }
+
+/* 特效層（src/fx/fx.ts）：蓋住整個視窗、不吃滑鼠。字與粒子是像素硬邊，光暈與暗角是平滑的 */
+.fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+.fx-float {
+  position: fixed; transform: translate(-50%, -50%); white-space: nowrap; font-weight: 800; font-size: 1.35rem; line-height: 1;
+  font-variant-numeric: tabular-nums; color: #f4ece0; letter-spacing: 0.02em;
+  /* 硬邊描黑（不模糊）＋一圈柔光 */
+  text-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000, 2px 2px #000, -2px -2px #000, 2px -2px #000, -2px 2px #000, 0 0 10px currentColor;
+}
+.fx-float.big { font-size: 1.8rem; }
+.fx-float.slide { font-size: 0.95rem; font-weight: 700; }
+.fx-pixel { position: fixed; display: block; image-rendering: pixelated; box-shadow: 1px 1px 0 #0008; }
+.fx-vignette { position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 45%, #000a 100%); }
+.fx-vignette.boss { background: radial-gradient(ellipse at center, transparent 40%, #5a0c0699 85%, #000c 100%); }
+.fx-vignette.victory { background: radial-gradient(ellipse at center, #f0d08322 0%, transparent 45%, #0007 100%); }
+.fx-vignette.defeat { background: radial-gradient(ellipse at center, transparent 30%, #000d 100%); }
+.fx-banner {
+  position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%); padding: 10px 64px;
+  background: linear-gradient(90deg, transparent, #120d09ee 18%, #120d09ee 82%, transparent);
+  border-top: 2px solid var(--gold-hi); border-bottom: 2px solid var(--gold-hi);
+  box-shadow: 0 0 24px #f0d08355;
+}
+.fx-banner span {
+  display: block; font-size: 2rem; font-weight: 800; letter-spacing: 0.4em; padding-left: 0.4em; color: var(--gold-hi);
+  text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 0 0 16px #f0d083aa;
+}
+.fx-banner.boss { border-color: #ff5a4a; box-shadow: 0 0 28px #ff3a2a77; }
+.fx-banner.boss span { color: #ff7a66; text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 0 0 18px #ff3a2acc; }
+.fx-banner.victory { box-shadow: 0 0 40px #f0d08399; }
+.fx-banner.victory span { font-size: 2.4rem; }
+.fx-banner.defeat { border-color: var(--muted); box-shadow: none; }
+.fx-banner.defeat span { color: var(--muted); text-shadow: 3px 3px 0 #000; }

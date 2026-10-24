@@ -30,6 +30,7 @@ const PAGES = [
   { id: 'images', label: '圖像', icon: 'image' },
   { id: 'narration', label: '敘事與判定', icon: 'sparkles' },
   { id: 'rules', label: '遊戲規則', icon: 'd20' },
+  { id: 'display', label: '畫面', icon: 'eye' },
   { id: 'save', label: '存檔', icon: 'save' },
 ] as const
 type PageId = (typeof PAGES)[number]['id']
@@ -156,6 +157,24 @@ function doReset() {
     </section>
 
   </template>
+
+  <section v-if="page === 'display'" class="panel">
+    <h2 class="head"><GameIcon name="sparkles" :size="20" />畫面特效</h2>
+    <div class="form">
+      <label>
+        <span class="lab">戰鬥的飄字、閃光與橫幅 <Hint text="全部：受擊抖動、幸運一擊震動畫面、敵人碎裂、勝利光粒子都會播。
+精簡：只留傷害飄字、HP 殘影與開場、勝利橫幅。
+關閉：不播特效，紀錄與 HP 直接更新。
+跟隨系統：系統開了「減少動態效果」時用精簡，否則全部。" /></span>
+        <select v-model="settings.effects">
+          <option value="auto">跟隨系統</option>
+          <option value="full">全部</option>
+          <option value="lite">精簡</option>
+          <option value="off">關閉</option>
+        </select>
+      </label>
+    </div>
+  </section>
 
   <template v-if="page === 'rules'">
     <section v-if="game.state" class="panel">

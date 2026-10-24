@@ -9,6 +9,9 @@ import { luckyThreshold } from '@/engine/character'
 import { safeText } from '@/engine/content'
 import { abilityDef, combatRules, damageTypeName, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { describeCombatLine } from '@/narrator/describe'
+import { banner, fxOn, flash, floatText, screenShake, shake, shatter } from '@/fx/fx'
+import { CRIT_COLOR, HEAL_COLOR, MISS_COLOR, cuesFor, unplayedHpDelta } from '@/fx/combatFx'
+import type { TimelineEntry } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -94,10 +97,107 @@ function onKey(e: KeyboardEvent) {
 onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
+// ── 特效播放：紀錄新增的那幾筆依序播，每筆間隔約 0.2 秒；HP 條與紀錄跟著播到哪裡才更新。
+// 播放中照樣可以操作（新的紀錄接在後面播）。特效關閉時直接全部顯示。
+const played = ref(combat.value.timeline.length)
+const field = ref<HTMLElement | null>(null)
+const cards = new Map<string, Element>()
+function cardRef(id: string, el: unknown) {
+  if (el instanceof Element) cards.set(id, el)
+  else cards.delete(id)
+}
+const hpDelta = computed(() => unplayedHpDelta(combat.value.timeline.slice(played.value)))
+/** 畫面上的 HP（還沒播到的傷害先不扣） */
+const shownHp = (c: Combatant) => Math.max(0, Math.min(c.maxHp, c.hp + (hpDelta.value[c.id] ?? 0)))
+/** 畫面上倒下了嗎（致命的那一下還沒播到時先不算） */
+const shownDown = (c: Combatant) => !isActive(c) && !(c.hp === 0 && (hpDelta.value[c.id] ?? 0) > 0)
+
+let timer: ReturnType<typeof setTimeout> | null = null
+function step() {
+  timer = null
+  const list = combat.value.timeline
+  if (played.value >= list.length) { played.value = list.length; drained(); return }
+  if (!fxOn()) { played.value = list.length; drained(); return }
+  const t = list[played.value]!
+  played.value++
+  play(t)
+  // 積了很多筆（例如敵人一口氣行動完）時加快
+  const backlog = list.length - played.value
+  timer = setTimeout(step, backlog > 6 ? 110 : 230)
+}
+function pump() {
+  if (!timer) step()
+}
+
+function play(t: TimelineEntry) {
+  const enemyIds = new Set(foes.value.map((c) => c.id))
+  for (const cue of cuesFor(t)) {
+    switch (cue.kind) {
+      case 'damage': {
+        const el = cards.get(cue.target)
+        floatText(el, cue.amount > 0 ? `-${cue.amount}` : '0', { color: cue.amount > 0 ? cue.color : MISS_COLOR, big: cue.crit })
+        if (cue.amount > 0) shake(el, cue.crit ? 2 : 1)
+        flash(el, cue.area || cue.color !== '#f4ece0' ? cue.color : '#ff5a4a', cue.crit)
+        break
+      }
+      case 'heal': {
+        const el = cards.get(cue.target)
+        floatText(el, `+${cue.amount}`, { color: HEAL_COLOR })
+        flash(el, HEAL_COLOR)
+        break
+      }
+      case 'crit':
+        floatText(cards.get(cue.target), '幸運一擊！', { color: CRIT_COLOR, top: true })
+        screenShake(field.value, 1.5)
+        break
+      case 'miss':
+        floatText(cards.get(cue.target), cue.text, { color: MISS_COLOR, slide: true })
+        break
+      case 'fumble': {
+        const el = cards.get(cue.actor)
+        floatText(el, '大失敗', { color: '#c97a6e', slide: true })
+        shake(el)
+        break
+      }
+      case 'down':
+        // 敵人碎成像素；我方卡片的褪色下沉由 CSS 處理
+        if (cue.enemy || enemyIds.has(cue.target)) {
+          const el = cards.get(cue.target)
+          setTimeout(() => shatter(el), 180)
+        }
+        break
+    }
+  }
+}
+
+/** 全部播完：戰鬥結束時出勝利或戰敗的橫幅 */
+let ended = combat.value.status !== 'ongoing'
+function drained() {
+  if (ended || combat.value.status === 'ongoing') return
+  ended = true
+  if (combat.value.status === 'victory') banner('勝利', 'victory')
+  else if (combat.value.status === 'defeat') banner('戰敗', 'defeat')
+}
+
+watch(() => combat.value.timeline.length, (n) => {
+  if (n < played.value) played.value = n
+  pump()
+})
+watch(() => combat.value.status, () => pump())
+onMounted(() => {
+  // 剛開戰（不是讀檔回來）：開場橫幅；有以 BOSS 出場或層主時改紅色並震一下
+  if (combat.value.timeline.length === 0 && combat.value.status === 'ongoing') {
+    const boss = foes.value.some((c) => c.headliner || c.boss)
+    banner(boss ? '強敵' : '遭遇', boss ? 'boss' : 'encounter')
+    if (boss) screenShake(field.value, 1.2)
+  }
+})
+onBeforeUnmount(() => { if (timer) clearTimeout(timer) })
+
 /** 倒下、撤離、已逃走 */
 function downText(c: Combatant): string {
   if (c.fled) return c.side === 'enemy' ? '已逃走' : '撤離'
-  return c.hp === 0 ? '倒下' : ''
+  return shownDown(c) ? '倒下' : ''
 }
 
 const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (v / max) * 100)) : 0}%`
@@ -105,7 +205,7 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
 /** 戰鬥紀錄依回合分組 */
 const rounds = computed(() => {
   const out: { round: number; lines: ReturnType<typeof describeCombatLine>[] ; key: number }[] = []
-  for (const t of combat.value.timeline) {
+  for (const t of combat.value.timeline.slice(0, played.value)) {
     const r = t.round ?? 0
     let g = out.at(-1)
     if (!g || g.round !== r) out.push((g = { round: r, lines: [], key: t.seq }))
@@ -155,7 +255,7 @@ function statusTitle(id: string): string {
 }
 
 watch(
-  () => combat.value.timeline.length,
+  played,
   async () => {
     await nextTick()
     log.value?.scrollTo({ top: log.value.scrollHeight })
@@ -163,10 +263,12 @@ watch(
 )
 
 const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功撤退', ongoing: '' }
+/** 結束時的結果與按鈕：特效播完才出現 */
+const showResult = computed(() => combat.value.status !== 'ongoing' && played.value >= combat.value.timeline.length)
 </script>
 
 <template>
-  <section class="panel field" :class="{ picking: !!pending }">
+  <section ref="field" class="panel field" :class="{ picking: !!pending }">
     <div class="row field-head">
       <h2 class="title"><GameIcon name="sword" :size="20" />戰鬥・{{ combat.scene ?? '' }}</h2>
       <span v-if="pending" class="pick-hint">點選發亮的卡片當目標（Esc 取消）</span>
@@ -180,8 +282,9 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
           <div
             v-for="c in party"
             :key="c.id"
+            :ref="(el) => cardRef(c.id, el)"
             class="fighter"
-            :class="{ current: actor?.id === c.id, down: !isActive(c), targetable: pending && isTarget(c), dim: pending && !isTarget(c) }"
+            :class="{ current: actor?.id === c.id, down: shownDown(c), fled: c.fled, targetable: pending && isTarget(c), dim: pending && !isTarget(c) }"
             @click="pending && isTarget(c) && chooseTarget(c.id)"
           >
             <div class="l1">
@@ -191,8 +294,8 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
             </div>
             <div class="l2">
               <span class="hpbar" :title="`HP ${c.hp}/${c.maxHp}${c.tempHp ? `（臨時 HP ${c.tempHp}）` : ''}`">
-                <span class="bar hp"><span :style="{ width: pct(c.hp, c.maxHp) }" /></span>
-                <span class="num">{{ c.hp }}/{{ c.maxHp }}<template v-if="c.tempHp">+{{ c.tempHp }}</template></span>
+                <span class="bar hp"><span class="ghost" :style="{ width: pct(shownHp(c), c.maxHp) }" /><span class="fill" :style="{ width: pct(shownHp(c), c.maxHp) }" /></span>
+                <span class="num">{{ shownHp(c) }}/{{ c.maxHp }}<template v-if="c.tempHp">+{{ c.tempHp }}</template></span>
               </span>
               <span class="ap" :title="`行動點 ${c.ap}/${c.apMax}（每回合 +${c.apRegen}）`">
                 <span class="pips"><i v-for="n in c.apMax" :key="n" :class="{ on: n <= c.ap }" /></span>
@@ -218,8 +321,9 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
           <div
             v-for="c in foes"
             :key="c.id"
+            :ref="(el) => cardRef(c.id, el)"
             class="fighter"
-            :class="{ current: actor?.id === c.id, down: !isActive(c), targetable: pending && isTarget(c), dim: pending && !isTarget(c), headliner: c.headliner }"
+            :class="{ current: actor?.id === c.id, down: shownDown(c), fled: c.fled, targetable: pending && isTarget(c), dim: pending && !isTarget(c), headliner: c.headliner }"
             @click="pending && isTarget(c) && chooseTarget(c.id)"
           >
             <div class="l1">
@@ -230,8 +334,8 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
             </div>
             <div class="l2">
               <span class="hpbar" :title="`HP ${c.hp}/${c.maxHp}`">
-                <span class="bar hp"><span :style="{ width: pct(c.hp, c.maxHp) }" /></span>
-                <span class="num">{{ c.hp }}/{{ c.maxHp }}</span>
+                <span class="bar hp"><span class="ghost" :style="{ width: pct(shownHp(c), c.maxHp) }" /><span class="fill" :style="{ width: pct(shownHp(c), c.maxHp) }" /></span>
+                <span class="num">{{ shownHp(c) }}/{{ c.maxHp }}</span>
               </span>
               <span class="tag">{{ damageTypeName(c.weapon.type) }}攻擊</span>
             </div>
@@ -258,7 +362,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
           <div v-for="(t, k) in l.targets ?? []" :key="k" class="sub" :title="t.detail">{{ t.text }}</div>
         </div>
       </div>
-      <div v-if="combat.timeline.length === 0" class="muted">戰鬥開始。</div>
+      <div v-if="played === 0" class="muted">戰鬥開始。</div>
     </div>
   </section>
 
@@ -320,7 +424,7 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
         </div>
       </template>
     </template>
-    <template v-else>
+    <template v-else-if="showResult">
       <h3>{{ resultText[combat.status] }}</h3>
       <button class="primary" @click="finish">結束戰鬥並產生戰報</button>
     </template>
@@ -345,7 +449,10 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
   transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; min-width: 0;
 }
 .fighter.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 10px #f0d08333; }
-.fighter.down { opacity: 0.4; }
+.fighter.down { opacity: 0.4; filter: grayscale(0.7); transform: translateY(3px); transition: opacity 0.5s, filter 0.5s, transform 0.5s steps(4, end), border-color 0.15s, box-shadow 0.15s; }
+/* 敵人倒下：碎片散開後卡片才淡掉 */
+.side.foe + .cards .fighter.down:not(.fled) { transition-delay: 0.25s; }
+.fighter.fled { transform: translateX(10px); }
 .fighter.dim { opacity: 0.35; }
 /* 以 BOSS 出場的怪物：金色邊框 */
 .fighter.headliner {
@@ -367,6 +474,10 @@ const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功
 .l3 .tag, .l2 .tag { margin: 0; }
 .hpbar { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 70px; }
 .hpbar .bar { flex: 1; height: 8px; }
+/* HP 殘影：白色的一段先留著，再慢慢追上真實值 */
+.bar > span.ghost { position: absolute; left: 0; top: 0; background: #fff6e0cc; transition: width 0.45s ease-out 0.35s; }
+.bar > span.ghost::after { display: none; }
+.bar > span.fill { transition: width 0.12s steps(3, end); }
 .num { font-size: var(--fs-xs); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pips { display: inline-flex; gap: 2px; }
 .pips i { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--accent); display: inline-block; }
