@@ -19,7 +19,7 @@ import {
   applyBlackMarket, applyEscape, applyHaggle, applyHire, applyInvite, applyNegotiate, setupFor, type MarketKind,
 } from './companions'
 import {
-  actionRules, ATTR_IDS, attrName, geography, locationById, regionById, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
+  abilities, actionRules, ATTR_IDS, attrName, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
@@ -50,6 +50,7 @@ import { useAbilityOutOfCombat, type AbilityUse } from './resources'
 import { formatMoney } from './money'
 import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, ResourceChange } from './types'
 import { contractOf } from './tattoos'
+import { canonicalName } from './script'
 
 export interface ActionInput {
   kind: ActionKind
@@ -185,6 +186,14 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
 // ---- 驗證 AI 的回傳 ----
 
 const clipText = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
+
+/** AI 回傳的物品名稱換成資料的寫法（繁簡不分；都不是時原樣，當成新的物品） */
+function itemNameOf(state: GameState, name: string): string {
+  if (!name || itemDef(name)) return name
+  return canonicalName(name, [
+    ...state.inventory.map((i) => i.name), ...itemRules.items.map((i) => i.name), ...saveItems().map((i) => i.name), ...Object.keys(state.customItems ?? {}),
+  ])
+}
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : NaN)
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 
@@ -279,7 +288,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         break
       }
       case 'item': {
-        const name = clipText(x.name, 20)
+        // 名字照資料的寫法（AI 照簡體的提示詞回傳時是簡體）：行囊、物品目錄、這個存檔自創的物品
+        const name = itemNameOf(state, clipText(x.name, 20))
         const qty = num(x.qty)
         if (!name || Number.isNaN(qty)) break
         const q = Math.round(qty)
@@ -320,7 +330,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         if (degree !== 'critical' || effects.some((y) => y.type === 'ability')) break
         const target = String(x.target ?? 'pc')
         if (target !== 'pc' && !state.party.some((m) => m.id === target)) break
-        const ability = clipText(x.ability, 30)
+        const raw = clipText(x.ability, 30)
+        const ability = raw ? canonicalName(raw, Object.values(abilities).map((a) => a.name)) : raw
         effects.push({ type: 'ability', target, ...(ability ? { ability } : {}) })
         break
       }

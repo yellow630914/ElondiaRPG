@@ -9,6 +9,7 @@ import { actionLoreText, buildActionPrompt } from './judge'
 import { loreForReport, pickLore, type LoreItem, type LoreSelection } from './lore'
 import { adultSceneOf, buildPrompt, type Prompt } from './prompt'
 import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
+import { toOutputScript } from './script'
 
 export interface ComposeOptions {
   config: PromptConfig
@@ -74,7 +75,7 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
     adult: o.adult,
   })
-  return { prompt, lore }
+  return { prompt: toOutputScript(prompt, o.language), lore }
 }
 
 export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptions): Composed {
@@ -93,5 +94,5 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     adult: o.adult,
     ...(lore ? { lore } : {}),
   })
-  return { prompt, ...(lore ? { lore } : {}) }
+  return { prompt: toOutputScript(prompt, o.language), ...(lore ? { lore } : {}) }
 }

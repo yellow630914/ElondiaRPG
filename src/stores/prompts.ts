@@ -137,6 +137,8 @@ export const usePrompts = defineStore('prompts', () => {
   async function composeOptions(): Promise<ComposeOptions> {
     await ensureLoaded()
     const settings = useSettings()
+    // 輸出繁體時把簡體的世界書轉成繁體：簡轉繁的字典用到時才載入
+    await (await import('@/narrator/script')).loadScriptConverters(settings.language)
     return {
       config: config.value,
       lore: items.value,
