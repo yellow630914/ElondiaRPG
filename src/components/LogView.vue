@@ -14,6 +14,9 @@ import Hint from './ui/Hint.vue'
 const PAGE = 30
 const game = useGame()
 const settings = useSettings()
+/** 開著 AI 細節描述，但「敘事正文」的模型來源還沒設定：提醒去設定 */
+const needsSource = computed(() => settings.aiNarration && !settings.ready('narration'))
+const emit = defineEmits<{ settings: [] }>()
 const hideTrade = ref(true)
 const shown = ref(PAGE)
 const feed = ref<HTMLElement | null>(null)
@@ -84,6 +87,12 @@ onMounted(() => toBottom(true))
       <label class="small"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述</label>
       <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易紀錄</label>
     </header>
+    <p v-if="needsSource" class="ai-missing small row">
+      <GameIcon name="warning" :size="15" />
+      <span>已開啟「AI 細節描述」，但還沒設定 AI 的模型來源：日誌只會顯示戰報與簡述。</span>
+      <button class="small" @click="emit('settings')">設定模型來源</button>
+      <button class="small ghost" title="不用 AI，只看戰報與簡述" @click="settings.aiNarration = false">關閉 AI 細節描述</button>
+    </p>
     <!-- token 用量：平常只顯示總數，點開看明細（展開與否記在這個瀏覽器） -->
     <details v-if="game.totalUsage.calls" class="small muted usage" :open="usageOpen" @toggle="onUsageToggle">
       <summary>本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens・{{ game.totalUsage.calls }} 次呼叫</summary>
@@ -124,6 +133,8 @@ onMounted(() => toBottom(true))
 .log-head { gap: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
 .log-head h2 { margin: 0; display: flex; align-items: center; gap: 8px; }
 .log-head h2 :deep(.game-icon) { color: var(--accent); }
+.ai-missing { gap: 8px; margin: 8px 0 0; padding: 6px 10px; border: 1px solid var(--gold-lo, var(--border)); border-radius: 4px; background: #3a2a1033; color: var(--accent); flex-wrap: wrap; }
+.ai-missing span { flex: 1; min-width: 12em; color: var(--text); }
 .log-head label { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
 .usage { margin: 6px 0 0; }
 .usage summary { cursor: pointer; }

@@ -61,14 +61,6 @@ function doReset() {
 <template>
   <nav class="row tabs pages">
     <button v-for="p in PAGES" :key="p.id" :class="{ active: page === p.id }" @click="openPage(p.id)"><GameIcon :name="p.icon" :size="15" />{{ p.label }}</button>
-    <!-- 介面語言：選項名稱各用自己的寫法，不轉換 -->
-    <label class="ui-lang small">
-      <GameIcon name="globe" :size="14" /> 語言
-      <select v-model="settings.uiLanguage" data-no-convert>
-        <option value="zh-Hant">繁體中文</option>
-        <option value="zh-Hans">简体中文</option>
-      </select>
-    </label>
   </nav>
 
   <template v-if="page === 'models'">
@@ -127,6 +119,9 @@ function doReset() {
           <Hint text="開啟：下列種類的日誌產生後，自動請「敘事正文」的模型寫出詳細經過。
 關閉：不自動呼叫 AI（AI 判定的主動行動除外），戰鬥直接顯示戰報，其他事件顯示簡述。每則日誌都可以從右上角的「⋯」手動寫出經過。" />
         </div>
+        <p v-if="settings.aiNarration && !settings.ready('narration')" class="small warn-line">
+          <GameIcon name="warning" :size="14" /> 「敘事正文」用的模型來源還沒設定好，AI 寫不了經過：到<a href="#" @click.prevent="openPage('models')">模型來源</a>填寫服務、模型與 API key。
+        </p>
         <div class="kinds">
           <label v-for="k in NARRATE_KINDS" :key="k.id" class="check small" :title="k.desc">
             <input v-model="settings.narrateKinds[k.id]" type="checkbox" /> {{ k.name }}
@@ -235,8 +230,8 @@ function doReset() {
 </template>
 
 <style scoped>
-.ui-lang { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
 .form { display: grid; gap: 12px; max-width: 560px; }
+.warn-line { margin: -4px 0 0; color: var(--accent); }
 .tabs { gap: 6px; margin-bottom: 10px; }
 .tabs button { display: inline-flex; align-items: center; gap: 6px; }
 .tabs button.active { border-color: var(--accent); color: var(--accent); }

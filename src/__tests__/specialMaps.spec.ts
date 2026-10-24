@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { specialMaps, stories, type SpecialMapDef, type StoryDef } from '@/engine/data'
-import { afterDefeat, cellAt, currentArea, currentCell, enterLocation, getArea, move, placeAt, position } from '@/engine/grid'
+import { afterDefeat, cellAt, crossLink, currentArea, currentCell, enterLocation, getArea, move, placeAt, position } from '@/engine/grid'
 import { applyPendingMove, queueMove } from '@/engine/road'
 import { enterSpecial, leaveSpecial, pruneSpecialMaps } from '@/engine/specialMaps'
 import { sanitizeSpecialMapMod, specialMapUsage, storySpotProblem } from '@/engine/specialMapMods'
@@ -22,10 +22,11 @@ function inRhineburg(): GameState {
   return newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 3, birthplace: 'rhineburg' })
 }
 
-/** 站在 (x, y) 旁邊，往那一格走一步 */
+/** 站在 (x, y) 旁邊，往那一格走一步；是通道就走過去（按 E） */
 function stepOnto(state: GameState, area: string, x: number, y: number, from: [number, number]) {
   placeAt(state, getArea(state, area), from[0], from[1])
-  return move(state, x - from[0], y - from[1])
+  const r = move(state, x - from[0], y - from[1])
+  return currentCell(state).kind === 'link' ? crossLink(state) : r
 }
 
 const extra: string[] = []

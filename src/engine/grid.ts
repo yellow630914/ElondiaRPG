@@ -13,7 +13,7 @@ import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
   attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId,
-  type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, type SpecialMapDef,
+  type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
@@ -905,13 +905,6 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   const ny = p.y + dy
   const cell = cellAt(area, nx, ny)
   if (!walkable(cell)) throw new Error('那裡過不去')
-  // 貴族區與王城有衛兵把守
-  if (cell!.kind === 'link') {
-    const blocked = zoneEntryBlock(state, getArea(state, cell!.link!.area).zone)
-    if (blocked) throw new Error(blocked)
-    // 主人的家：走出大門前要主人同意
-    if (cell!.dir === 'out' && atMasterHome(state, area)) assertMayLeaveHouse(state)
-  }
   state.time = addHours(state.time, stepMinutes(area) / 60)
   state.position = { area: area.key, x: nx, y: ny, prev: { x: p.x, y: p.y } }
   // 黑暗的地方：每走一格燒掉一點光源
@@ -944,6 +937,44 @@ export function blockedMove(state: GameState, dx: number, dy: number): string | 
   return walkable(cellAt(area, p.x + dx, p.y + dy)) ? null : '那邊走不過去'
 }
 
+/** 站著的出入口通往哪一區（不是出入口時 null）；只讀名字，不生成地圖 */
+export function linkTargetName(state: GameState): string | null {
+  const cell = currentCell(state)
+  if (cell.kind !== 'link' || !cell.link) return null
+  const key = cell.link.area
+  try {
+    return key.startsWith('sm/') ? specialMapOfKey(key)?.name ?? '別處' : getArea(state, key).name
+  } catch {
+    return '別處'
+  }
+}
+
+/**
+ * 走過腳下的出入口，換到相連的區域（城鎮的各區、房子的門、特殊地圖的通道）。
+ * 走到出入口上不會自動換區：玩家按 E 或格子資訊的按鈕才過去。不另外花時間（走上來那一步已經算了）。
+ */
+export function crossLink(state: GameState): StepResult {
+  if (state.combat) throw new Error('戰鬥進行中')
+  assertNoStandoff(state)
+  if (state.townEvent) throw new Error('先決定怎麼應付眼前的事')
+  const area = currentArea(state)
+  const p = position(state)
+  const cell = cellAt(area, p.x, p.y)
+  if (cell?.kind !== 'link' || !cell.link) throw new Error('這裡沒有通往別處的路')
+  const target = getArea(state, cell.link.area)
+  // 貴族區與王城有衛兵把守
+  const blocked = zoneEntryBlock(state, target.zone)
+  if (blocked) throw new Error(blocked)
+  // 主人的家：走出大門前要主人同意
+  if (cell.dir === 'out' && atMasterHome(state, area)) assertMayLeaveHouse(state)
+  // 進出特殊地圖：記下回程與地點
+  if (area.kind === 'special' || target.kind === 'special') onAreaChange(state, area, target, { x: p.x, y: p.y })
+  placeAt(state, target, cell.link.x, cell.link.y)
+  // 走進或走出主人的家：離家期限重新算
+  touchMasterHome(state, area, target)
+  return {}
+}
+
 /** 移動到指定格子（只能是相鄰格）。 */
 export function moveTo(state: GameState, x: number, y: number): StepResult {
   const p = position(state)
@@ -972,15 +1003,6 @@ export function substituteGroup(state: GameState, area: Area, kind: 'encounter' 
 function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cell): StepResult {
   const loc = locationById(area.location)
   switch (cell.kind) {
-    case 'link': {
-      const target = getArea(state, cell.link!.area)
-      // 進出特殊地圖：記下回程與地點
-      if (area.kind === 'special' || target.kind === 'special') onAreaChange(state, area, target, { x, y })
-      placeAt(state, target, cell.link!.x, cell.link!.y)
-      // 走進或走出主人的家：離家期限重新算
-      touchMasterHome(state, area, target)
-      return {}
-    }
     case 'encounter':
     case 'elite':
     case 'boss': {

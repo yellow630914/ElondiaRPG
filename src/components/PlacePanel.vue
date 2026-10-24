@@ -5,7 +5,7 @@ import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
 import { attrName, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, type ShopType } from '@/engine/data'
-import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, getArea, DUNGEON_LAYERS, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -50,15 +50,7 @@ const area = computed(() => currentArea(s.value))
 const cell = computed(() => currentCell(s.value))
 // 特殊地圖：地圖的描述、通道通往哪裡
 const specialDef = computed(() => (area.value.kind === 'special' ? specialMapOfKey(area.value.key) : undefined))
-const linkName = computed(() => {
-  const to = cell.value.link?.area
-  if (!to) return '別處'
-  try {
-    return getArea(s.value, to).name
-  } catch {
-    return '別處'
-  }
-})
+const linkName = computed(() => linkTargetName(s.value) ?? '別處')
 const lockTool = computed(() => bestTool(s.value, 'lockpick'))
 const LOCK_ICON: Record<LockMethod, IconName> = { dex: 'unlock', str: 'hand', int: 'lightbulb' }
 function lockBonus(k: LockMethod): number {
@@ -319,8 +311,9 @@ const shopDesc = computed(() => {
           <button @click="game.leaveSpecial()">離開，回到{{ s.special?.back ? '進來前的地方' : here.name }}</button>
         </template>
 
-        <template v-else-if="cell.kind === 'link' && area.kind === 'special'">
-          <p class="muted small">通往{{ linkName }}的通道。</p>
+        <template v-else-if="cell.kind === 'link'">
+          <p class="muted small">通往{{ linkName }}的{{ area.kind === 'special' ? '通道' : cell.dir === 'out' ? '大門' : '路口' }}。</p>
+          <button class="primary" @click="game.crossLink()"><GameIcon name="right" :size="14" /> 前往{{ linkName }}<span class="key">E</span></button>
         </template>
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'side'">
@@ -399,6 +392,8 @@ const shopDesc = computed(() => {
 </template>
 
 <style scoped>
+/* 鍵盤快捷鍵的小方塊（前往相連區域：E） */
+.key { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid currentColor; border-radius: 3px; font-size: 11px; line-height: 1.4; opacity: 0.75; }
 .guild-rank { display: grid; gap: 2px; padding: 6px 8px; border: 1px dashed var(--accent); border-radius: var(--radius); margin-bottom: 6px; }
 .guild-rank .hot { color: var(--accent); }
 .board > li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 4px; }

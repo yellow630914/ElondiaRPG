@@ -125,6 +125,15 @@ function closeDialogs() {
 }
 
 const showSettings = ref(false)
+/** 打開設定並切到指定的分頁（設定對話框每次打開時讀這一頁） */
+function openSettings(page: string) {
+  try {
+    localStorage.setItem('elondia.settingsPage', page)
+  } catch {
+    // 記不住分頁時從上次的分頁開始
+  }
+  showSettings.value = true
+}
 const showParty = ref(false)
 const showInventory = ref(false)
 const showRelations = ref(false)
@@ -221,6 +230,14 @@ onBeforeUnmount(() => {
     </div>
     <div class="top-buttons">
       <button v-if="eventCount" class="small events" :class="{ hot: blockingEvent }" title="需要你處理的事" @click="eventDialogOpen = true"><GameIcon :key="eventCount" name="bell" :size="14" class="bell" />待處理<span class="badge">{{ eventCount }}</span></button>
+      <!-- 介面語言：選項名稱各用自己的寫法，不轉換 -->
+      <label class="ghost icon lang" title="介面語言（AI 寫的正文用哪一種，在設定的「AI 的輸出語言」）">
+        <GameIcon name="globe" :size="24" />
+        <select v-model="settings.uiLanguage" data-no-convert aria-label="介面語言">
+          <option value="zh-Hant">繁體</option>
+          <option value="zh-Hans">简体</option>
+        </select>
+      </label>
       <button v-if="game.state" class="ghost icon" title="快速存檔（F8 / Ctrl+S）" @click="game.quickSave()"><GameIcon name="save" :size="24" /><span>快存</span></button>
       <button v-if="game.state" class="ghost icon" title="快速讀檔（F9）" @click="askQuickLoad"><GameIcon name="load" :size="24" /><span>快讀</span></button>
       <button v-if="game.state" class="ghost icon" title="存檔與讀檔：存檔欄位、匯出與匯入" @click="showSaves = true"><GameIcon name="saves" :size="24" /><span>存讀檔</span></button>
@@ -283,7 +300,7 @@ onBeforeUnmount(() => {
         <button v-if="enslaved" class="ghost" :title="canAskMaster ? '可以請求主人讓你出門或出城' : ''" @click="showContract = true"><GameIcon name="lock" :size="20" />契約<span v-if="canAskMaster" class="note">可請求</span></button>
       </nav>
       <CombatView v-if="inCombat" />
-      <LogView v-else />
+      <LogView v-else @settings="openSettings('models')" />
     </section>
 
     <aside v-if="!inCombat" v-show="showRight" class="right">
@@ -347,6 +364,10 @@ onBeforeUnmount(() => {
 .top-buttons { margin-left: auto; display: flex; gap: 2px; align-items: center; }
 .top-buttons .icon { min-width: 48px; padding: 4px 6px 2px; display: grid; justify-items: center; gap: 2px; color: var(--muted); }
 .top-buttons .icon span { font-size: 11px; line-height: 1.2; white-space: nowrap; }
+/* 語言：圖示下面是小小的下拉選單，和其他按鈕的文字同一排 */
+.top-buttons .lang { cursor: pointer; }
+.top-buttons .lang select { font-size: 11px; line-height: 1.2; padding: 0 2px; min-height: 0; height: auto; border: none; background: transparent; color: inherit; cursor: pointer; text-align: center; }
+.top-buttons .lang select option { background: var(--panel, #1a130d); color: var(--text); }
 .events { display: inline-flex; align-items: center; gap: 4px; border-color: var(--accent); color: var(--gold-hi); margin-right: 6px; }
 .events.hot { border-color: var(--danger); color: var(--danger); animation: pulse 1.6s ease-in-out infinite; }
 @keyframes pulse { 50% { opacity: 0.55; } }

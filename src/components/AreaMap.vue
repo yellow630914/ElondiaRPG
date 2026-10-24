@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, position, sight, type Cell } from '@/engine/grid'
+import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, linkTargetName, position, sight, type Cell } from '@/engine/grid'
 import { isCustomShopId, itemDef, landmarkDef, locationById } from '@/engine/data'
 import { cropStatus } from '@/engine/garden'
 import { homeById } from '@/engine/homes'
@@ -16,6 +16,8 @@ import { tileUrl, type TileKind } from './ui/tiles'
 const game = useGame()
 const area = computed(() => currentArea(game.state!))
 const pos = computed(() => position(game.state!))
+/** 站在通往別區的出入口上：地圖角落提示按 E */
+const linkTo = computed(() => (game.state!.combat ? null : linkTargetName(game.state!)))
 
 const ICON = CELL_ICON
 
@@ -177,8 +179,16 @@ function onKey(e: KeyboardEvent) {
   if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
   // 開著對話框時方向鍵留給對話框（捲動、選項），不移動隊伍
   if (target?.closest?.('dialog') || document.querySelector('dialog[open]')) return
+  if (game.state?.combat) return
+  // E：走過腳下的出入口（換到相連的區域）
+  if ((e.key === 'e' || e.key === 'E') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (cellAt(area.value, pos.value.x, pos.value.y)?.kind !== 'link') return
+    e.preventDefault()
+    game.crossLink()
+    return
+  }
   const dir = KEYS[e.key]
-  if (!dir || game.state?.combat) return
+  if (!dir) return
   e.preventDefault()
   game.move(dir[0], dir[1])
 }
@@ -191,6 +201,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   <div class="map-wrap">
     <Transition name="bump-tip">
       <span v-if="bumping" class="bump-tip small">{{ game.bumpText || '那邊走不過去' }}</span>
+      <span v-else-if="linkTo" class="bump-tip small">按 E 前往{{ linkTo }}</span>
       <span v-else-if="dark" class="bump-tip small">一片漆黑：走路不會揭開地圖，先點火把或等天亮</span>
     </Transition>
     <div :key="area.key" class="map" :style="{ '--w': area.width }">

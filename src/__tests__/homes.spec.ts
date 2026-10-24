@@ -3,7 +3,7 @@ import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { toolAccess } from '@/engine/crafting'
 import { geography, homeRules, locationById } from '@/engine/data'
-import { blocksFor, currentArea, currentCell, enterLocation, getArea, moveTo, placeAt, position, settlementKey, type Area } from '@/engine/grid'
+import { blocksFor, crossLink, currentArea, currentCell, enterLocation, getArea, moveTo, placeAt, position, settlementKey, type Area } from '@/engine/grid'
 import {
   buyHome, comfortOf, furnitureIn, generateHome, hasBed, homeOfArea, leaveWithResident, lotById, lotPrice, lotsOf, memberOrResident,
   placeFurniture, renameHome, residents, stayHome, takeFurniture, workbenchFor,
@@ -168,6 +168,7 @@ describe('going in and out', () => {
     const street = getArea(state, home.lot.area)
     standAt(state, street, home.lot.street.x, home.lot.street.y)
     moveTo(state, home.lot.x, home.lot.y)
+    crossLink(state)
     expect(currentArea(state).kind).toBe('home')
     expect(homeOfArea(state, currentArea(state))?.id).toBe(home.id)
     expect(currentCell(state).dir).toBe('out')
@@ -177,6 +178,8 @@ describe('going in and out', () => {
     const next = [[0, -1], [1, 0], [-1, 0], [0, 1]].map(([dx, dy]) => ({ x: p.x + dx!, y: p.y + dy! })).find((q) => ['floor', 'yard'].includes(ground.cells[q.y * ground.width + q.x]?.kind ?? ''))!
     moveTo(state, next.x, next.y)
     moveTo(state, p.x, p.y)
+    expect(currentArea(state).kind).toBe('home')
+    crossLink(state)
     expect(position(state)).toMatchObject({ area: home.lot.area, x: home.lot.street.x, y: home.lot.street.y })
   })
 })

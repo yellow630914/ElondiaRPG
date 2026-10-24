@@ -5,7 +5,7 @@ import { prepareAction, resolveAction } from '@/engine/actions'
 import { negotiateDc } from '@/engine/companions'
 import { geography, npcTags, slaveryRules, tagDcMod } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
-import { currentArea, enterLocation, getArea, move, position, standOn } from '@/engine/grid'
+import { crossLink, currentArea, enterLocation, getArea, move, position, standOn } from '@/engine/grid'
 import { buyHome, homeOnLot, lotsOf, manorOf } from '@/engine/homes'
 import {
   allowedDays, applyLeave, atMasterHome, currentMasterHome, homeDeadline, householdOf, leaveDc, mayLeaveHouse, overdueChance, sendToMasterHome, strictPoints, syncMasterHome,
@@ -226,10 +226,11 @@ describe("the master's house", () => {
       return c && c.kind !== 'wall' && c.kind !== 'link'
     })!
     move(state, inside[0]!, inside[1]!)
-    expect(() => move(state, -inside[0]!, -inside[1]!)).toThrow('出門')
+    move(state, -inside[0]!, -inside[1]!)
+    expect(() => crossLink(state)).toThrow('出門')
     expect(mayLeaveHouse(state)).toBe(false)
     applyLeave(state, blank(state), 'success')
-    move(state, -inside[0]!, -inside[1]!)
+    crossLink(state)
     expect(currentArea(state).kind).toBe('settlement')
     // 走出大門：離家期限從現在算
     expect(homeDeadline(state)!.hoursLeft).toBeCloseTo(allowedDays(state) * 24)

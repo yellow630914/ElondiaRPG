@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { geography } from '@/engine/data'
 import {
-  afterCombat, ascend, canTravelHere, cellAt, currentArea, currentCell, descend, enterLocation, getArea,
+  afterCombat, ascend, canTravelHere, cellAt, crossLink, currentArea, currentCell, descend, enterLocation, getArea,
   goOutskirts, isRevealed, move, moveTo, position, questRunnableHere, returnToTown, type Area,
 } from '@/engine/grid'
 import { longRest } from '@/engine/rest'
@@ -73,6 +73,9 @@ describe('settlements', () => {
   it('connects Soriel blocks through links', () => {
     const state = game()
     walkTo(state, 'link', [])
+    // 走到路口不會自動換區：按 E（crossLink）才過去
+    expect(currentCell(state).kind).toBe('link')
+    crossLink(state)
     expect(['外環・商業街', '內環・聖殿區']).toContain(currentArea(state).name)
   })
 
