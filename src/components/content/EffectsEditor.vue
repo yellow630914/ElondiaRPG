@@ -24,7 +24,6 @@ const storyList = computed(() => {
   void content.version
   return [...stories].sort((a, b) => Number(b.start.kind === 'manual') - Number(a.start.kind === 'manual'))
 })
-const factions = [...new Set(geography.locations.map((l) => l.faction).filter(Boolean))] as string[]
 type Row = Record<string, unknown> & { type: RewardEffect['type'] }
 const rows = computed(() => list.value as unknown as Row[])
 
@@ -33,7 +32,7 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   item: () => ({ type: 'item', name: '治療藥劑', qty: 1 }),
   gear: () => ({ type: 'gear', spec: { base: 'longsword', material: 'steel' } }),
   xp: () => ({ type: 'xp', amount: 50 }),
-  reputation: () => ({ type: 'reputation', faction: factions[0] ?? 'local', delta: 1 }),
+  reputation: () => ({ type: 'reputation', faction: 'local', delta: 1 }),
   affinity: () => ({ type: 'affinity', npc: namedNpcs[0]?.id ?? '', delta: 5 }),
   memory: () => ({ type: 'memory', summary: '', importance: 2 }),
   ability: () => ({ type: 'ability', target: 'pc', choices: 3 }),
@@ -154,8 +153,11 @@ function setBase(r: Row, base: string) {
       </template>
       <template v-else-if="r.type === 'xp'"><input v-model.number="r.amount" type="number" min="0" class="num" />點（全隊）</template>
       <template v-else-if="r.type === 'reputation'">
-        <input v-model="r.faction" list="effect-factions" placeholder="勢力" />
-        <datalist id="effect-factions"><option v-for="f in factions" :key="f" :value="f" /></datalist>
+        <select v-model="r.faction">
+          <option value="local">（所在地的勢力）</option>
+          <option v-for="f in geography.factions" :key="f.id" :value="f.id">{{ f.name }}</option>
+          <option v-if="r.faction && r.faction !== 'local' && !geography.factions.some((f) => f.id === r.faction)" :value="r.faction">{{ r.faction }}（不在勢力清單）</option>
+        </select>
         <input v-model.number="r.delta" type="number" class="num" />
       </template>
       <template v-else-if="r.type === 'affinity' || r.type === 'companion'">

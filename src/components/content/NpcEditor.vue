@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { choosablePerks, KEEPER_SHOPS, perkDef, shopRules } from '@/engine/data'
+import { npcTraits } from '@/engine/traits'
 import { npcPerksOf } from '@/engine/perks'
 import { computed, ref, watch } from 'vue'
 import { createNpc } from '@/engine/character'
@@ -15,6 +16,7 @@ import type { GearSlot } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import FlagInput from './FlagInput.vue'
+import ComboInput from './ComboInput.vue'
 import NpcPlacementEditor from './NpcPlacementEditor.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
@@ -170,6 +172,25 @@ function setKeeper(v: string) {
   if (v) draft.value.keeper = v
   else delete draft.value.keeper
 }
+
+// 和系統資料有關的欄位：勢力用下拉選單；出身與職業描述可以從清單選，也可以自己輸入
+function setFaction(v: string) {
+  if (v) draft.value.faction = v
+  else delete draft.value.faction
+}
+/** 這個種族的血統、部族、氏族（npc_traits.json），其他種族的排在後面 */
+const lineages = computed(() => {
+  const own = (npcTraits.races[draft.value.race]?.lineages ?? []).map((l) => l.name)
+  const others = Object.entries(npcTraits.races).filter(([r]) => r !== draft.value.race).flatMap(([, x]) => (x.lineages ?? []).map((l) => l.name))
+  return [...new Set([...own, ...others])]
+})
+/** 普通人的職業描述：先列這個人的標籤的，再列其他標籤的（npc_tags.json 的 occupations） */
+const occupations = computed(() => {
+  const tags = draft.value.tags ?? []
+  const all = Object.entries(npcTags.tags) as [string, { occupations?: string[] }][]
+  const mine = all.filter(([t]) => tags.includes(t)).flatMap(([, x]) => x.occupations ?? [])
+  return [...new Set([...mine, ...all.flatMap(([, x]) => x.occupations ?? [])])]
+})
 </script>
 
 <template>
@@ -212,12 +233,18 @@ function setKeeper(v: string) {
             <option v-for="(c, k) in combatClasses" :key="k" :value="k">{{ className(String(k)) }}</option>
           </select>
         </label>
-        <label v-else>職業描述 <input v-model="draft.occupation" maxlength="12" placeholder="鐵匠、修女……" /></label>
+        <label v-else>職業描述 <ComboInput v-model="draft.occupation" :options="occupations" :maxlength="12" placeholder="鐵匠、修女……（可以自己輸入）" /></label>
         <label>等級 <input v-model.number="draft.level" type="number" min="1" max="20" /></label>
         <label v-if="draft.kind !== 'commoner'">雇傭要價（白鸛幣） <input v-model.number="draft.hire_cc" type="number" min="0" :disabled="draft.unhireable" /></label>
         <label v-if="draft.kind !== 'commoner'" class="check" title="統治者、機構首長這類不會跟著冒險者走的人；特殊任務的「任務同行」不受影響"><input v-model="draft.unhireable" type="checkbox" /> 不受雇用</label>
-        <label>勢力 <input v-model="draft.faction" maxlength="30" /></label>
-        <label>出身 <input v-model="draft.lineage" maxlength="30" placeholder="部族、氏族……" /></label>
+        <label>勢力
+          <select :value="draft.faction ?? ''" @change="setFaction(($event.target as HTMLSelectElement).value)">
+            <option value="">（無）</option>
+            <option v-for="f in geography.factions" :key="f.id" :value="f.id">{{ f.name }}</option>
+            <option v-if="draft.faction && !geography.factions.some((f) => f.id === draft.faction)" :value="draft.faction">{{ draft.faction }}（不在勢力清單）</option>
+          </select>
+        </label>
+        <label>出身 <ComboInput v-model="draft.lineage" :options="lineages" :maxlength="30" placeholder="部族、氏族……（可以自己輸入）" /></label>
       </div>
       <label class="block">性格 <textarea v-model="draft.personality" rows="2" maxlength="160" /></label>
       <label class="block">外貌 <textarea v-model="draft.appearance" rows="2" maxlength="240" /></label>

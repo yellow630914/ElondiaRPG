@@ -285,6 +285,17 @@ function remove() {
   content.setItemDrops(props.name, [])
   emit('deleted')
 }
+
+/** 照明工具燒的燃料：能照亮格子的物品（burns > 0），不含自己 */
+const fuels = computed(() => {
+  void content.version
+  return itemRules.items.filter((i) => (i.burns ?? 0) > 0 && i.name !== props.name).map((i) => i.name)
+})
+function setFuel(v: string) {
+  if (!draft.value.tool) return
+  if (v) draft.value.tool.fuel = v
+  else delete draft.value.tool.fuel
+}
 </script>
 
 <template>
@@ -449,7 +460,11 @@ function remove() {
           </label>
         </template>
         <label v-if="draft.tool?.kind === 'light'">燒什麼
-          <input v-model="draft.tool.fuel" placeholder="空白：燒自己（火把）或不會燒（照明石）" />
+          <select :value="draft.tool.fuel ?? ''" @change="setFuel(($event.target as HTMLSelectElement).value)">
+            <option value="">（燒自己，或不會燒）</option>
+            <option v-for="f in fuels" :key="f" :value="f">{{ f }}</option>
+            <option v-if="draft.tool.fuel && !fuels.includes(draft.tool.fuel)" :value="draft.tool.fuel">{{ draft.tool.fuel }}（不是燃料）</option>
+          </select>
         </label>
         <label><span>能照亮幾格 <Hint text="燃料、火把每一份能照亮幾格；0 = 不是燃料。" /></span>
           <input v-model.number="draft.burns" type="number" min="0" max="999" />

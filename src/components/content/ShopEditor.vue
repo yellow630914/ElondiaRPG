@@ -12,6 +12,7 @@ import { useGame } from '@/stores/game'
 import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import ComboInput from './ComboInput.vue'
 
 // 商店的編輯表單。內建的店：圖示、描述、AI 特別商品、店主設定、固定清單、收購類別、工作、受訓與位置（只能移動）；
 // 店名、店種、上架的物品類型與店的專屬功能不能改。自建的店每一項都可以改，沒有專屬功能
@@ -160,6 +161,9 @@ function remove() {
     game.error = e instanceof Error ? e.message : String(e)
   }
 }
+
+/** 店主職稱：其他商店用過的，可以直接選 */
+const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t) => t.keeper.title).filter(Boolean))])
 </script>
 
 <template>
@@ -189,7 +193,7 @@ function remove() {
     <fieldset>
       <legend>店主</legend>
       <div class="grid">
-        <label>職稱 <input v-model="draft.title" maxlength="8" /></label>
+        <label>職稱 <ComboInput v-model="draft.title" :options="titles" :maxlength="8" placeholder="店主、掌櫃……（可以自己輸入）" /></label>
       </div>
       <div class="row small">
         <span class="muted">身分標籤 <Hint text="生成的店主帶這些標籤。" />：</span>

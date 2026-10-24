@@ -8,7 +8,7 @@
 
 | 資料 | 位置 | 說明 |
 |---|---|---|
-| 進行中的遊戲 | IndexedDB `elondia` 的 `current`（`state`、`narrations`、`usage` 三筆 JSON 文字） | 每次動作後自動保存 |
+| 進行中的遊戲 | IndexedDB `elondia` 的 `current`（`state`、`narrations`、`usage` 三筆 JSON 文字） | 每次動作後自動保存（畫面更新之後才序列化寫入，不拖慢操作；離開頁面或切到背景時馬上寫） |
 | 存檔欄位（手動、快速、自動 ×3） | IndexedDB `elondia` 的 `slot_meta`、`slot_data` | 欄位存了當時的自訂內容 |
 | 形象圖 | IndexedDB `elondia-portraits` | 依「種子:角色 id」保存，見 [PORTRAITS.md](PORTRAITS.md) |
 | 世界（自訂內容）、模型來源、插圖設定、提示詞組、自動存檔輪替的位置 | localStorage（`elondia.worlds`、`elondia.settings`、`elondia.image`、`elondia.promptSets`、`elondia.autoIndex`） | 跟著瀏覽器走；存檔記住用哪個世界，見 [CONTENT_EDITOR.md](CONTENT_EDITOR.md) 第 0 節 |

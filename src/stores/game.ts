@@ -235,15 +235,50 @@ export const useGame = defineStore('game', () => {
   let writing: Promise<void> | null = null
 
   function save() {
+    cancelSaveSoon()
     // 沒有進行中的遊戲（例如啟動時讀不了）：不要拿空的資料蓋掉原本的存檔
     if (!state.value) return
-    const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
+    // 用原始物件序列化：直接序列化響應式物件，每個欄位都要經過 Vue 的代理，存檔大的時候一次要十幾毫秒
+    const finished = Object.fromEntries(Object.entries(toRaw(narrations.value)).filter(([, n]) => n.status === 'done'))
     pendingWrite = {
-      state: JSON.stringify(state.value),
+      state: JSON.stringify(toRaw(state.value)),
       narrations: JSON.stringify(finished),
-      usage: JSON.stringify(usage.value),
+      usage: JSON.stringify(toRaw(usage.value)),
     }
     writing ??= flushSave()
+  }
+
+  // 一般動作之後的自動保存延到畫面更新之後（先讓玩家看到結果，再花時間序列化）；
+  // 離開頁面或切到背景時馬上存
+  let saveTimer: ReturnType<typeof setTimeout> | undefined
+  let saveFrame: number | undefined
+  function saveSoon() {
+    if (saveTimer !== undefined || saveFrame !== undefined) return
+    const later = () => {
+      saveFrame = undefined
+      saveTimer = setTimeout(() => {
+        saveTimer = undefined
+        save()
+      }, 0)
+    }
+    if (typeof requestAnimationFrame === 'function' && typeof document !== 'undefined' && document.visibilityState === 'visible') saveFrame = requestAnimationFrame(later)
+    else later()
+  }
+  function cancelSaveSoon() {
+    if (saveFrame !== undefined && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(saveFrame)
+    if (saveTimer !== undefined) clearTimeout(saveTimer)
+    saveFrame = undefined
+    saveTimer = undefined
+  }
+  /** 還沒寫出的自動保存馬上寫（離開頁面、切到背景、讀檔前） */
+  function saveNow() {
+    if (saveTimer !== undefined || saveFrame !== undefined) save()
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', saveNow)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveNow()
+    })
   }
 
   async function flushSave() {
@@ -265,6 +300,7 @@ export const useGame = defineStore('game', () => {
 
   /** 等目前的自動保存寫完（測試與讀檔前用） */
   async function flushed(): Promise<void> {
+    saveNow()
     while (writing) await writing
   }
 
@@ -281,7 +317,7 @@ export const useGame = defineStore('game', () => {
       deadlines.expireDeadlines(state.value)
       // 日誌太長時把舊的封存（token 用量另外合計，見 logArchive.ts）
       archiveOldReports(state.value, useSettings().logKeepLimit(), narrations.value, usage.value)
-      save()
+      saveSoon()
       const settings = useSettings()
       const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
       // 自動存檔：長休、抵達目的地
@@ -302,11 +338,17 @@ export const useGame = defineStore('game', () => {
 
   /** 動作前的一份複本（裡面混進響應式物件時改用 JSON） */
   function snapshotState(s: GameState): GameState {
+    // 日誌與封存只會在動作中加在後面（不改舊的），複製陣列就夠了：存檔大的時候整份深複製要好幾毫秒
+    const { reports, logArchive, ...rest } = toRaw(s)
+    let copy: GameState
     try {
-      return structuredClone(toRaw(s))
+      copy = structuredClone(rest) as GameState
     } catch {
-      return JSON.parse(JSON.stringify(s)) as GameState
+      copy = JSON.parse(JSON.stringify(rest)) as GameState
     }
+    copy.reports = [...reports]
+    if (logArchive) copy.logArchive = [...logArchive]
+    return copy
   }
 
   /** 地圖上的提示：主角那一格晃一下，地圖角落顯示原因 */
@@ -384,7 +426,7 @@ export const useGame = defineStore('game', () => {
     if (!state.value) return null
     const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
     const content = currentContent()
-    return JSON.parse(JSON.stringify({ state: state.value, narrations: finished, usage: usage.value, ...(content ? { content } : {}) })) as SaveData
+    return JSON.parse(JSON.stringify({ state: toRaw(state.value), narrations: finished, usage: toRaw(usage.value), ...(content ? { content } : {}) })) as SaveData
   }
 
   function currentContent(): ContentMods | undefined {

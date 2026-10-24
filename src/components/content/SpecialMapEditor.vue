@@ -9,6 +9,7 @@ import { useGame } from '@/stores/game'
 import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import FlagInput from './FlagInput.vue'
 
 // 特殊地圖的編輯表單：基本資料（所屬地點、給 AI 的描述、光線、刷新）、版面（畫格子或隨機挖）、
 // 額外的隨機內容、遭遇表與採集物、通道（接到城鎮區塊的牆或別張特殊地圖）。內建的不能刪除
@@ -459,8 +460,8 @@ function remove() {
             <p v-else class="small muted">那張是隨機地圖，沒辦法接通道。</p>
           </template>
           <div class="grid small">
-            <label>要有這些旗標才打開 <input v-model="c.flagsText" placeholder="用頓號分隔，可以不填" /></label>
-            <label>有這些旗標時關閉 <input v-model="c.flagsNoneText" placeholder="可以不填" /></label>
+            <label>要有這些旗標才打開 <FlagInput :model-value="splitFlags(c.flagsText)" placeholder="旗標（可以不填）" @update:model-value="c.flagsText = ($event ?? []).join('、')" /></label>
+            <label>有這些旗標時關閉 <FlagInput :model-value="splitFlags(c.flagsNoneText)" placeholder="旗標（可以不填）" @update:model-value="c.flagsNoneText = ($event ?? []).join('、')" /></label>
           </div>
         </div>
         <button class="small" :disabled="draft.conns.length >= L.connections" @click="addConn">＋ 新增通道</button>

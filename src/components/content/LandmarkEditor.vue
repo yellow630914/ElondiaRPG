@@ -11,6 +11,7 @@ import { useGame } from '@/stores/game'
 import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import FlagInput from './FlagInput.vue'
 
 // 城鎮特色地標的編輯表單：名稱、圖示、說明、AI 的氛圍、類型、位置，以及開放條件、參訪、探索、打工與受訓。
 // 內建的不能換聚落、不能刪除
@@ -169,8 +170,8 @@ function remove() {
       </div>
       <label class="check small"><input v-model="open.official" type="checkbox" /> 官方場所 <Hint text="逃亡奴隸不能用。" /></label>
       <div class="grid">
-        <label>劇情旗標成立時才開放（用頓號分隔） <input v-model="draft.flagsText" /></label>
-        <label>這些旗標成立時不開放 <input v-model="draft.flagsNoneText" /></label>
+        <label>劇情旗標成立時才開放 <FlagInput :model-value="splitFlags(draft.flagsText)" @update:model-value="draft.flagsText = ($event ?? []).join('、')" /></label>
+        <label>這些旗標成立時不開放 <FlagInput :model-value="splitFlags(draft.flagsNoneText)" @update:model-value="draft.flagsNoneText = ($event ?? []).join('、')" /></label>
       </div>
     </fieldset>
     <fieldset>
