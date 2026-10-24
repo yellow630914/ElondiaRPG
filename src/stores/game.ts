@@ -221,7 +221,7 @@ export const useGame = defineStore('game', () => {
   const notice = ref<string | null>(null)
   /** 往過不去的方向移動的次數（地圖用來播放撞牆的動畫） */
   const bump = ref(0)
-  /** 撞牆時的提示（「那邊走不過去」「旅途只能往前走」……） */
+  /** 撞牆或規則不讓走時的提示（「那邊走不過去」「旅途只能往前走」「要出門，先請求主人同意」……） */
   const bumpText = ref('')
   let noticeTimer: ReturnType<typeof setTimeout> | undefined
   const controllers = new Map<string, AbortController>()
@@ -268,7 +268,8 @@ export const useGame = defineStore('game', () => {
   }
 
   /** 執行引擎動作；錯誤訊息顯示在畫面上而不是丟出。 */
-  function run<T>(fn: (s: GameState) => T, opts: { narrate?: boolean } = {}): T | undefined {
+  /** onMap：移動類的動作做不到時（主人不讓你出門、奴隸不能出城……），提示顯示在地圖上，不跳出錯誤訊息 */
+  function run<T>(fn: (s: GameState) => T, opts: { narrate?: boolean; onMap?: boolean } = {}): T | undefined {
     if (!state.value) return undefined
     error.value = null
     // 動作中途出錯時還原成動作之前的狀態（不會留下改到一半的存檔）
@@ -291,7 +292,9 @@ export const useGame = defineStore('game', () => {
       return result
     } catch (e) {
       state.value = before
-      error.value = e instanceof Error ? e.message : String(e)
+      const msg = e instanceof Error ? e.message : String(e)
+      if (opts.onMap) blockedOnMap(msg)
+      else error.value = msg
       return undefined
     }
   }
@@ -303,6 +306,12 @@ export const useGame = defineStore('game', () => {
     } catch {
       return JSON.parse(JSON.stringify(s)) as GameState
     }
+  }
+
+  /** 地圖上的提示：主角那一格晃一下，地圖角落顯示原因 */
+  function blockedOnMap(text: string) {
+    bumpText.value = text
+    bump.value++
   }
 
   function isReport(x: unknown): x is Report {
@@ -892,7 +901,7 @@ export const useGame = defineStore('game', () => {
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     // 旅行：畫出旅途的單行道，一格一天往前走（road.ts）
-    travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent, { adult: useSettings().adult })),
+    travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent, { adult: useSettings().adult }), { onMap: true }),
     /** 一路往前走，遇到事件、戰鬥或抵達時停下 */
     walkRoad: () => run((s) => {
       for (let i = 0; i < 80; i++) {
@@ -905,7 +914,7 @@ export const useGame = defineStore('game', () => {
     answerRoadEvent: (i: number) => run((s) => road.answerRoadEvent(s, i)),
     answerTownEvent: (i: number) => run((s) => townEvents.answerTownEvent(s, i)),
     leaveSide: () => run((s) => road.leaveSide(s)),
-    leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s)),
+    leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s), { onMap: true }),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */
@@ -950,20 +959,19 @@ export const useGame = defineStore('game', () => {
         return report
       }),
     // 走格子
-    moveTo: (x: number, y: number) => run((s) => afterMove(s, grid.moveTo(s, x, y))),
+    moveTo: (x: number, y: number) => run((s) => afterMove(s, grid.moveTo(s, x, y)), { onMap: true }),
     pickLock: (method: grid.LockMethod) => run((s) => grid.pickLock(s, method)),
     move: (dx: number, dy: number) => {
-      // 撞牆不算錯誤：地圖上輕輕晃一下就好（不跳出錯誤訊息、不推動版面）
+      // 撞牆不算錯誤：地圖上輕輕晃一下就好（不跳出錯誤訊息、不推動版面）；規則不讓走的也一樣
       const blocked = state.value && !state.value.combat ? grid.blockedMove(state.value, dx, dy) : null
       if (blocked) {
-        bumpText.value = blocked
-        bump.value++
+        blockedOnMap(blocked)
         return undefined
       }
-      return run((s) => afterMove(s, grid.move(s, dx, dy)))
+      return run((s) => afterMove(s, grid.move(s, dx, dy)), { onMap: true })
     },
-    goOutskirts: () => run((s) => grid.goOutskirts(s) ?? encounters.checkHostiles(s)),
-    returnToTown: () => run(grid.returnToTown),
+    goOutskirts: () => run((s) => grid.goOutskirts(s) ?? encounters.checkHostiles(s), { onMap: true }),
+    returnToTown: () => run(grid.returnToTown, { onMap: true }),
     // 房子（homes.ts）
     buyHome: (lotId: string, name?: string) => run((s) => homes.buyHome(s, lotId, name)),
     renameHome: (id: string, name: string) => run((s) => homes.renameHome(s, id, name)),
@@ -1007,8 +1015,8 @@ export const useGame = defineStore('game', () => {
       state.value.options = { ...(state.value.options ?? { defeatLoot: 'half' }), defeatLoot: rule }
       save()
     },
-    descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s))),
-    ascend: () => run((s) => (grid.ascend(s), encounters.checkHostiles(s))),
+    descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s)), { onMap: true }),
+    ascend: () => run((s) => (grid.ascend(s), encounters.checkHostiles(s)), { onMap: true }),
     // 對峙：避開、現身、偷襲或開戰、付過路費（蒙混與威嚇是主動行動）
     avoidFoes: () => run(encounters.avoidFoes),
     revealSelf: () => run(encounters.revealSelf),

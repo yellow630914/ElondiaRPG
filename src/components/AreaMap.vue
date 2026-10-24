@@ -126,7 +126,7 @@ const rows = computed(() =>
   ),
 )
 
-// 撞牆：主角那一格晃一下，地圖角落淡淡提示（浮在地圖上，不推動版面）
+// 撞牆或規則不讓走：主角那一格晃一下，地圖角落淡淡提示（浮在地圖上，不推動版面；字多的停留久一點）
 const bumping = ref(false)
 let bumpTimer: ReturnType<typeof setTimeout> | undefined
 watch(() => game.bump, () => {
@@ -134,7 +134,7 @@ watch(() => game.bump, () => {
   clearTimeout(bumpTimer)
   requestAnimationFrame(() => {
     bumping.value = true
-    bumpTimer = setTimeout(() => (bumping.value = false), 900)
+    bumpTimer = setTimeout(() => (bumping.value = false), Math.max(900, game.bumpText.length * 110))
   })
 })
 onBeforeUnmount(() => clearTimeout(bumpTimer))
@@ -202,7 +202,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .map-wrap { container-type: inline-size; margin-top: 8px; position: relative; }
 .bump-tip {
   position: absolute; top: 4px; right: 4px; z-index: 2; pointer-events: none;
-  padding: 1px 8px; border-radius: 10px; background: rgba(20, 17, 13, 0.85); color: var(--muted); border: 1px solid var(--border);
+  max-width: calc(100% - 8px); padding: 1px 8px; border-radius: 10px; background: rgba(20, 17, 13, 0.9); color: var(--muted); border: 1px solid var(--border);
 }
 .bump-tip-enter-active, .bump-tip-leave-active { transition: opacity 0.25s; }
 .bump-tip-enter-from, .bump-tip-leave-to { opacity: 0; }
