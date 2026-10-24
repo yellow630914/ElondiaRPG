@@ -5,7 +5,7 @@
 
 import { craftRules as craftSkillRules, isCustomShopId, itemDef, locationById, shopRules, type CraftId, type Degree, type ShopType } from './data'
 import {
-  crafterRefusal, craftForKind, craftName, craftXpFor, gainCraftXp, keeperCraftLevel, skillOf, toolAccess, toolTierFor, toolTierName, type ToolAccess,
+  crafterRefusal, craftForKind, craftName, craftXpFor, gainCraftXp, keeperCraftLevel, skillOf, toolAccess, toolBlocker, toolTierFor, type ToolAccess,
 } from './crafting'
 import { npcRecord } from './npcs'
 import { keeperFor, locationMult } from './trade'
@@ -45,8 +45,10 @@ export interface CraftPlan {
   /** 自己動手：第一級材料的材料費、工坊租金 */
   materialCost?: number
   rent?: number
-  /** 不能打造的原因 */
+  /** 不能打造的原因（全部列出，用「；」接起來） */
   blocked?: string
+  /** 不能打造的原因，一條一條 */
+  blockers: string[]
 }
 
 function craftRules() {
@@ -139,38 +141,39 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
   const level = crafter ? skillOf(crafter, craft).level : keeperCraftLevel(npcRecord(state, keeperId(state, shop)) ?? { id: keeperId(state, shop) }, craft, loc.type)
   // 輔料：只能是材料，數量要扣掉當作打造材料用掉的
   const a = r.aux
-  let auxBlocked: string | undefined
-  if (aux.length > a.max_kinds) auxBlocked = `輔料最多 ${a.max_kinds} 種`
+  const auxBlocked: string[] = []
+  if (aux.length > a.max_kinds) auxBlocked.push(`輔料最多 ${a.max_kinds} 種`)
   for (const x of aux) {
     const owned = (state.inventory.find((i) => i.name === x.name)?.qty ?? 0) - (uses.find((u) => u.name === x.name)?.qty ?? 0)
-    if (itemDef(x.name)?.category !== 'material') auxBlocked ??= `${x.name}不是材料，不能當輔料`
-    else if (x.qty > a.max_qty) auxBlocked ??= `每種輔料最多 ${a.max_qty} 個`
-    else if (owned < x.qty) auxBlocked ??= `${x.name}不夠（還有 ${Math.max(0, owned)} 個）`
+    if (itemDef(x.name)?.category !== 'material') auxBlocked.push(`${x.name}不是材料，不能當輔料`)
+    else if (x.qty > a.max_qty) auxBlocked.push(`每種輔料最多 ${a.max_qty} 個`)
+    else if (owned < x.qty) auxBlocked.push(`${x.name}不夠（還有 ${Math.max(0, owned)} 個）`)
   }
   const auxValue = aux.reduce((sum, x) => sum + (itemDef(x.name)?.price_cc ?? 0) * x.qty, 0)
   const plain = gearRules.bases[base]!.price * m.price
   const auxChance = Math.round(Math.min(a.max_chance, (auxValue / Math.max(1, plain)) * a.chance_per_value) * 100) / 100
-  let blocked: string | undefined
+  // 不能打造的原因全部列出來，不用改一項才發現下一項
+  const blockers: string[] = []
   if (level < tier) {
-    blocked = crafter
+    blockers.push(crafter
       ? `${crafter.name}的${craftName(craft)}只有 Lv.${level}，處理不了${m.name}（要 Lv.${tier}）`
-      : `${loc.name}的工匠（${craftName(craft)} Lv.${level}）處理不了${m.name}（要 Lv.${tier}）`
-  } else if (self && self.tool.tier < toolTierFor(tier)) {
-    blocked = `${m.name}要用${toolTierName(toolTierFor(tier))}（現在：${self.tool.source}）`
-  } else if (have < units) blocked = `打造材料不夠（需要 ${units} 份能做成${m.name}的材料，持有 ${have} 份）`
-  else if (state.money_cc < fee) blocked = `${crafter ? '材料費與租金' : '工錢'}不夠（需要 ${formatMoney(fee)}）`
-  else if (auxBlocked) blocked = auxBlocked
+      : `${loc.name}的工匠（${craftName(craft)} Lv.${level}）處理不了${m.name}（要 Lv.${tier}）`)
+  }
+  if (self && self.tool.tier < toolTierFor(tier)) blockers.push(`${m.name}${toolBlocker(craft, toolTierFor(tier), self.tool)}`)
+  if (have < units) blockers.push(`打造材料不夠（需要 ${units} 份能做成${m.name}的材料，持有 ${have} 份）`)
+  if (state.money_cc < fee) blockers.push(`${crafter ? '材料費與租金' : '工錢'}不夠（需要 ${formatMoney(fee)}）`)
+  blockers.push(...auxBlocked)
   return {
     base, material, tier, units, uses, have, fee, dc: r.dc[tier - 1]!, aux, auxValue, auxChance, elements: auxElements(aux),
     craft, level,
     ...(crafter && self ? { crafter: crafter.id, tool: self.tool, materialCost: self.materialCost, rent: self.rent } : {}),
-    ...(blocked ? { blocked } : {}),
+    blockers, ...(blockers.length ? { blocked: blockers.join('；') } : {}),
   }
 }
 
 /** 自己動手的花費：第一級材料自己買；工具要在店裡租時付租金 */
 function selfCost(state: GameState, base: string, tier: number, craft: CraftId, mult: number) {
-  const tool = toolAccess(state, craft)
+  const tool = toolAccess(state, craft, toolTierFor(tier))
   const materialCost = tier === 1 ? Math.round(gearRules.bases[base]!.price * craftSkillRules.self.tier1_cost_ratio * mult) : 0
   const rent = tool.rentPerHour && tool.tier >= toolTierFor(tier) ? tool.rentPerHour * craftSkillRules.self.hours : 0
   return { tool, materialCost, rent }

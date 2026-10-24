@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { attrName, craftRules, type CraftId } from '@/engine/data'
-import { CRAFT_IDS, crafters, toolTierFor, toolTierName } from '@/engine/crafting'
+import { CRAFT_IDS, crafters, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import { formatMoney } from '@/engine/money'
 import { producedQty, produceTarget, recipeItems, recipePlan } from '@/engine/recipes'
 import { parseUse, useGame } from '@/stores/game'
@@ -94,7 +94,7 @@ function produce() {
         <tr><th>配方</th><td>{{ skill.name }} Lv.{{ plan.recipe.level }}<span class="muted">（{{ crafter.name }}的{{ skill.name }} Lv.{{ plan.level }}）</span></td></tr>
         <tr><th>檢定</th><td>{{ attrName(skill.attr) }} +{{ plan.level * craftRules.level_bonus }}・DC {{ plan.dc }}</td></tr>
         <tr><th>時間</th><td>約 {{ plan.hours }} 小時</td></tr>
-        <tr><th>工具</th><td>要{{ toolTierName(toolTierFor(plan.recipe.level)) }}<span class="muted">・現在 {{ plan.tool.source }}</span></td></tr>
+        <tr><th>工具</th><td>要{{ toolTierName(toolTierFor(plan.recipe.level)) }} <Hint :text="toolWhere(plan.recipe.craft, toolTierFor(plan.recipe.level))" /><span class="muted">・現在 {{ plan.tool.source }}</span></td></tr>
         <tr>
           <th>材料</th>
           <td><span v-for="x in plan.inputs" :key="x.name" :class="{ short: x.have < x.need }" class="input">{{ x.name }} {{ x.have }}/{{ x.need }}</span><span v-if="!plan.inputs.length" class="muted">不需要</span></td>
@@ -115,7 +115,7 @@ function produce() {
           <td>材料全部損失<span class="muted">（花費照付）</span></td>
         </tr>
       </table>
-      <p v-if="plan.blocked" class="warn"><GameIcon name="warning" :size="13" /> {{ plan.blocked }}</p>
+      <ul v-if="plan.blocked" class="warn blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
       <template v-else>
         <input v-model="text" placeholder="想怎麼做（選填）：例如加一點蜂蜜讓藥比較好入口" />
         <AbilityPicker v-model="use" />
@@ -146,4 +146,6 @@ table { width: 100%; border-collapse: collapse; }
 .warn { color: var(--danger); }
 .row > .hint { align-self: center; }
 .qty { width: 56px; }
+.blockers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.blockers li { display: flex; gap: 4px; align-items: baseline; }
 </style>

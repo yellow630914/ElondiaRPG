@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { attrName, craftRules, itemDef, type CraftId } from '@/engine/data'
-import { CRAFT_IDS, crafters, skillOf, toolTierFor, toolTierName } from '@/engine/crafting'
+import { CRAFT_IDS, crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import {
   capsSource, capsText, INVENT_CATEGORY_NAME, INVENT_GRADE_NAME, inventCaps, inventCategories, inventPlan, inventTarget,
   type InventCategory, type InventGrade, type InventRequest,
@@ -122,10 +122,10 @@ function invent() {
       材料價值 {{ formatMoney(plan.inputValue) }}<template v-if="plan.cost">・不夠的部分另外花 {{ formatMoney(plan.cost) }}（成品份數多時再補）</template><template v-if="plan.rent">・工坊租金 {{ formatMoney(plan.rent) }}</template>
     </p>
     <p class="muted">
-      {{ attrName(skill.attr) }}檢定 +{{ plan.skill * craftRules.level_bonus }}・DC {{ plan.dc }}・約 {{ plan.hours }} 小時・工具：要{{ toolTierName(toolTierFor(level)) }}，現在 {{ plan.tool.source }}
+      {{ attrName(skill.attr) }}檢定 +{{ plan.skill * craftRules.level_bonus }}・DC {{ plan.dc }}・約 {{ plan.hours }} 小時・工具：要{{ toolTierName(toolTierFor(level)) }} <Hint :text="toolWhere(req.craft, toolTierFor(level))" />，現在 {{ plan.tool.source }}
     </p>
     <p class="muted">大成功：稍強，多做一半・成功：同級，照設計的份數・部分成功：稍弱，份數一半・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
-    <p v-if="plan.blocked" class="warn"><GameIcon name="warning" :size="13" /> {{ plan.blocked }}</p>
+    <ul v-if="plan.blocked" class="warn blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
     <template v-else>
       <label class="field"><span>做法 <Hint text="不用取名，名字由 AI 依做法與材料決定。" /></span>
         <textarea v-model="text" rows="3" maxlength="400" placeholder="例如「把硫磺磨成粉，和藥草汁一起封進陶瓶，瓶口塞一條浸了油的布」「肉抹上蜂蜜和鹽，掛在爐邊慢慢烘乾」" />
@@ -151,4 +151,6 @@ function invent() {
 .x { padding: 0 4px; }
 .intro { display: flex; align-items: center; gap: 4px; }
 .warn { color: var(--danger); }
+.blockers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.blockers li { display: flex; gap: 4px; align-items: baseline; }
 </style>

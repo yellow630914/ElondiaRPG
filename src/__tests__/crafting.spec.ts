@@ -71,7 +71,7 @@ describe('making it yourself', () => {
   it('checks level, tools and materials; tier 1 material is bought', () => {
     const state = game()
     state.inventory = []
-    expect(craftPlan(state, 'longsword', 'iron', [], pc(state)).blocked).toContain('要用低階')
+    expect(craftPlan(state, 'longsword', 'iron', [], pc(state)).blocked).toContain('低階')
     addItem(state.inventory, '隨身鍛造工具', 1)
     const iron = craftPlan(state, 'longsword', 'iron', [], pc(state))
     expect(iron.blocked).toBeUndefined()
@@ -87,6 +87,21 @@ describe('making it yourself', () => {
     const rented = craftPlan(state, 'longsword', 'mithril', [], pc(state))
     expect(rented.blocked).toBeUndefined()
     expect(rented.rent).toBe(craftRules.workshop_rent.per_hour_cc * craftRules.self.hours)
+    // 自己的隨身工具就夠用的材料：站在店裡也不收租金
+    const own = craftPlan(state, 'longsword', 'steel', [], pc(state))
+    expect(own.rent).toBe(0)
+    expect(own.tool?.source).toBe('隨身鍛造工具')
+  })
+
+  it('lists every reason at once and says where to get the tool', () => {
+    const state = game()
+    state.inventory = []
+    state.money_cc = 0
+    const plan = craftPlan(state, 'longsword', 'mithril', [], pc(state))
+    expect(plan.blockers.length).toBeGreaterThanOrEqual(3)
+    expect(plan.blockers.some((b) => b.includes('只有 Lv.1'))).toBe(true)
+    expect(plan.blockers.some((b) => b.includes('到鐵匠鋪租用工坊'))).toBe(true)
+    expect(plan.blockers.some((b) => b.includes('打造材料不夠'))).toBe(true)
   })
 
   it('crafts a piece, pays the material and gives craft experience', () => {

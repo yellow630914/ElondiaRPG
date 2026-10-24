@@ -896,8 +896,11 @@ export const useGame = defineStore('game', () => {
   }
 
   /** 開始談判；AI 開啟時請 AI 依對象與情境生成談判方式 */
+  /** 要打開哪一場談判的對話框（開始或繼續談判時設定，見 NegotiationPanel） */
+  const negotiationFocus = ref<string | null>(null)
   async function startNegotiation(template: string, ctx: negotiation.NegotiationContext) {
     const n = run((s) => negotiation.startNegotiation(s, template, ctx))
+    if (n) negotiationFocus.value = n.id
     const s = state.value
     const settings = useSettings()
     if (!n || !s || n.ai || !settings.aiJudge || !settings.ready('negotiation')) return n
@@ -928,7 +931,7 @@ export const useGame = defineStore('game', () => {
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
-    perform, judge, flavorRoster, hire, flavorShop, startNegotiation,
+    perform, judge, flavorRoster, hire, flavorShop, startNegotiation, negotiationFocus,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),
     buyDeal: (type: ShopType, id: string, qty = 1) => run((s) => trade.buyDeal(s, type, id, qty)),
