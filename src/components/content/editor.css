@@ -2,6 +2,12 @@
 .editor { display: grid; gap: 10px; }
 .head { gap: 6px; align-items: center; }
 .head h3 { margin: 0; }
+/* 表頭（名稱、儲存、放棄修改、恢復預設）捲動時留在畫面上；有未儲存的修改時「儲存」發亮 */
+.editor > .head {
+  position: sticky; top: 0; z-index: 4; margin: -6px -8px 0; padding: 6px 8px;
+  background: var(--panel); border-bottom: 1px solid var(--border); box-shadow: 0 6px 10px -8px #000c;
+}
+.editor > .head button.primary:not(:disabled) { box-shadow: 0 0 0 1px var(--gold-hi), 0 0 12px #f0d08388; }
 .spacer { flex: 1; }
 fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; display: grid; gap: 6px; min-width: 0; }
 legend { color: var(--accent); padding: 0 4px; }

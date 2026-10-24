@@ -36,7 +36,23 @@ const groups = computed(() => {
   return [...CATEGORY_ORDER.filter((c) => set.has(c)), ...(set.has('special') ? ['special' as const] : [])]
 })
 const filter = ref<Group | 'all'>('all')
-const shownDeals = computed(() => deals.value.filter((d) => filter.value === 'all' || groupOf(d) === filter.value))
+// 搜尋與排序
+const query = ref('')
+const sort = ref<'default' | 'cheap' | 'dear' | 'name'>('default')
+const shownDeals = computed(() => {
+  const q = query.value.trim()
+  const list = deals.value.filter((d) => (filter.value === 'all' || groupOf(d) === filter.value)
+    && (!q || d.title.includes(q) || (isItemDeal(d) && (itemEffect(s.value, itemName(d)) ?? '').includes(q))))
+  if (sort.value === 'cheap') return [...list].sort((a, b) => price(a) - price(b))
+  if (sort.value === 'dear') return [...list].sort((a, b) => price(b) - price(a))
+  if (sort.value === 'name') return [...list].sort((a, b) => a.title.localeCompare(b.title, 'zh-Hant'))
+  return list
+})
+// 特別交易內容多，維持卡片；一般商品一列一件，點一下展開
+const specialDeals = computed(() => shownDeals.value.filter((d) => !isItemDeal(d)))
+const itemDeals = computed(() => shownDeals.value.filter(isItemDeal))
+const expanded = ref<string | null>(null)
+const toggle = (id: string) => { expanded.value = expanded.value === id ? null : id }
 const groupName = (g: Group) => (g === 'special' ? '特別交易' : itemRules.categories[g])
 
 const buyQty = reactive<Record<string, number>>({})
@@ -108,39 +124,69 @@ function sell(name: string, have: number) {
             <GameIcon v-if="g === 'special'" name="sparkles" :size="14" /><ItemIcon v-else :category="g" :size="14" /> {{ groupName(g) }}
           </button>
         </nav>
+        <div class="row tools">
+          <input v-model="query" class="grow search" type="search" placeholder="搜尋名稱或效果" />
+          <select v-model="sort" class="small" aria-label="排序">
+            <option value="default">預設排序</option>
+            <option value="cheap">價格低到高</option>
+            <option value="dear">價格高到低</option>
+            <option value="name">名稱</option>
+          </select>
+        </div>
         <p v-if="!deals.length" class="small muted">今天沒有東西可以買了。</p>
-        <ul class="plain list">
-          <li v-for="d in shownDeals" :key="d.id" class="entry">
-            <div class="row top">
-              <span v-if="isItemDeal(d)" class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="24" /></span>
-              <span v-else class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
-              <strong class="grow">{{ d.title }}</strong>
-              <span class="price">{{ costText(s, key, d) }}</span>
-            </div>
-            <div v-if="isItemDeal(d)" class="small">
-              <span class="muted">{{ categoryName(s, itemName(d)) }}</span>
-              <span v-if="itemEffect(s, itemName(d))" class="effect">・{{ itemEffect(s, itemName(d)) }}</span>
-            </div>
-            <div v-else class="small effect">得到：{{ d.gets.map((g) => effectText(s, g, shop?.keeper)).join('、') }}</div>
-            <div v-if="d.desc || (isItemDeal(d) && itemText(s, itemName(d)))" class="small muted">{{ d.desc ?? itemText(s, itemName(d)) }}</div>
-            <div class="row actions">
-              <span v-if="d.stock < 20" class="small muted">剩 {{ d.stock }}</span>
-              <span class="grow" />
-              <input v-if="isItemDeal(d) && d.stock > 1" v-model.number="buyQty[d.id]" class="num" type="number" min="1" :max="d.stock" placeholder="1" />
-              <button class="small primary" :disabled="busy || !affordable(d, isItemDeal(d) ? qtyOf(d) : 1)" @click="buy(d)">
-                {{ isItemDeal(d) && qtyOf(d) > 1 ? `買 ${qtyOf(d)} 個（${formatMoney(price(d) * qtyOf(d))}）` : '買下' }}
-              </button>
-              <button
-                v-if="price(d) > 0" class="small" :disabled="d.haggled || busy"
-                @click="haggling = haggling === d.id ? null : d.id"
-              >{{ d.haggled ? '已交涉過' : '交涉' }}</button>
-            </div>
-            <div v-if="haggling === d.id" class="row">
-              <input v-model="haggleText[d.id]" class="grow" placeholder="怎麼交涉？例如：挑出瑕疵、搬出熟人、請店主喝一杯" />
-              <button class="small" :disabled="busy" @click="bargain(d)">交涉（檢定）</button>
-            </div>
-          </li>
-        </ul>
+        <p v-else-if="!shownDeals.length" class="small muted">沒有符合的商品。</p>
+        <div class="list">
+          <ul v-if="specialDeals.length" class="plain specials">
+            <li v-for="d in specialDeals" :key="d.id" class="entry">
+              <div class="row top">
+                <span class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
+                <strong class="grow">{{ d.title }}</strong>
+                <span class="price">{{ costText(s, key, d) }}</span>
+              </div>
+              <div class="small effect">得到：{{ d.gets.map((g) => effectText(s, g, shop?.keeper)).join('、') }}</div>
+              <div v-if="d.desc" class="small muted">{{ d.desc }}</div>
+              <div class="row actions">
+                <span v-if="d.stock < 20" class="small muted">剩 {{ d.stock }}</span>
+                <span class="grow" />
+                <button class="small primary" :disabled="busy || !affordable(d)" @click="buy(d)">買下</button>
+                <button v-if="price(d) > 0" class="small" :disabled="d.haggled || busy" @click="haggling = haggling === d.id ? null : d.id">{{ d.haggled ? '已交涉過' : '交涉' }}</button>
+              </div>
+              <div v-if="haggling === d.id" class="row">
+                <input v-model="haggleText[d.id]" class="grow" placeholder="怎麼交涉？例如：挑出瑕疵、搬出熟人、請店主喝一杯" />
+                <button class="small" :disabled="busy" @click="bargain(d)">交涉（檢定）</button>
+              </div>
+            </li>
+          </ul>
+          <ul v-if="itemDeals.length" class="plain rows">
+            <li v-for="d in itemDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
+              <div class="line" @click="toggle(d.id)">
+                <span class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="22" /></span>
+                <span class="what">
+                  <strong>{{ d.title }}</strong>
+                  <span class="small muted">{{ categoryName(s, itemName(d)) }}</span>
+                  <span v-if="itemEffect(s, itemName(d))" class="small effect">{{ itemEffect(s, itemName(d)) }}</span>
+                </span>
+                <span class="price">{{ costText(s, key, d) }}</span>
+                <span class="stock small muted">{{ d.stock < 20 ? `剩 ${d.stock}` : '' }}</span>
+                <span class="btns" @click.stop>
+                  <input v-if="d.stock > 1" v-model.number="buyQty[d.id]" class="num" type="number" min="1" :max="d.stock" placeholder="1" />
+                  <button class="small primary" :disabled="busy || !affordable(d, qtyOf(d))" @click="buy(d)">
+                    {{ qtyOf(d) > 1 ? `買 ${qtyOf(d)} 個（${formatMoney(price(d) * qtyOf(d))}）` : '買下' }}
+                  </button>
+                  <button v-if="price(d) > 0" class="small" :disabled="d.haggled || busy" @click="haggling = haggling === d.id ? null : d.id">{{ d.haggled ? '已交涉' : '交涉' }}</button>
+                </span>
+              </div>
+              <div v-if="expanded === d.id" class="more small">
+                <div v-if="itemEffect(s, itemName(d))" class="effect">{{ itemEffect(s, itemName(d)) }}</div>
+                <div v-if="d.desc || itemText(s, itemName(d))" class="muted">{{ d.desc ?? itemText(s, itemName(d)) }}</div>
+              </div>
+              <div v-if="haggling === d.id" class="row haggle">
+                <input v-model="haggleText[d.id]" class="grow" placeholder="怎麼交涉？例如：挑出瑕疵、搬出熟人、請店主喝一杯" />
+                <button class="small" :disabled="busy" @click="bargain(d)">交涉（檢定）</button>
+              </div>
+            </li>
+          </ul>
+        </div>
       </section>
 
       <!-- 行囊 -->
@@ -198,11 +244,29 @@ function sell(name: string, have: number) {
 .chips { gap: 4px; }
 .chips button.active { border-color: var(--accent); color: var(--accent); }
 .list { display: grid; gap: 6px; margin: 0; max-height: calc(100vh - 350px); overflow-y: auto; padding-right: 2px; align-content: start; }
+.specials { display: grid; gap: 6px; }
+.tools { flex-wrap: nowrap; }
+.search { min-width: 0; }
+/* 一般商品：一列一件，約 44px 高 */
+.rows { display: grid; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); }
+.item-row { padding: 0; border-bottom: 1px solid var(--border); }
+.item-row:last-child { border-bottom: none; }
+.item-row.open { background: #c99a4510; }
+.item-row .line { display: grid; grid-template-columns: 30px minmax(0, 1fr) 5.5em 3em minmax(11.5em, auto); gap: 8px; align-items: center; min-height: 44px; padding: 3px 8px; cursor: pointer; }
+.item-row .line:hover { background: #c99a450a; }
+.what { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.what strong { flex-shrink: 0; }
+.what .effect { overflow: hidden; text-overflow: ellipsis; }
+.stock { text-align: right; white-space: nowrap; }
+.btns { display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; }
+.btns .num { width: 52px; height: 28px; padding: 2px 6px; }
+.item-row .more { display: grid; gap: 2px; padding: 0 10px 6px 46px; }
+.item-row .haggle { padding: 0 8px 6px 46px; }
 .entry { border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; display: grid; gap: 2px; background: var(--panel); }
 .entry.dim { opacity: 0.55; }
 .top { flex-wrap: nowrap; }
 .grow { flex: 1; min-width: 0; }
-.price { font-weight: 600; white-space: nowrap; }
+.price { font-weight: 600; white-space: nowrap; text-align: right; }
 .qty { font-weight: 600; color: var(--accent-2); }
 .effect { color: var(--accent); }
 .actions { margin-top: 2px; }

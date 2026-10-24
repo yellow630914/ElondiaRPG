@@ -32,6 +32,11 @@ const thinking = computed(() => [
 ])
 // 關閉 AI 細節描述時不顯示敘事，改顯示戰報或事件簡述（已生成的敘事仍保留，重新開啟後會再出現）
 // AI 判定的主動行動：AI 直接寫出的經過一律顯示
+// 敘事依空行分段（段距比整行空白小）
+const paragraphs = computed(() => {
+  const list = visibleNarration(narration.value?.text ?? '').split(/\n[ \t\u3000]*\n+/).map((x) => x.replace(/^\n+|\n+$/g, '')).filter(Boolean)
+  return list.length ? list : ['']
+})
 const showStory = computed(() => !!narration.value && (settings.aiNarration || !!narration.value.manual || props.report.check?.source === 'ai'))
 const showBattleReport = computed(() => props.report.kind === 'combat' && !showStory.value && !!props.report.timeline?.length)
 const names = computed(() => actorNames(props.report))
@@ -109,7 +114,9 @@ async function copyPrompt() {
     </details>
 
     <div v-if="showStory && narration" class="story story-paper">
-      <div class="narration" data-no-convert>{{ visibleNarration(narration.text) }}<span v-if="narration.status === 'streaming'" class="cursor">▌</span></div>
+      <div class="narration" data-no-convert>
+        <p v-for="(para, i) in paragraphs" :key="i">{{ para }}<span v-if="narration.status === 'streaming' && i === paragraphs.length - 1" class="cursor">▌</span></p>
+      </div>
       <p v-if="narration.status === 'error'" class="small err">{{ narration.error }}</p>
       <button v-if="narration.status === 'streaming'" class="small stop" @click="game.cancelNarration(report.report_id)">停止</button>
     </div>

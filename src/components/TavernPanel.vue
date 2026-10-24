@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { mod } from '@/engine/character'
+import { apMaxFor, apRegenFor, attrsOf, mod } from '@/engine/character'
 import { askingFor, invitable, marketsHere, partyOffersHere, waitChance } from '@/engine/companions'
-import { className, combatRules, companionRules, conditionName, genderName, raceName } from '@/engine/data'
+import { abilityDef, attributeRules, className, combatRules, companionRules, conditionName, genderName, raceName } from '@/engine/data'
 import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
-import { npcRecord } from '@/engine/npcs'
-import { isBound, leaderOf } from '@/engine/party'
+import { characterFor, npcRecord } from '@/engine/npcs'
+import { perksOf } from '@/engine/perks'
+import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { canNegotiate } from '@/engine/negotiation'
 import { discount, keeperTitle, shopKey } from '@/engine/trade'
-import type { TavernCandidate } from '@/engine/types'
+import type { Character, TavernCandidate } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import MarketPanel from './MarketPanel.vue'
+import { spellSlots } from './party/memberInfo'
 import NameTag from './NameTag.vue'
 import AppDialog from './AppDialog.vue'
 import ShopDialog from './items/ShopDialog.vue'
@@ -48,6 +50,18 @@ const visible = computed(() => {
   const list = today && today.day === s.value.time.day ? today.candidates : candidates.value
   return list.filter((c) => !s.value.party.some((m) => m.id === c.npc))
 })
+
+// 雇用前的預覽：角色資料以 NPC id 當種子產生，和入隊後一樣
+const previews = computed(() => {
+  const out: Record<string, Character> = {}
+  for (const c of visible.value) {
+    const rec = npcRecord(s.value, c.npc)
+    if (rec) out[c.npc] = characterFor(s.value, rec)
+  }
+  return out
+})
+const pv = (id: string) => previews.value[id]!
+const signed = (n: number) => `${n >= 0 ? '+' : ''}${n}`
 
 const offers = reactive<Record<string, number>>({})
 const approach = reactive<Record<string, string>>({})
@@ -165,8 +179,34 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
                   <div class="small muted">{{ genderName(npcRecord(s, c.npc)!.gender) }}・{{ raceName(npcRecord(s, c.npc)!.race) }}・{{ className(npcRecord(s, c.npc)!.class) }} Lv.{{ npcRecord(s, c.npc)!.level }}</div>
                 </div>
               </header>
+              <template v-if="previews[c.npc]">
+                <div class="vitals small">
+                  <span><span class="label">HP</span> <b>{{ pv(c.npc).maxHp }}</b></span>
+                  <template v-if="!isNoncombatant(pv(c.npc))">
+                    <span><span class="label">AP</span> <b>{{ apMaxFor(pv(c.npc).level, attrsOf(pv(c.npc))) }}</b><small class="muted">（每回合 +{{ apRegenFor(pv(c.npc).level) }}）</small></span>
+                    <span v-if="spellSlots(pv(c.npc)).length"><span class="label">法術環</span> {{ spellSlots(pv(c.npc)).map((x) => `${x.circle}環×${x.max}`).join('・') }}</span>
+                  </template>
+                </div>
+                <div class="attr5">
+                  <span v-for="a in attributeRules.attributes" :key="a.id" :title="a.desc">
+                    <span class="label">{{ a.name }}</span>
+                    <b>{{ attrsOf(pv(c.npc))[a.id] }}</b><small>{{ signed(mod(attrsOf(pv(c.npc))[a.id])) }}</small>
+                  </span>
+                </div>
+                <div v-if="pv(c.npc).abilities.length" class="chips">
+                  <span class="label small">能力</span>
+                  <span v-for="id in pv(c.npc).abilities" :key="id" class="tag" :title="abilityDef(id).desc">{{ abilityDef(id).name }}</span>
+                </div>
+                <div v-if="perksOf(pv(c.npc)).length" class="chips">
+                  <span class="label small">特質</span>
+                  <span v-for="p in perksOf(pv(c.npc))" :key="p.id" class="tag" :class="{ bad: p.flaw }" :title="p.desc">{{ p.name }}<template v-if="p.flaw">（缺陷）</template></span>
+                </div>
+              </template>
               <p class="bio">{{ npcRecord(s, c.npc)!.personality }}</p>
-              <p v-if="npcRecord(s, c.npc)!.appearance" class="small muted appearance">{{ npcRecord(s, c.npc)!.appearance }}</p>
+              <details v-if="npcRecord(s, c.npc)!.appearance" class="appearance small">
+                <summary>外貌</summary>
+                <p class="muted">{{ npcRecord(s, c.npc)!.appearance }}</p>
+              </details>
               <div class="price-row">
                 <span><span class="label">要價</span> <b>{{ formatMoney(askingFor(c)) }}</b><span v-if="c.counter_cc" class="tag">還價</span></span>
                 <span v-if="c.declined" class="small muted">今天不想再談了</span>
@@ -255,7 +295,19 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
 .cand { display: grid; gap: 6px; align-content: start; padding: 12px; background: #fff8e455; border: 1px solid var(--border); border-radius: 2px; }
 .cand header { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
 .bio { margin: 0; font-family: var(--font-story); font-size: var(--fs-sm); line-height: 1.8; }
-.appearance { margin: 0; }
+.appearance summary { cursor: pointer; color: var(--accent-2); }
+.appearance p { margin: 4px 0 0; }
+.vitals { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.vitals b { font-variant-numeric: tabular-nums; }
+.label { color: var(--muted); }
+.attr5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.attr5 > span { display: grid; justify-items: center; padding: 2px 0 1px; background: #fff8e488; border: 1px solid #c4a670; border-radius: 2px; }
+.attr5 .label { font-size: var(--fs-xs); letter-spacing: 0.2em; line-height: 1.3; }
+.attr5 b { font-size: 1.05rem; font-weight: 900; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.attr5 small { font-size: var(--fs-xs); color: #8a4a1e; font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.chips .label { margin-right: 2px; }
+.tag.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
 .price-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }
 .price-row b { color: var(--accent); font-size: var(--fs-lg); }
 .nego { display: grid; gap: 4px; padding: 8px; background: var(--panel-2); border-radius: 3px; }

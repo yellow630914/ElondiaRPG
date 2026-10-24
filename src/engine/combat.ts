@@ -736,7 +736,17 @@ function useItem(combat: CombatState, rng: Rng, actor: Combatant, name: string, 
     }
   }
   combat.itemsUsed = { ...combat.itemsUsed, [name]: (combat.itemsUsed?.[name] ?? 0) + 1 }
-  push(combat, { actor: actor.id, action: `使用${name}`, target: target.id, result: 'success', effects })
+  // 全體範圍的投擲沒有單一目標
+  const all = !use.escape && itemHitsEnemies(use) && use.area === 'all'
+  push(combat, { actor: actor.id, action: `使用${name}`, ...(all ? {} : { target: target.id }), result: 'success', effects })
+}
+
+/** 這個道具要不要讓玩家選目標：全體範圍的投擲和逃脫道具不用（介面直接用第一個合法目標送出） */
+export function itemNeedsTarget(name: string): boolean {
+  const use = itemDef(name)?.use
+  if (!use) return true
+  if (use.escape) return false
+  return !(itemHitsEnemies(use) && use.area === 'all')
 }
 
 function push(combat: CombatState, entry: Omit<TimelineEntry, 'seq' | 'round'>) {
@@ -898,10 +908,15 @@ function dealDamage(
     const isPhysical = damageType(r.type).group === 'physical'
     if (isPhysical) physical += amount
     else other += amount
-    const m = off * def
+    // 攻擊加成與目標的受傷倍率分開寫，標籤才不會把攻擊方的倍率說成目標的抵抗
+    const round2 = (x: number) => Math.round(x * 100) / 100
+    const notes = [
+      ...(Math.abs(off - 1) > 0.001 ? [`${off > 1 ? '攻擊加成' : '攻擊削弱'} ×${round2(off)}`] : []),
+      ...(Math.abs(def - 1) > 0.001 ? [`${multLabel(def)} ×${round2(def)}`] : []),
+    ]
     const effect: Effect = {
       type: 'damage', target: target.id, amount, element: damageTypeName(r.type),
-      ...(Math.abs(m - 1) > 0.001 ? { text: `${multLabel(def) || '加成'} ×${Math.round(m * 100) / 100}` } : {}),
+      ...(notes.length ? { text: notes.join('，') } : {}),
     }
     effects.push(effect)
     parts.push({ effect, physical: isPhysical })

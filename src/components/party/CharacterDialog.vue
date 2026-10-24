@@ -71,7 +71,7 @@ watch(() => props.member, () => (editingProfile.value = false))
 </script>
 
 <template>
-  <AppDialog :open="open" title="角色詳情" icon="user" width="1120px" @close="emit('close')">
+  <AppDialog :open="open" title="角色詳情" icon="user" width="1120px" fixed @close="emit('close')">
     <div class="who">
       <button v-for="x in s.party" :key="x.id" :class="{ on: x.id === m.id }" @click="emit('update:member', x.id)">
         <Avatar :id="x.id" :size="26" />{{ x.name }}

@@ -139,7 +139,7 @@ async function hire(id: string) {
     </div>
     <p v-if="!people.length" class="small muted">這裡現在沒有別人。</p>
 
-    <div class="groups">
+    <div>
     <FoldMenu v-for="g in groups" :id="`people.${g.key}`" :key="g.key" class="group" :icon="g.icon" :label="g.title" :detail="g.detail" :badge="g.items.length" open>
       <ul class="plain">
         <li v-for="p in g.items" :key="p.rec.id" :class="{ open: open === p.rec.id, far: p.dist > 1 }">
@@ -227,8 +227,13 @@ async function hire(id: string) {
 .more > summary::-webkit-details-marker { display: none; }
 .more > summary:hover, .more[open] > summary { color: var(--accent); border-color: var(--gold-lo); }
 .more-list { position: absolute; right: 0; top: 28px; z-index: 5; display: grid; gap: 4px; padding: 6px; background: var(--panel); border: 1px solid var(--gold-lo); border-radius: 3px; box-shadow: 0 8px 20px #000a; }
-.groups { max-height: 460px; overflow-y: auto; padding-right: 4px; }
-.line { gap: 6px; cursor: pointer; }
+.line { gap: 6px; cursor: pointer; flex-wrap: nowrap; min-width: 0; }
+/* 名字太長時省略名字，標籤留在同一行 */
+.line > * { flex-shrink: 0; }
+.line > .name-tag, .line > .small.muted { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.line > .name-tag { flex-shrink: 1; min-width: 3em; }
+.line > .small.muted { flex-shrink: 100; }
+.line > .name-tag :deep(.name) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .known { color: var(--accent); border-color: var(--gold-lo); }
 .bad { color: var(--danger); border-color: var(--danger); }
 li.far .line { opacity: 0.7; }
