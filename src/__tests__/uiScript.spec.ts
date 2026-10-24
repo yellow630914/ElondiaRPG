@@ -8,10 +8,12 @@ afterEach(() => {
 
 describe('介面語言：簡體中文', () => {
   it('連用語一起轉成簡體', () => {
-    expect(toSimplifiedUi('設定・儲存・匯出')).toBe('设置・保存・导出')
+    expect(toSimplifiedUi('設定・儲存・匯出・圖示')).toBe('设定・保存・导出・图标')
     expect(toSimplifiedUi('HP 10/20')).toBe('HP 10/20')
     // 遊戲裡的說法
     expect(toSimplifiedUi('存檔欄位・複製・角色設定')).toBe('存档栏位・复制・角色设定')
+    // 名字與奇幻的文字只轉字形，不換用語
+    expect(toSimplifiedUi('哥布林・熔岩核心・傳送卷軸・傑佛瑞・地平線上・檔案室・月光晶片')).toBe('哥布林・熔岩核心・传送卷轴・杰佛瑞・地平线上・档案室・月光晶片')
   })
 
   it('轉換畫面上的文字與屬性，不動輸入框的值、pre 與 data-no-convert', () => {
