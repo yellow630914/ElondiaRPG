@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>插圖工作台樣稿</title>
+<!-- 靜態樣稿：用 vite 開（npx vite），網址 /docs/mockups/image-studio.html。共用遊戲本身的樣式。 -->
+<link rel="stylesheet" href="/src/style.css" />
+<style>
+body { padding: 24px; }
+.screen { margin: 0 auto 40px; width: 1180px; }
+.screen > .cap { color: var(--gold-hi); font-size: var(--fs-lg); margin: 0 0 10px; letter-spacing: 0.08em; }
+.screen > .cap small { color: var(--muted); font-size: var(--fs-sm); margin-left: 10px; letter-spacing: 0; }
+
+/* 仿 AppDialog */
+.dlg { border: 6px solid #3a2818; border-image: linear-gradient(180deg, #5b3f24, #2e1f12) 1; box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #c99a45, 0 20px 60px #000; }
+.dlg-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px 8px; position: relative; }
+.dlg-head::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, #8a6a3a, transparent); }
+.dlg-head h2 { margin: 0; font-size: var(--fs-xl); letter-spacing: 0.16em; }
+.dlg-head .x { margin-left: auto; width: 30px; height: 30px; padding: 0; border-color: #8a6a3a; color: #5b3a1e; background: none; }
+.dlg-body { padding: 14px 18px 18px; }
+
+.studio { display: grid; grid-template-columns: 330px 1fr; gap: 18px; }
+.art { position: relative; width: 330px; height: 470px; border: 1px solid #8a6a3a; background: #2a1e14; overflow: hidden; }
+.art svg { width: 100%; height: 100%; display: block; }
+.art .badge { position: absolute; left: 8px; top: 8px; }
+.versions { display: flex; gap: 6px; margin-top: 8px; }
+.versions .v { width: 58px; height: 80px; border: 1px solid #8a6a3a; position: relative; overflow: hidden; background: #2a1e14; }
+.versions .v.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.versions .v span { position: absolute; left: 2px; bottom: 1px; font-size: 11px; color: #fff; text-shadow: 0 1px 2px #000; }
+.versions .v .star { left: auto; right: 3px; top: 1px; bottom: auto; color: #f0d083; }
+.versions .v.add { display: grid; place-items: center; color: var(--muted); border-style: dashed; font-size: 20px; }
+.meta { font-size: var(--fs-xs); color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid #b8955a; margin-bottom: 12px; }
+.tabs button { border-radius: 3px 3px 0 0; border-bottom: none; background: none; color: var(--muted); }
+.tabs button.on { background: #f4e7c6; color: var(--ink); border-color: #b8955a; font-weight: 700; }
+
+.step { border: 1px solid #c4a671; background: #f6ead0aa; border-radius: 4px; padding: 10px 12px; }
+.step h4 { margin: 0 0 6px; font-size: var(--fs-md); display: flex; align-items: center; gap: 8px; color: #5b3a1e; }
+.step h4 .n { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #7a4a1e; color: #f4e7c6; font-size: 12px; }
+.step h4 .r { margin-left: auto; font-weight: 400; }
+.ta { white-space: pre-wrap; background: var(--input-bg); border: 1px solid var(--border); border-radius: 3px; padding: 5px 8px; box-shadow: inset 0 1px 2px #6a4a2a33; }
+.ta, textarea { width: 100%; font-size: 0.82rem; line-height: 1.45; font-family: ui-monospace, Consolas, monospace; resize: vertical; }
+.flow { display: flex; align-items: center; gap: 8px; margin: 6px 0; color: #6b5038; font-size: var(--fs-sm); }
+.flow::before, .flow::after { content: ''; flex: 1; height: 1px; background: #c4a671; }
+.acts { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.acts .sp { flex: 1; }
+.kv { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px 10px; align-items: center; font-size: var(--fs-sm); margin-top: 8px; }
+.seg { display: inline-flex; border: 1px solid #b8955a; border-radius: 3px; overflow: hidden; }
+.seg button { border: none; border-radius: 0; background: none; color: #6b5038; padding: 2px 10px; font-size: var(--fs-sm); }
+.seg button + button { border-left: 1px solid #b8955a; }
+.seg button.on { background: #7a4a1e; color: #f4e7c6; }
+.note { font-size: var(--fs-xs); color: #7a6448; margin: 8px 0 0; }
+.hl { background: #fff3c4; box-shadow: 0 0 0 1px #e0b44a; border-radius: 2px; }
+.callout { position: absolute; background: #c8483a; color: #fff; font-size: 12px; padding: 1px 6px; border-radius: 10px; font-weight: 700; }
+
+/* 遮罩 */
+.mask { position: absolute; inset: 0; pointer-events: none; }
+.brushbar { display: flex; gap: 6px; align-items: center; margin-top: 8px; font-size: var(--fs-sm); flex-wrap: wrap; }
+table.compat { width: 100%; border-collapse: collapse; font-size: var(--fs-xs); margin-top: 8px; }
+table.compat th, table.compat td { border-top: 1px solid #d7bf8e; padding: 4px 6px; text-align: left; vertical-align: top; }
+table.compat th { color: #6b5038; font-weight: 700; white-space: nowrap; }
+[id*="devtools"], [class*="devtools"] { display: none !important; }
+.ok { color: #3f7a2f; font-weight: 700; } .mid { color: #a8691c; font-weight: 700; } .no { color: #a33; font-weight: 700; }
+
+/* 日誌插圖 */
+.logwrap { display: grid; grid-template-columns: 470px 1fr; gap: 18px; align-items: start; }
+.entry { border-left: 3px solid #9b7bd0; background: #241b14; padding: 10px 12px; margin-bottom: 10px; }
+.entry .h { display: flex; gap: 8px; font-size: var(--fs-sm); align-items: center; }
+.entry .h .k { color: #b89be6; } .entry .h .t { margin-left: auto; color: var(--muted); }
+.entry p { margin: 6px 0; font-size: 0.95rem; }
+.entry .chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.scene-img { margin-top: 8px; position: relative; border: 1px solid var(--gold-lo); overflow: hidden; }
+.scene-img img { width: 100%; display: block; aspect-ratio: 16 / 9; object-fit: cover; }
+.scene-img .who { position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; align-items: flex-end; height: 70%; }
+.scene-img .cap2 { position: absolute; left: 6px; bottom: 6px; font-size: 11px; background: #000a; padding: 1px 6px; border-radius: 2px; color: #ddd; }
+.menu { position: absolute; right: 8px; top: 30px; background: #f0e1bd; color: var(--ink); border: 1px solid #8a6a3a; box-shadow: 0 6px 16px #000a; font-size: var(--fs-sm); z-index: 2; }
+.menu div { padding: 4px 12px; } .menu div.on { background: #7a4a1e; color: #f4e7c6; }
+.stage { position: relative; height: 128px; border: 1px solid #c4a671; background: linear-gradient(180deg, #e9d7ad, #d9c08a); border-radius: 4px; margin-top: 6px; }
+.stage .lane { position: absolute; top: 0; bottom: 0; width: 1px; background: #b8955a88; }
+.stage .lbl { position: absolute; bottom: 2px; font-size: 11px; color: #7a6448; transform: translateX(-50%); }
+.stage .fig { position: absolute; bottom: 18px; transform: translateX(-50%); text-align: center; font-size: 12px; color: var(--ink); }
+.stage .fig .dot { width: 38px; height: 50px; margin: 0 auto 2px; border-radius: 19px 19px 4px 4px; border: 2px solid #7a4a1e; background: #f6ead0; display: grid; place-items: center; font-weight: 700; }
+.chars { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.char { border: 1px solid #c4a671; border-radius: 4px; padding: 6px 8px; background: #fbf3df; font-size: var(--fs-sm); display: grid; grid-template-columns: 44px 1fr; gap: 8px; }
+.char .pt { width: 44px; height: 58px; border: 1px solid #8a6a3a; background: #2a1e14; overflow: hidden; }
+.char input { width: 100%; font-size: 0.8rem; padding: 2px 6px; }
+.route { font-size: var(--fs-sm); display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f6a8a"/><stop offset="1" stop-color="#1f2733"/></linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5a8a"/><stop offset="1" stop-color="#2a1f33"/></linearGradient>
+    <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a6a3a"/><stop offset="1" stop-color="#33261a"/></linearGradient>
+    <symbol id="fig" viewBox="0 0 100 140">
+      <ellipse cx="50" cy="44" rx="20" ry="24" fill="#e8c9a8"/>
+      <path d="M28 40 Q30 14 50 14 Q72 14 73 42 Q78 70 70 86 L64 60 Q50 30 36 60 L30 86 Q22 66 28 40Z" fill="#c9b07a"/>
+      <path d="M14 140 Q16 96 50 88 Q84 96 86 140Z" fill="#5a3a5a"/>
+      <path d="M38 96 L50 120 L62 96" fill="none" stroke="#d9a54a" stroke-width="3"/>
+      <circle cx="43" cy="46" r="2.2" fill="#3a2a2a"/><circle cx="57" cy="46" r="2.2" fill="#3a2a2a"/>
+      <path d="M45 57 Q50 60 55 57" stroke="#a0524a" stroke-width="2" fill="none"/>
+    </symbol>
+    <symbol id="fig2" viewBox="0 0 100 140">
+      <ellipse cx="50" cy="44" rx="21" ry="24" fill="#d9a888"/>
+      <path d="M26 44 Q26 12 50 12 Q74 12 74 44 Q60 30 50 34 Q38 30 26 44Z" fill="#3a2a22"/>
+      <path d="M30 60 Q50 92 70 60 Q66 84 50 86 Q34 84 30 60Z" fill="#8a4a2a"/>
+      <path d="M10 140 Q14 94 50 88 Q86 94 90 140Z" fill="#4a5a3a"/>
+      <circle cx="43" cy="46" r="2.2" fill="#2a1a1a"/><circle cx="57" cy="46" r="2.2" fill="#2a1a1a"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============ 1. 提示詞 ============ -->
+<section class="screen" id="s1">
+  <p class="cap">① 形象圖工作台：改提示詞重送 <small>從角色的形象圖按「✏️ 工作台」打開</small></p>
+  <div class="dlg parchment paper">
+    <header class="dlg-head"><h2>🎨 莉婭 的形象圖</h2><span class="tag">NovelAI · Danbooru 標籤</span><button class="x">✕</button></header>
+    <div class="dlg-body studio">
+      <div>
+        <div class="art"><svg viewBox="0 0 100 140" preserveAspectRatio="xMidYMid slice"><rect width="100" height="140" fill="url(#g1)"/><use href="#fig"/></svg><span class="tag badge" style="background:#000a;color:#f0d083">v4 · 選取中</span></div>
+        <div class="versions">
+          <div class="v"><svg viewBox="0 0 100 140"><rect width="100" height="140" fill="url(#g3)"/><use href="#fig"/></svg><span>v1</span></div>
+          <div class="v"><svg viewBox="0 0 100 140"><rect width="100" height="140" fill="url(#g2)"/><use href="#fig"/></svg><span>v2</span></div>
+          <div class="v"><svg viewBox="0 0 100 140"><rect width="100" height="140" fill="url(#g2)"/><use href="#fig"/></svg><span>v3</span><span class="star">★</span></div>
+          <div class="v on"><svg viewBox="0 0 100 140"><rect width="100" height="140" fill="url(#g1)"/><use href="#fig"/></svg><span>v4</span></div>
+          <div class="v add" title="生成中的會先佔一格">⋯</div>
+        </div>
+        <p class="meta">★ = 目前的形象圖（隊伍、關係裡顯示的那張）<br />v4：NovelAI · seed 2837461 · 832×1216 · 第 1 天 16:20<br />由「直接用提示詞生圖」產生（提示詞有手改）</p>
+        <div class="acts"><button class="small primary">★ 設為形象圖</button><button class="small">⬇ 下載</button><button class="small danger">刪除這版</button></div>
+      </div>
+
+      <div>
+        <div class="tabs"><button class="on">✏️ 提示詞</button><button>🖌️ 以圖生圖</button><button>🧾 送出紀錄</button></div>
+
+        <div class="step">
+          <h4><span class="n">1</span>預處理前的描述 <span class="r small muted">依「形象插圖提示詞模板」＋角色資料組成</span></h4>
+          <div class="ta" style="min-height:11.0em">A single character portrait, upper body, facing the viewer, simple background, no text, no watermark.
+Name: 莉婭 · Female · Human · Fighter (Lv.1)
+Appearance: 中等身高、勻稱，琥珀色眼睛，麥色短髮……
+Outfit: 皮甲、短劍、圓盾
+<mark class="hl">Expression: 自信的微笑，手按在劍柄上</mark>
+Style: anime illustration, soft lighting</div>
+          <div class="acts">
+            <label class="small"><input type="checkbox" checked /> 記住為這個角色的描述（之後「重新生成」也用這段）</label>
+            <span class="sp"></span>
+            <button class="small">↺ 依角色資料重組</button>
+          </div>
+          <div class="acts">
+            <button class="small">只預處理（不生圖）</button>
+            <button class="small primary">預處理並生圖 ▶</button>
+            <span class="small muted">→ 新的一版，下面的提示詞會被覆蓋</span>
+          </div>
+        </div>
+
+        <div class="flow">⬇ 預處理：Danbooru 標籤（模型來源：DeepSeek · 用量記在「其他」）</div>
+
+        <div class="step">
+          <h4><span class="n">2</span>送出的提示詞 <span class="r small muted">預處理後；直接改這裡就不會再經過預處理</span></h4>
+          <div class="ta" style="min-height:6.6em">1girl, solo, human, short hair, blonde hair, amber eyes, tan skin, leather armor, short sword, round shield, <mark class="hl">confident smile, hand on hilt,</mark> upper body, looking at viewer, simple background, masterpiece, best quality</div>
+          <details open class="small" style="margin-top:6px"><summary>負面提示詞（這次）</summary>
+            <div class="ta" style="min-height:3.7em">lowres, bad anatomy, bad hands, missing fingers, extra digits, cropped, worst quality, text, watermark</div>
+          </details>
+          <div class="kv">
+            <span>種子</span><span class="row"><span class="seg"><button>隨機</button><button class="on">沿用 v4</button><button>指定</button></span><input value="2837461" style="width:110px" /></span>
+            <span>尺寸</span><span><select><option>832 × 1216（直）</option></select></span>
+          </div>
+          <div class="acts">
+            <span class="small muted">固定種子只改幾個詞＝同一張圖的微調</span><span class="sp"></span>
+            <button class="small primary">直接用這段生圖 ▶</button>
+          </div>
+        </div>
+        <p class="note">生成的圖都會成為新的一版，不會蓋掉目前的形象圖；按「★ 設為形象圖」才換。每個角色保留最近 8 版（設成形象圖的那張不會被擠掉）。ChatGPT 沒有種子與負面提示詞，那兩欄會隱藏。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. 以圖生圖 ============ -->
+<section class="screen" id="s2">
+  <p class="cap">② 以圖生圖（img2img）與局部重繪 <small>同一個工作台的第二個分頁</small></p>
+  <div class="dlg parchment paper">
+    <header class="dlg-head"><h2>🎨 莉婭 的形象圖</h2><span class="tag">ComfyUI · Illustrious</span><button class="x">✕</button></header>
+    <div class="dlg-body studio">
+      <div>
+        <div class="art" style="cursor:crosshair">
+          <svg viewBox="0 0 100 140" preserveAspectRatio="xMidYMid slice"><rect width="100" height="140" fill="url(#g2)"/><use href="#fig"/></svg>
+          <svg class="mask" viewBox="0 0 100 140" preserveAspectRatio="xMidYMid slice"><path d="M36 50 Q50 66 64 50 Q66 62 58 66 Q50 70 42 66 Q34 62 36 50Z" fill="#ff3b3b77" stroke="#ff3b3b" stroke-width="0.6" stroke-dasharray="2 1"/><circle cx="66" cy="58" r="5" fill="none" stroke="#fff" stroke-width="0.6"/></svg>
+          <span class="tag badge" style="background:#000a;color:#f0d083">底圖：v3 · 遮罩中</span>
+        </div>
+        <div class="brushbar">
+          <span class="seg"><button class="on">🖌 塗遮罩</button><button>🩹 擦掉</button></span>
+          <span>筆刷</span><input type="range" value="40" style="width:90px" />
+          <button class="small">清除遮罩</button>
+        </div>
+        <p class="meta">紅色＝要重畫的地方，其他地方保持不動。只有「局部重繪」需要塗。</p>
+      </div>
+
+      <div>
+        <div class="tabs"><button>✏️ 提示詞</button><button class="on">🖌️ 以圖生圖</button><button>🧾 送出紀錄</button></div>
+        <div class="step">
+          <h4><span class="n">1</span>底圖</h4>
+          <div class="row small">
+            <label><input type="radio" name="b" checked /> 版本 <select style="padding:1px 4px"><option>v3（★ 形象圖）</option></select></label>
+            <label><input type="radio" name="b" /> 上傳圖片 <button class="small">選檔案…</button></label>
+            <span class="muted">尺寸不同時先縮放成目前設定的尺寸</span>
+          </div>
+        </div>
+        <div class="step" style="margin-top:8px">
+          <h4><span class="n">2</span>怎麼改</h4>
+          <div class="row small"><span>模式</span><span class="seg"><button>整張重繪</button><button class="on">局部重繪（塗遮罩）</button></span></div>
+          <div class="row small" style="margin-top:8px"><span>重繪強度</span><input type="range" min="0" max="100" value="55" style="width:220px" /><b>0.55</b>
+            <span class="muted">0.2 調色調・0.5 改表情姿勢・0.8 幾乎重畫</span></div>
+          <div class="small" style="margin-top:8px">提示詞</div>
+          <div class="ta" style="min-height:3.7em">1girl, solo, short hair, blonde hair, amber eyes, leather armor, <mark class="hl">gentle smile, closed eyes, blush,</mark> upper body ...</div>
+          <p class="note" style="margin-top:2px">預設帶入這一版送出的提示詞；局部重繪只要寫這一塊要變成什麼也可以。</p>
+          <div class="acts"><span class="small">種子</span><span class="seg"><button class="on">隨機</button><button>沿用 v3</button></span><span class="sp"></span><button class="small primary">以圖生圖 ▶</button></div>
+        </div>
+        <table class="compat">
+          <tr><th>服務</th><th>整張重繪</th><th>局部重繪</th><th>怎麼做</th></tr>
+          <tr><td>ComfyUI</td><td class="ok">✓</td><td class="ok">✓</td><td>內建模式自動把空白 latent 換成「上傳的底圖 → VAEEncode」，局部加 SetLatentNoiseMask（都是原生節點）；自訂工作流程用 <code>%image%</code> <code>%mask%</code> <code>%denoise%</code></td></tr>
+          <tr><td>NovelAI</td><td class="ok">✓</td><td class="ok">✓</td><td>img2img（strength、noise）；局部用 infill＋遮罩</td></tr>
+          <tr><td>ChatGPT</td><td class="mid">△</td><td class="mid">△</td><td>/images/edits：照「文字指示」改圖，沒有重繪強度；遮罩是提示不是硬邊界。強度滑桿換成「想改什麼」的說明</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. 日誌插圖 ============ -->
+<section class="screen" id="s3">
+  <p class="cap">③ 依日誌生插圖 <small>冒險日誌每筆的「⋯」→「🎨 生成插圖」；生成後掛在那筆日誌下面</small></p>
+  <div class="logwrap">
+    <div class="panel" style="position:relative">
+      <h3>📖 冒險日誌</h3>
+      <div class="entry" style="position:relative">
+        <div class="h"><span class="k">✦ 事件</span><b>索里耶爾</b><span class="t">第 1 天 08:01 ⋯</span></div>
+        <p>把被制伏的賈爾薩從頭到腳又搜了一遍……把被制伏的賈爾薩收為奴隸（你先動的手）。</p>
+        <div class="chips"><span class="tag">金錢 +32 白鸛</span><span class="tag">聲望（聖環教廷）-4</span><span class="tag">賈爾薩加入隊伍（奴隸）</span></div>
+        <div class="menu"><div>📋 複製</div><div>🔁 重寫經過</div><div class="on">🎨 生成插圖</div></div>
+      </div>
+      <div class="entry">
+        <div class="h"><span class="k">✦ 事件</span><b>索里耶爾</b><span class="t">第 1 天 08:01 ⋯</span></div>
+        <p class="small muted">（生成後的樣子）</p>
+        <div class="scene-img">
+          <img src="/src/assets/backgrounds/soriel.webp" alt="" />
+          <div class="who">
+            <svg viewBox="0 0 100 140" width="120"><use href="#fig"/></svg>
+            <svg viewBox="0 0 100 140" width="110" style="transform:translateY(18px)"><use href="#fig2"/></svg>
+          </div>
+          <span class="cap2">示意 · NovelAI 多角色 · 點一下放大 / 重新生成 / 刪除</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="dlg parchment paper">
+      <header class="dlg-head"><h2>🎨 場景插圖</h2><span class="tag">第 1 天 08:01 · 事件</span><button class="x">✕</button></header>
+      <div class="dlg-body">
+        <div class="step">
+          <h4><span class="n">1</span>場景 <span class="r small muted">AI 依這筆日誌整理（可以改）· 用量記在「其他」</span></h4>
+          <div class="kv">
+            <span>地點</span><input value="索里耶爾外環・朝聖者區，石板路、晨霧" />
+            <span>時段</span><input value="清晨" />
+            <span>鏡頭</span><input value="中景、略低角度" />
+            <span>氣氛</span><input value="緊張、塵土飛揚" />
+          </div>
+        </div>
+        <div class="step" style="margin-top:8px">
+          <h4><span class="n">2</span>登場的人 <span class="r small muted">最多 4 人（NovelAI 6 人）；拖動決定站位</span></h4>
+          <div class="stage">
+            <div class="lane" style="left:33%"></div><div class="lane" style="left:66%"></div>
+            <span class="lbl" style="left:16%">左</span><span class="lbl" style="left:50%">中</span><span class="lbl" style="left:83%">右</span>
+            <div class="fig" style="left:38%"><div class="dot">莉</div>莉婭（主角）</div>
+            <div class="fig" style="left:72%"><div class="dot">賈</div>賈爾薩</div>
+          </div>
+          <div class="chars">
+            <div class="char"><div class="pt"><svg viewBox="0 0 100 140"><rect width="100" height="140" fill="url(#g2)"/><use href="#fig"/></svg></div>
+              <div><b>莉婭</b> <span class="tag">外貌：沿用形象圖描述</span><input value="站著，一手拉著繩子，俯視對方" /></div></div>
+            <div class="char"><div class="pt"><svg viewBox="0 0 100 140"><rect width="100" height="140" fill="url(#g3)"/><use href="#fig2"/></svg></div>
+              <div><b>賈爾薩</b> <span class="tag">外貌：沿用形象圖描述</span><input value="跪在地上、雙手反綁、不甘地抬頭" /></div></div>
+          </div>
+          <div class="acts"><button class="small">＋ 加入角色</button><span class="sp"></span><label class="small"><input type="checkbox" checked /> 把形象圖當參考圖（服務支援時）</label></div>
+        </div>
+        <div class="step" style="margin-top:8px">
+          <h4><span class="n">3</span>分級與送往哪裡</h4>
+          <div class="row small"><span>分級</span><span class="seg"><button class="on">一般</button><button>暗示</button><button>成人</button></span><span class="muted">AI 判斷為「一般」；成人向關閉時不能選成人</span></div>
+          <div class="route">
+            <span class="muted">一般、暗示</span><span>→ ChatGPT（形象圖當參考圖，人物最一致）</span>
+            <span class="muted">成人</span><span>→ NovelAI（多角色提示＋位置）<span class="muted">　⚙️ 設定 → 插圖生成 → 場景插圖</span></span>
+          </div>
+        </div>
+        <div class="acts" style="margin-top:10px"><button class="small">只看提示詞</button><span class="sp"></span><span class="small muted">預估：預處理 1 次＋生圖 1 張</span><button class="primary">生成插圖 ▶</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
