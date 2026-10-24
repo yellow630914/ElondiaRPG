@@ -100,6 +100,10 @@ interface SavedSettings {
   uiLanguage: UiLanguage
   /** 畫面特效；auto 跟著系統的「減少動態效果」 */
   effects: FxLevel | 'auto'
+  /** 背景圖：依所在的地區、城鎮、地下城換背景（見 src/assets/backgrounds） */
+  background: boolean
+  /** 背景圖的亮度（百分比，20～100；越低越暗，面板上的字越清楚） */
+  backgroundBrightness: number
   loreBudget: number
 }
 
@@ -140,6 +144,8 @@ function defaults(): SavedSettings {
     uiLanguage: 'zh-Hant',
     loreBudget: 12000,
     effects: 'auto',
+    background: true,
+    backgroundBrightness: 60,
   }
 }
 
@@ -204,9 +210,11 @@ export const useSettings = defineStore('settings', () => {
   watch(effects, () => {
     if (typeof document !== 'undefined') document.documentElement.dataset.fx = effectsLevel()
   }, { immediate: true })
+  const background = ref(initial.background)
+  const backgroundBrightness = ref(initial.backgroundBrightness)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget, effects],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -230,6 +238,8 @@ export const useSettings = defineStore('settings', () => {
         uiLanguage: uiLanguage.value === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant',
         loreBudget: loreBudget.value,
         effects: effects.value,
+        background: background.value !== false,
+        backgroundBrightness: Math.max(20, Math.min(100, Math.round(Number(backgroundBrightness.value) || 60))),
       }
       try {
         localStorage.setItem(KEY, JSON.stringify(data))
@@ -298,7 +308,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget, effects, effectsLevel,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })

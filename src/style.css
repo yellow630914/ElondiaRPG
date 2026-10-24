@@ -176,6 +176,9 @@ input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); box-s
 select { text-overflow: ellipsis; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
+/* 有背景圖時面板稍微透明，透出一點背景（components/fx/BackgroundLayer.vue） */
+html[data-bg] { --frame-bg: linear-gradient(180deg, #2a2017cc, #1d1611cc); }
+
 /* 面板：金色雕花細框；對話框裡（.parchment）變成淺色卡片 */
 .panel {
   background: var(--corner-tl) top 3px left 3px / 14px no-repeat, var(--corner-tr) top 3px right 3px / 14px no-repeat,

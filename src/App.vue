@@ -38,6 +38,7 @@ import EventCenter from '@/components/events/EventCenter.vue'
 import PartyStrip from '@/components/PartyStrip.vue'
 import GameIcon from '@/components/ui/GameIcon.vue'
 import AmbientLayer from '@/components/fx/AmbientLayer.vue'
+import BackgroundLayer from '@/components/fx/BackgroundLayer.vue'
 import { edgePulse, floatText, placeCard, tween } from '@/fx/fx'
 import { stateKey } from '@/fx/seen'
 import type { IconName } from '@/components/ui/iconPaths'
@@ -245,6 +246,7 @@ onBeforeUnmount(() => {
       <button v-if="game.state" class="ghost icon" title="存好進度，回到首頁" @click="goHome"><GameIcon name="home" :size="24" /><span>首頁</span></button>
     </div>
   </header>
+  <BackgroundLayer />
   <AmbientLayer v-if="game.state" />
   <Transition name="notice">
     <div v-if="game.notice" class="notice">{{ game.notice }}</div>

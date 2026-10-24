@@ -168,6 +168,11 @@ function doReset() {
           <option value="off">關閉</option>
         </select>
       </label>
+      <label class="check"><input v-model="settings.background" type="checkbox" /> 背景圖 <Hint text="依所在的地區、城鎮或地下城換整頁背景（城鎮與地區依時段、地下城依深度，有那張圖才換）。還沒有圖的地方不顯示背景圖。" /></label>
+      <label v-if="settings.background">
+        <span class="lab">背景圖亮度 {{ settings.backgroundBrightness }}% <Hint text="越暗，面板上的字越清楚。" /></span>
+        <input v-model.number="settings.backgroundBrightness" type="range" min="20" max="100" step="5" />
+      </label>
     </div>
   </section>
 

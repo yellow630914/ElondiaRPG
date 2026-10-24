@@ -147,6 +147,7 @@ flowchart TD
 | [PROMPTS](PROMPTS.md) | 提示詞 | `narrator/` |
 | [PORTRAITS](PORTRAITS.md) | 插圖 | `narrator/imageInfo.ts`、`imageProviders.ts`、`comfy.ts` |
 | [I18N](I18N.md) | 介面語言、提示詞的繁簡轉換 | `i18n/uiScript.ts`、`narrator/script.ts`、`script.ts` |
+| [BACKGROUNDS](BACKGROUNDS.md) | 背景圖 | `components/fx/backgrounds.ts`、`BackgroundLayer.vue` |
 | [CONTENT_EDITOR](CONTENT_EDITOR.md) | 自訂內容 | `mods.ts`、`stores/content.ts` |
 | [CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) | 內容引用與保護 | `usage.ts`、`mods.ts` |
 | [SAVES](SAVES.md) | 存檔 | `stores/saves.ts`、`stores/game.ts`、`state.ts` |
