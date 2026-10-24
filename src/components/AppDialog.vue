@@ -91,6 +91,11 @@ function onClick(e: MouseEvent) {
   text-align: left;
 }
 .app-dialog::backdrop { background: #000b; }
+/* 打開時從 96% 放大到 100%、淡入 */
+.app-dialog[open] { animation: dialog-in 0.15s ease-out; }
+.app-dialog[open]::backdrop { animation: backdrop-in 0.15s ease-out; }
+@keyframes dialog-in { from { opacity: 0; transform: scale(0.96); } }
+@keyframes backdrop-in { from { opacity: 0; } }
 .dialog-inner { display: flex; flex-direction: column; max-height: calc(100vh - 52px); }
 .app-dialog.fixed { height: calc(100vh - 40px); }
 .app-dialog.fixed .dialog-inner { height: 100%; }

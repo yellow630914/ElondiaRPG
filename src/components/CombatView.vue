@@ -9,8 +9,8 @@ import { luckyThreshold } from '@/engine/character'
 import { safeText } from '@/engine/content'
 import { abilityDef, combatRules, damageTypeName, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { describeCombatLine } from '@/narrator/describe'
-import { banner, fxOn, flash, floatText, screenShake, shake, shatter } from '@/fx/fx'
-import { CRIT_COLOR, HEAL_COLOR, MISS_COLOR, cuesFor, unplayedHpDelta } from '@/fx/combatFx'
+import { banner, fxOn, flash, floatText, screenFlash, screenShake, shake, shatter } from '@/fx/fx'
+import { BUFF_COLOR, CRIT_COLOR, DEBUFF_COLOR, HEAL_COLOR, MISS_COLOR, cuesFor, unplayedHpDelta } from '@/fx/combatFx'
 import type { TimelineEntry } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
@@ -100,6 +100,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 // ── 特效播放：紀錄新增的那幾筆依序播，每筆間隔約 0.2 秒；HP 條與紀錄跟著播到哪裡才更新。
 // 播放中照樣可以操作（新的紀錄接在後面播）。特效關閉時直接全部顯示。
 const played = ref(combat.value.timeline.length)
+const firstPlayed = combat.value.timeline.length
 const field = ref<HTMLElement | null>(null)
 const cards = new Map<string, Element>()
 function cardRef(id: string, el: unknown) {
@@ -159,6 +160,13 @@ function play(t: TimelineEntry) {
         shake(el)
         break
       }
+      case 'status': {
+        const el = cards.get(cue.target)
+        const color = cue.buff ? BUFF_COLOR : DEBUFF_COLOR
+        floatText(el, cue.name, { color, top: true })
+        flash(el, color)
+        break
+      }
       case 'down':
         // 敵人碎成像素；我方卡片的褪色下沉由 CSS 處理
         if (cue.enemy || enemyIds.has(cue.target)) {
@@ -188,6 +196,13 @@ onMounted(() => {
   // 剛開戰（不是讀檔回來）：開場橫幅；有以 BOSS 出場或層主時改紅色並震一下
   if (combat.value.timeline.length === 0 && combat.value.status === 'ongoing') {
     const boss = foes.value.some((c) => c.headliner || c.boss)
+    // 踩到地圖上的格子觸發：腳下那格閃紅、畫面紅一下；BOSS 格的地圖邊框轉紅
+    if (combat.value.cell) {
+      screenFlash('#c8483a')
+      const here = document.querySelector('.map .cell.here')
+      flash(here, '#ff3a2a', true)
+      if (boss) flash(document.querySelector('.map'), '#ff3a2a', true)
+    }
     banner(boss ? '強敵' : '遭遇', boss ? 'boss' : 'encounter')
     if (boss) screenShake(field.value, 1.2)
   }
@@ -204,13 +219,14 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
 
 /** 戰鬥紀錄依回合分組 */
 const rounds = computed(() => {
-  const out: { round: number; lines: ReturnType<typeof describeCombatLine>[] ; key: number }[] = []
-  for (const t of combat.value.timeline.slice(0, played.value)) {
+  const out: { round: number; lines: (ReturnType<typeof describeCombatLine> & { live: boolean })[]; key: number }[] = []
+  combat.value.timeline.slice(0, played.value).forEach((t, i) => {
     const r = t.round ?? 0
     let g = out.at(-1)
     if (!g || g.round !== r) out.push((g = { round: r, lines: [], key: t.seq }))
-    g.lines.push(describeCombatLine(t, names.value))
-  }
+    // 這次打開畫面之後才播到、有擲骰的那一行：前面的 d20 先翻滾一下
+    g.lines.push({ ...describeCombatLine(t, names.value), live: i >= firstPlayed && t.roll?.value !== undefined })
+  })
   return out
 })
 
@@ -268,7 +284,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 </script>
 
 <template>
-  <section ref="field" class="panel field" :class="{ picking: !!pending }">
+  <section ref="field" class="panel field" :class="{ picking: !!pending, lost: showResult && combat.status === 'defeat' }">
     <div class="row field-head">
       <h2 class="title"><GameIcon name="sword" :size="20" />戰鬥・{{ combat.scene ?? '' }}</h2>
       <span v-if="pending" class="pick-hint">點選發亮的卡片當目標（Esc 取消）</span>
@@ -358,6 +374,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
       <div v-for="g in rounds" :key="g.key" class="round-group">
         <h4 v-if="g.round" class="round-head">第 {{ g.round }} 回合</h4>
         <div v-for="(l, i) in g.lines" :key="i" class="line" :title="l.detail">
+          <span v-if="l.live" class="die"><GameIcon name="d20" :size="12" /></span>
           {{ l.text }}
           <div v-for="(t, k) in l.targets ?? []" :key="k" class="sub" :title="t.detail">{{ t.text }}</div>
         </div>
@@ -448,11 +465,21 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
   border: 1px solid #ffffff14; border-radius: 3px; padding: 5px 8px; background: #0004; display: grid; gap: 3px; align-content: start;
   transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s; min-width: 0;
 }
-.fighter.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 10px #f0d08333; }
+.fighter.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 10px #f0d08333; animation: breathe 2.4s ease-in-out infinite; }
+/* 輪到誰：金框慢慢呼吸 */
+@keyframes breathe { 50% { box-shadow: 0 0 0 1px var(--gold-hi), 0 0 16px #f0d08366; } }
+:global(html[data-fx='lite']) .fighter.current { animation: none; }
+/* 新加上的狀態標籤彈出來 */
+.l3 .tag.buff, .l3 .tag.debuff { animation: tag-pop 0.3s steps(4, end); }
+@keyframes tag-pop { from { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.2); opacity: 1; } }
+/* 戰敗：整個戰場慢慢變灰變暗 */
+.field { transition: filter 1.4s ease; }
+.field.lost { filter: grayscale(0.85) brightness(0.7); }
 .fighter.down { opacity: 0.4; filter: grayscale(0.7); transform: translateY(3px); transition: opacity 0.5s, filter 0.5s, transform 0.5s steps(4, end), border-color 0.15s, box-shadow 0.15s; }
 /* 敵人倒下：碎片散開後卡片才淡掉 */
 .side.foe + .cards .fighter.down:not(.fled) { transition-delay: 0.25s; }
-.fighter.fled { transform: translateX(10px); }
+.fighter.fled { transform: translateX(14px); opacity: 0.25; filter: none; }
+.side.foe + .cards .fighter.fled { transform: translateX(-14px); }
 .fighter.dim { opacity: 0.35; }
 /* 以 BOSS 出場的怪物：金色邊框 */
 .fighter.headliner {
@@ -502,6 +529,11 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .line { padding: 2px 0 2px 6px; border-bottom: 1px dotted #ffffff10; }
 .line[title] { cursor: help; }
 .line .sub { padding-left: 1.2em; color: var(--muted); }
+/* 擲骰：d20 翻滾 0.3 秒，接著那一行的字才出來 */
+.line .die { display: inline-flex; vertical-align: -2px; margin-right: 3px; color: var(--accent); animation: die-roll 0.3s steps(6, end); }
+.line:has(.die) { animation: line-in 0.3s steps(1, end); }
+@keyframes die-roll { from { transform: rotate(-360deg) scale(1.4); } }
+@keyframes line-in { from { color: transparent; } }
 .round-group:last-child .line:last-child { color: var(--text); border-bottom: none; }
 
 /* 行動面板固定在視窗底部，捲到哪裡都點得到 */

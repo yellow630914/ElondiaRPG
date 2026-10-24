@@ -84,7 +84,7 @@ const target = reactive<Record<string, string>>({})
         <GameIcon :name="isFolded(sec.id) ? 'right' : 'down'" :size="13" />
         <ItemIcon v-if="sec.id !== 'other'" :category="sec.id" :size="14" />{{ sec.name }}<span class="muted small">{{ sec.items.length }}</span>
       </button>
-      <ul v-if="!isFolded(sec.id)" class="plain rows">
+      <ul v-if="!isFolded(sec.id)" class="plain rows unfold">
         <li v-for="i in sec.items" :key="i.name" class="item-row" :class="{ open: expanded === i.name }">
           <div class="line" @click="expanded = expanded === i.name ? null : i.name">
             <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="22" /></span>

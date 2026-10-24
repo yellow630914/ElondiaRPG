@@ -9,6 +9,8 @@ import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
+import { flash, floatText } from '@/fx/fx'
+import { freshKeys, stateKey } from '@/fx/seen'
 import AppDialog from '../AppDialog.vue'
 import BodyFigure from './BodyFigure.vue'
 import { characterBody } from '@/engine/look'
@@ -54,6 +56,25 @@ const combat = computed<StatItem[]>(() => {
 })
 
 // ---- 主角設定 ----
+// ── 特效：加屬性點時數字彈一下；選中的能力卡發光、在能力清單裡翻面出現；新學會的特質卡翻過來
+const popped = ref('')
+let popTimer: ReturnType<typeof setTimeout> | undefined
+function spend(attr: string) {
+  game.spendAttr(m.value.id, attr as Parameters<typeof game.spendAttr>[1])
+  popped.value = ''
+  clearTimeout(popTimer)
+  requestAnimationFrame(() => (popped.value = attr))
+  popTimer = setTimeout(() => (popped.value = ''), 500)
+}
+const learned = ref('')
+function pick(e: MouseEvent, id: string) {
+  const el = e.currentTarget as HTMLElement
+  flash(el, '#ffd34d', true)
+  floatText(el, '習得！', { color: '#ffd34d', top: true })
+  learned.value = id
+  game.chooseAbility(m.value.id, id)
+}
+const newPerks = computed(() => freshKeys(`perks:${stateKey(game.state)}:${m.value.id}`, perksOf(m.value).map((p) => p.id)))
 const editingProfile = ref(false)
 const profile = reactive<{ gender: string; appearance: string; background: string; body: Body | '' }>({ gender: '', appearance: '', background: '', body: '' })
 function startProfile() {
@@ -92,10 +113,10 @@ watch(() => props.member, () => (editingProfile.value = false))
           <tbody>
             <tr v-for="a in attributeRules.attributes" :key="a.id">
               <td>{{ a.name }} <Hint :text="a.desc" /></td>
-              <td class="big" :class="{ changed: attrNote(m, a.id) }">{{ attrsOf(m)[a.id] }}</td>
+              <td class="big" :class="{ changed: attrNote(m, a.id) }"><span :class="{ pop: popped === a.id }">{{ attrsOf(m)[a.id] }}</span></td>
               <td>{{ signed(mod(attrsOf(m)[a.id])) }}</td>
               <td class="src">{{ attrNote(m, a.id) || '—' }}</td>
-              <td><button v-if="m.attrPoints > 0" class="small" :disabled="inCombat" :aria-label="`${a.name} +1`" @click="game.spendAttr(m.id, a.id)">＋</button></td>
+              <td><button v-if="m.attrPoints > 0" class="small" :disabled="inCombat" :aria-label="`${a.name} +1`" @click="spend(a.id)">＋</button></td>
             </tr>
           </tbody>
         </table>
@@ -110,7 +131,7 @@ watch(() => props.member, () => (editingProfile.value = false))
     <!-- 特質 -->
     <section v-else-if="tab === 'perks'" class="pane">
       <div class="perks">
-        <article v-for="p in perksOf(m)" :key="p.id" class="perk" :class="{ flaw: p.flaw }">
+        <article v-for="p in perksOf(m)" :key="p.id" class="perk" :class="{ flaw: p.flaw, flip: newPerks.has(p.id) }">
           <header>
             <ContentIcon kind="perk" :def="p" :size="20" />
             <b>{{ p.name }}</b>
@@ -186,7 +207,7 @@ watch(() => props.member, () => (editingProfile.value = false))
           <button class="small" :disabled="inCombat || rerollsLeft(m, settings.rerollLimit()) <= 0" @click="game.rerollAbility(m.id)">重抽（剩 {{ rerollsLeft(m, settings.rerollLimit()) }} 次）</button>
         </div>
         <div class="options">
-          <button v-for="id in m.pendingAbilityChoices[0]" :key="id" class="option" :disabled="inCombat" @click="game.chooseAbility(m.id, id)">
+          <button v-for="id in m.pendingAbilityChoices[0]" :key="id" class="option" :disabled="inCombat" @click="pick($event, id)">
             <b class="ab-name"><ContentIcon kind="ability" :id="id" :size="18" />{{ abilityDef(id).name }}</b>
             <span class="muted small">{{ TYPE_NAME[abilityDef(id).type] }}【{{ QUALITY_NAME[abilityQuality(abilityDef(id))] }}】・{{ abilityMeta(abilityDef(id)) }}</span>
             <span class="small">{{ abilityDef(id).desc }}</span>
@@ -196,7 +217,7 @@ watch(() => props.member, () => (editingProfile.value = false))
       <div v-for="g in groupedAbilities(m)" :key="g.type" class="group">
         <h4>{{ TYPE_NAME[g.type] }}</h4>
         <div class="abilities">
-          <article v-for="a in g.items" :key="a.id" class="ability" :class="`q-${abilityQuality(a)}`">
+          <article v-for="a in g.items" :key="a.id" class="ability" :class="[`q-${abilityQuality(a)}`, { flip: learned === a.id }]">
             <header><ContentIcon kind="ability" :def="a" :size="20" /><b>{{ a.name }}</b><span class="tag">{{ QUALITY_NAME[abilityQuality(a)] }}</span></header>
             <div class="meta small muted">{{ abilityMeta(a) }}</div>
             <p class="small">{{ a.desc }}</p>
@@ -253,4 +274,9 @@ watch(() => props.member, () => (editingProfile.value = false))
 @media (max-width: 900px) { .pane.two, .profile { grid-template-columns: minmax(0, 1fr); } }
 .body-pick { display: flex; gap: 10px; align-items: center; }
 .body-pick .fig { width: 44px; flex: none; }
+/* 特效：屬性 +1 彈一下、新能力與新特質的卡片翻過來 */
+.pop { display: inline-block; animation: attr-pop 0.4s steps(4, end); color: var(--gold-hi); }
+@keyframes attr-pop { 40% { transform: scale(1.6) translateY(-3px); } }
+.flip { animation: card-flip 0.6s steps(6, end); box-shadow: 0 0 0 1px var(--accent), 0 0 12px #f0d08366; }
+@keyframes card-flip { from { transform: rotateY(180deg); filter: brightness(0.3); } 50% { transform: rotateY(90deg); } }
 </style>

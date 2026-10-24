@@ -11,6 +11,8 @@ import { npcTitle } from '@/engine/npcs'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
+import { floatText } from '@/fx/fx'
+import { stateKey } from '@/fx/seen'
 import AbilityPicker from './AbilityPicker.vue'
 import JudgeToggle from './JudgeToggle.vue'
 import FoldMenu from './ui/FoldMenu.vue'
@@ -42,6 +44,23 @@ watch(people, (list) => {
   if (open.value && !list.some((p) => p.rec.id === open.value)) open.value = null
 })
 
+// 親密度變了：那個人的名字旁飄出愛心 +／碎心 −（讀檔、剛走到這裡不算）
+const lineEls = new Map<string, Element>()
+function lineRef(id: string, el: unknown) {
+  if (el instanceof Element) lineEls.set(id, el)
+  else lineEls.delete(id)
+}
+watch(() => [stateKey(game.state), people.value.map((p) => `${p.rec.id}=${rel(p.rec.id)?.affinity ?? ''}`)] as const, ([key, now], old) => {
+  if (!old || old[0] !== key) return
+  const before = new Map(old[1].map((x) => x.split('=') as [string, string]))
+  for (const x of now) {
+    const [id, v] = x.split('=') as [string, string]
+    const b = before.get(id)
+    if (!b || !v || b === v) continue
+    const d = Number(v) - Number(b)
+    floatText(lineEls.get(id), d > 0 ? `♥+${d}` : `💔${d}`, { color: d > 0 ? '#ff8cc8' : '#a89a84' })
+  }
+})
 function rel(id: string) {
   return s.value.relationships?.[id]
 }
@@ -143,7 +162,7 @@ async function hire(id: string) {
     <FoldMenu v-for="g in groups" :id="`people.${g.key}`" :key="g.key" class="group" :icon="g.icon" :label="g.title" :detail="g.detail" :badge="g.items.length" open>
       <ul class="plain">
         <li v-for="p in g.items" :key="p.rec.id" :class="{ open: open === p.rec.id, far: p.dist > 1 }">
-          <div class="row line" @click="open = open === p.rec.id ? null : p.rec.id">
+          <div :ref="(el) => lineRef(p.rec.id, el)" class="row line" @click="open = open === p.rec.id ? null : p.rec.id">
             <Avatar :id="p.rec.id" :size="28" />
             <NameTag :id="p.rec.id" />
             <span class="small muted">{{ npcTitle(p.rec) }}</span>

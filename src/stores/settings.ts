@@ -200,6 +200,10 @@ export const useSettings = defineStore('settings', () => {
   const effects = ref(initial.effects)
   /** 實際用的特效等級 */
   const effectsLevel = (): FxLevel => (effects.value === 'auto' ? (reducedMotion() ? 'lite' : 'full') : effects.value)
+  // 樣式表用 html[data-fx] 決定播哪些 CSS 動畫
+  watch(effects, () => {
+    if (typeof document !== 'undefined') document.documentElement.dataset.fx = effectsLevel()
+  }, { immediate: true })
 
   watch(
     [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget, effects],

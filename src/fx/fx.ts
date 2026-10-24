@@ -202,3 +202,93 @@ export function banner(text: string, kind: BannerKind): void {
   ], { duration, easing: 'steps(16, end)' })
   if (kind === 'victory') sparkle(window.innerWidth / 2, window.innerHeight / 2, Math.min(420, window.innerWidth * 0.6))
 }
+
+/** 升級：卡片上升起一道金色光柱，夾帶幾顆往上飄的像素 */
+export function pillar(el: Element | null | undefined): void {
+  if (!el || !fxOn()) return
+  const r = el.getBoundingClientRect()
+  const p = document.createElement('div')
+  p.className = 'fx-pillar'
+  p.style.left = `${r.left}px`
+  p.style.top = `${r.top - 30}px`
+  p.style.width = `${r.width}px`
+  p.style.height = `${r.height + 30}px`
+  spawn(p, [
+    { opacity: 0, transform: 'scaleX(0.2)' },
+    { opacity: 1, transform: 'scaleX(1)', offset: 0.2 },
+    { opacity: 0.8, transform: 'scaleX(0.8)', offset: 0.7 },
+    { opacity: 0, transform: 'scaleX(0.3)' },
+  ], { duration: 1200, easing: 'ease-out' })
+  sparkle(r.left + r.width / 2, r.top + r.height / 2, r.width * 0.8)
+}
+
+/** 打造的槌敲火花：幾顆橘黃像素從一點迸開 */
+export function sparks(el: Element | null | undefined, count = 12): void {
+  if (!el || !fxFull()) return
+  const r = el.getBoundingClientRect()
+  const x = r.left + r.width / 2
+  const y = r.top + r.height / 2
+  const colors = ['#fff3c4', '#ffd34d', '#ff9a3c']
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2
+    const d = 18 + (i % 3) * 8
+    spawn(pixel(x, y, colors[i % 3]!, 3 + (i % 2)), [
+      { transform: 'translate(0, 0)', opacity: 1 },
+      { transform: `translate(${Math.cos(a) * d}px, ${Math.sin(a) * d - 4}px)`, opacity: 0 },
+    ], { duration: 380, delay: (i % 4) * 90, easing: 'steps(6, end)' })
+  }
+}
+
+/** 換區域：畫面上方浮出地名卡，約 1 秒後消失 */
+export function placeCard(title: string, sub = ''): void {
+  if (!fxOn()) return
+  const b = document.createElement('div')
+  b.className = 'fx-place'
+  const t = document.createElement('b')
+  t.textContent = title
+  b.appendChild(t)
+  if (sub) {
+    const s = document.createElement('small')
+    s.textContent = sub
+    b.appendChild(s)
+  }
+  spawn(b, [
+    { transform: 'translate(-50%, -8px)', opacity: 0 },
+    { transform: 'translate(-50%, 0)', opacity: 1, offset: 0.15 },
+    { transform: 'translate(-50%, 0)', opacity: 1, offset: 0.8 },
+    { transform: 'translate(-50%, -4px)', opacity: 0 },
+  ], { duration: 1600, easing: 'ease-out' })
+}
+
+/** 畫面邊緣的一次脈動（通緝、警戒升高） */
+export function edgePulse(color = '#d8604e'): void {
+  if (!fxFull()) return
+  const v = document.createElement('div')
+  v.className = 'fx-edge'
+  v.style.boxShadow = `inset 0 0 80px 10px ${color}aa`
+  spawn(v, [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }], { duration: 1400, easing: 'ease-in-out' })
+}
+
+/** 全畫面閃一下顏色（觸發遭遇時閃紅） */
+export function screenFlash(color: string): void {
+  if (!fxOn()) return
+  const v = document.createElement('div')
+  v.className = 'fx-edge'
+  v.style.background = color
+  spawn(v, [{ opacity: 0 }, { opacity: 0.35, offset: 0.2 }, { opacity: 0 }], { duration: 380, easing: 'steps(4, end)' })
+}
+
+/** 數字從 from 滾到 to（逐格跳，不是平滑） */
+export function tween(from: number, to: number, ms: number, set: (v: number) => void): () => void {
+  if (!fxOn() || typeof requestAnimationFrame !== 'function' || from === to) { set(to); return () => {} }
+  const steps = 12
+  const t0 = performance.now()
+  let raf = 0
+  const tick = (now: number) => {
+    const k = Math.min(1, Math.floor(((now - t0) / ms) * steps) / steps)
+    set(Math.round(from + (to - from) * k))
+    if (k < 1) raf = requestAnimationFrame(tick)
+  }
+  raf = requestAnimationFrame(tick)
+  return () => { cancelAnimationFrame(raf); set(to) }
+}

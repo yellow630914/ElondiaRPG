@@ -315,3 +315,30 @@ ul.plain > li:last-child { border-bottom: none; }
 .fx-banner.victory span { font-size: 2.4rem; }
 .fx-banner.defeat { border-color: var(--muted); box-shadow: none; }
 .fx-banner.defeat span { color: var(--muted); text-shadow: 3px 3px 0 #000; }
+.fx-pillar {
+  position: fixed; transform-origin: center bottom;
+  background: linear-gradient(0deg, #f0d08300, #f0d08399 35%, #fff3c4cc 60%, #f0d08300);
+  box-shadow: 0 0 24px #f0d083aa; mix-blend-mode: screen;
+}
+.fx-place {
+  position: fixed; left: 50%; top: 84px; display: grid; justify-items: center; gap: 2px; padding: 8px 40px;
+  background: linear-gradient(90deg, transparent, #120d09ee 20%, #120d09ee 80%, transparent);
+  border-top: 1px solid var(--gold-lo); border-bottom: 1px solid var(--gold-lo);
+}
+.fx-place b { font-size: 1.25rem; letter-spacing: 0.3em; padding-left: 0.3em; color: var(--gold-hi); text-shadow: 2px 2px 0 #000, 0 0 12px #f0d08366; }
+.fx-place small { color: var(--muted); font-size: var(--fs-xs); letter-spacing: 0.1em; }
+.fx-edge { position: fixed; inset: 0; }
+
+/* 特效關閉：介面上的動畫與轉場一律直接跳到結果（敘事串流的游標除外）；精簡：只關掉持續循環的裝飾動態（.fx-loop） */
+html[data-fx='off'] *:not(.cursor), html[data-fx='off'] *::before, html[data-fx='off'] *::after {
+  animation-duration: 0s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important;
+  transition-duration: 0s !important; transition-delay: 0s !important;
+}
+html[data-fx='lite'] .fx-loop, html[data-fx='lite'] .fx-loop::before, html[data-fx='lite'] .fx-loop::after { animation: none !important; }
+
+/* 清單展開：高度從 0 慢慢長到內容高度（瀏覽器不支援時直接展開） */
+:root { interpolate-size: allow-keywords; }
+.unfold { overflow: clip; transition: height 0.22s ease-out, opacity 0.22s ease-out; }
+@starting-style { .unfold { height: 0; opacity: 0; } }
+details:not(.menu)::details-content { transition: height 0.22s ease-out, content-visibility 0.22s allow-discrete; height: 0; overflow: clip; }
+details:not(.menu)[open]::details-content { height: auto; }

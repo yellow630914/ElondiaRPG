@@ -162,9 +162,9 @@ function doReset() {
     <h2 class="head"><GameIcon name="sparkles" :size="20" />畫面特效</h2>
     <div class="form">
       <label>
-        <span class="lab">戰鬥的飄字、閃光與橫幅 <Hint text="全部：受擊抖動、幸運一擊震動畫面、敵人碎裂、勝利光粒子都會播。
-精簡：只留傷害飄字、HP 殘影與開場、勝利橫幅。
-關閉：不播特效，紀錄與 HP 直接更新。
+        <span class="lab">動畫特效（戰鬥、升級、金錢、地圖、背景氛圍） <Hint text="全部：所有特效，包括受擊抖動、畫面震動、像素碎裂、光粒子、背景的灰塵與飄雪。
+精簡：保留短小的回饋（飄字、HP 殘影、橫幅、地名卡、角色滑動），去掉震動、粒子、背景飄落物與持續閃動的光。
+關閉：不播特效，數字與畫面直接更新。
 跟隨系統：系統開了「減少動態效果」時用精簡，否則全部。" /></span>
         <select v-model="settings.effects">
           <option value="auto">跟隨系統</option>

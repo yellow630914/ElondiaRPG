@@ -1,6 +1,7 @@
 // 把戰鬥紀錄的一筆轉成要播的特效（純資料，畫面在 CombatView 播）。
 // 只讀紀錄裡已經有的東西：目標、傷害量、傷害類型、幸運一擊、大失敗、倒下。
 
+import { statuses } from '@/engine/data'
 import type { TimelineEntry } from '@/engine/types'
 
 /** 傷害數字的顏色（依傷害類型的名稱，紀錄裡存的是名稱） */
@@ -20,6 +21,8 @@ export const PHYSICAL_COLOR = '#f4ece0'
 export const HEAL_COLOR = '#7cdc6a'
 export const MISS_COLOR = '#a89a84'
 export const CRIT_COLOR = '#ffd34d'
+export const BUFF_COLOR = '#7cc8ff'
+export const DEBUFF_COLOR = '#c27cff'
 
 export function elementColor(element?: string): string {
   return (element && ELEMENT_COLOR[element]) || PHYSICAL_COLOR
@@ -32,6 +35,7 @@ export type CombatCue =
   | { kind: 'fumble'; actor: string }
   | { kind: 'crit'; target: string }
   | { kind: 'down'; target: string; enemy: boolean }
+  | { kind: 'status'; target: string; name: string; buff: boolean }
 
 const DOWN = new Set(['倒下', '死亡'])
 
@@ -61,7 +65,9 @@ export function cuesFor(t: TimelineEntry): CombatCue[] {
   }
   if (t.result === 'fumble') cues.push({ kind: 'fumble', actor: t.actor })
   for (const e of effects) {
-    if (e.type === 'status_add' && e.target && DOWN.has(e.status ?? '')) cues.push({ kind: 'down', target: e.target, enemy: e.status === '死亡' })
+    if (e.type !== 'status_add' || !e.target || !e.status) continue
+    if (DOWN.has(e.status)) cues.push({ kind: 'down', target: e.target, enemy: e.status === '死亡' })
+    else cues.push({ kind: 'status', target: e.target, name: e.status, buff: Object.values(statuses).find((x) => x.name === e.status)?.kind === 'buff' })
   }
   return cues
 }

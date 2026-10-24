@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { flash, floatText, sparks } from '@/fx/fx'
+import { isFreshReport } from '@/fx/seen'
+import { itemRarity } from './items/itemInfo'
 import { locationById } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import type { Report } from '@/engine/types'
@@ -56,6 +59,42 @@ function renameInvented() {
     if (name) game.flash(`✏️ 改名為「${name}」`)
   }
 }
+// ── 特效：這次遊玩中剛產生的日誌才播（讀檔、重畫不重播）
+const fresh = game.state ? isFreshReport(game.state, props.report.report_id) : false
+const dieEl = ref<HTMLElement | null>(null)
+const changesEl = ref<HTMLElement | null>(null)
+/** 主動行動的檢定：d20 先翻滾一下才出數字 */
+const rolling = ref(fresh && !!props.report.check)
+const shownNatural = ref(props.report.check?.natural ?? 0)
+/** 打造、製作：先敲出火花，再揭曉做出來的東西 */
+const CRAFT = /打造|製作|鍛造|煉|調配|縫製|雕刻|料理|烹/
+const crafting = ref(fresh && !!props.report.changes.items_gained?.length && CRAFT.test(props.report.check?.action ?? props.report.outcome.summary ?? ''))
+const timers: ReturnType<typeof setTimeout | typeof setInterval>[] = []
+onMounted(() => {
+  if (rolling.value) {
+    const spin = setInterval(() => (shownNatural.value = 1 + Math.floor(Math.random() * 20)), 60)
+    timers.push(spin, setTimeout(() => {
+      clearInterval(spin)
+      shownNatural.value = props.report.check!.natural
+      rolling.value = false
+      const d = props.report.check!.degree
+      if (d === 'critical') { floatText(dieEl.value, '大成功！', { color: '#ffd34d', top: true }); flash(dieEl.value, '#ffd34d', true) }
+      else if (d === 'fumble') { floatText(dieEl.value, '大失敗', { color: '#ff6a50', top: true }); flash(dieEl.value, '#ff3a2a', true) }
+    }, 650))
+  }
+  if (crafting.value) {
+    sparks(changesEl.value)
+    timers.push(setTimeout(() => sparks(changesEl.value), 220), setTimeout(() => (crafting.value = false), 650))
+  }
+})
+onBeforeUnmount(() => timers.forEach((t) => clearTimeout(t as ReturnType<typeof setTimeout>)))
+/** 變化標籤的樣式：稀有以上的掉落依稀有度發光、升級、學會技能 */
+const chips = computed(() => changes.value.map((text) => {
+  const item = /^獲得 (.+) ×\d+$/.exec(text)?.[1]
+  const rarity = item && game.state ? itemRarity(game.state, item) : ''
+  const cls = ['rare', 'epic', 'legendary', 'mythic'].includes(rarity) ? `loot r-${rarity}` : text.includes('升級！') ? 'lvl' : text.includes('習得技能') ? 'learn' : ''
+  return { text, cls }
+}))
 const showRaw = ref(false)
 const copied = ref(false)
 
@@ -68,7 +107,7 @@ async function copyPrompt() {
 </script>
 
 <template>
-  <article class="report" :class="report.kind">
+  <article class="report" :class="[report.kind, { fresh }]">
     <header class="head">
       <span class="kind"><GameIcon :name="KIND[report.kind].icon" :size="14" />{{ KIND[report.kind].name }}</span>
       <strong class="where">{{ locationById(report.location.at).name }}<template v-if="report.location.to"> → {{ locationById(report.location.to).name }}</template></strong>
@@ -90,12 +129,12 @@ async function copyPrompt() {
     <p class="summary">{{ report.outcome.summary }}</p>
     <p v-if="invented" class="small"><button class="small" @click="renameInvented"><GameIcon name="edit" :size="14" /> 幫「{{ invented }}」改名</button></p>
     <div v-if="roll && check" class="check small" :title="check">
-      <span class="d20">{{ roll.natural }}</span>
+      <span ref="dieEl" class="d20" :class="{ rolling, [roll.degree]: !rolling && fresh }">{{ rolling ? shownNatural : roll.natural }}</span>
       <span class="muted">{{ roll.action }}</span>
       <span class="tag">{{ attrName(roll.attr) }} {{ signed(roll.modifier) }}</span>
       <span class="muted">＝</span><b>{{ roll.total }}</b>
       <span class="muted">對 DC {{ roll.dc }}<template v-if="roll.dc !== roll.base_dc">（參考 {{ roll.base_dc }}）</template></span>
-      <span class="verdict" :class="roll.degree">{{ DEGREE[roll.degree] }}</span>
+      <span v-show="!rolling" class="verdict" :class="roll.degree">{{ DEGREE[roll.degree] }}</span>
       <span v-if="roll.reference_degree" class="muted">（骰值參考：{{ DEGREE[roll.reference_degree] }}）</span>
       <span v-if="roll.source === 'ai'" class="tag">AI 判定</span>
     </div>
@@ -133,8 +172,8 @@ async function copyPrompt() {
         <div v-for="t in report.timeline" :key="t.seq">{{ describeEntry(t, names) }}</div>
       </div>
     </details>
-    <div v-if="changes.length" class="row small changes">
-      <span v-for="c in changes" :key="c" class="tag">{{ c }}</span>
+    <div v-if="changes.length" ref="changesEl" class="row small changes" :class="{ crafting }">
+      <span v-for="(c, i) in chips" :key="c.text" class="tag" :class="c.cls" :style="{ '--i': i }">{{ c.text }}</span>
     </div>
 
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
@@ -202,6 +241,29 @@ async function copyPrompt() {
 .changes { margin: 8px 0 2px; gap: 5px; }
 /* 變化的標籤可能帶著 AI 寫的原因：允許換行，不要撐破卡片 */
 .changes .tag { white-space: normal; height: auto; }
+/* 剛產生的日誌：卡片由下往上滑入，變化標籤依序彈出 */
+.report.fresh { animation: card-in 0.3s steps(5, end); }
+@keyframes card-in { from { transform: translateY(14px); opacity: 0; } }
+.report.fresh .changes .tag { animation: chip-in 0.3s steps(4, end) both; animation-delay: calc(var(--i) * 60ms + 0.2s); }
+@keyframes chip-in { from { transform: scale(0.5); opacity: 0; } }
+.changes.crafting .tag { visibility: hidden; }
+/* 稀有以上的掉落：依稀有度發光；剛拿到時多閃一下 */
+.tag.loot { font-weight: 700; }
+.tag.r-rare { color: var(--r-rare); border-color: var(--r-rare); box-shadow: 0 0 6px color-mix(in srgb, var(--r-rare) 60%, transparent); }
+.tag.r-epic { color: var(--r-epic); border-color: var(--r-epic); box-shadow: 0 0 8px color-mix(in srgb, var(--r-epic) 60%, transparent); }
+.tag.r-legendary, .tag.r-mythic { color: var(--r-legendary); border-color: var(--r-legendary); box-shadow: 0 0 10px color-mix(in srgb, var(--r-legendary) 70%, transparent); }
+.report.fresh .tag.loot { animation: chip-in 0.3s steps(4, end) both, loot-flash 0.9s ease-out both; animation-delay: calc(var(--i) * 60ms + 0.2s); }
+@keyframes loot-flash { 0%, 30% { box-shadow: 0 0 22px 4px currentColor; } }
+.tag.lvl { color: var(--gold-hi); border-color: var(--gold-hi); }
+/* 學會技能：卡片從背面翻過來 */
+.report.fresh .tag.learn { animation: flip-in 0.5s steps(6, end) both; animation-delay: calc(var(--i) * 60ms + 0.2s); }
+@keyframes flip-in { from { transform: rotateY(180deg); color: transparent; background: var(--gold-lo); } 50% { transform: rotateY(90deg); } }
+/* 檢定：d20 翻滾，大成功金光、大失敗紅光 */
+.d20.rolling { animation: d20-spin 0.65s steps(8, end); }
+@keyframes d20-spin { from { transform: rotate(-720deg) scale(0.6); } }
+.d20.critical { background: #fff3c4; box-shadow: 0 0 0 2px var(--gold-hi); animation: d20-glow 1s ease-out; }
+.d20.fumble { background: #ff8a70; animation: d20-glow 1s ease-out; }
+@keyframes d20-glow { from { filter: drop-shadow(0 0 10px currentColor) brightness(1.6); } }
 .raw { max-height: 320px; overflow: auto; background: var(--bg); padding: 8px; border-radius: 3px; }
 details.steps summary, details.thinking summary { cursor: pointer; color: var(--accent-2); }
 .tokens { margin: 6px 0 0; text-align: right; }

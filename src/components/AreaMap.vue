@@ -6,6 +6,8 @@ import { cropStatus } from '@/engine/garden'
 import { homeById } from '@/engine/homes'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
+import { currentLight, isDark } from '@/engine/light'
+import { freshKeys, stateKey } from '@/fx/seen'
 import GameIcon from './ui/GameIcon.vue'
 import type { IconName } from './ui/iconPaths'
 import { CELL_GAME_ICON } from './ui/cellIcons'
@@ -142,6 +144,23 @@ onBeforeUnmount(() => clearTimeout(bumpTimer))
 
 // 一片漆黑時（視野 0）地圖右上角常駐提示：走路揭不開迷霧，提醒先點火把或等天亮
 const dark = computed(() => sight(game.state!, area.value) <= 0)
+// 黑暗的區域：角色周圍一圈暖色光暈（只是看起來的樣子，視野規則不動）；沒有光源時只剩一小圈
+const glow = computed(() => (isDark(game.state!, area.value) ? (currentLight(game.state!) ? 'torch' : 'dim') : ''))
+
+// 新揭開的格子淡入、上面的圖示彈一下；旅途上走過的路一段一段畫出虛線
+const fresh = ref(new Set<string>())
+let freshTimer: ReturnType<typeof setTimeout> | undefined
+watch(rows, (list) => {
+  const scope = `${stateKey(game.state)}:${area.value.key}`
+  const seen = list.flat().filter((c) => c.seen).map((c) => `${c.x},${c.y}`)
+  const trail = area.value.kind === 'road' ? list.flat().filter((c) => c.x < pos.value.x).map((c) => `t${c.x},${c.y}`) : []
+  const add = new Set([...freshKeys(`fog:${scope}`, seen), ...freshKeys(`trail:${scope}`, trail)])
+  if (!add.size) return
+  fresh.value = add
+  clearTimeout(freshTimer)
+  freshTimer = setTimeout(() => (fresh.value = new Set()), 700)
+}, { immediate: true })
+onBeforeUnmount(() => clearTimeout(freshTimer))
 
 function step(x: number, y: number) {
   // 和方向鍵同一條路：走不過去時只晃一下、跳提示
@@ -174,20 +193,21 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <span v-if="bumping" class="bump-tip small">{{ game.bumpText || '那邊走不過去' }}</span>
       <span v-else-if="dark" class="bump-tip small">一片漆黑：走路不會揭開地圖，先點火把或等天亮</span>
     </Transition>
-    <div class="map" :style="{ '--w': area.width }">
+    <div :key="area.key" class="map" :style="{ '--w': area.width }">
+      <!-- 主角：浮在格子上，移動時滑到下一格 -->
+      <span class="token" :class="[glow, { bump: bumping }]" :style="{ '--x': pos.x, '--y': pos.y }"><span class="me"><GameIcon name="user" /></span></span>
       <template v-for="row in rows" :key="row[0]!.y">
         <button
           v-for="c in row"
           :key="`${c.x},${c.y}`"
           class="cell"
-          :class="[c.seen ? c.cell.kind : 'fog', { here: c.here, step: c.canStep, done: c.cell.done, bump: c.here && bumping }]"
+          :class="[c.seen ? c.cell.kind : 'fog', { here: c.here, step: c.canStep, done: c.cell.done, bump: c.here && bumping, reveal: fresh.has(`${c.x},${c.y}`), trail: area.kind === 'road' && c.x < pos.x, draw: fresh.has(`t${c.x},${c.y}`) }]"
           :disabled="!c.canStep"
           :title="c.seen ? label(c.cell) + (c.who.length ? `\n人：${peopleTitle(c.who)}` : '') : '未探索'"
           :style="{ backgroundImage: tile(c.cell, c.seen, c.x, c.y) }"
           @click="step(c.x, c.y)"
         >
-          <span v-if="c.here" class="me"><GameIcon name="user" /></span>
-          <template v-else-if="c.seen">
+          <template v-if="c.seen && !c.here">
             <GameIcon v-if="gameIcon(c.cell)" class="glyph" :class="{ danger: DANGER.has(c.cell.kind) }" :name="gameIcon(c.cell)!" />
             <span v-else class="emoji">{{ icon(c.cell) }}</span>
           </template>
@@ -215,6 +235,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   80% { transform: translateX(1px); }
 }
 .map {
+  position: relative; animation: map-in 0.4s steps(5, end);
   --cell: min(40px, calc(100cqw / var(--w)));
   display: grid; gap: 0; grid-template-columns: repeat(var(--w), var(--cell)); width: max-content; max-width: 100%;
   border: 1px solid #000; box-shadow: 0 0 0 1px var(--gold-lo), 0 0 0 4px #0008; background: #000;
@@ -233,6 +254,34 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .glyph { width: calc(var(--cell) * 0.55); height: calc(var(--cell) * 0.55); color: var(--gold-hi); filter: drop-shadow(0 1px 0 #000) drop-shadow(0 0 2px #000); }
 .glyph.danger { color: #ff8a70; }
 .emoji { font-size: calc(var(--cell) * 0.5); filter: drop-shadow(0 1px 1px #000); }
+/* 換區域：地圖從暗處浮現 */
+@keyframes map-in { from { opacity: 0; filter: brightness(0.3); } }
+.token {
+  position: absolute; left: 0; top: 0; z-index: 2; width: var(--cell); height: var(--cell); display: grid; place-items: center; pointer-events: none;
+  transform: translate(calc(var(--cell) * var(--x)), calc(var(--cell) * var(--y))); transition: transform 0.12s linear;
+}
+.token.bump .me { animation: bump 0.3s ease; }
+/* 火把光暈：暖色一圈，邊緣微微晃動 */
+.token.torch::before, .token.dim::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: calc(var(--cell) * 4.5); height: calc(var(--cell) * 4.5); transform: translate(-50%, -50%);
+  border-radius: 50%; background: radial-gradient(circle, #ffb45a40 0%, #ff8a3a22 40%, transparent 70%); mix-blend-mode: screen;
+  animation: torch 1.8s ease-in-out infinite;
+}
+.token.dim::before { width: calc(var(--cell) * 2); height: calc(var(--cell) * 2); background: radial-gradient(circle, #ffb45a26, transparent 70%); }
+@keyframes torch { 30% { transform: translate(-50%, -50%) scale(1.06); opacity: 0.85; } 60% { transform: translate(-50%, -50%) scale(0.96); opacity: 1; } 80% { transform: translate(-50%, -50%) scale(1.03); opacity: 0.9; } }
+:global(html[data-fx='lite']) .token::before { animation: none; }
+/* 新揭開的格子淡入，圖示彈一下 */
+.cell.reveal { animation: reveal 0.45s steps(5, end); }
+@keyframes reveal { from { filter: brightness(0); } }
+.cell.reveal .glyph, .cell.reveal .emoji { animation: glyph-pop 0.5s steps(5, end) 0.15s both; }
+@keyframes glyph-pop { from { transform: scale(0.2); } 60% { transform: scale(1.35); filter: drop-shadow(0 0 6px #f0d083); } }
+/* 旅途：走過的路畫上虛線，新走過的一段從左往右畫出來 */
+.cell.trail::before {
+  content: ''; position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, var(--gold-hi) 0 4px, transparent 4px 8px); opacity: 0.8; transform-origin: left center;
+}
+.cell.trail.draw::before { animation: draw 0.3s steps(4, end); }
+@keyframes draw { from { transform: scaleX(0); } }
 .me { display: grid; place-items: center; width: calc(var(--cell) * 0.7); height: calc(var(--cell) * 0.7); border-radius: 50%; background: radial-gradient(circle, #f0d083, #b8862a); color: #2a1a08; box-shadow: 0 0 8px #f0d083; }
 .me :deep(.game-icon) { width: 70%; height: 70%; }
 .npc {
