@@ -120,9 +120,12 @@ export function openNegotiationsHere(state: GameState): Negotiation[] {
   return (state.negotiations ?? []).filter((n) => n.status === 'open' && n.location === state.location)
 }
 
+/** 放棄談判：還沒真的談過（一次都沒檢定）就當作沒開始，之後可以再談；談過了才算結束 */
 export function abandonNegotiation(state: GameState, id: string) {
   const n = state.negotiations?.find((x) => x.id === id)
-  if (n) n.status = 'done'
+  if (!n) return
+  if (n.attempts >= negotiationRules.max_attempts) state.negotiations = state.negotiations!.filter((x) => x !== n)
+  else n.status = 'done'
 }
 
 /** 套用結果表；部分成功且還有次數時談判繼續。回傳結果說明。 */

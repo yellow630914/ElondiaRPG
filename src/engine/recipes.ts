@@ -3,7 +3,7 @@
 // 要有對應階級的工具（配方等級決定），成功時得到工藝經驗。走主動行動 produce（target = 「做的人的 id@物品名稱*批數」）。
 
 import { craftRules, itemDef, itemRules, locationById, saveItems, type CraftId, type Degree, type ItemDef, type RecipeSpec } from './data'
-import { crafterRefusal, craftName, craftXpFor, gainCraftXp, skillOf, toolAccess, toolTierFor, toolTierName, type ToolAccess } from './crafting'
+import { crafterRefusal, craftName, craftXpFor, gainCraftXp, skillOf, toolAccess, toolBlocker, toolTierFor, type ToolAccess } from './crafting'
 import { applyEffects, type RewardEffect } from './effects'
 import { currentArea } from './grid'
 import { memberOrResident } from './homes'
@@ -42,7 +42,10 @@ export interface RecipePlan {
   /** 做的人的工藝等級 */
   level: number
   tool: ToolAccess
+  /** 做不了的原因（全部列出，用「；」接起來） */
   blocked?: string
+  /** 做不了的原因，一條一條 */
+  blockers: string[]
 }
 
 /** 依配方做 batches 批：材料、費用、時間都乘批數 */
@@ -53,20 +56,20 @@ export function recipePlan(state: GameState, name: string, batches: number, craf
   const n = Math.max(1, Math.min(rules.max_batches, Math.round(batches) || 1))
   const inputs = recipe.inputs.map((x) => ({ name: x.name, need: x.qty * n, have: state.inventory.find((i) => i.name === x.name)?.qty ?? 0 }))
   const hours = (recipe.hours ?? 2) * n
-  const tool = toolAccess(state, recipe.craft)
   const needTier = toolTierFor(recipe.level)
+  const tool = toolAccess(state, recipe.craft, needTier)
   const cost = Math.round((recipe.cost_cc ?? 0) * n * locationMult(state))
   const rent = tool.rentPerHour && tool.tier >= needTier ? tool.rentPerHour * hours : 0
   const level = skillOf(crafter, recipe.craft).level
-  let blocked: string | undefined
-  const short = inputs.find((x) => x.have < x.need)
-  if (level < recipe.level) blocked = `${crafter.name}的${craftName(recipe.craft)}只有 Lv.${level}（要 Lv.${recipe.level}）`
-  else if (tool.tier < needTier) blocked = `要用${craftName(recipe.craft)}的${toolTierName(needTier)}（現在：${tool.source}）`
-  else if (short) blocked = `${short.name}不夠（需要 ${short.need}，持有 ${short.have}）`
-  else if (state.money_cc < cost + rent) blocked = `費用不夠（需要 ${formatMoney(cost + rent)}）`
+  // 做不了的原因全部列出來，不用改一項才發現下一項
+  const blockers: string[] = []
+  if (level < recipe.level) blockers.push(`${crafter.name}的${craftName(recipe.craft)}只有 Lv.${level}（要 Lv.${recipe.level}）`)
+  if (tool.tier < needTier) blockers.push(toolBlocker(recipe.craft, needTier, tool))
+  for (const x of inputs) if (x.have < x.need) blockers.push(`${x.name}不夠（需要 ${x.need}，持有 ${x.have}）`)
+  if (state.money_cc < cost + rent) blockers.push(`費用不夠（需要 ${formatMoney(cost + rent)}）`)
   return {
     name, recipe, batches: n, qty: (recipe.qty ?? 1) * n, inputs, cost, rent, fee: cost + rent,
-    dc: rules.dc[recipe.level - 1] ?? 18, hours, level, tool, ...(blocked ? { blocked } : {}),
+    dc: rules.dc[recipe.level - 1] ?? 18, hours, level, tool, blockers, ...(blockers.length ? { blocked: blockers.join('；') } : {}),
   }
 }
 

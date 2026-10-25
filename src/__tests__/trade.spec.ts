@@ -7,7 +7,7 @@ import { itemDef, locationById } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { enterLocation, standOn } from '@/engine/grid'
 import { equipItem, useItem } from '@/engine/inventory'
-import { applyAiOptions, canNegotiate, chooseOption, startNegotiation } from '@/engine/negotiation'
+import { abandonNegotiation, applyAiOptions, canNegotiate, chooseOption, startNegotiation } from '@/engine/negotiation'
 import { setAffinity } from '@/engine/social'
 import { newGame } from '@/engine/state'
 import { doTownQuest, guildQuests, recruit } from '@/engine/town'
@@ -187,6 +187,19 @@ describe('negotiation', () => {
     expectValid(report)
     expect(quest.reward_cc).toBe(Math.round(reward * 1.2))
     expect(n.status).toBe('done')
+  })
+
+  it('only counts a shop discount as talked about once an approach was tried', () => {
+    const state = game(4)
+    standOn(state, 'smithy')
+    const first = startNegotiation(state, 'shop_discount', { shop: 'smithy' })
+    abandonNegotiation(state, first.id)
+    // 沒有真的談就放棄：之後還可以再談
+    expect(canNegotiate(state, 'shop_discount', { shop: 'smithy' })).toBeNull()
+    const again = startNegotiation(state, 'shop_discount', { shop: 'smithy' })
+    chooseOption(state, again.id, again.options[0]!.id)
+    if (again.status === 'open') abandonNegotiation(state, again.id)
+    expect(canNegotiate(state, 'shop_discount', { shop: 'smithy' })).not.toBeNull()
   })
 
   it('keeps the negotiation open after a partial success', () => {

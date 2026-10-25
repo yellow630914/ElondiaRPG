@@ -895,9 +895,12 @@ export const useGame = defineStore('game', () => {
     }
   }
 
+  /** 要打開哪一場談判的對話框（開始或繼續談判時設定，見 NegotiationPanel） */
+  const negotiationFocus = ref<string | null>(null)
   /** 開始談判；AI 開啟時請 AI 依對象與情境生成談判方式 */
   async function startNegotiation(template: string, ctx: negotiation.NegotiationContext) {
     const n = run((s) => negotiation.startNegotiation(s, template, ctx))
+    if (n) negotiationFocus.value = n.id
     const s = state.value
     const settings = useSettings()
     if (!n || !s || n.ai || !settings.aiJudge || !settings.ready('negotiation')) return n
@@ -906,7 +909,8 @@ export const useGame = defineStore('game', () => {
       const { completeText } = await import('@/narrator/providers')
       const src = settings.sourceFor('negotiation')
       const raw = extractJson(await completeText(src.provider, src.config, buildNegotiationPrompt(s, n), undefined, (u) => addUsage(OTHER_USAGE, u, originOf('negotiation', src))))
-      run((st) => negotiation.applyAiOptions(st, n.id, raw))
+      // 等 AI 的時候玩家可能已經放棄了（還沒談過的會從清單拿掉）
+      if (state.value?.negotiations?.some((x) => x.id === n.id && x.status === 'open')) run((st) => negotiation.applyAiOptions(st, n.id, raw))
     } catch (e) {
       error.value = `AI 生成談判方式失敗：${e instanceof Error ? e.message : String(e)}（先用預設的談判方式）`
     }
@@ -928,7 +932,7 @@ export const useGame = defineStore('game', () => {
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
-    perform, judge, flavorRoster, hire, flavorShop, startNegotiation,
+    perform, judge, flavorRoster, hire, flavorShop, startNegotiation, negotiationFocus,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),
     buyDeal: (type: ShopType, id: string, qty = 1) => run((s) => trade.buyDeal(s, type, id, qty)),

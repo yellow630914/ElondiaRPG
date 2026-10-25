@@ -16,7 +16,8 @@ import { ICON_PATHS, type IconName } from './ui/iconPaths'
 // 以原生 <dialog> 實作的對話框（羊皮紙樣式）：Esc 或點背景關閉。
 // icon 可以是介面圖示的名稱（見 ui/iconPaths.ts），也可以是 emoji。
 // fixed：有分頁的對話框固定高度（等於視窗高度），切分頁時標題與分頁列不會跳動
-const props = withDefaults(defineProps<{ open: boolean; title: string; icon?: string; width?: string; inlineError?: boolean; fixed?: boolean }>(), { width: '960px', icon: undefined })
+// stay：不要因為開始了談判或等待中的行動而自動關掉（談判自己的對話框）
+const props = withDefaults(defineProps<{ open: boolean; title: string; icon?: string; width?: string; inlineError?: boolean; fixed?: boolean; stay?: boolean }>(), { width: '960px', icon: undefined })
 const emit = defineEmits<{ close: [] }>()
 const el = ref<HTMLDialogElement | null>(null)
 
@@ -48,7 +49,7 @@ onMounted(sync)
 const game = useGame()
 const busy = computed(() => (game.state?.negotiations?.length ?? 0) + (game.state?.pendingAction ? 1 : 0))
 watch(busy, (now, before) => {
-  if (props.open && now > before) emit('close')
+  if (props.open && !props.stay && now > before) emit('close')
 })
 
 function onClick(e: MouseEvent) {
