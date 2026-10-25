@@ -15,6 +15,8 @@
    "class": "druid",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "荒野部落聯盟",
    "lineage": "月尾部落",
    "tags": [
@@ -73,6 +75,8 @@
    "class": "barbarian",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "荒野部落聯盟",
    "lineage": "赤鬃部落",
    "tags": [
@@ -131,6 +135,8 @@
    "class": "rogue",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "荒野部落聯盟",
    "lineage": "夜爪部落",
    "haunts": [

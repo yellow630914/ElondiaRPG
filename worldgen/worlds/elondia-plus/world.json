@@ -20,6 +20,8 @@
     "class": "cleric",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "聖環教廷",
     "tags": [
      "bishop",
@@ -161,6 +163,8 @@
     "class": "fighter",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "萊茵帝國",
     "tags": [
      "royal",
@@ -338,6 +342,8 @@
     "class": "bard",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "晨曦王國",
     "tags": [
      "royal",
@@ -489,6 +495,7 @@
     "kind": "commoner",
     "class": "",
     "hire_cc": 0,
+    "no_steal": true,
     "occupation": "議會首席",
     "faction": "奧德聯邦",
     "tags": [
@@ -746,6 +753,8 @@
     "class": "fighter",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "七潮議會",
     "tags": [
      "noble"
@@ -902,6 +911,8 @@
     "class": "bard",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "玉璘四時殿",
     "lineage": "春潮閣",
     "tags": [
@@ -1038,6 +1049,8 @@
     "class": "druid",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "精靈王庭",
     "tags": [
      "royal"
@@ -1308,6 +1321,8 @@
     "class": "fighter",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "矮人氏族聯盟",
     "lineage": "鐵爐氏族",
     "tags": [
@@ -1603,6 +1618,8 @@
     "class": "wizard",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "魔族領主議會",
     "lineage": "魅魔（赤翼宮廷）",
     "tags": [
@@ -1688,6 +1705,8 @@
     "class": "barbarian",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "魔族領主議會",
     "lineage": "炎魔（炎獄軍團）",
     "tags": [
@@ -1786,6 +1805,8 @@
     "class": "rogue",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "魔族領主議會",
     "lineage": "影魔（暗影氏族）",
     "tags": [
@@ -1834,6 +1855,8 @@
     "class": "barbarian",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "魔族領主議會",
     "lineage": "獸人（血角氏族）",
     "tags": [
@@ -1883,6 +1906,8 @@
     "class": "cleric",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "魔族領主議會",
     "lineage": "死靈（幽冥典儀會）",
     "tags": [
@@ -2057,6 +2082,8 @@
     "class": "druid",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "荒野部落聯盟",
     "lineage": "月尾部落",
     "tags": [
@@ -2115,6 +2142,8 @@
     "class": "barbarian",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "荒野部落聯盟",
     "lineage": "赤鬃部落",
     "tags": [
@@ -2173,6 +2202,8 @@
     "class": "rogue",
     "unhireable": true,
     "hire_cc": 0,
+    "no_attack": true,
+    "no_steal": true,
     "faction": "荒野部落聯盟",
     "lineage": "夜爪部落",
     "haunts": [

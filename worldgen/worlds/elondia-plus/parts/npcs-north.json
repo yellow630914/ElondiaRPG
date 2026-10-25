@@ -15,6 +15,8 @@
    "class": "fighter",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "矮人氏族聯盟",
    "lineage": "鐵爐氏族",
    "tags": [

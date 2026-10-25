@@ -12,6 +12,7 @@ def npc(id, name, gender, race, cls, level, loc, tier, place, personality, appea
     if not builtin: e['custom']=True
     if cls=='commoner':
         e['kind']='commoner'; e['class']=''; e['hire_cc']=0
+        if tier=='A': e['no_steal']=True
         if occupation: e['occupation']=occupation
     else:
         e['kind']='adventurer'; e['class']=cls
@@ -19,6 +20,9 @@ def npc(id, name, gender, race, cls, level, loc, tier, place, personality, appea
             e['unhireable']=True; e['hire_cc']=0
         else:
             e['hire_cc']=ASK[level]
+        # A 層（一國之主、機構首長）：不能偷襲、偷竊，只能透過特殊任務交手
+        if tier=='A':
+            e['no_attack']=True; e['no_steal']=True
     if faction: e['faction']=faction
     if lineage: e['lineage']=lineage
     if tags: e['tags']=tags

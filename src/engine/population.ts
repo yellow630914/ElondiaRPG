@@ -388,6 +388,12 @@ export function hireable(state: GameState): NpcRecord[] {
   return list.filter((r) => !isUnhireable(r.id) && !inActiveSquad(state, r.id))
 }
 
+/** 這位固定 NPC 不能偷襲、不能偷竊（看內容頁籤的設定） */
+export function isGuarded(id: string, kind: 'attack' | 'steal'): boolean {
+  const def = namedNpcs.find((n) => n.id === id)
+  return !!(kind === 'attack' ? def?.no_attack : def?.no_steal)
+}
+
 /** 這位固定 NPC 不受雇用 */
 export function isUnhireable(id: string): boolean {
   return !!namedNpcs.find((n) => n.id === id)?.unhireable

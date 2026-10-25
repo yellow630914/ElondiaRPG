@@ -5,6 +5,8 @@ import { hireable } from '@/engine/population'
 import { newGame } from '@/engine/state'
 import { recruitableHere } from '@/engine/town'
 import { hireAtAsking } from '@/engine/companions'
+import { prepareAction } from '@/engine/actions'
+import { npcRecord, registerNpc } from '@/engine/npcs'
 
 afterEach(() => applyContent(emptyMods()))
 
@@ -23,5 +25,37 @@ describe('unhireable fixed NPCs', () => {
   })
   it('only keeps the flag on adventurers', () => {
     expect(sanitizeNpc('mod_npc_x', { ...newNpc('mod_npc_x'), kind: 'commoner', unhireable: true }, true).unhireable).toBeUndefined()
+  })
+})
+
+describe('guarded fixed NPCs', () => {
+  function nextTo(guard: { no_attack?: boolean; no_steal?: boolean }) {
+    const mods = emptyMods()
+    mods.npcs.mod_npc_queen = sanitizeNpc('mod_npc_queen', { ...newNpc('mod_npc_queen'), name: '測試女王', class: 'fighter', level: 15, location: 'soriel', unhireable: true, ...guard }, true)
+    applyContent(mods)
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 1, birthplace: 'soriel' })
+    enterLocation(state)
+    const p = state.position!
+    registerNpc(state, { ...npcRecord(state, 'mod_npc_queen')!, at: { area: p.area, x: p.x, y: p.y, until: state.time.day } })
+    return state
+  }
+
+  it('cannot be ambushed or robbed', () => {
+    const state = nextTo({ no_attack: true, no_steal: true })
+    expect(() => prepareAction(state, { kind: 'attack', target: 'mod_npc_queen', text: '' })).toThrow('戒備森嚴')
+    expect(() => prepareAction(state, { kind: 'steal', target: 'mod_npc_queen', text: '' })).toThrow('戒備森嚴')
+    // 聊天照常
+    expect(() => prepareAction(state, { kind: 'chat', target: 'mod_npc_queen', text: '' })).not.toThrow()
+  })
+
+  it('still allows what is not forbidden', () => {
+    const state = nextTo({ no_steal: true })
+    expect(() => prepareAction(state, { kind: 'attack', target: 'mod_npc_queen', text: '' })).not.toThrow()
+  })
+
+  it('keeps no_attack only on adventurers', () => {
+    const c = sanitizeNpc('mod_npc_x', { ...newNpc('mod_npc_x'), kind: 'commoner', no_attack: true, no_steal: true }, true)
+    expect(c.no_attack).toBeUndefined()
+    expect(c.no_steal).toBe(true)
   })
 })

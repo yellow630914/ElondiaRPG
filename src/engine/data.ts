@@ -83,6 +83,10 @@ export interface NpcDef {
   hire_cc: number
   /** 不受雇用（統治者、機構首長……）：不出現在雇用候選、不能談雇用；特殊任務的「任務同行」不受影響 */
   unhireable?: boolean
+  /** 不能偷襲（一國之主、機構首長……）：只能透過特殊任務的戰鬥交手 */
+  no_attack?: boolean
+  /** 不能偷竊（身邊戒備森嚴） */
+  no_steal?: boolean
   personality: string
   faction?: string
   appearance?: string

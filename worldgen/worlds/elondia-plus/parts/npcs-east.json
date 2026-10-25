@@ -15,6 +15,8 @@
    "class": "fighter",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "七潮議會",
    "tags": [
     "noble"
@@ -171,6 +173,8 @@
    "class": "bard",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "玉璘四時殿",
    "lineage": "春潮閣",
    "tags": [

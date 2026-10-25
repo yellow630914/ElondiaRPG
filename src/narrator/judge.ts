@@ -3,6 +3,7 @@
 // AI 只回傳 JSON；程式負責驗證、夾住數值與套用（見 src/engine/actions.ts）。
 
 import { inActiveSquad, squadIds } from '@/engine/squads'
+import { isGuarded } from '@/engine/population'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
 import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
@@ -97,6 +98,12 @@ function squadLine(state: GameState, id: string): string {
   return `小隊：${sq.name}（${names}）；整隊一起行動，不會單獨受雇`
 }
 
+/** 不能偷襲、偷竊的人：自由行動也不能讓這種事成功 */
+function guardLine(id: string): string {
+  const no = [isGuarded(id, 'attack') ? '刺殺、偷襲' : '', isGuarded(id, 'steal') ? '偷竊' : ''].filter(Boolean)
+  return no.length ? `戒備：身邊戒備森嚴，${no.join('、')}不會得手（最多被識破、被護衛擋下）` : ''
+}
+
 function targetDetail(state: GameState, p: ActionPending): string {
   const id = p.target?.includes(':') ? p.target.split(':')[1] : p.target
   if (!id) return '對象：無（或場景中的不特定人物）'
@@ -112,6 +119,7 @@ function targetDetail(state: GameState, p: ActionPending): string {
     rel ? `與主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '與主角：素不相識',
     state.captives?.npcs.includes(rec.id) ? `現況：${CAPTIVE_NOTE}` : '',
     squadLine(state, rec.id),
+    guardLine(rec.id),
   ]
   return lines.filter(Boolean).join('\n')
 }

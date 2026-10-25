@@ -9,7 +9,7 @@ import { currentArea } from './grid'
 import { formatMoney } from './money'
 import { npcKind, npcRecord, npcTitle, registerNpc } from './npcs'
 import { addAffinity, pcOf } from './party'
-import { nearbyPeople, presentHere } from './population'
+import { isGuarded, nearbyPeople, presentHere } from './population'
 import { consequences, securityRules } from './security'
 import { ensureRelationship } from './social'
 import { withRng } from './state'
@@ -71,6 +71,9 @@ export function setupInteraction(state: GameState, kind: InteractionKind, target
   if (state.party.some((m) => m.id === rec.id)) throw new Error('隊友不需要這樣互動，可以用自由行動')
   if (!presentHere(state, rec.id)) throw new Error('對方不在這裡')
   if (state.captives?.npcs.includes(rec.id)) throw new Error(`${rec.name}被你制伏在地上，先決定怎麼處置`)
+  // 一國之主這類人身邊戒備森嚴：不能偷襲、偷竊（只能透過特殊任務交手）
+  if (kind === 'attack' && isGuarded(rec.id, 'attack')) throw new Error(`${rec.name}身邊戒備森嚴，找不到下手的機會`)
+  if (kind === 'steal' && isGuarded(rec.id, 'steal')) throw new Error(`${rec.name}身邊戒備森嚴，沒辦法下手偷東西`)
   if (kind === 'attack') return setupAttack(state, rec)
   if (kind === 'steal') return setupSteal(state, rec)
   if (rec.hostile) throw new Error(`${rec.name}對你充滿敵意，不想理你`)

@@ -1116,6 +1116,9 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   }
   if (raw.gender && GENDER_IDS.includes(raw.gender)) out.gender = raw.gender
   if (raw.unhireable && kind === 'adventurer') out.unhireable = true
+  // 普通人本來就不能被攻擊，只有冒險者需要「不能偷襲」
+  if (raw.no_attack && kind === 'adventurer') out.no_attack = true
+  if (raw.no_steal) out.no_steal = true
   if (str(raw.appearance, 240)) out.appearance = str(raw.appearance, 240)
   if (str(raw.background, 400)) out.background = str(raw.background, 400)
   if (str(raw.faction, 30)) out.faction = str(raw.faction, 30)

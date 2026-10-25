@@ -9,7 +9,7 @@ import { cellAt, CELL_NAME, cellName, currentArea, position } from '@/engine/gri
 import { affinityTable, itemValue, type InteractionKind } from '@/engine/interactions'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcTitle } from '@/engine/npcs'
-import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
+import { isGuarded, isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { inActiveSquad } from '@/engine/squads'
 import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
@@ -96,6 +96,10 @@ function toAction(p: PresentNpc) {
   document.querySelector('.action-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   document.querySelector<HTMLTextAreaElement>('.action-panel textarea:last-of-type')?.focus({ preventScroll: true })
 }
+
+// 一國之主這類人：不能偷襲、偷竊（內容頁籤的設定）
+const GUARDED = '身邊戒備森嚴，找不到下手的機會'
+const guarded = (p: PresentNpc, kind: 'attack' | 'steal') => isGuarded(p.rec.id, kind)
 
 // 固定 NPC 的小隊：不拆開雇用，找隊長整隊邀請或請他們帶你同行
 const squadOf = (id: string) => inActiveSquad(s.value, id)
@@ -227,8 +231,8 @@ async function hire(id: string) {
                   <summary class="small" title="獻媚、偷竊、偷襲" aria-label="更多互動"><GameIcon name="more" :size="16" /></summary>
                   <div class="more-list">
                     <button class="small" :disabled="busy" title="魅力檢定：奉承、討好；失敗會降低親密度，對貴族更難" @click="interact('flatter', p)">獻媚</button>
-                    <button class="small" :disabled="busy" title="靈巧檢定：偷錢或東西；被發現會降低親密度，在城裡還會提高衛兵警戒、降低聲望" @click="interact('steal', p)">偷竊</button>
-                    <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" title="靈巧檢定：成功就先手開戰；被看到會有衛兵與聲望的後果" @click="attack(p)">偷襲</button>
+                    <button class="small" :disabled="busy || guarded(p, 'steal')" :title="guarded(p, 'steal') ? GUARDED : '靈巧檢定：偷錢或東西；被發現會降低親密度，在城裡還會提高衛兵警戒、降低聲望'" @click="interact('steal', p)">偷竊</button>
+                    <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy || guarded(p, 'attack')" :title="guarded(p, 'attack') ? GUARDED : '靈巧檢定：成功就先手開戰；被看到會有衛兵與聲望的後果'" @click="attack(p)">偷襲</button>
                   </div>
                 </details>
               </div>
@@ -264,8 +268,8 @@ async function hire(id: string) {
               <p class="muted">{{ p.rec.name }}對你充滿敵意。</p>
               <div class="row">
                 <button class="small" :disabled="busy" @click="toAction(p)"><GameIcon name="d20" :size="13" />主動行動</button>
-                <button class="small" :disabled="busy" @click="interact('steal', p)">偷竊</button>
-                <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy" @click="attack(p)">偷襲</button>
+                <button class="small" :disabled="busy || guarded(p, 'steal')" :title="guarded(p, 'steal') ? GUARDED : ''" @click="interact('steal', p)">偷竊</button>
+                <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy || guarded(p, 'attack')" :title="guarded(p, 'attack') ? GUARDED : ''" @click="attack(p)">偷襲</button>
               </div>
             </template>
           </div>

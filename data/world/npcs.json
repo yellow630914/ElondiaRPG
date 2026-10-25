@@ -39,7 +39,7 @@
       "appearance": "栗色捲髮上插著一根銀羽鸢的羽毛，背著一把漆面斑駁的魯特琴，裙擺總沾著旅途的塵土。",
       "relations": { "npc_ael": "旅歌隊的另一半：覺得艾爾溫的筆記是全世界最好的歌詞素材，走到哪都拖著他。" },
       "squad": { "name": "旅歌隊", "members": ["npc_ael"], "together": 0.85 } },
-    { "id": "npc_lisar", "name": "「赤翼之君」莉莎爾", "gender": "female", "race": "demon", "class": "wizard", "level": 18, "location": "bloodplume", "hire_cc": 0, "unhireable": true,
+    { "id": "npc_lisar", "name": "「赤翼之君」莉莎爾", "gender": "female", "race": "demon", "class": "wizard", "level": 18, "location": "bloodplume", "hire_cc": 0, "unhireable": true, "no_attack": true, "no_steal": true,
       "kind": "adventurer", "tags": ["royal"], "landmark": "lm_crimson_throne", "lineage": "魅魔（赤翼宮廷）",
       "personality": "冷靜、驕傲、極有耐心；推行「秩序中的力量」，以律法整合荒原。對人類既好奇又警惕，偶爾會為了看清一個人而故意示弱。", "faction": "demon_council",
       "appearance": "高挑妖嬈的魅魔，肌膚緋紅透亮，赤紅雙翼舒展如烈焰；黑髮及腰，頭戴黑曜冠環，金色豎瞳，眉眼間自帶蠱惑的魅光。一身黑紅相間的宮廷長袍，袖口繡著燃燒的羽紋。",

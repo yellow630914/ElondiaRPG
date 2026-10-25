@@ -14,6 +14,8 @@
    "class": "wizard",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "魔族領主議會",
    "lineage": "魅魔（赤翼宮廷）",
    "tags": [
@@ -99,6 +101,8 @@
    "class": "barbarian",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "魔族領主議會",
    "lineage": "炎魔（炎獄軍團）",
    "tags": [
@@ -197,6 +201,8 @@
    "class": "rogue",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "魔族領主議會",
    "lineage": "影魔（暗影氏族）",
    "tags": [
@@ -245,6 +251,8 @@
    "class": "barbarian",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "魔族領主議會",
    "lineage": "獸人（血角氏族）",
    "tags": [
@@ -294,6 +302,8 @@
    "class": "cleric",
    "unhireable": true,
    "hire_cc": 0,
+   "no_attack": true,
+   "no_steal": true,
    "faction": "魔族領主議會",
    "lineage": "死靈（幽冥典儀會）",
    "tags": [
