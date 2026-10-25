@@ -251,6 +251,11 @@ export interface StoryNode {
   /** 在場的友方固定 NPC：站在任務點旁邊、戰鬥時站在隊伍這邊、判定與敘事時列為在場的人 */
   allies?: string[]
   options?: StoryOption[]
+  /**
+   * 玩家走到任務點時要先處理（不能移動、休息），另外多一個選擇：
+   * 緊急（true）多「稍候」：這次先略過，不記事件，離開這裡之後再來還會觸發；不緊急多「放棄」：任務線中斷
+   */
+  urgent?: boolean
   /** 劇情、判定成功、戰鬥勝利 */
   success?: StoryOutcome
   /** 判定失敗、戰鬥落敗或撤退 */

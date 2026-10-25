@@ -130,7 +130,10 @@ export interface CheckInfo {
   /** 實際使用的 DC（AI 可在 ±dc_adjust 內調整） */
   dc: number
   natural: number
+  /** 屬性調整加上情境修正 */
   modifier: number
+  /** 情境修正（已經算在 modifier 裡），例如「瑟琳的好感（45）+4」 */
+  situational?: { label: string; value: number }[]
   total: number
   /** 實際的成功程度（AI 判定時由 AI 決定） */
   degree: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
@@ -745,13 +748,15 @@ export interface GameState {
   /** 城鎮事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子、最近的種類 */
   townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
   /** 在臨時地圖裡：離開時回到的位置 */
-  side?: { area: string; back: { area: string; x: number; y: number } }
+  side?: { area: string; back: { area: string; x: number; y: number }; /** 特殊任務帶進來的臨時地圖：離開就放棄這個任務 */ story?: string }
   /** 在特殊地圖裡：從外面進來前的位置與地點（從出口離開時回到那裡），走過的需要刷新的地圖 */
   special?: { back?: { area: string; x: number; y: number }; location: string; visited: string[] }
   /** 冒險筆記的情報 */
   intel?: Intel[]
   /** 事件結果要求的移動（進入臨時地圖、改去別的地點），在報告提交之後執行 */
-  pendingMove?: { side_map?: string; special_map?: string; travel_to?: string }
+  pendingMove?: { side_map?: string; special_map?: string; travel_to?: string; /** 特殊任務的結果帶進臨時地圖 */ story?: string }
+  /** 特殊任務按了「稍候」的任務點：任務點 → 當時的地方（離開那裡之後再來會再觸發） */
+  storyWaits?: Record<string, string>
   /** 身為奴隸時，今天主人已經同意出城的地點 → 日期；被拒絕的地點 → 日期 */
   masterPass?: Record<string, number>
   masterRefuse?: Record<string, number>

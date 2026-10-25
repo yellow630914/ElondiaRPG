@@ -277,6 +277,7 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
   if (req) out.requires = req
   const allies = (n.allies ?? []).map((a) => str(a, 60)).filter(Boolean)
   if (allies.length) out.allies = [...new Set(allies)]
+  if (n.urgent) out.urgent = true
   if (kind === 'check') out.check = check(n.check) ?? { attr: 'int', dc: 12 }
   if (kind === 'combat') {
     const g = group(n.enemies)

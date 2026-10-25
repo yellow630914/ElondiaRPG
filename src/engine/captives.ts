@@ -20,6 +20,7 @@ import { addAffinity, isEnslaved, joinParty, partyRoom, pcOf } from './party'
 import { alertLevel, consequences, isWanted, securityRules } from './security'
 import { ensureRelationship } from './social'
 import { addHours, commitReport, newReportId, withRng } from './state'
+import { failStoriesOnDeath, refreshStoryMarkers } from './story'
 import type { Captives, GameState, NpcRecord, Report } from './types'
 
 export type CaptiveChoice = 'execute' | 'release' | 'enslave'
@@ -147,6 +148,8 @@ export function resolveCaptive(state: GameState, id: string, choice: CaptiveChoi
     delete stored.at
     for (const roster of Object.values(state.rosters ?? {})) roster.members = roster.members.filter((x) => x !== rec.id)
     lines.push(`處決了被制伏的${rec.name}（${firstHand}）。`)
+    // 不該發生（被制伏的人不能入隊），保險起見：死人不留在隊伍裡
+    state.party = state.party.filter((m) => m.id !== rec.id || m.isPlayer)
   } else {
     delete stored.hostile
     lines.push(`把被制伏的${rec.name}收為奴隸（${firstHand}）。`)
@@ -177,5 +180,9 @@ export function resolveCaptive(state: GameState, id: string, choice: CaptiveChoi
   }
   c.npcs = c.npcs.filter((x) => x !== id)
   if (!captiveRecords(state).length) delete state.captives
-  return commitReport(state, r)
+  // 處決了任務需要的角色：那個任務失敗
+  if (choice === 'execute') failStoriesOnDeath(state, r)
+  const committed = commitReport(state, r)
+  refreshStoryMarkers(state)
+  return committed
 }

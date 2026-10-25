@@ -23,6 +23,7 @@ import type { Character, GameState, GameTime, Report } from './types'
 import { contractOf } from './tattoos'
 import { gameRule } from './gameRules'
 import { squadMates } from './squads'
+import { blockingNode } from './story'
 
 export const INN_CC_PER_PERSON = 15
 
@@ -81,6 +82,8 @@ export function restEventBlock(state: GameState): string | null {
   if (state.pendingMasterEvent) return '先回應主人的要求'
   if (state.pendingDefeat) return '先應付眼前的處境'
   if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
+  const story = blockingNode(state)
+  if (story) return `先處理特殊任務「${story.def.title}」：${story.node.title}`
   return null
 }
 

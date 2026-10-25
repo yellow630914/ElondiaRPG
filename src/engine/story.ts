@@ -16,7 +16,7 @@ import {
   locationById, npcs as namedNpcs, regionById, specialMaps, stories, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
-import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, type Area, type CellKind } from './grid'
+import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
 import { formatMoney } from './money'
 import { npcRecord } from './npcs'
 import { joinParty, leaveParty, pcOf } from './party'
@@ -76,9 +76,20 @@ export function storyOffersHere(state: GameState): StoryDef[] {
     if (!canStart(state, def)) return false
     const s = def.start
     if (s.kind === 'guild') return area.kind === 'settlement' && cell.kind === 'guild' && (!s.location || s.location === area.location)
-    if (s.kind === 'npc') return !!s.npc && !!npcRecord(state, s.npc) && presentHere(state, s.npc)
+    if (s.kind === 'npc') return !!s.npc && npcFree(state, s.npc) && !npcRecord(state, s.npc)!.hostile && presentHere(state, s.npc)
     return false
   })
+}
+
+/** 被制伏、等你處置的人 */
+export function isCaptive(state: GameState, id: string): boolean {
+  return !!state.captives?.npcs.includes(id)
+}
+
+/** 這位角色還活著、沒有被制伏（任務可以找他、讓他加入、和他交手） */
+export function npcFree(state: GameState, id: string): boolean {
+  const rec = npcRecord(state, id)
+  return !!rec && !rec.dead && !isCaptive(state, id)
 }
 
 function storyReport(state: GameState, def: StoryDef, status: NonNullable<Report['story']>['status'], hours: number, node?: StoryNode): Report {
@@ -171,6 +182,9 @@ export function activeNodes(state: GameState): ActiveNode[] {
 /** 主角現在所在的地方有沒有這個任務點 */
 export function nodeIsHere(state: GameState, n: ActiveNode): boolean {
   const at = n.node.at
+  // 檢定參考好感的角色被制伏了：等處置完再說
+  const ref = n.node.check?.affinity?.npc
+  if (ref && isCaptive(state, ref)) return false
   const area = currentArea(state)
   if (at.location && at.where !== 'npc' && at.where !== 'road' && at.where !== 'side' && at.where !== 'special' && area.location !== at.location) return false
   switch (at.where) {
@@ -179,7 +193,7 @@ export function nodeIsHere(state: GameState, n: ActiveNode): boolean {
     case 'special': return currentCell(state).kind === 'quest' && currentCell(state).storyNode === n.ref
     case 'settlement': return area.kind === 'settlement'
     case 'cell': return area.kind === 'settlement' && currentCell(state).kind === at.cell
-    case 'npc': return !!at.npc && presentHere(state, at.npc) && (!at.location || area.location === at.location)
+    case 'npc': return !!at.npc && npcFree(state, at.npc) && presentHere(state, at.npc) && (!at.location || area.location === at.location)
     case 'outskirts':
     case 'dungeon': return currentCell(state).kind === 'quest' && currentCell(state).storyNode === n.ref
   }
@@ -224,10 +238,25 @@ export function playNode(state: GameState, ref: string, option?: number, intent?
   if (!nodeIsHere(state, n)) throw new Error('要在任務點才能進行')
   const { def, node } = n
   if (node.kind === 'combat') {
+    // 已經死了、被制伏的角色不上場；對手都不在了就直接算勝利
+    const foes = (node.foes ?? []).filter((id) => npcFree(state, id))
+    const allies = (node.allies ?? []).filter((id) => npcFree(state, id))
+    if (!node.enemies?.length && !foes.length) {
+      const report = storyReport(state, def, 'progress', 0.5, node)
+      if (intent) report.narration = { ...report.narration, player_intent: intent }
+      const gone = (node.foes ?? []).map((id) => npcRecord(state, id)?.name).filter(Boolean).join('、')
+      const lines = resolveOutcome(state, report, n.progress, def, node, node.success, true, '')
+      report.outcome = { ...report.outcome, result: 'success', summary: `${gone ? `${gone}已經不在了，` : ''}沒有交手。${lines.join('')}` }
+      report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), `${gone || '對手'}已經死了或被制伏，這場戰鬥沒有發生`] }
+      const committed = commitReport(state, report)
+      refreshStoryMarkers(state)
+      applyPendingMove(state)
+      return committed
+    }
     return startCombat(state, node.enemies ?? [], {
       story: { id: def.id, node: node.id }, scene: `${currentArea(state).name}・${node.title}`,
-      ...(node.foes?.length ? { npcs: node.foes.filter((id) => !!npcRecord(state, id)) } : {}),
-      ...(node.allies?.length ? { allies: node.allies.filter((id) => !!npcRecord(state, id)) } : {}),
+      ...(foes.length ? { npcs: foes } : {}),
+      ...(allies.length ? { allies } : {}),
       ...(intent ? { intent } : {}),
     })
   }
@@ -236,7 +265,7 @@ export function playNode(state: GameState, ref: string, option?: number, intent?
   if (node.kind === 'choice') {
     const o = node.options?.[option ?? -1]
     if (!o) throw new Error('沒有這個選項')
-    if (!condMet(state, o.requires)) throw new Error('這個選項現在不能選')
+    if (!optionOpen(state, node, option!)) throw new Error('這個選項現在不能選')
     if (o.check) throw new Error('這個選項要檢定')
     outcome = o.success
     label = o.label
@@ -266,7 +295,9 @@ function parseTarget(target: string | undefined): { ref: string; option?: number
 
 /** 這個選項現在能不能選（好感、旗標的條件） */
 export function optionOpen(state: GameState, node: StoryNode, option: number): boolean {
-  return condMet(state, node.options?.[option]?.requires)
+  const o = node.options?.[option]
+  if (o?.check?.affinity && isCaptive(state, o.check.affinity.npc)) return false
+  return condMet(state, o?.requires)
 }
 
 /** 檢定參考的好感：角色、目前的好感、加值（每 per 點 ±1，最多 ±max）、有沒有到門檻 */
@@ -383,6 +414,8 @@ function resolveOutcome(
     if (!success) {
       lines.push('這次沒有進展，之後可以再試一次。')
       log(progress, state, `${node.title}：沒有成功`, node.id)
+      // 離開這裡之後再來才會再擋住你（不然一直被同一個任務點擋著）
+      waitHere(state, nodeRef(def.id, node.id))
       return lines
     }
     outcome = {}
@@ -396,7 +429,9 @@ function resolveOutcome(
   if (notes.length) lines.push(notes.join('，') + '。')
   if (outcome.join) {
     const rec = npcRecord(state, outcome.join)
-    if (rec && !state.party.some((m) => m.id === rec.id)) {
+    if (rec && !npcFree(state, rec.id)) {
+      lines.push(`（${rec.name}${rec.dead ? '已經不在人世' : '被制伏了'}，沒辦法同行）`)
+    } else if (rec && !state.party.some((m) => m.id === rec.id)) {
       try {
         joinParty(state, rec, 'guest', report, { reason: `特殊任務「${def.title}」` })
         progress.guests = [...new Set([...(progress.guests ?? []), rec.id])]
@@ -409,7 +444,9 @@ function resolveOutcome(
   if (outcome.leave) leaveGuest(state, report, progress, outcome.leave, lines)
   // 進入臨時地圖、改去別的地點：報告提交之後執行
   queueMove(state, outcome)
+  if (state.pendingMove?.side_map) state.pendingMove.story = def.id
   if (!outcome.retry) progress.done = [...new Set([...progress.done, node.id])]
+  else waitHere(state, nodeRef(def.id, node.id))
   log(progress, state, `${node.title}${label ? `（${label}）` : ''}：${outcome.text ?? (success ? '完成' : '失敗')}`, node.id)
   if (outcome.complete) finishStory(state, report, progress, def, 'completed', lines)
   else if (outcome.fail_quest) finishStory(state, report, progress, def, 'failed', lines)
@@ -454,17 +491,74 @@ export function pruneStories(state: GameState) {
     p.guests = []
     p.log.push({ time: { ...state.time }, text: '這個特殊任務已經不存在，任務中斷' })
   }
+  failStoriesOnDeath(state)
+  // 舊存檔：臨時地圖裡的任務點，地圖已經不在了（以前離開就刪掉）
+  for (const p of Object.values(state.stories ?? {})) {
+    const def = p.status === 'active' ? storyDef(p.id) : undefined
+    if (!def || state.side?.story === p.id) continue
+    if (!sideNodesOpen(state, p.id)) continue
+    endQuietly(state, p, '離開了任務的臨時地圖，任務中斷')
+  }
 }
 
-/** 放棄進行中的任務 */
-export function abandonStory(state: GameState, id: string): Report {
+/** 不經過日誌結束任務（讀檔時整理）：任務同行的夥伴離隊 */
+function endQuietly(state: GameState, p: StoryProgress, text: string) {
+  p.status = 'failed'
+  p.ended = { ...state.time }
+  for (const g of p.guests ?? []) if (state.party.some((m) => m.id === g && m.bond === 'guest')) leaveParty(state, g, undefined, '任務同行結束')
+  p.guests = []
+  p.log.push({ time: { ...state.time }, text })
+}
+
+// ---- 角色死亡 ----
+
+/** 任務需要的固定 NPC：開頭的角色、任務同行，還沒結束的任務點要找、要加入的人（敵對的角色除外：本來就可能被打倒） */
+function neededNpcs(def: StoryDef, p: StoryProgress): string[] {
+  const foes = new Set(def.nodes.flatMap((n) => n.foes ?? []))
+  const ids: (string | undefined)[] = [def.start.kind === 'npc' ? def.start.npc : undefined, ...(p.guests ?? [])]
+  for (const n of def.nodes) {
+    if (p.done.includes(n.id)) continue
+    const outs = [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]
+    ids.push(n.at.npc, ...outs.map((o) => o?.join))
+    for (const o of outs) for (const e of o?.effects ?? []) if (e.type === 'companion' && typeof e.npc === 'string') ids.push(e.npc)
+  }
+  return [...new Set(ids.filter((x): x is string => !!x))].filter((id) => !foes.has(id))
+}
+
+/** 任務需要的角色死了：任務失敗。有報告時寫進報告（處決、戰鬥），沒有時（讀檔）直接結束 */
+export function failStoriesOnDeath(state: GameState, report?: Report) {
+  for (const p of Object.values(state.stories ?? {})) {
+    const def = p.status === 'active' ? storyDef(p.id) : undefined
+    if (!def) continue
+    const dead = neededNpcs(def, p).map((id) => npcRecord(state, id)).find((r) => r?.dead)
+    if (!dead) continue
+    const why = `${dead.name}死了，特殊任務「${def.title}」沒辦法繼續`
+    if (!report) {
+      endQuietly(state, p, why)
+      continue
+    }
+    const lines: string[] = []
+    log(p, state, why)
+    finishStory(state, report, p, def, 'failed', lines)
+    report.outcome.summary = `${report.outcome.summary ?? ''}${why}。${lines.join('')}`
+  }
+}
+
+/** 這個任務還有沒完成的臨時地圖任務點 */
+export function sideNodesOpen(state: GameState, id: string): boolean {
+  return activeNodes(state).some((n) => n.def.id === id && n.node.at.where === 'side')
+}
+
+/** 放棄進行中的任務（why：不是玩家自己放棄時的原因，例如離開了任務的臨時地圖） */
+export function abandonStory(state: GameState, id: string, why?: string): Report {
   const progress = state.stories?.[id]
   const def = storyDef(id)
   if (!progress || progress.status !== 'active' || !def) throw new Error('沒有進行中的這個任務')
   const report = storyReport(state, def, 'failed', 0)
   const lines: string[] = []
+  if (why) log(progress, state, why)
   finishStory(state, report, progress, def, 'failed', lines)
-  report.outcome = { ...report.outcome, result: 'neutral', summary: `放棄了特殊任務「${def.title}」。${lines.slice(1).join('')}` }
+  report.outcome = { ...report.outcome, result: 'neutral', summary: `${why ? `${why}，` : ''}放棄了特殊任務「${def.title}」。${lines.slice(1).join('')}` }
   report.narration = { length: 'short' }
   const committed = commitReport(state, report)
   refreshStoryMarkers(state)
@@ -487,6 +581,56 @@ export function expireStory(state: GameState, id: string): Report {
   return committed
 }
 
+// ---- 走到任務點：先處理（稍候或放棄） ----
+
+/** 任務點所在的「這裡」：按了稍候之後，離開這裡再回來才會再觸發 */
+function placeKey(state: GameState, n: ActiveNode): string {
+  const area = currentArea(state)
+  const p = position(state)
+  switch (n.node.at.where) {
+    case 'road': return state.road ? `road:${state.road.from}>${state.road.to}@${state.road.start.day}:${state.road.start.hour ?? 0}` : 'road'
+    case 'settlement': return `town:${area.location}`
+    case 'npc': return `npc:${area.key}`
+    default: return `${area.key}@${p.x},${p.y}`
+  }
+}
+
+/** 這個任務點在這裡按過稍候（或剛試過沒有進展） */
+export function waitingHere(state: GameState, n: ActiveNode): boolean {
+  return state.storyWaits?.[n.ref] === placeKey(state, n)
+}
+
+function waitHere(state: GameState, ref: string) {
+  const n = activeNodes(state).find((x) => x.ref === ref)
+  if (!n || !nodeIsHere(state, n)) return
+  const open = new Set(activeNodes(state).map((x) => x.ref))
+  // 結束的任務點不用記
+  state.storyWaits = Object.fromEntries(Object.entries(state.storyWaits ?? {}).filter(([k]) => open.has(k)))
+  state.storyWaits[ref] = placeKey(state, n)
+}
+
+/** 離開了按過稍候的地方：忘掉那次稍候，之後再來會再觸發（每個動作之後呼叫） */
+export function forgetStoryWaits(state: GameState) {
+  if (!state.storyWaits) return
+  const here = new Map(nodesHere(state).map((n) => [n.ref, placeKey(state, n)]))
+  for (const [ref, key] of Object.entries(state.storyWaits)) if (here.get(ref) !== key) delete state.storyWaits[ref]
+  if (!Object.keys(state.storyWaits).length) delete state.storyWaits
+}
+
+/** 擋住移動、休息的任務點：在這裡、還沒按稍候的第一個 */
+export function blockingNode(state: GameState): ActiveNode | undefined {
+  if (state.combat || state.pendingAction) return undefined
+  return nodesHere(state).find((n) => !waitingHere(state, n))
+}
+
+/** 緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發 */
+export function waitStory(state: GameState, ref: string) {
+  const n = active(state, ref)
+  if (!n.node.urgent) throw new Error('這個任務點不能稍候，只能處理或放棄')
+  if (!nodeIsHere(state, n)) throw new Error('要在任務點才能進行')
+  waitHere(state, ref)
+}
+
 // ---- 近郊與地下城的任務點（⭐） ----
 
 function layerId(area: Area): DungeonLayerId | undefined {
@@ -496,7 +640,7 @@ function layerId(area: Area): DungeonLayerId | undefined {
 /** 這一區該有哪些任務點 */
 function markersFor(state: GameState, area: Area): string[] {
   return activeNodes(state)
-    .filter(({ node }) => (node.at.where === 'side' && area.kind === 'side' && (!node.at.side_map || node.at.side_map === area.template))
+    .filter(({ def, node }) => (node.at.where === 'side' && area.kind === 'side' && state.side?.area === area.key && state.side.story === def.id && (!node.at.side_map || node.at.side_map === area.template))
       || (node.at.where === 'special' && area.kind === 'special' && node.at.special_map === area.special) || (node.at.location === area.location && (
       (node.at.where === 'outskirts' && area.kind === 'wild') ||
       (node.at.where === 'dungeon' && area.kind === 'dungeon' && (node.at.layer ?? 'outskirts') === layerId(area)))))

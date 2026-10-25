@@ -18,7 +18,7 @@ import {
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { questTargets } from './materialQuests'
-import { ensureStoryMarkers } from './story'
+import { blockingNode, ensureStoryMarkers } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
 import { ensureIntelPoints, finishIntel } from './intel'
 import { formatMoney } from './money'
@@ -1217,6 +1217,8 @@ export function assertNoStandoff(state: GameState) {
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
   if (state.pendingDefeat) throw new Error('先應付眼前的處境')
   if (state.captives?.npcs.length) throw new Error('先決定怎麼處置被制伏的人')
+  const story = blockingNode(state)
+  if (story) throw new Error(`先處理特殊任務「${story.def.title}」：${story.node.title}`)
 }
 
 /** 城門盤查：沒過時回傳盤查的紀錄（沒有擲骰時直接說明原因） */

@@ -20,7 +20,7 @@ import { spawnVisitors } from './population'
 import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
 import { addHours, commitReport, newReportId, withRng } from './state'
-import { canStart, ensureStoryMarkers, startStory } from './story'
+import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
 import { condMet, flagKey } from './storyFlags'
 import { gateCheck } from './security'
 import { toolBonus } from './tools'
@@ -475,7 +475,7 @@ export function finishJourney(state: GameState, to?: string): Report {
 // ---- 臨時地圖 ----
 
 /** 進入臨時地圖：站在出口，離開時回到現在的位置 */
-export function enterSide(state: GameState, template: string): Area {
+export function enterSide(state: GameState, template: string, story?: string): Area {
   const def = travelEvents.side_maps[template]
   if (!def) throw new Error('沒有這種地方')
   if (state.side) leaveSide(state)
@@ -491,7 +491,9 @@ export function enterSide(state: GameState, template: string): Area {
     return a
   })
   storeArea(state, area)
-  state.side = { area: key, back: { area: back.area, x: back.x, y: back.y } }
+  state.side = { area: key, back: { area: back.area, x: back.x, y: back.y }, ...(story ? { story } : {}) }
+  // 特殊任務帶進來的地圖：任務點只放在這張（記下是哪個任務之後才放）
+  if (story) withRng(state, (rng) => ensureStoryMarkers(state, area, rng))
   const exit = findKind(area, 'exit') ?? { x: 0, y: 0 }
   if (def.visitors) spawnVisitors(state, area, exit)
   if (template === 'waystation') enterWaystation(state)
@@ -504,6 +506,8 @@ export function leaveSide(state: GameState) {
   const side = state.side
   if (!side) return
   delete state.side
+  // 特殊任務帶進來的地圖：任務點還沒完成就離開，等於放棄這個任務（地圖不會留著）
+  if (side.story && sideNodesOpen(state, side.story)) abandonStory(state, side.story, '離開了任務的臨時地圖')
   if (state.areas) delete state.areas[side.area]
   state.position = { ...side.back }
 }
@@ -524,7 +528,7 @@ export function applyPendingMove(state: GameState) {
       arrive(state)
     }
   } else if (m.side_map) {
-    enterSide(state, m.side_map)
+    enterSide(state, m.side_map, m.story)
   } else if (m.special_map) {
     enterSpecial(state, m.special_map)
   }

@@ -436,7 +436,8 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
   return {
     schema_version: '0.1',
     report_id: newReportId(state),
-    kind: p.kind === 'free' || p.kind === 'craft' || p.kind === 'make' || p.kind === 'produce' || p.kind === 'invent' ? 'action' : 'social',
+    // 特殊任務的判定和任務的其他日誌一樣算事件
+    kind: p.kind === 'free' || p.kind === 'craft' || p.kind === 'make' || p.kind === 'produce' || p.kind === 'invent' ? 'action' : p.kind === 'story' ? 'event' : 'social',
     time: { start, end: addHours(start, hours) },
     location: { at: state.location, region: loc.region, scene: p.scene },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
@@ -463,7 +464,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
 
   const report = actionReport(state, p, p.hours ?? kind.hours)
   const check: CheckInfo = {
-    action: kind.name, attr, base_dc: p.base_dc, dc, natural: p.natural, modifier, total, degree,
+    action: kind.name, attr, base_dc: p.base_dc, dc, natural: p.natural, modifier, ...(p.situational.length ? { situational: p.situational } : {}), total, degree,
     ...(degree !== reference ? { reference_degree: reference } : {}),
     source: judgment ? 'ai' : 'rules',
     ...(judgment?.rationale ? { rationale: judgment.rationale } : {}),

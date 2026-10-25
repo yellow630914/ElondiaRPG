@@ -94,6 +94,8 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
       </label>
     </div>
     <label class="block"><span>事件描述 <Hint text="觸發時看到的，也會交給 AI。" /></span><textarea v-model="node.text" rows="3" maxlength="600" /></label>
+    <label class="check"><input type="checkbox" :checked="!!node.urgent" @change="($event.target as HTMLInputElement).checked ? (node.urgent = true) : delete node.urgent" /> 緊急
+      <Hint text="走到任務點時要先處理，不能移動或休息。緊急：多一個「稍候」，這次先略過、不記日誌，離開這裡之後再來還會遇到。不緊急：多一個「放棄」，選了任務線就中斷。" /></label>
 
     <div class="grid">
       <label>在哪裡

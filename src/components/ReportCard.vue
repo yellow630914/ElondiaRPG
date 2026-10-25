@@ -148,7 +148,8 @@ async function copyPrompt() {
     <div v-if="roll && check" class="check small" :title="check">
       <span ref="dieEl" class="d20" :class="{ rolling, [roll.degree]: !rolling && fresh }">{{ rolling ? shownNatural : roll.natural }}</span>
       <span class="muted">{{ roll.action }}</span>
-      <span class="tag">{{ attrName(roll.attr) }} {{ signed(roll.modifier) }}</span>
+      <span class="tag">{{ attrName(roll.attr) }} {{ signed(roll.modifier - (roll.situational ?? []).reduce((s, x) => s + x.value, 0)) }}</span>
+      <span v-for="x in roll.situational ?? []" :key="x.label" class="tag">{{ x.label }} {{ signed(x.value) }}</span>
       <span class="muted">＝</span><b>{{ roll.total }}</b>
       <span class="muted">對 DC {{ roll.dc }}<template v-if="roll.dc !== roll.base_dc">（參考 {{ roll.base_dc }}）</template></span>
       <span v-show="!rolling" class="verdict" :class="roll.degree">{{ DEGREE[roll.degree] }}</span>

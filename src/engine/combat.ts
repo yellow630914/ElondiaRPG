@@ -29,7 +29,7 @@ import { bossMerit } from './guild'
 import { lightingRules } from './light'
 import { defeatLoss } from './expedition'
 import { formatMoney } from './money'
-import { applyStoryCombat, refreshStoryMarkers } from './story'
+import { applyStoryCombat, failStoriesOnDeath, refreshStoryMarkers } from './story'
 import { finishIntel, intelBounty, intelById } from './intel'
 import { applyEffects } from './effects'
 import { roll, withBonus, type Rng } from './rng'
@@ -1686,6 +1686,8 @@ export function finishCombat(state: GameState): Report {
   if (combat.status === 'defeat' && !rescued) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes))
   // 特殊任務的戰鬥任務點：依勝負套用結果
   if (combat.story) applyStoryCombat(state, report, combat.story, combat.status)
+  // 打死了任務需要的角色：那個任務失敗
+  if (foes.some((f) => f.npcId && f.hp === 0)) failStoriesOnDeath(state, report)
   // 情報裡盤踞的強敵：打倒有額外的報酬
   const intelId = victory && combat.cell ? state.areas?.[combat.cell.area]?.cells[combat.cell.y * state.areas[combat.cell.area]!.width + combat.cell.x]?.intel : undefined
   const intel = intelById(state, intelId)

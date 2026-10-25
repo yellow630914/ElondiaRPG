@@ -316,6 +316,8 @@ export const useGame = defineStore('game', () => {
       const result = fn(state.value)
       // 期限：逾期的委託與特殊任務（各自產生報告）
       deadlines.expireDeadlines(state.value)
+      // 離開了按過「稍候」的任務點：之後再來會再觸發
+      story.forgetStoryWaits(state.value)
       // 日誌太長時把舊的封存（token 用量另外合計，見 logArchive.ts）
       archiveOldReports(state.value, useSettings().logKeepLimit(), narrations.value, usage.value)
       saveSoon()
@@ -953,7 +955,7 @@ export const useGame = defineStore('game', () => {
     /** 一路往前走，遇到事件、戰鬥或抵達時停下 */
     walkRoad: () => run((s) => {
       for (let i = 0; i < 80; i++) {
-        if (!s.road || s.side || s.roadEvent || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction) return {}
+        if (!s.road || s.side || s.roadEvent || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction || story.blockingNode(s)) return {}
         const r = afterMove(s, grid.move(s, 1, 0))
         if (r.report || r.combat || s.roadEvent || s.pendingMasterEvent) return r
       }
@@ -1006,6 +1008,8 @@ export const useGame = defineStore('game', () => {
       return perform({ kind: 'story', target, text, ...(use ? { use } : {}) })
     },
     abandonStory: (id: string) => run((s) => story.abandonStory(s, id)),
+    // 走到緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發
+    waitStory: (ref: string) => run((s) => story.waitStory(s, ref)),
     act: (action: combat.CombatAction) => run((s) => combat.act(s, action)),
     finishCombat: () =>
       run((s) => {

@@ -186,6 +186,15 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           notes.push(`${rec.name}已經在隊伍裡了`)
           break
         }
+        // 已經死了、被制伏等你處置的人：不能入隊（被制伏的人要在戰後處置收為奴隸）
+        if (rec.dead) {
+          notes.push(`（${rec.name}已經不在人世，沒辦法入隊）`)
+          break
+        }
+        if (state.captives?.npcs.includes(rec.id)) {
+          notes.push(`（${rec.name}被制伏了，要先在戰後處置決定怎麼對待）`)
+          break
+        }
         if (partyRoom(state) < 1) {
           ensureRelationship(state, rec)
           notes.push(`${rec.name}想加入，但隊伍已滿`)

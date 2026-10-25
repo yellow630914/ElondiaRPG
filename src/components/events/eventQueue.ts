@@ -1,15 +1,16 @@
 // 需要玩家回應的事件，用同一個格式排成佇列，在事件視窗（EventCenter.vue）裡一件一件處理：
-// - 擋住行動的（戰敗後的處境、對峙、刻印、主人的要求、旅途事件、城鎮事件）：不處理就不能移動、休息；排在前面
+// - 擋住行動的（戰敗後的處境、對峙、刻印、主人的要求、旅途事件、特殊任務的任務點、城鎮事件）：不處理就不能移動、休息；排在前面
 // - 可以晚點處理的（AI 提議的關係變化、升級、取得特質的機會）：可以按「稍後」
 // 有新的事件時事件視窗自動打開；關掉之後畫面上方顯示「🔔 N 件待處理」。
 
 import { ref } from 'vue'
 import { roadTemplate } from '@/engine/road'
+import { blockingNode } from '@/engine/story'
 import { pendingTownEvent } from '@/engine/townEvents'
 import type { GameState } from '@/engine/types'
 import { contractOf } from '@/engine/tattoos'
 
-export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'suggestion' | 'levelup' | 'perk'
+export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'story' | 'suggestion' | 'levelup' | 'perk'
 
 export interface GameEvent {
   /** 同一件事一直是同一個 id（用來判斷是不是新的事件、記住「稍後」） */
@@ -50,6 +51,9 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
       out.push({ id: `master:${hash(state.pendingMasterEvent)}`, kind: 'master', icon: '⛓️', title: `${master}的要求`, blocking: true })
     }
     if (state.roadEvent) out.push({ id: `road:${state.roadEvent.x}:${state.roadEvent.template}`, kind: 'road', icon: '🧭', title: roadTemplate(state.roadEvent.template)?.title ?? '旅途上的事', blocking: true })
+    // 走到特殊任務的任務點：處理、稍候（緊急的）或放棄
+    const story = blockingNode(state)
+    if (story) out.push({ id: `story:${story.ref}`, kind: 'story', icon: '⭐', title: `${story.def.title}：${story.node.title}`, blocking: true, ref: story.ref })
     if (state.townEvent) out.push({ id: `town:${state.townEvent.template}:${state.townEvents?.last ?? 0}`, kind: 'town', icon: '🏘️', title: pendingTownEvent(state)?.title ?? '城裡的事', blocking: true })
   }
   for (const s of state.suggestions ?? []) {

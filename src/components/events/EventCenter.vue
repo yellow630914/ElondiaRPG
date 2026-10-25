@@ -12,6 +12,8 @@ import MarkingPanel from './MarkingPanel.vue'
 import PerkOfferPanel from './PerkOfferPanel.vue'
 import RoadEventPanel from './RoadEventPanel.vue'
 import SuggestionPanel from './SuggestionPanel.vue'
+import StoryNodeCard from '../StoryNodeCard.vue'
+import { blockingNode } from '@/engine/story'
 import { activeEvents, eventDialogOpen, snoozed, type GameEvent } from './eventQueue'
 
 // 事件視窗：需要回應的事件（見 eventQueue.ts）一件一件處理。有新的事件時自動打開；
@@ -21,6 +23,7 @@ const game = useGame()
 const events = computed(() => activeEvents(game.state))
 const current = computed(() => events.value[0])
 const next = computed(() => events.value.slice(1))
+const storyNode = computed(() => (current.value?.kind === 'story' && game.state ? blockingNode(game.state) : undefined))
 
 // 出現新的事件就打開；升級選了一部分（剩下的能力或屬性點變少）不算新的事件，免得蓋住正在用的隊伍視窗
 const seen = ref(new Set<string>())
@@ -35,6 +38,9 @@ function isFresh(e: GameEvent): boolean {
   return before === undefined || left > before
 }
 watch(events, (list) => {
+  // 稍候之後離開、再回到特殊任務的任務點：當成新的事件，再打開一次
+  const ids = new Set(list.map((e) => e.id))
+  for (const id of seen.value) if (id.startsWith('story:') && !ids.has(id)) seen.value.delete(id)
   const fresh = list.filter(isFresh)
   if (fresh.length) {
     seen.value = new Set([...seen.value, ...fresh.map((e) => e.id)])
@@ -69,6 +75,7 @@ function openParty(member?: string) {
       <MasterEventPanel v-else-if="current.kind === 'master'" />
       <RoadEventPanel v-else-if="current.kind === 'road'" />
       <RoadEventPanel v-else-if="current.kind === 'town'" town />
+      <StoryNodeCard v-else-if="current.kind === 'story' && storyNode" :n="storyNode" prompt />
       <SuggestionPanel v-else-if="current.kind === 'suggestion'" :id="current.ref!" />
       <LevelUpPanel v-else-if="current.kind === 'levelup'" :id="current.ref!" @open-party="openParty" />
       <PerkOfferPanel v-else-if="current.kind === 'perk'" :refid="current.ref!" />

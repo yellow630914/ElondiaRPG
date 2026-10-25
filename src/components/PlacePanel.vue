@@ -16,6 +16,7 @@ import { bestTool } from '@/engine/tools'
 import type { Quest } from '@/engine/types'
 import { reachable } from '@/engine/world'
 import { useGame } from '@/stores/game'
+import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import GuardStatus from './GuardStatus.vue'
@@ -43,7 +44,13 @@ import { shopPlace, shopTypeForCell } from '@/engine/trade'
 import { CELL_GAME_ICON } from './ui/cellIcons'
 
 const game = useGame()
-const content = useContent()
+
+/** 離開臨時地圖：特殊任務帶進來、任務點還沒完成時，離開等於放棄 */
+function leaveSide() {
+  const id = s.value.side?.story
+  if (id && sideNodesOpen(s.value, id) && !confirm(`離開這裡就是放棄特殊任務「${storyDef(id)?.title ?? id}」（放棄後不能再接）。確定離開？`)) return
+  game.leaveSide()
+}const content = useContent()
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
@@ -318,7 +325,7 @@ const shopDesc = computed(() => {
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'side'">
           <p class="muted small">{{ area.name }}的出口。</p>
-          <button @click="game.leaveSide()">離開，回到{{ s.road ? '旅途' : '原本的地方' }}</button>
+          <button @click="leaveSide">離開，回到{{ s.road ? '旅途' : '原本的地方' }}</button>
         </template>
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'dungeon'">

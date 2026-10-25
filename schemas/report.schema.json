@@ -251,7 +251,11 @@
         "base_dc": { "type": "integer" },
         "dc": { "type": "integer" },
         "natural": { "type": "integer", "minimum": 1, "maximum": 20 },
-        "modifier": { "type": "integer" },
+        "modifier": { "type": "integer", "description": "屬性調整加上情境修正" },
+        "situational": {
+          "type": "array", "description": "情境修正（已經算在 modifier 裡），例如某位角色的好感",
+          "items": { "type": "object", "required": ["label", "value"], "properties": { "label": { "type": "string" }, "value": { "type": "integer" } } }
+        },
         "total": { "type": "integer" },
         "degree": { "enum": ["critical", "success", "partial", "fail", "fumble"] },
         "reference_degree": { "enum": ["critical", "success", "partial", "fail", "fumble"], "description": "骰值對 DC 算出的參考成功程度；只在與實際結果不同時記錄" },
