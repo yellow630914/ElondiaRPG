@@ -529,6 +529,13 @@ export interface SlaveListing {
   haggled?: boolean
 }
 
+/** 黑市的珍品：獨特裝備（物品名稱）與今天的價格 */
+export interface CurioListing {
+  item: string
+  price_cc: number
+  haggled?: boolean
+}
+
 export interface PartyOffer {
   id: string
   leader: string
@@ -649,6 +656,8 @@ export interface GameOptions {
   alertDecayDays?: number
   /** 戰鬥撤退與地下城緊急撤退的 DC 加減 */
   escapeDc?: number
+  /** 黑市每天刷新幾件珍品（獨特裝備） */
+  blackMarketGear?: number
 }
 
 /** 這一趟地下城探索（進入地下城時開始，離開時結束） */
@@ -745,6 +754,8 @@ export interface GameState {
   taverns?: Record<string, { day: number; candidates: TavernCandidate[]; flavored?: boolean }>
   /** 奴隸市場今天的商品；鍵為 城鎮/public 或 城鎮/black */
   markets?: Record<string, { day: number; stock: SlaveListing[] }>
+  /** 黑市每天刷新的珍品（地點 → 當天的貨） */
+  curios?: Record<string, { day: number; stock: CurioListing[] }>
   /** 其他隊伍的入隊邀請 */
   partyOffers?: PartyOffer[]
   /** 事件或 AI 讓人入隊時隊伍滿了：等主角騰出位子或放棄（見 away.ts） */

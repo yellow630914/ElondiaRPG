@@ -32,6 +32,11 @@
 
   "black_market_search": { "attr": "cha", "dc": 14, "hours": 2 },
 
+  "curios": {
+    "$comment": "黑市每天刷新的珍品：勾了「也會出現在黑市」的獨特裝備（items.json 的 black_market），件數是存檔規則的 blackMarketGear（預設 3）。價格 = 物品價 × price_mult（整數十），可以殺價（同奴隸的 haggle，每件每天一次）；買走就沒了，當天不補。",
+    "price_mult": 2.5
+  },
+
   "haggle": {
     "$comment": "殺價、魅惑等主動行動。成功程度決定價格倍率；失敗後當天不能再殺價。DC = base + 2 × 市場是黑市。",
     "attr": "cha",

@@ -7,7 +7,9 @@ import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { isBound, isEnslaved, leaderOf, partyRoom } from '@/engine/party'
 import type { MarkChoice } from '@/engine/slavery'
-import type { SlaveListing } from '@/engine/types'
+import type { CurioListing, SlaveListing } from '@/engine/types'
+import { itemDef } from '@/engine/data'
+import { gearSummary } from '@/engine/gear'
 import { useGame } from '@/stores/game'
 import MarkPicker from './MarkPicker.vue'
 import NameTag from './NameTag.vue'
@@ -19,9 +21,20 @@ const s = computed(() => game.state!)
 const market = computed(() => marketsHere(s.value).find((m) => m.kind === props.kind)?.def)
 const loaded = ref<SlaveListing[]>([])
 
+const loadedCurios = ref<CurioListing[]>([])
 onMounted(() => {
   loaded.value = game.marketStock(props.kind)
+  if (props.kind === 'black') loadedCurios.value = game.curioStock()
 })
+
+// ---- 黑市的珍品（獨特裝備，每天刷新） ----
+const curios = computed(() => (props.kind === 'black' ? s.value.curios?.[s.value.location]?.stock ?? loadedCurios.value : []))
+const curioOpen = ref<string | null>(null)
+const curioText = reactive<Record<string, string>>({})
+function haggleCurio(c: CurioListing) {
+  void game.perform({ kind: 'haggle', target: `curio:${c.item}`, text: curioText[c.item] ?? '' })
+  curioOpen.value = null
+}
 
 const stock = computed(() => s.value.markets?.[`${s.value.location}/${props.kind}`]?.stock ?? loaded.value)
 const partyFull = computed(() => partyRoom(s.value) < 1)
@@ -135,6 +148,28 @@ function sellSelf() {
       </li>
     </ul>
     <p v-if="stock.length === 0" class="small muted">今天沒有貨了。</p>
+    </FoldMenu>
+
+    <FoldMenu v-if="kind === 'black'" id="market.curios" icon="gem" label="今天的珍品" detail="黑市流出的獨特裝備，每天換一批；買走就沒了" :badge="curios.length">
+      <ul class="plain">
+        <li v-for="c in curios" :key="c.item" class="item small">
+          <div class="row" style="justify-content: space-between">
+            <b>{{ c.item }}</b>
+            <span>{{ formatMoney(c.price_cc) }}</span>
+          </div>
+          <div v-if="itemDef(c.item)?.gear" class="muted">{{ gearSummary(itemDef(c.item)!.gear!) }}</div>
+          <div v-if="itemDef(c.item)?.desc" class="muted">{{ itemDef(c.item)!.desc }}</div>
+          <div class="row">
+            <button class="small primary" :disabled="bound || s.money_cc < c.price_cc || game.judging" :title="bound ? '被主人帶著時不能自己買' : ''" @click="game.buyCurio(c.item)">買下</button>
+            <button class="small" :disabled="c.haggled || bound || game.judging" @click="curioOpen = curioOpen === c.item ? null : c.item">{{ c.haggled ? '已殺過價' : '殺價／交涉' }}</button>
+          </div>
+          <div v-if="curioOpen === c.item" class="row">
+            <input v-model="curioText[c.item]" style="flex: 1" placeholder="例如：指出它的來路不明、說自己認識失主" />
+            <button class="small" @click="haggleCurio(c)">交涉（魅力檢定）</button>
+          </div>
+        </li>
+      </ul>
+      <p v-if="!curios.length" class="small muted">今天沒有珍品（數量在「這個存檔的規則」調整）。</p>
     </FoldMenu>
 
     <FoldMenu v-if="!bound" class="small" icon="scale" :label="enslaved ? '登記出售自己（找新主人）' : '登記出售自己'" :detail="`等 ${slaveryRules.self_sale.hours} 小時，有買家的機率約 ${Math.round(selfSaleChance(s) * 100)}%`">

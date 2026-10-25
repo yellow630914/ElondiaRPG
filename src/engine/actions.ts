@@ -548,8 +548,8 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
   switch (p.kind) {
     case 'hire': return applyHire(state, report, p.target!, p.offer_cc ?? 0, degree)
     case 'haggle': {
-      const [mk, id] = p.target!.split(':') as [MarketKind, string]
-      return applyHaggle(state, report, mk, id, degree)
+      const i = p.target!.indexOf(':')
+      return applyHaggle(state, report, p.target!.slice(0, i) as MarketKind | 'curio', p.target!.slice(i + 1), degree)
     }
     case 'invite': return applyInvite(state, report, p.target!, degree)
     case 'squad_join': return applySquadJoin(state, report, p.target!, degree)

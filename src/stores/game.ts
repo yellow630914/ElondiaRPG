@@ -1122,6 +1122,8 @@ export const useGame = defineStore('game', () => {
     requestLeave: (mode: 'sneak' | 'formal' | null) => run((s) => companions.requestLeave(s, mode)),
     marketStock: (kind: companions.MarketKind) => run((s) => companions.marketStock(s, kind)) ?? [],
     buySlave: (kind: companions.MarketKind, id: string, mark?: slavery.MarkChoice) => run((s) => companions.buySlave(s, kind, id, mark)),
+    curioStock: () => run((s) => companions.curioStock(s)) ?? [],
+    buyCurio: (item: string) => run((s) => companions.buyCurio(s, item)),
     chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
     answerMasterEvent: (index: number) => run((s) => slavery.answerMasterEvent(s, index)),
     // 成人向的戰敗事件：關閉成人向時直接離開

@@ -32,6 +32,7 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   shortRestHours: { label: '短休的時間', hint: `短休花幾小時（預設 ${companionRules.rest.short_hours}）。`, default: companionRules.rest.short_hours, min: 0.5, max: 4, step: 0.5, unit: '小時' },
   longRestHours: { label: '長休的時間', hint: `長休花幾小時（預設 ${companionRules.rest.long_hours}）。住旅店照樣住到隔天早上。`, default: companionRules.rest.long_hours, min: 2, max: 12, step: 1, unit: '小時' },
   alertDecayDays: { label: '衛兵警戒多久降一級', hint: `犯案被目擊後，城裡的警戒每隔幾天降 1（預設 ${securityJson.alert.decay_days}）。`, default: securityJson.alert.decay_days, min: 1, max: 30, step: 1, unit: '天' },
+  blackMarketGear: { label: '黑市每天的珍品', hint: '知道黑市的城鎮，黑市每天刷新幾件獨特裝備（物品勾了「也會出現在黑市」的）。0 表示黑市不賣裝備。', default: 3, min: 0, max: 10, step: 1, unit: '件', zero: '不賣裝備' },
   escapeDc: { label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
 }
 

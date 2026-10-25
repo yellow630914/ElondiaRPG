@@ -1006,6 +1006,8 @@ export const slaveryRules = slaveryJson as unknown as {
   black_market_only: string[]
   markets: Record<string, { public?: MarketDef; black?: MarketDef }>
   black_market_search: { attr: AttrId; dc: number; hours: number }
+  /** 黑市每天刷新的珍品（獨特裝備） */
+  curios: { price_mult: number }
   haggle: { attr: AttrId; base: number; black_market_bonus: number; price_factor: Record<Degree, number> }
   self_sale: { hours: number; base: number; per_cha_mod: number; per_level: number; max: number; share: number; contract_weights: Record<string, number> }
   /** 逃亡時在不同地方休息，被契約印記追蹤到的機率倍率（沒列的地方 1） */

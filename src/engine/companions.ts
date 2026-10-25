@@ -20,7 +20,7 @@ import { setupStoryCheck } from './story'
 import { setupDefeatEvent } from './defeat'
 import { attrOf, lifeTier, mod, snapshot } from './character'
 import {
-  actionRules, combatRules, companionRules, contractDef, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
+  actionRules, combatRules, companionRules, contractDef, itemDef, itemRules, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
   tagDcMod, tagDef, type ActionKind, type AttrId, type Degree, type MarketDef, type NpcKind,
 } from './data'
 import type { Rng } from './rng'
@@ -45,8 +45,10 @@ import { currentArea, currentCell } from './grid'
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
-import type { Character, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
+import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
+import { itemShown } from './gear'
+import { gameRule } from './gameRules'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
 function socialReport(state: GameState, hours: number, scene: string, kind: Report['kind'] = 'social'): Report {
@@ -454,19 +456,63 @@ export function buySlave(state: GameState, kind: MarketKind, npcId: string, mark
   return commitReport(state, report)
 }
 
-export function haggleDc(state: GameState, kind: MarketKind, npcId: string): number {
+// ---- 黑市的珍品（獨特裝備） ----
+
+/** 今天黑市的珍品（第一次查看時刷新）：勾了「也會出現在黑市」的獨特裝備，件數是存檔規則 */
+export function curioStock(state: GameState): CurioListing[] {
+  marketDef(state, 'black')
+  const curios = (state.curios ??= {})
+  const cur = curios[state.location]
+  if (cur && cur.day === state.time.day) return cur.stock
+  const n = gameRule(state, 'blackMarketGear')
+  const pool = itemRules.items.filter((i) => i.black_market && i.gear?.unique && itemShown(i)).map((i) => i.name)
+  const stock = n && pool.length ? withRng(state, (rng) => {
+    const picked = [...pool].sort(() => rng.next() - 0.5).slice(0, n)
+    return picked.map((name): CurioListing => ({ item: name, price_cc: Math.max(10, Math.round((itemDef(name)!.price_cc * slaveryRules.curios.price_mult) / 10) * 10) }))
+  }) : []
+  curios[state.location] = { day: state.time.day, stock }
+  return stock
+}
+
+function curio(state: GameState, item: string): CurioListing {
+  const c = curioStock(state).find((x) => x.item === item)
+  if (!c) throw new Error('黑市今天沒有這件東西')
+  return c
+}
+
+/** 買下黑市的珍品 */
+export function buyCurio(state: GameState, item: string): Report {
+  assertFree(state, '自己在黑市買東西')
+  const c = curio(state, item)
+  if (state.money_cc < c.price_cc) throw new Error('錢不夠')
+  const def = marketDef(state, 'black')
+  const report = socialReport(state, 0.5, def.name)
+  report.kind = 'trade'
+  report.changes.money_cc = -c.price_cc
+  report.changes.items_gained = [{ name: item, qty: 1, owner: 'pc' }]
+  state.curios![state.location]!.stock = state.curios![state.location]!.stock.filter((x) => x.item !== item)
+  report.outcome.summary = `在${def.name}以 ${formatMoney(c.price_cc)} 買下【${item}】。`
+  report.outcome.tags = ['黑市']
+  return commitReport(state, report)
+}
+
+export function haggleDc(state: GameState, kind: MarketKind | 'curio', npcId: string): number {
+  if (kind === 'curio') {
+    if (curio(state, npcId).haggled) throw new Error('今天已經殺過價了')
+    return slaveryRules.haggle.base + slaveryRules.haggle.black_market_bonus
+  }
   const l = listing(state, kind, npcId)
   if (l.haggled) throw new Error('今天已經殺過價了')
   const h = slaveryRules.haggle
   return h.base + (kind === 'black' ? h.black_market_bonus : 0)
 }
 
-export function applyHaggle(state: GameState, report: Report, kind: MarketKind, npcId: string, degree: Degree): string {
-  const l = listing(state, kind, npcId)
+export function applyHaggle(state: GameState, report: Report, kind: MarketKind | 'curio', npcId: string, degree: Degree): string {
+  const l = kind === 'curio' ? curio(state, npcId) : listing(state, kind, npcId)
   const before = l.price_cc
   l.price_cc = Math.max(10, Math.round((l.price_cc * slaveryRules.haggle.price_factor[degree]) / 10) * 10)
   l.haggled = true
-  report.location.scene = marketDef(state, kind).name
+  report.location.scene = marketDef(state, kind === 'curio' ? 'black' : kind).name
   if (l.price_cc < before) return `價格從 ${formatMoney(before)} 降到 ${formatMoney(l.price_cc)}。`
   if (l.price_cc > before) return `商人被惹惱了，價格漲到 ${formatMoney(l.price_cc)}。`
   return '商人不肯讓價。'
@@ -813,13 +859,16 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       }
     }
     case 'haggle': {
-      const [mk, id] = (target ?? '').split(':') as [MarketKind, string]
-      const rec = npcRecord(state, id)
-      if (!rec) throw new Error('市場上沒有這個人')
+      // 奴隸「public:npc」「black:npc」，黑市的珍品「curio:物品名稱」
+      const i = (target ?? '').indexOf(':')
+      const mk = (target ?? '').slice(0, i) as MarketKind | 'curio'
+      const id = (target ?? '').slice(i + 1)
+      const rec = mk === 'curio' ? undefined : npcRecord(state, id)
+      if (mk !== 'curio' && !rec) throw new Error('市場上沒有這個人')
       const f = slaveryRules.haggle.price_factor
       const pct = (x: number) => `${Math.round((x - 1) * 100)}%`
       return {
-        dc: haggleDc(state, mk, id), targetName: `${rec.name}的賣家`, situational: [], scene: marketDef(state, mk).name,
+        dc: haggleDc(state, mk, id), targetName: rec ? `${rec.name}的賣家` : `【${id}】的賣家`, situational: [], scene: marketDef(state, mk === 'curio' ? 'black' : mk).name,
         outcomes: { critical: `價格 ${pct(f.critical)}`, success: `價格 ${pct(f.success)}`, partial: `價格 ${pct(f.partial)}`, fail: '不讓價', fumble: `價格 +${Math.round((f.fumble - 1) * 100)}%` },
       }
     }
