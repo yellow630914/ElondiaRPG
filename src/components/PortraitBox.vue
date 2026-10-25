@@ -7,7 +7,7 @@ import { portraitKey, TWEAKS, usePortraits } from '@/stores/portraits'
 import GameIcon from './ui/GameIcon.vue'
 
 // 角色的形象插圖（一般模式）：顯示、生成（插圖設定的服務）、✨ 微調（以這張為底重畫）、翻看舊版、上傳、刪除；點圖片放大。
-// 想自己改提示詞、調強度、塗遮罩時按「進階」打開工作台（PortraitStudio）
+// 想看或改提示詞、調強度、塗遮罩時按「進階」打開工作台（PortraitStudio）。large 時按鈕排在圖片下面
 const PortraitStudio = defineAsyncComponent(() => import('./PortraitStudio.vue'))
 const props = withDefaults(defineProps<{ id: string; size?: 'large' | 'small' }>(), { size: 'large' })
 const game = useGame()
@@ -31,14 +31,6 @@ async function loadAll(k: string) {
 onMounted(() => void loadAll(key.value))
 watch(key, (k) => void loadAll(k))
 
-const preview = computed(() => {
-  if (!canDescribe.value) return ''
-  try {
-    return portraits.describe(s.value, props.id)
-  } catch {
-    return ''
-  }
-})
 
 // ---- 各版：‹ 2 / 5 › 換目前的形象圖 ----
 const versions = computed(() => portraits.versions[key.value] ?? [])
@@ -132,15 +124,6 @@ const name = computed(() => portraitSubject(s.value, props.id)?.name ?? '')
         </div>
       </div>
     </div>
-    <details v-if="large && (record?.prompt || job?.tags || preview)" class="small prompt">
-      <summary>提示詞</summary>
-      <template v-if="job?.tags"><b>預處理後：</b><pre>{{ job.tags }}</pre></template>
-      <template v-if="record?.prompt">
-        <b>{{ record.semantic ? '上次送出的提示詞（預處理後）' : '上次送出的提示詞' }}：</b><pre>{{ record.prompt }}</pre>
-        <template v-if="record.semantic"><b>預處理前的描述：</b><pre>{{ record.semantic }}</pre></template>
-      </template>
-      <template v-else-if="preview"><b>會送出的描述{{ image.preprocessorFor() ? `（會先預處理：${image.preprocessorFor()!.name}）` : '' }}：</b><pre>{{ preview }}</pre></template>
-    </details>
     <div v-if="zoom && url" class="zoom" @click="zoom = false"><img :src="url" alt="形象圖" /></div>
     <PortraitStudio v-if="studio" :id="id" :name="name" @close="studio = false" />
   </div>
@@ -151,10 +134,15 @@ const name = computed(() => portraitSubject(s.value, props.id)?.name ?? '')
 button :deep(.game-icon) { vertical-align: -0.2em; }
 .portrait { display: grid; gap: 6px; }
 .top { display: flex; gap: 10px; align-items: flex-start; }
+/* 大的：圖片在上、按鈕與微調在下，整欄固定寬度，不擠右邊的設定 */
+.large { width: 260px; }
+.large .top { flex-direction: column; align-items: stretch; gap: 6px; }
+.large .left { justify-items: stretch; }
 .small .top { gap: 6px; }
 .left { display: grid; gap: 2px; justify-items: center; flex: none; }
 .frame { padding: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--panel-2); flex: none; cursor: zoom-in; }
-.large .frame { width: 120px; height: 160px; }
+.large .frame { width: 100%; height: auto; aspect-ratio: 3 / 4; }
+.large .nav { justify-content: center; }
 .small .frame { width: 64px; height: 84px; }
 .frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .frame.empty { display: flex; align-items: center; justify-content: center; font-size: 1.6rem; cursor: default; color: var(--muted); }
