@@ -8,6 +8,7 @@ import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import { canPromote } from '@/engine/promoteNpc'
 import { npcRecord } from '@/engine/npcs'
+import { awayCompanions, awayLabel } from '@/engine/away'
 import { useContent, VANILLA_NAME } from '@/stores/content'
 import PortraitBox from './PortraitBox.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -16,6 +17,13 @@ import Hint from './ui/Hint.vue'
 const game = useGame()
 const content = useContent()
 const s = computed(() => game.state!)
+// 所在：在隊伍裡、留在房子或寄放在酒館（其他人不標，行蹤不一定知道）
+const awayById = computed(() => new Map(awayCompanions(s.value).map((a) => [a.id, a])))
+function whereNow(id: string): string {
+  if (s.value.party.some((m) => m.id === id)) return '在隊伍裡'
+  const a = awayById.value.get(id)
+  return a ? `${a.place.kind === 'home' ? '留在' : '寄放在'}${awayLabel(a.place)}${a.days ? `（${a.days} 天）` : ''}` : ''
+}
 
 // 生成的人存成固定 NPC（存進目前的世界）
 function promotable(id: string): boolean {
@@ -191,6 +199,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
               </dd>
             </template>
             <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
+            <template v-if="whereNow(r.id)"><dt>所在</dt><dd>{{ whereNow(r.id) }}</dd></template>
             <template v-if="r.firstMet"><dt>初次見面</dt><dd>{{ formatTime(r.firstMet.time) }}・{{ locationById(r.firstMet.location).name }}</dd></template>
           </dl>
           <div class="row">

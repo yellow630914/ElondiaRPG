@@ -8,6 +8,8 @@ import { gearSummary, SLOTS, slotName } from '@/engine/gear'
 import { specRarity } from '../items/itemInfo'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
+import { awayCompanions, awayLabel } from '@/engine/away'
+import NameTag from '../NameTag.vue'
 import { perksOf } from '@/engine/perks'
 import { placeName, tattooName, tattoosOf } from '@/engine/tattoos'
 import type { Character } from '@/engine/types'
@@ -49,6 +51,9 @@ for (const m of s.value.party) {
   if (r !== undefined && r !== rank(m)) stamped[m.id] = true
 }
 onMounted(() => requestAnimationFrame(() => requestAnimationFrame(() => { for (const k of Object.keys(xpFrom)) delete xpFrom[k] })))
+// 不在隊上的夥伴：留在房子、寄放在酒館（要親自回去才帶得上）
+const away = computed(() => awayCompanions(s.value))
+const BOND: Record<string, string> = { hired: '受雇', voluntary: '自願', slave: '奴隸' }
 function canDismiss(m: Character) {
   return !m.isPlayer && !m.group && m.bond !== 'slave' && m.bond !== 'guest'
 }
@@ -156,6 +161,19 @@ function canDismiss(m: Character) {
     </article>
   </div>
 
+  <section v-if="away.length" class="panel away">
+    <h3><GameIcon name="home" :size="16" /> 不在隊上的夥伴 <span class="muted small">{{ away.length }} 人</span></h3>
+    <p class="small muted">留在房子或寄放在酒館：不算離隊，羈絆、契約、親密度都保留。要親自回到那裡才能帶上（房子在「看家的夥伴」，酒館在「寄放夥伴」）。</p>
+    <ul class="plain">
+      <li v-for="a in away" :key="a.id" class="away-row">
+        <NameTag :id="a.id" />
+        <span class="small muted">Lv.{{ a.character.level }}<template v-if="a.character.bond && BOND[a.character.bond]">・{{ BOND[a.character.bond] }}</template></span>
+        <span class="small where"><GameIcon :name="a.place.kind === 'home' ? 'home' : 'mug'" :size="12" /> {{ awayLabel(a.place) }}</span>
+        <span class="small muted">{{ a.days ? `待了 ${a.days} 天` : '今天留下' }}</span>
+      </li>
+    </ul>
+  </section>
+
   <section v-if="leader" class="panel leader">
     <h3><GameIcon name="flag" :size="16" /> {{ leader.name }}的隊伍</h3>
     <p v-if="bound" class="small muted">你是{{ leader.name }}的奴隸，不能自行離隊；只能在工具列的「契約」裡談判或逃離。</p>
@@ -171,6 +189,12 @@ function canDismiss(m: Character) {
 </template>
 
 <style scoped>
+.away { display: grid; gap: 6px; margin-top: 16px; }
+.away h3, .away p { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.away p { display: block; }
+.away ul { display: grid; gap: 4px; margin: 0; }
+.away-row { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.where { color: var(--accent); }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr)); gap: 16px; }
 .card {
   position: relative; display: grid; gap: 6px; align-content: start; padding: 14px;

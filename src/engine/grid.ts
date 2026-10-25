@@ -407,6 +407,19 @@ export function settlementArea(key: string, overlay = true): Area | undefined {
   return block ? buildBlock(loc, block, overlay) : undefined
 }
 
+/** 這座聚落的酒館格子（寄放夥伴、離隊的人等在這裡）；沒有酒館或不是聚落時為 undefined */
+export function tavernSpot(locationId: string): { area: string; x: number; y: number } | undefined {
+  const loc = geography.locations.find((l) => l.id === locationId)
+  if (!loc || loc.type === 'dungeon') return undefined
+  for (const b of settlementBlocks(loc)) {
+    if (!b.kinds.has('tavern')) continue
+    const area = settlementArea(b.key)
+    const at = area && findKind(area, 'tavern')
+    if (at) return { area: b.key, ...at }
+  }
+  return undefined
+}
+
 /** 聚落所有區塊的 key */
 export function blockKeys(locationId: string): string[] {
   return blocksFor(locationById(locationId)).map((b) => settlementKey(locationId, b.id))
@@ -1217,6 +1230,7 @@ export function assertNoStandoff(state: GameState) {
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
   if (state.pendingDefeat) throw new Error('先應付眼前的處境')
   if (state.captives?.npcs.length) throw new Error('先決定怎麼處置被制伏的人')
+  if (state.pendingJoins?.length) throw new Error('先決定要不要讓想入隊的人加入（騰出位子或放棄）')
   const story = blockingNode(state)
   if (story) throw new Error(`先處理特殊任務「${story.def.title}」：${story.node.title}`)
 }

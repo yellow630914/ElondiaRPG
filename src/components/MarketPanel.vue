@@ -45,7 +45,9 @@ function toggleMarking(l: SlaveListing) {
 }
 
 function buy(l: SlaveListing) {
-  game.buySlave(props.kind, l.npc, marks[l.npc] ?? l.contract)
+  const mark = marks[l.npc] ?? l.contract
+  // 隊伍滿了：先騰出位子（奴隸不能寄放酒館，可以送回房子）
+  game.requireRoom(1, `買下${npcRecord(s.value, l.npc)?.name ?? '奴隸'}`, () => game.buySlave(props.kind, l.npc, mark))
   marking.value = null
 }
 
@@ -104,7 +106,7 @@ function sellSelf() {
               <button v-else class="small primary" :disabled="partyFull || game.judging" @click="proposing = proposing === l.npc ? null : l.npc">向主人提議買下…</button>
             </template>
             <template v-else>
-              <button class="small primary" :disabled="partyFull || enslaved || s.money_cc < l.price_cc" :title="enslaved ? '身上還有奴隸印記，不能擁有奴隸（只能把自己賣出去）' : ''" @click="toggleMarking(l)">買下…</button>
+              <button class="small primary" :disabled="enslaved || s.money_cc < l.price_cc" :title="enslaved ? '身上還有奴隸印記，不能擁有奴隸（只能把自己賣出去）' : ''" @click="toggleMarking(l)">買下…</button>
               <button class="small" :disabled="l.haggled || enslaved || game.judging" @click="open = open === l.npc ? null : l.npc">
                 {{ l.haggled ? '已殺過價' : '殺價／交涉' }}
               </button>

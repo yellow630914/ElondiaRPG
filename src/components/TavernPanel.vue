@@ -7,8 +7,9 @@ import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { characterFor, npcRecord } from '@/engine/npcs'
 import { perksOf } from '@/engine/perks'
-import { followRoom, isBound, isNoncombatant, leaderOf, partyMax, partyRoom } from '@/engine/party'
+import { isBound, isNoncombatant, leaderOf, partyMax, partyRoom } from '@/engine/party'
 import { inActiveSquad } from '@/engine/squads'
+import { lodgeRefusal, lodgersHere } from '@/engine/away'
 import { canNegotiate } from '@/engine/negotiation'
 import { discount, keeperTitle, shopKey } from '@/engine/trade'
 import type { Character, TavernCandidate } from '@/engine/types'
@@ -74,9 +75,14 @@ function toggle(c: TavernCandidate) {
   offers[c.npc] ??= askingFor(c)
 }
 
-async function hire(c: TavernCandidate) {
-  await game.hire(c.npc, Math.max(0, Math.floor(offers[c.npc] ?? askingFor(c))), approach[c.npc] ?? '')
-  open.value = null
+function hire(c: TavernCandidate) {
+  const offer = Math.max(0, Math.floor(offers[c.npc] ?? askingFor(c)))
+  const text = approach[c.npc] ?? ''
+  // 隊伍滿了：先騰出位子（送回房子、寄放、請離）再談
+  game.requireRoom(1, `雇用${npcRecord(s.value, c.npc)?.name ?? ''}`, async () => {
+    await game.hire(c.npc, offer, text)
+    open.value = null
+  })
 }
 
 // 被主人帶著：不能自己雇人，改成向主人提議（主人出錢，見 companions.ts 的 proposeDc）
@@ -119,11 +125,27 @@ const squadHere = computed(() => joinableSquads(s.value))
 const squadName = (id: string) => inActiveSquad(s.value, id)?.name
 const squadOpt = (id: string) => squadOptions(s.value, id)
 const squadText = ref('')
+function inviteOne(id: string) {
+  const text = inviteText.value
+  inviteText.value = ''
+  const sq = inActiveSquad(s.value, id)
+  const need = sq ? squadOpt(id).invite.need : 1
+  game.requireRoom(need, sq ? `整隊邀請${sq.name}` : `邀請${npcRecord(s.value, id)?.name ?? ''}`, () => game.perform({ kind: 'invite', target: id, text }))
+}
+function squadJoin(leaderId: string) {
+  const text = squadText.value
+  squadText.value = ''
+  game.requireRoom(squadOpt(leaderId).join.need, `跟著${inActiveSquad(s.value, leaderId)?.name ?? '他們'}同行`, () => game.perform({ kind: 'squad_join', target: leaderId, text }), true)
+}
+
+// ---- 寄放在酒館的夥伴（不算離隊、不收錢，奴隸不能寄放） ----
+const lodgers = computed(() => lodgersHere(s.value))
+const companions = computed(() => s.value.party.filter((m) => !m.isPlayer && m.bond !== 'guest'))
 const blackText = ref('')
 const blackKnown = computed(() => marketsHere(s.value).some((m) => m.kind === 'black'))
 
 // ---- 選單 ----
-type Section = 'meals' | 'recruit' | 'offers' | 'invite' | 'black' | 'trade'
+type Section = 'meals' | 'recruit' | 'offers' | 'invite' | 'lodge' | 'black' | 'trade'
 const section = ref<Section | null>(null)
 const bestMeal = computed(() => {
   const list = s.value.party.flatMap((m) => m.status.filter((c) => MEAL_CONDITIONS.has(c)))
@@ -137,10 +159,11 @@ const menuItems = computed<MenuItem[]>(() => {
     items.push({ id: 'recruit', icon: 'users', label: '向主人提議雇人', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人）` : visible.value.length ? `請${master.value?.name ?? '主人'}出錢雇用今天城裡的冒險者（${visible.value.length} 位）` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' })
   } else {
     items.push(
-      { id: 'recruit', icon: 'users', label: '招募冒險者', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人）` : visible.value.length ? `今天城裡有 ${visible.value.length} 位可以雇用` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' },
+      { id: 'recruit', icon: 'users', label: '招募冒險者', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人），雇人前先騰出位子` : visible.value.length ? `今天城裡有 ${visible.value.length} 位可以雇用` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' },
       { id: 'offers', icon: 'flag', label: leader.value ? '你所在的隊伍' : '加入別人的隊伍', detail: leader.value ? `正跟著${leader.value.name}的隊伍` : `等待組隊 ${companionRules.wait_party.hours} 小時・機率約 ${chance.value}%${squadHere.value.length ? `・身邊有 ${squadHere.value.length} 支認識的小隊` : ''}`, badge: leader.value ? '' : (offersHere.value.length + squadHere.value.length) || '' },
     )
     if (inviteList.value.length) items.push({ id: 'invite', icon: 'feather', label: '邀請認識的人', detail: `${inviteList.value.length} 位認識的人可以邀請`, badge: inviteList.value.length })
+    if (lodgers.value.length || companions.value.length) items.push({ id: 'lodge', icon: 'home', label: '寄放夥伴', detail: lodgers.value.length ? `${lodgers.value.map((m) => m.name).join('、')}在這裡等你` : '讓同伴在酒館等你回來（不算離隊、不收錢）', badge: lodgers.value.length || '' })
     items.push({ id: 'black', icon: 'eye', label: blackKnown.value ? '黑市' : '打聽黑市', detail: blackKnown.value ? '不公開的奴隸買賣' : '魅力檢定，約 2 小時' })
   }
   items.push({ id: 'trade', icon: 'coins', label: '酒館的交易', detail: tradeLoading.value ? 'AI 正在準備今天的特別交易…' : '餐點以外的交易：情報、請客、幫忙……' })
@@ -162,7 +185,7 @@ function pick(id: string) {
   if (id === 'discount') game.startNegotiation('shop_discount', { shop: 'tavern' })
   else section.value = id as Section
 }
-const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒險者', offers: '加入別人的隊伍', invite: '邀請認識的人', black: '黑市', trade: '酒館的交易' }
+const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒險者', offers: '加入別人的隊伍', invite: '邀請認識的人', lodge: '寄放夥伴', black: '黑市', trade: '酒館的交易' }
 </script>
 <template>
   <div class="tavern">
@@ -238,7 +261,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
                   <button v-else class="small primary" :disabled="partyFull" @click="toggle(c)">{{ open === c.npc ? '收起' : '向主人提議' }}</button>
                 </template>
                 <span v-else-if="c.declined" class="small muted">今天不想再談了</span>
-                <button v-else class="small primary" :disabled="partyFull" @click="toggle(c)">{{ open === c.npc ? '收起' : '談雇傭' }}</button>
+                <button v-else class="small primary" @click="toggle(c)">{{ open === c.npc ? '收起' : '談雇傭' }}</button>
               </div>
               <div v-if="open === c.npc && bound" class="nego small">
                 <p class="muted">請{{ master?.name ?? '主人' }}出錢雇用，加入後是主人的隊員。魅力檢定，參考 DC {{ proposeDcOf(c.npc) ?? '—' }}（主人的親密度、要價相對主人的財力、主人的身分、契約的服從懲罰）。部分成功時主人要你出一半。</p>
@@ -255,7 +278,8 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
             </template>
           </article>
         </div>
-        <p v-if="partyFull" class="small muted">隊伍已滿（{{ maxParty }} 人）。</p>
+        <p v-if="partyFull && bound" class="small muted">隊伍已滿（{{ maxParty }} 人）。</p>
+        <p v-else-if="partyFull" class="small muted">隊伍已滿（{{ maxParty }} 人）：雇用時會先請你騰出位子（送回房子、寄放在酒館或請離隊伍）。</p>
       </template>
 
       <!-- 加入別人的隊伍 -->
@@ -263,7 +287,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
         <p v-if="leader" class="small muted">你正跟著{{ leader.name }}的隊伍。想離開的話，到「隊伍」選擇離隊方式，會在下次休息時進行。</p>
         <template v-else>
           <div class="row wait">
-            <button :disabled="followRoom(s) < 1" @click="game.waitForParty()"><GameIcon name="hourglass" :size="15" /> 等待組隊（{{ companionRules.wait_party.hours }} 小時）</button>
+            <button @click="game.requireRoom(1, '等待組隊', () => game.waitForParty(), true)"><GameIcon name="hourglass" :size="15" /> 等待組隊（{{ companionRules.wait_party.hours }} 小時）</button>
             <span class="small muted">機率約 {{ chance }}%，受魅力與等級影響；對方可能付簽約金給你。</span>
           </div>
           <p v-if="!offersHere.length" class="small muted">目前沒有隊伍邀請你。</p>
@@ -277,7 +301,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
                   <div><NameTag :id="q.leader" /> <span class="tag">{{ q.name }}</span><div class="muted">隊員：<template v-for="(id, i) in q.members" :key="id"><span v-if="i">、</span><NameTag :id="id" /></template></div></div>
                 </header>
                 <div class="row">
-                  <button class="small primary" :disabled="!!squadOpt(q.leader).join.why || game.judging" :title="squadOpt(q.leader).join.why ?? ''" @click="game.perform({ kind: 'squad_join', target: q.leader, text: squadText }); squadText = ''">請他們帶你同行（魅力檢定）</button>
+                  <button class="small primary" :disabled="!!squadOpt(q.leader).join.why || game.judging" @click="squadJoin(q.leader)">請他們帶你同行（魅力檢定）</button>
                   <span class="muted">{{ squadOpt(q.leader).join.why ?? `參考 DC ${squadOpt(q.leader).join.dc}（隊長的親密度、你帶的同伴數、等級差）` }}</span>
                 </div>
               </article>
@@ -292,7 +316,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
               <div v-if="o.members.length" class="muted">隊員：<template v-for="(id, i) in o.members" :key="id"><span v-if="i">、</span><NameTag :id="id" /></template></div>
               <p class="bio">{{ npcRecord(s, o.leader)?.personality }}</p>
               <div class="row">
-                <button class="small primary" @click="game.acceptPartyOffer(o.id)">加入</button>
+                <button class="small primary" @click="game.requireRoom(1 + o.members.length, `加入${npcRecord(s, o.leader)?.name ?? ''}的隊伍`, () => game.acceptPartyOffer(o.id), true)">加入</button>
                 <button class="small" @click="game.declinePartyOffer(o.id)">婉拒</button>
               </div>
             </article>
@@ -309,10 +333,34 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
             <span class="grow"><NameTag :id="r.id" /> <span class="muted small">Lv.{{ r.level }}・親密度 {{ s.relationships?.[r.id]?.affinity }}</span>
               <template v-if="squadName(r.id)"> <span class="tag small">{{ squadName(r.id) }}（{{ squadOpt(r.id).size }} 人）</span> <span v-if="squadOpt(r.id).invite.why" class="muted small">{{ squadOpt(r.id).invite.why }}</span></template>
             </span>
-            <button v-if="squadName(r.id)" class="small" :disabled="!!squadOpt(r.id).invite.why || game.judging" :title="squadOpt(r.id).invite.dc ? `參考 DC ${squadOpt(r.id).invite.dc}（每多一名隊員 +${companionRules.squad.invite_per_member}）` : ''" @click="game.perform({ kind: 'invite', target: r.id, text: inviteText }); inviteText = ''">整隊邀請</button>
-            <button v-else class="small" :disabled="partyFull || game.judging" @click="game.perform({ kind: 'invite', target: r.id, text: inviteText }); inviteText = ''">邀請</button>
+            <button v-if="squadName(r.id)" class="small" :disabled="!!squadOpt(r.id).invite.why || game.judging" :title="squadOpt(r.id).invite.dc ? `參考 DC ${squadOpt(r.id).invite.dc}（每多一名隊員 +${companionRules.squad.invite_per_member}）` : ''" @click="inviteOne(r.id)">整隊邀請</button>
+            <button v-else class="small" :disabled="game.judging" @click="inviteOne(r.id)">邀請</button>
           </li>
         </ul>
+      </template>
+
+      <!-- 寄放夥伴 -->
+      <template v-else-if="section === 'lodge'">
+        <p class="small muted">寄放的同伴不算離隊：羈絆、契約、親密度都保留，不佔隊伍人數，會一直在這間酒館等你回來帶。不收錢；奴隸只能留在你的房子。</p>
+        <h4 class="sub">在這裡等你的人</h4>
+        <ul class="plain invite">
+          <li v-for="m in lodgers" :key="m.id" class="row">
+            <Avatar :id="m.id" :size="30" />
+            <span class="grow"><NameTag :id="m.id" /></span>
+            <button class="small primary" @click="game.requireRoom(1, `帶上${m.name}`, () => game.takeLodger(m.id))">帶上</button>
+          </li>
+          <li v-if="!lodgers.length" class="muted small">沒有人寄放在這裡。</li>
+        </ul>
+        <template v-if="companions.length">
+          <h4 class="sub">隊伍裡的同伴</h4>
+          <ul class="plain invite">
+            <li v-for="m in companions" :key="m.id" class="row">
+              <Avatar :id="m.id" :size="30" />
+              <span class="grow"><NameTag :id="m.id" /> <span v-if="lodgeRefusal(s, m)" class="muted small">{{ lodgeRefusal(s, m) }}</span></span>
+              <button class="small" :disabled="!!lodgeRefusal(s, m)" @click="game.lodgeAtTavern(m.id)">寄放在這裡</button>
+            </li>
+          </ul>
+        </template>
       </template>
 
       <!-- 黑市 -->
@@ -332,6 +380,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
 </template>
 
 <style scoped>
+.sub { margin: 6px 0 0; font-size: var(--fs-sm, 0.9rem); color: var(--muted); }
 .tavern { display: grid; gap: 6px; grid-template-columns: minmax(0, 1fr); }
 .wide { width: 100%; margin-bottom: 8px; }
 .meals { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }

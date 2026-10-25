@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { combatRules, craftRules, homeRules, itemDef } from '@/engine/data'
+import { craftRules, homeRules, itemDef } from '@/engine/data'
 import { currentArea, currentCell } from '@/engine/grid'
 import {
   comfortOf, describeHome, furnitureIn, hasBed, homeOfArea, lotHere, lotPrice, ownHomeOfArea, PLACE_NAME, placeOf, residents, stayRefusal,
@@ -49,7 +49,6 @@ const comfort = computed(() => (home.value ? comfortOf(home.value) : 0))
 const benches = computed(() => all.value.filter((f) => itemDef(f.name)?.furniture?.function === 'workbench').map((f) => `${f.name}（${craftRules.skills[itemDef(f.name)!.furniture!.craft!].name}）`))
 const staying = computed(() => (home.value ? residents(s.value, home.value.id) : []))
 const companions = computed(() => s.value.party.filter((m) => !m.isPlayer))
-const partyFull = computed(() => s.value.party.filter((m) => m.bond !== 'guest').length >= combatRules.party_max)
 const floorName = (key: string) => home.value?.areas[key]?.name.split('・').at(-1) ?? ''
 
 // 苗圃：播種、收成、拔掉
@@ -151,7 +150,7 @@ function rename() {
       <ul class="plain">
         <li v-for="m in staying" :key="m.id" class="row">
           <NameTag :id="m.id" />
-          <button class="small" :disabled="partyFull" :title="partyFull ? `隊伍最多 ${combatRules.party_max} 人` : ''" @click="game.takeResident(m.id)">帶上</button>
+          <button class="small" @click="game.requireRoom(1, `帶上${m.name}`, () => game.takeResident(m.id))">帶上</button>
         </li>
         <li v-if="!staying.length" class="muted">沒有人留在家裡。</li>
       </ul>

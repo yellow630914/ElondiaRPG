@@ -82,6 +82,7 @@ export function restEventBlock(state: GameState): string | null {
   if (state.pendingMasterEvent) return '先回應主人的要求'
   if (state.pendingDefeat) return '先應付眼前的處境'
   if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
+  if (state.pendingJoins?.length) return '先決定要不要讓想入隊的人加入（騰出位子或放棄）'
   const story = blockingNode(state)
   if (story) return `先處理特殊任務「${story.def.title}」：${story.node.title}`
   return null

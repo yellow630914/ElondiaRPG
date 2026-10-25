@@ -10,7 +10,7 @@ import {
   townQuestsPerTown, townQuestsRefreshDays, townQuestTemplates, type NpcDef, type TownQuestTemplate,
 } from './data'
 import { roll, withBonus } from './rng'
-import { isFugitive, joinParty, leaveParty, partyRoom } from './party'
+import { isFugitive, joinParty, leaveParty, partyMax, partyRoom } from './party'
 import { npcRecord } from './npcs'
 import { clearQuestMarkers } from './grid'
 import { innCost, longRest } from './rest'
@@ -120,7 +120,7 @@ export function recruitableHere(state: GameState): NpcDef[] {
 export function recruit(state: GameState, npcId: string): Report {
   const def = recruitableHere(state).find((n) => n.id === npcId)
   if (!def) throw new Error('這裡沒有這位角色')
-  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
+  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${partyMax(state)} 人`)
   if (state.money_cc < def.hire_cc) throw new Error('招募費用不足')
   const report = baseReport(state, 'social', 1)
   const met = !!state.relationships?.[npcId]

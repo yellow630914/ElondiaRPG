@@ -26,6 +26,7 @@ import MapPanel from '@/components/MapPanel.vue'
 import NewGameView from '@/components/NewGameView.vue'
 import PartyCards from '@/components/party/PartyCards.vue'
 import CharacterDialog from '@/components/party/CharacterDialog.vue'
+import MakeRoomDialog from '@/components/party/MakeRoomDialog.vue'
 import type { CharTab } from '@/components/party/memberInfo'
 import InventoryView from '@/components/items/InventoryView.vue'
 import PeoplePanel from '@/components/PeoplePanel.vue'
@@ -340,6 +341,7 @@ onBeforeUnmount(() => {
     <SettingsView />
   </AppDialog>
 
+  <MakeRoomDialog />
   <EventCenter v-if="game.state" @open-party="onOpenParty" @open-relations="tab = 'adventure'; showRelations = true" />
 </template>
 

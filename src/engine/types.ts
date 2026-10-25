@@ -366,8 +366,28 @@ export interface NpcRecord extends NpcDef {
   stage?: number
   /** 不在隊伍裡的 NPC（店主）的工藝等級；隊友的在 character.crafts */
   crafts?: Partial<Record<CraftId, CraftSkill>>
-  /** 留在玩家家裡的夥伴：房子的 id（角色資料在 character，羈絆與契約照舊） */
+  /** 不在隊上、等主角回來帶的夥伴（角色資料在 character，羈絆與契約照舊）：留在家裡時是房子的 id，寄放在酒館時是「tavern:地點 id」（見 away.ts） */
   staying?: string
+  /** 開始留守或寄放的時間 */
+  stayingSince?: GameTime
+}
+
+/** 等主角決定的入隊：kind join＝加入主角的隊伍（npcs 第一位是本人，其餘是一起來的小隊隊員）；follow＝主角跟著 npcs[0] 的隊伍 */
+export interface PendingJoin {
+  id: string
+  kind: 'join' | 'follow'
+  npcs: string[]
+  /** join：入隊方式 */
+  mode?: 'voluntary' | 'hired' | 'slave'
+  /** 奴隸的印記（模板 id） */
+  contract?: string
+  /** 小隊：隊長的 id（入隊後記在 squad） */
+  squad?: string
+  /** follow：對方付給主角的錢 */
+  pay_cc?: number
+  /** 哪件事讓他們想加入（報告的摘要） */
+  source?: string
+  time: GameTime
 }
 
 /** 情報（冒險筆記）：事件點（在近郊或地下城的某一層放一個事件）或特殊任務的消息 */
@@ -727,6 +747,8 @@ export interface GameState {
   markets?: Record<string, { day: number; stock: SlaveListing[] }>
   /** 其他隊伍的入隊邀請 */
   partyOffers?: PartyOffer[]
+  /** 事件或 AI 讓人入隊時隊伍滿了：等主角騰出位子或放棄（見 away.ts） */
+  pendingJoins?: PendingJoin[]
   /** 主角打算離開目前所在的別人隊伍：下次休息時進行 */
   pendingLeave?: { mode: 'sneak' | 'formal' }
   /** 已擲骰、等待判定的主動行動 */

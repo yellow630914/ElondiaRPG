@@ -8,7 +8,7 @@ import { isBound, partyMax, partyRoom } from '@/engine/party'
 import { cellAt, CELL_NAME, cellName, currentArea, position } from '@/engine/grid'
 import { affinityTable, itemValue, type InteractionKind } from '@/engine/interactions'
 import { CURRENCY, formatMoney } from '@/engine/money'
-import { npcTitle } from '@/engine/npcs'
+import { npcRecord, npcTitle } from '@/engine/npcs'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { inActiveSquad } from '@/engine/squads'
 import type { NpcRecord } from '@/engine/types'
@@ -168,11 +168,23 @@ function startHire(id: string) {
   hiring.value = hiring.value === id ? null : id
 }
 
-async function hire(id: string) {
+function hire(id: string) {
   const c = candidateOf(id)
   if (!c) return
-  await game.hire(id, Math.max(0, Math.floor(offers[id] ?? askingFor(c))), text[id] ?? '')
-  hiring.value = null
+  const offer = Math.max(0, Math.floor(offers[id] ?? askingFor(c)))
+  const say = text[id] ?? ''
+  // 隊伍滿了：先騰出位子（送回房子、寄放、請離）再談
+  game.requireRoom(1, `雇用${npcRecord(s.value, id)?.name ?? ''}`, async () => {
+    await game.hire(id, offer, say)
+    hiring.value = null
+  })
+}
+/** 小隊：整隊邀請、請他們帶你同行（位子不夠時先騰出位子） */
+function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
+  const o = squadOpt(p.rec.id)
+  const name = squadOf(p.rec.id)?.name ?? ''
+  if (kind === 'invite') game.requireRoom(o.invite.need, `整隊邀請${name}`, () => interact('invite', p))
+  else game.requireRoom(o.join.need, `跟著${name}同行`, () => interact('squad_join', p), true)
 }
 </script>
 
@@ -217,10 +229,10 @@ async function hire(id: string) {
                 <button class="small" :disabled="busy" title="魅力檢定：聊得好會拉近關係，也可能聽到消息" @click="interact('chat', p)"><GameIcon name="message" :size="13" />聊天</button>
                 <button class="small" :disabled="busy" title="在主動行動裡以這個人為對象，自由描述要做的事" @click="toAction(p)"><GameIcon name="d20" :size="13" />主動行動</button>
                 <template v-if="squadOf(p.rec.id)?.leader === p.rec.id && !bound">
-                  <button class="small" :disabled="busy || !!squadOpt(p.rec.id).invite.why" :title="squadOpt(p.rec.id).invite.why ?? `整隊 ${squadOpt(p.rec.id).size} 人入隊・魅力檢定，參考 DC ${squadOpt(p.rec.id).invite.dc}`" @click="interact('invite', p)"><GameIcon name="feather" :size="13" />整隊邀請</button>
-                  <button class="small" :disabled="busy || !!squadOpt(p.rec.id).join.why" :title="squadOpt(p.rec.id).join.why ?? `跟著他們的隊伍・魅力檢定，參考 DC ${squadOpt(p.rec.id).join.dc}`" @click="interact('squad_join', p)"><GameIcon name="flag" :size="13" />請他們帶你同行</button>
+                  <button class="small" :disabled="busy || !!squadOpt(p.rec.id).invite.why" :title="squadOpt(p.rec.id).invite.why ?? `整隊 ${squadOpt(p.rec.id).size} 人入隊・魅力檢定，參考 DC ${squadOpt(p.rec.id).invite.dc}`" @click="squadAct('invite', p)"><GameIcon name="feather" :size="13" />整隊邀請</button>
+                  <button class="small" :disabled="busy || !!squadOpt(p.rec.id).join.why" :title="squadOpt(p.rec.id).join.why ?? `跟著他們的隊伍・魅力檢定，參考 DC ${squadOpt(p.rec.id).join.dc}`" @click="squadAct('squad_join', p)"><GameIcon name="flag" :size="13" />請他們帶你同行</button>
                 </template>
-                <button v-else-if="p.kind === 'adventurer' && !p.staff && !squadOf(p.rec.id)" class="small" :disabled="busy || partyFull" @click="startHire(p.rec.id)">
+                <button v-else-if="p.kind === 'adventurer' && !p.staff && !squadOf(p.rec.id)" class="small" :disabled="busy || (bound && partyFull)" @click="startHire(p.rec.id)">
                   <GameIcon name="hand" :size="13" />{{ hiring === p.rec.id ? '收起' : bound ? '向主人提議雇用' : '雇用' }}
                 </button>
                 <details class="more">
@@ -232,6 +244,11 @@ async function hire(id: string) {
                   </div>
                 </details>
               </div>
+              <!-- 小隊的按鈕停用時，原因直接寫出來（滑鼠提示在手機上看不到） -->
+              <p v-if="squadOf(p.rec.id)?.leader === p.rec.id && !bound && (squadOpt(p.rec.id).invite.why || squadOpt(p.rec.id).join.why)" class="muted why">
+                <template v-if="squadOpt(p.rec.id).invite.why">整隊邀請：{{ squadOpt(p.rec.id).invite.why }}。</template>
+                <template v-if="squadOpt(p.rec.id).join.why">請他們帶你同行：{{ squadOpt(p.rec.id).join.why }}。</template>
+              </p>
               <div class="row">
                 <select v-model="gift[p.rec.id]" class="small">
                   <option :value="undefined">選擇禮物…</option>
@@ -273,7 +290,7 @@ async function hire(id: string) {
       </ul>
     </FoldMenu>
     </div>
-    <p v-if="partyFull" class="small muted">隊伍已滿（{{ partyMax(s) }} 人），不能再雇人。</p>
+    <p v-if="partyFull" class="small muted">隊伍已滿（{{ partyMax(s) }} 人）<template v-if="!bound">：雇人或邀請時會先請你騰出位子</template>。</p>
   </section>
 </template>
 
@@ -290,14 +307,15 @@ async function hire(id: string) {
 .more > summary:hover, .more[open] > summary { color: var(--accent); border-color: var(--gold-lo); }
 .more-list { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .more-list button { white-space: nowrap; }
-.line { gap: 6px; cursor: pointer; flex-wrap: nowrap; min-width: 0; }
-/* 名字太長時省略名字，標籤留在同一行 */
+.line { gap: 3px 6px; cursor: pointer; flex-wrap: wrap; min-width: 0; }
+/* 標籤多時換到下一行，名字不會被擠掉；名字本身太長才省略 */
 .line > * { flex-shrink: 0; }
 .line > .name-tag, .line > .small.muted { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .line > .name-tag { flex-shrink: 1; min-width: 3em; }
 .line > .small.muted { flex-shrink: 100; }
 .line > .name-tag :deep(.name) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .known { color: var(--accent); border-color: var(--gold-lo); }
+.why { margin: 0; }
 .bad { color: var(--danger); border-color: var(--danger); }
 li.far .line { opacity: 0.7; }
 li.open { background: #c99a4510; outline: 1px solid var(--gold-lo); border-radius: 3px; padding: 6px; }

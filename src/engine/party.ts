@@ -6,6 +6,7 @@ import { attrName, classes, combatRules, companionRules, locationById, npcs as n
 import { characterFor, npcRecord, registerNpc } from './npcs'
 import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
+import { tavernSpot } from './grid'
 import { contractTerms, makeContract, type MarkChoice } from './slavery'
 import { clearContract, contractOf, setContract } from './tattoos'
 import type { Character, CompanionChange, ContractRef, GameState, MarkTerms, NpcRecord, Report } from './types'
@@ -105,7 +106,14 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
     setContract(member, makeContract(opts.contract ?? slaveryRules.roles.default, opts.ownedBy.id, opts.ownedBy.name, state.time), state.time, opts.ownedBy.name)
     member.status.push('slave_mark')
   }
-  if (state.npcs?.[rec.id]) delete state.npcs[rec.id]!.character
+  const stored = state.npcs?.[rec.id]
+  if (stored) {
+    delete stored.character
+    // 剛離隊時在酒館待著的格子、留守與寄放：回到隊伍就不算了
+    delete stored.at
+    delete stored.staying
+    delete stored.stayingSince
+  }
   state.party.push(member)
   if (namedNpcs.some((n) => n.id === rec.id) && !state.recruited.includes(rec.id)) state.recruited.push(rec.id)
   if (report && !report.party.some((p) => p.id === member.id)) report.party.push(snapshot(member, undefined, pcOf(state)))
@@ -126,7 +134,16 @@ export function leaveParty(state: GameState, id: string, report?: Report, reason
   const home = locationById(state.location).type === 'dungeon'
     ? reachable(state.location).find((r) => locationById(r.id).type !== 'dungeon')?.id ?? rec.location
     : state.location
-  registerNpc(state, { ...rec, level: member.level, location: home, spot: 'tavern', character: stored })
+  // 在那座城的酒館待幾天（companions.json 的 leave_stay_days），之後才照自己的活動範圍走動
+  const at = tavernSpot(home)
+  const base: NpcRecord = { ...rec }
+  delete base.staying
+  delete base.stayingSince
+  delete base.at
+  registerNpc(state, {
+    ...base, level: member.level, location: home, spot: 'tavern', character: stored,
+    ...(at ? { at: { ...at, until: state.time.day + companionRules.leave_stay_days } } : {}),
+  })
   recordChange(report, { npc: id, name: member.name, change: 'left', ...(member.bond ? { bond: member.bond } : {}), ...(reason ? { reason } : {}) })
   return member
 }

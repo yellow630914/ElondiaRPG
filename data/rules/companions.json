@@ -11,6 +11,8 @@
   },
   "$comment_guest": "任務同行（guest）：特殊任務讓固定 NPC 暫時入隊，不佔隊伍名額（最多 guest_max 人），不能遣散，任務的結果讓他離隊。",
   "guest_max": 2,
+  "$comment_leave_stay": "離隊的人（遣散、親密度太低離開……）留在這座城鎮的酒館等幾天，之後才照自己的活動範圍走動；在冒險區域離隊時是最近的聚落。",
+  "leave_stay_days": 7,
   "leave_threshold": -20,
   "initial_affinity": { "hired": 0, "voluntary": 10, "slave": -10, "leader": 5, "ally": 0, "guest": 5 },
 

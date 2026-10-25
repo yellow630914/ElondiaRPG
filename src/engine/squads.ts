@@ -76,10 +76,13 @@ export function squadWithLeader(state: GameState, s: Squad): NpcRecord[] {
     .filter((r): r is NpcRecord => !!r && !r.dead && !state.party.some((m) => m.id === r.id) && !!followsLeader(state, r))
 }
 
-/** 今天沒跟著隊長的隊員名字（整隊邀請時要等人到齊） */
+/** 今天沒跟著隊長的隊員名字（整隊邀請時要等人到齊）；已經在主角隊上、留在主角家或寄放在酒館的隊員不算缺席 */
 export function squadMissing(state: GameState, s: Squad): string[] {
   const here = new Set(squadWithLeader(state, s).map((r) => r.id))
-  return s.members.filter((id) => !here.has(id) && !npcRecord(state, id)?.dead).map((id) => npcRecord(state, id)?.name ?? id)
+  return s.members.filter((id) => {
+    const rec = npcRecord(state, id)
+    return !here.has(id) && !rec?.dead && !rec?.staying && !state.party.some((m) => m.id === id)
+  }).map((id) => npcRecord(state, id)?.name ?? id)
 }
 
 /** 隊伍裡同一支小隊的人（整隊邀請入隊的） */

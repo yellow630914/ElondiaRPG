@@ -12,6 +12,7 @@ import MarkingPanel from './MarkingPanel.vue'
 import PerkOfferPanel from './PerkOfferPanel.vue'
 import RoadEventPanel from './RoadEventPanel.vue'
 import SuggestionPanel from './SuggestionPanel.vue'
+import JoinPanel from './JoinPanel.vue'
 import StoryNodeCard from '../StoryNodeCard.vue'
 import { blockingNode } from '@/engine/story'
 import { activeEvents, eventDialogOpen, snoozed, type GameEvent } from './eventQueue'
@@ -76,6 +77,7 @@ function openParty(member?: string) {
       <RoadEventPanel v-else-if="current.kind === 'road'" />
       <RoadEventPanel v-else-if="current.kind === 'town'" town />
       <StoryNodeCard v-else-if="current.kind === 'story' && storyNode" :n="storyNode" prompt />
+      <JoinPanel v-else-if="current.kind === 'join'" :id="current.ref!" />
       <SuggestionPanel v-else-if="current.kind === 'suggestion'" :id="current.ref!" />
       <LevelUpPanel v-else-if="current.kind === 'levelup'" :id="current.ref!" @open-party="openParty" />
       <PerkOfferPanel v-else-if="current.kind === 'perk'" :refid="current.ref!" />

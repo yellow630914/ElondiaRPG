@@ -273,7 +273,8 @@ export function inviteDc(state: GameState, npcId: string): number {
   return i.base - Math.floor(rel.affinity / i.affinity_step) + i.level_gap * Math.max(0, rec.level - pcOf(state).level) + tagDcMod(rec, 'invite') + extra
 }
 
-export function validateInvite(state: GameState, npcId: string) {
+/** ignoreRoom：只看能不能邀請，不看隊伍有沒有空位（介面會先請玩家騰出位子） */
+export function validateInvite(state: GameState, npcId: string, ignoreRoom = false) {
   assertFree(state, '邀請別人入隊')
   const sq = inActiveSquad(state, npcId)
   if (sq && sq.leader !== npcId) throw new Error(`${npcRecord(state, npcId)?.name ?? '對方'}是${sq.name}的隊員，要整隊邀請，請找隊長`)
@@ -283,7 +284,7 @@ export function validateInvite(state: GameState, npcId: string) {
     if (missing.length) throw new Error(`${missing.join('、')}今天不在，等人到齊再整隊邀請`)
   }
   const size = 1 + squadFollowers(state, npcId).length
-  if (partyRoom(state) < size) throw new Error(size > 1 ? `${sq!.name}有 ${size} 人，隊伍放不下` : `隊伍最多 ${partyMax(state)} 人`)
+  if (!ignoreRoom && partyRoom(state) < size) throw new Error(size > 1 ? `${sq!.name}有 ${size} 人，隊伍放不下` : `隊伍最多 ${partyMax(state)} 人`)
 }
 
 export function applyInvite(state: GameState, report: Report, npcId: string, degree: Degree): string {
@@ -294,6 +295,8 @@ export function applyInvite(state: GameState, report: Report, npcId: string, deg
   if (degree === 'critical' || degree === 'success') {
     // 小隊整隊入隊：身上記著小隊（離隊、遣散時一起走）
     const m = joinParty(state, rec, 'voluntary', report, { reason: followers.length ? '整隊受邀' : '受邀' })
+    // 隊員已經先跟著主角（單獨帶上的）：隊長入隊後又是同一隊
+    if (sq && state.party.some((x) => x !== m && x.squad === sq.leader)) m.squad = sq.leader
     if (followers.length) {
       m.squad = rec.id
       for (const f of followers) joinParty(state, f, 'voluntary', report, { reason: `跟著${rec.name}入隊` }).squad = rec.id
@@ -327,7 +330,7 @@ function joinTarget(state: GameState, leaderId: string | undefined): Squad {
   return sq
 }
 
-export function validateSquadJoin(state: GameState, leaderId: string): Squad {
+export function validateSquadJoin(state: GameState, leaderId: string, ignoreRoom = false): Squad {
   assertFree(state, '自己找隊伍')
   if (leaderOf(state)) throw new Error('你已經在別人的隊伍裡了')
   const sq = joinTarget(state, leaderId)
@@ -336,7 +339,7 @@ export function validateSquadJoin(state: GameState, leaderId: string): Squad {
   const missing = squadMissing(state, sq)
   if (missing.length) throw new Error(`${missing.join('、')}今天不在，等人到齊再說`)
   const size = 1 + squadWithLeader(state, sq).length
-  if (followRoom(state) < size) throw new Error(`加上${sq.name}的 ${size} 人，隊伍會超過上限，先讓同伴離隊`)
+  if (!ignoreRoom && followRoom(state) < size) throw new Error(`加上${sq.name}的 ${size} 人，隊伍會超過上限，先讓同伴離隊`)
   return sq
 }
 
@@ -362,8 +365,11 @@ export function clearInviteCooldowns(state: GameState) {
   for (const k of Object.keys(state.flags)) if (k.startsWith('invite_wait:')) delete state.flags[k]
 }
 
-/** 介面用：對小隊隊長能不能整隊邀請、請他們帶主角同行，以及參考 DC（不能時附原因） */
-export function squadOptions(state: GameState, leaderId: string): { size: number; invite: { dc?: number; why?: string }; join: { dc?: number; why?: string } } {
+/**
+ * 介面用：對小隊隊長能不能整隊邀請、請他們帶主角同行，參考 DC（不能時附原因），以及各要幾個位子。
+ * 空位不夠不算「不能」：介面會先請玩家騰出位子（MakeRoomDialog）
+ */
+export function squadOptions(state: GameState, leaderId: string): { size: number; invite: { dc?: number; why?: string; need: number }; join: { dc?: number; why?: string; need: number } } {
   const sq = joinTarget(state, leaderId)
   const tryDc = (check: () => void, dc: () => number) => {
     try {
@@ -375,8 +381,8 @@ export function squadOptions(state: GameState, leaderId: string): { size: number
   }
   return {
     size: 1 + sq.members.length,
-    invite: tryDc(() => validateInvite(state, leaderId), () => inviteDc(state, leaderId)),
-    join: tryDc(() => validateSquadJoin(state, leaderId), () => squadJoinDc(state, sq)),
+    invite: { ...tryDc(() => validateInvite(state, leaderId, true), () => inviteDc(state, leaderId)), need: 1 + squadFollowers(state, leaderId).length },
+    join: { ...tryDc(() => validateSquadJoin(state, leaderId, true), () => squadJoinDc(state, sq)), need: 1 + squadWithLeader(state, sq).length },
   }
 }
 

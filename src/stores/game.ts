@@ -36,6 +36,8 @@ import * as tattooShop from '@/engine/tattooShop'
 import { markPromoted } from '@/engine/promoteNpc'
 import * as road from '@/engine/road'
 import * as homes from '@/engine/homes'
+import * as away from '@/engine/away'
+import * as partyEngine from '@/engine/party'
 import * as garden from '@/engine/garden'
 import * as invention from '@/engine/invention'
 import type { DefeatLoot, GameState, GearSlot, Report, TattooPlace } from '@/engine/types'
@@ -223,6 +225,19 @@ export const useGame = defineStore('game', () => {
   const notice = ref<string | null>(null)
   /** 往過不去的方向移動的次數（地圖用來播放撞牆的動畫） */
   const bump = ref(0)
+  /** 騰出位子的對話框（MakeRoomDialog.vue）：隊伍放不下時先讓同伴留守、寄放或離隊，騰出 need 個位子後執行 then */
+  const makeRoom = ref<{ need: number; title: string; follow?: boolean; then: () => unknown } | null>(null)
+  /** 有 need 個空位就直接執行，不夠時打開騰出位子的對話框（follow：以跟著別人隊伍的上限計） */
+  function requireRoom(need: number, title: string, then: () => unknown, follow = false) {
+    const s = state.value
+    if (!s) return
+    const room = follow ? partyEngine.followRoom(s) : partyEngine.partyRoom(s)
+    if (room >= need) {
+      then()
+      return
+    }
+    makeRoom.value = { need, title, then, ...(follow ? { follow } : {}) }
+  }
   /** 撞牆或規則不讓走時的提示（「那邊走不過去」「旅途只能往前走」「要出門，先請求主人同意」……） */
   const bumpText = ref('')
   let noticeTimer: ReturnType<typeof setTimeout> | undefined
@@ -930,7 +945,7 @@ export const useGame = defineStore('game', () => {
   return {
     /** 在動作的保護下改狀態：出錯時還原、顯示訊息（測試與少數元件用） */
     runAction: run,
-    state, narrations, error, saveWarning, flushed, pc, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText,
+    state, narrations, error, saveWarning, flushed, pc, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTarget, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText, makeRoom, requireRoom,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
@@ -1046,6 +1061,12 @@ export const useGame = defineStore('game', () => {
     }),
     stayHome: (id: string) => run((s) => homes.stayHome(s, grid.currentArea(s), id)),
     takeResident: (id: string) => run((s) => homes.leaveWithResident(s, grid.currentArea(s), id)),
+    // 不在隊上的夥伴與騰出位子（away.ts）
+    sendHome: (homeId: string, id: string) => run((s) => away.sendHome(s, homeId, id)),
+    lodgeAtTavern: (id: string) => run((s) => away.lodgeAtTavern(s, id)),
+    takeLodger: (id: string) => run((s) => away.takeLodger(s, id)),
+    acceptPendingJoin: (id: string) => run((s) => away.acceptPendingJoin(s, id)),
+    declinePendingJoin: (id: string) => run((s) => away.declinePendingJoin(s, id)),
     /** 忘記自創的配方（invention.ts） */
     // 特質：從機會選一個、放棄、寫說法交給 AI、受訓（docs/PERKS.md）
     learnPerk: (member: string, offer: string, perk: string) => run((s) => perkActions.learnFromOffer(s, member, offer, perk)),

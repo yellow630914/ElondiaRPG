@@ -361,6 +361,12 @@ export function presentHere(state: GameState, id: string): boolean {
   return nearbyPeople(state).some((p) => p.rec.id === id)
 }
 
+/** 區域 key 是聚落裡的區塊（不是近郊、地下城、房子） */
+function inTownArea(key: string): boolean {
+  const [loc, block] = key.split('/')
+  return !!loc && !!block && geography.locations.some((l) => l.id === loc && l.type !== 'dungeon') && block !== 'outskirts'
+}
+
 /** 今天在這座城裡（任何區塊）、可以雇用的冒險者 */
 export function adventurersInTown(state: GameState): NpcRecord[] {
   const inParty = new Set(state.party.map((m) => m.id))
@@ -369,6 +375,8 @@ export function adventurersInTown(state: GameState): NpcRecord[] {
     // 留在你家看家的夥伴不算
     if (inParty.has(rec.id) || npcKind(rec) !== 'adventurer' || rec.hostile || rec.staying) return false
     if (rec.dead || !visibleNpc(state, rec)) return false
+    // 暫時待在城裡某一格的人（例如剛離隊、在酒館待幾天）
+    if (rec.at && state.time.day <= rec.at.until && inTownArea(rec.at.area)) return rec.at.area.split('/')[0] === state.location
     const fixed = fixedCell(rec)
     if (fixed) return fixed.area.split('/')[0] === state.location
     const today = whereToday(rec, state.time.day)

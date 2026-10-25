@@ -2,8 +2,9 @@
 import { computed, nextTick, watch } from 'vue'
 import { floatText, pillar } from '@/fx/fx'
 import { lastSeen, stateKey } from '@/fx/seen'
-import { className, combatRules, companionRules, conditionName, conditionTone, describeStatus, genderDef, raceName, statusDef } from '@/engine/data'
+import { className, companionRules, conditionName, conditionTone, describeStatus, genderDef, raceName, statusDef } from '@/engine/data'
 import { isActive } from '@/engine/combat'
+import { partyMax } from '@/engine/party'
 import { useGame } from '@/stores/game'
 import Avatar from './ui/Avatar.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -14,6 +15,9 @@ export type PartySection = 'stats' | 'perks' | 'gear' | 'abilities'
 const emit = defineEmits<{ open: [member: string, section: PartySection] }>()
 const game = useGame()
 const party = computed(() => game.state?.party ?? [])
+// 任務同行的夥伴不佔位子；跟著別人的隊伍時上限放寬（party.ts 的 partyMax）
+const guests = computed(() => party.value.filter((m) => m.bond === 'guest').length)
+const max = computed(() => (game.state ? partyMax(game.state) : 0))
 const SECTIONS: { id: PartySection; icon: IconName; label: string }[] = [
   { id: 'stats', icon: 'sliders', label: '屬性與戰鬥數值' },
   { id: 'perks', icon: 'star', label: '特質' },
@@ -51,7 +55,7 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
 
 <template>
   <section class="panel party-strip">
-    <h3 class="head"><GameIcon name="users" :size="16" />隊伍 <span class="muted count">{{ party.length }} / {{ combatRules.party_max }}</span></h3>
+    <h3 class="head"><GameIcon name="users" :size="16" />隊伍 <span class="muted count" :title="guests ? `另有 ${guests} 位任務同行的夥伴（不佔位子）` : ''">{{ party.length - guests }} / {{ max }}</span></h3>
     <div v-for="m in party" :key="m.id" :ref="(el) => cardRef(m.id, el)" class="mini" :class="{ down: hpOf(m).down }">
       <span v-if="m.pendingAbilityChoices?.length || m.attrPoints > 0" class="lvup">可升級</span>
       <Avatar :id="m.id" :size="44" />
