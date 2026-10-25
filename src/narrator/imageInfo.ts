@@ -4,7 +4,7 @@
 import { className, genderName, raceName } from '@/engine/data'
 import { gearName } from '@/engine/gear'
 import { npcOutfit } from '@/engine/outfits'
-import { npcRecord, npcTitle } from '@/engine/npcs'
+import { appearanceOf, npcRecord, npcTitle } from '@/engine/npcs'
 import { placeName, tattooDesc, tattooName, tattoosOf } from '@/engine/tattoos'
 import type { EquippedGear, GameState, GearSlot } from '@/engine/types'
 import type { Prompt } from './prompt'
@@ -169,7 +169,7 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
     race: raceName(m?.race ?? rec!.race),
     role: m ? className(m.class) : npcTitle(rec!),
     level: m?.level ?? rec?.level,
-    appearance: m?.appearance ?? rec?.appearance ?? '',
+    appearance: appearanceOf(id, m?.appearance ?? rec?.appearance),
     personality: m?.personality ?? rec?.personality ?? '',
     background: m?.background ?? rec?.background ?? '',
     gear: [...gear, ...defGear],

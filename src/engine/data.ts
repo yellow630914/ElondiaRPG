@@ -90,6 +90,8 @@ export interface NpcDef {
   personality: string
   faction?: string
   appearance?: string
+  /** 成人向的外貌細節（私密部位、性徵……）：只在成人向內容開著時接在外貌後面交給 AI 與形象圖，見 npcs.ts 的 appearanceOf */
+  adult_appearance?: string
   /** 與其他角色的關係：角色 id → 文字 */
   relations?: Record<string, string>
   /** 普通人或冒險者；沒寫時有職業的算冒險者 */

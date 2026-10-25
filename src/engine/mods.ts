@@ -1111,7 +1111,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   const location = settlementIds().includes(raw.location ?? '') ? raw.location! : 'soriel'
   const out: NpcMod = {
     id,
-    name: str(raw.name, 12) || '未命名',
+    name: str(raw.name, 16) || '未命名',
     race: raw.race && attributeRules.races[raw.race] ? raw.race : 'human',
     class: cls,
     level: int(raw.level, 1, 20, 1),
@@ -1126,6 +1126,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   if (raw.no_attack && kind === 'adventurer') out.no_attack = true
   if (raw.no_steal) out.no_steal = true
   if (str(raw.appearance, 240)) out.appearance = str(raw.appearance, 240)
+  if (str(raw.adult_appearance, 240)) out.adult_appearance = str(raw.adult_appearance, 240)
   if (str(raw.background, 400)) out.background = str(raw.background, 400)
   if (str(raw.faction, 30)) out.faction = str(raw.faction, 30)
   if (str(raw.occupation, 12)) out.occupation = str(raw.occupation, 12)

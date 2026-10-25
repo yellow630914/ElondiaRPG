@@ -6,7 +6,7 @@
 
 import { npcPerksOf, perksOf } from './perks'
 import { createNpc, lifeTier } from './character'
-import { safeText } from './content'
+import { adultContent, safeText } from './content'
 import {
   attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, npcs as namedNpcs, perkDef, slaveryRules, tagDef,
   type Haunt, type NpcKind,
@@ -52,6 +52,12 @@ export function npcRecord(state: GameState, id: string): NpcRecord | undefined {
   // 固定 NPC 登場後會複製進存檔；出現的條件與出沒的地方跟著內容頁籤的設定走
   if (stored) syncPlacement(stored, def, stage)
   return stored ?? def
+}
+
+/** 交給 AI 與形象圖的外貌：成人向內容開著時，接上固定 NPC 的成人向外貌（跟著內容頁籤的設定走，不存進存檔） */
+export function appearanceOf(id: string, appearance?: string): string {
+  const extra = adultContent() ? namedNpcs.find((n) => n.id === id)?.adult_appearance : undefined
+  return [appearance, extra].filter(Boolean).join('')
 }
 
 /** 第一組條件成立的「依劇情旗標改變出沒」 */

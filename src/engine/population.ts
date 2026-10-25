@@ -138,11 +138,11 @@ export function ensureRoster(state: GameState, locId: string): Roster | undefine
   ensureMadam(state, loc)
   const rosters = (state.rosters ??= {})
   if (rosters[locId]) return rosters[locId]
-  // 具名 NPC：所屬地點是這裡的算進冒險者名額
+  // 具名 NPC：所屬地點是這裡的算進冒險者名額（不受雇用的統治者、機構首長不佔名額）
   const named = namedNpcs.filter((n) => n.location === locId).map((n) => n.id)
   const rng = new Rng(hashString(`${state.seed}:roster:${locId}`))
   const members = [...named]
-  for (let i = named.length; i < size.adventurer; i++) members.push(generateResident(state, rng, loc, 'adventurer').id)
+  for (let i = named.filter((id) => !isUnhireable(id)).length; i < size.adventurer; i++) members.push(generateResident(state, rng, loc, 'adventurer').id)
   for (let i = 0; i < size.commoner; i++) members.push(generateResident(state, rng, loc, 'commoner').id)
   // 有娼館的城鎮：至少有幾位娼妓
   if (zonesOf(loc).includes('brothel')) {

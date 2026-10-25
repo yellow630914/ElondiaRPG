@@ -31,6 +31,7 @@
 | `spot` | 固定待的設施（店主、職員） |
 | `hostile`、`dead` | 被攻擊後敵對、已經死亡 |
 | `no_attack`、`no_steal` | 固定 NPC：不可偷襲（只有冒險者）、不可偷竊；一國之主用，只能透過特殊任務交手 |
+| `adult_appearance` | 固定 NPC：成人向的外貌細節（私密部位、性徵）。只在成人向內容開著時接在外貌後面，交給 AI（行動判定的對象、人際關係）與形象圖；跟著內容頁籤的設定走，不存進存檔（`npcs.ts` 的 `appearanceOf`） |
 | `character` | 戰鬥資料（入隊過、或戰鬥時才產生） |
 | `lineage` | 血統、部族、氏族（見第 13 節） |
 
@@ -134,7 +135,7 @@
 | 城鎮、港口（town、port） | 5 | 5 |
 | 村落、哨站、要塞（village、outpost、fortress） | 3 | 3 |
 
-設定在 `data/rules/npc_population.json`。具名 NPC（莉娜等）算在他所屬城鎮的冒險者名額裡。
+設定在 `data/rules/npc_population.json`。具名 NPC（莉娜等）算在他所屬城鎮的冒險者名額裡；不受雇用的（國王、王子、樞機主教……）不佔名額。
 
 ### 6.2 建立與變動
 

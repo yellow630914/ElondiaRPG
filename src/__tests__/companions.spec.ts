@@ -183,7 +183,8 @@ describe('tavern hiring', () => {
   })
 
   it('hires at the asking price without a check', () => {
-    const state = game(7)
+    // 種子要讓今天的酒館有生成的冒險者（具名 NPC 佔了索里耶爾的一部分名額）
+    const state = game(8)
     state.money_cc = 5000
     const c = tavernCandidates(state).find((x) => x.npc.startsWith('adv_'))!
     hireAtAsking(state, c.npc)

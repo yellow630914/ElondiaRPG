@@ -84,7 +84,7 @@ describe('rosters', () => {
 
 describe('people here', () => {
   it('scatters residents over the cells of their district and keeps shopkeepers in their shop', () => {
-    const state = game()
+    const state = game(1)
     ensureRoster(state, 'soriel')
     standOn(state, 'shop')
     const here = peopleHere(state)

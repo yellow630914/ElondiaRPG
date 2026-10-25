@@ -24,7 +24,7 @@ import { gearName, gearRules, ordinaryBases, rarityName, rarityPoints } from '@/
 import { contractTerms, markSummary } from '@/engine/slavery'
 import { masterHomeSummary } from '@/engine/masterHome'
 import { parsePitchTarget, perkNames, perkPower, pitchCap } from '@/engine/perks'
-import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
+import { appearanceOf, npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
 import type { GameState, Negotiation, NpcRecord } from '@/engine/types'
 import { assemble, endNotesSection, fillDefeatRules, fillSceneRules, LANGUAGE_NAME, loreText, sharedSystemSections, styleLead, styleSection, type LoreLike, type Prompt } from './prompt'
@@ -122,7 +122,7 @@ function targetDetail(state: GameState, p: ActionPending): string {
     `對象 ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderName(rec.gender)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
     `身分：${npcIdentity(rec)}`,
     `性格：${rec.personality}`,
-    rec.appearance ? `外貌：${rec.appearance}` : '',
+    appearanceOf(rec.id, rec.appearance) ? `外貌：${appearanceOf(rec.id, rec.appearance)}` : '',
     wearing(rec),
     rec.background ? `背景：${rec.background}` : '',
     rel ? `與主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '與主角：素不相識',

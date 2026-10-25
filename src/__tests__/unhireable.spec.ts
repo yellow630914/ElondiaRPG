@@ -59,3 +59,19 @@ describe('guarded fixed NPCs', () => {
     expect(c.no_steal).toBe(true)
   })
 })
+
+describe('adult appearance', () => {
+  it('adds the adult details only with adult content on', async () => {
+    const { setAdultContent } = await import('@/engine/content')
+    const { appearanceOf } = await import('@/engine/npcs')
+    setAdultContent(false)
+    expect(appearanceOf('npc_aurelia', '金髮。')).toBe('金髮。')
+    setAdultContent(true)
+    expect(appearanceOf('npc_aurelia', '金髮。')).toMatch(/^金髮。陰唇/)
+    expect(appearanceOf('npc_amber', '黑髮。')).toBe('黑髮。')
+    setAdultContent(false)
+  })
+  it('keeps the field through the content editor', () => {
+    expect(sanitizeNpc('mod_npc_x', { ...newNpc('mod_npc_x'), adult_appearance: '細節' }, true).adult_appearance).toBe('細節')
+  })
+})

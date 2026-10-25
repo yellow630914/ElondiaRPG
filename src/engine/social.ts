@@ -8,7 +8,7 @@
 
 import { affinityStage } from './character'
 import { genderName, locationById, npcs, progression, type NpcDef } from './data'
-import { npcIdentity } from './npcs'
+import { appearanceOf, npcIdentity } from './npcs'
 import type { GameState, GameTime, Report } from './types'
 
 export interface Relationship {
@@ -403,7 +403,7 @@ export function formatContext(state: GameState, ctx: ContextResult): string {
       return [
         `- ${r.name}${genderOf(state, r.id) ? `（${genderOf(state, r.id)}）` : ''}｜親密度 ${r.affinity}（${affinityStage(r.affinity)}）｜id: ${r.id}`,
         identityOf(state, r.id) && `  身分：${identityOf(state, r.id)}`,
-        r.appearance && `  外貌：${r.appearance}`,
+        appearanceOf(r.id, r.appearance) && `  外貌：${appearanceOf(r.id, r.appearance)}`,
         r.personality && `  性格：${r.personality}`,
         `  與主角：${r.toPlayer}`,
         others.length ? `  與他人：${others.join('；')}` : '',

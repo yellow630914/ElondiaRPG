@@ -4,6 +4,7 @@ import { npcTraits } from '@/engine/traits'
 import { npcPerksOf } from '@/engine/perks'
 import { computed, ref, watch } from 'vue'
 import { createNpc } from '@/engine/character'
+import { adultContent } from '@/engine/content'
 import {
   abilities as abilityTable, ATTR_IDS, attrName, attributeRules, classAbilities, className, combatClasses, GENDER_IDS, genderName, geography,
   locationById, npcs as namedNpcs, npcTags, raceName, regionById,
@@ -249,7 +250,7 @@ const occupations = computed(() => {
     <fieldset>
       <legend>基本</legend>
       <div class="grid">
-        <label>名字 <input v-model="draft.name" maxlength="12" /></label>
+        <label>名字 <input v-model="draft.name" maxlength="16" /></label>
         <label>性別
           <select v-model="draft.gender">
             <option v-for="g in GENDER_IDS" :key="g" :value="g">{{ genderName(g) }}</option>
@@ -288,6 +289,7 @@ const occupations = computed(() => {
       </div>
       <label class="block">性格 <textarea v-model="draft.personality" rows="2" maxlength="160" /></label>
       <label class="block">外貌 <textarea v-model="draft.appearance" rows="2" maxlength="240" /></label>
+      <label v-if="adultContent()" class="block">成人向外貌 <Hint text="私密部位、性徵等細節：只在成人向內容開著時接在外貌後面交給 AI 與形象圖。" /> <textarea v-model="draft.adult_appearance" rows="2" maxlength="240" /></label>
       <label class="block">背景 <textarea v-model="draft.background" rows="3" maxlength="400" /></label>
       <div class="row checks">
         <span class="small">標籤：</span>
