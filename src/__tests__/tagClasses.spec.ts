@@ -23,3 +23,24 @@ describe('adventurer tags by class', () => {
     expect(rate('paladin', 'good')).toBeGreaterThan(rate('fighter', 'good'))
   }, 30000)
 })
+
+describe('races by location', () => {
+  it('makes each people the majority in their own capital', () => {
+    const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 1 })
+    const rng = new Rng(9)
+    const majority = (loc: string) => {
+      const n: Record<string, number> = {}
+      for (let i = 0; i < 400; i++) {
+        const r = generateResident(state, rng, locationById(loc), 'commoner')
+        n[r.race] = (n[r.race] ?? 0) + 1
+      }
+      return Object.entries(n).sort((a, b) => b[1] - a[1])[0]![0]
+    }
+    expect(majority('silvermoon')).toBe('elf')
+    expect(majority('ironforge')).toBe('dwarf')
+    expect(majority('bloodplume')).toBe('demon')
+    expect(majority('canglue')).toBe('yulin')
+    expect(majority('sunscorch')).toBe('catfolk')
+    expect(majority('soriel')).toBe('human')
+  }, 30000)
+})
