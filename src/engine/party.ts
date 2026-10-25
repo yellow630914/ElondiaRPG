@@ -30,6 +30,11 @@ export function partyRoom(state: GameState): number {
   return partyMax(state) - state.party.filter((m) => m.bond !== 'guest').length
 }
 
+/** 加入別人的隊伍時還有幾個名額（以放寬後的上限計）：對方的隊長和隊員要放得進來 */
+export function followRoom(state: GameState): number {
+  return Math.max(combatRules.party_max, combatRules.party_max_following ?? combatRules.party_max) - state.party.filter((m) => m.bond !== 'guest').length
+}
+
 export function pcOf(state: GameState): Character {
   const pc = state.party.find((m) => m.isPlayer)
   if (!pc) throw new Error('no player character')

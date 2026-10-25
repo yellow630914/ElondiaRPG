@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { apMaxFor, apRegenFor, attrsOf, mod } from '@/engine/character'
-import { askingFor, invitable, marketsHere, partyOffersHere, proposeDc, waitChance } from '@/engine/companions'
+import { askingFor, invitable, joinableSquads, marketsHere, partyOffersHere, proposeDc, squadOptions, waitChance } from '@/engine/companions'
 import { abilityDef, attributeRules, className, companionRules, conditionName, genderName, raceName } from '@/engine/data'
 import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { characterFor, npcRecord } from '@/engine/npcs'
 import { perksOf } from '@/engine/perks'
-import { isBound, isNoncombatant, leaderOf, partyMax, partyRoom } from '@/engine/party'
+import { followRoom, isBound, isNoncombatant, leaderOf, partyMax, partyRoom } from '@/engine/party'
+import { inActiveSquad } from '@/engine/squads'
 import { canNegotiate } from '@/engine/negotiation'
 import { discount, keeperTitle, shopKey } from '@/engine/trade'
 import type { Character, TavernCandidate } from '@/engine/types'
@@ -113,6 +114,11 @@ const chance = computed(() => Math.round(waitChance(s.value) * 100))
 // ---- 邀請、黑市 ----
 const inviteList = computed(() => invitable(s.value))
 const inviteText = ref('')
+// 固定 NPC 的小隊：整隊邀請、或請他們帶你同行
+const squadHere = computed(() => joinableSquads(s.value))
+const squadName = (id: string) => inActiveSquad(s.value, id)?.name
+const squadOpt = (id: string) => squadOptions(s.value, id)
+const squadText = ref('')
 const blackText = ref('')
 const blackKnown = computed(() => marketsHere(s.value).some((m) => m.kind === 'black'))
 
@@ -132,7 +138,7 @@ const menuItems = computed<MenuItem[]>(() => {
   } else {
     items.push(
       { id: 'recruit', icon: 'users', label: '招募冒險者', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人）` : visible.value.length ? `今天城裡有 ${visible.value.length} 位可以雇用` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' },
-      { id: 'offers', icon: 'flag', label: leader.value ? '你所在的隊伍' : '加入別人的隊伍', detail: leader.value ? `正跟著${leader.value.name}的隊伍` : `等待組隊 ${companionRules.wait_party.hours} 小時・機率約 ${chance.value}%`, badge: leader.value ? '' : offersHere.value.length || '' },
+      { id: 'offers', icon: 'flag', label: leader.value ? '你所在的隊伍' : '加入別人的隊伍', detail: leader.value ? `正跟著${leader.value.name}的隊伍` : `等待組隊 ${companionRules.wait_party.hours} 小時・機率約 ${chance.value}%${squadHere.value.length ? `・身邊有 ${squadHere.value.length} 支認識的小隊` : ''}`, badge: leader.value ? '' : (offersHere.value.length + squadHere.value.length) || '' },
     )
     if (inviteList.value.length) items.push({ id: 'invite', icon: 'feather', label: '邀請認識的人', detail: `${inviteList.value.length} 位認識的人可以邀請`, badge: inviteList.value.length })
     items.push({ id: 'black', icon: 'eye', label: blackKnown.value ? '黑市' : '打聽黑市', detail: blackKnown.value ? '不公開的奴隸買賣' : '魅力檢定，約 2 小時' })
@@ -257,10 +263,26 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
         <p v-if="leader" class="small muted">你正跟著{{ leader.name }}的隊伍。想離開的話，到「隊伍」選擇離隊方式，會在下次休息時進行。</p>
         <template v-else>
           <div class="row wait">
-            <button :disabled="partyFull" @click="game.waitForParty()"><GameIcon name="hourglass" :size="15" /> 等待組隊（{{ companionRules.wait_party.hours }} 小時）</button>
+            <button :disabled="followRoom(s) < 1" @click="game.waitForParty()"><GameIcon name="hourglass" :size="15" /> 等待組隊（{{ companionRules.wait_party.hours }} 小時）</button>
             <span class="small muted">機率約 {{ chance }}%，受魅力與等級影響；對方可能付簽約金給你。</span>
           </div>
           <p v-if="!offersHere.length" class="small muted">目前沒有隊伍邀請你。</p>
+          <!-- 認識的固定 NPC 小隊就在身邊：請他們帶你同行 -->
+          <template v-if="squadHere.length">
+            <input v-model="squadText" class="wide" placeholder="怎麼說服他們帶上你（選填）" />
+            <div class="cands">
+              <article v-for="q in squadHere" :key="q.leader" class="cand small">
+                <header>
+                  <Avatar :id="q.leader" :size="44" />
+                  <div><NameTag :id="q.leader" /> <span class="tag">{{ q.name }}</span><div class="muted">隊員：<template v-for="(id, i) in q.members" :key="id"><span v-if="i">、</span><NameTag :id="id" /></template></div></div>
+                </header>
+                <div class="row">
+                  <button class="small primary" :disabled="!!squadOpt(q.leader).join.why || game.judging" :title="squadOpt(q.leader).join.why ?? ''" @click="game.perform({ kind: 'squad_join', target: q.leader, text: squadText }); squadText = ''">請他們帶你同行（魅力檢定）</button>
+                  <span class="muted">{{ squadOpt(q.leader).join.why ?? `參考 DC ${squadOpt(q.leader).join.dc}（隊長的親密度、你帶的同伴數、等級差）` }}</span>
+                </div>
+              </article>
+            </div>
+          </template>
           <div class="cands">
             <article v-for="o in offersHere" :key="o.id" class="cand small">
               <header>
@@ -284,8 +306,11 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
         <ul class="plain invite">
           <li v-for="r in inviteList" :key="r.id" class="row">
             <Avatar :id="r.id" :size="30" />
-            <span class="grow"><NameTag :id="r.id" /> <span class="muted small">Lv.{{ r.level }}・親密度 {{ s.relationships?.[r.id]?.affinity }}</span></span>
-            <button class="small" :disabled="partyFull || game.judging" @click="game.perform({ kind: 'invite', target: r.id, text: inviteText }); inviteText = ''">邀請</button>
+            <span class="grow"><NameTag :id="r.id" /> <span class="muted small">Lv.{{ r.level }}・親密度 {{ s.relationships?.[r.id]?.affinity }}</span>
+              <template v-if="squadName(r.id)"> <span class="tag small">{{ squadName(r.id) }}（{{ squadOpt(r.id).size }} 人）</span> <span v-if="squadOpt(r.id).invite.why" class="muted small">{{ squadOpt(r.id).invite.why }}</span></template>
+            </span>
+            <button v-if="squadName(r.id)" class="small" :disabled="!!squadOpt(r.id).invite.why || game.judging" :title="squadOpt(r.id).invite.dc ? `參考 DC ${squadOpt(r.id).invite.dc}（每多一名隊員 +${companionRules.squad.invite_per_member}）` : ''" @click="game.perform({ kind: 'invite', target: r.id, text: inviteText }); inviteText = ''">整隊邀請</button>
+            <button v-else class="small" :disabled="partyFull || game.judging" @click="game.perform({ kind: 'invite', target: r.id, text: inviteText }); inviteText = ''">邀請</button>
           </li>
         </ul>
       </template>

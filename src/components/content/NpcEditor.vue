@@ -16,6 +16,7 @@ import type { GearSlot } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import FlagInput from './FlagInput.vue'
+import AffinityCondEditor from './AffinityCondEditor.vue'
 import ComboInput from './ComboInput.vue'
 import NpcPlacementEditor from './NpcPlacementEditor.vue'
 import UsageNote from './UsageNote.vue'
@@ -38,7 +39,8 @@ function current(): NpcMod {
 }
 const draft = ref<NpcMod>(current())
 // 比較時略過空的條件（表單會先建立空的 requires 物件）
-const snap = (v: unknown) => JSON.stringify(v, (k, x) => (k === 'requires' && x && !x.flags?.length && !x.flags_none?.length ? undefined : x))
+const emptyCond = (x: { flags?: string[]; flags_none?: string[]; affinity?: Record<string, number> } | undefined) => !!x && !x.flags?.length && !x.flags_none?.length && !Object.keys(x.affinity ?? {}).length
+const snap = (v: unknown) => JSON.stringify(v, (k, x) => (k === 'requires' && emptyCond(x) ? undefined : x))
 const saved = ref(snap(draft.value))
 watch(() => props.id, () => {
   draft.value = current()
@@ -67,6 +69,41 @@ function moveStage(i: number, d: number) {
 
 // ---- 劇情條件 ----
 const requires = computed(() => (draft.value.requires ??= {}))
+
+// ---- 小隊（寫在隊長身上）：隊員跟著隊長出沒，只能整隊邀請或請他們帶主角同行 ----
+/** 別人的小隊把這個角色列為隊員 */
+const memberOf = computed(() => {
+  void content.version
+  return namedNpcs.find((n) => n.id !== props.id && n.squad?.members.includes(props.id))
+})
+const hasSquad = computed({
+  get: () => !!draft.value.squad,
+  set: (on: boolean) => {
+    if (on) draft.value.squad = { name: `${draft.value.name}的小隊`, members: [] }
+    else delete draft.value.squad
+  },
+})
+/** 可以當隊員的人：其他固定 NPC，不是別隊的隊長或隊員 */
+const squadCandidates = computed(() => {
+  void content.version
+  const taken = new Set(namedNpcs.filter((n) => n.id !== props.id).flatMap((n) => (n.squad ? [n.id, ...n.squad.members] : [])))
+  return namedNpcs.filter((n) => n.id !== props.id && !taken.has(n.id))
+})
+const pickMember = ref('')
+function addMember() {
+  const sq = draft.value.squad
+  if (!sq || !pickMember.value || sq.members.includes(pickMember.value) || sq.members.length >= 3) return
+  sq.members.push(pickMember.value)
+  pickMember.value = ''
+}
+const squadReq = computed(() => (draft.value.squad!.requires ??= {}))
+const togetherPct = computed({
+  get: () => Math.round((draft.value.squad?.together ?? 1) * 100),
+  set: (v: number) => {
+    if (draft.value.squad) draft.value.squad.together = Math.max(0, Math.min(100, v || 0)) / 100
+  },
+})
+const npcName = (id: string) => namedNpcs.find((n) => n.id === id)?.name ?? id
 
 // ---- 屬性、能力、裝備 ----
 const customAttrs = computed({
@@ -134,7 +171,8 @@ const previewAbilities = computed(() => preview.value.abilities.map((id) => abil
 // ---- 動作 ----
 function save() {
   try {
-    if (draft.value.requires && !draft.value.requires.flags?.length && !draft.value.requires.flags_none?.length) delete draft.value.requires
+    if (emptyCond(draft.value.requires)) delete draft.value.requires
+    if (draft.value.squad && emptyCond(draft.value.squad.requires)) delete draft.value.squad.requires
     content.saveNpc(props.id, draft.value)
     draft.value = current()
     saved.value = snap(draft.value)
@@ -296,6 +334,39 @@ const occupations = computed(() => {
     </fieldset>
 
     <fieldset>
+      <legend>小隊</legend>
+      <p v-if="memberOf" class="small muted">是「{{ memberOf.name }}」的小隊「{{ memberOf.squad!.name }}」的隊員：跟著隊長出沒，不能單獨雇用或邀請（要改到隊長那邊編輯）。</p>
+      <template v-else>
+        <p class="small muted">
+          寫在隊長身上，2–4 人。隊員依同行機率每天跟著隊長、站在隊長旁邊；小隊不能拆開，只能整隊邀請入隊（DC 每多一人 +1，看隊長的親密度），或請他們帶主角同行（主角跟著隊長，上限放寬為 6 人）。
+          <Hint text="整隊入隊的人親密度太低離隊、被遣散時整隊一起走。事件效果「加入隊伍」指定小隊的人（自願、雇傭）時整隊一起來；「跟著別人的隊伍」指定隊長又沒寫隊員時，帶上整支小隊。條件不成立時小隊不存在，各自行動。" />
+        </p>
+        <label class="check small"><input v-model="hasSquad" type="checkbox" /> 帶著一支小隊</label>
+        <template v-if="draft.squad">
+          <div class="row">
+            <label class="small">隊名 <input v-model="draft.squad.name" maxlength="16" /></label>
+            <label class="small">每天同行的機率 <input v-model.number="togetherPct" type="number" min="0" max="100" class="pct" />%</label>
+          </div>
+          <div class="row small">
+            隊員：
+            <span v-for="(m, i) in draft.squad.members" :key="m" class="tag">{{ npcName(m) }} <button class="small" title="移除" @click="draft.squad.members.splice(i, 1)">✕</button></span>
+            <template v-if="draft.squad.members.length < 3">
+              <select v-model="pickMember">
+                <option value="">（選一位固定 NPC）</option>
+                <option v-for="n in squadCandidates.filter((x) => !draft.squad!.members.includes(x.id))" :key="n.id" :value="n.id">{{ n.name }}（{{ locationById(n.location).name }}）</option>
+              </select>
+              <button class="small" :disabled="!pickMember" @click="addMember">＋ 隊員</button>
+            </template>
+          </div>
+          <p v-if="!draft.squad.members.length" class="small warn">還沒有隊員：儲存時不會建立小隊。</p>
+          <div class="row small">小隊成立的條件：這些旗標都成立 <FlagInput v-model="squadReq.flags" /></div>
+          <div class="row small">而且這些旗標都不成立 <FlagInput v-model="squadReq.flags_none" /></div>
+          <AffinityCondEditor :model-value="squadReq" label="而且好感至少：" @update:model-value="draft.squad!.requires = $event" />
+        </template>
+      </template>
+    </fieldset>
+
+    <fieldset>
       <legend>能力值、技能與裝備</legend>
       <p class="small muted">
         預覽：{{ className(preview.class) }} Lv.{{ preview.level }}・生命 {{ preview.maxHp }}・{{ ATTR_IDS.map((a) => `${attrName(a)} ${preview.attrs[a]}`).join('、') }}
@@ -363,4 +434,5 @@ const occupations = computed(() => {
 <style scoped>
 .stage { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 .slot { width: 3em; }
+.pct { width: 5em; }
 </style>

@@ -24,6 +24,7 @@ import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, GuildRank, Quest, Report } from './types'
 import { shortestPath } from './world'
 import { rewardMoney } from './gameRules'
+import { squadMates } from './squads'
 
 export { INN_CC_PER_PERSON } from './rest'
 export const RATION_CC = 5
@@ -141,19 +142,22 @@ export function dismiss(state: GameState, npcId: string): Report {
   if (npc.bond === 'slave') throw new Error('奴隸不能遣散，請先解除契約')
   if (npc.bond === 'guest') throw new Error('任務同行的夥伴會在任務的進展中離開')
   const report = baseReport(state, 'social', 0.5)
-  leaveParty(state, npcId, report, '遣散')
-  report.outcome.summary = `${npc.name}離開了隊伍。`
+  // 整隊入隊的小隊：整隊一起離開
+  const group = [npc, ...squadMates(state, npc).filter((m) => m !== npc)]
+  for (const m of group) leaveParty(state, m.id, report, m === npc ? '遣散' : `跟著${npc.name}離開`)
+  report.outcome.summary = `${group.map((m) => m.name).join('、')}離開了隊伍。`
   report.outcome.tags = ['離隊']
   // 入隊沒多久就遣散：對方覺得被利用，消息傳開，這座城的物價上漲一陣子
   const pen = craftRules.dismiss_penalty
   if (npc.joined && hoursBetween(npc.joined, state.time) < pen.days * 24) {
-    const rel = state.relationships?.[npcId]
-    if (rel) {
+    for (const m of group) {
+      const rel = state.relationships?.[m.id]
+      if (!rel) continue
       const after = Math.max(-100, rel.affinity + pen.affinity)
-      ;(report.changes.affinity ??= []).push({ npc: npcId, delta: after - rel.affinity, after, reason: '才入隊沒多久就被遣散' })
+      ;(report.changes.affinity ??= []).push({ npc: m.id, delta: after - rel.affinity, after, reason: '才入隊沒多久就被遣散' })
     }
     state.flags[`notoriety:${state.location}`] = state.time.day + pen.notoriety_days
-    report.outcome.summary += `才入隊沒幾天就被遣散，${npc.name}覺得被利用了；這件事在${locationById(state.location).name}傳開，商店對你的開價高了一些。`
+    report.outcome.summary += `才入隊沒幾天就被遣散，${group.map((m) => m.name).join('、')}覺得被利用了；這件事在${locationById(state.location).name}傳開，商店對你的開價高了一些。`
     report.outcome.tags.push('用完就丟')
   }
   return commitReport(state, report)

@@ -1164,6 +1164,15 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
     return [{ requires: r, location: settlementIds().includes(st.location) ? st.location : location, ...(h.length ? { haunts: h } : {}), ...(f ? { fixed: f } : {}) }]
   })
   if (stages.length) out.stages = stages
+  // 小隊：隊員是其他角色的 id（不含自己，最多 3 人）；隊員存不存在、有沒有重複加入別隊，由 squads.ts 執行時判斷
+  if (raw.squad && typeof raw.squad === 'object' && Array.isArray(raw.squad.members)) {
+    const members = [...new Set(raw.squad.members.filter((m): m is string => typeof m === 'string' && !!m.trim() && m !== id).map((m) => m.trim()))].slice(0, 3)
+    if (members.length) {
+      const r = cond(raw.squad.requires)
+      const together = typeof raw.squad.together === 'number' && Number.isFinite(raw.squad.together) ? Math.max(0, Math.min(1, Math.round(raw.squad.together * 100) / 100)) : 1
+      out.squad = { name: str(raw.squad.name, 16) || `${out.name}的小隊`, members, ...(together < 1 ? { together } : {}), ...(r ? { requires: r } : {}) }
+    }
+  }
   if (custom) out.custom = true
   return out
 }

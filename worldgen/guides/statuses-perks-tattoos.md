@@ -226,7 +226,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 |---|---|
 | `attrs` | `str` 力量、`dex` 靈巧、`int` 智力、`fai` 信仰、`cha` 魅力 |
 | `contexts` | `action` 主動行動、`negotiation` 談判、`master_event` 回應主人、`gate` 城門盤查、`trap` 察覺陷阱、`lock` 開鎖、`travel` 旅行途中的危險、`road` 旅途上的事件、`quest` 執行委託、`retreat` 撤出地下城、`stealth` 潛行、`initiative` 戰鬥先攻、`save` 戰鬥中的豁免 |
-| `kinds` | 主動行動的種類（`data/rules/actions.json` 的 `kinds`）：`hire` `haggle` `invite` `black_market` `negotiate` `escape` `bargain` `negotiation` `rest_talk` `chat` `gift` `flatter` `bluff` `intimidate` `steal` `attack` `master_permit` `master_leave` `marking` `master_event` `master_return` `seek_master` `work` `patron` `unmark` `story` `defeat_event` `craft` `make` `produce` `train` `explore` `perk_pitch` `invent` |
+| `kinds` | 主動行動的種類（`data/rules/actions.json` 的 `kinds`）：`hire` `haggle` `invite` `squad_join` `propose` `black_market` `negotiate` `escape` `bargain` `negotiation` `rest_talk` `chat` `gift` `flatter` `bluff` `intimidate` `steal` `attack` `master_permit` `master_leave` `marking` `master_event` `master_return` `seek_master` `work` `patron` `unmark` `story` `defeat_event` `craft` `make` `produce` `train` `explore` `perk_pitch` `invent` |
 | `vs_tags` | 對象的標籤（`data/rules/npc_tags.json`）：`traveler` `merchant` `commoner` `slave` `noble` `royal` `priest` `bishop` `good` `villain` `prostitute` |
 
 **`kinds` 與 `vs_tags` 不會被檢查**：寫錯的值會留著，但永遠不會成立，世界檢查也看不出來。一定照上表抄。

@@ -55,7 +55,7 @@
 | 類別 | 行動 |
 |---|---|
 | 一般 | 自由行動 `free`、長休時的互動 `rest_talk` |
-| 交流 | 聊天 `chat`、送禮 `gift`、獻媚 `flatter`、雇傭談判 `hire`、邀請入隊 `invite` |
+| 交流 | 聊天 `chat`、送禮 `gift`、獻媚 `flatter`、雇傭談判 `hire`、邀請入隊 `invite`（固定 NPC 小隊整隊邀請）、請小隊帶你同行 `squad_join`、向主人提議雇人或買奴隸 `propose` |
 | 交易 | 殺價 `haggle`（奴隸市場）、交涉價格 `bargain`、談判 `negotiation`、打聽黑市 `black_market` |
 | 犯罪與對峙 | 偷竊 `steal`、偷襲 `attack`、蒙混過關 `bluff`、威嚇 `intimidate` |
 | 奴隸 | 刻印 `marking`、請求主人同意出城 `master_permit`、請求主人讓你出門 `master_leave`、回應主人 `master_event`、談判解除契約 `negotiate`、逃離主人 `escape`、回到主人身邊 `master_return`、投靠新主人 `seek_master`、解除印記 `unmark` |

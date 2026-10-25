@@ -39,6 +39,8 @@
     "hire": { "name": "雇傭談判", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"] },
     "haggle": { "name": "殺價", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"] },
     "invite": { "name": "邀請入隊", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"] },
+    "squad_join": { "name": "請小隊帶你同行", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"],
+      "$comment": "請固定 NPC 的小隊（NpcDef.squad）帶主角同行：成功時隊長成為主角跟著的隊長、隊員是同隊的隊員（DC 見 companions.json 的 squad.join）" },
     "black_market": { "name": "打聽黑市", "attr": "cha", "hours": 2, "effects": ["flag", "reputation", "money", "hp"] },
     "negotiate": { "name": "談判解除契約", "attr": "cha", "hours": 1, "effects": ["affinity", "relationship_text", "flag"] },
     "escape": { "name": "逃離主人", "attr": "dex", "hours": 2, "effects": ["affinity", "relationship_text", "flag", "hp"] },

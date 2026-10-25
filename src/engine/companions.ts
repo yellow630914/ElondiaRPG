@@ -35,7 +35,7 @@ import {
 import { setupInteraction } from './interactions'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, changeMaster, isBound, isEnslaved, isFugitive, joinParty,
-  leaderOf, partyRoom, pcOf, playerEscapes, punish, recapturePlayer, removeCondition, setHp,
+  followRoom, leaderOf, partyMax, partyRoom, pcOf, playerEscapes, punish, recapturePlayer, removeCondition, setHp,
 } from './party'
 import { negotiationSetup } from './negotiation'
 import { setupPatron } from './brothel'
@@ -47,6 +47,7 @@ import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
 import type { Character, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
+import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
 function socialReport(state: GameState, hours: number, scene: string, kind: Report['kind'] = 'social'): Report {
   const start = { ...state.time }
@@ -112,7 +113,7 @@ function assertCanHire(state: GameState, npcId: string, offer: number) {
   if (state.captives?.npcs.includes(npcId)) throw new Error('對方被你制伏在地上，先決定怎麼處置')
   const c = candidate(state, npcId)
   if (c.declined) throw new Error('對方今天不想再談了')
-  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
+  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${partyMax(state)} 人`)
   if (offer < 0 || !Number.isFinite(offer)) throw new Error('出價錯誤')
   if (state.money_cc < offer) throw new Error('錢不夠')
 }
@@ -183,7 +184,7 @@ export function partyOffersHere(state: GameState): PartyOffer[] {
 export function waitForParty(state: GameState): Report {
   assertFree(state, '自己找隊伍')
   if (leaderOf(state)) throw new Error('你已經在別人的隊伍裡了')
-  if (partyRoom(state) < 1) throw new Error('隊伍已滿，沒有人能帶上你們')
+  if (followRoom(state) < 1) throw new Error('隊伍已滿，沒有人能帶上你們')
   const w = companionRules.wait_party
   const pc = pcOf(state)
   const report = socialReport(state, w.hours, tavernScene(state))
@@ -191,7 +192,7 @@ export function waitForParty(state: GameState): Report {
     if (!rng.chance(waitChance(state))) return null
     const level = Math.min(20, pc.level + rng.int(w.leader_level[0], w.leader_level[1]))
     const leader = generateNpc(state, rng, { level }, 'pty')
-    const memberCount = rng.int(0, Math.min(2, partyRoom(state) - 1))
+    const memberCount = rng.int(0, Math.max(0, Math.min(2, followRoom(state) - 1)))
     const members = Array.from({ length: memberCount }, () => generateNpc(state, rng, { level: Math.max(1, level - rng.int(0, 2)) }, 'pty'))
     const payChance = w.pay_chance + w.pay_chance_per_cha_mod * Math.max(0, mod(attrOf(pc, 'cha')))
     const pay = rng.chance(payChance) ? Math.round((w.pay_per_level * pc.level * (1 + Math.max(0, mod(attrOf(pc, 'cha'))) * 0.25)) / 5) * 5 : 0
@@ -213,7 +214,7 @@ export function acceptPartyOffer(state: GameState, offerId: string): Report {
   const offer = partyOffersHere(state).find((o) => o.id === offerId)
   if (!offer) throw new Error('邀請已經失效')
   if (leaderOf(state)) throw new Error('你已經在別人的隊伍裡了')
-  if (partyRoom(state) < 1 + offer.members.length) throw new Error('隊伍人數太多，對方帶不下')
+  if (followRoom(state) < 1 + offer.members.length) throw new Error('隊伍人數太多，對方帶不下')
   const leader = npcRecord(state, offer.leader)!
   const report = socialReport(state, 0.5, tavernScene(state))
   joinParty(state, leader, 'leader', report, { group: leader.id, reason: '邀請主角同行' })
@@ -242,7 +243,7 @@ export function requestLeave(state: GameState, mode: 'sneak' | 'formal' | null) 
 
 // ---- 5. 邀請認識的人 ----
 
-/** 可以邀請的人：認識、不在隊伍、親密度足夠、今天人就在這座城鎮 */
+/** 可以邀請的人：認識、不在隊伍、親密度足夠、今天人就在這座城鎮。小隊只能透過隊長整隊邀請 */
 export function invitable(state: GameState): NpcRecord[] {
   const inParty = new Set(state.party.map((m) => m.id))
   const min = companionRules.invite.min_affinity
@@ -251,6 +252,16 @@ export function invitable(state: GameState): NpcRecord[] {
     .map((r) => npcRecord(state, r.id))
     // 開店中的店主、公會職員：得顧店，不能邀請入隊
     .filter((rec): rec is NpcRecord => !!rec && presentHere(state, rec.id) && !isShopStaff(rec) && !rec.staying)
+    .filter((rec) => {
+      const sq = inActiveSquad(state, rec.id)
+      return !sq || sq.leader === rec.id
+    })
+}
+
+/** 整隊邀請時一起入隊的隊員（不是小隊的隊長時為空） */
+function squadFollowers(state: GameState, npcId: string): NpcRecord[] {
+  const sq = inActiveSquad(state, npcId)
+  return sq && sq.leader === npcId ? squadWithLeader(state, sq) : []
 }
 
 export function inviteDc(state: GameState, npcId: string): number {
@@ -258,32 +269,115 @@ export function inviteDc(state: GameState, npcId: string): number {
   const rec = npcRecord(state, npcId)
   if (!rel || !rec) throw new Error('你不認識這個人')
   const i = companionRules.invite
-  return i.base - Math.floor(rel.affinity / i.affinity_step) + i.level_gap * Math.max(0, rec.level - pcOf(state).level) + tagDcMod(rec, 'invite')
+  const extra = companionRules.squad.invite_per_member * squadFollowers(state, npcId).length
+  return i.base - Math.floor(rel.affinity / i.affinity_step) + i.level_gap * Math.max(0, rec.level - pcOf(state).level) + tagDcMod(rec, 'invite') + extra
 }
 
 export function validateInvite(state: GameState, npcId: string) {
   assertFree(state, '邀請別人入隊')
+  const sq = inActiveSquad(state, npcId)
+  if (sq && sq.leader !== npcId) throw new Error(`${npcRecord(state, npcId)?.name ?? '對方'}是${sq.name}的隊員，要整隊邀請，請找隊長`)
   if (!invitable(state).some((r) => r.id === npcId)) throw new Error('現在無法邀請這個人')
-  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
+  if (sq) {
+    const missing = squadMissing(state, sq)
+    if (missing.length) throw new Error(`${missing.join('、')}今天不在，等人到齊再整隊邀請`)
+  }
+  const size = 1 + squadFollowers(state, npcId).length
+  if (partyRoom(state) < size) throw new Error(size > 1 ? `${sq!.name}有 ${size} 人，隊伍放不下` : `隊伍最多 ${partyMax(state)} 人`)
 }
 
 export function applyInvite(state: GameState, report: Report, npcId: string, degree: Degree): string {
   const rec = npcRecord(state, npcId)!
+  const sq = inActiveSquad(state, npcId)
+  const followers = squadFollowers(state, npcId)
+  for (const f of followers) ensureRelationship(state, f)
   if (degree === 'critical' || degree === 'success') {
-    joinParty(state, rec, 'voluntary', report, { reason: '受邀' })
+    // 小隊整隊入隊：身上記著小隊（離隊、遣散時一起走）
+    const m = joinParty(state, rec, 'voluntary', report, { reason: followers.length ? '整隊受邀' : '受邀' })
+    if (followers.length) {
+      m.squad = rec.id
+      for (const f of followers) joinParty(state, f, 'voluntary', report, { reason: `跟著${rec.name}入隊` }).squad = rec.id
+    }
     if (degree === 'critical') addAffinity(state, report, npcId, 5, '很高興受到邀請')
-    return `${rec.name}答應加入隊伍。`
+    return followers.length ? `${rec.name}答應了，${sq!.name}（${[rec, ...followers].map((r) => r.name).join('、')}）整隊加入隊伍。` : `${rec.name}答應加入隊伍。`
   }
   // 被拒絕後，下次長休前不能再邀請
   ;(report.changes.flags ??= {})[`invite_wait:${npcId}`] = true
-  if (degree === 'partial') return `${rec.name}有些心動，但說要再考慮一下。`
+  if (degree === 'partial') return `${rec.name}有些心動，但說要${followers.length ? '和隊員商量' : '再考慮'}一下。`
   addAffinity(state, report, npcId, degree === 'fumble' ? -8 : -3, '邀請被拒')
   return degree === 'fumble' ? `${rec.name}覺得被冒犯，斷然拒絕。` : `${rec.name}婉拒了邀請。`
+}
+
+// ---- 5b. 請固定 NPC 的小隊帶主角同行 ----
+
+/** 這裡可以請求同行的小隊：認識隊長、隊長就在身邊、親密度足夠、隊員到齊 */
+export function joinableSquads(state: GameState): Squad[] {
+  if (isBound(state) || leaderOf(state)) return []
+  const min = companionRules.invite.min_affinity
+  return squads().filter((sq) => {
+    if (!squadActive(state, sq) || state.party.some((m) => squadIds(sq).includes(m.id))) return false
+    const rel = state.relationships?.[sq.leader]
+    return !!rel && rel.affinity >= min && presentHere(state, sq.leader)
+  })
+}
+
+function joinTarget(state: GameState, leaderId: string | undefined): Squad {
+  const sq = squads().find((x) => x.leader === leaderId)
+  if (!sq) throw new Error('沒有這支小隊')
+  return sq
+}
+
+export function validateSquadJoin(state: GameState, leaderId: string): Squad {
+  assertFree(state, '自己找隊伍')
+  if (leaderOf(state)) throw new Error('你已經在別人的隊伍裡了')
+  const sq = joinTarget(state, leaderId)
+  if (state.flags[`invite_wait:${sq.leader}`]) throw new Error(`${npcRecord(state, sq.leader)?.name ?? '隊長'}說要再想想，下次長休後再問`)
+  if (!joinableSquads(state).some((x) => x.leader === sq.leader)) throw new Error('現在沒辦法請他們帶你同行')
+  const missing = squadMissing(state, sq)
+  if (missing.length) throw new Error(`${missing.join('、')}今天不在，等人到齊再說`)
+  const size = 1 + squadWithLeader(state, sq).length
+  if (followRoom(state) < size) throw new Error(`加上${sq.name}的 ${size} 人，隊伍會超過上限，先讓同伴離隊`)
+  return sq
+}
+
+export function applySquadJoin(state: GameState, report: Report, leaderId: string, degree: Degree): string {
+  const sq = joinTarget(state, leaderId)
+  const leader = npcRecord(state, sq.leader)!
+  const members = squadWithLeader(state, sq)
+  report.others = [leader, ...members].map((r) => ({ id: r.id, name: r.name, race: r.race, class: r.class, level: r.level, personality: r.personality }))
+  if (degree === 'critical' || degree === 'success') {
+    joinParty(state, leader, 'leader', report, { group: leader.id, reason: '帶主角同行' })
+    for (const m of members) joinParty(state, m, 'ally', report, { group: leader.id })
+    if (degree === 'critical') addAffinity(state, report, leader.id, 3, '很歡迎你同行')
+    return `${leader.name}答應帶你同行，你跟著${sq.name}行動。`
+  }
+  ;(report.changes.flags ??= {})[`invite_wait:${sq.leader}`] = true
+  if (degree === 'partial') return `${leader.name}說要和隊員商量一下（下次長休後再問）。`
+  addAffinity(state, report, leader.id, degree === 'fumble' ? -6 : -2, '請求同行被拒')
+  return degree === 'fumble' ? `${leader.name}覺得你只是想沾光，冷冷地拒絕了。` : `${leader.name}婉拒了，說現在不方便多帶人。`
 }
 
 /** 長休時清掉「再考慮一下」的冷卻 */
 export function clearInviteCooldowns(state: GameState) {
   for (const k of Object.keys(state.flags)) if (k.startsWith('invite_wait:')) delete state.flags[k]
+}
+
+/** 介面用：對小隊隊長能不能整隊邀請、請他們帶主角同行，以及參考 DC（不能時附原因） */
+export function squadOptions(state: GameState, leaderId: string): { size: number; invite: { dc?: number; why?: string }; join: { dc?: number; why?: string } } {
+  const sq = joinTarget(state, leaderId)
+  const tryDc = (check: () => void, dc: () => number) => {
+    try {
+      check()
+      return { dc: dc() }
+    } catch (e) {
+      return { why: e instanceof Error ? e.message : String(e) }
+    }
+  }
+  return {
+    size: 1 + sq.members.length,
+    invite: tryDc(() => validateInvite(state, leaderId), () => inviteDc(state, leaderId)),
+    join: tryDc(() => validateSquadJoin(state, leaderId), () => squadJoinDc(state, sq)),
+  }
 }
 
 // ---- 3. 奴隸市場 ----
@@ -338,7 +432,7 @@ export function buySlave(state: GameState, kind: MarketKind, npcId: string, mark
   // 無主、逃亡中身上也還有印記：奴隸不能擁有奴隸
   if (isEnslaved(state)) throw new Error('身上還有奴隸印記，不能擁有奴隸')
   const l = listing(state, kind, npcId)
-  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
+  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${partyMax(state)} 人`)
   if (state.money_cc < l.price_cc) throw new Error('錢不夠')
   const def = marketDef(state, kind)
   const rec = npcRecord(state, npcId)!
@@ -730,6 +824,14 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return {
         dc: inviteDc(state, rec.id), targetName: rec.name, situational: [], scene: locationById(state.location).name,
         outcomes: { critical: '自願加入，親密度 +5', success: '自願加入', partial: '要再考慮（下次長休後才能再邀請）', fail: '婉拒（親密度 -3）', fumble: '被冒犯（親密度 -8）' },
+      }
+    }
+    case 'squad_join': {
+      const sq = validateSquadJoin(state, target ?? '')
+      const leader = npcRecord(state, sq.leader)!
+      return {
+        dc: squadJoinDc(state, sq), targetName: leader.name, situational: [], scene: locationById(state.location).name,
+        outcomes: { critical: `跟著${sq.name}同行，親密度 +3`, success: `跟著${sq.name}同行`, partial: '要商量（下次長休後才能再問）', fail: '婉拒（親密度 -2）', fumble: '被當成想沾光（親密度 -6）' },
       }
     }
     case 'black_market': {

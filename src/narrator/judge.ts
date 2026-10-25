@@ -2,6 +2,7 @@
 // 主動行動：擲骰先發生，AI 拿到完整資料與骰值，自己決定成功與否（可以出乎預料）並直接寫出經過。
 // AI 只回傳 JSON；程式負責驗證、夾住數值與套用（見 src/engine/actions.ts）。
 
+import { inActiveSquad, squadIds } from '@/engine/squads'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
 import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
@@ -88,6 +89,14 @@ function pcDetail(state: GameState): string {
   return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}`
 }
 
+/** 固定 NPC 的小隊：隊名與隊員（整隊行動，不會單獨受雇） */
+function squadLine(state: GameState, id: string): string {
+  const sq = inActiveSquad(state, id)
+  if (!sq) return ''
+  const names = squadIds(sq).map((m) => `${npcRecord(state, m)?.name ?? m}${m === sq.leader ? '（隊長）' : ''}`).join('、')
+  return `小隊：${sq.name}（${names}）；整隊一起行動，不會單獨受雇`
+}
+
 function targetDetail(state: GameState, p: ActionPending): string {
   const id = p.target?.includes(':') ? p.target.split(':')[1] : p.target
   if (!id) return '對象：無（或場景中的不特定人物）'
@@ -102,6 +111,7 @@ function targetDetail(state: GameState, p: ActionPending): string {
     rec.background ? `背景：${rec.background}` : '',
     rel ? `與主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '與主角：素不相識',
     state.captives?.npcs.includes(rec.id) ? `現況：${CAPTIVE_NOTE}` : '',
+    squadLine(state, rec.id),
   ]
   return lines.filter(Boolean).join('\n')
 }

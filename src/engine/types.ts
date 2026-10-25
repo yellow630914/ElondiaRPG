@@ -240,6 +240,8 @@ export interface Character {
   bond?: Bond
   /** 隊長的 id：跟著別人的隊伍一起行動的成員（bond = leader / ally） */
   group?: string
+  /** 整隊邀請入隊的小隊（隊長的 id）：離隊、遣散時整隊一起走 */
+  squad?: string
   /** 身上的刺青（每個部位一個；奴隸印記也是其中一種，契約掛在它上面，見 engine/tattoos.ts） */
   tattoos?: Tattoo[]
   /** 已花掉的生命骰（總數 = 等級） */

@@ -39,6 +39,7 @@
 | `background` | 字串 | 最多 400 字 | 背景 |
 | `tags` | id 陣列 | `data/rules/npc_tags.json` 的 key | `traveler` 旅人、`merchant` 商人、`commoner` 平民、`slave` 奴隸、`noble` 貴族、`royal` 皇族、`priest` 神官、`bishop` 主教、`good` 好人、`villain` 惡人、`prostitute` 娼妓。不存在的拿掉、重複的合併。**不檢查適用的類型與互斥**，自己遵守：`villain` 只給冒險者，`good` 和 `villain` 不能同時有，`merchant`、`commoner`、`royal`、`bishop`、`prostitute` 只給普通人 |
 | `relations` | 物件 | `{ "<角色 id>": "文字" }`，每段最多 160 字 | 和其他角色的關係（給 AI）。空字串的拿掉 |
+| `squad` | 物件 | `{ "name", "members", "together"?, "requires"? }` | 這個人帶著的小隊（寫在**隊長**身上）：`members` 是其他固定 NPC 的 id（1–3 人，不含自己）、`together` 是隊員每天跟著隊長的機率（0–1，預設 1）、`requires` 是小隊成立的條件。隊員跟著隊長出沒，只能整隊邀請或請他們帶主角同行（[NPC_SYSTEM](../../docs/NPC_SYSTEM.md) 第 3.1 節）。隊員之間記得也寫 `relations` |
 
 ### 2.2 能力值、技能、特質、裝備
 
@@ -309,12 +310,14 @@ python3 -c "import json;m=json.load(open('data/world/maps.json'))['maps']['rhine
 | `stages` 有一組沒寫 `requires`（或旗標全是空的） | 那一組拿掉 |
 | `stages` 的 `location` 不對 | 改成角色本身的 `location` |
 | 旗標名稱有空白、`story:` 前綴、超過 40 字 | 空白換成 `_`、去掉前綴、截斷 |
+| `squad` 的隊員寫到自己、重複、超過 3 人 | 拿掉自己與重複的，留前 3 人；一個隊員都沒有時整欄拿掉。`together` 夾在 0–1 |
 
 整理不檢查、要自己對的：
 
 - `tags` 的適用類型與互斥（`villain` 給普通人、`good` 和 `villain` 一起寫都會留著）。
 - `abilities` 是不是這個職業的技能。
 - `faction` 是不是勢力 id；`relations` 的 key 是不是存在的角色。
+- `squad` 的隊員是不是存在的角色、有沒有同時在兩支小隊、隊長是不是別隊的隊員（遊戲中略過不存在的 id，重複時只算第一支小隊）。
 - `keeper` 的店在所屬地點有沒有（第 3.2 節；沒有時世界檢查會提醒，但整理不拿掉）；`haunts` 的地區在那個地點有沒有（例如 `palace` 只有王都）。
 - `fixed` 落在通道（數字）上也會留著：選 `.` 或設施格，不要選通道。
 

@@ -118,6 +118,20 @@ export interface NpcDef {
   requires?: StoryCond
   /** 依劇情旗標改變出沒：由上往下第一組條件成立的設定取代上面的所屬地點、活躍地點與固定格子 */
   stages?: NpcStage[]
+  /** 這個人帶著的小隊（寫在隊長身上，見 engine/squads.ts）：隊員跟著隊長出沒，只能整隊邀請或請他們帶主角同行 */
+  squad?: NpcSquad
+}
+
+/** 固定 NPC 的小隊（2–4 人，含隊長） */
+export interface NpcSquad {
+  /** 隊名 */
+  name: string
+  /** 隊員：固定 NPC 的 id（不含隊長，1–3 人） */
+  members: string[]
+  /** 隊員每天跟著隊長的機率（0–1，預設 1） */
+  together?: number
+  /** 小隊成立的條件；不成立時各自行動 */
+  requires?: StoryCond
 }
 
 export interface NpcStage {
@@ -930,6 +944,8 @@ export const companionRules = companionsJson as unknown as {
     pay_chance: number; pay_chance_per_cha_mod: number; pay_per_level: number; leader_level: [number, number]
   }
   invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number }
+  /** 固定 NPC 的小隊（squads.ts）：整隊邀請每多一人 DC +invite_per_member；請他們帶主角同行的 DC */
+  squad: { invite_per_member: number; join: { base: number; min: number; affinity_step: number; per_companion: number; level_gap: number } }
   leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
   rest: { short_hours: number; long_hours: number; long_rest_gap_hours: number; ambush: Record<'settlement' | 'home' | 'wild' | 'dungeon' | 'road' | 'side' | 'special', number> }
   noncombatant: { defeat_check: { dc: number; affinity_step: number }; rescue_hours: number; return_hp_ratio: number }
@@ -1128,7 +1144,7 @@ export function contractDef(id: string): ContractDef {
   return adultContent() ? c : { ...c, name: safeText(c.name), mark: safeText(c.mark), side_effects: c.side_effects.map(safeText) }
 }
 
-export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
+export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
   | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore'

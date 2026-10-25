@@ -14,13 +14,14 @@ import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import { changeHitDice, changeSlots } from './resources'
 import {
-  addAffinity, addCondition, changeMaster, enslavePlayer, freePlayer, freeSlave, isBound, joinParty, leaveParty, partyRoom, pcOf, removeCondition, setHp,
+  addAffinity, addCondition, changeMaster, enslavePlayer, followRoom, freePlayer, freeSlave, isBound, joinParty, leaderOf, leaveParty, partyRoom, pcOf, removeCondition, setHp,
 } from './party'
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
 import { gearKnown, registerGear } from './gear'
 import type { GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
+import { inActiveSquad, squadIds } from './squads'
 import { startStory, storyDef } from './story'
 import { contractKind, randomMaster } from './slavery'
 import { forceEquip } from './forcedGear'
@@ -194,8 +195,18 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           notes.push(`身為奴隸，無法擁有奴隸`)
           break
         }
-        joinParty(state, rec, e.mode, report, { ...(e.contract ? { contract: e.contract } : {}), reason: '事件' })
-        notes.push(`${rec.name}加入了隊伍`)
+        // 小隊的人自願或受雇入隊：整隊一起來（放不下的隊員留在原地）
+        const sq = e.mode === 'voluntary' || e.mode === 'hired' ? inActiveSquad(state, rec.id) : undefined
+        const mates = sq ? squadIds(sq).filter((id) => id !== rec.id && !state.party.some((m) => m.id === id)).map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r && !r.dead) : []
+        const joined = joinParty(state, rec, e.mode, report, { ...(e.contract ? { contract: e.contract } : {}), reason: '事件' })
+        const came = [rec.name]
+        if (sq) joined.squad = sq.leader
+        for (const r of mates) {
+          if (partyRoom(state) < 1) break
+          joinParty(state, r, e.mode, report, { reason: `跟著${rec.name}入隊` }).squad = sq!.leader
+          came.push(r.name)
+        }
+        notes.push(`${came.join('、')}加入了隊伍`)
         break
       }
       case 'join_party': {
@@ -204,9 +215,17 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           notes.push('身為奴隸，跟不了別人的隊伍')
           break
         }
+        if (leaderOf(state)) {
+          notes.push('你已經跟著別人的隊伍了')
+          break
+        }
         const leader = resolveNpc(state, e.leader)
-        const members = (e.members ?? []).map((m) => resolveNpc(state, m))
-        if (partyRoom(state) < 1 + members.length) {
+        // 帶隊的是固定 NPC 小隊的隊長、又沒指定隊員：整支小隊一起
+        const sq = !e.members?.length ? inActiveSquad(state, leader.id) : undefined
+        const members = sq?.leader === leader.id
+          ? sq.members.map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r && !r.dead && !state.party.some((m) => m.id === r.id))
+          : (e.members ?? []).map((m) => resolveNpc(state, m))
+        if (followRoom(state) < 1 + members.length) {
           notes.push(`${leader.name}的隊伍沒有空位`)
           break
         }

@@ -14,6 +14,7 @@ import { generateNpc, hashString, npcKind, npcRecord, npcSpot, registerNpc, weig
 import { Rng } from './rng'
 import { condMet } from './storyFlags'
 import { allyPlacement } from './story'
+import { followsLeader, inActiveSquad } from './squads'
 import type { GameState, NpcRecord, Roster } from './types'
 import { contractOf } from './tattoos'
 
@@ -224,6 +225,9 @@ export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day): 
   if (ally) return ally.area
   if (!visibleNpc(state, rec)) return undefined
   if (rec.at && day <= rec.at.until) return rec.at.area
+  // 小隊的隊員：今天跟著隊長
+  const lead = followsLeader(state, rec, day)
+  if (lead) return areaOf(state, lead, day)
   // 固定 NPC：站在指定的格子
   const fixed = fixedCell(rec)
   if (fixed) return fixed.area
@@ -286,6 +290,12 @@ export function npcCell(state: GameState, rec: NpcRecord, area: Area): { x: numb
   const ally = allyPlacement(state, rec.id)
   if (ally?.area === area.key) return { x: ally.x, y: ally.y }
   if (rec.at && rec.at.area === area.key && state.time.day <= rec.at.until) return { x: rec.at.x, y: rec.at.y }
+  // 小隊的隊員：站在隊長旁邊
+  const lead = followsLeader(state, rec)
+  if (lead) {
+    const at = npcCell(state, lead, area)
+    return at ? besideCell(area, at, rec.id) : null
+  }
   const fixed = fixedCell(rec)
   if (fixed?.area === area.key && fixed.x < area.width && fixed.y < area.height) return { x: fixed.x, y: fixed.y }
   const spot = !rec.haunts?.length ? npcSpot(rec) : undefined
@@ -300,6 +310,15 @@ export function npcCell(state: GameState, rec: NpcRecord, area: Area): { x: numb
   if (!Object.keys(options).length) return null
   const i = Number(weightedPick(rng, options))
   return { x: i % area.width, y: Math.floor(i / area.width) }
+}
+
+const AROUND = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] as const
+
+/** 隊長旁邊走得到的一格（依隊員 id 固定挑；四周都走不到時和隊長同一格） */
+function besideCell(area: Area, at: { x: number; y: number }, id: string): { x: number; y: number } {
+  const open = AROUND.map(([dx, dy]) => ({ x: at.x + dx, y: at.y + dy }))
+    .filter((p) => p.x >= 0 && p.y >= 0 && p.x < area.width && p.y < area.height && !['wall', 'water', 'manor'].includes(area.cells[p.y * area.width + p.x]!.kind))
+  return open.length ? open[hashString(`${id}:beside`) % open.length]! : at
 }
 
 export interface PresentNpc {
@@ -365,8 +384,8 @@ export function hireable(state: GameState): NpcRecord[] {
   for (const p of nearbyPeople(state)) {
     if (p.kind === 'adventurer' && !p.staff && !p.rec.hostile && !p.rec.staying && !isHostile(state, p.rec) && !list.includes(p.rec)) list.push(p.rec)
   }
-  // 不受雇用的固定 NPC（統治者……）不列入
-  return list.filter((r) => !isUnhireable(r.id))
+  // 不受雇用的固定 NPC（統治者……）不列入；小隊不拆開雇用（只能整隊邀請）
+  return list.filter((r) => !isUnhireable(r.id) && !inActiveSquad(state, r.id))
 }
 
 /** 這位固定 NPC 不受雇用 */

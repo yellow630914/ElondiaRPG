@@ -22,6 +22,7 @@ import { addHours, commitReport, newReportId, withRng } from './state'
 import type { Character, GameState, GameTime, Report } from './types'
 import { contractOf } from './tattoos'
 import { gameRule } from './gameRules'
+import { squadMates } from './squads'
 
 export const INN_CC_PER_PERSON = 15
 
@@ -267,9 +268,12 @@ export function restChecks(state: GameState, report: Report, place: 'short' | Re
   }
   for (const m of [...state.party]) {
     if (m.isPlayer || m.bond === 'slave' || m.bond === 'leader' || m.bond === 'guest') continue
-    if ((m.affinity ?? 0) > threshold) continue
+    if ((m.affinity ?? 0) > threshold || !state.party.includes(m)) continue
+    // 整隊入隊的小隊：一個人受夠了，整隊一起走
+    const mates = squadMates(state, m).filter((x) => x !== m)
     leaveParty(state, m.id, report, '親密度過低')
-    lines.push(`${m.name}受夠了，在休息時離開了隊伍。`)
+    for (const x of mates) leaveParty(state, x.id, report, `跟著${m.name}離開`)
+    lines.push(mates.length ? `${m.name}受夠了，在休息時帶著${mates.map((x) => x.name).join('、')}離開了隊伍。` : `${m.name}受夠了，在休息時離開了隊伍。`)
   }
 
   if (state.pendingLeave) {

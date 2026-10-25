@@ -2,7 +2,7 @@
 import { npcPerksOf, perksOf } from '@/engine/perks'
 import { computed, reactive, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
-import { askingFor, proposeDc } from '@/engine/companions'
+import { askingFor, proposeDc, squadOptions } from '@/engine/companions'
 import { genderName, raceName, tagDef } from '@/engine/data'
 import { isBound, partyMax, partyRoom } from '@/engine/party'
 import { cellAt, CELL_NAME, cellName, currentArea, position } from '@/engine/grid'
@@ -10,6 +10,7 @@ import { affinityTable, itemValue, type InteractionKind } from '@/engine/interac
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcTitle } from '@/engine/npcs'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
+import { inActiveSquad } from '@/engine/squads'
 import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
 import { floatText } from '@/fx/fx'
@@ -96,6 +97,10 @@ function toAction(p: PresentNpc) {
   document.querySelector<HTMLTextAreaElement>('.action-panel textarea:last-of-type')?.focus({ preventScroll: true })
 }
 
+// 固定 NPC 的小隊：不拆開雇用，找隊長整隊邀請或請他們帶你同行
+const squadOf = (id: string) => inActiveSquad(s.value, id)
+const squadOpt = (id: string) => squadOptions(s.value, id)
+
 function tagsOf(rec: NpcRecord) {
   return (rec.tags ?? []).map((t) => tagDef(t)).filter((t) => !!t)
 }
@@ -106,7 +111,7 @@ const gift = reactive<Record<string, string>>({})
 const use = ref('')
 const gifts = computed(() => s.value.inventory.filter((i) => i.qty > 0))
 
-function interact(kind: InteractionKind, p: PresentNpc) {
+function interact(kind: InteractionKind | 'invite' | 'squad_join', p: PresentNpc) {
   const id = p.rec.id
   const u = parseUse(use.value)
   void game.perform({
@@ -190,6 +195,7 @@ async function hire(id: string) {
             <span v-if="captive(p)" class="tag small bad">被制伏</span>
             <span v-else-if="hostile(p)" class="tag small bad">敵對</span>
             <span v-if="p.dist > 1" class="tag">{{ p.dist }} 格</span>
+            <span v-if="squadOf(p.rec.id)" class="tag small squad" :title="squadOf(p.rec.id)!.leader === p.rec.id ? '小隊的隊長' : '小隊的隊員'"><GameIcon name="flag" :size="11" />{{ squadOf(p.rec.id)!.name }}<template v-if="squadOf(p.rec.id)!.leader === p.rec.id">・隊長</template></span>
             <span v-for="t in tagsOf(p.rec)" :key="t.name" class="tag small" :title="t.ai_hint">{{ t.emoji }}{{ t.name }}</span>
             <span v-if="rel(p.rec.id)" class="tag known" :title="`親密度 ${rel(p.rec.id)!.affinity}`"><GameIcon name="heart" :size="11" />{{ affinityStage(rel(p.rec.id)!.affinity) }}</span>
           </div>
@@ -204,12 +210,17 @@ async function hire(id: string) {
             <p v-if="captive(p)" class="muted">{{ p.rec.name }}被你制伏在地上，先在「戰後處置」決定怎麼處置（可以審問、劫財、放過、收為奴隸或處決）。</p>
             <p v-else-if="p.dist > 1" class="muted">{{ whereIs(p) }}。走到旁邊（相鄰的格子）才能互動。</p>
             <template v-else-if="!hostile(p)">
+              <p v-if="squadOf(p.rec.id) && squadOf(p.rec.id)!.leader !== p.rec.id" class="muted">是{{ squadOf(p.rec.id)!.name }}的隊員，不單獨受雇；要找隊長整隊邀請，或請他們帶你同行。</p>
               <input v-model="text[p.rec.id]" placeholder="想說什麼、怎麼做（選填，會交給 AI 判定）" />
               <AbilityPicker v-model="use" />
               <div class="row acts">
                 <button class="small" :disabled="busy" title="魅力檢定：聊得好會拉近關係，也可能聽到消息" @click="interact('chat', p)"><GameIcon name="message" :size="13" />聊天</button>
                 <button class="small" :disabled="busy" title="在主動行動裡以這個人為對象，自由描述要做的事" @click="toAction(p)"><GameIcon name="d20" :size="13" />主動行動</button>
-                <button v-if="p.kind === 'adventurer' && !p.staff" class="small" :disabled="busy || partyFull" @click="startHire(p.rec.id)">
+                <template v-if="squadOf(p.rec.id)?.leader === p.rec.id && !bound">
+                  <button class="small" :disabled="busy || !!squadOpt(p.rec.id).invite.why" :title="squadOpt(p.rec.id).invite.why ?? `整隊 ${squadOpt(p.rec.id).size} 人入隊・魅力檢定，參考 DC ${squadOpt(p.rec.id).invite.dc}`" @click="interact('invite', p)"><GameIcon name="feather" :size="13" />整隊邀請</button>
+                  <button class="small" :disabled="busy || !!squadOpt(p.rec.id).join.why" :title="squadOpt(p.rec.id).join.why ?? `跟著他們的隊伍・魅力檢定，參考 DC ${squadOpt(p.rec.id).join.dc}`" @click="interact('squad_join', p)"><GameIcon name="flag" :size="13" />請他們帶你同行</button>
+                </template>
+                <button v-else-if="p.kind === 'adventurer' && !p.staff && !squadOf(p.rec.id)" class="small" :disabled="busy || partyFull" @click="startHire(p.rec.id)">
                   <GameIcon name="hand" :size="13" />{{ hiring === p.rec.id ? '收起' : bound ? '向主人提議雇用' : '雇用' }}
                 </button>
                 <details class="more">

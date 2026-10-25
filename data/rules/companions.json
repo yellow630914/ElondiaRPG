@@ -49,6 +49,12 @@
     "level_gap": 2
   },
 
+  "squad": {
+    "$comment": "固定 NPC 的小隊（NpcDef.squad）：只能整隊邀請（邀請的 DC 每多一名隊員 +invite_per_member，看隊長的親密度），或請他們帶主角同行。同行的 DC = base - floor(隊長親密度 / affinity_step) + per_companion × 主角帶的同伴數 + level_gap × max(0, 隊長等級 - 主角等級)，至少 min。",
+    "invite_per_member": 1,
+    "join": { "base": 12, "min": 5, "affinity_step": 10, "per_companion": 2, "level_gap": 1 }
+  },
+
   "leave_party": {
     "$comment": "主角離開別人的隊伍：在下一次休息時進行。sneak = 靈巧檢定對 DC base + floor(隊長等級 / 2)；formal 不需檢定。",
     "sneak_base": 11,
