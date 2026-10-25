@@ -72,7 +72,7 @@ function abandon() {
       </div>
     </template>
     <div v-if="prompt" class="row later">
-      <button v-if="n.node.urgent" class="small" :disabled="busy" title="這次先略過，不記在日誌；離開這裡之後再來還會遇到" @click="game.waitStory(n.ref)">稍候</button>
+      <button v-if="!n.node.urgent" class="small" :disabled="busy" title="這次先略過，不記在日誌；離開這裡之後再來還會遇到" @click="game.waitStory(n.ref)">稍候</button>
       <button v-else class="small danger" :disabled="busy" title="任務線中斷，之後不能再接" @click="abandon">放棄任務</button>
     </div>
   </div>

@@ -59,7 +59,7 @@
 | `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施、自建的商店或城鎮的特色地標上（`at.cell`，地標見 [LANDMARKS](LANDMARKS.md)）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`）、`road` 旅途上、`side` 臨時地圖裡的 ⭐（`at.side_map`）、`special` 特殊地圖裡的 ⭐（`at.special_map`；固定地圖可以再用 `at.x`、`at.y` 指定確切的格子，見 [SPECIAL_MAPS](SPECIAL_MAPS.md) 第 6 節） |
 | `at.location` | 地點 id（`npc` 可以不寫，跟著角色走） |
 | `requires` | 解鎖的條件：`flags` 全部成立、`flags_none` 都不成立、`affinity` 每位角色的好感（親密度）都夠，例如 `{ "flags": ["a"], "affinity": { "npc_selene": 20 } }`（沒見過面算 0） |
-| `urgent` | 走到任務點時一定要先處理（不能移動、休息），事件視窗另外多一個選擇：`true`（編輯器的「緊急」）多「稍候」，這次先略過、不記日誌，離開這裡之後再來還會觸發；不寫多「放棄任務」，選了任務線就中斷。判定沒有進展（失敗可以再試、好感不到門檻、戰鬥撤退）之後也不再擋住你，離開再來才會再觸發 |
+| `urgent` | 走到任務點時一定要先處理（不能移動、休息），事件視窗另外多一個選擇：不寫（不緊急，預設）多「稍候」，這次先略過、不記日誌，離開這裡之後再來還會觸發；`true`（編輯器的「緊急」）只能處理或「放棄任務」，選了任務線就中斷，適合旅途上、臨時地圖裡這種過了就沒有的場面。判定沒有進展（失敗可以再試、好感不到門檻、戰鬥撤退）之後也不再擋住你，離開再來才會再觸發 |
 | `allies` | 在場的友方固定 NPC（id 的清單，任何種類的任務點都可以用）：解鎖之後站在 ⭐ 旁邊，或站在設施上（`cell`；`settlement` 在城門），不管他平常的出沒與出現條件；戰鬥時站在你這邊（由你操作，生命值不留到戰鬥之後）；AI 判定與寫經過時知道他們在場（`report.others`） |
 | `kind` | `story` 劇情（直接發生）、`check` 判定（`check: { attr, dc }`，可以參考好感，見下面）、`combat` 戰鬥（`enemies` 怪物、`foes` 固定 NPC）、`choice` 選擇（`options`，每個選項可以有自己的檢定與出現條件 `requires`） |
 | `success`、`fail` | 結果（劇情只有 success；判定與戰鬥沒寫 fail 時，失敗可以再試） |

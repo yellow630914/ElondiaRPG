@@ -16,7 +16,6 @@
       "nodes": [
         {
           "id": "ask_tavern",
-          "urgent": true,
           "title": "到索里耶爾的酒館打聽消息",
           "text": "酒館老闆擦著杯子回想：昨晚有個戴兜帽的瘦子在角落喝悶酒，付錢時掉出一枚銀色的東西，之後往城外的方向走了。",
           "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
@@ -30,7 +29,6 @@
         },
         {
           "id": "track",
-          "urgent": true,
           "title": "在索里耶爾近郊追查兜帽人的足跡",
           "text": "城外的泥地上有一串新鮮的腳印，混在商隊的車轍之間，時有時無。",
           "at": { "where": "outskirts", "location": "soriel" },
@@ -44,7 +42,6 @@
         },
         {
           "id": "crypt_camp",
-          "urgent": true,
           "title": "到低語墓穴的周邊找出盜賊",
           "text": "墓穴入口附近升著一堆小火，兩個盜賊正在分贓，其中一人手上把玩著一枚刻著聖環的徽記。",
           "at": { "where": "dungeon", "location": "whisper_crypt", "layer": "outskirts" },
@@ -58,7 +55,6 @@
         },
         {
           "id": "return",
-          "urgent": true,
           "title": "決定聖環徽記的去向",
           "text": "聖環徽記在你手上沉甸甸的。神殿就在眼前，但你也知道黑市的人願意出好價錢。",
           "at": { "where": "cell", "location": "soriel", "cell": "temple" },
@@ -119,6 +115,7 @@
       "nodes": [
         {
           "id": "decide",
+          "urgent": true,
           "title": "決定怎麼處理翻覆的篷車",
           "text": "小女孩抽抽噎噎地說，爸爸和車夫被一群蒙面人抓走了。她家在河谷鎮。",
           "at": { "where": "road" },
@@ -139,6 +136,7 @@
         },
         {
           "id": "hideout",
+          "urgent": true,
           "title": "救出被抓走的商人",
           "text": "洞窟深處，幾個蒙面盜賊圍著被綁住的商人，正在清點搶來的貨物。",
           "at": { "where": "side", "side_map": "cave" },
@@ -154,7 +152,6 @@
         },
         {
           "id": "home",
-          "urgent": true,
           "title": "把小女孩送到河谷鎮的旅店",
           "text": "小女孩的母親在旅店門口急得團團轉，一看到女兒就衝了過來。",
           "at": { "where": "cell", "location": "rivervale", "cell": "inn" },
@@ -185,7 +182,6 @@
       "nodes": [
         {
           "id": "sneak",
-          "urgent": true,
           "title": "潛入蛇溪洞窟淺層的走私營地",
           "text": "營地裡堆著貨箱，兩個看守靠在火堆旁打瞌睡，帳本就放在最裡面的帳篷。",
           "at": { "where": "dungeon", "location": "snake_creek", "layer": "shallow" },
@@ -206,7 +202,6 @@
         },
         {
           "id": "fight",
-          "urgent": true,
           "title": "打倒走私販子",
           "text": "營地已經被驚動。走私販子的頭目抄起彎刀守在帳篷前，手下圍了上來。",
           "at": { "where": "dungeon", "location": "snake_creek", "layer": "shallow" },
@@ -217,7 +212,6 @@
         },
         {
           "id": "deliver",
-          "urgent": true,
           "title": "決定帳本的去向（索里耶爾的冒險者公會）",
           "text": "帳本上密密麻麻記著貨物與買家，有幾個名字你在城裡聽過。",
           "at": { "where": "cell", "location": "soriel", "cell": "guild" },

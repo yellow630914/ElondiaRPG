@@ -623,10 +623,10 @@ export function blockingNode(state: GameState): ActiveNode | undefined {
   return nodesHere(state).find((n) => !waitingHere(state, n))
 }
 
-/** 緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發 */
+/** 不緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發 */
 export function waitStory(state: GameState, ref: string) {
   const n = active(state, ref)
-  if (!n.node.urgent) throw new Error('這個任務點不能稍候，只能處理或放棄')
+  if (n.node.urgent) throw new Error('這個任務點很緊急，不能稍候，只能處理或放棄')
   if (!nodeIsHere(state, n)) throw new Error('要在任務點才能進行')
   waitHere(state, ref)
 }

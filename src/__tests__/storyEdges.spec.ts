@@ -90,7 +90,7 @@ describe('special quest NPCs who are captured, dead or hostile', () => {
     const invite = sanitizeStory('invite', {
       title: '邀請', summary: '', start: { kind: 'manual' },
       nodes: [{
-        id: 'ask', title: '邀請瑟琳', text: '', at: { where: 'settlement', location: 'soriel' }, kind: 'choice', urgent: true,
+        id: 'ask', title: '邀請瑟琳', text: '', at: { where: 'settlement', location: 'soriel' }, kind: 'choice',
         options: [
           { label: '邀請', check: { attr: 'cha', dc: 12, affinity: { npc: SELENE } }, success: { effects: [{ type: 'companion', npc: SELENE, mode: 'voluntary' }], complete: true } },
           { label: '直接拉她入隊', success: { effects: [{ type: 'companion', npc: SELENE, mode: 'voluntary' }] } },
@@ -117,8 +117,8 @@ describe('arriving at a special quest point', () => {
     nodes: [{ id: 'here', title: '在城裡', text: '', at: { where: 'cell', location: 'soriel', cell: 'tavern' }, kind: 'check', check: { attr: 'cha', dc: 30 }, requires: { flags: ['t'] }, ...(urgent ? { urgent: true } : {}), success: { complete: true } }],
   }, false)
 
-  it('blocks moving until you deal with it; urgent points can wait until you come back', () => {
-    const state = game({ t: town(true) })
+  it('blocks moving until you deal with it; points that are not urgent can wait until you come back', () => {
+    const state = game({ t: town(false) })
     startStory(state, 't')
     standOn(state, 'tavern')
     expect(blockingNode(state)?.ref).toBe('t:here')
@@ -135,8 +135,8 @@ describe('arriving at a special quest point', () => {
     expect(state.reports.length).toBe(reports)
   })
 
-  it('offers only abandoning on points that are not urgent', () => {
-    const state = game({ t: town(false) })
+  it('offers only abandoning on urgent points', () => {
+    const state = game({ t: town(true) })
     startStory(state, 't')
     standOn(state, 'tavern')
     expect(() => waitStory(state, 't:here')).toThrow('不能稍候')
@@ -157,7 +157,7 @@ describe('arriving at a special quest point', () => {
   })
 
   it('lists situational modifiers on the check', () => {
-    const state = game({ t: sanitizeStory('t', { ...town(true), nodes: [{ ...town(true).nodes[0]!, check: { attr: 'cha', dc: 12, affinity: { npc: SELENE } } }] }, false) })
+    const state = game({ t: sanitizeStory('t', { ...town(false), nodes: [{ ...town(false).nodes[0]!, check: { attr: 'cha', dc: 12, affinity: { npc: SELENE } } }] }, false) })
     ensureRelationship(state, npcRecord(state, SELENE)!)
     setAffinity(state, SELENE, 45)
     startStory(state, 't')
@@ -173,8 +173,8 @@ describe('side maps a quest takes you into', () => {
   const cave = sanitizeStory('c', {
     title: '洞窟', summary: '', start: { kind: 'manual' }, start_flags: ['c'],
     nodes: [
-      { id: 'enter', title: '進洞', text: '', at: { where: 'settlement', location: 'soriel' }, kind: 'story', urgent: true, requires: { flags: ['c'], flags_none: ['c_in'] }, success: { set_flags: ['c_in'], side_map: 'cave' } },
-      { id: 'boss', title: '洞裡的人', text: '', at: { where: 'side', side_map: 'cave' }, kind: 'story', urgent: true, requires: { flags: ['c_in'] }, success: { complete: true } },
+      { id: 'enter', title: '進洞', text: '', at: { where: 'settlement', location: 'soriel' }, kind: 'story', requires: { flags: ['c'], flags_none: ['c_in'] }, success: { set_flags: ['c_in'], side_map: 'cave' } },
+      { id: 'boss', title: '洞裡的人', text: '', at: { where: 'side', side_map: 'cave' }, kind: 'story', requires: { flags: ['c_in'] }, success: { complete: true } },
     ],
   }, false)
   const stars = (state: GameState) => currentArea(state).cells.filter((c) => c.storyNode).map((c) => c.storyNode)

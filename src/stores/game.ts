@@ -1008,7 +1008,7 @@ export const useGame = defineStore('game', () => {
       return perform({ kind: 'story', target, text, ...(use ? { use } : {}) })
     },
     abandonStory: (id: string) => run((s) => story.abandonStory(s, id)),
-    // 走到緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發
+    // 走到不緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發
     waitStory: (ref: string) => run((s) => story.waitStory(s, ref)),
     act: (action: combat.CombatAction) => run((s) => combat.act(s, action)),
     finishCombat: () =>

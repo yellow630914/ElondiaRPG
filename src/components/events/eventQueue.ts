@@ -51,7 +51,7 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
       out.push({ id: `master:${hash(state.pendingMasterEvent)}`, kind: 'master', icon: '⛓️', title: `${master}的要求`, blocking: true })
     }
     if (state.roadEvent) out.push({ id: `road:${state.roadEvent.x}:${state.roadEvent.template}`, kind: 'road', icon: '🧭', title: roadTemplate(state.roadEvent.template)?.title ?? '旅途上的事', blocking: true })
-    // 走到特殊任務的任務點：處理、稍候（緊急的）或放棄
+    // 走到特殊任務的任務點：處理、稍候（不緊急的）或放棄（緊急的）
     const story = blockingNode(state)
     if (story) out.push({ id: `story:${story.ref}`, kind: 'story', icon: '⭐', title: `${story.def.title}：${story.node.title}`, blocking: true, ref: story.ref })
     if (state.townEvent) out.push({ id: `town:${state.townEvent.template}:${state.townEvents?.last ?? 0}`, kind: 'town', icon: '🏘️', title: pendingTownEvent(state)?.title ?? '城裡的事', blocking: true })
