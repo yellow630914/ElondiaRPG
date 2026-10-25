@@ -4,6 +4,7 @@
 
 import { inActiveSquad, squadIds } from '@/engine/squads'
 import { isGuarded } from '@/engine/population'
+import { npcOutfit } from '@/engine/outfits'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
 import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import {
@@ -19,13 +20,13 @@ import { shopTitle } from '@/engine/shopNames'
 import { toolSummary } from '@/engine/tools'
 import { intelSummary } from '@/engine/inventory'
 import { craftPart, craftRarity, parseCraftTarget } from '@/engine/craft'
-import { gearName, gearRules, rarityName, rarityPoints } from '@/engine/gear'
+import { gearName, gearRules, ordinaryBases, rarityName, rarityPoints } from '@/engine/gear'
 import { contractTerms, markSummary } from '@/engine/slavery'
 import { masterHomeSummary } from '@/engine/masterHome'
 import { parsePitchTarget, perkNames, perkPower, pitchCap } from '@/engine/perks'
 import { npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
-import type { GameState, Negotiation } from '@/engine/types'
+import type { GameState, Negotiation, NpcRecord } from '@/engine/types'
 import { assemble, endNotesSection, fillDefeatRules, fillSceneRules, LANGUAGE_NAME, loreText, sharedSystemSections, styleLead, styleSection, type LoreLike, type Prompt } from './prompt'
 import type { PromptEntry } from './promptConfig'
 import { contractOf, tattoosOf, tattooSummary } from '@/engine/tattoos'
@@ -98,6 +99,13 @@ function squadLine(state: GameState, id: string): string {
   return `小隊：${sq.name}（${names}）；整隊一起行動，不會單獨受雇`
 }
 
+/** 身上穿著的（有戰鬥資料時是裝備，沒有時是依身分穿的服裝） */
+function wearing(rec: NpcRecord): string {
+  const gear = rec.character?.gear ?? npcOutfit(rec)
+  const names = Object.values(gear ?? {}).map((g) => g?.name).filter(Boolean)
+  return names.length ? `穿著：${names.join('、')}` : ''
+}
+
 /** 不能偷襲、偷竊的人：自由行動也不能讓這種事成功 */
 function guardLine(id: string): string {
   const no = [isGuarded(id, 'attack') ? '刺殺、偷襲' : '', isGuarded(id, 'steal') ? '偷竊' : ''].filter(Boolean)
@@ -115,6 +123,7 @@ function targetDetail(state: GameState, p: ActionPending): string {
     `身分：${npcIdentity(rec)}`,
     `性格：${rec.personality}`,
     rec.appearance ? `外貌：${rec.appearance}` : '',
+    wearing(rec),
     rec.background ? `背景：${rec.background}` : '',
     rel ? `與主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '與主角：素不相識',
     state.captives?.npcs.includes(rec.id) ? `現況：${CAPTIVE_NOTE}` : '',
@@ -287,7 +296,7 @@ function gearDoc(state: GameState, p: ActionPending): string {
     return `{"type":"gear","name":"<成品的名字 ≤20 字，可以不填>","desc":"<≤80 字>","enchants":{"mods":{"hit":1}}}（打造的成品：${gearName({ base, material })}，底材與材料固定。稀有度依 degree：${rar}；失敗與大失敗不會做出東西。${auxText}${enchant}）`
   }
   const mats = Object.entries(gearRules.materials).filter(([, m]) => m.level <= pc.level).map(([id, m]) => `${id}（${m.name}）`).join('、')
-  const bases = Object.entries(gearRules.bases).filter(([, b]) => !b.restraint).map(([id, b]) => `${id}（${b.name}）`).join('、')
+  const bases = ordinaryBases().map((id) => `${id}（${gearRules.bases[id]!.name}）`).join('、')
   return `{"type":"gear","base":"<底材 id>","material":"<材料 id>","name":"<≤20 字，可以不填>","desc":"<≤80 字>","rarity":"common/uncommon/rare/epic/legendary","enchants":{}}（事件中得到一件裝備，例如在遺跡裡找到、別人贈送：只在 degree 為 success 以上而且合理時，最多一件。稀有度不超過材料原本的，大成功可以高一級。底材：${bases}。材料要和底材同類（金屬、皮革、布料、木材、寶石），目前可用：${mats}。${enchant}）`
 }
 

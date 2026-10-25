@@ -7,8 +7,9 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, type AffinityMap, type AttrId, type Mods } from './data'
+import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, type AffinityMap, type AttrId, type ItemDef, type Mods } from './data'
 import { describeEffects } from './perks'
+import { adultContent } from './content'
 import type { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
 
@@ -48,11 +49,36 @@ export interface BaseDef {
   restraint?: boolean
   /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用內建的底材圖 */
   icon?: string
+  /** 服裝（regular 常規、anime 二次元、adult 成人向）：不出現在寶箱與掉落的隨機裝備；裁縫店每天另外上架 */
+  outfit?: OutfitKind
+  /** 成人向：成人向內容關閉時完全隱藏（商店、寶箱、建角、打造、NPC 配裝、主人強制裝備） */
+  adult?: boolean
 }
 
-/** 可以打造、隨機生成的底材（不含束縛用的） */
+export type OutfitKind = 'regular' | 'anime' | 'adult'
+export const OUTFIT_KINDS: Record<OutfitKind, string> = { regular: '常規服裝', anime: '二次元服裝', adult: '成人向服裝' }
+
+/** 這個底材現在看得到（存在，而且不是成人向、或成人向內容開著） */
+export function baseShown(id: string): boolean {
+  const b = gearRules.bases[id]
+  return !!b && (!b.adult || adultContent())
+}
+
+/** 這件物品現在看得到：成人向的物品（或用成人向底材做的裝備）在成人向內容關閉時隱藏 */
+export function itemShown(i: Pick<ItemDef, 'adult' | 'gear'> | undefined): boolean {
+  if (!i) return false
+  if (adultContent()) return true
+  return !i.adult && (!i.gear || !gearRules.bases[i.gear.base]?.adult)
+}
+
+/** 可以打造、隨機生成的底材（不含束縛用的；成人向內容關閉時不含成人向的） */
 export function ordinaryBases(): string[] {
-  return Object.entries(gearRules.bases).filter(([, b]) => !b.restraint).map(([id]) => id)
+  return Object.entries(gearRules.bases).filter(([id, b]) => !b.restraint && baseShown(id)).map(([id]) => id)
+}
+
+/** 寶箱與掉落的隨機裝備用的底材（再去掉服裝） */
+export function randomBases(): string[] {
+  return ordinaryBases().filter((id) => !gearRules.bases[id]!.outfit)
 }
 
 export interface ClassGearTemplate {
@@ -392,13 +418,17 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
           return !!b && !b.restraint && baseFits(b.slot, slot) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
         })
         : []
-      const bases = [...new Set([...fromClass, ...custom])].filter((b) => gearRules.bases[b])
+      // 上身另外可以選服裝（不能比職業的護甲類型重：比基尼鎧甲是金屬、皮革緊身衣是皮革）
+      const outfits = slot === 'body' && fromClass.length
+        ? Object.entries(gearRules.bases).filter(([, b]) => b.outfit && b.slot === 'body' && ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)).map(([id]) => id)
+        : []
+      const bases = [...new Set([...fromClass, ...custom, ...outfits])].filter((b) => baseShown(b))
       if (bases.length) out.push({ slot, template: !!t.start[slot], bases })
       continue
     }
     // 頭、腿等護具：不能比職業的護甲類型重（布 < 皮革 < 金屬）；飾品不限
     const bases = Object.entries(gearRules.bases)
-      .filter(([, b]) => !b.restraint && baseFits(b.slot, slot) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
+      .filter(([id, b]) => !b.restraint && baseShown(id) && baseFits(b.slot, slot) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
       .map(([id]) => id)
     if (bases.length) out.push({ slot, template: false, bases })
   }
@@ -771,7 +801,7 @@ export function rollEnchants(base: string, points: number, rng: Rng, elements: s
 // ---- 寶箱與掉落 ----
 
 /** 依等級隨機生成一件裝備（寶箱、人形怪物的掉落）：底材平均挑，材料依等級，有機會高一級稀有度並附魔 */
-export function randomGear(rng: Rng, level: number, bases = ordinaryBases()): GearSpec {
+export function randomGear(rng: Rng, level: number, bases = randomBases()): GearSpec {
   const base = rng.pick(bases)
   const kind = gearRules.bases[base]!.kind
   const material = materialOf(kind, rollTier(rng, kind, level))

@@ -138,6 +138,7 @@
       "cell": "smithy",
       "keeper": { "classes": ["fighter", "barbarian"], "title": "鐵匠", "tags": ["merchant"] },
       "catalog_tag": "smith",
+      "outfits": [0, 1],
       "buys": ["equipment", "material"],
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
       "specials": [
@@ -154,6 +155,7 @@
       "cell": "tailor",
       "keeper": { "classes": ["bard", "rogue"], "title": "裁縫", "tags": ["merchant"] },
       "catalog_tag": "tailor",
+      "outfits": [2, 4],
       "buys": ["equipment", "material"],
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
       "specials": [
@@ -170,6 +172,7 @@
       "cell": "jeweler",
       "keeper": { "classes": ["bard", "rogue"], "title": "珠寶商", "tags": ["merchant"] },
       "catalog_tag": "jeweler",
+      "outfits": [0, 1],
       "buys": ["equipment", "material"],
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
       "specials": [

@@ -17,10 +17,10 @@ describe('gear', () => {
   it('lists every base × material of the same kind in the catalog', () => {
     const items = itemRules.items
     const names = new Set(items.filter((i) => i.gear).map((i) => i.name))
-    // 束縛用的底材（主人強制裝備）沒有制式品
+    // 束縛用的底材（主人強制裝備）沒有制式品；服裝只有前三級材料的制式品
     for (const [base, b] of Object.entries(gearRules.bases).filter(([, x]) => !x.restraint)) {
       for (const [material, m] of Object.entries(gearRules.materials)) {
-        if (m.kind !== b.kind) continue
+        if (m.kind !== b.kind || (b.outfit && m.tier > 3)) continue
         const name = gearName({ base, material })
         expect(names.has(name), name).toBe(true)
         const def = items.find((i) => i.name === name)!

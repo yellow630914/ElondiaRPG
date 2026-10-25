@@ -16,7 +16,7 @@ import {
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
-import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
+import { forgeItemFor, gearRules, itemShown, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
@@ -1201,7 +1201,7 @@ function openChest(state: GameState, area: Area, level: number): Report {
     else items.push({ name, qty: 1, owner: 'pc' })
   }
   const money = withRng(state, (rng) => {
-    for (const [name, p] of t.items) if (itemDef(name) && rng.chance(p)) add(name)
+    for (const [name, p] of t.items) if (itemShown(itemDef(name)) && rng.chance(p)) add(name)
     if (rng.chance(t.gear)) add(registerGear(state, randomGear(rng, level)))
     if (t.gear_extra && rng.chance(t.gear_extra)) add(registerGear(state, randomGear(rng, level)))
     for (const [tier, p] of t.forge) {

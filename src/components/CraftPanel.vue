@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
 import { canCraftHere, craftKindsHere, craftPlan, craftRarity, craftTarget, makeTarget, type AuxItem } from '@/engine/craft'
 import { crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
-import { baseSlotName, gearName, gearRules, gearSummary, rarityName, rarityPoints, type BaseSlot } from '@/engine/gear'
+import { baseShown, baseSlotName, gearName, gearRules, gearSummary, rarityName, rarityPoints, type BaseSlot } from '@/engine/gear'
 import { formatMoney } from '@/engine/money'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
@@ -33,7 +33,7 @@ const crafterId = ref('pc')
 const crafter = computed(() => who.value.find((w) => w.member.id === crafterId.value && !w.refusal)?.member ?? s.value.party.find((m) => m.isPlayer)!)
 
 // 委託：只列這間店做得出來的底材（鐵匠鋪：金屬、木材；裁縫店：皮革、布料；珠寶店：寶石）；自己動手：全部
-const bases = computed(() => Object.entries(gearRules.bases).filter(([, b]) => !b.restraint && (make.value || craftKindsHere(s.value).includes(b.kind))).map(([id, b]) => ({ id, ...b })))
+const bases = computed(() => Object.entries(gearRules.bases).filter(([id, b]) => !b.restraint && baseShown(id) && (make.value || craftKindsHere(s.value).includes(b.kind))).map(([id, b]) => ({ id, ...b })))
 const picked = ref('')
 const base = computed({
   get: () => (bases.value.some((b) => b.id === picked.value) ? picked.value : bases.value[0]?.id ?? 'longsword'),

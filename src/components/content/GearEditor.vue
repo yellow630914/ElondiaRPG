@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ATTR_IDS, attrName, damageTypeName, damageTypes, equipment, itemRules } from '@/engine/data'
-import { baseSlots, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
+import { baseSlots, gearRules, gearSummary, OUTFIT_KINDS, rarityName, RARITY_ORDER, type OutfitKind } from '@/engine/gear'
 import { builtinBase, builtinMaterial, type BaseMod, type MaterialMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import type { GearSlot } from '@/engine/types'
@@ -41,6 +41,11 @@ function currentMaterial(): MaterialMod {
   return m
 }
 const base = ref<BaseMod>(props.kind === 'base' ? currentBase() : ({} as BaseMod))
+function setOutfit(v: string) {
+  if (v) base.value.outfit = v as OutfitKind
+  else delete base.value.outfit
+  if (v === 'adult') base.value.adult = true
+}
 const mat = ref<MaterialMod>(props.kind === 'material' ? currentMaterial() : ({} as MaterialMod))
 const text = () => JSON.stringify(props.kind === 'base' ? base.value : mat.value)
 const saved = ref(text())
@@ -143,6 +148,16 @@ function remove() {
         <label v-if="base.slot === 'main_hand'" class="check small"><input v-model="base.two_handed" type="checkbox" :disabled="builtin" /> 雙手武器（空出副手）</label>
         <label class="block">描述 <input v-model="base.desc" maxlength="120" /></label>
         <div class="block icon-row"><span>圖示</span><IconField v-model="base.icon" :fallback="baseFallback" hint="用這個底材做的裝備都用這張圖（物品自己有上傳圖時用物品的）。上傳的圖會縮到 48×48 以內，存在這個世界裡。" /></div>
+        <div v-if="base.slot !== 'main_hand' && base.slot !== 'off_hand'" class="row small">
+          <label>服裝分類
+            <select :value="base.outfit ?? ''" @change="setOutfit(($event.target as HTMLSelectElement).value)">
+              <option value="">（不是服裝）</option>
+              <option v-for="(n, k) in OUTFIT_KINDS" :key="k" :value="k">{{ n }}</option>
+            </select>
+          </label>
+          <Hint text="服裝不會出現在寶箱與掉落的隨機裝備裡；裁縫店（鐵匠鋪、珠寶店少量）每天另外上架幾件。上身的服裝建角時也能選。" />
+        </div>
+        <label class="check small"><input type="checkbox" :checked="!!base.adult" :disabled="base.outfit === 'adult'" @change="base.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向：成人向內容關閉時完全隱藏（商店、寶箱、建角、打造、NPC 配裝都不出現）</label>
         <label v-if="base.slot !== 'main_hand' && base.slot !== 'body'" class="check small">
           <input v-model="base.restraint" type="checkbox" :disabled="builtin" /> 束縛用（項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減，給「主人會強制裝備」的物品用
         </label>

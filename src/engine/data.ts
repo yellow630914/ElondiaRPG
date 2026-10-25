@@ -1346,6 +1346,10 @@ export interface ItemDef {
   seed?: SeedSpec
   /** 主人會強制主角裝上這件裝備（主人的事件 force_equip）；tags：只有這些身分的主人會用（沒有時任何主人） */
   master_force?: { tags?: string[] }
+  /** 成人向：成人向內容關閉時不出現（商店、寶箱、黑市、主人強制裝備）；用成人向底材做的裝備也算 */
+  adult?: boolean
+  /** 獨特物品可以出現在黑市（每天刷新的珍品，見 docs/ITEMS.md 3.1 節） */
+  black_market?: boolean
   /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用底材或類別的圖示 */
   icon?: string
 }
@@ -1465,6 +1469,8 @@ export interface ShopTypeDef {
   /** 店主：職稱與身分標籤（生成店主時用；classes 保留給 AI 參考） */
   keeper: { classes: string[]; title: string; tags?: string[] }
   catalog_tag: string
+  /** 每天另外上架幾件服裝（底材有 outfit 的裝備）：[最少, 最多]；沒有時不賣服裝 */
+  outfits?: [number, number]
   buys: ItemCategory[]
   ai_effects: RewardEffect['type'][]
   specials: ShopSpecial[]

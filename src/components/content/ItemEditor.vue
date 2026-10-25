@@ -327,6 +327,7 @@ function setFuel(v: string) {
         <label>價格（{{ formatMoney(draft.price_cc) }}）<input v-model.number="draft.price_cc" type="number" min="0" /></label>
       </div>
       <label class="block">描述 <textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
+      <label class="check small"><input type="checkbox" :checked="!!draft.adult" @change="draft.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向：成人向內容關閉時不出現（商店、寶箱、黑市、主人強制裝備）；用成人向底材做的裝備自動算</label>
       <div class="block icon-row"><span>圖示</span><IconField v-model="draft.icon" :fallback="iconFallback" /></div>
       <p v-if="draft.category === 'material'" class="small muted">材料的價格是商人的收購價（全額收購）；其他物品賣出時是一半。</p>
     </fieldset>
@@ -627,6 +628,10 @@ function setFuel(v: string) {
         <label class="check small">
           <input type="checkbox" :checked="!!draft.gear.unique" @change="setUnique(($event.target as HTMLInputElement).checked)" />
           獨特物品：帶一種檢定加值。不會在商店賣、不能打造，要放進寶箱或特殊任務的效果才拿得到 <Hint text="這個檢定加值和附魔分開，可以和其他加值疊加。" />
+        </label>
+        <label v-if="draft.gear.unique" class="check small">
+          <input type="checkbox" :checked="!!draft.black_market" @change="draft.black_market = ($event.target as HTMLInputElement).checked || undefined" />
+          也會出現在黑市：知道黑市的城鎮每天刷新幾件珍品（件數在遊戲規則），價格是物品價的幾倍，可以殺價
         </label>
         <div v-if="draft.gear.unique" class="unique small">
           <label>檢定加值 <input v-model.number="draft.gear.unique.bonus" type="number" min="1" max="3" class="num" /></label>

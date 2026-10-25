@@ -14,7 +14,7 @@ import {
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { findKind } from './grid'
-import { gearName, gearPrice, gearRules, randomGear, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
+import { gearName, gearPrice, gearRules, itemShown, randomGear, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
 import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
@@ -162,10 +162,13 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const def = shopDef(type)
   const rank = locationRank(shopPlace(state).type)
   // 獨特物品、有屬性加減的裝備、主人強制裝備的東西不在商店賣（只能從事件、寶箱或主人得到）
-  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank)
+  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && itemShown(i) && locationRank(i.min_location ?? 'village') <= rank)
   return withRng(state, (rng) => {
     const deals: Deal[] = []
-    const equipment = available.filter((i) => i.category === 'equipment')
+    // 服裝另外挑（shops.json 的 outfits），不擠掉護具與武器
+    const isOutfit = (i: ItemDef) => !!(i.gear && gearRules.bases[i.gear.base]?.outfit)
+    const equipment = available.filter((i) => i.category === 'equipment' && !isOutfit(i))
+    const outfits = available.filter((i) => i.category === 'equipment' && isOutfit(i))
     const pickSome = <T>(list: T[], n: number) => [...list].sort(() => rng.next() - 0.5).slice(0, n)
     for (const i of available) {
       if (i.category === 'equipment') continue
@@ -180,6 +183,13 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
     for (let n = rng.int(3, 6); n > 0 && picked.size < equipment.length; n--) {
       const pool = equipment.filter((i) => !picked.has(i.name))
       picked.add(weightedPick(rng, Object.fromEntries(pool.map((i) => [i.name, gearWeight(i)]))))
+    }
+    if (def.outfits && outfits.length) {
+      for (let n = rng.int(def.outfits[0], def.outfits[1]); n > 0 && picked.size < equipment.length + outfits.length; n--) {
+        const pool = outfits.filter((i) => !picked.has(i.name))
+        if (!pool.length) break
+        picked.add(weightedPick(rng, Object.fromEntries(pool.map((i) => [i.name, gearWeight(i)]))))
+      }
     }
     for (const name of picked) deals.push(itemDeal(state, name, 1))
     // 魔法物品店：每天隨機上架消耗品與材料（材料以收購價加成賣出，依聚落規模限制價格）

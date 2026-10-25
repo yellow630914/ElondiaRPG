@@ -20,6 +20,7 @@
     "cloth": { "name": "布衣", "evade": 1, "dr": 0, "threat": -0.1 },
     "monk_robe": { "name": "武僧袍", "evade": 2, "dr": 0 },
     "leather": { "name": "皮甲", "evade": 1, "dr": 1 },
+    "bikini": { "name": "比基尼鎧甲", "evade": 2, "dr": 1, "threat": 0.05 },
     "chain": { "name": "鍊甲", "evade": -1, "dr": 2, "resist": { "slashing": -0.25 }, "threat": 0.05 },
     "chain_shield": { "name": "鍊甲與盾", "evade": -1, "dr": 3, "resist": { "slashing": -0.25 }, "threat": 0.15 },
     "plate": { "name": "板甲", "evade": -3, "dr": 4, "resist": { "slashing": -0.25, "piercing": -0.25, "lightning": 0.25 }, "threat": 0.25 }

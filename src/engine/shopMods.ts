@@ -247,6 +247,13 @@ export function restoreShops() {
   setCellOverrides({})
 }
 
+/** 內建商店用這份目錄時每天另外上架的服裝件數 */
+function outfitsOf(catalog: string | undefined): [number, number] | undefined {
+  if (!catalog) return undefined
+  const d = Object.values(snapshot).find((x) => x.catalog_tag === catalog && x.outfits)
+  return d?.outfits ? [...d.outfits] as [number, number] : undefined
+}
+
 /** 套用一家店的修改（位置另外由 applyShopPlacements 一起算） */
 export function applyShopMod(id: string, m: ShopMod) {
   if (m.custom) {
@@ -256,6 +263,8 @@ export function applyShopMod(id: string, m: ShopMod) {
       keeper: { classes: [...CUSTOM_KEEPER_CLASSES], title: m.keeper?.title ?? '店主', tags: [...(m.keeper?.tags ?? [])] },
       catalog_tag: m.catalog ?? '', buys: [...(m.buys ?? [])], ai_effects: [...CUSTOM_AI_EFFECTS], specials: [],
       ...(m.fixed?.length ? { fixed: clone(m.fixed) } : {}),
+      // 上架和內建的店同一份目錄時，也照它每天另外上架服裝
+      ...(outfitsOf(m.catalog) ? { outfits: outfitsOf(m.catalog) } : {}),
       custom: true, craft: [...(m.craft ?? [])],
     }
     if (m.work) {

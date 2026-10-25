@@ -15,7 +15,7 @@ import {
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
   type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
 } from './data'
-import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef } from './gear'
+import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
@@ -796,6 +796,9 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   const forge = (raw.forge?.materials ?? []).filter((m) => !!gearRules.materials[m])
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
+  if (raw.adult) out.adult = true
+  // 黑市：只有獨特物品
+  if (raw.black_market && gear?.unique) out.black_market = true
   if (category === 'info' && raw.intel) {
     const it = raw.intel
     const kind = (['point', 'story', 'lead'] as const).includes(it.kind) ? it.kind : 'point'
@@ -939,6 +942,9 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
     if (builtin.two_handed) out.two_handed = true
     else delete out.two_handed
   }
+  // 服裝的分類與成人向（成人向的服裝一定是成人向）
+  if (raw.outfit && raw.outfit in OUTFIT_KINDS && out.slot !== 'main_hand' && out.slot !== 'off_hand') out.outfit = raw.outfit
+  if (raw.adult || out.outfit === 'adult') out.adult = true
   // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
   const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body'
   if (restraint) {

@@ -2,7 +2,7 @@
 // 免費給主角裝上並鎖住；契約還在時不能卸下，也不能在那個欄位換別的（inventory.ts 的 lockedGear）。
 
 import { itemRules } from './data'
-import { gearKnown, slotName } from './gear'
+import { gearKnown, itemShown, slotName } from './gear'
 import { freeSlotsFor, putOn } from './inventory'
 import { npcRecord } from './npcs'
 import { pcOf } from './party'
@@ -14,7 +14,7 @@ export function forcedGearPool(state: GameState, masterTags: string[] = []): str
   const pc = pcOf(state)
   const wearing = new Set(Object.values(pc.gear ?? {}).map((g) => g?.name))
   return itemRules.items
-    .filter((i) => i.master_force && i.gear && gearKnown(i.gear))
+    .filter((i) => i.master_force && i.gear && gearKnown(i.gear) && itemShown(i))
     .filter((i) => !i.master_force!.tags?.length || i.master_force!.tags.some((t) => masterTags.includes(t)))
     .filter((i) => !wearing.has(i.name) && freeSlotsFor(pc, i.gear!).length > 0)
     .map((i) => i.name)

@@ -8,6 +8,7 @@ import {
 } from './data'
 import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGear, wearDefaultUnderwear } from './gear'
 import { bodyOf } from './traits'
+import { dressNpc } from './outfits'
 import { tattoosOf, tattooSummary } from './tattoos'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
@@ -282,7 +283,8 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
       if (spec && gearRules.bases[spec.base] && gearRules.materials[spec.material]) c.gear[slot as keyof typeof c.gear] = { name: gearName(spec), spec: { ...spec } }
     }
   }
-  // 依性別預設穿上內衣、內褲（固定 NPC 指定了的欄位不動）
+  // 依身分補上服裝（頭、鞋、腿飾、內衣褲……空著的欄位），再依性別穿上預設的內衣、內褲；固定 NPC 指定了的欄位不動
+  dressNpc(c, def)
   wearDefaultUnderwear(c, bodyOf(def.race, def.gender))
   if (def.appearance) c.appearance = def.appearance
   if (def.background) c.background = def.background
