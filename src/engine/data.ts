@@ -131,6 +131,8 @@ export interface NpcStage {
 export interface StoryCond {
   flags?: string[]
   flags_none?: string[]
+  /** 角色的好感（親密度）至少多少：{ 角色 id: 最低值 }（沒見過面算 0） */
+  affinity?: Record<string, number>
 }
 
 // ---- 特殊任務（人工編寫的任務鏈，data/rules/stories.json，說明見 docs/STORY_QUESTS.md） ----
@@ -179,7 +181,12 @@ export interface StoryPlace {
   y?: number
 }
 
-export interface StoryCheck { attr: AttrId; dc: number }
+/**
+ * 檢定參考某位角色的好感（親密度）：每 per 點 +1（負的就 -1），最多 ±max；
+ * min：好感不到這個數字就直接算失敗，不擲骰（見 docs/STORY_QUESTS.md 第 2 節）
+ */
+export interface StoryAffinity { npc: string; per?: number; max?: number; min?: number }
+export interface StoryCheck { attr: AttrId; dc: number; affinity?: StoryAffinity }
 
 /** 任務點的結果：旗標、效果、同行的夥伴、任務完成或失敗 */
 export interface StoryOutcome {
@@ -204,6 +211,8 @@ export interface StoryOutcome {
 
 export interface StoryOption {
   label: string
+  /** 選項出現的條件（旗標、好感）；沒有時一直都在 */
+  requires?: StoryCond
   check?: StoryCheck
   success?: StoryOutcome
   fail?: StoryOutcome

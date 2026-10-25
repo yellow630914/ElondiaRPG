@@ -79,7 +79,16 @@ const isLoc = (id: unknown) => typeof id === 'string' && geography.locations.som
 function check(v: unknown): StoryCheck | undefined {
   if (!v || typeof v !== 'object') return undefined
   const c = v as Partial<StoryCheck>
-  return { attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr! : 'int', dc: int(c.dc, 1, 40, 12) }
+  const out: StoryCheck = { attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr! : 'int', dc: int(c.dc, 1, 40, 12) }
+  // 參考好感：角色、每幾點 +1、加值上限、門檻
+  const a = c.affinity
+  if (a && typeof a === 'object' && str(a.npc, 60)) {
+    out.affinity = {
+      npc: str(a.npc, 60), per: int(a.per, 1, 100, 10), max: int(a.max, 0, 20, 5),
+      ...(typeof a.min === 'number' && Number.isFinite(a.min) ? { min: int(a.min, -100, 100, 0) } : {}),
+    }
+  }
+  return out
 }
 
 export function sanitizeEffects(v: unknown): RewardEffect[] {
@@ -280,7 +289,8 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
       const c = check(o?.check)
       const s = outcome(o?.success)
       const f = outcome(o?.fail)
-      return { label: str(o?.label, 30) || '選項', ...(c ? { check: c } : {}), ...(s ? { success: s } : {}), ...(c && f ? { fail: f } : {}) }
+      const r = sanitizeCond(o?.requires) as StoryCond | undefined
+      return { label: str(o?.label, 30) || '選項', ...(r ? { requires: r } : {}), ...(c ? { check: c } : {}), ...(s ? { success: s } : {}), ...(c && f ? { fail: f } : {}) }
     })
   } else {
     const s = outcome(n.success)
@@ -455,6 +465,13 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     for (const id of n.allies ?? []) if (!npcIds.has(id)) err.push(`${t}的友方角色 ${id} 不存在`)
     for (const id of n.allies ?? []) if (n.foes?.includes(id)) err.push(`${t}：${id} 同時是友方與敵對角色`)
     if (n.kind === 'choice' && !n.options?.length) err.push(`${t}是選擇，但沒有選項`)
+    // 參考好感、好感條件的角色要存在
+    for (const id of Object.keys(n.requires?.affinity ?? {})) if (!npcIds.has(id)) err.push(`${t}的好感條件：角色 ${id} 不存在`)
+    if (n.check?.affinity && !npcIds.has(n.check.affinity.npc)) err.push(`${t}的檢定參考的角色 ${n.check.affinity.npc} 不存在`)
+    for (const o of n.options ?? []) {
+      for (const id of Object.keys(o.requires?.affinity ?? {})) if (!npcIds.has(id)) err.push(`${t}的選項「${o.label}」的好感條件：角色 ${id} 不存在`)
+      if (o.check?.affinity && !npcIds.has(o.check.affinity.npc)) err.push(`${t}的選項「${o.label}」參考的角色 ${o.check.affinity.npc} 不存在`)
+    }
     for (const { o } of outcomesOf(n)) {
       if (o.join && !npcIds.has(o.join)) err.push(`${t}要同行的角色 ${o.join} 不存在`)
       if (o.leave && !npcIds.has(o.leave)) err.push(`${t}要離開的角色 ${o.leave} 不存在`)

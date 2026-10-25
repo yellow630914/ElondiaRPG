@@ -58,10 +58,34 @@
 | `id`、`title`、`text` | id（英數）、冒險筆記上的目標、觸發時的事件描述（也交給 AI） |
 | `at.where` | `settlement` 在聚落裡、`cell` 站在某種設施、自建的商店或城鎮的特色地標上（`at.cell`，地標見 [LANDMARKS](LANDMARKS.md)）、`npc` 某位固定 NPC 在身邊（`at.npc`）、`outskirts` 近郊的 ⭐、`dungeon` 地下城某一層的 ⭐（`at.layer`）、`road` 旅途上、`side` 臨時地圖裡的 ⭐（`at.side_map`）、`special` 特殊地圖裡的 ⭐（`at.special_map`；固定地圖可以再用 `at.x`、`at.y` 指定確切的格子，見 [SPECIAL_MAPS](SPECIAL_MAPS.md) 第 6 節） |
 | `at.location` | 地點 id（`npc` 可以不寫，跟著角色走） |
-| `requires` | 解鎖的旗標條件 |
+| `requires` | 解鎖的條件：`flags` 全部成立、`flags_none` 都不成立、`affinity` 每位角色的好感（親密度）都夠，例如 `{ "flags": ["a"], "affinity": { "npc_selene": 20 } }`（沒見過面算 0） |
 | `allies` | 在場的友方固定 NPC（id 的清單，任何種類的任務點都可以用）：解鎖之後站在 ⭐ 旁邊，或站在設施上（`cell`；`settlement` 在城門），不管他平常的出沒與出現條件；戰鬥時站在你這邊（由你操作，生命值不留到戰鬥之後）；AI 判定與寫經過時知道他們在場（`report.others`） |
-| `kind` | `story` 劇情（直接發生）、`check` 判定（`check: { attr, dc }`）、`combat` 戰鬥（`enemies` 怪物、`foes` 固定 NPC）、`choice` 選擇（`options`，每個選項可以有自己的檢定） |
+| `kind` | `story` 劇情（直接發生）、`check` 判定（`check: { attr, dc }`，可以參考好感，見下面）、`combat` 戰鬥（`enemies` 怪物、`foes` 固定 NPC）、`choice` 選擇（`options`，每個選項可以有自己的檢定與出現條件 `requires`） |
 | `success`、`fail` | 結果（劇情只有 success；判定與戰鬥沒寫 fail 時，失敗可以再試） |
+
+### 參考好感的檢定
+
+判定與選項的檢定可以參考某位固定 NPC 對主角的好感（親密度）：
+
+```jsonc
+"check": { "attr": "cha", "dc": 12, "affinity": { "npc": "npc_selene", "per": 10, "max": 5, "min": 20 } }
+```
+
+- **加值**：好感每 `per` 點 +1（預設 10；負的好感就扣），最多 ±`max`（預設 5）。放進檢定的情境修正，骰子明細看得到「瑟琳的好感（45）+4」。
+- **門檻**（`min`，可以不寫）：好感不到就直接套用失敗的結果，不擲骰（日誌寫「瑟琳的好感 15，不到 20，沒有擲骰」）；沒有寫失敗的結果時，之後可以再試。
+- AI 判定時，場景裡會寫這位角色對主角的好感與看法；日誌的其他人也帶上他，寫經過時有他的關係與記憶。
+- 選項另外可以有出現條件：`"requires": { "affinity": { "npc_selene": 10 } }`（也可以用旗標），條件不成立時選項不出現。
+
+例：瑟琳的任務最後邀請她入隊。好感 10 以上才出現這個選項，好感換成魅力檢定的加值，不到 20 直接失敗；成功正式入隊，失敗她給一筆謝禮。
+
+```jsonc
+{ "label": "邀請她入隊", "requires": { "affinity": { "npc_selene": 10 } },
+  "check": { "attr": "cha", "dc": 12, "affinity": { "npc": "npc_selene", "per": 10, "max": 5, "min": 20 } },
+  "success": { "text": "瑟琳答應了。", "effects": [{ "type": "companion", "npc": "npc_selene", "mode": "voluntary" }], "complete": true },
+  "fail": { "text": "瑟琳婉拒，塞給你一袋錢當謝禮。", "effects": [{ "type": "money", "amount": 200 }], "complete": true } }
+```
+
+編輯器：檢定欄的「參考好感」（角色、每幾點 +1、上限、門檻），任務點的「解鎖需要好感」，選項的「這個選項出現需要」。「檢查任務鏈」會提醒不存在的角色。好感條件也可以用在固定 NPC 的「依劇情旗標改變出沒」等其他用到條件的地方。
 
 近郊與地下城的任務點在進入那一區時放一格 ⭐（解鎖之後才放）。判定與有檢定的選項走主動行動：玩家可以描述做法、搭配能力，交給 AI 判定（大成功、成功、部分成功都算成功）；沒有 AI 時依規則擲骰。
 

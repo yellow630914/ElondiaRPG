@@ -57,9 +57,9 @@
 | `title` | 字串 | 最多 **40** 字 | 冒險筆記上的目標，寫出地點（「到萊茵堡的酒館打聽……」） |
 | `text` | 字串 | 最多 600 字 | 觸發時的事件描述（也交給 AI） |
 | `at` | 物件 | 見 2.4 | 在哪裡出現；不寫＝`settlement` |
-| `requires` | 物件 | `{ "flags": [...], "flags_none": [...] }` | 解鎖的條件：`flags` 全部成立、`flags_none` 全部不成立。不寫＝任務一開始就解鎖 |
+| `requires` | 物件 | `{ "flags": [...], "flags_none": [...], "affinity": { "<固定 NPC id>": 最低好感 } }` | 解鎖的條件：`flags` 全部成立、`flags_none` 全部不成立、`affinity` 每位角色的好感（-100～100，沒見過面算 0）都夠。不寫＝任務一開始就解鎖 |
 | `kind` | 字串 | `story` 劇情、`check` 判定、`combat` 戰鬥、`choice` 選擇 | 其他值變 `story` |
-| `check` | 物件 | `{ "attr": "<屬性>", "dc": 12 }`；`attr` 是 `str`、`dex`、`int`、`fai`、`cha`，`dc` 1～40 | 只有 `check` 用。沒寫時是智力 DC 12；`attr` 寫錯變 `int` |
+| `check` | 物件 | `{ "attr": "<屬性>", "dc": 12 }`；`attr` 是 `str`、`dex`、`int`、`fai`、`cha`，`dc` 1～40；可以加 `"affinity": { "npc": "<固定 NPC id>", "per": 10, "max": 5, "min": 20 }` | 只有 `check` 用。沒寫時是智力 DC 12；`attr` 寫錯變 `int`。`affinity`：好感每 `per` 點 ±1（1～100，預設 10），最多 ±`max`（0～20，預設 5）；`min`（選填）好感不到就直接失敗、不擲骰。角色不存在是錯誤 |
 | `enemies` | 陣列 | `[["<怪物 id>", 數量], ...]`，數量 1～6 | 只有 `combat` 用。怪物 id 查 `data/rules/enemies.json` 或同一個包的 `enemies` |
 | `foes` | id 陣列 | 固定 NPC 的 id | 只有 `combat` 用：敵對的固定 NPC。`enemies`、`foes` 至少要有一種 |
 | `allies` | id 陣列 | 固定 NPC 的 id | 任何種類都可以：在場的友方，解鎖後站在 ⭐ 旁邊（或站在設施上），戰鬥時站在你這邊，不看他平常的出沒與 `requires` |
@@ -72,7 +72,8 @@
 | 欄位 | 範圍 | 說明 |
 |---|---|---|
 | `label` | 最多 30 字；空的變「選項」 | 按鈕上的字 |
-| `check` | 同任務點的 `check` | 選填：有檢定的選項 |
+| `requires` | 同任務點的 `requires` | 選填：選項出現的條件（例如 `{ "affinity": { "npc_selene": 10 } }`），不成立時選項不出現 |
+| `check` | 同任務點的 `check` | 選填：有檢定的選項（也可以參考好感） |
 | `success` | 結果 | 沒有檢定時選了就發生；有檢定時是成功 |
 | `fail` | 結果 | 只有寫了 `check` 的選項才收 |
 

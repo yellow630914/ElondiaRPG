@@ -1065,11 +1065,18 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; affinity?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
-  return flags.length || none.length ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}) } : undefined
+  // 好感條件：角色 id → 最低值（-100～100）
+  const affinity = Object.fromEntries(Object.entries(r.affinity && typeof r.affinity === 'object' ? r.affinity : {})
+    .filter(([id, n]) => typeof id === 'string' && id.trim() && typeof n === 'number' && Number.isFinite(n))
+    .map(([id, n]) => [id.trim().slice(0, 60), Math.max(-100, Math.min(100, Math.round(n as number)))]))
+  const hasAff = Object.keys(affinity).length > 0
+  return flags.length || none.length || hasAff
+    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(hasAff ? { affinity } : {}) }
+    : undefined
 }
 export { cond as sanitizeCond }
 

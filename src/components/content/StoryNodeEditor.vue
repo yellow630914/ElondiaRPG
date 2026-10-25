@@ -7,6 +7,8 @@ import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAM
 import { travelEvents } from '@/engine/road'
 import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
+import AffinityCondEditor from './AffinityCondEditor.vue'
+import StoryAffinityEditor from './StoryAffinityEditor.vue'
 import Hint from '../ui/Hint.vue'
 
 // 一個任務點：在哪裡、解鎖的條件、種類（劇情、判定、戰鬥、選擇）、結果
@@ -150,6 +152,7 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
     </template>
     <div class="row small">解鎖需要旗標 <FlagInput v-model="requires.flags" placeholder="全部成立才解鎖" /></div>
     <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
+    <AffinityCondEditor :model-value="requires" label="解鎖需要好感" @update:model-value="(v) => (node.requires = v)" />
     <div class="row checks small">
       <span>在場的友方固定 NPC：</span>
       <label v-for="n in namedNpcs" :key="n.id" class="check">
@@ -167,6 +170,7 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
         DC <input v-model.number="node.check.dc" type="number" min="1" max="40" class="num" />
         <Hint text="可以描述做法交給 AI 判定；大成功、成功、部分成功都算成功。" />
       </div>
+      <StoryAffinityEditor v-model="node.check" />
       <OutcomeEditor v-model="node.success" label="成功" />
       <OutcomeEditor v-model="node.fail" label="失敗" optional />
     </template>
@@ -201,6 +205,8 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
           </template>
           <button class="small" @click="node.options!.splice(i, 1)">移除選項</button>
         </div>
+        <StoryAffinityEditor v-if="o.check" v-model="o.check" />
+        <AffinityCondEditor :model-value="o.requires ?? {}" label="這個選項出現需要" @update:model-value="(v) => (o.requires = v)" />
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" />
         <OutcomeEditor v-if="o.check" v-model="o.fail" label="失敗" optional />
       </div>

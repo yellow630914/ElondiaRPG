@@ -6,14 +6,14 @@
 //   讓固定 NPC 以「任務同行」加入或離開，也可以完成或失敗整個任務。
 // - 每次推進都產生一份報告（report.story），也記在任務的經過（冒險筆記）。
 
-import { snapshot } from './character'
+import { affinityStage, snapshot } from './character'
 import { endpointsIn } from './specialMaps'
 import { storySpotProblem } from './specialMapMods'
 import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
 import {
-  locationById, npcs as namedNpcs, regionById, specialMaps, stories, type Degree, type DungeonLayerId, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
+  locationById, npcs as namedNpcs, regionById, specialMaps, stories, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, type Area, type CellKind } from './grid'
@@ -106,7 +106,9 @@ function storyReport(state: GameState, def: StoryDef, status: NonNullable<Report
 
 /** 任務點在場的人（友方與身邊的固定 NPC）：記在報告的 others，AI 寫經過時會帶上他們的關係與記憶 */
 function presentOthers(state: GameState, node: StoryNode): { id: string; name: string }[] {
-  const ids = [...new Set([...(node.allies ?? []), ...(node.at.npc ? [node.at.npc] : [])])]
+  // 友方、身邊的固定 NPC、檢定參考好感的角色
+  const affinityIds = [node.check?.affinity?.npc, ...(node.options ?? []).map((o) => o.check?.affinity?.npc)].filter((x): x is string => !!x)
+  const ids = [...new Set([...(node.allies ?? []), ...(node.at.npc ? [node.at.npc] : []), ...affinityIds])]
   return ids
     .filter((id) => !state.party.some((m) => m.id === id))
     .map((id) => npcRecord(state, id))
@@ -234,6 +236,7 @@ export function playNode(state: GameState, ref: string, option?: number, intent?
   if (node.kind === 'choice') {
     const o = node.options?.[option ?? -1]
     if (!o) throw new Error('沒有這個選項')
+    if (!condMet(state, o.requires)) throw new Error('這個選項現在不能選')
     if (o.check) throw new Error('這個選項要檢定')
     outcome = o.success
     label = o.label
@@ -261,6 +264,32 @@ function parseTarget(target: string | undefined): { ref: string; option?: number
   return { ref: target ?? '' }
 }
 
+/** 這個選項現在能不能選（好感、旗標的條件） */
+export function optionOpen(state: GameState, node: StoryNode, option: number): boolean {
+  return condMet(state, node.options?.[option]?.requires)
+}
+
+/** 檢定參考的好感：角色、目前的好感、加值（每 per 點 ±1，最多 ±max）、有沒有到門檻 */
+export function storyAffinity(state: GameState, a: StoryAffinity): { name: string; affinity: number; bonus: number; blocked: boolean; min?: number } {
+  const affinity = state.relationships?.[a.npc]?.affinity ?? 0
+  const per = Math.max(1, a.per ?? 10)
+  const max = Math.max(0, a.max ?? 5)
+  const raw = Math.trunc(affinity / per)
+  const bonus = Math.max(-max, Math.min(max, raw)) || 0
+  const name = npcRecord(state, a.npc)?.name ?? a.npc
+  return { name, affinity, bonus, blocked: a.min !== undefined && affinity < a.min, ...(a.min !== undefined ? { min: a.min } : {}) }
+}
+
+/** 檢定的好感門檻沒過時的說明（沒有門檻或過了是 undefined） */
+export function storyCheckGate(state: GameState, target: string): string | undefined {
+  const { ref, option } = parseTarget(target)
+  const n = active(state, ref)
+  const a = checkOf(n.node, option).check.affinity
+  if (!a) return undefined
+  const x = storyAffinity(state, a)
+  return x.blocked ? `${x.name}的好感 ${x.affinity}，不到 ${x.min}` : undefined
+}
+
 function checkOf(node: StoryNode, option?: number): { check: StoryCheck; success?: StoryOutcome; fail?: StoryOutcome; label: string } {
   if (node.kind === 'choice') {
     const o = node.options?.[option ?? -1]
@@ -276,12 +305,21 @@ export function setupStoryCheck(state: GameState, target?: string) {
   const n = active(state, ref)
   if (!nodeIsHere(state, n)) throw new Error('要在任務點才能進行')
   const c = checkOf(n.node, option)
+  if (option !== undefined && !optionOpen(state, n.node, option)) throw new Error('這個選項現在不能選')
+  const gate = storyCheckGate(state, target ?? '')
+  if (gate) throw new Error(`${gate}：沒辦法檢定`)
   const ok = c.success?.text ?? '成功'
   const bad = c.fail?.text ?? '沒有成功（之後可以再試一次）'
+  // 參考好感：加值放進情境修正（骰子明細看得到），對方的關係寫進場景給 AI
+  const a = c.check.affinity ? storyAffinity(state, c.check.affinity) : undefined
+  const rel = c.check.affinity ? state.relationships?.[c.check.affinity.npc] : undefined
+  const relText = a ? `${a.name}對主角的好感 ${a.affinity}（${affinityStage(a.affinity)}）${rel?.toPlayer ? `，${a.name}眼中的主角：${rel.toPlayer}` : ''}。` : ''
+  const targetName = (n.node.at.npc && npcRecord(state, n.node.at.npc)?.name) || a?.name
   return {
-    attr: c.check.attr, dc: c.check.dc, hours: 1, situational: [],
-    ...(n.node.at.npc && npcRecord(state, n.node.at.npc) ? { targetName: npcRecord(state, n.node.at.npc)!.name } : {}),
-    scene: `${currentArea(state).name}・特殊任務「${n.def.title}」：${n.node.title}（${c.label}）。${n.node.text}${allyNames(state, n.node) ? `在場的友方：${allyNames(state, n.node)}。` : ''}`,
+    attr: c.check.attr, dc: c.check.dc, hours: 1,
+    situational: a?.bonus ? [{ label: `${a.name}的好感（${a.affinity}）`, value: a.bonus }] : [],
+    ...(targetName ? { targetName } : {}),
+    scene: `${currentArea(state).name}・特殊任務「${n.def.title}」：${n.node.title}（${c.label}）。${n.node.text}${allyNames(state, n.node) ? `在場的友方：${allyNames(state, n.node)}。` : ''}${relText}`,
     outcomes: { critical: ok, success: ok, partial: `勉強過關：${ok}`, fail: bad, fumble: bad } as Partial<Record<Degree, string>>,
   }
 }
@@ -299,6 +337,24 @@ export function applyStoryCheck(state: GameState, report: Report, target: string
   if (present.length) report.others = [...(report.others ?? []), ...present]
   const lines = resolveOutcome(state, report, n.progress, n.def, n.node, success ? c.success : c.fail, success, n.node.kind === 'choice' ? c.label : '')
   return lines.join('')
+}
+
+/** 好感不到檢定的門檻：不擲骰，直接套用失敗的結果 */
+export function failStoryCheck(state: GameState, target: string): Report {
+  const gate = storyCheckGate(state, target)
+  if (!gate) throw new Error('好感已經夠了，要擲骰')
+  const { ref, option } = parseTarget(target)
+  const n = active(state, ref)
+  if (!nodeIsHere(state, n)) throw new Error('要在任務點才能進行')
+  const c = checkOf(n.node, option)
+  const report = storyReport(state, n.def, 'progress', 1, n.node)
+  const lines = resolveOutcome(state, report, n.progress, n.def, n.node, c.fail, false, n.node.kind === 'choice' ? c.label : '')
+  report.outcome = { ...report.outcome, result: 'failure', summary: `（${gate}，沒有擲骰）${lines.join('')}` }
+  report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), `${gate}：對方的態度不夠親近，這件事談不成`] }
+  const committed = commitReport(state, report)
+  refreshStoryMarkers(state)
+  applyPendingMove(state)
+  return committed
 }
 
 /** 戰鬥任務點結束：勝利套用成功的結果，落敗或撤退套用失敗的結果（沒有失敗的結果時可以再挑戰） */

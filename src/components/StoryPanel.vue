@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { attrName, enemies, type StoryNode } from '@/engine/data'
+import { attrName, enemies, type StoryCheck, type StoryNode } from '@/engine/data'
 import { npcRecord } from '@/engine/npcs'
-import { nodesHere, storyOffersHere } from '@/engine/story'
+import { nodesHere, storyAffinity, storyOffersHere } from '@/engine/story'
+import { condMet } from '@/engine/storyFlags'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -25,8 +26,13 @@ const busy = computed(() => game.judging || !!s.value.pendingAction || !!s.value
 const text = ref<Record<string, string>>({})
 const use = ref<Record<string, string>>({})
 
-function checkLabel(c: { attr: string; dc: number }) {
-  return `${attrName(c.attr as never)}檢定・DC ${c.dc}`
+/** 檢定的說明：屬性與 DC；參考好感時加上好感的加值，沒到門檻時說會直接失敗 */
+function checkLabel(c: StoryCheck) {
+  const base = `${attrName(c.attr)}檢定・DC ${c.dc}`
+  if (!c.affinity) return base
+  const a = storyAffinity(s.value, c.affinity)
+  if (a.blocked) return `${base}・${a.name}的好感 ${a.affinity}，不到 ${a.min}：會直接失敗`
+  return `${base}・${a.name}的好感 ${a.bonus >= 0 ? '+' : ''}${a.bonus}`
 }
 function foes(n: StoryNode): string {
   return [
@@ -36,7 +42,7 @@ function foes(n: StoryNode): string {
 }
 function attempt(ref: string, option?: number) {
   const u = parseUse(use.value[ref] ?? '')
-  void game.perform({ kind: 'story', target: option === undefined ? ref : `${ref}:${option}`, text: text.value[ref] ?? '', ...(u ? { use: u } : {}) })
+  void game.attemptStory(option === undefined ? ref : `${ref}:${option}`, text.value[ref] ?? '', u)
   text.value[ref] = ''
   use.value[ref] = ''
 }
@@ -73,10 +79,13 @@ function play(ref: string, option?: number) {
           <button class="small primary" :disabled="busy" @click="attempt(n.ref)">嘗試（{{ checkLabel(n.node.check) }}）</button>
         </div>
         <div v-else class="row">
-          <button
-            v-for="(o, i) in n.node.options ?? []" :key="i" class="small" :class="{ primary: !o.check }" :disabled="busy"
-            @click="o.check ? attempt(n.ref, i) : play(n.ref, i)"
-          >{{ o.label }}<template v-if="o.check">（{{ checkLabel(o.check) }}）</template></button>
+          <template v-for="(o, i) in n.node.options ?? []" :key="i">
+            <!-- 有好感、旗標條件的選項：條件成立才出現 -->
+            <button
+              v-if="condMet(s, o.requires)" class="small" :class="{ primary: !o.check }" :disabled="busy"
+              @click="o.check ? attempt(n.ref, i) : play(n.ref, i)"
+            >{{ o.label }}<template v-if="o.check">（{{ checkLabel(o.check) }}）</template></button>
+          </template>
         </div>
       </template>
     </div>

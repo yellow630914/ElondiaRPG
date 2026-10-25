@@ -25,10 +25,11 @@ export function clearFlag(state: GameState, name: string) {
   delete state.flags[flagKey(name)]
 }
 
-/** 條件成立：flags 全部有、flags_none 全部沒有（沒有條件時成立） */
+/** 條件成立：flags 全部有、flags_none 全部沒有、affinity 的每位角色好感都夠（沒有條件時成立） */
 export function condMet(state: GameState, cond: StoryCond | undefined): boolean {
   if (!cond) return true
   return (cond.flags ?? []).every((f) => hasFlag(state, f)) && (cond.flags_none ?? []).every((f) => !hasFlag(state, f))
+    && Object.entries(cond.affinity ?? {}).every(([id, min]) => (state.relationships?.[id]?.affinity ?? 0) >= min)
 }
 
 /** 目前成立的劇情旗標（名稱，不含前綴） */
