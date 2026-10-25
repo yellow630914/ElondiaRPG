@@ -14,7 +14,7 @@ import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import { changeHitDice, changeSlots } from './resources'
 import {
-  addAffinity, addCondition, changeMaster, enslavePlayer, freePlayer, freeSlave, joinParty, leaveParty, partyRoom, pcOf, removeCondition, setHp,
+  addAffinity, addCondition, changeMaster, enslavePlayer, freePlayer, freeSlave, isBound, joinParty, leaveParty, partyRoom, pcOf, removeCondition, setHp,
 } from './party'
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
@@ -199,6 +199,11 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         break
       }
       case 'join_party': {
+        // 被主人帶著時跟不了別人的隊伍（主人才是隊長）
+        if (isBound(state)) {
+          notes.push('身為奴隸，跟不了別人的隊伍')
+          break
+        }
         const leader = resolveNpc(state, e.leader)
         const members = (e.members ?? []).map((m) => resolveNpc(state, m))
         if (partyRoom(state) < 1 + members.length) {

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import FoldMenu from './ui/FoldMenu.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { marketsHere, selfSaleChance, type MarketKind } from '@/engine/companions'
-import { className, combatRules, contractDef, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
+import { marketsHere, proposeDc, selfSaleChance, type MarketKind } from '@/engine/companions'
+import { className, contractDef, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import { isBound, isEnslaved } from '@/engine/party'
+import { isBound, isEnslaved, leaderOf, partyRoom } from '@/engine/party'
 import type { MarkChoice } from '@/engine/slavery'
 import type { SlaveListing } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -24,7 +24,7 @@ onMounted(() => {
 })
 
 const stock = computed(() => s.value.markets?.[`${s.value.location}/${props.kind}`]?.stock ?? loaded.value)
-const partyFull = computed(() => s.value.party.length >= combatRules.party_max)
+const partyFull = computed(() => partyRoom(s.value) < 1)
 const enslaved = computed(() => isEnslaved(s.value))
 const bound = computed(() => isBound(s.value))
 // 這個市場常見的買家（依權重）
@@ -54,6 +54,23 @@ function haggle(l: SlaveListing) {
   open.value = null
 }
 
+// ---- 被主人帶著：向主人提議買下 ----
+const master = computed(() => (bound.value ? leaderOf(s.value) : undefined))
+const proposing = ref<string | null>(null)
+const proposeText = reactive<Record<string, string>>({})
+const proposedToday = (id: string) => s.value.flags[`propose_no:${id}`] === s.value.time.day
+function proposeDcOf(id: string): number | null {
+  try {
+    return proposeDc(s.value, { kind: 'buy', market: props.kind, npc: id })
+  } catch {
+    return null
+  }
+}
+async function propose(l: SlaveListing) {
+  await game.perform({ kind: 'propose', target: `buy:${props.kind}:${l.npc}`, text: proposeText[l.npc] ?? '' })
+  proposing.value = null
+}
+
 function sellSelf() {
   const msg = enslaved.value
     ? '登記出售自己：買下你的人會成為新主人，身上的印記沿用。確定嗎？'
@@ -81,10 +98,24 @@ function sellSelf() {
           <div class="muted" :title="contractDef(l.contract).side_effects.join('；')">契約：{{ contractDef(l.contract).name }}</div>
           <div class="row">
             <span>{{ formatMoney(l.price_cc) }}</span>
-            <button class="small primary" :disabled="partyFull || enslaved || s.money_cc < l.price_cc" @click="toggleMarking(l)">買下…</button>
-            <button class="small" :disabled="l.haggled || enslaved || game.judging" @click="open = open === l.npc ? null : l.npc">
-              {{ l.haggled ? '已殺過價' : '殺價／交涉' }}
-            </button>
+            <!-- 被主人帶著：向主人提議買下（主人出錢，奴隸屬於主人） -->
+            <template v-if="bound">
+              <span v-if="proposedToday(l.npc)" class="muted">主人今天不想再聽你提這個人</span>
+              <button v-else class="small primary" :disabled="partyFull || game.judging" @click="proposing = proposing === l.npc ? null : l.npc">向主人提議買下…</button>
+            </template>
+            <template v-else>
+              <button class="small primary" :disabled="partyFull || enslaved || s.money_cc < l.price_cc" :title="enslaved ? '身上還有奴隸印記，不能擁有奴隸（只能把自己賣出去）' : ''" @click="toggleMarking(l)">買下…</button>
+              <button class="small" :disabled="l.haggled || enslaved || game.judging" @click="open = open === l.npc ? null : l.npc">
+                {{ l.haggled ? '已殺過價' : '殺價／交涉' }}
+              </button>
+            </template>
+          </div>
+          <div v-if="proposing === l.npc" class="pick">
+            <span class="muted">請{{ master?.name ?? '主人' }}出錢買下，買下後是主人的奴隸、跟著隊伍。魅力檢定，參考 DC {{ proposeDcOf(l.npc) ?? '—' }}（主人的親密度、售價相對主人的財力、主人的身分、契約的服從懲罰）；部分成功時主人要你出一半。</span>
+            <div class="row">
+              <input v-model="proposeText[l.npc]" style="flex: 1" placeholder="怎麼說服主人（選填），例如：說她會做菜、能幫主人管帳" />
+              <button class="small primary" :disabled="game.judging" @click="propose(l)">向主人提議（魅力檢定）</button>
+            </div>
           </div>
           <div v-if="marking === l.npc" class="pick">
             <span class="muted">選擇要刻上的印記：</span>

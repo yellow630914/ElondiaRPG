@@ -530,6 +530,8 @@ export const combatRules = combatJson as unknown as {
   proficiency: { base: number; every_levels: number }
   xp_to_next_level_per_level: number
   party_max: number
+  /** 跟著別人的隊伍時的上限（見 party.ts 的 partyMax） */
+  party_max_following?: number
   hp: { base: number; per_level: number; min_per_level: number }
   ap: { base: number; every_levels: number; min: number; regen: number; regen_every_levels: number }
   action_costs: { weapon_attack: number; defend: number; flee: number; item: number; spell_by_circle: number[] }
@@ -1017,6 +1019,12 @@ export const slaveryRules = slaveryJson as unknown as {
   }
   fugitive_master: { return: { attr: AttrId; base: number; affinity_step: number }; negotiate_dc_bonus: number }
   seek_master: { attr: AttrId; base: number; affinity_step: number }
+  /** 被主人帶著時向主人提議雇人、買奴隸（companions.ts 的 proposeDc） */
+  propose: {
+    attr: AttrId; base: number; affinity_step: number; budget_per_level: number; cost_dc: number; cost_dc_max: number
+    wealth: Record<string, number>; tag_dc: Record<'hire' | 'buy', Record<string, number>>
+    partial_share: number; critical_affinity: number; fumble_affinity: number
+  }
   master_tags: {
     kinds: Record<'adventurer' | 'commoner', { dc: number; market: number }>
     tags: Record<string, { dc: number; chance: number; public: number; black: number; negotiate?: number }>
@@ -1122,7 +1130,7 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story'
+  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear'

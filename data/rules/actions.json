@@ -76,6 +76,8 @@
       "$comment": "主人的突發事件：玩家自己輸入的回應。參考 DC 見 slavery.json 的 master_events（free_dc）；沒有 AI 時依 free_outcomes。release：只在 AI 判定為大成功時採用（主人一時心軟，抹去印記）" },
     "master_return": { "name": "回到主人身邊", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"],
       "$comment": "逃亡奴隸主動回到身邊的主人那裡。一定會被收回，成功程度決定懲罰（見 slavery.json 的 fugitive_master）" },
+    "propose": { "name": "向主人提議", "attr": "cha", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag"],
+      "$comment": "被主人帶著時，向主人提議雇用某位冒險者（target = hire:<npc id>）或買下某名奴隸（target = buy:<public|black>:<npc id>）當隊友；主人出錢，入隊後是主人的隊員（見 slavery.json 的 propose）" },
     "seek_master": { "name": "投靠新主人", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"],
       "$comment": "無主或逃亡的奴隸請身邊的冒險者成為新主人（見 slavery.json 的 seek_master）" },
     "work": { "name": "工作", "attr": "cha", "hours": 4, "effects": ["affinity", "relationship_text", "flag", "money", "item", "hp"],

@@ -45,7 +45,7 @@ import { currentArea, currentCell } from './grid'
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
-import type { GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
+import type { Character, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
 
 function socialReport(state: GameState, hours: number, scene: string, kind: Report['kind'] = 'social'): Report {
@@ -335,6 +335,8 @@ function listing(state: GameState, kind: MarketKind, npcId: string): SlaveListin
 /** 買下奴隸；可以選擇要刻的印記（模板或自訂），沒選時用市場原本的 */
 export function buySlave(state: GameState, kind: MarketKind, npcId: string, mark?: MarkChoice): Report {
   assertFree(state, '買奴隸')
+  // 無主、逃亡中身上也還有印記：奴隸不能擁有奴隸
+  if (isEnslaved(state)) throw new Error('身上還有奴隸印記，不能擁有奴隸')
   const l = listing(state, kind, npcId)
   if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
   if (state.money_cc < l.price_cc) throw new Error('錢不夠')
@@ -566,6 +568,101 @@ export function releaseSlave(state: GameState, npcId: string): Report {
   return commitReport(state, report)
 }
 
+// ---- 6. 被主人帶著時，向主人提議雇人、買奴隸 ----
+// 主人出錢；入隊後是主人的隊員（ally，跟著主人的隊伍），買下的奴隸契約屬於主人。見 docs/COMPANIONS.md 第 2.4 節
+
+export type ProposalTarget = { kind: 'hire'; npc: string } | { kind: 'buy'; market: MarketKind; npc: string }
+
+/** target：hire:<npc id> 或 buy:<public|black>:<npc id> */
+export function parseProposal(target: string | undefined): ProposalTarget {
+  const [k, a, b] = (target ?? '').split(':')
+  if (k === 'hire' && a) return { kind: 'hire', npc: a }
+  if (k === 'buy' && (a === 'public' || a === 'black') && b) return { kind: 'buy', market: a, npc: b }
+  throw new Error('要向主人提議雇誰、買誰？')
+}
+
+/** 帶著主角的主人（隊伍裡的隊長，也是契約的主人） */
+function masterOf(state: GameState): { member: Character; rec?: NpcRecord } {
+  const m = leaderOf(state)
+  if (!isBound(state) || !m || m.id !== contractOf(pcOf(state))?.master) throw new Error('你沒有被主人帶著')
+  const rec = npcRecord(state, m.id)
+  return { member: m, ...(rec ? { rec } : {}) }
+}
+
+/** 提議的花費：雇用照要價，買奴隸照市價 */
+export function proposalCost(state: GameState, t: ProposalTarget): number {
+  return t.kind === 'hire' ? askingFor(candidate(state, t.npc)) : listing(state, t.market, t.npc).price_cc
+}
+
+/** 主人的財力（願意為這種事花的錢）：每級 budget_per_level × 財富倍率（依標籤取最高；普通人較低；都沒有是 1） */
+export function masterBudget(state: GameState): number {
+  const p = slaveryRules.propose
+  const { member, rec } = masterOf(state)
+  const mults = [...(rec?.tags ?? []).map((t) => p.wealth[t]), rec?.kind === 'commoner' ? p.wealth.commoner : undefined].filter((x): x is number => typeof x === 'number')
+  return Math.round(p.budget_per_level * member.level * (mults.length ? Math.max(...mults) : 1))
+}
+
+/** 向主人提議的參考 DC：主人親密度高比較容易；花費相對主人的財力越高越難；主人的身分（好人不愛買奴隸、惡人愛） */
+export function proposeDc(state: GameState, t: ProposalTarget): number {
+  const p = slaveryRules.propose
+  const { member, rec } = masterOf(state)
+  const affinity = state.relationships?.[member.id]?.affinity ?? 0
+  const costDc = Math.min(p.cost_dc_max, Math.round((proposalCost(state, t) / Math.max(1, masterBudget(state))) * p.cost_dc))
+  const tagDc = (rec?.tags ?? []).reduce((s, tag) => s + (p.tag_dc[t.kind][tag] ?? 0), 0)
+  return Math.max(5, p.base - Math.floor(affinity / p.affinity_step) + costDc + tagDc)
+}
+
+const proposeFlag = (npc: string) => `propose_no:${npc}`
+
+/** 能不能提議：被主人帶著、隊伍還有空位、對象在酒館或市場上、今天還沒被主人拒絕過 */
+export function validateProposal(state: GameState, t: ProposalTarget): NpcRecord {
+  masterOf(state)
+  const rec = npcRecord(state, t.npc)
+  if (!rec) throw new Error('找不到這個人')
+  if (state.flags[proposeFlag(t.npc)] === state.time.day) throw new Error('主人今天不想再聽你提這個人')
+  if (partyRoom(state) < 1) throw new Error('隊伍已滿，主人帶不了更多人')
+  if (t.kind === 'hire') {
+    if (isUnhireable(t.npc)) throw new Error('對方不會受雇於人')
+    if (state.captives?.npcs.includes(t.npc)) throw new Error('對方被制伏在地上')
+    candidate(state, t.npc)
+  } else listing(state, t.market, t.npc)
+  return rec
+}
+
+/** 結算：主人答應就出錢讓對方入隊（部分成功要主角出一半）；失敗今天不再提這個人；大失敗主人不高興 */
+export function applyProposal(state: GameState, report: Report, target: string, degree: Degree): string {
+  const p = slaveryRules.propose
+  const t = parseProposal(target)
+  const rec = validateProposal(state, t)
+  const { member: master } = masterOf(state)
+  const cost = proposalCost(state, t)
+  const what = t.kind === 'hire' ? `雇用${rec.name}` : `買下${rec.name}`
+  // 提到的人也寫進日誌（AI 寫經過時知道是誰）
+  if (!report.others?.some((o) => o.id === rec.id)) report.others = [...(report.others ?? []), { id: rec.id, name: rec.name, race: rec.race, class: rec.class, level: rec.level }]
+  if (degree === 'fail' || degree === 'fumble') {
+    ;(report.changes.flags ??= {})[proposeFlag(t.npc)] = state.time.day
+    if (degree === 'fumble') addAffinity(state, report, master.id, p.fumble_affinity, '奴隸多管閒事')
+    return degree === 'fumble' ? `${master.name}覺得你多管閒事，臉色很難看。` : `${master.name}不答應${what}。`
+  }
+  let share = 0
+  if (degree === 'partial') {
+    share = Math.round((cost * p.partial_share) / 5) * 5
+    if (state.money_cc < share) return `${master.name}說可以${what}，但要你出 ${formatMoney(share)}；你的錢不夠，只好作罷。`
+    report.changes.money_cc = (report.changes.money_cc ?? 0) - share
+  }
+  if (t.kind === 'hire') {
+    joinParty(state, rec, 'ally', report, { group: master.id, reason: '主人雇用' })
+  } else {
+    const l = listing(state, t.market, t.npc)
+    joinParty(state, rec, 'ally', report, { group: master.id, ownedBy: { id: master.id, name: master.name }, contract: l.contract, reason: '主人買下' })
+    const market = state.markets![`${state.location}/${t.market}`]!
+    market.stock = market.stock.filter((x) => x.npc !== t.npc)
+  }
+  if (degree === 'critical') addAffinity(state, report, master.id, p.critical_affinity, '提議得體')
+  const paid = share ? `，你出了 ${formatMoney(share)}，其餘由主人付` : `，${master.name}付了 ${formatMoney(cost)}`
+  return `${master.name}答應${what}${paid}；${rec.name}以${master.name}的${t.kind === 'hire' ? '隊員' : '奴隸'}身分加入隊伍。`
+}
+
 // ---- 給主動行動用：參考 DC 與各成功程度的機制結果 ----
 
 export interface ActionSetup {
@@ -653,6 +750,26 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupMasterEvent(state)
     case 'master_return':
       return setupReturn(state)
+    case 'propose': {
+      const t = parseProposal(target)
+      const rec = validateProposal(state, t)
+      const { member: master } = masterOf(state)
+      const cost = proposalCost(state, t)
+      const what = t.kind === 'hire' ? `雇用${rec.name}` : `買下${rec.name}`
+      const share = Math.round((cost * slaveryRules.propose.partial_share) / 5) * 5
+      return {
+        attr: slaveryRules.propose.attr,
+        dc: proposeDc(state, t), targetName: master.name, situational: [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }],
+        scene: t.kind === 'hire' ? `${tavernScene(state)}・向${master.name}提議${what}（要價 ${formatMoney(cost)}）` : `${marketDef(state, t.market).name}・向${master.name}提議${what}（售價 ${formatMoney(cost)}）`,
+        outcomes: {
+          critical: `${master.name}出錢${what}，對你的提議很滿意（親密度 +${slaveryRules.propose.critical_affinity}）`,
+          success: `${master.name}出錢${what}`,
+          partial: `${master.name}答應，但要你出 ${formatMoney(share)}`,
+          fail: '主人不答應，今天不再提這個人',
+          fumble: `主人覺得你多管閒事（親密度 ${slaveryRules.propose.fumble_affinity}）`,
+        },
+      }
+    }
     case 'seek_master':
       return setupSeekMaster(state, target)
     case 'unmark':

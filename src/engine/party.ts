@@ -20,9 +20,14 @@ const JOIN_TEXT: Record<Bond, string> = {
   guest: '因為任務暫時同行的夥伴。',
 }
 
+/** 隊伍上限：跟著別人的隊伍（有隊長，包括主人）時放寬（combat.json 的 party_max_following），別人的小隊才帶得上主角 */
+export function partyMax(state: GameState): number {
+  return state.party.some((m) => m.bond === 'leader') ? Math.max(combatRules.party_max, combatRules.party_max_following ?? combatRules.party_max) : combatRules.party_max
+}
+
 /** 隊伍還有幾個名額（任務同行的夥伴不佔名額） */
 export function partyRoom(state: GameState): number {
-  return combatRules.party_max - state.party.filter((m) => m.bond !== 'guest').length
+  return partyMax(state) - state.party.filter((m) => m.bond !== 'guest').length
 }
 
 export function pcOf(state: GameState): Character {
@@ -64,6 +69,8 @@ export interface JoinOptions {
   reason?: string
   /** 取代預設的關係文字（例如戰後收為奴隸，不是買來的） */
   toPlayer?: string
+  /** 隊員是別人（主人）的奴隸：契約屬於這個人（bond 是 ally） */
+  ownedBy?: { id: string; name: string }
 }
 
 /** NPC 入隊。新認識的角色依入隊方式設定初始親密度。 */
@@ -71,7 +78,7 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
   if (state.party.some((m) => m.id === rec.id)) throw new Error(`${rec.name}已經在隊伍裡了`)
   if (bond === 'guest') {
     if (state.party.filter((m) => m.bond === 'guest').length >= companionRules.guest_max) throw new Error(`任務同行的夥伴最多 ${companionRules.guest_max} 人`)
-  } else if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
+  } else if (partyRoom(state) < 1 && bond !== 'leader') throw new Error(`隊伍最多 ${partyMax(state)} 人`)
   const known = !!state.relationships?.[rec.id]
   const rel = ensureRelationship(state, rec)
   if (!known) setAffinity(state, rec.id, companionRules.initial_affinity[bond])
@@ -87,6 +94,10 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
   if (opts.group) member.group = opts.group
   if (bond === 'slave') {
     setContract(member, makeContract(opts.contract ?? slaveryRules.roles.default, 'pc', pcOf(state).name, state.time), state.time, pcOf(state).name)
+    member.status.push('slave_mark')
+  } else if (opts.ownedBy) {
+    // 主人買下的奴隸：跟著主人的隊伍，契約屬於主人
+    setContract(member, makeContract(opts.contract ?? slaveryRules.roles.default, opts.ownedBy.id, opts.ownedBy.name, state.time), state.time, opts.ownedBy.name)
     member.status.push('slave_mark')
   }
   if (state.npcs?.[rec.id]) delete state.npcs[rec.id]!.character

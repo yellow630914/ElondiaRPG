@@ -16,7 +16,7 @@ import { formatMoney } from './money'
 import { locationById, npcTags, regionById } from './data'
 import { currentArea, getArea } from './grid'
 import { npcRecord, registerNpc } from './npcs'
-import { addAffinity, joinParty, partyRoom, pcOf } from './party'
+import { addAffinity, isEnslaved, joinParty, partyRoom, pcOf } from './party'
 import { alertLevel, consequences, isWanted, securityRules } from './security'
 import { ensureRelationship } from './social'
 import { addHours, commitReport, newReportId, withRng } from './state'
@@ -115,6 +115,7 @@ export function resolveCaptive(state: GameState, id: string, choice: CaptiveChoi
   const todo = [...new Set(deeds)]
   if (todo.includes('violate') && !adultContent()) throw new Error('沒有開啟成人向內容')
   if (choice === 'enslave' && partyRoom(state) < 1) throw new Error('隊伍已滿，帶不走更多人')
+  if (choice === 'enslave' && isEnslaved(state)) throw new Error('身上還有奴隸印記，不能擁有奴隸')
   const stored = state.npcs?.[rec.id] ?? registerNpc(state, { ...rec })
   const pc = pcOf(state)
   const firstHand = c.aggressor === 'npc' ? '對方先動的手' : '你先動的手'

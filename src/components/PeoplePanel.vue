@@ -2,8 +2,9 @@
 import { npcPerksOf, perksOf } from '@/engine/perks'
 import { computed, reactive, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
-import { askingFor } from '@/engine/companions'
-import { combatRules, genderName, raceName, tagDef } from '@/engine/data'
+import { askingFor, proposeDc } from '@/engine/companions'
+import { genderName, raceName, tagDef } from '@/engine/data'
+import { isBound, partyMax, partyRoom } from '@/engine/party'
 import { cellAt, CELL_NAME, cellName, currentArea, position } from '@/engine/grid'
 import { affinityTable, itemValue, type InteractionKind } from '@/engine/interactions'
 import { CURRENCY, formatMoney } from '@/engine/money'
@@ -132,7 +133,22 @@ const candidates = computed(() => {
 })
 const offers = reactive<Record<string, number>>({})
 const hiring = ref<string | null>(null)
-const partyFull = computed(() => s.value.party.length >= combatRules.party_max)
+const partyFull = computed(() => partyRoom(s.value) < 1)
+// 被主人帶著：雇用改成向主人提議（主人出錢，入隊後是主人的隊員）
+const bound = computed(() => isBound(s.value))
+const proposedToday = (id: string) => s.value.flags[`propose_no:${id}`] === s.value.time.day
+function proposeDcOf(id: string): number | null {
+  try {
+    return proposeDc(s.value, { kind: 'hire', npc: id })
+  } catch {
+    return null
+  }
+}
+async function propose(id: string) {
+  await game.perform({ kind: 'propose', target: `hire:${id}`, text: text[id] ?? '' })
+  text[id] = ''
+  hiring.value = null
+}
 
 function candidateOf(id: string) {
   return candidates.value.find((c) => c.npc === id)
@@ -194,7 +210,7 @@ async function hire(id: string) {
                 <button class="small" :disabled="busy" title="魅力檢定：聊得好會拉近關係，也可能聽到消息" @click="interact('chat', p)"><GameIcon name="message" :size="13" />聊天</button>
                 <button class="small" :disabled="busy" title="在主動行動裡以這個人為對象，自由描述要做的事" @click="toAction(p)"><GameIcon name="d20" :size="13" />主動行動</button>
                 <button v-if="p.kind === 'adventurer' && !p.staff" class="small" :disabled="busy || partyFull" @click="startHire(p.rec.id)">
-                  <GameIcon name="hand" :size="13" />{{ hiring === p.rec.id ? '收起' : '雇用' }}
+                  <GameIcon name="hand" :size="13" />{{ hiring === p.rec.id ? '收起' : bound ? '向主人提議雇用' : '雇用' }}
                 </button>
                 <details class="more">
                   <summary class="small" title="獻媚、偷竊、偷襲" aria-label="更多互動"><GameIcon name="more" :size="16" /></summary>
@@ -214,7 +230,15 @@ async function hire(id: string) {
                 <span class="muted">{{ giftHint(p.rec) }}</span>
               </div>
 
-              <div v-if="hiring === p.rec.id && candidateOf(p.rec.id)" class="hire">
+              <div v-if="hiring === p.rec.id && candidateOf(p.rec.id) && bound" class="hire">
+                <span>要價 {{ formatMoney(askingFor(candidateOf(p.rec.id)!)) }}・主人出錢</span>
+                <span v-if="proposedToday(p.rec.id)" class="muted">主人今天不想再聽你提這個人</span>
+                <template v-else>
+                  <span class="muted">魅力檢定，參考 DC {{ proposeDcOf(p.rec.id) ?? '—' }}（上面的文字是你怎麼說服主人）</span>
+                  <button class="small primary" :disabled="busy" @click="propose(p.rec.id)">向主人提議（魅力檢定）</button>
+                </template>
+              </div>
+              <div v-else-if="hiring === p.rec.id && candidateOf(p.rec.id)" class="hire">
                 <span>要價 {{ formatMoney(askingFor(candidateOf(p.rec.id)!)) }}<template v-if="candidateOf(p.rec.id)!.counter_cc">（還價）</template></span>
                 <span v-if="candidateOf(p.rec.id)!.declined" class="muted">今天不想再談了</span>
                 <template v-else>
@@ -238,7 +262,7 @@ async function hire(id: string) {
       </ul>
     </FoldMenu>
     </div>
-    <p v-if="partyFull" class="small muted">隊伍已滿（{{ combatRules.party_max }} 人），不能再雇人。</p>
+    <p v-if="partyFull" class="small muted">隊伍已滿（{{ partyMax(s) }} 人），不能再雇人。</p>
   </section>
 </template>
 

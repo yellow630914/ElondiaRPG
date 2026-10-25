@@ -4,6 +4,7 @@
   "proficiency": { "base": 2, "every_levels": 4 },
   "xp_to_next_level_per_level": 100,
   "party_max": 4,
+  "party_max_following": 6,
 
   "hp": {
     "$comment": "最大生命值 = base + 等級 × max(min_per_level, per_level + mod(力量) + mod(信仰))",

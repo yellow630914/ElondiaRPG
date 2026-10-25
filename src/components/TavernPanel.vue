@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { apMaxFor, apRegenFor, attrsOf, mod } from '@/engine/character'
-import { askingFor, invitable, marketsHere, partyOffersHere, waitChance } from '@/engine/companions'
-import { abilityDef, attributeRules, className, combatRules, companionRules, conditionName, genderName, raceName } from '@/engine/data'
+import { askingFor, invitable, marketsHere, partyOffersHere, proposeDc, waitChance } from '@/engine/companions'
+import { abilityDef, attributeRules, className, companionRules, conditionName, genderName, raceName } from '@/engine/data'
 import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { characterFor, npcRecord } from '@/engine/npcs'
 import { perksOf } from '@/engine/perks'
-import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
+import { isBound, isNoncombatant, leaderOf, partyMax, partyRoom } from '@/engine/party'
 import { canNegotiate } from '@/engine/negotiation'
 import { discount, keeperTitle, shopKey } from '@/engine/trade'
 import type { Character, TavernCandidate } from '@/engine/types'
@@ -27,7 +27,8 @@ const game = useGame()
 const s = computed(() => game.state!)
 const candidates = ref<TavernCandidate[]>([])
 const bound = computed(() => isBound(s.value))
-const partyFull = computed(() => s.value.party.length >= combatRules.party_max)
+const partyFull = computed(() => partyRoom(s.value) < 1)
+const maxParty = computed(() => partyMax(s.value))
 
 function refresh() {
   candidates.value = game.tavernCandidates()
@@ -77,6 +78,21 @@ async function hire(c: TavernCandidate) {
   open.value = null
 }
 
+// 被主人帶著：不能自己雇人，改成向主人提議（主人出錢，見 companions.ts 的 proposeDc）
+const master = computed(() => (bound.value ? leaderOf(s.value) : undefined))
+function proposeDcOf(id: string): number | null {
+  try {
+    return proposeDc(s.value, { kind: 'hire', npc: id })
+  } catch {
+    return null
+  }
+}
+const proposedToday = (id: string) => s.value.flags[`propose_no:${id}`] === s.value.time.day
+async function propose(c: TavernCandidate) {
+  await game.perform({ kind: 'propose', target: `hire:${c.npc}`, text: approach[c.npc] ?? '' })
+  open.value = null
+}
+
 // ---- 用餐 ----
 const menu = computed(() => {
   void s.value.time.minute
@@ -111,9 +127,11 @@ const menuItems = computed<MenuItem[]>(() => {
   const items: MenuItem[] = [
     { id: 'meals', icon: 'mug', label: '用餐', detail: `今天的菜單 ${menu.value.filter((m) => !m.unavailable).length} 道（全隊一起吃）`, badge: bestMeal.value, tone: 'good' },
   ]
-  if (!bound.value) {
+  if (bound.value) {
+    items.push({ id: 'recruit', icon: 'users', label: '向主人提議雇人', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人）` : visible.value.length ? `請${master.value?.name ?? '主人'}出錢雇用今天城裡的冒險者（${visible.value.length} 位）` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' })
+  } else {
     items.push(
-      { id: 'recruit', icon: 'users', label: '招募冒險者', detail: partyFull.value ? `隊伍已滿（${combatRules.party_max} 人）` : visible.value.length ? `今天城裡有 ${visible.value.length} 位可以雇用` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' },
+      { id: 'recruit', icon: 'users', label: '招募冒險者', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人）` : visible.value.length ? `今天城裡有 ${visible.value.length} 位可以雇用` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' },
       { id: 'offers', icon: 'flag', label: leader.value ? '你所在的隊伍' : '加入別人的隊伍', detail: leader.value ? `正跟著${leader.value.name}的隊伍` : `等待組隊 ${companionRules.wait_party.hours} 小時・機率約 ${chance.value}%`, badge: leader.value ? '' : offersHere.value.length || '' },
     )
     if (inviteList.value.length) items.push({ id: 'invite', icon: 'feather', label: '邀請認識的人', detail: `${inviteList.value.length} 位認識的人可以邀請`, badge: inviteList.value.length })
@@ -142,7 +160,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
 </script>
 <template>
   <div class="tavern">
-    <p v-if="bound" class="small muted">身為奴隸，你只能在一旁看著主人和別人談話。</p>
+    <p v-if="bound" class="small muted">身為奴隸，你不能自己雇人或找隊伍；想多個隊友，可以向主人提議。</p>
     <p v-if="keeper" class="small muted keeper">{{ keeperTitle('tavern') }}：<NameTag :id="keeper.id" />・{{ keeper.personality }}</p>
     <BuildingMenu :items="menuItems" @pick="pick" />
 
@@ -209,10 +227,19 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
               </details>
               <div class="price-row">
                 <span><span class="label">要價</span> <b>{{ formatMoney(askingFor(c)) }}</b><span v-if="c.counter_cc" class="tag">還價</span></span>
-                <span v-if="c.declined" class="small muted">今天不想再談了</span>
+                <template v-if="bound">
+                  <span v-if="proposedToday(c.npc)" class="small muted">主人今天不想再聽你提這個人</span>
+                  <button v-else class="small primary" :disabled="partyFull" @click="toggle(c)">{{ open === c.npc ? '收起' : '向主人提議' }}</button>
+                </template>
+                <span v-else-if="c.declined" class="small muted">今天不想再談了</span>
                 <button v-else class="small primary" :disabled="partyFull" @click="toggle(c)">{{ open === c.npc ? '收起' : '談雇傭' }}</button>
               </div>
-              <div v-if="open === c.npc" class="nego small">
+              <div v-if="open === c.npc && bound" class="nego small">
+                <p class="muted">請{{ master?.name ?? '主人' }}出錢雇用，加入後是主人的隊員。魅力檢定，參考 DC {{ proposeDcOf(c.npc) ?? '—' }}（主人的親密度、要價相對主人的財力、主人的身分、契約的服從懲罰）。部分成功時主人要你出一半。</p>
+                <label><span>怎麼說服主人（選填） <Hint text="會交給 AI 判定。" /></span><input v-model="approach[c.npc]" placeholder="例如：說他能幫主人扛行李、打退攔路的人" /></label>
+                <button class="small primary" :disabled="game.judging" @click="propose(c)">向主人提議雇用（魅力檢定）</button>
+              </div>
+              <div v-else-if="open === c.npc" class="nego small">
                 <label>出價（{{ CURRENCY.short }}）<input v-model.number="offers[c.npc]" type="number" min="0" step="5" /></label>
                 <label><span>談判方式（選填） <Hint text="會交給 AI 判定。" /></span><input v-model="approach[c.npc]" placeholder="例如：答應分他一成戰利品、請他喝酒" /></label>
                 <button class="small primary" :disabled="(offers[c.npc] ?? 0) > s.money_cc || game.judging" @click="hire(c)">
@@ -222,7 +249,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
             </template>
           </article>
         </div>
-        <p v-if="partyFull" class="small muted">隊伍已滿（{{ combatRules.party_max }} 人）。</p>
+        <p v-if="partyFull" class="small muted">隊伍已滿（{{ maxParty }} 人）。</p>
       </template>
 
       <!-- 加入別人的隊伍 -->
