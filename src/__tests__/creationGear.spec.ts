@@ -76,6 +76,9 @@ describe('new game with chosen gear', () => {
 
   it('uses the default budget when none is given, and keeps the class start without a choice', () => {
     expect(() => game({ gear: { head: { base: 'helm', tier: 3 }, feet: { base: 'boots', tier: 1 } } })).toThrow('預算不夠')
-    expect(pcOf(game()).gear).toEqual(startingGear('fighter'))
+    // 職業的基本配備，再加上依體型預設的內衣、內褲
+    const gear = pcOf(game()).gear!
+    expect(gear).toMatchObject(startingGear('fighter'))
+    expect(Object.keys(gear).sort()).toEqual([...Object.keys(startingGear('fighter')), 'underwear_bottom', 'underwear_top'].sort())
   })
 })

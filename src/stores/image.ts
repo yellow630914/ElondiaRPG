@@ -4,7 +4,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import {
-  BUILTIN_PREPROCESSORS, DEFAULT_PORTRAIT_TEMPLATE, DEFAULT_STYLE, DEFAULT_TAG_INSTRUCTIONS, IMAGE_SERVICES, imageServiceInfo,
+  BUILTIN_PREPROCESSORS, DEFAULT_PORTRAIT_TEMPLATE, LEGACY_PORTRAIT_TEMPLATES, DEFAULT_STYLE, DEFAULT_TAG_INSTRUCTIONS, IMAGE_SERVICES, imageServiceInfo,
   type ImagePreprocessor, type ImageServiceConfig, type ImageServiceId,
 } from '@/narrator/imageInfo'
 import {
@@ -76,6 +76,8 @@ function load(): SavedImageSettings {
       ...base, ...saved,
       service: IMAGE_SERVICES.some((s) => s.id === saved.service) ? saved.service! : base.service,
       sceneAdultService: IMAGE_SERVICES.some((s) => s.id === saved.sceneAdultService) ? saved.sceneAdultService! : '',
+      // 沒改過的舊預設模板（構圖寫死 upper body）：換成新的預設
+      template: typeof saved.template === 'string' && !LEGACY_PORTRAIT_TEMPLATES.includes(saved.template) ? saved.template : base.template,
       configs,
       ...loadPreprocess(saved, base),
       ...presetsOf(loadPresets(saved, configs.comfyui)),

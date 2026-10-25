@@ -5,7 +5,7 @@ import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './charact
 import { pruneSpecialMaps } from './specialMaps'
 import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
-import { creationGear, gearRules, syncGear, type CreationGear } from './gear'
+import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, termsFromTemplate, type SlaveStart } from './slavery'
 import { backfillEventMemories, ensureRelationship, MEMORY_RULES_VERSION, recordMemory, setAffinity } from './social'
@@ -13,7 +13,7 @@ import { Rng } from './rng'
 import type { Character, ContractRef, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, MarkTerms, Report } from './types'
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
-import { genderId, lookAppearance, sanitizeLook } from './look'
+import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
 import { BODIES, bodyOf, type Body } from './traits'
 
 export const START_LOCATION = 'soriel'
@@ -72,6 +72,9 @@ export function newGame(opts: NewGameOptions): GameState {
   if (gender) pc.gender = gender
   if (appearance) pc.appearance = appearance
   if (body) pc.body = body
+  // 依性別（體型）預設穿上內衣、內褲；建角時自己挑了的欄位不動
+  wearDefaultUnderwear(pc, characterBody(pc))
+  syncGear(pc, classDef(opts.classId).weapon)
   if (background) pc.background = background
   // 特質：清單裡的照選，自訂的整理過才收
   // 缺陷最多兩個、每個換一個一般特質的名額（perks.json 的 creation），多的從後面拿掉

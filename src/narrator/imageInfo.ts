@@ -5,7 +5,7 @@ import { className, genderName, raceName } from '@/engine/data'
 import { gearName } from '@/engine/gear'
 import { npcRecord, npcTitle } from '@/engine/npcs'
 import { placeName, tattooDesc, tattooName, tattoosOf } from '@/engine/tattoos'
-import type { GameState } from '@/engine/types'
+import type { EquippedGear, GameState, GearSlot } from '@/engine/types'
 import type { Prompt } from './prompt'
 
 export type ImageServiceId = 'openai' | 'novelai' | 'comfyui'
@@ -118,6 +118,34 @@ export interface PortraitSubject {
   gear: string[]
   /** 刺青與印記：「部位：名稱（外觀）」 */
   tattoos: string[]
+  /** 構圖：刺青、腿部飾品、露出的內褲在下半身時拉遠（full body、cowboy shot），否則 upper body */
+  composition?: string
+}
+
+// 下半身的刺青部位與裝備欄位：形象圖要拉遠才畫得到
+const FULL_BODY_PLACES = new Set(['left_thigh', 'right_thigh', 'left_calf', 'right_calf'])
+const WAIST_PLACES = new Set(['hips', 'belly'])
+
+/** 依刺青與裝備決定構圖（見 PortraitSubject.composition） */
+export function portraitComposition(places: string[], slots: string[]): string {
+  if (places.some((p) => FULL_BODY_PLACES.has(p)) || slots.includes('leg_accessory')) return 'full body'
+  if (places.some((p) => WAIST_PLACES.has(p)) || slots.includes('underwear_bottom')) return 'cowboy shot'
+  return 'upper body'
+}
+
+/** 身上的裝備（名稱）：內衣、內褲被上身、下身的衣物蓋住時標「穿在裡面」；回傳露在外面的欄位 */
+function wornGear(gear: Partial<Record<GearSlot, EquippedGear>> | undefined): { names: string[]; visible: string[] } {
+  const names: string[] = []
+  const visible: string[] = []
+  const cover: Partial<Record<GearSlot, GearSlot>> = { underwear_top: 'body', underwear_bottom: 'legs' }
+  for (const [slot, g] of Object.entries(gear ?? {}) as [GearSlot, EquippedGear | undefined][]) {
+    if (!g?.name) continue
+    const over = cover[slot]
+    const hidden = !!over && !!gear?.[over]
+    names.push(hidden ? `${g.name}（穿在裡面）` : g.name)
+    if (!hidden) visible.push(slot)
+  }
+  return { names, visible }
 }
 
 /** 隊伍成員或登場過的 NPC 的形象資料 */
@@ -128,9 +156,10 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
   const gender = m?.gender ?? rec?.gender
   // 主角的性別是自由輸入的文字；NPC 是性別 id
   const genderText = !gender ? '' : m?.isPlayer ? gender : genderName(gender)
-  const gear = m ? Object.values(m.gear ?? {}).map((g) => g?.name).filter((n): n is string => !!n)
-    : Object.values(rec?.character?.gear ?? {}).map((g) => g?.name).filter((n): n is string => !!n)
+  const worn = wornGear(m ? m.gear : rec?.character?.gear)
+  const gear = worn.names
   const defGear = !gear.length && rec?.gear ? Object.values(rec.gear).filter((g) => !!g).map((g) => gearName(g!)) : []
+  const tattoos = tattoosOf(m ?? rec?.character)
   return {
     id,
     name: m?.name ?? rec!.name,
@@ -142,11 +171,12 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
     personality: m?.personality ?? rec?.personality ?? '',
     background: m?.background ?? rec?.background ?? '',
     gear: [...gear, ...defGear],
-    tattoos: tattoosOf(m ?? rec?.character).map((t) => {
+    tattoos: tattoos.map((t) => {
       const name = tattooName(t)
       const desc = tattooDesc(t).slice(0, 60)
       return `${placeName(t.place)}：${name || desc}${name && desc ? `（${desc}）` : ''}`
     }),
+    composition: portraitComposition(tattoos.map((t) => t.place), worn.visible),
   }
 }
 
@@ -159,9 +189,12 @@ export const DEFAULT_PORTRAIT_TEMPLATE = [
   'Tattoos and marks: {tattoos}',
   'Personality, shown through expression and pose: {personality}',
   'Background story hints: {background}',
-  'Composition: upper body, facing the viewer, simple softly lit fantasy background, only one person, no text, no watermark.',
+  'Composition: {composition}, facing the viewer, simple softly lit fantasy background, only one person, no text, no watermark.',
   'Art style: {style}',
 ].join('\n')
+
+/** 以前的預設模板（構圖寫死 upper body）：讀設定時換成新的預設 */
+export const LEGACY_PORTRAIT_TEMPLATES = [DEFAULT_PORTRAIT_TEMPLATE.replace('{composition}', 'upper body')]
 
 export const DEFAULT_STYLE = 'detailed anime-style fantasy illustration, painterly shading, soft lighting'
 
@@ -171,7 +204,10 @@ export function portraitPrompt(subject: PortraitSubject, template: string, style
     name: subject.name, gender: subject.gender, race: subject.race, role: subject.role,
     level: subject.level ? String(subject.level) : '', appearance: subject.appearance, personality: subject.personality,
     background: subject.background.slice(0, 200), gear: subject.gear.join('、'), tattoos: (subject.tattoos ?? []).join('；'), style,
+    composition: subject.composition ?? 'upper body',
   }
+  // 自訂的模板沒有 {composition}：寫死的 upper body 換成需要的構圖（下半身的刺青、腿部飾品才畫得到）
+  if (!template.includes('{composition}') && values.composition !== 'upper body') template = template.replace(/upper[ -]body/gi, values.composition!)
   return template
     .split('\n')
     // 只有空值的代號：整行拿掉；有內容的照填
@@ -208,6 +244,7 @@ export const DEFAULT_TAG_INSTRUCTIONS = [
   '3. 只用 Danbooru 上實際存在的標籤，空格不要換成底線；描述沒寫到的細節可以依角色設定合理補上，不要和描述衝突。',
   '4. 不要寫出角色名字或作品名稱。',
   '5. 大約 20～40 個標籤。',
+  '6. 刺青、印記與每件裝備都要保留成標籤並寫出部位（例如 butterfly tattoo, thigh tattoo）；構圖照描述的 Composition（upper body、cowboy shot、full body），讓這些部位畫得到。標成「穿在裡面」的內衣不要畫成露出來。',
 ].join('\n')
 
 /** 內建的預處理指示 */
@@ -223,6 +260,7 @@ export const BUILTIN_PREPROCESSORS: ImagePreprocessor[] = [
       '3. 用具體的視覺詞彙；描述沒寫到的細節可以依角色設定合理補上，不要和描述衝突。',
       '4. 不要寫出角色名字或作品名稱。',
       '5. 大約 60～120 個英文單字。',
+      '6. 刺青、印記與每件裝備都要寫進去並寫出部位；構圖照描述的 Composition，讓這些部位畫得到。標成「穿在裡面」的內衣不要寫成露出來。',
     ].join('\n'),
   },
   {
@@ -233,6 +271,7 @@ export const BUILTIN_PREPROCESSORS: ImagePreprocessor[] = [
       '1. 只輸出一個 JSON 物件，不要任何說明或程式碼框。',
       '2. 欄位（值都用英文）：{"subject": "人物與性別", "appearance": "髮型、髮色、眼睛、體型、種族特徵", "outfit": "服裝與裝備", "expression": "表情", "pose": "姿勢", "composition": "構圖", "background": "背景", "style": "畫風", "quality": "畫質詞"}。',
       '3. 描述沒寫到的細節可以依角色設定合理補上，不要和描述衝突；不要寫出角色名字或作品名稱。',
+      '4. 刺青、印記與每件裝備都要寫進 outfit 或 appearance 並寫出部位；composition 照描述的 Composition。',
     ].join('\n'),
   },
 ]

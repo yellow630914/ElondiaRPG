@@ -54,7 +54,7 @@
 | `perks` | id 陣列 | `data/rules/perks.json` 裡沒有 `race` 的特質（缺陷 `flaw_` 也可以），或自建的特質 | 不寫＝依 id 固定地抽；`[]`＝沒有特質。種族特質與不存在的拿掉 |
 | `gear` | 物件 | `{ "<欄位>": <裝備規格> }` | 指定的欄位用這件，沒寫的欄位空著（見下表） |
 
-**裝備的欄位**：`main_hand` 主手、`off_hand` 副手、`head`、`body`、`legs`、`wrists`、`feet`、`belt`、`accessory` 首飾、`ring_1`、`ring_2`、`piercing_1`、`piercing_2`、`leg_accessory`。
+**裝備的欄位**：`main_hand` 主手、`off_hand` 副手、`head`、`body`、`legs`、`wrists`、`feet`、`belt`、`accessory` 首飾、`ring_1`、`ring_2`、`piercing_1`、`piercing_2`、`leg_accessory`、`underwear_top` 內衣、`underwear_bottom` 內褲（沒寫內衣、內褲時依性別穿上預設的）。
 
 **裝備規格**（`data/rules/gear.json`；裝備的組成見 [ITEMS](../../docs/ITEMS.md)）：
 

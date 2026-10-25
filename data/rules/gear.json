@@ -1,15 +1,23 @@
 {
-  "$comment": "裝備模板。角色（主角、夥伴、敵對冒險者，所有種族共用）有 14 個欄位（穿孔飾品兩格：耳環、臍環；腿部飾品一格：腳鍊、腿環）。一件裝備 = 底材（base：決定欄位、武器或防具類型、固定數值、隨材料成長的數值）＋ 材料（material：等級 tier、成長值 bonus、稀有度、價格倍率、建議等級）＋ 附魔（enchants，只有打造、事件或特殊物品才有）。數值依 scale 由材料的 bonus 推算：full = bonus、half = floor(bonus/2)、up = ceil(bonus/2)、third = floor(bonus/3)、res = -0.15 × bonus（抗性）。商店與敵人掉落的『制式裝備』是 base × material 的組合（scripts 產生到 items.json）。附魔點數依稀有度（enchant_points）：命中、傷害、迴避、減傷、豁免、幸運一擊每 +1 = 1 點，行動點回復 +1 = 2 點，抗性或屬性攻擊加成每 0.25 = 1 點，仇恨每 ±0.1 = 1 點。",
+  "$comment": "裝備模板。角色（主角、夥伴、敵對冒險者，所有種族共用）有 16 個欄位（穿孔飾品兩格：耳環、臍環；腿部飾品一格：腳鍊、腿環；內衣與內褲各一格，數值和飾品同一個模板，依性別預設穿上，見 underwear_defaults）。一件裝備 = 底材（base：決定欄位、武器或防具類型、固定數值、隨材料成長的數值）＋ 材料（material：等級 tier、成長值 bonus、稀有度、價格倍率、建議等級）＋ 附魔（enchants，只有打造、事件或特殊物品才有）。數值依 scale 由材料的 bonus 推算：full = bonus、half = floor(bonus/2)、up = ceil(bonus/2)、third = floor(bonus/3)、res = -0.15 × bonus（抗性）。商店與敵人掉落的『制式裝備』是 base × material 的組合（scripts 產生到 items.json）。附魔點數依稀有度（enchant_points）：命中、傷害、迴避、減傷、豁免、幸運一擊每 +1 = 1 點，行動點回復 +1 = 2 點，抗性或屬性攻擊加成每 0.25 = 1 點，仇恨每 ±0.1 = 1 點。",
   "version": 1,
 
   "slots": {
     "main_hand": "主手", "off_hand": "副手", "head": "頭部", "body": "上身", "legs": "下身",
     "wrists": "手腕", "feet": "鞋子", "belt": "腰帶", "accessory": "首飾", "ring_1": "戒指", "ring_2": "戒指",
-    "piercing_1": "穿孔飾品", "piercing_2": "穿孔飾品", "leg_accessory": "腿部飾品"
+    "piercing_1": "穿孔飾品", "piercing_2": "穿孔飾品", "leg_accessory": "腿部飾品",
+    "underwear_top": "內衣／內襯", "underwear_bottom": "內褲"
+  },
+  "underwear_defaults": {
+    "$comment": "建角與 NPC 生成時依體型預設穿上的內衣、內褲（第一級材料：亞麻，沒有加成）；那個欄位已經有東西或被種族封住時不穿。",
+    "masc": { "underwear_top": "undershirt", "underwear_bottom": "loincloth" },
+    "fem": { "underwear_top": "breast_band", "underwear_bottom": "panties" },
+    "andro": { "underwear_top": "undershirt", "underwear_bottom": "briefs" }
   },
   "slot_groups": { "ring": ["ring_1", "ring_2"], "piercing": ["piercing_1", "piercing_2"] },
 
   "$comment_restraint": "底材的 restraint：束縛用的底材（主人強制裝備的項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減。",
+  "$comment_underwear": "內衣、內褲：布料，數值和飾品同一個模板（材料加成的三分之一）。基本款（汗衫、裹胸、兜襠布、貼身短褲、綁帶內褲）便宜、用 third（第一、二級材料沒有加成）；講究的（束腰馬甲、蕾絲胸衣、蕾絲內褲、絲帶吊襪內褲）用 third_up。",
   "attrs": {
     "$comment": "裝備的屬性加減（GearSpec.attrs）：只有內容資料裡的裝備會有（編輯器設定、事件給的、主人強制裝備的），不能打造、不在商店上架。每項 ±max_change；身上所有裝備給的同一項屬性合計最多 ±cap。",
     "max_change": 3,
@@ -63,6 +71,9 @@
     "shackles": { "slot": "leg_accessory", "name": "腳鐐", "kind": "metal", "price": 30, "restraint": true, "desc": "鎖在腳踝上的金屬環。" },
     "spiked_collar": { "slot": "accessory", "name": "刺釘項圈", "kind": "leather", "price": 20, "restraint": true, "desc": "釘著短刺的粗皮項圈。" },
     "choker": { "slot": "accessory", "name": "頸環", "kind": "cloth", "price": 20, "restraint": true, "desc": "貼著脖子的布製頸環。" },
+    "chastity_belt": { "slot": "underwear_bottom", "name": "貞操帶", "kind": "metal", "price": 60, "restraint": true, "desc": "鎖在腰間的金屬護襠，鑰匙在主人身上。" },
+    "leather_harness": { "slot": "underwear_top", "name": "皮革束帶", "kind": "leather", "price": 30, "restraint": true, "desc": "在胸前交叉勒緊的皮帶，穿在衣服底下。" },
+    "silk_binding": { "slot": "underwear_top", "name": "束胸綢", "kind": "cloth", "price": 20, "restraint": true, "desc": "一圈圈緊緊纏住胸口的綢帶，結打在背後，自己解不開。" },
     "dagger":       { "slot": "main_hand", "name": "匕首", "kind": "metal", "weapon": "dagger", "price": 160, "scale": { "damage": "full", "hit": "half" } },
     "shortsword":   { "slot": "main_hand", "name": "短劍", "kind": "metal", "weapon": "shortsword", "price": 180, "scale": { "damage": "full", "hit": "half" } },
     "scimitar":     { "slot": "main_hand", "name": "彎刀", "kind": "metal", "weapon": "scimitar", "price": 200, "scale": { "damage": "full", "hit": "half" } },
@@ -125,7 +136,17 @@
     "anklet_wind":  { "slot": "leg_accessory", "name": "疾風腳鍊", "kind": "jewel", "price": 160, "scale": { "evade": "third_up" }, "desc": "繫在腳踝上的細鍊，走起路來輕得像風。" },
     "anklet_bell":  { "slot": "leg_accessory", "name": "鈴音腳鍊", "kind": "jewel", "price": 100, "scale": { "save": "third_up" }, "desc": "綴著小鈴的腳鍊，鈴聲能讓人保持清醒。" },
     "thigh_band":   { "slot": "leg_accessory", "name": "鐵縛腿環", "kind": "jewel", "price": 140, "scale": { "dr": "third_up" }, "desc": "緊束在大腿上的硬環，護住要害。" },
-    "thigh_sheath": { "slot": "leg_accessory", "name": "藏刃腿環", "kind": "jewel", "price": 150, "scale": { "damage": "third_up" }, "desc": "大腿上的皮環，內側藏著一把小刀。" }
+    "thigh_sheath": { "slot": "leg_accessory", "name": "藏刃腿環", "kind": "jewel", "price": 150, "scale": { "damage": "third_up" }, "desc": "大腿上的皮環，內側藏著一把小刀。" },
+
+    "undershirt":   { "slot": "underwear_top", "name": "汗衫", "kind": "cloth", "price": 8, "scale": { "dr": "third" }, "desc": "貼身的短袖內衫，吸汗，穿在盔甲底下不會磨傷。" },
+    "breast_band":  { "slot": "underwear_top", "name": "裹胸", "kind": "cloth", "price": 8, "scale": { "save": "third" }, "desc": "一圈纏在胸口的軟布，活動時不晃。" },
+    "bodice":       { "slot": "underwear_top", "name": "束腰馬甲", "kind": "cloth", "price": 120, "scale": { "evade": "third_up" }, "desc": "以鯨骨撐出線條的束腰，穿上之後站姿自然挺拔。" },
+    "lace_bra":     { "slot": "underwear_top", "name": "蕾絲胸衣", "kind": "cloth", "price": 100, "scale": { "crit": "third_up" }, "desc": "綴著細蕾絲的胸衣，做工精緻，貴族小姐們的最愛。" },
+    "loincloth":    { "slot": "underwear_bottom", "name": "兜襠布", "kind": "cloth", "price": 6, "scale": { "damage": "third" }, "desc": "一條長布纏成的襠布，戰士們穿慣了的老樣式。" },
+    "briefs":       { "slot": "underwear_bottom", "name": "貼身短褲", "kind": "cloth", "price": 8, "scale": { "evade": "third" }, "desc": "合身的短褲，跑跳時不會卡住。" },
+    "panties":      { "slot": "underwear_bottom", "name": "綁帶內褲", "kind": "cloth", "price": 8, "scale": { "save": "third" }, "desc": "兩側用細帶繫住的內褲，鬆緊自己調。" },
+    "lace_panties": { "slot": "underwear_bottom", "name": "蕾絲內褲", "kind": "cloth", "price": 100, "scale": { "hit": "third_up" }, "desc": "半透的蕾絲內褲，邊緣繡著小小的花。" },
+    "garter_briefs":{ "slot": "underwear_bottom", "name": "吊襪內褲", "kind": "cloth", "price": 140, "scale": { "ap_regen": "third" }, "desc": "腰間垂下絲帶吊住長襪的內褲，好材料做的穿著輕盈得讓人精神一振。" }
   },
 
   "classes": {
@@ -144,7 +165,7 @@
   },
 
   "races": {
-    "$comment": "種族的裝備模板：目前所有種族都使用同一套 11 個欄位；blocked 可以封住某些欄位（例如將來加入無法穿鞋的種族）。",
+    "$comment": "種族的裝備模板：目前所有種族都使用同一套 16 個欄位；blocked 可以封住某些欄位（例如將來加入無法穿鞋的種族）。",
     "human": { "blocked": [] }, "elf": { "blocked": [] }, "dwarf": { "blocked": [] },
     "demon": { "blocked": [] }, "catfolk": { "blocked": [] }, "yulin": { "blocked": [] }
   },
@@ -155,7 +176,7 @@
     "attr": "int",
     "fee": [1, 2, 3, 4, 5],
     "dc": [10, 12, 14, 16, 18],
-    "units": { "main_hand": 2, "two_handed": 3, "off_hand": 2, "head": 1, "body": 3, "legs": 2, "wrists": 1, "feet": 1, "belt": 1, "accessory": 1, "ring": 1, "piercing": 1, "leg_accessory": 1 },
+    "units": { "main_hand": 2, "two_handed": 3, "off_hand": 2, "head": 1, "body": 3, "legs": 2, "wrists": 1, "feet": 1, "belt": 1, "accessory": 1, "ring": 1, "piercing": 1, "leg_accessory": 1, "underwear_top": 1, "underwear_bottom": 1 },
     "lost_on_fail": 0.5,
     "aux": {
       "$comment": "輔料：任何材料都可以加進去（最多 max_kinds 種、每種 max_qty 個），不論結果都會用掉。輔料的總價值 ÷（底價 × 材料倍率）× chance_per_value 是成品稀有度再高一級的機率（上限 max_chance；部分成功時改成照成功做）。名稱或描述裡的字決定附魔的屬性方向（elements）。",
@@ -182,10 +203,10 @@
   "chests": {
     "$comment": "地下城的寶箱（每層的數量見 maps.json 的 generation.dungeon.layers[].chests）。level 為這一層怪物的最高等級；money 為 [最少, 最多] × level；gear 為裝一件裝備的機率（deep 的 gear_extra 為第二件的機率）；items 為 [物品, 機率]；forge 為 [材料等級, 機率]，依底材隨機挑一種類型。",
     "outskirts": { "money": [5, 20], "gear": 0.4, "items": [["走私客的腳鍊", 0.02], ["老獵人的護身符", 0.02], ["微弱治療藥劑", 0.5], ["解毒劑", 0.3], ["火焰瓶", 0.2], ["懸賞告示", 0.15]], "forge": [[2, 0.15]] },
-    "shallow": { "money": [8, 30], "gear": 0.6, "items": [["礦工的幸運腰帶", 0.025], ["說書人的銀耳環", 0.025], ["盜賊公會的舊手套", 0.025], ["微弱治療藥劑", 0.5], ["微弱法力恢復藥劑", 0.3], ["解毒劑", 0.3], ["火焰瓶", 0.25], ["護盾藥劑", 0.2], ["褪色的密信", 0.12], ["商隊的行程表", 0.1]], "forge": [[2, 0.3]] },
-    "middle": { "money": [10, 40], "gear": 0.75, "items": [["老兵的腿環", 0.03], ["商隊領隊的戒指", 0.03], ["鍊金師的皮帽", 0.03], ["修女的念珠", 0.03], ["治療藥劑", 0.4], ["法力恢復藥劑", 0.25], ["巨力藥劑", 0.2], ["鐵膚藥劑", 0.2], ["冰霜瓶", 0.2], ["萬用解藥", 0.2], ["古墓拓本", 0.12], ["褪色的密信", 0.1]], "forge": [[2, 0.3], [3, 0.15]] },
-    "deep": { "money": [15, 60], "gear": 0.9, "gear_extra": 0.35, "items": [["舞孃的臍環", 0.035], ["決鬥者的耳墜", 0.035], ["夜行者的軟靴", 0.035], ["治療藥劑", 0.5], ["高等治療藥劑", 0.15], ["復甦藥劑", 0.15], ["活力藥劑", 0.2], ["雷光彈", 0.2], ["抗火藥劑", 0.15], ["古墓拓本", 0.15]], "forge": [[3, 0.3], [4, 0.06]] },
-    "abyss": { "money": [20, 80], "gear": 1, "gear_extra": 0.5, "items": [["舞孃的臍環", 0.05], ["決鬥者的耳墜", 0.05], ["夜行者的軟靴", 0.05], ["高等治療藥劑", 0.4], ["復甦藥劑", 0.25], ["活力藥劑", 0.25], ["雷光彈", 0.25], ["抗火藥劑", 0.2], ["古墓拓本", 0.2]], "forge": [[4, 0.25], [5, 0.04]] }
+    "shallow": { "money": [8, 30], "gear": 0.6, "items": [["礦工的幸運腰帶", 0.025], ["說書人的銀耳環", 0.025], ["盜賊公會的舊手套", 0.025], ["酒館女侍的綁帶內褲", 0.025], ["吟遊詩人的絲綢汗衫", 0.025], ["微弱治療藥劑", 0.5], ["微弱法力恢復藥劑", 0.3], ["解毒劑", 0.3], ["火焰瓶", 0.25], ["護盾藥劑", 0.2], ["褪色的密信", 0.12], ["商隊的行程表", 0.1]], "forge": [[2, 0.3]] },
+    "middle": { "money": [10, 40], "gear": 0.75, "items": [["老兵的腿環", 0.03], ["商隊領隊的戒指", 0.03], ["鍊金師的皮帽", 0.03], ["修女的念珠", 0.03], ["宮廷舞會的蕾絲胸衣", 0.03], ["說客的貼身短褲", 0.03], ["商人妻的裹胸", 0.03], ["寵奴的絲綢胸衣", 0.03], ["吊帶舞孃的吊襪內褲", 0.03], ["治療藥劑", 0.4], ["法力恢復藥劑", 0.25], ["巨力藥劑", 0.2], ["鐵膚藥劑", 0.2], ["冰霜瓶", 0.2], ["萬用解藥", 0.2], ["古墓拓本", 0.12], ["褪色的密信", 0.1]], "forge": [[2, 0.3], [3, 0.15]] },
+    "deep": { "money": [15, 60], "gear": 0.9, "gear_extra": 0.35, "items": [["舞孃的臍環", 0.035], ["交際花的束腰馬甲", 0.035], ["決鬥者的耳墜", 0.035], ["夜行者的軟靴", 0.035], ["治療藥劑", 0.5], ["高等治療藥劑", 0.15], ["復甦藥劑", 0.15], ["活力藥劑", 0.2], ["雷光彈", 0.2], ["抗火藥劑", 0.15], ["古墓拓本", 0.15]], "forge": [[3, 0.3], [4, 0.06]] },
+    "abyss": { "money": [20, 80], "gear": 1, "gear_extra": 0.5, "items": [["舞孃的臍環", 0.05], ["交際花的束腰馬甲", 0.05], ["魅魔絲的蕾絲內褲", 0.05], ["決鬥者的耳墜", 0.05], ["夜行者的軟靴", 0.05], ["高等治療藥劑", 0.4], ["復甦藥劑", 0.25], ["活力藥劑", 0.25], ["雷光彈", 0.25], ["抗火藥劑", 0.2], ["古墓拓本", 0.2]], "forge": [[4, 0.25], [5, 0.04]] }
   },
   "loadout": {
     "$comment": "夥伴與敵對冒險者依等級即時生成的裝備：每個欄位從建議等級不超過角色等級的材料中挑（最高的一級機率 top、低一級 below、再低 lower），傳說材料另外乘上 legendary；頭、腿、手腕、腳、腰帶各有 pieces_base + pieces_per_level × 等級 的機率穿戴，首飾與兩枚戒指各有 jewelry_base + jewelry_per_level × 等級。",

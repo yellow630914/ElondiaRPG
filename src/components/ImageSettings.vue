@@ -146,7 +146,7 @@ function resetService() {
       <div class="row"><button class="small" :disabled="image.style === DEFAULT_STYLE" @click="image.style = DEFAULT_STYLE">畫風恢復預設</button></div>
       <details>
         <summary class="small">形象插圖的提示詞模板</summary>
-        <p class="small muted">代號：{name} {gender} {race} {role} {level} {appearance} {personality} {background} {gear} {tattoos} {style}。代號的值是空的那一行會整行拿掉。</p>
+        <p class="small muted">代號：{name} {gender} {race} {role} {level} {appearance} {personality} {background} {gear} {tattoos} {composition} {style}。{composition} 依刺青與裝備的部位自動選 upper body、cowboy shot 或 full body；模板沒有這個代號時，寫死的 upper body 也會跟著換。代號的值是空的那一行會整行拿掉。</p>
         <textarea v-model="image.template" rows="9" class="mono" spellcheck="false" />
         <div class="row"><button class="small" :disabled="image.template === DEFAULT_PORTRAIT_TEMPLATE" @click="image.template = DEFAULT_PORTRAIT_TEMPLATE">恢復預設</button></div>
       </details>

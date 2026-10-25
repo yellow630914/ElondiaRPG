@@ -6,7 +6,8 @@ import {
   abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
 } from './data'
-import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGear } from './gear'
+import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGear, wearDefaultUnderwear } from './gear'
+import { bodyOf } from './traits'
 import { tattoosOf, tattooSummary } from './tattoos'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
@@ -281,6 +282,8 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
       if (spec && gearRules.bases[spec.base] && gearRules.materials[spec.material]) c.gear[slot as keyof typeof c.gear] = { name: gearName(spec), spec: { ...spec } }
     }
   }
+  // 依性別預設穿上內衣、內褲（固定 NPC 指定了的欄位不動）
+  wearDefaultUnderwear(c, bodyOf(def.race, def.gender))
   if (def.appearance) c.appearance = def.appearance
   if (def.background) c.background = def.background
   // 特質：資料裡指定的，沒有時依 id 固定地抽

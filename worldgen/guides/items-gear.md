@@ -237,7 +237,7 @@
 | 欄位 | 型別 | 範圍 | 說明 |
 |---|---|---|---|
 | `custom` | 布林 | 新的一律 `true` | |
-| `slot` | 字串 | `main_hand` 主手、`off_hand` 副手、`head`、`body` 上身、`legs`、`wrists`、`feet`、`belt`、`accessory` 首飾、`leg_accessory` 腿部飾品、`ring` 戒指（兩格）、`piercing` 穿孔飾品（兩格） | 其他值（包括 `ring_1`、`piercing_2`）變 `main_hand` |
+| `slot` | 字串 | `main_hand` 主手、`off_hand` 副手、`head`、`body` 上身、`legs`、`wrists`、`feet`、`belt`、`accessory` 首飾、`leg_accessory` 腿部飾品、`underwear_top` 內衣／內襯、`underwear_bottom` 內褲、`ring` 戒指（兩格）、`piercing` 穿孔飾品（兩格） | 其他值（包括 `ring_1`、`piercing_2`）變 `main_hand` |
 | `name` | 字串 | 最多 **12** 字 | 制式裝備名稱的後半 |
 | `kind` | 字串 | 2.9 節的五種 | 用哪一類材料。其他值變 `metal` |
 | `price` | 整數 | 1～10000000，預設 100 | 底價（乘材料倍率）。內建：主手 30～450、上身 60～6000、飾品 80～260 |

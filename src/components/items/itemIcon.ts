@@ -59,6 +59,8 @@ const SLOT_ART: Record<BaseSlot, Partial<Record<MaterialKind, IconRef>> & { any:
   ring: { any: { art: 'ring' } }, ring_1: { any: { art: 'ring' } }, ring_2: { any: { art: 'ring' } },
   piercing: { any: { art: 'earring' } }, piercing_1: { any: { art: 'earring' } }, piercing_2: { any: { art: 'earring' } },
   leg_accessory: { any: { art: 'anklet' } },
+  underwear_top: { any: { art: 'camisole' }, metal: { art: 'camisole' }, leather: { art: 'camisole' } },
+  underwear_bottom: { any: { art: 'briefs' }, metal: { art: 'briefs' } },
 }
 
 /** 武器的圖：內建的武器類型有自己的圖；自建底材複製來的武器（登錄成 w_<底材>）找骰子與傷害類型相同的內建武器 */

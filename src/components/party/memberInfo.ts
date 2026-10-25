@@ -26,6 +26,7 @@ export const TYPE_NAME = { skill: '技能', spell: '法術', cantrip: '戲法' }
 export const SLOT_ICON: Record<GearSlot, IconName> = {
   main_hand: 'sword', off_hand: 'shield', head: 'crown', body: 'shirt', legs: 'shirt', wrists: 'hand', feet: 'arrowDown',
   belt: 'minus', accessory: 'gem', ring_1: 'target', ring_2: 'target', piercing_1: 'sparkles', piercing_2: 'sparkles', leg_accessory: 'sparkles',
+  underwear_top: 'shirt', underwear_bottom: 'shirt',
 }
 
 export const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)

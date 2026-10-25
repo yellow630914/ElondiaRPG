@@ -1,4 +1,4 @@
-// 裝備：14 個欄位、底材 × 材料、稀有度與附魔（data/rules/gear.json）。
+// 裝備：16 個欄位、底材 × 材料、稀有度與附魔（data/rules/gear.json）。
 //
 // - 一件裝備的數值由組成（GearSpec）推算：底材決定欄位、武器或防具類型與固定數值，材料的 bonus 依 scale 成長，
 //   附魔在稀有度的點數內加減。制式裝備（items.json）、打造與事件生成的裝備（customItems）都用同一套公式。
@@ -72,6 +72,8 @@ export const gearRules = gearJson as unknown as {
   bases: Record<string, BaseDef>
   classes: Record<string, ClassGearTemplate>
   races: Record<string, { blocked: GearSlot[] }>
+  /** 依體型預設穿上的內衣、內褲（底材 id） */
+  underwear_defaults: Record<'masc' | 'fem' | 'andro', Partial<Record<GearSlot, string>>>
   drops: {
     adventurer: { chance: number; max: number }
     armed: { chance: number; per_level: number; max_chance: number }
@@ -295,6 +297,23 @@ function piece(base: string, tier: number): EquippedGear {
   return { name: gearName(spec), spec }
 }
 
+/** 內衣、內褲的欄位 */
+export const UNDERWEAR_SLOTS: GearSlot[] = ['underwear_top', 'underwear_bottom']
+
+/**
+ * 依體型穿上預設的內衣、內褲（第一級材料，gear.json 的 underwear_defaults）：建角與 NPC 生成時用。
+ * 那個欄位已經有東西、或被種族封住時不穿；不用亂數，不影響其他裝備的生成
+ */
+export function wearDefaultUnderwear(c: Pick<Character, 'gear' | 'race'>, body: 'masc' | 'fem' | 'andro') {
+  const blocked = gearRules.races[c.race]?.blocked ?? []
+  const defaults = gearRules.underwear_defaults?.[body] ?? {}
+  for (const slot of UNDERWEAR_SLOTS) {
+    const base = defaults[slot]
+    if (!base || !gearRules.bases[base] || blocked.includes(slot) || c.gear?.[slot]) continue
+    ;(c.gear ??= {})[slot] = piece(base, 1)
+  }
+}
+
 /** 開局的基本配備（第一級材料） */
 export function startingGear(classId: string): Partial<Record<GearSlot, EquippedGear>> {
   const t = gearRules.classes[classId]
@@ -404,6 +423,7 @@ export const SLOT_CATEGORY: Record<GearSlot, 'weapon' | 'armor' | 'accessory'> =
   main_hand: 'weapon', off_hand: 'weapon',
   head: 'armor', body: 'armor', legs: 'armor', wrists: 'armor', feet: 'armor', belt: 'armor',
   accessory: 'accessory', ring_1: 'accessory', ring_2: 'accessory', piercing_1: 'accessory', piercing_2: 'accessory', leg_accessory: 'accessory',
+  underwear_top: 'accessory', underwear_bottom: 'accessory',
 }
 
 /** 建角時每個欄位可以選的所有裝備（底材 × 第 1～max_tier 級材料），預算都算好了 */
