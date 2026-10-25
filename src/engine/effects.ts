@@ -21,7 +21,8 @@ import { withRng } from './state'
 import { gearKnown, registerGear } from './gear'
 import type { GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
-import { inActiveSquad, squadIds } from './squads'
+import { inActiveSquad } from './squads'
+import { joinGroup, queueJoin } from './away'
 import { startStory, storyDef } from './story'
 import { contractKind, randomMaster } from './slavery'
 import { forceEquip } from './forcedGear'
@@ -195,27 +196,23 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           notes.push(`（${rec.name}被制伏了，要先在戰後處置決定怎麼對待）`)
           break
         }
-        if (partyRoom(state) < 1) {
-          ensureRelationship(state, rec)
-          notes.push(`${rec.name}想加入，但隊伍已滿`)
-          break
-        }
         if (e.mode === 'slave' && contractOf(pcOf(state))) {
           notes.push(`身為奴隸，無法擁有奴隸`)
           break
         }
-        // 小隊的人自願或受雇入隊：整隊一起來（放不下的隊員留在原地）
-        const sq = e.mode === 'voluntary' || e.mode === 'hired' ? inActiveSquad(state, rec.id) : undefined
-        const mates = sq ? squadIds(sq).filter((id) => id !== rec.id && !state.party.some((m) => m.id === id)).map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r && !r.dead) : []
-        const joined = joinParty(state, rec, e.mode, report, { ...(e.contract ? { contract: e.contract } : {}), reason: '事件' })
-        const came = [rec.name]
-        if (sq) joined.squad = sq.leader
-        for (const r of mates) {
-          if (partyRoom(state) < 1) break
-          joinParty(state, r, e.mode, report, { reason: `跟著${rec.name}入隊` }).squad = sq!.leader
-          came.push(r.name)
+        // 小隊的人自願或受雇入隊：整隊一起來。隊伍放不下時等主角決定（騰出位子或放棄），不會只進來一部分
+        const { people, squad } = joinGroup(state, rec, e.mode)
+        if (partyRoom(state) < people.length) {
+          ensureRelationship(state, rec)
+          queueJoin(state, { kind: 'join', npcs: people.map((r) => r.id), mode: e.mode, ...(e.contract ? { contract: e.contract } : {}), ...(squad ? { squad } : {}), ...(report.outcome.summary ? { source: report.outcome.summary } : {}) })
+          notes.push(`${people.map((r) => r.name).join('、')}想加入，但隊伍放不下：騰出位子或放棄`)
+          break
         }
-        notes.push(`${came.join('、')}加入了隊伍`)
+        const [first, ...mates] = people
+        const joined = joinParty(state, first!, e.mode, report, { ...(e.contract ? { contract: e.contract } : {}), reason: '事件' })
+        if (squad) joined.squad = squad
+        for (const r of mates) joinParty(state, r, e.mode, report, { reason: `跟著${rec.name}入隊` }).squad = squad!
+        notes.push(`${people.map((r) => r.name).join('、')}加入了隊伍`)
         break
       }
       case 'join_party': {
@@ -235,7 +232,8 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           ? sq.members.map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r && !r.dead && !state.party.some((m) => m.id === r.id))
           : (e.members ?? []).map((m) => resolveNpc(state, m))
         if (followRoom(state) < 1 + members.length) {
-          notes.push(`${leader.name}的隊伍沒有空位`)
+          queueJoin(state, { kind: 'follow', npcs: [leader.id, ...members.map((m) => m.id)], ...(e.pay_cc ? { pay_cc: Math.round(e.pay_cc) } : {}), ...(report.outcome.summary ? { source: report.outcome.summary } : {}) })
+          notes.push(`${leader.name}的隊伍帶不下你們這麼多人：騰出位子或放棄`)
           break
         }
         joinParty(state, leader, 'leader', report, { group: leader.id })

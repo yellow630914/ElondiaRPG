@@ -1,5 +1,5 @@
 // 需要玩家回應的事件，用同一個格式排成佇列，在事件視窗（EventCenter.vue）裡一件一件處理：
-// - 擋住行動的（戰敗後的處境、對峙、刻印、主人的要求、旅途事件、特殊任務的任務點、城鎮事件）：不處理就不能移動、休息；排在前面
+// - 擋住行動的（戰敗後的處境、對峙、刻印、主人的要求、旅途事件、特殊任務的任務點、隊伍滿了的入隊、城鎮事件）：不處理就不能移動、休息；排在前面
 // - 可以晚點處理的（AI 提議的關係變化、升級、取得特質的機會）：可以按「稍後」
 // 有新的事件時事件視窗自動打開；關掉之後畫面上方顯示「🔔 N 件待處理」。
 
@@ -10,7 +10,7 @@ import { pendingTownEvent } from '@/engine/townEvents'
 import type { GameState } from '@/engine/types'
 import { contractOf } from '@/engine/tattoos'
 
-export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'story' | 'suggestion' | 'levelup' | 'perk'
+export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'story' | 'join' | 'suggestion' | 'levelup' | 'perk'
 
 export interface GameEvent {
   /** 同一件事一直是同一個 id（用來判斷是不是新的事件、記住「稍後」） */
@@ -54,6 +54,11 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     // 走到特殊任務的任務點：處理、稍候（不緊急的）或放棄（緊急的）
     const story = blockingNode(state)
     if (story) out.push({ id: `story:${story.ref}`, kind: 'story', icon: '⭐', title: `${story.def.title}：${story.node.title}`, blocking: true, ref: story.ref })
+    // 事件或 AI 讓人入隊時隊伍滿了：騰出位子或放棄
+    for (const j of state.pendingJoins ?? []) {
+      const name = state.npcs?.[j.npcs[0]!]?.name ?? state.relationships?.[j.npcs[0]!]?.name ?? '有人'
+      out.push({ id: `join:${j.id}`, kind: 'join', icon: '🤝', title: j.kind === 'follow' ? `${name}邀請你同行` : `${name}${j.npcs.length > 1 ? `等 ${j.npcs.length} 人` : ''}想加入隊伍`, blocking: true, ref: j.id })
+    }
     if (state.townEvent) out.push({ id: `town:${state.townEvent.template}:${state.townEvents?.last ?? 0}`, kind: 'town', icon: '🏘️', title: pendingTownEvent(state)?.title ?? '城裡的事', blocking: true })
   }
   for (const s of state.suggestions ?? []) {

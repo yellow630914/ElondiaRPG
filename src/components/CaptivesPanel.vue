@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { captiveConsequence, captiveRecords, type CaptiveChoice, type CaptiveDeed } from '@/engine/captives'
 import { tagDef } from '@/engine/data'
 import { npcTitle } from '@/engine/npcs'
-import { isEnslaved, partyRoom } from '@/engine/party'
+import { isEnslaved } from '@/engine/party'
 import { parseUse, useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import AbilityPicker from './AbilityPicker.vue'
@@ -19,9 +19,12 @@ const captives = computed(() => captiveRecords(s.value))
 const busy = computed(() => game.judging || !!s.value.pendingAction)
 const firstHand = computed(() => (s.value.captives?.aggressor === 'party' ? '是你先動的手' : '是對方先動的手'))
 const unseen = computed(() => !!s.value.captives?.unseen)
-const room = computed(() => partyRoom(s.value) > 0)
-/** 不能收為奴隸的原因：主角身上有奴隸印記（奴隸不能擁有奴隸）、隊伍已滿 */
-const enslaveWhy = computed(() => (isEnslaved(s.value) ? '身上還有奴隸印記，不能擁有奴隸' : !room.value ? '隊伍已滿' : ''))
+/** 不能收為奴隸的原因：主角身上有奴隸印記（奴隸不能擁有奴隸）；隊伍滿了時先騰出位子 */
+const enslaveWhy = computed(() => (isEnslaved(s.value) ? '身上還有奴隸印記，不能擁有奴隸' : ''))
+function enslave(id: string) {
+  const name = captives.value.find((c) => c.id === id)?.name ?? ''
+  game.requireRoom(1, `收${name}為奴隸`, () => resolve(id, 'enslave'))
+}
 const text = ref<Record<string, string>>({})
 const use = ref<Record<string, string>>({})
 /** 處置時順便做的事（劫財、劫色），和處置寫成同一篇 */
@@ -93,7 +96,7 @@ async function act(id: string) {
         <button class="small" :disabled="busy || !(text[c.id] ?? '').trim()" title="交給 AI 判定；做完人還在你手上" @click="act(c.id)"><GameIcon name="d20" :size="13" />主動行動</button>
         <span class="spacer" />
         <button class="small" :disabled="busy" :title="`${s.captives?.aggressor === 'npc' ? '對方欠你一份情：親密度上升' : '對方會記恨在心'}；${cost(c.id, 'release')}`" @click="resolve(c.id, 'release')"><GameIcon name="hand" :size="13" />放過</button>
-        <button class="small" :disabled="busy || !!enslaveWhy" :title="enslaveWhy || `以奴隸身分加入隊伍（1 HP）；${cost(c.id, 'enslave')}`" @click="resolve(c.id, 'enslave')"><GameIcon name="lock" :size="13" />收為奴隸</button>
+        <button class="small" :disabled="busy || !!enslaveWhy" :title="enslaveWhy || `以奴隸身分加入隊伍（1 HP）；${cost(c.id, 'enslave')}`" @click="enslave(c.id)"><GameIcon name="lock" :size="13" />收為奴隸</button>
         <button class="small danger" :disabled="busy" :title="cost(c.id, 'execute')" @click="resolve(c.id, 'execute')"><GameIcon name="skull" :size="13" />處決</button>
       </div>
       <AbilityPicker v-model="use[c.id]" />

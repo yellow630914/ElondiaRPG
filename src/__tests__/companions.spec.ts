@@ -92,13 +92,14 @@ describe('reward template', () => {
     expect(state.relationships![slave.id]!.affinity).toBe(-10)
   })
 
-  it('reports that the party is full instead of throwing', () => {
+  it('queues a join for the player to decide when the party is full instead of throwing', () => {
     const state = game(3)
     const report = blankReport(state)
     const effects = Array.from({ length: 4 }, (_, i) => ({ type: 'companion' as const, npc: { name: `路人${i}` }, mode: 'voluntary' as const }))
     const notes = applyEffects(state, report, effects)
     expect(state.party).toHaveLength(4)
-    expect(notes.at(-1)).toContain('隊伍已滿')
+    expect(notes.at(-1)).toContain('騰出位子或放棄')
+    expect(state.pendingJoins).toHaveLength(1)
   })
 })
 

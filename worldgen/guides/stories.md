@@ -125,7 +125,7 @@
 | `affinity` | `npc`：固定 NPC 的 id、`delta`：−50～50、`reason`（最多 40 字） | 親密度 |
 | `memory` | `summary`（最多 200 字）、`importance`：1～3，不寫＝2 | 共同記憶 |
 | `ability` | `ability`：能力 id；或 `choices`：1～5 | 學會這項能力：是主角職業的能力（法術要環階夠）時直接學會，不受等級的品質與解鎖限制；已經會了只提示；不是這個職業的或環階不夠時，改成一次三選一並說明原因。不寫或不存在時變成一次「N 選一」（不寫 `choices`＝3）。對象一律是主角 |
-| `companion` | `npc`：固定 NPC 的 id、`mode`：`voluntary` 或 `hired` | 正式入隊。**只能指定固定 NPC**（不能寫一份規格），其他 `mode`（`slave`）變 `voluntary`。隊伍滿了、對方死了或被制伏時不會入隊（只寫進日誌，不會再給一次機會）。指定**小隊**（[npcs](npcs.md) 的 `squad`）的人時整隊一起入隊，放不下的留在原地 |
+| `companion` | `npc`：固定 NPC 的 id、`mode`：`voluntary` 或 `hired` | 正式入隊。**只能指定固定 NPC**（不能寫一份規格），其他 `mode`（`slave`）變 `voluntary`。對方死了或被制伏時不會入隊。隊伍放不下時不會丟掉：事件視窗出現「想加入隊伍」，玩家騰出位子（送回房子、寄放酒館、請離）或放棄，決定前不能移動、休息。指定**小隊**（[npcs](npcs.md) 的 `squad`）的人時整隊一起入隊，不會只進來一部分 |
 | `condition` | `condition`：`punished`、`blessed`、`shaken`、`fed_light`、`well_rested`、`fed_well`、`fed_fine`、`fed_feast`、`fed_legend`、`cheered`、`tipsy`、`honed`、`relaxed`；`add`：`false` 時拿掉 | 主角的非戰鬥狀態 |
 | `hp` | `ratio`：−0.9～1 | 主角生命值的比例（`amount` 不收） |
 | `start_story` | `story`：特殊任務 id | 開始另一個特殊任務（要存在，不能是自己） |
@@ -411,9 +411,9 @@
 |---|---|---|
 | `at.npc`、`start.npc` 的角色有 `requires`（或 `stages` 搬走了） | 條件不符時他不在任何地方，任務點永遠不會出現（`allies` 不受影響，`at.npc` 會） | 任務進行中需要他時，確認他的 `requires` 一定成立；搬家用 `stages` 時，任務點的 `at.location` 不寫（跟著角色走） |
 | 角色是小隊的隊員（`squad`） | 大部分日子跟著隊長走，不在自己的活躍地點；寫了 `at.location` 時可能很少遇到 | 對小隊的隊員不要寫 `at.location`；或改成找隊長 |
-| `companion` 指定小隊的人 | 整隊一起入隊，隊伍放不下的隊員留在原地 | 想只帶一個人時用 `join`（任務同行），或不要讓他屬於小隊 |
+| `companion` 指定小隊的人 | 整隊一起入隊（放不下時整隊等玩家騰位子或放棄） | 想只帶一個人時用 `join`（任務同行），或不要讓他屬於小隊 |
 | 任務同行（`join`）已經 2 人 | 第 3 人加不進來，任務照常往下走 | 同一時間最多 2 個 `join`，用 `leave` 先送走一個 |
-| 最後才 `companion`，但玩家隊伍滿了 | 只寫「想加入，但隊伍已滿」，不會再給一次機會 | 在結局的 `text` 提醒玩家，或用任務同行陪到最後，結束後再請玩家自己邀請（之前加好感） |
+| 最後才 `companion`，但玩家隊伍滿了 | 事件視窗跳出「想加入隊伍」，玩家要騰出位子或放棄才能繼續移動 | 正常；結局的 `text` 可以先鋪陳「他想跟著你」，玩家比較不會錯愕 |
 
 **其他**
 

@@ -6,10 +6,10 @@
 // - 夥伴可以留在家裡（不算離隊）：不佔隊伍人數、不參加戰鬥，回家時可以帶上。
 
 import { snapshot } from './character'
-import { combatRules, craftRules, geography, homeRules, itemDef, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
+import { craftRules, geography, homeRules, itemDef, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
 import { blocksFor, placeAt, position, settlementKey, type Area, type Cell } from './grid'
 import { npcRecord, registerNpc } from './npcs'
-import { partyRoom } from './party'
+import { partyMax, partyRoom } from './party'
 import type { Rng } from './rng'
 import { addHours, addItem, commitReport, newReportId, player, removeItem, withRng } from './state'
 import { locationMult } from './trade'
@@ -481,25 +481,52 @@ export function stayRefusal(m: Character): string | undefined {
 export function stayHome(state: GameState, area: Area, memberId: string): Report {
   const home = ownHomeOfArea(state, area)
   if (!home) throw new Error('要在自己的房子裡')
+  return stayAt(state, home, memberId)
+}
+
+/** 讓隊員留在某一棟自己的房子（在房子裡留下，或在同一座城送回家，見 away.ts） */
+export function stayAt(state: GameState, home: Home, memberId: string, summary?: string): Report {
   const m = state.party.find((x) => x.id === memberId)
   if (!m) throw new Error('隊伍中沒有這位角色')
   const refusal = stayRefusal(m)
   if (refusal) throw new Error(`${m.name}不能留守：${refusal}`)
-  state.party = state.party.filter((x) => x !== m)
   const ground = home.areas[home.floors.find((k) => home.areas[k]?.homeFloor === 'ground')!]!
   // 站在一樓室內的某一格（不擋門）
   const spots = ground.cells.map((c, i) => i).filter((i) => ground.cells[i]!.kind === 'floor' && !ground.cells[i]!.furniture)
   const spot = spots[hash(m.id) % Math.max(1, spots.length)] ?? 0
-  const rec = npcRecord(state, m.id)
-  registerNpc(state, {
-    ...(rec ?? { id: m.id, name: m.name, race: m.race, class: m.class, level: m.level, location: home.location, hire_cc: 0, personality: m.personality ?? '' }),
-    level: m.level, location: home.location, character: JSON.parse(JSON.stringify(m)) as Character, staying: home.id,
-    at: { area: ground.key, x: spot % ground.width, y: Math.floor(spot / ground.width), until: 1e9 },
-  })
+  parkMember(state, m, home.location, home.id, { area: ground.key, x: spot % ground.width, y: Math.floor(spot / ground.width) })
   const report = homeReport(state, 'social', 0.2, home.name)
   report.changes.companions = [{ npc: m.id, name: m.name, change: 'left', reason: '留在家裡' }]
-  report.outcome = { result: 'neutral', summary: `${m.name}留在「${home.name}」看家。`, tags: ['留守'] }
+  report.outcome = { result: 'neutral', summary: summary ?? `${m.name}留在「${home.name}」看家。`, tags: ['留守'] }
   return commitReport(state, report)
+}
+
+/**
+ * 隊員離開隊伍、待在某個地方等主角回來（不算離隊：羈絆、契約、親密度都保留）。
+ * staying：房子的 id 或「tavern:地點」；at：站的格子（一直待著）
+ */
+export function parkMember(state: GameState, m: Character, location: string, staying: string, at: { area: string; x: number; y: number }) {
+  state.party = state.party.filter((x) => x !== m)
+  const rec = npcRecord(state, m.id)
+  registerNpc(state, {
+    ...(rec ?? { id: m.id, name: m.name, race: m.race, class: m.class, level: m.level, location, hire_cc: 0, personality: m.personality ?? '' }),
+    level: m.level, location, character: JSON.parse(JSON.stringify(m)) as Character, staying, stayingSince: { ...state.time },
+    at: { ...at, until: 1e9 },
+  })
+}
+
+/** 把留守或寄放的夥伴帶回隊伍（隊伍要有空位）；回傳回到隊伍的角色 */
+export function unparkMember(state: GameState, id: string): Character {
+  const rec = state.npcs?.[id]
+  if (!rec?.staying || !rec.character) throw new Error(`${rec?.name ?? '這個人'}沒有在等你`)
+  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${partyMax(state)} 人`)
+  const m = rec.character
+  delete rec.character
+  delete rec.staying
+  delete rec.stayingSince
+  delete rec.at
+  state.party.push(m)
+  return m
 }
 
 /** 帶上留在家裡的夥伴 */
@@ -508,12 +535,7 @@ export function leaveWithResident(state: GameState, area: Area, id: string): Rep
   if (!home) throw new Error('要在自己的房子裡')
   const rec = state.npcs?.[id]
   if (!rec || rec.staying !== home.id || !rec.character) throw new Error(`${rec?.name ?? '這個人'}沒有留在這裡`)
-  if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${combatRules.party_max} 人`)
-  const m = rec.character
-  delete rec.character
-  delete rec.staying
-  delete rec.at
-  state.party.push(m)
+  const m = unparkMember(state, id)
   const report = homeReport(state, 'social', 0.2, home.name)
   report.changes.companions = [{ npc: m.id, name: m.name, change: 'joined', ...(m.bond ? { bond: m.bond } : {}), reason: '從家裡出發' }]
   report.outcome = { result: 'neutral', summary: `${m.name}跟著你從「${home.name}」出發。`, tags: ['歸隊'] }

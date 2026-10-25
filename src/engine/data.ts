@@ -942,6 +942,8 @@ export const companionRules = companionsJson as unknown as {
   bonds: Record<Bond, string>
   /** 任務同行的夥伴最多幾人（不佔隊伍名額） */
   guest_max: number
+  /** 離隊的人留在那座城鎮的酒館幾天（之後照自己的活動範圍走動） */
+  leave_stay_days: number
   leave_threshold: number
   initial_affinity: Record<Bond, number>
   tavern: {
