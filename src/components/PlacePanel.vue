@@ -50,7 +50,8 @@ function leaveSide() {
   const id = s.value.side?.story
   if (id && sideNodesOpen(s.value, id) && !confirm(`離開這裡就是放棄特殊任務「${storyDef(id)?.title ?? id}」（放棄後不能再接）。確定離開？`)) return
   game.leaveSide()
-}const content = useContent()
+}
+const content = useContent()
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
