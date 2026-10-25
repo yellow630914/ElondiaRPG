@@ -149,6 +149,15 @@ export interface ComfyVars {
   seed: number
   /** 負面提示詞（沒有時用設定組合的） */
   negative?: string
+  /** 尺寸（沒有時用設定組合的；場景插圖用橫的） */
+  width?: number
+  height?: number
+  /** 以圖生圖：上傳到 ComfyUI 的底圖檔名（/upload/image 回傳的） */
+  image?: string
+  /** 局部重繪：上傳的遮罩檔名（白色是要重畫的地方） */
+  mask?: string
+  /** 以圖生圖的重繪強度（0～1） */
+  denoise?: number
 }
 
 /** 送出的正面提示詞：固定前綴＋產生的提示詞 */
@@ -161,10 +170,15 @@ export function fullPrompt(p: ComfyPreset, prompt: string): string {
 export function buildWorkflow(p: ComfyPreset, v: ComfyVars): ComfyWorkflow {
   const prompt = fullPrompt(p, v.prompt)
   const negative = v.negative ?? p.negative
+  const width = v.width ?? p.width
+  const height = v.height ?? p.height
   if (p.mode === 'custom') {
+    if (v.image && !p.workflow.includes('%image%')) throw new Error('這組自訂工作流程沒有 %image% 代號，不能以圖生圖（在 LoadImage 節點的圖片欄位填 %image%，KSampler 的 denoise 填 %denoise%）')
+    if (v.mask && !p.workflow.includes('%mask%')) throw new Error('這組自訂工作流程沒有 %mask% 代號，不能局部重繪（遮罩用 LoadImageMask 節點，圖片欄位填 %mask%）')
     return fillWorkflow(p.workflow, {
-      prompt, negative, width: p.width, height: p.height, seed: v.seed, steps: p.steps, scale: p.cfg,
+      prompt, negative, width, height, seed: v.seed, steps: p.steps, scale: p.cfg,
       sampler: p.sampler, scheduler: p.scheduler, model: p.checkpoint || p.unet,
+      image: v.image ?? '', mask: v.mask ?? '', denoise: v.image ? v.denoise ?? 0.6 : 1,
     }) as ComfyWorkflow
   }
   const wf: ComfyWorkflow = {}
@@ -202,10 +216,20 @@ export function buildWorkflow(p: ComfyPreset, v: ComfyVars): ComfyWorkflow {
   }
   const positive: Link = [add('CLIPTextEncode', { text: prompt, clip }, '正向'), 0]
   const neg: Link = [add('CLIPTextEncode', { text: negative, clip }, '反向'), 0]
-  const latent = add('EmptyLatentImage', { width: p.width, height: p.height, batch_size: 1 })
+  // 以圖生圖：底圖編碼成 latent（局部重繪再加遮罩），不然是空白的 latent
+  let latent: Link
+  if (v.image) {
+    const img = add('LoadImage', { image: v.image }, '底圖')
+    latent = [add('VAEEncode', { pixels: [img, 0], vae }), 0]
+    if (v.mask) {
+      const mask = add('LoadImageMask', { image: v.mask, channel: 'red' }, '遮罩')
+      latent = [add('SetLatentNoiseMask', { samples: latent, mask: [mask, 0] }), 0]
+    }
+  } else latent = [add('EmptyLatentImage', { width, height, batch_size: 1 }), 0]
   const sampler = { seed: v.seed, sampler_name: p.sampler, scheduler: p.scheduler, model, positive, negative: neg }
-  let samples = add('KSampler', { ...sampler, steps: p.steps, cfg: p.cfg, denoise: 1, latent_image: [latent, 0] })
-  if (p.hires.on) {
+  let samples = add('KSampler', { ...sampler, steps: p.steps, cfg: p.cfg, denoise: v.image ? v.denoise ?? 0.6 : 1, latent_image: latent })
+  // 以圖生圖不再做高解析修復（底圖已經是成品的尺寸）
+  if (p.hires.on && !v.image) {
     const up = add('LatentUpscaleBy', { upscale_method: p.hires.method, scale_by: p.hires.scale, samples: [samples, 0] })
     samples = add('KSampler', { ...sampler, steps: p.hires.steps, cfg: p.hires.cfg, denoise: p.hires.denoise, latent_image: [up, 0] }, '高解析修復')
   }
@@ -482,6 +506,27 @@ export function comfyServer(cfg: Pick<ImageServiceConfig, 'baseURL' | 'apiKey'>)
   }
 }
 
+/** 把圖片上傳到 ComfyUI 的 input 資料夾（以圖生圖的底圖、遮罩）；回傳 LoadImage 用的檔名 */
+export async function uploadComfyImage(server: ComfyServer, blob: Blob, name: string, signal?: AbortSignal): Promise<string> {
+  const form = new FormData()
+  form.append('image', blob, name)
+  form.append('overwrite', 'true')
+  form.append('type', 'input')
+  // 上傳是 multipart：不要帶 JSON 的 Content-Type
+  const { 'Content-Type': _json, ...headers } = server.headers
+  let res: Response
+  try {
+    res = await fetch(`${server.base}/upload/image`, { method: 'POST', headers, body: form, signal })
+  } catch (e) {
+    if (signal?.aborted) throw e
+    throw unreachable(server.base)
+  }
+  if (!res.ok) throw new Error(`ComfyUI 上傳圖片失敗（${res.status}）`)
+  const out = (await res.json()) as { name?: string; subfolder?: string }
+  if (!out.name) throw new Error('ComfyUI 上傳圖片後沒有回傳檔名')
+  return out.subfolder ? `${out.subfolder}/${out.name}` : out.name
+}
+
 const unreachable = (base: string) => new Error(`連不到 ComfyUI（${base}）：確認 ComfyUI 有開、網址正確，並且啟動時加了 --enable-cors-header`)
 
 /** 讀一個節點的定義；伺服器沒有這個節點時是 undefined */
@@ -533,6 +578,8 @@ export async function checkWorkflow(server: ComfyServer, wf: Record<string, unkn
     if (!info) continue
     for (const [key, value] of Object.entries(n.inputs)) {
       if (typeof value !== 'string') continue
+      // 剛上傳的底圖與遮罩：伺服器的清單可能還沒更新
+      if (key === 'image' && (n.class_type === 'LoadImage' || n.class_type === 'LoadImageMask')) continue
       const options = comboOptions(info, key)
       if (options.length && !options.includes(value)) out.push(`${INPUT_NAMES[key] ?? key}：伺服器上沒有「${value || '（空白）'}」`)
     }

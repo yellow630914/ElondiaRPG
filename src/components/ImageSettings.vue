@@ -125,6 +125,23 @@ function resetService() {
         </div>
       </fieldset>
 
+      <fieldset class="pre">
+        <legend class="small">
+          <GameIcon name="notebook" :size="16" />日誌插圖
+          <Hint text="冒險日誌每則的「⋯」→「生成插圖」：先用「插圖提示詞預處理」的模型來源把日誌整理成分鏡（誰在畫面上、站在哪、在做什麼），再照上面選的生圖服務與預處理的寫法出圖，掛在那則日誌下面。NovelAI 的 V4 模型可以分開描述每個人與位置；ChatGPT 會把登場角色的形象圖當參考圖；ComfyUI 接成一段提示詞，三人以上容易混在一起。" />
+        </legend>
+        <label>成人場景改用
+          <select v-model="image.sceneAdultService">
+            <option value="">和一般場景一樣（{{ info.name }}）</option>
+            <option v-for="s in IMAGE_SERVICES.filter((x) => x.id !== 'openai')" :key="s.id" :value="s.id">{{ s.name }}</option>
+          </select>
+        </label>
+        <p class="small muted">
+          ChatGPT 不畫成人內容；開啟成人向、日誌是成人場景時改用這裡選的服務（要先切到那個服務填好 key 與網址）。
+          <span v-if="image.sceneAdultService && !image.ready(image.sceneAdultService)" class="warn-text">{{ imageServiceInfo(image.sceneAdultService).name }} 還沒設定好。</span>
+        </p>
+      </fieldset>
+
       <label><span>畫風 <Hint text="填進提示詞模板的 {style}。" /></span><input v-model="image.style" /></label>
       <div class="row"><button class="small" :disabled="image.style === DEFAULT_STYLE" @click="image.style = DEFAULT_STYLE">畫風恢復預設</button></div>
       <details>

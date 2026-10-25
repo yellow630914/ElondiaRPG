@@ -144,7 +144,7 @@ function skipImport() {
     <div class="row tools small">
       <span class="muted">匯出時附上：</span>
       <label class="check"><input v-model="withContent" type="checkbox" /> 自訂內容</label>
-      <label class="check" title="這一局所有角色的形象圖；圖片很大，檔案會變大很多"><input v-model="withPortraitsOut" type="checkbox" /> 形象圖</label>
+      <label class="check" title="這一局所有角色目前的形象圖與日誌插圖（不含舊版）；圖片很大，檔案會變大很多"><input v-model="withPortraitsOut" type="checkbox" /> 形象圖與插圖</label>
     </div>
 
     <section v-if="pending" class="panel importing">
@@ -154,7 +154,7 @@ function skipImport() {
         <GameIcon name="world" :size="13" /> 這個存檔用的世界「{{ pending.preview.world?.name ?? '沒有記錄' }}」和這個瀏覽器的不同（或不存在）：會用存檔附帶的自訂內容建立新的世界「{{ pending.preview.newWorld }}」，存檔改用它。目前的世界不會變動。
       </p>
       <label v-if="pending.preview.portraits" class="check">
-        <input v-model="withPortraitsIn" type="checkbox" /> 還原形象圖（{{ pending.preview.portraits }} 張）
+        <input v-model="withPortraitsIn" type="checkbox" /> 還原形象圖與插圖（{{ pending.preview.portraits }} 張）
       </label>
       <div class="row">
         <button class="primary" @click="confirmImport"><GameIcon name="download" :size="15" /> 匯入</button>

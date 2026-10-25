@@ -11,7 +11,10 @@ import { visibleNarration } from '@/narrator/judge'
 import { usageFeatureName, usageSourceLabel, useGame } from '@/stores/game'
 import { inventedIn } from '@/engine/invention'
 import { useSettings } from '@/stores/settings'
+import { useImageSettings } from '@/stores/image'
+import { sceneKey, useScenes } from '@/stores/scenes'
 import { attrName } from '@/engine/data'
+import SceneImage from './SceneImage.vue'
 import GameIcon from './ui/GameIcon.vue'
 import type { IconName } from './ui/iconPaths'
 
@@ -98,6 +101,17 @@ const chips = computed(() => changes.value.map((text) => {
 const showRaw = ref(false)
 const copied = ref(false)
 
+// 日誌插圖：一鍵整理分鏡、生圖，掛在這則日誌下面（SceneImage）
+const image = useImageSettings()
+const scenes = useScenes()
+const hasScene = computed(() => !!game.state && !!scenes.urls[sceneKey(game.state, props.report.report_id)])
+function illustrate(e: Event) {
+  ;(e.target as HTMLElement).closest('details')?.removeAttribute('open')
+  if (!game.state) return
+  scenes.clearError(sceneKey(game.state, props.report.report_id))
+  void scenes.generate(game.state, props.report)
+}
+
 async function copyPrompt() {
   const p = await game.promptFor(props.report)
   await navigator.clipboard.writeText(`${p.system}\n\n---\n\n${p.user}`)
@@ -121,6 +135,9 @@ async function copyPrompt() {
             </button>
           </template>
           <span v-else-if="settings.aiNarration" class="small muted">「敘事正文」的模型來源尚未設定，請到「設定」填寫</span>
+          <button class="small ghost" :disabled="!image.ready()" :title="image.ready() ? '依這則日誌畫一張插圖（AI 先整理分鏡，再送給生圖服務）' : '先到「設定 → 插圖生成」設定生圖服務'" @click="illustrate">
+            <GameIcon name="image" :size="14" /> {{ hasScene ? '重新生成插圖' : '生成插圖' }}
+          </button>
           <button class="small ghost" @click="copyPrompt"><GameIcon name="copy" :size="14" /> {{ copied ? '已複製' : '複製提示詞' }}</button>
           <button class="small ghost" @click="showRaw = !showRaw"><GameIcon name="code" :size="14" /> {{ showRaw ? '隱藏' : '顯示' }}報告 JSON</button>
         </div>
@@ -175,6 +192,8 @@ async function copyPrompt() {
     <div v-if="changes.length" ref="changesEl" class="row small changes" :class="{ crafting }">
       <span v-for="(c, i) in chips" :key="c.text" class="tag" :class="c.cls" :style="{ '--i': i }">{{ c.text }}</span>
     </div>
+
+    <SceneImage v-if="game.state" :report="report" />
 
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
     <!-- 這則日誌用掉的 token：平常只顯示總數，點開看輸入、輸出、快取與各次呼叫 -->

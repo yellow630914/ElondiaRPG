@@ -2,12 +2,29 @@
 // 請求直接從瀏覽器送出，key 只存在這個瀏覽器。
 
 import {
-  buildWorkflow, checkWorkflow, comfyServer, executionErrorText, pickOutputImage, presetFromLegacy, promptErrorText,
+  buildWorkflow, checkWorkflow, comfyServer, executionErrorText, pickOutputImage, presetFromLegacy, promptErrorText, uploadComfyImage,
   type ComfyHistoryEntry, type ComfyPreset,
 } from './comfy'
 import type { ImageServiceConfig, ImageServiceId } from './imageInfo'
+import { blobToBase64, fitMask } from './imageUtils'
 
 export { fillWorkflow } from './comfy'
+
+/** 以圖生圖：底圖（已經是要的尺寸）、重繪強度、局部重繪的遮罩 */
+export interface ImageInit {
+  image: Blob
+  /** 重繪強度 0～1（OpenAI 沒有，照文字指示改） */
+  strength: number
+  /** 遮罩：白色是要重畫的地方、黑色保留，和底圖一樣大 */
+  mask?: Blob
+}
+
+/** 多人場景裡的一個角色（NovelAI V4 的多角色提示）：自己的提示詞與在畫面上的位置（0～1） */
+export interface SceneCharacter {
+  prompt: string
+  x: number
+  y: number
+}
 
 export interface ImageRequest {
   prompt: string
@@ -15,19 +32,45 @@ export interface ImageRequest {
   negative?: string
   seed?: number
   signal?: AbortSignal
+  /** 尺寸（沒有時用設定的） */
+  width?: number
+  height?: number
+  /** 以圖生圖 */
+  init?: ImageInit
+  /** NovelAI：多人場景的各個角色 */
+  characters?: SceneCharacter[]
+  /** OpenAI：參考圖（例如登場角色的形象圖），讓人物長得一樣 */
+  references?: Blob[]
   /** ComfyUI：用哪一組設定（沒有時由舊版的單一工作流程設定轉換） */
   comfy?: ComfyPreset
   /** ComfyUI：送出前檢查節點與檔案（預設檢查） */
   check?: boolean
 }
 
+export interface ImageResult {
+  blob: Blob
+  /** 用的種子（OpenAI 沒有種子） */
+  seed?: number
+}
+
+const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
+
+/** 產生一張圖片，連同用的種子（記下來，之後可以沿用種子微調） */
+export async function renderImage(service: ImageServiceId, cfg: ImageServiceConfig, req: ImageRequest): Promise<ImageResult> {
+  const seed = service === 'openai' ? undefined : req.seed ?? randomSeed()
+  const r = { ...req, ...(seed !== undefined ? { seed } : {}) }
+  let blob: Blob
+  switch (service) {
+    case 'openai': blob = await openAIImage(cfg, r); break
+    case 'novelai': blob = await novelAIImage(cfg, r); break
+    case 'comfyui': blob = await comfyImage(cfg, r); break
+  }
+  return { blob, ...(seed !== undefined ? { seed } : {}) }
+}
+
 /** 產生一張圖片 */
 export async function generateImage(service: ImageServiceId, cfg: ImageServiceConfig, req: ImageRequest): Promise<Blob> {
-  switch (service) {
-    case 'openai': return openAIImage(cfg, req)
-    case 'novelai': return novelAIImage(cfg, req)
-    case 'comfyui': return comfyImage(cfg, req)
-  }
+  return (await renderImage(service, cfg, req)).blob
 }
 
 const trimURL = (u: string) => u.trim().replace(/\/+$/, '')
@@ -65,14 +108,35 @@ function base64ToBlob(b64: string, type = 'image/png'): Blob {
 // ---- OpenAI ----
 
 export function openAIBody(cfg: ImageServiceConfig, req: ImageRequest): Record<string, unknown> {
-  return { model: cfg.model, prompt: req.prompt, size: `${cfg.width}x${cfg.height}`, n: 1, ...parseExtra(cfg.extra) }
+  return { model: cfg.model, prompt: req.prompt, size: `${req.width ?? cfg.width}x${req.height ?? cfg.height}`, n: 1, ...parseExtra(cfg.extra) }
+}
+
+/**
+ * 改圖（/images/edits，multipart）：以圖生圖的底圖、參考圖都放在 image；局部重繪的遮罩是透明的地方要重畫。
+ * mask 已經轉成 OpenAI 的格式
+ */
+export function openAIEditForm(cfg: ImageServiceConfig, req: ImageRequest, mask?: Blob): FormData {
+  const form = new FormData()
+  form.append('model', cfg.model)
+  form.append('prompt', req.prompt)
+  form.append('size', `${req.width ?? cfg.width}x${req.height ?? cfg.height}`)
+  form.append('n', '1')
+  const images = [...(req.init ? [req.init.image] : []), ...(req.references ?? [])]
+  // 一張用 image；好幾張用 image[]
+  images.forEach((b, i) => form.append(images.length > 1 ? 'image[]' : 'image', b, `image-${i + 1}.png`))
+  if (mask) form.append('mask', mask, 'mask.png')
+  for (const [k, v] of Object.entries(parseExtra(cfg.extra))) form.append(k, typeof v === 'string' ? v : JSON.stringify(v))
+  return form
 }
 
 async function openAIImage(cfg: ImageServiceConfig, req: ImageRequest): Promise<Blob> {
-  const res = await fetch(`${trimURL(cfg.baseURL || 'https://api.openai.com/v1')}/images/generations`, {
+  const base = trimURL(cfg.baseURL || 'https://api.openai.com/v1')
+  const edit = !!req.init || !!req.references?.length
+  const mask = req.init?.mask ? await fitMask(req.init.mask, req.width ?? cfg.width, req.height ?? cfg.height, true) : undefined
+  const res = await fetch(`${base}/images/${edit ? 'edits' : 'generations'}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify(openAIBody(cfg, req)),
+    headers: edit ? { Authorization: `Bearer ${cfg.apiKey}` } : { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
+    body: edit ? openAIEditForm(cfg, req, mask) : JSON.stringify(openAIBody(cfg, req)),
     signal: req.signal,
   })
   if (!res.ok) throw await failure(res, 'OpenAI')
@@ -89,32 +153,52 @@ async function openAIImage(cfg: ImageServiceConfig, req: ImageRequest): Promise<
 
 // ---- NovelAI ----
 
-export function novelAIBody(cfg: ImageServiceConfig, req: ImageRequest): Record<string, unknown> {
+/**
+ * NovelAI 的請求。enc：以圖生圖的底圖與遮罩（base64，已經是要的尺寸）。
+ * 有底圖是 img2img，再有遮罩是 infill（局部重繪，用模型的 -inpainting 版）；
+ * V4 模型的多人場景把每個角色放進 char_captions，位置寫在 centers
+ */
+export function novelAIBody(cfg: ImageServiceConfig, req: ImageRequest, enc: { image?: string; mask?: string } = {}): Record<string, unknown> {
   const negative = req.negative ?? cfg.negative
-  const seed = req.seed ?? Math.floor(Math.random() * 2 ** 32)
+  const seed = req.seed ?? randomSeed()
   const v4 = /diffusion-4/.test(cfg.model)
+  const chars = v4 ? req.characters ?? [] : []
+  const action = enc.image ? (enc.mask ? 'infill' : 'img2img') : 'generate'
+  const model = action === 'infill' && !/-inpainting$/.test(cfg.model) ? `${cfg.model}-inpainting` : cfg.model
   return {
     input: req.prompt,
-    model: cfg.model,
-    action: 'generate',
+    model,
+    action,
     parameters: {
-      params_version: 3, width: cfg.width, height: cfg.height, scale: cfg.scale, sampler: cfg.sampler, steps: cfg.steps,
+      params_version: 3, width: req.width ?? cfg.width, height: req.height ?? cfg.height, scale: cfg.scale, sampler: cfg.sampler, steps: cfg.steps,
       n_samples: 1, seed, ucPreset: 0, qualityToggle: true, noise_schedule: 'karras', cfg_rescale: 0,
       negative_prompt: negative,
       ...(v4 ? {
-        v4_prompt: { caption: { base_caption: req.prompt, char_captions: [] }, use_coords: false, use_order: true },
-        v4_negative_prompt: { caption: { base_caption: negative, char_captions: [] }, legacy_uc: false },
+        v4_prompt: {
+          caption: { base_caption: req.prompt, char_captions: chars.map((c) => ({ char_caption: c.prompt, centers: [{ x: c.x, y: c.y }] })) },
+          use_coords: chars.length > 0, use_order: true,
+        },
+        v4_negative_prompt: {
+          caption: { base_caption: negative, char_captions: chars.map((c) => ({ char_caption: '', centers: [{ x: c.x, y: c.y }] })) },
+          legacy_uc: false,
+        },
+        ...(chars.length ? { characterPrompts: chars.map((c) => ({ prompt: c.prompt, uc: '', center: { x: c.x, y: c.y }, enabled: true })) } : {}),
       } : {}),
+      ...(enc.image ? { image: enc.image, strength: req.init?.strength ?? 0.6, noise: 0, extra_noise_seed: seed } : {}),
+      ...(enc.mask ? { mask: enc.mask, add_original_image: true } : {}),
       ...parseExtra(cfg.extra),
     },
   }
 }
 
 async function novelAIImage(cfg: ImageServiceConfig, req: ImageRequest): Promise<Blob> {
+  const enc = req.init
+    ? { image: await blobToBase64(req.init.image), ...(req.init.mask ? { mask: await blobToBase64(await fitMask(req.init.mask, req.width ?? cfg.width, req.height ?? cfg.height)) } : {}) }
+    : {}
   const res = await fetch(`${trimURL(cfg.baseURL || 'https://image.novelai.net')}/ai/generate-image`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify(novelAIBody(cfg, req)),
+    body: JSON.stringify(novelAIBody(cfg, req, enc)),
     signal: req.signal,
   })
   if (!res.ok) throw await failure(res, 'NovelAI')
@@ -167,7 +251,19 @@ const sleep = (ms: number, signal?: AbortSignal) => new Promise<void>((resolve, 
 async function comfyImage(cfg: ImageServiceConfig, req: ImageRequest): Promise<Blob> {
   const preset = req.comfy ?? presetFromLegacy(cfg)
   const server = comfyServer(cfg)
-  const prompt = buildWorkflow(preset, { prompt: req.prompt, seed: req.seed ?? Math.floor(Math.random() * 2 ** 32), ...(req.negative ? { negative: req.negative } : {}) })
+  // 以圖生圖：先把底圖（與遮罩）上傳到 ComfyUI
+  let image: string | undefined
+  let mask: string | undefined
+  if (req.init) {
+    const tag = Date.now().toString(36)
+    image = await uploadComfyImage(server, req.init.image, `elondia-${tag}.png`, req.signal)
+    if (req.init.mask) mask = await uploadComfyImage(server, req.init.mask, `elondia-${tag}-mask.png`, req.signal)
+  }
+  const prompt = buildWorkflow(preset, {
+    prompt: req.prompt, seed: req.seed ?? randomSeed(), ...(req.negative ? { negative: req.negative } : {}),
+    ...(req.width ? { width: req.width } : {}), ...(req.height ? { height: req.height } : {}),
+    ...(image ? { image, denoise: req.init!.strength } : {}), ...(mask ? { mask } : {}),
+  })
   if (req.check !== false) {
     const problems = await checkWorkflow(server, prompt, preset.mode !== 'custom', req.signal)
     if (problems.length) throw new Error(problems.join('；'))

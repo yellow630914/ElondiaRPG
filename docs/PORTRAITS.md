@@ -1,9 +1,11 @@
 # 角色形象插圖
 
 > 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[PROMPTS](PROMPTS.md)（預處理用的模型來源與功能分配）、[SAVES](SAVES.md)（匯出、匯入、清理）。
-> 程式：`src/narrator/imageInfo.ts`（服務模板、提示詞、預處理指示）、`src/narrator/imageProviders.ts`（送出請求）、`src/stores/image.ts`（設定）、`src/stores/portraits.ts`（保存與生成）、`src/components/ImageSettings.vue`、`src/components/PortraitBox.vue`。
+> 程式：`src/narrator/imageInfo.ts`（服務模板、提示詞、預處理指示）、`src/narrator/imageProviders.ts`（送出請求）、`src/narrator/imageUtils.ts`（縮放底圖、遮罩）、`src/narrator/sceneInfo.ts`（日誌插圖的分鏡）、`src/stores/image.ts`（設定）、`src/stores/portraits.ts`（保存與生成）、`src/stores/scenes.ts`（日誌插圖）、`src/components/ImageSettings.vue`、`src/components/PortraitBox.vue`、`src/components/PortraitStudio.vue`、`src/components/SceneImage.vue`。
 
 隊伍視窗的每位成員、人際關係裡登場過的人都有一格形象圖：可以「🎨 生成形象圖」、「📁 上傳」自己的圖片、刪除，點圖片放大。
+
+操作分兩層：一般玩家用**一般模式**就夠（生成、✨ 微調、翻看舊版、日誌插圖一鍵生成）；想自己控制提示詞、強度、遮罩時才打開**進階**（第 6 節）。
 
 ## 1. 設定（⚙️ 設定 → 🎨 插圖生成）
 
@@ -51,7 +53,17 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 
 - 圖片存在這個瀏覽器的 IndexedDB（`elondia-portraits`），太大放不進 localStorage，也不放進存檔欄位。
 - 匯出時附上形象圖、匯入時還原、沒有存檔用到的圖自動清掉：見 [SAVES.md](SAVES.md) 第 2～4 節。
-- 依「這一局（存檔的種子）＋角色 id」保存，不同存檔的主角不會互相蓋掉。
+- 依「這一局（存檔的種子）＋角色 id」保存，不同存檔的主角不會互相蓋掉。同一個資料庫裡的 key：
+
+| key | 內容 | 匯出 |
+|---|---|---|
+| `種子:角色id` | 目前的形象圖（隊伍、關係裡顯示的那張） | 帶 |
+| `種子:角色id~時間` | 生成過的每一版（生成、微調、進階、上傳都算一版） | 不帶 |
+| `種子:角色id!desc` | 進階模式「記住」的描述（之後「重新生成」也用） | 不帶 |
+| `種子:@scene:日誌id` | 日誌插圖（第 7 節） | 帶 |
+
+- 每個角色保留最近 8 版（`MAX_VERSIONS`）；超過時刪掉最舊的，目前的形象圖那版不會被刪。舊資料只有目前的圖時，第一次讀取各版會把它補成第一版。
+- 每一版記下送出的提示詞、預處理前的描述、服務、**種子**（OpenAI 沒有種子）、這次另外指定的負面提示詞、怎麼來的（生成、微調、進階、上傳）。
 - 生成中可以取消；出錯時顯示原因（例如還沒設定 key、服務回應 401、CORS 被擋）。
 
 ## 5. ComfyUI 的設定組合
@@ -72,7 +84,7 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 - **LoRA**：依序套用，每個可以停用、調權重；預設模型與 CLIP 用同一個權重，按「分開調 CLIP」可以各自設定。
 - **高解析修復**：latent 放大（倍率、放大方式）後再採樣一次（步數、CFG、重繪強度）。
 - **固定前綴標籤**：品質、畫風、LoRA 觸發詞，接在角色的提示詞前面（`前綴, 角色提示詞`）。
-- **自訂工作流程的代號**：`%prompt%`（前綴＋角色提示詞）`%negative%` `%width%` `%height%` `%seed%` `%steps%` `%scale%` `%sampler%` `%scheduler%` `%model%`（Checkpoint 或 UNet 欄位）。整個字串就是代號時換成原本的型別（數字就是數字）。
+- **自訂工作流程的代號**：`%prompt%`（前綴＋角色提示詞）`%negative%` `%width%` `%height%` `%seed%` `%steps%` `%scale%` `%sampler%` `%scheduler%` `%model%`（Checkpoint 或 UNet 欄位）；以圖生圖另外有 `%image%`（上傳的底圖檔名，填在 LoadImage）、`%mask%`（遮罩檔名，填在 LoadImageMask）、`%denoise%`（重繪強度；一般生圖時是 1）。整個字串就是代號時換成原本的型別（數字就是數字）。沒有 `%image%` 的自訂工作流程不能以圖生圖，沒有 `%mask%` 的不能局部重繪。
 
 舊版只有一份 ComfyUI 工作流程：沒改過預設工作流程的變成 Checkpoint 模式（模型欄位就是 Checkpoint），改過的變成自訂工作流程，行為和原本一樣。
 
@@ -95,6 +107,56 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 - Checkpoint 與 UNet 模式也檢查選的檔案、類型、取樣器在不在伺服器的清單裡。自訂工作流程只檢查節點（有些外掛節點接受清單外的值），值的問題交給 ComfyUI 回報。
 - `/prompt` 回應 400 的 `node_errors`、執行時的 `execution_error` 都翻成「哪個節點的哪個欄位、伺服器上沒有什麼」。
 
+### 以圖生圖
+
+底圖（與遮罩）先用 `POST /upload/image` 上傳到 ComfyUI 的 input 資料夾。內建模式把 `EmptyLatentImage` 換成 `LoadImage` → `VAEEncode`；局部重繪再加 `LoadImageMask`（紅色通道，白色是要重畫的地方）→ `SetLatentNoiseMask`；`KSampler` 的 denoise 是重繪強度。以圖生圖不做高解析修復。剛上傳的檔名不在伺服器的清單裡，送出前檢查不檢查 LoadImage 的圖片欄位。
+
 ### 拿哪一張圖
 
 一個工作流程可能有好幾張圖（第一次採樣的預覽、臉部修復前的預覽……）。依序：指定的節點編號 → 存檔的輸出（`SaveImage` 一類，`type: output`）中最後一個節點 → 最後一個有圖的節點（例如只有預覽的工作流程，拿最後的「完成」預覽）。
+
+## 6. 微調、以圖生圖與進階工作台
+
+### 一般模式（`PortraitBox`）
+
+- **重新生成**：和以前一樣，新的一張成為目前的形象圖；舊的還在，圖片下面的「‹ 2 / 5 ›」可以翻回去（翻到哪張，哪張就是目前的形象圖）。
+- **✨ 微調**：以目前的形象圖為底重畫（以圖生圖），構圖不變。選一個預設，或寫一句想改什麼：
+
+| 預設 | 重繪強度 | 加進提示詞 |
+|---|---|---|
+| 小幅變化 | 0.35 | （不加） |
+| 微笑、害羞、生氣、難過 | 0.5 | 對應的表情標籤（例如 `blush, shy, embarrassed`） |
+| 修正崩壞 | 0.3 | `detailed face, detailed hands`，負面提示詞另外加 `bad hands, bad anatomy, deformed, extra fingers` |
+| 自己寫一句 | 0.55 | 有預處理時：把「這次要改的」接在描述後面重新預處理；沒有時直接接在上次的提示詞後面 |
+
+  ChatGPT 是照文字指示改圖（`/images/edits`），微調寫成「Edit this image: …. Keep the same character, face, hairstyle, outfit, art style and composition.」。
+- 底圖會縮放、裁切成目前服務的出圖尺寸（`fitImage`）。
+
+### 進階工作台（`PortraitStudio`，按「進階」打開）
+
+一般模式不夠用時才打開。左邊是選的那一版與各版縮圖（★ 是目前的形象圖），可以設為形象圖、下載、刪除（目前的形象圖那版不能刪）。**進階生成的圖是新的一版，不會換掉目前的形象圖**，按「★ 設為形象圖」才換。
+
+- **提示詞**分頁：
+  1. 預處理前的描述：可以改。「只預處理」看看會改成什麼；「預處理並生圖」照改過的描述重新預處理再生圖。勾「記住為這個角色的描述」時存起來（`!desc`），之後一般模式的「重新生成」也用這段；「依角色資料重組」回到依模板組成的描述。
+  2. 送出的提示詞：直接改，按「直接用這段生圖」不再經過預處理。這次的負面提示詞、種子（隨機、沿用這版、指定）。固定種子只改幾個詞，就是同一張圖的微調。ChatGPT 沒有種子與負面提示詞，這兩欄不顯示。
+- **以圖生圖**分頁：底圖選某一版或上傳的圖片；整張重繪或局部重繪（在左邊的圖上塗遮罩，紅色是要重畫的地方，可以擦掉、調筆刷）；重繪強度 0.1～0.95；提示詞預設帶入那一版送出的提示詞。
+
+| 服務 | 整張重繪 | 局部重繪 |
+|---|---|---|
+| ComfyUI | 內建模式自動改成以圖生圖（第 5 節）；自訂工作流程要有 `%image%` | 內建模式加遮罩；自訂工作流程要有 `%mask%` |
+| NovelAI | `action: img2img`（`image`、`strength`、`noise`） | `action: infill`，模型改用 `-inpainting` 版本，帶 `mask` |
+| ChatGPT | `/images/edits`：照文字指示改，沒有重繪強度（不顯示滑桿） | 遮罩轉成 OpenAI 的格式（要改的地方透明）；只是參考範圍，不是硬邊界 |
+
+## 7. 日誌插圖
+
+冒險日誌每則的「⋯」→「生成插圖」，一鍵完成，圖掛在那則日誌下面（可以放大、重新生成、刪除）。
+
+1. **整理分鏡**：用「插圖提示詞預處理」的模型來源，把日誌（摘要、行動、玩家描述的做法、已經寫出的正文、地點與時段）和可以登場的人（日誌裡的隊伍與其他人，附外貌、裝備、刺青）交給模型，回傳 JSON：`rating`（general、suggestive、explicit）、`scene`（整體畫面：人數、地點、時段、光線、構圖，不含各角色外貌）、`characters`（最多 4 人：id、位置 left／center／right、這個角色的提示詞）。各欄位照這個服務的預處理指示的寫法寫（例如 Danbooru 標籤）；沒有預處理時寫英文句子。沒有開啟成人向時一律 general、不畫裸露與血腥。用量記在那則日誌。
+2. **選服務**：日誌是成人場景（有 `adult_scene`）而且開啟成人向時，用「⚙️ 設定 → 🎨 插圖生成 → 日誌插圖」的「成人場景改用」；其他用目前的服務。分鏡判定是 explicit、服務卻是 ChatGPT 時，換成成人場景用的服務再整理一次；沒有指定時告訴玩家要指定 NovelAI 或 ComfyUI。
+3. **組成請求**（`composeScene`）：
+   - **NovelAI**（V4 模型）：`scene` 當整體提示詞，每個角色放進 `v4_prompt.caption.char_captions`，位置寫在 `centers`（左 0.3、中 0.5、右 0.7）。
+   - **ChatGPT**：一段英文（整體畫面＋「on the left: …」）；登場角色有形象圖時當參考圖一起送（`/images/edits`，最多 4 張），人物長得比較一致。
+   - **ComfyUI**：接成一段提示詞（標籤用逗號）。三人以上外貌容易混在一起；需要時改用自己的區域提示工作流程。
+4. 尺寸用橫的：長邊當寬（ComfyUI、NovelAI），ChatGPT 是 1536 × 1024。
+
+插圖和形象圖存在同一個資料庫（`種子:@scene:日誌id`），匯出存檔時勾「形象圖與插圖」一起帶。

@@ -28,6 +28,8 @@ interface SavedImageSettings {
   /** ComfyUI 的設定組合（每個主模一組）與目前用的那一組 */
   comfyPresets: ComfyPreset[]
   comfyActive: string
+  /** 日誌插圖：成人場景改用哪個服務（空字串是和一般場景一樣用目前的服務） */
+  sceneAdultService: ImageServiceId | ''
 }
 
 function defaultConfigs(): Record<ImageServiceId, ImageServiceConfig> {
@@ -44,6 +46,7 @@ function defaults(): SavedImageSettings {
     style: DEFAULT_STYLE,
     comfyPresets: [],
     comfyActive: '',
+    sceneAdultService: '',
   }
 }
 
@@ -72,6 +75,7 @@ function load(): SavedImageSettings {
     return {
       ...base, ...saved,
       service: IMAGE_SERVICES.some((s) => s.id === saved.service) ? saved.service! : base.service,
+      sceneAdultService: IMAGE_SERVICES.some((s) => s.id === saved.sceneAdultService) ? saved.sceneAdultService! : '',
       configs,
       ...loadPreprocess(saved, base),
       ...presetsOf(loadPresets(saved, configs.comfyui)),
@@ -135,16 +139,17 @@ export const useImageSettings = defineStore('image', () => {
   const style = ref(initial.style)
   const comfyPresets = ref<ComfyPreset[]>(initial.comfyPresets)
   const comfyActive = ref(initial.comfyActive)
+  const sceneAdultService = ref<ImageServiceId | ''>(initial.sceneAdultService)
   /** 從 ComfyUI 讀到的清單（不保存，每次開啟設定時再讀） */
   const comfyOptions = ref<ComfyOptions | null>(null)
   const comfyLoading = ref(false)
   const comfyError = ref<string | null>(null)
 
-  watch([service, configs, preprocess, preprocessors, template, style, comfyPresets, comfyActive], () => {
+  watch([service, configs, preprocess, preprocessors, template, style, comfyPresets, comfyActive, sceneAdultService], () => {
     const data: SavedImageSettings = {
       service: service.value, configs: configs.value, preprocess: preprocess.value, preprocessors: preprocessors.value,
       template: template.value, style: style.value,
-      comfyPresets: comfyPresets.value, comfyActive: comfyActive.value,
+      comfyPresets: comfyPresets.value, comfyActive: comfyActive.value, sceneAdultService: sceneAdultService.value,
     }
     try {
       localStorage.setItem(KEY, JSON.stringify(data))
@@ -156,10 +161,31 @@ export const useImageSettings = defineStore('image', () => {
   /** 目前的服務設定 */
   const config = () => configs.value[service.value]
   /** 設定完成了嗎（有網址；需要 key 的服務有 key；ComfyUI 的設定組合選好了模型） */
-  function ready(): boolean {
-    const info = imageServiceInfo(service.value)
-    const c = config()
-    return !!c.baseURL && (!!c.apiKey || !!info.keyOptional) && (service.value !== 'comfyui' || !presetIssues(preset()).length)
+  function ready(id: ImageServiceId = service.value): boolean {
+    const info = imageServiceInfo(id)
+    const c = configs.value[id]
+    return !!c.baseURL && (!!c.apiKey || !!info.keyOptional) && (id !== 'comfyui' || !presetIssues(preset()).length)
+  }
+
+  /** 這個服務出圖的尺寸（ComfyUI 看設定組合）；landscape：場景插圖用橫的（長邊當寬） */
+  function sizeFor(id: ImageServiceId = service.value, landscape = false): { width: number; height: number } {
+    const c = id === 'comfyui' ? preset() : configs.value[id]
+    const [a, b] = [c.width, c.height]
+    if (!landscape) return { width: a, height: b }
+    // OpenAI 只有固定的幾種尺寸：橫的是 1536 × 1024
+    if (id === 'openai') return { width: 1536, height: 1024 }
+    return { width: Math.max(a, b), height: Math.min(a, b) }
+  }
+
+  /** 這個服務預設的負面提示詞（ComfyUI 看設定組合；OpenAI 沒有） */
+  function negativeFor(id: ImageServiceId = service.value): string {
+    if (id === 'openai') return ''
+    return id === 'comfyui' ? preset().negative : configs.value[id].negative
+  }
+
+  /** 日誌插圖用哪個服務：成人場景可以另外指定 */
+  function sceneService(adult: boolean): ImageServiceId {
+    return adult && sceneAdultService.value ? sceneAdultService.value : service.value
   }
 
   // ---- ComfyUI 的設定組合 ----
@@ -267,7 +293,8 @@ export const useImageSettings = defineStore('image', () => {
   }
 
   return {
-    service, configs, preprocess, preprocessors, template, style, config, ready, resetService,
+    service, configs, preprocess, preprocessors, template, style, config, ready, resetService, sizeFor, negativeFor,
+    sceneAdultService, sceneService,
     allPreprocessors, preprocessorFor, addPreprocessor, removePreprocessor,
     comfyPresets, comfyActive, comfyOptions, comfyLoading, comfyError,
     preset, addPreset, duplicatePreset, removePreset, importPreset, loadComfyOptions,
