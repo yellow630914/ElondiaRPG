@@ -98,6 +98,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 引用不存在的 id（地點、地標、怪物、NPC） | 匯入時被默默拿掉，任務接不起來 | 先做被引用的；查 `data/` 的 id；看報告的「整理時改了」 |
 | 任務的旗標前後接不上、`manual` 的任務沒有人開啟 | 任務永遠做不完 | [design/story-design](design/story-design.md) 第 7 節的檢查清單 |
 | 戰鬥任務點用了那一層沒有的怪、等級對不上階級 | 太難或太簡單 | [balance/stories](balance/stories.md) |
+| 特殊任務通過檢查，但玩起來卡住（每進城就被擋、每趟旅途都觸發、出了洞窟任務就沒了、委託人被當成 `foes` 打死） | 玩家只能放棄任務 | [guides/stories](guides/stories.md) 6.4 節逐條對照 |
 | 統治者可以被雇用 | 國王跟著玩家去挖礦 | A、B 層加 `unhireable` |
 | 只做資料、沒寫世界書 | AI 不知道新的人與事，敘事和資料對不起來 | 第 2 節第 9 步 |
 | 手抄內建世界書的原文再改寫 | 抄錯的地方原本的設定就不見了 | 用腳本從 `elondia.worldbook.json` 讀原文再接上新段落 |
