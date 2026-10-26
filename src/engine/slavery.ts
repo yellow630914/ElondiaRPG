@@ -9,7 +9,7 @@ import { checkModifiers, modifierNote } from './perks'
 import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
-import { adultContent, adultScene, safeText } from './content'
+import { adultContent, adultScene, safeText, tagsAllowed } from './content'
 import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
 import { reputationOf } from './security'
 import { forcedGearPool } from './forcedGear'
@@ -438,7 +438,9 @@ export function maybeMasterEvent(state: GameState, chance: number, opts: MasterE
   syncMasterHome(state)
   // 主人的標籤在 NPC 登錄裡
   const rec = npcRecord(state, master.id) ?? { id: master.id }
-  const events = ev.events.filter((e) => (opts.adult || !e.adult) && eventFits(state, rec, e))
+  // 主人的性邀約與被推進娼館接客都算「主角非自願」：設定裡關掉時不發生
+  const unwilling = tagsAllowed(['pc_unwilling'])
+  const events = ev.events.filter((e) => (!e.adult || (opts.adult && unwilling)) && (e.cell !== 'brothel' || unwilling) && eventFits(state, rec, e))
   // 離家太久：主人想回家（逾期越久越容易），先擲
   const overdue = events.filter((e) => e.overdue)
   const home = overdueChance(state)

@@ -17,6 +17,10 @@ const o = computed(() => model.value)
 // 事件不能讓主角淪為奴隸（只有特殊任務可以）
 const EVENT_EFFECTS = (Object.keys(STORY_EFFECTS) as RewardEffect['type'][]).filter((t) => t !== 'enslave_player')
 
+function addDeath(id: string) {
+  if (!id || !o.value) return
+  o.value.deaths = [...new Set([...(o.value.deaths ?? []), id])]
+}
 function enable(on: boolean) {
   model.value = on ? {} : undefined
 }
@@ -44,6 +48,14 @@ const end = computed({
       <div class="row small">設定旗標 <FlagInput v-model="o.set_flags" /></div>
       <div class="row small">清除旗標 <FlagInput v-model="o.clear_flags" /></div>
       <CounterDeltasEditor v-model="o.counters" />
+      <div v-if="!props.event" class="row small">
+        死去的角色 <Hint text="故事裡的死亡：這些固定 NPC 在這裡死去（不用和他戰鬥），之後不再出現；需要他的其他任務會失敗。要和他戰鬥時，改用一隻代替他的怪物。" />
+        <span v-for="(d, i) in o.deaths ?? []" :key="d" class="tag chip">{{ namedNpcs.find((n) => n.id === d)?.name ?? d }} <button class="x" @click="o.deaths!.splice(i, 1); if (!o.deaths!.length) delete o.deaths">×</button></span>
+        <select :value="''" @change="addDeath(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
+          <option value="">＋ 選擇角色</option>
+          <option v-for="n in namedNpcs" :key="n.id" :value="n.id" :disabled="o.deaths?.includes(n.id)">{{ n.name }}</option>
+        </select>
+      </div>
       <div v-if="!props.event" class="row small">
         同行加入
         <select v-model="o.join">

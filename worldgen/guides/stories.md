@@ -115,6 +115,7 @@
 | `side_map` | 字串 | `cave`、`ruins`、`waystation` | 進入臨時地圖，出口回到原本的地方 |
 | `special_map` | 特殊地圖 id | 存在的 `sm_` id | 傳送到那張地圖的入口 |
 | `travel_to` | 地點 id | 任何地點 | 改去別的地點（旅途中直接抵達，不在旅途時被帶過去；在臨時地圖或特殊地圖裡時先離開） |
+| `deaths` | id 陣列 | 固定 NPC 的 id | 故事裡的死亡：這些角色在這裡死去，之後不再出現；需要他的其他任務失敗。要和他戰鬥時用代替他的怪物（`enemies`），不要用 `foes` |
 
 **效果**（`effects` 與 `rewards` 共用）：特殊任務只收下表這幾種，[EFFECTS](../../docs/EFFECTS.md) 的其他種類（`flag`、`meet`、`intel`、`leave`、`join_party`……）整項拿掉，世界檢查會提醒並寫出替代的寫法：旗標用 `set_flags`／`clear_flags`；認識 NPC 用 `affinity` 或 `npc` 任務點；情報用情報商（`start.kind: informant`）或旅途開頭；同行用 `join`／`leave`，結束後要正式入隊用 `companion`。
 

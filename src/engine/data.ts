@@ -242,6 +242,8 @@ export interface StoryOutcome {
   clear_flags?: string[]
   /** 劇情計數器的加減：{ 計數器 id: 增減 } */
   counters?: Record<string, number>
+  /** 這些固定 NPC 在這裡死去（故事裡的死亡；不用和他戰鬥）：之後不再出現，需要他的其他任務會失敗 */
+  deaths?: string[]
   effects?: RewardEffect[]
   /** 固定 NPC 以「任務同行」加入、離開 */
   join?: string

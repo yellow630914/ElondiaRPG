@@ -18,7 +18,7 @@ import {
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
 import { formatMoney } from './money'
-import { npcRecord } from './npcs'
+import { npcRecord, registerNpc } from './npcs'
 import { joinParty, leaveParty, pcOf } from './party'
 import { presentHere } from './population'
 import type { Rng } from './rng'
@@ -27,7 +27,7 @@ import { addCounters, condMet, flagKey } from './storyFlags'
 import { tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
-import type { GameState, Report, StoryProgress } from './types'
+import type { GameState, NpcRecord, Report, StoryProgress } from './types'
 
 export function storyDef(id: string): StoryDef | undefined {
   return stories.find((s) => s.id === id)
@@ -428,6 +428,7 @@ function resolveOutcome(
   setFlags(report, outcome.set_flags, true)
   setFlags(report, outcome.clear_flags, false)
   addCounters(state, report.changes, outcome.counters)
+  for (const id of outcome.deaths ?? []) storyDeath(state, report, def, id, lines)
   // 特質的機會：來源寫成這個特殊任務
   const sourced = (list: RewardEffect[]) => list.map((e) => (e.type === 'perk' && !e.source ? { ...e, source: `特殊任務「${def.title}」` } : e))
   const notes = outcome.effects?.length ? applyEffects(state, report, sourced(outcome.effects)) : []
@@ -528,6 +529,24 @@ function neededNpcs(def: StoryDef, p: StoryProgress): string[] {
     for (const o of outs) for (const e of o?.effects ?? []) if (e.type === 'companion' && typeof e.npc === 'string') ids.push(e.npc)
   }
   return [...new Set(ids.filter((x): x is string => !!x))].filter((id) => !foes.has(id))
+}
+
+/** 故事裡的死亡（結果的 deaths）：標記死亡、離開隊伍與名單；需要他的「其他」任務失敗（這個任務自己照常進行） */
+function storyDeath(state: GameState, report: Report, def: StoryDef, id: string, lines: string[]) {
+  const rec = npcRecord(state, id)
+  if (!rec || rec.dead) return
+  const stored = state.npcs?.[rec.id] ?? registerNpc(state, JSON.parse(JSON.stringify(rec)) as NpcRecord)
+  stored.dead = true
+  delete stored.at
+  for (const r of Object.values(state.rosters ?? {})) r.members = r.members.filter((x) => x !== rec.id)
+  if (state.party.some((m) => m.id === rec.id && !m.isPlayer)) leaveParty(state, rec.id, report, '死去')
+  state.party = state.party.filter((m) => m.id !== rec.id || m.isPlayer)
+  for (const p of Object.values(state.stories ?? {})) {
+    const other = p.status === 'active' && p.id !== def.id ? storyDef(p.id) : undefined
+    if (!other || !neededNpcs(other, p).includes(rec.id)) continue
+    log(p, state, `${rec.name}死了，特殊任務「${other.title}」沒辦法繼續`)
+    finishStory(state, report, p, other, 'failed', lines)
+  }
 }
 
 /** 任務需要的角色死了：任務失敗。有報告時寫進報告（處決、戰鬥），沒有時（讀檔）直接結束 */

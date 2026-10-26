@@ -222,6 +222,8 @@ function outcome(v: unknown): StoryOutcome | undefined {
   if (clear.length) out.clear_flags = clear
   const counters = sanitizeCounterDeltas(o.counters)
   if (counters) out.counters = counters
+  const deaths = [...new Set((Array.isArray(o.deaths) ? o.deaths : []).map((d) => str(d, 60)).filter(Boolean))]
+  if (deaths.length) out.deaths = deaths
   const effects = sanitizeEffects(o.effects)
   if (effects.length) out.effects = effects
   if (str(o.join, 60)) out.join = str(o.join, 60)
@@ -446,6 +448,8 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     const other = others.find((s) => s.id !== def.id && (s.start_flags ?? []).includes(f))
     if (other) err.push(`開頭的旗標 🚩${f} 也是「${other.title}」的開頭旗標，兩個任務的任務點會互相觸發（請改名）`)
   }
+  // 故事裡死去的角色要是固定 NPC
+  for (const n of def.nodes) for (const { o } of outcomesOf(n)) for (const d of o.deaths ?? []) if (!npcIds.has(d)) err.push(`「${n.title}」的結果裡死去的角色 ${d} 不存在`)
   // 用到的劇情計數器要存在
   const counterIds = new Set([
     ...Object.keys(def.start.requires?.counters ?? {}),

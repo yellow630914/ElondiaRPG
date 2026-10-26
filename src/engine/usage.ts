@@ -111,6 +111,7 @@ export function npcUsage(id: string, state?: GameState | null): string[] {
       if (n.allies?.includes(id)) where.push(`任務點「${n.title}」的友方`)
     }
     if (storyOutcomes(s).some((o) => o.join === id || o.leave === id)) where.push('任務同行')
+    if (storyOutcomes(s).some((o) => o.deaths?.includes(id))) where.push('故事裡的死亡')
     if (storyEffects(s).some((e) => (e.type === 'companion' && e.npc === id) || (e.type === 'affinity' && e.npc === id) || (e.type === 'enslave_player' && e.master === id))) where.push('效果')
     if (where.length) out.push(`特殊任務「${s.title}」的${[...new Set(where)].join('、')}`)
   }

@@ -132,3 +132,28 @@ describe('hidden landmarks', () => {
     expect(cell()).toBe('lm_dawn_sanctum')
   })
 })
+
+describe('story deaths', () => {
+  it('marks a fixed NPC dead and fails other stories that need them, but not this one', async () => {
+    const { startStory, playNode } = await import('@/engine/story')
+    const { npcRecord } = await import('@/engine/npcs')
+    const { sanitizeStory } = await import('@/engine/storyMods')
+    const mods = emptyMods()
+    mods.stories.death_a = sanitizeStory('death_a', {
+      title: '國王之死', summary: '', start: { kind: 'manual' },
+      nodes: [{ id: 'n1', title: '國王倒下', text: '國王倒下了。', at: { where: 'settlement' }, kind: 'story', success: { deaths: ['npc_alexander'], complete: true } }],
+    }, true)
+    mods.stories.death_b = sanitizeStory('death_b', {
+      title: '覲見國王', summary: '', start: { kind: 'manual' },
+      nodes: [{ id: 'm1', title: '見國王', text: '…', at: { where: 'npc', npc: 'npc_alexander' }, kind: 'story', success: { complete: true } }],
+    }, true)
+    applyContent(mods)
+    const state = game()
+    startStory(state, 'death_b')
+    startStory(state, 'death_a')
+    playNode(state, 'death_a:n1')
+    expect(npcRecord(state, 'npc_alexander')!.dead).toBe(true)
+    expect(state.stories!.death_a!.status).toBe('completed')
+    expect(state.stories!.death_b!.status).toBe('failed')
+  })
+})
