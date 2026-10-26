@@ -109,16 +109,22 @@ describe('built-in stories', () => {
       ['noel_pretty_clerk', 'noel_prank_price', 'noel_getting_serious'],
       ['zero_warm_chest', 'zero_recall_order', 'zero_definition'],
       ['kar_challenge', 'kar_rigged_match', 'kar_arena_trophy'],
+      ['oboro_rooftop_shadow', 'oboro_report', 'oboro_shadow_heart'],
+      ['belv_bandit_hunter', 'belv_old_brand', 'belv_not_a_toy'],
+      ['eil_ghost_bride', 'eil_lost_ring', 'eil_hundred_year_wedding'],
+      ['pru_what_is_love', 'pru_ring_and_date', 'pru_swamp_wedding'],
+      ['ila_elf_cold', 'ila_moon_bloom', 'ila_hundred_years'],
+      ['mimi_clumsy_maid', 'mimi_tea_guild', 'mimi_opening_day'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
       expect(levels).toEqual([5, 8, 11])
       for (let i = 1; i < ids.length; i++) expect(story(ids[i]!).start.requires?.flags?.length, ids[i]).toBeGreaterThan(0)
     }
-    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'lena_good_friend', 'lena_runaway', 'lena_lighter_love', 'valerie_sample', 'valerie_stolen_paper', 'valerie_hearing', 'eve_holiday', 'eve_tea_house', 'eve_master', 'luc_practice_partner', 'luc_succubus_manual', 'luc_eighth_exam', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels', 'twin_sisters_test', 'twin_lana_song', 'twin_same_person', 'noel_pretty_clerk', 'noel_prank_price', 'noel_getting_serious', 'zero_warm_chest', 'zero_recall_order', 'zero_definition', 'kar_challenge', 'kar_rigged_match', 'kar_arena_trophy']
+    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'lena_good_friend', 'lena_runaway', 'lena_lighter_love', 'valerie_sample', 'valerie_stolen_paper', 'valerie_hearing', 'eve_holiday', 'eve_tea_house', 'eve_master', 'luc_practice_partner', 'luc_succubus_manual', 'luc_eighth_exam', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels', 'twin_sisters_test', 'twin_lana_song', 'twin_same_person', 'noel_pretty_clerk', 'noel_prank_price', 'noel_getting_serious', 'zero_warm_chest', 'zero_recall_order', 'zero_definition', 'kar_challenge', 'kar_rigged_match', 'kar_arena_trophy', 'oboro_rooftop_shadow', 'oboro_report', 'oboro_shadow_heart', 'belv_bandit_hunter', 'belv_old_brand', 'belv_not_a_toy', 'eil_ghost_bride', 'eil_lost_ring', 'eil_hundred_year_wedding', 'pru_what_is_love', 'pru_ring_and_date', 'pru_swamp_wedding', 'ila_elf_cold', 'ila_moon_bloom', 'ila_hundred_years', 'mimi_clumsy_maid', 'mimi_tea_guild', 'mimi_opening_day']
     expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
     // 角色在任務開始前就有性經驗：標非處女
-    expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
+    expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels', 'belv_bandit_hunter', 'belv_old_brand', 'belv_not_a_toy'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
   })
 
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {
