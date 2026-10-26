@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
+import { xpToNext } from '@/engine/character'
 import { startCombat } from '@/engine/combat'
 import { enterLocation, generateLayer, standOn, storeArea } from '@/engine/grid'
 import { fightToEnd } from './helpers/fight'
@@ -123,7 +124,7 @@ describe('combat', () => {
   it('levels up and offers skill choices', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 3 })
     state.location = 'snake_creek'
-    state.party[0]!.xp = 99
+    state.party[0]!.xp = xpToNext(1) - 1
     startCombat(state, [['giant_rat', 1]])
     const report = fightToEnd(state)
     expect(report.outcome.result).toBe('victory')

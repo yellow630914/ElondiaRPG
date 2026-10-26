@@ -114,14 +114,16 @@ describe('special quests', () => {
     state.location = 'soriel'
     enterLocation(state)
     standOn(state, 'temple')
-    const xp = state.party[0]!.xp
+    const before = { level: state.party[0]!.level, xp: state.party[0]!.xp }
     const money = state.money_cc
     const r4 = playNode(state, 'lost_relic:return', 0) as Report
     valid(r4)
     expect(r4.story?.status).toBe('completed')
     expect(state.stories!.lost_relic!.status).toBe('completed')
     expect(state.money_cc).toBe(money + 150)
-    expect(state.party[0]!.xp).toBeGreaterThan(xp)
+    // 經驗增加（可能剛好升級，經驗歸零重算）
+    const after = state.party[0]!
+    expect(after.level > before.level || after.xp > before.xp).toBe(true)
     expect(state.party.some((m) => m.id === 'npc_selene')).toBe(false)
     expect(state.inventory.find((i) => i.name === '治療藥劑')?.qty).toBeGreaterThanOrEqual(2)
     expect(state.stories!.lost_relic!.log.length).toBeGreaterThanOrEqual(5)
