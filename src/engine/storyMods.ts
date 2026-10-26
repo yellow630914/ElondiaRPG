@@ -469,6 +469,18 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     if (e.type === 'perk') for (const id of [e.perk, ...(e.options ?? [])]) if (id && !perkDef(id)) err.push(`效果裡的特質 ${id} 不存在`)
     if (e.type === 'start_story' && e.story === def.id) err.push('效果要開始的是這個任務自己')
   }
+  // 一般任務（沒有成人向標籤）卻需要成人向角色：成人向關著時那個角色不出現，任務接不到或卡住
+  if (!def.tags?.includes('adult')) {
+    const adultIds = new Set(namedNpcs.filter((n) => n.adult).map((n) => n.id))
+    const name = (id: string) => namedNpcs.find((n) => n.id === id)?.name ?? id
+    if (def.start.kind === 'npc' && def.start.npc && adultIds.has(def.start.npc)) warn.push(`開頭的角色${name(def.start.npc)}是成人向角色，成人向關著時不會出現，這個任務接不到（請替任務加上成人向標籤，或換一個角色）`)
+    for (const n of def.nodes) {
+      const need = [...(n.at.where === 'npc' && n.at.npc ? [n.at.npc] : []), ...(n.foes ?? []), ...(n.allies ?? []), ...outcomesOf(n).flatMap(({ o }) => (o.join ? [o.join] : []))]
+      for (const id of new Set(need.filter((x) => adultIds.has(x)))) {
+        warn.push(`任務點「${n.title}」需要成人向角色${name(id)}，成人向關著時${name(id)}不會出現，任務會卡在這裡（請替任務加上成人向標籤，或換一個角色）`)
+      }
+    }
+  }
   if (def.start.kind === 'manual') {
     const starters = others.filter((s) => s.id !== def.id && [...(s.rewards ?? []), ...s.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.effects ?? []))]
       .some((e) => e.type === 'start_story' && e.story === def.id))
@@ -506,6 +518,7 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     for (const { o } of outcomesOf(n)) {
       if (o.join && !npcIds.has(o.join)) err.push(`${t}要同行的角色 ${o.join} 不存在`)
       if (o.leave && !npcIds.has(o.leave)) err.push(`${t}要離開的角色 ${o.leave} 不存在`)
+      if (o.join && o.complete) warn.push(`${t}的結果同時「同行」和「完成任務」：任務完成時同行的角色會馬上離開（要讓角色留在隊上，請改用「正式入隊」效果）`)
     }
     if (n.at.where === 'cell' && n.at.cell && !(n.at.cell in CELL_NAME) && !shopRules.types[n.at.cell as ShopType] && !landmarks[n.at.cell]) err.push(`${t}的設施不存在`)
     else if (n.at.where === 'cell' && n.at.cell && n.at.location && !hasFacility(n.at.location, n.at.cell as CellKind)) {

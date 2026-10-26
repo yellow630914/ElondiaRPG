@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { newGame } from '@/engine/state'
-import { addCounters, condMet, counterValue, setFlag } from '@/engine/storyFlags'
+import { addCounters, clampCounters, condMet, counterValue, setFlag } from '@/engine/storyFlags'
 import { applyContent, emptyMods, normalizeMods, sanitizeCond } from '@/engine/mods'
 import { sanitizeOutcome, storyCheck } from '@/engine/storyMods'
 import { stories, storyCounters } from '@/engine/data'
@@ -22,6 +22,21 @@ describe('story counters', () => {
     expect(counterValue(state, 'test_c')).toBe(5)
     expect(counterValue(state, 'human_stance')).toBe(-1)
     expect(state.flags['count:missing']).toBeUndefined()
+    delete storyCounters.test_c
+  })
+
+  it('clamps saved values into new limits when the counter is changed', () => {
+    const state = game()
+    storyCounters.test_c = { name: '測試', initial: 0 }
+    state.flags['count:test_c'] = 9
+    state.flags['count:human_stance'] = -4
+    storyCounters.test_c = { name: '測試', initial: 0, min: -2, max: 3 }
+    clampCounters(state)
+    expect(counterValue(state, 'test_c')).toBe(3)
+    expect(counterValue(state, 'human_stance')).toBe(-4)
+    state.flags['count:test_c'] = -7
+    clampCounters(state)
+    expect(counterValue(state, 'test_c')).toBe(-2)
     delete storyCounters.test_c
   })
 

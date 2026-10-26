@@ -3,7 +3,8 @@ import ContentTagChips from './ContentTagChips.vue'
 import { computed, ref } from 'vue'
 import { attrName, enemies, type StoryCheck } from '@/engine/data'
 import { npcRecord } from '@/engine/npcs'
-import { npcFree, optionOpen, storyAffinity, type ActiveNode } from '@/engine/story'
+import { formatMoney } from '@/engine/money'
+import { npcFree, optionOpen, storyAffinity, storyCostGate, storyCosts, type ActiveNode } from '@/engine/story'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -24,6 +25,19 @@ function checkLabel(c: StoryCheck) {
   const a = storyAffinity(s.value, c.affinity)
   if (a.blocked) return `${base}・${a.name}的好感 ${a.affinity}，不到 ${a.min}：會直接失敗`
   return `${base}・${a.name}的好感 ${a.bonus >= 0 ? '+' : ''}${a.bonus}`
+}
+/** 要付錢的任務點、選項：按鈕寫出金額（檢定寫成功或失敗時付） */
+function costLabel(option?: number) {
+  const c = storyCosts(props.n.node, option)
+  const check = option === undefined ? props.n.node.kind === 'check' : !!props.n.node.options?.[option]?.check
+  if (!c.success && !c.fail) return ''
+  if (!check || c.success === c.fail) return `付 ${formatMoney(Math.max(c.success, c.fail))}`
+  return [c.success ? `成功要付 ${formatMoney(c.success)}` : '', c.fail ? `失敗要付 ${formatMoney(c.fail)}` : ''].filter(Boolean).join('・')
+}
+/** 錢不夠時的說明（按鈕停用） */
+function costGate(option?: number) {
+  void s.value.money_cc
+  return storyCostGate(s.value, props.n.node, option)
 }
 // 已經死了、被制伏的角色不上場
 const foes = computed(() => [
@@ -50,7 +64,8 @@ function abandon() {
     <div><b>{{ n.node.title }}</b></div>
     <p v-if="n.node.text" class="small">{{ n.node.text }}</p>
     <template v-if="n.node.kind === 'story'">
-      <div class="row"><button class="small primary" :disabled="busy" @click="play()">繼續</button></div>
+      <div class="row"><button class="small primary" :disabled="busy || !!costGate()" :title="costGate()" @click="play()">繼續<template v-if="costLabel()">（{{ costLabel() }}）</template></button></div>
+      <p v-if="costGate()" class="small warn">{{ costGate() }}</p>
     </template>
     <template v-else-if="n.node.kind === 'combat'">
       <p class="small"><GameIcon name="sword" :size="13" class="foe" /> {{ foes || '對手已經不在了' }}</p>
@@ -60,17 +75,19 @@ function abandon() {
       <input v-model="text" class="grow" :placeholder="n.node.kind === 'check' ? '怎麼做（選填；AI 判定時參考）' : '補充你的做法（選填）'" />
       <AbilityPicker v-if="n.node.kind === 'check' || n.node.options?.some((o) => o.check)" v-model="use" />
       <div v-if="n.node.kind === 'check' && n.node.check" class="row">
-        <button class="small primary" :disabled="busy" @click="attempt()">嘗試（{{ checkLabel(n.node.check) }}）</button>
+        <button class="small primary" :disabled="busy || !!costGate()" :title="costGate()" @click="attempt()">嘗試（{{ checkLabel(n.node.check) }}<template v-if="costLabel()">・{{ costLabel() }}</template>）</button>
       </div>
+      <p v-if="n.node.kind === 'check' && costGate()" class="small warn">{{ costGate() }}</p>
       <div v-else class="row">
         <template v-for="(o, i) in n.node.options ?? []" :key="i">
           <!-- 有好感、旗標條件的選項：條件成立才出現 -->
           <button
-            v-if="optionOpen(s, n.node, i)" class="small" :class="{ primary: !o.check }" :disabled="busy"
+            v-if="optionOpen(s, n.node, i)" class="small" :class="{ primary: !o.check }" :disabled="busy || !!costGate(i)" :title="costGate(i)"
             @click="o.check ? attempt(i) : play(i)"
-          >{{ o.label }}<template v-if="o.check">（{{ checkLabel(o.check) }}）</template> <ContentTagChips :tags="o.tags" /></button>
+          >{{ o.label }}<template v-if="o.check || costLabel(i)">（{{ [o.check ? checkLabel(o.check) : '', costLabel(i)].filter(Boolean).join('・') }}）</template> <ContentTagChips :tags="o.tags" /></button>
         </template>
       </div>
+      <p v-if="n.node.kind === 'choice' && (n.node.options ?? []).some((_, i) => optionOpen(s, n.node, i) && costGate(i))" class="small warn">身上只有 {{ formatMoney(s.money_cc) }}，付不起的選項不能選</p>
     </template>
     <div v-if="prompt" class="row later">
       <button v-if="!n.node.urgent" class="small" :disabled="busy" title="這次先略過，不記在日誌；離開這裡之後再來還會遇到" @click="game.waitStory(n.ref)">稍候</button>
@@ -84,6 +101,7 @@ function abandon() {
 .card.prompt { border: none; padding: 0; gap: 8px; }
 .card p { margin: 0; line-height: 1.6; }
 .foe { color: var(--danger); vertical-align: -2px; }
+.warn { color: var(--danger); margin: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .later { justify-content: flex-end; }
 .grow { width: 100%; }
