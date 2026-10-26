@@ -10,7 +10,7 @@
 - **區塊**：`stories`。世界包寫在 `content.stories`，內容檔寫在最外層的 `stories`（外層格式見 [content-file](content-file.md)）。
 - **id**（區塊裡的 key）：新的任務用 `mod_story_<英文小寫>`，只用小寫英數與底線（`mod_story_sewer_apprentice`）。整個世界裡不能重複。
 - **新的任務**：加 `"custom": true`。
-- **修改內建的任務**：用原本的 id（`lost_relic`、`overturned_wagon`、`smuggler_ledger`，查 `data/rules/stories.json`），**不加** `custom`，寫整份修改後的資料。
+- **修改內建的任務**：用原本的 id（例如 `lost_relic`、`dawn_throne_ambush`，全部查 `data/rules/stories.json`），**不加** `custom`，寫整份修改後的資料。
 - 項目裡可以不寫 `id`；寫了要和 key 一樣。
 - **有錯誤的任務整條不匯入**（第 6.2 節）；拿掉一條可能讓開啟它的任務也變成有錯誤，會連鎖拿掉。
 
@@ -142,7 +142,7 @@
 ### 2.6 旗標
 
 - **名稱**：英文小寫與底線，前面加這條任務的簡稱，避免和別的任務撞名（`sewer_app_started`、`sewer_app_lead`）。最多 40 字；空白會換成 `_`，`story:` 前綴會被去掉。
-- **開頭旗標**（`start_flags`）不能和任何任務一樣，內建的有 `relic_started`、`wagon_found`、`ledger_rumor`。
+- **開頭旗標**（`start_flags`）不能和任何任務一樣，內建的查 `data/rules/stories.json` 的 `start_flags`（例如 `relic_started`、`wagon_found`、`ledger_rumor`）；內建任務的旗標用了 `dthr_`、`whcr_`、`lil_` 這些簡稱，自建的不要用同樣的前綴。
 - 旗標是**全域**的：其他任務的 `requires`、固定 NPC 的 `requires` 與 `stages` 都讀同一個旗標，所以可以用來串接任務、讓角色搬家或消失（見 [npcs](npcs.md) 2.3 節）。
 - `ai:` 開頭的名稱讀 AI 判定寫下的旗標（`ai:答應幫忙`），不算「沒有地方設定」。
 - 任務點只在任務進行中才會出現；沒有 `requires` 的任務點任務一開始就解鎖。習慣上第一個任務點需要開頭旗標，之後每個任務點需要前一個設定的旗標。
@@ -357,7 +357,7 @@
 - `npc` 開頭的 `start.npc` 沒寫或不存在。
 - `guild` 開頭沒寫 `location`；那座城沒有冒險者公會。
 - `informant` 開頭的城沒有情報商（沒有情報商的：`windhammer`、`snowridge`、`sunscorch`、`rotmarsh`、`bone_hills`、`mosswhisper`、`windspeak`、`stilltide_oasis`）。
-- 開頭旗標和別的任務一樣（包括內建的 `relic_started`、`wagon_found`、`ledger_rumor`）。
+- 開頭旗標和別的任務一樣（包括內建任務的開頭旗標，例如 `relic_started`、`dthr_ambush`）。
 - 效果裡的物品（得到的）、裝備的底材或材料、角色（`affinity`、`companion`）、要開始的任務、主人、特質不存在；`start_story` 開始的是自己。
 - 任務點沒有地點：`settlement`、`cell`、`outskirts`、`dungeon` 沒寫 `location`。
 - `special` 的特殊地圖沒寫或不存在（「特殊地圖不存在」）。
