@@ -4,7 +4,7 @@ import { applyContent, emptyMods } from '@/engine/mods'
 import { sanitizeStory, storyCheck } from '@/engine/storyMods'
 import { canStart } from '@/engine/story'
 import { counterValue, setFlag } from '@/engine/storyFlags'
-import { npcs as namedNpcs, stories } from '@/engine/data'
+import { enemies, npcs as namedNpcs, stories } from '@/engine/data'
 import { adultContent, setAdultContent, setContentFilters } from '@/engine/content'
 import type { StoryDef } from '@/engine/data'
 
@@ -38,13 +38,17 @@ describe('built-in stories', () => {
       ['dawn_throne_ambush', 'dawn_throne_poison', 'dawn_throne_crown'],
       ['whisper_seal', 'whisper_oath', 'whisper_emperor'],
       ['lilian_successor', 'lilian_abbey', 'lilian_graduation'],
+      ['rhine_raid', 'rhine_iron_cross', 'rhine_council'],
+      ['mist_bell', 'mist_inquisition', 'mist_saint'],
+      ['isadora_interview', 'isadora_ball', 'isadora_elope'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
       expect(levels).toEqual([5, 8, 11])
       for (let i = 1; i < ids.length; i++) expect(story(ids[i]!).start.requires?.flags?.length, ids[i]).toBeGreaterThan(0)
     }
-    expect(['lilian_successor', 'lilian_abbey', 'lilian_graduation'].every((id) => story(id).tags?.includes('adult'))).toBe(true)
+    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope']
+    expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
   })
 
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {
@@ -108,5 +112,18 @@ describe('built-in stories', () => {
     expect(counterValue(state, 'human_stance')).toBe(1)
     expect(npcRecord(state, 'npc_anastasia')!.background).toContain('登基為晨曦王國的女王')
     expect(npcRecord(state, 'npc_alexei')!.background).toContain('守邊公爵')
+  })
+
+  it('never talks with the emperor of whispers: he is fought, then sealed, and keeps coming back', () => {
+    const emperor = story('whisper_emperor')
+    const throne = emperor.nodes.find((n) => n.id === 'throne')!
+    expect(throne.kind).toBe('combat')
+    expect(throne.enemies?.[0]?.[0]).toBe('emperor_of_whispers')
+    expect(emperor.nodes.every((n) => (n.options ?? []).every((o) => !o.label.includes('勸')))).toBe(true)
+    expect(enemies.emperor_of_whispers!.desc).toContain('重新聚起形體')
+  })
+
+  it('keeps the kingmaker and the rulers out of reach of a sneak attack', () => {
+    for (const id of ['npc_lorenzo_valois', 'npc_anastasia', 'npc_alexei', 'npc_alexander']) expect(namedNpcs.find((n) => n.id === id)!.no_attack, id).toBe(true)
   })
 })
