@@ -21,7 +21,7 @@ import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
-import { condMet, flagKey } from './storyFlags'
+import { addCounters, condMet, flagKey } from './storyFlags'
 import { gateCheck } from './security'
 import { toolBonus } from './tools'
 import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
@@ -385,6 +385,7 @@ export function applyRoadOutcome(state: GameState, report: Report, o: StoryOutco
   if (o.text) lines.push(o.text)
   for (const f of o.set_flags ?? []) (report.changes.flags ??= {})[flagKey(f)] = true
   for (const f of o.clear_flags ?? []) (report.changes.flags ??= {})[flagKey(f)] = false
+  addCounters(state, report.changes, o.counters)
   const notes = o.effects?.length ? applyEffects(state, report, o.effects) : []
   if (notes.length) lines.push(notes.join('，') + '。')
   queueMove(state, o)

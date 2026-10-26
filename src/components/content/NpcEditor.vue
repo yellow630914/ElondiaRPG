@@ -16,6 +16,7 @@ import { Rng } from '@/engine/rng'
 import type { GearSlot } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
+import CondExtrasEditor from './CondExtrasEditor.vue'
 import FlagInput from './FlagInput.vue'
 import AffinityCondEditor from './AffinityCondEditor.vue'
 import ComboInput from './ComboInput.vue'
@@ -318,6 +319,7 @@ const occupations = computed(() => {
       <div class="row">
         <span class="small">這些旗標成立時不出現：</span><FlagInput v-model="requires.flags_none" />
       </div>
+      <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (draft.requires = v)" />
     </fieldset>
 
     <fieldset>
@@ -333,7 +335,24 @@ const occupations = computed(() => {
         </div>
         <div class="row small">這些旗標都成立時 <FlagInput v-model="st.requires.flags" /></div>
         <div class="row small">而且這些旗標都不成立 <FlagInput v-model="st.requires.flags_none" /></div>
+        <CondExtrasEditor :model-value="st.requires" @update:model-value="(v) => (st.requires = v)" />
         <NpcPlacementEditor v-model="draft.stages![i]!" />
+        <details class="small" :open="!!(st.name || st.background || st.personality || st.tags)">
+          <summary>身分改變 <Hint text="例如皇子登基成為國王：有寫的取代上面的名字、性格、背景與標籤（AI 也會看到新的身分）；條件不再成立時換回來。沒寫的照舊。" /></summary>
+          <div class="row">
+            <label>名字 <input :value="st.name ?? ''" maxlength="16" placeholder="不變" @change="st.name = ($event.target as HTMLInputElement).value.trim() || undefined" /></label>
+          </div>
+          <label class="block">性格 <textarea :value="st.personality ?? ''" rows="2" maxlength="160" placeholder="不變" @change="st.personality = ($event.target as HTMLTextAreaElement).value.trim() || undefined" /></label>
+          <label class="block">背景 <textarea :value="st.background ?? ''" rows="3" maxlength="400" placeholder="不變" @change="st.background = ($event.target as HTMLTextAreaElement).value.trim() || undefined" /></label>
+          <div class="row checks">
+            <label class="check"><input type="checkbox" :checked="!!st.tags" @change="st.tags = ($event.target as HTMLInputElement).checked ? [...(draft.tags ?? [])] : undefined" /> 改變標籤</label>
+            <template v-if="st.tags">
+              <label v-for="[k, t] in tags" :key="k" class="check" :title="t.ai_hint">
+                <input type="checkbox" :checked="st.tags.includes(k)" @change="st.tags = ($event.target as HTMLInputElement).checked ? [...st.tags!, k] : st.tags!.filter((x) => x !== k)" /> {{ t.name }}
+              </label>
+            </template>
+          </div>
+        </details>
       </div>
       <button class="small" @click="addStage">＋ 依旗標改變出沒</button>
     </fieldset>

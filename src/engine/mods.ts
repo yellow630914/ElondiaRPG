@@ -10,7 +10,7 @@
 import mapsJson from '@data/world/maps.json'
 import {
   abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
-  npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
+  npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
   type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
@@ -25,6 +25,7 @@ import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, s
 import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
+import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type CounterMod } from './counterMods'
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
@@ -118,6 +119,8 @@ export interface ContentMods {
   eventRules: Record<string, EventRulesMod>
   /** 類別的圖示（依類別 id；舊的自訂內容沒有這一欄） */
   categoryIcons: Record<string, CategoryIconMod>
+  /** 劇情計數器（舊的自訂內容沒有這一欄） */
+  counters: Record<string, CounterMod>
 }
 
 /** 類別的圖示：玩家上傳的圖（data URL），沒有的類別用內建的圖 */
@@ -126,7 +129,7 @@ export interface CategoryIconMod {
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, categoryIcons: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, categoryIcons: {}, counters: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -226,6 +229,7 @@ function restore() {
   restoreLandmarks()
   restoreSpecialMaps()
   restoreTravelEvents()
+  restoreCounters()
   setCategoryIcons({})
   setCustomGear([], [])
   replaceRecord(abilities, snapshot.abilities)
@@ -539,6 +543,8 @@ export function applyContent(mods: ContentMods): string[] {
     enemies[id] = { ...strip(m, ['custom', 'spawns', 'exclude']), id }
   })
   tryEach('怪物的出現地點', mods.enemies, (id, m) => applyPlacements(id, m))
+  // 劇情計數器（固定 NPC、任務與事件的條件會用到）
+  tryEach('劇情計數器', mods.counters ?? {}, (id, m) => applyCounter(id, sanitizeCounter(m, !!m.custom)))
   tryEach('固定 NPC', mods.npcs, (id, m) => {
     const def = { ...strip(m, ['custom']), id }
     const i = namedNpcs.findIndex((n) => n.id === id)
@@ -984,6 +990,12 @@ export function normalizeMods(raw: unknown): ContentMods {
   const statusIds = new Set([...Object.keys(statuses), ...Object.keys(r.statuses ?? {})])
   for (const [id, v] of Object.entries(r.statuses ?? {})) out.statuses[id] = sanitizeStatus(id, v, !!v.custom || !snapshot.statuses[id], statusIds)
   for (const [id, s] of Object.entries(out.statuses)) if (s.custom && !statuses[id]) statuses[id] = strip(s, ['custom'])
+  // 劇情計數器：任務與事件的檢查會看計數器存不存在，先登錄自建的
+  for (const [id, v] of Object.entries(r.counters ?? {})) {
+    const key = cleanCounterId(id)
+    if (key && v && typeof v === 'object') out.counters[key] = sanitizeCounter(v, !!v.custom || !builtinCounter(key))
+  }
+  for (const [id, c] of Object.entries(out.counters)) if (c.custom && !storyCounters[id]) storyCounters[id] = strip(c, ['custom'])
   // 刺青圖樣與奴隸印記：特殊任務的效果會檢查存不存在，先登錄自建的
   for (const [id, v] of Object.entries(r.tattoos ?? {})) {
     const t = sanitizeTattooMod(v, !!v.custom || !snapshot.tattoos[id])
@@ -1071,20 +1083,48 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; affinity?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
+  const any = list(r.flags_any)
+  // 計數器的範圍：計數器 id → { min, max }（至少要有一邊）
+  const counters: Record<string, { min?: number; max?: number }> = {}
+  for (const [id, x] of Object.entries(r.counters && typeof r.counters === 'object' ? r.counters : {})) {
+    const key = cleanCounterId(id)
+    const o = x && typeof x === 'object' ? x as { min?: unknown; max?: unknown } : {}
+    const num = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(-9999, Math.min(9999, Math.round(n))) : undefined)
+    const min = num(o.min)
+    const max = num(o.max)
+    if (key && (min !== undefined || max !== undefined)) counters[key] = { ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}) }
+  }
+  const hasCount = Object.keys(counters).length > 0
   // 好感條件：角色 id → 最低值（-100～100）
   const affinity = Object.fromEntries(Object.entries(r.affinity && typeof r.affinity === 'object' ? r.affinity : {})
     .filter(([id, n]) => typeof id === 'string' && id.trim() && typeof n === 'number' && Number.isFinite(n))
     .map(([id, n]) => [id.trim().slice(0, 60), Math.max(-100, Math.min(100, Math.round(n as number)))]))
   const hasAff = Object.keys(affinity).length > 0
-  return flags.length || none.length || hasAff
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(hasAff ? { affinity } : {}) }
+  return flags.length || none.length || any.length || hasCount || hasAff
+    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }
+
+/** 計數器 id：小寫英文、數字、底線，最多 40 字 */
+export function cleanCounterId(v: unknown): string {
+  return typeof v === 'string' ? v.trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 40) : ''
+}
+
+/** 結果裡的計數器加減：計數器 id → 增減（-100～100，0 不收） */
+export function sanitizeCounterDeltas(v: unknown): Record<string, number> | undefined {
+  const out: Record<string, number> = {}
+  for (const [id, d] of Object.entries(v && typeof v === 'object' ? v : {})) {
+    const key = cleanCounterId(id)
+    const n = typeof d === 'number' && Number.isFinite(d) ? Math.max(-100, Math.min(100, Math.round(d))) : 0
+    if (key && n) out[key] = n
+  }
+  return Object.keys(out).length ? out : undefined
+}
 
 function cleanHaunts(v: NpcDef['haunts']): NonNullable<NpcDef['haunts']> {
   return (v ?? [])
@@ -1172,7 +1212,15 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
     if (!r) return []
     const h = cleanHaunts(st.haunts)
     const f = cleanFixed(st.fixed)
-    return [{ requires: r, location: settlementIds().includes(st.location) ? st.location : location, ...(h.length ? { haunts: h } : {}), ...(f ? { fixed: f } : {}) }]
+    // 身分改變：名字、背景、性格、標籤（有寫的才取代）
+    const name = str(st.name, 16)
+    const bg = str(st.background, 400)
+    const pers = str(st.personality, 160)
+    const tags = Array.isArray(st.tags) ? [...new Set(st.tags.filter((t) => !!npcTags.tags[t]))] : undefined
+    return [{
+      requires: r, location: settlementIds().includes(st.location) ? st.location : location, ...(h.length ? { haunts: h } : {}), ...(f ? { fixed: f } : {}),
+      ...(name ? { name } : {}), ...(bg ? { background: bg } : {}), ...(pers ? { personality: pers } : {}), ...(tags ? { tags } : {}),
+    }]
   })
   if (stages.length) out.stages = stages
   // 小隊：隊員是其他角色的 id（不含自己，最多 3 人）；隊員存不存在、有沒有重複加入別隊，由 squads.ts 執行時判斷

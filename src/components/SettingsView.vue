@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { DEFEAT_LOOT_NAME, defeatLootRule } from '@/engine/expedition'
 import type { DefeatLoot } from '@/engine/types'
 import { companionRules } from '@/engine/data'
+import { CONTENT_TAGS, FILTER_TAGS } from '@/engine/content'
 import { gearRules } from '@/engine/gear'
 import type { StepPlace } from '@/engine/grid'
 import mapsJson from '@data/world/maps.json'
@@ -148,6 +149,20 @@ function doReset() {
           <input v-model="settings.adult" type="checkbox" /> 成人向：注入成人向世界書條目，並開啟成人向的事件 <Hint text="世界書條目例如敘事傾向、情色喜劇法則等；事件例如主人的性邀約。" />
         </label>
         <p v-if="settings.adult" class="small muted">請確認你使用的 AI 服務的使用政策允許此類內容；不允許時模型可能拒絕生成。</p>
+        <div class="row checks">
+          <span class="lab">內容篩選 <Hint text="取消勾選的內容不會出現：帶這個標籤的特殊任務不會開放、任務裡帶這個標籤的選項不會出現。進行中的任務不受影響。" /></span>
+          <label v-for="t in FILTER_TAGS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
+            <input v-model="settings.contentFilters[t]" type="checkbox" /> {{ CONTENT_TAGS[t].name }}
+          </label>
+        </div>
+        <label v-if="settings.adult">
+          <span class="lab">戰敗色情事件 <Hint text="戰敗後敵人（發情的怪物、惡人……）起意的事件。關閉「主角非自願」時也不會發生。" /></span>
+          <select v-model="settings.defeatAdult">
+            <option value="all">開啟</option>
+            <option value="not_masc">男性形象的主角不發生</option>
+            <option value="off">關閉</option>
+          </select>
+        </label>
       </div>
     </section>
 

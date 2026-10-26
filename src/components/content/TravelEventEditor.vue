@@ -7,6 +7,7 @@ import { MODE_NAME } from '@/engine/travel'
 import { builtinTravelEvent, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
+import CondExtrasEditor from './CondExtrasEditor.vue'
 import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
 import Hint from '../ui/Hint.vue'
@@ -173,6 +174,7 @@ function remove() {
       <legend>劇情條件</legend>
       <div class="row small">需要旗標 <FlagInput v-model="requires.flags" placeholder="全部成立才出現" /></div>
       <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
+      <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (draft.requires = v)" />
     </fieldset>
 
     <fieldset v-if="draft.kind === 'check'">

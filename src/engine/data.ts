@@ -1,6 +1,7 @@
 // 讀入 data/ 底下的 JSON，並提供型別。
 
 import geographyJson from '@data/world/geography.json'
+import countersJson from '@data/rules/counters.json'
 import npcsJson from '@data/world/npcs.json'
 import progressionJson from '@data/rules/progression.json'
 import economyJson from '@data/rules/economy.json'
@@ -147,15 +148,37 @@ export interface NpcStage {
   location: string
   haunts?: Haunt[]
   fixed?: { area: string; x: number; y: number }
+  /** 身分改變（例如皇子登基成為國王）：有寫的取代預設的名字、背景、性格、標籤；條件不再成立時換回來 */
+  name?: string
+  background?: string
+  personality?: string
+  tags?: string[]
 }
 
-/** 劇情旗標的條件：flags 全部成立、flags_none 全部不成立 */
+/** 劇情旗標的條件：flags 全部成立、flags_none 全部不成立、flags_any 至少一個成立、計數器在範圍內 */
 export interface StoryCond {
   flags?: string[]
   flags_none?: string[]
+  /** 至少一個成立（「或」） */
+  flags_any?: string[]
+  /** 劇情計數器的範圍：{ 計數器 id: { min, max } }（含邊界） */
+  counters?: Record<string, CounterRange>
   /** 角色的好感（親密度）至少多少：{ 角色 id: 最低值 }（沒見過面算 0） */
   affinity?: Record<string, number>
 }
+
+export interface CounterRange { min?: number; max?: number }
+
+/** 劇情計數器（data/rules/counters.json，內容頁籤可以修改與新增）：存在存檔的 flags 的 count:<id> */
+export interface CounterDef {
+  name: string
+  desc?: string
+  /** 開新遊戲時的值（沒寫是 0） */
+  initial?: number
+  min?: number
+  max?: number
+}
+export const storyCounters = (countersJson as unknown as { counters: Record<string, CounterDef> }).counters
 
 // ---- 特殊任務（人工編寫的任務鏈，data/rules/stories.json，說明見 docs/STORY_QUESTS.md） ----
 
@@ -174,6 +197,8 @@ export interface StoryStart {
   price?: number
   /** 主角至少要幾級 */
   min_level?: number
+  /** 只給這些體型的主角（男性形象 masc、女性形象 fem、中性 andro；沒寫時都可以），例如做給女性主角的任務 */
+  pc_body?: ('masc' | 'fem' | 'andro')[]
   /** npc：這位角色對主角的親密度至少要多少（沒見過面算 0） */
   min_affinity?: number
   /** 劇情旗標的條件 */
@@ -215,6 +240,8 @@ export interface StoryOutcome {
   text?: string
   set_flags?: string[]
   clear_flags?: string[]
+  /** 劇情計數器的加減：{ 計數器 id: 增減 } */
+  counters?: Record<string, number>
   effects?: RewardEffect[]
   /** 固定 NPC 以「任務同行」加入、離開 */
   join?: string
@@ -233,6 +260,8 @@ export interface StoryOutcome {
 
 export interface StoryOption {
   label: string
+  /** 內容標籤（content.ts 的 CONTENT_TAGS）：設定關掉的標籤的選項不出現，例如 NTR 分支 */
+  tags?: string[]
   /** 選項出現的條件（旗標、好感）；沒有時一直都在 */
   requires?: StoryCond
   check?: StoryCheck
@@ -274,6 +303,8 @@ export interface StoryDef {
   id: string
   title: string
   summary: string
+  /** 內容標籤（content.ts 的 CONTENT_TAGS：成人向、NTR、非處女、主角非自願）：接任務前顯示，設定關掉的不會開放 */
+  tags?: string[]
   /** 建議的公會階級：接取時檢查（同級或更低，組隊時可以高一級；story.ts 的 storyRankOk） */
   rank?: GuildRank
   start: StoryStart
@@ -343,6 +374,8 @@ export interface LandmarkOpen {
   /** 劇情旗標：這些成立（而且那些不成立）時才開放 */
   flags?: string[]
   flags_none?: string[]
+  /** 旗標的條件不成立時不顯示：地圖上是普通的道路（例如開幕前的女僕咖啡廳、秘密俱樂部） */
+  hidden?: boolean
   /** 在這裡的勢力至少要有這麼多聲望 */
   min_reputation?: number
   /** 官方場所：逃亡奴隸不能用 */

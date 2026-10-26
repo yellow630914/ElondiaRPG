@@ -173,6 +173,7 @@ function remove() {
         <label>劇情旗標成立時才開放 <FlagInput :model-value="splitFlags(draft.flagsText)" @update:model-value="draft.flagsText = ($event ?? []).join('、')" /></label>
         <label>這些旗標成立時不開放 <FlagInput :model-value="splitFlags(draft.flagsNoneText)" @update:model-value="draft.flagsNoneText = ($event ?? []).join('、')" /></label>
       </div>
+      <label class="check small"><input v-model="open.hidden" type="checkbox" /> 旗標的條件不成立時不顯示 <Hint text="地圖上看起來是普通的道路，條件成立後才出現（例如完成任務後才開幕的店、秘密俱樂部）。要有旗標的條件才有效。" /></label>
     </fieldset>
     <fieldset>
       <legend>參訪</legend>

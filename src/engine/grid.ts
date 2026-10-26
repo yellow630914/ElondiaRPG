@@ -8,11 +8,12 @@
 
 import { checkBonus, checkModifiers, modifierNote } from './perks'
 import { safeText } from './content'
+import { condMet } from './storyFlags'
 import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId,
+  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
@@ -345,7 +346,23 @@ export function getArea(state: GameState, key: string): Area {
   const block = blocksFor(loc).find((b) => b.id === blockId)
   if (!block) throw new Error(`unknown area: ${key}`)
   // 待售的空地與買下的房子（依存檔，疊在固定地圖上）；特殊地圖的通道（依旗標）
-  return overlayConnections(state, overlayLots(state, buildBlock(loc, block)))
+  return hideLandmarks(state, overlayConnections(state, overlayLots(state, buildBlock(loc, block))))
+}
+
+/** 地標還沒出現：開放條件勾了「條件成立前不顯示」，劇情旗標又不符合 */
+export function landmarkHidden(state: GameState, l: LandmarkDef): boolean {
+  const o = l.open
+  return !!o?.hidden && !condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })
+}
+
+/** 還沒出現的地標還原成道路 */
+function hideLandmarks(state: GameState, area: Area): Area {
+  for (const l of Object.values(landmarks)) {
+    if (l.at.area !== area.key || !landmarkHidden(state, l)) continue
+    const i = l.at.y * area.width + l.at.x
+    if (area.cells[i]?.kind === l.id) area.cells[i] = { kind: 'floor' }
+  }
+  return area
 }
 
 export function cellAt(area: Area, x: number, y: number): Cell | undefined {

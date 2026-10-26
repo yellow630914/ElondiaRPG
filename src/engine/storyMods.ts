@@ -1,14 +1,15 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import {
-  abilities, ATTR_IDS, companionRules, specialMaps, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, companionRules, specialMaps, storyCounters, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
 } from './data'
 import type { RewardEffect } from './effects'
 import { blockKeys, CELL_NAME, settlementArea, type CellKind } from './grid'
 import { gearKnown } from './gear'
 import { RANK_ORDER } from './materialQuests'
-import { sanitizeCond, sanitizeGearSpecLoose } from './mods'
+import { sanitizeCond, sanitizeCounterDeltas, sanitizeGearSpecLoose } from './mods'
+import { CONTENT_TAG_IDS } from './content'
 import { cleanFlag, condMet, hasFlag } from './storyFlags'
 import type { GameState } from './types'
 import { travelEvents } from './road'
@@ -219,6 +220,8 @@ function outcome(v: unknown): StoryOutcome | undefined {
   if (set.length) out.set_flags = set
   const clear = flags(o.clear_flags)
   if (clear.length) out.clear_flags = clear
+  const counters = sanitizeCounterDeltas(o.counters)
+  if (counters) out.counters = counters
   const effects = sanitizeEffects(o.effects)
   if (effects.length) out.effects = effects
   if (str(o.join, 60)) out.join = str(o.join, 60)
@@ -291,7 +294,8 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
       const s = outcome(o?.success)
       const f = outcome(o?.fail)
       const r = sanitizeCond(o?.requires) as StoryCond | undefined
-      return { label: str(o?.label, 30) || '選項', ...(r ? { requires: r } : {}), ...(c ? { check: c } : {}), ...(s ? { success: s } : {}), ...(c && f ? { fail: f } : {}) }
+      const tags = contentTags(o?.tags)
+      return { label: str(o?.label, 30) || '選項', ...(tags ? { tags } : {}), ...(r ? { requires: r } : {}), ...(c ? { check: c } : {}), ...(s ? { success: s } : {}), ...(c && f ? { fail: f } : {}) }
     })
   } else {
     const s = outcome(n.success)
@@ -300,6 +304,12 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
     if (f) out.fail = f
   }
   return out
+}
+
+/** 內容標籤：CONTENT_TAGS 裡的，依固定順序 */
+function contentTags(v: unknown): string[] | undefined {
+  const tags = CONTENT_TAG_IDS.filter((t) => Array.isArray(v) && v.includes(t))
+  return tags.length ? tags : undefined
 }
 
 function start(v: unknown): StoryStart {
@@ -316,6 +326,8 @@ function start(v: unknown): StoryStart {
   }
   if (kind === 'informant') out.price = int(s.price, 0, 1e7, 100)
   if (s.min_level) out.min_level = int(s.min_level, 1, 20, 1)
+  const bodies = (['masc', 'fem', 'andro'] as const).filter((b) => Array.isArray(s.pc_body) && s.pc_body.includes(b))
+  if (bodies.length && bodies.length < 3) out.pc_body = bodies
   const req = sanitizeCond(s.requires) as StoryCond | undefined
   if (req) out.requires = req
   if (str(s.text, 400)) out.text = str(s.text, 400)
@@ -331,6 +343,8 @@ export function sanitizeStory(id: string, raw: Partial<StoryMod>, custom: boolea
     start: start(raw.start),
     nodes: (raw.nodes ?? []).slice(0, 60).map((n, i) => node(n, i, used)),
   }
+  const tags = contentTags(raw.tags)
+  if (tags) out.tags = tags
   if (raw.rank && RANK_ORDER.includes(raw.rank)) out.rank = raw.rank
   // 完成時的公會功績：空白時用預設（progression.json 的 guild_merit.story）
   if (raw.merit !== undefined && raw.merit !== null && String(raw.merit) !== '') out.merit = Math.round(num(raw.merit, 0, 100, 0))
@@ -385,8 +399,10 @@ export function flagUsage(def: StoryDef): FlagUse[] {
   for (const f of def.start_flags ?? []) get(f).setBy.push('任務開始')
   for (const f of def.start.requires?.flags ?? []) get(f).requiredBy.push('接取條件')
   for (const f of def.start.requires?.flags_none ?? []) get(f).blockedBy.push('接取條件')
+  for (const f of def.start.requires?.flags_any ?? []) get(f).requiredBy.push('接取條件（之一）')
   for (const n of def.nodes) {
     for (const f of n.requires?.flags ?? []) get(f).requiredBy.push(n.title)
+    for (const f of n.requires?.flags_any ?? []) get(f).requiredBy.push(`${n.title}（之一）`)
     for (const f of n.requires?.flags_none ?? []) get(f).blockedBy.push(n.title)
     for (const { label, o } of outcomesOf(n)) {
       for (const f of o.set_flags ?? []) get(f).setBy.push(`${n.title}・${label}`)
@@ -430,6 +446,12 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     const other = others.find((s) => s.id !== def.id && (s.start_flags ?? []).includes(f))
     if (other) err.push(`開頭的旗標 🚩${f} 也是「${other.title}」的開頭旗標，兩個任務的任務點會互相觸發（請改名）`)
   }
+  // 用到的劇情計數器要存在
+  const counterIds = new Set([
+    ...Object.keys(def.start.requires?.counters ?? {}),
+    ...def.nodes.flatMap((n) => [...Object.keys(n.requires?.counters ?? {}), ...(n.options ?? []).flatMap((o) => Object.keys(o.requires?.counters ?? {})), ...outcomesOf(n).flatMap(({ o }) => Object.keys(o.counters ?? {}))]),
+  ])
+  for (const id of counterIds) if (!storyCounters[id]) err.push(`劇情計數器 ${id} 不存在（在「🔢 劇情計數器」新增）`)
   // 效果裡用到的東西要存在
   const effects = [...(def.rewards ?? []), ...def.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.effects ?? []))]
   for (const e of effects) {
@@ -536,7 +558,7 @@ export function copyStory(src: StoryDef, id: string, title = `${src.title}（複
     map.set(f, (f.startsWith(src.id) ? `${id}${f.slice(src.id.length)}` : `${id}_${f}`).slice(0, 40))
   }
   const ren = (list?: string[]) => list?.map((f) => map.get(f) ?? f)
-  const cond = (c?: StoryCond) => c && { ...c, ...(c.flags ? { flags: ren(c.flags) } : {}), ...(c.flags_none ? { flags_none: ren(c.flags_none) } : {}) }
+  const cond = (c?: StoryCond) => c && { ...c, ...(c.flags ? { flags: ren(c.flags) } : {}), ...(c.flags_none ? { flags_none: ren(c.flags_none) } : {}), ...(c.flags_any ? { flags_any: ren(c.flags_any) } : {}) }
   const outcome = (o?: StoryOutcome) => o && { ...o, ...(o.set_flags ? { set_flags: ren(o.set_flags) } : {}), ...(o.clear_flags ? { clear_flags: ren(o.clear_flags) } : {}) }
   const copy = clone(src) as StoryMod
   copy.id = id

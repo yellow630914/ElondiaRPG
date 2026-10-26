@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { setAdultContent } from '@/engine/content'
+import { setAdultContent, setContentFilters, setDefeatAdult, type DefeatAdultMode, type FilterTag } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { setLongRestGap } from '@/engine/rest'
@@ -95,6 +95,10 @@ interface SavedSettings {
   /** 完整保留最近幾則日誌（更早的封存，見 docs/SAVES.md 第 6 節） */
   logKeep: number
   adult: boolean
+  /** 內容篩選：false 的標籤（NTR、非處女、主角非自願）的特殊任務與事件不出現 */
+  contentFilters: Record<FilterTag, boolean>
+  /** 戰敗色情事件：全部、男性形象的主角不發生、關閉 */
+  defeatAdult: DefeatAdultMode
   language: 'zh-Hant' | 'zh-Hans'
   /** 介面語言（畫面上的文字；AI 的輸出語言是 language） */
   uiLanguage: UiLanguage
@@ -142,6 +146,8 @@ function defaults(): SavedSettings {
     creationGearBudget: gearRules.creation.default_budget,
     logKeep: 200,
     adult: false,
+    contentFilters: { ntr: true, non_virgin: true, pc_unwilling: true },
+    defeatAdult: 'all',
     language: 'zh-Hant',
     uiLanguage: 'zh-Hant',
     loreBudget: 12000,
@@ -176,7 +182,8 @@ function load(): SavedSettings {
     const routes = { ...defaultRoutes(), ...(saved.routes ? { adult: saved.routes.narration ?? 0 } : {}), ...saved.routes }
     for (const k of Object.keys(routes) as AiFeature[]) if (!(routes[k] >= 0 && routes[k] < SOURCE_COUNT)) routes[k] = 0
     const { autoNarrate: _a, provider: _p, configs: _c, ...rest } = saved
-    return { ...base, ...rest, aiNarration, sources, routes, narrateKinds: { ...base.narrateKinds, ...saved.narrateKinds }, stepMinutes: { ...base.stepMinutes, ...saved.stepMinutes } }
+    const defeatAdult = (['all', 'not_masc', 'off'] as const).includes(saved.defeatAdult as DefeatAdultMode) ? saved.defeatAdult! : base.defeatAdult
+    return { ...base, ...rest, aiNarration, sources, routes, defeatAdult, contentFilters: { ...base.contentFilters, ...saved.contentFilters }, narrateKinds: { ...base.narrateKinds, ...saved.narrateKinds }, stepMinutes: { ...base.stepMinutes, ...saved.stepMinutes } }
   } catch {
     return base
   }
@@ -202,6 +209,10 @@ export const useSettings = defineStore('settings', () => {
   const adult = ref(initial.adult)
   // 引擎的成人向開關（娼館／按摩店等名稱、成人向事件）
   watch(adult, setAdultContent, { immediate: true })
+  const contentFilters = ref(initial.contentFilters)
+  watch(contentFilters, (f) => setContentFilters(f), { immediate: true, deep: true })
+  const defeatAdult = ref(initial.defeatAdult)
+  watch(defeatAdult, setDefeatAdult, { immediate: true })
   const language = ref(initial.language)
   const uiLanguage = ref(initial.uiLanguage)
   watch(uiLanguage, applyUiLanguage, { immediate: true })
@@ -218,7 +229,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -238,6 +249,8 @@ export const useSettings = defineStore('settings', () => {
         creationGearBudget: gearBudget(),
         logKeep: logKeep.value,
         adult: adult.value,
+        contentFilters: { ...contentFilters.value },
+        defeatAdult: defeatAdult.value,
         language: language.value,
         uiLanguage: uiLanguage.value === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant',
         loreBudget: loreBudget.value,
@@ -313,7 +326,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })

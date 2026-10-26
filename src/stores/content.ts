@@ -23,6 +23,8 @@ import { pruneRoadEvent } from '@/engine/road'
 import { makeWorldPackage, parseWorldFile } from '@/engine/worldPackage'
 import { usePrompts } from './prompts'
 import { pruneTownEvent } from '@/engine/townEvents'
+import { builtinCounter, counterUsage, sanitizeCounter, type CounterMod } from '@/engine/counterMods'
+import { cleanCounterId } from '@/engine/mods'
 import { builtinTravelEvent, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from '@/engine/travelEventMods'
 import { computePlacements, sanitizeShopMod, shopUsage, type ShopMod } from '@/engine/shopMods'
 import { settlementArea } from '@/engine/grid'
@@ -58,9 +60,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'categoryIcons']
+const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'categoryIcons', 'counters']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', categoryIcons: '類別圖示',
+  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', categoryIcons: '類別圖示', counters: '劇情計數器',
 }
 
 export interface ModsDiffEntry {
@@ -569,6 +571,31 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
+  // ---- 劇情計數器 ----
+
+  function saveCounter(id: string, draft: Partial<CounterMod>) {
+    const key = cleanCounterId(id)
+    if (!key) throw new Error('計數器的 id 只能用小寫英文、數字與底線')
+    const base = builtinCounter(key)
+    const m = sanitizeCounter(draft, !base)
+    mods.value.counters ??= {}
+    if (base && JSON.stringify(m) === JSON.stringify(sanitizeCounter(base, false))) delete mods.value.counters[key]
+    else mods.value.counters[key] = m
+    save()
+  }
+  /** 自建、而且沒有被任何地方用到的計數器才能刪 */
+  function deleteCounter(id: string) {
+    if (!mods.value.counters?.[id]?.custom) throw new Error('內建的計數器不能刪除')
+    const used = counterUsage(id)
+    if (used.length) throw new Error(`還有地方用到這個計數器：${used.join('、')}`)
+    delete mods.value.counters[id]
+    save()
+  }
+  function restoreCounter(id: string) {
+    if (!mods.value.counters?.[id]?.custom) delete mods.value.counters?.[id]
+    save()
+  }
+
   // ---- 刺青圖樣、奴隸印記與印記設定 ----
 
   function saveTattoo(id: string, draft: Partial<TattooMod>) {
@@ -879,7 +906,7 @@ export const useContent = defineStore('content', () => {
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
-    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveEventRules, restoreEventRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
+    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

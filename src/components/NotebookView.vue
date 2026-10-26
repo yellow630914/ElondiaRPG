@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ContentTagChips from './ContentTagChips.vue'
 import { deadlineText, hoursLeft, storyDeadline } from '@/engine/deadlines'
 import { computed, ref } from 'vue'
 import { enemies, locationById, stories } from '@/engine/data'
@@ -98,7 +99,7 @@ const counts = computed(() => ({
       <div v-for="{ p, def, goals } in myStories" :key="p.id" class="card" :class="p.status">
         <div class="row">
           <span v-if="def!.rank" class="tag">{{ def!.rank }}</span>
-          <b class="grow">{{ def!.title }}</b>
+          <b class="grow">{{ def!.title }} <ContentTagChips :tags="def!.tags" /></b>
           <span v-if="p.status === 'active' && storyDeadline(s, p.id)" class="tag" :class="{ warn: hoursLeft(s, storyDeadline(s, p.id)!) < 24 }"><GameIcon name="hourglass" :size="12" />{{ deadlineText(s, storyDeadline(s, p.id)) }}</span>
           <span class="tag" :class="{ ok: p.status === 'completed' }">{{ p.status === 'active' ? '進行中' : p.status === 'completed' ? '完成' : '失敗' }}</span>
           <button v-if="p.status === 'active'" class="small" @click="abandon(p.id, def!.title)">放棄</button>

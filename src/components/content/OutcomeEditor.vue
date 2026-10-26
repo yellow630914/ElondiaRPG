@@ -6,6 +6,7 @@ import { SIDE_MAPS, STORY_EFFECTS } from '@/engine/storyMods'
 import type { RewardEffect } from '@/engine/effects'
 import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
+import CounterDeltasEditor from './CounterDeltasEditor.vue'
 import Hint from '../ui/Hint.vue'
 
 // 任務點的一個結果：文字、劇情旗標、效果、任務同行的夥伴、完成或失敗。
@@ -42,6 +43,7 @@ const end = computed({
       <label class="block small">發生的事（給玩家與 AI）<textarea v-model="o.text" rows="2" maxlength="400" /></label>
       <div class="row small">設定旗標 <FlagInput v-model="o.set_flags" /></div>
       <div class="row small">清除旗標 <FlagInput v-model="o.clear_flags" /></div>
+      <CounterDeltasEditor v-model="o.counters" />
       <div v-if="!props.event" class="row small">
         同行加入
         <select v-model="o.join">

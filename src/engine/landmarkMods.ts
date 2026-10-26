@@ -97,6 +97,8 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>): Land
     const rep = num(raw.open.min_reputation, L.reputation, 0)
     if (rep) o.min_reputation = rep
     if (raw.open.official) o.official = true
+    // 條件成立前不顯示：要有旗標的條件才有意義
+    if (raw.open.hidden && (f.length || fn.length)) o.hidden = true
     if (Object.keys(o).length) out.open = o
   }
   // 參訪：要有名稱，而且花錢、花時間或有效果

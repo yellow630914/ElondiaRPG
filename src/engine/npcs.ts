@@ -9,7 +9,7 @@ import { createNpc, lifeTier } from './character'
 import { adultContent, safeText } from './content'
 import {
   attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, npcs as namedNpcs, perkDef, slaveryRules, tagDef,
-  type Haunt, type NpcKind,
+  type Haunt, type NpcKind, type NpcStage,
 } from './data'
 import { Rng } from './rng'
 import { rollLook } from './traits'
@@ -50,7 +50,7 @@ export function npcRecord(state: GameState, id: string): NpcRecord | undefined {
   const stage = activeStage(state, def)
   if (!stored && stage !== undefined) stored = registerNpc(state, JSON.parse(JSON.stringify(def)) as NpcRecord)
   // 固定 NPC 登場後會複製進存檔；出現的條件與出沒的地方跟著內容頁籤的設定走
-  if (stored) syncPlacement(stored, def, stage)
+  if (stored) syncPlacement(state, stored, def, stage)
   return stored ?? def
 }
 
@@ -68,12 +68,39 @@ export function activeStage(state: GameState, def: Pick<NpcRecord, 'stages'>): n
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 
-function syncPlacement(rec: NpcRecord, def: NpcRecord, stage: number | undefined) {
+const IDENTITY = ['name', 'background', 'personality', 'tags'] as const
+
+/** 階段的身分改變（名字、背景、性格、標籤）：有寫的用階段的，沒寫的用預設的；同步到人際關係與隊伍裡的角色 */
+function syncIdentity(state: GameState, rec: NpcRecord, def: NpcRecord, st: NpcStage | undefined) {
+  const staged = !!st && IDENTITY.some((k) => st[k] !== undefined)
+  if (!staged && !rec.stagedIdentity) return
+  for (const k of IDENTITY) {
+    const v = (staged ? st![k] : undefined) ?? def[k]
+    if (v === undefined) delete rec[k]
+    else (rec as unknown as Record<string, unknown>)[k] = clone(v)
+  }
+  if (staged) rec.stagedIdentity = true
+  else delete rec.stagedIdentity
+  const rel = state.relationships?.[rec.id]
+  if (rel) {
+    rel.name = rec.name
+    if (rec.personality) rel.personality = rec.personality
+  }
+  for (const c of [state.party.find((m) => m.id === rec.id), rec.character]) {
+    if (!c) continue
+    c.name = rec.name
+    if (rec.background) c.background = rec.background
+    else delete c.background
+  }
+}
+
+function syncPlacement(state: GameState, rec: NpcRecord, def: NpcRecord, stage: number | undefined) {
   if (def.requires) rec.requires = clone(def.requires)
   else delete rec.requires
   if (def.landmark) rec.landmark = def.landmark
   else delete rec.landmark
   const st = stage !== undefined ? def.stages?.[stage] : undefined
+  syncIdentity(state, rec, def, st)
   if (st) {
     // 搬到新的地方
     rec.location = st.location

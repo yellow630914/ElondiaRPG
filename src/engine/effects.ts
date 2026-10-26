@@ -7,6 +7,7 @@
 // applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
+import { tagsAllowed } from './content'
 import { abilities, classAbilities, locationById, perkDef, slaveryRules, type AttrId } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, learnable, learnAbility, maxCircle, recalc } from './character'
@@ -467,6 +468,11 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         }
         if (state.stories?.[e.story]) {
           notes.push(`特殊任務「${def.title}」已經開始過了`)
+          break
+        }
+        // 設定關掉的內容（成人向、NTR……）：不開始
+        if (!tagsAllowed(def.tags)) {
+          notes.push(`（特殊任務「${def.title}」的內容在設定裡關閉了）`)
           break
         }
         // 特殊任務的結果接著開始另一個任務：另外一則日誌（這一則是原本任務的經過）

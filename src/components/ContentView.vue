@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, type ShopType } from '@/engine/data'
+import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { builtinSpecialMap, newSpecialMap, newSpecialMapId } from '@/engine/specialMapMods'
@@ -25,6 +25,7 @@ import ItemEditor from './content/ItemEditor.vue'
 import NpcEditor from './content/NpcEditor.vue'
 import PerkEditor from './content/PerkEditor.vue'
 import StatusEditor from './content/StatusEditor.vue'
+import CountersEditor from './content/CountersEditor.vue'
 import StoryEditor from './content/StoryEditor.vue'
 import TattooEditor from './content/TattooEditor.vue'
 import ShopEditor from './content/ShopEditor.vue'
@@ -114,6 +115,8 @@ const KINDS: Record<string, string> = { metal: '金屬', leather: '皮革', clot
 
 /** 物品頁的「類別圖示」那一列（物品名稱不能有「|」，不會撞名） */
 const ICONS_KEY = '|icons'
+/** 特殊任務頁的「劇情計數器」那一列 */
+const COUNTERS_KEY = '|counters'
 
 type Status = 'custom' | 'edited' | ''
 interface Row { key: string; name: string; note: string; status: Status; sort?: number }
@@ -194,9 +197,10 @@ const rows = computed<Row[]>(() => {
     const rules = [{ key: 'rules', name: '⚙️ 事件設定', note: '機率、權重、冷卻', status: st(!!m.eventRules?.rules, false), sort: 2 }]
     list = [...evs, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'stories') {
-    list = stories
+    const counters = { key: COUNTERS_KEY, name: '🔢 劇情計數器', note: `${Object.keys(storyCounters).length} 個`, status: st(Object.keys(m.counters ?? {}).length > 0, false) }
+    list = [counters, ...stories
       .map((d) => ({ key: d.id, name: d.title, note: `${START_KINDS[d.start.kind]}・${d.nodes.length} 個任務點`, status: st(!!m.stories[d.id], !builtinStory(d.id)) }))
-      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))]
   } else if (sub.value === 'npcs') {
     list = namedNpcs
       .map((n) => ({ key: n.id, name: n.name, note: `${locationById(n.location).name}・${n.class ? className(n.class) : n.occupation ?? '普通人'} Lv.${n.level}`, status: st(!!m.npcs[n.id], !builtinNpc(n.id)) }))
@@ -225,7 +229,7 @@ const current = computed(() => {
   const key = selected.value[sub.value]
   if (!key) return ''
   const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? key === ICONS_KEY || !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
-    : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? stories.some((d) => d.id === key)
+    : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? key === COUNTERS_KEY || stories.some((d) => d.id === key)
     : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key)
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
     : sub.value === 'landmarks' ? !!landmarks[key]
@@ -563,6 +567,7 @@ function resetAll() {
           <TravelEventEditor v-else :id="current" :key="`ev-${current}`" @deleted="select('')" />
         </template>
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
+        <CountersEditor v-else-if="sub === 'stories' && current === COUNTERS_KEY" key="counters" />
         <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" @open="select" />
         <GearEditor v-else-if="sub === 'bases'" :id="current" :key="`b-${current}`" kind="base" @deleted="select('')" />
         <GearEditor v-else :id="current" :key="`m-${current}`" kind="material" @deleted="select('')" />

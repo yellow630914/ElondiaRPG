@@ -1,0 +1,8 @@
+{
+  "$comment": "劇情計數器：特殊任務、旅途與城鎮事件的結果可以加減（結果的 counters），條件可以要求數值的範圍（條件的 counters：min、max）。initial 是開新遊戲時的值，min、max 是上下限（沒寫不限）。內容頁籤「⭐ 特殊任務 → 🔢 劇情計數器」可以修改與新增。說明見 docs/STORY_QUESTS.md 第 1.1 節。",
+  "version": 1,
+  "counters": {
+    "human_stance": { "name": "人類世界的走向", "desc": "人類方政治故事線的結果：主和 +1、主戰 -1。正數走和平、負數走開戰（見 worldgen/design/elondia-storylines.md 第 1.2 節）", "initial": 0 },
+    "demon_stance": { "name": "魔族世界的走向", "desc": "魔族方政治故事線的結果：主和 +1、主戰 -1。正數走和平、負數走開戰", "initial": 0 }
+  }
+}

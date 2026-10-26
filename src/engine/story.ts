@@ -23,7 +23,9 @@ import { joinParty, leaveParty, pcOf } from './party'
 import { presentHere } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
-import { condMet, flagKey } from './storyFlags'
+import { addCounters, condMet, flagKey } from './storyFlags'
+import { tagsAllowed } from './content'
+import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
 import type { GameState, Report, StoryProgress } from './types'
 
@@ -61,6 +63,8 @@ export function storyRankOk(state: GameState, def: Pick<StoryDef, 'rank'>): bool
 /** 還沒開始、條件也符合（建議階級、等級、劇情旗標）。公會、固定 NPC、情報商、旅途的開頭都用這個檢查 */
 export function canStart(state: GameState, def: StoryDef): boolean {
   if (state.stories?.[def.id]) return false
+  if (!tagsAllowed(def.tags)) return false
+  if (def.start.pc_body?.length && !def.start.pc_body.includes(characterBody(pcOf(state)))) return false
   if (!storyRankOk(state, def)) return false
   if (def.start.min_level && pcOf(state).level < def.start.min_level) return false
   if (def.start.kind === 'npc' && def.start.npc && def.start.min_affinity !== undefined
@@ -297,7 +301,7 @@ function parseTarget(target: string | undefined): { ref: string; option?: number
 export function optionOpen(state: GameState, node: StoryNode, option: number): boolean {
   const o = node.options?.[option]
   if (o?.check?.affinity && isCaptive(state, o.check.affinity.npc)) return false
-  return condMet(state, o?.requires)
+  return tagsAllowed(o?.tags) && condMet(state, o?.requires)
 }
 
 /** 檢定參考的好感：角色、目前的好感、加值（每 per 點 ±1，最多 ±max）、有沒有到門檻 */
@@ -423,6 +427,7 @@ function resolveOutcome(
   if (outcome.text) lines.push(outcome.text)
   setFlags(report, outcome.set_flags, true)
   setFlags(report, outcome.clear_flags, false)
+  addCounters(state, report.changes, outcome.counters)
   // 特質的機會：來源寫成這個特殊任務
   const sourced = (list: RewardEffect[]) => list.map((e) => (e.type === 'perk' && !e.source ? { ...e, source: `特殊任務「${def.title}」` } : e))
   const notes = outcome.effects?.length ? applyEffects(state, report, sourced(outcome.effects)) : []

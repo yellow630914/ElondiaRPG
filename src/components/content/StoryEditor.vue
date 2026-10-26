@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { computed, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { geography, npcs as namedNpcs, stories, type StoryNode } from '@/engine/data'
@@ -10,6 +11,7 @@ import { builtinStory, copyStory, flagUsage, NODE_KINDS, newNode, progressBreaks
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import EffectsEditor from './EffectsEditor.vue'
+import CondExtrasEditor from './CondExtrasEditor.vue'
 import FlagInput from './FlagInput.vue'
 import StoryNodeEditor from './StoryNodeEditor.vue'
 import UsageNote from './UsageNote.vue'
@@ -27,7 +29,7 @@ function current(): StoryMod {
 }
 const draft = ref<StoryMod>(current())
 // 比較時略過空的條件（表單會先建立空的 requires 物件）
-const snap = (v: unknown) => JSON.stringify(v, (k, x) => (k === 'requires' && x && !x.flags?.length && !x.flags_none?.length ? undefined : x))
+const snap = (v: unknown) => JSON.stringify(v, (k, x) => (k === 'requires' && x && !x.flags?.length && !x.flags_none?.length && !x.flags_any?.length && !Object.keys(x.counters ?? {}).length && !Object.keys(x.affinity ?? {}).length ? undefined : x))
 const saved = ref(snap(draft.value))
 watch(() => props.id, () => {
   draft.value = current()
@@ -161,6 +163,12 @@ function remove() {
   }
   emit('deleted')
 }
+const BODIES = [['masc', '男性形象'], ['fem', '女性形象'], ['andro', '中性']] as const
+/** 勾選或取消一個標籤（全部取消時拿掉欄位） */
+function toggleTag<T extends string>(list: T[] | undefined, t: T, on: boolean): T[] | undefined {
+  const next = on ? [...new Set([...(list ?? []), t])] : (list ?? []).filter((x) => x !== t)
+  return next.length ? next : undefined
+}
 </script>
 
 <template>
@@ -208,6 +216,12 @@ function remove() {
         <label><span>期限 <Hint text="開始後幾天內要完成，空白不限。" /></span><input v-model.number="draft.time_limit" type="number" min="0" max="365" placeholder="不限" /></label>
       </div>
       <label class="block"><span>簡介 <Hint text="冒險筆記與接任務時看到。" /></span><textarea v-model="draft.summary" rows="2" maxlength="300" /></label>
+      <div class="row checks small">
+        <span>內容標籤 <Hint text="接任務時與冒險筆記顯示成警示；成人向在設定沒有開啟成人向時不開放，其他標籤玩家可以在設定裡關閉（關閉的任務不開放）。分支才有的內容（例如 NTR 分支）標在那個選項上。" /></span>
+        <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
+          <input type="checkbox" :checked="draft.tags?.includes(t)" @change="draft.tags = toggleTag(draft.tags, t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
+        </label>
+      </div>
     </fieldset>
 
     <fieldset>
@@ -242,6 +256,12 @@ function remove() {
         <label v-if="draft.start.kind === 'informant'">情報的價格（白鸛幣） <input v-model.number="draft.start.price" type="number" min="0" /></label>
         <label>主角至少幾級 <input v-model.number="draft.start.min_level" type="number" min="1" max="20" placeholder="不限" /></label>
       </div>
+      <div class="row checks small">
+        <span>只給這些主角 <Hint text="依主角的體型（建角時選的體態；沒選時依種族與性別）。都不勾＝都可以，例如做給女性主角的任務只勾女性形象。" /></span>
+        <label v-for="[b, label] in BODIES" :key="b" class="check">
+          <input type="checkbox" :checked="draft.start.pc_body?.includes(b)" @change="draft.start.pc_body = toggleTag(draft.start.pc_body, b, ($event.target as HTMLInputElement).checked)" /> {{ label }}
+        </label>
+      </div>
       <div v-if="draft.start.kind === 'travel'" class="row checks small">
         <span>只在前往這些地區時（不勾＝任何地區）：</span>
         <label v-for="r in geography.regions" :key="r.id" class="check">
@@ -251,6 +271,7 @@ function remove() {
       <label class="block"><span>開頭的事件描述 <Hint text="旅途、情報商、NPC 拜託時看到；沒有時用簡介。" /></span><textarea v-model="draft.start.text" rows="2" maxlength="400" /></label>
       <div class="row small">接取需要旗標 <FlagInput v-model="startReq.flags" /></div>
       <div class="row small">這些旗標成立時不出現 <FlagInput v-model="startReq.flags_none" /></div>
+      <CondExtrasEditor :model-value="startReq" @update:model-value="(v) => (draft.start.requires = v)" />
       <div class="row small">開始時設定的旗標 <Hint text="任務鏈的第一個旗標。" /> <FlagInput v-model="draft.start_flags" /></div>
     </fieldset>
 

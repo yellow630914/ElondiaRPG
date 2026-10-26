@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ContentTagChips from './ContentTagChips.vue'
 import { computed, ref } from 'vue'
 import { attrName, enemies, type StoryCheck } from '@/engine/data'
 import { npcRecord } from '@/engine/npcs'
@@ -67,7 +68,7 @@ function abandon() {
           <button
             v-if="optionOpen(s, n.node, i)" class="small" :class="{ primary: !o.check }" :disabled="busy"
             @click="o.check ? attempt(i) : play(i)"
-          >{{ o.label }}<template v-if="o.check">（{{ checkLabel(o.check) }}）</template></button>
+          >{{ o.label }}<template v-if="o.check">（{{ checkLabel(o.check) }}）</template> <ContentTagChips :tags="o.tags" /></button>
         </template>
       </div>
     </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { computed } from 'vue'
 import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
 import { CELL_ICON, cellName, type CellKind } from '@/engine/grid'
@@ -7,6 +8,7 @@ import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAM
 import { travelEvents } from '@/engine/road'
 import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
+import CondExtrasEditor from './CondExtrasEditor.vue'
 import AffinityCondEditor from './AffinityCondEditor.vue'
 import StoryAffinityEditor from './StoryAffinityEditor.vue'
 import Hint from '../ui/Hint.vue'
@@ -79,6 +81,11 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
   if (on) set.add(id)
   else set.delete(id)
   node.value[field] = set.size ? [...set] : undefined
+}
+function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
+  const next = on ? [...new Set([...(o.tags ?? []), t])] : (o.tags ?? []).filter((x) => x !== t)
+  if (next.length) o.tags = next
+  else delete o.tags
 }
 </script>
 
@@ -154,6 +161,7 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
     </template>
     <div class="row small">解鎖需要旗標 <FlagInput v-model="requires.flags" placeholder="全部成立才解鎖" /></div>
     <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
+    <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (node.requires = v)" />
     <AffinityCondEditor :model-value="requires" label="解鎖需要好感" @update:model-value="(v) => (node.requires = v)" />
     <div class="row checks small">
       <span>在場的友方固定 NPC：</span>
@@ -207,8 +215,15 @@ function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
           </template>
           <button class="small" @click="node.options!.splice(i, 1)">移除選項</button>
         </div>
+        <div class="row checks small">
+          <span>選項的內容標籤 <Hint text="設定裡關掉的標籤，這個選項不會出現（例如 NTR 分支）。" /></span>
+          <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
+            <input type="checkbox" :checked="o.tags?.includes(t)" @change="setOptionTag(o, t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
+          </label>
+        </div>
         <StoryAffinityEditor v-if="o.check" v-model="o.check" />
         <AffinityCondEditor :model-value="o.requires ?? {}" label="這個選項出現需要" @update:model-value="(v) => (o.requires = v)" />
+        <CondExtrasEditor :model-value="o.requires ?? {}" @update:model-value="(v) => (o.requires = v)" />
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" />
         <OutcomeEditor v-if="o.check" v-model="o.fail" label="失敗" optional />
       </div>

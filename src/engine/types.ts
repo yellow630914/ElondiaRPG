@@ -364,6 +364,8 @@ export interface NpcRecord extends NpcDef {
   character?: Character
   /** 目前套用的「依劇情旗標改變出沒」（stages 的索引） */
   stage?: number
+  /** 名字、背景、性格、標籤目前用的是階段的身分（條件不再成立時換回預設的） */
+  stagedIdentity?: boolean
   /** 不在隊伍裡的 NPC（店主）的工藝等級；隊友的在 character.crafts */
   crafts?: Partial<Record<CraftId, CraftSkill>>
   /** 不在隊上、等主角回來帶的夥伴（角色資料在 character，羈絆與契約照舊）：留在家裡時是房子的 id，寄放在酒館時是「tavern:地點 id」（見 away.ts） */

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { attrName, combatRules } from '@/engine/data'
+import { defeatAdultAllowed } from '@/engine/content'
+import { characterBody } from '@/engine/look'
+import { pcOf } from '@/engine/party'
 import { parseUse, useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import AbilityPicker from './AbilityPicker.vue'
@@ -18,6 +21,13 @@ const busy = computed(() => game.judging || !!s.value.pendingAction)
 const text = ref('')
 const use = ref('')
 const foes = computed(() => ev.value.foes.map((f) => f.name).join('、'))
+// 設定改成不發生（關閉成人向、主角非自願或戰敗事件）時可以直接離開
+const allowed = computed(() => {
+  void settings.adult
+  void settings.contentFilters
+  void settings.defeatAdult
+  return defeatAdultAllowed(characterBody(pcOf(s.value)))
+})
 
 function choose(i: number) {
   void game.perform({ kind: 'defeat_event', target: `opt:${i}`, text: rules.options[i]!.label })
@@ -33,10 +43,10 @@ function respond() {
 <template>
   <section class="panel defeat-event">
     <div class="row head">
-      <h3 class="title"><GameIcon name="warning" :size="16" />倒下之後<Hint v-if="settings.adult" text="結束後和一般戰敗一樣：地下城回到入口、近郊回到城門。" /></h3>
-      <JudgeToggle v-if="settings.adult" />
+      <h3 class="title"><GameIcon name="warning" :size="16" />倒下之後<Hint v-if="allowed" text="結束後和一般戰敗一樣：地下城回到入口、近郊回到城門。" /></h3>
+      <JudgeToggle v-if="allowed" />
     </div>
-    <template v-if="settings.adult">
+    <template v-if="allowed">
       <p>你倒在{{ ev.scene }}，{{ foes }}圍了上來，看向你的眼神不懷好意……你要怎麼做？</p>
       <div class="options">
         <button v-for="(o, i) in rules.options" :key="o.label" class="small" :disabled="busy" @click="choose(i)">

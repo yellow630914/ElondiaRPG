@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ContentTagChips from './ContentTagChips.vue'
 import { computed } from 'vue'
 import { nodesHere, storyOffersHere } from '@/engine/story'
 import { useGame } from '@/stores/game'
@@ -26,7 +27,7 @@ const busy = computed(() => game.judging || !!s.value.pendingAction || !!s.value
   <section v-if="offers.length || nodes.length" class="panel story-panel">
     <h3 class="title"><GameIcon name="star" :size="16" />特殊任務</h3>
     <div v-for="d in offers" :key="d.id" class="card">
-      <div><span v-if="d.rank" class="tag">{{ d.rank }}</span> <b>{{ d.title }}</b></div>
+      <div><span v-if="d.rank" class="tag">{{ d.rank }}</span> <b>{{ d.title }}</b> <ContentTagChips :tags="d.tags" /></div>
       <p class="small">{{ d.start.text ?? d.summary }}</p>
       <p v-if="d.start.text" class="small muted">{{ d.summary }}</p>
       <button class="small primary" :disabled="busy" @click="game.startStory(d.id)">接下任務</button>

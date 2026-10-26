@@ -15,7 +15,7 @@
     "statuses": {}, "tattoos": {}, "marks": {}, "markRules": {},
     "landmarks": {}, "specialMaps": {}, "shops": {},
     "abilities": {}, "perks": {}, "materials": {}, "bases": {}, "items": {},
-    "enemies": {}, "npcs": {}, "stories": {}, "travelEvents": {}, "eventRules": {}, "categoryIcons": {}
+    "enemies": {}, "npcs": {}, "stories": {}, "travelEvents": {}, "eventRules": {}, "categoryIcons": {}, "counters": {}
   },
   "prompts": { "lore": {}, "customLore": [] }
 }
@@ -54,6 +54,7 @@
 | `travelEvents` | 旅途與城鎮事件 | `mod_event_<英文>` | [events](events.md) |
 | `eventRules` | 事件的機率與冷卻（只有一筆，key 是 `rules`） | `rules` | 同上 |
 | `categoryIcons` | 物品類別的圖示（取代內建的類別圖）：`{ "<類別>": { "icon": "<data URL>" } }` | 類別 id（`food`、`consumable`……，見 `data/rules/items.json` 的 `categories`） | [items-gear](items-gear.md) 2.11 節 |
+| `counters` | 劇情計數器：`{ "<id>": { "name": "…", "desc": "…", "initial": 0, "min": -5, "max": 5, "custom": true } }`（內建的不寫 `custom`，只改名稱、說明、初始值與上下限） | 小寫英文、數字、底線 | [docs/STORY_QUESTS](../../docs/STORY_QUESTS.md) 1.1 節 |
 
 - **新的項目**：加 `"custom": true`。id 用英文小寫、數字、底線，看得出是什麼（`mod_npc_dawnlight_king`），整個世界裡不能重複。
 - **修改內建的項目**：用原本的 id（內建的 id 查 `data/` 裡對應的檔案），**不加** `custom`，寫整份修改後的資料（不是只寫改的欄位）。能用新增的就不要改內建的：內建項目被很多地方用到，改了容易牽動別的東西。

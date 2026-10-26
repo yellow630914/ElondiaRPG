@@ -23,6 +23,7 @@
 | `custom` | 布林 | 新的任務一律 `true` | |
 | `title` | 字串 | 最多 **30** 字；空的變「新的特殊任務」 | 名稱 |
 | `summary` | 字串 | 最多 300 字 | 冒險筆記上的簡介；開頭沒寫 `text` 時也用它 |
+| `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling` | 內容標籤：接任務時顯示警示；成人向在成人向關閉時不開放，其他標籤玩家可以在設定裡關閉。選項也可以有 `tags`（只有那個分支的內容） |
 | `rank` | 字串 | `F`、`E`、`D`、`C`、`B`、`A`、`S` | 建議的公會階級：主角的階級同級或更高才接得到（組隊 2 人以上可以低一級）。不寫＝不限 |
 | `merit` | 整數 | 0～100；不寫＝5 | 完成時的公會功績 |
 | `time_limit` | 整數 | 1～365 天；0 或不寫＝不限 | 開始後幾天內要完成，過了就失敗 |
@@ -43,7 +44,8 @@
 | `regions` | `travel` | `central`、`north`、`south`、`forest`、`east_sea`、`west` | 只在前往這些地區時；不寫＝任何地區。不存在的拿掉 |
 | `price` | `informant` | 0～10000000；不寫＝100 | 情報的價格（白鸛幣） |
 | `min_level` | 全部 | 1～20 | 主角至少幾級 |
-| `requires` | 全部 | `{ "flags": [...], "flags_none": [...], "affinity": { "<固定 NPC id>": 最低好感 } }` | 接取條件（旗標、好感；和任務點的 `requires` 同一種寫法） |
+| `requires` | 全部 | `{ "flags": [...], "flags_none": [...], "flags_any": [...], "counters": { "<計數器 id>": { "min": 1 } }, "affinity": { "<固定 NPC id>": 最低好感 } }` | 接取條件（和任務點的 `requires` 同一種寫法） |
+| `pc_body` | 全部 | `["fem"]` | 只給這些體型的主角（`masc`、`fem`、`andro`） |
 | `text` | 全部 | 最多 400 字 | 開頭的事件描述 |
 
 - `manual` 的任務要靠別的任務的效果 `{ "type": "start_story", "story": "<id>" }` 開始；沒有人開啟時檢查會提醒。
@@ -57,7 +59,7 @@
 | `title` | 字串 | 最多 **40** 字 | 冒險筆記上的目標，寫出地點（「到萊茵堡的酒館打聽……」） |
 | `text` | 字串 | 最多 600 字 | 觸發時的事件描述（也交給 AI） |
 | `at` | 物件 | 見 2.4 | 在哪裡出現；不寫＝`settlement` |
-| `requires` | 物件 | `{ "flags": [...], "flags_none": [...], "affinity": { "<固定 NPC id>": 最低好感 } }` | 解鎖的條件：`flags` 全部成立、`flags_none` 全部不成立、`affinity` 每位角色的好感（-100～100，沒見過面算 0）都夠。不寫＝任務一開始就解鎖 |
+| `requires` | 物件 | `{ "flags": [...], "flags_none": [...], "affinity": { "<固定 NPC id>": 最低好感 } }` | 解鎖的條件：`flags` 全部成立、`flags_none` 全部不成立、`flags_any` 至少一個成立、`counters` 劇情計數器在範圍內、`affinity` 每位角色的好感（-100～100，沒見過面算 0）都夠。不寫＝任務一開始就解鎖 |
 | `kind` | 字串 | `story` 劇情、`check` 判定、`combat` 戰鬥、`choice` 選擇 | 其他值變 `story` |
 | `check` | 物件 | `{ "attr": "<屬性>", "dc": 12 }`；`attr` 是 `str`、`dex`、`int`、`fai`、`cha`，`dc` 1～40；可以加 `"affinity": { "npc": "<固定 NPC id>", "per": 10, "max": 5, "min": 20 }` | 只有 `check` 用。沒寫時是智力 DC 12；`attr` 寫錯變 `int`。`affinity`：好感每 `per` 點 ±1（1～100，預設 10），最多 ±`max`（0～20，預設 5）；`min`（選填）好感不到就直接失敗、不擲骰。角色不存在是錯誤 |
 | `enemies` | 陣列 | `[["<怪物 id>", 數量], ...]`，數量 1～6 | 只有 `combat` 用。怪物 id 查 `data/rules/enemies.json` 或同一個包的 `enemies` |
@@ -103,6 +105,7 @@
 |---|---|---|---|
 | `text` | 字串 | 最多 400 字 | 發生的事 |
 | `set_flags`、`clear_flags` | 字串陣列 | 旗標名稱（2.6） | 設定、清除旗標 |
+| `counters` | 物件 | `{ "<計數器 id>": 增減 }` | 劇情計數器的加減（-100～100；計數器要先在世界內容的 `counters` 裡有） |
 | `effects` | 效果陣列 | 見下表 | |
 | `join` | 固定 NPC 的 id | | 以「任務同行」加入：不佔隊伍名額，最多 2 人（第 3 人加不進來，日誌寫原因）。已經死了、被制伏的人不會加入。小隊的人只有他自己加入 |
 | `leave` | 固定 NPC 的 id | | 任務同行離開（任務結束時也會自動離開） |

@@ -7,7 +7,8 @@
 // 設定關閉成人向時不會發生；已經在等待回應時關閉，可以直接略過。
 
 import { attrOf, mod } from './character'
-import { adultContent, adultScene } from './content'
+import { adultScene, defeatAdultAllowed } from './content'
+import { characterBody } from './look'
 import { combatRules, locationById, regionById, type AttrId, type Degree } from './data'
 import { applyEffects } from './effects'
 import { afterDefeat } from './grid'
@@ -39,7 +40,7 @@ export function defeatEventFoes(state: GameState, foes: Foe[]): Foe[] {
  * 呼叫端負責判斷是戰敗、沒有救兵；回傳是否觸發。
  */
 export function rollDefeatEvent(state: GameState, rng: Rng, report: Report, foes: Foe[]): boolean {
-  if (!adultContent()) return false
+  if (!defeatAdultAllowed(characterBody(pcOf(state)))) return false
   const eligible = defeatEventFoes(state, foes)
   if (!eligible.length) return false
   const r = rules()

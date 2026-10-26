@@ -3,7 +3,7 @@
 // 作者寫的旗標名稱（例如 met_elder）存在 GameState.flags 的 story:<名稱>，和程式自己用的旗標分開。
 // 名稱以 ai: 開頭時直接讀 AI 判定寫下的旗標（例如 ai:答應幫忙），讓劇情可以接上 AI 的判定。
 
-import type { StoryCond } from './data'
+import { storyCounters, type StoryCond } from './data'
 import type { GameState } from './types'
 
 export const STORY_PREFIX = 'story:'
@@ -25,11 +25,40 @@ export function clearFlag(state: GameState, name: string) {
   delete state.flags[flagKey(name)]
 }
 
-/** 條件成立：flags 全部有、flags_none 全部沒有、affinity 的每位角色好感都夠（沒有條件時成立） */
+/** 條件成立：flags 全部有、flags_none 全部沒有、flags_any 至少一個有、計數器在範圍內、affinity 的每位角色好感都夠（沒有條件時成立） */
 export function condMet(state: GameState, cond: StoryCond | undefined): boolean {
   if (!cond) return true
   return (cond.flags ?? []).every((f) => hasFlag(state, f)) && (cond.flags_none ?? []).every((f) => !hasFlag(state, f))
+    && (!cond.flags_any?.length || cond.flags_any.some((f) => hasFlag(state, f)))
+    && Object.entries(cond.counters ?? {}).every(([id, r]) => {
+      const v = counterValue(state, id)
+      return (r.min === undefined || v >= r.min) && (r.max === undefined || v <= r.max)
+    })
     && Object.entries(cond.affinity ?? {}).every(([id, min]) => (state.relationships?.[id]?.affinity ?? 0) >= min)
+}
+
+// ---- 劇情計數器（data/rules/counters.json） ----
+
+export const COUNTER_PREFIX = 'count:'
+
+/** 計數器目前的值（還沒動過時是計數器的初始值） */
+export function counterValue(state: GameState, id: string): number {
+  const v = state.flags[`${COUNTER_PREFIX}${id}`]
+  return typeof v === 'number' ? v : storyCounters[id]?.initial ?? 0
+}
+
+/** 把計數器的加減寫進報告的變更（同一份報告裡多次加減會累計），依計數器的上下限夾住；不存在的計數器略過 */
+export function addCounters(state: GameState, changes: { flags?: Record<string, unknown> }, deltas: Record<string, number> | undefined) {
+  for (const [id, d] of Object.entries(deltas ?? {})) {
+    const def = storyCounters[id]
+    if (!def || !d) continue
+    const key = `${COUNTER_PREFIX}${id}`
+    const pending = changes.flags?.[key]
+    let v = (typeof pending === 'number' ? pending : counterValue(state, id)) + d
+    if (def.min !== undefined) v = Math.max(def.min, v)
+    if (def.max !== undefined) v = Math.min(def.max, v)
+    ;(changes.flags ??= {})[key] = v
+  }
 }
 
 /** 目前成立的劇情旗標（名稱，不含前綴） */
