@@ -552,7 +552,7 @@
       "appearance": "矮人裡也算嬌小的女人，金色鬍鬚編成兩條細辮，圓滾滾的臉頰永遠紅通通，腰間掛著一排試酒用的小錫杯。",
       "background": "鐵爐堡最好的釀酒師，「酒桶」是她自己取的外號。一年一度的氏族宴會上，誰能把別的氏族喝倒，誰就能在議會裡多說一句話——所以每年這個時候，她的酒窖門口都排滿了各氏族的使者。",
       "relations": { "npc_thorin_ironforge": "國王陛下，全鐵爐堡唯一喝不醉的人——除了她以外。" } },
-    { "id": "npc_durak_greyrock", "name": "杜拉克・灰岩", "gender": "female", "race": "dwarf", "class": "fighter", "level": 13, "location": "greyrock", "hire_cc": 0, "unhireable": true,
+    { "id": "npc_durak_greyrock", "name": "杜拉克・灰岩", "gender": "female", "race": "dwarf", "class": "fighter", "level": 13, "location": "greyrock", "hire_cc": 0, "unhireable": true, "no_attack": true,
       "kind": "adventurer", "landmark": "lm_granite_rampart", "lineage": "灰岩氏族",
       "personality": "不苟言笑，只相信城牆和自己的兵；欣賞能吃苦的人。", "faction": "dwarf_clans",
       "appearance": "方臉的女矮人將軍，頭盔上插著一根灰色長羽，從不卸甲。",

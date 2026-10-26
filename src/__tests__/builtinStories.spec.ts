@@ -4,7 +4,7 @@ import { applyContent, emptyMods } from '@/engine/mods'
 import { sanitizeStory, storyCheck } from '@/engine/storyMods'
 import { canStart } from '@/engine/story'
 import { counterValue, setFlag } from '@/engine/storyFlags'
-import { enemies, npcs as namedNpcs, stories } from '@/engine/data'
+import { dungeonEncounters, enemies, npcs as namedNpcs, stories } from '@/engine/data'
 import { adultContent, setAdultContent, setContentFilters } from '@/engine/content'
 import type { StoryDef } from '@/engine/data'
 
@@ -90,6 +90,12 @@ describe('built-in stories', () => {
       ['scs_cracked_accord', 'scs_nightclaw_intel', 'scs_sandcastle_shadow'],
       ['rite_broken_moon', 'rite_redmane_games', 'rite_wind_field'],
       ['bab_growing_tents', 'bab_restless_builders', 'bab_babelin_spire'],
+      ['pit_exile_name', 'pit_unfinished_verdict', 'pit_blackiron_tyrant'],
+      ['echo_dead_husband', 'echo_seal_log', 'echo_spirit_of_echoes'],
+      ['gnt_mountain_heartbeat', 'gnt_rune_circuit', 'gnt_giant_king'],
+      ['emb_warm_floors', 'emb_flame_weavers', 'emb_heart_of_flame'],
+      ['brc_bloodsworn_squires', 'brc_fallen_king', 'brc_first_oathbreaker'],
+      ['ghs_maneating_flowers', 'ghs_experiment_log', 'ghs_first_experiment'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
@@ -172,6 +178,13 @@ describe('built-in stories', () => {
     expect(throne.enemies?.[0]?.[0]).toBe('emperor_of_whispers')
     expect(emperor.nodes.every((n) => (n.options ?? []).every((o) => !o.label.includes('勸')))).toBe(true)
     expect(enemies.emperor_of_whispers!.desc).toContain('重新聚起形體')
+  })
+
+  it('explains why every abyss boss comes back: the history dragon replays the place', () => {
+    const bosses = Object.values(dungeonEncounters).flatMap((t) => (t.bosses?.abyss ?? []).map((g) => g[0]))
+    const strongest = bosses.filter((id) => enemies[id]!.level >= 13)
+    expect(strongest.length).toBeGreaterThanOrEqual(16)
+    for (const id of strongest) expect(enemies[id]!.desc, id).toContain('阿契隆')
   })
 
   it('keeps every fixed NPC a storyline needs out of reach of a sneak attack', () => {
