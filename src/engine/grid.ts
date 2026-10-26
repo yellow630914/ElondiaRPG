@@ -9,6 +9,7 @@
 import { checkBonus, checkModifiers, modifierNote } from './perks'
 import { adultContent, safeText } from './content'
 import { condMet } from './storyFlags'
+import { sceneShown } from './landmarks'
 import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
@@ -349,11 +350,15 @@ export function getArea(state: GameState, key: string): Area {
   return hideLandmarks(state, overlayConnections(state, overlayLots(state, buildBlock(loc, block))))
 }
 
-/** 地標還沒出現：開放條件勾了「條件成立前不顯示」，劇情旗標又不符合；成人向的場所在沒有開啟成人向時也不出現 */
+/**
+ * 地標還沒出現：開放條件勾了「條件成立前不顯示」，劇情旗標又不符合；成人向的場所在沒有開啟成人向時也不出現；
+ * 只有場景的地標（沒有參訪、探索、打工），一個場景都不出現時也不出現（內容篩選關掉、一定在場的人死了）
+ */
 export function landmarkHidden(state: GameState, l: LandmarkDef): boolean {
   const o = l.open
   if (o?.adult && !adultContent()) return true
-  return !!o?.hidden && !condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })
+  if (o?.hidden && !condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return true
+  return !!l.scenes?.length && !l.visit && !l.explore && !l.work && !l.scenes.some((sc) => sceneShown(state, sc))
 }
 
 /** 還沒出現的地標還原成道路 */

@@ -140,6 +140,6 @@
    "combat_mods": { "damage": 1 },
    "clears": "long_rest"
   },
-  "relaxed": { "name": "放鬆", "desc": "在娼館度過了愉快的時光，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" }
+  "relaxed": { "name": "放鬆", "desc": "剛剛過了愉快的時光，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" }
   }
 }

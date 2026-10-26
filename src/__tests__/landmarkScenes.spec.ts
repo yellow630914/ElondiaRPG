@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { landmarks, stories } from '@/engine/data'
 import { setAdultContent, setContentFilters } from '@/engine/content'
-import { enterLocation, getArea, standOn } from '@/engine/grid'
+import { enterLocation, getArea, landmarkHidden, standOn } from '@/engine/grid'
+import { npcRecord } from '@/engine/npcs'
+import { peopleHere } from '@/engine/population'
+import { guildQuests } from '@/engine/town'
 import { sanitizeLandmarkMod, sanitizeScene } from '@/engine/landmarkMods'
 import { enterLandmark, insideLandmark, interiorBlocked, landmarkHere, playLandmarkScene, sceneBlocked, sceneSpots, sceneText, scenesHere } from '@/engine/landmarks'
 import { leaveSpecial } from '@/engine/specialMaps'
@@ -69,6 +72,8 @@ describe('special areas unlocked by the storylines', () => {
       const cell = () => getArea(state, l.at.area).cells[l.at.y * getArea(state, l.at.area).width + l.at.x]!.kind
       expect(cell(), id).toBe('floor')
       for (const f of l.open!.flags!) setFlag(state, f)
+      // 卡珊卓線的結局一定是戴著項圈或自由其中一個；沒有場景可選的地標不出現
+      if (id === 'lm_succubus_banquet') setFlag(state, 'cas_free')
       expect(cell(), id).toBe(id)
       // 成人向關著時不出現
       setAdultContent(false)
@@ -245,5 +250,49 @@ describe('special-area interiors', () => {
     expect(sanitizeLandmarkMod('lm_honor_hole', l as never).scenes![0]!.spot).toBeUndefined()
     expect(sanitizeLandmarkMod('lm_honor_hole', { ...l, interior: 'sm_maid_cafe' } as never).interior).toBeUndefined()
     expect(sanitizeLandmarkMod('lm_honor_hole', { ...l, interior: 'sm_maid_cafe' } as never).scenes!.every((x) => !x.spot)).toBe(true)
+  })
+})
+
+describe('special areas after the play test', () => {
+  it('are never picked as a place for guild quests', () => {
+    for (const id of AREAS) {
+      const l = landmarks[id]!
+      for (let seed = 1; seed <= 20; seed++) {
+        setAdultContent(true)
+        const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed, birthplace: l.location })
+        for (const f of [...l.open!.flags!, 'cas_free']) setFlag(state, f)
+        enterLocation(state)
+        expect(guildQuests(state).some((q) => q.landmark === id), `${id} seed ${seed}`).toBe(false)
+      }
+    }
+  })
+
+  it('disappear when no scene could be chosen there', () => {
+    const club = at('lm_ebony_night', ['aya_club'])
+    expect(landmarkHere(club)?.id).toBe('lm_ebony_night')
+    setContentFilters({ ntr: false })
+    expect(landmarkHidden(club, landmarks.lm_ebony_night!)).toBe(true)
+    setContentFilters({ ntr: true })
+    expect(landmarkHidden(club, landmarks.lm_ebony_night!)).toBe(false)
+    const salon = at('lm_wives_salon', ['group_wives_done'])
+    npcRecord(salon, 'npc_clara')!.dead = true
+    expect(landmarkHidden(salon, landmarks.lm_wives_salon!)).toBe(true)
+  })
+
+  it('move Eve and Ren into the maid cafe once it opens', () => {
+    const state = at('lm_maid_cafe', ['mimi_lover', 'eve_lover'])
+    expect(npcRecord(state, 'npc_eve')?.location).toBe('dawnlight')
+    expect(npcRecord(state, 'npc_eve')?.fixed?.area).toBe('sm/sm_maid_cafe')
+    expect(npcRecord(state, 'npc_ren')?.location).toBe('tidehaven')
+    setFlag(state, 'ren_lover')
+    setFlag(state, 'ren_land')
+    expect(npcRecord(state, 'npc_ren')?.fixed?.area).toBe('sm/sm_maid_cafe')
+    expect(currentArea(state).key).toBe('sm/sm_maid_cafe')
+    const here = peopleHere(state).map((p) => p.rec.id)
+    expect(here).toContain('npc_eve')
+    expect(here).toContain('npc_ren')
+    // 只有伊芙線、咖啡廳還沒開：留在萊茵堡
+    const only = at('lm_wives_salon', ['group_wives_done', 'eve_lover'])
+    expect(npcRecord(only, 'npc_eve')?.location).toBe('rhineburg')
   })
 })
