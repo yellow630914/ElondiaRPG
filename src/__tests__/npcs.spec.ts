@@ -9,7 +9,7 @@ import { withRng } from '@/engine/state'
 import { locationById, npcTags } from '@/engine/data'
 import { cellAt, currentArea, enterLocation, standOn, zonesOf } from '@/engine/grid'
 import { npcKind, npcRecord, npcTitle } from '@/engine/npcs'
-import { areaOf, ensureRoster, isUnhireable, peopleHere, presentHere, whereToday } from '@/engine/population'
+import { areaOf, ensureRoster, outsideQuota, peopleHere, presentHere, whereToday } from '@/engine/population'
 import { shopState } from '@/engine/trade'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
@@ -30,8 +30,8 @@ describe('rosters', () => {
     const recs = roster.members.map((id) => npcRecord(state, id)!)
     const adventurers = recs.filter((r) => npcKind(r) === 'adventurer')
     const commoners = recs.filter((r) => npcKind(r) === 'commoner')
-    // 不受雇用的固定 NPC（機構首長……）不佔名額
-    const slotless = (list: typeof recs) => list.filter((r) => isUnhireable(r.id)).length
+    // 不受雇用的固定 NPC（機構首長……）與成人向角色不佔名額
+    const slotless = (list: typeof recs) => list.filter((r) => outsideQuota(r.id)).length
     expect(adventurers.length).toBe(8 + slotless(adventurers))
     // 普通人 8 位（具名的議員也算在裡面）；阿爾貝納有娼館，娼妓不足 3 位時另外補上
     expect(commoners.length).toBeGreaterThanOrEqual(8)

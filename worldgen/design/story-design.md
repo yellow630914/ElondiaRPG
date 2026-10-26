@@ -1,7 +1,7 @@
 # 設計特殊任務
 
 > 目標：玩家給出設定（或直接用世界書），Agent 能為整個世界生成主線、支線、角色任務線、獨特物品任務……而且每一條都接得起來、找得到、會完成。
-> 格式見 [guides/stories](../guides/stories.md)；範例見 [worlds/elondia-plus/stories.md](../worlds/elondia-plus/stories.md)（37 條，就是照這份指南做的）。系統規則見 [STORY_QUESTS](../../docs/STORY_QUESTS.md)。
+> 格式見 [guides/stories](../guides/stories.md)；內建世界的故事線規劃見 [elondia-storylines](elondia-storylines.md)。系統規則見 [STORY_QUESTS](../../docs/STORY_QUESTS.md)。
 > **先做固定 NPC**（[npc-design](npc-design.md)）：任務的委託人、對手、同行的夥伴幾乎都是固定 NPC。
 
 ## 1. 先讀什麼

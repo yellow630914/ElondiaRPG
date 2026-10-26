@@ -1,7 +1,7 @@
 # 世界書與提示詞
 
 > 目標：世界生成完之後，把新的人、事、地寫回世界書，產出一組新的提示詞，和內容一起打包成世界包。玩家匯入世界時，這組提示詞會一起建立並綁定（切換世界時自動切換）。
-> 格式見 [guides/content-file](../guides/content-file.md) 第 5 節；範例見 [worlds/elondia-plus/parts/prompts.json](../worlds/elondia-plus/parts/prompts.json)（由 [scripts/gen_prompts.py](../worlds/elondia-plus/scripts/gen_prompts.py) 產生）。系統規則見 [PROMPTS](../../docs/PROMPTS.md)。
+> 格式見 [guides/content-file](../guides/content-file.md) 第 5 節；範例：內建世界書的「人物-<地區>」條目（地區的重要人物，提到名字時觸發）與勢力概述的「各勢力現任首領」。系統規則見 [PROMPTS](../../docs/PROMPTS.md)。
 
 ## 1. 世界書在遊戲裡怎麼用
 
@@ -58,6 +58,6 @@
 
 1. 列出這個世界新增的：統治者、各地區的重要人物、主線、地區故事線與傳說、新的地點、組織、獨特物品。
 2. 照第 2 節決定每一項寫到哪個條目。
-3. 寫產生腳本（`worlds/<代號>/scripts/gen_prompts.py`，可以照艾隆迪亞擴充的改）：從 `parts/` 的 NPC 與任務、規劃清單讀資料，從內建世界書讀原文，產出 `parts/prompts.json`。
+3. 寫產生腳本（`worlds/<代號>/scripts/gen_prompts.py`）：從 `parts/` 的 NPC 與任務、規劃清單讀資料，從內建世界書讀原文，產出 `parts/prompts.json`。
 4. `node worldgen/tools/build-world.mjs <代號>`，跑世界檢查：「說明」會列出修改內建幾條、新增幾條；uid 不合或重複是錯誤。
 5. 在遊戲裡匯入世界包，到「提示詞」頁的世界書清單確認新條目都在（標著「自訂」）、改寫的條目標著「已修改」；走到那個地區、遇到那個人之後，用「👁️ 預覽」看條目有沒有觸發、字數有沒有超過上限。

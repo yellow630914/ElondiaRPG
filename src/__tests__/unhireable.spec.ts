@@ -75,3 +75,22 @@ describe('adult appearance', () => {
     expect(sanitizeNpc('mod_npc_x', { ...newNpc('mod_npc_x'), adult_appearance: '細節' }, true).adult_appearance).toBe('細節')
   })
 })
+
+describe('adult-only fixed NPCs', () => {
+  it('hides them while adult content is off', async () => {
+    const { setAdultContent } = await import('@/engine/content')
+    const { isAdultOnly, visibleNpc } = await import('@/engine/population')
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 1, birthplace: 'albena' })
+    const rec = npcRecord(state, 'npc_elena')!
+    setAdultContent(false)
+    expect(isAdultOnly('npc_elena')).toBe(true)
+    expect(visibleNpc(state, rec)).toBe(false)
+    expect(visibleNpc(state, npcRecord(state, 'npc_kai')!)).toBe(true)
+    setAdultContent(true)
+    expect(visibleNpc(state, rec)).toBe(true)
+    setAdultContent(false)
+  })
+  it('keeps the flag through the content editor', () => {
+    expect(sanitizeNpc('mod_npc_x', { ...newNpc('mod_npc_x'), adult: true }, true).adult).toBe(true)
+  })
+})

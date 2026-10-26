@@ -10,7 +10,7 @@ import { hireAtAsking } from '@/engine/companions'
 import { setAdultContent } from '@/engine/content'
 import { currentArea, enterLocation, goOutskirts, move, returnToTown, standOn } from '@/engine/grid'
 import { generateNpc, npcRecord } from '@/engine/npcs'
-import { ensureRoster, isHostile, isUnhireable, peopleHere, pruneNpcs, refreshRosters, spawnVisitors } from '@/engine/population'
+import { ensureRoster, isHostile, outsideQuota, peopleHere, pruneNpcs, refreshRosters, spawnVisitors } from '@/engine/population'
 import {
   alertFine, alertLevel, fineDue, gateCheck, isWanted, payFine, raiseAlert, reputationBand, wantedFine, zoneEntryBlock,
 } from '@/engine/security'
@@ -55,7 +55,7 @@ describe('roster turnover', () => {
     const after = state.rosters!.soriel!.members
     expect(after).not.toEqual(before)
     // 王都 12 + 12 人，加上不佔名額的固定 NPC（教皇、審判長……）
-    expect(after.length).toBeLessThanOrEqual(24 + after.filter((id) => isUnhireable(id)).length)
+    expect(after.length).toBeLessThanOrEqual(24 + after.filter((id) => outsideQuota(id)).length)
     expect(after.filter((id) => before.includes(id)).length).toBeGreaterThan(12)
     expect(state.rosters!.soriel!.updated).toBe(1 + 60)
   })

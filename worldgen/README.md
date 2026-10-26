@@ -16,7 +16,7 @@
 
 | 要做的事 | 先讀 |
 |---|---|
-| 從頭生成一個世界 | [WORLD_GUIDE.md](WORLD_GUIDE.md)（依序生成的步驟）＋ [templates/world-template.md](templates/world-template.md)（玩家填的設定）；範例 [worlds/elondia-plus](worlds/elondia-plus/README.md) |
+| 從頭生成一個世界 | [WORLD_GUIDE.md](WORLD_GUIDE.md)（依序生成的步驟）＋ [templates/world-template.md](templates/world-template.md)（玩家填的設定）；範例：內建世界的固定 NPC（`data/world/npcs.json`）與故事線規劃（[design/elondia-storylines](design/elondia-storylines.md)） |
 | 新增或修改某一種內容 | `guides/` 對應的那一份（格式、欄位、範圍、範例） |
 | 檢查平衡 | [balance/README.md](balance/README.md)，再看對應的那一份 |
 | 設計固定 NPC | [design/npc-design.md](design/npc-design.md) |

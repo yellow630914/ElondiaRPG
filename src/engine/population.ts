@@ -11,6 +11,7 @@ import {
   currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
 } from './grid'
 import { generateNpc, hashString, npcKind, npcRecord, npcSpot, registerNpc, weightedPick } from './npcs'
+import { adultContent } from './content'
 import { Rng } from './rng'
 import { condMet } from './storyFlags'
 import { allyPlacement } from './story'
@@ -139,9 +140,13 @@ export function rosterSize(loc: Location): { adventurer: number; commoner: numbe
   return population.roster_by_location?.[loc.id] ?? population.roster[loc.type]
 }
 
-/** 佔名單名額的人：不受雇用的固定 NPC（統治者、機構首長……）不佔名額 */
+/** 不佔名單名額的固定 NPC：不受雇用的（統治者、機構首長……）與成人向角色 */
+export function outsideQuota(id: string): boolean {
+  return isUnhireable(id) || !!namedNpcs.find((n) => n.id === id)?.adult
+}
+
 function takesSlot(rec: NpcRecord, kind: NpcKind): boolean {
-  return npcKind(rec) === kind && !isUnhireable(rec.id)
+  return npcKind(rec) === kind && !outsideQuota(rec.id)
 }
 
 /** 建立地點的名單（已經有就直接回傳）；地下城沒有名單 */
@@ -196,9 +201,14 @@ function ensureMadam(state: GameState, loc: Location) {
 
 // ---- 每天在哪裡 ----
 
-/** 劇情旗標不符合時不出現（固定 NPC 的 requires） */
-export function visibleNpc(state: GameState, rec: Pick<NpcRecord, 'requires'>): boolean {
-  return condMet(state, rec.requires)
+/** 劇情旗標不符合時不出現（固定 NPC 的 requires）；成人向角色在成人向內容關閉時不出現 */
+export function visibleNpc(state: GameState, rec: Pick<NpcRecord, 'id' | 'requires'>): boolean {
+  return !isAdultOnly(rec.id) && condMet(state, rec.requires)
+}
+
+/** 成人向角色，而且成人向內容關著（看內容頁籤的設定） */
+export function isAdultOnly(id: string): boolean {
+  return !adultContent() && !!namedNpcs.find((n) => n.id === id)?.adult
 }
 
 /** NPC 今天在哪裡（依活躍地點的權重，用 NPC id＋日期的固定亂數）；沒有活躍地點時為 undefined */

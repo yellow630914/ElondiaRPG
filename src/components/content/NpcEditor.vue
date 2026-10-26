@@ -278,6 +278,7 @@ const occupations = computed(() => {
         <label v-if="draft.kind !== 'commoner'" class="check" title="統治者、機構首長這類不會跟著冒險者走的人；特殊任務的「任務同行」不受影響"><input v-model="draft.unhireable" type="checkbox" /> 不受雇用</label>
         <label v-if="draft.kind !== 'commoner'" class="check" title="一國之主這類身邊戒備森嚴的人：不能偷襲（普通人本來就不能攻擊）。特殊任務的戰鬥不受影響"><input v-model="draft.no_attack" type="checkbox" /> 不可偷襲</label>
         <label class="check" title="身邊戒備森嚴，不能偷竊"><input v-model="draft.no_steal" type="checkbox" /> 不可偷竊</label>
+        <label class="check" title="成人向內容關閉時完全不出現（不在任何地點、不能雇用、不佔名單名額）"><input v-model="draft.adult" type="checkbox" /> 成人向角色</label>
         <label>勢力
           <select :value="draft.faction ?? ''" @change="setFaction(($event.target as HTMLSelectElement).value)">
             <option value="">（無）</option>

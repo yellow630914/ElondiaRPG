@@ -1125,6 +1125,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   // 普通人本來就不能被攻擊，只有冒險者需要「不能偷襲」
   if (raw.no_attack && kind === 'adventurer') out.no_attack = true
   if (raw.no_steal) out.no_steal = true
+  if (raw.adult) out.adult = true
   if (str(raw.appearance, 240)) out.appearance = str(raw.appearance, 240)
   if (str(raw.adult_appearance, 240)) out.adult_appearance = str(raw.adult_appearance, 240)
   if (str(raw.background, 400)) out.background = str(raw.background, 400)

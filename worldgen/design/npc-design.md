@@ -1,7 +1,7 @@
 # 設計固定 NPC
 
 > 目標：玩家給出設定（或直接用世界書），Agent 能為整個世界生成一批有層次、有關係、找得到的固定 NPC。例如替晨曦王國生成國王、替萊茵帝國生成皇帝、替每個特色建築配一位特色人物。
-> 格式見 [guides/npcs](../guides/npcs.md)；範例見 [worlds/elondia-plus/npcs.md](../worlds/elondia-plus/npcs.md)（85 位，就是照這份指南做的）。系統規則見 [NPC_SYSTEM](../../docs/NPC_SYSTEM.md)。
+> 格式見 [guides/npcs](../guides/npcs.md)；範例見內建世界的 `data/world/npcs.json`（原本照這份指南做的 85 位，修改後併入內建）。系統規則見 [NPC_SYSTEM](../../docs/NPC_SYSTEM.md)。
 
 ## 1. 先讀什麼
 

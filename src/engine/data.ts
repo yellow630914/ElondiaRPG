@@ -90,6 +90,8 @@ export interface NpcDef {
   personality: string
   faction?: string
   appearance?: string
+  /** 成人向角色：成人向內容關閉時完全不出現（不在任何地點、不能雇用、不佔名單名額） */
+  adult?: boolean
   /** 成人向的外貌細節（私密部位、性徵……）：只在成人向內容開著時接在外貌後面交給 AI 與形象圖，見 npcs.ts 的 appearanceOf */
   adult_appearance?: string
   /** 與其他角色的關係：角色 id → 文字 */

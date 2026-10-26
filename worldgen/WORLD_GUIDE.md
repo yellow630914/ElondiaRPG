@@ -2,7 +2,7 @@
 
 > 給 Agent：照這份的順序，把玩家填好的 [世界生成模板](templates/world-template.md) 變成一個可以匯入的世界包。每一步都指向對應的指南；系統規則在 [`docs/`](../docs/README.md)。
 > 動手前先讀 [README](README.md) 第 0 節的守則：**只在 `worldgen/worlds/<代號>/` 裡產出檔案，一律做成新的世界，不改 `data/`、`src/`、`docs/`。**
-> 完整的範例是 [艾隆迪亞擴充](worlds/elondia-plus/)：85 位固定 NPC、37 條特殊任務、7 條改寫與 17 條新增的世界書條目，全部用腳本產生。
+> 範例：內建世界的固定 NPC（`data/world/npcs.json`，原本照這份指南做成世界包，後來併入內建）與故事線規劃（[design/elondia-storylines](design/elondia-storylines.md)）。
 
 ## 0. 準備
 
