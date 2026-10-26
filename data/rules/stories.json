@@ -26722,19 +26722,18 @@
         {
           "id": "bell",
           "title": "在索里耶爾近郊的鐘樓擋下聖戰派的審判官",
-          "text": "鐘樓的頂層，聖戰派的審判官們穿著白金色的長袍，手裡捧著聖戰詔書的抄本。鐘繩已經握在其中一人的手裡：「鐘聲響起，聖戰就開始了。」他們看見你，舉起了聖印。",
+          "text": "鐘樓的頂層，聖戰派的大審判官穿著白金色的長袍，手裡捧著聖戰詔書的抄本，身邊站著他的審判官。鐘繩已經握在他的手裡：「鐘聲響起，聖戰就開始了。」他看見你，舉起了聖印——聖光亮得像正午。",
           "at": { "where": "outskirts", "location": "soriel" },
           "requires": { "flags": ["pol_p3_truth"] },
           "kind": "combat",
-          "enemies": [["crusade_inquisitor", 2]],
+          "enemies": [["grand_inquisitor", 1], ["crusade_inquisitor", 1]],
           "success": {
-            "text": "審判官們倒下了，鐘繩斷在了你的手裡。鐘沒有響。索里耶爾的夜很安靜。",
+            "text": "大審判官跪倒在鐘下，鐘繩斷在了你的手裡。鐘沒有響。索里耶爾的夜很安靜。",
             "set_flags": ["pol_p3_won"]
           },
           "fail": {
-            "text": "審判官們把你們逼到了鐘樓的邊緣，鐘繩被拉動了——可是鐘沒有響。你抬起頭，看見伊莎貝拉站在鐘的旁邊，雙手抱著鐘舌，咧嘴一笑：「……騎士不能對教廷拔劍。可是騎士可以抱住一口鐘。」",
-            "set_flags": ["pol_p3_won"],
-            "effects": [{ "type": "hp", "ratio": -0.2 }]
+            "text": "大審判官的聖光把你們逼下了鐘樓。鐘還沒有響——伊莎貝拉站在鐘的旁邊，雙手抱著鐘舌，咧嘴一笑：「騎士不能對教廷拔劍，可是騎士可以抱住一口鐘。撐不了太久，快點回來。」——準備好了，可以再上鐘樓。",
+            "retry": true
           }
         },
         {
@@ -26961,19 +26960,18 @@
         {
           "id": "guard",
           "title": "在血羽城堡近郊突破赤翼宮廷的近衛",
-          "text": "通往城牆的石階上，赤翼宮廷的近衛們站成了一排，黑紅的鎧甲上燃燒著羽紋。他們的隊長說：「陛下說讓你上去。」他舉起了劍，「可是近衛的職責，是讓你證明你配上去。」",
+          "text": "通往城牆的石階上，赤翼近衛長站在最後一段，黑紅的鎧甲上燃燒著羽紋，身邊是他最後一名近衛。「陛下說讓你上去。」他舉起了燃燒的劍，「可是近衛的職責，是讓你證明你配上去。」",
           "at": { "where": "outskirts", "location": "bloodplume" },
           "requires": { "flags": ["pol_h3"] },
           "kind": "combat",
-          "enemies": [["crimson_royal_guard", 2]],
+          "enemies": [["crimson_guard_captain", 1], ["crimson_royal_guard", 1]],
           "success": {
-            "text": "近衛們倒下了，最後一個近衛的隊長讓開了路：「……陛下在等你。」",
+            "text": "近衛長單膝跪在石階上，燃燒的劍插在身邊。他讓開了路：「……陛下在等你。」",
             "set_flags": ["pol_h3_through"]
           },
           "fail": {
-            "text": "近衛們把你打倒在石階上——然後，他們的隊長伸手把你拉了起來：「夠了。陛下說，你倒下也會站起來。」他讓開了路。",
-            "set_flags": ["pol_h3_through"],
-            "effects": [{ "type": "hp", "ratio": -0.2 }]
+            "text": "近衛長把你們打下了石階。他沒有追，只是站回了原地：「陛下說你會再來。我也在這裡等。」——準備好了，可以再上石階。",
+            "retry": true
           }
         },
         {
@@ -27217,19 +27215,18 @@
         {
           "id": "guard",
           "title": "在萊茵堡近郊突破帝國的近衛軍",
-          "text": "通往城牆的石階上，帝國的近衛軍站成了一排，深藍的鎧甲上刻著萊茵的雙頭鷹。他們的隊長說：「宰相大人說讓你上去。」他舉起了劍，「可是近衛的職責，是讓你證明你配上去。」",
+          "text": "通往城牆的石階上，帝國近衛軍統領站在最後一段，深藍的鎧甲上刻著萊茵的雙頭鷹，身邊是他最後一名近衛。「宰相大人說讓你上去。」他舉起了劍，劍身上纏著雷光，「可是近衛的職責，是讓你證明你配上去。」",
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["pol_d3"] },
           "kind": "combat",
-          "enemies": [["rhine_royal_guard", 2]],
+          "enemies": [["rhine_guard_marshal", 1], ["rhine_royal_guard", 1]],
           "success": {
-            "text": "近衛們倒下了，最後一個近衛的隊長讓開了路：「……宰相大人在等你。」",
+            "text": "統領單膝跪在石階上，劍上的雷光熄了。他讓開了路：「……宰相大人在等你。」",
             "set_flags": ["pol_d3_through"]
           },
           "fail": {
-            "text": "近衛們把你打倒在石階上——然後，他們的隊長伸手把你拉了起來：「夠了。大人說，你倒下也會站起來。」他讓開了路。",
-            "set_flags": ["pol_d3_through"],
-            "effects": [{ "type": "hp", "ratio": -0.2 }]
+            "text": "統領把你們打下了石階。他沒有追，只是站回了原地：「大人說你會再來。我也在這裡等。」——準備好了，可以再上石階。",
+            "retry": true
           }
         },
         {
@@ -27323,17 +27320,17 @@
         {
           "id": "heroes",
           "title": "在裂縫的深處擋下回響的英雄",
-          "text": "裂縫的最深處，兩個身影從殘影裡走了出來：兩百年前統一戰爭的英雄——一個人類的騎士，一個魔族的領主。他們生前互相殺死了對方，現在，他們一起舉起了武器，對著你：「讓我們看看，這個時代的人，配不配走到這裡。」",
+          "text": "裂縫的最深處，兩個身影從殘影裡走了出來：兩百年前統一了人類諸國的英雄王，和最後一個倒在他劍下的魔族英雄。他們生前互相殺死了對方，現在，他們一起舉起了武器，對著你：「讓我們看看，這個時代的人，配不配走到這裡。」",
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["pol_gaze_in"] },
           "kind": "combat",
-          "enemies": [["echo_champion", 2]],
+          "enemies": [["echo_hero_king", 1], ["echo_champion", 1]],
           "fail": {
             "text": "回響的英雄把你們逼退出了裂縫。他們沒有追——只是站在裂縫的深處，等著。「這個時代的人，還不夠。」裂縫還開著，你可以準備好了再來。",
             "retry": true
           },
           "success": {
-            "text": "回響的英雄們放下了武器。人類的騎士看著魔族的領主，第一次笑了：「……兩百年了。」魔族的領主也笑了：「這個時代的人，走得比我們遠。」他們一起散成了光。",
+            "text": "回響的英雄們放下了武器。英雄王看著身邊的魔族英雄，第一次笑了：「……兩百年了。」魔族的英雄也笑了：「這個時代的人，走得比我們遠。」他們一起散成了光。",
             "set_flags": ["pol_gaze_passed"]
           }
         },
@@ -27381,6 +27378,469 @@
       "rank": "S",
       "merit": 25,
       "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 5000 }]
+    },
+    {
+      "id": "drg_kagni",
+      "title": "熾寂兩極",
+      "summary": "龍災開始了。北境的雪原一半在沸騰、一半在凍結——熱量之龍卡格尼完全醒了過來，被祂碰過的村子，人們連哭和笑都忘了。（巨龍史詩・熱量之龍）",
+      "rank": "S",
+      "merit": 25,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_old_ironroot",
+        "min_level": 18,
+        "requires": { "flags": ["dragon_calamity"] },
+        "text": "老鐵根坐在風錘下面，酒壺是滿的，一口也沒喝：「卡格尼醒了。不是呼吸——是醒了。」他指著東邊，那裡的天空一半是赤紅、一半是死白，「雪嵴哨站的人，連酒都嘗不出味道了。」他看著你，「上一次，你替我們從牠的洞裡帶回了東西。這一次，要從牠本身帶回來。」"
+      },
+      "start_flags": ["drg_kag_start"],
+      "nodes": [
+        {
+          "id": "hammer",
+          "title": "讓風錘重新敲出低沉的調子",
+          "text": "風錘的鳴響亂成了一團：一下尖得像要碎掉，一下悶得像被雪埋住。老鐵根說，風錘的調子就是北境的心跳——要走進熾與寂的交界，得先讓它穩下來。",
+          "at": { "where": "cell", "location": "windhammer", "cell": "lm_wind_hammer" },
+          "requires": { "flags": ["drg_kag_start"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 20 },
+          "success": {
+            "text": "你和老鐵根一起掄起了風錘，一下、兩下、三下。第十下的時候，鳴響終於沉了下來，低低地傳過整片雪原。東邊的赤與白，停了一瞬。",
+            "set_flags": ["drg_kag_steady"]
+          },
+          "fail": {
+            "text": "你們掄到手都裂了，風錘的調子還是穩不下來。老鐵根喘著氣，乾脆把酒壺裡的酒全倒在了風錘上：「矮人的老辦法。」鳴響沉了下來——大概是酒的關係。",
+            "set_flags": ["drg_kag_steady"]
+          }
+        },
+        {
+          "id": "dragon",
+          "title": "在風錘村近郊擋下卡格尼的投影",
+          "text": "雪原的交界上，空氣一半在燃燒、一半在凍結。熱量之龍的投影從赤與白之間升起——沒有形體，只有扭曲發燙的熱浪和連聲音都凍住的虛空，交替著朝你們壓過來。被祂抽乾的寂白之影，跟在祂的身後。",
+          "at": { "where": "outskirts", "location": "windhammer" },
+          "requires": { "flags": ["drg_kag_steady"] },
+          "kind": "combat",
+          "enemies": [["kagni_projection", 1], ["kagni_stillshade", 1]],
+          "success": {
+            "text": "熱浪與虛空同時退去，雪原安靜了下來——不是死寂，是普通的、冬天的安靜。卡格尼的投影縮成了一團小小的光，懸在半空中，一半溫暖、一半冰冷，等著你。",
+            "set_flags": ["drg_kag_won"]
+          },
+          "fail": {
+            "text": "熱浪和虛空把你們逼回了風錘村。你的手指還在發抖——一半是燙，一半是冷。老鐵根把你拉進屋子裡：「沒關係。卡格尼不會跑，雪原也還在。準備好了，再去。」",
+            "retry": true
+          }
+        },
+        {
+          "id": "end",
+          "title": "決定熱量之龍的去處",
+          "text": "那團光懸在你面前，一半溫暖、一半冰冷。卡格尼的聲音很遠，像是從沸點和零度同時傳來：「你們的心太熱，又太冷。我只是在拿走多出來的。」光閃了一下，「凡人，你要我怎麼做？」",
+          "at": { "where": "npc", "npc": "npc_old_ironroot" },
+          "requires": { "flags": ["drg_kag_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「把你拿走的溫度，還給北境的人」",
+              "success": {
+                "text": "光猶豫了很久，然後慢慢地散開，化成千千萬萬個小光點，飄向北境的每一個村子。那天晚上，雪嵴哨站的人第一次嘗出了酒的味道，有人哭了，有人笑了，有人又哭又笑。卡格尼的聲音最後一次響起：「……那我就睡在你們的爐火裡吧。」",
+                "set_flags": ["drg_kag_done", "drg_kag_hearth"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩：在北境擋下熱量之龍卡格尼的投影，讓祂把拿走的溫度還給了北境的人。祂說，要睡在人們的爐火裡。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「上次你給我的光點，我一直記得」",
+              "requires": { "flags": ["kag_warmth"] },
+              "success": {
+                "text": "光愣了一下，然後亮了起來：「……是你。帶走光點的那個人。」祂繞著你轉了一圈，熱與冷第一次混在了一起，變成了剛剛好的溫度，「你記得。那我就不用再拿走了。」光沉進了風錘裡。從那天起，風錘的鳴響裡多了一點暖意——北境的人說，那是龍在打呼。",
+                "set_flags": ["drg_kag_done", "drg_kag_hearth", "drg_kag_friend"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_old_ironroot", "delta": 10, "reason": "讓卡格尼睡進了風錘" },
+                  { "type": "memory", "summary": "巨龍史詩：熱量之龍卡格尼認出了當年帶走光點的你，熱與冷混成了剛剛好的溫度，沉進了風錘裡。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把那些金子拿回去，把味道還給我」",
+              "requires": { "flags": ["kag_gold"] },
+              "success": {
+                "text": "你把當年從洞裡扛下山的金子，一袋一袋地倒在雪地上。光看著那些金子，沉默了很久：「……你終於發現了。」金子化成了光，鑽進了你的胸口。那天晚上，你喝了一口老鐵根的酒——很烈、很苦、很好喝。你哭了。",
+                "set_flags": ["drg_kag_done", "drg_kag_returned"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩：把當年從熱量之龍那裡扛走的金子還給了卡格尼，換回了喝酒的味道。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 6000 }]
+    },
+    {
+      "id": "drg_sinor",
+      "title": "霧鎖的真名",
+      "summary": "珊瑚灣的每一面鏡子都慢了半拍，每一首童謠都多了一句沒人教過的歌詞。詭秘之龍希諾爾醒了——祂說，祂想要一個名字。（巨龍史詩・詭秘之龍）",
+      "rank": "S",
+      "merit": 25,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_coral_miko",
+        "min_level": 18,
+        "requires": { "flags": ["dragon_calamity"] },
+        "text": "澪站在海靈祠的鏡子前，鏡子裡的她慢了三拍：「祂醒了。」她轉過身，鏡子裡的她過了很久才轉過來，「珊瑚灣的人開始忘記自己的名字。孩子們唱的童謠，最後多了一句：『門後面的那個，也想要名字。』」她看著你，「祂在等你，冒險者。只有你，祂記得。」"
+      },
+      "start_flags": ["drg_sin_start"],
+      "nodes": [
+        {
+          "id": "riddle",
+          "title": "在海靈祠解開希諾爾的謎語",
+          "text": "海靈祠的每一面牆上，都浮出了一行字——同一句謎語，寫了一千遍：「我有一千個名字，卻沒有一個是我的。我藏在每一個說不清的角落。我是什麼？」",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "lm_sea_spirit_shrine" },
+          "requires": { "flags": ["drg_sin_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 20 },
+          "success": {
+            "text": "你答：「傳說。」牆上的字一行一行地消失了，最後只剩一行：「答對了。那，來找我吧。」祠堂的地板裂開了一道縫，霧從縫裡湧了出來，通往海邊。",
+            "set_flags": ["drg_sin_answer"]
+          },
+          "fail": {
+            "text": "你答不出來。可是澪在你身後輕聲說：「……秘密？」牆上的字閃了一下：「接近了。」地板還是裂開了——祂好像也等不及了。",
+            "set_flags": ["drg_sin_answer"]
+          }
+        },
+        {
+          "id": "dragon",
+          "title": "在珊瑚灣近郊擋下希諾爾的投影",
+          "text": "海邊的霧濃得看不見自己的手。霧裡有一團會說話的影子，一千種聲音同時在說謎語；霧裡還有另一個你——比你慢半拍，你舉劍，它也舉劍，只是晚了一點點。",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "requires": { "flags": ["drg_sin_answer"] },
+          "kind": "combat",
+          "enemies": [["sinor_projection", 1], ["sinor_mirror_double", 1]],
+          "success": {
+            "text": "霧散了，慢半拍的倒影也散了。海邊只剩下一條小小的、霧做的龍，盤在一塊礁石上，看著你：「……你打贏了。」祂的聲音不再是一千種，只有一種，像個孩子。",
+            "set_flags": ["drg_sin_won"]
+          },
+          "fail": {
+            "text": "霧把你們吞了進去，等你們再看得見的時候，已經站在海靈祠的門口了。澪扶著你，鏡子裡的你過了很久才站穩：「祂沒有傷你。祂只是……還沒想好要不要讓你過去。」——準備好了，可以再走進霧裡。",
+            "retry": true
+          }
+        },
+        {
+          "id": "end",
+          "title": "給詭秘之龍一個名字",
+          "text": "小龍盤在礁石上，尾巴纏著自己：「凡人給我取了一千個名字：霧鎖迷言、希諾爾、門後面的那個、說不清的東西。」祂抬起頭，「沒有一個是我自己的。你給我一個。」",
+          "at": { "where": "npc", "npc": "npc_coral_miko" },
+          "requires": { "flags": ["drg_sin_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「朋友」",
+              "success": {
+                "text": "小龍愣住了，然後在礁石上滾了一圈：「……朋友。」祂念了一次又一次，「這個名字，不說不清。」祂散成了霧，霧裡留下了一句話：「以後孩子們唱童謠，最後一句要唱：門後面住著一個朋友。」從那天起，珊瑚灣的鏡子不再慢半拍了。",
+                "set_flags": ["drg_sin_done", "drg_sin_friend"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩：在珊瑚灣擋下詭秘之龍希諾爾的投影，給了祂一個名字：朋友。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「上一次你說，想要被記得。那就叫『記得』」",
+              "requires": { "flags": ["sin_friend"] },
+              "success": {
+                "text": "小龍的眼睛亮了：「……你記得。」祂繞著你和澪轉了一圈，霧裡浮出了珊瑚灣所有孩子的臉，「那我就叫『記得』。每一個說不清的角落，都有一個記得我的人。」祂散成了霧，從此，珊瑚灣的人再也沒有忘記過自己的名字。",
+                "set_flags": ["drg_sin_done", "drg_sin_remembered"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 10, "reason": "讓希諾爾被記得" },
+                  { "type": "memory", "summary": "巨龍史詩：詭秘之龍希諾爾想被記得。你給了祂一個名字：記得。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「你的名字，就是你自己決定的那一個」",
+              "success": {
+                "text": "小龍想了很久很久，最後在礁石上用尾巴寫了一個字——那個字沒有人看得懂，可是祂寫完之後，笑了。「……這是我的。」祂散成了霧。澪說，她在夢裡聽見了那個名字，可是醒來就忘了——也許，那才是對的。",
+                "set_flags": ["drg_sin_done"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩：詭秘之龍希諾爾在礁石上寫下了自己的名字。沒有人看得懂，祂卻笑了。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 6000 }]
+    },
+    {
+      "id": "drg_sorian",
+      "title": "夢的盡頭",
+      "summary": "銀月城的精靈們睡著了就醒不過來。夢境之龍索利安把整座森林拉進了夢裡——祂說，精靈千年的夢太長、太寂寞，祂想替他們找到夢的盡頭。（巨龍史詩・夢境之龍）",
+      "rank": "S",
+      "merit": 25,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 19,
+        "requires": { "flags": ["dragon_calamity"] },
+        "text": "艾溫娜的眼睛紅紅的，像是好幾天沒睡——她是不敢睡：「銀月城一半的人睡著了，叫不醒。」她握著一片發光的霧鱗，「索利安在夢裡。祂說，祂在找夢的盡頭。」她把霧鱗放在你手心，「守門人。只有你能從夢裡走出來。」"
+      },
+      "start_flags": ["drg_sor_start"],
+      "nodes": [
+        {
+          "id": "sleep",
+          "title": "在生命之泉走進精靈千年的夢",
+          "text": "生命之泉邊，莉安德拉替你點了安眠的香。你握著霧鱗躺下，閉上眼睛——然後你站在一片無邊無際的森林裡，每一棵樹都是一個精靈的夢，有的開花，有的枯萎，有的千年沒有醒過。",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["drg_sor_start"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 21 },
+          "success": {
+            "text": "你在千萬個夢之間，找到了一條沒有夢的路——那是索利安走過的路。路的盡頭，霧越來越濃，越來越亮。",
+            "set_flags": ["drg_sor_dreaming"]
+          },
+          "fail": {
+            "text": "你差點迷失在別人的夢裡——一個精靈孩子三百年前的夢，一場永遠沒有結束的生日宴會。是霧鱗在你手心燙了一下，把你拉了回來。路的盡頭，霧越來越亮。",
+            "set_flags": ["drg_sor_dreaming"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "dragon",
+          "title": "在銀月城近郊的夢裡擋下索利安的投影",
+          "text": "夢的盡頭，索利安的投影盤在一片空白上——半透明的霧與瑰麗的幻象，鱗片裡流動著無數精靈的夢。一個從千年前的夢裡走出來的騎士，擋在祂的面前。祂的聲音像搖籃曲：「守門人。你來叫醒他們？可是醒來，他們只會更寂寞。」",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["drg_sor_dreaming"] },
+          "kind": "combat",
+          "enemies": [["sorian_projection", 1], ["sorian_dream_knight", 1]],
+          "success": {
+            "text": "夢裡的騎士散成了花瓣，索利安的投影退後了一步，鱗片裡的夢一個一個地暗了下去：「……你還是要叫醒他們。」祂的聲音很輕，「為什麼？」",
+            "set_flags": ["drg_sor_won"]
+          },
+          "fail": {
+            "text": "夢的盡頭把你推了回去。你在生命之泉邊醒來，滿身是汗，霧鱗在手心發燙。艾溫娜握著你的手：「你醒了——你還醒得過來。」——準備好了，可以再睡一次。",
+            "retry": true
+          }
+        },
+        {
+          "id": "end",
+          "title": "回答夢境之龍",
+          "text": "索利安盤在夢的盡頭，看著你：「精靈活得太久，夢得太少。我只是想讓他們做一個不會醒的好夢。」祂低下頭，霧做的鼻尖幾乎碰到你，「守門人，你要怎麼說服我？」",
+          "at": { "where": "npc", "npc": "npc_evenna_starword" },
+          "requires": { "flags": ["drg_sor_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「好夢會醒，才是好夢」",
+              "success": {
+                "text": "索利安沉默了很久，然後笑了——整片夢境都在笑：「……你說得對。不醒的夢，只是牢籠。」祂一個一個地放開了精靈們的夢。那天早上，銀月城的精靈們同時醒了過來，很多人哭了——因為他們終於記得自己夢見了什麼。",
+                "set_flags": ["drg_sor_done", "drg_sor_wake"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩：在夢的盡頭擋下夢境之龍索利安。你說，好夢會醒，才是好夢——祂放開了精靈們的夢。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「你替他們守夢，我替他們守門。我們一起」",
+              "requires": { "flags_any": ["shd_gatekeeper", "mor_done"] },
+              "success": {
+                "text": "索利安的眼睛亮了起來：「……守門人。你還記得。」祂低下頭，「好。我守夢，你守門——夢裡的歸我，醒來的歸你。」精靈們一個一個地醒了，可是從那天起，他們的夢裡都多了一扇門，門邊站著一個看不清臉的守門人。艾溫娜說，那是你。",
+                "set_flags": ["drg_sor_done", "drg_sor_gatekeeper"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_evenna_starword", "delta": 10, "reason": "讓銀月城醒來" },
+                  { "type": "memory", "summary": "巨龍史詩：夢境之龍索利安認出了守門人。祂守夢，你守門——從此精靈們的夢裡，都多了一扇門。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓他們醒來，然後多做點夢」",
+              "success": {
+                "text": "索利安歪著頭想了想：「醒來，然後多做點夢……」祂笑了，「貪心的孩子。」祂放開了精靈們的夢，卻在每個人的額頭留下了一顆小小的種子。從那天起，銀月城的精靈們每晚都會做夢——短短的、醒得過來的、會想再做一次的那種。",
+                "set_flags": ["drg_sor_done"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩：夢境之龍索利安放開了精靈們的夢，卻讓他們每晚都會做一個醒得過來的夢。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 6000 }]
+    },
+    {
+      "id": "drg_babelin",
+      "title": "塔的頂端",
+      "summary": "烈日草原的巨塔又開始長了——這次不是一夜幾層，而是一個時辰一層。塔之龍巴別林說，祂要碰到天空的另一邊。（巨龍史詩・塔之龍）",
+      "rank": "S",
+      "merit": 25,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_talo_redmane",
+        "min_level": 19,
+        "requires": { "flags": ["dragon_calamity"] },
+        "text": "塔洛站在草原上，仰著頭，脖子都酸了：「塔又在長。」他指著西邊，那座塔已經穿過了雲，尖頂消失在看不見的地方，「草原上的帳篷也在長，赤鬃的人停不下來，一直在蓋。」他咬著牙，「我母親說，這一次要有人爬到頂上，告訴那條龍該停了。」他看著你，「我陪你爬。」"
+      },
+      "start_flags": ["drg_bab_start"],
+      "nodes": [
+        {
+          "id": "climb",
+          "title": "在烈日草原近郊爬上不停長高的巨塔",
+          "text": "巨塔的外牆一直在動，磚一塊一塊地往上疊，你踩著的那一層，下一刻就變成了下面一層。塔洛在你身邊，咬著繩子往上爬：「別往下看！」",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "requires": { "flags": ["drg_bab_start"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 21 },
+          "success": {
+            "text": "你們爬了一天一夜，終於追上了正在長的那一層。風很大，雲在你們腳下。尖頂就在上面——它在動，像一隻在呼吸的動物。",
+            "set_flags": ["drg_bab_top"]
+          },
+          "fail": {
+            "text": "你們爬到一半，塔洛滑了下去，你一把抓住了他，兩個人吊在半空中。是塔自己長出了一塊磚，托住了你們的腳——像是祂也想讓你們上來。",
+            "set_flags": ["drg_bab_top"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "dragon",
+          "title": "在塔的頂端擋下巴別林的投影",
+          "text": "塔的頂端，巴別林的投影從尖頂裡走了出來——不是龍，是一座會走路的塔，尖頂一層一層地往天上長，塔基的磚自己疊成了巨人，擋在你們面前。巨大的聲音從整座塔裡傳出來：「再一層！再一層就碰到了！別擋我！」",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "requires": { "flags": ["drg_bab_top"] },
+          "kind": "combat",
+          "enemies": [["babelin_projection", 1], ["babelin_brick_titan", 1]],
+          "success": {
+            "text": "磚巨人散成了沙，塔的投影停了下來，尖頂第一次沒有再往上長。整座塔在發抖：「……你們為什麼要擋我？我只是想看看上面有什麼。」",
+            "set_flags": ["drg_bab_won"]
+          },
+          "fail": {
+            "text": "塔把你們甩了下來——磚一塊一塊地托著你們，把你們放回了草原上，像是怕你們摔死。塔洛躺在沙地上大笑：「祂打贏了，還送我們回來！」——準備好了，可以再爬一次。",
+            "retry": true
+          }
+        },
+        {
+          "id": "end",
+          "title": "告訴塔之龍上面有什麼",
+          "text": "塔的頂端，風停了。巴別林的聲音不再巨大，像一個想不通事情的孩子：「我一直往上長，因為上面一定有什麼。」整座塔安靜地等著，「凡人，你們從下面上來——你們告訴我，上面有什麼？」",
+          "at": { "where": "npc", "npc": "npc_talo_redmane" },
+          "requires": { "flags": ["drg_bab_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「上面什麼都沒有。好東西都在下面」",
+              "success": {
+                "text": "塔沉默了很久，然後，從尖頂開始，一層一層地往下縮，像在嘆氣。縮到最後，只剩一座小小的、剛好能住人的塔。巴別林的聲音最後一次響起：「……那我就住在下面吧。」草原上的帳篷，一頂一頂地矮了回去——不是塌掉，是安心了。",
+                "set_flags": ["drg_bab_done", "drg_bab_down"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩：在塔的頂端擋下塔之龍巴別林。你說，好東西都在下面——塔縮成了一座剛好能住人的小塔。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「上面是別的龍。祂們會下來找你」",
+              "requires": { "flags_any": ["bab_knew", "sin_done"] },
+              "success": {
+                "text": "塔猛地一震，然後大笑起來，笑得整座塔都在搖：「那個愛說謎語的傢伙也這麼說！」巴別林停了下來，「好吧——我不用再往上長了。我就在這裡，等祂們下來。」塔留在了原地，再也沒有長高一寸。塔洛說，有時候夜裡，塔頂會亮起燈，像是在跟誰打招呼。",
+                "set_flags": ["drg_bab_done", "drg_bab_wait"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 10, "reason": "陪他爬到了塔頂" },
+                  { "type": "memory", "summary": "巨龍史詩：塔之龍巴別林停止了長高，留在原地等別的龍下來找祂。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「那就一起往上看，不用再往上長」",
+              "requires": { "flags": ["bab_grow"] },
+              "success": {
+                "text": "巴別林愣住了：「……一起看？」你和塔洛在塔頂坐下來，看著雲的上面——什麼都沒有，只有很多很多的星星。塔看了一整夜，然後說：「……好看。」祂沒有縮回去，也沒有再長高。從此烈日草原多了一座全大陸最高的觀星台，赤鬃的人說，那是龍送的。",
+                "set_flags": ["drg_bab_done", "drg_bab_stars"],
+                "effects": [
+                  {
+                    "type": "memory",
+                    "summary": "巨龍史詩：你和塔之龍巴別林在塔頂一起看了一整夜的星星。祂不再長高，烈日草原多了一座全大陸最高的觀星台。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 6000 }]
+    },
+    {
+      "id": "drg_acheron",
+      "title": "回響的盡頭",
+      "summary": "四條龍都平息了。歷史之龍阿契隆的眼睛，最後一次在天空睜開——祂說，所有的龍醒來，都是因為凡人的心太吵；現在，祂要聽聽凡人會怎麼記住這個時代。（巨龍史詩・終章）",
+      "rank": "S",
+      "merit": 30,
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 20,
+        "requires": { "flags": ["drg_kag_done", "drg_sin_done", "drg_sor_done", "drg_bab_done"] },
+        "text": "河谷鎮公會的主管已經不說話了，只是把一張空白的委託書推到你面前。委託書上慢慢浮出了字，一層疊著一層，像是無數個時代的人同時在寫：「熱量、詭秘、夢境、塔——都安靜了。來吧，凡人。讓我看看，你們要怎麼記住這個時代。——阿契隆」"
+      },
+      "start_flags": ["drg_ach_start"],
+      "nodes": [
+        {
+          "id": "rift",
+          "title": "在河谷鎮近郊走進千年的回響",
+          "text": "河谷鎮外的天空又裂開了——這一次不是兩百年，是一千年、兩千年、更久以前。巨龍紀元的尾聲、精靈王庭的黃金時代、第一座人類城市的建立，全部同時在重演。你走進裂縫，每一步都踩在一個不同的時代上。",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["drg_ach_start"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 21 },
+          "success": {
+            "text": "你沒有迷失。你走過了每一個時代，記住了每一個時代的一張臉——最後，你走到了一個還沒有發生的時代面前。那裡空白一片，阿契隆在等你。",
+            "set_flags": ["drg_ach_in"]
+          },
+          "fail": {
+            "text": "裂縫裡的時代太多了，你差點忘了自己屬於哪一個。是你走過的那些故事線救了你——每一個你幫過的人的名字，都像一盞燈。你走到了空白的盡頭，阿契隆在等你。",
+            "set_flags": ["drg_ach_in"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "dragon",
+          "title": "在千年的回響裡擋下阿契隆的投影",
+          "text": "空白的盡頭，阿契隆的投影第一次以完整的形體出現：層層交錯的殘影，每一層都是一個消逝的時代，拼成了一頭比天空還大的龍。千年來所有死去的士兵，疊成了一個身影，站在祂的面前。祂的聲音是所有時代的聲音：「證明給我看——你們值得被記住。」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["drg_ach_in"] },
+          "kind": "combat",
+          "enemies": [["acheron_projection", 1], ["acheron_echo_army", 1]],
+          "success": {
+            "text": "千年的亡軍散成了光，阿契隆的殘影一層一層地剝落，最後只剩下一隻眼睛——你在天空裡見過的那一隻。它看著你，這一次，眼神裡沒有審視，只有好奇。",
+            "set_flags": ["drg_ach_won"]
+          },
+          "fail": {
+            "text": "所有的時代同時壓了下來，你被推回了河谷鎮的郊外。天空的裂縫還開著，阿契隆的聲音很平靜：「不急。歷史有的是時間。」——準備好了，可以再走進裂縫。",
+            "retry": true
+          }
+        },
+        {
+          "id": "end",
+          "title": "告訴阿契隆，凡人會怎麼記住這個時代",
+          "text": "那隻眼睛看著你：「我讓地下城重演最深刻的過去，讓你們不要忘記。可是你們的心太吵——吵醒了熱量、詭秘、夢境、塔。」它眨了一下，「現在，告訴我：這個時代，你們要怎麼記住？」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["drg_ach_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「用故事記住。每一個人的故事」",
+              "success": {
+                "text": "眼睛看了你很久，然後笑了——你感覺得到。「……故事。」天空的裂縫一道一道地合上，每合上一道，就有一個你走過的故事在半空中閃過：雪原的風錘、珊瑚灣的童謠、森林的夢、草原的塔，還有好多好多的人。阿契隆的聲音最後一次響起：「好。那這個時代，就交給你們自己記住了。」龍災，結束了。",
+                "set_flags": ["drg_done", "drg_ach_stories"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩・終章：擋下了歷史之龍阿契隆的投影。你說，這個時代要用每一個人的故事記住——龍災結束了。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「不用你重演。我們自己會記得」",
+              "success": {
+                "text": "眼睛眨了一下，像是有點寂寞：「……不用我了嗎？」你說，不是不用，是可以休息了。眼睛慢慢地閉上了。從那天起，地下城的層主還是會重新出現——可是那是因為地下城自己記得，不再是阿契隆讓它們重演。龍災，結束了。",
+                "set_flags": ["drg_done", "drg_ach_rest"],
+                "effects": [{ "type": "memory", "summary": "巨龍史詩・終章：擋下了歷史之龍阿契隆的投影。你說我們自己會記得——祂閉上了眼睛。龍災結束了。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 5000 }, { "type": "xp", "amount": 8000 }]
     }
   ]
 }
