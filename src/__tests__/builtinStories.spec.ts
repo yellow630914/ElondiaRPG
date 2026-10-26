@@ -78,6 +78,12 @@ describe('built-in stories', () => {
       ['brew_cellar_queue', 'brew_bribed_cask', 'brew_clan_feast'],
       ['smith_fireless_iron', 'smith_heartfire_test', 'smith_council_verdict'],
       ['wt_spring_decline', 'wt_other_end', 'wt_new_sprout'],
+      ['wat_dancer_rumor', 'wat_chart_island', 'wat_spring_heart'],
+      ['smg_blacksail_cargo', 'smg_skull_tide', 'smg_under_council_eyes'],
+      ['sinor_lagging_mirror', 'sinor_untold_legend', 'sinor_fog_locked'],
+      ['acc_novel_girl', 'acc_kalanthil_courtesy', 'acc_sprout_and_root'],
+      ['shadow_extra_star', 'shadow_same_dream', 'shadow_sorian_projection'],
+      ['fog_lost_names', 'fog_mistveil', 'fog_behind_the_mist'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)

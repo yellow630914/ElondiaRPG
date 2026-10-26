@@ -11337,6 +11337,1661 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "wat_dancer_rumor",
+      "title": "舞孃的打聽",
+      "summary": "從西部荒野來的貓魅族舞孃蕾伊拉，白天在潮汐港的酒館跳舞，晚上到處打聽一件能「無中生水」的祕寶。她的旅費，昨晚被扒走了。（尋找生水的祕寶・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_leila",
+        "min_level": 5,
+        "text": "蕾伊拉的尾巴垂得快碰到地板了：「我跳了三個月的舞存的旅費……昨晚全被扒走了。」她突然抬起頭，眼睛亮得像沙漠的太陽，「你是冒險者吧？幫我找回來，我跳一整晚的舞給你看！不、不是那種舞！是故鄉的舞！」"
+      },
+      "start_flags": ["wat_start"],
+      "nodes": [
+        {
+          "id": "tavern",
+          "title": "在潮汐港的酒館打聽扒手的下落",
+          "text": "酒館裡擠滿了水手。蕾伊拉一緊張就跳起舞來，引得半間酒館的人都在吹口哨。你趁著大家看她的時候，一桌一桌地問。",
+          "at": { "where": "cell", "location": "tidehaven", "cell": "tavern" },
+          "requires": { "flags": ["wat_start"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "一個喝醉的老水手告訴你：港口有一群專扒外地人的小鬼，老大是個獨眼的，窩在城外的破船廠。他還多說了一句：「那個貓姑娘在找『湧泉之心』？情報商那裡有張老海圖，上面畫著它。」",
+            "set_flags": ["wat_lead"],
+            "effects": [{ "type": "affinity", "npc": "npc_leila", "delta": 5, "reason": "陪她在酒館打聽" }]
+          },
+          "fail": {
+            "text": "你什麼也沒問到，倒是蕾伊拉一曲跳完，一個水手塞給她一張紙條：「扒手窩在城外的破船廠。還有，情報商那裡有張畫著『湧泉之心』的海圖。」",
+            "set_flags": ["wat_lead"]
+          }
+        },
+        {
+          "id": "cutpurses",
+          "title": "在潮汐港近郊的破船廠搶回蕾伊拉的旅費",
+          "text": "破船廠的骨架裡，幾個扒手正在分贓，蕾伊拉的錢袋就在獨眼老大的手裡。蕾伊拉二話不說，一個迴旋踢就衝了上去。",
+          "at": { "where": "outskirts", "location": "tidehaven" },
+          "requires": { "flags": ["wat_lead"] },
+          "kind": "combat",
+          "enemies": [["harbor_cutpurse", 3]],
+          "success": {
+            "text": "扒手們被踢進了海裡。蕾伊拉抱著錢袋數了三遍，一枚都沒少，然後抱住了你：「你是好人！」",
+            "set_flags": ["wat_purse"]
+          },
+          "fail": {
+            "text": "扒手們搶走了一半才逃走。蕾伊拉抱著剩下的一半錢袋，嘆了口氣，又笑了：「一半也好！至少不用從頭再跳三個月。」",
+            "set_flags": ["wat_purse"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "chart",
+          "title": "決定怎麼買下那張海圖",
+          "text": "情報商把那張泛黃的海圖攤開：一座畫在珊瑚灣附近的小島，旁邊寫著「湧泉之心——風母之贈」。價錢是蕾伊拉全部的旅費。她咬著嘴唇，尾巴緊緊纏在腿上。",
+          "at": { "where": "cell", "location": "tidehaven", "cell": "informant" },
+          "requires": { "flags": ["wat_purse"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "替她付一半",
+              "success": {
+                "text": "你掏出了一半的錢。蕾伊拉愣了很久，然後當場在情報商的店裡跳了一支故鄉的舞——沙漠的舞，像風吹過沙丘。情報商看呆了，又退了你們一半的錢。",
+                "set_flags": ["wat_1_done", "wat_paid"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_leila", "delta": 15, "reason": "替她付了一半的海圖錢" },
+                  { "type": "money", "amount": -100 },
+                  { "type": "memory", "summary": "替潮汐港的貓魅族舞孃蕾伊拉搶回了旅費，幫她買下了畫著「湧泉之心」的海圖。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她自己付",
+              "success": {
+                "text": "蕾伊拉把全部的旅費推了過去，接過海圖，抱在胸前：「沒關係，錢可以再跳。故鄉的泉，等不了。」",
+                "set_flags": ["wat_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_leila", "delta": 10, "reason": "替她搶回了旅費" },
+                  { "type": "memory", "summary": "替潮汐港的貓魅族舞孃蕾伊拉搶回了旅費，她用全部的錢買下了畫著「湧泉之心」的海圖。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "wat_chart_island",
+      "title": "海圖上的島",
+      "summary": "海圖上的小島在珊瑚灣附近。珊瑚灣海靈祠的巫女澪說，她聽過「風母之贈」的傳說——可是傳說的結尾，她一直想不起來。（尋找生水的祕寶・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_leila",
+        "min_level": 8,
+        "requires": { "flags": ["wat_1_done"] },
+        "text": "蕾伊拉把海圖攤在你面前，手指點著珊瑚灣旁邊的小島：「就是這裡！」她的尾巴興奮地甩來甩去，「珊瑚灣有個巫女，聽得懂海浪的話。我們去問她！」"
+      },
+      "start_flags": ["wat_island"],
+      "nodes": [
+        {
+          "id": "miko",
+          "title": "請珊瑚灣的巫女澪聽海浪說話",
+          "text": "海靈祠的巫女澪看了海圖很久，然後停下來聽海，聽到忘了自己剛剛在說什麼。「啊。風母之贈……很久很久以前，風母把一顆會湧出清水的心送給了沙漠的人。後來……後來……」她又停下來聽海。",
+          "at": { "where": "npc", "npc": "npc_coral_miko" },
+          "requires": { "flags": ["wat_island"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": {
+            "text": "你陪澪一起聽海，終於聽到了結尾：送心的船沉在了小島旁，心被海靈收了起來——成了珊瑚灣海靈祠那口淡水井的源頭。澪的臉色變了：「……我們的井，就是湧泉之心。」",
+            "set_flags": ["wat_heard"],
+            "effects": [{ "type": "affinity", "npc": "npc_coral_miko", "delta": 10, "reason": "陪她一起聽海" }]
+          },
+          "fail": {
+            "text": "你們聽了一整天，澪只想起來一半：「送心的船沉在了小島旁……然後，海靈把它收起來了。收到哪裡……海浪不肯說。」",
+            "set_flags": ["wat_heard"]
+          }
+        },
+        {
+          "id": "reef",
+          "title": "在珊瑚灣近郊的小島擊退礁石的潛伏者",
+          "text": "海圖上的小島只是一片露出海面的礁石。沉船的骨架卡在礁石之間，裡面空空如也。退潮的水窪裡，幾隻背上長著珊瑚的大東西緩緩地站了起來。",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "requires": { "flags": ["wat_heard"] },
+          "kind": "combat",
+          "enemies": [["reef_lurker", 2]],
+          "success": {
+            "text": "潛伏者沉回了海裡。沉船的船艙裡只剩下一塊刻著沙漠文字的木牌：「獻給風母——沙痕部落」。蕾伊拉摸著那些字，眼淚掉了下來。",
+            "set_flags": ["wat_wreck"]
+          },
+          "fail": {
+            "text": "潛伏者把你們逼回了小船上，卻在漲潮時沉回了海裡。蕾伊拉從沉船裡撿回了一塊木牌：「獻給風母——沙痕部落」。她摸著那些字，眼淚掉了下來。",
+            "set_flags": ["wat_wreck"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "truth",
+          "title": "決定要不要告訴蕾伊拉真相",
+          "text": "沉船裡沒有湧泉之心。澪看著你，小聲地說：「如果……如果湧泉之心是我們的井，那她要的東西，就在珊瑚灣。可是拿走了，珊瑚灣就沒有淡水了。」蕾伊拉還在船頭抱著那塊木牌。",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "requires": { "flags": ["wat_wreck"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "告訴蕾伊拉真相",
+              "success": {
+                "text": "蕾伊拉聽完，很久沒有說話。最後她說：「……我不能拿走別人的水，去救自己的故鄉。」她抬頭看著澪，「可是，一定有別的辦法。對吧？」澪點了點頭，又停下來聽海。",
+                "set_flags": ["wat_2_done", "wat_truth"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_leila", "delta": 15, "reason": "告訴了她真相" },
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 10, "reason": "替她說出了真相" },
+                  { "type": "memory", "summary": "在珊瑚灣發現「湧泉之心」就是海靈祠那口井的源頭，把真相告訴了蕾伊拉。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "先瞞著她",
+              "success": {
+                "text": "你只說沉船裡什麼都沒有。蕾伊拉擦掉眼淚，又笑了：「沒關係！海圖錯了，我就再找一張。」澪看著你，什麼也沒說。",
+                "set_flags": ["wat_2_done", "wat_hidden"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": -5, "reason": "瞞著蕾伊拉" },
+                  { "type": "memory", "summary": "在珊瑚灣發現「湧泉之心」就是海靈祠那口井的源頭，卻沒有告訴蕾伊拉。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "wat_spring_heart",
+      "title": "湧泉之心",
+      "summary": "海靈祠的巫女澪說，海靈願意見想要湧泉之心的人——但要先通過潮汐守護靈的考驗。蕾伊拉的故鄉，今年的泉水只剩下一口井。（尋找生水的祕寶・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_leila",
+        "min_level": 11,
+        "requires": { "flags": ["wat_2_done"] },
+        "text": "蕾伊拉手裡捏著一封從沙漠寄來的信，信紙上有沙子：「故鄉只剩最後一口井了。」她沒有哭，只是一直在原地小小地跳著舞步，「澪說海靈願意見我。我想……親口問問祂。你陪我去好不好？」"
+      },
+      "start_flags": ["wat_heart"],
+      "nodes": [
+        {
+          "id": "guardian",
+          "title": "在珊瑚灣的海靈祠通過潮汐守護靈的考驗",
+          "text": "海靈祠的井口湧出了海水，兩道由潮汐凝成的巨大身影從井裡升了起來，聲音像浪打在礁石上：「想要風母之贈的人……證明你們配得上水。」蕾伊拉擺好了架勢，站到了你身邊。",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "lm_sea_spirit_shrine" },
+          "requires": { "flags": ["wat_heart"] },
+          "kind": "combat",
+          "enemies": [["tide_guardian", 2]],
+          "allies": ["npc_leila"],
+          "success": {
+            "text": "守護靈散成了一場細雨，雨水落在蕾伊拉的臉上。井底傳來一個溫柔的聲音：「沙漠的孩子。你要什麼？」",
+            "set_flags": ["wat_tested"]
+          },
+          "fail": {
+            "text": "守護靈把你們打倒在井邊，卻在蕾伊拉第三次站起來時停了下來，散成了一場細雨。井底傳來一個溫柔的聲音：「沙漠的孩子。你要什麼？」",
+            "set_flags": ["wat_tested"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "ask",
+          "title": "替蕾伊拉向海靈開口",
+          "text": "蕾伊拉張了張嘴，卻緊張得說不出話，尾巴抖個不停。澪輕輕推了推你：「你來說吧。海靈喜歡聽真心話。」",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "lm_sea_spirit_shrine" },
+          "requires": { "flags": ["wat_tested"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說了沙漠的井、珊瑚灣的井，和一個跳了三個月的舞只為了買一張海圖的舞孃。井底沉默了很久，然後笑了：「心只有一顆。但心可以生出種子。」一顆小小的、發著藍光的石頭浮出了井口。",
+            "set_flags": ["wat_asked", "wat_seed_offer"]
+          },
+          "fail": {
+            "text": "你說得結結巴巴，可蕾伊拉突然跳起了故鄉的舞，一句話也沒說。井底沉默了很久，然後說：「心只有一顆。你要拿走它嗎？」",
+            "set_flags": ["wat_asked"]
+          }
+        },
+        {
+          "id": "choose",
+          "title": "決定湧泉之心的去處",
+          "text": "井口的水映著月光。蕾伊拉看著井，又看著你：「你陪我走到這裡的。你說——該怎麼辦？」",
+          "at": { "where": "npc", "npc": "npc_leila" },
+          "requires": { "flags": ["wat_asked"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "收下海靈的泉種",
+              "requires": { "flags": ["wat_seed_offer"] },
+              "success": {
+                "text": "蕾伊拉捧著那顆泉種，哭得像個孩子。半年後，沙漠寄來一封信，信紙上沒有沙子：「泉種發芽了。故鄉的井，又滿了。」信的最後畫著一隻跳舞的貓。",
+                "set_flags": ["wat_done", "wat_seed"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_leila", "delta": 25, "reason": "陪她找到了故鄉的水" },
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 15, "reason": "保住了珊瑚灣的井" },
+                  { "type": "reputation", "faction": "seven_tides", "delta": 5 },
+                  { "type": "memory", "summary": "陪貓魅族舞孃蕾伊拉向珊瑚灣的海靈求來了一顆泉種，沙漠的故鄉又有了水，珊瑚灣的井也保住了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "帶走湧泉之心",
+              "success": {
+                "text": "蕾伊拉把手伸進井裡，捧出了一顆跳動著的水藍色的心。珊瑚灣的井在她身後慢慢乾了。澪什麼也沒說，只是替你們開了門。半年後，沙漠的故鄉又有了水；珊瑚灣的鎮民開始從滄月闕運淡水，一桶一桶地。",
+                "set_flags": ["wat_done", "wat_taken"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_leila", "delta": 20, "reason": "陪她帶回了湧泉之心" },
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": -15, "reason": "珊瑚灣的井乾了" },
+                  { "type": "memory", "summary": "陪蕾伊拉從珊瑚灣的海靈祠帶走了湧泉之心。沙漠的故鄉有了水，珊瑚灣的井乾了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把心留在珊瑚灣，我們再找別的辦法」",
+              "success": {
+                "text": "蕾伊拉擦掉眼淚，對著井深深地鞠了一躬：「謝謝你們讓我看見它。」她轉身時，井底浮出了一滴發藍光的水，落進了她的水壺：「給沙漠的孩子。一滴，能撐一年。」",
+                "set_flags": ["wat_done", "wat_left"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_leila", "delta": 20, "reason": "陪她做了艱難的決定" },
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 20, "reason": "把心留在了珊瑚灣" },
+                  { "type": "memory", "summary": "陪蕾伊拉把湧泉之心留在了珊瑚灣。海靈送了她一滴能撐一年的水。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "smg_blacksail_cargo",
+      "title": "黑帆的貨",
+      "summary": "七潮議會懸賞走私王「黑帆」卡洛斯的證據。今晚，有一艘不掛旗的船要在潮汐港外卸貨。（走私・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "guild",
+        "location": "tidehaven",
+        "min_level": 5,
+        "text": "公會的告示板上貼著七潮議會的懸賞令，上面蓋著白鯨的紋章：「收集走私王『黑帆』卡洛斯的走私證據，重賞。」底下有人用小字補了一行：「祝你活得夠久，領得到賞金。」"
+      },
+      "start_flags": ["smg_start"],
+      "nodes": [
+        {
+          "id": "tip",
+          "title": "到潮汐港的情報商打聽今晚的船",
+          "text": "情報商一聽到「黑帆」兩個字，就把店門關上了：「你想死，別拖我下水。」他壓低聲音，「……今晚，北邊的海灣，一艘不掛旗的船。」",
+          "at": { "where": "cell", "location": "tidehaven", "cell": "informant" },
+          "requires": { "flags": ["smg_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你從情報商的帳本上看出了端倪：這艘船每個月來一次，卸的貨從來不經過港務。時間是午夜，北邊的海灣。",
+            "set_flags": ["smg_tip"]
+          },
+          "fail": {
+            "text": "情報商收了一筆錢，才肯畫一張北邊海灣的地圖給你。",
+            "set_flags": ["smg_tip"],
+            "effects": [{ "type": "money", "amount": -80 }]
+          }
+        },
+        {
+          "id": "beach",
+          "title": "在潮汐港近郊的海灣截下走私船的水手",
+          "text": "午夜的海灣裡，幾個水手正把木箱從小艇上搬到沙灘。看見你，他們扔下箱子，抽出了彎刀：「黑帆的貨，誰敢碰？」",
+          "at": { "where": "outskirts", "location": "tidehaven" },
+          "requires": { "flags": ["smg_tip"] },
+          "kind": "combat",
+          "enemies": [["smuggler_deckhand", 3]],
+          "success": {
+            "text": "水手們划著小艇逃了，留下了幾個木箱。你撬開一箱——不是黃金，也不是武器，是成箱的藥：退燒藥、止血草、治海熱病的苦根。箱子上寫著：「珊瑚灣」。",
+            "set_flags": ["smg_crates"]
+          },
+          "fail": {
+            "text": "水手們搶走了幾箱才逃走，剩下兩個木箱。你撬開一箱——是成箱的藥，箱子上寫著：「珊瑚灣」。",
+            "set_flags": ["smg_crates"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "report",
+          "title": "決定怎麼處理這批藥",
+          "text": "深潮席的雷諾看了看那些藥，嘆了口氣：「議會對藥材抽三成的稅，珊瑚灣的漁民買不起。黑帆就用走私的方式，賣給他們半價的藥。」他看著你，「證據就在這裡。交不交給議會，你決定。」",
+          "at": { "where": "npc", "npc": "npc_reno_deeptide" },
+          "requires": { "flags": ["smg_crates"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "把藥送去珊瑚灣，不交給議會",
+              "success": {
+                "text": "你把藥送到了珊瑚灣，漁民們把你當成了英雄。三天後，一個穿著黑衣的人在酒館找到你：「黑帆先生想請你喝一杯。」",
+                "set_flags": ["smg_1_done", "smg_let"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_reno_deeptide", "delta": 5, "reason": "替珊瑚灣著想" },
+                  { "type": "memory", "summary": "在潮汐港截下了「黑帆」的走私船，發現是給珊瑚灣的平價藥，把藥送了過去，沒有交給議會。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "交給議會領賞",
+              "success": {
+                "text": "議會收下了證據，你領了賞金。白鯨在議會上一拳打在桌上：「黑帆，這是第一張牌。」雷諾看著那些被沒收的藥，很久沒有說話。",
+                "set_flags": ["smg_1_done", "smg_report"],
+                "effects": [
+                  { "type": "money", "amount": 200 },
+                  { "type": "reputation", "faction": "seven_tides", "delta": 5 },
+                  { "type": "memory", "summary": "在潮汐港截下了「黑帆」的走私船，把走私的藥材交給了七潮議會。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "smg_skull_tide",
+      "title": "骷髏潮島的東西",
+      "summary": "「黑帆」卡洛斯親自找上門來，要你護送一件從骷髏潮島帶回來的貨。他說，那是一件「不該存在」的東西。（走私・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_carlos_blacksail",
+        "min_level": 8,
+        "requires": { "flags": ["smg_1_done"] },
+        "text": "卡洛斯風度翩翩地替你拉開椅子：「你截過我的船。我欣賞你。」他把一個用鹽封住的小木箱放在桌上，「這是從骷髏潮島帶回來的。我的人碰過它的，三個都瘋了。我需要一個不會瘋的人，把它送到城外的倉庫。」"
+      },
+      "start_flags": ["smg_skull"],
+      "nodes": [
+        {
+          "id": "roof",
+          "title": "應付屋頂上的玉璘族隱密",
+          "text": "你帶著木箱走出酒館，屋頂上傳來一聲很輕的「啊」。一個玉璘族的姑娘從屋簷上滑了下來，尾巴在空中亂甩，好不容易才站穩：「我、我是影子！你沒看到我！」她的臉紅得像珊瑚，「……那個箱子，不能交給黑帆。」",
+          "at": { "where": "npc", "npc": "npc_oboro" },
+          "requires": { "flags": ["smg_skull"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "朧終於冷靜下來，一板一眼地告訴你：骷髏潮島是古代海盜王的墓，島心的古堡被鹽化了——箱子裡是古堡的一塊心石，會把靠近的人變成鹽。「冬璃宮在找它。」她說完，又滑下了屋頂。",
+            "set_flags": ["smg_warned"],
+            "effects": [{ "type": "affinity", "npc": "npc_oboro", "delta": 5, "reason": "沒有拆穿她" }]
+          },
+          "fail": {
+            "text": "朧結結巴巴地說了一大串，你只聽懂了「鹽」、「詛咒」和「冬璃宮」。她說完，尾巴一甩，又滑下了屋頂。",
+            "set_flags": ["smg_warned"]
+          }
+        },
+        {
+          "id": "wraiths",
+          "title": "在潮汐港近郊擋下被鹽化的怨靈",
+          "text": "去倉庫的路上，木箱的縫隙裡滲出了白色的鹽粒。鹽粒落地，長成了兩個渾身結晶的人形——古代海盜的怨靈，嘴裡唸著：「還給我……還給我……」",
+          "at": { "where": "outskirts", "location": "tidehaven" },
+          "requires": { "flags": ["smg_warned"] },
+          "kind": "combat",
+          "enemies": [["salt_wraith", 2]],
+          "success": {
+            "text": "怨靈碎成了一地的鹽。木箱安靜了下來，但你的手指上沾到的鹽粒，摸起來像是冰的。",
+            "set_flags": ["smg_survived"]
+          },
+          "fail": {
+            "text": "怨靈把你們逼退了，最後自己碎成了一地的鹽。你的手臂上多了一片白色的結晶，好幾天才褪掉。",
+            "set_flags": ["smg_survived"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "deliver",
+          "title": "決定把箱子交給誰",
+          "text": "倉庫門口，卡洛斯的人在等。屋頂上，朧又出現了，這次沒有滑下來。卡洛斯從倉庫裡走出來，笑著伸出手：「辛苦了，朋友。」",
+          "at": { "where": "npc", "npc": "npc_carlos_blacksail" },
+          "requires": { "flags": ["smg_survived"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "照約定交給卡洛斯",
+              "success": {
+                "text": "卡洛斯接過箱子，塞給你一袋沉甸甸的金幣：「我說過，我欣賞你。」他湊近你耳邊，「這東西，會讓我在議會的眼皮底下，賺到議會這輩子都賺不到的錢。」屋頂上的朧消失了。",
+                "set_flags": ["smg_2_done", "smg_carlos"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_carlos_blacksail", "delta": 15, "reason": "替他送了貨" },
+                  { "type": "money", "amount": 400 },
+                  { "type": "memory", "summary": "替走私王「黑帆」卡洛斯把骷髏潮島帶回來的鹽化心石送到了倉庫。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "交給屋頂上的朧",
+              "success": {
+                "text": "你把箱子往屋頂上一拋，朧手忙腳亂地接住了，差點又滑下來。卡洛斯的笑容沒有變，只是眼睛冷了：「……有意思。」他轉身走回倉庫，「我們會再見面的，朋友。」",
+                "set_flags": ["smg_2_done", "smg_yulin"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_oboro", "delta": 15, "reason": "把心石交給了冬璃宮" },
+                  { "type": "affinity", "npc": "npc_carlos_blacksail", "delta": -10, "reason": "壞了他的生意" },
+                  { "type": "reputation", "faction": "four_seasons", "delta": 10 },
+                  { "type": "memory", "summary": "把走私王「黑帆」卡洛斯從骷髏潮島帶回來的鹽化心石交給了冬璃宮的隱密朧。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "smg_under_council_eyes",
+      "title": "議會的眼皮底下",
+      "summary": "七潮議會要對黑帆的船隊發動總搜查。卡洛斯的打手已經在港口集結——潮汐港的地下秩序，今晚要換一個主人，或者不換。（走私・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_reno_deeptide",
+        "min_level": 11,
+        "requires": { "flags": ["smg_2_done"] },
+        "text": "雷諾難得地沒有喝酒：「白鯨今晚要搜黑帆的船隊。黑帆的打手已經在碼頭集結了。」他把一本被海水泡過的帳本交給你，「這是黑帆的帳本，我的人花了三年才弄到。看懂它，你就知道今晚該站在哪一邊。」"
+      },
+      "start_flags": ["smg_raid"],
+      "nodes": [
+        {
+          "id": "enforcers",
+          "title": "在潮汐港近郊的碼頭擋下黑帆的打手",
+          "text": "城外的私人碼頭上，三個甩著濕透斗篷的打手攔住了議會的搜查隊。他們看見你，笑了：「又是你。黑帆先生說，你今晚會來。」",
+          "at": { "where": "outskirts", "location": "tidehaven" },
+          "requires": { "flags": ["smg_raid"] },
+          "kind": "combat",
+          "enemies": [["blacksail_enforcer", 3]],
+          "success": {
+            "text": "打手們倒在了碼頭上。搜查隊衝進了倉庫，可裡面空空如也——卡洛斯早就把貨移走了。只有一張紙條：「我在老地方等你。一個人來。」",
+            "set_flags": ["smg_docks"]
+          },
+          "fail": {
+            "text": "打手們把搜查隊逼退了，卻在白鯨親自帶著艦隊趕到時撤走。倉庫裡空空如也，只有一張紙條：「我在老地方等你。一個人來。」",
+            "set_flags": ["smg_docks"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "ledger",
+          "title": "看懂黑帆的帳本",
+          "text": "帳本上的字是用暗語寫的，數字密密麻麻。你一頁一頁地翻，越翻越覺得不對勁。",
+          "at": { "where": "npc", "npc": "npc_reno_deeptide" },
+          "requires": { "flags": ["smg_docks"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 17 },
+          "success": {
+            "text": "你看懂了：黑帆的走私，有一半是在替七潮議會的三個議員運貨——那三個議員一邊懸賞黑帆，一邊收他的分紅。另一半，是珊瑚灣的藥、沙漠的水桶、和各種議會抽重稅的平民貨。",
+            "set_flags": ["smg_read"],
+            "effects": [{ "type": "affinity", "npc": "npc_reno_deeptide", "delta": 10, "reason": "看懂了帳本" }]
+          },
+          "fail": {
+            "text": "你只看懂了一半：黑帆的走私，有一半是在替議會裡的某些人運貨。雷諾苦笑：「我也只看懂這麼多。」",
+            "set_flags": ["smg_read"]
+          }
+        },
+        {
+          "id": "deal",
+          "title": "在老地方和卡洛斯談判",
+          "text": "老地方是一間沒有招牌的小酒館。卡洛斯一個人坐在角落裡，替你倒了一杯酒：「你看過帳本了。」他笑了笑，「所以你知道，抓我，議會裡那三位會鬆一口氣。放我，潮汐港的地下照舊。或者——我們可以談談第三條路。」",
+          "at": { "where": "npc", "npc": "npc_carlos_blacksail" },
+          "requires": { "flags": ["smg_read"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「把帳本交給白鯨，你也一起去自首」",
+              "check": { "attr": "cha", "dc": 17 },
+              "success": {
+                "text": "卡洛斯沉默了很久，然後大笑：「好！要死，也要拉那三個傢伙陪葬。」第二天，他帶著帳本走進了七潮議會廳。三個議員被逐出議會，白鯨給了卡洛斯一張「特許貿易商」的執照——平民貨的稅，從此減了一半。",
+                "set_flags": ["smg_done", "smg_licensed"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_carlos_blacksail", "delta": 20, "reason": "給了他一條體面的路" },
+                  { "type": "reputation", "faction": "seven_tides", "delta": 15 },
+                  { "type": "memory", "summary": "說服走私王「黑帆」卡洛斯帶著帳本向七潮議會自首，揭發了收他分紅的三個議員。他成了議會的特許貿易商。", "importance": 3 }
+                ],
+                "complete": true
+              },
+              "fail": {
+                "text": "卡洛斯搖了搖頭：「你太天真了，朋友。」他留下帳本，消失在夜色裡。你把帳本交給了白鯨，三個議員被逐出議會——但黑帆從此再也沒有在潮汐港出現過。",
+                "set_flags": ["smg_done", "smg_gone"],
+                "effects": [
+                  { "type": "reputation", "faction": "seven_tides", "delta": 10 },
+                  { "type": "memory", "summary": "把黑帆的帳本交給了七潮議會，揭發了三個議員。黑帆從此消失在海上。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「帳本我收著，潮汐港的地下照舊」",
+              "success": {
+                "text": "卡洛斯舉杯：「敬我們的秘密。」從那天起，你在潮汐港的每一間酒館都不用付錢，每一艘船都願意載你。帳本鎖在你的行李深處——一張可以讓整個議會發抖的牌。",
+                "set_flags": ["smg_done", "smg_shadow"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_carlos_blacksail", "delta": 25, "reason": "替他保住了帳本" },
+                  { "type": "money", "amount": 800 },
+                  { "type": "memory", "summary": "和走私王「黑帆」卡洛斯達成了協議：帳本你收著，潮汐港的地下照舊。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "sinor_lagging_mirror",
+      "title": "慢半拍的倒影",
+      "summary": "珊瑚灣的鎮民開始抱怨一些說不清的事：鏡子裡的倒影慢半拍、深夜的巷子裡有腳步聲、同一首歌在三個地方同時響起。巫女澪說，她夢裡的影子越來越近了。（龍的線索・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_coral_miko",
+        "min_level": 5,
+        "text": "澪把一面小鏡子遞給你：「你看。」鏡子裡的你，眨眼比你慢了半拍。澪停下來聽海，又轉回來：「鎮上的人都遇到了奇怪的事。每一件都很小……小到說出來會被笑。可是加起來……」她看著你，「我想知道，是誰在搗蛋。」"
+      },
+      "start_flags": ["sin_start"],
+      "nodes": [
+        {
+          "id": "stories",
+          "title": "在珊瑚灣的酒館收集說不清的怪事",
+          "text": "酒館裡的漁民們一聽你問怪事，就搶著說：昨晚有人聽見自己的名字從海裡傳來、托馬老爹撈到一顆珍珠，裡面映著一個他不認識的人、三個不同的人在同一天夢到同一扇門。",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "tavern" },
+          "requires": { "flags": ["sin_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你把每件怪事的時間和地點排出來，發現它們繞著鎮子畫了一個圈——圈的中心是海靈祠。而所有的怪事，都發生在退潮的時候。",
+            "set_flags": ["sin_pattern"]
+          },
+          "fail": {
+            "text": "怪事太多太雜，你理不出頭緒。倒是一個醉漢說了一句：「都是退潮的時候。退潮，海裡的東西就會上來。」",
+            "set_flags": ["sin_pattern"]
+          }
+        },
+        {
+          "id": "mirrors",
+          "title": "在珊瑚灣近郊擊退鏡中的影子",
+          "text": "退潮時，海灘上的水窪映著月光，每一個水窪裡都有一個人影——你的人影。它們慢半拍地動著，然後，一個接一個地從水窪裡爬了出來。",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "requires": { "flags": ["sin_pattern"] },
+          "kind": "combat",
+          "enemies": [["mirror_wraith", 3]],
+          "success": {
+            "text": "鏡中的影子碎成了水花。漲潮了，海灘上的水窪消失了。可你回頭的時候，總覺得最遠的那個水窪裡，還有一個影子在看你。",
+            "set_flags": ["sin_shards"]
+          },
+          "fail": {
+            "text": "影子把你們逼退到了沙丘上，然後隨著漲潮消失了。你回頭的時候，總覺得最遠的那個水窪裡，還有一個影子在看你。",
+            "set_flags": ["sin_shards"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "record",
+          "title": "決定怎麼處理這些怪事的紀錄",
+          "text": "你把收集到的怪事全寫在一本冊子上，交給澪。她翻了很久，停下來聽海，又翻了很久：「寫下來……它們好像就變得更真了。」她看著你，「要留著嗎？」",
+          "at": { "where": "npc", "npc": "npc_coral_miko" },
+          "requires": { "flags": ["sin_shards"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "留著，繼續記錄",
+              "success": {
+                "text": "澪把冊子放在祠堂的神龕下：「那我們繼續記。」那天晚上，冊子的最後一頁多了一行字，不是你們寫的：「謝謝你們注意到我。」",
+                "set_flags": ["sin_1_done", "sin_notes"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 10, "reason": "陪她記錄怪事" },
+                  { "type": "memory", "summary": "在珊瑚灣收集說不清的怪事，寫成一本冊子留在海靈祠。冊子的最後一頁多了一行不是你們寫的字。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "燒掉，讓鎮民忘了它們",
+              "success": {
+                "text": "冊子在祠堂的爐裡燒成了灰。第二天，鎮上的怪事少了一半——可澪說，她夢裡的影子更清楚了：「它不高興了。被忘掉，比被害怕更難受。」",
+                "set_flags": ["sin_1_done", "sin_burned"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 5, "reason": "替鎮民著想" },
+                  { "type": "memory", "summary": "在珊瑚灣收集說不清的怪事，把紀錄燒掉了。澪夢裡的影子更清楚了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "sinor_untold_legend",
+      "title": "說不清的傳說",
+      "summary": "珊瑚灣的每個孩子都會唱一首禁忌的童謠，卻沒有人知道它從哪裡來。這個月，托馬老爹手下的採珠人有三個潛下去後失蹤了一天，回來時都忘了自己的名字。（龍的線索・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_coral_miko",
+        "min_level": 8,
+        "requires": { "flags": ["sin_1_done"] },
+        "text": "澪哼著一首旋律：「霧裡的門不要開，開了門就回不來……」她停下來，「鎮上的每個孩子都會唱。我問了我的師父、師父的師父——沒有人知道是誰教的。」她又停下來聽海，「托馬老爹的採珠人回來了，忘了自己的名字。他們說，他們在海底看見了一扇門。」"
+      },
+      "start_flags": ["sin_legend"],
+      "nodes": [
+        {
+          "id": "toma",
+          "title": "請托馬老爹說說採珠人看見的門",
+          "text": "托馬老爹一向愛唱歌，今天卻一句也不唱：「三個孩子，都是我帶大的。他們潛下去，在海底看見了一扇石門，門上刻著那首童謠。」他的手在發抖，「然後就什麼都不記得了。」",
+          "at": { "where": "npc", "npc": "npc_toma_pearl" },
+          "requires": { "flags": ["sin_legend"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你陪托馬老爹喝了一整瓶酒，他終於說出了他自己的秘密：四十年前，他也看見過那扇門。他沒有忘記名字——他忘記的是自己的母親長什麼樣子。「門會拿走一樣東西。」他說，「每一次。」",
+            "set_flags": ["sin_door"],
+            "effects": [{ "type": "affinity", "npc": "npc_toma_pearl", "delta": 10, "reason": "陪他說出了秘密" }]
+          },
+          "fail": {
+            "text": "托馬老爹不肯多說，只指了指海：「門在北邊的礁石下。霧起的時候，它會自己出現。」",
+            "set_flags": ["sin_door"]
+          }
+        },
+        {
+          "id": "fog",
+          "title": "在珊瑚灣近郊擊退霧裡模仿人聲的東西",
+          "text": "你們划船到北邊的礁石時，霧起了。霧裡傳來呼喚聲——你母親的聲音、你朋友的聲音、你自己的聲音。兩個灰濛濛的身影從霧裡走了出來，臉上沒有五官，嘴裡卻發出你最熟悉的聲音。",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "requires": { "flags": ["sin_door"] },
+          "kind": "combat",
+          "enemies": [["fog_mimic", 2]],
+          "success": {
+            "text": "霧中的東西散了，可霧沒有散。霧的深處，海面下隱隱透出一扇石門的輪廓，門上的刻痕閃著微光——是那首童謠。",
+            "set_flags": ["sin_fogged"]
+          },
+          "fail": {
+            "text": "霧中的東西把你們逼回了船上，然後自己散了。霧的深處，海面下隱隱透出一扇石門的輪廓。",
+            "set_flags": ["sin_fogged"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "gate",
+          "title": "決定要不要靠近那扇門",
+          "text": "石門就在船下。澪握著祠堂的銅鈴，手心全是汗：「我可以搖鈴，讓霧散掉。或者……我們可以跟著霧走，看看門後面是什麼。」",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "requires": { "flags": ["sin_fogged"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "跟著霧走",
+              "success": {
+                "text": "你們跟著霧走到了門前。門沒有打開，只是在你的腦子裡低聲說了一句：「還不是時候。」霧散了。回到岸上，你發現自己忘了一件小事——你想不起來自己第一把武器是在哪裡買的。",
+                "set_flags": ["sin_2_done", "sin_followed"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 10, "reason": "陪她走到了門前" },
+                  { "type": "memory", "summary": "在珊瑚灣的霧裡走到了海底石門前。門說「還不是時候」，你忘了自己第一把武器是在哪裡買的。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓澪搖鈴",
+              "success": {
+                "text": "鈴聲響起，霧一下子散了，石門的輪廓也消失在海裡。三個採珠人在同一個時刻想起了自己的名字。澪鬆了一口氣，又停下來聽海：「……它說，下次見。」",
+                "set_flags": ["sin_2_done", "sin_bell"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 10, "reason": "讓她搖了鈴" },
+                  { "type": "affinity", "npc": "npc_toma_pearl", "delta": 15, "reason": "孩子們想起了名字" },
+                  { "type": "memory", "summary": "在珊瑚灣的霧裡，讓澪搖響了祠堂的銅鈴。三個採珠人想起了自己的名字。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "sinor_fog_locked",
+      "title": "霧鎖迷言",
+      "summary": "澪夢裡的影子終於有了名字：詭秘之龍「霧鎖迷言」希諾爾。它在海靈祠留下了一個謎題——答對的人，可以問它一個問題。（龍的線索・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_coral_miko",
+        "min_level": 11,
+        "requires": { "flags": ["sin_2_done"] },
+        "text": "澪把一張寫滿字的紙交給你，字跡不是她的：「我醒來的時候，它就在枕頭邊。」紙上只有一個謎題，和一個署名——「希諾爾」。澪看著你，第一次沒有停下來聽海：「它說，今晚退潮的時候，在祠堂等你。」"
+      },
+      "start_flags": ["sin_riddle"],
+      "nodes": [
+        {
+          "id": "phantoms",
+          "title": "在珊瑚灣的海靈祠擊退謎題的幻影",
+          "text": "退潮的時候，海靈祠的每一面鏡子、每一個水盆、每一扇窗戶裡，都映出了不同的你——有的在笑，有的在哭，有的根本不是你。兩個幻影從鏡子裡走了出來，用你的聲音說：「先證明你是真的。」澪握著銅鈴，站到了你身邊。",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "lm_sea_spirit_shrine" },
+          "requires": { "flags": ["sin_riddle"] },
+          "kind": "combat",
+          "enemies": [["riddle_phantom", 2]],
+          "allies": ["npc_coral_miko"],
+          "success": {
+            "text": "幻影碎成了鏡子的碎片，每一片碎片裡都映著一隻眼睛，一起眨了一下。祠堂裡響起了一個聲音，像是從很遠的地方，又像是從你自己的腦子裡：「好。現在，回答我。」",
+            "set_flags": ["sin_real"]
+          },
+          "fail": {
+            "text": "幻影把你們逼到了神龕前，然後自己碎了——它們只是想看你會不會懷疑自己。祠堂裡響起了一個聲音：「好。現在，回答我。」",
+            "set_flags": ["sin_real"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "riddle",
+          "title": "回答希諾爾的謎題",
+          "text": "「我在每一個巧合裡，在每一個說不清的傳說裡，在你忘記的每一件小事裡。你找不到我，卻總覺得我在。我是什麼？」",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "lm_sea_spirit_shrine" },
+          "requires": { "flags": ["sin_real"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 17 },
+          "success": {
+            "text": "你說：「不安。」聲音笑了，笑得整座祠堂的鏡子都在顫：「對。也不對。我是你們給不安取的名字。」一團霧在神龕上凝成了一條很小、很小的龍，鱗片像霧一樣流動：「問吧。一個問題。」",
+            "set_flags": ["sin_answered"],
+            "effects": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }]
+          },
+          "fail": {
+            "text": "你答錯了。聲音卻沒有生氣：「答錯也是一種答案。人總是答錯，所以我才存在。」一團霧在神龕上凝成了一條很小、很小的龍：「問吧。一個問題——答錯的人，只能問一半。」",
+            "set_flags": ["sin_answered"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "question",
+          "title": "向希諾爾問一個問題",
+          "text": "霧做的小龍盤在神龕上，等著。澪在你身邊屏住了呼吸。你只能問一個問題。",
+          "at": { "where": "npc", "npc": "npc_coral_miko" },
+          "requires": { "flags": ["sin_answered"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「七條龍為什麼在醒來？」",
+              "success": {
+                "text": "小龍沉默了很久：「因為你們在做夢、在燃燒、在建塔、在狂歡、在注視、在害怕……你們的心太吵了，吵醒了我們。」它慢慢地散成了霧，「下一個醒來的，會在沙漠裡建塔。」霧散了，澪的夢從此安靜了。",
+                "set_flags": ["sin_done", "sin_why", "sinor_seen"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 20, "reason": "陪她見到了夢裡的影子" },
+                  { "type": "memory", "summary": "在珊瑚灣的海靈祠見到了詭秘之龍希諾爾。它說七條龍是被凡人太吵的心吵醒的，下一條會在沙漠裡建塔。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「你想要什麼？」",
+              "success": {
+                "text": "小龍愣住了，然後笑了，笑得像個孩子：「從來沒有人問過我這個。」它在澪的肩膀上繞了一圈，「我想要……被記得。不是被害怕，是被記得。」它散成了霧。從那天起，珊瑚灣的孩子們唱那首童謠時，最後多了一句：「門後面住著一個寂寞的朋友。」",
+                "set_flags": ["sin_done", "sin_friend", "sinor_seen"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 25, "reason": "替龍找到了朋友" },
+                  { "type": "memory", "summary": "在珊瑚灣的海靈祠問詭秘之龍希諾爾想要什麼。它說，它想被記得。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "acc_novel_girl",
+      "title": "被人類小說教壞的孩子",
+      "summary": "新芽同盟的盟主希爾薇想在銀月城辦第一場「外族日」，邀請人類、矮人的商人進城。翠輝議會說，這是精靈衰亡的開始。（是否接納外族・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sylvie",
+        "min_level": 5,
+        "text": "希爾薇的嘴巴停不下來：「人類！真的人類！你讀過《霧都的戀人》嗎？沒有？太可惜了！」她把一疊請帖塞給你，「我要辦外族日，可是議會的人把我的信使都『請』出了森林。你是人類，他們不能把你『請』出去——好啦，可以，但是會很尷尬！」"
+      },
+      "start_flags": ["acc_start"],
+      "nodes": [
+        {
+          "id": "invite",
+          "title": "在銀月城的酒館替希爾薇找願意來的外族商人",
+          "text": "銀月城根界的酒館裡，只有幾個被允許進城的外族商人，他們聽到「外族日」都笑了：「精靈請我們進城？上一次精靈請人類進城，是三百年前的事了——後來森林燒了一片，就再也沒有下一次了。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "tavern" },
+          "requires": { "flags": ["acc_start"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你說服了三個商人：一個矮人銅匠、一個人類香料商、一個半身人的說書人。說書人眨了眨眼：「三百年前的那場火，你真該問問議長本人。」",
+            "set_flags": ["acc_guests"],
+            "effects": [{ "type": "affinity", "npc": "npc_sylvie", "delta": 5, "reason": "替她找到了客人" }]
+          },
+          "fail": {
+            "text": "只有一個半身人的說書人願意來：「免費的宴會？我去！」他眨了眨眼，「三百年前的那場火，你真該問問議長本人。」",
+            "set_flags": ["acc_guests"]
+          }
+        },
+        {
+          "id": "rangers",
+          "title": "在銀月城近郊應付翠輝議會的荊棘衛",
+          "text": "送商人回營地的路上，幾個穿著荊棘紋披風的精靈游俠從樹上跳了下來，弓已經拉滿了：「翠輝議會有令：外族不得在城外過夜。請你們——離開。」他們的語氣禮貌得像是在道歉，箭頭卻對準了你。",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["acc_guests"] },
+          "kind": "combat",
+          "enemies": [["thornguard_ranger", 3]],
+          "success": {
+            "text": "荊棘衛收起了弓，有一個還向你行了個禮：「……我們只是奉命行事。請轉告希爾薇大人，議長想見見你。」",
+            "set_flags": ["acc_ranger"]
+          },
+          "fail": {
+            "text": "荊棘衛把你們逼回了營地，卻沒有再動手。帶頭的那個嘆了口氣：「議長想見見你。請你明天去翠階。」",
+            "set_flags": ["acc_ranger"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "novel",
+          "title": "回報希爾薇",
+          "text": "希爾薇聽說議長想見你，眼睛亮了起來：「卡蘭西爾要見你？這是好事！」她又塞給你一本手抄的小冊子，臉紅了，「……這是我寫的。用筆名。人類和精靈的戀愛小說。你可以……幫我看看寫得像不像人類嗎？」",
+          "at": { "where": "npc", "npc": "npc_sylvie" },
+          "requires": { "flags": ["acc_ranger"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "認真讀完，告訴她感想",
+              "success": {
+                "text": "你讀了一整晚。小說裡的人類王子每天都要說三遍「我會為你放棄王位」，精靈公主每天都要哭兩次。你告訴她：人類其實沒有那麼戲劇化——但這本小說，讓你哭了一次。希爾薇抱著冊子在原地轉了三圈。",
+                "set_flags": ["acc_1_done", "acc_novel"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sylvie", "delta": 20, "reason": "讀了她的小說" },
+                  { "type": "memory", "summary": "替銀月城新芽同盟的希爾薇找來了外族日的客人，還讀完了她用筆名寫的人類戀愛小說。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "說你先去見議長",
+              "success": {
+                "text": "希爾薇有點失望，但還是把小冊子收了回去：「也是！正事要緊！」她揮著手送你出門，「如果卡蘭西爾對你不禮貌——他一定會很禮貌，那就是不禮貌——告訴我！」",
+                "set_flags": ["acc_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sylvie", "delta": 10, "reason": "替她找來了客人" },
+                  { "type": "memory", "summary": "替銀月城新芽同盟的希爾薇找來了外族日的客人。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "acc_kalanthil_courtesy",
+      "title": "卡蘭西爾的禮貌",
+      "summary": "翠輝議會的議長卡蘭西爾請你共進晚餐，禮貌到讓人覺得被輕視。他說，三百年前人類燒了風語崗哨旁的一片古林——那就是精靈不再接納外族的原因。（是否接納外族・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_kalanthil",
+        "min_level": 8,
+        "requires": { "flags": ["acc_1_done"] },
+        "text": "卡蘭西爾替你斟了一杯月光色的酒，每一個動作都完美得像畫：「希爾薇大人還年輕。她沒有見過三百年前的那場火。」他放下酒壺，「人類的探險隊燒了風語崗哨旁的千年古林，三百個精靈死在火裡。你若不信，可以去問風語崗哨的瑟隆——他的眼睛，就是在那場火裡瞎的。」"
+      },
+      "start_flags": ["acc_fire"],
+      "nodes": [
+        {
+          "id": "theron",
+          "title": "到風語崗哨的酒館聽盲眼的瑟隆說那場火",
+          "text": "盲眼的老哨兵瑟隆坐在酒館的角落裡，聽著窗外的風鈴聲：「三百年前的火？」他笑了，笑得很慈祥，「卡蘭西爾那孩子讓你來的吧。他每次都這樣——」他停了一下，「我的眼睛是在魔族的突襲裡瞎的。那場火……我看見了點火的人，在我還看得見的時候。」",
+          "at": { "where": "cell", "location": "windspeak", "cell": "tavern" },
+          "requires": { "flags": ["acc_fire"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": {
+            "text": "你陪瑟隆一起聽風鈴，聽到天黑。他終於說了：點火的人穿著人類探險隊的衣服，可他們跑起來的樣子，是精靈——被王庭流放的精靈術士，想讓王庭和人類決裂，好讓流放者回不了家的人永遠回不了家。「這件事，」瑟隆說，「三百年來，我只告訴過卡蘭西爾的父親。」",
+            "set_flags": ["acc_truth_heard"],
+            "effects": [{ "type": "affinity", "npc": "npc_theron_blind", "delta": 15, "reason": "陪他聽了一晚的風鈴" }]
+          },
+          "fail": {
+            "text": "瑟隆只說了一半：「點火的人，穿著人類的衣服。可他們跑起來……不像人類。」他搖了搖頭，「去古林的灰燼裡看看吧。灰燼不會說謊。」",
+            "set_flags": ["acc_truth_heard"]
+          }
+        },
+        {
+          "id": "ash",
+          "title": "在風語崗哨近郊的焦林裡安撫怨靈",
+          "text": "風語崗哨旁的古林至今還是一片焦黑，三百年都沒有長出新芽。你一走進去，灰燼就飄了起來，凝成了兩個渾身冒著火星的精靈怨靈，用古精靈語尖叫著：「人類！又是人類！」",
+          "at": { "where": "outskirts", "location": "windspeak" },
+          "requires": { "flags": ["acc_truth_heard"] },
+          "kind": "combat",
+          "enemies": [["ash_grove_spirit", 2]],
+          "success": {
+            "text": "怨靈散成了灰。灰燼底下露出了一枚燒焦的胸針——上面是被王庭流放的術士才會戴的紋章：一片倒過來的葉子。",
+            "set_flags": ["acc_proof"]
+          },
+          "fail": {
+            "text": "怨靈把你們逼出了焦林，最後自己散成了灰。你在林邊撿到了一枚燒焦的胸針——一片倒過來的葉子，被王庭流放的術士的紋章。",
+            "set_flags": ["acc_proof"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "tell",
+          "title": "決定要不要把真相告訴卡蘭西爾",
+          "text": "你握著那枚胸針回到銀月城。卡蘭西爾在翠階的書房裡等你，一如往常地禮貌：「如何？你見到瑟隆了？」",
+          "at": { "where": "npc", "npc": "npc_kalanthil" },
+          "requires": { "flags": ["acc_proof"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "把胸針放在他面前",
+              "success": {
+                "text": "卡蘭西爾看著那枚胸針，臉上的禮貌第一次碎了。他很久沒有說話，最後低聲說：「……我父親知道。他知道，卻沒有告訴任何人。」他把胸針收進了抽屜，「謝謝你，人類。我需要……想一想。」",
+                "set_flags": ["acc_2_done", "acc_truth"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_kalanthil", "delta": 15, "reason": "讓他知道了真相" },
+                  { "type": "memory", "summary": "在風語崗哨查出三百年前燒掉古林的不是人類，而是被王庭流放的精靈術士，把證據交給了議長卡蘭西爾。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把胸針交給希爾薇",
+              "success": {
+                "text": "希爾薇拿著胸針衝進了議會，當著所有議員的面把它摔在桌上。議會吵了整整三天。卡蘭西爾在散會後找到你，第一次沒有那麼禮貌：「你本可以先告訴我的。」",
+                "set_flags": ["acc_2_done", "acc_public"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sylvie", "delta": 15, "reason": "把證據交給了她" },
+                  { "type": "affinity", "npc": "npc_kalanthil", "delta": -10, "reason": "讓他在議會上難堪" },
+                  { "type": "memory", "summary": "查出三百年前燒掉古林的是被流放的精靈術士，把證據交給了希爾薇，她當眾在議會上公開了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "acc_sprout_and_root",
+      "title": "新芽與古根",
+      "summary": "精靈王庭要表決是否開放森林。外族日當天，有人要讓人類的商隊在銀月城外「出事」——好讓三百年前的那場火，再燒一次。（是否接納外族・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sylvie",
+        "min_level": 11,
+        "requires": { "flags": ["acc_2_done"] },
+        "text": "希爾薇這次沒有說個不停，只是把一張字條給你看：「外族日當天，人類的商隊會在城外遇襲。」字跡很漂亮，沒有署名。「是塞夫給的。迷霧之幕的人。」她咬著嘴唇，「如果商隊出事，表決就完了。」"
+      },
+      "start_flags": ["acc_day"],
+      "nodes": [
+        {
+          "id": "blades",
+          "title": "在銀月城近郊保護外族的商隊",
+          "text": "城外的林道上，商隊的馬車剛轉過彎，三個披著霧色斗篷的身影就從樹影裡浮現。他們的匕首上淬著毒，斗篷上繡著一片倒過來的葉子——和焦林裡那枚胸針一模一樣。",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["acc_day"] },
+          "kind": "combat",
+          "enemies": [["mistveil_blade", 3]],
+          "success": {
+            "text": "刺客們消失在霧裡，留下了一個受傷的同伴。他咬著牙說：「流放者……永遠回不了家。如果我們回不了家，誰也別想進來。」",
+            "set_flags": ["acc_saved"]
+          },
+          "fail": {
+            "text": "刺客們傷了兩個護衛，卻在王庭的鷹騎趕到時退走，留下了一個受傷的同伴：「如果我們回不了家，誰也別想進來。」",
+            "set_flags": ["acc_saved"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "speech",
+          "title": "在王庭的表決前作證",
+          "text": "王庭的表決在月輝之母的樹冠下舉行，外族的證人被允許在樹下說話。希爾薇緊張得把裙角都揉皺了，卡蘭西爾面無表情地坐在議長的位子上。所有精靈都在等你開口。",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "guild" },
+          "requires": { "flags": ["acc_saved"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說了三百年前的火、焦林裡的胸針、今天的刺客，和一群回不了家的流放者。你說，關上森林的門，擋住的不只是外族。樹冠下安靜了很久，然後一個年老的精靈站了起來，接著是第二個、第三個。",
+            "set_flags": ["acc_spoke"]
+          },
+          "fail": {
+            "text": "你說得不夠好，樹冠下有人在竊笑。可那個受傷的刺客被押上來作證時，所有精靈都安靜了——他是三百年前那場火裡，流放者的孩子。",
+            "set_flags": ["acc_spoke"]
+          }
+        },
+        {
+          "id": "vote",
+          "title": "決定你向王庭提出的方案",
+          "text": "表決前，女王伊瑟蘭迪爾從樹冠上傳下一句話：「外族的證人，你希望精靈怎麼做？」希爾薇和卡蘭西爾同時看著你。",
+          "at": { "where": "npc", "npc": "npc_sylvie" },
+          "requires": { "flags": ["acc_spoke"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「打開森林，也讓流放者回家」",
+              "success": {
+                "text": "表決以一票之差通過。森林的門打開了：外族可以在銀月城根界做生意，被流放的精靈可以申請回家。希爾薇抱著你哭了。卡蘭西爾走過來，向你行了一個完整的禮——第一次不讓人覺得被輕視。",
+                "set_flags": ["acc_done", "acc_open"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sylvie", "delta": 25, "reason": "替森林打開了門" },
+                  { "type": "affinity", "npc": "npc_kalanthil", "delta": 10, "reason": "說服了他" },
+                  { "type": "reputation", "faction": "elf_court", "delta": 15 },
+                  { "type": "memory", "summary": "在銀月城的王庭表決前作證，精靈開放了森林，被流放的精靈也可以回家了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「先從邊境的市集開始」",
+              "success": {
+                "text": "王庭通過了折衷的方案：苔語村和風語崗哨設立外族市集，銀月城本身暫不開放。希爾薇有點失望，卡蘭西爾卻點了點頭：「三百年的門，不能一天就打開。」",
+                "set_flags": ["acc_done", "acc_border"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_kalanthil", "delta": 15, "reason": "提出了穩健的方案" },
+                  { "type": "affinity", "npc": "npc_sylvie", "delta": 10, "reason": "至少打開了一扇窗" },
+                  { "type": "reputation", "faction": "elf_court", "delta": 10 },
+                  { "type": "memory", "summary": "在銀月城的王庭表決前作證，精靈在苔語村和風語崗哨設立了外族市集。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「提起世界樹的儀式」",
+              "requires": { "flags": ["wt_open"] },
+              "success": {
+                "text": "你說，世界樹的新芽，是人類和精靈一起唱出來的。樹冠上的女王沉默了很久，然後親自走下了月輝之母：「新芽，是從外面長出來的。」表決全數通過。那天晚上，銀月城的每一棵樹都亮了。",
+                "set_flags": ["acc_done", "acc_open", "acc_treesong"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sylvie", "delta": 25, "reason": "替森林打開了門" },
+                  { "type": "affinity", "npc": "npc_kalanthil", "delta": 15, "reason": "被世界樹說服了" },
+                  { "type": "reputation", "faction": "elf_court", "delta": 20 },
+                  { "type": "memory", "summary": "在銀月城的王庭表決前，提起了人類參加世界樹儀式的事。女王親自走下月輝之母，精靈全數通過開放森林。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "shadow_extra_star",
+      "title": "不該存在的星",
+      "summary": "星月之環的首席星術師艾溫娜說，天上多了一顆不該存在的星。從那天起，銀月城開始有精靈在夜裡夢遊。（巨龍之影・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 5,
+        "text": "艾溫娜抱著一捲星圖衝過來，差點撞到你：「你看！這裡！」她指著星圖上一個用紅墨水圈起來的點，「三個月前它還不在。它不動，不閃，也不照亮任何東西。」她壓低聲音，「然後，精靈們開始夢遊了。全都往同一個方向走。」"
+      },
+      "start_flags": ["shd_start"],
+      "nodes": [
+        {
+          "id": "star",
+          "title": "陪艾溫娜觀測那顆星",
+          "text": "艾溫娜的觀星儀架在根界的屋頂上。那顆星確實不閃，像是有人在夜空上挖了一個小洞，洞的另一邊有光。你看著看著，眼皮越來越重。",
+          "at": { "where": "npc", "npc": "npc_evenna_starword" },
+          "requires": { "flags": ["shd_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你在睡著前算出來了：那顆星的位置，正好在夢遊的精靈走去的方向——城外的螢光林。艾溫娜搖醒你，眼睛亮得嚇人：「你也被它拉走了一下，對不對？」",
+            "set_flags": ["shd_dir"],
+            "effects": [{ "type": "affinity", "npc": "npc_evenna_starword", "delta": 10, "reason": "陪她算出了星的方向" }]
+          },
+          "fail": {
+            "text": "你睡著了，醒來時發現自己站在屋頂的邊緣，正要往下走。艾溫娜死死拉著你的衣角：「你也被它拉走了！方向是城外的螢光林！」",
+            "set_flags": ["shd_dir"],
+            "effects": [{ "type": "hp", "ratio": -0.05 }]
+          }
+        },
+        {
+          "id": "wisps",
+          "title": "在銀月城近郊趕走夢遊的螢靈",
+          "text": "城外的螢光林裡，幾個夢遊的精靈閉著眼睛往前走，身邊飛著一群螢火蟲般的光點。光點感覺到你，聚成了人形，發出像夢話一樣的嗡嗡聲，朝你撲過來。",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["shd_dir"] },
+          "kind": "combat",
+          "enemies": [["dream_firefly", 3]],
+          "success": {
+            "text": "螢靈散了，夢遊的精靈們一個接一個地醒了過來，揉著眼睛問自己在哪裡。他們都說夢見了同一個東西：一條用霧做成的龍，在星空裡游。",
+            "set_flags": ["shd_woke"]
+          },
+          "fail": {
+            "text": "螢靈把你們逼退了，最後隨著天亮自己消失。夢遊的精靈們醒了過來，都說夢見了同一條用霧做成的龍。",
+            "set_flags": ["shd_woke"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "report",
+          "title": "決定要不要把夢的事告訴王庭",
+          "text": "艾溫娜把精靈們的夢一個一個記下來，越記手越抖：「霧做的龍……夢境之龍索利安。」她看著你，「星月之環要把這件事報告給王庭。可是王庭會說，這只是星術師的胡思亂想。」",
+          "at": { "where": "npc", "npc": "npc_evenna_starword" },
+          "requires": { "flags": ["shd_woke"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "陪她一起去王庭報告",
+              "success": {
+                "text": "王庭果然沒有相信。可女王伊瑟蘭迪爾在散會後派人送來一張紙條，上面只有一句話：「我也夢到了。」艾溫娜把紙條夾進了星圖裡。",
+                "set_flags": ["shd_1_done", "shd_reported"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_evenna_starword", "delta": 15, "reason": "陪她去了王庭" },
+                  { "type": "memory", "summary": "陪銀月城的星術師艾溫娜追查天上多出來的星，精靈們夢遊時都夢見了霧做的龍。女王說，她也夢到了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「先別報告，再觀測一陣子」",
+              "success": {
+                "text": "艾溫娜點點頭，在觀星儀旁邊多架了一張床：「那我就不睡了。」你覺得她說的是真的。",
+                "set_flags": ["shd_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_evenna_starword", "delta": 10, "reason": "陪她觀測" },
+                  { "type": "memory", "summary": "陪銀月城的星術師艾溫娜追查天上多出來的星，精靈們夢遊時都夢見了霧做的龍。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "shadow_same_dream",
+      "title": "同一個夢",
+      "summary": "風語崗哨的哨兵們開始做同一個夢：一條霧做的龍在星空裡游，最後停在崗哨上空，看著他們。盲眼的老哨兵瑟隆說，他「聽」見了那條龍。（巨龍之影・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_theron_blind",
+        "min_level": 8,
+        "requires": { "flags": ["shd_1_done"] },
+        "text": "瑟隆坐在風鈴下，閉著已經不需要閉的眼睛：「年輕人，你聽。」風鈴響了，每一聲都慢得不對勁，像是在水裡響的。「三百年來，風鈴只送亡者上天穹。這幾晚，它在送活人的夢——送到一條龍那裡。」"
+      },
+      "start_flags": ["shd_dream"],
+      "nodes": [
+        {
+          "id": "sleep",
+          "title": "在風語崗哨的酒館睡進哨兵們的夢",
+          "text": "瑟隆替你倒了一杯安眠的花茶：「睡吧。我在旁邊敲風鈴，你就不會迷路。」你喝下茶，在酒館的長椅上閉上了眼睛。",
+          "at": { "where": "cell", "location": "windspeak", "cell": "tavern" },
+          "requires": { "flags": ["shd_dream"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": {
+            "text": "你走進了夢裡：星空、霧、和一條鱗片像霧一樣流動的龍。它沒有看你，而是在看著崗哨下的某個東西——森林邊境上，有一群獵犬一樣的影子，正在夢與現實的縫隙裡啃咬著什麼。",
+            "set_flags": ["shd_inside"],
+            "effects": [{ "type": "affinity", "npc": "npc_theron_blind", "delta": 10, "reason": "替他走進了夢" }]
+          },
+          "fail": {
+            "text": "你只看到了一片霧，就被風鈴聲拉了回來。瑟隆說：「沒關係。我聽見了——龍在看森林的邊境。那裡有東西在啃夢。」",
+            "set_flags": ["shd_inside"]
+          }
+        },
+        {
+          "id": "hounds",
+          "title": "在風語崗哨近郊擊退啃食夢境的獵犬",
+          "text": "崗哨外的邊境林地裡，兩頭半透明的獵犬正把一個睡著的哨兵圍在中間，一口一口地咬著他身邊的霧氣。哨兵在夢裡發出痛苦的呻吟。",
+          "at": { "where": "outskirts", "location": "windspeak" },
+          "requires": { "flags": ["shd_inside"] },
+          "kind": "combat",
+          "enemies": [["dream_hound", 2]],
+          "success": {
+            "text": "獵犬散成了霧。睡著的哨兵醒了，第一句話是：「龍說……謝謝。」",
+            "set_flags": ["shd_hounds"]
+          },
+          "fail": {
+            "text": "獵犬把你們逼退了，卻在天亮時消失。睡著的哨兵醒了，第一句話是：「龍說……謝謝。」",
+            "set_flags": ["shd_hounds"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "chimes",
+          "title": "和瑟隆決定怎麼處理風鈴",
+          "text": "瑟隆摸著風鈴：「龍在保護做夢的人，那些獵犬在吃夢。我可以把風鈴拆下來，讓活人的夢不再被送上去——龍就看不見我們了，獵犬也找不到我們了。或者……」",
+          "at": { "where": "npc", "npc": "npc_theron_blind" },
+          "requires": { "flags": ["shd_hounds"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓風鈴繼續響」",
+              "success": {
+                "text": "瑟隆笑了：「我也這麼想。」從那天起，風語崗哨的哨兵們每晚都會做同一個夢，夢裡有一條霧做的龍，在星空裡替他們守夜。",
+                "set_flags": ["shd_2_done", "shd_chimes"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_theron_blind", "delta": 15, "reason": "讓風鈴繼續響" },
+                  { "type": "memory", "summary": "在風語崗哨走進哨兵們的夢，擊退了啃食夢境的獵犬。風鈴繼續把活人的夢送到霧做的龍那裡。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「拆下風鈴，先保護哨兵」",
+              "success": {
+                "text": "瑟隆嘆了口氣，一個一個地拆下了風鈴。那天晚上，風語崗哨三百年來第一次沒有風鈴聲。哨兵們睡得很沉，誰也沒有做夢。瑟隆說，他好像聽見了一聲很遠很遠的嘆息。",
+                "set_flags": ["shd_2_done", "shd_silent"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_theron_blind", "delta": 5, "reason": "替哨兵著想" },
+                  { "type": "memory", "summary": "在風語崗哨擊退了啃食夢境的獵犬，拆下了送夢的風鈴。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "shadow_sorian_projection",
+      "title": "索利安的投影",
+      "summary": "艾溫娜算出來了：那顆不該存在的星，今晚會落到森林裡。夢境之龍索利安的投影，要在現實裡現身了。（巨龍之影・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 11,
+        "requires": { "flags": ["shd_2_done"] },
+        "text": "艾溫娜三天沒有睡覺，眼睛裡全是血絲，臉上卻在笑：「今晚！那顆星會落在風語崗哨外的林地裡。不是星——是投影。高維巨龍的投影！」她抓住你的手，「我活了四百年，第一次能親眼看見龍。你陪我去好不好？」"
+      },
+      "start_flags": ["shd_fall"],
+      "nodes": [
+        {
+          "id": "guardians",
+          "title": "在風語崗哨近郊擊退霧鱗的守衛",
+          "text": "星落下來了，沒有聲音，也沒有火光，只有一大片霧從天上流下來，鋪滿了整片林地。霧裡站起了兩個身披霧色鱗甲的守衛，用夢話一樣的聲音說：「醒著的人，不能進來。」艾溫娜舉起了她的星杖。",
+          "at": { "where": "outskirts", "location": "windspeak" },
+          "requires": { "flags": ["shd_fall"] },
+          "kind": "combat",
+          "enemies": [["mist_scale_guardian", 2]],
+          "allies": ["npc_evenna_starword"],
+          "success": {
+            "text": "守衛散成了霧，霧的深處，有一雙比月亮還大的眼睛睜開了。",
+            "set_flags": ["shd_through"]
+          },
+          "fail": {
+            "text": "守衛把你們打倒在林地上。你閉上眼睛的那一刻，霧把你們輕輕地托了起來——你們睡著了，所以可以進去了。霧的深處，有一雙比月亮還大的眼睛睜開了。",
+            "set_flags": ["shd_through"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "gaze",
+          "title": "在索利安的投影前保持清醒",
+          "text": "夢境之龍索利安的投影盤在林地上空，身體是半透明的霧與瑰麗的幻象，每一片鱗片裡都映著一個不同的夢。它的聲音像安撫，也像誘惑：「睡吧……在夢裡，你想要的一切都在。」",
+          "at": { "where": "outskirts", "location": "windspeak" },
+          "requires": { "flags": ["shd_through"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 17 },
+          "success": {
+            "text": "你咬著舌頭保持清醒。索利安的眼睛裡閃過一絲驚訝，然後是笑意：「好孩子。醒著的人，可以問我問題。」",
+            "set_flags": ["shd_awake"],
+            "effects": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }]
+          },
+          "fail": {
+            "text": "你睡著了，做了一個很美很美的夢。艾溫娜把你搖醒時，你哭了，卻想不起來夢見了什麼。索利安看著你：「……可惜。不過，你還是可以問一個問題。」",
+            "set_flags": ["shd_awake"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "ask",
+          "title": "向索利安問一個問題",
+          "text": "艾溫娜在你身邊，激動得說不出話。索利安等著。",
+          "at": { "where": "npc", "npc": "npc_evenna_starword" },
+          "requires": { "flags": ["shd_awake"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我們在莫菲的夢裡見過」",
+              "requires": { "flags": ["sorian_seen"] },
+              "success": {
+                "text": "索利安的眼睛亮了起來：「守門人。」它低下頭，霧做的鼻尖幾乎碰到你，「你替做夢的人守著門，我替他們守著夢。我們是一樣的。」它把一片霧鱗留在了艾溫娜的手心，「這個給星術師。有了它，她就能在夢裡看見星星的另一邊。」",
+                "set_flags": ["shd_done", "shd_gatekeeper", "sorian_seen"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_evenna_starword", "delta": 25, "reason": "讓她見到了龍" },
+                  { "type": "reputation", "faction": "elf_court", "delta": 10 },
+                  { "type": "memory", "summary": "在風語崗哨外見到了夢境之龍索利安的投影。它認出了你——在莫菲的夢裡見過的守門人。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「你為什麼來森林？」",
+              "success": {
+                "text": "索利安看著森林：「這裡的夢最老、最長，也最寂寞。精靈活得太久，夢得太少。」它慢慢地升回了天上，「讓他們多做點夢吧。」那顆不該存在的星，從那天起每晚都在，艾溫娜說，它在笑。",
+                "set_flags": ["shd_done", "shd_why", "sorian_seen"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_evenna_starword", "delta": 20, "reason": "讓她見到了龍" },
+                  { "type": "reputation", "faction": "elf_court", "delta": 10 },
+                  { "type": "memory", "summary": "在風語崗哨外見到了夢境之龍索利安的投影。它說精靈活得太久、夢得太少。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把你的夢分一點給我」",
+              "success": {
+                "text": "索利安笑了，鱗片裡的夢一起閃了一下：「貪心的孩子。」一個夢鑽進了你的額頭。從那天起，你每晚都會夢見一片你從沒去過的海——後來你才知道，那是另一個世界的海。",
+                "set_flags": ["shd_done", "shd_dream_gift", "sorian_seen"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_evenna_starword", "delta": 15, "reason": "讓她見到了龍" },
+                  { "type": "perk", "perk": "lucky", "options": ["iron_will", "scholar"] },
+                  { "type": "memory", "summary": "在風語崗哨外見到了夢境之龍索利安的投影，它分了一個夢給你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "fog_lost_names",
+      "title": "迷路的人",
+      "summary": "苔語村東邊的森林裡起了一場不散的霧。走進霧裡的人，三天後會自己走出來——卻忘了自己的名字。（森林深處的迷霧・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_octavia_mossvoice",
+        "min_level": 5,
+        "text": "奧克塔維亞的聲音像風吹過枯葉：「已經有四個人了。走進霧裡，三天後回來，什麼都記得，就是不記得自己叫什麼。」她摸著一棵老橡樹，「樹不肯告訴我霧裡有什麼。這是第一次，樹對我說謊。」"
+      },
+      "start_flags": ["fog_start"],
+      "nodes": [
+        {
+          "id": "ring",
+          "title": "在苔語村的森語之環問樹",
+          "text": "森語之環的空地上，奧克塔維亞和菲恩唱起了森語的歌。這一次，樹的回答不是畫面，而是一片白——像是有人用霧把畫面蓋住了。",
+          "at": { "where": "cell", "location": "mosswhisper", "cell": "lm_whispering_ring" },
+          "requires": { "flags": ["fog_start"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 13 },
+          "success": {
+            "text": "你在一片白裡看見了一個很小的破綻：霧的後面，有一圈用古精靈文寫成的符文，像是一道牆。菲恩睜開眼睛：「那是……結界？精靈的結界？」",
+            "set_flags": ["fog_ward"],
+            "effects": [{ "type": "affinity", "npc": "npc_fenn_apprentice", "delta": 5, "reason": "陪他看見了結界" }]
+          },
+          "fail": {
+            "text": "你只看見了一片白。菲恩卻看見了一點東西：「霧的後面……有字。古精靈文。」",
+            "set_flags": ["fog_ward"]
+          }
+        },
+        {
+          "id": "stalkers",
+          "title": "在苔語村近郊擊退霧裡的潛行者",
+          "text": "你們走到霧的邊緣，霧裡伸出了幾隻細長的手，接著是細長的身體——沒有臉，只有一張不斷開合的嘴，嘴裡吐出的是別人的名字。",
+          "at": { "where": "outskirts", "location": "mosswhisper" },
+          "requires": { "flags": ["fog_ward"] },
+          "kind": "combat",
+          "enemies": [["fog_stalker", 3]],
+          "success": {
+            "text": "霧中的潛行者散了，吐出的名字一個一個飄回了村子的方向。那天晚上，四個失去名字的人，有兩個想起來了。",
+            "set_flags": ["fog_names"]
+          },
+          "fail": {
+            "text": "霧中的潛行者把你們逼回了村子，卻在撤退時吐出了一個名字——那天晚上，四個失去名字的人，有一個想起來了。",
+            "set_flags": ["fog_names"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "next",
+          "title": "和奧克塔維亞商量",
+          "text": "奧克塔維亞聽完，沉默了很久：「精靈的結界……在苔語村旁邊。我在這裡住了四十年，從來不知道。」她看著你，「銀月城的人一定知道些什麼。你要去問嗎？」",
+          "at": { "where": "npc", "npc": "npc_octavia_mossvoice" },
+          "requires": { "flags": ["fog_names"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我去銀月城問」",
+              "success": {
+                "text": "奧克塔維亞點點頭，替你寫了一封介紹信：「給塞夫。迷霧之幕的人。如果有誰知道霧的事，就是他。」菲恩在旁邊小聲說：「迷霧之幕……名字裡就有霧。」",
+                "set_flags": ["fog_1_done", "fog_seph"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_octavia_mossvoice", "delta": 10, "reason": "替村子追查霧的事" },
+                  { "type": "memory", "summary": "在苔語村查出東邊森林裡不散的霧後面，有一道古老的精靈結界。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「先守住村子，不讓人再進霧裡」",
+              "success": {
+                "text": "你幫村民在霧的邊緣立了一圈木樁，掛上了鈴鐺。奧克塔維亞在每根木樁上都刻了一個森語的記號：「回家。」從那天起，再也沒有人走進霧裡。可霧，每天都往村子挪近了一點。",
+                "set_flags": ["fog_1_done", "fog_fenced"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_octavia_mossvoice", "delta": 15, "reason": "替村子守住了邊界" },
+                  { "type": "memory", "summary": "在苔語村查出霧的後面有精靈結界，替村子在霧的邊緣立了一圈掛鈴的木樁。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "fog_mistveil",
+      "title": "迷霧之幕",
+      "summary": "迷霧之幕的影行者塞夫從不說謊——只是不說。苔語村旁的霧，是迷霧之幕五百年前布下的結界，現在它正在崩解。（森林深處的迷霧・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_seph_mistveil",
+        "min_level": 8,
+        "requires": { "flags": ["fog_1_done"] },
+        "text": "塞夫安靜地聽你說完，安靜地行了一個禮：「霧，是我們布下的。」他沒有解釋，只是遞給你一張畫著符文的羊皮紙，「結界的符文石在霧的邊緣，有一塊碎了。碎了的地方，霧會漏出來，名字會被吃掉。修好它，霧就不會再往村子走。」他頓了頓，「或者，你可以不修。」"
+      },
+      "start_flags": ["fog_veil"],
+      "nodes": [
+        {
+          "id": "dossier",
+          "title": "在銀月城的情報商打聽迷霧之幕的過去",
+          "text": "銀月城的情報商是個戴著兜帽的暮影精靈，聽到「迷霧之幕」，就把你帶進了店後的小房間：「五百年前，王庭流放了一整個村子的精靈。迷霧之幕奉命把他們『藏起來』。」他壓低聲音，「藏到哪裡，沒有人知道。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "informant" },
+          "requires": { "flags": ["fog_veil"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你從情報商的舊檔案裡找到了：被流放的村子叫「霧谷」，他們的罪名是「與人類通婚」。藏他們的結界，就在苔語村東邊。霧後面，有一整個村子。",
+            "set_flags": ["fog_valley"]
+          },
+          "fail": {
+            "text": "情報商只肯說到這裡：「霧後面……也許有人。也許。」",
+            "set_flags": ["fog_valley"],
+            "effects": [{ "type": "money", "amount": -80 }]
+          }
+        },
+        {
+          "id": "sentinels",
+          "title": "在苔語村近郊擊退結界的哨衛",
+          "text": "霧的邊緣，碎掉的符文石旁站著兩尊用苔蘚和石頭做成的古老哨衛。它們看見你，眼睛裡亮起了白光：「迷霧之幕有令：任何人不得靠近。」",
+          "at": { "where": "outskirts", "location": "mosswhisper" },
+          "requires": { "flags": ["fog_valley"] },
+          "kind": "combat",
+          "enemies": [["mist_sentinel", 2]],
+          "success": {
+            "text": "哨衛跪了下來，眼睛裡的光熄了。碎掉的符文石就在眼前，霧從裂縫裡一絲一絲地漏出來——漏出來的霧裡，隱隱傳來孩子的笑聲。",
+            "set_flags": ["fog_stone"]
+          },
+          "fail": {
+            "text": "哨衛把你們逼退了，最後是塞夫從霧裡走出來，一句古精靈語讓它們停了下來。碎掉的符文石旁，霧裡隱隱傳來孩子的笑聲。",
+            "set_flags": ["fog_stone"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "repair",
+          "title": "決定要不要修好符文石",
+          "text": "塞夫站在符文石旁，等著你決定：「修好它，霧會退回去，苔語村安全了，霧谷繼續藏著。不修，霧會越來越薄——五百年來，霧谷第一次會被外面的人看見。」他沒有說他希望你怎麼做。他從不說。",
+          "at": { "where": "outskirts", "location": "mosswhisper" },
+          "requires": { "flags": ["fog_stone"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "修好符文石",
+              "success": {
+                "text": "塞夫教你把符文一個一個地補回去。霧退回了森林深處，霧裡的笑聲也聽不見了。塞夫向你行了一個禮：「謝謝你。」你第一次聽出他的聲音裡有一點什麼——像是遺憾。",
+                "set_flags": ["fog_2_done", "fog_mended"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_seph_mistveil", "delta": 10, "reason": "替迷霧之幕修好了結界" },
+                  { "type": "affinity", "npc": "npc_octavia_mossvoice", "delta": 10, "reason": "霧退回去了" },
+                  { "type": "memory", "summary": "替迷霧之幕修好了苔語村東邊的結界。霧退回了森林深處，霧裡藏著一個被流放了五百年的精靈村子。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "不修",
+              "success": {
+                "text": "你把工具放下了。塞夫看了你很久，然後做了一件你從沒見過他做的事——他笑了：「……我等這一天，等了兩百年。」他轉身走進霧裡，「跟我來。我帶你去見他們。」",
+                "set_flags": ["fog_2_done", "fog_open"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_seph_mistveil", "delta": 20, "reason": "替他做了他做不了的決定" },
+                  { "type": "memory", "summary": "沒有修好迷霧之幕的結界。影行者塞夫說，他等這一天等了兩百年。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "fog_behind_the_mist",
+      "title": "霧後面的東西",
+      "summary": "霧谷——被流放了五百年的精靈村子，罪名是「與人類通婚」。結界正在崩解，霧谷的守霧者不願意被外面的人看見，王庭也不願意。（森林深處的迷霧・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_seph_mistveil",
+        "min_level": 11,
+        "requires": { "flags": ["fog_2_done"] },
+        "text": "塞夫帶你穿過霧。霧的後面是一個安靜的村子，房屋和苔語村一模一樣，只是更老。村民裡有精靈、有人類、也有尖耳朵卻長著鬍子的人。「霧谷，」塞夫說，「五百年了。結界撐不過這個冬天。霧谷的守霧者不肯讓它倒，王庭也不肯。」他看著你，「但是，霧谷的孩子們想看看太陽。」"
+      },
+      "start_flags": ["fog_valley_in"],
+      "nodes": [
+        {
+          "id": "wardens",
+          "title": "在苔語村近郊的霧谷面對守霧者",
+          "text": "村子的盡頭，兩個披著霧的高大身影擋住了你：霧谷的守霧者，五百年前親手把自己和家人關進霧裡的精靈術士。他們的身體已經有一半變成了霧：「外面的人，回去。外面只有火和刀。」",
+          "at": { "where": "outskirts", "location": "mosswhisper" },
+          "requires": { "flags": ["fog_valley_in"] },
+          "kind": "combat",
+          "enemies": [["mist_warden", 2]],
+          "success": {
+            "text": "守霧者退開了，身上的霧一點一點地散去，露出了兩張很老、很累的臉。其中一個問：「……外面，現在怎麼樣了？」",
+            "set_flags": ["fog_asked"]
+          },
+          "fail": {
+            "text": "守霧者把你們逼退到了村口，卻停了下來。一個霧谷的孩子跑過來，擋在你面前：「不要打他！他是從外面來的！」守霧者的霧，一點一點地散了。",
+            "set_flags": ["fog_asked"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "outside",
+          "title": "告訴守霧者外面的樣子",
+          "text": "守霧者、霧谷的村民、塞夫，都在等你回答：外面，現在是什麼樣子？",
+          "at": { "where": "outskirts", "location": "mosswhisper" },
+          "requires": { "flags": ["fog_asked"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說了苔語村：人類的德魯伊和精靈的學徒一起唱歌。你說了銀月城的爭吵、世界樹的新芽、矮人的酒和魔族的陳情日。你說，外面還是有火和刀——但也有很多人在學著放下它們。守霧者聽完，很久，很久，然後哭了。",
+            "set_flags": ["fog_told"]
+          },
+          "fail": {
+            "text": "你說得不好，守霧者沒有被說服。但霧谷的孩子們圍著你，一個一個地問：「外面有海嗎？有雪嗎？有和我一樣的人嗎？」守霧者看著孩子們，沉默了。",
+            "set_flags": ["fog_told"]
+          }
+        },
+        {
+          "id": "lift",
+          "title": "決定霧谷的未來",
+          "text": "結界在你們頭頂發出了碎裂的聲音。守霧者看著你：「你從外面來。你說——要讓霧散掉，還是再撐五百年？」",
+          "at": { "where": "npc", "npc": "npc_seph_mistveil" },
+          "requires": { "flags": ["fog_told"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓霧散掉",
+              "success": {
+                "text": "守霧者鬆開了手。五百年的霧在一個早晨散盡，霧谷的孩子們第一次看見了太陽，尖叫著跑進了陽光裡。苔語村的奧克塔維亞帶著麵包和花，第一個走進了霧谷。塞夫把這件事寫成了報告，送到王庭——報告的最後一句是：「我沒有說謊。我只是終於說了。」",
+                "set_flags": ["fog_done", "fog_lifted"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_seph_mistveil", "delta": 25, "reason": "讓霧谷看見了太陽" },
+                  { "type": "affinity", "npc": "npc_octavia_mossvoice", "delta": 20, "reason": "多了一群鄰居" },
+                  { "type": "reputation", "faction": "elf_court", "delta": 5 },
+                  { "type": "memory", "summary": "在古樹森林深處讓迷霧之幕的結界散去，被流放了五百年的霧谷第一次看見了太陽。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "替他們重新撐起結界",
+              "success": {
+                "text": "你和塞夫、守霧者一起，把結界重新撐了起來。霧谷又一次藏進了霧裡。臨走前，一個霧谷的孩子塞給你一顆白色的小石頭：「等外面變好了，再來接我們。」塞夫看著那顆石頭：「……我會記得的。」",
+                "set_flags": ["fog_done", "fog_kept"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_seph_mistveil", "delta": 10, "reason": "替霧谷守住了結界" },
+                  { "type": "memory", "summary": "在古樹森林深處替霧谷重新撐起了結界。一個孩子說：等外面變好了，再來接我們。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }
