@@ -145,6 +145,8 @@ export interface NpcSquad {
 
 export interface NpcStage {
   requires: StoryCond
+  /** 只在白天（6～18 時）或只在夜裡成立（例如只在夜裡營業的地方） */
+  hours?: 'day' | 'night'
   location: string
   haunts?: Haunt[]
   fixed?: { area: string; x: number; y: number }

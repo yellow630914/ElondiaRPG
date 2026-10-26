@@ -296,3 +296,53 @@ describe('special areas after the play test', () => {
     expect(npcRecord(only, 'npc_eve')?.location).toBe('rhineburg')
   })
 })
+
+describe('characters in the special-area rooms', () => {
+  // 每個特殊區域：打開它的旗標、時段，以及應該站在裡面的人
+  const CASES: [string, string[], number, string[]][] = [
+    ['lm_maid_cafe', ['mimi_lover', 'eve_lover', 'mimi_cafe', 'ren_lover', 'ren_land'], 14, ['npc_mimi', 'npc_eve', 'npc_ren']],
+    ['lm_wives_salon', ['group_wives_done', 'marg_lover', 'liese_lover', 'clara_lover'], 14, ['npc_margarete', 'npc_lieselotte', 'npc_clara']],
+    ['lm_ebony_night', ['aya_club'], 22, ['npc_aya']],
+    ['lm_succubus_banquet', ['cas_lover', 'cas_free', 'twin_lovers', 'luc_lover', 'noel_lover'], 22, ['npc_cassandra', 'npc_rona', 'npc_lana', 'npc_lucia', 'npc_noel']],
+    ['lm_idol_backstage', ['group_idols_done', 'stella_lover', 'noir_lover', 'pom_lover'], 22, ['npc_stella', 'npc_noir', 'npc_pom']],
+  ]
+
+  it('stand in their own rooms of the interior once their area opens', () => {
+    for (const [id, flags, hour, who] of CASES) {
+      const state = at(id, flags)
+      state.time.hour = hour
+      const area = currentArea(state)
+      expect(area.key, id).toBe(`sm/${landmarks[id]!.interior}`)
+      const here = peopleHere(state)
+      for (const npc of who) {
+        const p = here.find((x) => x.rec.id === npc)
+        expect(p, `${id} ${npc}`).toBeDefined()
+        expect(area.cells[p!.y * area.width + p!.x]!.kind, `${id} ${npc}`).not.toBe('wall')
+      }
+      // 每個人站在不同的格子
+      const cells = who.map((npc) => here.find((x) => x.rec.id === npc)!).map((p) => `${p.x},${p.y}`)
+      expect(new Set(cells).size, id).toBe(who.length)
+    }
+  })
+
+  it('keep the night venues to the night and the tea party to the afternoon', () => {
+    const club = at('lm_ebony_night', ['aya_club'])
+    club.time.hour = 10
+    expect(npcRecord(club, 'npc_aya')?.fixed).toBeUndefined()
+    expect(npcRecord(club, 'npc_aya')?.location).toBe('soriel')
+    club.time.hour = 22
+    expect(npcRecord(club, 'npc_aya')?.fixed?.area).toBe('sm/sm_ebony_night')
+    const salon = at('lm_wives_salon', ['group_wives_done', 'clara_lover'])
+    salon.time.hour = 22
+    expect(npcRecord(salon, 'npc_clara')?.fixed).toBeUndefined()
+    salon.time.hour = 14
+    expect(npcRecord(salon, 'npc_clara')?.fixed?.area).toBe('sm/sm_wives_salon')
+  })
+
+  it('leave the twins, Lucia and Noel out of the banquet hall until they are lovers', () => {
+    const state = at('lm_succubus_banquet', ['cas_lover', 'cas_collared', 'twin_lovers'])
+    expect(npcRecord(state, 'npc_rona')?.fixed?.area).toBe('sm/sm_succubus_banquet')
+    expect(npcRecord(state, 'npc_lucia')?.fixed).toBeUndefined()
+    expect(npcRecord(state, 'npc_noel')?.fixed).toBeUndefined()
+  })
+})

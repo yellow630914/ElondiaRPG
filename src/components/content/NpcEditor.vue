@@ -336,6 +336,13 @@ const occupations = computed(() => {
         <div class="row small">這些旗標都成立時 <FlagInput v-model="st.requires.flags" /></div>
         <div class="row small">而且這些旗標都不成立 <FlagInput v-model="st.requires.flags_none" /></div>
         <CondExtrasEditor :model-value="st.requires" @update:model-value="(v) => (st.requires = v)" />
+        <label class="small">時段 <Hint text="只在白天（6～18 時）或只在夜裡成立，例如只在夜裡營業的地方；其他時候照下一組或上面的設定。" />
+          <select v-model="st.hours">
+            <option :value="undefined">任何時候</option>
+            <option value="day">只在白天</option>
+            <option value="night">只在夜裡</option>
+          </select>
+        </label>
         <NpcPlacementEditor v-model="draft.stages![i]!" />
         <details class="small" :open="!!(st.name || st.background || st.personality || st.tags)">
           <summary>身分改變 <Hint text="例如皇子登基成為國王：有寫的取代上面的名字、性格、背景與標籤（AI 也會看到新的身分）；條件不再成立時換回來。沒寫的照舊。" /></summary>

@@ -77,7 +77,7 @@
 | `landmark` | 地標 id | `lm_` 開頭，而且這個地標的 `location` 要和角色的 `location` 一樣 | **待在地標**：站在地標那一格，地標搬家時跟著走。有 `landmark` 時不看 `fixed` 與 `haunts` |
 | `keeper` | 店種 | `general` 雜貨店、`temple` 神殿、`tavern` 酒館、`smithy` 鐵匠鋪、`tailor` 裁縫店、`jeweler` 珠寶店、`magic` 魔法物品店、`informant` 情報商，或自建商店的 id（`shop_…`） | **擔任店主**：取代所屬地點那間店生成的店主，平常待在店裡。所屬地點要有這種店（第 3.2 節的表）。同一間店有好幾位時用第一位。流浪商人 `wanderer` 不行 |
 | `requires` | 物件 | `{ "flags": [...], "flags_none": [...] }` | 只在 `flags` 全部成立、`flags_none` 全部不成立時出現。不成立時不在任何地圖上、不能雇用；特殊任務把他列為友方時例外。旗標名稱的規則見 [stories](stories.md) 第 2.6 節 |
-| `stages` | 陣列 | `[{ "requires": {...}, "location": "<聚落 id>", "haunts": [...], "fixed": {...} }]` | **依劇情旗標改變出沒**：由上往下用第一組 `requires` 成立的設定，取代 `location`、`haunts`、`fixed`（和上面的規則一樣）。一組成立時不看 `landmark`。沒有 `requires` 的一組整組拿掉；`location` 不對時用角色本身的 `location`。同一個角色，親密度、記憶、等級、裝備都延續 |
+| `stages` | 陣列 | `[{ "requires": {...}, "location": "<聚落 id>", "haunts": [...], "fixed": {...} }]` | **依劇情旗標改變出沒**：由上往下用第一組 `requires` 成立的設定，取代 `location`、`haunts`、`fixed`（和上面的規則一樣）。一組成立時不看 `landmark`。沒有 `requires` 的一組整組拿掉；`location` 不對時用角色本身的 `location`。同一個角色，親密度、記憶、等級、裝備都延續。每一組可以加 `"hours": "day"`／`"night"`：只在白天（6～18 時）或只在夜裡成立 |
 
 - `x` 是第幾欄、`y` 是第幾列，從 0 開始，對照區塊的 `grid`（每一列是一個字串）。
 - 座標超出區塊時被夾到邊上，再看那一格：是牆或水就整欄拿掉，不是就留下（可能落在通道上）。

@@ -1218,7 +1218,8 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
     const pers = str(st.personality, 160)
     const tags = Array.isArray(st.tags) ? [...new Set(st.tags.filter((t) => !!npcTags.tags[t]))] : undefined
     return [{
-      requires: r, location: settlementIds().includes(st.location) ? st.location : location, ...(h.length ? { haunts: h } : {}), ...(f ? { fixed: f } : {}),
+      requires: r, ...(st.hours === 'day' || st.hours === 'night' ? { hours: st.hours } : {}),
+      location: settlementIds().includes(st.location) ? st.location : location, ...(h.length ? { haunts: h } : {}), ...(f ? { fixed: f } : {}),
       ...(name ? { name } : {}), ...(bg ? { background: bg } : {}), ...(pers ? { personality: pers } : {}), ...(tags ? { tags } : {}),
     }]
   })

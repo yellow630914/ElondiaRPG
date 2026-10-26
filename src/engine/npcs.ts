@@ -14,6 +14,7 @@ import {
 import { Rng } from './rng'
 import { rollLook } from './traits'
 import { condMet } from './storyFlags'
+import { isNight } from './light'
 import type { Character, GameState, NpcRecord } from './types'
 
 export interface NpcSpec {
@@ -62,7 +63,7 @@ export function appearanceOf(id: string, appearance?: string): string {
 
 /** 第一組條件成立的「依劇情旗標改變出沒」 */
 export function activeStage(state: GameState, def: Pick<NpcRecord, 'stages'>): number | undefined {
-  const i = (def.stages ?? []).findIndex((st) => condMet(state, st.requires))
+  const i = (def.stages ?? []).findIndex((st) => condMet(state, st.requires) && (!st.hours || (st.hours === 'night') === isNight(state.time)))
   return i >= 0 ? i : undefined
 }
 
