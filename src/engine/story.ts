@@ -69,6 +69,8 @@ export function canStart(state: GameState, def: StoryDef): boolean {
   if (def.start.min_level && pcOf(state).level < def.start.min_level) return false
   if (def.start.kind === 'npc' && def.start.npc && def.start.min_affinity !== undefined
     && (state.relationships?.[def.start.npc]?.affinity ?? 0) < def.start.min_affinity) return false
+  // 任務要找、要同行的人已經死了：接了也做不完
+  if (neededNpcs(def, { done: [] }).some((id) => npcRecord(state, id)?.dead)) return false
   return condMet(state, def.start.requires)
 }
 
@@ -523,13 +525,17 @@ function endQuietly(state: GameState, p: StoryProgress, text: string) {
 
 // ---- 角色死亡 ----
 
-/** 任務需要的固定 NPC：開頭的角色、任務同行，還沒結束的任務點要找、要加入的人（敵對的角色除外：本來就可能被打倒） */
-function neededNpcs(def: StoryDef, p: StoryProgress): string[] {
-  const foes = new Set(def.nodes.flatMap((n) => n.foes ?? []))
+/**
+ * 任務需要的固定 NPC：開頭的角色、任務同行，還沒結束的任務點要找、要加入的人。
+ * 敵對的角色除外（本來就可能被打倒），這個任務自己寫了會死去的角色也除外（故事裡的死亡，見 storyDeath）。
+ */
+function neededNpcs(def: StoryDef, p: Pick<StoryProgress, 'done' | 'guests'>): string[] {
+  const outcomes = (n: StoryNode) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]
+  const foes = new Set([...def.nodes.flatMap((n) => n.foes ?? []), ...def.nodes.flatMap((n) => outcomes(n).flatMap((o) => o?.deaths ?? []))])
   const ids: (string | undefined)[] = [def.start.kind === 'npc' ? def.start.npc : undefined, ...(p.guests ?? [])]
   for (const n of def.nodes) {
     if (p.done.includes(n.id)) continue
-    const outs = [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]
+    const outs = outcomes(n)
     ids.push(n.at.npc, ...outs.map((o) => o?.join))
     for (const o of outs) for (const e of o?.effects ?? []) if (e.type === 'companion' && typeof e.npc === 'string') ids.push(e.npc)
   }

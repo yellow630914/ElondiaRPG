@@ -492,6 +492,10 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     for (const id of n.allies ?? []) if (!npcIds.has(id)) err.push(`${t}的友方角色 ${id} 不存在`)
     for (const id of n.allies ?? []) if (n.foes?.includes(id)) err.push(`${t}：${id} 同時是友方與敵對角色`)
     if (n.kind === 'choice' && !n.options?.length) err.push(`${t}是選擇，但沒有選項`)
+    // 每個選項都帶了任務本身沒有的內容標籤：玩家在設定關掉那些標籤時，這個任務點沒有選項可選
+    if (n.kind === 'choice' && n.options?.length && n.options.every((o) => (o.tags ?? []).some((tag) => !def.tags?.includes(tag)))) {
+      warn.push(`${t}的每個選項都有內容標籤，設定關掉這些標籤時沒有選項可選（請留一個沒有標籤的選項）`)
+    }
     // 參考好感、好感條件的角色要存在
     for (const id of Object.keys(n.requires?.affinity ?? {})) if (!npcIds.has(id)) err.push(`${t}的好感條件：角色 ${id} 不存在`)
     if (n.check?.affinity && !npcIds.has(n.check.affinity.npc)) err.push(`${t}的檢定參考的角色 ${n.check.affinity.npc} 不存在`)
