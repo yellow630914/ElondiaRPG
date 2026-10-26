@@ -142,7 +142,7 @@
 ### 2.6 旗標
 
 - **名稱**：英文小寫與底線，前面加這條任務的簡稱，避免和別的任務撞名（`sewer_app_started`、`sewer_app_lead`）。最多 40 字；空白會換成 `_`，`story:` 前綴會被去掉。
-- **開頭旗標**（`start_flags`）不能和任何任務一樣，內建的查 `data/rules/stories.json` 的 `start_flags`（例如 `relic_started`、`wagon_found`、`ledger_rumor`）；內建任務的旗標用了 `dthr_`、`whcr_`、`lil_`、`rwar_`、`mabb_`、`isa_`、`doct_`、`snk_`、`aya_`、`rv_`、`epic_`、`ser_`、`port_`、`spr_`、`ame_`、`cw_`、`cave_`、`wl_`、`annex_`、`spy_`、`def_`、`lena_`、`val_`、`eve_`、`vsec_`、`lis_`、`valk_`、`ign_`、`noc_`、`mor_`、`law_`、`trl_`、`god_`、`lila_`、`rot_`、`hm_`、`era_`、`kag_`、`ore_`、`brew_`、`smith_`、`wt_`、`wat_`、`smg_`、`sin_`、`acc_`、`shd_`、`fog_`、`vault_`、`reef_`、`nip_`、`scs_`、`rite_`、`bab_`、`pit_`、`echo_`、`gnt_`、`emb_`、`brc_`、`ghs_` 這些簡稱，自建的不要用同樣的前綴。
+- **開頭旗標**（`start_flags`）不能和任何任務一樣，內建的查 `data/rules/stories.json` 的 `start_flags`（例如 `relic_started`、`wagon_found`、`ledger_rumor`）；內建任務的旗標用了 `dthr_`、`whcr_`、`lil_`、`rwar_`、`mabb_`、`isa_`、`doct_`、`snk_`、`aya_`、`rv_`、`epic_`、`ser_`、`port_`、`spr_`、`ame_`、`cw_`、`cave_`、`wl_`、`annex_`、`spy_`、`def_`、`lena_`、`val_`、`eve_`、`vsec_`、`lis_`、`valk_`、`ign_`、`noc_`、`mor_`、`law_`、`trl_`、`god_`、`lila_`、`rot_`、`hm_`、`era_`、`kag_`、`ore_`、`brew_`、`smith_`、`wt_`、`wat_`、`smg_`、`sin_`、`acc_`、`shd_`、`fog_`、`vault_`、`reef_`、`nip_`、`scs_`、`rite_`、`bab_`、`pit_`、`echo_`、`gnt_`、`emb_`、`brc_`、`ghs_`、`msr_`、`thc_`、`vh_`、`tfc_`、`skl_`、`ecc_`、`qst_` 這些簡稱，自建的不要用同樣的前綴。
 - 旗標是**全域**的：其他任務的 `requires`、固定 NPC 的 `requires` 與 `stages` 都讀同一個旗標，所以可以用來串接任務、讓角色搬家或消失（見 [npcs](npcs.md) 2.3 節）。
 - `ai:` 開頭的名稱讀 AI 判定寫下的旗標（`ai:答應幫忙`），不算「沒有地方設定」。
 - 任務點只在任務進行中才會出現；沒有 `requires` 的任務點任務一開始就解鎖。習慣上第一個任務點需要開頭旗標，之後每個任務點需要前一個設定的旗標。

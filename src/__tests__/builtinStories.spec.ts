@@ -96,6 +96,13 @@ describe('built-in stories', () => {
       ['emb_warm_floors', 'emb_flame_weavers', 'emb_heart_of_flame'],
       ['brc_bloodsworn_squires', 'brc_fallen_king', 'brc_first_oathbreaker'],
       ['ghs_maneating_flowers', 'ghs_experiment_log', 'ghs_first_experiment'],
+      ['msr_stolen_bows', 'msr_shard_avatar', 'msr_moon_core'],
+      ['thc_moonlight_pilgrimage', 'thc_eaten_memories', 'thc_goddess_shadow'],
+      ['vh_infected_elves', 'vh_alien_bloom', 'vh_otherworld_gate'],
+      ['tfc_lost_envoy', 'tfc_forgotten_abyss', 'tfc_sea_god_remnant'],
+      ['skl_no_survivors', 'skl_pirate_king_map', 'skl_kraken'],
+      ['ecc_missing_hunter', 'ecc_calamity_shade', 'ecc_voice_of_catastrophe'],
+      ['qst_unregistered', 'qst_sun_oracle', 'qst_sun_god_avatar'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
@@ -185,6 +192,19 @@ describe('built-in stories', () => {
     const strongest = bosses.filter((id) => enemies[id]!.level >= 13)
     expect(strongest.length).toBeGreaterThanOrEqual(16)
     for (const id of strongest) expect(enemies[id]!.desc, id).toContain('阿契隆')
+  })
+
+  it('lets the party retry an abyss boss fight: the fail outcome keeps the node open', () => {
+    const bosses = new Set(Object.values(dungeonEncounters).flatMap((t) => (t.bosses?.abyss ?? []).map((g) => g[0])).filter((id) => enemies[id]!.level >= 13))
+    const fights = stories.flatMap((s) => s.nodes.filter((n) => n.kind === 'combat' && (n.enemies ?? []).some(([m]) => bosses.has(m))).map((n) => ({ id: s.id, n })))
+    expect(fights.length).toBeGreaterThanOrEqual(15)
+    for (const { id, n } of fights) {
+      expect(n.fail?.retry, `${id}:${n.id}`).toBe(true)
+      expect(n.fail?.set_flags ?? [], `${id}:${n.id}`).toEqual([])
+    }
+    for (const [id, node] of [['trial_new_moon', 'lizards'], ['trial_bloodhorn_warrior', 'beasts'], ['trial_war_spirits', 'spirits'], ['law_bone_throne', 'axes']]) {
+      expect(story(id!).nodes.find((n) => n.id === node)!.fail?.retry, `${id}:${node}`).toBe(true)
+    }
   })
 
   it('keeps every fixed NPC a storyline needs out of reach of a sneak attack', () => {
