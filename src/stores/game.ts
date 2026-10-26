@@ -5,7 +5,7 @@ import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
 import * as deadlines from '@/engine/deadlines'
 import { pitchTarget } from '@/engine/perks'
-import { computed, ref, toRaw } from 'vue'
+import { computed, ref, toRaw, watch } from 'vue'
 import * as actions from '@/engine/actions'
 import * as combat from '@/engine/combat'
 import * as companions from '@/engine/companions'
@@ -205,6 +205,10 @@ export const useGame = defineStore('game', () => {
     }
   })
   const state = ref<GameState | null>(null)
+  // 開關成人向：成人向的特殊任務暫停或繼續，地圖上的任務點（⭐）跟著拿掉或放回（在設定套用之後）
+  watch(() => useSettings().adult, () => {
+    if (state.value) story.refreshStoryMarkers(state.value)
+  }, { flush: 'post' })
   const narrations = ref<Record<string, NarrationState>>({})
   /** token 用量：日誌 id（或 OTHER_USAGE）→ 累計 */
   const usage = ref<Record<string, UsageEntry>>({})
