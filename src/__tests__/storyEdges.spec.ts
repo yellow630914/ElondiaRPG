@@ -1,13 +1,14 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { resolveCaptive } from '@/engine/captives'
-import { currentArea, enterLocation, move, standOn } from '@/engine/grid'
+import { afterDefeat, currentArea, enterLocation, findKind, move, standOn } from '@/engine/grid'
 import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
 import { npcRecord, registerNpc } from '@/engine/npcs'
 import { applyPendingMove, leaveSide } from '@/engine/road'
 import { newGame } from '@/engine/state'
 import { ensureRelationship, setAffinity } from '@/engine/social'
-import { abandonStory, activeNodes, blockingNode, forgetStoryWaits, nodesHere, optionOpen, playNode, pruneStories, startStory, storyOffersHere, waitStory } from '@/engine/story'
+import { abandonStory, activeNodes, blockingNode, forgetStoryWaits, nodesHere, optionOpen, playNode, pruneStories, setupStoryCheck, startStory, storyCostGate, storyCosts, storyMaxCost, storyOffersHere, waitStory } from '@/engine/story'
+import { stories } from '@/engine/data'
 import { sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
 import { setFlag } from '@/engine/storyFlags'
 import type { GameState, Report } from '@/engine/types'
@@ -190,6 +191,30 @@ describe('side maps a quest takes you into', () => {
     expect(state.stories?.c?.status).toBe('failed')
   })
 
+  it('keeps you in the map at its entrance when you fall there, so the quest goes on', () => {
+    const state = game({ c: cave })
+    startStory(state, 'c')
+    playNode(state, 'c:enter')
+    const area = currentArea(state)
+    state.position = { area: area.key, x: area.width - 1, y: area.height - 1 }
+    afterDefeat(state)
+    expect(state.stories?.c?.status).toBe('active')
+    expect(state.side?.area).toBe(area.key)
+    expect(state.position).toMatchObject({ area: area.key, ...findKind(area, 'exit') })
+    expect(stars(state)).toEqual(['c:boss'])
+  })
+
+  it('still takes you out of a map whose quest points are all done', () => {
+    const state = game({ c: cave })
+    startStory(state, 'c')
+    playNode(state, 'c:enter')
+    const back = state.side!.back
+    state.side!.story = undefined
+    afterDefeat(state)
+    expect(state.side).toBeUndefined()
+    expect(state.position).toEqual(back)
+  })
+
   it('does not put the point in an unrelated cave', () => {
     const state = game({ c: cave })
     startStory(state, 'c')
@@ -267,5 +292,71 @@ describe('hidden landmarks and town jobs', () => {
       enterLocation(state)
       expect(guildQuests(state).filter((q) => q.landmark)).toEqual([])
     }
+  })
+})
+
+describe('ordinary quests that need an adult-only character', () => {
+  const quest = (tags?: string[]) => sanitizeStory('o', {
+    title: '屋頂', summary: '', start: { kind: 'manual' }, start_flags: ['o'], ...(tags ? { tags } : {}),
+    nodes: [{ id: 'roof', title: '屋頂上的人', text: '', at: { where: 'npc', npc: 'npc_oboro' }, kind: 'story', success: { complete: true } }],
+  }, false)
+
+  it('warns that the quest gets stuck while adult content is off', () => {
+    expect(storyCheck(quest()).warnings.some((w) => w.includes('屋頂上的人') && w.includes('成人向角色朧'))).toBe(true)
+  })
+
+  it('does not warn when the quest itself is adult', () => {
+    expect(storyCheck(quest(['adult'])).warnings.some((w) => w.includes('成人向角色'))).toBe(false)
+  })
+})
+
+describe('options that cost money', () => {
+  const pay = sanitizeStory('p', {
+    title: '贖身', summary: '', start: { kind: 'manual' }, start_flags: ['p'],
+    nodes: [
+      { id: 'ransom', title: '贖金', text: '', at: { where: 'settlement', location: 'soriel' }, kind: 'choice', options: [
+        { label: '付清', success: { effects: [{ type: 'money', amount: -1500 }], complete: true } },
+        { label: '離開', success: { complete: true } },
+      ] },
+      { id: 'tip', title: '打聽', text: '', at: { where: 'settlement', location: 'soriel' }, kind: 'check', check: { attr: 'cha', dc: 10 }, success: {}, fail: { effects: [{ type: 'money', amount: -150 }] } },
+    ],
+  }, false)
+
+  it('cannot be picked without the money, and the others still can', () => {
+    const state = game({ p: pay })
+    startStory(state, 'p')
+    state.money_cc = 1000
+    const node = activeNodes(state).find((n) => n.ref === 'p:ransom')!.node
+    expect(storyCosts(node, 0)).toEqual({ success: 1500, fail: 0 })
+    expect(storyCostGate(state, node, 0)).toContain('1,500')
+    expect(() => playNode(state, 'p:ransom', 0)).toThrow('錢不夠')
+    expect(storyCostGate(state, node, 1)).toBeUndefined()
+    state.money_cc = 1500
+    playNode(state, 'p:ransom', 0)
+    expect(state.money_cc).toBe(0)
+  })
+
+  it('blocks a check whose result costs more than you carry, and tells you before you take the quest', () => {
+    const state = game({ p: pay })
+    startStory(state, 'p')
+    state.money_cc = 100
+    expect(() => setupStoryCheck(state, 'p:tip')).toThrow('錢不夠')
+    state.money_cc = 150
+    expect(() => setupStoryCheck(state, 'p:tip')).not.toThrow()
+    expect(storyMaxCost(pay)).toBe(1500)
+  })
+})
+
+describe('characters a quest takes along', () => {
+  it('warns when the same result both brings someone along and ends the quest', () => {
+    const def = sanitizeStory('j', {
+      title: '同行', summary: '', start: { kind: 'manual' }, start_flags: ['j'],
+      nodes: [{ id: 'go', title: '走吧', text: '', at: { where: 'settlement', location: 'soriel' }, kind: 'story', success: { join: SELENE, complete: true } }],
+    }, false)
+    expect(storyCheck(def).warnings.some((w) => w.includes('走吧') && w.includes('正式入隊'))).toBe(true)
+  })
+
+  it('has no built-in quest that brings someone along only to drop them at the end', () => {
+    expect(stories.filter((d) => storyCheck(d).warnings.some((w) => w.includes('正式入隊'))).map((d) => d.id)).toEqual([])
   })
 })

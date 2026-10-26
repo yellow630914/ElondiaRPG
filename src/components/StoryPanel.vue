@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import ContentTagChips from './ContentTagChips.vue'
 import { computed } from 'vue'
-import { nodesHere, storyOffersHere } from '@/engine/story'
+import { formatMoney } from '@/engine/money'
+import { nodesHere, storyMaxCost, storyOffersHere } from '@/engine/story'
 import { useGame } from '@/stores/game'
 import StoryNodeCard from './StoryNodeCard.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -30,6 +31,7 @@ const busy = computed(() => game.judging || !!s.value.pendingAction || !!s.value
       <div><span v-if="d.rank" class="tag">{{ d.rank }}</span> <b>{{ d.title }}</b> <ContentTagChips :tags="d.tags" /></div>
       <p class="small">{{ d.start.text ?? d.summary }}</p>
       <p v-if="d.start.text" class="small muted">{{ d.summary }}</p>
+      <p v-if="storyMaxCost(d)" class="small muted">途中有要付錢的地方（一次最多 {{ formatMoney(storyMaxCost(d)) }}），錢不夠時那一步不能選</p>
       <button class="small primary" :disabled="busy" @click="game.startStory(d.id)">接下任務</button>
     </div>
     <StoryNodeCard v-for="n in nodes" :key="n.ref" :n="n" />

@@ -61,6 +61,19 @@ export function addCounters(state: GameState, changes: { flags?: Record<string, 
   }
 }
 
+/** 計數器的上下限改了：存檔裡的值夾回新的範圍（讀檔時與自訂內容改變之後；初始值沒動過的計數器本來就跟著新的初始值） */
+export function clampCounters(state: GameState) {
+  for (const [id, def] of Object.entries(storyCounters)) {
+    const key = `${COUNTER_PREFIX}${id}`
+    const v = state.flags[key]
+    if (typeof v !== 'number') continue
+    let c = v
+    if (def.min !== undefined) c = Math.max(def.min, c)
+    if (def.max !== undefined) c = Math.min(def.max, c)
+    if (c !== v) state.flags[key] = c
+  }
+}
+
 /** 目前成立的劇情旗標（名稱，不含前綴） */
 export function storyFlags(state: GameState): string[] {
   return Object.keys(state.flags)

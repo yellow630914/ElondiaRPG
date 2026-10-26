@@ -19,7 +19,7 @@ import {
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { forgeItemFor, gearRules, itemShown, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { questTargets } from './materialQuests'
-import { blockingNode, ensureStoryMarkers } from './story'
+import { blockingNode, ensureStoryMarkers, sideNodesOpen } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
 import { ensureIntelPoints, finishIntel } from './intel'
 import { formatMoney } from './money'
@@ -1387,8 +1387,14 @@ export function afterDefeat(state: GameState) {
   const area = state.areas?.[p.area]
   const loc = locationById(state.location)
   if (area?.kind === 'side') {
-    // 臨時地圖裡倒下：被帶回原本的地方（旅途或地圖上）
-    leaveSide(state)
+    if (state.side?.story && sideNodesOpen(state, state.side.story)) {
+      // 特殊任務的臨時地圖：被拖回地圖入口，任務還在（任務點沒寫失敗結果時可以再挑戰）
+      const exit = findKind(area, 'exit') ?? { x: 0, y: 0 }
+      placeAt(state, area, exit.x, exit.y)
+    } else {
+      // 臨時地圖裡倒下：被帶回原本的地方（旅途或地圖上）
+      leaveSide(state)
+    }
   } else if (area?.kind === 'special') {
     // 特殊地圖裡倒下：被送回所屬地點
     specialDefeat(state)

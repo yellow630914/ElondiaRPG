@@ -9128,10 +9128,10 @@
                 "set_flags": ["lila_done", "lila_travel"],
                 "effects": [
                   { "type": "affinity", "npc": "npc_lila_listener", "delta": 30, "reason": "帶她去看生者的世界" },
-                  { "type": "memory", "summary": "寂墓聖堂的莉菈放下了繼承人的位置，跟你一起去看生者的世界。", "importance": 3 }
+                  { "type": "memory", "summary": "寂墓聖堂的莉菈放下了繼承人的位置，跟你一起去看生者的世界。", "importance": 3 },
+                  { "type": "companion", "npc": "npc_lila_listener", "mode": "voluntary" }
                 ],
-                "complete": true,
-                "join": "npc_lila_listener"
+                "complete": true
               }
             }
           ]
@@ -20572,10 +20572,10 @@
                 "set_flags": ["eil_lover", "eil_follows"],
                 "effects": [
                   { "type": "affinity", "npc": "npc_eileen", "delta": 25, "reason": "帶她離開長廊" },
-                  { "type": "memory", "summary": "在夢裡和幽靈新娘艾琳完成了百年前的婚禮。她沒有消失，決定跟著你，去看一百年後的世界。", "importance": 3 }
+                  { "type": "memory", "summary": "在夢裡和幽靈新娘艾琳完成了百年前的婚禮。她沒有消失，決定跟著你，去看一百年後的世界。", "importance": 3 },
+                  { "type": "companion", "npc": "npc_eileen", "mode": "voluntary" }
                 ],
-                "complete": true,
-                "join": "npc_eileen"
+                "complete": true
               }
             },
             {

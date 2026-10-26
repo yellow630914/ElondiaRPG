@@ -10,6 +10,8 @@ import NameTag from '../NameTag.vue'
 import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
 import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
+import ContentTagChips from '../ContentTagChips.vue'
+import { storyDef, storyMaxCost } from '@/engine/story'
 
 // 商店的交易視窗：左邊是店裡的商品，右邊是行囊（可以賣的標出收購價）
 const props = defineProps<{ type: ShopType; loading?: boolean }>()
@@ -50,6 +52,11 @@ const shownDeals = computed(() => {
 })
 // 特別交易內容多，維持卡片；一般商品一列一件，點一下展開
 const specialDeals = computed(() => shownDeals.value.filter((d) => !isItemDeal(d)))
+/** 情報商賣的特殊任務消息：任務的內容標籤、途中最多一次要付的錢（買之前就知道） */
+function dealStory(d: Deal) {
+  const g = d.gets.find((x) => x.type === 'start_story')
+  return g?.type === 'start_story' ? storyDef(g.story) : undefined
+}
 const itemDeals = computed(() => shownDeals.value.filter(isItemDeal))
 const expanded = ref<string | null>(null)
 const toggle = (id: string) => { expanded.value = expanded.value === id ? null : id }
@@ -140,11 +147,12 @@ function sell(name: string, have: number) {
             <li v-for="d in specialDeals" :key="d.id" class="entry">
               <div class="row top">
                 <span class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
-                <strong class="grow">{{ d.title }}</strong>
+                <strong class="grow">{{ d.title }} <ContentTagChips v-if="dealStory(d)" :tags="dealStory(d)!.tags" /></strong>
                 <span class="price">{{ costText(s, key, d) }}</span>
               </div>
               <div class="small effect">得到：{{ d.gets.map((g) => effectText(s, g, shop?.keeper)).join('、') }}</div>
               <div v-if="d.desc" class="small muted">{{ d.desc }}</div>
+              <div v-if="dealStory(d) && storyMaxCost(dealStory(d)!)" class="small muted">任務途中有要付錢的地方（一次最多 {{ formatMoney(storyMaxCost(dealStory(d)!)) }}），錢不夠時那一步不能選</div>
               <div class="row actions">
                 <span v-if="d.stock < 20" class="small muted">剩 {{ d.stock }}</span>
                 <span class="grow" />

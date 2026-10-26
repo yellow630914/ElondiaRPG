@@ -23,7 +23,7 @@ import { joinParty, leaveParty, pcOf } from './party'
 import { presentHere } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
-import { addCounters, condMet, flagKey } from './storyFlags'
+import { addCounters, clampCounters, condMet, flagKey } from './storyFlags'
 import { adultContent, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
@@ -278,9 +278,13 @@ export function playNode(state: GameState, ref: string, option?: number, intent?
     if (!o) throw new Error('沒有這個選項')
     if (!optionOpen(state, node, option!)) throw new Error('這個選項現在不能選')
     if (o.check) throw new Error('這個選項要檢定')
+    const gate = storyCostGate(state, node, option)
+    if (gate) throw new Error(gate)
     outcome = o.success
     label = o.label
   } else if (node.kind === 'story') {
+    const gate = storyCostGate(state, node)
+    if (gate) throw new Error(gate)
     outcome = node.success
   } else {
     throw new Error('判定的任務點要擲骰')
@@ -305,6 +309,29 @@ function parseTarget(target: string | undefined): { ref: string; option?: number
 }
 
 /** 這個選項現在能不能選（好感、旗標的條件） */
+/** 結果裡要付的錢（扣款加總，沒有時 0） */
+function outcomeCost(o: StoryOutcome | undefined): number {
+  return (o?.effects ?? []).reduce((sum, e) => sum + (e.type === 'money' && e.amount < 0 ? -e.amount : 0), 0)
+}
+
+/** 任務點（或選項）成功、失敗時要付的錢；戰鬥不算（打輸的代價不用事先準備） */
+export function storyCosts(node: StoryNode, option?: number): { success: number; fail: number } {
+  const src = option !== undefined ? node.options?.[option] : node.kind === 'combat' ? undefined : node
+  return { success: outcomeCost(src?.success), fail: outcomeCost(src?.fail) }
+}
+
+/** 錢不夠付這個任務點（或選項）可能要付的錢時的說明；付得起時是 undefined */
+export function storyCostGate(state: GameState, node: StoryNode, option?: number): string | undefined {
+  const c = storyCosts(node, option)
+  const need = Math.max(c.success, c.fail)
+  return need > state.money_cc ? `錢不夠：要準備 ${formatMoney(need)}，身上只有 ${formatMoney(state.money_cc)}` : undefined
+}
+
+/** 這條任務線途中最多一次要付多少錢（接任務前提醒；沒有要付錢的地方時 0） */
+export function storyMaxCost(def: StoryDef): number {
+  return Math.max(0, ...def.nodes.flatMap((n) => [storyCosts(n), ...(n.options ?? []).map((_, i) => storyCosts(n, i))]).map((c) => Math.max(c.success, c.fail)))
+}
+
 export function optionOpen(state: GameState, node: StoryNode, option: number): boolean {
   const o = node.options?.[option]
   if (o?.check?.affinity && isCaptive(state, o.check.affinity.npc)) return false
@@ -350,6 +377,8 @@ export function setupStoryCheck(state: GameState, target?: string) {
   if (option !== undefined && !optionOpen(state, n.node, option)) throw new Error('這個選項現在不能選')
   const gate = storyCheckGate(state, target ?? '')
   if (gate) throw new Error(`${gate}：沒辦法檢定`)
+  const cost = storyCostGate(state, n.node, option)
+  if (cost) throw new Error(cost)
   const ok = c.success?.text ?? '成功'
   const bad = c.fail?.text ?? '沒有成功（之後可以再試一次）'
   // 參考好感：加值放進情境修正（骰子明細看得到），對方的關係寫進場景給 AI
@@ -493,9 +522,11 @@ function finishStory(state: GameState, report: Report, progress: StoryProgress, 
 
 /**
  * 自訂內容刪掉的特殊任務：存檔裡進行中的算中斷，任務同行的夥伴離隊（不然會一直佔著同行的名額）。
+ * 劇情計數器的上下限改了：夾回新的範圍。
  * 讀檔時與自訂內容改變之後呼叫。
  */
 export function pruneStories(state: GameState) {
+  clampCounters(state)
   for (const p of Object.values(state.stories ?? {})) {
     if (p.status !== 'active' || storyDef(p.id)) continue
     p.status = 'failed'
