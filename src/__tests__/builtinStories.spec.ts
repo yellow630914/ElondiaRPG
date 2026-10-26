@@ -145,6 +145,27 @@ describe('built-in stories', () => {
     expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels', 'belv_bandit_hunter', 'belv_old_brand', 'belv_not_a_toy', 'marg_salon_newcomer', 'marg_unsent_letters', 'marg_masked_ball', 'liese_heavy_flour', 'liese_front_basket', 'liese_harvest_festival', 'clara_lilac_reader', 'clara_field_research', 'clara_last_chapter'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
   })
 
+  it('opens the group quests only after every member romance line is done', () => {
+    const groups: Record<string, string[]> = {
+      group_wives_tea: ['marg_lover', 'liese_lover', 'clara_lover'],
+      group_idol_backstage: ['stella_lover', 'noir_lover', 'pom_lover'],
+      group_rulers_tea: ['ith_lover', 'ana_lover', 'ele_lover', 'lisr_lover', 'sak_lover'],
+      group_athletes: ['isab_lover', 'brun_lover', 'kara_lover'],
+      group_contract_bond: ['mat_lover', 'ser_lover'],
+    }
+    for (const [id, flags] of Object.entries(groups)) {
+      const s = story(id)
+      expect(s.rank, id).toBe('B')
+      expect(s.start.min_level, id).toBe(11)
+      expect([...(s.start.requires?.flags ?? [])].sort(), id).toEqual([...flags].sort())
+    }
+    // 女統治者們的茶話會另外要求和平線（人類、魔族兩邊都走向和平）
+    expect(story('group_rulers_tea').start.requires?.counters).toEqual({ human_stance: { min: 1 }, demon_stance: { min: 1 } })
+    // 成員有成人向角色的才標成人向
+    expect(['group_wives_tea', 'group_idol_backstage', 'group_contract_bond'].every((id) => story(id).tags?.includes('adult'))).toBe(true)
+    expect(['group_rulers_tea', 'group_athletes'].every((id) => !story(id).tags?.includes('adult'))).toBe(true)
+  })
+
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {
     expect(stories.flatMap((s) => s.nodes.flatMap((n) => n.foes ?? []))).toEqual([])
     const deaths = stories.flatMap((s) => s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])].flatMap((o) => o?.deaths ?? [])))
