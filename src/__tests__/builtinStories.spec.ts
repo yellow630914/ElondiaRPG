@@ -3,7 +3,7 @@ import { newGame } from '@/engine/state'
 import { applyContent, emptyMods } from '@/engine/mods'
 import { sanitizeStory, storyCheck } from '@/engine/storyMods'
 import { canStart } from '@/engine/story'
-import { counterValue, setFlag } from '@/engine/storyFlags'
+import { condMet, counterValue, setFlag } from '@/engine/storyFlags'
 import { dungeonEncounters, enemies, npcs as namedNpcs, stories } from '@/engine/data'
 import { adultContent, setAdultContent, setContentFilters } from '@/engine/content'
 import type { StoryDef } from '@/engine/data'
@@ -126,6 +126,11 @@ describe('built-in stories', () => {
       ['kara_great_hunt', 'kara_suitors', 'kara_mane_oath'],
       ['ren_bath_maid', 'ren_land_holiday', 'ren_tide_home'],
       ['mat_innocent_question', 'mat_lost_puppy', 'mat_honest_contract'],
+      ['ith_moon_query', 'ith_old_garden', 'ith_mortal_time'],
+      ['ana_sneak_out', 'ana_body_double', 'ana_crown_and_road'],
+      ['ele_chancellor_lunch', 'ele_greenhouse', 'ele_last_edict'],
+      ['lisr_red_again', 'lisr_court_currents', 'lisr_crimson_vow'],
+      ['sak_land_banquet', 'sak_lost_sister', 'sak_tide_challenge'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
@@ -134,10 +139,72 @@ describe('built-in stories', () => {
     }
     const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'lena_good_friend', 'lena_runaway', 'lena_lighter_love', 'valerie_sample', 'valerie_stolen_paper', 'valerie_hearing', 'eve_holiday', 'eve_tea_house', 'eve_master', 'luc_practice_partner', 'luc_succubus_manual', 'luc_eighth_exam', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels', 'twin_sisters_test', 'twin_lana_song', 'twin_same_person', 'noel_pretty_clerk', 'noel_prank_price', 'noel_getting_serious', 'zero_warm_chest', 'zero_recall_order', 'zero_definition', 'kar_challenge', 'kar_rigged_match', 'kar_arena_trophy', 'oboro_rooftop_shadow', 'oboro_report', 'oboro_shadow_heart', 'belv_bandit_hunter', 'belv_old_brand', 'belv_not_a_toy', 'eil_ghost_bride', 'eil_lost_ring', 'eil_hundred_year_wedding', 'pru_what_is_love', 'pru_ring_and_date', 'pru_swamp_wedding', 'ila_elf_cold', 'ila_moon_bloom', 'ila_hundred_years', 'mimi_clumsy_maid', 'mimi_tea_guild', 'mimi_opening_day', 'stella_lost_idol', 'stella_empty_seats', 'stella_star_confession', 'noir_blank_score', 'noir_fan_letters', 'noir_song_for_whom', 'pom_unpaid_fee', 'pom_theater_contract', 'pom_guard_contract', 'marg_salon_newcomer', 'marg_unsent_letters', 'marg_masked_ball', 'liese_heavy_flour', 'liese_front_basket', 'liese_harvest_festival', 'clara_lilac_reader', 'clara_field_research', 'clara_last_chapter', 'ren_bath_maid', 'ren_land_holiday', 'ren_tide_home']
     expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
-    // 不是成人向角色的戀愛線（運動系三人、瑪蒂爾達）不標成人向，成人內容關閉時也能玩
-    expect(['isab_drinking_bet', 'isab_young_knight', 'isab_last_bet', 'brun_sweet_tooth', 'brun_academy_speech', 'brun_frost_shield', 'kara_great_hunt', 'kara_suitors', 'kara_mane_oath', 'mat_innocent_question', 'mat_lost_puppy', 'mat_honest_contract'].every((id) => !story(id).tags?.includes('adult'))).toBe(true)
+    // 不是成人向角色的戀愛線（運動系三人、瑪蒂爾達、五位女統治者）不標成人向，成人內容關閉時也能玩
+    expect(['isab_drinking_bet', 'isab_young_knight', 'isab_last_bet', 'brun_sweet_tooth', 'brun_academy_speech', 'brun_frost_shield', 'kara_great_hunt', 'kara_suitors', 'kara_mane_oath', 'mat_innocent_question', 'mat_lost_puppy', 'mat_honest_contract', 'ith_moon_query', 'ith_old_garden', 'ith_mortal_time', 'ana_sneak_out', 'ana_body_double', 'ana_crown_and_road', 'ele_chancellor_lunch', 'ele_greenhouse', 'ele_last_edict', 'lisr_red_again', 'lisr_court_currents', 'lisr_crimson_vow', 'sak_land_banquet', 'sak_lost_sister', 'sak_tide_challenge'].every((id) => !story(id).tags?.includes('adult'))).toBe(true)
     // 角色在任務開始前就有性經驗：標非處女
     expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels', 'belv_bandit_hunter', 'belv_old_brand', 'belv_not_a_toy', 'marg_salon_newcomer', 'marg_unsent_letters', 'marg_masked_ball', 'liese_heavy_flour', 'liese_front_basket', 'liese_harvest_festival', 'clara_lilac_reader', 'clara_field_research', 'clara_last_chapter'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
+  })
+
+  it('opens the group quests only after every member romance line is done', () => {
+    const groups: Record<string, string[]> = {
+      group_wives_tea: ['marg_lover', 'liese_lover', 'clara_lover'],
+      group_idol_backstage: ['stella_lover', 'noir_lover', 'pom_lover'],
+      group_rulers_tea: ['ith_lover', 'ana_lover', 'ele_lover', 'lisr_lover', 'sak_lover'],
+      group_athletes: ['isab_lover', 'brun_lover', 'kara_lover'],
+      group_contract_bond: ['mat_lover', 'ser_lover'],
+    }
+    for (const [id, flags] of Object.entries(groups)) {
+      const s = story(id)
+      expect(s.rank, id).toBe('B')
+      expect(s.start.min_level, id).toBe(11)
+      expect([...(s.start.requires?.flags ?? [])].sort(), id).toEqual([...flags].sort())
+    }
+    // 女統治者們的茶話會另外要求和平線（人類、魔族兩邊都走向和平）
+    expect(story('group_rulers_tea').start.requires?.counters).toEqual({ human_stance: { min: 1 }, demon_stance: { min: 1 } })
+    // 成員有成人向角色的才標成人向
+    expect(['group_wives_tea', 'group_idol_backstage', 'group_contract_bond'].every((id) => story(id).tags?.includes('adult'))).toBe(true)
+    expect(['group_rulers_tea', 'group_athletes'].every((id) => !story(id).tags?.includes('adult'))).toBe(true)
+  })
+
+  it('splits the political epic by the two stance counters', () => {
+    const routes = story('pol_storm_eve').nodes.filter((n) => n.id.startsWith('route'))
+    for (let h = -3; h <= 3; h++) {
+      for (let d = -3; d <= 3; d++) {
+        const g = game()
+        g.flags['count:human_stance'] = h
+        g.flags['count:demon_stance'] = d
+        setFlag(g, 'pol_echoed')
+        // 路線的任務點照兩邊的走向拆開，任何情況都剛好開一個
+        const open = routes.filter((n) => condMet(g, n.requires))
+        expect(open.length, `${h},${d}`).toBe(1)
+        const shown = (open[0]!.options ?? []).map((o) => o.success.set_flags?.[0])
+        // 兩邊都主和只能清剿、兩邊都主戰只能開戰，其他情況兩條都能選
+        const want = h >= 1 && d >= 1 ? ['pol_route_peace'] : h <= -1 && d <= -1 ? ['pol_route_war'] : ['pol_route_peace', 'pol_route_war']
+        expect(shown.sort(), `${h},${d}`).toEqual(want)
+      }
+    }
+  })
+
+  it('runs each epic route through Lv.15–17 and ends in the shared Lv.18 finale', () => {
+    const routes = [
+      ['pol_peace', 'pol_peace_iron_cross', 'pol_peace_bloodhorn', 'pol_peace_crusade', 'pol_peace_done'],
+      ['pol_war_human', 'pol_war_h_rivervale', 'pol_war_h_ashport', 'pol_war_h_bloodplume', 'pol_war_h_done'],
+      ['pol_war_demon', 'pol_war_d_ashport', 'pol_war_d_rivervale', 'pol_war_d_rhineburg', 'pol_war_d_done'],
+    ]
+    expect(story('pol_storm_eve').start.min_level).toBe(14)
+    for (const [entry, ...rest] of routes) {
+      const ids = rest.slice(0, 3)
+      expect(ids.map((id) => story(id).start.min_level)).toEqual([15, 16, 17])
+      expect(story(ids[0]!).start.requires?.flags).toEqual([entry])
+      const ends = story(ids[2]!).nodes.flatMap((n) => (n.options ?? []).map((o) => o.success.set_flags ?? []))
+      expect(ends.every((f) => f.includes(rest[3]!))).toBe(true)
+    }
+    const fin = story('pol_acheron_gaze')
+    expect(fin.start.min_level).toBe(18)
+    expect([...(fin.start.requires?.flags_any ?? [])].sort()).toEqual(['pol_peace_done', 'pol_war_d_done', 'pol_war_h_done'])
+    // 終章的戰鬥輸了可以重試；結局留下龍災的旗標給巨龍史詩
+    expect(fin.nodes.find((n) => n.id === 'heroes')!.fail?.retry).toBe(true)
+    expect(fin.nodes.find((n) => n.id === 'eye')!.options!.every((o) => o.success.set_flags?.includes('dragon_calamity'))).toBe(true)
   })
 
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {

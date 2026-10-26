@@ -24398,6 +24398,2989 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ith_moon_query",
+      "title": "女王的提問",
+      "summary": "觀星者艾溫娜帶來一個奇怪的請求：有一位「不方便透露身分」的精靈，想在生命之泉邊聽一個人類說說外面的世界。（伊瑟蘭迪爾・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 5,
+        "text": "艾溫娜把你拉到星月之環的陰影裡，壓低聲音：「有一位……很尊貴的人，想聽人類說話。」她的表情很微妙，「今晚月亮升起的時候，生命之泉。她會戴著兜帽，你不要問她是誰。」她頓了頓，「……也不要讓她發現你知道她是誰。」"
+      },
+      "start_flags": ["ith_start"],
+      "nodes": [
+        {
+          "id": "questions",
+          "title": "在生命之泉回答兜帽精靈的提問",
+          "text": "月光下的生命之泉邊，一個戴著兜帽的精靈坐在石頭上，銀髮從兜帽裡一直流到地上——她大概不知道這有多顯眼。她的聲音像在吟詩：「人類。告訴我，你們的城市，晚上也有月光嗎？」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你說了晨光城的燈火、潮汐港的船帆、血羽城堡夜裡的紅光。她一句一句地聽，聽到天快亮了，才輕聲說：「……一千年，我只知道書上寫的外面。」她站起來，兜帽滑落了一點，露出一雙淡金色的眼睛，「明晚，再說給我聽。」",
+            "set_flags": ["ith_heard"],
+            "effects": [{ "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "說了一整夜的外面" }]
+          },
+          "fail": {
+            "text": "你說得結結巴巴，可她一點也不在意，聽得很認真，偶爾問一些奇怪的問題：「人類的麵包，為什麼要烤？」天亮的時候，她笑了：「你說話的樣子，很有趣。」",
+            "set_flags": ["ith_heard"]
+          }
+        },
+        {
+          "id": "wisps",
+          "title": "在銀月城近郊趕走魔能枯竭的鬼火",
+          "text": "第二晚，她說想看看森林的邊緣。城外的林子裡，幾團黯淡的鬼火飄了過來——它們本該是銀色的，現在卻是灰的，貪婪地吸著周圍的魔能。兜帽精靈的聲音第一次變了：「……連它們也餓了。」",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["ith_heard"] },
+          "kind": "combat",
+          "enemies": [["faded_wisp", 3]],
+          "success": {
+            "text": "鬼火們散了。兜帽精靈蹲下來，掌心亮起一點銀光，讓一朵枯萎的月光花重新抬起了頭。她看著那朵花，很久：「森林在衰退。我能做的，只有這麼一點。」",
+            "set_flags": ["ith_forest"]
+          },
+          "fail": {
+            "text": "鬼火們吸走了你們一身的力氣，才慢慢散去。兜帽精靈扶著你，手很涼：「……抱歉。是我想來的。」",
+            "set_flags": ["ith_forest"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "unmask",
+          "title": "回應兜帽精靈",
+          "text": "回到生命之泉，兜帽精靈坐在石頭上，看著泉水裡的月亮：「你早就知道我是誰了吧。」她摘下兜帽，銀白的藤蔓冠在月光下發亮，「……一千年來，沒有人敢在我面前說『麵包要烤』這種話。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_forest"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我只是在跟一個想聽故事的人說話」",
+              "success": {
+                "text": "伊瑟蘭迪爾愣住了，然後笑了——像月光落在水面上，很輕：「想聽故事的人。」她重複了一次，「……好。那，想聽故事的人，明晚還會來。」她重新戴上了兜帽，「你也要來。」",
+                "set_flags": ["ith_1_done", "ith_story"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 15, "reason": "只把她當成想聽故事的人" },
+                  { "type": "memory", "summary": "精靈女王伊瑟蘭迪爾戴著兜帽，在生命之泉邊聽你說外面的世界。你說，你只是在跟一個想聽故事的人說話。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「陛下，外面的世界，您可以自己去看」",
+              "success": {
+                "text": "伊瑟蘭迪爾看著你，淡金色的眼睛裡有什麼東西動了一下：「自己去看。」她輕輕地笑了，「……卡蘭西爾聽到會昏倒的。」她站起來，「可是，我開始想了。」",
+                "set_flags": ["ith_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "說她可以自己去看" },
+                  { "type": "memory", "summary": "精靈女王伊瑟蘭迪爾戴著兜帽，在生命之泉邊聽你說外面的世界。你說，外面的世界她可以自己去看。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ith_old_garden",
+      "title": "千年前的花園",
+      "summary": "伊瑟蘭迪爾說，九百年前她在森林外和人類一起種過一座花園。她想再看它一眼——在議長卡蘭西爾發現之前。（伊瑟蘭迪爾・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 8,
+        "requires": { "flags": ["ith_1_done"] },
+        "text": "艾溫娜這次是真的在嘆氣：「陛下說，她想出城。」她把一張很舊、很舊的羊皮紙交給你，上面畫著一座花園，「九百年前，她和一個人類的園丁一起種的。」她看著你，「陛下說，只有你能陪她去。卡蘭西爾議長要是知道了……」她沒有說下去。"
+      },
+      "start_flags": ["ith_garden"],
+      "nodes": [
+        {
+          "id": "map",
+          "title": "在銀月城的神殿查花園的位置",
+          "text": "神殿的古籍室裡，伊瑟蘭迪爾戴著兜帽，指著一張又一張地圖：「這裡以前是河。這裡以前是村子。」她的手指停在一片空白的地方，「……九百年，什麼都變了。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "temple" },
+          "requires": { "flags": ["ith_garden"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你把古地圖和現在的地圖疊在一起，找到了：花園在銀月城東邊的山谷裡，現在那裡是一片荊棘林。伊瑟蘭迪爾看著那個點，輕聲說：「……他種的玫瑰，也許還在。」",
+            "set_flags": ["ith_found"],
+            "effects": [{ "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "替她找到了花園" }]
+          },
+          "fail": {
+            "text": "你們找了一整個下午，最後是伊瑟蘭迪爾閉上眼睛，聽了很久的風：「……東邊。山谷裡。」她睜開眼睛，「那裡的樹，還記得我。」",
+            "set_flags": ["ith_found"]
+          }
+        },
+        {
+          "id": "thorns",
+          "title": "在銀月城近郊穿過荊棘林",
+          "text": "東邊的山谷被荊棘覆蓋，荊棘裡潛伏著會動的藤蔓獵手——它們纏上你們的腳，想把闖入者拖進荊棘的深處。伊瑟蘭迪爾停下來，看著那些荊棘：「……它們是在守護什麼。」",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["ith_found"] },
+          "kind": "combat",
+          "enemies": [["thorn_stalker", 2]],
+          "success": {
+            "text": "藤蔓獵手們縮回了荊棘裡。荊棘的中央，有一小片空地——一叢野玫瑰開得正盛，紅得像九百年前一樣。伊瑟蘭迪爾在玫瑰前跪下，很久很久沒有說話。",
+            "set_flags": ["ith_roses"]
+          },
+          "fail": {
+            "text": "藤蔓獵手們把你們纏得滿身是傷，最後是伊瑟蘭迪爾輕輕地唱了一句歌，荊棘自己分開了一條路。路的盡頭，一叢野玫瑰開得正盛。",
+            "set_flags": ["ith_roses"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "gardener",
+          "title": "聽伊瑟蘭迪爾說那個園丁",
+          "text": "伊瑟蘭迪爾摘了一朵玫瑰，看著它：「他叫馬丁。很普通的人類，手很粗，笑起來很吵。」她的聲音很輕，「我們種了二十年的花。然後他老了，然後他死了。」她抬起頭看你，「精靈愛上人類，就是這樣——看著他們老去，然後一個人記得一千年。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_roses"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「可是妳記得了九百年，這朵玫瑰還在」",
+              "success": {
+                "text": "伊瑟蘭迪爾看著手裡的玫瑰，很久，然後笑了，眼淚從淡金色的眼睛裡滑下來：「……是啊。他還在。」她把那朵玫瑰別在你的衣襟上，「一千年後，我也會記得你。」她頓了頓，「……這不是悲傷的話。」",
+                "set_flags": ["ith_2_done", "ith_remember"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 20, "reason": "說玫瑰還在" },
+                  { "type": "memory", "summary": "陪精靈女王伊瑟蘭迪爾找到了她九百年前和人類園丁一起種的玫瑰。她說，一千年後她也會記得你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「那這一次，換我陪妳種花」",
+              "success": {
+                "text": "伊瑟蘭迪爾愣住了，然後慢慢地點頭：「……好。」她把那朵玫瑰的種子交給你，「種在你喜歡的地方。」她看著你，「人類的時間很短。所以，每一天都要種。」",
+                "set_flags": ["ith_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 15, "reason": "說要陪她種花" },
+                  { "type": "memory", "summary": "陪精靈女王伊瑟蘭迪爾找到了九百年前的玫瑰。你說，這一次換你陪她種花。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ith_mortal_time",
+      "title": "凡人的時間",
+      "summary": "森林的魔能衰退到了谷底，枯萎的巨獸從森林深處走了出來。伊瑟蘭迪爾要在生命之泉舉行千年一次的復甦儀式——她說，儀式需要一個「和她同心」的人。（伊瑟蘭迪爾・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 11,
+        "requires": { "flags": ["ith_2_done"] },
+        "text": "艾溫娜這次沒有壓低聲音，因為整個銀月城都知道了：森林深處的巨獸在枯萎、發狂。「陛下要舉行復甦儀式。」她看著你，「儀式需要兩個人——女王，和一個與她同心的人。」她頓了頓，「議會吵了三天。最後，陛下只說了一句話：『我選好了。』」"
+      },
+      "start_flags": ["ith_rite"],
+      "nodes": [
+        {
+          "id": "beasts",
+          "title": "在銀月城近郊擋下魔能枯萎的巨獸",
+          "text": "城外的森林在發出呻吟。兩頭身上長滿枯藤的巨獸從樹林裡走出來，所過之處，草木一片灰白。伊瑟蘭迪爾站在城門口，沒有戴兜帽：「……它們以前是森林的守護者。」",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["ith_rite"] },
+          "kind": "combat",
+          "enemies": [["blight_colossus", 2]],
+          "success": {
+            "text": "巨獸們倒下了，身上的枯藤碎成了灰。伊瑟蘭迪爾走過去，把手放在其中一頭的額頭上：「……睡吧。等森林醒來，你們也會醒來。」",
+            "set_flags": ["ith_held"]
+          },
+          "fail": {
+            "text": "巨獸們把你們逼回了城門，最後是伊瑟蘭迪爾張開雙手，銀光從她身上湧出，巨獸們搖晃著倒下了。她扶著城門喘氣，臉色蒼白：「……沒時間了。去泉邊。」",
+            "set_flags": ["ith_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "rite",
+          "title": "在生命之泉和伊瑟蘭迪爾一起完成復甦儀式",
+          "text": "生命之泉邊，伊瑟蘭迪爾握住了你的手，泉水開始發光。她閉上眼睛：「跟著我的心跳。」她的手在抖，「……如果你的心和我不一樣，儀式會失敗。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_held"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 17 },
+          "success": {
+            "text": "你們的心跳慢慢地合在了一起。泉水的光一圈一圈地擴散出去，穿過銀月城，穿過森林，枯萎的樹葉一片一片地綠了回來。伊瑟蘭迪爾睜開眼睛，看著你：「……一樣的。」她的眼淚掉進了泉水裡，「我們的心，是一樣的。」",
+            "set_flags": ["ith_bloomed"]
+          },
+          "fail": {
+            "text": "你的心跳太快了，泉水的光閃了一下，快要熄滅——伊瑟蘭迪爾卻笑了，把你的手按在她的胸口：「……我的也是。」她的心跳和你一樣快。泉水重新亮了起來，森林的綠意一圈一圈地擴散了出去。",
+            "set_flags": ["ith_bloomed"]
+          }
+        },
+        {
+          "id": "after",
+          "title": "儀式之後",
+          "text": "天亮了，森林醒了過來。伊瑟蘭迪爾坐在泉邊，看著你：「一千年來，我以為我再也不會選擇任何人了。」她的聲音很輕，「因為選了，就要看著他老去。」她伸出手，碰了碰你的臉，「可是，我選了。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_bloomed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那我們把凡人的時間，過得長一點」",
+              "success": {
+                "text": "伊瑟蘭迪爾笑了——不是像月光，是像一個普通的女孩：「長一點。」她把額頭靠在你的額頭上，「……好。那就從今天開始。」卡蘭西爾議長聽說之後，在議會上沉默了很久，最後只說了一句：「……陛下很久沒有笑了。」",
+                "set_flags": ["ith_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 25, "reason": "說要把凡人的時間過得長一點" },
+                  { "type": "memory", "summary": "和精靈女王伊瑟蘭迪爾一起完成了森林的復甦儀式。她說一千年來以為不會再選任何人——可是她選了你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「一千年後，記得我。這樣就夠了」",
+              "success": {
+                "text": "伊瑟蘭迪爾的眼淚掉了下來：「……不夠。」她抱住了你，抱得很緊，「一千年太長了。我要你每一天都在。」她把銀白的藤蔓冠摘下來，戴在你的頭上，「這是王庭的誓約。」她笑著哭，「……議會要吵一百年了。讓他們吵。」",
+                "set_flags": ["ith_lover", "ith_crown_vow"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 25, "reason": "要她記得" },
+                  { "type": "memory", "summary": "和精靈女王伊瑟蘭迪爾一起完成了森林的復甦儀式。她把銀白的藤蔓冠戴在你的頭上——那是王庭的誓約。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「森林向外族打開之後，我們一起去看外面」",
+              "requires": { "flags_any": ["acc_open", "wt_open"] },
+              "success": {
+                "text": "伊瑟蘭迪爾愣了一下，然後笑了：「……外面。」她站起來，牽著你的手，「新芽同盟的孩子們把森林打開了，現在換我走出去。」她回頭看了一眼銀月城，「卡蘭西爾會昏倒的。」她轉回來，「……讓他昏。你說的那些燈火、船帆、紅光——我想一個一個去看。和你。」",
+                "set_flags": ["ith_lover", "ith_journey"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 25, "reason": "要帶她去看外面" },
+                  { "type": "memory", "summary": "和精靈女王伊瑟蘭迪爾一起完成了森林的復甦儀式。森林打開之後，她說要和你一起去看外面的世界。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ana_sneak_out",
+      "title": "溜出城的樞機",
+      "summary": "晨曦王國的公主、樞機主教安納塔西亞，有一個誰都不知道的嗜好：換上便服，溜出城去當一天的冒險者。這一次，她需要一個嚮導。（安納塔西亞・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_anastasia",
+        "min_level": 5,
+        "text": "一個嬌小的半精靈穿著緋紅的樞機法衣，在晨光城的巷子裡攔住了你，碧色的眼睛沉靜又銳利：「你是冒險者。」不是問句，「明天是我的休息日——一年只有一天。」她把一袋金幣塞進你手裡，「帶我出城。當一天冒險者。」她頓了頓，聲音小了一點，「……不准告訴任何人。」"
+      },
+      "start_flags": ["ana_start"],
+      "nodes": [
+        {
+          "id": "disguise",
+          "title": "在晨光城的裁縫店替安納塔西亞換上冒險者的衣服",
+          "text": "裁縫店裡，安納塔西亞挑了一件又一件，最後選了一件皮甲和一頂寬簷帽，在鏡子前轉了一圈：「這樣，看起來像冒險者嗎？」——看起來像一個穿著皮甲的公主。",
+          "at": { "where": "cell", "location": "dawnlight", "cell": "tailor" },
+          "requires": { "flags": ["ana_start"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 13 },
+          "success": {
+            "text": "你替她把髮髻拆了，綁成冒險者常見的馬尾，往皮甲上抹了點泥，把帽簷壓低。安納塔西亞看著鏡子裡的自己，愣住了：「……我不認得我了。」她笑了，笑得一點也不像樞機主教。",
+            "set_flags": ["ana_disguised"],
+            "effects": [{ "type": "affinity", "npc": "npc_anastasia", "delta": 10, "reason": "替她變裝" }]
+          },
+          "fail": {
+            "text": "怎麼換都還是像公主。最後安納塔西亞放棄了，乾脆把樞機的聖環往口袋裡一塞：「就說我是有錢人家的小姐，想出城玩。」——這倒是真的。",
+            "set_flags": ["ana_disguised"]
+          }
+        },
+        {
+          "id": "boars",
+          "title": "在晨光城近郊和安納塔西亞一起打退野豬",
+          "text": "城外的田野上，幾頭發狂的大野豬正在糟蹋農夫的麥田。安納塔西亞眼睛一亮，拔出了一把細劍——是她從裁縫店的櫥窗裡順手買的：「冒險者的委託！」她沒等你，已經衝了出去。",
+          "at": { "where": "outskirts", "location": "dawnlight" },
+          "requires": { "flags": ["ana_disguised"] },
+          "kind": "combat",
+          "enemies": [["field_boar", 3]],
+          "success": {
+            "text": "野豬們逃回了林子裡。安納塔西亞的皮甲上全是泥，頭髮亂成一團，笑得眼睛都瞇起來了：「……這比主持彌撒有趣一百倍。」農夫們跑來道謝，給了你們一籃雞蛋。她捧著那籃雞蛋，像捧著王冠。",
+            "set_flags": ["ana_quested"]
+          },
+          "fail": {
+            "text": "一頭野豬把安納塔西亞撞倒在泥巴裡。你把她拉起來，她滿臉是泥，卻笑得停不下來：「……一年只有一天。這是我過得最好的一天。」",
+            "set_flags": ["ana_quested"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "sunset",
+          "title": "回應夕陽下的安納塔西亞",
+          "text": "夕陽下，安納塔西亞坐在麥田邊的石牆上，晃著腳，手裡拿著一顆農夫給的蘋果：「我十二歲的時候，想當冒險者。」她啃了一口蘋果，「父王說，公主不能當冒險者。」她看著遠處的晨光城，「……所以我當了樞機主教。至少，可以到處跑。」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_quested"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「明年的休息日，我還帶妳出來」",
+              "success": {
+                "text": "安納塔西亞轉過頭看你，碧色的眼睛在夕陽裡閃了一下：「……一年一次太少了。」她跳下石牆，把蘋果核丟進麥田，「我會想辦法，讓休息日多一點。」她回頭，「我很擅長想辦法的。」",
+                "set_flags": ["ana_1_done", "ana_again"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 15, "reason": "說要再帶她出來" },
+                  { "type": "memory", "summary": "帶晨曦王國的公主安納塔西亞溜出城，當了一天冒險者。她說會想辦法讓休息日多一點。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「今天，妳是一個冒險者」",
+              "success": {
+                "text": "安納塔西亞愣了一下，然後笑了：「……一個冒險者。」她把這幾個字念了一次，像是在嚐味道，「好。今天的冒險者，要請嚮導喝一杯。」她拉著你走向路邊的小酒館，「不准說我是誰。」",
+                "set_flags": ["ana_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 10, "reason": "說她今天是冒險者" },
+                  { "type": "memory", "summary": "帶晨曦王國的公主安納塔西亞溜出城，當了一天冒險者。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「官道上那天，妳也是這樣拔劍的」",
+              "requires": { "flags": ["dthr_1_done"] },
+              "success": {
+                "text": "安納塔西亞看著你，很久，然後笑了：「我就知道是你。」她從口袋裡掏出樞機的聖環，在夕陽下轉了一圈，「那天在馬車裡，我說『想要我的命就自己進來拿』——其實我在發抖。」她把聖環收起來，「你是第一個知道的人。」",
+                "set_flags": ["ana_1_done", "ana_again"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 20, "reason": "記得官道上的那一天" },
+                  {
+                    "type": "memory",
+                    "summary": "帶晨曦王國的公主安納塔西亞溜出城。她說，那天在官道上被刺客圍住的時候，其實她在發抖——你是第一個知道的人。",
+                    "importance": 2
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ana_body_double",
+      "title": "替身",
+      "summary": "安納塔西亞找到了「讓休息日多一點」的辦法：一個長得很像她的替身。可是替身出門的第一天，就遇上了刺客。（安納塔西亞・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_anastasia",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["ana_1_done"] },
+        "text": "安納塔西亞帶來了一個女孩——嬌小、銀髮、碧色眼睛，連站姿都一樣：「我的替身，莉娜。孤兒院出身，很聰明。」她頓了頓，「我付她很多錢，讓她替我主持早晨的彌撒。」她的表情忽然冷了下來，「昨天，有人在彌撒的路上放了一支毒箭。」"
+      },
+      "start_flags": ["ana_double"],
+      "nodes": [
+        {
+          "id": "train",
+          "title": "在晨光城的旅店陪莉娜練習當公主",
+          "text": "旅店的房間裡，安納塔西亞教莉娜怎麼走路、怎麼說話、怎麼在別人說謊的時候不動聲色。莉娜學得很快，可是有一件事學不會——安納塔西亞看人的那種眼神。",
+          "at": { "where": "cell", "location": "dawnlight", "cell": "inn" },
+          "requires": { "flags": ["ana_double"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你教莉娜：「不要學她的眼神。學她看著妳的時候，心裡在想什麼。」莉娜想了很久，然後抬起頭——那一瞬間，連安納塔西亞都愣住了。她轉頭看你：「……你比我還懂我。」",
+            "set_flags": ["ana_trained"],
+            "effects": [{ "type": "affinity", "npc": "npc_anastasia", "delta": 10, "reason": "教會了替身" }]
+          },
+          "fail": {
+            "text": "莉娜怎麼學都學不像。最後安納塔西亞嘆了口氣：「算了。刺客不會看那麼仔細。」她頓了頓，「……可是你會。你一眼就看得出來，對吧？」",
+            "set_flags": ["ana_trained"]
+          }
+        },
+        {
+          "id": "assassins",
+          "title": "在晨光城近郊擋下對替身下手的刺客",
+          "text": "替身莉娜的馬車在城外的林蔭道上被攔下了。兩個穿著灰衣的刺客從樹上跳下來，短刀直撲車門。車裡——不是莉娜。安納塔西亞自己坐在裡面，冷冷地說：「我就知道。」",
+          "at": { "where": "outskirts", "location": "dawnlight" },
+          "requires": { "flags": ["ana_trained"] },
+          "kind": "combat",
+          "enemies": [["court_hitman", 2]],
+          "success": {
+            "text": "刺客們倒下了。安納塔西亞從其中一個人的懷裡翻出了一枚戒指，看了一眼，臉色變得很難看——戒指上的紋章，是王宮裡的人。她把戒指收進袖子裡：「……這件事，我自己處理。」",
+            "set_flags": ["ana_caught"]
+          },
+          "fail": {
+            "text": "刺客們把你們逼到了馬車邊，安納塔西亞拔出細劍，和你背靠背地站著。刺客們看見她不是替身，猶豫了，最後退走了，丟下了一枚刻著紋章的戒指。",
+            "set_flags": ["ana_caught"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "why",
+          "title": "問安納塔西亞為什麼自己坐在車裡",
+          "text": "回城的路上，安納塔西亞一直很安靜。你問她，為什麼不讓莉娜坐在車裡。她看著窗外：「因為莉娜是我花錢請來的，不是我的命。」她轉過頭，「……而且，我知道你會來。」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_caught"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「下次不准拿自己當誘餌」",
+              "success": {
+                "text": "安納塔西亞看著你，碧色的眼睛眨了眨：「……你在命令我？」她的嘴角動了一下，「全王國只有父王敢命令我。」她轉回去看窗外，耳尖卻紅了，「……好。下次，我先問你。」",
+                "set_flags": ["ana_2_done", "ana_scolded"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 20, "reason": "罵她不准拿自己當誘餌" },
+                  { "type": "memory", "summary": "晨曦王國的安納塔西亞用自己當誘餌引出刺客，因為她知道你會來。你罵她下次不准這樣——她說，下次先問你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳很勇敢。也很笨」",
+              "success": {
+                "text": "安納塔西亞愣了一下，然後笑出了聲——不是樞機的笑，是一個女孩的笑：「從來沒有人說我笨。」她靠在馬車的椅背上，「……可是你說得對。」她看著你，「謝謝你來。」",
+                "set_flags": ["ana_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 15, "reason": "說她勇敢又笨" },
+                  { "type": "memory", "summary": "晨曦王國的安納塔西亞用自己當誘餌引出刺客。你說她很勇敢，也很笨——她笑了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ana_crown_and_road",
+      "title": "王冠與道路",
+      "summary": "雇刺客的人被揪了出來，王宮裡的暗流卻沒有停。安納塔西亞說，她一直在想一個問題：如果有一天，要在王座和道路之間選一個，她會選哪一個。（安納塔西亞・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_anastasia",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["ana_2_done"] },
+        "text": "安納塔西亞在王宮的花園裡等你，穿著最隆重的禮服，手裡卻拿著那頂冒險者的寬簷帽：「戒指的主人招了——他雇了更多的人，要在我去教國的路上動手。」她把帽子戴在頭上，看著你，「這一趟，我想用冒險者的身分去。」她頓了頓，「回來之後，我有一個問題要問你。」"
+      },
+      "start_flags": ["ana_journey"],
+      "nodes": [
+        {
+          "id": "mercs",
+          "title": "在晨光城近郊擋下埋伏的王冠傭兵",
+          "text": "往教國的官道上，一隊佩戴著金色王冠徽章的傭兵堵住了路：「公主殿下，有人出高價，要您永遠回不了晨光城。」安納塔西亞壓低了帽簷，拔出細劍：「……我現在不是公主。」",
+          "at": { "where": "outskirts", "location": "dawnlight" },
+          "requires": { "flags": ["ana_journey"] },
+          "kind": "combat",
+          "enemies": [["crown_mercenary", 2]],
+          "success": {
+            "text": "傭兵們丟下武器逃了。安納塔西亞擦著細劍上的血，手很穩：「十二歲的時候，我想當冒險者。」她看著你，「現在我知道，冒險者也會害怕。只是，身邊有人的時候，比較不怕。」",
+            "set_flags": ["ana_safe"]
+          },
+          "fail": {
+            "text": "傭兵們把你們逼到了路邊的溝裡，最後是官道上路過的一隊聖殿騎士認出了她的細劍——伊莎貝拉團長送的——把傭兵們趕跑了。安納塔西亞爬出溝，滿身是泥：「……冒險者的運氣，也是實力。」",
+            "set_flags": ["ana_safe"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "choice",
+          "title": "回答安納塔西亞的問題",
+          "text": "教國回來的路上，你們在官道邊的小旅店過夜。安納塔西亞坐在窗邊，看著星星：「我的問題是——」她停了很久，「王座和道路，你覺得我該選哪一個？」她轉過頭，碧色的眼睛裡沒有算計，「……這次不是政治。我真的不知道。」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_safe"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說，她不用選。王座需要一個會想丟下一切溜出城的人，因為只有那樣的人，才記得城外的人怎麼生活。安納塔西亞看著你，很久，然後把臉埋進了雙手裡：「……原來可以不用選。」",
+            "set_flags": ["ana_answered"]
+          },
+          "fail": {
+            "text": "你說不出一個好答案，只說：「不管妳選哪一個，我都在。」安納塔西亞愣住了，然後笑了，笑得眼淚都出來了：「……這不是答案。」她抹了抹眼睛，「可是，比答案好。」",
+            "set_flags": ["ana_answered"]
+          }
+        },
+        {
+          "id": "ask",
+          "title": "回應安納塔西亞",
+          "text": "安納塔西亞走到你面前，摘下了寬簷帽，銀白的長髮散了下來：「我還有一個問題。」她的聲音很輕，「我這輩子都在算計——父王、兄長、教皇、公爵。」她抬起頭看你，「只有你，我從來沒有算計過。這代表什麼？」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_answered"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「代表妳喜歡我」",
+              "success": {
+                "text": "安納塔西亞的臉一下子紅了——你從沒見過她臉紅：「……你、你怎麼可以這樣直接說出來。」她抓著寬簷帽，擋住了半張臉，「這是政治上最大的失誤。」她把帽子放下，踮起腳，吻了你，「……我認了。」",
+                "set_flags": ["ana_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 25, "reason": "說破了她的心" },
+                  { "type": "memory", "summary": "晨曦王國的安納塔西亞問你，她從來沒有算計過你，這代表什麼。你說，代表她喜歡你。她說，她認了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「代表我也是。我也從來沒有算計過妳」",
+              "success": {
+                "text": "安納塔西亞看著你，很久，然後慢慢地伸出手，握住了你的手：「……那就說好了。」她的手很小，握得很緊，「王座、道路，都一起。」她笑了，「從今天開始，我有兩個休息日——每一天都是。」",
+                "set_flags": ["ana_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 25, "reason": "說也從來沒有算計過她" },
+                  { "type": "memory", "summary": "晨曦王國的安納塔西亞說，她這輩子只有你從來沒有算計過。你說你也是——她說，王座和道路，都一起。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「女王，也可以有一個冒險者」",
+              "requires": { "flags": ["dthr_queen"] },
+              "success": {
+                "text": "安納塔西亞——晨曦王國的女王——笑了：「女王的冒險者。」她從懷裡拿出王冠，戴上，然後又摘下來，戴在你的頭上，「……開玩笑的。」她拿回王冠，卻牽起了你的手，「王國歸我，我歸你。這樣，公平嗎？」",
+                "set_flags": ["ana_lover", "ana_queen_love"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 25, "reason": "說女王也可以有冒險者" },
+                  { "type": "memory", "summary": "晨曦王國的女王安納塔西亞說：王國歸我，我歸你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ele_chancellor_lunch",
+      "title": "宰相的午餐",
+      "summary": "帝國宰相艾蕾諾拉替不露面的皇帝處理整個帝國的事務，已經三天沒睡了。宰相府的秘書偷偷來公會求助：有沒有人能讓宰相大人吃一頓午餐？（艾蕾諾拉・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_eleanora_rhine",
+        "min_level": 5,
+        "text": "一個金髮盤得一絲不亂、穿深藍長袍的女人在宰相府門口攔住了你，眼睛下面有很深的黑眼圈，說話卻一字不差：「你就是秘書說的那個冒險者。」她遞給你一疊公文，「把這些送到城外的驛站。驛站最近被人盯上了，送信的人都沒回來。」她轉身要走，晃了一下，扶住了門框，「……我沒事。」"
+      },
+      "start_flags": ["ele_start"],
+      "nodes": [
+        {
+          "id": "ambush",
+          "title": "在萊茵堡近郊擋下劫公文的伏兵",
+          "text": "城外的驛站附近，幾個蒙面的伏兵從樹林裡衝出來，目標很明確——你懷裡的那疊公文。帶頭的人喊：「宰相府的信！拿到了就有賞！」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["ele_start"] },
+          "kind": "combat",
+          "enemies": [["courier_ambusher", 3]],
+          "success": {
+            "text": "伏兵們逃了。你把公文送到了驛站，驛站長看著你，嘆了口氣：「這個月第四批了。宰相大人每天要發出幾百份公文——有人不想讓它們送到。」",
+            "set_flags": ["ele_delivered"]
+          },
+          "fail": {
+            "text": "伏兵們搶走了一封信才逃——你檢查了一下，是一封寫給皇帝的、關於「溫室的肥料」的信。你不太確定那算不算機密。",
+            "set_flags": ["ele_delivered"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "tonic",
+          "title": "在萊茵堡的魔法物品店替艾蕾諾拉找提神藥",
+          "text": "回到宰相府，秘書在門口哭喪著臉：「大人昏倒了，醒來又坐回了書桌前。」她把一張藥方塞給你，「魔法物品店的提神藥——可是大人說，她不需要。」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "magic" },
+          "requires": { "flags": ["ele_delivered"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你沒有買提神藥，而是買了一包安眠的香料和一籃熱騰騰的午餐。秘書看著你，愣住了：「……大人會殺了你的。」",
+            "set_flags": ["ele_lunch"],
+            "effects": [{ "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 5, "reason": "替她準備了午餐" }]
+          },
+          "fail": {
+            "text": "你買了提神藥。艾蕾諾拉喝了，繼續工作。可是你注意到，她看公文的時候，手一直在抖。你把一塊麵包放在她手邊。她沒有說話，但吃了。",
+            "set_flags": ["ele_lunch"]
+          }
+        },
+        {
+          "id": "eat",
+          "title": "讓艾蕾諾拉吃一頓午餐",
+          "text": "宰相府的書房裡，公文堆得比人還高。艾蕾諾拉頭也不抬：「放下就可以走了。」你沒有走。她抬起頭，看見你手裡的午餐，皺起眉頭：「……我說過我不需要。」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_lunch"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「妳總是擔心父親忘了吃飯。誰擔心妳？」",
+              "success": {
+                "text": "艾蕾諾拉的筆停住了。很久，她放下筆，摘下了眼鏡——你第一次發現她戴眼鏡：「……誰告訴你的？」她沒有等你回答，拿起了一塊麵包，「坐下。」她看著窗外，「一個人吃飯，太安靜了。」",
+                "set_flags": ["ele_1_done", "ele_worried"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 15, "reason": "擔心她" },
+                  { "type": "memory", "summary": "逼帝國宰相艾蕾諾拉吃了一頓午餐。你問她，她總是擔心父親忘了吃飯，那誰擔心她？", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把公文搬到一邊，把午餐放在桌上",
+              "success": {
+                "text": "艾蕾諾拉瞪著你，像是要把你送進大牢。可是午餐的香味飄過來，她的肚子叫了一聲。很久，她嘆了口氣，拿起了湯匙：「……十分鐘。」她吃了半個小時。",
+                "set_flags": ["ele_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 10, "reason": "逼她吃了午餐" },
+                  { "type": "memory", "summary": "逼帝國宰相艾蕾諾拉吃了一頓午餐。她說十分鐘，吃了半個小時。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ele_greenhouse",
+      "title": "溫室裡的皇帝",
+      "summary": "艾蕾諾拉說，帝國只有她知道皇帝每天在做什麼。現在，皇帝的溫室裡逃出了一株「不太聽話」的植物——她需要一個不會說出去的人。（艾蕾諾拉・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_eleanora_rhine",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["ele_1_done"] },
+        "text": "艾蕾諾拉第一次在宰相府以外的地方約你——城外的一座小橋邊，她沒有穿宰相長袍：「接下來的事，你要帶進墳墓裡。」她深吸了一口氣，「我的父親，帝國的皇帝，每天在溫室裡種花。」她頓了頓，「昨天，他種的一株魔藤逃出去了。」她的表情很平靜，「……它吃了一頭牛。」"
+      },
+      "start_flags": ["ele_garden"],
+      "nodes": [
+        {
+          "id": "vines",
+          "title": "在萊茵堡近郊抓回逃出溫室的魔藤",
+          "text": "城外的牧場上，兩株比樹還高的魔藤揮舞著藤蔓，藤蔓上開著漂亮得不可思議的紫花。艾蕾諾拉拿出了她的權杖——其實是一根法杖：「父親說，不要傷到花。」她頓了頓，「……盡量。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["ele_garden"] },
+          "kind": "combat",
+          "enemies": [["greenhouse_creeper", 2]],
+          "success": {
+            "text": "魔藤們縮成了兩顆種子，掉在草地上。艾蕾諾拉把它們撿起來，用手帕包好：「……花沒有傷到。」她看著你，嘴角動了一下，「父親會很高興。」",
+            "set_flags": ["ele_caught"]
+          },
+          "fail": {
+            "text": "魔藤們把你們纏得動彈不得，最後是艾蕾諾拉用法杖燒斷了藤蔓的根——花全燒掉了。她看著灰燼，嘆了口氣：「……父親會哭三天。」",
+            "set_flags": ["ele_caught"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "edict",
+          "title": "陪艾蕾諾拉寫下一道敕令",
+          "text": "皇宮的溫室裡，一個穿著園丁圍裙的老人在給花澆水，對你笑了笑，沒有說話。艾蕾諾拉在溫室角落的小桌上攤開公文：「父親的敕令，都是在這裡寫的。」她看著父親的背影，「他說他種花的時候，想得最清楚。我只是……把他說的話寫下來。」她把筆遞給你，「今天的這一道，你幫我想。」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_caught"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你們一起寫完了一道關於北境冬糧的敕令。老皇帝走過來看了一眼，點點頭，在上面蓋了印，然後拍了拍艾蕾諾拉的頭——像拍一個孩子。艾蕾諾拉僵住了，然後低下頭，很久都沒有抬起來。",
+            "set_flags": ["ele_written"]
+          },
+          "fail": {
+            "text": "你們寫了三次都寫不好。老皇帝走過來，看了一眼，拿起筆改了兩個字，敕令就完美了。他對你笑了笑：「她太認真了。你要多帶她出去走走。」",
+            "set_flags": ["ele_written"]
+          }
+        },
+        {
+          "id": "secret",
+          "title": "回應艾蕾諾拉的秘密",
+          "text": "走出溫室，艾蕾諾拉站在皇宮的迴廊上，看著夕陽：「全帝國都以為我才是掌權的人。」她的聲音很輕，「其實我只是一支筆。」她轉頭看你，「……這個秘密，我說給你聽了。你知道這代表什麼嗎？」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_written"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「代表妳累了，想要有人一起扛」",
+              "success": {
+                "text": "艾蕾諾拉看著你，很久，然後慢慢地，把頭靠在了你的肩上：「……三十年了。」她的聲音很小，「第一次有人看出來。」她沒有哭，只是靠著，靠了很久，「下次……父親的花開了，一起來看。」",
+                "set_flags": ["ele_2_done", "ele_lean"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 20, "reason": "看出了她累了" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉告訴你皇帝在溫室種花的秘密。她說自己只是一支筆——你說，她累了，想要有人一起扛。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「代表妳信任我」",
+              "success": {
+                "text": "艾蕾諾拉的嘴角動了一下：「……不只。」她轉過身，往迴廊的另一頭走，走了幾步又停下來，「宰相不說沒把握的話。」她回頭看你，「等我有把握了，再告訴你剩下的。」",
+                "set_flags": ["ele_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 15, "reason": "說她信任你" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉告訴你皇帝在溫室種花的秘密。她說這不只代表信任——剩下的，等她有把握了再說。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ele_last_edict",
+      "title": "最後一道敕令",
+      "summary": "鐵十字會的強硬派認定宰相才是帝國真正的主人，派了刺客要她的命。艾蕾諾拉說，她要寫一道敕令——這輩子第一道，為自己寫的。（艾蕾諾拉・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_eleanora_rhine",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["ele_2_done"] },
+        "text": "艾蕾諾拉把一份密報放在你面前：「鐵十字會的強硬派要我的命。他們以為殺了我，帝國就沒有人能擋著戰爭。」她的聲音很平靜，「他們不知道，敕令是父親寫的。」她看著你，「……但是，我也有一道敕令要寫。為自己寫的。」她頓了頓，「寫之前，先活下來。」"
+      },
+      "start_flags": ["ele_hunted"],
+      "nodes": [
+        {
+          "id": "assassins",
+          "title": "在萊茵堡近郊擋下鐵十字會的刺客",
+          "text": "宰相的馬車在城外的林蔭道上被攔下了。兩個佩戴鐵十字徽章的刺客從樹上跳下，劍尖對準了車門：「宰相大人。帝國不需要懦夫的和平。」艾蕾諾拉從車裡走出來，舉起了法杖：「……帝國也不需要你們。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["ele_hunted"] },
+          "kind": "combat",
+          "enemies": [["iron_cross_assassin", 2]],
+          "success": {
+            "text": "刺客們倒下了。艾蕾諾拉收起法杖，手很穩，聲音也很穩：「……謝謝。」然後她的膝蓋軟了一下，你扶住了她。她沒有推開你。",
+            "set_flags": ["ele_alive"]
+          },
+          "fail": {
+            "text": "刺客們把你們逼到了馬車邊，一劍劃破了艾蕾諾拉的袖子。她沒有退，法杖上燃起了法師學院第一名的火焰——刺客們看著那團火，逃了。她看著燒焦的袖子，喘著氣：「……三十年沒在實戰裡用過了。」",
+            "set_flags": ["ele_alive"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "write",
+          "title": "看艾蕾諾拉寫下那道敕令",
+          "text": "溫室的小桌上，艾蕾諾拉攤開一張空白的敕令紙，筆尖懸在紙上，很久沒有落下：「我替父親寫了三十年的敕令。」她的手在抖，「每一道都完美。可是這一道……我不知道怎麼寫。」她抬頭看你，「幫我。」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_alive"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說，不用寫得完美，寫她想說的就好。艾蕾諾拉看著你，然後低下頭，寫了一行字，又一行字。寫完之後，她把敕令轉過來給你看——那不是敕令的格式，是一封信。",
+            "set_flags": ["ele_wrote"]
+          },
+          "fail": {
+            "text": "你說不出什麼好建議。艾蕾諾拉卻在這時放下了筆：「……算了。」她把空白的紙推到一邊，「有些話，不用寫。」她看著你，「說出來就好。」",
+            "set_flags": ["ele_wrote"]
+          }
+        },
+        {
+          "id": "read",
+          "title": "回應艾蕾諾拉的敕令",
+          "text": "老皇帝在溫室的另一頭澆花，假裝沒有在聽。艾蕾諾拉站在你面前，深藍的長袍，金髮盤得一絲不亂——只有臉是紅的：「敕令。」她的聲音在抖，「帝國宰相艾蕾諾拉・馮・萊茵，命令……命令你……」她說不下去了。",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_wrote"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「臣，遵旨」",
+              "success": {
+                "text": "艾蕾諾拉愣住了：「……我還沒說完。」你說，不管是什麼命令，都遵旨。她看著你，很久，然後笑了——宰相從不笑，可她笑了，笑得像一個二十幾歲的女孩：「……那就命令你，留在我身邊。」溫室的另一頭，老皇帝放下了水壺，悄悄地鼓了掌。",
+                "set_flags": ["ele_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 25, "reason": "遵了她的旨" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉寫了這輩子第一道為自己的敕令：命令你留在她身邊。你說，臣遵旨。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "握住她的手，「不用命令」",
+              "success": {
+                "text": "艾蕾諾拉看著被你握住的手，很久，然後慢慢地，把額頭抵在你的胸口：「……宰相不會說『拜託』。」她的聲音悶悶的，「所以只能寫成命令。」她抬起頭，「拜託你。留下來。」老皇帝在溫室的另一頭，把一朵剛開的紫花剪下來，放在了你們旁邊的桌上。",
+                "set_flags": ["ele_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 25, "reason": "說不用命令" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉想用敕令命令你留下。你說不用命令——她說了這輩子第一次的「拜託」。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「停戰延續了。妳可以休息了」",
+              "requires": { "flags": ["rwar_peace"] },
+              "success": {
+                "text": "艾蕾諾拉愣了一下，然後慢慢地放鬆了肩膀——你從來沒看過她放鬆的樣子：「……是啊。停戰延續了。」她把那張敕令紙折起來，塞進你的口袋，「那，這是宰相的最後一道公事。」她靠在你身上，閉上眼睛，「接下來，是艾蕾諾拉的私事。」",
+                "set_flags": ["ele_lover", "ele_rest"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 25, "reason": "讓她可以休息" },
+                  { "type": "memory", "summary": "停戰延續之後，帝國宰相艾蕾諾拉說，那是宰相的最後一道公事——接下來，是艾蕾諾拉的私事。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "lisr_red_again",
+      "title": "「紅」的第二封委託",
+      "summary": "血羽城堡的公會又出現了那種優雅字跡的委託，署名只有一個字：「紅」。這次她想看的，是人類的「約會」。（莉莎爾・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "guild",
+        "location": "bloodplume",
+        "min_level": 5,
+        "text": "公會的告示板上貼著一張用優雅字跡寫的委託：「誠徵人類一名，示範人類的『約會』。純屬研究。報酬從優。地點：南門酒館。」署名只有一個字：「紅」。櫃台的魔族職員看著那張委託，表情很奇怪：「……您確定要接這個？」"
+      },
+      "start_flags": ["lisr_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "在血羽城堡的酒館向「紅」示範人類的約會",
+          "text": "南門酒館的角落，一個紅髮、披著黑斗篷的高挑女人在等你，金色的豎瞳在兜帽底下閃著光。她面前攤著一本筆記：「人類的約會。第一步是什麼？」她拿起筆，等著記錄——酒館裡的魔族們都在偷偷往這邊看，又迅速轉開視線。",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "tavern" },
+          "requires": { "flags": ["lisr_start"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你示範了點酒、碰杯、聊天氣。她一項一項地記，記到一半，筆停了：「……聊天氣，有什麼意義？」你說，意義是想多聽對方說一句話。她看著你，很久，然後在筆記上寫：「重要。」",
+            "set_flags": ["lisr_dated"],
+            "effects": [{ "type": "affinity", "npc": "npc_lisar", "delta": 10, "reason": "示範了人類的約會" }]
+          },
+          "fail": {
+            "text": "你緊張得把酒灑在了她的斗篷上。酒館一片死寂——每一個魔族都停止了呼吸。「紅」卻笑了出來，笑得肩膀發抖：「……這也是約會的一部分？」她在筆記上寫：「會灑酒。有趣。」",
+            "set_flags": ["lisr_dated"]
+          }
+        },
+        {
+          "id": "hounds",
+          "title": "在血羽城堡近郊趕走灰燼獵犬",
+          "text": "她說約會的下一步是「散步」。城外的荒原上，幾頭渾身冒著餘燼的獵犬聞到了你們——它們本該怕她，卻好像認不出斗篷底下的人。「紅」站在原地，沒有動手：「……我想看看，人類會怎麼保護約會的對象。」",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "requires": { "flags": ["lisr_dated"] },
+          "kind": "combat",
+          "enemies": [["ash_hound", 3]],
+          "success": {
+            "text": "獵犬們夾著尾巴逃了。「紅」看著擋在她前面的你，金色的豎瞳裡有什麼東西亮了一下：「……你沒有問我會不會打。」她輕聲說，「你直接擋在了前面。」",
+            "set_flags": ["lisr_guarded"]
+          },
+          "fail": {
+            "text": "獵犬們把你撲倒在沙地上。「紅」終於動了——只是抬了一下手，獵犬們就像見到了天敵一樣哀嚎著逃走了。她蹲下來，看著你：「……你明知道打不過，還擋在前面。」她伸出手，「人類，真奇怪。」",
+            "set_flags": ["lisr_guarded"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "end",
+          "title": "約會的最後一步",
+          "text": "回到酒館門口，「紅」把筆記收起來：「約會的最後一步是什麼？」她的語氣像是在問一道律法題，耳尖卻有一點紅——緋紅的皮膚上，紅得更深了一點。",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "tavern" },
+          "requires": { "flags": ["lisr_guarded"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「約好下一次」",
+              "success": {
+                "text": "「紅」愣了一下，然後笑了——一個很淺、很驕傲的笑：「下一次。」她拿出筆記，寫下了這兩個字，然後撕下那一頁，塞進你的手裡，「這是契約。赤翼……」她頓住了，「……紅，從不違約。」",
+                "set_flags": ["lisr_1_done", "lisr_next"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 15, "reason": "約好了下一次" },
+                  { "type": "memory", "summary": "替自稱「紅」的魔族貴婦人示範了人類的約會。最後一步，你們約好了下一次。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「最後一步，是說出妳真正的名字」",
+              "success": {
+                "text": "「紅」的笑容停了一下。很久，她拉下了兜帽，黑曜冠環在月光下閃著光：「……你早就知道了。」血羽城堡的主人看著你，金色的豎瞳裡沒有怒意，只有好奇，「莉莎爾。」她說，「這個名字，很少有人當面叫。你可以。」",
+                "set_flags": ["lisr_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 10, "reason": "要她說出真正的名字" },
+                  { "type": "memory", "summary": "替自稱「紅」的魔族貴婦人示範了人類的約會。最後一步，她告訴你她的名字：莉莎爾。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "lisr_court_currents",
+      "title": "宮廷的暗流",
+      "summary": "薇洛妮卡說，陛下想要一雙「人類的眼睛」——碎角派的人在血羽城堡的人類區裡活動，議會裡的魔族看不出來，人類看得出來。（莉莎爾・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_veronica",
+        "min_level": 8,
+        "requires": { "flags": ["lisr_1_done"] },
+        "text": "薇洛妮卡把一封蓋著赤翼印的信交給你，表情比上一次還微妙：「陛下指名要你。」信上的字跡你認得：「碎角派的人在人類區裡活動。我的眼睛都是魔族的眼睛，看不見人類看得見的東西。——紅」薇洛妮卡咳了一聲，「陛下最近……常常翻一本筆記。上面寫著『會灑酒』。」"
+      },
+      "start_flags": ["lisr_eyes"],
+      "nodes": [
+        {
+          "id": "intel",
+          "title": "在血羽城堡的情報商查碎角派的動向",
+          "text": "市集的情報商是個人類，聽到「碎角派」就變了臉色：「那些人在人類區收買打手，說是要『讓魔王看看人類有多不可靠』。」他壓低聲音，「他們打算在人類區放火，然後栽贓給人類。」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "informant" },
+          "requires": { "flags": ["lisr_eyes"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你拿到了碎角派的計畫：今晚，他們的刺客會在城外的舊石場集合，帶著火油和人類的衣服。",
+            "set_flags": ["lisr_plot"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才肯說：「城外的舊石場。今晚。」",
+            "set_flags": ["lisr_plot"],
+            "effects": [{ "type": "money", "amount": -150 }]
+          }
+        },
+        {
+          "id": "raiders",
+          "title": "在血羽城堡近郊擋下碎角派的刺客",
+          "text": "舊石場裡，幾個穿著人類衣服的魔族正在往桶裡灌火油。他們頭上的角被布包著，可是那些角——碎掉了一截，是碎角派的記號。他們看見你，拔出了刀：「人類？正好，第一個燒的就是你。」",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "requires": { "flags": ["lisr_plot"] },
+          "kind": "combat",
+          "enemies": [["shatterhorn_agent", 2]],
+          "success": {
+            "text": "碎角派的刺客們倒下了。你把他們綁好、連同火油桶一起交給了城衛。城衛隊長看著那些包著布的碎角，臉色鐵青：「……陛下會很生氣。」",
+            "set_flags": ["lisr_stopped"]
+          },
+          "fail": {
+            "text": "刺客們把你們逼退了，可在混亂中，火油桶翻倒在他們自己腳邊，一個刺客的火把掉了下去——他們狼狽地逃了，留下了一地包著碎角的頭巾。",
+            "set_flags": ["lisr_stopped"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "report",
+          "title": "在血誓碑谷向莉莎爾回報",
+          "text": "血誓碑谷的月光下，莉莎爾一個人站在碑林之間，沒有戴兜帽，赤紅的雙翼收在身後：「我聽說了。」她轉過身看你，「人類的眼睛，看見了魔族看不見的東西。」她頓了頓，「……可是你為什麼要幫我？我是魔王。」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["lisr_stopped"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「因為妳是『紅』」",
+              "success": {
+                "text": "莉莎爾愣住了。很久，她笑了——一個很少有人見過的笑，驕傲又有點無措：「……紅。」她伸手，碰了碰你的臉，指尖很燙，「議會裡沒有人敢這樣回答我。」她收回手，「下次約會——第二次——我來決定去哪裡。」",
+                "set_flags": ["lisr_2_done", "lisr_red"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 20, "reason": "說她是紅" },
+                  { "type": "memory", "summary": "替赤翼之君莉莎爾擋下了碎角派的陰謀。她問你為什麼幫魔王——你說，因為她是「紅」。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「因為律法比混亂好。人類也這麼想」",
+              "success": {
+                "text": "莉莎爾看著你，金色的豎瞳裡閃過一絲讚賞：「秩序中的力量。」她點點頭，「……你懂。」她轉身看著碑林，「可是你說錯了一件事。」她回頭，「你幫我，不只是因為律法。」她沒有說下去，耳尖卻紅了。",
+                "set_flags": ["lisr_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 15, "reason": "說律法比混亂好" },
+                  { "type": "memory", "summary": "替赤翼之君莉莎爾擋下了碎角派的陰謀。你說律法比混亂好——她說，你幫她不只是因為律法。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "lisr_crimson_vow",
+      "title": "赤翼之誓",
+      "summary": "碎角派的勇士在血誓碑谷向魔王下了戰書：魔王若要一個人類當伴侶，就要讓那個人類通過魔族的決鬥。莉莎爾說，她不會替你打——可是，她會在碑谷等你。（莉莎爾・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_veronica",
+        "min_level": 11,
+        "requires": { "flags": ["lisr_2_done"] },
+        "text": "薇洛妮卡這次沒有表情了，直接把一封戰書拍在桌上：「碎角派的勇士下了戰書。他們說，陛下若要一個人類當伴侶，那個人類就要通過魔族的決鬥。」她看著你，「陛下沒有否認『伴侶』這兩個字。」她頓了頓，「議會吵翻了。陛下只說了一句話：『讓他們看。』」"
+      },
+      "start_flags": ["lisr_duel"],
+      "nodes": [
+        {
+          "id": "champions",
+          "title": "在血羽城堡近郊打倒碎角派的勇士",
+          "text": "城外的決鬥場上，兩個頭上的角碎了一截的魔族勇士扛著巨斧走了出來，全身塗著血紅的戰紋：「人類。魔王的伴侶要能站著接下我們的斧頭。」觀戰的魔族領主們圍成一圈。遠處的碑谷入口，一個披著黑斗篷的身影靜靜地站著。",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "requires": { "flags": ["lisr_duel"] },
+          "kind": "combat",
+          "enemies": [["shatterhorn_champion", 2]],
+          "success": {
+            "text": "碎角派的勇士們倒在了沙地上。觀戰的魔族領主們沉默了很久，然後，一個接一個地，把手按在了胸口——那是魔族對強者的禮節。",
+            "set_flags": ["lisr_proven"]
+          },
+          "fail": {
+            "text": "勇士們把你打倒了三次，你站起來了三次。第四次，帶頭的勇士放下了斧頭：「……夠了。」他看著你，「倒了三次還站得起來的人類——魔族認。」觀戰的領主們，一個接一個地把手按在了胸口。",
+            "set_flags": ["lisr_proven"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "oath",
+          "title": "在血誓碑谷立下誓約",
+          "text": "血誓碑谷的最深處，莉莎爾摘下了黑曜冠環，放在一塊空白的石碑上：「魔族的伴侶，要在血誓碑谷立誓。」她看著你，金色的豎瞳裡第一次有了緊張，「血誓是不能違背的。違背的人，會被誓約吞噬。」她伸出手，「……你還要立嗎？」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["lisr_proven"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你握住了她的手，念完了整段古老的誓詞。石碑亮了起來，你們的名字一筆一劃地刻了上去——赤翼的莉莎爾，和一個人類。莉莎爾看著那塊石碑，赤紅的雙翼不受控制地展開了：「……成了。」",
+            "set_flags": ["lisr_sworn"]
+          },
+          "fail": {
+            "text": "你念錯了誓詞的一句。石碑閃了一下，差點熄滅——莉莎爾握緊了你的手，替你念完了那一句，聲音在抖：「……我替你念。」石碑重新亮了起來，你們的名字刻了上去。她低聲說，「血誓允許一方替另一方念。只要那一方，真心願意。」",
+            "set_flags": ["lisr_sworn"]
+          }
+        },
+        {
+          "id": "after",
+          "title": "立誓之後",
+          "text": "碑谷的月光下，莉莎爾重新戴上了冠環，看著石碑上的兩個名字，很久沒有說話。然後她轉過身，赤紅的雙翼慢慢地合攏，把你們兩個人都包了進去：「我推行了一輩子的律法。」她的聲音很輕，「這是第一條，我自己想遵守的。」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["lisr_sworn"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那我也遵守一輩子」",
+              "success": {
+                "text": "莉莎爾笑了——驕傲的、像烈焰一樣的笑：「一輩子。」她低下頭，在你的額頭上留下了一個吻，燙得像火，「人類的一輩子很短。」她的雙翼收緊了，「所以，每一天，都是我的。」那一夜，赤焰王座廳的燈，一直亮到天亮——魔王很少熬夜。",
+                "set_flags": ["lisr_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 25, "reason": "和她立下了血誓" },
+                  { "type": "memory", "summary": "在血誓碑谷和赤翼之君莉莎爾立下了伴侶的血誓。她說，這是她推行了一輩子的律法裡，第一條自己想遵守的。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「下一次約會，換『紅』決定去哪裡」",
+              "success": {
+                "text": "莉莎爾愣了一下，然後大笑起來——魔族們說，魔王從來不大笑：「……紅。」她從斗篷底下拿出那本筆記，翻到最後一頁，上面寫著：「約會的最後一步：約好下一次。」她把筆記塞給你，「這一次，換你記。」",
+                "set_flags": ["lisr_lover", "lisr_red_date"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 25, "reason": "要和紅繼續約會" },
+                  {
+                    "type": "memory",
+                    "summary": "在血誓碑谷和赤翼之君莉莎爾立下了伴侶的血誓。之後，你說下一次約會換「紅」決定——她把那本筆記交給了你。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "sak_land_banquet",
+      "title": "潮主的宴會",
+      "summary": "今年的潮主櫻汐把治理都城當成辦宴會。這一次，她想辦一場「陸地風格」的宴會——需要一個真正的陸地人當顧問。（櫻汐・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sakurashio",
+        "min_level": 5,
+        "text": "一個珊瑚紅長髮、插著並蒂珊瑚花的玉璘族女孩從潮鏡台上游下來，魚尾一甩，濺了你一身水：「陸地人！真的陸地人！」她抓住你的手，眼睛閃閃發亮，「我是今年的潮主！我要辦一場陸地風格的宴會——你當我的顧問！」她頓了頓，「陸地的宴會，是不是要用火烤東西？那個，在海裡怎麼辦？」"
+      },
+      "start_flags": ["sak_start"],
+      "nodes": [
+        {
+          "id": "plan",
+          "title": "在滄月闕的酒館替櫻汐策劃陸地風格的宴會",
+          "text": "滄月闕的酒館裡，櫻汐把一大疊計畫攤在桌上：陸地的音樂、陸地的舞蹈、陸地的「烤魚」——她在旁邊畫了一條哭泣的魚。她托著下巴看你：「陸地的宴會，最重要的是什麼？」",
+          "at": { "where": "cell", "location": "canglue", "cell": "tavern" },
+          "requires": { "flags": ["sak_start"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你說，陸地的宴會最重要的不是吃什麼，是大家坐在一起。櫻汐愣住了，然後拍手大笑：「跟海裡一樣！」她把計畫書翻到最後一頁，寫下了「大家坐在一起」，畫了一個大大的圈。",
+            "set_flags": ["sak_planned"],
+            "effects": [{ "type": "affinity", "npc": "npc_sakurashio", "delta": 10, "reason": "替她策劃了宴會" }]
+          },
+          "fail": {
+            "text": "你說的陸地宴會規矩太多了，櫻汐聽得頭昏腦脹。最後她把計畫書一丟：「算了！我們就辦一場大家都開心的宴會！」——這大概才是最好的計畫。",
+            "set_flags": ["sak_planned"]
+          }
+        },
+        {
+          "id": "eels",
+          "title": "在滄月闕近郊趕走偷吃宴會食材的饕餮鰻",
+          "text": "宴會的食材堆在城外的珊瑚倉庫裡，卻被一群饕餮鰻吃了一半。櫻汐游過去，叉著腰：「那是我的宴會！」饕餮鰻們張開滿是細牙的嘴，打了一個嗝。",
+          "at": { "where": "outskirts", "location": "canglue" },
+          "requires": { "flags": ["sak_planned"] },
+          "kind": "combat",
+          "enemies": [["glutton_eel", 3]],
+          "success": {
+            "text": "饕餮鰻們逃進了海藻林。櫻汐數了數剩下的食材：「……還夠！」她抱著一籃海葡萄，笑得像中了大獎，「陸地人，你好厲害！」",
+            "set_flags": ["sak_saved"]
+          },
+          "fail": {
+            "text": "饕餮鰻們吃飽了才走，剩下的食材只夠一半的人。櫻汐卻一點也不沮喪：「那就一半的人吃，一半的人跳舞，然後交換！」",
+            "set_flags": ["sak_saved"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "party",
+          "title": "在宴會上回應櫻汐",
+          "text": "宴會辦得熱熱鬧鬧，四殿的玉璘族都來了。櫻汐唱完了一首歌，整個都城的結界都在發亮。她游到你身邊，臉頰紅紅的：「陸地人，你說——今天的宴會，是陸地風格的嗎？」",
+          "at": { "where": "npc", "npc": "npc_sakurashio" },
+          "requires": { "flags": ["sak_saved"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「是櫻汐風格的。比陸地的好」",
+              "success": {
+                "text": "櫻汐愣了一下，然後整個人亮了起來——真的亮了，她的鱗片在發光：「櫻汐風格！」她抓著你的手轉了一圈，「那下一次的宴會，也要你來當顧問！櫻汐風格的顧問！」",
+                "set_flags": ["sak_1_done", "sak_advisor"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "說是櫻汐風格的" },
+                  { "type": "memory", "summary": "替潮主櫻汐策劃了一場「陸地風格」的宴會。你說，那是櫻汐風格的，比陸地的好。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳的歌，讓結界都亮了」",
+              "success": {
+                "text": "櫻汐的臉一下子紅了，耳鰭都豎了起來：「你、你聽到了？」她把臉埋進你的肩膀，「……那首是我自己寫的。第一次唱給陸地人聽。」",
+                "set_flags": ["sak_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 10, "reason": "誇了她的歌" },
+                  { "type": "memory", "summary": "替潮主櫻汐策劃了一場「陸地風格」的宴會。她唱了一首自己寫的歌，第一次唱給陸地人聽。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "sak_lost_sister",
+      "title": "迷路的妹妹",
+      "summary": "櫻汐的妹妹汐音是派駐潮汐港的使者，在港口迷路了一百多次。這一次她沒有回來——潮汐港有人在抓落單的玉璘族。（櫻汐・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sakurashio",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["sak_1_done"] },
+        "text": "櫻汐第一次沒有笑，珊瑚紅的頭髮亂成一團：「汐音三天沒有回信了。」她抓著你的手，「她每次迷路都會寫信給我，說她又迷路了。」她的聲音在抖，「這次沒有信。」她抬起頭，「潮主不能離開都城太久……陸地人，拜託你。」"
+      },
+      "start_flags": ["sak_shion"],
+      "nodes": [
+        {
+          "id": "trace",
+          "title": "在潮汐港的情報商打聽汐音的下落",
+          "text": "潮汐港的情報商聽說是玉璘族的使者，臉色變了：「最近有一夥人在港口抓落單的玉璘族——說是賣給內陸的收藏家，當『活的寶石』。」他壓低聲音，「他們的船停在城外的廢棄船塢。」",
+          "at": { "where": "cell", "location": "tidehaven", "cell": "informant" },
+          "requires": { "flags": ["sak_shion"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你拿到了廢棄船塢的位置，還有一個消息：被抓的人裡，有一個一直在說「我又迷路了」的玉璘族女孩。",
+            "set_flags": ["sak_traced"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才肯說：「城外的廢棄船塢。」",
+            "set_flags": ["sak_traced"],
+            "effects": [{ "type": "money", "amount": -150 }]
+          }
+        },
+        {
+          "id": "netters",
+          "title": "在潮汐港近郊從捕網手那裡救回汐音",
+          "text": "廢棄船塢裡，幾個拿著鐵網的人正把一個個水缸搬上船，水缸裡關著玉璘族。最小的那個水缸裡，一個女孩正對著網子嘆氣：「……又迷路了。」",
+          "at": { "where": "outskirts", "location": "tidehaven" },
+          "requires": { "flags": ["sak_traced"] },
+          "kind": "combat",
+          "enemies": [["slaver_netter", 2]],
+          "success": {
+            "text": "捕網手們逃了。你打開了所有的水缸，玉璘族們一個一個地游回了海裡。最小的那個女孩爬出水缸，看著你：「……你是姊姊派來的嗎？」她頓了頓，「我是不是又迷路了？」",
+            "set_flags": ["sak_found"]
+          },
+          "fail": {
+            "text": "捕網手們把你們逼退了，可在混亂中水缸被打翻了，玉璘族們順著船塢的排水溝游回了海裡——只剩一個，在排水溝口迷了路。你把她撈了起來：「……汐音？」",
+            "set_flags": ["sak_found"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "reunion",
+          "title": "把汐音送回櫻汐身邊",
+          "text": "潮鏡台上，櫻汐一看見汐音就撲了過去，姊妹倆抱著哭成一團，哭到結界都在閃。很久，櫻汐抬起頭，紅著眼睛看你：「謝謝你。」她游到你面前，「潮主欠你一個願望。什麼都可以。」",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_tide_mirror" },
+          "requires": { "flags": ["sak_found"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「下次宴會，坐在妳旁邊」",
+              "success": {
+                "text": "櫻汐愣住了，然後臉一下子紅透了，耳鰭抖個不停：「……就、就這樣？」汐音在旁邊小聲地說：「姊姊，他是在說他喜歡妳。」櫻汐整個人沉進了水裡，只露出一雙發亮的眼睛：「……我知道啦！」",
+                "set_flags": ["sak_2_done", "sak_beside"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 20, "reason": "說要坐在她旁邊" },
+                  { "type": "memory", "summary": "替潮主櫻汐救回了迷路的妹妹汐音。她說欠你一個願望——你說，下次宴會坐在她旁邊。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「給汐音一張潮汐港的地圖」",
+              "success": {
+                "text": "櫻汐和汐音同時愣住了，然後一起笑了出來。櫻汐笑得在水裡翻了一圈：「這是我聽過最好的願望！」她把一張畫滿了記號的地圖塞給汐音，「……陸地人，你真的很好。」她頓了頓，「好到讓人想一直待在你身邊。」",
+                "set_flags": ["sak_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "替汐音要了地圖" },
+                  { "type": "affinity", "npc": "npc_shion_envoy", "delta": 10, "reason": "替她要了一張地圖" },
+                  { "type": "memory", "summary": "替潮主櫻汐救回了迷路的妹妹汐音。你的願望是給汐音一張潮汐港的地圖。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "sak_tide_challenge",
+      "title": "挑潮祭",
+      "summary": "一年一度的挑潮祭到了——櫻汐要守住潮主的位置。可是今年，祖忘之淵的深海妖物也聞到了祭典的歌聲。她說，贏了之後，最後一首歌要唱給你聽。（櫻汐・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sakurashio",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["sak_2_done"] },
+        "text": "櫻汐穿著最隆重的櫻色廣袖羅裳，頭上的並蒂珊瑚花開得正盛：「挑潮祭！今年我要連勝四屆！」她轉了一圈，又停下來，表情認真了起來，「可是螺鈿婆婆說，祖忘之淵的東西在往上爬——祭典的歌聲會把它們引過來。」她握住你的手，「陸地人，替我守住祭典。贏了之後……最後一首歌，我要唱給你聽。」"
+      },
+      "start_flags": ["sak_festival"],
+      "nodes": [
+        {
+          "id": "horrors",
+          "title": "在滄月闕近郊擋下被歌聲引來的深海妖物",
+          "text": "挑潮祭的歌聲傳遍了海底。城外的深溝裡，兩頭長著無數觸手、眼睛發著幽光的深海妖物爬了上來，朝著祭典的方向游去。",
+          "at": { "where": "outskirts", "location": "canglue" },
+          "requires": { "flags": ["sak_festival"] },
+          "kind": "combat",
+          "enemies": [["trench_horror", 2]],
+          "success": {
+            "text": "深海妖物們沉回了深溝。遠處，祭典的歌聲還在繼續——櫻汐唱的那一段，比任何人都亮。",
+            "set_flags": ["sak_guarded"]
+          },
+          "fail": {
+            "text": "深海妖物們把你們拖向了深溝，最後是祭典上的歌聲突然變大了——櫻汐感覺到了，對著深溝的方向唱了一段，妖物們捂著觸手退了回去。",
+            "set_flags": ["sak_guarded"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "duet",
+          "title": "在潮鏡台和櫻汐唱完最後一首歌",
+          "text": "櫻汐贏了，連勝四屆。潮鏡台上，四殿的玉璘族都在歡呼。她舉起手，讓大家安靜下來：「最後一首歌——」她看著台下的你，「我想和一個陸地人一起唱。」她伸出手，「上來。」",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_tide_mirror" },
+          "requires": { "flags": ["sak_guarded"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你們一起唱完了那首歌——她教過你的那首，她自己寫的那首。結界亮得像白晝，整個滄月闕都看見了。歌唱完了，櫻汐沒有放開你的手：「……陸地人唱歌，也很好聽。」",
+            "set_flags": ["sak_sang"]
+          },
+          "fail": {
+            "text": "你唱走了好幾個音，台下有人在笑。可是櫻汐笑得最大聲，她把你的走音也唱進了歌裡，唱成了一首全新的歌。結界還是亮了，亮得有點歪——族人們說，那是今年最好聽的一首。",
+            "set_flags": ["sak_sang"]
+          }
+        },
+        {
+          "id": "confess",
+          "title": "回應櫻汐",
+          "text": "祭典散了，櫻汐拉著你游到了潮鏡台最高的地方，從那裡可以看見整個滄月闕的燈火。她頭上的並蒂珊瑚花，有一朵掉了下來，她撿起來，別在你的衣襟上：「並蒂珊瑚花，一朵給自己，一朵給喜歡的人。」她的臉紅透了，「……這是玉璘族的告白。」",
+          "at": { "where": "npc", "npc": "npc_sakurashio" },
+          "requires": { "flags": ["sak_sang"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那我收下了」",
+              "success": {
+                "text": "櫻汐歡呼了一聲，撲進你懷裡，魚尾纏住了你的腿：「收下了！收下了！」她抬起頭，眼睛閃閃發亮，「那下一場宴會，就是我們的宴會！」她頓了頓，又認真了起來，「……潮主的伴侶，要陪潮主辦一輩子的宴會喔。很累的喔。」",
+                "set_flags": ["sak_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 25, "reason": "收下了並蒂珊瑚花" },
+                  { "type": "memory", "summary": "挑潮祭之後，潮主櫻汐把並蒂珊瑚花別在了你的衣襟上——那是玉璘族的告白。你收下了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把另一朵也別回她的頭上，「一起的」",
+              "success": {
+                "text": "櫻汐愣住了，摸著頭上重新別好的珊瑚花：「……一起的。」她的眼淚一顆一顆地浮起來，在海水裡變成了小小的珍珠，「並蒂珊瑚，本來就是一起長的。」她牽起你的手，「那，一直一起。」",
+                "set_flags": ["sak_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 25, "reason": "說珊瑚花是一起的" },
+                  {
+                    "type": "memory",
+                    "summary": "挑潮祭之後，潮主櫻汐把並蒂珊瑚花別在你的衣襟上。你把另一朵別回她的頭上——並蒂珊瑚，本來就是一起長的。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「礁光柱修好了，結界會一直亮著」",
+              "requires": { "flags": ["reef_done"] },
+              "success": {
+                "text": "櫻汐看著遠處重新亮起的礁光柱，笑了：「……是你修好的。」她靠在你身上，「螺鈿婆婆說，結界亮著，是因為有人在唱歌。」她抬起頭，「以後，我每天都唱。唱給你聽，也唱給滄月闕聽。」她把並蒂珊瑚花別在你的衣襟上，「這樣，結界就永遠不會暗了。」",
+                "set_flags": ["sak_lover", "sak_barrier_song"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 25, "reason": "說結界會一直亮著" },
+                  { "type": "memory", "summary": "挑潮祭之後，潮主櫻汐說，以後每天都唱歌——唱給你聽，也唱給滄月闕聽。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "group_wives_tea",
+      "title": "人妻下午茶會",
+      "summary": "艾森伯爵夫人的沙龍辦了一場小小的下午茶：點心是麥穗麵包店的，朗讀的是紫丁香的新作。三位客人坐下來之後，才發現她們等的是同一個人。（多人特殊任務）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_margarete",
+        "min_level": 11,
+        "requires": { "flags": ["marg_lover", "liese_lover", "clara_lover"] },
+        "text": "瑪格麗特用羽扇遮著嘴，遞給你一張燙金的請帖：「下午茶。很小的聚會，只有三位客人。」她的眼睛笑得很危險，「麥穗麵包店的老闆娘送點心，圖書館的克拉拉女士朗讀新作。」她頓了頓，「……還有你。我很好奇，你坐下來的時候，會先看誰。」"
+      },
+      "start_flags": ["wives_tea"],
+      "nodes": [
+        {
+          "id": "tea",
+          "title": "在瑪格麗特的沙龍撐過三位人妻的下午茶",
+          "text": "沙龍的小圓桌邊，莉澤洛特端著一大盤剛出爐的點心，看見你，笑容僵住了。克拉拉抱著手稿，眼鏡後的灰色眼睛眨了眨，臉一點一點地紅了。瑪格麗特搖著羽扇，慢條斯理地倒茶：「看來，不用介紹了。」三雙眼睛同時看著你。",
+          "at": { "where": "npc", "npc": "npc_margarete" },
+          "requires": { "flags": ["wives_tea"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你坐下來，替三個人各倒了一杯茶，先說了一句：「莉澤洛特的點心最好吃，克拉拉的新作我最想聽，瑪格麗特的沙龍我最喜歡。」三個人互看了一眼。莉澤洛特第一個笑出了聲，克拉拉跟著笑，最後瑪格麗特也收起了羽扇：「……狡猾。」",
+            "set_flags": ["wives_seated"]
+          },
+          "fail": {
+            "text": "你張開嘴，一句話也說不出來。沉默了很久，是莉澤洛特先笑了：「哎呀，他嚇壞了。」克拉拉小聲地說：「……跟我小說裡寫的一模一樣。」瑪格麗特嘆了口氣，替你倒了一杯茶：「喝吧。今天不會吃了你——大概。」",
+            "set_flags": ["wives_seated"]
+          }
+        },
+        {
+          "id": "paparazzi",
+          "title": "在萊茵堡近郊擋下揭醜報雇的打手",
+          "text": "茶會散場的時候，有人在沙龍的窗外鬼鬼祟祟。帝都的揭醜小報聽說了「伯爵夫人的秘密沙龍」，雇了打手在城外的路上堵人，要搶克拉拉的手稿、拍下三位夫人的「醜聞」。",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["wives_seated"] },
+          "kind": "combat",
+          "enemies": [["scandal_thug", 2]],
+          "success": {
+            "text": "打手們丟下畫具逃了。莉澤洛特撿起一塊畫板，看了看上面畫的四個人，大笑：「畫得還挺像的！」瑪格麗特把畫板丟進了水溝，「這種東西，帝都每天都有。」她看著你，「只是，今天是我們的。」",
+            "set_flags": ["wives_safe"]
+          },
+          "fail": {
+            "text": "打手們搶走了一張畫才跑——是一張畫錯了的速寫，四個人的臉都看不清楚。克拉拉看著他們跑遠，推了推眼鏡：「……這種程度的描寫，連我的編輯都不會收。」",
+            "set_flags": ["wives_safe"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "decide",
+          "title": "三位人妻的決定",
+          "text": "沙龍的燈重新點了起來。三個人坐在一起，像是開了一場會議。最後，瑪格麗特代表發言：「我們談過了。」莉澤洛特點頭，克拉拉低著頭在筆記本上寫字。瑪格麗特看著你，「我們都不打算放手。所以——」她用羽扇指著你，「你要怎麼辦？」",
+          "at": { "where": "npc", "npc": "npc_margarete" },
+          "requires": { "flags": ["wives_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「每週的下午茶，我都來」",
+              "success": {
+                "text": "三個人互看了一眼，然後一起笑了出來。莉澤洛特拍著桌子：「每週！點心我包了！」克拉拉在筆記本上寫：「每週。下午茶之後。」瑪格麗特站起來，鎖上了沙龍的門：「那麼——今天是第一週。」那一夜，帝都最有名的沙龍，關門到了第二天中午。",
+                "set_flags": ["group_wives_done", "wives_weekly"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_margarete", "delta": 10, "reason": "說每週都來" },
+                  { "type": "affinity", "npc": "npc_lieselotte", "delta": 10, "reason": "說每週都來" },
+                  { "type": "affinity", "npc": "npc_clara", "delta": 10, "reason": "說每週都來" },
+                  {
+                    "type": "memory",
+                    "summary": "瑪格麗特、莉澤洛特、克拉拉三位人妻在下午茶會上發現了彼此。你說，每週的下午茶都來——她們說，今天是第一週。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳們決定。我聽妳們的」",
+              "success": {
+                "text": "瑪格麗特愣了一下，然後慢慢地笑了：「……聽我們的？」她看了另外兩個人一眼，「那，第一條規矩：誰也不准吃醋。」莉澤洛特舉手：「第二條：每天早上第一爐的麵包，大家一起吃！」克拉拉小聲地補充：「第三條……取材，要三個人一起。」",
+                "set_flags": ["group_wives_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_margarete", "delta": 10, "reason": "聽她們的" },
+                  { "type": "affinity", "npc": "npc_lieselotte", "delta": 10, "reason": "聽她們的" },
+                  { "type": "affinity", "npc": "npc_clara", "delta": 10, "reason": "聽她們的" },
+                  { "type": "memory", "summary": "瑪格麗特、莉澤洛特、克拉拉三位人妻在下午茶會上發現了彼此。你說聽她們的——她們訂了三條規矩。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "group_idol_backstage",
+      "title": "三重奏的後台",
+      "summary": "星屑三重奏的三個人，各自和護衛兼經紀人在一起了——然後在同一天發現了。下一場演唱會只剩三天，團員們卻吵得一首歌也排不出來。（多人特殊任務）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_stella",
+        "min_level": 11,
+        "requires": { "flags": ["stella_lover", "noir_lover", "pom_lover"] },
+        "text": "史黛拉衝進你的房間，眼睛紅紅的：「諾瓦說你是她的！波姆也說你是她的！」她抓著你的衣領，「可是你是我的啊！」門口，諾瓦抱著手臂冷冷地站著，波姆抱著帳本笑得很甜——甜得可怕。史黛拉吸了吸鼻子，「……演唱會還剩三天。我們一首歌也排不出來。」"
+      },
+      "start_flags": ["idol_fight"],
+      "nodes": [
+        {
+          "id": "meeting",
+          "title": "在河谷鎮的酒館召開星屑三重奏的緊急會議",
+          "text": "酒館的角落，三個人坐成一個三角形，誰也不看誰。史黛拉咬著點心，諾瓦撥著魯特琴的弦，波姆在帳本上寫寫算算——你偷看了一眼，上面寫的是「護衛先生的時間分配表」。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "tavern" },
+          "requires": { "flags": ["idol_fight"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說，星屑三重奏是三個人一起唱的——少了誰都不是星屑三重奏。三個人安靜了很久。最後諾瓦先開口：「……我寫的歌，本來就是三個人的聲部。」波姆把時間分配表撕了：「那就三個人一起分。」史黛拉哭著笑了。",
+            "set_flags": ["idol_made_up"]
+          },
+          "fail": {
+            "text": "你說錯了話，三個人一起瞪你。可是瞪著瞪著，史黛拉先笑了出來：「……我們好像在吵很蠢的事。」諾瓦哼了一聲，波姆把時間分配表摺成了紙飛機，丟到了你頭上。",
+            "set_flags": ["idol_made_up"]
+          }
+        },
+        {
+          "id": "fans",
+          "title": "在河谷鎮近郊擋下失控的狂熱粉絲團",
+          "text": "消息傳了出去：星屑三重奏的三個人「都被一個護衛搶走了」。城外的路上，一群穿著應援服的狂熱粉絲扛著棍子，堵住了演唱會的馬車：「把我們的偶像還來！」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["idol_made_up"] },
+          "kind": "combat",
+          "enemies": [["fan_club_brute", 2]],
+          "success": {
+            "text": "狂熱粉絲們被打跑了，扛著的應援旗掉了一地。史黛拉撿起一面寫著她名字的旗子，看了很久，然後把它插在馬車上：「……他們也是我們的粉絲。」她轉頭看你，「下次演唱會，我要好好跟大家說。」",
+            "set_flags": ["idol_road"]
+          },
+          "fail": {
+            "text": "狂熱粉絲們把馬車圍住了，最後是波姆站上車頂，笑著宣布：「今天的演唱會，第一排免費！」粉絲們歡呼著散了。她跳下來，在帳本上記了一筆：「……虧了。記在護衛先生的帳上。」",
+            "set_flags": ["idol_road"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "backstage",
+          "title": "演唱會之後的後台",
+          "text": "演唱會辦完了。最後一首歌，三個人對著第一排正中間的你一起唱——全場都看見了。散場之後，後台的門鎖上了。史黛拉、諾瓦、波姆三個人站在你面前，舞台裝還沒換下來。波姆笑得很甜：「時間分配表撕掉了。」諾瓦別開臉：「……所以，要一起。」史黛拉握住了你的手：「大家的笑容是我的力量——你的，是我們的。」",
+          "at": { "where": "npc", "npc": "npc_stella" },
+          "requires": { "flags": ["idol_road"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「星屑三重奏的專屬護衛，接下了」",
+              "success": {
+                "text": "三個人一起撲了上來。那一夜的後台，史黛拉負責撒嬌，諾瓦負責黏人，波姆負責指揮——她說這也是經紀人的工作。天亮的時候，諾瓦在樂譜的角落寫了一首新歌的名字：「四重奏」。",
+                "set_flags": ["group_idols_done", "idol_quartet"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_stella", "delta": 10, "reason": "當了三個人的護衛" },
+                  { "type": "affinity", "npc": "npc_noir", "delta": 10, "reason": "當了三個人的護衛" },
+                  { "type": "affinity", "npc": "npc_pom", "delta": 10, "reason": "當了三個人的護衛" },
+                  {
+                    "type": "memory",
+                    "summary": "星屑三重奏的史黛拉、諾瓦、波姆在同一天發現了彼此。演唱會之後的後台，她們說：要一起。諾瓦寫了一首新歌，叫做「四重奏」。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「先換衣服。舞台裝會皺」",
+              "success": {
+                "text": "三個人愣了一下，然後一起笑了出來。波姆笑得最大聲：「護衛先生，真不浪漫喵！」可是她們真的乖乖換了衣服——換到一半，史黛拉說「反正都要脫的」，諾瓦把枕頭丟過去，後台亂成了一團。那一夜，舞台裝一件也沒皺。",
+                "set_flags": ["group_idols_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_stella", "delta": 10, "reason": "記得她們的舞台裝" },
+                  { "type": "affinity", "npc": "npc_noir", "delta": 10, "reason": "記得她們的舞台裝" },
+                  { "type": "affinity", "npc": "npc_pom", "delta": 10, "reason": "記得她們的舞台裝" },
+                  { "type": "memory", "summary": "星屑三重奏的史黛拉、諾瓦、波姆在同一天發現了彼此，最後決定要一起。後台亂成了一團，舞台裝一件也沒皺。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "group_rulers_tea",
+      "title": "女統治者們的茶話會",
+      "summary": "和平延續了，阿爾貝納的風誓塔辦了一場國際會議。會議的休息時間，五位女統治者喝著茶，聊起了一個冒險者——然後發現，她們聊的是同一個人。（多人特殊任務）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_eleanora_rhine",
+        "min_level": 11,
+        "requires": {
+          "flags": ["ith_lover", "ana_lover", "ele_lover", "lisr_lover", "sak_lover"],
+          "counters": { "human_stance": { "min": 1 }, "demon_stance": { "min": 1 } }
+        },
+        "text": "艾蕾諾拉把一封蓋著五個印章的信交給你，表情一絲不苟，耳尖卻是紅的：「風誓塔的國際會議。人類、精靈、魔族、玉璘族——和平延續之後的第一次。」她頓了頓，「會議之外，有一場茶話會。只有五個人。」她把信塞進你手裡，「……她們指名要你出席。理由是『需要當面確認一件事』。」"
+      },
+      "start_flags": ["rulers_summit"],
+      "nodes": [
+        {
+          "id": "summit",
+          "title": "在風誓塔的國際會議上當證人",
+          "text": "風誓塔的圓桌邊，坐著五個人：精靈女王、晨曦的安納塔西亞、帝國宰相、赤翼之君、滄月闕的潮主。和平的條文一條一條地念過去，每念完一條，就有人看你一眼。輪到你以證人身分發言的時候，五雙眼睛同時看了過來。",
+          "at": { "where": "cell", "location": "albena", "cell": "lm_windoath_tower" },
+          "requires": { "flags": ["rulers_summit"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 17 },
+          "success": {
+            "text": "你講了你走過的路——北境的雪、南方的血誓、東海的潮、西方的沙、森林裡的泉。講完的時候，整個會議廳安靜了很久。最後，伊瑟蘭迪爾第一個在條約上簽了名：「……這個人走過的地方，就是我們要守住的和平。」",
+            "set_flags": ["rulers_signed"]
+          },
+          "fail": {
+            "text": "你講得結結巴巴，可是每講到一個地方，就有一個人輕輕地點頭——那是她的地方。最後櫻汐拍著手笑了出來：「大家都點頭了！那就簽吧！」五個印章蓋在了同一張條約上。",
+            "set_flags": ["rulers_signed"]
+          }
+        },
+        {
+          "id": "warhawks",
+          "title": "在阿爾貝納近郊擋下主戰派的殘黨",
+          "text": "條約簽完的當晚，鐵十字會和碎角派的殘黨聯手了——兩個本該互相仇恨的主戰派，為了破壞和平站在了一起。他們埋伏在城外的河堤上，等著五位統治者的馬車經過。",
+          "at": { "where": "outskirts", "location": "albena" },
+          "requires": { "flags": ["rulers_signed"] },
+          "kind": "combat",
+          "enemies": [["warhawk_remnant", 2]],
+          "success": {
+            "text": "殘黨們倒下了。五輛馬車的車門同時打開，五位統治者一起走了出來，看著擋在路中間的你。莉莎爾第一個開口，語氣很淡：「……又擋在前面。」她看了看其他四個人，「看來，你對每個人都這樣。」",
+            "set_flags": ["rulers_saved"]
+          },
+          "fail": {
+            "text": "殘黨們把你逼到了河堤邊——然後，五位統治者一起出手了：精靈的月光、樞機的聖光、宰相的火、魔王的烈焰、潮主的歌聲。殘黨們連逃都來不及。安納塔西亞收起細劍，看著你：「……你知道我們五個人一起出手，是多大的外交事件嗎？」",
+            "set_flags": ["rulers_saved"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "tea",
+          "title": "在風誓塔接受五位女統治者的「教訓」",
+          "text": "風誓塔的頂樓，一張小圓桌，六張椅子。五位統治者已經坐好了，茶已經倒好了。艾蕾諾拉推了推不存在的眼鏡：「我們剛才發現了一件事。」安納塔西亞笑得很甜：「我們五個人，聊的都是同一個冒險者。」櫻汐舉手：「所以我們決定——」莉莎爾放下茶杯：「要好好地教訓你。」伊瑟蘭迪爾輕聲說：「……坐下吧。教訓，很長。」",
+          "at": { "where": "cell", "location": "albena", "cell": "lm_windoath_tower" },
+          "requires": { "flags": ["rulers_saved"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "坐下，「請各位陛下手下留情」",
+              "success": {
+                "text": "五個人互看了一眼，然後一起笑了出來——精靈女王的笑像月光，女王的笑像陽光，宰相第一次大笑，魔王笑得像烈焰，潮主笑得在椅子上打滾。那一場「教訓」從下午持續到深夜，內容是：每個人輪流說一件你做過的蠢事，再說一件你做過的好事。最後，五個人一起訂了一份條約——比和平條約還長。條約的第一條是：輪流。",
+                "set_flags": ["group_rulers_done", "rulers_treaty"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "出席了茶話會" },
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 10, "reason": "出席了茶話會" },
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 10, "reason": "出席了茶話會" },
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 10, "reason": "出席了茶話會" },
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 10, "reason": "出席了茶話會" },
+                  {
+                    "type": "memory",
+                    "summary": "和平延續之後，五位女統治者在風誓塔的茶話會上發現她們聊的是同一個冒險者。那一場「教訓」持續到深夜，最後她們訂了一份比和平條約還長的條約。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「我能先喝一口茶嗎？」",
+              "success": {
+                "text": "櫻汐第一個笑出了聲，接著是安納塔西亞，然後是所有人。艾蕾諾拉嘆了口氣，親手替你倒了茶：「……准了。」莉莎爾把下巴擱在手上，金色的豎瞳看著你：「喝慢一點。今晚很長。」伊瑟蘭迪爾點點頭：「精靈的時間，人類的時間——今晚都一樣長。」那一夜的風誓塔，燈一直亮著。",
+                "set_flags": ["group_rulers_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "出席了茶話會" },
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 10, "reason": "出席了茶話會" },
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 10, "reason": "出席了茶話會" },
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 10, "reason": "出席了茶話會" },
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 10, "reason": "出席了茶話會" },
+                  {
+                    "type": "memory",
+                    "summary": "和平延續之後，五位女統治者在風誓塔的茶話會上要「好好地教訓」你。你先喝了一口茶——那一夜的風誓塔，燈一直亮著。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "group_athletes",
+      "title": "三個人的比賽",
+      "summary": "聖殿騎士團長、第一軍團將軍、赤鬃族長——三個女戰士發現彼此之後，沒有吵架，而是決定比一場。比什麼？什麼都比。（多人特殊任務）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_isabella_rowan",
+        "min_level": 11,
+        "requires": { "flags": ["isab_lover", "brun_lover", "kara_lover"] },
+        "text": "伊莎貝拉把一張賭約拍在桌上，笑得很開心：「我聽說了。霜盾的將軍、赤鬃的族長。」她喝了一口酒，「我不打算吵架——騎士不吵架。」她把賭約推給你，上面簽著三個名字，「我們要比一場。喝酒、腕力、狩獵，三項。贏的人……」她咧嘴一笑，「贏的人決定，以後怎麼分你。」"
+      },
+      "start_flags": ["athletes_contest"],
+      "nodes": [
+        {
+          "id": "drink",
+          "title": "在索里耶爾的酒館當三個女戰士比賽的裁判",
+          "text": "索里耶爾的酒館被包下了。伊莎貝拉坐在桌子的一邊，布倫希爾德縮在另一邊——對她的身高來說很困難——卡菈把腳翹在桌上。第一項：喝酒。第二項：腕力。三個人都看著你：「裁判，開始吧。」",
+          "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
+          "requires": { "flags": ["athletes_contest"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 17 },
+          "success": {
+            "text": "喝酒，伊莎貝拉贏了。腕力，布倫希爾德贏了——她紅著臉道歉了三次。卡菈不服，要求跟你比，你撐了很久，最後輸得很漂亮。卡菈大笑：「裁判也是選手！」三個人一比一比一，平手。",
+            "set_flags": ["athletes_tied"]
+          },
+          "fail": {
+            "text": "比到一半，三個人開始一起灌你酒。布倫希爾德小聲地說：「……對、對不起，伊莎貝拉說裁判也要喝。」最後你趴在桌上，三個人看著你，一起笑了：「裁判輸了。」比賽變成了平手。",
+            "set_flags": ["athletes_tied"]
+          }
+        },
+        {
+          "id": "hunt",
+          "title": "在索里耶爾近郊和三個女戰士一起獵下鹽原巨蜥",
+          "text": "第三項：狩獵。目標是鹽原上的兩頭巨蜥——每一頭都比馬車還大，眼睛會把人看成石頭。伊莎貝拉拔劍，布倫希爾德舉盾，卡菈掄起戰斧：「誰打倒的多，誰贏！」三個人同時衝了出去，誰也沒等誰。",
+          "at": { "where": "outskirts", "location": "soriel" },
+          "requires": { "flags": ["athletes_tied"] },
+          "kind": "combat",
+          "enemies": [["salt_basilisk", 2]],
+          "success": {
+            "text": "巨蜥們倒在了鹽地上。三個人數了數——每個人都說是自己砍的最後一刀。吵了半天，布倫希爾德小聲地說：「……其實，最後一刀，是他。」三個人一起轉頭看你。",
+            "set_flags": ["athletes_hunted"]
+          },
+          "fail": {
+            "text": "巨蜥們把你們逼得滿身是傷，最後是三個人背靠背站成了一個三角——騎士的劍、將軍的盾、族長的斧——才把牠們打退。卡菈喘著氣大笑：「……一起打，比較快！」",
+            "set_flags": ["athletes_hunted"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "result",
+          "title": "宣布比賽的結果",
+          "text": "營火邊，三個人坐成一圈，等著裁判宣布結果。伊莎貝拉喝著酒，布倫希爾德吃著蘋果派，卡菈啃著巨蜥的腿。她們看著你，表情一模一樣——期待，又有點不安。",
+          "at": { "where": "npc", "npc": "npc_isabella_rowan" },
+          "requires": { "flags": ["athletes_hunted"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「平手。三個人都贏了」",
+              "success": {
+                "text": "伊莎貝拉大笑著拍桌子：「我就知道！」卡菈把巨蜥腿一丟：「平手不算！明年再比！」布倫希爾德小聲地說：「……那、那明年也平手吧。」三個人互看了一眼，然後一起把你按在了營火邊。那一夜，三個女戰士和她們的裁判，一直聊到了天亮——聊的都是你。",
+                "set_flags": ["group_athletes_done", "athletes_annual"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_isabella_rowan", "delta": 10, "reason": "判了平手" },
+                  { "type": "affinity", "npc": "npc_brunhild", "delta": 10, "reason": "判了平手" },
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 10, "reason": "判了平手" },
+                  {
+                    "type": "memory",
+                    "summary": "聖殿騎士團長伊莎貝拉、霜盾布倫希爾德、赤鬃族長卡菈比了一場：喝酒、腕力、狩獵。你判了平手——她們說，每年都要比一次。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「贏的是我。三個人，我都要」",
+              "success": {
+                "text": "三個人愣住了。然後伊莎貝拉第一個笑出了聲：「……好大的口氣！」卡菈的鬃毛全豎起來了，大笑：「這才像我的伴侶！」布倫希爾德的臉紅到了耳根，卻點了點頭：「……可、可以。」伊莎貝拉舉起酒杯：「那就這樣說定了——贏的人，要負責。」",
+                "set_flags": ["group_athletes_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_isabella_rowan", "delta": 10, "reason": "說三個人都要" },
+                  { "type": "affinity", "npc": "npc_brunhild", "delta": 10, "reason": "說三個人都要" },
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 10, "reason": "說三個人都要" },
+                  { "type": "memory", "summary": "聖殿騎士團長伊莎貝拉、霜盾布倫希爾德、赤鬃族長卡菈比了一場。你宣布贏的是你——三個人，你都要。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "group_contract_bond",
+      "title": "主僕的契約",
+      "summary": "瑪蒂爾達曾經握著瑟蕾娜的契約，瑟蕾娜曾經是她契約下的花魁。現在兩個人都自由了，也都愛著同一個人——金蓮樓的舊老闆卻拿著一份「舊契約」找上了燈塔下的茶館。（多人特殊任務）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_matilda_rosen",
+        "min_level": 11,
+        "requires": { "flags": ["mat_lover", "ser_lover"] },
+        "text": "瑪蒂爾達抱著雪球，站在你的旅店門口，笑容第一次有點僵：「瑟蕾娜寫信給我了。」她把信遞給你，「金蓮樓的舊老闆拿著一份契約去找她，說她的贖身不算數。」她咬著嘴唇，「那份契約是假的——我一看就知道，因為真的那份在我手上，我親手撕掉了。」她抬起頭，「……我欠她的。你陪我去。」"
+      },
+      "start_flags": ["bond_trip"],
+      "nodes": [
+        {
+          "id": "teahouse",
+          "title": "在燈塔下的茶館讓瑪蒂爾達和瑟蕾娜見面",
+          "text": "燈塔下的小茶館裡，瑟蕾娜在泡茶，看見瑪蒂爾達走進來，手停了一下。兩個人很久沒有說話。最後是瑟蕾娜先開口，聲音很平靜：「議員大人。十年的契約，您收了我多少錢，還記得嗎？」瑪蒂爾達抱緊了雪球：「……記得。每一筆都記得。」",
+          "at": { "where": "npc", "npc": "npc_serena" },
+          "requires": { "flags": ["bond_trip"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你在兩個人之間坐下，說：「契約撕掉了，可是妳們都還記得。這代表那十年，妳們都沒有忘記對方。」瑟蕾娜看著瑪蒂爾達，很久，然後倒了一杯茶，推到她面前：「……喝吧。這裡的茶，是免費的。」瑪蒂爾達的眼淚掉進了茶杯裡。",
+            "set_flags": ["bond_met"]
+          },
+          "fail": {
+            "text": "你說不出什麼話，只是坐在兩個人之間。沉默了很久，瑪蒂爾達突然站起來，對著瑟蕾娜深深地鞠了一躬：「……對不起。」瑟蕾娜愣住了，然後笑了——那是金蓮樓的頭牌從來沒有過的笑：「議員大人，原來也會道歉。」",
+            "set_flags": ["bond_met"]
+          }
+        },
+        {
+          "id": "enforcers",
+          "title": "在沿海渡口近郊擋下金蓮樓舊老闆的打手",
+          "text": "金蓮樓的舊老闆帶著打手來了，手裡揮著一份泛黃的契約：「瑟蕾娜！妳的贖身不算數！」他的打手們圍住了茶館。瑪蒂爾達擋在瑟蕾娜前面，抱著小狗，笑得很甜——甜得可怕：「那份契約，我能看看嗎？」",
+          "at": { "where": "outskirts", "location": "coast_ferry" },
+          "requires": { "flags": ["bond_met"] },
+          "kind": "combat",
+          "enemies": [["lotus_enforcer", 2]],
+          "success": {
+            "text": "打手們倒下了。舊老闆跪在地上，手裡的契約被瑪蒂爾達抽走了。她只看了一眼：「印章是三年前的樣式——羅森商會的印章，兩年前就換過了。」她把契約撕成了兩半，「偽造契約，在聯邦是重罪。」",
+            "set_flags": ["bond_won"]
+          },
+          "fail": {
+            "text": "打手們把你們逼進了茶館，可瑟蕾娜在這時拿起了泡茶的熱水壺——金蓮樓的頭牌，也學過怎麼保護自己。打手們燙得哇哇叫著逃了。瑪蒂爾達從舊老闆手裡抽走了契約，撕成了兩半。",
+            "set_flags": ["bond_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "new_contract",
+          "title": "三個人的新契約",
+          "text": "茶館打烊了。瑪蒂爾達從懷裡拿出一份新的契約，放在桌上：「我寫了一份新的。」瑟蕾娜看著那份契約，又看著她：「……議員大人，又要和我簽契約？」瑪蒂爾達搖了搖頭，把筆遞給瑟蕾娜，又遞給你：「這一份，沒有主人，也沒有奴僕。」她小聲地說，「只有三個人。」",
+          "at": { "where": "npc", "npc": "npc_matilda_rosen" },
+          "requires": { "flags": ["bond_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "簽名，然後把筆交給瑟蕾娜",
+              "success": {
+                "text": "瑟蕾娜拿著筆，看了瑪蒂爾達很久，然後簽下了自己的名字——用的不是金蓮樓的花名，是她小時候的名字。瑪蒂爾達看著那個名字，哭了。那一夜，燈塔下的茶館點著一盞小燈，三個人的影子映在窗上，很久都沒有分開。",
+                "set_flags": ["group_bond_done", "bond_three"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_matilda_rosen", "delta": 10, "reason": "簽了三個人的契約" },
+                  { "type": "affinity", "npc": "npc_serena", "delta": 15, "reason": "簽了三個人的契約" },
+                  {
+                    "type": "memory",
+                    "summary": "瑪蒂爾達和瑟蕾娜——握著契約的議員與她契約下的花魁——在燈塔下的茶館和解了。三個人簽了一份沒有主人、也沒有奴僕的契約。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「這份契約，讓瑟蕾娜決定條款」",
+              "success": {
+                "text": "瑟蕾娜愣住了，然後慢慢地笑了：「……我決定？」她拿起筆，想了很久，只寫了一條：「每個月，三個人一起看一次海。」瑪蒂爾達看著那一條，紅著眼睛簽了名：「……這是我簽過最便宜的契約。」瑟蕾娜搖搖頭：「是最貴的。」",
+                "set_flags": ["group_bond_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_matilda_rosen", "delta": 10, "reason": "讓瑟蕾娜決定" },
+                  { "type": "affinity", "npc": "npc_serena", "delta": 15, "reason": "讓她決定條款" },
+                  { "type": "memory", "summary": "瑪蒂爾達和瑟蕾娜在燈塔下的茶館和解了。新契約的條款由瑟蕾娜決定：每個月，三個人一起看一次海。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "pol_storm_eve",
+      "title": "風暴的前夜",
+      "summary": "大陸各地的天空同時出現了殘影——統一戰爭的戰場、燒毀的城池、死去的將軍。有人說那是預兆：人類與魔族的爭鬥，就要在今年分出結果。（史詩：政治鬥爭的匯流・序章）",
+      "rank": "A",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 14,
+        "text": "河谷鎮公會的主管把所有的委託都撤了下來，只留下一張：「全大陸的情勢彙整。急件。」他看著你，臉色很難看：「這三天，萊茵堡、血羽城堡、索里耶爾、晨光城的天上，都出現了一樣的東西——兩百年前統一戰爭的殘影。」他壓低聲音，「各國的使者都在找能看清局勢的人。他們說，指名要你。」"
+      },
+      "start_flags": ["pol_start"],
+      "nodes": [
+        {
+          "id": "brief",
+          "title": "在河谷鎮的情報商拼湊各國的動向",
+          "text": "情報商的桌上堆滿了密信：萊茵堡的軍議、赤翼宮廷的議會、教廷的公會議、晨曦王宮的詔書、獸骨荒丘的戰鼓。你走過的每一條故事線，都在這些信裡留下了痕跡。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "informant" },
+          "requires": { "flags": ["pol_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 18 },
+          "success": {
+            "text": "你把一封一封的密信攤開，拼出了整張大陸的圖：哪些人放下了刀，哪些人還握著。情報商看著你畫的圖，沉默了很久：「……這張圖，值一座城。」",
+            "set_flags": ["pol_briefed"]
+          },
+          "fail": {
+            "text": "密信太多，拼不出全貌——可是你認得信裡的名字，那些都是你見過、幫過、或是擋過的人。光憑這些名字，你也大概知道風往哪裡吹了。",
+            "set_flags": ["pol_briefed"]
+          }
+        },
+        {
+          "id": "echoes",
+          "title": "在河谷鎮近郊擋下從殘影裡走出來的亡兵",
+          "text": "城外的平原上，天空的殘影越來越清楚——然後，殘影裡的士兵一個接一個地走了下來。兩百年前統一戰爭的亡兵，舉著生鏽的旗幟，朝河谷鎮的方向前進。半空中閃過一層層交錯的殘影——歷史之龍「回響編年」阿契隆的回響。",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_briefed"] },
+          "kind": "combat",
+          "enemies": [["echo_legionnaire", 2]],
+          "success": {
+            "text": "亡兵們散成了灰，殘影卻沒有消失。最後一個亡兵在散去之前，看著你，說了一句兩百年前的話：「……這一次，你們會選什麼？」",
+            "set_flags": ["pol_echoed"]
+          },
+          "fail": {
+            "text": "亡兵們把你們逼回了城門，然後在日出時自己散去了，像是演完了一場戲。半空中的殘影卻還在，比昨天更清楚了。",
+            "set_flags": ["pol_echoed"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "route_peace",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_echoed"], "counters": { "human_stance": { "min": 1 }, "demon_stance": { "min": 1 } } },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「和平已經是大勢了。剩下的，是那些不肯放下刀的人」",
+              "success": {
+                "text": "人類與魔族的君主們都走向了和平——剩下的主戰派，在暗處磨著刀。你決定一個城鎮一個城鎮地去，把他們找出來。",
+                "set_flags": ["pol_route_peace"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_war",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_echoed"], "counters": { "human_stance": { "max": -1 }, "demon_stance": { "max": -1 } } },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「戰爭已經沒辦法避免了」",
+              "success": {
+                "text": "人類與魔族都選了戰爭。號角已經在兩邊的城牆上響起——你得決定，自己要站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_mixed_1",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_echoed"], "counters": { "human_stance": { "min": 1 }, "demon_stance": { "max": 0 } } },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓世界走向和平」",
+              "success": {
+                "text": "世界還在搖擺。你決定把它往和平推一把——去清剿那些想點燃戰火的人。",
+                "set_flags": ["pol_route_peace"]
+              }
+            },
+            {
+              "label": "「讓戰爭開始」",
+              "success": {
+                "text": "世界還在搖擺。你決定不再等待——戰爭總要有人開始，而你要決定自己站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_mixed_2",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_echoed"], "counters": { "human_stance": { "max": 0 }, "demon_stance": { "min": 1 } } },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓世界走向和平」",
+              "success": {
+                "text": "世界還在搖擺。你決定把它往和平推一把——去清剿那些想點燃戰火的人。",
+                "set_flags": ["pol_route_peace"]
+              }
+            },
+            {
+              "label": "「讓戰爭開始」",
+              "success": {
+                "text": "世界還在搖擺。你決定不再等待——戰爭總要有人開始，而你要決定自己站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_mixed_3",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": {
+            "flags": ["pol_echoed"],
+            "counters": { "human_stance": { "max": -1 }, "demon_stance": { "min": 0, "max": 0 } }
+          },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓世界走向和平」",
+              "success": {
+                "text": "世界還在搖擺。你決定把它往和平推一把——去清剿那些想點燃戰火的人。",
+                "set_flags": ["pol_route_peace"]
+              }
+            },
+            {
+              "label": "「讓戰爭開始」",
+              "success": {
+                "text": "世界還在搖擺。你決定不再等待——戰爭總要有人開始，而你要決定自己站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_mixed_4",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": {
+            "flags": ["pol_echoed"],
+            "counters": { "human_stance": { "min": 0, "max": 0 }, "demon_stance": { "max": 0 } }
+          },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓世界走向和平」",
+              "success": {
+                "text": "世界還在搖擺。你決定把它往和平推一把——去清剿那些想點燃戰火的人。",
+                "set_flags": ["pol_route_peace"]
+              }
+            },
+            {
+              "label": "「讓戰爭開始」",
+              "success": {
+                "text": "世界還在搖擺。你決定不再等待——戰爭總要有人開始，而你要決定自己站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "side",
+          "title": "選擇站在哪一邊",
+          "text": "戰爭要開始了。人類的使者和魔族的使者，同時把手伸向你：「你的劍，要為誰而揮？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_route_war"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "站在人類這一邊",
+              "success": {
+                "text": "你接過了帝國的軍令。魔族的使者看著你，沒有生氣，只是點了點頭：「……戰場上見。」他轉身離開，「希望你不會後悔。」",
+                "set_flags": ["pol_1_done", "pol_war_human"],
+                "effects": [{ "type": "memory", "summary": "風暴的前夜：人類與魔族的戰爭開始了，你選擇站在人類這一邊。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "站在魔族這一邊",
+              "success": {
+                "text": "你接過了赤翼的軍令。人類的使者瞪著你，像是看著一個叛徒：「……你知道你在做什麼嗎？」你點頭。他啐了一口，轉身離開。赤翼的使者把一枚燃燒羽紋的徽章別在你的胸口：「歡迎。」",
+                "set_flags": ["pol_1_done", "pol_war_demon"],
+                "effects": [{ "type": "memory", "summary": "風暴的前夜：人類與魔族的戰爭開始了，你選擇站在魔族這一邊。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "purge",
+          "title": "接下清剿主戰派的委託",
+          "text": "各國的使者交換了眼神，然後一起把一份名單放在你面前：鐵十字會、血角派、聖戰派——三個想點燃戰火的組織，散在三個國家。帝國的使者說：「各國的軍隊不能越境。」魔族的使者接著說：「但是一個冒險者可以。」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_route_peace"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「從萊茵堡開始」",
+              "success": {
+                "text": "你收下了名單。各國的使者第一次在同一張桌子上舉起了杯——為了和平，也為了一個要替他們跑遍大陸的冒險者。",
+                "set_flags": ["pol_1_done", "pol_peace"],
+                "effects": [{ "type": "memory", "summary": "風暴的前夜：世界走向和平，你接下了清剿主戰派的委託——鐵十字會、血角派、聖戰派。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 2000 }, { "type": "xp", "amount": 3000 }]
+    },
+    {
+      "id": "pol_peace_iron_cross",
+      "title": "鐵十字會的巢穴",
+      "summary": "鐵十字會是帝國主戰派的地下組織，夜襲南郊的村子、在騎士學院鬧事、派刺客殺宰相——都是他們。現在，他們的首領躲在萊茵堡城外的舊要塞裡。（史詩：清剿主戰派・一）",
+      "start": {
+        "kind": "guild",
+        "location": "rhineburg",
+        "min_level": 15,
+        "requires": { "flags": ["pol_peace"] },
+        "text": "萊茵堡公會的主管遞給你一封蓋著宰相府火漆的信：「鐵十字會的首領，『灰鐵』海因里希。他躲在城外的舊要塞裡，手下有三百人。」主管壓低聲音，「帝國軍不能動——要塞裡有一半是軍人的子弟。宰相大人說，要交給『不屬於任何一國的人』。」"
+      },
+      "start_flags": ["pol_p1"],
+      "nodes": [
+        {
+          "id": "intel",
+          "title": "在萊茵堡的情報商找出要塞的弱點",
+          "text": "大道上的情報商攤開一張舊要塞的圖紙：「這座要塞是統一戰爭時蓋的，有一條運糧的暗道，一百年沒人用過。」他頓了頓，「鐵十字會的人，一半是被煽動的年輕人。真正的狂熱者，只有首領身邊那一圈。」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "informant" },
+          "requires": { "flags": ["pol_p1"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 18 },
+          "success": {
+            "text": "你找到了暗道的入口，也拿到了一份名單：哪些人是被煽動的，哪些人是首領的親衛。只要拿下首領，其他人會散。",
+            "set_flags": ["pol_p1_plan"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才把圖紙給你。暗道的入口標得很模糊，你得自己去找。",
+            "set_flags": ["pol_p1_plan"],
+            "effects": [{ "type": "money", "amount": -300 }]
+          }
+        },
+        {
+          "id": "raid",
+          "title": "在萊茵堡近郊突襲鐵十字會的要塞",
+          "text": "暗道的盡頭，是要塞的地窖。首領的親衛們穿著黑色的板甲，胸口的鐵十字徽章閃著光：「為了帝國的榮耀！」他們舉起了劍。",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["pol_p1_plan"] },
+          "kind": "combat",
+          "enemies": [["iron_cross_fanatic", 2]],
+          "success": {
+            "text": "親衛們倒下了。要塞的大廳裡，『灰鐵』海因里希放下了劍，看著你：「……你知道統一戰爭死了多少人嗎？我父親、我祖父，都死在魔族的手裡。」他的聲音在抖，「和平？那是對死者的背叛。」",
+            "set_flags": ["pol_p1_won"]
+          },
+          "fail": {
+            "text": "親衛們把你們逼回了暗道，可是要塞裡的年輕人們在這時放下了武器——他們看見了你們在暗道裡救下的一個被困的同伴。大廳裡，海因里希孤零零地站著。",
+            "set_flags": ["pol_p1_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "judge",
+          "title": "決定海因里希的下場",
+          "text": "海因里希跪在大廳中央，鐵十字的旗幟在他身後燒著。要塞外面，萊茵堡的軍隊在等著。他抬起頭看你：「殺了我吧。這樣，鐵十字會就有了烈士。」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "informant" },
+          "requires": { "flags": ["pol_p1_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "交給帝國審判",
+              "success": {
+                "text": "你把海因里希交給了帝國軍。他沒有成為烈士——他被送上了法庭，在全帝國的面前，聽完了南郊村子倖存者的證詞。審判的最後一天，他哭了。鐵十字會散了。",
+                "set_flags": ["pol_p1_done", "pol_p1_trial"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 10 },
+                  { "type": "memory", "summary": "清剿主戰派：拿下了鐵十字會的首領「灰鐵」海因里希，交給帝國審判。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「帶我去看你父親的墓」",
+              "success": {
+                "text": "海因里希愣住了。很久之後，他帶你走到要塞後面的小墓園，墓碑上刻著兩個名字。他跪在墓前，第一次說了實話：「……我只是不想他們白死。」你陪他站到天亮。第二天，他自己走向了帝國軍，解散了鐵十字會。",
+                "set_flags": ["pol_p1_done", "pol_p1_grave"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 5 },
+                  { "type": "memory", "summary": "清剿主戰派：鐵十字會的首領海因里希在父親的墓前說了實話，自己解散了鐵十字會。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "A",
+      "merit": 15,
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+    },
+    {
+      "id": "pol_peace_bloodhorn",
+      "title": "血角的最後據點",
+      "summary": "血角派是魔族主戰派的核心：他們相信魔族的力量應該拿來征服，而不是被律法綁住。他們的戰旗插在獸骨荒丘最深處的骸骨要塞上。（史詩：清剿主戰派・二）",
+      "start": {
+        "kind": "guild",
+        "location": "bone_hills",
+        "min_level": 16,
+        "requires": { "flags": ["pol_p1_done"] },
+        "text": "獸骨荒丘的公會只有一張破桌子和一個獨眼的魔族主管。他把一封蓋著赤翼印的信推給你：「赤翼之君說，血角派的事，魔族自己解決不了——每個魔族都有血親在裡面。」他咧嘴一笑，露出一排尖牙，「所以，交給人類。荒丘的規矩：打贏的人說了算。」"
+      },
+      "start_flags": ["pol_p2"],
+      "nodes": [
+        {
+          "id": "challenge",
+          "title": "在獸骨荒丘的酒館向血角派下戰書",
+          "text": "荒丘的酒館裡，血角派的戰士們在喝酒。你走進去，把戰書釘在桌上——荒丘的規矩：要挑戰一個部族，要先在酒館裡讓所有人聽見。整個酒館安靜了下來。",
+          "at": { "where": "cell", "location": "bone_hills", "cell": "tavern" },
+          "requires": { "flags": ["pol_p2"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 19 },
+          "success": {
+            "text": "你說完了戰書，酒館裡的血角戰士們互看了一眼，然後有一半的人站起來走了出去——他們不是不敢打，是聽懂了你說的話：「打贏了，就讓魔族自己決定要不要和平。」剩下的人，舉起了酒杯：「明天，決鬥場見。」",
+            "set_flags": ["pol_p2_called"]
+          },
+          "fail": {
+            "text": "你的戰書被一把撕碎了。血角派的戰士們大笑：「人類想挑戰血角？」可是笑聲之後，他們還是接下了——荒丘的規矩，誰也不能拒絕戰書。",
+            "set_flags": ["pol_p2_called"]
+          }
+        },
+        {
+          "id": "duel",
+          "title": "在獸骨荒丘近郊打倒血角派的戰爭領主",
+          "text": "骸骨要塞前的決鬥場上，兩個身上塗滿血紅戰紋的戰爭領主扛著巨斧走了出來。整個荒丘的魔族都來看了——血角派、律法派、還有不屬於任何一派的普通人。",
+          "at": { "where": "outskirts", "location": "bone_hills" },
+          "requires": { "flags": ["pol_p2_called"] },
+          "kind": "combat",
+          "enemies": [["bloodhorn_warlord", 2]],
+          "success": {
+            "text": "戰爭領主們倒在了骸骨堆上。決鬥場一片死寂，然後，一個接一個的魔族把手按在了胸口。血角派的戰旗，從骸骨要塞上降了下來。",
+            "set_flags": ["pol_p2_won"]
+          },
+          "fail": {
+            "text": "戰爭領主們把你們打倒了三次，你們站起來了三次。第四次，他們放下了斧頭——荒丘的規矩：倒下三次還站得起來的人，就算贏了。血角派的戰旗，降了下來。",
+            "set_flags": ["pol_p2_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "決定血角派的去處",
+          "text": "骸骨要塞的大廳裡，血角派剩下的戰士們跪成一排，等著你的決定。荒丘的規矩，勝者可以要他們的命。他們的首領抬起頭：「人類。你打贏了。我們的命，是你的。」",
+          "at": { "where": "cell", "location": "bone_hills", "cell": "tavern" },
+          "requires": { "flags": ["pol_p2_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「你們的命是你們自己的。去守邊境吧」",
+              "success": {
+                "text": "血角派的戰士們愣住了。很久之後，他們的首領站起來，把巨斧插在你的腳邊：「……從今天開始，血角守邊境，不再越過去。」這是荒丘有史以來，第一次有勝者不要敗者的命。",
+                "set_flags": ["pol_p2_done", "pol_p2_border"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 10 },
+                  { "type": "memory", "summary": "清剿主戰派：在獸骨荒丘打倒了血角派的戰爭領主，讓他們去守邊境，不再越境。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把你們交給赤翼的律法」",
+              "success": {
+                "text": "血角派的戰士們被押往了血羽城堡，在赤翼的律法前受審。審判很公正，罰得很重。荒丘的魔族們說，那是魔族第一次，用律法而不是拳頭解決主戰派。",
+                "set_flags": ["pol_p2_done", "pol_p2_law"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 10 },
+                  { "type": "memory", "summary": "清剿主戰派：在獸骨荒丘打倒了血角派，把他們交給赤翼的律法審判。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+    },
+    {
+      "id": "pol_peace_crusade",
+      "title": "聖戰派的密室",
+      "summary": "最後一個主戰派藏得最深：聖環教廷裡的聖戰派。他們手上有兩百年前統一戰爭的「聖戰詔書」，打算在大教堂的鐘聲裡重新宣讀它。（史詩：清剿主戰派・三）",
+      "start": {
+        "kind": "guild",
+        "location": "soriel",
+        "min_level": 17,
+        "requires": { "flags": ["pol_p2_done"] },
+        "text": "索里耶爾公會的主管關上了所有的窗：「聖戰派。教廷裡的人，連教皇都動不了他們。」他從抽屜裡拿出一張紙條，上面只有一行字，筆跡很粗：「明晚，大教堂的鐘樓。他們要宣讀聖戰詔書。——伊莎貝拉」主管看著你，「聖殿騎士團長說，她的騎士不能對教廷拔劍。可是你能。」"
+      },
+      "start_flags": ["pol_p3"],
+      "nodes": [
+        {
+          "id": "archive",
+          "title": "在索里耶爾的神殿找出聖戰詔書的真相",
+          "text": "大教堂的書庫深處，兩百年前的卷宗疊得比人還高。聖戰詔書的原本就在這裡——如果聖戰派要宣讀的是抄本，原本也許有什麼不一樣。",
+          "at": { "where": "cell", "location": "soriel", "cell": "temple" },
+          "requires": { "flags": ["pol_p3"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 19 },
+          "success": {
+            "text": "你找到了原本。聖戰詔書的最後一行，被抄本省略了：「此詔於和平之日作廢，願後世不再以神之名開戰。」兩百年前的教皇，早就預見了這一天。",
+            "set_flags": ["pol_p3_truth"]
+          },
+          "fail": {
+            "text": "你找不到原本——可是在書庫的角落，你找到了一封兩百年前的教皇寫的私信：「我簽了聖戰詔書。願後世原諒我。」這封信，也許比詔書本身更有份量。",
+            "set_flags": ["pol_p3_truth"]
+          }
+        },
+        {
+          "id": "bell",
+          "title": "在索里耶爾近郊的鐘樓擋下聖戰派的審判官",
+          "text": "鐘樓的頂層，聖戰派的審判官們穿著白金色的長袍，手裡捧著聖戰詔書的抄本。鐘繩已經握在其中一人的手裡：「鐘聲響起，聖戰就開始了。」他們看見你，舉起了聖印。",
+          "at": { "where": "outskirts", "location": "soriel" },
+          "requires": { "flags": ["pol_p3_truth"] },
+          "kind": "combat",
+          "enemies": [["crusade_inquisitor", 2]],
+          "success": {
+            "text": "審判官們倒下了，鐘繩斷在了你的手裡。鐘沒有響。索里耶爾的夜很安靜。",
+            "set_flags": ["pol_p3_won"]
+          },
+          "fail": {
+            "text": "審判官們把你們逼到了鐘樓的邊緣，鐘繩被拉動了——可是鐘沒有響。你抬起頭，看見伊莎貝拉站在鐘的旁邊，雙手抱著鐘舌，咧嘴一笑：「……騎士不能對教廷拔劍。可是騎士可以抱住一口鐘。」",
+            "set_flags": ["pol_p3_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "read",
+          "title": "在大教堂宣讀詔書的最後一行",
+          "text": "第二天早上，大教堂的廣場擠滿了人。聖戰派的審判官們被押在台下，教皇坐在高台上，看著你手裡的那份原本。他沉默了很久，然後說：「……念吧。」",
+          "at": { "where": "cell", "location": "soriel", "cell": "temple" },
+          "requires": { "flags": ["pol_p3_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "念出詔書的最後一行",
+              "success": {
+                "text": "你念出了那一行：「此詔於和平之日作廢，願後世不再以神之名開戰。」整個廣場安靜了很久。然後，大教堂的鐘響了——不是聖戰的鐘，是和平的鐘。教皇站起來，親手撕掉了聖戰派的抄本。三個主戰派，都清剿完了。",
+                "set_flags": ["pol_peace_done", "pol_p3_read"],
+                "effects": [
+                  { "type": "reputation", "faction": "holy_ring", "delta": 10 },
+                  {
+                    "type": "memory",
+                    "summary": "清剿主戰派：在大教堂念出了聖戰詔書被省略的最後一行——此詔於和平之日作廢。鐵十字會、血角派、聖戰派，都清剿完了。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把原本交給教皇，讓他自己念",
+              "success": {
+                "text": "教皇接過了原本，看了很久，然後站起來，親自念出了最後一行。他的聲音在抖：「……兩百年了。我們讓先人等太久了。」鐘聲響了。三個主戰派，都清剿完了。",
+                "set_flags": ["pol_peace_done", "pol_p3_pope"],
+                "effects": [
+                  { "type": "reputation", "faction": "holy_ring", "delta": 15 },
+                  { "type": "memory", "summary": "清剿主戰派：把聖戰詔書的原本交給教皇，讓他親自念出了最後一行。三個主戰派都清剿完了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+    },
+    {
+      "id": "pol_war_h_rivervale",
+      "title": "河谷鎮的前線",
+      "summary": "戰爭開始了。魔族的先鋒越過了南方的荒原，第一個目標是河谷鎮——大陸的十字路口，冒險者最多的地方。帝國的援軍還要三天。（史詩：開戰・人類方・一）",
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 15,
+        "requires": { "flags": ["pol_war_human"] },
+        "text": "河谷鎮公會的大廳擠滿了冒險者，每個人都在磨刀。主管站在桌子上大喊：「魔族的先鋒離鎮上只剩半天的路！帝國的援軍還要三天！」他看見你，從桌上跳下來，「你是帝國指派的人。這三天，河谷鎮交給你。」"
+      },
+      "start_flags": ["pol_h1"],
+      "nodes": [
+        {
+          "id": "rally",
+          "title": "在河谷鎮的公會組織冒險者守城",
+          "text": "河谷鎮沒有城牆，只有木柵和一條河。冒險者們吵成一團：有人要逃，有人要衝，有人要躲進地窖。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_h1"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 18 },
+          "success": {
+            "text": "你站上了桌子，把冒險者們分成了三隊：弓手守橋、戰士守柵、法師守河。最後你說：「河谷鎮是冒險者的鎮。三天，我們撐得住。」大廳裡爆出了吼聲。",
+            "set_flags": ["pol_h1_ready"]
+          },
+          "fail": {
+            "text": "你說得不夠好，一半的冒險者逃走了。可是剩下的那一半，都是不會逃的人——他們拿起了武器，站到了你身後。",
+            "set_flags": ["pol_h1_ready"]
+          }
+        },
+        {
+          "id": "vanguard",
+          "title": "在河谷鎮近郊擋下魔族的先鋒",
+          "text": "天亮時，魔族的先鋒出現在了地平線上：燃燒的戰旗、赤紅的鎧甲、翅膀遮天的飛行部隊。冒險者們握緊了武器。先鋒的隊長在河的對岸舉起了戰斧。",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_h1_ready"] },
+          "kind": "combat",
+          "enemies": [["crimson_vanguard", 2]],
+          "success": {
+            "text": "先鋒的隊長倒在了河裡，魔族的戰旗退回了地平線。冒險者們歡呼起來——撐過了第一天。三天後，帝國的援軍到了，看見的是一座完好無缺的河谷鎮。",
+            "set_flags": ["pol_h1_held"]
+          },
+          "fail": {
+            "text": "先鋒把木柵燒穿了一半，冒險者們退到了河的這一邊。可是河還在——魔族的先鋒過不了河。三天後，帝國的援軍到了，河谷鎮燒了一半，但還在。",
+            "set_flags": ["pol_h1_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "河谷鎮之後",
+          "text": "帝國的將軍帶著援軍進了鎮，看著燒焦的木柵和守了三天的冒險者們：「河谷鎮守住了。」他轉向你，「下一個目標，灰港鎮——魔族在邊境上的港口。」他頓了頓，「俘虜的魔族先鋒，要怎麼處理？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_h1_held"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「按戰爭的規矩，善待俘虜」",
+              "success": {
+                "text": "將軍皺了皺眉，最後點了點頭。魔族的俘虜們被關在鎮上的穀倉裡，每天有麵包和水。其中一個俘虜對你說：「……你是個奇怪的人類。」",
+                "set_flags": ["pol_h1_done", "pol_h_mercy"],
+                "effects": [{ "type": "memory", "summary": "開戰・人類方：守住了河谷鎮。你要求善待魔族的俘虜。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「交給帝國處置」",
+              "success": {
+                "text": "將軍把俘虜們押走了。你沒有問他們去了哪裡。帝國的軍旗插在河谷鎮的鎮中心，往南指著灰港鎮的方向。",
+                "set_flags": ["pol_h1_done"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・人類方：守住了河谷鎮，把魔族的俘虜交給了帝國。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "A",
+      "merit": 15,
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+    },
+    {
+      "id": "pol_war_h_ashport",
+      "title": "灰港鎮之戰",
+      "summary": "灰港鎮是人類與魔族共住的港口，也是魔族在邊境上最重要的補給線。帝國要拿下它——可是港口裡，有一半的居民是人類。（史詩：開戰・人類方・二）",
+      "start": {
+        "kind": "guild",
+        "location": "ashport",
+        "min_level": 16,
+        "requires": { "flags": ["pol_h1_done"] },
+        "text": "灰港鎮的公會還開著——戰爭裡，冒險者公會是唯一不分陣營的地方。主管是個半魔，看著你身上的帝國徽章，嘆了口氣：「帝國要拿下港口。」他把一張港口的地圖推給你，「港口裡住著一半的人類、一半的魔族。打起來，誰都活不了。」"
+      },
+      "start_flags": ["pol_h2"],
+      "nodes": [
+        {
+          "id": "harbor",
+          "title": "在灰港鎮的情報商找出不傷平民的辦法",
+          "text": "港口的情報商是個老水手，人類和魔族都信任他：「赤翼的守備軍守著碼頭，平民住在市集那一邊。」他指著地圖，「只要拿下碼頭的燈塔，守備軍就沒辦法補給——他們會自己撤。」",
+          "at": { "where": "cell", "location": "ashport", "cell": "informant" },
+          "requires": { "flags": ["pol_h2"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 19 },
+          "success": {
+            "text": "你和老水手一起擬了一個計畫：夜裡從海上摸進燈塔，天亮前拿下它，讓守備軍自己撤退。市集那一邊，一個平民也不用碰。",
+            "set_flags": ["pol_h2_plan"]
+          },
+          "fail": {
+            "text": "計畫擬得不夠周全——可是老水手說，他會在天亮前把市集那一邊的居民都叫醒，讓他們躲進地窖。",
+            "set_flags": ["pol_h2_plan"]
+          }
+        },
+        {
+          "id": "lighthouse",
+          "title": "在灰港鎮近郊拿下碼頭的燈塔",
+          "text": "夜裡的燈塔下，赤翼的守備兵們舉著長戟，鎧甲上的燃燒羽紋在火光裡閃爍。他們看見你們從海裡爬上來，吹響了號角。",
+          "at": { "where": "outskirts", "location": "ashport" },
+          "requires": { "flags": ["pol_h2_plan"] },
+          "kind": "combat",
+          "enemies": [["crimson_garrison", 2]],
+          "success": {
+            "text": "燈塔拿下了。天亮時，赤翼的守備軍看著燈塔上的帝國旗幟，沉默地收起了長戟，坐船撤回了南方。市集裡的居民走出地窖，人類和魔族站在一起，看著空蕩蕩的碼頭。",
+            "set_flags": ["pol_h2_won"]
+          },
+          "fail": {
+            "text": "守備兵們把你們逼回了海裡，可是燈塔的燈在打鬥中被打翻了——沒有燈，補給船進不了港。三天後，赤翼的守備軍撤走了。",
+            "set_flags": ["pol_h2_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "灰港鎮之後",
+          "text": "帝國的軍隊進了灰港鎮。港口的魔族居民們站在市集裡，看著帝國的士兵，眼神裡有恐懼，也有憤怒。帝國的將軍問你：「這些魔族，要怎麼辦？」",
+          "at": { "where": "cell", "location": "ashport", "cell": "informant" },
+          "requires": { "flags": ["pol_h2_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「他們是灰港鎮的居民。讓他們留下」",
+              "success": {
+                "text": "將軍不太情願，可還是下了命令：灰港鎮的魔族居民可以留下，和以前一樣。那天晚上，港口的酒館裡，人類和魔族坐在同一張桌子上喝酒——像戰爭從來沒有發生過。",
+                "set_flags": ["pol_h2_done", "pol_h_mercy"],
+                "effects": [{ "type": "memory", "summary": "開戰・人類方：拿下了灰港鎮，讓港口的魔族居民留下。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓他們自己選要不要往南走」",
+              "success": {
+                "text": "一半的魔族居民收拾了行李，往南方去了。另一半留了下來——他們在灰港鎮住了三代，這裡就是家。帝國的旗幟插在燈塔上，往南指著血羽城堡。",
+                "set_flags": ["pol_h2_done"],
+                "effects": [{ "type": "memory", "summary": "開戰・人類方：拿下了灰港鎮，讓魔族居民自己選擇去留。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+    },
+    {
+      "id": "pol_war_h_bloodplume",
+      "title": "血羽城堡的城下",
+      "summary": "帝國的大軍兵臨血羽城堡。赤翼之君莉莎爾沒有逃，也沒有降——她在城牆上等著。帝國的將軍說，要讓冒險者打開城門；莉莎爾說，她只和那個冒險者談。（史詩：開戰・人類方・三）",
+      "start": {
+        "kind": "guild",
+        "location": "bloodplume",
+        "min_level": 17,
+        "requires": { "flags": ["pol_h2_done"] },
+        "text": "血羽城堡的公會居然還開著。魔族的主管看著你，沒有敵意，只是很累：「赤翼之君有一封信給你。」信上的字跡很漂亮：「我的近衛會守到最後一個人。如果你想讓更少的人死，就自己上來。——莉莎爾」主管頓了頓，「……陛下在城牆上等你。」"
+      },
+      "start_flags": ["pol_h3"],
+      "nodes": [
+        {
+          "id": "guard",
+          "title": "在血羽城堡近郊突破赤翼宮廷的近衛",
+          "text": "通往城牆的石階上，赤翼宮廷的近衛們站成了一排，黑紅的鎧甲上燃燒著羽紋。他們的隊長說：「陛下說讓你上去。」他舉起了劍，「可是近衛的職責，是讓你證明你配上去。」",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "requires": { "flags": ["pol_h3"] },
+          "kind": "combat",
+          "enemies": [["crimson_royal_guard", 2]],
+          "success": {
+            "text": "近衛們倒下了，最後一個近衛的隊長讓開了路：「……陛下在等你。」",
+            "set_flags": ["pol_h3_through"]
+          },
+          "fail": {
+            "text": "近衛們把你打倒在石階上——然後，他們的隊長伸手把你拉了起來：「夠了。陛下說，你倒下也會站起來。」他讓開了路。",
+            "set_flags": ["pol_h3_through"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "talk",
+          "title": "在城牆上和莉莎爾談判",
+          "text": "城牆的最高處，莉莎爾一個人站著，赤紅的雙翼收在身後，看著城下的帝國大軍：「人類。」她沒有回頭，「你贏了。可是你想要什麼樣的勝利？」她轉過身，金色的豎瞳看著你，「血羽城堡燒成灰的勝利？還是另一種？」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["pol_h3_through"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 19 },
+          "success": {
+            "text": "你說，你要的勝利，是血羽城堡還在、魔族還在、律法還在——只是不再越過邊境。莉莎爾看著你，很久，然後笑了：「……人類的勝利，原來可以這樣。」",
+            "set_flags": ["pol_h3_terms"]
+          },
+          "fail": {
+            "text": "你說不出什麼好的條件，只說：「我不想再看到有人死。」莉莎爾看著你，很久：「……這就夠了。」",
+            "set_flags": ["pol_h3_terms"]
+          }
+        },
+        {
+          "id": "end",
+          "title": "戰爭的結局",
+          "text": "莉莎爾摘下了黑曜冠環，放在城牆上：「赤翼宮廷投降。」她的聲音很平靜，「條件是：血羽城堡不燒、魔族不為奴、律法留下。」城下的帝國大軍等著你的回答。",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["pol_h3_terms"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "答應她的條件",
+              "success": {
+                "text": "你把莉莎爾的條件帶下了城牆，帝國的將軍很久才點頭。血羽城堡的城門打開了，帝國的軍隊進城的時候，沒有放一把火。戰爭結束了——人類贏了，但魔族還在。",
+                "set_flags": ["pol_war_h_done", "pol_h_terms"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 10 },
+                  { "type": "reputation", "faction": "demon_council", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・人類方：兵臨血羽城堡，莉莎爾投降。你答應了她的條件：城不燒、魔族不為奴、律法留下。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把冠環戴回去。停戰，不是投降」",
+              "success": {
+                "text": "莉莎爾愣住了。你把冠環遞還給她：「帝國不需要征服血羽城堡。只需要魔族不再越過邊境。」她看著你，很久，然後把冠環戴了回去：「……停戰。」城下的帝國將軍罵了一整天，最後還是簽了停戰協議。",
+                "set_flags": ["pol_war_h_done", "pol_h_truce"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 10 },
+                  { "type": "memory", "summary": "開戰・人類方：兵臨血羽城堡，你把莉莎爾的冠環遞還給她——停戰，不是投降。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+    },
+    {
+      "id": "pol_war_d_ashport",
+      "title": "灰港鎮的號角",
+      "summary": "戰爭開始了。人類的聖戰軍從北方南下，第一個目標是灰港鎮——魔族在邊境上的港口。赤翼的援軍還要三天。（史詩：開戰・魔族方・一）",
+      "start": {
+        "kind": "guild",
+        "location": "ashport",
+        "min_level": 15,
+        "requires": { "flags": ["pol_war_demon"] },
+        "text": "灰港鎮的公會裡，半魔的主管看著你胸口的燃燒羽紋徽章，嘆了口氣：「赤翼指派的人。」他把一張地圖攤在桌上，「聖戰軍的先鋒離港口只剩半天。赤翼的援軍要三天。」他頓了頓，「港口裡住著一半的人類。聖戰軍說，他們是來『解放』的。」"
+      },
+      "start_flags": ["pol_d1"],
+      "nodes": [
+        {
+          "id": "rally",
+          "title": "在灰港鎮的公會組織港口的守備",
+          "text": "港口的居民們擠在公會裡，人類和魔族都有。有人說要投降，有人說要逃，有個人類的老漁夫說：「我在這裡住了六十年。我的鄰居是魔族。我不要被『解放』。」",
+          "at": { "where": "cell", "location": "ashport", "cell": "guild" },
+          "requires": { "flags": ["pol_d1"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 18 },
+          "success": {
+            "text": "你讓人類和魔族的居民站在一起，分成了守碼頭、守市集、守燈塔的三隊。老漁夫拿起了魚叉，站到了魔族鄰居的旁邊：「……三天，撐得住。」",
+            "set_flags": ["pol_d1_ready"]
+          },
+          "fail": {
+            "text": "一半的居民逃走了。剩下的那一半，人類和魔族都有——他們拿起了能拿的東西，站到了你身後。",
+            "set_flags": ["pol_d1_ready"]
+          }
+        },
+        {
+          "id": "vanguard",
+          "title": "在灰港鎮近郊擋下聖戰軍的先鋒",
+          "text": "天亮時，聖戰軍的先鋒出現在北邊的山坡上：白金色的旗幟、閃著聖光的長槍、齊聲的聖歌。先鋒的隊長舉起了聖印：「為了神，解放灰港鎮！」",
+          "at": { "where": "outskirts", "location": "ashport" },
+          "requires": { "flags": ["pol_d1_ready"] },
+          "kind": "combat",
+          "enemies": [["crusade_vanguard", 2]],
+          "success": {
+            "text": "聖戰軍的先鋒退回了山坡後面。港口的居民們歡呼起來——人類和魔族抱在一起。三天後，赤翼的援軍到了，看見的是一座完好無缺的灰港鎮。",
+            "set_flags": ["pol_d1_held"]
+          },
+          "fail": {
+            "text": "先鋒衝進了碼頭，燒了半座倉庫。可是港口的居民們——人類和魔族——一起用漁網和魚叉把他們趕了出去。三天後，赤翼的援軍到了，灰港鎮燒了一半，但還在。",
+            "set_flags": ["pol_d1_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "灰港鎮之後",
+          "text": "赤翼的將軍進了港口，看著守了三天的居民們：「灰港鎮守住了。」她轉向你，「下一個目標，河谷鎮——人類的十字路口。」她頓了頓，「俘虜的聖戰軍，要怎麼處理？」",
+          "at": { "where": "cell", "location": "ashport", "cell": "guild" },
+          "requires": { "flags": ["pol_d1_held"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「按戰爭的規矩，善待俘虜」",
+              "success": {
+                "text": "赤翼的將軍看了你一眼，點了點頭：「赤翼的律法也是這樣說的。」聖戰軍的俘虜們被關在倉庫裡，每天有麵包和水。其中一個年輕的聖騎士對你說：「……他們說魔族會吃人。」",
+                "set_flags": ["pol_d1_done", "pol_d_mercy"],
+                "effects": [{ "type": "memory", "summary": "開戰・魔族方：守住了灰港鎮。你要求善待聖戰軍的俘虜。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「交給赤翼的律法」",
+              "success": {
+                "text": "俘虜們被押往了血羽城堡，在赤翼的律法前受審。赤翼的軍旗插在灰港鎮的燈塔上，往北指著河谷鎮的方向。",
+                "set_flags": ["pol_d1_done"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・魔族方：守住了灰港鎮，把聖戰軍的俘虜交給赤翼的律法。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "A",
+      "merit": 15,
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+    },
+    {
+      "id": "pol_war_d_rivervale",
+      "title": "河谷鎮的十字路口",
+      "summary": "赤翼的大軍北上，河谷鎮是人類的十字路口，也是帝國南方最重要的補給線。帝國的騎士守著它——可是鎮上住著大陸最多的冒險者。（史詩：開戰・魔族方・二）",
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 16,
+        "requires": { "flags": ["pol_d1_done"] },
+        "text": "河谷鎮的公會還開著，冒險者們看著你胸口的燃燒羽紋徽章，表情很複雜。主管把一張鎮上的地圖推給你：「帝國的騎士守著石橋。冒險者們說，他們不幫任何一邊。」他頓了頓，「可是如果打起來，冒險者們會保護自己的家。」"
+      },
+      "start_flags": ["pol_d2"],
+      "nodes": [
+        {
+          "id": "neutral",
+          "title": "在河谷鎮的公會說服冒險者們保持中立",
+          "text": "公會的大廳裡，冒險者們圍著你，有人在磨刀，有人在冷笑。一個老冒險者說：「你以前也是我們的人。現在你替魔族打仗？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_d2"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 19 },
+          "success": {
+            "text": "你說，你不是要拿下河谷鎮，只是要帝國的騎士撤出石橋——冒險者的家，一間也不會燒。老冒險者看著你，很久，然後把刀收了起來：「……你說的。我們看著。」",
+            "set_flags": ["pol_d2_neutral"]
+          },
+          "fail": {
+            "text": "冒險者們不信你。可是他們也沒有拔刀——公會的規矩，冒險者不在公會裡打架。他們說：「我們不幫你，也不擋你。燒了任何一間房子，我們就不客氣。」",
+            "set_flags": ["pol_d2_neutral"]
+          }
+        },
+        {
+          "id": "bridge",
+          "title": "在河谷鎮近郊拿下石橋",
+          "text": "石橋上，帝國的騎士們站成了一排，盾牌連成一道牆，長槍指著你們。騎士隊長舉起了劍：「為了帝國！」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_d2_neutral"] },
+          "kind": "combat",
+          "enemies": [["imperial_knight", 2]],
+          "success": {
+            "text": "騎士們退過了石橋，往北撤去。赤翼的軍旗插在了石橋上。河谷鎮的冒險者們站在屋頂上看著——你說到做到，一間房子也沒有燒。",
+            "set_flags": ["pol_d2_won"]
+          },
+          "fail": {
+            "text": "騎士們把你們逼回了橋頭，可是在打鬥中，石橋被打斷了一半——帝國的補給線斷了。三天後，騎士們自己撤走了。",
+            "set_flags": ["pol_d2_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "河谷鎮之後",
+          "text": "赤翼的軍隊進了河谷鎮。鎮上的人類居民們站在路邊，看著魔族的士兵，眼神裡有恐懼。赤翼的將軍問你：「這座鎮，要怎麼辦？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_d2_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「河谷鎮是冒險者的鎮。讓它保持中立」",
+              "success": {
+                "text": "赤翼的將軍皺了皺眉，最後下了命令：赤翼的軍隊只守石橋，不進鎮。那天晚上，河谷鎮的酒館照樣開著，冒險者們喝著酒，一個魔族的士兵在門口猶豫了很久，最後有人叫他進來。",
+                "set_flags": ["pol_d2_done", "pol_d_mercy"],
+                "effects": [{ "type": "memory", "summary": "開戰・魔族方：拿下了河谷鎮的石橋，讓河谷鎮保持中立。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「交給赤翼管理」",
+              "success": {
+                "text": "赤翼的官員接管了河谷鎮。鎮上的人類照樣生活，只是多了魔族的稅吏和巡邏。赤翼的軍旗插在石橋上，往北指著萊茵堡的方向。",
+                "set_flags": ["pol_d2_done"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・魔族方：拿下了河谷鎮，交給赤翼管理。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+    },
+    {
+      "id": "pol_war_d_rhineburg",
+      "title": "萊茵堡的城牆",
+      "summary": "赤翼的大軍兵臨萊茵堡。帝國宰相艾蕾諾拉沒有逃——她在城牆上等著。赤翼之君說，要讓冒險者打開城門；宰相說，她只和那個冒險者談。（史詩：開戰・魔族方・三）",
+      "start": {
+        "kind": "guild",
+        "location": "rhineburg",
+        "min_level": 17,
+        "requires": { "flags": ["pol_d2_done"] },
+        "text": "萊茵堡的公會居然還開著。人類的主管看著你胸口的燃燒羽紋徽章，沒有敵意，只是很累：「宰相大人有一封信給你。」信上的字跡一絲不苟：「帝國的近衛軍會守到最後一個人。如果你想讓更少的人死，就自己上來。——艾蕾諾拉」主管頓了頓，「……大人在城牆上等你。」"
+      },
+      "start_flags": ["pol_d3"],
+      "nodes": [
+        {
+          "id": "guard",
+          "title": "在萊茵堡近郊突破帝國的近衛軍",
+          "text": "通往城牆的石階上，帝國的近衛軍站成了一排，深藍的鎧甲上刻著萊茵的雙頭鷹。他們的隊長說：「宰相大人說讓你上去。」他舉起了劍，「可是近衛的職責，是讓你證明你配上去。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["pol_d3"] },
+          "kind": "combat",
+          "enemies": [["rhine_royal_guard", 2]],
+          "success": {
+            "text": "近衛們倒下了，最後一個近衛的隊長讓開了路：「……宰相大人在等你。」",
+            "set_flags": ["pol_d3_through"]
+          },
+          "fail": {
+            "text": "近衛們把你打倒在石階上——然後，他們的隊長伸手把你拉了起來：「夠了。大人說，你倒下也會站起來。」他讓開了路。",
+            "set_flags": ["pol_d3_through"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "talk",
+          "title": "在城牆上和艾蕾諾拉談判",
+          "text": "城牆的最高處，艾蕾諾拉一個人站著，深藍的宰相長袍在風裡飄，看著城下的赤翼大軍：「冒險者。」她沒有回頭，「你贏了。可是你想要什麼樣的勝利？」她轉過身，「萊茵堡燒成灰的勝利？還是另一種？」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["pol_d3_through"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 19 },
+          "success": {
+            "text": "你說，你要的勝利，是萊茵堡還在、帝國還在、皇帝的溫室也還在——只是不再越過邊境。艾蕾諾拉看著你，很久，然後慢慢地放鬆了肩膀：「……魔族的勝利，原來可以這樣。」",
+            "set_flags": ["pol_d3_terms"]
+          },
+          "fail": {
+            "text": "你說不出什麼好的條件，只說：「我不想再看到有人死。」艾蕾諾拉看著你，很久：「……這就夠了。」",
+            "set_flags": ["pol_d3_terms"]
+          }
+        },
+        {
+          "id": "end",
+          "title": "戰爭的結局",
+          "text": "艾蕾諾拉把宰相的權杖放在城牆上：「萊茵帝國投降。」她的聲音很平靜，「條件是：萊茵堡不燒、人類不為奴、皇帝的敕令留下。」城下的赤翼大軍等著你的回答。",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["pol_d3_terms"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "答應她的條件",
+              "success": {
+                "text": "你把艾蕾諾拉的條件帶下了城牆，赤翼的將軍很久才點頭。萊茵堡的城門打開了，赤翼的軍隊進城的時候，沒有放一把火。戰爭結束了——魔族贏了，但帝國還在。",
+                "set_flags": ["pol_war_d_done", "pol_d_terms"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 10 },
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・魔族方：兵臨萊茵堡，艾蕾諾拉投降。你答應了她的條件：城不燒、人類不為奴、皇帝的敕令留下。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把權杖拿回去。停戰，不是投降」",
+              "success": {
+                "text": "艾蕾諾拉愣住了。你把權杖遞還給她：「魔族不需要征服萊茵堡。只需要人類不再越過邊境。」她看著你，很久，然後接過了權杖：「……停戰。」城下的赤翼將軍罵了一整天，最後還是簽了停戰協議。",
+                "set_flags": ["pol_war_d_done", "pol_d_truce"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 10 },
+                  { "type": "memory", "summary": "開戰・魔族方：兵臨萊茵堡，你把艾蕾諾拉的權杖遞還給她——停戰，不是投降。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+    },
+    {
+      "id": "pol_acheron_gaze",
+      "title": "阿契隆的注視",
+      "summary": "戰爭結束了——或者和平到來了。就在這時，大陸各地的天空同時裂開，兩百年來所有的戰場、所有的死者，一起在半空中重演。歷史之龍「回響編年」阿契隆，睜開了眼睛。（史詩：政治鬥爭的匯流・終章）",
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 18,
+        "requires": { "flags_any": ["pol_peace_done", "pol_war_h_done", "pol_war_d_done"] },
+        "text": "河谷鎮公會的主管沒有說話，只是指著窗外。天空裂開了——不是雲，是天空本身，一層一層地裂開，裂縫裡是兩百年前的統一戰爭、五百年前的龍災、一千年前的精靈王庭。所有的過去，同時在重演。主管的聲音在抖：「……各國的使者都來了。他們說，只有你能上去。」"
+      },
+      "start_flags": ["pol_gaze"],
+      "nodes": [
+        {
+          "id": "sky",
+          "title": "在河谷鎮近郊走進天空的裂縫",
+          "text": "河谷鎮外的平原上，天空的裂縫垂到了地面，像一道門。門的那一邊，是兩百年前的戰場——你看見了所有你走過的故事線的源頭：被弒的皇帝、背誓的領主、被抹去名字的聖者。半空中閃過一層層交錯的殘影——歷史之龍「回響編年」阿契隆的回響。",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_gaze"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 20 },
+          "success": {
+            "text": "你走進了裂縫，沒有迷失。殘影在你身邊流過，像一條河——你看見了過去，可是你知道自己站在現在。裂縫的最深處，有兩個身影在等你。",
+            "set_flags": ["pol_gaze_in"]
+          },
+          "fail": {
+            "text": "裂縫裡的殘影差點把你吞沒——你看見自己死在每一個戰場上。可是你想起了那些你幫過的人的名字，一個一個地念出來，殘影就一層一層地退開了。裂縫的最深處，有兩個身影在等你。",
+            "set_flags": ["pol_gaze_in"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "heroes",
+          "title": "在裂縫的深處擋下回響的英雄",
+          "text": "裂縫的最深處，兩個身影從殘影裡走了出來：兩百年前統一戰爭的英雄——一個人類的騎士，一個魔族的領主。他們生前互相殺死了對方，現在，他們一起舉起了武器，對著你：「讓我們看看，這個時代的人，配不配走到這裡。」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_gaze_in"] },
+          "kind": "combat",
+          "enemies": [["echo_champion", 2]],
+          "fail": {
+            "text": "回響的英雄把你們逼退出了裂縫。他們沒有追——只是站在裂縫的深處，等著。「這個時代的人，還不夠。」裂縫還開著，你可以準備好了再來。",
+            "retry": true
+          },
+          "success": {
+            "text": "回響的英雄們放下了武器。人類的騎士看著魔族的領主，第一次笑了：「……兩百年了。」魔族的領主也笑了：「這個時代的人，走得比我們遠。」他們一起散成了光。",
+            "set_flags": ["pol_gaze_passed"]
+          }
+        },
+        {
+          "id": "eye",
+          "title": "回答阿契隆",
+          "text": "裂縫的盡頭，沒有龍——只有一隻眼睛，大得像天空本身，裡面倒映著整片大陸的過去。一個聲音在你的腦海裡響起，像是無數個時代的人同時在說話：「我記得一切。戰爭、和平、背叛、誓約。我讓它們重演，是為了讓你們記得。」眼睛看著你，「你們會記得嗎？」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_gaze_passed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我們會記得。所以你可以休息了」",
+              "success": {
+                "text": "眼睛看著你，很久。然後，天空的裂縫一道一道地合上了。可是在最後一道裂縫合上之前，你看見了：大陸的四方，有別的東西在醒來——北境的熱浪、森林的夢、海上的迷霧、荒野的巨塔。阿契隆的聲音最後一次響起：「……我睡了，祂們就醒了。」龍災，開始了。",
+                "set_flags": ["pol_done", "dragon_calamity", "pol_gaze_rest"],
+                "effects": [
+                  {
+                    "type": "memory",
+                    "summary": "政治鬥爭的匯流：天空裂開，歷史之龍阿契隆睜開了眼睛。你說我們會記得，祂可以休息了——祂睡了，其他的龍醒了。龍災開始了。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「我們會記得。可是也要往前走」",
+              "success": {
+                "text": "眼睛眨了一下——像是笑了。天空的裂縫一道一道地合上了，可是殘影沒有完全消失：從今以後，每一座地下城、每一個古戰場，還是會重演最深刻的過去。阿契隆的聲音最後一次響起：「往前走吧。前面，有別的龍在等你們。」大陸的四方，有別的東西在醒來。龍災，開始了。",
+                "set_flags": ["pol_done", "dragon_calamity", "pol_gaze_forward"],
+                "effects": [
+                  {
+                    "type": "memory",
+                    "summary": "政治鬥爭的匯流：天空裂開，歷史之龍阿契隆睜開了眼睛。你說我們會記得，也要往前走——祂說前面有別的龍在等。龍災開始了。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 25,
+      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 5000 }]
     }
   ]
 }
