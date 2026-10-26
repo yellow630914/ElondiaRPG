@@ -308,7 +308,6 @@ function parseTarget(target: string | undefined): { ref: string; option?: number
   return { ref: target ?? '' }
 }
 
-/** 這個選項現在能不能選（好感、旗標的條件） */
 /** 結果裡要付的錢（扣款加總，沒有時 0） */
 function outcomeCost(o: StoryOutcome | undefined): number {
   return (o?.effects ?? []).reduce((sum, e) => sum + (e.type === 'money' && e.amount < 0 ? -e.amount : 0), 0)
@@ -332,6 +331,7 @@ export function storyMaxCost(def: StoryDef): number {
   return Math.max(0, ...def.nodes.flatMap((n) => [storyCosts(n), ...(n.options ?? []).map((_, i) => storyCosts(n, i))]).map((c) => Math.max(c.success, c.fail)))
 }
 
+/** 這個選項現在能不能選（好感、旗標的條件） */
 export function optionOpen(state: GameState, node: StoryNode, option: number): boolean {
   const o = node.options?.[option]
   if (o?.check?.affinity && isCaptive(state, o.check.affinity.npc)) return false

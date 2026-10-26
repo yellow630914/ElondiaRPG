@@ -22,11 +22,7 @@ const story = (id: string) => stories.find((s) => s.id === id)!
 // 內建的特殊任務不經過整理就直接用：要通過任務鏈的檢查，而且整理後不變（沒有超過長度、範圍的寫法）
 describe('built-in stories', () => {
   it('pass the story check without errors or warnings', () => {
-    // 已知、等內容那邊改資料的警告：走私線的屋頂任務點要找成人向角色朧（成人向關著時卡住）
-    const known = (id: string, w: string) => id === 'smg_skull_tide' && w.includes('成人向角色朧')
-    const bad = stories.map((s) => ({ id: s.id, ...storyCheck(s) }))
-      .map((r) => ({ ...r, warnings: r.warnings.filter((w) => !known(r.id, w)) }))
-      .filter((r) => r.errors.length || r.warnings.length)
+    const bad = stories.map((s) => ({ id: s.id, ...storyCheck(s) })).filter((r) => r.errors.length || r.warnings.length)
     expect(bad).toEqual([])
   })
 
