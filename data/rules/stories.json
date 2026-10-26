@@ -24398,6 +24398,1399 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ith_moon_query",
+      "title": "女王的提問",
+      "summary": "觀星者艾溫娜帶來一個奇怪的請求：有一位「不方便透露身分」的精靈，想在生命之泉邊聽一個人類說說外面的世界。（伊瑟蘭迪爾・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 5,
+        "text": "艾溫娜把你拉到星月之環的陰影裡，壓低聲音：「有一位……很尊貴的人，想聽人類說話。」她的表情很微妙，「今晚月亮升起的時候，生命之泉。她會戴著兜帽，你不要問她是誰。」她頓了頓，「……也不要讓她發現你知道她是誰。」"
+      },
+      "start_flags": ["ith_start"],
+      "nodes": [
+        {
+          "id": "questions",
+          "title": "在生命之泉回答兜帽精靈的提問",
+          "text": "月光下的生命之泉邊，一個戴著兜帽的精靈坐在石頭上，銀髮從兜帽裡一直流到地上——她大概不知道這有多顯眼。她的聲音像在吟詩：「人類。告訴我，你們的城市，晚上也有月光嗎？」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你說了晨光城的燈火、潮汐港的船帆、血羽城堡夜裡的紅光。她一句一句地聽，聽到天快亮了，才輕聲說：「……一千年，我只知道書上寫的外面。」她站起來，兜帽滑落了一點，露出一雙淡金色的眼睛，「明晚，再說給我聽。」",
+            "set_flags": ["ith_heard"],
+            "effects": [{ "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "說了一整夜的外面" }]
+          },
+          "fail": {
+            "text": "你說得結結巴巴，可她一點也不在意，聽得很認真，偶爾問一些奇怪的問題：「人類的麵包，為什麼要烤？」天亮的時候，她笑了：「你說話的樣子，很有趣。」",
+            "set_flags": ["ith_heard"]
+          }
+        },
+        {
+          "id": "wisps",
+          "title": "在銀月城近郊趕走魔能枯竭的鬼火",
+          "text": "第二晚，她說想看看森林的邊緣。城外的林子裡，幾團黯淡的鬼火飄了過來——它們本該是銀色的，現在卻是灰的，貪婪地吸著周圍的魔能。兜帽精靈的聲音第一次變了：「……連它們也餓了。」",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["ith_heard"] },
+          "kind": "combat",
+          "enemies": [["faded_wisp", 3]],
+          "success": {
+            "text": "鬼火們散了。兜帽精靈蹲下來，掌心亮起一點銀光，讓一朵枯萎的月光花重新抬起了頭。她看著那朵花，很久：「森林在衰退。我能做的，只有這麼一點。」",
+            "set_flags": ["ith_forest"]
+          },
+          "fail": {
+            "text": "鬼火們吸走了你們一身的力氣，才慢慢散去。兜帽精靈扶著你，手很涼：「……抱歉。是我想來的。」",
+            "set_flags": ["ith_forest"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "unmask",
+          "title": "回應兜帽精靈",
+          "text": "回到生命之泉，兜帽精靈坐在石頭上，看著泉水裡的月亮：「你早就知道我是誰了吧。」她摘下兜帽，銀白的藤蔓冠在月光下發亮，「……一千年來，沒有人敢在我面前說『麵包要烤』這種話。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_forest"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我只是在跟一個想聽故事的人說話」",
+              "success": {
+                "text": "伊瑟蘭迪爾愣住了，然後笑了——像月光落在水面上，很輕：「想聽故事的人。」她重複了一次，「……好。那，想聽故事的人，明晚還會來。」她重新戴上了兜帽，「你也要來。」",
+                "set_flags": ["ith_1_done", "ith_story"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 15, "reason": "只把她當成想聽故事的人" },
+                  { "type": "memory", "summary": "精靈女王伊瑟蘭迪爾戴著兜帽，在生命之泉邊聽你說外面的世界。你說，你只是在跟一個想聽故事的人說話。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「陛下，外面的世界，您可以自己去看」",
+              "success": {
+                "text": "伊瑟蘭迪爾看著你，淡金色的眼睛裡有什麼東西動了一下：「自己去看。」她輕輕地笑了，「……卡蘭西爾聽到會昏倒的。」她站起來，「可是，我開始想了。」",
+                "set_flags": ["ith_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "說她可以自己去看" },
+                  { "type": "memory", "summary": "精靈女王伊瑟蘭迪爾戴著兜帽，在生命之泉邊聽你說外面的世界。你說，外面的世界她可以自己去看。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ith_old_garden",
+      "title": "千年前的花園",
+      "summary": "伊瑟蘭迪爾說，九百年前她在森林外和人類一起種過一座花園。她想再看它一眼——在議長卡蘭西爾發現之前。（伊瑟蘭迪爾・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 8,
+        "requires": { "flags": ["ith_1_done"] },
+        "text": "艾溫娜這次是真的在嘆氣：「陛下說，她想出城。」她把一張很舊、很舊的羊皮紙交給你，上面畫著一座花園，「九百年前，她和一個人類的園丁一起種的。」她看著你，「陛下說，只有你能陪她去。卡蘭西爾議長要是知道了……」她沒有說下去。"
+      },
+      "start_flags": ["ith_garden"],
+      "nodes": [
+        {
+          "id": "map",
+          "title": "在銀月城的神殿查花園的位置",
+          "text": "神殿的古籍室裡，伊瑟蘭迪爾戴著兜帽，指著一張又一張地圖：「這裡以前是河。這裡以前是村子。」她的手指停在一片空白的地方，「……九百年，什麼都變了。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "temple" },
+          "requires": { "flags": ["ith_garden"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你把古地圖和現在的地圖疊在一起，找到了：花園在銀月城東邊的山谷裡，現在那裡是一片荊棘林。伊瑟蘭迪爾看著那個點，輕聲說：「……他種的玫瑰，也許還在。」",
+            "set_flags": ["ith_found"],
+            "effects": [{ "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "替她找到了花園" }]
+          },
+          "fail": {
+            "text": "你們找了一整個下午，最後是伊瑟蘭迪爾閉上眼睛，聽了很久的風：「……東邊。山谷裡。」她睜開眼睛，「那裡的樹，還記得我。」",
+            "set_flags": ["ith_found"]
+          }
+        },
+        {
+          "id": "thorns",
+          "title": "在銀月城近郊穿過荊棘林",
+          "text": "東邊的山谷被荊棘覆蓋，荊棘裡潛伏著會動的藤蔓獵手——它們纏上你們的腳，想把闖入者拖進荊棘的深處。伊瑟蘭迪爾停下來，看著那些荊棘：「……它們是在守護什麼。」",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["ith_found"] },
+          "kind": "combat",
+          "enemies": [["thorn_stalker", 2]],
+          "success": {
+            "text": "藤蔓獵手們縮回了荊棘裡。荊棘的中央，有一小片空地——一叢野玫瑰開得正盛，紅得像九百年前一樣。伊瑟蘭迪爾在玫瑰前跪下，很久很久沒有說話。",
+            "set_flags": ["ith_roses"]
+          },
+          "fail": {
+            "text": "藤蔓獵手們把你們纏得滿身是傷，最後是伊瑟蘭迪爾輕輕地唱了一句歌，荊棘自己分開了一條路。路的盡頭，一叢野玫瑰開得正盛。",
+            "set_flags": ["ith_roses"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "gardener",
+          "title": "聽伊瑟蘭迪爾說那個園丁",
+          "text": "伊瑟蘭迪爾摘了一朵玫瑰，看著它：「他叫馬丁。很普通的人類，手很粗，笑起來很吵。」她的聲音很輕，「我們種了二十年的花。然後他老了，然後他死了。」她抬起頭看你，「精靈愛上人類，就是這樣——看著他們老去，然後一個人記得一千年。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_roses"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「可是妳記得了九百年，這朵玫瑰還在」",
+              "success": {
+                "text": "伊瑟蘭迪爾看著手裡的玫瑰，很久，然後笑了，眼淚從淡金色的眼睛裡滑下來：「……是啊。他還在。」她把那朵玫瑰別在你的衣襟上，「一千年後，我也會記得你。」她頓了頓，「……這不是悲傷的話。」",
+                "set_flags": ["ith_2_done", "ith_remember"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 20, "reason": "說玫瑰還在" },
+                  { "type": "memory", "summary": "陪精靈女王伊瑟蘭迪爾找到了她九百年前和人類園丁一起種的玫瑰。她說，一千年後她也會記得你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「那這一次，換我陪妳種花」",
+              "success": {
+                "text": "伊瑟蘭迪爾愣住了，然後慢慢地點頭：「……好。」她把那朵玫瑰的種子交給你，「種在你喜歡的地方。」她看著你，「人類的時間很短。所以，每一天都要種。」",
+                "set_flags": ["ith_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 15, "reason": "說要陪她種花" },
+                  { "type": "memory", "summary": "陪精靈女王伊瑟蘭迪爾找到了九百年前的玫瑰。你說，這一次換你陪她種花。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ith_mortal_time",
+      "title": "凡人的時間",
+      "summary": "森林的魔能衰退到了谷底，枯萎的巨獸從森林深處走了出來。伊瑟蘭迪爾要在生命之泉舉行千年一次的復甦儀式——她說，儀式需要一個「和她同心」的人。（伊瑟蘭迪爾・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_evenna_starword",
+        "min_level": 11,
+        "requires": { "flags": ["ith_2_done"] },
+        "text": "艾溫娜這次沒有壓低聲音，因為整個銀月城都知道了：森林深處的巨獸在枯萎、發狂。「陛下要舉行復甦儀式。」她看著你，「儀式需要兩個人——女王，和一個與她同心的人。」她頓了頓，「議會吵了三天。最後，陛下只說了一句話：『我選好了。』」"
+      },
+      "start_flags": ["ith_rite"],
+      "nodes": [
+        {
+          "id": "beasts",
+          "title": "在銀月城近郊擋下魔能枯萎的巨獸",
+          "text": "城外的森林在發出呻吟。兩頭身上長滿枯藤的巨獸從樹林裡走出來，所過之處，草木一片灰白。伊瑟蘭迪爾站在城門口，沒有戴兜帽：「……它們以前是森林的守護者。」",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "requires": { "flags": ["ith_rite"] },
+          "kind": "combat",
+          "enemies": [["blight_colossus", 2]],
+          "success": {
+            "text": "巨獸們倒下了，身上的枯藤碎成了灰。伊瑟蘭迪爾走過去，把手放在其中一頭的額頭上：「……睡吧。等森林醒來，你們也會醒來。」",
+            "set_flags": ["ith_held"]
+          },
+          "fail": {
+            "text": "巨獸們把你們逼回了城門，最後是伊瑟蘭迪爾張開雙手，銀光從她身上湧出，巨獸們搖晃著倒下了。她扶著城門喘氣，臉色蒼白：「……沒時間了。去泉邊。」",
+            "set_flags": ["ith_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "rite",
+          "title": "在生命之泉和伊瑟蘭迪爾一起完成復甦儀式",
+          "text": "生命之泉邊，伊瑟蘭迪爾握住了你的手，泉水開始發光。她閉上眼睛：「跟著我的心跳。」她的手在抖，「……如果你的心和我不一樣，儀式會失敗。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_held"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 17 },
+          "success": {
+            "text": "你們的心跳慢慢地合在了一起。泉水的光一圈一圈地擴散出去，穿過銀月城，穿過森林，枯萎的樹葉一片一片地綠了回來。伊瑟蘭迪爾睜開眼睛，看著你：「……一樣的。」她的眼淚掉進了泉水裡，「我們的心，是一樣的。」",
+            "set_flags": ["ith_bloomed"]
+          },
+          "fail": {
+            "text": "你的心跳太快了，泉水的光閃了一下，快要熄滅——伊瑟蘭迪爾卻笑了，把你的手按在她的胸口：「……我的也是。」她的心跳和你一樣快。泉水重新亮了起來，森林的綠意一圈一圈地擴散了出去。",
+            "set_flags": ["ith_bloomed"]
+          }
+        },
+        {
+          "id": "after",
+          "title": "儀式之後",
+          "text": "天亮了，森林醒了過來。伊瑟蘭迪爾坐在泉邊，看著你：「一千年來，我以為我再也不會選擇任何人了。」她的聲音很輕，「因為選了，就要看著他老去。」她伸出手，碰了碰你的臉，「可是，我選了。」",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "requires": { "flags": ["ith_bloomed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那我們把凡人的時間，過得長一點」",
+              "success": {
+                "text": "伊瑟蘭迪爾笑了——不是像月光，是像一個普通的女孩：「長一點。」她把額頭靠在你的額頭上，「……好。那就從今天開始。」卡蘭西爾議長聽說之後，在議會上沉默了很久，最後只說了一句：「……陛下很久沒有笑了。」",
+                "set_flags": ["ith_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 25, "reason": "說要把凡人的時間過得長一點" },
+                  { "type": "memory", "summary": "和精靈女王伊瑟蘭迪爾一起完成了森林的復甦儀式。她說一千年來以為不會再選任何人——可是她選了你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「一千年後，記得我。這樣就夠了」",
+              "success": {
+                "text": "伊瑟蘭迪爾的眼淚掉了下來：「……不夠。」她抱住了你，抱得很緊，「一千年太長了。我要你每一天都在。」她把銀白的藤蔓冠摘下來，戴在你的頭上，「這是王庭的誓約。」她笑著哭，「……議會要吵一百年了。讓他們吵。」",
+                "set_flags": ["ith_lover", "ith_crown_vow"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 25, "reason": "要她記得" },
+                  { "type": "memory", "summary": "和精靈女王伊瑟蘭迪爾一起完成了森林的復甦儀式。她把銀白的藤蔓冠戴在你的頭上——那是王庭的誓約。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「森林向外族打開之後，我們一起去看外面」",
+              "requires": { "flags_any": ["acc_open", "wt_open"] },
+              "success": {
+                "text": "伊瑟蘭迪爾愣了一下，然後笑了：「……外面。」她站起來，牽著你的手，「新芽同盟的孩子們把森林打開了，現在換我走出去。」她回頭看了一眼銀月城，「卡蘭西爾會昏倒的。」她轉回來，「……讓他昏。你說的那些燈火、船帆、紅光——我想一個一個去看。和你。」",
+                "set_flags": ["ith_lover", "ith_journey"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 25, "reason": "要帶她去看外面" },
+                  { "type": "memory", "summary": "和精靈女王伊瑟蘭迪爾一起完成了森林的復甦儀式。森林打開之後，她說要和你一起去看外面的世界。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ana_sneak_out",
+      "title": "溜出城的樞機",
+      "summary": "晨曦王國的公主、樞機主教安納塔西亞，有一個誰都不知道的嗜好：換上便服，溜出城去當一天的冒險者。這一次，她需要一個嚮導。（安納塔西亞・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_anastasia",
+        "min_level": 5,
+        "text": "一個嬌小的半精靈穿著緋紅的樞機法衣，在晨光城的巷子裡攔住了你，碧色的眼睛沉靜又銳利：「你是冒險者。」不是問句，「明天是我的休息日——一年只有一天。」她把一袋金幣塞進你手裡，「帶我出城。當一天冒險者。」她頓了頓，聲音小了一點，「……不准告訴任何人。」"
+      },
+      "start_flags": ["ana_start"],
+      "nodes": [
+        {
+          "id": "disguise",
+          "title": "在晨光城的裁縫店替安納塔西亞換上冒險者的衣服",
+          "text": "裁縫店裡，安納塔西亞挑了一件又一件，最後選了一件皮甲和一頂寬簷帽，在鏡子前轉了一圈：「這樣，看起來像冒險者嗎？」——看起來像一個穿著皮甲的公主。",
+          "at": { "where": "cell", "location": "dawnlight", "cell": "tailor" },
+          "requires": { "flags": ["ana_start"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 13 },
+          "success": {
+            "text": "你替她把髮髻拆了，綁成冒險者常見的馬尾，往皮甲上抹了點泥，把帽簷壓低。安納塔西亞看著鏡子裡的自己，愣住了：「……我不認得我了。」她笑了，笑得一點也不像樞機主教。",
+            "set_flags": ["ana_disguised"],
+            "effects": [{ "type": "affinity", "npc": "npc_anastasia", "delta": 10, "reason": "替她變裝" }]
+          },
+          "fail": {
+            "text": "怎麼換都還是像公主。最後安納塔西亞放棄了，乾脆把樞機的聖環往口袋裡一塞：「就說我是有錢人家的小姐，想出城玩。」——這倒是真的。",
+            "set_flags": ["ana_disguised"]
+          }
+        },
+        {
+          "id": "boars",
+          "title": "在晨光城近郊和安納塔西亞一起打退野豬",
+          "text": "城外的田野上，幾頭發狂的大野豬正在糟蹋農夫的麥田。安納塔西亞眼睛一亮，拔出了一把細劍——是她從裁縫店的櫥窗裡順手買的：「冒險者的委託！」她沒等你，已經衝了出去。",
+          "at": { "where": "outskirts", "location": "dawnlight" },
+          "requires": { "flags": ["ana_disguised"] },
+          "kind": "combat",
+          "enemies": [["field_boar", 3]],
+          "success": {
+            "text": "野豬們逃回了林子裡。安納塔西亞的皮甲上全是泥，頭髮亂成一團，笑得眼睛都瞇起來了：「……這比主持彌撒有趣一百倍。」農夫們跑來道謝，給了你們一籃雞蛋。她捧著那籃雞蛋，像捧著王冠。",
+            "set_flags": ["ana_quested"]
+          },
+          "fail": {
+            "text": "一頭野豬把安納塔西亞撞倒在泥巴裡。你把她拉起來，她滿臉是泥，卻笑得停不下來：「……一年只有一天。這是我過得最好的一天。」",
+            "set_flags": ["ana_quested"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "sunset",
+          "title": "回應夕陽下的安納塔西亞",
+          "text": "夕陽下，安納塔西亞坐在麥田邊的石牆上，晃著腳，手裡拿著一顆農夫給的蘋果：「我十二歲的時候，想當冒險者。」她啃了一口蘋果，「父王說，公主不能當冒險者。」她看著遠處的晨光城，「……所以我當了樞機主教。至少，可以到處跑。」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_quested"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「明年的休息日，我還帶妳出來」",
+              "success": {
+                "text": "安納塔西亞轉過頭看你，碧色的眼睛在夕陽裡閃了一下：「……一年一次太少了。」她跳下石牆，把蘋果核丟進麥田，「我會想辦法，讓休息日多一點。」她回頭，「我很擅長想辦法的。」",
+                "set_flags": ["ana_1_done", "ana_again"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 15, "reason": "說要再帶她出來" },
+                  { "type": "memory", "summary": "帶晨曦王國的公主安納塔西亞溜出城，當了一天冒險者。她說會想辦法讓休息日多一點。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「今天，妳是一個冒險者」",
+              "success": {
+                "text": "安納塔西亞愣了一下，然後笑了：「……一個冒險者。」她把這幾個字念了一次，像是在嚐味道，「好。今天的冒險者，要請嚮導喝一杯。」她拉著你走向路邊的小酒館，「不准說我是誰。」",
+                "set_flags": ["ana_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 10, "reason": "說她今天是冒險者" },
+                  { "type": "memory", "summary": "帶晨曦王國的公主安納塔西亞溜出城，當了一天冒險者。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「官道上那天，妳也是這樣拔劍的」",
+              "requires": { "flags": ["dthr_1_done"] },
+              "success": {
+                "text": "安納塔西亞看著你，很久，然後笑了：「我就知道是你。」她從口袋裡掏出樞機的聖環，在夕陽下轉了一圈，「那天在馬車裡，我說『想要我的命就自己進來拿』——其實我在發抖。」她把聖環收起來，「你是第一個知道的人。」",
+                "set_flags": ["ana_1_done", "ana_again"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 20, "reason": "記得官道上的那一天" },
+                  {
+                    "type": "memory",
+                    "summary": "帶晨曦王國的公主安納塔西亞溜出城。她說，那天在官道上被刺客圍住的時候，其實她在發抖——你是第一個知道的人。",
+                    "importance": 2
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ana_body_double",
+      "title": "替身",
+      "summary": "安納塔西亞找到了「讓休息日多一點」的辦法：一個長得很像她的替身。可是替身出門的第一天，就遇上了刺客。（安納塔西亞・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_anastasia",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["ana_1_done"] },
+        "text": "安納塔西亞帶來了一個女孩——嬌小、銀髮、碧色眼睛，連站姿都一樣：「我的替身，莉娜。孤兒院出身，很聰明。」她頓了頓，「我付她很多錢，讓她替我主持早晨的彌撒。」她的表情忽然冷了下來，「昨天，有人在彌撒的路上放了一支毒箭。」"
+      },
+      "start_flags": ["ana_double"],
+      "nodes": [
+        {
+          "id": "train",
+          "title": "在晨光城的旅店陪莉娜練習當公主",
+          "text": "旅店的房間裡，安納塔西亞教莉娜怎麼走路、怎麼說話、怎麼在別人說謊的時候不動聲色。莉娜學得很快，可是有一件事學不會——安納塔西亞看人的那種眼神。",
+          "at": { "where": "cell", "location": "dawnlight", "cell": "inn" },
+          "requires": { "flags": ["ana_double"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你教莉娜：「不要學她的眼神。學她看著妳的時候，心裡在想什麼。」莉娜想了很久，然後抬起頭——那一瞬間，連安納塔西亞都愣住了。她轉頭看你：「……你比我還懂我。」",
+            "set_flags": ["ana_trained"],
+            "effects": [{ "type": "affinity", "npc": "npc_anastasia", "delta": 10, "reason": "教會了替身" }]
+          },
+          "fail": {
+            "text": "莉娜怎麼學都學不像。最後安納塔西亞嘆了口氣：「算了。刺客不會看那麼仔細。」她頓了頓，「……可是你會。你一眼就看得出來，對吧？」",
+            "set_flags": ["ana_trained"]
+          }
+        },
+        {
+          "id": "assassins",
+          "title": "在晨光城近郊擋下對替身下手的刺客",
+          "text": "替身莉娜的馬車在城外的林蔭道上被攔下了。兩個穿著灰衣的刺客從樹上跳下來，短刀直撲車門。車裡——不是莉娜。安納塔西亞自己坐在裡面，冷冷地說：「我就知道。」",
+          "at": { "where": "outskirts", "location": "dawnlight" },
+          "requires": { "flags": ["ana_trained"] },
+          "kind": "combat",
+          "enemies": [["court_hitman", 2]],
+          "success": {
+            "text": "刺客們倒下了。安納塔西亞從其中一個人的懷裡翻出了一枚戒指，看了一眼，臉色變得很難看——戒指上的紋章，是王宮裡的人。她把戒指收進袖子裡：「……這件事，我自己處理。」",
+            "set_flags": ["ana_caught"]
+          },
+          "fail": {
+            "text": "刺客們把你們逼到了馬車邊，安納塔西亞拔出細劍，和你背靠背地站著。刺客們看見她不是替身，猶豫了，最後退走了，丟下了一枚刻著紋章的戒指。",
+            "set_flags": ["ana_caught"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "why",
+          "title": "問安納塔西亞為什麼自己坐在車裡",
+          "text": "回城的路上，安納塔西亞一直很安靜。你問她，為什麼不讓莉娜坐在車裡。她看著窗外：「因為莉娜是我花錢請來的，不是我的命。」她轉過頭，「……而且，我知道你會來。」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_caught"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「下次不准拿自己當誘餌」",
+              "success": {
+                "text": "安納塔西亞看著你，碧色的眼睛眨了眨：「……你在命令我？」她的嘴角動了一下，「全王國只有父王敢命令我。」她轉回去看窗外，耳尖卻紅了，「……好。下次，我先問你。」",
+                "set_flags": ["ana_2_done", "ana_scolded"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 20, "reason": "罵她不准拿自己當誘餌" },
+                  { "type": "memory", "summary": "晨曦王國的安納塔西亞用自己當誘餌引出刺客，因為她知道你會來。你罵她下次不准這樣——她說，下次先問你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳很勇敢。也很笨」",
+              "success": {
+                "text": "安納塔西亞愣了一下，然後笑出了聲——不是樞機的笑，是一個女孩的笑：「從來沒有人說我笨。」她靠在馬車的椅背上，「……可是你說得對。」她看著你，「謝謝你來。」",
+                "set_flags": ["ana_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 15, "reason": "說她勇敢又笨" },
+                  { "type": "memory", "summary": "晨曦王國的安納塔西亞用自己當誘餌引出刺客。你說她很勇敢，也很笨——她笑了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ana_crown_and_road",
+      "title": "王冠與道路",
+      "summary": "雇刺客的人被揪了出來，王宮裡的暗流卻沒有停。安納塔西亞說，她一直在想一個問題：如果有一天，要在王座和道路之間選一個，她會選哪一個。（安納塔西亞・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_anastasia",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["ana_2_done"] },
+        "text": "安納塔西亞在王宮的花園裡等你，穿著最隆重的禮服，手裡卻拿著那頂冒險者的寬簷帽：「戒指的主人招了——他雇了更多的人，要在我去教國的路上動手。」她把帽子戴在頭上，看著你，「這一趟，我想用冒險者的身分去。」她頓了頓，「回來之後，我有一個問題要問你。」"
+      },
+      "start_flags": ["ana_journey"],
+      "nodes": [
+        {
+          "id": "mercs",
+          "title": "在晨光城近郊擋下埋伏的王冠傭兵",
+          "text": "往教國的官道上，一隊佩戴著金色王冠徽章的傭兵堵住了路：「公主殿下，有人出高價，要您永遠回不了晨光城。」安納塔西亞壓低了帽簷，拔出細劍：「……我現在不是公主。」",
+          "at": { "where": "outskirts", "location": "dawnlight" },
+          "requires": { "flags": ["ana_journey"] },
+          "kind": "combat",
+          "enemies": [["crown_mercenary", 2]],
+          "success": {
+            "text": "傭兵們丟下武器逃了。安納塔西亞擦著細劍上的血，手很穩：「十二歲的時候，我想當冒險者。」她看著你，「現在我知道，冒險者也會害怕。只是，身邊有人的時候，比較不怕。」",
+            "set_flags": ["ana_safe"]
+          },
+          "fail": {
+            "text": "傭兵們把你們逼到了路邊的溝裡，最後是官道上路過的一隊聖殿騎士認出了她的細劍——伊莎貝拉團長送的——把傭兵們趕跑了。安納塔西亞爬出溝，滿身是泥：「……冒險者的運氣，也是實力。」",
+            "set_flags": ["ana_safe"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "choice",
+          "title": "回答安納塔西亞的問題",
+          "text": "教國回來的路上，你們在官道邊的小旅店過夜。安納塔西亞坐在窗邊，看著星星：「我的問題是——」她停了很久，「王座和道路，你覺得我該選哪一個？」她轉過頭，碧色的眼睛裡沒有算計，「……這次不是政治。我真的不知道。」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_safe"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說，她不用選。王座需要一個會想丟下一切溜出城的人，因為只有那樣的人，才記得城外的人怎麼生活。安納塔西亞看著你，很久，然後把臉埋進了雙手裡：「……原來可以不用選。」",
+            "set_flags": ["ana_answered"]
+          },
+          "fail": {
+            "text": "你說不出一個好答案，只說：「不管妳選哪一個，我都在。」安納塔西亞愣住了，然後笑了，笑得眼淚都出來了：「……這不是答案。」她抹了抹眼睛，「可是，比答案好。」",
+            "set_flags": ["ana_answered"]
+          }
+        },
+        {
+          "id": "ask",
+          "title": "回應安納塔西亞",
+          "text": "安納塔西亞走到你面前，摘下了寬簷帽，銀白的長髮散了下來：「我還有一個問題。」她的聲音很輕，「我這輩子都在算計——父王、兄長、教皇、公爵。」她抬起頭看你，「只有你，我從來沒有算計過。這代表什麼？」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_answered"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「代表妳喜歡我」",
+              "success": {
+                "text": "安納塔西亞的臉一下子紅了——你從沒見過她臉紅：「……你、你怎麼可以這樣直接說出來。」她抓著寬簷帽，擋住了半張臉，「這是政治上最大的失誤。」她把帽子放下，踮起腳，吻了你，「……我認了。」",
+                "set_flags": ["ana_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 25, "reason": "說破了她的心" },
+                  { "type": "memory", "summary": "晨曦王國的安納塔西亞問你，她從來沒有算計過你，這代表什麼。你說，代表她喜歡你。她說，她認了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「代表我也是。我也從來沒有算計過妳」",
+              "success": {
+                "text": "安納塔西亞看著你，很久，然後慢慢地伸出手，握住了你的手：「……那就說好了。」她的手很小，握得很緊，「王座、道路，都一起。」她笑了，「從今天開始，我有兩個休息日——每一天都是。」",
+                "set_flags": ["ana_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 25, "reason": "說也從來沒有算計過她" },
+                  { "type": "memory", "summary": "晨曦王國的安納塔西亞說，她這輩子只有你從來沒有算計過。你說你也是——她說，王座和道路，都一起。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「女王，也可以有一個冒險者」",
+              "requires": { "flags": ["dthr_queen"] },
+              "success": {
+                "text": "安納塔西亞——晨曦王國的女王——笑了：「女王的冒險者。」她從懷裡拿出王冠，戴上，然後又摘下來，戴在你的頭上，「……開玩笑的。」她拿回王冠，卻牽起了你的手，「王國歸我，我歸你。這樣，公平嗎？」",
+                "set_flags": ["ana_lover", "ana_queen_love"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 25, "reason": "說女王也可以有冒險者" },
+                  { "type": "memory", "summary": "晨曦王國的女王安納塔西亞說：王國歸我，我歸你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ele_chancellor_lunch",
+      "title": "宰相的午餐",
+      "summary": "帝國宰相艾蕾諾拉替不露面的皇帝處理整個帝國的事務，已經三天沒睡了。宰相府的秘書偷偷來公會求助：有沒有人能讓宰相大人吃一頓午餐？（艾蕾諾拉・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_eleanora_rhine",
+        "min_level": 5,
+        "text": "一個金髮盤得一絲不亂、穿深藍長袍的女人在宰相府門口攔住了你，眼睛下面有很深的黑眼圈，說話卻一字不差：「你就是秘書說的那個冒險者。」她遞給你一疊公文，「把這些送到城外的驛站。驛站最近被人盯上了，送信的人都沒回來。」她轉身要走，晃了一下，扶住了門框，「……我沒事。」"
+      },
+      "start_flags": ["ele_start"],
+      "nodes": [
+        {
+          "id": "ambush",
+          "title": "在萊茵堡近郊擋下劫公文的伏兵",
+          "text": "城外的驛站附近，幾個蒙面的伏兵從樹林裡衝出來，目標很明確——你懷裡的那疊公文。帶頭的人喊：「宰相府的信！拿到了就有賞！」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["ele_start"] },
+          "kind": "combat",
+          "enemies": [["courier_ambusher", 3]],
+          "success": {
+            "text": "伏兵們逃了。你把公文送到了驛站，驛站長看著你，嘆了口氣：「這個月第四批了。宰相大人每天要發出幾百份公文——有人不想讓它們送到。」",
+            "set_flags": ["ele_delivered"]
+          },
+          "fail": {
+            "text": "伏兵們搶走了一封信才逃——你檢查了一下，是一封寫給皇帝的、關於「溫室的肥料」的信。你不太確定那算不算機密。",
+            "set_flags": ["ele_delivered"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "tonic",
+          "title": "在萊茵堡的魔法物品店替艾蕾諾拉找提神藥",
+          "text": "回到宰相府，秘書在門口哭喪著臉：「大人昏倒了，醒來又坐回了書桌前。」她把一張藥方塞給你，「魔法物品店的提神藥——可是大人說，她不需要。」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "magic" },
+          "requires": { "flags": ["ele_delivered"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你沒有買提神藥，而是買了一包安眠的香料和一籃熱騰騰的午餐。秘書看著你，愣住了：「……大人會殺了你的。」",
+            "set_flags": ["ele_lunch"],
+            "effects": [{ "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 5, "reason": "替她準備了午餐" }]
+          },
+          "fail": {
+            "text": "你買了提神藥。艾蕾諾拉喝了，繼續工作。可是你注意到，她看公文的時候，手一直在抖。你把一塊麵包放在她手邊。她沒有說話，但吃了。",
+            "set_flags": ["ele_lunch"]
+          }
+        },
+        {
+          "id": "eat",
+          "title": "讓艾蕾諾拉吃一頓午餐",
+          "text": "宰相府的書房裡，公文堆得比人還高。艾蕾諾拉頭也不抬：「放下就可以走了。」你沒有走。她抬起頭，看見你手裡的午餐，皺起眉頭：「……我說過我不需要。」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_lunch"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「妳總是擔心父親忘了吃飯。誰擔心妳？」",
+              "success": {
+                "text": "艾蕾諾拉的筆停住了。很久，她放下筆，摘下了眼鏡——你第一次發現她戴眼鏡：「……誰告訴你的？」她沒有等你回答，拿起了一塊麵包，「坐下。」她看著窗外，「一個人吃飯，太安靜了。」",
+                "set_flags": ["ele_1_done", "ele_worried"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 15, "reason": "擔心她" },
+                  { "type": "memory", "summary": "逼帝國宰相艾蕾諾拉吃了一頓午餐。你問她，她總是擔心父親忘了吃飯，那誰擔心她？", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把公文搬到一邊，把午餐放在桌上",
+              "success": {
+                "text": "艾蕾諾拉瞪著你，像是要把你送進大牢。可是午餐的香味飄過來，她的肚子叫了一聲。很久，她嘆了口氣，拿起了湯匙：「……十分鐘。」她吃了半個小時。",
+                "set_flags": ["ele_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 10, "reason": "逼她吃了午餐" },
+                  { "type": "memory", "summary": "逼帝國宰相艾蕾諾拉吃了一頓午餐。她說十分鐘，吃了半個小時。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ele_greenhouse",
+      "title": "溫室裡的皇帝",
+      "summary": "艾蕾諾拉說，帝國只有她知道皇帝每天在做什麼。現在，皇帝的溫室裡逃出了一株「不太聽話」的植物——她需要一個不會說出去的人。（艾蕾諾拉・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_eleanora_rhine",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["ele_1_done"] },
+        "text": "艾蕾諾拉第一次在宰相府以外的地方約你——城外的一座小橋邊，她沒有穿宰相長袍：「接下來的事，你要帶進墳墓裡。」她深吸了一口氣，「我的父親，帝國的皇帝，每天在溫室裡種花。」她頓了頓，「昨天，他種的一株魔藤逃出去了。」她的表情很平靜，「……它吃了一頭牛。」"
+      },
+      "start_flags": ["ele_garden"],
+      "nodes": [
+        {
+          "id": "vines",
+          "title": "在萊茵堡近郊抓回逃出溫室的魔藤",
+          "text": "城外的牧場上，兩株比樹還高的魔藤揮舞著藤蔓，藤蔓上開著漂亮得不可思議的紫花。艾蕾諾拉拿出了她的權杖——其實是一根法杖：「父親說，不要傷到花。」她頓了頓，「……盡量。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["ele_garden"] },
+          "kind": "combat",
+          "enemies": [["greenhouse_creeper", 2]],
+          "success": {
+            "text": "魔藤們縮成了兩顆種子，掉在草地上。艾蕾諾拉把它們撿起來，用手帕包好：「……花沒有傷到。」她看著你，嘴角動了一下，「父親會很高興。」",
+            "set_flags": ["ele_caught"]
+          },
+          "fail": {
+            "text": "魔藤們把你們纏得動彈不得，最後是艾蕾諾拉用法杖燒斷了藤蔓的根——花全燒掉了。她看著灰燼，嘆了口氣：「……父親會哭三天。」",
+            "set_flags": ["ele_caught"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "edict",
+          "title": "陪艾蕾諾拉寫下一道敕令",
+          "text": "皇宮的溫室裡，一個穿著園丁圍裙的老人在給花澆水，對你笑了笑，沒有說話。艾蕾諾拉在溫室角落的小桌上攤開公文：「父親的敕令，都是在這裡寫的。」她看著父親的背影，「他說他種花的時候，想得最清楚。我只是……把他說的話寫下來。」她把筆遞給你，「今天的這一道，你幫我想。」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_caught"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你們一起寫完了一道關於北境冬糧的敕令。老皇帝走過來看了一眼，點點頭，在上面蓋了印，然後拍了拍艾蕾諾拉的頭——像拍一個孩子。艾蕾諾拉僵住了，然後低下頭，很久都沒有抬起來。",
+            "set_flags": ["ele_written"]
+          },
+          "fail": {
+            "text": "你們寫了三次都寫不好。老皇帝走過來，看了一眼，拿起筆改了兩個字，敕令就完美了。他對你笑了笑：「她太認真了。你要多帶她出去走走。」",
+            "set_flags": ["ele_written"]
+          }
+        },
+        {
+          "id": "secret",
+          "title": "回應艾蕾諾拉的秘密",
+          "text": "走出溫室，艾蕾諾拉站在皇宮的迴廊上，看著夕陽：「全帝國都以為我才是掌權的人。」她的聲音很輕，「其實我只是一支筆。」她轉頭看你，「……這個秘密，我說給你聽了。你知道這代表什麼嗎？」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_written"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「代表妳累了，想要有人一起扛」",
+              "success": {
+                "text": "艾蕾諾拉看著你，很久，然後慢慢地，把頭靠在了你的肩上：「……三十年了。」她的聲音很小，「第一次有人看出來。」她沒有哭，只是靠著，靠了很久，「下次……父親的花開了，一起來看。」",
+                "set_flags": ["ele_2_done", "ele_lean"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 20, "reason": "看出了她累了" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉告訴你皇帝在溫室種花的秘密。她說自己只是一支筆——你說，她累了，想要有人一起扛。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「代表妳信任我」",
+              "success": {
+                "text": "艾蕾諾拉的嘴角動了一下：「……不只。」她轉過身，往迴廊的另一頭走，走了幾步又停下來，「宰相不說沒把握的話。」她回頭看你，「等我有把握了，再告訴你剩下的。」",
+                "set_flags": ["ele_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 15, "reason": "說她信任你" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉告訴你皇帝在溫室種花的秘密。她說這不只代表信任——剩下的，等她有把握了再說。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ele_last_edict",
+      "title": "最後一道敕令",
+      "summary": "鐵十字會的強硬派認定宰相才是帝國真正的主人，派了刺客要她的命。艾蕾諾拉說，她要寫一道敕令——這輩子第一道，為自己寫的。（艾蕾諾拉・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_eleanora_rhine",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["ele_2_done"] },
+        "text": "艾蕾諾拉把一份密報放在你面前：「鐵十字會的強硬派要我的命。他們以為殺了我，帝國就沒有人能擋著戰爭。」她的聲音很平靜，「他們不知道，敕令是父親寫的。」她看著你，「……但是，我也有一道敕令要寫。為自己寫的。」她頓了頓，「寫之前，先活下來。」"
+      },
+      "start_flags": ["ele_hunted"],
+      "nodes": [
+        {
+          "id": "assassins",
+          "title": "在萊茵堡近郊擋下鐵十字會的刺客",
+          "text": "宰相的馬車在城外的林蔭道上被攔下了。兩個佩戴鐵十字徽章的刺客從樹上跳下，劍尖對準了車門：「宰相大人。帝國不需要懦夫的和平。」艾蕾諾拉從車裡走出來，舉起了法杖：「……帝國也不需要你們。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["ele_hunted"] },
+          "kind": "combat",
+          "enemies": [["iron_cross_assassin", 2]],
+          "success": {
+            "text": "刺客們倒下了。艾蕾諾拉收起法杖，手很穩，聲音也很穩：「……謝謝。」然後她的膝蓋軟了一下，你扶住了她。她沒有推開你。",
+            "set_flags": ["ele_alive"]
+          },
+          "fail": {
+            "text": "刺客們把你們逼到了馬車邊，一劍劃破了艾蕾諾拉的袖子。她沒有退，法杖上燃起了法師學院第一名的火焰——刺客們看著那團火，逃了。她看著燒焦的袖子，喘著氣：「……三十年沒在實戰裡用過了。」",
+            "set_flags": ["ele_alive"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "write",
+          "title": "看艾蕾諾拉寫下那道敕令",
+          "text": "溫室的小桌上，艾蕾諾拉攤開一張空白的敕令紙，筆尖懸在紙上，很久沒有落下：「我替父親寫了三十年的敕令。」她的手在抖，「每一道都完美。可是這一道……我不知道怎麼寫。」她抬頭看你，「幫我。」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_alive"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說，不用寫得完美，寫她想說的就好。艾蕾諾拉看著你，然後低下頭，寫了一行字，又一行字。寫完之後，她把敕令轉過來給你看——那不是敕令的格式，是一封信。",
+            "set_flags": ["ele_wrote"]
+          },
+          "fail": {
+            "text": "你說不出什麼好建議。艾蕾諾拉卻在這時放下了筆：「……算了。」她把空白的紙推到一邊，「有些話，不用寫。」她看著你，「說出來就好。」",
+            "set_flags": ["ele_wrote"]
+          }
+        },
+        {
+          "id": "read",
+          "title": "回應艾蕾諾拉的敕令",
+          "text": "老皇帝在溫室的另一頭澆花，假裝沒有在聽。艾蕾諾拉站在你面前，深藍的長袍，金髮盤得一絲不亂——只有臉是紅的：「敕令。」她的聲音在抖，「帝國宰相艾蕾諾拉・馮・萊茵，命令……命令你……」她說不下去了。",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_wrote"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「臣，遵旨」",
+              "success": {
+                "text": "艾蕾諾拉愣住了：「……我還沒說完。」你說，不管是什麼命令，都遵旨。她看著你，很久，然後笑了——宰相從不笑，可她笑了，笑得像一個二十幾歲的女孩：「……那就命令你，留在我身邊。」溫室的另一頭，老皇帝放下了水壺，悄悄地鼓了掌。",
+                "set_flags": ["ele_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 25, "reason": "遵了她的旨" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉寫了這輩子第一道為自己的敕令：命令你留在她身邊。你說，臣遵旨。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "握住她的手，「不用命令」",
+              "success": {
+                "text": "艾蕾諾拉看著被你握住的手，很久，然後慢慢地，把額頭抵在你的胸口：「……宰相不會說『拜託』。」她的聲音悶悶的，「所以只能寫成命令。」她抬起頭，「拜託你。留下來。」老皇帝在溫室的另一頭，把一朵剛開的紫花剪下來，放在了你們旁邊的桌上。",
+                "set_flags": ["ele_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 25, "reason": "說不用命令" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉想用敕令命令你留下。你說不用命令——她說了這輩子第一次的「拜託」。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「停戰延續了。妳可以休息了」",
+              "requires": { "flags": ["rwar_peace"] },
+              "success": {
+                "text": "艾蕾諾拉愣了一下，然後慢慢地放鬆了肩膀——你從來沒看過她放鬆的樣子：「……是啊。停戰延續了。」她把那張敕令紙折起來，塞進你的口袋，「那，這是宰相的最後一道公事。」她靠在你身上，閉上眼睛，「接下來，是艾蕾諾拉的私事。」",
+                "set_flags": ["ele_lover", "ele_rest"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 25, "reason": "讓她可以休息" },
+                  { "type": "memory", "summary": "停戰延續之後，帝國宰相艾蕾諾拉說，那是宰相的最後一道公事——接下來，是艾蕾諾拉的私事。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "lisr_red_again",
+      "title": "「紅」的第二封委託",
+      "summary": "血羽城堡的公會又出現了那種優雅字跡的委託，署名只有一個字：「紅」。這次她想看的，是人類的「約會」。（莉莎爾・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "guild",
+        "location": "bloodplume",
+        "min_level": 5,
+        "text": "公會的告示板上貼著一張用優雅字跡寫的委託：「誠徵人類一名，示範人類的『約會』。純屬研究。報酬從優。地點：南門酒館。」署名只有一個字：「紅」。櫃台的魔族職員看著那張委託，表情很奇怪：「……您確定要接這個？」"
+      },
+      "start_flags": ["lisr_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "在血羽城堡的酒館向「紅」示範人類的約會",
+          "text": "南門酒館的角落，一個紅髮、披著黑斗篷的高挑女人在等你，金色的豎瞳在兜帽底下閃著光。她面前攤著一本筆記：「人類的約會。第一步是什麼？」她拿起筆，等著記錄——酒館裡的魔族們都在偷偷往這邊看，又迅速轉開視線。",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "tavern" },
+          "requires": { "flags": ["lisr_start"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你示範了點酒、碰杯、聊天氣。她一項一項地記，記到一半，筆停了：「……聊天氣，有什麼意義？」你說，意義是想多聽對方說一句話。她看著你，很久，然後在筆記上寫：「重要。」",
+            "set_flags": ["lisr_dated"],
+            "effects": [{ "type": "affinity", "npc": "npc_lisar", "delta": 10, "reason": "示範了人類的約會" }]
+          },
+          "fail": {
+            "text": "你緊張得把酒灑在了她的斗篷上。酒館一片死寂——每一個魔族都停止了呼吸。「紅」卻笑了出來，笑得肩膀發抖：「……這也是約會的一部分？」她在筆記上寫：「會灑酒。有趣。」",
+            "set_flags": ["lisr_dated"]
+          }
+        },
+        {
+          "id": "hounds",
+          "title": "在血羽城堡近郊趕走灰燼獵犬",
+          "text": "她說約會的下一步是「散步」。城外的荒原上，幾頭渾身冒著餘燼的獵犬聞到了你們——它們本該怕她，卻好像認不出斗篷底下的人。「紅」站在原地，沒有動手：「……我想看看，人類會怎麼保護約會的對象。」",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "requires": { "flags": ["lisr_dated"] },
+          "kind": "combat",
+          "enemies": [["ash_hound", 3]],
+          "success": {
+            "text": "獵犬們夾著尾巴逃了。「紅」看著擋在她前面的你，金色的豎瞳裡有什麼東西亮了一下：「……你沒有問我會不會打。」她輕聲說，「你直接擋在了前面。」",
+            "set_flags": ["lisr_guarded"]
+          },
+          "fail": {
+            "text": "獵犬們把你撲倒在沙地上。「紅」終於動了——只是抬了一下手，獵犬們就像見到了天敵一樣哀嚎著逃走了。她蹲下來，看著你：「……你明知道打不過，還擋在前面。」她伸出手，「人類，真奇怪。」",
+            "set_flags": ["lisr_guarded"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "end",
+          "title": "約會的最後一步",
+          "text": "回到酒館門口，「紅」把筆記收起來：「約會的最後一步是什麼？」她的語氣像是在問一道律法題，耳尖卻有一點紅——緋紅的皮膚上，紅得更深了一點。",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "tavern" },
+          "requires": { "flags": ["lisr_guarded"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「約好下一次」",
+              "success": {
+                "text": "「紅」愣了一下，然後笑了——一個很淺、很驕傲的笑：「下一次。」她拿出筆記，寫下了這兩個字，然後撕下那一頁，塞進你的手裡，「這是契約。赤翼……」她頓住了，「……紅，從不違約。」",
+                "set_flags": ["lisr_1_done", "lisr_next"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 15, "reason": "約好了下一次" },
+                  { "type": "memory", "summary": "替自稱「紅」的魔族貴婦人示範了人類的約會。最後一步，你們約好了下一次。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「最後一步，是說出妳真正的名字」",
+              "success": {
+                "text": "「紅」的笑容停了一下。很久，她拉下了兜帽，黑曜冠環在月光下閃著光：「……你早就知道了。」血羽城堡的主人看著你，金色的豎瞳裡沒有怒意，只有好奇，「莉莎爾。」她說，「這個名字，很少有人當面叫。你可以。」",
+                "set_flags": ["lisr_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 10, "reason": "要她說出真正的名字" },
+                  { "type": "memory", "summary": "替自稱「紅」的魔族貴婦人示範了人類的約會。最後一步，她告訴你她的名字：莉莎爾。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "lisr_court_currents",
+      "title": "宮廷的暗流",
+      "summary": "薇洛妮卡說，陛下想要一雙「人類的眼睛」——碎角派的人在血羽城堡的人類區裡活動，議會裡的魔族看不出來，人類看得出來。（莉莎爾・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_veronica",
+        "min_level": 8,
+        "requires": { "flags": ["lisr_1_done"] },
+        "text": "薇洛妮卡把一封蓋著赤翼印的信交給你，表情比上一次還微妙：「陛下指名要你。」信上的字跡你認得：「碎角派的人在人類區裡活動。我的眼睛都是魔族的眼睛，看不見人類看得見的東西。——紅」薇洛妮卡咳了一聲，「陛下最近……常常翻一本筆記。上面寫著『會灑酒』。」"
+      },
+      "start_flags": ["lisr_eyes"],
+      "nodes": [
+        {
+          "id": "intel",
+          "title": "在血羽城堡的情報商查碎角派的動向",
+          "text": "市集的情報商是個人類，聽到「碎角派」就變了臉色：「那些人在人類區收買打手，說是要『讓魔王看看人類有多不可靠』。」他壓低聲音，「他們打算在人類區放火，然後栽贓給人類。」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "informant" },
+          "requires": { "flags": ["lisr_eyes"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你拿到了碎角派的計畫：今晚，他們的刺客會在城外的舊石場集合，帶著火油和人類的衣服。",
+            "set_flags": ["lisr_plot"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才肯說：「城外的舊石場。今晚。」",
+            "set_flags": ["lisr_plot"],
+            "effects": [{ "type": "money", "amount": -150 }]
+          }
+        },
+        {
+          "id": "raiders",
+          "title": "在血羽城堡近郊擋下碎角派的刺客",
+          "text": "舊石場裡，幾個穿著人類衣服的魔族正在往桶裡灌火油。他們頭上的角被布包著，可是那些角——碎掉了一截，是碎角派的記號。他們看見你，拔出了刀：「人類？正好，第一個燒的就是你。」",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "requires": { "flags": ["lisr_plot"] },
+          "kind": "combat",
+          "enemies": [["shatterhorn_agent", 2]],
+          "success": {
+            "text": "碎角派的刺客們倒下了。你把他們綁好、連同火油桶一起交給了城衛。城衛隊長看著那些包著布的碎角，臉色鐵青：「……陛下會很生氣。」",
+            "set_flags": ["lisr_stopped"]
+          },
+          "fail": {
+            "text": "刺客們把你們逼退了，可在混亂中，火油桶翻倒在他們自己腳邊，一個刺客的火把掉了下去——他們狼狽地逃了，留下了一地包著碎角的頭巾。",
+            "set_flags": ["lisr_stopped"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "report",
+          "title": "在血誓碑谷向莉莎爾回報",
+          "text": "血誓碑谷的月光下，莉莎爾一個人站在碑林之間，沒有戴兜帽，赤紅的雙翼收在身後：「我聽說了。」她轉過身看你，「人類的眼睛，看見了魔族看不見的東西。」她頓了頓，「……可是你為什麼要幫我？我是魔王。」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["lisr_stopped"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「因為妳是『紅』」",
+              "success": {
+                "text": "莉莎爾愣住了。很久，她笑了——一個很少有人見過的笑，驕傲又有點無措：「……紅。」她伸手，碰了碰你的臉，指尖很燙，「議會裡沒有人敢這樣回答我。」她收回手，「下次約會——第二次——我來決定去哪裡。」",
+                "set_flags": ["lisr_2_done", "lisr_red"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 20, "reason": "說她是紅" },
+                  { "type": "memory", "summary": "替赤翼之君莉莎爾擋下了碎角派的陰謀。她問你為什麼幫魔王——你說，因為她是「紅」。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「因為律法比混亂好。人類也這麼想」",
+              "success": {
+                "text": "莉莎爾看著你，金色的豎瞳裡閃過一絲讚賞：「秩序中的力量。」她點點頭，「……你懂。」她轉身看著碑林，「可是你說錯了一件事。」她回頭，「你幫我，不只是因為律法。」她沒有說下去，耳尖卻紅了。",
+                "set_flags": ["lisr_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 15, "reason": "說律法比混亂好" },
+                  { "type": "memory", "summary": "替赤翼之君莉莎爾擋下了碎角派的陰謀。你說律法比混亂好——她說，你幫她不只是因為律法。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "lisr_crimson_vow",
+      "title": "赤翼之誓",
+      "summary": "碎角派的勇士在血誓碑谷向魔王下了戰書：魔王若要一個人類當伴侶，就要讓那個人類通過魔族的決鬥。莉莎爾說，她不會替你打——可是，她會在碑谷等你。（莉莎爾・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_veronica",
+        "min_level": 11,
+        "requires": { "flags": ["lisr_2_done"] },
+        "text": "薇洛妮卡這次沒有表情了，直接把一封戰書拍在桌上：「碎角派的勇士下了戰書。他們說，陛下若要一個人類當伴侶，那個人類就要通過魔族的決鬥。」她看著你，「陛下沒有否認『伴侶』這兩個字。」她頓了頓，「議會吵翻了。陛下只說了一句話：『讓他們看。』」"
+      },
+      "start_flags": ["lisr_duel"],
+      "nodes": [
+        {
+          "id": "champions",
+          "title": "在血羽城堡近郊打倒碎角派的勇士",
+          "text": "城外的決鬥場上，兩個頭上的角碎了一截的魔族勇士扛著巨斧走了出來，全身塗著血紅的戰紋：「人類。魔王的伴侶要能站著接下我們的斧頭。」觀戰的魔族領主們圍成一圈。遠處的碑谷入口，一個披著黑斗篷的身影靜靜地站著。",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "requires": { "flags": ["lisr_duel"] },
+          "kind": "combat",
+          "enemies": [["shatterhorn_champion", 2]],
+          "success": {
+            "text": "碎角派的勇士們倒在了沙地上。觀戰的魔族領主們沉默了很久，然後，一個接一個地，把手按在了胸口——那是魔族對強者的禮節。",
+            "set_flags": ["lisr_proven"]
+          },
+          "fail": {
+            "text": "勇士們把你打倒了三次，你站起來了三次。第四次，帶頭的勇士放下了斧頭：「……夠了。」他看著你，「倒了三次還站得起來的人類——魔族認。」觀戰的領主們，一個接一個地把手按在了胸口。",
+            "set_flags": ["lisr_proven"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "oath",
+          "title": "在血誓碑谷立下誓約",
+          "text": "血誓碑谷的最深處，莉莎爾摘下了黑曜冠環，放在一塊空白的石碑上：「魔族的伴侶，要在血誓碑谷立誓。」她看著你，金色的豎瞳裡第一次有了緊張，「血誓是不能違背的。違背的人，會被誓約吞噬。」她伸出手，「……你還要立嗎？」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["lisr_proven"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你握住了她的手，念完了整段古老的誓詞。石碑亮了起來，你們的名字一筆一劃地刻了上去——赤翼的莉莎爾，和一個人類。莉莎爾看著那塊石碑，赤紅的雙翼不受控制地展開了：「……成了。」",
+            "set_flags": ["lisr_sworn"]
+          },
+          "fail": {
+            "text": "你念錯了誓詞的一句。石碑閃了一下，差點熄滅——莉莎爾握緊了你的手，替你念完了那一句，聲音在抖：「……我替你念。」石碑重新亮了起來，你們的名字刻了上去。她低聲說，「血誓允許一方替另一方念。只要那一方，真心願意。」",
+            "set_flags": ["lisr_sworn"]
+          }
+        },
+        {
+          "id": "after",
+          "title": "立誓之後",
+          "text": "碑谷的月光下，莉莎爾重新戴上了冠環，看著石碑上的兩個名字，很久沒有說話。然後她轉過身，赤紅的雙翼慢慢地合攏，把你們兩個人都包了進去：「我推行了一輩子的律法。」她的聲音很輕，「這是第一條，我自己想遵守的。」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["lisr_sworn"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那我也遵守一輩子」",
+              "success": {
+                "text": "莉莎爾笑了——驕傲的、像烈焰一樣的笑：「一輩子。」她低下頭，在你的額頭上留下了一個吻，燙得像火，「人類的一輩子很短。」她的雙翼收緊了，「所以，每一天，都是我的。」那一夜，赤焰王座廳的燈，一直亮到天亮——魔王很少熬夜。",
+                "set_flags": ["lisr_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 25, "reason": "和她立下了血誓" },
+                  { "type": "memory", "summary": "在血誓碑谷和赤翼之君莉莎爾立下了伴侶的血誓。她說，這是她推行了一輩子的律法裡，第一條自己想遵守的。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「下一次約會，換『紅』決定去哪裡」",
+              "success": {
+                "text": "莉莎爾愣了一下，然後大笑起來——魔族們說，魔王從來不大笑：「……紅。」她從斗篷底下拿出那本筆記，翻到最後一頁，上面寫著：「約會的最後一步：約好下一次。」她把筆記塞給你，「這一次，換你記。」",
+                "set_flags": ["lisr_lover", "lisr_red_date"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 25, "reason": "要和紅繼續約會" },
+                  {
+                    "type": "memory",
+                    "summary": "在血誓碑谷和赤翼之君莉莎爾立下了伴侶的血誓。之後，你說下一次約會換「紅」決定——她把那本筆記交給了你。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "sak_land_banquet",
+      "title": "潮主的宴會",
+      "summary": "今年的潮主櫻汐把治理都城當成辦宴會。這一次，她想辦一場「陸地風格」的宴會——需要一個真正的陸地人當顧問。（櫻汐・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sakurashio",
+        "min_level": 5,
+        "text": "一個珊瑚紅長髮、插著並蒂珊瑚花的玉璘族女孩從潮鏡台上游下來，魚尾一甩，濺了你一身水：「陸地人！真的陸地人！」她抓住你的手，眼睛閃閃發亮，「我是今年的潮主！我要辦一場陸地風格的宴會——你當我的顧問！」她頓了頓，「陸地的宴會，是不是要用火烤東西？那個，在海裡怎麼辦？」"
+      },
+      "start_flags": ["sak_start"],
+      "nodes": [
+        {
+          "id": "plan",
+          "title": "在滄月闕的酒館替櫻汐策劃陸地風格的宴會",
+          "text": "滄月闕的酒館裡，櫻汐把一大疊計畫攤在桌上：陸地的音樂、陸地的舞蹈、陸地的「烤魚」——她在旁邊畫了一條哭泣的魚。她托著下巴看你：「陸地的宴會，最重要的是什麼？」",
+          "at": { "where": "cell", "location": "canglue", "cell": "tavern" },
+          "requires": { "flags": ["sak_start"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你說，陸地的宴會最重要的不是吃什麼，是大家坐在一起。櫻汐愣住了，然後拍手大笑：「跟海裡一樣！」她把計畫書翻到最後一頁，寫下了「大家坐在一起」，畫了一個大大的圈。",
+            "set_flags": ["sak_planned"],
+            "effects": [{ "type": "affinity", "npc": "npc_sakurashio", "delta": 10, "reason": "替她策劃了宴會" }]
+          },
+          "fail": {
+            "text": "你說的陸地宴會規矩太多了，櫻汐聽得頭昏腦脹。最後她把計畫書一丟：「算了！我們就辦一場大家都開心的宴會！」——這大概才是最好的計畫。",
+            "set_flags": ["sak_planned"]
+          }
+        },
+        {
+          "id": "eels",
+          "title": "在滄月闕近郊趕走偷吃宴會食材的饕餮鰻",
+          "text": "宴會的食材堆在城外的珊瑚倉庫裡，卻被一群饕餮鰻吃了一半。櫻汐游過去，叉著腰：「那是我的宴會！」饕餮鰻們張開滿是細牙的嘴，打了一個嗝。",
+          "at": { "where": "outskirts", "location": "canglue" },
+          "requires": { "flags": ["sak_planned"] },
+          "kind": "combat",
+          "enemies": [["glutton_eel", 3]],
+          "success": {
+            "text": "饕餮鰻們逃進了海藻林。櫻汐數了數剩下的食材：「……還夠！」她抱著一籃海葡萄，笑得像中了大獎，「陸地人，你好厲害！」",
+            "set_flags": ["sak_saved"]
+          },
+          "fail": {
+            "text": "饕餮鰻們吃飽了才走，剩下的食材只夠一半的人。櫻汐卻一點也不沮喪：「那就一半的人吃，一半的人跳舞，然後交換！」",
+            "set_flags": ["sak_saved"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "party",
+          "title": "在宴會上回應櫻汐",
+          "text": "宴會辦得熱熱鬧鬧，四殿的玉璘族都來了。櫻汐唱完了一首歌，整個都城的結界都在發亮。她游到你身邊，臉頰紅紅的：「陸地人，你說——今天的宴會，是陸地風格的嗎？」",
+          "at": { "where": "npc", "npc": "npc_sakurashio" },
+          "requires": { "flags": ["sak_saved"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「是櫻汐風格的。比陸地的好」",
+              "success": {
+                "text": "櫻汐愣了一下，然後整個人亮了起來——真的亮了，她的鱗片在發光：「櫻汐風格！」她抓著你的手轉了一圈，「那下一次的宴會，也要你來當顧問！櫻汐風格的顧問！」",
+                "set_flags": ["sak_1_done", "sak_advisor"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "說是櫻汐風格的" },
+                  { "type": "memory", "summary": "替潮主櫻汐策劃了一場「陸地風格」的宴會。你說，那是櫻汐風格的，比陸地的好。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳的歌，讓結界都亮了」",
+              "success": {
+                "text": "櫻汐的臉一下子紅了，耳鰭都豎了起來：「你、你聽到了？」她把臉埋進你的肩膀，「……那首是我自己寫的。第一次唱給陸地人聽。」",
+                "set_flags": ["sak_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 10, "reason": "誇了她的歌" },
+                  { "type": "memory", "summary": "替潮主櫻汐策劃了一場「陸地風格」的宴會。她唱了一首自己寫的歌，第一次唱給陸地人聽。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "sak_lost_sister",
+      "title": "迷路的妹妹",
+      "summary": "櫻汐的妹妹汐音是派駐潮汐港的使者，在港口迷路了一百多次。這一次她沒有回來——潮汐港有人在抓落單的玉璘族。（櫻汐・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sakurashio",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["sak_1_done"] },
+        "text": "櫻汐第一次沒有笑，珊瑚紅的頭髮亂成一團：「汐音三天沒有回信了。」她抓著你的手，「她每次迷路都會寫信給我，說她又迷路了。」她的聲音在抖，「這次沒有信。」她抬起頭，「潮主不能離開都城太久……陸地人，拜託你。」"
+      },
+      "start_flags": ["sak_shion"],
+      "nodes": [
+        {
+          "id": "trace",
+          "title": "在潮汐港的情報商打聽汐音的下落",
+          "text": "潮汐港的情報商聽說是玉璘族的使者，臉色變了：「最近有一夥人在港口抓落單的玉璘族——說是賣給內陸的收藏家，當『活的寶石』。」他壓低聲音，「他們的船停在城外的廢棄船塢。」",
+          "at": { "where": "cell", "location": "tidehaven", "cell": "informant" },
+          "requires": { "flags": ["sak_shion"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你拿到了廢棄船塢的位置，還有一個消息：被抓的人裡，有一個一直在說「我又迷路了」的玉璘族女孩。",
+            "set_flags": ["sak_traced"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才肯說：「城外的廢棄船塢。」",
+            "set_flags": ["sak_traced"],
+            "effects": [{ "type": "money", "amount": -150 }]
+          }
+        },
+        {
+          "id": "netters",
+          "title": "在潮汐港近郊從捕網手那裡救回汐音",
+          "text": "廢棄船塢裡，幾個拿著鐵網的人正把一個個水缸搬上船，水缸裡關著玉璘族。最小的那個水缸裡，一個女孩正對著網子嘆氣：「……又迷路了。」",
+          "at": { "where": "outskirts", "location": "tidehaven" },
+          "requires": { "flags": ["sak_traced"] },
+          "kind": "combat",
+          "enemies": [["slaver_netter", 2]],
+          "success": {
+            "text": "捕網手們逃了。你打開了所有的水缸，玉璘族們一個一個地游回了海裡。最小的那個女孩爬出水缸，看著你：「……你是姊姊派來的嗎？」她頓了頓，「我是不是又迷路了？」",
+            "set_flags": ["sak_found"]
+          },
+          "fail": {
+            "text": "捕網手們把你們逼退了，可在混亂中水缸被打翻了，玉璘族們順著船塢的排水溝游回了海裡——只剩一個，在排水溝口迷了路。你把她撈了起來：「……汐音？」",
+            "set_flags": ["sak_found"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "reunion",
+          "title": "把汐音送回櫻汐身邊",
+          "text": "潮鏡台上，櫻汐一看見汐音就撲了過去，姊妹倆抱著哭成一團，哭到結界都在閃。很久，櫻汐抬起頭，紅著眼睛看你：「謝謝你。」她游到你面前，「潮主欠你一個願望。什麼都可以。」",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_tide_mirror" },
+          "requires": { "flags": ["sak_found"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「下次宴會，坐在妳旁邊」",
+              "success": {
+                "text": "櫻汐愣住了，然後臉一下子紅透了，耳鰭抖個不停：「……就、就這樣？」汐音在旁邊小聲地說：「姊姊，他是在說他喜歡妳。」櫻汐整個人沉進了水裡，只露出一雙發亮的眼睛：「……我知道啦！」",
+                "set_flags": ["sak_2_done", "sak_beside"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 20, "reason": "說要坐在她旁邊" },
+                  { "type": "memory", "summary": "替潮主櫻汐救回了迷路的妹妹汐音。她說欠你一個願望——你說，下次宴會坐在她旁邊。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「給汐音一張潮汐港的地圖」",
+              "success": {
+                "text": "櫻汐和汐音同時愣住了，然後一起笑了出來。櫻汐笑得在水裡翻了一圈：「這是我聽過最好的願望！」她把一張畫滿了記號的地圖塞給汐音，「……陸地人，你真的很好。」她頓了頓，「好到讓人想一直待在你身邊。」",
+                "set_flags": ["sak_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "替汐音要了地圖" },
+                  { "type": "affinity", "npc": "npc_shion_envoy", "delta": 10, "reason": "替她要了一張地圖" },
+                  { "type": "memory", "summary": "替潮主櫻汐救回了迷路的妹妹汐音。你的願望是給汐音一張潮汐港的地圖。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "sak_tide_challenge",
+      "title": "挑潮祭",
+      "summary": "一年一度的挑潮祭到了——櫻汐要守住潮主的位置。可是今年，祖忘之淵的深海妖物也聞到了祭典的歌聲。她說，贏了之後，最後一首歌要唱給你聽。（櫻汐・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sakurashio",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["sak_2_done"] },
+        "text": "櫻汐穿著最隆重的櫻色廣袖羅裳，頭上的並蒂珊瑚花開得正盛：「挑潮祭！今年我要連勝四屆！」她轉了一圈，又停下來，表情認真了起來，「可是螺鈿婆婆說，祖忘之淵的東西在往上爬——祭典的歌聲會把它們引過來。」她握住你的手，「陸地人，替我守住祭典。贏了之後……最後一首歌，我要唱給你聽。」"
+      },
+      "start_flags": ["sak_festival"],
+      "nodes": [
+        {
+          "id": "horrors",
+          "title": "在滄月闕近郊擋下被歌聲引來的深海妖物",
+          "text": "挑潮祭的歌聲傳遍了海底。城外的深溝裡，兩頭長著無數觸手、眼睛發著幽光的深海妖物爬了上來，朝著祭典的方向游去。",
+          "at": { "where": "outskirts", "location": "canglue" },
+          "requires": { "flags": ["sak_festival"] },
+          "kind": "combat",
+          "enemies": [["trench_horror", 2]],
+          "success": {
+            "text": "深海妖物們沉回了深溝。遠處，祭典的歌聲還在繼續——櫻汐唱的那一段，比任何人都亮。",
+            "set_flags": ["sak_guarded"]
+          },
+          "fail": {
+            "text": "深海妖物們把你們拖向了深溝，最後是祭典上的歌聲突然變大了——櫻汐感覺到了，對著深溝的方向唱了一段，妖物們捂著觸手退了回去。",
+            "set_flags": ["sak_guarded"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "duet",
+          "title": "在潮鏡台和櫻汐唱完最後一首歌",
+          "text": "櫻汐贏了，連勝四屆。潮鏡台上，四殿的玉璘族都在歡呼。她舉起手，讓大家安靜下來：「最後一首歌——」她看著台下的你，「我想和一個陸地人一起唱。」她伸出手，「上來。」",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_tide_mirror" },
+          "requires": { "flags": ["sak_guarded"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你們一起唱完了那首歌——她教過你的那首，她自己寫的那首。結界亮得像白晝，整個滄月闕都看見了。歌唱完了，櫻汐沒有放開你的手：「……陸地人唱歌，也很好聽。」",
+            "set_flags": ["sak_sang"]
+          },
+          "fail": {
+            "text": "你唱走了好幾個音，台下有人在笑。可是櫻汐笑得最大聲，她把你的走音也唱進了歌裡，唱成了一首全新的歌。結界還是亮了，亮得有點歪——族人們說，那是今年最好聽的一首。",
+            "set_flags": ["sak_sang"]
+          }
+        },
+        {
+          "id": "confess",
+          "title": "回應櫻汐",
+          "text": "祭典散了，櫻汐拉著你游到了潮鏡台最高的地方，從那裡可以看見整個滄月闕的燈火。她頭上的並蒂珊瑚花，有一朵掉了下來，她撿起來，別在你的衣襟上：「並蒂珊瑚花，一朵給自己，一朵給喜歡的人。」她的臉紅透了，「……這是玉璘族的告白。」",
+          "at": { "where": "npc", "npc": "npc_sakurashio" },
+          "requires": { "flags": ["sak_sang"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那我收下了」",
+              "success": {
+                "text": "櫻汐歡呼了一聲，撲進你懷裡，魚尾纏住了你的腿：「收下了！收下了！」她抬起頭，眼睛閃閃發亮，「那下一場宴會，就是我們的宴會！」她頓了頓，又認真了起來，「……潮主的伴侶，要陪潮主辦一輩子的宴會喔。很累的喔。」",
+                "set_flags": ["sak_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 25, "reason": "收下了並蒂珊瑚花" },
+                  { "type": "memory", "summary": "挑潮祭之後，潮主櫻汐把並蒂珊瑚花別在了你的衣襟上——那是玉璘族的告白。你收下了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把另一朵也別回她的頭上，「一起的」",
+              "success": {
+                "text": "櫻汐愣住了，摸著頭上重新別好的珊瑚花：「……一起的。」她的眼淚一顆一顆地浮起來，在海水裡變成了小小的珍珠，「並蒂珊瑚，本來就是一起長的。」她牽起你的手，「那，一直一起。」",
+                "set_flags": ["sak_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 25, "reason": "說珊瑚花是一起的" },
+                  {
+                    "type": "memory",
+                    "summary": "挑潮祭之後，潮主櫻汐把並蒂珊瑚花別在你的衣襟上。你把另一朵別回她的頭上——並蒂珊瑚，本來就是一起長的。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「礁光柱修好了，結界會一直亮著」",
+              "requires": { "flags": ["reef_done"] },
+              "success": {
+                "text": "櫻汐看著遠處重新亮起的礁光柱，笑了：「……是你修好的。」她靠在你身上，「螺鈿婆婆說，結界亮著，是因為有人在唱歌。」她抬起頭，「以後，我每天都唱。唱給你聽，也唱給滄月闕聽。」她把並蒂珊瑚花別在你的衣襟上，「這樣，結界就永遠不會暗了。」",
+                "set_flags": ["sak_lover", "sak_barrier_song"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 25, "reason": "說結界會一直亮著" },
+                  { "type": "memory", "summary": "挑潮祭之後，潮主櫻汐說，以後每天都唱歌——唱給你聽，也唱給滄月闕聽。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }

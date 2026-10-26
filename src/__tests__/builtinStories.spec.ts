@@ -126,6 +126,11 @@ describe('built-in stories', () => {
       ['kara_great_hunt', 'kara_suitors', 'kara_mane_oath'],
       ['ren_bath_maid', 'ren_land_holiday', 'ren_tide_home'],
       ['mat_innocent_question', 'mat_lost_puppy', 'mat_honest_contract'],
+      ['ith_moon_query', 'ith_old_garden', 'ith_mortal_time'],
+      ['ana_sneak_out', 'ana_body_double', 'ana_crown_and_road'],
+      ['ele_chancellor_lunch', 'ele_greenhouse', 'ele_last_edict'],
+      ['lisr_red_again', 'lisr_court_currents', 'lisr_crimson_vow'],
+      ['sak_land_banquet', 'sak_lost_sister', 'sak_tide_challenge'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
@@ -134,8 +139,8 @@ describe('built-in stories', () => {
     }
     const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'lena_good_friend', 'lena_runaway', 'lena_lighter_love', 'valerie_sample', 'valerie_stolen_paper', 'valerie_hearing', 'eve_holiday', 'eve_tea_house', 'eve_master', 'luc_practice_partner', 'luc_succubus_manual', 'luc_eighth_exam', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels', 'twin_sisters_test', 'twin_lana_song', 'twin_same_person', 'noel_pretty_clerk', 'noel_prank_price', 'noel_getting_serious', 'zero_warm_chest', 'zero_recall_order', 'zero_definition', 'kar_challenge', 'kar_rigged_match', 'kar_arena_trophy', 'oboro_rooftop_shadow', 'oboro_report', 'oboro_shadow_heart', 'belv_bandit_hunter', 'belv_old_brand', 'belv_not_a_toy', 'eil_ghost_bride', 'eil_lost_ring', 'eil_hundred_year_wedding', 'pru_what_is_love', 'pru_ring_and_date', 'pru_swamp_wedding', 'ila_elf_cold', 'ila_moon_bloom', 'ila_hundred_years', 'mimi_clumsy_maid', 'mimi_tea_guild', 'mimi_opening_day', 'stella_lost_idol', 'stella_empty_seats', 'stella_star_confession', 'noir_blank_score', 'noir_fan_letters', 'noir_song_for_whom', 'pom_unpaid_fee', 'pom_theater_contract', 'pom_guard_contract', 'marg_salon_newcomer', 'marg_unsent_letters', 'marg_masked_ball', 'liese_heavy_flour', 'liese_front_basket', 'liese_harvest_festival', 'clara_lilac_reader', 'clara_field_research', 'clara_last_chapter', 'ren_bath_maid', 'ren_land_holiday', 'ren_tide_home']
     expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
-    // 不是成人向角色的戀愛線（運動系三人、瑪蒂爾達）不標成人向，成人內容關閉時也能玩
-    expect(['isab_drinking_bet', 'isab_young_knight', 'isab_last_bet', 'brun_sweet_tooth', 'brun_academy_speech', 'brun_frost_shield', 'kara_great_hunt', 'kara_suitors', 'kara_mane_oath', 'mat_innocent_question', 'mat_lost_puppy', 'mat_honest_contract'].every((id) => !story(id).tags?.includes('adult'))).toBe(true)
+    // 不是成人向角色的戀愛線（運動系三人、瑪蒂爾達、五位女統治者）不標成人向，成人內容關閉時也能玩
+    expect(['isab_drinking_bet', 'isab_young_knight', 'isab_last_bet', 'brun_sweet_tooth', 'brun_academy_speech', 'brun_frost_shield', 'kara_great_hunt', 'kara_suitors', 'kara_mane_oath', 'mat_innocent_question', 'mat_lost_puppy', 'mat_honest_contract', 'ith_moon_query', 'ith_old_garden', 'ith_mortal_time', 'ana_sneak_out', 'ana_body_double', 'ana_crown_and_road', 'ele_chancellor_lunch', 'ele_greenhouse', 'ele_last_edict', 'lisr_red_again', 'lisr_court_currents', 'lisr_crimson_vow', 'sak_land_banquet', 'sak_lost_sister', 'sak_tide_challenge'].every((id) => !story(id).tags?.includes('adult'))).toBe(true)
     // 角色在任務開始前就有性經驗：標非處女
     expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'cas_black_rose_guest', 'cas_collar_origin', 'cas_queen_kneels', 'belv_bandit_hunter', 'belv_old_brand', 'belv_not_a_toy', 'marg_salon_newcomer', 'marg_unsent_letters', 'marg_masked_ball', 'liese_heavy_flour', 'liese_front_basket', 'liese_harvest_festival', 'clara_lilac_reader', 'clara_field_research', 'clara_last_chapter'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
   })
