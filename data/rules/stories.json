@@ -1091,7 +1091,7 @@
           "at": { "where": "outskirts", "location": "dawnlight" },
           "requires": { "flags": ["lil_grad"] },
           "kind": "combat",
-          "enemies": [["star_shadow", 2]],
+          "enemies": [["first_star_heir", 1], ["star_shadow", 1]],
           "allies": ["npc_lilian"],
           "success": {
             "text": "殘影們微笑著散成星屑。最後一位前輩在消失前摸了摸莉莉安的頭：「恭喜畢業。」星之心落回莉莉安手裡，光芒漸漸淡去。",
@@ -1594,7 +1594,7 @@
           "at": { "where": "dungeon", "location": "mist_abbey", "layer": "abyss" },
           "requires": { "flags": ["mabb_saint"] },
           "kind": "combat",
-          "enemies": [["mist_seraph", 2]],
+          "enemies": [["grey_wing_seraph", 1], ["mist_seraph", 1]],
           "success": {
             "text": "熾天使的光矛垂了下來，灰色的羽毛散落一地。祭壇就在前面，上面只有一塊被鑿平的石碑。",
             "set_flags": ["mabb_altar"]
@@ -7045,7 +7045,7 @@
           "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
           "requires": { "flags": ["lis_wall"] },
           "kind": "combat",
-          "enemies": [["spine_wraith", 2]],
+          "enemies": [["fallen_dragon_grudge", 1], ["spine_wraith", 1]],
           "success": {
             "text": "怨念散成了一片黑灰。莉莎爾收起翅膀，看著石碑上新多出的焦痕：「它在找我。不——它在找一條龍。我身上有它想要的東西。」",
             "set_flags": ["lis_spine"]
@@ -7524,7 +7524,7 @@
           "at": { "where": "outskirts", "location": "moltenhold" },
           "requires": { "flags": ["ign_titan"] },
           "kind": "combat",
-          "enemies": [["forge_titan", 2]],
+          "enemies": [["forge_titan_prime", 1], ["forge_titan", 1]],
           "allies": ["npc_ignis_forge"],
           "success": {
             "text": "巨像跪了下來。伊格妮絲爬上其中一具的胸口，把心核舉到半空，看著你：「第一個指令，你來說。」",
@@ -8032,7 +8032,7 @@
           "at": { "where": "outskirts", "location": "shadow_vale" },
           "requires": { "flags": ["mor_dragon"] },
           "kind": "combat",
-          "enemies": [["dream_warden", 2]],
+          "enemies": [["dream_gatekeeper", 1], ["dream_warden", 1]],
           "allies": ["npc_morphe"],
           "success": {
             "text": "守衛們散成了星光。森林的盡頭，一條由夢組成的龍盤在倒懸的樹上，閉著眼睛，像是在睡覺——又像是在看著你。",
@@ -8566,14 +8566,14 @@
           "at": { "where": "cell", "location": "bone_hills", "cell": "lm_blood_trial_ground" },
           "requires": { "flags": ["trl_spirits"] },
           "kind": "combat",
-          "enemies": [["war_spirit", 2]],
+          "enemies": [["elder_war_spirit", 1], ["war_spirit", 1]],
           "allies": ["npc_ulma_bloodtrial"],
           "success": {
             "text": "戰靈的身影一點一點地散去，最後只剩下兩團紅光，在你和烏爾瑪的頭頂盤旋。",
             "set_flags": ["trl_spirits_down"]
           },
           "fail": {
-            "text": "你們撐不住，只能先退了下來。血角的戰靈還在那裡——等你們準備好了，可以再來挑戰。",
+            "text": "你們撐不住，只能先退了下來。血角的古戰靈還在那裡——等你們準備好了，可以再來挑戰。",
             "retry": true
           }
         },
@@ -8839,7 +8839,7 @@
           "at": { "where": "cell", "location": "silent_tomb", "cell": "lm_ember_tower" },
           "requires": { "flags": ["god_glimpse"] },
           "kind": "combat",
-          "enemies": [["white_flame_avatar", 2]],
+          "enemies": [["white_flame_warden", 1], ["white_flame_avatar", 1]],
           "allies": ["npc_aetherion"],
           "success": {
             "text": "守門的火焰散成了光點，白色的世界裂開一道縫。縫的另一邊，是深不見底的黑。",
@@ -9088,7 +9088,7 @@
           "at": { "where": "cell", "location": "silent_tomb", "cell": "lm_silent_corridor" },
           "requires": { "flags": ["lila_rite"] },
           "kind": "combat",
-          "enemies": [["tomb_warden", 2]],
+          "enemies": [["tomb_warden_elder", 1], ["tomb_warden", 1]],
           "allies": ["npc_lila_listener"],
           "success": {
             "text": "守墓靈的燈籠熄滅了。它們沒有消失，只是退回了牆裡，低聲說：「孩子……你還沒有回答。」",
@@ -9360,7 +9360,7 @@
           "at": { "where": "outskirts", "location": "rotmarsh" },
           "requires": { "flags": ["rot_ready"] },
           "kind": "combat",
-          "enemies": [["mire_wyrm", 2]],
+          "enemies": [["mire_wyrm_mother", 1], ["mire_wyrm", 1]],
           "success": {
             "text": "巨蟲們沉回了沼地深處，泥水上冒了最後幾個泡泡。村子那邊，鼓聲重新響了起來。",
             "set_flags": ["rot_saved"]
@@ -10152,7 +10152,7 @@
           "at": { "where": "outskirts", "location": "windhammer" },
           "requires": { "flags": ["kag_hoard"] },
           "kind": "combat",
-          "enemies": [["heat_warden", 2]],
+          "enemies": [["blaze_warden", 1], ["heat_warden", 1]],
           "success": {
             "text": "守衛們倒下了，一個化成了岩漿，一個碎成了冰。山洞深處，有什麼東西睜開了眼睛。",
             "set_flags": ["kag_inside"]
@@ -10424,7 +10424,7 @@
           "at": { "where": "outskirts", "location": "ironforge" },
           "requires": { "flags": ["ore_open"] },
           "kind": "combat",
-          "enemies": [["gate_warden", 2]],
+          "enemies": [["elder_gate_warden", 1], ["gate_warden", 1]],
           "allies": ["npc_balin_greyrock"],
           "success": {
             "text": "石衛單膝跪下，回到了門上。封印之門發出三短一長的聲響，慢慢地打開了。門後，一群白鬍子垂到地上的古鍛匠站在一座星光閃爍的礦脈前。",
@@ -11269,7 +11269,7 @@
           "at": { "where": "outskirts", "location": "silvermoon" },
           "requires": { "flags": ["wt_source"] },
           "kind": "combat",
-          "enemies": [["blight_treant", 2]],
+          "enemies": [["blight_treant_elder", 1], ["blight_treant", 1]],
           "allies": ["npc_liandra_spring"],
           "success": {
             "text": "古樹人跪了下來，根深深地扎回了土裡。它們還活著，但動不了了。莉安德拉說：「現在。趁它們還記得自己是誰。」",
@@ -11541,7 +11541,7 @@
           "at": { "where": "cell", "location": "coral_bay", "cell": "lm_sea_spirit_shrine" },
           "requires": { "flags": ["wat_heart"] },
           "kind": "combat",
-          "enemies": [["tide_guardian", 2]],
+          "enemies": [["great_tide_guardian", 1], ["tide_guardian", 1]],
           "allies": ["npc_leila"],
           "success": {
             "text": "守護靈散成了一場細雨，雨水落在蕾伊拉的臉上。井底傳來一個溫柔的聲音：「沙漠的孩子。你要什麼？」",
@@ -12648,7 +12648,7 @@
           "at": { "where": "outskirts", "location": "windspeak" },
           "requires": { "flags": ["shd_fall"] },
           "kind": "combat",
-          "enemies": [["mist_scale_guardian", 2]],
+          "enemies": [["mist_scale_warden", 1], ["mist_scale_guardian", 1]],
           "allies": ["npc_evenna_starword"],
           "success": {
             "text": "守衛散成了霧，霧的深處，有一雙比月亮還大的眼睛睜開了。",
@@ -12930,7 +12930,7 @@
           "at": { "where": "outskirts", "location": "mosswhisper" },
           "requires": { "flags": ["fog_valley_in"] },
           "kind": "combat",
-          "enemies": [["mist_warden", 2]],
+          "enemies": [["mist_warden_patriarch", 1], ["mist_warden", 1]],
           "success": {
             "text": "守霧者退開了，身上的霧一點一點地散去，露出了兩張很老、很累的臉。其中一個問：「……外面，現在怎麼樣了？」",
             "set_flags": ["fog_asked"]
@@ -14267,7 +14267,7 @@
           "at": { "where": "outskirts", "location": "stilltide_oasis" },
           "requires": { "flags": ["rite_field"] },
           "kind": "combat",
-          "enemies": [["ancestor_spirit", 2]],
+          "enemies": [["first_ancestor_spirit", 1], ["ancestor_spirit", 1]],
           "success": {
             "text": "祖靈停下了，在你面前跪下一條腿——貓魅族對獵手的禮。「好。你可以看。」它們轉向了娜伊薇與卡菈。",
             "set_flags": ["rite_witness"]
@@ -14548,7 +14548,7 @@
           "at": { "where": "outskirts", "location": "sunscorch" },
           "requires": { "flags": ["bab_climb"] },
           "kind": "combat",
-          "enemies": [["tower_sentinel", 2]],
+          "enemies": [["great_tower_sentinel", 1], ["tower_sentinel", 1]],
           "success": {
             "text": "哨兵碎成了磚，掉下了塔外，很久很久才聽見落地的聲音。往上看，塔頂還在雲裡。",
             "set_flags": ["bab_mid"]
@@ -19434,7 +19434,7 @@
           "at": { "where": "outskirts", "location": "moltenhold" },
           "requires": { "flags": ["zero_titan"] },
           "kind": "combat",
-          "enemies": [["forge_titan", 2]],
+          "enemies": [["forge_titan_prime", 1], ["forge_titan", 1]],
           "allies": ["npc_zero"],
           "success": {
             "text": "巨像跪了下來。軍需官看著零號——一個為了保護人類而戰鬥的「試作機」——很久，撕掉了回收令：「……民用型。我記住了。」",
@@ -20529,7 +20529,7 @@
           "at": { "where": "cell", "location": "silent_tomb", "cell": "lm_silent_corridor" },
           "requires": { "flags": ["eil_wedding"] },
           "kind": "combat",
-          "enemies": [["tomb_warden_spirit", 2]],
+          "enemies": [["tomb_warden_elder", 1], ["tomb_warden_spirit", 1]],
           "success": {
             "text": "守墓靈們退回了石像裡。最後一尊在閉上眼睛之前，看著艾琳說：「……一百年，夠了。去吧。」",
             "set_flags": ["eil_allowed"]
@@ -20815,7 +20815,7 @@
           "at": { "where": "outskirts", "location": "rotmarsh" },
           "requires": { "flags": ["pru_blessed"] },
           "kind": "combat",
-          "enemies": [["mire_croc", 2]],
+          "enemies": [["old_mire_king", 1], ["mire_croc", 1]],
           "success": {
             "text": "沼王鱷們沉回了沼澤深處。村民們歡呼著把烤魚抬回了廣場——其中一條鱷魚的尾巴，被魔族的老獵人拖回來當了加菜。",
             "set_flags": ["pru_feast"]
@@ -21066,7 +21066,7 @@
           "at": { "where": "outskirts", "location": "mosswhisper" },
           "requires": { "flags": ["ila_last"] },
           "kind": "combat",
-          "enemies": [["bloom_treant", 2]],
+          "enemies": [["thousand_year_bloom", 1], ["bloom_treant", 1]],
           "success": {
             "text": "古樹們重新把根扎進了土裡，花謝了，又睡了過去。艾拉妮雅摸著其中一棵的樹皮：「對不起喔，吵醒你們了。」她回頭看你，「……再一百年，我們再一起來看它們開花，好嗎？」",
             "set_flags": ["ila_cleared"]
@@ -22966,11 +22966,11 @@
         {
           "id": "inquisitors",
           "title": "在萊茵堡近郊擋下禁書審查官",
-          "text": "審問的前一夜，禁書審查官親自帶人來圖書館搜查原稿。你和克拉拉帶著原稿從後門逃出城，審查官們追了上來，手裡的聖印閃著白光：「交出淫書！」",
+          "text": "審問的前一夜，禁書總審查官親自帶人來圖書館搜查原稿。你和克拉拉帶著原稿從後門逃出城，審查官們追了上來，手裡的聖印閃著白光：「交出淫書！」",
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["clara_trial"] },
           "kind": "combat",
-          "enemies": [["book_inquisitor", 2]],
+          "enemies": [["chief_book_inquisitor", 1], ["book_inquisitor", 1]],
           "success": {
             "text": "審查官們退走了，原稿完好無缺。克拉拉抱著它，喘著氣：「……明天的審問，還是要去。」她看著你，「逃走的話，紫丁香就真的是罪人了。」",
             "set_flags": ["clara_kept"]
@@ -23792,7 +23792,7 @@
           "at": { "where": "outskirts", "location": "sunscorch" },
           "requires": { "flags": ["kara_oath"] },
           "kind": "combat",
-          "enemies": [["storm_roc", 2]],
+          "enemies": [["thunder_plume_roc", 1], ["storm_roc", 1]],
           "success": {
             "text": "最後一隻巨鵬墜落在草原上，雷雲散了。卡菈從巨鵬的尾巴上拔下兩根最長的羽毛，一根給你，一根插在自己的鬃毛裡：「誓約的第一半，完成了。」",
             "set_flags": ["kara_roc"]
@@ -24596,7 +24596,7 @@
           "at": { "where": "outskirts", "location": "silvermoon" },
           "requires": { "flags": ["ith_rite"] },
           "kind": "combat",
-          "enemies": [["blight_colossus", 2]],
+          "enemies": [["withered_forest_warden", 1], ["blight_colossus", 1]],
           "success": {
             "text": "巨獸們倒下了，身上的枯藤碎成了灰。伊瑟蘭迪爾走過去，把手放在其中一頭的額頭上：「……睡吧。等森林醒來，你們也會醒來。」",
             "set_flags": ["ith_held"]
@@ -26634,20 +26634,19 @@
         },
         {
           "id": "duel",
-          "title": "在獸骨荒丘近郊打倒血角派的戰爭領主",
-          "text": "骸骨要塞前的決鬥場上，兩個身上塗滿血紅戰紋的戰爭領主扛著巨斧走了出來。整個荒丘的魔族都來看了——血角派、律法派、還有不屬於任何一派的普通人。",
+          "title": "在獸骨荒丘近郊打倒血角派的戰帥",
+          "text": "骸骨要塞前的決鬥場上，血角派的戰帥扛著巨斧走了出來，身上的血紅戰紋是用自己的血畫的，身後跟著他最強的戰爭領主。整個荒丘的魔族都來看了——血角派、律法派、還有不屬於任何一派的普通人。",
           "at": { "where": "outskirts", "location": "bone_hills" },
           "requires": { "flags": ["pol_p2_called"] },
           "kind": "combat",
-          "enemies": [["bloodhorn_warlord", 2]],
+          "enemies": [["bloodhorn_warmaster", 1], ["bloodhorn_warlord", 1]],
           "success": {
-            "text": "戰爭領主們倒在了骸骨堆上。決鬥場一片死寂，然後，一個接一個的魔族把手按在了胸口。血角派的戰旗，從骸骨要塞上降了下來。",
+            "text": "戰帥和他的戰爭領主倒在了骸骨堆上。決鬥場一片死寂，然後，一個接一個的魔族把手按在了胸口。血角派的戰旗，從骸骨要塞上降了下來。",
             "set_flags": ["pol_p2_won"]
           },
           "fail": {
-            "text": "戰爭領主們把你們打倒了三次，你們站起來了三次。第四次，他們放下了斧頭——荒丘的規矩：倒下三次還站得起來的人，就算贏了。血角派的戰旗，降了下來。",
-            "set_flags": ["pol_p2_won"],
-            "effects": [{ "type": "hp", "ratio": -0.2 }]
+            "text": "戰帥把你們打倒了三次，第三次你們沒能站起來。他扛起巨斧，轉身走回骸骨要塞：「荒丘的戰書不會過期。站得起來了，再來。」",
+            "retry": true
           }
         },
         {

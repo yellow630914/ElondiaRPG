@@ -217,11 +217,32 @@ describe('built-in stories', () => {
     // 史詩線的頭目戰（政治線的高潮、終章與五條龍）：頭目加一隻手下，輸了可以重試
     const epic = stories.filter((s) => s.id.startsWith('drg_') || s.id.startsWith('pol_'))
     const bossNodes = epic.flatMap((s) => s.nodes.filter((n) => n.enemies?.some(([e]) => (enemies[e]?.hp ?? 0) > 500)).map((n) => ({ s, n })))
-    expect(bossNodes.map(({ s }) => s.id).sort()).toEqual(['drg_acheron', 'drg_babelin', 'drg_kagni', 'drg_sinor', 'drg_sorian', 'pol_acheron_gaze', 'pol_peace_crusade', 'pol_war_d_rhineburg', 'pol_war_h_bloodplume'])
+    expect(bossNodes.map(({ s }) => s.id).sort()).toEqual(['drg_acheron', 'drg_babelin', 'drg_kagni', 'drg_sinor', 'drg_sorian', 'pol_acheron_gaze', 'pol_peace_bloodhorn', 'pol_peace_crusade', 'pol_war_d_rhineburg', 'pol_war_h_bloodplume'])
     for (const { s, n } of bossNodes) {
       expect(n.enemies?.length, s.id).toBe(2)
       expect(n.fail?.retry, s.id).toBe(true)
       expect(n.fail?.set_flags ?? [], s.id).toEqual([])
+    }
+  })
+
+  it('makes the strong-looking opponents of the storylines bosses: one boss with an ultimate plus one minion', () => {
+    // 任務線裡看起來很強的對手（傳說、神靈、古老的守護者、巨大的野獸、有名有姓的首領）不會兩三下就倒
+    const fights: [string, string, string][] = [
+      ['lilian_graduation', 'shadows', 'first_star_heir'], ['mist_saint', 'seraphs', 'grey_wing_seraph'], ['lisar_far_sight', 'spine', 'fallen_dragon_grudge'],
+      ['ignis_forge_titan', 'wake', 'forge_titan_prime'], ['zero_definition', 'titans', 'forge_titan_prime'], ['morphe_dream_dragon', 'wardens', 'dream_gatekeeper'],
+      ['trial_war_spirits', 'spirits', 'elder_war_spirit'], ['god_glimpse', 'flame', 'white_flame_warden'], ['lila_living_world', 'wardens', 'tomb_warden_elder'],
+      ['eil_hundred_year_wedding', 'wardens', 'tomb_warden_elder'], ['rot_harvest_festival', 'wyrm', 'mire_wyrm_mother'], ['kagni_hoard', 'wardens', 'blaze_warden'],
+      ['ore_star_heart', 'wardens', 'elder_gate_warden'], ['wt_new_sprout', 'treants', 'blight_treant_elder'], ['wat_spring_heart', 'guardian', 'great_tide_guardian'],
+      ['shadow_sorian_projection', 'guardians', 'mist_scale_warden'], ['fog_behind_the_mist', 'wardens', 'mist_warden_patriarch'], ['rite_wind_field', 'ancestors', 'first_ancestor_spirit'],
+      ['bab_babelin_spire', 'sentinels', 'great_tower_sentinel'], ['ila_hundred_years', 'treants', 'thousand_year_bloom'], ['pru_swamp_wedding', 'crocs', 'old_mire_king'],
+      ['kara_mane_oath', 'rocs', 'thunder_plume_roc'], ['ith_mortal_time', 'beasts', 'withered_forest_warden'], ['clara_last_chapter', 'inquisitors', 'chief_book_inquisitor'],
+      ['pol_peace_bloodhorn', 'duel', 'bloodhorn_warmaster'],
+    ]
+    for (const [id, node, boss] of fights) {
+      const n = story(id).nodes.find((x) => x.id === node)!
+      expect(n.enemies?.map(([e, k]) => [e === boss, k]), `${id}:${node}`).toEqual([[true, 1], [false, 1]])
+      expect(enemies[boss]!.ability_hp_below, boss).toBeTruthy()
+      expect(enemies[boss]!.level, boss).toBeGreaterThan(enemies[n.enemies![1]![0]]!.level)
     }
   })
 
