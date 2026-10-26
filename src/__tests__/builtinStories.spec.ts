@@ -66,6 +66,12 @@ describe('built-in stories', () => {
       ['ignis_prototype', 'ignis_army_order', 'ignis_forge_titan'],
       ['noctis_ghostwriter', 'noctis_undelivered', 'noctis_evernight'],
       ['morphe_insomnia', 'morphe_moth_dust', 'morphe_dream_dragon'],
+      ['law_weakest_king', 'law_iron_tongue', 'law_bone_throne'],
+      ['trial_new_moon', 'trial_bloodhorn_warrior', 'trial_war_spirits'],
+      ['god_silent_prophecy', 'god_white_flame', 'god_glimpse'],
+      ['lila_travel_books', 'lila_first_trip', 'lila_living_world'],
+      ['rot_herb_errand', 'rot_tax_collectors', 'rot_harvest_festival'],
+      ['hm_greyport_contract', 'hm_ghost_ship', 'hm_abyss_treaty'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
