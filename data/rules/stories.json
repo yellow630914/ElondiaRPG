@@ -21410,6 +21410,1630 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "stella_lost_idol",
+      "title": "迷路的偶像",
+      "summary": "星屑三重奏的演唱會一個小時後開始，隊長兼中心的史黛拉卻不見了——她說要去買點心，然後就迷路了。（史黛拉・一）",
+      "tags": ["adult"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_stella",
+        "min_level": 5,
+        "text": "一個金色單邊馬尾、穿著綴滿星星舞台裝的女孩抓住了你的手，眼睛閃閃發亮：「你是冒險者對吧！太好了！」她左右張望，「請問……河谷鎮的舞台在哪裡？我出來買點心，然後就……」她的肚子咕嚕叫了一聲，「……演唱會還有一個小時。大家的笑容在等我！」"
+      },
+      "start_flags": ["stella_start"],
+      "nodes": [
+        {
+          "id": "goblins",
+          "title": "在河谷鎮近郊趕走搶舞台道具的哥布林",
+          "text": "你帶著史黛拉往舞台走，卻發現她走錯的方向是對的——舞台道具的馬車在城外被一群哥布林圍住了，牠們戴著亮片頭飾，在馬車上跳來跳去。史黛拉叉著腰：「那是我的星星披風！」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["stella_start"] },
+          "kind": "combat",
+          "enemies": [["concert_goblin", 3]],
+          "success": {
+            "text": "哥布林們抱著亮片逃了。史黛拉從泥地裡撿起她的星星披風，拍了拍，披在身上轉了一圈：「完美！」她看著你，「你好強喔！三個吟遊詩人加起來都打不過牠們！」",
+            "set_flags": ["stella_props"]
+          },
+          "fail": {
+            "text": "哥布林們搶走了一半的亮片逃了，可是星星披風還在。史黛拉披上它，對著你比了一個勝利手勢：「沒關係！少了亮片，我自己會發光！」",
+            "set_flags": ["stella_props"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "stage",
+          "title": "在河谷鎮的酒館陪史黛拉撐過開場",
+          "text": "酒館裡擠滿了人。諾瓦已經在調音，波姆在門口收錢。史黛拉衝上台，張開嘴——然後發現自己把歌詞忘了，台下一片安靜。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "tavern" },
+          "requires": { "flags": ["stella_props"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你在台下帶頭打起了拍子，酒館裡的人一個接一個跟著拍。史黛拉愣了一下，然後笑了——不是舞台上的那種笑，是真的笑。她想起了歌詞，唱得比任何時候都大聲。",
+            "set_flags": ["stella_sang"],
+            "effects": [{ "type": "affinity", "npc": "npc_stella", "delta": 10, "reason": "在台下替她打拍子" }]
+          },
+          "fail": {
+            "text": "你想幫忙，結果自己唱錯了一句，整個酒館都笑了。史黛拉也笑了，笑完了，她說：「謝謝！現在我想起來了！」那天的演唱會，是她唱得最開心的一次。",
+            "set_flags": ["stella_sang"]
+          }
+        },
+        {
+          "id": "after",
+          "title": "回應演唱會後的史黛拉",
+          "text": "散場之後，史黛拉坐在舞台邊，晃著腳，啃著你替她買的點心：「大家都以為我永遠很有精神。」她小聲地說，「其實我好怕上台的時候忘詞、怕大家不笑。」她看著你，「……今天，謝謝你。」",
+          "at": { "where": "npc", "npc": "npc_stella" },
+          "requires": { "flags": ["stella_sang"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「下次，我也在台下」",
+              "success": {
+                "text": "史黛拉的眼睛一下子亮了起來：「真的嗎？！」她跳下舞台，抓著你的手上下甩，「那就說好了！你是我專屬的、第一排的觀眾！」她頓了頓，臉有點紅，「……也是我專屬的護衛。」",
+                "set_flags": ["stella_1_done", "stella_front_row"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_stella", "delta": 15, "reason": "答應在台下看她" },
+                  { "type": "memory", "summary": "偶像團體「星屑三重奏」的隊長史黛拉說，她其實很怕忘詞。你答應以後都在台下。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "摸摸她的頭，「辛苦了」",
+              "success": {
+                "text": "史黛拉僵住了，然後整個人慢慢地紅了：「……好久沒有人摸我的頭了。」她把頭往你的手掌裡蹭了蹭，「隊長要當大家的太陽，所以不能撒嬌——可是，現在已經散場了吧？」",
+                "set_flags": ["stella_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_stella", "delta": 10, "reason": "摸了她的頭" },
+                  { "type": "memory", "summary": "偶像團體「星屑三重奏」的隊長史黛拉在散場之後，第一次撒了嬌。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "stella_empty_seats",
+      "title": "沒有觀眾的演唱會",
+      "summary": "對手樂團「黃金號角」包下了河谷鎮所有的場地，還雇人在街上撕星屑三重奏的海報。史黛拉說，就算沒有舞台，她也要唱。（史黛拉・二）",
+      "tags": ["adult"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_stella",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["stella_1_done"] },
+        "text": "史黛拉抱著一疊被撕破的海報，站在雨裡：「黃金號角把所有的場地都包下來了。」她把海報攤開，用力撫平，「沒關係！沒有舞台，我們就在廣場上唱！」她笑得很用力，「……可是波姆說，就算在廣場上，他們也會派人來鬧。」"
+      },
+      "start_flags": ["stella_rival"],
+      "nodes": [
+        {
+          "id": "thugs",
+          "title": "在河谷鎮近郊擋下黃金號角雇的流氓",
+          "text": "你們在城外的路口搭了一個簡陋的舞台。還沒開唱，黃金號角雇來的流氓就扛著棍子來了：「這裡是誰准你們唱的？」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["stella_rival"] },
+          "kind": "combat",
+          "enemies": [["rival_band_thug", 2]],
+          "success": {
+            "text": "流氓們扔下棍子逃了。史黛拉從舞台後面探出頭：「走了嗎？」你點頭。她鬆了一口氣，然後拍了拍手，「好！開唱！」",
+            "set_flags": ["stella_clear"]
+          },
+          "fail": {
+            "text": "流氓們踢壞了半個舞台才走。史黛拉站在剩下的半個舞台上，看著你：「……半個舞台，也是舞台。」",
+            "set_flags": ["stella_clear"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "sing",
+          "title": "陪史黛拉唱給沒有人的廣場",
+          "text": "雨還在下，台下一個人也沒有——只有你。史黛拉看著空蕩蕩的路口，握著麥克風的手在抖：「……一個人也好。」她深吸一口氣，「我唱給你聽。」",
+          "at": { "where": "npc", "npc": "npc_stella" },
+          "requires": { "flags": ["stella_clear"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你站在雨裡，替她鼓掌、喊她的名字。第一首唱完的時候，路口多了兩個躲雨的旅人；第三首的時候，多了一群放學的孩子；最後一首，整條路都站滿了人。史黛拉唱完，哭了。",
+            "set_flags": ["stella_crowd"],
+            "effects": [{ "type": "affinity", "npc": "npc_stella", "delta": 10, "reason": "一個人在台下為她鼓掌" }]
+          },
+          "fail": {
+            "text": "你們淋了一整場雨，台下一直只有你一個人。可史黛拉唱完最後一首，對著你深深地鞠了一躬：「謝謝你，唯一的觀眾。」她笑著，「今天，是我唱得最認真的一次。」",
+            "set_flags": ["stella_crowd"]
+          }
+        },
+        {
+          "id": "rain",
+          "title": "陪淋濕的史黛拉回旅店",
+          "text": "旅店的房間裡，史黛拉渾身濕透，舞台裝貼在身上，牙齒打著顫：「好冷……」她看著你，「諾瓦和波姆去跟黃金號角談判了。」她拉住你的袖子，「……可以陪我，等身體暖起來嗎？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "inn" },
+          "requires": { "flags": ["stella_crowd"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "抱住她",
+              "success": {
+                "text": "史黛拉在你懷裡慢慢暖了起來，然後變得很燙。她抬起頭，第一次不是用舞台上的聲音說話：「……我不想當大家的太陽了。今晚，只想當你一個人的。」那一夜，星星舞台裝掉在了地上，一直到天亮都沒有人撿。",
+                "set_flags": ["stella_2_done", "stella_night"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_stella", "delta": 20, "reason": "抱住了她" },
+                  { "type": "memory", "summary": "陪星屑三重奏的史黛拉在雨裡唱完了一場沒有舞台的演唱會。那一夜，她說只想當你一個人的太陽。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "替她生火、煮熱湯",
+              "success": {
+                "text": "你生了火，煮了一鍋熱湯。史黛拉裹著毯子喝湯，喝著喝著靠在你肩上睡著了，嘴裡還在哼著今天的歌。半夜她醒來，發現你還坐在那裡，小聲地說：「……你這個人，太溫柔了。犯規。」",
+                "set_flags": ["stella_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_stella", "delta": 15, "reason": "煮了熱湯給她" },
+                  { "type": "memory", "summary": "陪星屑三重奏的史黛拉在雨裡唱完了一場沒有舞台的演唱會。你煮了熱湯給她，她說你太溫柔了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "stella_star_confession",
+      "title": "星星的告白",
+      "summary": "星屑三重奏要在河谷鎮辦第一場正式的大演唱會。史黛拉說，她要在最後一首歌之前，對台下的某個人告白——可是狂信徒說，這種「淫靡的歌」不准唱。（史黛拉・三）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_stella",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["stella_2_done"] },
+        "text": "史黛拉把一張門票塞進你手裡——第一排，正中間：「正式的大演唱會！整個河谷鎮的人都會來！」她頓了頓，臉一下子紅了，「……最後一首歌之前，我有話要說。對台下的某個人。」她轉身跑開，又跑回來，「可是有一群奇怪的人，說要燒舞台。」"
+      },
+      "start_flags": ["stella_concert"],
+      "nodes": [
+        {
+          "id": "zealots",
+          "title": "在河谷鎮近郊擋下要燒舞台的狂信徒",
+          "text": "演唱會的前一夜，一群穿著灰袍、提著火把的狂信徒往舞台走去：「靡靡之音，敗壞人心！」他們舉起了火把，「燒了它！」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["stella_concert"] },
+          "kind": "combat",
+          "enemies": [["zealot_guard", 2]],
+          "success": {
+            "text": "狂信徒們丟下火把逃了。舞台完好無缺。史黛拉站在舞台中央，對著空無一人的觀眾席揮手：「明天見！」——她是在練習。",
+            "set_flags": ["stella_safe"]
+          },
+          "fail": {
+            "text": "狂信徒們燒掉了舞台的一角才被趕走。史黛拉看著燒黑的木板，想了想，在上面畫了一顆星星：「這樣更好看了。」",
+            "set_flags": ["stella_safe"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "concert",
+          "title": "陪星屑三重奏撐完整場演唱會",
+          "text": "演唱會開始了。整個河谷鎮的人都來了，三個吟遊詩人在台上閃閃發光——直到第七首歌，史黛拉的嗓子啞了。她看向台下，看見了你。",
+          "at": { "where": "npc", "npc": "npc_stella" },
+          "requires": { "flags": ["stella_safe"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你在台下唱起了第七首歌——第一次演唱會那天，你唱錯的那首。這次你沒有唱錯。整個廣場跟著你唱了起來。史黛拉在台上哭著笑，嗓子好了。",
+            "set_flags": ["stella_last_song"]
+          },
+          "fail": {
+            "text": "你在台下喊她的名字，喊得比任何人都大聲。史黛拉聽見了，嗓子還是啞的，可她笑著唱完了——用全場最難聽、最開心的聲音。",
+            "set_flags": ["stella_last_song"]
+          }
+        },
+        {
+          "id": "confess",
+          "title": "回應最後一首歌之前的告白",
+          "text": "最後一首歌之前，史黛拉放下了麥克風，走到舞台的最前面，看著第一排正中間的你：「我一直以為，我是大家的太陽。」她的聲音在抖，「可是在下雨的那一天，我發現……我也需要一個太陽。」她伸出手，「那個人，就是你。」",
+          "at": { "where": "npc", "npc": "npc_stella" },
+          "requires": { "flags": ["stella_last_song"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "跳上舞台，牽起她的手",
+              "success": {
+                "text": "全場尖叫。你牽著她的手，站在舞台上，諾瓦在旁邊翻了一個白眼，卻偷偷彈起了一段情歌的前奏；波姆已經在計算明天的報紙能賣多少錢。最後一首歌，史黛拉是看著你唱的。散場之後，後台的門鎖上了——第一次。",
+                "set_flags": ["stella_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_stella", "delta": 25, "reason": "在全場面前牽起她的手" },
+                  { "type": "memory", "summary": "星屑三重奏的史黛拉在大演唱會的最後一首歌之前，對你告白。你跳上舞台，牽起了她的手。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "在台下點頭，「唱完，我在後台等妳」",
+              "success": {
+                "text": "史黛拉愣了一下，然後笑了——舞台上最燦爛的那種笑。她轉身面對觀眾，唱完了最後一首歌，唱得整個河谷鎮都在發光。散場之後，她衝進後台，撲進你懷裡：「我唱完了！」她踮起腳，「……現在，換你了。」",
+                "set_flags": ["stella_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_stella", "delta": 25, "reason": "在後台等她" },
+                  { "type": "memory", "summary": "星屑三重奏的史黛拉在大演唱會的最後一首歌之前，對你告白。你在後台等她唱完。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "noir_blank_score",
+      "title": "寫不出來的歌",
+      "summary": "星屑三重奏的作曲諾瓦寫不出新歌了。她說河谷鎮的聲音太吵，要去城外錄「真正的聲音」——鳥妖的歌。（諾瓦・一）",
+      "tags": ["adult"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_noir",
+        "min_level": 5,
+        "text": "一個黑色短髮挑染紫色、耳朵上戴滿銀環的精靈坐在酒館角落，面前的樂譜一個音符也沒有。她抬起金色的眼睛看了你一眼：「你是那個護衛。」語氣很冷，「跟我出城。我要錄鳥妖的歌。」她站起來，「……別誤會，只是因為史黛拉說你可靠。」"
+      },
+      "start_flags": ["noir_start"],
+      "nodes": [
+        {
+          "id": "harpies",
+          "title": "在河谷鎮近郊錄下鳥妖的歌",
+          "text": "城外的懸崖上，三隻鳥妖正在唱歌——很美，美得讓人想往懸崖下面走。諾瓦拿出了一顆錄音水晶，你拔出了武器：鳥妖們發現了你們，歌聲變成了尖叫。",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["noir_start"] },
+          "kind": "combat",
+          "enemies": [["song_harpy", 3]],
+          "success": {
+            "text": "鳥妖們飛走了。諾瓦看著錄音水晶，愣住了：「……錄到了。」錄到的是鳥妖的歌，還有你在打鬥中喊的一聲「小心！」。她把水晶收進懷裡，沒有刪掉。",
+            "set_flags": ["noir_recorded"]
+          },
+          "fail": {
+            "text": "鳥妖們把你們逼下了懸崖的一半，水晶只錄到了風聲和你們的喘氣聲。諾瓦聽了一遍，卻沒有生氣：「……這個節奏，可以用。」",
+            "set_flags": ["noir_recorded"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "compose",
+          "title": "在河谷鎮的旅店陪諾瓦寫歌",
+          "text": "旅店的房間裡，諾瓦抱著魯特琴，一遍一遍地聽水晶。她彈了一段，停了；又彈了一段，又停了。「不對。」她煩躁地抓著頭髮，「少了什麼。」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "inn" },
+          "requires": { "flags": ["noir_recorded"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你說，少的是「停下來」的地方——鳥妖的歌之所以好聽，是因為牠們會換氣。諾瓦盯著你看了很久，然後低頭在樂譜上寫了一個休止符。那一夜，她寫完了整首歌。",
+            "set_flags": ["noir_wrote"],
+            "effects": [{ "type": "affinity", "npc": "npc_noir", "delta": 10, "reason": "替她找到了少的東西" }]
+          },
+          "fail": {
+            "text": "你聽不出少了什麼，只好在旁邊打瞌睡。諾瓦彈著彈著，看著你睡著的樣子，手指停了下來——然後彈出了一段很溫柔的旋律。她把那段寫進了樂譜，什麼也沒說。",
+            "set_flags": ["noir_wrote"]
+          }
+        },
+        {
+          "id": "listen",
+          "title": "聽諾瓦的新歌",
+          "text": "天快亮的時候，諾瓦把你搖醒，把魯特琴放在膝上：「聽。」她彈完了整首歌，沒有看你，「……怎麼樣？」她的耳朵尖，在銀環之間，微微地紅了。",
+          "at": { "where": "npc", "npc": "npc_noir" },
+          "requires": { "flags": ["noir_wrote"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「很好聽。這首歌叫什麼？」",
+              "success": {
+                "text": "諾瓦沉默了很久：「……還沒取名。」她把樂譜收起來，背對著你，「等我想到了再告訴你。」你瞥見了樂譜的角落，寫著一行很小、劃掉了又寫上的字——那是你的名字。",
+                "set_flags": ["noir_1_done", "noir_named"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noir", "delta": 15, "reason": "說她的歌好聽" },
+                  { "type": "memory", "summary": "陪星屑三重奏的作曲諾瓦寫了一首新歌。樂譜的角落寫著你的名字，劃掉了又寫上。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「中間那段很溫柔」",
+              "success": {
+                "text": "諾瓦的手指在琴弦上停住了。很久，她冷冷地說：「……那段是史黛拉要的。」她站起來，走到門口，又停下來，「騙你的。」門關上了。走廊上傳來一聲很小的、像是撞到牆的聲音。",
+                "set_flags": ["noir_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noir", "delta": 10, "reason": "聽出了那段旋律" },
+                  { "type": "memory", "summary": "陪星屑三重奏的作曲諾瓦寫了一首新歌，你聽出了中間那段很溫柔。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "noir_fan_letters",
+      "title": "粉絲的信",
+      "summary": "諾瓦偷偷收集粉絲的信，一封都捨不得丟。最近，有一個粉絲的信越寫越可怕——信封裡夾著她的頭髮，還有她房間窗戶的素描。（諾瓦・二）",
+      "tags": ["adult"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_noir",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["noir_1_done"] },
+        "text": "諾瓦把一疊信丟在你面前，表情冷得像冰，手卻在抖：「最近這個人的信。」最上面那封裡，夾著一撮紫色挑染的黑髮，「這是我的頭髮。」她抬起頭，「……我不怕。只是，晚上睡不著。」"
+      },
+      "start_flags": ["noir_stalker"],
+      "nodes": [
+        {
+          "id": "trace",
+          "title": "在河谷鎮的情報商追查寫信的人",
+          "text": "河谷鎮的情報商翻了翻那些信：「這種紙，只有上城區的貴族會買。」他把一封信對著光，「信封上的蠟印被刮掉了，可是刮得不乾淨。」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "informant" },
+          "requires": { "flags": ["noir_stalker"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你們認出了蠟印的殘痕：一個沒落男爵家的家紋。男爵的兒子是星屑三重奏所有演唱會的常客，總是坐在最後一排，從不鼓掌。他雇了人，今晚要「接」諾瓦回家。",
+            "set_flags": ["noir_traced"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才說：「上城區的男爵少爺。他雇了打手，今晚動手。」",
+            "set_flags": ["noir_traced"],
+            "effects": [{ "type": "money", "amount": -150 }]
+          }
+        },
+        {
+          "id": "hirelings",
+          "title": "在河谷鎮近郊擋下跟蹤狂雇的打手",
+          "text": "城外的小路上，一輛沒有家紋的馬車停在暗處，車門開著，裡面鋪著絲綢——像一個籠子。幾個打手從樹後走出來：「精靈小姐呢？少爺等很久了。」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["noir_traced"] },
+          "kind": "combat",
+          "enemies": [["stalker_hireling", 2]],
+          "success": {
+            "text": "打手們逃了，馬車裡的男爵少爺被你拖了出來，交給了鎮上的衛兵。他一直在喊：「她是我的！她的每一首歌都是寫給我的！」諾瓦站在你身後，冷冷地說：「不是。」",
+            "set_flags": ["noir_safe"]
+          },
+          "fail": {
+            "text": "打手們把你們逼退了，可男爵少爺在混亂中被自己的馬車輾到了腳，哭著被衛兵抬走了。諾瓦看著他，冷冷地說：「……我的歌，不是寫給你的。」",
+            "set_flags": ["noir_safe"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "陪睡不著的諾瓦",
+          "text": "那天晚上，諾瓦敲開了你的房門，抱著枕頭，面無表情：「我睡不著。」她走進來，坐在你的床邊，「……別誤會。只是因為你比較近。」她沉默了很久，「你知道我的歌是寫給誰的嗎？」",
+          "at": { "where": "npc", "npc": "npc_noir" },
+          "requires": { "flags": ["noir_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「史黛拉？」",
+              "success": {
+                "text": "諾瓦愣住了，然後很輕地笑了——你第一次看她笑：「……以前是。」她躺了下來，背對著你，「現在不只了。」那一夜，冷酷的作曲黏在你身上，黏得一點也不冷酷，舌頭上的銀環涼涼的。天亮時她說：「這件事，史黛拉不准知道。」",
+                "set_flags": ["noir_2_done", "noir_night"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noir", "delta": 20, "reason": "猜到了史黛拉" },
+                  { "type": "memory", "summary": "星屑三重奏的諾瓦說，她的歌以前是寫給史黛拉的——現在不只了。那一夜，她黏著你不放。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「不知道。告訴我」",
+              "success": {
+                "text": "諾瓦看著你，很久，然後把枕頭丟在你臉上：「笨蛋。」她躺下來，拉過你的手臂當枕頭，「自己去聽。」她閉上眼睛，聲音小得幾乎聽不見，「……每一首。」",
+                "set_flags": ["noir_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noir", "delta": 15, "reason": "要她親口告訴你" },
+                  { "type": "memory", "summary": "星屑三重奏的諾瓦抱著枕頭來敲你的門。她說，她的歌寫給誰，自己去聽——每一首。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "noir_song_for_whom",
+      "title": "為誰寫的歌",
+      "summary": "男爵少爺被放出來了。他找了一個流浪的咒術樂師，把諾瓦的舊魯特琴改成了會自己彈奏的魔像——它只會彈一首歌，彈到聽的人瘋掉為止。（諾瓦・三）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_noir",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["noir_2_done"] },
+        "text": "諾瓦的手指纏著繃帶，琴弦斷了三根：「我以前的魯特琴，被偷了。」她的聲音很平靜，「昨晚城外有人在彈它——彈我三年前寫的那首歌。聽到的人都瘋了。」她看著你，「我要把它拿回來。」她頓了頓，「……還有，等這件事結束，有一首歌，我要彈給你聽。」"
+      },
+      "start_flags": ["noir_lute"],
+      "nodes": [
+        {
+          "id": "golems",
+          "title": "在河谷鎮近郊打倒被詛咒的魯特琴魔像",
+          "text": "城外的廢棄劇場裡，兩具用樂器和骨頭拼成的魔像在舞台上彈奏，琴聲像是無數根針扎進耳朵。諾瓦咬著牙：「……那是我寫給史黛拉的第一首歌。」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["noir_lute"] },
+          "kind": "combat",
+          "enemies": [["cursed_lute_golem", 2]],
+          "success": {
+            "text": "魔像們散成了一地的木片和琴弦。諾瓦從裡面撿出了她的舊魯特琴，琴身裂了一道縫。她抱著它，很久沒有說話。",
+            "set_flags": ["noir_broken"]
+          },
+          "fail": {
+            "text": "琴聲讓你們頭痛欲裂，最後是諾瓦用自己的魯特琴彈出了一段反向的旋律，魔像們才自己散了架。她的手指在流血，抱著舊魯特琴不放。",
+            "set_flags": ["noir_broken"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "cleanse",
+          "title": "陪諾瓦用一首新歌洗掉詛咒",
+          "text": "舊魯特琴上的詛咒還在，琴弦自己在顫動。諾瓦把它放在膝上：「要洗掉詛咒，得用一首比它更強的歌蓋過去。」她看著你，「我一個人彈不出來。你……幫我打拍子。」",
+          "at": { "where": "npc", "npc": "npc_noir" },
+          "requires": { "flags": ["noir_broken"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你們一起彈完了那首歌——從鳥妖的懸崖開始寫、在跟蹤狂的夜裡寫完的那首。詛咒像一層灰一樣從琴身上剝落。諾瓦彈完最後一個音，低著頭：「……這首歌，叫做你的名字。」",
+            "set_flags": ["noir_cleansed"]
+          },
+          "fail": {
+            "text": "你的拍子打得亂七八糟，可諾瓦沒有停，一直彈到詛咒散去。最後一個音落下，她抬起頭：「……拍子很爛。」她頓了頓，「可是，只有你打的拍子我聽得進去。」",
+            "set_flags": ["noir_cleansed"]
+          }
+        },
+        {
+          "id": "song",
+          "title": "回應諾瓦的歌",
+          "text": "諾瓦把修好的舊魯特琴遞給你：「這把琴，我寫了三年給史黛拉的歌。」她看著你，金色的眼睛第一次不冷，「新的那把，我想寫給你。」她的耳朵紅透了，「……這不是告白。只是作曲家的工作報告。」",
+          "at": { "where": "npc", "npc": "npc_noir" },
+          "requires": { "flags": ["noir_cleansed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那就寫一輩子的報告」",
+              "success": {
+                "text": "諾瓦愣住了，然後低下頭，用額頭抵著你的胸口：「……一輩子太長了。」她的聲音悶悶的，「精靈的一輩子，你陪不完。」她抬起頭，吻了你，舌環碰到了你的牙齒，「所以，你要活久一點。」",
+                "set_flags": ["noir_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noir", "delta": 25, "reason": "說要聽一輩子" },
+                  { "type": "memory", "summary": "星屑三重奏的作曲諾瓦說，她新的魯特琴要寫歌給你。你說，那就寫一輩子。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「這個報告，我想親耳聽妳說」",
+              "success": {
+                "text": "諾瓦瞪著你，很久，最後放棄似地嘆了一口氣：「……喜歡你。」她說完就把臉埋進你懷裡，「說了。滿意了吧。」她的耳朵燙得像火，「再讓我說一次，我就把你寫進最難聽的歌裡。」",
+                "set_flags": ["noir_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noir", "delta": 25, "reason": "讓她親口說出來" },
+                  { "type": "memory", "summary": "星屑三重奏的作曲諾瓦，在你面前親口說了喜歡。她說再要她說一次，就把你寫進最難聽的歌裡。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「去銀月城的外族日，唱給希爾薇聽吧」",
+              "requires": { "flags": ["acc_open"] },
+              "success": {
+                "text": "諾瓦愣了一下，然後笑了：「……那個頭號粉絲，會哭死的。」銀月城外族日的舞台上，諾瓦彈了那首用你的名字取名的歌，希爾薇在台下哭得一塌糊塗。散場之後，諾瓦拉著你走進了銀月城的月光裡：「森林裡的音樂，好像也沒那麼無聊了。」",
+                "set_flags": ["noir_lover", "noir_silvermoon"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noir", "delta": 25, "reason": "帶她回到了銀月城" },
+                  { "type": "affinity", "npc": "npc_sylvie", "delta": 10, "reason": "讓她聽到了諾瓦的歌" },
+                  { "type": "memory", "summary": "星屑三重奏的諾瓦在銀月城外族日的舞台上，彈了那首用你的名字取名的歌。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "pom_unpaid_fee",
+      "title": "經紀人的帳本",
+      "summary": "星屑三重奏上個月在城外的莊園唱了三晚，莊園的管事卻一個銅幣也不付。經紀人波姆說，「討債」也是護衛的工作。（波姆・一）",
+      "tags": ["adult"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_pom",
+        "min_level": 5,
+        "text": "一個粉色雙馬尾的貓魅族女孩抱著一本厚厚的帳本，眨著紅色的大眼睛：「護衛先生～波姆醬有一件小小的事想拜託你喵～」她翻開帳本，指著一行用紅筆圈起來的數字，笑容甜得發膩，「這個莊園，欠我們三晚的演出費。我們去，『溫柔地』提醒他們一下，好嗎？」"
+      },
+      "start_flags": ["pom_start"],
+      "nodes": [
+        {
+          "id": "bouncers",
+          "title": "在河谷鎮近郊擋下莊園的保鑣",
+          "text": "莊園的管事一看見波姆就叫來了保鑣：「演出費？什麼演出費？」波姆笑得更甜了，躲到你身後：「護衛先生，拜託你了喵～」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pom_start"] },
+          "kind": "combat",
+          "enemies": [["promoter_bouncer", 3]],
+          "success": {
+            "text": "保鑣們躺了一地。波姆蹲在管事面前，翻開帳本：「三晚的演出費，加上遲付的利息，加上護衛先生的出場費，加上波姆醬受到驚嚇的精神賠償——」管事的錢袋空了。",
+            "set_flags": ["pom_collected"]
+          },
+          "fail": {
+            "text": "保鑣們把你們趕了出來。可是波姆在被趕出來之前，已經把管事的錢袋從他的腰帶上摸走了：「這是演出費喵～」她笑得一點也不天然。",
+            "set_flags": ["pom_collected"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "books",
+          "title": "在河谷鎮的公會陪波姆算帳",
+          "text": "公會的角落，波姆把錢一枚一枚地排在桌上，分成三堆：史黛拉的、諾瓦的、團費。她的手指停在第四堆前面——那堆是空的。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pom_collected"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你發現了：波姆從來沒有給自己分過錢。她的那一份，全部進了團費。波姆抬起頭，笑容第一次有點僵：「……被發現了喵。」",
+            "set_flags": ["pom_counted"],
+            "effects": [{ "type": "affinity", "npc": "npc_pom", "delta": 10, "reason": "看穿了她的帳本" }]
+          },
+          "fail": {
+            "text": "你算到一半就頭昏了。波姆笑著把錢收起來：「算帳是波姆醬的工作喵～」你沒注意到，桌上始終只有三堆。",
+            "set_flags": ["pom_counted"]
+          }
+        },
+        {
+          "id": "share",
+          "title": "回應波姆的帳本",
+          "text": "波姆把帳本闔上，抱在胸前：「史黛拉是笨蛋，諾瓦不會算錢。」她的尾巴垂了下來，「波姆醬要是不精明一點，她們會被騙光的喵。」她抬起頭，又是那個甜甜的笑，「所以，護衛先生的出場費……可以先欠著嗎喵？」",
+          "at": { "where": "npc", "npc": "npc_pom" },
+          "requires": { "flags": ["pom_counted"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「不用給我。拿去給妳自己買點東西」",
+              "success": {
+                "text": "波姆愣住了，笑容慢慢地消失了，換成了一個你沒見過的表情——不是可愛，是真的不知道該怎麼辦。很久，她小聲地說：「……從來沒有人說過，要我買東西給自己喵。」她把那幾枚銀幣握在手心，握得很緊。",
+                "set_flags": ["pom_1_done", "pom_gift"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_pom", "delta": 15, "reason": "要她買東西給自己" },
+                  { "type": "memory", "summary": "星屑三重奏的經紀人波姆從來沒有給自己分過錢。你把出場費讓給了她，要她買東西給自己。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「欠著可以，要算利息」",
+              "success": {
+                "text": "波姆的眼睛一下子亮了起來——是遇到對手的那種亮：「利息？」她湊到你面前，紅色的眼睛瞇了起來，「好喵。那波姆醬用別的東西付利息喵～」她在你臉頰上親了一下，「一天一個。複利喔喵。」",
+                "set_flags": ["pom_1_done", "pom_interest"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_pom", "delta": 15, "reason": "跟她討利息" },
+                  { "type": "memory", "summary": "星屑三重奏的經紀人波姆欠你出場費。她說，利息一天一個吻，複利。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "pom_theater_contract",
+      "title": "黑心劇場的合約",
+      "summary": "河谷鎮上城區的劇場老闆開出了一份「獨家合約」：星屑三重奏只能在他的劇場唱，五年。波姆一看就知道是陷阱——可史黛拉已經簽了名。（波姆・二）",
+      "tags": ["adult"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_pom",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["pom_1_done"] },
+        "text": "波姆把一份合約拍在桌上，第一次沒有笑：「史黛拉那個笨蛋，簽了。」她用指甲劃著合約上的一行小字，「五年獨家，收入他拿九成，違約要賠一萬白鸛——還有這條：『演出者須提供老闆指定的私人服務』。」她的尾巴炸成了一團，「……波姆醬要讓他後悔寫這條喵。」"
+      },
+      "start_flags": ["pom_contract"],
+      "nodes": [
+        {
+          "id": "dirt",
+          "title": "在河谷鎮的情報商挖劇場老闆的底",
+          "text": "情報商聽說是那個劇場老闆，笑了：「他啊，簽過的團沒有一個撐過一年。」他壓低聲音，「不過，他的帳本有兩本。」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "informant" },
+          "requires": { "flags": ["pom_contract"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你們拿到了劇場老闆逃稅的證據：第二本帳本藏在劇場的保險箱裡。波姆的眼睛瞇了起來：「好喵。那我們就去『拜訪』一下保險箱喵。」",
+            "set_flags": ["pom_dirt"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才肯說。波姆一邊付錢一邊在帳本上記下這筆開銷，記在劇場老闆的名下：「這筆，他會還的喵。」",
+            "set_flags": ["pom_dirt"],
+            "effects": [{ "type": "money", "amount": -150 }]
+          }
+        },
+        {
+          "id": "guards",
+          "title": "在河谷鎮近郊擋下劇場的護衛",
+          "text": "劇場老闆察覺了，派護衛把保險箱裝上馬車，要運出城。波姆擋在路中間，張開雙手：「那是證據喵！不准跑喵！」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pom_dirt"] },
+          "kind": "combat",
+          "enemies": [["theater_guard", 2]],
+          "success": {
+            "text": "護衛們逃了，保險箱留了下來。波姆撬開了鎖，翻出了第二本帳本，一頁一頁地翻，笑容越來越甜：「……一萬白鸛的違約金？他欠稅務官的，是這個數字的三倍喵。」",
+            "set_flags": ["pom_ledger"]
+          },
+          "fail": {
+            "text": "護衛們把你們逼退了，可在混亂中，波姆已經從保險箱裡抽走了第二本帳本，塞進了她的舞台裝裡：「證據到手喵～」",
+            "set_flags": ["pom_ledger"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "deal",
+          "title": "陪波姆和劇場老闆攤牌之後",
+          "text": "劇場老闆看著那本帳本，臉色發白，親手撕掉了合約。回旅店的路上，波姆一直很安靜。到了房門口，她拉住你的衣角：「……那條『私人服務』，史黛拉沒看到。諾瓦也沒看到。」她低著頭，「只有波姆醬看到了。所以波姆醬一直很怕。」",
+          "at": { "where": "npc", "npc": "npc_pom" },
+          "requires": { "flags": ["pom_ledger"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "抱住她，「已經沒事了」",
+              "success": {
+                "text": "波姆在你懷裡發抖，然後哭了——不是撒嬌的那種哭，是真的哭。哭完了，她抬起頭，眼睛紅紅的，笑容卻是你沒見過的那種：「……波姆醬今晚，不想一個人睡喵。」她把你拉進了房間，「這次不是利息。是波姆醬自己想要的。」",
+                "set_flags": ["pom_2_done", "pom_night"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_pom", "delta": 20, "reason": "抱住了害怕的她" },
+                  { "type": "memory", "summary": "替星屑三重奏撕掉了黑心劇場的合約。經紀人波姆說她一直很怕——那一夜，她不想一個人睡。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳保護了她們。誰來保護妳？」",
+              "success": {
+                "text": "波姆愣住了，紅色的眼睛眨了眨，眼淚一下子掉了下來：「……犯規喵。」她用額頭撞了一下你的胸口，「那、那就你喵。」她抬起頭，「這份合約，波姆醬要親手寫。條款很多喔喵。」",
+                "set_flags": ["pom_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_pom", "delta": 15, "reason": "說要保護她" },
+                  { "type": "memory", "summary": "替星屑三重奏撕掉了黑心劇場的合約。你問經紀人波姆：誰來保護妳？她說，那就你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "pom_guard_contract",
+      "title": "護衛的合約",
+      "summary": "破產的劇場老闆雇了綁匪，要綁走星屑三重奏賣到外地抵債。波姆說，等這件事結束，她要和護衛先生簽一份「正式的合約」。（波姆・三）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_pom",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["pom_2_done"] },
+        "text": "波姆衝進你的房間，雙馬尾跑散了一半：「史黛拉和諾瓦被抓走了喵！」她手裡攥著一張勒索信，「劇場老闆破產了，他雇了綁匪，要把她們賣到外地抵債！」她咬著嘴唇，「……波姆醬算不出來怎麼救她們。這是第一次，波姆醬算不出來。」"
+      },
+      "start_flags": ["pom_kidnap"],
+      "nodes": [
+        {
+          "id": "kidnappers",
+          "title": "在河谷鎮近郊從綁匪手上救回史黛拉和諾瓦",
+          "text": "城外的廢棄磨坊裡，史黛拉和諾瓦被綁在柱子上，嘴裡塞著布。綁匪們在數錢，看見你和波姆，站了起來：「又送來一個？正好，三個一起賣。」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pom_kidnap"] },
+          "kind": "combat",
+          "enemies": [["kidnapper_bandit", 2]],
+          "success": {
+            "text": "綁匪們倒下了。波姆衝過去解開了兩個人的繩子，史黛拉一邊哭一邊抱住她，諾瓦嘴裡的布一拿掉就罵：「……慢死了。」她看著你，「謝謝。」",
+            "set_flags": ["pom_rescued"]
+          },
+          "fail": {
+            "text": "綁匪們把你們逼到了水車邊，可是波姆在打鬥中摸到了綁匪頭子腰上的鑰匙，解開了史黛拉和諾瓦的繩子——三個吟遊詩人一起唱起了刺耳的高音，綁匪們捂著耳朵逃了。",
+            "set_flags": ["pom_rescued"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "terms",
+          "title": "和波姆談合約的條款",
+          "text": "回到河谷鎮，波姆把一份她自己寫的合約放在你面前，厚厚的一疊：「護衛合約。」她的臉紅透了，卻假裝很專業，「第一條：甲方（波姆醬）每天要給乙方（護衛先生）一個吻。第二條：乙方不准對其他偶像比對甲方好……」她一條一條地念下去，「第四十七條——」",
+          "at": { "where": "npc", "npc": "npc_pom" },
+          "requires": { "flags": ["pom_rescued"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 17 },
+          "success": {
+            "text": "你找到了合約裡唯一的漏洞：第四十八條「本合約永久有效」和第四十九條「乙方有權隨時解約」互相矛盾。波姆看著你圈出來的地方，愣住了，然後笑了：「……第四十九條，是故意寫的喵。」她拿起筆，把它劃掉了，「波姆醬想讓你自己選。」",
+            "set_flags": ["pom_signed"]
+          },
+          "fail": {
+            "text": "你看到第三十條就頭昏了。波姆笑著把筆塞進你手裡：「不用看完喵。反正最後一條是——」她翻到最後一頁，上面只寫了一行字：「乙方願意的話，請簽名。」",
+            "set_flags": ["pom_signed"]
+          }
+        },
+        {
+          "id": "sign",
+          "title": "在波姆的合約上簽名",
+          "text": "波姆把筆遞給你，手在抖：「波姆醬這輩子簽過很多合約。」她看著你，「這是第一份，是為自己簽的喵。」",
+          "at": { "where": "npc", "npc": "npc_pom" },
+          "requires": { "flags": ["pom_signed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "簽名",
+              "success": {
+                "text": "你簽了名。波姆把合約抱在胸前，尾巴豎得直直的，緞帶都在發抖：「成交喵！」然後她撲上來，把你壓倒在床上，「第一條，現在開始履行喵。」她頓了頓，「……還有第二到第四十八條。今晚全部履行喵。」",
+                "set_flags": ["pom_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_pom", "delta": 25, "reason": "簽了她的合約" },
+                  { "type": "memory", "summary": "星屑三重奏的經紀人波姆，為自己簽了第一份合約：護衛合約，永久有效。你簽了名。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「不用合約。我本來就會留下」",
+              "success": {
+                "text": "波姆愣住了，然後把合約撕成了兩半，撕完了又後悔，抱著碎片哭了：「……波姆醬寫了三天的喵！」你抱住她，她在你懷裡又哭又笑，「那、那口頭約定也算喵。波姆醬會記在帳本上的——永遠。」",
+                "set_flags": ["pom_lover"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_pom", "delta": 25, "reason": "說不用合約也會留下" },
+                  { "type": "memory", "summary": "星屑三重奏的經紀人波姆寫了一份護衛合約。你說不用合約，你本來就會留下——她記在了帳本上，永遠。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "marg_salon_newcomer",
+      "title": "沙龍的新面孔",
+      "summary": "艾森伯爵夫人瑪格麗特的沙龍，是帝都貴族最想擠進去的地方。這一次，她邀請了一個平民冒險者——貴族們都在猜，她想做什麼。（瑪格麗特・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_margarete",
+        "min_level": 5,
+        "text": "一個深紅色髮髻、手持羽扇的貴婦人在上城區的街角攔下了你，琥珀色的眼睛從扇子上方打量著你：「你就是那個冒險者。」她的聲音慵懶而從容，「我的沙龍有點無聊了。」她遞給你一張燙金的邀請函，「後天晚上。穿得體面一點——或者不要，我更想看貴族們的表情。」"
+      },
+      "start_flags": ["marg_start"],
+      "nodes": [
+        {
+          "id": "salon",
+          "title": "在瑪格麗特的沙龍應付貴族們的試探",
+          "text": "沙龍裡，貴族們端著酒杯圍了過來：「你殺過龍嗎？」「冒險者都不洗澡的嗎？」「夫人為什麼會邀請你？」瑪格麗特坐在角落，搖著羽扇，看好戲似地看著你。",
+          "at": { "where": "npc", "npc": "npc_margarete" },
+          "requires": { "flags": ["marg_start"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你一個問題一個問題地回答，回答得貴族們都笑了，最後連最挑剔的老侯爵也舉起了酒杯。瑪格麗特的羽扇停了下來。散場時她說：「十五年了，這是我的沙龍第一次真的有趣。」",
+            "set_flags": ["marg_salon"],
+            "effects": [{ "type": "affinity", "npc": "npc_margarete", "delta": 10, "reason": "讓她的沙龍變得有趣" }]
+          },
+          "fail": {
+            "text": "你說錯了好幾句話，貴族們竊笑。瑪格麗特卻在這時站起來，挽住了你的手臂：「這位是我的客人。」沙龍一下子安靜了。散場時她說：「你答得很糟。可是，比他們真誠。」",
+            "set_flags": ["marg_salon"]
+          }
+        },
+        {
+          "id": "robbers",
+          "title": "在萊茵堡近郊擋下劫伯爵夫人馬車的強盜",
+          "text": "幾天後，瑪格麗特要去郊外的別墅避暑，指名要你護送。馬車剛出城，路邊就跳出了一群蒙面強盜：「伯爵家的馬車！值錢的都交出來！」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["marg_salon"] },
+          "kind": "combat",
+          "enemies": [["highway_robber", 3]],
+          "success": {
+            "text": "強盜們逃了。瑪格麗特從馬車裡探出頭，臉上沒有一點害怕，只有一點……興奮：「你剛才的樣子，」她用羽扇遮住了嘴，「很好看。」",
+            "set_flags": ["marg_escorted"]
+          },
+          "fail": {
+            "text": "強盜們搶走了一箱行李才逃。瑪格麗特看著那個空掉的位置，笑了：「那箱是我丈夫的收藏。」她搖著羽扇，「我一直想把它扔掉。」",
+            "set_flags": ["marg_escorted"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "villa",
+          "title": "回應別墅裡的瑪格麗特",
+          "text": "郊外的別墅裡，瑪格麗特換下了禮服，穿著一件酒紅色的睡袍，赤著腳坐在陽台上：「我嫁進艾森家十五年。」她看著月亮，「丈夫比我大三十歲，現在只關心他的收藏和痛風。」她轉頭看你，「你說，一個女人能在禮節裡活多久？」",
+          "at": { "where": "npc", "npc": "npc_margarete" },
+          "requires": { "flags": ["marg_escorted"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「活到她自己不想活為止」",
+              "success": {
+                "text": "瑪格麗特看著你，很久，然後笑了——不是沙龍上的那種笑：「真是無禮的回答。」她站起來，走到你面前，睡袍的領口微微敞開，「……我喜歡無禮。」她在你的嘴角留下了一個很輕的吻，然後轉身回了房間。門沒有關。",
+                "set_flags": ["marg_1_done", "marg_bold"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_margarete", "delta": 15, "reason": "給了她無禮的回答" },
+                  { "type": "memory", "summary": "護送艾森伯爵夫人瑪格麗特去郊外的別墅。她問你，一個女人能在禮節裡活多久。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「夫人，該休息了」",
+              "success": {
+                "text": "瑪格麗特的羽扇停在了半空中，然後慢慢地收了起來：「……你是第一個，在這種時候叫我去休息的男人。」她站起來，回房間之前停了一下，「晚安。明天，我們再聊。」",
+                "set_flags": ["marg_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_margarete", "delta": 10, "reason": "守了分寸" },
+                  { "type": "memory", "summary": "護送艾森伯爵夫人瑪格麗特去郊外的別墅。你守了分寸，她說明天再聊。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "marg_unsent_letters",
+      "title": "沒寄出的信",
+      "summary": "瑪格麗特的書桌裡，有一疊從來沒寄出去的情書——收信人是一個不存在的人。現在，那疊信被偷了，有人拿著它們來勒索她。（瑪格麗特・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_margarete",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["marg_1_done"] },
+        "text": "瑪格麗特把一封信放在你面前，手指在發抖，聲音卻很平靜：「有人偷走了我書桌裡的信。」她頓了頓，「十五年來，我寫給一個……不存在的人的信。」勒索信上寫著：一千白鸛，否則這些信會出現在伯爵的書房裡。她抬起頭，「我不怕丈夫知道。我怕的是，那些信被別人讀到。」"
+      },
+      "start_flags": ["marg_letters"],
+      "nodes": [
+        {
+          "id": "trace",
+          "title": "在萊茵堡的情報商追查勒索者",
+          "text": "大道上的情報商聽完，摸著下巴：「最近有個沒落的子爵少爺，欠了一屁股賭債，在找『來錢快』的門路。」他笑了笑，「他以前常去艾森家的沙龍——被夫人趕出來過。」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "informant" },
+          "requires": { "flags": ["marg_letters"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你查到了子爵少爺的藏身處：城外一間廢棄的獵屋。他雇了幾個打手，約好今晚在那裡交易。",
+            "set_flags": ["marg_found"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才肯說：「城外的獵屋。今晚。」",
+            "set_flags": ["marg_found"],
+            "effects": [{ "type": "money", "amount": -150 }]
+          }
+        },
+        {
+          "id": "thugs",
+          "title": "在萊茵堡近郊擋下勒索者的打手",
+          "text": "獵屋外，子爵少爺的打手們拿著棍子守在門口。子爵少爺從窗戶探出頭，手裡揮著一疊信：「錢呢？夫人的情書，可是很精彩的！」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["marg_found"] },
+          "kind": "combat",
+          "enemies": [["blackmail_thug", 2]],
+          "success": {
+            "text": "打手們倒下了。子爵少爺跪在地上，雙手捧著那疊信。你接過信，一封也沒有打開。",
+            "set_flags": ["marg_recovered"]
+          },
+          "fail": {
+            "text": "打手們把你們逼退了，可子爵少爺在逃跑的時候，那疊信從他懷裡掉了出來，散了一地。你一封一封地撿起來，一封也沒有打開。",
+            "set_flags": ["marg_recovered"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "return",
+          "title": "把信還給瑪格麗特",
+          "text": "瑪格麗特接過那疊信，看著你：「你沒有讀。」不是問句。她把信放在壁爐邊，猶豫了很久，「……十五年，我一直在等一個人。等到後來，我連他長什麼樣子都想像不出來了。」她轉過頭，「直到你出現。」",
+          "at": { "where": "npc", "npc": "npc_margarete" },
+          "requires": { "flags": ["marg_recovered"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「燒了吧。他已經不用活在信裡了」",
+              "success": {
+                "text": "瑪格麗特把信一封一封地丟進壁爐，看著它們燒成灰。最後一封燒完的時候，她轉過身，解開了禮服的扣子，底下是黑色蕾絲的成套內衣與吊帶襪：「這是為那個人準備的。」她的聲音在抖，「十五年，第一次有人看見。」那一夜，帝國最完美的夫人，一點也不端莊。",
+                "set_flags": ["marg_2_done", "marg_burned"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_margarete", "delta": 20, "reason": "燒掉了那些信" },
+                  { "type": "memory", "summary": "替艾森伯爵夫人瑪格麗特追回了十五年沒寄出的情書。你們把它們燒了——她說，那個人不用再活在信裡了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「念一封給我聽」",
+              "success": {
+                "text": "瑪格麗特愣住了，然後慢慢地打開了最上面那一封，念了出來。她的聲音從平靜變成了顫抖，念到最後一句，她停了下來，看著你：「……最後一句，我寫了十五年都不敢寫完。」她放下信，吻了你，「這就是最後一句。」",
+                "set_flags": ["marg_2_done", "marg_read"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_margarete", "delta": 20, "reason": "聽她念了信" },
+                  {
+                    "type": "memory",
+                    "summary": "替艾森伯爵夫人瑪格麗特追回了十五年沒寄出的情書。她念了一封給你聽，最後一句沒有寫完——她用一個吻代替。",
+                    "importance": 2
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "marg_masked_ball",
+      "title": "化裝舞會",
+      "summary": "皇宮的化裝舞會上，所有人都戴著面具——瑪格麗特說，這是帝都唯一一個晚上，伯爵夫人可以和任何人跳舞。可是被趕出沙龍的子爵家，雇了劍手要讓舞會染血。（瑪格麗特・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_margarete",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["marg_2_done"] },
+        "text": "瑪格麗特遞給你一副銀色的面具：「皇宮的化裝舞會。」她自己的面具是酒紅色的，配著她的禮服，「戴上面具的那一晚，沒有伯爵夫人，也沒有冒險者。」她用羽扇輕輕敲了敲你的胸口，「只有想跳舞的人。」她頓了頓，「……子爵家放話了。他們會在舞會上找你。」"
+      },
+      "start_flags": ["marg_ball"],
+      "nodes": [
+        {
+          "id": "duelists",
+          "title": "在萊茵堡近郊擋下子爵家雇的蒙面劍手",
+          "text": "去皇宮的路上，馬車在城外的林蔭道被攔下了。兩個戴著黑色面具的劍手站在路中間：「子爵家問候伯爵夫人。」他們拔出了細劍，「還有她的小冒險者。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["marg_ball"] },
+          "kind": "combat",
+          "enemies": [["masked_duelist", 2]],
+          "success": {
+            "text": "劍手們的面具掉在了地上，人跑進了林子裡。瑪格麗特從馬車裡走出來，撿起一副黑面具，看了看，丟進了路邊的水溝：「品味真差。」她挽起你的手，「走吧。我們要遲到了。」",
+            "set_flags": ["marg_arrived"]
+          },
+          "fail": {
+            "text": "劍手們劃破了你的外套，可瑪格麗特在這時從馬車裡丟出了她的羽扇——扇骨裡藏著一根細針，正中領頭劍手的手腕。劍手們逃了。她撿回扇子：「伯爵夫人，也要會保護自己。」",
+            "set_flags": ["marg_arrived"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "dance",
+          "title": "在化裝舞會上和瑪格麗特跳舞",
+          "text": "皇宮的大廳裡，燈火輝煌。瑪格麗特牽著你走進舞池，周圍的貴族們都在竊竊私語——就算戴著面具，帝國最完美的夫人也太好認了。她在你耳邊說：「讓他們看。」",
+          "at": { "where": "npc", "npc": "npc_margarete" },
+          "requires": { "flags": ["marg_arrived"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 17 },
+          "success": {
+            "text": "你們跳完了整支華爾茲，一步也沒有錯。最後一個轉身的時候，瑪格麗特的面具滑落了，整個大廳都安靜了——她沒有撿，只是看著你笑：「十五年來，我第一次不想戴著任何東西。」",
+            "set_flags": ["marg_danced"]
+          },
+          "fail": {
+            "text": "你踩了她三次腳。瑪格麗特每一次都笑出了聲，笑得面具都歪了。最後她乾脆摘下了面具，在整個大廳的注視下靠在你的肩上：「跳得真爛。」她小聲地說，「……可是我好開心。」",
+            "set_flags": ["marg_danced"]
+          }
+        },
+        {
+          "id": "choice",
+          "title": "舞會之後",
+          "text": "舞會散場，瑪格麗特沒有回伯爵府，而是拉著你走進了皇宮花園的深處。她靠在玫瑰叢邊，摘下了最後一根髮簪，深紅色的長髮散了下來：「明天，整個帝都都會知道艾森伯爵夫人和一個冒險者跳了一整晚的舞。」她看著你，「你怕嗎？」",
+          "at": { "where": "npc", "npc": "npc_margarete" },
+          "requires": { "flags": ["marg_danced"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「不怕。妳呢？」",
+              "success": {
+                "text": "瑪格麗特笑了，笑得像個少女：「我怕了十五年。」她把你拉進了玫瑰叢的陰影裡，「從今晚開始，換他們怕我。」那一夜，帝國最完美的夫人在皇宮的花園裡，把十五年份的禮節全部丟掉了。天亮時，她把她的珍珠項鍊戴在了你的脖子上：「……抵押品。你要還我的。每天。」",
+                "set_flags": ["marg_lover", "marg_open"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_margarete", "delta": 25, "reason": "和她跳了一整晚的舞" },
+                  { "type": "memory", "summary": "在皇宮的化裝舞會上和艾森伯爵夫人瑪格麗特跳了一整晚的舞。她說，她怕了十五年，從今晚開始換別人怕她。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「那就只讓帝都知道跳舞的事」",
+              "success": {
+                "text": "瑪格麗特看著你，琥珀色的眼睛裡有什麼東西融化了：「……你總是替我想。」她撿起面具，重新戴上，牽著你走進了花園深處的小亭子，「那麼，跳舞之後的事——只有我們知道。」她在面具底下笑了，「秘密的戀人。聽起來，像紫丁香的小說。」",
+                "set_flags": ["marg_lover", "marg_secret"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_margarete", "delta": 25, "reason": "替她守住了秘密" },
+                  { "type": "memory", "summary": "在皇宮的化裝舞會上和艾森伯爵夫人瑪格麗特跳了一整晚的舞。之後的事，只有你們知道。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "liese_heavy_flour",
+      "title": "麵粉袋太重了",
+      "summary": "萊茵堡下城區的麥穗麵包店，老闆娘莉澤洛特一個人撐著店。丈夫在南境前線，一年只回家一次。今天，糧倉的巨鼠又把麵粉咬破了。（莉澤洛特・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lieselotte",
+        "min_level": 5,
+        "text": "一個蜂蜜色馬尾、臉上有雀斑的女人扛著兩袋麵粉從你身邊走過，笑聲整條街都聽得見：「借過借過！」她走了兩步，停下來，回頭看你，「欸，你是冒險者吧？」她把麵粉袋往地上一放，擦了擦汗，「城外的糧倉有老鼠——很大的老鼠。我付你麵包，管飽！」"
+      },
+      "start_flags": ["liese_start"],
+      "nodes": [
+        {
+          "id": "rats",
+          "title": "在萊茵堡近郊清掉糧倉的巨鼠",
+          "text": "城外的糧倉裡，麵粉袋被咬得到處是洞，三隻比狗還大的巨鼠正在麵粉堆裡打滾，白白的一片。莉澤洛特捲起袖子：「就是牠們！吃了我三個月的麵粉！」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["liese_start"] },
+          "kind": "combat",
+          "enemies": [["grain_rat", 3]],
+          "success": {
+            "text": "巨鼠們被趕跑了。莉澤洛特看著滿地的麵粉，嘆了一口氣，然後又笑了：「沒關係！剩下的還夠烤一週！」她拍了拍你的肩膀，拍得你一個踉蹌，「謝啦！」",
+            "set_flags": ["liese_rats"]
+          },
+          "fail": {
+            "text": "巨鼠們咬破了更多的袋子才逃。莉澤洛特看著自己被麵粉弄得白白的手，笑出了聲：「我們兩個現在看起來像麵團！」",
+            "set_flags": ["liese_rats"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "carry",
+          "title": "在萊茵堡的雜貨店幫莉澤洛特扛麵粉",
+          "text": "剩下的麵粉要從雜貨店的倉庫扛回麵包店，整整二十袋。莉澤洛特一次扛兩袋，回頭看你：「你行不行啊，冒險者？」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "shop" },
+          "requires": { "flags": ["liese_rats"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 13 },
+          "success": {
+            "text": "你一次扛了三袋。莉澤洛特吹了一聲口哨：「可以啊！」扛完最後一袋，她靠在麵包店的門框上喘氣，汗水把襯衫貼在了身上，自己卻沒發現。",
+            "set_flags": ["liese_carried"],
+            "effects": [{ "type": "affinity", "npc": "npc_lieselotte", "delta": 10, "reason": "幫她扛完了麵粉" }]
+          },
+          "fail": {
+            "text": "你扛到第十袋就腿軟了。莉澤洛特笑著把剩下的全扛完了：「冒險者也不過如此嘛！」她把一個剛出爐的麵包塞進你嘴裡，「吃飽了才有力氣！」",
+            "set_flags": ["liese_carried"]
+          }
+        },
+        {
+          "id": "bread",
+          "title": "收下莉澤洛特的麵包",
+          "text": "麵包店打烊了，莉澤洛特把一大籃麵包推到你面前：「說好的報酬！」她坐在烤爐邊，看著窗外，「這些本來是要寄到前線的。我丈夫在第三軍團。」她笑了一下，「一年只回來一次，收穫節的時候。」她的笑聲第一次不那麼大，「……一個人吃飯，好安靜。」",
+          "at": { "where": "npc", "npc": "npc_lieselotte" },
+          "requires": { "flags": ["liese_carried"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那我常來吃」",
+              "success": {
+                "text": "莉澤洛特愣了一下，然後笑得整條街都聽得見：「好啊！說定了！」她拍了拍你的背，「每天早上第一爐的麵包，留給你！」她轉過身去收拾烤盤，耳朵紅紅的。",
+                "set_flags": ["liese_1_done", "liese_regular"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lieselotte", "delta": 15, "reason": "說要常來吃" },
+                  { "type": "memory", "summary": "萊茵堡麥穗麵包店的老闆娘莉澤洛特，丈夫在南境前線一年只回來一次。你說要常來吃她的麵包。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「這些麵包，我幫妳送到前線」",
+              "success": {
+                "text": "莉澤洛特看著你，很久，然後低下頭：「……你真是個好人。」她把一張紙條塞進麵包籃裡，「這個也幫我帶給他。」你沒有看紙條。送到前線的時候，你聽見那個士兵讀完了紙條，笑著說：「她總是說沒關係。」",
+                "set_flags": ["liese_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lieselotte", "delta": 10, "reason": "幫她送麵包" },
+                  { "type": "memory", "summary": "替萊茵堡麥穗麵包店的老闆娘莉澤洛特把麵包送到了前線。她的丈夫說，她總是說沒關係。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "liese_front_basket",
+      "title": "寄往前線的籃子",
+      "summary": "莉澤洛特每週寄到前線的麵包，這三個月一籃也沒有送到。軍需處說沒收到——可是黑市上，賣著印著麥穗的麵包。（莉澤洛特・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lieselotte",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["liese_1_done"] },
+        "text": "莉澤洛特把一封信攤在你面前，是她丈夫寫來的，字跡很潦草：「這三個月都沒收到妳的麵包，是不是店裡出了什麼事？」她的手指用力地壓著信紙，「我每週都寄。每一週。」她抬起頭，笑容第一次笑不出來，「……有人在偷前線的東西。」"
+      },
+      "start_flags": ["liese_basket"],
+      "nodes": [
+        {
+          "id": "trace",
+          "title": "在萊茵堡的情報商查黑市的麵包",
+          "text": "大道上的情報商咬了一口印著麥穗的麵包：「好吃。黑市上賣十倍價錢。」他壓低聲音，「軍需處有個管倉庫的，跟黑市的車夫是一夥的。前線的補給，十箱裡有三箱會『不見』。」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "informant" },
+          "requires": { "flags": ["liese_basket"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你拿到了黑市車隊的路線：今晚，他們會從城外的舊磨坊出發，車上裝的是本該送到前線的補給——包括莉澤洛特的麵包。",
+            "set_flags": ["liese_route"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才肯說：「舊磨坊。今晚。」",
+            "set_flags": ["liese_route"],
+            "effects": [{ "type": "money", "amount": -150 }]
+          }
+        },
+        {
+          "id": "carters",
+          "title": "在萊茵堡近郊攔下黑市的車隊",
+          "text": "舊磨坊外，黑市的車夫們正把一箱一箱的軍需品搬上馬車。最上面那箱，蓋子上印著一個麥穗。莉澤洛特看見了，捲起袖子，抄起了一根擀麵棍。",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["liese_route"] },
+          "kind": "combat",
+          "enemies": [["black_market_carter", 2]],
+          "success": {
+            "text": "車夫們被打趴了。莉澤洛特用擀麵棍指著他們，大聲地說：「前線的人在挨餓，你們在賣他們的飯！」她把麥穗麵包的箱子抱在懷裡，眼眶紅了。你們把車隊和帳本交給了城衛。",
+            "set_flags": ["liese_caught"]
+          },
+          "fail": {
+            "text": "車夫們把你們逼退了，駕著一半的車逃了。可莉澤洛特在最後一刻跳上了最後一輛車，硬是把那輛車攔了下來——車上，正好是她的麵包。",
+            "set_flags": ["liese_caught"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "oven",
+          "title": "陪莉澤洛特在烤爐邊等天亮",
+          "text": "麵包店裡，莉澤洛特在烤一爐新的麵包——這次她要親手交給前線的信使。烤爐的火光映在她臉上，她揉麵團揉得很用力：「三個月。他以為我忘了他。」她停了下來，手按在麵團上，「……其實，我有時候也會忘記他長什麼樣子。」她轉過頭，「這樣，是不是很壞？」",
+          "at": { "where": "npc", "npc": "npc_lieselotte" },
+          "requires": { "flags": ["liese_caught"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "從背後抱住她",
+              "success": {
+                "text": "莉澤洛特僵住了，手上的麵團被她握碎了。很久，她靠在了你的懷裡：「……我一直說沒關係。」她的聲音在抖，「一年三百六十天，一個人在烤爐邊睡不著——我說沒關係。」她轉過身，麵粉沾在了你的衣服上，「今晚，我不想說沒關係了。」那一夜，烤爐的火一直沒有熄。",
+                "set_flags": ["liese_2_done", "liese_night"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lieselotte", "delta": 20, "reason": "抱住了她" },
+                  { "type": "memory", "summary": "替萊茵堡的莉澤洛特追回了寄往前線的麵包。那一夜在烤爐邊，她說不想再說沒關係了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「不壞。妳只是太寂寞了」",
+              "success": {
+                "text": "莉澤洛特的眼淚掉進了麵團裡。她用手背擦了擦，笑了，笑得比平常小聲：「……今天的麵包，會有點鹹。」她把一塊揉好的麵團塞進你手裡，「陪我揉完這一爐。揉完了……再說。」",
+                "set_flags": ["liese_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lieselotte", "delta": 15, "reason": "說她只是太寂寞" },
+                  { "type": "memory", "summary": "替萊茵堡的莉澤洛特追回了寄往前線的麵包。你陪她揉完了一整爐麵團。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "liese_harvest_festival",
+      "title": "收穫節",
+      "summary": "收穫節到了，丈夫一年一次的休假卻被取消——前線吃緊。同一天，一群從第三軍團逃出來的老兵，盯上了收穫節滿是現金的麵包店。（莉澤洛特・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lieselotte",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["liese_2_done"] },
+        "text": "莉澤洛特站在麵包店門口，手裡拿著一封蓋著第三軍團印章的信，笑容掛在臉上，卻一點也不像在笑：「今年的休假取消了。前線吃緊。」她把信折起來，塞進圍裙的口袋，「沒關係——」她停住了，看著你，「……不對。我說過不再說沒關係了。」她拉住你的手，「收穫節，陪我過。」"
+      },
+      "start_flags": ["liese_festival"],
+      "nodes": [
+        {
+          "id": "deserters",
+          "title": "在萊茵堡近郊擋下第三軍團的逃兵",
+          "text": "收穫節的前一夜，城外的路上，幾個穿著破爛第三軍團制服的老兵正在磨刀：「下城區那間麵包店，收穫節一天能賺一整年的錢。」他們抬起頭，看見了你，「……又是個多管閒事的。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["liese_festival"] },
+          "kind": "combat",
+          "enemies": [["deserter_veteran", 2]],
+          "success": {
+            "text": "逃兵們倒下了。其中一個看著你，啞著嗓子說：「前線……每天都在死人。」他被城衛帶走之前，把一個東西塞給你——一枚第三軍團的徽章，背面刻著「麥穗」兩個字。「給那個麵包店的老闆娘。她丈夫……在我們營裡。他說，她的麵包是前線最好吃的。」",
+            "set_flags": ["liese_safe"]
+          },
+          "fail": {
+            "text": "逃兵們把你們逼退了，可最後一個逃兵在離開之前停了下來，看著麵包店的方向：「……那間店的麵包，我在前線吃過。」他啐了一口，帶著其他人走了。",
+            "set_flags": ["liese_safe"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "festival",
+          "title": "陪莉澤洛特撐過收穫節的麵包店",
+          "text": "收穫節當天，麵包店門口排了整整一條街。莉澤洛特一個人揉麵、烤麵包、收錢，笑聲比平常還大——大到你聽得出來，她是在逼自己笑。",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "shop" },
+          "requires": { "flags": ["liese_safe"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 17 },
+          "success": {
+            "text": "你捲起袖子，接下了揉麵團的活。一整天，你們一個揉一個烤，配合得像是做了十年的搭檔。打烊的時候，莉澤洛特靠在烤爐邊，第一次不是逼自己笑：「……今年的收穫節，好像不寂寞。」",
+            "set_flags": ["liese_done_day"]
+          },
+          "fail": {
+            "text": "你揉的麵團一個比一個醜，可是客人們搶著買：「這個形狀好特別！」莉澤洛特笑得眼淚都出來了。打烊的時候，她說：「今年賣得最好的，是你揉的醜麵包。」",
+            "set_flags": ["liese_done_day"]
+          }
+        },
+        {
+          "id": "night",
+          "title": "收穫節的夜晚",
+          "text": "收穫節的夜晚，整個萊茵堡都在放煙火。莉澤洛特關上了麵包店的門，坐在烤爐邊，手裡拿著那封取消休假的信：「我嫁給他的時候，以為一年見一次也沒關係。」她把信放進了烤爐，看著它燒起來，「……我還是愛他。可是我也……」她轉過頭看你，說不下去。",
+          "at": { "where": "npc", "npc": "npc_lieselotte" },
+          "requires": { "flags": ["liese_done_day"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「不用選。我在這裡就好」",
+              "success": {
+                "text": "莉澤洛特看著你，眼淚和笑一起湧了出來：「……你這個人，太狡猾了。」她撲進了你懷裡，把你推倒在麵粉袋上，煙火的光從窗戶照進來，「那今晚，我不選了。」那一夜，麥穗麵包店的烤爐燒到了天亮。第二天早上，第一爐麵包是心形的——她說是不小心的。",
+                "set_flags": ["liese_lover", "liese_secret"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lieselotte", "delta": 25, "reason": "說她不用選" },
+                  { "type": "memory", "summary": "陪萊茵堡麥穗麵包店的莉澤洛特過了收穫節。她還愛著前線的丈夫——你說，她不用選。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「寫一封信給他吧，說實話」",
+              "success": {
+                "text": "莉澤洛特愣住了，很久，然後點點頭。她寫了一整夜的信，寫完了交給你看——你沒看，她自己念了出來：「我很寂寞。我遇到了一個人。我不知道該怎麼辦。」一個月後，回信來了，只有一行字：「對不起，讓妳一個人。妳要幸福。」她抱著信哭了很久，然後抬起頭，牽住了你的手。",
+                "set_flags": ["liese_lover", "liese_honest"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lieselotte", "delta": 25, "reason": "陪她說了實話" },
+                  { "type": "memory", "summary": "陪萊茵堡麥穗麵包店的莉澤洛特過了收穫節。她寫信給前線的丈夫說了實話——丈夫回信說：妳要幸福。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "clara_lilac_reader",
+      "title": "紫丁香的讀者",
+      "summary": "帝都最受歡迎的禁書作家「紫丁香」，沒有人知道是誰。你在大道上撿到了一份掉落的手稿——作者正抱著一疊書，臉色發白地四處找它。（克拉拉・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_clara",
+        "min_level": 5,
+        "text": "一個戴圓框眼鏡、懷裡抱著書的黑髮女人在大道上來回地找，臉色白得像紙。你手裡的那份手稿，封面上寫著「紫丁香・第十二卷・初稿」。她看見了，整個人僵住了，書掉了一地：「那、那個……」她的聲音輕得幾乎聽不見，「……您、您讀了嗎？」"
+      },
+      "start_flags": ["clara_start"],
+      "nodes": [
+        {
+          "id": "drunks",
+          "title": "在萊茵堡的酒館搶回被傳閱的手稿",
+          "text": "你把手稿還給她的時候，才發現少了三頁——被風吹走了，飄進了旁邊的酒館。酒館裡，幾個醉漢正搶著傳閱那三頁，笑得拍桌子：「紫丁香的新作！這段太棒了！」克拉拉躲在你身後，臉紅到了耳根。",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "tavern" },
+          "requires": { "flags": ["clara_start"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 13 },
+          "success": {
+            "text": "你趁醉漢們搶來搶去的時候，一把抽走了那三頁，連同一個醉漢的酒杯。克拉拉接過稿子，抱在胸前，小聲地說：「……謝謝。」她頓了頓，「那個……您覺得那段，寫得好嗎？」",
+            "set_flags": ["clara_pages"],
+            "effects": [{ "type": "affinity", "npc": "npc_clara", "delta": 10, "reason": "替她搶回了稿子" }]
+          },
+          "fail": {
+            "text": "你搶回了兩頁，第三頁被醉漢塞進了嘴裡吃掉了。克拉拉看著那個醉漢，臉色發白，然後——忍不住笑了出來：「……那一頁，寫得最差。」",
+            "set_flags": ["clara_pages"]
+          }
+        },
+        {
+          "id": "pirates",
+          "title": "在萊茵堡近郊擋下盜印商的打手",
+          "text": "那幾個醉漢裡，有一個是盜印商的眼線。當天晚上，盜印商的打手就跟著克拉拉出了城——他們想知道紫丁香是誰，好搶下一卷的原稿。",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["clara_pages"] },
+          "kind": "combat",
+          "enemies": [["pirate_printer_thug", 3]],
+          "success": {
+            "text": "打手們逃了。克拉拉抱著手稿蹲在路邊，眼鏡歪了：「……如果被人知道我是紫丁香，學院會開除我丈夫的。」她抬起頭，「您會保密嗎？」",
+            "set_flags": ["clara_safe"]
+          },
+          "fail": {
+            "text": "打手們搶走了一疊紙才逃——是克拉拉帶在身上的圖書館借書單。她看著他們跑遠，鬆了一口氣，然後笑了：「他們會從借書單上猜出什麼呢？」",
+            "set_flags": ["clara_safe"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "secret",
+          "title": "回應紫丁香",
+          "text": "克拉拉帶你走進了法師學院圖書館的閱覽室，關上門，摘下了眼鏡——她摘下眼鏡之後，像是換了一個人：「我結婚八年了。」她的聲音很輕，「丈夫陪他的研究，比陪我多。」她看著你手裡的手稿，「……那些小說裡寫的事，我一件也沒有做過。我只是想像。」",
+          "at": { "where": "npc", "npc": "npc_clara" },
+          "requires": { "flags": ["clara_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我是紫丁香的讀者。下一卷，我想第一個讀」",
+              "success": {
+                "text": "克拉拉愣住了，然後臉一點一點地紅了：「……第一個讀者。」她把手稿抱得更緊了，「那、那您要給我意見。真實的意見。」她戴回了眼鏡，又變回了那個安靜的圖書館員，「每週三下午，閱覽室沒有人。」",
+                "set_flags": ["clara_1_done", "clara_reader"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_clara", "delta": 15, "reason": "說要當她的第一個讀者" },
+                  { "type": "memory", "summary": "萊茵堡的圖書館員克拉拉，就是帝都禁書作家「紫丁香」。你答應保密，還要當她下一卷的第一個讀者。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「我會保密」",
+              "success": {
+                "text": "克拉拉點點頭，鬆了一口氣。你轉身要走的時候，她叫住了你：「……那個。」她的手指絞著披肩的流蘇，「第十二卷的男主角，我一直寫不好。」她抬起頭，「能讓我……觀察您一下嗎？只是觀察。」",
+                "set_flags": ["clara_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_clara", "delta": 10, "reason": "答應替她保密" },
+                  { "type": "memory", "summary": "萊茵堡的圖書館員克拉拉，就是帝都禁書作家「紫丁香」。你答應替她保密。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "clara_field_research",
+      "title": "取材",
+      "summary": "紫丁香的第十二卷寫不下去了。克拉拉說，她需要「取材」——把小說裡寫的事，親身試一次。可同時，教廷的禁書審查官開始在帝都追查紫丁香。（克拉拉・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_clara",
+        "min_affinity": 20,
+        "min_level": 8,
+        "requires": { "flags": ["clara_1_done"] },
+        "text": "克拉拉把一張寫滿字的清單推到你面前，眼鏡後的灰色眼睛不敢看你：「第十二卷，第七章。」清單上的第一項是「在旅店的房間裡，被人從背後解開頭髮」。她的耳朵紅透了，「……我寫不出來。因為我不知道那是什麼感覺。」她深吸一口氣，「請、請讓我取材。」"
+      },
+      "start_flags": ["clara_research"],
+      "nodes": [
+        {
+          "id": "inn",
+          "title": "在萊茵堡的旅店陪克拉拉取材",
+          "text": "旅店的房間裡，克拉拉坐在床邊，背對著你，手裡拿著筆記本，筆尖在發抖：「請、請開始。」你解開了她的低馬尾，黑色的長髮散落在披肩上。她的筆掉了。",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "inn" },
+          "requires": { "flags": ["clara_research"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你很慢、很輕地替她梳頭髮，一邊梳一邊說些不相干的話，讓她放鬆下來。清單上的第一項完成了，克拉拉撿起筆，寫了整整三頁。寫完了，她小聲地說：「……第二項，下次再取材。」",
+            "set_flags": ["clara_noted"],
+            "effects": [{ "type": "affinity", "npc": "npc_clara", "delta": 10, "reason": "溫柔地陪她取材" }]
+          },
+          "fail": {
+            "text": "你的手太緊張了，扯到了她的頭髮。克拉拉「啊」了一聲，然後忍不住笑了出來：「……小說裡不會寫這個。」她撿起筆，「可是，好真實。」她寫了兩頁，每一頁都在笑。",
+            "set_flags": ["clara_noted"]
+          }
+        },
+        {
+          "id": "censors",
+          "title": "在萊茵堡近郊擋下教廷審查官的護衛",
+          "text": "從旅店出來，你們被跟蹤了。城外的路上，幾個穿著教廷白袍的護衛攔住了你們：「禁書審查官大人想請教克拉拉女士——圖書館的借書記錄上，紫丁香的讀者都借過同一本書。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["clara_noted"] },
+          "kind": "combat",
+          "enemies": [["censor_guard", 2]],
+          "success": {
+            "text": "護衛們撤退了。克拉拉抱著筆記本，臉色發白：「……他們開始懷疑了。」她看著你，「如果我被抓了，你要說你什麼都不知道。」",
+            "set_flags": ["clara_hunted"]
+          },
+          "fail": {
+            "text": "護衛們搶走了克拉拉的包，翻了一遍——裡面只有圖書館的借書單和一本植物圖鑑。筆記本在你懷裡。他們悻悻地走了。",
+            "set_flags": ["clara_hunted"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "chapter",
+          "title": "讀克拉拉寫的第七章",
+          "text": "幾天後，克拉拉把第七章的初稿交給了你：「第一個讀者。」你讀完了——那是你們在旅店裡的事，一字不差，只是最後多了一段，你們沒有做過的那一段。克拉拉看著你讀完，摘下了眼鏡：「……最後那一段，是想像的。」她的聲音在抖，「你覺得，寫得真實嗎？」",
+          "at": { "where": "npc", "npc": "npc_clara" },
+          "requires": { "flags": ["clara_hunted"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「不夠真實。要不要取材？」",
+              "success": {
+                "text": "克拉拉愣住了，然後臉紅得連脖子都紅了：「……你、你這是在邀請我。」她站起來，走到你面前，把眼鏡放進了你的口袋，「那、那麼，取材開始。」那一夜，帝都最大膽的禁書作家發現，自己寫了八年的東西，原來全都寫錯了——現實比小說還要好。",
+                "set_flags": ["clara_2_done", "clara_real"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_clara", "delta": 20, "reason": "陪她取材到最後" },
+                  {
+                    "type": "memory",
+                    "summary": "萊茵堡的克拉拉——紫丁香——把你們的事寫進了第十二卷第七章。最後那一段是想像的，你說不夠真實——於是你們取材了。",
+                    "importance": 2
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「很真實。妳寫得比我想的還好」",
+              "success": {
+                "text": "克拉拉看著你，很久，然後把稿子抱在胸前，低下頭笑了：「……第一次，有人說我寫的東西真實。」她小聲地說，「我會把這一章留下來。不出版。」她抬起頭，「只給你一個人讀。」",
+                "set_flags": ["clara_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_clara", "delta": 15, "reason": "說她寫得真實" },
+                  { "type": "memory", "summary": "萊茵堡的克拉拉——紫丁香——把你們的事寫進了第十二卷第七章。她說這一章不出版，只給你讀。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "clara_last_chapter",
+      "title": "最後一章",
+      "summary": "教廷的禁書審查官找到了紫丁香的線索，要在法師學院公開審問克拉拉。院長塞拉菲娜是紫丁香的頭號讀者——可她不知道作者就是自己的圖書館員。（克拉拉・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_clara",
+        "min_affinity": 30,
+        "min_level": 11,
+        "requires": { "flags": ["clara_2_done"] },
+        "text": "克拉拉站在圖書館的書架之間，手裡拿著一張教廷的傳喚令，表情出奇地平靜：「明天，審查官要在學院裡審問我。」她摘下眼鏡，擦了擦，「我丈夫說，他不認識紫丁香。他說得對——他從來沒有讀過我寫的任何東西。」她戴回眼鏡，看著你，「可是你讀過。每一個字。」"
+      },
+      "start_flags": ["clara_trial"],
+      "nodes": [
+        {
+          "id": "inquisitors",
+          "title": "在萊茵堡近郊擋下禁書審查官",
+          "text": "審問的前一夜，禁書審查官親自帶人來圖書館搜查原稿。你和克拉拉帶著原稿從後門逃出城，審查官們追了上來，手裡的聖印閃著白光：「交出淫書！」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["clara_trial"] },
+          "kind": "combat",
+          "enemies": [["book_inquisitor", 2]],
+          "success": {
+            "text": "審查官們退走了，原稿完好無缺。克拉拉抱著它，喘著氣：「……明天的審問，還是要去。」她看著你，「逃走的話，紫丁香就真的是罪人了。」",
+            "set_flags": ["clara_kept"]
+          },
+          "fail": {
+            "text": "審查官們搶走了一疊原稿——是第十一卷，已經出版過的那一卷。他們以為抓到了證據，得意地走了。真正的第十二卷，在你懷裡。",
+            "set_flags": ["clara_kept"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "dean",
+          "title": "在院長塞拉菲娜面前替紫丁香辯護",
+          "text": "學院的大廳裡，審查官把第十一卷摔在桌上：「這是淫書！作者就在這間學院裡！」院長塞拉菲娜坐在主位上，臉色古怪——她的書架上，第一卷到第十一卷整整齊齊地排著。她看著你：「你是證人？說吧。」",
+          "at": { "where": "npc", "npc": "npc_seraphina_weiss" },
+          "requires": { "flags": ["clara_kept"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 17 },
+          "success": {
+            "text": "你說，紫丁香寫的不是淫書，是寂寞——一個被冷落的人，用文字證明自己還活著。你引用了第十一卷裡的一段，院長的眼睛濕了。塞拉菲娜站起來，對審查官說：「這是學院的文學研究資料。教廷，請回吧。」散會之後，她經過克拉拉身邊，小聲地說：「……第十二卷，我要簽名本。」",
+            "set_flags": ["clara_cleared"]
+          },
+          "fail": {
+            "text": "你說得結結巴巴，可這時克拉拉自己站了起來，摘下眼鏡：「我是紫丁香。」大廳一片譁然。院長塞拉菲娜愣了很久，然後笑了出來：「……我早該猜到的。」她轉向審查官，「學院的圖書館員寫什麼，是學院的事。請回。」",
+            "set_flags": ["clara_cleared"]
+          }
+        },
+        {
+          "id": "last",
+          "title": "讀紫丁香的最後一章",
+          "text": "審問結束的那天晚上，克拉拉把第十二卷的最後一章交給你。她的丈夫當天就搬去了研究室住，留下一張紙條：「我從來不了解妳。對不起。」克拉拉看著你讀完最後一章，摘下了眼鏡：「最後一章，我寫了一個結局。」她走到你面前，「可是，我想聽你寫的那一個。」",
+          "at": { "where": "npc", "npc": "npc_clara" },
+          "requires": { "flags": ["clara_cleared"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「紫丁香和她的讀者，從此不用再想像」",
+              "success": {
+                "text": "克拉拉笑了，眼淚從灰色的眼睛裡滑下來：「……好老套的結局。」她吻了你，「我好喜歡。」那一夜，她沒有拿筆記本，也沒有清單。天亮的時候，她靠在你的胸口說：「紫丁香的下一卷，要寫一個幸福的故事。帝都的讀者們，一定會嚇一跳。」",
+                "set_flags": ["clara_lover", "clara_happy"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_clara", "delta": 25, "reason": "替她寫了結局" },
+                  { "type": "memory", "summary": "陪萊茵堡的克拉拉——紫丁香——撐過了教廷的審問。她說，下一卷要寫一個幸福的故事。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「最後一章，我們一起寫」",
+              "success": {
+                "text": "克拉拉愣住了，然後把筆塞進你手裡，自己握著你的手：「……那就從第一句開始。」你們一起寫了一整夜，寫到最後，誰都分不清哪一句是誰寫的。天亮的時候，稿紙散了一地，克拉拉在你懷裡睡著了，嘴角帶著笑。最後一章的最後一句是：「未完待續。」",
+                "set_flags": ["clara_lover", "clara_cowrite"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_clara", "delta": 25, "reason": "和她一起寫最後一章" },
+                  { "type": "memory", "summary": "陪萊茵堡的克拉拉——紫丁香——撐過了教廷的審問。你們一起寫了第十二卷的最後一章：未完待續。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
     }
   ]
 }
