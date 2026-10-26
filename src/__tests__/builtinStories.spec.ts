@@ -41,13 +41,17 @@ describe('built-in stories', () => {
       ['rhine_raid', 'rhine_iron_cross', 'rhine_council'],
       ['mist_bell', 'mist_inquisition', 'mist_saint'],
       ['isadora_interview', 'isadora_ball', 'isadora_elope'],
+      ['doctrine_notebook', 'doctrine_mirror', 'doctrine_council'],
+      ['snake_red_creek', 'snake_eggs', 'snake_progenitor'],
+      ['aya_prayer_book', 'aya_harbor', 'aya_last_confession'],
+      ['aya_prayer_book', 'aya_harbor', 'aya_ebony_club'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
       expect(levels).toEqual([5, 8, 11])
       for (let i = 1; i < ids.length; i++) expect(story(ids[i]!).start.requires?.flags?.length, ids[i]).toBeGreaterThan(0)
     }
-    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope']
+    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club']
     expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
   })
 
@@ -123,8 +127,35 @@ describe('built-in stories', () => {
     expect(enemies.emperor_of_whispers!.desc).toContain('重新聚起形體')
   })
 
-  it('keeps the kingmaker and the rulers out of reach of a sneak attack', () => {
+  it('keeps every fixed NPC a storyline needs out of reach of a sneak attack', () => {
+    const needed = new Set<string>()
+    for (const st of stories) {
+      if (st.start.npc) needed.add(st.start.npc)
+      for (const n of st.nodes) {
+        if (n.at?.npc) needed.add(n.at.npc)
+        for (const a of n.allies ?? []) needed.add(a)
+        for (const o of [n.success, n.fail, ...(n.options ?? []).flatMap((x) => [x.success, x.fail])]) if (o?.join) needed.add(o.join)
+      }
+    }
+    expect([...needed].filter((id) => !namedNpcs.find((n) => n.id === id)!.no_attack)).toEqual([])
     for (const id of ['npc_lorenzo_valois', 'npc_anastasia', 'npc_alexei', 'npc_alexander']) expect(namedNpcs.find((n) => n.id === id)!.no_attack, id).toBe(true)
+  })
+
+  it('splits the NTR branch of Aya into its own tagged option and quest', () => {
+    setAdultContent(true)
+    const want = story('aya_harbor').nodes.find((n) => n.id === 'want')!
+    expect(want.options!.map((o) => o.tags ?? [])).toEqual([[], ['ntr']])
+    expect(story('aya_ebony_club').tags).toEqual(['adult', 'ntr'])
+    expect(story('aya_ebony_club').start.requires?.flags).toEqual(['aya_ntr'])
+    expect(story('aya_last_confession').start.requires?.flags).toEqual(['aya_pc'])
+    const state = game()
+    state.party[0]!.level = 11
+    state.guild = { rank: 'B', merit: 0 }
+    state.relationships = { ...state.relationships, npc_aya: { affinity: 40 } as never }
+    setFlag(state, 'aya_ntr')
+    expect(canStart(state, story('aya_ebony_club'))).toBe(true)
+    setContentFilters({ ntr: false })
+    expect(canStart(state, story('aya_ebony_club'))).toBe(false)
   })
 })
 
