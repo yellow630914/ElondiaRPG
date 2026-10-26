@@ -51,16 +51,19 @@ describe('built-in stories', () => {
       ['port_seized_ship', 'port_lighthouse', 'port_charter'],
       ['spirit_river_girl', 'spirit_upstream', 'spirit_drowned'],
       ['amelia_lonely_night', 'amelia_white_gull', 'amelia_ring'],
+      ['commerce_false_bandits', 'commerce_false_coin', 'commerce_council_vote'],
+      ['seacave_low_tide', 'seacave_siren', 'seacave_drowned_crew'],
+      ['lab_medium', 'lab_sober', 'lab_guild_return'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
       expect(levels).toEqual([5, 8, 11])
       for (let i = 1; i < ids.length; i++) expect(story(ids[i]!).start.requires?.flags?.length, ids[i]).toBeGreaterThan(0)
     }
-    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring']
+    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return']
     expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
     // 角色在任務開始前就有性經驗：標非處女
-    expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
+    expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
   })
 
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {
@@ -196,5 +199,19 @@ describe('serena ransom', () => {
     const [bargain] = story('serena_councillor').nodes.filter((n) => n.id === 'bargain')
     const flags = bargain!.options!.flatMap((o) => [o.success, o.fail]).filter(Boolean).map((o) => o!.set_flags!.find((f) => f !== 'ser_2_done'))
     expect(new Set(flags)).toEqual(new Set(['ser_price', 'ser_free_deal']))
+  })
+})
+
+describe('quests inside a temporary map', () => {
+  it('go in with their own side map and never leave a fight there without an outcome', () => {
+    for (const id of ['seacave_low_tide', 'seacave_siren', 'seacave_drowned_crew']) {
+      const st = story(id)
+      expect(st.nodes[0]!.success!.side_map, id).toBe('cave')
+      for (const n of st.nodes.slice(1)) {
+        expect(n.at.where, `${id}:${n.id}`).toBe('side')
+        expect(n.urgent, `${id}:${n.id}`).toBe(true)
+        if (n.kind === 'combat') expect(n.fail, `${id}:${n.id}`).toBeTruthy()
+      }
+    }
   })
 })
