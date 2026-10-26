@@ -26278,6 +26278,1109 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "pol_storm_eve",
+      "title": "風暴的前夜",
+      "summary": "大陸各地的天空同時出現了殘影——統一戰爭的戰場、燒毀的城池、死去的將軍。有人說那是預兆：人類與魔族的爭鬥，就要在今年分出結果。（史詩：政治鬥爭的匯流・序章）",
+      "rank": "A",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 14,
+        "text": "河谷鎮公會的主管把所有的委託都撤了下來，只留下一張：「全大陸的情勢彙整。急件。」他看著你，臉色很難看：「這三天，萊茵堡、血羽城堡、索里耶爾、晨光城的天上，都出現了一樣的東西——兩百年前統一戰爭的殘影。」他壓低聲音，「各國的使者都在找能看清局勢的人。他們說，指名要你。」"
+      },
+      "start_flags": ["pol_start"],
+      "nodes": [
+        {
+          "id": "brief",
+          "title": "在河谷鎮的情報商拼湊各國的動向",
+          "text": "情報商的桌上堆滿了密信：萊茵堡的軍議、赤翼宮廷的議會、教廷的公會議、晨曦王宮的詔書、獸骨荒丘的戰鼓。你走過的每一條故事線，都在這些信裡留下了痕跡。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "informant" },
+          "requires": { "flags": ["pol_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 18 },
+          "success": {
+            "text": "你把一封一封的密信攤開，拼出了整張大陸的圖：哪些人放下了刀，哪些人還握著。情報商看著你畫的圖，沉默了很久：「……這張圖，值一座城。」",
+            "set_flags": ["pol_briefed"]
+          },
+          "fail": {
+            "text": "密信太多，拼不出全貌——可是你認得信裡的名字，那些都是你見過、幫過、或是擋過的人。光憑這些名字，你也大概知道風往哪裡吹了。",
+            "set_flags": ["pol_briefed"]
+          }
+        },
+        {
+          "id": "echoes",
+          "title": "在河谷鎮近郊擋下從殘影裡走出來的亡兵",
+          "text": "城外的平原上，天空的殘影越來越清楚——然後，殘影裡的士兵一個接一個地走了下來。兩百年前統一戰爭的亡兵，舉著生鏽的旗幟，朝河谷鎮的方向前進。半空中閃過一層層交錯的殘影——歷史之龍「回響編年」阿契隆的回響。",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_briefed"] },
+          "kind": "combat",
+          "enemies": [["echo_legionnaire", 2]],
+          "success": {
+            "text": "亡兵們散成了灰，殘影卻沒有消失。最後一個亡兵在散去之前，看著你，說了一句兩百年前的話：「……這一次，你們會選什麼？」",
+            "set_flags": ["pol_echoed"]
+          },
+          "fail": {
+            "text": "亡兵們把你們逼回了城門，然後在日出時自己散去了，像是演完了一場戲。半空中的殘影卻還在，比昨天更清楚了。",
+            "set_flags": ["pol_echoed"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "route_peace",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_echoed"], "counters": { "human_stance": { "min": 1 }, "demon_stance": { "min": 1 } } },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「和平已經是大勢了。剩下的，是那些不肯放下刀的人」",
+              "success": {
+                "text": "人類與魔族的君主們都走向了和平——剩下的主戰派，在暗處磨著刀。你決定一個城鎮一個城鎮地去，把他們找出來。",
+                "set_flags": ["pol_route_peace"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_war",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_echoed"], "counters": { "human_stance": { "max": -1 }, "demon_stance": { "max": -1 } } },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「戰爭已經沒辦法避免了」",
+              "success": {
+                "text": "人類與魔族都選了戰爭。號角已經在兩邊的城牆上響起——你得決定，自己要站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_mixed_1",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_echoed"], "counters": { "human_stance": { "min": 1 }, "demon_stance": { "max": 0 } } },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓世界走向和平」",
+              "success": {
+                "text": "世界還在搖擺。你決定把它往和平推一把——去清剿那些想點燃戰火的人。",
+                "set_flags": ["pol_route_peace"]
+              }
+            },
+            {
+              "label": "「讓戰爭開始」",
+              "success": {
+                "text": "世界還在搖擺。你決定不再等待——戰爭總要有人開始，而你要決定自己站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_mixed_2",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_echoed"], "counters": { "human_stance": { "max": 0 }, "demon_stance": { "min": 1 } } },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓世界走向和平」",
+              "success": {
+                "text": "世界還在搖擺。你決定把它往和平推一把——去清剿那些想點燃戰火的人。",
+                "set_flags": ["pol_route_peace"]
+              }
+            },
+            {
+              "label": "「讓戰爭開始」",
+              "success": {
+                "text": "世界還在搖擺。你決定不再等待——戰爭總要有人開始，而你要決定自己站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_mixed_3",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": {
+            "flags": ["pol_echoed"],
+            "counters": { "human_stance": { "max": -1 }, "demon_stance": { "min": 0, "max": 0 } }
+          },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓世界走向和平」",
+              "success": {
+                "text": "世界還在搖擺。你決定把它往和平推一把——去清剿那些想點燃戰火的人。",
+                "set_flags": ["pol_route_peace"]
+              }
+            },
+            {
+              "label": "「讓戰爭開始」",
+              "success": {
+                "text": "世界還在搖擺。你決定不再等待——戰爭總要有人開始，而你要決定自己站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "route_mixed_4",
+          "title": "決定世界要往哪裡走",
+          "text": "回到公會，各國的使者都在等你：帝國的、教廷的、晨曦的、赤翼的、精靈的、玉璘族的。他們都在問同一個問題——戰爭，還是和平？你走過的每一條路，已經替世界做了大半的決定。剩下的，由你來說。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": {
+            "flags": ["pol_echoed"],
+            "counters": { "human_stance": { "min": 0, "max": 0 }, "demon_stance": { "max": 0 } }
+          },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓世界走向和平」",
+              "success": {
+                "text": "世界還在搖擺。你決定把它往和平推一把——去清剿那些想點燃戰火的人。",
+                "set_flags": ["pol_route_peace"]
+              }
+            },
+            {
+              "label": "「讓戰爭開始」",
+              "success": {
+                "text": "世界還在搖擺。你決定不再等待——戰爭總要有人開始，而你要決定自己站在哪一邊。",
+                "set_flags": ["pol_route_war"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "side",
+          "title": "選擇站在哪一邊",
+          "text": "戰爭要開始了。人類的使者和魔族的使者，同時把手伸向你：「你的劍，要為誰而揮？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_route_war"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "站在人類這一邊",
+              "success": {
+                "text": "你接過了帝國的軍令。魔族的使者看著你，沒有生氣，只是點了點頭：「……戰場上見。」他轉身離開，「希望你不會後悔。」",
+                "set_flags": ["pol_1_done", "pol_war_human"],
+                "effects": [{ "type": "memory", "summary": "風暴的前夜：人類與魔族的戰爭開始了，你選擇站在人類這一邊。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "站在魔族這一邊",
+              "success": {
+                "text": "你接過了赤翼的軍令。人類的使者瞪著你，像是看著一個叛徒：「……你知道你在做什麼嗎？」你點頭。他啐了一口，轉身離開。赤翼的使者把一枚燃燒羽紋的徽章別在你的胸口：「歡迎。」",
+                "set_flags": ["pol_1_done", "pol_war_demon"],
+                "effects": [{ "type": "memory", "summary": "風暴的前夜：人類與魔族的戰爭開始了，你選擇站在魔族這一邊。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "purge",
+          "title": "接下清剿主戰派的委託",
+          "text": "各國的使者交換了眼神，然後一起把一份名單放在你面前：鐵十字會、血角派、聖戰派——三個想點燃戰火的組織，散在三個國家。帝國的使者說：「各國的軍隊不能越境。」魔族的使者接著說：「但是一個冒險者可以。」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_route_peace"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「從萊茵堡開始」",
+              "success": {
+                "text": "你收下了名單。各國的使者第一次在同一張桌子上舉起了杯——為了和平，也為了一個要替他們跑遍大陸的冒險者。",
+                "set_flags": ["pol_1_done", "pol_peace"],
+                "effects": [{ "type": "memory", "summary": "風暴的前夜：世界走向和平，你接下了清剿主戰派的委託——鐵十字會、血角派、聖戰派。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 2000 }, { "type": "xp", "amount": 3000 }]
+    },
+    {
+      "id": "pol_peace_iron_cross",
+      "title": "鐵十字會的巢穴",
+      "summary": "鐵十字會是帝國主戰派的地下組織，夜襲南郊的村子、在騎士學院鬧事、派刺客殺宰相——都是他們。現在，他們的首領躲在萊茵堡城外的舊要塞裡。（史詩：清剿主戰派・一）",
+      "start": {
+        "kind": "guild",
+        "location": "rhineburg",
+        "min_level": 15,
+        "requires": { "flags": ["pol_peace"] },
+        "text": "萊茵堡公會的主管遞給你一封蓋著宰相府火漆的信：「鐵十字會的首領，『灰鐵』海因里希。他躲在城外的舊要塞裡，手下有三百人。」主管壓低聲音，「帝國軍不能動——要塞裡有一半是軍人的子弟。宰相大人說，要交給『不屬於任何一國的人』。」"
+      },
+      "start_flags": ["pol_p1"],
+      "nodes": [
+        {
+          "id": "intel",
+          "title": "在萊茵堡的情報商找出要塞的弱點",
+          "text": "大道上的情報商攤開一張舊要塞的圖紙：「這座要塞是統一戰爭時蓋的，有一條運糧的暗道，一百年沒人用過。」他頓了頓，「鐵十字會的人，一半是被煽動的年輕人。真正的狂熱者，只有首領身邊那一圈。」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "informant" },
+          "requires": { "flags": ["pol_p1"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 18 },
+          "success": {
+            "text": "你找到了暗道的入口，也拿到了一份名單：哪些人是被煽動的，哪些人是首領的親衛。只要拿下首領，其他人會散。",
+            "set_flags": ["pol_p1_plan"]
+          },
+          "fail": {
+            "text": "情報商收了一大筆錢才把圖紙給你。暗道的入口標得很模糊，你得自己去找。",
+            "set_flags": ["pol_p1_plan"],
+            "effects": [{ "type": "money", "amount": -300 }]
+          }
+        },
+        {
+          "id": "raid",
+          "title": "在萊茵堡近郊突襲鐵十字會的要塞",
+          "text": "暗道的盡頭，是要塞的地窖。首領的親衛們穿著黑色的板甲，胸口的鐵十字徽章閃著光：「為了帝國的榮耀！」他們舉起了劍。",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["pol_p1_plan"] },
+          "kind": "combat",
+          "enemies": [["iron_cross_fanatic", 2]],
+          "success": {
+            "text": "親衛們倒下了。要塞的大廳裡，『灰鐵』海因里希放下了劍，看著你：「……你知道統一戰爭死了多少人嗎？我父親、我祖父，都死在魔族的手裡。」他的聲音在抖，「和平？那是對死者的背叛。」",
+            "set_flags": ["pol_p1_won"]
+          },
+          "fail": {
+            "text": "親衛們把你們逼回了暗道，可是要塞裡的年輕人們在這時放下了武器——他們看見了你們在暗道裡救下的一個被困的同伴。大廳裡，海因里希孤零零地站著。",
+            "set_flags": ["pol_p1_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "judge",
+          "title": "決定海因里希的下場",
+          "text": "海因里希跪在大廳中央，鐵十字的旗幟在他身後燒著。要塞外面，萊茵堡的軍隊在等著。他抬起頭看你：「殺了我吧。這樣，鐵十字會就有了烈士。」",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "informant" },
+          "requires": { "flags": ["pol_p1_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "交給帝國審判",
+              "success": {
+                "text": "你把海因里希交給了帝國軍。他沒有成為烈士——他被送上了法庭，在全帝國的面前，聽完了南郊村子倖存者的證詞。審判的最後一天，他哭了。鐵十字會散了。",
+                "set_flags": ["pol_p1_done", "pol_p1_trial"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 10 },
+                  { "type": "memory", "summary": "清剿主戰派：拿下了鐵十字會的首領「灰鐵」海因里希，交給帝國審判。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「帶我去看你父親的墓」",
+              "success": {
+                "text": "海因里希愣住了。很久之後，他帶你走到要塞後面的小墓園，墓碑上刻著兩個名字。他跪在墓前，第一次說了實話：「……我只是不想他們白死。」你陪他站到天亮。第二天，他自己走向了帝國軍，解散了鐵十字會。",
+                "set_flags": ["pol_p1_done", "pol_p1_grave"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 5 },
+                  { "type": "memory", "summary": "清剿主戰派：鐵十字會的首領海因里希在父親的墓前說了實話，自己解散了鐵十字會。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "A",
+      "merit": 15,
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+    },
+    {
+      "id": "pol_peace_bloodhorn",
+      "title": "血角的最後據點",
+      "summary": "血角派是魔族主戰派的核心：他們相信魔族的力量應該拿來征服，而不是被律法綁住。他們的戰旗插在獸骨荒丘最深處的骸骨要塞上。（史詩：清剿主戰派・二）",
+      "start": {
+        "kind": "guild",
+        "location": "bone_hills",
+        "min_level": 16,
+        "requires": { "flags": ["pol_p1_done"] },
+        "text": "獸骨荒丘的公會只有一張破桌子和一個獨眼的魔族主管。他把一封蓋著赤翼印的信推給你：「赤翼之君說，血角派的事，魔族自己解決不了——每個魔族都有血親在裡面。」他咧嘴一笑，露出一排尖牙，「所以，交給人類。荒丘的規矩：打贏的人說了算。」"
+      },
+      "start_flags": ["pol_p2"],
+      "nodes": [
+        {
+          "id": "challenge",
+          "title": "在獸骨荒丘的酒館向血角派下戰書",
+          "text": "荒丘的酒館裡，血角派的戰士們在喝酒。你走進去，把戰書釘在桌上——荒丘的規矩：要挑戰一個部族，要先在酒館裡讓所有人聽見。整個酒館安靜了下來。",
+          "at": { "where": "cell", "location": "bone_hills", "cell": "tavern" },
+          "requires": { "flags": ["pol_p2"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 19 },
+          "success": {
+            "text": "你說完了戰書，酒館裡的血角戰士們互看了一眼，然後有一半的人站起來走了出去——他們不是不敢打，是聽懂了你說的話：「打贏了，就讓魔族自己決定要不要和平。」剩下的人，舉起了酒杯：「明天，決鬥場見。」",
+            "set_flags": ["pol_p2_called"]
+          },
+          "fail": {
+            "text": "你的戰書被一把撕碎了。血角派的戰士們大笑：「人類想挑戰血角？」可是笑聲之後，他們還是接下了——荒丘的規矩，誰也不能拒絕戰書。",
+            "set_flags": ["pol_p2_called"]
+          }
+        },
+        {
+          "id": "duel",
+          "title": "在獸骨荒丘近郊打倒血角派的戰爭領主",
+          "text": "骸骨要塞前的決鬥場上，兩個身上塗滿血紅戰紋的戰爭領主扛著巨斧走了出來。整個荒丘的魔族都來看了——血角派、律法派、還有不屬於任何一派的普通人。",
+          "at": { "where": "outskirts", "location": "bone_hills" },
+          "requires": { "flags": ["pol_p2_called"] },
+          "kind": "combat",
+          "enemies": [["bloodhorn_warlord", 2]],
+          "success": {
+            "text": "戰爭領主們倒在了骸骨堆上。決鬥場一片死寂，然後，一個接一個的魔族把手按在了胸口。血角派的戰旗，從骸骨要塞上降了下來。",
+            "set_flags": ["pol_p2_won"]
+          },
+          "fail": {
+            "text": "戰爭領主們把你們打倒了三次，你們站起來了三次。第四次，他們放下了斧頭——荒丘的規矩：倒下三次還站得起來的人，就算贏了。血角派的戰旗，降了下來。",
+            "set_flags": ["pol_p2_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "決定血角派的去處",
+          "text": "骸骨要塞的大廳裡，血角派剩下的戰士們跪成一排，等著你的決定。荒丘的規矩，勝者可以要他們的命。他們的首領抬起頭：「人類。你打贏了。我們的命，是你的。」",
+          "at": { "where": "cell", "location": "bone_hills", "cell": "tavern" },
+          "requires": { "flags": ["pol_p2_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「你們的命是你們自己的。去守邊境吧」",
+              "success": {
+                "text": "血角派的戰士們愣住了。很久之後，他們的首領站起來，把巨斧插在你的腳邊：「……從今天開始，血角守邊境，不再越過去。」這是荒丘有史以來，第一次有勝者不要敗者的命。",
+                "set_flags": ["pol_p2_done", "pol_p2_border"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 10 },
+                  { "type": "memory", "summary": "清剿主戰派：在獸骨荒丘打倒了血角派的戰爭領主，讓他們去守邊境，不再越境。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把你們交給赤翼的律法」",
+              "success": {
+                "text": "血角派的戰士們被押往了血羽城堡，在赤翼的律法前受審。審判很公正，罰得很重。荒丘的魔族們說，那是魔族第一次，用律法而不是拳頭解決主戰派。",
+                "set_flags": ["pol_p2_done", "pol_p2_law"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 10 },
+                  { "type": "memory", "summary": "清剿主戰派：在獸骨荒丘打倒了血角派，把他們交給赤翼的律法審判。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+    },
+    {
+      "id": "pol_peace_crusade",
+      "title": "聖戰派的密室",
+      "summary": "最後一個主戰派藏得最深：聖環教廷裡的聖戰派。他們手上有兩百年前統一戰爭的「聖戰詔書」，打算在大教堂的鐘聲裡重新宣讀它。（史詩：清剿主戰派・三）",
+      "start": {
+        "kind": "guild",
+        "location": "soriel",
+        "min_level": 17,
+        "requires": { "flags": ["pol_p2_done"] },
+        "text": "索里耶爾公會的主管關上了所有的窗：「聖戰派。教廷裡的人，連教皇都動不了他們。」他從抽屜裡拿出一張紙條，上面只有一行字，筆跡很粗：「明晚，大教堂的鐘樓。他們要宣讀聖戰詔書。——伊莎貝拉」主管看著你，「聖殿騎士團長說，她的騎士不能對教廷拔劍。可是你能。」"
+      },
+      "start_flags": ["pol_p3"],
+      "nodes": [
+        {
+          "id": "archive",
+          "title": "在索里耶爾的神殿找出聖戰詔書的真相",
+          "text": "大教堂的書庫深處，兩百年前的卷宗疊得比人還高。聖戰詔書的原本就在這裡——如果聖戰派要宣讀的是抄本，原本也許有什麼不一樣。",
+          "at": { "where": "cell", "location": "soriel", "cell": "temple" },
+          "requires": { "flags": ["pol_p3"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 19 },
+          "success": {
+            "text": "你找到了原本。聖戰詔書的最後一行，被抄本省略了：「此詔於和平之日作廢，願後世不再以神之名開戰。」兩百年前的教皇，早就預見了這一天。",
+            "set_flags": ["pol_p3_truth"]
+          },
+          "fail": {
+            "text": "你找不到原本——可是在書庫的角落，你找到了一封兩百年前的教皇寫的私信：「我簽了聖戰詔書。願後世原諒我。」這封信，也許比詔書本身更有份量。",
+            "set_flags": ["pol_p3_truth"]
+          }
+        },
+        {
+          "id": "bell",
+          "title": "在索里耶爾近郊的鐘樓擋下聖戰派的審判官",
+          "text": "鐘樓的頂層，聖戰派的審判官們穿著白金色的長袍，手裡捧著聖戰詔書的抄本。鐘繩已經握在其中一人的手裡：「鐘聲響起，聖戰就開始了。」他們看見你，舉起了聖印。",
+          "at": { "where": "outskirts", "location": "soriel" },
+          "requires": { "flags": ["pol_p3_truth"] },
+          "kind": "combat",
+          "enemies": [["crusade_inquisitor", 2]],
+          "success": {
+            "text": "審判官們倒下了，鐘繩斷在了你的手裡。鐘沒有響。索里耶爾的夜很安靜。",
+            "set_flags": ["pol_p3_won"]
+          },
+          "fail": {
+            "text": "審判官們把你們逼到了鐘樓的邊緣，鐘繩被拉動了——可是鐘沒有響。你抬起頭，看見伊莎貝拉站在鐘的旁邊，雙手抱著鐘舌，咧嘴一笑：「……騎士不能對教廷拔劍。可是騎士可以抱住一口鐘。」",
+            "set_flags": ["pol_p3_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "read",
+          "title": "在大教堂宣讀詔書的最後一行",
+          "text": "第二天早上，大教堂的廣場擠滿了人。聖戰派的審判官們被押在台下，教皇坐在高台上，看著你手裡的那份原本。他沉默了很久，然後說：「……念吧。」",
+          "at": { "where": "cell", "location": "soriel", "cell": "temple" },
+          "requires": { "flags": ["pol_p3_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "念出詔書的最後一行",
+              "success": {
+                "text": "你念出了那一行：「此詔於和平之日作廢，願後世不再以神之名開戰。」整個廣場安靜了很久。然後，大教堂的鐘響了——不是聖戰的鐘，是和平的鐘。教皇站起來，親手撕掉了聖戰派的抄本。三個主戰派，都清剿完了。",
+                "set_flags": ["pol_peace_done", "pol_p3_read"],
+                "effects": [
+                  { "type": "reputation", "faction": "holy_ring", "delta": 10 },
+                  {
+                    "type": "memory",
+                    "summary": "清剿主戰派：在大教堂念出了聖戰詔書被省略的最後一行——此詔於和平之日作廢。鐵十字會、血角派、聖戰派，都清剿完了。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把原本交給教皇，讓他自己念",
+              "success": {
+                "text": "教皇接過了原本，看了很久，然後站起來，親自念出了最後一行。他的聲音在抖：「……兩百年了。我們讓先人等太久了。」鐘聲響了。三個主戰派，都清剿完了。",
+                "set_flags": ["pol_peace_done", "pol_p3_pope"],
+                "effects": [
+                  { "type": "reputation", "faction": "holy_ring", "delta": 15 },
+                  { "type": "memory", "summary": "清剿主戰派：把聖戰詔書的原本交給教皇，讓他親自念出了最後一行。三個主戰派都清剿完了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+    },
+    {
+      "id": "pol_war_h_rivervale",
+      "title": "河谷鎮的前線",
+      "summary": "戰爭開始了。魔族的先鋒越過了南方的荒原，第一個目標是河谷鎮——大陸的十字路口，冒險者最多的地方。帝國的援軍還要三天。（史詩：開戰・人類方・一）",
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 15,
+        "requires": { "flags": ["pol_war_human"] },
+        "text": "河谷鎮公會的大廳擠滿了冒險者，每個人都在磨刀。主管站在桌子上大喊：「魔族的先鋒離鎮上只剩半天的路！帝國的援軍還要三天！」他看見你，從桌上跳下來，「你是帝國指派的人。這三天，河谷鎮交給你。」"
+      },
+      "start_flags": ["pol_h1"],
+      "nodes": [
+        {
+          "id": "rally",
+          "title": "在河谷鎮的公會組織冒險者守城",
+          "text": "河谷鎮沒有城牆，只有木柵和一條河。冒險者們吵成一團：有人要逃，有人要衝，有人要躲進地窖。",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_h1"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 18 },
+          "success": {
+            "text": "你站上了桌子，把冒險者們分成了三隊：弓手守橋、戰士守柵、法師守河。最後你說：「河谷鎮是冒險者的鎮。三天，我們撐得住。」大廳裡爆出了吼聲。",
+            "set_flags": ["pol_h1_ready"]
+          },
+          "fail": {
+            "text": "你說得不夠好，一半的冒險者逃走了。可是剩下的那一半，都是不會逃的人——他們拿起了武器，站到了你身後。",
+            "set_flags": ["pol_h1_ready"]
+          }
+        },
+        {
+          "id": "vanguard",
+          "title": "在河谷鎮近郊擋下魔族的先鋒",
+          "text": "天亮時，魔族的先鋒出現在了地平線上：燃燒的戰旗、赤紅的鎧甲、翅膀遮天的飛行部隊。冒險者們握緊了武器。先鋒的隊長在河的對岸舉起了戰斧。",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_h1_ready"] },
+          "kind": "combat",
+          "enemies": [["crimson_vanguard", 2]],
+          "success": {
+            "text": "先鋒的隊長倒在了河裡，魔族的戰旗退回了地平線。冒險者們歡呼起來——撐過了第一天。三天後，帝國的援軍到了，看見的是一座完好無缺的河谷鎮。",
+            "set_flags": ["pol_h1_held"]
+          },
+          "fail": {
+            "text": "先鋒把木柵燒穿了一半，冒險者們退到了河的這一邊。可是河還在——魔族的先鋒過不了河。三天後，帝國的援軍到了，河谷鎮燒了一半，但還在。",
+            "set_flags": ["pol_h1_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "河谷鎮之後",
+          "text": "帝國的將軍帶著援軍進了鎮，看著燒焦的木柵和守了三天的冒險者們：「河谷鎮守住了。」他轉向你，「下一個目標，灰港鎮——魔族在邊境上的港口。」他頓了頓，「俘虜的魔族先鋒，要怎麼處理？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_h1_held"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「按戰爭的規矩，善待俘虜」",
+              "success": {
+                "text": "將軍皺了皺眉，最後點了點頭。魔族的俘虜們被關在鎮上的穀倉裡，每天有麵包和水。其中一個俘虜對你說：「……你是個奇怪的人類。」",
+                "set_flags": ["pol_h1_done", "pol_h_mercy"],
+                "effects": [{ "type": "memory", "summary": "開戰・人類方：守住了河谷鎮。你要求善待魔族的俘虜。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「交給帝國處置」",
+              "success": {
+                "text": "將軍把俘虜們押走了。你沒有問他們去了哪裡。帝國的軍旗插在河谷鎮的鎮中心，往南指著灰港鎮的方向。",
+                "set_flags": ["pol_h1_done"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・人類方：守住了河谷鎮，把魔族的俘虜交給了帝國。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "A",
+      "merit": 15,
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+    },
+    {
+      "id": "pol_war_h_ashport",
+      "title": "灰港鎮之戰",
+      "summary": "灰港鎮是人類與魔族共住的港口，也是魔族在邊境上最重要的補給線。帝國要拿下它——可是港口裡，有一半的居民是人類。（史詩：開戰・人類方・二）",
+      "start": {
+        "kind": "guild",
+        "location": "ashport",
+        "min_level": 16,
+        "requires": { "flags": ["pol_h1_done"] },
+        "text": "灰港鎮的公會還開著——戰爭裡，冒險者公會是唯一不分陣營的地方。主管是個半魔，看著你身上的帝國徽章，嘆了口氣：「帝國要拿下港口。」他把一張港口的地圖推給你，「港口裡住著一半的人類、一半的魔族。打起來，誰都活不了。」"
+      },
+      "start_flags": ["pol_h2"],
+      "nodes": [
+        {
+          "id": "harbor",
+          "title": "在灰港鎮的情報商找出不傷平民的辦法",
+          "text": "港口的情報商是個老水手，人類和魔族都信任他：「赤翼的守備軍守著碼頭，平民住在市集那一邊。」他指著地圖，「只要拿下碼頭的燈塔，守備軍就沒辦法補給——他們會自己撤。」",
+          "at": { "where": "cell", "location": "ashport", "cell": "informant" },
+          "requires": { "flags": ["pol_h2"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 19 },
+          "success": {
+            "text": "你和老水手一起擬了一個計畫：夜裡從海上摸進燈塔，天亮前拿下它，讓守備軍自己撤退。市集那一邊，一個平民也不用碰。",
+            "set_flags": ["pol_h2_plan"]
+          },
+          "fail": {
+            "text": "計畫擬得不夠周全——可是老水手說，他會在天亮前把市集那一邊的居民都叫醒，讓他們躲進地窖。",
+            "set_flags": ["pol_h2_plan"]
+          }
+        },
+        {
+          "id": "lighthouse",
+          "title": "在灰港鎮近郊拿下碼頭的燈塔",
+          "text": "夜裡的燈塔下，赤翼的守備兵們舉著長戟，鎧甲上的燃燒羽紋在火光裡閃爍。他們看見你們從海裡爬上來，吹響了號角。",
+          "at": { "where": "outskirts", "location": "ashport" },
+          "requires": { "flags": ["pol_h2_plan"] },
+          "kind": "combat",
+          "enemies": [["crimson_garrison", 2]],
+          "success": {
+            "text": "燈塔拿下了。天亮時，赤翼的守備軍看著燈塔上的帝國旗幟，沉默地收起了長戟，坐船撤回了南方。市集裡的居民走出地窖，人類和魔族站在一起，看著空蕩蕩的碼頭。",
+            "set_flags": ["pol_h2_won"]
+          },
+          "fail": {
+            "text": "守備兵們把你們逼回了海裡，可是燈塔的燈在打鬥中被打翻了——沒有燈，補給船進不了港。三天後，赤翼的守備軍撤走了。",
+            "set_flags": ["pol_h2_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "灰港鎮之後",
+          "text": "帝國的軍隊進了灰港鎮。港口的魔族居民們站在市集裡，看著帝國的士兵，眼神裡有恐懼，也有憤怒。帝國的將軍問你：「這些魔族，要怎麼辦？」",
+          "at": { "where": "cell", "location": "ashport", "cell": "informant" },
+          "requires": { "flags": ["pol_h2_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「他們是灰港鎮的居民。讓他們留下」",
+              "success": {
+                "text": "將軍不太情願，可還是下了命令：灰港鎮的魔族居民可以留下，和以前一樣。那天晚上，港口的酒館裡，人類和魔族坐在同一張桌子上喝酒——像戰爭從來沒有發生過。",
+                "set_flags": ["pol_h2_done", "pol_h_mercy"],
+                "effects": [{ "type": "memory", "summary": "開戰・人類方：拿下了灰港鎮，讓港口的魔族居民留下。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓他們自己選要不要往南走」",
+              "success": {
+                "text": "一半的魔族居民收拾了行李，往南方去了。另一半留了下來——他們在灰港鎮住了三代，這裡就是家。帝國的旗幟插在燈塔上，往南指著血羽城堡。",
+                "set_flags": ["pol_h2_done"],
+                "effects": [{ "type": "memory", "summary": "開戰・人類方：拿下了灰港鎮，讓魔族居民自己選擇去留。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+    },
+    {
+      "id": "pol_war_h_bloodplume",
+      "title": "血羽城堡的城下",
+      "summary": "帝國的大軍兵臨血羽城堡。赤翼之君莉莎爾沒有逃，也沒有降——她在城牆上等著。帝國的將軍說，要讓冒險者打開城門；莉莎爾說，她只和那個冒險者談。（史詩：開戰・人類方・三）",
+      "start": {
+        "kind": "guild",
+        "location": "bloodplume",
+        "min_level": 17,
+        "requires": { "flags": ["pol_h2_done"] },
+        "text": "血羽城堡的公會居然還開著。魔族的主管看著你，沒有敵意，只是很累：「赤翼之君有一封信給你。」信上的字跡很漂亮：「我的近衛會守到最後一個人。如果你想讓更少的人死，就自己上來。——莉莎爾」主管頓了頓，「……陛下在城牆上等你。」"
+      },
+      "start_flags": ["pol_h3"],
+      "nodes": [
+        {
+          "id": "guard",
+          "title": "在血羽城堡近郊突破赤翼宮廷的近衛",
+          "text": "通往城牆的石階上，赤翼宮廷的近衛們站成了一排，黑紅的鎧甲上燃燒著羽紋。他們的隊長說：「陛下說讓你上去。」他舉起了劍，「可是近衛的職責，是讓你證明你配上去。」",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "requires": { "flags": ["pol_h3"] },
+          "kind": "combat",
+          "enemies": [["crimson_royal_guard", 2]],
+          "success": {
+            "text": "近衛們倒下了，最後一個近衛的隊長讓開了路：「……陛下在等你。」",
+            "set_flags": ["pol_h3_through"]
+          },
+          "fail": {
+            "text": "近衛們把你打倒在石階上——然後，他們的隊長伸手把你拉了起來：「夠了。陛下說，你倒下也會站起來。」他讓開了路。",
+            "set_flags": ["pol_h3_through"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "talk",
+          "title": "在城牆上和莉莎爾談判",
+          "text": "城牆的最高處，莉莎爾一個人站著，赤紅的雙翼收在身後，看著城下的帝國大軍：「人類。」她沒有回頭，「你贏了。可是你想要什麼樣的勝利？」她轉過身，金色的豎瞳看著你，「血羽城堡燒成灰的勝利？還是另一種？」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["pol_h3_through"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 19 },
+          "success": {
+            "text": "你說，你要的勝利，是血羽城堡還在、魔族還在、律法還在——只是不再越過邊境。莉莎爾看著你，很久，然後笑了：「……人類的勝利，原來可以這樣。」",
+            "set_flags": ["pol_h3_terms"]
+          },
+          "fail": {
+            "text": "你說不出什麼好的條件，只說：「我不想再看到有人死。」莉莎爾看著你，很久：「……這就夠了。」",
+            "set_flags": ["pol_h3_terms"]
+          }
+        },
+        {
+          "id": "end",
+          "title": "戰爭的結局",
+          "text": "莉莎爾摘下了黑曜冠環，放在城牆上：「赤翼宮廷投降。」她的聲音很平靜，「條件是：血羽城堡不燒、魔族不為奴、律法留下。」城下的帝國大軍等著你的回答。",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["pol_h3_terms"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "答應她的條件",
+              "success": {
+                "text": "你把莉莎爾的條件帶下了城牆，帝國的將軍很久才點頭。血羽城堡的城門打開了，帝國的軍隊進城的時候，沒有放一把火。戰爭結束了——人類贏了，但魔族還在。",
+                "set_flags": ["pol_war_h_done", "pol_h_terms"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 10 },
+                  { "type": "reputation", "faction": "demon_council", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・人類方：兵臨血羽城堡，莉莎爾投降。你答應了她的條件：城不燒、魔族不為奴、律法留下。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把冠環戴回去。停戰，不是投降」",
+              "success": {
+                "text": "莉莎爾愣住了。你把冠環遞還給她：「帝國不需要征服血羽城堡。只需要魔族不再越過邊境。」她看著你，很久，然後把冠環戴了回去：「……停戰。」城下的帝國將軍罵了一整天，最後還是簽了停戰協議。",
+                "set_flags": ["pol_war_h_done", "pol_h_truce"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 10 },
+                  { "type": "memory", "summary": "開戰・人類方：兵臨血羽城堡，你把莉莎爾的冠環遞還給她——停戰，不是投降。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+    },
+    {
+      "id": "pol_war_d_ashport",
+      "title": "灰港鎮的號角",
+      "summary": "戰爭開始了。人類的聖戰軍從北方南下，第一個目標是灰港鎮——魔族在邊境上的港口。赤翼的援軍還要三天。（史詩：開戰・魔族方・一）",
+      "start": {
+        "kind": "guild",
+        "location": "ashport",
+        "min_level": 15,
+        "requires": { "flags": ["pol_war_demon"] },
+        "text": "灰港鎮的公會裡，半魔的主管看著你胸口的燃燒羽紋徽章，嘆了口氣：「赤翼指派的人。」他把一張地圖攤在桌上，「聖戰軍的先鋒離港口只剩半天。赤翼的援軍要三天。」他頓了頓，「港口裡住著一半的人類。聖戰軍說，他們是來『解放』的。」"
+      },
+      "start_flags": ["pol_d1"],
+      "nodes": [
+        {
+          "id": "rally",
+          "title": "在灰港鎮的公會組織港口的守備",
+          "text": "港口的居民們擠在公會裡，人類和魔族都有。有人說要投降，有人說要逃，有個人類的老漁夫說：「我在這裡住了六十年。我的鄰居是魔族。我不要被『解放』。」",
+          "at": { "where": "cell", "location": "ashport", "cell": "guild" },
+          "requires": { "flags": ["pol_d1"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 18 },
+          "success": {
+            "text": "你讓人類和魔族的居民站在一起，分成了守碼頭、守市集、守燈塔的三隊。老漁夫拿起了魚叉，站到了魔族鄰居的旁邊：「……三天，撐得住。」",
+            "set_flags": ["pol_d1_ready"]
+          },
+          "fail": {
+            "text": "一半的居民逃走了。剩下的那一半，人類和魔族都有——他們拿起了能拿的東西，站到了你身後。",
+            "set_flags": ["pol_d1_ready"]
+          }
+        },
+        {
+          "id": "vanguard",
+          "title": "在灰港鎮近郊擋下聖戰軍的先鋒",
+          "text": "天亮時，聖戰軍的先鋒出現在北邊的山坡上：白金色的旗幟、閃著聖光的長槍、齊聲的聖歌。先鋒的隊長舉起了聖印：「為了神，解放灰港鎮！」",
+          "at": { "where": "outskirts", "location": "ashport" },
+          "requires": { "flags": ["pol_d1_ready"] },
+          "kind": "combat",
+          "enemies": [["crusade_vanguard", 2]],
+          "success": {
+            "text": "聖戰軍的先鋒退回了山坡後面。港口的居民們歡呼起來——人類和魔族抱在一起。三天後，赤翼的援軍到了，看見的是一座完好無缺的灰港鎮。",
+            "set_flags": ["pol_d1_held"]
+          },
+          "fail": {
+            "text": "先鋒衝進了碼頭，燒了半座倉庫。可是港口的居民們——人類和魔族——一起用漁網和魚叉把他們趕了出去。三天後，赤翼的援軍到了，灰港鎮燒了一半，但還在。",
+            "set_flags": ["pol_d1_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "灰港鎮之後",
+          "text": "赤翼的將軍進了港口，看著守了三天的居民們：「灰港鎮守住了。」她轉向你，「下一個目標，河谷鎮——人類的十字路口。」她頓了頓，「俘虜的聖戰軍，要怎麼處理？」",
+          "at": { "where": "cell", "location": "ashport", "cell": "guild" },
+          "requires": { "flags": ["pol_d1_held"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「按戰爭的規矩，善待俘虜」",
+              "success": {
+                "text": "赤翼的將軍看了你一眼，點了點頭：「赤翼的律法也是這樣說的。」聖戰軍的俘虜們被關在倉庫裡，每天有麵包和水。其中一個年輕的聖騎士對你說：「……他們說魔族會吃人。」",
+                "set_flags": ["pol_d1_done", "pol_d_mercy"],
+                "effects": [{ "type": "memory", "summary": "開戰・魔族方：守住了灰港鎮。你要求善待聖戰軍的俘虜。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「交給赤翼的律法」",
+              "success": {
+                "text": "俘虜們被押往了血羽城堡，在赤翼的律法前受審。赤翼的軍旗插在灰港鎮的燈塔上，往北指著河谷鎮的方向。",
+                "set_flags": ["pol_d1_done"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・魔族方：守住了灰港鎮，把聖戰軍的俘虜交給赤翼的律法。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "A",
+      "merit": 15,
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+    },
+    {
+      "id": "pol_war_d_rivervale",
+      "title": "河谷鎮的十字路口",
+      "summary": "赤翼的大軍北上，河谷鎮是人類的十字路口，也是帝國南方最重要的補給線。帝國的騎士守著它——可是鎮上住著大陸最多的冒險者。（史詩：開戰・魔族方・二）",
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 16,
+        "requires": { "flags": ["pol_d1_done"] },
+        "text": "河谷鎮的公會還開著，冒險者們看著你胸口的燃燒羽紋徽章，表情很複雜。主管把一張鎮上的地圖推給你：「帝國的騎士守著石橋。冒險者們說，他們不幫任何一邊。」他頓了頓，「可是如果打起來，冒險者們會保護自己的家。」"
+      },
+      "start_flags": ["pol_d2"],
+      "nodes": [
+        {
+          "id": "neutral",
+          "title": "在河谷鎮的公會說服冒險者們保持中立",
+          "text": "公會的大廳裡，冒險者們圍著你，有人在磨刀，有人在冷笑。一個老冒險者說：「你以前也是我們的人。現在你替魔族打仗？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_d2"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 19 },
+          "success": {
+            "text": "你說，你不是要拿下河谷鎮，只是要帝國的騎士撤出石橋——冒險者的家，一間也不會燒。老冒險者看著你，很久，然後把刀收了起來：「……你說的。我們看著。」",
+            "set_flags": ["pol_d2_neutral"]
+          },
+          "fail": {
+            "text": "冒險者們不信你。可是他們也沒有拔刀——公會的規矩，冒險者不在公會裡打架。他們說：「我們不幫你，也不擋你。燒了任何一間房子，我們就不客氣。」",
+            "set_flags": ["pol_d2_neutral"]
+          }
+        },
+        {
+          "id": "bridge",
+          "title": "在河谷鎮近郊拿下石橋",
+          "text": "石橋上，帝國的騎士們站成了一排，盾牌連成一道牆，長槍指著你們。騎士隊長舉起了劍：「為了帝國！」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_d2_neutral"] },
+          "kind": "combat",
+          "enemies": [["imperial_knight", 2]],
+          "success": {
+            "text": "騎士們退過了石橋，往北撤去。赤翼的軍旗插在了石橋上。河谷鎮的冒險者們站在屋頂上看著——你說到做到，一間房子也沒有燒。",
+            "set_flags": ["pol_d2_won"]
+          },
+          "fail": {
+            "text": "騎士們把你們逼回了橋頭，可是在打鬥中，石橋被打斷了一半——帝國的補給線斷了。三天後，騎士們自己撤走了。",
+            "set_flags": ["pol_d2_won"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "after",
+          "title": "河谷鎮之後",
+          "text": "赤翼的軍隊進了河谷鎮。鎮上的人類居民們站在路邊，看著魔族的士兵，眼神裡有恐懼。赤翼的將軍問你：「這座鎮，要怎麼辦？」",
+          "at": { "where": "cell", "location": "rivervale", "cell": "guild" },
+          "requires": { "flags": ["pol_d2_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「河谷鎮是冒險者的鎮。讓它保持中立」",
+              "success": {
+                "text": "赤翼的將軍皺了皺眉，最後下了命令：赤翼的軍隊只守石橋，不進鎮。那天晚上，河谷鎮的酒館照樣開著，冒險者們喝著酒，一個魔族的士兵在門口猶豫了很久，最後有人叫他進來。",
+                "set_flags": ["pol_d2_done", "pol_d_mercy"],
+                "effects": [{ "type": "memory", "summary": "開戰・魔族方：拿下了河谷鎮的石橋，讓河谷鎮保持中立。", "importance": 3 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「交給赤翼管理」",
+              "success": {
+                "text": "赤翼的官員接管了河谷鎮。鎮上的人類照樣生活，只是多了魔族的稅吏和巡邏。赤翼的軍旗插在石橋上，往北指著萊茵堡的方向。",
+                "set_flags": ["pol_d2_done"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・魔族方：拿下了河谷鎮，交給赤翼管理。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+    },
+    {
+      "id": "pol_war_d_rhineburg",
+      "title": "萊茵堡的城牆",
+      "summary": "赤翼的大軍兵臨萊茵堡。帝國宰相艾蕾諾拉沒有逃——她在城牆上等著。赤翼之君說，要讓冒險者打開城門；宰相說，她只和那個冒險者談。（史詩：開戰・魔族方・三）",
+      "start": {
+        "kind": "guild",
+        "location": "rhineburg",
+        "min_level": 17,
+        "requires": { "flags": ["pol_d2_done"] },
+        "text": "萊茵堡的公會居然還開著。人類的主管看著你胸口的燃燒羽紋徽章，沒有敵意，只是很累：「宰相大人有一封信給你。」信上的字跡一絲不苟：「帝國的近衛軍會守到最後一個人。如果你想讓更少的人死，就自己上來。——艾蕾諾拉」主管頓了頓，「……大人在城牆上等你。」"
+      },
+      "start_flags": ["pol_d3"],
+      "nodes": [
+        {
+          "id": "guard",
+          "title": "在萊茵堡近郊突破帝國的近衛軍",
+          "text": "通往城牆的石階上，帝國的近衛軍站成了一排，深藍的鎧甲上刻著萊茵的雙頭鷹。他們的隊長說：「宰相大人說讓你上去。」他舉起了劍，「可是近衛的職責，是讓你證明你配上去。」",
+          "at": { "where": "outskirts", "location": "rhineburg" },
+          "requires": { "flags": ["pol_d3"] },
+          "kind": "combat",
+          "enemies": [["rhine_royal_guard", 2]],
+          "success": {
+            "text": "近衛們倒下了，最後一個近衛的隊長讓開了路：「……宰相大人在等你。」",
+            "set_flags": ["pol_d3_through"]
+          },
+          "fail": {
+            "text": "近衛們把你打倒在石階上——然後，他們的隊長伸手把你拉了起來：「夠了。大人說，你倒下也會站起來。」他讓開了路。",
+            "set_flags": ["pol_d3_through"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "talk",
+          "title": "在城牆上和艾蕾諾拉談判",
+          "text": "城牆的最高處，艾蕾諾拉一個人站著，深藍的宰相長袍在風裡飄，看著城下的赤翼大軍：「冒險者。」她沒有回頭，「你贏了。可是你想要什麼樣的勝利？」她轉過身，「萊茵堡燒成灰的勝利？還是另一種？」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["pol_d3_through"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 19 },
+          "success": {
+            "text": "你說，你要的勝利，是萊茵堡還在、帝國還在、皇帝的溫室也還在——只是不再越過邊境。艾蕾諾拉看著你，很久，然後慢慢地放鬆了肩膀：「……魔族的勝利，原來可以這樣。」",
+            "set_flags": ["pol_d3_terms"]
+          },
+          "fail": {
+            "text": "你說不出什麼好的條件，只說：「我不想再看到有人死。」艾蕾諾拉看著你，很久：「……這就夠了。」",
+            "set_flags": ["pol_d3_terms"]
+          }
+        },
+        {
+          "id": "end",
+          "title": "戰爭的結局",
+          "text": "艾蕾諾拉把宰相的權杖放在城牆上：「萊茵帝國投降。」她的聲音很平靜，「條件是：萊茵堡不燒、人類不為奴、皇帝的敕令留下。」城下的赤翼大軍等著你的回答。",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["pol_d3_terms"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "答應她的條件",
+              "success": {
+                "text": "你把艾蕾諾拉的條件帶下了城牆，赤翼的將軍很久才點頭。萊茵堡的城門打開了，赤翼的軍隊進城的時候，沒有放一把火。戰爭結束了——魔族贏了，但帝國還在。",
+                "set_flags": ["pol_war_d_done", "pol_d_terms"],
+                "effects": [
+                  { "type": "reputation", "faction": "demon_council", "delta": 10 },
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 5 },
+                  { "type": "memory", "summary": "開戰・魔族方：兵臨萊茵堡，艾蕾諾拉投降。你答應了她的條件：城不燒、人類不為奴、皇帝的敕令留下。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「把權杖拿回去。停戰，不是投降」",
+              "success": {
+                "text": "艾蕾諾拉愣住了。你把權杖遞還給她：「魔族不需要征服萊茵堡。只需要人類不再越過邊境。」她看著你，很久，然後接過了權杖：「……停戰。」城下的赤翼將軍罵了一整天，最後還是簽了停戰協議。",
+                "set_flags": ["pol_war_d_done", "pol_d_truce"],
+                "effects": [
+                  { "type": "reputation", "faction": "rhine_empire", "delta": 10 },
+                  { "type": "memory", "summary": "開戰・魔族方：兵臨萊茵堡，你把艾蕾諾拉的權杖遞還給她——停戰，不是投降。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 20,
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+    },
+    {
+      "id": "pol_acheron_gaze",
+      "title": "阿契隆的注視",
+      "summary": "戰爭結束了——或者和平到來了。就在這時，大陸各地的天空同時裂開，兩百年來所有的戰場、所有的死者，一起在半空中重演。歷史之龍「回響編年」阿契隆，睜開了眼睛。（史詩：政治鬥爭的匯流・終章）",
+      "start": {
+        "kind": "guild",
+        "location": "rivervale",
+        "min_level": 18,
+        "requires": { "flags_any": ["pol_peace_done", "pol_war_h_done", "pol_war_d_done"] },
+        "text": "河谷鎮公會的主管沒有說話，只是指著窗外。天空裂開了——不是雲，是天空本身，一層一層地裂開，裂縫裡是兩百年前的統一戰爭、五百年前的龍災、一千年前的精靈王庭。所有的過去，同時在重演。主管的聲音在抖：「……各國的使者都來了。他們說，只有你能上去。」"
+      },
+      "start_flags": ["pol_gaze"],
+      "nodes": [
+        {
+          "id": "sky",
+          "title": "在河谷鎮近郊走進天空的裂縫",
+          "text": "河谷鎮外的平原上，天空的裂縫垂到了地面，像一道門。門的那一邊，是兩百年前的戰場——你看見了所有你走過的故事線的源頭：被弒的皇帝、背誓的領主、被抹去名字的聖者。半空中閃過一層層交錯的殘影——歷史之龍「回響編年」阿契隆的回響。",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_gaze"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 20 },
+          "success": {
+            "text": "你走進了裂縫，沒有迷失。殘影在你身邊流過，像一條河——你看見了過去，可是你知道自己站在現在。裂縫的最深處，有兩個身影在等你。",
+            "set_flags": ["pol_gaze_in"]
+          },
+          "fail": {
+            "text": "裂縫裡的殘影差點把你吞沒——你看見自己死在每一個戰場上。可是你想起了那些你幫過的人的名字，一個一個地念出來，殘影就一層一層地退開了。裂縫的最深處，有兩個身影在等你。",
+            "set_flags": ["pol_gaze_in"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "heroes",
+          "title": "在裂縫的深處擋下回響的英雄",
+          "text": "裂縫的最深處，兩個身影從殘影裡走了出來：兩百年前統一戰爭的英雄——一個人類的騎士，一個魔族的領主。他們生前互相殺死了對方，現在，他們一起舉起了武器，對著你：「讓我們看看，這個時代的人，配不配走到這裡。」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_gaze_in"] },
+          "kind": "combat",
+          "enemies": [["echo_champion", 2]],
+          "fail": {
+            "text": "回響的英雄把你們逼退出了裂縫。他們沒有追——只是站在裂縫的深處，等著。「這個時代的人，還不夠。」裂縫還開著，你可以準備好了再來。",
+            "retry": true
+          },
+          "success": {
+            "text": "回響的英雄們放下了武器。人類的騎士看著魔族的領主，第一次笑了：「……兩百年了。」魔族的領主也笑了：「這個時代的人，走得比我們遠。」他們一起散成了光。",
+            "set_flags": ["pol_gaze_passed"]
+          }
+        },
+        {
+          "id": "eye",
+          "title": "回答阿契隆",
+          "text": "裂縫的盡頭，沒有龍——只有一隻眼睛，大得像天空本身，裡面倒映著整片大陸的過去。一個聲音在你的腦海裡響起，像是無數個時代的人同時在說話：「我記得一切。戰爭、和平、背叛、誓約。我讓它們重演，是為了讓你們記得。」眼睛看著你，「你們會記得嗎？」",
+          "at": { "where": "outskirts", "location": "rivervale" },
+          "requires": { "flags": ["pol_gaze_passed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我們會記得。所以你可以休息了」",
+              "success": {
+                "text": "眼睛看著你，很久。然後，天空的裂縫一道一道地合上了。可是在最後一道裂縫合上之前，你看見了：大陸的四方，有別的東西在醒來——北境的熱浪、森林的夢、海上的迷霧、荒野的巨塔。阿契隆的聲音最後一次響起：「……我睡了，祂們就醒了。」龍災，開始了。",
+                "set_flags": ["pol_done", "dragon_calamity", "pol_gaze_rest"],
+                "effects": [
+                  {
+                    "type": "memory",
+                    "summary": "政治鬥爭的匯流：天空裂開，歷史之龍阿契隆睜開了眼睛。你說我們會記得，祂可以休息了——祂睡了，其他的龍醒了。龍災開始了。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「我們會記得。可是也要往前走」",
+              "success": {
+                "text": "眼睛眨了一下——像是笑了。天空的裂縫一道一道地合上了，可是殘影沒有完全消失：從今以後，每一座地下城、每一個古戰場，還是會重演最深刻的過去。阿契隆的聲音最後一次響起：「往前走吧。前面，有別的龍在等你們。」大陸的四方，有別的東西在醒來。龍災，開始了。",
+                "set_flags": ["pol_done", "dragon_calamity", "pol_gaze_forward"],
+                "effects": [
+                  {
+                    "type": "memory",
+                    "summary": "政治鬥爭的匯流：天空裂開，歷史之龍阿契隆睜開了眼睛。你說我們會記得，也要往前走——祂說前面有別的龍在等。龍災開始了。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rank": "S",
+      "merit": 25,
+      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 5000 }]
     }
   ]
 }

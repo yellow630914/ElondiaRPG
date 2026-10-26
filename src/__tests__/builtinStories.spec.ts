@@ -3,7 +3,7 @@ import { newGame } from '@/engine/state'
 import { applyContent, emptyMods } from '@/engine/mods'
 import { sanitizeStory, storyCheck } from '@/engine/storyMods'
 import { canStart } from '@/engine/story'
-import { counterValue, setFlag } from '@/engine/storyFlags'
+import { condMet, counterValue, setFlag } from '@/engine/storyFlags'
 import { dungeonEncounters, enemies, npcs as namedNpcs, stories } from '@/engine/data'
 import { adultContent, setAdultContent, setContentFilters } from '@/engine/content'
 import type { StoryDef } from '@/engine/data'
@@ -164,6 +164,47 @@ describe('built-in stories', () => {
     // 成員有成人向角色的才標成人向
     expect(['group_wives_tea', 'group_idol_backstage', 'group_contract_bond'].every((id) => story(id).tags?.includes('adult'))).toBe(true)
     expect(['group_rulers_tea', 'group_athletes'].every((id) => !story(id).tags?.includes('adult'))).toBe(true)
+  })
+
+  it('splits the political epic by the two stance counters', () => {
+    const routes = story('pol_storm_eve').nodes.filter((n) => n.id.startsWith('route'))
+    for (let h = -3; h <= 3; h++) {
+      for (let d = -3; d <= 3; d++) {
+        const g = game()
+        g.flags['count:human_stance'] = h
+        g.flags['count:demon_stance'] = d
+        setFlag(g, 'pol_echoed')
+        // 路線的任務點照兩邊的走向拆開，任何情況都剛好開一個
+        const open = routes.filter((n) => condMet(g, n.requires))
+        expect(open.length, `${h},${d}`).toBe(1)
+        const shown = (open[0]!.options ?? []).map((o) => o.success.set_flags?.[0])
+        // 兩邊都主和只能清剿、兩邊都主戰只能開戰，其他情況兩條都能選
+        const want = h >= 1 && d >= 1 ? ['pol_route_peace'] : h <= -1 && d <= -1 ? ['pol_route_war'] : ['pol_route_peace', 'pol_route_war']
+        expect(shown.sort(), `${h},${d}`).toEqual(want)
+      }
+    }
+  })
+
+  it('runs each epic route through Lv.15–17 and ends in the shared Lv.18 finale', () => {
+    const routes = [
+      ['pol_peace', 'pol_peace_iron_cross', 'pol_peace_bloodhorn', 'pol_peace_crusade', 'pol_peace_done'],
+      ['pol_war_human', 'pol_war_h_rivervale', 'pol_war_h_ashport', 'pol_war_h_bloodplume', 'pol_war_h_done'],
+      ['pol_war_demon', 'pol_war_d_ashport', 'pol_war_d_rivervale', 'pol_war_d_rhineburg', 'pol_war_d_done'],
+    ]
+    expect(story('pol_storm_eve').start.min_level).toBe(14)
+    for (const [entry, ...rest] of routes) {
+      const ids = rest.slice(0, 3)
+      expect(ids.map((id) => story(id).start.min_level)).toEqual([15, 16, 17])
+      expect(story(ids[0]!).start.requires?.flags).toEqual([entry])
+      const ends = story(ids[2]!).nodes.flatMap((n) => (n.options ?? []).map((o) => o.success.set_flags ?? []))
+      expect(ends.every((f) => f.includes(rest[3]!))).toBe(true)
+    }
+    const fin = story('pol_acheron_gaze')
+    expect(fin.start.min_level).toBe(18)
+    expect([...(fin.start.requires?.flags_any ?? [])].sort()).toEqual(['pol_peace_done', 'pol_war_d_done', 'pol_war_h_done'])
+    // 終章的戰鬥輸了可以重試；結局留下龍災的旗標給巨龍史詩
+    expect(fin.nodes.find((n) => n.id === 'heroes')!.fail?.retry).toBe(true)
+    expect(fin.nodes.find((n) => n.id === 'eye')!.options!.every((o) => o.success.set_flags?.includes('dragon_calamity'))).toBe(true)
   })
 
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {
