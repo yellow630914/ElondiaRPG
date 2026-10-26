@@ -8,7 +8,8 @@ import { applyPendingMove, leaveSide } from '@/engine/road'
 import { newGame } from '@/engine/state'
 import { ensureRelationship, setAffinity } from '@/engine/social'
 import { abandonStory, activeNodes, blockingNode, forgetStoryWaits, nodesHere, optionOpen, playNode, pruneStories, startStory, storyOffersHere, waitStory } from '@/engine/story'
-import { sanitizeStory, type StoryMod } from '@/engine/storyMods'
+import { sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
+import { setFlag } from '@/engine/storyFlags'
 import type { GameState, Report } from '@/engine/types'
 
 afterEach(() => applyContent(emptyMods()))
@@ -198,5 +199,73 @@ describe('side maps a quest takes you into', () => {
     state.pendingMove = { side_map: 'cave' }
     applyPendingMove(state)
     expect(stars(state)).toEqual([])
+  })
+})
+
+describe('NPCs a quest still needs and NPCs it kills', () => {
+  const lastWords: StoryMod = {
+    id: 'wb_last_words', title: '臨終的託付', summary: '老人臨終託付', custom: true,
+    start: { kind: 'npc', npc: SELENE },
+    start_flags: ['wb_start'],
+    nodes: [
+      { id: 'dies', title: '老人斷氣', kind: 'story', text: '…', at: { where: 'settlement', location: 'soriel' }, requires: { flags: ['wb_start'] }, success: { set_flags: ['wb_dead'], deaths: [SELENE] } },
+      { id: 'after', title: '替他完成心願', kind: 'story', text: '…', at: { where: 'settlement', location: 'soriel' }, requires: { flags: ['wb_dead'] }, success: { complete: true } },
+    ],
+  } as unknown as StoryMod
+
+  it('keeps going after loading when the quest itself killed its giver', () => {
+    const state = game({ wb_last_words: lastWords })
+    startStory(state, 'wb_last_words')
+    playNode(state, 'wb_last_words:dies')
+    pruneStories(state)
+    expect(state.stories!.wb_last_words!.status).toBe('active')
+    playNode(state, 'wb_last_words:after')
+    expect(state.stories!.wb_last_words!.status).toBe('completed')
+  })
+
+  it('does not offer a quest when someone a later point needs is already dead', async () => {
+    const { canStart } = await import('@/engine/story')
+    const { stories } = await import('@/engine/data')
+    const state = game()
+    state.party[0]!.level = 8
+    state.guild = { rank: 'C', merit: 0 }
+    setFlag(state, 'rwar_1_done')
+    const def = stories.find((s) => s.id === 'rhine_iron_cross')!
+    expect(canStart(state, def)).toBe(true)
+    kill(state, 'npc_rock_the_rat')
+    expect(canStart(state, def)).toBe(false)
+  })
+})
+
+describe('content tags on every option', () => {
+  it('warns when turning tags off would leave a choice with nothing to pick', async () => {
+    const { stories } = await import('@/engine/data')
+    game({
+      wb_ntr: {
+        id: 'wb_ntr', title: 'NTR 分支測試', summary: '…', custom: true, start: { kind: 'guild' },
+        nodes: [{ id: 'pick', title: '抉擇', kind: 'choice', text: '…', at: { where: 'settlement', location: 'soriel' }, options: [{ label: '把她讓給他', tags: ['ntr'], success: { complete: true } }] }],
+      } as unknown as StoryMod,
+    })
+    const def = stories.find((s) => s.id === 'wb_ntr')!
+    expect(storyCheck(def).warnings.some((w) => w.includes('沒有選項可選'))).toBe(true)
+    def.nodes[0]!.options!.push({ label: '拒絕', success: { complete: true } })
+    expect(storyCheck(def).warnings.some((w) => w.includes('沒有選項可選'))).toBe(false)
+  })
+})
+
+describe('hidden landmarks and town jobs', () => {
+  it('does not post a job at a landmark that has not appeared yet', async () => {
+    const { landmarks } = await import('@/engine/data')
+    const { guildQuests } = await import('@/engine/town')
+    const hidden: Record<string, unknown> = {}
+    for (const l of Object.values(landmarks).filter((x) => x.location === 'rhineburg')) {
+      hidden[l.id] = { ...JSON.parse(JSON.stringify(l)), open: { ...(l.open ?? {}), flags: ['wb_never'], hidden: true } }
+    }
+    for (let seed = 1; seed <= 8; seed++) {
+      applyContent(normalizeMods({ ...emptyMods(), landmarks: hidden as never }))
+      const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed, birthplace: 'rhineburg' })
+      enterLocation(state)
+      expect(guildQuests(state).filter((q) => q.landmark)).toEqual([])
+    }
   })
 })

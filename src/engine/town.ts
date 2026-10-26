@@ -12,7 +12,7 @@ import {
 import { roll, withBonus } from './rng'
 import { isFugitive, joinParty, leaveParty, partyMax, partyRoom } from './party'
 import { npcRecord } from './npcs'
-import { clearQuestMarkers } from './grid'
+import { clearQuestMarkers, landmarkHidden } from './grid'
 import { innCost, longRest } from './rest'
 import { applyEffects, type RewardEffect } from './effects'
 import {
@@ -190,9 +190,9 @@ export function questScene(quest: Quest): string {
   return townText(tpl?.scene ?? '{town}', quest.target).split('{landmark}').join(name)
 }
 
-/** 這座城裡符合類型的地標 */
-function landmarksFor(townId: string, types: string[]) {
-  return landmarksIn(townId).filter((l) => l.types.some((t) => types.includes(t)))
+/** 這座城裡符合類型的地標（還沒出現的除外） */
+function landmarksFor(state: GameState, townId: string, types: string[]) {
+  return landmarksIn(townId).filter((l) => l.types.some((t) => types.includes(t)) && !landmarkHidden(state, l))
 }
 
 export function canAcceptRank(state: GameState, rank: GuildRank, quest?: Pick<Quest, 'flags'>): boolean {
@@ -227,10 +227,10 @@ export function guildQuests(state: GameState): Quest[] {
   state.flags[boardKey] = state.time.day
   withRng(state, (rng) => {
     // 以地標為標的的範本：城裡要有符合類型的地標
-    const pool = Object.values(townQuestTemplates).filter((t) => !t.landmark || landmarksFor(state.location, t.landmark).length)
+    const pool = Object.values(townQuestTemplates).filter((t) => !t.landmark || landmarksFor(state, state.location, t.landmark).length)
     for (let i = 0; i < townQuestsPerTown && pool.length > 0; i++) {
       const tpl = pool.splice(rng.int(0, pool.length - 1), 1)[0]!
-      const lm = tpl.landmark ? rng.pick(landmarksFor(state.location, tpl.landmark)) : undefined
+      const lm = tpl.landmark ? rng.pick(landmarksFor(state, state.location, tpl.landmark)) : undefined
       state.quests.push({
         id: `q-${state.location}-${state.time.day}-${tpl.id}`,
         title: townText(tpl.title, state.location).split('{landmark}').join(lm?.name ?? ''),
