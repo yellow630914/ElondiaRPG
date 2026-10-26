@@ -45,14 +45,19 @@ describe('built-in stories', () => {
       ['snake_red_creek', 'snake_eggs', 'snake_progenitor'],
       ['aya_prayer_book', 'aya_harbor', 'aya_last_confession'],
       ['aya_prayer_book', 'aya_harbor', 'aya_ebony_club'],
+      ['rivervale_oath_stone', 'rivervale_cellar', 'rivervale_summit'],
+      ['epic_bellringer', 'epic_undead_general', 'epic_frost_giant'],
+      ['serena_golden_lotus', 'serena_councillor', 'serena_sea'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
       expect(levels).toEqual([5, 8, 11])
       for (let i = 1; i < ids.length; i++) expect(story(ids[i]!).start.requires?.flags?.length, ids[i]).toBeGreaterThan(0)
     }
-    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club']
+    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea']
     expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
+    // 角色在任務開始前就有性經驗：標非處女
+    expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
   })
 
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {
@@ -178,5 +183,15 @@ describe('adult stories when adult content is turned off', () => {
     expect(state.stories!.lilian_successor!.status).toBe('active')
     setAdultContent(true)
     expect(blockingNode(state)?.ref).toBe('lilian_successor:night')
+  })
+})
+
+describe('serena ransom', () => {
+  it('offers only the payment the councillor agreed to', () => {
+    const ransom = story('serena_sea').nodes.find((n) => n.id === 'ransom')!
+    expect(ransom.options!.map((o) => o.requires?.flags)).toEqual([['ser_price'], ['ser_free_deal']])
+    const [bargain] = story('serena_councillor').nodes.filter((n) => n.id === 'bargain')
+    const flags = bargain!.options!.flatMap((o) => [o.success, o.fail]).filter(Boolean).map((o) => o!.set_flags!.find((f) => f !== 'ser_2_done'))
+    expect(new Set(flags)).toEqual(new Set(['ser_price', 'ser_free_deal']))
   })
 })
