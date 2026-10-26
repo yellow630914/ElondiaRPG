@@ -58,6 +58,7 @@ function addCustom(p: PerkDef) {
       <Hint :text="`特質一直生效，影響檢定與戰鬥。${rules.slots > 0 ? `一般特質最多 ${rules.slots} 個，每選一個缺陷多 ${rules.slots_per_flaw} 個名額。` : '一般特質不限個數。'}缺陷最多 ${rules.max_flaws} 個。種族特質自動擁有，不佔名額。`" />
     </h3>
     <table v-if="racePerks(race).length" class="perk-table race">
+      <tbody>
       <tr v-for="p in racePerks(race)" :key="p.id">
         <td class="pick"><input type="checkbox" checked disabled /></td>
         <td class="ic"><ContentIcon kind="perk" :def="p" :size="18" /></td>
@@ -65,6 +66,7 @@ function addCustom(p: PerkDef) {
         <td class="desc">{{ p.desc }}</td>
         <td class="num muted">—</td>
       </tr>
+      </tbody>
     </table>
     <div class="folds">
       <FoldMenu
@@ -109,6 +111,7 @@ function addCustom(p: PerkDef) {
       </FoldMenu>
       <FoldMenu id="newgame.perks.custom" icon="edit" label="自訂特質" :detail="custom.map((p) => p.name).join('、') || '自己寫一個特質或缺陷'" :badge="custom.length || undefined" tone="gold">
         <table v-if="custom.length" class="perk-table">
+          <tbody>
           <tr v-for="(p, i) in custom" :key="p.id" class="on">
             <td class="ic"><ContentIcon kind="perk" :def="p" :size="18" /></td>
             <th>{{ p.name }} <span v-if="p.flaw" class="tag bad">缺陷</span></th>
@@ -116,6 +119,7 @@ function addCustom(p: PerkDef) {
             <td class="num">{{ perkPower(p) }}</td>
             <td><button class="small" @click="custom = custom.filter((_, j) => j !== i)">移除</button></td>
           </tr>
+          </tbody>
         </table>
         <PerkBuilder allow-flaw @add="addCustom" />
         <p v-if="count.error" class="bad">{{ count.error }}</p>

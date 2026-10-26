@@ -323,6 +323,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
       <div class="sec">
         <h3 class="head small"><GameIcon name="user" :size="15" />基本資料</h3>
         <table class="tbl form">
+          <tbody>
           <tr>
             <th>名字</th>
             <td><input v-model="name" placeholder="旅人" maxlength="20" /></td>
@@ -366,6 +367,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
               <div class="note">{{ birthplaceInfo }}・冒險的起點</div>
             </td>
           </tr>
+          </tbody>
         </table>
       </div>
 
@@ -388,7 +390,9 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
           </tbody>
         </table>
         <table class="tbl derived">
+          <tbody>
           <tr v-for="d in derived" :key="d.name"><th>{{ d.name }}</th><td class="strong">{{ d.value }}</td><td class="muted small">{{ d.from }}</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -439,10 +443,12 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
     <div class="sec">
       <h3 class="head small"><GameIcon name="d20" :size="15" />存檔規則</h3>
       <table class="tbl form">
+        <tbody>
         <tr>
           <th>地下城戰敗時 <Hint text="這趟探索撿到、還沒帶出地下城的物品與錢；之後可以在「設定」裡改。" /></th>
           <td><select v-model="defeatLoot"><option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option></select></td>
         </tr>
+        </tbody>
       </table>
       <FoldMenu id="newgame.rules" icon="d20" label="更多存檔規則" :detail="Object.keys(rules).length ? `改了 ${Object.keys(rules).length} 項` : '經驗、報酬、休息、旅途、委託期限……（之後可以在設定裡改）'">
         <RuleFields v-model="rules" />
@@ -485,6 +491,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
           <button class="small" type="button" @click="masterSeed = Math.floor(Math.random() * 2 ** 31)"><GameIcon name="shuffle" :size="13" /> 換一批</button>
         </div>
         <table v-else-if="masterMode === 'custom'" class="tbl form custom-master">
+          <tbody>
           <tr><th>名字</th><td><input v-model="customMaster.name" maxlength="12" placeholder="留空則隨機" /></td></tr>
           <tr>
             <th>身分 <Hint text="冒險者有職業，會和你一起戰鬥；普通人沒有職業，同行但不參與戰鬥（戰敗時依親密度搬救兵或先逃走）。" /></th>
@@ -521,6 +528,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
           <tr><th>等級</th><td><input v-model.number="customMaster.level" type="number" min="1" max="20" class="short" /></td></tr>
           <tr><th>性格</th><td><input v-model="customMaster.personality" maxlength="120" placeholder="選填" /></td></tr>
           <tr><th>外貌</th><td><input v-model="customMaster.appearance" maxlength="200" placeholder="選填" /></td></tr>
+          </tbody>
         </table>
         <h4 class="head small"><GameIcon name="lock" :size="14" />契約印記</h4>
         <MarkPicker v-model="mark" allow-custom />
@@ -548,9 +556,9 @@ button :deep(.game-icon) { vertical-align: -0.2em; }
 .sec { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: color-mix(in srgb, currentColor 2%, transparent); align-content: start; }
 .tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .tbl thead th { font-size: var(--fs-xs); color: var(--muted); font-weight: 600; text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--border); }
-.tbl td, .tbl tbody th, .tbl > tr > th { padding: 5px 6px; text-align: left; vertical-align: middle; border-bottom: 1px solid color-mix(in srgb, currentColor 9%, transparent); }
+.tbl td, .tbl tbody th { padding: 5px 6px; text-align: left; vertical-align: middle; border-bottom: 1px solid color-mix(in srgb, currentColor 9%, transparent); }
 .tbl th { font-weight: 600; white-space: nowrap; }
-.form > tr > th, .form th { width: 1%; vertical-align: top; padding-top: 9px; color: var(--muted); }
+.form th { width: 1%; vertical-align: top; padding-top: 9px; color: var(--muted); }
 .form input:not([type='checkbox']):not([type='radio']), .form select, .form textarea { width: 100%; }
 .form .short { width: 90px !important; }
 .pair { display: flex; gap: 6px; }

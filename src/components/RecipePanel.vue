@@ -90,6 +90,7 @@ function produce() {
       </div>
       <p v-if="itemText(s, plan.name)" class="desc">{{ itemText(s, plan.name) }}</p>
       <table class="kv">
+        <tbody>
         <tr v-if="itemEffect(s, plan.name)"><th>效果</th><td>{{ itemEffect(s, plan.name) }}</td></tr>
         <tr><th>配方</th><td>{{ skill.name }} Lv.{{ plan.recipe.level }}<span class="muted">（{{ crafter.name }}的{{ skill.name }} Lv.{{ plan.level }}）</span></td></tr>
         <tr><th>檢定</th><td>{{ attrName(skill.attr) }} +{{ plan.level * craftRules.level_bonus }}・DC {{ plan.dc }}</td></tr>
@@ -104,8 +105,10 @@ function produce() {
           <th>批數</th>
           <td><input v-model.number="batches" type="number" min="1" :max="craftRules.recipe.max_batches" class="qty" /> <span class="muted">材料、花費與時間乘批數，只擲一次</span></td>
         </tr>
+        </tbody>
       </table>
       <table class="outcomes">
+        <tbody>
         <tr><th>大成功</th><th>成功</th><th>部分成功</th><th>失敗</th><th>大失敗</th></tr>
         <tr>
           <td>{{ producedQty(plan.qty, 'critical') }} 份</td>
@@ -114,6 +117,7 @@ function produce() {
           <td>材料損失一半</td>
           <td>材料全部損失<span class="muted">（花費照付）</span></td>
         </tr>
+        </tbody>
       </table>
       <ul v-if="plan.blocked" class="warn blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
       <template v-else>

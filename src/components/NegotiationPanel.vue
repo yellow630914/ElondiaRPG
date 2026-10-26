@@ -47,14 +47,18 @@ function free(id: string) {
   <AppDialog :open="!!cur" :title="cur?.title ?? '談判'" icon="hand" width="720px" stay @close="shown = null">
     <div v-if="cur" class="nego-body">
       <table class="kv">
+        <tbody>
         <tr><th>對象</th><td><NameTag :id="cur.counterpart" /><div class="muted">{{ npcRecord(s, cur.counterpart)?.personality }}</div></td></tr>
         <tr><th>目標</th><td>{{ cur.goal }}</td></tr>
         <tr><th>次數</th><td>還可以談 {{ cur.attempts }} 次<span class="muted">（部分成功時可以再談）</span></td></tr>
+        </tbody>
       </table>
 
       <h4>結果</h4>
       <table class="tbl results">
+        <tbody>
         <tr v-for="d in DEGREES" :key="d"><th><span class="tag">{{ DEGREE_NAME[d] }}</span></th><td>{{ cur.outcomes[d].text }}</td></tr>
+        </tbody>
       </table>
 
       <h4>選擇談判方式<span class="muted">（依規則檢定{{ cur.ai ? '・AI 依對象設計' : '' }}）</span><Hint v-if="cur.options.some((o) => o.cost_cc)" :text="`有代價的方式會先付出金錢（${formatMoney(Math.min(...cur.options.filter((o) => o.cost_cc).map((o) => o.cost_cc!)))} 起），無論成敗。`" /></h4>

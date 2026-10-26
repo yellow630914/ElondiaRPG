@@ -150,6 +150,7 @@ const summary = computed(() => catalog.value.map((s) => {
       </div>
       <h4 class="small">目前的配備</h4>
       <table class="summary small">
+        <tbody>
         <tr v-for="r in summary" :key="r.slot" :class="{ off: r.blocked }">
           <th>{{ slotName(r.slot) }}<span v-if="r.template" class="muted">（基本）</span></th>
           <td>
@@ -160,6 +161,7 @@ const summary = computed(() => catalog.value.map((s) => {
           <td class="num">{{ r.option && !r.blocked ? (r.option.cost ? `${r.option.cost} 點` : '免費') : '' }}</td>
           <td class="act"><button v-if="r.option && !r.template && !r.blocked" class="small ghost" @click="clear(r.slot)">拿掉</button></td>
         </tr>
+        </tbody>
       </table>
       <p v-if="spent > budget" class="over small">超過預算 {{ spent - budget }} 點：降低材料等級或拿掉幾件。</p>
       <div class="row end"><button class="primary" @click="emit('close')">完成</button></div>

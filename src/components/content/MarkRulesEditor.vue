@@ -97,13 +97,15 @@ function restore() {
     <fieldset>
       <legend>權重（0 = 不出現）</legend>
       <table class="small">
-        <tr><th></th><th v-for="w in WEIGHTS" :key="w.key">{{ w.label }}</th></tr>
+        <thead><tr><th></th><th v-for="w in WEIGHTS" :key="w.key">{{ w.label }}</th></tr></thead>
+        <tbody>
         <tr v-for="id in ids" :key="id">
           <th>{{ name(id) }}</th>
           <td v-for="w in WEIGHTS" :key="w.key">
             <input type="number" min="0" max="100" step="0.1" style="width: 64px" :value="weights(w.key)[id] ?? 0" @input="setWeight(w.key, id, Number(($event.target as HTMLInputElement).value))" />
           </td>
         </tr>
+        </tbody>
       </table>
     </fieldset>
   </div>
