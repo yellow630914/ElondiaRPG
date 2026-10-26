@@ -8,7 +8,8 @@ import { bossIds, durability } from './balanceSim'
 describe('monster durability', () => {
   it('minions take 2-3 hits and bosses last 3-4 rounds against a party of their level', () => {
     const bosses = bossIds()
-    const rows = Object.keys(enemies).map((id) => durability(id, Number(process.env.BALANCE_TRIALS ?? 12), bosses.has(id)))
+    // 頭目：地下城的層主，加上有大招（ability_hp_below）的特殊任務頭目
+    const rows = Object.keys(enemies).map((id) => durability(id, Number(process.env.BALANCE_TRIALS ?? 12), bosses.has(id) || !!enemies[id]!.ability_hp_below))
     if (process.env.BALANCE_REPORT) writeFileSync(process.env.BALANCE_REPORT, JSON.stringify(rows, null, 1))
     const off = rows.filter((r) => (r.boss ? r.roundsToKill < 2.9 || r.roundsToKill > 4.1 : r.hitsToKill < 1.8 || r.hitsToKill > 3.2))
     expect(off.map((r) => `${r.name}（${r.level} 級${r.boss ? '層主' : ''}）${r.boss ? `${r.roundsToKill} 回合` : `${r.hitsToKill} 下`}`)).toEqual([])

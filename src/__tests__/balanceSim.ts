@@ -141,6 +141,15 @@ function fight(group: EncounterGroup, level: number, seed: number, classes: stri
   }
 }
 
+/** 特殊任務的戰鬥（例如頭目＋手下）：4 人隊伍、隊伍等級 level，回傳勝率、平均回合、贏的場次剩下的生命（hpLeft）與輸了算 0 的平均（hpAll） */
+export function groupFight(group: EncounterGroup, level: number, trials: number) {
+  const rs = Array.from({ length: trials }, (_, t) => fight(group, level, 5000 + t))
+  const wins = rs.filter((r) => r.win)
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
+  const r2 = (n: number) => Math.round(n * 100) / 100
+  return { win: r2(wins.length / trials), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(wins.map((r) => r.hpLeft))), hpAll: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))), downed: r2(avg(wins.map((r) => r.downed))) }
+}
+
 /** 每座地下城每一層的層主戰（隊伍等級 = 層主等級 + levelOffset） */
 export function bossFights(trials: number, levelOffset = 0, only?: { dungeon: string; layer: string }): FightRow[] {
   const rows: FightRow[] = []

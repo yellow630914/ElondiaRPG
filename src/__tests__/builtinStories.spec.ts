@@ -207,6 +207,24 @@ describe('built-in stories', () => {
     expect(fin.nodes.find((n) => n.id === 'eye')!.options!.every((o) => o.success.set_flags?.includes('dragon_calamity'))).toBe(true)
   })
 
+  it('ends the dragon epic in Acheron after the four dragons, with retryable boss fights', () => {
+    const dragons = ['drg_kagni', 'drg_sinor', 'drg_sorian', 'drg_babelin']
+    expect(dragons.map((id) => story(id).start.min_level)).toEqual([18, 18, 19, 19])
+    for (const id of dragons) expect(story(id).start.requires?.flags).toEqual(['dragon_calamity'])
+    const fin = story('drg_acheron')
+    expect(fin.start.min_level).toBe(20)
+    expect([...(fin.start.requires?.flags ?? [])].sort()).toEqual(['drg_bab_done', 'drg_kag_done', 'drg_sin_done', 'drg_sor_done'])
+    // 史詩線的頭目戰（政治線的高潮、終章與五條龍）：頭目加一隻手下，輸了可以重試
+    const epic = stories.filter((s) => s.id.startsWith('drg_') || s.id.startsWith('pol_'))
+    const bossNodes = epic.flatMap((s) => s.nodes.filter((n) => n.enemies?.some(([e]) => (enemies[e]?.hp ?? 0) > 500)).map((n) => ({ s, n })))
+    expect(bossNodes.map(({ s }) => s.id).sort()).toEqual(['drg_acheron', 'drg_babelin', 'drg_kagni', 'drg_sinor', 'drg_sorian', 'pol_acheron_gaze', 'pol_peace_crusade', 'pol_war_d_rhineburg', 'pol_war_h_bloodplume'])
+    for (const { s, n } of bossNodes) {
+      expect(n.enemies?.length, s.id).toBe(2)
+      expect(n.fail?.retry, s.id).toBe(true)
+      expect(n.fail?.set_flags ?? [], s.id).toEqual([])
+    }
+  })
+
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {
     expect(stories.flatMap((s) => s.nodes.flatMap((n) => n.foes ?? []))).toEqual([])
     const deaths = stories.flatMap((s) => s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])].flatMap((o) => o?.deaths ?? [])))
