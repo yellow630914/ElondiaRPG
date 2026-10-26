@@ -108,7 +108,9 @@ function act(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_leave' | '
       </div>
       <p class="mark-text">{{ contract.def.mark }}</p>
       <table class="kv terms">
+        <tbody>
         <tr v-for="t in terms" :key="t.k"><th>{{ t.k }}</th><td class="v">{{ t.v }}</td><td class="note muted">{{ t.note }}</td></tr>
+        </tbody>
       </table>
       <template v-if="contract.def.side_effects.length">
         <div class="sub">副作用</div>
@@ -120,17 +122,21 @@ function act(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_leave' | '
     <template v-if="bound">
       <h4><GameIcon name="building" :size="14" /> {{ contract.masterName }}的家</h4>
       <table v-if="home" class="kv">
+        <tbody>
         <tr><th>地點</th><td>{{ home.where }}</td></tr>
         <tr v-if="home.people.length"><th>家裡還有</th><td>{{ home.people.join('、') }}</td></tr>
         <tr v-if="home.deadline"><th>離家期限</th><td :class="{ warn: home.late }">{{ home.deadline }}</td></tr>
         <tr v-if="strict"><th>嚴加看管</th><td>{{ strict }} 點（出門與出城的 DC +{{ strict }}）</td></tr>
+        </tbody>
       </table>
       <p v-else class="small muted">主人沒有自己的家，你跟著他走。</p>
       <h4><GameIcon name="door" :size="14" /> 今天的許可</h4>
       <table class="kv">
+        <tbody>
         <tr v-if="atHome"><th>出門</th><td :class="{ ok: mayLeave, warn: houseRefused }">{{ mayLeave ? '同意了' : houseRefused ? '今天不准' : `要先請求（${attrName(slaveryRules.master_home.leave.attr)}檢定，參考 DC ${leaveDc(s)}）` }}</td></tr>
         <tr v-if="inTown"><th>出城、旅行</th><td :class="{ ok: permitted, warn: refused }">{{ permitted ? '同意了，今天可以自由進出這座城' : refused ? '今天不准離開這座城' : `要先請求（${attrName(slaveryRules.master_permit.attr)}檢定，印記越重越難）` }}</td></tr>
         <tr v-if="!atHome && !inTown"><th>行動</th><td>跟著主人；談判要在安全的地方，逃離隨時都可以</td></tr>
+        </tbody>
       </table>
       <h4><GameIcon name="d20" :size="14" /> 你的做法</h4>
       <textarea v-model="text" rows="3" placeholder="描述你打算怎麼說服主人、用什麼理由請求出門或出城，或怎麼逃走" />
@@ -166,12 +172,14 @@ function act(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_leave' | '
       <template v-if="offers.length">
         <h4><GameIcon name="unlock" :size="14" /> 解除印記</h4>
         <table class="offers">
+          <tbody>
           <tr v-for="o in offers" :key="o.target">
             <td><b>{{ o.name }}</b><template v-if="o.helper">（{{ o.helper }}）</template><div class="muted">{{ o.desc }}</div></td>
             <td class="num">{{ attrName(o.attr) }} DC {{ o.dc }}</td>
             <td class="num">{{ o.fee_cc ? formatMoney(o.fee_cc) : '免費' }}</td>
             <td class="num"><button class="small" :disabled="game.judging || s.money_cc < o.fee_cc" @click="act('unmark', o.target)">解除印記</button></td>
           </tr>
+          </tbody>
         </table>
       </template>
       <p v-else class="small muted">這裡沒有人能解除印記 <Hint text="要解除印記：到神殿（要有聲望，便宜）、王都與有黑市的城市的刻印師（很貴），或請身邊（或隊伍裡）的法師（契約解除，紋樣留下來變成普通刺青）。" /></p>

@@ -54,13 +54,19 @@ describe('built-in stories', () => {
       ['commerce_false_bandits', 'commerce_false_coin', 'commerce_council_vote'],
       ['seacave_low_tide', 'seacave_siren', 'seacave_drowned_crew'],
       ['lab_medium', 'lab_sober', 'lab_guild_return'],
+      ['annex_white_rook', 'annex_hill_exercise', 'annex_protection_treaty'],
+      ['spy_pigeons', 'spy_valentin_brother', 'spy_secret_envoy'],
+      ['defense_codebook', 'defense_mole', 'defense_spymaster'],
+      ['lena_good_friend', 'lena_runaway', 'lena_lighter_love'],
+      ['valerie_sample', 'valerie_stolen_paper', 'valerie_hearing'],
+      ['eve_holiday', 'eve_tea_house', 'eve_master'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
       expect(levels).toEqual([5, 8, 11])
       for (let i = 1; i < ids.length; i++) expect(story(ids[i]!).start.requires?.flags?.length, ids[i]).toBeGreaterThan(0)
     }
-    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return']
+    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return', 'lena_good_friend', 'lena_runaway', 'lena_lighter_love', 'valerie_sample', 'valerie_stolen_paper', 'valerie_hearing', 'eve_holiday', 'eve_tea_house', 'eve_master']
     expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
     // 角色在任務開始前就有性經驗：標非處女
     expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring', 'lab_medium', 'lab_sober', 'lab_guild_return'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)

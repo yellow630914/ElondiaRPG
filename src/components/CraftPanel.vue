@@ -89,6 +89,7 @@ function craft() {
       <Hint text="第一級材料自己買（材料費），更好的材料要自備。做的人擲屬性檢定，加上工藝等級。成功時做的人得到工藝經驗。" />
     </p>
     <table class="kv">
+      <tbody>
       <tr v-if="make">
         <th>誰來做</th>
         <td>
@@ -149,8 +150,10 @@ function craft() {
           </div>
         </td>
       </tr>
+      </tbody>
     </table>
     <table class="outcomes">
+      <tbody>
       <tr><th>大成功</th><th>成功</th><th>部分成功</th><th>失敗</th></tr>
       <tr>
         <td>{{ rarityName(craftRarity(mat, 'critical')!) }}<div class="muted">附魔 {{ rarityPoints(craftRarity(mat, 'critical')!) }} 點</div></td>
@@ -158,6 +161,7 @@ function craft() {
         <td>沒有附魔</td>
         <td>材料損失一半</td>
       </tr>
+      </tbody>
     </table>
     <ul v-if="plan.blocked" class="warn blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
     <template v-else>

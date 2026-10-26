@@ -86,17 +86,21 @@ function startFrom(id: string) {
         <button v-for="id in Object.keys(slaveryRules.contracts)" :key="id" class="small" type="button" @click="startFrom(id)">{{ templateTerms(id).name }}</button>
       </div>
       <table class="form">
+        <tbody>
         <tr><th>名稱</th><td><input v-model="custom.name" :maxlength="r.name_chars" /></td></tr>
         <tr><th>描述 <Hint text="印記的樣子與感覺，會交給 AI 描寫。" /></th><td><textarea v-model="custom.mark" rows="2" :maxlength="r.mark_chars" /></td></tr>
         <tr><th>部位 <Hint text="原本的刺青會被蓋掉。" /></th><td><select v-model="custom.place"><option v-for="p in TATTOO_PLACES" :key="p" :value="p">{{ placeName(p) }}</option></select></td></tr>
+        </tbody>
       </table>
       <table class="form nums">
         <thead><tr><th>項目</th><th>數值</th><th class="muted">範圍</th></tr></thead>
+        <tbody>
         <tr v-for="c in COLS" :key="c.key">
           <th>{{ c.name }} <Hint :text="c.hint" /></th>
           <td><input v-model.number="(custom as unknown as Record<string, number>)[c.key]" type="number" :step="c.step ?? 1" :min="range(c.key)[0]" :max="range(c.key)[1]" /></td>
           <td class="muted nowrap">{{ range(c.key)[0] }}～{{ range(c.key)[1] }}</td>
         </tr>
+        </tbody>
       </table>
       <label>副作用（一行一項，最多 {{ r.side_effects }} 項）<textarea v-model="sideText" rows="2" /></label>
       <p class="muted">數值超出範圍時會自動調整。</p>
