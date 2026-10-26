@@ -91,7 +91,7 @@
 - **🧩 提示詞**：文風、世界書（SillyTavern 格式，可以匯入匯出）、敘事與判定的規則都可以編輯，存成多組；世界可以綁定一組提示詞。
 - **世界包**：一個檔案帶著世界的自訂內容與提示詞，「📥 匯入成新的世界」就能用，不會動到原版世界。
 - **世界生成指南**（[`worldgen/`](worldgen/README.md)）：給 Agent 或玩家依序生成一整個世界的指南——每種內容的新增編輯指南、平衡性自檢方法、固定 NPC 與特殊任務的設計方法、填寫式的世界模板、世界書的寫回方式，以及檢查工具（`WORLD=<世界包> npx vitest run src/__tests__/worldCheck.spec.ts`）。
-- **隨附的世界包「艾隆迪亞擴充」**（[`worldgen/worlds/elondia-plus/`](worldgen/worlds/elondia-plus/README.md)）：替各地補上 85 位固定 NPC（統治者、機構首長、地標與鄉間人物）、37 條特殊任務（大陸主線「龍影之兆」5 章、地區故事線、內建角色的任務線、地下城傳說）與對應的世界書條目。
+- **隨附的世界包「艾隆迪亞擴充」**（[`worldgen/worlds/elondia-plus/`](worldgen/worlds/elondia-plus/README.md)）：37 條特殊任務（大陸主線「龍影之兆」5 章、地區故事線、內建角色的任務線、地下城傳說）。它的 85 位固定 NPC 已經併入內建世界（有修改），新的故事線規劃見 [`worldgen/design/elondia-storylines.md`](worldgen/design/elondia-storylines.md)。
 
 ## 自己建置
 

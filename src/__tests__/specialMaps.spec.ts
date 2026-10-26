@@ -237,7 +237,7 @@ describe('special map mods', () => {
 
   it('lists story points, teleports and connections that use a map', () => {
     expect(specialMapUsage('sm_rhineburg_cistern')).toContain('特殊地圖「萊茵堡下水道」的通道')
-    expect(specialMapUsage('sm_rhineburg_sewer')).toEqual([])
+    expect(specialMapUsage('sm_rhineburg_sewer')).toEqual(['固定 NPC「「老鼠」洛克」待在這裡'])
   })
 })
 

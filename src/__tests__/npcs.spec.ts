@@ -9,7 +9,7 @@ import { withRng } from '@/engine/state'
 import { locationById, npcTags } from '@/engine/data'
 import { cellAt, currentArea, enterLocation, standOn, zonesOf } from '@/engine/grid'
 import { npcKind, npcRecord, npcTitle } from '@/engine/npcs'
-import { areaOf, ensureRoster, peopleHere, presentHere, whereToday } from '@/engine/population'
+import { areaOf, ensureRoster, isUnhireable, peopleHere, presentHere, whereToday } from '@/engine/population'
 import { shopState } from '@/engine/trade'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
@@ -30,8 +30,10 @@ describe('rosters', () => {
     const recs = roster.members.map((id) => npcRecord(state, id)!)
     const adventurers = recs.filter((r) => npcKind(r) === 'adventurer')
     const commoners = recs.filter((r) => npcKind(r) === 'commoner')
-    expect(adventurers.length).toBe(8)
-    // 普通人 8 位；阿爾貝納有娼館，娼妓不足 3 位時另外補上
+    // 不受雇用的固定 NPC（機構首長……）不佔名額
+    const slotless = (list: typeof recs) => list.filter((r) => isUnhireable(r.id)).length
+    expect(adventurers.length).toBe(8 + slotless(adventurers))
+    // 普通人 8 位（具名的議員也算在裡面）；阿爾貝納有娼館，娼妓不足 3 位時另外補上
     expect(commoners.length).toBeGreaterThanOrEqual(8)
     expect(commoners.length).toBeLessThanOrEqual(8 + 3)
     expect(commoners.filter((r) => r.tags?.includes('prostitute')).length).toBeGreaterThanOrEqual(3)
@@ -58,12 +60,15 @@ describe('rosters', () => {
       const zones = zonesOf(locationById(loc))
       for (const id of roster.members) {
         const rec = npcRecord(state, id)!
+        // 待在地標、固定格子的固定 NPC 沒有活躍地點
+        if (rec.landmark || rec.fixed) continue
         expect(rec.haunts!.some((h) => h.location === loc)).toBe(true)
         for (const h of rec.haunts!) {
           if (h.location === loc) expect(zones).toContain(h.zone)
           if (h.zone === 'dungeon') expect(locationById(h.location).type).toBe('dungeon')
         }
-        for (const t of rec.tags ?? []) {
+        // 生成的人依標籤的適用類型抽；固定 NPC 可以帶任何標籤（例如身為冒險者的國王帶「皇族」）
+        for (const t of rec.generated ? rec.tags ?? [] : []) {
           const def = npcTags.tags[t]!
           expect(def.kinds).toContain(npcKind(rec))
           if (def.location_types) expect(def.location_types).toContain(locationById(loc).type)

@@ -13,6 +13,7 @@ import type { GameState, Quest, QuestKind, Report } from '@/engine/types'
 import { reachable, shortestPath } from '@/engine/world'
 import { lotsOf } from '@/engine/homes'
 import { ensureRoster } from '@/engine/population'
+import { npcRecord } from '@/engine/npcs'
 import { clearCounts, layerName, layerRank, rankForLevel } from '@/engine/materialQuests'
 import { geography, locationById, townQuestsPerTown } from '@/engine/data'
 
@@ -50,7 +51,7 @@ describe('world', () => {
       const roster = ensureRoster(state, id)!
       expect(roster.members.length, id).toBeGreaterThan(0)
       if (id === 'windhammer') {
-        const races = roster.members.map((m) => state.npcs![m]!.race)
+        const races = roster.members.map((m) => npcRecord(state, m)!.race)
         expect(races.filter((r) => r === 'human').length).toBeGreaterThan(races.length / 2)
       }
     }

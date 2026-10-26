@@ -17,7 +17,7 @@ import { generateNpc, npcKind, npcRecord, slavePrice } from '@/engine/npcs'
 import { isFugitive, leaderOf } from '@/engine/party'
 import { hitDiceLeft, longRest, shortRest } from '@/engine/rest'
 import { acceptSuggestion, addMemory, addSuggestions, compactMemories, editMemory, ensureRelationship, setAffinity } from '@/engine/social'
-import { applyRosterFlavor } from '@/engine/population'
+import { applyRosterFlavor, isUnhireable } from '@/engine/population'
 import { chooseMark, termsFromTemplate } from '@/engine/slavery'
 import { addHours, commitReport, migrate, newGame, withRng } from '@/engine/state'
 import { acceptQuest, guildQuests, recruit } from '@/engine/town'
@@ -173,10 +173,10 @@ describe('tavern hiring', () => {
     const count = Object.keys(state.npcs!).length
     expect(tavernCandidates(state).map((c) => c.npc)).toEqual(list.map((c) => c.npc))
     expect(Object.keys(state.npcs!).length).toBe(count)
-    // 王都 12 + 12 人，有娼館所以再補到至少 3 位娼妓（補的人數依抽到的身分而定）
+    // 王都 12 + 12 人（不受雇用的固定 NPC 不佔名額），有娼館所以再補到至少 3 位娼妓（補的人數依抽到的身分而定）
     const members = state.rosters!.soriel!.members
     const size = population.roster.capital!
-    const extra = members.slice(size.adventurer + size.commoner)
+    const extra = members.slice(size.adventurer + size.commoner + members.filter((id) => isUnhireable(id)).length)
     expect(extra.every((id) => npcRecord(state, id)!.tags?.includes('prostitute'))).toBe(true)
     expect(members.filter((id) => npcRecord(state, id)!.tags?.includes('prostitute')).length).toBeGreaterThanOrEqual(population.brothel_workers)
     expect(extra.length).toBeLessThanOrEqual(population.brothel_workers)

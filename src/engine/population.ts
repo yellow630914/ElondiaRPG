@@ -118,32 +118,47 @@ export function generateResident(state: GameState, rng: Rng, loc: Location, kind
     const [lo, hi] = npcTags.kinds.commoner.level ?? [1, 3]
     level = rng.int(lo, hi)
   }
+  const haunts = buildHaunts(rng, kind, tags, loc)
+  // 地點自己的職業（渡口的水手……）：只在有設定的地點多擲一次骰
+  const local = kind === 'commoner' ? population.local_occupations?.[loc.id] : undefined
+  const occupation = kind !== 'commoner' ? undefined : local?.list.length && rng.next() < local.chance ? rng.pick(local.list) : occupations.length ? rng.pick(occupations) : undefined
   return generateNpc(state, rng, {
     kind,
     ...(cls ? { class: cls } : {}),
     tags,
     level,
     location: loc.id,
-    haunts: buildHaunts(rng, kind, tags, loc),
-    ...(kind === 'commoner' && occupations.length ? { occupation: rng.pick(occupations) } : {}),
+    haunts,
+    ...(kind === 'commoner' && occupation ? { occupation } : {}),
     ...(loc.faction && kind === 'commoner' ? { faction: loc.faction } : {}),
   }, prefix ?? (kind === 'adventurer' ? 'adv' : 'cmn'))
+}
+
+/** 地點的名單人數：地點類型的人數，個別地點可以另外指定（npc_population.json 的 roster_by_location） */
+export function rosterSize(loc: Location): { adventurer: number; commoner: number } | undefined {
+  return population.roster_by_location?.[loc.id] ?? population.roster[loc.type]
+}
+
+/** 佔名單名額的人：不受雇用的固定 NPC（統治者、機構首長……）不佔名額 */
+function takesSlot(rec: NpcRecord, kind: NpcKind): boolean {
+  return npcKind(rec) === kind && !isUnhireable(rec.id)
 }
 
 /** 建立地點的名單（已經有就直接回傳）；地下城沒有名單 */
 export function ensureRoster(state: GameState, locId: string): Roster | undefined {
   const loc = locationById(locId)
-  const size = population.roster[loc.type]
+  const size = rosterSize(loc)
   if (!size) return undefined
   ensureMadam(state, loc)
   const rosters = (state.rosters ??= {})
   if (rosters[locId]) return rosters[locId]
-  // 具名 NPC：所屬地點是這裡的算進冒險者名額（不受雇用的統治者、機構首長不佔名額）
-  const named = namedNpcs.filter((n) => n.location === locId).map((n) => n.id)
+  // 具名 NPC：所屬地點是這裡的算進冒險者或普通人的名額（不受雇用的統治者、機構首長不佔名額）
+  const named = namedNpcs.filter((n) => n.location === locId)
   const rng = new Rng(hashString(`${state.seed}:roster:${locId}`))
-  const members = [...named]
-  for (let i = named.filter((id) => !isUnhireable(id)).length; i < size.adventurer; i++) members.push(generateResident(state, rng, loc, 'adventurer').id)
-  for (let i = 0; i < size.commoner; i++) members.push(generateResident(state, rng, loc, 'commoner').id)
+  const members = named.map((n) => n.id)
+  const namedCount = (k: NpcKind) => named.filter((n) => takesSlot(n as NpcRecord, k)).length
+  for (let i = namedCount('adventurer'); i < size.adventurer; i++) members.push(generateResident(state, rng, loc, 'adventurer').id)
+  for (let i = namedCount('commoner'); i < size.commoner; i++) members.push(generateResident(state, rng, loc, 'commoner').id)
   // 有娼館的城鎮：至少有幾位娼妓
   if (zonesOf(loc).includes('brothel')) {
     const have = members.filter((id) => npcRecord(state, id)?.tags?.includes('prostitute')).length
@@ -440,12 +455,12 @@ export function refreshRosters(state: GameState) {
 
 function rosterEvent(state: GameState, locId: string, roster: Roster, rng: Rng) {
   const loc = locationById(locId)
-  const size = population.roster[loc.type]
+  const size = rosterSize(loc)
   if (!size) return
   const inParty = new Set(state.party.map((m) => m.id))
   const members = roster.members.map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r && !r.dead)
   roster.members = members.map((r) => r.id)
-  const count = (k: NpcKind) => members.filter((r) => npcKind(r) === k).length
+  const count = (k: NpcKind) => members.filter((r) => takesSlot(r, k)).length
   // 未滿額：有人搬來
   for (const kind of ['adventurer', 'commoner'] as NpcKind[]) {
     if (count(kind) < size[kind]) {

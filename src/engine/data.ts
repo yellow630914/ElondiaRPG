@@ -1236,6 +1236,10 @@ export const population = populationJson as unknown as {
   /** 有娼館的城鎮，名單上至少有幾位娼妓 */
   brothel_workers: number
   roster: Record<string, { adventurer: number; commoner: number }>
+  /** 個別地點的名單人數（取代地點類型的人數），例如冒險者特別多的河谷鎮 */
+  roster_by_location?: Record<string, { adventurer: number; commoner: number }>
+  /** 個別地點的普通人職業：依機率取代標籤的職業描述，例如渡口的水手 */
+  local_occupations?: Record<string, { chance: number; list: string[] }>
   adventurer_level: Record<string, [number, number]>
   known_weight: number
   turnover: { period_days: number; chance: number }

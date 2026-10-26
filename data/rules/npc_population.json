@@ -1,5 +1,5 @@
 {
-  "$comment": "各地點的 NPC 名單：第一次進入地點時建立，之後相對固定（變動規則在第二階段加入）。roster = 名單人數（冒險者與普通人約 1:1，不含店主、公會職員等職員）。adventurer_level = 冒險者的等級範圍（抽兩次取較低者，低等級比較常見）。known_weight = 和主角有關係的人在抽選時的權重倍率。說明見 docs/NPC_SYSTEM.md 第 6 節。",
+  "$comment": "各地點的 NPC 名單：第一次進入地點時建立，之後相對固定（變動規則在第二階段加入）。roster = 名單人數（冒險者與普通人約 1:1，不含店主、公會職員等職員）；roster_by_location = 個別地點的名單人數（取代地點類型的人數）；local_occupations = 個別地點的普通人職業（chance 的機率取代標籤的職業描述）。具名 NPC 佔他所屬地點的名額，不受雇用的不佔。adventurer_level = 冒險者的等級範圍（抽兩次取較低者，低等級比較常見）。known_weight = 和主角有關係的人在抽選時的權重倍率。說明見 docs/NPC_SYSTEM.md 第 6 節。",
   "version": 1,
   "roster": {
     "capital": { "adventurer": 12, "commoner": 12 },
@@ -9,6 +9,15 @@
     "village": { "adventurer": 3, "commoner": 3 },
     "outpost": { "adventurer": 3, "commoner": 3 },
     "fortress": { "adventurer": 3, "commoner": 3 }
+  },
+  "roster_by_location": {
+    "rivervale": { "adventurer": 12, "commoner": 6 },
+    "coast_ferry": { "adventurer": 9, "commoner": 7 }
+  },
+  "local_occupations": {
+    "coast_ferry": { "chance": 0.6, "list": ["水手", "船工", "漁夫", "碼頭工人", "補網婦", "領航員", "船上的廚子"] },
+    "rivervale": { "chance": 0.4, "list": ["渡口船夫", "傭兵仲介", "旅店夥計", "商隊車夫", "跑腿的信差"] },
+    "tidehaven": { "chance": 0.5, "list": ["水手", "船工", "碼頭工人", "漁夫", "珍珠商"] }
   },
   "adventurer_level": {
     "capital": [1, 8],
