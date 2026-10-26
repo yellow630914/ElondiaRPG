@@ -1,12 +1,13 @@
 // 城鎮的特色地標：遊戲中的功能（docs/LANDMARKS.md）。資料在 data/world/landmarks.json，內容編輯器見 landmarkMods.ts。
 // 開放條件、參訪（付錢或花時間換效果）、探索（主動行動的檢定）、場景（條件成立時的固定場景）；打工與受訓走 work.ts、perkActions.ts（格子的種類就是地標 id）。
 
-import { landmarkDef, locationById, npcs as namedNpcs, type Degree, type LandmarkDef, type LandmarkScene } from './data'
+import { landmarkDef, landmarks, locationById, npcs as namedNpcs, specialMaps, type Degree, type LandmarkDef, type LandmarkScene } from './data'
 import { adultContent, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { npcFree } from './story'
 import { applyEffects } from './effects'
-import { currentArea, currentCell } from './grid'
+import { currentArea, currentCell, position } from './grid'
+import { enterSpecial } from './specialMaps'
 import { isNight } from './light'
 import { formatMoney } from './money'
 import { isFugitive, pcOf } from './party'
@@ -17,10 +18,38 @@ import { effectText } from './trade'
 import { commitReport } from './state'
 import type { GameState, Report } from './types'
 
-/** 主角現在站的地標（聚落裡） */
+/** 主角現在站的地標（聚落裡的地標格，或在地標的內部） */
 export function landmarkHere(state: GameState): LandmarkDef | undefined {
-  if (currentArea(state).kind !== 'settlement') return undefined
+  const area = currentArea(state)
+  if (area.kind === 'special') return landmarkOfInterior(area.special)
+  if (area.kind !== 'settlement') return undefined
   return landmarkDef(currentCell(state).kind)
+}
+
+/** 以這張特殊地圖為內部的地標 */
+export function landmarkOfInterior(id: string | undefined): LandmarkDef | undefined {
+  return id ? Object.values(landmarks).find((l) => l.interior === id) : undefined
+}
+
+/** 主角在這個地標的內部 */
+export function insideLandmark(state: GameState, l: LandmarkDef): boolean {
+  const area = currentArea(state)
+  return area.kind === 'special' && !!l.interior && area.special === l.interior
+}
+
+/** 為什麼現在不能走進地標的內部（可以時是 undefined） */
+export function interiorBlocked(state: GameState): string | undefined {
+  const l = landmarkHere(state)
+  if (!l?.interior || !specialMaps[l.interior]) return '這裡沒有可以進去的地方'
+  if (insideLandmark(state, l)) return '已經在裡面了'
+  return landmarkClosed(state, l)
+}
+
+/** 走進地標的內部（站在入口；從出口離開時回到地標格） */
+export function enterLandmark(state: GameState) {
+  const why = interiorBlocked(state)
+  if (why) throw new Error(why)
+  enterSpecial(state, landmarkHere(state)!.interior!)
 }
 
 /** 站在地標上行動時，場景帶上地標與它的氛圍（交給 AI） */
@@ -144,11 +173,31 @@ export function sceneShown(state: GameState, sc: LandmarkScene): boolean {
   return (sc.cast ?? []).every((c) => c.flags?.length || npcFree(state, c.npc))
 }
 
+/** 場景在不在主角站的這一格：有內部的地標，寫了格子的場景在裡面的那一格，沒寫的在外面的地標格上 */
+function sceneAtHere(state: GameState, l: LandmarkDef, sc: LandmarkScene): boolean {
+  if (!insideLandmark(state, l)) return !(l.interior && sc.spot)
+  const p = position(state)
+  return !!sc.spot && sc.spot.x === p.x && sc.spot.y === p.y
+}
+
 /** 站在這裡現在出現的場景（index 是地標上的順序） */
 export function scenesHere(state: GameState): { index: number; scene: LandmarkScene }[] {
   const l = landmarkHere(state)
   if (!l?.scenes) return []
-  return l.scenes.map((scene, index) => ({ index, scene })).filter(({ scene }) => sceneShown(state, scene))
+  return l.scenes.map((scene, index) => ({ index, scene })).filter(({ scene }) => sceneAtHere(state, l, scene) && sceneShown(state, scene))
+}
+
+/** 在地標的內部時，有場景的格子（地圖標示用）：「x,y」→ 格子的名稱 */
+export function sceneSpots(state: GameState): Map<string, string> {
+  const out = new Map<string, string>()
+  const l = landmarkHere(state)
+  if (!l?.scenes || !insideLandmark(state, l)) return out
+  for (const sc of l.scenes) {
+    if (!sc.spot || !sceneShown(state, sc)) continue
+    const k = `${sc.spot.x},${sc.spot.y}`
+    out.set(k, out.get(k) ?? sc.spot_name ?? sc.title)
+  }
+  return out
 }
 
 /** 還要等幾天才能再選這個場景（0：現在可以）；沒有勾自己算冷卻的場景共用地標的冷卻 */
@@ -163,7 +212,7 @@ export function sceneWait(state: GameState, l: LandmarkDef, sc: LandmarkScene): 
 export function sceneBlocked(state: GameState, index: number): string | undefined {
   const l = landmarkHere(state)
   const sc = l?.scenes?.[index]
-  if (!l || !sc || !sceneShown(state, sc)) return '這裡沒有這個場景'
+  if (!l || !sc || !sceneAtHere(state, l, sc) || !sceneShown(state, sc)) return '這裡沒有這個場景'
   const closed = landmarkClosed(state, l)
   if (closed) return closed
   const wait = sceneWait(state, l, sc)
@@ -194,7 +243,7 @@ export function playLandmarkScene(state: GameState, index: number): Report {
   const { ids } = sceneCast(state, sc)
   const text = sceneText(state, sc)
   const report = baseReport(state, 'event', sc.hours ?? 2)
-  report.location.scene = `${locationById(state.location).name}・${l.name}・${sc.title}${l.scene ? `（${l.scene.slice(0, 80)}）` : ''}`
+  report.location.scene = `${locationById(state.location).name}・${l.name}${sc.spot_name ? `・${sc.spot_name}` : ''}・${sc.title}${l.scene ? `（${l.scene.slice(0, 80)}）` : ''}`
   report.lore_keys!.push(l.name, ...ids.map(npcName))
   applyEffects(state, report, [
     ...(sc.money_cc ? [{ type: 'money' as const, amount: -sc.money_cc }] : []),

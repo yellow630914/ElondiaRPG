@@ -371,6 +371,8 @@ export interface LandmarkDef {
   work?: { attr: AttrId; dc: number; rate_cc: number; desc: string }
   /** 場景：條件成立時可以選的固定場景（例如解鎖的特殊區域），隔幾天才能再來（預設 3 天，場景之間共用） */
   scenes?: LandmarkScene[]
+  /** 內部：一張特殊地圖（固定地圖、同一個聚落）。地標格變成入口，場景可以指定在裡面的哪一格 */
+  interior?: string
 }
 /** 地標的場景（docs/LANDMARKS.md 第 6 節） */
 export interface LandmarkScene {
@@ -399,6 +401,10 @@ export interface LandmarkScene {
   cooldown_days?: number
   /** 自己算冷卻，不和這個地標的其他場景共用（例如咖啡廳的喝茶） */
   own_cooldown?: boolean
+  /** 在地標內部（interior）的哪一格；沒寫時在地標格上（外面） */
+  spot?: { x: number; y: number }
+  /** 那一格的名稱（地圖上的提示，例如「米米的小房間」） */
+  spot_name?: string
 }
 export interface LandmarkOpen {
   /** 只在白天（6～18 時）或只在夜裡開放 */
@@ -500,6 +506,8 @@ export interface SpecialMapDef {
   shops?: { shop: string; x: number; y: number }[]
   /** BOSS 格（地圖上的 B）各自的怪物與名字（只有固定地圖；沒設定的 B 格照強敵的規則） */
   bosses?: SpecialBoss[]
+  /** 安全的室內（例如地標的內部）：休息不會被襲擊 */
+  peaceful?: boolean
 }
 /** 格子種類的名稱（和 grid.ts 的 CellKind 相同，這裡用字串避免循環引用） */
 export type CellKindName = string

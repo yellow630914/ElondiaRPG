@@ -318,6 +318,7 @@ function remove() {
       </div>
       <label class="block"><span>給 AI 的描述 <Hint text="外觀、氣氛、危險；在裡面的每一則日誌都會帶上。" /></span><textarea v-model="draft.desc" rows="3" :maxlength="L.desc_chars" /></label>
       <label class="check small"><input v-model="draft.refresh" type="checkbox" /> 會刷新：離開這片特殊地圖之後再進來，遭遇、資源與寶箱全部重來 <Hint text="沒勾時打過、採過的一直保持。" /></label>
+      <label class="check small"><input v-model="draft.peaceful" type="checkbox" /> 安全的室內：休息不會被襲擊 <Hint text="例如地標的內部（咖啡廳、宴會廳）。" /></label>
     </fieldset>
 
     <fieldset>

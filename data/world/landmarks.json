@@ -1510,7 +1510,7 @@
    "types": [
     "official"
    ],
-   "desc": "瑪格麗特在貴族區的沙龍。每隔幾天，三位夫人會在這裡辦一場只邀請你的下午茶會。",
+   "desc": "瑪格麗特在貴族區的沙龍。每隔幾天，三位夫人會在這裡辦一場只邀請你的下午茶會。走進去選位子。",
    "scene": "鋪著蕾絲桌巾的沙龍，紅茶與奶油點心的香氣裡，窗簾總是拉得剛好。",
    "open": {
     "flags": [
@@ -1548,7 +1548,12 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 2,
+      "y": 2
+     },
+     "spot_name": "沙龍的茶桌"
     },
     {
      "title": "享用三位夫人",
@@ -1578,9 +1583,15 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 7,
+      "y": 2
+     },
+     "spot_name": "窗邊的長沙發"
     }
-   ]
+   ],
+   "interior": "sm_wives_salon"
   },
   {
    "id": "lm_maid_cafe",
@@ -1636,7 +1647,12 @@
        ]
       }
      ],
-     "affinity": 1
+     "affinity": 1,
+     "spot": {
+      "x": 3,
+      "y": 5
+     },
+     "spot_name": "前廳的座位"
     },
     {
      "title": "和米米去小房間",
@@ -1659,7 +1675,12 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 1,
+      "y": 1
+     },
+     "spot_name": "米米的小房間"
     },
     {
      "title": "和伊芙去小房間",
@@ -1682,7 +1703,12 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 4,
+      "y": 1
+     },
+     "spot_name": "伊芙的小房間"
     },
     {
      "title": "和漣去小房間",
@@ -1710,7 +1736,12 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 7,
+      "y": 2
+     },
+     "spot_name": "漣的浴室"
     },
     {
      "title": "暫時關店，和三個人一起",
@@ -1744,9 +1775,15 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 11,
+      "y": 1
+     },
+     "spot_name": "最大的小房間"
     }
-   ]
+   ],
+   "interior": "sm_maid_cafe"
   },
   {
    "id": "lm_ebony_night",
@@ -1787,7 +1824,12 @@
        "npc": "npc_aya"
       }
      ],
-     "affinity": 3
+     "affinity": 3,
+     "spot": {
+      "x": 8,
+      "y": 1
+     },
+     "spot_name": "角落的卡座"
     },
     {
      "title": "和阿雅一起侍奉水手們",
@@ -1808,9 +1850,15 @@
        "npc": "npc_aya"
       }
      ],
-     "affinity": 3
+     "affinity": 3,
+     "spot": {
+      "x": 4,
+      "y": 1
+     },
+     "spot_name": "水手們中間"
     }
-   ]
+   ],
+   "interior": "sm_ebony_night"
   },
   {
    "id": "lm_succubus_banquet",
@@ -1888,7 +1936,12 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 5,
+      "y": 2
+     },
+     "spot_name": "宴會的長桌"
     },
     {
      "title": "被女王們玩弄",
@@ -1942,7 +1995,12 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 5,
+      "y": 1
+     },
+     "spot_name": "女王的高背椅"
     },
     {
      "title": "被女王們服侍",
@@ -1996,9 +2054,15 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 2,
+      "y": 1
+     },
+     "spot_name": "絲綢的寢台"
     }
-   ]
+   ],
+   "interior": "sm_succubus_banquet"
   },
   {
    "id": "lm_idol_backstage",
@@ -2050,9 +2114,15 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 2,
+      "y": 1
+     },
+     "spot_name": "後台的休息室"
     }
-   ]
+   ],
+   "interior": "sm_idol_backstage"
   },
   {
    "id": "lm_honor_hole",
@@ -2092,7 +2162,12 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 3,
+      "y": 1
+     },
+     "spot_name": "牆的這一邊（服務）"
     },
     {
      "title": "當被服務的一方",
@@ -2110,9 +2185,15 @@
        "condition": "relaxed",
        "add": true
       }
-     ]
+     ],
+     "spot": {
+      "x": 5,
+      "y": 1
+     },
+     "spot_name": "牆的那一邊（被服務）"
     }
-   ]
+   ],
+   "interior": "sm_honor_hole"
   }
  ]
 }

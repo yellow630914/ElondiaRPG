@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { blockedReason, landmarkClosed, landmarkHere, sceneBlocked, sceneCastNames, scenesHere } from '@/engine/landmarks'
-import { attrName } from '@/engine/data'
+import { blockedReason, insideLandmark, interiorBlocked, landmarkClosed, landmarkHere, sceneBlocked, sceneCastNames, scenesHere } from '@/engine/landmarks'
+import { attrName, specialMaps } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { effectText } from '@/engine/trade'
 import { parseUse, useGame } from '@/stores/game'
@@ -17,6 +17,9 @@ const l = computed(() => landmarkHere(s.value))
 const closed = computed(() => (l.value ? landmarkClosed(s.value, l.value) : undefined))
 const visitBlocked = computed(() => (l.value?.visit ? blockedReason(s.value, 'visit') : undefined))
 const exploreBlocked = computed(() => (l.value?.explore ? blockedReason(s.value, 'explore') : undefined))
+// 有內部的地標：站在外面時可以走進去（裡面從出口離開）
+const interior = computed(() => (l.value?.interior && !insideLandmark(s.value, l.value) ? specialMaps[l.value.interior] : undefined))
+const interiorWhy = computed(() => (interior.value ? interiorBlocked(s.value) : undefined))
 const scenes = computed(() => scenesHere(s.value).map((x) => ({ ...x, blocked: sceneBlocked(s.value, x.index), cast: sceneCastNames(s.value, x.scene).join('、') })))
 const gains = (list: { type: string }[] = []) => list.map((e) => effectText(s.value, e as never)).join('、')
 const text = ref('')
@@ -40,6 +43,9 @@ function explore() {
       <p v-if="l.visit.desc" class="muted">{{ l.visit.desc }}</p>
       <p v-if="gains(l.visit.effects)" class="muted">得到：{{ gains(l.visit.effects) }}</p>
       <button class="small" :disabled="!!visitBlocked || game.judging || !!s.pendingAction" :title="visitBlocked ?? ''" @click="game.visitLandmark()">{{ visitBlocked ?? l.visit.title }}</button>
+    </div>
+    <div v-if="interior" class="item">
+      <button class="small primary" :disabled="!!interiorWhy || game.judging || !!s.pendingAction" :title="interiorWhy ?? ''" @click="game.enterLandmark()"><GameIcon name="door" :size="13" /> {{ interiorWhy ?? `走進${interior.name}` }}</button>
     </div>
     <div v-for="x in scenes" :key="x.index" class="item">
       <div><strong class="ttl"><GameIcon name="heart" :size="13" /> {{ x.scene.title }}</strong> <ContentTagChips :tags="x.scene.tags" />

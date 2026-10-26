@@ -2,7 +2,7 @@
 // 內建的地圖每一項都可以改、不能刪；自建的地圖沒有被用到時可以刪。
 
 import {
-  DUNGEON_LAYER_IDS, enemies, geography, isSpecialMapId, itemDef, npcs as namedNpcs, shopRules, specialKey, specialMapLegend, specialMaps, stories,
+  DUNGEON_LAYER_IDS, enemies, geography, isSpecialMapId, itemDef, landmarks, npcs as namedNpcs, shopRules, specialKey, specialMapLegend, specialMaps, stories,
   type DungeonLayerId, type EncounterGroup, type ShopType, type SpecialConnection, type SpecialMapDef,
 } from './data'
 import { settlementArea, type CellKind } from './grid'
@@ -91,6 +91,7 @@ export function sanitizeSpecialMapMod(
     layer: DUNGEON_LAYER_IDS.includes(raw.layer as DungeonLayerId) ? raw.layer : 'shallow',
   }
   if (raw.refresh) out.refresh = true
+  if (raw.peaceful) out.peaceful = true
   // 版面：固定地圖（格子）或隨機地圖（大小）
   const rows = (Array.isArray(raw.grid) ? raw.grid : []).filter((r): r is string => typeof r === 'string').slice(0, L.size[1])
   if (rows.length) {
@@ -198,6 +199,7 @@ export function specialMapUsage(id: string): string[] {
   for (const def of Object.values(specialMaps)) {
     if (def.id !== id && def.connections?.some((c) => c.to.area === specialKey(id))) out.push(`特殊地圖「${def.name}」的通道`)
   }
+  for (const l of Object.values(landmarks)) if (l.interior === id) out.push(`地標「${l.name}」的內部`)
   const key = specialKey(id)
   for (const n of namedNpcs) {
     if (n.fixed?.area === key || n.stages?.some((st) => st.fixed?.area === key)) out.push(`固定 NPC「${n.name}」待在這裡`)

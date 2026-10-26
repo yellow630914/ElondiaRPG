@@ -3,7 +3,11 @@ import { landmarks, stories } from '@/engine/data'
 import { setAdultContent, setContentFilters } from '@/engine/content'
 import { enterLocation, getArea, standOn } from '@/engine/grid'
 import { sanitizeLandmarkMod, sanitizeScene } from '@/engine/landmarkMods'
-import { landmarkHere, playLandmarkScene, sceneBlocked, sceneText, scenesHere } from '@/engine/landmarks'
+import { enterLandmark, insideLandmark, interiorBlocked, landmarkHere, playLandmarkScene, sceneBlocked, sceneSpots, sceneText, scenesHere } from '@/engine/landmarks'
+import { leaveSpecial } from '@/engine/specialMaps'
+import { specialMapUsage } from '@/engine/specialMapMods'
+import { ambushChance } from '@/engine/rest'
+import { currentArea, currentCell } from '@/engine/grid'
 import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
 import { newGame } from '@/engine/state'
 import { setFlag } from '@/engine/storyFlags'
@@ -25,10 +29,31 @@ function at(id: string, flags: string[], body?: 'masc' | 'fem' | 'andro'): GameS
   state.time.hour = 21
   enterLocation(state)
   expect(standOn(state, id as never), id).toBe(true)
+  enterLandmark(state)
   return state
 }
-const titles = (state: GameState) => scenesHere(state).map((x) => x.scene.title)
-const index = (state: GameState, title: string) => scenesHere(state).find((x) => x.scene.title === title)!.index
+/** 走到這個場景所在的那一格 */
+function goTo(state: GameState, title: string) {
+  const sc = landmarkHere(state)!.scenes!.find((x) => x.title === title)!
+  state.position = { ...state.position!, x: sc.spot!.x, y: sc.spot!.y }
+}
+/** 內部每一格現在出現的場景（依地標上的順序） */
+function titles(state: GameState): string[] {
+  const l = landmarkHere(state)!
+  const back = { ...state.position! }
+  const seen = new Set<string>()
+  for (const sc of l.scenes ?? []) {
+    if (!sc.spot) continue
+    state.position = { ...back, x: sc.spot.x, y: sc.spot.y }
+    for (const x of scenesHere(state)) seen.add(x.scene.title)
+  }
+  state.position = back
+  return (l.scenes ?? []).map((x) => x.title).filter((t) => seen.has(t))
+}
+const index = (state: GameState, title: string) => {
+  goTo(state, title)
+  return scenesHere(state).find((x) => x.scene.title === title)!.index
+}
 
 describe('special areas unlocked by the storylines', () => {
   it('are adult landmarks that stay a plain road until their quest flags are set', () => {
@@ -158,5 +183,67 @@ describe('characters moved by their story stage', () => {
     const again = npcRecord(state, 'npc_eve')!
     expect(again).toBe(first)
     expect(again.haunts).toBe(haunts)
+  })
+})
+
+describe('special-area interiors', () => {
+  it('give every special area its own room map, with each scene in a room of it', async () => {
+    const { specialMaps } = await import('@/engine/data')
+    for (const id of AREAS) {
+      const l = landmarks[id]!
+      const m = specialMaps[l.interior!]!
+      expect(m.location, id).toBe(l.location)
+      expect(m.peaceful, id).toBe(true)
+      expect(m.lighting, id).toBe('lit')
+      for (const sc of l.scenes!) {
+        expect(sc.spot, `${id} ${sc.title}`).toBeDefined()
+        expect(m.grid![sc.spot!.y]![sc.spot!.x], `${id} ${sc.title}`).toBe('.')
+        expect(sc.spot_name, `${id} ${sc.title}`).toBeTruthy()
+      }
+      expect(specialMapUsage(m.id)).toContain(`地標「${l.name}」的內部`)
+    }
+  })
+
+  it('lets you walk in through the landmark, offers nothing at the door, and brings you back out to it', () => {
+    setAdultContent(true)
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'albena' })
+    setFlag(state, 'wl_1_done')
+    enterLocation(state)
+    standOn(state, 'lm_honor_hole' as never)
+    const door = { ...state.position! }
+    expect(scenesHere(state)).toEqual([])
+    expect(interiorBlocked(state)).toBeUndefined()
+    enterLandmark(state)
+    expect(currentArea(state).key).toBe('sm/sm_honor_hole')
+    expect(insideLandmark(state, landmarks.lm_honor_hole!)).toBe(true)
+    expect(currentCell(state).kind).toBe('exit')
+    expect(scenesHere(state)).toEqual([])
+    expect([...sceneSpots(state).values()]).toEqual(['牆的這一邊（服務）', '牆的那一邊（被服務）'])
+    expect(ambushChance(state)).toBe(0)
+    expect(sceneBlocked(state, 0)).toBe('這裡沒有這個場景')
+    state.position = { ...state.position!, x: 3, y: 1 }
+    expect(scenesHere(state).map((x) => x.scene.title)).toEqual(['當服務的一方'])
+    state.position = { ...state.position!, x: 5, y: 1 }
+    expect(scenesHere(state).map((x) => x.scene.title)).toEqual(['當被服務的一方'])
+    leaveSpecial(state)
+    expect(state.position).toEqual(door)
+    expect(landmarkHere(state)?.id).toBe('lm_honor_hole')
+  })
+
+  it('keeps the door shut while the venue is closed', () => {
+    const state = at('lm_ebony_night', ['aya_club'])
+    leaveSpecial(state)
+    state.time.hour = 12
+    expect(interiorBlocked(state)).toBe('黑檀之夜只在夜裡開放')
+    expect(() => enterLandmark(state)).toThrow()
+  })
+
+  it('keeps an interior only in the same settlement, and spots only on cells you can stand on', () => {
+    const l = JSON.parse(JSON.stringify(landmarks.lm_honor_hole)) as never as Record<string, unknown> & { scenes: { spot?: unknown }[] }
+    expect(sanitizeLandmarkMod('lm_honor_hole', l as never).interior).toBe('sm_honor_hole')
+    l.scenes[0]!.spot = { x: 4, y: 1 }
+    expect(sanitizeLandmarkMod('lm_honor_hole', l as never).scenes![0]!.spot).toBeUndefined()
+    expect(sanitizeLandmarkMod('lm_honor_hole', { ...l, interior: 'sm_maid_cafe' } as never).interior).toBeUndefined()
+    expect(sanitizeLandmarkMod('lm_honor_hole', { ...l, interior: 'sm_maid_cafe' } as never).scenes!.every((x) => !x.spot)).toBe(true)
   })
 })

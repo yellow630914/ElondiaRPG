@@ -4,8 +4,8 @@ import { deadlineText, questDeadlineDays } from '@/engine/deadlines'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, type ShopType } from '@/engine/data'
-import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
+import { attrName, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, position, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -25,7 +25,7 @@ import NegotiationPanel from './NegotiationPanel.vue'
 import StoryPanel from './StoryPanel.vue'
 import ShopPanel from './ShopPanel.vue'
 import LandmarkPanel from './LandmarkPanel.vue'
-import { closedHere } from '@/engine/landmarks'
+import { closedHere, sceneSpots } from '@/engine/landmarks'
 import TattooPanel from './TattooPanel.vue'
 import TavernPanel from './TavernPanel.vue'
 import WorkPanel from './WorkPanel.vue'
@@ -56,6 +56,13 @@ const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => currentArea(s.value))
 const cell = computed(() => currentCell(s.value))
+// 安全的室內（地標的內部）：空地叫「室內」，不叫道路
+const insideRoom = computed(() => area.value.kind === 'special' && !!specialMaps[area.value.special ?? '']?.peaceful)
+// 地標內部有場景的格子（例如咖啡廳的小房間）
+const sceneSpot = computed(() => {
+  const p = position(s.value)
+  return sceneSpots(s.value).get(`${p.x},${p.y}`)
+})
 // 特殊地圖：地圖的描述、通道通往哪裡
 const specialDef = computed(() => (area.value.kind === 'special' ? specialMapOfKey(area.value.key) : undefined))
 const linkName = computed(() => linkTargetName(s.value) ?? '別處')
@@ -201,7 +208,7 @@ const shopDesc = computed(() => {
           <GameIcon v-if="CELL_GAME_ICON[cell.kind]" :name="CELL_GAME_ICON[cell.kind]!" :size="18" />
           <span v-else-if="ICON[cell.kind]">{{ ICON[cell.kind] }}</span>
           <GameIcon v-else name="pin" :size="18" />
-          {{ title ? title.name : cell.kind === 'wall' ? '道路' : cell.kind === 'boss' && cell.name ? cell.name : cellName(cell.kind) }}
+          {{ title ? title.name : sceneSpot ?? (cell.kind === 'wall' ? '道路' : cell.kind === 'boss' && cell.name ? cell.name : insideRoom && cell.kind === 'floor' ? '室內' : cellName(cell.kind)) }}
           <span v-if="title && named && title.name !== shopKindName(named)" class="tag">{{ shopKindName(named) }}</span>
           <Hint v-if="title && shopDesc && title.desc" :text="shopDesc" />
         </h3>
@@ -361,7 +368,7 @@ const shopDesc = computed(() => {
           </div>
         </template>
 
-        <LandmarkPanel v-else-if="landmarkDef(cell.kind)" :key="`lm-${area.key}-${cell.kind}`" />
+        <LandmarkPanel v-else-if="landmarkDef(cell.kind) || sceneSpot" :key="`lm-${area.key}-${cell.kind}`" />
 
         <p v-else-if="!cell.storyNode" class="muted small">{{ cell.done ? '這裡已經清理乾淨了。' : '四下無事。' }}</p>
 

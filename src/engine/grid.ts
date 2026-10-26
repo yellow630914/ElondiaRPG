@@ -14,7 +14,7 @@ import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
   attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId, type LandmarkDef,
-  type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, type SpecialMapDef,
+  type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { forgeItemFor, gearRules, itemShown, MATERIAL_KINDS, randomGear, registerGear } from './gear'
@@ -391,12 +391,17 @@ export function currentCell(state: GameState): Cell {
 }
 
 export function isRevealed(area: Area, x: number, y: number): boolean {
-  // 聚落與旅途整張看得到（旅途的事件出發時就擲好了）
-  return area.kind === 'settlement' || area.kind === 'home' || area.kind === 'road' || (area.revealed?.includes(y * area.width + x) ?? false)
+  // 聚落與旅途整張看得到（旅途的事件出發時就擲好了）；安全的室內（地標的內部）也是
+  return area.kind === 'settlement' || area.kind === 'home' || area.kind === 'road' || isRoom(area) || (area.revealed?.includes(y * area.width + x) ?? false)
+}
+
+/** 安全的室內（特殊地圖勾了 peaceful，例如地標的內部）：一進去就看得到整間 */
+function isRoom(area: Area): boolean {
+  return area.kind === 'special' && !!specialMaps[area.special ?? '']?.peaceful
 }
 
 export function reveal(area: Area, x: number, y: number, radius = 1) {
-  if (area.kind === 'settlement' || area.kind === 'home') return
+  if (area.kind === 'settlement' || area.kind === 'home' || isRoom(area)) return
   const set = new Set(area.revealed ?? [])
   for (let dy = -radius; dy <= radius; dy++) {
     for (let dx = -radius; dx <= radius; dx++) {

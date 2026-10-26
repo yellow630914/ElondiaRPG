@@ -2,7 +2,7 @@
 // 內建的地標每一項都可以改（位置只能在同一個聚落裡移動），不能刪除；自建的地標可以擺在任何聚落，沒有被用到時可以刪除。
 
 import {
-  ATTR_IDS, geography, isLandmarkId, type LandmarkScene, landmarkJob, landmarks, landmarkTypes, npcs as namedNpcs, perkRules, stories, workRules, type AttrId, type LandmarkDef,
+  ATTR_IDS, geography, isLandmarkId, specialMapLegend, specialMaps, type LandmarkScene, landmarkJob, landmarks, landmarkTypes, npcs as namedNpcs, perkRules, stories, workRules, type AttrId, type LandmarkDef,
 } from './data'
 import { cleanFlag } from './storyFlags'
 import { sanitizeEffects } from './storyMods'
@@ -141,15 +141,18 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>): Land
       desc: str(raw.work.desc, L.desc_chars) || '在這裡幫忙。',
     }
   }
-  // 場景：要有名稱與經過
-  const scenes = (Array.isArray(raw.scenes) ? raw.scenes : []).map(sanitizeScene).filter((x): x is LandmarkScene => !!x).slice(0, L.scenes)
+  // 內部：同一個聚落的固定特殊地圖
+  const inner = typeof raw.interior === 'string' ? specialMaps[raw.interior] : undefined
+  if (inner?.grid?.length && inner.location === location) out.interior = inner.id
+  // 場景：要有名稱與經過；內部的格子要在地圖裡、走得進去
+  const scenes = (Array.isArray(raw.scenes) ? raw.scenes : []).map((x) => sanitizeScene(x, out.interior)).filter((x): x is LandmarkScene => !!x).slice(0, L.scenes)
   if (scenes.length) out.scenes = scenes
   if (!base) out.custom = true
   return out
 }
 
 /** 整理一個場景（docs/LANDMARKS.md 第 6 節）；沒有名稱或經過時丟掉 */
-export function sanitizeScene(raw: Partial<LandmarkScene> | undefined): LandmarkScene | undefined {
+export function sanitizeScene(raw: Partial<LandmarkScene> | undefined, interior?: string): LandmarkScene | undefined {
   const L = LANDMARK_LIMITS
   const title = str(raw?.title, L.title_chars)
   const scene = str(raw?.scene, L.scene_text_chars)
@@ -183,6 +186,14 @@ export function sanitizeScene(raw: Partial<LandmarkScene> | undefined): Landmark
   const cd = num(raw.cooldown_days, L.cooldown, 3)
   if (cd !== 3) out.cooldown_days = cd
   if (raw.own_cooldown) out.own_cooldown = true
+  const map = interior ? specialMaps[interior] : undefined
+  const sp = raw.spot
+  const ch = map?.grid && sp && Number.isInteger(sp.x) && Number.isInteger(sp.y) ? map.grid[sp.y]?.[sp.x] : undefined
+  const kind = ch === undefined ? undefined : ({ ...specialMapLegend, ...(map?.legend ?? {}) }[ch] ?? 'wall')
+  if (kind && kind !== 'wall' && kind !== 'water') {
+    out.spot = { x: sp!.x, y: sp!.y }
+    if (str(raw.spot_name, L.title_chars)) out.spot_name = str(raw.spot_name, L.title_chars)
+  }
   return out
 }
 

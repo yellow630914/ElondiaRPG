@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkRules } from '@/engine/data'
+import { ATTR_IDS, attrName, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkRules, specialMaps, type LandmarkScene } from '@/engine/data'
 import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { BODIES, BODY_NAME } from '@/engine/traits'
 import { settlementArea } from '@/engine/grid'
@@ -89,6 +89,18 @@ function addScene() {
 }
 function removeScene(i: number) {
   draft.value.scenes!.splice(i, 1)
+}
+// 內部：同一個聚落的固定特殊地圖
+const interiors = computed(() => {
+  void content.version
+  return Object.values(specialMaps).filter((m) => m.grid?.length && m.location === draft.value.location)
+})
+function setSpot(sc: LandmarkScene, k: 'x' | 'y', v: string) {
+  if (v === '') {
+    delete sc.spot
+    return
+  }
+  sc.spot = { ...(sc.spot ?? { x: 0, y: 0 }), [k]: Math.max(0, Math.floor(Number(v) || 0)) }
 }
 function toggleList<T extends string>(list: T[] | undefined, v: T, on: boolean): T[] | undefined {
   const set = new Set(list ?? [])
@@ -208,6 +220,12 @@ function remove() {
     </fieldset>
     <fieldset>
       <legend>場景（最多 {{ LANDMARK_LIMITS.scenes }} 個）</legend>
+      <label class="small">內部（特殊地圖） <Hint text="同一個聚落的固定特殊地圖：地標格變成入口，從地圖的出口離開時回到地標格；場景可以指定在裡面的哪一格。" />
+        <select v-model="draft.interior">
+          <option :value="undefined">沒有</option>
+          <option v-for="m in interiors" :key="m.id" :value="m.id">{{ m.name }}</option>
+        </select>
+      </label>
       <p class="small muted">條件成立時可以選的固定場景（例如解鎖的特殊區域）：付錢、花時間，在場的人加好感，交給 AI 寫經過；成人向的場景照成人場景規則詳細描寫。預設每 3 天一次，場景之間共用。</p>
       <div v-for="(sc, i) in draft.scenes ?? []" :key="i" class="scene-box">
         <div class="row"><b>場景 {{ i + 1 }}</b><span class="spacer" /><button class="small warn" @click="removeScene(i)">刪除</button></div>
@@ -218,6 +236,11 @@ function remove() {
           <label>隔幾天能再來 <input v-model.number="sc.cooldown_days" type="number" :min="LANDMARK_LIMITS.cooldown[0]" :max="LANDMARK_LIMITS.cooldown[1]" placeholder="3" /></label>
           <label>在場的人加好感 <input v-model.number="sc.affinity" type="number" :min="LANDMARK_LIMITS.affinity[0]" :max="LANDMARK_LIMITS.affinity[1]" /></label>
           <label class="check"><input v-model="sc.own_cooldown" type="checkbox" /> 自己算冷卻 <Hint text="不和這個地標的其他場景共用冷卻（例如咖啡廳的喝茶）。" /></label>
+        </div>
+        <div v-if="draft.interior" class="grid">
+          <label>在內部的 x <input :value="sc.spot?.x" type="number" min="0" placeholder="外面" @input="setSpot(sc, 'x', ($event.target as HTMLInputElement).value)" /></label>
+          <label>在內部的 y <input :value="sc.spot?.y" type="number" min="0" placeholder="外面" @input="setSpot(sc, 'y', ($event.target as HTMLInputElement).value)" /></label>
+          <label>那一格的名稱 <input v-model="sc.spot_name" :maxlength="LANDMARK_LIMITS.title_chars" placeholder="例如：米米的小房間" /></label>
         </div>
         <label class="block">說明（玩家看的） <input v-model="sc.desc" :maxlength="LANDMARK_LIMITS.desc_chars" /></label>
         <label class="block"><span>經過（交給 AI） <Hint text="這段場景是什麼；{cast} 會換成在場的人。" /></span><textarea v-model="sc.scene" rows="3" :maxlength="LANDMARK_LIMITS.scene_text_chars" /></label>

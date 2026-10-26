@@ -9,7 +9,7 @@
 import { checkBonus } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
-import { classDef, companionRules, homeRules, locationById, regionById, slaveryRules, wildEncounters, type DungeonLayerId } from './data'
+import { classDef, companionRules, homeRules, locationById, regionById, slaveryRules, specialMaps, wildEncounters, type DungeonLayerId } from './data'
 import { currentArea, currentCell, DUNGEON_LAYERS } from './grid'
 import { comfortOf, hasBed, homeOfArea } from './homes'
 import { formatMoney } from './money'
@@ -126,10 +126,11 @@ function restReport(state: GameState, hours: number, scene: string): Report {
   }
 }
 
-/** 在這裡休息被襲擊的機率（安全房 0；帳篷減半；套用存檔規則） */
+/** 在這裡休息被襲擊的機率（安全房、安全的室內 0；帳篷減半；套用存檔規則） */
 export function ambushChance(state: GameState): number {
   const area = currentArea(state)
   if (currentCell(state).kind === 'safe') return 0
+  if (area.kind === 'special' && specialMaps[area.special ?? '']?.peaceful) return 0
   // 存檔規則的倍率
   const base = Math.min(1, (companionRules.rest.ambush[area.kind] ?? 0) * gameRule(state, 'ambushMult'))
   // 露營類的工具（帳篷）：在城外紮營休息，被襲擊的機率減半

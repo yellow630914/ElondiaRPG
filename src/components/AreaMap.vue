@@ -7,6 +7,7 @@ import { homeById } from '@/engine/homes'
 import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 import { currentLight, isDark } from '@/engine/light'
+import { sceneSpots } from '@/engine/landmarks'
 import { freshKeys, stateKey } from '@/fx/seen'
 import GameIcon from './ui/GameIcon.vue'
 import type { IconName } from './ui/iconPaths'
@@ -116,6 +117,9 @@ function peopleTitle(list: PresentNpc[]): string {
   return list.map((p) => p.rec.name).join('、')
 }
 
+// 地標內部有場景的格子（例如咖啡廳的小房間）：畫一顆心
+const spots = computed(() => sceneSpots(game.state!))
+
 const rows = computed(() =>
   Array.from({ length: area.value.height }, (_, y) =>
     Array.from({ length: area.value.width }, (_, x) => {
@@ -126,7 +130,7 @@ const rows = computed(() =>
       const blocked = cell.kind === 'wall' || cell.kind === 'water'
       const who = seen ? people.value.get(`${x},${y}`) ?? [] : []
       // 沒看過的相鄰格也能點：摸黑往前走，走不過去就跳「那邊走不過去」
-      return { x, y, cell, seen, here, who, canStep: adjacent && (!seen || !blocked) }
+      return { x, y, cell, seen, here, who, spot: spots.value.get(`${x},${y}`), canStep: adjacent && (!seen || !blocked) }
     }),
   ),
 )
@@ -214,12 +218,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           class="cell"
           :class="[c.seen ? c.cell.kind : 'fog', { here: c.here, step: c.canStep, done: c.cell.done, bump: c.here && bumping, reveal: fresh.has(`${c.x},${c.y}`), trail: area.kind === 'road' && c.x < pos.x, draw: fresh.has(`t${c.x},${c.y}`) }]"
           :disabled="!c.canStep"
-          :title="c.seen ? label(c.cell) + (c.who.length ? `\n人：${peopleTitle(c.who)}` : '') : '未探索'"
+          :title="c.seen ? (c.spot ?? label(c.cell)) + (c.who.length ? `\n人：${peopleTitle(c.who)}` : '') : '未探索'"
           :style="{ backgroundImage: tile(c.cell, c.seen, c.x, c.y) }"
           @click="step(c.x, c.y)"
         >
           <template v-if="c.seen && !c.here">
-            <GameIcon v-if="gameIcon(c.cell)" class="glyph" :class="{ danger: DANGER.has(c.cell.kind) }" :name="gameIcon(c.cell)!" />
+            <GameIcon v-if="c.spot" class="glyph spot" name="heart" />
+            <GameIcon v-else-if="gameIcon(c.cell)" class="glyph" :class="{ danger: DANGER.has(c.cell.kind) }" :name="gameIcon(c.cell)!" />
             <span v-else class="emoji">{{ icon(c.cell) }}</span>
           </template>
           <span v-if="c.who.length" class="npc" :class="{ hostile: c.who.some((p) => isHostile(game.state!, p.rec)) }"><GameIcon name="user" :size="9" />{{ c.who.length > 1 ? c.who.length : '' }}</span>
@@ -264,6 +269,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .cell.here { box-shadow: inset 0 0 0 2px var(--gold-hi), 0 0 10px #f0d08388; z-index: 1; }
 .glyph { width: calc(var(--cell) * 0.55); height: calc(var(--cell) * 0.55); color: var(--gold-hi); filter: drop-shadow(0 1px 0 #000) drop-shadow(0 0 2px #000); }
 .glyph.danger { color: #ff8a70; }
+.glyph.spot { color: #ff9ec4; }
 .emoji { font-size: calc(var(--cell) * 0.5); filter: drop-shadow(0 1px 1px #000); }
 /* 換區域：地圖從暗處浮現 */
 @keyframes map-in { from { opacity: 0; filter: brightness(0.3); } }
