@@ -26512,7 +26512,7 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 2000 }, { "type": "xp", "amount": 3000 }]
+      "rewards": [{ "type": "money", "amount": 2000 }, { "type": "xp", "amount": 300 }]
     },
     {
       "id": "pol_peace_iron_cross",
@@ -26600,7 +26600,7 @@
       ],
       "rank": "A",
       "merit": 15,
-      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 300 }]
     },
     {
       "id": "pol_peace_bloodhorn",
@@ -26686,7 +26686,7 @@
       ],
       "rank": "S",
       "merit": 20,
-      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 350 }]
     },
     {
       "id": "pol_peace_crusade",
@@ -26776,7 +26776,7 @@
       ],
       "rank": "S",
       "merit": 20,
-      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 400 }]
     },
     {
       "id": "pol_war_h_rivervale",
@@ -26860,7 +26860,7 @@
       ],
       "rank": "A",
       "merit": 15,
-      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 300 }]
     },
     {
       "id": "pol_war_h_ashport",
@@ -26941,7 +26941,7 @@
       ],
       "rank": "S",
       "merit": 20,
-      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 350 }]
     },
     {
       "id": "pol_war_h_bloodplume",
@@ -27028,7 +27028,7 @@
       ],
       "rank": "S",
       "merit": 20,
-      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 400 }]
     },
     {
       "id": "pol_war_d_ashport",
@@ -27112,7 +27112,7 @@
       ],
       "rank": "A",
       "merit": 15,
-      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 3200 }]
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 300 }]
     },
     {
       "id": "pol_war_d_rivervale",
@@ -27196,7 +27196,7 @@
       ],
       "rank": "S",
       "merit": 20,
-      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 3800 }]
+      "rewards": [{ "type": "money", "amount": 2500 }, { "type": "xp", "amount": 350 }]
     },
     {
       "id": "pol_war_d_rhineburg",
@@ -27283,7 +27283,7 @@
       ],
       "rank": "S",
       "merit": 20,
-      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 4200 }]
+      "rewards": [{ "type": "money", "amount": 2800 }, { "type": "xp", "amount": 400 }]
     },
     {
       "id": "pol_acheron_gaze",
@@ -27376,7 +27376,7 @@
       ],
       "rank": "S",
       "merit": 25,
-      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 5000 }]
+      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 400 }]
     },
     {
       "id": "drg_kagni",
@@ -27470,7 +27470,7 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 6000 }]
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 300 }]
     },
     {
       "id": "drg_sinor",
@@ -27563,7 +27563,7 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 6000 }]
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 300 }]
     },
     {
       "id": "drg_sorian",
@@ -27657,7 +27657,7 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 6000 }]
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 300 }]
     },
     {
       "id": "drg_babelin",
@@ -27758,7 +27758,7 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 6000 }]
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 300 }]
     },
     {
       "id": "drg_acheron",
@@ -27839,7 +27839,7 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 5000 }, { "type": "xp", "amount": 8000 }]
+      "rewards": [{ "type": "money", "amount": 5000 }, { "type": "xp", "amount": 500 }]
     }
   ]
 }
