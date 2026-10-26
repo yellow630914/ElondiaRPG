@@ -26637,18 +26637,20 @@
           "check": { "attr": "cha", "dc": 19 },
           "success": {
             "text": "你說完了戰書，酒館裡的血角戰士們互看了一眼，然後有一半的人站起來走了出去——他們不是不敢打，是聽懂了你說的話：「打贏了，就讓魔族自己決定要不要和平。」剩下的人，舉起了酒杯：「明天，決鬥場見。」",
-            "set_flags": ["pol_p2_called"]
+            "set_flags": ["pol_p2_called"],
+            "special_map": "sm_bone_arena"
           },
           "fail": {
             "text": "你的戰書被一把撕碎了。血角派的戰士們大笑：「人類想挑戰血角？」可是笑聲之後，他們還是接下了——荒丘的規矩，誰也不能拒絕戰書。",
-            "set_flags": ["pol_p2_called"]
+            "set_flags": ["pol_p2_called"],
+            "special_map": "sm_bone_arena"
           }
         },
         {
           "id": "duel",
-          "title": "在獸骨荒丘近郊打倒血角派的戰帥",
+          "title": "在骸骨要塞的決鬥場打倒血角派的戰帥",
           "text": "骸骨要塞前的決鬥場上，血角派的戰帥扛著巨斧走了出來，身上的血紅戰紋是用自己的血畫的，身後跟著他最強的戰爭領主。整個荒丘的魔族都來看了——血角派、律法派、還有不屬於任何一派的普通人。",
-          "at": { "where": "outskirts", "location": "bone_hills" },
+          "at": { "where": "special", "special_map": "sm_bone_arena", "x": 6, "y": 2 },
           "requires": { "flags": ["pol_p2_called"] },
           "kind": "combat",
           "enemies": [["bloodhorn_warmaster", 1], ["bloodhorn_warlord", 1]],
@@ -26723,18 +26725,20 @@
           "check": { "attr": "int", "dc": 19 },
           "success": {
             "text": "你找到了原本。聖戰詔書的最後一行，被抄本省略了：「此詔於和平之日作廢，願後世不再以神之名開戰。」兩百年前的教皇，早就預見了這一天。",
-            "set_flags": ["pol_p3_truth"]
+            "set_flags": ["pol_p3_truth"],
+            "special_map": "sm_soriel_belltower"
           },
           "fail": {
             "text": "你找不到原本——可是在書庫的角落，你找到了一封兩百年前的教皇寫的私信：「我簽了聖戰詔書。願後世原諒我。」這封信，也許比詔書本身更有份量。",
-            "set_flags": ["pol_p3_truth"]
+            "set_flags": ["pol_p3_truth"],
+            "special_map": "sm_soriel_belltower"
           }
         },
         {
           "id": "bell",
-          "title": "在索里耶爾近郊的鐘樓擋下聖戰派的審判官",
+          "title": "在大教堂的鐘樓擋下聖戰派的審判官",
           "text": "鐘樓的頂層，聖戰派的大審判官穿著白金色的長袍，手裡捧著聖戰詔書的抄本，身邊站著他的審判官。鐘繩已經握在他的手裡：「鐘聲響起，聖戰就開始了。」他看見你，舉起了聖印——聖光亮得像正午。",
-          "at": { "where": "outskirts", "location": "soriel" },
+          "at": { "where": "special", "special_map": "sm_soriel_belltower", "x": 2, "y": 1 },
           "requires": { "flags": ["pol_p3_truth"] },
           "kind": "combat",
           "enemies": [["grand_inquisitor", 1], ["crusade_inquisitor", 1]],
@@ -26970,9 +26974,9 @@
       "nodes": [
         {
           "id": "guard",
-          "title": "在血羽城堡近郊突破赤翼宮廷的近衛",
+          "title": "在城牆石階上突破赤翼宮廷的近衛",
           "text": "通往城牆的石階上，赤翼近衛長站在最後一段，黑紅的鎧甲上燃燒著羽紋，身邊是他最後一名近衛。「陛下說讓你上去。」他舉起了燃燒的劍，「可是近衛的職責，是讓你證明你配上去。」",
-          "at": { "where": "outskirts", "location": "bloodplume" },
+          "at": { "where": "special", "special_map": "sm_bloodplume_stairs", "x": 5, "y": 2 },
           "requires": { "flags": ["pol_h3"] },
           "kind": "combat",
           "enemies": [["crimson_guard_captain", 1], ["crimson_royal_guard", 1]],
@@ -27225,9 +27229,9 @@
       "nodes": [
         {
           "id": "guard",
-          "title": "在萊茵堡近郊突破帝國的近衛軍",
+          "title": "在萊茵堡的城牆上突破帝國的近衛軍",
           "text": "通往城牆的石階上，帝國近衛軍統領站在最後一段，深藍的鎧甲上刻著萊茵的雙頭鷹，身邊是他最後一名近衛。「宰相大人說讓你上去。」他舉起了劍，劍身上纏著雷光，「可是近衛的職責，是讓你證明你配上去。」",
-          "at": { "where": "outskirts", "location": "rhineburg" },
+          "at": { "where": "special", "special_map": "sm_rhineburg_ramparts", "x": 6, "y": 1 },
           "requires": { "flags": ["pol_d3"] },
           "kind": "combat",
           "enemies": [["rhine_guard_marshal", 1], ["rhine_royal_guard", 1]],
@@ -27320,19 +27324,21 @@
           "check": { "attr": "fai", "dc": 20 },
           "success": {
             "text": "你走進了裂縫，沒有迷失。殘影在你身邊流過，像一條河——你看見了過去，可是你知道自己站在現在。裂縫的最深處，有兩個身影在等你。",
-            "set_flags": ["pol_gaze_in"]
+            "set_flags": ["pol_gaze_in"],
+            "special_map": "sm_sky_rift"
           },
           "fail": {
             "text": "裂縫裡的殘影差點把你吞沒——你看見自己死在每一個戰場上。可是你想起了那些你幫過的人的名字，一個一個地念出來，殘影就一層一層地退開了。裂縫的最深處，有兩個身影在等你。",
             "set_flags": ["pol_gaze_in"],
-            "effects": [{ "type": "hp", "ratio": -0.2 }]
+            "effects": [{ "type": "hp", "ratio": -0.2 }],
+            "special_map": "sm_sky_rift"
           }
         },
         {
           "id": "heroes",
           "title": "在裂縫的深處擋下回響的英雄",
           "text": "裂縫的最深處，兩個身影從殘影裡走了出來：兩百年前統一了人類諸國的英雄王，和最後一個倒在他劍下的魔族英雄。他們生前互相殺死了對方，現在，他們一起舉起了武器，對著你：「讓我們看看，這個時代的人，配不配走到這裡。」",
-          "at": { "where": "outskirts", "location": "rivervale" },
+          "at": { "where": "special", "special_map": "sm_sky_rift", "x": 7, "y": 2 },
           "requires": { "flags": ["pol_gaze_in"] },
           "kind": "combat",
           "enemies": [["echo_hero_king", 1], ["echo_champion", 1]],
@@ -27349,7 +27355,7 @@
           "id": "eye",
           "title": "回答阿契隆",
           "text": "裂縫的盡頭，沒有龍——只有一隻眼睛，大得像天空本身，裡面倒映著整片大陸的過去。一個聲音在你的腦海裡響起，像是無數個時代的人同時在說話：「我記得一切。戰爭、和平、背叛、誓約。我讓它們重演，是為了讓你們記得。」眼睛看著你，「你們會記得嗎？」",
-          "at": { "where": "outskirts", "location": "rivervale" },
+          "at": { "where": "special", "special_map": "sm_sky_rift", "x": 7, "y": 1 },
           "requires": { "flags": ["pol_gaze_passed"] },
           "kind": "choice",
           "options": [
@@ -27415,18 +27421,20 @@
           "check": { "attr": "str", "dc": 20 },
           "success": {
             "text": "你和老鐵根一起掄起了風錘，一下、兩下、三下。第十下的時候，鳴響終於沉了下來，低低地傳過整片雪原。東邊的赤與白，停了一瞬。",
-            "set_flags": ["drg_kag_steady"]
+            "set_flags": ["drg_kag_steady"],
+            "special_map": "sm_kagni_heart"
           },
           "fail": {
             "text": "你們掄到手都裂了，風錘的調子還是穩不下來。老鐵根喘著氣，乾脆把酒壺裡的酒全倒在了風錘上：「矮人的老辦法。」鳴響沉了下來——大概是酒的關係。",
-            "set_flags": ["drg_kag_steady"]
+            "set_flags": ["drg_kag_steady"],
+            "special_map": "sm_kagni_heart"
           }
         },
         {
           "id": "dragon",
-          "title": "在風錘村近郊擋下卡格尼的投影",
+          "title": "在熾寂的山腹擋下卡格尼的投影",
           "text": "雪原的交界上，空氣一半在燃燒、一半在凍結。熱量之龍的投影從赤與白之間升起——沒有形體，只有扭曲發燙的熱浪和連聲音都凍住的虛空，交替著朝你們壓過來。被祂抽乾的寂白之影，跟在祂的身後。",
-          "at": { "where": "outskirts", "location": "windhammer" },
+          "at": { "where": "special", "special_map": "sm_kagni_heart", "x": 5, "y": 1 },
           "requires": { "flags": ["drg_kag_steady"] },
           "kind": "combat",
           "enemies": [["kagni_projection", 1], ["kagni_stillshade", 1]],
@@ -27509,18 +27517,20 @@
           "check": { "attr": "int", "dc": 20 },
           "success": {
             "text": "你答：「傳說。」牆上的字一行一行地消失了，最後只剩一行：「答對了。那，來找我吧。」祠堂的地板裂開了一道縫，霧從縫裡湧了出來，通往海邊。",
-            "set_flags": ["drg_sin_answer"]
+            "set_flags": ["drg_sin_answer"],
+            "special_map": "sm_sinor_grotto"
           },
           "fail": {
             "text": "你答不出來。可是澪在你身後輕聲說：「……秘密？」牆上的字閃了一下：「接近了。」地板還是裂開了——祂好像也等不及了。",
-            "set_flags": ["drg_sin_answer"]
+            "set_flags": ["drg_sin_answer"],
+            "special_map": "sm_sinor_grotto"
           }
         },
         {
           "id": "dragon",
-          "title": "在珊瑚灣近郊擋下希諾爾的投影",
+          "title": "在霧鎖的海蝕洞擋下希諾爾的投影",
           "text": "海邊的霧濃得看不見自己的手。霧裡有一團會說話的影子，一千種聲音同時在說謎語；霧裡還有另一個你——比你慢半拍，你舉劍，它也舉劍，只是晚了一點點。",
-          "at": { "where": "outskirts", "location": "coral_bay" },
+          "at": { "where": "special", "special_map": "sm_sinor_grotto", "x": 5, "y": 1 },
           "requires": { "flags": ["drg_sin_answer"] },
           "kind": "combat",
           "enemies": [["sinor_projection", 1], ["sinor_mirror_double", 1]],
@@ -27602,19 +27612,21 @@
           "check": { "attr": "fai", "dc": 21 },
           "success": {
             "text": "你在千萬個夢之間，找到了一條沒有夢的路——那是索利安走過的路。路的盡頭，霧越來越濃，越來越亮。",
-            "set_flags": ["drg_sor_dreaming"]
+            "set_flags": ["drg_sor_dreaming"],
+            "special_map": "sm_sorian_dream"
           },
           "fail": {
             "text": "你差點迷失在別人的夢裡——一個精靈孩子三百年前的夢，一場永遠沒有結束的生日宴會。是霧鱗在你手心燙了一下，把你拉了回來。路的盡頭，霧越來越亮。",
             "set_flags": ["drg_sor_dreaming"],
-            "effects": [{ "type": "hp", "ratio": -0.1 }]
+            "effects": [{ "type": "hp", "ratio": -0.1 }],
+            "special_map": "sm_sorian_dream"
           }
         },
         {
           "id": "dragon",
-          "title": "在銀月城近郊的夢裡擋下索利安的投影",
+          "title": "在精靈千年的夢裡擋下索利安的投影",
           "text": "夢的盡頭，索利安的投影盤在一片空白上——半透明的霧與瑰麗的幻象，鱗片裡流動著無數精靈的夢。一個從千年前的夢裡走出來的騎士，擋在祂的面前。祂的聲音像搖籃曲：「守門人。你來叫醒他們？可是醒來，他們只會更寂寞。」",
-          "at": { "where": "outskirts", "location": "silvermoon" },
+          "at": { "where": "special", "special_map": "sm_sorian_dream", "x": 6, "y": 1 },
           "requires": { "flags": ["drg_sor_dreaming"] },
           "kind": "combat",
           "enemies": [["sorian_projection", 1], ["sorian_dream_knight", 1]],
@@ -27688,9 +27700,9 @@
       "nodes": [
         {
           "id": "climb",
-          "title": "在烈日草原近郊爬上不停長高的巨塔",
+          "title": "爬上不停長高的巨塔",
           "text": "巨塔的外牆一直在動，磚一塊一塊地往上疊，你踩著的那一層，下一刻就變成了下面一層。塔洛在你身邊，咬著繩子往上爬：「別往下看！」",
-          "at": { "where": "outskirts", "location": "sunscorch" },
+          "at": { "where": "special", "special_map": "sm_babelin_spire", "x": 3, "y": 7 },
           "requires": { "flags": ["drg_bab_start"] },
           "kind": "check",
           "check": { "attr": "str", "dc": 21 },
@@ -27708,7 +27720,7 @@
           "id": "dragon",
           "title": "在塔的頂端擋下巴別林的投影",
           "text": "塔的頂端，巴別林的投影從尖頂裡走了出來——不是龍，是一座會走路的塔，尖頂一層一層地往天上長，塔基的磚自己疊成了巨人，擋在你們面前。巨大的聲音從整座塔裡傳出來：「再一層！再一層就碰到了！別擋我！」",
-          "at": { "where": "outskirts", "location": "sunscorch" },
+          "at": { "where": "special", "special_map": "sm_babelin_spire", "x": 3, "y": 1 },
           "requires": { "flags": ["drg_bab_top"] },
           "kind": "combat",
           "enemies": [["babelin_projection", 1], ["babelin_brick_titan", 1]],
@@ -27797,19 +27809,21 @@
           "check": { "attr": "fai", "dc": 21 },
           "success": {
             "text": "你沒有迷失。你走過了每一個時代，記住了每一個時代的一張臉——最後，你走到了一個還沒有發生的時代面前。那裡空白一片，阿契隆在等你。",
-            "set_flags": ["drg_ach_in"]
+            "set_flags": ["drg_ach_in"],
+            "special_map": "sm_acheron_echo"
           },
           "fail": {
             "text": "裂縫裡的時代太多了，你差點忘了自己屬於哪一個。是你走過的那些故事線救了你——每一個你幫過的人的名字，都像一盞燈。你走到了空白的盡頭，阿契隆在等你。",
             "set_flags": ["drg_ach_in"],
-            "effects": [{ "type": "hp", "ratio": -0.15 }]
+            "effects": [{ "type": "hp", "ratio": -0.15 }],
+            "special_map": "sm_acheron_echo"
           }
         },
         {
           "id": "dragon",
           "title": "在千年的回響裡擋下阿契隆的投影",
           "text": "空白的盡頭，阿契隆的投影第一次以完整的形體出現：層層交錯的殘影，每一層都是一個消逝的時代，拼成了一頭比天空還大的龍。千年來所有死去的士兵，疊成了一個身影，站在祂的面前。祂的聲音是所有時代的聲音：「證明給我看——你們值得被記住。」",
-          "at": { "where": "outskirts", "location": "rivervale" },
+          "at": { "where": "special", "special_map": "sm_acheron_echo", "x": 7, "y": 3 },
           "requires": { "flags": ["drg_ach_in"] },
           "kind": "combat",
           "enemies": [["acheron_projection", 1], ["acheron_echo_army", 1]],
@@ -27826,7 +27840,7 @@
           "id": "end",
           "title": "告訴阿契隆，凡人會怎麼記住這個時代",
           "text": "那隻眼睛看著你：「我讓地下城重演最深刻的過去，讓你們不要忘記。可是你們的心太吵——吵醒了熱量、詭秘、夢境、塔。」它眨了一下，「現在，告訴我：這個時代，你們要怎麼記住？」",
-          "at": { "where": "outskirts", "location": "rivervale" },
+          "at": { "where": "special", "special_map": "sm_acheron_echo", "x": 7, "y": 1 },
           "requires": { "flags": ["drg_ach_won"] },
           "kind": "choice",
           "options": [

@@ -141,6 +141,193 @@
         "#.......#",
         "####E####"
       ]
+    },
+    "sm_bone_arena": {
+      "name": "骸骨要塞的決鬥場",
+      "location": "bone_hills",
+      "desc": "骸骨要塞前的決鬥場：巨獸肋骨圍成的圓場，地上的血沙踩下去是溫的；看臺上擠滿了血角派、律法派與不屬於任何一派的魔族。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["bloodhorn_warlord", 1]]],
+      "grid": [
+        "#############",
+        "#...........#",
+        "#..#.....#..#",
+        "#...........#",
+        "#...........#",
+        "#..#.....#..#",
+        "#...........#",
+        "######E######"
+      ],
+      "connections": [{"at": {"x": 6, "y": 7}, "to": {"area": "bone_hills/main", "x": 8, "y": 2}, "requires": {"flags": ["pol_p2_called"]}}]
+    },
+    "sm_soriel_belltower": {
+      "name": "大教堂的鐘樓",
+      "location": "soriel",
+      "desc": "索里耶爾大教堂的鐘樓：螺旋石階一層一層往上，頂上掛著兩百年前鑄的聖戰之鐘。聖戰派要在這裡敲響它。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["crusade_inquisitor", 1]]],
+      "grid": [
+        "#########",
+        "#...#...#",
+        "#...#...#",
+        "#.......#",
+        "###.#####",
+        "#.......#",
+        "#.#####.#",
+        "#.......#",
+        "####E####"
+      ],
+      "connections": [{"at": {"x": 4, "y": 8}, "to": {"area": "soriel/sanctum", "x": 10, "y": 4}, "requires": {"flags": ["pol_p3_truth"]}}]
+    },
+    "sm_bloodplume_stairs": {
+      "name": "血羽城堡的城牆石階",
+      "location": "bloodplume",
+      "desc": "通往血羽城堡城牆的最後一段石階：赤紅的旗幟在風裡翻動，赤翼宮廷的近衛守在每一個轉角。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["crimson_royal_guard", 1]]],
+      "grid": [
+        "###########",
+        "#....#....#",
+        "#.........#",
+        "###.###.###",
+        "#.........#",
+        "###.###.###",
+        "#.........#",
+        "#####E#####"
+      ],
+      "connections": [{"at": {"x": 5, "y": 7}, "to": {"area": "bloodplume/palace", "x": 8, "y": 1}, "requires": {"flags": ["pol_h3"]}}]
+    },
+    "sm_rhineburg_ramparts": {
+      "name": "萊茵堡的城牆",
+      "location": "rhineburg",
+      "desc": "萊茵堡的外城牆：垛口一個接一個，帝國的近衛軍在城牆上列陣，城下是兩百年沒有被攻破過的護城河。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["rhine_royal_guard", 1]]],
+      "grid": [
+        "#############",
+        "#...........#",
+        "#.#.#.#.#.#.#",
+        "#...........#",
+        "#####...#####",
+        "#...........#",
+        "######E######"
+      ],
+      "connections": [{"at": {"x": 6, "y": 6}, "to": {"area": "rhineburg/gate", "x": 10, "y": 2}, "requires": {"flags": ["pol_d3"]}}]
+    },
+    "sm_sky_rift": {
+      "name": "天空的裂縫",
+      "location": "rivervale",
+      "desc": "河谷鎮上空裂開的縫隙裡：腳下是兩百年前的戰場，頭頂是燒毀的城池，四周的殘影一層疊著一層，最深處有一隻睜開的眼睛。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["echo_champion", 1]]],
+      "grid": [
+        "###############",
+        "#.............#",
+        "#.~~.......~~.#",
+        "#.....###.....#",
+        "#.~~.......~~.#",
+        "#......E......#",
+        "###############"
+      ],
+      "connections": [{"at": {"x": 7, "y": 5}, "to": {"area": "rivervale/bank", "x": 0, "y": 4}, "requires": {"flags": ["pol_gaze_in"]}}]
+    },
+    "sm_kagni_heart": {
+      "name": "熾寂的山腹",
+      "location": "windhammer",
+      "desc": "風錘村下方的山腹：一半是燒得發白的熔岩，一半是寂靜無聲的冰，熱量之龍卡格尼的投影盤踞在正中央。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["kagni_stillshade", 1]]],
+      "grid": [
+        "###########",
+        "#~~.....~~#",
+        "#.........#",
+        "#..~...~..#",
+        "#.........#",
+        "#####E#####"
+      ],
+      "connections": [{"at": {"x": 5, "y": 5}, "to": {"area": "windhammer/main", "x": 6, "y": 2}, "requires": {"flags": ["drg_kag_steady"]}}]
+    },
+    "sm_sinor_grotto": {
+      "name": "霧鎖的海蝕洞",
+      "location": "coral_bay",
+      "desc": "珊瑚灣的海蝕洞：霧從水面升起，每一片水窪都映著不同的你，洞底有一個沒有名字的聲音在說話。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["sinor_mirror_double", 1]]],
+      "grid": [
+        "###########",
+        "#~~~...~~~#",
+        "#~.......~#",
+        "#...~~~...#",
+        "#.........#",
+        "#~~..E..~~#",
+        "###########"
+      ],
+      "connections": [{"at": {"x": 5, "y": 5}, "to": {"area": "coral_bay/docks", "x": 8, "y": 5}, "requires": {"flags": ["drg_sin_answer"]}}]
+    },
+    "sm_sorian_dream": {
+      "name": "精靈千年的夢",
+      "location": "silvermoon",
+      "desc": "精靈千年的夢裡：倒懸的森林，星光與霧氣凝成的路，夢境之龍索利安的投影在盡頭等著醒著的人。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["sorian_dream_knight", 1]]],
+      "grid": [
+        "#############",
+        "#.#.#...#.#.#",
+        "#...........#",
+        "#.#.#.#.#.#.#",
+        "#...........#",
+        "#.#.#...#.#.#",
+        "######E######"
+      ],
+      "connections": [{"at": {"x": 6, "y": 6}, "to": {"area": "silvermoon/noble", "x": 8, "y": 2}, "requires": {"flags": ["drg_sor_dreaming"]}}]
+    },
+    "sm_babelin_spire": {
+      "name": "巴別林的巨塔",
+      "location": "sunscorch",
+      "desc": "烈日草原上不停長高的巨塔：磚塊自己往上疊，石階繞著塔心一圈一圈往上，頂端的尖頂還在長。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["babelin_brick_titan", 1]]],
+      "grid": [
+        "#######",
+        "#.....#",
+        "###.###",
+        "#.....#",
+        "#.###.#",
+        "#.....#",
+        "###.###",
+        "#.....#",
+        "#.###.#",
+        "#.....#",
+        "###E###"
+      ],
+      "connections": [{"at": {"x": 3, "y": 10}, "to": {"area": "sunscorch/main", "x": 6, "y": 2}, "requires": {"flags": ["drg_bab_start"]}}]
+    },
+    "sm_acheron_echo": {
+      "name": "千年的回響",
+      "location": "rivervale",
+      "desc": "千年的回響裡：所有被記住的時代同時重演，城牆、戰旗與英雄的影子一排一排地站著，歷史之龍阿契隆的投影在最深處翻著書頁。",
+      "lighting": "lit",
+      "refresh": false,
+      "table": [[["acheron_echo_army", 1]]],
+      "grid": [
+        "###############",
+        "#.............#",
+        "#.#.#.#.#.#.#.#",
+        "#.............#",
+        "#.#.#.#.#.#.#.#",
+        "#.............#",
+        "#######E#######"
+      ],
+      "connections": [{"at": {"x": 7, "y": 6}, "to": {"area": "rivervale/upper", "x": 8, "y": 2}, "requires": {"flags": ["drg_ach_in"]}}]
     }
   }
 }
