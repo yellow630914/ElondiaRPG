@@ -48,16 +48,19 @@ describe('built-in stories', () => {
       ['rivervale_oath_stone', 'rivervale_cellar', 'rivervale_summit'],
       ['epic_bellringer', 'epic_undead_general', 'epic_frost_giant'],
       ['serena_golden_lotus', 'serena_councillor', 'serena_sea'],
+      ['port_seized_ship', 'port_lighthouse', 'port_charter'],
+      ['spirit_river_girl', 'spirit_upstream', 'spirit_drowned'],
+      ['amelia_lonely_night', 'amelia_white_gull', 'amelia_ring'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
       expect(levels).toEqual([5, 8, 11])
       for (let i = 1; i < ids.length; i++) expect(story(ids[i]!).start.requires?.flags?.length, ids[i]).toBeGreaterThan(0)
     }
-    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea']
+    const adult = ['lilian_successor', 'lilian_abbey', 'lilian_graduation', 'isadora_interview', 'isadora_ball', 'isadora_elope', 'aya_prayer_book', 'aya_harbor', 'aya_last_confession', 'aya_ebony_club', 'serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring']
     expect(adult.every((id) => story(id).tags?.includes('adult'))).toBe(true)
     // 角色在任務開始前就有性經驗：標非處女
-    expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
+    expect(['serena_golden_lotus', 'serena_councillor', 'serena_sea', 'amelia_lonely_night', 'amelia_white_gull', 'amelia_ring'].every((id) => story(id).tags?.includes('non_virgin'))).toBe(true)
   })
 
   it('only fights stand-in monsters, never fixed NPCs, and kills the king on the story node', () => {
