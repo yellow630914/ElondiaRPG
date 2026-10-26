@@ -71,55 +71,56 @@ const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 const IDENTITY = ['name', 'background', 'personality', 'tags'] as const
 
 /** 階段的身分改變（名字、背景、性格、標籤）：有寫的用階段的，沒寫的用預設的；同步到人際關係與隊伍裡的角色 */
+/**
+ * 欄位真的變了才寫：存檔是畫面的反應式資料，每次都換成新的物件會讓讀它的畫面不停重算
+ * （npcRecord 在畫面的 computed 裡也會呼叫）
+ */
+function put(obj: object, key: string, value: unknown) {
+  const o = obj as Record<string, unknown>
+  if (value === undefined) {
+    if (key in o) delete o[key]
+  } else if (JSON.stringify(o[key]) !== JSON.stringify(value)) {
+    o[key] = clone(value)
+  }
+}
+
 function syncIdentity(state: GameState, rec: NpcRecord, def: NpcRecord, st: NpcStage | undefined) {
   const staged = !!st && IDENTITY.some((k) => st[k] !== undefined)
   if (!staged && !rec.stagedIdentity) return
-  for (const k of IDENTITY) {
-    const v = (staged ? st![k] : undefined) ?? def[k]
-    if (v === undefined) delete rec[k]
-    else (rec as unknown as Record<string, unknown>)[k] = clone(v)
-  }
-  if (staged) rec.stagedIdentity = true
-  else delete rec.stagedIdentity
+  for (const k of IDENTITY) put(rec, k, (staged ? st![k] : undefined) ?? def[k])
+  put(rec, 'stagedIdentity', staged ? true : undefined)
   const rel = state.relationships?.[rec.id]
   if (rel) {
-    rel.name = rec.name
-    if (rec.personality) rel.personality = rec.personality
+    put(rel, 'name', rec.name)
+    if (rec.personality) put(rel, 'personality', rec.personality)
   }
   for (const c of [state.party.find((m) => m.id === rec.id), rec.character]) {
     if (!c) continue
-    c.name = rec.name
-    if (rec.background) c.background = rec.background
-    else delete c.background
+    put(c, 'name', rec.name)
+    put(c, 'background', rec.background || undefined)
   }
 }
 
 function syncPlacement(state: GameState, rec: NpcRecord, def: NpcRecord, stage: number | undefined) {
-  if (def.requires) rec.requires = clone(def.requires)
-  else delete rec.requires
-  if (def.landmark) rec.landmark = def.landmark
-  else delete rec.landmark
+  put(rec, 'requires', def.requires)
+  put(rec, 'landmark', def.landmark)
   const st = stage !== undefined ? def.stages?.[stage] : undefined
   syncIdentity(state, rec, def, st)
   if (st) {
     // 搬到新的地方
-    rec.location = st.location
-    if (st.fixed) rec.fixed = clone(st.fixed)
-    else delete rec.fixed
-    if (st.haunts?.length) rec.haunts = clone(st.haunts)
-    else delete rec.haunts
-    rec.stage = stage
+    put(rec, 'location', st.location)
+    put(rec, 'fixed', st.fixed)
+    put(rec, 'haunts', st.haunts?.length ? st.haunts : undefined)
+    put(rec, 'stage', stage)
     return
   }
   if (rec.stage !== undefined) {
     // 條件不再成立：回到原本的設定
-    rec.location = def.location
-    if (def.haunts?.length) rec.haunts = clone(def.haunts)
-    else delete rec.haunts
+    put(rec, 'location', def.location)
+    put(rec, 'haunts', def.haunts?.length ? def.haunts : undefined)
     delete rec.stage
   }
-  if (def.fixed) rec.fixed = clone(def.fixed)
-  else delete rec.fixed
+  put(rec, 'fixed', def.fixed)
 }
 
 export function registerNpc(state: GameState, rec: NpcRecord): NpcRecord {

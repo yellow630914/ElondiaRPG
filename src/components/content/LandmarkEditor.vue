@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, landmarks, landmarkTypes, locationById, perkRules } from '@/engine/data'
+import { ATTR_IDS, attrName, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkRules } from '@/engine/data'
+import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
+import { BODIES, BODY_NAME } from '@/engine/traits'
 import { settlementArea } from '@/engine/grid'
 import { builtinLandmark, LANDMARK_EFFECTS, LANDMARK_LIMITS, landmarkTraining, landmarkUsage, type LandmarkMod } from '@/engine/landmarkMods'
 import { builtinPerk } from '@/engine/mods'
@@ -13,7 +15,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import FlagInput from './FlagInput.vue'
 
-// 城鎮特色地標的編輯表單：名稱、圖示、說明、AI 的氛圍、類型、位置，以及開放條件、參訪、探索、打工與受訓。
+// 城鎮特色地標的編輯表單：名稱、圖示、說明、AI 的氛圍、類型、位置，以及開放條件、參訪、場景、探索、打工與受訓。
 // 內建的不能換聚落、不能刪除
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()
@@ -27,6 +29,7 @@ function current(): Draft {
   const l = clone(landmarks[props.id]!)
   return {
     scene: '', ...l, open: l.open ?? {}, ...(builtinLandmark(props.id) ? {} : { custom: true }),
+    scenes: (l.scenes ?? []).map((sc) => ({ ...sc, requires: sc.requires ?? {}, cast: sc.cast ?? [], effects: sc.effects ?? [] })),
     train: landmarkTraining(props.id), flagsText: (l.open?.flags ?? []).join('、'), flagsNoneText: (l.open?.flags_none ?? []).join('、'),
   }
 }
@@ -79,6 +82,19 @@ const splitFlags = (t: string) => t.split(/[、,，\s]+/).map((x) => x.trim()).f
 function toggleVisit(on: boolean) {
   if (on) draft.value.visit = { title: '參訪', hours: 0.5, effects: [] }
   else delete draft.value.visit
+}
+// 場景
+function addScene() {
+  (draft.value.scenes ??= []).push({ title: '新的場景', scene: '', hours: 2, requires: {}, cast: [], effects: [] })
+}
+function removeScene(i: number) {
+  draft.value.scenes!.splice(i, 1)
+}
+function toggleList<T extends string>(list: T[] | undefined, v: T, on: boolean): T[] | undefined {
+  const set = new Set(list ?? [])
+  if (on) set.add(v)
+  else set.delete(v)
+  return set.size ? [...set] : undefined
 }
 function toggleExplore(on: boolean) {
   if (on) draft.value.explore = { title: '四處探索', attr: 'int', dc: 12, hours: 2, effects: [{ type: 'money', amount: 30 }] }
@@ -169,6 +185,7 @@ function remove() {
         <label>至少要有的聲望（這裡的勢力） <input v-model.number="open.min_reputation" type="number" :min="LANDMARK_LIMITS.reputation[0]" :max="LANDMARK_LIMITS.reputation[1]" /></label>
       </div>
       <label class="check small"><input v-model="open.official" type="checkbox" /> 官方場所 <Hint text="逃亡奴隸不能用。" /></label>
+      <label class="check small"><input v-model="open.adult" type="checkbox" /> 成人向的場所 <Hint text="沒有開啟成人向時不開放，地圖上也不顯示。" /></label>
       <div class="grid">
         <label>劇情旗標成立時才開放 <FlagInput :model-value="splitFlags(draft.flagsText)" @update:model-value="draft.flagsText = ($event ?? []).join('、')" /></label>
         <label>這些旗標成立時不開放 <FlagInput :model-value="splitFlags(draft.flagsNoneText)" @update:model-value="draft.flagsNoneText = ($event ?? []).join('、')" /></label>
@@ -188,6 +205,52 @@ function remove() {
         <label class="block">說明 <input v-model="draft.visit.desc" :maxlength="LANDMARK_LIMITS.desc_chars" /></label>
         <div class="small">效果（最多 {{ LANDMARK_LIMITS.effects }} 個）：<EffectsEditor v-model="draft.visit.effects" :types="LANDMARK_EFFECTS" /></div>
       </template>
+    </fieldset>
+    <fieldset>
+      <legend>場景（最多 {{ LANDMARK_LIMITS.scenes }} 個）</legend>
+      <p class="small muted">條件成立時可以選的固定場景（例如解鎖的特殊區域）：付錢、花時間，在場的人加好感，交給 AI 寫經過；成人向的場景照成人場景規則詳細描寫。預設每 3 天一次，場景之間共用。</p>
+      <div v-for="(sc, i) in draft.scenes ?? []" :key="i" class="scene-box">
+        <div class="row"><b>場景 {{ i + 1 }}</b><span class="spacer" /><button class="small warn" @click="removeScene(i)">刪除</button></div>
+        <div class="grid">
+          <label>名稱 <input v-model="sc.title" :maxlength="LANDMARK_LIMITS.title_chars" /></label>
+          <label>花費（白鸛） <input v-model.number="sc.money_cc" type="number" min="0" /></label>
+          <label>時數 <input v-model.number="sc.hours" type="number" step="0.5" :min="LANDMARK_LIMITS.hours[0]" :max="LANDMARK_LIMITS.hours[1]" /></label>
+          <label>隔幾天能再來 <input v-model.number="sc.cooldown_days" type="number" :min="LANDMARK_LIMITS.cooldown[0]" :max="LANDMARK_LIMITS.cooldown[1]" placeholder="3" /></label>
+          <label>在場的人加好感 <input v-model.number="sc.affinity" type="number" :min="LANDMARK_LIMITS.affinity[0]" :max="LANDMARK_LIMITS.affinity[1]" /></label>
+          <label class="check"><input v-model="sc.own_cooldown" type="checkbox" /> 自己算冷卻 <Hint text="不和這個地標的其他場景共用冷卻（例如咖啡廳的喝茶）。" /></label>
+        </div>
+        <label class="block">說明（玩家看的） <input v-model="sc.desc" :maxlength="LANDMARK_LIMITS.desc_chars" /></label>
+        <label class="block"><span>經過（交給 AI） <Hint text="這段場景是什麼；{cast} 會換成在場的人。" /></span><textarea v-model="sc.scene" rows="3" :maxlength="LANDMARK_LIMITS.scene_text_chars" /></label>
+        <div class="row checks small">
+          <span>內容標籤：</span>
+          <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
+            <input type="checkbox" :checked="sc.tags?.includes(t)" @change="sc.tags = toggleList(sc.tags, t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
+          </label>
+        </div>
+        <div class="row checks small">
+          <span>只給這些主角 <Hint text="依主角的體型；都不勾＝都可以。" />：</span>
+          <label v-for="b in BODIES" :key="b" class="check">
+            <input type="checkbox" :checked="sc.pc_body?.includes(b)" @change="sc.pc_body = toggleList(sc.pc_body, b, ($event.target as HTMLInputElement).checked)" /> {{ BODY_NAME[b] }}
+          </label>
+        </div>
+        <div class="grid">
+          <label>這些旗標成立時才出現 <FlagInput v-model="sc.requires!.flags" /></label>
+          <label>這些旗標成立時不出現 <FlagInput v-model="sc.requires!.flags_none" /></label>
+          <label>任一個成立時出現 <FlagInput v-model="sc.requires!.flags_any" /></label>
+        </div>
+        <div class="small">在場的固定 NPC（最多 {{ LANDMARK_LIMITS.cast }} 個） <Hint text="寫了旗標的人，旗標成立才在場；沒寫的人一定在場（死了或被抓走時這個場景不出現）。" /></div>
+        <div v-for="(c, j) in sc.cast ?? []" :key="j" class="grid">
+          <label>角色 <select v-model="c.npc"><option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option></select></label>
+          <label>這些旗標成立才在場 <FlagInput v-model="c.flags" /></label>
+          <label class="check"><button class="small" @click="sc.cast!.splice(j, 1)">移除</button></label>
+        </div>
+        <div class="row">
+          <button class="small" :disabled="(sc.cast?.length ?? 0) >= LANDMARK_LIMITS.cast" @click="(sc.cast ??= []).push({ npc: namedNpcs[0]!.id })">＋ 加一個角色</button>
+          <label class="small">有人不在場時代替的人 <input v-model="sc.extras" :maxlength="LANDMARK_LIMITS.extras_chars" placeholder="例如：其他不知名的魅魔" /></label>
+        </div>
+        <div class="small">效果（最多 {{ LANDMARK_LIMITS.effects }} 個）：<EffectsEditor v-model="sc.effects" :types="LANDMARK_EFFECTS" /></div>
+      </div>
+      <button class="small" :disabled="(draft.scenes?.length ?? 0) >= LANDMARK_LIMITS.scenes" @click="addScene">＋ 新增場景</button>
     </fieldset>
     <fieldset>
       <legend>探索</legend>
@@ -231,3 +294,6 @@ function remove() {
 </template>
 
 <style scoped src="./editor.css"></style>
+<style scoped>
+.scene-box { display: grid; gap: 6px; border: 1px dashed var(--border); border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+</style>

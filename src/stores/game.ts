@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { sanitizeRules, type NumericRule } from '@/engine/gameRules'
-import { visitLandmark } from '@/engine/landmarks'
+import { playLandmarkScene, visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
 import * as deadlines from '@/engine/deadlines'
@@ -1004,6 +1004,8 @@ export const useGame = defineStore('game', () => {
     templeHeal: () => run(town.templeHeal),
     /** 參訪站著的地標 */
     visitLandmark: () => run(visitLandmark),
+    /** 選站著的地標上的場景 */
+    playLandmarkScene: (index: number) => run((s) => playLandmarkScene(s, index)),
     /** 把生成的人存成固定 NPC（存進目前的世界） */
     promoteNpc: (id: string) => run((s) => {
       useContent().promoteNpc(s, id)

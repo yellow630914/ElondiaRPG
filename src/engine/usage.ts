@@ -2,7 +2,7 @@
 // 檢查兩種地方：其他內容（任務、固定 NPC、物品……），以及目前載入的存檔。
 // 其他存檔要等讀檔時才知道；讀檔時的清理見 state.ts 的 migrate。
 
-import { itemRules, npcs as namedNpcs, perkRules, shopRules, specialMaps, stories, type StoryDef, type StoryOutcome } from './data'
+import { itemRules, landmarks, npcs as namedNpcs, perkRules, shopRules, specialMaps, stories, type StoryDef, type StoryOutcome } from './data'
 import type { RewardEffect } from './effects'
 import { gearSpecOf } from './gear'
 import { furnitureIn } from './homes'
@@ -116,6 +116,9 @@ export function npcUsage(id: string, state?: GameState | null): string[] {
     if (where.length) out.push(`特殊任務「${s.title}」的${[...new Set(where)].join('、')}`)
   }
   for (const n of namedNpcs) if (n.id !== id && n.squad?.members.includes(id)) out.push(`「${n.name}」的小隊「${n.squad.name}」的隊員`)
+  for (const l of Object.values(landmarks)) {
+    for (const sc of l.scenes ?? []) if (sc.cast?.some((c) => c.npc === id) || sc.effects?.some((e) => e.type === 'affinity' && e.npc === id)) out.push(`地標「${l.name}」的場景「${sc.title}」`)
+  }
   if (state) {
     const m = state.party.find((x) => x.id === id)
     if (m) out.push(`目前存檔的隊伍（${m.name}）`)

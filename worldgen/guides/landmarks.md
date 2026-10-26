@@ -31,6 +31,8 @@
 | `open.flags`、`open.flags_none` | 字串陣列 | 各最多 4 個，每個 ≤ 40 字 | 劇情旗標：這些成立、那些不成立時才開放（空白換成 `_`） |
 | `open.min_reputation` | 整數 | 1～100 | 在**這個聚落所屬勢力**的聲望至少要多少 |
 | `open.official` | `true` | | 官方場所：逃亡奴隸不能用 |
+| `open.hidden` | `true` | 要有 `open.flags` 或 `open.flags_none` | 旗標的條件不成立時不顯示：地圖上是普通的道路（例如完成任務才出現的店、秘密俱樂部） |
+| `open.adult` | `true` | | 成人向的場所：沒有開啟成人向時不開放，地圖上也不顯示 |
 | `visit.title` | 字串 | 1～16 字 | **必填**，沒有時整個 `visit` 拿掉 |
 | `visit.desc` | 字串 | ≤ 200 字 | |
 | `visit.money_cc` | 整數 | 1～100000 | 參訪費（白鸛幣）；0 不寫 |
@@ -49,6 +51,7 @@
 | `work.dc` | 整數 | 5～30 | 沒寫時 12 |
 | `work.rate_cc` | 整數 | 0～100 | 時薪（白鸛幣）；沒寫時 3 |
 | `work.desc` | 字串 | ≤ 200 字 | 沒寫時「在這裡幫忙。」；打工的名稱固定是「<地標名稱>的雜務」 |
+| `scenes` | 場景陣列 | 最多 8 個，見 2.3 | 條件成立時可以選的固定場景（例如解鎖的特殊區域） |
 
 地標的類型（`data/world/landmarks.json` 的 `types`）：
 
@@ -172,6 +175,27 @@ for (const b of blocks) {
 | `perk` | `perk`、`options`、`direct` | 可以選的特質 id |
 | `condition` | `condition`、`add` | `blessed` `cheered` `honed` `relaxed` `well_rested` `tipsy` `shaken` `punished` `fed_light` `fed_fine` `fed_well` `fed_feast` `fed_legend`；`add: false` 是拿掉 |
 | `tattoo` | `template`（圖樣 id）或自己描述 | 見 [statuses-perks-tattoos.md](statuses-perks-tattoos.md) |
+
+### 2.3 場景（`scenes`）
+
+條件成立時可以選的固定場景：付錢、花時間，在場的固定 NPC 加好感，得到效果，AI 照 `scene` 寫經過（標了成人向的照成人場景規則詳細描寫）。預設每 3 天一次，同一個地標的場景共用冷卻。系統說明見 [LANDMARKS](../../docs/LANDMARKS.md) 第 6 節。
+
+| 欄位 | 型別 | 範圍 | 說明 |
+|---|---|---|---|
+| `title` | 字串 | 1～16 字 | **必填**：按鈕的名稱；同一個地標裡不要重複 |
+| `scene` | 字串 | 1～400 字 | **必填**：交給 AI 的經過。`{cast}` 換成在場的人 |
+| `desc` | 字串 | ≤ 200 字 | 地點面板的說明（給玩家看） |
+| `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling` | 內容標籤：設定關掉的標籤不出現；`adult` 的場景交給 AI 時標成成人場景 |
+| `requires.flags`、`requires.flags_none`、`requires.flags_any` | 字串陣列 | 各最多 4 個 | 劇情旗標：成立／不成立／任一個成立時才出現 |
+| `pc_body` | 字串陣列 | `masc`、`fem`、`andro` | 只給這些體型的主角；三個都寫或都不寫＝都可以 |
+| `cast` | 陣列 | 最多 6 個 | 登場的固定 NPC：`{ "npc": "<id>", "flags": [...] }`。寫了 `flags` 的，旗標成立才在場；沒寫的一定在場（死了或被抓走時整個場景不出現） |
+| `extras` | 字串 | ≤ 30 字 | 有寫了旗標的人不在場時，代替的人（例如「其他不知名的魅魔」） |
+| `money_cc` | 整數 | 1～100000 | 花費；0 不寫 |
+| `hours` | 數字 | 0.5～24，0.5 的倍數 | 沒寫時 2 |
+| `effects` | 效果陣列 | 最多 6 個，見 2.2 | |
+| `affinity` | 整數 | 1～30 | 在場的每個固定 NPC 加的好感 |
+| `cooldown_days` | 整數 | 1～60，不要寫 3 | 隔幾天才能再來；預設 3 |
+| `own_cooldown` | `true` | | 自己算冷卻，不和其他場景共用（例如咖啡廳前廳的喝茶） |
 
 ## 3. 可以引用什麼
 

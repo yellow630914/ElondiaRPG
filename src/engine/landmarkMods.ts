@@ -2,13 +2,15 @@
 // 內建的地標每一項都可以改（位置只能在同一個聚落裡移動），不能刪除；自建的地標可以擺在任何聚落，沒有被用到時可以刪除。
 
 import {
-  ATTR_IDS, geography, isLandmarkId, landmarkJob, landmarks, landmarkTypes, npcs as namedNpcs, perkRules, stories, workRules, type AttrId, type LandmarkDef,
+  ATTR_IDS, geography, isLandmarkId, type LandmarkScene, landmarkJob, landmarks, landmarkTypes, npcs as namedNpcs, perkRules, stories, workRules, type AttrId, type LandmarkDef,
 } from './data'
 import { cleanFlag } from './storyFlags'
 import { sanitizeEffects } from './storyMods'
 import type { RewardEffect } from './effects'
 import { blockKeys, CELL_ICON, invalidateBlocks, settlementArea, type CellKind } from './grid'
 import { isLotCell } from './homes'
+import { CONTENT_TAG_IDS } from './content'
+import { BODIES } from './traits'
 
 export interface LandmarkMod extends LandmarkDef {
   custom?: boolean
@@ -25,6 +27,7 @@ export function landmarkSpotProblem(id: string, at: { area: string; x: number; y
 
 export const LANDMARK_LIMITS = {
   name_chars: 12, desc_chars: 200, scene_chars: 200, types: 4, title_chars: 16, flags: 4,
+  scenes: 8, scene_text_chars: 400, cast: 6, extras_chars: 30, affinity: [0, 30],
   money: [0, 100_000], hours: [0.5, 24], cooldown: [1, 60], dc: [5, 30], rate_cc: [0, 100], reputation: [0, 100], effects: 6,
 } as const
 /** 參訪與探索可以用的效果（不能讓主角淪為奴隸、開始特殊任務或讓人入隊） */
@@ -97,6 +100,7 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>): Land
     const rep = num(raw.open.min_reputation, L.reputation, 0)
     if (rep) o.min_reputation = rep
     if (raw.open.official) o.official = true
+    if (raw.open.adult) o.adult = true
     // 條件成立前不顯示：要有旗標的條件才有意義
     if (raw.open.hidden && (f.length || fn.length)) o.hidden = true
     if (Object.keys(o).length) out.open = o
@@ -137,7 +141,48 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>): Land
       desc: str(raw.work.desc, L.desc_chars) || '在這裡幫忙。',
     }
   }
+  // 場景：要有名稱與經過
+  const scenes = (Array.isArray(raw.scenes) ? raw.scenes : []).map(sanitizeScene).filter((x): x is LandmarkScene => !!x).slice(0, L.scenes)
+  if (scenes.length) out.scenes = scenes
   if (!base) out.custom = true
+  return out
+}
+
+/** 整理一個場景（docs/LANDMARKS.md 第 6 節）；沒有名稱或經過時丟掉 */
+export function sanitizeScene(raw: Partial<LandmarkScene> | undefined): LandmarkScene | undefined {
+  const L = LANDMARK_LIMITS
+  const title = str(raw?.title, L.title_chars)
+  const scene = str(raw?.scene, L.scene_text_chars)
+  if (!raw || !title || !scene) return undefined
+  const out: LandmarkScene = { title, scene }
+  if (str(raw.desc, L.desc_chars)) out.desc = str(raw.desc, L.desc_chars)
+  const tags = CONTENT_TAG_IDS.filter((t) => Array.isArray(raw.tags) && raw.tags.includes(t))
+  if (tags.length) out.tags = tags
+  const req: NonNullable<LandmarkScene['requires']> = {}
+  for (const k of ['flags', 'flags_none', 'flags_any'] as const) {
+    const f = flags(raw.requires?.[k])
+    if (f.length) req[k] = f
+  }
+  if (Object.keys(req).length) out.requires = req
+  const bodies = BODIES.filter((b) => Array.isArray(raw.pc_body) && raw.pc_body.includes(b))
+  if (bodies.length && bodies.length < BODIES.length) out.pc_body = bodies
+  const ids = new Set(namedNpcs.map((n) => n.id))
+  const cast = (Array.isArray(raw.cast) ? raw.cast : []).filter((c) => c && ids.has(c.npc))
+    .map((c) => ({ npc: c.npc, ...(flags(c.flags).length ? { flags: flags(c.flags) } : {}) }))
+  const seen = new Set<string>()
+  const uniq = cast.filter((c) => !seen.has(c.npc) && !!seen.add(c.npc)).slice(0, L.cast)
+  if (uniq.length) out.cast = uniq
+  if (str(raw.extras, L.extras_chars)) out.extras = str(raw.extras, L.extras_chars)
+  const money = num(raw.money_cc, L.money, 0)
+  if (money) out.money_cc = money
+  out.hours = num(raw.hours, L.hours, 2, 0.5)
+  const fx = effects(raw.effects)
+  if (fx.length) out.effects = fx
+  const aff = num(raw.affinity, L.affinity, 0)
+  if (aff) out.affinity = aff
+  const cd = num(raw.cooldown_days, L.cooldown, 3)
+  if (cd !== 3) out.cooldown_days = cd
+  if (raw.own_cooldown) out.own_cooldown = true
   return out
 }
 

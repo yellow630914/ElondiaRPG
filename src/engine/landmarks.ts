@@ -1,12 +1,15 @@
 // 城鎮的特色地標：遊戲中的功能（docs/LANDMARKS.md）。資料在 data/world/landmarks.json，內容編輯器見 landmarkMods.ts。
-// 開放條件、參訪（付錢或花時間換效果）、探索（主動行動的檢定）；打工與受訓走 work.ts、perkActions.ts（格子的種類就是地標 id）。
+// 開放條件、參訪（付錢或花時間換效果）、探索（主動行動的檢定）、場景（條件成立時的固定場景）；打工與受訓走 work.ts、perkActions.ts（格子的種類就是地標 id）。
 
-import { landmarkDef, locationById, type Degree, type LandmarkDef } from './data'
+import { landmarkDef, locationById, npcs as namedNpcs, type Degree, type LandmarkDef, type LandmarkScene } from './data'
+import { adultContent, tagsAllowed } from './content'
+import { characterBody } from './look'
+import { npcFree } from './story'
 import { applyEffects } from './effects'
 import { currentArea, currentCell } from './grid'
 import { isNight } from './light'
 import { formatMoney } from './money'
-import { isFugitive } from './party'
+import { isFugitive, pcOf } from './party'
 import { reputationOf } from './security'
 import { condMet } from './storyFlags'
 import { baseReport } from './town'
@@ -39,6 +42,7 @@ export function landmarkClosed(state: GameState, l: LandmarkDef): string | undef
   if (!condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return `${l.name}現在不開放`
   if (o.min_reputation && reputationOf(state, locationById(l.location).faction) < o.min_reputation) return `要在這裡的勢力有 ${o.min_reputation} 點聲望，${l.name}才讓你進去`
   if (o.official && isFugitive(state)) return `${l.name}的人認出了你身上的契約印記，不讓你進去`
+  if (o.adult && !adultContent()) return `${l.name}現在不開放`
   return undefined
 }
 
@@ -115,4 +119,92 @@ export function applyExplore(state: GameState, report: Report, degree: Degree): 
   if (degree !== 'critical' && degree !== 'success') return `在${l.name}${e.title}，${degree === 'partial' ? '有些頭緒，但沒找到什麼' : '一無所獲'}。`
   applyEffects(state, report, [...e.effects, ...(degree === 'critical' ? e.critical ?? [] : [])])
   return `在${l.name}${e.title}，有所收穫。`
+}
+
+// ---- 場景（docs/LANDMARKS.md 第 6 節） ----
+
+const npcName = (id: string) => namedNpcs.find((n) => n.id === id)?.name ?? id
+
+/** 場景裡現在在場的固定 NPC；有寫旗標的人不在場時 missing（換成代替的人） */
+export function sceneCast(state: GameState, sc: LandmarkScene): { ids: string[]; missing: boolean } {
+  const ids: string[] = []
+  let missing = false
+  for (const c of sc.cast ?? []) {
+    if (npcFree(state, c.npc) && (!c.flags?.length || condMet(state, { flags: c.flags }))) ids.push(c.npc)
+    else missing = true
+  }
+  return { ids, missing }
+}
+
+/** 場景現在出不出現：內容標籤、主角的體型、劇情旗標；一定要在場的人（沒寫旗標的）死了或被抓走時也不出現 */
+export function sceneShown(state: GameState, sc: LandmarkScene): boolean {
+  if (!tagsAllowed(sc.tags)) return false
+  if (sc.pc_body?.length && !sc.pc_body.includes(characterBody(pcOf(state)))) return false
+  if (sc.requires && !condMet(state, sc.requires)) return false
+  return (sc.cast ?? []).every((c) => c.flags?.length || npcFree(state, c.npc))
+}
+
+/** 站在這裡現在出現的場景（index 是地標上的順序） */
+export function scenesHere(state: GameState): { index: number; scene: LandmarkScene }[] {
+  const l = landmarkHere(state)
+  if (!l?.scenes) return []
+  return l.scenes.map((scene, index) => ({ index, scene })).filter(({ scene }) => sceneShown(state, scene))
+}
+
+/** 還要等幾天才能再選這個場景（0：現在可以）；沒有勾自己算冷卻的場景共用地標的冷卻 */
+export function sceneWait(state: GameState, l: LandmarkDef, sc: LandmarkScene): number {
+  const r = state.landmarks?.[l.id]
+  const last = sc.own_cooldown ? r?.scenes?.[sc.title] : r?.scene
+  if (last === undefined) return 0
+  return Math.max(0, last + (sc.cooldown_days ?? 3) - state.time.day)
+}
+
+/** 為什麼現在不能選這個場景（可以時是 undefined） */
+export function sceneBlocked(state: GameState, index: number): string | undefined {
+  const l = landmarkHere(state)
+  const sc = l?.scenes?.[index]
+  if (!l || !sc || !sceneShown(state, sc)) return '這裡沒有這個場景'
+  const closed = landmarkClosed(state, l)
+  if (closed) return closed
+  const wait = sceneWait(state, l, sc)
+  if (wait) return `${wait} 天後才能再來`
+  if ((sc.money_cc ?? 0) > state.money_cc) return `錢不夠（要 ${formatMoney(sc.money_cc!)}）`
+  return undefined
+}
+
+/** 場景裡在場的人的名字（有人不在場時接上代替的人） */
+export function sceneCastNames(state: GameState, sc: LandmarkScene): string[] {
+  const { ids, missing } = sceneCast(state, sc)
+  const names = ids.map(npcName)
+  if (missing && sc.extras) names.push(sc.extras)
+  return names
+}
+
+/** 場景交給 AI 的文字：{cast} 換成在場的人 */
+export function sceneText(state: GameState, sc: LandmarkScene): string {
+  return sc.scene.replace(/\{cast\}/g, sceneCastNames(state, sc).join('、') || sc.extras || '在場的人')
+}
+
+/** 選一個地標的場景：付錢、花時間，在場的人加好感，得到設定的效果；成人向的場景交給 AI 詳細描寫 */
+export function playLandmarkScene(state: GameState, index: number): Report {
+  const why = sceneBlocked(state, index)
+  if (why) throw new Error(why)
+  const l = landmarkHere(state)!
+  const sc = l.scenes![index]!
+  const { ids } = sceneCast(state, sc)
+  const text = sceneText(state, sc)
+  const report = baseReport(state, 'event', sc.hours ?? 2)
+  report.location.scene = `${locationById(state.location).name}・${l.name}・${sc.title}${l.scene ? `（${l.scene.slice(0, 80)}）` : ''}`
+  report.lore_keys!.push(l.name, ...ids.map(npcName))
+  applyEffects(state, report, [
+    ...(sc.money_cc ? [{ type: 'money' as const, amount: -sc.money_cc }] : []),
+    ...(sc.affinity ? ids.map((npc) => ({ type: 'affinity' as const, npc, delta: sc.affinity!, reason: `${l.name}・${sc.title}` })) : []),
+    ...(sc.effects ?? []),
+  ])
+  const r = record(state, l.id)
+  if (sc.own_cooldown) (r.scenes ??= {})[sc.title] = state.time.day
+  else r.scene = state.time.day
+  report.outcome = { result: 'success', summary: `在${l.name}${sc.title}：${text}` }
+  if (sc.tags?.includes('adult') && adultContent()) report.narration = { ...report.narration, length: 'long', adult_scene: text }
+  return commitReport(state, report)
 }

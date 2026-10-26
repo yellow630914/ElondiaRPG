@@ -369,6 +369,36 @@ export interface LandmarkDef {
   explore?: LandmarkExplore
   /** 在這裡打工（和設施的工作一樣，見 work.ts） */
   work?: { attr: AttrId; dc: number; rate_cc: number; desc: string }
+  /** 場景：條件成立時可以選的固定場景（例如解鎖的特殊區域），隔幾天才能再來（預設 3 天，場景之間共用） */
+  scenes?: LandmarkScene[]
+}
+/** 地標的場景（docs/LANDMARKS.md 第 6 節） */
+export interface LandmarkScene {
+  /** 名稱（按鈕） */
+  title: string
+  /** 地點面板的說明 */
+  desc?: string
+  /** 交給 AI 的經過：這段場景是什麼（{cast} 換成在場的人） */
+  scene: string
+  /** 內容標籤（成人向的場景照成人場景規則詳細描寫；設定關掉的標籤不出現） */
+  tags?: string[]
+  /** 出現的條件：劇情旗標 */
+  requires?: { flags?: string[]; flags_none?: string[]; flags_any?: string[] }
+  /** 只給這些體型的主角（不寫＝都可以） */
+  pc_body?: ('masc' | 'fem' | 'andro')[]
+  /** 登場的固定 NPC：寫了旗標的，旗標成立才在場；死了、被抓走的不在場 */
+  cast?: { npc: string; flags?: string[] }[]
+  /** 有人不在場時，代替的人（例如「其他不知名的魅魔」） */
+  extras?: string
+  money_cc?: number
+  hours?: number
+  effects?: RewardEffect[]
+  /** 在場的每個固定 NPC 加的好感 */
+  affinity?: number
+  /** 隔幾天才能再來（預設 3） */
+  cooldown_days?: number
+  /** 自己算冷卻，不和這個地標的其他場景共用（例如咖啡廳的喝茶） */
+  own_cooldown?: boolean
 }
 export interface LandmarkOpen {
   /** 只在白天（6～18 時）或只在夜裡開放 */
@@ -382,6 +412,8 @@ export interface LandmarkOpen {
   min_reputation?: number
   /** 官方場所：逃亡奴隸不能用 */
   official?: boolean
+  /** 成人向的場所：沒有開啟成人向時不開放也不顯示 */
+  adult?: boolean
 }
 export interface LandmarkVisit {
   title: string

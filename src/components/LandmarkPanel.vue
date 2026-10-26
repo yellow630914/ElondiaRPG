@@ -1,21 +1,23 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { blockedReason, landmarkClosed, landmarkHere, sceneBlocked, sceneCastNames, scenesHere } from '@/engine/landmarks'
 import { attrName } from '@/engine/data'
-import { blockedReason, landmarkClosed, landmarkHere } from '@/engine/landmarks'
 import { formatMoney } from '@/engine/money'
 import { effectText } from '@/engine/trade'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import ContentTagChips from './ContentTagChips.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 
-// 站在城鎮的特色地標上：開放的狀態、參訪、探索（data/world/landmarks.json，見 docs/LANDMARKS.md）
+// 站在城鎮的特色地標上：開放的狀態、參訪、場景、探索（data/world/landmarks.json，見 docs/LANDMARKS.md）
 const game = useGame()
 const s = computed(() => game.state!)
 const l = computed(() => landmarkHere(s.value))
 const closed = computed(() => (l.value ? landmarkClosed(s.value, l.value) : undefined))
 const visitBlocked = computed(() => (l.value?.visit ? blockedReason(s.value, 'visit') : undefined))
 const exploreBlocked = computed(() => (l.value?.explore ? blockedReason(s.value, 'explore') : undefined))
+const scenes = computed(() => scenesHere(s.value).map((x) => ({ ...x, blocked: sceneBlocked(s.value, x.index), cast: sceneCastNames(s.value, x.scene).join('、') })))
 const gains = (list: { type: string }[] = []) => list.map((e) => effectText(s.value, e as never)).join('、')
 const text = ref('')
 const use = ref('')
@@ -38,6 +40,14 @@ function explore() {
       <p v-if="l.visit.desc" class="muted">{{ l.visit.desc }}</p>
       <p v-if="gains(l.visit.effects)" class="muted">得到：{{ gains(l.visit.effects) }}</p>
       <button class="small" :disabled="!!visitBlocked || game.judging || !!s.pendingAction" :title="visitBlocked ?? ''" @click="game.visitLandmark()">{{ visitBlocked ?? l.visit.title }}</button>
+    </div>
+    <div v-for="x in scenes" :key="x.index" class="item">
+      <div><strong class="ttl"><GameIcon name="heart" :size="13" /> {{ x.scene.title }}</strong> <ContentTagChips :tags="x.scene.tags" />
+        <span class="muted">（{{ x.scene.money_cc ? `${formatMoney(x.scene.money_cc)}・` : '' }}{{ x.scene.hours ?? 2 }} 小時・{{ (x.scene.cooldown_days ?? 3) > 1 ? `每 ${x.scene.cooldown_days ?? 3} 天一次` : '每天一次' }}）</span>
+      </div>
+      <p v-if="x.scene.desc" class="muted">{{ x.scene.desc }}</p>
+      <p v-if="x.cast" class="muted">在場：{{ x.cast }}</p>
+      <button class="small" :disabled="!!x.blocked || game.judging || !!s.pendingAction" :title="x.blocked ?? ''" @click="game.playLandmarkScene(x.index)">{{ x.blocked ?? x.scene.title }}</button>
     </div>
     <FoldMenu v-if="l.explore" :id="`landmark.explore`" class="item" icon="search" :label="l.explore.title" :detail="`${attrName(l.explore.attr)}檢定，參考 DC ${l.explore.dc}・${l.explore.hours} 小時`">
       <p v-if="l.explore.desc" class="muted">{{ l.explore.desc }}</p>

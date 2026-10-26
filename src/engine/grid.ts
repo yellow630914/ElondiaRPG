@@ -7,7 +7,7 @@
 // 走進格子會觸發內容：遭遇（戰鬥）、陷阱（檢定）、資源（採集）等；設施與樓梯等需要在格子上選擇動作。
 
 import { checkBonus, checkModifiers, modifierNote } from './perks'
-import { safeText } from './content'
+import { adultContent, safeText } from './content'
 import { condMet } from './storyFlags'
 import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
@@ -349,9 +349,10 @@ export function getArea(state: GameState, key: string): Area {
   return hideLandmarks(state, overlayConnections(state, overlayLots(state, buildBlock(loc, block))))
 }
 
-/** 地標還沒出現：開放條件勾了「條件成立前不顯示」，劇情旗標又不符合 */
+/** 地標還沒出現：開放條件勾了「條件成立前不顯示」，劇情旗標又不符合；成人向的場所在沒有開啟成人向時也不出現 */
 export function landmarkHidden(state: GameState, l: LandmarkDef): boolean {
   const o = l.open
+  if (o?.adult && !adultContent()) return true
   return !!o?.hidden && !condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })
 }
 
