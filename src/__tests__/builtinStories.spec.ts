@@ -72,6 +72,12 @@ describe('built-in stories', () => {
       ['lila_travel_books', 'lila_first_trip', 'lila_living_world'],
       ['rot_herb_errand', 'rot_tax_collectors', 'rot_harvest_festival'],
       ['hm_greyport_contract', 'hm_ghost_ship', 'hm_abyss_treaty'],
+      ['era_crystal_price', 'era_two_orders', 'era_best_of_times'],
+      ['kagni_hammer_tone', 'kagni_burn_and_still', 'kagni_hoard'],
+      ['ore_seal_knocking', 'ore_mistone_runes', 'ore_star_heart'],
+      ['brew_cellar_queue', 'brew_bribed_cask', 'brew_clan_feast'],
+      ['smith_fireless_iron', 'smith_heartfire_test', 'smith_council_verdict'],
+      ['wt_spring_decline', 'wt_other_end', 'wt_new_sprout'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
