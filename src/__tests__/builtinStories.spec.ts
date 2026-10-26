@@ -84,6 +84,12 @@ describe('built-in stories', () => {
       ['acc_novel_girl', 'acc_kalanthil_courtesy', 'acc_sprout_and_root'],
       ['shadow_extra_star', 'shadow_same_dream', 'shadow_sorian_projection'],
       ['fog_lost_names', 'fog_mistveil', 'fog_behind_the_mist'],
+      ['vault_missing_jade', 'vault_banquet_guest', 'vault_tide_mirror'],
+      ['reef_odd_light', 'reef_coral_sickness', 'reef_barrier_crack'],
+      ['nip_fake_catnip', 'nip_moonlight_herb', 'nip_sand_lions'],
+      ['scs_cracked_accord', 'scs_nightclaw_intel', 'scs_sandcastle_shadow'],
+      ['rite_broken_moon', 'rite_redmane_games', 'rite_wind_field'],
+      ['bab_growing_tents', 'bab_restless_builders', 'bab_babelin_spire'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)

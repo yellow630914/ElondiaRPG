@@ -12992,6 +12992,1641 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "vault_missing_jade",
+      "title": "少了一件的玉璜",
+      "summary": "冬璃宮主璃月發現，全族的珍寶庫裡少了一件古老的玉璜。年度大宴就要開始了，她還沒有告訴任何人。（寶庫失竊案・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_rigetsu",
+        "min_level": 5,
+        "text": "璃月把你請進冬璃宮最深處的靜室，關上了三道螺鈿門：「陸地人，你不認識我們的任何人，所以我能信任你。」她攤開一本帳冊，「『潮汐之璜』，三千年前的初代潮主留下的。上個月還在。大宴七天後開始——四殿的人都會來看寶庫。」"
+      },
+      "start_flags": ["vault_start"],
+      "nodes": [
+        {
+          "id": "gallery",
+          "title": "在滄月闕的四時迴廊查潮汐之璜的來歷",
+          "text": "四時迴廊的貝殼牆上鑲著歷代潮主的畫像。秋珊苑主墨鱗正在抄寫一首古詩，聽見「潮汐之璜」，筆停了一下：「你在查那個？」",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_four_seasons_gallery" },
+          "requires": { "flags": ["vault_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你和墨鱗一起翻出了初代潮主的畫像：畫中人手裡捧著的玉璜上，刻著礁光柱的光紋。墨鱗輕聲說：「傳說它是礁光柱的『調音石』。不過那只是傳說。」她說這句話的時候，沒有看你的眼睛。",
+            "set_flags": ["vault_hist"]
+          },
+          "fail": {
+            "text": "你看不懂古詩，墨鱗替你唸了一段：「潮汐之璜，結界之音。」她低下頭繼續抄寫，「只是傳說罷了。」",
+            "set_flags": ["vault_hist"]
+          }
+        },
+        {
+          "id": "imps",
+          "title": "在滄月闕近郊趕走偷亮晶晶東西的珊瑚小妖",
+          "text": "結界邊緣的珊瑚叢裡，一群拇指大的珊瑚小妖正在搶一個螺鈿盒子——冬璃宮的紋章。它們最喜歡亮晶晶的東西，看見你身上的釦子，一起撲了過來。",
+          "at": { "where": "outskirts", "location": "canglue" },
+          "requires": { "flags": ["vault_hist"] },
+          "kind": "combat",
+          "enemies": [["coral_imp", 3]],
+          "success": {
+            "text": "小妖們尖叫著逃回了珊瑚叢。螺鈿盒子是空的，盒蓋內側卻用指甲刻著一行小字：「不是我偷的。我只是借。」",
+            "set_flags": ["vault_box"]
+          },
+          "fail": {
+            "text": "小妖們搶走了你兩顆釦子才逃走，丟下了螺鈿盒子。盒子是空的，盒蓋內側刻著：「不是我偷的。我只是借。」",
+            "set_flags": ["vault_box"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "report",
+          "title": "回報璃月",
+          "text": "璃月看著那行小字，臉色很平靜，手指卻緊緊抓著盒子：「借……」她抬起頭，「大宴要開始了。陸地人，你說——要告訴其他三殿嗎？」",
+          "at": { "where": "npc", "npc": "npc_rigetsu" },
+          "requires": { "flags": ["vault_box"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「先別說，大宴上一起查」",
+              "success": {
+                "text": "璃月點點頭，把盒子收進了袖子裡：「那麼，大宴上，你是我的客人。」她給了你一枚冬璃宮的玉牌，「拿著它，四殿的宴席你都能坐。」",
+                "set_flags": ["vault_1_done", "vault_secret"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_rigetsu", "delta": 15, "reason": "替她保守了秘密" },
+                  { "type": "memory", "summary": "替滄月闕的冬璃宮主璃月追查失竊的潮汐之璜，找到了一個刻著「我只是借」的空盒子。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「告訴其他三殿，大家一起找」",
+              "success": {
+                "text": "璃月沉默了很久：「……也好。」那天晚上，四殿的殿主第一次為了寶庫的事聚在一起，潮主櫻汐聽完，拍手笑了：「好像推理小說！」只有墨鱗一句話也沒說。",
+                "set_flags": ["vault_1_done", "vault_told"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_rigetsu", "delta": 5, "reason": "讓她說出了口" },
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 5, "reason": "給了她一場推理遊戲" },
+                  { "type": "memory", "summary": "替滄月闕追查失竊的潮汐之璜，說服璃月告訴了四殿的殿主。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "vault_banquet_guest",
+      "title": "大宴上的客人",
+      "summary": "滄月闕的年度大宴開始了，七天七夜的歌舞與酒宴。夏瀾殿主鯨歌是總籌辦——如果有誰知道每一位客人的底細，就是她。（寶庫失竊案・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_rigetsu",
+        "min_level": 8,
+        "requires": { "flags": ["vault_1_done"] },
+        "text": "大宴的第一夜，璃月坐在宴席的最角落，一口酒也沒喝：「客人名單在鯨歌手上。可是她……」她看了一眼宴席中央那個已經喝了二十杯還在大笑的身影，「你得陪她喝，她才會說。」"
+      },
+      "start_flags": ["vault_feast"],
+      "nodes": [
+        {
+          "id": "drink",
+          "title": "陪夏瀾殿主鯨歌喝酒",
+          "text": "鯨歌一手抓著鯨髭酒樽，一手攬著你的肩：「陸地人！來，乾！」她的酒量深不見底，你的不是。",
+          "at": { "where": "npc", "npc": "npc_geika" },
+          "requires": { "flags": ["vault_feast"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你喝到第十二杯的時候，終於把話題繞到了客人名單。鯨歌大笑：「名單？我全記得！」她掰著手指，「潮汐港來了一個收藏家，說要買古董，出手很闊。還有……」她湊近你，酒氣撲面，「上個月，墨鱗那孩子去過一次潮汐港。她從來不去陸地的。」",
+            "set_flags": ["vault_lead"],
+            "effects": [{ "type": "affinity", "npc": "npc_geika", "delta": 15, "reason": "陪她喝到最後" }]
+          },
+          "fail": {
+            "text": "你在第七杯就倒下了。醒來時，鯨歌坐在你旁邊，替你蓋著她的外袍：「陸地人，酒量太差。」她把一張名單塞給你，「拿去。潮汐港來的收藏家，我也覺得怪。」",
+            "set_flags": ["vault_lead"],
+            "effects": [{ "type": "hp", "ratio": -0.05 }]
+          }
+        },
+        {
+          "id": "divers",
+          "title": "在滄月闕近郊截下收藏家的潛水傭兵",
+          "text": "大宴的第三夜，結界外的海裡亮起了幾點燈光。幾個喝了化形藥、長著臨時鰓的人類傭兵正在結界外鑿洞——收藏家的人，想趁宴會偷偷運貨出去。",
+          "at": { "where": "outskirts", "location": "canglue" },
+          "requires": { "flags": ["vault_lead"] },
+          "kind": "combat",
+          "enemies": [["collector_diver", 2]],
+          "success": {
+            "text": "傭兵們丟下工具逃了。他們留下的貨袋裡沒有潮汐之璜，只有一張收據：「潮汐之璜，購自秋珊苑。」",
+            "set_flags": ["vault_receipt"]
+          },
+          "fail": {
+            "text": "傭兵們搶回了半袋貨，逃回了海面。剩下的半袋裡，有一張收據：「潮汐之璜，購自秋珊苑。」",
+            "set_flags": ["vault_receipt"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "next",
+          "title": "決定要不要直接去問墨鱗",
+          "text": "你把收據交給璃月。她看了很久，聲音第一次在發抖：「墨鱗……不會的。她是四殿中最懂事的。」她把收據收起來，「我們該直接去問她，還是先找到玉璜？」",
+          "at": { "where": "npc", "npc": "npc_rigetsu" },
+          "requires": { "flags": ["vault_receipt"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「直接去問她」",
+              "success": {
+                "text": "你們去了四時迴廊。墨鱗正在抄寫古詩，聽見腳步聲，沒有抬頭：「我知道你們會來。」她放下筆，「大宴最後一夜，潮鏡台。我會在那裡說清楚——在所有人面前。」",
+                "set_flags": ["vault_2_done", "vault_asked"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_moring", "delta": 5, "reason": "給了她開口的機會" },
+                  { "type": "memory", "summary": "在滄月闕的大宴上，查出潮汐之璜是秋珊苑主墨鱗賣給潮汐港收藏家的。她說會在潮鏡台說清楚。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「先從收藏家手上把玉璜追回來」",
+              "success": {
+                "text": "你們在大宴的第六夜找到了收藏家的船。他笑著說玉璜早就轉手了，「不過，賣家說了，最後一夜的潮鏡台，會有一場好戲。」璃月握緊了拳頭。",
+                "set_flags": ["vault_2_done", "vault_chased"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_rigetsu", "delta": 10, "reason": "替她追查玉璜" },
+                  { "type": "memory", "summary": "在滄月闕的大宴上追查潮汐之璜，發現收藏家早就把它轉手了。最後一夜的潮鏡台，會有一場好戲。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "vault_tide_mirror",
+      "title": "潮鏡台的真相",
+      "summary": "大宴的最後一夜，滿月照在潮鏡台上。秋珊苑主墨鱗要在四殿面前說出潮汐之璜的下落——收藏家的打手們也來了。（寶庫失竊案・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_rigetsu",
+        "min_level": 11,
+        "requires": { "flags": ["vault_2_done"] },
+        "text": "璃月穿上了冬璃宮最隆重的雪玉禮服，臉色卻蒼白：「今晚，不管墨鱗說什麼，我都要站在她面前聽完。」她頓了頓，「收藏家的船還在結界外。他想要的不只是一件玉璜。陸地人，替我守住潮鏡台。」"
+      },
+      "start_flags": ["vault_night"],
+      "nodes": [
+        {
+          "id": "guards",
+          "title": "在潮鏡台擋下收藏家的打手",
+          "text": "滿月升起的時候，三個穿著潛水甲的打手從結界的裂縫鑽了進來，直奔潮鏡台旁的寶庫：「趁她們在吵架，能拿多少拿多少！」四殿的玉璘族們驚叫著四散——她們從來沒有見過有人在宴會上拔刀。",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_tide_mirror" },
+          "requires": { "flags": ["vault_night"] },
+          "kind": "combat",
+          "enemies": [["collector_bodyguard", 3]],
+          "success": {
+            "text": "打手們倒在了潮鏡台上。全場安靜了下來。墨鱗從人群裡走了出來，手裡捧著一件發著光的東西——潮汐之璜。",
+            "set_flags": ["vault_saved"]
+          },
+          "fail": {
+            "text": "打手們把你們逼到了台邊，玉璘族的巡守終於趕到。全場安靜了下來。墨鱗從人群裡走了出來，手裡捧著潮汐之璜。",
+            "set_flags": ["vault_saved"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "speech",
+          "title": "在潮鏡台聽墨鱗說完",
+          "text": "墨鱗把潮汐之璜放在潮鏡台的中央：「是我拿走的。我把它『賣』給了收藏家，又從收藏家的船上偷了回來。」她看著四殿的殿主，「三千年來，我們的寶庫沒有一道鎖；我們的都城沒有一個兵。一個陸地的收藏家就能鑽進結界——如果來的是軍隊呢？」全場鴉雀無聲。所有人都看向你，等著外人說話。",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_tide_mirror" },
+          "requires": { "flags": ["vault_saved"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 17 },
+          "success": {
+            "text": "你說，墨鱗說的是真的：今晚的打手、結界的裂縫、從陸地吹來的戰爭——外面的世界正在變。潮主櫻汐聽完，第一次沒有笑：「……原來我們一直在辦宴會，忘了看門。」",
+            "set_flags": ["vault_heard"]
+          },
+          "fail": {
+            "text": "你說得不夠清楚，可璃月替你接了下去：「她說得對。我是寶庫的主人，我比誰都清楚。」潮主櫻汐聽完，第一次沒有笑。",
+            "set_flags": ["vault_heard"]
+          }
+        },
+        {
+          "id": "verdict",
+          "title": "決定怎麼處置墨鱗",
+          "text": "潮主櫻汐看著墨鱗，又看著你：「依族規，偷寶庫的人要被逐出都城。可是她說的話……」她咬著嘴唇，「陸地人，你說，我們該怎麼辦？」",
+          "at": { "where": "npc", "npc": "npc_rigetsu" },
+          "requires": { "flags": ["vault_heard"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「讓她負責建立都城的巡守」",
+              "success": {
+                "text": "櫻汐拍了一下手：「好！墨鱗，罰你——當都城的第一位巡守長！」全場愣了一瞬，然後爆出了掌聲。墨鱗紅著眼眶低下頭。璃月走過去，第一次在大家面前握住了她的手。",
+                "set_flags": ["vault_done", "vault_reform"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_moring", "delta": 25, "reason": "替她說了話" },
+                  { "type": "affinity", "npc": "npc_rigetsu", "delta": 20, "reason": "找回了潮汐之璜" },
+                  { "type": "reputation", "faction": "four_seasons", "delta": 15 },
+                  { "type": "memory", "summary": "在滄月闕的潮鏡台找回了潮汐之璜。秋珊苑主墨鱗以偷寶庫來警告族人，被罰當都城的第一位巡守長。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「族規就是族規」",
+              "success": {
+                "text": "墨鱗被逐出了滄月闕。她離開的那天，沒有人送行，只有璃月站在結界邊，看著她游向潮汐港的方向。第二年的大宴，寶庫多了三道鎖、都城多了一支巡守——都是照墨鱗留下的信做的。",
+                "set_flags": ["vault_done", "vault_exiled"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_rigetsu", "delta": 10, "reason": "找回了潮汐之璜" },
+                  { "type": "reputation", "faction": "four_seasons", "delta": 10 },
+                  { "type": "memory", "summary": "在滄月闕的潮鏡台找回了潮汐之璜。秋珊苑主墨鱗依族規被逐出了都城，卻留下了守護都城的方法。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "reef_odd_light",
+      "title": "有點怪的光",
+      "summary": "維護礁光柱的老匠人螺鈿婆婆說，結界的光「有點怪」，卻說不出哪裡怪。滄月闕的隔水結界，全靠礁光柱維繫。（礁光柱維修・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_raden_granny",
+        "min_level": 5,
+        "text": "螺鈿婆婆拉著你的手：「我年輕的時候啊，礁光柱的光是一呼一吸的，像在睡覺。」她指著頭頂那根巨大的珊瑚燈塔，「你看，現在它呼、呼、吸——多了一口氣。我說不出哪裡怪，可是我的手知道。陸地人，你眼睛年輕，替我看看。」"
+      },
+      "start_flags": ["reef_start"],
+      "nodes": [
+        {
+          "id": "pillar",
+          "title": "在滄月闕的礁光柱看光紋",
+          "text": "礁光柱的表面刻滿了細細的光紋，柔光沿著紋路一圈一圈地流。螺鈿婆婆遞給你一片透明的貝殼：「用這個看。光紋斷掉的地方，貝殼會變暗。」",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_reef_light_pillar" },
+          "requires": { "flags": ["reef_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你在光柱的底部找到了：幾道光紋上附著一層薄薄的、半透明的東西，正在一口一口地吸著光——多出來的那一口氣，是它們在吸。",
+            "set_flags": ["reef_found"],
+            "effects": [{ "type": "affinity", "npc": "npc_raden_granny", "delta": 5, "reason": "眼睛很好" }]
+          },
+          "fail": {
+            "text": "你看了一整天，貝殼一直很亮。最後螺鈿婆婆自己摸到了光柱底部：「這裡。黏黏的。有東西在吸光。」",
+            "set_flags": ["reef_found"]
+          }
+        },
+        {
+          "id": "leeches",
+          "title": "在滄月闕近郊清掉吸光的海蛭",
+          "text": "結界外的光柱根部，一大群半透明的海蛭吸在珊瑚上，身體裡亮著偷來的光。它們感覺到你靠近，鬆開了珊瑚，朝你游了過來。",
+          "at": { "where": "outskirts", "location": "canglue" },
+          "requires": { "flags": ["reef_found"] },
+          "kind": "combat",
+          "enemies": [["barrier_leech", 3]],
+          "success": {
+            "text": "海蛭被清乾淨了。礁光柱的光重新變成了一呼一吸。螺鈿婆婆拍著手：「對、對！就是這樣！」",
+            "set_flags": ["reef_clean"]
+          },
+          "fail": {
+            "text": "海蛭把你們纏得團團轉，最後在結界的光變強時自己鬆開逃走了。光柱的光恢復了一半。",
+            "set_flags": ["reef_clean"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "sample",
+          "title": "決定怎麼處理抓到的海蛭",
+          "text": "你的網袋裡還有幾隻活的海蛭，在袋子裡發著偷來的光。螺鈿婆婆皺著眉頭：「我年輕的時候，從來沒見過這種東西。它們是從哪裡來的？」",
+          "at": { "where": "npc", "npc": "npc_raden_granny" },
+          "requires": { "flags": ["reef_clean"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "交給秋珊苑的學者研究",
+              "success": {
+                "text": "秋珊苑的學者們研究了三天，得出結論：海蛭來自結界下方的「祖忘之淵」，那是玉璘族的疆域之外。螺鈿婆婆聽完，很久沒有說話：「……深淵的東西，往上爬了。」",
+                "set_flags": ["reef_1_done", "reef_studied"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_raden_granny", "delta": 10, "reason": "替她找出了原因" },
+                  { "type": "memory", "summary": "替滄月闕的螺鈿婆婆清掉了吸食礁光柱光芒的海蛭，牠們來自結界下方的祖忘之淵。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "燒掉，免得牠們跑出來",
+              "success": {
+                "text": "你把海蛭燒成了一縷縷的光。螺鈿婆婆點點頭：「乾淨。」可那天晚上，她一個人在光柱下坐了很久，摸著光紋，像在聽什麼。",
+                "set_flags": ["reef_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_raden_granny", "delta": 10, "reason": "替她清掉了海蛭" },
+                  { "type": "memory", "summary": "替滄月闕的螺鈿婆婆清掉了吸食礁光柱光芒的海蛭。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "reef_coral_sickness",
+      "title": "珊瑚的病",
+      "summary": "海蛭清掉了，礁光柱的珊瑚卻開始一根一根地變白。螺鈿婆婆說，要從珊瑚灣找來「暖流珊瑚」接上去，光柱才能活。（礁光柱維修・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_raden_granny",
+        "min_level": 8,
+        "requires": { "flags": ["reef_1_done"] },
+        "text": "螺鈿婆婆捧著一截變白的珊瑚，手在發抖：「我年輕的時候，礁光柱的珊瑚是紅的、會發光的。現在你看……」她把珊瑚放下，「珊瑚灣的托馬老爹知道哪裡有暖流珊瑚。替我去拿一枝來。要活的。」"
+      },
+      "start_flags": ["reef_graft"],
+      "nodes": [
+        {
+          "id": "toma",
+          "title": "請珊瑚灣的托馬老爹帶路",
+          "text": "托馬老爹聽說是螺鈿婆婆要的，大笑起來：「那個老太婆！五十年前她還欠我一頓酒！」他指著外海，「暖流珊瑚長在北邊的深礁，要潛很深。你能潛多深？」",
+          "at": { "where": "npc", "npc": "npc_toma_pearl" },
+          "requires": { "flags": ["reef_graft"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 15 },
+          "success": {
+            "text": "你跟著托馬老爹潛到了深礁。紅色的暖流珊瑚在黑暗裡發著溫暖的光，托馬老爹小心地切下一枝，用海草包好：「告訴她，這頓酒我記著。」",
+            "set_flags": ["reef_coral"],
+            "effects": [{ "type": "affinity", "npc": "npc_toma_pearl", "delta": 10, "reason": "陪他潛到了深礁" }]
+          },
+          "fail": {
+            "text": "你潛到一半就憋不住了，托馬老爹一個人潛了下去，帶回了一枝暖流珊瑚：「年輕人，肺活量要練。」",
+            "set_flags": ["reef_coral"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "jellies",
+          "title": "在珊瑚灣近郊擋下白化的水母群",
+          "text": "回程的海面上，一大片蒼白的水母浮了上來，觸手碰到的珊瑚都瞬間變白——讓礁光柱生病的，就是牠們。牠們聞到了你懷裡暖流珊瑚的味道。",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "requires": { "flags": ["reef_coral"] },
+          "kind": "combat",
+          "enemies": [["pale_jelly", 2]],
+          "success": {
+            "text": "水母群沉了下去。懷裡的暖流珊瑚還是紅的，還在發光。",
+            "set_flags": ["reef_safe"]
+          },
+          "fail": {
+            "text": "水母群把你們的小船纏住了，托馬老爹用船槳硬是把牠們打散。暖流珊瑚的一角變白了，但還活著。",
+            "set_flags": ["reef_safe"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "graft",
+          "title": "把暖流珊瑚接上礁光柱",
+          "text": "螺鈿婆婆捧著暖流珊瑚，眼眶紅了：「好、好……」她拿出一套小得像繡花針的工具，「接珊瑚要很穩的手。我的手，最近有點抖了。」",
+          "at": { "where": "npc", "npc": "npc_raden_granny" },
+          "requires": { "flags": ["reef_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓婆婆教你接",
+              "success": {
+                "text": "你在螺鈿婆婆的指導下接了一整夜。天亮時，接口的地方亮起了一點紅光，沿著光紋慢慢地爬上了光柱。婆婆抱住了你：「好孩子。你的手，像我年輕的時候。」",
+                "set_flags": ["reef_2_done", "reef_grafted"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_raden_granny", "delta": 20, "reason": "跟她學了接珊瑚" },
+                  { "type": "memory", "summary": "替滄月闕的螺鈿婆婆從珊瑚灣帶回了暖流珊瑚，親手接上了生病的礁光柱。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓年輕的玉璘族來學」",
+              "success": {
+                "text": "你在宴會上找來了一個總是坐在角落發呆的年輕玉璘族。螺鈿婆婆嘮叨了她一整夜，她一聲不吭地學了一整夜。天亮時，接口亮起了紅光。婆婆看著她，難得沒有嘮叨：「……明天再來。」",
+                "set_flags": ["reef_2_done", "reef_apprentice"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_raden_granny", "delta": 15, "reason": "替她找到了徒弟" },
+                  { "type": "reputation", "faction": "four_seasons", "delta": 5 },
+                  { "type": "memory", "summary": "替滄月闕的螺鈿婆婆帶回了暖流珊瑚，還替她找到了第一個徒弟。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "reef_barrier_crack",
+      "title": "結界的裂縫",
+      "summary": "滿月之夜，礁光柱的結界裂開了一道縫。海水湧進了都城的邊緣，祖忘之淵的東西順著裂縫往上爬。潮主櫻汐說，她的歌能讓結界發亮——但需要有人替她擋住深淵。（礁光柱維修・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_raden_granny",
+        "min_level": 11,
+        "requires": { "flags": ["reef_2_done"] },
+        "text": "螺鈿婆婆拄著拐杖衝到你面前，第一次沒有說「我年輕的時候」：「結界裂了！東邊的光柱！」她抓著你的手，「潮主在唱歌，可是深淵的東西在往上爬。陸地人，快！」"
+      },
+      "start_flags": ["reef_crack"],
+      "nodes": [
+        {
+          "id": "rays",
+          "title": "在滄月闕的礁光柱擋下深淵的鰩",
+          "text": "東邊的礁光柱下，海水從結界的裂縫裡噴了進來。兩條巨大的、渾身漆黑的鰩從深淵游了上來，翅膀一拍就是一道漩渦，直撲正在唱歌的潮主。",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_reef_light_pillar" },
+          "requires": { "flags": ["reef_crack"] },
+          "kind": "combat",
+          "enemies": [["abyss_ray", 2]],
+          "success": {
+            "text": "深淵的鰩沉回了黑暗裡。潮主櫻汐的歌聲沒有斷，可裂縫還在——她的聲音不夠撐住整道結界。",
+            "set_flags": ["reef_held"]
+          },
+          "fail": {
+            "text": "深淵的鰩把你們捲進了漩渦，最後在櫻汐的歌聲裡退回了深淵。可裂縫還在——她的聲音不夠撐住整道結界。",
+            "set_flags": ["reef_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "song",
+          "title": "陪櫻汐一起唱",
+          "text": "櫻汐的臉色越來越白，卻還在笑：「陸地人，你會唱歌嗎？不會也沒關係——跟著我的聲音，哼就好！」螺鈿婆婆把手按在光柱上，光紋在她的手下一明一暗。",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_reef_light_pillar" },
+          "requires": { "flags": ["reef_held"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 17 },
+          "success": {
+            "text": "你的聲音和櫻汐的歌聲疊在了一起。礁光柱的光紋一圈一圈地亮了起來，裂縫慢慢合上了。最後一道光閉合的時候，整座都城都聽見了一聲很輕的、像是鯨魚的嘆息。",
+            "set_flags": ["reef_sealed"],
+            "effects": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }]
+          },
+          "fail": {
+            "text": "你的聲音走了調，可螺鈿婆婆也開口了——她的聲音沙啞，卻是全都城最老的歌。三個人的聲音疊在一起，裂縫慢慢合上了。",
+            "set_flags": ["reef_sealed"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "future",
+          "title": "決定礁光柱以後要怎麼守",
+          "text": "天亮了，結界恢復了平靜。櫻汐癱坐在光柱下，笑著問你：「陸地人，你覺得……這種事，以後還會發生嗎？」螺鈿婆婆在旁邊點頭：「會。深淵的東西已經醒了。」",
+          "at": { "where": "npc", "npc": "npc_raden_granny" },
+          "requires": { "flags": ["reef_sealed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「請陸地的工匠一起來維修」",
+              "success": {
+                "text": "櫻汐當場決定：深潮席每年派一批陸地的工匠來學礁光柱的維修。第一批來的，是鐵爐堡的矮人——他們看見光柱的時候，安靜了整整一刻鐘。螺鈿婆婆嘮叨了他們一整年，嘮叨得很開心。",
+                "set_flags": ["reef_done", "reef_landsmiths"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_raden_granny", "delta": 20, "reason": "讓礁光柱有了更多的傳人" },
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "陪她唱了歌" },
+                  { "type": "reputation", "faction": "four_seasons", "delta": 15 },
+                  { "type": "memory", "summary": "在滄月闕陪潮主櫻汐唱歌補好了結界的裂縫。從此陸地的工匠每年都會來學礁光柱的維修。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「每一根光柱都要有人輪值」",
+              "success": {
+                "text": "櫻汐把四殿的殿主叫來，訂下了輪值的規矩：每一根礁光柱，每一夜都要有一個玉璘族守著，隨時唱歌。族人們抱怨了三天，然後把輪值變成了一種新的宴會——在光柱下唱歌、喝酒、守夜。",
+                "set_flags": ["reef_done", "reef_watch"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 20, "reason": "陪她唱了歌" },
+                  { "type": "affinity", "npc": "npc_raden_granny", "delta": 15, "reason": "讓光柱有人守著" },
+                  { "type": "reputation", "faction": "four_seasons", "delta": 15 },
+                  { "type": "memory", "summary": "在滄月闕陪潮主櫻汐唱歌補好了結界的裂縫，替都城訂下了礁光柱的輪值。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "nip_fake_catnip",
+      "title": "假貨",
+      "summary": "帳環市集的駝商阿茲爾說自己能賣沙子給沙漠。這個月，他賣了一批「傳說中的月光貓薄荷」——是假的。買了的貓魅族戰士們，正在找他算帳。（傳說中的貓薄荷・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_azir_camel",
+        "min_level": 5,
+        "text": "阿茲爾躲在一堆駝毛毯子後面，只露出兩隻耳朵：「我發誓我不知道是假的！我也是被騙的！」他壓低聲音，「赤鬃的戰士們喝了那批『貓薄荷茶』，全都醉得發瘋，現在在營地外面搶商隊。我、我付你錢，替我擺平好不好？」"
+      },
+      "start_flags": ["nip_start"],
+      "nodes": [
+        {
+          "id": "tavern",
+          "title": "在沙堡營地的酒館安撫被騙的客人",
+          "text": "酒館裡擠滿了買到假貓薄荷的客人，有人類、有貓魅族，一個比一個生氣。一個沙痕部落的老婦人拍著桌子：「我孫女結婚要用的！」",
+          "at": { "where": "cell", "location": "sandcastle", "cell": "tavern" },
+          "requires": { "flags": ["nip_start"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你答應每個人都會拿到真貨，酒館總算安靜了下來。老婦人眨了眨眼：「真的月光貓薄荷，只長在靜潮綠洲的月光底下。假貨裡加的是沙漠的醉草——喝了會發瘋的那種。」",
+            "set_flags": ["nip_calm"]
+          },
+          "fail": {
+            "text": "你被罵得狗血淋頭。最後是老婦人替你說了話：「別吵了！假貨裡加的是沙漠的醉草。真的月光貓薄荷，只長在靜潮綠洲。」",
+            "set_flags": ["nip_calm"]
+          }
+        },
+        {
+          "id": "bandits",
+          "title": "在沙堡營地近郊擋下醉瘋的強盜",
+          "text": "營地外的商道上，幾個喝了假貓薄荷茶的貓魅族戰士瞳孔放得老大，尾巴炸成了毛刷，搖搖晃晃地圍住了一支商隊：「把……把所有的毛線球交出來！」",
+          "at": { "where": "outskirts", "location": "sandcastle" },
+          "requires": { "flags": ["nip_calm"] },
+          "kind": "combat",
+          "enemies": [["catnip_bandit", 3]],
+          "success": {
+            "text": "醉瘋的強盜們被打倒，一個個抱著商隊的毛線球睡著了，還在打呼。醒來之後，他們一點都不記得自己做了什麼。",
+            "set_flags": ["nip_stopped"]
+          },
+          "fail": {
+            "text": "強盜們搶走了一車毛線球才倒下睡著。醒來之後，他們一點都不記得自己做了什麼——只記得毛線球很好玩。",
+            "set_flags": ["nip_stopped"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "azir",
+          "title": "和阿茲爾算帳",
+          "text": "阿茲爾聽完，鬆了一口氣，又緊張起來：「那……那個賣假貨給我的人跑了。客人們要真貨。」他搓著手，「你說，我該怎麼辦？」",
+          "at": { "where": "npc", "npc": "npc_azir_camel" },
+          "requires": { "flags": ["nip_stopped"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「把錢全部退給客人」",
+              "success": {
+                "text": "阿茲爾心痛得尾巴都垂下來了，可還是一個一個退了錢。帳環市集的人說，阿茲爾這輩子第一次賠錢做生意。他拉著你的袖子：「下次，我們一起去找真貨。我出旅費。」",
+                "set_flags": ["nip_1_done", "nip_refund"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_azir_camel", "delta": 10, "reason": "逼他做了一次好人" },
+                  { "type": "memory", "summary": "替沙堡營地的駝商阿茲爾擺平了假貓薄荷的風波，逼他把錢全部退給客人。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「答應客人去找真貨」",
+              "success": {
+                "text": "阿茲爾在帳環市集門口貼了一張告示：「一個月內，真貨送到。」底下簽了他和你的名字。他小聲說：「現在我們是生意夥伴了。」",
+                "set_flags": ["nip_1_done", "nip_promise"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_azir_camel", "delta": 15, "reason": "陪他做了一個承諾" },
+                  { "type": "memory", "summary": "替沙堡營地的駝商阿茲爾擺平了假貓薄荷的風波，答應客人去找真的月光貓薄荷。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "nip_moonlight_herb",
+      "title": "月光下的草",
+      "summary": "真的月光貓薄荷只長在靜潮綠洲的月光底下。月尾部落的占卜師銀鈴說，她知道哪裡有——但守著它的東西，脾氣很不好。（傳說中的貓薄荷・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_azir_camel",
+        "min_level": 8,
+        "requires": { "flags": ["nip_1_done"] },
+        "text": "阿茲爾把一張畫得歪七扭八的地圖攤開：「靜潮綠洲。月尾部落的地盤。」他抖了一下耳朵，「月尾的人不太喜歡生意人，所以……你去問。我在這裡替你看攤子。」"
+      },
+      "start_flags": ["nip_oasis"],
+      "nodes": [
+        {
+          "id": "silverbell",
+          "title": "請靜潮綠洲的銀鈴占卜貓薄荷的位置",
+          "text": "銀鈴把一碗泉水放在你面前，水面上漂著一片銀色的葉子：「月光貓薄荷是祖靈給貓魅族的禮物。不是拿來賣的。」她溫柔地看著你，「你為什麼要找它？說真話，水會知道。」",
+          "at": { "where": "npc", "npc": "npc_silverbell" },
+          "requires": { "flags": ["nip_oasis"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": {
+            "text": "你說了老婦人孫女的婚禮、被醉草毒瘋的戰士、和一個第一次賠錢做生意的駝商。水面上的葉子轉了一圈，指向綠洲東邊的月光沙丘。銀鈴笑了：「水說你沒有說謊。」",
+            "set_flags": ["nip_place"],
+            "effects": [{ "type": "affinity", "npc": "npc_silverbell", "delta": 10, "reason": "說了真話" }]
+          },
+          "fail": {
+            "text": "水面上的葉子一動也不動。銀鈴嘆了口氣：「水不太相信你。」可她還是指了指東邊，「月光沙丘。小心守著它的那一位。」",
+            "set_flags": ["nip_place"]
+          }
+        },
+        {
+          "id": "lynx",
+          "title": "在靜潮綠洲近郊的月光沙丘面對守護的月猞猁",
+          "text": "月光沙丘上，一片銀色的草在夜風裡發著微光。兩頭和人一樣大的銀色猞猁趴在草叢裡，聞到你的味道，慢慢地站了起來，喉嚨裡發出低沉的咕嚕聲。",
+          "at": { "where": "outskirts", "location": "stilltide_oasis" },
+          "requires": { "flags": ["nip_place"] },
+          "kind": "combat",
+          "enemies": [["moon_lynx", 2]],
+          "success": {
+            "text": "月猞猁退開了，在不遠的沙丘上坐下來看著你，尾巴一下一下地拍著沙子——像是在等你怎麼做。",
+            "set_flags": ["nip_reached"]
+          },
+          "fail": {
+            "text": "月猞猁把你們逼退了，最後自己趴回了草叢旁邊，看著你，尾巴一下一下地拍著沙子——像是在等你怎麼做。",
+            "set_flags": ["nip_reached"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "harvest",
+          "title": "決定怎麼採月光貓薄荷",
+          "text": "月光貓薄荷在你的腳邊發著光，香氣淡淡的、甜甜的。遠處的月猞猁還在看著你。",
+          "at": { "where": "outskirts", "location": "stilltide_oasis" },
+          "requires": { "flags": ["nip_reached"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "只採夠用的，留下根",
+              "success": {
+                "text": "你只剪了一小把，留下了根。月猞猁慢慢走過來，聞了聞你的手，然後在你腳邊翻了個身——露出了肚子。銀鈴說，這是月尾部落一百年來第一次聽說，月猞猁讓外人摸肚子。",
+                "set_flags": ["nip_2_done", "nip_gentle"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_silverbell", "delta": 10, "reason": "沒有貪心" },
+                  { "type": "memory", "summary": "在靜潮綠洲的月光沙丘採了一小把真的月光貓薄荷。守護它的月猞猁讓你摸了肚子。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "連根挖一株回去種",
+              "success": {
+                "text": "你挖起了一整株，小心地包在濕布裡。月猞猁看著你，什麼也沒做，只是轉身走進了沙丘。銀鈴說：「祖靈允許了。可是它在沙堡營地，不一定活得下去。」",
+                "set_flags": ["nip_2_done", "nip_plant"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_azir_camel", "delta": 10, "reason": "替他帶回了一整株" },
+                  { "type": "memory", "summary": "在靜潮綠洲的月光沙丘挖了一整株月光貓薄荷帶回沙堡營地。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "nip_sand_lions",
+      "title": "草原上的大貓",
+      "summary": "月光貓薄荷回到了沙堡營地——香氣也傳到了荒野深處。那天晚上，一群沙漠巨獅循著香味，朝營地衝了過來。（傳說中的貓薄荷・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_azir_camel",
+        "min_level": 11,
+        "requires": { "flags": ["nip_2_done"] },
+        "text": "阿茲爾連滾帶爬地衝進你住的帳篷：「獅子！好大的獅子！」他的尾巴炸得比身體還大，「牠們聞到貓薄荷了！整群往營地衝過來！葛雷說要放箭，可是牠們是沙漠的神獸，殺了會觸怒祖靈的！」"
+      },
+      "start_flags": ["nip_lions"],
+      "nodes": [
+        {
+          "id": "lions",
+          "title": "在沙堡營地近郊擋住沙漠巨獅",
+          "text": "營地外的沙丘上，兩頭比駱駝還大的沙漠巨獅正低著頭狂奔，鬃毛在月光下像燃燒的金沙，眼睛裡全是貓薄荷帶來的狂熱。",
+          "at": { "where": "outskirts", "location": "sandcastle" },
+          "requires": { "flags": ["nip_lions"] },
+          "kind": "combat",
+          "enemies": [["sand_lion", 2]],
+          "success": {
+            "text": "巨獅被你們擋了下來，喘著氣趴在沙丘上，眼睛還盯著營地的方向。牠們沒有受致命傷——只是累了。",
+            "set_flags": ["nip_held"]
+          },
+          "fail": {
+            "text": "巨獅撞翻了營地外的兩座帳篷才被擋下來，喘著氣趴在沙丘上，眼睛還盯著營地的方向。",
+            "set_flags": ["nip_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "lure",
+          "title": "用貓薄荷把巨獅引回沙漠",
+          "text": "阿茲爾把一小包月光貓薄荷塞給你：「把牠們引回沙漠深處！跑快一點！」巨獅們的鼻子同時轉向了你。",
+          "at": { "where": "outskirts", "location": "sandcastle" },
+          "requires": { "flags": ["nip_held"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 17 },
+          "success": {
+            "text": "你在沙丘之間跑了一整夜，兩頭巨獅跟在後面，像兩隻追毛線球的小貓。天亮時，你把貓薄荷灑在沙漠深處的岩石上，巨獅們在岩石邊打滾、翻肚子，最後睡著了。你一個人走回營地，腿都快斷了。",
+            "set_flags": ["nip_lured"]
+          },
+          "fail": {
+            "text": "你跑到一半就被追上了，巨獅把你撲倒在沙丘上——然後開始舔你手上的貓薄荷。你被舔了一整夜，天亮時渾身黏黏的，但巨獅們心滿意足地走了。",
+            "set_flags": ["nip_lured"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "use",
+          "title": "決定剩下的貓薄荷怎麼用",
+          "text": "營地平靜了下來。阿茲爾捧著剩下的月光貓薄荷，第一次沒有算錢：「這東西……太危險了，也太好了。你說，該怎麼辦？」沙痕部落的長老薩伊拉也來了。",
+          "at": { "where": "npc", "npc": "npc_saila_sandmark" },
+          "requires": { "flags": ["nip_lured"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "拿來辦沙堡營地的慶典",
+              "success": {
+                "text": "薩伊拉在帳環市集辦了一場慶典：人類、貓魅族、駝商、冒險者，大家一起喝了一杯淡淡的月光貓薄荷茶。那一晚，營地裡沒有人吵架。老婦人的孫女在慶典上結了婚。",
+                "set_flags": ["nip_done", "nip_festival"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_saila_sandmark", "delta": 20, "reason": "替營地辦了一場慶典" },
+                  { "type": "affinity", "npc": "npc_azir_camel", "delta": 15, "reason": "陪他找到了真貨" },
+                  { "type": "reputation", "faction": "wild_tribes", "delta": 10 },
+                  { "type": "memory", "summary": "在沙堡營地用真的月光貓薄荷辦了一場慶典，人類和貓魅族一起喝了一杯茶。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "交給阿茲爾照約定賣給客人",
+              "success": {
+                "text": "阿茲爾一包一包地把真貨送到了每一個被騙的客人手上，沒有多收一枚銅幣。帳環市集的人說，阿茲爾現在是全荒野最誠實的駝商——他自己聽了，尾巴翹得比駝峰還高。",
+                "set_flags": ["nip_done", "nip_honest"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_azir_camel", "delta": 25, "reason": "讓他成了誠實的駝商" },
+                  { "type": "money", "amount": 300 },
+                  { "type": "memory", "summary": "讓沙堡營地的駝商阿茲爾把真的月光貓薄荷送到了每一個被騙的客人手上。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "scs_cracked_accord",
+      "title": "協議的裂痕",
+      "summary": "沙堡營地的人類冒險者和貓魅族靠「沙堡協議」和平共處了二十年。這個月，營地裡接連遭竊，每個現場都留下了貓魅族的毛。（沙堡之影・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_gray_sandkeep",
+        "min_level": 5,
+        "text": "葛雷把一撮黑色的毛放在桌上：「夜爪的毛。七次失竊，七個現場都有。」他的聲音很平靜，手卻握得很緊，「我的人要我把夜爪的帳篷拆了。薩伊拉說不是她們幹的。我信薩伊拉——可是我需要證據。」"
+      },
+      "start_flags": ["scs_start"],
+      "nodes": [
+        {
+          "id": "fur",
+          "title": "到沙堡營地的情報商查那撮毛",
+          "text": "營地的情報商是個戴著面紗的沙痕族老人，用放大鏡看了那撮毛很久：「顏色是夜爪的黑。可是……」他拔下一根，在燭火上燒了一下，「真正的貓魅族的毛，燒起來是香的。這個——是臭的。」",
+          "at": { "where": "cell", "location": "sandcastle", "cell": "informant" },
+          "requires": { "flags": ["scs_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你和情報商一起確認了：那是染黑的駝毛。他還告訴你，最近營地外的沙丘上有一群人類在紮營，帳篷裡晾著很多黑色的「耳朵」。",
+            "set_flags": ["scs_fake"]
+          },
+          "fail": {
+            "text": "你看不出差別，情報商替你說了：「染黑的駝毛。」他收了一筆錢，又多說一句，「營地外的沙丘上，有一群人類在紮營。」",
+            "set_flags": ["scs_fake"],
+            "effects": [{ "type": "money", "amount": -50 }]
+          }
+        },
+        {
+          "id": "raiders",
+          "title": "在沙堡營地近郊抓住假扮夜爪的盜賊",
+          "text": "沙丘後的營地裡，幾個人類正在往頭上戴假耳朵、往腰上綁假尾巴。看見你，他們罵了一聲，抄起了彎刀。",
+          "at": { "where": "outskirts", "location": "sandcastle" },
+          "requires": { "flags": ["scs_fake"] },
+          "kind": "combat",
+          "enemies": [["false_nightclaw", 3]],
+          "success": {
+            "text": "盜賊們被綁了起來，假耳朵掉了一地。帶頭的那個咬著牙：「有人付錢讓我們做的。他說，只要營地亂起來，他就有生意。」",
+            "set_flags": ["scs_caught"]
+          },
+          "fail": {
+            "text": "盜賊們逃了，丟下了一整箱假耳朵、假尾巴，和一張沒寫名字的收據。",
+            "set_flags": ["scs_caught"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "saila",
+          "title": "把證據交給薩伊拉",
+          "text": "薩伊拉看著那一箱假耳朵，又好氣又好笑：「人類的盜賊，連貓的尾巴長在哪裡都不知道。」她收起笑容，「可是付錢的人還在。你說，要在營地裡公開，還是先私下查？」",
+          "at": { "where": "npc", "npc": "npc_saila_sandmark" },
+          "requires": { "flags": ["scs_caught"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "在營地裡公開",
+              "success": {
+                "text": "葛雷和薩伊拉一起站在沙堡的門口，把假耳朵一個一個地扔進火裡。營地裡的人類和貓魅族一起大笑——二十年來，這是他們第一次一起笑同一件事。",
+                "set_flags": ["scs_1_done", "scs_public"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_saila_sandmark", "delta": 10, "reason": "替夜爪洗清了冤屈" },
+                  { "type": "affinity", "npc": "npc_gray_sandkeep", "delta": 10, "reason": "替他找到了證據" },
+                  { "type": "memory", "summary": "在沙堡營地揭穿了假扮夜爪的人類盜賊，營地裡的人類和貓魅族一起大笑。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "先私下查付錢的人",
+              "success": {
+                "text": "薩伊拉點點頭：「那就先別打草驚蛇。」她把箱子藏進了自己的帳篷，「我會去問夜爪的薩芙——如果荒野裡有誰知道付錢的人是誰，就是她。」",
+                "set_flags": ["scs_1_done", "scs_quiet"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_saila_sandmark", "delta": 15, "reason": "和她一起保守秘密" },
+                  { "type": "memory", "summary": "在沙堡營地查出失竊案是人類盜賊假扮夜爪做的，和薩伊拉決定先私下追查付錢的人。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "scs_nightclaw_intel",
+      "title": "夜爪的情報",
+      "summary": "夜爪的首領薩芙只在夜裡出現。她說付錢的人是一間人類的礦業商會：只要沙堡協議破裂，他們就能拿到流沙聖殿周邊的開採權。（沙堡之影・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_saff_nightclaw",
+        "min_level": 8,
+        "requires": { "flags": ["scs_1_done"] },
+        "text": "薩芙從帳篷的陰影裡走出來，像是一直站在那裡：「你替夜爪洗了冤屈。夜爪不欠人情。」她把一張羊皮紙丟給你，上面畫著一個金色的鐵鎬紋章，「金鎬商會。他們要沙堡協議破裂，好拿到聖殿周邊的開採權。他們的人今晚在酒館裡跟人碰頭。」"
+      },
+      "start_flags": ["scs_company"],
+      "nodes": [
+        {
+          "id": "tail",
+          "title": "在沙堡營地的酒館跟蹤商會的人",
+          "text": "酒館裡，一個穿著體面外套的人類正和沙堡的一個傭兵小頭目喝酒，桌上推過去一袋錢。你坐在隔壁桌，假裝在喝酒。",
+          "at": { "where": "cell", "location": "sandcastle", "cell": "tavern" },
+          "requires": { "flags": ["scs_company"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 15 },
+          "success": {
+            "text": "你聽清楚了：商會要在三天後，趁沙暴的夜裡讓傭兵燒掉沙痕部落的帳篷，再把罪推給夜爪。你跟著那個人走出酒館，一路跟到了營地外的商會營地。",
+            "set_flags": ["scs_plan"],
+            "effects": [{ "type": "affinity", "npc": "npc_saff_nightclaw", "delta": 5, "reason": "跟得夠安靜" }]
+          },
+          "fail": {
+            "text": "你被發現了，那人起身就走。可薩芙的人一直跟在後面——第二天一早，一張紙條塞在你的枕頭下：「沙暴之夜，燒沙痕的帳篷。商會營地在東邊。」",
+            "set_flags": ["scs_plan"]
+          }
+        },
+        {
+          "id": "camp",
+          "title": "在沙堡營地近郊突襲商會的傭兵營地",
+          "text": "東邊沙丘的商會營地裡，幾個傭兵正在把火油桶搬上駱駝。他們看見你，拔出了刀：「金鎬商會的事，少管。」",
+          "at": { "where": "outskirts", "location": "sandcastle" },
+          "requires": { "flags": ["scs_plan"] },
+          "kind": "combat",
+          "enemies": [["company_mercenary", 2]],
+          "success": {
+            "text": "傭兵們倒下了，火油桶被你們推倒在沙子裡。營地的帳篷裡有一本帳冊——金鎬商會付給沙堡傭兵小頭目的錢，一筆一筆都記著。",
+            "set_flags": ["scs_ledger"]
+          },
+          "fail": {
+            "text": "傭兵們帶著一半的火油逃了，留下了一本帳冊——金鎬商會付給沙堡傭兵小頭目的錢，一筆一筆都記著。",
+            "set_flags": ["scs_ledger"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "give",
+          "title": "決定把帳冊交給誰",
+          "text": "薩芙在月光下等你：「把帳冊給我，夜爪會在天亮前處理掉那個傭兵小頭目。乾淨，安靜。」她看著你，「或者，你可以交給葛雷——用人類的方法。」",
+          "at": { "where": "npc", "npc": "npc_saff_nightclaw" },
+          "requires": { "flags": ["scs_ledger"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "交給葛雷",
+              "success": {
+                "text": "葛雷把傭兵小頭目叫到沙堡，當著所有冒險者的面攤開了帳冊。小頭目被逐出了營地。葛雷對你點了點頭，又看了一眼陰影裡的薩芙：「……替我謝謝她。」",
+                "set_flags": ["scs_2_done", "scs_gray"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_gray_sandkeep", "delta": 15, "reason": "讓他用自己的方法處理" },
+                  { "type": "memory", "summary": "在沙堡營地查出金鎬商會收買傭兵要破壞沙堡協議，把帳冊交給了守備長葛雷。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "交給薩芙",
+              "success": {
+                "text": "第二天早上，傭兵小頭目不見了。沒有人知道他去了哪裡，也沒有人問。薩芙在你的帳篷外留了一根黑色的羽毛——夜爪的信物。",
+                "set_flags": ["scs_2_done", "scs_saff"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_saff_nightclaw", "delta": 20, "reason": "信任夜爪" },
+                  { "type": "memory", "summary": "在沙堡營地查出金鎬商會收買傭兵，把帳冊交給了夜爪的薩芙。傭兵小頭目從此不見了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "scs_sandcastle_shadow",
+      "title": "沙堡之影",
+      "summary": "沙暴之夜，金鎬商會不再躲了：他們的傭兵隊長帶著人包圍了沙堡，要守備長葛雷交出營地的管理權。（沙堡之影・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_gray_sandkeep",
+        "min_level": 11,
+        "requires": { "flags": ["scs_2_done"] },
+        "text": "沙暴拍打著沙堡的牆。葛雷穿上了他二十年沒穿過的舊鎧甲：「金鎬的人在外面。他們說，沙堡協議已經過時了——他們要接管營地。」他把一把劍交給你，「今晚，我需要人類和貓魅族站在同一道牆上。」"
+      },
+      "start_flags": ["scs_storm"],
+      "nodes": [
+        {
+          "id": "siege",
+          "title": "在沙堡擋下金鎬商會的傭兵隊長",
+          "text": "沙暴中，三個披著金鎬紋章斗篷的傭兵隊長撞開了沙堡的大門。他們身後是更多的傭兵，舉著火把。葛雷舉起盾牌，站在你身邊。",
+          "at": { "where": "cell", "location": "sandcastle", "cell": "lm_sandcastle_keep" },
+          "requires": { "flags": ["scs_storm"] },
+          "kind": "combat",
+          "enemies": [["company_captain", 3]],
+          "allies": ["npc_gray_sandkeep"],
+          "success": {
+            "text": "傭兵隊長們倒在了沙堡的門口。外面的傭兵還在，可他們看見門口的人類和貓魅族並肩站著，猶豫了。",
+            "set_flags": ["scs_held"]
+          },
+          "fail": {
+            "text": "傭兵隊長們把你們逼退到了沙堡的大廳，就在這時，沙暴裡響起了夜爪的哨聲，黑色的影子從四面八方撲了出來。傭兵們退走了。",
+            "set_flags": ["scs_held"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "rally",
+          "title": "在沙暴中讓營地站在一起",
+          "text": "沙堡外，人類冒險者和貓魅族各自圍成一團，誰也不看誰。商會的傭兵還在沙暴裡喊：「人類跟貓住在一起，遲早出事！」葛雷看著你：「說點什麼。他們會聽外人的。」",
+          "at": { "where": "cell", "location": "sandcastle", "cell": "lm_sandcastle_keep" },
+          "requires": { "flags": ["scs_held"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說了假耳朵、被收買的小頭目、和二十年前葛雷與薩伊拉在沙堡門口握的那一次手。你說，商會要的不是營地，是讓你們互相害怕。人群裡，一個人類冒險者先走了過去，接著是一個沙痕的獵手。最後，所有人都站在了同一道牆上。",
+            "set_flags": ["scs_united"]
+          },
+          "fail": {
+            "text": "你說得不好，可薩伊拉走到了人群中間，牽起了葛雷的手——像二十年前一樣。人群安靜了，然後一個一個地站到了一起。",
+            "set_flags": ["scs_united"]
+          }
+        },
+        {
+          "id": "accord",
+          "title": "決定新的沙堡協議",
+          "text": "沙暴停了。金鎬商會的人退走了，留下一地的火把。葛雷和薩伊拉站在沙堡門口，薩芙在陰影裡。薩伊拉說：「協議要改了。這次——你來寫第一句。」",
+          "at": { "where": "npc", "npc": "npc_saila_sandmark" },
+          "requires": { "flags": ["scs_united"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「沙堡由人類與貓魅族共同守備」",
+              "success": {
+                "text": "新的沙堡協議寫在一張駝皮上：守備長的位子從此由人類與貓魅族各一人共同擔任。葛雷和薩伊拉在協議上按了手印，薩芙在最下面留了一道爪痕。",
+                "set_flags": ["scs_done", "scs_equal"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_gray_sandkeep", "delta": 20, "reason": "替沙堡守住了協議" },
+                  { "type": "affinity", "npc": "npc_saila_sandmark", "delta": 20, "reason": "替營地寫下了新的協議" },
+                  { "type": "reputation", "faction": "wild_tribes", "delta": 15 },
+                  { "type": "memory", "summary": "在沙暴之夜守住了沙堡，寫下新的沙堡協議：人類與貓魅族共同守備營地。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓夜爪負責營地的情報」",
+              "success": {
+                "text": "新的協議裡多了一條：夜爪在營地裡設一頂帳篷，負責所有的情報。從那以後，金鎬商會的人再也沒能靠近沙堡營地十里之內——沒有人知道為什麼。",
+                "set_flags": ["scs_done", "scs_nightclaw"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_saff_nightclaw", "delta": 25, "reason": "讓夜爪走到了陽光下" },
+                  { "type": "affinity", "npc": "npc_gray_sandkeep", "delta": 10, "reason": "守住了沙堡" },
+                  { "type": "reputation", "faction": "wild_tribes", "delta": 10 },
+                  { "type": "memory", "summary": "在沙暴之夜守住了沙堡，新的沙堡協議讓夜爪負責營地的情報。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "rite_broken_moon",
+      "title": "斷裂的月亮",
+      "summary": "月尾部落的占卜師銀鈴最近的每一次占卜，都出現同一個符號：斷裂的月亮。她不敢告訴大祭禮娜伊薇。（大祭禮・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_silverbell",
+        "min_level": 5,
+        "text": "銀鈴把一碗泉水推到你面前，水面上浮著一片裂成兩半的月光：「七次了。每一次都是斷裂的月亮。」她的聲音很輕，「大祭禮的任期是終身的……斷裂的月亮，是不是在說她的……」她說不下去了。"
+      },
+      "start_flags": ["rite_start"],
+      "nodes": [
+        {
+          "id": "altar",
+          "title": "在靜潮綠洲的靜泉祭壇陪銀鈴重新占卜",
+          "text": "夜裡的靜泉祭壇，泉面反射著淡淡的銀藍光。銀鈴把泉水舀進月形的銀碗裡：「這一次，你也看。兩個人看見的，比較準。」",
+          "at": { "where": "cell", "location": "stilltide_oasis", "cell": "lm_stillspring_altar" },
+          "requires": { "flags": ["rite_start"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 13 },
+          "success": {
+            "text": "你看見了：月亮不是斷了，是被分成了兩半——一半是銀色的，一半是赤色的。赤色的那一半在變大。銀鈴倒吸了一口氣：「赤鬃……下一次的推舉大典。」",
+            "set_flags": ["rite_seen"],
+            "effects": [{ "type": "affinity", "npc": "npc_silverbell", "delta": 10, "reason": "陪她看清了占卜" }]
+          },
+          "fail": {
+            "text": "你只看見了一片銀光。銀鈴盯著水面很久，小聲說：「另一半……是赤色的。」",
+            "set_flags": ["rite_seen"]
+          }
+        },
+        {
+          "id": "wraiths",
+          "title": "在靜潮綠洲近郊安撫乾涸泉眼的怨靈",
+          "text": "綠洲邊緣有一口乾涸的舊泉，泉眼裡冒出了幾縷灰色的影子——渴死在荒野裡的旅人的怨靈，聞到了水的味道，朝綠洲爬過來。",
+          "at": { "where": "outskirts", "location": "stilltide_oasis" },
+          "requires": { "flags": ["rite_seen"] },
+          "kind": "combat",
+          "enemies": [["oasis_wraith", 3]],
+          "success": {
+            "text": "怨靈們散了。銀鈴在乾涸的泉眼邊倒了一碗水：「喝吧。」水滲進了沙子裡，泉眼深處傳來一聲很輕的嘆息。",
+            "set_flags": ["rite_calmed"]
+          },
+          "fail": {
+            "text": "怨靈把你們逼退到了綠洲邊，最後在銀鈴倒下的一碗水前散了。",
+            "set_flags": ["rite_calmed"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "tell",
+          "title": "決定要不要告訴大祭禮",
+          "text": "大祭禮娜伊薇只在夜裡出現在祭壇邊。銀鈴抓著你的衣角：「如果告訴她，她會擔心。如果不告訴她……」",
+          "at": { "where": "npc", "npc": "npc_naivee" },
+          "requires": { "flags": ["rite_calmed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "陪銀鈴一起告訴她",
+              "success": {
+                "text": "娜伊薇聽完，很慢很慢地笑了：「月亮會缺，也會圓。」她看著泉水，「赤鬃的卡菈想當大祭禮——我知道。我在泉水裡看得見祖靈，卻看不清自己的未來。」她看著你，「也許，你看得清。」",
+                "set_flags": ["rite_1_done", "rite_told"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_naivee", "delta": 15, "reason": "說了真話" },
+                  { "type": "affinity", "npc": "npc_silverbell", "delta": 10, "reason": "陪她開了口" },
+                  { "type": "memory", "summary": "陪靜潮綠洲的占卜師銀鈴把「斷裂的月亮」的占卜告訴了大祭禮娜伊薇：赤鬃的卡菈想在下一次推舉成為大祭禮。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「先去赤鬃那邊看看」",
+              "success": {
+                "text": "銀鈴鬆了一口氣：「也好。先弄清楚，再告訴她。」她把一枚銀鈴尾飾交給你，「拿著它，月尾的人會幫你。」",
+                "set_flags": ["rite_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_silverbell", "delta": 10, "reason": "替她分擔了煩惱" },
+                  { "type": "memory", "summary": "陪靜潮綠洲的占卜師銀鈴看見了「斷裂的月亮」：赤鬃部落在下一次推舉大典的勢力正在變大。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "rite_redmane_games",
+      "title": "赤鬃的競技",
+      "summary": "赤鬃族長卡菈的兒子塔洛想在部族競技裡出頭。母系部落裡男人很難出頭——他偏偏不信。今年的競技，是獵下一頭雷角犀。（大祭禮・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_talo_redmane",
+        "min_level": 8,
+        "requires": { "flags": ["rite_1_done"] },
+        "text": "塔洛的尾巴甩得像鞭子：「今年的競技，誰先獵下雷角犀，誰就能在推舉大典上替赤鬃說話！」他握著長矛，「母親說男人不能代表赤鬃。我要讓她看看！外地人，你跟我一隊！」"
+      },
+      "start_flags": ["rite_games"],
+      "nodes": [
+        {
+          "id": "race",
+          "title": "在烈日草原的城門參加競技的長跑",
+          "text": "競技的第一關是長跑：從烈日草原的營地跑到雷角犀的獵場，第一個到的隊伍才能先出手。赤鬃的戰士們已經擺好了架勢。",
+          "at": { "where": "cell", "location": "sunscorch", "cell": "gate" },
+          "requires": { "flags": ["rite_games"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 15 },
+          "success": {
+            "text": "你和塔洛第一個衝到了獵場。赤鬃的戰士們在後面喘著氣，有人罵：「人類跑得比貓還快？」塔洛笑得露出了牙。",
+            "set_flags": ["rite_first"],
+            "effects": [{ "type": "affinity", "npc": "npc_talo_redmane", "delta": 10, "reason": "陪他跑了第一" }]
+          },
+          "fail": {
+            "text": "你跑得太慢，塔洛硬是拉著你跑完了最後一段。你們第三個到——但前兩隊都在獵場邊找不到犀牛。",
+            "set_flags": ["rite_first"],
+            "effects": [{ "type": "hp", "ratio": -0.05 }]
+          }
+        },
+        {
+          "id": "rhino",
+          "title": "在烈日草原近郊獵下雷角犀",
+          "text": "龜裂的草原上，兩頭雷角犀正在吃荊棘。牠們的角在陽光下閃著藍白色的電光，蹄子一踏，草原就裂開一道縫。",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "requires": { "flags": ["rite_first"] },
+          "kind": "combat",
+          "enemies": [["thunder_rhino", 2]],
+          "success": {
+            "text": "雷角犀倒下了。塔洛站在犀牛的身上，舉起長矛，朝著赤鬃的營地大吼。遠處，一個高大的身影在看著——卡菈。",
+            "set_flags": ["rite_hunted"]
+          },
+          "fail": {
+            "text": "雷角犀把你們撞得東倒西歪，最後是塔洛一矛刺中了犀牛的眼睛。他滿身是血地站起來，朝赤鬃的營地大吼。遠處，卡菈在看著。",
+            "set_flags": ["rite_hunted"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "credit",
+          "title": "決定這次獵物算誰的",
+          "text": "競技的規矩是：獵物歸出最後一擊的人。塔洛看著你，又看著遠處的母親，小聲說：「……最後一擊，你說是誰的就是誰的。」",
+          "at": { "where": "npc", "npc": "npc_talo_redmane" },
+          "requires": { "flags": ["rite_hunted"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「是塔洛的」",
+              "success": {
+                "text": "赤鬃的長老們吵了一整夜：男人能不能代表赤鬃說話？最後卡菈一拳打在議帳的柱子上：「獵物是他的。規矩就是規矩。」塔洛跪在母親面前，哭得像個孩子。",
+                "set_flags": ["rite_2_done", "rite_talo"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 25, "reason": "讓他代表了赤鬃" },
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 10, "reason": "讓她看見了兒子" },
+                  { "type": "memory", "summary": "在烈日草原的部族競技陪塔洛獵下了雷角犀，讓他成了第一個代表赤鬃說話的男人。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「是我的，但我讓給赤鬃的族長」",
+              "success": {
+                "text": "你把犀牛的角獻給了卡菈。卡菈看了你很久，大笑起來：「外地人懂規矩！」她拍著塔洛的頭，「下次，自己贏。」塔洛低著頭，咬著嘴唇，卻沒有生氣。",
+                "set_flags": ["rite_2_done", "rite_kara"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 20, "reason": "把獵物獻給了她" },
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 5, "reason": "陪他獵了犀牛" },
+                  { "type": "memory", "summary": "在烈日草原的部族競技獵下了雷角犀，把犀角獻給了赤鬃族長卡菈。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "rite_wind_field",
+      "title": "祭風原的推舉",
+      "summary": "推舉大典在荒野中心的祭風原舉行。四部落的族長齊聚，祖靈會降臨考驗候選人——今年的候選人，是娜伊薇與卡菈。（大祭禮・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_silverbell",
+        "min_level": 11,
+        "requires": { "flags": ["rite_2_done"] },
+        "text": "銀鈴把一件繡著銀月紋的披風披在你身上：「四部落都同意讓一個外地人當推舉的見證人——你。」她的手在發抖，「祖靈會降臨。候選人要在祖靈面前證明自己……可是祖靈不分外人，見證人也會被考驗。」"
+      },
+      "start_flags": ["rite_field"],
+      "nodes": [
+        {
+          "id": "ancestors",
+          "title": "在靜潮綠洲近郊的祭風原通過祖靈的考驗",
+          "text": "祭風原上的風突然停了。兩個由風沙凝成的巨大身影從地平線上站了起來——貓魅族的祖靈，耳朵與尾巴是千年前的樣子，眼睛是兩團月光。它們沒有看候選人，先看向了你：「外地人。你憑什麼替我們的孩子作證？」",
+          "at": { "where": "outskirts", "location": "stilltide_oasis" },
+          "requires": { "flags": ["rite_field"] },
+          "kind": "combat",
+          "enemies": [["ancestor_spirit", 2]],
+          "success": {
+            "text": "祖靈停下了，在你面前跪下一條腿——貓魅族對獵手的禮。「好。你可以看。」它們轉向了娜伊薇與卡菈。",
+            "set_flags": ["rite_witness"]
+          },
+          "fail": {
+            "text": "祖靈把你打倒在祭風原上，你又站了起來。第三次站起來時，祖靈停下了：「跌倒了還站起來的人，可以看。」它們轉向了娜伊薇與卡菈。",
+            "set_flags": ["rite_witness"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "mediate",
+          "title": "在祖靈面前替兩位候選人說話",
+          "text": "祖靈問了娜伊薇與卡菈同一個問題：「荒野需要什麼樣的大祭禮？」娜伊薇說：「能聽見祖靈的人。」卡菈說：「能保護族人的人。」兩個人都說得對，祖靈沉默了。四部落的族長都看向了見證人——你。",
+          "at": { "where": "outskirts", "location": "stilltide_oasis" },
+          "requires": { "flags": ["rite_witness"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 17 },
+          "success": {
+            "text": "你說，聽見祖靈的人和保護族人的人，本來就不該是同一個人去背所有的重量。祖靈聽完，很久，然後笑了——風沙在祭風原上旋成了一個圓：「外地人說了我們想說的話。」",
+            "set_flags": ["rite_spoken"],
+            "effects": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }]
+          },
+          "fail": {
+            "text": "你說得結結巴巴，可娜伊薇和卡菈都在聽。最後，卡菈先開口了：「……外地人的意思是，我們兩個都不夠，對吧？」娜伊薇慢慢地點了頭。",
+            "set_flags": ["rite_spoken"]
+          }
+        },
+        {
+          "id": "choose",
+          "title": "做出見證人的建議",
+          "text": "祖靈等著。四部落的族長等著。銀鈴緊緊握著你的手：「見證人的建議，祖靈會聽。」",
+          "at": { "where": "npc", "npc": "npc_silverbell" },
+          "requires": { "flags": ["rite_spoken"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「娜伊薇繼續當大祭禮，卡菈當聯盟的戰首」",
+              "success": {
+                "text": "祖靈點了點頭，風沙散去了。娜伊薇留在了祭壇，卡菈得到了一個新的名號——聯盟戰首，在大祭禮之下、四部落之上。卡菈哼了一聲：「至少能打架。」她走過娜伊薇身邊時，第一次停下來向她行了禮。",
+                "set_flags": ["rite_done", "rite_split"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_naivee", "delta": 20, "reason": "替她分擔了重量" },
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 15, "reason": "讓她有了自己的位置" },
+                  { "type": "reputation", "faction": "wild_tribes", "delta": 15 },
+                  { "type": "memory", "summary": "在祭風原的推舉大典上當見證人，建議娜伊薇繼續當大祭禮、卡菈成為聯盟戰首。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓卡菈當大祭禮」",
+              "success": {
+                "text": "祖靈沉默了很久，然後把月光放在了卡菈的頭上。卡菈愣住了——她從來沒想過會真的贏。娜伊薇第一個走過去，替她披上了祭袍：「祖靈的聲音很吵。你會習慣的。」赤鬃的戰士們吼了一整夜。",
+                "set_flags": ["rite_done", "rite_kara_wins"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 25, "reason": "讓她成了大祭禮" },
+                  { "type": "affinity", "npc": "npc_naivee", "delta": 10, "reason": "讓她放下了重量" },
+                  { "type": "reputation", "faction": "wild_tribes", "delta": 10 },
+                  { "type": "memory", "summary": "在祭風原的推舉大典上當見證人，建議讓赤鬃的卡菈成為新的大祭禮。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓四部落輪流推舉」",
+              "success": {
+                "text": "祖靈大笑，風沙在祭風原上跳起了舞。新的規矩訂了下來：大祭禮的任期改為十年，四部落輪流推舉。娜伊薇是最後一位終身的大祭禮，卡菈是下一任。夜爪的薩芙在人群後面說：「……輪到我們的時候，我會在夜裡主持。」",
+                "set_flags": ["rite_done", "rite_rotation"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_naivee", "delta": 15, "reason": "讓大祭禮不再是終身的重擔" },
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 15, "reason": "讓赤鬃有了機會" },
+                  { "type": "affinity", "npc": "npc_saff_nightclaw", "delta": 10, "reason": "讓夜爪也有了機會" },
+                  { "type": "reputation", "faction": "wild_tribes", "delta": 15 },
+                  { "type": "memory", "summary": "在祭風原的推舉大典上建議大祭禮由四部落輪流推舉，任期十年。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "bab_growing_tents",
+      "title": "一夜長高的帳篷",
+      "summary": "烈日草原上，赤鬃的帳篷一夜之間長高了三層。搭帳篷的人說，他們停不下來——想再加一層，再加一層。（沙漠中的巨塔・一）",
+      "rank": "D",
+      "merit": 6,
+      "start": {
+        "kind": "guild",
+        "location": "sunscorch",
+        "min_level": 5,
+        "text": "公會的告示板上貼著一張畫：一頂帳篷，上面疊著另一頂，再疊著另一頂，一直疊到紙的頂端。底下寫著：「誰能讓我們的人停下來，赤鬃重謝。」字跡在最後幾個字歪了——像是寫字的人也想往上寫。"
+      },
+      "start_flags": ["bab_start"],
+      "nodes": [
+        {
+          "id": "tavern",
+          "title": "在烈日草原的酒館打聽長高的帳篷",
+          "text": "酒館的屋頂比上個月高了一倍，老闆還在梯子上加木頭，滿頭大汗：「我、我也不想啊！可是每次停下來，心裡就癢——再高一點，再高一點就好。」",
+          "at": { "where": "cell", "location": "sunscorch", "cell": "tavern" },
+          "requires": { "flags": ["bab_start"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你問遍了酒館裡的人，發現他們說的都是同一個方向：往西邊看的時候，心最癢。西邊的地平線上，有一個尖尖的東西，昨天還沒有。",
+            "set_flags": ["bab_west"]
+          },
+          "fail": {
+            "text": "你什麼也問不出來，倒是自己在酒館裡待久了，也開始想把椅子疊起來。你趕緊走出門，看見西邊的地平線上，有一個尖尖的東西。",
+            "set_flags": ["bab_west"]
+          }
+        },
+        {
+          "id": "bricks",
+          "title": "在烈日草原近郊擊退自己長出來的磚獸",
+          "text": "西邊的草原上，地面一塊一塊地拱起，泥土燒成了磚，磚又自己疊成了四條腿的野獸，背上還在往上長著小小的尖塔。",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "requires": { "flags": ["bab_west"] },
+          "kind": "combat",
+          "enemies": [["brick_crawler", 3]],
+          "success": {
+            "text": "磚獸碎成了一地的磚塊，可地面還在微微地拱起。遠處那個尖尖的東西，看起來比剛才又高了一點。",
+            "set_flags": ["bab_bricks"]
+          },
+          "fail": {
+            "text": "磚獸把你們逼退了，最後自己疊得太高，倒塌了。遠處那個尖尖的東西，看起來比剛才又高了一點。",
+            "set_flags": ["bab_bricks"],
+            "effects": [{ "type": "hp", "ratio": -0.1 }]
+          }
+        },
+        {
+          "id": "stop",
+          "title": "決定怎麼讓帳篷停下來",
+          "text": "回到營地，帳篷們還在長高。塔洛爬在自己家的帳篷頂上，一邊哭一邊加骨架：「我停不下來！」",
+          "at": { "where": "npc", "npc": "npc_talo_redmane" },
+          "requires": { "flags": ["bab_bricks"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「把西邊的窗都封起來」",
+              "success": {
+                "text": "你們把所有帳篷朝西的那一面都用獸皮封了起來。看不見西邊，人們的手慢慢停了下來。塔洛從帳篷頂上爬下來，癱在地上：「……謝謝。」可夜裡，還是有人偷偷掀開獸皮往西看。",
+                "set_flags": ["bab_1_done", "bab_sealed"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 10, "reason": "讓他停了下來" },
+                  { "type": "memory", "summary": "在烈日草原發現帳篷一夜長高，是因為西邊地平線上多了一個尖尖的東西。用獸皮封住了朝西的窗。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓他們爬到最高，看看西邊有什麼」",
+              "success": {
+                "text": "塔洛爬到了帳篷的最頂端，看了很久，臉色發白：「……一座塔。在沙漠裡。比山還高。」他爬下來，手不抖了，「看清楚了，心就不癢了。」",
+                "set_flags": ["bab_1_done", "bab_looked"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 15, "reason": "陪他看清了" },
+                  { "type": "memory", "summary": "在烈日草原陪塔洛爬上了一夜長高的帳篷，看見西邊的沙漠裡有一座比山還高的塔。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "bab_restless_builders",
+      "title": "停不下來的工匠",
+      "summary": "沙漠裡的那座塔每天都在長高。被它吸引的工匠、獵人、商人一批一批地走進沙漠，替它疊磚——赤鬃族長卡菈的戰士們也去了。（沙漠中的巨塔・二）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_talo_redmane",
+        "min_level": 8,
+        "requires": { "flags": ["bab_1_done"] },
+        "text": "塔洛握著長矛，臉上有一道新的疤：「我母親的二十個戰士，昨晚全都往西走了。他們說要去『把塔蓋完』。」他咬著牙，「母親要親自去把他們拖回來。我先去。你來嗎？」"
+      },
+      "start_flags": ["bab_builders"],
+      "nodes": [
+        {
+          "id": "watch",
+          "title": "在烈日草原的城門看清塔的樣子",
+          "text": "烈日草原的營門上，赤鬃的瞭望手用骨製的望遠鏡看著西邊：「塔的底下，有人。很多人。他們在疊磚，疊到手流血也不停。」",
+          "at": { "where": "cell", "location": "sunscorch", "cell": "gate" },
+          "requires": { "flags": ["bab_builders"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你用望遠鏡看了很久，發現了規律：塔每長高一層，塔下的工匠就有一個人倒下，然後被塔吞進去，成了磚的一部分。你放下望遠鏡，手心全是汗。",
+            "set_flags": ["bab_saw"]
+          },
+          "fail": {
+            "text": "你只看得見塔，看不清塔下的人。瞭望手的聲音在發抖：「……有人倒下，就不見了。」",
+            "set_flags": ["bab_saw"]
+          }
+        },
+        {
+          "id": "guardians",
+          "title": "在烈日草原近郊擊退塔的守衛",
+          "text": "塔的腳下，你看見了赤鬃的戰士們，眼神空洞地疊著磚。你一靠近，兩尊用磚和沙子堆成的守衛就從塔基上走了下來，擋住了你：「不蓋塔的人，不能靠近。」",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "requires": { "flags": ["bab_saw"] },
+          "kind": "combat",
+          "enemies": [["spire_guardian", 2]],
+          "success": {
+            "text": "守衛倒塌了。塔洛衝過去，一個一個地把戰士們從磚堆邊拖開。他們醒過來的時候，手上全是血，卻都在笑：「好高啊……好高……」",
+            "set_flags": ["bab_freed"]
+          },
+          "fail": {
+            "text": "守衛把你們逼退了，最後自己疊得太高，倒塌了。塔洛衝過去，把戰士們從磚堆邊拖開。",
+            "set_flags": ["bab_freed"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "drag",
+          "title": "決定怎麼帶戰士們回去",
+          "text": "二十個戰士只醒了一半。另一半還在掙扎，想爬回塔下。塔洛看著你：「綁起來拖回去，還是……讓他們自己決定？」",
+          "at": { "where": "npc", "npc": "npc_talo_redmane" },
+          "requires": { "flags": ["bab_freed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "綁起來拖回去",
+              "success": {
+                "text": "你們把戰士們綁在駱駝上，拖了一整夜才回到營地。一離開塔，他們就清醒了，羞愧得抬不起頭。卡菈在營門口等著，一個一個地拍了他們的頭：「回來就好。」她看向你和塔洛，「……塔，要拆掉。」",
+                "set_flags": ["bab_2_done", "bab_dragged"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 15, "reason": "把她的戰士帶了回來" },
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 10, "reason": "陪他救回了戰士" },
+                  { "type": "memory", "summary": "在西邊沙漠的巨塔下，把被塔吸引的赤鬃戰士綁回了營地。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "陪他們聊，讓他們自己醒",
+              "success": {
+                "text": "你坐在戰士們身邊，問他們想把塔蓋到多高、蓋好了要做什麼。沒有一個人答得出來。說著說著，他們一個一個地停了手，看著自己流血的手，哭了。塔洛在旁邊看著你：「……原來是這樣。他們不知道自己要什麼。」",
+                "set_flags": ["bab_2_done", "bab_talked"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 20, "reason": "讓他看懂了塔" },
+                  { "type": "memory", "summary": "在西邊沙漠的巨塔下，陪被塔吸引的赤鬃戰士聊天，讓他們自己醒了過來。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "bab_babelin_spire",
+      "title": "巴別林的塔",
+      "summary": "沙漠裡的塔已經高得看不見頂了。塔之龍「尖頂執念」巴別林從不以生物之姿現身——它就是塔本身。爬到頂端的人，會見到它想要的東西。（沙漠中的巨塔・三）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_talo_redmane",
+        "min_level": 11,
+        "requires": { "flags": ["bab_2_done"] },
+        "text": "塔洛把一卷繩子背在肩上：「母親說要拆塔。可是塔太高了，從下面拆不動。」他看著西邊，「要從上面拆。我們爬上去。」他頓了頓，「……如果我在半路上想停下來繼續蓋，你就打我。」"
+      },
+      "start_flags": ["bab_climb"],
+      "nodes": [
+        {
+          "id": "sentinels",
+          "title": "在烈日草原近郊的巨塔中段擊退塔的哨兵",
+          "text": "爬到塔的中段，牆上的磚突然一塊一塊地鬆開，疊成了兩個巨大的哨兵，每一個都比你高三倍，頭頂還在往上長著尖頂：「往上的人，只能是我們。」",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "requires": { "flags": ["bab_climb"] },
+          "kind": "combat",
+          "enemies": [["tower_sentinel", 2]],
+          "success": {
+            "text": "哨兵碎成了磚，掉下了塔外，很久很久才聽見落地的聲音。往上看，塔頂還在雲裡。",
+            "set_flags": ["bab_mid"]
+          },
+          "fail": {
+            "text": "哨兵把你們逼到了塔的邊緣，最後是塔洛把繩子纏在哨兵的腳上，讓它自己掉了下去。往上看，塔頂還在雲裡。",
+            "set_flags": ["bab_mid"],
+            "effects": [{ "type": "hp", "ratio": -0.2 }]
+          }
+        },
+        {
+          "id": "climb",
+          "title": "爬上巴別林的塔頂",
+          "text": "越往上爬，心就越癢：再高一點，再高一點，蓋到天上去。塔洛在你下面，咬著牙不說話，手指已經在牆上摳出了血。",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "requires": { "flags": ["bab_mid"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 17 },
+          "success": {
+            "text": "你爬到了塔頂。塔頂沒有屋頂，只有一個還在長高的尖頂，和一片看得見整個荒野的天空。一個聲音從腳下的每一塊磚裡傳來：「好高，對吧？再高一點，就碰得到了。」",
+            "set_flags": ["bab_top"],
+            "effects": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }]
+          },
+          "fail": {
+            "text": "你在最後一段差點鬆手，塔洛從下面撐住了你。兩個人一起爬上了塔頂。一個聲音從腳下的每一塊磚裡傳來：「好高，對吧？再高一點，就碰得到了。」",
+            "set_flags": ["bab_top"],
+            "effects": [{ "type": "hp", "ratio": -0.15 }]
+          }
+        },
+        {
+          "id": "answer",
+          "title": "在塔頂回答巴別林",
+          "text": "「碰得到什麼？」你問。聲音沉默了很久：「……我不知道。我一直往上長，就是為了知道。」腳下的塔在微微地顫抖，像是快撐不住了。塔洛看著你。",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "requires": { "flags": ["bab_top"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「上面什麼都沒有。停下來吧」",
+              "success": {
+                "text": "塔沉默了。然後，從尖頂開始，一塊一塊的磚慢慢地鬆開，像沙一樣流下去。你和塔洛順著繩子滑下塔，落地的時候，塔已經變回了一座沙丘。草原上的帳篷，一頂一頂地矮了回去。",
+                "set_flags": ["bab_done", "bab_stopped", "babelin_seen"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 20, "reason": "陪他爬到了塔頂" },
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 15, "reason": "讓赤鬃的帳篷恢復了原樣" },
+                  { "type": "reputation", "faction": "wild_tribes", "delta": 10 },
+                  { "type": "memory", "summary": "在西邊沙漠爬上了塔之龍巴別林的塔，告訴它上面什麼都沒有。塔變回了一座沙丘。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「你想碰的，是天空另一邊的龍」",
+              "requires": { "flags": ["sinor_seen"] },
+              "success": {
+                "text": "塔猛地一震。「……你怎麼知道？」你說，希諾爾告訴過你，七條龍正在醒來，下一個會在沙漠裡建塔。聲音笑了，笑得整座塔都在搖：「那個愛說謎語的傢伙。」塔停止了長高，「好吧。我不用再往上長了——它們會下來找我。」塔留了下來，再也沒有長高過一寸。",
+                "set_flags": ["bab_done", "bab_knew", "babelin_seen"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 20, "reason": "陪他爬到了塔頂" },
+                  { "type": "reputation", "faction": "wild_tribes", "delta": 10 },
+                  { "type": "memory", "summary": "在西邊沙漠的塔頂，告訴塔之龍巴別林：它想碰的是其他的龍。塔停止了長高，留在了沙漠裡。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「讓它繼續長，看看能長多高」",
+              "success": {
+                "text": "塔歡喜地顫抖著，繼續往上長。你和塔洛滑下塔的時候，它已經穿過了雲。從那天起，烈日草原的人每天早上都會往西看一眼——塔還在長，心還在癢。赤鬃的帳篷，再也沒有矮回去。",
+                "set_flags": ["bab_done", "bab_grow", "babelin_seen"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_talo_redmane", "delta": 5, "reason": "陪他爬到了塔頂" },
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": -10, "reason": "讓塔繼續長高" },
+                  { "type": "memory", "summary": "在西邊沙漠的塔頂，讓塔之龍巴別林的塔繼續長高，穿過了雲。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }
