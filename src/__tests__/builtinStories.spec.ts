@@ -60,6 +60,12 @@ describe('built-in stories', () => {
       ['lena_good_friend', 'lena_runaway', 'lena_lighter_love'],
       ['valerie_sample', 'valerie_stolen_paper', 'valerie_hearing'],
       ['eve_holiday', 'eve_tea_house', 'eve_master'],
+      ['veronica_petitions', 'veronica_little_book', 'veronica_petition_day'],
+      ['lisar_incognito', 'lisar_oath_valley', 'lisar_far_sight'],
+      ['valkas_drinking_friend', 'valkas_war_games', 'valkas_molten_oath'],
+      ['ignis_prototype', 'ignis_army_order', 'ignis_forge_titan'],
+      ['noctis_ghostwriter', 'noctis_undelivered', 'noctis_evernight'],
+      ['morphe_insomnia', 'morphe_moth_dust', 'morphe_dream_dragon'],
     ]
     for (const ids of chains) {
       const levels = ids.map((id) => story(id).start.min_level)
