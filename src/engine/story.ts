@@ -24,7 +24,7 @@ import { presentHere } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { addCounters, condMet, flagKey } from './storyFlags'
-import { tagsAllowed } from './content'
+import { adultContent, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
 import type { GameState, NpcRecord, Report, StoryProgress } from './types'
@@ -168,13 +168,18 @@ export function startStory(state: GameState, id: string, opts: { text?: string; 
 
 export interface ActiveNode { def: StoryDef; node: StoryNode; ref: string }
 
+/** 成人向的任務在設定關閉成人向時暫停：任務點不出現、不擋人，重新開啟後接著進行 */
+export function storyPaused(def: Pick<StoryDef, 'tags'>): boolean {
+  return !!def.tags?.includes('adult') && !adultContent()
+}
+
 /** 進行中的任務裡已經解鎖、還沒結束的任務點 */
 export function activeNodes(state: GameState): ActiveNode[] {
   const out: ActiveNode[] = []
   for (const p of Object.values(state.stories ?? {})) {
     if (p.status !== 'active') continue
     const def = storyDef(p.id)
-    if (!def) continue
+    if (!def || storyPaused(def)) continue
     for (const node of def.nodes) {
       if (p.done.includes(node.id) || !condMet(state, node.requires)) continue
       out.push({ def, node, ref: nodeRef(def.id, node.id) })
@@ -211,7 +216,7 @@ export function nodesHere(state: GameState): ActiveNode[] {
 function active(state: GameState, ref: string): ActiveNode & { progress: StoryProgress } {
   const { def, node } = parseRef(ref)
   const progress = state.stories?.[def.id]
-  if (!progress || progress.status !== 'active' || progress.done.includes(node.id) || !condMet(state, node.requires)) throw new Error('這個任務點現在沒辦法進行')
+  if (!progress || progress.status !== 'active' || storyPaused(def) || progress.done.includes(node.id) || !condMet(state, node.requires)) throw new Error('這個任務點現在沒辦法進行')
   return { def, node, ref, progress }
 }
 

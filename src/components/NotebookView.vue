@@ -7,7 +7,7 @@ import { expireIntel, intelPlace } from '@/engine/intel'
 import { canTurnIn, isMaterialQuest, layerName, questProgressText } from '@/engine/materialQuests'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
-import { activeNodes, placeText } from '@/engine/story'
+import { activeNodes, placeText, storyPaused } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
 import type { Quest } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -109,7 +109,8 @@ const counts = computed(() => ({
           <b>目前的目標</b>
           <ul class="plain goals">
             <li v-for="g in goals" :key="g.ref"><GameIcon name="target" :size="12" /> {{ g.node.title }} <span class="muted">（{{ placeText(g.node, s) }}）</span></li>
-            <li v-if="!goals.length" class="muted">（現在沒有可以進行的目標）</li>
+            <li v-if="storyPaused(def!)" class="muted">（設定關閉了成人向，這個任務暫停中；重新開啟後接著進行）</li>
+            <li v-else-if="!goals.length" class="muted">（現在沒有可以進行的目標）</li>
           </ul>
         </div>
         <FoldMenu class="history" icon="notes" label="經過" :detail="p.log.length ? `最近：${p.log.at(-1)!.text.slice(0, 24)}${p.log.at(-1)!.text.length > 24 ? '…' : ''}` : ''" :badge="p.log.length" :open="p.status === 'active'">
