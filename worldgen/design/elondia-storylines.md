@@ -122,8 +122,10 @@
 
 每一座地下城都有自己的故事線，游離在主線與政治線之外（2～3 個任務，照第 1.1 節的等級帶；可以從公會委託、情報商或地下城裡的發現開頭）。題材從世界書的地下城背景與傳說來：
 
+- **可以重試的任務點**：「練好了再來」的戰鬥——地下城線的底層層主戰、鮮血試煉場的三場試煉、戈爾的斧衛考驗——失敗的結果寫 `retry`（照樣顯示失敗的文字，但任務點不結束）。劇情上錯過就沒有的場面（伏擊、暴動、追逐）照舊寫一般的失敗結果，劇情往下走。
+
 - 層主無法溝通，打倒之後會重新出現：原因統一是歷史之龍「回響編年」阿契隆讓地下城反覆重演最深刻的過去（任務的結局寫成半空中閃過交錯的殘影）。低語墓穴、晨霧修道院原本用血誓、封印的說法，已經改成阿契隆。
-- 地下城線的戰鬥直接用各層的怪物，不用替身：一（D）在中層、二（C）在深層、三（B）在底層，最後一戰是底層層主。Lv.11 的隊伍打 13 級的底層層主多半會輸，所以這一戰都寫了失敗的結果，劇情照樣往下走。
+- 地下城線的戰鬥直接用各層的怪物，不用替身：一（D）在中層、二（C）在深層、三（B）在底層，最後一戰是底層層主。Lv.11 的隊伍打 13 級的底層層主多半會輸，所以這一戰的失敗結果都是 `retry`：輸了任務點不結束，練等之後可以再來挑戰（測試會檢查）。
 
 | 地區 | 地下城 |
 |---|---|
@@ -267,8 +269,15 @@
 | 第十三批 | 地下城：餘燼裂隙 | 地底的熱（`emb_warm_floors`，D，血羽城堡公會）→ 偷焰的人（`emb_flame_weavers`，C，血羽城堡情報商）→ 魔焰之源（`emb_heart_of_flame`，B，血羽城堡公會） | 魔焰織法者偷取原初魔焰賣給想造「永不熄滅的劍」的鍛匠；魔焰倒回裂隙或交給薇洛妮卡；壓下往上湧的魔焰之源，把火星留在裂隙（`emb_left`）或帶走（`emb_spark`，選一個特長） |
 | 第十三批 | 地下城：血岩深穴 | 血誓侍從（`brc_bloodsworn_squires`，D，寂墓聖堂公會）→ 戰敗的古王（`brc_fallen_king`，C，艾瑟里昂）→ 最初的背誓者（`brc_first_oathbreaker`，B，寂墓聖堂公會） | 戰敗的古王不是在避難，是在看守封印最初背誓者的聖所；守衛不夠，門快開了。第二個任務選白焰（`brc_whiteflame`）的話，最後可以用遺火塔的白焰封門（`brc_ashseal`）；否則用自己的血立誓守門（`brc_bloodseal`，選一個特長） |
 | 第十三批 | 地下城：地獄溫室 | 吃人的花（`ghs_maneating_flowers`，D，血羽城堡情報商）→ 實驗記錄（`ghs_experiment_log`，C，薇洛妮卡）→ 第零號實驗體（`ghs_first_experiment`，B，薇洛妮卡） | 地獄溫室原本是莉莎爾年輕時的「荒原綠化計畫」，想讓南境的孩子不再挨餓。實驗記錄照約定交給薇洛妮卡或給莫格婆婆；打倒第零號實驗體，它長出的種子種在腐沼村（`ghs_planted`，荒原長出第一片普通的草）或交給莉莎爾（`ghs_palace`） |
+| 第十四批 | 地下城：月影根穴 | 根穴裡的弓聲（`msr_stolen_bows`，D，托倫）→ 月之碎片的化身（`msr_shard_avatar`，C，艾溫娜）→ 月之碎片的本源（`msr_moon_core`，B，銀月城公會） | 墮落的精靈是千年前碰了月之碎片的王庭守根人；碎片交給艾溫娜研究或種在生命之泉旁；壓下甦醒的月之碎片本源，把清醒的守根人帶回王都（`msr_home`，托倫找回了祖父）或讓他們繼續守根（`msr_guard`） |
+| 第十四批 | 地下城：荊棘迴廊 | 月華巡禮（`thc_moonlight_pilgrimage`，D，菲恩）→ 被吃掉的記憶（`thc_eaten_memories`，C，奧克塔維亞）→ 女神的倒影（`thc_goddess_shadow`，B，菲恩） | 陪跟著人類老師學德魯伊的精靈學徒菲恩（中層、深層在場助戰）走完精靈成年的月華巡禮：最怕的是家族背對他、被吃掉的記憶要不要全部拿回來（`thc_whole`／`thc_left`）；結局去和家族說話（`thc_family`）或成為苔語村的德魯伊（`thc_druid`） |
+| 第十四批 | 地下城：翠影空洞 | 被寄生的精靈（`vh_infected_elves`，D，莉安德拉）→ 異界之花（`vh_alien_bloom`，C，艾溫娜）→ 異界之門（`vh_otherworld_gate`，B，莉安德拉） | 精靈的誕生地長出了異界的花，孢子來自世界樹之根上的一道裂縫，門的另一邊有和精靈很像的人在唱寂寞的歌。結局用世界樹的新芽縫起裂縫（`vh_sewn`，要先完成世界樹線）、用精靈最古老的歌封住（`vh_sung`）或留一道星光網住的縫讓艾溫娜研究（`vh_window`） |
+| 第十四批 | 地下城：潮隕洞窟 | 又迷路的使者（`tfc_lost_envoy`，D，托馬老爹）→ 祖忘之淵（`tfc_forgotten_abyss`，C，澪）→ 古海神的殘念（`tfc_sea_god_remnant`，B，澪） | 迷路的玉璘族使者汐音撿到了古海神的骨頭；祖靈在哭，因為被人遺忘的古海神在把他們吃回去；辦海神祭或寫進史書。結局讓珊瑚灣每年唱歌給祂聽（`tfc_rest`）；礁光柱線完成的話，也可以讓祂的力量撐起礁光柱（`tfc_pillars`）。澪在底層的第一戰助戰 |
+| 第十四批 | 地下城：骷髏潮島 | 沒有人回來的島（`skl_no_survivors`，D，雷諾）→ 紅鬚的地圖（`skl_pirate_king_map`，C，卡洛斯）→ 島的頭骨（`skl_kraken`，B，雷諾） | 海盜王紅鬚把寶藏交給一頭巨妖的頭骨看守；和黑帆卡洛斯合拼藏寶圖（照約定或瞞著他）。讓巨妖睡回去之後，照紅鬚的遺願把三百年前搶走的東西還回去（`skl_returned`）、交給七潮議會（`skl_council`）或和卡洛斯五五分帳（`skl_shared`） |
+| 第十四批 | 地下城：回音峽谷 | 沒有回來的獵手（`ecc_missing_hunter`，D，薩芙）→ 浩劫的殘影（`ecc_calamity_shade`，C，薩芙）→ 浩劫之聲（`ecc_voice_of_catastrophe`，B，薩芙） | 救回薩芙在試煉之谷失蹤的妹妹；夜爪被撕掉的族譜第一頁：他們是替始祖娜依卡守住浩劫之聲的守門人。結局讓荒野四部落一起守（`ecc_shared`）或照夜爪的方式守（`ecc_nightclaw`） |
+| 第十四批 | 地下城：流沙聖殿 | 沒有登記的人（`qst_unregistered`，D，塔莉）→ 太陽神諭（`qst_sun_oracle`，C，塔莉）→ 太陽神的化身（`qst_sun_god_avatar`，B，沙堡營地公會） | 公會聯絡員塔莉「沒回來的人」名單：救回她弟弟和被流沙困住的四個冒險者，解開太陽神諭（答案是太陽的一天）。結局留下黃金聖物、帶回三十年來沒回來的人的遺物（`qst_names`）或拿走聖物（`qst_relic`，掌心的太陽烙印，選一個特長） |
 
-- 每條三個任務，`min_level` 5、8、11，下一個任務的開頭要求上一個的完成旗標（`dthr_1_done`、`whcr_1_done`、`lil_1_done`、`rwar_1_done`、`mabb_1_done`、`isa_1_done`、`doct_1_done`、`snk_1_done`、`aya_1_done`、`rv_1_done`、`epic_1_done`、`ser_1_done`、`port_1_done`、`spr_1_done`、`ame_1_done`、`cw_1_done`、`cave_1_done`、`wl_1_done`、`annex_1_done`、`spy_1_done`、`def_1_done`、`lena_1_done`、`val_1_done`、`eve_1_done`、`vsec_1_done`、`lis_1_done`、`valk_1_done`、`ign_1_done`、`noc_1_done`、`mor_1_done`、`law_1_done`、`trl_1_done`、`god_1_done`、`lila_1_done`、`rot_1_done`、`hm_1_done`、`era_1_done`、`kag_1_done`、`ore_1_done`、`brew_1_done`、`smith_1_done`、`wt_1_done`、`wat_1_done`、`smg_1_done`、`sin_1_done`、`acc_1_done`、`shd_1_done`、`fog_1_done`、`vault_1_done`、`reef_1_done`、`nip_1_done`、`scs_1_done`、`rite_1_done`、`bab_1_done`、`pit_1_done`、`echo_1_done`、`gnt_1_done`、`emb_1_done`、`brc_1_done`、`ghs_1_done`……），中間的空檔玩家可以去練等。每個任務都停在可以等的地方（「叔父還能撐幾個月」「封印還撐得住」「等星之心的魔力恢復」）。
+- 每條三個任務，`min_level` 5、8、11，下一個任務的開頭要求上一個的完成旗標（`dthr_1_done`、`whcr_1_done`、`lil_1_done`、`rwar_1_done`、`mabb_1_done`、`isa_1_done`、`doct_1_done`、`snk_1_done`、`aya_1_done`、`rv_1_done`、`epic_1_done`、`ser_1_done`、`port_1_done`、`spr_1_done`、`ame_1_done`、`cw_1_done`、`cave_1_done`、`wl_1_done`、`annex_1_done`、`spy_1_done`、`def_1_done`、`lena_1_done`、`val_1_done`、`eve_1_done`、`vsec_1_done`、`lis_1_done`、`valk_1_done`、`ign_1_done`、`noc_1_done`、`mor_1_done`、`law_1_done`、`trl_1_done`、`god_1_done`、`lila_1_done`、`rot_1_done`、`hm_1_done`、`era_1_done`、`kag_1_done`、`ore_1_done`、`brew_1_done`、`smith_1_done`、`wt_1_done`、`wat_1_done`、`smg_1_done`、`sin_1_done`、`acc_1_done`、`shd_1_done`、`fog_1_done`、`vault_1_done`、`reef_1_done`、`nip_1_done`、`scs_1_done`、`rite_1_done`、`bab_1_done`、`pit_1_done`、`echo_1_done`、`gnt_1_done`、`emb_1_done`、`brc_1_done`、`ghs_1_done`、`msr_1_done`、`thc_1_done`、`vh_1_done`、`tfc_1_done`、`skl_1_done`、`ecc_1_done`、`qst_1_done`……），中間的空檔玩家可以去練等。每個任務都停在可以等的地方（「叔父還能撐幾個月」「封印還撐得住」「等星之心的魔力恢復」）。
 - 任務需要的固定 NPC（開頭、任務點、在場的友方、同行）一律設成不能被攻擊（`no_attack`），測試會檢查。
 - 和 NPC 的戰鬥一律用替身怪物（`docs/MONSTERS.md`「特殊任務的替身怪物」），故事裡的死亡用結果的 `deaths`。
 - 測試：`src/__tests__/builtinStories.spec.ts`（內建任務通過檢查、整理後不變、等級帶與接續、加冕的流程）。
