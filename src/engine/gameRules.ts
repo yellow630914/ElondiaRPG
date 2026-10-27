@@ -1,16 +1,16 @@
 // 這個存檔的規則（state.options）：開新遊戲時選，之後可以在設定的「這個存檔的規則」改。
 // 每一項都有預設值（和沒有這項規則時一樣），讀的時候一律夾在範圍內；舊存檔沒有的欄位就是預設。
-// 戰敗掉落（defeatLoot）另外在 expedition.ts。說明見 docs/SAVES.md 第 7 節。
+// 戰敗掉落（defeatLoot）另外在 expedition.ts；難度（difficulty）的係數在下面。說明見 docs/SAVES.md 第 7 節。
 
-import type { GameOptions, GameState } from './types'
+import type { Difficulty, GameOptions, GameState } from './types'
 import { companionRules, combatRules } from './data'
 // 直接讀 JSON：security.ts 會用到這裡，避免循環引用
 import securityJson from '@data/rules/security.json'
 import slaveryJson from '@data/rules/slavery.json'
 import parasitesJson from '@data/rules/parasites.json'
 
-/** 數值類的存檔規則 */
-export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot'>
+/** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
+export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty'>
 
 export interface RuleDef {
   label: string
@@ -44,6 +44,42 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
 
 function pct(n: number): string {
   return `${Math.round(n * 100)}%`
+}
+
+// ---- 難度（combat.json 的 difficulty）：怪物的生命與輸出的係數，普通 = 1 ----
+
+export interface DifficultyDef {
+  id: Difficulty
+  name: string
+  /** 怪物最大生命的係數 */
+  hp: number
+  /** 怪物造成的傷害的係數 */
+  damage: number
+  desc: string
+}
+
+export const DIFFICULTY_IDS: Difficulty[] = ['story', 'easy', 'normal', 'hard', 'epic']
+
+/** 各難度的係數（照 combat.json 的順序；資料裡沒寫的難度用普通的係數補） */
+export const DIFFICULTY_DEFS: Record<Difficulty, DifficultyDef> = Object.fromEntries(
+  DIFFICULTY_IDS.map((id) => {
+    const d = combatRules.difficulty.levels.find((l) => l.id === id)
+    return [id, { id, name: d?.name ?? id, hp: d?.hp ?? 1, damage: d?.damage ?? 1, desc: d?.desc ?? '' }]
+  }),
+) as Record<Difficulty, DifficultyDef>
+
+export const DEFAULT_DIFFICULTY: Difficulty =
+  (DIFFICULTY_IDS as string[]).includes(combatRules.difficulty.default) ? combatRules.difficulty.default as Difficulty : 'normal'
+
+/** 這個存檔的難度（舊存檔沒有、寫壞了都算普通） */
+export function difficultyOf(state: Pick<GameState, 'options'> | null | undefined): Difficulty {
+  const d = state?.options?.difficulty
+  return d && DIFFICULTY_DEFS[d] ? d : DEFAULT_DIFFICULTY
+}
+
+/** 這個存檔的難度係數 */
+export function difficultyRule(state: Pick<GameState, 'options'> | null | undefined): DifficultyDef {
+  return DIFFICULTY_DEFS[difficultyOf(state)]
 }
 
 /** 讀一項存檔規則（沒有設定、不是數字時用預設，超出範圍的夾回來） */

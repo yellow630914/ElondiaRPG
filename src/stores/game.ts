@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import { DIFFICULTY_DEFS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
@@ -42,7 +42,7 @@ import * as away from '@/engine/away'
 import * as partyEngine from '@/engine/party'
 import * as garden from '@/engine/garden'
 import * as invention from '@/engine/invention'
-import type { DefeatLoot, GameState, GearSlot, Report, TattooPlace } from '@/engine/types'
+import type { DefeatLoot, Difficulty, GameState, GearSlot, Report, TattooPlace } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
@@ -1118,10 +1118,17 @@ export const useGame = defineStore('game', () => {
       state.value.options = { ...(state.value.options ?? { defeatLoot: 'half' }), defeatLoot: rule }
       save()
     },
+    /** 這個存檔的難度（combat.json 的 difficulty）：只影響之後開打的戰鬥 */
+    setDifficulty: (difficulty: Difficulty) => {
+      if (!state.value || !DIFFICULTY_DEFS[difficulty]) return
+      state.value.options = { ...(state.value.options ?? { defeatLoot: 'half' }), difficulty }
+      save()
+    },
     /** 這個存檔的數值規則（gameRules.ts）：和預設一樣的不存 */
     setRules: (rules: Partial<Record<NumericRule, unknown>>) => {
       if (!state.value) return
-      state.value.options = { defeatLoot: state.value.options?.defeatLoot ?? 'half', ...sanitizeRules(rules) }
+      const { defeatLoot = 'half', difficulty } = state.value.options ?? {}
+      state.value.options = { defeatLoot, ...(difficulty ? { difficulty } : {}), ...sanitizeRules(rules) }
       save()
     },
     descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s)), { onMap: true }),

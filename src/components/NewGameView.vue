@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { DEFEAT_LOOT_NAME } from '@/engine/expedition'
-import type { DefeatLoot, GearSlot } from '@/engine/types'
+import type { DefeatLoot, Difficulty, GearSlot } from '@/engine/types'
 import { apMaxFor, apRegenFor, baseAttrs, luckyThreshold, maxHpFor, mod, slotMaxFor } from '@/engine/character'
 import { abilities, ATTR_IDS, attributeRules, combatClasses as classes, geography, isSettlement, locationById, type AttrId, type NpcKind } from '@/engine/data'
 import { GENDER_IDS, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
@@ -29,7 +29,7 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import RuleFields from './RuleFields.vue'
-import { sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
@@ -203,10 +203,13 @@ function start() {
     ...(customPerks.value.length ? { customPerks: customPerks.value.map((p) => ({ ...p })) } : {}),
     gear: { ...gearChoice.value },
     gearBudget: gearBudget.value,
-    options: { defeatLoot: defeatLoot.value, ...sanitizeRules(rules.value) },
+    // 難度和其他規則一樣：和預設一樣的不存
+    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...sanitizeRules(rules.value) },
   }, content.active)
 }
 
+/** 這個存檔的規則：難度（怪物的生命與輸出的係數） */
+const difficulty = ref<Difficulty>(DEFAULT_DIFFICULTY)
 /** 這個存檔的規則：在地下城戰敗時，這趟撿到的東西 */
 const defeatLoot = ref<DefeatLoot>('half')
 // 其他存檔規則（gameRules.ts）：沒寫的是預設
@@ -445,6 +448,13 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
       <table class="tbl form">
         <tbody>
         <tr>
+          <th>難度 <Hint text="怪物的生命與造成的傷害各乘一個係數，普通是設計的基準。經驗值與戰利品不變；之後可以在「設定」裡改（只影響之後開打的戰鬥）。" /></th>
+          <td>
+            <select v-model="difficulty"><option v-for="id in DIFFICULTY_IDS" :key="id" :value="id">{{ DIFFICULTY_DEFS[id].name }}</option></select>
+            <p class="small muted diff">{{ DIFFICULTY_DEFS[difficulty].desc }}（怪物生命 ×{{ DIFFICULTY_DEFS[difficulty].hp }}、傷害 ×{{ DIFFICULTY_DEFS[difficulty].damage }}）</p>
+          </td>
+        </tr>
+        <tr>
           <th>地下城戰敗時 <Hint text="這趟探索撿到、還沒帶出地下城的物品與錢；之後可以在「設定」裡改。" /></th>
           <td><select v-model="defeatLoot"><option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option></select></td>
         </tr>
@@ -561,6 +571,7 @@ button :deep(.game-icon) { vertical-align: -0.2em; }
 .form th { width: 1%; vertical-align: top; padding-top: 9px; color: var(--muted); }
 .form input:not([type='checkbox']):not([type='radio']), .form select, .form textarea { width: 100%; }
 .form .short { width: 90px !important; }
+.diff { margin: 3px 0 0; }
 .pair { display: flex; gap: 6px; }
 .pair select { flex: 0 0 9em; }
 .pair input { flex: 1; min-width: 0; }

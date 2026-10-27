@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { companionRules } from '@/engine/data'
 import { questDeadlineDays } from '@/engine/deadlines'
 import { applyEffects } from '@/engine/effects'
-import { gameRule, RULE_DEFS, rewardMoney, sanitizeRules } from '@/engine/gameRules'
+import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultyRule, gameRule, RULE_DEFS, rewardMoney, sanitizeRules } from '@/engine/gameRules'
+import { startCombat } from '@/engine/combat'
 import { enterLocation, goOutskirts } from '@/engine/grid'
 import { ambushChance, shortRest } from '@/engine/rest'
 import { alertLevel, securityRules } from '@/engine/security'
+import { enemies } from '@/engine/data'
 import { commitReport, migrate, newGame } from '@/engine/state'
 import type { GameState, Report } from '@/engine/types'
 
@@ -30,6 +32,50 @@ describe('per-save rules', () => {
     expect(sanitizeRules({ xpMult: 2, moneyMult: 1, escapeDc: '', longRestHours: '6' })).toEqual({ xpMult: 2, longRestHours: 6 })
     // 舊存檔沒有這些欄位：照預設
     expect(gameRule(migrate(game()), 'deadlineMult')).toBe(1)
+  })
+
+  it('leaves difficulty on normal by default and keeps it when other rules change', () => {
+    expect(DEFAULT_DIFFICULTY).toBe('normal')
+    expect(difficultyOf(game())).toBe('normal')
+    // 舊存檔沒有這個欄位、寫壞了的也算普通
+    expect(difficultyOf(migrate(game()))).toBe('normal')
+    expect(difficultyOf({ options: { defeatLoot: 'half', difficulty: 'nope' as never } })).toBe('normal')
+    expect(difficultyRule({ options: { defeatLoot: 'half', difficulty: 'epic' } })).toBe(DIFFICULTY_DEFS.epic)
+    // 難度不是數值規則：不會被 sanitizeRules 當成一項吃掉
+    expect(Object.keys(RULE_DEFS)).not.toContain('difficulty')
+    expect(sanitizeRules({ difficulty: 'epic' } as never)).toEqual({})
+  })
+
+  it('curves monster hp and damage by difficulty, with normal as the baseline', () => {
+    // 普通 = 1：和沒有這個規則時完全一樣
+    expect(DIFFICULTY_DEFS.normal.hp).toBe(1)
+    expect(DIFFICULTY_DEFS.normal.damage).toBe(1)
+    // 五個難度都在，而且生命與輸出都隨難度單調上升
+    expect(DIFFICULTY_IDS).toEqual(['story', 'easy', 'normal', 'hard', 'epic'])
+    for (let i = 1; i < DIFFICULTY_IDS.length; i++) {
+      const prev = DIFFICULTY_DEFS[DIFFICULTY_IDS[i - 1]!]
+      const cur = DIFFICULTY_DEFS[DIFFICULTY_IDS[i]!]
+      expect(cur.hp).toBeGreaterThan(prev.hp)
+      expect(cur.damage).toBeGreaterThan(prev.damage)
+    }
+    // 史詩的輸出係數刻意壓低（怪物主要是變耐打）：不要讓層主一拳打倒一個隊員
+    expect(DIFFICULTY_DEFS.epic.damage).toBeLessThanOrEqual(1.2)
+  })
+
+  it('applies the difficulty coefficients to monsters in combat', () => {
+    const base = enemies.goblin!
+    for (const id of DIFFICULTY_IDS) {
+      const state = game({ defeatLoot: 'half', difficulty: id })
+      const combat = startCombat(state, [['goblin', 1]])
+      const foe = combat.combatants.find((c) => c.side === 'enemy')!
+      const d = DIFFICULTY_DEFS[id]
+      // 特徵也會改生命：只有沒擲到特徵時才對得上基礎值
+      if (!foe.traits?.length) expect(foe.maxHp).toBe(Math.max(1, Math.round(base.hp * d.hp)))
+      expect(foe.dmgMult ?? 1).toBe(d.damage)
+      // 開戰時把難度記進戰鬥狀態（普通不記）
+      expect(combat.difficulty).toBe(id === 'normal' ? undefined : id)
+      delete state.combat
+    }
   })
 
   it('scales experience and reward money, but not spending', () => {
