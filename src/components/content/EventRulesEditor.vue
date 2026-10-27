@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { MODE_NAME } from '@/engine/travel'
-import { currentEventRules, ROUTE_MODES, type EventRulesMod } from '@/engine/travelEventMods'
+import { currentEventRules, DUNGEON_TRIGGERS, ROUTE_MODES, type EventRulesMod } from '@/engine/travelEventMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
@@ -69,6 +69,14 @@ const WEIGHT_NAME = { auto: '原本的旅途事件與普通檢定', choice: '普
         <label>記住最近幾次的分類 <input v-model.number="draft.town.recent_size" type="number" min="0" max="10" class="num" /></label>
       </div>
       <p class="small muted">分類：{{ Object.values(draft.town.categories).join('、') }}。同一個分類最近出現過一次，權重就乘一次，所以不會一直遇到同一類的事。</p>
+    </fieldset>
+    <fieldset>
+      <legend>地下城事件 <Hint text="在地下城與近郊觸發陷阱（沒察覺時）、打開寶箱、採集、在安全房長休之後的機率。內建的地下城事件都是成人向。" /></legend>
+      <div class="grid">
+        <label v-for="(n, k) in DUNGEON_TRIGGERS" :key="k">{{ n }}的機率（0～1）<input v-model.number="draft.dungeon.chance[k]" type="number" min="0" max="1" step="0.01" class="num" /></label>
+        <label>兩次事件至少隔幾小時 <input v-model.number="draft.dungeon.cooldown_hours" type="number" min="0" max="168" class="num" /></label>
+        <label>同一事件預設幾天後才會再出現 <input v-model.number="draft.dungeon.repeat_days" type="number" min="0" max="60" class="num" /></label>
+      </div>
     </fieldset>
   </div>
 </template>

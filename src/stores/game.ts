@@ -3,6 +3,7 @@ import { sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
+import * as dungeonEvents from '@/engine/dungeonEvents'
 import * as deadlines from '@/engine/deadlines'
 import { pitchTarget } from '@/engine/perks'
 import { computed, ref, toRaw, watch } from 'vue'
@@ -173,6 +174,7 @@ function load(s: GameState): GameState {
   // 自訂內容刪掉的事件：等待中的作廢
   road.pruneRoadEvent(s)
   townEvents.pruneTownEvent(s)
+  dungeonEvents.pruneDungeonEvent(s)
   // 武器與防具類型由裝備決定（自訂內容可能改過底材）
   for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
   // 主人的家：先對齊格局（舊格局的樓層、超出範圍的座標改到一樓出口），再檢查位置
@@ -982,6 +984,7 @@ export const useGame = defineStore('game', () => {
     }),
     answerRoadEvent: (i: number) => run((s) => road.answerRoadEvent(s, i)),
     answerTownEvent: (i: number) => run((s) => townEvents.answerTownEvent(s, i)),
+    answerDungeonEvent: (i: number) => run((s) => dungeonEvents.answerDungeonEvent(s, i)),
     leaveSide: () => run((s) => road.leaveSide(s)),
     leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s), { onMap: true }),
     rest: () => run(town.rest),

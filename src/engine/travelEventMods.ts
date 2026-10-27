@@ -1,10 +1,12 @@
-// 旅途事件與城鎮事件的自訂內容（docs/TRAVEL_EVENTS.md、docs/CONTENT_EDITOR.md）。
+// 旅途事件、城鎮事件與地下城事件的自訂內容（docs/TRAVEL_EVENTS.md、docs/CONTENT_EDITOR.md）。
 // 內建的事件可以改、不能刪；自建的事件沒有被用到的地方，隨時可以刪（等待中的事件會作廢）。
-// 另外一筆「事件設定」（key 是 rules）：旅途各種路段的機率、事件種類的權重，城鎮事件的機率與冷卻。
+// 另外一筆「事件設定」（key 是 rules）：旅途各種路段的機率、事件種類的權重，城鎮事件與地下城事件的機率與冷卻。
 
 import { ATTR_IDS, geography, shopRules, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
 import { sanitizeCond } from './mods'
-import { travelEvents, type RoadOption, type RoadTemplate, type TownEventRules } from './road'
+import { travelEvents, type DungeonEventRules, type DungeonTrigger, type EventScope, type RoadOption, type RoadTemplate, type TownEventRules } from './road'
+import { CONTENT_TAG_IDS } from './content'
+import { BODIES } from './traits'
 import { sanitizeOutcome } from './storyMods'
 import { TOWN_EVENT_CELLS } from './townEvents'
 import { MODE_NAME } from './travel'
@@ -18,9 +20,14 @@ export interface EventRulesMod {
   chance: Partial<Record<RouteMode, number>>
   weights: { auto: number; choice: number; combat: number; advanced: number }
   town: TownEventRules
+  dungeon: DungeonEventRules
 }
 
-export const EVENT_LIMITS = { title_chars: 20, text_chars: 400, label_chars: 30, options: 5, cooldown_days: [0, 60] } as const
+export const EVENT_LIMITS = { title_chars: 20, text_chars: 400, label_chars: 30, options: 5, cooldown_days: [0, 60], scene_chars: 200 } as const
+export const DUNGEON_TRIGGERS: Record<DungeonTrigger, string> = { trap: '觸發陷阱', chest: '打開寶箱', gather: '採集', rest: '安全房長休' }
+/** 地下城事件的層：0 近郊、1 淺層 … 4 底層 */
+export const EVENT_LAYERS = ['近郊', '淺層', '中層', '深層', '底層'] as const
+const DEFAULT_DUNGEON: DungeonEventRules = { chance: { trap: 0, chest: 0, gather: 0, rest: 0 }, cooldown_hours: 4, repeat_days: 3 }
 export const ROUTE_MODES = Object.keys(MODE_NAME) as RouteMode[]
 export const LOCATION_TYPE_NAME: Record<Exclude<LocationType, 'dungeon'>, string> = {
   capital: '主城', city: '城市', town: '城鎮', village: '村莊', port: '港口', outpost: '哨站', fortress: '要塞',
@@ -39,7 +46,7 @@ const num = (v: unknown, lo: number, hi: number, d: number, digits = 2) => {
 const snapshot = { templates: clone(travelEvents.templates), rules: rulesOf() }
 
 function rulesOf(): EventRulesMod {
-  return clone({ chance: travelEvents.chance, weights: travelEvents.weights, town: travelEvents.town })
+  return clone({ chance: travelEvents.chance, weights: travelEvents.weights, town: travelEvents.town, dungeon: travelEvents.dungeon ?? DEFAULT_DUNGEON })
 }
 
 export function builtinTravelEvent(id: string): RoadTemplate | undefined {
@@ -88,11 +95,12 @@ function pick<T extends string>(v: unknown, allowed: readonly T[]): T[] {
 /** extraCells：還沒套用、但同一包裡有的自建商店（匯入時） */
 export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, custom: boolean, extraCells: string[] = []): TravelEventMod {
   const L = EVENT_LIMITS
-  const scope = raw.scope === 'town' ? 'town' : 'road'
-  const kind = raw.kind === 'check' ? 'check' : 'choice'
+  const scope: EventScope = raw.scope === 'town' || raw.scope === 'dungeon' ? raw.scope : 'road'
+  // 地下城事件只有選擇（事件發生在主角身上，主角自己決定怎麼應付）
+  const kind = raw.kind === 'check' && scope !== 'dungeon' ? 'check' : 'choice'
   const out: TravelEventMod = {
     id,
-    ...(scope === 'town' ? { scope } : {}),
+    ...(scope !== 'road' ? { scope } : {}),
     tier: scope === 'road' && raw.tier === 'advanced' ? 'advanced' : 'normal',
     kind,
     title: str(raw.title, L.title_chars) || '新的事件',
@@ -101,6 +109,16 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
   if (scope === 'road') {
     const modes = pick(raw.modes, ROUTE_MODES)
     if (modes.length) out.modes = modes
+  } else if (scope === 'dungeon') {
+    const triggers = pick(raw.triggers, Object.keys(DUNGEON_TRIGGERS) as DungeonTrigger[])
+    if (triggers.length) out.triggers = triggers
+    const dungeons = pick(raw.dungeons, geography.locations.map((l) => l.id))
+    if (dungeons.length) out.dungeons = dungeons
+    const regions = pick(raw.regions, geography.regions.map((r) => r.id))
+    if (regions.length) out.regions = regions
+    const layers = [...new Set((Array.isArray(raw.layers) ? raw.layers : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < EVENT_LAYERS.length))].sort()
+    if (layers.length) out.layers = layers
+    if (raw.cooldown_days !== undefined && raw.cooldown_days !== null && String(raw.cooldown_days) !== '') out.cooldown_days = Math.round(num(raw.cooldown_days, ...L.cooldown_days, 3))
   } else {
     const cells = pick(raw.cells, [...townEventCells(), ...extraCells])
     if (cells.length) out.cells = cells
@@ -113,6 +131,13 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
   if (typeof raw.category === 'string' && travelEvents.town?.categories[raw.category]) out.category = raw.category
   const req = sanitizeCond(raw.requires)
   if (req) out.requires = req
+  // 內容標籤、主角的體型、親密場景（成人向的事件）
+  const tags = CONTENT_TAG_IDS.filter((t) => Array.isArray(raw.tags) && raw.tags.includes(t))
+  if (tags.length) out.tags = tags
+  const bodies = BODIES.filter((b) => Array.isArray(raw.pc_body) && raw.pc_body.includes(b))
+  if (bodies.length && bodies.length < BODIES.length) out.pc_body = bodies
+  const scene = str(raw.scene, L.scene_chars)
+  if (scene) out.scene = scene
   if (kind === 'check') {
     out.check = check(raw.check) ?? { attr: 'int', dc: 12 }
     const s = outcome(raw.success)
@@ -130,6 +155,7 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
       if (s) opt.success = s
       const f = c ? outcome(o?.fail) : undefined
       if (f) opt.fail = f
+      if (out.scene && (o?.adult_scene === 'always' || (c && (o?.adult_scene === 'success' || o?.adult_scene === 'fail')))) opt.adult_scene = o.adult_scene
       return opt
     })
     if (options.length) out.options = options
@@ -139,9 +165,10 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
   return out
 }
 
-export function newTravelEvent(id: string, scope: 'road' | 'town' = 'road'): TravelEventMod {
+export function newTravelEvent(id: string, scope: EventScope = 'road'): TravelEventMod {
   return sanitizeTravelEvent(id, {
-    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : '新的旅途事件', text: '',
+    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : '新的旅途事件', text: '',
+    ...(scope === 'dungeon' ? { triggers: ['trap'] as DungeonTrigger[] } : {}),
     options: [{ label: '答應', success: { text: '' } }, { label: '離開', success: { text: '你沒有多管。' } }],
   }, true)
 }
@@ -163,7 +190,13 @@ export function sanitizeEventRules(raw: Partial<EventRulesMod>): EventRulesMod {
     recent_size: Math.round(num(t.recent_size, 0, 10, base.town.recent_size)),
     categories: base.town.categories,
   }
-  return { chance, weights, town }
+  const d = raw.dungeon ?? base.dungeon
+  const dungeon: DungeonEventRules = {
+    chance: Object.fromEntries((Object.keys(DUNGEON_TRIGGERS) as DungeonTrigger[]).map((k) => [k, num(d.chance?.[k], 0, 1, base.dungeon.chance[k])])) as DungeonEventRules['chance'],
+    cooldown_hours: num(d.cooldown_hours, 0, 168, base.dungeon.cooldown_hours, 1),
+    repeat_days: Math.round(num(d.repeat_days, 0, 60, base.dungeon.repeat_days)),
+  }
+  return { chance, weights, town, dungeon }
 }
 
 /** 把事件與設定還原成內建的樣子（自建的拿掉） */
@@ -173,6 +206,7 @@ export function restoreTravelEvents() {
   travelEvents.chance = r.chance
   travelEvents.weights = r.weights
   travelEvents.town = r.town
+  travelEvents.dungeon = r.dungeon
 }
 
 export function applyTravelEvent(id: string, m: TravelEventMod) {
@@ -186,6 +220,7 @@ export function applyEventRules(r: EventRulesMod) {
   travelEvents.chance = clone(r.chance)
   travelEvents.weights = clone(r.weights)
   travelEvents.town = clone(r.town)
+  travelEvents.dungeon = clone(r.dungeon)
 }
 
 export function currentEventRules(): EventRulesMod {

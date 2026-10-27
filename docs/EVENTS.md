@@ -13,6 +13,7 @@
 | ⚠️ 對峙 | 敵對的冒險者、強盜擋住去路 | 是 | `StandoffPanel` |
 | 🔥 刻下契約印記 | 成為奴隸時（開局或之後） | 是 | `events/MarkingPanel` |
 | ⛓️ 主人的要求 | 主角是奴隸時，走動或旅途上隨機發生 | 是 | `MasterEventPanel` |
+| ⚠️ 地下城事件 | 地下城與近郊觸發陷阱、打開寶箱、採集、在安全房長休之後（成人向，見 [ADULT_EVENTS](ADULT_EVENTS.md)） | 是 | `events/RoadEventPanel`（`dungeon`） |
 | 🧭 旅途事件 | 旅途上走到 ❔ 事件格 | 是 | `events/RoadEventPanel` |
 | 💞 關係變化 | AI 寫敘事或判定後提議更新和某人的關係 | 否，可以稍後 | `events/SuggestionPanel` |
 | ⬆️ 升級 | 有能力三選一或屬性點還沒分配 | 否，可以稍後 | `events/LevelUpPanel`（到隊伍視窗選） |

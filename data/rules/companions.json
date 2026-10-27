@@ -140,6 +140,12 @@
    "combat_mods": { "damage": 1 },
    "clears": "long_rest"
   },
-  "relaxed": { "name": "放鬆", "desc": "剛剛過了愉快的時光，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" }
+  "relaxed": { "name": "放鬆", "desc": "剛剛過了愉快的時光，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" },
+  "aroused": {"name": "發情", "desc": "身體還在發燙，腦袋裡只想著那件事。下次長休前所有檢定 -1。", "check_penalty": 1, "clears": "long_rest"},
+  "sensitive": {"name": "敏感", "desc": "被碰過的地方還在發麻，連衣服的摩擦都受不了。下次長休前靈巧檢定 -2。", "check_penalty": 2, "check_attrs": ["dex"], "clears": "long_rest"},
+  "afterglow": {"name": "餘韻", "desc": "剛剛的感覺還沒有退，很難專心。下次長休前智力檢定 -2。", "check_penalty": 2, "check_attrs": ["int"], "clears": "long_rest"},
+  "dazed": {"name": "恍惚", "desc": "腦袋昏昏沉沉的，分不清剛剛是不是真的。下次長休前信仰檢定 -2。", "check_penalty": 2, "check_attrs": ["fai"], "clears": "long_rest"},
+  "drained": {"name": "虛脫", "desc": "全身的力氣都被抽乾了。下次長休前力量檢定 -2，戰鬥傷害 -1。", "check_penalty": 2, "check_attrs": ["str"], "combat_mods": {"damage": -1}, "clears": "long_rest"},
+  "disheveled": {"name": "衣衫不整", "desc": "衣服被扯壞、溶掉了一部分，整個人狼狽不堪。下次長休前魅力檢定 -1。", "check_penalty": 1, "check_attrs": ["cha"], "clears": "long_rest"}
   }
 }

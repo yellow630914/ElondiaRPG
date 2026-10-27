@@ -427,7 +427,7 @@ export interface MasterEventOptions {
 }
 
 export function maybeMasterEvent(state: GameState, chance: number, opts: MasterEventOptions = {}): PendingMasterEvent | undefined {
-  if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent) return undefined
+  if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent || state.dungeonEvent) return undefined
   // 主人不在身邊（戰敗時逃開了）時沒有突發事件
   const master = state.party.find((m) => m.id === contractOf(pcOf(state))!.master)
   if (!master || master.status.includes('away')) return undefined

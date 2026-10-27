@@ -782,6 +782,10 @@ export interface GameState {
   townEvent?: { template: string }
   /** 城鎮事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子、最近的種類 */
   townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
+  /** 地下城與近郊等待回應的事件（dungeonEvents.ts）：模板與觸發點 */
+  dungeonEvent?: { template: string; trigger: string }
+  /** 地下城事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子 */
+  dungeonEvents?: { last?: number; seen: Record<string, number> }
   /** 在臨時地圖裡：離開時回到的位置 */
   side?: { area: string; back: { area: string; x: number; y: number }; /** 特殊任務帶進來的臨時地圖：離開就放棄這個任務 */ story?: string }
   /** 在特殊地圖裡：從外面進來前的位置與地點（從出口離開時回到那裡），走過的需要刷新的地圖 */

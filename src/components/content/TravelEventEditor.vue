@@ -4,7 +4,9 @@ import { ATTR_IDS, attrName, geography, type LocationType, type RouteMode } from
 import { cellName, type CellKind } from '@/engine/grid'
 import { travelEvents, type RoadOption } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
-import { builtinTravelEvent, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
+import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
+import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
+import type { DungeonTrigger, EventScope } from '@/engine/road'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import CondExtrasEditor from './CondExtrasEditor.vue'
@@ -12,7 +14,7 @@ import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
 import Hint from '../ui/Hint.vue'
 
-// 旅途事件或城鎮事件的編輯表單：在哪裡出現、檢定或選項、結果
+// 旅途事件、城鎮事件或地下城事件的編輯表單：在哪裡出現、檢定或選項、結果
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()
 const content = useContent()
@@ -36,13 +38,31 @@ const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
 const builtin = computed(() => !!builtinTravelEvent(props.id))
 const edited = computed(() => builtin.value && !!content.mods.travelEvents?.[props.id])
 const town = computed(() => draft.value.scope === 'town')
+const dungeon = computed(() => draft.value.scope === 'dungeon')
+const BODY_NAME = { fem: '女性形象', andro: '中性', masc: '男性形象' } as const
+function setScope(v: string) {
+  const scope = (['town', 'dungeon'].includes(v) ? v : undefined) as EventScope | undefined
+  draft.value.scope = scope
+  if (scope === 'dungeon') {
+    setKind('choice')
+    draft.value.triggers ??= ['trap']
+  }
+}
+function toggleNum(field: 'layers', v: number, on: boolean) {
+  const set = new Set<number>(draft.value[field] ?? [])
+  if (on) set.add(v)
+  else set.delete(v)
+  if (set.size) draft.value[field] = [...set].sort()
+  else delete draft.value[field]
+}
 const warnings = computed(() => travelEventWarnings(draft.value))
 const requires = computed(() => draft.value.requires!)
 const categories = computed(() => travelEvents.town?.categories ?? {})
 const settlements = geography.locations.filter((l) => l.type !== 'dungeon')
+const dungeonPlaces = geography.locations.filter((l) => l.type === 'dungeon')
 const cellLabel = (c: string) => cellName(c as CellKind)
 
-function toggle<T extends string>(field: 'modes' | 'cells' | 'location_types' | 'locations', v: T, on: boolean) {
+function toggle<T extends string>(field: 'modes' | 'cells' | 'location_types' | 'locations' | 'triggers' | 'dungeons' | 'regions' | 'tags' | 'pc_body', v: T, on: boolean) {
   const set = new Set<string>((draft.value[field] as string[] | undefined) ?? [])
   if (on) set.add(v)
   else set.delete(v)
@@ -95,7 +115,7 @@ function remove() {
 <template>
   <div class="editor">
     <div class="row head">
-      <h3>{{ town ? '🏘️' : '🧭' }} {{ draft.title || '（未命名）' }}</h3>
+      <h3>{{ town ? '🏘️' : dungeon ? '⚠️' : '🧭' }} {{ draft.title || '（未命名）' }}</h3>
       <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
       <span v-if="dirty" class="tag warn">未儲存</span>
       <span class="spacer" />
@@ -105,8 +125,8 @@ function remove() {
       <button v-else class="small danger" @click="remove">刪除</button>
     </div>
     <p class="small muted">
-      id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
-      檢定由隊伍裡最擅長那個屬性的人來擲。
+      id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
+      {{ dungeon ? '事件發生在主角身上：檢定由主角自己擲。' : '檢定由隊伍裡最擅長那個屬性的人來擲。' }}
     </p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
 
@@ -115,18 +135,19 @@ function remove() {
       <div class="grid">
         <label>標題 <input v-model="draft.title" maxlength="20" /></label>
         <label>在哪裡
-          <select :value="draft.scope ?? 'road'" @change="draft.scope = ($event.target as HTMLSelectElement).value === 'town' ? 'town' : undefined">
+          <select :value="draft.scope ?? 'road'" @change="setScope(($event.target as HTMLSelectElement).value)">
             <option value="road">旅途上</option>
             <option value="town">城鎮的設施上</option>
+            <option value="dungeon">地下城與近郊</option>
           </select>
         </label>
-        <label>種類
+        <label v-if="!dungeon">種類
           <select :value="draft.kind" @change="setKind(($event.target as HTMLSelectElement).value as 'check' | 'choice')">
             <option value="check">檢定（走到時直接擲骰揭曉）</option>
             <option value="choice">選擇（玩家選一個選項）</option>
           </select>
         </label>
-        <label v-if="!town">等級
+        <label v-if="!town && !dungeon">等級
           <select :value="draft.tier" @change="setTier(($event.target as HTMLSelectElement).value as 'normal' | 'advanced')">
             <option value="normal">普通事件</option>
             <option value="advanced">高階事件（✨，可以帶進臨時地圖）</option>
@@ -139,11 +160,35 @@ function remove() {
           </select>
         </label>
         <label v-if="town">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.town?.repeat_days ?? 7)" /></label>
+        <label v-if="dungeon">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.dungeon?.repeat_days ?? 3)" /></label>
       </div>
       <label class="block">描述（給玩家與 AI）<textarea v-model="draft.text" rows="3" maxlength="400" /></label>
     </fieldset>
 
-    <fieldset v-if="!town">
+    <fieldset v-if="dungeon">
+      <legend>出現的地方 <Hint text="每一項沒勾時不限（觸發點至少勾一個）。" /></legend>
+      <div class="row small"><b>觸發點</b>
+        <label v-for="(n, k) in DUNGEON_TRIGGERS" :key="k" class="check">
+          <input type="checkbox" :checked="draft.triggers?.includes(k)" @change="toggle<DungeonTrigger>('triggers', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
+        </label>
+      </div>
+      <div class="row small"><b>層</b>
+        <label v-for="(n, i) in EVENT_LAYERS" :key="i" class="check">
+          <input type="checkbox" :checked="draft.layers?.includes(i)" @change="toggleNum('layers', i, ($event.target as HTMLInputElement).checked)" /> {{ n }}
+        </label>
+      </div>
+      <div class="row small"><b>地區</b>
+        <label v-for="r in geography.regions" :key="r.id" class="check">
+          <input type="checkbox" :checked="draft.regions?.includes(r.id)" @change="toggle('regions', r.id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}
+        </label>
+      </div>
+      <div class="row small"><b>只在這些地下城</b> <Hint text="近郊的事件寫那座聚落；這裡只列地下城。" />
+        <label v-for="l in dungeonPlaces" :key="l.id" class="check">
+          <input type="checkbox" :checked="draft.dungeons?.includes(l.id)" @change="toggle('dungeons', l.id, ($event.target as HTMLInputElement).checked)" /> {{ l.name }}
+        </label>
+      </div>
+    </fieldset>
+    <fieldset v-else-if="!town">
       <legend>路段 <Hint text="沒勾時任何路段都會出現。" /></legend>
       <div class="row">
         <label v-for="m in ROUTE_MODES" :key="m" class="check small">
@@ -168,6 +213,21 @@ function remove() {
           <input type="checkbox" :checked="draft.locations?.includes(l.id)" @change="toggle('locations', l.id, ($event.target as HTMLInputElement).checked)" /> {{ l.name }}
         </label>
       </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>內容 <Hint text="內容標籤：設定沒有開啟或關掉時這個事件不出現。親密場景：選項勾了「進入親密場景」時，敘事依這段描寫。" /></legend>
+      <div class="row small"><b>內容標籤</b>
+        <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
+          <input type="checkbox" :checked="draft.tags?.includes(t)" @change="toggle('tags', t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
+        </label>
+      </div>
+      <div class="row small"><b>只給這些主角</b>
+        <label v-for="(n, b) in BODY_NAME" :key="b" class="check">
+          <input type="checkbox" :checked="draft.pc_body?.includes(b)" @change="toggle('pc_body', b, ($event.target as HTMLInputElement).checked)" /> {{ n }}
+        </label>
+      </div>
+      <label class="block">親密場景（成人向，可以空著）<textarea v-model="draft.scene" rows="2" maxlength="200" /></label>
     </fieldset>
 
     <fieldset>
@@ -197,6 +257,12 @@ function remove() {
             <select v-model="o.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
             DC <input v-model.number="o.check.dc" type="number" min="1" max="40" class="num" />
           </template>
+          <select v-if="draft.scene" v-model="o.adult_scene" class="small" title="這個選項進入親密場景">
+            <option :value="undefined">不進入親密場景</option>
+            <option value="always">一定進入親密場景</option>
+            <option v-if="o.check" value="success">成功時進入</option>
+            <option v-if="o.check" value="fail">失敗時進入</option>
+          </select>
           <button class="small" @click="draft.options!.splice(i, 1)">移除</button>
         </div>
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" optional event />

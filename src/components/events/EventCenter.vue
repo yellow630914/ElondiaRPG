@@ -76,6 +76,7 @@ function openParty(member?: string) {
       <MasterEventPanel v-else-if="current.kind === 'master'" />
       <RoadEventPanel v-else-if="current.kind === 'road'" />
       <RoadEventPanel v-else-if="current.kind === 'town'" town />
+      <RoadEventPanel v-else-if="current.kind === 'dungeon'" dungeon />
       <StoryNodeCard v-else-if="current.kind === 'story' && storyNode" :n="storyNode" prompt />
       <JoinPanel v-else-if="current.kind === 'join'" :id="current.ref!" />
       <SuggestionPanel v-else-if="current.kind === 'suggestion'" :id="current.ref!" />

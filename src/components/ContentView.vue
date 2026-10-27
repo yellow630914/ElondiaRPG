@@ -41,7 +41,7 @@ import ItemIcon from './items/ItemIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
 import { travelEvents } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
-import { builtinTravelEvent, newTravelEvent } from '@/engine/travelEventMods'
+import { builtinTravelEvent, DUNGEON_TRIGGERS, newTravelEvent } from '@/engine/travelEventMods'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
 type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'shops' | 'events' | 'npcs' | 'stories'
@@ -190,11 +190,13 @@ const rows = computed<Row[]>(() => {
     const evs = travelEvents.templates
       .filter((t) => !k || (t.scope ?? 'road') === k)
       .map((t) => ({
-        key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}`,
-        note: t.scope === 'town' ? `城鎮・${t.kind === 'check' ? '檢定' : '選擇'}` : `${(t.modes ?? []).map((m) => MODE_NAME[m]).join('、') || '任何路段'}・${t.kind === 'check' ? '檢定' : '選擇'}`,
-        status: st(!!m.travelEvents?.[t.id], !builtinTravelEvent(t.id)), sort: t.scope === 'town' ? 1 : 0,
+        key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.scope === 'dungeon' ? '⚠️' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}`,
+        note: t.scope === 'town' ? `城鎮・${t.kind === 'check' ? '檢定' : '選擇'}`
+          : t.scope === 'dungeon' ? `地下城・${(t.triggers ?? []).map((x) => DUNGEON_TRIGGERS[x]).join('、')}${t.tags?.includes('adult') ? '・成人向' : ''}`
+          : `${(t.modes ?? []).map((m) => MODE_NAME[m]).join('、') || '任何路段'}・${t.kind === 'check' ? '檢定' : '選擇'}`,
+        status: st(!!m.travelEvents?.[t.id], !builtinTravelEvent(t.id)), sort: t.scope === 'town' ? 1 : t.scope === 'dungeon' ? 2 : 0,
       }))
-    const rules = [{ key: 'rules', name: '⚙️ 事件設定', note: '機率、權重、冷卻', status: st(!!m.eventRules?.rules, false), sort: 2 }]
+    const rules = [{ key: 'rules', name: '⚙️ 事件設定', note: '機率、權重、冷卻', status: st(!!m.eventRules?.rules, false), sort: 3 }]
     list = [...evs, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'stories') {
     const counters = { key: COUNTERS_KEY, name: '🔢 劇情計數器', note: `${Object.keys(storyCounters).length} 個`, status: st(Object.keys(m.counters ?? {}).length > 0, false) }
@@ -299,7 +301,7 @@ function create() {
       select(id)
     } else if (sub.value === 'events') {
       const id = newModId('event')
-      content.saveTravelEvent(id, newTravelEvent(id, eventScope.value === 'town' ? 'town' : 'road'))
+      content.saveTravelEvent(id, newTravelEvent(id, eventScope.value === 'town' || eventScope.value === 'dungeon' ? eventScope.value : 'road'))
       select(id)
     } else if (sub.value === 'bases') {
       const id = newModId('base')
@@ -513,9 +515,10 @@ function resetAll() {
         </div>
         <div v-if="sub === 'events'" class="row">
           <select v-model="eventScope" class="grow">
-            <option value="">旅途與城鎮事件</option>
+            <option value="">旅途、城鎮與地下城事件</option>
             <option value="road">🧭 旅途事件</option>
             <option value="town">🏘️ 城鎮事件</option>
+            <option value="dungeon">⚠️ 地下城事件</option>
           </select>
         </div>
         <div v-if="sub === 'abilities'" class="row">

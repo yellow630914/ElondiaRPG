@@ -23,6 +23,7 @@ import { pruneRoadEvent } from '@/engine/road'
 import { makeWorldPackage, parseWorldFile } from '@/engine/worldPackage'
 import { usePrompts } from './prompts'
 import { pruneTownEvent } from '@/engine/townEvents'
+import { pruneDungeonEvent } from '@/engine/dungeonEvents'
 import { builtinCounter, counterUsage, sanitizeCounter, type CounterMod } from '@/engine/counterMods'
 import { cleanCounterId } from '@/engine/mods'
 import { builtinTravelEvent, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from '@/engine/travelEventMods'
@@ -179,6 +180,7 @@ export const useContent = defineStore('content', () => {
       pruneSpecialMaps(game.state)
       pruneRoadEvent(game.state)
       pruneTownEvent(game.state)
+      pruneDungeonEvent(game.state)
     }
     version.value++
     persist()

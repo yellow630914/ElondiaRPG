@@ -29,6 +29,7 @@ import { gateCheck, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
 import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
+import { maybeDungeonEvent } from './dungeonEvents'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { homeById, overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
@@ -1069,7 +1070,10 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
     case 'resource': {
       if (cell.done || !cell.item) return {}
       cell.done = true
-      return { report: gather(state, area, cell.item) }
+      const report = gather(state, area, cell.item)
+      // 採集時的地下城事件（花粉、觸手植物……）：採到之後才發生
+      maybeDungeonEvent(state, 'gather')
+      return { report }
     }
     case 'chest': {
       if (cell.done) return {}
@@ -1078,6 +1082,8 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
       cell.done = true
       // 情報的藏寶處：結束這則情報
       if (cell.intel) finishIntel(state, cell.intel)
+      // 擬態寶箱（地下城事件）：寶箱本身不打開，裡面的東西看回應
+      if (!cell.intel && maybeDungeonEvent(state, 'chest')) return {}
       return { report: openChest(state, area, cell.level ?? 1) }
     }
     default:
@@ -1117,7 +1123,9 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   const dc = spec.trap_dc + (dark ? lightingRules.dark.trap_dc : 0)
   const success = r.total >= dc
   const effects: NonNullable<Report['timeline']>[number]['effects'] = []
-  if (!success) {
+  // 沒察覺：可能是色情陷阱（地下城事件，成人向開啟時），事件取代陷阱的傷害
+  const event = !success && maybeDungeonEvent(state, 'trap')
+  if (!success && !event) {
     const dmg = withRng(state, (rng) => roll(rng, spec.trap_damage).total)
     scout.hp = Math.max(1, scout.hp - dmg)
     effects.push({ type: 'damage', target: scout.id, amount: dmg })
@@ -1130,7 +1138,7 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   report.party = state.party.map((m, i) => snapshot(m, before[i], player(state)))
   report.outcome = {
     result: success ? 'success' : 'failure',
-    summary: success ? `${scout.name}及時察覺${area.name}的陷阱。` : `${scout.name}觸發了${area.name}的陷阱。`,
+    summary: success ? `${scout.name}及時察覺${area.name}的陷阱。` : event ? `${scout.name}沒有察覺${area.name}的陷阱——機關對準的是你。` : `${scout.name}觸發了${area.name}的陷阱。`,
     tags: ['陷阱', ...(dark ? ['黑暗'] : [])],
   }
   report.lore_keys!.push(loc.name)
@@ -1256,6 +1264,7 @@ export function assertNoStandoff(state: GameState) {
   if (state.standoff) throw new Error('先處理眼前的對峙')
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
+  if (state.dungeonEvent) throw new Error('先應付眼前的處境')
   if (state.pendingDefeat) throw new Error('先應付眼前的處境')
   if (state.captives?.npcs.length) throw new Error('先決定怎麼處置被制伏的人')
   if (state.pendingJoins?.length) throw new Error('先決定要不要讓想入隊的人加入（騰出位子或放棄）')

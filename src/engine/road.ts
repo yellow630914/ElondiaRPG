@@ -26,6 +26,8 @@ import { gateCheck } from './security'
 import { toolBonus } from './tools'
 import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
+import type { ContentTag } from './content'
+import type { Body } from './traits'
 import { shortestPath } from './world'
 import { enterWaystation } from './trade'
 import { closeOut, enterSpecial } from './specialMaps'
@@ -34,9 +36,15 @@ import { gameRule } from './gameRules'
 
 // ---- 資料 ----
 
-export interface RoadOption { label: string; check?: StoryCheck; success?: StoryOutcome; fail?: StoryOutcome }
-/** 事件發生的地方：旅途上（預設），或城鎮的設施上（townEvents.ts） */
-export type EventScope = 'road' | 'town'
+export interface RoadOption {
+  label: string; check?: StoryCheck; success?: StoryOutcome; fail?: StoryOutcome
+  /** 成人向：這個選項進入親密場景（模板的 scene）：always 一定、success / fail 檢定成功或失敗時 */
+  adult_scene?: 'always' | 'success' | 'fail'
+}
+/** 事件發生的地方：旅途上（預設）、城鎮的設施上（townEvents.ts），或地下城與近郊（dungeonEvents.ts） */
+export type EventScope = 'road' | 'town' | 'dungeon'
+/** 地下城事件的觸發點：觸發陷阱、打開寶箱、採集、在安全房長休之後 */
+export type DungeonTrigger = 'trap' | 'chest' | 'gather' | 'rest'
 export interface RoadTemplate {
   id: string
   scope?: EventScope
@@ -56,6 +64,20 @@ export interface RoadTemplate {
   requires?: StoryCond
   /** 同一個事件隔多少天才會再出現（城鎮；沒有時用 town.repeat_days） */
   cooldown_days?: number
+  /** 地下城：哪些觸發點 */
+  triggers?: DungeonTrigger[]
+  /** 地下城：只在這些地點（地下城的 id；近郊是那座聚落的 id；沒有時任何地點） */
+  dungeons?: string[]
+  /** 地下城：只在這些地區（沒有時任何地區） */
+  regions?: string[]
+  /** 地下城：哪幾層（0 近郊、1 淺層、2 中層、3 深層、4 底層；沒有時任何一層） */
+  layers?: number[]
+  /** 內容標籤（成人向、主角非自願……）：設定沒有開啟或關掉時不出現 */
+  tags?: ContentTag[]
+  /** 只給這些體型的主角 */
+  pc_body?: Body[]
+  /** 成人向的親密場景是什麼：選項帶 adult_scene 時，敘事要詳細描寫 */
+  scene?: string
   title: string
   text: string
   check?: StoryCheck
@@ -71,6 +93,13 @@ export const travelEvents = travelEventsJson as unknown as {
   side_maps: Record<string, SideMapDef>
   /** 城鎮事件（事件導演）：走上設施時的機率、兩次事件之間的冷卻、同一事件多久不重複、種類 */
   town: TownEventRules
+  /** 地下城與近郊的事件：各觸發點的機率、兩次事件之間的冷卻 */
+  dungeon?: DungeonEventRules
+}
+export interface DungeonEventRules {
+  chance: Record<DungeonTrigger, number>
+  cooldown_hours: number
+  repeat_days: number
 }
 export interface TownEventRules {
   chance: number
