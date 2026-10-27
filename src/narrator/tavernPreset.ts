@@ -43,7 +43,7 @@ const LEGACY_KEYS: { key: string; name: string; late?: boolean }[] = [
 
 /**
  * 換掉酒館的巨集：註解 {{// …}}、{{trim}}、{{noop}} 拿掉，{{newline}} 換行，{{user}}（<USER>）換成本遊戲的 {{player}}。
- * 其他巨集（{{char}}、{{setvar::…}}、{{random::…}}……）留著，列在 macros 裡讓玩家自己改。
+ * 其他巨集（{{char}}、{{setvar::…}}、{{random::…}}……，包括包在別的巨集裡的）與舊式的 <BOT> 留著，列在 macros 裡讓玩家自己改。
  */
 export function cleanTavernText(text: string): { content: string; macros: string[] } {
   const content = text
@@ -53,7 +53,11 @@ export function cleanTavernText(text: string): { content: string; macros: string
     .replace(/\{\{user\}\}|<USER>/gi, '{{player}}')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
-  const macros = [...new Set((content.match(/\{\{[^{}]*\}\}/g) ?? []).filter((m) => m !== '{{player}}').map((m) => m.replace(/::[\s\S]*$/, '}}')))]
+  // 每個 {{ 開頭的巨集都算（包在別的巨集裡的也算，例如 {{random::{{player}},…}} 的 random），名字取到 :: 或 }} 為止；
+  // 舊式的 <BOT>、<CHAR> 也列出來
+  const names = [...content.matchAll(/\{\{\s*([^{}:]+?)\s*(?=::|\}\})/g)].map((m) => `{{${m[1]}}}`)
+  const legacy = content.match(/<(BOT|CHAR)>/gi) ?? []
+  const macros = [...new Set([...names, ...legacy])].filter((m) => m !== '{{player}}')
   return { content, macros }
 }
 

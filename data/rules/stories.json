@@ -26591,7 +26591,7 @@
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["pol_briefed"] },
           "kind": "combat",
-          "enemies": [["echo_legionnaire", 2]],
+          "enemies": [["echo_legionnaire", 3], ["echo_champion", 1]],
           "success": {
             "text": "亡兵們散成了灰，殘影卻沒有消失。最後一個亡兵在散去之前，看著你，說了一句兩百年前的話：「……這一次，你們會選什麼？」",
             "set_flags": ["pol_echoed"]
@@ -26826,7 +26826,7 @@
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["pol_p1_plan"] },
           "kind": "combat",
-          "enemies": [["iron_cross_fanatic", 2]],
+          "enemies": [["iron_cross_fanatic", 3], ["iron_cross_assassin", 1]],
           "success": {
             "text": "親衛們倒下了。要塞的大廳裡，『灰鐵』海因里希放下了劍，看著你：「……你知道統一戰爭死了多少人嗎？我父親、我祖父，都死在魔族的手裡。」他的聲音在抖，「和平？那是對死者的背叛。」",
             "set_flags": ["pol_p1_won"]
@@ -27125,7 +27125,7 @@
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["pol_h1_ready"] },
           "kind": "combat",
-          "enemies": [["crimson_vanguard", 2]],
+          "enemies": [["crimson_vanguard", 3], ["crimson_royal_guard", 1]],
           "success": {
             "text": "先鋒的隊長倒在了河裡，魔族的戰旗退回了地平線。冒險者們歡呼起來——撐過了第一天。三天後，帝國的援軍到了，看見的是一座完好無缺的河谷鎮。",
             "set_flags": ["pol_h1_held"]
@@ -27209,7 +27209,7 @@
           "at": { "where": "outskirts", "location": "ashport" },
           "requires": { "flags": ["pol_h2_plan"] },
           "kind": "combat",
-          "enemies": [["crimson_garrison", 2]],
+          "enemies": [["crimson_garrison", 3], ["crimson_royal_guard", 1]],
           "success": {
             "text": "燈塔拿下了。天亮時，赤翼的守備軍看著燈塔上的帝國旗幟，沉默地收起了長戟，坐船撤回了南方。市集裡的居民走出地窖，人類和魔族站在一起，看著空蕩蕩的碼頭。",
             "set_flags": ["pol_h2_won"]
@@ -27409,7 +27409,7 @@
           "at": { "where": "outskirts", "location": "ashport" },
           "requires": { "flags": ["pol_d1_ready"] },
           "kind": "combat",
-          "enemies": [["crusade_vanguard", 2]],
+          "enemies": [["crusade_vanguard", 3], ["crusade_inquisitor", 1]],
           "success": {
             "text": "聖戰軍的先鋒退回了山坡後面。港口的居民們歡呼起來——人類和魔族抱在一起。三天後，赤翼的援軍到了，看見的是一座完好無缺的灰港鎮。",
             "set_flags": ["pol_d1_held"]
@@ -27493,7 +27493,7 @@
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["pol_d2_neutral"] },
           "kind": "combat",
-          "enemies": [["imperial_knight", 2]],
+          "enemies": [["imperial_knight", 3], ["rhine_royal_guard", 1]],
           "success": {
             "text": "騎士們退過了石橋，往北撤去。赤翼的軍旗插在了石橋上。河谷鎮的冒險者們站在屋頂上看著——你說到做到，一間房子也沒有燒。",
             "set_flags": ["pol_d2_won"]
@@ -35275,7 +35275,7 @@
             "set_flags": ["conf_tithe_haggle"]
           },
           "fail": {
-            "text": "你越談他越貴，談到最後他直接把手伸進你的修女服裡掂了掂：「這樣吧，先付一點訂金。」",
+            "text": "你越談他越不耐煩，價錢是壓到了一百五十，他卻直接把手伸進你的修女服裡掂了掂：「這樣吧，先付一點訂金。」",
             "scene": "商人教會的胖執事一邊撥算盤一邊把手伸進主角的修女服裡，揉捏主角的胸口、手指往下摳弄，說這是懺悔的「訂金」，算盤珠子撥一下他就摳一下。",
             "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
             "set_flags": ["conf_tithe_haggle"]
@@ -35291,14 +35291,14 @@
           "text": "懺悔室裡坐著教會的主任司鐸，桌上擺著一個錢箱。「付錢吧，孩子。」他的眼睛看著你的修女服，「付不起的話，教會也收實物。」執事和帳房的會計站在門口，一個也沒走。",
           "options": [
             {
-              "label": "付兩百白鸛",
+              "label": "付一百五十白鸛",
               "success": {
-                "text": "你把兩百白鸛倒進錢箱。司鐸數完錢，點點頭：「很好，罪洗了。」然後他把錢箱推到一邊，解開了腰帶：「現在是教會送你的祝福——免費的。」執事和會計也走了進來。",
+                "text": "你把一百五十白鸛倒進錢箱。司鐸數完錢，點點頭：「很好，罪洗了。」然後他把錢箱推到一邊，解開了腰帶：「現在是教會送你的祝福——免費的。」執事和會計也走了進來。",
                 "scene": "主角付完懺悔的錢，商人教會的司鐸、執事和會計還是把主角按在錢箱旁邊的桌上，三個人輪流幹主角，說這是教會免費的祝福，銅幣在桌上被撞得叮噹響。",
                 "effects": [
-                  { "type": "money", "amount": -200 },
+                  { "type": "money", "amount": -150 },
                   { "type": "affinity", "npc": "npc_sister_agathe", "delta": 2, "reason": "居然付了錢" },
-                  { "type": "memory", "summary": "在阿爾貝納的商人教會付了兩百白鸛懺悔，然後被三個人「免費祝福」。", "importance": 2 }
+                  { "type": "memory", "summary": "在阿爾貝納的商人教會付了一百五十白鸛懺悔，然後被三個人「免費祝福」。", "importance": 2 }
                 ],
                 "set_flags": ["conf_3_done"],
                 "complete": true

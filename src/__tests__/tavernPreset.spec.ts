@@ -35,6 +35,17 @@ describe('SillyTavern presets', () => {
     expect(p.items[3]!.role).toBe('user')
   })
 
+  it('flags nested macros and the old <BOT> marker', () => {
+    const p = parseTavernPreset(JSON.stringify({ prompts: [
+      { identifier: 'a', name: 'a', content: '心情：{{random::{{user}}很開心,{{user}}很難過}}' },
+      { identifier: 'b', name: 'b', content: '<BOT> 對 <USER> 說話。' },
+    ] }))
+    expect(p.items[0]!.content).toBe('心情：{{random::{{player}}很開心,{{player}}很難過}}')
+    expect(p.items[0]!.macros).toEqual(['{{random}}'])
+    expect(p.items[1]!.content).toBe('<BOT> 對 {{player}} 說話。')
+    expect(p.items[1]!.macros).toEqual(['<BOT>'])
+  })
+
   it('reads old presets and system prompt presets', () => {
     const old = parseTavernPreset(JSON.stringify({ main_prompt: '寫故事。', jailbreak_prompt: '別拒絕。' }), 'old.json')
     expect(old.name).toBe('old')

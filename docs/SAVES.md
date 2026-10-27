@@ -104,7 +104,7 @@
 
 | 規則 | 欄位 | 預設 | 範圍 | 影響 |
 |---|---|---|---|---|
-| 難度 | `difficulty` | 普通 | 故事／簡單／普通／困難／史詩 | 怪物的最大生命與造成的傷害各乘一個係數（`combat.json` 的 `difficulty`，普通 = 1）；開戰時記進 `CombatState.difficulty`，改了只影響之後開打的戰鬥。經驗值與戰利品不變，敵對的 NPC 也不受影響。曲線見 [COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 6 節 |
+| 難度 | `difficulty` | 普通 | 故事／簡單／普通／困難／史詩 | 怪物的最大生命與造成的傷害各乘一個係數（`combat.json` 的 `difficulty`，普通 = 1；頭目一組、小怪依區域各一組）；開戰時記進 `CombatState.difficulty`，改了只影響之後開打的戰鬥。經驗值與戰利品不變，敵對的 NPC 也不受影響。曲線見 [COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 6 節 |
 | 戰敗掉落 | `defeatLoot` | 失去一半 | 保留／失去一半／全部失去 | 在地下城戰敗時，這趟撿到、還沒帶出去的東西（`expedition.ts`） |
 | 經驗值倍率 | `xpMult` | 1 | 0.25～5 | 所有經驗值（`commitReport` 加經驗前乘上，報告裡記實際的量） |
 | 報酬與戰利品的錢 | `moneyMult` | 1 | 0.25～5 | 委託報酬、事件與任務給的錢（`money` 效果）、戰鬥與寶箱、撿到的古錢；賣東西、打工、物價不變 |

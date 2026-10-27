@@ -670,7 +670,10 @@ export const combatRules = combatJson as unknown as {
   flee_dc: number
   boss: { control_turns: number; immune_turns: number }
   /** 難度係數（存檔規則）：怪物的生命與輸出各乘一個係數，普通 = 1 */
-  difficulty: { default: string; levels: { id: string; name: string; hp: number; damage: number; desc: string }[] }
+  difficulty: {
+    default: string
+    levels: { id: string; name: string; hp: number; damage: number; minions?: Partial<Record<MinionTier, { hp: number; damage: number }>>; desc: string }[]
+  }
   hit: { evade_floor_base: number }
   lucky: { base: number; attr_floor: number; floor: number }
   save: { dc_base: number }
@@ -933,6 +936,19 @@ export const wildEncounterTables = enemiesData.wild_encounters
 export function wildEncounters(region: string): EncounterGroup[] {
   const table = enemiesData.wild_encounters[region] ?? enemiesData.wild_encounters.default
   return Array.isArray(table) ? table : []
+}
+
+/** 小怪最淺出現在哪裡（難度的係數依這個分開）：城郊遭遇表、地下城的周邊、淺層，其他（中層以下、只在特殊任務出現）算 deep */
+export type MinionTier = 'wild' | 'outskirts' | 'shallow' | 'deep'
+export const MINION_TIERS: MinionTier[] = ['wild', 'outskirts', 'shallow', 'deep']
+
+export function minionTier(id: string): MinionTier {
+  const has = (groups: EncounterGroup[] | undefined) => !!groups?.some((g) => g.some(([m]) => m === id))
+  if (geography.regions.some((r) => has(wildEncounters(r.id)))) return 'wild'
+  const tables = Object.values(dungeonEncounters)
+  if (tables.some((e) => has(e.outskirts))) return 'outskirts'
+  if (tables.some((e) => has(e.shallow))) return 'shallow'
+  return 'deep'
 }
 
 // ---- 怪物的特徵與狀態 ----
