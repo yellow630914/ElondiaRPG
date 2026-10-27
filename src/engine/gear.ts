@@ -305,6 +305,31 @@ export function gearBonuses(c: Pick<Character, 'gear'>): { mods: Mods; resist: A
   return { mods, resist, offense, threat: Math.round(threat * 100) / 100 }
 }
 
+/** 限定穿著的一項怎麼稱呼（底材 id 換成底材的名稱） */
+export function wearName(w: string): string {
+  return gearRules.bases[w]?.name ?? w
+}
+
+/** 限定穿著（特殊任務的任務點、地標的場景）裡這個角色還沒穿上的：穿著同名的物品、或同一種底材的裝備都算 */
+export function missingWear(c: Pick<Character, 'gear'>, wear: string[] | undefined): string[] {
+  const worn = Object.values(c.gear ?? {}).filter(Boolean)
+  return (wear ?? []).filter((w) => !worn.some((g) => g!.name === w || g!.spec.base === w))
+}
+
+/** 內容編輯器的限定穿著選項：服裝類的底材（任何一件都算），以及有名字的服裝物品 */
+export function wearChoices(): [string, string][] {
+  return [
+    ...Object.entries(gearRules.bases).filter(([, b]) => b.outfit).map(([id, b]): [string, string] => [id, `任何一件${b.name}`]),
+    ...itemRules.items.filter((i) => i.gear && gearRules.bases[i.gear.base]?.outfit).map((i): [string, string] => [i.name, i.name]),
+  ]
+}
+
+/** 還沒穿上限定穿著時的說明（按鈕停用）；穿好了是 undefined */
+export function wearNote(c: Pick<Character, 'gear'>, wear: string[] | undefined): string | undefined {
+  const miss = missingWear(c, wear)
+  return miss.length ? `要穿著${miss.map((w) => `【${wearName(w)}】`).join('')}才能進行（到隊伍的裝備換上）` : undefined
+}
+
 export function equipped(name: string, spec: GearSpec): EquippedGear {
   return { name, spec }
 }

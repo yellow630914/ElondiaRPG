@@ -353,13 +353,14 @@ export function getArea(state: GameState, key: string): Area {
 
 /**
  * 地標還沒出現：開放條件勾了「條件成立前不顯示」，劇情旗標又不符合；成人向的場所在沒有開啟成人向時也不出現；
- * 只有場景的地標（沒有參訪、探索、打工），一個場景都不出現時也不出現（內容篩選關掉、一定在場的人死了）
+ * 勾了「條件成立前不顯示」、只有場景的地標（沒有參訪、探索、打工），一個場景都不出現時也不出現（內容篩選關掉、一定在場的人死了）。
+ * 沒勾的（例如打工線的委託人所在、完成之後才有場景的地標）照常出現，任務點才走得到
  */
 export function landmarkHidden(state: GameState, l: LandmarkDef): boolean {
   const o = l.open
   if (o?.adult && !adultContent()) return true
   if (o?.hidden && !condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return true
-  return !!l.scenes?.length && !l.visit && !l.explore && !l.work && !l.scenes.some((sc) => sceneShown(state, sc))
+  return !!o?.hidden && !!l.scenes?.length && !l.visit && !l.explore && !l.work && !l.scenes.some((sc) => sceneShown(state, sc))
 }
 
 /** 還沒出現的地標還原成道路 */

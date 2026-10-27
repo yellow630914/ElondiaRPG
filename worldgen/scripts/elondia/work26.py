@@ -86,6 +86,115 @@ LANDMARKS = [
 ]
 
 
+# ---------------- 打工線完成之後的地標場景（可以重複，預設每 3 天一次） ----------------
+# 設計稿（adult-events.md 第 2 節 M4）：自願的打工類用地標場景＋任務線。那條線完成（<前綴>_done）之後，
+# 委託人的地標出現一到兩個場景：回去上工、賺錢；有制服的線一樣要穿著（story_batch26.py 的 DRESS）。
+M = ['adult', 'male_partner']
+MN = ['adult', 'non_virgin', 'male_partner']
+
+
+def cond(c):
+    return {"type": "condition", "target": "pc", "condition": c, "add": True}
+
+
+def work(title, desc, scene, pay, hours, *conds, tags=M, cast=(), aff=0):
+    sc = {"title": title, "desc": desc, "scene": scene, "tags": tags, "pc_body": ["fem", "andro"]}
+    if cast: sc["cast"] = [{"npc": n} for n in cast]
+    sc["hours"] = hours
+    sc["effects"] = [{"type": "money", "amount": pay}, *[cond(c) for c in conds]]
+    if aff: sc["affinity"] = aff
+    return sc
+
+
+SCENES = {
+    'lm_silverscale_inn': ('inn', [
+        work('上晚班', '穿著制服端一整晚的酒，客人的手隨便伸。',
+             '主角穿著看板娘的制服端了一整晚的酒，屁股和胸口被每一桌的客人摸過一輪；常客照例把主角叫到桌子底下，一個接一個塞進主角嘴裡，打烊時圍裙口袋塞滿了小費。', 120, 4, 'aroused'),
+        work('包場的夜', '冒險者包下整間店，你是今晚的獎品。',
+             '一隊剛領了賞金的冒險者包下銀鱗旅店，主角被放上長桌當今晚的獎品，整桌的人輪流上，{cast}收完錢也脫了圍裙一起加入；天亮時主角躺在酒漬裡數錢。', 260, 5, 'drained', 'disheveled', tags=MN, cast=['npc_greta_silverscale'], aff=1),
+    ]),
+    'lm_odd_tower': ('odd', [
+        work('當一次受試者', '脫光了讓她測量，再試穿新的試用品。',
+             '{cast}叫主角脫光躺上實驗台，一邊在身上畫刻度一邊摸遍全身，再塞進新做的符文玉石，記錄主角高潮幾次、叫得多大聲。', 150, 3, 'sensitive', cast=['npc_hildegard'], aff=1),
+        work('法師之屌・改良版', '她又改良了那根魔法造的東西。',
+             '{cast}用魔法造出改良過的法師之屌，比上次更粗、會自己動，把主角綁在實驗台上幹到失神，再換成兩根前後一起，一整晚只顧著抄數據。', 220, 4, 'afterglow', 'drained', cast=['npc_hildegard'], aff=1),
+    ]),
+    'lm_golden_dice': ('dice', [
+        work('發牌的夜班', '穿著兔女郎裝發一整晚的牌。',
+             '主角穿著兔女郎裝發了一整晚的牌，賭客把籌碼塞進胸口和胯下，贏了錢的就把主角拉到大腿上摸個夠，輸了的拉到桌底下出氣。', 200, 5, 'aroused'),
+        work('貴賓室的轉運', '貴賓室今晚手氣不好，要你去轉運。',
+             '{cast}把主角推進貴賓室替輸錢的貴賓「轉運」，主角跪在賭桌上被一圈貴賓輪流幹，每幹一個就擲一次骰子，擲到天亮。', 400, 6, 'drained', 'disheveled', cast=['npc_victor_dice']),
+    ]),
+    'lm_tent_ring_bazaar': ('dance', [
+        work('市集的舞', '在市集跳舞，讓人把錢塞進舞衣。',
+             '主角穿著薄紗、搖著腳鍊在市集中央跳舞，看熱鬧的男人把錢塞進舞衣裡，手指順便伸進去，跳完一場薄紗底下全是錢和指印。', 150, 3, 'aroused'),
+        work('帳篷裡的加場', '和娜希拉一起，在帳篷裡收真正的價錢。',
+             '跳完舞，主角和{cast}一起被帶進後面的帳篷，兩個人並排跪著侍奉一整帳篷的客人，輪完一圈換姿勢再來一圈，腳鍊的鈴聲響了一整個下午。', 320, 5, 'drained', tags=MN, cast=['npc_nashira'], aff=1),
+    ]),
+    'lm_krause_manor': ('maid', [
+        work('見習女僕的一天', '掃地被少爺掀裙子，晚上替伯爵洗澡。',
+             '主角穿著改造女僕裝打掃了一整天，盧卡斯少爺每經過一次就掀一次裙子、把主角按在牆上玩；晚上替伯爵洗澡，用身體洗，洗到伯爵在浴池裡射了兩次。', 180, 6, 'aroused', cast=['npc_count_krause', 'npc_lukas_krause']),
+        work('父子的晚上', '伯爵和少爺今晚都要你。',
+             '伯爵和盧卡斯少爺把主角叫進同一間寢室，一個從前面一個從後面，父子倆比誰撐得久，主角被夾在中間幹到天亮，女僕裝撕成了碎布。', 300, 6, 'drained', 'disheveled', cast=['npc_count_krause', 'npc_lukas_krause']),
+    ]),
+    'lm_pilgrim_bath': ('expo', [
+        work('再走一次朝聖大道', '只穿網襪，光著身子走一趟，貝托收賭金。',
+             '主角又一次只穿著網襪走上朝聖大道，從澡堂走到聖所，整條街的人吹口哨、伸手摸，{cast}在後面跟著收賭金，走到半路被拉進巷子裡的不止一個。', 150, 3, 'disheveled', 'aroused', cast=['npc_bertho_bath']),
+    ]),
+    'lm_pearl_bath': ('bath', [
+        work('搓背的班', '替水手搓背，哪裡都要搓。',
+             '主角只貼著乳貼、穿著丁字褲替一整排水手搓背，搓完背搓前面，客人要哪裡就搓哪裡，最後在石板上用嘴收尾，一個接一個。', 160, 4, 'aroused'),
+        work('深池的常客', '常客們在深池等你。',
+             '常客們在深池等著，主角一下水就被拖到池中央，水裡一個接一個輪流上，浮上來喘口氣又被按下去，泡到手指發皺。', 300, 5, 'drained', 'sensitive'),
+    ]),
+    'lm_ironforge_onsen': ('onsen', [
+        work('混浴的幫工', '穿著浴衣幫工，客人叫你就要下池。',
+             '主角穿著浴衣在溫泉旅館幫工，醉醺醺的礦工一叫就要脫掉浴衣下池，在熱水裡被摸遍、被拉到大腿上坐，一晚下來泡得渾身通紅。', 180, 4, 'aroused'),
+        work('礦工的發薪夜', '發薪夜，整座礦場的人都來泡。',
+             '發薪夜整座礦場的礦工都擠進溫泉，主角在池邊的石床上被排隊的礦工一個接一個幹，{cast}在旁邊收錢、喊下一個，排到天亮還沒排完。', 320, 6, 'drained', 'disheveled', cast=['npc_grum_kettle']),
+    ]),
+    'lm_lower_massage': ('massage', [
+        work('特別服務', '穿著旗袍按摩，最後一步另外算錢。',
+             '主角穿著旗袍替客人按摩，按到最後一步就爬上床，用手、用嘴、用身體收尾，一個客人接一個客人，{cast}在門外數錢。', 170, 4, 'aroused', cast=['npc_hans_fingers']),
+        work('三人套餐', '三個客人一起點了你。',
+             '三個客人一起點了主角的「三人套餐」，旗袍被掀到腰上，一個在前面一個在後面一個在嘴裡，換了好幾輪位子才付錢走人。', 300, 5, 'drained'),
+    ]),
+    'lm_nude_atelier': ('paint', [
+        work('裸體模特兒', '脫光了站好，讓整間畫室的學徒畫。',
+             '主角脫光了站在畫室中央，學徒們說要「確認比例」，一個個走上來摸，畫到一半有人放下畫筆直接上，{cast}只說別動、保持姿勢。', 140, 4, 'aroused', cast=['npc_bartolo_painter']),
+        work('畫室的課後', '下課之後，整間畫室一起上。',
+             '下課後{cast}鎖上門，主角被按在模特兒台上，整間畫室的學徒輪流上，顏料抹得全身都是，最後畫了一張主角滿身精液的速寫。', 260, 5, 'drained', 'disheveled', cast=['npc_bartolo_painter']),
+    ]),
+    'lm_blood_trial_ground': ('horn', [
+        work('試煉場的賭注', '上場打一場，輸了就是戰團今晚的戰利品。',
+             '主角在試煉場和血角的戰士打了一場，故意或不故意地輸了，被扛回戰團的營地當今晚的戰利品，{cast}先上，然後整支戰團輪著來，賞錢丟在主角肚子上。', 260, 5, 'drained', 'disheveled', cast=['npc_kargh_warband']),
+    ]),
+    'lm_bed_school': ('court', [
+        work('見習館的夜課', '魅魔們今晚教新的服侍方法，你當教材。',
+             '侍寢見習館的魅魔們把主角當教材，教新來的見習生怎麼服侍男人，主角被一個個客人輪流示範用，魅魔在旁邊講解哪裡要夾緊、哪裡要叫。', 250, 4, 'aroused', 'afterglow'),
+        work('宮廷的晚宴', '今晚的宴會，你是主菜。',
+             '宮廷的晚宴上主角被端上長桌當主菜，赴宴的貴族輪流享用，{cast}在主位上看著，酒杯一舉就換下一個人。', 450, 6, 'drained', cast=['npc_veronica']),
+    ]),
+}
+
+
+def place_work_scenes(lms):
+    """把打工的場景放上地標：那條線完成才出現；有制服的線要穿著（整批換掉，可以重跑）"""
+    from story_batch26 import DRESS
+    by_id = {l['id']: l for l in lms}
+    n = 0
+    for lid, (pre, scenes) in SCENES.items():
+        wear = DRESS[pre][2] if pre in DRESS else None
+        out = []
+        for sc in scenes:
+            sc = {**sc, "requires": {"flags": [f"{pre}_done"]}}
+            if wear: sc["wear"] = wear
+            out.append(sc)
+        by_id[lid]['scenes'] = out
+        n += len(out)
+    return n
+
+
 def write():
     # 第二十七、二十八批的打工線（story_batch27.py、story_batch28.py）的裝備、NPC 與地標一起寫
     from story_batch27 import ITEMS27, NPCS27, LANDMARKS27
@@ -114,6 +223,7 @@ def write():
     d = json.load(open(L))
     ids = {l['id'] for l in LANDMARKS}
     d['landmarks'] = [l for l in d['landmarks'] if l['id'] not in ids] + LANDMARKS
+    print('work scenes', place_work_scenes(d['landmarks']))
     open(L, 'w').write(json.dumps(d, ensure_ascii=False, indent=1))
     print('work items', len(ITEMS), 'npcs', len(NPCS), 'landmarks', len(LANDMARKS))
 

@@ -403,6 +403,8 @@ export interface LandmarkScene {
   requires?: { flags?: string[]; flags_none?: string[]; flags_any?: string[] }
   /** 只給這些體型的主角（不寫＝都可以） */
   pc_body?: ('masc' | 'fem' | 'andro')[]
+  /** 限定穿著：物品名稱或裝備底材的 id，主角都穿在身上才能選（例如打工的制服；和特殊任務的任務點一樣） */
+  wear?: string[]
   /** 登場的固定 NPC：寫了旗標的，旗標成立才在場；死了、被抓走的不在場 */
   cast?: { npc: string; flags?: string[] }[]
   /** 有人不在場時，代替的人（例如「其他不知名的魅魔」） */

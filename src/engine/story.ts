@@ -17,7 +17,7 @@ import {
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
-import { gearRules } from './gear'
+import { wearNote } from './gear'
 import { formatMoney } from './money'
 import { npcRecord, registerNpc } from './npcs'
 import { joinParty, leaveParty, pcOf } from './party'
@@ -324,21 +324,9 @@ export function storyCosts(node: StoryNode, option?: number): { success: number;
   return { success: outcomeCost(src?.success), fail: outcomeCost(src?.fail) }
 }
 
-/** 限定穿著的一項怎麼稱呼（底材 id 換成底材的名稱） */
-export function wearName(w: string): string {
-  return gearRules.bases[w]?.name ?? w
-}
-
-/** 任務點的限定穿著（node.wear）裡，主角還沒穿上的那幾項：穿著同名的物品、或同一種底材的裝備都算 */
-export function missingWear(state: GameState, node: Pick<StoryNode, 'wear'>): string[] {
-  const worn = Object.values(pcOf(state).gear ?? {}).filter(Boolean)
-  return (node.wear ?? []).filter((w) => !worn.some((g) => g!.name === w || g!.spec.base === w))
-}
-
-/** 沒有穿上限定穿著時的說明（按鈕停用）；穿好了是 undefined */
+/** 沒有穿上任務點的限定穿著（node.wear）時的說明；穿好了是 undefined */
 export function wearGate(state: GameState, node: Pick<StoryNode, 'wear'>): string | undefined {
-  const miss = missingWear(state, node)
-  return miss.length ? `要穿著${miss.map((w) => `【${wearName(w)}】`).join('')}才能進行（到隊伍的裝備換上）` : undefined
+  return wearNote(pcOf(state), node.wear)
 }
 
 /** 錢不夠付這個任務點（或選項）可能要付的錢時的說明；付得起時是 undefined */

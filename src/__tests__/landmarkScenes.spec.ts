@@ -12,7 +12,9 @@ import { specialMapUsage } from '@/engine/specialMapMods'
 import { ambushChance } from '@/engine/rest'
 import { currentArea, currentCell } from '@/engine/grid'
 import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
-import { newGame } from '@/engine/state'
+import { addItem, newGame } from '@/engine/state'
+import { equipItem } from '@/engine/inventory'
+import { pcOf } from '@/engine/party'
 import { setFlag } from '@/engine/storyFlags'
 import type { GameState } from '@/engine/types'
 
@@ -344,5 +346,61 @@ describe('characters in the special-area rooms', () => {
     expect(npcRecord(state, 'npc_rona')?.fixed?.area).toBe('sm/sm_succubus_banquet')
     expect(npcRecord(state, 'npc_lucia')?.fixed).toBeUndefined()
     expect(npcRecord(state, 'npc_noel')?.fixed).toBeUndefined()
+  })
+})
+
+describe('work-line scenes', () => {
+  // 打工線完成之後，委託人的地標出現可以重複的打工場景；有制服的線要穿著
+  const WORK = ['lm_silverscale_inn', 'lm_odd_tower', 'lm_golden_dice', 'lm_tent_ring_bazaar', 'lm_krause_manor', 'lm_pilgrim_bath', 'lm_pearl_bath',
+    'lm_ironforge_onsen', 'lm_lower_massage', 'lm_nude_atelier', 'lm_blood_trial_ground', 'lm_bed_school']
+
+  it('open after the line is done, only for feminine and androgynous heroes, and pay for the work', () => {
+    for (const id of WORK) {
+      const scenes = landmarks[id]!.scenes!
+      expect(scenes.length, id).toBeGreaterThan(0)
+      for (const sc of scenes) {
+        expect(sc.requires?.flags?.[0], `${id} ${sc.title}`).toMatch(/_done$/)
+        expect(sc.tags, sc.title).toContain('male_partner')
+        expect(sc.pc_body, sc.title).toEqual(['fem', 'andro'])
+        expect(sc.effects?.find((e) => e.type === 'money'), sc.title).toBeTruthy()
+        expect(sanitizeScene(sc, landmarks[id]!.interior)).toEqual(sc)
+      }
+    }
+  })
+
+  it('stay on the map before the line is done, so the quest nodes there can be reached', () => {
+    setAdultContent(true)
+    const used = new Set(stories.flatMap((d) => d.nodes.filter((n) => n.at.where === 'cell' && landmarks[n.at.cell ?? '']).map((n) => n.at.cell!)))
+    for (const id of used) {
+      const l = landmarks[id]!
+      if (l.open?.hidden) continue
+      const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: l.location, gender: '女', body: 'fem' })
+      enterLocation(state)
+      const a = getArea(state, l.at.area)
+      expect(a.cells[l.at.y * a.width + l.at.x]?.kind, id).toBe(id)
+    }
+  })
+
+  it('ask for the uniform before you can go back to work', () => {
+    setAdultContent(true)
+    const l = landmarks.lm_golden_dice!
+    const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: l.location, gender: '女', body: 'fem' })
+    state.time.hour = 21
+    enterLocation(state)
+    expect(standOn(state, 'lm_golden_dice' as never)).toBe(true)
+    expect(scenesHere(state)).toEqual([])
+    setFlag(state, 'dice_done')
+    const i = scenesHere(state)[0]!.index
+    expect(sceneBlocked(state, i)).toContain('兔女郎裝')
+    addItem(state.inventory, '絲綢兔女郎裝', 1)
+    addItem(state.inventory, '絲綢兔耳髮箍', 1)
+    equipItem(state, '絲綢兔女郎裝', pcOf(state).id)
+    equipItem(state, '絲綢兔耳髮箍', pcOf(state).id)
+    expect(sceneBlocked(state, i)).toBeUndefined()
+    const money = state.money_cc
+    const report = playLandmarkScene(state, i)
+    expect(state.money_cc).toBeGreaterThan(money)
+    expect(report.narration?.adult_scene).toBeTruthy()
+    expect(sceneBlocked(state, i)).toContain('天後')
   })
 })

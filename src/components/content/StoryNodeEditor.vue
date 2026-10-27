@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { computed } from 'vue'
-import { ATTR_IDS, attrName, enemies, geography, itemRules, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
-import { gearRules } from '@/engine/gear'
+import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
+import { wearChoices } from '@/engine/gear'
 import { CELL_ICON, cellName, type CellKind } from '@/engine/grid'
 import { specialPreview, storySpotProblem } from '@/engine/specialMapMods'
 import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
 import { travelEvents } from '@/engine/road'
 import FlagInput from './FlagInput.vue'
 import NameListInput from './NameListInput.vue'
+import NpcPicker from './NpcPicker.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
 import CondExtrasEditor from './CondExtrasEditor.vue'
 import AffinityCondEditor from './AffinityCondEditor.vue'
@@ -29,11 +30,7 @@ const cellOptions = computed(() => [
   ...Object.values(shopRules.types).filter((d) => d.custom).map((d) => d.cell as CellKind),
   ...landmarksIn(node.value.at.location ?? '').map((l) => l.id as CellKind),
 ])
-// 限定穿著的選項：服裝類的底材（任何一件都算），以及有名字的服裝物品
-const wearOptions = computed((): [string, string][] => [
-  ...Object.entries(gearRules.bases).filter(([, b]) => b.outfit).map(([id, b]): [string, string] => [id, `任何一件${b.name}`]),
-  ...itemRules.items.filter((i) => i.gear && gearRules.bases[i.gear.base]?.outfit).map((i): [string, string] => [i.name, i.name]),
-])
+const wearOptions = computed(() => wearChoices())
 const enemyList = computed(() => Object.values(enemies).sort((a, b) => a.level - b.level))
 
 function setKind(kind: StoryNode['kind']) {
@@ -82,12 +79,6 @@ function toggleCheck(o: StoryOption, on: boolean) {
     delete o.check
     delete o.fail
   }
-}
-function toggleNpc(field: 'foes' | 'allies', id: string, on: boolean) {
-  const set = new Set(node.value[field] ?? [])
-  if (on) set.add(id)
-  else set.delete(id)
-  node.value[field] = set.size ? [...set] : undefined
 }
 function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
   const next = on ? [...new Set([...(o.tags ?? []), t])] : (o.tags ?? []).filter((x) => x !== t)
@@ -171,12 +162,7 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
     <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (node.requires = v)" />
     <AffinityCondEditor :model-value="requires" label="解鎖需要好感" @update:model-value="(v) => (node.requires = v)" />
     <div class="row small">限定穿著 <Hint text="主角要穿著這些才能進行（任務點照樣出現，按鈕停用並說明）。寫底材（例如 bunny_suit）時任何一件兔女郎裝都算，寫物品名稱時要那一件。" /> <NameListInput v-model="node.wear" :options="wearOptions" placeholder="底材或物品名稱" /></div>
-    <div class="row checks small">
-      <span>在場的友方固定 NPC：</span>
-      <label v-for="n in namedNpcs" :key="n.id" class="check">
-        <input type="checkbox" :checked="node.allies?.includes(n.id)" @change="toggleNpc('allies', n.id, ($event.target as HTMLInputElement).checked)" /> {{ n.name }}
-      </label>
-    </div>
+    <NpcPicker v-model="node.allies" label="在場的友方固定 NPC：" :exclude="node.foes" />
     <p v-if="node.allies?.length" class="small muted">
       解鎖時，勾選的角色會站在{{ ['outskirts', 'dungeon', 'side', 'special'].includes(where) ? ' ⭐ 旁邊' : where === 'npc' || where === 'road' ? '這裡' : '設施上' }}（不管平常的出沒與出現條件）；戰鬥時站在你這邊（由你操作），AI 判定與寫經過時也知道他們在場。要在成功後一起走，結果裡用「任務同行」。
     </p>
@@ -202,12 +188,7 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
         <button class="small" @click="node.enemies!.splice(i, 1)">移除</button>
       </div>
       <button class="small" @click="(node.enemies ??= []).push(['bandit', 1])">＋ 怪物</button>
-      <div class="row checks small">
-        <span>敵對的固定 NPC：</span>
-        <label v-for="n in namedNpcs" :key="n.id" class="check">
-          <input type="checkbox" :checked="node.foes?.includes(n.id)" @change="toggleNpc('foes', n.id, ($event.target as HTMLInputElement).checked)" /> {{ n.name }}
-        </label>
-      </div>
+      <NpcPicker v-model="node.foes" label="敵對的固定 NPC：" :exclude="node.allies" />
       <OutcomeEditor v-model="node.success" label="勝利" />
       <OutcomeEditor v-model="node.fail" label="落敗或撤退" optional />
     </template>
