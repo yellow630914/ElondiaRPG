@@ -104,6 +104,8 @@ export const travelEvents = travelEventsJson as unknown as {
 }
 export interface DungeonEventRules {
   chance: Record<DungeonTrigger, number>
+  /** 各層（近郊、淺層、中層、深層、底層）普通難度的 DC：選項寫的 DC 以 14 為「普通」，實際 DC = 這一層的 DC +（寫的 DC − 14） */
+  dc?: number[]
   cooldown_hours: number
   repeat_days: number
 }

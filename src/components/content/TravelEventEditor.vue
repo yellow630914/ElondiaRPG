@@ -284,6 +284,7 @@ function remove() {
           <template v-if="o.check">
             <select v-model="o.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
             DC <input v-model.number="o.check.dc" type="number" min="1" max="40" class="num" />
+            <Hint v-if="onPc" :text="`14 是「普通」：實際 DC 依${parasite ? '主角等級與侵蝕度的階段' : '地下城的層'}調整，寫 12 就是比普通容易 2、寫 16 比普通難 2。`" />
           </template>
           <select v-if="draft.scene" v-model="o.adult_scene" class="small" title="這個選項進入親密場景">
             <option :value="undefined">不進入親密場景</option>

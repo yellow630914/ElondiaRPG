@@ -429,7 +429,7 @@
     "chance": 0.12, "cooldown_hours": 12, "repeat_days": 10, "recent_penalty": 0.35, "recent_size": 4,
     "categories": {"social": "人情", "trouble": "麻煩", "opportunity": "機會", "omen": "傳聞與異象", "commerce": "買賣"}
   },
-  "dungeon": {"$comment": "地下城與近郊的事件（scope: dungeon，見 docs/ADULT_EVENTS.md）：觸發陷阱（沒察覺時）、打開寶箱、採集、在安全房長休之後，冷卻過了就依各觸發點的 chance 遇到一件事；同一事件 repeat_days 天內不重複。", "chance": {"trap": 0.5, "chest": 0.08, "gather": 0.15, "rest": 0.15}, "cooldown_hours": 6, "repeat_days": 3},
+  "dungeon": {"$comment": "地下城與近郊的事件（scope: dungeon，見 docs/ADULT_EVENTS.md）：觸發陷阱（沒察覺時）、打開寶箱、採集、在安全房長休之後，冷卻過了就依各觸發點的 chance 遇到一件事；同一事件 repeat_days 天內不重複。dc 是各層（近郊、淺層、中層、深層、底層）普通難度的 DC：選項寫的 DC 以 14 為「普通」，實際 DC = 這一層的 DC +（寫的 DC − 14）+ 存檔規則「事件檢定的難度」。", "chance": {"trap": 0.5, "chest": 0.08, "gather": 0.15, "rest": 0.15}, "cooldown_hours": 6, "repeat_days": 3, "dc": [11, 13, 14, 16, 18]},
   "side_maps": {
     "$comment": "臨時地圖：cave、ruins 是隨機挖出的小洞窟（遭遇用這段路的城郊遭遇表，強一點），waystation 是固定的驛站（安全房可以長休、有雜貨商、可能遇到冒險者）。從出口離開就回到旅途。",
     "cave": { "lighting": "dark", "name": "神秘洞窟", "size": [7, 7], "carve_steps": 26, "encounters": [1, 2], "elites": 1, "traps": [0, 1], "resources": [1, 2], "chests": [1, 1], "chest_layer": "shallow" },

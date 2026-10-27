@@ -11,6 +11,7 @@ import { locationById, regionById } from './data'
 import { currentArea, type Area } from './grid'
 import { characterBody } from './look'
 import { pcOf } from './party'
+import { parasiteOf, parasiteRules, stageOf } from './parasites'
 import { checkModifiers, modifierNote } from './perks'
 import { applyPendingMove, applyRoadOutcome, travelEvents, type DungeonTrigger, type RoadOption, type RoadTemplate } from './road'
 import { commitReport, newReportId, withRng } from './state'
@@ -19,6 +20,33 @@ import type { GameState, GameTime, Report } from './types'
 import { roll as diceRoll, withBonus } from './rng'
 
 const hoursOf = (t: GameTime) => t.day * 24 + (t.hour ?? 0) + (t.minute ?? 0) / 60
+
+/** 事件選項寫的 DC 以這個為「普通」：14 以下比較容易、以上比較難（相對於這裡的難度） */
+export const EVENT_DC_REF = 14
+export const DEFAULT_LAYER_DC = [11, 13, 14, 16, 18]
+
+/** 這件事普通難度的 DC：地下城事件依層，寄生物的發作依主角等級與階段；其他事件就是 14 */
+export function eventBaseDc(state: GameState, t: Pick<RoadTemplate, 'scope' | 'parasite'>): number {
+  if (t.scope === 'dungeon') {
+    const area = currentArea(state)
+    const layer = layerOf(area) ?? 0
+    const table = travelEvents.dungeon?.dc ?? DEFAULT_LAYER_DC
+    return table[Math.min(layer, table.length - 1)] ?? EVENT_DC_REF
+  }
+  if (t.scope === 'parasite') {
+    const r = parasiteRules.dc ?? { base: 12, per_level: 0.4, stages: [0, 0, 1, 2] }
+    const pc = pcOf(state)
+    const p = t.parasite ? parasiteOf(pc, t.parasite) : undefined
+    return r.base + Math.round(pc.level * r.per_level) + (r.stages[p ? stageOf(p.corruption) : 0] ?? 0)
+  }
+  return EVENT_DC_REF
+}
+
+/** 選項實際的 DC：這件事的普通難度 +（寫的 DC − 14）+ 存檔規則「事件檢定的難度」（只算發生在主角身上的事件） */
+export function eventDc(state: GameState, t: Pick<RoadTemplate, 'scope' | 'parasite'>, dc: number): number {
+  if (t.scope !== 'dungeon' && t.scope !== 'parasite') return dc
+  return Math.max(5, Math.min(30, eventBaseDc(state, t) + (dc - EVENT_DC_REF) + gameRule(state, 'eventDc')))
+}
 
 export function dungeonTemplates(): RoadTemplate[] {
   return travelEvents.templates.filter((t) => t.scope === 'dungeon')
@@ -119,8 +147,9 @@ export function resolvePcOption(state: GameState, report: Report, t: RoadTemplat
     const dice = withBonus('1d20', mod(attrOf(pc, o.check.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
     const r = withRng(state, (rng) => diceRoll(rng, dice))
     const natural = r.rolls[0] ?? r.total
-    ok = natural === 20 || (natural !== 1 && r.total >= o.check.dc)
-    report.timeline = [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `${t.title}：${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
+    const dc = eventDc(state, t, o.check.dc)
+    ok = natural === 20 || (natural !== 1 && r.total >= dc)
+    report.timeline = [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `${t.title}：${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc }, result: ok ? 'success' : 'fail' }]
   }
   const lines = [`${t.text}你選擇${o.label}。`, ...applyRoadOutcome(state, report, ok ? o.success : o.fail)]
   report.outcome = { result: o.check ? (ok ? 'success' : 'failure') : 'neutral', summary: lines.join(''), tags: [tag] }

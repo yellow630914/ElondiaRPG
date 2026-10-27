@@ -35,7 +35,7 @@ describe('rosters', () => {
     expect(adventurers.length).toBe(8 + slotless(adventurers))
     // 普通人 8 位（具名的議員也算在裡面）；阿爾貝納有娼館，娼妓不足 3 位時另外補上
     expect(commoners.length).toBeGreaterThanOrEqual(8)
-    expect(commoners.length).toBeLessThanOrEqual(8 + 3)
+    expect(commoners.length).toBeLessThanOrEqual(8 + 3 + slotless(commoners))
     expect(commoners.filter((r) => r.tags?.includes('prostitute')).length).toBeGreaterThanOrEqual(3)
     // 具名 NPC 算在冒險者名額裡
     expect(roster.members).toContain('npc_kai')

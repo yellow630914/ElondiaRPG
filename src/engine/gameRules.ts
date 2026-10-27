@@ -38,6 +38,7 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   masterEventMult: { label: '主人事件的機率', hint: `被主人帶著時，主人突發事件的機率乘上這個倍率（預設：走動每一步 ${pct(slaveryJson.master_events.step_chance)}、旅行每趟 ${pct(slaveryJson.master_events.travel_chance)}）。0 表示主人不會突然提出要求（離家逾期的「主人要回家」照樣會發生）。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
   parasiteMult: { label: '寄生發作的機率', hint: `身上的寄生物（寄生裝備、淫紋、寄生種子）發作的機率乘上這個倍率（預設：走動每一步 ${pct(parasitesJson.step_chance)}、旅途每天 ${pct(parasitesJson.travel_chance)}、長休之後 ${pct(parasitesJson.rest_chance)}；支配階段加倍）。0 表示不會發作。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發作' },
   dungeonEventMult: { label: '地下城事件的機率', hint: '地下城與近郊的色情事件（觸發陷阱、打開寶箱、採集、安全房長休）的機率乘上這個倍率。0 表示不會發生。成人向內容。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
+  eventDc: { label: '事件檢定的難度', hint: '地下城事件與寄生物發作的檢定 DC 加減（這兩種事件的 DC 本來就依層、主角等級與侵蝕度的階段調整）。負數比較容易。成人向內容。', default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
   escapeDc: { label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
 }
 

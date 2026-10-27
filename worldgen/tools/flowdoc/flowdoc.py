@@ -193,11 +193,16 @@ for st in S:
     lines.setdefault(name, []).append(st)
 
 
+# 打工的任務線（story_batch26.py）
+WORK_LINES = {'銀鱗旅店的看板娘', '怪人魔導師的研究', '黃金骰子的兔女郎', '舞孃的夜間表演', '伯爵府的見習女僕'}
+
+
 def category(name, sts):
     if name in ('政治史詩', '巨龍史詩'): return '史詩'
     if name == '多人特殊任務': return '多人特殊任務'
     if name == '入門委託': return '入門委託'
     if name == '沿海洞窟': return '地下城'
+    if name in WORK_LINES: return '打工線（成人向）'
     nn = [n for s in sts for n in s['nodes']]
     if name in LOC.values() or sum(n['at'].get('where') == 'dungeon' for n in nn) * 2 >= len(nn): return '地下城'
     short = {v.split('・')[0].split('「')[-1].split('」')[-1] for v in NPC.values()}
@@ -211,7 +216,7 @@ def category(name, sts):
     return '地區與勢力'
 
 
-ORDER = ['入門委託', '地區與勢力', '地下城', '角色線', '角色線（成人向）', '多人特殊任務', '史詩']
+ORDER = ['入門委託', '地區與勢力', '地下城', '角色線', '角色線（成人向）', '打工線（成人向）', '多人特殊任務', '史詩']
 out = []
 for name, sts in lines.items():
     sts = sorted(sts, key=lambda s: (s['start'].get('min_level') or 0))
@@ -233,6 +238,25 @@ FLOW = {
 for l in out:
     if l['name'] in FLOW: l['flow'] = [{'label': lb, 'ids': ids, 'seq': not lb.startswith(('四條龍', '軍需'))} for lb, ids in FLOW[l['name']]]
     elif l['name'] in ('多人特殊任務', '入門委託'): l['flow'] = [{'label': '各自獨立', 'ids': [q['id'] for q in l['quests']], 'seq': False}]
+
+# 事件的 DC：選項寫的 DC 以 14 為「普通」，實際 DC 依層（地下城事件）或主角等級與階段（寄生物）調整
+def difficulty(dc):
+    d = dc - 14
+    return '普通' if d == 0 else f"{'容易' if d < 0 else '困難'} {'+' if d > 0 else '−'}{abs(d)}"
+
+
+def dungeon_dc(c, t):
+    table = TE.get('dungeon', {}).get('dc') or [11, 13, 14, 16, 18]
+    dcs = sorted({table[i] + c['dc'] - 14 for i in (t.get('layers') or range(len(table)))})
+    rng = f"{dcs[0]}" if len(dcs) == 1 else f"{dcs[0]}～{dcs[-1]}"
+    return f"{ATTR.get(c['attr'], c['attr'])} {difficulty(c['dc'])}（DC {rng}，依層）"
+
+
+def parasite_dc(c):
+    r = PAR.get('dc') or {'base': 12, 'per_level': 0.4}
+    lo, hi = r['base'] + round(1 * r['per_level']), r['base'] + round(20 * r['per_level']) + max(r.get('stages', [0]))
+    return f"{ATTR.get(c['attr'], c['attr'])} {difficulty(c['dc'])}（DC 約 {lo + c['dc'] - 14}～{hi + c['dc'] - 14}，依主角等級與階段）"
+
 
 # 地下城的色情事件（travel_events.json 的 scope: dungeon）：每個觸發點一條「線」，每個事件當成只有一個任務點的任務
 TE = ld('data/rules/travel_events.json')
@@ -257,7 +281,7 @@ for trig, tname in DTRIG.items():
                 b = {'label': label, 'text': res.get('text', ''), 'fx': effects(res), 'next': [], 'unlock': [], 'done': False, 'retry': False,
                      'flags': res.get('set_flags', []), 'fail': not ok, 'tags': tags}
                 if o.get('check') and ok:
-                    b['check'] = f"{ATTR.get(o['check']['attr'], o['check']['attr'])} DC {o['check']['dc']}"
+                    b['check'] = dungeon_dc(o['check'], t)
                 branches.append(b)
         qs.append({'id': t['id'], 'title': t['title'], 'summary': t.get('scene', ''), 'rank': '—', 'level': None,
                    'tags': [TAG.get(x, x) for x in t.get('tags', [])], 'who': f"{tname}・{where_}・{layers}", 'startText': '',
@@ -285,7 +309,7 @@ for pid, pdef in PAR['parasites'].items():
                 b = {'label': label, 'text': res.get('text', ''), 'fx': effects(res), 'next': [], 'unlock': [], 'done': False, 'retry': False,
                      'flags': res.get('set_flags', []), 'fail': not ok, 'tags': tags}
                 if o.get('check') and ok:
-                    b['check'] = f"{ATTR.get(o['check']['attr'], o['check']['attr'])} DC {o['check']['dc']}"
+                    b['check'] = parasite_dc(o['check'])
                 branches.append(b)
         qs.append({'id': t['id'], 'title': t['title'], 'summary': t.get('scene', ''), 'rank': '—', 'level': None,
                    'tags': [TAG.get(x, x) for x in t.get('tags', [])], 'who': f"{pdef['name']}・{stages}・{moments}", 'startText': '',

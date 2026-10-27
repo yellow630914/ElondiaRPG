@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { attrName } from '@/engine/data'
 import { roadTemplate } from '@/engine/road'
 import { pendingTownEvent } from '@/engine/townEvents'
-import { pendingDungeonEvent } from '@/engine/dungeonEvents'
+import { eventDc, pendingDungeonEvent } from '@/engine/dungeonEvents'
 import { pendingParasiteEvent } from '@/engine/parasiteEvents'
 import { useGame } from '@/stores/game'
 import GameIcon from '../ui/GameIcon.vue'
@@ -33,7 +33,7 @@ function answer(i: number) {
     <p class="small">{{ pending.text }}</p>
     <div class="row">
       <button v-for="(o, i) in pending.options ?? []" :key="i" class="small" :disabled="game.judging" @click="answer(i)">
-        {{ o.label }}<template v-if="o.check">（{{ attrName(o.check.attr) }}・DC {{ o.check.dc }}）</template>
+        {{ o.label }}<template v-if="o.check">（{{ attrName(o.check.attr) }}・DC {{ game.state ? eventDc(game.state, pending, o.check.dc) : o.check.dc }}）</template>
       </button>
     </div>
   </section>

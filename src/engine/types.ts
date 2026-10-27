@@ -693,6 +693,7 @@ export interface GameOptions {
   masterEventMult?: number
   parasiteMult?: number
   dungeonEventMult?: number
+  eventDc?: number
 }
 
 /** 這一趟地下城探索（進入地下城時開始，離開時結束） */

@@ -300,8 +300,9 @@ CONDS = {
     "drained": {"name": "虛脫", "desc": "全身的力氣都被抽乾了。下次長休前力量檢定 -2，戰鬥傷害 -1。", "check_penalty": 2, "check_attrs": ["str"], "combat_mods": {"damage": -1}, "clears": "long_rest"},
     "disheveled": {"name": "衣衫不整", "desc": "衣服被扯壞、溶掉了一部分，整個人狼狽不堪。下次長休前魅力檢定 -1。", "check_penalty": 1, "check_attrs": ["cha"], "clears": "long_rest"},
 }
-RULES = {"$comment": "地下城與近郊的事件（scope: dungeon，見 docs/ADULT_EVENTS.md）：觸發陷阱（沒察覺時）、打開寶箱、採集、在安全房長休之後，冷卻過了就依各觸發點的 chance 遇到一件事；同一事件 repeat_days 天內不重複。",
-         "chance": {"trap": 0.5, "chest": 0.08, "gather": 0.15, "rest": 0.15}, "cooldown_hours": 6, "repeat_days": 3}
+RULES = {"$comment": "地下城與近郊的事件（scope: dungeon，見 docs/ADULT_EVENTS.md）：觸發陷阱（沒察覺時）、打開寶箱、採集、在安全房長休之後，冷卻過了就依各觸發點的 chance 遇到一件事；同一事件 repeat_days 天內不重複。dc 是各層（近郊、淺層、中層、深層、底層）普通難度的 DC：選項寫的 DC 以 14 為「普通」，實際 DC = 這一層的 DC +（寫的 DC − 14）+ 存檔規則「事件檢定的難度」。",
+         "chance": {"trap": 0.5, "chest": 0.08, "gather": 0.15, "rest": 0.15}, "cooldown_hours": 6, "repeat_days": 3,
+         "dc": [11, 13, 14, 16, 18]}
 
 if __name__ == '__main__':
     assert len({e['id'] for e in E}) == len(E)

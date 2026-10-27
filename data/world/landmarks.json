@@ -2194,6 +2194,64 @@
     }
    ],
    "interior": "sm_honor_hole"
+  },
+  {
+   "id": "lm_golden_dice",
+   "name": "黃金骰子賭場",
+   "emoji": "🎲",
+   "location": "albena",
+   "at": {
+    "area": "albena/market",
+    "x": 3,
+    "y": 5
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "聯邦市集最大的賭場，金色的大門上掛著一對骰子。兔女郎在賭桌之間穿梭，貴賓室的門後傳來籌碼的聲音。",
+   "scene": "水晶吊燈下煙霧繚繞，骰子聲、輪盤聲與笑聲混在一起；穿著兔女郎裝的女孩們端著酒，在客人的手之間穿梭。",
+   "open": {
+    "hours": "night",
+    "adult": true
+   }
+  },
+  {
+   "id": "lm_krause_manor",
+   "name": "克勞澤伯爵府",
+   "emoji": "🏰",
+   "location": "rhineburg",
+   "at": {
+    "area": "rhineburg/noble",
+    "x": 1,
+    "y": 1
+   },
+   "types": [
+    "official"
+   ],
+   "desc": "貴族區角落一座灰色的老宅，門口貼著一張已經發黃的告示：誠徵見習女僕，待遇從優。",
+   "scene": "擦得發亮的走廊空蕩蕩的，牆上掛著伯爵夫人的畫像；遠處傳來少爺的笑聲，和一個女僕摔門而出的聲音。",
+   "open": {
+    "adult": true
+   }
+  },
+  {
+   "id": "lm_odd_tower",
+   "name": "怪人之塔",
+   "emoji": "🔮",
+   "location": "dawnlight",
+   "at": {
+    "area": "dawnlight/gate",
+    "x": 5,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "晨曦門邊一座歪歪斜斜的細塔，門口的牌子寫著：誠徵受試者，報酬優渥，不問經驗。底下用很小的字寫著：會脫衣服。",
+   "scene": "塔裡堆滿了發光的瓶罐與奇形怪狀的魔導具，空氣裡有薄荷、硫磺與一點點甜膩的味道。",
+   "open": {
+    "adult": true
+   }
   }
  ]
 }

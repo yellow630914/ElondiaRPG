@@ -5,6 +5,7 @@
 import { ATTR_IDS, geography, shopRules, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
 import { sanitizeCond } from './mods'
 import { parasiteDef, parasiteRules } from './parasites'
+import { DEFAULT_LAYER_DC } from './dungeonEvents'
 import { travelEvents, type DungeonEventRules, type DungeonTrigger, type EventScope, type RoadOption, type RoadTemplate, type TownEventRules } from './road'
 import { CONTENT_TAG_IDS } from './content'
 import { BODIES } from './traits'
@@ -205,6 +206,7 @@ export function sanitizeEventRules(raw: Partial<EventRulesMod>): EventRulesMod {
     chance: Object.fromEntries((Object.keys(DUNGEON_TRIGGERS) as DungeonTrigger[]).map((k) => [k, num(d.chance?.[k], 0, 1, base.dungeon.chance[k])])) as DungeonEventRules['chance'],
     cooldown_hours: num(d.cooldown_hours, 0, 168, base.dungeon.cooldown_hours, 1),
     repeat_days: Math.round(num(d.repeat_days, 0, 60, base.dungeon.repeat_days)),
+    dc: EVENT_LAYERS.map((_, i) => Math.round(num(d.dc?.[i], 5, 30, base.dungeon.dc?.[i] ?? DEFAULT_LAYER_DC[i]!))),
   }
   return { chance, weights, town, dungeon }
 }

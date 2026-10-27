@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { setAdultContent, setContentFilters } from '@/engine/content'
 import { companionRules } from '@/engine/data'
-import { answerDungeonEvent, dungeonCandidates, dungeonTemplates, maybeDungeonEvent, pendingDungeonEvent, pruneDungeonEvent } from '@/engine/dungeonEvents'
+import { answerDungeonEvent, DEFAULT_LAYER_DC, dungeonCandidates, eventBaseDc, eventDc, dungeonTemplates, maybeDungeonEvent, pendingDungeonEvent, pruneDungeonEvent } from '@/engine/dungeonEvents'
 import { cellAt, currentArea, DUNGEON_LAYERS, enterLocation, move } from '@/engine/grid'
 import { applyContent, emptyMods } from '@/engine/mods'
 import { longRestBlocked } from '@/engine/rest'
@@ -164,5 +164,21 @@ describe('dungeon adult events', () => {
     pruneDungeonEvent(state)
     expect(state.dungeonEvent).toBeUndefined()
     expect(travelEvents.dungeon?.chance.trap).toBeGreaterThan(0)
+  })
+
+  it('scale check DCs by layer: the written DC is an offset from 14, plus the save rule', () => {
+    const state = inDungeon()
+    const area = currentArea(state)
+    const layer = area.kind === 'dungeon' ? area.layer ?? 0 : 0
+    const base = (travelEvents.dungeon?.dc ?? DEFAULT_LAYER_DC)[layer]!
+    const t = { scope: 'dungeon' as const }
+    expect(eventBaseDc(state, t)).toBe(base)
+    expect(eventDc(state, t, 14)).toBe(base)
+    expect(eventDc(state, t, 12)).toBe(base - 2)
+    state.options = { ...state.options!, eventDc: 3 }
+    expect(eventDc(state, t, 16)).toBe(base + 5)
+    // 旅途與城鎮事件不受影響
+    expect(eventDc(state, { scope: 'town' }, 13)).toBe(13)
+    expect(travelEvents.dungeon?.dc).toEqual([11, 13, 14, 16, 18])
   })
 })

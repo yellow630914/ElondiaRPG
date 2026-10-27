@@ -13,6 +13,7 @@ import {
 } from '@/engine/parasiteEvents'
 import { activeParasites, attachParasite, growParasites, parasiteDef, parasiteOf, parasiteRules, removalTerms, stageOf, tameParasite } from '@/engine/parasites'
 import { checkModifiers } from '@/engine/perks'
+import { eventBaseDc } from '@/engine/dungeonEvents'
 import { travelEvents } from '@/engine/road'
 import { newGame } from '@/engine/state'
 import { condMet, setFlag } from '@/engine/storyFlags'
@@ -228,5 +229,16 @@ describe('parasites', () => {
     expect(condMet(state, cas.start.requires)).toBe(true)
     setFlag(state, 'par_mark_help_cas_start')
     expect(condMet(state, help.start.requires)).toBe(false)
+  })
+
+  it('scale flare-up DCs with the hero level and the stage', () => {
+    const state = game()
+    const pc = pcOf(state)
+    attachParasite(pc, LIN, state.time)
+    const t = { scope: 'parasite' as const, parasite: LIN }
+    expect(eventBaseDc(state, t)).toBe(12 + Math.round(pc.level * 0.4))
+    pc.level = 10
+    parasiteOf(pc, LIN)!.corruption = 95
+    expect(eventBaseDc(state, t)).toBe(12 + 4 + 2)
   })
 })

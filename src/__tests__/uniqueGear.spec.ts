@@ -5,16 +5,14 @@ import { enterLocation } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
 import { sanitizeItem } from '@/engine/mods'
 import { checkModifiers } from '@/engine/perks'
-import { parasiteRules } from '@/engine/parasites'
 import { addItem, newGame } from '@/engine/state'
 import { applyAiDeals, sellPrice, shopKey, shopState } from '@/engine/trade'
 import { defenseMult, startCombat } from '@/engine/combat'
 
 // 內建的獨特物品（寶箱、黑市）；任務的獨特裝備另外測（不進寶箱、不上黑市）
 const uniques = () => itemRules.items.filter((i) => i.gear?.unique && i.black_market)
-// 寄生物馴服後的獨特色情裝備不是任務的獎勵（parasites.json 的 tamed.item）
-const parasiteItems = new Set(Object.values(parasiteRules.parasites).flatMap((p) => [p.item, p.tamed?.item]).filter(Boolean))
-const questGear = () => itemRules.items.filter((i) => i.gear?.unique && !i.black_market && !parasiteItems.has(i.name))
+// 成人向的獨特色情裝備（寄生物、打工任務線）另外算，不在這裡的等級區間裡
+const questGear = () => itemRules.items.filter((i) => i.gear?.unique && !i.black_market && !i.adult)
 
 /** 特殊任務給的物品名稱（完成獎勵與每個結果的效果） */
 function storyItems(): Map<string, string[]> {

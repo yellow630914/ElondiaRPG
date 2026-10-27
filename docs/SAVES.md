@@ -112,6 +112,7 @@
 | 主人事件的機率 | `masterEventMult` | 1 | 0～3 | 主人的突發事件（走動時）與旅途上的主人格子；0 = 不會發生 |
 | 寄生發作的機率 | `parasiteMult` | 1 | 0～3 | 寄生物的發作（[ADULT_EVENTS](ADULT_EVENTS.md) 第 6.2 節）；0 = 不會發作 |
 | 地下城事件的機率 | `dungeonEventMult` | 1 | 0～3 | 地下城與近郊的色情事件；0 = 不會發生 |
+| 事件檢定的難度 | `eventDc` | 0 | −10～+10 | 地下城事件與寄生物發作的檢定 DC 加減（[ADULT_EVENTS](ADULT_EVENTS.md) 第 7 節） |
 | 委託的期限 | `deadlineMult` | 1 | 0～5 | 之後接的公會委託的天數（至少 1 天）；0 = 不限期限；特殊任務不變 |
 | 短休的時間 | `shortRestHours` | 1 | 0.5～4 小時 | |
 | 長休的時間 | `longRestHours` | 8 | 2～12 小時 | 旅店與家裡照樣住到隔天早上 |

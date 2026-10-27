@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setAdultContent } from '@/engine/content'
-import { stories, type StoryDef } from '@/engine/data'
+import { itemRules, stories, type StoryDef } from '@/engine/data'
 import { enterLocation } from '@/engine/grid'
 import { npcRecord } from '@/engine/npcs'
 import { joinParty } from '@/engine/party'
@@ -61,5 +61,34 @@ describe('intimate scenes in special quests', () => {
       return playNode(state, 'ren_tide_home:sea', 0) as Report
     }
     expect(play().narration?.adult_scene).toBe(story('ren_tide_home').nodes.find((n) => n.id === 'sea')!.options![0]!.success!.scene)
+  })
+})
+
+describe('work quest lines', () => {
+  const LINES = {
+    inn: ['inn_skirt', 'inn_cellar', 'inn_feast', '看板娘的圍裙'],
+    odd: ['odd_measure', 'odd_trial', 'odd_exchange', '實驗用的魔導項圈'],
+    dice: ['dice_dealer', 'dice_luck', 'dice_jackpot', '黃金骰子的兔女郎裝'],
+    dance: ['dance_bazaar', 'dance_chief', 'dance_night', '夜之舞孃的腳鍊'],
+    maid: ['maid_skirt', 'maid_bath', 'maid_night', '伯爵府的女僕裝'],
+  }
+
+  it('run three stages in order, only for feminine and androgynous heroes, and end with the line gear in every branch', () => {
+    for (const [pre, [a, b, c, gear]] of Object.entries(LINES)) {
+      const [s1, s2, s3] = [a!, b!, c!].map(story)
+      for (const s of [s1, s2, s3]) {
+        expect(s!.tags, s!.id).toContain('adult')
+        expect(s!.start.pc_body, s!.id).toEqual(['fem', 'andro'])
+      }
+      expect(s1!.start.requires).toBeUndefined()
+      expect(s2!.start.requires?.flags).toEqual([`${pre}_1_done`])
+      expect(s3!.start.requires?.flags).toEqual([`${pre}_2_done`])
+      const last = s3!.nodes.at(-1)!
+      for (const o of last.options!) {
+        expect(o.success!.effects, `${c} ${o.label}`).toContainEqual({ type: 'item', name: gear, qty: 1 })
+        expect(o.success!.scene, `${c} ${o.label}`).toBeTruthy()
+      }
+      expect(itemRules.items.find((i) => i.name === gear)).toMatchObject({ adult: true, tags: ['unique'] })
+    }
   })
 })
