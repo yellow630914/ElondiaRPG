@@ -19,6 +19,8 @@ export interface CharacterDraft {
   look?: Record<string, string>
   appearance: string
   background: string
+  /** 身分標籤（舊的角色沒有） */
+  tags?: string[]
   perks: string[]
   customPerks: unknown[]
   gear: Record<string, { base: string; tier: number }>

@@ -10,7 +10,7 @@ import slaveryJson from '@data/rules/slavery.json'
 import parasitesJson from '@data/rules/parasites.json'
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
-export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty'>
+export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange'>
 
 export interface RuleDef {
   label: string

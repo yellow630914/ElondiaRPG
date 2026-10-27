@@ -10,6 +10,7 @@ import { roll, withBonus } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { GameState, Report } from './types'
 import { gameRule } from './gameRules'
+import { pcTagEffect } from './pcTags'
 
 export const securityRules = securityJson as unknown as {
   alert: { max: number; decay_days: number; gate_dc_base: number; gate_dc_per_level: number }
@@ -192,7 +193,7 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
     : { ok: false, report, reason: `衛兵不讓你通過；繳交罰金 ${formatMoney(alertFine(state, locId))} 就能通過。` }
 }
 
-/** 貴族區與王城：通緝中不能進入；王城需要聲望、許可，或當天說服了衛兵 */
+/** 貴族區與王城：通緝中不能進入；王城需要聲望、許可、皇族的身分，或當天說服了衛兵 */
 export function zoneEntryBlock(state: GameState, zone: string | undefined): string | null {
   if (zone !== 'noble' && zone !== 'palace') return null
   const loc = locationById(state.location)
@@ -205,10 +206,11 @@ export function zoneEntryBlock(state: GameState, zone: string | undefined): stri
   return null
 }
 
-/** 聲望不夠、沒有許可，今天也還沒說服衛兵：進王城要先說服 */
+/** 聲望不夠、沒有許可，今天也還沒說服衛兵：進王城要先說服（主角是皇族時不用） */
 export function palaceNeedsPersuading(state: GameState): boolean {
   const loc = locationById(state.location)
-  return reputationOf(state, loc.faction) < securityRules.palace_reputation
+  return !pcTagEffect(state, 'palace')
+    && reputationOf(state, loc.faction) < securityRules.palace_reputation
     && !state.flags[`palace_permit:${loc.id}`]
     && state.palacePass?.[loc.id] !== state.time.day
 }

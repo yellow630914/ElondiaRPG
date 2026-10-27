@@ -3,7 +3,8 @@ import { computed, reactive, ref, watch } from 'vue'
 import {
   abilityQuality, apMaxFor, apRegenFor, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor,
 } from '@/engine/character'
-import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules } from '@/engine/data'
+import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules, tagDef } from '@/engine/data'
+import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
@@ -92,7 +93,19 @@ function saveProfile() {
   game.editProfile({ ...profile })
   editingProfile.value = false
 }
-watch(() => props.member, () => (editingProfile.value = false))
+watch(() => props.member, () => (editingProfile.value = false, editingTags.value = false))
+// 主角的身分標籤：存檔規則允許時可以更換
+const editingTags = ref(false)
+const tagDraft = ref<string[]>([])
+const canChangeTags = computed(() => !!game.state?.options?.tagChange)
+function startTags() {
+  tagDraft.value = [...(m.value.tags ?? [])]
+  editingTags.value = true
+}
+function saveTags() {
+  game.setPcTags(tagDraft.value)
+  editingTags.value = false
+}
 </script>
 
 <template>
@@ -183,6 +196,20 @@ watch(() => props.member, () => (editingProfile.value = false))
             <template v-if="m.gender"><dt>性別</dt><dd>{{ m.gender }}</dd></template>
             <template v-if="m.isPlayer"><dt>體型</dt><dd>{{ BODY_NAME[characterBody(m)] }}<span v-if="!m.body" class="muted">（依種族與性別）</span></dd></template>
             <template v-if="m.birthplace"><dt>出身</dt><dd>{{ locationById(m.birthplace).name }}</dd></template>
+            <template v-if="m.isPlayer && (m.tags?.length || canChangeTags)">
+              <dt>身分</dt>
+              <dd>
+                <template v-if="!editingTags">
+                  <span v-for="t in m.tags ?? []" :key="t" class="tag" :title="tagDef(t)?.ai_hint">{{ tagDef(t)?.emoji }} {{ tagDef(t)?.name ?? t }}</span>
+                  <span v-if="!m.tags?.length" class="muted">（沒有）</span>
+                  <button v-if="canChangeTags" class="small" @click="startTags"><GameIcon name="edit" :size="13" /> 更換</button>
+                </template>
+                <div v-else class="tag-edit">
+                  <PcTagPicker v-model="tagDraft" />
+                  <div class="row"><button class="small primary" @click="saveTags">儲存</button><button class="small" @click="editingTags = false">取消</button></div>
+                </div>
+              </dd>
+            </template>
             <template v-if="m.appearance"><dt>外貌</dt><dd>{{ m.appearance }}</dd></template>
             <template v-if="m.background"><dt>背景</dt><dd>{{ m.background }}</dd></template>
           </dl>
@@ -273,6 +300,8 @@ watch(() => props.member, () => (editingProfile.value = false))
 .kv { display: grid; grid-template-columns: 4em minmax(0, 1fr); gap: 6px 10px; margin: 0; }
 .kv dt { color: var(--muted); font-size: var(--fs-sm); letter-spacing: 0.15em; }
 .kv dd { margin: 0; }
+.kv dd .tag { margin-right: 4px; }
+.tag-edit { display: grid; gap: 6px; }
 .contract { display: grid; gap: 4px; padding: 8px 10px; border: 1px dashed var(--danger); border-radius: 3px; }
 .contract h4 { margin: 0; color: var(--danger); display: flex; align-items: center; gap: 4px; }
 .edit { display: grid; gap: 6px; }

@@ -212,6 +212,8 @@ function doReset() {
             <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.tagChange" @change="game.setTagChange(($event.target as HTMLInputElement).checked)" />
+          允許在遊戲中更換身分標籤 <Hint text="勾選時，可以在角色詳情的「角色設定」裡更換主角的身分標籤（最多 3 個）。皇族可以直接進出王城。" /></label>
         <RuleFields :model-value="saveRules" @update:model-value="game.setRules" />
       </div>
     </section>

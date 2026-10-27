@@ -253,6 +253,8 @@ export interface Character {
   coveredTattoos?: { parasite: string; tattoo: Tattoo }[]
   /** 已花掉的生命骰（總數 = 等級） */
   hitDiceUsed?: number
+  /** 身分標籤（只有主角有；npc_tags.json 裡 player 不是 false 的標籤，最多 3 個，見 engine/pcTags.ts） */
+  tags?: string[]
   /** 體型（主角建角時選的；沒有時依種族與性別，見 look.ts） */
   body?: 'masc' | 'fem' | 'andro'
   /** 性別：主角是自由輸入的文字；NPC 是性別 id（見 npc_pool.json） */
@@ -700,6 +702,8 @@ export interface GameOptions {
   parasiteMult?: number
   dungeonEventMult?: number
   eventDc?: number
+  /** 允許在遊戲中更換主角的身分標籤（見 engine/pcTags.ts） */
+  tagChange?: boolean
 }
 
 /** 這一趟地下城探索（進入地下城時開始，離開時結束） */

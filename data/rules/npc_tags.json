@@ -1,5 +1,5 @@
 {
-  "$comment": "NPC 標籤：決定活躍地點、生成機率，並給 AI 當作身分參考。kinds = 適用的 NPC 類型（commoner 普通人、adventurer 冒險者）。commoner_weight = 普通人的主要標籤權重（每位普通人抽一個主要標籤）；adventurer_chance = 冒險者帶這個標籤的機率（各自獨立）；extra_chance = 已有其他標籤時再加上這個標籤的機率（例如商人＋旅人 = 行商）。location_types = 只在這些類型的地點生成（沒寫為全部）。zone_weights 覆寫該 NPC 在各地區的權重（town 一般、noble 貴族區、palace 王城、temple 神殿、outskirts 近郊、dungeon 地下城）；地點沒有的地區會併入 town。haunt_extra = 除了所屬地點，再加入幾個相鄰的地點（沿道路，權重 haunt_extra_weight）。occupations 是普通人的職業描述；wealth 是財富等級（1 平民～4 皇族，送禮與偷竊用）。exclusive = 互斥的標籤（不會同時擁有）；dc_mods = 和帶這個標籤的人互動時的參考 DC 修正（chat、gift、flatter、hire、invite）；never_hostile = 不會因關係差而在野外動手；crime_reputation = 對他犯罪被發現時額外的聲望變化。class_mult = 冒險者依職業調整 adventurer_chance 的倍率（沒寫的職業是 1；例如聖騎士很少是惡人、常是好人）。說明見 docs/NPC_SYSTEM.md 第 4 節。",
+  "$comment": "NPC 標籤：決定活躍地點、生成機率，並給 AI 當作身分參考。kinds = 適用的 NPC 類型（commoner 普通人、adventurer 冒險者）。commoner_weight = 普通人的主要標籤權重（每位普通人抽一個主要標籤）；adventurer_chance = 冒險者帶這個標籤的機率（各自獨立）；extra_chance = 已有其他標籤時再加上這個標籤的機率（例如商人＋旅人 = 行商）。location_types = 只在這些類型的地點生成（沒寫為全部）。zone_weights 覆寫該 NPC 在各地區的權重（town 一般、noble 貴族區、palace 王城、temple 神殿、outskirts 近郊、dungeon 地下城）；地點沒有的地區會併入 town。haunt_extra = 除了所屬地點，再加入幾個相鄰的地點（沿道路，權重 haunt_extra_weight）。occupations 是普通人的職業描述；wealth 是財富等級（1 平民～4 皇族，送禮與偷竊用）。exclusive = 互斥的標籤（不會同時擁有）；dc_mods = 和帶這個標籤的人互動時的參考 DC 修正（chat、gift、flatter、hire、invite）；never_hostile = 不會因關係差而在野外動手；crime_reputation = 對他犯罪被發現時額外的聲望變化。class_mult = 冒險者依職業調整 adventurer_chance 的倍率（沒寫的職業是 1；例如聖騎士很少是惡人、常是好人）。主角也可以帶標籤（建角時最多 3 個，見 engine/pcTags.ts）：player = false 的標籤主角不能選（奴隸、娼妓由各自的系統決定）；pc_effects = 主角帶著這個標籤時的效果（palace：不必聲望也能進出王城）。說明見 docs/NPC_SYSTEM.md 第 4 節。",
   "version": 1,
   "kinds": {
     "commoner": {
@@ -39,7 +39,7 @@
       "ai_hint": "一般的平民百姓，過著自己的日子"
     },
     "slave": {
-      "name": "奴隸", "emoji": "⛓️", "kinds": ["commoner", "adventurer"],
+      "name": "奴隸", "emoji": "⛓️", "kinds": ["commoner", "adventurer"], "player": false,
       "commoner_weight": 3, "adventurer_chance": 0.02,
       "wealth": 0,
       "occupations": ["家僕", "雜役", "礦工", "搬運工"],
@@ -56,7 +56,7 @@
       "ai_hint": "貴族出身，重視身分、禮節與家族名聲"
     },
     "royal": {
-      "name": "皇族", "emoji": "👑", "kinds": ["commoner"],
+      "name": "皇族", "emoji": "👑", "kinds": ["commoner"], "pc_effects": { "palace": true },
       "commoner_weight": 0.6,
       "location_types": ["capital"],
       "zone_weights": { "town": 0.1, "noble": 1, "palace": 2 },
@@ -107,6 +107,7 @@
       "$comment": "娼妓（關閉成人向時顯示為技師）。只出現在有娼館的城鎮（requires_zone），平常待在娼館格子；娼館的店主是帶這個標籤的老鴇。",
       "name": "娼妓",
       "emoji": "🌹",
+      "player": false,
       "kinds": ["commoner"],
       "commoner_weight": 6,
       "requires_zone": "brothel",

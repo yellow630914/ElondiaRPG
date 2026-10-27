@@ -14,12 +14,14 @@ import { slotTitle } from '@/stores/saves'
 import { useCharacterPresets, type CharacterDraft, type CharacterPreset } from '@/stores/characterPresets'
 import MarkPicker from './MarkPicker.vue'
 import PerkPicker from './PerkPicker.vue'
+import PcTagPicker from './PcTagPicker.vue'
 import LookPicker from './LookPicker.vue'
 import StartGearDialog from './StartGearDialog.vue'
 import ContentIcon from './icons/ContentIcon.vue'
 import ItemIcon from './items/ItemIcon.vue'
 import { choosablePerks, type PerkDef } from '@/engine/data'
 import { racePerks } from '@/engine/perks'
+import { sanitizePcTags } from '@/engine/pcTags'
 import { genderId } from '@/engine/look'
 import type { Body } from '@/engine/traits'
 import NameTag from './NameTag.vue'
@@ -58,6 +60,10 @@ const background = ref('')
 // 體態：體型（空字串＝依種族與性別）與各部位
 const body = ref<Body | ''>('')
 const look = ref<Record<string, string>>({})
+// 身分標籤（和 NPC 共用 npc_tags.json，最多 3 個）
+const pcTags = ref<string[]>([])
+/** 這個存檔的規則：允許在遊戲中更換身分標籤 */
+const tagChange = ref(false)
 // 特質：清單裡的任選，也可以自訂
 const perks = ref<string[]>([])
 const customPerks = ref<PerkDef[]>([])
@@ -199,12 +205,13 @@ function start() {
     ...(body.value ? { body: body.value } : {}),
     ...(Object.keys(look.value).length ? { look: { ...look.value } } : {}),
     ...(s ? { slave: s } : {}),
+    ...(pcTags.value.length ? { tags: [...pcTags.value] } : {}),
     ...(perks.value.length ? { perks: [...perks.value] } : {}),
     ...(customPerks.value.length ? { customPerks: customPerks.value.map((p) => ({ ...p })) } : {}),
     gear: { ...gearChoice.value },
     gearBudget: gearBudget.value,
     // 難度和其他規則一樣：和預設一樣的不存
-    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...sanitizeRules(rules.value) },
+    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...sanitizeRules(rules.value) },
   }, content.active)
 }
 
@@ -222,7 +229,7 @@ function draft(): CharacterDraft {
   return {
     name: name.value.trim() || '旅人', gender: gender.value, race: race.value, classId: classId.value, bonus: { ...bonus }, birthplace: birthplace.value,
     ...(body.value ? { body: body.value } : {}), look: { ...look.value }, appearance: appearance.value, background: background.value,
-    perks: [...perks.value], customPerks: customPerks.value.map((p) => ({ ...p })), gear: JSON.parse(JSON.stringify(gearChoice.value)),
+    tags: [...pcTags.value], perks: [...perks.value], customPerks: customPerks.value.map((p) => ({ ...p })), gear: JSON.parse(JSON.stringify(gearChoice.value)),
     ...(slave.value ? { slave: { mode: masterMode.value, seed: masterSeed.value, picked: pickedMaster.value, custom: JSON.parse(JSON.stringify(customMaster)), mark: JSON.parse(JSON.stringify(mark.value)) } } : {}),
   }
 }
@@ -258,6 +265,7 @@ async function loadPreset(p: CharacterPreset) {
     // 現在的世界沒有的特質不帶
     const known = new Set(choosablePerks().map((x) => x.id))
     perks.value = (d.perks ?? []).filter((id) => known.has(id))
+    pcTags.value = sanitizePcTags(d.tags)
     customPerks.value = (d.customPerks ?? []) as PerkDef[]
     resetGear()
     gear.value = { ...gear.value, ...(d.gear as CreationGear) }
@@ -416,6 +424,11 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
     </div>
 
     <div class="sec">
+      <h3 class="head small"><GameIcon name="user" :size="15" />身分標籤（選填，最多 3 個） <Hint text="和 NPC 一樣的身分標籤，AI 會把它當成你的身分。有★的標籤有效果：皇族不必聲望也能進出王城。開始之後要換，得在存檔規則勾「允許在遊戲中更換身分標籤」。" /></h3>
+      <PcTagPicker v-model="pcTags" />
+    </div>
+
+    <div class="sec">
       <PerkPicker v-model:perks="perks" v-model:custom="customPerks" :race="race" :cls="classId" />
     </div>
 
@@ -457,6 +470,10 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
         <tr>
           <th>地下城戰敗時 <Hint text="這趟探索撿到、還沒帶出地下城的物品與錢；之後可以在「設定」裡改。" /></th>
           <td><select v-model="defeatLoot"><option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option></select></td>
+        </tr>
+        <tr>
+          <th>身分標籤 <Hint text="勾選時，遊戲中可以在角色詳情裡更換主角的身分標籤；之後可以在「設定」裡改。" /></th>
+          <td><label class="check"><input v-model="tagChange" type="checkbox" /> 允許在遊戲中更換身分標籤</label></td>
         </tr>
         </tbody>
       </table>

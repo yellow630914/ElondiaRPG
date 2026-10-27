@@ -13,6 +13,7 @@ import { Rng } from './rng'
 import type { Character, ContractRef, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, MarkTerms, Report } from './types'
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
+import { sanitizePcTags } from './pcTags'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
 import { BODIES, bodyOf, type Body } from './traits'
 
@@ -38,6 +39,8 @@ export interface NewGameOptions {
   /** 建立角色時選的特質（perks.json 的 id）與自訂的特質（docs/PERKS.md） */
   perks?: string[]
   customPerks?: unknown[]
+  /** 身分標籤（npc_tags.json 的 id，最多 3 個，見 pcTags.ts） */
+  tags?: string[]
   /** 這個存檔的規則（沒有時用預設） */
   options?: Partial<GameOptions>
   /** 建角時挑的裝備（沒有時用職業的起始裝備）與預算（材料等級點數，見 gear.ts 的 creationGear） */
@@ -70,6 +73,8 @@ export function newGame(opts: NewGameOptions): GameState {
     syncGear(pc, classDef(opts.classId).weapon)
   }
   if (gender) pc.gender = gender
+  const tags = sanitizePcTags(opts.tags)
+  if (tags.length) pc.tags = tags
   if (appearance) pc.appearance = appearance
   if (body) pc.body = body
   // 依性別（體型）預設穿上內衣、內褲；建角時自己挑了的欄位不動
@@ -334,6 +339,12 @@ export function migrate(state: GameState): GameState {
   for (const m of state.party) {
     m.hitDiceUsed ??= 0
     if (!m.isPlayer) m.bond ??= 'hired'
+    // 主角的身分標籤（v0.3.1 起）：舊存檔沒有；拿掉不認得、不能選或互斥的
+    if (m.isPlayer && m.tags) {
+      const tags = sanitizePcTags(m.tags)
+      if (tags.length) m.tags = tags
+      else delete m.tags
+    }
   }
   state.npcs ??= {}
   state.suggestions ??= []

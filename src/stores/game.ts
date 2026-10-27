@@ -3,6 +3,7 @@ import { DIFFICULTY_DEFS, sanitizeRules, type NumericRule } from '@/engine/gameR
 import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
+import { setPcTags } from '@/engine/pcTags'
 import * as dungeonEvents from '@/engine/dungeonEvents'
 import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as deadlines from '@/engine/deadlines'
@@ -1125,10 +1126,19 @@ export const useGame = defineStore('game', () => {
     /** 這個存檔的數值規則（gameRules.ts）：和預設一樣的不存 */
     setRules: (rules: Partial<Record<NumericRule, unknown>>) => {
       if (!state.value) return
-      const { defeatLoot = 'half', difficulty } = state.value.options ?? {}
-      state.value.options = { defeatLoot, ...(difficulty ? { difficulty } : {}), ...sanitizeRules(rules) }
+      const { defeatLoot = 'half', difficulty, tagChange } = state.value.options ?? {}
+      state.value.options = { defeatLoot, ...(difficulty ? { difficulty } : {}), ...(tagChange ? { tagChange } : {}), ...sanitizeRules(rules) }
       save()
     },
+    /** 這個存檔允不允許在遊戲中更換主角的身分標籤 */
+    setTagChange: (on: boolean) => {
+      if (!state.value) return
+      const { tagChange: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
+      state.value.options = { ...rest, ...(on ? { tagChange: true } : {}) }
+      save()
+    },
+    /** 更換主角的身分標籤（存檔規則要允許，見 pcTags.ts） */
+    setPcTags: (tags: string[]) => run((s) => setPcTags(s, tags)),
     descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s)), { onMap: true }),
     ascend: () => run((s) => (grid.ascend(s), encounters.checkHostiles(s)), { onMap: true }),
     // 對峙：避開、現身、偷襲或開戰、付過路費（蒙混與威嚇是主動行動）
