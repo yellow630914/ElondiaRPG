@@ -9,7 +9,8 @@ import { newGame } from '@/engine/state'
 import { ensureRelationship, setAffinity } from '@/engine/social'
 import { equipItem } from '@/engine/inventory'
 import { pcOf } from '@/engine/party'
-import { abandonStory, activeNodes, blockingNode, forgetStoryWaits, nodesHere, optionOpen, playNode, pruneStories, setupStoryCheck, startStory, storyCostGate, storyCosts, storyMaxCost, storyOffersHere, waitStory, wearGate } from '@/engine/story'
+import { abandonStory, activeNodes, blockingNode, forgetStoryWaits, nodesHere, optionOpen, playNode, pruneStories, setupStoryCheck, startStory, storyCostGate, storyCosts, storyMaxCost, storyOffersHere, storyWearLocks, waitStory, wearGate } from '@/engine/story'
+import { attachParasite } from '@/engine/parasites'
 import { stories } from '@/engine/data'
 import { sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
 import { setFlag } from '@/engine/storyFlags'
@@ -397,5 +398,15 @@ describe('uniforms a quest hands out and asks you to wear', () => {
     expect(wearGate(state, node)).toBeUndefined()
     playNode(state, 'w:serve')
     expect(state.stories!.w!.status).toBe('completed')
+  })
+
+  it('warns when taking the quest that a locked slot keeps the uniform off', () => {
+    const state = game({ b: { ...work, id: 'b', nodes: [{ ...work.nodes[0]!, wear: ['pasties'] }] } })
+    const def = stories.find((d) => d.id === 'b')!
+    expect(storyWearLocks(state, def)).toBeUndefined()
+    attachParasite(pcOf(state), 'hungry_lingerie', state.time)
+    expect(storyWearLocks(state, def)).toContain('渴求的魔導衣脫不下來，穿不上【乳貼】')
+    const r = startStory(state, 'b')
+    expect(r.outcome.summary).toContain('要先拿下來才能進行這個任務')
   })
 })

@@ -18,6 +18,7 @@ import {
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
 import { wearNote } from './gear'
+import { wearLocks } from './inventory'
 import { formatMoney } from './money'
 import { npcRecord, registerNpc } from './npcs'
 import { joinParty, leaveParty, pcOf } from './party'
@@ -85,6 +86,20 @@ export function storyOffersHere(state: GameState): StoryDef[] {
     if (s.kind === 'guild') return area.kind === 'settlement' && cell.kind === 'guild' && (!s.location || s.location === area.location)
     if (s.kind === 'npc') return !!s.npc && npcFree(state, s.npc) && !npcRecord(state, s.npc)!.hostile && presentHere(state, s.npc)
     return false
+  })
+}
+
+/**
+ * 有沒有特殊任務要用到這個地標：進行中（沒暫停）的任務還沒做的任務點在這一格，或現在接得到的任務的任務點在這一格、委託人待在這個地標。
+ * 只有場景的地標沒有場景可選時，靠這個決定要不要留在地圖上（例如打工線的委託人所在）
+ */
+export function storyNeedsLandmark(state: GameState, id: string): boolean {
+  const atCell = (n: StoryNode) => n.at.where === 'cell' && n.at.cell === id
+  return stories.some((def) => {
+    const p = state.stories?.[def.id]
+    if (p) return p.status === 'active' && !storyPaused(def) && def.nodes.some((n) => !p.done.includes(n.id) && atCell(n))
+    const uses = def.nodes.some(atCell) || (def.start.kind === 'npc' && !!def.start.npc && namedNpcs.find((n) => n.id === def.start.npc)?.landmark === id)
+    return uses && canStart(state, def)
   })
 }
 
@@ -161,7 +176,8 @@ export function startStory(state: GameState, id: string, opts: { text?: string; 
   if (def.start.items?.length) applyEffects(state, report, def.start.items.map((name) => ({ type: 'item' as const, name, qty: 1 })))
   const text = opts.text ?? def.start.text ?? def.summary
   log(progress, state, text)
-  report.outcome = { result: 'success', summary: `接下特殊任務「${def.title}」：${def.summary}`, tags: [...new Set([...(report.outcome.tags ?? []), '特殊任務'])] }
+  const locks = storyWearLocks(state, def)
+  report.outcome = { result: 'success', summary: `接下特殊任務「${def.title}」：${def.summary}${locks ? `（${locks}）` : ''}`, tags: [...new Set([...(report.outcome.tags ?? []), '特殊任務'])] }
   report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), text] }
   if (opts.report) return report
   const committed = commitReport(state, report)
@@ -322,6 +338,12 @@ function outcomeCost(o: StoryOutcome | undefined): number {
 export function storyCosts(node: StoryNode, option?: number): { success: number; fail: number } {
   const src = option !== undefined ? node.options?.[option] : node.kind === 'combat' ? undefined : node
   return { success: outcomeCost(src?.success), fail: outcomeCost(src?.fail) }
+}
+
+/** 任務要穿的（各任務點的 wear）有被鎖住的欄位擋住時的提醒（接任務的時候顯示）；沒有時是 undefined */
+export function storyWearLocks(state: GameState, def: StoryDef): string | undefined {
+  const locks = wearLocks(pcOf(state), [...new Set(def.nodes.flatMap((n) => n.wear ?? []))])
+  return locks.length ? `提醒：${locks.join('；')}，要先拿下來才能進行這個任務` : undefined
 }
 
 /** 沒有穿上任務點的限定穿著（node.wear）時的說明；穿好了是 undefined */

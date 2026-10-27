@@ -10,7 +10,7 @@ import { checkBonus } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat } from './combat'
 import { enemies, locationById, regionById, slaveryRules, specialMaps, stories, wildEncounters, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryCond, type StoryOutcome } from './data'
-import { applyEffects } from './effects'
+import { affordable, applyEffects } from './effects'
 import {
   assertNoStandoff, clearAreas, currentArea, ensureQuestTargets, findKind, generateSide, placeAt, position, reveal, storeArea, substituteGroup,
   type Area, type Cell, type SideMapDef, type StepResult,
@@ -423,7 +423,8 @@ export function applyRoadOutcome(state: GameState, report: Report, o: StoryOutco
   for (const f of o.set_flags ?? []) (report.changes.flags ??= {})[flagKey(f)] = true
   for (const f of o.clear_flags ?? []) (report.changes.flags ??= {})[flagKey(f)] = false
   addCounters(state, report.changes, o.counters)
-  const notes = o.effects?.length ? applyEffects(state, report, o.effects) : []
+  // 錢不夠付時扣到 0 為止
+  const notes = o.effects?.length ? applyEffects(state, report, affordable(state, o.effects, report)) : []
   if (notes.length) lines.push(notes.join('，') + '。')
   queueMove(state, o)
   return lines

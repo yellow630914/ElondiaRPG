@@ -13,7 +13,7 @@ import { adultContent, adultScene, safeText, tagsAllowed } from './content'
 import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
 import { reputationOf } from './security'
 import { forcedGearPool } from './forcedGear'
-import { applyEffects, type RewardEffect } from './effects'
+import { affordable, applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
 import { generateNpc, npcKind, npcRecord, registerNpc, weightedPick } from './npcs'
@@ -507,13 +507,6 @@ export function pendingEventDef(state: GameState): MasterEventDef {
   const e = pm && slaveryRules.master_events.events.find((x) => x.id === pm.id)
   if (!e) throw new Error('現在沒有主人的要求')
   return e
-}
-
-/** 錢不夠時只花得起手上的 */
-function affordable(state: GameState, effects: RewardEffect[]): RewardEffect[] {
-  return effects
-    .map((x) => (x.type === 'money' && x.amount < 0 ? { ...x, amount: -Math.min(-x.amount, state.money_cc) } : x))
-    .filter((x) => x.type !== 'money' || x.amount !== 0)
 }
 
 /** 從三個回應裡選一個：有檢定的依規則擲骰 */
