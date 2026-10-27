@@ -5,7 +5,7 @@ import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
 import { attrName, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
-import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, position, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, position, linkEntryBlock, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -20,6 +20,7 @@ import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import GuardStatus from './GuardStatus.vue'
+import { isWanted, palacePersuadeDc } from '@/engine/security'
 import MarketPanel from './MarketPanel.vue'
 import NegotiationPanel from './NegotiationPanel.vue'
 import StoryPanel from './StoryPanel.vue'
@@ -66,6 +67,9 @@ const sceneSpot = computed(() => {
 // 特殊地圖：地圖的描述、通道通往哪裡
 const specialDef = computed(() => (area.value.kind === 'special' ? specialMapOfKey(area.value.key) : undefined))
 const linkName = computed(() => linkTargetName(s.value) ?? '別處')
+const linkBlock = computed(() => (cell.value.kind === 'link' ? linkEntryBlock(s.value) : null))
+// 王城的衛兵：聲望不夠、今天還沒被拒絕時可以說服
+const canPersuade = computed(() => linkBlock.value?.zone === 'palace' && !isWanted(s.value, here.value.faction) && s.value.palaceBlock?.[s.value.location] !== s.value.time.day)
 const lockTool = computed(() => bestTool(s.value, 'lockpick'))
 const LOCK_ICON: Record<LockMethod, IconName> = { dex: 'unlock', str: 'hand', int: 'lightbulb' }
 function lockBonus(k: LockMethod): number {
@@ -328,7 +332,9 @@ const shopDesc = computed(() => {
 
         <template v-else-if="cell.kind === 'link'">
           <p class="muted small">通往{{ linkName }}的{{ area.kind === 'special' ? '通道' : cell.dir === 'out' ? '大門' : '路口' }}。</p>
-          <button class="primary" @click="game.crossLink()"><GameIcon name="right" :size="14" /> 前往{{ linkName }}<span class="key">E</span></button>
+          <p v-if="linkBlock" class="warn small"><GameIcon name="siren" :size="13" /> {{ linkBlock.reason }}</p>
+          <button v-if="canPersuade" class="primary" @click="game.persuadePalaceGuard()">說服衛兵（魅力 DC {{ palacePersuadeDc(s) }}）</button>
+          <button :class="{ primary: !linkBlock }" :disabled="!!linkBlock" @click="game.crossLink()"><GameIcon name="right" :size="14" /> 前往{{ linkName }}<span class="key">E</span></button>
         </template>
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'side'">
@@ -416,6 +422,7 @@ const shopDesc = computed(() => {
 .tag.hot { border-color: var(--accent); color: var(--accent); }
 .lock-methods { display: flex; flex-wrap: wrap; gap: 4px; }
 .qty { width: 56px; }
+.warn { color: var(--accent); margin: 2px 0; }
 .travel :deep(.menu) { margin: 0; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
 .place-title { display: flex; align-items: center; gap: 6px; }

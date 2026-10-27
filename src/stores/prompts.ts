@@ -243,10 +243,15 @@ export const usePrompts = defineStore('prompts', () => {
 
   /** 匯入文風或其他提示詞，加在清單最後；名稱與內容都相同的條目略過。回傳新增與略過的數量 */
   function importEntries(list: EntryList, text: string, fileName?: string): { added: number; skipped: number } {
+    return addEntries(list, parseEntryFile(list, text, fileName))
+  }
+
+  /** 把條目加在清單最後；名稱和內容都相同的略過 */
+  function addEntries(list: EntryList, entries: Omit<PromptEntry, 'id'>[]): { added: number; skipped: number } {
     const arr = config.value[list]
     let added = 0
     let skipped = 0
-    for (const e of parseEntryFile(list, text, fileName)) {
+    for (const e of entries) {
       if (arr.some((x) => x.name === e.name && x.content.trim() === e.content.trim())) {
         skipped += 1
         continue
@@ -321,7 +326,7 @@ export const usePrompts = defineStore('prompts', () => {
     sets, active, activeName, switchSet, createSet, createSetFrom, setConfig, renameSet, deleteSet,
     addEntry, duplicateEntry, removeEntry, moveEntry, restoreEntry, restorePresets, presetOf,
     isCustomLore, updateLore, resetLore, addLore, removeLore,
-    exportEntries, importEntries, exportLore, importLore,
+    exportEntries, importEntries, addEntries, exportLore, importLore,
     exportConfig, importConfig, resetAll,
   }
 })

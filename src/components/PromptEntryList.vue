@@ -5,6 +5,8 @@ import { useGame } from '@/stores/game'
 import { usePrompts, type EntryList } from '@/stores/prompts'
 import { useSettings } from '@/stores/settings'
 import { dateStamp, download } from './download'
+import { parseTavernPreset, type TavernPreset } from '@/narrator/tavernPreset'
+import TavernPresetDialog from './TavernPresetDialog.vue'
 
 const props = defineProps<{ list: EntryList }>()
 const prompts = usePrompts()
@@ -35,6 +37,21 @@ async function onImport(e: Event) {
     game.error = `匯入${label.value}失敗：${err instanceof Error ? err.message : String(err)}`
   }
 }
+// 酒館的預設：列出條目，挑想要的加進來
+const tavernInput = ref<HTMLInputElement | null>(null)
+const tavern = ref<TavernPreset | null>(null)
+async function onTavern(e: Event) {
+  const input = e.target as HTMLInputElement
+  const f = input.files?.[0]
+  input.value = ''
+  if (!f) return
+  try {
+    tavern.value = parseTavernPreset(await f.text(), f.name)
+  } catch (err) {
+    game.error = `讀取酒館預設失敗：${err instanceof Error ? err.message : String(err)}`
+  }
+}
+
 const entries = computed(() => prompts.config[props.list])
 const open = ref<string | null>(null)
 const TARGETS = PROMPT_TARGETS
@@ -106,7 +123,10 @@ function changed(e: PromptEntry): boolean {
     <button class="small" :disabled="!entries.some((e) => e.enabled)" @click="exportList(true)">📤 只匯出開啟的</button>
     <button class="small" title="本遊戲匯出的 JSON，或純文字／Markdown（整份當一個條目，檔名當名稱）" @click="fileInput?.click()">📥 匯入</button>
     <input ref="fileInput" type="file" accept=".json,.txt,.md,application/json,text/plain,text/markdown" multiple hidden @change="onImport" />
+    <button class="small" title="SillyTavern 的對話補全預設或系統提示詞：列出裡面的條目，挑想要的加到文風或其他提示詞" @click="tavernInput?.click()">🍺 匯入酒館預設</button>
+    <input ref="tavernInput" type="file" accept=".json,application/json" hidden @change="onTavern" />
   </div>
+  <TavernPresetDialog :preset="tavern" @close="tavern = null" />
   <p class="small muted">匯入的條目加在清單最後，名稱和內容都相同的會略過；也可以匯入 .txt 或 .md 檔，整份當作一個{{ label }}。</p>
 </template>
 

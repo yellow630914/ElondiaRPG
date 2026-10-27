@@ -108,7 +108,7 @@
 
 - 敘事的硬性規則：報告的結果、數值、物品、傷亡不可更改或新增；親密值、擲骰與 DC 不寫數字；只輸出正文，不輸出世界書原本要求的 `<thinking>`、狀態欄等聊天用模組。全文與可修改的地方見 [PROMPTS](PROMPTS.md) 第 3 節。
 - 主角名用 `{{player}}` 代入；世界書寫死的玩家名「沈頤」也會換成主角名。
-- AI 服務（Anthropic、OpenAI、Gemini、OpenAI 相容格式）、模型來源與功能分配見 [PROMPTS](PROMPTS.md) 第 0、1 節。
+- AI 服務（Anthropic、OpenAI、Gemini、Vertex AI、OpenAI 相容格式）、模型來源與功能分配見 [PROMPTS](PROMPTS.md) 第 0、1 節。
 
 ## 6. 專案結構
 

@@ -25,7 +25,7 @@ import { applyPendingMove, leaveSide, roadMove } from './road'
 import { ensureIntelPoints, finishIntel } from './intel'
 import { formatMoney } from './money'
 import { spawnVisitors } from './population'
-import { gateCheck, zoneEntryBlock } from './security'
+import { gateCheck, persuadePalaceGuard as persuadeGuard, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
 import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
@@ -992,6 +992,31 @@ export function linkTargetName(state: GameState): string | null {
   } catch {
     return '別處'
   }
+}
+
+/** 腳下的路口通往的區域（不是路口或找不到時是 undefined） */
+function linkTarget(state: GameState): Area | undefined {
+  const cell = currentCell(state)
+  if (cell.kind !== 'link' || !cell.link || cell.link.area.startsWith('sm/')) return undefined
+  try {
+    return getArea(state, cell.link.area)
+  } catch {
+    return undefined
+  }
+}
+
+/** 腳下的路口通往的區域被衛兵擋著時的原因（貴族區、王城；畫面顯示用） */
+export function linkEntryBlock(state: GameState): { reason: string; zone: string } | null {
+  const target = linkTarget(state)
+  const reason = target && zoneEntryBlock(state, target.zone)
+  return reason ? { reason, zone: target.zone! } : null
+}
+
+/** 在通往王城的路口說服衛兵放行 */
+export function persuadePalaceGuard(state: GameState): Report {
+  const target = linkTarget(state)
+  if (target?.zone !== 'palace') throw new Error('這裡不是王城的大門')
+  return persuadeGuard(state, palaceName(locationById(state.location)))
 }
 
 /**

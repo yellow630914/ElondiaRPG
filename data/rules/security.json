@@ -1,5 +1,5 @@
 {
-  "$comment": "衛兵警戒、通緝、罰金與聲望（見 docs/NPC_SYSTEM.md 第 9 節）。警戒是每個地點 0～max，最後一次犯案後每 decay_days 天降 1；達到 max 時被該地點所屬的勢力通緝。出入城門時，警戒 1 以上要檢定（主角靈巧或魅力取高，DC = gate_dc_base + gate_dc_per_level × 警戒），失敗當天就過不去，要繳警戒罰金；通緝時不能檢定，必須繳通緝罰金。罰金以一般人的生活費（economy.json 的 commoner_living_cc_per_day）計：警戒 = alert_days 天 × 警戒等級，通緝 = wanted_days 天，再乘上該勢力聲望的 fine 倍率。reputation_bands 依聲望（≥ min）調整買入價（buy）、賣出價（sell）與罰金倍率（fine）。palace_reputation = 進入王城需要的聲望。",
+  "$comment": "衛兵警戒、通緝、罰金與聲望（見 docs/NPC_SYSTEM.md 第 9 節）。警戒是每個地點 0～max，最後一次犯案後每 decay_days 天降 1；達到 max 時被該地點所屬的勢力通緝。出入城門時，警戒 1 以上要檢定（主角靈巧或魅力取高，DC = gate_dc_base + gate_dc_per_level × 警戒），失敗當天就過不去，要繳警戒罰金；通緝時不能檢定，必須繳通緝罰金。罰金以一般人的生活費（economy.json 的 commoner_living_cc_per_day）計：警戒 = alert_days 天 × 警戒等級，通緝 = wanted_days 天，再乘上該勢力聲望的 fine 倍率。reputation_bands 依聲望（≥ min）調整買入價（buy）、賣出價（sell）與罰金倍率（fine）。palace_reputation = 進入王城需要的聲望；聲望不夠時可以說服王城的衛兵（palace_persuade，見下）。",
   "version": 1,
   "alert": { "max": 3, "decay_days": 7, "gate_dc_base": 10, "gate_dc_per_level": 3 },
   "fines": { "alert_days": 7, "wanted_days": 60 },
@@ -11,6 +11,13 @@
     { "min": -999, "buy": 0.3, "sell": -0.3, "fine": 2 }
   ],
   "palace_reputation": 10,
+  "palace_persuade": {
+    "$comment": "聲望不夠時說服王城的衛兵（主角魅力）：DC = dc_base + floor(差的聲望 × dc_per_reputation)，最多 dc_max。成功當天可以自由進出王城；失敗當天不會再聽你說；大失敗（擲出 1）衛兵起疑，這裡的警戒 + fumble_alert。",
+    "dc_base": 13,
+    "dc_per_reputation": 0.5,
+    "dc_max": 24,
+    "fumble_alert": 1
+  },
   "steal": {
     "$comment": "偷到的錢 = 一般人生活費 × loot_days[對方的財富等級] × (0.5～1.5)；大成功加倍，商人身上可能改成偷到一件商品。DC = base + 2 × 生命層級差 + wary（財富等級 ≥ 2 的人比較警覺）- floor(親密度 / 25)。",
     "base": 12,

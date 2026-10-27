@@ -200,7 +200,8 @@ for st in S:
 # 打工的任務線（story_batch26～28.py）
 WORK_LINES = {'銀鱗旅店的看板娘', '怪人魔導師的研究', '黃金骰子的兔女郎', '舞孃的夜間表演', '伯爵府的見習女僕',
               '光著身子的朝聖者', '人魚澡堂的搓背女', '熔岩溫泉的混浴', '下城區按摩店的特別服務',
-              '畫家的裸體模特兒', '血角的戰利品之夜', '魅魔宮廷的侍寢見習', '祭品儀式'}
+              '畫家的裸體模特兒', '血角的戰利品之夜', '魅魔宮廷的侍寢見習', '祭品儀式',
+              '教堂懺悔室的各國巡禮', '豐饒祭的巫女', '求偶祭', '潮汐祭'}
 
 
 def category(name, sts):
@@ -208,7 +209,7 @@ def category(name, sts):
     if name == '多人特殊任務': return '多人特殊任務'
     if name == '入門委託': return '入門委託'
     if name == '沿海洞窟': return '地下城'
-    if name in WORK_LINES: return '打工線（成人向）'
+    if name in WORK_LINES: return '打工、巡禮與祭典（成人向）'
     nn = [n for s in sts for n in s['nodes']]
     if name in LOC.values() or sum(n['at'].get('where') == 'dungeon' for n in nn) * 2 >= len(nn): return '地下城'
     short = {v.split('・')[0].split('「')[-1].split('」')[-1] for v in NPC.values()}
@@ -222,7 +223,7 @@ def category(name, sts):
     return '地區與勢力'
 
 
-ORDER = ['入門委託', '地區與勢力', '地下城', '角色線', '角色線（成人向）', '打工線（成人向）', '多人特殊任務', '史詩']
+ORDER = ['入門委託', '地區與勢力', '地下城', '角色線', '角色線（成人向）', '打工、巡禮與祭典（成人向）', '多人特殊任務', '史詩']
 out = []
 for name, sts in lines.items():
     sts = sorted(sts, key=lambda s: (s['start'].get('min_level') or 0))
