@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { companionRules } from '@/engine/data'
 import { questDeadlineDays } from '@/engine/deadlines'
 import { applyEffects } from '@/engine/effects'
-import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultyRule, gameRule, RULE_DEFS, rewardMoney, sanitizeRules } from '@/engine/gameRules'
+import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyFor, difficultyOf, difficultyRule, gameRule, RULE_DEFS, rewardMoney, sanitizeRules } from '@/engine/gameRules'
 import { startCombat } from '@/engine/combat'
 import { enterLocation, goOutskirts } from '@/engine/grid'
 import { ambushChance, shortRest } from '@/engine/rest'
 import { alertLevel, securityRules } from '@/engine/security'
-import { enemies } from '@/engine/data'
+import { dungeonEncounters, enemies, isLayerBoss, MINION_TIERS, minionTier } from '@/engine/data'
 import { commitReport, migrate, newGame } from '@/engine/state'
 import type { GameState, Report } from '@/engine/types'
 
@@ -50,16 +50,33 @@ describe('per-save rules', () => {
     // 普通 = 1：和沒有這個規則時完全一樣
     expect(DIFFICULTY_DEFS.normal.hp).toBe(1)
     expect(DIFFICULTY_DEFS.normal.damage).toBe(1)
-    // 五個難度都在，而且生命與輸出都隨難度單調上升
+    for (const t of MINION_TIERS) expect(DIFFICULTY_DEFS.normal.minions[t]).toEqual({ hp: 1, damage: 1 })
+    // 五個難度都在；怪物的生命隨難度上升，小怪的輸出也是
     expect(DIFFICULTY_IDS).toEqual(['story', 'easy', 'normal', 'hard', 'epic'])
     for (let i = 1; i < DIFFICULTY_IDS.length; i++) {
       const prev = DIFFICULTY_DEFS[DIFFICULTY_IDS[i - 1]!]
       const cur = DIFFICULTY_DEFS[DIFFICULTY_IDS[i]!]
       expect(cur.hp).toBeGreaterThan(prev.hp)
-      expect(cur.damage).toBeGreaterThan(prev.damage)
+      for (const t of MINION_TIERS) {
+        expect(cur.minions[t].hp).toBeGreaterThan(prev.minions[t].hp)
+        expect(cur.minions[t].damage).toBeGreaterThanOrEqual(prev.minions[t].damage)
+      }
     }
-    // 史詩的輸出係數刻意壓低（怪物主要是變耐打）：不要讓層主一拳打倒一個隊員
-    expect(DIFFICULTY_DEFS.epic.damage).toBeLessThanOrEqual(1.2)
+    // 頭目變難靠生命（戰鬥變長），輸出不超過普通：不要讓層主一拳打倒一個隊員
+    expect(DIFFICULTY_DEFS.hard.damage).toBeLessThanOrEqual(1)
+    expect(DIFFICULTY_DEFS.epic.damage).toBeLessThanOrEqual(1)
+  })
+
+  it('uses the boss coefficients for bosses and the area coefficients for minions', () => {
+    const epic = DIFFICULTY_DEFS.epic
+    expect(minionTier('goblin')).toBe('wild')
+    expect(difficultyFor(epic, 'goblin')).toEqual(epic.minions.wild)
+    const boss = Object.values(dungeonEncounters)[0]!.bosses!.shallow![0]![0]
+    expect(difficultyFor(epic, boss)).toBe(epic)
+    const storyBoss = Object.values(enemies).find((e) => Object.keys(e.ability_hp_below ?? {}).length && !isLayerBoss(e.id))!
+    expect(difficultyFor(epic, storyBoss.id)).toBe(epic)
+    expect(minionTier('rhine_royal_guard')).toBe('deep')
+    expect(difficultyFor(epic, 'rhine_royal_guard')).toEqual(epic.minions.deep)
   })
 
   it('applies the difficulty coefficients to monsters in combat', () => {
@@ -68,7 +85,7 @@ describe('per-save rules', () => {
       const state = game({ defeatLoot: 'half', difficulty: id })
       const combat = startCombat(state, [['goblin', 1]])
       const foe = combat.combatants.find((c) => c.side === 'enemy')!
-      const d = DIFFICULTY_DEFS[id]
+      const d = difficultyFor(DIFFICULTY_DEFS[id], 'goblin')
       // 特徵也會改生命：只有沒擲到特徵時才對得上基礎值
       if (!foe.traits?.length) expect(foe.maxHp).toBe(Math.max(1, Math.round(base.hp * d.hp)))
       expect(foe.dmgMult ?? 1).toBe(d.damage)

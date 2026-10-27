@@ -31,7 +31,7 @@ const SECTION_NAME: Record<string, string> = {
 
 /** 小怪每場掉的生命（依出現的最淺區域）與層主的目標勝率：docs/MONSTERS.md */
 export const MINION_LOSS: Record<MinionArea, [number, number]> = { wild: [0.25, 0.35], outskirts: [0.2, 0.3], shallow: [0.15, 0.2], full: [0.1, 0.15] }
-export const BOSS_WIN: Record<string, number> = { shallow: 0.8, middle: 0.75, deep: 0.7, abyss: 0.65 }
+export const BOSS_WIN: Record<string, number> = { shallow: 0.85, middle: 0.85, deep: 0.85, abyss: 0.85 }
 /** 層主戰至少跑幾場 */
 export const BOSS_TRIALS = 40
 
@@ -229,13 +229,13 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
     const boss = bosses.has(id) || isLayerBoss(id)
     const d = durability(id, Math.max(6, Math.round(trials / 2)), boss)
     if (boss) {
-      const ok = d.roundsToKill >= 2.9 && d.roundsToKill <= 4.1
-      if (!ok) add('error', '平衡：怪物', `層主「${e.name}」要 ${d.roundsToKill} 回合才打得倒（目標 3～4 回合）：調整生命 hp`)
+      const ok = d.roundsToKill >= 3.7 && d.roundsToKill <= 5.4
+      if (!ok) add('error', '平衡：怪物', `層主「${e.name}」要 ${d.roundsToKill} 回合才打得倒（目標 4～5 回合）：調整生命 hp`)
       monsterRows.push([e.name, String(e.level), '層主', `${d.roundsToKill} 回合`, '', '', ok ? '✅' : '❌'])
       continue
     }
-    const hitsOk = d.hitsToKill >= 1.8 && d.hitsToKill <= 3.2
-    if (!hitsOk) add('error', '平衡：怪物', `「${e.name}」要挨 ${d.hitsToKill} 下（目標 2～3 下）：調整生命 hp`)
+    const hitsOk = d.hitsToKill >= 2.7 && d.hitsToKill <= 4.8
+    if (!hitsOk) add('error', '平衡：怪物', `「${e.name}」要挨 ${d.hitsToKill} 下（目標 3～4.5 下）：調整生命 hp`)
     const area = minionArea(id)
     const f = minionFight(id, Math.max(10, trials))
     const loss = 1 - f.hpLeft
@@ -255,7 +255,7 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
       // 勝率的雜訊大（20 場的標準誤差約 9%）：至少跑 40 場；快速模式（場數少於 20）只提醒、不算錯誤
       const rows = bossFightRows(dungeon, layer, Math.max(trials, BOSS_TRIALS))
       for (const r of rows) {
-        const target = BOSS_WIN[layer] ?? 0.75
+        const target = BOSS_WIN[layer] ?? 0.85
         const ok = Math.abs(r.win - target) <= 0.1
         if (!ok) add(trials < 20 ? 'warn' : 'error', '平衡：層主戰', `${dungeon} ${layer} 的層主「${r.name}」勝率 ${pct(r.win)}（目標 ${pct(target)} ±10%）：調整 offense.all${trials < 20 ? '（快速模式：交付前用預設場數再確認）' : ''}`)
         bossRows.push([r.name, `${dungeon} / ${layer}`, pct(r.win), pct(target), String(r.rounds), ok ? '✅' : '❌'])

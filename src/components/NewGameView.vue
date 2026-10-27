@@ -29,7 +29,7 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import RuleFields from './RuleFields.vue'
-import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
@@ -448,10 +448,10 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
       <table class="tbl form">
         <tbody>
         <tr>
-          <th>難度 <Hint text="怪物的生命與造成的傷害各乘一個係數，普通是設計的基準。經驗值與戰利品不變；之後可以在「設定」裡改（只影響之後開打的戰鬥）。" /></th>
+          <th>難度 <Hint text="怪物的生命與造成的傷害各乘一個係數（頭目一組，小怪依出現的區域各一組），普通是設計的基準。經驗值與戰利品不變；之後可以在「設定」裡改（只影響之後開打的戰鬥）。" /></th>
           <td>
             <select v-model="difficulty"><option v-for="id in DIFFICULTY_IDS" :key="id" :value="id">{{ DIFFICULTY_DEFS[id].name }}</option></select>
-            <p class="small muted diff">{{ DIFFICULTY_DEFS[difficulty].desc }}（怪物生命 ×{{ DIFFICULTY_DEFS[difficulty].hp }}、傷害 ×{{ DIFFICULTY_DEFS[difficulty].damage }}）</p>
+            <p class="small muted diff">{{ DIFFICULTY_DEFS[difficulty].desc }}（{{ difficultySummary(DIFFICULTY_DEFS[difficulty]) }}）</p>
           </td>
         </tr>
         <tr>

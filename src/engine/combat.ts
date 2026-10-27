@@ -39,7 +39,7 @@ import type {
   ActorState, Character, Difficulty, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
 } from './types'
 import { contractOf } from './tattoos'
-import { DIFFICULTY_DEFS, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
+import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
 
 export interface StatusInstance {
   id: string
@@ -314,13 +314,14 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
 }
 
 /**
- * 一隻怪物上場。難度係數（diff）乘在最大生命與造成的傷害上（普通難度是 1，和沒有這個規則時一樣）；
+ * 一隻怪物上場。難度係數（diff）乘在最大生命與造成的傷害上（普通難度是 1，和沒有這個規則時一樣；頭目與各區域的小怪各有一組，見 difficultyFor）；
  * 生命先乘難度再套特徵，兩邊的倍率因此是相乘的。敵對的 NPC（冒險者）不受難度影響——他們的生命是自己的角色資料。
  */
 function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 0, diff: DifficultyDef = DIFFICULTY_DEFS.normal): Combatant {
   const def = enemies[defId]
   if (!def) throw new Error(`unknown enemy: ${defId}`)
-  const hp = Math.max(1, Math.round(def.hp * diff.hp))
+  const coef = difficultyFor(diff, defId)
+  const hp = Math.max(1, Math.round(def.hp * coef.hp))
   const c: Combatant = {
     id, name: def.name + suffix, side: 'enemy', level: def.level, attrs: { ...def.attrs }, prof: proficiency(def.level),
     hp, maxHp: hp, tempHp: 0,
@@ -335,7 +336,7 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 
     defId, threat: 0, threatMult: 1,
     ...(def.ability_hp_below && Object.keys(def.ability_hp_below).length ? { hpGates: { ...def.ability_hp_below } } : {}),
     ...(isLayerBoss(defId) ? { boss: true } : {}),
-    ...(diff.damage !== 1 ? { dmgMult: diff.damage } : {}),
+    ...(coef.damage !== 1 ? { dmgMult: coef.damage } : {}),
   }
   applyTraits(c, rollTraits(rng, def, bonus))
   return c

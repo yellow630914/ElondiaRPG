@@ -1,7 +1,7 @@
 // 戰鬥耐打度的模擬（docs/MONSTERS.md「耐打度」）：4 人隊伍（戰士、遊蕩者、牧師、法師）用和怪物同等級的角色
 // （依職業學的技能、依等級生成的裝備），打一隻去掉弱點（保留抗性）與特徵、血量無限的怪物，量平均每一擊的傷害與每回合的傷害。
 // 隊員的打法：能用的傷害技能挑環數最高的，沒有就普通攻擊，行動點不夠就結束回合。
-import { abilities, abilityDef, dungeonEncounters, enemies, geography, wildEncounters, type EncounterGroup } from '@/engine/data'
+import { abilities, abilityDef, dungeonEncounters, enemies, minionTier, type EncounterGroup } from '@/engine/data'
 import { builtinAbility } from '@/engine/mods'
 import { createNpc } from '@/engine/character'
 import { act, chooseAction, currentActor, isActive, startCombat, usableAbilities, type Combatant } from '@/engine/combat'
@@ -258,14 +258,10 @@ export const AREA_PARTIES = {
 } as const
 export type MinionArea = keyof typeof AREA_PARTIES
 
-/** 怪物出現的最淺區域：城郊遭遇表算郊外，再來是地下城的周邊、淺層 */
+/** 怪物出現的最淺區域：城郊遭遇表算郊外，再來是地下城的周邊、淺層（engine 的 minionTier，deep 對到 4 人隊伍） */
 export function minionArea(id: string): MinionArea {
-  const has = (groups: EncounterGroup[] | undefined) => !!groups?.some((g) => g.some(([m]) => m === id))
-  if (geography.regions.some((r) => has(wildEncounters(r.id)))) return 'wild'
-  const tables = Object.values(dungeonEncounters)
-  if (tables.some((e) => has(e.outskirts))) return 'outskirts'
-  if (tables.some((e) => has(e.shallow))) return 'shallow'
-  return 'full'
+  const t = minionTier(id)
+  return t === 'deep' ? 'full' : t
 }
 
 export interface MinionRow { id: string; name: string; level: number; area: MinionArea; win: number; rounds: number; hpLeft: number; downedEver: number; worstHit: number; oneShot: number }

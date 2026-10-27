@@ -26591,7 +26591,7 @@
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["pol_briefed"] },
           "kind": "combat",
-          "enemies": [["echo_legionnaire", 2]],
+          "enemies": [["echo_legionnaire", 3], ["echo_champion", 1]],
           "success": {
             "text": "亡兵們散成了灰，殘影卻沒有消失。最後一個亡兵在散去之前，看著你，說了一句兩百年前的話：「……這一次，你們會選什麼？」",
             "set_flags": ["pol_echoed"]
@@ -26826,7 +26826,7 @@
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["pol_p1_plan"] },
           "kind": "combat",
-          "enemies": [["iron_cross_fanatic", 2]],
+          "enemies": [["iron_cross_fanatic", 3], ["iron_cross_assassin", 1]],
           "success": {
             "text": "親衛們倒下了。要塞的大廳裡，『灰鐵』海因里希放下了劍，看著你：「……你知道統一戰爭死了多少人嗎？我父親、我祖父，都死在魔族的手裡。」他的聲音在抖，「和平？那是對死者的背叛。」",
             "set_flags": ["pol_p1_won"]
@@ -27125,7 +27125,7 @@
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["pol_h1_ready"] },
           "kind": "combat",
-          "enemies": [["crimson_vanguard", 2]],
+          "enemies": [["crimson_vanguard", 3], ["crimson_royal_guard", 1]],
           "success": {
             "text": "先鋒的隊長倒在了河裡，魔族的戰旗退回了地平線。冒險者們歡呼起來——撐過了第一天。三天後，帝國的援軍到了，看見的是一座完好無缺的河谷鎮。",
             "set_flags": ["pol_h1_held"]
@@ -27209,7 +27209,7 @@
           "at": { "where": "outskirts", "location": "ashport" },
           "requires": { "flags": ["pol_h2_plan"] },
           "kind": "combat",
-          "enemies": [["crimson_garrison", 2]],
+          "enemies": [["crimson_garrison", 3], ["crimson_royal_guard", 1]],
           "success": {
             "text": "燈塔拿下了。天亮時，赤翼的守備軍看著燈塔上的帝國旗幟，沉默地收起了長戟，坐船撤回了南方。市集裡的居民走出地窖，人類和魔族站在一起，看著空蕩蕩的碼頭。",
             "set_flags": ["pol_h2_won"]
@@ -27409,7 +27409,7 @@
           "at": { "where": "outskirts", "location": "ashport" },
           "requires": { "flags": ["pol_d1_ready"] },
           "kind": "combat",
-          "enemies": [["crusade_vanguard", 2]],
+          "enemies": [["crusade_vanguard", 3], ["crusade_inquisitor", 1]],
           "success": {
             "text": "聖戰軍的先鋒退回了山坡後面。港口的居民們歡呼起來——人類和魔族抱在一起。三天後，赤翼的援軍到了，看見的是一座完好無缺的灰港鎮。",
             "set_flags": ["pol_d1_held"]
@@ -27493,7 +27493,7 @@
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["pol_d2_neutral"] },
           "kind": "combat",
-          "enemies": [["imperial_knight", 2]],
+          "enemies": [["imperial_knight", 3], ["rhine_royal_guard", 1]],
           "success": {
             "text": "騎士們退過了石橋，往北撤去。赤翼的軍旗插在了石橋上。河谷鎮的冒險者們站在屋頂上看著——你說到做到，一間房子也沒有燒。",
             "set_flags": ["pol_d2_won"]
