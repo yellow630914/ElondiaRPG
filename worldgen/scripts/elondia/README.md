@@ -13,7 +13,7 @@
 | `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態 |
 | `parasites25.py` | `data/rules/parasites.json`、`items.json`、`companions.json`、`travel_events.json` | 寄生物的規則、物品、發作事件 |
 | `work26.py` | `data/rules/items.json`、`data/world/npcs.json`、`landmarks.json` | 打工任務線（成人向）的獨特色情裝備、委託人與地標：自己的五條線，加上 `story_batch27.py`、`story_batch28.py` 匯出的 `ITEMS27/28`、`NPCS27/28`、`LANDMARKS27/28`（任務本身在 `story_batch26`～`28`） |
-| `town_events26.py` | `data/rules/travel_events.json` | 城鎮的成人向事件（搜身盤查、被下藥的酒、賭局的代價） |
+| `town_events26.py` | `data/rules/travel_events.json` | 城鎮的成人向事件（搜身盤查、被下藥的酒、賭局的代價、被搭訕、被偷摸） |
 | `docgear24.py` | `docs/ITEMS.md` 3.1.1 節 | 任務的獨特裝備表 |
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |
 
