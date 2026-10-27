@@ -34,6 +34,11 @@ export function reputationOf(state: GameState, faction: string | null | undefine
   return faction ? state.reputation[faction] ?? 0 : 0
 }
 
+/** 場所的聲望門檻（王城、地標、神殿的服務）：聲望夠，或主角帶著不看聲望的標籤（皇族） */
+export function meetsReputation(state: GameState, faction: string | null | undefined, min: number): boolean {
+  return reputationOf(state, faction) >= min || pcTagEffect(state, 'bypass_reputation')
+}
+
 /** 依地點所屬勢力的聲望：買入、賣出價與罰金的倍率 */
 export function reputationBand(state: GameState, locId = state.location) {
   const rep = reputationOf(state, locationById(locId).faction)
@@ -209,8 +214,7 @@ export function zoneEntryBlock(state: GameState, zone: string | undefined): stri
 /** 聲望不夠、沒有許可，今天也還沒說服衛兵：進王城要先說服（主角是皇族時不用） */
 export function palaceNeedsPersuading(state: GameState): boolean {
   const loc = locationById(state.location)
-  return !pcTagEffect(state, 'palace')
-    && reputationOf(state, loc.faction) < securityRules.palace_reputation
+  return !meetsReputation(state, loc.faction, securityRules.palace_reputation)
     && !state.flags[`palace_permit:${loc.id}`]
     && state.palacePass?.[loc.id] !== state.time.day
 }

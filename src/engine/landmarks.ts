@@ -13,7 +13,7 @@ import { isNight } from './light'
 import { wearNote } from './gear'
 import { formatMoney } from './money'
 import { isFugitive, pcOf } from './party'
-import { reputationOf } from './security'
+import { meetsReputation } from './security'
 import { condMet } from './storyFlags'
 import { baseReport } from './town'
 import { effectText } from './trade'
@@ -71,7 +71,7 @@ export function landmarkClosed(state: GameState, l: LandmarkDef): string | undef
   if (o.hours === 'day' && isNight(state.time)) return `${l.name}只在白天開放`
   if (o.hours === 'night' && !isNight(state.time)) return `${l.name}只在夜裡開放`
   if (!condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return `${l.name}現在不開放`
-  if (o.min_reputation && reputationOf(state, locationById(l.location).faction) < o.min_reputation) return `要在這裡的勢力有 ${o.min_reputation} 點聲望，${l.name}才讓你進去`
+  if (o.min_reputation && !meetsReputation(state, locationById(l.location).faction, o.min_reputation)) return `要在這裡的勢力有 ${o.min_reputation} 點聲望，${l.name}才讓你進去`
   if (o.official && isFugitive(state)) return `${l.name}的人認出了你身上的契約印記，不讓你進去`
   if (o.adult && !adultContent()) return `${l.name}現在不開放`
   return undefined

@@ -1343,7 +1343,7 @@ export interface NpcTagDef {
   /** false：主角不能選這個標籤（例如奴隸、娼妓，由各自的系統決定） */
   player?: boolean
   /** 主角帶著這個標籤時的效果（見 engine/pcTags.ts） */
-  pc_effects?: { palace?: boolean }
+  pc_effects?: { bypass_reputation?: boolean }
 }
 
 /** 標籤的 DC 修正：所有標籤相加 */

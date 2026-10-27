@@ -11,7 +11,7 @@ import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrI
 import { isMadam, nearBrothel } from './brothel'
 import { adultContent, adultScene, safeText, tagsAllowed } from './content'
 import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
-import { reputationOf } from './security'
+import { meetsReputation } from './security'
 import { forcedGearPool } from './forcedGear'
 import { affordable, applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
@@ -778,7 +778,7 @@ function blackMarketKnown(state: GameState): boolean {
 
 /** 這個服務在這裡的聲望夠不夠（神殿） */
 export function unmarkRepOk(state: GameState, def: UnmarkServiceDef): boolean {
-  return !def.min_reputation || reputationOf(state, locationById(state.location).faction) >= def.min_reputation
+  return !def.min_reputation || meetsReputation(state, locationById(state.location).faction, def.min_reputation)
 }
 
 /** 身邊（隊伍裡或附近）有這些職業的人 */

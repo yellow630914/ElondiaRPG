@@ -7,7 +7,7 @@ import { locationById } from './data'
 import { currentCell } from './grid'
 import { formatMoney } from './money'
 import { isFugitive, pcOf, setHp } from './party'
-import { reputationOf } from './security'
+import { meetsReputation } from './security'
 import { commitReport } from './state'
 import { addTattoo, oathError, placeName, removeTattoo, tattooAt, tattooError, tattooKindName, tattooRules, tattooTemplate, type NewTattoo } from './tattoos'
 import { baseReport } from './town'
@@ -45,7 +45,7 @@ export function inkKind(shop: TattooShopId): 'plain' | 'oath' | undefined {
 export function shopRefusal(state: GameState, shop: TattooShopId): string | undefined {
   const r = tattooShop(shop)
   if (shop === 'temple' && isFugitive(state)) return '神殿的人認出了你身上的契約印記，拒絕接待'
-  if (r.min_reputation && reputationOf(state, locationById(state.location).faction) < r.min_reputation) return `要在這裡的勢力有 ${r.min_reputation} 點聲望，神殿才肯替你洗刺青`
+  if (r.min_reputation && !meetsReputation(state, locationById(state.location).faction, r.min_reputation)) return `要在這裡的勢力有 ${r.min_reputation} 點聲望，神殿才肯替你洗刺青`
   return undefined
 }
 

@@ -17,7 +17,7 @@ function toggle(id: string) {
   if (tags.value.includes(id)) tags.value = tags.value.filter((t) => t !== id)
   else if (!blocked(id)) tags.value = [...tags.value, id]
 }
-const EFFECT: Record<string, string> = { palace: '不必聲望也能進出王城' }
+const EFFECT: Record<string, string> = { bypass_reputation: '不必聲望也能進入王城、地標與神殿的服務' }
 function effects(id: string): string {
   const e = tagDef(id)?.pc_effects ?? {}
   return Object.entries(e).filter(([, on]) => on).map(([k]) => EFFECT[k] ?? k).join('、')

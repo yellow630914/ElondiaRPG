@@ -4,6 +4,10 @@ import { enterLocation } from '@/engine/grid'
 import { pcOf } from '@/engine/party'
 import { PC_TAG_MAX, pcTagChoices, pcTagEffect, sanitizePcTags, setPcTags } from '@/engine/pcTags'
 import { palaceNeedsPersuading, zoneEntryBlock } from '@/engine/security'
+import { landmarkClosed } from '@/engine/landmarks'
+import { shopRefusal } from '@/engine/tattooShop'
+import { unmarkRepOk } from '@/engine/slavery'
+import { landmarks, slaveryRules } from '@/engine/data'
 import { migrate, newGame, SAVE_SCHEMA } from '@/engine/state'
 import type { GameState } from '@/engine/types'
 
@@ -36,12 +40,27 @@ describe('player identity tags', () => {
     expect(palaceNeedsPersuading(commoner)).toBe(true)
     expect(zoneEntryBlock(commoner, 'palace')).toContain('聲望')
     const royal = game(['royal'])
-    expect(pcTagEffect(royal, 'palace')).toBe(true)
+    expect(pcTagEffect(royal, 'bypass_reputation')).toBe(true)
     expect(palaceNeedsPersuading(royal)).toBe(false)
     expect(zoneEntryBlock(royal, 'palace')).toBeNull()
     // 通緝中還是進不去
     royal.wanted = { rhine_empire: { day: 1 } }
     expect(zoneEntryBlock(royal, 'palace')).toContain('通緝')
+  })
+
+  it('lets royals past every reputation gate: landmarks and the temple services', () => {
+    const armory = landmarks.lm_imperial_armory!
+    expect(armory.open?.min_reputation).toBeGreaterThan(0)
+    const commoner = game(['noble'])
+    commoner.time.hour = 12
+    expect(landmarkClosed(commoner, armory)).toContain('聲望')
+    expect(shopRefusal(commoner, 'temple')).toContain('聲望')
+    expect(unmarkRepOk(commoner, slaveryRules.unmark.services.temple!)).toBe(false)
+    const royal = game(['royal'])
+    royal.time.hour = 12
+    expect(landmarkClosed(royal, armory)).toBeUndefined()
+    expect(shopRefusal(royal, 'temple') ?? '').not.toContain('聲望')
+    expect(unmarkRepOk(royal, slaveryRules.unmark.services.temple!)).toBe(true)
   })
 
   it('changes tags in game only when the save rule allows it', () => {

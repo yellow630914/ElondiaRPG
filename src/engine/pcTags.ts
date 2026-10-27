@@ -1,6 +1,6 @@
 // 主角的身分標籤：和 NPC 共用 npc_tags.json 的標籤（例如貴族、皇族、神官、商人），建角時最多選 3 個。
 // 存檔規則勾了「允許更換身分標籤」時，遊戲中可以在角色詳情裡改。
-// 標籤的效果寫在 npc_tags.json 的 pc_effects（目前只有 palace：可以直接進出王城）。
+// 標籤的效果寫在 npc_tags.json 的 pc_effects（目前只有 bypass_reputation：要聲望的場所都不看聲望，見 security.ts 的 meetsReputation）。
 import { npcTags, tagsExclusive, type NpcTagDef } from './data'
 import { pcOf } from './party'
 import type { GameState } from './types'
