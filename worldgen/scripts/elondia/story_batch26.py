@@ -428,11 +428,15 @@ DRESS = {
 
 
 def apply_dress(batch):
-    """把制服與限定穿著寫進任務：接下第一個任務時發制服，限定的任務每個任務點都要穿著（戰鬥的任務點不限）"""
+    """把制服與限定穿著寫進任務：接下第一個任務時發制服，限定的任務每個任務點都要穿著（戰鬥的任務點不限）。
+    第二十九批之後的巡禮、祭典也一樣（DRESS29、DRESS30）"""
+    from story_batch29 import DRESS29
+    from story_batch30 import DRESS30
+    table = {**DRESS, **DRESS29, **DRESS30}
     by_id = {q['id']: q for q in batch}
-    for pre, (first, items, wear, ids) in DRESS.items():
+    for pre, (first, items, wear, ids) in table.items():
         by_id[first]['start']['items'] = items
         for sid in ids:
             for n in by_id[sid]['nodes']:
                 if n['kind'] != 'combat': n['wear'] = wear
-    return sum(len(v[3]) for v in DRESS.values())
+    return sum(len(v[3]) for v in table.values())

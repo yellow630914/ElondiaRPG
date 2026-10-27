@@ -199,9 +199,11 @@ def write():
     # 第二十七、二十八批的打工線（story_batch27.py、story_batch28.py）的裝備、NPC 與地標一起寫
     from story_batch27 import ITEMS27, NPCS27, LANDMARKS27
     from story_batch28 import ITEMS28, NPCS28, LANDMARKS28
-    ITEMS = globals()['ITEMS'] + ITEMS27 + ITEMS28
-    NPCS = globals()['NPCS'] + NPCS27 + NPCS28
-    LANDMARKS = globals()['LANDMARKS'] + LANDMARKS27 + LANDMARKS28
+    from story_batch29 import ITEMS29, NPCS29, LANDMARKS29
+    from story_batch30 import ITEMS30, NPCS30, LANDMARKS30
+    ITEMS = globals()['ITEMS'] + ITEMS27 + ITEMS28 + ITEMS29 + ITEMS30
+    NPCS = globals()['NPCS'] + NPCS27 + NPCS28 + NPCS29 + NPCS30
+    LANDMARKS = globals()['LANDMARKS'] + LANDMARKS27 + LANDMARKS28 + LANDMARKS29 + LANDMARKS30
     # 物品：接在吊帶舞孃的吊襪內褲後面
     P = 'data/rules/items.json'
     names = {i['name'] for i in ITEMS}

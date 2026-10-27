@@ -35082,6 +35082,1123 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 900 }, { "type": "xp", "amount": 2400 }]
+    },
+    {
+      "id": "conf_lattice",
+      "title": "格子窗的那一邊",
+      "summary": "巡禮修女阿嘉莎說，走完五座城的懺悔室，一身的罪就洗乾淨了。第一站是晨光城的晨曦聖殿。（教堂懺悔室的各國巡禮・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sister_agathe",
+        "min_level": 7,
+        "pc_body": ["fem", "andro"],
+        "text": "阿嘉莎把一套修女服和頭巾塞進你懷裡：「巡禮者都穿這個。底下什麼都別穿——懺悔的人要坦坦蕩蕩。」她替你拉緊頭巾，順手在你屁股上拍了一下，「晨曦聖殿的神父耳朵很好，你說得越詳細，罪洗得越乾淨。」",
+        "items": ["亞麻修女服", "亞麻修女頭巾"]
+      },
+      "start_flags": ["conf_lattice_start"],
+      "nodes": [
+        {
+          "id": "tell",
+          "title": "在晨曦聖殿的懺悔室說出你的罪",
+          "kind": "check",
+          "at": { "where": "cell", "location": "dawnlight", "cell": "lm_dawn_sanctum" },
+          "text": "懺悔室又窄又暗，格子窗那一邊傳來神父粗重的呼吸聲。「孩子，說吧。你犯了什麼淫邪的罪？說得越詳細越好——跟誰、在哪裡、怎麼弄的、弄了幾次。」格子窗底下有一個拳頭大的洞，洞口磨得很光滑。",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": {
+            "text": "你一件一件地說，說得又慢又細。格子窗那一邊的呼吸越來越急，布料摩擦的聲音也越來越快。說完的時候，他啞著嗓子說：「很好……很好。神聽見了。」",
+            "effects": [{ "type": "money", "amount": 30 }],
+            "set_flags": ["conf_lattice_tell"]
+          },
+          "fail": {
+            "text": "你說得吞吞吐吐，神父不滿意，一個細節一個細節地逼問，要你把每一次的姿勢都說出來、要你一邊說一邊摸給他聽。",
+            "scene": "懺悔室裡，神父隔著格子窗逼主角把每一次性經驗的細節都說出來，要主角一邊說一邊撩起修女服摸自己給他聽，主角的手指在腿間越動越快，格子窗另一邊傳來他自慰的喘息。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["conf_lattice_tell"]
+          },
+          "requires": { "flags": ["conf_lattice_start"] },
+          "wear": ["nun_habit", "nun_veil"]
+        },
+        {
+          "id": "hand",
+          "title": "「把手伸過來」",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "dawnlight", "cell": "lm_dawn_sanctum" },
+          "text": "「最後一步，」神父說，「贖罪要用身體。把手從洞裡伸過來。」洞的另一頭，他的褲子已經解開了。",
+          "options": [
+            {
+              "label": "把手伸過去",
+              "success": {
+                "text": "你把手伸進洞裡，握住了那根又熱又硬的東西。沒多久他就把它整根塞了過來，要你用嘴替他贖罪。你跪在懺悔室裡，直到他抖著射完。阿嘉莎在門外數錢：「第一站，過了。」",
+                "scene": "主角跪在懺悔室裡，把手伸過格子窗的洞替神父套弄，他隨即把陰莖整根從洞裡塞過來，主角含住它前後吞吐，被他抓著格子窗頂到喉嚨深處，最後射滿主角的嘴。",
+                "effects": [
+                  { "type": "money", "amount": 80 },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "第一站就很聽話" },
+                  { "type": "memory", "summary": "在晨曦聖殿的懺悔室裡，隔著格子窗用手和嘴替神父「贖罪」。", "importance": 2 }
+                ],
+                "set_flags": ["conf_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "撩起裙子，貼上格子窗",
+              "success": {
+                "text": "你轉過身，撩起修女服，把屁股貼上那個洞。格子窗那一邊的神父愣了一下，接著整個人撞了過來。懺悔室的木板被撞得咯咯響，他一邊幹一邊念著寬恕的經文。阿嘉莎在門外數錢：「第一站，過了。」",
+                "scene": "主角撩起修女服、光著屁股貼上懺悔室格子窗的洞，神父從另一邊把陰莖插進主角體內，隔著木板一下一下地猛撞，一邊幹一邊念寬恕的經文，最後射在主角裡面，精液順著大腿往下流。",
+                "effects": [
+                  { "type": "money", "amount": 100 },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "第一站就很懂事" },
+                  { "type": "memory", "summary": "在晨曦聖殿的懺悔室裡，撩起修女服讓神父隔著格子窗的洞幹了一回。", "importance": 2 }
+                ],
+                "set_flags": ["conf_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["conf_lattice_tell"] },
+          "wear": ["nun_habit", "nun_veil"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 150 }, { "type": "xp", "amount": 300 }]
+    },
+    {
+      "id": "conf_chapel",
+      "title": "軍中禮拜堂",
+      "summary": "第二站是萊茵堡的軍中禮拜堂。隨軍神父聽士兵懺悔聽了二十個冬天，他說贖罪要跪著。（教堂懺悔室的各國巡禮・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sister_agathe",
+        "min_level": 8,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["conf_1_done"] },
+        "text": "阿嘉莎在萊茵堡的城門口等你，手裡拿著一張摺好的信：「給軍中禮拜堂的隨軍神父。他人很好，就是愛讓人跪著。」她壓低聲音，「明天第三軍團開拔，今晚排隊懺悔的士兵很多。你去，他們會很感激。」"
+      },
+      "start_flags": ["conf_chapel_start"],
+      "nodes": [
+        {
+          "id": "kneel",
+          "title": "在軍中禮拜堂跪著懺悔",
+          "kind": "check",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "temple" },
+          "text": "禮拜堂裡瀰漫著皮革和汗水的味道。隨軍神父坐在長椅上，叫你跪在他腿間懺悔：「一邊說，一邊贖罪。」他掀開了神袍。門外，一排明天就要上前線的士兵正在等著。",
+          "check": { "attr": "fai", "dc": 14 },
+          "success": {
+            "text": "你一邊含著他一邊斷斷續續地懺悔，他閉著眼睛點頭，像在聽一場彌撒。最後他按著你的頭射了，拍拍你的頭巾：「贖完了。下一個罪人在門外。」",
+            "scene": "主角跪在隨軍神父的兩腿之間，一邊含著他的陰莖一邊斷斷續續地說出自己的罪，神父閉著眼按住主角的頭上下抽送，最後射在主角嘴裡，叫主角吞下去才算贖完。",
+            "effects": [{ "type": "money", "amount": 50 }],
+            "set_flags": ["conf_chapel_kneel"]
+          },
+          "fail": {
+            "text": "你說得太慢，他不耐煩了，揪著你的頭巾把你按下去，一句懺悔都不讓你說完。",
+            "scene": "隨軍神父不耐煩地揪住主角的修女頭巾，把主角的頭按在胯下猛頂，嗆得主角說不出話，直到他射在主角的喉嚨裡。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "dazed", "add": true }],
+            "set_flags": ["conf_chapel_kneel"]
+          },
+          "requires": { "flags": ["conf_chapel_start"] },
+          "wear": ["nun_habit", "nun_veil"]
+        },
+        {
+          "id": "line",
+          "title": "門外排隊的士兵",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "rhineburg", "cell": "temple" },
+          "text": "神父扣好神袍，朝門外點了點頭：「明天開拔的孩子們也有罪要贖。你是巡禮者，替他們贖，比我念一百遍經文還靈。」門開了，第一個士兵已經在解皮帶。",
+          "options": [
+            {
+              "label": "替整排士兵贖罪",
+              "success": {
+                "text": "你在禮拜堂的祭壇前跪了一整夜，士兵一個接一個地進來，有的站著、有的把你按在長椅上，誰也沒說一句懺悔的話。天亮時軍號響了，最後一個士兵邊跑邊繫皮帶。神父在你的頭巾上畫了一個聖環：「主會記得。」",
+                "scene": "軍中禮拜堂裡，明天開拔的士兵排著隊一個接一個上主角：把主角按在長椅上從後面幹、拉起來站著幹、塞進主角嘴裡，一個射完換下一個，主角的修女服被精液弄得一塌糊塗，一直被輪到天亮的軍號響起。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "替整排士兵贖了罪" },
+                  { "type": "memory", "summary": "在萊茵堡的軍中禮拜堂，替明天開拔的一整排士兵「贖罪」到天亮。", "importance": 2 }
+                ],
+                "set_flags": ["conf_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "只替神父一個人贖完",
+              "success": {
+                "text": "你搖頭，把門關上：「我只替神父贖。」神父笑了，把你按在祭壇上，從背後慢慢地幹，幹完一次又一次，門外的士兵罵了一整夜。",
+                "scene": "隨軍神父把主角按在禮拜堂的祭壇上，掀起修女服從背後慢慢地幹，射了一次又一次，主角趴在祭壇的聖布上被頂得往前滑，門外士兵的叫罵聲一直沒停。",
+                "effects": [
+                  { "type": "money", "amount": 100 },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 3, "reason": "只陪了神父" },
+                  { "type": "memory", "summary": "在萊茵堡的軍中禮拜堂，被隨軍神父按在祭壇上幹了一整夜。", "importance": 2 }
+                ],
+                "set_flags": ["conf_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["conf_chapel_kneel"] },
+          "wear": ["nun_habit", "nun_veil"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "conf_tithe",
+      "title": "懺悔的價錢",
+      "summary": "第三站是阿爾貝納的商人教會。這裡什麼都要錢，懺悔也是；付不起的，用別的付。（教堂懺悔室的各國巡禮・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sister_agathe",
+        "min_level": 9,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["conf_2_done"] },
+        "text": "阿嘉莎把一張價目表攤在你面前：「小罪五十、大罪一百、淫邪的罪兩百，現付。」她用指甲點了點最底下一行小字，「付不起的，執事會跟你『商量』。我是建議你別付錢——錢留著，身體洗一洗又是乾淨的。」"
+      },
+      "start_flags": ["conf_tithe_start"],
+      "nodes": [
+        {
+          "id": "haggle",
+          "title": "跟收錢的執事談懺悔的價錢",
+          "kind": "check",
+          "at": { "where": "cell", "location": "albena", "cell": "temple" },
+          "text": "教會的帳房就設在懺悔室旁邊。胖執事一邊撥算盤一邊打量你的修女服：「淫邪的罪，兩百白鸛。看你這身打扮，罪應該不小。」他的眼睛在你胸口停了很久。",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你把價錢談到了一百五十。執事撥了撥算盤，笑著說：「付錢，或者付別的——一樣的價。」他把懺悔室的簾子拉開了。",
+            "effects": [{ "type": "money", "amount": 20 }],
+            "set_flags": ["conf_tithe_haggle"]
+          },
+          "fail": {
+            "text": "你越談他越貴，談到最後他直接把手伸進你的修女服裡掂了掂：「這樣吧，先付一點訂金。」",
+            "scene": "商人教會的胖執事一邊撥算盤一邊把手伸進主角的修女服裡，揉捏主角的胸口、手指往下摳弄，說這是懺悔的「訂金」，算盤珠子撥一下他就摳一下。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["conf_tithe_haggle"]
+          },
+          "requires": { "flags": ["conf_tithe_start"] },
+          "wear": ["nun_habit", "nun_veil"]
+        },
+        {
+          "id": "pay",
+          "title": "付懺悔的錢",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "albena", "cell": "temple" },
+          "text": "懺悔室裡坐著教會的主任司鐸，桌上擺著一個錢箱。「付錢吧，孩子。」他的眼睛看著你的修女服，「付不起的話，教會也收實物。」執事和帳房的會計站在門口，一個也沒走。",
+          "options": [
+            {
+              "label": "付兩百白鸛",
+              "success": {
+                "text": "你把兩百白鸛倒進錢箱。司鐸數完錢，點點頭：「很好，罪洗了。」然後他把錢箱推到一邊，解開了腰帶：「現在是教會送你的祝福——免費的。」執事和會計也走了進來。",
+                "scene": "主角付完懺悔的錢，商人教會的司鐸、執事和會計還是把主角按在錢箱旁邊的桌上，三個人輪流幹主角，說這是教會免費的祝福，銅幣在桌上被撞得叮噹響。",
+                "effects": [
+                  { "type": "money", "amount": -200 },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 2, "reason": "居然付了錢" },
+                  { "type": "memory", "summary": "在阿爾貝納的商人教會付了兩百白鸛懺悔，然後被三個人「免費祝福」。", "importance": 2 }
+                ],
+                "set_flags": ["conf_3_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "用身體付",
+              "success": {
+                "text": "你把修女服從肩上褪下來：「我用這個付。」司鐸笑了，在帳本上記了一筆。三個人按著價目表一項一項地收：小罪用嘴、大罪用下面、淫邪的罪三個人一起收。收完了，執事還開了一張收據塞進你的頭巾裡。",
+                "scene": "主角在商人教會的懺悔室裡用身體付懺悔的錢：司鐸、執事和會計照著價目表輪流收，先用主角的嘴、再從下面幹，最後三個人同時前後一起上，邊幹邊在帳本上記帳，射完還把收據塞進主角的頭巾。",
+                "effects": [
+                  { "type": "money", "amount": 100 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "懂得省錢" },
+                  { "type": "memory", "summary": "在阿爾貝納的商人教會用身體付了懺悔的錢，司鐸、執事和會計照價目表一項一項收。", "importance": 2 }
+                ],
+                "set_flags": ["conf_3_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["conf_tithe_haggle"] },
+          "wear": ["nun_habit", "nun_veil"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 600 }]
+    },
+    {
+      "id": "conf_trial",
+      "title": "審判廷的懺悔室",
+      "summary": "第四站是索里耶爾的聖環主殿。審判廷的懺悔室有一條規矩：說謊會被罰，說實話也會被罰。（教堂懺悔室的各國巡禮・四）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sister_agathe",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["conf_3_done"] },
+        "text": "阿嘉莎在聖環主殿的台階上等你，難得地沒有笑：「審判廷的人跟前面的不一樣，他們不聽懺悔，他們審。」她把你的頭巾拉正，「記住，在那裡說什麼都會被罰。罰完了，第四站就過了。」"
+      },
+      "start_flags": ["conf_trial_start"],
+      "nodes": [
+        {
+          "id": "question",
+          "title": "回答審判官的問題",
+          "kind": "check",
+          "at": { "where": "cell", "location": "soriel", "cell": "lm_holy_ring_cathedral" },
+          "text": "懺悔室沒有格子窗，只有一張刑具一樣的跪凳和三個戴兜帽的審判官。最前面那個翻開一本厚厚的冊子：「巡禮者，你在前三站做了什麼？一件一件說。我們都知道答案。」",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你避開了他們的陷阱，每個問題都答得滴水不漏。審判官合上冊子，冷冷地說：「答得很好。太好了，好得像是在說謊。」",
+            "set_flags": ["conf_trial_question"]
+          },
+          "fail": {
+            "text": "你答錯了一題，審判官一揮手，另外兩個人把你按在跪凳上，掀起修女服，用戒尺在你屁股上打了十下才繼續問。",
+            "scene": "審判廷的懺悔室裡，兩個審判官把主角按在跪凳上、掀起修女服，用戒尺狠狠地打主角光著的屁股，打一下問一題，打到主角的屁股通紅、腿間濕透。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "sensitive", "add": true }],
+            "set_flags": ["conf_trial_question"]
+          },
+          "requires": { "flags": ["conf_trial_start"] },
+          "wear": ["nun_habit", "nun_veil"]
+        },
+        {
+          "id": "verdict",
+          "title": "審判廷的判決",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "soriel", "cell": "lm_holy_ring_cathedral" },
+          "text": "三個審判官站了起來，最前面那個解開兜帽下的長袍：「最後一題：你喜歡嗎？說謊，罰；說實話，也罰。」",
+          "options": [
+            {
+              "label": "說謊：「不喜歡」",
+              "success": {
+                "text": "「說謊。」他們把你綁在跪凳上，雙手反綁在背後，三個人輪流罰你，每罰一次就問一次「喜歡嗎」，你說一次「不喜歡」就再罰一次。罰到你說不出話，他們才在冊子上蓋了章。",
+                "scene": "主角被反綁雙手、趴綁在審判廷的跪凳上，三個審判官輪流從後面幹主角，每射一次就問一次「喜歡嗎」，主角說「不喜歡」就換下一個繼續，直到主角喊不出聲音。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "sensitive", "add": true },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "撐過了審判廷" },
+                  { "type": "memory", "summary": "在聖環主殿的審判廷懺悔室裡說了謊，被三個審判官綁在跪凳上輪流「罰」到說不出話。", "importance": 2 }
+                ],
+                "set_flags": ["conf_4_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "說實話：「喜歡」",
+              "success": {
+                "text": "「淫邪之罪，認了。」他們把你抬上懺悔室的長桌，像審判一樣一條一條地罰：嘴、胸口、前面、後面。最年長的審判官最後一個上，一邊幹一邊宣讀判決書。罰完，他在你的頭巾上蓋了審判廷的火漆印。",
+                "scene": "主角承認自己喜歡，三個審判官把主角抬上懺悔室的長桌，照判決書一條一條地罰：輪流用主角的嘴、揉捏胸口、從前面和後面幹，最年長的審判官最後一個上，一邊抽送一邊宣讀判決，射在主角裡面。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "在審判廷認了罪" },
+                  { "type": "memory", "summary": "在聖環主殿的審判廷懺悔室裡認了淫邪之罪，被三個審判官在長桌上一條一條地「罰」。", "importance": 2 }
+                ],
+                "set_flags": ["conf_4_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["conf_trial_question"] },
+          "wear": ["nun_habit", "nun_veil"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "conf_last",
+      "title": "修女的懺悔",
+      "summary": "最後一站是河谷鎮四國交界的小禮拜堂。阿嘉莎說，這一站換她懺悔。（教堂懺悔室的各國巡禮・五）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sister_agathe",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["conf_4_done"] },
+        "text": "阿嘉莎在河谷鎮的小禮拜堂門口等你，手裡的錢袋比第一天鼓了好幾倍。「最後一站。」她笑得和第一天一樣溫和，「這一站，換我懺悔。你聽完了，巡禮就結束了。」"
+      },
+      "start_flags": ["conf_last_start"],
+      "nodes": [
+        {
+          "id": "her_sin",
+          "title": "聽阿嘉莎懺悔",
+          "kind": "story",
+          "at": { "where": "cell", "location": "rivervale", "cell": "temple" },
+          "text": "阿嘉莎跪在小禮拜堂的懺悔室裡，隔著格子窗，換你坐在神父的位置上。「我的罪是這樣的：五座城的神父，每一個都付錢給我。你在晨曦聖殿的那一次，八十白鸛；軍中禮拜堂那一整夜，一個士兵五個銅幣；商人教會的帳我抽三成；審判廷付得最多。」她數著念珠，像在數錢，「巡禮從來不洗罪，巡禮是我的生意。你是我這一季賣得最好的一個。」",
+          "success": {
+            "text": "她懺悔完，站起來拍了拍修女服的膝蓋：「現在你知道了。」禮拜堂的門開了，五座城的神父一個一個走了進來——晨曦聖殿的、軍中禮拜堂的、商人教會的、審判廷的，還有這間小禮拜堂的老神父。阿嘉莎說：「他們湊了錢，來替你的巡禮『結業』。」",
+            "effects": [{ "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "聽完了她的懺悔" }],
+            "set_flags": ["conf_last_her_sin"]
+          },
+          "requires": { "flags": ["conf_last_start"] },
+          "wear": ["nun_habit", "nun_veil"]
+        },
+        {
+          "id": "graduation",
+          "title": "巡禮的結業",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "rivervale", "cell": "temple" },
+          "text": "五個神父把小禮拜堂的門閂上，在祭壇前站成一圈。阿嘉莎把一條繡著五道聖環的黑紗頭巾放在祭壇上：「結業的獎品。怎麼結業，你自己選——我抽三成。」",
+          "options": [
+            {
+              "label": "讓她看著你被五個神父用",
+              "success": {
+                "text": "你跪上祭壇，讓五個神父圍上來。阿嘉莎坐在第一排的長椅上，一邊數錢一邊看，偶爾指揮一句「換個姿勢，那位付了雙倍」。天亮時她把那條黑紗頭巾戴在你頭上：「巡禮結束了。罪？一點也沒少。」",
+                "scene": "主角跪在小禮拜堂的祭壇上，五座城的神父圍成一圈輪流幹主角，前後一起、一個射完換下一個，阿嘉莎坐在長椅上數錢、指揮他們換姿勢；主角的修女服被扯開，從嘴到下身都被射滿，一直弄到天亮。",
+                "effects": [
+                  { "type": "item", "name": "巡禮者的懺悔頭紗", "qty": 1 },
+                  { "type": "money", "amount": 200 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 10, "reason": "替她賺了最後一筆" },
+                  {
+                    "type": "memory",
+                    "summary": "在河谷鎮的小禮拜堂，讓五座城的神父在祭壇上輪流「結業」，阿嘉莎在旁邊抽成。她把巡禮者的懺悔頭紗給了你。",
+                    "importance": 3
+                  }
+                ],
+                "set_flags": ["conf_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "拉她一起跪下",
+              "success": {
+                "text": "你一把抓住阿嘉莎的手腕，把她也拖上祭壇：「抽成的人也要結業。」神父們笑了，五個人分成兩邊。她罵了一句，很快就跟你一樣叫不出完整的經文。天亮時她揉著膝蓋把頭巾丟給你：「下一季的巡禮者，你自己帶。」",
+                "scene": "主角把阿嘉莎拖上祭壇，兩人並排跪著，五個神父分成兩邊輪流幹她們，前面的人塞進嘴裡、後面的人從背後頂，換來換去；阿嘉莎的修女服被掀到腰上，和主角一起被幹到天亮。",
+                "effects": [
+                  { "type": "item", "name": "巡禮者的懺悔頭紗", "qty": 1 },
+                  { "type": "money", "amount": 150 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "被拖下水" },
+                  { "type": "memory", "summary": "在河谷鎮的小禮拜堂，把阿嘉莎也拖上祭壇，和她並排被五座城的神父「結業」。她把巡禮者的懺悔頭紗給了你。", "importance": 3 }
+                ],
+                "set_flags": ["conf_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "把她推到前面去",
+              "success": {
+                "text": "你把阿嘉莎推到神父們面前：「先從賣人的開始。」五個神父看了看她，又看了看錢袋，先上了她，再上你。整夜她都在喊「我抽三成」，沒有人理她。天亮時她的錢袋倒空在祭壇上，頭巾被你拿走了。",
+                "scene": "主角把阿嘉莎推到祭壇前，五個神父先輪流幹她，把她按在聖壇上前後一起上，接著再輪到主角；主角和阿嘉莎被輪流抽送、互相舔乾淨，一直到天亮，阿嘉莎的錢袋倒在祭壇上撒了一地。",
+                "effects": [
+                  { "type": "item", "name": "巡禮者的懺悔頭紗", "qty": 1 },
+                  { "type": "money", "amount": 300 },
+                  { "type": "condition", "target": "pc", "condition": "afterglow", "add": true },
+                  { "type": "affinity", "npc": "npc_sister_agathe", "delta": -5, "reason": "被你推出去先挨" },
+                  { "type": "memory", "summary": "在河谷鎮的小禮拜堂，把阿嘉莎推到五座城的神父面前先挨，自己再上。她的錢袋和巡禮者的懺悔頭紗都歸了你。", "importance": 3 }
+                ],
+                "set_flags": ["conf_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["conf_last_her_sin"] },
+          "wear": ["nun_habit", "nun_veil"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1200 }]
+    },
+    {
+      "id": "fert_chosen",
+      "title": "外族的巫女",
+      "summary": "苔語村的祭司瑟芙在找今年豐饒祭的「外族的巫女」。條件只有一個：身體要經得起村裡的男人檢查。（豐饒祭的巫女・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_seph_fertility",
+        "min_level": 8,
+        "pc_body": ["fem", "andro"],
+        "text": "瑟芙把一件薄得透光的紗衣和一條緞帶塞進你手裡：「穿上，別的都脫掉。豐饒祭要一個外族的巫女，森林說今年是你。」她上下打量你，像在挑一頭母鹿，「先讓村裡的長老們檢查身體——巫女要把全村男人的種子都收下來，身子太窄、太嬌的撐不到月亮下山。」",
+        "items": ["絲綢透視薄紗睡衣", "絲綢緞帶髮飾"]
+      },
+      "start_flags": ["fert_chosen_start"],
+      "nodes": [
+        {
+          "id": "inspect",
+          "title": "在森語之環讓長老們檢查身體",
+          "kind": "check",
+          "at": { "where": "cell", "location": "mosswhisper", "cell": "lm_whispering_ring" },
+          "text": "你只穿著紗衣站在森語之環的石圈中央，三個精靈長老圍著你轉。瑟芙一聲令下，紗衣被掀到胸口以上：長老們捏你的乳房、掰開你的腿、把手指伸進去量深淺，一邊量一邊用精靈語討論，像在評一塊田的土質好不好。",
+          "check": { "attr": "fai", "dc": 14 },
+          "success": {
+            "text": "你咬著牙一聲不吭地讓他們量完。最老的那個長老抽出沾濕的手指聞了聞，點頭：「這塊地，能種。」瑟芙在你的小腹上畫了一個紋樣。",
+            "effects": [{ "type": "money", "amount": 60 }],
+            "set_flags": ["fert_chosen_inspect"]
+          },
+          "fail": {
+            "text": "量到一半你就腿軟了，濕得一塌糊塗，長老們笑得鬍子都在抖。瑟芙在你的小腹上畫了一個紋樣：「這麼容易濕，好，種子不會漏。」",
+            "scene": "三個精靈長老在石圈中央「檢查」只穿紗衣的主角：揉捏胸部與乳尖、掰開雙腿、輪流把手指插進主角體內量深淺，主角被玩到雙腿發軟、濕透，長老們一邊摸一邊評論。",
+            "effects": [
+              { "type": "money", "amount": 60 },
+              { "type": "condition", "target": "pc", "condition": "aroused", "add": true }
+            ],
+            "set_flags": ["fert_chosen_inspect"]
+          },
+          "requires": { "flags": ["fert_chosen_start"] },
+          "wear": ["sheer_negligee", "hair_ribbon"]
+        },
+        {
+          "id": "seed_test",
+          "title": "在苔語村的旅店試種",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "mosswhisper", "cell": "inn" },
+          "text": "瑟芙說檢查還差最後一項：「試種」。旅店的大房間裡，五個村裡的年輕男人已經脫了衣服等著，「看看你一個晚上收得下幾個。收得越多，今年的收成越好。」",
+          "options": [
+            {
+              "label": "一個一個收下來",
+              "success": {
+                "text": "你躺在大房間的草蓆上，讓五個男人一個一個上來，每一個都射在裡面。天亮時瑟芙掀開你的紗衣看了一眼，滿意地說：「五個，一滴都沒漏。你是今年的巫女。」",
+                "scene": "旅店的大房間裡，主角穿著薄紗躺在草蓆上，五個村裡的年輕男人一個接一個壓上來和主角交合，每個人都射在主角體內，瑟芙在旁邊數數，要主角夾緊不准漏出來。",
+                "effects": [{ "type": "memory", "summary": "在苔語村被選為豐饒祭的外族巫女，通過了長老的身體檢查，一個晚上收下了五個村裡男人的種子。", "importance": 2 }],
+                "set_flags": ["fert_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "「五個一起來」",
+              "success": {
+                "text": "你把紗衣撩到腰上，讓五個人一起來。嘴裡一個、下面一個、手裡兩個，剩下那個等不及在你背上蹭。瑟芙看了一整晚，在本子上記了很多東西：「這個巫女，能撐到月亮下山。」",
+                "scene": "主角讓五個村裡的男人同時上：一個插在嘴裡、一個從後面插入、兩手各握一根，第五個在主角背上磨蹭，男人們換了好幾輪位置，全都射在主角身上與體內。",
+                "effects": [{ "type": "memory", "summary": "在苔語村被選為豐饒祭的外族巫女，一個晚上同時應付了五個村裡的男人。", "importance": 2 }],
+                "set_flags": ["fert_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["fert_chosen_inspect"] },
+          "wear": ["sheer_negligee", "hair_ribbon"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 500 }]
+    },
+    {
+      "id": "fert_dance",
+      "title": "祭壇前的舞",
+      "summary": "豐饒祭的前夜，巫女要在銀月城的生命之泉前跳祈願的舞。跳到一半，看舞的男人可以上來「祈願」。（豐饒祭的巫女・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_seph_fertility",
+        "min_level": 9,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["fert_1_done"] },
+        "text": "瑟芙替你在紗衣外面補畫紋樣，從乳頭一路畫到大腿內側：「前夜的舞在銀月城的生命之泉前跳。精靈的規矩，看舞的男人想求今年多子多福，就上來摸巫女一把，摸哪裡都行；求得越誠心的，就不只是摸。」她把緞帶綁到你頭上，「跳到天亮，不准停。」"
+      },
+      "start_flags": ["fert_dance_start"],
+      "nodes": [
+        {
+          "id": "dance",
+          "title": "在生命之泉前跳祈願的舞",
+          "kind": "check",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "text": "泉水邊點滿了月光燈，城裡的精靈男人圍成一圈。你赤著腳、穿著透光的紗衣開始跳，每轉一圈就有一隻手伸進來：揉胸、捏屁股、手指從腿間抹過去，有人把泉水潑在你身上，紗衣黏在皮膚上跟沒穿一樣。",
+          "check": { "attr": "dex", "dc": 15 },
+          "success": {
+            "text": "你踩著鼓點一路跳到半夜，被摸遍了也沒亂掉一步。圍觀的精靈把祈願的銀幣丟進泉水裡，嘩啦啦響。",
+            "effects": [{ "type": "money", "amount": 120 }],
+            "set_flags": ["fert_dance_dance"]
+          },
+          "fail": {
+            "text": "你被摸得腳步亂了，摔在泉水邊。圍觀的人一擁而上，說是要扶你，扶了很久。",
+            "scene": "主角跳舞時摔倒在生命之泉邊，圍觀的精靈男人一擁而上，在濕透的紗衣底下到處撫摸、揉捏主角的胸部與私處，好幾根手指輪流插進主角體內「祈願」。",
+            "effects": [
+              { "type": "money", "amount": 80 },
+              { "type": "condition", "target": "pc", "condition": "disheveled", "add": true }
+            ],
+            "set_flags": ["fert_dance_dance"]
+          },
+          "requires": { "flags": ["fert_dance_start"] },
+          "wear": ["sheer_negligee", "hair_ribbon"]
+        },
+        {
+          "id": "prayer",
+          "title": "收下最誠心的祈願",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
+          "text": "天快亮時，鼓聲停了。三個城裡的精靈貴族走進圈子，各自在泉水裡丟了一袋金幣：「我們求的是兒子。」瑟芙對你點點頭——最誠心的祈願，要用巫女的身體還願。",
+          "options": [
+            {
+              "label": "在泉水裡還願",
+              "success": {
+                "text": "你走進及腰的泉水裡，讓三個貴族在水裡輪流抱著你幹，泉水被攪得嘩嘩作響。最後一個射完，瑟芙把泉水舀起來潑在你小腹上：「好，願收下了。」",
+                "scene": "主角站在及腰的泉水裡，三個精靈貴族輪流從正面抱起主角、或把主角壓在泉邊的石頭上交合，水花四濺，每個人都射在主角體內，瑟芙最後把泉水潑在主角小腹上。",
+                "effects": [
+                  { "type": "money", "amount": 200 },
+                  { "type": "memory", "summary": "在銀月城生命之泉前跳了豐饒祭前夜的舞，在泉水裡替三個精靈貴族「還願」。", "importance": 2 }
+                ],
+                "set_flags": ["fert_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "跪在泉邊，用嘴還願",
+              "success": {
+                "text": "你跪在泉邊的石頭上，用嘴一個一個替他們還願，吞得乾乾淨淨。其中一個說嘴巴不算數，把你翻過來從後面又還了一次。瑟芙說：「也行。」",
+                "scene": "主角跪在泉邊的石頭上，輪流用嘴服侍三個精靈貴族並把精液吞下，其中一人不滿足，把主角翻過身壓在石頭上從後面插入，射在主角體內才放手。",
+                "effects": [
+                  { "type": "money", "amount": 200 },
+                  { "type": "memory", "summary": "在銀月城生命之泉前跳了豐饒祭前夜的舞，跪在泉邊替三個精靈貴族「還願」。", "importance": 2 }
+                ],
+                "set_flags": ["fert_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["fert_dance_dance"] },
+          "wear": ["sheer_negligee", "hair_ribbon"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 350 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "fert_rite",
+      "title": "月輝之母下的交合",
+      "summary": "豐饒祭的正日。月輝之母的根延伸到銀月城外的祭林，巫女要躺在最粗的那條根上，讓森林的男人把種子種進去，直到月亮下山。（豐饒祭的巫女・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_seph_fertility",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["fert_2_done"] },
+        "text": "瑟芙替你把紗衣解開，只留下頭上的緞帶和小腹上的紋樣：「今晚不用穿了，但緞帶不能拿下來，那是巫女的記號。」她指著城外的祭林，「月輝之母的根在那裡冒出地面，你躺上去，男人們排隊。精靈、人類、迷路的旅人——今晚來的都算數。月亮下山之前，不准合腿。」"
+      },
+      "start_flags": ["fert_rite_start"],
+      "nodes": [
+        {
+          "id": "procession",
+          "title": "被抬進城外的祭林",
+          "kind": "story",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "text": "四個精靈男人把一絲不掛的你抬在肩上，穿過城門走進祭林。一路上的男人伸手摸你的腳、你的腿、你的胸，有人邊走邊把手指伸進去「暖地」。祭林中央，一條比人還粗的銀白色樹根從土裡拱起來，上面鋪著花瓣。",
+          "success": {
+            "text": "他們把你放上樹根，樹皮暖得像有體溫。林子裡的火把一盞一盞點起來，男人們排成了長長的一列。",
+            "scene": "四個精靈男人把全裸的主角抬在肩上走進祭林，沿路的男人伸手撫摸主角的腿、胸部與私處，有人一邊走一邊用手指插進主角體內「暖地」，主角被摸得渾身發燙。",
+            "set_flags": ["fert_rite_procession"]
+          },
+          "requires": { "flags": ["fert_rite_start"] },
+          "wear": ["sheer_negligee", "hair_ribbon"]
+        },
+        {
+          "id": "rite",
+          "title": "在月輝之母的根上收下種子",
+          "kind": "choice",
+          "at": { "where": "outskirts", "location": "silvermoon" },
+          "text": "瑟芙站在樹根旁，舉起一束白花：「豐饒祭，開始。」第一個男人已經爬了上來。隊伍長得看不到尾巴，月亮才剛升起。",
+          "options": [
+            {
+              "label": "躺著，一個一個收下來",
+              "success": {
+                "text": "你躺在樹根上張著腿，一個男人射完下去，下一個就爬上來，一整夜沒停過。月亮下山時你已經數不清幾個了，小腹被灌得微微鼓起。瑟芙把一頂白花編成的花冠戴到你頭上：「今年的收成，會很好。」",
+                "scene": "主角全裸躺在月輝之母銀白色的樹根上張開雙腿，排成長列的男人一個接一個壓上來和主角交合、射在主角體內，一整夜沒有停過，直到主角小腹被灌得微微鼓起，精液沿著樹根往下流。",
+                "effects": [
+                  { "type": "item", "name": "豐饒祭的花冠", "qty": 1 },
+                  { "type": "money", "amount": 300 },
+                  {
+                    "type": "memory",
+                    "summary": "在銀月城外的祭林，躺在月輝之母的根上當豐饒祭的巫女，一整夜收下了數不清的男人的種子，拿到了豐饒祭的花冠。",
+                    "importance": 2
+                  }
+                ],
+                "set_flags": ["fert_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "騎在樹根上，讓他們一次三個",
+              "success": {
+                "text": "你跨坐在樹根上，前面一個、後面一個、嘴裡一個，隊伍走得比別人快三倍。火把燒完換了兩輪，你還在叫。月亮下山時瑟芙把花冠戴到你頭上，笑得像個看到大豐收的農婦：「三倍的種子，三倍的收成。」",
+                "scene": "主角跨坐在月輝之母的樹根上，同時被三個男人佔有：一個從下面插入、一個從後面插入、一個插在主角嘴裡，三人射完就換下一組，一整夜輪了好幾十人，主角渾身沾滿精液與花瓣。",
+                "effects": [
+                  { "type": "item", "name": "豐饒祭的花冠", "qty": 1 },
+                  { "type": "money", "amount": 300 },
+                  { "type": "memory", "summary": "在銀月城外的祭林，騎在月輝之母的根上一次應付三個男人，當完了豐饒祭的巫女，拿到了豐饒祭的花冠。", "importance": 2 }
+                ],
+                "set_flags": ["fert_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["fert_rite_procession"] },
+          "wear": ["sheer_negligee", "hair_ribbon"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 550 }, { "type": "xp", "amount": 1300 }]
+    },
+    {
+      "id": "mate_paint",
+      "title": "求偶紋",
+      "summary": "赤鬃部落的求偶祭缺一個「外來的獵物」。祭火人哈魯說，先塗上求偶紋，在篝火前讓戰士們看清楚。（求偶祭・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_haru_redmane",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "text": "哈魯把一條裹胸和一條兜襠布丟給你，咧嘴露出缺了一顆的犬齒：「求偶祭要一隻外來的獵物，族長說你的味道不錯。」他舔了舔手裡的紅色顏料，「先塗紋。塗了求偶紋，就是告訴全部落的公的：這隻可以追。今晚在篝火前站一站，讓他們先看貨。」",
+        "items": ["亞麻裹胸", "亞麻兜襠布"]
+      },
+      "start_flags": ["mate_paint_start"],
+      "nodes": [
+        {
+          "id": "paint",
+          "title": "在赤鬃議帳塗上求偶紋",
+          "kind": "story",
+          "at": { "where": "cell", "location": "sunscorch", "cell": "lm_redmane_council" },
+          "text": "議帳外，哈魯用粗糙的手指沾著紅色顏料，在你身上畫求偶紋：從脖子畫到乳頭繞兩圈，沿著小腹往下，裹胸和兜襠布被他扯開畫了裡面，最後在大腿內側畫了兩道箭頭，指著同一個地方。族長卡菈坐在議帳門口喝酒，看了一眼：「畫得太明白了。」哈魯說：「就是要明白。」",
+          "success": {
+            "text": "顏料乾了之後，你身上每一道紋都在說同一句話。路過的戰士一個個停下來看，尾巴豎得筆直。",
+            "scene": "祭火人哈魯用沾著紅顏料的手指在主角全身畫求偶紋：扯開裹胸在乳頭上繞圈、扯開兜襠布在私處周圍與大腿內側描畫，一邊畫一邊揉捏，畫到主角喘息不止。",
+            "set_flags": ["mate_paint_paint"]
+          },
+          "requires": { "flags": ["mate_paint_start"] },
+          "wear": ["breast_band", "loincloth"]
+        },
+        {
+          "id": "show",
+          "title": "在篝火前讓戰士們看貨",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "sunscorch", "cell": "tavern" },
+          "text": "酒帳前的篝火燒得劈啪響，二十幾個赤鬃戰士圍成一圈。哈魯把你推到火光中間：「轉一圈！讓他們看看明天要追的是什麼。」有人吹口哨，有人已經把手伸了過來。",
+          "options": [
+            {
+              "label": "讓他們摸個夠",
+              "success": {
+                "text": "你在篝火前慢慢轉了一圈，又一圈。戰士們一個個上來摸，摸胸、摸屁股、手指沿著求偶紋的箭頭往下鑽。顏料被摸花了一大片，哈魯一邊罵一邊補。",
+                "scene": "主角只穿著被扯鬆的裹胸與兜襠布站在篝火中央，二十幾個赤鬃戰士輪流上前撫摸：揉捏胸部、掐屁股、手指順著求偶紋鑽進主角腿間摳弄，摸得主角雙腿發軟。",
+                "effects": [{ "type": "memory", "summary": "在烈日草原塗上了赤鬃部落的求偶紋，在篝火前被戰士們摸了個遍。", "importance": 2 }],
+                "set_flags": ["mate_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "挑三個先嚐嚐",
+              "success": {
+                "text": "你指了三個最壯的，把他們拉到篝火後面。哈魯在後面喊犯規，可是沒人理他。回來的時候你身上的求偶紋糊成一片，三個戰士的尾巴都垂著。",
+                "scene": "主角把三個最壯的赤鬃戰士拉到篝火後面的草地上，三個人輪流把主角壓在地上交合，一個射完換下一個，求偶紋的顏料被汗水和精液糊成一片。",
+                "effects": [{ "type": "memory", "summary": "在烈日草原塗上了赤鬃部落的求偶紋，求偶祭前夜就在篝火後面先嚐了三個戰士。", "importance": 2 }],
+                "set_flags": ["mate_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["mate_paint_paint"] },
+          "wear": ["breast_band", "loincloth"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 700 }]
+    },
+    {
+      "id": "mate_chase",
+      "title": "求偶的追逐",
+      "summary": "求偶祭的正午：獵物先跑，戰士們晚一刻出發。被追到的，當場就是追到的人的。（求偶祭・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_haru_redmane",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["mate_1_done"] },
+        "text": "哈魯在你的屁股上拍了一個紅手印：「規矩很簡單。我喊跑，你就跑；數到一百，戰士們出發。被誰追到，就給誰騎，騎完了你可以接著跑——如果你還站得起來。」族長卡菈在議帳前舉起號角，「跑到太陽下山都沒被追到的，有賞。不過，」哈魯笑，「從來沒有人撐到過。」"
+      },
+      "start_flags": ["mate_chase_start"],
+      "nodes": [
+        {
+          "id": "run",
+          "title": "在草原上逃",
+          "kind": "check",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "text": "號角一響，你衝進齊腰的草裡。背後傳來一陣陣吼叫，赤鬃戰士們追上來了，四腳著地跑得比你快得多。草葉刮著你沒什麼遮掩的身體，第一個戰士的影子已經撲到了你旁邊。",
+          "check": { "attr": "dex", "dc": 16 },
+          "success": {
+            "text": "你在草裡繞了好幾個彎，甩掉了前三個。第四個還是撲倒了你——不過已經是下午了，哈魯說這是今年最好看的一場。",
+            "effects": [{ "type": "money", "amount": 150 }],
+            "set_flags": ["mate_chase_run"]
+          },
+          "fail": {
+            "text": "你才跑了一刻鐘就被撲倒在草裡，兜襠布被一把扯掉。",
+            "scene": "主角在草原上被第一個追上的赤鬃戰士撲倒在草叢裡，兜襠布被扯掉，戰士從後面把主角按在地上交合，射完後放主角起來繼續跑，沒跑多遠又被下一個撲倒。",
+            "effects": [
+              { "type": "money", "amount": 80 },
+              { "type": "condition", "target": "pc", "condition": "disheveled", "add": true }
+            ],
+            "set_flags": ["mate_chase_run"]
+          },
+          "requires": { "flags": ["mate_chase_start"] },
+          "wear": ["breast_band", "loincloth"]
+        },
+        {
+          "id": "caught",
+          "title": "被追到之後",
+          "kind": "choice",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "text": "太陽偏西的時候，你倒在一片被壓平的草地上，身邊圍著五個喘著粗氣的戰士——他們幾乎同時追到，誰也不讓誰。哈魯騎著馬趕到，看了看：「那就一起。」",
+          "options": [
+            {
+              "label": "讓他們排隊",
+              "success": {
+                "text": "五個戰士猜拳排了順序。你趴在草地上，一個騎完換下一個，每一個都比上一個用力。太陽下山時，哈魯把你扛上馬背：「明晚篝火夜，你還有得受。」",
+                "scene": "主角趴在被壓平的草地上，五個赤鬃戰士排好順序，一個接一個從後面騎上來交合，每個人都射在主角體內，太陽下山時主角已經站不起來。",
+                "effects": [
+                  { "type": "money", "amount": 200 },
+                  { "type": "memory", "summary": "在赤鬃部落的求偶祭被五個戰士同時追到，在草原上讓他們排隊輪流騎。", "importance": 2 }
+                ],
+                "set_flags": ["mate_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "「全部一起上」",
+              "success": {
+                "text": "你翻過身張開腿：「別猜了，一起來。」五個人同時撲上來，草地上滾成一團。哈魯在旁邊看得直搖尾巴：「這隻獵物比獵人還餓。」",
+                "scene": "主角在草地上張開雙腿，讓五個赤鬃戰士同時撲上來：前後兩個同時插入、一個插在嘴裡、兩個在主角手裡，五人輪換位置直到全部射在主角身上與體內。",
+                "effects": [
+                  { "type": "money", "amount": 200 },
+                  { "type": "memory", "summary": "在赤鬃部落的求偶祭被五個戰士同時追到，讓他們在草原上一起上。", "importance": 2 }
+                ],
+                "set_flags": ["mate_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["mate_chase_run"] },
+          "wear": ["breast_band", "loincloth"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "mate_bonfire",
+      "title": "篝火夜",
+      "summary": "求偶祭的最後一晚：所有追到過獵物的戰士圍著最大的篝火，把獵物「領走」——一個一個，或一群。（求偶祭・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_haru_redmane",
+        "min_level": 12,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["mate_2_done"] },
+        "text": "哈魯替你重新畫上求偶紋，這次畫得更粗、更紅：「篝火夜。追到過你的戰士都會來，一共十一個——還有幾個沒追到、不服氣的。」他把一串空的皮繩掛到你脖子上，「領走你的人，每人在上面串一顆牙。天亮時串滿了，你就是部落的。」族長卡菈在篝火對面舉杯，沒有說話。"
+      },
+      "start_flags": ["mate_bonfire_start"],
+      "nodes": [
+        {
+          "id": "drum",
+          "title": "在篝火前被獻給戰士們",
+          "kind": "story",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "text": "草原上的篝火燒得比人還高，鼓聲震得地面發抖。哈魯把你推到火堆前的獸皮上，戰士們的眼睛在火光裡發亮。你身上的求偶紋被汗水沖得往下流，一路流到大腿之間。",
+          "success": {
+            "text": "鼓聲停了。哈魯喊了一聲，第一個戰士走進了火光。",
+            "scene": "篝火前，全身畫滿求偶紋的主角跪在獸皮上，鼓聲中被一圈赤鬃戰士圍住，戰士們一邊喝酒一邊伸手撫摸主角，有人把酒倒在主角胸口舔掉。",
+            "set_flags": ["mate_bonfire_drum"]
+          },
+          "requires": { "flags": ["mate_bonfire_start"] },
+          "wear": ["breast_band", "loincloth"]
+        },
+        {
+          "id": "claim",
+          "title": "被戰士們領走",
+          "kind": "choice",
+          "at": { "where": "outskirts", "location": "sunscorch" },
+          "text": "戰士們圍成一圈，一個一個脫下了皮甲。哈魯拍了拍你的屁股：「怎麼收，你自己選。」",
+          "options": [
+            {
+              "label": "一個一個來，串滿十一顆牙",
+              "success": {
+                "text": "你躺在獸皮上，讓追到過你的戰士一個一個領走。每一個射完，就從自己的牙串上拔一顆串到你脖子上。天亮時皮繩上串滿了十一顆獸牙，你連手指都抬不起來。哈魯把項鍊扣緊：「現在你是赤鬃的了——至少今年是。」",
+                "scene": "篝火前的獸皮上，十一個赤鬃戰士一個接一個和主角交合，每人射在主角體內後就在主角脖子的皮繩上串一顆獸牙，一整夜輪完，主角渾身是汗與精液，連手指都抬不起來。",
+                "effects": [
+                  { "type": "item", "name": "求偶祭的獸牙項鍊", "qty": 1 },
+                  { "type": "money", "amount": 300 },
+                  { "type": "memory", "summary": "在赤鬃部落的篝火夜被十一個戰士一個一個領走，脖子上串滿了獸牙。", "importance": 2 }
+                ],
+                "set_flags": ["mate_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓整群一起上",
+              "success": {
+                "text": "你站起來把皮繩丟給哈魯：「不用一個一個。」整群戰士撲了上來，連那幾個沒追到的也擠了進來。篝火燒到熄滅，你在獸皮上被幹到昏過去又醒過來。天亮時哈魯數了數，皮繩上串了十六顆牙：「比追到你的人還多五個。算了，牙是真的就行。」",
+                "scene": "主角在篝火前被整群赤鬃戰士同時佔有：好幾根同時插在主角的嘴裡、前面與後面，其他人圍在旁邊等著換位，射在主角臉上、胸口與體內，主角被幹到昏過去又醒來，一直到篝火熄滅。",
+                "effects": [
+                  { "type": "item", "name": "求偶祭的獸牙項鍊", "qty": 1 },
+                  { "type": "money", "amount": 300 },
+                  { "type": "memory", "summary": "在赤鬃部落的篝火夜讓整群戰士一起上，皮繩上串了十六顆獸牙。", "importance": 2 }
+                ],
+                "set_flags": ["mate_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["mate_bonfire_drum"] },
+          "wear": ["breast_band", "loincloth"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
+    },
+    {
+      "id": "brine_bride",
+      "title": "潮之新娘",
+      "summary": "珊瑚灣鎮的潮汐祭要選一個「潮之新娘」。老船頭岡索說，新娘先要在海靈祠用海水淨身——淨到大海滿意為止。（潮汐祭・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_ganso_saltbeard",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "text": "岡索吐了一口菸，把一條白色的裹胸和一條細得像繩子的丁字褲塞給你：「今年的潮之新娘，就你了。大海是個貪吃的娘們，不餵飽她就不給魚。」他用缺了兩根手指的手比劃了一下，「先去海靈祠淨身。淨身嘛——就是讓漁夫們用海水把你裡外都洗一遍。洗乾淨了，才嫁得出去。」",
+        "items": ["絲綢裹胸", "絲綢丁字褲"]
+      },
+      "start_flags": ["brine_bride_start"],
+      "nodes": [
+        {
+          "id": "wash",
+          "title": "在海靈祠用海水淨身",
+          "kind": "check",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "lm_sea_spirit_shrine" },
+          "text": "海靈祠的石台上，你只穿著那兩塊布躺著。漁夫們一桶一桶地把冰冷的海水潑上來，接著是手：抹過胸口、搓過小腹、扯開丁字褲的細繩把手指伸進去「洗裡面」。岡索在旁邊唸祝禱，唸得很慢。",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": {
+            "text": "你閉著眼睛熬過了整段祝禱，一聲都沒出。岡索點點頭：「新娘要穩。大海喜歡穩的。」",
+            "effects": [{ "type": "money", "amount": 80 }],
+            "set_flags": ["brine_bride_wash"]
+          },
+          "fail": {
+            "text": "海水太冷、手太熱，你叫出了聲，叫得整座祠堂都聽得見。漁夫們笑成一團。岡索說：「大海也喜歡叫得響的。」",
+            "scene": "漁夫們在海靈祠的石台上替主角「淨身」：把冰冷的海水潑在主角身上，用粗糙的手搓揉主角的胸部與乳尖，扯開丁字褲的細繩，手指沾著海水插進主角體內來回洗，主角忍不住叫出聲。",
+            "effects": [
+              { "type": "money", "amount": 80 },
+              { "type": "condition", "target": "pc", "condition": "sensitive", "add": true }
+            ],
+            "set_flags": ["brine_bride_wash"]
+          },
+          "requires": { "flags": ["brine_bride_start"] },
+          "wear": ["breast_band", "thong"]
+        },
+        {
+          "id": "ring",
+          "title": "收下漁夫們的聘禮",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "lm_sea_spirit_shrine" },
+          "text": "淨完身，岡索說新娘還要收「聘禮」：鎮上七條漁船，每條船派一個人來，各帶一條最好的魚。「魚收下了，人也要收下。這是規矩。」七個曬得黝黑的漁夫在祠堂外排好了隊。",
+          "options": [
+            {
+              "label": "在石台上一條船一條船地收",
+              "success": {
+                "text": "你躺回石台上，七個漁夫一條船一條船地輪流上來，魚堆在祠堂門口，越堆越高。最後一個走的時候，岡索數了數魚：「七條船都下了聘。你嫁得出去了。」",
+                "scene": "海靈祠的石台上，七條漁船派來的漁夫輪流和濕淋淋的主角交合，一個接一個射在主角體內，帶來的魚在祠堂門口越堆越高，岡索在一旁唸祝禱。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "memory", "summary": "在珊瑚灣鎮的海靈祠被選為潮汐祭的潮之新娘，淨身之後收下了七條漁船的「聘禮」。", "importance": 2 }
+                ],
+                "set_flags": ["brine_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "跪在祠堂門口，用嘴收",
+              "success": {
+                "text": "你跪在祠堂門口，讓七個漁夫一個一個用嘴收下他們的「聘禮」，吞不下的流到了魚堆上。岡索嫌棄地搖頭：「浪費。」但還是點了頭。",
+                "scene": "主角跪在海靈祠門口，七個渾身魚腥的漁夫輪流把東西塞進主角嘴裡，主角一個一個用嘴服侍到他們射出來，吞不下的精液沿著下巴流到門口的魚堆上。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "memory", "summary": "在珊瑚灣鎮的海靈祠被選為潮汐祭的潮之新娘，跪在祠堂門口用嘴收下了七個漁夫的「聘禮」。", "importance": 2 }
+                ],
+                "set_flags": ["brine_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["brine_bride_wash"] },
+          "wear": ["breast_band", "thong"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "brine_parade",
+      "title": "漁船的遊行",
+      "summary": "潮汐祭的白天，潮之新娘要站在領頭的漁船船頭繞港一圈，讓全鎮的人看清楚今年嫁給大海的是什麼樣的身子。（潮汐祭・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_ganso_saltbeard",
+        "min_level": 12,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["brine_1_done"] },
+        "text": "岡索把你的裹胸往下拉了一截：「白天的遊行，新娘站船頭，全鎮都會看。大海要知道她拿到的是什麼貨。」他拍了拍船舷，「船上有十二個划槳的，划一圈港要一個時辰——划累了，他們會想歇歇。歇的時候怎麼伺候他們，你懂。」"
+      },
+      "start_flags": ["brine_parade_start"],
+      "nodes": [
+        {
+          "id": "prow",
+          "title": "站在領頭的漁船船頭繞港",
+          "kind": "check",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "tavern" },
+          "text": "你站在船頭，海風把裹胸吹得往上翻，碼頭上擠滿了人，吹口哨的、喊價的、往船上丟貝殼的。每經過一條船，船上的漁夫就伸長了竿子來撩你的丁字褲。你要站穩，不能掉下去——掉下去的新娘不吉利。",
+          "check": { "attr": "dex", "dc": 16 },
+          "success": {
+            "text": "你迎著風站了一整圈，一次都沒晃。碼頭上丟來的貝殼和銅幣堆滿了船頭。",
+            "effects": [{ "type": "money", "amount": 150 }],
+            "set_flags": ["brine_parade_prow"]
+          },
+          "fail": {
+            "text": "一根竿子勾住了你的丁字褲，你一個踉蹌，被兩個划槳的漁夫一把抱住——抱住了就沒再放開。",
+            "scene": "主角在船頭被竿子勾住丁字褲、失去平衡，被兩個划槳的漁夫抱進船艙，兩人一前一後把主角夾在中間撫摸、交合，船外碼頭上的人吹著口哨看。",
+            "effects": [
+              { "type": "money", "amount": 100 },
+              { "type": "condition", "target": "pc", "condition": "disheveled", "add": true }
+            ],
+            "set_flags": ["brine_parade_prow"]
+          },
+          "requires": { "flags": ["brine_parade_start"] },
+          "wear": ["breast_band", "thong"]
+        },
+        {
+          "id": "rest",
+          "title": "在船上伺候划槳的漁夫",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "coral_bay", "cell": "tavern" },
+          "text": "繞到港口最遠的那一頭，岡索喊了一聲「歇槳」。十二個划槳的漁夫放下槳，一齊轉過頭來看你。船在水上慢慢地晃。",
+          "options": [
+            {
+              "label": "在船艙裡一個一個伺候",
+              "success": {
+                "text": "你鑽進船艙，十二個漁夫一個一個進來歇。船晃一下，你就叫一聲，碼頭上的人聽得清清楚楚。歇完了槳，船繞回港口時，你被抱上船頭再站一次，腿抖得像剛學走路。",
+                "scene": "搖晃的漁船船艙裡，十二個划槳的漁夫一個接一個進來和主角交合，船每晃一下主角就叫出聲，岸上都聽得見，十二個人全射在主角體內後主角被抱回船頭繼續遊行。",
+                "effects": [
+                  { "type": "money", "amount": 250 },
+                  { "type": "memory", "summary": "在潮汐祭的漁船遊行上，在船艙裡一個一個伺候了十二個划槳的漁夫。", "importance": 2 }
+                ],
+                "set_flags": ["brine_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "躺在甲板上，讓全港的人看",
+              "success": {
+                "text": "你直接躺在甲板上張開腿，讓漁夫們在全港的人面前輪流上。碼頭上的歡呼聲比過年還響，岡索說這是他看過最好看的一次遊行：「大海這下知道她拿到的是什麼貨了。」",
+                "scene": "主角躺在漁船甲板上張開雙腿，十二個划槳的漁夫當著碼頭上全鎮的人輪流和主角交合，有時兩三個一起上，岸上的人歡呼、丟貝殼，一直到船繞回港口。",
+                "effects": [
+                  { "type": "money", "amount": 250 },
+                  { "type": "memory", "summary": "在潮汐祭的漁船遊行上，躺在甲板上當著全港的人讓划槳的漁夫們輪流上。", "importance": 2 }
+                ],
+                "set_flags": ["brine_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["brine_parade_prow"] },
+          "wear": ["breast_band", "thong"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 450 }, { "type": "xp", "amount": 1100 }]
+    },
+    {
+      "id": "brine_spring",
+      "title": "大潮之夜",
+      "summary": "潮汐祭的最後一晚是一年裡最大的退潮。潮之新娘要躺在退潮後露出來的礁石上，獻給大海——大海沒有手腳，全鎮的漁夫代勞，一直到潮水漲回來。（潮汐祭・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_ganso_saltbeard",
+        "min_level": 13,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["brine_2_done"] },
+        "text": "岡索難得沒有抽菸，把一條串滿白貝殼的腰鍊繫在你的腰上：「今晚是大潮。潮水退到最遠的時候，那塊新娘礁會露出來。你躺上去，全鎮的男人排在礁石上，一直到潮水漲回來淹到你的腰為止。」他咧嘴，「潮水漲得很慢。很、慢。」"
+      },
+      "start_flags": ["brine_spring_start"],
+      "nodes": [
+        {
+          "id": "ebb",
+          "title": "走上退潮後露出來的新娘礁",
+          "kind": "story",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "text": "月光下，海水退得遠遠的，露出一大片濕滑的黑色礁石。你赤著腳踩過滿地的海藻和貝殼，走到最遠的那塊平坦礁石上。回頭一看，全鎮的漁夫舉著火把，從岸邊一路排到礁石上，排成一條長長的火龍。",
+          "success": {
+            "text": "岡索站在礁石邊，舉起一串貝殼往海裡一丟：「大海，新娘來了！」第一個漁夫走上了礁石。",
+            "scene": "大潮的月光下，主角只穿著裹胸、丁字褲與貝殼腰鍊，赤腳走上退潮後的礁石，岸邊排成長列的漁夫舉著火把盯著主角，第一批漁夫已經伸手拉開主角身上的布料。",
+            "set_flags": ["brine_spring_ebb"]
+          },
+          "requires": { "flags": ["brine_spring_start"] },
+          "wear": ["breast_band", "thong"]
+        },
+        {
+          "id": "offering",
+          "title": "把自己獻給大海",
+          "kind": "choice",
+          "at": { "where": "outskirts", "location": "coral_bay" },
+          "text": "潮水在遠處嘩嘩作響，正在一點一點地往回漲。排在礁石上的漁夫多得數不清。岡索在你耳邊說：「潮水淹到你的腰之前，一個都不准少。」",
+          "options": [
+            {
+              "label": "躺在礁石上，等潮水漲回來",
+              "success": {
+                "text": "你躺在冰冷的礁石上，漁夫一個接一個爬上來。潮水漲到你的腳踝時，你已經數不清幾個了；漲到大腿時，你只剩下喘氣的力氣；漲到腰的時候，最後一個漁夫射完，岡索把你從水裡撈起來：「好了，大海吃飽了。今年不會翻船。」腰上的貝殼腰鍊被浸得發亮。",
+                "scene": "主角躺在退潮後冰冷的礁石上，全鎮的漁夫一個接一個爬上來和主角交合、射在主角體內，潮水一點一點漲上來，從腳踝淹到大腿再淹到腰，最後一個漁夫射完時主角半泡在海水裡，渾身都是精液與海水。",
+                "effects": [
+                  { "type": "item", "name": "潮汐祭的貝殼腰鍊", "qty": 1 },
+                  { "type": "money", "amount": 350 },
+                  {
+                    "type": "memory",
+                    "summary": "在珊瑚灣鎮潮汐祭的大潮之夜，躺在新娘礁上讓全鎮的漁夫輪流上，一直到潮水漲回來，拿到了潮汐祭的貝殼腰鍊。",
+                    "importance": 2
+                  }
+                ],
+                "set_flags": ["brine_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "跪在礁石上，一次好幾個",
+              "success": {
+                "text": "你跪在礁石上，讓漁夫們一次三四個地圍上來，前後和嘴裡都塞滿了。潮水漲得很慢，可是隊伍消化得很快。潮水淹到腰的時候，岸上已經沒有人在排隊了。岡索搖著頭笑：「大海今年吃撐了。」他把你抱回岸上，腰上的貝殼還在嘩啦嘩啦響。",
+                "scene": "主角跪在退潮的礁石上，漁夫們一次三四個圍上來，同時插在主角的嘴裡、前面與後面，其他人在旁邊等著換，射在主角臉上、背上與體內，潮水漲到主角腰間時全鎮的男人都已經輪過一遍。",
+                "effects": [
+                  { "type": "item", "name": "潮汐祭的貝殼腰鍊", "qty": 1 },
+                  { "type": "money", "amount": 350 },
+                  {
+                    "type": "memory",
+                    "summary": "在珊瑚灣鎮潮汐祭的大潮之夜，跪在新娘礁上一次應付好幾個漁夫，把全鎮的男人都消化完了，拿到了潮汐祭的貝殼腰鍊。",
+                    "importance": 2
+                  }
+                ],
+                "set_flags": ["brine_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["brine_spring_ebb"] },
+          "wear": ["breast_band", "thong"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 650 }, { "type": "xp", "amount": 1600 }]
     }
   ]
 }
