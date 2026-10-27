@@ -34,6 +34,11 @@ export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'>): boolean {
   return !!i.gear?.unique || !!i.gear?.attrs || !!i.master_force
 }
 
+/** 獨特裝備（任務與寶箱給的、獨一無二的東西）：不能賣給商店，也不能拿去和人交換 */
+export function isUniqueItem(state: Pick<GameState, 'customItems'>, name: string): boolean {
+  return !!(itemDef(name)?.gear?.unique ?? state.customItems?.[name]?.gear?.unique)
+}
+
 export function shopTypeForCell(cellKind: string): ShopType | null {
   if (isCustomShopId(cellKind) && shopRules.types[cellKind]) return cellKind
   return CELL_SHOP[cellKind] ?? null
@@ -287,7 +292,7 @@ export function sellPrice(state: GameState, key: string, name: string): number |
   const type = typeOf(key)
   const cat = itemCategory(state, name)
   const value = itemValue(state, name)
-  if (!cat || value === undefined || !shopDef(type).buys.includes(cat)) return null
+  if (!cat || value === undefined || !shopDef(type).buys.includes(cat) || isUniqueItem(state, name)) return null
   const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
   return Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell)))
 }
@@ -532,7 +537,7 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
     let itemsGiven = 0
     for (const g of Array.isArray(d.gives) ? d.gives : []) {
       const x = (g ?? {}) as Record<string, unknown>
-      if (x.type === 'item' && clip(x.name, 20)) {
+      if (x.type === 'item' && clip(x.name, 20) && !isUniqueItem(state, clip(x.name, 20))) {
         const name = clip(x.name, 20)
         const qty = Math.max(1, Math.min(10, Math.round(num(x.qty) || 1)))
         gives.push({ type: 'item', name, qty })

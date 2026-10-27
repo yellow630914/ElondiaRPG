@@ -570,6 +570,18 @@ export type Attrs = Record<AttrId, number>
 /** 傷害屬性或群組（physical / elemental / divine / arcane / all）→ 倍率加減 */
 export type AffinityMap = Partial<Record<string, number>>
 
+/**
+ * 抗性（受到的傷害倍率加減）疊在一起時是乘算：每一個來源各自乘上 (1 + 值)，
+ * 兩個 -0.5 是 ×0.25 而不是免疫；單一來源 -1 才是免疫，弱點（正值）也一樣相乘。
+ */
+export function mulResist(into: AffinityMap, from?: AffinityMap) {
+  for (const [k, v] of Object.entries(from ?? {})) {
+    if (!v) continue
+    const m = Math.max(0, 1 + (into[k] ?? 0)) * Math.max(0, 1 + v)
+    into[k] = Math.round((m - 1) * 10000) / 10000
+  }
+}
+
 /** 戰鬥修正，欄位同 statuses.json 的 mods */
 export interface Mods {
   hit?: number

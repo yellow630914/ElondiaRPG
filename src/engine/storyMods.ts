@@ -291,7 +291,7 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
     if (foes.length) out.foes = [...new Set(foes)]
   }
   if (kind === 'choice') {
-    out.options = (n.options ?? []).slice(0, 6).map((o): StoryOption => {
+    out.options = (n.options ?? []).slice(0, 10).map((o): StoryOption => {
       const c = check(o?.check)
       const s = outcome(o?.success)
       const f = outcome(o?.fail)

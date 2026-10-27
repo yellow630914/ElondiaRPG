@@ -109,7 +109,7 @@ const counts = computed(() => ({
           <b>目前的目標</b>
           <ul class="plain goals">
             <li v-for="g in goals" :key="g.ref"><GameIcon name="target" :size="12" /> {{ g.node.title }} <span class="muted">（{{ placeText(g.node, s) }}）</span></li>
-            <li v-if="storyPaused(def!)" class="muted">（設定關閉了成人向，這個任務暫停中；重新開啟後接著進行）</li>
+            <li v-if="storyPaused(def!)" class="muted">（設定的內容篩選關掉了這個任務的標籤，任務暫停中；重新開啟後接著進行）</li>
             <li v-else-if="!goals.length" class="muted">（現在沒有可以進行的目標）</li>
           </ul>
         </div>

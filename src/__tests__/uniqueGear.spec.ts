@@ -6,7 +6,8 @@ import { equipItem } from '@/engine/inventory'
 import { sanitizeItem } from '@/engine/mods'
 import { checkModifiers } from '@/engine/perks'
 import { addItem, newGame } from '@/engine/state'
-import { applyAiDeals, shopState } from '@/engine/trade'
+import { applyAiDeals, sellPrice, shopKey, shopState } from '@/engine/trade'
+import { defenseMult, startCombat } from '@/engine/combat'
 
 // 內建的獨特物品（寶箱、黑市）；任務的獨特裝備另外測（不進寶箱、不上黑市）
 const uniques = () => itemRules.items.filter((i) => i.gear?.unique && i.black_market)
@@ -83,7 +84,7 @@ describe('unique gear', () => {
   it('quest gear: every piece is handed out by a special quest, stronger in later level bands', () => {
     const given = storyItems()
     const gear = questGear()
-    expect(gear.length).toBe(124)
+    expect(gear.length).toBe(149)
     for (const i of gear) {
       expect(given.get(i.name)?.length, i.name).toBe(1)
       const sid = given.get(i.name)![0]!
@@ -111,6 +112,45 @@ describe('unique gear', () => {
         expect(pieces.some((i) => cls.body.includes(i.gear!.base)), `${c} armor Lv.${band[0]}`).toBe(true)
       }
       expect(pieces.filter((i) => !['main_hand', 'body', 'wrists'].includes(slot(i))).length).toBe(10)
+    }
+  })
+
+  it('cannot be sold to shops', () => {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 2 })
+    enterLocation(state)
+    addItem(state.inventory, '千爐機甲・板甲', 1)
+    addItem(state.inventory, '鐵長劍', 1)
+    expect(sellPrice(state, shopKey(state, 'smithy'), '千爐機甲・板甲')).toBeNull()
+    expect(sellPrice(state, shopKey(state, 'smithy'), '鐵長劍')).toBeGreaterThan(0)
+  })
+
+  it('multiplies resistances instead of adding them, so two rings never make you immune', () => {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 2 })
+    enterLocation(state)
+    const id = state.party[0]!.id
+    for (const [name, slot] of [['滿月之戒', 'ring_1'], ['歷史的指環', 'ring_2']] as const) {
+      addItem(state.inventory, name, 1)
+      equipItem(state, name, id, slot)
+    }
+    const combat = startCombat(state, [['storm_giant', 1]])
+    const pc = combat.combatants.find((c) => c.side === 'party')!
+    // 兩枚全部抗性 75%：0.25 × 0.25，而不是 1 - 1.5 = 免疫
+    expect(defenseMult(pc, 'lightning')).toBeCloseTo(0.0625)
+    expect(defenseMult(pc, 'lightning')).toBeGreaterThan(0)
+  })
+
+  it('quest gear: the Lv.12-15 and Lv.16-18 bands also cover every class', () => {
+    const given = storyItems()
+    const levelOf = (name: string) => stories.find((x) => x.id === given.get(name)![0])!.start.min_level ?? 1
+    const classes = ['fighter', 'barbarian', 'paladin', 'ranger', 'rogue', 'monk', 'bard', 'cleric', 'druid', 'wizard'] as const
+    for (const band of [[12, 15], [16, 18]]) {
+      const pieces = questGear().filter((i) => { const lv = levelOf(i.name); return lv >= band[0]! && lv <= band[1]! })
+      for (const c of classes) {
+        const cls = gearRules.classes[c] as { main: string[]; body: string[] }
+        const weapon = c === 'monk' ? pieces.some((i) => ['wraps', 'vambraces'].includes(i.gear!.base)) : pieces.some((i) => cls.main.includes(i.gear!.base))
+        expect(weapon, `${c} weapon Lv.${band[0]}`).toBe(true)
+        expect(pieces.some((i) => cls.body.includes(i.gear!.base)), `${c} armor Lv.${band[0]}`).toBe(true)
+      }
     }
   })
 })

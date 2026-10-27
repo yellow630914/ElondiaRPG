@@ -9,6 +9,7 @@
 import {
   actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
   type PerkDef, type PerkEffect,
+  mulResist,
 } from './data'
 import { gearRules } from './gear'
 import { conditionModifiers } from './party'
@@ -93,7 +94,7 @@ export function perkCombat(c: PerkHolder): { mods: Mods; resist: AffinityMap; of
   for (const p of perksOf(c)) {
     for (const e of p.effects) {
       if ('combat' in e) for (const [k, v] of Object.entries(e.combat)) mods[k as keyof Mods] = (mods[k as keyof Mods] ?? 0) + (v ?? 0)
-      if ('resist' in e) for (const [k, v] of Object.entries(e.resist)) resist[k] = (resist[k] ?? 0) + (v ?? 0)
+      if ('resist' in e) mulResist(resist, e.resist)
       if ('offense' in e) for (const [k, v] of Object.entries(e.offense)) offense[k] = (offense[k] ?? 0) + (v ?? 0)
     }
   }

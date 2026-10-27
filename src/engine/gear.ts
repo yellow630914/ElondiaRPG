@@ -7,7 +7,7 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, type AffinityMap, type AttrId, type ItemDef, type Mods } from './data'
+import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, mulResist, type AffinityMap, type AttrId, type ItemDef, type Mods } from './data'
 import { describeEffects } from './perks'
 import { adultContent } from './content'
 import type { Rng } from './rng'
@@ -213,14 +213,14 @@ export function gearStats(spec: GearSpec): GearStats {
   const offense: AffinityMap = {}
   addMods(mods, base.stats)
   for (const [k, s] of Object.entries(base.scale ?? {})) addMods(mods, { [k]: scaled(s as Scale, material.bonus) })
-  for (const [k, s] of Object.entries(base.resist_scale ?? {})) addMap(resist, { [k]: scaled(s, material.bonus) })
+  for (const [k, s] of Object.entries(base.resist_scale ?? {})) mulResist(resist, { [k]: scaled(s, material.bonus) })
   // 材料本身的特性：防具才有（秘銀較輕、精金更硬）；材料的抗性（龍皮抗火）防具與飾品都有
   if (!base.weapon) {
     addMods(mods, material.armor)
-    addMap(resist, material.resist)
+    mulResist(resist, material.resist)
   }
   addMods(mods, spec.enchants?.mods)
-  addMap(resist, spec.enchants?.resist)
+  mulResist(resist, spec.enchants?.resist)
   addMap(offense, spec.enchants?.offense)
   const threat = (base.threat ?? 0) + (spec.enchants?.mods?.threat ?? 0)
   delete mods.threat
@@ -298,7 +298,7 @@ export function gearBonuses(c: Pick<Character, 'gear'>): { mods: Mods; resist: A
     if (!g || !gearKnown(g.spec)) continue
     const s = gearStats(g.spec)
     addMods(mods, s.mods)
-    addMap(resist, s.resist)
+    mulResist(resist, s.resist)
     addMap(offense, s.offense)
     threat += s.threat
   }

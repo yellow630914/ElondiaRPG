@@ -3,7 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import { costText, dealMoney, discount, effectText, isItemDeal, keeperTitle, sellPrice, shopKey } from '@/engine/trade'
+import { costText, dealMoney, discount, effectText, isItemDeal, isUniqueItem, keeperTitle, sellPrice, shopKey } from '@/engine/trade'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from '../NameTag.vue'
@@ -226,7 +226,7 @@ function sell(name: string, have: number) {
                   賣 {{ sellN(i.name, i.qty) > 1 ? `${sellN(i.name, i.qty)} 個（${formatMoney(i.price * sellN(i.name, i.qty))}）` : `（${formatMoney(i.price)}）` }}
                 </button>
               </template>
-              <span v-else class="small muted">這間店不收</span>
+              <span v-else class="small muted">{{ isUniqueItem(s, i.name) ? '獨特裝備不能賣' : '這間店不收' }}</span>
             </div>
           </li>
         </ul>

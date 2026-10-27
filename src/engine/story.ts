@@ -24,7 +24,7 @@ import { presentHere } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { addCounters, clampCounters, condMet, flagKey } from './storyFlags'
-import { adultContent, tagsAllowed } from './content'
+import { tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
 import type { GameState, NpcRecord, Report, StoryProgress } from './types'
@@ -170,9 +170,9 @@ export function startStory(state: GameState, id: string, opts: { text?: string; 
 
 export interface ActiveNode { def: StoryDef; node: StoryNode; ref: string }
 
-/** 成人向的任務在設定關閉成人向時暫停：任務點不出現、不擋人，重新開啟後接著進行 */
+/** 任務的內容標籤在設定裡被關掉時暫停（成人向、NTR、男性對象……）：任務點不出現、不擋人，重新開啟後接著進行 */
 export function storyPaused(def: Pick<StoryDef, 'tags'>): boolean {
-  return !!def.tags?.includes('adult') && !adultContent()
+  return !tagsAllowed(def.tags)
 }
 
 /** 進行中的任務裡已經解鎖、還沒結束的任務點 */

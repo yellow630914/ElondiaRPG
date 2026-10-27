@@ -5,6 +5,7 @@ import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks'
 import {
   abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
+  mulResist,
 } from './data'
 import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGear, wearDefaultUnderwear } from './gear'
 import { bodyOf } from './traits'
@@ -190,9 +191,7 @@ export function gearAffinities(c: Pick<Character, 'race' | 'armor' | 'gear' | 'p
   const perks = perkCombat(c)
   const resist: AffinityMap = {}
   const offense: AffinityMap = {}
-  for (const src of [armor.resist, gear.resist, perks.resist]) {
-    for (const [k, v] of Object.entries(src ?? {})) resist[k] = (resist[k] ?? 0) + (v ?? 0)
-  }
+  for (const src of [armor.resist, gear.resist, perks.resist]) mulResist(resist, src)
   for (const src of [armor.offense, gear.offense, perks.offense]) {
     for (const [k, v] of Object.entries(src ?? {})) offense[k] = (offense[k] ?? 0) + (v ?? 0)
   }

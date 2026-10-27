@@ -17,6 +17,7 @@ import {
   locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
+  mulResist,
 } from './data'
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { safeText } from './content'
@@ -380,7 +381,7 @@ export function applyTraits(c: Combatant, traits: string[]) {
       c.ap += t.ap
     }
     if (t.initiative) c.initiative += t.initiative
-    for (const [k, v] of Object.entries(t.resist ?? {})) c.resist[k] = (c.resist[k] ?? 0) + (v ?? 0)
+    mulResist(c.resist, t.resist)
     for (const [k, v] of Object.entries(t.offense ?? {})) c.offense[k] = (c.offense[k] ?? 0) + (v ?? 0)
     if (t.xp_mult) c.xpMult = (c.xpMult ?? 1) * t.xp_mult
     if (t.ai?.focus !== undefined) ai.focus = (ai.focus ?? 1) * t.ai.focus
@@ -548,8 +549,15 @@ export function offenseMult(c: Combatant, type: string): number {
   return Math.max(0, 1 + affinity(c.offense, c.statuses.map((s) => statusDef(s.id).offense), type))
 }
 
+/** 受到的傷害倍率：抗性是乘算，屬性本身、所屬群組、全部，以及每個狀態各乘一次（見 mulResist） */
 export function defenseMult(c: Combatant, type: string): number {
-  return Math.max(0, 1 + affinity(c.resist, c.statuses.map((s) => statusDef(s.id).resist), type))
+  const group = damageType(type).group
+  let m = 1
+  for (const map of [c.resist, ...c.statuses.map((s) => statusDef(s.id).resist)]) {
+    if (!map) continue
+    for (const k of new Set([type, group, 'all'])) m *= Math.max(0, 1 + (map[k] ?? 0))
+  }
+  return Math.round(m * 10000) / 10000
 }
 
 export function multLabel(m: number): string {

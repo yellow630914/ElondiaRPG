@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { newGame } from '@/engine/state'
 import { applyContent, emptyMods } from '@/engine/mods'
 import { sanitizeStory, storyCheck } from '@/engine/storyMods'
-import { canStart } from '@/engine/story'
+import { canStart, storyPaused } from '@/engine/story'
 import { condMet, counterValue, setFlag } from '@/engine/storyFlags'
 import { dungeonEncounters, enemies, npcs as namedNpcs, stories } from '@/engine/data'
 import { adultContent, setAdultContent, setContentFilters, tagsAllowed } from '@/engine/content'
@@ -448,7 +448,11 @@ describe('quests inside a temporary map', () => {
     setContentFilters({ male_partner: false })
     expect(tagsAllowed(['adult', 'male_partner'])).toBe(false)
     expect(tagsAllowed(['adult'])).toBe(true)
+    // 已經接下的任務也暫停，重新打開之後接著進行
+    expect(storyPaused(story('valk_ember_night'))).toBe(true)
+    expect(storyPaused(story('isab_bet_paid'))).toBe(false)
     setContentFilters({ male_partner: true })
+    expect(storyPaused(story('valk_ember_night'))).toBe(false)
     setAdultContent(false)
   })
 })
