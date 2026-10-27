@@ -673,10 +673,14 @@ export interface GuildState {
 
 /** 戰敗時這趟探索撿到的東西：保留、失去一半、全部失去 */
 export type DefeatLoot = 'keep' | 'half' | 'all'
+/** 難度（存檔規則）：怪物的生命與輸出的係數，見 combat.json 的 difficulty */
+export type Difficulty = 'story' | 'easy' | 'normal' | 'hard' | 'epic'
 
 /** 這個存檔的規則（開新遊戲時選，之後可以在設定裡改） */
 export interface GameOptions {
   defeatLoot: DefeatLoot
+  /** 難度：怪物的生命與輸出的係數（沒有時是普通，見 gameRules.ts 的 DIFFICULTY_DEFS） */
+  difficulty?: Difficulty
   /** 以下見 gameRules.ts：沒有時用預設 */
   xpMult?: number
   moneyMult?: number

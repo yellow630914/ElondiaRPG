@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { DEFEAT_LOOT_NAME, defeatLootRule } from '@/engine/expedition'
-import type { DefeatLoot } from '@/engine/types'
+import type { DefeatLoot, Difficulty } from '@/engine/types'
 import { companionRules } from '@/engine/data'
 import { CONTENT_TAGS, FILTER_TAGS } from '@/engine/content'
 import { gearRules } from '@/engine/gear'
@@ -11,7 +11,7 @@ import { useGame } from '@/stores/game'
 import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
-import { RULE_DEFS, type NumericRule } from '@/engine/gameRules'
+import { DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, RULE_DEFS, type NumericRule } from '@/engine/gameRules'
 import ModelSourceEditor from './ModelSourceEditor.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
@@ -199,6 +199,14 @@ function doReset() {
     <section v-if="game.state" class="panel">
       <h2 class="head"><GameIcon name="d20" :size="20" />這個存檔的規則</h2>
       <div class="form">
+        <label><span class="lab">難度 <Hint text="怪物的生命與造成的傷害各乘一個係數，普通是設計的基準（和沒有這個設定時一樣）。經驗值與戰利品不隨難度變動。改了只影響之後開打的戰鬥，進行中的那一場不變。" /></span>
+          <select :value="difficultyOf(game.state)" @change="game.setDifficulty(($event.target as HTMLSelectElement).value as Difficulty)">
+            <option v-for="id in DIFFICULTY_IDS" :key="id" :value="id">
+              {{ DIFFICULTY_DEFS[id].name }}（生命 ×{{ DIFFICULTY_DEFS[id].hp }}、傷害 ×{{ DIFFICULTY_DEFS[id].damage }}）
+            </option>
+          </select>
+        </label>
+        <p class="small muted">{{ DIFFICULTY_DEFS[difficultyOf(game.state)].desc }}</p>
         <label><span class="lab">在地下城戰敗時，這趟探索撿到、還沒帶出去的物品與錢 <Hint text="離開地下城（啟程旅行）就算帶出去了。這個規則存在存檔裡，每個存檔可以不一樣。" /></span>
           <select :value="defeatLootRule(game.state)" @change="game.setDefeatLoot(($event.target as HTMLSelectElement).value as DefeatLoot)">
             <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>

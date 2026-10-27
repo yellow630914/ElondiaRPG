@@ -667,6 +667,8 @@ export const combatRules = combatJson as unknown as {
   defend: { evade: number }
   flee_dc: number
   boss: { control_turns: number; immune_turns: number }
+  /** 難度係數（存檔規則）：怪物的生命與輸出各乘一個係數，普通 = 1 */
+  difficulty: { default: string; levels: { id: string; name: string; hp: number; damage: number; desc: string }[] }
   hit: { evade_floor_base: number }
   lucky: { base: number; attr_floor: number; floor: number }
   save: { dc_base: number }

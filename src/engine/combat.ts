@@ -36,10 +36,10 @@ import { applyEffects } from './effects'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
-  ActorState, Character, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
+  ActorState, Character, Difficulty, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
 } from './types'
 import { contractOf } from './tattoos'
-import { gameRule, rewardMoney } from './gameRules'
+import { DIFFICULTY_DEFS, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
 
 export interface StatusInstance {
   id: string
@@ -113,6 +113,8 @@ export interface Combatant {
   ai?: MonsterAi
   /** 經驗倍率（特徵） */
   xpMult?: number
+  /** 難度（存檔規則）：造成的傷害乘上這個係數；普通難度沒有這個欄位 */
+  dmgMult?: number
 }
 
 export type CombatAction =
@@ -127,6 +129,8 @@ export type CombatAction =
 export interface CombatState {
   /** 存檔規則：隊伍撤退的 DC 加減（開戰時記下） */
   fleeDcMod?: number
+  /** 存檔規則：難度（開戰時記下；普通難度不記，舊存檔沒有也算普通） */
+  difficulty?: Difficulty
   id: string
   location: string
   startTime: Required<GameTime>
@@ -202,6 +206,8 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     for (const [id, n] of enemyGroup) counts[id] = (counts[id] ?? 0) + n
     const seen: Record<string, number> = {}
     const bonus = traitBonus(state, opts)
+    // 難度（存檔規則）：怪物的生命與輸出的係數，普通是 1
+    const diff = difficultyRule(state)
     // BOSS 格：第一組是 BOSS（層主，或特殊地圖 BOSS 格指定的第一種怪物），其他是護衛
     const headliner = bossCellOf(state, opts) ? enemyGroup[0]?.[0] : undefined
     let idx = 1
@@ -209,7 +215,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       for (let i = 0; i < n; i++) {
         seen[defId] = (seen[defId] ?? 0) + 1
         const suffix = counts[defId]! > 1 ? ` ${String.fromCharCode(64 + seen[defId]!)}` : ''
-        const f = fromEnemy(`e${idx++}`, defId, suffix, rng, bonus)
+        const f = fromEnemy(`e${idx++}`, defId, suffix, rng, bonus, diff)
         if (g === 0 && defId === headliner) f.headliner = true
         fighters.push(f)
       }
@@ -233,6 +239,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     const combat: CombatState = {
       id: `c-${state.nextReportNo}`,
       ...(gameRule(state, 'escapeDc') ? { fleeDcMod: gameRule(state, 'escapeDc') } : {}),
+      ...(difficultyOf(state) !== 'normal' ? { difficulty: difficultyOf(state) } : {}),
       location: state.location,
       startTime: { ...state.time },
       round: 1,
@@ -306,12 +313,17 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
   }
 }
 
-function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 0): Combatant {
+/**
+ * 一隻怪物上場。難度係數（diff）乘在最大生命與造成的傷害上（普通難度是 1，和沒有這個規則時一樣）；
+ * 生命先乘難度再套特徵，兩邊的倍率因此是相乘的。敵對的 NPC（冒險者）不受難度影響——他們的生命是自己的角色資料。
+ */
+function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 0, diff: DifficultyDef = DIFFICULTY_DEFS.normal): Combatant {
   const def = enemies[defId]
   if (!def) throw new Error(`unknown enemy: ${defId}`)
+  const hp = Math.max(1, Math.round(def.hp * diff.hp))
   const c: Combatant = {
     id, name: def.name + suffix, side: 'enemy', level: def.level, attrs: { ...def.attrs }, prof: proficiency(def.level),
-    hp: def.hp, maxHp: def.hp, tempHp: 0,
+    hp, maxHp: hp, tempHp: 0,
     ap: def.ap, apMax: def.ap, apRegen: combatRules.ap.regen,
     slots: [], slotMax: [], abilities: [...(def.abilities ?? [])],
     weapon: { name: '攻擊', ...def.weapon }, armorEvade: def.evade, armorDr: def.dr,
@@ -323,6 +335,7 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 
     defId, threat: 0, threatMult: 1,
     ...(def.ability_hp_below && Object.keys(def.ability_hp_below).length ? { hpGates: { ...def.ability_hp_below } } : {}),
     ...(isLayerBoss(defId) ? { boss: true } : {}),
+    ...(diff.damage !== 1 ? { dmgMult: diff.damage } : {}),
   }
   applyTraits(c, rollTraits(rng, def, bonus))
   return c
@@ -930,10 +943,12 @@ function dealDamage(
   let physical = 0
   let other = 0
   const parts: { effect: Effect; physical: boolean }[] = []
+  // 難度係數：怪物造成的傷害乘上這個（普通難度沒有這個欄位）
+  const diff = attacker?.dmgMult ?? 1
   for (const r of rolls) {
     const off = attacker ? offenseMult(attacker, r.type) : 1
     const def = defenseMult(target, r.type)
-    let amount = Math.max(0, Math.floor(r.amount * (opts.mult ?? 1) * off * def))
+    let amount = Math.max(0, Math.floor(r.amount * (opts.mult ?? 1) * off * def * diff))
     if (opts.half) amount = Math.floor(amount / 2)
     const isPhysical = damageType(r.type).group === 'physical'
     if (isPhysical) physical += amount
@@ -942,6 +957,7 @@ function dealDamage(
     const round2 = (x: number) => Math.round(x * 100) / 100
     const notes = [
       ...(Math.abs(off - 1) > 0.001 ? [`${off > 1 ? '攻擊加成' : '攻擊削弱'} ×${round2(off)}`] : []),
+      ...(Math.abs(diff - 1) > 0.001 ? [`難度 ×${round2(diff)}`] : []),
       ...(Math.abs(def - 1) > 0.001 ? [`${multLabel(def)} ×${round2(def)}`] : []),
     ]
     const effect: Effect = {

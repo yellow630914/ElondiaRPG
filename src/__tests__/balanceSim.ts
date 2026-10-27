@@ -7,9 +7,12 @@ import { createNpc } from '@/engine/character'
 import { act, chooseAction, currentActor, isActive, startCombat, usableAbilities, type Combatant } from '@/engine/combat'
 import { Rng } from '@/engine/rng'
 import { newGame } from '@/engine/state'
+import type { Difficulty } from '@/engine/types'
 
 export const PARTY = ['fighter', 'rogue', 'cleric', 'wizard']
 const ROUNDS = 3
+/** 算成「一拳一個小朋友」的門檻：生命在最大值的這個比例以上，被敵人一次出手直接打倒 */
+export const ONE_SHOT_FROM = 0.9
 
 /** 模擬用的隊伍（測試也用） */
 export function simParty(level: number, seed: number, classes: string[] = PARTY) {
@@ -114,10 +117,16 @@ export interface FightRow {
   hpAll: number
   /** 獲勝時平均倒下幾人 */
   downed: number
+  /** 整場倒下過的平均人數（被救起來的也算） */
+  downedEver: number
+  /** 平均「最痛的一拳」占隊員最大生命的比例 */
+  worstHit: number
+  /** 有人被敵人一次出手從幾乎滿血直接打倒的場次比例（「一拳一個小朋友」） */
+  oneShot: number
 }
 
-function fight(group: EncounterGroup, level: number, seed: number, classes: string[] = PARTY) {
-  const state = newGame({ name: 'x', race: 'human', classId: 'fighter', seed })
+function fight(group: EncounterGroup, level: number, seed: number, classes: string[] = PARTY, difficulty: Difficulty = 'normal') {
+  const state = newGame({ name: 'x', race: 'human', classId: 'fighter', seed, options: { defeatLoot: 'half', difficulty } })
   state.party = simParty(level, seed, classes)
   const rng = new Rng(seed * 7 + 1)
   const combat = startCombat(state, group)
@@ -133,25 +142,60 @@ function fight(group: EncounterGroup, level: number, seed: number, classes: stri
     else act(state, { type: 'end_turn' })
   }
   const members = combat.combatants.filter((c) => c.side === 'party')
+  // 「一拳一個小朋友」：照戰報重播每個人的生命（傷害與治療的量都是實際數字），量三件事——
+  // worstHit：敵人一次出手對同一個隊員造成的傷害（多段加起來）占他最大生命的最高比例；
+  // oneShot：有沒有人被一次出手從幾乎滿血（ONE_SHOT_FROM 以上）直接打倒；
+  // downedEver：整場倒下過的人數（被救起來的也算，收場時的 downed 不算他們）。
+  const maxHp = Object.fromEntries(members.map((c) => [c.id, c.maxHp]))
+  const hp = { ...Object.fromEntries(members.map((c) => [c.id, combat.startHp[c.id] ?? c.maxHp])) }
+  const downedEver = new Set<string>()
+  let worstHit = 0
+  let oneShot = false
+  for (const t of combat.timeline) {
+    const enemy = combat.combatants.find((c) => c.id === t.actor)?.side === 'enemy'
+    const dealt: Record<string, number> = {}
+    for (const e of t.effects ?? []) {
+      const id = e.target ?? ''
+      if (!maxHp[id]) continue
+      const amount = (e as { amount?: number }).amount ?? 0
+      if (e.type === 'damage') dealt[id] = (dealt[id] ?? 0) + amount
+      else if (e.type === 'heal') hp[id] = Math.min(maxHp[id]!, (hp[id] ?? 0) + amount)
+    }
+    for (const [id, dmg] of Object.entries(dealt)) {
+      const before = hp[id] ?? 0
+      hp[id] = Math.max(0, before - dmg)
+      if (hp[id] === 0) downedEver.add(id)
+      if (!enemy) continue
+      worstHit = Math.max(worstHit, dmg / maxHp[id]!)
+      if (hp[id] === 0 && before >= maxHp[id]! * ONE_SHOT_FROM) oneShot = true
+    }
+  }
   return {
     win: combat.status === 'victory',
     rounds: combat.round,
     hpLeft: members.reduce((s, c) => s + Math.max(0, c.hp), 0) / members.reduce((s, c) => s + c.maxHp, 0),
     downed: members.filter((c) => c.hp <= 0).length,
+    downedEver: downedEver.size,
+    worstHit,
+    oneShot,
   }
 }
 
 /** 特殊任務的戰鬥（例如頭目＋手下）：4 人隊伍、隊伍等級 level，回傳勝率、平均回合、贏的場次剩下的生命（hpLeft）與輸了算 0 的平均（hpAll） */
-export function groupFight(group: EncounterGroup, level: number, trials: number) {
-  const rs = Array.from({ length: trials }, (_, t) => fight(group, level, 5000 + t))
+export function groupFight(group: EncounterGroup, level: number, trials: number, difficulty: Difficulty = 'normal') {
+  const rs = Array.from({ length: trials }, (_, t) => fight(group, level, 5000 + t, PARTY, difficulty))
   const wins = rs.filter((r) => r.win)
   const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
   const r2 = (n: number) => Math.round(n * 100) / 100
-  return { win: r2(wins.length / trials), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(wins.map((r) => r.hpLeft))), hpAll: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))), downed: r2(avg(wins.map((r) => r.downed))) }
+  return {
+    win: r2(wins.length / trials), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(wins.map((r) => r.hpLeft))),
+    hpAll: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))), downed: r2(avg(wins.map((r) => r.downed))),
+    downedEver: r2(avg(rs.map((r) => r.downedEver))), worstHit: r2(avg(rs.map((r) => r.worstHit))), oneShot: r2(rs.filter((r) => r.oneShot).length / trials),
+  }
 }
 
 /** 每座地下城每一層的層主戰（隊伍等級 = 層主等級 + levelOffset） */
-export function bossFights(trials: number, levelOffset = 0, only?: { dungeon: string; layer: string }): FightRow[] {
+export function bossFights(trials: number, levelOffset = 0, only?: { dungeon: string; layer: string }, difficulty: Difficulty = 'normal'): FightRow[] {
   const rows: FightRow[] = []
   for (const [dungeon, enc] of Object.entries(dungeonEncounters)) {
     if (only && dungeon !== only.dungeon) continue
@@ -160,7 +204,7 @@ export function bossFights(trials: number, levelOffset = 0, only?: { dungeon: st
       const boss = group?.[0]?.[0]
       if (!group || !boss || !enemies[boss]) continue
       const level = Math.max(1, enemies[boss]!.level + levelOffset)
-      const rs = Array.from({ length: trials }, (_, t) => fight(group, level, 2000 + t))
+      const rs = Array.from({ length: trials }, (_, t) => fight(group, level, 2000 + t, PARTY, difficulty))
       const wins = rs.filter((r) => r.win)
       const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
       const r2 = (n: number) => Math.round(n * 100) / 100
@@ -168,16 +212,17 @@ export function bossFights(trials: number, levelOffset = 0, only?: { dungeon: st
         dungeon, layer, boss, name: enemies[boss]!.name, bossLevel: enemies[boss]!.level, partyLevel: level, hp: enemies[boss]!.hp,
         win: r2(wins.length / trials), rounds: r2(avg(rs.map((r) => r.rounds))),
         hpLeft: r2(avg(wins.map((r) => r.hpLeft))), hpAll: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))), downed: r2(avg(wins.map((r) => r.downed))),
+        downedEver: r2(avg(rs.map((r) => r.downedEver))), worstHit: r2(avg(rs.map((r) => r.worstHit))), oneShot: r2(rs.filter((r) => r.oneShot).length / trials),
       })
     }
   }
   return rows
 }
 
-export interface GroupRow { dungeon: string; layer: string; group: string; level: number; win: number; rounds: number; hpLeft: number; downed: number }
+export interface GroupRow { dungeon: string; layer: string; group: string; level: number; win: number; rounds: number; hpLeft: number; downed: number; downedEver: number; worstHit: number; oneShot: number }
 
 /** 抽測一般遭遇：每座地下城每一層抽 perLayer 組（隊伍等級 = 那一組怪物的最高等級 + levelOffset） */
-export function layerFights(trials: number, perLayer = 2, levelOffset = 0): GroupRow[] {
+export function layerFights(trials: number, perLayer = 2, levelOffset = 0, difficulty: Difficulty = 'normal'): GroupRow[] {
   const rows: GroupRow[] = []
   const rng = new Rng(77)
   for (const [dungeon, enc] of Object.entries(dungeonEncounters)) {
@@ -186,13 +231,14 @@ export function layerFights(trials: number, perLayer = 2, levelOffset = 0): Grou
       const picks = [...table].sort(() => rng.next() - 0.5).slice(0, perLayer)
       for (const group of picks) {
         const level = Math.max(1, Math.max(...group.map(([id]) => enemies[id]?.level ?? 1)) + levelOffset)
-        const rs = Array.from({ length: trials }, (_, t) => fight(group, level, 3000 + t))
+        const rs = Array.from({ length: trials }, (_, t) => fight(group, level, 3000 + t, PARTY, difficulty))
         const wins = rs.filter((r) => r.win)
         const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
         const r2 = (n: number) => Math.round(n * 100) / 100
         rows.push({
           dungeon, layer, group: group.map(([id, n]) => `${enemies[id]?.name ?? id}×${n}`).join('、'), level,
           win: r2(wins.length / trials), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(wins.map((r) => r.hpLeft))), downed: r2(avg(wins.map((r) => r.downed))),
+          downedEver: r2(avg(rs.map((r) => r.downedEver))), worstHit: r2(avg(rs.map((r) => r.worstHit))), oneShot: r2(rs.filter((r) => r.oneShot).length / trials),
         })
       }
     }
@@ -222,20 +268,24 @@ export function minionArea(id: string): MinionArea {
   return 'full'
 }
 
-export interface MinionRow { id: string; name: string; level: number; area: MinionArea; win: number; rounds: number; hpLeft: number }
+export interface MinionRow { id: string; name: string; level: number; area: MinionArea; win: number; rounds: number; hpLeft: number; downedEver: number; worstHit: number; oneShot: number }
 
 /** 每種小怪兩隻一組，打同等級、依出現區域組成的隊伍（每種隊伍各 trials 場）：調整小怪輸出用（目標每場掉的生命：城郊 25～35%、周邊 20～30%、淺層 15～20%、中層以下 10～15%） */
-export function minionFight(id: string, trials: number): MinionRow {
+export function minionFight(id: string, trials: number, difficulty: Difficulty = 'normal'): MinionRow {
   const m = enemies[id]!
   const area = minionArea(id)
-  const rs = AREA_PARTIES[area].flatMap((classes) => Array.from({ length: trials }, (_, t) => fight([[m.id, 2]], m.level, 4000 + t, [...classes])))
+  const rs = AREA_PARTIES[area].flatMap((classes) => Array.from({ length: trials }, (_, t) => fight([[m.id, 2]], m.level, 4000 + t, [...classes], difficulty)))
   const avg = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0)
   const r2 = (n: number) => Math.round(n * 1000) / 1000
   // 輸了算剩 0
-  return { id: m.id, name: m.name, level: m.level, area, win: r2(rs.filter((r) => r.win).length / rs.length), rounds: r2(avg(rs.map((r) => r.rounds))), hpLeft: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))) }
+  return {
+    id: m.id, name: m.name, level: m.level, area, win: r2(rs.filter((r) => r.win).length / rs.length), rounds: r2(avg(rs.map((r) => r.rounds))),
+    hpLeft: r2(avg(rs.map((r) => (r.win ? r.hpLeft : 0)))),
+    downedEver: r2(avg(rs.map((r) => r.downedEver))), worstHit: r2(avg(rs.map((r) => r.worstHit))), oneShot: r2(rs.filter((r) => r.oneShot).length / rs.length),
+  }
 }
 
-export function minionFights(trials: number): MinionRow[] {
+export function minionFights(trials: number, difficulty: Difficulty = 'normal'): MinionRow[] {
   const bosses = bossIds()
-  return Object.values(enemies).filter((m) => !bosses.has(m.id)).map((m) => minionFight(m.id, trials))
+  return Object.values(enemies).filter((m) => !bosses.has(m.id)).map((m) => minionFight(m.id, trials, difficulty))
 }
