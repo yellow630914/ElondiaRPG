@@ -670,11 +670,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 250 },
-        { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "噤聲", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 450 }, { "type": "item", "name": "噤聲", "qty": 1 }]
     },
     {
       "id": "whisper_oath",
@@ -1502,11 +1498,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 250 },
-        { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "遠鐘", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 450 }, { "type": "item", "name": "遠鐘", "qty": 1 }]
     },
     {
       "id": "mist_inquisition",
@@ -3169,11 +3161,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 250 },
-        { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "顫音", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 450 }, { "type": "item", "name": "顫音", "qty": 1 }]
     },
     {
       "id": "epic_undead_general",
@@ -5259,11 +5247,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 300 },
-        { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "白城堡", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }, { "type": "item", "name": "白城堡", "qty": 1 }]
     },
     {
       "id": "annex_hill_exercise",
@@ -8014,11 +7998,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 250 },
-        { "type": "xp", "amount": 400 },
-        { "type": "item", "name": "夢遊者", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 400 }, { "type": "item", "name": "夢遊者", "qty": 1 }]
     },
     {
       "id": "morphe_moth_dust",
@@ -8279,11 +8259,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 300 },
-        { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "千敗", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }, { "type": "item", "name": "千敗", "qty": 1 }]
     },
     {
       "id": "law_iron_tongue",
@@ -11280,11 +11256,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 300 },
-        { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "泉苔", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }, { "type": "item", "name": "泉苔", "qty": 1 }]
     },
     {
       "id": "wt_other_end",
@@ -12977,11 +12949,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 300 },
-        { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "不忘", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }, { "type": "item", "name": "不忘", "qty": 1 }]
     },
     {
       "id": "fog_mistveil",
@@ -13421,7 +13389,11 @@
                 "effects": [
                   { "type": "affinity", "npc": "npc_rigetsu", "delta": 10, "reason": "找回了潮汐之璜" },
                   { "type": "reputation", "faction": "four_seasons", "delta": 10 },
-                  { "type": "memory", "summary": "在滄月闕的潮鏡台找回了潮汐之璜。秋珊苑主墨鱗依族規被「逐出都城」——其實只是不准參加大宴，她照樣待在四季畫廊，還替都城寫好了加強守備的辦法。", "importance": 3 }
+                  {
+                    "type": "memory",
+                    "summary": "在滄月闕的潮鏡台找回了潮汐之璜。秋珊苑主墨鱗依族規被「逐出都城」——其實只是不准參加大宴，她照樣待在四季畫廊，還替都城寫好了加強守備的辦法。",
+                    "importance": 3
+                  }
                 ],
                 "complete": true
               }
@@ -15813,11 +15785,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 600 },
-        { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "馴焰", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }, { "type": "item", "name": "馴焰", "qty": 1 }]
     },
     {
       "id": "emb_heart_of_flame",
@@ -23352,11 +23320,7 @@
           ]
         }
       ],
-      "rewards": [
-        { "type": "money", "amount": 300 },
-        { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "賭債", "qty": 1 }
-      ]
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }, { "type": "item", "name": "賭債", "qty": 1 }]
     },
     {
       "id": "isab_young_knight",
@@ -31062,7 +31026,7 @@
           "title": "兩半潮汐之璜合在一起",
           "kind": "choice",
           "at": { "where": "npc", "npc": "npc_moring" },
-          "text": "兩半玉璜合在一起的那一瞬間，滄月闕的潮水停了。光從玉璜裡流出來，凝成了三樣東西，懸在你面前：完整的潮汐之璜、一枚月光之言、一對最好的一刻。墨鱗屏住了呼吸：「古籍說的是真的。挑一樣吧——剩下的會回到海裡。」",
+          "text": "兩半玉璜合在一起的那一瞬間，滄月闕的潮水停了。光從玉璜裡流出來，凝成了三樣東西，懸在你面前：完整的潮汐之璜、一枚滿月之戒、一對潮鏡耳墜。墨鱗屏住了呼吸：「古籍說的是真的。挑一樣吧——剩下的會回到海裡。」",
           "options": [
             {
               "label": "拿潮汐之璜",
