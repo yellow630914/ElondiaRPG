@@ -55,6 +55,7 @@ export function itemUsage(name: string, state?: GameState | null): string[] {
     if (s.start.items?.includes(name)) out.push(`特殊任務「${s.title}」接下時拿到的物品`)
     if (s.nodes.some((n) => n.wear?.includes(name))) out.push(`特殊任務「${s.title}」限定的穿著`)
   }
+  for (const l of Object.values(landmarks)) if (l.scenes?.some((sc) => sc.wear?.includes(name))) out.push(`地標「${l.name}」的場景限定的穿著`)
   for (const t of Object.values(shopRules.types)) if (t.fixed?.some((f) => f.item === name)) out.push(`商店「${t.name}」的固定清單`)
   for (const it of itemRules.items) {
     if (it.tool?.fuel === name) out.push(`「${it.name}」的燃料`)
@@ -91,6 +92,7 @@ export function gearUsage(kind: 'base' | 'material', id: string, state?: GameSta
     if (storyEffects(s).some((e) => e.type === 'gear' && uses(e.spec))) out.push(`特殊任務「${s.title}」的獎勵`)
     if (kind === 'base' && s.nodes.some((n) => n.wear?.includes(id))) out.push(`特殊任務「${s.title}」限定的穿著`)
   }
+  if (kind === 'base') for (const l of Object.values(landmarks)) if (l.scenes?.some((sc) => sc.wear?.includes(id))) out.push(`地標「${l.name}」的場景限定的穿著`)
   if (state) {
     for (const c of characters(state)) {
       if (Object.values(c.gear ?? {}).some((g) => uses(g?.spec))) out.push(`目前存檔「${c.name}」身上的裝備`)

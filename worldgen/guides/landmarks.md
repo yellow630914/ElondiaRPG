@@ -189,6 +189,7 @@ for (const b of blocks) {
 | `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling` | 內容標籤：設定關掉的標籤不出現；`adult` 的場景交給 AI 時標成成人場景 |
 | `requires.flags`、`requires.flags_none`、`requires.flags_any` | 字串陣列 | 各最多 4 個 | 劇情旗標：成立／不成立／任一個成立時才出現 |
 | `pc_body` | 字串陣列 | `masc`、`fem`、`andro` | 只給這些體型的主角；三個都寫或都不寫＝都可以 |
+| `wear` | 字串陣列 | 物品名稱或裝備底材 id | 限定穿著：主角都穿在身上才能選（底材時任何一件同種的服裝都算），例如打工的制服 |
 | `cast` | 陣列 | 最多 6 個 | 登場的固定 NPC：`{ "npc": "<id>", "flags": [...] }`。寫了 `flags` 的，旗標成立才在場；沒寫的一定在場（死了或被抓走時整個場景不出現） |
 | `extras` | 字串 | ≤ 30 字 | 有寫了旗標的人不在場時，代替的人（例如「其他不知名的魅魔」） |
 | `money_cc` | 整數 | 1～100000 | 花費；0 不寫 |

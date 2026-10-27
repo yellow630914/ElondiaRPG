@@ -14,6 +14,8 @@ import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import FlagInput from './FlagInput.vue'
+import NameListInput from './NameListInput.vue'
+import { wearChoices } from '@/engine/gear'
 
 // 城鎮特色地標的編輯表單：名稱、圖示、說明、AI 的氛圍、類型、位置，以及開放條件、參訪、場景、探索、打工與受訓。
 // 內建的不能換聚落、不能刪除
@@ -143,6 +145,7 @@ function remove() {
     game.error = e instanceof Error ? e.message : String(e)
   }
 }
+const wearOptions = computed(() => wearChoices())
 </script>
 
 <template>
@@ -256,6 +259,7 @@ function remove() {
             <input type="checkbox" :checked="sc.pc_body?.includes(b)" @change="sc.pc_body = toggleList(sc.pc_body, b, ($event.target as HTMLInputElement).checked)" /> {{ BODY_NAME[b] }}
           </label>
         </div>
+        <div class="row small">限定穿著 <Hint text="主角要穿著這些才能選（例如打工的制服）。寫底材時任何一件同種的服裝都算。" /> <NameListInput v-model="sc.wear" :options="wearOptions" placeholder="底材或物品名稱" /></div>
         <div class="grid">
           <label>這些旗標成立時才出現 <FlagInput v-model="sc.requires!.flags" /></label>
           <label>這些旗標成立時不出現 <FlagInput v-model="sc.requires!.flags_none" /></label>

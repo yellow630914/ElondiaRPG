@@ -150,7 +150,7 @@ describe('travel event mods', () => {
 })
 
 describe('adult town events', () => {
-  const ADULT = ['town_frisk', 'town_drugged_drink', 'town_gamble_price']
+  const ADULT = ['town_frisk', 'town_drugged_drink', 'town_gamble_price', 'town_pickup', 'town_grope']
   const female = (location = 'albena') => {
     const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: location, gender: '女', body: 'fem' })
     enterLocation(state)

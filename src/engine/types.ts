@@ -862,6 +862,10 @@ export interface GameState {
   gatePass?: Record<string, number>
   /** 今天被城門擋下的地點 → 日期 */
   gateBlock?: Record<string, number>
+  /** 今天說服了王城衛兵的地點 → 日期 */
+  palacePass?: Record<string, number>
+  /** 今天說服王城衛兵失敗的地點 → 日期 */
+  palaceBlock?: Record<string, number>
   /** 上次長休結束的時間 */
   lastLongRest?: GameTime
   /** AI 提議的人際關係文字更新，等待玩家確認 */

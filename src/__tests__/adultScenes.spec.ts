@@ -79,24 +79,28 @@ describe('work quest lines', () => {
     horn: ['horn_feast', 'horn_winner', 'horn_trophy', '戰利品的獸骨腰帶'],
     court: ['court_demo', 'court_lord', 'court_banquet', '侍寢見習的魅魔絲衣'],
     pyre: ['pyre_cleanse', 'pyre_prelude', 'pyre_offering', '祭品的血紅頸環'],
+    conf: ['conf_lattice', 'conf_chapel', 'conf_tithe', 'conf_trial', 'conf_last', '巡禮者的懺悔頭紗'],
+    fert: ['fert_chosen', 'fert_dance', 'fert_rite', '豐饒祭的花冠'],
+    mate: ['mate_paint', 'mate_chase', 'mate_bonfire', '求偶祭的獸牙項鍊'],
+    brine: ['brine_bride', 'brine_parade', 'brine_spring', '潮汐祭的貝殼腰鍊'],
   }
 
-  it('run three stages in order, only for feminine and androgynous heroes, and end with the line gear in every branch', () => {
-    for (const [pre, [a, b, c, gear]] of Object.entries(LINES)) {
-      const [s1, s2, s3] = [a!, b!, c!].map(story)
-      for (const s of [s1, s2, s3]) {
+  it('run their stages in order, only for feminine and androgynous heroes, and end with the line gear in every branch', () => {
+    for (const [pre, ids] of Object.entries(LINES)) {
+      const gear = ids.at(-1)!
+      const quests = ids.slice(0, -1).map(story)
+      quests.forEach((s, i) => {
         expect(s!.tags, s!.id).toContain('adult')
         // 打工線一律算男性對象（結局有女性一起也一樣）
         expect(s!.tags, s!.id).toContain('male_partner')
         expect(s!.start.pc_body, s!.id).toEqual(['fem', 'andro'])
-      }
-      expect(s1!.start.requires).toBeUndefined()
-      expect(s2!.start.requires?.flags).toEqual([`${pre}_1_done`])
-      expect(s3!.start.requires?.flags).toEqual([`${pre}_2_done`])
-      const last = s3!.nodes.at(-1)!
+        if (i === 0) expect(s!.start.requires, s!.id).toBeUndefined()
+        else expect(s!.start.requires?.flags, s!.id).toEqual([`${pre}_${i}_done`])
+      })
+      const last = quests.at(-1)!.nodes.at(-1)!
       for (const o of last.options!) {
-        expect(o.success!.effects, `${c} ${o.label}`).toContainEqual({ type: 'item', name: gear, qty: 1 })
-        expect(o.success!.scene, `${c} ${o.label}`).toBeTruthy()
+        expect(o.success!.effects, `${pre} ${o.label}`).toContainEqual({ type: 'item', name: gear, qty: 1 })
+        expect(o.success!.scene, `${pre} ${o.label}`).toBeTruthy()
       }
       expect(itemRules.items.find((i) => i.name === gear)).toMatchObject({ adult: true, tags: ['unique'] })
     }
@@ -105,7 +109,7 @@ describe('work quest lines', () => {
   it('hand out the work uniform and ask for it on the job', () => {
     // 有制服的線：第一個限定的任務接下時發制服，之後每個非戰鬥的任務點都要穿著；結局的獨特裝備也算
     const dressed = stories.filter((s) => s.start.items?.length)
-    expect(dressed.map((s) => s.id).sort()).toEqual(['bath_scrub', 'court_demo', 'dance_bazaar', 'dice_dealer', 'expo_parade', 'inn_skirt', 'maid_skirt', 'massage_lesson', 'onsen_mixed'])
+    expect(dressed.map((s) => s.id).sort()).toEqual(['bath_scrub', 'brine_bride', 'conf_lattice', 'court_demo', 'dance_bazaar', 'dice_dealer', 'expo_parade', 'fert_chosen', 'inn_skirt', 'maid_skirt', 'massage_lesson', 'mate_paint', 'onsen_mixed'])
     for (const s of dressed) {
       const wear = s.nodes.find((n) => n.wear)!.wear!
       for (const name of s.start.items!) expect(itemRules.items.find((i) => i.name === name), `${s.id} ${name}`).toBeTruthy()

@@ -439,7 +439,90 @@
      }
     ],
     "cooldown_days": 14
-   }
+   },
+   "scenes": [
+    {
+     "title": "上晚班",
+     "desc": "穿著制服端一整晚的酒，客人的手隨便伸。",
+     "scene": "主角穿著看板娘的制服端了一整晚的酒，屁股和胸口被每一桌的客人摸過一輪；常客照例把主角叫到桌子底下，一個接一個塞進主角嘴裡，打烊時圍裙口袋塞滿了小費。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 4,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 120
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "inn_done"
+      ]
+     },
+     "wear": [
+      "dress"
+     ]
+    },
+    {
+     "title": "包場的夜",
+     "desc": "冒險者包下整間店，你是今晚的獎品。",
+     "scene": "一隊剛領了賞金的冒險者包下銀鱗旅店，主角被放上長桌當今晚的獎品，整桌的人輪流上，{cast}收完錢也脫了圍裙一起加入；天亮時主角躺在酒漬裡數錢。",
+     "tags": [
+      "adult",
+      "non_virgin",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_greta_silverscale"
+      }
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 260
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "inn_done"
+      ]
+     },
+     "wear": [
+      "dress"
+     ]
+    }
+   ]
   },
   {
    "id": "lm_old_stone_bridge",
@@ -831,7 +914,51 @@
       "add": true
      }
     ]
-   }
+   },
+   "scenes": [
+    {
+     "title": "試煉場的賭注",
+     "desc": "上場打一場，輸了就是戰團今晚的戰利品。",
+     "scene": "主角在試煉場和血角的戰士打了一場，故意或不故意地輸了，被扛回戰團的營地當今晚的戰利品，{cast}先上，然後整支戰團輪著來，賞錢丟在主角肚子上。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_kargh_warband"
+      }
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 260
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "horn_done"
+      ]
+     }
+    }
+   ]
   },
   {
    "id": "lm_silent_corridor",
@@ -1107,7 +1234,86 @@
      }
     ],
     "cooldown_days": 3
-   }
+   },
+   "scenes": [
+    {
+     "title": "市集的舞",
+     "desc": "在市集跳舞，讓人把錢塞進舞衣。",
+     "scene": "主角穿著薄紗、搖著腳鍊在市集中央跳舞，看熱鬧的男人把錢塞進舞衣裡，手指順便伸進去，跳完一場薄紗底下全是錢和指印。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 3,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 150
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "dance_done"
+      ]
+     },
+     "wear": [
+      "sheer_negligee",
+      "anklet_bell"
+     ]
+    },
+    {
+     "title": "帳篷裡的加場",
+     "desc": "和娜希拉一起，在帳篷裡收真正的價錢。",
+     "scene": "跳完舞，主角和{cast}一起被帶進後面的帳篷，兩個人並排跪著侍奉一整帳篷的客人，輪完一圈換姿勢再來一圈，腳鍊的鈴聲響了一整個下午。",
+     "tags": [
+      "adult",
+      "non_virgin",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_nashira"
+      }
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 320
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "dance_done"
+      ]
+     },
+     "wear": [
+      "sheer_negligee",
+      "anklet_bell"
+     ]
+    }
+   ]
   },
   {
    "id": "lm_redmane_council",
@@ -2213,7 +2419,90 @@
    "open": {
     "hours": "night",
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "發牌的夜班",
+     "desc": "穿著兔女郎裝發一整晚的牌。",
+     "scene": "主角穿著兔女郎裝發了一整晚的牌，賭客把籌碼塞進胸口和胯下，贏了錢的就把主角拉到大腿上摸個夠，輸了的拉到桌底下出氣。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 200
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "dice_done"
+      ]
+     },
+     "wear": [
+      "bunny_suit",
+      "bunny_ears"
+     ]
+    },
+    {
+     "title": "貴賓室的轉運",
+     "desc": "貴賓室今晚手氣不好，要你去轉運。",
+     "scene": "{cast}把主角推進貴賓室替輸錢的貴賓「轉運」，主角跪在賭桌上被一圈貴賓輪流幹，每幹一個就擲一次骰子，擲到天亮。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_victor_dice"
+      }
+     ],
+     "hours": 6,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 400
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "dice_done"
+      ]
+     },
+     "wear": [
+      "bunny_suit",
+      "bunny_ears"
+     ]
+    }
+   ]
   },
   {
    "id": "lm_krause_manor",
@@ -2232,7 +2521,101 @@
    "scene": "擦得發亮的走廊空蕩蕩的，牆上掛著伯爵夫人的畫像；遠處傳來少爺的笑聲，和一個女僕摔門而出的聲音。",
    "open": {
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "見習女僕的一天",
+     "desc": "掃地被少爺掀裙子，晚上替伯爵洗澡。",
+     "scene": "主角穿著改造女僕裝打掃了一整天，盧卡斯少爺每經過一次就掀一次裙子、把主角按在牆上玩；晚上替伯爵洗澡，用身體洗，洗到伯爵在浴池裡射了兩次。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_count_krause"
+      },
+      {
+       "npc": "npc_lukas_krause"
+      }
+     ],
+     "hours": 6,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 180
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "maid_done"
+      ]
+     },
+     "wear": [
+      "lewd_maid",
+      "maid_headdress"
+     ]
+    },
+    {
+     "title": "父子的晚上",
+     "desc": "伯爵和少爺今晚都要你。",
+     "scene": "伯爵和盧卡斯少爺把主角叫進同一間寢室，一個從前面一個從後面，父子倆比誰撐得久，主角被夾在中間幹到天亮，女僕裝撕成了碎布。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_count_krause"
+      },
+      {
+       "npc": "npc_lukas_krause"
+      }
+     ],
+     "hours": 6,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 300
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "maid_done"
+      ]
+     },
+     "wear": [
+      "lewd_maid",
+      "maid_headdress"
+     ]
+    }
+   ]
   },
   {
    "id": "lm_odd_tower",
@@ -2251,7 +2634,89 @@
    "scene": "塔裡堆滿了發光的瓶罐與奇形怪狀的魔導具，空氣裡有薄荷、硫磺與一點點甜膩的味道。",
    "open": {
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "當一次受試者",
+     "desc": "脫光了讓她測量，再試穿新的試用品。",
+     "scene": "{cast}叫主角脫光躺上實驗台，一邊在身上畫刻度一邊摸遍全身，再塞進新做的符文玉石，記錄主角高潮幾次、叫得多大聲。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_hildegard"
+      }
+     ],
+     "hours": 3,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 150
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "sensitive",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "odd_done"
+      ]
+     }
+    },
+    {
+     "title": "法師之屌・改良版",
+     "desc": "她又改良了那根魔法造的東西。",
+     "scene": "{cast}用魔法造出改良過的法師之屌，比上次更粗、會自己動，把主角綁在實驗台上幹到失神，再換成兩根前後一起，一整晚只顧著抄數據。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_hildegard"
+      }
+     ],
+     "hours": 4,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 220
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "afterglow",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "odd_done"
+      ]
+     }
+    }
+   ]
   },
   {
    "id": "lm_pilgrim_bath",
@@ -2271,7 +2736,54 @@
    "open": {
     "hours": "day",
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "再走一次朝聖大道",
+     "desc": "只穿網襪，光著身子走一趟，貝托收賭金。",
+     "scene": "主角又一次只穿著網襪走上朝聖大道，從澡堂走到聖所，整條街的人吹口哨、伸手摸，{cast}在後面跟著收賭金，走到半路被拉進巷子裡的不止一個。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_bertho_bath"
+      }
+     ],
+     "hours": 3,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 150
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "expo_done"
+      ]
+     },
+     "wear": [
+      "fishnet"
+     ]
+    }
+   ]
   },
   {
    "id": "lm_pearl_bath",
@@ -2290,7 +2802,85 @@
    "scene": "潮濕的石室裡瀰漫著海鹽與香油的味道，搓背間的竹簾後面傳來水聲和男人滿足的哼聲。",
    "open": {
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "搓背的班",
+     "desc": "替水手搓背，哪裡都要搓。",
+     "scene": "主角只貼著乳貼、穿著丁字褲替一整排水手搓背，搓完背搓前面，客人要哪裡就搓哪裡，最後在石板上用嘴收尾，一個接一個。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 4,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 160
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "bath_done"
+      ]
+     },
+     "wear": [
+      "pasties",
+      "thong"
+     ]
+    },
+    {
+     "title": "深池的常客",
+     "desc": "常客們在深池等你。",
+     "scene": "常客們在深池等著，主角一下水就被拖到池中央，水裡一個接一個輪流上，浮上來喘口氣又被按下去，泡到手指發皺。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 300
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "sensitive",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "bath_done"
+      ]
+     },
+     "wear": [
+      "pasties",
+      "thong"
+     ]
+    }
+   ]
   },
   {
    "id": "lm_ironforge_onsen",
@@ -2309,7 +2899,88 @@
    "scene": "硫磺味的熱氣裡，一群剛下工的礦工光著身子泡在池裡喝酒，大聲唱著跑調的礦工歌。",
    "open": {
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "混浴的幫工",
+     "desc": "穿著浴衣幫工，客人叫你就要下池。",
+     "scene": "主角穿著浴衣在溫泉旅館幫工，醉醺醺的礦工一叫就要脫掉浴衣下池，在熱水裡被摸遍、被拉到大腿上坐，一晚下來泡得渾身通紅。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 4,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 180
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "onsen_done"
+      ]
+     },
+     "wear": [
+      "yukata"
+     ]
+    },
+    {
+     "title": "礦工的發薪夜",
+     "desc": "發薪夜，整座礦場的人都來泡。",
+     "scene": "發薪夜整座礦場的礦工都擠進溫泉，主角在池邊的石床上被排隊的礦工一個接一個幹，{cast}在旁邊收錢、喊下一個，排到天亮還沒排完。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_grum_kettle"
+      }
+     ],
+     "hours": 6,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 320
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "onsen_done"
+      ]
+     },
+     "wear": [
+      "yukata"
+     ]
+    }
+   ]
   },
   {
    "id": "lm_lower_massage",
@@ -2328,7 +2999,82 @@
    "scene": "薄荷油的味道蓋不住隔壁傳來的聲音，按摩床上的客人一邊哼一邊把錢塞進師傅的口袋。",
    "open": {
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "特別服務",
+     "desc": "穿著旗袍按摩，最後一步另外算錢。",
+     "scene": "主角穿著旗袍替客人按摩，按到最後一步就爬上床，用手、用嘴、用身體收尾，一個客人接一個客人，{cast}在門外數錢。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_hans_fingers"
+      }
+     ],
+     "hours": 4,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 170
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "massage_done"
+      ]
+     },
+     "wear": [
+      "qipao"
+     ]
+    },
+    {
+     "title": "三人套餐",
+     "desc": "三個客人一起點了你。",
+     "scene": "三個客人一起點了主角的「三人套餐」，旗袍被掀到腰上，一個在前面一個在後面一個在嘴裡，換了好幾輪位子才付錢走人。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 300
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "massage_done"
+      ]
+     },
+     "wear": [
+      "qipao"
+     ]
+    }
+   ]
   },
   {
    "id": "lm_nude_atelier",
@@ -2347,7 +3093,87 @@
    "scene": "油彩、松節油和酒的味道混在一起，畫架圍成一圈，中間是一張鋪著舊毯子的高台；學徒們在角落裡竊竊私語。",
    "open": {
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "裸體模特兒",
+     "desc": "脫光了站好，讓整間畫室的學徒畫。",
+     "scene": "主角脫光了站在畫室中央，學徒們說要「確認比例」，一個個走上來摸，畫到一半有人放下畫筆直接上，{cast}只說別動、保持姿勢。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_bartolo_painter"
+      }
+     ],
+     "hours": 4,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 140
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "paint_done"
+      ]
+     }
+    },
+    {
+     "title": "畫室的課後",
+     "desc": "下課之後，整間畫室一起上。",
+     "scene": "下課後{cast}鎖上門，主角被按在模特兒台上，整間畫室的學徒輪流上，顏料抹得全身都是，最後畫了一張主角滿身精液的速寫。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_bartolo_painter"
+      }
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 260
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "paint_done"
+      ]
+     }
+    }
+   ]
   },
   {
    "id": "lm_bed_school",
@@ -2367,7 +3193,88 @@
    "open": {
     "hours": "night",
     "adult": true
-   }
+   },
+   "scenes": [
+    {
+     "title": "見習館的夜課",
+     "desc": "魅魔們今晚教新的服侍方法，你當教材。",
+     "scene": "侍寢見習館的魅魔們把主角當教材，教新來的見習生怎麼服侍男人，主角被一個個客人輪流示範用，魅魔在旁邊講解哪裡要夾緊、哪裡要叫。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 4,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 250
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "afterglow",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "court_done"
+      ]
+     },
+     "wear": [
+      "sheer_negligee"
+     ]
+    },
+    {
+     "title": "宮廷的晚宴",
+     "desc": "今晚的宴會，你是主菜。",
+     "scene": "宮廷的晚宴上主角被端上長桌當主菜，赴宴的貴族輪流享用，{cast}在主位上看著，酒杯一舉就換下一個人。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_veronica"
+      }
+     ],
+     "hours": 6,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 450
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "court_done"
+      ]
+     },
+     "wear": [
+      "sheer_negligee"
+     ]
+    }
+   ]
   }
  ]
 }

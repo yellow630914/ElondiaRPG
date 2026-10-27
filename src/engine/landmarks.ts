@@ -5,10 +5,12 @@ import { landmarkDef, landmarks, locationById, npcs as namedNpcs, specialMaps, t
 import { adultContent, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { npcFree } from './story'
+import { npcRecord } from './npcs'
 import { applyEffects } from './effects'
 import { currentArea, currentCell, position } from './grid'
 import { enterSpecial } from './specialMaps'
 import { isNight } from './light'
+import { wearNote } from './gear'
 import { formatMoney } from './money'
 import { isFugitive, pcOf } from './party'
 import { reputationOf } from './security'
@@ -218,7 +220,7 @@ export function sceneBlocked(state: GameState, index: number): string | undefine
   const wait = sceneWait(state, l, sc)
   if (wait) return `${wait} 天後才能再來`
   if ((sc.money_cc ?? 0) > state.money_cc) return `錢不夠（要 ${formatMoney(sc.money_cc!)}）`
-  return undefined
+  return wearNote(pcOf(state), sc.wear)
 }
 
 /** 場景裡在場的人的名字（有人不在場時接上代替的人） */
@@ -245,6 +247,13 @@ export function playLandmarkScene(state: GameState, index: number): Report {
   const report = baseReport(state, 'event', sc.hours ?? 2)
   report.location.scene = `${locationById(state.location).name}・${l.name}${sc.spot_name ? `・${sc.spot_name}` : ''}・${sc.title}${l.scene ? `（${l.scene.slice(0, 80)}）` : ''}`
   report.lore_keys!.push(l.name, ...ids.map(npcName))
+  // 在場的人記在 others：插圖的分鏡從隊伍與 others 挑人
+  const present = ids
+    .filter((id) => !state.party.some((m) => m.id === id))
+    .map((id) => npcRecord(state, id))
+    .filter((r): r is NonNullable<typeof r> => !!r && !r.dead)
+    .map((r) => ({ id: r.id, name: r.name, race: r.race, class: r.class, level: r.level, personality: r.personality }))
+  if (present.length) report.others = [...(report.others ?? []), ...present]
   applyEffects(state, report, [
     ...(sc.money_cc ? [{ type: 'money' as const, amount: -sc.money_cc }] : []),
     ...(sc.affinity ? ids.map((npc) => ({ type: 'affinity' as const, npc, delta: sc.affinity!, reason: `${l.name}・${sc.title}` })) : []),

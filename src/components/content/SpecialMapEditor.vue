@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, itemRules, locationById, shopRules, specialMapLegend, specialMaps, type EncounterGroup, type ShopType, type SpecialConnection } from '@/engine/data'
+import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, itemRules, landmarks, locationById, shopRules, specialMapLegend, specialMaps, type EncounterGroup, type ShopType, type SpecialConnection } from '@/engine/data'
 import { CELL_ICON, cellName, settlementArea, type CellKind } from '@/engine/grid'
 import { builtinSpecialMap, LIGHTINGS, MAP_CHARS, mapSize, SPECIAL_MAP_LIMITS, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import type { CellRef } from '@/engine/shopMods'
@@ -41,6 +41,8 @@ function reset() {
 watch(() => props.id, reset)
 const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
 const builtin = computed(() => !!builtinSpecialMap(props.id))
+// 這張地圖是哪些地標的內部：裡面的事件是地標的場景（在地標頁編輯），列出來免得以為地圖是空的
+const asInterior = computed(() => Object.values(landmarks).filter((l) => l.interior === props.id))
 const edited = computed(() => builtin.value && !!content.mods.specialMaps?.[props.id])
 const usage = computed(() => {
   void content.version
@@ -319,6 +321,13 @@ function remove() {
       <label class="block"><span>給 AI 的描述 <Hint text="外觀、氣氛、危險；在裡面的每一則日誌都會帶上。" /></span><textarea v-model="draft.desc" rows="3" :maxlength="L.desc_chars" /></label>
       <label class="check small"><input v-model="draft.refresh" type="checkbox" /> 會刷新：離開這片特殊地圖之後再進來，遭遇、資源與寶箱全部重來 <Hint text="沒勾時打過、採過的一直保持。" /></label>
       <label class="check small"><input v-model="draft.peaceful" type="checkbox" /> 安全的室內：休息不會被襲擊 <Hint text="例如地標的內部（咖啡廳、宴會廳）。" /></label>
+      <div v-for="l in asInterior" :key="l.id" class="small interior-note">
+        <b>{{ l.emoji }} {{ l.name }}的內部</b>：裡面的事件是那個地標的場景（在「地標」頁編輯，條件成立時出現，預設每 3 天一次）。
+        <ul v-if="l.scenes?.length">
+          <li v-for="sc in l.scenes" :key="sc.title">{{ sc.title }}<template v-if="sc.spot">（{{ sc.spot_name || `${sc.spot.x}, ${sc.spot.y}` }}）</template><template v-else>（在外面的地標格上）</template></li>
+        </ul>
+        <span v-else class="muted">還沒有任何場景。</span>
+      </div>
     </fieldset>
 
     <fieldset>
@@ -471,7 +480,9 @@ function remove() {
   </div>
 </template>
 
-<style scoped src="./editor.css"></style>
+<style scoped src="./editor.css">.interior-note { border-left: 3px solid var(--accent); padding-left: 8px; margin-top: 4px; }
+.interior-note ul { margin: 2px 0 0; padding-left: 18px; }
+</style>
 <style scoped>
 .cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; user-select: none; }
 .cell { width: 24px; height: 24px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }

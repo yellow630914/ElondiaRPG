@@ -169,6 +169,8 @@ export function sanitizeScene(raw: Partial<LandmarkScene> | undefined, interior?
   if (Object.keys(req).length) out.requires = req
   const bodies = BODIES.filter((b) => Array.isArray(raw.pc_body) && raw.pc_body.includes(b))
   if (bodies.length && bodies.length < BODIES.length) out.pc_body = bodies
+  const wear = [...new Set((Array.isArray(raw.wear) ? raw.wear : []).map((w) => str(w, 60)).filter(Boolean))].slice(0, 6)
+  if (wear.length) out.wear = wear
   const ids = new Set(namedNpcs.map((n) => n.id))
   const cast = (Array.isArray(raw.cast) ? raw.cast : []).filter((c) => c && ids.has(c.npc))
     .map((c) => ({ npc: c.npc, ...(flags(c.flags).length ? { flags: flags(c.flags) } : {}) }))
