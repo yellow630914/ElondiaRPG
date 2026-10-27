@@ -41,7 +41,9 @@ import { negotiationSetup } from './negotiation'
 import { setupPatron } from './brothel'
 import { setupWork } from './work'
 import { setupExplore } from './landmarks'
-import { currentArea, currentCell } from './grid'
+import { currentArea, currentCell, palaceGateName } from './grid'
+import { assertMayPersuadePalace, palacePersuadeDc, settlePalacePersuasion } from './security'
+import { checkModifiers } from './perks'
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
@@ -518,6 +520,11 @@ export function applyHaggle(state: GameState, report: Report, kind: MarketKind |
   return '商人不肯讓價。'
 }
 
+/** 說服王城的衛兵（行動判定）：成功、大成功當天放行；其餘當天不再聽，大失敗另外提高警戒 */
+export function applyPalaceGate(state: GameState, degree: Degree): string {
+  return settlePalacePersuasion(state, degree === 'critical' || degree === 'success', degree === 'fumble', palaceGateName(state))
+}
+
 /** 黑市的打聽：不管這裡有沒有黑市都可以試；沒有黑市時成功也找不到。 */
 export function applyBlackMarket(state: GameState, report: Report, degree: Degree): string {
   const exists = !!slaveryRules.markets[state.location]?.black
@@ -895,6 +902,16 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return {
         dc: r.dc, situational: [], scene: tavernScene(state),
         outcomes: { critical: '找到黑市（如果這裡有）', success: '找到黑市（如果這裡有）', partial: '得到一點線索', fail: '沒人透露', fumble: '被衛兵盯上（聲望 -1）' },
+      }
+    }
+    case 'palace_gate': {
+      const palace = palaceGateName(state)
+      assertMayPersuadePalace(state)
+      return {
+        dc: palacePersuadeDc(state), targetName: `${palace}的衛兵`, attr: 'cha', hours: 0.25,
+        situational: checkModifiers(pc, { context: 'gate', attr: 'cha' }).filter((x) => x.value !== 0),
+        scene: `${locationById(state.location).name}・${palace}的大門`,
+        outcomes: { critical: '今天放行', success: '今天放行', partial: '不放行，今天不會再聽你說', fail: '不放行，今天不會再聽你說', fumble: '起了疑心，這裡的警戒上升' },
       }
     }
     case 'master_permit':

@@ -1012,11 +1012,15 @@ export function linkEntryBlock(state: GameState): { reason: string; zone: string
   return reason ? { reason, zone: target.zone! } : null
 }
 
-/** 在通往王城的路口說服衛兵放行 */
+/** 站在通往王城的路口時，回傳王城的名字（例如「皇宮」）；不是時丟出錯誤 */
+export function palaceGateName(state: GameState): string {
+  if (linkTarget(state)?.zone !== 'palace') throw new Error('這裡不是王城的大門')
+  return palaceName(locationById(state.location))
+}
+
+/** 在通往王城的路口說服衛兵放行（只擲骰，不經過行動判定） */
 export function persuadePalaceGuard(state: GameState): Report {
-  const target = linkTarget(state)
-  if (target?.zone !== 'palace') throw new Error('這裡不是王城的大門')
-  return persuadeGuard(state, palaceName(locationById(state.location)))
+  return persuadeGuard(state, palaceGateName(state))
 }
 
 /**

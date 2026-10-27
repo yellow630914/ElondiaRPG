@@ -226,10 +226,7 @@ export function palacePersuadeDc(state: GameState): number {
  */
 export function persuadePalaceGuard(state: GameState, palaceName = '王城'): Report {
   const loc = locationById(state.location)
-  if (isWanted(state, loc.faction)) throw new Error(`你被${factionName(loc.faction!)}通緝，衛兵不會聽你說。`)
-  if (!palaceNeedsPersuading(state)) throw new Error('衛兵已經放行了')
-  const day = state.time.day
-  if (state.palaceBlock?.[loc.id] === day) throw new Error('王城的衛兵今天不會再聽你說了')
+  assertMayPersuadePalace(state)
   const pc = pcOf(state)
   const extra = checkModifiers(pc, { context: 'gate', attr: 'cha' })
   const dice = withBonus('1d20', mod(attrOf(pc, 'cha')) + proficiency(pc.level) + extra.reduce((sum, x) => sum + x.value, 0))
@@ -237,24 +234,31 @@ export function persuadePalaceGuard(state: GameState, palaceName = '王城'): Re
   const r = withRng(state, (rng) => roll(rng, dice))
   const fumble = r.rolls[0] === 1
   const ok = !fumble && r.total >= dc
-  if (ok) (state.palacePass ??= {})[loc.id] = day
-  else (state.palaceBlock ??= {})[loc.id] = day
-  const alertNote = fumble && securityRules.palace_persuade.fumble_alert ? raiseAlert(state, loc.id, securityRules.palace_persuade.fumble_alert) : ''
-  const report = securityReport(
-    state,
-    ok
-      ? `你說服了${palaceName}的衛兵，他們今天放你進出${palaceName}。`
-      : fumble
-        ? `你的說詞漏洞百出，${palaceName}的衛兵起了疑心，把你趕走了。${alertNote}`
-        : `${palaceName}的衛兵不為所動，今天不會再聽你說了。`,
-    ok ? 'success' : 'failure',
-    `${loc.name}・${palaceName}的大門`,
-  )
+  const report = securityReport(state, settlePalacePersuasion(state, ok, fumble, palaceName), ok ? 'success' : 'failure', `${loc.name}・${palaceName}的大門`)
   report.timeline = [{
     seq: 1, time: report.time.start, actor: 'pc', action: `魅力檢定・說服${palaceName}的衛兵`,
     roll: { dice, value: r.total, dc }, result: ok ? 'success' : fumble ? 'fumble' : 'fail',
   }]
   return commitReport(state, report)
+}
+
+/** 現在能不能說服王城的衛兵：通緝中、已經放行、今天被拒絕過都不行 */
+export function assertMayPersuadePalace(state: GameState) {
+  const loc = locationById(state.location)
+  if (isWanted(state, loc.faction)) throw new Error(`你被${factionName(loc.faction!)}通緝，衛兵不會聽你說。`)
+  if (!palaceNeedsPersuading(state)) throw new Error('衛兵已經放行了')
+  if (state.palaceBlock?.[loc.id] === state.time.day) throw new Error('王城的衛兵今天不會再聽你說了')
+}
+
+/** 說服王城衛兵的結果：成功當天放行；失敗當天不再聽；大失敗另外提高這裡的警戒。回傳結果的描述 */
+export function settlePalacePersuasion(state: GameState, ok: boolean, fumble: boolean, palaceName = '王城'): string {
+  const loc = locationById(state.location)
+  const day = state.time.day
+  if (ok) (state.palacePass ??= {})[loc.id] = day
+  else (state.palaceBlock ??= {})[loc.id] = day
+  if (ok) return `你說服了${palaceName}的衛兵，他們今天放你進出${palaceName}。`
+  const alertNote = fumble && securityRules.palace_persuade.fumble_alert ? raiseAlert(state, loc.id, securityRules.palace_persuade.fumble_alert) : ''
+  return fumble ? `你的說詞漏洞百出，${palaceName}的衛兵起了疑心，把你趕走了。${alertNote}` : `${palaceName}的衛兵不為所動，今天不會再聽你說了。`
 }
 
 /** 犯案被目擊：地點警戒與勢力聲望下降（同一個勢力只扣一次） */

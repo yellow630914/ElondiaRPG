@@ -8,7 +8,7 @@ import { captiveConsequence, resolveCaptive } from '@/engine/captives'
 import { setupInteraction } from '@/engine/interactions'
 import { hireAtAsking } from '@/engine/companions'
 import { setAdultContent } from '@/engine/content'
-import { currentArea, enterLocation, goOutskirts, move, returnToTown, standOn } from '@/engine/grid'
+import { blockKeys, currentArea, enterLocation, getArea, goOutskirts, move, placeAt, returnToTown, standOn } from '@/engine/grid'
 import { generateNpc, npcRecord } from '@/engine/npcs'
 import { ensureRoster, isHostile, outsideQuota, peopleHere, pruneNpcs, refreshRosters, spawnVisitors } from '@/engine/population'
 import {
@@ -369,6 +369,46 @@ describe('crime and the guards', () => {
     expect(palacePersuadeDc(state)).toBe(24)
     state.wanted = { holy_ring: { day: 1 } }
     expect(() => persuadePalaceGuard(state)).toThrow('通緝')
+  })
+
+  it('lets you write what you say to the palace guards (an action the judge can weigh)', () => {
+    /** 站到萊茵堡通往皇宮的路口 */
+    function atPalaceGate(seed: number): GameState {
+      const state = game(seed)
+      state.location = 'rhineburg'
+      state.position = undefined
+      enterLocation(state)
+      for (const key of blockKeys(state.location)) {
+        const area = getArea(state, key)
+        if (area.zone === 'palace') continue
+        const i = area.cells.findIndex((c) => c.kind === 'link' && !!c.link && !c.link.area.startsWith('sm/') && getArea(state, c.link.area).zone === 'palace')
+        if (i >= 0) {
+          placeAt(state, area, i % area.width, Math.floor(i / area.width))
+          return state
+        }
+      }
+      throw new Error('找不到王城的路口')
+    }
+    // 不在王城的路口不能說服
+    expect(() => prepareAction(game(), { kind: 'palace_gate', text: '' })).toThrow('王城的大門')
+    // 說詞跟著行動走；成功當天放行
+    const state = atPalaceGate(4)
+    const p = prepareAction(state, { kind: 'palace_gate', text: '亮出公會的推薦信，說是替伯爵送急件' })
+    expect(p.text).toContain('推薦信')
+    expect(p.base_dc).toBe(palacePersuadeDc(state))
+    p.natural = 20
+    const ok = resolveAction(state, null)!
+    expect(validate(ok), JSON.stringify(validate.errors)).toBe(true)
+    expect(JSON.stringify(ok.outcome)).toContain('放你進出')
+    expect(zoneEntryBlock(state, 'palace')).toBeNull()
+    expect(() => prepareAction(state, { kind: 'palace_gate', text: '' })).toThrow('放行')
+    // 失敗：當天不再聽；大失敗另外提高警戒
+    const fail = atPalaceGate(5)
+    prepareAction(fail, { kind: 'palace_gate', text: '' }).natural = 1
+    resolveAction(fail, null)
+    expect(zoneEntryBlock(fail, 'palace')).toContain('今天不會再聽你說')
+    expect(alertLevel(fail)).toBeGreaterThan(0)
+    expect(() => prepareAction(fail, { kind: 'palace_gate', text: '' })).toThrow('今天不會再聽你說')
   })
 
   it('prices follow your reputation with the local faction', () => {

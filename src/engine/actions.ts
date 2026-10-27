@@ -16,7 +16,7 @@ import { checkModifiers } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { computeDegree, DEGREE_NAME } from './checks'
 import {
-  applyBlackMarket, applyEscape, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, setupFor, type MarketKind,
+  applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, setupFor, type MarketKind,
 } from './companions'
 import {
   abilities, actionRules, ATTR_IDS, attrName, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
@@ -556,6 +556,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'squad_join': return applySquadJoin(state, report, p.target!, degree)
     case 'propose': return applyProposal(state, report, p.target!, degree)
     case 'black_market': return applyBlackMarket(state, report, degree)
+    case 'palace_gate': return applyPalaceGate(state, degree)
     case 'negotiate': return applyNegotiate(state, report, degree)
     case 'escape': return applyEscape(state, report, degree)
     case 'bargain': return applyBargain(state, report, p.target!, degree)

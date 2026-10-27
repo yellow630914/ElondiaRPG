@@ -70,6 +70,12 @@ const linkName = computed(() => linkTargetName(s.value) ?? '別處')
 const linkBlock = computed(() => (cell.value.kind === 'link' ? linkEntryBlock(s.value) : null))
 // 王城的衛兵：聲望不夠、今天還沒被拒絕時可以說服
 const canPersuade = computed(() => linkBlock.value?.zone === 'palace' && !isWanted(s.value, here.value.faction) && s.value.palaceBlock?.[s.value.location] !== s.value.time.day)
+// 說服衛兵的說詞（選填；設定了 AI 判定時依說詞調整 DC）
+const persuadeText = ref('')
+function persuade() {
+  void game.perform({ kind: 'palace_gate', text: persuadeText.value })
+  persuadeText.value = ''
+}
 const lockTool = computed(() => bestTool(s.value, 'lockpick'))
 const LOCK_ICON: Record<LockMethod, IconName> = { dex: 'unlock', str: 'hand', int: 'lightbulb' }
 function lockBonus(k: LockMethod): number {
@@ -333,7 +339,10 @@ const shopDesc = computed(() => {
         <template v-else-if="cell.kind === 'link'">
           <p class="muted small">通往{{ linkName }}的{{ area.kind === 'special' ? '通道' : cell.dir === 'out' ? '大門' : '路口' }}。</p>
           <p v-if="linkBlock" class="warn small"><GameIcon name="siren" :size="13" /> {{ linkBlock.reason }}</p>
-          <button v-if="canPersuade" class="primary" @click="game.persuadePalaceGuard()">說服衛兵（魅力 DC {{ palacePersuadeDc(s) }}）</button>
+          <template v-if="canPersuade">
+            <textarea v-model="persuadeText" class="persuade-text" rows="2" maxlength="400" placeholder="你怎麼說服衛兵（選填）：例如亮出公會的推薦信，說是來替伯爵送急件的" />
+            <button class="primary" :disabled="game.judging" @click="persuade">說服衛兵（魅力 DC {{ palacePersuadeDc(s) }}）</button>
+          </template>
           <button :class="{ primary: !linkBlock }" :disabled="!!linkBlock" @click="game.crossLink()"><GameIcon name="right" :size="14" /> 前往{{ linkName }}<span class="key">E</span></button>
         </template>
 
@@ -415,6 +424,7 @@ const shopDesc = computed(() => {
 <style scoped>
 /* 鍵盤快捷鍵的小方塊（前往相連區域：E） */
 .key { display: inline-block; margin-left: 6px; padding: 0 5px; border: 1px solid currentColor; border-radius: 3px; font-size: 11px; line-height: 1.4; opacity: 0.75; }
+.persuade-text { width: 100%; box-sizing: border-box; resize: vertical; margin-bottom: 4px; }
 .guild-rank { display: grid; gap: 2px; padding: 6px 8px; border: 1px dashed var(--accent); border-radius: var(--radius); margin-bottom: 6px; }
 .guild-rank .hot { color: var(--accent); }
 .board > li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 4px; }
