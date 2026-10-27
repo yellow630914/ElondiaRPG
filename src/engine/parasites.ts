@@ -104,14 +104,19 @@ export function parasiteEffects(p: ParasiteState): { check: CheckFilter; bonus: 
 const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)))
 const dayOf = (t: GameTime) => t.day
 
-/** 依時間增長侵蝕度（例如種子）：上次增長之後過了幾天就加幾次 */
-export function growParasites(c: Character, now: GameTime) {
-  for (const p of activeParasites(c)) {
-    const grow = parasiteDef(p.id)?.grow_per_day ?? 0
+/**
+ * 依時間增長侵蝕度（例如種子）：上次增長之後過了幾天就加幾次。
+ * 暫停時（成人向關閉、沉睡、已馴服，或 paused 說發作關掉了）只把日子往前推、不增長，恢復時不會一次補上。
+ */
+export function growParasites(c: Character, now: GameTime, paused?: (p: ParasiteState) => boolean) {
+  const active = new Set(activeParasites(c))
+  for (const p of parasitesOf(c)) {
     const last = p.grown ?? dayOf(p.since)
     const days = dayOf(now) - last
     if (days <= 0) continue
     p.grown = dayOf(now)
+    if (!active.has(p) || paused?.(p)) continue
+    const grow = parasiteDef(p.id)?.grow_per_day ?? 0
     if (grow) p.corruption = clamp(p.corruption + grow * days)
   }
 }
@@ -200,6 +205,8 @@ export function detachParasite(c: Character, id: string): string {
   if (!p) return ''
   if (def?.kind === 'gear' && def.slot && c.gear?.[def.slot]?.locked === `${PARASITE_LOCK}${id}`) delete c.gear[def.slot]
   if (def?.kind === 'mark') c.tattoos = tattoosOf(c).filter((t) => !(t.kind === 'curse' && t.parasite === id))
+  // 被淫紋蓋掉的刺青留下來，之後還能到刻印師紋回來
+  if (p.covered) (c.coveredTattoos ??= []).push({ parasite: id, tattoo: p.covered })
   c.parasites = parasitesOf(c).filter((x) => x !== p)
   return `${def?.name ?? '寄生物'}離開了你的身體`
 }
@@ -229,20 +236,29 @@ export function reinkable(c: Character): { parasite: string; tattoo: Tattoo; kin
     if (p.stored && !tattooAt(c, p.stored.place)) out.push({ parasite: p.id, tattoo: p.stored, kind: 'curse', price: def?.reink_price ?? 500 })
     if (p.covered && !tattooAt(c, p.covered.place)) out.push({ parasite: p.id, tattoo: p.covered, kind: 'covered', price: def?.reink_price ?? 500 })
   }
+  // 淫紋已經拿掉、留下來的被蓋掉的刺青（同一種寄生物還在身上、也蓋著刺青時先列它的）
+  for (const k of c.coveredTattoos ?? []) {
+    if (out.some((o) => o.parasite === k.parasite && o.kind === 'covered') || tattooAt(c, k.tattoo.place)) continue
+    out.push({ parasite: k.parasite, tattoo: k.tattoo, kind: 'covered', price: parasiteDef(k.parasite)?.reink_price ?? 500 })
+  }
   return out
 }
 
 /** 紋回來（刻印師）：回傳說明 */
 export function reinkTattoo(c: Character, parasite: string, kind: 'curse' | 'covered', time: GameTime): string {
   const p = parasiteOf(c, parasite)
-  const t = kind === 'curse' ? p?.stored : p?.covered
-  if (!p || !t) throw new Error('沒有可以紋回來的印記')
+  const kept = kind === 'covered' && !p?.covered ? c.coveredTattoos?.find((k) => k.parasite === parasite) : undefined
+  const t = kind === 'curse' ? p?.stored : (p?.covered ?? kept?.tattoo)
+  if (!t || (!p && !kept)) throw new Error('沒有可以紋回來的印記')
   if (tattooAt(c, t.place)) throw new Error(`${placeName(t.place)}已經有刺青了`)
   ;(c.tattoos ??= []).push({ ...t, since: { ...time } })
-  if (kind === 'curse') {
-    delete p.stored
-    delete p.dormant
-  } else delete p.covered
+  if (kept) c.coveredTattoos = c.coveredTattoos!.filter((k) => k !== kept)
+  else if (kind === 'curse') {
+    delete p!.stored
+    delete p!.dormant
+    // 沉睡的日子不算：從今天起才繼續增長
+    p!.grown = time.day
+  } else delete p!.covered
   return `${placeName(t.place)}重新紋上了「${t.name ?? ''}」`
 }
 
@@ -258,7 +274,9 @@ export function parasiteSummary(c: Pick<Character, 'parasites'>): string {
   return parasitesOf(c).map((p) => {
     const def = parasiteDef(p.id)
     if (!def) return ''
-    const state = p.tamed ? '已馴服' : p.dormant ? '沉睡中（被奴隸印記頂掉）' : `${stageName(p.corruption)}（侵蝕度 ${p.corruption}）`
+    // 馴服之後不再寫未馴服時的樣子（會餓、會自己動），免得 AI 照舊描寫它作亂
+    if (p.tamed) return `- ${def.name}：已馴服。蠢蠢欲動，但乖乖地在等待你的指令。`
+    const state = p.dormant ? '沉睡中（被奴隸印記頂掉）' : `${stageName(p.corruption)}（侵蝕度 ${p.corruption}）`
     return `- ${def.name}：${state}。${def.desc}`
   }).filter(Boolean).join('\n')
 }

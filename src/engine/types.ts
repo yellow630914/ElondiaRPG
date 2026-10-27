@@ -249,6 +249,8 @@ export interface Character {
   tattoos?: Tattoo[]
   /** 身上的寄生物（寄生裝備、淫紋、寄生種子；只有主角會有，見 engine/parasites.ts） */
   parasites?: ParasiteState[]
+  /** 淫紋拿掉（解咒、撕毀）時，原本被它蓋掉的刺青：刻印師可以紋回來（parasite 是當時蓋掉它的寄生物） */
+  coveredTattoos?: { parasite: string; tattoo: Tattoo }[]
   /** 已花掉的生命骰（總數 = 等級） */
   hitDiceUsed?: number
   /** 體型（主角建角時選的；沒有時依種族與性別，見 look.ts） */

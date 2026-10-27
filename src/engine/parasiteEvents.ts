@@ -54,6 +54,16 @@ export function parasiteCandidates(state: GameState, p: ParasiteState, trigger: 
     && condMet(state, t.requires))
 }
 
+/**
+ * 這個寄生物還能不能發作：存檔規則「寄生發作的機率」不是 0、而且至少有一件發作事件沒有被內容篩選擋掉
+ * （例如關掉「主角非自願」）。不能發作時就像詛咒：被動效果還在，但侵蝕度不增長。
+ */
+export function flaresOn(state: GameState, p: ParasiteState): boolean {
+  if (!adultContent() || gameRule(state, 'parasiteMult') <= 0) return false
+  const body = characterBody(pcOf(state))
+  return parasiteTemplates().some((t) => t.parasite === p.id && tagsAllowed(t.tags) && (!t.pc_body?.length || t.pc_body.includes(body)))
+}
+
 /** 有別的事情等著處理的時候不發作 */
 function busy(state: GameState): boolean {
   return !!(state.parasiteEvent || state.dungeonEvent || state.townEvent || state.roadEvent || state.combat || state.standoff
@@ -61,15 +71,15 @@ function busy(state: GameState): boolean {
 }
 
 /**
- * 依時機擲發作：先依時間增長侵蝕度，冷卻過了，每個會發作的寄生物各擲一次（機率 × 存檔規則 × 階段倍率），
+ * 依時機擲發作：先依時間增長侵蝕度（不能發作的不增長），冷卻過了，每個會發作的寄生物各擲一次（機率 × 存檔規則 × 階段倍率），
  * 中了就從候選裡挑一件（避開最近發作過的）。回傳有沒有開始事件。
  */
 export function maybeParasiteEvent(state: GameState, trigger: ParasiteTrigger): boolean {
-  if (!adultContent()) return false
   const pc = pcOf(state)
   if (!parasitesOf(pc).length) return false
-  growParasites(pc, state.time)
-  if (busy(state)) return false
+  // 成人向關閉、發作關掉時也要把日子往前推（不增長），之後恢復才不會一次補上
+  growParasites(pc, state.time, (p) => !flaresOn(state, p))
+  if (!adultContent() || busy(state)) return false
   const now = hoursOf(state.time)
   const log = state.parasiteEvents
   if (log?.last !== undefined && now - log.last < parasiteRules.cooldown_hours) return false

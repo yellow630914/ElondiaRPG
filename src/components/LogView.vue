@@ -17,7 +17,7 @@ const settings = useSettings()
 /** 開著 AI 細節描述，但「敘事正文」的模型來源還沒設定：提醒去設定 */
 const needsSource = computed(() => settings.aiNarration && !settings.ready('narration'))
 const emit = defineEmits<{ settings: [] }>()
-const hideTrade = ref(true)
+const hideTrade = ref(false)
 const shown = ref(PAGE)
 const feed = ref<HTMLElement | null>(null)
 // token 用量分三份：目前的日誌、已封存的日誌、不屬於任何日誌的呼叫（酒館候選人、商店清單、談判方式等）

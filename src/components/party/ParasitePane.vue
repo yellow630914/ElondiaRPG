@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { Character } from '@/engine/types'
 import { actionRules, attrName } from '@/engine/data'
 import { parasiteDef, parasiteEffects, parasiteRules, parasitesOf, stageName, stageOf } from '@/engine/parasites'
-import { triggerBlock } from '@/engine/parasiteEvents'
+import { flaresOn, triggerBlock } from '@/engine/parasiteEvents'
 import { placeName } from '@/engine/tattoos'
 import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
@@ -23,6 +23,7 @@ function effectText(p: Parameters<typeof parasiteEffects>[0]): string {
   }).join('，')
 }
 const block = (id: string) => (game.state ? triggerBlock(game.state, id) : '')
+const quiet = (p: Parameters<typeof flaresOn>[1]) => !!game.state && !flaresOn(game.state, p)
 </script>
 
 <template>
@@ -46,6 +47,7 @@ const block = (id: string) => (game.state ? triggerBlock(game.state, id) : '')
         </div>
         <p class="small">侵蝕度 <b>{{ p.corruption }}</b>／100<template v-if="effectText(p)">・{{ effectText(p) }}</template></p>
       </template>
+      <p v-if="!p.tamed && !p.dormant && quiet(p)" class="small muted">發作已經關掉（內容篩選或存檔規則）：它就像一道詛咒，不會發作、侵蝕度也不增長，但被動效果還在；要拿掉就去解咒。</p>
       <p v-if="p.dormant" class="small muted">被奴隸印記頂掉了，不會發作；可以到刻印師那裡紋回來。</p>
       <p v-else-if="p.tamed && p.stored" class="small muted">印記不在身上，可以到刻印師那裡紋回來。</p>
       <p v-if="p.covered" class="small muted">刻上時蓋掉了{{ placeName(p.covered.place) }}的「{{ p.covered.name }}」，可以到刻印師那裡紋回來。</p>
