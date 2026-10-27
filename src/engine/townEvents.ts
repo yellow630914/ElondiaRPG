@@ -3,10 +3,14 @@
 // - 冷卻：兩次城鎮事件之間至少隔 town.cooldown_hours；同一個事件隔 cooldown_days（或 town.repeat_days）天才會再出現。
 // - 類型平衡：最近發生過的種類（category）權重乘上 recent_penalty，同一種不會一直出現。
 // - check 的事件走到時直接擲骰揭曉；choice 的事件等玩家選（state.townEvent）。
+// - 成人向的事件（tags、pc_body、scene）和地下城事件一樣：內容設定關掉的標籤不出現，選項帶 adult_scene 時敘事進入親密場景。
 
 import { snapshot } from './character'
+import { tagsAllowed } from './content'
 import { locationById, regionById, shopRules } from './data'
+import { sceneOn } from './dungeonEvents'
 import { currentArea, position, type Area } from './grid'
+import { characterBody } from './look'
 import { pcOf } from './party'
 import { applyPendingMove, applyRoadOutcome, roll, travelEvents, type RoadTemplate } from './road'
 import { commitReport, newReportId, withRng } from './state'
@@ -32,10 +36,13 @@ export function townCandidates(state: GameState, area: Area, cellKind: string): 
   const day = state.time.day
   const seen = state.townEvents?.seen ?? {}
   const repeat = travelEvents.town?.repeat_days ?? 7
+  const body = characterBody(pcOf(state))
   return townTemplates().filter((t) =>
     (!t.cells?.length || t.cells.includes(cellKind))
     && (!t.location_types?.length || t.location_types.includes(loc.type))
     && (!t.locations?.length || t.locations.includes(loc.id))
+    && tagsAllowed(t.tags)
+    && (!t.pc_body?.length || t.pc_body.includes(body))
     && condMet(state, t.requires)
     && (seen[t.id] === undefined || day - seen[t.id]! >= (t.cooldown_days ?? repeat)))
 }
@@ -142,6 +149,7 @@ export function answerTownEvent(state: GameState, index: number): Report {
   const lines = [`${t.title}：${o.label}。`, ...applyRoadOutcome(state, report, ok ? o.success : o.fail)]
   report.outcome = { result: o.check ? (ok ? 'success' : 'failure') : 'neutral', summary: lines.join(''), tags: ['城鎮事件'] }
   report.narration = { ...report.narration, focus: [t.text, `主角的選擇：${o.label}`] }
+  if (t.scene && sceneOn(o, ok)) report.narration = { ...report.narration, length: 'medium', adult_scene: t.scene }
   delete state.townEvent
   const committed = commitReport(state, report)
   applyPendingMove(state)

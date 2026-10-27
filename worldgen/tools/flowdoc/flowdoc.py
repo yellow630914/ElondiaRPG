@@ -193,8 +193,10 @@ for st in S:
     lines.setdefault(name, []).append(st)
 
 
-# 打工的任務線（story_batch26.py）
-WORK_LINES = {'銀鱗旅店的看板娘', '怪人魔導師的研究', '黃金骰子的兔女郎', '舞孃的夜間表演', '伯爵府的見習女僕'}
+# 打工的任務線（story_batch26～28.py）
+WORK_LINES = {'銀鱗旅店的看板娘', '怪人魔導師的研究', '黃金骰子的兔女郎', '舞孃的夜間表演', '伯爵府的見習女僕',
+              '光著身子的朝聖者', '人魚澡堂的搓背女', '熔岩溫泉的混浴', '下城區按摩店的特別服務',
+              '畫家的裸體模特兒', '血角的戰利品之夜', '魅魔宮廷的侍寢見習', '祭品儀式'}
 
 
 def category(name, sts):
@@ -317,6 +319,31 @@ for pid, pdef in PAR['parasites'].items():
                    'nodes': [{'title': t['title'], 'kind': '選擇', 'where': f"身上有{pdef['name']}（{stages}）", 'text': t['text'], 'req': [], 'info': [], 'urgent': False, 'branches': branches}]})
     out.append({'name': f"寄生物的發作：{pdef['name']}", 'cat': '地下城事件（成人向）', 'lv': '—', 'npc': '', 'quests': qs,
                 'flow': [{'label': '各自獨立（依侵蝕度的階段與機率發作，回應之前不能移動）', 'ids': [q['id'] for q in qs], 'seq': False}]})
+# 城鎮的成人向事件（scope: town，有 adult 標籤的）：一條「線」，DC 不調整
+tevs = [t for t in TE['templates'] if t.get('scope') == 'town' and 'adult' in t.get('tags', [])]
+if tevs:
+    qs = []
+    for t in tevs:
+        cells = '、'.join(CELL.get(c, c) for c in t.get('cells', [])) or '任何設施'
+        where_ = '、'.join(loc(x) for x in t.get('locations', [])) or '任何聚落'
+        branches = []
+        for o in t.get('options', []):
+            for ok, res in [(True, o.get('success')), (False, o.get('fail'))]:
+                if not res: continue
+                label = o['label'] if ok or not o.get('check') else o['label'] + '（失敗）'
+                scene = o.get('adult_scene')
+                tags = ['親密場景'] if scene and (scene == 'always' or scene == ('success' if ok else 'fail')) else []
+                b = {'label': label, 'text': res.get('text', ''), 'fx': effects(res), 'next': [], 'unlock': [], 'done': False, 'retry': False,
+                     'flags': res.get('set_flags', []), 'fail': not ok, 'tags': tags}
+                if o.get('check') and ok:
+                    b['check'] = f"{ATTR.get(o['check']['attr'], o['check']['attr'])} DC {o['check']['dc']}"
+                branches.append(b)
+        qs.append({'id': t['id'], 'title': t['title'], 'summary': t.get('scene', ''), 'rank': '—', 'level': None,
+                   'tags': [TAG.get(x, x) for x in t.get('tags', [])], 'who': f"走上{cells}・{where_}", 'startText': '',
+                   'startReq': ['只給：' + '、'.join(BODYN[b] for b in t.get('pc_body', []))] if t.get('pc_body') else [], 'prereq': [], 'rewards': [],
+                   'nodes': [{'title': t['title'], 'kind': '選擇', 'where': f"{where_}的{cells}", 'text': t['text'], 'req': [], 'info': [], 'urgent': False, 'branches': branches}]})
+    out.append({'name': '城鎮事件（成人向）', 'cat': '城鎮事件（成人向）', 'lv': '—', 'npc': '', 'quests': qs,
+                'flow': [{'label': '各自獨立（走上設施時依機率發生，回應之前不能移動）', 'ids': [q['id'] for q in qs], 'seq': False}]})
 for i, l in enumerate(out): l['key'] = f"L{i + 1}"
 data = json.dumps(out, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
 tpl = (HERE / 'template.html').read_text()

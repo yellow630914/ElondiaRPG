@@ -8,15 +8,16 @@
 
 | 腳本 | 寫進 | 說明 |
 |---|---|---|
-| `story_batch1.py` | `data/rules/stories.json` | 所有特殊任務：匯入 `story_batch2`～`story_batch26`，再套用 `epic_places.place_epics`（史詩頭目戰的特殊地圖）、`uniq23.place_gear`（任務的獨特裝備）、`adult_scenes26.place_scenes`（親密場景）。以 git 的 `2fa8ee9` 版的 stories.json 為底，後面接上這些批次 |
+| `story_batch1.py` | `data/rules/stories.json` | 所有特殊任務：匯入 `story_batch2`～`story_batch28`，再套用 `epic_places.place_epics`（史詩頭目戰的特殊地圖）、`uniq23.place_gear`（任務的獨特裝備）、`adult_scenes26.place_scenes`（親密場景）。以 git 的 `2fa8ee9` 版的 stories.json 為底，後面接上這些批次 |
 | `uniq23.py` | `data/rules/items.json` | 任務的獨特裝備 149 件 |
 | `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態 |
 | `parasites25.py` | `data/rules/parasites.json`、`items.json`、`companions.json`、`travel_events.json` | 寄生物的規則、物品、發作事件 |
-| `work26.py` | `data/rules/items.json` | 打工任務線的獨特色情裝備（任務本身在 `story_batch26.py`） |
+| `work26.py` | `data/rules/items.json`、`data/world/npcs.json`、`landmarks.json` | 打工任務線（成人向）的獨特色情裝備、委託人與地標：自己的五條線，加上 `story_batch27.py`、`story_batch28.py` 匯出的 `ITEMS27/28`、`NPCS27/28`、`LANDMARKS27/28`（任務本身在 `story_batch26`～`28`） |
+| `town_events26.py` | `data/rules/travel_events.json` | 城鎮的成人向事件（搜身盤查、被下藥的酒、賭局的代價） |
 | `docgear24.py` | `docs/ITEMS.md` 3.1.1 節 | 任務的獨特裝備表 |
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |
 
-建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `work26.py` → `story_batch1.py` → `docgear24.py` → `flowdoc.py`。
+建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `story_batch1.py` → `docgear24.py` → `flowdoc.py`。
 
 ## 一次性（已經套用過，留作紀錄）
 

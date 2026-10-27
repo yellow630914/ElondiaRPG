@@ -28,7 +28,7 @@ ITEMS = [
          '希爾德加德用來記錄「魔力的直接交換」的黑色蕾絲項圈，中央的墜子是一顆會發熱的魔晶。戴著它的人，咒文會變得異常順口。',
          {"int": 2}, {"save": 1}, {"check": {"attrs": ["int"]}, "bonus": 3}, 2600),
     gear('夜之舞孃的腳鍊', 'anklet_bell', 'gold',
-         '沙痕部落的舞孃代代相傳的金鈴腳鍊，只有跳過「只有一位觀眾的夜間表演」的人才能戴。鈴聲一響，所有人的目光都會跟著腳步走。',
+         '沙痕部落的舞孃代代相傳的金鈴腳鍊，只有在夜間表演裡侍奉過整個帳篷客人的舞孃才能戴。鈴聲一響，所有男人的目光都會跟著腳步走。',
          {"dex": 1, "cha": 1}, {"evade": 2}, {"check": {"kinds": ["work", "flatter"]}, "bonus": 3}, 2600),
 ]
 
@@ -42,21 +42,21 @@ NPCS = [
      "relations": {}},
     {"id": "npc_count_krause", "name": "奧圖・馮・克勞澤", "gender": "male", "race": "human", "class": "", "level": 8, "location": "rhineburg", "hire_cc": 0, "no_attack": True, "adult": True,
      "kind": "commoner", "tags": ["noble"], "occupation": "伯爵", "landmark": "lm_krause_manor",
-     "personality": "威嚴、講究禮儀，對下人的要求一絲不苟；私底下寂寞又貪戀溫存，在浴室與寢室裡是另一個人。",
+     "personality": "威嚴、講究禮儀，對下人的要求一絲不苟；私底下好色又專橫，把女僕當成府裡的家具，在浴室與寢室裡只管自己舒服。",
      "appearance": "五十歲上下的帝國伯爵，灰白的鬍子修剪得整整齊齊，背挺得像一把劍；左臉有一道舊戰傷。",
      "adult_appearance": "退役軍人的身材還沒走樣，肩背寬厚，身上留著好幾道戰場上的疤。",
-     "background": "克勞澤伯爵，第一軍團退役的騎兵將領，夫人五年前病逝。伯爵府的女僕一個接一個地辭職，管家說是因為「規矩太多」；城裡的人說，是因為少爺。",
+     "background": "克勞澤伯爵，第一軍團退役的騎兵將領，夫人五年前病逝。伯爵府的女僕一個接一個地辭職，管家說是因為「規矩太多」；城裡的人說，是因為父子倆都管不住褲襠。",
      "relations": {"npc_lukas_krause": "唯一的兒子。管不動，也捨不得管。"}},
     {"id": "npc_lukas_krause", "name": "盧卡斯・馮・克勞澤", "gender": "male", "race": "human", "class": "", "level": 3, "location": "rhineburg", "hire_cc": 0, "no_attack": True, "adult": True,
      "kind": "commoner", "tags": ["noble"], "occupation": "伯爵家的少爺", "landmark": "lm_krause_manor",
-     "personality": "被寵壞的惡作劇少爺，愛掀女僕的裙子、愛看人臉紅；被認真對待時卻會手足無措，其實很怕寂寞。",
+     "personality": "被寵壞的惡作劇少爺，愛掀女僕的裙子、愛看人臉紅；什麼都想要，玩膩了就丟。",
      "appearance": "十九歲的金髮少年，長得像母親，漂亮得有點女氣；總是穿著敞開領口的白襯衫。",
      "adult_appearance": "看起來纖瘦，脫了衣服卻意外地結實。",
-     "background": "克勞澤伯爵的獨子，下個月就要滿二十歲、辦成年禮。母親過世之後，他用惡作劇把伯爵府的女僕一個一個趕走，像是在測試誰會留下來。",
+     "background": "克勞澤伯爵的獨子，下個月就要滿二十歲、辦成年禮。府裡的女僕被他玩過一輪又一輪，成年禮的那一晚，他要一個「全新的」。",
      "relations": {"npc_count_krause": "父親。很少說話，說了就是吵架。"}},
     {"id": "npc_hildegard", "name": "希爾德加德", "gender": "female", "race": "elf", "class": "wizard", "level": 12, "location": "dawnlight", "hire_cc": 0, "no_attack": True, "adult": True,
      "kind": "adventurer", "tags": ["traveler"], "occupation": "怪人魔導師", "landmark": "lm_odd_tower",
-     "personality": "滿腦子只有研究的怪人，說話飛快、毫無羞恥心，叫人脫衣服就像叫人伸手量脈搏；興奮起來會忘記自己也是有身體的人。對受試者意外地體貼。",
+     "personality": "滿腦子只有研究的怪人，說話飛快、毫無羞恥心，叫人脫衣服就像叫人伸手量脈搏；興奮起來會忘記自己也是有身體的人。對受試者一點都不客氣。",
      "appearance": "看不出年紀的精靈女性，銀白長髮亂糟糟地紮成一束，戴著好幾層鏡片的眼鏡；法袍底下什麼都不穿，袖子沾滿了藥漬。",
      "adult_appearance": "纖細的身體上畫滿了測量用的魔力刻度線，從鎖骨一路畫到大腿內側——她說是為了方便自己當受試者。",
      "background": "晨光城郊外怪人之塔的主人，研究「魔力與快感的關係」三百年，被每一所魔導學院列為拒絕往來戶。她付的報酬很好，受試者卻很少來第二次——不是因為痛，是因為太舒服，回不去正常的生活。",
@@ -66,7 +66,7 @@ NPCS = [
      "personality": "慵懶、性感、愛逗人，舞台下說話像在打呵欠，一上台就像換了一個人；把舞蹈當成信仰，對偷懶的徒弟毫不留情。",
      "appearance": "二十八歲的貓魅族舞孃，黑豹般的深色毛皮與琥珀色的眼睛，身材修長；全身只有薄紗、金幣串與腳踝上的一串金鈴。",
      "adult_appearance": "腰間與大腿內側紋著部落的舞紋，跳舞時會隨著汗水發亮。",
-     "background": "帳環市集最有名的舞孃，蕾伊拉入行時的師姊。沙痕部落的舞孃有一個古老的傳統：只有跳過「只有一位觀眾的夜間表演」的人，才能戴上祖傳的金鈴腳鍊。她在等一個能接下那串腳鍊的人。",
+     "background": "帳環市集最有名的舞孃，蕾伊拉入行時的師姊。沙痕部落的舞孃有一個老規矩：白天跳舞收賞錢，夜裡在帳篷裡收真正的價錢；侍奉過整個帳篷客人的舞孃，才能戴上祖傳的金鈴腳鍊。她缺一個新的搭檔。",
      "relations": {"npc_leila": "師妹。跑去東海找什麼祕寶，信都不寫一封。"}},
 ]
 
@@ -87,6 +87,12 @@ LANDMARKS = [
 
 
 def write():
+    # 第二十七、二十八批的打工線（story_batch27.py、story_batch28.py）的裝備、NPC 與地標一起寫
+    from story_batch27 import ITEMS27, NPCS27, LANDMARKS27
+    from story_batch28 import ITEMS28, NPCS28, LANDMARKS28
+    ITEMS = globals()['ITEMS'] + ITEMS27 + ITEMS28
+    NPCS = globals()['NPCS'] + NPCS27 + NPCS28
+    LANDMARKS = globals()['LANDMARKS'] + LANDMARKS27 + LANDMARKS28
     # 物品：接在吊帶舞孃的吊襪內褲後面
     P = 'data/rules/items.json'
     names = {i['name'] for i in ITEMS}

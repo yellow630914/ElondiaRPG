@@ -2252,6 +2252,122 @@
    "open": {
     "adult": true
    }
+  },
+  {
+   "id": "lm_pilgrim_bath",
+   "name": "朝聖者澡堂",
+   "emoji": "🛁",
+   "location": "soriel",
+   "at": {
+    "area": "soriel/pilgrim",
+    "x": 3,
+    "y": 4
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "朝聖者區的公共澡堂，門口刻著「潔淨身體，以迎聖環」。更衣櫃沒有鎖，老闆說神會看著。",
+   "scene": "蒸氣裡混著廉價肥皂與汗味，更衣間的木架上總是少了幾件衣服；老闆貝托在櫃台後面笑瞇瞇地數錢。",
+   "open": {
+    "hours": "day",
+    "adult": true
+   }
+  },
+  {
+   "id": "lm_pearl_bath",
+   "name": "珍珠澡堂",
+   "emoji": "🐚",
+   "location": "tidehaven",
+   "at": {
+    "area": "tidehaven/lower",
+    "x": 3,
+    "y": 3
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "水手街的玉璘族澡堂，有淺池、搓背間和一個只接熟客的深海水池。",
+   "scene": "潮濕的石室裡瀰漫著海鹽與香油的味道，搓背間的竹簾後面傳來水聲和男人滿足的哼聲。",
+   "open": {
+    "adult": true
+   }
+  },
+  {
+   "id": "lm_ironforge_onsen",
+   "name": "熔岩溫泉旅館",
+   "emoji": "♨️",
+   "location": "ironforge",
+   "at": {
+    "area": "ironforge/gate",
+    "x": 2,
+    "y": 4
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "外門廳旁的溫泉旅館，引地底熔岩加熱的泉水。只有一個大池子：矮人的規矩是男女混浴，幫工也一樣。",
+   "scene": "硫磺味的熱氣裡，一群剛下工的礦工光著身子泡在池裡喝酒，大聲唱著跑調的礦工歌。",
+   "open": {
+    "adult": true
+   }
+  },
+  {
+   "id": "lm_lower_massage",
+   "name": "下城區的按摩店",
+   "emoji": "💆",
+   "location": "rhineburg",
+   "at": {
+    "area": "rhineburg/lower",
+    "x": 3,
+    "y": 3
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "娼館隔壁的按摩店，招牌寫著「舒筋活血」。前面是按摩床，後面的小房間另外收錢。",
+   "scene": "薄荷油的味道蓋不住隔壁傳來的聲音，按摩床上的客人一邊哼一邊把錢塞進師傅的口袋。",
+   "open": {
+    "adult": true
+   }
+  },
+  {
+   "id": "lm_nude_atelier",
+   "name": "河畔的畫室",
+   "emoji": "🎨",
+   "location": "albena",
+   "at": {
+    "area": "albena/river",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "河畔一間堆滿畫布的畫室，門口貼著：誠徵裸體模特兒，日結，不問出身。窗戶永遠拉著簾子。",
+   "scene": "油彩、松節油和酒的味道混在一起，畫架圍成一圈，中間是一張鋪著舊毯子的高台；學徒們在角落裡竊竊私語。",
+   "open": {
+    "adult": true
+   }
+  },
+  {
+   "id": "lm_bed_school",
+   "name": "侍寢見習館",
+   "emoji": "🥀",
+   "location": "bloodplume",
+   "at": {
+    "area": "bloodplume/slums",
+    "x": 3,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "暗巷深處一間掛著紅燈的館子，赤翼宮廷在這裡訓練侍寢的見習生。門口的魅魔只問一句：「誰派你來的？」",
+   "scene": "館裡燭光昏暗，到處是軟墊和薄紗，空氣甜得發膩；隔間裡傳來魅魔們教課的聲音，和學生的喘息。",
+   "open": {
+    "hours": "night",
+    "adult": true
+   }
   }
  ]
 }

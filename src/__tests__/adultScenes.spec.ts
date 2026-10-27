@@ -66,11 +66,19 @@ describe('intimate scenes in special quests', () => {
 
 describe('work quest lines', () => {
   const LINES = {
-    inn: ['inn_skirt', 'inn_cellar', 'inn_feast', '看板娘的圍裙'],
+    inn: ['inn_skirt', 'inn_table', 'inn_feast', '看板娘的圍裙'],
     odd: ['odd_measure', 'odd_trial', 'odd_exchange', '實驗用的魔導項圈'],
     dice: ['dice_dealer', 'dice_luck', 'dice_jackpot', '黃金骰子的兔女郎裝'],
     dance: ['dance_bazaar', 'dance_chief', 'dance_night', '夜之舞孃的腳鍊'],
     maid: ['maid_skirt', 'maid_bath', 'maid_night', '伯爵府的女僕裝'],
+    expo: ['expo_stolen', 'expo_field', 'expo_parade', '露出狂的網襪'],
+    bath: ['bath_scrub', 'bath_vip', 'bath_deep', '澡堂的珍珠胸鍊'],
+    onsen: ['onsen_mixed', 'onsen_rub', 'onsen_dawn', '溫泉旅館的浴衣'],
+    massage: ['massage_lesson', 'massage_special', 'massage_last', '按摩師的薄紗手套'],
+    paint: ['paint_pose', 'paint_statue', 'paint_brush', '畫家模特兒的絲袍'],
+    horn: ['horn_feast', 'horn_winner', 'horn_trophy', '戰利品的獸骨腰帶'],
+    court: ['court_demo', 'court_lord', 'court_banquet', '侍寢見習的魅魔絲衣'],
+    pyre: ['pyre_cleanse', 'pyre_prelude', 'pyre_offering', '祭品的血紅頸環'],
   }
 
   it('run three stages in order, only for feminine and androgynous heroes, and end with the line gear in every branch', () => {
@@ -78,6 +86,8 @@ describe('work quest lines', () => {
       const [s1, s2, s3] = [a!, b!, c!].map(story)
       for (const s of [s1, s2, s3]) {
         expect(s!.tags, s!.id).toContain('adult')
+        // 打工線一律算男性對象（結局有女性一起也一樣）
+        expect(s!.tags, s!.id).toContain('male_partner')
         expect(s!.start.pc_body, s!.id).toEqual(['fem', 'andro'])
       }
       expect(s1!.start.requires).toBeUndefined()

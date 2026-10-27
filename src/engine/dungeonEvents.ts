@@ -132,8 +132,8 @@ export function pcEventReport(state: GameState, title: string, tag: string): Rep
   }
 }
 
-/** 這個選項會不會進入親密場景（只在開啟成人向時） */
-function sceneOn(o: RoadOption, ok: boolean): boolean {
+/** 這個選項會不會進入親密場景（只在開啟成人向時；城鎮事件也用） */
+export function sceneOn(o: RoadOption, ok: boolean): boolean {
   if (!adultContent() || !o.adult_scene) return false
   return o.adult_scene === 'always' || (!!o.check && o.adult_scene === (ok ? 'success' : 'fail'))
 }

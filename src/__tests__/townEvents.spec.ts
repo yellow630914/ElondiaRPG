@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { setAdultContent } from '@/engine/content'
 import { enterLocation, move, standOn } from '@/engine/grid'
 import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
 import { pruneRoadEvent, travelEvents } from '@/engine/road'
@@ -14,7 +15,10 @@ beforeEach(() => {
   localStorage.clear()
   setActivePinia(createPinia())
 })
-afterEach(() => applyContent(emptyMods()))
+afterEach(() => {
+  applyContent(emptyMods())
+  setAdultContent(false)
+})
 
 function inTown(location = 'soriel', seed = 4): GameState {
   const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed, birthplace: location })
@@ -142,5 +146,50 @@ describe('travel event mods', () => {
     for (const t of travelEvents.templates) {
       expect(sanitizeTravelEvent(t.id, t, false), t.id).toEqual(t)
     }
+  })
+})
+
+describe('adult town events', () => {
+  const ADULT = ['town_frisk', 'town_drugged_drink', 'town_gamble_price']
+  const female = (location = 'albena') => {
+    const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: location, gender: '女', body: 'fem' })
+    enterLocation(state)
+    return state
+  }
+
+  it('are adult, male-partner events for feminine and androgynous heroes with a scene on every yielding option', () => {
+    for (const id of ADULT) {
+      const t = travelEvents.templates.find((x) => x.id === id)!
+      expect(t.scope).toBe('town')
+      expect(t.tags, id).toContain('adult')
+      expect(t.tags, id).toContain('male_partner')
+      expect(t.pc_body, id).toEqual(['fem', 'andro'])
+      expect(t.scene, id).toBeTruthy()
+      expect(t.options!.at(-1)!.adult_scene, id).toBe('always')
+    }
+  })
+
+  it('only show up with adult content on and for the right body', () => {
+    const state = female()
+    const ids = () => townCandidates(state, currentArea(state), 'tavern').map((t) => t.id)
+    expect(ids()).not.toContain('town_drugged_drink')
+    setAdultContent(true)
+    expect(ids()).toContain('town_drugged_drink')
+    expect(ids()).toContain('town_gamble_price')
+    const man = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'albena', gender: '男', body: 'masc' })
+    enterLocation(man)
+    expect(townCandidates(man, currentArea(man), 'tavern').map((t) => t.id)).not.toContain('town_drugged_drink')
+  })
+
+  it('hand the scene to the narration when the hero gives in', () => {
+    setAdultContent(true)
+    only('town_drugged_drink')
+    const state = female()
+    expect(standOn(state, 'tavern')).toBe(true)
+    maybeTownEvent(state)
+    expect(pendingTownEvent(state)?.id).toBe('town_drugged_drink')
+    const report = answerTownEvent(state, 2)
+    expect(report.narration?.adult_scene).toBe(travelEvents.templates.find((x) => x.id === 'town_drugged_drink')!.scene)
+    expect(report.changes.conditions?.map((c) => c.condition)).toContain('aroused')
   })
 })
