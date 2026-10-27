@@ -351,7 +351,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "聖環護衛的鍊甲", "qty": 1 }
+      ]
     },
     {
       "id": "dawn_throne_poison",
@@ -666,7 +670,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 250 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "驅散低語的護符", "qty": 1 }
+      ]
     },
     {
       "id": "whisper_oath",
@@ -1221,7 +1229,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "南郊守夜人的長劍", "qty": 1 }
+      ]
     },
     {
       "id": "rhine_iron_cross",
@@ -1411,7 +1423,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+      "rewards": [
+        { "type": "money", "amount": 1500 },
+        { "type": "xp", "amount": 2000 },
+        { "type": "item", "name": "四將軍的秘銀板甲", "qty": 1 }
+      ]
     },
     {
       "id": "mist_bell",
@@ -1486,7 +1502,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 250 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "晨霧修道院的鐘鎚", "qty": 1 }
+      ]
     },
     {
       "id": "mist_inquisition",
@@ -1637,7 +1657,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+      "rewards": [
+        { "type": "money", "amount": 1500 },
+        { "type": "xp", "amount": 2000 },
+        { "type": "item", "name": "聖者埃利昂的鎚", "qty": 1 }
+      ]
     },
     {
       "id": "isadora_interview",
@@ -2190,7 +2214,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+      "rewards": [
+        { "type": "money", "amount": 1500 },
+        { "type": "xp", "amount": 2000 },
+        { "type": "item", "name": "大公會議的護教鍊甲", "qty": 1 }
+      ]
     },
     {
       "id": "snake_red_creek",
@@ -2269,7 +2297,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 250 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "蛇溪的解毒項鍊", "qty": 1 }
+      ]
     },
     {
       "id": "snake_eggs",
@@ -3137,7 +3169,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 250 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "席恩的指揮細劍", "qty": 1 }
+      ]
     },
     {
       "id": "epic_undead_general",
@@ -3267,7 +3303,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+      "rewards": [
+        { "type": "money", "amount": 1200 },
+        { "type": "xp", "amount": 1800 },
+        { "type": "item", "name": "史詩終章的秘銀細劍", "qty": 1 }
+      ]
     },
     {
       "id": "serena_golden_lotus",
@@ -3895,7 +3935,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 250 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "流水之靈的誓約護符", "qty": 1 }
+      ]
     },
     {
       "id": "spirit_upstream",
@@ -4046,7 +4090,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+      "rewards": [
+        { "type": "money", "amount": 1200 },
+        { "type": "xp", "amount": 1800 },
+        { "type": "item", "name": "誓約守望者的護符", "qty": 1 }
+      ]
     },
     {
       "id": "amelia_lonely_night",
@@ -4488,7 +4536,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "假幣師的迅捷之戒", "qty": 1 }
+      ]
     },
     {
       "id": "commerce_council_vote",
@@ -4739,7 +4791,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 500 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "海妖的金耳墜", "qty": 1 }
+      ]
     },
     {
       "id": "seacave_drowned_crew",
@@ -5203,7 +5259,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "白棋信使的胸甲", "qty": 1 }
+      ]
     },
     {
       "id": "annex_hill_exercise",
@@ -5400,7 +5460,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+      "rewards": [
+        { "type": "money", "amount": 1500 },
+        { "type": "xp", "amount": 2000 },
+        { "type": "item", "name": "白棋的金印戒", "qty": 1 }
+      ]
     },
     {
       "id": "spy_pigeons",
@@ -5487,7 +5551,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "密探的迅捷之戒", "qty": 1 }
+      ]
     },
     {
       "id": "spy_valentin_brother",
@@ -5733,7 +5801,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "扒手凱的折刀", "qty": 1 }
+      ]
     },
     {
       "id": "defense_mole",
@@ -5896,7 +5968,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+      "rewards": [
+        { "type": "money", "amount": 1500 },
+        { "type": "xp", "amount": 2000 },
+        { "type": "item", "name": "白棋密探的秘銀匕首", "qty": 1 }
+      ]
     },
     {
       "id": "lena_good_friend",
@@ -7680,7 +7756,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "代筆人的靜心耳墜", "qty": 1 }
+      ]
     },
     {
       "id": "noctis_undelivered",
@@ -7934,7 +8014,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 400 }]
+      "rewards": [
+        { "type": "money", "amount": 250 },
+        { "type": "xp", "amount": 400 },
+        { "type": "item", "name": "莫菲的夢遊法杖", "qty": 1 }
+      ]
     },
     {
       "id": "morphe_moth_dust",
@@ -8195,7 +8279,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "最弱四天王的巨斧", "qty": 1 }
+      ]
     },
     {
       "id": "law_iron_tongue",
@@ -8394,7 +8482,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+      "rewards": [
+        { "type": "money", "amount": 1500 },
+        { "type": "xp", "amount": 2000 },
+        { "type": "item", "name": "沉默之斧", "qty": 1 }
+      ]
     },
     {
       "id": "trial_new_moon",
@@ -8554,7 +8646,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "血獸皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "trial_war_spirits",
@@ -8738,7 +8834,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "灰燼修會的骨鎚矛", "qty": 1 }
+      ]
     },
     {
       "id": "god_white_flame",
@@ -8827,7 +8927,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "白焰鎚矛", "qty": 1 }
+      ]
     },
     {
       "id": "god_glimpse",
@@ -9240,7 +9344,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 250 }, { "type": "xp", "amount": 400 }]
+      "rewards": [
+        { "type": "money", "amount": 250 },
+        { "type": "xp", "amount": 400 },
+        { "type": "item", "name": "莫格婆婆的採藥杖", "qty": 1 }
+      ]
     },
     {
       "id": "rot_tax_collectors",
@@ -10050,7 +10158,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "風錘村的風紋腳鍊", "qty": 1 }
+      ]
     },
     {
       "id": "kagni_burn_and_still",
@@ -10969,7 +11081,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "心火之劍", "qty": 1 }
+      ]
     },
     {
       "id": "smith_council_verdict",
@@ -11164,7 +11280,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "守泉祭司的苔紋皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "wt_other_end",
@@ -11257,7 +11377,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "根語者的獸皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "wt_new_sprout",
@@ -11352,7 +11476,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+      "rewards": [
+        { "type": "money", "amount": 1200 },
+        { "type": "xp", "amount": 1800 },
+        { "type": "item", "name": "新芽古樹杖", "qty": 1 }
+      ]
     },
     {
       "id": "wat_dancer_rumor",
@@ -11440,7 +11568,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "舞孃的纏腕絲帶", "qty": 1 }
+      ]
     },
     {
       "id": "wat_chart_island",
@@ -11722,7 +11854,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "走私客的夜行皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "smg_skull_tide",
@@ -11913,7 +12049,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+      "rewards": [
+        { "type": "money", "amount": 1500 },
+        { "type": "xp", "amount": 2000 },
+        { "type": "item", "name": "黑帆的夜行皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "sinor_lagging_mirror",
@@ -12548,7 +12688,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "觀星者的星圖長袍", "qty": 1 }
+      ]
     },
     {
       "id": "shadow_same_dream",
@@ -12742,7 +12886,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+      "rewards": [
+        { "type": "money", "amount": 1200 },
+        { "type": "xp", "amount": 1800 },
+        { "type": "item", "name": "星落之夜的月影長袍", "qty": 1 }
+      ]
     },
     {
       "id": "fog_lost_names",
@@ -12829,7 +12977,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "記得名字的項鍊", "qty": 1 }
+      ]
     },
     {
       "id": "fog_mistveil",
@@ -13183,7 +13335,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "夏瀾殿的鯨皮外套", "qty": 1 }
+      ]
     },
     {
       "id": "vault_tide_mirror",
@@ -13808,7 +13964,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1200 }, { "type": "xp", "amount": 1800 }]
+      "rewards": [
+        { "type": "money", "amount": 1200 },
+        { "type": "xp", "amount": 1800 },
+        { "type": "item", "name": "沙獅皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "scs_cracked_accord",
@@ -14255,7 +14415,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "競技場的月影絲纏腕", "qty": 1 }
+      ]
     },
     {
       "id": "rite_wind_field",
@@ -15089,7 +15253,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "封印隊的明心項鍊", "qty": 1 }
+      ]
     },
     {
       "id": "echo_spirit_of_echoes",
@@ -15286,7 +15454,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "杜拉克的軍戒", "qty": 1 }
+      ]
     },
     {
       "id": "gnt_rune_circuit",
@@ -15641,7 +15813,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "魔焰織法者的法杖", "qty": 1 }
+      ]
     },
     {
       "id": "emb_heart_of_flame",
@@ -15815,7 +15991,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "血誓侍從的臍釘", "qty": 1 }
+      ]
     },
     {
       "id": "brc_fallen_king",
@@ -15903,7 +16083,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "古王的驅暗項鍊", "qty": 1 }
+      ]
     },
     {
       "id": "brc_first_oathbreaker",
@@ -16177,7 +16361,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "綠化計畫的項鍊", "qty": 1 }
+      ]
     },
     {
       "id": "ghs_first_experiment",
@@ -16358,7 +16546,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "托倫的紫杉長弓", "qty": 1 }
+      ]
     },
     {
       "id": "msr_shard_avatar",
@@ -16446,7 +16638,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "月影根穴的古樹長弓", "qty": 1 }
+      ]
     },
     {
       "id": "msr_moon_core",
@@ -16622,7 +16818,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "月華巡禮的修行袍", "qty": 1 }
+      ]
     },
     {
       "id": "thc_eaten_memories",
@@ -16802,7 +17002,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+      "rewards": [
+        { "type": "money", "amount": 1500 },
+        { "type": "xp", "amount": 2000 },
+        { "type": "item", "name": "女神倒影的修行袍", "qty": 1 }
+      ]
     },
     {
       "id": "vh_infected_elves",
@@ -17436,7 +17640,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "海盜王的瞭望耳環", "qty": 1 }
+      ]
     },
     {
       "id": "skl_pirate_king_map",
@@ -17524,7 +17732,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "紅鬚的鷹眼耳環", "qty": 1 }
+      ]
     },
     {
       "id": "skl_kraken",
@@ -17714,7 +17926,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "夜爪獵手的皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "ecc_calamity_shade",
@@ -18071,7 +18287,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "太陽神諭的腳鍊", "qty": 1 }
+      ]
     },
     {
       "id": "qst_sun_god_avatar",
@@ -23132,7 +23352,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "伊莎貝拉的舊鍊甲", "qty": 1 }
+      ]
     },
     {
       "id": "isab_young_knight",
@@ -23235,7 +23459,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "年輕騎士的秘銀鍊甲", "qty": 1 }
+      ]
     },
     {
       "id": "isab_last_bet",
@@ -23691,7 +23919,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "赤鬃狩獵皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "kara_suitors",
@@ -23779,7 +24011,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+      "rewards": [
+        { "type": "money", "amount": 600 },
+        { "type": "xp", "amount": 900 },
+        { "type": "item", "name": "求婚者的金臍釘", "qty": 1 }
+      ]
     },
     {
       "id": "kara_mane_oath",
@@ -25607,7 +25843,11 @@
           ]
         }
       ],
-      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+      "rewards": [
+        { "type": "money", "amount": 300 },
+        { "type": "xp", "amount": 450 },
+        { "type": "item", "name": "春潮閣的宴會皮甲", "qty": 1 }
+      ]
     },
     {
       "id": "sak_lost_sister",
@@ -26763,7 +27003,7 @@
               "label": "念出詔書的最後一行",
               "success": {
                 "text": "你念出了那一行：「此詔於和平之日作廢，願後世不再以神之名開戰。」整個廣場安靜了很久。然後，大教堂的鐘響了——不是聖戰的鐘，是和平的鐘。教皇站起來，親手撕掉了聖戰派的抄本。三個主戰派，都清剿完了。",
-                "set_flags": ["pol_peace_done", "pol_p3_read"],
+                "set_flags": ["pol_peace_done", "pol_p3_read", "pol_peace_crusade_spoils"],
                 "effects": [
                   { "type": "reputation", "faction": "holy_ring", "delta": 10 },
                   {
@@ -26771,19 +27011,51 @@
                     "summary": "清剿主戰派：在大教堂念出了聖戰詔書被省略的最後一行——此詔於和平之日作廢。鐵十字會、血角派、聖戰派，都清剿完了。",
                     "importance": 3
                   }
-                ],
-                "complete": true
+                ]
               }
             },
             {
               "label": "把原本交給教皇，讓他自己念",
               "success": {
                 "text": "教皇接過了原本，看了很久，然後站起來，親自念出了最後一行。他的聲音在抖：「……兩百年了。我們讓先人等太久了。」鐘聲響了。三個主戰派，都清剿完了。",
-                "set_flags": ["pol_peace_done", "pol_p3_pope"],
+                "set_flags": ["pol_peace_done", "pol_p3_pope", "pol_peace_crusade_spoils"],
                 "effects": [
                   { "type": "reputation", "faction": "holy_ring", "delta": 15 },
                   { "type": "memory", "summary": "清剿主戰派：把聖戰詔書的原本交給教皇，讓他親自念出了最後一行。三個主戰派都清剿完了。", "importance": 3 }
-                ],
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "spoils",
+          "title": "論功行賞：教皇的謝禮",
+          "text": "大教堂的鐘樓下，教皇格里高利七世親手捧出三件東西：「主戰派清剿乾淨了，這場戰爭沒有打起來。教廷欠你的，比這三件東西多得多——可是你只能挑一件。」",
+          "at": { "where": "cell", "location": "soriel", "cell": "temple" },
+          "requires": { "flags": ["pol_peace_crusade_spoils"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「這一片鐘」",
+              "success": {
+                "text": "你收下了「聖鐘碎片的墜飾」。",
+                "effects": [{ "type": "item", "name": "聖鐘碎片的墜飾", "qty": 1 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「詔書的封蠟」",
+              "success": {
+                "text": "你收下了「燒毀詔書的封蠟戒」。",
+                "effects": [{ "type": "item", "name": "燒毀詔書的封蠟戒", "qty": 1 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「和約的耳環」",
+              "success": {
+                "text": "你收下了「和平的鷹眼耳環」。",
+                "effects": [{ "type": "item", "name": "和平的鷹眼耳環", "qty": 1 }],
                 "complete": true
               }
             }
@@ -27018,24 +27290,56 @@
               "label": "答應她的條件",
               "success": {
                 "text": "你把莉莎爾的條件帶下了城牆，帝國的將軍很久才點頭。血羽城堡的城門打開了，帝國的軍隊進城的時候，沒有放一把火。戰爭結束了——人類贏了，但魔族還在。",
-                "set_flags": ["pol_war_h_done", "pol_h_terms"],
+                "set_flags": ["pol_war_h_done", "pol_h_terms", "pol_war_h_bloodplume_spoils"],
                 "effects": [
                   { "type": "reputation", "faction": "rhine_empire", "delta": 10 },
                   { "type": "reputation", "faction": "demon_council", "delta": 5 },
                   { "type": "memory", "summary": "開戰・人類方：兵臨血羽城堡，莉莎爾投降。你答應了她的條件：城不燒、魔族不為奴、律法留下。", "importance": 3 }
-                ],
-                "complete": true
+                ]
               }
             },
             {
               "label": "「把冠環戴回去。停戰，不是投降」",
               "success": {
                 "text": "莉莎爾愣住了。你把冠環遞還給她：「帝國不需要征服血羽城堡。只需要魔族不再越過邊境。」她看著你，很久，然後把冠環戴了回去：「……停戰。」城下的帝國將軍罵了一整天，最後還是簽了停戰協議。",
-                "set_flags": ["pol_war_h_done", "pol_h_truce"],
+                "set_flags": ["pol_war_h_done", "pol_h_truce", "pol_war_h_bloodplume_spoils"],
                 "effects": [
                   { "type": "reputation", "faction": "demon_council", "delta": 10 },
                   { "type": "memory", "summary": "開戰・人類方：兵臨血羽城堡，你把莉莎爾的冠環遞還給她——停戰，不是投降。", "importance": 3 }
-                ],
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "spoils",
+          "title": "論功行賞：帝國的謝禮",
+          "text": "停戰的條件談完了，帝國的使節把三件戰利品擺在你面前：「宰相大人說，攻下血羽城堡的人可以先挑。只能挑一件——剩下的要分給戰死的人的家屬。」",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
+          "requires": { "flags": ["pol_war_h_bloodplume_spoils"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「血誓碑的碎片」",
+              "success": {
+                "text": "你收下了「血誓碑的碎片」。",
+                "effects": [{ "type": "item", "name": "血誓碑的碎片", "qty": 1 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「勝利之戒」",
+              "success": {
+                "text": "你收下了「帝國的勝利之戒」。",
+                "effects": [{ "type": "item", "name": "帝國的勝利之戒", "qty": 1 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「赤羽臍環」",
+              "success": {
+                "text": "你收下了「赤羽臍環」。",
+                "effects": [{ "type": "item", "name": "赤羽臍環", "qty": 1 }],
                 "complete": true
               }
             }
@@ -27273,24 +27577,56 @@
               "label": "答應她的條件",
               "success": {
                 "text": "你把艾蕾諾拉的條件帶下了城牆，赤翼的將軍很久才點頭。萊茵堡的城門打開了，赤翼的軍隊進城的時候，沒有放一把火。戰爭結束了——魔族贏了，但帝國還在。",
-                "set_flags": ["pol_war_d_done", "pol_d_terms"],
+                "set_flags": ["pol_war_d_done", "pol_d_terms", "pol_war_d_rhineburg_spoils"],
                 "effects": [
                   { "type": "reputation", "faction": "demon_council", "delta": 10 },
                   { "type": "reputation", "faction": "rhine_empire", "delta": 5 },
                   { "type": "memory", "summary": "開戰・魔族方：兵臨萊茵堡，艾蕾諾拉投降。你答應了她的條件：城不燒、人類不為奴、皇帝的敕令留下。", "importance": 3 }
-                ],
-                "complete": true
+                ]
               }
             },
             {
               "label": "「把權杖拿回去。停戰，不是投降」",
               "success": {
                 "text": "艾蕾諾拉愣住了。你把權杖遞還給她：「魔族不需要征服萊茵堡。只需要人類不再越過邊境。」她看著你，很久，然後接過了權杖：「……停戰。」城下的赤翼將軍罵了一整天，最後還是簽了停戰協議。",
-                "set_flags": ["pol_war_d_done", "pol_d_truce"],
+                "set_flags": ["pol_war_d_done", "pol_d_truce", "pol_war_d_rhineburg_spoils"],
                 "effects": [
                   { "type": "reputation", "faction": "rhine_empire", "delta": 10 },
                   { "type": "memory", "summary": "開戰・魔族方：兵臨萊茵堡，你把艾蕾諾拉的權杖遞還給她——停戰，不是投降。", "importance": 3 }
-                ],
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "spoils",
+          "title": "論功行賞：赤翼之君的謝禮",
+          "text": "萊茵堡的城牆上換上了赤翼的旗幟。薇洛妮卡捧著一個黑紅色的匣子走來：「陛下說，攻下萊茵堡的人，可以從這三件裡挑一件。」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["pol_war_d_rhineburg_spoils"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「城門的鑰匙」",
+              "success": {
+                "text": "你收下了「萊茵堡的城門鑰匙墜」。",
+                "effects": [{ "type": "item", "name": "萊茵堡的城門鑰匙墜", "qty": 1 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「凱旋之戒」",
+              "success": {
+                "text": "你收下了「赤翼的凱旋之戒」。",
+                "effects": [{ "type": "item", "name": "赤翼的凱旋之戒", "qty": 1 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「金鷹」",
+              "success": {
+                "text": "你收下了「帝國金鷹耳環」。",
+                "effects": [{ "type": "item", "name": "帝國金鷹耳環", "qty": 1 }],
                 "complete": true
               }
             }
@@ -27363,29 +27699,61 @@
               "label": "「我們會記得。所以你可以休息了」",
               "success": {
                 "text": "眼睛看著你，很久。然後，天空的裂縫一道一道地合上了。可是在最後一道裂縫合上之前，你看見了：大陸的四方，有別的東西在醒來——北境的熱浪、森林的夢、海上的迷霧、荒野的巨塔。阿契隆的聲音最後一次響起：「……我睡了，祂們就醒了。」龍災，開始了。",
-                "set_flags": ["pol_done", "dragon_calamity", "pol_gaze_rest"],
+                "set_flags": ["pol_done", "dragon_calamity", "pol_gaze_rest", "pol_acheron_gaze_spoils"],
                 "effects": [
                   {
                     "type": "memory",
                     "summary": "政治鬥爭的匯流：天空裂開，歷史之龍阿契隆睜開了眼睛。你說我們會記得，祂可以休息了——祂睡了，其他的龍醒了。龍災開始了。",
                     "importance": 3
                   }
-                ],
-                "complete": true
+                ]
               }
             },
             {
               "label": "「我們會記得。可是也要往前走」",
               "success": {
                 "text": "眼睛眨了一下——像是笑了。天空的裂縫一道一道地合上了，可是殘影沒有完全消失：從今以後，每一座地下城、每一個古戰場，還是會重演最深刻的過去。阿契隆的聲音最後一次響起：「往前走吧。前面，有別的龍在等你們。」大陸的四方，有別的東西在醒來。龍災，開始了。",
-                "set_flags": ["pol_done", "dragon_calamity", "pol_gaze_forward"],
+                "set_flags": ["pol_done", "dragon_calamity", "pol_gaze_forward", "pol_acheron_gaze_spoils"],
                 "effects": [
                   {
                     "type": "memory",
                     "summary": "政治鬥爭的匯流：天空裂開，歷史之龍阿契隆睜開了眼睛。你說我們會記得，也要往前走——祂說前面有別的龍在等。龍災開始了。",
                     "importance": 3
                   }
-                ],
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "spoils",
+          "title": "阿契隆留下的東西",
+          "text": "裂縫深處的回響一層一層地散去，阿契隆的眼睛閉上之前，有三樣東西從空中落了下來，懸在你面前。你只來得及抓住其中一樣。",
+          "at": { "where": "special", "special_map": "sm_sky_rift", "x": 7, "y": 1 },
+          "requires": { "flags": ["pol_acheron_gaze_spoils"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "抓住書籤",
+              "success": {
+                "text": "你收下了「阿契隆的書籤」。",
+                "effects": [{ "type": "item", "name": "阿契隆的書籤", "qty": 1 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "抓住指環",
+              "success": {
+                "text": "你收下了「歷史的指環」。",
+                "effects": [{ "type": "item", "name": "歷史的指環", "qty": 1 }],
+                "complete": true
+              }
+            },
+            {
+              "label": "抓住耳墜",
+              "success": {
+                "text": "你收下了「回響耳墜」。",
+                "effects": [{ "type": "item", "name": "回響耳墜", "qty": 1 }],
                 "complete": true
               }
             }
@@ -27439,8 +27807,9 @@
           "kind": "combat",
           "enemies": [["kagni_projection", 1], ["kagni_stillshade", 1]],
           "success": {
-            "text": "熱浪與虛空同時退去，雪原安靜了下來——不是死寂，是普通的、冬天的安靜。卡格尼的投影縮成了一團小小的光，懸在半空中，一半溫暖、一半冰冷，等著你。",
-            "set_flags": ["drg_kag_won"]
+            "text": "熱浪與虛空同時退去，雪原安靜了下來——不是死寂，是普通的、冬天的安靜。卡格尼的投影縮成了一團小小的光，懸在半空中，一半溫暖、一半冰冷，等著你。投影散去的地方，留下了兩件發著光的武器：「熾寂之斧」與「兩極之劍」。",
+            "set_flags": ["drg_kag_won"],
+            "effects": [{ "type": "item", "name": "熾寂之斧", "qty": 1 }, { "type": "item", "name": "兩極之劍", "qty": 1 }]
           },
           "fail": {
             "text": "熱浪和虛空把你們逼回了風錘村。你的手指還在發抖——一半是燙，一半是冷。老鐵根把你拉進屋子裡：「沒關係。卡格尼不會跑，雪原也還在。準備好了，再去。」",
@@ -27535,8 +27904,9 @@
           "kind": "combat",
           "enemies": [["sinor_projection", 1], ["sinor_mirror_double", 1]],
           "success": {
-            "text": "霧散了，慢半拍的倒影也散了。海邊只剩下一條小小的、霧做的龍，盤在一塊礁石上，看著你：「……你打贏了。」祂的聲音不再是一千種，只有一種，像個孩子。",
-            "set_flags": ["drg_sin_won"]
+            "text": "霧散了，慢半拍的倒影也散了。海邊只剩下一條小小的、霧做的龍，盤在一塊礁石上，看著你：「……你打贏了。」祂的聲音不再是一千種，只有一種，像個孩子。投影散去的地方，留下了兩件發著光的武器：「真名之刃」與「迷言細劍」。",
+            "set_flags": ["drg_sin_won"],
+            "effects": [{ "type": "item", "name": "真名之刃", "qty": 1 }, { "type": "item", "name": "迷言細劍", "qty": 1 }]
           },
           "fail": {
             "text": "霧把你們吞了進去，等你們再看得見的時候，已經站在海靈祠的門口了。澪扶著你，鏡子裡的你過了很久才站穩：「祂沒有傷你。祂只是……還沒想好要不要讓你過去。」——準備好了，可以再走進霧裡。",
@@ -27631,8 +28001,9 @@
           "kind": "combat",
           "enemies": [["sorian_projection", 1], ["sorian_dream_knight", 1]],
           "success": {
-            "text": "夢裡的騎士散成了花瓣，索利安的投影退後了一步，鱗片裡的夢一個一個地暗了下去：「……你還是要叫醒他們。」祂的聲音很輕，「為什麼？」",
-            "set_flags": ["drg_sor_won"]
+            "text": "夢裡的騎士散成了花瓣，索利安的投影退後了一步，鱗片裡的夢一個一個地暗了下去：「……你還是要叫醒他們。」祂的聲音很輕，「為什麼？」投影散去的地方，留下了兩件發著光的武器：「千年夢杖」與「夢林之杖」。",
+            "set_flags": ["drg_sor_won"],
+            "effects": [{ "type": "item", "name": "千年夢杖", "qty": 1 }, { "type": "item", "name": "夢林之杖", "qty": 1 }]
           },
           "fail": {
             "text": "夢的盡頭把你推了回去。你在生命之泉邊醒來，滿身是汗，霧鱗在手心發燙。艾溫娜握著你的手：「你醒了——你還醒得過來。」——準備好了，可以再睡一次。",
@@ -27725,8 +28096,9 @@
           "kind": "combat",
           "enemies": [["babelin_projection", 1], ["babelin_brick_titan", 1]],
           "success": {
-            "text": "磚巨人散成了沙，塔的投影停了下來，尖頂第一次沒有再往上長。整座塔在發抖：「……你們為什麼要擋我？我只是想看看上面有什麼。」",
-            "set_flags": ["drg_bab_won"]
+            "text": "磚巨人散成了沙，塔的投影停了下來，尖頂第一次沒有再往上長。整座塔在發抖：「……你們為什麼要擋我？我只是想看看上面有什麼。」投影散去的地方，留下了兩件發著光的武器：「尖頂之鎚」與「登頂者的纏腕」。",
+            "set_flags": ["drg_bab_won"],
+            "effects": [{ "type": "item", "name": "尖頂之鎚", "qty": 1 }, { "type": "item", "name": "登頂者的纏腕", "qty": 1 }]
           },
           "fail": {
             "text": "塔把你們甩了下來——磚一塊一塊地托著你們，把你們放回了草原上，像是怕你們摔死。塔洛躺在沙地上大笑：「祂打贏了，還送我們回來！」——準備好了，可以再爬一次。",
@@ -27828,8 +28200,9 @@
           "kind": "combat",
           "enemies": [["acheron_projection", 1], ["acheron_echo_army", 1]],
           "success": {
-            "text": "千年的亡軍散成了光，阿契隆的殘影一層一層地剝落，最後只剩下一隻眼睛——你在天空裡見過的那一隻。它看著你，這一次，眼神裡沒有審視，只有好奇。",
-            "set_flags": ["drg_ach_won"]
+            "text": "千年的亡軍散成了光，阿契隆的殘影一層一層地剝落，最後只剩下一隻眼睛——你在天空裡見過的那一隻。它看著你，這一次，眼神裡沒有審視，只有好奇。投影散去的地方，留下了兩件發著光的武器：「史冊之鎚」與「回響長弓」。",
+            "set_flags": ["drg_ach_won"],
+            "effects": [{ "type": "item", "name": "史冊之鎚", "qty": 1 }, { "type": "item", "name": "回響長弓", "qty": 1 }]
           },
           "fail": {
             "text": "所有的時代同時壓了下來，你被推回了河谷鎮的郊外。天空的裂縫還開著，阿契隆的聲音很平靜：「不急。歷史有的是時間。」——準備好了，可以再走進裂縫。",
@@ -27866,6 +28239,2656 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 5000 }, { "type": "xp", "amount": 500 }]
+    },
+    {
+      "id": "vsec_after_hours",
+      "title": "下班之後的總管",
+      "summary": "陳情日過去了，薇洛妮卡的小冊子上，多了一行只寫給自己看的字。（薇洛妮卡的秘書生活・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_veronica",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["vsec_done"] },
+        "text": "薇洛妮卡把一本新的小冊子推到你面前，封面是空白的：「這本不記陳情，記我自己想做的事。第一頁只有一行。」她用筆尖點了點那一行字，蜜金色的臉頰有一點紅，「今晚，總管府的燈熄了以後，你留下來。」"
+      },
+      "start_flags": ["vsec_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪薇洛妮卡把最後一疊公文批完",
+          "text": "總管府的書房裡只剩一盞燈。薇洛妮卡解開了宮廷禮服的高領，把最後一疊公文分成兩半，一半推給你：「批完才能下班。這是規矩——我自己定的。」",
+          "at": { "where": "npc", "npc": "npc_veronica" },
+          "requires": { "flags": ["vsec_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "最後一份公文蓋上印章的時候，她把筆放下，把眼鏡摘了，把小冊子翻到第一頁，在那一行字旁邊打了一個勾。",
+            "set_flags": ["vsec_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "留在總管府的書房",
+          "text": "薇洛妮卡站起來，背對著你解開禮服的繫帶。黑紅色的布料一層一層滑到地上，露出蜜金色的背和收起來的小小翅膀。「魅魔不需要練習，」她回過頭，聲音比平常低，「可是我從來沒有為了自己做過。」",
+          "at": { "where": "npc", "npc": "npc_veronica" },
+          "requires": { "flags": ["vsec_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她照著小冊子來",
+              "success": {
+                "text": "她真的照著小冊子來——一條一條，把寫了十年卻沒用上的東西全用在你身上。她跨坐在你腿上吻你，帶著你的手解開最後一件內衣，在書桌上、在長椅上、最後在堆滿陳情書的地毯上，一次又一次地要你。她高潮時把臉埋在你頸窩，翅膀整個張開，把燈都搧熄了。",
+                "set_flags": ["vsec_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_veronica", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "下班之後，薇洛妮卡照著那本空白小冊子的第一頁，和你在總管府的書房裡過了一夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把她抱到書桌上",
+              "success": {
+                "text": "你把她抱上書桌，公文嘩啦啦地掉了一地，她也不管。你吻過她的鎖骨、胸口、小腹，一路往下，她咬著手背不讓自己出聲，最後還是在你嘴邊顫抖著叫了出來。後半夜換她把你壓在長椅上，慢條斯理地還你，像在批一份很長、很重要的公文。",
+                "set_flags": ["vsec_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_veronica", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "薇洛妮卡在總管府的書桌上，第一次為了自己而不是為了宮廷，和你在一起。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "valk_ember_night",
+      "title": "熔爐邊的一夜",
+      "summary": "熔鑄家族的家主瓦爾卡斯說，他欠你一場酒——這次只有你們兩個。（搖擺的瓦爾卡斯・四）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_valkas_moltencast",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["valk_loyal", "valk_rebel"] },
+        "text": "瓦爾卡斯把灰燼巨槍插在地上，扛著一整桶烈酒走過來：「伊格妮絲說我該好好謝你。」他咧嘴一笑，熔岩的光從皮膚的裂縫裡透出來，「我不會說謝謝。今晚來熔爐，我請你喝——喝完了，我們再看看要做什麼。」"
+      },
+      "start_flags": ["valk_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "在熔鑄要塞的大熔爐邊喝酒",
+          "text": "大熔爐的火映得整個廳堂發紅。瓦爾卡斯一碗接一碗地灌，講他年輕時打過的仗、講他女兒小時候怎麼拿他的槍當鞦韆。講到一半他停下來，盯著你看了很久。",
+          "at": { "where": "npc", "npc": "npc_valkas_moltencast" },
+          "requires": { "flags": ["valk_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「你是第一個讓我喝醉了還想繼續說話的人。」他把碗放下，熱氣從他身上一陣一陣地湧過來。",
+            "set_flags": ["valk_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_valkas_moltencast", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "留在熔爐邊",
+          "text": "瓦爾卡斯脫下了護甲。鐵塔一樣的身體在火光下像一座剛冷卻的火山，裂縫裡的光隨著呼吸一明一暗。「我不懂溫柔，」他的大手捧住你的臉，燙得剛剛好，「你要是怕，現在說。」",
+          "at": { "where": "npc", "npc": "npc_valkas_moltencast" },
+          "requires": { "flags": ["valk_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我不怕」",
+              "success": {
+                "text": "他把你抱起來放在溫熱的鐵砧旁的毛皮上，壓下來吻你，吻得又重又深。他的手很大，粗糙又燙，剝掉你的衣服就像剝掉一層爐渣；他進入你的時候很慢，慢得不像他，然後越來越快，越來越重，熔爐的火跟著他的喘息一起翻騰。最後他低吼著抱緊你，渾身的裂縫亮得像要燒起來。",
+                "set_flags": ["valk_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_valkas_moltencast", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "熔鑄家族的家主瓦爾卡斯在大熔爐邊和你過了一夜。他說他不懂溫柔——那一夜，他學得很快。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓他躺下",
+              "success": {
+                "text": "你把這座火山推倒在毛皮上，他愣了一下，然後大笑起來，乖乖地躺好。你一寸一寸地摸過他滾燙的胸口、龜裂的腹肌，往下握住他、含住他，直到這個在戰場上從沒退過一步的炎魔抓著毛皮，啞著嗓子叫你的名字。後來他翻身把你壓住，說輪到他了——你們一直鬧到熔爐的火熄了又被他點起來。",
+                "set_flags": ["valk_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_valkas_moltencast", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你讓熔鑄家族的家主瓦爾卡斯第一次在戰場以外認輸。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ign_test_run",
+      "title": "工坊的試運轉",
+      "summary": "機偶交貨了，千爐工坊安靜了下來。伊格妮絲說，她想試一樣不是機器的東西。（伊格妮絲的新機偶・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_ignis_forge",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["ign_guard", "ign_plough", "ign_war"] },
+        "text": "伊格妮絲脫下厚重的皮手套，指尖上全是燙傷的舊疤：「機偶都交出去了。這三個月，我沒有一天睡超過四小時。」她別開視線，髮絲像餘燼一樣忽明忽暗，「今晚工坊沒人。我想……試試看，不是跟機器在一起是什麼感覺。」"
+      },
+      "start_flags": ["ign_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪伊格妮絲關掉工坊的爐子",
+          "text": "千爐工坊的爐子一座一座熄掉，最後只剩下她的工作台上那一盞。伊格妮絲把工具一件一件掛回牆上，掛得很慢，像是在拖時間。",
+          "at": { "where": "npc", "npc": "npc_ignis_forge" },
+          "requires": { "flags": ["ign_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "最後一把扳手掛好了。她轉過身，背靠著工作台，深吸了一口氣：「好。開始測試。」",
+            "set_flags": ["ign_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "在千爐工坊過夜",
+          "text": "伊格妮絲解開了工作服的釦子，裡面是被汗水浸透的貼身衣，精悍的身體上全是鍛造留下的細小傷疤。「我的手很粗，」她低聲說，「你不要笑。」",
+          "at": { "where": "npc", "npc": "npc_ignis_forge" },
+          "requires": { "flags": ["ign_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "握住她的手",
+              "success": {
+                "text": "你握住她滿是舊疤的手，一根一根地吻她的指尖。她的呼吸亂了，把你拉到工作台上，吻得毫無技巧卻非常認真。你們在圖紙堆裡脫光了彼此，她跨在你身上，一邊動一邊喘著說這比任何機偶都難調，最後在你懷裡繃緊了全身，髮絲亮得像整座工坊重新點火。",
+                "set_flags": ["ign_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ignis_forge", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "伊格妮絲在千爐工坊的工作台上，第一次和不是機器的東西在一起——那是你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她來調整你",
+              "success": {
+                "text": "「那就照妳的方式。」她眼睛一亮，像拿到新圖紙一樣把你從頭到腳摸了一遍，哪裡會讓你喘、哪裡會讓你發抖，她都記下來，然後一樣一樣試。她用嘴、用手，最後用整個身體，直到你們兩個都汗濕地癱在圖紙上。她靠著你的胸口，滿足地說：「數據很漂亮。要再測一次。」",
+                "set_flags": ["ign_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ignis_forge", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "伊格妮絲把你當成她這輩子最用心調整的作品，在千爐工坊試了一整夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "noc_be_loved",
+      "title": "不必代筆的話",
+      "summary": "諾克緹絲又寫了一封信，這一次收件人是你。信很短，她要你當面讀。（諾克緹絲也想被疼愛・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_noctis",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["noc_confessed", "noc_suspected"] },
+        "text": "諾克緹絲把一封信塞進你手裡，轉身就想走，又停下來。無面面具後面的鬼火眼睛閃了閃，她很小聲地說：「這封……不是代筆。我自己寫的。」信上只有一行字：「我也想被疼愛一次。」"
+      },
+      "start_flags": ["noc_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪諾克緹絲在陰影之谷散步",
+          "text": "陰影之谷的夜晚很安靜。諾克緹絲走在你旁邊，一句話也不說，影子卻一直悄悄地往你那邊靠，靠到最後，兩個人的影子疊在了一起。",
+          "at": { "where": "npc", "npc": "npc_noctis" },
+          "requires": { "flags": ["noc_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "走到谷底的時候，她停下來，第一次在你面前摘下了無面面具。底下是一張墨藍微光、緊張得要命的臉。",
+            "set_flags": ["noc_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_noctis", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到諾克緹絲的住處",
+          "text": "她的房間裡什麼都沒有，只有一張床和一疊寫給莉莎爾、永遠沒寄出去的信。諾克緹絲把信推到床底下，解開漆黑的絲帶，身上的微光一陣一陣地顫：「我不知道要說什麼。所以……不說了。」",
+          "at": { "where": "npc", "npc": "npc_noctis" },
+          "requires": { "flags": ["noc_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "慢慢地疼愛她",
+              "success": {
+                "text": "你很慢、很仔細地疼愛她——吻她的額頭、眼睛、嘴唇，吻她從來沒被人碰過的地方。她一開始僵得像影子，後來在你手下化開了，墨藍的光從皮膚底下一層一層地亮起來。你進入、或被她緊緊夾住的時候，她第一次發出了聲音，一聲接一聲，最後哭著抱住你，整個房間都被她照亮了。",
+                "set_flags": ["noc_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noctis", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "諾克緹絲想被疼愛一次。那一夜，你疼愛了她很多次。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她說出想要什麼",
+              "success": {
+                "text": "「說出來。」你吻著她的耳朵，「不用寫，用說的。」她憋了很久，終於擠出一個字：「……這裡。」然後是第二個、第三個，一個比一個大膽，最後幾乎是哀求。你照著她說的一處一處碰她、舔她、要她，直到這個一開口就冷場的影魔在你身下喊得停不下來。",
+                "set_flags": ["noc_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_noctis", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "不擅言辭的諾克緹絲那一夜說了很多話——全是想要你的話。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "mor_good_dream",
+      "title": "一場好夢",
+      "summary": "莫菲終於睡了一個好覺。她說，這次她想夢一個有你的夢——醒著的時候。（莫菲的睡眠品質・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_morphe",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["mor_done", "mor_lover"] },
+        "text": "莫菲的身形比平常清楚得多，臉色也好了。她飄到你面前，伸出一根有點模糊的手指點了點你的胸口：「我睡飽了。睡飽的第一件事，我想做一件我在別人的夢裡看過幾千次、自己卻從來沒做過的事。」"
+      },
+      "start_flags": ["mor_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪莫菲在夢魘迷堂看星星",
+          "text": "夢魘迷堂的屋頂上，莫菲躺在你身邊，指著天上一顆一顆的星星說那是誰的夢。說到第十顆的時候，她的手悄悄鑽進了你的手心。",
+          "at": { "where": "npc", "npc": "npc_morphe" },
+          "requires": { "flags": ["mor_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「我看過幾千個人做這件事，」她轉過頭看你，「可是我不知道從哪裡開始。」",
+            "set_flags": ["mor_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_morphe", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "回到莫菲的房間",
+          "text": "莫菲的房間裡飄著淡淡的霧。她脫掉了袍子，身體在霧裡若隱若現，邊緣像煙一樣散開又聚攏：「你碰到的地方，我才會清楚。」",
+          "at": { "where": "npc", "npc": "npc_morphe" },
+          "requires": { "flags": ["mor_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她變清楚",
+              "success": {
+                "text": "你一處一處地碰她，她就一處一處地清楚起來——肩膀、胸口、腰、大腿之間。你吻遍她的時候，她整個人都凝成了實體，熱得像剛從夢裡醒來；她纏著你，在你身下一次又一次地顫抖，最後高潮時整個房間的霧都散了，只剩下她清清楚楚地抱著你。",
+                "set_flags": ["mor_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_morphe", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "影魔莫菲在你的手底下，第一次完完整整、清清楚楚地存在了一整夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她照著夢裡看過的來",
+              "success": {
+                "text": "「那就照妳看過的來。」她眨眨眼，然後把幾千個夢裡的東西一樣一樣地在你身上試——有些溫柔，有些大膽得讓你臉紅。她的身體時而像煙、時而像水，從你身上每一處滑過、包住你，最後她伏在你身上，一邊喘一邊笑：「原來……自己做，比看別人做好太多了。」",
+                "set_flags": ["mor_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_morphe", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "莫菲把她在別人夢裡看過的東西，全部和你做了一遍。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "trl_victor_rite",
+      "title": "勝利者的權利",
+      "summary": "血角的戰士之間有一個古老的習俗：試煉的勝利者，可以向場主要一樣東西。烏爾瑪說，你還沒要。（試煉場・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_ulma_bloodtrial",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["trl_blessed", "trl_done", "trl_gave"] },
+        "text": "烏爾瑪把兩把手斧插在試煉場的血沙上，雙手抱胸，苔綠色的臉上一點表情也沒有：「你站到了最後，還沒要你的獎賞。」她頓了頓，聲音壓低了一點，「血角的規矩，勝利者想要什麼都行。我已經猜到你要什麼了——今晚，到我的帳篷來。」"
+      },
+      "start_flags": ["trl_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和烏爾瑪在試煉場比最後一場",
+          "text": "試煉場空無一人。烏爾瑪丟給你一把練習用的木斧：「獎賞要先打贏才拿得到。」你們在月光下打了很久，打到兩個人都氣喘吁吁，最後滾在血沙上，她壓著你，你也壓著她。",
+          "at": { "where": "npc", "npc": "npc_ulma_bloodtrial" },
+          "requires": { "flags": ["trl_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "她低頭看著你，汗從細長彎曲的角尖滴下來：「……算你贏。」",
+            "set_flags": ["trl_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_ulma_bloodtrial", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到烏爾瑪的帳篷",
+          "text": "帳篷裡鋪著厚厚的獸皮。烏爾瑪把皮甲一扯就丟到角落，苔綠色的身體結實得像一棵老樹，到處是戰鬥留下的疤：「血角不搞那些軟綿綿的。」可她說這句話的時候，耳朵是紅的。",
+          "at": { "where": "npc", "npc": "npc_ulma_bloodtrial" },
+          "requires": { "flags": ["trl_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "像戰士一樣",
+              "success": {
+                "text": "那一夜像另一場試煉。她把你摔在獸皮上，你翻過來壓住她，兩個人在帳篷裡扭打、啃咬、喘息，誰也不肯先讓。她用大腿夾住你的腰，指甲在你背上劃出一道道紅痕，最後她在你身下吼出來，聲音大得整個營地都聽得見——第二天沒有一個戰士敢提這件事。",
+                "set_flags": ["trl_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ulma_bloodtrial", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "試煉場的場主烏爾瑪把勝利者的獎賞給了你——在她的帳篷裡，打了一整夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "溫柔地對她",
+              "success": {
+                "text": "你沒有跟她打。你抓住她揮過來的手，吻她手背上的疤，再吻她肩上的、腰上的、大腿上的。烏爾瑪整個人僵住了，「……血角不、不搞這些……」她說到一半就說不下去了。你慢慢地要她，她在你懷裡抖得像第一次上試煉場的新兵，最後咬著你的肩膀，很小聲地叫了你的名字。",
+                "set_flags": ["trl_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ulma_bloodtrial", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "血角的女戰士烏爾瑪這輩子第一次被人溫柔地對待——在她的帳篷裡，被你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "god_warm_hands",
+      "title": "活著的溫度",
+      "summary": "灰燼修會的大祭司艾瑟里昂說，死者們安靜了。他想在下一個預言來臨之前，記住活著是什麼溫度。（窺見神的一角・四）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_aetherion",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["god_done", "god_sealed", "god_told"] },
+        "text": "艾瑟里昂站在無聲長廊的盡頭，冷霧在他身邊繞成一圈一圈。他說話慢得像在數心跳：「死者們不再說話了。這是幾百年來，我第一次聽見自己的心跳。」他伸出灰白的手，停在你的臉頰旁邊，沒有碰到，「我想知道……活著的人，是什麼溫度。」"
+      },
+      "start_flags": ["god_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪艾瑟里昂在無聲長廊點燈",
+          "text": "無聲長廊的燈幾百年沒有點過了。你陪他一盞一盞地點起來，燈火照亮了牆上刻滿的名字。點到最後一盞的時候，他的手碰到了你的手——冰冷，卻沒有退開。",
+          "at": { "where": "npc", "npc": "npc_aetherion" },
+          "requires": { "flags": ["god_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「你的手，」他低聲說，「是燙的。」冷霧第一次從他身邊散開了。",
+            "set_flags": ["god_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_aetherion", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到艾瑟里昂的禪房",
+          "text": "禪房裡只有一張石床。艾瑟里昂摘下白骨王冠，解開長袍：瘦削的身體灰白如骨，卻不是枯骨——胸口在起伏，皮膚底下有很淡的血色。「我已經忘了怎麼做，」他說，「教我。」",
+          "at": { "where": "npc", "npc": "npc_aetherion" },
+          "requires": { "flags": ["god_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "溫暖他",
+              "success": {
+                "text": "你把他拉到身邊，用整個身體貼住他冰冷的身體。他抱住你的時候抖了一下，然後越抱越緊，吻你的時候像在喝水。他慢慢地進入你，動作生疏卻極其專注，每一下都像在數你的心跳；到最後他的身體真的熱了起來，死灰色的皮膚泛出血色，他在你耳邊發出了一聲幾百年沒有發出過的、活人的喘息。",
+                "set_flags": ["god_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_aetherion", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "灰燼修會的大祭司艾瑟里昂在禪房裡，從你身上記住了活著的溫度。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓他躺著感受",
+              "success": {
+                "text": "「你什麼都不用做。」你讓他躺在石床上，從他冰冷的嘴唇開始，一路往下吻、往下暖，含住他、包住他，讓他在你的體溫裡一點一點地熱起來。這個對生死毫無執著的古老祭司抓著石床的邊緣，第一次失去了平靜，喘得說不出一個完整的字。",
+                "set_flags": ["god_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_aetherion", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你讓對生死毫無執著的艾瑟里昂，第一次對活著有了執著。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "lila_grown_wish",
+      "title": "旅行書的最後一頁",
+      "summary": "莉菈收集的旅行書裡，有一本她從來不敢讀完。最後一頁寫的，是旅人和愛人的一夜。（莉菈的大冒險・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lila_listener",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["lila_done", "lila_priest", "lila_travel"] },
+        "text": "莉菈抱著一本封面磨破的旅行書，側著頭，像在聽什麼：「死者們說，我已經是大人了，不能老是讓書替我活。」她在無聲長廊當了八十年的見習祭司，看起來卻還是那麼纖瘦。她把書翻到最後一頁，耳朵紅透了，「我、我想試試這一頁。和你。」"
+      },
+      "start_flags": ["lila_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪莉菈讀旅行書",
+          "text": "你們坐在長廊的台階上，莉菈把旅行書一頁一頁唸給你聽：雪山、沙漠、會唱歌的海。唸到最後一頁之前，她停了下來，深吸一口氣，把書闔上了。",
+          "at": { "where": "npc", "npc": "npc_lila_listener" },
+          "requires": { "flags": ["lila_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「剩下的，」她小聲說，「我不想用讀的。」",
+            "set_flags": ["lila_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_lila_listener", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到莉菈的小房間",
+          "text": "莉菈的小房間裡堆滿了旅行書。她解開紫色的緞帶，灰白的長髮散下來，脫掉見習祭司的袍子時手一直在抖：「我、我是大人了。死了以後也算……我是說，我是大人了。你不要把我當小孩。」",
+          "at": { "where": "npc", "npc": "npc_lila_listener" },
+          "requires": { "flags": ["lila_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "把她當成大人",
+              "success": {
+                "text": "你把她當成大人。你吻她、碰她，問她每一個地方可不可以，她每一次都紅著臉點頭，最後乾脆拉著你的手往她想要的地方去。她很瘦，身體冰冰涼涼的，卻在你手下一點一點熱起來；她高潮的時候緊緊抱住你，哭著笑說書上寫的根本不夠。",
+                "set_flags": ["lila_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lila_listener", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "已經成年很久的見習祭司莉菈，和你一起把旅行書的最後一頁變成了自己的故事。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她照著書來",
+              "success": {
+                "text": "「那就照著書來。」她認真地點頭，翻開書，一行一行地唸，一行一行地做——唸到一半就唸不下去了，因為她已經跨在你身上，喘得說不出話。書掉在床邊，翻到哪一頁都沒有人管了。天亮時她窩在你懷裡說：「我要寫一本新的旅行書。第一章就是這裡。」",
+                "set_flags": ["lila_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lila_listener", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "莉菈照著旅行書的最後一頁和你過了一夜，然後說，要把這一夜寫成自己的第一章。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "rot_slime_study",
+      "title": "普露露的戀愛研究",
+      "summary": "腐沼村的史萊姆娘普露露說，她研究人類的「戀愛」研究到最後一步了。最後一步，需要一個人類。（魔族普通人的生活・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_pururu",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["rot_danced", "rot_done", "rot_nick_stays"] },
+        "text": "普露露整個貼到你身上，水藍色的身體涼涼的、軟軟的：「莫格婆婆說，戀愛的最後一步不能找她問，要找喜歡的人一起做。」她歪著頭，胸口跟著心情一下子變大了一圈，「普露露喜歡你。所以今晚，普露露要做最後一步的研究！」"
+      },
+      "start_flags": ["rot_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪普露露在沼地邊看螢火蟲",
+          "text": "沼地邊的螢火蟲一閃一閃。普露露學著村裡的情侶靠在你肩上，靠著靠著整個人就融了一半在你身上，又趕快把自己捏回來：「對不起！太喜歡了，形狀就會跑掉。」",
+          "at": { "where": "npc", "npc": "npc_pururu" },
+          "requires": { "flags": ["rot_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「莫格婆婆說，」她認真地看著你，「做最後一步的時候，形狀跑掉也沒關係。」",
+            "set_flags": ["rot_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_pururu", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到普露露的小屋",
+          "text": "普露露的小屋裡有一個大木盆，她平常睡在裡面。她本來就沒穿衣服，這時候卻學著人類的樣子，害羞地用手擋住自己——擋了兩秒就忘了，整個人撲了上來：「開始研究！」",
+          "at": { "where": "npc", "npc": "npc_pururu" },
+          "requires": { "flags": ["rot_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她研究你",
+              "success": {
+                "text": "她研究得非常仔細：用手、用嘴、用整個涼涼滑滑的身體，把你從頭到腳都包起來試了一遍，每找到一個讓你喘的地方就開心地記下來。她的身體會隨著你的反應變形，緊緊地裹住你、在你身上起伏，最後她高潮的時候整個人化成一灘發光的水，又笑嘻嘻地把自己捏回來：「結論：普露露最喜歡你了！」",
+                "set_flags": ["rot_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_pururu", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "腐沼村的史萊姆娘普露露和你完成了「戀愛的最後一步」的研究。她說結論是：最喜歡你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "教她人類的方式",
+              "success": {
+                "text": "「人類是這樣做的。」你很慢地教她：先接吻，再擁抱，再一點一點地往下。她學得很快，快得有點犯規——你教一次，她就舉一反三，用你從沒想過的方式讓你招架不住。到後來是她在教你了。她在大木盆裡抱著你，滿足地晃來晃去：「人類的戀愛，好棒。」",
+                "set_flags": ["rot_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_pururu", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你教史萊姆娘普露露人類的戀愛方式。她學得太快，後半夜換她教你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "brew_private_cask",
+      "title": "私藏的那一桶",
+      "summary": "「酒桶」赫爾嘉的酒窖最深處，有一桶她誰都不給喝的酒。她說，要開的話，只開給你。（灌醉對方的酒・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_helga_malt",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["brew_done", "brew_helga", "brew_trade"] },
+        "text": "赫爾嘉把腰間的小錫杯一個一個解下來，只留下一個：「氏族宴會結束了，我也不用再替誰試酒了。」她紅通通的臉頰更紅了，「酒窖最裡面有一桶，是我出師那年釀的。我發過誓，要和第一個讓我心動的人一起喝。」她是矮人裡也算嬌小的成年女人，此刻卻像個要告白的小姑娘。"
+      },
+      "start_flags": ["brew_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "在赫爾嘉的酒窖裡開那一桶酒",
+          "text": "酒窖最深處的那一桶上落滿了灰。赫爾嘉用袖子擦乾淨，親手敲開了塞子，濃得化不開的香味一下子漲滿了整個酒窖。你們一人一杯，一杯接一杯。",
+          "at": { "where": "npc", "npc": "npc_helga_malt" },
+          "requires": { "flags": ["brew_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "喝到第五杯，她靠在酒桶上，金色的鬍辮都散了：「這桶酒……原來是這個味道。」",
+            "set_flags": ["brew_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_helga_malt", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "留在酒窖裡",
+          "text": "赫爾嘉解開了圍裙和襯衫，豐滿圓潤的身體在燈下泛著酒意的紅。她把你拉到一堆麥稈上，打了一個小小的嗝，自己先笑了起來：「我、我沒醉。矮人不會醉。我只是……很想要你。」",
+          "at": { "where": "npc", "npc": "npc_helga_malt" },
+          "requires": { "flags": ["brew_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "陪她醉一次",
+              "success": {
+                "text": "你們都醉了，醉得很開心。她在麥稈上滾來滾去，把你壓在下面親得到處都是酒味，你把她翻過來，吻遍她圓潤柔軟的身體。她叫起來很大聲，一點也不害羞，抓著你一次又一次地要，最後抱著你在酒桶邊睡著了，嘴裡還在嘟囔：「再一杯……再一次……」",
+                "set_flags": ["brew_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_helga_malt", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "「酒桶」赫爾嘉打開了出師那年釀的酒，和你在酒窖的麥稈上醉了一整夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "清醒地好好愛她",
+              "success": {
+                "text": "你放下了酒杯。「我想記得今晚。」赫爾嘉愣了一下，也放下了杯子。你們很清醒、很慢地脫掉彼此的衣服，她每一處都敏感得驚人，你碰一下她就抖一下。你一直愛她到她在你懷裡哭出來，她說這是她這輩子第一次沒喝醉也覺得頭暈。",
+                "set_flags": ["brew_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_helga_malt", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "赫爾嘉放下了酒杯，第一次清醒地讓一個人愛她——在她的酒窖裡，那個人是你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "wat_desert_dance",
+      "title": "只跳給一個人的舞",
+      "summary": "貓魅族舞孃蕾伊拉說，她跳了十年的舞，從來沒有為一個人跳過。今晚，她只跳給你看。（尋找生水的祕寶・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_leila",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["wat_done", "wat_left", "wat_seed", "wat_taken"] },
+        "text": "蕾伊拉的金棕色長尾在你小腿上繞了一圈：「找祕寶的旅費、回西部的路費，全都是你幫我湊的。」她腳踝上的鈴鐺叮噹響，「我沒有錢還你。可是我有一支舞——從來沒跳給任何人看過的那一支。今晚，在我的房間。」"
+      },
+      "start_flags": ["wat_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "在潮汐港的酒館看蕾伊拉最後一場",
+          "text": "酒館裡擠滿了人，蕾伊拉在台上轉著、跳著，綴滿金幣的舞衣閃得人睜不開眼。整場表演，她的眼睛一直只看著你一個人。",
+          "at": { "where": "npc", "npc": "npc_leila" },
+          "requires": { "flags": ["wat_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "散場的時候，她從台上跳下來，直接坐到你腿上，咬著你的耳朵說：「剛才那個，是給他們的。」",
+            "set_flags": ["wat_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_leila", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到蕾伊拉的房間",
+          "text": "房間裡點著一盞香燈。蕾伊拉的舞衣上的金幣一枚一枚地解下來，薄紗一層一層地落地，小麥色的肌膚上只剩下腳踝的鈴鐺。她在你面前跳了起來，腰肢扭得像水，尾巴勾著你的下巴：「這一支，叫『只給你』。」",
+          "at": { "where": "npc", "npc": "npc_leila" },
+          "requires": { "flags": ["wat_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "看完這支舞",
+              "success": {
+                "text": "你一直看到最後。舞的最後一個動作，是她跨坐到你身上，把你的手放在她的腰上。鈴鐺一聲一聲地響，跟著她起伏的節奏，快一點、再快一點，她仰起頭、尾巴繃得筆直，在你身上顫抖著跳完了最後一拍。那一夜鈴鐺響到天亮。",
+                "set_flags": ["wat_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_leila", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "貓魅族舞孃蕾伊拉在潮汐港的小房間裡，為你一個人跳完了那支舞——最後一段，是在你身上跳的。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "跳到一半就抱住她",
+              "success": {
+                "text": "你等不到最後了。你在她轉到你面前時抱住她，把她壓到床上，她驚叫一聲又笑了起來，尾巴纏住你的手腕不放。你吻著她汗濕的肌膚，一路吻到她最敏感的地方，她扭著腰、咬著唇，鈴鐺亂響成一片，「犯規……舞還沒跳完……」她一邊抱怨，一邊纏得更緊。",
+                "set_flags": ["wat_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_leila", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "蕾伊拉的舞跳到一半就被你抱住了。她抱怨了一整夜，也沒放開你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "sin_tide_shrine",
+      "title": "潮聲裡的巫女",
+      "summary": "霧散了，夢裡的影子也不見了。巫女澪說，她終於能好好睡了——可是她不想一個人睡。（龍的線索・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_coral_miko",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["sin_done", "sin_friend", "sin_why"] },
+        "text": "澪站在神社的鳥居下，白色祭衣被海風吹得貼在身上，皮膚上的鱗紋在月光下若隱若現：「夢裡的影子走了。可是這幾個月，我每一次害怕的時候，想到的都是你。」她低下頭，「巫女不能有戀人……可是今晚，我想當一次不是巫女的女人。」"
+      },
+      "start_flags": ["sin_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪澪在珊瑚灣的海邊散步",
+          "text": "退潮後的沙灘很長。澪赤著腳走在你身邊，指著海裡一閃一閃的光說那是珊瑚在呼吸。走到沙灘的盡頭，她停下來，把頭髮上的祭簪拔了下來。",
+          "at": { "where": "npc", "npc": "npc_coral_miko" },
+          "requires": { "flags": ["sin_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "黑色的長髮散落到腰際。「好了，」她說，「現在我不是巫女了。」",
+            "set_flags": ["sin_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_coral_miko", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到海邊的小屋",
+          "text": "海邊的小屋裡聽得見潮聲。澪解開祭衣的腰帶，白色的布料從肩上滑下來，鱗紋從她的頸側一路延伸到腰際、到大腿內側。她拉著你的手放在那些鱗紋上：「這裡……從來沒有人碰過。」",
+          "at": { "where": "npc", "npc": "npc_coral_miko" },
+          "requires": { "flags": ["sin_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "沿著鱗紋吻她",
+              "success": {
+                "text": "你沿著鱗紋一路吻下去，從頸側到胸口、到腰際、到她大腿內側最細的那一片。她的鱗紋一碰就亮起淡淡的光，她喘著抓住床單，最後在你嘴邊弓起身子，叫得像潮聲一樣一波一波。那一夜，你們隨著潮水起落，一次又一次。",
+                "set_flags": ["sin_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "珊瑚灣的巫女澪拔下了祭簪，在海邊的小屋裡當了一夜不是巫女的女人。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她主導",
+              "success": {
+                "text": "「妳想怎麼做就怎麼做。」澪咬著唇想了很久，然後輕輕把你推倒，跨坐上來，像在神社裡跳祭舞那樣慢慢地動。她的長髮垂下來把你們兩個都蓋住，鱗紋在黑暗裡發光，她越動越快、越動越不像巫女，最後伏在你胸口，喘著說她再也不想當巫女了。",
+                "set_flags": ["sin_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_coral_miko", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "巫女澪在海邊的小屋裡，第一次照著自己的心意，而不是神的意思，去愛一個人。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "vault_winter_palace",
+      "title": "冬璃宮的夜",
+      "summary": "潮汐之璜的事落幕了。冬璃宮主璃月說，她欠你一份謝禮——一份不能寫進族譜的謝禮。（寶庫失竊案・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_rigetsu",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["vault_done", "vault_exiled", "vault_reform"] },
+        "text": "璃月的雪白長髮上，雪玉璜環在燭光下冷冷地閃著。她屏退了侍女，親手替你斟了一杯：「寶庫的事，你幫我守住了冬璃宮的臉面。」她的鱗尾在地上輕輕一掃，聲音放得很低，「宮主的謝禮，寫在族譜上。我自己的謝禮……今晚在我的寢殿。」"
+      },
+      "start_flags": ["vault_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪璃月在冬璃宮的冰廊散步",
+          "text": "冬璃宮的冰廊一路通向海底，冰壁外是游來游去的魚群。璃月走在你身邊，冰冷的鱗尾偶爾擦過你的腳踝。她說起了她當上宮主那年，一個人在冰廊裡哭了一整夜。",
+          "at": { "where": "npc", "npc": "npc_rigetsu" },
+          "requires": { "flags": ["vault_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「從那天起，我就沒有在任何人面前軟弱過。」她停下腳步，「今晚，我想試試看。」",
+            "set_flags": ["vault_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_rigetsu", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到璃月的寢殿",
+          "text": "寢殿裡鋪著雪白的獸毛。璃月取下了雪玉璜環，解開繡著螺鈿紋樣的衣袍，雪白的肌膚、如冰的鱗尾，在燭光下美得不像真的。「玉璘族的鱗尾，」她把你的手拉過去，「只給伴侶碰。」",
+          "at": { "where": "npc", "npc": "npc_rigetsu" },
+          "requires": { "flags": ["vault_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "碰她的鱗尾",
+              "success": {
+                "text": "你的手沿著她冰涼的鱗尾慢慢往上，她整個人顫了一下，咬著唇沒有出聲。你一路往上吻，鱗片在你嘴下一片一片地發燙，她終於忍不住叫了出來，鱗尾纏住你的腿把你拉得更近。那一夜，冷冰冰的宮主在你身下融化了好幾次。",
+                "set_flags": ["vault_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_rigetsu", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "冬璃宮主璃月把只給伴侶碰的鱗尾交給了你，在寢殿裡度過了一夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她卸下宮主的架子",
+              "success": {
+                "text": "「今晚妳不是宮主。」你把她抱上獸毛，她愣住了，然後笑了——第一次笑得不像宮主。她纏著你，要你吻她、要你碰她，要得又急又多，一點也不端莊，最後抱著你在你肩上哭了一小會兒，說她已經很多年沒有這樣被人抱著了。",
+                "set_flags": ["vault_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_rigetsu", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "冬璃宮主璃月在你面前卸下了宮主的架子，在寢殿裡哭了，也笑了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "reef_pillar_song",
+      "title": "光柱下的歌",
+      "summary": "那一夜在礁光柱下和你一起唱歌之後，潮主櫻汐說，她的歌聲裡一直有你的聲音。（礁光柱維修・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sakurashio",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["reef_done", "reef_landsmiths", "reef_watch"] },
+        "text": "櫻汐坐在礁光柱下，珊瑚紅的長髮上插著並蒂珊瑚花：「結界補好了，螺鈿婆婆說可以撐一百年。」她拍了拍身邊的位置，「那天晚上，你跟著我哼歌，我的歌聲裡多了一個聲音。從那天起，我一唱歌就會想到你。」她湊過來，「今晚陪我再唱一次。這次不是為了結界。」"
+      },
+      "start_flags": ["reef_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "在礁光柱下陪櫻汐唱歌",
+          "text": "光紋沿著礁光柱一圈一圈地流。櫻汐唱著，你跟著哼，海水在結界外輕輕地晃，好像也在聽。唱到最後一句，她的聲音越來越輕，最後變成了在你耳邊的一聲嘆息。",
+          "at": { "where": "npc", "npc": "npc_sakurashio" },
+          "requires": { "flags": ["reef_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「唱完了，」她說，「接下來，換別的。」",
+            "set_flags": ["reef_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_sakurashio", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到春潮閣的閣樓",
+          "text": "春潮閣的閣樓開著窗，看得見遠處的礁光柱。櫻汐解開櫻色廣袖羅裳，玉色的鱗尾在月光下閃著柔光。她把你拉到身邊，在你耳邊輕輕地哼起了那天的歌：「跟著我的聲音……就好。」",
+          "at": { "where": "npc", "npc": "npc_sakurashio" },
+          "requires": { "flags": ["reef_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "跟著她的聲音",
+              "success": {
+                "text": "你跟著她的聲音——她哼到哪裡，你就吻到哪裡；她的聲音高起來，你就更深；她的聲音斷了，變成喘息，你就抱緊她。那一夜她唱了一首沒有歌詞的歌，一遍又一遍，最後在你懷裡唱到了最高的那個音。",
+                "set_flags": ["reef_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "潮主櫻汐在春潮閣的閣樓上，為你唱了一首沒有歌詞的歌。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她唱不出來",
+              "success": {
+                "text": "「這次換妳跟著我。」你吻住了她，她還想哼，哼到一半就斷了。你一路往下，她的歌聲變成了一聲一聲的驚喘，鱗尾在床上亂掃，最後她抓著你的頭髮，叫得整個春潮閣都聽得見。事後她紅著臉抱怨：「明天潮主沒辦法唱歌了，都是你害的。」",
+                "set_flags": ["reef_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "潮主櫻汐那一夜唱不出歌來——因為你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "nip_desert_bargain",
+      "title": "駝商的最後一筆交易",
+      "summary": "阿茲爾說，他這輩子什麼都賣過，只有一樣東西從來不賣。今晚，他想把它送給你。（傳說中的貓薄荷・四）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_azir_camel",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["nip_done", "nip_festival", "nip_honest"] },
+        "text": "阿茲爾把頭上的布巾解下來，淺沙色的貓耳抖了抖：「我殺價殺了一輩子，什麼都能談。」他難得沒有在笑，「可是有一樣東西我從來不賣——我自己。」他把一把鑰匙放在你手心，「市集最裡面的那頂帳篷。不收錢，也不殺價。」"
+      },
+      "start_flags": ["nip_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪阿茲爾收攤",
+          "text": "帳環市集的燈一盞一盞熄掉，阿茲爾把小商品一樣一樣收進箱子裡，一邊收一邊跟你殺價——殺的是明天早餐誰請。殺到最後他輸了，笑著搖頭：「第一次輸得這麼開心。」",
+          "at": { "where": "npc", "npc": "npc_azir_camel" },
+          "requires": { "flags": ["nip_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "他把最後一個箱子扣上，轉過身，金色的貓眼在暗處亮了起來。",
+            "set_flags": ["nip_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_azir_camel", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到市集最裡面的帳篷",
+          "text": "帳篷裡鋪著西部的織毯，點著甜甜的香。阿茲爾脫掉了外袍，精瘦的身體曬成蜜色，尾巴不安地掃著地毯：「我說過不收錢。」他靠過來，「可是我還是想先問一句——你想怎麼要我？」",
+          "at": { "where": "npc", "npc": "npc_azir_camel" },
+          "requires": { "flags": ["nip_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓他來",
+              "success": {
+                "text": "「你最會談了，你來。」他笑了，把你推倒在織毯上，從你的嘴唇一路吻下去，舌頭帶著一點貓的粗糙。他進入你的時候很耐心，一邊動一邊在你耳邊說些不正經的話，說得你臉紅，又動得你說不出話。他的尾巴纏著你的腿，最後低低地喵了一聲，伏在你身上喘了很久。",
+                "set_flags": ["nip_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_azir_camel", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "帳環市集的駝商阿茲爾把他從來不賣的東西送給了你——在市集最裡面的帳篷裡。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "換你主導這筆交易",
+              "success": {
+                "text": "「這次我開價。」你把他壓在織毯上，他愣了一下，耳朵往後一貼，乖得出奇。你慢慢地吻他、摸他、握住他，他在你手下忍不住弓起身子，尾巴亂掃，啞著嗓子求你快一點。你偏不快。他輸得一塌糊塗，最後抱著你笑：「這是我這輩子最划算的一筆。」",
+                "set_flags": ["nip_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_azir_camel", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你和駝商阿茲爾談了一筆不收錢的交易。他說，那是他這輩子最划算的一筆。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "isab_bet_paid",
+      "title": "兌現的賭注",
+      "summary": "賭注成立了。伊莎貝拉說，騎士說話算話——今晚，她要兌現。（伊莎貝拉・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_isabella_rowan",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["isab_lover"] },
+        "text": "伊莎貝拉把一瓶酒放在桌上，臉比酒還紅：「賭注成立了，可是我們還沒有……那個。」她抓了抓短髮，左頰的疤都紅了，「騎士團的小子們每天在背後打賭我們到底做了沒有。我不想再讓他們賭了。今晚，我房間。」"
+      },
+      "start_flags": ["isab_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和伊莎貝拉在索里耶爾的酒館喝最後一杯",
+          "text": "酒館裡的騎士們看見你們進來，識相地全都跑光了。伊莎貝拉倒了兩杯，一口喝光自己的，又一口喝光你的。",
+          "at": { "where": "npc", "npc": "npc_isabella_rowan" },
+          "requires": { "flags": ["isab_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「……我緊張。」她瞪著空杯子，「我砍過幾百個盜匪都沒這麼緊張過。」",
+            "set_flags": ["isab_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_isabella_rowan", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到伊莎貝拉的房間",
+          "text": "伊莎貝拉的房間裡掛著一整面牆的劍。她脫掉白色披風，解開護甲，高大結實的身體上全是傷疤，肩膀比你寬，腰卻意外地細。「我不太會，」她說，「可是我學東西很快。」",
+          "at": { "where": "npc", "npc": "npc_isabella_rowan" },
+          "requires": { "flags": ["isab_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "教她",
+              "success": {
+                "text": "你教她，她學得很快——快得讓你招架不住。她抱你抱得很緊，吻你吻得很用力，每一處都要你教，學會了就加倍還你。她在你身下的時候像在衝鋒，一點也不保留，叫得整條走廊都聽得見；第二天早上，騎士團的小子們全都去打掃馬廄了。",
+                "set_flags": ["isab_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_isabella_rowan", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "伊莎貝拉兌現了她的賭注。她學得很快，那一夜你們都沒怎麼睡。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她用騎士的方式",
+              "success": {
+                "text": "「照妳的方式。」她想了想，把你抱起來丟到床上，像在戰場上一樣直接撲了上來。她又重又熱，汗水混著酒味，動起來毫不客氣，卻在你喘不過氣的時候停下來，粗糙的手很笨拙地摸你的臉：「……太用力了？」你搖頭，她就笑了，繼續衝鋒。",
+                "set_flags": ["isab_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_isabella_rowan", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "聖殿騎士團長伊莎貝拉用騎士的方式兌現了賭注——毫無保留，一次衝鋒到底。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "brun_sweet_night",
+      "title": "霜盾的蛋糕之夜",
+      "summary": "「霜盾」布倫希爾德一年講的話不超過一百句。今天她用了十句，全都是在邀你去她家吃甜點。（布倫希爾德・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_brunhild",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["brun_lover", "brun_peace"] },
+        "text": "布倫希爾德站在你面前，兩公尺多的身高把陽光都擋住了。她把頭盔夾在腋下，那張稚氣的臉紅得像蘋果：「我做了蛋糕。」停了很久，「很多。」又停了很久，「一個人吃不完。」她是第一軍團的將軍，打過的仗比你走過的路還多，此刻卻緊張得手都在抖，「今晚……來我家。」"
+      },
+      "start_flags": ["brun_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "在布倫希爾德家吃蛋糕",
+          "text": "她家的桌上擺滿了蛋糕，每一個都歪歪扭扭的，每一個都很好吃。布倫希爾德坐在你對面，一口一口地吃，偷偷看你一眼，又低頭吃一口。",
+          "at": { "where": "npc", "npc": "npc_brunhild" },
+          "requires": { "flags": ["brun_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "你伸手擦掉她嘴角的奶油。她整個人僵住了，然後慢慢地、慢慢地把臉湊了過來。",
+            "set_flags": ["brun_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_brunhild", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "留在布倫希爾德家",
+          "text": "布倫希爾德脫掉了霜白色的板甲，底下的身體高大得驚人，肩寬手長，肌肉結實，胸口卻柔軟豐滿。她坐在床邊，把你整個人抱進懷裡，聲音小得幾乎聽不見：「……我怕把你弄壞。」",
+          "at": { "where": "npc", "npc": "npc_brunhild" },
+          "requires": { "flags": ["brun_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「不會壞的」",
+              "success": {
+                "text": "「不會壞的。」她小心翼翼地吻你，小心翼翼地脫你的衣服，像在捧一塊易碎的蛋糕。你把她拉倒在床上，吻遍她高大的身體，她每一次被你碰到都會很小聲地抽一口氣。後來她不怕了，把你抱起來、壓下去、整個人纏著你，那張稚氣的臉在高潮時皺成一團，美得要命。",
+                "set_flags": ["brun_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_brunhild", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "「霜盾」布倫希爾德那一夜說的話比一整年還多——幾乎全是你的名字。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "爬到她身上",
+              "success": {
+                "text": "你直接爬到她身上，她嚇了一跳，又不敢推開你，只好乖乖地躺著，讓你一處一處地探索這具高大的身體。你吻她的時候她會發抖，你往下的時候她會用手捂住臉，最後她抓著床單，第一次在別人面前叫出了聲——那聲音一點也不像將軍。",
+                "set_flags": ["brun_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_brunhild", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你讓「霜盾」布倫希爾德在床上捂著臉叫出了聲。那聲音一點也不像將軍。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "kara_mating_hunt",
+      "title": "赤鬃的求偶之夜",
+      "summary": "赤鬃族長卡菈說，族裡最古老的規矩是：狩獵之後的那一夜，屬於一起狩獵的那個人。（卡菈・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_kara_redmane",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["kara_lover", "kara_priestess_oath"] },
+        "text": "卡菈把一張剛剝下的獸皮丟在你腳邊，赤棕色的鬃毛在風裡像火焰一樣翻動：「打得贏我，也跟得上我。你兩樣都做到了。」她咧嘴一笑，露出尖尖的犬齒，「赤鬃的規矩：狩獵之後的那一夜，屬於一起狩獵的人。今晚，草原上，只有我們兩個。」"
+      },
+      "start_flags": ["kara_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和卡菈在草原上狩獵",
+          "text": "你們在月光下追了一整晚的獵物。卡菈跑在你前面，回頭看你跟不跟得上；你跟上了，她就笑著跑得更快。最後獵物倒下的時候，你們兩個都撲倒在草地上，她壓在你身上，喘著氣，眼睛亮得嚇人。",
+          "at": { "where": "npc", "npc": "npc_kara_redmane" },
+          "requires": { "flags": ["kara_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「抓到了。」她說——說的不是獵物。",
+            "set_flags": ["kara_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_kara_redmane", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "留在草原上",
+          "text": "篝火燒得劈啪響。卡菈扯掉身上的獸骨和戰利品，赤裸的身體結實修長，尾巴高高地豎著。她繞著你走了一圈，像在打量獵物：「赤鬃的女人求偶的時候，不會等男人或女人開口。」",
+          "at": { "where": "npc", "npc": "npc_kara_redmane" },
+          "requires": { "flags": ["kara_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她狩獵你",
+              "success": {
+                "text": "她撲了上來。你被她壓在獸皮上，她咬你的脖子、舔你的胸口，爪子在你身上留下一道道細細的紅痕。她在你身上起伏得又快又狠，尾巴纏住你的腰，最後仰頭對著月亮發出一聲長長的吼叫，整片草原都安靜了下來。",
+                "set_flags": ["kara_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "赤鬃族長卡菈在草原上狩獵了你。那一夜，整片草原都聽見了她的吼聲。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "反過來狩獵她",
+              "success": {
+                "text": "你在她撲上來之前先抓住了她的手腕，把她翻過來壓在獸皮上。卡菈愣了一下，然後大笑起來，尾巴興奮地拍著地：「好！這才配得上我！」你們扭打著、糾纏著，誰也不讓誰，最後她在你身下顫抖著投降，咬著你的肩膀說，赤鬃的族長從來沒有輸給過任何人。",
+                "set_flags": ["kara_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_kara_redmane", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你在草原上反過來狩獵了赤鬃族長卡菈。她說，她這輩子第一次輸得這麼高興。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "mat_no_fine_print",
+      "title": "沒有附註的契約",
+      "summary": "瑪蒂爾達遞給你一份契約。這是她這輩子第一份，沒有任何陷阱的契約。（瑪蒂爾達・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_matilda_rosen",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["mat_lover"] },
+        "text": "二十二歲的議員瑪蒂爾達把一份契約放在你面前，白色小狗在她懷裡打了個哈欠：「我仔細看過了，一條陷阱也沒有。」契約上只有一行字：「今晚，瑪蒂爾達・羅森屬於你。」她笑得還是那麼甜，臉卻紅透了，「簽不簽？」"
+      },
+      "start_flags": ["mat_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪瑪蒂爾達在七議席的花園散步",
+          "text": "議會的花園裡開滿了玫瑰。瑪蒂爾達把小狗交給了侍女，挽著你的手走了一圈又一圈。她說起了她十五歲第一次學會在契約裡埋陷阱的那一天，說她從那天起就不相信任何人了。",
+          "at": { "where": "npc", "npc": "npc_matilda_rosen" },
+          "requires": { "flags": ["mat_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「可是你，」她停下來看你，「我想相信一次。」",
+            "set_flags": ["mat_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_matilda_rosen", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到瑪蒂爾達的宅邸",
+          "text": "她的臥房裡到處都是荷葉邊和蝴蝶結。瑪蒂爾達背對著你解開華麗洋裝的繫帶，蜂蜜色的捲髮散在雪白的肩上。她轉過身，第一次沒有笑：「我……其實很害怕。」",
+          "at": { "where": "npc", "npc": "npc_matilda_rosen" },
+          "requires": { "flags": ["mat_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "照著契約來",
+              "success": {
+                "text": "「契約上寫，妳屬於我。」你吻她的時候她抖得很厲害，你就慢下來，一處一處地吻，一處一處地問。她的害怕一點一點地融掉，最後拉著你的手往她身體最深處去，在你懷裡哭著高潮，說這是她簽過最好的一份契約。",
+                "set_flags": ["mat_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_matilda_rosen", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "瑪蒂爾達簽了她這輩子第一份沒有陷阱的契約。那一夜，她屬於你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把契約改成互相的",
+              "success": {
+                "text": "你拿起筆，在契約上加了一行：「——你也屬於她。」瑪蒂爾達愣住了，然後笑得眼淚都流了出來。她撲到你身上，像拆禮物一樣拆開你的衣服，又甜又大膽地要你，荷葉邊的床單被你們滾得亂七八糟。天亮時她抱著那份契約睡著了。",
+                "set_flags": ["mat_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_matilda_rosen", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你把瑪蒂爾達的契約改成了互相的。她抱著那份契約睡了一整夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ith_moonwell_night",
+      "title": "生命之泉邊的一夜",
+      "summary": "精靈女王伊瑟蘭迪爾活了上千年，第一次想要一個凡人陪她一夜。（伊瑟蘭迪爾・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_ithrandil",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["ith_crown_vow", "ith_journey", "ith_lover"] },
+        "text": "伊瑟蘭迪爾在生命之泉邊等你，銀色的長髮垂到地上，淡金色的眼睛映著泉水的光：「我活了很久，看過很多凡人來了又走。」她說話像在吟詩，「我一直以為，不去愛，就不會在你們走的時候心痛。」她伸出手，「我錯了。今晚，留在泉邊。」"
+      },
+      "start_flags": ["ith_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪伊瑟蘭迪爾在月光森林散步",
+          "text": "月光森林裡的每一棵樹都在發光。伊瑟蘭迪爾走在你身邊，告訴你每一棵樹的名字、每一棵樹活了多少年。走到最老的那一棵前面，她停了下來，摘下了白銀藤蔓編成的冠。",
+          "at": { "where": "npc", "npc": "npc_ithrandil" },
+          "requires": { "flags": ["ith_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「這頂冠，戴了九百年。」她把冠放在樹根上，「今晚，我不想當女王。」",
+            "set_flags": ["ith_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_ithrandil", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "留在生命之泉邊",
+          "text": "泉水的光照在她身上。伊瑟蘭迪爾解開了長袍，修長白皙的身體美得像月光凝成的，長髮像銀色的瀑布一樣披在身後。她拉著你走進淺淺的泉水裡：「在精靈的語言裡，『愛』和『記住』是同一個字。」",
+          "at": { "where": "npc", "npc": "npc_ithrandil" },
+          "requires": { "flags": ["ith_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她記住你",
+              "success": {
+                "text": "你在泉水裡吻她，從她的唇到她的頸、到她的胸口。泉水溫暖得像她的體溫，她靠著你、纏著你，在水裡和你交纏在一起。她從來沒有失態過，那一夜卻在你懷裡失態了一次又一次，最後抱著你，用精靈語在你耳邊說了很長的一句話——你聽不懂，但你知道是什麼意思。",
+                "set_flags": ["ith_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "精靈女王伊瑟蘭迪爾在生命之泉邊，用精靈的方式記住了你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "慢慢地愛她",
+              "success": {
+                "text": "你沒有急。你用了整整一夜，很慢很慢地愛她，像她有一千年可以等，像你也有。她說凡人總是太匆忙，可是那一夜你一點也不匆忙，慢得她最後忍不住抓著你求你，聲音不再像吟詩，只像一個想要被愛的女人。",
+                "set_flags": ["ith_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_ithrandil", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你用了一整夜慢慢地愛精靈女王伊瑟蘭迪爾。她說，那是她九百年來最短的一夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ana_cardinal_vows",
+      "title": "樞機的另一件嗜好",
+      "summary": "安納塔西亞說，除了溜出城當冒險者，她還有第二件誰都不知道的嗜好。她只想告訴你。（安納塔西亞・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_anastasia",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["ana_lover", "ana_queen_love"] },
+        "text": "安納塔西亞換上了便服，銀白的長髮放了下來，碧色的眼睛帶著一點惡作劇的光：「溜出城當冒險者，是我第一個秘密。」她早就是成年人了，是晨曦王國的公主、聖環教廷的樞機——卻在你面前笑得像要做壞事，「第二個秘密，今晚帶你去看。城外的獵人小屋。不准告訴任何人。」"
+      },
+      "start_flags": ["ana_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪安納塔西亞溜出王都",
+          "text": "她熟門熟路地帶你繞過城牆的巡邏，從一條排水溝鑽了出去，笑得停不下來。月光下她跑在你前面，嬌小的身影輕快得像一隻鳥。",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "跑到獵人小屋門口，她喘著氣回頭看你：「第二個秘密是——我想要你，已經想很久了。」",
+            "set_flags": ["ana_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_anastasia", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到城外的獵人小屋",
+          "text": "小屋裡只有一張床和一盞燈。安納塔西亞脫掉了便服，嬌小玲瓏的身體在燈光下白得發亮。她坐在床邊看著你，莊嚴得像在主持彌撒，臉卻紅得像個闖了禍的小女孩：「樞機不能做這種事。所以……你要負責讓我不後悔。」",
+          "at": { "where": "npc", "npc": "npc_anastasia" },
+          "requires": { "flags": ["ana_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她不後悔",
+              "success": {
+                "text": "你讓她一點也不後悔。你吻遍她嬌小的身體，她每一處都敏感得驚人，一碰就顫，一吻就喘。她平常莊嚴華貴的聲音在你身下碎成一聲一聲的呻吟，最後抓著你的背，在你懷裡高潮得渾身發抖。她窩在你懷裡說：「……我要每個月都溜出來。」",
+                "set_flags": ["ana_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "樞機主教安納塔西亞在城外的獵人小屋裡，把她的第二個秘密交給了你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她發號施令",
+              "success": {
+                "text": "「那妳說，要我怎麼做。」她愣了一下，然後露出了掌權者的微笑。她用主持會議的語氣命令你——吻這裡、碰那裡、再慢一點、再用力一點——每一條都說得清清楚楚，可說到後來聲音就抖了，命令變成了哀求，哀求變成了只會叫你的名字。",
+                "set_flags": ["ana_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_anastasia", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "安納塔西亞在獵人小屋裡對你發號施令。說到最後，她只會叫你的名字了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ele_off_duty",
+      "title": "宰相的休假",
+      "summary": "帝國宰相艾蕾諾拉二十年來第一次請了一天假。她說，這一天要全部給你。（艾蕾諾拉・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_eleanora_rhine",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["ele_lover", "ele_rest"] },
+        "text": "艾蕾諾拉把權杖交給秘書，金髮第一次沒有盤起來：「我請假了。一天。二十年來第一次。」她深藍色的宰相長袍換成了一件簡單的裙子，看起來年輕了十歲，「我不知道休假要做什麼。所以……你決定。」她頓了頓，「不過今晚，我已經決定好了。」"
+      },
+      "start_flags": ["ele_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "陪艾蕾諾拉過她的第一個休假日",
+          "text": "你們在帝都的街上閒逛，吃路邊攤，看街頭藝人表演。艾蕾諾拉一開始還會下意識地評估每一個攤販的稅收，後來就不想了，笑得越來越像一個普通的女人。",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "天黑的時候，她挽著你的手，在你耳邊說：「接下來的時間，不准談公事。」",
+            "set_flags": ["ele_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到宰相府的私室",
+          "text": "私室裡沒有一份公文。艾蕾諾拉解開裙子，金髮散在背上，身體因為長年伏案而有點單薄，卻線條分明。她把你拉到床上，第一次露出了不是宰相的表情：「我管了二十年的帝國。今晚，我不想管任何事。」",
+          "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
+          "requires": { "flags": ["ele_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她什麼都不用管",
+              "success": {
+                "text": "你讓她什麼都不用管。你脫掉她最後一件衣服，吻她緊繃了二十年的肩膀、背脊、腰，一路吻到她再也想不起任何公文。她在你身下一點一點地放鬆，最後完全交給了你，高潮的時候抓著枕頭哭了出來——她說，那是二十年來第一次，腦袋裡什麼都沒有。",
+                "set_flags": ["ele_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "帝國宰相艾蕾諾拉在她的第一個休假日，把自己完全交給了你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她用宰相的效率",
+              "success": {
+                "text": "「那妳就用處理國事的效率來。」她笑了，然後真的用處理國事的效率——精準、迅速、有條不紊地把你拆開、吻遍、要了一次又一次。她做什麼都是第一名，這件事也不例外。天亮時她看著窗外，說：「下一次休假，我要提前三個月排。」",
+                "set_flags": ["ele_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "艾蕾諾拉用處理國事的效率愛了你一整夜，然後說要提前三個月排下一次休假。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "lisr_red_night",
+      "title": "「紅」的最後一封信",
+      "summary": "「紅」又寄了一封信。這一次，她想看的不是人類的約會，而是約會之後的事。（莉莎爾・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lisar",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["lisr_lover", "lisr_red_date"] },
+        "text": "血羽城堡的公會又收到了那種優雅字跡的信，署名還是一個字：「紅」。信上寫：「人類的約會，我已經看過了。人類說，約會之後還有一件事。」最後一行的字跡有一點亂，「今晚，我的寢宮。我想親自看——不，親自做。」"
+      },
+      "start_flags": ["lisr_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "赴莉莎爾的晚宴",
+          "text": "晚宴只有兩個人。莉莎爾坐在長桌的另一頭，緋紅的肌膚在燭光下透亮，金色的豎瞳一直看著你。菜一道一道地上，她一口也沒吃，只是看著你吃。",
+          "at": { "where": "npc", "npc": "npc_lisar" },
+          "requires": { "flags": ["lisr_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "最後一道菜撤下的時候，她站起來，繞過長桌，走到你身邊：「我看夠了。」",
+            "set_flags": ["lisr_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_lisar", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到莉莎爾的寢宮",
+          "text": "寢宮裡掛著黑紅相間的帷幔。莉莎爾取下黑曜冠環，解開宮廷長袍，赤紅的雙翼在身後舒展開來，高挑妖嬈的身體美得讓人無法呼吸。她是赤翼之君，荒原上最強大的魅魔——此刻卻停在你面前，「我故意示弱過很多次，為了看清一個人。這一次……不是故意的。」",
+          "at": { "where": "npc", "npc": "npc_lisar" },
+          "requires": { "flags": ["lisr_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她示弱",
+              "success": {
+                "text": "你把她推倒在床上，她沒有反抗。赤翼之君在你身下閉上眼睛，任你吻遍她緋紅的肌膚，任你一寸一寸地佔有她。她的翅膀在你身下顫抖，魅魔的魅光從她身上一陣一陣地湧出來，把你們兩個都捲進去；她高潮的時候，整座寢宮的燭火都燒成了紅色。",
+                "set_flags": ["lisr_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "赤翼之君莉莎爾在她的寢宮裡，第一次不是故意地示弱——對你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她做她想做的",
+              "success": {
+                "text": "「那就做妳想做的。」她笑了，那是魅魔的笑。她把你壓在帷幔下，用千年來只在書上讀過、從沒用過的魅魔技藝，一點一點地把你逼到崩潰邊緣，又在最後一刻停下來，看著你、吻你、再繼續。直到天亮，你都分不清是她在要你，還是你在要她。",
+                "set_flags": ["lisr_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lisar", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "赤翼之君莉莎爾在寢宮裡，用她從沒用過的魅魔技藝要了你一整夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "sak_tide_bed",
+      "title": "潮主的私宴",
+      "summary": "潮主櫻汐辦了無數場宴會。這一場，賓客只有一位。（櫻汐・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_sakurashio",
+        "min_affinity": 40,
+        "min_level": 11,
+        "requires": { "flags_any": ["sak_barrier_song", "sak_lover"] },
+        "text": "櫻汐的請帖上畫著一朵並蒂珊瑚花：「春潮閣，今晚，私宴。賓客：一位。服裝：隨意。或者不穿。」底下還有一行很小的字，「顧問大人，這次的宴會風格，是『只有我們兩個』。」"
+      },
+      "start_flags": ["sak_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "赴櫻汐的私宴",
+          "text": "春潮閣的大廳只擺了一張小桌。櫻汐親手斟酒、親手佈菜，玉色的鱗尾在桌下時不時地蹭著你的腿。她說了很多宴會上的趣事，說到最後，聲音越來越小。",
+          "at": { "where": "npc", "npc": "npc_sakurashio" },
+          "requires": { "flags": ["sak_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「辦了那麼多場宴會，」她托著下巴看你，「這是我第一次希望賓客不要走。」",
+            "set_flags": ["sak_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_sakurashio", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "留在春潮閣",
+          "text": "櫻汐解開櫻色廣袖羅裳，珊瑚紅的長髮散在肩上，玉色的鱗尾在燭光下像一條流動的玉河。她把你拉到鋪滿花瓣的床上，咬著你的耳朵說：「宴會的最後一道菜，是我。」",
+          "at": { "where": "npc", "npc": "npc_sakurashio" },
+          "requires": { "flags": ["sak_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "品嚐最後一道菜",
+              "success": {
+                "text": "你慢慢地品嚐——從她的唇、她的頸、她的胸口，一路到她鱗尾與肌膚交界的那一圈，那裡敏感得讓她一碰就叫出聲。她在花瓣裡扭動，鱗尾纏著你不放，叫得比任何一場宴會的歌聲都動聽。那一夜，最後一道菜上了很多次。",
+                "set_flags": ["sak_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "潮主櫻汐的私宴上，最後一道菜是她自己。你品嚐了一整夜。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她招待你",
+              "success": {
+                "text": "「潮主大人，請招待。」她笑了，然後拿出辦宴會的全部本事招待你——用手、用嘴、用整個柔軟的身體，一道一道地上菜，每一道都讓你招架不住。最後她伏在你身上，鱗尾輕輕地拍著床：「招待得還滿意嗎？下一場，什麼時候？」",
+                "set_flags": ["sak_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_sakurashio", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "潮主櫻汐用辦宴會的全部本事招待了你一整夜，然後問你下一場什麼時候。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "gear_new_design",
+      "title": "新式武器設計",
+      "summary": "鐵爐堡的發明家迪莉婭・銅鬚說，無火之鐵終於穩定了。她想用它做出一把「從來沒有人做過的武器」——需要一個真正上過戰場的人來試。（鍛造與冒險・一）",
+      "rank": "A",
+      "merit": 12,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_dilia_copperbeard",
+        "min_level": 12,
+        "text": "迪莉婭的護目鏡上全是煤灰，背包噗噗地冒著蒸汽：「無火之鐵穩定了！不用火、不用錘，熔出來的精金比任何鍛造的都硬！」她把一疊設計圖攤在你面前，「可是我不知道該做成什麼。劍？斧？鎚？你上過戰場——你告訴我，你想要什麼。」"
+      },
+      "start_flags": ["gear_new_design_start"],
+      "nodes": [
+        {
+          "id": "melt",
+          "title": "在鐵爐堡的鐵匠鋪幫迪莉婭看著無火熔爐",
+          "kind": "check",
+          "at": { "where": "cell", "location": "ironforge", "cell": "smithy" },
+          "text": "無火熔爐的指針一路往紅色的那一格爬。迪莉婭在一旁大喊：「穩住壓力閥！不要讓它超過九成——超過了就會……就會很精彩！」",
+          "check": { "attr": "int", "dc": 17 },
+          "success": {
+            "text": "指針在八成九的地方停住了。熔爐裡的精金安靜地流進模具，迪莉婭抱著頭尖叫：「成功了！第一爐完全穩定的無火精金！」",
+            "set_flags": ["gear_new_design_melt"]
+          },
+          "fail": {
+            "text": "壓力閥噴出一陣蒸汽，把你們兩個都噴成了大花臉。熔爐還是撐住了——精金流進了模具，只是迪莉婭的眉毛少了一半。",
+            "set_flags": ["gear_new_design_melt"]
+          },
+          "requires": { "flags": ["gear_new_design_start"] }
+        },
+        {
+          "id": "test",
+          "title": "在鐵爐堡近郊用新武器擋下風暴巨人",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "ironforge" },
+          "text": "試作品剛冷卻，城外就傳來了警鐘：兩頭風暴巨人從山口走了下來，雷雲跟在牠們頭頂上。迪莉婭把試作的武器塞進你手裡：「實戰測試！拜託不要弄斷！」",
+          "enemies": [["storm_giant", 2]],
+          "success": {
+            "text": "巨人轟然倒下。你手上的試作品連一道刮痕都沒有。迪莉婭在旁邊瘋狂地記筆記：「硬度、韌性、手感——全部超過預期！現在，正式版要做成什麼樣子？」",
+            "set_flags": ["gear_new_design_test"]
+          },
+          "fail": {
+            "text": "你們被巨人逼回了城裡，衛兵們接手了剩下的戰鬥。迪莉婭看著試作品上的凹痕，反而笑了：「好！這下我知道哪裡要加強了！」",
+            "set_flags": ["gear_new_design_test"]
+          },
+          "requires": { "flags": ["gear_new_design_melt"] }
+        },
+        {
+          "id": "pick",
+          "title": "決定正式版的武器",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_dilia_copperbeard" },
+          "text": "迪莉婭把六張設計圖排在工作台上：長劍、戰鎚、巨斧、細劍、鎚矛，還有一副給赤手空拳的人用的護臂。「無火精金只夠做一件。你挑——你挑哪一件，我就把它做到最好。」",
+          "options": [
+            {
+              "label": "做成長劍",
+              "success": {
+                "text": "三天之後，迪莉婭把「無火精金長劍」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "effects": [
+                  { "type": "item", "name": "無火精金長劍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成戰鎚",
+              "success": {
+                "text": "三天之後，迪莉婭把「無火精金戰鎚」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "effects": [
+                  { "type": "item", "name": "無火精金戰鎚", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成巨斧",
+              "success": {
+                "text": "三天之後，迪莉婭把「無火精金巨斧」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "effects": [
+                  { "type": "item", "name": "無火精金巨斧", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成細劍",
+              "success": {
+                "text": "三天之後，迪莉婭把「無火精金細劍」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "effects": [
+                  { "type": "item", "name": "無火精金細劍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成鎚矛",
+              "success": {
+                "text": "三天之後，迪莉婭把「無火精金鎚矛」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "effects": [
+                  { "type": "item", "name": "無火精金鎚矛", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成護臂",
+              "success": {
+                "text": "三天之後，迪莉婭把「無火精金護臂」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "effects": [
+                  { "type": "item", "name": "無火精金護臂", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_new_design_test"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 3000 }, { "type": "xp", "amount": 2500 }]
+    },
+    {
+      "id": "gear_broken_legend",
+      "title": "破損的傳說武器",
+      "summary": "心火熔源的瑪格達・鐵爐找到了兩百年前斷成七截的傳說武器「黎明」。碎片散在古戰場上，被重演的亡兵守著。（鍛造與冒險・二）",
+      "rank": "A",
+      "merit": 12,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_magda_ironforge",
+        "min_level": 14,
+        "text": "瑪格達把一截斷掉的劍尖放在你手心，金屬還是溫的：「『黎明』。兩百年前統一戰爭的最後一夜，它斷成了七截。我找到了一截，其他六截在回聲裂谷外的古戰場上——那裡的亡兵每天晚上都在重打那一仗。」她握緊了拳頭，「心火能把它接回來。可是我需要有人把碎片帶回來。」"
+      },
+      "start_flags": ["gear_broken_legend_start"],
+      "nodes": [
+        {
+          "id": "field",
+          "title": "在鐵爐堡近郊的古戰場擋下重演的亡兵",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "ironforge" },
+          "text": "月亮升起的時候，古戰場上的亡兵一排一排地站了起來，舉起生鏽的劍，喊著兩百年前的口號。「黎明」的碎片在他們腳下的泥裡發著微光。",
+          "enemies": [["echo_legionnaire", 3]],
+          "success": {
+            "text": "最後一個亡兵倒下之前，對你行了一個舊式的軍禮。你從泥裡挖出了六截碎片，每一截都在發燙。",
+            "set_flags": ["gear_broken_legend_field"]
+          },
+          "fail": {
+            "text": "你們撐不住，只搶到了四截碎片就退了下來。第二天晚上再去的時候，剩下的兩截被亡兵插在了戰場中央——像是在等你。你拿到了。",
+            "set_flags": ["gear_broken_legend_field"]
+          },
+          "requires": { "flags": ["gear_broken_legend_start"] }
+        },
+        {
+          "id": "forge",
+          "title": "在鐵爐堡的鐵匠鋪陪瑪格達用心火重鑄",
+          "kind": "check",
+          "at": { "where": "cell", "location": "ironforge", "cell": "smithy" },
+          "text": "心火熔源的火是白色的，燒得整個鐵匠鋪都在嗡嗡響。瑪格達把七截碎片放進火裡：「它記得自己原本的樣子。可是它也可以變成別的——要看握著它的人想要什麼。把手放在鉗子上，想著你想要的樣子。」",
+          "check": { "attr": "fai", "dc": 18 },
+          "success": {
+            "text": "碎片在火裡融在一起，又自己分開，像是在等你決定。瑪格達屏住了呼吸：「它聽見你了。」",
+            "set_flags": ["gear_broken_legend_forge"]
+          },
+          "fail": {
+            "text": "火焰猛地竄高，燙傷了你的手。可是碎片還是融在了一起——瑪格達說，傳說武器不怕痛，只怕沒有人想要它。",
+            "set_flags": ["gear_broken_legend_forge"]
+          },
+          "requires": { "flags": ["gear_broken_legend_field"] }
+        },
+        {
+          "id": "pick",
+          "title": "決定「黎明」的新樣子",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_magda_ironforge" },
+          "text": "白色的火焰裡，「黎明」的金屬慢慢地流動著，等著最後一錘。瑪格達舉起鍛錘看著你：「長弓、法杖、長棍、匕首、長劍、細劍——它想變成什麼，你說了算。」",
+          "options": [
+            {
+              "label": "重鑄成長弓",
+              "success": {
+                "text": "最後一錘落下，「重鑄的黎明・長弓」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "effects": [
+                  { "type": "item", "name": "重鑄的黎明・長弓", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "重鑄成法杖",
+              "success": {
+                "text": "最後一錘落下，「重鑄的黎明・法杖」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "effects": [
+                  { "type": "item", "name": "重鑄的黎明・法杖", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "重鑄成長棍",
+              "success": {
+                "text": "最後一錘落下，「重鑄的黎明・長棍」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "effects": [
+                  { "type": "item", "name": "重鑄的黎明・長棍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "重鑄成匕首",
+              "success": {
+                "text": "最後一錘落下，「重鑄的黎明・匕首」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "effects": [
+                  { "type": "item", "name": "重鑄的黎明・匕首", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "照原樣重鑄成長劍",
+              "success": {
+                "text": "最後一錘落下，「重鑄的黎明・長劍」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "effects": [
+                  { "type": "item", "name": "重鑄的黎明・長劍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "重鑄成細劍",
+              "success": {
+                "text": "最後一錘落下，「重鑄的黎明・細劍」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "effects": [
+                  { "type": "item", "name": "重鑄的黎明・細劍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_broken_legend_forge"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 3000 }]
+    },
+    {
+      "id": "gear_forge_mech_armor",
+      "title": "千爐的機甲",
+      "summary": "機偶交貨之後，千爐工坊的伊格妮絲把機偶的關節技術用在了鎧甲上。她說，第一副要給你——前提是你要先陪它挨揍。（鍛造與冒險・三）",
+      "rank": "A",
+      "merit": 12,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_ignis_forge",
+        "min_level": 13,
+        "text": "伊格妮絲拍了拍工作台上的一堆零件，零件發出了咔噠咔噠的聲音：「機偶的關節，裝進鎧甲裡。穿的人不會累，挨打也不會痛——理論上。」她戴上厚重的皮手套，「理論需要測試。你來穿，我來打。不，我開玩笑的。校場那邊的圖騰巨像會來打。」"
+      },
+      "start_flags": ["gear_forge_mech_armor_start"],
+      "nodes": [
+        {
+          "id": "fit",
+          "title": "在熔火堡壘的鐵匠鋪讓伊格妮絲量身",
+          "kind": "check",
+          "at": { "where": "cell", "location": "moltenhold", "cell": "smithy" },
+          "text": "伊格妮絲拿著皮尺繞著你轉了三圈，一邊量一邊唸數字，唸到一半停下來：「站直。不要動。你一動，關節就會對不準——」",
+          "check": { "attr": "dex", "dc": 16 },
+          "success": {
+            "text": "你一動也不動地站了兩個小時。伊格妮絲滿意地點頭：「完美的數據。這副鎧甲會像第二層皮膚一樣。」",
+            "set_flags": ["gear_forge_mech_armor_fit"]
+          },
+          "fail": {
+            "text": "你打了一個噴嚏，伊格妮絲的皮尺斷了。她嘆了一口氣，重新量了一遍：「……第二層皮膚，可能會有一點緊。」",
+            "set_flags": ["gear_forge_mech_armor_fit"]
+          },
+          "requires": { "flags": ["gear_forge_mech_armor_start"] }
+        },
+        {
+          "id": "trial",
+          "title": "在熔火堡壘近郊穿著試作機甲擋下圖騰巨像",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "moltenhold" },
+          "text": "兩具從荒原帶回來的圖騰巨像被放出了籠子，眼睛裡燒著古老的火。伊格妮絲站在安全的地方大喊：「關節的轉速我調到最高了！如果覺得腳快飛出去了，那是正常的！」",
+          "enemies": [["totem_colossus", 2]],
+          "success": {
+            "text": "巨像碎成了一地的石頭。試作機甲上多了幾道凹痕，關節卻轉得比剛開始更順了。伊格妮絲衝過來，把耳朵貼在你的胸甲上聽：「好聲音。它在學你的動作。」",
+            "set_flags": ["gear_forge_mech_armor_trial"]
+          },
+          "fail": {
+            "text": "你們被巨像逼到了校場邊緣，最後是工坊的機偶衝出來收了尾。伊格妮絲看著試作機甲上的凹痕，沉默了很久，然後說：「好。下一版會更好。」",
+            "set_flags": ["gear_forge_mech_armor_trial"]
+          },
+          "requires": { "flags": ["gear_forge_mech_armor_fit"] }
+        },
+        {
+          "id": "pick",
+          "title": "決定正式版的機甲",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_ignis_forge" },
+          "text": "伊格妮絲把五份設計圖攤開：板甲、鍊甲、皮甲、武僧袍、長袍。「機偶的關節，什麼都裝得進去。可是精金和龍皮只夠做一副——你要哪一種？」",
+          "options": [
+            {
+              "label": "做成板甲",
+              "success": {
+                "text": "一週之後，「千爐機甲・板甲」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "effects": [
+                  { "type": "item", "name": "千爐機甲・板甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成鍊甲",
+              "success": {
+                "text": "一週之後，「千爐機甲・鍊甲」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "effects": [
+                  { "type": "item", "name": "千爐機甲・鍊甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成皮甲",
+              "success": {
+                "text": "一週之後，「千爐機甲・皮甲」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "effects": [
+                  { "type": "item", "name": "千爐機甲・皮甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成武僧袍",
+              "success": {
+                "text": "一週之後，「千爐機甲・武僧袍」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "effects": [
+                  { "type": "item", "name": "千爐機甲・武僧袍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "做成長袍",
+              "success": {
+                "text": "一週之後，「千爐機甲・長袍」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "effects": [
+                  { "type": "item", "name": "千爐機甲・長袍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_forge_mech_armor_trial"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 3000 }, { "type": "xp", "amount": 2500 }]
+    },
+    {
+      "id": "gear_giant_armory",
+      "title": "巨人的武庫",
+      "summary": "灰岩堡壘的符文師瑟爾・迷石，在古符迴路的盡頭找到了一扇門：巨人王的武庫。門後面的東西，三千年沒有人碰過。（鍛造與冒險・四）",
+      "rank": "S",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_ser_mistone",
+        "min_level": 15,
+        "text": "瑟爾的灰袍上的符文一閃一閃，看不出性別與年紀的臉上難得有了一點興奮：「古符迴路的最後一段旋律，是一把鑰匙。我唱了三個月，門開了。」瑟爾頓了頓，「巨人王的武庫。裡面的鎧甲是巨人鍛匠打給矮人勇士的禮物——可是守門的東西還醒著。」"
+      },
+      "start_flags": ["gear_giant_armory_start"],
+      "nodes": [
+        {
+          "id": "song",
+          "title": "在灰岩堡壘的鐵匠鋪陪瑟爾解讀武庫的門紋",
+          "kind": "check",
+          "at": { "where": "cell", "location": "greyrock", "cell": "smithy" },
+          "text": "瑟爾把門上的拓印攤在鐵匠鋪的桌上，三千年前的巨人文字一圈一圈地繞著。「門要聽見正確的旋律才會讓人進去。我只解出了一半。另一半——你看看。」",
+          "check": { "attr": "int", "dc": 18 },
+          "success": {
+            "text": "你看出來了：另一半的旋律是倒著寫的。瑟爾愣了一下，然後輕輕地哼了出來。拓印上的符文一個一個地亮了起來。",
+            "set_flags": ["gear_giant_armory_song"]
+          },
+          "fail": {
+            "text": "你看了一整夜也看不出來。天亮的時候，瑟爾突然拍了一下桌子：「倒著寫的！」你們都太累了，誰也沒力氣高興。",
+            "set_flags": ["gear_giant_armory_song"]
+          },
+          "requires": { "flags": ["gear_giant_armory_start"] }
+        },
+        {
+          "id": "guards",
+          "title": "在灰岩堡壘近郊擋下守門的風暴巨人",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "greyrock" },
+          "text": "武庫的門一開，三頭風暴巨人就從門後的陰影裡站了起來。牠們不是活的——是巨人王留下來守門的魂，眼睛裡閃著雷光。",
+          "enemies": [["storm_giant", 3]],
+          "success": {
+            "text": "最後一頭巨人倒下的時候，沒有發出聲音，只是慢慢地化成了雷光散去。武庫的燈一盞一盞地亮了起來。",
+            "set_flags": ["gear_giant_armory_guards"]
+          },
+          "fail": {
+            "text": "你們退出了武庫，巨人魂沒有追出來。瑟爾說牠們只守門，不追人。第二天你們再進去，牠們累了——或者說，三千年第一次有人連續來兩天，牠們也很困惑。你們過去了。",
+            "set_flags": ["gear_giant_armory_guards"]
+          },
+          "requires": { "flags": ["gear_giant_armory_song"] }
+        },
+        {
+          "id": "pick",
+          "title": "從巨人王的武庫挑一件鎧甲",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_ser_mistone" },
+          "text": "武庫裡只剩下五件還能穿的鎧甲，其他的都在三千年裡化成了灰。瑟爾說：「巨人王的規矩：每個來的人只能帶走一件。挑你需要的，不要挑你想要的。」",
+          "options": [
+            {
+              "label": "帶走板甲",
+              "success": {
+                "text": "你帶走了「巨人武庫的板甲」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "effects": [
+                  { "type": "item", "name": "巨人武庫的板甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "帶走鍊甲",
+              "success": {
+                "text": "你帶走了「巨人武庫的鍊甲」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "effects": [
+                  { "type": "item", "name": "巨人武庫的鍊甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "帶走皮甲",
+              "success": {
+                "text": "你帶走了「巨人武庫的皮甲」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "effects": [
+                  { "type": "item", "name": "巨人武庫的皮甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "帶走獵裝",
+              "success": {
+                "text": "你帶走了「巨人武庫的獵裝」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "effects": [
+                  { "type": "item", "name": "巨人武庫的獵裝", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "帶走武僧袍",
+              "success": {
+                "text": "你帶走了「巨人武庫的武僧袍」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "effects": [
+                  { "type": "item", "name": "巨人武庫的武僧袍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_giant_armory_guards"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 3000 }]
+    },
+    {
+      "id": "gear_another_treasure",
+      "title": "又一個神祕的寶藏",
+      "summary": "冒險者公會的聯絡員塔莉，在「沒回來的人」名單的背面發現了一張手繪地圖：流沙底下，還有一座沒有名字的寶庫。（鍛造與冒險・五）",
+      "rank": "A",
+      "merit": 12,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_tali_liaison",
+        "min_level": 13,
+        "text": "塔莉把防沙眼鏡推到額頭上，攤開一張皺巴巴的紙：「這是名單上一個沒回來的人留下的。背面畫著一座寶庫——不是流沙聖殿，是另一座，更深，沒有名字。」她嘆了一口氣，「又一個神祕的寶藏。每次都說是最後一個，每次都不是。」她看著你，「可是這一次，我想知道他到底找到了什麼。」"
+      },
+      "start_flags": ["gear_another_treasure_start"],
+      "nodes": [
+        {
+          "id": "map",
+          "title": "在沙堡營地的情報商比對地圖",
+          "kind": "check",
+          "at": { "where": "cell", "location": "sandcastle", "cell": "informant" },
+          "text": "情報商把幾張舊地圖疊在一起，對著光看。塔莉的手繪地圖上，有一條線和三十年前的沙暴紀錄對得上——也和另外兩條對得上。",
+          "check": { "attr": "int", "dc": 16 },
+          "success": {
+            "text": "你找到了：三條線交會的地方，是一片每年只有沙暴之後才會露出來的岩床。塔莉在地圖上畫了一個大大的叉：「就是這裡。」",
+            "set_flags": ["gear_another_treasure_map"]
+          },
+          "fail": {
+            "text": "你們比對了一整天，最後是情報商的小孩指著地圖說：「這裡不是有一個叉嗎？」——手繪地圖上的叉，被沙子蓋住了。",
+            "set_flags": ["gear_another_treasure_map"]
+          },
+          "requires": { "flags": ["gear_another_treasure_start"] }
+        },
+        {
+          "id": "queen",
+          "title": "在沙堡營地近郊擋下寶庫裡的聖甲蟲女王",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "sandcastle" },
+          "text": "岩床底下的寶庫入口，被一層一層的聖甲蟲殼堵住了。牠們動了起來——兩隻聖甲蟲女王從殼堆裡爬出來，背上的金殼閃著光。",
+          "enemies": [["scarab_swarm_queen", 2]],
+          "success": {
+            "text": "女王的金殼碎了一地。寶庫的門後，是那個沒回來的人——他的骨頭靠在牆邊，手裡還握著一盞燈。他找到了。他只是沒能出去。",
+            "set_flags": ["gear_another_treasure_queen"]
+          },
+          "fail": {
+            "text": "你們被蟲群逼了出來。等到天黑，蟲群睡了，你們才偷偷溜進去。寶庫的門後，那個沒回來的人靠在牆邊，手裡還握著一盞燈。",
+            "set_flags": ["gear_another_treasure_queen"]
+          },
+          "requires": { "flags": ["gear_another_treasure_map"] }
+        },
+        {
+          "id": "pick",
+          "title": "從無名寶藏裡帶走一件",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_tali_liaison" },
+          "text": "寶庫裡的東西不多，卻每一樣都亮得刺眼。塔莉把那個人的名牌收進了懷裡：「他的家人會想知道。」她看著你，「我們只拿一件——剩下的，留給下一個找到這裡的人。這是冒險者的規矩。」",
+          "options": [
+            {
+              "label": "拿精準之戒",
+              "success": {
+                "text": "你帶走了「無名寶藏的精準之戒」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "effects": [
+                  { "type": "item", "name": "無名寶藏的精準之戒", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿鐵膚護符",
+              "success": {
+                "text": "你帶走了「無名寶藏的鐵膚護符」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "effects": [
+                  { "type": "item", "name": "無名寶藏的鐵膚護符", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿活力臍釘",
+              "success": {
+                "text": "你帶走了「無名寶藏的活力臍釘」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "effects": [
+                  { "type": "item", "name": "無名寶藏的活力臍釘", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿鷹眼耳環",
+              "success": {
+                "text": "你帶走了「無名寶藏的鷹眼耳環」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "effects": [
+                  { "type": "item", "name": "無名寶藏的鷹眼耳環", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_another_treasure_queen"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 3000 }, { "type": "xp", "amount": 2500 }]
+    },
+    {
+      "id": "gear_last_sea_chart",
+      "title": "老船長的最後一張海圖",
+      "summary": "灰港鎮的哈根船長說，他的船友五十年前帶著一張海圖出海，再也沒有回來。這個月，海圖上畫的那片海，浮起了一根桅桿。（鍛造與冒險・六）",
+      "rank": "S",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_captain_hagen",
+        "min_level": 15,
+        "text": "哈根把空酒瓶放在桌上，獨眼看著窗外的海：「五十年前，我的船友帶著一張海圖出海。他說那片海底下沉著一艘比任何船都古老的船。」他從懷裡掏出一張被海水泡爛的紙，「這是他留給我的另一半。這個月，那片海上浮起了一根桅桿。」他把海圖推給你，「我老了，潛不下去了。你替我去看看——他到底找到了沒有。」"
+      },
+      "start_flags": ["gear_last_sea_chart_start"],
+      "nodes": [
+        {
+          "id": "sail",
+          "title": "在灰港鎮的港口陪哈根船長辨認海圖",
+          "kind": "check",
+          "at": { "where": "cell", "location": "ashport", "cell": "gate" },
+          "text": "哈根把兩半海圖拼在一起，用手指沿著上面的星位一點一點地摸過去：「我的眼睛不好了。你來看——這顆星，現在是不是還在那裡？」",
+          "check": { "attr": "dex", "dc": 17 },
+          "success": {
+            "text": "你對準了星位。哈根長長地吐了一口氣：「五十年了，那顆星還在。我們走。」",
+            "set_flags": ["gear_last_sea_chart_sail"]
+          },
+          "fail": {
+            "text": "你看錯了一顆星，船在外海繞了兩天。第三天早上，哈根突然指著遠處：「桅桿！」——是他用那隻獨眼找到的。",
+            "set_flags": ["gear_last_sea_chart_sail"]
+          },
+          "requires": { "flags": ["gear_last_sea_chart_start"] }
+        },
+        {
+          "id": "kraken",
+          "title": "在灰港鎮近郊的海上擋下纏住沉船的巨妖觸手",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "ashport" },
+          "text": "那根桅桿底下，是一艘被巨大觸手纏住的古船。你們一靠近，三條觸手就從海裡竄了出來，朝船身捲了過來。哈根抓緊船舵大喊：「別讓它們碰到船——碰到了就是一起沉下去！」",
+          "enemies": [["kraken_tentacle", 3]],
+          "success": {
+            "text": "觸手縮回了深海。古船慢慢地浮了上來，船首像的臉被海水沖得模糊，船名卻還看得清楚——是哈根的船友的名字。",
+            "set_flags": ["gear_last_sea_chart_kraken"]
+          },
+          "fail": {
+            "text": "觸手把你們的船撞得進了水，你們只好先退回港口修船。第二次出海的時候，觸手不見了——古船已經自己浮了上來，像是在等你們。",
+            "set_flags": ["gear_last_sea_chart_kraken"]
+          },
+          "requires": { "flags": ["gear_last_sea_chart_sail"] }
+        },
+        {
+          "id": "pick",
+          "title": "從古船的船長室裡帶走一件",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_captain_hagen" },
+          "text": "古船的船長室裡，哈根的船友坐在桌前，只剩下骨頭了，手還按在一本航海日誌上。日誌的最後一頁寫著：「哈根，我找到了。留一件給你，其他的給替你來的人。」桌上擺著四件東西。",
+          "options": [
+            {
+              "label": "拿迅捷之戒",
+              "success": {
+                "text": "你拿走了「老船長的迅捷之戒」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "effects": [
+                  { "type": "item", "name": "老船長的迅捷之戒", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿守護護符",
+              "success": {
+                "text": "你拿走了「老船長的守護護符」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "effects": [
+                  { "type": "item", "name": "老船長的守護護符", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿明心項鍊",
+              "success": {
+                "text": "你拿走了「老船長的明心項鍊」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "effects": [
+                  { "type": "item", "name": "老船長的明心項鍊", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿風紋腳鍊",
+              "success": {
+                "text": "你拿走了「老船長的風紋腳鍊」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "effects": [
+                  { "type": "item", "name": "老船長的風紋腳鍊", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_last_sea_chart_kraken"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 4000 }, { "type": "xp", "amount": 3000 }]
+    },
+    {
+      "id": "gear_star_heart_forge",
+      "title": "星心礦的第一把武器",
+      "summary": "星心礦交到了地面。石誓會的巴爾林說，古鍛匠們留下了一個條件：第一塊星心礦，要打成一把武器，交給讓封印之門打開的那個人。（傳說的礦石・四）",
+      "rank": "S",
+      "merit": 20,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_balin_greyrock",
+        "min_level": 16,
+        "requires": { "flags_any": ["ore_done", "ore_hearth", "ore_shared"] },
+        "text": "巴爾林的岩灰色重甲上落滿了地底的灰，他把一塊發著星光的礦石放在你面前：「星心礦。三百年來第一塊交到地面的。古鍛匠們說，第一塊要打成武器，交給讓門打開的人。」他頓了頓，「可是星心礦只有在地底最熱的熔爐裡才熔得動——那座熔爐現在被火焰傳令者佔著。」"
+      },
+      "start_flags": ["gear_star_heart_forge_start"],
+      "nodes": [
+        {
+          "id": "heralds",
+          "title": "在鐵爐堡近郊的地底熔爐擋下魔焰傳令者",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "ironforge" },
+          "text": "地底熔爐的火被魔焰染成了紫色。四個魔焰傳令者圍著熔爐唱著什麼，每唱一句，火就竄高一分。牠們看見你手裡的星心礦，同時停了下來。",
+          "enemies": [["flame_herald", 4]],
+          "success": {
+            "text": "傳令者的歌聲斷了，熔爐的火慢慢地變回了白色。巴爾林把星心礦放進火裡，礦石開始發出低沉的鳴響。",
+            "set_flags": ["gear_star_heart_forge_heralds"]
+          },
+          "fail": {
+            "text": "你們退出了熔爐。等到第二天，傳令者的歌聲變弱了——牠們也受了傷。這一次，你們把牠們趕走了。",
+            "set_flags": ["gear_star_heart_forge_heralds"]
+          },
+          "requires": { "flags": ["gear_star_heart_forge_start"] }
+        },
+        {
+          "id": "smelt",
+          "title": "在鐵爐堡的鐵匠鋪陪巴爾林熔煉星心礦",
+          "kind": "check",
+          "at": { "where": "cell", "location": "ironforge", "cell": "smithy" },
+          "text": "星心礦在火裡熔成了一團會跳動的光。巴爾林把鍛錘交給你：「古鍛匠的規矩：第一錘要由用它的人來打。打下去的時候，想著你要它變成什麼。」",
+          "check": { "attr": "str", "dc": 20 },
+          "success": {
+            "text": "你的第一錘落下，整座鐵匠鋪都安靜了。星心礦的光順著鍛錘爬上你的手臂，像是在認你。",
+            "set_flags": ["gear_star_heart_forge_smelt"]
+          },
+          "fail": {
+            "text": "你的第一錘打偏了，火星濺了你一臉。巴爾林笑了：「三百年前的古鍛匠，第一錘也打偏了。星心礦不在乎這個。」",
+            "set_flags": ["gear_star_heart_forge_smelt"]
+          },
+          "requires": { "flags": ["gear_star_heart_forge_heralds"] }
+        },
+        {
+          "id": "pick",
+          "title": "決定星心礦的形狀",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_balin_greyrock" },
+          "text": "星心礦在砧上等著。巴爾林說：「它可以變成長劍、巨斧或細劍——只能一種。三百年後的矮人會看著它，想起是誰讓門打開的。」",
+          "options": [
+            {
+              "label": "打成長劍",
+              "success": {
+                "text": "最後一錘落下，「星心長劍」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "effects": [
+                  { "type": "item", "name": "星心長劍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "打成巨斧",
+              "success": {
+                "text": "最後一錘落下，「星心巨斧」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "effects": [
+                  { "type": "item", "name": "星心巨斧", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "打成細劍",
+              "success": {
+                "text": "最後一錘落下，「星心細劍」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "effects": [
+                  { "type": "item", "name": "星心細劍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_star_heart_forge_smelt"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 5000 }, { "type": "xp", "amount": 3500 }]
+    },
+    {
+      "id": "gear_church_supply",
+      "title": "聖戰的軍需",
+      "summary": "史詩的走向越來越清楚，聖環教廷的軍需庫要重新分配。教皇格里高利七世說，軍需庫裡最好的一副鎧甲，要給真正守護過人的人——前提是那批軍需要先平安運到。（史詩：軍需・教廷）",
+      "rank": "S",
+      "merit": 20,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_pope_gregory",
+        "min_level": 16,
+        "requires": { "flags_any": ["pol_peace", "pol_war_human"] },
+        "text": "教皇格里高利七世轉著手上那枚磨亮的聖環戒，白鬚下的聲音很平靜：「兩百年來，教廷的軍需庫第一次要打開。不管是為了和平，還是為了戰爭，前線的人都需要鎧甲。」他看著你，「從索里耶爾到前線的路上，有人不想讓這批軍需到。把它們送到，軍需庫裡最好的那一副，就是你的。」"
+      },
+      "start_flags": ["gear_church_supply_start"],
+      "nodes": [
+        {
+          "id": "convoy",
+          "title": "在索里耶爾近郊擋下襲擊軍需車隊的赤翼先鋒",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "soriel" },
+          "text": "軍需車隊剛出城就被攔住了：三個赤翼軍的先鋒從林子裡衝出來，赤紅的翅膀遮住了天。牠們不是正規軍——是不想讓任何一方準備好的那些人。",
+          "enemies": [["crimson_vanguard", 3]],
+          "success": {
+            "text": "先鋒們丟下了武器，飛回了南方。車隊的車夫們圍過來拍你的肩膀，有一個年輕的修士哭了——那是他第一次看見魔族。",
+            "set_flags": ["gear_church_supply_convoy"]
+          },
+          "fail": {
+            "text": "你們被打退了，車隊卻沒有停下——車夫們繞了遠路，多走了兩天，還是把軍需送到了。教皇說，那兩天是你們替他們爭取的。",
+            "set_flags": ["gear_church_supply_convoy"]
+          },
+          "requires": { "flags": ["gear_church_supply_start"] }
+        },
+        {
+          "id": "pick",
+          "title": "從教廷的軍需庫挑一副鎧甲",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_pope_gregory" },
+          "text": "軍需庫的門打開了。兩百年的灰塵底下，三副鎧甲在燭光下閃著光：白金的板甲、遊騎兵的古龍皮甲、樞機的星輝長袍。教皇說：「挑一副。剩下的，會送到前線去。」",
+          "options": [
+            {
+              "label": "挑白金板甲",
+              "success": {
+                "text": "你挑了「聖環的白金板甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "effects": [
+                  { "type": "item", "name": "聖環的白金板甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "挑古龍皮甲",
+              "success": {
+                "text": "你挑了「教廷遊騎兵的古龍皮甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "effects": [
+                  { "type": "item", "name": "教廷遊騎兵的古龍皮甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "挑星輝長袍",
+              "success": {
+                "text": "你挑了「樞機的星輝長袍」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "effects": [
+                  { "type": "item", "name": "樞機的星輝長袍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_church_supply_convoy"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 5000 }, { "type": "xp", "amount": 3500 }]
+    },
+    {
+      "id": "gear_redwing_supply",
+      "title": "赤翼的軍需",
+      "summary": "赤翼宮廷的總管薇洛妮卡說，陛下要重新整理宮廷的軍需。軍需帳本上有一副鎧甲的名字旁邊，空著一格——那一格要寫上你的名字，前提是軍需要先平安送到。（史詩：軍需・赤翼宮廷）",
+      "rank": "S",
+      "merit": 20,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_veronica",
+        "min_level": 16,
+        "requires": { "flags_any": ["pol_peace", "pol_war_demon"] },
+        "text": "薇洛妮卡翻開她的小冊子，指著一行字：「宮廷的軍需庫要重新分配。陛下親自寫了一條：『最好的那一副，給那個人類。』」她抬起頭，蜜金色的臉上帶著一點笑，「當然，要先把軍需送到前線。聖戰軍的先鋒在半路上等著——他們不想讓任何一方準備好。」"
+      },
+      "start_flags": ["gear_redwing_supply_start"],
+      "nodes": [
+        {
+          "id": "convoy",
+          "title": "在血羽城堡近郊擋下襲擊軍需車隊的聖戰先鋒",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "text": "軍需車隊剛出城門，三個穿白袍的聖戰軍先鋒就從荒原的石堆後面站了起來，手裡的聖劍閃著刺眼的光：「異端的鎧甲，不准送到！」",
+          "enemies": [["crusade_vanguard", 3]],
+          "success": {
+            "text": "聖戰先鋒們退走了，臨走前回頭看了你一眼——一個人類替魔族押車，他們大概一輩子都想不通。車隊的魔族士兵們對你行了一個血角的禮。",
+            "set_flags": ["gear_redwing_supply_convoy"]
+          },
+          "fail": {
+            "text": "你們被打退了，車隊卻沒有停下。魔族的車夫們說，那些白袍的人追著你們跑了半天，車隊才有機會繞過去。軍需還是送到了。",
+            "set_flags": ["gear_redwing_supply_convoy"]
+          },
+          "requires": { "flags": ["gear_redwing_supply_start"] }
+        },
+        {
+          "id": "pick",
+          "title": "從赤翼宮廷的軍需庫挑一副鎧甲",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_veronica" },
+          "text": "軍需庫裡掛著三副鎧甲：近衛的星隕鍊甲、斥候的古龍皮甲、拳衛的星輝武僧袍。薇洛妮卡把筆遞給你：「挑一副，然後在帳本上簽名。陛下會看的。」",
+          "options": [
+            {
+              "label": "挑星隕鍊甲",
+              "success": {
+                "text": "你挑了「赤翼近衛的星隕鍊甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "effects": [
+                  { "type": "item", "name": "赤翼近衛的星隕鍊甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "挑古龍皮甲",
+              "success": {
+                "text": "你挑了「赤翼斥候的古龍皮甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "effects": [
+                  { "type": "item", "name": "赤翼斥候的古龍皮甲", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "挑星輝武僧袍",
+              "success": {
+                "text": "你挑了「赤翼拳衛的星輝武僧袍」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "effects": [
+                  { "type": "item", "name": "赤翼拳衛的星輝武僧袍", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_redwing_supply_convoy"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 5000 }, { "type": "xp", "amount": 3500 }]
+    },
+    {
+      "id": "gear_vault_other_half",
+      "title": "潮汐之璜的另一半",
+      "summary": "寶庫失竊案落幕之後，秋珊苑主墨鱗在古籍裡讀到：潮汐之璜原本是一對。另一半沉在祖忘之淵的邊緣，被溺死的祖靈守著。（寶庫失竊案・四）",
+      "rank": "S",
+      "merit": 20,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_moring",
+        "min_level": 17,
+        "requires": { "flags_any": ["vault_done", "vault_exiled", "vault_reform"] },
+        "text": "墨鱗抱著一疊書，墨玉筆插在盤起的黑髮上：「潮汐之璜，原本是一對。」她翻開一本快要散掉的古籍，「另一半在三百年前的大潮裡沉到了祖忘之淵的邊緣。古籍上說，兩半合在一起的時候，會留下三樣東西——找到它的人，可以帶走一樣。」"
+      },
+      "start_flags": ["gear_vault_other_half_start"],
+      "nodes": [
+        {
+          "id": "read",
+          "title": "在滄月闕的情報商陪墨鱗翻古籍",
+          "kind": "check",
+          "at": { "where": "cell", "location": "canglue", "cell": "informant" },
+          "text": "古籍的最後幾頁被海水泡得字跡模糊。墨鱗把書攤在燈下：「這一段講的是祖忘之淵的入口。可是字都化開了——你看得出來嗎？」",
+          "check": { "attr": "int", "dc": 19 },
+          "success": {
+            "text": "你從化開的墨跡裡認出了一個潮汐的符號。墨鱗眼睛一亮：「是滿月的大潮！只有那一夜，入口才會打開。」",
+            "set_flags": ["gear_vault_other_half_read"]
+          },
+          "fail": {
+            "text": "你們看了三天也看不出來。第四天晚上，滿月照進了窗戶，書頁上的墨跡自己亮了起來。墨鱗說，古籍大概是嫌你們太慢了。",
+            "set_flags": ["gear_vault_other_half_read"]
+          },
+          "requires": { "flags": ["gear_vault_other_half_start"] }
+        },
+        {
+          "id": "drowners",
+          "title": "在滄月闕近郊擋下守著潮汐之璜的祖靈溺魂",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "canglue" },
+          "text": "滿月的大潮把祖忘之淵的邊緣露了出來。半截玉璜躺在一堆白骨中間，發著淡淡的光。四個祖靈溺魂從水裡升起來，空洞的眼睛看著你。",
+          "enemies": [["ancestral_drowner", 4]],
+          "success": {
+            "text": "溺魂們散成了一片泡沫，最後一個消失之前，向你行了一個玉璘族的古禮。你撿起了那半截玉璜——它和墨鱗手上的那一半，在月光下同時亮了起來。",
+            "set_flags": ["gear_vault_other_half_drowners"]
+          },
+          "fail": {
+            "text": "你們被溺魂逼回了岸上。可是大潮退去的時候，那半截玉璜被浪沖到了你的腳邊——祖靈們，好像也想讓它回家。",
+            "set_flags": ["gear_vault_other_half_drowners"]
+          },
+          "requires": { "flags": ["gear_vault_other_half_read"] }
+        },
+        {
+          "id": "pick",
+          "title": "兩半潮汐之璜合在一起",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_moring" },
+          "text": "兩半玉璜合在一起的那一瞬間，滄月闕的潮水停了。光從玉璜裡流出來，凝成了三樣東西，懸在你面前：完整的潮汐之璜、一枚滿月之戒、一對潮鏡耳墜。墨鱗屏住了呼吸：「古籍說的是真的。挑一樣吧——剩下的會回到海裡。」",
+          "options": [
+            {
+              "label": "拿潮汐之璜",
+              "success": {
+                "text": "你握住了「潮汐之璜」。另外兩樣東西化成了光，慢慢地沉回了海裡。墨鱗在古籍的最後一頁，用墨玉筆寫下了今天的日期。",
+                "effects": [
+                  { "type": "item", "name": "潮汐之璜", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_moring", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿滿月之戒",
+              "success": {
+                "text": "你握住了「滿月之戒」。另外兩樣東西化成了光，慢慢地沉回了海裡。墨鱗在古籍的最後一頁，用墨玉筆寫下了今天的日期。",
+                "effects": [
+                  { "type": "item", "name": "滿月之戒", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_moring", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿潮鏡耳墜",
+              "success": {
+                "text": "你握住了「潮鏡耳墜」。另外兩樣東西化成了光，慢慢地沉回了海裡。墨鱗在古籍的最後一頁，用墨玉筆寫下了今天的日期。",
+                "effects": [
+                  { "type": "item", "name": "潮鏡耳墜", "qty": 1 },
+                  { "type": "affinity", "npc": "npc_moring", "delta": 5, "reason": "把作品交給你" }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_vault_other_half_drowners"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 6000 }, { "type": "xp", "amount": 4000 }]
     }
   ]
 }

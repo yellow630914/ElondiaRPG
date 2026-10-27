@@ -995,7 +995,7 @@
       "appearance": "深藍短髮的玉璘族，鱗尾上掛著浪紋金鈴，手裡總捧著鯨髭酒樽。",
       "background": "夏瀾殿主，都城宴會的總籌辦。她牽線四殿之間的往來，也牽線玉璘族與人類商人的生意。",
       "relations": { "npc_sakurashio": "酒友" } },
-    { "id": "npc_moring", "name": "墨鱗", "gender": "female", "race": "yulin", "class": "wizard", "level": 11, "location": "canglue", "hire_cc": 0, "unhireable": true,
+    { "id": "npc_moring", "name": "墨鱗", "gender": "female", "race": "yulin", "class": "wizard", "level": 11, "location": "canglue", "hire_cc": 0, "unhireable": true, "no_attack": true,
       "kind": "adventurer", "landmark": "lm_four_seasons_gallery", "lineage": "秋珊苑",
       "stages": [{"requires": {"flags": ["vault_exiled"]}, "location": "tidehaven", "haunts": [{"location": "tidehaven", "zone": "town", "weight": 3}], "background": "從前的秋珊苑主。她偷走潮汐之璜，想讓族人看見都城沒有一道鎖、沒有一個兵；依族規被逐出了滄月闕，現在住在潮汐港，替迷路的玉璘族指路。", "personality": "沉靜、博學；被逐出都城之後還是最關心族人的那一個，只是現在隔著一片海。"}],
       "personality": "沉靜、博學，族中少有的有耐性的人；收集外界的書，最關心陸地局勢。", "faction": "four_seasons",

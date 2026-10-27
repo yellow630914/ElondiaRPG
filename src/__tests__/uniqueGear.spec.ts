@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { itemDef, itemRules } from '@/engine/data'
+import { itemDef, itemRules, stories } from '@/engine/data'
 import { gearRules, gearSummary, sanitizeGearSpec } from '@/engine/gear'
 import { enterLocation } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
@@ -8,7 +8,24 @@ import { checkModifiers } from '@/engine/perks'
 import { addItem, newGame } from '@/engine/state'
 import { applyAiDeals, shopState } from '@/engine/trade'
 
-const uniques = () => itemRules.items.filter((i) => i.gear?.unique)
+// 內建的獨特物品（寶箱、黑市）；任務的獨特裝備另外測（不進寶箱、不上黑市）
+const uniques = () => itemRules.items.filter((i) => i.gear?.unique && i.black_market)
+const questGear = () => itemRules.items.filter((i) => i.gear?.unique && !i.black_market)
+
+/** 特殊任務給的物品名稱（完成獎勵與每個結果的效果） */
+function storyItems(): Map<string, string[]> {
+  const out = new Map<string, string[]>()
+  const add = (name: string, sid: string) => out.set(name, [...(out.get(name) ?? []), sid])
+  for (const s of stories) {
+    for (const e of s.rewards ?? []) if (e.type === 'item') add(e.name, s.id)
+    for (const n of s.nodes) {
+      for (const o of [n.success, n.fail, ...(n.options ?? []).flatMap((x) => [x.success, x.fail])]) {
+        for (const e of o?.effects ?? []) if (e.type === 'item') add(e.name, s.id)
+      }
+    }
+  }
+  return out
+}
 
 describe('unique gear', () => {
   it('has a dozen unique items, all low to mid level, each with one check bonus', () => {
@@ -61,5 +78,39 @@ describe('unique gear', () => {
     const out = sanitizeItem('自訂獨特', { category: 'equipment', price_cc: 10, tags: [], gear: { base: 'boots', material: 'leather', unique: { check: { contexts: ['stealth', 'nope' as never] }, bonus: 9 } } }, true)
     expect(out.gear!.unique).toEqual({ check: { contexts: ['stealth'] }, bonus: 3 })
     expect(itemDef('夜行者的軟靴')!.gear!.unique).toEqual({ check: { contexts: ['stealth'] }, bonus: 2 })
+  })
+
+  it('quest gear: every piece is handed out by a special quest, stronger in later level bands', () => {
+    const given = storyItems()
+    const gear = questGear()
+    expect(gear.length).toBe(124)
+    for (const i of gear) {
+      expect(given.get(i.name)?.length, i.name).toBe(1)
+      const sid = given.get(i.name)![0]!
+      const s = stories.find((x) => x.id === sid)!
+      const level = s.start.min_level ?? 1
+      const tier = gearRules.materials[i.gear!.material]!.tier
+      // 材料的等級不超過任務的等級太多：Lv.5 第二級、Lv.8～11 第三級、Lv.12～15 第四級、Lv.16 以上第五級
+      expect(tier, `${i.name} @ ${sid}`).toBe(level >= 16 ? 5 : level >= 12 ? 4 : level >= 8 ? 3 : 2)
+      expect(gearSummary(i.gear!), i.name).toContain('獨特：')
+      expect(s.tags ?? [], sid).not.toContain('adult')
+    }
+  })
+
+  it('quest gear: each Lv.5 and Lv.8-11 band gives every combat class a weapon, armor and accessory', () => {
+    const given = storyItems()
+    const levelOf = (name: string) => stories.find((x) => x.id === given.get(name)![0])!.start.min_level ?? 1
+    const classes = ['fighter', 'barbarian', 'paladin', 'ranger', 'rogue', 'monk', 'bard', 'cleric', 'druid', 'wizard'] as const
+    for (const band of [[5, 5], [8, 11]]) {
+      const pieces = questGear().filter((i) => { const lv = levelOf(i.name); return lv >= band[0]! && lv <= band[1]! })
+      const slot = (i: (typeof pieces)[number]) => gearRules.bases[i.gear!.base]!.slot
+      for (const c of classes) {
+        const cls = gearRules.classes[c] as { main: string[]; body: string[] }
+        const weapon = c === 'monk' ? pieces.some((i) => i.gear!.base === 'wraps') : pieces.some((i) => cls.main.includes(i.gear!.base))
+        expect(weapon, `${c} weapon Lv.${band[0]}`).toBe(true)
+        expect(pieces.some((i) => cls.body.includes(i.gear!.base)), `${c} armor Lv.${band[0]}`).toBe(true)
+      }
+      expect(pieces.filter((i) => !['main_hand', 'body', 'wrists'].includes(slot(i))).length).toBe(10)
+    }
   })
 })

@@ -5,7 +5,7 @@ import { sanitizeStory, storyCheck } from '@/engine/storyMods'
 import { canStart } from '@/engine/story'
 import { condMet, counterValue, setFlag } from '@/engine/storyFlags'
 import { dungeonEncounters, enemies, npcs as namedNpcs, stories } from '@/engine/data'
-import { adultContent, setAdultContent, setContentFilters } from '@/engine/content'
+import { adultContent, setAdultContent, setContentFilters, tagsAllowed } from '@/engine/content'
 import type { StoryDef } from '@/engine/data'
 
 const adultDefault = adultContent()
@@ -196,8 +196,13 @@ describe('built-in stories', () => {
       const ids = rest.slice(0, 3)
       expect(ids.map((id) => story(id).start.min_level)).toEqual([15, 16, 17])
       expect(story(ids[0]!).start.requires?.flags).toEqual([entry])
-      const ends = story(ids[2]!).nodes.flatMap((n) => (n.options ?? []).map((o) => o.success.set_flags ?? []))
+      // 結局之後是論功行賞：三選一的獨特飾品
+      const last = story(ids[2]!)
+      const ends = last.nodes.filter((n) => n.id !== 'spoils').flatMap((n) => (n.options ?? []).map((o) => o.success.set_flags ?? []))
       expect(ends.every((f) => f.includes(rest[3]!))).toBe(true)
+      const spoils = last.nodes.find((n) => n.id === 'spoils')!
+      expect(spoils.options!.map((o) => o.success.effects?.[0]?.type)).toEqual(['item', 'item', 'item'])
+      expect(spoils.options!.every((o) => o.success.complete)).toBe(true)
     }
     const fin = story('pol_acheron_gaze')
     expect(fin.start.min_level).toBe(18)
@@ -205,6 +210,7 @@ describe('built-in stories', () => {
     // 終章的戰鬥輸了可以重試；結局留下龍災的旗標給巨龍史詩
     expect(fin.nodes.find((n) => n.id === 'heroes')!.fail?.retry).toBe(true)
     expect(fin.nodes.find((n) => n.id === 'eye')!.options!.every((o) => o.success.set_flags?.includes('dragon_calamity'))).toBe(true)
+    expect(fin.nodes.find((n) => n.id === 'spoils')!.options!.length).toBe(3)
   })
 
   it('ends the dragon epic in Acheron after the four dragons, with retryable boss fights', () => {
@@ -413,5 +419,33 @@ describe('quests inside a temporary map', () => {
         if (n.kind === 'combat') expect(n.fail, `${id}:${n.id}`).toBeTruthy()
       }
     }
+  })
+
+  it('gives every non-adult character line a fourth, adult quest with its own partner, tagging traditional men', () => {
+    const fourth = stories.filter((s) => /・四）$/.test(s.summary) && s.nodes.some((n) => n.id === 'night'))
+    expect(fourth.length).toBe(24)
+    for (const s of fourth) {
+      expect(s.tags?.[0], s.id).toBe('adult')
+      expect(s.start.min_affinity, s.id).toBe(40)
+      expect(s.start.requires?.flags_any?.length, s.id).toBeGreaterThan(0)
+      // 前一個任務（同一條線的三）的結局旗標
+      const line = s.summary.match(/（(.+)・四）$/)![1]!
+      const third = stories.find((x) => x.summary.endsWith(`（${line}・三）`))!
+      const ends = third.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).flatMap((o) => o?.set_flags ?? [])
+      for (const f of s.start.requires!.flags_any!) expect(ends, `${s.id} ${f}`).toContain(f)
+      const male = namedNpcs.find((n) => n.id === s.start.npc)!.gender === 'male'
+      expect(s.tags!.includes('male_partner'), s.id).toBe(male)
+    }
+    expect(fourth.filter((s) => s.tags!.includes('male_partner')).map((s) => s.id).sort()).toEqual(['god_warm_hands', 'nip_desert_bargain', 'valk_ember_night'])
+  })
+
+  it('hides quests with a traditional male partner when that filter is off', () => {
+    setAdultContent(true)
+    expect(tagsAllowed(['adult', 'male_partner'])).toBe(true)
+    setContentFilters({ male_partner: false })
+    expect(tagsAllowed(['adult', 'male_partner'])).toBe(false)
+    expect(tagsAllowed(['adult'])).toBe(true)
+    setContentFilters({ male_partner: true })
+    setAdultContent(false)
   })
 })

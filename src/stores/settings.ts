@@ -146,7 +146,7 @@ function defaults(): SavedSettings {
     creationGearBudget: gearRules.creation.default_budget,
     logKeep: 200,
     adult: false,
-    contentFilters: { ntr: true, non_virgin: true, pc_unwilling: true },
+    contentFilters: { ntr: true, non_virgin: true, pc_unwilling: true, male_partner: true },
     defeatAdult: 'all',
     language: 'zh-Hant',
     uiLanguage: 'zh-Hant',
