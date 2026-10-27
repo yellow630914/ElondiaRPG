@@ -140,6 +140,19 @@ function memberOrPc(state: GameState, id: string) {
   return id === 'pc' ? pcOf(state) : state.party.find((m) => m.id === id)
 }
 
+/** 錢不夠時只付得出身上有的（扣到 0 為止）：事件與主人的要求用；同一份報告裡已經算進的錢也算 */
+export function affordable(state: GameState, effects: RewardEffect[], report?: Report): RewardEffect[] {
+  let left = Math.max(0, state.money_cc + (report?.changes.money_cc ?? 0))
+  return effects
+    .map((x) => {
+      if (x.type !== 'money' || x.amount >= 0) return x
+      const paid = Math.min(-x.amount, left)
+      left -= paid
+      return { ...x, amount: -paid }
+    })
+    .filter((x) => x.type !== 'money' || x.amount !== 0)
+}
+
 /** 套用效果，回傳每個效果的簡短說明（無法套用的會註明原因）。 */
 export function applyEffects(state: GameState, report: Report, effects: RewardEffect[]): string[] {
   const notes: string[] = []

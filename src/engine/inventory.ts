@@ -7,7 +7,7 @@ import {
   attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates,
   type ItemIntel, type ItemUse,
 } from './data'
-import { gearKnown, gearRules, gearSpecOf, gearStats, slotName, slotsFor, syncGear } from './gear'
+import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
 import { gainCondition, pcOf } from './party'
 import { toolDef } from './tools'
@@ -188,6 +188,23 @@ export function lockedGear(m: Character, slot: GearSlot): EquippedGear | undefin
   const g = m.gear?.[slot]
   if (!g?.locked) return undefined
   return g.locked.startsWith(PARASITE_LOCK) || contractOf(m) ? g : undefined
+}
+
+/**
+ * 限定穿著（任務點、地標場景的 wear）裡，因為欄位被鎖住（寄生裝備、主人強制戴上的）而穿不上的：回傳提醒的句子。
+ * 已經穿著符合的就不算
+ */
+export function wearLocks(m: Character, wear: string[] | undefined): string[] {
+  const out: string[] = []
+  for (const w of missingWear(m, wear)) {
+    const base = gearRules.bases[w] ? w : itemDef(w)?.gear?.base
+    const slot = base ? gearRules.bases[base]?.slot : undefined
+    if (!slot) continue
+    const group = gearRules.slot_groups[slot] ?? [slot as GearSlot]
+    const locks = group.map((x) => lockedGear(m, x))
+    if (locks.length && locks.every(Boolean)) out.push(`${locks[0]!.name}脫不下來，穿不上【${wearName(w)}】`)
+  }
+  return [...new Set(out)]
 }
 
 function assertUnlocked(m: Character, slot: GearSlot) {

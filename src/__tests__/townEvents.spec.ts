@@ -59,6 +59,17 @@ describe('town events', () => {
     expect(state.townEvent).toBeUndefined()
   })
 
+  it('takes only what the hero has when an event asks for more money than that', () => {
+    setAdultContent(true)
+    only('town_frisk')
+    const state = inTown('soriel')
+    state.townEvent = { template: 'town_frisk' }
+    state.money_cc = 10
+    const r = answerTownEvent(state, 1)
+    expect(r.changes.money_cc).toBe(-10)
+    expect(state.money_cc).toBe(0)
+  })
+
   it('only offers events that fit the facility, settlement type and flags', () => {
     const state = inTown('soriel')
     const area = currentArea(state)

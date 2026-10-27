@@ -16,6 +16,7 @@ import { addItem, newGame } from '@/engine/state'
 import { equipItem } from '@/engine/inventory'
 import { pcOf } from '@/engine/party'
 import { setFlag } from '@/engine/storyFlags'
+import { startStory } from '@/engine/story'
 import type { GameState } from '@/engine/types'
 
 afterEach(() => {
@@ -369,17 +370,43 @@ describe('work-line scenes', () => {
     }
   })
 
-  it('stay on the map before the line is done, so the quest nodes there can be reached', () => {
+  it('stay on the map while a quest there can be taken or is going on, so the quest nodes can be reached', () => {
     setAdultContent(true)
     const used = new Set(stories.flatMap((d) => d.nodes.filter((n) => n.at.where === 'cell' && landmarks[n.at.cell ?? '']).map((n) => n.at.cell!)))
     for (const id of used) {
       const l = landmarks[id]!
       if (l.open?.hidden) continue
       const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: l.location, gender: '女', body: 'fem' })
+      state.guild = { rank: 'S', merit: 999 }
+      pcOf(state).level = 20
       enterLocation(state)
       const a = getArea(state, l.at.area)
       expect(a.cells[l.at.y * a.width + l.at.x]?.kind, id).toBe(id)
     }
+  })
+
+  it('hide a work landmark when nothing there is for this hero, and bring it back for a quest going on', () => {
+    setAdultContent(true)
+    const l = landmarks.lm_odd_tower!
+    // 等級、公會階級都不夠：任務接不到、也沒有場景
+    const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: l.location, gender: '女', body: 'fem' })
+    expect(landmarkHidden(state, l)).toBe(true)
+    state.guild = { rank: 'S', merit: 999 }
+    pcOf(state).level = 20
+    expect(landmarkHidden(state, l)).toBe(false)
+    // 陽剛的主角接不到打工線
+    pcOf(state).body = 'masc'
+    expect(landmarkHidden(state, l)).toBe(true)
+    // 進行中的任務還要用到時留著
+    pcOf(state).body = 'fem'
+    startStory(state, 'odd_measure')
+    pcOf(state).body = 'masc'
+    expect(landmarkHidden(state, l)).toBe(false)
+    // 線完成之後有場景
+    pcOf(state).body = 'fem'
+    state.stories!.odd_measure!.status = 'completed'
+    setFlag(state, 'odd_done')
+    expect(landmarkHidden(state, l)).toBe(false)
   })
 
   it('ask for the uniform before you can go back to work', () => {
@@ -387,6 +414,8 @@ describe('work-line scenes', () => {
     const l = landmarks.lm_golden_dice!
     const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: l.location, gender: '女', body: 'fem' })
     state.time.hour = 21
+    state.guild = { rank: 'S', merit: 999 }
+    pcOf(state).level = 20
     enterLocation(state)
     expect(standOn(state, 'lm_golden_dice' as never)).toBe(true)
     expect(scenesHere(state)).toEqual([])
