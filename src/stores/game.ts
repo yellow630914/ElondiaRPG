@@ -1056,6 +1056,8 @@ export const useGame = defineStore('game', () => {
     pickLock: (method: grid.LockMethod) => run((s) => grid.pickLock(s, method)),
     // 走過腳下的出入口（城鎮各區、房子的門、特殊地圖的通道）：按 E 或格子資訊的按鈕
     crossLink: () => run((s) => afterMove(s, grid.crossLink(s)), { onMap: true }),
+    // 聲望不夠時在通往王城的路口說服衛兵
+    persuadePalaceGuard: () => run(grid.persuadePalaceGuard),
     move: (dx: number, dy: number) => {
       // 撞牆不算錯誤：地圖上輕輕晃一下就好（不跳出錯誤訊息、不推動版面）；規則不讓走的也一樣
       const blocked = state.value && !state.value.combat ? grid.blockedMove(state.value, dx, dy) : null

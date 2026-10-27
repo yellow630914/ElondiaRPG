@@ -16,6 +16,7 @@ export const securityRules = securityJson as unknown as {
   fines: { alert_days: number; wanted_days: number }
   reputation_bands: { min: number; buy: number; sell: number; fine: number }[]
   palace_reputation: number
+  palace_persuade: { dc_base: number; dc_per_reputation: number; dc_max: number; fumble_alert: number }
   steal: {
     base: number; wary: number; loot_days: number[]
     fail: { affinity: number; alert: number; reputation: number }
@@ -88,7 +89,7 @@ export function fineDue(state: GameState, locId = state.location): { amount: num
   return { amount: alertFine(state, locId), wanted: false }
 }
 
-function securityReport(state: GameState, summary: string, result: Report['outcome']['result']): Report {
+function securityReport(state: GameState, summary: string, result: Report['outcome']['result'], scene?: string): Report {
   const loc = locationById(state.location)
   const pc = pcOf(state)
   const start = { ...state.time }
@@ -97,9 +98,9 @@ function securityReport(state: GameState, summary: string, result: Report['outco
     report_id: newReportId(state),
     kind: 'social',
     time: { start, end: addHours(start, 0.25) },
-    location: { at: state.location, region: loc.region, scene: `${loc.name}的城門` },
+    location: { at: state.location, region: loc.region, scene: scene ?? `${loc.name}的城門` },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result, summary, tags: ['城門'] },
+    outcome: { result, summary, tags: [scene ? '王城' : '城門'] },
     changes: {},
     narration: { pov: 'second_person', length: 'short' },
     lore_keys: [loc.name, regionById(loc.region).name],
@@ -191,15 +192,69 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
     : { ok: false, report, reason: `衛兵不讓你通過；繳交罰金 ${formatMoney(alertFine(state, locId))} 就能通過。` }
 }
 
-/** 貴族區與王城：通緝中不能進入；王城需要聲望 */
+/** 貴族區與王城：通緝中不能進入；王城需要聲望、許可，或當天說服了衛兵 */
 export function zoneEntryBlock(state: GameState, zone: string | undefined): string | null {
   if (zone !== 'noble' && zone !== 'palace') return null
   const loc = locationById(state.location)
   if (isWanted(state, loc.faction)) return `你被${factionName(loc.faction!)}通緝，衛兵不讓你進入${zone === 'palace' ? '王城' : '貴族區'}。`
-  if (zone === 'palace' && reputationOf(state, loc.faction) < securityRules.palace_reputation && !state.flags[`palace_permit:${loc.id}`]) {
-    return `王城的衛兵擋住了你：需要${loc.faction ? factionName(loc.faction) : '這裡'}的聲望達到 ${securityRules.palace_reputation}，或是得到許可。`
+  if (zone === 'palace' && palaceNeedsPersuading(state)) {
+    return state.palaceBlock?.[loc.id] === state.time.day
+      ? '王城的衛兵今天不會再聽你說了。'
+      : `王城的衛兵擋住了你：需要${loc.faction ? factionName(loc.faction) : '這裡'}的聲望達到 ${securityRules.palace_reputation}，或是得到許可；也可以試著說服衛兵。`
   }
   return null
+}
+
+/** 聲望不夠、沒有許可，今天也還沒說服衛兵：進王城要先說服 */
+export function palaceNeedsPersuading(state: GameState): boolean {
+  const loc = locationById(state.location)
+  return reputationOf(state, loc.faction) < securityRules.palace_reputation
+    && !state.flags[`palace_permit:${loc.id}`]
+    && state.palacePass?.[loc.id] !== state.time.day
+}
+
+/** 說服王城衛兵的 DC：差的聲望越多越難 */
+export function palacePersuadeDc(state: GameState): number {
+  const r = securityRules.palace_persuade
+  const gap = Math.max(0, securityRules.palace_reputation - reputationOf(state, locationById(state.location).faction))
+  return Math.min(r.dc_max, r.dc_base + Math.floor(gap * r.dc_per_reputation))
+}
+
+/**
+ * 說服王城的衛兵（主角魅力）：成功當天可以自由進出王城，失敗當天不會再聽你說，大失敗衛兵起疑（警戒上升）。
+ * 呼叫的人要確認主角站在通往王城的路口（grid.ts 的 persuadePalaceGuard）。
+ */
+export function persuadePalaceGuard(state: GameState, palaceName = '王城'): Report {
+  const loc = locationById(state.location)
+  if (isWanted(state, loc.faction)) throw new Error(`你被${factionName(loc.faction!)}通緝，衛兵不會聽你說。`)
+  if (!palaceNeedsPersuading(state)) throw new Error('衛兵已經放行了')
+  const day = state.time.day
+  if (state.palaceBlock?.[loc.id] === day) throw new Error('王城的衛兵今天不會再聽你說了')
+  const pc = pcOf(state)
+  const extra = checkModifiers(pc, { context: 'gate', attr: 'cha' })
+  const dice = withBonus('1d20', mod(attrOf(pc, 'cha')) + proficiency(pc.level) + extra.reduce((sum, x) => sum + x.value, 0))
+  const dc = palacePersuadeDc(state)
+  const r = withRng(state, (rng) => roll(rng, dice))
+  const fumble = r.rolls[0] === 1
+  const ok = !fumble && r.total >= dc
+  if (ok) (state.palacePass ??= {})[loc.id] = day
+  else (state.palaceBlock ??= {})[loc.id] = day
+  const alertNote = fumble && securityRules.palace_persuade.fumble_alert ? raiseAlert(state, loc.id, securityRules.palace_persuade.fumble_alert) : ''
+  const report = securityReport(
+    state,
+    ok
+      ? `你說服了${palaceName}的衛兵，他們今天放你進出${palaceName}。`
+      : fumble
+        ? `你的說詞漏洞百出，${palaceName}的衛兵起了疑心，把你趕走了。${alertNote}`
+        : `${palaceName}的衛兵不為所動，今天不會再聽你說了。`,
+    ok ? 'success' : 'failure',
+    `${loc.name}・${palaceName}的大門`,
+  )
+  report.timeline = [{
+    seq: 1, time: report.time.start, actor: 'pc', action: `魅力檢定・說服${palaceName}的衛兵`,
+    roll: { dice, value: r.total, dc }, result: ok ? 'success' : fumble ? 'fumble' : 'fail',
+  }]
+  return commitReport(state, report)
 }
 
 /** 犯案被目擊：地點警戒與勢力聲望下降（同一個勢力只扣一次） */

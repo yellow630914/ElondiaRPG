@@ -1,6 +1,6 @@
 // AI 服務的基本資料（不含 SDK，讓設定畫面不必載入各家 SDK）。
 
-export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'openai_compatible'
+export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'vertex' | 'openai_compatible'
 
 /** 思考（推理）的強度；沒有設定時不送參數，用服務與模型的預設 */
 export type ReasoningLevel = 'off' | 'low' | 'medium' | 'high'
@@ -85,6 +85,8 @@ export interface ProviderInfo {
   needsBaseURL: boolean
   /** 本機服務可以不填 key */
   keyOptional?: boolean
+  /** 不能用 key 列出模型（Vertex AI 的快速模式） */
+  noModelList?: boolean
   presets?: { name: string; baseURL: string }[]
 }
 
@@ -112,6 +114,16 @@ export const PROVIDERS: ProviderInfo[] = [
     modelHints: ['gemini-flash-latest', 'gemini-pro-latest'],
     keyHint: 'AIza...',
     needsBaseURL: false,
+  },
+  {
+    // Vertex AI 的快速模式（express mode）：用 Google Cloud 的 API key，不需要專案與服務帳號
+    id: 'vertex',
+    name: 'Google Vertex AI（API key）',
+    defaultModel: 'gemini-2.5-flash',
+    modelHints: ['gemini-2.5-flash', 'gemini-2.5-pro'],
+    keyHint: 'Google Cloud 的 API key',
+    needsBaseURL: false,
+    noModelList: true,
   },
   {
     id: 'openai_compatible',

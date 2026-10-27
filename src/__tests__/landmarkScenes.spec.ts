@@ -102,6 +102,7 @@ describe('special areas unlocked by the storylines', () => {
     state.money_cc = 500
     const r = playLandmarkScene(state, index(state, '和米米去小房間'))
     expect(r.narration?.adult_scene).toContain('米米')
+    expect(r.others?.map((o) => o.id)).toEqual(['npc_mimi'])
     expect(r.changes.affinity?.some((a) => a.npc === 'npc_mimi' && a.delta === 3)).toBe(true)
     expect(sceneBlocked(state, index(state, '和伊芙去小房間'))).toBe('3 天後才能再來')
     expect(sceneBlocked(state, index(state, '在前廳喝茶'))).toBeUndefined()

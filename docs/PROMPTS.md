@@ -15,9 +15,10 @@
 | Anthropic（Claude） | `@anthropic-ai/sdk` | 預設 `claude-opus-5-5`；支援的模型自動開啟伺服器端拒絕備援（`fallbacks: "default"`） |
 | OpenAI | `openai` | |
 | Google Gemini | `@google/genai` | |
+| Google Vertex AI（API key） | `@google/genai`（`vertexai: true`） | 快速模式（express mode）：Google Cloud 的 API key，送到 `aiplatform.googleapis.com`，不需要專案與服務帳號。這種 key 不能列出模型（列模型的 API 只收 OAuth），要直接輸入完整的模型名稱（例如 `gemini-2.5-flash`，沒有 `-latest` 別名）。思考參數與 Gemini 相同 |
 | OpenAI 相容格式 | `openai`（自訂 Base URL） | 內建 OpenRouter、DeepSeek、Ollama、LM Studio、智譜 GLM（BigModel、Z.ai）、通義千問（DashScope）、Moonshot 的預設網址（`providerInfo.ts`）；本機服務可不填 key |
 
-「載入模型清單」會向服務查詢可用模型，也可以當作連線測試。成人向世界書條目預設不注入，需在設定中手動開啟。
+「載入模型清單」會向服務查詢可用模型，也可以當作連線測試（Vertex AI 沒有這個按鈕）。成人向世界書條目預設不注入，需在設定中手動開啟。
 
 ## 1. 七種請求
 
@@ -61,7 +62,7 @@
 |---|---|---|
 | Anthropic | Claude 5 系列與 4.6 之後：`thinking: {type: "adaptive", display: "summarized"}`＋`output_config.effort`（關閉送 `disabled`；Opus 5.5、Fable、Mythos 不能關閉）；舊模型：`thinking.budget_tokens`（2048／8192／16384） | `thinking_delta` |
 | OpenAI | `reasoning_effort`（關閉＝minimal） | 不回傳 |
-| Gemini | `thinkingConfig.thinkingBudget`（Gemini 3 用 `thinkingLevel`）、`includeThoughts` | `thought` 為 true 的部分 |
+| Gemini、Vertex AI | `thinkingConfig.thinkingBudget`（Gemini 3 用 `thinkingLevel`）、`includeThoughts` | `thought` 為 true 的部分 |
 | OpenAI 相容格式 | 依「參數格式」：`reasoning_effort`、`thinking.type`（智譜 GLM、Kimi）、`reasoning.effort`（OpenRouter）、`enable_thinking`（通義千問）；自動時依 Base URL 判斷 | `reasoning_content`（DeepSeek、GLM、千問）或 `reasoning`（OpenRouter） |
 
 OpenAI 相容格式另外可以填**自訂請求參數**（JSON 物件），直接加進請求，用來補上服務要求的其他欄位。
@@ -237,6 +238,7 @@ user（後段：每次不同）
 - 內容可以用 `{{player}}` 代表主角名字。
 - **匯出**：文風、其他提示詞可以各自匯出全部或只匯出開啟的（`{"type":"elondia-styles","entries":[…]}`）。
 - **匯入**：本遊戲匯出的檔案、條目陣列或整份提示詞設定；也可以匯入 `.txt`、`.md`，整份當作一個條目、檔名當名稱。匯入的條目加在清單最後，名稱與內容都相同的略過。
+- **匯入酒館預設**（`src/narrator/tavernPreset.ts`、`TavernPresetDialog.vue`）：SillyTavern 的對話補全預設（`prompts` 依全域的 `prompt_order` 排序；聊天紀錄之類的標記與空的條目不列）、舊版的 `main_prompt`／`nsfw_prompt`／`jailbreak_prompt`，或系統提示詞預設（`name` + `content`）。對話框列出每個條目（預設裡有沒有開、酒館用哪個身分送出、是否在聊天紀錄之後、內容），勾選後加到文風或其他提示詞，可以分幾次加到不同地方，也可以合併成一個條目；套用到、成人向、加進來就開啟一次設定。`{{user}}`／`<USER>` 換成 `{{player}}`，`{{// 註解}}`、`{{trim}}`、`{{noop}}` 拿掉，`{{newline}}` 換行；其他巨集（`{{char}}`、`{{setvar::…}}`……）原樣保留並在條目上標出來。加到其他提示詞時，酒館放在聊天紀錄之後（或 `injection_position` 是聊天中）的條目放後段，其他放前段。預設不套用到判定（判定要求只輸出 JSON）。
 - 這些設定跟著瀏覽器走（所有存檔共用），存在目前的提示詞組（localStorage 的 `elondia.promptSets`）；頁籤底部可以一次匯出、匯入全部設定（匯入會取代目前的設定）或全部恢復預設。
 
 ## 7. C～E. 生成請求

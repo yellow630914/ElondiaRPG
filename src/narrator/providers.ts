@@ -1,4 +1,4 @@
-// AI 服務：Anthropic、OpenAI、Google Gemini，以及 OpenAI 相容格式（OpenRouter、DeepSeek、本機 Ollama 等）。
+// AI 服務：Anthropic、OpenAI、Google Gemini、Vertex AI（API key），以及 OpenAI 相容格式（OpenRouter、DeepSeek、本機 Ollama 等）。
 // API key 由玩家自行輸入，只存在瀏覽器的 localStorage，請求直接從瀏覽器送到各服務。
 
 // 各家 SDK 在用到時才載入，只會下載玩家選用的那一家
@@ -39,7 +39,8 @@ export async function* streamNarration(
       yield* streamOpenAI(provider, config, prompt, signal, onUsage, onThinking)
       return
     case 'gemini':
-      yield* streamGemini(config, prompt, signal, onUsage, onThinking)
+    case 'vertex':
+      yield* streamGemini(provider, config, prompt, signal, onUsage, onThinking)
       return
   }
 }
@@ -49,9 +50,10 @@ async function anthropicClient(config: ProviderConfig) {
   return new Anthropic({ apiKey: config.apiKey, dangerouslyAllowBrowser: true })
 }
 
-async function geminiClient(config: ProviderConfig) {
+/** Gemini API（AI Studio）或 Vertex AI 的快速模式（同一個 SDK，用 API key 連 aiplatform.googleapis.com） */
+async function geminiClient(provider: 'gemini' | 'vertex', config: ProviderConfig) {
   const { GoogleGenAI } = await import('@google/genai')
-  return new GoogleGenAI({ apiKey: config.apiKey })
+  return new GoogleGenAI({ apiKey: config.apiKey, ...(provider === 'vertex' ? { vertexai: true } : {}) })
 }
 
 async function* streamAnthropic(config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback) {
@@ -157,8 +159,8 @@ export function openAIMessages(provider: ProviderId, config: ProviderConfig, pro
   return [system, { role: 'user', content: prompt.user }] as unknown as Messages
 }
 
-async function* streamGemini(config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback) {
-  const ai = await geminiClient(config)
+async function* streamGemini(provider: 'gemini' | 'vertex', config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback) {
+  const ai = await geminiClient(provider, config)
   const thinkingConfig = geminiThinking(config)
   const stream = await ai.models.generateContentStream({
     model: config.model,
@@ -201,8 +203,11 @@ export async function listModels(provider: ProviderId, config: ProviderConfig): 
       for await (const m of client.models.list()) ids.push(m.id)
       break
     }
+    case 'vertex':
+      // 列出模型的 API 不收 API key（要 OAuth），快速模式只能直接輸入模型名稱
+      throw new Error('Vertex AI 的 API key 不能列出模型，請直接輸入模型名稱（例如 gemini-2.5-flash）')
     case 'gemini': {
-      const ai = await geminiClient(config)
+      const ai = await geminiClient(provider, config)
       const pager = await ai.models.list()
       for await (const m of pager) {
         if (m.name && (m.supportedActions ?? ['generateContent']).includes('generateContent')) {
