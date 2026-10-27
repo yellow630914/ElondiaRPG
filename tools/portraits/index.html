@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>角色印象圖</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --panel: #ffffff; --line: #ddd8cc; --text: #2b2822; --muted: #776f62;
+    --accent: #8a3b2e; --accent-text: #fff; --ok: #2f7a45; --warn: #a3471f; --chip: #efe9dc; --sel: #f3e3d8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1b19; --panel: #262421; --line: #3d3a34; --text: #e9e4da; --muted: #a59d8f;
+      --accent: #d9805f; --accent-text: #1c1b19; --ok: #6cc28a; --warn: #f0a070; --chip: #34312c; --sel: #3d2f28;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.55 system-ui, "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; flex-wrap: wrap; }
+  header h1 { font-size: 17px; margin: 0; }
+  header .grow { flex: 1; }
+  .muted { color: var(--muted); }
+  .small { font-size: 12px; }
+  main { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 50px); }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } aside { position: static; height: 45vh; } }
+  aside { border-right: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; overflow: hidden; position: sticky; top: 50px; height: calc(100vh - 50px); }
+  aside .filters { padding: 10px; display: grid; gap: 6px; border-bottom: 1px solid var(--line); }
+  aside ul { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
+  aside li { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  aside li:hover { background: var(--chip); }
+  aside li.sel { background: var(--sel); }
+  aside li .thumb { width: 36px; height: 36px; border-radius: 4px; background: var(--chip); object-fit: cover; flex: none; }
+  aside li .who { flex: 1; min-width: 0; }
+  aside li .who div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  section.content { padding: 14px 18px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .card > h2 { font-size: 15px; margin: 0 0 8px; }
+  details.card > summary { cursor: pointer; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px 12px; }
+  label { display: grid; gap: 2px; font-size: 12px; color: var(--muted); }
+  label.inline { display: flex; align-items: center; gap: 6px; color: var(--text); font-size: 13px; }
+  input, select, textarea, button { font: inherit; color: var(--text); }
+  input[type=text], input[type=number], select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 5px 7px; width: 100%; }
+  textarea { resize: vertical; min-height: 56px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+  button { border: 1px solid var(--line); background: var(--chip); border-radius: 5px; padding: 5px 12px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .chip { display: inline-block; background: var(--chip); border-radius: 10px; padding: 0 8px; font-size: 12px; margin: 0 4px 2px 0; }
+  .chip.adult { color: var(--warn); }
+  .chip.done { color: var(--ok); }
+  .desc { white-space: pre-wrap; background: var(--bg); border-radius: 5px; padding: 6px 8px; margin: 4px 0 8px; }
+  .status { font-size: 13px; min-height: 20px; }
+  .status.err { color: var(--warn); white-space: pre-wrap; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .shot { border: 2px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; }
+  .shot.chosen { border-color: var(--ok); }
+  .shot img { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; cursor: zoom-in; background: var(--chip); }
+  .shot .meta { padding: 5px 7px; font-size: 12px; display: grid; gap: 4px; }
+  .shot .meta .row button { padding: 2px 8px; font-size: 12px; }
+  .preview { font-family: ui-monospace, Consolas, monospace; font-size: 12px; background: var(--bg); border-radius: 5px; padding: 6px 8px; white-space: pre-wrap; word-break: break-word; }
+  .dirty { color: var(--warn); font-size: 12px; }
+  #zoom { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 9; cursor: zoom-out; }
+  #zoom img { max-width: 95vw; max-height: 95vh; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>角色印象圖</h1>
+  <span class="muted small" id="comfyInfo"></span>
+  <span class="grow"></span>
+  <label class="inline"><input type="checkbox" id="adultOn"> 成人向（加上成人向提示詞）</label>
+</header>
+<main>
+  <aside>
+    <div class="filters">
+      <input type="text" id="q" placeholder="搜尋名字、線名、id">
+      <select id="lineFilter"><option value="">全部任務線</option></select>
+      <div class="row">
+        <select id="adultFilter" style="flex:1">
+          <option value="">成人向與一般</option><option value="adult">只看成人向</option><option value="sfw">只看一般</option>
+        </select>
+        <select id="doneFilter" style="flex:1">
+          <option value="">全部</option><option value="todo">還沒選圖</option><option value="done">已經選圖</option>
+        </select>
+      </div>
+      <div class="muted small" id="listCount"></div>
+    </div>
+    <ul id="list"></ul>
+  </aside>
+
+  <section class="content">
+    <details class="card" id="settingsCard" open>
+      <summary>生成設定</summary>
+      <div style="display:grid;gap:10px;margin-top:10px">
+        <div class="row">
+          <label class="inline"><input type="radio" name="mode" value="builtin" checked> 內建工作流程（Checkpoint 文生圖）</label>
+          <label class="inline"><input type="radio" name="mode" value="custom"> 自訂工作流程（API 格式）</label>
+        </div>
+        <div id="builtinBox" class="grid">
+          <label>Checkpoint<select id="checkpoint"></select></label>
+          <label>取樣器<select id="sampler"></select></label>
+          <label>排程<select id="scheduler"></select></label>
+          <label>步數<input type="number" id="steps" min="1" max="200" value="28"></label>
+          <label>CFG<input type="number" id="cfg" min="0" max="30" step="0.5" value="6"></label>
+          <div style="align-self:end"><button id="loadLists">讀取 ComfyUI 清單</button></div>
+        </div>
+        <div id="customBox" class="hidden" style="display:grid;gap:6px">
+          <div class="row">
+            <label style="flex:1">工作流程名稱（寫進每張圖的 .json）<input type="text" id="wfName" placeholder="例如：我的 Illustrious 工作流程"></label>
+            <label>選檔案<input type="file" id="wfFile" accept=".json,application/json"></label>
+          </div>
+          <label>工作流程 JSON（ComfyUI 選單的「Export (API)」；和遊戲相同的代號：%prompt% %negative% %width% %height% %seed% %steps% %scale% %sampler% %scheduler% %model%）
+            <textarea id="wfText" rows="6" placeholder='{"3": {"class_type": "KSampler", "inputs": {"seed": "%seed%", ...}}, ...}'></textarea>
+          </label>
+          <div class="muted small">自訂工作流程的 %steps% %scale% %sampler% %scheduler% %model% 用上面內建模式的欄位（切回內建模式就能改）；%image% %mask% 是空字串，%denoise% 是 1。成品從存檔節點（SaveImage）拿，也可以指定節點 id：</div>
+          <label style="max-width:200px">成品節點 id（可留空）<input type="text" id="outputNode"></label>
+        </div>
+        <div class="grid">
+          <label>寬<input type="number" id="width" min="64" step="8" value="832"></label>
+          <label>高<input type="number" id="height" min="64" step="8" value="1216"></label>
+          <label>尺寸預設<select id="sizePreset">
+            <option value="">—</option><option value="832x1216">832×1216（直）</option><option value="896x1152">896×1152</option>
+            <option value="1024x1024">1024×1024（方）</option><option value="768x1024">768×1024</option><option value="512x768">512×768（SD1.5）</option>
+          </select></label>
+          <label>每位幾張<input type="number" id="batch" min="1" max="32" value="2"></label>
+          <label>Seed（隨機時不用填）<input type="number" id="seed" min="0" value="0"></label>
+          <label class="inline" style="align-self:end"><input type="checkbox" id="seedRandom" checked> 隨機 seed</label>
+        </div>
+        <label>前綴（加在每位角色的提示詞前面）<textarea id="prefix" rows="2"></textarea></label>
+        <label>後綴（加在最後面）<textarea id="suffix" rows="1"></textarea></label>
+        <label>負面提示詞<textarea id="negative" rows="2"></textarea></label>
+        <label>沒勾「成人向」時另外加進負面的詞<textarea id="sfwNegative" rows="1"></textarea></label>
+        <div class="row"><button id="resetStyle">還原預設的前綴與負面</button><span class="muted small">設定存在這台瀏覽器（localStorage）。</span></div>
+      </div>
+    </details>
+
+    <div class="card" id="npcCard">
+      <div class="muted">左邊選一位角色。</div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <button class="primary" id="genOne" disabled>生成</button>
+        <button id="genAll">生成全部（目前清單）</button>
+        <label class="inline"><input type="checkbox" id="skipDone" checked> 跳過已經選圖的人</label>
+        <button id="stop" disabled>停止</button>
+        <span class="grow"></span>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="card">
+      <h2 id="galleryTitle">成品</h2>
+      <div class="muted small" style="margin-bottom:8px">每張都存在 tools/portraits/out/&lt;id&gt;/；按「選這張」複製成 tools/portraits/export/&lt;id&gt;.png。</div>
+      <div class="gallery" id="gallery"></div>
+    </div>
+  </section>
+</main>
+<div id="zoom"><img alt=""></div>
+
+<script>
+'use strict'
+const $ = (id) => document.getElementById(id)
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+
+const DEFAULTS = {
+  prefix: 'masterpiece, best quality, amazing quality, very aesthetic, upper body, portrait, looking at viewer, simple background, fantasy',
+  suffix: '',
+  negative: 'lowres, worst quality, low quality, bad anatomy, bad hands, missing fingers, extra fingers, extra digits, fewer digits, cropped, jpeg artifacts, signature, watermark, username, text, blurry, child, loli, shota, aged down',
+  sfwNegative: 'nsfw, nude, nipples, explicit',
+  sampler: 'euler_ancestral',
+  scheduler: 'normal',
+}
+const FIELDS = ['checkpoint', 'sampler', 'scheduler', 'steps', 'cfg', 'wfName', 'wfText', 'outputNode', 'width', 'height', 'batch', 'seed', 'prefix', 'suffix', 'negative', 'sfwNegative']
+const CHECKS = ['seedRandom', 'adultOn', 'skipDone']
+const LS = 'elondia-portraits'
+
+let npcs = []
+let current = null
+let status = { counts: {}, exports: {} }
+let running = false
+let stopFlag = false
+const dirty = new Set()
+
+// ---- 設定（存在 localStorage）----
+function loadSettings() {
+  let s = {}
+  try { s = JSON.parse(localStorage.getItem(LS) || '{}') } catch {}
+  for (const k of FIELDS) {
+    const v = s[k] ?? DEFAULTS[k]
+    if (v === undefined) continue
+    const el = $(k)
+    if (el.tagName === 'SELECT' && v && ![...el.options].some((o) => o.value === v)) el.add(new Option(v, v))
+    el.value = v
+  }
+  for (const k of CHECKS) if (k in s) $(k).checked = !!s[k]
+  if (s.mode) document.querySelector(`input[name=mode][value=${s.mode}]`).checked = true
+  showMode()
+}
+function saveSettings() {
+  const s = { mode: mode() }
+  for (const k of FIELDS) s[k] = $(k).value
+  for (const k of CHECKS) s[k] = $(k).checked
+  try { localStorage.setItem(LS, JSON.stringify(s)) } catch {}
+}
+const mode = () => document.querySelector('input[name=mode]:checked').value
+function showMode() {
+  $('builtinBox').classList.toggle('hidden', mode() !== 'builtin')
+  $('customBox').classList.toggle('hidden', mode() !== 'custom')
+}
+
+// ---- 和 API 溝通 ----
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const text = await res.text()
+  let data
+  try { data = JSON.parse(text) } catch { data = text }
+  if (!res.ok) throw new Error(comfyError(data, res.status))
+  return data
+}
+function comfyError(d, code) {
+  if (typeof d === 'string') return `${code}：${d.slice(0, 300)}`
+  if (typeof d.error === 'string') return d.error
+  const parts = []
+  if (d.error) parts.push(`${d.error.message || ''}${d.error.details ? '：' + d.error.details : ''}`)
+  for (const [id, ne] of Object.entries(d.node_errors || {})) {
+    for (const e of ne.errors || []) parts.push(`節點 ${id}（${ne.class_type}）：${e.message}${e.details ? '：' + e.details : ''}`)
+  }
+  return parts.join('\n') || `ComfyUI 回應 ${code}`
+}
+
+async function loadLists() {
+  setStatus('讀取 ComfyUI 清單…')
+  try {
+    const [ck, ks] = await Promise.all([api('/comfy/object_info/CheckpointLoaderSimple'), api('/comfy/object_info/KSampler')])
+    const combo = (info, cls, key) => info?.[cls]?.input?.required?.[key]?.[0] ?? []
+    fill($('checkpoint'), combo(ck, 'CheckpointLoaderSimple', 'ckpt_name'))
+    fill($('sampler'), combo(ks, 'KSampler', 'sampler_name'))
+    fill($('scheduler'), combo(ks, 'KSampler', 'scheduler'))
+    saveSettings()
+    setStatus(`讀到 ${$('checkpoint').options.length} 個 Checkpoint。`)
+  } catch (e) { setStatus(e.message, true) }
+}
+function fill(sel, list) {
+  if (!Array.isArray(list) || !list.length) return
+  const keep = sel.value
+  sel.innerHTML = ''
+  for (const v of list) sel.add(new Option(v, v))
+  if (list.includes(keep)) sel.value = keep
+}
+
+// ---- 名單 ----
+async function loadNpcs() {
+  try {
+    npcs = (await api('/api/npcs')).npcs
+  } catch (e) {
+    $('npcCard').innerHTML = `<div class="status err">${esc(e.message)}</div>`
+    return
+  }
+  const lines = [...new Set(npcs.flatMap((n) => n.lines))]
+  for (const l of lines) $('lineFilter').add(new Option(l, l))
+  await refreshStatus()
+  renderList()
+}
+async function refreshStatus() {
+  try { status = await api('/api/status') } catch {}
+  $('comfyInfo').textContent = status.comfy ? `ComfyUI：${status.comfy}` : ''
+}
+function filtered() {
+  const q = $('q').value.trim().toLowerCase()
+  const line = $('lineFilter').value
+  const af = $('adultFilter').value
+  const df = $('doneFilter').value
+  return npcs.filter((n) => {
+    if (q && ![n.name, n.id, ...n.lines].some((s) => s.toLowerCase().includes(q))) return false
+    if (line && !n.lines.includes(line)) return false
+    if (af === 'adult' && !n.adult) return false
+    if (af === 'sfw' && n.adult) return false
+    if (df === 'todo' && status.exports[n.id]) return false
+    if (df === 'done' && !status.exports[n.id]) return false
+    return true
+  })
+}
+function renderList() {
+  const list = filtered()
+  $('listCount').textContent = `${list.length} / ${npcs.length} 位`
+  $('list').innerHTML = list.map((n) => {
+    const exp = status.exports[n.id]
+    const cnt = status.counts[n.id] || 0
+    return `<li data-id="${n.id}" class="${current?.id === n.id ? 'sel' : ''}">
+      ${exp ? `<img class="thumb" src="${exp}" alt="">` : '<span class="thumb"></span>'}
+      <div class="who"><div>${esc(n.name)}${dirty.has(n.id) ? ' <span class="dirty">•</span>' : ''}</div>
+      <div class="muted small">${esc(n.lines.join('、'))}${cnt ? `・${cnt} 張` : ''}</div></div>
+      ${n.adult ? '<span class="chip adult">成人</span>' : ''}</li>`
+  }).join('')
+}
+
+// ---- 一位角色 ----
+function select(id) {
+  current = npcs.find((n) => n.id === id) || null
+  renderList()
+  renderNpc()
+  renderGallery()
+}
+function renderNpc() {
+  const n = current
+  $('genOne').disabled = !n || running
+  if (!n) return
+  const facts = [n.race_name + (n.lineage ? `・${n.lineage}` : ''), n.gender_name, n.age, n.occupation, n.class].filter(Boolean)
+  $('npcCard').innerHTML = `
+    <h2>${esc(n.name)} <span class="muted small">${esc(n.id)}</span></h2>
+    <div>${facts.map((f) => `<span class="chip">${esc(f)}</span>`).join('')}${n.adult ? '<span class="chip adult">成人向</span>' : ''}${n.romance ? '<span class="chip">有戀愛結局</span>' : ''}</div>
+    <div class="small muted" style="margin-top:4px">任務線：${esc(n.lines.join('、'))}${n.outfit?.length ? `　依身分的服裝：${esc(n.outfit.join('、'))}` : ''}</div>
+    <div class="small muted" style="margin-top:8px">外貌</div><div class="desc">${esc(n.appearance)}</div>
+    ${n.adult_appearance ? `<details><summary class="small muted">成人向外貌</summary><div class="desc">${esc(n.adult_appearance)}</div></details>` : ''}
+    <div style="display:grid;gap:6px;margin-top:6px">
+      <label>提示詞（英文標籤）<textarea data-k="prompt" rows="3">${esc(n.prompt)}</textarea></label>
+      <label>這位角色另外的負面提示詞<textarea data-k="negative" rows="1">${esc(n.negative || '')}</textarea></label>
+      ${n.adult ? `<label>成人向提示詞（勾「成人向」時加在後面）<textarea data-k="adult_prompt" rows="2">${esc(n.adult_prompt || '')}</textarea></label>` : ''}
+      <div class="row"><button id="savePrompt">儲存提示詞到 prompts.json</button><span id="dirtyNote" class="dirty"></span></div>
+      <div class="small muted">實際送出</div><div class="preview" id="preview"></div>
+    </div>`
+  for (const ta of $('npcCard').querySelectorAll('textarea[data-k]')) {
+    ta.addEventListener('input', () => { n[ta.dataset.k] = ta.value; dirty.add(n.id); markDirty(); renderPreview() })
+  }
+  $('savePrompt').onclick = savePrompt
+  markDirty()
+  renderPreview()
+}
+function markDirty() {
+  const el = $('dirtyNote')
+  if (el) el.textContent = current && dirty.has(current.id) ? '有還沒儲存的修改（生成時會用修改後的版本）' : ''
+}
+async function savePrompt() {
+  const n = current
+  try {
+    await api('/api/prompts', { id: n.id, prompt: n.prompt, negative: n.negative || '', ...(n.adult ? { adult_prompt: n.adult_prompt || '' } : {}) })
+    dirty.delete(n.id)
+    markDirty()
+    renderList()
+    setStatus(`已經存進 prompts.json：${n.name}`)
+  } catch (e) { setStatus(e.message, true) }
+}
+
+// ---- 提示詞與工作流程 ----
+const join = (...parts) => parts.map((p) => (p || '').trim().replace(/^[,，\s]+|[,，\s]+$/g, '')).filter(Boolean).join(', ')
+function texts(n) {
+  const adult = $('adultOn').checked
+  return {
+    prompt: join($('prefix').value, n.prompt, adult && n.adult ? n.adult_prompt : '', $('suffix').value),
+    negative: join($('negative').value, n.negative, adult ? '' : $('sfwNegative').value),
+  }
+}
+function renderPreview() {
+  if (!current || !$('preview')) return
+  const t = texts(current)
+  $('preview').textContent = `正面：${t.prompt}\n負面：${t.negative}`
+}
+
+/** 和遊戲的 fillWorkflow（src/narrator/comfy.ts）相同：整個字串就是代號時換成原本的型別，字串裡夾著代號時做文字取代 */
+function fillWorkflow(workflow, vars) {
+  let parsed
+  try { parsed = JSON.parse(workflow) } catch { throw new Error('ComfyUI 的工作流程不是正確的 JSON') }
+  const walk = (v) => {
+    if (typeof v === 'string') {
+      const whole = /^%(\w+)%$/.exec(v)
+      if (whole && whole[1] in vars) return vars[whole[1]]
+      return v.replace(/%(\w+)%/g, (m, k) => (k in vars ? String(vars[k]) : m))
+    }
+    if (Array.isArray(v)) return v.map(walk)
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]))
+    return v
+  }
+  const out = walk(parsed)
+  if (!out || typeof out !== 'object' || Array.isArray(out)) throw new Error('ComfyUI 的工作流程要是 API 格式的 JSON 物件')
+  if (Array.isArray(out.nodes)) throw new Error('這是 ComfyUI 一般格式的工作流程：請用選單的「Export (API)」匯出 API 格式')
+  return out
+}
+
+/** 內建的 Checkpoint 文生圖（和遊戲的內建模式相同的節點） */
+function builtinWorkflow(v) {
+  if (!v.model) throw new Error('還沒選 Checkpoint：先按「讀取 ComfyUI 清單」')
+  return {
+    1: { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: v.model } },
+    2: { class_type: 'CLIPTextEncode', inputs: { text: v.prompt, clip: ['1', 1] }, _meta: { title: '正向' } },
+    3: { class_type: 'CLIPTextEncode', inputs: { text: v.negative, clip: ['1', 1] }, _meta: { title: '反向' } },
+    4: { class_type: 'EmptyLatentImage', inputs: { width: v.width, height: v.height, batch_size: 1 } },
+    5: { class_type: 'KSampler', inputs: { seed: v.seed, steps: v.steps, cfg: v.scale, sampler_name: v.sampler, scheduler: v.scheduler, denoise: 1, model: ['1', 0], positive: ['2', 0], negative: ['3', 0], latent_image: ['4', 0] } },
+    6: { class_type: 'VAEDecode', inputs: { samples: ['5', 0], vae: ['1', 2] } },
+    7: { class_type: 'SaveImage', inputs: { filename_prefix: 'elondia_portrait', images: ['6', 0] } },
+  }
+}
+
+function buildJob(n, seed) {
+  const t = texts(n)
+  const v = {
+    prompt: t.prompt, negative: t.negative, width: +$('width').value, height: +$('height').value, seed,
+    steps: +$('steps').value, scale: +$('cfg').value, sampler: $('sampler').value, scheduler: $('scheduler').value,
+    model: $('checkpoint').value, image: '', mask: '', denoise: 1,
+  }
+  const custom = mode() === 'custom'
+  if (custom && !$('wfText').value.trim()) throw new Error('自訂工作流程是空的：貼上 ComfyUI「Export (API)」匯出的 JSON')
+  const wf = custom ? fillWorkflow($('wfText').value, v) : builtinWorkflow(v)
+  const meta = {
+    name: n.name, seed, prompt: v.prompt, negative: v.negative, width: v.width, height: v.height,
+    adult: $('adultOn').checked && n.adult,
+    workflow: custom ? ($('wfName').value.trim() || '自訂工作流程') : `內建（${v.model}）`,
+    ...(custom ? {} : { steps: v.steps, cfg: v.scale, sampler: v.sampler, scheduler: v.scheduler, checkpoint: v.model }),
+  }
+  return { wf, meta }
+}
+
+/** 從結果挑出成品圖（和遊戲的 pickOutputImage 相同）：指定的節點 → 存檔的輸出中最後一個 → 最後一個有圖的節點 */
+function pickOutputImage(outputs, outputNode) {
+  const entries = Object.entries(outputs || {}).filter(([, o]) => o.images?.length)
+  if (outputNode && outputs?.[outputNode]?.images?.length) return outputs[outputNode].images[0]
+  const saved = entries.filter(([, o]) => o.images.some((i) => (i.type ?? 'output') === 'output'))
+  const pick = saved.at(-1) ?? entries.at(-1)
+  return pick ? (pick[1].images.find((i) => (i.type ?? 'output') === 'output') ?? pick[1].images[0]) : undefined
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const clientId = 'portraits-' + Math.random().toString(36).slice(2)
+const randomSeed = () => Math.floor(Math.random() * 2 ** 48)
+
+async function runOne(n, seed, label) {
+  const { wf, meta } = buildJob(n, seed)
+  setStatus(`${label}：送出（seed ${seed}）…`)
+  const q = await api('/comfy/prompt', { prompt: wf, client_id: clientId })
+  const id = q.prompt_id
+  if (!id) throw new Error('ComfyUI 沒有回傳 prompt_id')
+  const t0 = Date.now()
+  for (;;) {
+    if (stopFlag) { await api('/comfy/interrupt', {}).catch(() => {}); throw new Error('已經停止') }
+    await sleep(1000)
+    const h = await api(`/comfy/history/${encodeURIComponent(id)}`)
+    const entry = h[id]
+    if (!entry) { setStatus(`${label}：生成中…（${Math.round((Date.now() - t0) / 1000)} 秒）`); continue }
+    if (entry.status?.status_str === 'error') {
+      const msg = (entry.status.messages || []).filter((m) => m[0] === 'execution_error').map((m) => `${m[1].node_type}：${m[1].exception_message}`).join('\n')
+      throw new Error(`ComfyUI 生成失敗${msg ? '：' + msg : ''}`)
+    }
+    const img = pickOutputImage(entry.outputs, $('outputNode').value.trim())
+    if (!img) {
+      if (entry.status?.completed) throw new Error('ComfyUI 跑完了，但沒有輸出圖片（工作流程裡要有 SaveImage）')
+      continue
+    }
+    const saved = await api('/api/save', { id: n.id, image: img, meta: { ...meta, prompt_id: id } })
+    status.counts[n.id] = (status.counts[n.id] || 0) + 1
+    return saved
+  }
+}
+
+async function run(list) {
+  saveSettings()
+  running = true
+  stopFlag = false
+  $('stop').disabled = false
+  $('genOne').disabled = $('genAll').disabled = true
+  const batch = Math.max(1, +$('batch').value || 1)
+  let done = 0
+  let failed = 0
+  try {
+    for (let i = 0; i < list.length; i++) {
+      const n = list[i]
+      if (!n.prompt?.trim()) { failed++; continue }
+      for (let b = 0; b < batch; b++) {
+        if (stopFlag) break
+        const seed = $('seedRandom').checked ? randomSeed() : (+$('seed').value || 0) + b
+        const label = `${list.length > 1 ? `第 ${i + 1}/${list.length} 位 ` : ''}${n.name}（${b + 1}/${batch}）`
+        try {
+          await runOne(n, seed, label)
+          done++
+          if (current?.id === n.id) renderGallery()
+          renderList()
+        } catch (e) {
+          if (stopFlag) break
+          failed++
+          setStatus(`${label}：${e.message}`, true)
+          if (list.length === 1) return
+          await sleep(1500)
+        }
+      }
+      if (stopFlag) break
+    }
+    setStatus(`${stopFlag ? '已經停止。' : '完成。'}存了 ${done} 張${failed ? `，${failed} 次失敗或跳過（沒有提示詞的人會跳過）` : ''}。`, failed > 0 && !done)
+  } finally {
+    running = false
+    $('stop').disabled = true
+    $('genAll').disabled = false
+    $('genOne').disabled = !current
+  }
+}
+
+// ---- 成品 ----
+async function renderGallery() {
+  const n = current
+  $('galleryTitle').textContent = n ? `成品：${n.name}` : '成品'
+  if (!n) { $('gallery').innerHTML = ''; return }
+  let g
+  try { g = await api(`/api/gallery?id=${encodeURIComponent(n.id)}`) } catch (e) { $('gallery').innerHTML = `<div class="status err">${esc(e.message)}</div>`; return }
+  if (current !== n) return
+  if (!g.items.length) { $('gallery').innerHTML = '<div class="muted">還沒有圖。</div>'; return }
+  $('gallery').innerHTML = g.items.map((it) => `
+    <div class="shot ${g.chosen === it.file ? 'chosen' : ''}" data-file="${esc(it.file)}">
+      <img src="${it.url}" loading="lazy" alt="">
+      <div class="meta">
+        <div class="muted">seed ${esc(it.meta.seed)}・${esc(it.meta.saved_at || '')}${it.meta.adult ? '・成人向' : ''}</div>
+        <div class="muted" title="${esc(it.meta.workflow)}" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.meta.workflow || '')}</div>
+        <div class="row">
+          <button data-act="pick">${g.chosen === it.file ? '✓ 已選' : '選這張'}</button>
+          <button data-act="seed">用這個 seed</button>
+          <button data-act="del">刪除</button>
+        </div>
+      </div>
+    </div>`).join('')
+}
+async function galleryAction(file, act, item) {
+  const n = current
+  try {
+    if (act === 'pick') {
+      await api('/api/export', { id: n.id, file })
+      setStatus(`已經複製成 tools/portraits/export/${n.id}${file.slice(file.lastIndexOf('.'))}`)
+    } else if (act === 'del') {
+      if (!confirm('刪掉這張圖？')) return
+      await api('/api/delete', { id: n.id, file })
+    } else if (act === 'seed') {
+      const seed = item.querySelector('.meta .muted').textContent.match(/seed (\d+)/)?.[1]
+      if (seed) { $('seed').value = seed; $('seedRandom').checked = false; saveSettings(); setStatus(`seed 固定成 ${seed}`) }
+      return
+    }
+    await refreshStatus()
+    renderList()
+    renderGallery()
+  } catch (e) { setStatus(e.message, true) }
+}
+
+function setStatus(msg, err = false) {
+  $('status').textContent = msg
+  $('status').classList.toggle('err', err)
+}
+
+// ---- 事件 ----
+$('list').addEventListener('click', (e) => { const li = e.target.closest('li'); if (li) select(li.dataset.id) })
+for (const id of ['q', 'lineFilter', 'adultFilter', 'doneFilter']) $(id).addEventListener('input', renderList)
+$('gallery').addEventListener('click', (e) => {
+  const shot = e.target.closest('.shot')
+  if (!shot) return
+  if (e.target.tagName === 'IMG') { $('zoom').querySelector('img').src = e.target.src; $('zoom').style.display = 'flex'; return }
+  const act = e.target.dataset.act
+  if (act) galleryAction(shot.dataset.file, act, shot)
+})
+$('zoom').addEventListener('click', () => { $('zoom').style.display = 'none' })
+for (const el of document.querySelectorAll('input[name=mode]')) el.addEventListener('change', () => { showMode(); saveSettings() })
+for (const k of [...FIELDS, ...CHECKS]) $(k).addEventListener('change', () => { saveSettings(); renderPreview() })
+for (const k of ['prefix', 'suffix', 'negative', 'sfwNegative']) $(k).addEventListener('input', renderPreview)
+$('adultOn').addEventListener('change', renderPreview)
+$('sizePreset').addEventListener('change', () => {
+  const [w, h] = $('sizePreset').value.split('x')
+  if (w) { $('width').value = w; $('height').value = h; saveSettings() }
+  $('sizePreset').value = ''
+})
+$('resetStyle').addEventListener('click', () => {
+  for (const k of ['prefix', 'suffix', 'negative', 'sfwNegative']) $(k).value = DEFAULTS[k]
+  saveSettings()
+  renderPreview()
+})
+$('wfFile').addEventListener('change', async () => {
+  const f = $('wfFile').files[0]
+  if (!f) return
+  $('wfText').value = await f.text()
+  if (!$('wfName').value.trim()) $('wfName').value = f.name.replace(/\.json$/i, '')
+  try { fillWorkflow($('wfText').value, {}); setStatus(`讀進工作流程：${f.name}`) } catch (e) { setStatus(e.message, true) }
+  saveSettings()
+})
+$('loadLists').addEventListener('click', loadLists)
+$('genOne').addEventListener('click', () => current && run([current]))
+$('genAll').addEventListener('click', () => {
+  const list = filtered().filter((n) => !($('skipDone').checked && status.exports[n.id]))
+  if (!list.length) return setStatus('目前的清單沒有要生成的人。')
+  if (confirm(`依序生成 ${list.length} 位，每位 ${Math.max(1, +$('batch').value || 1)} 張？`)) run(list)
+})
+$('stop').addEventListener('click', () => { stopFlag = true; setStatus('停止中…') })
+window.addEventListener('beforeunload', (e) => { if (dirty.size) e.preventDefault() })
+
+loadSettings()
+loadNpcs()
+if (mode() === 'builtin' && !$('checkpoint').value) loadLists()
+</script>
+</body>
+</html>

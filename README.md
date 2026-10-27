@@ -120,6 +120,7 @@ pnpm build             # 型別檢查 + 建置到 dist/（相對路徑，放在�
 | [`docs/OPEN_QUESTIONS.md`](docs/OPEN_QUESTIONS.md) | 待決定事項 |
 | [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) | 程式中發現的 Bug 與不合理之處 |
 | [`worldgen/`](worldgen/README.md) | 世界生成：指南、模板、平衡性自檢、世界包範例 |
+| [`tools/portraits/`](tools/portraits/README.md) | 角色印象圖工具：用本機的 ComfyUI 替有角色線的固定 NPC 生成形象圖 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 版本更新紀錄 |
 | [`schemas/report.schema.json`](schemas/report.schema.json) | 事件報告格式（JSON Schema）；範例在 [`examples/reports/`](examples/reports/) |
 | [`data/world/`](data/world/) | 地區、勢力、地點與路線、城鎮格子地圖、地標、特殊地圖、固定 NPC、生成 NPC 的素材 |
