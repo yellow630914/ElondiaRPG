@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, contractDef, describeStatus, enemies, itemDef, itemRules, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
+import { abilities, className, contractDef, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { builtinSpecialMap, newSpecialMap, newSpecialMapId } from '@/engine/specialMapMods'
 import { newMark, newTattooTemplate } from '@/engine/tattooMods'
 import { oathText, placeName, tattooRules } from '@/engine/tattoos'
-import { perkPower } from '@/engine/perks'
-import { gearRules } from '@/engine/gear'
+import { perkCategory, perkPower, PERK_CATEGORIES } from '@/engine/perks'
+import { baseSlots, gearRules } from '@/engine/gear'
+import { CONTENT_TAGS } from '@/engine/content'
+import { BODY_NAME } from '@/engine/traits'
 import {
   ABILITY_TYPES, abilityClasses, builtinAbility, builtinBase, builtinEnemy, builtinMaterial, builtinNpc, builtinPerk, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions,
   ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk, builtinStatus, newStatus,
@@ -94,6 +96,21 @@ function resetFilters() {
   statusKind.value = ''
   tattooKind.value = ''
   eventScope.value = ''
+  gearSlot.value = ''
+  matKind.value = ''
+  perkCat.value = ''
+  placeFilter.value = ''
+  adultFilter.value = ''
+  tagFilter.value = ''
+  bodyFilter.value = ''
+  flagFilter.value = ''
+  npcGender.value = ''
+  npcRace.value = ''
+  npcKind.value = ''
+  npcJob.value = ''
+  npcTag.value = ''
+  storyLevel.value = ''
+  storyNpc.value = ''
 }
 const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', shops: '', events: '', npcs: '', stories: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
@@ -113,6 +130,101 @@ const abilityType = ref('')
 const abilityClass = ref('')
 
 const KINDS: Record<string, string> = { metal: '金屬', leather: '皮革', cloth: '布料', wood: '木材', jewel: '寶石' }
+const BASE_SLOTS = baseSlots()
+
+// 底材、裝備：欄位、材料類型；特質：分類
+const gearSlot = ref('')
+const matKind = ref('')
+const perkCat = ref('')
+// 地標、事件、固定 NPC、特殊任務共用：地點、成人向、內容標籤、主角形象、旗標
+const placeFilter = ref('')
+const adultFilter = ref('')
+const tagFilter = ref('')
+const bodyFilter = ref('')
+const flagFilter = ref('')
+// 固定 NPC：性別、種族、身分、職業、標籤；特殊任務：建議等級、固定 NPC
+const npcGender = ref('')
+const npcRace = ref('')
+const npcKind = ref('')
+const npcJob = ref('')
+const npcTag = ref('')
+const storyLevel = ref('')
+const storyNpc = ref('')
+const NPC_KINDS: Record<string, string> = { commoner: '普通人', adventurer: '冒險者' }
+const STORY_BANDS: Record<string, [number, number]> = { '1-4': [1, 4], '5-8': [5, 8], '9-11': [9, 11], '12-15': [12, 15], '16-18': [16, 18], '19-20': [19, 99] }
+
+const FLAG_KEYS = new Set(['flags', 'flags_none', 'flags_any', 'set_flags', 'clear_flags', 'start_flags'])
+/** 一個定義裡寫到的所有旗標（條件與設定的旗標，任何深度） */
+function flagsIn(o: unknown, out = new Set<string>()): Set<string> {
+  if (Array.isArray(o)) for (const x of o) flagsIn(x, out)
+  else if (o && typeof o === 'object') {
+    for (const [k, v] of Object.entries(o)) {
+      if (FLAG_KEYS.has(k) && Array.isArray(v)) {
+        for (const f of v) if (typeof f === 'string') out.add(f)
+      } else flagsIn(v, out)
+    }
+  }
+  return out
+}
+/** 特殊任務裡出現的固定 NPC（開始的角色、任務點的角色、同伴與敵人） */
+function npcsIn(o: unknown, out = new Set<string>()): Set<string> {
+  if (Array.isArray(o)) for (const x of o) npcsIn(x, out)
+  else if (o && typeof o === 'object') {
+    for (const [k, v] of Object.entries(o)) {
+      if (k === 'npc' && typeof v === 'string') out.add(v)
+      else if ((k === 'allies' || k === 'foes') && Array.isArray(v)) {
+        for (const x of v) if (typeof x === 'string') out.add(x)
+      } else npcsIn(v, out)
+    }
+  }
+  return out
+}
+const flagMatch = (o: unknown) => {
+  const q = flagFilter.value.trim()
+  return !q || [...flagsIn(o)].some((f) => f.includes(q))
+}
+const adultMatch = (adult: boolean) => !adultFilter.value || (adultFilter.value === 'yes') === adult
+const bodyMatch = (bodies: string[] | undefined) => !bodyFilter.value || (bodyFilter.value === 'any' ? !bodies?.length : !!bodies?.includes(bodyFilter.value))
+const locName = (id: string) => {
+  try {
+    return locationById(id).name
+  } catch {
+    return id
+  }
+}
+/** 這一頁的篩選選項：用到的地點、旗標、職業、標籤 */
+const options = computed(() => {
+  void content.version
+  const sorted = (ids: Iterable<string>, name: (id: string) => string = (x) => x) => [...new Set(ids)].map((id) => [id, name(id)] as [string, string]).sort((a, b) => a[1].localeCompare(b[1], 'zh-Hant'))
+  const flagsOf = (list: unknown[]) => [...new Set(list.flatMap((x) => [...flagsIn(x)]))].sort()
+  if (sub.value === 'landmarks') {
+    const list = Object.values(landmarks)
+    return { places: sorted(list.map((l) => l.location), locName), flags: flagsOf(list) }
+  }
+  if (sub.value === 'events') {
+    const t = travelEvents.templates
+    const regions = sorted(t.flatMap((x) => x.regions ?? []), (id) => {
+      try {
+        return `地區：${regionById(id).name}`
+      } catch {
+        return `地區：${id}`
+      }
+    }).map(([id, n]) => [`r:${id}`, n] as [string, string])
+    return { places: [...sorted(t.flatMap((x) => [...(x.locations ?? []), ...(x.dungeons ?? [])]), locName), ...regions], flags: flagsOf(t) }
+  }
+  if (sub.value === 'npcs') {
+    const jobs = [...sorted(namedNpcs.filter((n) => n.class).map((n) => n.class), className).map(([id, n]) => [`c:${id}`, n] as [string, string]),
+      ...sorted(namedNpcs.filter((n) => !n.class && n.occupation).map((n) => n.occupation!)).map(([id, n]) => [`o:${id}`, n] as [string, string])]
+    return {
+      places: sorted(namedNpcs.map((n) => n.location), locName), flags: flagsOf(namedNpcs), jobs,
+      genders: sorted(namedNpcs.map((n) => n.gender ?? ''), (g) => genderName(g) || '未設定'),
+      races: sorted(namedNpcs.map((n) => n.race), raceName),
+      tags: sorted(namedNpcs.flatMap((n) => n.tags ?? []), (t) => tagDef(t)?.name ?? t),
+    }
+  }
+  if (sub.value === 'stories') return { flags: flagsOf(stories), npcNames: [...new Set(namedNpcs.map((n) => n.name))].sort() }
+  return {}
+})
 
 /** 物品頁的「類別圖示」那一列（物品名稱不能有「|」，不會撞名） */
 const ICONS_KEY = '|icons'
@@ -140,6 +252,8 @@ const rows = computed<Row[]>(() => {
     list = itemRules.items
       .filter((i) => !category.value || i.category === category.value)
       .filter((i) => !itemSource.value || !!sources.value.get(i.name)?.has(itemSource.value))
+      .filter((i) => category.value !== 'equipment' || ((!gearSlot.value || gearRules.bases[i.gear?.base ?? '']?.slot === gearSlot.value)
+        && (!matKind.value || gearRules.materials[i.gear?.material ?? '']?.kind === matKind.value)))
       .map((i) => ({ key: i.name, name: i.name, note: `${itemRules.categories[i.category]}・${formatMoney(i.price_cc)}`, status: st(!!m.items[i.name], !!m.items[i.name]?.custom) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
     // 類別圖示的設定放在最上面（不篩選類別、取得方式時）
@@ -162,6 +276,7 @@ const rows = computed<Row[]>(() => {
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'perks') {
     list = perkRules.perks
+      .filter((p) => !perkCat.value || (perkCat.value === 'race' ? !!p.race : !p.race && perkCategory(p) === perkCat.value))
       .map((p) => ({ key: p.id, name: p.name, note: p.race ? '種族' : `強度 ${perkPower(p)}${p.train ? '・可受訓' : ''}`, status: st(!!m.perks[p.id], !builtinPerk(p.id)), sort: p.race ? 1 : 0 }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'tattoos') {
@@ -176,6 +291,9 @@ const rows = computed<Row[]>(() => {
     list = [...tats, ...marks, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'landmarks') {
     list = Object.values(landmarks)
+      .filter((l) => !placeFilter.value || l.location === placeFilter.value)
+      .filter((l) => adultMatch(!!l.open?.adult || !!l.scenes?.some((x) => x.tags?.includes('adult'))))
+      .filter((l) => flagMatch(l))
       .map((l) => ({ key: l.id, name: `${l.emoji} ${l.name}`, note: `${locationById(l.location).name}・${l.types.map((t) => landmarkTypes[t]?.name).join('、')}`, status: st(!!m.landmarks?.[l.id], !builtinLandmark(l.id)) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'specialMaps') {
@@ -190,6 +308,16 @@ const rows = computed<Row[]>(() => {
     const k = eventScope.value
     const evs = travelEvents.templates
       .filter((t) => !k || (t.scope ?? 'road') === k)
+      .filter((t) => {
+        const p = placeFilter.value
+        if (!p) return true
+        if (p === 'none') return !t.locations?.length && !t.dungeons?.length && !t.regions?.length
+        return p.startsWith('r:') ? !!t.regions?.includes(p.slice(2)) : !!t.locations?.includes(p) || !!t.dungeons?.includes(p)
+      })
+      .filter((t) => adultMatch(!!t.tags?.includes('adult')))
+      .filter((t) => !tagFilter.value || !!t.tags?.includes(tagFilter.value as never))
+      .filter((t) => bodyMatch(t.pc_body))
+      .filter((t) => flagMatch(t))
       .map((t) => ({
         key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.scope === 'dungeon' ? '⚠️' : t.scope === 'parasite' ? '💗' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}`,
         note: t.scope === 'town' ? `城鎮・${t.kind === 'check' ? '檢定' : '選擇'}`
@@ -198,21 +326,43 @@ const rows = computed<Row[]>(() => {
           : `${(t.modes ?? []).map((m) => MODE_NAME[m]).join('、') || '任何路段'}・${t.kind === 'check' ? '檢定' : '選擇'}`,
         status: st(!!m.travelEvents?.[t.id], !builtinTravelEvent(t.id)), sort: t.scope === 'town' ? 1 : t.scope === 'dungeon' ? 2 : t.scope === 'parasite' ? 2.5 : 0,
       }))
-    const rules = [{ key: 'rules', name: '⚙️ 事件設定', note: '機率、權重、冷卻', status: st(!!m.eventRules?.rules, false), sort: 3 }]
+    const narrowed = placeFilter.value || adultFilter.value || tagFilter.value || bodyFilter.value || flagFilter.value.trim()
+    const rules = narrowed ? [] : [{ key: 'rules', name: '⚙️ 事件設定', note: '機率、權重、冷卻', status: st(!!m.eventRules?.rules, false), sort: 3 }]
     list = [...evs, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'stories') {
     const counters = { key: COUNTERS_KEY, name: '🔢 劇情計數器', note: `${Object.keys(storyCounters).length} 個`, status: st(Object.keys(m.counters ?? {}).length > 0, false) }
-    list = [counters, ...stories
+    const band = STORY_BANDS[storyLevel.value]
+    const who = storyNpc.value.trim()
+    const narrowed = band || who || adultFilter.value || tagFilter.value || bodyFilter.value || flagFilter.value.trim()
+    list = [...(narrowed ? [] : [counters]), ...stories
+      .filter((d) => !band || ((d.start.min_level ?? 1) >= band[0] && (d.start.min_level ?? 1) <= band[1]))
+      .filter((d) => adultMatch(!!d.tags?.includes('adult')))
+      .filter((d) => !tagFilter.value || !!d.tags?.includes(tagFilter.value))
+      .filter((d) => bodyMatch(d.start.pc_body))
+      .filter((d) => flagMatch(d))
+      .filter((d) => !who || [...npcsIn(d)].some((id) => (namedNpcs.find((n) => n.id === id)?.name ?? id).includes(who)))
       .map((d) => ({ key: d.id, name: d.title, note: `${START_KINDS[d.start.kind]}・${d.nodes.length} 個任務點`, status: st(!!m.stories[d.id], !builtinStory(d.id)) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))]
   } else if (sub.value === 'npcs') {
+    const job = npcJob.value
     list = namedNpcs
+      .filter((n) => !placeFilter.value || n.location === placeFilter.value)
+      .filter((n) => !npcGender.value || (n.gender ?? '') === npcGender.value)
+      .filter((n) => !npcRace.value || n.race === npcRace.value)
+      .filter((n) => !npcKind.value || (n.kind ?? (n.class ? 'adventurer' : 'commoner')) === npcKind.value)
+      .filter((n) => !job || (job.startsWith('c:') ? n.class === job.slice(2) : !n.class && n.occupation === job.slice(2)))
+      .filter((n) => !npcTag.value || !!n.tags?.includes(npcTag.value))
+      .filter((n) => flagMatch(n))
       .map((n) => ({ key: n.id, name: n.name, note: `${locationById(n.location).name}・${n.class ? className(n.class) : n.occupation ?? '普通人'} Lv.${n.level}`, status: st(!!m.npcs[n.id], !builtinNpc(n.id)) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'bases') {
-    list = Object.entries(gearRules.bases).map(([id, b]) => ({ key: id, name: b.name, note: `${KINDS[b.kind]}・${formatMoney(b.price)}`, status: st(!!m.bases[id], !builtinBase(id)) }))
+    list = Object.entries(gearRules.bases)
+      .filter(([, b]) => (!gearSlot.value || b.slot === gearSlot.value) && (!matKind.value || b.kind === matKind.value))
+      .map(([id, b]) => ({ key: id, name: b.name, note: `${KINDS[b.kind]}・${formatMoney(b.price)}`, status: st(!!m.bases[id], !builtinBase(id)) }))
   } else {
-    list = Object.entries(gearRules.materials).map(([id, x]) => ({ key: id, name: x.name, note: `${KINDS[x.kind]}・${x.tier} 級`, status: st(!!m.materials[id], !builtinMaterial(id)) }))
+    list = Object.entries(gearRules.materials)
+      .filter(([, x]) => !matKind.value || x.kind === matKind.value)
+      .map(([id, x]) => ({ key: id, name: x.name, note: `${KINDS[x.kind]}・${x.tier} 級`, status: st(!!m.materials[id], !builtinMaterial(id)) }))
   }
   return list
     .filter((r) => !q || r.name.includes(q) || r.key.includes(q))
@@ -485,6 +635,104 @@ function resetAll() {
             <option v-for="(n, k) in ITEM_SOURCE_NAME" :key="k" :value="k">{{ n }}</option>
           </select>
         </div>
+        <div v-if="sub === 'items' && category === 'equipment'" class="row">
+          <select v-model="gearSlot" class="grow">
+            <option value="">所有欄位</option>
+            <option v-for="(n, k) in BASE_SLOTS" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="matKind" class="grow">
+            <option value="">所有材料類型</option>
+            <option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </div>
+        <div v-if="sub === 'bases'" class="row">
+          <select v-model="gearSlot" class="grow">
+            <option value="">所有欄位</option>
+            <option v-for="(n, k) in BASE_SLOTS" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="matKind" class="grow">
+            <option value="">所有材料類型</option>
+            <option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </div>
+        <div v-if="sub === 'materials'" class="row">
+          <select v-model="matKind" class="grow">
+            <option value="">所有材料類型</option>
+            <option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </div>
+        <div v-if="sub === 'perks'" class="row">
+          <select v-model="perkCat" class="grow">
+            <option value="">所有分類</option>
+            <option v-for="(n, k) in PERK_CATEGORIES" :key="k" :value="k">{{ n }}</option>
+            <option value="race">種族天賦</option>
+          </select>
+        </div>
+        <div v-if="sub === 'landmarks'" class="row">
+          <select v-model="placeFilter" class="grow">
+            <option value="">所有地點</option>
+            <option v-for="[k, n] in options.places ?? []" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="adultFilter">
+            <option value="">成人向與一般</option>
+            <option value="yes">🔞 成人向</option>
+            <option value="no">一般</option>
+          </select>
+          <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
+          <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
+        </div>
+        <div v-if="sub === 'npcs'" class="row">
+          <select v-model="placeFilter" class="grow">
+            <option value="">所有地點</option>
+            <option v-for="[k, n] in options.places ?? []" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="npcGender">
+            <option value="">所有性別</option>
+            <option v-for="[k, n] in options.genders ?? []" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="npcRace">
+            <option value="">所有種族</option>
+            <option v-for="[k, n] in options.races ?? []" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="npcKind">
+            <option value="">所有身分</option>
+            <option v-for="(n, k) in NPC_KINDS" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="npcJob" class="grow">
+            <option value="">所有職業</option>
+            <option v-for="[k, n] in options.jobs ?? []" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <select v-model="npcTag" class="grow">
+            <option value="">所有標籤</option>
+            <option v-for="[k, n] in options.tags ?? []" :key="k" :value="k">{{ n }}</option>
+          </select>
+          <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
+          <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
+        </div>
+        <div v-if="sub === 'stories'" class="row">
+          <select v-model="storyLevel">
+            <option value="">所有建議等級</option>
+            <option v-for="(_, k) in STORY_BANDS" :key="k" :value="k">Lv.{{ k }}</option>
+          </select>
+          <select v-model="tagFilter" class="grow">
+            <option value="">所有內容標籤</option>
+            <option v-for="(t, k) in CONTENT_TAGS" :key="k" :value="k">{{ t.name }}</option>
+          </select>
+          <select v-model="adultFilter">
+            <option value="">成人向與一般</option>
+            <option value="yes">🔞 成人向</option>
+            <option value="no">一般</option>
+          </select>
+          <select v-model="bodyFilter">
+            <option value="">所有主角形象</option>
+            <option value="any">不限形象</option>
+            <option v-for="(n, k) in BODY_NAME" :key="k" :value="k">只給{{ n }}</option>
+          </select>
+          <input v-model="storyNpc" list="cv-npcs" placeholder="固定 NPC 名稱" class="grow" />
+          <datalist id="cv-npcs"><option v-for="n in options.npcNames ?? []" :key="n" :value="n" /></datalist>
+          <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
+          <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
+        </div>
         <div v-if="sub === 'enemies'" class="row">
           <select v-model="enemyKind" class="grow">
             <option value="">所有種類</option>
@@ -523,6 +771,27 @@ function resetAll() {
             <option value="dungeon">⚠️ 地下城事件</option>
             <option value="parasite">💗 寄生物的發作</option>
           </select>
+          <select v-model="placeFilter" class="grow">
+            <option value="">所有地點</option>
+            <option v-for="[k, n] in options.places ?? []" :key="k" :value="k">{{ n }}</option>
+            <option value="none">沒有限制地點</option>
+          </select>
+          <select v-model="adultFilter">
+            <option value="">成人向與一般</option>
+            <option value="yes">🔞 成人向</option>
+            <option value="no">一般</option>
+          </select>
+          <select v-model="tagFilter" class="grow">
+            <option value="">所有內容標籤</option>
+            <option v-for="(t, k) in CONTENT_TAGS" :key="k" :value="k">{{ t.name }}</option>
+          </select>
+          <select v-model="bodyFilter">
+            <option value="">所有主角形象</option>
+            <option value="any">不限形象</option>
+            <option v-for="(n, k) in BODY_NAME" :key="k" :value="k">只給{{ n }}</option>
+          </select>
+          <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
+          <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
         </div>
         <div v-if="sub === 'abilities'" class="row">
           <select v-model="abilityType" class="grow">
@@ -534,7 +803,7 @@ function resetAll() {
             <option v-for="c in abilityClasses()" :key="c" :value="c">{{ c === 'monster' ? '怪物' : className(c) }}</option>
           </select>
         </div>
-        <p v-if="sub === 'enemies' || sub === 'items' || sub === 'abilities' || sub === 'statuses'" class="small muted count">符合 {{ rows.length }} 項</p>
+        <p v-if="sub !== 'shops' && sub !== 'specialMaps' && sub !== 'tattoos'" class="small muted count">符合 {{ rows.length }} 項</p>
         <ul class="plain rows">
           <li v-for="r in rows" :key="r.key" :class="{ active: current === r.key }" @click="select(r.key)">
             <ItemIcon v-if="sub === 'items' && r.key !== ICONS_KEY" :name="r.key" :size="18" class="row-ic" />
