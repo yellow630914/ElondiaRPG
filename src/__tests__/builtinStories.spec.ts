@@ -421,9 +421,12 @@ describe('quests inside a temporary map', () => {
     }
   })
 
-  it('gives every non-adult character line a fourth, adult quest with its own partner, tagging traditional men', () => {
+  it('gives the non-adult character lines a fourth, adult quest, one per partner, tagging traditional men', () => {
     const fourth = stories.filter((s) => /・四）$/.test(s.summary) && s.nodes.some((n) => n.id === 'night'))
-    expect(fourth.length).toBe(24)
+    // 礁光柱維修沒有：主角是螺鈿婆婆，櫻汐已經有自己的故事線
+    expect(fourth.length).toBe(23)
+    expect(new Set(fourth.map((s) => s.start.npc)).size).toBe(23)
+    expect(fourth.some((s) => s.summary.includes('礁光柱維修'))).toBe(false)
     for (const s of fourth) {
       expect(s.tags?.[0], s.id).toBe('adult')
       expect(s.start.min_affinity, s.id).toBe(40)
