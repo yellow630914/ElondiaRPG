@@ -1358,6 +1358,8 @@ export function tagsExclusive(a: string, b: string): boolean {
 export const npcTags = npcTagsJson as unknown as {
   kinds: Record<NpcKind, { name: string; zone_weights: Record<string, number>; level?: [number, number]; dungeon_haunts?: [number, number] }>
   neighbor_weight: number
+  /** 有性別的職業稱呼（公主／王子……），見 npcs.ts 的 occupationFor */
+  gendered_occupations?: { female: string; male: string; neutral: string }[]
   tags: Record<string, NpcTagDef>
 }
 export const population = populationJson as unknown as {

@@ -14,6 +14,20 @@
     }
   },
   "neighbor_weight": 0.1,
+  "$gendered_occupations": "有性別的職業稱呼：生成 NPC 時依性別換成對應的稱呼（女性、TS、扶她用 female；男性、偽娘用 male；未知用 neutral），清單裡寫哪一個都可以。",
+  "gendered_occupations": [
+    { "female": "公主", "male": "王子", "neutral": "王室的子嗣" },
+    { "female": "王妹", "male": "王弟", "neutral": "國王的手足" },
+    { "female": "女王的姪女", "male": "女王的姪子", "neutral": "女王的姪輩" },
+    { "female": "男爵家的千金", "male": "男爵家的少爺", "neutral": "男爵家的孩子" },
+    { "female": "伯爵夫人", "male": "伯爵", "neutral": "伯爵家的人" },
+    { "female": "沒落的騎士家長女", "male": "沒落的騎士家長子", "neutral": "沒落的騎士家後裔" },
+    { "female": "貴族家的次女", "male": "貴族家的次子", "neutral": "貴族家的老二" },
+    { "female": "修女", "male": "修士", "neutral": "修道者" },
+    { "female": "洗衣婦", "male": "洗衣工", "neutral": "洗衣工" },
+    { "female": "酒館女侍", "male": "酒館夥計", "neutral": "酒館夥計" },
+    { "female": "補網婦", "male": "補網工", "neutral": "補網工" }
+  ],
   "tags": {
     "traveler": {
       "name": "旅人", "emoji": "🧳", "kinds": ["commoner", "adventurer"],

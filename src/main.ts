@@ -17,6 +17,13 @@ import '@fontsource/lxgw-wenkai-tc/400.css'
 import '@fontsource/lxgw-wenkai-tc/700.css'
 import './style.css'
 
+// 網站更新後，還開著的舊頁面要載入的程式檔已經換了名字（例如連線測試、AI 敘事要用的模組）：
+// 原本的「Failed to fetch dynamically imported module」看不懂，改成請玩家重新整理
+window.addEventListener('vite:preloadError', (e) => {
+  const err = (e as Event & { payload?: unknown }).payload
+  if (err instanceof Error) err.message = `遊戲已經更新到新版本，這個頁面還是舊的：請重新整理頁面（F5）再試一次。（${err.message}）`
+})
+
 // 自訂內容（怪物、物品、裝備）要在讀檔之前套用
 initContent()
 

@@ -8,7 +8,7 @@ import { npcPerksOf, perksOf } from './perks'
 import { createNpc, lifeTier } from './character'
 import { adultContent, safeText } from './content'
 import {
-  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, npcs as namedNpcs, perkDef, slaveryRules, tagDef,
+  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, npcs as namedNpcs, npcTags, perkDef, slaveryRules, tagDef,
   type Haunt, type NpcKind, type NpcStage,
 } from './data'
 import { Rng } from './rng'
@@ -202,6 +202,15 @@ function newNpcId(state: GameState, prefix: string): string {
 }
 
 /** 生成一位 NPC 並登錄。spec 沒指定的欄位隨機決定；普通人沒有職業。 */
+/** 有性別的職業稱呼依性別換成對應的（公主／王子、修女／修士……；npc_tags.json 的 gendered_occupations） */
+export function occupationFor(occupation: string, gender: string | undefined): string {
+  const row = npcTags.gendered_occupations?.find((r) => r.female === occupation || r.male === occupation || r.neutral === occupation)
+  if (!row) return occupation
+  if (gender === 'female' || gender === 'ts' || gender === 'futa') return row.female
+  if (gender === 'male' || gender === 'femboy') return row.male
+  return row.neutral
+}
+
 export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, prefix = 'gen'): NpcRecord {
   const location = spec.location ?? state.location
   const kind: NpcKind = spec.kind ?? 'adventurer'
@@ -233,7 +242,7 @@ export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, pref
     ...(spec.background ? { background: spec.background } : {}),
     kind,
     ...(tags.length ? { tags } : {}),
-    ...(spec.occupation ? { occupation: spec.occupation } : {}),
+    ...(spec.occupation ? { occupation: occupationFor(spec.occupation, gender) } : {}),
     ...(spec.haunts?.length ? { haunts: spec.haunts } : {}),
     ...(spec.spot ? { spot: spec.spot } : {}),
     generated: true,

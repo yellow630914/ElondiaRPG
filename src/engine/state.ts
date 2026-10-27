@@ -14,6 +14,7 @@ import type { Character, ContractRef, EquippedGear, GameOptions, GameState, Game
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
 import { sanitizePcTags } from './pcTags'
+import { occupationFor } from './npcs'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
 import { BODIES, bodyOf, type Body } from './traits'
 
@@ -296,7 +297,11 @@ export function migrate(state: GameState): GameState {
   // 「飾品」類別已經拿掉（併入裝備）：AI 自創的飾品改成雜物
   for (const c of Object.values(state.customItems ?? {})) if (c.category === 'valuable') c.category = 'gear'
   for (const m of state.party) migrateJewelry(m.gear as Record<string, EquippedGear | undefined>, state.inventory)
-  for (const r of Object.values(state.npcs ?? {})) migrateJewelry(r.character?.gear as Record<string, EquippedGear | undefined> | undefined)
+  for (const r of Object.values(state.npcs ?? {})) {
+    migrateJewelry(r.character?.gear as Record<string, EquippedGear | undefined> | undefined)
+    // 以前職業比性別先決定，可能出現男性的「女王的姪女」：依性別換成對應的稱呼
+    if (r.generated && r.occupation) r.occupation = occupationFor(r.occupation, r.gender)
+  }
   for (const q of state.quests) {
     q.kind ??= 'clear_dungeon'
     q.area ??= 'dungeon'
