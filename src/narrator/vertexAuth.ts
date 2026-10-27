@@ -141,3 +141,30 @@ export async function* streamVertexService(sa: ServiceAccount, config: ProviderC
   const rest = buf.split(/\r?\n/).filter((l) => l.startsWith('data:')).map((l) => l.slice(5).trim()).join('')
   if (rest) yield JSON.parse(rest) as GeminiChunk
 }
+
+/**
+ * 用服務帳戶列出 Vertex AI 上 Google 的 Gemini 模型（Model Garden 的 publishers/google/models，只收 OAuth，不收 API key）。
+ * 回傳模型名稱（例如 gemini-2.5-flash），最多翻 5 頁
+ */
+export async function listVertexModels(sa: ServiceAccount, region?: string, signal?: AbortSignal): Promise<string[]> {
+  const token = await vertexAccessToken(sa, signal)
+  const r = region?.trim() || VERTEX_DEFAULT_REGION
+  const host = r === 'global' ? 'https://aiplatform.googleapis.com' : `https://${r}-aiplatform.googleapis.com`
+  const ids = new Set<string>()
+  let page = ''
+  for (let i = 0; i < 5; i++) {
+    const res = await fetch(`${host}/v1beta1/publishers/google/models?pageSize=100${page ? `&pageToken=${encodeURIComponent(page)}` : ''}`, {
+      headers: { Authorization: `Bearer ${token}`, 'x-goog-user-project': sa.project_id },
+      signal,
+    })
+    if (!res.ok) throw new Error(`已經換到 access token，但列不出模型（${res.status}）：${(await res.text()).slice(0, 200)}。可以直接輸入模型名稱，再按「測試連線」`)
+    const data = (await res.json()) as { publisherModels?: { name?: string }[]; nextPageToken?: string }
+    for (const m of data.publisherModels ?? []) {
+      const id = m.name?.split('/').pop()
+      if (id && /^gemini/.test(id)) ids.add(id)
+    }
+    if (!data.nextPageToken) break
+    page = data.nextPageToken
+  }
+  return [...ids]
+}

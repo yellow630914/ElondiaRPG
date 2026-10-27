@@ -15,10 +15,10 @@
 | Anthropic（Claude） | `@anthropic-ai/sdk` | 預設 `claude-opus-5-5`；支援的模型自動開啟伺服器端拒絕備援（`fallbacks: "default"`） |
 | OpenAI | `openai` | |
 | Google Gemini | `@google/genai` | |
-| Google Vertex AI | API key：`@google/genai`（`vertexai: true`）；服務帳戶 JSON：瀏覽器直接打 REST（`src/narrator/vertexAuth.ts`） | 兩種認證：① 快速模式（express mode）的 API key，送到 `aiplatform.googleapis.com`。② 服務帳戶 JSON（和 SillyTavern 的 Vertex AI「完整模式」一樣，例如贈金的專案）：在 key 欄位貼上或選擇金鑰檔，用私鑰在瀏覽器裡簽 RS256 的 JWT（WebCrypto），向 `oauth2.googleapis.com/token` 換 access token（快取到過期前一分鐘），再呼叫 `{區域}-aiplatform.googleapis.com/v1/projects/{專案}/locations/{區域}/publishers/google/models/{模型}:streamGenerateContent?alt=sse`；區域預設 us-central1，也可以填 global。兩個端點都允許瀏覽器跨網域呼叫，所以不需要伺服器。兩種都不能列出模型，要直接輸入模型名稱 |
+| Google Vertex AI | API key：`@google/genai`（`vertexai: true`）；服務帳戶 JSON：瀏覽器直接打 REST（`src/narrator/vertexAuth.ts`） | 兩種認證：① 快速模式（express mode）的 API key，送到 `aiplatform.googleapis.com`。② 服務帳戶 JSON（和 SillyTavern 的 Vertex AI「完整模式」一樣，例如贈金的專案）：在 key 欄位貼上或選擇金鑰檔，用私鑰在瀏覽器裡簽 RS256 的 JWT（WebCrypto），向 `oauth2.googleapis.com/token` 換 access token（快取到過期前一分鐘），再呼叫 `{區域}-aiplatform.googleapis.com/v1/projects/{專案}/locations/{區域}/publishers/google/models/{模型}:streamGenerateContent?alt=sse`；區域預設 us-central1，也可以填 global。兩個端點都允許瀏覽器跨網域呼叫，所以不需要伺服器。服務帳戶可以載入模型清單（`v1beta1/publishers/google/models`，只收 OAuth，只留 gemini 開頭的）；API key 不能列，要直接輸入模型名稱。兩種都有「測試連線」：用選的模型送一個很短的請求（`testConnection`），確認 key 與模型名稱 |
 | OpenAI 相容格式 | `openai`（自訂 Base URL） | 內建 OpenRouter、DeepSeek、Ollama、LM Studio、智譜 GLM（BigModel、Z.ai）、通義千問（DashScope）、Moonshot 的預設網址（`providerInfo.ts`）；本機服務可不填 key |
 
-「載入模型清單」會向服務查詢可用模型，也可以當作連線測試（Vertex AI 沒有這個按鈕；用服務帳戶時有「測試連線」，確認換得到 access token）。成人向世界書條目預設不注入，需在設定中手動開啟。
+「載入模型清單」會向服務查詢可用模型，也可以當作連線測試（Vertex AI 用 API key 時沒有這個按鈕，改用「測試連線」送一個很短的請求）。成人向世界書條目預設不注入，需在設定中手動開啟。
 
 ## 1. 七種請求
 

@@ -81,4 +81,30 @@ describe('Vertex AI with a service account JSON', () => {
     const { listModels } = await import('@/narrator/providers')
     await expect(listModels('vertex', { apiKey: json, model: '' })).rejects.toThrow('換不到 access token')
   })
+
+  it('lists the Gemini models with the access token, page by page', async () => {
+    const { json } = await account()
+    const urls: string[] = []
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+      urls.push(url)
+      if (url.startsWith('https://oauth2')) return new Response(JSON.stringify({ access_token: 'tok', expires_in: 3600 }))
+      expect((init.headers as Record<string, string>)['x-goog-user-project']).toBe('my-proj')
+      if (!url.includes('pageToken')) return new Response(JSON.stringify({ publisherModels: [{ name: 'publishers/google/models/gemini-2.5-flash' }, { name: 'publishers/google/models/imagen-4.0' }], nextPageToken: 'p2' }))
+      return new Response(JSON.stringify({ publisherModels: [{ name: 'publishers/google/models/gemini-2.5-pro' }] }))
+    })
+    const { listModels } = await import('@/narrator/providers')
+    expect(await listModels('vertex', { apiKey: json, model: '' })).toEqual(['gemini-2.5-flash', 'gemini-2.5-pro'])
+    expect(urls.filter((u) => u.includes('/v1beta1/publishers/google/models')).length).toBe(2)
+  })
+
+  it('tests the connection with a short request to the chosen model', async () => {
+    const { json } = await account()
+    vi.stubGlobal('fetch', async (url: string, init: RequestInit) => {
+      if (url.startsWith('https://oauth2')) return new Response(JSON.stringify({ access_token: 'tok', expires_in: 3600 }))
+      expect(JSON.parse(init.body as string).generationConfig.maxOutputTokens).toBe(256)
+      return new Response(sse(['data: {"candidates":[{"content":{"parts":[{"text":"OK"}]}}]}\n\n']))
+    })
+    const { testConnection } = await import('@/narrator/providers')
+    expect(await testConnection('vertex', { apiKey: json, model: 'gemini-2.5-flash' })).toBe('OK')
+  })
 })

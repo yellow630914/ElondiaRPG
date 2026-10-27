@@ -3,7 +3,7 @@
 
 // 各家 SDK 在用到時才載入，只會下載玩家選用的那一家
 import type { Prompt } from './prompt'
-import { parseServiceAccount, streamVertexService, vertexAccessToken, vertexBody } from './vertexAuth'
+import { listVertexModels, parseServiceAccount, streamVertexService, vertexBody } from './vertexAuth'
 import { anthropicThinking, cacheMarkFor, geminiThinking, openAIReasoningBody, type ProviderConfig, type ProviderId, type TokenUsage } from './providerInfo'
 
 export type { ProviderConfig, ProviderId, TokenUsage }
@@ -207,11 +207,11 @@ export async function listModels(provider: ProviderId, config: ProviderConfig): 
       break
     }
     case 'vertex': {
-      // 列出模型的 API 不收 API key（要 OAuth）；服務帳戶只先確認換得到 token，模型名稱一樣直接輸入
+      // 列出模型的 API 只收 OAuth：服務帳戶可以列，API key 不行（用「測試連線」確認 key 與模型名稱）
       const sa = parseServiceAccount(config.apiKey)
-      if (!sa) throw new Error('Vertex AI 的 API key 不能列出模型，請直接輸入模型名稱（例如 gemini-2.5-flash）')
-      await vertexAccessToken(sa)
-      return []
+      if (!sa) throw new Error('Vertex AI 的 API key 不能列出模型，請直接輸入模型名稱（例如 gemini-2.5-flash），再按「測試連線」')
+      ids.push(...(await listVertexModels(sa, config.region)))
+      break
     }
     case 'gemini': {
       const ai = await geminiClient(provider, config)
@@ -235,3 +235,13 @@ export async function completeText(
   for await (const chunk of streamNarration(provider, config, prompt, signal, onUsage, onThinking)) text += chunk
   return text
 }
+
+/**
+ * 測試連線：用設定的 key 與模型送一個很短的請求（不能列出模型的服務用，例如 Vertex AI 的 API key）。
+ * 成功時回傳模型的回答（可能是空的：思考用掉了全部的輸出額度也算連得上）
+ */
+export async function testConnection(provider: ProviderId, config: ProviderConfig): Promise<string> {
+  const text = await completeText(provider, { ...config, maxTokens: 256, showThinking: false }, { system: '這是連線測試。', user: '請只回答「OK」。' })
+  return text.trim()
+}
+

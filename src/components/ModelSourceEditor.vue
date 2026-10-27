@@ -55,13 +55,14 @@ async function loadJson(e: Event) {
   cfg.value.apiKey = text.trim()
   message.value = ''
 }
-async function testServiceAccount() {
+// 不能列出模型的服務（Vertex AI）：用選的模型送一個很短的請求，確認 key（或服務帳戶）與模型名稱都對
+async function testModel() {
   loading.value = true
   message.value = ''
   try {
-    const { listModels } = await import('@/narrator/providers')
-    await listModels('vertex', cfg.value)
-    message.value = '服務帳戶可以用：已經換到 access token。'
+    const { testConnection } = await import('@/narrator/providers')
+    const reply = await testConnection(source.value.provider, cfg.value)
+    message.value = `連線成功：${cfg.value.model} 有回應${reply ? `（「${reply.slice(0, 20)}」）` : ''}。`
   } catch (e) {
     message.value = `連線失敗：${e instanceof Error ? e.message : String(e)}`
   } finally {
@@ -170,7 +171,6 @@ function copyFrom(e: Event) {
         <span class="row">
           <input v-model.trim="cfg.region" :placeholder="VERTEX_DEFAULT_REGION" style="width: 180px" />
           <button class="small" @click="cfg.region = 'global'">global</button>
-          <button class="small" :disabled="loading" @click="testServiceAccount">{{ loading ? '測試中…' : '測試連線' }}</button>
         </span>
       </label>
     </template>
@@ -187,14 +187,17 @@ function copyFrom(e: Event) {
             <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
           </optgroup>
         </select>
-        <button v-if="!info.noModelList" class="small" :disabled="loading || (!cfg.apiKey && !info.keyOptional)" @click="loadModels">
+        <button v-if="!info.noModelList || serviceAccount" class="small" :disabled="loading || (!cfg.apiKey && !info.keyOptional)" @click="loadModels">
           {{ loading ? '載入中…' : '載入模型清單' }}
+        </button>
+        <button v-if="info.noModelList" class="small" :disabled="loading || !cfg.apiKey || !cfg.model" title="用選的模型送一個很短的請求，確認 key 與模型名稱" @click="testModel">
+          {{ loading ? '測試中…' : '測試連線' }}
         </button>
       </span>
       <input v-model.trim="cfg.model" placeholder="或直接輸入模型名稱" aria-label="模型名稱" />
     </div>
     <p v-if="source.provider === 'vertex'" class="small muted">
-      兩種用法：① API key（快速模式）：在 Google Cloud 主控台建立 API key 並啟用 Vertex AI API。② 服務帳戶 JSON（和 SillyTavern 的 Vertex AI「完整模式」一樣，例如用贈金的專案）：在主控台的「IAM 與管理 → 服務帳戶」建立帳戶、給它「Vertex AI 使用者」角色，新增 JSON 金鑰，把檔案選進來或整段貼上。JSON 只存在這台瀏覽器，請求直接從瀏覽器送到 Google。兩種都不能列出模型，請直接輸入模型名稱（Vertex 沒有 gemini-flash-latest 這類別名，要寫完整的版本，例如 gemini-2.5-flash）。
+      兩種用法：① API key（快速模式）：在 Google Cloud 主控台建立 API key 並啟用 Vertex AI API。② 服務帳戶 JSON（和 SillyTavern 的 Vertex AI「完整模式」一樣，例如用贈金的專案）：在主控台的「IAM 與管理 → 服務帳戶」建立帳戶、給它「Vertex AI 使用者」角色，新增 JSON 金鑰，把檔案選進來或整段貼上。JSON 只存在這台瀏覽器，請求直接從瀏覽器送到 Google。服務帳戶可以「載入模型清單」；API key 不能列出模型（Google 的清單 API 只收 OAuth），請直接輸入模型名稱（Vertex 沒有 gemini-flash-latest 這類別名，要寫完整的版本，例如 gemini-2.5-flash）。兩種都可以按「測試連線」，用選的模型送一個很短的請求，確認 key 和模型名稱都對。
     </p>
     <p v-if="message" class="small">{{ message }}</p>
 
