@@ -17,6 +17,7 @@ import {
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
+import { gearRules } from './gear'
 import { formatMoney } from './money'
 import { npcRecord, registerNpc } from './npcs'
 import { joinParty, leaveParty, pcOf } from './party'
@@ -156,6 +157,8 @@ export function startStory(state: GameState, id: string, opts: { text?: string; 
   const report = opts.report ?? storyReport(state, def, 'started', 0.5)
   report.story = { id, title: def.title, status: 'started' }
   setFlags(report, def.start_flags, true)
+  // 接下任務時拿到的物品（例如打工的制服）
+  if (def.start.items?.length) applyEffects(state, report, def.start.items.map((name) => ({ type: 'item' as const, name, qty: 1 })))
   const text = opts.text ?? def.start.text ?? def.summary
   log(progress, state, text)
   report.outcome = { result: 'success', summary: `接下特殊任務「${def.title}」：${def.summary}`, tags: [...new Set([...(report.outcome.tags ?? []), '特殊任務'])] }
@@ -248,6 +251,8 @@ export function playNode(state: GameState, ref: string, option?: number, intent?
   const n = active(state, ref)
   if (!nodeIsHere(state, n)) throw new Error('要在任務點才能進行')
   const { def, node } = n
+  const dress = wearGate(state, node)
+  if (dress) throw new Error(dress)
   if (node.kind === 'combat') {
     // 已經死了、被制伏的角色不上場；對手都不在了就直接算勝利
     const foes = (node.foes ?? []).filter((id) => npcFree(state, id))
@@ -319,6 +324,23 @@ export function storyCosts(node: StoryNode, option?: number): { success: number;
   return { success: outcomeCost(src?.success), fail: outcomeCost(src?.fail) }
 }
 
+/** 限定穿著的一項怎麼稱呼（底材 id 換成底材的名稱） */
+export function wearName(w: string): string {
+  return gearRules.bases[w]?.name ?? w
+}
+
+/** 任務點的限定穿著（node.wear）裡，主角還沒穿上的那幾項：穿著同名的物品、或同一種底材的裝備都算 */
+export function missingWear(state: GameState, node: Pick<StoryNode, 'wear'>): string[] {
+  const worn = Object.values(pcOf(state).gear ?? {}).filter(Boolean)
+  return (node.wear ?? []).filter((w) => !worn.some((g) => g!.name === w || g!.spec.base === w))
+}
+
+/** 沒有穿上限定穿著時的說明（按鈕停用）；穿好了是 undefined */
+export function wearGate(state: GameState, node: Pick<StoryNode, 'wear'>): string | undefined {
+  const miss = missingWear(state, node)
+  return miss.length ? `要穿著${miss.map((w) => `【${wearName(w)}】`).join('')}才能進行（到隊伍的裝備換上）` : undefined
+}
+
 /** 錢不夠付這個任務點（或選項）可能要付的錢時的說明；付得起時是 undefined */
 export function storyCostGate(state: GameState, node: StoryNode, option?: number): string | undefined {
   const c = storyCosts(node, option)
@@ -377,7 +399,7 @@ export function setupStoryCheck(state: GameState, target?: string) {
   if (option !== undefined && !optionOpen(state, n.node, option)) throw new Error('這個選項現在不能選')
   const gate = storyCheckGate(state, target ?? '')
   if (gate) throw new Error(`${gate}：沒辦法檢定`)
-  const cost = storyCostGate(state, n.node, option)
+  const cost = wearGate(state, n.node) ?? storyCostGate(state, n.node, option)
   if (cost) throw new Error(cost)
   const ok = c.success?.text ?? '成功'
   const bad = c.fail?.text ?? '沒有成功（之後可以再試一次）'

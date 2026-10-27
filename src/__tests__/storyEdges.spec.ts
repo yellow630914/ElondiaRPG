@@ -7,7 +7,9 @@ import { npcRecord, registerNpc } from '@/engine/npcs'
 import { applyPendingMove, leaveSide } from '@/engine/road'
 import { newGame } from '@/engine/state'
 import { ensureRelationship, setAffinity } from '@/engine/social'
-import { abandonStory, activeNodes, blockingNode, forgetStoryWaits, nodesHere, optionOpen, playNode, pruneStories, setupStoryCheck, startStory, storyCostGate, storyCosts, storyMaxCost, storyOffersHere, waitStory } from '@/engine/story'
+import { equipItem } from '@/engine/inventory'
+import { pcOf } from '@/engine/party'
+import { abandonStory, activeNodes, blockingNode, forgetStoryWaits, nodesHere, optionOpen, playNode, pruneStories, setupStoryCheck, startStory, storyCostGate, storyCosts, storyMaxCost, storyOffersHere, waitStory, wearGate } from '@/engine/story'
 import { stories } from '@/engine/data'
 import { sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
 import { setFlag } from '@/engine/storyFlags'
@@ -358,5 +360,42 @@ describe('characters a quest takes along', () => {
 
   it('has no built-in quest that brings someone along only to drop them at the end', () => {
     expect(stories.filter((d) => storyCheck(d).warnings.some((w) => w.includes('正式入隊'))).map((d) => d.id)).toEqual([])
+  })
+})
+
+describe('uniforms a quest hands out and asks you to wear', () => {
+  const work = sanitizeStory('w', {
+    title: '打工', summary: '', start: { kind: 'manual', items: ['亞麻兔女郎裝', '亞麻女僕頭飾'] }, start_flags: ['w'],
+    nodes: [{ id: 'serve', title: '上工', text: '', at: { where: 'settlement', location: 'soriel' }, kind: 'story', wear: ['bunny_suit', '亞麻女僕頭飾'], requires: { flags: ['w'] }, success: { complete: true } }],
+  }, false)
+
+  it('keeps the fields through the sanitizer and checks that they exist', () => {
+    expect(work.start.items).toEqual(['亞麻兔女郎裝', '亞麻女僕頭飾'])
+    expect(work.nodes[0]!.wear).toEqual(['bunny_suit', '亞麻女僕頭飾'])
+    expect(storyCheck(work).errors).toEqual([])
+    const bad = structuredClone(work)
+    bad.start.items = ['不存在的衣服']
+    bad.nodes[0]!.wear = ['no_such_base', '治療藥水']
+    const errs = storyCheck(bad).errors
+    expect(errs.some((e) => e.includes('不存在的衣服'))).toBe(true)
+    expect(errs.some((e) => e.includes('no_such_base'))).toBe(true)
+    expect(errs.some((e) => e.includes('治療藥水') && e.includes('不是裝備'))).toBe(true)
+  })
+
+  it('gives the uniform on taking the quest and blocks the node until it is worn', () => {
+    const state = game({ w: work })
+    startStory(state, 'w')
+    expect(state.inventory.find((i) => i.name === '亞麻兔女郎裝')?.qty).toBe(1)
+    const node = activeNodes(state).find((n) => n.ref === 'w:serve')!.node
+    expect(wearGate(state, node)).toContain('兔女郎裝')
+    expect(() => playNode(state, 'w:serve')).toThrow('要穿著')
+    // 任何一件兔女郎裝都算；有名字的那件要剛好是它
+    equipItem(state, '亞麻兔女郎裝', pcOf(state).id)
+    expect(wearGate(state, node)).toContain('亞麻女僕頭飾')
+    expect(wearGate(state, node)).not.toContain('兔女郎裝')
+    equipItem(state, '亞麻女僕頭飾', pcOf(state).id)
+    expect(wearGate(state, node)).toBeUndefined()
+    playNode(state, 'w:serve')
+    expect(state.stories!.w!.status).toBe('completed')
   })
 })

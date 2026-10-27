@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { computed } from 'vue'
-import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
+import { ATTR_IDS, attrName, enemies, geography, itemRules, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
+import { gearRules } from '@/engine/gear'
 import { CELL_ICON, cellName, type CellKind } from '@/engine/grid'
 import { specialPreview, storySpotProblem } from '@/engine/specialMapMods'
 import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
 import { travelEvents } from '@/engine/road'
 import FlagInput from './FlagInput.vue'
+import NameListInput from './NameListInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
 import CondExtrasEditor from './CondExtrasEditor.vue'
 import AffinityCondEditor from './AffinityCondEditor.vue'
@@ -26,6 +28,11 @@ const cellOptions = computed(() => [
   ...STORY_CELLS,
   ...Object.values(shopRules.types).filter((d) => d.custom).map((d) => d.cell as CellKind),
   ...landmarksIn(node.value.at.location ?? '').map((l) => l.id as CellKind),
+])
+// 限定穿著的選項：服裝類的底材（任何一件都算），以及有名字的服裝物品
+const wearOptions = computed((): [string, string][] => [
+  ...Object.entries(gearRules.bases).filter(([, b]) => b.outfit).map(([id, b]): [string, string] => [id, `任何一件${b.name}`]),
+  ...itemRules.items.filter((i) => i.gear && gearRules.bases[i.gear.base]?.outfit).map((i): [string, string] => [i.name, i.name]),
 ])
 const enemyList = computed(() => Object.values(enemies).sort((a, b) => a.level - b.level))
 
@@ -163,6 +170,7 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
     <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
     <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (node.requires = v)" />
     <AffinityCondEditor :model-value="requires" label="解鎖需要好感" @update:model-value="(v) => (node.requires = v)" />
+    <div class="row small">限定穿著 <Hint text="主角要穿著這些才能進行（任務點照樣出現，按鈕停用並說明）。寫底材（例如 bunny_suit）時任何一件兔女郎裝都算，寫物品名稱時要那一件。" /> <NameListInput v-model="node.wear" :options="wearOptions" placeholder="底材或物品名稱" /></div>
     <div class="row checks small">
       <span>在場的友方固定 NPC：</span>
       <label v-for="n in namedNpcs" :key="n.id" class="check">

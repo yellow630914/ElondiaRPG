@@ -786,6 +786,9 @@ place_epics(BATCH)
 from uniq23 import place_gear
 place_gear(BATCH)
 # 成人向角色線的親密場景（adult_scenes26.py）：戀人結局、非成人向角色線的「四」、寄生物的儀式
+from story_batch26 import apply_dress
+print('dressed quests', apply_dress(BATCH))
+
 from adult_scenes26 import place_scenes
 print('scenes', place_scenes(BATCH, BATCH23))
 

@@ -2,7 +2,7 @@
 import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { computed, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
-import { geography, npcs as namedNpcs, stories, type StoryNode } from '@/engine/data'
+import { geography, itemRules, npcs as namedNpcs, stories, type StoryNode } from '@/engine/data'
 import { storyMerit } from '@/engine/guild'
 import { RANK_ORDER } from '@/engine/materialQuests'
 import { placeText, storyDef } from '@/engine/story'
@@ -13,6 +13,7 @@ import { useGame } from '@/stores/game'
 import EffectsEditor from './EffectsEditor.vue'
 import CondExtrasEditor from './CondExtrasEditor.vue'
 import FlagInput from './FlagInput.vue'
+import NameListInput from './NameListInput.vue'
 import StoryNodeEditor from './StoryNodeEditor.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
@@ -42,6 +43,7 @@ const edited = computed(() => builtin.value && !!content.mods.stories[props.id])
 
 const settlements = geography.locations.filter((l) => l.type !== 'dungeon')
 const startReq = computed(() => (draft.value.start.requires ??= {}))
+const itemOptions = computed((): [string, string][] => itemRules.items.map((i) => [i.name, i.name]))
 const open = ref<number | null>(0)
 // 錯誤擋儲存，警告只提醒（storyCheck）
 const check = computed(() => {
@@ -273,6 +275,7 @@ function toggleTag<T extends string>(list: T[] | undefined, t: T, on: boolean): 
       <div class="row small">這些旗標成立時不出現 <FlagInput v-model="startReq.flags_none" /></div>
       <CondExtrasEditor :model-value="startReq" @update:model-value="(v) => (draft.start.requires = v)" />
       <div class="row small">開始時設定的旗標 <Hint text="任務鏈的第一個旗標。" /> <FlagInput v-model="draft.start_flags" /></div>
+      <div class="row small">接下任務時拿到的物品 <Hint text="各一件，例如打工的制服；搭配任務點的「限定穿著」。" /> <NameListInput v-model="draft.start.items" :options="itemOptions" placeholder="物品名稱" /></div>
     </fieldset>
 
     <fieldset>

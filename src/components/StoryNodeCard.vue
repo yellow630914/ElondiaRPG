@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import { attrName, enemies, type StoryCheck } from '@/engine/data'
 import { npcRecord } from '@/engine/npcs'
 import { formatMoney } from '@/engine/money'
-import { npcFree, optionOpen, storyAffinity, storyCostGate, storyCosts, type ActiveNode } from '@/engine/story'
+import { npcFree, optionOpen, storyAffinity, storyCostGate, storyCosts, wearGate, type ActiveNode } from '@/engine/story'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -34,10 +34,12 @@ function costLabel(option?: number) {
   if (!check || c.success === c.fail) return `付 ${formatMoney(Math.max(c.success, c.fail))}`
   return [c.success ? `成功要付 ${formatMoney(c.success)}` : '', c.fail ? `失敗要付 ${formatMoney(c.fail)}` : ''].filter(Boolean).join('・')
 }
-/** 錢不夠時的說明（按鈕停用） */
+/** 限定穿著還沒穿上時的說明（所有按鈕停用） */
+const dress = computed(() => wearGate(s.value, props.n.node))
+/** 錢不夠、或還沒穿上限定穿著時的說明（按鈕停用） */
 function costGate(option?: number) {
   void s.value.money_cc
-  return storyCostGate(s.value, props.n.node, option)
+  return dress.value ?? storyCostGate(s.value, props.n.node, option)
 }
 // 已經死了、被制伏的角色不上場
 const foes = computed(() => [
@@ -63,13 +65,14 @@ function abandon() {
     <div class="small muted">{{ n.def.title }}</div>
     <div><b>{{ n.node.title }}</b></div>
     <p v-if="n.node.text" class="small">{{ n.node.text }}</p>
+    <p v-if="dress" class="small warn">{{ dress }}</p>
     <template v-if="n.node.kind === 'story'">
       <div class="row"><button class="small primary" :disabled="busy || !!costGate()" :title="costGate()" @click="play()">繼續<template v-if="costLabel()">（{{ costLabel() }}）</template></button></div>
-      <p v-if="costGate()" class="small warn">{{ costGate() }}</p>
+      <p v-if="!dress && costGate()" class="small warn">{{ costGate() }}</p>
     </template>
     <template v-else-if="n.node.kind === 'combat'">
       <p class="small"><GameIcon name="sword" :size="13" class="foe" /> {{ foes || '對手已經不在了' }}</p>
-      <div class="row"><button class="small primary" :disabled="busy" @click="play()">{{ foes ? '開始戰鬥' : '繼續' }}</button></div>
+      <div class="row"><button class="small primary" :disabled="busy || !!dress" :title="dress" @click="play()">{{ foes ? '開始戰鬥' : '繼續' }}</button></div>
     </template>
     <template v-else>
       <input v-model="text" class="grow" :placeholder="n.node.kind === 'check' ? '怎麼做（選填；AI 判定時參考）' : '補充你的做法（選填）'" />
@@ -77,7 +80,7 @@ function abandon() {
       <div v-if="n.node.kind === 'check' && n.node.check" class="row">
         <button class="small primary" :disabled="busy || !!costGate()" :title="costGate()" @click="attempt()">嘗試（{{ checkLabel(n.node.check) }}<template v-if="costLabel()">・{{ costLabel() }}</template>）</button>
       </div>
-      <p v-if="n.node.kind === 'check' && costGate()" class="small warn">{{ costGate() }}</p>
+      <p v-if="n.node.kind === 'check' && !dress && costGate()" class="small warn">{{ costGate() }}</p>
       <div v-else class="row">
         <template v-for="(o, i) in n.node.options ?? []" :key="i">
           <!-- 有好感、旗標條件的選項：條件成立才出現 -->
@@ -87,7 +90,7 @@ function abandon() {
           >{{ o.label }}<template v-if="o.check || costLabel(i)">（{{ [o.check ? checkLabel(o.check) : '', costLabel(i)].filter(Boolean).join('・') }}）</template> <ContentTagChips :tags="o.tags" /></button>
         </template>
       </div>
-      <p v-if="n.node.kind === 'choice' && (n.node.options ?? []).some((_, i) => optionOpen(s, n.node, i) && costGate(i))" class="small warn">身上只有 {{ formatMoney(s.money_cc) }}，付不起的選項不能選</p>
+      <p v-if="n.node.kind === 'choice' && !dress && (n.node.options ?? []).some((_, i) => optionOpen(s, n.node, i) && costGate(i))" class="small warn">身上只有 {{ formatMoney(s.money_cc) }}，付不起的選項不能選</p>
     </template>
     <div v-if="prompt" class="row later">
       <button v-if="!n.node.urgent" class="small" :disabled="busy" title="這次先略過，不記在日誌；離開這裡之後再來還會遇到" @click="game.waitStory(n.ref)">稍候</button>

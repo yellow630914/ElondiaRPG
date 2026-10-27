@@ -178,7 +178,7 @@ function quest(q, i, l) {
     const prev = j ? q.nodes[j - 1].title : ''
     const next = q.nodes[j + 1]?.title ?? ''
     const reqs = reqChips(n.req, prev)
-    const info = n.info.map(([k, t]) => `<div class="info"><span class="lbl">${k === 'foes' ? '敵人' : '判定'}</span>${k === 'foes' ? esc(t).replace(/（頭目）/g, '<span class="boss">（頭目）</span>') : esc(t)}</div>`).join('')
+    const info = n.info.map(([k, t]) => `<div class="info"><span class="lbl">${k === 'foes' ? '敵人' : k === 'wear' ? '限定穿著' : '判定'}</span>${k === 'foes' ? esc(t).replace(/（頭目）/g, '<span class="boss">（頭目）</span>') : esc(t)}</div>`).join('')
     return `<li class="step"><span class="dot k-${esc(n.kind)}" title="${esc(n.kind)}">${KIND1[n.kind] || '・'}</span>
       <h4>${esc(n.title)}<span class="where">${esc(n.where)}</span>${n.urgent ? ' <span class="chip bad">限時</span>' : ''}</h4>
       ${reqs.length ? `<div>${chips(reqs)}</div>` : ''}

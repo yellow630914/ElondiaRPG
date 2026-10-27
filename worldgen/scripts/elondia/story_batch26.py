@@ -408,3 +408,31 @@ maid = [
 ]
 
 BATCH26 = inn + odd + dice + dance + maid
+
+
+# ---------------- 打工的制服（第二十六～二十八批共用；story_batch1.py 套用） ----------------
+# 任務線的前綴：(拿到制服的任務, 接下任務時拿到的物品, 限定穿著, 限定的任務)。
+# 限定穿著寫底材：任何一件同種的服裝都算（結局拿到的獨特裝備也是）。制服在第一個限定的任務接下時發。
+DRESS = {
+    'inn': ('inn_skirt', ['絲綢連身裙'], ['dress'], ['inn_skirt', 'inn_table', 'inn_feast']),
+    'dice': ('dice_dealer', ['絲綢兔女郎裝', '絲綢兔耳髮箍', '絲綢網襪'], ['bunny_suit', 'bunny_ears'], ['dice_dealer', 'dice_luck', 'dice_jackpot']),
+    'maid': ('maid_skirt', ['絲綢改造女僕裝', '絲綢女僕頭飾'], ['lewd_maid', 'maid_headdress'], ['maid_skirt', 'maid_bath', 'maid_night']),
+    'dance': ('dance_bazaar', ['絲綢透視薄紗睡衣', '銅製鈴音腳鍊'], ['sheer_negligee', 'anklet_bell'], ['dance_bazaar', 'dance_chief', 'dance_night']),
+    'court': ('court_demo', ['絲綢透視薄紗睡衣'], ['sheer_negligee'], ['court_demo', 'court_lord', 'court_banquet']),
+    'bath': ('bath_scrub', ['絲綢乳貼', '絲綢丁字褲'], ['pasties', 'thong'], ['bath_scrub', 'bath_vip', 'bath_deep']),
+    'onsen': ('onsen_mixed', ['亞麻浴衣'], ['yukata'], ['onsen_mixed', 'onsen_rub', 'onsen_dawn']),
+    'massage': ('massage_lesson', ['絲綢旗袍'], ['qipao'], ['massage_lesson', 'massage_special', 'massage_last']),
+    # 光著身子走上朝聖大道：身上只准有網襪
+    'expo': ('expo_parade', ['絲綢網襪'], ['fishnet'], ['expo_parade']),
+}
+
+
+def apply_dress(batch):
+    """把制服與限定穿著寫進任務：接下第一個任務時發制服，限定的任務每個任務點都要穿著（戰鬥的任務點不限）"""
+    by_id = {q['id']: q for q in batch}
+    for pre, (first, items, wear, ids) in DRESS.items():
+        by_id[first]['start']['items'] = items
+        for sid in ids:
+            for n in by_id[sid]['nodes']:
+                if n['kind'] != 'combat': n['wear'] = wear
+    return sum(len(v[3]) for v in DRESS.values())

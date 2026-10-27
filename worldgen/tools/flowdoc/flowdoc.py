@@ -16,6 +16,7 @@ regionName = {r['id']: r['name'] for r in geo['regions']}
 LM = {l['id']: l['name'] for l in ld('data/world/landmarks.json')['landmarks']}
 SM = {k: v for k, v in ld('data/world/special_maps.json')['maps'].items()}
 EN = {e['id']: e for e in ld('data/rules/enemies.json')['enemies']}
+BASES = ld('data/rules/gear.json')['bases']
 ATTR = {a['id']: a['name'] for a in ld('data/rules/attributes.json')['attributes']}
 PERK = {p['id']: p['name'] for p in ld('data/rules/perks.json')['perks']}
 CNT = {k: v['name'] for k, v in ld('data/rules/counters.json')['counters'].items()}
@@ -139,6 +140,8 @@ def quest(st):
         info = []
         if n['kind'] == 'combat':
             info.append(('foes', '、'.join(f"{EN[e]['name']}×{k}" + ('（頭目）' if EN[e].get('ability_hp_below') else '') for e, k in n.get('enemies', [])) + (f"；同行：{'、'.join(npc(a) for a in n['allies'])}" if n.get('allies') else '')))
+        if n.get('wear'):
+            info.append(('wear', '、'.join(f"任何一件{BASES[w]['name']}" if w in BASES else w for w in n['wear'])))
         if n.get('check'):
             c = n['check']
             info.append(('check', f"{ATTR.get(c.get('attr'), c.get('attr'))} DC {c.get('dc')}" + (f"（參考{npc(c['affinity'])}的好感）" if c.get('affinity') else '')))
@@ -171,6 +174,7 @@ def quest(st):
     if s0.get('price'): sreq.append(f"情報費 {s0['price']} 白鸛")
     if s0.get('chance'): sreq.append(f"機率 {int(s0['chance'] * 100)}%")
     if s0.get('regions'): sreq.append('地區：' + '、'.join(s0['regions']))
+    if s0.get('items'): sreq.append('接下時拿到：' + '、'.join(s0['items']))
     rew = []
     for x in st.get('rewards', []):
         if x['type'] == 'xp': rew.append(f"經驗 {x['amount']}")

@@ -32113,7 +32113,8 @@
         "npc": "npc_greta_silverscale",
         "min_level": 6,
         "pc_body": ["fem", "andro"],
-        "text": "格蕾塔把一件制服塞進你懷裡：白圍裙、黑色的短洋裝，短到你拿起來的時候愣了一下。「看板娘就穿這件。薪水日結，小費歸你。」她拍拍你的屁股，「常客手腳不乾淨的話——笑著說謝謝，然後多收他一杯酒錢。這間店就是這樣賺的。」"
+        "text": "格蕾塔把一件制服塞進你懷裡：白圍裙、黑色的短洋裝，短到你拿起來的時候愣了一下。「看板娘就穿這件。薪水日結，小費歸你。」她拍拍你的屁股，「常客手腳不乾淨的話——笑著說謝謝，然後多收他一杯酒錢。這間店就是這樣賺的。」",
+        "items": ["絲綢連身裙"]
       },
       "start_flags": ["inn_skirt_start"],
       "nodes": [
@@ -32135,7 +32136,8 @@
             "effects": [{ "type": "money", "amount": 60 }],
             "set_flags": ["inn_skirt_shift"]
           },
-          "requires": { "flags": ["inn_skirt_start"] }
+          "requires": { "flags": ["inn_skirt_start"] },
+          "wear": ["dress"]
         },
         {
           "id": "regular",
@@ -32178,7 +32180,8 @@
               }
             }
           ],
-          "requires": { "flags": ["inn_skirt_shift"] }
+          "requires": { "flags": ["inn_skirt_shift"] },
+          "wear": ["dress"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 150 }, { "type": "xp", "amount": 300 }]
@@ -32219,7 +32222,8 @@
             "effects": [{ "type": "money", "amount": 150 }],
             "set_flags": ["inn_table_under"]
           },
-          "requires": { "flags": ["inn_table_start"] }
+          "requires": { "flags": ["inn_table_start"] },
+          "wear": ["dress"]
         },
         {
           "id": "more",
@@ -32255,7 +32259,8 @@
               }
             }
           ],
-          "requires": { "flags": ["inn_table_under"] }
+          "requires": { "flags": ["inn_table_under"] },
+          "wear": ["dress"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 600 }]
@@ -32293,7 +32298,8 @@
             "scene": "慶功宴上醉醺醺的冒險者們一擁而上，好幾隻手同時扒開主角的圍裙、揉捏胸口、摳弄下身，把主角往桌上拖。",
             "set_flags": ["inn_feast_feast"]
           },
-          "requires": { "flags": ["inn_feast_start"] }
+          "requires": { "flags": ["inn_feast_start"] },
+          "wear": ["dress"]
         },
         {
           "id": "prize",
@@ -32331,7 +32337,8 @@
               }
             }
           ],
-          "requires": { "flags": ["inn_feast_feast"] }
+          "requires": { "flags": ["inn_feast_feast"] },
+          "wear": ["dress"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1000 }]
@@ -32576,7 +32583,8 @@
         "npc": "npc_victor_dice",
         "min_level": 9,
         "pc_body": ["fem", "andro"],
-        "text": "維克托轉著指間的金骰子，上下打量你，露出一顆金牙：「奶子夠大，手也穩。」他把一套兔女郎裝丟在賭桌上，「規矩很簡單：發牌要準，笑容要甜，貴賓的籌碼塞在哪裡，就讓他塞在哪裡。」他把骰子彈到你手心，「塞多少，一半是你的。」"
+        "text": "維克托轉著指間的金骰子，上下打量你，露出一顆金牙：「奶子夠大，手也穩。」他把一套兔女郎裝丟在賭桌上，「規矩很簡單：發牌要準，笑容要甜，貴賓的籌碼塞在哪裡，就讓他塞在哪裡。」他把骰子彈到你手心，「塞多少，一半是你的。」",
+        "items": ["絲綢兔女郎裝", "絲綢兔耳髮箍", "絲綢網襪"]
       },
       "start_flags": ["dice_dealer_start"],
       "nodes": [
@@ -32598,7 +32606,8 @@
             "effects": [{ "type": "money", "amount": 60 }],
             "set_flags": ["dice_dealer_deal"]
           },
-          "requires": { "flags": ["dice_dealer_start"] }
+          "requires": { "flags": ["dice_dealer_start"] },
+          "wear": ["bunny_suit", "bunny_ears"]
         },
         {
           "id": "chips",
@@ -32641,7 +32650,8 @@
               }
             }
           ],
-          "requires": { "flags": ["dice_dealer_deal"] }
+          "requires": { "flags": ["dice_dealer_deal"] },
+          "wear": ["bunny_suit", "bunny_ears"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
@@ -32673,7 +32683,8 @@
             "text": "你關上門，走到他面前。他盯著你的兔女郎裝，褲子已經鼓了起來。",
             "set_flags": ["dice_luck_vip"]
           },
-          "requires": { "flags": ["dice_luck_start"] }
+          "requires": { "flags": ["dice_luck_start"] },
+          "wear": ["bunny_suit", "bunny_ears"]
         },
         {
           "id": "luck",
@@ -32709,7 +32720,8 @@
               }
             }
           ],
-          "requires": { "flags": ["dice_luck_vip"] }
+          "requires": { "flags": ["dice_luck_vip"] },
+          "wear": ["bunny_suit", "bunny_ears"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
@@ -32747,7 +32759,8 @@
             "text": "你沒看穿他的手法，可是你一直盯著他，盯到他手抖、擲出了一個一點。最後的贏家，是另一個人——還有你。",
             "set_flags": ["dice_jackpot_cheat"]
           },
-          "requires": { "flags": ["dice_jackpot_start"] }
+          "requires": { "flags": ["dice_jackpot_start"] },
+          "wear": ["bunny_suit", "bunny_ears"]
         },
         {
           "id": "prize",
@@ -32785,7 +32798,8 @@
               }
             }
           ],
-          "requires": { "flags": ["dice_jackpot_cheat"] }
+          "requires": { "flags": ["dice_jackpot_cheat"] },
+          "wear": ["bunny_suit", "bunny_ears"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
@@ -32802,7 +32816,8 @@
         "npc": "npc_nashira",
         "min_level": 9,
         "pc_body": ["fem", "andro"],
-        "text": "娜希拉懶洋洋地趴在帳篷的軟墊上，尾巴一甩一甩地打量你：「蕾伊拉那丫頭跑去東海之後，我缺一個能賺錢的。」她丟給你一套薄得透光的舞衣，上面綴滿了金幣，「穿上。今天中午在市集跳一場。觀眾要往你的舞衣裡塞錢，就讓他們塞——塞到哪裡都一樣。」"
+        "text": "娜希拉懶洋洋地趴在帳篷的軟墊上，尾巴一甩一甩地打量你：「蕾伊拉那丫頭跑去東海之後，我缺一個能賺錢的。」她丟給你一套薄得透光的舞衣，上面綴滿了金幣，「穿上。今天中午在市集跳一場。觀眾要往你的舞衣裡塞錢，就讓他們塞——塞到哪裡都一樣。」",
+        "items": ["絲綢透視薄紗睡衣", "銅製鈴音腳鍊"]
       },
       "start_flags": ["dance_bazaar_start"],
       "nodes": [
@@ -32824,7 +32839,8 @@
             "effects": [{ "type": "money", "amount": 80 }],
             "set_flags": ["dance_bazaar_dance"]
           },
-          "requires": { "flags": ["dance_bazaar_start"] }
+          "requires": { "flags": ["dance_bazaar_start"] },
+          "wear": ["sheer_negligee", "anklet_bell"]
         },
         {
           "id": "coins",
@@ -32867,7 +32883,8 @@
               }
             }
           ],
-          "requires": { "flags": ["dance_bazaar_dance"] }
+          "requires": { "flags": ["dance_bazaar_dance"] },
+          "wear": ["sheer_negligee", "anklet_bell"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
@@ -32899,7 +32916,8 @@
             "text": "你跳了三支舞。第三支舞結束時，他終於開口了：「過來。」",
             "set_flags": ["dance_chief_tent"]
           },
-          "requires": { "flags": ["dance_chief_start"] }
+          "requires": { "flags": ["dance_chief_start"] },
+          "wear": ["sheer_negligee", "anklet_bell"]
         },
         {
           "id": "serve",
@@ -32935,7 +32953,8 @@
               }
             }
           ],
-          "requires": { "flags": ["dance_chief_tent"] }
+          "requires": { "flags": ["dance_chief_tent"] },
+          "wear": ["sheer_negligee", "anklet_bell"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
@@ -32973,7 +32992,8 @@
             "scene": "娜希拉把跟不上節奏的主角按在沙丘上，手伸進薄紗裡揉捏主角的奶子、插進主角的下身摳弄，一邊示範該怎麼扭腰，一邊把主角弄到高潮。",
             "set_flags": ["dance_night_rehearse"]
           },
-          "requires": { "flags": ["dance_night_start"] }
+          "requires": { "flags": ["dance_night_start"] },
+          "wear": ["sheer_negligee", "anklet_bell"]
         },
         {
           "id": "audience",
@@ -33013,7 +33033,8 @@
               }
             }
           ],
-          "requires": { "flags": ["dance_night_rehearse"] }
+          "requires": { "flags": ["dance_night_rehearse"] },
+          "wear": ["sheer_negligee", "anklet_bell"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
@@ -33030,7 +33051,8 @@
         "npc": "npc_count_krause",
         "min_level": 10,
         "pc_body": ["fem", "andro"],
-        "text": "克勞澤伯爵坐在書房裡，看著你的推薦信，連頭都沒抬：「伯爵府的規矩：五點起床，七點備早餐，不准頂撞主人。」他翻過一頁，「少爺做什麼，你都不准頂撞。管家會教你怎麼應付。」他終於抬起頭，上下打量你，「上一個撐了三天。你看起來耐操一點。」"
+        "text": "克勞澤伯爵坐在書房裡，看著你的推薦信，連頭都沒抬：「伯爵府的規矩：五點起床，七點備早餐，不准頂撞主人。」他翻過一頁，「少爺做什麼，你都不准頂撞。管家會教你怎麼應付。」他終於抬起頭，上下打量你，「上一個撐了三天。你看起來耐操一點。」",
+        "items": ["絲綢改造女僕裝", "絲綢女僕頭飾"]
       },
       "start_flags": ["maid_skirt_start"],
       "nodes": [
@@ -33050,7 +33072,8 @@
             "scene": "少爺盧卡斯把跪著擦地的主角的女僕裙整個掀到腰上，扯下內褲盯著看，伸手揉捏主角的屁股、手指從後面摳進主角的下身，才笑著跑開。",
             "set_flags": ["maid_skirt_clean"]
           },
-          "requires": { "flags": ["maid_skirt_start"] }
+          "requires": { "flags": ["maid_skirt_start"] },
+          "wear": ["lewd_maid", "maid_headdress"]
         },
         {
           "id": "lukas",
@@ -33093,7 +33116,8 @@
               }
             }
           ],
-          "requires": { "flags": ["maid_skirt_clean"] }
+          "requires": { "flags": ["maid_skirt_clean"] },
+          "wear": ["lewd_maid", "maid_headdress"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 800 }]
@@ -33125,7 +33149,8 @@
             "text": "浴池的熱氣從隔壁飄了過來。",
             "set_flags": ["maid_bath_dress"]
           },
-          "requires": { "flags": ["maid_bath_start"] }
+          "requires": { "flags": ["maid_bath_start"] },
+          "wear": ["lewd_maid", "maid_headdress"]
         },
         {
           "id": "bath",
@@ -33161,7 +33186,8 @@
               }
             }
           ],
-          "requires": { "flags": ["maid_bath_dress"] }
+          "requires": { "flags": ["maid_bath_dress"] },
+          "wear": ["lewd_maid", "maid_headdress"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1200 }]
@@ -33200,7 +33226,8 @@
             "scene": "成年禮的宴會上，喝醉的子爵把主角拉進窗簾後面，掀起女僕裙從後面摳弄主角的下身、揉捏奶子，摸了一整首華爾茲才放主角回大廳。",
             "set_flags": ["maid_night_ceremony"]
           },
-          "requires": { "flags": ["maid_night_start"] }
+          "requires": { "flags": ["maid_night_start"] },
+          "wear": ["lewd_maid", "maid_headdress"]
         },
         {
           "id": "night",
@@ -33253,7 +33280,8 @@
               }
             }
           ],
-          "requires": { "flags": ["maid_night_ceremony"] }
+          "requires": { "flags": ["maid_night_ceremony"] },
+          "wear": ["lewd_maid", "maid_headdress"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 700 }, { "type": "xp", "amount": 2000 }]
@@ -33426,7 +33454,8 @@
         "min_level": 8,
         "pc_body": ["fem", "andro"],
         "requires": { "flags": ["expo_2_done"] },
-        "text": "貝托這次笑不太出來了，賭金大到他都在流汗：「整個外環都下注了。朝聖大道，從商業街走到聖殿區的門口，正午，光著身子。」他把一雙網襪丟給你，「只准穿這個——賭鬼們說，全裸太便宜你了。走完了，賭金對半分。走不完……」他指了指聖殿區的方向，「審判廷會先找到你。」"
+        "text": "貝托這次笑不太出來了，賭金大到他都在流汗：「整個外環都下注了。朝聖大道，從商業街走到聖殿區的門口，正午，光著身子。」他把一雙網襪丟給你，「只准穿這個——賭鬼們說，全裸太便宜你了。走完了，賭金對半分。走不完……」他指了指聖殿區的方向，「審判廷會先找到你。」",
+        "items": ["絲綢網襪"]
       },
       "start_flags": ["expo_parade_start"],
       "nodes": [
@@ -33447,7 +33476,8 @@
             "scene": "人群擠上來圍住只穿網襪的主角，一隻隻手趁亂揉捏主角的胸部與屁股、伸進雙腿之間，網襪被扯破一角，主角在推擠中被摸遍全身。",
             "set_flags": ["expo_parade_market"]
           },
-          "requires": { "flags": ["expo_parade_start"] }
+          "requires": { "flags": ["expo_parade_start"] },
+          "wear": ["fishnet"]
         },
         {
           "id": "gate",
@@ -33485,7 +33515,8 @@
               }
             }
           ],
-          "requires": { "flags": ["expo_parade_market"] }
+          "requires": { "flags": ["expo_parade_market"] },
+          "wear": ["fishnet"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1000 }]
@@ -33502,7 +33533,8 @@
         "npc": "npc_coralia",
         "min_level": 8,
         "pc_body": ["fem", "andro"],
-        "text": "珊瑚把一條短得只到大腿根的濕浴巾丟給你，算盤打得噼啪響：「工錢按人頭算，一個客人五十。規矩只有一條：客人付了錢，就讓客人滿意。」她用煙斗指了指你的胸口，「這裡大一點的，小費多一倍。水手們手腳不乾淨，別當一回事——摸一下又不會少塊肉。」"
+        "text": "珊瑚把一條短得只到大腿根的濕浴巾丟給你，算盤打得噼啪響：「工錢按人頭算，一個客人五十。規矩只有一條：客人付了錢，就讓客人滿意。」她用煙斗指了指你的胸口，「這裡大一點的，小費多一倍。水手們手腳不乾淨，別當一回事——摸一下又不會少塊肉。」",
+        "items": ["絲綢乳貼", "絲綢丁字褲"]
       },
       "start_flags": ["bath_scrub_start"],
       "nodes": [
@@ -33524,7 +33556,8 @@
             "effects": [{ "type": "money", "amount": 100 }],
             "set_flags": ["bath_scrub_scrub"]
           },
-          "requires": { "flags": ["bath_scrub_start"] }
+          "requires": { "flags": ["bath_scrub_start"] },
+          "wear": ["pasties", "thong"]
         },
         {
           "id": "front",
@@ -33568,7 +33601,8 @@
               }
             }
           ],
-          "requires": { "flags": ["bath_scrub_scrub"] }
+          "requires": { "flags": ["bath_scrub_scrub"] },
+          "wear": ["pasties", "thong"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
@@ -33597,7 +33631,8 @@
           "at": { "where": "cell", "location": "tidehaven", "cell": "lm_pearl_bath" },
           "text": "貴賓間的石台上鋪著海藻，一個肚滿腸肥的船東光著身子趴在上面，手上的戒指比你的拳頭還大。珊瑚替你全身抹滿了溫熱的香油，連胸口和雙腿之間都抹得滑溜溜的，然後拍了一下你的屁股：「去吧。」",
           "success": { "text": "你滑溜溜地爬上了石台。", "set_flags": ["bath_vip_oil"] },
-          "requires": { "flags": ["bath_vip_start"] }
+          "requires": { "flags": ["bath_vip_start"] },
+          "wear": ["pasties", "thong"]
         },
         {
           "id": "wash",
@@ -33633,7 +33668,8 @@
               }
             }
           ],
-          "requires": { "flags": ["bath_vip_oil"] }
+          "requires": { "flags": ["bath_vip_oil"] },
+          "wear": ["pasties", "thong"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
@@ -33673,7 +33709,8 @@
             "effects": [{ "type": "condition", "target": "pc", "condition": "drained", "add": true }],
             "set_flags": ["bath_deep_dive"]
           },
-          "requires": { "flags": ["bath_deep_start"] }
+          "requires": { "flags": ["bath_deep_start"] },
+          "wear": ["pasties", "thong"]
         },
         {
           "id": "night",
@@ -33711,7 +33748,8 @@
               }
             }
           ],
-          "requires": { "flags": ["bath_deep_dive"] }
+          "requires": { "flags": ["bath_deep_dive"] },
+          "wear": ["pasties", "thong"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
@@ -33728,7 +33766,8 @@
         "npc": "npc_grum_kettle",
         "min_level": 9,
         "pc_body": ["fem", "andro"],
-        "text": "葛倫把一桶冰麥酒塞進你懷裡，紅鬍子上還掛著泡沫：「幫工的活：送酒、刷池子、陪客人泡。熔岩溫泉的規矩是混浴，」他一把扯掉你身上的浴巾，丟到一邊，「浴巾是給客人擦身體的，不是給幫工遮的。扭扭捏捏的，扣工錢。」池子裡二十幾個剛下工的礦工，齊刷刷地轉過頭來。"
+        "text": "葛倫把一桶冰麥酒塞進你懷裡，紅鬍子上還掛著泡沫：「幫工的活：送酒、刷池子、陪客人泡。熔岩溫泉的規矩是混浴，」他一把扯掉你身上的浴巾，丟到一邊，「浴巾是給客人擦身體的，不是給幫工遮的。扭扭捏捏的，扣工錢。」池子裡二十幾個剛下工的礦工，齊刷刷地轉過頭來。",
+        "items": ["亞麻浴衣"]
       },
       "start_flags": ["onsen_mixed_start"],
       "nodes": [
@@ -33751,7 +33790,8 @@
             "effects": [{ "type": "money", "amount": 100 }],
             "set_flags": ["onsen_mixed_serve"]
           },
-          "requires": { "flags": ["onsen_mixed_start"] }
+          "requires": { "flags": ["onsen_mixed_start"] },
+          "wear": ["yukata"]
         },
         {
           "id": "drunk",
@@ -33794,7 +33834,8 @@
               }
             }
           ],
-          "requires": { "flags": ["onsen_mixed_serve"] }
+          "requires": { "flags": ["onsen_mixed_serve"] },
+          "wear": ["yukata"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
@@ -33834,7 +33875,8 @@
             "effects": [{ "type": "money", "amount": 100 }],
             "set_flags": ["onsen_rub_knead"]
           },
-          "requires": { "flags": ["onsen_rub_start"] }
+          "requires": { "flags": ["onsen_rub_start"] },
+          "wear": ["yukata"]
         },
         {
           "id": "soft",
@@ -33870,7 +33912,8 @@
               }
             }
           ],
-          "requires": { "flags": ["onsen_rub_knead"] }
+          "requires": { "flags": ["onsen_rub_knead"] },
+          "wear": ["yukata"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
@@ -33910,7 +33953,8 @@
             "effects": [{ "type": "condition", "target": "pc", "condition": "drained", "add": true }],
             "set_flags": ["onsen_dawn_party"]
           },
-          "requires": { "flags": ["onsen_dawn_start"] }
+          "requires": { "flags": ["onsen_dawn_start"] },
+          "wear": ["yukata"]
         },
         {
           "id": "dawn",
@@ -33948,7 +33992,8 @@
               }
             }
           ],
-          "requires": { "flags": ["onsen_dawn_party"] }
+          "requires": { "flags": ["onsen_dawn_party"] },
+          "wear": ["yukata"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
@@ -33965,7 +34010,8 @@
         "npc": "npc_hans_fingers",
         "min_level": 8,
         "pc_body": ["fem", "andro"],
-        "text": "漢斯擦著手上的薄荷油，上下打量了你一眼：「想學？脫了，趴上去。」他指了指按摩床，「我不教理論。我在你身上按一遍，你記住哪裡會軟、哪裡會叫，以後就照著按客人。」他頓了一下，「全部脫。哪裡都要按。」"
+        "text": "漢斯擦著手上的薄荷油，上下打量了你一眼：「想學？脫了，趴上去。」他指了指按摩床，「我不教理論。我在你身上按一遍，你記住哪裡會軟、哪裡會叫，以後就照著按客人。」他頓了一下，「全部脫。哪裡都要按。」",
+        "items": ["絲綢旗袍"]
       },
       "start_flags": ["massage_lesson_start"],
       "nodes": [
@@ -33987,7 +34033,8 @@
             "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
             "set_flags": ["massage_lesson_lesson"]
           },
-          "requires": { "flags": ["massage_lesson_start"] }
+          "requires": { "flags": ["massage_lesson_start"] },
+          "wear": ["qipao"]
         },
         {
           "id": "practice",
@@ -34025,7 +34072,8 @@
               }
             }
           ],
-          "requires": { "flags": ["massage_lesson_lesson"] }
+          "requires": { "flags": ["massage_lesson_lesson"] },
+          "wear": ["qipao"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
@@ -34057,7 +34105,8 @@
             "text": "他從錢袋裡倒出一把銀幣，數也不數就丟在床頭。",
             "set_flags": ["massage_special_officer"]
           },
-          "requires": { "flags": ["massage_special_start"] }
+          "requires": { "flags": ["massage_special_start"] },
+          "wear": ["qipao"]
         },
         {
           "id": "service",
@@ -34087,7 +34136,8 @@
               }
             }
           ],
-          "requires": { "flags": ["massage_special_officer"] }
+          "requires": { "flags": ["massage_special_officer"] },
+          "wear": ["qipao"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
@@ -34126,7 +34176,8 @@
             "scene": "等不及的副官從背後把主角壓在按摩床上，抓著主角的腰用勃起的陰莖在主角的屁股間磨蹭。",
             "set_flags": ["massage_last_warm"]
           },
-          "requires": { "flags": ["massage_last_start"] }
+          "requires": { "flags": ["massage_last_start"] },
+          "wear": ["qipao"]
         },
         {
           "id": "last",
@@ -34168,7 +34219,8 @@
               }
             }
           ],
-          "requires": { "flags": ["massage_last_warm"] }
+          "requires": { "flags": ["massage_last_warm"] },
+          "wear": ["qipao"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
@@ -34614,7 +34666,8 @@
         "npc": "npc_veronica",
         "min_level": 10,
         "pc_body": ["fem", "andro"],
-        "text": "薇洛妮卡從一疊陳情書後面抬起頭，笑得甜得發膩：「宮廷裡有幾位領主，只有在床上才肯簽字。」她在小冊子上寫了一行字，撕下來塞給你，「拿去暗巷的侍寢見習館。魅魔們會先『示範』給你看——用你的身體示範。學會了，我有活給你。學不會，就當免費按摩。」"
+        "text": "薇洛妮卡從一疊陳情書後面抬起頭，笑得甜得發膩：「宮廷裡有幾位領主，只有在床上才肯簽字。」她在小冊子上寫了一行字，撕下來塞給你，「拿去暗巷的侍寢見習館。魅魔們會先『示範』給你看——用你的身體示範。學會了，我有活給你。學不會，就當免費按摩。」",
+        "items": ["絲綢透視薄紗睡衣"]
       },
       "start_flags": ["court_demo_start"],
       "nodes": [
@@ -34634,7 +34687,8 @@
             "scene": "三個魅魔把緊張的主角按在軟墊上，一個舔弄主角的乳尖、一個揉捏屁股、一個用手指在主角的私處抽送，直到主角在她們手中癱軟高潮。",
             "set_flags": ["court_demo_inspect"]
           },
-          "requires": { "flags": ["court_demo_start"] }
+          "requires": { "flags": ["court_demo_start"] },
+          "wear": ["sheer_negligee"]
         },
         {
           "id": "lesson",
@@ -34664,7 +34718,8 @@
               }
             }
           ],
-          "requires": { "flags": ["court_demo_inspect"] }
+          "requires": { "flags": ["court_demo_inspect"] },
+          "wear": ["sheer_negligee"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 1000 }]
@@ -34732,7 +34787,8 @@
               }
             }
           ],
-          "requires": { "flags": ["court_lord_guards"] }
+          "requires": { "flags": ["court_lord_guards"] },
+          "wear": ["sheer_negligee"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1400 }]
@@ -34807,7 +34863,8 @@
               }
             }
           ],
-          "requires": { "flags": ["court_banquet_rivals"] }
+          "requires": { "flags": ["court_banquet_rivals"] },
+          "wear": ["sheer_negligee"]
         }
       ],
       "rewards": [{ "type": "money", "amount": 700 }, { "type": "xp", "amount": 2000 }]

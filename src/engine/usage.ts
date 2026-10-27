@@ -52,6 +52,8 @@ export function itemUsage(name: string, state?: GameState | null): string[] {
   const out: string[] = []
   for (const s of stories) {
     if (storyEffects(s).some((e) => e.type === 'item' && e.name === name)) out.push(`特殊任務「${s.title}」的獎勵`)
+    if (s.start.items?.includes(name)) out.push(`特殊任務「${s.title}」接下時拿到的物品`)
+    if (s.nodes.some((n) => n.wear?.includes(name))) out.push(`特殊任務「${s.title}」限定的穿著`)
   }
   for (const t of Object.values(shopRules.types)) if (t.fixed?.some((f) => f.item === name)) out.push(`商店「${t.name}」的固定清單`)
   for (const it of itemRules.items) {
@@ -87,6 +89,7 @@ export function gearUsage(kind: 'base' | 'material', id: string, state?: GameSta
   for (const n of namedNpcs) if (Object.values(n.gear ?? {}).some(uses)) out.push(`固定 NPC「${n.name}」的裝備`)
   for (const s of stories) {
     if (storyEffects(s).some((e) => e.type === 'gear' && uses(e.spec))) out.push(`特殊任務「${s.title}」的獎勵`)
+    if (kind === 'base' && s.nodes.some((n) => n.wear?.includes(id))) out.push(`特殊任務「${s.title}」限定的穿著`)
   }
   if (state) {
     for (const c of characters(state)) {

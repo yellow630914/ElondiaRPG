@@ -7,7 +7,7 @@ import {
 } from './data'
 import type { RewardEffect } from './effects'
 import { blockKeys, CELL_NAME, settlementArea, type CellKind } from './grid'
-import { gearKnown } from './gear'
+import { gearKnown, gearRules } from './gear'
 import { RANK_ORDER } from './materialQuests'
 import { sanitizeCond, sanitizeCounterDeltas, sanitizeGearSpecLoose } from './mods'
 import { CONTENT_TAG_IDS } from './content'
@@ -295,6 +295,8 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
   const out: StoryNode = { id, title: str(n.title, 40) || '新的任務點', text: str(n.text, 600), at: place(n.at), kind }
   const req = sanitizeCond(n.requires) as StoryCond | undefined
   if (req) out.requires = req
+  const wear = [...new Set((Array.isArray(n.wear) ? n.wear : []).map((w) => str(w, 60)).filter(Boolean))].slice(0, 6)
+  if (wear.length) out.wear = wear
   const allies = (n.allies ?? []).map((a) => str(a, 60)).filter(Boolean)
   if (allies.length) out.allies = [...new Set(allies)]
   if (n.urgent) out.urgent = true
@@ -348,6 +350,8 @@ function start(v: unknown): StoryStart {
   const req = sanitizeCond(s.requires) as StoryCond | undefined
   if (req) out.requires = req
   if (str(s.text, 400)) out.text = str(s.text, 400)
+  const items = [...new Set((Array.isArray(s.items) ? s.items : []).map((i) => str(i, 60)).filter(Boolean))].slice(0, 6)
+  if (items.length) out.items = items
   return out
 }
 
@@ -485,6 +489,11 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     if (e.type === 'enslave_player' && typeof e.master === 'string' && !npcIds.has(e.master)) err.push(`效果裡的主人 ${e.master} 不存在`)
     if (e.type === 'perk') for (const id of [e.perk, ...(e.options ?? [])]) if (id && !perkDef(id)) err.push(`效果裡的特質 ${id} 不存在`)
     if (e.type === 'start_story' && e.story === def.id) err.push('效果要開始的是這個任務自己')
+  }
+  for (const name of def.start.items ?? []) if (!itemDef(name)) err.push(`接下任務時拿到的物品「${name}」不存在`)
+  for (const n of def.nodes) for (const w of n.wear ?? []) {
+    if (!itemDef(w) && !gearRules.bases[w]) err.push(`任務點「${n.title}」限定的穿著「${w}」不是物品，也不是裝備底材`)
+    else if (itemDef(w) && !itemDef(w)!.gear) err.push(`任務點「${n.title}」限定的穿著「${w}」不是裝備`)
   }
   // 一般任務（沒有成人向標籤）卻需要成人向角色：成人向關著時那個角色不出現，任務接不到或卡住
   if (!def.tags?.includes('adult')) {

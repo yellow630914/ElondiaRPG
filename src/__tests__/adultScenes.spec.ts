@@ -101,4 +101,17 @@ describe('work quest lines', () => {
       expect(itemRules.items.find((i) => i.name === gear)).toMatchObject({ adult: true, tags: ['unique'] })
     }
   })
+
+  it('hand out the work uniform and ask for it on the job', () => {
+    // 有制服的線：第一個限定的任務接下時發制服，之後每個非戰鬥的任務點都要穿著；結局的獨特裝備也算
+    const dressed = stories.filter((s) => s.start.items?.length)
+    expect(dressed.map((s) => s.id).sort()).toEqual(['bath_scrub', 'court_demo', 'dance_bazaar', 'dice_dealer', 'expo_parade', 'inn_skirt', 'maid_skirt', 'massage_lesson', 'onsen_mixed'])
+    for (const s of dressed) {
+      const wear = s.nodes.find((n) => n.wear)!.wear!
+      for (const name of s.start.items!) expect(itemRules.items.find((i) => i.name === name), `${s.id} ${name}`).toBeTruthy()
+      // 發的衣服穿得上限定的每一項
+      for (const w of wear) expect(s.start.items!.some((name) => itemRules.items.find((i) => i.name === name)!.gear!.base === w), `${s.id} ${w}`).toBe(true)
+      for (const n of s.nodes) if (n.kind !== 'combat') expect(n.wear, `${s.id} ${n.id}`).toEqual(wear)
+    }
+  })
 })

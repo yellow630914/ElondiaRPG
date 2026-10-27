@@ -211,6 +211,8 @@ export interface StoryStart {
   requires?: StoryCond
   /** 開頭的事件描述（旅途、情報商的開頭；沒有時用任務的簡介） */
   text?: string
+  /** 接下任務時拿到的物品（各一件，例如打工的制服） */
+  items?: string[]
 }
 
 /** 任務點在哪裡觸發 */
@@ -293,6 +295,8 @@ export interface StoryNode {
   at: StoryPlace
   /** 解鎖的條件；沒有時任務一開始就解鎖 */
   requires?: StoryCond
+  /** 限定穿著：每一項是物品名稱或裝備底材的 id（例如 bunny_suit，任何一件兔女郎裝都算），主角都穿在身上才能進行（任務點照樣出現，按鈕停用並說明） */
+  wear?: string[]
   kind: StoryNodeKind
   check?: StoryCheck
   /** 戰鬥：怪物（遭遇表的格式）與固定 NPC */
