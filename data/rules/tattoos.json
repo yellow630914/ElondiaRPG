@@ -17,7 +17,8 @@
   "kinds": {
     "slave": "奴隸印記",
     "oath": "誓約印記",
-    "plain": "普通刺青"
+    "plain": "普通刺青",
+    "curse": "詛咒印記"
   },
   "oath": {
     "$comment": "誓約印記的平衡規則：最多動 max_attrs 項屬性，每項 ±1～±max_change，有加有減而且加總為 0；每個角色最多 max_per_character 個。",
@@ -26,10 +27,10 @@
     "max_per_character": 2
   },
   "shops": {
-    "$comment": "刺青與洗刺青的價格（白鸛幣）與花的時間。parlor 刺青店：刺普通刺青（自己描述的加 custom_extra）、洗普通刺青。carver 刻印師：刻誓約印記（加的總點數 × oath_per_point）、洗普通刺青與誓約印記。temple 神殿：洗普通刺青與誓約印記，便宜，但要在這裡的勢力有 min_reputation 聲望，逃亡奴隸不接待。奴隸印記的解除另外走契約的解除印記（slavery.json 的 unmark）。",
+    "$comment": "刺青與洗刺青的價格（白鸛幣）與花的時間。parlor 刺青店：刺普通刺青（自己描述的加 custom_extra）、洗普通刺青。carver 刻印師：刻誓約印記（加的總點數 × oath_per_point）、洗普通刺青與誓約印記。temple 神殿：洗普通刺青與誓約印記，便宜，但要在這裡的勢力有 min_reputation 聲望，逃亡奴隸不接待。curse 是洗掉已馴服的詛咒印記（未馴服的要解咒，見 parasites.json 的 remove）。奴隸印記的解除另外走契約的解除印記（slavery.json 的 unmark）。",
     "parlor": { "name": "刺青店", "ink": 200, "custom_extra": 100, "remove": { "plain": 300 }, "hours": 2 },
-    "carver": { "name": "刻印師", "oath_per_point": 1000, "custom_extra": 500, "remove": { "plain": 800, "oath": 4000 }, "hours": 4 },
-    "temple": { "name": "神殿", "remove": { "plain": 150, "oath": 1200 }, "min_reputation": 10, "hours": 2 }
+    "carver": { "name": "刻印師", "oath_per_point": 1000, "custom_extra": 500, "remove": { "plain": 800, "oath": 4000, "curse": 1000 }, "hours": 4 },
+    "temple": { "name": "神殿", "remove": { "plain": 150, "oath": 1200, "curse": 600 }, "min_reputation": 10, "hours": 2 }
   },
   "templates": {
     "thorn_vine": { "kind": "plain", "name": "荊棘藤蔓", "desc": "一圈纏繞的黑色荊棘藤蔓，刺尖處點著細小的紅。", "places": ["left_arm", "right_arm", "left_calf", "right_calf"] },

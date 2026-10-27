@@ -12,8 +12,10 @@ import { awayCompanions, awayLabel } from '@/engine/away'
 import NameTag from '../NameTag.vue'
 import { perksOf } from '@/engine/perks'
 import { placeName, tattooName, tattoosOf } from '@/engine/tattoos'
+import { parasiteDef, parasitesOf, stageName } from '@/engine/parasites'
 import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import { useSettings } from '@/stores/settings'
 import Avatar from '../ui/Avatar.vue'
 import GameIcon from '../ui/GameIcon.vue'
 import ItemIcon from '../items/ItemIcon.vue'
@@ -22,6 +24,7 @@ import { attrNote, contractFor, spellSlots, type CharTab } from './memberInfo'
 // 隊伍的第一層：每人一張角色卡，細節在角色詳情（CharacterDialog）
 const emit = defineEmits<{ detail: [member: string, tab: CharTab] }>()
 const game = useGame()
+const settings = useSettings()
 const s = computed(() => game.state!)
 const inCombat = computed(() => !!s.value.combat)
 const leader = computed(() => leaderOf(s.value))
@@ -138,6 +141,13 @@ function canDismiss(m: Character) {
         <span class="items">
           <span v-for="t in tattoosOf(m)" :key="t.place" class="tag" :class="{ bad: t.kind === 'slave' }">{{ placeName(t.place) }}・{{ tattooName(t) }}</span>
           <span v-if="!tattoosOf(m).length" class="muted">無</span>
+        </span>
+        <span class="go">詳情<GameIcon name="right" :size="12" /></span>
+      </button>
+      <button v-if="settings.adult && parasitesOf(m).length" class="sec ghost" @click="emit('detail', m.id, 'parasites')">
+        <span class="label">寄生物</span>
+        <span class="items">
+          <span v-for="p in parasitesOf(m)" :key="p.id" class="tag" :class="{ bad: !p.tamed && !p.dormant }">{{ parasiteDef(p.id)?.name ?? p.id }}・{{ p.tamed ? '已馴服' : p.dormant ? '沉睡' : stageName(p.corruption) }}</span>
         </span>
         <span class="go">詳情<GameIcon name="right" :size="12" /></span>
       </button>

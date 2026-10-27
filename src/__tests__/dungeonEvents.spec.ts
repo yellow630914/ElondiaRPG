@@ -116,7 +116,7 @@ describe('dungeon adult events', () => {
       const i = t.options!.findIndex((o) => o.adult_scene === 'always')
       const report = answerDungeonEvent(state, i)
       expect(report.outcome.tags).toContain('地下城事件')
-      expect(report.narration.adult_scene).toBe(t.scene)
+      expect(report.narration!.adult_scene).toBe(t.scene)
       expect(state.dungeonEvent).toBeUndefined()
       expect(() => move(state, -dx, -dy)).not.toThrow()
     } finally {

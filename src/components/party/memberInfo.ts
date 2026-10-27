@@ -7,12 +7,13 @@ import { contractOf } from '@/engine/tattoos'
 import type { Character, GearSlot } from '@/engine/types'
 import type { IconName } from '../ui/iconPaths'
 
-export type CharTab = 'stats' | 'perks' | 'gear' | 'tattoos' | 'profile' | 'abilities'
+export type CharTab = 'stats' | 'perks' | 'gear' | 'tattoos' | 'parasites' | 'profile' | 'abilities'
 export const CHAR_TABS: { id: CharTab; label: string; icon: IconName }[] = [
   { id: 'stats', label: '屬性與戰鬥', icon: 'sliders' },
   { id: 'perks', label: '特質', icon: 'star' },
   { id: 'gear', label: '裝備', icon: 'shield' },
   { id: 'tattoos', label: '刺青', icon: 'feather' },
+  { id: 'parasites', label: '寄生物', icon: 'heart' },
   { id: 'profile', label: '角色設定', icon: 'notebook' },
   { id: 'abilities', label: '能力', icon: 'sparkles' },
 ]

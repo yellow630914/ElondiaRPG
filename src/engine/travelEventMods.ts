@@ -4,6 +4,7 @@
 
 import { ATTR_IDS, geography, shopRules, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
 import { sanitizeCond } from './mods'
+import { parasiteDef, parasiteRules } from './parasites'
 import { travelEvents, type DungeonEventRules, type DungeonTrigger, type EventScope, type RoadOption, type RoadTemplate, type TownEventRules } from './road'
 import { CONTENT_TAG_IDS } from './content'
 import { BODIES } from './traits'
@@ -25,6 +26,8 @@ export interface EventRulesMod {
 
 export const EVENT_LIMITS = { title_chars: 20, text_chars: 400, label_chars: 30, options: 5, cooldown_days: [0, 60], scene_chars: 200 } as const
 export const DUNGEON_TRIGGERS: Record<DungeonTrigger, string> = { trap: '觸發陷阱', chest: '打開寶箱', gather: '採集', rest: '安全房長休' }
+/** 寄生物發作的時機（parasiteEvents.ts） */
+export const PARASITE_MOMENTS: Record<NonNullable<RoadTemplate['moments']>[number], string> = { step: '走動', travel: '旅途', rest: '長休之後' }
 /** 地下城事件的層：0 近郊、1 淺層 … 4 底層 */
 export const EVENT_LAYERS = ['近郊', '淺層', '中層', '深層', '底層'] as const
 const DEFAULT_DUNGEON: DungeonEventRules = { chance: { trap: 0, chest: 0, gather: 0, rest: 0 }, cooldown_hours: 4, repeat_days: 3 }
@@ -95,9 +98,9 @@ function pick<T extends string>(v: unknown, allowed: readonly T[]): T[] {
 /** extraCells：還沒套用、但同一包裡有的自建商店（匯入時） */
 export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, custom: boolean, extraCells: string[] = []): TravelEventMod {
   const L = EVENT_LIMITS
-  const scope: EventScope = raw.scope === 'town' || raw.scope === 'dungeon' ? raw.scope : 'road'
-  // 地下城事件只有選擇（事件發生在主角身上，主角自己決定怎麼應付）
-  const kind = raw.kind === 'check' && scope !== 'dungeon' ? 'check' : 'choice'
+  const scope: EventScope = raw.scope === 'town' || raw.scope === 'dungeon' || raw.scope === 'parasite' ? raw.scope : 'road'
+  // 地下城事件與寄生物的發作只有選擇（事件發生在主角身上，主角自己決定怎麼應付）
+  const kind = raw.kind === 'check' && scope !== 'dungeon' && scope !== 'parasite' ? 'check' : 'choice'
   const out: TravelEventMod = {
     id,
     ...(scope !== 'road' ? { scope } : {}),
@@ -119,6 +122,12 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
     const layers = [...new Set((Array.isArray(raw.layers) ? raw.layers : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < EVENT_LAYERS.length))].sort()
     if (layers.length) out.layers = layers
     if (raw.cooldown_days !== undefined && raw.cooldown_days !== null && String(raw.cooldown_days) !== '') out.cooldown_days = Math.round(num(raw.cooldown_days, ...L.cooldown_days, 3))
+  } else if (scope === 'parasite') {
+    out.parasite = typeof raw.parasite === 'string' && parasiteDef(raw.parasite) ? raw.parasite : Object.keys(parasiteRules.parasites)[0]!
+    const stages = [...new Set((Array.isArray(raw.stages) ? raw.stages : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < parasiteRules.stages.length))].sort()
+    if (stages.length && stages.length < parasiteRules.stages.length) out.stages = stages
+    const moments = pick(raw.moments, Object.keys(PARASITE_MOMENTS) as NonNullable<RoadTemplate['moments']>)
+    if (moments.length && moments.length < Object.keys(PARASITE_MOMENTS).length) out.moments = moments
   } else {
     const cells = pick(raw.cells, [...townEventCells(), ...extraCells])
     if (cells.length) out.cells = cells
@@ -167,8 +176,9 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
 
 export function newTravelEvent(id: string, scope: EventScope = 'road'): TravelEventMod {
   return sanitizeTravelEvent(id, {
-    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : '新的旅途事件', text: '',
+    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : scope === 'parasite' ? '新的發作' : '新的旅途事件', text: '',
     ...(scope === 'dungeon' ? { triggers: ['trap'] as DungeonTrigger[] } : {}),
+    ...(scope === 'parasite' ? { tags: ['adult' as const] } : {}),
     options: [{ label: '答應', success: { text: '' } }, { label: '離開', success: { text: '你沒有多管。' } }],
   }, true)
 }

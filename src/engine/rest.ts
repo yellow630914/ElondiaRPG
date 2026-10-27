@@ -7,6 +7,7 @@
 // - 每次休息結束時進行離隊檢查（見 restChecks）。
 
 import { maybeDungeonEvent } from './dungeonEvents'
+import { maybeParasiteEvent } from './parasiteEvents'
 import { checkBonus } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
@@ -81,7 +82,7 @@ export function restEventBlock(state: GameState): string | null {
   if (state.standoff) return '先處理眼前的對峙'
   if (state.pendingMark) return '先完成契約印記的刻印'
   if (state.pendingMasterEvent) return '先回應主人的要求'
-  if (state.dungeonEvent) return '先應付眼前的處境'
+  if (state.dungeonEvent || state.parasiteEvent) return '先應付眼前的處境'
   if (state.pendingDefeat) return '先應付眼前的處境'
   if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
   if (state.pendingJoins?.length) return '先決定要不要讓想入隊的人加入（騰出位子或放棄）'
@@ -253,6 +254,8 @@ export function longRest(state: GameState, place: RestPlace): Report {
   const committed = commitReport(state, report)
   // 安全房醒來之前：夜襲、淫夢（地下城事件）
   if (place === 'safe') maybeDungeonEvent(state, 'rest')
+  // 醒來的時候：寄生物可能發作
+  maybeParasiteEvent(state, 'rest')
   return committed
 }
 

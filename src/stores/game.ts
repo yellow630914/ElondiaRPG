@@ -4,6 +4,7 @@ import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landma
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
 import * as dungeonEvents from '@/engine/dungeonEvents'
+import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as deadlines from '@/engine/deadlines'
 import { pitchTarget } from '@/engine/perks'
 import { computed, ref, toRaw, watch } from 'vue'
@@ -163,6 +164,8 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   // 城鎮事件（事件導演）：走上設施時可能遇到一件事
   const town = townEvents.maybeTownEvent(s)
   if (town.report) return { report: town.report }
+  // 寄生物的發作：旅途上一格一天，其他地方一步
+  parasiteEvents.maybeParasiteEvent(s, s.road && !s.side ? 'travel' : 'step')
   return r
 }
 
@@ -175,6 +178,7 @@ function load(s: GameState): GameState {
   road.pruneRoadEvent(s)
   townEvents.pruneTownEvent(s)
   dungeonEvents.pruneDungeonEvent(s)
+  parasiteEvents.pruneParasiteEvent(s)
   // 武器與防具類型由裝備決定（自訂內容可能改過底材）
   for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
   // 主人的家：先對齊格局（舊格局的樓層、超出範圍的座標改到一樓出口），再檢查位置
@@ -976,15 +980,19 @@ export const useGame = defineStore('game', () => {
     /** 一路往前走，遇到事件、戰鬥或抵達時停下 */
     walkRoad: () => run((s) => {
       for (let i = 0; i < 80; i++) {
-        if (!s.road || s.side || s.roadEvent || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction || story.blockingNode(s)) return {}
+        if (!s.road || s.side || s.roadEvent || s.parasiteEvent || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction || story.blockingNode(s)) return {}
         const r = afterMove(s, grid.move(s, 1, 0))
-        if (r.report || r.combat || s.roadEvent || s.pendingMasterEvent) return r
+        if (r.report || r.combat || s.roadEvent || s.pendingMasterEvent || s.parasiteEvent) return r
       }
       return {}
     }),
     answerRoadEvent: (i: number) => run((s) => road.answerRoadEvent(s, i)),
     answerTownEvent: (i: number) => run((s) => townEvents.answerTownEvent(s, i)),
     answerDungeonEvent: (i: number) => run((s) => dungeonEvents.answerDungeonEvent(s, i)),
+    answerParasiteEvent: (i: number) => run((s) => parasiteEvents.answerParasiteEvent(s, i)),
+    triggerParasite: (id: string) => run((s) => parasiteEvents.triggerTamed(s, id)),
+    cureParasite: (id: string) => run((s) => parasiteEvents.cureParasite(s, id)),
+    reinkParasite: (id: string, kind: 'curse' | 'covered') => run((s) => parasiteEvents.reinkAtCarver(s, id, kind)),
     leaveSide: () => run((s) => road.leaveSide(s)),
     leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s), { onMap: true }),
     rest: () => run(town.rest),

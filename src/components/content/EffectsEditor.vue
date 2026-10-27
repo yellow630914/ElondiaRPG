@@ -5,6 +5,7 @@ import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
 import { EFFECT_CONDITIONS, STORY_EFFECTS } from '@/engine/storyMods'
 import { oathError, oathText, TATTOO_PLACES, placeName, tattooKindName, tattooRules } from '@/engine/tattoos'
+import { parasiteRules } from '@/engine/parasites'
 import { useContent } from '@/stores/content'
 import Hint from '../ui/Hint.vue'
 
@@ -45,7 +46,10 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   lose_perk: () => ({ type: 'lose_perk', perk: choosablePerks()[0]!.id }),
   tattoo: () => ({ type: 'tattoo', template: Object.keys(tattooRules.templates)[0]! }),
   remove_tattoo: () => ({ type: 'remove_tattoo', kind: 'plain' }),
+  parasite: () => ({ type: 'parasite', parasite: parasiteIds[0]!, op: 'add' }),
+  corruption: () => ({ type: 'corruption', parasite: parasiteIds[0]!, delta: 10 }),
 }
+const parasiteIds = Object.keys(parasiteRules.parasites)
 // 刺青：圖樣，或自己描述（誓約要填屬性的加減）
 const tattooTemplates = computed(() => {
   void content.version
@@ -252,6 +256,12 @@ function setBase(r: Row, base: string) {
           <option v-for="p in TATTOO_PLACES" :key="p" :value="p">{{ placeName(p) }}的刺青</option>
         </select>
         <span class="small muted">奴隸印記不會被洗掉（要解除契約）</span>
+      </template>
+      <template v-else-if="r.type === 'parasite' || r.type === 'corruption'">
+        <select v-model="r.parasite"><option v-for="p in parasiteIds" :key="p" :value="p">{{ parasiteRules.parasites[p]!.name }}</option></select>
+        <select v-if="r.type === 'parasite'" v-model="r.op"><option value="add">寄生</option><option value="tame">馴服</option><option value="remove">拿掉</option></select>
+        <template v-else><input v-model.number="r.delta" type="number" min="-100" max="100" class="num" />點</template>
+        <Hint :text="r.type === 'parasite' ? '對象是主角。寄生：寄生裝備穿上並鎖住、淫紋刻在小腹（已經有同一種、或小腹是奴隸印記時不寄生）；馴服：換成馴服後的物品或印記，不再自動發作；拿掉：寄生物離開身體。' : '主角身上這個寄生物的侵蝕度加減（0～100，決定階段）；沉睡或已馴服時不變。'" />
       </template>
       <template v-else-if="r.type === 'condition'">
         <select v-model="r.add"><option :value="true">得到</option><option :value="false">去掉</option></select>

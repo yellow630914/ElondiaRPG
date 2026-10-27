@@ -75,10 +75,12 @@ figcaption { font-size: var(--fs-xs); color: #9a8768; letter-spacing: 0.2em; }
 .spot.on circle { fill: #c99a45; stroke: #f0d083; stroke-dasharray: none; }
 .spot.on.slave circle { fill: #d8604e; stroke: #ff9a80; }
 .spot.on.oath circle { fill: #8ab6ef; stroke: #c8e0ff; }
+.spot.on.curse circle { fill: #c0466e; stroke: #ff9ac0; }
 .spot.sel circle { stroke: #fff; stroke-width: 2; stroke-dasharray: none; }
 .info h4 { margin: 0 0 6px; font-size: var(--fs-lg); color: var(--title); }
 .tag.slave { color: var(--danger); border-color: var(--danger); }
 .tag.oath { color: var(--accent); border-color: var(--accent); }
+.tag.curse { color: #c0466e; border-color: #c0466e; }
 .oath { color: var(--accent); margin: 4px 0; }
 .list { margin-top: 12px; columns: 2; column-gap: 20px; }
 .list li { display: flex; gap: 8px; padding: 3px 4px; cursor: pointer; border-bottom: 1px dotted var(--border); break-inside: avoid; }

@@ -247,6 +247,8 @@ export interface Character {
   squad?: string
   /** 身上的刺青（每個部位一個；奴隸印記也是其中一種，契約掛在它上面，見 engine/tattoos.ts） */
   tattoos?: Tattoo[]
+  /** 身上的寄生物（寄生裝備、淫紋、寄生種子；只有主角會有，見 engine/parasites.ts） */
+  parasites?: ParasiteState[]
   /** 已花掉的生命骰（總數 = 等級） */
   hitDiceUsed?: number
   /** 體型（主角建角時選的；沒有時依種族與性別，見 look.ts） */
@@ -300,7 +302,7 @@ export interface ContractRef {
 
 export type TattooPlace = 'neck' | 'left_arm' | 'right_arm' | 'chest' | 'back' | 'belly' | 'hips' | 'left_thigh' | 'right_thigh' | 'left_calf' | 'right_calf'
 /** 奴隸印記、誓約印記、普通刺青 */
-export type TattooKind = 'slave' | 'oath' | 'plain'
+export type TattooKind = 'slave' | 'oath' | 'plain' | 'curse'
 
 /** 身上的一個刺青 */
 export interface Tattoo {
@@ -318,6 +320,33 @@ export interface Tattoo {
   since: GameTime
   /** 誰刺的（主人、刺青師、事件的說明） */
   by?: string
+  /** 詛咒印記（淫紋）：是哪一種寄生物（parasites.json 的 id） */
+  parasite?: string
+  /** 詛咒印記：已經馴服（屬性只有加值、帶檢定加值；可以洗掉、換掉） */
+  tamed?: boolean
+  /** 已馴服的詛咒印記：檢定加值（和獨特裝備一樣，一種篩選條件） */
+  unique?: { check: import('./data').CheckFilter; bonus: number }
+}
+
+/** 身上的一個寄生物（engine/parasites.ts） */
+export interface ParasiteState {
+  /** parasites.json 的 id */
+  id: string
+  /** 侵蝕度 0～100：屈服就上升，抵抗成功就下降；決定階段 */
+  corruption: number
+  since: GameTime
+  /** 上一次依時間增長侵蝕度的日子 */
+  grown?: number
+  /** 沉睡：淫紋被奴隸印記頂掉了（不發作、沒有被動效果、侵蝕度凍結），等著到刻印師紋回來 */
+  dormant?: boolean
+  /** 已經馴服：不會自動發作，可以主動觸發 */
+  tamed?: boolean
+  /** 不在身上的印記（被奴隸印記頂掉、或馴服後洗掉的淫紋）：刻印師可以照這份紋回來 */
+  stored?: Tattoo
+  /** 刻上淫紋時被蓋掉的刺青：刻印師可以紋回來 */
+  covered?: Tattoo
+  /** 上一次主動觸發（已馴服）的時間：每次長休之間一次 */
+  triggered?: GameTime
 }
 
 /** 契約印記的條款：名稱、描述與各項數值（描述會給 AI 判定與寫正文） */
@@ -660,6 +689,10 @@ export interface GameOptions {
   escapeDc?: number
   /** 黑市每天刷新幾件珍品（獨特裝備） */
   blackMarketGear?: number
+  /** 主人的突發事件、寄生物的發作、地下城事件的機率倍率 */
+  masterEventMult?: number
+  parasiteMult?: number
+  dungeonEventMult?: number
 }
 
 /** 這一趟地下城探索（進入地下城時開始，離開時結束） */
@@ -786,6 +819,10 @@ export interface GameState {
   dungeonEvent?: { template: string; trigger: string }
   /** 地下城事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子 */
   dungeonEvents?: { last?: number; seen: Record<string, number> }
+  /** 寄生物等待回應的發作事件（parasiteEvents.ts）：模板與寄生物 */
+  parasiteEvent?: { template: string; parasite: string }
+  /** 寄生物發作的紀錄：上一次的時間（絕對小時）、最近發作過的事件（避免連續重複） */
+  parasiteEvents?: { last?: number; recent?: string[] }
   /** 在臨時地圖裡：離開時回到的位置 */
   side?: { area: string; back: { area: string; x: number; y: number }; /** 特殊任務帶進來的臨時地圖：離開就放棄這個任務 */ story?: string }
   /** 在特殊地圖裡：從外面進來前的位置與地點（從出口離開時回到那裡），走過的需要刷新的地圖 */

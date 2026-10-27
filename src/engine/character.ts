@@ -1,6 +1,8 @@
 // 角色：屬性、三資源（生命值、行動點、法術環）的推導、升級與能力學習。
 // 公式說明見 docs/COMBAT_SYSTEM.md，數值在 data/rules/combat.json。
 
+import { adultContent } from './content'
+import { parasiteSummary, parasitesOf } from './parasites'
 import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks'
 import {
   abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
@@ -91,7 +93,8 @@ function gearAttrSources(c: Character): AttrSource[] {
 
 /** 角色身上所有的屬性加減（給畫面與 AI 說明來源）：誓約印記、裝備，加上登記的來源 */
 export function attrSources(c: Character): AttrSource[] {
-  const oaths = (c.tattoos ?? []).filter((t) => t.kind === 'oath' && t.attrs).map((t) => ({ label: `誓約印記【${t.name ?? ''}】`, attrs: t.attrs! }))
+  const oaths = (c.tattoos ?? []).filter((t) => (t.kind === 'oath' || (t.kind === 'curse' && t.tamed)) && t.attrs)
+    .map((t) => ({ label: `${t.kind === 'oath' ? '誓約印記' : '印記'}【${t.name ?? ''}】`, attrs: t.attrs! }))
   return [...oaths, ...gearAttrSources(c), ...attrProviders.flatMap((p) => p(c))].filter((s) => ATTR_IDS.some((a) => s.attrs[a]))
 }
 
@@ -421,6 +424,7 @@ export function protagonistText(c: Character, birthplaceName?: string): string {
     c.background ? `背景：${c.background}` : '',
     perksOf(c).length ? `特質：${perksOf(c).map((p) => (p.flaw ? `${p.name}（缺陷）` : p.name)).join('、')}` : '',
     tattoosOf(c).length ? `刺青：\n${tattooSummary(c)}` : '',
+    parasitesOf(c).length && adultContent() ? `寄生物：\n${parasiteSummary(c)}` : '',
   ]
   return lines.filter(Boolean).join('\n')
 }

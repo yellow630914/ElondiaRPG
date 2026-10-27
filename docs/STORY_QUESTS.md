@@ -34,6 +34,7 @@
 | `flags_any` | 至少一個成立（「或」） |
 | `counters` | 劇情計數器在範圍內：`{ "human_stance": { "min": 1 } }`（含邊界，min、max 可以只寫一邊） |
 | `affinity` | 角色的好感至少多少 |
+| `parasites` | 主角身上的寄生物：`{ "succubus_mark": { "min": 30, "max": 100, "tamed": false } }`（寫了就要身上有、而且沒有沉睡；侵蝕度含邊界，`tamed` 要已馴服或還沒，不寫不限；見 [ADULT_EVENTS](ADULT_EVENTS.md) 第 6 節） |
 
 **劇情計數器**（`data/rules/counters.json`，內容頁籤「⭐ 特殊任務 → 🔢 劇情計數器」新增與修改，跟著世界匯出匯入）：結果的 `counters`（`{ "human_stance": 1 }`）加減數值，條件的 `counters` 要求範圍。計數器有名稱、說明、初始值與上下限；存檔裡存在 `flags` 的 `count:<id>`。內建兩個：`human_stance`（人類世界的走向）、`demon_stance`（魔族世界的走向），政治故事線主和 +1、主戰 -1，史詩線看正負決定走和平或開戰。任務用到不存在的計數器是錯誤；被用到的自建計數器不能刪除。
 
@@ -144,6 +145,8 @@
 **特質**：`{ "type": "perk", "perk": "veteran", "options": ["diplomat"] }` 給主角一次學特質的機會（從這幾個選一個，或寫說法擲骰交給 AI 爭取別的；來源寫成這個特殊任務），`"direct": true` 直接學會；`{ "type": "lose_perk", "perk": "<id>" }` 失去特質。見 [`PERKS.md`](PERKS.md)。
 
 **刺青**：`{ "type": "tattoo", "template": "lotus" }`（圖樣，可以加 `place`、`by`），或自己描述 `{ "type": "tattoo", "kind": "oath", "name": "…", "text": "…", "attrs": { "str": 2, "int": -2 } }`；`{ "type": "remove_tattoo", "kind": "plain" }` 洗掉。見 [`TATTOOS.md`](TATTOOS.md)。
+
+**寄生物**：`{ "type": "parasite", "parasite": "hungry_lingerie", "op": "add" }`（寄生；`tame` 馴服、`remove` 拿掉），`{ "type": "corruption", "parasite": "succubus_mark", "delta": 10 }` 加減侵蝕度。見 [ADULT_EVENTS](ADULT_EVENTS.md) 第 6 節。
 
 **非戰鬥狀態**：`{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }`（祝福、放鬆、興致高昂、磨利……，多半到下次長休；奴隸印記、逃亡、暫時離隊不能用）。
 

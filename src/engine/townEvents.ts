@@ -54,7 +54,7 @@ export function townWeight(state: GameState, t: RoadTemplate): number {
  */
 export function maybeTownEvent(state: GameState): { report?: Report } {
   const rules = travelEvents.town
-  if (!rules || state.townEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.road) return {}
+  if (!rules || state.townEvent || state.parasiteEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.road) return {}
   const area = currentArea(state)
   if (area.kind !== 'settlement') return {}
   const p = position(state)

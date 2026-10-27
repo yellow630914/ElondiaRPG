@@ -1,0 +1,256 @@
+{
+  "$comment": "寄生物（見 docs/ADULT_EVENTS.md 第 6 節）：侵蝕度 0～100 依 stages 分階段（min 是門檻，chance_mult 是這個階段發作的機率倍率）。發作：走動每一步 step_chance、旅途每天 travel_chance、長休之後 rest_chance（都再乘上存檔規則「寄生發作的機率」），兩次至少隔 cooldown_hours 小時。remove 是解咒的地方（神殿、刻印師）與擲骰的屬性。parasites：kind gear（寄生裝備：item 物品鎖在 slot 欄位）、mark（淫紋：刻在 place 的詛咒印記）、seed（寄生種子）；grow_per_day 每天自己增長的侵蝕度；stage_effects 各階段的被動效果（檢定加減）；remove 解咒的 DC 與價錢基準（DC + 侵蝕度/10、價錢 ×(1 + 侵蝕度/100)）；reink_price 刻印師紋回來的價錢；stories 解咒時中止的任務線（連同 flag_prefix 開頭的劇情旗標一起清掉，之後再被寄生可以重來）；tamed 馴服之後的物品或印記、主動觸發的親密場景（scene）、結果（text）與狀態（buff）。",
+  "step_chance": 0.01,
+  "travel_chance": 0.3,
+  "rest_chance": 0.25,
+  "cooldown_hours": 8,
+  "stages": [
+    {
+      "min": 0,
+      "name": "潛伏",
+      "chance_mult": 0.5
+    },
+    {
+      "min": 30,
+      "name": "發作",
+      "chance_mult": 1
+    },
+    {
+      "min": 60,
+      "name": "共生",
+      "chance_mult": 1
+    },
+    {
+      "min": 90,
+      "name": "支配",
+      "chance_mult": 2
+    }
+  ],
+  "remove": {
+    "temple": {
+      "name": "神殿的解咒",
+      "attr": "fai"
+    },
+    "carver": {
+      "name": "刻印師的解咒",
+      "attr": "int"
+    }
+  },
+  "parasites": {
+    "hungry_lingerie": {
+      "name": "渴求的魔導衣",
+      "kind": "gear",
+      "item": "渴求的魔導衣",
+      "slot": "underwear_top",
+      "desc": "從擬態寶箱裡爬出來、貼在身上脫不下來的黑色蕾絲內衣。它是活的，會餓，餓的時候會自己動。",
+      "grow_per_day": 2,
+      "stage_effects": [
+        [],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          },
+          {
+            "check": {
+              "kinds": [
+                "flatter",
+                "chat"
+              ]
+            },
+            "bonus": 1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -2
+          },
+          {
+            "check": {
+              "kinds": [
+                "flatter",
+                "chat"
+              ]
+            },
+            "bonus": 1
+          }
+        ]
+      ],
+      "remove": {
+        "dc": 14,
+        "price": 1500
+      },
+      "reink_price": 0,
+      "stories": [
+        "par_lin_look",
+        "par_lin_feed",
+        "par_lin_relic",
+        "par_lin_master"
+      ],
+      "flag_prefix": "par_lin_",
+      "tamed": {
+        "item": "馴服的魔導衣",
+        "scene": "主角主動喚醒已經馴服的魔導衣：黑色的蕾絲照著主角的心意在身上游走、收緊、撫弄，主角想要多少就給多少，想停就停。這一次是主角在使用它。",
+        "text": "你喚醒了魔導衣。它乖乖地照著你的意思動，直到你滿足為止。",
+        "buff": "parasite_glow"
+      }
+    },
+    "succubus_mark": {
+      "name": "魅魔的契紋",
+      "kind": "mark",
+      "place": "belly",
+      "mark": {
+        "name": "魅魔的契紋",
+        "desc": "小腹上一個桃紅色的紋樣，形狀像一顆被藤蔓纏住的心。發作的時候會發燙、發亮。"
+      },
+      "desc": "魅魔在小腹刻下的淫紋。發作時身體會不聽使喚；它是一份契約的一半，另一半在刻紋的魅魔手上。",
+      "grow_per_day": 2,
+      "stage_effects": [
+        [],
+        [
+          {
+            "check": {
+              "attrs": [
+                "fai"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "fai"
+              ]
+            },
+            "bonus": -1
+          },
+          {
+            "check": {
+              "attrs": [
+                "cha"
+              ]
+            },
+            "bonus": 1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "fai"
+              ]
+            },
+            "bonus": -2
+          },
+          {
+            "check": {
+              "attrs": [
+                "cha"
+              ]
+            },
+            "bonus": 1
+          }
+        ]
+      ],
+      "remove": {
+        "dc": 15,
+        "price": 1800
+      },
+      "reink_price": 600,
+      "stories": [
+        "par_mark_help",
+        "par_mark_find",
+        "par_mark_contracts",
+        "par_mark_rewrite",
+        "par_mark_help_cas",
+        "par_mark_find_cas",
+        "par_mark_contracts_cas",
+        "par_mark_rewrite_cas"
+      ],
+      "flag_prefix": "par_mark_",
+      "tamed": {
+        "mark": {
+          "name": "主宰之紋",
+          "desc": "小腹上的紋樣變成了深紅色，藤蔓反過來把心護在中間。它現在聽你的。",
+          "attrs": {
+            "cha": 2,
+            "fai": 1
+          },
+          "check": {
+            "attrs": [
+              "cha"
+            ]
+          },
+          "bonus": 3
+        },
+        "scene": "主角主動點亮主宰之紋：紋樣的熱流照著主角的意思在身體裡奔湧，主角任由慾望漲滿、再一口氣釋放，完全由自己掌控節奏。",
+        "text": "你點亮了主宰之紋。熱流在身體裡奔湧，最後化成一股滿足的倦意。",
+        "buff": "parasite_glow"
+      }
+    },
+    "parasite_seed": {
+      "name": "寄生植物的種子",
+      "kind": "seed",
+      "desc": "寄生植物推進身體深處的一顆種子。溫溫的，偶爾會動一下；幾天之後就會發芽。",
+      "grow_per_day": 30,
+      "stage_effects": [
+        [],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -2
+          }
+        ]
+      ],
+      "remove": {
+        "dc": 12,
+        "price": 400
+      }
+    }
+  }
+}

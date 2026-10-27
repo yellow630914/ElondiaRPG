@@ -58,8 +58,8 @@ export function inkPrice(shop: TattooShopId, t: Pick<NewTattoo, 'kind' | 'attrs'
 }
 
 /** 洗掉這種刺青的價格（這家店不洗時為 undefined） */
-export function removePrice(shop: TattooShopId, kind: TattooKind): number | undefined {
-  return kind === 'slave' ? undefined : tattooShop(shop).remove[kind]
+export function removePrice(shop: TattooShopId, kind: TattooKind, tamed = true): number | undefined {
+  return kind === 'slave' || (kind === 'curse' && !tamed) ? undefined : tattooShop(shop).remove[kind]
 }
 
 /** 要刺的刺青：圖樣，或自己描述（名稱、外觀；誓約要屬性的加減） */
@@ -117,6 +117,7 @@ export function washTattoo(state: GameState, place: TattooPlace): Report {
   const t = tattooAt(pc, place)
   if (!t) throw new Error(`${placeName(place)}沒有刺青`)
   if (t.kind === 'slave') throw new Error('奴隸印記要解除契約才能去掉')
+  if (t.kind === 'curse' && !t.tamed) throw new Error('未馴服的詛咒印記洗不掉，要解咒')
   const price = removePrice(shop, t.kind)
   if (price === undefined) throw new Error(`${tattooShop(shop).name}不洗${tattooKindName(t.kind)}`)
   if (state.money_cc < price) throw new Error(`錢不夠（要 ${formatMoney(price)}）`)

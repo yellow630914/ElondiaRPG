@@ -7,8 +7,10 @@
 // applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
+import { attachParasite, changeCorruption, detachParasite, tameParasite } from './parasites'
 import { tagsAllowed } from './content'
-import { abilities, classAbilities, locationById, perkDef, slaveryRules, type AttrId } from './data'
+import { addItem } from './state'
+import { abilities, classAbilities, classes, locationById, perkDef, slaveryRules, type AttrId } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
@@ -19,7 +21,7 @@ import {
 } from './party'
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
-import { gearKnown, registerGear } from './gear'
+import { gearKnown, registerGear, syncGear } from './gear'
 import type { GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
 import { inActiveSquad } from './squads'
@@ -108,11 +110,16 @@ export type RewardEffect =
   | { type: 'remove_tattoo'; place?: TattooPlace; kind?: 'plain' | 'oath' }
   /** 主人強制主角裝上一件裝備並鎖住（npc 是主人；item 沒寫時從主人會用的裡面隨機挑，見 forcedGear.ts） */
   | { type: 'force_equip'; npc: string; item?: string }
+  /** 主角的寄生物（parasites.json）：寄生（add）、馴服（tame）、拿掉（remove） */
+  | { type: 'parasite'; parasite: string; op: 'add' | 'tame' | 'remove' }
+  /** 寄生物的侵蝕度加減 */
+  | { type: 'corruption'; parasite: string; delta: number }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
   'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip',
+  'parasite', 'corruption',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -355,6 +362,28 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         } catch (err) {
           notes.push(`沒有刺上刺青（${err instanceof Error ? err.message : String(err)}）`)
         }
+        break
+      }
+      case 'parasite': {
+        const pc = pcOf(state)
+        if (e.op === 'add') {
+          const r = attachParasite(pc, e.parasite, state.time)
+          if (r.removed) addItem(state.inventory, r.removed, 1)
+          syncGear(pc, classes[pc.class]?.weapon)
+          recalc(pc)
+          if (r.note) notes.push(r.note)
+        } else {
+          const line = e.op === 'tame' ? tameParasite(pc, e.parasite) : detachParasite(pc, e.parasite)
+          syncGear(pc, classes[pc.class]?.weapon)
+          recalc(pc)
+          setHp(state, pc, pc.hp, report)
+          if (line) notes.push(line)
+        }
+        break
+      }
+      case 'corruption': {
+        const line = changeCorruption(pcOf(state), e.parasite, e.delta)
+        if (line) notes.push(line)
         break
       }
       case 'force_equip': {

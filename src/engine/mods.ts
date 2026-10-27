@@ -7,6 +7,7 @@
 // - 自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備。
 // 說明見 docs/CONTENT_EDITOR.md。
 
+import { parasiteDef } from './parasites'
 import mapsJson from '@data/world/maps.json'
 import {
   abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
@@ -1083,7 +1084,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1104,8 +1105,19 @@ function cond(v: unknown): NpcDef['requires'] {
     .filter(([id, n]) => typeof id === 'string' && id.trim() && typeof n === 'number' && Number.isFinite(n))
     .map(([id, n]) => [id.trim().slice(0, 60), Math.max(-100, Math.min(100, Math.round(n as number)))]))
   const hasAff = Object.keys(affinity).length > 0
-  return flags.length || none.length || any.length || hasCount || hasAff
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}) }
+  // 寄生物：寄生物 id → { min, max（侵蝕度 0～100）, tamed }（只收存在的寄生物）
+  const parasites: Record<string, { min?: number; max?: number; tamed?: boolean }> = {}
+  for (const [id, x] of Object.entries(r.parasites && typeof r.parasites === 'object' ? r.parasites : {})) {
+    if (!parasiteDef(id)) continue
+    const o = x && typeof x === 'object' ? x as { min?: unknown; max?: unknown; tamed?: unknown } : {}
+    const pct = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : undefined)
+    const min = pct(o.min)
+    const max = pct(o.max)
+    parasites[id] = { ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}), ...(typeof o.tamed === 'boolean' ? { tamed: o.tamed } : {}) }
+  }
+  const hasPar = Object.keys(parasites).length > 0
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar
+    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }

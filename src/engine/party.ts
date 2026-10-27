@@ -1,6 +1,7 @@
 // 隊伍成員的進出：入隊（雇傭、自願、奴隸、跟著別人的隊伍）、離隊、成為奴隸與獲釋、非戰鬥狀態與懲罰。
 // 這些函式直接修改狀態，並把變化記在報告的 changes 裡；報告由呼叫端提交。
 
+import { PARASITE_LOCK } from './parasites'
 import { snapshot } from './character'
 import { attrName, classes, combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, type AttrId, type Bond } from './data'
 import { characterFor, npcRecord, registerNpc } from './npcs'
@@ -256,7 +257,7 @@ export function freePlayer(state: GameState, report?: Report, reason?: string) {
   const pc = pcOf(state)
   if (!clearContract(pc)) return
   // 主人強制裝上的東西：契約解除後可以拿下了
-  for (const g of Object.values(pc.gear ?? {})) if (g) delete g.locked
+  for (const g of Object.values(pc.gear ?? {})) if (g && !g.locked?.startsWith(PARASITE_LOCK)) delete g.locked
   removeCondition(pc, 'slave_mark', report)
   removeCondition(pc, 'fugitive', report)
   recordChange(report, { npc: 'pc', name: pc.name, change: 'freed', ...(reason ? { reason } : {}) })

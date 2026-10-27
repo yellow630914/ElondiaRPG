@@ -4,6 +4,7 @@
 // - 目前的內建模板都是成人向（色情陷阱、擬態寶箱、花粉、觸手植物、夜襲……），成人向關閉時一件都不會發生。
 // - 事件發生在主角身上：選項的檢定由主角自己擲（不是隊伍裡最擅長的人）。
 
+import { gameRule } from './gameRules'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { adultContent, tagsAllowed } from './content'
 import { locationById, regionById } from './data'
@@ -56,14 +57,15 @@ export function dungeonCandidates(state: GameState, area: Area, trigger: Dungeon
  */
 export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger): boolean {
   const rules = travelEvents.dungeon
-  if (!rules || state.dungeonEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.townEvent) return false
+  if (!rules || state.dungeonEvent || state.parasiteEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.townEvent) return false
   const area = currentArea(state)
   const now = hoursOf(state.time)
   const last = state.dungeonEvents?.last
   if (last !== undefined && now - last < rules.cooldown_hours) return false
   const list = dungeonCandidates(state, area, trigger)
   if (!list.length) return false
-  const pick = withRng(state, (rng) => (rng.chance(rules.chance[trigger] ?? 0) ? rng.pick(list) : undefined))
+  const chance = Math.min(1, (rules.chance[trigger] ?? 0) * gameRule(state, 'dungeonEventMult'))
+  const pick = withRng(state, (rng) => (rng.chance(chance) ? rng.pick(list) : undefined))
   if (!pick) return false
   const log = (state.dungeonEvents ??= { seen: {} })
   log.last = now
@@ -83,7 +85,8 @@ export function pruneDungeonEvent(state: GameState) {
   if (state.dungeonEvent && !pendingDungeonEvent(state)) delete state.dungeonEvent
 }
 
-function eventReport(state: GameState, title: string): Report {
+/** 發生在主角身上的事件的報告（地下城事件、寄生物發作） */
+export function pcEventReport(state: GameState, title: string, tag: string): Report {
   const area = currentArea(state)
   const loc = locationById(area.location)
   const pc = pcOf(state)
@@ -94,7 +97,7 @@ function eventReport(state: GameState, title: string): Report {
     time: { start: { ...state.time }, end: { ...state.time } },
     location: { at: loc.id, region: loc.region, scene: `${area.name}・${title}` },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', tags: ['地下城事件'] },
+    outcome: { result: 'neutral', tags: [tag] },
     changes: {},
     narration: { pov: 'second_person', length: 'short' },
     lore_keys: [loc.name, regionById(loc.region).name],
@@ -107,13 +110,9 @@ function sceneOn(o: RoadOption, ok: boolean): boolean {
   return o.adult_scene === 'always' || (!!o.check && o.adult_scene === (ok ? 'success' : 'fail'))
 }
 
-/** 選一個回應：有檢定的由主角擲骰（非戰鬥狀態與特質也算） */
-export function answerDungeonEvent(state: GameState, index: number): Report {
-  const t = pendingDungeonEvent(state)
-  const o = t?.options?.[index]
-  if (!t || !o) throw new Error('沒有這個選項')
+/** 主角回應一個選項：有檢定的由主角擲骰（非戰鬥狀態與特質也算），套用結果、寫進報告；回傳檢定有沒有成功 */
+export function resolvePcOption(state: GameState, report: Report, t: RoadTemplate, o: RoadOption, tag: string, scene = t.scene): boolean {
   const pc = pcOf(state)
-  const report = eventReport(state, t.title)
   let ok = true
   if (o.check) {
     const extra = checkModifiers(pc, { context: 'action', attr: o.check.attr })
@@ -124,9 +123,19 @@ export function answerDungeonEvent(state: GameState, index: number): Report {
     report.timeline = [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `${t.title}：${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
   }
   const lines = [`${t.text}你選擇${o.label}。`, ...applyRoadOutcome(state, report, ok ? o.success : o.fail)]
-  report.outcome = { result: o.check ? (ok ? 'success' : 'failure') : 'neutral', summary: lines.join(''), tags: ['地下城事件'] }
+  report.outcome = { result: o.check ? (ok ? 'success' : 'failure') : 'neutral', summary: lines.join(''), tags: [tag] }
   report.narration = { ...report.narration, focus: [t.text, `主角的回應：${o.label}`] }
-  if (t.scene && sceneOn(o, ok)) report.narration = { ...report.narration, length: 'medium', adult_scene: t.scene }
+  if (scene && sceneOn(o, ok)) report.narration = { ...report.narration, length: 'medium', adult_scene: scene }
+  return ok
+}
+
+/** 選一個回應 */
+export function answerDungeonEvent(state: GameState, index: number): Report {
+  const t = pendingDungeonEvent(state)
+  const o = t?.options?.[index]
+  if (!t || !o) throw new Error('沒有這個選項')
+  const report = pcEventReport(state, t.title, '地下城事件')
+  resolvePcOption(state, report, t, o, '地下城事件')
   delete state.dungeonEvent
   const committed = commitReport(state, report)
   applyPendingMove(state)

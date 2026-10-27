@@ -23,9 +23,11 @@ import Hint from '../ui/Hint.vue'
 import StatGrid, { type StatItem } from '../ui/StatGrid.vue'
 import PaperDoll from './PaperDoll.vue'
 import TattooMap from './TattooMap.vue'
+import ParasitePane from './ParasitePane.vue'
+import { parasitesOf } from '@/engine/parasites'
 import { abilityMeta, affinityText, attrNote, CHAR_TABS, contractFor, groupedAbilities, QUALITY_NAME, signed, slotsText, TYPE_NAME, type CharTab } from './memberInfo'
 
-// 角色詳情：分頁（屬性與戰鬥、特質、裝備、刺青、角色設定、能力），頂部切換角色
+// 角色詳情：分頁（屬性與戰鬥、特質、裝備、刺青、寄生物、角色設定、能力），頂部切換角色
 const props = defineProps<{ open: boolean; member: string; tab: CharTab }>()
 const emit = defineEmits<{ close: []; 'update:member': [id: string]; 'update:tab': [tab: CharTab] }>()
 const game = useGame()
@@ -33,7 +35,9 @@ const settings = useSettings()
 const s = computed(() => game.state!)
 const inCombat = computed(() => !!s.value.combat)
 const m = computed(() => s.value.party.find((x) => x.id === props.member) ?? s.value.party[0]!)
-const tabs = computed(() => CHAR_TABS.filter((t) => !isNoncombatant(m.value) || (t.id !== 'abilities' && (t.id !== 'gear' || !!m.value.gear))))
+// 寄生物：只有身上有的時候（成人向開啟）
+const tabs = computed(() => CHAR_TABS.filter((t) => (t.id !== 'parasites' || (settings.adult && !!parasitesOf(m.value).length))
+  && (!isNoncombatant(m.value) || (t.id !== 'abilities' && (t.id !== 'gear' || !!m.value.gear)))))
 // 分頁不適用這個角色時（例如非戰鬥人員的能力）回到「屬性與戰鬥」：開啟、換角色、換分頁時都檢查
 watch([tabs, () => props.tab, () => props.open], () => {
   if (props.open && !tabs.value.some((t) => t.id === props.tab)) emit('update:tab', 'stats')
@@ -149,6 +153,9 @@ watch(() => props.member, () => (editingProfile.value = false))
 
     <!-- 刺青 -->
     <section v-else-if="tab === 'tattoos'" class="pane"><TattooMap :member="m" /></section>
+
+    <!-- 寄生物 -->
+    <section v-else-if="tab === 'parasites'" class="pane"><ParasitePane :member="m" /></section>
 
     <!-- 角色設定 -->
     <section v-else-if="tab === 'profile'" class="pane profile">

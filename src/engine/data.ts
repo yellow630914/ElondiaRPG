@@ -167,7 +167,11 @@ export interface StoryCond {
   counters?: Record<string, CounterRange>
   /** 角色的好感（親密度）至少多少：{ 角色 id: 最低值 }（沒見過面算 0） */
   affinity?: Record<string, number>
+  /** 主角身上的寄生物：{ 寄生物 id: { min, max（侵蝕度，含邊界）, tamed（已經馴服或還沒） } }；寫了就要身上有、而且沒有沉睡 */
+  parasites?: Record<string, ParasiteRange>
 }
+
+export interface ParasiteRange { min?: number; max?: number; tamed?: boolean }
 
 export interface CounterRange { min?: number; max?: number }
 

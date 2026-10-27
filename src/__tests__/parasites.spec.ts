@@ -1,0 +1,232 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { attrSources } from '@/engine/character'
+import { setAdultContent } from '@/engine/content'
+import { itemDef, stories } from '@/engine/data'
+import { applyEffects } from '@/engine/effects'
+import { enterLocation, standOn } from '@/engine/grid'
+import { unequipItem } from '@/engine/inventory'
+import { pcOf } from '@/engine/party'
+import {
+  answerParasiteEvent, cureOffers, cureParasite, maybeParasiteEvent, parasiteCandidates, parasiteTemplates, pendingParasiteEvent, pruneParasiteEvent,
+  reinkAtCarver, reinkOffers, triggerBlock, triggerTamed,
+} from '@/engine/parasiteEvents'
+import { activeParasites, attachParasite, growParasites, parasiteDef, parasiteOf, parasiteRules, removalTerms, stageOf, tameParasite } from '@/engine/parasites'
+import { checkModifiers } from '@/engine/perks'
+import { travelEvents } from '@/engine/road'
+import { newGame } from '@/engine/state'
+import { condMet, setFlag } from '@/engine/storyFlags'
+import { addTattoo, setContract, tattooAt, tattooFromTemplate } from '@/engine/tattoos'
+import { washTattoo } from '@/engine/tattooShop'
+import { sanitizeTravelEvent } from '@/engine/travelEventMods'
+import type { GameState, Report } from '@/engine/types'
+
+const LIN = 'hungry_lingerie'
+const MARK = 'succubus_mark'
+const SEED = 'parasite_seed'
+const keep = { step: parasiteRules.step_chance, cooldown: parasiteRules.cooldown_hours }
+
+beforeEach(() => {
+  localStorage.clear()
+  setActivePinia(createPinia())
+  setAdultContent(true)
+})
+afterEach(() => {
+  setAdultContent(false)
+  parasiteRules.step_chance = keep.step
+  parasiteRules.cooldown_hours = keep.cooldown
+})
+
+function game(): GameState {
+  const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 3, gender: '女', body: 'fem', birthplace: 'rhineburg' })
+  enterLocation(state)
+  state.money_cc = 100000
+  return state
+}
+
+function blank(state: GameState): Report {
+  return {
+    schema_version: '0.1', report_id: `r-${state.nextReportNo++}`, kind: 'event',
+    time: { start: { ...state.time }, end: { ...state.time } }, location: { at: state.location }, party: [], outcome: { result: 'neutral' }, changes: {},
+  }
+}
+
+describe('parasites', () => {
+  it('ship three parasites whose items, quest lines and flare events all exist', () => {
+    for (const [id, def] of Object.entries(parasiteRules.parasites)) {
+      if (def.item) expect(itemDef(def.item), def.item).toBeTruthy()
+      if (def.tamed?.item) expect(itemDef(def.tamed.item)?.gear?.unique, def.tamed.item).toBeTruthy()
+      for (const sid of def.stories ?? []) expect(stories.some((s) => s.id === sid), sid).toBe(true)
+      expect(parasiteTemplates().filter((t) => t.parasite === id).length, id).toBeGreaterThanOrEqual(def.kind === 'seed' ? 3 : 10)
+    }
+    for (const t of parasiteTemplates()) {
+      expect(t.tags, t.id).toContain('adult')
+      expect(sanitizeTravelEvent(t.id, t, false), t.id).toEqual(t)
+      // 每個發作都有一個抵抗的選項（檢定）與一個屈服的選項（一定進入親密場景）
+      expect(t.options!.some((o) => o.check), t.id).toBe(true)
+      expect(t.options!.some((o) => o.adult_scene === 'always'), t.id).toBe(true)
+    }
+  })
+
+  it('lock the lingerie onto the hero; taming swaps it for the unlocked unique piece', () => {
+    const state = game()
+    const pc = pcOf(state)
+    const old = pc.gear?.underwear_top?.name
+    applyEffects(state, blank(state), [{ type: 'parasite', parasite: LIN, op: 'add' }])
+    expect(pc.gear!.underwear_top).toMatchObject({ name: '渴求的魔導衣', locked: `parasite:${LIN}` })
+    if (old) expect(state.inventory.some((i) => i.name === old)).toBe(true)
+    expect(() => unequipItem(state, pc.id, 'underwear_top')).toThrow()
+    // 同一種只會有一個
+    expect(attachParasite(pc, LIN, state.time).note).toContain('已經有')
+    applyEffects(state, blank(state), [{ type: 'parasite', parasite: LIN, op: 'tame' }])
+    expect(pc.gear!.underwear_top).toEqual({ name: '馴服的魔導衣', spec: itemDef('馴服的魔導衣')!.gear })
+    expect(parasiteOf(pc, LIN)).toMatchObject({ tamed: true, corruption: 0 })
+    expect(activeParasites(pc)).toEqual([])
+  })
+
+  it('carve the mark over a plain tattoo, refuse a slave mark, and go dormant when a slave mark takes the place', () => {
+    const state = game()
+    const pc = pcOf(state)
+    addTattoo(pc, tattooFromTemplate('lotus', pc, 'belly'), state.time)
+    expect(attachParasite(pc, MARK, state.time).note).toContain('蓋掉了')
+    expect(tattooAt(pc, 'belly')).toMatchObject({ kind: 'curse', parasite: MARK })
+    expect(parasiteOf(pc, MARK)!.covered).toMatchObject({ kind: 'plain', place: 'belly' })
+    // 未馴服的淫紋洗不掉
+    standOn(state, 'carver')
+    expect(() => washTattoo(state, 'belly')).toThrow('解咒')
+    // 奴隸印記頂掉：沉睡、記下來；刻印師等部位空了才能紋回來
+    setContract(pc, { kind: 'labor', master: 'm', masterName: '主人', obedience: 0, since: { ...state.time }, terms: { place: 'belly' } } as never)
+    expect(parasiteOf(pc, MARK)).toMatchObject({ dormant: true, stored: { kind: 'curse' } })
+    expect(activeParasites(pc)).toEqual([])
+    expect(reinkOffers(state)).toEqual([])
+    pc.tattoos = (pc.tattoos ?? []).filter((t) => t.kind !== 'slave')
+    expect(reinkOffers(state).map((o) => o.kind).sort()).toEqual(['covered', 'curse'])
+    reinkAtCarver(state, MARK, 'curse')
+    expect(tattooAt(pc, 'belly')).toMatchObject({ kind: 'curse' })
+    expect(parasiteOf(pc, MARK)!.dormant).toBeUndefined()
+    // 小腹已經是奴隸印記時刻不上去
+    const other = game()
+    const pc2 = pcOf(other)
+    setContract(pc2, { kind: 'labor', master: 'm', masterName: '主人', obedience: 0, since: { ...other.time }, terms: { place: 'belly' } } as never)
+    expect(attachParasite(pc2, MARK, other.time).note).toContain('奴隸印記')
+    expect(parasiteOf(pc2, MARK)).toBeUndefined()
+  })
+
+  it('give the tamed mark its attributes and check bonus; a tamed mark can be washed and re-inked', () => {
+    const state = game()
+    const pc = pcOf(state)
+    attachParasite(pc, MARK, state.time)
+    tameParasite(pc, MARK)
+    expect(tattooAt(pc, 'belly')).toMatchObject({ name: '主宰之紋', tamed: true, attrs: { cha: 2, fai: 1 } })
+    expect(attrSources(pc).find((x) => x.label.includes('主宰之紋'))?.attrs).toEqual({ cha: 2, fai: 1 })
+    expect(checkModifiers(pc, { context: 'action', attr: 'cha' }).some((x) => x.value === 3)).toBe(true)
+    standOn(state, 'carver')
+    washTattoo(state, 'belly')
+    expect(tattooAt(pc, 'belly')).toBeUndefined()
+    expect(parasiteOf(pc, MARK)!.stored).toMatchObject({ name: '主宰之紋' })
+    reinkAtCarver(state, MARK, 'curse')
+    expect(tattooAt(pc, 'belly')).toMatchObject({ name: '主宰之紋' })
+  })
+
+  it('stage effects, story conditions and daily growth follow corruption', () => {
+    const state = game()
+    const pc = pcOf(state)
+    attachParasite(pc, SEED, state.time)
+    const p = parasiteOf(pc, SEED)!
+    expect(condMet(state, { parasites: { [SEED]: { min: 30 } } })).toBe(false)
+    state.time = { ...state.time, day: state.time.day + 2 }
+    growParasites(pc, state.time)
+    expect(p.corruption).toBe(60)
+    expect(stageOf(p.corruption)).toBe(2)
+    expect(condMet(state, { parasites: { [SEED]: { min: 30, tamed: false } } })).toBe(true)
+    expect(checkModifiers(pc, { context: 'action', attr: 'dex' }).some((x) => x.value === -1)).toBe(true)
+    expect(removalTerms(p)).toEqual({ dc: parasiteDef(SEED)!.remove!.dc + 6, price: Math.round(parasiteDef(SEED)!.remove!.price * 1.6) })
+    // 成人向關閉：沒有被動效果、不發作
+    setAdultContent(false)
+    expect(activeParasites(pc)).toEqual([])
+    expect(checkModifiers(pc, { context: 'action', attr: 'dex' }).some((x) => x.label.includes('寄生'))).toBe(false)
+    parasiteRules.step_chance = 1
+    expect(maybeParasiteEvent(state, 'step')).toBe(false)
+  })
+
+  it('flare up on a step, wait for an answer and move corruption by the choice', () => {
+    const state = game()
+    const pc = pcOf(state)
+    attachParasite(pc, LIN, state.time)
+    parasiteRules.step_chance = 1
+    parasiteRules.cooldown_hours = 0
+    state.options!.parasiteMult = 0
+    expect(maybeParasiteEvent(state, 'step')).toBe(false)
+    state.options!.parasiteMult = 2
+    expect(maybeParasiteEvent(state, 'step')).toBe(true)
+    const t = pendingParasiteEvent(state)!
+    expect(parasiteCandidates(state, parasiteOf(pc, LIN)!, 'step').map((x) => x.id)).toContain(t.id)
+    // 等待回應時不會再發作
+    expect(maybeParasiteEvent(state, 'step')).toBe(false)
+    const give = t.options!.findIndex((o) => o.adult_scene === 'always')
+    const r = answerParasiteEvent(state, give)
+    expect(state.parasiteEvent).toBeUndefined()
+    expect(parasiteOf(pc, LIN)!.corruption).toBeGreaterThan(0)
+    expect(r.narration?.adult_scene).toBe(t.scene)
+    // 寄生物不在了：等待中的事件作廢
+    maybeParasiteEvent(state, 'step')
+    pc.parasites = []
+    pruneParasiteEvent(state)
+    expect(state.parasiteEvent).toBeUndefined()
+  })
+
+  it('let a tamed parasite be awakened once between long rests', () => {
+    const state = game()
+    const pc = pcOf(state)
+    attachParasite(pc, LIN, state.time)
+    expect(triggerBlock(state, LIN)).toBe('還沒有馴服')
+    tameParasite(pc, LIN)
+    const r = triggerTamed(state, LIN)
+    expect(r.narration?.adult_scene).toBe(parasiteDef(LIN)!.tamed!.scene)
+    expect(pc.status).toContain('parasite_glow')
+    expect(triggerBlock(state, LIN)).toContain('長休')
+    state.lastLongRest = { day: state.time.day + 1, hour: 8, minute: 0 }
+    expect(triggerBlock(state, LIN)).toBeUndefined()
+  })
+
+  it('cure at the temple or the carver: pay, roll, and the quest line ends with it', () => {
+    const state = game()
+    const pc = pcOf(state)
+    applyEffects(state, blank(state), [{ type: 'parasite', parasite: LIN, op: 'add' }])
+    state.stories = { par_lin_look: { status: 'active', started: { ...state.time }, log: [] } as never }
+    setFlag(state, 'par_lin_look_start')
+    standOn(state, 'carver')
+    const offer = cureOffers(state).find((o) => o.id === LIN)!
+    expect(offer).toMatchObject({ attr: 'int', dc: removalTerms(parasiteOf(pc, LIN)!)!.dc })
+    // 擲到成功為止（失敗時侵蝕度上升）
+    for (let i = 0; i < 30 && parasiteOf(pc, LIN); i++) cureParasite(state, LIN)
+    expect(parasiteOf(pc, LIN)).toBeUndefined()
+    expect(pc.gear?.underwear_top?.name).not.toBe('渴求的魔導衣')
+    // 任務線中止，紀錄與旗標清掉：之後再被寄生可以重來
+    expect(state.stories!.par_lin_look).toBeUndefined()
+    expect(Object.keys(state.flags).some((k) => k.includes('par_lin_'))).toBe(false)
+  })
+
+  it('hook the yielding answers of the dungeon events', () => {
+    const give = (id: string) => travelEvents.templates.find((t) => t.id === id)!.options!.find((o) => o.adult_scene === 'always')!
+    expect(give('dg_cursed_lingerie').success!.effects).toContainEqual({ type: 'parasite', parasite: LIN, op: 'add' })
+    expect(give('dg_succubus_box').success!.effects).toContainEqual({ type: 'parasite', parasite: MARK, op: 'add' })
+    expect(give('dg_seed_plant').success!.effects).toContainEqual({ type: 'parasite', parasite: SEED, op: 'add' })
+    // 抵抗成功不會寄生
+    for (const id of ['dg_cursed_lingerie', 'dg_succubus_box', 'dg_seed_plant']) {
+      const t = travelEvents.templates.find((x) => x.id === id)!
+      for (const o of t.options!.filter((x) => x.check)) expect(JSON.stringify(o.success ?? {}), id).not.toContain('"parasite"')
+    }
+  })
+
+  it('open the mark line at either partner, but only one of them', () => {
+    const state = game()
+    attachParasite(pcOf(state), MARK, state.time)
+    const help = stories.find((s) => s.id === 'par_mark_help')!
+    const cas = stories.find((s) => s.id === 'par_mark_help_cas')!
+    expect(condMet(state, help.start.requires)).toBe(true)
+    expect(condMet(state, cas.start.requires)).toBe(true)
+    setFlag(state, 'par_mark_help_cas_start')
+    expect(condMet(state, help.start.requires)).toBe(false)
+  })
+})

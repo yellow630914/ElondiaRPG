@@ -31066,6 +31066,930 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 6000 }, { "type": "xp", "amount": 4000 }]
+    },
+    {
+      "id": "par_lin_look",
+      "title": "脫不下來的內衣",
+      "summary": "寶箱裡的黑色蕾絲內衣穿上就脫不下來了，它還會動、會餓。阿爾貝納的伊蓮娜面無表情地盯著你的胸口：「那件。活的。」（渴求的魔導衣・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_elena",
+        "min_level": 1,
+        "requires": { "parasites": { "hungry_lingerie": { "tamed": false } } },
+        "text": "伊蓮娜在街上攔住你，盯著你的胸口看了很久，然後伸出一根手指，戳了戳你衣服底下的蕾絲。蕾絲回戳了她一下。伊蓮娜的眼睛亮了：「那件。活的。」她難得一口氣說了一整句，「給我看。現在。」"
+      },
+      "start_flags": ["par_lin_look_start"],
+      "nodes": [
+        {
+          "id": "look",
+          "title": "讓伊蓮娜檢查魔導衣",
+          "kind": "check",
+          "at": { "where": "npc", "npc": "npc_elena" },
+          "text": "伊蓮娜把你拉進研究室，面無表情地解開你的衣服，把臉湊到蕾絲前面看、聞，最後伸出舌頭舔了一下。魔導衣興奮地扭了起來。「別動。」她說——不知道是在對你說，還是對它說。",
+          "check": { "attr": "int", "dc": 12 },
+          "success": {
+            "text": "你們一起找到了蕾絲底下的魔導迴路：那是一種古老的「贖罪衣」，修道院用來讓犯了色戒的修女「把慾望交出來」的東西。伊蓮娜在筆記本上寫：會吃。吃什麼？——然後抬頭看你：「媒介。它吃媒介。跟我一樣。」",
+            "set_flags": ["par_lin_look_look"]
+          },
+          "fail": {
+            "text": "魔導衣被她舔得太興奮，當著她的面發作了一次。伊蓮娜面無表情地看完，在筆記本上記了一整頁，最後寫下結論：「贖罪衣。修道院的。會吃。吃——這個。」她指了指你濕掉的地方。",
+            "effects": [{ "type": "corruption", "parasite": "hungry_lingerie", "delta": 5 }],
+            "set_flags": ["par_lin_look_look"]
+          },
+          "requires": { "flags": ["par_lin_look_start"] }
+        },
+        {
+          "id": "reagent",
+          "title": "到阿爾貝納的魔法物品店買安撫用的藥劑",
+          "kind": "check",
+          "at": { "where": "cell", "location": "albena", "cell": "magic" },
+          "text": "伊蓮娜開了一張單子：月影草、靜默粉、一小瓶聖水。魔法物品店的老闆看了看單子，又看了看你，笑得很曖昧：「又是贖罪衣？這東西最近很流行啊。」他報了一個高得離譜的價錢。",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": {
+            "text": "你殺到了一半的價錢。老闆一邊包藥一邊嘀咕：「上一個穿著它來的人，最後是被它穿著走的。小心點。」",
+            "effects": [{ "type": "money", "amount": -40 }],
+            "set_flags": ["par_lin_look_reagent"]
+          },
+          "fail": {
+            "text": "你沒殺成價，還被老闆多看了好幾眼。藥是買到了。",
+            "effects": [{ "type": "money", "amount": -90 }],
+            "set_flags": ["par_lin_look_reagent"]
+          },
+          "requires": { "flags": ["par_lin_look_look"] }
+        },
+        {
+          "id": "answer",
+          "title": "回研究室找伊蓮娜",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_elena" },
+          "text": "伊蓮娜把藥劑調成一碗灰色的糊，抹在蕾絲上。魔導衣打了個嗝似的抖了一下，安靜了。「暫時。」她說，「它會餓。會長大。越餓，越難拿下來。」她看著你，「解咒。可以。神殿。很貴。——或者，」她頓了一下，「研究它。跟我。」",
+          "options": [
+            {
+              "label": "「我們一起研究它」",
+              "success": {
+                "text": "伊蓮娜的嘴角動了一下，這大概是她最接近笑的表情：「好。下次。它餓的時候。來找我。」她在筆記本的封面上寫了一行字：贖罪衣觀察日誌・第一冊。",
+                "set_flags": ["par_lin_1_done"],
+                "effects": [
+                  { "type": "corruption", "parasite": "hungry_lingerie", "delta": -5 },
+                  { "type": "affinity", "npc": "npc_elena", "delta": 10, "reason": "願意一起研究贖罪衣" },
+                  { "type": "memory", "summary": "身上的「渴求的魔導衣」是修道院的贖罪衣，會吃慾望長大。答應伊蓮娜一起研究它。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「我想先想想要不要解咒」",
+              "success": {
+                "text": "伊蓮娜點點頭：「合理。」她把剩下的藥劑塞給你，「想好了。來。它餓了。也來。」",
+                "set_flags": ["par_lin_1_done"],
+                "effects": [
+                  { "type": "corruption", "parasite": "hungry_lingerie", "delta": -5 },
+                  { "type": "affinity", "npc": "npc_elena", "delta": 5, "reason": "讓她看了贖罪衣" },
+                  { "type": "memory", "summary": "身上的「渴求的魔導衣」是修道院的贖罪衣，會吃慾望長大；神殿可以解咒，伊蓮娜也願意研究它。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_lin_look_reagent"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 100 }, { "type": "xp", "amount": 300 }]
+    },
+    {
+      "id": "par_lin_feed",
+      "title": "餵養的方法",
+      "summary": "魔導衣越來越餓了。伊蓮娜說，餓的東西不能一直餓著——要學會怎麼「餵」，它才會開始聽話。（渴求的魔導衣・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_elena",
+        "min_level": 4,
+        "requires": { "flags": ["par_lin_1_done"], "parasites": { "hungry_lingerie": { "tamed": false, "min": 30 } } },
+        "text": "伊蓮娜一看到你就皺起了眉頭——這對她來說是很大的表情。「長大了。」她把手按在你胸口，蕾絲立刻纏上了她的手指，「餓。很餓。」她抽回手，在筆記本上寫了幾個字，「教你。餵它。」"
+      },
+      "start_flags": ["par_lin_feed_start"],
+      "nodes": [
+        {
+          "id": "theory",
+          "title": "聽伊蓮娜講白濁魔導的餵養理論",
+          "kind": "story",
+          "at": { "where": "npc", "npc": "npc_elena" },
+          "text": "伊蓮娜在黑板上畫了一個圓，又畫了一個箭頭：「媒介。進去。魔力。出來。」她指著圓說，「它。跟我的魔導。一樣。可是它，沒有主人。」她轉過身，「餵它的人。是主人。被它餵的人。是食物。」",
+          "success": {
+            "text": "你聽懂了：魔導衣一直在「吃」你，所以它把你當成了食物。只要你換一種方式——由你決定什麼時候、用什麼餵它——它就會慢慢地把你當成主人。伊蓮娜點頭：「對。練習。今晚。榮譽洞。」",
+            "set_flags": ["par_lin_feed_theory"]
+          },
+          "requires": { "flags": ["par_lin_feed_start"] }
+        },
+        {
+          "id": "hole",
+          "title": "跟伊蓮娜到阿爾貝納酒館地下的榮譽洞收集媒介",
+          "kind": "check",
+          "at": { "where": "cell", "location": "albena", "cell": "tavern" },
+          "text": "酒館地下的榮譽洞又熱又暗，牆上一排圓圓的洞。伊蓮娜熟門熟路地跪在其中一個洞前，回頭看你：「收集。給它吃。由你決定。不是它。」魔導衣聞到味道，在你的衣服底下躁動了起來。",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": {
+            "text": "你照著伊蓮娜教的，把收集到的媒介一點一點地餵給魔導衣，它要更多的時候，你就停下來。到最後，它學會了等——等你給它。伊蓮娜在旁邊記錄：「有效。」",
+            "effects": [{ "type": "corruption", "parasite": "hungry_lingerie", "delta": -10 }],
+            "set_flags": ["par_lin_feed_hole"]
+          },
+          "fail": {
+            "text": "魔導衣比你快了一步，自己伸出蕾絲去搶。那一晚，你分不清是你在餵它，還是它在用你收集。伊蓮娜在旁邊記錄：「失敗。但是。數據。很好。」",
+            "effects": [{ "type": "corruption", "parasite": "hungry_lingerie", "delta": 8 }],
+            "set_flags": ["par_lin_feed_hole"]
+          },
+          "requires": { "flags": ["par_lin_feed_theory"] }
+        },
+        {
+          "id": "slime",
+          "title": "在阿爾貝納近郊抓回吃撐了逃走的魔力史萊姆",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "albena" },
+          "text": "第二天，研究室的桶子裡多了幾隻史萊姆——是魔導衣吃不下、吐出來的媒介凝成的。牠們連夜溜出了研究室，在城外的田裡打滾。伊蓮娜面無表情地說：「它的。孩子。抓回來。」",
+          "enemies": [["mana_slime", 3]],
+          "success": {
+            "text": "史萊姆被你們裝回了桶子裡。伊蓮娜蓋上蓋子，這次蓋得很緊：「它開始。會吐了。代表。會選了。」",
+            "set_flags": ["par_lin_feed_slime"]
+          },
+          "fail": {
+            "text": "史萊姆把你們黏得動彈不得，最後是卡蜜拉晃晃悠悠地走過來，一個火球就把牠們烤乾了。伊蓮娜在筆記本上寫：下次，蓋子。",
+            "set_flags": ["par_lin_feed_slime"]
+          },
+          "requires": { "flags": ["par_lin_feed_hole"] }
+        },
+        {
+          "id": "answer",
+          "title": "回研究室找伊蓮娜",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_elena" },
+          "text": "伊蓮娜翻著筆記本，一頁一頁的數據。「它會等了。」她說，「可是。不夠。它還是覺得。你是食物。」她闔上筆記本，「做它的。人。我知道。在哪裡。晨霧修道院。」",
+          "options": [
+            {
+              "label": "「那就去修道院」",
+              "success": {
+                "text": "伊蓮娜點頭，把一張手繪的地圖塞給你：「深處。院長的工房。調伏之針。」她頓了一下，「帶回來。我縫。」",
+                "set_flags": ["par_lin_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_elena", "delta": 10, "reason": "一起學會餵養贖罪衣" },
+                  { "type": "memory", "summary": "跟伊蓮娜學會了「餵」魔導衣：由自己決定什麼時候、用什麼餵它。做出贖罪衣的人在晨霧修道院的深處。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_lin_feed_slime"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "par_lin_relic",
+      "title": "修道院的裁縫",
+      "summary": "晨霧修道院的院長在墮落之前，是全大陸最好的裁縫。贖罪衣是她做的；能讓贖罪衣認主的「調伏之針」，還在她的工房裡。（渴求的魔導衣・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_elena",
+        "min_level": 7,
+        "requires": { "flags": ["par_lin_2_done"], "parasites": { "hungry_lingerie": { "tamed": false } } },
+        "text": "伊蓮娜把一本發黃的帳冊攤在桌上，指著其中一行：晨霧修道院，院長瑪蒂爾德，訂製贖罪衣七件，附調伏之針一枚。「針。在她那裡。」她抬頭，「她。還在。只是。不是人了。」"
+      },
+      "start_flags": ["par_lin_relic_start"],
+      "nodes": [
+        {
+          "id": "record",
+          "title": "在晨霧修道院的中層找到院長的工房紀錄",
+          "kind": "check",
+          "at": { "where": "dungeon", "location": "mist_abbey", "layer": "middle" },
+          "text": "修道院的縫紉室裡掛滿了沒做完的贖罪衣，每一件都在輕輕地動，像在呼吸。你的魔導衣認出了牠們，興奮地收緊了一下。縫紉台上，一本院長的手記壓在剪刀底下。",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "手記裡寫著：「慾望是罪，罪要交出來。贖罪衣替她們吃掉慾望——可是牠們吃得太多了，吃到忘了誰是主人。只有調伏之針，能把主人縫回牠們的記憶裡。」最後一頁寫著：針，在我身上。永遠。",
+            "set_flags": ["par_lin_relic_record"]
+          },
+          "fail": {
+            "text": "你讀得太專心，沒注意到四周的贖罪衣全都朝你爬了過來。你逃出縫紉室時，手記只搶到了一半——夠了，最後一頁寫著：針，在我身上。",
+            "effects": [{ "type": "corruption", "parasite": "hungry_lingerie", "delta": 5 }],
+            "set_flags": ["par_lin_relic_record"]
+          },
+          "requires": { "flags": ["par_lin_relic_start"] }
+        },
+        {
+          "id": "abbot",
+          "title": "在晨霧修道院的深層擊敗墮落院長",
+          "kind": "combat",
+          "at": { "where": "dungeon", "location": "mist_abbey", "layer": "deep" },
+          "text": "工房的最深處，一個穿著破爛修女服的身影坐在縫紉機前，一針一針地縫著空氣。她轉過頭，半張臉已經變成了蕾絲：「孩子……你穿著我的作品呢。它餓嗎？來，讓我幫你餵它。」她的胸口，插著一枚發光的銀針。",
+          "enemies": [["fallen_abbot", 1]],
+          "success": {
+            "text": "墮落院長倒下時，蕾絲從她的身上一條一條地剝落。她看著你，眼神忽然清明了：「針……拿去吧。別像我一樣，被它們穿著走。」你從她胸口拔出了調伏之針。",
+            "set_flags": ["par_lin_relic_abbot"]
+          },
+          "fail": {
+            "text": "你們被她的蕾絲逼退了。可是撤退的時候，你的魔導衣自己伸出了一條蕾絲，從她胸口勾走了那枚銀針——它好像也想要被馴服。",
+            "effects": [{ "type": "corruption", "parasite": "hungry_lingerie", "delta": 8 }],
+            "set_flags": ["par_lin_relic_abbot"]
+          },
+          "requires": { "flags": ["par_lin_relic_record"] }
+        },
+        {
+          "id": "answer",
+          "title": "把調伏之針帶回去給伊蓮娜",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_elena" },
+          "text": "伊蓮娜把調伏之針舉到燈下看了很久。「好針。」她說，然後看著你，「縫的時候。它要最餓。你要最清醒。」她把針收進一個絨布盒子，「它長到。很大的時候。來。」",
+          "options": [
+            {
+              "label": "「我會撐到那一天」",
+              "success": {
+                "text": "伊蓮娜點頭，伸手按了按你的胸口。魔導衣乖乖地讓她按著，沒有纏上去。「進步。」她說。",
+                "set_flags": ["par_lin_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_elena", "delta": 10, "reason": "帶回了調伏之針" },
+                  {
+                    "type": "memory",
+                    "summary": "從晨霧修道院的墮落院長身上拿回了調伏之針。等魔導衣長到最大、最餓的時候，伊蓮娜會用它把主人縫進魔導衣的記憶裡。",
+                    "importance": 2
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_lin_relic_abbot"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 800 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "par_lin_master",
+      "title": "誰是主人",
+      "summary": "魔導衣長到了最大，也餓到了最餓。伊蓮娜拿出調伏之針：今晚，要決定誰穿著誰。（渴求的魔導衣・四）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_elena",
+        "min_level": 9,
+        "requires": { "flags": ["par_lin_3_done"], "parasites": { "hungry_lingerie": { "tamed": false, "min": 60 } } },
+        "text": "伊蓮娜一看到你，就把研究室的門鎖上了。「時候。到了。」她打開絨布盒子，調伏之針在燈下發著光。魔導衣聞到針的味道，在你的身上瘋了似地收緊、扭動。伊蓮娜面無表情地說：「脫。全部。」"
+      },
+      "start_flags": ["par_lin_master_start"],
+      "nodes": [
+        {
+          "id": "sew",
+          "title": "讓伊蓮娜用調伏之針縫上主人的記憶",
+          "kind": "check",
+          "at": { "where": "npc", "npc": "npc_elena" },
+          "text": "你躺在研究室的台子上，魔導衣已經長滿了你的全身。伊蓮娜一手拿著調伏之針，一手撫弄著你，要讓它餓到極點——「它最餓的時候。你。要記得。你是誰。」每一針縫下去，魔導衣就在你身上掀起一陣快感的浪。",
+          "check": { "attr": "fai", "dc": 16 },
+          "success": {
+            "text": "第七針縫下去的時候，你在快感的浪頭上喊出了自己的名字。魔導衣停了下來——然後，第一次，它等著你的命令。伊蓮娜放下針，額頭上全是汗：「成功。它在。等你。」",
+            "set_flags": ["par_lin_master_sew"]
+          },
+          "fail": {
+            "text": "你在第五針的時候忘了自己是誰，魔導衣差一點就把你整個吞了下去。伊蓮娜咬著牙把剩下的兩針縫完，你才慢慢地醒過來。它還在等——等你決定。",
+            "effects": [{ "type": "corruption", "parasite": "hungry_lingerie", "delta": 10 }],
+            "set_flags": ["par_lin_master_sew"]
+          },
+          "requires": { "flags": ["par_lin_master_start"] }
+        },
+        {
+          "id": "choose",
+          "title": "決定魔導衣的去留",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_elena" },
+          "text": "魔導衣安靜地貼在你的身上，等著。伊蓮娜坐在床邊，拿著剪刀，也等著：「兩條路。讓它。認你。或者。我剪。剪了。它就死了。」她難得多說了一句，「我覺得。它。喜歡你。」",
+          "options": [
+            {
+              "label": "「我是你的主人。」",
+              "success": {
+                "text": "你對魔導衣下了第一個命令：「鬆開。」它鬆開了。「收緊。」它收緊了。你笑了出來，伊蓮娜也是——你第一次看見她真的笑。從今以後，它是你的衣服，不是你的主人。",
+                "effects": [
+                  { "type": "parasite", "parasite": "hungry_lingerie", "op": "tame" },
+                  { "type": "affinity", "npc": "npc_elena", "delta": 20, "reason": "一起馴服了贖罪衣" },
+                  {
+                    "type": "memory",
+                    "summary": "在伊蓮娜的幫助下，用調伏之針馴服了渴求的魔導衣。它現在叫「馴服的魔導衣」，照著你的意思動，也只照著你的意思動。",
+                    "importance": 3
+                  }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「剪掉它。」",
+              "success": {
+                "text": "伊蓮娜點頭，剪刀一刀一刀地剪下去。蕾絲沒有掙扎，安靜地落在床上，化成了灰。你的胸口空蕩蕩的，有點冷。伊蓮娜把灰收進一個小瓶子裡：「媒介。最好的。賣給你？」她頓了一下，「開玩笑。送你。」",
+                "effects": [
+                  { "type": "parasite", "parasite": "hungry_lingerie", "op": "remove" },
+                  { "type": "money", "amount": 1500 },
+                  { "type": "affinity", "npc": "npc_elena", "delta": 15, "reason": "陪她走完了贖罪衣的研究" },
+                  { "type": "memory", "summary": "在伊蓮娜的幫助下剪掉了渴求的魔導衣。它沒有掙扎。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_lin_master_sew"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 3000 }]
+    },
+    {
+      "id": "par_mark_help",
+      "title": "小腹上的紋",
+      "summary": "小腹上多了一個桃紅色的紋樣，發作的時候會發燙、發亮。魅魔學院的萬年留級生露西菈抱著《魅魔百態》，臉紅得冒煙：「那、那是契紋！真的契紋！」（魅魔的契紋・露西菈・一）",
+      "tags": ["adult"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lucia",
+        "min_level": 1,
+        "requires": {
+          "flags_none": ["par_mark_help_start", "par_mark_help_cas_start"],
+          "parasites": { "succubus_mark": { "tamed": false } }
+        },
+        "text": "露西菈經過你身邊時突然停下來，鼻子動了動，然後整張臉紅到了耳根：「你、你身上有魅魔的味道！很、很濃！」她低頭看著你的小腹，《魅魔百態》從手上滑了下來，「那個……那個是契紋吧？可以、可以讓我看看嗎？只是學術上的！」"
+      },
+      "start_flags": ["par_mark_help_start"],
+      "nodes": [
+        {
+          "id": "read",
+          "title": "和露西菈一起翻《魅魔百態》查契紋",
+          "kind": "check",
+          "at": { "where": "npc", "npc": "npc_lucia" },
+          "text": "露西菈把《魅魔百態》攤在酒館的桌上，一頁一頁地比對你小腹上的紋樣。她每看一眼你的小腹，就要把臉埋進書裡冷靜三秒。「藤、藤蔓纏著心……這是、這是……」她的手指停在某一頁上，聲音都變了。",
+          "check": { "attr": "int", "dc": 12 },
+          "success": {
+            "text": "「薇絲佩菈的紋。」露西菈讀出了那一頁的標題，「三百年前被封印的大魅魔……課本上說，她刻下的契紋會一點一點地把人變成她的東西。」她抬起頭，眼睛裡全是淚，「怎、怎麼辦，我們學院的教授都打不過她……」",
+            "set_flags": ["par_mark_help_read"]
+          },
+          "fail": {
+            "text": "你們翻書翻到一半，契紋發作了。露西菈看著發光的紋樣，自己也跟著冒煙，最後兩個人一起趴在桌上喘氣。等你們冷靜下來，她才指著書上的一個名字：「薇絲佩菈……是她的紋。」",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 5 }],
+            "set_flags": ["par_mark_help_read"]
+          },
+          "requires": { "flags": ["par_mark_help_start"] }
+        },
+        {
+          "id": "ask",
+          "title": "到血羽城堡的魔法物品店打聽薇絲佩菈",
+          "kind": "story",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "magic" },
+          "text": "魔法物品店的老闆是一個上了年紀的魔族，聽到薇絲佩菈的名字就放下了手上的東西：「那個女人的封印，三年前就被盜墓的人破了。」他看了一眼你的小腹，「你碰到的，是她的分身。本體還在找回力量——用你們這些帶著她契紋的人。」",
+          "success": {
+            "text": "老闆說，契紋是一份契約的一半；另一半，也就是契約的原本，藏在魔族的某個書庫裡。「找到原本，」他說，「就能改寫它。不過，那可不是留級生做得到的事。」露西菈在你背後縮了縮脖子。",
+            "set_flags": ["par_mark_help_ask"]
+          },
+          "requires": { "flags": ["par_mark_help_read"] }
+        },
+        {
+          "id": "answer",
+          "title": "回答露西菈",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_lucia" },
+          "text": "露西菈抱著《魅魔百態》，尾巴打了好幾個結：「我、我知道我很沒用……可是契紋的事，我是全學院讀得最熟的！」她鼓起勇氣看著你，「讓我幫你！就當作……就當作是我的畢業研究！」",
+          "options": [
+            {
+              "label": "「拜託妳了，露西菈」",
+              "success": {
+                "text": "露西菈的翅膀不受控制地拍了兩下，把自己拍到了半空中：「好、好的！我會努力的！」她落地之後，在《魅魔百態》的空白頁寫上：畢業研究——薇絲佩菈的契紋，研究對象：你。她寫完又劃掉了「研究對象」，改成了「夥伴」。",
+                "set_flags": ["par_mark_1_done", "par_mark_with_lucia"],
+                "effects": [
+                  { "type": "corruption", "parasite": "succubus_mark", "delta": -5 },
+                  { "type": "affinity", "npc": "npc_lucia", "delta": 10, "reason": "把契紋的事交給她" },
+                  { "type": "memory", "summary": "小腹上的契紋是三百年前被封印的大魅魔薇絲佩菈刻下的。露西菈把它當成畢業研究，答應幫你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_mark_help_ask"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 100 }, { "type": "xp", "amount": 300 }]
+    },
+    {
+      "id": "par_mark_find",
+      "title": "契約的另一半",
+      "summary": "契紋越來越深了。露西菈從學院的禁書區偷看到一行字：薇絲佩菈的僕從會來「收成」帶著契紋的人。（魅魔的契紋・露西菈・二）",
+      "tags": ["adult"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lucia",
+        "min_level": 4,
+        "requires": {
+          "flags": ["par_mark_1_done", "par_mark_with_lucia"],
+          "parasites": { "succubus_mark": { "tamed": false, "min": 30 } }
+        },
+        "text": "露西菈一看到你就衝過來，抓住你的手：「契紋變深了！我、我看得出來！」她壓低聲音，「我偷看了禁書區……薇絲佩菈會派僕從來收成契紋夠深的人。他們今晚就會到城外！」她咬著嘴唇，「我、我會保護你的！大概！」"
+      },
+      "start_flags": ["par_mark_find_start"],
+      "nodes": [
+        {
+          "id": "imps",
+          "title": "在血羽城堡近郊擊退薇絲佩菈的僕從",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "text": "月亮升起時，城外的荒地上出現了一個穿著學院制服的魅魔，帶著兩隻小惡魔。露西菈倒吸了一口氣：「是、是學院的優等生……她投靠薇絲佩菈了？」優等生對你笑了笑：「學姊，把那個人類交出來吧。妳又不會用。」",
+          "enemies": [["honor_succubus", 1], ["brimstone_imp", 2]],
+          "success": {
+            "text": "優等生被打跑之前，丟下了一句話：「契約的原本在血岩深穴，你們拿不到的。」露西菈愣了很久，然後握緊了拳頭：「……她剛剛說我不會用。我、我會用給她看！」",
+            "set_flags": ["par_mark_find_imps"]
+          },
+          "fail": {
+            "text": "你們撐不住，優等生的魅惑術讓你的契紋亮得刺眼。最後是露西菈閉著眼睛大喊「不准碰他！」——那一次她的魅惑術成功了，連優等生都愣住了。她們撤退時，優等生說溜了嘴：原本在血岩深穴。",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 8 }],
+            "set_flags": ["par_mark_find_imps"]
+          },
+          "requires": { "flags": ["par_mark_find_start"] }
+        },
+        {
+          "id": "answer",
+          "title": "回答露西菈",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_lucia" },
+          "text": "露西菈的手還在發抖，卻笑得很開心：「我、我剛剛魅惑成功了耶。」她深吸一口氣，「血岩深穴……魔族古王的書庫就在那裡。契約的原本一定在那裡。」",
+          "options": [
+            {
+              "label": "「去找契約的原本」",
+              "success": {
+                "text": "露西菈點點頭，在《魅魔百態》上畫了一張血岩深穴的地圖：「我、我會準備好改寫契約要用的咒文！」",
+                "set_flags": ["par_mark_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lucia", "delta": 10, "reason": "一起追查契紋" },
+                  { "type": "memory", "summary": "和露西菈一起擊退了薇絲佩菈的僕從（投靠她的學院優等生）。契約的原本在血岩深穴的魔族書庫裡。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_mark_find_imps"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "par_mark_contracts",
+      "title": "契約書庫",
+      "summary": "血岩深穴裡，戰敗的魔族古王留下了一座契約書庫。薇絲佩菈的契約原本就在那裡。（魅魔的契紋・露西菈・三）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lucia",
+        "min_level": 7,
+        "requires": { "flags": ["par_mark_2_done", "par_mark_with_lucia"], "parasites": { "succubus_mark": { "tamed": false } } },
+        "text": "露西菈把一疊寫滿咒文的筆記塞進背包：「我、我整理好了！魔族的契約文字，我讀得懂！」她頓了一下，聲音小了下去，「……大概讀得懂。」"
+      },
+      "start_flags": ["par_mark_contracts_start"],
+      "nodes": [
+        {
+          "id": "archive",
+          "title": "在血岩深穴的中層解讀魔族的契約書庫",
+          "kind": "check",
+          "at": { "where": "dungeon", "location": "bloodrock_cave", "layer": "middle" },
+          "text": "書庫的牆上刻滿了契約，每一份都在微微發光。露西菈的眼睛亮了：「這、這些全部都是魔族的契約！」她一邊找一邊唸，你小腹的契紋跟著某個方向一閃一閃。",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你們跟著契紋的閃光，找到了一份用血寫的契約：「薇絲佩菈，契約者——」後面的名字是你的。露西菈臉色發白：「她、她把你的名字寫進去了……原本在更深的地方。」",
+            "set_flags": ["par_mark_contracts_archive"]
+          },
+          "fail": {
+            "text": "書庫裡的契約感應到你的契紋，一起亮了起來，把你們困在光裡好一陣子。露西菈好不容易解開咒文，才發現契紋的光指著更深的地方。",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 5 }],
+            "set_flags": ["par_mark_contracts_archive"]
+          },
+          "requires": { "flags": ["par_mark_contracts_start"] }
+        },
+        {
+          "id": "guards",
+          "title": "在血岩深穴的深層搶下契約的原本",
+          "kind": "combat",
+          "at": { "where": "dungeon", "location": "bloodrock_cave", "layer": "deep" },
+          "text": "書庫的最深處，兩個血誓守衛守著一個上鎖的箱子。箱子裡傳出薇絲佩菈的聲音：「小可愛，你自己送上門來了。」露西菈抓緊了你的衣角：「我、我們一起！」",
+          "enemies": [["bloodsworn_guard", 2]],
+          "success": {
+            "text": "守衛倒下了。你們打開箱子，裡面是一張發光的羊皮紙——契約的原本。薇絲佩菈的聲音氣急敗壞：「放下！那是我的！」露西菈把它捲起來塞進懷裡：「現在是我們的了！」",
+            "set_flags": ["par_mark_contracts_guards"]
+          },
+          "fail": {
+            "text": "你們被守衛逼退了，可是露西菈在撤退的時候，用一個她自己都不相信會成功的魅惑術讓守衛轉了身。她從箱子裡搶出了羊皮紙，抱著它跑得比你還快。",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 8 }],
+            "set_flags": ["par_mark_contracts_guards"]
+          },
+          "requires": { "flags": ["par_mark_contracts_archive"] }
+        },
+        {
+          "id": "answer",
+          "title": "和露西菈研究契約的原本",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_lucia" },
+          "text": "露西菈把契約的原本攤在桌上，用了一整晚的時間解讀。天亮時，她抬起頭，眼睛紅紅的：「可以改寫……可是要在契紋最深的時候。那時候你會最接近她，也最危險。」",
+          "options": [
+            {
+              "label": "「等它最深的時候，我們改寫它」",
+              "success": {
+                "text": "露西菈用力點頭：「到時候，我、我會陪著你。這是我的畢業研究——也是我想做的事。」",
+                "set_flags": ["par_mark_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_lucia", "delta": 10, "reason": "一起拿回了契約的原本" },
+                  { "type": "memory", "summary": "和露西菈從血岩深穴的書庫拿回了薇絲佩菈的契約原本。要在契紋最深的時候改寫它。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_mark_contracts_guards"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 800 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "par_mark_rewrite",
+      "title": "改寫契約",
+      "summary": "契紋深得像要燒穿身體，薇絲佩菈隨時都能把你叫走。露西菈攤開契約的原本：今晚，要決定誰是這份契約的主人。（魅魔的契紋・露西菈・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_lucia",
+        "min_level": 9,
+        "requires": {
+          "flags": ["par_mark_3_done", "par_mark_with_lucia"],
+          "parasites": { "succubus_mark": { "tamed": false, "min": 60 } }
+        },
+        "text": "露西菈把房間的門窗都鎖上，在地上畫了一個複雜的魔法陣，契約的原本放在正中央。她的手在發抖，聲音卻很堅定：「改寫契約的時候……需要另一個魅魔的魔力。我、我會把我的魔力借給你。」她的臉紅透了，「借的方法……書上寫的是……很親密的那種。」"
+      },
+      "start_flags": ["par_mark_rewrite_start"],
+      "nodes": [
+        {
+          "id": "ritual",
+          "title": "和露西菈一起在魔法陣裡改寫契約",
+          "kind": "check",
+          "at": { "where": "npc", "npc": "npc_lucia" },
+          "text": "你們在魔法陣裡相擁，露西菈的魔力順著你們交纏的身體流進你的契紋。契紋亮得刺眼，薇絲佩菈的聲音在你的腦海裡尖叫：「你是我的！」露西菈在你耳邊喘著氣：「說、說出來……說出你的名字……」",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": {
+            "text": "你在露西菈的懷裡喊出了自己的名字。契約的原本上，薇絲佩菈的名字和你的名字交換了位置。她的尖叫聲越來越遠，最後消失了。露西菈趴在你的胸口，喘著氣笑了：「成、成功了……我第一次……魅惑成功……」",
+            "set_flags": ["par_mark_rewrite_ritual"]
+          },
+          "fail": {
+            "text": "薇絲佩菈的聲音太強了，你差一點就被她拉了過去。露西菈緊緊地抱住你，用盡全身的魔力把你拉回來——你們都快昏過去了，契約的原本卻還在那裡，等著最後一筆。",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 10 }],
+            "set_flags": ["par_mark_rewrite_ritual"]
+          },
+          "requires": { "flags": ["par_mark_rewrite_start"] }
+        },
+        {
+          "id": "choose",
+          "title": "決定契約的結局",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_lucia" },
+          "text": "契約的原本在魔法陣裡發著光，只差最後一筆。露西菈靠在你身上，聲音很輕：「兩種寫法。寫你的名字在主人那一欄……它就是你的了。或者，把它撕掉，一切都結束。」她看著你，「不管你選哪一個，我、我都會在。」",
+          "options": [
+            {
+              "label": "「我是這份契約的主人。」",
+              "success": {
+                "text": "你在主人那一欄寫下了自己的名字。小腹上的紋樣從桃紅變成了深紅，藤蔓反過來把心護在中間——它現在聽你的。露西菈看著新的紋樣，臉又紅了：「好、好漂亮……這、這可以寫進我的畢業論文嗎？」",
+                "complete": true,
+                "effects": [
+                  { "type": "parasite", "parasite": "succubus_mark", "op": "tame" },
+                  { "type": "affinity", "npc": "npc_lucia", "delta": 20, "reason": "一起改寫了契約" },
+                  {
+                    "type": "memory",
+                    "summary": "在露西菈的幫助下改寫了薇絲佩菈的契約，契紋變成了聽命於你的「主宰之紋」。露西菈說，這是她第一次魅惑成功。",
+                    "importance": 3
+                  }
+                ]
+              }
+            },
+            {
+              "label": "「把它撕掉。」",
+              "success": {
+                "text": "你把契約撕成了兩半。小腹上的紋樣一點一點地淡去，最後只剩下一片光滑的皮膚。露西菈摸了摸那裡，眼淚掉了下來：「消失了……你自由了。」她吸了吸鼻子，「我、我的畢業研究……也結束了呢。」",
+                "complete": true,
+                "effects": [
+                  { "type": "parasite", "parasite": "succubus_mark", "op": "remove" },
+                  { "type": "money", "amount": 1500 },
+                  { "type": "affinity", "npc": "npc_lucia", "delta": 15, "reason": "陪你撕毀了契約" },
+                  { "type": "memory", "summary": "在露西菈的幫助下撕毀了薇絲佩菈的契約，小腹上的契紋消失了。", "importance": 3 }
+                ]
+              }
+            }
+          ],
+          "requires": { "flags": ["par_mark_rewrite_ritual"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 3000 }]
+    },
+    {
+      "id": "par_mark_help_cas",
+      "title": "小腹上的紋",
+      "summary": "小腹上多了一個桃紅色的紋樣，發作的時候會發燙、發亮。血羽城堡「黑薔薇」的女王卡珊卓看了一眼，就認出了它：「魅魔的契紋。我見過很多。戴著它的人，最後都跪在別人腳下。」（魅魔的契紋・卡珊卓・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_cassandra",
+        "min_level": 1,
+        "requires": {
+          "flags_none": ["par_mark_help_start", "par_mark_help_cas_start"],
+          "parasites": { "succubus_mark": { "tamed": false } }
+        },
+        "text": "卡珊卓用鞭柄挑起你的下巴，視線往下移，停在你的小腹上。她的眼神變了：「魅魔的契紋。」她收回鞭子，聲音一如往常地平靜，「我店裡有好幾個女孩戴過這個。我知道它會對你做什麼。」她轉身，「跟我來。如果你還想當自己的主人的話。」"
+      },
+      "start_flags": ["par_mark_help_cas_start"],
+      "nodes": [
+        {
+          "id": "read",
+          "title": "讓卡珊卓看看契紋",
+          "kind": "check",
+          "at": { "where": "npc", "npc": "npc_cassandra" },
+          "text": "黑薔薇最深處的房間裡，卡珊卓讓你躺在絲絨的長椅上，用戴著手套的手指描著你小腹上的紋樣。每描一筆，契紋就燙一下，你就忍不住弓起身子。「別動。」她說，「也別說謊——它亮的時候，你想要什麼？」",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": {
+            "text": "你老實地回答了。卡珊卓點點頭：「誠實是好事。」她拿起一本皮面的帳冊，「藤蔓纏著心——薇絲佩菈的紋。三百年前被封印的大魅魔。我的女孩們身上那些，都是她的分身刻的。」",
+            "set_flags": ["par_mark_help_cas_read"]
+          },
+          "fail": {
+            "text": "你想裝作沒事，契紋卻在她的指尖下亮了起來。卡珊卓看著你喘息的樣子，沒有笑，只是很冷靜地在帳冊上記了一筆：「薇絲佩菈的紋。它已經開始教你說謊了。」",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 5 }],
+            "set_flags": ["par_mark_help_cas_read"]
+          },
+          "requires": { "flags": ["par_mark_help_cas_start"] }
+        },
+        {
+          "id": "ask",
+          "title": "在血羽城堡的娼館見戴過契紋的女孩",
+          "kind": "story",
+          "at": { "where": "cell", "location": "bloodplume", "cell": "brothel" },
+          "text": "卡珊卓帶你去見一個在黑薔薇工作的女孩。女孩的小腹上有一道淡淡的疤，形狀像一顆被藤蔓纏住的心。「我是被它吃掉一半才逃出來的，」女孩說，「女王幫我撕了契約——用的是契約的原本。」",
+          "success": {
+            "text": "女孩說，契紋只是一份契約的一半；原本藏在魔族的書庫裡，只有找到它，才能改寫或撕毀。卡珊卓在旁邊淡淡地補了一句：「我花了兩年才找到她的那一份。你的那一份，我們一起找。」",
+            "set_flags": ["par_mark_help_cas_ask"]
+          },
+          "requires": { "flags": ["par_mark_help_cas_read"] }
+        },
+        {
+          "id": "answer",
+          "title": "回答卡珊卓",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_cassandra" },
+          "text": "卡珊卓靠在門框上，摘下一隻手套：「我不做白工。可是我討厭薇絲佩菈——她讓太多人跪在她腳下了。」她看著你，「讓我幫你。代價是，你要聽我的。在這件事情上，完全地聽我的。」",
+          "options": [
+            {
+              "label": "「我聽妳的，女王」",
+              "success": {
+                "text": "卡珊卓嘴角揚了一下，那是一個很淺、很真的笑：「好孩子。」她重新戴上手套，「第一條規矩：契紋發作的時候，不准一個人撐著。來找我。」",
+                "set_flags": ["par_mark_1_done", "par_mark_with_cas"],
+                "effects": [
+                  { "type": "corruption", "parasite": "succubus_mark", "delta": -5 },
+                  { "type": "affinity", "npc": "npc_cassandra", "delta": 10, "reason": "把契紋的事交給她" },
+                  {
+                    "type": "memory",
+                    "summary": "小腹上的契紋是三百年前被封印的大魅魔薇絲佩菈刻下的。黑薔薇的女王卡珊卓答應幫你，條件是在這件事上完全聽她的。",
+                    "importance": 2
+                  }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_mark_help_cas_ask"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 100 }, { "type": "xp", "amount": 300 }]
+    },
+    {
+      "id": "par_mark_find_cas",
+      "title": "契約的另一半",
+      "summary": "契紋越來越深了。卡珊卓收到消息：薇絲佩菈的僕從正在城外「收成」契紋夠深的人。（魅魔的契紋・卡珊卓・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_cassandra",
+        "min_level": 4,
+        "requires": {
+          "flags": ["par_mark_1_done", "par_mark_with_cas"],
+          "parasites": { "succubus_mark": { "tamed": false, "min": 30 } }
+        },
+        "text": "卡珊卓把一張紙條放在你面前：「我的客人說，城外有魅魔在找帶著契紋的人。」她看了一眼你的小腹，「你的已經夠深了。今晚，他們會來找你。」她拿起鞭子，「我們先去找他們。」"
+      },
+      "start_flags": ["par_mark_find_cas_start"],
+      "nodes": [
+        {
+          "id": "imps",
+          "title": "在血羽城堡近郊擊退薇絲佩菈的僕從",
+          "kind": "combat",
+          "at": { "where": "outskirts", "location": "bloodplume" },
+          "text": "城外的荒地上，一個穿著學院制服的魅魔帶著兩隻小惡魔等著。她看到卡珊卓時愣了一下，然後笑了：「黑薔薇的女王也來了？可惜，這個人類是薇絲佩菈大人的。」卡珊卓甩了一下鞭子：「現在是我的。」",
+          "enemies": [["honor_succubus", 1], ["brimstone_imp", 2]],
+          "success": {
+            "text": "魅魔被打跑之前，丟下了一句話：「契約的原本在血岩深穴，你們拿不到的。」卡珊卓收起鞭子，冷冷地說：「她說太多了。」",
+            "set_flags": ["par_mark_find_cas_imps"]
+          },
+          "fail": {
+            "text": "你們撐不住，魅魔的魅惑術讓你的契紋亮得刺眼。卡珊卓擋在你面前，一鞭子抽在魅魔的臉上：「我說過，現在是我的。」魅魔撤退時，惱羞成怒地喊出了原本的下落：血岩深穴。",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 8 }],
+            "set_flags": ["par_mark_find_cas_imps"]
+          },
+          "requires": { "flags": ["par_mark_find_cas_start"] }
+        },
+        {
+          "id": "answer",
+          "title": "回答卡珊卓",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_cassandra" },
+          "text": "卡珊卓替你擦掉臉上的灰，動作很輕：「血岩深穴。魔族古王的書庫。我找到那個女孩的契約，也是在那裡。」她看著你，「你怕嗎？」",
+          "options": [
+            {
+              "label": "「去找契約的原本」",
+              "success": {
+                "text": "卡珊卓點點頭：「很好。害怕的時候，就看著我。」",
+                "set_flags": ["par_mark_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_cassandra", "delta": 10, "reason": "一起追查契紋" },
+                  { "type": "memory", "summary": "和卡珊卓一起擊退了薇絲佩菈的僕從。契約的原本在血岩深穴的魔族書庫裡。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_mark_find_cas_imps"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "par_mark_contracts_cas",
+      "title": "契約書庫",
+      "summary": "血岩深穴裡，戰敗的魔族古王留下了一座契約書庫。卡珊卓兩年前來過一次。（魅魔的契紋・卡珊卓・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_cassandra",
+        "min_level": 7,
+        "requires": { "flags": ["par_mark_2_done", "par_mark_with_cas"], "parasites": { "succubus_mark": { "tamed": false } } },
+        "text": "卡珊卓換上了一身你從來沒見過的、樸素的旅行裝，脖子上的頸環還在：「書庫的路，我記得。」她頓了一下，「上一次來，我是為了別人。這一次，是為了你。」"
+      },
+      "start_flags": ["par_mark_contracts_cas_start"],
+      "nodes": [
+        {
+          "id": "archive",
+          "title": "在血岩深穴的中層解讀魔族的契約書庫",
+          "kind": "check",
+          "at": { "where": "dungeon", "location": "bloodrock_cave", "layer": "middle" },
+          "text": "書庫的牆上刻滿了契約，每一份都在微微發光。卡珊卓的手指撫過其中一份：「這是那個女孩的——我撕掉的那份，牆上還留著痕跡。」你小腹的契紋跟著某個方向一閃一閃。",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你們跟著契紋的閃光，找到了一份用血寫的契約，上面寫著你的名字。卡珊卓看了很久，聲音冷得像冰：「她連你的名字都拿走了。原本在更深的地方。」",
+            "set_flags": ["par_mark_contracts_cas_archive"]
+          },
+          "fail": {
+            "text": "書庫裡的契約感應到你的契紋，一起亮了起來，你被光困住，跪了下來。卡珊卓一把抓住你的頸後，把你拖出了光圈：「站起來。我們還沒到。」",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 5 }],
+            "set_flags": ["par_mark_contracts_cas_archive"]
+          },
+          "requires": { "flags": ["par_mark_contracts_cas_start"] }
+        },
+        {
+          "id": "guards",
+          "title": "在血岩深穴的深層搶下契約的原本",
+          "kind": "combat",
+          "at": { "where": "dungeon", "location": "bloodrock_cave", "layer": "deep" },
+          "text": "書庫的最深處，兩個血誓守衛守著一個上鎖的箱子。箱子裡傳出薇絲佩菈的聲音：「卡珊卓？妳又來偷我的東西了？」卡珊卓甩開鞭子：「這次我要拿的，是我的人。」",
+          "enemies": [["bloodsworn_guard", 2]],
+          "success": {
+            "text": "守衛倒下了。你們打開箱子，裡面是一張發光的羊皮紙——契約的原本。卡珊卓把它捲起來，交到你的手上：「你的東西。自己拿著。」",
+            "set_flags": ["par_mark_contracts_cas_guards"]
+          },
+          "fail": {
+            "text": "你們被守衛逼退了，卡珊卓卻在撤退的時候，用鞭子捲走了箱子裡的羊皮紙。她手臂上多了一道血痕，看都沒看一眼：「拿到了。走。」",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 8 }],
+            "set_flags": ["par_mark_contracts_cas_guards"]
+          },
+          "requires": { "flags": ["par_mark_contracts_cas_archive"] }
+        },
+        {
+          "id": "answer",
+          "title": "和卡珊卓研究契約的原本",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_cassandra" },
+          "text": "黑薔薇的房間裡，卡珊卓把契約的原本攤在桌上：「改寫它，要在契紋最深的時候。那時候你會最想跪下——跪在薇絲佩菈的腳下。」她看著你，「所以那一晚，你要跪在我的腳下。」",
+          "options": [
+            {
+              "label": "「等它最深的時候，我們改寫它」",
+              "success": {
+                "text": "卡珊卓點頭，伸手摸了摸你的頭髮：「好孩子。到時候，我會讓你記得，你是誰的。」",
+                "set_flags": ["par_mark_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_cassandra", "delta": 10, "reason": "一起拿回了契約的原本" },
+                  { "type": "memory", "summary": "和卡珊卓從血岩深穴的書庫拿回了薇絲佩菈的契約原本。要在契紋最深的時候改寫它。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["par_mark_contracts_cas_guards"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 800 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "par_mark_rewrite_cas",
+      "title": "改寫契約",
+      "summary": "契紋深得像要燒穿身體，薇絲佩菈隨時都能把你叫走。卡珊卓鎖上了黑薔薇最深處的門：今晚，要決定誰是這份契約的主人。（魅魔的契紋・卡珊卓・四）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_cassandra",
+        "min_level": 9,
+        "requires": {
+          "flags": ["par_mark_3_done", "par_mark_with_cas"],
+          "parasites": { "succubus_mark": { "tamed": false, "min": 60 } }
+        },
+        "text": "卡珊卓鎖上門，把契約的原本放在床頭，摘下了手套：「契紋最深的時候，薇絲佩菈會叫你跪下。」她坐在床沿，翹起腿，「所以，在她叫你之前——先對我跪下。讓你的身體記住：你只會為了自己選擇的人跪。」"
+      },
+      "start_flags": ["par_mark_rewrite_cas_start"],
+      "nodes": [
+        {
+          "id": "ritual",
+          "title": "在黑薔薇跪在卡珊卓的面前改寫契約",
+          "kind": "check",
+          "at": { "where": "npc", "npc": "npc_cassandra" },
+          "text": "卡珊卓用鞭子、用手指、用低沉的命令，一次又一次地讓你的契紋亮起來，又一次又一次地把你從快感的邊緣拉回來。薇絲佩菈的聲音在你的腦海裡尖叫：「跪下！」卡珊卓在你耳邊說：「你要跪給誰？」",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": {
+            "text": "「妳。」你說。契約的原本上，薇絲佩菈的名字和你的名字交換了位置。她的尖叫聲越來越遠，最後消失了。卡珊卓托起你的臉，第一次在你面前露出了溫柔的表情：「好孩子。你自由了——你選擇的。」",
+            "set_flags": ["par_mark_rewrite_cas_ritual"]
+          },
+          "fail": {
+            "text": "薇絲佩菈的聲音太強了，你差一點就跪向了另一個方向。卡珊卓一把揪住你的頭髮，逼你看著她，直到你想起自己是誰——你們都精疲力盡，契約的原本卻還在那裡，等著最後一筆。",
+            "effects": [{ "type": "corruption", "parasite": "succubus_mark", "delta": 10 }],
+            "set_flags": ["par_mark_rewrite_cas_ritual"]
+          },
+          "requires": { "flags": ["par_mark_rewrite_cas_start"] }
+        },
+        {
+          "id": "choose",
+          "title": "決定契約的結局",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_cassandra" },
+          "text": "契約的原本在床頭發著光，只差最後一筆。卡珊卓靠著床頭，手指撫過你小腹上的紋樣：「兩種寫法。在主人那一欄寫你的名字，它就是你的了——一個很好用的東西。或者撕掉它，乾乾淨淨。」她看著你，「你自己選。這一次，不用聽我的。」",
+          "options": [
+            {
+              "label": "「我是這份契約的主人。」",
+              "success": {
+                "text": "你在主人那一欄寫下了自己的名字。小腹上的紋樣從桃紅變成了深紅，藤蔓反過來把心護在中間——它現在聽你的。卡珊卓看著新的紋樣，滿意地笑了：「很適合你。現在，你也是個女王了。」",
+                "complete": true,
+                "effects": [
+                  { "type": "parasite", "parasite": "succubus_mark", "op": "tame" },
+                  { "type": "affinity", "npc": "npc_cassandra", "delta": 20, "reason": "一起改寫了契約" },
+                  { "type": "memory", "summary": "在卡珊卓的幫助下改寫了薇絲佩菈的契約，契紋變成了聽命於你的「主宰之紋」。卡珊卓說，你也是個女王了。", "importance": 3 }
+                ]
+              }
+            },
+            {
+              "label": "「把它撕掉。」",
+              "success": {
+                "text": "你把契約撕成了兩半。小腹上的紋樣一點一點地淡去，最後只剩下一片光滑的皮膚。卡珊卓摸了摸那裡，很久沒有說話。最後她說：「很好。這樣，你就不欠任何人了。」她頓了一下，「……包括我。」",
+                "complete": true,
+                "effects": [
+                  { "type": "parasite", "parasite": "succubus_mark", "op": "remove" },
+                  { "type": "money", "amount": 1500 },
+                  { "type": "affinity", "npc": "npc_cassandra", "delta": 15, "reason": "陪你撕毀了契約" },
+                  { "type": "memory", "summary": "在卡珊卓的幫助下撕毀了薇絲佩菈的契約，小腹上的契紋消失了。", "importance": 3 }
+                ]
+              }
+            }
+          ],
+          "requires": { "flags": ["par_mark_rewrite_cas_ritual"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 3000 }]
     }
   ]
 }

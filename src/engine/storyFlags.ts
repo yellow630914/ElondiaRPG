@@ -35,6 +35,13 @@ export function condMet(state: GameState, cond: StoryCond | undefined): boolean 
       return (r.min === undefined || v >= r.min) && (r.max === undefined || v <= r.max)
     })
     && Object.entries(cond.affinity ?? {}).every(([id, min]) => (state.relationships?.[id]?.affinity ?? 0) >= min)
+    && Object.entries(cond.parasites ?? {}).every(([id, r]) => {
+      // 主角身上要有這個寄生物、而且沒有沉睡；侵蝕度在範圍內、馴服與否相符
+      const p = state.party.find((m) => m.isPlayer)?.parasites?.find((x) => x.id === id)
+      if (!p || p.dormant) return false
+      if (r.tamed !== undefined && !!p.tamed !== r.tamed) return false
+      return (r.min === undefined || p.corruption >= r.min) && (r.max === undefined || p.corruption <= r.max)
+    })
 }
 
 // ---- 劇情計數器（data/rules/counters.json） ----

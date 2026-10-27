@@ -4,6 +4,7 @@
 // - 誓約印記：屬性有加有減、加總為 0（tattoos.json 的 oath），由 character.ts 的 attrsOf 算進有效屬性。
 // - 普通刺青：只是外觀，寫進給 AI 的主角資料。
 
+import { displaceCurse, storeTamedCurse } from './parasites'
 import tattooJson from '@data/rules/tattoos.json'
 import { adultContent, safeText } from './content'
 import { ATTR_IDS, attrName, type AttrId } from './data'
@@ -96,6 +97,8 @@ export function setContract(c: Character, contract: ContractRef, time: GameTime 
   const list = (c.tattoos ??= [])
   const covered = list.filter((t) => t.kind !== 'slave' && t.place === place)
   c.tattoos = list.filter((t) => t.kind !== 'slave' && t.place !== place)
+  // 淫紋被頂掉：記下來（未馴服的沉睡），之後可以到刻印師紋回來
+  for (const t of covered) if (t.kind === 'curse') displaceCurse(c, t)
   c.tattoos.push({ kind: 'slave', place, contract, since: { ...time }, ...(by ? { by } : {}) })
   return covered
 }
@@ -179,11 +182,12 @@ export function tattooFromTemplate(id: string, c: Pick<Character, 'tattoos'>, pl
   return { kind: tpl.kind, place: at, name: tpl.name, desc: tpl.desc, template: id, ...(tpl.kind === 'oath' ? { attrs: { ...tpl.attrs } } : {}) }
 }
 
-/** 洗掉一個部位的刺青（奴隸印記要用解除契約，不能用這個） */
+/** 洗掉一個部位的刺青（奴隸印記要用解除契約、未馴服的淫紋要解咒，不能用這個；已馴服的淫紋記下來，之後可以紋回來） */
 export function removeTattoo(c: Character, place: TattooPlace): Tattoo | undefined {
   const t = tattooAt(c, place)
-  if (!t || t.kind === 'slave') return undefined
+  if (!t || t.kind === 'slave' || (t.kind === 'curse' && !t.tamed)) return undefined
   c.tattoos = tattoosOf(c).filter((x) => x !== t)
+  if (t.kind === 'curse') storeTamedCurse(c, t)
   return t
 }
 

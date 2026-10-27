@@ -6,6 +6,7 @@
 // - 缺陷（flaw）：負的效果。建立角色時最多選兩個、每個換一個一般特質的名額；事件直接給（不是機會），
 //   受訓或事件的 lose_perk 克服。AI 設計的特質不能是缺陷。
 
+import { activeParasites, parasiteDef, parasiteEffects, stageName } from './parasites'
 import {
   actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
   type PerkDef, type PerkEffect,
@@ -71,9 +72,19 @@ export function gearCheckModifiers(c: Pick<Character, 'gear'>, ctx: CheckCtx): {
   return out
 }
 
-/** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備（正數是加值） */
+/** 寄生物的被動效果（目前階段）與已馴服的印記的檢定加值 */
+export function parasiteCheckModifiers(c: Pick<Character, 'parasites' | 'tattoos'>, ctx: CheckCtx): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = []
+  for (const p of activeParasites(c)) {
+    for (const e of parasiteEffects(p)) if (matches(e.check, ctx)) out.push({ label: `寄生【${parasiteDef(p.id)!.name}・${stageName(p.corruption)}】`, value: e.bonus })
+  }
+  for (const t of c.tattoos ?? []) if (t.kind === 'curse' && t.tamed && t.unique && matches(t.unique.check, ctx)) out.push({ label: `印記【${t.name ?? ''}】`, value: t.unique.bonus })
+  return out
+}
+
+/** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備 + 寄生物與印記（正數是加值） */
 export function checkModifiers(c: Character, ctx: CheckCtx): { label: string; value: number }[] {
-  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...gearCheckModifiers(c, ctx)].filter((x) => x.value !== 0)
+  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx)].filter((x) => x.value !== 0)
 }
 
 /** 檢定的情境修正總和 */

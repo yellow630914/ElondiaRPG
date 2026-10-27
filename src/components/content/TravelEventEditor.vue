@@ -4,7 +4,8 @@ import { ATTR_IDS, attrName, geography, type LocationType, type RouteMode } from
 import { cellName, type CellKind } from '@/engine/grid'
 import { travelEvents, type RoadOption } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
-import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
+import { parasiteRules } from '@/engine/parasites'
+import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, PARASITE_MOMENTS, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
 import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import type { DungeonTrigger, EventScope } from '@/engine/road'
 import { useContent } from '@/stores/content'
@@ -14,7 +15,7 @@ import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
 import Hint from '../ui/Hint.vue'
 
-// 旅途事件、城鎮事件或地下城事件的編輯表單：在哪裡出現、檢定或選項、結果
+// 旅途事件、城鎮事件、地下城事件或寄生物的發作的編輯表單：在哪裡出現、檢定或選項、結果
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()
 const content = useContent()
@@ -39,16 +40,24 @@ const builtin = computed(() => !!builtinTravelEvent(props.id))
 const edited = computed(() => builtin.value && !!content.mods.travelEvents?.[props.id])
 const town = computed(() => draft.value.scope === 'town')
 const dungeon = computed(() => draft.value.scope === 'dungeon')
+const parasite = computed(() => draft.value.scope === 'parasite')
+// 發生在主角身上的事件（地下城事件、寄生物的發作）：只有選擇，主角自己擲
+const onPc = computed(() => dungeon.value || parasite.value)
+const parasiteIds = Object.keys(parasiteRules.parasites)
 const BODY_NAME = { fem: '女性形象', andro: '中性', masc: '男性形象' } as const
 function setScope(v: string) {
-  const scope = (['town', 'dungeon'].includes(v) ? v : undefined) as EventScope | undefined
+  const scope = (['town', 'dungeon', 'parasite'].includes(v) ? v : undefined) as EventScope | undefined
   draft.value.scope = scope
   if (scope === 'dungeon') {
     setKind('choice')
     draft.value.triggers ??= ['trap']
   }
+  if (scope === 'parasite') {
+    setKind('choice')
+    draft.value.parasite ??= parasiteIds[0]
+  }
 }
-function toggleNum(field: 'layers', v: number, on: boolean) {
+function toggleNum(field: 'layers' | 'stages', v: number, on: boolean) {
   const set = new Set<number>(draft.value[field] ?? [])
   if (on) set.add(v)
   else set.delete(v)
@@ -62,7 +71,7 @@ const settlements = geography.locations.filter((l) => l.type !== 'dungeon')
 const dungeonPlaces = geography.locations.filter((l) => l.type === 'dungeon')
 const cellLabel = (c: string) => cellName(c as CellKind)
 
-function toggle<T extends string>(field: 'modes' | 'cells' | 'location_types' | 'locations' | 'triggers' | 'dungeons' | 'regions' | 'tags' | 'pc_body', v: T, on: boolean) {
+function toggle<T extends string>(field: 'modes' | 'cells' | 'location_types' | 'locations' | 'triggers' | 'dungeons' | 'regions' | 'tags' | 'pc_body' | 'moments', v: T, on: boolean) {
   const set = new Set<string>((draft.value[field] as string[] | undefined) ?? [])
   if (on) set.add(v)
   else set.delete(v)
@@ -115,7 +124,7 @@ function remove() {
 <template>
   <div class="editor">
     <div class="row head">
-      <h3>{{ town ? '🏘️' : dungeon ? '⚠️' : '🧭' }} {{ draft.title || '（未命名）' }}</h3>
+      <h3>{{ town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : '🧭' }} {{ draft.title || '（未命名）' }}</h3>
       <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
       <span v-if="dirty" class="tag warn">未儲存</span>
       <span class="spacer" />
@@ -125,8 +134,8 @@ function remove() {
       <button v-else class="small danger" @click="remove">刪除</button>
     </div>
     <p class="small muted">
-      id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
-      {{ dungeon ? '事件發生在主角身上：檢定由主角自己擲。' : '檢定由隊伍裡最擅長那個屬性的人來擲。' }}
+      id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : parasite ? '寄生物的發作：身上有這個寄生物（沒馴服、沒沉睡）時，走動、旅途或長休之後依 parasites.json 的機率（乘上存檔規則「寄生發作的機率」與階段的倍率）出現；選項的結果通常是侵蝕度的加減（效果「寄生物的侵蝕度」）。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
+      {{ onPc ? '事件發生在主角身上：檢定由主角自己擲。' : '檢定由隊伍裡最擅長那個屬性的人來擲。' }}
     </p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
 
@@ -139,15 +148,16 @@ function remove() {
             <option value="road">旅途上</option>
             <option value="town">城鎮的設施上</option>
             <option value="dungeon">地下城與近郊</option>
+            <option value="parasite">寄生物的發作</option>
           </select>
         </label>
-        <label v-if="!dungeon">種類
+        <label v-if="!onPc">種類
           <select :value="draft.kind" @change="setKind(($event.target as HTMLSelectElement).value as 'check' | 'choice')">
             <option value="check">檢定（走到時直接擲骰揭曉）</option>
             <option value="choice">選擇（玩家選一個選項）</option>
           </select>
         </label>
-        <label v-if="!town && !dungeon">等級
+        <label v-if="!town && !onPc">等級
           <select :value="draft.tier" @change="setTier(($event.target as HTMLSelectElement).value as 'normal' | 'advanced')">
             <option value="normal">普通事件</option>
             <option value="advanced">高階事件（✨，可以帶進臨時地圖）</option>
@@ -185,6 +195,24 @@ function remove() {
       <div class="row small"><b>只在這些地下城</b> <Hint text="近郊的事件寫那座聚落；這裡只列地下城。" />
         <label v-for="l in dungeonPlaces" :key="l.id" class="check">
           <input type="checkbox" :checked="draft.dungeons?.includes(l.id)" @change="toggle('dungeons', l.id, ($event.target as HTMLInputElement).checked)" /> {{ l.name }}
+        </label>
+      </div>
+    </fieldset>
+    <fieldset v-else-if="parasite">
+      <legend>哪一種寄生物 <Hint text="階段與時機沒勾時不限。" /></legend>
+      <div class="row small">
+        <select v-model="draft.parasite">
+          <option v-for="p in parasiteIds" :key="p" :value="p">{{ parasiteRules.parasites[p]!.name }}</option>
+        </select>
+      </div>
+      <div class="row small"><b>階段</b>
+        <label v-for="(st, i) in parasiteRules.stages" :key="i" class="check">
+          <input type="checkbox" :checked="draft.stages?.includes(i)" @change="toggleNum('stages', i, ($event.target as HTMLInputElement).checked)" /> {{ st.name }}（{{ st.min }}+）
+        </label>
+      </div>
+      <div class="row small"><b>時機</b>
+        <label v-for="(n, k) in PARASITE_MOMENTS" :key="k" class="check">
+          <input type="checkbox" :checked="draft.moments?.includes(k)" @change="toggle('moments', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
         </label>
       </div>
     </fieldset>

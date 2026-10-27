@@ -41,8 +41,8 @@ export interface RoadOption {
   /** 成人向：這個選項進入親密場景（模板的 scene）：always 一定、success / fail 檢定成功或失敗時 */
   adult_scene?: 'always' | 'success' | 'fail'
 }
-/** 事件發生的地方：旅途上（預設）、城鎮的設施上（townEvents.ts），或地下城與近郊（dungeonEvents.ts） */
-export type EventScope = 'road' | 'town' | 'dungeon'
+/** 事件發生的地方：旅途上（預設）、城鎮的設施上（townEvents.ts）、地下城與近郊（dungeonEvents.ts），或寄生物的發作（parasiteEvents.ts） */
+export type EventScope = 'road' | 'town' | 'dungeon' | 'parasite'
 /** 地下城事件的觸發點：觸發陷阱、打開寶箱、採集、在安全房長休之後 */
 export type DungeonTrigger = 'trap' | 'chest' | 'gather' | 'rest'
 export interface RoadTemplate {
@@ -72,6 +72,12 @@ export interface RoadTemplate {
   regions?: string[]
   /** 地下城：哪幾層（0 近郊、1 淺層、2 中層、3 深層、4 底層；沒有時任何一層） */
   layers?: number[]
+  /** 寄生物：哪一種（parasites.json 的 id） */
+  parasite?: string
+  /** 寄生物：哪些階段（0 潛伏、1 發作、2 共生、3 支配；沒有時任何階段） */
+  stages?: number[]
+  /** 寄生物：哪些時機（step 走動、travel 旅途、rest 長休之後；沒有時任何時機） */
+  moments?: ('step' | 'travel' | 'rest')[]
   /** 內容標籤（成人向、主角非自願……）：設定沒有開啟或關掉時不出現 */
   tags?: ContentTag[]
   /** 只給這些體型的主角 */
@@ -222,7 +228,7 @@ function buildRoad(state: GameState, from: string, to: string, legs: { from: str
     break
   }
   // 被主人帶著：主人的事件
-  if (isBound(state) && dayCells.length && rng.chance(slaveryRules.master_events.travel_chance)) {
+  if (isBound(state) && dayCells.length && rng.chance(Math.min(1, slaveryRules.master_events.travel_chance * gameRule(state, 'masterEventMult')))) {
     const free = dayCells.filter((i) => cells[i]!.event?.tier !== 'special')
     if (free.length) {
       const i = rng.pick(free)

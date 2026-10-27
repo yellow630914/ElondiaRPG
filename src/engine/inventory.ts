@@ -1,5 +1,6 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
+import { PARASITE_LOCK } from './parasites'
 import { hasPerk, offerPerks } from './perks'
 import { recalc, snapshot } from './character'
 import {
@@ -182,14 +183,16 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
  * 穿上裝備：放進指定的欄位（沒指定時挑第一個空的、可以放的欄位）。
  * 雙手武器會空出副手；換下來的裝備放回行囊。
  */
-/** 主人強制裝上、契約還在時不能拿下的裝備 */
+/** 不能拿下的裝備：主人強制裝上的（契約還在時）、寄生裝備（馴服或解咒之前） */
 export function lockedGear(m: Character, slot: GearSlot): EquippedGear | undefined {
   const g = m.gear?.[slot]
-  return g?.locked && contractOf(m) ? g : undefined
+  if (!g?.locked) return undefined
+  return g.locked.startsWith(PARASITE_LOCK) || contractOf(m) ? g : undefined
 }
 
 function assertUnlocked(m: Character, slot: GearSlot) {
   const g = lockedGear(m, slot)
+  if (g?.locked?.startsWith(PARASITE_LOCK)) throw new Error(`${g.name}緊緊貼在身上，脫不下來（寄生裝備：馴服或解咒之後才能拿下）`)
   if (g) throw new Error(`${g.name}是主人強制戴上的，契約還在時不能拿下`)
 }
 

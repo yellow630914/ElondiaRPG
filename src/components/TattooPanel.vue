@@ -3,6 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { ATTR_IDS, attrName } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { inkKind, inkPrice, orderTattoo, removePrice, shopRefusal, tattooShop, type TattooShopId } from '@/engine/tattooShop'
+import { cureOffers, reinkOffers } from '@/engine/parasiteEvents'
 import {
   freePlaces, oathError, oathText, placeName, tattooError, tattooKindName, tattooName, tattooRules, tattoosOf,
 } from '@/engine/tattoos'
@@ -64,7 +65,11 @@ function ink() {
 }
 
 // ---- 洗刺青 ----
-const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'slave').map((t) => ({ t, price: removePrice(props.shop, t.kind) })))
+const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'slave').map((t) => ({ t, price: removePrice(props.shop, t.kind, t.kind !== 'curse' || !!t.tamed) })))
+
+// ---- 寄生物：解咒（神殿、刻印師）與紋回來（刻印師） ----
+const cures = computed(() => (props.shop === 'parlor' ? [] : cureOffers(s.value)))
+const reinks = computed(() => reinkOffers(s.value))
 </script>
 
 <template>
@@ -105,10 +110,30 @@ const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'sl
       <li v-for="{ t, price: p } in washable" :key="t.place">
         {{ placeName(t.place) }}・{{ tattooKindName(t.kind) }}【{{ tattooName(t) }}】
         <button v-if="p !== undefined" class="small" :disabled="!!refusal || s.money_cc < p" @click="game.washTattoo(t.place)">洗掉（{{ formatMoney(p) }}）</button>
+        <span v-else-if="t.kind === 'curse' && !t.tamed" class="muted">未馴服的詛咒印記洗不掉，要解咒</span>
         <span v-else class="muted">這裡不洗{{ tattooKindName(t.kind) }}</span>
       </li>
     </ul>
     <p v-else class="muted">身上沒有可以洗的刺青。</p>
+
+    <template v-if="cures.length">
+      <h4>解咒 <Hint text="拿掉身上的寄生物（寄生裝備、淫紋、寄生種子）：先付錢再擲骰，侵蝕度越高越難、越貴；失敗時錢不退、侵蝕度上升。成功時寄生物的任務線也跟著結束。" /></h4>
+      <ul class="plain">
+        <li v-for="c in cures" :key="c.id">
+          {{ c.name }}（{{ attrName(c.attr as never) }}・DC {{ c.dc }}）
+          <button class="small" :disabled="!!refusal || s.money_cc < c.price" @click="game.cureParasite(c.id)">解咒（{{ formatMoney(c.price) }}）</button>
+        </li>
+      </ul>
+    </template>
+    <template v-if="reinks.length">
+      <h4>紋回來 <Hint text="被奴隸印記頂掉、或馴服後洗掉的淫紋，以及刻上淫紋時被蓋掉的刺青，刻印師可以照原樣紋回去（部位要空著）。" /></h4>
+      <ul class="plain">
+        <li v-for="r in reinks" :key="`${r.parasite}:${r.kind}`">
+          {{ placeName(r.tattoo.place) }}・{{ tattooKindName(r.tattoo.kind) }}【{{ tattooName(r.tattoo) }}】
+          <button class="small" :disabled="s.money_cc < r.price" @click="game.reinkParasite(r.parasite, r.kind)">紋回來（{{ formatMoney(r.price) }}）</button>
+        </li>
+      </ul>
+    </template>
   </div>
 </template>
 

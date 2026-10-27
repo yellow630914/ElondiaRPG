@@ -27,6 +27,7 @@ import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
 import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
+import { gameRule } from './gameRules'
 
 // ---- 印記條款 ----
 
@@ -427,7 +428,7 @@ export interface MasterEventOptions {
 }
 
 export function maybeMasterEvent(state: GameState, chance: number, opts: MasterEventOptions = {}): PendingMasterEvent | undefined {
-  if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent || state.dungeonEvent) return undefined
+  if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent || state.dungeonEvent || state.parasiteEvent) return undefined
   // 主人不在身邊（戰敗時逃開了）時沒有突發事件
   const master = state.party.find((m) => m.id === contractOf(pcOf(state))!.master)
   if (!master || master.status.includes('away')) return undefined
@@ -449,7 +450,7 @@ export function maybeMasterEvent(state: GameState, chance: number, opts: MasterE
   const general = events.filter((e) => !e.cell && !e.overdue)
   const picked = withRng(state, (rng) => (overdue.length && rng.chance(home) ? pickEvent(rng, overdue) : undefined)
     ?? local.find((e) => rng.chance(e.chance ?? 0))
-    ?? (general.length && rng.chance(chance) ? pickEvent(rng, general) : undefined))
+    ?? (general.length && rng.chance(Math.min(1, chance * gameRule(state, 'masterEventMult'))) ? pickEvent(rng, general) : undefined))
   if (!picked) return undefined
   return startMasterEvent(state, picked)
 }
