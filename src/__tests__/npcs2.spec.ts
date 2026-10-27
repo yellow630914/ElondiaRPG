@@ -12,7 +12,7 @@ import { currentArea, enterLocation, goOutskirts, move, returnToTown, standOn } 
 import { generateNpc, npcRecord } from '@/engine/npcs'
 import { ensureRoster, isHostile, outsideQuota, peopleHere, pruneNpcs, refreshRosters, spawnVisitors } from '@/engine/population'
 import {
-  alertFine, alertLevel, fineDue, gateCheck, isWanted, payFine, raiseAlert, reputationBand, wantedFine, zoneEntryBlock,
+  alertFine, alertLevel, fineDue, gateCheck, isWanted, palacePersuadeDc, payFine, persuadePalaceGuard, raiseAlert, reputationBand, wantedFine, zoneEntryBlock,
 } from '@/engine/security'
 import { newGame, withRng } from '@/engine/state'
 import { dealMoney, shopKey, shopState } from '@/engine/trade'
@@ -339,6 +339,36 @@ describe('crime and the guards', () => {
     expect(zoneEntryBlock(state, 'noble')).toBeNull()
     state.reputation.holy_ring = 10
     expect(zoneEntryBlock(state, 'palace')).toBeNull()
+  })
+
+  it('lets you talk your way past the palace guards for the day', () => {
+    const seen = new Set<string>()
+    for (let seed = 1; seed <= 60 && seen.size < 2; seed++) {
+      const state = game(seed)
+      expect(palacePersuadeDc(state)).toBe(18)
+      const r = persuadePalaceGuard(state)
+      expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
+      seen.add(r.outcome.result)
+      if (r.outcome.result === 'success') {
+        expect(zoneEntryBlock(state, 'palace')).toBeNull()
+        expect(() => persuadePalaceGuard(state)).toThrow()
+        state.time.day += 1
+        expect(zoneEntryBlock(state, 'palace')).toContain('說服衛兵')
+      } else {
+        expect(zoneEntryBlock(state, 'palace')).toContain('今天不會再聽你說')
+        expect(() => persuadePalaceGuard(state)).toThrow()
+        state.time.day += 1
+        expect(zoneEntryBlock(state, 'palace')).toContain('說服衛兵')
+      }
+    }
+    expect(seen).toEqual(new Set(['success', 'failure']))
+    const state = game()
+    state.reputation.holy_ring = 6
+    expect(palacePersuadeDc(state)).toBe(15)
+    state.reputation.holy_ring = -40
+    expect(palacePersuadeDc(state)).toBe(24)
+    state.wanted = { holy_ring: { day: 1 } }
+    expect(() => persuadePalaceGuard(state)).toThrow('通緝')
   })
 
   it('prices follow your reputation with the local faction', () => {
