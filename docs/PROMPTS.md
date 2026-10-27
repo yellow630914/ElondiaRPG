@@ -15,9 +15,10 @@
 | Anthropic（Claude） | `@anthropic-ai/sdk` | 預設 `claude-opus-5-5`；支援的模型自動開啟伺服器端拒絕備援（`fallbacks: "default"`） |
 | OpenAI | `openai` | |
 | Google Gemini | `@google/genai` | |
+| Google Vertex AI（API key） | `@google/genai`（`vertexai: true`） | 快速模式（express mode）：Google Cloud 的 API key，送到 `aiplatform.googleapis.com`，不需要專案與服務帳號。這種 key 不能列出模型（列模型的 API 只收 OAuth），要直接輸入完整的模型名稱（例如 `gemini-2.5-flash`，沒有 `-latest` 別名）。思考參數與 Gemini 相同 |
 | OpenAI 相容格式 | `openai`（自訂 Base URL） | 內建 OpenRouter、DeepSeek、Ollama、LM Studio、智譜 GLM（BigModel、Z.ai）、通義千問（DashScope）、Moonshot 的預設網址（`providerInfo.ts`）；本機服務可不填 key |
 
-「載入模型清單」會向服務查詢可用模型，也可以當作連線測試。成人向世界書條目預設不注入，需在設定中手動開啟。
+「載入模型清單」會向服務查詢可用模型，也可以當作連線測試（Vertex AI 沒有這個按鈕）。成人向世界書條目預設不注入，需在設定中手動開啟。
 
 ## 1. 七種請求
 
@@ -61,7 +62,7 @@
 |---|---|---|
 | Anthropic | Claude 5 系列與 4.6 之後：`thinking: {type: "adaptive", display: "summarized"}`＋`output_config.effort`（關閉送 `disabled`；Opus 5.5、Fable、Mythos 不能關閉）；舊模型：`thinking.budget_tokens`（2048／8192／16384） | `thinking_delta` |
 | OpenAI | `reasoning_effort`（關閉＝minimal） | 不回傳 |
-| Gemini | `thinkingConfig.thinkingBudget`（Gemini 3 用 `thinkingLevel`）、`includeThoughts` | `thought` 為 true 的部分 |
+| Gemini、Vertex AI | `thinkingConfig.thinkingBudget`（Gemini 3 用 `thinkingLevel`）、`includeThoughts` | `thought` 為 true 的部分 |
 | OpenAI 相容格式 | 依「參數格式」：`reasoning_effort`、`thinking.type`（智譜 GLM、Kimi）、`reasoning.effort`（OpenRouter）、`enable_thinking`（通義千問）；自動時依 Base URL 判斷 | `reasoning_content`（DeepSeek、GLM、千問）或 `reasoning`（OpenRouter） |
 
 OpenAI 相容格式另外可以填**自訂請求參數**（JSON 物件），直接加進請求，用來補上服務要求的其他欄位。

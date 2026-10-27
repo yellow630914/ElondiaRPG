@@ -79,6 +79,7 @@ const REASONING_NOTE: Record<ProviderId, string> = {
   anthropic: 'Claude 5 系列與 4.6 之後的模型用自適應思考（強度是 effort）；舊模型用思考預算。Opus 5.5 不能關閉思考。',
   openai: 'reasoning_effort（推理模型才有效；關閉對應 minimal）。OpenAI 不回傳思考內容。',
   gemini: 'thinkingBudget（Gemini 3 用 thinkingLevel）；部分 Pro 模型不能關閉思考。',
+  vertex: 'thinkingBudget（Gemini 3 用 thinkingLevel）；部分 Pro 模型不能關閉思考。',
   openai_compatible: '各家的參數不同，依下方的「參數格式」送出；服務要求的其他參數可以寫在「自訂請求參數」。',
 }
 
@@ -144,12 +145,15 @@ function copyFrom(e: Event) {
             <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
           </optgroup>
         </select>
-        <button class="small" :disabled="loading || (!cfg.apiKey && !info.keyOptional)" @click="loadModels">
+        <button v-if="!info.noModelList" class="small" :disabled="loading || (!cfg.apiKey && !info.keyOptional)" @click="loadModels">
           {{ loading ? '載入中…' : '載入模型清單' }}
         </button>
       </span>
       <input v-model.trim="cfg.model" placeholder="或直接輸入模型名稱" aria-label="模型名稱" />
     </div>
+    <p v-if="source.provider === 'vertex'" class="small muted">
+      用 Vertex AI 的快速模式（express mode）：在 Google Cloud 主控台建立 API key 並啟用 Vertex AI API 就能用，不需要服務帳號。這種 key 不能列出模型，請直接輸入模型名稱（Vertex 沒有 gemini-flash-latest 這類別名，要寫完整的版本，例如 gemini-2.5-flash）。
+    </p>
     <p v-if="message" class="small">{{ message }}</p>
 
     <label>
