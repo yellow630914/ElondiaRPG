@@ -111,6 +111,15 @@ describe('save schema', () => {
     expect(Object.keys(fixed.customItems ?? {})).toEqual(['優良鐵戰靴（2）'])
     expect(fixed.inventory.map((i) => i.name)).toEqual(expect.arrayContaining(['優良鐵戰靴（2）', '精製秘銀護腰']))
 
+    // 特殊任務的獨特裝備改名：行囊與身上的舊名稱跟著改
+    const uniq = JSON.parse(JSON.stringify(state)) as GameState
+    uniq.schema = 9
+    uniq.inventory.push({ name: '千爐機甲・板甲', qty: 1 })
+    uniq.party[0]!.gear = { ...uniq.party[0]!.gear, ring_1: { name: '滿月之戒', spec: { base: 'ring_guard', material: 'starstone' } } }
+    const relabeled = migrate(uniq)
+    expect(relabeled.inventory.find((i) => i.name === '半重')?.qty).toBe(1)
+    expect(relabeled.party[0]!.gear?.ring_1?.name).toBe('月光之言')
+
     const future = { ...state, schema: SAVE_SCHEMA + 1 }
     expect(() => assertSchema(future)).toThrow('比較新版本')
     expect(() => migrate(JSON.parse(JSON.stringify(future)))).toThrow('比較新版本')

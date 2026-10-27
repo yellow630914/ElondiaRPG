@@ -118,9 +118,9 @@ describe('unique gear', () => {
   it('cannot be sold to shops', () => {
     const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 2 })
     enterLocation(state)
-    addItem(state.inventory, '千爐機甲・板甲', 1)
+    addItem(state.inventory, '半重', 1)
     addItem(state.inventory, '鐵長劍', 1)
-    expect(sellPrice(state, shopKey(state, 'smithy'), '千爐機甲・板甲')).toBeNull()
+    expect(sellPrice(state, shopKey(state, 'smithy'), '半重')).toBeNull()
     expect(sellPrice(state, shopKey(state, 'smithy'), '鐵長劍')).toBeGreaterThan(0)
   })
 
@@ -128,7 +128,7 @@ describe('unique gear', () => {
     const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 2 })
     enterLocation(state)
     const id = state.party[0]!.id
-    for (const [name, slot] of [['滿月之戒', 'ring_1'], ['歷史的指環', 'ring_2']] as const) {
+    for (const [name, slot] of [['月光之言', 'ring_1'], ['萬代之憶', 'ring_2']] as const) {
       addItem(state.inventory, name, 1)
       equipItem(state, name, id, slot)
     }

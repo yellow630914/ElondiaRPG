@@ -354,7 +354,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "聖環護衛的鍊甲", "qty": 1 }
+        { "type": "item", "name": "官道遺誓", "qty": 1 }
       ]
     },
     {
@@ -673,7 +673,7 @@
       "rewards": [
         { "type": "money", "amount": 250 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "驅散低語的護符", "qty": 1 }
+        { "type": "item", "name": "噤聲", "qty": 1 }
       ]
     },
     {
@@ -1232,7 +1232,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "南郊守夜人的長劍", "qty": 1 }
+        { "type": "item", "name": "守夜餘燼", "qty": 1 }
       ]
     },
     {
@@ -1426,7 +1426,7 @@
       "rewards": [
         { "type": "money", "amount": 1500 },
         { "type": "xp", "amount": 2000 },
-        { "type": "item", "name": "四將軍的秘銀板甲", "qty": 1 }
+        { "type": "item", "name": "四色軍議", "qty": 1 }
       ]
     },
     {
@@ -1505,7 +1505,7 @@
       "rewards": [
         { "type": "money", "amount": 250 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "晨霧修道院的鐘鎚", "qty": 1 }
+        { "type": "item", "name": "遠鐘", "qty": 1 }
       ]
     },
     {
@@ -1660,7 +1660,7 @@
       "rewards": [
         { "type": "money", "amount": 1500 },
         { "type": "xp", "amount": 2000 },
-        { "type": "item", "name": "聖者埃利昂的鎚", "qty": 1 }
+        { "type": "item", "name": "指甲刻名", "qty": 1 }
       ]
     },
     {
@@ -2217,7 +2217,7 @@
       "rewards": [
         { "type": "money", "amount": 1500 },
         { "type": "xp", "amount": 2000 },
-        { "type": "item", "name": "大公會議的護教鍊甲", "qty": 1 }
+        { "type": "item", "name": "兩百年之護", "qty": 1 }
       ]
     },
     {
@@ -2300,7 +2300,7 @@
       "rewards": [
         { "type": "money", "amount": 250 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "蛇溪的解毒項鍊", "qty": 1 }
+        { "type": "item", "name": "紅溪蛇鱗", "qty": 1 }
       ]
     },
     {
@@ -3172,7 +3172,7 @@
       "rewards": [
         { "type": "money", "amount": 250 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "席恩的指揮細劍", "qty": 1 }
+        { "type": "item", "name": "顫音", "qty": 1 }
       ]
     },
     {
@@ -3306,7 +3306,7 @@
       "rewards": [
         { "type": "money", "amount": 1200 },
         { "type": "xp", "amount": 1800 },
-        { "type": "item", "name": "史詩終章的秘銀細劍", "qty": 1 }
+        { "type": "item", "name": "史詩最後一句", "qty": 1 }
       ]
     },
     {
@@ -3938,7 +3938,7 @@
       "rewards": [
         { "type": "money", "amount": 250 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "流水之靈的誓約護符", "qty": 1 }
+        { "type": "item", "name": "石橋一滴", "qty": 1 }
       ]
     },
     {
@@ -4093,7 +4093,7 @@
       "rewards": [
         { "type": "money", "amount": 1200 },
         { "type": "xp", "amount": 1800 },
-        { "type": "item", "name": "誓約守望者的護符", "qty": 1 }
+        { "type": "item", "name": "兩百年誓約", "qty": 1 }
       ]
     },
     {
@@ -4539,7 +4539,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "假幣師的迅捷之戒", "qty": 1 }
+        { "type": "item", "name": "比真的還真", "qty": 1 }
       ]
     },
     {
@@ -4794,7 +4794,7 @@
       "rewards": [
         { "type": "money", "amount": 500 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "海妖的金耳墜", "qty": 1 }
+        { "type": "item", "name": "洞中歌聲", "qty": 1 }
       ]
     },
     {
@@ -5262,7 +5262,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "白棋信使的胸甲", "qty": 1 }
+        { "type": "item", "name": "白城堡", "qty": 1 }
       ]
     },
     {
@@ -5463,7 +5463,7 @@
       "rewards": [
         { "type": "money", "amount": 1500 },
         { "type": "xp", "amount": 2000 },
-        { "type": "item", "name": "白棋的金印戒", "qty": 1 }
+        { "type": "item", "name": "羅莎琳德之印", "qty": 1 }
       ]
     },
     {
@@ -5554,7 +5554,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "密探的迅捷之戒", "qty": 1 }
+        { "type": "item", "name": "鴿籠密碼", "qty": 1 }
       ]
     },
     {
@@ -5804,7 +5804,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "扒手凱的折刀", "qty": 1 }
+        { "type": "item", "name": "順手牽羊", "qty": 1 }
       ]
     },
     {
@@ -5971,7 +5971,7 @@
       "rewards": [
         { "type": "money", "amount": 1500 },
         { "type": "xp", "amount": 2000 },
-        { "type": "item", "name": "白棋密探的秘銀匕首", "qty": 1 }
+        { "type": "item", "name": "無刃", "qty": 1 }
       ]
     },
     {
@@ -7759,7 +7759,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "代筆人的靜心耳墜", "qty": 1 }
+        { "type": "item", "name": "他人之言", "qty": 1 }
       ]
     },
     {
@@ -8017,7 +8017,7 @@
       "rewards": [
         { "type": "money", "amount": 250 },
         { "type": "xp", "amount": 400 },
-        { "type": "item", "name": "莫菲的夢遊法杖", "qty": 1 }
+        { "type": "item", "name": "夢遊者", "qty": 1 }
       ]
     },
     {
@@ -8282,7 +8282,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "最弱四天王的巨斧", "qty": 1 }
+        { "type": "item", "name": "千敗", "qty": 1 }
       ]
     },
     {
@@ -8485,7 +8485,7 @@
       "rewards": [
         { "type": "money", "amount": 1500 },
         { "type": "xp", "amount": 2000 },
-        { "type": "item", "name": "沉默之斧", "qty": 1 }
+        { "type": "item", "name": "戈爾的沉默", "qty": 1 }
       ]
     },
     {
@@ -8649,7 +8649,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "血獸皮甲", "qty": 1 }
+        { "type": "item", "name": "新月血夜", "qty": 1 }
       ]
     },
     {
@@ -8837,7 +8837,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "灰燼修會的骨鎚矛", "qty": 1 }
+        { "type": "item", "name": "亡者靜聽", "qty": 1 }
       ]
     },
     {
@@ -8930,7 +8930,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "白焰鎚矛", "qty": 1 }
+        { "type": "item", "name": "遺火白焰", "qty": 1 }
       ]
     },
     {
@@ -9347,7 +9347,7 @@
       "rewards": [
         { "type": "money", "amount": 250 },
         { "type": "xp", "amount": 400 },
-        { "type": "item", "name": "莫格婆婆的採藥杖", "qty": 1 }
+        { "type": "item", "name": "沼地先知", "qty": 1 }
       ]
     },
     {
@@ -10161,7 +10161,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "風錘村的風紋腳鍊", "qty": 1 }
+        { "type": "item", "name": "山風銀屑", "qty": 1 }
       ]
     },
     {
@@ -11084,7 +11084,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "心火之劍", "qty": 1 }
+        { "type": "item", "name": "呼吸之焰", "qty": 1 }
       ]
     },
     {
@@ -11283,7 +11283,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "守泉祭司的苔紋皮甲", "qty": 1 }
+        { "type": "item", "name": "泉苔", "qty": 1 }
       ]
     },
     {
@@ -11380,7 +11380,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "根語者的獸皮甲", "qty": 1 }
+        { "type": "item", "name": "樹說你需要", "qty": 1 }
       ]
     },
     {
@@ -11479,7 +11479,7 @@
       "rewards": [
         { "type": "money", "amount": 1200 },
         { "type": "xp", "amount": 1800 },
-        { "type": "item", "name": "新芽古樹杖", "qty": 1 }
+        { "type": "item", "name": "不止的新芽", "qty": 1 }
       ]
     },
     {
@@ -11571,7 +11571,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "舞孃的纏腕絲帶", "qty": 1 }
+        { "type": "item", "name": "金幣之舞", "qty": 1 }
       ]
     },
     {
@@ -11857,7 +11857,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "走私客的夜行皮甲", "qty": 1 }
+        { "type": "item", "name": "海鷗不看", "qty": 1 }
       ]
     },
     {
@@ -12052,7 +12052,7 @@
       "rewards": [
         { "type": "money", "amount": 1500 },
         { "type": "xp", "amount": 2000 },
-        { "type": "item", "name": "黑帆的夜行皮甲", "qty": 1 }
+        { "type": "item", "name": "無月之海", "qty": 1 }
       ]
     },
     {
@@ -12691,7 +12691,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "觀星者的星圖長袍", "qty": 1 }
+        { "type": "item", "name": "多餘之星", "qty": 1 }
       ]
     },
     {
@@ -12889,7 +12889,7 @@
       "rewards": [
         { "type": "money", "amount": 1200 },
         { "type": "xp", "amount": 1800 },
-        { "type": "item", "name": "星落之夜的月影長袍", "qty": 1 }
+        { "type": "item", "name": "星落之夜", "qty": 1 }
       ]
     },
     {
@@ -12980,7 +12980,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "記得名字的項鍊", "qty": 1 }
+        { "type": "item", "name": "不忘", "qty": 1 }
       ]
     },
     {
@@ -13338,7 +13338,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "夏瀾殿的鯨皮外套", "qty": 1 }
+        { "type": "item", "name": "鯨歌浪鈴", "qty": 1 }
       ]
     },
     {
@@ -13967,7 +13967,7 @@
       "rewards": [
         { "type": "money", "amount": 1200 },
         { "type": "xp", "amount": 1800 },
-        { "type": "item", "name": "沙獅皮甲", "qty": 1 }
+        { "type": "item", "name": "草原沙影", "qty": 1 }
       ]
     },
     {
@@ -14418,7 +14418,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "競技場的月影絲纏腕", "qty": 1 }
+        { "type": "item", "name": "先於目光", "qty": 1 }
       ]
     },
     {
@@ -15256,7 +15256,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "封印隊的明心項鍊", "qty": 1 }
+        { "type": "item", "name": "唯一歸來者", "qty": 1 }
       ]
     },
     {
@@ -15457,7 +15457,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "杜拉克的軍戒", "qty": 1 }
+        { "type": "item", "name": "山之心跳", "qty": 1 }
       ]
     },
     {
@@ -15816,7 +15816,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "魔焰織法者的法杖", "qty": 1 }
+        { "type": "item", "name": "馴焰", "qty": 1 }
       ]
     },
     {
@@ -15994,7 +15994,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "血誓侍從的臍釘", "qty": 1 }
+        { "type": "item", "name": "不倦戰紋", "qty": 1 }
       ]
     },
     {
@@ -16086,7 +16086,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "古王的驅暗項鍊", "qty": 1 }
+        { "type": "item", "name": "敗王的饋贈", "qty": 1 }
       ]
     },
     {
@@ -16364,7 +16364,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "綠化計畫的項鍊", "qty": 1 }
+        { "type": "item", "name": "未萌之種", "qty": 1 }
       ]
     },
     {
@@ -16549,7 +16549,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "托倫的紫杉長弓", "qty": 1 }
+        { "type": "item", "name": "根界歸途", "qty": 1 }
       ]
     },
     {
@@ -16641,7 +16641,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "月影根穴的古樹長弓", "qty": 1 }
+        { "type": "item", "name": "根穴月光", "qty": 1 }
       ]
     },
     {
@@ -16821,7 +16821,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "月華巡禮的修行袍", "qty": 1 }
+        { "type": "item", "name": "新月靜心", "qty": 1 }
       ]
     },
     {
@@ -17005,7 +17005,7 @@
       "rewards": [
         { "type": "money", "amount": 1500 },
         { "type": "xp", "amount": 2000 },
-        { "type": "item", "name": "女神倒影的修行袍", "qty": 1 }
+        { "type": "item", "name": "女神倒影", "qty": 1 }
       ]
     },
     {
@@ -17643,7 +17643,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "海盜王的瞭望耳環", "qty": 1 }
+        { "type": "item", "name": "桅頂之眼", "qty": 1 }
       ]
     },
     {
@@ -17735,7 +17735,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "紅鬚的鷹眼耳環", "qty": 1 }
+        { "type": "item", "name": "紅鬚的夾層", "qty": 1 }
       ]
     },
     {
@@ -17929,7 +17929,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "夜爪獵手的皮甲", "qty": 1 }
+        { "type": "item", "name": "無聲峽谷", "qty": 1 }
       ]
     },
     {
@@ -18290,7 +18290,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "太陽神諭的腳鍊", "qty": 1 }
+        { "type": "item", "name": "沙上之舞", "qty": 1 }
       ]
     },
     {
@@ -23355,7 +23355,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "伊莎貝拉的舊鍊甲", "qty": 1 }
+        { "type": "item", "name": "賭債", "qty": 1 }
       ]
     },
     {
@@ -23462,7 +23462,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "年輕騎士的秘銀鍊甲", "qty": 1 }
+        { "type": "item", "name": "還命之恩", "qty": 1 }
       ]
     },
     {
@@ -23922,7 +23922,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "赤鬃狩獵皮甲", "qty": 1 }
+        { "type": "item", "name": "赤鬃疾風", "qty": 1 }
       ]
     },
     {
@@ -24014,7 +24014,7 @@
       "rewards": [
         { "type": "money", "amount": 600 },
         { "type": "xp", "amount": 900 },
-        { "type": "item", "name": "求婚者的金臍釘", "qty": 1 }
+        { "type": "item", "name": "勇士之奪", "qty": 1 }
       ]
     },
     {
@@ -25846,7 +25846,7 @@
       "rewards": [
         { "type": "money", "amount": 300 },
         { "type": "xp", "amount": 450 },
-        { "type": "item", "name": "春潮閣的宴會皮甲", "qty": 1 }
+        { "type": "item", "name": "櫻色宴席", "qty": 1 }
       ]
     },
     {
@@ -27038,24 +27038,24 @@
             {
               "label": "「這一片鐘」",
               "success": {
-                "text": "你收下了「聖鐘碎片的墜飾」。",
-                "effects": [{ "type": "item", "name": "聖鐘碎片的墜飾", "qty": 1 }],
+                "text": "你收下了「未響之鐘」。",
+                "effects": [{ "type": "item", "name": "未響之鐘", "qty": 1 }],
                 "complete": true
               }
             },
             {
               "label": "「詔書的封蠟」",
               "success": {
-                "text": "你收下了「燒毀詔書的封蠟戒」。",
-                "effects": [{ "type": "item", "name": "燒毀詔書的封蠟戒", "qty": 1 }],
+                "text": "你收下了「沒有打起的戰爭」。",
+                "effects": [{ "type": "item", "name": "沒有打起的戰爭", "qty": 1 }],
                 "complete": true
               }
             },
             {
               "label": "「和約的耳環」",
               "success": {
-                "text": "你收下了「和平的鷹眼耳環」。",
-                "effects": [{ "type": "item", "name": "和平的鷹眼耳環", "qty": 1 }],
+                "text": "你收下了「各出一半」。",
+                "effects": [{ "type": "item", "name": "各出一半", "qty": 1 }],
                 "complete": true
               }
             }
@@ -27320,26 +27320,26 @@
           "kind": "choice",
           "options": [
             {
-              "label": "「血誓碑的碎片」",
+              "label": "「裂開的血誓」（守護護符）",
               "success": {
-                "text": "你收下了「血誓碑的碎片」。",
-                "effects": [{ "type": "item", "name": "血誓碑的碎片", "qty": 1 }],
+                "text": "你收下了「裂開的血誓」。",
+                "effects": [{ "type": "item", "name": "裂開的血誓", "qty": 1 }],
                 "complete": true
               }
             },
             {
               "label": "「勝利之戒」",
               "success": {
-                "text": "你收下了「帝國的勝利之戒」。",
-                "effects": [{ "type": "item", "name": "帝國的勝利之戒", "qty": 1 }],
+                "text": "你收下了「金鷹凱旋」。",
+                "effects": [{ "type": "item", "name": "金鷹凱旋", "qty": 1 }],
                 "complete": true
               }
             },
             {
-              "label": "「赤羽臍環」",
+              "label": "「配得上的人」（活力臍釘）",
               "success": {
-                "text": "你收下了「赤羽臍環」。",
-                "effects": [{ "type": "item", "name": "赤羽臍環", "qty": 1 }],
+                "text": "你收下了「配得上的人」。",
+                "effects": [{ "type": "item", "name": "配得上的人", "qty": 1 }],
                 "complete": true
               }
             }
@@ -27609,24 +27609,24 @@
             {
               "label": "「城門的鑰匙」",
               "success": {
-                "text": "你收下了「萊茵堡的城門鑰匙墜」。",
-                "effects": [{ "type": "item", "name": "萊茵堡的城門鑰匙墜", "qty": 1 }],
+                "text": "你收下了「不破之門」。",
+                "effects": [{ "type": "item", "name": "不破之門", "qty": 1 }],
                 "complete": true
               }
             },
             {
               "label": "「凱旋之戒」",
               "success": {
-                "text": "你收下了「赤翼的凱旋之戒」。",
-                "effects": [{ "type": "item", "name": "赤翼的凱旋之戒", "qty": 1 }],
+                "text": "你收下了「赤翼凱旋」。",
+                "effects": [{ "type": "item", "name": "赤翼凱旋", "qty": 1 }],
                 "complete": true
               }
             },
             {
               "label": "「金鷹」",
               "success": {
-                "text": "你收下了「帝國金鷹耳環」。",
-                "effects": [{ "type": "item", "name": "帝國金鷹耳環", "qty": 1 }],
+                "text": "你收下了「易主的金鷹」。",
+                "effects": [{ "type": "item", "name": "易主的金鷹", "qty": 1 }],
                 "complete": true
               }
             }
@@ -27744,16 +27744,16 @@
             {
               "label": "抓住指環",
               "success": {
-                "text": "你收下了「歷史的指環」。",
-                "effects": [{ "type": "item", "name": "歷史的指環", "qty": 1 }],
+                "text": "你收下了「萬代之憶」。",
+                "effects": [{ "type": "item", "name": "萬代之憶", "qty": 1 }],
                 "complete": true
               }
             },
             {
               "label": "抓住耳墜",
               "success": {
-                "text": "你收下了「回響耳墜」。",
-                "effects": [{ "type": "item", "name": "回響耳墜", "qty": 1 }],
+                "text": "你收下了「英雄的致意」。",
+                "effects": [{ "type": "item", "name": "英雄的致意", "qty": 1 }],
                 "complete": true
               }
             }
@@ -27807,9 +27807,9 @@
           "kind": "combat",
           "enemies": [["kagni_projection", 1], ["kagni_stillshade", 1]],
           "success": {
-            "text": "熱浪與虛空同時退去，雪原安靜了下來——不是死寂，是普通的、冬天的安靜。卡格尼的投影縮成了一團小小的光，懸在半空中，一半溫暖、一半冰冷，等著你。投影散去的地方，留下了兩件發著光的武器：「熾寂之斧」與「兩極之劍」。",
+            "text": "熱浪與虛空同時退去，雪原安靜了下來——不是死寂，是普通的、冬天的安靜。卡格尼的投影縮成了一團小小的光，懸在半空中，一半溫暖、一半冰冷，等著你。投影散去的地方，留下了兩件發著光的武器：「熾寂」與「兩極」。",
             "set_flags": ["drg_kag_won"],
-            "effects": [{ "type": "item", "name": "熾寂之斧", "qty": 1 }, { "type": "item", "name": "兩極之劍", "qty": 1 }]
+            "effects": [{ "type": "item", "name": "熾寂", "qty": 1 }, { "type": "item", "name": "兩極", "qty": 1 }]
           },
           "fail": {
             "text": "熱浪和虛空把你們逼回了風錘村。你的手指還在發抖——一半是燙，一半是冷。老鐵根把你拉進屋子裡：「沒關係。卡格尼不會跑，雪原也還在。準備好了，再去。」",
@@ -27904,9 +27904,9 @@
           "kind": "combat",
           "enemies": [["sinor_projection", 1], ["sinor_mirror_double", 1]],
           "success": {
-            "text": "霧散了，慢半拍的倒影也散了。海邊只剩下一條小小的、霧做的龍，盤在一塊礁石上，看著你：「……你打贏了。」祂的聲音不再是一千種，只有一種，像個孩子。投影散去的地方，留下了兩件發著光的武器：「真名之刃」與「迷言細劍」。",
+            "text": "霧散了，慢半拍的倒影也散了。海邊只剩下一條小小的、霧做的龍，盤在一塊礁石上，看著你：「……你打贏了。」祂的聲音不再是一千種，只有一種，像個孩子。投影散去的地方，留下了兩件發著光的武器：「真名」與「迷言」。",
             "set_flags": ["drg_sin_won"],
-            "effects": [{ "type": "item", "name": "真名之刃", "qty": 1 }, { "type": "item", "name": "迷言細劍", "qty": 1 }]
+            "effects": [{ "type": "item", "name": "真名", "qty": 1 }, { "type": "item", "name": "迷言", "qty": 1 }]
           },
           "fail": {
             "text": "霧把你們吞了進去，等你們再看得見的時候，已經站在海靈祠的門口了。澪扶著你，鏡子裡的你過了很久才站穩：「祂沒有傷你。祂只是……還沒想好要不要讓你過去。」——準備好了，可以再走進霧裡。",
@@ -28001,9 +28001,9 @@
           "kind": "combat",
           "enemies": [["sorian_projection", 1], ["sorian_dream_knight", 1]],
           "success": {
-            "text": "夢裡的騎士散成了花瓣，索利安的投影退後了一步，鱗片裡的夢一個一個地暗了下去：「……你還是要叫醒他們。」祂的聲音很輕，「為什麼？」投影散去的地方，留下了兩件發著光的武器：「千年夢杖」與「夢林之杖」。",
+            "text": "夢裡的騎士散成了花瓣，索利安的投影退後了一步，鱗片裡的夢一個一個地暗了下去：「……你還是要叫醒他們。」祂的聲音很輕，「為什麼？」投影散去的地方，留下了兩件發著光的武器：「千年之夢」與「倒懸之林」。",
             "set_flags": ["drg_sor_won"],
-            "effects": [{ "type": "item", "name": "千年夢杖", "qty": 1 }, { "type": "item", "name": "夢林之杖", "qty": 1 }]
+            "effects": [{ "type": "item", "name": "千年之夢", "qty": 1 }, { "type": "item", "name": "倒懸之林", "qty": 1 }]
           },
           "fail": {
             "text": "夢的盡頭把你推了回去。你在生命之泉邊醒來，滿身是汗，霧鱗在手心發燙。艾溫娜握著你的手：「你醒了——你還醒得過來。」——準備好了，可以再睡一次。",
@@ -28096,9 +28096,9 @@
           "kind": "combat",
           "enemies": [["babelin_projection", 1], ["babelin_brick_titan", 1]],
           "success": {
-            "text": "磚巨人散成了沙，塔的投影停了下來，尖頂第一次沒有再往上長。整座塔在發抖：「……你們為什麼要擋我？我只是想看看上面有什麼。」投影散去的地方，留下了兩件發著光的武器：「尖頂之鎚」與「登頂者的纏腕」。",
+            "text": "磚巨人散成了沙，塔的投影停了下來，尖頂第一次沒有再往上長。整座塔在發抖：「……你們為什麼要擋我？我只是想看看上面有什麼。」投影散去的地方，留下了兩件發著光的武器：「最後一塊磚」與「登頂者」。",
             "set_flags": ["drg_bab_won"],
-            "effects": [{ "type": "item", "name": "尖頂之鎚", "qty": 1 }, { "type": "item", "name": "登頂者的纏腕", "qty": 1 }]
+            "effects": [{ "type": "item", "name": "最後一塊磚", "qty": 1 }, { "type": "item", "name": "登頂者", "qty": 1 }]
           },
           "fail": {
             "text": "塔把你們甩了下來——磚一塊一塊地托著你們，把你們放回了草原上，像是怕你們摔死。塔洛躺在沙地上大笑：「祂打贏了，還送我們回來！」——準備好了，可以再爬一次。",
@@ -28200,9 +28200,9 @@
           "kind": "combat",
           "enemies": [["acheron_projection", 1], ["acheron_echo_army", 1]],
           "success": {
-            "text": "千年的亡軍散成了光，阿契隆的殘影一層一層地剝落，最後只剩下一隻眼睛——你在天空裡見過的那一隻。它看著你，這一次，眼神裡沒有審視，只有好奇。投影散去的地方，留下了兩件發著光的武器：「史冊之鎚」與「回響長弓」。",
+            "text": "千年的亡軍散成了光，阿契隆的殘影一層一層地剝落，最後只剩下一隻眼睛——你在天空裡見過的那一隻。它看著你，這一次，眼神裡沒有審視，只有好奇。投影散去的地方，留下了兩件發著光的武器：「闔上的史冊」與「千年回響」。",
             "set_flags": ["drg_ach_won"],
-            "effects": [{ "type": "item", "name": "史冊之鎚", "qty": 1 }, { "type": "item", "name": "回響長弓", "qty": 1 }]
+            "effects": [{ "type": "item", "name": "闔上的史冊", "qty": 1 }, { "type": "item", "name": "千年回響", "qty": 1 }]
           },
           "fail": {
             "text": "所有的時代同時壓了下來，你被推回了河谷鎮的郊外。天空的裂縫還開著，阿契隆的聲音很平靜：「不急。歷史有的是時間。」——準備好了，可以再走進裂縫。",
@@ -29840,9 +29840,9 @@
             {
               "label": "做成長劍",
               "success": {
-                "text": "三天之後，迪莉婭把「無火精金長劍」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "text": "三天之後，迪莉婭把「無紋」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
-                  { "type": "item", "name": "無火精金長劍", "qty": 1 },
+                  { "type": "item", "name": "無紋", "qty": 1 },
                   { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -29851,9 +29851,9 @@
             {
               "label": "做成戰鎚",
               "success": {
-                "text": "三天之後，迪莉婭把「無火精金戰鎚」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "text": "三天之後，迪莉婭把「穩定器」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
-                  { "type": "item", "name": "無火精金戰鎚", "qty": 1 },
+                  { "type": "item", "name": "穩定器", "qty": 1 },
                   { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -29862,9 +29862,9 @@
             {
               "label": "做成巨斧",
               "success": {
-                "text": "三天之後，迪莉婭把「無火精金巨斧」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "text": "三天之後，迪莉婭把「第四十三稿」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
-                  { "type": "item", "name": "無火精金巨斧", "qty": 1 },
+                  { "type": "item", "name": "第四十三稿", "qty": 1 },
                   { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -29873,9 +29873,9 @@
             {
               "label": "做成細劍",
               "success": {
-                "text": "三天之後，迪莉婭把「無火精金細劍」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "text": "三天之後，迪莉婭把「無火之針」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
-                  { "type": "item", "name": "無火精金細劍", "qty": 1 },
+                  { "type": "item", "name": "無火之針", "qty": 1 },
                   { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -29884,9 +29884,9 @@
             {
               "label": "做成鎚矛",
               "success": {
-                "text": "三天之後，迪莉婭把「無火精金鎚矛」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "text": "三天之後，迪莉婭把「七棱星」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
-                  { "type": "item", "name": "無火精金鎚矛", "qty": 1 },
+                  { "type": "item", "name": "七棱星", "qty": 1 },
                   { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -29895,9 +29895,9 @@
             {
               "label": "做成護臂",
               "success": {
-                "text": "三天之後，迪莉婭把「無火精金護臂」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
+                "text": "三天之後，迪莉婭把「拳之設計」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
-                  { "type": "item", "name": "無火精金護臂", "qty": 1 },
+                  { "type": "item", "name": "拳之設計", "qty": 1 },
                   { "type": "affinity", "npc": "npc_dilia_copperbeard", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -29968,9 +29968,9 @@
             {
               "label": "重鑄成長弓",
               "success": {
-                "text": "最後一錘落下，「重鑄的黎明・長弓」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "text": "最後一錘落下，「晨弦」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
                 "effects": [
-                  { "type": "item", "name": "重鑄的黎明・長弓", "qty": 1 },
+                  { "type": "item", "name": "晨弦", "qty": 1 },
                   { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -29979,9 +29979,9 @@
             {
               "label": "重鑄成法杖",
               "success": {
-                "text": "最後一錘落下，「重鑄的黎明・法杖」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "text": "最後一錘落下，「一點晨光」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
                 "effects": [
-                  { "type": "item", "name": "重鑄的黎明・法杖", "qty": 1 },
+                  { "type": "item", "name": "一點晨光", "qty": 1 },
                   { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -29990,9 +29990,9 @@
             {
               "label": "重鑄成長棍",
               "success": {
-                "text": "最後一錘落下，「重鑄的黎明・長棍」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "text": "最後一錘落下，「草生黎明」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
                 "effects": [
-                  { "type": "item", "name": "重鑄的黎明・長棍", "qty": 1 },
+                  { "type": "item", "name": "草生黎明", "qty": 1 },
                   { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30001,9 +30001,9 @@
             {
               "label": "重鑄成匕首",
               "success": {
-                "text": "最後一錘落下，「重鑄的黎明・匕首」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "text": "最後一錘落下，「黎明之尖」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
                 "effects": [
-                  { "type": "item", "name": "重鑄的黎明・匕首", "qty": 1 },
+                  { "type": "item", "name": "黎明之尖", "qty": 1 },
                   { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30012,9 +30012,9 @@
             {
               "label": "照原樣重鑄成長劍",
               "success": {
-                "text": "最後一錘落下，「重鑄的黎明・長劍」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "text": "最後一錘落下，「黎明」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
                 "effects": [
-                  { "type": "item", "name": "重鑄的黎明・長劍", "qty": 1 },
+                  { "type": "item", "name": "黎明", "qty": 1 },
                   { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30023,9 +30023,9 @@
             {
               "label": "重鑄成細劍",
               "success": {
-                "text": "最後一錘落下，「重鑄的黎明・細劍」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
+                "text": "最後一錘落下，「晨鐘」在白火裡亮了起來，像天邊的第一道晨光。瑪格達擦掉額頭的汗：「兩百年了。它終於又有主人了。」",
                 "effects": [
-                  { "type": "item", "name": "重鑄的黎明・細劍", "qty": 1 },
+                  { "type": "item", "name": "晨鐘", "qty": 1 },
                   { "type": "affinity", "npc": "npc_magda_ironforge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30096,9 +30096,9 @@
             {
               "label": "做成板甲",
               "success": {
-                "text": "一週之後，「千爐機甲・板甲」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "text": "一週之後，「半重」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
-                  { "type": "item", "name": "千爐機甲・板甲", "qty": 1 },
+                  { "type": "item", "name": "半重", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30107,9 +30107,9 @@
             {
               "label": "做成鍊甲",
               "success": {
-                "text": "一週之後，「千爐機甲・鍊甲」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "text": "一週之後，「千環無偏」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
-                  { "type": "item", "name": "千爐機甲・鍊甲", "qty": 1 },
+                  { "type": "item", "name": "千環無偏", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30118,9 +30118,9 @@
             {
               "label": "做成皮甲",
               "success": {
-                "text": "一週之後，「千爐機甲・皮甲」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "text": "一週之後，「彈簧之躍」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
-                  { "type": "item", "name": "千爐機甲・皮甲", "qty": 1 },
+                  { "type": "item", "name": "彈簧之躍", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30129,9 +30129,9 @@
             {
               "label": "做成武僧袍",
               "success": {
-                "text": "一週之後，「千爐機甲・武僧袍」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "text": "一週之後，「發條一推」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
-                  { "type": "item", "name": "千爐機甲・武僧袍", "qty": 1 },
+                  { "type": "item", "name": "發條一推", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30140,9 +30140,9 @@
             {
               "label": "做成長袍",
               "success": {
-                "text": "一週之後，「千爐機甲・長袍」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "text": "一週之後，「袖中齒輪」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
-                  { "type": "item", "name": "千爐機甲・長袍", "qty": 1 },
+                  { "type": "item", "name": "袖中齒輪", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30151,9 +30151,9 @@
             {
               "label": "做成樂師皮甲",
               "success": {
-                "text": "一週之後，「千爐機甲・樂師皮甲」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
+                "text": "一週之後，「不修的故障」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
-                  { "type": "item", "name": "千爐機甲・樂師皮甲", "qty": 1 },
+                  { "type": "item", "name": "不修的故障", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ignis_forge", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30224,9 +30224,9 @@
             {
               "label": "帶走板甲",
               "success": {
-                "text": "你帶走了「巨人武庫的板甲」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "text": "你帶走了「巨人王之贈」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
                 "effects": [
-                  { "type": "item", "name": "巨人武庫的板甲", "qty": 1 },
+                  { "type": "item", "name": "巨人王之贈", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30235,9 +30235,9 @@
             {
               "label": "帶走鍊甲",
               "success": {
-                "text": "你帶走了「巨人武庫的鍊甲」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "text": "你帶走了「古符千環」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
                 "effects": [
-                  { "type": "item", "name": "巨人武庫的鍊甲", "qty": 1 },
+                  { "type": "item", "name": "古符千環", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30246,9 +30246,9 @@
             {
               "label": "帶走皮甲",
               "success": {
-                "text": "你帶走了「巨人武庫的皮甲」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "text": "你帶走了「改小三圈」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
                 "effects": [
-                  { "type": "item", "name": "巨人武庫的皮甲", "qty": 1 },
+                  { "type": "item", "name": "改小三圈", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30257,9 +30257,9 @@
             {
               "label": "帶走獵裝",
               "success": {
-                "text": "你帶走了「巨人武庫的獵裝」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "text": "你帶走了「山路皮圖」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
                 "effects": [
-                  { "type": "item", "name": "巨人武庫的獵裝", "qty": 1 },
+                  { "type": "item", "name": "山路皮圖", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30268,9 +30268,9 @@
             {
               "label": "帶走武僧袍",
               "success": {
-                "text": "你帶走了「巨人武庫的武僧袍」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "text": "你帶走了「三千年無塵」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
                 "effects": [
-                  { "type": "item", "name": "巨人武庫的武僧袍", "qty": 1 },
+                  { "type": "item", "name": "三千年無塵", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30279,9 +30279,9 @@
             {
               "label": "帶走苔紋皮甲",
               "success": {
-                "text": "你帶走了「巨人武庫的苔紋皮甲」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
+                "text": "你帶走了「活苔」。武庫的門在你身後慢慢地關上，瑟爾輕輕地哼著那段旋律，像是在對巨人王道謝。",
                 "effects": [
-                  { "type": "item", "name": "巨人武庫的苔紋皮甲", "qty": 1 },
+                  { "type": "item", "name": "活苔", "qty": 1 },
                   { "type": "affinity", "npc": "npc_ser_mistone", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30352,9 +30352,9 @@
             {
               "label": "拿精準之戒",
               "success": {
-                "text": "你帶走了「無名寶藏的精準之戒」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "text": "你帶走了「最上層」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
                 "effects": [
-                  { "type": "item", "name": "無名寶藏的精準之戒", "qty": 1 },
+                  { "type": "item", "name": "最上層", "qty": 1 },
                   { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30363,9 +30363,9 @@
             {
               "label": "拿鐵膚護符",
               "success": {
-                "text": "你帶走了「無名寶藏的鐵膚護符」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "text": "你帶走了「無名戰士」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
                 "effects": [
-                  { "type": "item", "name": "無名寶藏的鐵膚護符", "qty": 1 },
+                  { "type": "item", "name": "無名戰士", "qty": 1 },
                   { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30374,9 +30374,9 @@
             {
               "label": "拿活力臍釘",
               "success": {
-                "text": "你帶走了「無名寶藏的活力臍釘」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "text": "你帶走了「自熱」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
                 "effects": [
-                  { "type": "item", "name": "無名寶藏的活力臍釘", "qty": 1 },
+                  { "type": "item", "name": "自熱", "qty": 1 },
                   { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30385,9 +30385,9 @@
             {
               "label": "拿鷹眼耳環",
               "success": {
-                "text": "你帶走了「無名寶藏的鷹眼耳環」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "text": "你帶走了「細繩之後」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
                 "effects": [
-                  { "type": "item", "name": "無名寶藏的鷹眼耳環", "qty": 1 },
+                  { "type": "item", "name": "細繩之後", "qty": 1 },
                   { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30396,9 +30396,9 @@
             {
               "label": "拿靜心耳墜",
               "success": {
-                "text": "你帶走了「無名寶藏的靜心耳墜」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
+                "text": "你帶走了「流沙慢歌」。塔莉在名單上那個名字旁邊，寫下了兩個字：「找到了。」",
                 "effects": [
-                  { "type": "item", "name": "無名寶藏的靜心耳墜", "qty": 1 },
+                  { "type": "item", "name": "流沙慢歌", "qty": 1 },
                   { "type": "affinity", "npc": "npc_tali_liaison", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30468,9 +30468,9 @@
             {
               "label": "拿迅捷之戒",
               "success": {
-                "text": "你拿走了「老船長的迅捷之戒」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "text": "你拿走了「船長室的抽屜」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
                 "effects": [
-                  { "type": "item", "name": "老船長的迅捷之戒", "qty": 1 },
+                  { "type": "item", "name": "船長室的抽屜", "qty": 1 },
                   { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30479,9 +30479,9 @@
             {
               "label": "拿守護護符",
               "success": {
-                "text": "你拿走了「老船長的守護護符」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "text": "你拿走了「不鏽船首」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
                 "effects": [
-                  { "type": "item", "name": "老船長的守護護符", "qty": 1 },
+                  { "type": "item", "name": "不鏽船首", "qty": 1 },
                   { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30490,9 +30490,9 @@
             {
               "label": "拿明心項鍊",
               "success": {
-                "text": "你拿走了「老船長的明心項鍊」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "text": "你拿走了「星位紙條」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
                 "effects": [
-                  { "type": "item", "name": "老船長的明心項鍊", "qty": 1 },
+                  { "type": "item", "name": "星位紙條", "qty": 1 },
                   { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30501,9 +30501,9 @@
             {
               "label": "拿風紋腳鍊",
               "success": {
-                "text": "你拿走了「老船長的風紋腳鍊」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "text": "你拿走了「桅上奔跑」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
                 "effects": [
-                  { "type": "item", "name": "老船長的風紋腳鍊", "qty": 1 },
+                  { "type": "item", "name": "桅上奔跑", "qty": 1 },
                   { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30512,9 +30512,9 @@
             {
               "label": "拿抗毒項鍊",
               "success": {
-                "text": "你拿走了「老船長的抗毒項鍊」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
+                "text": "你拿走了「永綠海草」，把剩下的留給了哈根。老船長抱著航海日誌坐在船首，喝了一整瓶酒，一句話也沒說。",
                 "effects": [
-                  { "type": "item", "name": "老船長的抗毒項鍊", "qty": 1 },
+                  { "type": "item", "name": "永綠海草", "qty": 1 },
                   { "type": "affinity", "npc": "npc_captain_hagen", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30585,9 +30585,9 @@
             {
               "label": "打成長劍",
               "success": {
-                "text": "最後一錘落下，「星心長劍」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「同步心跳」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心長劍", "qty": 1 },
+                  { "type": "item", "name": "同步心跳", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30596,9 +30596,9 @@
             {
               "label": "打成巨斧",
               "success": {
-                "text": "最後一錘落下，「星心巨斧」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「劈開大物」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心巨斧", "qty": 1 },
+                  { "type": "item", "name": "劈開大物", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30607,9 +30607,9 @@
             {
               "label": "打成細劍",
               "success": {
-                "text": "最後一錘落下，「星心細劍」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「追不上的風」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心細劍", "qty": 1 },
+                  { "type": "item", "name": "追不上的風", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30618,9 +30618,9 @@
             {
               "label": "打成戰鎚",
               "success": {
-                "text": "最後一錘落下，「星心戰鎚」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「星之禱」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心戰鎚", "qty": 1 },
+                  { "type": "item", "name": "星之禱", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30629,9 +30629,9 @@
             {
               "label": "打成長弓",
               "success": {
-                "text": "最後一錘落下，「星心長弓」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「先見之箭」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心長弓", "qty": 1 },
+                  { "type": "item", "name": "先見之箭", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30640,9 +30640,9 @@
             {
               "label": "打成纏腕",
               "success": {
-                "text": "最後一錘落下，「星心纏腕」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「拳中星光」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心纏腕", "qty": 1 },
+                  { "type": "item", "name": "拳中星光", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30651,9 +30651,9 @@
             {
               "label": "打成指揮細劍",
               "success": {
-                "text": "最後一錘落下，「星心指揮細劍」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「星星的音高」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心指揮細劍", "qty": 1 },
+                  { "type": "item", "name": "星星的音高", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30662,9 +30662,9 @@
             {
               "label": "打成鎚矛",
               "success": {
-                "text": "最後一錘落下，「星心鎚矛」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「守門人名錄」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心鎚矛", "qty": 1 },
+                  { "type": "item", "name": "守門人名錄", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30673,9 +30673,9 @@
             {
               "label": "打成長棍",
               "success": {
-                "text": "最後一錘落下，「星心長棍」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「草之朝向」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心長棍", "qty": 1 },
+                  { "type": "item", "name": "草之朝向", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30684,9 +30684,9 @@
             {
               "label": "打成法杖",
               "success": {
-                "text": "最後一錘落下，「星心法杖」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
+                "text": "最後一錘落下，「與星對眨」在砧上亮得像一顆剛誕生的星。巴爾林單膝跪下：「石誓會會記住這一天。」",
                 "effects": [
-                  { "type": "item", "name": "星心法杖", "qty": 1 },
+                  { "type": "item", "name": "與星對眨", "qty": 1 },
                   { "type": "affinity", "npc": "npc_balin_greyrock", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30735,14 +30735,14 @@
           "title": "從教廷的軍需庫挑一副鎧甲",
           "kind": "choice",
           "at": { "where": "npc", "npc": "npc_pope_gregory" },
-          "text": "軍需庫的門打開了。兩百年的灰塵底下，一整排鎧甲在燭光下閃著光：從白金的板甲、聖戰騎士的鍊甲、遊騎兵與聖詠隊的古龍皮甲，到苦修院的武僧袍與樞機的星輝長袍，每一種打仗的方式都有一副。教皇說：「挑一副。剩下的，會送到前線去。」",
+          "text": "軍需庫的門打開了。兩百年的灰塵底下，一整排鎧甲在燭光下閃著光：從白金的板甲、聖戰騎士的鍊甲、遊騎兵與五線譜，到苦修院的武僧袍與燭光金線，每一種打仗的方式都有一副。教皇說：「挑一副。剩下的，會送到前線去。」",
           "options": [
             {
               "label": "挑白金板甲",
               "success": {
-                "text": "你挑了「聖環的白金板甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「白金七芒」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "聖環的白金板甲", "qty": 1 },
+                  { "type": "item", "name": "白金七芒", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30751,9 +30751,9 @@
             {
               "label": "挑古龍皮甲",
               "success": {
-                "text": "你挑了「教廷遊騎兵的古龍皮甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「兩百年追獵」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "教廷遊騎兵的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "兩百年追獵", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30762,9 +30762,9 @@
             {
               "label": "挑星輝長袍",
               "success": {
-                "text": "你挑了「樞機的星輝長袍」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「燭光金線」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "樞機的星輝長袍", "qty": 1 },
+                  { "type": "item", "name": "燭光金線", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30773,9 +30773,9 @@
             {
               "label": "挑星隕鍊甲",
               "success": {
-                "text": "你挑了「聖戰騎士的星隕鍊甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「環環禱詞」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "聖戰騎士的星隕鍊甲", "qty": 1 },
+                  { "type": "item", "name": "環環禱詞", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30784,9 +30784,9 @@
             {
               "label": "挑懺悔者皮甲",
               "success": {
-                "text": "你挑了「懺悔者的古龍皮甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「劃掉的印記」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "懺悔者的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "劃掉的印記", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30795,9 +30795,9 @@
             {
               "label": "挑夜巡皮甲",
               "success": {
-                "text": "你挑了「教廷夜巡者的古龍皮甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「不在這裡」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "教廷夜巡者的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "不在這裡", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30806,9 +30806,9 @@
             {
               "label": "挑苦修袍",
               "success": {
-                "text": "你挑了「苦修院的星輝武僧袍」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「三百年擋拳」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "苦修院的星輝武僧袍", "qty": 1 },
+                  { "type": "item", "name": "三百年擋拳", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30817,9 +30817,9 @@
             {
               "label": "挑聖詠皮甲",
               "success": {
-                "text": "你挑了「聖詠隊的古龍皮甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「五線譜」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "聖詠隊的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "五線譜", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30828,9 +30828,9 @@
             {
               "label": "挑聖林皮甲",
               "success": {
-                "text": "你挑了「聖林守衛的古龍皮甲」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「不枯橡葉」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "聖林守衛的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "不枯橡葉", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30839,9 +30839,9 @@
             {
               "label": "挑學者長袍",
               "success": {
-                "text": "你挑了「教廷書庫的星輝長袍」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
+                "text": "你挑了「未還的借書單」。教皇在它的胸口畫了一個聖環：「願它守護你，像你守護了他們。」",
                 "effects": [
-                  { "type": "item", "name": "教廷書庫的星輝長袍", "qty": 1 },
+                  { "type": "item", "name": "未還的借書單", "qty": 1 },
                   { "type": "affinity", "npc": "npc_pope_gregory", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30895,9 +30895,9 @@
             {
               "label": "挑星隕鍊甲",
               "success": {
-                "text": "你挑了「赤翼近衛的星隕鍊甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「血誓之環」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "赤翼近衛的星隕鍊甲", "qty": 1 },
+                  { "type": "item", "name": "血誓之環", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30906,9 +30906,9 @@
             {
               "label": "挑古龍皮甲",
               "success": {
-                "text": "你挑了「赤翼斥候的古龍皮甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「夜色深紅」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "赤翼斥候的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "夜色深紅", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30917,9 +30917,9 @@
             {
               "label": "挑星輝武僧袍",
               "success": {
-                "text": "你挑了「赤翼拳衛的星輝武僧袍」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「展翼」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "赤翼拳衛的星輝武僧袍", "qty": 1 },
+                  { "type": "item", "name": "展翼", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30928,9 +30928,9 @@
             {
               "label": "挑星隕板甲",
               "success": {
-                "text": "你挑了「赤翼聖印的星隕板甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「翼下聖印」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "赤翼聖印的星隕板甲", "qty": 1 },
+                  { "type": "item", "name": "翼下聖印", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30939,9 +30939,9 @@
             {
               "label": "挑血吼皮甲",
               "success": {
-                "text": "你挑了「血吼戰團的古龍皮甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「爪痕勳章」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "血吼戰團的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "爪痕勳章", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30950,9 +30950,9 @@
             {
               "label": "挑獵翼皮甲",
               "success": {
-                "text": "你挑了「赤翼獵手的古龍皮甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「赤羽引路」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "赤翼獵手的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "赤羽引路", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30961,9 +30961,9 @@
             {
               "label": "挑宮廷樂師皮甲",
               "success": {
-                "text": "你挑了「赤翼宮廷樂師的古龍皮甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「宴會與戰場」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "赤翼宮廷樂師的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "宴會與戰場", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30972,9 +30972,9 @@
             {
               "label": "挑血祭司鍊甲",
               "success": {
-                "text": "你挑了「赤翼血祭司的星隕鍊甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「暗紅祈禱」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "赤翼血祭司的星隕鍊甲", "qty": 1 },
+                  { "type": "item", "name": "暗紅祈禱", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30983,9 +30983,9 @@
             {
               "label": "挑荒原皮甲",
               "success": {
-                "text": "你挑了「荒原巫者的古龍皮甲」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「最後的草籽」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "荒原巫者的古龍皮甲", "qty": 1 },
+                  { "type": "item", "name": "最後的草籽", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -30994,9 +30994,9 @@
             {
               "label": "挑宮廷法師長袍",
               "success": {
-                "text": "你挑了「赤翼宮廷法師的星輝長袍」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
+                "text": "你挑了「血羽結界」，在帳本上簽下了名字。薇洛妮卡在那一格旁邊畫了一顆小小的心，又趕快塗掉了。",
                 "effects": [
-                  { "type": "item", "name": "赤翼宮廷法師的星輝長袍", "qty": 1 },
+                  { "type": "item", "name": "血羽結界", "qty": 1 },
                   { "type": "affinity", "npc": "npc_veronica", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
@@ -31062,7 +31062,7 @@
           "title": "兩半潮汐之璜合在一起",
           "kind": "choice",
           "at": { "where": "npc", "npc": "npc_moring" },
-          "text": "兩半玉璜合在一起的那一瞬間，滄月闕的潮水停了。光從玉璜裡流出來，凝成了三樣東西，懸在你面前：完整的潮汐之璜、一枚滿月之戒、一對潮鏡耳墜。墨鱗屏住了呼吸：「古籍說的是真的。挑一樣吧——剩下的會回到海裡。」",
+          "text": "兩半玉璜合在一起的那一瞬間，滄月闕的潮水停了。光從玉璜裡流出來，凝成了三樣東西，懸在你面前：完整的潮汐之璜、一枚月光之言、一對最好的一刻。墨鱗屏住了呼吸：「古籍說的是真的。挑一樣吧——剩下的會回到海裡。」",
           "options": [
             {
               "label": "拿潮汐之璜",
@@ -31076,22 +31076,22 @@
               }
             },
             {
-              "label": "拿滿月之戒",
+              "label": "拿月光之言（守護之戒）",
               "success": {
-                "text": "你握住了「滿月之戒」。另外兩樣東西化成了光，慢慢地沉回了海裡。墨鱗在古籍的最後一頁，用墨玉筆寫下了今天的日期。",
+                "text": "你握住了「月光之言」。另外兩樣東西化成了光，慢慢地沉回了海裡。墨鱗在古籍的最後一頁，用墨玉筆寫下了今天的日期。",
                 "effects": [
-                  { "type": "item", "name": "滿月之戒", "qty": 1 },
+                  { "type": "item", "name": "月光之言", "qty": 1 },
                   { "type": "affinity", "npc": "npc_moring", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
               }
             },
             {
-              "label": "拿潮鏡耳墜",
+              "label": "拿最好的一刻（靜心耳墜）",
               "success": {
-                "text": "你握住了「潮鏡耳墜」。另外兩樣東西化成了光，慢慢地沉回了海裡。墨鱗在古籍的最後一頁，用墨玉筆寫下了今天的日期。",
+                "text": "你握住了「最好的一刻」。另外兩樣東西化成了光，慢慢地沉回了海裡。墨鱗在古籍的最後一頁，用墨玉筆寫下了今天的日期。",
                 "effects": [
-                  { "type": "item", "name": "潮鏡耳墜", "qty": 1 },
+                  { "type": "item", "name": "最好的一刻", "qty": 1 },
                   { "type": "affinity", "npc": "npc_moring", "delta": 5, "reason": "把作品交給你" }
                 ],
                 "complete": true
