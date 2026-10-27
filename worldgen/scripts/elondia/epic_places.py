@@ -114,14 +114,14 @@ PLACES = {
     ('pol_war_h_bloodplume', 'guard'): ('sm_bloodplume_stairs', 5, 2, '在城牆石階上突破赤翼宮廷的近衛'),
     ('pol_war_d_rhineburg', 'guard'): ('sm_rhineburg_ramparts', 6, 1, '在萊茵堡的城牆上突破帝國的近衛軍'),
     ('pol_acheron_gaze', 'heroes'): ('sm_sky_rift', 7, 2, '在裂縫的深處擋下回響的英雄'),
-    ('pol_acheron_gaze', 'eye'): ('sm_sky_rift', 7, 1, '回答阿契隆'),
+    ('pol_acheron_gaze', 'eye'): ('sm_sky_rift', 7, 1, '直面阿契隆的眼睛'),
     ('drg_kagni', 'dragon'): ('sm_kagni_heart', 5, 1, '在熾寂的山腹擋下卡格尼的投影'),
     ('drg_sinor', 'dragon'): ('sm_sinor_grotto', 5, 1, '在霧鎖的海蝕洞擋下希諾爾的投影'),
     ('drg_sorian', 'dragon'): ('sm_sorian_dream', 6, 1, '在精靈千年的夢裡擋下索利安的投影'),
     ('drg_babelin', 'climb'): ('sm_babelin_spire', 3, 7, '爬上不停長高的巨塔'),
     ('drg_babelin', 'dragon'): ('sm_babelin_spire', 3, 1, '在塔的頂端擋下巴別林的投影'),
     ('drg_acheron', 'dragon'): ('sm_acheron_echo', 7, 3, '在千年的回響裡擋下阿契隆的投影'),
-    ('drg_acheron', 'end'): ('sm_acheron_echo', 7, 1, '告訴阿契隆，凡人會怎麼記住這個時代'),
+    ('drg_acheron', 'end'): ('sm_acheron_echo', 7, 1, '在那隻眼睛前，讓這個時代亮一次'),
 }
 SEND = {
     ('pol_peace_bloodhorn', 'challenge'): 'sm_bone_arena',
