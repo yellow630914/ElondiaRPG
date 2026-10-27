@@ -177,7 +177,7 @@ describe('built-in stories', () => {
         // 路線的任務點照兩邊的走向拆開，任何情況都剛好開一個
         const open = routes.filter((n) => condMet(g, n.requires))
         expect(open.length, `${h},${d}`).toBe(1)
-        const shown = (open[0]!.options ?? []).map((o) => o.success.set_flags?.[0])
+        const shown = (open[0]!.options ?? []).map((o) => o.success?.set_flags?.[0])
         // 兩邊都主和只能清剿、兩邊都主戰只能開戰，其他情況兩條都能選
         const want = h >= 1 && d >= 1 ? ['pol_route_peace'] : h <= -1 && d <= -1 ? ['pol_route_war'] : ['pol_route_peace', 'pol_route_war']
         expect(shown.sort(), `${h},${d}`).toEqual(want)
@@ -198,18 +198,18 @@ describe('built-in stories', () => {
       expect(story(ids[0]!).start.requires?.flags).toEqual([entry])
       // 結局之後是論功行賞：三選一的獨特飾品
       const last = story(ids[2]!)
-      const ends = last.nodes.filter((n) => n.id !== 'spoils').flatMap((n) => (n.options ?? []).map((o) => o.success.set_flags ?? []))
+      const ends = last.nodes.filter((n) => n.id !== 'spoils').flatMap((n) => (n.options ?? []).map((o) => o.success?.set_flags ?? []))
       expect(ends.every((f) => f.includes(rest[3]!))).toBe(true)
       const spoils = last.nodes.find((n) => n.id === 'spoils')!
-      expect(spoils.options!.map((o) => o.success.effects?.[0]?.type)).toEqual(['item', 'item', 'item'])
-      expect(spoils.options!.every((o) => o.success.complete)).toBe(true)
+      expect(spoils.options!.map((o) => o.success?.effects?.[0]?.type)).toEqual(['item', 'item', 'item'])
+      expect(spoils.options!.every((o) => o.success?.complete)).toBe(true)
     }
     const fin = story('pol_acheron_gaze')
     expect(fin.start.min_level).toBe(18)
     expect([...(fin.start.requires?.flags_any ?? [])].sort()).toEqual(['pol_peace_done', 'pol_war_d_done', 'pol_war_h_done'])
     // 終章的戰鬥輸了可以重試；結局留下龍災的旗標給巨龍史詩
     expect(fin.nodes.find((n) => n.id === 'heroes')!.fail?.retry).toBe(true)
-    expect(fin.nodes.find((n) => n.id === 'eye')!.options!.every((o) => o.success.set_flags?.includes('dragon_calamity'))).toBe(true)
+    expect(fin.nodes.find((n) => n.id === 'eye')!.options!.every((o) => o.success?.set_flags?.includes('dragon_calamity'))).toBe(true)
     expect(fin.nodes.find((n) => n.id === 'spoils')!.options!.length).toBe(3)
   })
 

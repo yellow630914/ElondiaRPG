@@ -35,7 +35,7 @@ describe('epic set pieces', () => {
       expect(m.grid![door.at.y]![door.at.x], sid).toBe('E')
       // 開門的旗標是這個任務自己的（接任務或前一個任務點設的）
       const def = stories.find((s) => s.id === sid)!
-      const own = [...def.start_flags, ...def.nodes.flatMap((x) => [x.success, x.fail, ...(x.options ?? []).map((o) => o.success)].flatMap((o) => o?.set_flags ?? []))]
+      const own = [...(def.start_flags ?? []), ...def.nodes.flatMap((x) => [x.success, x.fail, ...(x.options ?? []).map((o) => o.success)].flatMap((o) => o?.set_flags ?? []))]
       expect(own, sid).toContain(door.requires!.flags![0])
     }
   })
