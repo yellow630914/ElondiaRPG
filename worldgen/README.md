@@ -43,6 +43,8 @@
 
 **平衡性測試**（`balance/`）：[README（自檢流程）](balance/README.md)、[怪物](balance/monsters.md)、[物品](balance/items.md)、[技能](balance/abilities.md)、[狀態、特質、刺青](balance/statuses-perks-tattoos.md)、[經濟與報酬](balance/economy.md)、[特殊任務](balance/stories.md)。
 
+**任務線走向**：內建艾隆迪亞的所有特殊任務、地下城事件與寄生物的發作整理成一頁 [design/ElondiaQuestFlows.html](design/ElondiaQuestFlows.html)（分支、條件、檢定、效果、親密場景）；內建內容改過之後在 repo 根目錄跑 `python3 worldgen/tools/flowdoc/flowdoc.py` 重新產生。
+
 ## 3. 完成前的檢查清單
 
 - [ ] 所有產出都在 `worldgen/worlds/<代號>/`，沒有改到 `data/`、`src/`、`docs/`

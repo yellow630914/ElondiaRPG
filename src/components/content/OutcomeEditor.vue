@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { geography, npcs as namedNpcs, specialMaps, type StoryOutcome } from '@/engine/data'
 import { travelEvents } from '@/engine/road'
-import { SIDE_MAPS, STORY_EFFECTS } from '@/engine/storyMods'
+import { SIDE_MAPS, STORY_EFFECTS, STORY_SCENE_CHARS } from '@/engine/storyMods'
 import type { RewardEffect } from '@/engine/effects'
 import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
@@ -45,6 +45,10 @@ const end = computed({
     </label>
     <template v-if="o">
       <label class="block small">發生的事（給玩家與 AI）<textarea v-model="o.text" rows="2" maxlength="400" /></label>
+      <label v-if="!props.event" class="block small">
+        <span>親密場景（成人向，可以空著）<Hint text="寫了，這段經過就交給「成人場景正文」，依成人場景規則詳細描寫、不會一筆帶過。寫誰和誰、在哪裡、做了什麼；只給 AI 看。任務要標「成人向」。" /></span>
+        <textarea v-model="o.scene" rows="2" :maxlength="STORY_SCENE_CHARS" />
+      </label>
       <div class="row small">設定旗標 <FlagInput v-model="o.set_flags" /></div>
       <div class="row small">清除旗標 <FlagInput v-model="o.clear_flags" /></div>
       <CounterDeltasEditor v-model="o.counters" />

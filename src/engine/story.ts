@@ -24,7 +24,7 @@ import { presentHere } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { addCounters, clampCounters, condMet, flagKey } from './storyFlags'
-import { tagsAllowed } from './content'
+import { adultContent, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
 import type { GameState, NpcRecord, Report, StoryProgress } from './types'
@@ -450,6 +450,8 @@ function resolveOutcome(
 ): string[] {
   const lines = [`「${def.title}」${node.title}${label ? `：${label}` : ''}。`]
   report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), node.text, ...(outcome?.text ? [outcome.text] : [])] }
+  // 親密場景：依成人場景規則詳細描寫（交給成人場景正文）
+  if (outcome?.scene && adultContent()) report.narration = { ...report.narration, length: report.narration?.length === 'long' ? 'long' : 'medium', adult_scene: outcome.scene }
   if (!outcome) {
     if (!success) {
       lines.push('這次沒有進展，之後可以再試一次。')

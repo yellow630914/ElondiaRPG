@@ -218,6 +218,9 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
 }
 
 /** 整理一個結果（旅途與城鎮事件也用） */
+/** 任務結果的親密場景描述的長度上限 */
+export const STORY_SCENE_CHARS = 300
+
 export function sanitizeOutcome(v: unknown): StoryOutcome | undefined {
   return outcome(v)
 }
@@ -227,6 +230,7 @@ function outcome(v: unknown): StoryOutcome | undefined {
   const o = v as Partial<StoryOutcome>
   const out: StoryOutcome = {}
   if (str(o.text, 400)) out.text = str(o.text, 400)
+  if (str(o.scene, STORY_SCENE_CHARS)) out.scene = str(o.scene, STORY_SCENE_CHARS)
   const set = flags(o.set_flags)
   if (set.length) out.set_flags = set
   const clear = flags(o.clear_flags)
@@ -459,6 +463,8 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     const other = others.find((s) => s.id !== def.id && (s.start_flags ?? []).includes(f))
     if (other) err.push(`開頭的旗標 🚩${f} 也是「${other.title}」的開頭旗標，兩個任務的任務點會互相觸發（請改名）`)
   }
+  // 親密場景只在成人向的任務裡
+  if (!(def.tags ?? []).includes('adult') && def.nodes.some((n) => outcomesOf(n).some(({ o }) => o.scene))) err.push('有結果寫了親密場景，但任務沒有標「成人向」')
   // 故事裡死去的角色要是固定 NPC
   for (const n of def.nodes) for (const { o } of outcomesOf(n)) for (const d of o.deaths ?? []) if (!npcIds.has(d)) err.push(`「${n.title}」的結果裡死去的角色 ${d} 不存在`)
   // 用到的劇情計數器要存在

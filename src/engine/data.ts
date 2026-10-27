@@ -244,6 +244,11 @@ export interface StoryCheck { attr: AttrId; dc: number; affinity?: StoryAffinity
 /** 任務點的結果：旗標、效果、同行的夥伴、任務完成或失敗 */
 export interface StoryOutcome {
   text?: string
+  /**
+   * 成人向的親密場景（只在特殊任務）：寫了而且開啟成人向時，這段經過交給「成人場景正文」，依成人場景規則詳細描寫，
+   * 不會一筆帶過；寫的是誰和誰、在哪裡、做了什麼（給 AI 看的提示，不顯示給玩家）
+   */
+  scene?: string
   set_flags?: string[]
   clear_flags?: string[]
   /** 劇情計數器的加減：{ 計數器 id: 增減 } */

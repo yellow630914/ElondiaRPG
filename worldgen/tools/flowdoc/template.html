@@ -1,0 +1,229 @@
+<title>艾隆迪亞任務線走向</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* 版面：左側是任務線索引（可搜尋），右側一次讀一條線；每個任務是一張卡，任務點沿著一條時間軸往下，分支縮排在任務點底下 */
+:root {
+  --bg: #eceff2; --surface: #fbfcfd; --ink: #1b2130; --muted: #5b6475; --line: #d3d8e0;
+  --accent: #8a5a14; --accent-soft: #f2e7d4; --ok: #2d6a43; --ok-soft: #e0efe5; --bad: #a3342e; --bad-soft: #f6e1df;
+  --teal: #285f69; --teal-soft: #dcecee; --violet: #574890; --violet-soft: #e6e2f3;
+  --f-display: "Noto Serif TC", "Songti TC", serif; --f-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11141a; --surface: #191e26; --ink: #e3e6eb; --muted: #98a1b0; --line: #2b323d;
+  --accent: #d8a650; --accent-soft: #3a2f1c; --ok: #79bd8f; --ok-soft: #1d3326; --bad: #e58077; --bad-soft: #3c2220;
+  --teal: #73b6bf; --teal-soft: #1b3236; --violet: #ab9de3; --violet-soft: #29243f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #11141a; --surface: #191e26; --ink: #e3e6eb; --muted: #98a1b0; --line: #2b323d;
+  --accent: #d8a650; --accent-soft: #3a2f1c; --ok: #79bd8f; --ok-soft: #1d3326; --bad: #e58077; --bad-soft: #3c2220;
+  --teal: #73b6bf; --teal-soft: #1b3236; --violet: #ab9de3; --violet-soft: #29243f; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.7; margin: 0 }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
+.wrap { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 28px; max-width: 1240px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 64px }
+aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); align-self: start; max-height: calc(100vh - 32px); display: flex; flex-direction: column; gap: 12px; min-width: 0 }
+.brand h1 { font-family: var(--f-display); font-size: 1.35rem; margin: 0; text-wrap: balance; letter-spacing: .02em }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: .82rem }
+#q { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; font-size: .9rem }
+#q:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+nav { overflow-y: auto; min-height: 0; padding-right: 4px }
+nav h2 { font-size: .72rem; letter-spacing: .12em; color: var(--muted); margin: 14px 0 4px; font-weight: 700 }
+nav a { display: flex; justify-content: space-between; gap: 8px; padding: 3px 8px; border-radius: 5px; color: var(--ink); text-decoration: none; font-size: .9rem }
+nav a span:last-child { color: var(--muted); font-size: .75rem; font-variant-numeric: tabular-nums; white-space: nowrap }
+nav a:hover { background: var(--accent-soft) }
+nav a[aria-current="true"] { background: var(--accent); color: var(--surface) }
+nav a[aria-current="true"] span:last-child { color: var(--surface) }
+.pick { display: none }
+main { min-width: 0 }
+.line-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 4px }
+.line-head h2 { font-family: var(--f-display); font-size: 1.9rem; margin: 0; text-wrap: balance }
+.eyebrow { font-size: .75rem; letter-spacing: .12em; color: var(--accent); font-weight: 700 }
+.meta { color: var(--muted); font-size: .88rem }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 22px; align-items: center }
+.flow a { font-size: .85rem; padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); text-decoration: none; background: var(--surface) }
+.flow a:hover { border-color: var(--accent) }
+.flow i { color: var(--muted); font-style: normal; font-size: .8rem }
+.flow.rows { flex-direction: column; align-items: stretch; gap: 8px }
+.flow-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center }
+.flow-lbl { font-size: .75rem; letter-spacing: .08em; color: var(--accent); font-weight: 700; min-width: 9.5em }
+.quest { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px; margin-bottom: 22px }
+.q-top { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center }
+.rank { font-family: var(--f-display); font-weight: 700; color: var(--accent); border: 1.5px solid var(--accent); border-radius: 4px; padding: 0 7px; font-size: .9rem; line-height: 1.5 }
+.quest h3 { font-family: var(--f-display); font-size: 1.3rem; margin: 0; text-wrap: balance }
+.summary { margin: 6px 0 0; color: var(--muted); max-width: 68ch }
+.start { margin-top: 12px; padding: 10px 14px; background: var(--bg); border-radius: 8px; font-size: .9rem; display: grid; gap: 4px }
+.start b { font-weight: 700 }
+.chip { display: inline-block; font-size: .76rem; padding: 0 8px; border-radius: 999px; line-height: 1.75; white-space: nowrap; margin: 2px 4px 2px 0; background: var(--bg); color: var(--muted) }
+.chip.tag { background: var(--bad-soft); color: var(--bad) }
+.chip.aff { background: var(--accent-soft); color: var(--accent) }
+.chip.counter { background: var(--violet-soft); color: var(--violet) }
+.chip.bad { background: var(--bad-soft); color: var(--bad) }
+.chip.join, .chip.perk, .chip.item, .chip.rep { background: var(--teal-soft); color: var(--teal) }
+.chip.need, .chip.after, .chip.any, .chip.none { background: var(--bg); color: var(--ink); border: 1px dashed var(--line) }
+.steps { list-style: none; margin: 16px 0 0; padding: 0; position: relative }
+.steps::before { content: ""; position: absolute; left: 13px; top: 6px; bottom: 6px; width: 2px; background: var(--line) }
+.step { position: relative; padding-left: 40px; margin-bottom: 18px }
+.dot { position: absolute; left: 0; top: 1px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: .78rem; font-weight: 700;
+  background: var(--surface); border: 2px solid var(--line); color: var(--muted) }
+.dot.k-戰鬥 { border-color: var(--bad); color: var(--bad) }
+.dot.k-判定 { border-color: var(--teal); color: var(--teal) }
+.dot.k-選擇 { border-color: var(--accent); color: var(--accent) }
+.step h4 { margin: 0; font-size: 1rem; font-weight: 700 }
+.where { color: var(--muted); font-size: .82rem; margin-left: 6px; font-weight: 400 }
+.scene { color: var(--muted); font-size: .88rem; margin: 4px 0 6px; max-width: 72ch }
+.info { font-size: .86rem; margin: 2px 0 }
+.info .lbl { color: var(--muted); margin-right: 6px }
+.boss { color: var(--bad); font-weight: 700 }
+.branches { display: grid; gap: 8px; margin-top: 8px }
+.br { border-left: 3px solid var(--line); padding: 4px 0 4px 12px }
+.br.ok { border-color: var(--ok) } .br.fail { border-color: var(--bad) } .br.opt { border-color: var(--accent) }
+.br-label { font-weight: 700; font-size: .9rem }
+.br.ok .br-label { color: var(--ok) } .br.fail .br-label { color: var(--bad) } .br.opt .br-label { color: var(--accent) }
+.br p { margin: 2px 0 4px; font-size: .9rem; max-width: 72ch }
+.go { font-size: .84rem; margin-top: 2px }
+.go span { margin-right: 10px; white-space: normal }
+.go .done { color: var(--ok); font-weight: 700 }
+.go .retry { color: var(--bad); font-weight: 700 }
+.go .unlock { color: var(--violet) }
+.go .next { color: var(--accent) }
+.flags { font-family: var(--f-mono); font-size: .72rem; color: var(--muted); word-break: break-all }
+.rewards { margin-top: 6px; font-size: .88rem; color: var(--muted) }
+.pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px }
+.pager button { font: inherit; font-size: .9rem; padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); cursor: pointer; max-width: 48% }
+.pager button:hover { border-color: var(--accent) }
+.legend { font-size: .78rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px }
+@media (max-width: 820px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 16px }
+  aside { position: static; max-height: none }
+  nav { display: none }
+  .pick { display: block; width: 100%; padding: 8px; font: inherit; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink) }
+  .quest { padding: 16px 14px }
+  .line-head h2 { font-size: 1.5rem }
+}
+@media (prefers-reduced-motion: no-preference) { nav a, .flow a, .pager button { transition: background .15s, border-color .15s } }
+</style>
+
+<div class="wrap">
+  <aside>
+    <div class="brand">
+      <h1>艾隆迪亞任務線走向</h1>
+      <p id="stats"></p>
+    </div>
+    <input id="q" type="search" placeholder="搜尋任務線、任務、人物" aria-label="搜尋任務線、任務、人物">
+    <select id="pick" class="pick" aria-label="選擇任務線"></select>
+    <div class="legend"><span>戰＝戰鬥</span><span>判＝判定</span><span>選＝選擇</span><span>劇＝劇情</span></div>
+    <nav id="nav" aria-label="任務線"></nav>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+const LINES = JSON.parse(document.getElementById('data').textContent)
+const $ = (s) => document.querySelector(s)
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+const KIND1 = { 戰鬥: '戰', 判定: '判', 選擇: '選', 劇情: '劇' }
+const nq = LINES.reduce((s, l) => s + l.quests.length, 0)
+$('#stats').textContent = `${LINES.length} 條任務線・${nq} 個特殊任務`
+
+function haystack(l) { return [l.name, l.npc, l.cat, ...l.quests.flatMap((q) => [q.title, q.who])].join(' ').toLowerCase() }
+const HAY = LINES.map(haystack)
+let CUR = ''
+
+function renderNav() {
+  const q = $('#q').value.trim().toLowerCase()
+  const cur = CUR
+  let html = '', last = '', opts = ''
+  LINES.forEach((l, i) => {
+    if (q && !HAY[i].includes(q)) return
+    if (l.cat !== last) { html += `<h2>${esc(l.cat)}</h2>`; opts += `${last ? '</optgroup>' : ''}<optgroup label="${esc(l.cat)}">`; last = l.cat }
+    html += `<a href="#${l.key}" aria-current="${l.key === cur}"><span>${esc(l.name)}</span><span>${esc(l.lv)}</span></a>`
+    opts += `<option value="${l.key}" ${l.key === cur ? 'selected' : ''}>${esc(l.name)}（${esc(l.lv)}）</option>`
+  })
+  $('#nav').innerHTML = html || '<p class="meta">沒有符合的任務線</p>'
+  $('#pick').innerHTML = opts + (last ? '</optgroup>' : '')
+}
+
+function chips(list) { return list.map(([k, t]) => `<span class="chip ${k}">${esc(t)}</span>`).join('') }
+
+function reqChips(req, prevTitle) {
+  return req.filter(([k, t]) => !(k === 'after' && (t === prevTitle || t === '接下任務')))
+    .map(([k, t]) => [k, k === 'after' ? `接在「${t}」之後` : k === 'need' ? `需要 ${t}` : t])
+}
+
+function branch(b, nextTitle) {
+  const cls = b.fail ? 'fail' : (b.label === '成功' || b.label === '接著') ? 'ok' : 'opt'
+  const go = []
+  const nexts = b.next.filter((t) => !(b.next.length === 1 && t === nextTitle))
+  if (nexts.length) go.push(`<span class="next">→ ${nexts.map((t) => `「${esc(t)}」`).join('、')}</span>`)
+  if (b.done) go.push('<span class="done">✔ 任務完成</span>')
+  if (b.retry) go.push('<span class="retry">↺ 留在這一步，可以重試</span>')
+  if (b.unlock.length) go.push(`<span class="unlock">解鎖任務：${b.unlock.map((t) => `「${esc(t)}」`).join('、')}</span>`)
+  const head = [
+    b.check ? `<span class="chip">${esc(b.check)}</span>` : '',
+    (b.tags || []).map((t) => `<span class="chip tag">${esc(t)}</span>`).join(''),
+    chips(reqChips(b.req || [], '')),
+  ].join('')
+  return `<div class="br ${cls}"><div class="br-label">${esc(b.label)} ${head}</div>
+    ${b.text ? `<p>${esc(b.text)}</p>` : ''}
+    ${b.fx.length ? `<div>${chips(b.fx)}</div>` : ''}
+    ${go.length ? `<div class="go">${go.join('')}</div>` : ''}
+    ${b.flags.length ? `<div class="flags">旗標：${b.flags.map(esc).join('、')}</div>` : ''}</div>`
+}
+
+function quest(q, i, l) {
+  const steps = q.nodes.map((n, j) => {
+    const prev = j ? q.nodes[j - 1].title : ''
+    const next = q.nodes[j + 1]?.title ?? ''
+    const reqs = reqChips(n.req, prev)
+    const info = n.info.map(([k, t]) => `<div class="info"><span class="lbl">${k === 'foes' ? '敵人' : '判定'}</span>${k === 'foes' ? esc(t).replace(/（頭目）/g, '<span class="boss">（頭目）</span>') : esc(t)}</div>`).join('')
+    return `<li class="step"><span class="dot k-${esc(n.kind)}" title="${esc(n.kind)}">${KIND1[n.kind] || '・'}</span>
+      <h4>${esc(n.title)}<span class="where">${esc(n.where)}</span>${n.urgent ? ' <span class="chip bad">限時</span>' : ''}</h4>
+      ${reqs.length ? `<div>${chips(reqs)}</div>` : ''}
+      <p class="scene">${esc(n.text)}</p>${info}
+      <div class="branches">${n.branches.map((b) => branch(b, next)).join('')}</div></li>`
+  }).join('')
+  const pre = q.prereq.length ? `<div><b>前提</b>　${chips(q.prereq.map(([k, t]) => [k, k === 'need' ? `需要 ${t}` : t]))}</div>` : ''
+  return `<article class="quest" id="${esc(q.id)}">
+    <div class="q-top"><span class="rank">${esc(q.rank)}</span><h3>${esc(q.title)}</h3>
+      ${q.tags.map((t) => `<span class="chip tag">${esc(t)}</span>`).join('')}<span class="meta">${l.quests.length > 1 ? `第 ${i + 1} 個・` : ''}${esc(q.id)}</span></div>
+    <p class="summary">${esc(q.summary)}</p>
+    <div class="start"><div><b>接取</b>　${esc(q.who)}　${q.startReq.map((t) => `<span class="chip">${esc(t)}</span>`).join('')}</div>${pre}
+      <div class="meta">${esc(q.startText)}</div></div>
+    <ol class="steps">${steps}</ol>
+    <div class="rewards">完成獎勵：${q.rewards.map(esc).join('、') || '—'}</div>
+  </article>`
+}
+
+function show(key) {
+  const i = Math.max(0, LINES.findIndex((l) => l.key === key))
+  const l = LINES[i]
+  CUR = l.key
+  const T = Object.fromEntries(l.quests.map((q) => [q.id, q.title]))
+  const pill = (id) => `<a href="#${l.key}" data-q="${esc(id)}">${esc(T[id])}</a>`
+  const flow = l.flow
+    ? l.flow.map((r) => `<div class="flow-row"><span class="flow-lbl">${esc(r.label)}</span>${r.ids.map(pill).join(r.seq ? '<i>→</i>' : '<i>・</i>')}</div>`).join('')
+    : l.quests.map((q) => pill(q.id)).join('<i>→</i>')
+  $('#main').innerHTML = `<div class="eyebrow">${esc(l.cat)}</div>
+    <div class="line-head"><h2>${esc(l.name)}</h2><span class="meta">${esc(l.lv)}・${l.quests.length} 個任務${l.npc ? `・從${esc(l.npc)}開始` : ''}</span></div>
+    <div class="flow${l.flow ? ' rows' : ''}">${flow}</div>
+    ${l.quests.map((q, j) => quest(q, j, l)).join('')}
+    <div class="pager">${i > 0 ? `<button type="button" data-k="${LINES[i - 1].key}">← ${esc(LINES[i - 1].name)}</button>` : '<span></span>'}
+      ${i < LINES.length - 1 ? `<button type="button" data-k="${LINES[i + 1].key}">${esc(LINES[i + 1].name)} →</button>` : ''}</div>`
+  renderNav()
+  document.querySelector('nav a[aria-current="true"]')?.scrollIntoView({ block: 'nearest' })
+}
+
+$('#main').addEventListener('click', (e) => {
+  const a = e.target.closest('[data-q]')
+  if (a) { e.preventDefault(); document.getElementById(a.dataset.q)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return }
+  const b = e.target.closest('[data-k]')
+  if (b) { location.hash = b.dataset.k; window.scrollTo(0, 0) }
+})
+$('#q').addEventListener('input', renderNav)
+$('#pick').addEventListener('change', (e) => { location.hash = e.target.value; window.scrollTo(0, 0) })
+window.addEventListener('hashchange', () => { show(location.hash.slice(1)); window.scrollTo(0, 0) })
+show(location.hash.slice(1) || LINES[0].key)
+</script>
