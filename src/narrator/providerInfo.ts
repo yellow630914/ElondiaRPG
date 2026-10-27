@@ -16,6 +16,8 @@ export interface ProviderConfig {
   model: string
   /** 只有 OpenAI 相容格式需要 */
   baseURL?: string
+  /** Vertex AI 用服務帳戶 JSON 時的區域（預設 us-central1；global 也可以） */
+  region?: string
   /** 留空則用各服務預設值 */
   maxTokens?: number
   /** 思考的強度（沒有設定時用預設） */
@@ -118,10 +120,10 @@ export const PROVIDERS: ProviderInfo[] = [
   {
     // Vertex AI 的快速模式（express mode）：用 Google Cloud 的 API key，不需要專案與服務帳號
     id: 'vertex',
-    name: 'Google Vertex AI（API key）',
+    name: 'Google Vertex AI',
     defaultModel: 'gemini-2.5-flash',
     modelHints: ['gemini-2.5-flash', 'gemini-2.5-pro'],
-    keyHint: 'Google Cloud 的 API key',
+    keyHint: 'API key，或貼上服務帳戶的 JSON',
     needsBaseURL: false,
     noModelList: true,
   },

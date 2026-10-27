@@ -46,7 +46,7 @@
 - **AI 細節描述**：每次行動、事件或戰鬥結束後，請 AI 寫出經過（串流顯示）；關閉時顯示戰報與簡述，也可以複製提示詞自行使用。
 - **繁簡中文**：「AI 的輸出語言」可以選繁體或簡體；送出的提示詞會照著轉成同一種寫法（[`docs/I18N.md`](docs/I18N.md) 第 4 節）。
 - **AI 判定主動行動**：用文字描述主角要做的事，擲骰後由 AI 決定成敗並寫出經過，數值後果由程式夾在上限內；也讓 AI 設計各地居民、商店的特別商品與談判方式（店名不經 AI，照地區規則生成或手寫）。
-- **服務**：Anthropic、OpenAI、Google Gemini、Google Vertex AI（API key），以及 OpenAI 相容格式（DeepSeek、阿里雲百煉、智譜、Moonshot、OpenRouter、Ollama……）。可以設定三個模型來源，再指定每個功能用哪一個（例如正文用寫作好的模型、判定用便宜的模型）；每則日誌顯示用掉的 token。見 [`docs/PROMPTS.md`](docs/PROMPTS.md)。
+- **服務**：Anthropic、OpenAI、Google Gemini、Google Vertex AI（API key 或服務帳戶 JSON），以及 OpenAI 相容格式（DeepSeek、阿里雲百煉、智譜、Moonshot、OpenRouter、Ollama……）。可以設定三個模型來源，再指定每個功能用哪一個（例如正文用寫作好的模型、判定用便宜的模型）；每則日誌顯示用掉的 token。見 [`docs/PROMPTS.md`](docs/PROMPTS.md)。
 - **插圖**：替主角、夥伴與 NPC 生成形象圖（OpenAI、NovelAI、ComfyUI），可以先請語言模型把描述轉成標籤；也可以上傳自己的圖。見 [`docs/PORTRAITS.md`](docs/PORTRAITS.md)。
 
 ## 遊戲內容

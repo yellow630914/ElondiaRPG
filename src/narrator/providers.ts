@@ -1,8 +1,9 @@
-// AI 服務：Anthropic、OpenAI、Google Gemini、Vertex AI（API key），以及 OpenAI 相容格式（OpenRouter、DeepSeek、本機 Ollama 等）。
+// AI 服務：Anthropic、OpenAI、Google Gemini、Vertex AI（API key 或服務帳戶 JSON），以及 OpenAI 相容格式（OpenRouter、DeepSeek、本機 Ollama 等）。
 // API key 由玩家自行輸入，只存在瀏覽器的 localStorage，請求直接從瀏覽器送到各服務。
 
 // 各家 SDK 在用到時才載入，只會下載玩家選用的那一家
 import type { Prompt } from './prompt'
+import { parseServiceAccount, streamVertexService, vertexAccessToken, vertexBody } from './vertexAuth'
 import { anthropicThinking, cacheMarkFor, geminiThinking, openAIReasoningBody, type ProviderConfig, type ProviderId, type TokenUsage } from './providerInfo'
 
 export type { ProviderConfig, ProviderId, TokenUsage }
@@ -160,9 +161,11 @@ export function openAIMessages(provider: ProviderId, config: ProviderConfig, pro
 }
 
 async function* streamGemini(provider: 'gemini' | 'vertex', config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback) {
-  const ai = await geminiClient(provider, config)
   const thinkingConfig = geminiThinking(config)
-  const stream = await ai.models.generateContentStream({
+  // Vertex AI 的服務帳戶 JSON（和 SillyTavern 的完整模式一樣）：SDK 的瀏覽器版只收 API key，改打 REST
+  const sa = provider === 'vertex' ? parseServiceAccount(config.apiKey) : undefined
+  const ai = sa ? undefined : await geminiClient(provider, config)
+  const stream = sa ? streamVertexService(sa, config, vertexBody(config, prompt.system, prompt.user, thinkingConfig), signal) : await ai!.models.generateContentStream({
     model: config.model,
     contents: prompt.user,
     config: {
@@ -203,9 +206,13 @@ export async function listModels(provider: ProviderId, config: ProviderConfig): 
       for await (const m of client.models.list()) ids.push(m.id)
       break
     }
-    case 'vertex':
-      // 列出模型的 API 不收 API key（要 OAuth），快速模式只能直接輸入模型名稱
-      throw new Error('Vertex AI 的 API key 不能列出模型，請直接輸入模型名稱（例如 gemini-2.5-flash）')
+    case 'vertex': {
+      // 列出模型的 API 不收 API key（要 OAuth）；服務帳戶只先確認換得到 token，模型名稱一樣直接輸入
+      const sa = parseServiceAccount(config.apiKey)
+      if (!sa) throw new Error('Vertex AI 的 API key 不能列出模型，請直接輸入模型名稱（例如 gemini-2.5-flash）')
+      await vertexAccessToken(sa)
+      return []
+    }
     case 'gemini': {
       const ai = await geminiClient(provider, config)
       const pager = await ai.models.list()

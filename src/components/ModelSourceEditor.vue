@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import {
   CACHE_MARKS, guessCacheMark, guessReasoningFormat, parseExtraBody, providerInfo, PROVIDERS, REASONING_FORMATS, REASONING_LEVELS, type ProviderId, type ReasoningLevel,
 } from '@/narrator/providerInfo'
+import { parseServiceAccount, VERTEX_DEFAULT_REGION } from '@/narrator/vertexAuth'
 import { AI_FEATURES, useSettings } from '@/stores/settings'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
@@ -32,6 +33,35 @@ async function loadModels() {
     const provider = source.value.provider
     loaded.value[provider] = await listModels(provider, cfg.value)
     message.value = `連線成功，共 ${loaded.value[provider]!.length} 個模型，可以從下拉選單選擇。`
+  } catch (e) {
+    message.value = `連線失敗：${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    loading.value = false
+  }
+}
+
+// Vertex AI：key 欄位也可以貼服務帳戶的 JSON（SillyTavern 的「完整模式」），或直接選 JSON 檔
+const serviceAccount = computed(() => (source.value.provider === 'vertex' ? parseServiceAccount(cfg.value.apiKey) : undefined))
+async function loadJson(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  const text = await file.text()
+  if (!parseServiceAccount(text)) {
+    message.value = '這不是服務帳戶的金鑰檔（要有 client_email、private_key、project_id）'
+    return
+  }
+  cfg.value.apiKey = text.trim()
+  message.value = ''
+}
+async function testServiceAccount() {
+  loading.value = true
+  message.value = ''
+  try {
+    const { listModels } = await import('@/narrator/providers')
+    await listModels('vertex', cfg.value)
+    message.value = '服務帳戶可以用：已經換到 access token。'
   } catch (e) {
     message.value = `連線失敗：${e instanceof Error ? e.message : String(e)}`
   } finally {
@@ -126,12 +156,24 @@ function copyFrom(e: Event) {
     </label>
 
     <label>
-      API key{{ info.keyOptional ? '（選填）' : '' }}
+      {{ source.provider === 'vertex' ? 'API key 或服務帳戶 JSON' : 'API key' }}{{ info.keyOptional ? '（選填）' : '' }}
       <span class="row">
         <input v-model="cfg.apiKey" :type="showKey ? 'text' : 'password'" :placeholder="info.keyHint" autocomplete="off" style="flex: 1" />
         <button class="small" @click="showKey = !showKey">{{ showKey ? '隱藏' : '顯示' }}</button>
+        <label v-if="source.provider === 'vertex'" class="small file-btn">選擇 JSON 檔<input type="file" accept=".json,application/json" hidden @change="loadJson" /></label>
       </span>
     </label>
+    <template v-if="serviceAccount">
+      <p class="small">服務帳戶：{{ serviceAccount.client_email }}・專案 {{ serviceAccount.project_id }}</p>
+      <label>
+        <span class="lab">區域 <Hint text="Vertex AI 的區域，預設 us-central1；新模型（例如 Gemini 3 的預覽版）有時只在 global。" /></span>
+        <span class="row">
+          <input v-model.trim="cfg.region" :placeholder="VERTEX_DEFAULT_REGION" style="width: 180px" />
+          <button class="small" @click="cfg.region = 'global'">global</button>
+          <button class="small" :disabled="loading" @click="testServiceAccount">{{ loading ? '測試中…' : '測試連線' }}</button>
+        </span>
+      </label>
+    </template>
 
     <div class="field">
       <span>模型</span>
@@ -152,7 +194,7 @@ function copyFrom(e: Event) {
       <input v-model.trim="cfg.model" placeholder="或直接輸入模型名稱" aria-label="模型名稱" />
     </div>
     <p v-if="source.provider === 'vertex'" class="small muted">
-      用 Vertex AI 的快速模式（express mode）：在 Google Cloud 主控台建立 API key 並啟用 Vertex AI API 就能用，不需要服務帳號。這種 key 不能列出模型，請直接輸入模型名稱（Vertex 沒有 gemini-flash-latest 這類別名，要寫完整的版本，例如 gemini-2.5-flash）。
+      兩種用法：① API key（快速模式）：在 Google Cloud 主控台建立 API key 並啟用 Vertex AI API。② 服務帳戶 JSON（和 SillyTavern 的 Vertex AI「完整模式」一樣，例如用贈金的專案）：在主控台的「IAM 與管理 → 服務帳戶」建立帳戶、給它「Vertex AI 使用者」角色，新增 JSON 金鑰，把檔案選進來或整段貼上。JSON 只存在這台瀏覽器，請求直接從瀏覽器送到 Google。兩種都不能列出模型，請直接輸入模型名稱（Vertex 沒有 gemini-flash-latest 這類別名，要寫完整的版本，例如 gemini-2.5-flash）。
     </p>
     <p v-if="message" class="small">{{ message }}</p>
 
@@ -209,4 +251,5 @@ function copyFrom(e: Event) {
 .reasoning textarea { width: 100%; font-family: monospace; }
 .lab, .status { display: flex; align-items: center; gap: 4px; }
 label.check { display: inline-flex !important; gap: 6px; align-items: center; }
+.file-btn { cursor: pointer; border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 8px; white-space: nowrap; }
 </style>
