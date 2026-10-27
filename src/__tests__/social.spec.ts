@@ -22,7 +22,7 @@ describe('relationships', () => {
     const state = game()
     recruit(state, 'npc_lina')
     const lina = state.relationships!.npc_lina!
-    expect(lina.appearance).toContain('耳朵')
+    expect(lina.appearance).toContain('貓耳')
     expect(lina.toOthers.npc_selene).toContain('甜點')
     expect(lina.firstMet?.location).toBe('soriel')
     expect(lina.toPlayer).toContain('冒險夥伴')
