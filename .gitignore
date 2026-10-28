@@ -37,3 +37,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# GitHub Wiki 的本機預覽（node tools/wiki/build.mjs）
+wiki-out

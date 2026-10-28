@@ -16,8 +16,10 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 │
 ├─ 世界與移動
 │   └─ WORLD              地點、路線、聚落、走格子
-│       ├─ DUNGEON_DESIGN 地下城四層、光線、安全房、撤退
+│       ├─ DUNGEON_DESIGN 地下城分層、光線、安全房、撤退
 │       ├─ TRAVEL_EVENTS  旅途地圖、旅途事件、臨時地圖、情報
+│       ├─ LANDMARKS      城鎮的特色地標：開放條件、探索、工作與訓練
+│       ├─ SPECIAL_MAPS   特殊地圖：下水道、宮殿內部這類人工設計的地方
 │       └─ HOMES          空地、房屋、家具、種植
 │
 ├─ 城鎮與經濟
@@ -30,16 +32,22 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 ├─ 人物與關係
 │   ├─ NPC_SYSTEM         名單、活躍地點、互動、警戒與通緝
 │   ├─ COMPANIONS         夥伴、休息、奴隸契約、主人的家
+│   ├─ TATTOOS            刺青：奴隸印記、誓約印記、普通刺青
 │   └─ RELATIONSHIP_MEMORY 人際關係、共同記憶
 │
 ├─ 劇情與事件
 │   ├─ STORY_QUESTS       特殊任務、劇情旗標
-│   └─ EVENTS             事件視窗（要玩家回應的事件）
+│   ├─ EVENTS             事件視窗（要玩家回應的事件）
+│   └─ ADULT_EVENTS       成人向：地下城的色情事件、寄生物
 │
 ├─ AI 與呈現
-│   ├─ PROMPTS            AI 服務、提示詞結構、快取、世界書注入
+│   ├─ PROMPTS            AI 服務、AI 開關、提示詞結構、快取、世界書注入
 │   ├─ PORTRAITS          角色形象插圖
-│   └─ I18N               介面語言與提示詞的繁簡轉換
+│   ├─ I18N               介面語言與提示詞的繁簡轉換
+│   └─ BACKGROUNDS        背景圖
+│
+├─ 開發計畫
+│   └─ UI_V2_PLAN         UI 改版的分階段計畫（樣稿在 mockups/，立繪規格在 comfy/）
 │
 ├─ 內容與存檔
 │   ├─ CONTENT_EDITOR     自訂內容與世界
@@ -71,6 +79,11 @@ flowchart TD
   WO[WORLD] --> DG[DUNGEON_DESIGN]
   WO --> TE[TRAVEL_EVENTS]
   WO --> HO[HOMES]
+  LM[LANDMARKS] --> WO
+  SM[SPECIAL_MAPS] --> WO
+  SM --> DG
+  SQ --> LM
+  SQ --> SM
   DG --> MO
   DG --> IT[ITEMS]
   TE --> EF
@@ -97,6 +110,9 @@ flowchart TD
   CO --> NP
   CO --> CB
   CO --> HO
+  TA[TATTOOS] --> CO
+  TA --> CB
+  EF --> TA
 
   SQ --> EF
   SQ --> AC
@@ -105,6 +121,9 @@ flowchart TD
   EV --> NP
   EV --> TE
   EV --> CB
+  AE[ADULT_EVENTS] --> TE
+  AE --> EV
+  AE --> DG
 
   PO[PORTRAITS] --> PR
   PR --> RM
@@ -112,7 +131,7 @@ flowchart TD
   SV[SAVES] --> CE
   SV --> PO
 
-  GD -.-> CB & PK & EF & AC & WO & GU & TR & NP & CO & SQ & PR & CE & SV
+  GD -.-> CB & PK & EF & AC & WO & GU & TR & NP & CO & SQ & PR & CE & SV & LM & SM & TA & AE
 ```
 
 **樞紐**：`EFFECTS`、`ACTIONS` 與 `PERKS`（所有檢定都經過 `checkModifiers`）被最多系統依賴，改它們的格式或上限時，要一起看 GUILD、TRADE、COMPANIONS、STORY_QUESTS、WORK、CRAFTING、NPC_SYSTEM。
@@ -151,16 +170,39 @@ flowchart TD
 | [CONTENT_EDITOR](CONTENT_EDITOR.md) | 自訂內容 | `mods.ts`、`stores/content.ts` |
 | [CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) | 內容引用與保護 | `usage.ts`、`mods.ts` |
 | [SAVES](SAVES.md) | 存檔 | `stores/saves.ts`、`stores/game.ts`、`state.ts` |
+| [ADULT_EVENTS](ADULT_EVENTS.md) | 地下城的色情事件、寄生物（成人向） | `dungeonEvents.ts`、`parasites.ts`、`parasiteEvents.ts` |
+| [UI_V2_PLAN](UI_V2_PLAN.md) | UI 改版計畫 | `components/` |
 | [OPEN_QUESTIONS](OPEN_QUESTIONS.md) | 待決定事項 | — |
 | [KNOWN_ISSUES](KNOWN_ISSUES.md) | 程式問題 | — |
 
 沒有標資料夾的程式檔都在 `src/engine/`。
 
-## 4. 維護規則
+## 4. 其他文件
+
+| 位置 | 內容 |
+|---|---|
+| [`../README.md`](../README.md) | 專案說明：怎麼玩、遊戲內容、自己建置、發布新版本 |
+| [`../CHANGELOG.md`](../CHANGELOG.md) | 版本更新紀錄（新的改動先寫在「未發布」） |
+| [`../worldgen/`](../worldgen/README.md) | 世界製作：給 Agent 或玩家的世界生成指南、各種內容的製作指南（`guides/`）、設計方法（`design/`）、平衡性自檢（`balance/`）、世界模板（`templates/`）、內建內容的產生腳本（`scripts/elondia/`） |
+| [`comfy/portrait-spec.md`](comfy/portrait-spec.md) | 模組化像素立繪規格（ComfyUI） |
+| [`mockups/`](mockups/) | UI 樣稿（HTML） |
+| [`../tools/pixel/`](../tools/pixel/README.md) | 像素素材管線 |
+| [`../src/assets/backgrounds/`](../src/assets/backgrounds/README.md)、[`../src/assets/scenes/`](../src/assets/scenes/README.md) | 背景圖、建築場景圖的檔名規則 |
+
+## 5. GitHub Wiki
+
+[Wiki](https://github.com/yellow630914/ElondiaRPG/wiki) 由這些文件自動產生，不在 wiki 上直接寫：
+
+- 哪份文件變成哪一頁、放在側邊欄的哪一組，寫在 [`tools/wiki/build.mjs`](../tools/wiki/build.mjs) 的 `GROUPS`。文件之間的連結會改成 wiki 頁面的連結（用代號當連結文字的，例如 `[COMBAT_SYSTEM](COMBAT_SYSTEM.md)`，會顯示成頁名「戰鬥系統」），其他連結改成 GitHub 上那個版本的檔案。
+- 推送版本 tag 時，[`.github/workflows/wiki.yml`](../.github/workflows/wiki.yml) 產生頁面並推到 wiki；也可以在 Actions → Wiki → Run workflow 手動同步。第一次使用前要先在 GitHub 的 Wiki 頁籤按「Create the first page」建立 wiki（隨便存一頁，同步時會被覆蓋）。
+- 本機預覽：`node tools/wiki/build.mjs --out wiki-out`（`wiki-out/` 不進 git）。
+- **新增文件時要加進 `GROUPS`**（不放上 wiki 的加進 `SKIP`），否則測試 `src/__tests__/wiki.spec.ts` 會失敗。
+
+## 6. 維護規則
 
 1. **以程式為準。** 改了程式就改文件；發現文件和程式不同，照程式改文件（程式本身有問題時記到 KNOWN_ISSUES）。
 2. **一件事只寫在一個地方。** 其他文件只放連結。例如效果種類只寫在 EFFECTS、主動行動的流程只寫在 ACTIONS、價格公式只寫在 TRADE 第 3 節、休息規則只寫在 COMPANIONS 第 5 節。
 3. **待決定的事寫進 OPEN_QUESTIONS**，不要散在各文件末尾；決定之後把結論寫回系統文件，再從清單刪掉。
-4. **新增系統時**：開一份文件，開頭寫「上層／依賴／被依賴」與程式、資料檔，再把它加進本文件的階層、依賴圖與一覽表。
+4. **新增系統時**：開一份文件，開頭寫「上層／依賴／被依賴」與程式、資料檔，再把它加進本文件的階層、依賴圖與一覽表，以及 wiki 的 `GROUPS`（第 5 節）。
 5. **不要改檔名。** 程式註解與 `data/` 的 `$comment` 會用「docs/檔名.md 第 N 節」引用文件；改章節編號時要一起搜尋 `docs/檔名` 更新。
 6. **資料整理型的表格**（MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節）沒有產生腳本，改資料時要記得同步。

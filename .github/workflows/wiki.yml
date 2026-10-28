@@ -1,0 +1,48 @@
+# Wiki：把 repo 裡的文件產生成 GitHub Wiki 的頁面並推上去（tools/wiki/build.mjs，說明見 docs/README.md 第 5 節）。
+# 推送版本 tag（v0.3.5 這類）時同步，wiki 和那一版的文件一致；也可以手動執行（Actions → Wiki → Run workflow），
+# 連結指向執行時的分支。
+# 第一次使用前，要先在 repo 的 Wiki 頁籤按「Create the first page」隨便存一頁，GitHub 才會建立 wiki 的 git repo。
+name: Wiki
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  wiki:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 產生頁面
+        run: node tools/wiki/build.mjs --out "$RUNNER_TEMP/wiki-out" --ref "$GITHUB_REF_NAME"
+      - name: 推到 wiki
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" "$RUNNER_TEMP/wiki"; then
+            echo "::error::找不到 wiki 的 git repo：先到 repo 的 Wiki 頁籤按「Create the first page」建立 wiki，再重新執行。"
+            exit 1
+          fi
+          cd "$RUNNER_TEMP/wiki"
+          # 整個換成新產生的頁面（文件改名或刪掉時，舊的頁面一起拿掉）
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R "$RUNNER_TEMP/wiki-out/." .
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "wiki 沒有變動"
+            exit 0
+          fi
+          git commit -m "同步文件（${GITHUB_REF_NAME}）"
+          git push origin HEAD
