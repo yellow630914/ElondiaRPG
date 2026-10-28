@@ -116,11 +116,21 @@ function guardLine(id: string): string {
 function targetDetail(state: GameState, p: ActionPending): string {
   const id = p.target?.includes(':') ? p.target.split(':')[1] : p.target
   if (!id) return '對象：無（或場景中的不特定人物）'
+  if (!p.with?.length) return npcDetail(state, id, '對象', p.targetName)
+  // 多個對象：每個人都附上資料與戒備；入隊、換主人、解除契約只認主要對象
+  return [
+    `這次行動同時涉及 ${p.with.length + 1} 人。每個人都可以有各自的親密度變化（每人各自的上限）；join、change_master、release 只適用主要對象，同行的對象不會入隊、不會成為主角的主人。`,
+    npcDetail(state, id, '主要對象'),
+    ...p.with.map((w) => npcDetail(state, w, '同行的對象')),
+  ].join('\n\n')
+}
+
+function npcDetail(state: GameState, id: string, label: string, fallback?: string): string {
   const rec = npcRecord(state, id)
   const rel = state.relationships?.[id]
-  if (!rec) return `對象：${p.targetName ?? id}`
+  if (!rec) return `${label}：${fallback ?? id}`
   const lines = [
-    `對象 ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderName(rec.gender)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
+    `${label} ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderName(rec.gender)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
     `身分：${npcIdentity(rec)}`,
     `性格：${rec.personality}`,
     appearanceOf(rec.id, rec.appearance) ? `外貌：${appearanceOf(rec.id, rec.appearance)}` : '',
@@ -240,7 +250,7 @@ function joinDoc(state: GameState, p: ActionPending): string {
     why = e instanceof Error ? e.message : String(e)
   }
   const cond = why ? `目前不符合邀請的條件（${why}），這次寫了也不會入隊，不要在經過裡寫成已經同行` : `檢定總值要達到邀請的 DC ${dc}（不是這次行動的 DC）才會真的入隊`
-  return `{"type":"join","npc":"${id}"}（行動的對象答應加入主角的隊伍、從此同行：只在 degree 為 success 以上、對象真心願意跟著主角走時。程式另外檢查邀請的條件：人在身邊、親密度、被婉拒後的冷卻、隊伍空位、小隊要找隊長；${cond}。沒有寫這個效果時，經過裡不要寫成對方已經入隊）`
+  return `{"type":"join","npc":"${id}"}（行動的${p.with?.length ? '主要' : ''}對象答應加入主角的隊伍、從此同行：只在 degree 為 success 以上、對象真心願意跟著主角走時。程式另外檢查邀請的條件：人在身邊、親密度、被婉拒後的冷卻、隊伍空位、小隊要找隊長；${cond}。沒有寫這個效果時，經過裡不要寫成對方已經入隊）`
 }
 
 /** 爭取特質：AI 判斷說法合不合理，並在 perk 欄位設計特質；程式依 degree 夾住強度 */
@@ -321,8 +331,8 @@ function gearDoc(state: GameState, p: ActionPending): string {
 /** 判定也帶世界書時，拿來比對關鍵字的文字 */
 export function actionLoreText(state: GameState, p: ActionPending): string {
   const id = p.target?.includes(':') ? p.target.split(':')[1] : p.target
-  const rec = id ? npcRecord(state, id) : undefined
-  return [p.text, p.scene, locationById(p.location).name, p.targetName ?? '', rec?.name ?? '', rec?.personality ?? '', rec?.background ?? ''].join('\n')
+  const recs = [id, ...(p.with ?? [])].map((x) => (x ? npcRecord(state, x) : undefined))
+  return [p.text, p.scene, locationById(p.location).name, p.targetName ?? '', ...recs.flatMap((rec) => [rec?.name ?? '', rec?.personality ?? '', rec?.background ?? ''])].join('\n')
 }
 
 /** 主動行動的判定提示詞：AI 看得到骰值。 */

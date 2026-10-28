@@ -1307,6 +1307,10 @@ export const actionRules = actionsJson as unknown as {
     value_steps?: number[]
     wealth_scale?: number[]
     status_dc?: number
+    /** 自由行動：一次最多幾個對象（含主要對象） */
+    max_targets?: number
+    /** 自由行動：主要對象之外每多一人，DC 增加多少 */
+    extra_target_dc?: number
   }>
 }
 

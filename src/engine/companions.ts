@@ -855,7 +855,7 @@ export interface ActionSetup {
   actor?: string
 }
 
-export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string): ActionSetup {
+export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string, others: string[] = []): ActionSetup {
   const pc = pcOf(state)
   switch (kind) {
     case 'chat':
@@ -1050,16 +1050,30 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       }
     }
     case 'free': {
-      if (target && !presentHere(state, target)) throw new Error('對方不在這裡')
-      const rec = target ? npcRecord(state, target) : undefined
+      // 對象：主要對象加上同行的對象（最多 max_targets 人），每個人都要在身邊
+      const def = actionRules.kinds.free
+      const ids = target ? [target, ...others] : others
+      if (others.length && !target) throw new Error('先選主要對象')
+      if (new Set(ids).size !== ids.length) throw new Error('同一個人選了兩次')
+      if (ids.length > (def.max_targets ?? 1)) throw new Error(`一次最多 ${def.max_targets ?? 1} 個對象`)
+      const recs = ids.map((id) => {
+        const rec = npcRecord(state, id)
+        if (!presentHere(state, id)) throw new Error(`${rec?.name ?? '對方'}不在這裡`)
+        return rec
+      })
       // 對認識之前的人（例如店主）行動，就算認識了
-      if (rec) ensureRelationship(state, rec)
-      const rel = target ? state.relationships?.[target] : undefined
-      const situational = isBound(state) && target && target === contractOf(pc)?.master ? [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }] : []
-      let dc = 12
-      if (rec) dc += 2 * Math.max(0, lifeTier(rec.level) - lifeTier(pc.level))
-      if (rel) dc -= Math.floor(rel.affinity / 25)
-      return { dc, ...(rec ? { targetName: rec.name } : {}), situational, scene: locationById(state.location).name, outcomes: {} }
+      for (const rec of recs) if (rec) ensureRelationship(state, rec)
+      const base = def.base ?? 12
+      const dcOf = (id: string, rec: NpcRecord | undefined) => {
+        const rel = state.relationships?.[id]
+        return base + (rec ? 2 * Math.max(0, lifeTier(rec.level) - lifeTier(pc.level)) : 0) - (rel ? Math.floor(rel.affinity / 25) : 0)
+      }
+      // 多人時 DC 取最難的那位，每多一人再加一點
+      const dc = ids.length ? Math.max(...ids.map((id, i) => dcOf(id, recs[i]))) + (def.extra_target_dc ?? 0) * (ids.length - 1) : base
+      const master = isBound(state) ? contractOf(pc)?.master : undefined
+      const situational = master && ids.includes(master) ? [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }] : []
+      const names = recs.map((r, i) => r?.name ?? ids[i]!)
+      return { dc, ...(names.length ? { targetName: names.join('、') } : {}), situational, scene: locationById(state.location).name, outcomes: {} }
     }
   }
 }

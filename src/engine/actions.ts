@@ -59,8 +59,10 @@ export interface ActionInput {
   kind: ActionKind
   /** 玩家描述的行為 */
   text: string
-  /** 對象：NPC id；殺價為 "public:npc" / "black:npc" */
+  /** 對象：NPC id；殺價為 "public:npc" / "black:npc"。自由行動有多個對象時是主要對象 */
   target?: string
+  /** 自由行動：同行的對象（主要對象之外的人，合計最多 actions.json 的 max_targets 人） */
+  with?: string[]
   /** 雇傭談判的出價 */
   offer_cc?: number
   /** 搭配使用的能力（例如用魅惑術幫談判）：花資源換檢定加值 */
@@ -128,6 +130,11 @@ export interface Judgment {
 
 export { computeDegree, DEGREE_NAME }
 
+/** 自由行動的所有對象：主要對象在前，接著是同行的對象 */
+export function actionTargets(p: Pick<ActionInput, 'target' | 'with'>): string[] {
+  return [...(p.target ? [p.target] : []), ...(p.with ?? [])]
+}
+
 export function situationalTotal(p: ActionPending): number {
   return p.situational.reduce((s, x) => s + x.value, 0)
 }
@@ -144,7 +151,11 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   if (!kind) throw new Error('沒有這種行動')
   const text = input.text.trim().slice(0, 400)
   if (input.kind === 'free' && !text) throw new Error('請描述你要做什麼')
-  const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item)
+  // 同行的對象只有自由行動有
+  const others = input.kind === 'free' ? (input.with ?? []).filter(Boolean) : []
+  input = { ...input, ...(others.length ? { with: others } : {}) }
+  if (!others.length) delete input.with
+  const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item, others)
   // 擲檢定的人：通常是主角；夥伴動手製作時是那位夥伴
   const pc = (setup.actor && memberOrResident(state, currentArea(state), setup.actor)) || pcOf(state)
   // 情境修正：這次行動的特殊情況，加上非戰鬥狀態與特質（對象的標籤也算，例如「對貴族 +1」）
@@ -160,7 +171,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     situational.push({ label: `${user.name}的【${used.ability.name}】`, value: used.bonus })
   }
   // 對自己的奴隸行動：奴隸抗拒時處於劣勢，主角擲兩次取較高的
-  const ownSlave = !!input.target && state.party.some((m) => m.id === input.target && m.bond === 'slave' && contractOf(m)?.master === 'pc')
+  const targets = actionTargets(input)
+  const ownSlave = targets.length > 0 && targets.every((id) => state.party.some((m) => m.id === id && m.bond === 'slave' && contractOf(m)?.master === 'pc'))
   const rolls = withRng(state, (rng) => (ownSlave ? [roll(rng, '1d20').total, roll(rng, '1d20').total] : [roll(rng, '1d20').total]))
   const natural = Math.max(...rolls)
   const pending: ActionPending = {
@@ -168,7 +180,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     text,
     id: `a-${state.nextReportNo}`,
     natural,
-    ...(ownSlave ? { rolls, advantage: '對方是主角的奴隸，抗拒時處於劣勢' } : {}),
+    ...(ownSlave ? { rolls, advantage: targets.length > 1 ? '對方都是主角的奴隸，抗拒時處於劣勢' : '對方是主角的奴隸，抗拒時處於劣勢' } : {}),
     base_dc: setup.dc,
     attr: setup.attr ?? kind.attr,
     ...(setup.hours ? { hours: setup.hours } : {}),
@@ -460,7 +472,7 @@ function judgeJoin(
     notes.push(`（${t}）`)
     if (wait) effects.push({ type: 'flag', key: `invite_wait:${npc}`, value: true })
   }
-  if (!p.target || npc !== p.target) return refuse('只有這次行動的對象能入隊')
+  if (!p.target || npc !== p.target) return refuse(p.with?.length ? '只有這次行動的主要對象能入隊' : '只有這次行動的對象能入隊')
   const rel = state.relationships?.[npc]
   const delta = affinitySeen.get(npc) ?? 0
   // 暫時套上這次的親密度變化來檢查（檢查完還原，實際的變化在結算時套用）
@@ -538,13 +550,14 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
       report.narration = { ...report.narration, length: 'medium', focus: [`長休的經過：${restReport.outcome.summary}`, '入睡前或清晨與對象的互動', ...(report.narration?.focus ?? [])] }
     }
   }
-  if (p.target && state.captives?.npcs.includes(p.target)) {
-    report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), CAPTIVE_NOTE] }
+  const targets = actionTargets(p)
+  for (const id of targets) {
+    if (!state.captives?.npcs.includes(id)) continue
+    const name = targets.length > 1 ? `${npcRecord(state, id)?.name ?? id}：` : ''
+    report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), `${name}${CAPTIVE_NOTE}`] }
   }
-  if (p.target && state.relationships?.[p.target]) {
-    const rel = state.relationships[p.target]!
-    if (!report.party.some((x) => x.id === rel.id)) report.others = [{ id: rel.id, name: rel.name }]
-  }
+  const others = targets.map((id) => state.relationships?.[id]).filter((rel) => !!rel && !report.party.some((x) => x.id === rel.id))
+  if (others.length) report.others = others.map((rel) => ({ id: rel!.id, name: rel!.name }))
   report.timeline = [{
     seq: 1, time: report.time.start, actor: 'pc', action: `${kind.name}（${attrName(attr)}${p.rolls ? `・優勢 ${p.rolls.join('、')}` : ''}）`,
     ...(p.target && !p.target.includes(':') ? { target: p.target } : {}),
@@ -650,13 +663,13 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
   }
 }
 
-/** 沒有 AI（或 AI 的判斷與骰值不符）時的預設效果：自由行動依成功程度小幅改變對象的親密度。 */
+/** 沒有 AI（或 AI 的判斷與骰值不符）時的預設效果：自由行動依成功程度小幅改變每位對象的親密度。 */
 function defaultEffects(state: GameState, report: Report, p: ActionPending, degree: Degree): string[] {
   if (p.kind === 'rest_talk') return restTalkDefaults(state, report, p, degree)
   if (p.kind === 'master_event') return masterEventDefaults(state, report, degree)
-  if (p.kind !== 'free' || !p.target || !state.relationships?.[p.target]) return []
+  if (p.kind !== 'free') return []
   const delta = { critical: 4, success: 2, partial: 0, fail: -2, fumble: -4 }[degree]
-  addAffinity(state, report, p.target, delta, p.text.slice(0, 30))
+  for (const id of actionTargets(p)) if (state.relationships?.[id]) addAffinity(state, report, id, delta, p.text.slice(0, 30))
   return []
 }
 

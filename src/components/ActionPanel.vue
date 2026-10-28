@@ -34,8 +34,19 @@ const totals = computed(() => {
 
 // ---- 自由行動 ----
 const text = ref('')
-// 對象：隊友，以及「這裡的人」（身邊的人可以選；同一區較遠的人要先走近）
-const target = computed({ get: () => game.actionTarget, set: (v: string) => { game.actionTarget = v } })
+// 對象：隊友，以及「這裡的人」（身邊的人可以選；同一區較遠的人要先走近）。
+// 最多 max_targets 人：第一位是主要對象（入隊、換主人只看他），其他是同行的對象
+const targets = computed({ get: () => game.actionTargets, set: (v: string[]) => { game.actionTargets = v } })
+const maxTargets = actionRules.kinds.free.max_targets ?? 1
+const pick = ref('')
+function addTarget() {
+  if (pick.value && !targets.value.includes(pick.value) && targets.value.length < maxTargets) targets.value = [...targets.value, pick.value]
+  pick.value = ''
+}
+const removeTarget = (id: string) => { targets.value = targets.value.filter((x) => x !== id) }
+const makePrimary = (id: string) => { targets.value = [id, ...targets.value.filter((x) => x !== id)] }
+const TARGETS_HINT = `最多 ${maxTargets} 人。第一位是主要對象：入隊、換主人、解除契約只看他；點其他人的名字可以改成主要對象。
+參考 DC 取最難的那位，每多一人 +${actionRules.kinds.free.extra_target_dc ?? 0}。每個人都可能有親密度變化。`
 function label(id: string, name: string): string {
   const rec = s.value.party.find((m) => m.id === id) ?? npcRecord(s.value, id)
   return rec ? `${raceEmoji(rec.race)}${name}${classEmoji(rec.class)}` : name
@@ -46,9 +57,11 @@ const people = computed(() => peopleHere(s.value).map((p) => ({
 })))
 const nearTargets = computed(() => people.value.filter((p) => p.near))
 const farTargets = computed(() => people.value.filter((p) => !p.near))
-// 移動之後，原本選的對象不在身邊了就清掉
+const nameOf = (id: string) => [...partyTargets.value, ...people.value].find((t) => t.id === id)?.name ?? id
+// 移動之後，原本選的對象不在身邊了就移掉
 watch([partyTargets, nearTargets], ([party, near]) => {
-  if (target.value && ![...party, ...near].some((t) => t.id === target.value)) target.value = ''
+  const here = targets.value.filter((id) => [...party, ...near].some((t) => t.id === id))
+  if (here.length !== targets.value.length) targets.value = here
 }, { immediate: true })
 
 const use = ref('')
@@ -63,12 +76,13 @@ function grow(e: Event) {
 }
 function doFree() {
   const u = parseUse(use.value)
-  void game.perform({ kind: 'free', text: text.value, ...(target.value ? { target: target.value } : {}), ...(u ? { use: u } : {}) })
+  const [first, ...rest] = targets.value
+  void game.perform({ kind: 'free', text: text.value, ...(first ? { target: first } : {}), ...(rest.length ? { with: rest } : {}), ...(u ? { use: u } : {}) })
   text.value = ''
   use.value = ''
   if (freeBox.value) freeBox.value.style.height = freeBox.value.style.overflowY = ''
   // 對象每次重選：不然下一個沒有對象的行動會被算在上一個人身上
-  target.value = ''
+  targets.value = []
 }
 
 // ---- 請法師拆誓約印記（紋樣留下來變成普通刺青）；奴隸契約在工具列的「契約」（ContractDialog） ----
@@ -136,19 +150,27 @@ const pendingMark = computed(() => s.value.pendingMark)
       <hr />
     </template>
     <div class="pick">
-      <select v-model="target" title="對象">
-        <option value="">（沒有特定對象）</option>
+      <select v-model="pick" title="對象" :disabled="targets.length >= maxTargets" @change="addTarget">
+        <option value="">{{ !targets.length ? '（沒有特定對象）' : targets.length >= maxTargets ? `已選 ${maxTargets} 人` : '＋ 再加一位對象' }}</option>
         <optgroup v-if="partyTargets.length" label="隊伍">
-          <option v-for="t in partyTargets" :key="t.id" :value="t.id">{{ t.name }}</option>
+          <option v-for="t in partyTargets" :key="t.id" :value="t.id" :disabled="targets.includes(t.id)">{{ t.name }}</option>
         </optgroup>
         <optgroup v-if="nearTargets.length" label="身邊的人">
-          <option v-for="t in nearTargets" :key="t.id" :value="t.id">{{ t.name }}・{{ t.note }}</option>
+          <option v-for="t in nearTargets" :key="t.id" :value="t.id" :disabled="targets.includes(t.id)">{{ t.name }}・{{ t.note }}</option>
         </optgroup>
         <optgroup v-if="farTargets.length" label="這一區（要先走近）">
           <option v-for="t in farTargets" :key="t.id" :value="t.id" disabled>{{ t.name }}・{{ t.note }}・{{ t.dist }} 格</option>
         </optgroup>
       </select>
       <AbilityPicker v-model="use" />
+    </div>
+    <div v-if="targets.length" class="chips">
+      <span v-for="(id, i) in targets" :key="id" class="chip" :class="{ main: i === 0 }">
+        <span v-if="i === 0" class="main-tag">主要</span>
+        <button class="name" type="button" :disabled="i === 0" :title="i === 0 ? '主要對象' : '改成主要對象'" @click="makePrimary(id)">{{ nameOf(id) }}</button>
+        <button class="x" type="button" :aria-label="`移掉${nameOf(id)}`" @click="removeTarget(id)">×</button>
+      </span>
+      <Hint :text="TARGETS_HINT" :width="300" />
     </div>
     <div class="send">
       <textarea ref="freeBox" v-model="text" class="free" rows="1" placeholder="例如：買一份甜點給莉娜，順便問她怕水的原因" @input="grow" />
@@ -164,6 +186,14 @@ const pendingMark = computed(() => s.value.pendingMark)
 .head h3 { margin: 0; display: flex; align-items: center; gap: 6px; flex: 1; }
 .head h3 :deep(.game-icon) { color: var(--accent); }
 .pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 2px; padding: 1px 2px 1px 6px; border: 1px solid var(--border); border-radius: 3px; font-size: var(--fs-sm); background: #0003; }
+.chip.main { border-color: var(--accent); }
+.chip .main-tag { font-size: var(--fs-xs); color: var(--accent); margin-right: 2px; }
+.chip button { background: none; border: 0; padding: 0 3px; color: inherit; font: inherit; cursor: pointer; min-height: 0; }
+.chip button.name:disabled { cursor: default; opacity: 1; }
+.chip .x { color: var(--muted); }
+.chip .x:hover { color: var(--danger); }
 .send { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
 .send textarea.free { margin: 6px 0 0; min-height: 36px; resize: none; overflow-y: hidden; }
 .send button { margin-top: 6px; }

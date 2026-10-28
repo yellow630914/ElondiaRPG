@@ -35,7 +35,10 @@
       "$comment_gear": "gear（事件得到的裝備）：只在成功以上採用，最多一件；材料的建議等級不超過主角等級，稀有度不超過材料原本的（大成功可以高一級）",
       "$comment_slavery": "release（解除主角的契約）只在大成功、而且有對象時採用；change_master（對象成為主角的新主人）只在成功以上、主角是奴隸、對象就在身邊時採用",
       "$comment_ability": "ability：只在 AI 判定為大成功時採用，最多一項，必須是目前可以學的能力（否則隨機）",
-      "$comment_base": "有對象時 DC = base + 2 × max(0, 對方生命層級 - 主角生命層級) - floor(親密度 / 25)"
+      "$comment_base": "有對象時 DC = base + 2 × max(0, 對方生命層級 - 主角生命層級) - floor(親密度 / 25)",
+      "max_targets": 3,
+      "extra_target_dc": 1,
+      "$comment_targets": "對象最多 max_targets 人：第一位是主要對象，其他是同行的對象。DC 取最難的那位，每多一人 + extra_target_dc。每個人都可以得到親密度（每人各自的上限）；入隊（join）、換主人（change_master）、解除契約（release）只認主要對象"
     },
     "hire": { "name": "雇傭談判", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"] },
     "haggle": { "name": "殺價", "attr": "cha", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"] },

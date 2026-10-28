@@ -3,7 +3,7 @@ import { npcPerksOf, perksOf } from '@/engine/perks'
 import { computed, reactive, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { askingFor, proposeDc, squadOptions } from '@/engine/companions'
-import { genderName, raceName, tagDef } from '@/engine/data'
+import { actionRules, genderName, raceName, tagDef } from '@/engine/data'
 import { isBound, partyMax, partyRoom } from '@/engine/party'
 import { cellAt, CELL_NAME, cellName, currentArea, position } from '@/engine/grid'
 import { affinityTable, itemValue, type InteractionKind } from '@/engine/interactions'
@@ -90,9 +90,13 @@ function attack(p: PresentNpc) {
   if (confirm(`偷襲${p.rec.name}？被人看到的話，這裡與${p.rec.name}常去的地方都會提高警戒、降低聲望。`)) interact('attack', p)
 }
 
-/** 帶到「主動行動」：選好對象，捲到主動行動面板 */
+/** 帶到「主動行動」：加進對象（還沒選人時就是主要對象），捲到主動行動面板 */
 function toAction(p: PresentNpc) {
-  game.actionTarget = p.rec.id
+  const max = actionRules.kinds.free.max_targets ?? 1
+  if (!game.actionTargets.includes(p.rec.id)) {
+    if (game.actionTargets.length >= max) game.flash(`主動行動最多 ${max} 個對象，先移掉一位`)
+    else game.actionTargets = [...game.actionTargets, p.rec.id]
+  }
   document.querySelector('.action-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   document.querySelector<HTMLTextAreaElement>('.action-panel textarea:last-of-type')?.focus({ preventScroll: true })
 }
@@ -231,7 +235,7 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
               <AbilityPicker v-model="use" />
               <div class="row acts">
                 <button class="small" :disabled="busy" title="魅力檢定：聊得好會拉近關係，也可能聽到消息" @click="interact('chat', p)"><GameIcon name="message" :size="13" />聊天</button>
-                <button class="small" :disabled="busy" title="在主動行動裡以這個人為對象，自由描述要做的事" @click="toAction(p)"><GameIcon name="d20" :size="13" />主動行動</button>
+                <button class="small" :disabled="busy" title="把這個人加進主動行動的對象（第一位是主要對象），自由描述要做的事" @click="toAction(p)"><GameIcon name="d20" :size="13" />主動行動</button>
                 <template v-if="squadOf(p.rec.id)?.leader === p.rec.id && !bound">
                   <button class="small" :disabled="busy || !!squadOpt(p.rec.id).invite.why" :title="squadOpt(p.rec.id).invite.why ?? `整隊 ${squadOpt(p.rec.id).size} 人入隊・魅力檢定，參考 DC ${squadOpt(p.rec.id).invite.dc}`" @click="squadAct('invite', p)"><GameIcon name="feather" :size="13" />整隊邀請</button>
                   <button class="small" :disabled="busy || !!squadOpt(p.rec.id).join.why" :title="squadOpt(p.rec.id).join.why ?? `跟著他們的隊伍・魅力檢定，參考 DC ${squadOpt(p.rec.id).join.dc}`" @click="squadAct('squad_join', p)"><GameIcon name="flag" :size="13" />請他們帶你同行</button>

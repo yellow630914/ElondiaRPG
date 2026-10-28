@@ -42,11 +42,11 @@ export function narrationContext(state: GameState | null, report: Report): strin
   return state ? social.formatContext(state, social.selectContext(state, social.queryForReport(state, report))) : ''
 }
 
-/** 判定請求的人際關係與記憶：隊伍全員，加上行動對象 */
+/** 判定請求的人際關係與記憶：隊伍全員，加上行動的對象（多個對象時每一位） */
 export function judgeContext(state: GameState, p: ActionPending): string {
   const participants = ['pc', ...state.party.filter((m) => !m.isPlayer).map((m) => m.id)]
   const target = p.target?.includes(':') ? p.target.split(':')[1] : p.target
-  if (target && state.relationships?.[target] && !participants.includes(target)) participants.push(target)
+  for (const id of [target, ...(p.with ?? [])]) if (id && state.relationships?.[id] && !participants.includes(id)) participants.push(id)
   return social.formatContext(state, social.selectContext(state, { participants, location: state.location }))
 }
 
