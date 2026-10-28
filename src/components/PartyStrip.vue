@@ -3,8 +3,9 @@ import { computed, nextTick, watch } from 'vue'
 import { floatText, pillar } from '@/fx/fx'
 import { lastSeen, stateKey } from '@/fx/seen'
 import { className, companionRules, conditionName, conditionTone, describeStatus, genderDef, raceName, statusDef } from '@/engine/data'
+import { xpToNext } from '@/engine/character'
 import { isActive } from '@/engine/combat'
-import { partyMax } from '@/engine/party'
+import { isNoncombatant, partyMax } from '@/engine/party'
 import { useGame } from '@/stores/game'
 import Avatar from './ui/Avatar.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -51,6 +52,8 @@ watch(() => party.value.map((m) => `${m.id}:${m.level}`).join(','), async () => 
   }
 }, { immediate: true })
 const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (v / max) * 100)) : 0}%`
+// 等級旁的 EXP 圓環：圓周當作 100（pathLength），填滿的比例
+const ring = (v: number, max: number) => (max > 0 ? Math.max(0, Math.min(100, (v / max) * 100)) : 0)
 </script>
 
 <template>
@@ -62,7 +65,15 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
       <div class="info">
         <div class="name">
           <b :style="{ color: genderDef(m.gender)?.color }">{{ m.name }}</b>
-          <small>{{ raceName(m.race) }}・{{ className(m.class) }} Lv.<span :key="m.level" class="lv">{{ m.level }}</span></small>
+          <small>{{ raceName(m.race) }}・{{ className(m.class) }}<template v-if="isNoncombatant(m)"> Lv.<span :key="m.level" class="lv">{{ m.level }}</span></template></small>
+          <span v-if="!isNoncombatant(m)" class="lvring" :title="`Lv.${m.level}・EXP ${m.xp} / ${xpToNext(m.level)}`">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle class="track" cx="12" cy="12" r="10" />
+              <circle class="fill" cx="12" cy="12" r="10" pathLength="100" :stroke-dasharray="`${ring(m.xp, xpToNext(m.level))} 100`" />
+            </svg>
+            <span :key="m.level" class="lv">{{ m.level }}</span>
+          </span>
+          <small v-if="!isNoncombatant(m)" class="xpnum">{{ m.xp }}/{{ xpToNext(m.level) }}</small>
           <span v-if="hpOf(m).down" class="tag bad state">{{ hpOf(m).fled ? '撤離' : '倒下' }}</span>
         </div>
         <div class="hp" :title="`HP ${hpOf(m).hp} / ${hpOf(m).max}`">
@@ -93,7 +104,7 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
   padding: 6px 8px; background: #0005; border: 1px solid #ffffff10; border-radius: 3px;
 }
 .mini:hover { border-color: var(--gold-lo); }
-.mini.down > :deep(.avatar), .mini.down .hp { opacity: 0.45; filter: grayscale(1); }
+.mini.down > :deep(.avatar), .mini.down .hp, .mini.down .lvring { opacity: 0.45; filter: grayscale(1); }
 .state { margin-left: auto; padding: 0 5px; font-size: var(--fs-xs); flex-shrink: 0; }
 .tag.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
 .lvup {
@@ -110,6 +121,13 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
 .name small { color: var(--muted); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 100; }
 .hp { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
 .hp .bar { flex: 1; height: 8px; }
+.lvring { position: relative; width: 22px; height: 22px; flex-shrink: 0; display: grid; place-items: center; align-self: center; }
+.lvring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.lvring circle { fill: none; stroke-width: 3; }
+.lvring .track { stroke: #0009; }
+.lvring .fill { stroke: #9cc46a; stroke-linecap: butt; transition: stroke-dasharray 0.6s steps(10, end); }
+.lvring .lv { position: relative; font-size: 0.68rem; font-weight: 700; color: var(--gold-hi); font-variant-numeric: tabular-nums; }
+.xpnum { color: var(--muted); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
 .num { font-size: var(--fs-xs); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
 .conds { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
 .conds .tag.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }

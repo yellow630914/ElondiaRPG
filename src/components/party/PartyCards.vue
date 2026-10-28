@@ -230,7 +230,7 @@ function canDismiss(m: Character) {
 .vital { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) 5.5em; gap: 6px; align-items: center; margin-bottom: 3px; }
 .vital .num { font-size: var(--fs-sm); text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 .bar.xp { height: 6px; }
-.bar.xp > span { background: linear-gradient(180deg, #b6d884, #7ea050); transition: width 0.9s steps(12, end) 0.2s; }
+.bar.xp > span { transition: width 0.9s steps(12, end) 0.2s; }
 .rank.stamp { animation: stamp 0.45s steps(5, end) 0.2s both; }
 @keyframes stamp { from { transform: scale(2.4) rotate(-12deg); opacity: 0; } 70% { transform: scale(0.92) rotate(2deg); opacity: 1; } }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }

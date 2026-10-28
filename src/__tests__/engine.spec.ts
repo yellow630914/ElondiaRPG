@@ -197,8 +197,11 @@ describe('quests', () => {
     }
     expect(quest.status).toBe('ready')
     const money = state.money_cc
-    expectValid(turnInQuest(state, quest.id))
+    const done = turnInQuest(state, quest.id)
+    expectValid(done)
     expect(state.money_cc).toBe(money + quest.reward_cc)
+    // 打怪的委託只有戰鬥經驗，交付不另外給
+    expect(done.changes.xp).toBeUndefined()
   })
 
   it('completes check-based quests, retrying and fighting off ambushes', () => {
@@ -214,7 +217,10 @@ describe('quests', () => {
         else expectValid(result as Report)
       }
       expect(quest.status, kind).toBe('ready')
-      expectValid(turnInQuest(state, quest.id))
+      const done = turnInQuest(state, quest.id)
+      expectValid(done)
+      // 不用打怪的委託交付時給經驗：20 × F 級的等級下限 1
+      expect(done.changes.xp?.map((x) => x.amount), kind).toEqual(state.party.map(() => 20))
       if (kind === 'gather') expect(state.inventory.find((i) => i.name === '藥草')).toBeUndefined()
     }
   })

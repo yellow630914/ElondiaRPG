@@ -1032,11 +1032,14 @@ export interface MaterialQuestRules {
 }
 /** 委託的期限（天）：城內、近郊固定天數；地下城另加來回路程（per_travel_day × 單程最多天數），最多 max 天 */
 export interface QuestDeadlineRules { town: number; outskirts: number; dungeon: number; per_travel_day: number; max: number }
-const townQuestsData = townQuestsJson as unknown as { per_town: number; refresh_days: number; templates: TownQuestTemplate[]; material_quests: MaterialQuestRules; deadline_days?: QuestDeadlineRules }
+/** 交付委託的經驗：只給 kinds 列的委託，per_rank_level × 委託階級的等級下限 */
+export interface QuestXpRules { per_rank_level: number; kinds: string[] }
+const townQuestsData = townQuestsJson as unknown as { per_town: number; refresh_days: number; quest_xp?: QuestXpRules; templates: TownQuestTemplate[]; material_quests: MaterialQuestRules; deadline_days?: QuestDeadlineRules }
 export const materialQuestRules = townQuestsData.material_quests
 export const questDeadlineRules: QuestDeadlineRules | undefined = townQuestsData.deadline_days
 export const townQuestsPerTown = townQuestsData.per_town
 export const townQuestsRefreshDays = townQuestsData.refresh_days
+export const questXpRules: QuestXpRules | undefined = townQuestsData.quest_xp
 export const townQuestTemplates: Record<string, TownQuestTemplate> = Object.fromEntries(
   townQuestsData.templates.map((t) => [t.id, t]),
 )

@@ -3,6 +3,11 @@
   "version": 1,
   "per_town": 4,
   "refresh_days": 1,
+  "quest_xp": {
+    "$comment": "交付委託的經驗（每位隊員）：只給 kinds 列的不用打怪的委託（打怪的委託已經有戰鬥經驗）。經驗 = per_rank_level × 委託階級的等級下限（progression.json 的 guild_ranks），材料委託依交付份數比例增加。晉升考核不給。",
+    "per_rank_level": 20,
+    "kinds": ["search", "gather", "patrol", "delivery", "gather_wild", "gather_dungeon"]
+  },
   "deadline_days": { "town": 3, "outskirts": 5, "dungeon": 7, "per_travel_day": 2, "max": 40 },
   "$comment_deadline": "委託的期限：接下時決定，城內 town 天、近郊 outskirts 天；地下城 dungeon 天再加上來回路程（per_travel_day × 單程最多天數），最多 max 天。過了期限還沒完成目標就逾期失敗（公會聲望 -1）；目標達成之後不會逾期。",
   "$comment_refresh": "公會委託板每 refresh_days 天更新一次：沒人接的委託撤下（談過報酬的保留），換上新的一批。已接下的委託不受影響。",
