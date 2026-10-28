@@ -223,7 +223,10 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   const attr = (ATTR_IDS as string[]).includes(String(r.attr)) ? (r.attr as AttrId) : p.attr
   const dcRaw = num(r.dc)
   const dc = Number.isNaN(dcRaw) ? p.base_dc : clamp(Math.round(dcRaw), p.base_dc - adj, p.base_dc + adj)
-  const degree = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree) ? (r.degree as Degree) : undefined
+  // AI 沒寫（或寫錯）成功程度時，用骰值對 DC 算出的參考結果（和結算時一樣），效果的門檻也照這個看
+  const degree = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
+    ? (r.degree as Degree)
+    : computeDegree(p.natural, p.natural + p.modifiers[attr] + situationalTotal(p), dc)
   const allowed = new Set(actionRules.kinds[p.kind].effects)
   const pc = pcOf(state)
   const known = (id: string) => !!state.relationships?.[id]
@@ -234,6 +237,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   let money = 0
   const adjusted: string[] = []
   const notes: string[] = []
+  let joinAsk: Record<string, unknown> | undefined
   // 同一樣物品這次已經給出去、拿到的數量（AI 可能分兩筆寫同一樣東西）
   const given = new Map<string, number>()
   const got = new Map<string, number>()
@@ -403,32 +407,10 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         effects.push({ type: 'meet', npc, spot: 'inn', ...(affinity ? { affinity } : {}), ...(str(x.to_player, caps.relationship_text_chars) ? { to_player: str(x.to_player, caps.relationship_text_chars)! } : {}) })
         break
       }
-      case 'join': {
-        // 行動的對象答應入隊：成功以上，而且要符合「邀請認識的人」的所有條件（人在身邊、親密度、冷卻、空位、小隊找隊長），
-        // 檢定總值也要達到邀請的 DC。不符合時不採用，寫進結果與交給寫手
-        if (effects.some((y) => y.type === 'companion')) break
-        const npc = String(x.npc ?? p.target ?? '')
-        const who = npcRecord(state, npc)?.name ?? '對方'
-        const refuse = (why: string) => {
-          const t = `${who}沒有入隊：${why}`
-          adjusted.push(t)
-          notes.push(`（${t}）`)
-        }
-        if (!p.target || npc !== p.target) { refuse('只有這次行動的對象能入隊'); break }
-        if (degree !== 'critical' && degree !== 'success') { refuse('入隊要成功以上'); break }
-        try {
-          validateInvite(state, npc)
-        } catch (err) {
-          refuse(err instanceof Error ? err.message : String(err))
-          break
-        }
-        const inv = inviteDc(state, npc)
-        const total = p.natural + p.modifiers[attr] + situationalTotal(p)
-        const d = computeDegree(p.natural, total, inv)
-        if (d !== 'critical' && d !== 'success') { refuse(`檢定總值 ${total} 沒有達到邀請的 DC ${inv}`); break }
-        effects.push({ type: 'companion', npc, mode: 'voluntary' })
+      case 'join':
+        // 入隊在其他效果之後檢查（同一次判定的親密度變化要算進去）
+        joinAsk ??= x
         break
-      }
       case 'xp': {
         const amount = num(x.amount)
         if (Number.isNaN(amount) || amount <= 0) break
@@ -437,6 +419,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
       }
     }
   }
+  if (joinAsk) judgeJoin(state, p, joinAsk, degree, attr, affinitySeen, effects, adjusted, notes)
   const updates: RelationshipUpdate[] = []
   for (const u of Array.isArray(r.relationship_updates) ? r.relationship_updates : []) {
     const id = String((u as Record<string, unknown>)?.id ?? '')
@@ -446,7 +429,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   return {
     attr, dc,
     ...(clipText(r.rationale, 200) ? { rationale: clipText(r.rationale, 200) } : {}),
-    ...(degree ? { degree } : {}),
+    degree,
     ...(clipText(r.summary, caps.summary_chars) ? { summary: clipText(r.summary, caps.summary_chars) } : {}),
     ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
@@ -457,6 +440,45 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     relationship_updates: updates,
     ...(adjusted.length ? { adjusted } : {}),
     ...(notes.length ? { notes } : {}),
+  }
+}
+
+/**
+ * 行動的對象答應入隊：成功以上，而且要符合「邀請認識的人」的所有條件（人在身邊、親密度、冷卻、空位、小隊找隊長），
+ * 檢定總值也要達到邀請的 DC。親密度用這次判定結算後的數字。不符合時不採用，寫進結果與交給寫手；
+ * 對方真的拒絕（成功程度或檢定總值不夠）時和邀請一樣，下次長休前不能再邀請
+ */
+function judgeJoin(
+  state: GameState, p: ActionPending, x: Record<string, unknown>, degree: Degree, attr: AttrId,
+  affinitySeen: Map<string, number>, effects: RewardEffect[], adjusted: string[], notes: string[],
+) {
+  const npc = String(x.npc ?? p.target ?? '')
+  const who = npcRecord(state, npc)?.name ?? '對方'
+  const refuse = (why: string, wait = false) => {
+    const t = `${who}沒有入隊：${why}${wait ? '（下次長休前不能再邀請）' : ''}`
+    adjusted.push(t)
+    notes.push(`（${t}）`)
+    if (wait) effects.push({ type: 'flag', key: `invite_wait:${npc}`, value: true })
+  }
+  if (!p.target || npc !== p.target) return refuse('只有這次行動的對象能入隊')
+  const rel = state.relationships?.[npc]
+  const delta = affinitySeen.get(npc) ?? 0
+  // 暫時套上這次的親密度變化來檢查（檢查完還原，實際的變化在結算時套用）
+  if (rel) rel.affinity += delta
+  try {
+    try {
+      validateInvite(state, npc)
+    } catch (err) {
+      return refuse(err instanceof Error ? err.message : String(err))
+    }
+    if (degree !== 'critical' && degree !== 'success') return refuse('入隊要成功以上', true)
+    const inv = inviteDc(state, npc)
+    const total = p.natural + p.modifiers[attr] + situationalTotal(p)
+    const d = computeDegree(p.natural, total, inv)
+    if (d !== 'critical' && d !== 'success') return refuse(`檢定總值 ${total} 沒有達到邀請的 DC ${inv}`, true)
+    effects.push({ type: 'companion', npc, mode: 'voluntary' })
+  } finally {
+    if (rel) rel.affinity -= delta
   }
 }
 
