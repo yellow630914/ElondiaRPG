@@ -21,7 +21,7 @@ const list = computed(() => openNegotiationsHere(s.value))
 const text = reactive<Record<string, string>>({})
 const use = reactive<Record<string, string>>({})
 const DEGREES = Object.keys(DEGREE_NAME) as Degree[]
-const aiOn = computed(() => settings.aiJudge && settings.ready('negotiation'))
+const aiOn = computed(() => settings.judgesWithAi())
 
 // 對話框顯示哪一場：開始或繼續談判時由 store 設定；談判結束（不在清單裡）就自動關掉
 const shown = computed({ get: () => game.negotiationFocus, set: (v: string | null) => { game.negotiationFocus = v } })

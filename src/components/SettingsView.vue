@@ -8,7 +8,8 @@ import { gearRules } from '@/engine/gear'
 import type { StepPlace } from '@/engine/grid'
 import mapsJson from '@data/world/maps.json'
 import { useGame } from '@/stores/game'
-import { AI_FEATURES, NARRATE_KINDS, useSettings } from '@/stores/settings'
+import { AI_FEATURES, useSettings } from '@/stores/settings'
+import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
 import { DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultySummary, RULE_DEFS, type NumericRule } from '@/engine/gameRules'
@@ -113,27 +114,23 @@ function doReset() {
   <template v-if="page === 'narration'">
 
     <section class="panel">
-      <h2 class="head"><GameIcon name="sparkles" :size="20" />敘事與判定</h2>
+      <h2 class="head"><GameIcon name="d20" :size="20" />AI 判定與描述
+        <Hint text="遊戲裡所有會呼叫 AI 的開關都在這裡；冒險頁面的「AI」按鈕打開的泡泡視窗也是同一組開關。每一項的「?」寫出會影響哪些行為。" />
+      </h2>
       <div class="form">
-        <div class="field-row">
-          <label class="check"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述</label>
-          <Hint text="開啟：下列種類的日誌產生後，自動請「敘事正文」的模型寫出詳細經過。
-關閉：不自動呼叫 AI（AI 判定的主動行動除外），戰鬥直接顯示戰報，其他事件顯示簡述。每則日誌都可以從右上角的「⋯」手動寫出經過。" />
-        </div>
-        <p v-if="settings.aiNarration && !settings.ready('narration')" class="small warn-line">
-          <GameIcon name="warning" :size="14" /> 「敘事正文」用的模型來源還沒設定好，AI 寫不了經過：到<a href="#" @click.prevent="openPage('models')">模型來源</a>填寫服務、模型與 API key。
+        <AiToggles kinds />
+        <p v-if="!settings.ready()" class="small warn-line">
+          <GameIcon name="warning" :size="14" /> 還沒有設定好的模型來源，所有 AI 功能都不會呼叫：到<a href="#" @click.prevent="openPage('models')">模型來源</a>填寫服務、模型與 API key。
         </p>
-        <div class="kinds">
-          <label v-for="k in NARRATE_KINDS" :key="k.id" class="check small" :title="k.desc">
-            <input v-model="settings.narrateKinds[k.id]" type="checkbox" /> {{ k.name }}
-            <span class="muted">{{ k.desc }}</span>
-          </label>
-        </div>
-        <div class="field-row">
-          <label class="check"><input v-model="settings.aiJudge" type="checkbox" /> AI 判定主動行動</label>
-          <Hint text="開啟：主動行動（談判、雇傭、殺價、邀請、逃離……）先擲骰，再把骰值與完整資料交給 AI，由 AI 決定成敗（可能出乎預料），經過再交給敘事正文寫出；各地居民、商店的交易清單與談判方式也由 AI 設計。
-關閉：依規則判定（預設屬性與參考 DC）。" />
-        </div>
+        <p v-else-if="settings.judgesWithAi()" class="small muted">
+          擲骰的行動由「{{ settings.sourceFor('judge').name }}」判定，經過{{ settings.splitJudgeNarrative() ? `由「${settings.sourceFor('narration').name}」寫` : '在判定時順便寫出' }}；各功能用哪個來源在<a href="#" @click.prevent="openPage('models')">模型來源</a>的「功能分配」。
+        </p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="head"><GameIcon name="book" :size="20" />AI 輸出與內容</h2>
+      <div class="form">
         <label>
           AI 的輸出語言
           <select v-model="settings.language">
@@ -281,8 +278,6 @@ function doReset() {
 .routes td { border-bottom: 1px solid var(--border); padding: 6px 8px 6px 0; vertical-align: top; }
 .routes .name { white-space: nowrap; font-weight: 600; }
 .note { color: var(--accent-2); }
-.kinds { display: grid; gap: 4px; padding-left: 22px; }
-.kinds .muted { margin-left: 4px; }
 .form label, .form .field { display: grid; gap: 4px; }
 .form label.check { display: flex; gap: 6px; align-items: center; }
 .steps { display: flex; flex-wrap: wrap; gap: 12px; }

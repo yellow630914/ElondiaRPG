@@ -42,7 +42,7 @@ const tradeLoading = ref(false)
 onMounted(async () => {
   refresh()
   game.shopState('tavern')
-  tradeLoading.value = settings.aiJudge && settings.ready('shop')
+  tradeLoading.value = settings.designs('shop')
   await Promise.all([game.flavorRoster().then(refresh), game.flavorShop('tavern')])
   tradeLoading.value = false
 })

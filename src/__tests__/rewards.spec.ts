@@ -207,6 +207,21 @@ describe('model sources', () => {
     expect(settings.splitJudgeNarrative()).toBe(true)
     settings.judgeWritesNarrative = true
     expect(settings.splitJudgeNarrative()).toBe(false)
+    // 舊版的居民、商店清單、談判方式跟著 AI 判定：沿用當時開著的狀態
+    expect(settings.aiDesign).toEqual({ roster: true, shop: true, negotiation: true })
+    expect(settings.designs('shop')).toBe(true)
+  })
+
+  it('switches the AI designs separately from AI judging', async () => {
+    localStorage.setItem('elondia.settings', JSON.stringify({ sources: [{ name: '來源 1', provider: 'gemini', configs: { gemini: { apiKey: 'AIza', model: 'gemini-pro-latest' } } }], aiJudge: true, aiDesign: { roster: false, shop: true, negotiation: false } }))
+    const { useSettings } = await import('@/stores/settings')
+    const settings = useSettings()
+    expect(settings.judgesWithAi()).toBe(true)
+    expect(settings.designs('roster')).toBe(false)
+    expect(settings.designs('shop')).toBe(true)
+    settings.aiJudge = false
+    expect(settings.judgesWithAi()).toBe(false)
+    expect(settings.designs('shop')).toBe(true)
   })
 
   it('narrates a judged action with the narration prompt by default, even with AI narration off', async () => {

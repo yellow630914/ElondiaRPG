@@ -19,7 +19,7 @@ const game = useGame()
 const settings = useSettings()
 const s = computed(() => game.state!)
 const pending = computed(() => s.value.pendingAction)
-const aiOn = computed(() => settings.aiJudge && settings.ready('judge'))
+const aiOn = computed(() => settings.judgesWithAi())
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 

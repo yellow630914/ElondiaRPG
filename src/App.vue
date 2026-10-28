@@ -139,6 +139,10 @@ function openSettings(page: string) {
   }
   showSettings.value = true
 }
+// 冒險頁面的「AI」泡泡視窗按「完整設定」：打開設定的那一頁
+const onOpenSettings = (e: Event) => openSettings(String((e as CustomEvent).detail ?? 'narration'))
+window.addEventListener('elondia:open-settings', onOpenSettings)
+onBeforeUnmount(() => window.removeEventListener('elondia:open-settings', onOpenSettings))
 const showParty = ref(false)
 const showInventory = ref(false)
 const showRelations = ref(false)

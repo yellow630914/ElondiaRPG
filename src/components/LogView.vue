@@ -9,6 +9,7 @@ import { formatTime } from '@/engine/state'
 import ReportCard from './ReportCard.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import JudgeToggle from './JudgeToggle.vue'
 
 // 冒險頁中間的日誌：舊的在上、新的在下，有新紀錄時捲到最下面。
 const PAGE = 30
@@ -84,7 +85,7 @@ onMounted(() => toBottom(true))
     <header class="row log-head">
       <h2><GameIcon name="book" :size="20" />冒險日誌</h2>
       <span class="spacer" />
-      <label class="small"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述</label>
+      <JudgeToggle show="narration" />
       <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易紀錄</label>
     </header>
     <p v-if="needsSource" class="ai-missing small row">

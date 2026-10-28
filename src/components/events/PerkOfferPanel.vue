@@ -17,7 +17,7 @@ const offerId = computed(() => props.refid.split(':')[1]!)
 const m = computed(() => game.state?.party.find((x) => x.id === memberId.value))
 const offer = computed(() => m.value?.perkOffers?.find((o) => o.id === offerId.value))
 const options = computed(() => (offer.value?.options ?? []).map((id) => perkDef(id)).filter((d) => !!d))
-const aiOn = computed(() => settings.aiJudge && settings.ready('judge'))
+const aiOn = computed(() => settings.judgesWithAi())
 const canPitch = computed(() => !!offer.value?.pitch && !offer.value.pitched)
 const text = ref('')
 const p = perkRules.pitch

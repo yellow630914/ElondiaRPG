@@ -836,7 +836,7 @@ export const useGame = defineStore('game', () => {
     const pending = s?.pendingAction
     if (!s || !pending || judging.value) return
     const settings = useSettings()
-    const ai = useAI ?? (settings.aiJudge && settings.ready('judge'))
+    const ai = useAI ?? settings.judgesWithAi()
     if (!ai) {
       run((st) => actions.resolveAction(st, null))
       return
@@ -882,7 +882,7 @@ export const useGame = defineStore('game', () => {
   async function flavorRoster() {
     const s = state.value
     const settings = useSettings()
-    if (!s || !settings.aiJudge || !settings.ready('roster')) return
+    if (!s || !settings.designs('roster')) return
     const loc = s.location
     const roster = s.rosters?.[loc]
     if (!roster || flavoring.has(loc)) return
@@ -908,7 +908,7 @@ export const useGame = defineStore('game', () => {
   async function flavorShop(type: ShopType) {
     const s = state.value
     const settings = useSettings()
-    if (!s || !settings.aiJudge || !settings.ready('shop') || shopRules.types[type]?.ai === false) return
+    if (!s || !settings.designs('shop') || shopRules.types[type]?.ai === false) return
     const shop = trade.shopState(s, type)
     if (shop.aiTried || shop.source === 'ai') return
     shop.aiTried = true
@@ -931,7 +931,7 @@ export const useGame = defineStore('game', () => {
     if (n) negotiationFocus.value = n.id
     const s = state.value
     const settings = useSettings()
-    if (!n || !s || n.ai || !settings.aiJudge || !settings.ready('negotiation')) return n
+    if (!n || !s || n.ai || !settings.designs('negotiation')) return n
     n.ai = true
     try {
       const { completeText } = await import('@/narrator/providers')

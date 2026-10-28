@@ -50,7 +50,7 @@ const grades = computed(() => GRADES.map((g) => ({ grade: g, caps: inventCaps(cr
 const gradeShown = ref<InventGrade>('success')
 const shownCaps = computed(() => grades.value.find((x) => x.grade === gradeShown.value)?.caps ?? grades.value[0]?.caps)
 const skill = computed(() => craftRules.skills[craft.value])
-const aiOn = computed(() => settings.aiJudge && settings.ready('judge'))
+const aiOn = computed(() => settings.judgesWithAi())
 const text = ref('')
 const use = ref('')
 

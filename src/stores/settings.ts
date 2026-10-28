@@ -29,12 +29,23 @@ export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'n
 export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: boolean }[] = [
   { id: 'narration', name: '敘事正文', desc: '所有日誌的詳細經過：戰鬥、旅行、事件，以及主動行動判定之後的經過；也可以在每則日誌手動生成', prose: true },
   { id: 'adult', name: '成人場景正文', desc: '成人向開啟時，帶親密場景的日誌（娼館、主人的邀約、戰敗後的遭遇、AI 判定認為有親密場景的行動）改用這個來源寫經過；提示詞用套用到「成人場景」的文風與其他提示詞', prose: true },
-  { id: 'judge', name: '主動行動判定', desc: '看骰值決定成敗與後果，只回傳 JSON；經過交給「敘事正文」（除非下方勾選「判定時順便寫出經過」）', prose: false },
-  { id: 'roster', name: '居民潤飾', desc: '第一次到一個地點時，設計居民的名字、外貌與性格（JSON）', prose: false },
-  { id: 'shop', name: '商店清單', desc: '第一次進店時設計今天的交易清單（JSON）', prose: false },
-  { id: 'negotiation', name: '談判方式', desc: '開始談判時設計可以採取的方式（JSON）', prose: false },
+  { id: 'judge', name: '主動行動判定', desc: '「擲骰的行動交給 AI 判定」開啟時：看骰值決定成敗與後果，只回傳 JSON；經過交給「敘事正文」（除非下方勾選「判定時順便寫出經過」）', prose: false },
+  { id: 'roster', name: '居民潤飾', desc: '「AI 設計 → 居民」開啟時：第一次到一個地點時，設計居民的名字、外貌與性格（JSON）', prose: false },
+  { id: 'shop', name: '商店清單', desc: '「AI 設計 → 商店清單」開啟時：第一次進店時設計今天的交易清單（JSON）', prose: false },
+  { id: 'negotiation', name: '談判方式', desc: '「AI 設計 → 談判方式」開啟時：開始談判時設計可以採取的方式（JSON）', prose: false },
   { id: 'tags', name: '插圖提示詞預處理', desc: '生成形象插圖前，依選的預處理指示改寫角色描述（例如轉成 Danbooru 標籤、JSON），插圖設定選了「生圖提示詞預處理」時才用；日誌插圖整理分鏡也用這個來源', prose: false },
 ]
+
+/** AI 設計：和擲骰無關、由 AI 生成內容的功能，各自開關（舊版跟著「AI 判定」一起開關） */
+export type AiDesign = 'roster' | 'shop' | 'negotiation'
+export const AI_DESIGNS: { id: AiDesign; name: string; desc: string }[] = [
+  { id: 'roster', name: '居民', desc: '第一次到一個地點時，設計名單上居民的名字、外貌、性格與背景（種族、職業、等級、要價不變）' },
+  { id: 'shop', name: '商店清單', desc: '每間店每天第一次進店時，設計今天的特別商品與收購（店名不經 AI）' },
+  { id: 'negotiation', name: '談判方式', desc: '開始談判時，依對象與情境設計可以採取的方式' },
+]
+
+/** 「AI 判定」（擲骰的行動交給 AI）涵蓋的地方：設定頁與遊戲裡的勾選框說明用 */
+export const AI_JUDGED_PLACES = '主動行動；這裡的人（交談、送禮、恭維、偷竊、提議……）；酒館的雇傭、邀請與黑市；殺價；王城衛兵；地標探索；休息時的互動；打工、娼館；打造、製作、種植與自創配方；爭取特質；談判裡自己描述的做法；身為奴隸時的談判、逃離、刻印與主人的事件；戰敗事件、戰後處置、對峙'
 
 /** 模型來源：一組服務、key 與模型。每個來源對各服務各自保存設定，切換服務不會弄丟 key。 */
 export interface ModelSource {
@@ -49,7 +60,7 @@ export const SOURCE_COUNT = 3
 export type NarrateKind = 'action' | 'combat' | 'travel' | 'event' | 'rest' | 'social' | 'trade'
 
 export const NARRATE_KINDS: { id: NarrateKind; name: string; desc: string }[] = [
-  { id: 'action', name: '🎲 主動行動', desc: '擲骰判定的行動：聊天、送禮、偷竊、雇傭、談判、蒙混……（AI 判定的行動不受「AI 細節描述」開關影響）' },
+  { id: 'action', name: '🎲 主動行動', desc: '擲骰判定的行動：聊天、送禮、偷竊、雇傭、談判、蒙混……' },
   { id: 'combat', name: '⚔️ 戰鬥', desc: '戰報' },
   { id: 'travel', name: '🧭 旅行', desc: '旅途與抵達' },
   { id: 'event', name: '📜 事件與委託', desc: '陷阱、採集、對峙、委託' },
@@ -82,8 +93,10 @@ interface SavedSettings {
   narrateKinds: Record<NarrateKind, boolean>
   /** AI 細節描述：開啟時每次行動後自動請 AI 寫事件經過；關閉時只顯示戰報與事件簡述 */
   aiNarration: boolean
-  /** AI 判定：主動行動由 AI 看骰值判定、居民與商店清單由 AI 設計；關閉時依規則判定 */
+  /** AI 判定：擲骰的行動由 AI 看骰值判定並寫出經過；關閉時依規則判定 */
   aiJudge: boolean
+  /** AI 設計：居民、商店清單、談判方式各自開關 */
+  aiDesign: Record<AiDesign, boolean>
   /** 升級時的能力三選一，每組可以重抽的次數 */
   abilityRerolls: number
   /** 兩次長休至少隔幾小時（0～24） */
@@ -139,6 +152,7 @@ function defaults(): SavedSettings {
     judgeWritesNarrative: false,
     narrateKinds: defaultNarrateKinds(),
     aiNarration: false,
+    aiDesign: { roster: false, shop: false, negotiation: false },
     aiJudge: false,
     abilityRerolls: progression.ability_rerolls,
     longRestGap: companionRules.rest.long_rest_gap_hours,
@@ -183,7 +197,10 @@ function load(): SavedSettings {
     for (const k of Object.keys(routes) as AiFeature[]) if (!(routes[k] >= 0 && routes[k] < SOURCE_COUNT)) routes[k] = 0
     const { autoNarrate: _a, provider: _p, configs: _c, ...rest } = saved
     const defeatAdult = (['all', 'not_masc', 'off'] as const).includes(saved.defeatAdult as DefeatAdultMode) ? saved.defeatAdult! : base.defeatAdult
-    return { ...base, ...rest, aiNarration, sources, routes, defeatAdult, contentFilters: { ...base.contentFilters, ...saved.contentFilters }, narrateKinds: { ...base.narrateKinds, ...saved.narrateKinds }, stepMinutes: { ...base.stepMinutes, ...saved.stepMinutes } }
+    // 舊版的居民、商店清單、談判方式跟著「AI 判定」一起開關：沿用當時的狀態
+    const designWas = saved.aiJudge ?? false
+    const aiDesign = Object.fromEntries(AI_DESIGNS.map((d) => [d.id, typeof saved.aiDesign?.[d.id] === 'boolean' ? saved.aiDesign[d.id] : designWas])) as Record<AiDesign, boolean>
+    return { ...base, ...rest, aiNarration, aiDesign, sources, routes, defeatAdult, contentFilters: { ...base.contentFilters, ...saved.contentFilters }, narrateKinds: { ...base.narrateKinds, ...saved.narrateKinds }, stepMinutes: { ...base.stepMinutes, ...saved.stepMinutes } }
   } catch {
     return base
   }
@@ -197,6 +214,7 @@ export const useSettings = defineStore('settings', () => {
   const narrateKinds = ref(initial.narrateKinds)
   const aiNarration = ref(initial.aiNarration)
   const aiJudge = ref(initial.aiJudge)
+  const aiDesign = ref(initial.aiDesign)
   const abilityRerolls = ref(initial.abilityRerolls)
   const longRestGap = ref(initial.longRestGap)
   // 引擎的長休間隔
@@ -229,7 +247,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -238,6 +256,7 @@ export const useSettings = defineStore('settings', () => {
         narrateKinds: narrateKinds.value,
         aiNarration: aiNarration.value,
         aiJudge: aiJudge.value,
+        aiDesign: { ...aiDesign.value },
         abilityRerolls: abilityRerolls.value,
         // 欄位清空時存成預設，下次打開設定不會是空的
         longRestGap: typeof longRestGap.value === 'number' && Number.isFinite(longRestGap.value) ? longRestGap.value : companionRules.rest.long_rest_gap_hours,
@@ -292,6 +311,11 @@ export const useSettings = defineStore('settings', () => {
   const ready = (feature?: AiFeature) =>
     feature ? sourceReady(sourceIndex(feature)) : AI_FEATURES.some((f) => sourceReady(sourceIndex(f.id)))
 
+  /** 擲骰的行動要不要交給 AI 判定：開啟而且判定的來源設定好了 */
+  const judgesWithAi = () => aiJudge.value && ready('judge')
+  /** 這項 AI 設計要不要呼叫 AI：開啟而且來源設定好了 */
+  const designs = (d: AiDesign) => aiDesign.value[d] && ready(d)
+
   /** 判定只回傳 JSON，經過交給敘事正文：預設如此；只有勾選「順便寫出經過」而且同一個來源時才合併 */
   const splitJudgeNarrative = () => !judgeWritesNarrative.value || sourceIndex('judge') !== sourceIndex('narration')
 
@@ -326,7 +350,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })
