@@ -249,17 +249,33 @@ export function requestLeave(state: GameState, mode: 'sneak' | 'formal' | null) 
 
 /** 可以邀請的人：認識、不在隊伍、親密度足夠、今天人就在這座城鎮。小隊只能透過隊長整隊邀請 */
 export function invitable(state: GameState): NpcRecord[] {
-  const inParty = new Set(state.party.map((m) => m.id))
-  const min = companionRules.invite.min_affinity
   return Object.values(state.relationships ?? {})
-    .filter((r) => !inParty.has(r.id) && r.affinity >= min && !state.flags[`invite_wait:${r.id}`])
+    .filter((r) => !inviteRefusal(state, r.id))
     .map((r) => npcRecord(state, r.id))
-    // 開店中的店主、公會職員：得顧店，不能邀請入隊
-    .filter((rec): rec is NpcRecord => !!rec && presentHere(state, rec.id) && !isShopStaff(rec) && !rec.staying)
+    .filter((rec): rec is NpcRecord => !!rec)
     .filter((rec) => {
       const sq = inActiveSquad(state, rec.id)
       return !sq || sq.leader === rec.id
     })
+}
+
+/** 這個人現在不能邀請的原因（可以時為 undefined；小隊與隊伍空位另外看，見 validateInvite） */
+export function inviteRefusal(state: GameState, npcId: string): string | undefined {
+  const rec = npcRecord(state, npcId)
+  const rel = state.relationships?.[npcId]
+  if (!rec || !rel) return '你不認識這個人'
+  const min = companionRules.invite.min_affinity
+  if (state.party.some((m) => m.id === npcId)) return `${rec.name}已經在隊伍裡了`
+  if (rec.dead) return `${rec.name}已經不在人世`
+  // 被制伏、等你處置的人：要在戰後處置決定（收為奴隸、放過……）
+  if (state.captives?.npcs.includes(npcId)) return `${rec.name}被制伏了，要先在戰後處置決定怎麼對待`
+  if (rel.affinity < min) return `${rec.name}的親密度不夠（${rel.affinity}，至少要 ${min}）`
+  if (state.flags[`invite_wait:${npcId}`]) return `${rec.name}說要再考慮，下次長休後再邀請`
+  if (rec.staying) return `${rec.name}留在別處，要到那裡帶人`
+  if (!presentHere(state, npcId)) return `${rec.name}不在身邊`
+  // 開店中的店主、公會職員：得顧店，不能邀請入隊
+  if (isShopStaff(rec)) return `${rec.name}得顧店，不能邀請入隊`
+  return undefined
 }
 
 /** 整隊邀請時一起入隊的隊員（不是小隊的隊長時為空） */
@@ -283,6 +299,8 @@ export function validateInvite(state: GameState, npcId: string, ignoreRoom = fal
   assertFree(state, '邀請別人入隊')
   const sq = inActiveSquad(state, npcId)
   if (sq && sq.leader !== npcId) throw new Error(`${npcRecord(state, npcId)?.name ?? '對方'}是${sq.name}的隊員，要整隊邀請，請找隊長`)
+  const why = inviteRefusal(state, npcId)
+  if (why) throw new Error(why)
   if (!invitable(state).some((r) => r.id === npcId)) throw new Error('現在無法邀請這個人')
   if (sq) {
     const missing = squadMissing(state, sq)

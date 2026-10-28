@@ -114,6 +114,8 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
     delete stored.at
     delete stored.staying
     delete stored.stayingSince
+    // 被打過、放過的對手：入隊之後就不再敵對
+    delete stored.hostile
   }
   state.party.push(member)
   if (namedNpcs.some((n) => n.id === rec.id) && !state.recruited.includes(rec.id)) state.recruited.push(rec.id)
