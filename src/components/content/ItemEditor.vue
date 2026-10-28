@@ -7,7 +7,7 @@ import {
 import { gearPrice, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
 import { actionRules, DUNGEON_LAYER_NAME, npcTags, perkRules, slaveryRules, tagDef } from '@/engine/data'
 import { intelSummary, useSummary } from '@/engine/inventory'
-import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
+import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod, SYSTEM_CONDITIONS } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
 import { choosablePerks, CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
@@ -93,11 +93,11 @@ const materials = computed(() => {
 
 // ---- 欄位 ----
 const use = computed(() => (draft.value.use ??= {}) as ItemUse)
-// 吃喝可以給的狀態：到下次長休就解除的那些（用餐、喝酒、磨利……；名稱與說明可以在狀態頁籤改）
+// 吃喝可以給的非戰鬥狀態（用餐、喝酒、磨利、自建的……；奴隸印記這類由規則加上的除外）
 const conditionList = computed(() => {
   void content.version
   return Object.entries(companionRules.conditions)
-    .filter(([id, c]) => !id.startsWith('$') && c.clears === 'long_rest')
+    .filter(([id]) => !id.startsWith('$') && !SYSTEM_CONDITIONS.includes(id))
     .map(([id, c]) => ({ id, name: `${c.name}：${c.desc}` }))
 })
 function setTool(kind: string) {

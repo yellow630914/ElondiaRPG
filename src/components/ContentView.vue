@@ -13,7 +13,7 @@ import { CONTENT_TAGS } from '@/engine/content'
 import { BODY_NAME } from '@/engine/traits'
 import {
   ABILITY_TYPES, abilityClasses, builtinAbility, builtinBase, builtinEnemy, builtinMaterial, builtinNpc, builtinPerk, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions,
-  ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk, builtinStatus, newStatus,
+  ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk, builtinStatus, newStatus, newCondition,
   builtinMark, builtinTattoo, conditionIds,
 } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -97,6 +97,7 @@ function resetFilters() {
   abilityType.value = ''
   abilityClass.value = ''
   statusKind.value = ''
+  pickStatusType.value = false
   tattooKind.value = ''
   eventScope.value = ''
   gearSlot.value = ''
@@ -280,7 +281,7 @@ const rows = computed<Row[]>(() => {
     const conds = !statusKind.value || statusKind.value === 'cond'
       ? conditionIds().map((id) => {
         const c = companionRules.conditions[id]!
-        return { key: `c:${id}`, name: `🏕️ ${c.name}`, note: shortCondition(c), status: st(!!m.conditions?.[id], false), sort: 2 }
+        return { key: `c:${id}`, name: `🏕️ ${c.name}`, note: shortCondition(c), status: st(!!m.conditions?.[id], !!m.conditions?.[id]?.custom), sort: 2 }
       })
       : []
     list = [...list, ...conds].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || (a.sort ?? 0) - (b.sort ?? 0))
@@ -408,6 +409,27 @@ function select(key: string) {
   selected.value[sub.value] = key
 }
 
+// 新增狀態時選類型（戰鬥狀態：技能與物品在戰鬥中施加；非戰鬥狀態：記在角色身上，事件、食物、地標給予）
+const pickStatusType = ref(false)
+function createStatus(type: 'combat' | 'cond') {
+  pickStatusType.value = false
+  try {
+    if (type === 'combat') {
+      const id = newModId('status')
+      content.saveStatus(id, newStatus(statusKind.value === 'debuff' ? 'debuff' : 'buff'))
+      if (statusKind.value === 'cond') statusKind.value = ''
+      select(id)
+    } else {
+      const id = newModId('cond')
+      content.saveCondition(id, newCondition())
+      if (statusKind.value === 'buff' || statusKind.value === 'debuff') statusKind.value = ''
+      select(`c:${id}`)
+    }
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+  }
+}
+
 function create() {
   try {
     if (sub.value === 'enemies') {
@@ -428,9 +450,8 @@ function create() {
       content.saveAbility(id, newAbility(id))
       select(id)
     } else if (sub.value === 'statuses') {
-      const id = newModId('status')
-      content.saveStatus(id, newStatus(statusKind.value === 'debuff' ? 'debuff' : 'buff'))
-      select(id)
+      // 先選類型：戰鬥狀態或非戰鬥狀態
+      pickStatusType.value = !pickStatusType.value
     } else if (sub.value === 'perks') {
       const id = newModId('perk')
       content.savePerk(id, newPerk(id))
@@ -485,7 +506,7 @@ function create() {
 function duplicate() {
   const key = current.value
   // 非戰鬥狀態不能自建
-  if (!key || (sub.value === 'statuses' && key.startsWith('c:'))) return
+  if (!key) return
   try {
     if (sub.value === 'enemies') {
       const id = newModId('enemy')
@@ -549,6 +570,11 @@ function duplicate() {
         content.saveMark(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
         select(`m:${id}`)
       }
+    } else if (sub.value === 'statuses' && key.startsWith('c:')) {
+      const id = newModId('cond')
+      const src = JSON.parse(JSON.stringify(companionRules.conditions[key.slice(2)]))
+      content.saveCondition(id, { ...src, name: `${src.name}2`.slice(0, 10), custom: true })
+      select(`c:${id}`)
     } else if (sub.value === 'statuses') {
       const id = newModId('status')
       const src = JSON.parse(JSON.stringify(content.mods.statuses[key] ?? statuses[key]))
@@ -629,8 +655,13 @@ function resetAll() {
     <div v-else class="layout">
       <section class="panel list-panel">
         <div class="row">
-          <button class="small primary" :disabled="sub === 'statuses' && statusKind === 'cond'" :title="sub === 'statuses' && statusKind === 'cond' ? '非戰鬥狀態目前只能修改內建的' : ''" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current || (sub === 'statuses' && current.startsWith('c:'))" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+          <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
+          <button class="small" :disabled="!current" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+        </div>
+        <div v-if="sub === 'statuses' && pickStatusType" class="pick-type">
+          <span class="small muted">新狀態的類型：</span>
+          <button class="small" title="技能或物品在戰鬥中施加，持續幾回合" @click="createStatus('combat')">⚔️ 戰鬥狀態（BUFF／DEBUFF）</button>
+          <button class="small" title="記在角色身上，事件、特殊任務、地標、食物給予，可以設定長休時解除" @click="createStatus('cond')">🏕️ 非戰鬥狀態</button>
         </div>
         <div class="row">
           <input v-model="search" placeholder="搜尋名稱" class="grow" />
@@ -842,7 +873,7 @@ function resetAll() {
         <EnemyEditor v-else-if="sub === 'enemies'" :id="current" :key="`e-${current}`" @deleted="select('')" />
         <ItemEditor v-else-if="sub === 'items'" :key="`i-${current}`" :name="current" @renamed="select" @deleted="select('')" />
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
-        <ConditionEditor v-else-if="sub === 'statuses' && current.startsWith('c:')" :id="current.slice(2)" :key="current" />
+        <ConditionEditor v-else-if="sub === 'statuses' && current.startsWith('c:')" :id="current.slice(2)" :key="current" @deleted="select('')" />
         <StatusEditor v-else-if="sub === 'statuses'" :id="current" :key="`s-${current}`" @deleted="select('')" />
         <PerkEditor v-else-if="sub === 'perks'" :id="current" :key="`p-${current}`" @deleted="select('')" />
         <ShopEditor v-else-if="sub === 'shops'" :id="current" :key="`shop-${current}`" @deleted="select('')" />
@@ -879,6 +910,7 @@ function resetAll() {
 <style scoped>
 .content-view { display: grid; gap: 10px; max-width: 1400px; margin: 0 auto; }
 .subs { gap: 6px; }
+.pick-type { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px; border: 1px dashed var(--border); border-radius: var(--radius); }
 .subs button.active { border-color: var(--accent); color: var(--accent); }
 .spacer { flex: 1; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

@@ -93,8 +93,10 @@ export interface StatusMod extends StatusDef {
   custom?: boolean
 }
 
-/** 非戰鬥狀態（companions.json 的 conditions：用餐、喝酒、受罰、祝福……）：內建的可以修改，不能刪除，目前不能自建 */
-export type ConditionMod = ConditionDef
+/** 非戰鬥狀態（companions.json 的 conditions：用餐、喝酒、受罰、祝福……）：內建的可以修改，自建的沒有被使用時可以刪除 */
+export interface ConditionMod extends ConditionDef {
+  custom?: boolean
+}
 
 export interface ContentMods {
   version: 1
@@ -186,9 +188,9 @@ export function builtinCondition(id: string): ConditionDef | undefined {
   return !id.startsWith('$') && snapshot.conditions[id] ? clone(snapshot.conditions[id]!) : undefined
 }
 
-/** 內建的非戰鬥狀態的 id（不含 $comment） */
+/** 目前的非戰鬥狀態的 id（內建與自建，不含 $comment） */
 export function conditionIds(): string[] {
-  return Object.keys(snapshot.conditions).filter((k) => !k.startsWith('$'))
+  return Object.keys(companionRules.conditions).filter((k) => !k.startsWith('$'))
 }
 
 /** 由程式加上與解除的非戰鬥狀態（奴隸印記、逃亡、暫時離隊）：解除時機、同組與疊加不能改 */
@@ -476,9 +478,10 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('狀態', mods.statuses ?? {}, (id, m) => {
     statuses[id] = strip(m, ['custom'])
   })
-  // 非戰鬥狀態（用餐、喝酒……）：物品、事件、休息會用到
+  // 非戰鬥狀態（用餐、喝酒……）：物品、事件、休息會用到。自建的彼此可以互相引用（再獲得一次變成、獲得時拿掉）
+  const knownConditions = new Set([...conditionIds(), ...Object.keys(mods.conditions ?? {})])
   tryEach('非戰鬥狀態', mods.conditions ?? {}, (id, m) => {
-    companionRules.conditions[id] = sanitizeCondition(id, m)
+    companionRules.conditions[id] = strip(sanitizeCondition(id, m, !!m.custom || !builtinCondition(id), knownConditions), ['custom'])
   })
   // 刺青與奴隸印記：事件、特殊任務會用到
   tryEach('刺青圖樣', mods.tattoos ?? {}, (id, m) => {
@@ -1015,10 +1018,11 @@ export function normalizeMods(raw: unknown): ContentMods {
   const statusIds = new Set([...Object.keys(statuses), ...Object.keys(r.statuses ?? {})])
   for (const [id, v] of Object.entries(r.statuses ?? {})) out.statuses[id] = sanitizeStatus(id, v, !!v.custom || !snapshot.statuses[id], statusIds)
   for (const [id, s] of Object.entries(out.statuses)) if (s.custom && !statuses[id]) statuses[id] = strip(s, ['custom'])
-  // 非戰鬥狀態：只收內建的（不存在的 id 略過）
-  for (const [id, v] of Object.entries(r.conditions ?? {})) {
-    if (builtinCondition(id) && v && typeof v === 'object') out.conditions[id] = sanitizeCondition(id, v)
-  }
+  // 非戰鬥狀態：任務、事件、地標的效果與物品會檢查存不存在，先登錄自建的（id 不對的略過）
+  const conditionRaw = Object.entries(r.conditions ?? {}).filter(([id, v]) => !!v && typeof v === 'object' && (!!builtinCondition(id) || CONDITION_ID.test(id)))
+  const knownConditions = new Set([...conditionIds(), ...conditionRaw.map(([id]) => id)])
+  for (const [id, v] of conditionRaw) out.conditions[id] = sanitizeCondition(id, v, !!v.custom || !builtinCondition(id), knownConditions)
+  for (const [id, c] of Object.entries(out.conditions)) if (c.custom && !companionRules.conditions[id]) companionRules.conditions[id] = strip(c, ['custom'])
   // 劇情計數器：任務與事件的檢查會看計數器存不存在，先登錄自建的
   for (const [id, v] of Object.entries(r.counters ?? {})) {
     const key = cleanCounterId(id)
@@ -1452,10 +1456,11 @@ export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: bool
  * 整理非戰鬥狀態：名稱、說明、檢定加減（check_penalty，負數是加值）與作用的屬性、每場戰鬥的加減與暫時生命、
  * 長休解除、同組（rank 高的取代低的）、再獲得一次變成另一個狀態、獲得時拿掉的狀態。只能改內建的。
  */
-export function sanitizeCondition(id: string, raw: Partial<ConditionMod>): ConditionMod {
-  const base = builtinCondition(id)
-  if (!base) throw new Error('只能修改內建的非戰鬥狀態')
-  const out: ConditionMod = { name: str(raw.name, 10) || base.name, desc: str(raw.desc, 160) || base.desc }
+export function sanitizeCondition(id: string, raw: Partial<ConditionMod>, custom = false, known?: Set<string>): ConditionMod {
+  const base = custom ? undefined : builtinCondition(id)
+  if (!custom && !base) throw new Error('沒有這個非戰鬥狀態')
+  if (custom && (builtinCondition(id) || !CONDITION_ID.test(id))) throw new Error('自建狀態的 id 不對')
+  const out: ConditionMod = { name: str(raw.name, 10) || base?.name || '新的狀態', desc: str(raw.desc, 160) || base?.desc || '' }
   const pen = int(raw.check_penalty, -5, 5, 0)
   if (pen) out.check_penalty = pen
   const attrs = Array.isArray(raw.check_attrs) ? ATTR_IDS.filter((a) => raw.check_attrs!.includes(a)) : []
@@ -1465,18 +1470,27 @@ export function sanitizeCondition(id: string, raw: Partial<ConditionMod>): Condi
   const hp = int(raw.combat_temp_hp, 0, 50, 0)
   if (hp) out.combat_temp_hp = hp
   // 系統狀態：照內建的
-  const src = SYSTEM_CONDITIONS.includes(id) ? base : raw
+  const src = base && SYSTEM_CONDITIONS.includes(id) ? base : raw
   if (src.clears === 'long_rest') out.clears = 'long_rest'
   const group = str(src.group, 16)
   if (/^[a-z][a-z0-9_]*$/.test(group)) {
     out.group = group
     out.rank = int(src.rank, 1, 9, 1)
   }
-  const others = conditionIds().filter((k) => k !== id && !SYSTEM_CONDITIONS.includes(k))
+  const others = [...(known ?? conditionIds())].filter((k) => k !== id && !k.startsWith('$') && !SYSTEM_CONDITIONS.includes(k))
   if (typeof src.stacks_to === 'string' && others.includes(src.stacks_to)) out.stacks_to = src.stacks_to
   const rep = Array.isArray(src.replaces) ? others.filter((k) => src.replaces!.includes(k)) : []
   if (rep.length) out.replaces = rep
+  if (custom) out.custom = true
   return out
+}
+
+/** 自建的非戰鬥狀態的 id（newModId('cond') 產生的；匯入時也只收這種） */
+const CONDITION_ID = /^mod_cond_[a-z0-9]{1,24}$/
+
+/** 新的非戰鬥狀態：下次長休時解除、所有檢定 +1 */
+export function newCondition(): ConditionMod {
+  return { name: '新的狀態', desc: '下次長休前所有檢定 +1。', check_penalty: -1, clears: 'long_rest', custom: true }
 }
 
 /** 哪些地方會給或拿掉這個非戰鬥狀態（編輯畫面參考用）：酒館菜單、物品與工具、特殊任務、事件、地標、奴隸生活，以及目前存檔裡有這個狀態的角色 */
@@ -1491,6 +1505,12 @@ export function conditionUsage(id: string, state?: GameState | null): string[] {
   for (const l of Object.values(landmarks)) if (has(l)) out.push(`地標「${l.name}」`)
   if (has(slaveryRules)) out.push('奴隸生活的事件')
   for (const c of state?.party ?? []) if (c.status.includes(id)) out.push(`目前存檔的「${c.name}」`)
+  for (const r of Object.values(state?.npcs ?? {})) {
+    if (r.character?.status?.includes(id) && !state!.party.some((c) => c.id === r.character!.id)) out.push(`目前存檔的「${r.character.name}」`)
+  }
+  for (const [k, c] of Object.entries(companionRules.conditions)) {
+    if (k !== id && !k.startsWith('$') && (c.stacks_to === id || c.replaces?.includes(id))) out.push(`非戰鬥狀態「${c.name}」`)
+  }
   return out
 }
 

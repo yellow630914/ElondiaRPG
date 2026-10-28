@@ -10,7 +10,7 @@ import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, typ
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
-  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinCondition, sanitizeCondition, type ConditionMod, builtinTattoo, builtinMark, builtinMarkRules,
+  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinCondition, sanitizeCondition, conditionUsage, type ConditionMod, builtinTattoo, builtinMark, builtinMarkRules,
 } from '@/engine/mods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { itemRules, perkRules, shopRules, slaveryRules, type ItemCategory, type ShopType } from '@/engine/data'
@@ -320,7 +320,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'condition' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -334,6 +334,7 @@ export const useContent = defineStore('content', () => {
       case 'ability': return abilityUsage(key, state)
       case 'perk': return perkUsage(key, state)
       case 'status': return statusUsage(key, state)
+      case 'condition': return conditionUsage(key, state)
       case 'tattoo': return tattooUsage(key)
       case 'mark': return markUsage(key)
       case 'shop': return shopUsage(key)
@@ -575,17 +576,25 @@ export const useContent = defineStore('content', () => {
     save()
   }
 
-  // ---- 非戰鬥狀態（用餐、喝酒……）：只能改內建的；改回跟內建一樣時不留紀錄 ----
+  // ---- 非戰鬥狀態（用餐、喝酒……）：內建的改回跟內建一樣時不留紀錄 ----
 
   function saveCondition(id: string, draft: Partial<ConditionMod>) {
-    const m = sanitizeCondition(id, draft)
+    const base = builtinCondition(id)
+    const m = sanitizeCondition(id, draft, !base)
     mods.value.conditions ??= {}
-    if (JSON.stringify(m) === JSON.stringify(sanitizeCondition(id, builtinCondition(id)!))) delete mods.value.conditions[id]
+    if (base && JSON.stringify(m) === JSON.stringify(sanitizeCondition(id, base))) delete mods.value.conditions[id]
     else mods.value.conditions[id] = m
     save()
   }
+  /** 自建、而且沒有被任何地方用到的非戰鬥狀態才能刪 */
+  function deleteCondition(id: string) {
+    if (!mods.value.conditions?.[id]?.custom) throw new Error('內建的狀態不能刪除')
+    assertUnused('condition', id)
+    delete mods.value.conditions[id]
+    save()
+  }
   function restoreCondition(id: string) {
-    delete mods.value.conditions?.[id]
+    if (!mods.value.conditions?.[id]?.custom) delete mods.value.conditions?.[id]
     save()
   }
 
@@ -922,7 +931,7 @@ export const useContent = defineStore('content', () => {
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
-    saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, restoreCondition,
+    saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, deleteCondition, restoreCondition,
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods,

@@ -3,7 +3,7 @@
 import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
 import { pruneSpecialMaps } from './specialMaps'
-import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, companionRules, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
@@ -369,9 +369,16 @@ export function migrate(state: GameState): GameState {
   return state
 }
 
-/** 自訂內容刪掉的狀態：從進行中的戰鬥拿掉（讀檔時，以及自訂內容改變之後） */
+/**
+ * 自訂內容刪掉的狀態（讀檔時，以及自訂內容改變之後）：戰鬥狀態從進行中的戰鬥拿掉；
+ * 自建的非戰鬥狀態（mod_cond_ 開頭）從角色身上拿掉。
+ */
 export function pruneStatuses(state: GameState) {
   for (const x of state.combat?.combatants ?? []) if (x.statuses.some((s) => !statuses[s.id])) x.statuses = x.statuses.filter((s) => !!statuses[s.id])
+  const gone = (id: string) => id.startsWith('mod_cond_') && !companionRules.conditions[id]
+  for (const c of [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((x): x is Character => !!x)]) {
+    if (c.status?.some(gone)) c.status = c.status.filter((id) => !gone(id))
+  }
 }
 
 /** 自訂內容刪掉的能力：從角色身上拿掉（讀檔時，以及自訂內容改變之後） */

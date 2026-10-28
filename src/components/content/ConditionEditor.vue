@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ATTR_IDS, attrName, companionRules, describeCondition, type AttrId, type ConditionDef, type Mods } from '@/engine/data'
-import { conditionIds, conditionUsage, SYSTEM_CONDITIONS, type ConditionMod } from '@/engine/mods'
+import { builtinCondition, conditionIds, conditionUsage, SYSTEM_CONDITIONS, type ConditionMod } from '@/engine/mods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 
-// 非戰鬥狀態（用餐、喝酒、受罰、祝福……，companions.json 的 conditions）的編輯表單：只能改內建的，存檔前是草稿
+// 非戰鬥狀態（用餐、喝酒、受罰、祝福……，companions.json 的 conditions）的編輯表單：內建的可以修改，自建的沒有被用到時可以刪除，存檔前是草稿
 const props = defineProps<{ id: string }>()
+const emit = defineEmits<{ deleted: [] }>()
 const content = useContent()
 const game = useGame()
 
@@ -27,7 +28,8 @@ watch(() => props.id, () => {
   saved.value = snap(draft.value)
 })
 const dirty = computed(() => snap(draft.value) !== saved.value)
-const edited = computed(() => !!content.mods.conditions?.[props.id])
+const builtin = computed(() => !!builtinCondition(props.id))
+const edited = computed(() => builtin.value && !!content.mods.conditions?.[props.id])
 const system = computed(() => SYSTEM_CONDITIONS.includes(props.id))
 const usage = computed(() => {
   void content.version
@@ -113,26 +115,39 @@ function restore() {
   draft.value = current()
   saved.value = snap(draft.value)
 }
+function remove() {
+  if (!confirm(`刪除「${draft.value.name}」？`)) return
+  try {
+    content.deleteCondition(props.id)
+    emit('deleted')
+  } catch (e) {
+    game.error = e instanceof Error ? e.message : String(e)
+  }
+}
 </script>
 
 <template>
   <div class="editor">
     <div class="row head">
       <h3>🏕️ {{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ edited ? '內建・已修改' : '內建' }}</span>
+      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
       <span v-if="dirty" class="tag warn">未儲存</span>
       <span class="spacer" />
       <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
       <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
+      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
+      <button
+        v-else class="small danger" :disabled="usage.length > 0"
+        :title="usage.length ? '還有地方用到這個狀態，不能刪除' : ''" @click="remove"
+      >刪除</button>
     </div>
     <p class="small muted">id：{{ id }}・效果：{{ preview }}</p>
     <p class="small muted">
       非戰鬥狀態記在每個角色身上（不是戰鬥中的 BUFF／DEBUFF），由用餐、食物、工具、事件、地標或休息給予。
-      修改後，已經有這個狀態的角色馬上照新的效果算。
+      修改後，已經有這個狀態的角色馬上照新的效果算。自建的狀態要在事件、特殊任務、地標的效果選「獲得狀態」，或在物品的使用效果選它，才會給到角色身上。
     </p>
     <p v-if="system" class="small warn-text">這是由遊戲規則加上與解除的狀態：解除時機、同組與疊加不能改，只能改名稱、說明與效果。</p>
-    <UsageNote :usage="usage" :deletable="false" />
+    <UsageNote :usage="usage" :deletable="!builtin" />
 
     <fieldset>
       <legend>基本</legend>
