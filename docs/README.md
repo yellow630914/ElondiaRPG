@@ -46,17 +46,18 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 │   ├─ I18N               介面語言與提示詞的繁簡轉換
 │   └─ BACKGROUNDS        背景圖
 │
-├─ 開發計畫
-│   └─ UI_V2_PLAN         UI 改版的分階段計畫（樣稿在 mockups/，立繪規格在 comfy/）
-│
 ├─ 內容與存檔
 │   ├─ CONTENT_EDITOR     自訂內容與世界
 │   │   └─ CONTENT_DEPENDENCIES 內容之間的引用、刪除與改名的保護
 │   └─ SAVES              存檔位置、匯出匯入、存檔格式版本
 │
-└─ 追蹤清單
-    ├─ OPEN_QUESTIONS     待決定事項（集中在這裡）
-    └─ KNOWN_ISSUES       程式中發現的 Bug 與不合理之處
+└─ plan/（計畫與追蹤：還沒做完的事）
+    ├─ README             放在哪裡、流程、完成紀錄
+    ├─ BUGS               Bug：程式沒有照規則運作
+    ├─ LOGIC_ISSUES       業務邏輯問題：程式照設計運作，但規則不合理
+    ├─ ROADMAP            未來計畫：已經決定要做的事（含程式整理）
+    ├─ IDEAS              點子庫：還沒決定要不要做的構想
+    └─ UI_V2_PLAN         UI 改版的分階段計畫（樣稿在 mockups/，立繪規格在 comfy/）
 ```
 
 ## 2. 依賴關係
@@ -171,9 +172,12 @@ flowchart TD
 | [CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) | 內容引用與保護 | `usage.ts`、`mods.ts` |
 | [SAVES](SAVES.md) | 存檔 | `stores/saves.ts`、`stores/game.ts`、`state.ts` |
 | [ADULT_EVENTS](ADULT_EVENTS.md) | 地下城的色情事件、寄生物（成人向） | `dungeonEvents.ts`、`parasites.ts`、`parasiteEvents.ts` |
-| [UI_V2_PLAN](UI_V2_PLAN.md) | UI 改版計畫 | `components/` |
-| [OPEN_QUESTIONS](OPEN_QUESTIONS.md) | 待決定事項 | — |
-| [KNOWN_ISSUES](KNOWN_ISSUES.md) | 程式問題 | — |
+| [plan/README](plan/README.md) | 計畫與追蹤：分類、流程、完成紀錄 | — |
+| [plan/BUGS](plan/BUGS.md) | Bug | — |
+| [plan/LOGIC_ISSUES](plan/LOGIC_ISSUES.md) | 業務邏輯問題 | — |
+| [plan/ROADMAP](plan/ROADMAP.md) | 未來計畫 | — |
+| [plan/IDEAS](plan/IDEAS.md) | 點子庫 | — |
+| [plan/UI_V2_PLAN](plan/UI_V2_PLAN.md) | UI 改版計畫 | `components/` |
 
 沒有標資料夾的程式檔都在 `src/engine/`。
 
@@ -193,16 +197,16 @@ flowchart TD
 
 [Wiki](https://github.com/yellow630914/ElondiaRPG/wiki) 由這些文件自動產生，不在 wiki 上直接寫：
 
-- 哪份文件變成哪一頁、放在側邊欄的哪一組，寫在 [`tools/wiki/build.mjs`](../tools/wiki/build.mjs) 的 `GROUPS`。文件之間的連結會改成 wiki 頁面的連結（用代號當連結文字的，例如 `[COMBAT_SYSTEM](COMBAT_SYSTEM.md)`，會顯示成頁名「戰鬥系統」），其他連結改成 GitHub 上那個版本的檔案。
+- 哪份文件變成哪一頁、放在側邊欄的哪一組（玩家指南、遊戲系統、世界製作、開發、計畫與追蹤），寫在 [`tools/wiki/build.mjs`](../tools/wiki/build.mjs) 的 `GROUPS`。文件之間的連結會改成 wiki 頁面的連結（用代號當連結文字的，例如 `[COMBAT_SYSTEM](COMBAT_SYSTEM.md)`，會顯示成頁名「戰鬥系統」），其他連結改成 GitHub 上那個版本的檔案。
 - 推送版本 tag 時，[`.github/workflows/wiki.yml`](../.github/workflows/wiki.yml) 產生頁面並推到 wiki；也可以在 Actions → Wiki → Run workflow 手動同步。第一次使用前要先在 GitHub 的 Wiki 頁籤按「Create the first page」建立 wiki（隨便存一頁，同步時會被覆蓋）。
 - 本機預覽：`node tools/wiki/build.mjs --out wiki-out`（`wiki-out/` 不進 git）。
 - **新增文件時要加進 `GROUPS`**（不放上 wiki 的加進 `SKIP`），否則測試 `src/__tests__/wiki.spec.ts` 會失敗。
 
 ## 6. 維護規則
 
-1. **以程式為準。** 改了程式就改文件；發現文件和程式不同，照程式改文件（程式本身有問題時記到 KNOWN_ISSUES）。
+1. **以程式為準。** 改了程式就改文件；發現文件和程式不同，照程式改文件（程式本身有問題時，沒照規則跑的記到 [plan/BUGS](plan/BUGS.md)，規則不合理的記到 [plan/LOGIC_ISSUES](plan/LOGIC_ISSUES.md)）。
 2. **一件事只寫在一個地方。** 其他文件只放連結。例如效果種類只寫在 EFFECTS、主動行動的流程只寫在 ACTIONS、價格公式只寫在 TRADE 第 3 節、休息規則只寫在 COMPANIONS 第 5 節。
-3. **待決定的事寫進 OPEN_QUESTIONS**，不要散在各文件末尾；決定之後把結論寫回系統文件，再從清單刪掉。
+3. **還沒做完的事寫進 [plan/](plan/README.md)**（Bug、業務邏輯問題、未來計畫、點子庫分開），不要散在各文件末尾；處理完把結論寫回系統文件，再從清單刪掉，在 plan/README 記一行完成紀錄。
 4. **新增系統時**：開一份文件，開頭寫「上層／依賴／被依賴」與程式、資料檔，再把它加進本文件的階層、依賴圖與一覽表，以及 wiki 的 `GROUPS`（第 5 節）。
 5. **不要改檔名。** 程式註解與 `data/` 的 `$comment` 會用「docs/檔名.md 第 N 節」引用文件；改章節編號時要一起搜尋 `docs/檔名` 更新。
 6. **資料整理型的表格**（MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節）沒有產生腳本，改資料時要記得同步。

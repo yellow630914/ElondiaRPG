@@ -290,7 +290,7 @@ export function assertSchema(state: Pick<GameState, 'schema'>) {
 
 export function migrate(state: GameState): GameState {
   assertSchema(state)
-  // 「本地」聲望以前會直接存成 local（KNOWN_ISSUES W5）：沒有人讀，拿掉
+  // 「本地」聲望以前會直接存成 local（以前記在 KNOWN_ISSUES 的 W5）：沒有人讀，拿掉
   if (state.reputation) delete state.reputation.local
   // 以前 AI 會替商店取名字（shopNames）：店名改成只用手寫與規則生成，拿掉
   delete (state as { shopNames?: unknown }).shopNames

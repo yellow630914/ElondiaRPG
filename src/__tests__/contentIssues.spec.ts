@@ -1,4 +1,4 @@
-// docs/KNOWN_ISSUES.md 第 5 節修掉的問題（W1～W23）：每條至少一個測試
+// 以前記在 docs/KNOWN_ISSUES.md 第 5 節、已經修掉的問題（W1～W23，紀錄見 docs/plan/README.md）：每條至少一個測試
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { applyContent, builtinAbility, builtinMarkRules, emptyMods, normalizeMods, sanitizeAbility, sanitizeBase, sanitizeNpc, type ContentMods } from '@/engine/mods'

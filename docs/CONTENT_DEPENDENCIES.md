@@ -97,4 +97,4 @@
 
 ## 7. 還沒處理的風險
 
-討論後暫時不處理的項目，集中在 [OPEN_QUESTIONS](OPEN_QUESTIONS.md) 的「自訂內容」。
+討論後暫時不處理的項目，記在 [LOGIC_ISSUES](plan/LOGIC_ISSUES.md) 的 L2、L3。

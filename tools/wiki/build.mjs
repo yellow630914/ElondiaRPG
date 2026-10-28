@@ -90,11 +90,16 @@ export const GROUPS = [
     { page: '文件地圖', src: 'docs/README.md', desc: '所有設計文件的階層、依賴關係與維護規則' },
     { page: '內建內容的產生腳本', src: 'worldgen/scripts/elondia/README.md', desc: '艾隆迪亞內建內容的產生腳本與執行順序' },
     { page: '世界生成計畫', src: 'worldgen/PLAN.md', desc: 'worldgen 的工作計畫' },
-    { page: 'UI 改版計畫', src: 'docs/UI_V2_PLAN.md', desc: 'UI v2 的分階段計畫' },
     { page: '像素素材管線', src: 'tools/pixel/README.md', desc: '像素圖示與地圖格的素材管線' },
     { page: '模組化像素立繪規格', src: 'docs/comfy/portrait-spec.md', desc: '用 ComfyUI 產生立繪素材的規格' },
-    { page: '待決定事項', src: 'docs/OPEN_QUESTIONS.md' },
-    { page: '程式中發現的問題', src: 'docs/KNOWN_ISSUES.md' },
+  ] },
+  { name: '計畫與追蹤', pages: [
+    { page: '計畫與追蹤', src: 'docs/plan/README.md', desc: '分類、流程、完成紀錄' },
+    { page: 'Bug', src: 'docs/plan/BUGS.md', desc: '程式沒有照規則運作的問題' },
+    { page: '業務邏輯問題', src: 'docs/plan/LOGIC_ISSUES.md', desc: '程式照設計運作，但規則不合理的地方' },
+    { page: '未來計畫', src: 'docs/plan/ROADMAP.md', desc: '已經決定要做的事' },
+    { page: '點子庫', src: 'docs/plan/IDEAS.md', desc: '還沒決定要不要做的構想' },
+    { page: 'UI 改版計畫', src: 'docs/plan/UI_V2_PLAN.md', desc: 'UI v2 的分階段計畫' },
   ] },
 ]
 
