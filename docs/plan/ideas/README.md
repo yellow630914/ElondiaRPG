@@ -10,7 +10,7 @@
 | [early-design](early-design.md) | 早期設計文件（GAME_DESIGN、已刪除的 QUEST_EVENT_DESIGN、DUNGEON_DESIGN）裡還沒做的構想 | 註明原本在哪份文件 |
 | [review-2026-10](review-2026-10.md) | 2026-10 盤點內容與系統時列出、先不做的項目 | 之後的盤點另開一份（`review-年-月.md`） |
 | [player-feedback](player-feedback.md) | 玩家的回饋（Discord 等）引出的構想 | 寫出玩家遇到的情況與日期 |
-| [xianxia-adult-lorebook](xianxia-adult-lorebook.md) | 玩家提供的素材：修仙題材的成人向 SillyTavern 世界書（🔞） | 原文保留，附名詞對照與對應的現有機制；只放在 repo，不同步到 wiki |
+| [xianxia-adult-lorebook](xianxia-adult-lorebook.md) | 玩家提供的素材：修仙題材的成人向 SillyTavern 世界書（🔞） | 原文是第三方著作，不放 repo（放在專案擁有者的私人頁面）；這裡只有名詞對照、對應的現有機制與備用條目；不同步到 wiki |
 | [dev-discussion](dev-discussion.md) | 開發討論中提出、還沒做的構想 | 寫出當時在做什麼 |
 
 新的來源（例如某個玩家社群、某次試玩）可以另開一份，加進這張表。
