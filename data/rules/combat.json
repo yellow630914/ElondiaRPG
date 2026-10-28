@@ -2,7 +2,7 @@
   "$comment": "戰鬥規則數值。公式說明見 docs/COMBAT_SYSTEM.md。mod(x) = floor((x - 10) / 2)。",
   "version": 2,
   "proficiency": { "base": 2, "every_levels": 4 },
-  "xp_to_next_level_per_level": 135,
+  "xp_to_next_level_per_level": 150,
   "party_max": 4,
   "party_max_following": 6,
 

@@ -3,7 +3,7 @@
 import { checkBonus } from './perks'
 import { abilityQuality, proficiency, rerollAbilityChoices, snapshot } from './character'
 import { setQuestDeadline } from './deadlines'
-import { dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit } from './guild'
+import { dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit, questXp } from './guild'
 import { startCombat, type CombatState } from './combat'
 import {
   craftRules, abilityDef, attributeRules, combatRules, dungeonEncounters, economy, itemDef, landmarkDef, landmarksIn, locationById, npcs, regionById,
@@ -361,6 +361,9 @@ export function turnInQuest(state: GameState, questId: string, count?: number): 
     ...(tpl?.item ? [{ type: 'item' as const, name: tpl.item, qty: -(tpl.qty ?? 1) }] : []),
     ...(tpl?.rewards ?? []),
   ]
+  // 不用打怪的委託（送貨、尋物、採集……）給經驗；打怪的委託已經有戰鬥經驗
+  const xp = questXp(quest, n)
+  if (xp > 0) effects.push({ type: 'xp', amount: xp })
   const notes = applyEffects(state, report, effects)
   if (notes.length) report.outcome.summary += notes.join('；')
   if (isExam(quest)) {

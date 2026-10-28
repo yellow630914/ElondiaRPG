@@ -2,7 +2,7 @@
 // 功績與等級都夠了，公會發晉升考核委託；通過考核才升階。隊友的階級仍依等級換算。
 
 import { guildRankFor } from './character'
-import { dungeonEncounters, enemies, locationById, progression, BOSS_LAYER_IDS, type BossLayerId } from './data'
+import { dungeonEncounters, enemies, locationById, progression, questXpRules, BOSS_LAYER_IDS, type BossLayerId } from './data'
 import { layerName, layerRanks, RANK_ORDER, rewardRange } from './materialQuests'
 import { shortestPath } from './world'
 import type { GameState, GuildRank, GuildState, Quest } from './types'
@@ -34,6 +34,13 @@ export function nextRank(rank: GuildRank): GuildRank | undefined {
 /** 交付這個階級的委託得到的功績 */
 export function questMerit(rank: GuildRank): number {
   return merit().quest[RANK_ORDER.indexOf(rank)] ?? 0
+}
+
+/** 交付委託的經驗（每位隊員）：只有不用打怪的委託有；材料委託交了 delivered 份時依比例增加 */
+export function questXp(quest: Pick<Quest, 'kind' | 'rank' | 'goal' | 'flags'>, delivered = quest.goal): number {
+  const r = questXpRules
+  if (!r || isExam(quest) || !r.kinds.includes(quest.kind)) return 0
+  return Math.round((r.per_rank_level * rankInfo(quest.rank).levels[0] * delivered) / Math.max(1, quest.goal))
 }
 
 export const bossMerit = () => merit().boss
