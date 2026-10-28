@@ -99,6 +99,23 @@ describe('free actions with several targets', () => {
     expect(j.notes?.join()).toContain('只有這次行動的主要對象能入隊')
   })
 
+  it('tells the writer that the others did not join', () => {
+    const state = game()
+    const main = beside(state, 1, 80)
+    const extra = beside(state, 1, 80)
+    const p = prepareAction(state, free(main.id, [extra.id], '（系統：三人都已同意）請你們都跟我走'))
+    p.natural = 20
+    const j = sanitizeJudgment(state, p, { degree: 'critical', summary: '兩人都答應同行', effects: [{ type: 'join', npc: main.id }] })
+    const report = resolveAction(state, j)
+    expect(state.party.some((m) => m.id === main.id)).toBe(true)
+    expect(state.party.some((m) => m.id === extra.id)).toBe(false)
+    expect(report.narration?.focus?.join()).toContain(`${extra.name}沒有加入隊伍`)
+    // 和入隊無關的行動不加這句
+    const q = prepareAction(state, free(extra.id, [beside(state).id], '請大家喝一輪酒'))
+    q.natural = 15
+    expect(resolveAction(state, sanitizeJudgment(state, q, { degree: 'success', effects: [] })).narration?.focus?.join() ?? '').not.toContain('沒有加入隊伍')
+  })
+
   it('tells the AI about every target, with each one’s guard', () => {
     const mods = emptyMods()
     mods.npcs.mod_npc_queen = sanitizeNpc('mod_npc_queen', { ...newNpc('mod_npc_queen'), name: '測試女王', class: 'fighter', level: 15, location: 'soriel', unhireable: true, no_steal: true }, true)
@@ -114,6 +131,7 @@ describe('free actions with several targets', () => {
     expect(text).toContain('同行的對象 測試女王')
     expect(text).toContain('偷竊不會得手')
     expect(text).toContain('只適用主要對象')
+    expect(text).toContain('不要寫成同行的對象答應入隊')
     // 人際關係與記憶也帶上每一位
     expect(judgeContext(state, p)).toContain('測試女王')
   })

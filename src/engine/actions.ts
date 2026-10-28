@@ -584,6 +584,8 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
   if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }
   if (judgment?.adjusted?.length) report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), ...judgment.adjusted.map((t) => `${t}；經過要照實際結算的數字寫`)] }
+  const stayed = withNotJoined(state, report, p, notes)
+  if (stayed) report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), stayed] }
   const scene = adultSceneFor(p, degree, judgment)
   if (scene) report.narration = { ...report.narration, length: report.narration?.length === 'long' ? 'long' : 'medium', adult_scene: scene }
   const success = degree === 'critical' || degree === 'success'
@@ -660,6 +662,15 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'free':
     case 'rest_talk': return ''
   }
+}
+
+/** 玩家邀請入隊、或這次有人入隊時，同行的對象（沒有入隊的）要寫明沒有跟來：AI 只對主要對象寫 join 時，經過可能把大家都寫成同行 */
+function withNotJoined(state: GameState, report: Report, p: ActionPending, notes: string[]): string | undefined {
+  if (p.kind !== 'free' || !p.with?.length) return undefined
+  const joined = report.changes.companions?.some((c) => c.change === 'joined')
+  if (!joined && !notes.some((n) => n.includes('入隊')) && !/入隊|加入|同行|跟我走|一起走/.test(p.text)) return undefined
+  const names = p.with.filter((id) => !state.party.some((m) => m.id === id)).map((id) => npcRecord(state, id)?.name ?? id)
+  return names.length ? `${names.join('、')}沒有加入隊伍，這次之後也不會跟著主角走：經過不要寫成同行或答應入隊` : undefined
 }
 
 /** 沒有 AI（或 AI 的判斷與骰值不符）時的預設效果：自由行動依成功程度小幅改變每位對象的親密度。 */
