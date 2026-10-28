@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import {
-  abilityQuality, apMaxFor, apRegenFor, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor,
+  abilityQuality, apMaxFor, apRegenFor, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
 import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules, tagDef } from '@/engine/data'
 import PcTagPicker from '../PcTagPicker.vue'
@@ -125,6 +125,11 @@ function saveTags() {
     <!-- 屬性與戰鬥 -->
     <section v-if="tab === 'stats'" class="pane two">
       <div>
+        <div v-if="!isNoncombatant(m)" class="level">
+          <b>Lv.{{ m.level }}</b>
+          <div class="bar xp"><span :style="{ width: `${Math.min(100, (m.xp / xpToNext(m.level)) * 100)}%` }" /></div>
+          <span class="num">EXP {{ m.xp }} / {{ xpToNext(m.level) }}</span>
+        </div>
         <table class="attrs">
           <thead><tr><th>屬性</th><th>數值</th><th>修正</th><th>來源</th><th /></tr></thead>
           <tbody>
@@ -272,6 +277,10 @@ function saveTags() {
 .tabs button.on { background: #4b3420; color: #f0d083; border-color: #2a1a0e; }
 .dot { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); }
 .pane.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+.level { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-bottom: 8px; }
+.level b { font-size: 1.1rem; font-weight: 900; }
+.level .bar { height: 7px; }
+.level .num { font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
 .attrs { width: 100%; border-collapse: collapse; }
 .attrs th { text-align: left; font-weight: 600; padding: 6px 4px; font-size: var(--fs-sm); color: var(--muted); border-bottom: 2px solid #4b3420; }
 .attrs td { padding: 7px 4px; border-bottom: 1px dotted var(--border); font-variant-numeric: tabular-nums; }

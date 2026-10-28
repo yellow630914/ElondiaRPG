@@ -233,6 +233,7 @@ html[data-bg] { --frame-bg: linear-gradient(180deg, rgb(42 32 23 / var(--panel-a
 .bar > span::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 7px, #0000002e 7px 8px); }
 .bar.hp > span { background: linear-gradient(180deg, #e6705f, var(--hp) 50%, #99332a); }
 .bar.mp > span { background: linear-gradient(180deg, #78a9e6, var(--mp) 50%, #2f5f99); }
+.bar.xp > span { background: linear-gradient(180deg, #b6d884, #7ea050); }
 .parchment .bar { background: #3a2a1a; border-color: #2a1a0e; box-shadow: none; }
 
 /* 選單列：建築的功能選單（BuildingMenu）與可以展開的區塊（FoldMenu）共用 —— 圖示、名稱與一行說明、右側的數字、箭頭 */

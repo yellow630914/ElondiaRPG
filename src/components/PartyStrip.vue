@@ -3,8 +3,9 @@ import { computed, nextTick, watch } from 'vue'
 import { floatText, pillar } from '@/fx/fx'
 import { lastSeen, stateKey } from '@/fx/seen'
 import { className, companionRules, conditionName, conditionTone, describeStatus, genderDef, raceName, statusDef } from '@/engine/data'
+import { xpToNext } from '@/engine/character'
 import { isActive } from '@/engine/combat'
-import { partyMax } from '@/engine/party'
+import { isNoncombatant, partyMax } from '@/engine/party'
 import { useGame } from '@/stores/game'
 import Avatar from './ui/Avatar.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -69,6 +70,10 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
           <div class="bar hp"><span :style="{ width: pct(hpOf(m).hp, hpOf(m).max) }" /></div>
           <span class="num">{{ hpOf(m).hp }}/{{ hpOf(m).max }}</span>
         </div>
+        <div v-if="!isNoncombatant(m)" class="xp" :title="`EXP ${m.xp} / ${xpToNext(m.level)}`">
+          <div class="bar xp"><span :style="{ width: pct(m.xp, xpToNext(m.level)) }" /></div>
+          <span class="num">{{ m.xp }}/{{ xpToNext(m.level) }}</span>
+        </div>
         <div v-if="m.status.length || hpOf(m).statuses.length" class="conds">
           <span v-for="c in m.status" :key="c" class="tag" :class="conditionTone(c)" :title="companionRules.conditions[c]?.desc">{{ conditionName(c) }}</span>
           <span v-for="st in hpOf(m).statuses" :key="st.id" class="tag" :class="statusDef(st.id).kind === 'buff' ? 'good' : 'bad'" :title="describeStatus(statusDef(st.id))">{{ statusDef(st.id).name }}</span>
@@ -93,7 +98,7 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
   padding: 6px 8px; background: #0005; border: 1px solid #ffffff10; border-radius: 3px;
 }
 .mini:hover { border-color: var(--gold-lo); }
-.mini.down > :deep(.avatar), .mini.down .hp { opacity: 0.45; filter: grayscale(1); }
+.mini.down > :deep(.avatar), .mini.down .hp, .mini.down .xp { opacity: 0.45; filter: grayscale(1); }
 .state { margin-left: auto; padding: 0 5px; font-size: var(--fs-xs); flex-shrink: 0; }
 .tag.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
 .lvup {
@@ -110,6 +115,9 @@ const pct = (v: number, max: number) => `${max > 0 ? Math.max(0, Math.min(100, (
 .name small { color: var(--muted); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 100; }
 .hp { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
 .hp .bar { flex: 1; height: 8px; }
+.xp { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.xp .bar { flex: 1; height: 4px; }
+.xp .num { opacity: 0.8; }
 .num { font-size: var(--fs-xs); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; }
 .conds { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
 .conds .tag.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
