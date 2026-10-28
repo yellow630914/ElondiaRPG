@@ -107,7 +107,7 @@ function addTo(list: EntryList) {
         <div class="row small">
           套用到：
           <label v-for="t in PROMPT_TARGETS" :key="t" class="check"><input type="checkbox" :checked="targets.includes(t)" @change="toggleTarget(t)" /> {{ TARGET_NAME[t] }}</label>
-          ｜<label class="check" title="只在設定開啟成人向時送出"><input v-model="adult" type="checkbox" /> 🔞 成人向</label>
+          ｜<label class="check" title="只在成人場景送出（日誌帶親密場景，或判定的行動可能進入親密場景）"><input v-model="adult" type="checkbox" /> 🔞 成人向</label>
           ｜<label class="check"><input v-model="enable" type="checkbox" /> 加進來就開啟</label>
         </div>
         <div class="row small">

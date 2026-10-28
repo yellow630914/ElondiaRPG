@@ -9,7 +9,7 @@ import { checkModifiers, modifierNote } from './perks'
 import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
 import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
-import { adultContent, adultScene, safeText, tagsAllowed } from './content'
+import { adultScene, tagsAllowed } from './content'
 import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
 import { meetsReputation } from './security'
 import { forcedGearPool } from './forcedGear'
@@ -47,7 +47,7 @@ export function deriveFunctions(t: Omit<MarkTerms, 'functions'>): ContractFuncti
   ]
 }
 
-/** 模板的條款（原始文字，不依成人向開關替換；顯示時由 contractTerms 處理） */
+/** 模板的條款（原始文字） */
 export function termsFromTemplate(kind: string): MarkTerms {
   const d: ContractDef = slaveryRules.contracts[contractKind(kind)]!
   const t: Omit<MarkTerms, 'functions'> = {
@@ -67,15 +67,14 @@ export function termsFromTemplate(kind: string): MarkTerms {
   return { ...t, functions: deriveFunctions(t) }
 }
 
-/** 模板的條款，給畫面顯示（關閉成人向時文字換成一般用語） */
+/** 模板的條款，給畫面顯示 */
 export function templateTerms(kind: string): MarkTerms {
   return contractTerms({ terms: termsFromTemplate(kind) })
 }
 
-/** 契約的條款（刻印時存的那一份）；關閉成人向時文字換成一般用語 */
+/** 契約的條款（刻印時存的那一份） */
 export function contractTerms(c: Pick<ContractRef, 'terms'>): MarkTerms {
-  const t = c.terms
-  return adultContent() ? t : { ...t, name: safeText(t.name), mark: safeText(t.mark), side_effects: t.side_effects.map(safeText) }
+  return c.terms
 }
 
 /** 自訂印記：文字截斷、數值夾在範圍內；功能依數值推得。魔力封印只有從有封印的模板改起、而且有給上限時才有 */
@@ -422,12 +421,7 @@ function hoursOf(t: GameTime): number {
 }
 
 /** 移動或旅行之後：被主人帶著時，可能發生主人的突發事件（等待主角回應） */
-export interface MasterEventOptions {
-  /** 允許成人向事件（設定的「成人向」） */
-  adult?: boolean
-}
-
-export function maybeMasterEvent(state: GameState, chance: number, opts: MasterEventOptions = {}): PendingMasterEvent | undefined {
+export function maybeMasterEvent(state: GameState, chance: number): PendingMasterEvent | undefined {
   if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent || state.dungeonEvent || state.parasiteEvent) return undefined
   // 主人不在身邊（戰敗時逃開了）時沒有突發事件
   const master = state.party.find((m) => m.id === contractOf(pcOf(state))!.master)
@@ -441,7 +435,7 @@ export function maybeMasterEvent(state: GameState, chance: number, opts: MasterE
   const rec = npcRecord(state, master.id) ?? { id: master.id }
   // 主人的性邀約與被推進娼館接客都算「主角非自願」：設定裡關掉時不發生
   const unwilling = tagsAllowed(['pc_unwilling'])
-  const events = ev.events.filter((e) => (!e.adult || (opts.adult && unwilling)) && (e.cell !== 'brothel' || unwilling) && eventFits(state, rec, e))
+  const events = ev.events.filter((e) => (!e.adult || unwilling) && (e.cell !== 'brothel' || unwilling) && eventFits(state, rec, e))
   // 離家太久：主人想回家（逾期越久越容易），先擲
   const overdue = events.filter((e) => e.overdue)
   const home = overdueChance(state)
@@ -498,7 +492,7 @@ function forMaster(effects: RewardEffect[] | undefined, master: string, masterNa
 }
 
 function withMaster(state: GameState, s: string): string {
-  return safeText(s.split('{master}').join(contractOf(pcOf(state))?.masterName ?? '主人'))
+  return s.split('{master}').join(contractOf(pcOf(state))?.masterName ?? '主人')
 }
 
 /** 等待回應的事件定義 */
@@ -526,9 +520,9 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     time: { start, end: addHours(start, o.hours ?? e.hours) },
     location: { at: area.location, region: loc.region, scene: area.name },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', summary: `${state.pendingMasterEvent!.text}你選擇${safeText(o.label)}。`, tags: ['主人'] },
+    outcome: { result: 'neutral', summary: `${state.pendingMasterEvent!.text}你選擇${o.label}。`, tags: ['主人'] },
     changes: {},
-    narration: { pov: 'second_person', length: 'short', focus: [`${c.masterName}的突發要求`, `主角的回應：${safeText(o.label)}`] },
+    narration: { pov: 'second_person', length: 'short', focus: [`${c.masterName}的突發要求`, `主角的回應：${o.label}`] },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
   let effects = forMaster(o.effects, c.master, c.masterName)
@@ -548,7 +542,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   }
   // 成人向：這個回應進入親密場景時，敘事要詳細描寫
   const ok = report.outcome.result === 'success'
-  if (adultContent() && e.scene && (o.adult_scene === 'always' || (o.check && o.adult_scene === (ok ? 'success' : 'fail')))) {
+  if (e.scene && (o.adult_scene === 'always' || (o.check && o.adult_scene === (ok ? 'success' : 'fail')))) {
     report.narration = { ...report.narration, length: 'medium', adult_scene: withMaster(state, e.scene) }
   }
   delete state.pendingMasterEvent
@@ -693,7 +687,7 @@ export function setupSeekMaster(state: GameState, target?: string) {
   const rec = seekTarget(state, target)
   ensureRelationship(state, rec)
   const stays = (npcKind(rec) === 'commoner' ? '（普通人主人同行，但不參與戰鬥）' : '')
-    + (isMadam(rec) ? safeText(`（老鴇會把印記改刻成${contractDef(slaveryRules.roles.madam).name}）`) : '')
+    + (isMadam(rec) ? `（老鴇會把印記改刻成${contractDef(slaveryRules.roles.madam).name}）` : '')
   return {
     dc: seekMasterDc(state, rec), targetName: rec.name, situational: [],
     scene: `${currentArea(state).name}・請${rec.name}收下自己`,
@@ -716,7 +710,7 @@ export function applySeekMaster(state: GameState, report: Report, target: string
         c.obedience = Math.max(0, c.obedience - 1)
         addAffinity(state, report, rec.id, 3, '收下了主角')
       }
-      return `${rec.name}收下了你，成為你的新主人。${remarked ? safeText(`${rec.name}把你的印記改刻成了${contractDef(slaveryRules.roles.madam).name}。`) : ''}`
+      return `${rec.name}收下了你，成為你的新主人。${remarked ? `${rec.name}把你的印記改刻成了${contractDef(slaveryRules.roles.madam).name}。` : ''}`
     }
     case 'partial':
       addAffinity(state, report, rec.id, 1, '對主角有些好感')

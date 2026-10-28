@@ -21,9 +21,8 @@ const busy = computed(() => game.judging || !!s.value.pendingAction)
 const text = ref('')
 const use = ref('')
 const foes = computed(() => ev.value.foes.map((f) => f.name).join('、'))
-// 設定改成不發生（關閉成人向、主角非自願或戰敗事件）時可以直接離開
+// 設定改成不發生（關閉主角非自願或戰敗事件）時可以直接離開
 const allowed = computed(() => {
-  void settings.adult
   void settings.contentFilters
   void settings.defeatAdult
   return defeatAdultAllowed(characterBody(pcOf(s.value)))

@@ -4,7 +4,6 @@ import worldbook from '../../data/worldbook/elondia.worldbook.json'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
 import { finishCombat, startCombat } from '@/engine/combat'
-import { setAdultContent } from '@/engine/content'
 import { combatRules, slaveryRules } from '@/engine/data'
 import { afterCombat, enterLocation, goOutskirts, standOn } from '@/engine/grid'
 import { generateNpc } from '@/engine/npcs'
@@ -20,12 +19,18 @@ const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 const defeatDc = combatRules.defeat_event.check.dc
 
 afterEach(() => {
-  setAdultContent(false)
   combatRules.defeat_event.check.dc = defeatDc
 })
 
-function options(adult = true) {
-  return { config: defaultPromptConfig(), lore: loreItems(worldbook as unknown as Worldbook, {}, []), adult, budgetChars: 20000, language: 'zh-Hant' as const }
+function options() {
+  return { config: defaultPromptConfig(), lore: loreItems(worldbook as unknown as Worldbook, {}, []), budgetChars: 20000, language: 'zh-Hant' as const }
+}
+
+/** 判定請求也帶世界書 */
+function judgeOptions() {
+  const o = options()
+  o.config.loreInJudge = true
+  return o
 }
 
 function game(): GameState {
@@ -59,7 +64,6 @@ function answer(state: GameState, event: string, option: number): Report {
 
 describe('adult scenes', () => {
   it('asks the narrator to describe a brothel visit in detail', () => {
-    setAdultContent(true)
     const state = game()
     standOn(state, 'brothel')
     state.money_cc = 100
@@ -70,26 +74,25 @@ describe('adult scenes', () => {
     expect(prompt.system).toContain('<adult_scene>')
     expect(prompt.user).toContain('成人場景：在娼館')
     expect(prompt.user).toContain('約 500～900 字')
-    // 之後關閉成人向，重新生成時不附上
-    const off = composeNarration(state, r, options(false)).prompt
-    expect(off.system).not.toContain('<adult_scene>')
-    expect(off.user).not.toContain('成人場景')
+    // 成人向的世界書只跟著成人場景送出
+    expect(prompt.system).toContain('叙事倾向与事件触发机制')
+    const plain: Report = { ...r, narration: { ...r.narration } }
+    delete plain.narration!.adult_scene
+    const general = composeNarration(state, plain, options()).prompt
+    expect(general.system).not.toContain('<adult_scene>')
+    expect(general.system).not.toContain('叙事倾向与事件触发机制')
+    expect(general.user).not.toContain('成人場景')
   })
 
-  it('marks brothel work but not other jobs, and nothing with the adult setting off', () => {
-    setAdultContent(true)
+  it('marks brothel work but not other jobs', () => {
     const state = game()
     standOn(state, 'brothel')
     expect(act(state, { kind: 'work', target: '4', text: '' }, 15).narration?.adult_scene).toContain('接客')
     standOn(state, 'tavern')
     expect(act(state, { kind: 'work', target: '4', text: '' }, 15).narration?.adult_scene).toBeUndefined()
-    setAdultContent(false)
-    standOn(state, 'brothel')
-    expect(act(state, { kind: 'work', target: '4', text: '' }, 15).narration?.adult_scene).toBeUndefined()
   })
 
   it('follows the answer to the master: accepting the proposition or failing to refuse the brothel', () => {
-    setAdultContent(true)
     const yes = answer(slave(), 'proposition', 0)
     expect(yes.narration?.adult_scene).toMatch(/^陪.+過夜$/)
     expect(composeNarration(null, yes, options()).prompt.system).toContain('<adult_scene>')
@@ -101,27 +104,28 @@ describe('adult scenes', () => {
     expect(answer(slave(), 'brothel_forced', 0).narration?.adult_scene).toContain('娼館接客')
   })
 
-  it('lets the AI judge flag a scene in a free response or action, only with the adult setting on', () => {
-    setAdultContent(true)
+  it('lets the AI judge flag a scene in a free response or action', () => {
     const state = slave()
     startMasterEvent(state, slaveryRules.master_events.events.find((e) => e.id === 'proposition')!)
     prepareAction(state, { kind: 'master_event', text: '紅著臉點頭' })
-    const judge = composeJudge(state, state.pendingAction!, options()).prompt
+    const judge = composeJudge(state, state.pendingAction!, judgeOptions()).prompt
     expect(judge.system).toContain('adult_scene')
     expect(judge.system).toContain('<adult_scene>')
     expect(judge.user).toContain('依主角的回應與你的判定決定是否進入')
     const r = resolveAction(state, sanitizeJudgment(state, state.pendingAction!, { degree: 'success', attr: 'cha', dc: 12, adult_scene: '答應了主人，陪他過夜' }))
     expect(r.narration?.adult_scene).toBe('答應了主人，陪他過夜')
 
+    // 成人向的條目只在可能進入親密場景的行動送出；自由行動照樣可以由 AI 標出場景
+    expect(judge.system).toContain('叙事倾向与事件触发机制')
     const free = game()
     expect(act(free, { kind: 'free', text: '在河邊散步' }, 12, { degree: 'success', attr: 'cha', dc: 12 }).narration?.adult_scene).toBeUndefined()
-    setAdultContent(false)
-    expect(composeJudge(free, prepareAction(free, { kind: 'free', text: '散步' }), options(false)).prompt.system).not.toContain('adult_scene')
-    expect(sanitizeJudgment(free, free.pendingAction!, { degree: 'success', attr: 'cha', dc: 12, adult_scene: '親密場景' }).adult_scene).toBeUndefined()
+    const walk = composeJudge(free, prepareAction(free, { kind: 'free', text: '散步' }), judgeOptions()).prompt.system
+    expect(walk).toContain('adult_scene')
+    expect(walk).not.toContain('叙事倾向与事件触发机制')
+    expect(sanitizeJudgment(free, free.pendingAction!, { degree: 'success', attr: 'cha', dc: 12, adult_scene: '親密場景' }).adult_scene).toBe('親密場景')
   })
 
   it('describes the defeat event in detail only when the hero fails to get away', () => {
-    setAdultContent(true)
     combatRules.defeat_event.check.dc = -100
     const respond = (natural: number) => {
       const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 7 })
@@ -146,7 +150,6 @@ describe('adult scenes', () => {
   })
 
   it('uses the adult-scene entries and keeps the shared prefix cacheable', () => {
-    setAdultContent(true)
     const state = game()
     standOn(state, 'brothel')
     state.money_cc = 100
@@ -158,8 +161,8 @@ describe('adult scenes', () => {
       { id: 's1', name: '共用文風', content: '共用的文風', enabled: true, targets: ['narration', 'adult'] },
       { id: 's2', name: '成人文風', content: '成人場景專用的文風', enabled: true, targets: ['adult'], adult: true },
     ]
-    expect(narrationTarget(scene, true)).toBe('adult')
-    expect(narrationTarget(scene, false)).toBe('narration')
+    expect(narrationTarget(scene)).toBe('adult')
+    expect(narrationTarget(plain)).toBe('narration')
     const a = composeNarration(state, scene, o).prompt.system
     const n = composeNarration(state, plain, o).prompt.system
     expect(a).toContain('成人場景專用的文風')

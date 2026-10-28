@@ -15,7 +15,6 @@ export interface ComposeOptions {
   config: PromptConfig
   /** 套用覆寫後的世界書條目（loreItems） */
   lore: LoreItem[]
-  adult: boolean
   budgetChars: number
   language: 'zh-Hant' | 'zh-Hans'
   /** 判定與正文用不同的模型：判定不寫經過 */
@@ -50,48 +49,50 @@ export function judgeContext(state: GameState, p: ActionPending): string {
   return social.formatContext(state, social.selectContext(state, { participants, location: state.location }))
 }
 
-/** 這則日誌的敘事屬於哪一種：帶親密場景（成人向開啟時）是「成人場景」 */
-export function narrationTarget(report: Report, adult: boolean): Extract<PromptTarget, 'narration' | 'adult'> {
-  return adultSceneOf(report, adult) ? 'adult' : 'narration'
+/** 這則日誌的敘事屬於哪一種：帶親密場景是「成人場景」 */
+export function narrationTarget(report: Report): Extract<PromptTarget, 'narration' | 'adult'> {
+  return adultSceneOf(report) ? 'adult' : 'narration'
 }
 
 export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions): Composed {
   const name = playerName(state)
-  const lore = loreForReport(o.lore, report, { adult: o.adult, budgetChars: o.budgetChars, playerName: name })
+  // 分流：帶親密場景的日誌才送成人向的條目（世界書、文風、其他提示詞）
+  const adult = !!adultSceneOf(report)
+  const lore = loreForReport(o.lore, report, { adult, budgetChars: o.budgetChars, playerName: name })
   const protagonist = protagonistOf(state)
   const context = narrationContext(state, report)
   // 成人場景的敘事用套用到「成人場景」的條目
-  const target = narrationTarget(report, o.adult)
+  const target = narrationTarget(report)
   const prompt = buildPrompt(report, lore, {
     playerName: name,
     language: o.language,
     ...(protagonist ? { protagonist } : {}),
     ...(context ? { context } : {}),
-    styles: activeEntries(o.config.styles, target, name, { adult: o.adult }),
-    instructions: activeEntries(o.config.custom, target, name, { position: 'system', adult: o.adult }),
-    endNotes: activeEntries(o.config.custom, target, name, { position: 'end', adult: o.adult }),
+    styles: activeEntries(o.config.styles, target, name, { adult }),
+    instructions: activeEntries(o.config.custom, target, name, { position: 'system', adult }),
+    endNotes: activeEntries(o.config.custom, target, name, { position: 'end', adult }),
     ...(o.config.narrationRules ? { rules: o.config.narrationRules } : {}),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
-    adult: o.adult,
   })
   return { prompt: toOutputScript(prompt, o.language), lore }
 }
 
 export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptions): Composed {
   const name = playerName(state)
+  // 分流：行動可能進入親密場景（娼館、主人的要求、戰敗事件……）時才送成人向的條目
+  const adult = !!p.adultScene
   const lore = o.config.loreInJudge
-    ? pickLore(o.lore, { text: actionLoreText(state, p), travel: false }, { adult: o.adult, budgetChars: o.budgetChars, playerName: name })
+    ? pickLore(o.lore, { text: actionLoreText(state, p), travel: false }, { adult, budgetChars: o.budgetChars, playerName: name })
     : undefined
   const prompt = buildActionPrompt(state, p, judgeContext(state, p), {
     language: o.language,
     narrative: !o.splitNarrative,
-    styles: activeEntries(o.config.styles, 'judge', name, { adult: o.adult }),
-    instructions: activeEntries(o.config.custom, 'judge', name, { position: 'system', adult: o.adult }),
-    endNotes: activeEntries(o.config.custom, 'judge', name, { position: 'end', adult: o.adult }),
+    styles: activeEntries(o.config.styles, 'judge', name, { adult }),
+    instructions: activeEntries(o.config.custom, 'judge', name, { position: 'system', adult }),
+    endNotes: activeEntries(o.config.custom, 'judge', name, { position: 'end', adult }),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
-    adult: o.adult,
     ...(lore ? { lore } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), ...(lore ? { lore } : {}) }

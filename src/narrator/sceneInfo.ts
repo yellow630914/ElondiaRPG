@@ -54,9 +54,11 @@ const TIME_NAME = (hour = 12) => (hour >= 5 && hour < 7 ? '黎明' : hour >= 7 &
  * multi：服務能分開描述每個角色（NovelAI V4），不能時 scene 也要交代每個人
  */
 export function scenePrompt(
-  state: GameState, report: Report, cast: SceneCastMember[], opts: { format?: ImagePreprocessor; adult: boolean; multi: boolean; narration?: string },
+  state: GameState, report: Report, cast: SceneCastMember[], opts: { format?: ImagePreprocessor; multi: boolean; narration?: string },
 ): Prompt {
   const loc = locationById(report.location.at)
+  // 分流：帶親密場景的日誌才可以畫成人場景
+  const adult = !!report.narration?.adult_scene
   const system = [
     '你是遊戲插圖的分鏡師。依使用者給的冒險日誌，設計一張最能代表這段經過的插圖，交給 AI 生圖。',
     '只輸出一個 JSON 物件，不要任何說明或程式碼框：',
@@ -67,7 +69,7 @@ export function scenePrompt(
     '3. 每個角色的 prompt：照提供的外貌描述畫（髮色、眼睛、種族特徵、體型不要改），加上服裝、表情、動作與姿勢；要和其他人的位置與互動對得上。',
     '4. position 是角色在畫面上的位置；兩個人時通常一左一右。',
     opts.multi ? '' : '5. 這個生圖服務不能分開描述每個人：scene 也要簡短交代每個人在哪裡、在做什麼（例如 on the left, on the right）。',
-    opts.adult
+    adult
       ? '6. rating：一般場景 general；有性暗示、裸露 suggestive；性行為 explicit。成人場景照實畫，不要迴避。'
       : '6. 不要裸露、性暗示或血腥的內容；rating 一律 general。',
     '7. 不要寫出角色名字、地名或作品名稱。',
@@ -81,7 +83,7 @@ export function scenePrompt(
     `經過：${report.outcome.summary ?? ''}`,
     report.check?.action ? `主角的行動：${report.check.action}` : '',
     report.narration?.player_intent ? `玩家描述的做法：${report.narration.player_intent}` : '',
-    opts.adult && report.narration?.adult_scene ? `這段是成人場景：${report.narration.adult_scene}` : '',
+    adult ? `這段是成人場景：${report.narration?.adult_scene}` : '',
     opts.narration ? `\n日誌正文：\n${opts.narration.slice(0, 1500)}` : '',
     '\n可以登場的人：',
     ...cast.map((c) => `- id: ${c.id}｜${c.player ? '主角' : '其他人'}｜${c.description}`),
@@ -91,7 +93,7 @@ export function scenePrompt(
 
 const POSITIONS: ScenePosition[] = ['left', 'center', 'right']
 
-/** 讀分鏡的回覆：不認識的人略過、位置補上、成人向關閉時不會是成人場景 */
+/** 讀分鏡的回覆：不認識的人略過、位置補上；adult：日誌帶親密場景，不是的話一律 general */
 export function parseScenePlan(raw: unknown, cast: SceneCastMember[], adult: boolean): ScenePlan {
   const r = (raw ?? {}) as { rating?: unknown; scene?: unknown; characters?: unknown }
   const scene = typeof r.scene === 'string' ? r.scene.trim() : ''

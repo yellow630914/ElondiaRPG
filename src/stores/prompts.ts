@@ -142,7 +142,6 @@ export const usePrompts = defineStore('prompts', () => {
     return {
       config: config.value,
       lore: items.value,
-      adult: settings.adult,
       budgetChars: settings.loreBudget,
       language: settings.language,
       splitNarrative: settings.splitJudgeNarrative(),

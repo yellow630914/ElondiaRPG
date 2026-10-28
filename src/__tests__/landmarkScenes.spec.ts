@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { landmarks, stories } from '@/engine/data'
-import { setAdultContent, setContentFilters } from '@/engine/content'
+import { setContentFilters } from '@/engine/content'
 import { enterLocation, getArea, landmarkHidden, standOn } from '@/engine/grid'
 import { npcRecord } from '@/engine/npcs'
 import { peopleHere } from '@/engine/population'
@@ -20,7 +20,6 @@ import { startStory } from '@/engine/story'
 import type { GameState } from '@/engine/types'
 
 afterEach(() => {
-  setAdultContent(false)
   setContentFilters({ ntr: true })
   applyContent(emptyMods())
 })
@@ -28,7 +27,6 @@ afterEach(() => {
 const AREAS = ['lm_wives_salon', 'lm_maid_cafe', 'lm_ebony_night', 'lm_succubus_banquet', 'lm_idol_backstage', 'lm_honor_hole']
 
 function at(id: string, flags: string[], body?: 'masc' | 'fem' | 'andro'): GameState {
-  setAdultContent(true)
   const l = landmarks[id]!
   const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: l.location, ...(body ? { body } : {}) })
   for (const f of flags) setFlag(state, f)
@@ -69,7 +67,6 @@ describe('special areas unlocked by the storylines', () => {
       expect(l.open?.adult, id).toBe(true)
       expect(l.open?.flags?.length, id).toBeGreaterThan(0)
       expect(l.scenes?.length, id).toBeGreaterThan(0)
-      setAdultContent(true)
       const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: l.location })
       enterLocation(state)
       const cell = () => getArea(state, l.at.area).cells[l.at.y * getArea(state, l.at.area).width + l.at.x]!.kind
@@ -78,9 +75,6 @@ describe('special areas unlocked by the storylines', () => {
       // 卡珊卓線的結局一定是戴著項圈或自由其中一個；沒有場景可選的地標不出現
       if (id === 'lm_succubus_banquet') setFlag(state, 'cas_free')
       expect(cell(), id).toBe(id)
-      // 成人向關著時不出現
-      setAdultContent(false)
-      expect(cell(), id).toBe('floor')
     }
   })
 
@@ -148,14 +142,11 @@ describe('special areas unlocked by the storylines', () => {
     expect(landmarkHere(state)?.id).toBe('lm_honor_hole')
   })
 
-  it('needs the wives and the idols all there, and is gone with adult content off', () => {
+  it('needs the wives and the idols all there', () => {
     const tea = at('lm_wives_salon', ['group_wives_done'])
     expect(sceneText(tea, landmarks.lm_wives_salon!.scenes![0]!)).toContain('瑪格麗特・馮・艾森、莉澤洛特、克拉拉')
     const idols = at('lm_idol_backstage', ['group_idols_done'])
     expect(titles(idols)).toEqual(['演出後替三人「充電」'])
-    setAdultContent(false)
-    expect(titles(idols)).toEqual([])
-    expect(() => playLandmarkScene(idols, 0)).toThrow()
   })
 })
 
@@ -183,7 +174,6 @@ describe('landmark scenes in the content editor', () => {
 describe('characters moved by their story stage', () => {
   it('are not rewritten each time they are looked up, so the map does not keep redrawing', async () => {
     const { npcRecord } = await import('@/engine/npcs')
-    setAdultContent(true)
     const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'dawnlight' })
     setFlag(state, 'eve_lover')
     const first = npcRecord(state, 'npc_eve')!
@@ -214,7 +204,6 @@ describe('special-area interiors', () => {
   })
 
   it('lets you walk in through the landmark, offers nothing at the door, and brings you back out to it', () => {
-    setAdultContent(true)
     const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'albena' })
     setFlag(state, 'wl_1_done')
     enterLocation(state)
@@ -262,7 +251,6 @@ describe('special areas after the play test', () => {
     for (const id of AREAS) {
       const l = landmarks[id]!
       for (let seed = 1; seed <= 20; seed++) {
-        setAdultContent(true)
         const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed, birthplace: l.location })
         for (const f of [...l.open!.flags!, 'cas_free']) setFlag(state, f)
         enterLocation(state)
@@ -371,7 +359,6 @@ describe('work-line scenes', () => {
   })
 
   it('stay on the map while a quest there can be taken or is going on, so the quest nodes can be reached', () => {
-    setAdultContent(true)
     const used = new Set(stories.flatMap((d) => d.nodes.filter((n) => n.at.where === 'cell' && landmarks[n.at.cell ?? '']).map((n) => n.at.cell!)))
     for (const id of used) {
       const l = landmarks[id]!
@@ -386,7 +373,6 @@ describe('work-line scenes', () => {
   })
 
   it('hide a work landmark when nothing there is for this hero, and bring it back for a quest going on', () => {
-    setAdultContent(true)
     const l = landmarks.lm_odd_tower!
     // 等級、公會階級都不夠：任務接不到、也沒有場景
     const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: l.location, gender: '女', body: 'fem' })
@@ -410,7 +396,6 @@ describe('work-line scenes', () => {
   })
 
   it('ask for the uniform before you can go back to work', () => {
-    setAdultContent(true)
     const l = landmarks.lm_golden_dice!
     const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 4, birthplace: l.location, gender: '女', body: 'fem' })
     state.time.hour = 21

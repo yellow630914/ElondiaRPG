@@ -85,11 +85,9 @@ describe('portrait prompts', () => {
   })
 
   it('preprocesses the description with the chosen instructions and cleans the answer', () => {
-    const p = preprocessPrompt('a girl', '轉成標籤', false)
-    expect(p.system).toMatch(/^轉成標籤/)
-    expect(p.system).toContain('不要加入裸露')
+    const p = preprocessPrompt('a girl', '轉成標籤')
+    expect(p.system).toBe('轉成標籤')
     expect(p.user).toContain('a girl')
-    expect(preprocessPrompt('a girl', '轉成標籤', true).system).not.toContain('不要加入裸露')
     expect(cleanTags('```\nTags: 1girl, long hair，silver hair\nlong hair, "green eyes"\n```')).toBe('1girl, long hair, silver hair, green eyes')
     expect(cleanPreprocessed('```\nTags: 1girl, long hair\n```', 'tags')).toBe('1girl, long hair')
     // 原樣送出：只拿掉程式碼框，JSON 保持原樣

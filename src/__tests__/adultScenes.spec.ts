@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { setAdultContent } from '@/engine/content'
 import { itemRules, stories, type StoryDef } from '@/engine/data'
 import { enterLocation } from '@/engine/grid'
 import { npcRecord } from '@/engine/npcs'
@@ -10,7 +9,6 @@ import { setFlag } from '@/engine/storyFlags'
 import { sanitizeOutcome, storyCheck, STORY_SCENE_CHARS } from '@/engine/storyMods'
 import type { Report } from '@/engine/types'
 
-afterEach(() => setAdultContent(false))
 
 const story = (id: string) => stories.find((s) => s.id === id)!
 const outcomes = (s: StoryDef) => s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).filter(Boolean)
@@ -47,10 +45,8 @@ describe('intimate scenes in special quests', () => {
     for (const s of fourths) for (const o of s.nodes.find((n) => n.id === 'night')!.options!) expect(o.success?.scene, s.id).toBeTruthy()
   })
 
-  it('hand the scene to the narration as an adult scene when adult content is on', () => {
-    // 成人向關閉時這類任務整個暫停，不會走到這裡
+  it('hand the scene to the narration as an adult scene', () => {
     const play = () => {
-      setAdultContent(true)
       const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 3 })
       enterLocation(state)
       startStory(state, 'ren_tide_home')

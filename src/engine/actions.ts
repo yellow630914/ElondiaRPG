@@ -33,7 +33,7 @@ import { applyProduce } from './recipes'
 import { applyInvent } from './invention'
 import { currentArea } from './grid'
 import { memberOrResident } from './homes'
-import { adultContent, type AdultScene } from './content'
+import type { AdultScene } from './content'
 import { applyDefeatResponse } from './defeat'
 import { applyStoryCheck, refreshStoryMarkers } from './story'
 import { applyPendingMove } from './road'
@@ -112,7 +112,7 @@ export interface Judgment {
   summary?: string
   /** AI 直接寫出的結果經過（作為報告的敘事） */
   narrative?: string
-  /** AI 認為這次的經過包含親密場景（只在開啟成人向時採用）：場景是什麼 */
+  /** AI 認為這次的經過包含親密場景：場景是什麼 */
   adult_scene?: string
   effects: RewardEffect[]
   relationship_updates: RelationshipUpdate[]
@@ -433,7 +433,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     ...(clipText(r.summary, caps.summary_chars) ? { summary: clipText(r.summary, caps.summary_chars) } : {}),
     ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
-    ...(adultContent() && clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
+    ...(clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
     ...(p.kind === 'invent' && r.invention && typeof r.invention === 'object' ? { invention: r.invention as Record<string, unknown> } : {}),
     ...(p.kind === 'perk_pitch' && r.perk && typeof r.perk === 'object' ? { perk: r.perk as Record<string, unknown> } : {}),
     effects,
@@ -590,11 +590,10 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
 }
 
 /**
- * 這次的經過有沒有親密場景（只在開啟成人向時）：行動本身會進入場景（娼館、戰敗事件沒能脫身），
+ * 這次的經過有沒有親密場景：行動本身會進入場景（娼館、戰敗事件沒能脫身），
  * 或 AI 判定認為有（主人的要求、自由行動、長休的互動……）。
  */
 export function adultSceneFor(p: ActionPending, degree: Degree, judgment: Judgment | null): string | undefined {
-  if (!adultContent()) return undefined
   const s = p.adultScene
   if (s && (!s.on || s.on.includes(degree))) return s.label
   return judgment?.adult_scene

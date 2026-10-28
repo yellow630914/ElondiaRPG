@@ -6,7 +6,6 @@ import {
   type Combatant,
 } from '@/engine/combat'
 import { luckyThreshold } from '@/engine/character'
-import { safeText } from '@/engine/content'
 import { abilityDef, combatRules, damageTypeName, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { describeCombatLine } from '@/narrator/describe'
 import { banner, fxOn, flash, floatText, screenFlash, screenShake, shake, shatter } from '@/fx/fx'
@@ -357,7 +356,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
             </div>
             <div class="l3 small">
               <span v-for="t in affinityTags(c)" :key="t.text" class="tag" :class="t.kind">{{ t.text }}</span>
-              <span v-for="t in c.traits ?? []" :key="t" class="tag trait" :title="safeText(monsterTraits.traits[t]?.desc ?? '')">{{ safeText(monsterTraits.traits[t]?.name ?? t) }}</span>
+              <span v-for="t in c.traits ?? []" :key="t" class="tag trait" :title="monsterTraits.traits[t]?.desc ?? ''">{{ monsterTraits.traits[t]?.name ?? t }}</span>
               <span v-for="st in c.statuses" :key="st.id" class="tag" :class="statusDef(st.id).kind" :title="statusTitle(st.id)">
                 {{ statusDef(st.id).name }}{{ st.turns < 99 ? ` ${st.turns}` : '' }}
               </span>

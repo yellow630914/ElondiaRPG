@@ -6,7 +6,6 @@
 
 import { npcPerksOf, perksOf } from './perks'
 import { createNpc, lifeTier } from './character'
-import { adultContent, safeText } from './content'
 import {
   attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, npcs as namedNpcs, npcTags, perkDef, slaveryRules, tagDef,
   type Haunt, type NpcKind, type NpcStage,
@@ -55,9 +54,9 @@ export function npcRecord(state: GameState, id: string): NpcRecord | undefined {
   return stored ?? def
 }
 
-/** 交給 AI 與形象圖的外貌：成人向內容開著時，接上固定 NPC 的成人向外貌（跟著內容頁籤的設定走，不存進存檔） */
+/** 交給 AI 與形象圖的外貌：接上固定 NPC 的成人向外貌（跟著內容頁籤的設定走，不存進存檔） */
 export function appearanceOf(id: string, appearance?: string): string {
-  const extra = adultContent() ? namedNpcs.find((n) => n.id === id)?.adult_appearance : undefined
+  const extra = namedNpcs.find((n) => n.id === id)?.adult_appearance
   return [appearance, extra].filter(Boolean).join('')
 }
 
@@ -258,7 +257,7 @@ export function npcKind(rec: Pick<NpcRecord, 'kind' | 'class'>): NpcKind {
 /** 身分的簡稱：冒險者是職業，普通人是職業描述 */
 export function npcTitle(rec: Pick<NpcRecord, 'kind' | 'class' | 'occupation' | 'tags'>): string {
   if (npcKind(rec) === 'adventurer') return className(rec.class)
-  return safeText(rec.occupation ?? tagDef(rec.tags?.[0] ?? '')?.name ?? '平民')
+  return rec.occupation ?? tagDef(rec.tags?.[0] ?? '')?.name ?? '平民'
 }
 
 /** 給 AI 的身分說明：類型、職業或職業描述、標籤 */

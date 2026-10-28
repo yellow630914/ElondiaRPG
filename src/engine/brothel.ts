@@ -1,8 +1,8 @@
-// 娼館（關閉成人向時顯示為按摩店，見 content.ts）：消費、老鴇。
+// 娼館：消費、老鴇。
 // 被迫工作是主人的突發事件（slavery.json master_events 裡 cell 為 brothel 的事件），
 // 無主的奴隸找老鴇當主人走「投靠新主人」（seek_master），成功後老鴇改刻娼妓契約。
 
-import { adultScene, safeText } from './content'
+import { adultScene } from './content'
 import { locationById, workRules, type Degree } from './data'
 import { applyEffects } from './effects'
 import { currentArea, currentCell } from './grid'
@@ -38,13 +38,13 @@ function patronTarget(state: GameState, target?: string): NpcRecord | undefined 
   if (!target) return undefined
   const rec = npcRecord(state, target)
   if (!rec || !presentHere(state, rec.id)) throw new Error('對方不在這裡')
-  if (!rec.tags?.includes('prostitute')) throw new Error(safeText(`${rec.name}不是這裡的娼妓`))
+  if (!rec.tags?.includes('prostitute')) throw new Error(`${rec.name}不是這裡的娼妓`)
   return rec
 }
 
 export function setupPatron(state: GameState, target?: string) {
-  if (!atBrothel(state)) throw new Error(safeText('要在娼館裡才能消費'))
-  if (isBound(state)) throw new Error(safeText('有主人的奴隸不能在娼館消費'))
+  if (!atBrothel(state)) throw new Error('要在娼館裡才能消費')
+  if (isBound(state)) throw new Error('有主人的奴隸不能在娼館消費')
   const rec = patronTarget(state, target)
   if (rec) ensureRelationship(state, rec)
   const r = workRules.brothel.patron
@@ -53,8 +53,8 @@ export function setupPatron(state: GameState, target?: string) {
   return {
     ...adultScene(`在娼館與${rec?.name ?? '娼妓'}共度`),
     dc: r.dc, situational: [], hours: r.hours,
-    targetName: rec?.name ?? safeText('娼館'),
-    scene: safeText(`${locationById(state.location).name}的娼館`),
+    targetName: rec?.name ?? '娼館',
+    scene: `${locationById(state.location).name}的娼館`,
     outcomes: {
       critical: `賓主盡歡，只收 ${formatMoney(Math.round(price * (1 - r.discount)))}，身心放鬆（下次長休前檢定 +1）`,
       success: `付 ${formatMoney(price)}，身心放鬆（下次長休前檢定 +1）`,
@@ -84,7 +84,7 @@ export function applyPatron(state: GameState, report: Report, target: string | u
     }
   }
   if (rec) addAffinity(state, report, rec.id, r.affinity[degree], '在娼館的一晚')
-  return safeText(lines.join(''))
+  return lines.join('')
 }
 
 /** 這個區域的娼館就在身邊（同一格或相鄰）：被主人帶著經過時可能被迫工作 */

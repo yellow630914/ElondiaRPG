@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { setAdultContent } from '@/engine/content'
 import { enterLocation, move, standOn } from '@/engine/grid'
 import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
 import { pruneRoadEvent, travelEvents } from '@/engine/road'
@@ -17,7 +16,6 @@ beforeEach(() => {
 })
 afterEach(() => {
   applyContent(emptyMods())
-  setAdultContent(false)
 })
 
 function inTown(location = 'soriel', seed = 4): GameState {
@@ -60,7 +58,6 @@ describe('town events', () => {
   })
 
   it('takes only what the hero has when an event asks for more money than that', () => {
-    setAdultContent(true)
     only('town_frisk')
     const state = inTown('soriel')
     state.townEvent = { template: 'town_frisk' }
@@ -180,11 +177,9 @@ describe('adult town events', () => {
     }
   })
 
-  it('only show up with adult content on and for the right body', () => {
+  it('only show up for the right body', () => {
     const state = female()
     const ids = () => townCandidates(state, currentArea(state), 'tavern').map((t) => t.id)
-    expect(ids()).not.toContain('town_drugged_drink')
-    setAdultContent(true)
     expect(ids()).toContain('town_drugged_drink')
     expect(ids()).toContain('town_gamble_price')
     const man = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'albena', gender: '男', body: 'masc' })
@@ -193,7 +188,6 @@ describe('adult town events', () => {
   })
 
   it('hand the scene to the narration when the hero gives in', () => {
-    setAdultContent(true)
     only('town_drugged_drink')
     const state = female()
     expect(standOn(state, 'tavern')).toBe(true)

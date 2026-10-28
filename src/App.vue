@@ -284,7 +284,7 @@ onBeforeUnmount(() => {
   <PromptsView v-if="game.state && tab === 'prompts'" />
   <ContentView v-if="game.state && tab === 'content'" />
 
-  <main v-if="game.state" v-show="tab === 'adventure'" :key="settings.adult ? 'adult' : 'safe'" class="game" :class="{ combat: inCombat }">
+  <main v-if="game.state" v-show="tab === 'adventure'" class="game" :class="{ combat: inCombat }">
     <nav v-if="narrow && !inCombat" class="panel side-tabs">
       <button :class="{ active: sideTab === 'map' }" @click="sideTab = 'map'"><GameIcon name="map" :size="15" />地圖／隊伍</button>
       <button :class="{ active: sideTab === 'here' }" @click="sideTab = 'here'"><GameIcon name="users" :size="15" />這裡／地點</button>

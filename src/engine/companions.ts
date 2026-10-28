@@ -49,7 +49,6 @@ import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
 import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
-import { itemShown } from './gear'
 import { gameRule } from './gameRules'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
@@ -486,7 +485,7 @@ export function curioStock(state: GameState): CurioListing[] {
   const cur = curios[state.location]
   if (cur && cur.day === state.time.day) return cur.stock
   const n = gameRule(state, 'blackMarketGear')
-  const pool = itemRules.items.filter((i) => i.black_market && i.gear?.unique && itemShown(i)).map((i) => i.name)
+  const pool = itemRules.items.filter((i) => i.black_market && i.gear?.unique).map((i) => i.name)
   const stock = n && pool.length ? withRng(state, (rng) => {
     const picked = [...pool].sort(() => rng.next() - 0.5).slice(0, n)
     return picked.map((name): CurioListing => ({ item: name, price_cc: Math.max(10, Math.round((itemDef(name)!.price_cc * slaveryRules.curios.price_mult) / 10) * 10) }))

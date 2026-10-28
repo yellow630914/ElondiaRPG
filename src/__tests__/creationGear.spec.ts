@@ -23,10 +23,9 @@ describe('creation gear slots', () => {
     const head = (cls: string) => creationSlots(cls).find((s) => s.slot === 'head')!.bases
     expect(head('fighter')).toEqual(expect.arrayContaining(['helm', 'leather_cap', 'hood']))
     expect(head('rogue')).not.toContain('helm')
-    // 布料的頭飾（兜帽、髮帶、女僕頭飾……）；成人向內容關閉時沒有兔耳
+    // 布料的頭飾（兜帽、髮帶、女僕頭飾、兔耳……）
     expect(head('wizard')).toContain('hood')
     expect(head('wizard')).not.toContain('leather_cap')
-    expect(head('wizard')).not.toContain('bunny_ears')
   })
 })
 

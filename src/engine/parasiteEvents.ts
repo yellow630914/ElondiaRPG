@@ -6,10 +6,9 @@
 // - 解咒：神殿（信仰）或刻印師（智力），擲骰對 DC（侵蝕度越高越難、越貴）；成功拿掉寄生物並中止它的任務線
 //   （紀錄與旗標清掉，之後再被寄生可以重來），失敗侵蝕度上升。
 // - 紋回來：刻印師把記下來的淫紋（被奴隸印記頂掉、或馴服後洗掉）與被淫紋蓋掉的刺青紋回去。
-// - 成人向關閉時：不發作、不能主動觸發（解咒、紋回來照常）。
 
 import { attrOf, mod, proficiency, recalc } from './character'
-import { adultContent, tagsAllowed } from './content'
+import { tagsAllowed } from './content'
 import { syncGear } from './gear'
 import { classes } from './data'
 import { gameRule } from './gameRules'
@@ -59,7 +58,7 @@ export function parasiteCandidates(state: GameState, p: ParasiteState, trigger: 
  * （例如關掉「主角非自願」）。不能發作時就像詛咒：被動效果還在，但侵蝕度不增長。
  */
 export function flaresOn(state: GameState, p: ParasiteState): boolean {
-  if (!adultContent() || gameRule(state, 'parasiteMult') <= 0) return false
+  if (gameRule(state, 'parasiteMult') <= 0) return false
   const body = characterBody(pcOf(state))
   return parasiteTemplates().some((t) => t.parasite === p.id && tagsAllowed(t.tags) && (!t.pc_body?.length || t.pc_body.includes(body)))
 }
@@ -77,9 +76,9 @@ function busy(state: GameState): boolean {
 export function maybeParasiteEvent(state: GameState, trigger: ParasiteTrigger): boolean {
   const pc = pcOf(state)
   if (!parasitesOf(pc).length) return false
-  // 成人向關閉、發作關掉時也要把日子往前推（不增長），之後恢復才不會一次補上
+  // 發作關掉時也要把日子往前推（不增長），之後恢復才不會一次補上
   growParasites(pc, state.time, (p) => !flaresOn(state, p))
-  if (!adultContent() || busy(state)) return false
+  if (busy(state)) return false
   const now = hoursOf(state.time)
   const log = state.parasiteEvents
   if (log?.last !== undefined && now - log.last < parasiteRules.cooldown_hours) return false
@@ -136,7 +135,6 @@ export function triggerBlock(state: GameState, id: string): string | undefined {
   if (!p || !def?.tamed) return '沒有這個寄生物'
   if (!p.tamed) return '還沒有馴服'
   if (p.dormant || p.stored) return '印記不在身上'
-  if (!adultContent()) return '成人向內容沒有開啟'
   if (busy(state) || state.road && !state.side) return '現在不是時候'
   const rest = state.lastLongRest
   if (p.triggered && (!rest || hoursOf(rest) <= hoursOf(p.triggered))) return '長休之後才能再一次'

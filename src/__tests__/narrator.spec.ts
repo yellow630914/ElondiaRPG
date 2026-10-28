@@ -31,7 +31,7 @@ describe('selectLore', () => {
     expect(picked).not.toContain('分阶段亲密值规则')
   })
 
-  it('only includes adult entries when enabled', () => {
+  it('only includes adult entries for adult scenes', () => {
     expect(comments(combat)).not.toContain('叙事倾向与事件触发机制')
     expect(comments(combat, { ...opts, adult: true })).toContain('叙事倾向与事件触发机制')
   })

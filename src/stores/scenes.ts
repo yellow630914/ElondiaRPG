@@ -81,7 +81,8 @@ export const useScenes = defineStore('scenes', () => {
     controllers.set(key, controller)
     jobs.value[key] = { stage: 'plan' }
     try {
-      const adult = settings.adult
+      // 分流：帶親密場景的日誌才是成人場景（插圖服務、分級）
+      const adult = !!report.narration?.adult_scene
       const cast = sceneCast(state, report)
       const narration = game.narrations[report.report_id]?.text
       const src = settings.sourceFor('tags')
@@ -93,14 +94,14 @@ export const useScenes = defineStore('scenes', () => {
         const format = image.preprocessorFor(service)
         const collector = game.usageCollector(game.originOf('tags', src))
         const text = await completeText(src.provider, src.config, scenePrompt(state, report, cast, {
-          ...(format ? { format } : {}), adult, multi: service === 'novelai', ...(narration ? { narration } : {}),
+          ...(format ? { format } : {}), multi: service === 'novelai', ...(narration ? { narration } : {}),
         }), controller.signal, collector.onUsage)
         collector.flush(report.report_id)
         return parseScenePlan(extractJson(text), cast, adult)
       }
 
       // 先猜是不是成人場景（日誌標了成人場景）來選服務；分鏡判定是成人場景、但服務是 ChatGPT 時換成成人場景用的服務再整理一次
-      let service = image.sceneService(adult && !!report.narration?.adult_scene)
+      let service = image.sceneService(adult)
       let p = await plan(service)
       if (p.rating === 'explicit' && service === 'openai') {
         const alt = image.sceneService(true)

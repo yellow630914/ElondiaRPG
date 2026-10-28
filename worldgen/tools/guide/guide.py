@@ -29,7 +29,7 @@ REGION_OF = {l['id']: l.get('region') for l in GEO['locations']}
 LOC_TYPE = {l['id']: l.get('type') for l in GEO['locations']}
 
 HEAD = '> 這一頁由 `worldgen/tools/guide/guide.py` 依遊戲資料自動產生，不要直接修改。內容有劇透，攻略的細節收在「展開」裡。\n'
-ADULT = '> 🔞 **成人向**：這一頁的內容只在設定開啟「成人向」時出現。\n'
+ADULT = '> 🔞 **成人向**：這一頁是成人向的內容（有露骨的性描寫）。\n'
 
 
 def esc(s):
@@ -420,7 +420,7 @@ def quest_of_flag(f):
 
 
 def landmarks_page():
-    out = ['# 城鎮的特色地標', '', HEAD, '各城鎮的地標：開放條件、可以做的事。成人向的地標標 🔞（只在開啟成人向時出現）。', '']
+    out = ['# 城鎮的特色地標', '', HEAD, '各城鎮的地標：開放條件、可以做的事。成人向的地標標 🔞。', '']
     by_loc = collections.defaultdict(list)
     for l in LMS: by_loc[l['location']].append(l)
     for lid, ls in by_loc.items():

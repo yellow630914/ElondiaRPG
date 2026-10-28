@@ -147,8 +147,6 @@ export interface JudgePromptOptions {
   defeatRules?: string
   /** 玩家修改過的成人場景規則 */
   sceneRules?: string
-  /** 成人向是否開啟：開啟時 AI 可以標出親密場景（adult_scene），narrative 依成人場景規則詳細描寫 */
-  adult?: boolean
 }
 
 /** 主動行動的判定規則：不含任何會隨行動改變的內容，可以被快取 */
@@ -173,20 +171,18 @@ ${currencyRule()}
 9. 只輸出 JSON，不要任何其他文字。`
 }
 
-function judgeFormat(adult: boolean): string {
+function judgeFormat(): string {
   return `輸出格式：
-{"degree":"success","attr":"cha","dc":<整數>,"rationale":"為什麼是這個結果（簡短）","twist":"（只在出乎預料時填寫）","summary":"……","narrative":"……",${adult ? '"adult_scene":"（只在經過包含親密場景時填寫）",' : ''}"effects":[],"relationship_updates":[{"id":"<id>","to_player":"更新後與主角的關係（只在關係明顯改變時提供）"}]}`
+{"degree":"success","attr":"cha","dc":<整數>,"rationale":"為什麼是這個結果（簡短）","twist":"（只在出乎預料時填寫）","summary":"……","narrative":"……","adult_scene":"（只在經過包含親密場景時填寫）","effects":[],"relationship_updates":[{"id":"<id>","to_player":"更新後與主角的關係（只在關係明顯改變時提供）"}]}`
 }
 
-/** 成人向開啟時：可以標出親密場景；寫經過時附上成人場景規則 */
+/** 可以標出親密場景；寫經過時附上成人場景規則 */
 function sceneSection(opts: JudgePromptOptions, player: string, narrative: boolean): string {
-  if (!opts.adult) return ''
-  const flag = '成人向已開啟：如果這次的經過包含性愛等親密場景（例如兩人決定共度一夜、被迫接客、被敵人侵犯），adult_scene 用一句話寫出是什麼場景（≤ 40 字）；沒有就不要填這個欄位，也不要硬把行動寫成親密場景。'
+  const flag = '如果這次的經過包含性愛等親密場景（例如兩人決定共度一夜、被迫接客、被敵人侵犯），adult_scene 用一句話寫出是什麼場景（≤ 40 字）；沒有就不要填這個欄位，也不要硬把行動寫成親密場景。'
   return narrative ? `${flag}填了 adult_scene 時，narrative 依下面的成人場景規則詳細描寫：\n${fillSceneRules(opts.sceneRules, player)}` : flag
 }
 
-function narrativeLength(p: ActionPending, adult: boolean): string {
-  if (!adult) return '約 200～400 字'
+function narrativeLength(p: ActionPending): string {
   const s = p.adultScene
   if (s && (!s.on || s.on.length === 5)) return '約 500～900 字（親密場景是主體）'
   return '約 200～400 字；有親密場景時約 500～900 字'
@@ -348,7 +344,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
     { key: 'rules', title: '判定規則', part: 'system', text: judgeRules(lang, narrative) },
     // 文風接續規則的最後一條編號（和敘事規則一樣用 styleLead）
     styleSection(narrative ? opts.styles : [], `${styleLead(judgeRules(lang, narrative))}（narrative）`),
-    { key: 'format', title: '輸出格式', part: 'system', text: judgeFormat(!!opts.adult) },
+    { key: 'format', title: '輸出格式', part: 'system', text: judgeFormat() },
     ...sharedSystemSections({ instructions: opts.instructions, constantLore: opts.lore?.constant }),
     // 只有部分判定才有的規則放在 system 的最後（和敘事請求一樣），前面的規則、文風、常駐世界書、前段提示詞可以共用快取。
     // 成人向的戰敗事件：回應時另外附上戰敗事件規則（narrative 是後半段）
@@ -365,7 +361,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
       text: `<action>
 行動：${kind.name}
 場景：${p.scene}（${locationById(p.location).name}）
-${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}${opts.adult ? sceneNote(p) : ''}
+${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}${sceneNote(p)}
 </action>`,
     },
     {
@@ -394,7 +390,7 @@ ${outcomes || '- 無固定機制結果，依你的 effects 決定'}
       text: narrative
         ? `本次要求：
 - narrative 視角：第二人稱，以「你」指稱主角${pc.name}
-- narrative 篇幅：${narrativeLength(p, !!opts.adult)}
+- narrative 篇幅：${narrativeLength(p)}
 請判定這次行動，只輸出 JSON。`
         : '請判定這次行動，只輸出 JSON（narrative 留空）。',
     },

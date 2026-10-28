@@ -32,7 +32,7 @@
 | `open.min_reputation` | 整數 | 1～100 | 在**這個聚落所屬勢力**的聲望至少要多少 |
 | `open.official` | `true` | | 官方場所：逃亡奴隸不能用 |
 | `open.hidden` | `true` | 要有 `open.flags` 或 `open.flags_none` | 旗標的條件不成立時不顯示：地圖上是普通的道路（例如完成任務才出現的店、秘密俱樂部） |
-| `open.adult` | `true` | | 成人向的場所：沒有開啟成人向時不開放，地圖上也不顯示 |
+| `open.adult` | `true` | | 成人向的場所：不當公會委託的地點；內容編輯器篩選用 |
 | `visit.title` | 字串 | 1～16 字 | **必填**，沒有時整個 `visit` 拿掉 |
 | `visit.desc` | 字串 | ≤ 200 字 | |
 | `visit.money_cc` | 整數 | 1～100000 | 參訪費（白鸛幣）；0 不寫 |

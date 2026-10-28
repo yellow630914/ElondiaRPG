@@ -200,7 +200,7 @@ const wearOptions = computed(() => wearChoices())
         <label>至少要有的聲望（這裡的勢力） <input v-model.number="open.min_reputation" type="number" :min="LANDMARK_LIMITS.reputation[0]" :max="LANDMARK_LIMITS.reputation[1]" /></label>
       </div>
       <label class="check small"><input v-model="open.official" type="checkbox" /> 官方場所 <Hint text="逃亡奴隸不能用。" /></label>
-      <label class="check small"><input v-model="open.adult" type="checkbox" /> 成人向的場所 <Hint text="沒有開啟成人向時不開放，地圖上也不顯示。" /></label>
+      <label class="check small"><input v-model="open.adult" type="checkbox" /> 成人向的場所 <Hint text="不當委託地點；內容編輯器的篩選用。" /></label>
       <div class="grid">
         <label>劇情旗標成立時才開放 <FlagInput :model-value="splitFlags(draft.flagsText)" @update:model-value="draft.flagsText = ($event ?? []).join('、')" /></label>
         <label>這些旗標成立時不開放 <FlagInput :model-value="splitFlags(draft.flagsNoneText)" @update:model-value="draft.flagsNoneText = ($event ?? []).join('、')" /></label>

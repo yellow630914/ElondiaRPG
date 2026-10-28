@@ -1,12 +1,12 @@
 // 地下城與近郊的事件（docs/ADULT_EVENTS.md）：觸發陷阱、打開寶箱、採集、在安全房長休之後，依機率遇到一件事。
 // - 模板和旅途、城鎮事件共用（travel_events.json 的 templates，scope: dungeon），依觸發點、地點、地區、層數、內容標籤、主角體型篩選。
 // - 機率與冷卻在 travel_events.json 的 dungeon；同一個事件隔 repeat_days 天（或 cooldown_days）才會再出現。
-// - 目前的內建模板都是成人向（色情陷阱、擬態寶箱、花粉、觸手植物、夜襲……），成人向關閉時一件都不會發生。
+// - 目前的內建模板都是成人向（色情陷阱、擬態寶箱、花粉、觸手植物、夜襲……），內容篩選關掉「主角非自願」時，非自願的事件不會發生。
 // - 事件發生在主角身上：選項的檢定由主角自己擲（不是隊伍裡最擅長的人）。
 
 import { gameRule } from './gameRules'
 import { attrOf, mod, proficiency, snapshot } from './character'
-import { adultContent, tagsAllowed } from './content'
+import { tagsAllowed } from './content'
 import { locationById, regionById } from './data'
 import { currentArea, type Area } from './grid'
 import { characterBody } from './look'
@@ -132,9 +132,9 @@ export function pcEventReport(state: GameState, title: string, tag: string): Rep
   }
 }
 
-/** 這個選項會不會進入親密場景（只在開啟成人向時；城鎮事件也用） */
+/** 這個選項會不會進入親密場景（城鎮事件也用） */
 export function sceneOn(o: RoadOption, ok: boolean): boolean {
-  if (!adultContent() || !o.adult_scene) return false
+  if (!o.adult_scene) return false
   return o.adult_scene === 'always' || (!!o.check && o.adult_scene === (ok ? 'success' : 'fail'))
 }
 

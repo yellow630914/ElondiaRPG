@@ -4,14 +4,13 @@
 // - 處決：死亡（從名單移除）
 // - 放過：留在原地、敵對，今天不會再打起來；對方先動手時，對方欠你一份情（親密度上升）
 // - 收為奴隸：以奴隸身分加入隊伍（要有空位），打上預設的契約，以 1 HP 加入
-// - 處置時可以順便劫財、劫色（只在開啟成人向時），和處置寫成同一篇日誌
+// - 處置時可以順便劫財、劫色，和處置寫成同一篇日誌
 // - 也可以先用主動行動對他做任何事（審問、勸降……），交給 AI 判定，之後再處置
 // 處置時也可以寫下怎麼做（例如怎麼處決、放過時說了什麼），記在報告的 player_intent 交給 AI 寫經過；結果不變
 // 劫財、劫色、處決與收為奴隸有後果：依誰先動手（security.json 的 captives），有衛兵的聚落加警戒、所屬勢力扣聲望；
 // 主角偷襲時沒有人看到，就不加警戒。
 
 import { snapshot } from './character'
-import { adultContent } from './content'
 import { formatMoney } from './money'
 import { locationById, npcTags, regionById } from './data'
 import { currentArea, getArea } from './grid'
@@ -24,7 +23,7 @@ import { failStoriesOnDeath, refreshStoryMarkers } from './story'
 import type { Captives, GameState, NpcRecord, Report } from './types'
 
 export type CaptiveChoice = 'execute' | 'release' | 'enslave'
-/** 處置時順便做的事：劫財、劫色（只在開啟成人向時） */
+/** 處置時順便做的事：劫財、劫色 */
 export type CaptiveDeed = 'rob' | 'violate'
 
 type Cost = Record<Captives['aggressor'], { alert: number; reputation: number }>
@@ -114,7 +113,6 @@ export function resolveCaptive(state: GameState, id: string, choice: CaptiveChoi
   const rec = npcRecord(state, id)
   if (!rec) throw new Error('找不到這個人')
   const todo = [...new Set(deeds)]
-  if (todo.includes('violate') && !adultContent()) throw new Error('沒有開啟成人向內容')
   if (choice === 'enslave' && partyRoom(state) < 1) throw new Error('隊伍已滿，帶不走更多人')
   if (choice === 'enslave' && isEnslaved(state)) throw new Error('身上還有奴隸印記，不能擁有奴隸')
   const stored = state.npcs?.[rec.id] ?? registerNpc(state, { ...rec })

@@ -6,7 +6,6 @@
 
 import { displaceCurse, storeTamedCurse } from './parasites'
 import tattooJson from '@data/rules/tattoos.json'
-import { adultContent, safeText } from './content'
 import { ATTR_IDS, attrName, type AttrId } from './data'
 import type { Character, ContractRef, GameTime, Tattoo, TattooKind, TattooPlace } from './types'
 
@@ -60,15 +59,13 @@ export function freePlaces(c: Pick<Character, 'tattoos'>): TattooPlace[] {
   return TATTOO_PLACES.filter((p) => !tattooAt(c, p))
 }
 
-/** 刺青的名稱與外觀（奴隸印記看契約的條款；關閉成人向時換成一般用語） */
+/** 刺青的名稱與外觀（奴隸印記看契約的條款） */
 export function tattooName(t: Tattoo): string {
-  const name = t.kind === 'slave' ? t.contract?.terms.name ?? '' : t.name ?? ''
-  return adultContent() ? name : safeText(name)
+  return t.kind === 'slave' ? t.contract?.terms.name ?? '' : t.name ?? ''
 }
 
 export function tattooDesc(t: Tattoo): string {
-  const desc = t.kind === 'slave' ? t.contract?.terms.mark ?? '' : t.desc ?? ''
-  return adultContent() ? desc : safeText(desc)
+  return t.kind === 'slave' ? t.contract?.terms.mark ?? '' : t.desc ?? ''
 }
 
 /** 給畫面與 AI 的一行說明：部位、種類、名稱、外觀（誓約印記加上屬性） */

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { safeText } from '@/engine/content'
 import { attrName, slaveryRules } from '@/engine/data'
 import { pendingEventDef } from '@/engine/slavery'
 import { parseUse, useGame } from '@/stores/game'
@@ -36,7 +35,7 @@ function respond() {
     <p>{{ ev.text }}</p>
     <div class="options">
       <button v-for="(o, i) in def.options" :key="o.label" class="small" :disabled="busy" @click="game.answerMasterEvent(i)">
-        {{ safeText(o.label) }}<span v-if="o.check" class="muted">（{{ attrName(o.check.attr) }} DC {{ o.check.dc }}）</span>
+        {{ o.label }}<span v-if="o.check" class="muted">（{{ attrName(o.check.attr) }} DC {{ o.check.dc }}）</span>
       </button>
     </div>
     <p class="small muted">或者自己決定怎麼回應（參考 DC {{ def.free_dc ?? slaveryRules.master_events.free_dc }}，可以搭配能力）：</p>

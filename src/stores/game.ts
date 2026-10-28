@@ -161,7 +161,7 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   const back = companions.rejoinAway(s)
   if (back) return { report: back }
   // 旅途上主人的事件出發時就放在格子上了
-  if (!s.road || s.side) slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance, { adult: useSettings().adult })
+  if (!s.road || s.side) slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance)
   // 城鎮事件（事件導演）：走上設施時可能遇到一件事
   const town = townEvents.maybeTownEvent(s)
   if (town.report) return { report: town.report }
@@ -212,10 +212,10 @@ export const useGame = defineStore('game', () => {
     }
   })
   const state = ref<GameState | null>(null)
-  // 開關成人向：成人向的特殊任務暫停或繼續，地圖上的任務點（⭐）跟著拿掉或放回（在設定套用之後）
-  watch(() => useSettings().adult, () => {
+  // 改內容篩選：被關掉的特殊任務暫停或繼續，地圖上的任務點（⭐）跟著拿掉或放回（在設定套用之後）
+  watch(() => useSettings().contentFilters, () => {
     if (state.value) story.refreshStoryMarkers(state.value)
-  }, { flush: 'post' })
+  }, { flush: 'post', deep: true })
   const narrations = ref<Record<string, NarrationState>>({})
   /** token 用量：日誌 id（或 OTHER_USAGE）→ 累計 */
   const usage = ref<Record<string, UsageEntry>>({})
@@ -977,7 +977,7 @@ export const useGame = defineStore('game', () => {
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     // 旅行：畫出旅途的單行道，一格一天往前走（road.ts）
-    travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent, { adult: useSettings().adult }), { onMap: true }),
+    travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent), { onMap: true }),
     /** 一路往前走，遇到事件、戰鬥或抵達時停下 */
     walkRoad: () => run((s) => {
       for (let i = 0; i < 80; i++) {
@@ -1162,7 +1162,7 @@ export const useGame = defineStore('game', () => {
     buyCurio: (item: string) => run((s) => companions.buyCurio(s, item)),
     chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
     answerMasterEvent: (index: number) => run((s) => slavery.answerMasterEvent(s, index)),
-    // 成人向的戰敗事件：關閉成人向時直接離開
+    // 成人向的戰敗事件：設定改成不發生（主角非自願、戰敗事件）時直接離開
     skipDefeatEvent: () => run(defeat.skipDefeatEvent),
     offerSelf: (kind: companions.MarketKind) => run((s) => companions.offerSelf(s, kind)),
     releaseSlave: (id: string) => run((s) => companions.releaseSlave(s, id)),

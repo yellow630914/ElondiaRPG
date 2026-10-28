@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { setAdultContent, setContentFilters } from '@/engine/content'
+import { setContentFilters } from '@/engine/content'
 import { companionRules } from '@/engine/data'
 import { answerDungeonEvent, DEFAULT_LAYER_DC, dungeonCandidates, eventBaseDc, eventDc, dungeonTemplates, maybeDungeonEvent, pendingDungeonEvent, pruneDungeonEvent } from '@/engine/dungeonEvents'
 import { cellAt, currentArea, DUNGEON_LAYERS, enterLocation, move } from '@/engine/grid'
@@ -15,11 +15,9 @@ import type { GameState } from '@/engine/types'
 beforeEach(() => {
   localStorage.clear()
   setActivePinia(createPinia())
-  setAdultContent(true)
 })
 afterEach(() => {
   applyContent(emptyMods())
-  setAdultContent(false)
   setContentFilters({ pc_unwilling: true })
 })
 
@@ -82,7 +80,7 @@ describe('dungeon adult events', () => {
     }
   })
 
-  it('only happen with adult content on, to feminine or androgynous heroes, and respect the unwilling filter', () => {
+  it('only happen to feminine or androgynous heroes and respect the unwilling filter', () => {
     const fem = inDungeon('fem')
     const area = currentArea(fem)
     expect(dungeonCandidates(fem, area, 'trap').length).toBeGreaterThan(0)
@@ -92,8 +90,6 @@ describe('dungeon adult events', () => {
     const willing = dungeonCandidates(fem, area, 'rest')
     expect(willing.length).toBeGreaterThan(0)
     expect(willing.every((t) => !t.tags?.includes('pc_unwilling'))).toBe(true)
-    setAdultContent(false)
-    expect(dungeonCandidates(fem, area, 'rest')).toEqual([])
   })
 
   it('springs from an undetected trap instead of trap damage, blocks moving and resting until answered', () => {

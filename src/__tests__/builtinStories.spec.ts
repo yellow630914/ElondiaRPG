@@ -5,13 +5,10 @@ import { sanitizeStory, storyCheck } from '@/engine/storyMods'
 import { canStart, storyPaused } from '@/engine/story'
 import { condMet, counterValue, setFlag } from '@/engine/storyFlags'
 import { dungeonEncounters, enemies, npcs as namedNpcs, stories } from '@/engine/data'
-import { adultContent, setAdultContent, setContentFilters, tagsAllowed } from '@/engine/content'
+import { setContentFilters, tagsAllowed } from '@/engine/content'
 import type { StoryDef } from '@/engine/data'
 
-const adultDefault = adultContent()
-
 afterEach(() => {
-  setAdultContent(adultDefault)
   applyContent(emptyMods())
   setContentFilters({})
 })
@@ -274,16 +271,12 @@ describe('built-in stories', () => {
     expect(counterValue(state, 'human_stance')).toBe(0)
   })
 
-  it('hides the adult storyline when its tag is filtered out', () => {
+  it('opens the adult storyline like any other', () => {
     const state = game()
     state.party[0]!.level = 5
     state.guild = { rank: 'D', merit: 0 }
     state.relationships = { ...state.relationships, npc_lilian: { affinity: 10 } as never }
-    const lil = story('lilian_successor')
-    setAdultContent(true)
-    const on = canStart(state, lil)
-    setAdultContent(false)
-    expect([on, canStart(state, lil)]).toEqual([true, false])
+    expect(canStart(state, story('lilian_successor'))).toBe(true)
   })
 
   it('gives the new monarch a staged identity', () => {
@@ -359,7 +352,6 @@ describe('built-in stories', () => {
   })
 
   it('splits the NTR branch of Aya into its own tagged option and quest', () => {
-    setAdultContent(true)
     const want = story('aya_harbor').nodes.find((n) => n.id === 'want')!
     expect(want.options!.map((o) => o.tags ?? [])).toEqual([[], ['ntr']])
     expect(story('aya_ebony_club').tags).toEqual(['adult', 'ntr'])
@@ -376,25 +368,22 @@ describe('built-in stories', () => {
   })
 })
 
-describe('adult stories when adult content is turned off', () => {
-  it('pause their nodes and pick up where they left off when it is turned back on', async () => {
-    const { activeNodes, blockingNode, playNode, startStory, storyPaused } = await import('@/engine/story')
-    const { enterLocation, standOn } = await import('@/engine/grid')
-    setAdultContent(true)
-    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 1, birthplace: 'dawnlight' })
+describe('stories whose tag is filtered out', () => {
+  it('pause their nodes and pick up where they left off when the filter is turned back on', async () => {
+    const { activeNodes, startStory, storyPaused } = await import('@/engine/story')
+    const { enterLocation } = await import('@/engine/grid')
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 1, birthplace: 'rivervale' })
     enterLocation(state)
-    startStory(state, 'lilian_successor')
-    setFlag(state, 'lil_fought')
-    standOn(state, 'inn')
-    expect(blockingNode(state)?.ref).toBe('lilian_successor:night')
-    setAdultContent(false)
-    expect(storyPaused(story('lilian_successor'))).toBe(true)
-    expect(activeNodes(state).filter((n) => n.def.id === 'lilian_successor')).toEqual([])
-    expect(blockingNode(state)).toBeUndefined()
-    expect(() => playNode(state, 'lilian_successor:night', 0)).toThrow()
-    expect(state.stories!.lilian_successor!.status).toBe('active')
-    setAdultContent(true)
-    expect(blockingNode(state)?.ref).toBe('lilian_successor:night')
+    startStory(state, 'inn_skirt')
+    const nodes = () => activeNodes(state).filter((n) => n.def.id === 'inn_skirt')
+    expect(storyPaused(story('inn_skirt'))).toBe(false)
+    expect(nodes().length).toBeGreaterThan(0)
+    setContentFilters({ male_partner: false })
+    expect(storyPaused(story('inn_skirt'))).toBe(true)
+    expect(nodes()).toEqual([])
+    expect(state.stories!.inn_skirt!.status).toBe('active')
+    setContentFilters({ male_partner: true })
+    expect(nodes().length).toBeGreaterThan(0)
   })
 })
 
@@ -443,7 +432,6 @@ describe('quests inside a temporary map', () => {
   })
 
   it('hides quests with a traditional male partner when that filter is off', () => {
-    setAdultContent(true)
     expect(tagsAllowed(['adult', 'male_partner'])).toBe(true)
     setContentFilters({ male_partner: false })
     expect(tagsAllowed(['adult', 'male_partner'])).toBe(false)
@@ -453,6 +441,5 @@ describe('quests inside a temporary map', () => {
     expect(storyPaused(story('isab_bet_paid'))).toBe(false)
     setContentFilters({ male_partner: true })
     expect(storyPaused(story('valk_ember_night'))).toBe(false)
-    setAdultContent(false)
   })
 })

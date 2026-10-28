@@ -117,7 +117,6 @@ function resetService() {
           <textarea :value="pre.instructions" rows="9" class="mono" readonly />
           <p class="small muted">回覆的整理方式：{{ pre.output === 'tags' ? '整理成標籤' : '原樣送出' }}</p>
         </details>
-        <p v-if="pre" class="small muted">沒有開啟成人向時，會另外加上「不要加入裸露、性暗示或血腥的內容」。</p>
         <div class="row">
           <button v-if="pre" class="small" @click="image.addPreprocessor(pre)"><GameIcon name="copy" :size="14" />複製成自訂</button>
           <button class="small" @click="image.addPreprocessor()"><GameIcon name="plus" :size="14" />新增預處理指示</button>
@@ -137,7 +136,7 @@ function resetService() {
           </select>
         </label>
         <p class="small muted">
-          ChatGPT 不畫成人內容；開啟成人向、日誌是成人場景時改用這裡選的服務（要先切到那個服務填好 key 與網址）。
+          ChatGPT 不畫成人內容；日誌是成人場景（帶親密場景）時改用這裡選的服務（要先切到那個服務填好 key 與網址）。
           <span v-if="image.sceneAdultService && !image.ready(image.sceneAdultService)" class="warn-text">{{ imageServiceInfo(image.sceneAdultService).name }} 還沒設定好。</span>
         </p>
       </fieldset>

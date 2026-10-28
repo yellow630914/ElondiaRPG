@@ -2,7 +2,7 @@
 // 開放條件、參訪（付錢或花時間換效果）、探索（主動行動的檢定）、場景（條件成立時的固定場景）；打工與受訓走 work.ts、perkActions.ts（格子的種類就是地標 id）。
 
 import { landmarkDef, landmarks, locationById, npcs as namedNpcs, specialMaps, type Degree, type LandmarkDef, type LandmarkScene } from './data'
-import { adultContent, tagsAllowed } from './content'
+import { tagsAllowed } from './content'
 import { characterBody } from './look'
 import { npcFree } from './story'
 import { npcRecord } from './npcs'
@@ -73,7 +73,6 @@ export function landmarkClosed(state: GameState, l: LandmarkDef): string | undef
   if (!condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return `${l.name}現在不開放`
   if (o.min_reputation && !meetsReputation(state, locationById(l.location).faction, o.min_reputation)) return `要在這裡的勢力有 ${o.min_reputation} 點聲望，${l.name}才讓你進去`
   if (o.official && isFugitive(state)) return `${l.name}的人認出了你身上的契約印記，不讓你進去`
-  if (o.adult && !adultContent()) return `${l.name}現在不開放`
   return undefined
 }
 
@@ -263,6 +262,6 @@ export function playLandmarkScene(state: GameState, index: number): Report {
   if (sc.own_cooldown) (r.scenes ??= {})[sc.title] = state.time.day
   else r.scene = state.time.day
   report.outcome = { result: 'success', summary: `在${l.name}${sc.title}：${text}` }
-  if (sc.tags?.includes('adult') && adultContent()) report.narration = { ...report.narration, length: 'long', adult_scene: text }
+  if (sc.tags?.includes('adult')) report.narration = { ...report.narration, length: 'long', adult_scene: text }
   return commitReport(state, report)
 }

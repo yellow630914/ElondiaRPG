@@ -5,7 +5,6 @@ import schema from '../../schemas/report.schema.json'
 import { buildActionPrompt } from '@/narrator/judge'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat, startCombat } from '@/engine/combat'
-import { setAdultContent } from '@/engine/content'
 import { combatRules } from '@/engine/data'
 import { defeatEventFoes, skipDefeatEvent } from '@/engine/defeat'
 import { afterCombat, currentArea, goOutskirts } from '@/engine/grid'
@@ -21,7 +20,6 @@ const rules = combatRules.defeat_event
 const dc = rules.check.dc
 
 afterEach(() => {
-  setAdultContent(false)
   rules.check.dc = dc
 })
 
@@ -45,7 +43,6 @@ function lose(state: GameState, tags = ['villain']): Report {
 
 describe('defeat event', () => {
   it('stops the report right before the villains act and waits for the player', () => {
-    setAdultContent(true)
     rules.check.dc = -100
     const state = game()
     const area = currentArea(state).key
@@ -57,7 +54,7 @@ describe('defeat event', () => {
     expect(currentArea(state).key).toBe(area)
     expect(() => prepareAction(state, { kind: 'free', text: '逃跑' })).toThrow('眼前的處境')
 
-    const options = { config: defaultPromptConfig(), lore: loreItems(worldbook as unknown as Worldbook, {}, []), adult: true, budgetChars: 20000, language: 'zh-Hant' as const }
+    const options = { config: defaultPromptConfig(), lore: loreItems(worldbook as unknown as Worldbook, {}, []), budgetChars: 20000, language: 'zh-Hant' as const }
     const prompt = composeNarration(state, report, options).prompt
     expect(prompt.system).toContain('<defeat_event>')
     expect(prompt.user).toContain('戰敗事件的前半段')
@@ -65,7 +62,7 @@ describe('defeat event', () => {
     const money = state.money_cc
     prepareAction(state, { kind: 'defeat_event', target: 'opt:1', text: rules.options[1]!.label })
     // 判定請求：戰敗事件規則放在 system 的最後（常駐世界書、前段提示詞之後），前面可以共用快取
-    const judge = buildActionPrompt(state, state.pendingAction!, '', { narrative: true, adult: true, lore: { constant: [{ comment: '常駐', content: '世界觀' }], triggered: [] } as never })
+    const judge = buildActionPrompt(state, state.pendingAction!, '', { narrative: true, lore: { constant: [{ comment: '常駐', content: '世界觀' }], triggered: [] } as never })
     const system = judge.sections!.filter((x) => x.part === 'system').map((x) => x.key)
     expect(system.indexOf('defeat')).toBeGreaterThan(system.indexOf('lore_constant'))
     expect(system.slice(-2)).toEqual(['defeat', 'scene'])
@@ -83,14 +80,8 @@ describe('defeat event', () => {
     expect(composeNarration(state, after, options).prompt.user).toContain('戰敗事件的後半段')
   })
 
-  it('needs the adult setting, a matching enemy and a passed charisma check', () => {
+  it('needs a matching enemy and a passed charisma check', () => {
     rules.check.dc = -100
-    const off = game()
-    lose(off)
-    expect(off.pendingDefeat).toBeUndefined()
-    expect(currentArea(off).kind).toBe('settlement')
-
-    setAdultContent(true)
     const plain = game()
     lose(plain, ['merchant'])
     expect(plain.pendingDefeat).toBeUndefined()
@@ -103,7 +94,6 @@ describe('defeat event', () => {
   })
 
   it('triggers more often the more charismatic the hero is', () => {
-    setAdultContent(true)
     const count = (cha: number) => {
       let n = 0
       for (let seed = 1; seed <= 60; seed++) {
@@ -131,8 +121,7 @@ describe('defeat event', () => {
     expect(defeatEventFoes(state, [{ ...foe(['rut']), hp: 0 }])).toHaveLength(0)
   })
 
-  it('can be skipped when the adult setting is turned off afterwards', () => {
-    setAdultContent(true)
+  it('can be skipped when the settings no longer allow it', () => {
     rules.check.dc = -100
     const state = game()
     lose(state)

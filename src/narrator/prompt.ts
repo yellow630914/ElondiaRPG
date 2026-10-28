@@ -13,6 +13,8 @@ import type { PromptEntry } from './promptConfig'
 export interface LoreLike {
   comment: string
   content: string
+  /** 成人向的條目：只在成人場景注入，常駐的放在 system 的後面（見 sharedSystemSections） */
+  adult?: boolean
 }
 
 export interface PromptOptions {
@@ -34,8 +36,6 @@ export interface PromptOptions {
   defeatRules?: string
   /** 玩家修改過的成人場景規則（沒有時用預設） */
   sceneRules?: string
-  /** 成人向是否開啟；關閉時不附上成人場景規則（舊的報告可能還帶著 adult_scene） */
-  adult?: boolean
 }
 
 /** 提示詞的一個區塊；預覽畫面依此顯示順序與大小 */
@@ -86,14 +86,21 @@ export function styleSection(styles: PromptEntry[] | undefined, lead: string): P
 /** 常駐世界書與其他提示詞：敘事與判定共用的前段區塊（放在規則與文風之後） */
 export function sharedSystemSections(o: { instructions?: PromptEntry[]; constantLore?: LoreLike[] }): PromptSection[] {
   const instructions = o.instructions ?? []
+  const shared = (o.constantLore ?? []).filter((e) => !e.adult)
+  const adult = (o.constantLore ?? []).filter((e) => e.adult)
   return [
     {
       key: 'lore_constant', title: '世界書（常駐）', part: 'system',
-      text: o.constantLore?.length ? `<worldbook>\n${loreText(o.constantLore)}\n</worldbook>` : '',
+      text: shared.length ? `<worldbook>\n${loreText(shared)}\n</worldbook>` : '',
     },
     {
       key: 'instructions', title: '其他提示詞（前段）', part: 'system',
       text: instructions.length ? `<instructions>\n${instructions.map((s) => `## ${s.name}\n${s.content.trim()}`).join('\n\n')}\n</instructions>` : '',
+    },
+    // 成人向的常駐條目只在成人場景才有：放在共用的段落之後，一般日誌與成人場景的前段可以共用快取
+    {
+      key: 'lore_adult', title: '世界書（成人向常駐）', part: 'system',
+      text: adult.length ? `<worldbook>\n${loreText(adult)}\n</worldbook>` : '',
     },
   ]
 }
@@ -164,7 +171,7 @@ export const DEFAULT_NARRATION_RULES = `<role>
  * 玩家可以在「提示詞 → 敘事規則」修改；{{player}} 換成主角名。
  */
 export const DEFAULT_DEFEAT_RULES = `<defeat_event>
-這是成人向的戰敗事件（玩家開啟了成人向設定）。登場的所有角色都是成年人。
+這是成人向的戰敗事件。登場的所有角色都是成年人。
 1. 前半段（本次要求會註明）：依 timeline 寫完戰鬥與{{player}}倒下，接著寫敵人圍上來、意圖逐漸明顯的緊張時刻。在對方真正動手之前停筆，最後一句停在懸念上，留給玩家決定怎麼反應；不要寫出之後發生的事，也不要替主角做決定。
 2. 後半段（本次要求會註明）：依報告的結果（主角的反應與成功程度）寫出接下來的經過。大成功與成功時主角化解危機或脫身；部分成功時付出一些代價才脫身；失敗與大失敗時依成人場景規則（<adult_scene>）把這段遭遇當作正文的主體詳細描寫。最後寫主角被丟下或獨自醒來，然後回到安全的地方。
 3. 不可改變報告的結果、數值與損失；敵人的言行依它們的種類、性格與世界書；主角的反應要符合 <protagonist> 的設定。
@@ -179,7 +186,7 @@ export function fillDefeatRules(template: string | undefined, player: string): s
  * 附加在敘事規則之後，要求在正文詳細描寫經過。玩家可以在「提示詞 → 敘事規則」修改；{{player}} 換成主角名。
  */
 export const DEFAULT_SCENE_RULES = `<adult_scene>
-這次的經過包含成人向的親密場景（玩家開啟了成人向設定）。登場的所有角色都是成年人。
+這次的經過包含成人向的親密場景。登場的所有角色都是成年人。
 1. 親密場景是這次正文的主體：具體寫出經過，不要用「一夜過去」「事後」之類的跳接帶過，也不要只寫開頭和結束。
 2. 依時間順序寫出細節：場所與氣氛、雙方的動作與身體的反應、觸覺、氣味、聲音等感官、對話與心理的變化；節奏要有起伏，從開始、過程到結束。
 3. 角色的言行依他們的種族、性格、對主角的態度與彼此的關係；{{player}}的反應依 <protagonist> 的設定與這次的情境（主動、順從、被迫或抗拒），寫出對應的心理。
@@ -191,9 +198,9 @@ export function fillSceneRules(template: string | undefined, player: string): st
   return (template?.trim() ? template : DEFAULT_SCENE_RULES).split('{{player}}').join(player)
 }
 
-/** 報告有沒有要詳細描寫的親密場景（成人向關閉時一律沒有） */
-export function adultSceneOf(report: Report, adult = true): string | undefined {
-  return adult ? report.narration?.adult_scene : undefined
+/** 報告有沒有要詳細描寫的親密場景 */
+export function adultSceneOf(report: Report): string | undefined {
+  return report.narration?.adult_scene
 }
 
 const STYLE_SLOT = '{{style}}'
@@ -219,7 +226,7 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
   const lang = LANGUAGE_NAME[opts.language]
   const { constant, triggered } = Array.isArray(lore) ? { constant: [], triggered: lore } : lore
   const pov = report.narration?.pov === 'third_person' ? '第三人稱' : `第二人稱，以「你」指稱主角${opts.playerName}`
-  const scene = adultSceneOf(report, opts.adult)
+  const scene = adultSceneOf(report)
   // 親密場景至少寫中等篇幅
   const length = LENGTH_HINT[scene && (report.narration?.length ?? 'medium') === 'short' ? 'medium' : report.narration?.length ?? 'medium']
 

@@ -15,6 +15,7 @@ import {
   markStrength, masterNearby, masterTagDc, masterWhereabouts, seekMasterDc, startMasterEvent, unmarkOffers,
 } from '@/engine/slavery'
 import { commitReport, newGame } from '@/engine/state'
+import { setContentFilters } from '@/engine/content'
 import type { GameState, Report } from '@/engine/types'
 import { contractOf, tattooAt, tattoosOf } from '@/engine/tattoos'
 
@@ -143,20 +144,25 @@ describe('the master holds the leash', () => {
     }
   })
 
-  it('keeps adult events behind the adult setting', () => {
+  it('keeps adult events behind the pc_unwilling filter', () => {
     const adult = slaveryRules.master_events.events.filter((e) => e.adult).map((e) => e.id)
     expect(adult).toContain('proposition')
-    const seen = (opts: { adult?: boolean }) => {
+    const seen = () => {
       const ids = new Set<string>()
       for (let seed = 1; seed < 80; seed++) {
         const state = bound()
         state.rngState = seed
-        ids.add(maybeMasterEvent(state, 1, opts)!.id)
+        ids.add(maybeMasterEvent(state, 1)!.id)
       }
       return ids
     }
-    expect([...seen({})].some((id) => adult.includes(id))).toBe(false)
-    expect(seen({ adult: true })).toContain('proposition')
+    expect(seen()).toContain('proposition')
+    setContentFilters({ pc_unwilling: false })
+    try {
+      expect([...seen()].some((id) => adult.includes(id))).toBe(false)
+    } finally {
+      setContentFilters({ pc_unwilling: true })
+    }
   })
 
   it('lets the player answer in their own words', () => {
