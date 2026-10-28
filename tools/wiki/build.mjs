@@ -245,7 +245,7 @@ function home(ref, version) {
     for (const p of g.pages) out.push(`| [${p.page}](${wikiHref(p.page)}) | ${[p.sub, p.desc].filter(Boolean).join('：') || '—'} |`)
     out.push('')
   }
-  out.push('> 這個 wiki 由 repo 裡的文件自動產生（`tools/wiki/build.mjs`），推送版本 tag 時同步。文件以程式為準，見[文件地圖](' + wikiHref('文件地圖') + ')。', '')
+  out.push('> 這個 wiki 由 repo 裡的文件自動產生（`tools/wiki/build.mjs`），每次發布新版本時同步。文件以程式為準，見[文件地圖](' + wikiHref('文件地圖') + ')。', '')
   return out.join('\n')
 }
 

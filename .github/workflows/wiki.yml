@@ -1,12 +1,13 @@
 # Wiki：把 repo 裡的文件產生成 GitHub Wiki 的頁面並推上去（tools/wiki/build.mjs，說明見 docs/README.md 第 5 節）。
-# 推送版本 tag（v0.3.5 這類）時同步，wiki 和那一版的文件一致；也可以手動執行（Actions → Wiki → Run workflow），
-# 連結指向執行時的分支。
+# 推送版本 tag（v0.3.5 這類）時，等發布流程（release.yml）成功之後才同步，wiki 和實際發布的那一版文件一致；
+# 發布失敗時不更新。也可以手動執行（Actions → Wiki → Run workflow），連結指向執行時的分支。
 # 第一次使用前，要先在 repo 的 Wiki 頁籤按「Create the first page」隨便存一頁，GitHub 才會建立 wiki 的 git repo。
 name: Wiki
 
 on:
-  push:
-    tags: ['v*']
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
   workflow_dispatch:
 
 concurrency:
@@ -15,22 +16,33 @@ concurrency:
 
 jobs:
   wiki:
+    # 發布流程：只在推送 tag 觸發、而且成功時（手動重新部署 Pages 不算發布）
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       startsWith(github.event.workflow_run.head_branch, 'v'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # 推送 tag 觸發的發布：head_branch 是 tag 名稱，head_sha 是那一版的 commit
+      REF: ${{ github.event.workflow_run.head_branch || github.ref_name }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: 產生頁面
-        run: node tools/wiki/build.mjs --out "$RUNNER_TEMP/wiki-out" --ref "$GITHUB_REF_NAME"
+        run: node tools/wiki/build.mjs --out "$RUNNER_TEMP/wiki-out" --ref "$REF"
       - name: 推到 wiki
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if ! git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" "$RUNNER_TEMP/wiki"; then
-            echo "::error::找不到 wiki 的 git repo：先到 repo 的 Wiki 頁籤按「Create the first page」建立 wiki，再重新執行。"
+            echo "::error::找不到 wiki 的 git repo：先到 repo 的 Wiki 頁籤按「Create the first page」建立 wiki，再到 Actions → Wiki 手動執行。"
             exit 1
           fi
           cd "$RUNNER_TEMP/wiki"
@@ -44,5 +56,5 @@ jobs:
             echo "wiki 沒有變動"
             exit 0
           fi
-          git commit -m "同步文件（${GITHUB_REF_NAME}）"
+          git commit -m "同步文件（${REF}）"
           git push origin HEAD

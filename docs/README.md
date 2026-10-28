@@ -198,7 +198,7 @@ flowchart TD
 [Wiki](https://github.com/yellow630914/ElondiaRPG/wiki) 由這些文件自動產生，不在 wiki 上直接寫：
 
 - 哪份文件變成哪一頁、放在側邊欄的哪一組（玩家指南、遊戲系統、世界製作、開發、計畫與追蹤），寫在 [`tools/wiki/build.mjs`](../tools/wiki/build.mjs) 的 `GROUPS`。文件之間的連結會改成 wiki 頁面的連結（用代號當連結文字的，例如 `[COMBAT_SYSTEM](COMBAT_SYSTEM.md)`，會顯示成頁名「戰鬥系統」），其他連結改成 GitHub 上那個版本的檔案。
-- 推送版本 tag 時，[`.github/workflows/wiki.yml`](../.github/workflows/wiki.yml) 產生頁面並推到 wiki；也可以在 Actions → Wiki → Run workflow 手動同步。第一次使用前要先在 GitHub 的 Wiki 頁籤按「Create the first page」建立 wiki（隨便存一頁，同步時會被覆蓋）。
+- 推送版本 tag、發布流程（`release.yml`）成功之後，[`.github/workflows/wiki.yml`](../.github/workflows/wiki.yml) 產生那一版的頁面並推到 wiki（發布失敗時不更新）；也可以在 Actions → Wiki → Run workflow 手動同步。第一次使用前要先在 GitHub 的 Wiki 頁籤按「Create the first page」建立 wiki（隨便存一頁，同步時會被覆蓋）。
 - 本機預覽：`node tools/wiki/build.mjs --out wiki-out`（`wiki-out/` 不進 git）。
 - **新增文件時要加進 `GROUPS`**（不放上 wiki 的加進 `SKIP`），否則測試 `src/__tests__/wiki.spec.ts` 會失敗。
 
