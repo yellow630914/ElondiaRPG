@@ -93,10 +93,13 @@ const materials = computed(() => {
 
 // ---- 欄位 ----
 const use = computed(() => (draft.value.use ??= {}) as ItemUse)
-// 吃喝可以給的狀態：到下次長休就解除的那些（用餐、喝酒、磨利……）
-const conditionList = Object.entries(companionRules.conditions)
-  .filter(([id, c]) => !id.startsWith('$') && c.clears === 'long_rest')
-  .map(([id, c]) => ({ id, name: `${c.name}：${c.desc}` }))
+// 吃喝可以給的狀態：到下次長休就解除的那些（用餐、喝酒、磨利……；名稱與說明可以在狀態頁籤改）
+const conditionList = computed(() => {
+  void content.version
+  return Object.entries(companionRules.conditions)
+    .filter(([id, c]) => !id.startsWith('$') && c.clears === 'long_rest')
+    .map(([id, c]) => ({ id, name: `${c.name}：${c.desc}` }))
+})
 function setTool(kind: string) {
   if (!kind) delete draft.value.tool
   else draft.value.tool = {

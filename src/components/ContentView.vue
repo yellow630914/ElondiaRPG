@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, contractDef, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
+import { abilities, className, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { builtinSpecialMap, newSpecialMap, newSpecialMapId } from '@/engine/specialMapMods'
@@ -14,7 +14,7 @@ import { BODY_NAME } from '@/engine/traits'
 import {
   ABILITY_TYPES, abilityClasses, builtinAbility, builtinBase, builtinEnemy, builtinMaterial, builtinNpc, builtinPerk, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions,
   ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk, builtinStatus, newStatus,
-  builtinMark, builtinTattoo,
+  builtinMark, builtinTattoo, conditionIds,
 } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { useContent } from '@/stores/content'
@@ -27,6 +27,7 @@ import ItemEditor from './content/ItemEditor.vue'
 import NpcEditor from './content/NpcEditor.vue'
 import PerkEditor from './content/PerkEditor.vue'
 import StatusEditor from './content/StatusEditor.vue'
+import ConditionEditor from './content/ConditionEditor.vue'
 import CountersEditor from './content/CountersEditor.vue'
 import StoryEditor from './content/StoryEditor.vue'
 import TattooEditor from './content/TattooEditor.vue'
@@ -117,13 +118,18 @@ function resetFilters() {
 const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', shops: '', events: '', npcs: '', stories: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
 const tattooKind = ref('')
-// 狀態：增益、減益
+// 狀態：增益、減益、非戰鬥狀態（列表的 key：戰鬥狀態是 id，非戰鬥狀態是 c:<id>）
 const statusKind = ref('')
 // 事件：旅途、城鎮（列表的 key 是事件 id，rules 是事件設定）
 const eventScope = ref('')
 /** 清單上的效果簡述：第一項效果，太長就截斷（完整的在編輯畫面） */
 function shortStatus(s: Parameters<typeof describeStatus>[0]): string {
   const parts = describeStatus(s).split('；')
+  const first = parts[0]!
+  return first.length > 12 ? `${first.slice(0, 11)}…` : parts.length > 1 ? `${first}…` : first
+}
+function shortCondition(c: Parameters<typeof describeCondition>[0]): string {
+  const parts = describeCondition(c).split('；')
   const first = parts[0]!
   return first.length > 12 ? `${first.slice(0, 11)}…` : parts.length > 1 ? `${first}…` : first
 }
@@ -271,7 +277,13 @@ const rows = computed<Row[]>(() => {
     list = Object.entries(statuses)
       .filter(([, s]) => !statusKind.value || s.kind === statusKind.value)
       .map(([id, s]) => ({ key: id, name: `${s.kind === 'buff' ? '🟢' : '🔴'} ${s.name}`, note: shortStatus(s), status: st(!!m.statuses?.[id], !builtinStatus(id)), sort: s.kind === 'buff' ? 0 : 1 }))
-      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+    const conds = !statusKind.value || statusKind.value === 'cond'
+      ? conditionIds().map((id) => {
+        const c = companionRules.conditions[id]!
+        return { key: `c:${id}`, name: `🏕️ ${c.name}`, note: shortCondition(c), status: st(!!m.conditions?.[id], false), sort: 2 }
+      })
+      : []
+    list = [...list, ...conds].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || (a.sort ?? 0) - (b.sort ?? 0))
   } else if (sub.value === 'perks') {
     list = perkRules.perks
       .filter((p) => !perkCat.value || (perkCat.value === 'race' ? !!p.race : !p.race && perkCategory(p) === perkCat.value))
@@ -373,7 +385,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n(m.statuses ?? {}), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -382,7 +394,7 @@ const current = computed(() => {
   if (!key) return ''
   const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
     : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? key === COUNTERS_KEY || stories.some((d) => d.id === key)
-    : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key)
+    : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? (key.startsWith('c:') ? conditionIds().includes(key.slice(2)) : !!statuses[key]) : sub.value === 'perks' ? !!perkDef(key)
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
     : sub.value === 'landmarks' ? !!landmarks[key]
     : sub.value === 'specialMaps' ? !!specialMaps[key]
@@ -472,7 +484,8 @@ function create() {
 /** 以目前選的項目為範本複製一份自建項目 */
 function duplicate() {
   const key = current.value
-  if (!key) return
+  // 非戰鬥狀態不能自建
+  if (!key || (sub.value === 'statuses' && key.startsWith('c:'))) return
   try {
     if (sub.value === 'enemies') {
       const id = newModId('enemy')
@@ -616,8 +629,8 @@ function resetAll() {
     <div v-else class="layout">
       <section class="panel list-panel">
         <div class="row">
-          <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+          <button class="small primary" :disabled="sub === 'statuses' && statusKind === 'cond'" :title="sub === 'statuses' && statusKind === 'cond' ? '非戰鬥狀態目前只能修改內建的' : ''" @click="create">{{ NEW_LABEL[sub] }}</button>
+          <button class="small" :disabled="!current || (sub === 'statuses' && current.startsWith('c:'))" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
         </div>
         <div class="row">
           <input v-model="search" placeholder="搜尋名稱" class="grow" />
@@ -752,9 +765,10 @@ function resetAll() {
         </div>
         <div v-if="sub === 'statuses'" class="row">
           <select v-model="statusKind" class="grow">
-            <option value="">增益與減益</option>
+            <option value="">所有狀態</option>
             <option value="buff">🟢 增益（BUFF）</option>
             <option value="debuff">🔴 減益（DEBUFF）</option>
+            <option value="cond">🏕️ 非戰鬥狀態（用餐、喝酒……）</option>
           </select>
         </div>
         <div v-if="sub === 'tattoos'" class="row">
@@ -828,6 +842,7 @@ function resetAll() {
         <EnemyEditor v-else-if="sub === 'enemies'" :id="current" :key="`e-${current}`" @deleted="select('')" />
         <ItemEditor v-else-if="sub === 'items'" :key="`i-${current}`" :name="current" @renamed="select" @deleted="select('')" />
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
+        <ConditionEditor v-else-if="sub === 'statuses' && current.startsWith('c:')" :id="current.slice(2)" :key="current" />
         <StatusEditor v-else-if="sub === 'statuses'" :id="current" :key="`s-${current}`" @deleted="select('')" />
         <PerkEditor v-else-if="sub === 'perks'" :id="current" :key="`p-${current}`" @deleted="select('')" />
         <ShopEditor v-else-if="sub === 'shops'" :id="current" :key="`shop-${current}`" @deleted="select('')" />

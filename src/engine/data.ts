@@ -1110,6 +1110,15 @@ export function conditionTone(id: string): 'good' | 'bad' | 'plain' {
   return st ? (st.kind === 'buff' ? 'good' : 'bad') : 'plain'
 }
 
+/** 非戰鬥狀態的效果簡述（內容編輯器的清單與編輯畫面） */
+export function describeCondition(c: ConditionDef): string {
+  const parts: string[] = []
+  if (c.check_penalty) parts.push(`${c.check_attrs?.length ? c.check_attrs.map(attrName).join('、') : '所有'}檢定 ${c.check_penalty < 0 ? '+' : '-'}${Math.abs(c.check_penalty)}`)
+  if (c.combat_temp_hp) parts.push(`每場戰鬥開始時暫時生命 ${c.combat_temp_hp}`)
+  if (c.combat_mods && Object.values(c.combat_mods).some(Boolean)) parts.push(`戰鬥中${describeStatus({ name: '', kind: 'buff', mods: c.combat_mods })}`)
+  return parts.join('；') || '沒有數值效果'
+}
+
 export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal'
 export interface ContractDef {
   name: string

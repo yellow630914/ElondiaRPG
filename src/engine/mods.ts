@@ -14,7 +14,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
+  type Control, type LuckRoll, type StatusDef, type ConditionDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -30,6 +30,7 @@ import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type Co
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
+import { travelEvents } from './road'
 import { sanitizeIcon, setCategoryIcons } from './itemIcons'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
@@ -92,6 +93,9 @@ export interface StatusMod extends StatusDef {
   custom?: boolean
 }
 
+/** 非戰鬥狀態（companions.json 的 conditions：用餐、喝酒、受罰、祝福……）：內建的可以修改，不能刪除，目前不能自建 */
+export type ConditionMod = ConditionDef
+
 export interface ContentMods {
   version: 1
   enemies: Record<string, EnemyMod>
@@ -104,6 +108,8 @@ export interface ContentMods {
   perks: Record<string, PerkMod>
   /** 舊的自訂內容沒有這一欄（讀取時補上） */
   statuses: Record<string, StatusMod>
+  /** 非戰鬥狀態（舊的自訂內容沒有這一欄，讀取時補上） */
+  conditions: Record<string, ConditionMod>
   /** 刺青圖樣（普通刺青、誓約印記） */
   tattoos: Record<string, TattooMod>
   /** 奴隸印記的模板 */
@@ -130,7 +136,7 @@ export interface CategoryIconMod {
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, categoryIcons: {}, counters: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, categoryIcons: {}, counters: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -153,6 +159,7 @@ const snapshot = {
   abilities: clone(abilities),
   perks: clone(perkRules.perks),
   statuses: clone(statuses),
+  conditions: clone(companionRules.conditions),
   tattoos: clone(tattooRules.templates),
   marks: clone(slaveryRules.contracts),
   markRules: clone(currentMarkRules()),
@@ -174,6 +181,18 @@ export function builtinMarkRules(): MarkRulesMod {
 export function builtinStatus(id: string): StatusDef | undefined {
   return snapshot.statuses[id] ? clone(snapshot.statuses[id]!) : undefined
 }
+
+export function builtinCondition(id: string): ConditionDef | undefined {
+  return !id.startsWith('$') && snapshot.conditions[id] ? clone(snapshot.conditions[id]!) : undefined
+}
+
+/** 內建的非戰鬥狀態的 id（不含 $comment） */
+export function conditionIds(): string[] {
+  return Object.keys(snapshot.conditions).filter((k) => !k.startsWith('$'))
+}
+
+/** 由程式加上與解除的非戰鬥狀態（奴隸印記、逃亡、暫時離隊）：解除時機、同組與疊加不能改 */
+export const SYSTEM_CONDITIONS = ['slave_mark', 'fugitive', 'away']
 
 export function builtinPerk(id: string): PerkDef | undefined {
   const p = snapshot.perks.find((x) => x.id === id)
@@ -223,6 +242,7 @@ function restore() {
   maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon)
   namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs))
   replaceRecord(statuses, snapshot.statuses)
+  replaceRecord(companionRules.conditions, snapshot.conditions)
   replaceRecord(tattooRules.templates, snapshot.tattoos)
   replaceRecord(slaveryRules.contracts, snapshot.marks)
   applyMarkRules(clone(snapshot.markRules))
@@ -455,6 +475,10 @@ export function applyContent(mods: ContentMods): string[] {
   // 狀態最先：能力、物品、其他狀態的命中附加都會用到
   tryEach('狀態', mods.statuses ?? {}, (id, m) => {
     statuses[id] = strip(m, ['custom'])
+  })
+  // 非戰鬥狀態（用餐、喝酒……）：物品、事件、休息會用到
+  tryEach('非戰鬥狀態', mods.conditions ?? {}, (id, m) => {
+    companionRules.conditions[id] = sanitizeCondition(id, m)
   })
   // 刺青與奴隸印記：事件、特殊任務會用到
   tryEach('刺青圖樣', mods.tattoos ?? {}, (id, m) => {
@@ -991,6 +1015,10 @@ export function normalizeMods(raw: unknown): ContentMods {
   const statusIds = new Set([...Object.keys(statuses), ...Object.keys(r.statuses ?? {})])
   for (const [id, v] of Object.entries(r.statuses ?? {})) out.statuses[id] = sanitizeStatus(id, v, !!v.custom || !snapshot.statuses[id], statusIds)
   for (const [id, s] of Object.entries(out.statuses)) if (s.custom && !statuses[id]) statuses[id] = strip(s, ['custom'])
+  // 非戰鬥狀態：只收內建的（不存在的 id 略過）
+  for (const [id, v] of Object.entries(r.conditions ?? {})) {
+    if (builtinCondition(id) && v && typeof v === 'object') out.conditions[id] = sanitizeCondition(id, v)
+  }
   // 劇情計數器：任務與事件的檢查會看計數器存不存在，先登錄自建的
   for (const [id, v] of Object.entries(r.counters ?? {})) {
     const key = cleanCounterId(id)
@@ -1417,6 +1445,52 @@ export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: bool
   if (raw.special && raw.special in STATUS_SPECIALS) out.special = raw.special
   if (raw.charges) out.charges = int(raw.charges, 1, 10, 1)
   if (custom) out.custom = true
+  return out
+}
+
+/**
+ * 整理非戰鬥狀態：名稱、說明、檢定加減（check_penalty，負數是加值）與作用的屬性、每場戰鬥的加減與暫時生命、
+ * 長休解除、同組（rank 高的取代低的）、再獲得一次變成另一個狀態、獲得時拿掉的狀態。只能改內建的。
+ */
+export function sanitizeCondition(id: string, raw: Partial<ConditionMod>): ConditionMod {
+  const base = builtinCondition(id)
+  if (!base) throw new Error('只能修改內建的非戰鬥狀態')
+  const out: ConditionMod = { name: str(raw.name, 10) || base.name, desc: str(raw.desc, 160) || base.desc }
+  const pen = int(raw.check_penalty, -5, 5, 0)
+  if (pen) out.check_penalty = pen
+  const attrs = Array.isArray(raw.check_attrs) ? ATTR_IDS.filter((a) => raw.check_attrs!.includes(a)) : []
+  if (pen && attrs.length && attrs.length < ATTR_IDS.length) out.check_attrs = attrs
+  const m = mods(raw.combat_mods, -5, 5)
+  if (m) out.combat_mods = m
+  const hp = int(raw.combat_temp_hp, 0, 50, 0)
+  if (hp) out.combat_temp_hp = hp
+  // 系統狀態：照內建的
+  const src = SYSTEM_CONDITIONS.includes(id) ? base : raw
+  if (src.clears === 'long_rest') out.clears = 'long_rest'
+  const group = str(src.group, 16)
+  if (/^[a-z][a-z0-9_]*$/.test(group)) {
+    out.group = group
+    out.rank = int(src.rank, 1, 9, 1)
+  }
+  const others = conditionIds().filter((k) => k !== id && !SYSTEM_CONDITIONS.includes(k))
+  if (typeof src.stacks_to === 'string' && others.includes(src.stacks_to)) out.stacks_to = src.stacks_to
+  const rep = Array.isArray(src.replaces) ? others.filter((k) => src.replaces!.includes(k)) : []
+  if (rep.length) out.replaces = rep
+  return out
+}
+
+/** 哪些地方會給或拿掉這個非戰鬥狀態（編輯畫面參考用）：酒館菜單、物品與工具、特殊任務、事件、地標、奴隸生活，以及目前存檔裡有這個狀態的角色 */
+export function conditionUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  const has = (v: unknown) => JSON.stringify(v ?? null).replace(/\s+/g, '').includes(`"condition":"${id}"`)
+  for (const m of itemRules.meals.menu) if (m.condition === id) out.push(`酒館菜單「${m.name}」`)
+  for (const i of itemRules.items) if (i.use?.condition === id) out.push(`物品「${i.name}」`)
+  for (const t of Object.values(itemRules.tools)) if (t.condition === id) out.push(`工具「${t.name}」`)
+  for (const st of stories) if (has(st)) out.push(`特殊任務「${st.title}」`)
+  for (const t of travelEvents.templates) if (has(t)) out.push(`事件「${t.title}」`)
+  for (const l of Object.values(landmarks)) if (has(l)) out.push(`地標「${l.name}」`)
+  if (has(slaveryRules)) out.push('奴隸生活的事件')
+  for (const c of state?.party ?? []) if (c.status.includes(id)) out.push(`目前存檔的「${c.name}」`)
   return out
 }
 
