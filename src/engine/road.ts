@@ -78,7 +78,7 @@ export interface RoadTemplate {
   stages?: number[]
   /** 寄生物：哪些時機（step 走動、travel 旅途、rest 長休之後；沒有時任何時機） */
   moments?: ('step' | 'travel' | 'rest')[]
-  /** 內容標籤（成人向、主角非自願……）：設定沒有開啟或關掉時不出現 */
+  /** 內容標籤（成人向、主角非自願……）：設定裡關掉的不出現 */
   tags?: ContentTag[]
   /** 只給這些體型的主角 */
   pc_body?: Body[]
@@ -140,7 +140,7 @@ export const ROAD_KEY = 'road'
  * 出發：在城門（或地下城的出口）畫出這趟旅程的單行道，站在起點。
  * 被城門的衛兵攔下時回傳盤查的紀錄，不會出發。
  */
-export function startJourney(state: GameState, destination: string, intent?: string, opts: { adult?: boolean } = {}): Report | undefined {
+export function startJourney(state: GameState, destination: string, intent?: string, ): Report | undefined {
   if (state.road) throw new Error('已經在旅途中了')
   const path = shortestPath(state.location, destination)
   if (!path || path.legs.length === 0) throw new Error(`無法前往 ${destination}`)
@@ -162,7 +162,6 @@ export function startJourney(state: GameState, destination: string, intent?: str
     timeline: [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `出發・前往${locationById(destination).name}`, result: 'none' }],
     hpBefore: Object.fromEntries(state.party.map((m) => [m.id, m.hp])),
     ...(intent ? { intent } : {}),
-    ...(opts.adult ? { adult: true } : {}),
   }
   delete state.roadEvent
   delete state.townEvent
@@ -343,7 +342,7 @@ function triggerEvent(state: GameState, road: RoadState, area: Area, x: number, 
   const ev = cell.event!
   if (ev.tier === 'master') {
     cell.done = true
-    maybeMasterEvent(state, 1, { adult: road.adult })
+    maybeMasterEvent(state, 1)
     return {}
   }
   if (ev.tier === 'special') {

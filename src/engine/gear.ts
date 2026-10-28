@@ -7,9 +7,8 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, mulResist, type AffinityMap, type AttrId, type ItemDef, type Mods } from './data'
+import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, mulResist, type AffinityMap, type AttrId, type Mods } from './data'
 import { describeEffects } from './perks'
-import { adultContent } from './content'
 import type { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
 
@@ -51,27 +50,19 @@ export interface BaseDef {
   icon?: string
   /** 服裝（regular 常規、anime 二次元、adult 成人向）：不出現在寶箱與掉落的隨機裝備；裁縫店每天另外上架 */
   outfit?: OutfitKind
-  /** 成人向：成人向內容關閉時完全隱藏（商店、寶箱、建角、打造、NPC 配裝、主人強制裝備） */
+  /** 成人向的底材：內容編輯器的篩選用 */
   adult?: boolean
 }
 
 export type OutfitKind = 'regular' | 'anime' | 'adult'
 export const OUTFIT_KINDS: Record<OutfitKind, string> = { regular: '常規服裝', anime: '二次元服裝', adult: '成人向服裝' }
 
-/** 這個底材現在看得到（存在，而且不是成人向、或成人向內容開著） */
+/** 這個底材存在（自訂內容可能刪掉了） */
 export function baseShown(id: string): boolean {
-  const b = gearRules.bases[id]
-  return !!b && (!b.adult || adultContent())
+  return !!gearRules.bases[id]
 }
 
-/** 這件物品現在看得到：成人向的物品（或用成人向底材做的裝備）在成人向內容關閉時隱藏 */
-export function itemShown(i: Pick<ItemDef, 'adult' | 'gear'> | undefined): boolean {
-  if (!i) return false
-  if (adultContent()) return true
-  return !i.adult && (!i.gear || !gearRules.bases[i.gear.base]?.adult)
-}
-
-/** 可以打造、隨機生成的底材（不含束縛用的；成人向內容關閉時不含成人向的） */
+/** 可以打造、隨機生成的底材（不含束縛用的） */
 export function ordinaryBases(): string[] {
   return Object.entries(gearRules.bases).filter(([id, b]) => !b.restraint && baseShown(id)).map(([id]) => id)
 }

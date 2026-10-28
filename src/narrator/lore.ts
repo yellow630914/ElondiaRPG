@@ -36,7 +36,7 @@ export interface LoreItem {
   mode: LoreMode
   /** 注入順序：越小越前面 */
   order: number
-  /** 成人向：設定開啟才注入 */
+  /** 成人向：只在成人場景（日誌帶親密場景、行動可能進入親密場景）注入 */
   adult: boolean
   builtin: boolean
   /** 內建條目被玩家改過 */
@@ -49,7 +49,7 @@ export interface LoreItem {
 export type LoreOverride = Partial<Pick<LoreItem, 'comment' | 'content' | 'keys' | 'mode' | 'order' | 'adult'>>
 
 export interface LoreOptions {
-  /** 是否注入成人向條目（敘事傾向、情色喜劇法則、相關價格參考） */
+  /** 這次是成人場景：注入成人向條目（敘事傾向、情色喜劇法則、相關價格參考） */
   adult: boolean
   /** 注入字數上限 */
   budgetChars: number
@@ -66,7 +66,7 @@ const HARDCODED_NAME = '沈頤'
 const TRAVEL_ONLY = [46]
 // 改由引擎實作或與遊戲 UI 衝突的條目：預設停用
 const EXCLUDED = new Set([1, 2, 3, 4, 8, 10, 11, 29, 30, 31])
-// 成人向條目：設定開啟才注入；其中 38、39 是敘事法則，開啟時常駐
+// 成人向條目：只在成人場景注入；其中 38、39 是敘事法則，成人場景時常駐
 const ADULT = new Set([16, 17, 18, 38, 39])
 const ADULT_CONSTANT = new Set([38, 39])
 // 巨龍條目沒有關鍵字，以「龍」觸發
@@ -91,7 +91,7 @@ export function defaultLoreItem(e: WorldbookEntry): LoreItem {
   if (e.uid === STYLE) return { ...base, mode: 'off', note: '文風改由「文風」條目管理；需要時可以開啟' }
   if (TRAVEL_ONLY.includes(e.uid)) return { ...base, mode: 'travel', note: '只在旅行報告注入' }
   if (EXCLUDED.has(e.uid)) return { ...base, mode: 'off', note: '規則已由遊戲引擎實作，或是聊天用的格式指示' }
-  if (ADULT_CONSTANT.has(e.uid)) return { ...base, mode: 'constant', note: '成人向：設定開啟時常駐' }
+  if (ADULT_CONSTANT.has(e.uid)) return { ...base, mode: 'constant', note: '成人向：成人場景時常駐' }
   if (e.uid === DRAGON) return { ...base, mode: 'keyword', keys: ['龍', '龙'], note: '原本沒有關鍵字，以「龍」觸發' }
   return { ...base, mode: 'keyword' }
 }
@@ -115,7 +115,7 @@ export const LORE_STATUS_NAME: Record<LoreStatus, string> = {
   triggered: '觸發',
   idle: '未觸發',
   off: '停用',
-  adult: '成人（未開啟）',
+  adult: '成人（不是成人場景）',
   budget: '超出字數上限',
 }
 

@@ -4,7 +4,7 @@
 //    主角做一次魅力檢定（敵人有沒有起意），成功就觸發：戰報的敘事停在對方準備動手的前一刻（narration.mode = defeat_cliffhanger）。
 // 2. 玩家從三個選項選一個，或自己描述反應（主動行動 defeat_event，AI 判定時用另一套敘事規則寫出後續）。
 // 3. 結果依成功程度：可能再損失一些錢、驚魂未定；之後和一般戰敗一樣（地下城回到入口、近郊回到城門）。
-// 設定關閉成人向時不會發生；已經在等待回應時關閉，可以直接略過。
+// 內容篩選關掉「主角非自願」或戰敗事件的設定關閉時不會發生；已經在等待回應時關閉，可以直接略過。
 
 import { attrOf, mod } from './character'
 import { adultScene, defeatAdultAllowed } from './content'
@@ -115,7 +115,7 @@ export function applyDefeatResponse(state: GameState, report: Report, degree: De
   return lost > 0 ? `被搜走了 ${formatMoney(lost)}。` : ''
 }
 
-/** 關閉成人向時，等待中的戰敗事件直接略過（和一般戰敗一樣離開） */
+/** 戰敗事件不再允許時（內容篩選、戰敗事件的設定），等待中的事件直接略過（和一般戰敗一樣離開） */
 export function skipDefeatEvent(state: GameState) {
   if (!state.pendingDefeat) return
   delete state.pendingDefeat

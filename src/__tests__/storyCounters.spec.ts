@@ -99,13 +99,11 @@ describe('npc stage identity', () => {
 describe('content tags', () => {
   it('hides tagged stories and options the settings turn off, and stories for other bodies', async () => {
     const { canStart, optionOpen } = await import('@/engine/story')
-    const { setAdultContent, setContentFilters, defeatAdultAllowed, setDefeatAdult } = await import('@/engine/content')
+    const { setContentFilters, defeatAdultAllowed, setDefeatAdult } = await import('@/engine/content')
     const state = game()
     const def = { id: 'tag_test', title: '測試', summary: '', start: { kind: 'manual' as const }, nodes: [] }
     expect(canStart(state, def)).toBe(true)
-    setAdultContent(false)
-    expect(canStart(state, { ...def, tags: ['adult'] })).toBe(false)
-    setAdultContent(true)
+    expect(canStart(state, { ...def, tags: ['adult'] })).toBe(true)
     expect(canStart(state, { ...def, tags: ['adult', 'ntr'] })).toBe(true)
     setContentFilters({ ntr: false })
     expect(canStart(state, { ...def, tags: ['adult', 'ntr'] })).toBe(false)
@@ -126,7 +124,6 @@ describe('content tags', () => {
     expect(defeatAdultAllowed('fem')).toBe(false)
     setContentFilters({ pc_unwilling: true })
     setDefeatAdult('all')
-    setAdultContent(false)
   })
 })
 

@@ -36,8 +36,8 @@ const settings = useSettings()
 const s = computed(() => game.state!)
 const inCombat = computed(() => !!s.value.combat)
 const m = computed(() => s.value.party.find((x) => x.id === props.member) ?? s.value.party[0]!)
-// 寄生物：只有身上有的時候（成人向開啟）
-const tabs = computed(() => CHAR_TABS.filter((t) => (t.id !== 'parasites' || (settings.adult && !!parasitesOf(m.value).length))
+// 寄生物：只有身上有的時候
+const tabs = computed(() => CHAR_TABS.filter((t) => (t.id !== 'parasites' || !!parasitesOf(m.value).length)
   && (!isNoncombatant(m.value) || (t.id !== 'abilities' && (t.id !== 'gear' || !!m.value.gear)))))
 // 分頁不適用這個角色時（例如非戰鬥人員的能力）回到「屬性與戰鬥」：開啟、換角色、換分頁時都檢查
 watch([tabs, () => props.tab, () => props.open], () => {

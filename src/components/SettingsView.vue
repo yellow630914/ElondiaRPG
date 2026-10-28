@@ -80,11 +80,11 @@ function doReset() {
 
     <section class="panel">
       <h2 class="head"><GameIcon name="shuffle" :size="20" />功能分配
-        <Hint :text="`只有「敘事正文」${settings.adult ? '與「成人場景正文」' : ''}會寫出日誌裡的正文，適合用寫作能力好的模型；其他功能只輸出 JSON，可以改用便宜、快速的模型。`" />
+        <Hint text="只有「敘事正文」與「成人場景正文」會寫出日誌裡的正文，適合用寫作能力好的模型；其他功能只輸出 JSON，可以改用便宜、快速的模型。帶親密場景的日誌一律交給「成人場景正文」：請確認那個來源的使用政策允許此類內容，不允許時模型可能拒絕生成。" />
       </h2>
       <table class="routes small">
         <tbody>
-          <tr v-for="f in AI_FEATURES.filter((x) => x.id !== 'adult' || settings.adult)" :key="f.id">
+          <tr v-for="f in AI_FEATURES" :key="f.id">
             <td class="name"><GameIcon :name="f.prose ? 'edit' : 'code'" :size="14" :title="f.prose ? '寫正文' : '只輸出 JSON'" /> {{ f.name }}</td>
             <td>
               <select v-model.number="settings.routes[f.id]">
@@ -142,17 +142,13 @@ function doReset() {
           <span class="lab">世界書注入字數上限 <Hint text="文風、世界書條目與其他提示詞在畫面上方的「提示詞」頁籤調整，也可以在那裡預覽送出的內容。" /></span>
           <input v-model.number="settings.loreBudget" type="number" min="2000" step="1000" style="width: 140px" />
         </label>
-        <label class="check">
-          <input v-model="settings.adult" type="checkbox" /> 成人向：注入成人向世界書條目，並開啟成人向的事件 <Hint text="世界書條目例如敘事傾向、情色喜劇法則等；事件例如主人的性邀約。" />
-        </label>
-        <p v-if="settings.adult" class="small muted">請確認你使用的 AI 服務的使用政策允許此類內容；不允許時模型可能拒絕生成。</p>
         <div class="row checks">
           <span class="lab">內容篩選 <Hint text="取消勾選的內容不會出現：帶這個標籤的特殊任務不會開放、任務裡帶這個標籤的選項不會出現。進行中的任務不受影響。" /></span>
           <label v-for="t in FILTER_TAGS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
             <input v-model="settings.contentFilters[t]" type="checkbox" /> {{ CONTENT_TAGS[t].name }}
           </label>
         </div>
-        <label v-if="settings.adult">
+        <label>
           <span class="lab">戰敗色情事件 <Hint text="戰敗後敵人（發情的怪物、惡人……）起意的事件。關閉「主角非自願」時也不會發生。" /></span>
           <select v-model="settings.defeatAdult">
             <option value="all">開啟</option>

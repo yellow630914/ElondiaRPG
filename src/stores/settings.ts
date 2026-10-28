@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { setAdultContent, setContentFilters, setDefeatAdult, type DefeatAdultMode, type FilterTag } from '@/engine/content'
+import { setContentFilters, setDefeatAdult, type DefeatAdultMode, type FilterTag } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { setLongRestGap } from '@/engine/rest'
@@ -28,7 +28,7 @@ export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'n
 
 export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: boolean }[] = [
   { id: 'narration', name: '敘事正文', desc: '所有日誌的詳細經過：戰鬥、旅行、事件，以及主動行動判定之後的經過；也可以在每則日誌手動生成', prose: true },
-  { id: 'adult', name: '成人場景正文', desc: '成人向開啟時，帶親密場景的日誌（娼館、主人的邀約、戰敗後的遭遇、AI 判定認為有親密場景的行動）改用這個來源寫經過；提示詞用套用到「成人場景」的文風與其他提示詞', prose: true },
+  { id: 'adult', name: '成人場景正文', desc: '帶親密場景的日誌（娼館、主人的邀約、戰敗後的遭遇、AI 判定認為有親密場景的行動）改用這個來源寫經過；提示詞用套用到「成人場景」的文風與其他提示詞', prose: true },
   { id: 'judge', name: '主動行動判定', desc: '「擲骰的行動交給 AI 判定」開啟時：看骰值決定成敗與後果，只回傳 JSON；經過交給「敘事正文」（除非下方勾選「判定時順便寫出經過」）', prose: false },
   { id: 'roster', name: '居民潤飾', desc: '「AI 設計 → 居民」開啟時：第一次到一個地點時，設計居民的名字、外貌與性格（JSON）', prose: false },
   { id: 'shop', name: '商店清單', desc: '「AI 設計 → 商店清單」開啟時：第一次進店時設計今天的交易清單（JSON）', prose: false },
@@ -107,7 +107,6 @@ interface SavedSettings {
   creationGearBudget: number
   /** 完整保留最近幾則日誌（更早的封存，見 docs/SAVES.md 第 6 節） */
   logKeep: number
-  adult: boolean
   /** 內容篩選：false 的標籤（NTR、非處女、主角非自願）的特殊任務與事件不出現 */
   contentFilters: Record<FilterTag, boolean>
   /** 戰敗色情事件：全部、男性形象的主角不發生、關閉 */
@@ -159,7 +158,6 @@ function defaults(): SavedSettings {
     stepMinutes: { ...mapsJson.generation.step_minutes },
     creationGearBudget: gearRules.creation.default_budget,
     logKeep: 200,
-    adult: false,
     contentFilters: { ntr: true, non_virgin: true, pc_unwilling: true, male_partner: true },
     defeatAdult: 'all',
     language: 'zh-Hant',
@@ -172,7 +170,7 @@ function defaults(): SavedSettings {
   }
 }
 
-type OldSettings = Partial<SavedSettings> & { autoNarrate?: boolean; provider?: ProviderId; configs?: Record<ProviderId, ProviderConfig> }
+type OldSettings = Partial<SavedSettings> & { adult?: boolean; autoNarrate?: boolean; provider?: ProviderId; configs?: Record<ProviderId, ProviderConfig> }
 
 function load(): SavedSettings {
   const base = defaults()
@@ -195,7 +193,8 @@ function load(): SavedSettings {
     // 舊版沒有「成人場景正文」：和敘事正文用同一個來源
     const routes = { ...defaultRoutes(), ...(saved.routes ? { adult: saved.routes.narration ?? 0 } : {}), ...saved.routes }
     for (const k of Object.keys(routes) as AiFeature[]) if (!(routes[k] >= 0 && routes[k] < SOURCE_COUNT)) routes[k] = 0
-    const { autoNarrate: _a, provider: _p, configs: _c, ...rest } = saved
+    // 舊版的「成人向」開關已經拿掉
+    const { autoNarrate: _a, provider: _p, configs: _c, adult: _adult, ...rest } = saved
     const defeatAdult = (['all', 'not_masc', 'off'] as const).includes(saved.defeatAdult as DefeatAdultMode) ? saved.defeatAdult! : base.defeatAdult
     // 舊版的居民、商店清單、談判方式跟著「AI 判定」一起開關：沿用當時的狀態
     const designWas = saved.aiJudge ?? false
@@ -224,9 +223,7 @@ export const useSettings = defineStore('settings', () => {
   watch(stepMinutes, (m) => setStepMinutes(m), { immediate: true, deep: true })
   const creationGearBudget = ref(initial.creationGearBudget)
   const logKeep = ref(initial.logKeep)
-  const adult = ref(initial.adult)
-  // 引擎的成人向開關（娼館／按摩店等名稱、成人向事件）
-  watch(adult, setAdultContent, { immediate: true })
+  // 引擎的內容篩選與戰敗事件設定
   const contentFilters = ref(initial.contentFilters)
   watch(contentFilters, (f) => setContentFilters(f), { immediate: true, deep: true })
   const defeatAdult = ref(initial.defeatAdult)
@@ -247,7 +244,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, adult, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -267,7 +264,6 @@ export const useSettings = defineStore('settings', () => {
         })) as Record<StepPlace, number>,
         creationGearBudget: gearBudget(),
         logKeep: logKeep.value,
-        adult: adult.value,
         contentFilters: { ...contentFilters.value },
         defeatAdult: defeatAdult.value,
         language: language.value,
@@ -319,9 +315,9 @@ export const useSettings = defineStore('settings', () => {
   /** 判定只回傳 JSON，經過交給敘事正文：預設如此；只有勾選「順便寫出經過」而且同一個來源時才合併 */
   const splitJudgeNarrative = () => !judgeWritesNarrative.value || sourceIndex('judge') !== sourceIndex('narration')
 
-  /** 寫這則日誌的經過用哪個功能的來源：帶親密場景（成人向開啟時）用「成人場景正文」 */
+  /** 寫這則日誌的經過用哪個功能的來源：帶親密場景用「成人場景正文」 */
   function narrationFeature(report: Report): 'narration' | 'adult' {
-    return adult.value && report.narration?.adult_scene ? 'adult' : 'narration'
+    return report.narration?.adult_scene ? 'adult' : 'narration'
   }
 
   /** 這則日誌要不要自動寫出經過：AI 判定的主動行動只看種類開關，其他還要開啟 AI 細節描述 */
@@ -350,7 +346,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, adult, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
   }
 })

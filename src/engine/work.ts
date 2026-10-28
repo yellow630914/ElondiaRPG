@@ -3,7 +3,7 @@
 // 被主人帶著時，收入依印記歸主人（state.ts 的收益歸屬）。
 // 也可以派自己的奴隸去做：由奴隸擲檢定，工錢歸主角（target 是「時數:奴隸 id」）。
 
-import { adultScene, safeText } from './content'
+import { adultScene } from './content'
 import { locationById, workRules, type Degree, type JobDef } from './data'
 import { applyEffects } from './effects'
 import { currentArea, currentCell } from './grid'
@@ -22,7 +22,7 @@ export function jobHere(state: GameState): (JobDef & { cell: string }) | undefin
   if (closedHere(state)) return undefined
   const cell = currentCell(state).kind
   const job = workRules.jobs[cell]
-  return job ? { ...job, name: safeText(job.name), desc: safeText(job.desc), cell } : undefined
+  return job ? { ...job, cell } : undefined
 }
 
 /** 可以派去工作的人：主角自己的奴隸（在隊伍裡、沒有暫時離隊） */

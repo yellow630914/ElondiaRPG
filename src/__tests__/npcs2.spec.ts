@@ -7,7 +7,6 @@ import { avoidFoes, checkHostiles, fightFoes, payToll } from '@/engine/encounter
 import { captiveConsequence, resolveCaptive } from '@/engine/captives'
 import { setupInteraction } from '@/engine/interactions'
 import { hireAtAsking } from '@/engine/companions'
-import { setAdultContent } from '@/engine/content'
 import { blockKeys, currentArea, enterLocation, getArea, goOutskirts, move, placeAt, returnToTown, standOn } from '@/engine/grid'
 import { generateNpc, npcRecord } from '@/engine/npcs'
 import { ensureRoster, isHostile, outsideQuota, peopleHere, pruneNpcs, refreshRosters, spawnVisitors } from '@/engine/population'
@@ -233,7 +232,7 @@ describe('hostile adventurers', () => {
     expect(isWanted(state, 'holy_ring')).toBe(true)
   })
 
-  it('robs (and, with adult content on, violates) a captive in the same entry as the disposal', () => {
+  it('robs and violates a captive in the same entry as the disposal', () => {
     const state = outside()
     const a = beside(state, { tags: ['villain'], level: 2 })
     checkHostiles(state)
@@ -243,13 +242,8 @@ describe('hostile adventurers', () => {
     finishCombat(state)
     const money = state.money_cc
     const reports = state.reports.length
-    // 劫色只在開啟成人向時
-    setAdultContent(false)
-    expect(() => resolveCaptive(state, a.id, 'release', '', ['rob', 'violate'])).toThrow('成人向')
     expect(state.captives?.npcs).toEqual([a.id])
-    setAdultContent(true)
     const r = resolveCaptive(state, a.id, 'release', '翻遍他的行囊', ['rob', 'violate'])
-    setAdultContent(false)
     expect(validate(r)).toBe(true)
     expect(state.reports.length).toBe(reports + 1)
     expect(r.outcome.tags).toEqual(['戰後處置', '劫財', '劫色', '放過'])

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { attrSources } from '@/engine/character'
-import { setAdultContent, setContentFilters } from '@/engine/content'
+import { setContentFilters } from '@/engine/content'
 import { itemDef, stories } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
 import { enterLocation, standOn } from '@/engine/grid'
@@ -30,10 +30,8 @@ const keep = { step: parasiteRules.step_chance, cooldown: parasiteRules.cooldown
 beforeEach(() => {
   localStorage.clear()
   setActivePinia(createPinia())
-  setAdultContent(true)
 })
 afterEach(() => {
-  setAdultContent(false)
   setContentFilters({ pc_unwilling: true })
   parasiteRules.step_chance = keep.step
   parasiteRules.cooldown_hours = keep.cooldown
@@ -143,12 +141,6 @@ describe('parasites', () => {
     expect(condMet(state, { parasites: { [SEED]: { min: 30, tamed: false } } })).toBe(true)
     expect(checkModifiers(pc, { context: 'action', attr: 'dex' }).some((x) => x.value === -1)).toBe(true)
     expect(removalTerms(p)).toEqual({ dc: parasiteDef(SEED)!.remove!.dc + 6, price: Math.round(parasiteDef(SEED)!.remove!.price * 1.6) })
-    // 成人向關閉：沒有被動效果、不發作
-    setAdultContent(false)
-    expect(activeParasites(pc)).toEqual([])
-    expect(checkModifiers(pc, { context: 'action', attr: 'dex' }).some((x) => x.label.includes('寄生'))).toBe(false)
-    parasiteRules.step_chance = 1
-    expect(maybeParasiteEvent(state, 'step')).toBe(false)
   })
 
   it('flare up on a step, wait for an answer and move corruption by the choice', () => {
@@ -215,11 +207,11 @@ describe('parasites', () => {
     attachParasite(pc, SEED, state.time)
     attachParasite(pc, MARK, state.time)
     parasiteOf(pc, MARK)!.corruption = 40
-    // 成人向關掉五天再打開：種子不會一口氣長滿
-    setAdultContent(false)
+    // 發作的機率調成 0 五天再調回來：種子不會一口氣長滿
+    state.options = { ...state.options!, parasiteMult: 0 }
     state.time = { ...state.time, day: state.time.day + 5 }
     maybeParasiteEvent(state, 'step')
-    setAdultContent(true)
+    delete state.options!.parasiteMult
     maybeParasiteEvent(state, 'step')
     expect(parasiteOf(pc, SEED)!.corruption).toBe(0)
     // 契紋被奴隸印記頂掉二十天，紋回來之後還是 40

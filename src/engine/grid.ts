@@ -7,7 +7,6 @@
 // 走進格子會觸發內容：遭遇（戰鬥）、陷阱（檢定）、資源（採集）等；設施與樓梯等需要在格子上選擇動作。
 
 import { checkBonus, checkModifiers, modifierNote } from './perks'
-import { adultContent, safeText } from './content'
 import { condMet } from './storyFlags'
 import { sceneShown } from './landmarks'
 import mapsJson from '@data/world/maps.json'
@@ -18,7 +17,7 @@ import {
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
-import { forgeItemFor, gearRules, itemShown, MATERIAL_KINDS, randomGear, registerGear } from './gear'
+import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers, sideNodesOpen, storyNeedsLandmark } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
@@ -196,9 +195,9 @@ export const CELL_ICON: Partial<Record<CellKind, string>> = {
 // 地標的圖示（內容編輯器改了會重設）
 for (const l of Object.values(landmarks)) CELL_ICON[l.id as CellKind] = l.emoji
 
-/** 格子的名稱（關閉成人向時，娼館顯示為按摩店） */
+/** 格子的名稱 */
 export function cellName(kind: CellKind): string {
-  return safeText(CELL_NAME[kind] ?? shopRules.types[kind as ShopType]?.name ?? landmarkDef(kind)?.name ?? '')
+  return CELL_NAME[kind] ?? shopRules.types[kind as ShopType]?.name ?? landmarkDef(kind)?.name ?? ''
 }
 
 // ---- 世界設定擺的商店 ----
@@ -352,13 +351,12 @@ export function getArea(state: GameState, key: string): Area {
 }
 
 /**
- * 地標還沒出現：開放條件勾了「條件成立前不顯示」，劇情旗標又不符合；成人向的場所在沒有開啟成人向時也不出現；
+ * 地標還沒出現：開放條件勾了「條件成立前不顯示」，劇情旗標又不符合；
  * 只有場景的地標（沒有參訪、探索、打工），一個場景都不出現時也不出現（內容篩選關掉、體型不符、一定在場的人死了）；
  * 沒勾「條件成立前不顯示」的（例如打工線的委託人所在），還有接得到或進行中的特殊任務要用到時照常出現，任務點才走得到
  */
 export function landmarkHidden(state: GameState, l: LandmarkDef): boolean {
   const o = l.open
-  if (o?.adult && !adultContent()) return true
   if (o?.hidden && !condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return true
   if (!l.scenes?.length || l.visit || l.explore || l.work || l.scenes.some((sc) => sceneShown(state, sc))) return false
   // 沒勾的（打工線的委託人所在、完成之後才有場景的地標）：還有接得到或進行中的任務要用到時留著，任務點才走得到
@@ -1155,7 +1153,7 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   const dc = spec.trap_dc + (dark ? lightingRules.dark.trap_dc : 0)
   const success = r.total >= dc
   const effects: NonNullable<Report['timeline']>[number]['effects'] = []
-  // 沒察覺：可能是色情陷阱（地下城事件，成人向開啟時），事件取代陷阱的傷害
+  // 沒察覺：可能是色情陷阱（地下城事件），事件取代陷阱的傷害
   const event = !success && maybeDungeonEvent(state, 'trap')
   if (!success && !event) {
     const dmg = withRng(state, (rng) => roll(rng, spec.trap_damage).total)
@@ -1269,7 +1267,7 @@ function openChest(state: GameState, area: Area, level: number): Report {
     else items.push({ name, qty: 1, owner: 'pc' })
   }
   const money = withRng(state, (rng) => {
-    for (const [name, p] of t.items) if (itemShown(itemDef(name)) && rng.chance(p)) add(name)
+    for (const [name, p] of t.items) if (itemDef(name) && rng.chance(p)) add(name)
     if (rng.chance(t.gear)) add(registerGear(state, randomGear(rng, level)))
     if (t.gear_extra && rng.chance(t.gear_extra)) add(registerGear(state, randomGear(rng, level)))
     for (const [tier, p] of t.forge) {

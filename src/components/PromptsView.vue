@@ -60,7 +60,7 @@ async function refresh() {
 onMounted(refresh)
 let timer: ReturnType<typeof setTimeout> | undefined
 watch(
-  () => [JSON.stringify(prompts.config), settings.adult, settings.loreBudget, settings.language, reportId.value, game.state?.reports.length, game.state?.pendingAction?.id, game.state?.relationships, game.state?.memories],
+  () => [JSON.stringify(prompts.config), settings.loreBudget, settings.language, reportId.value, game.state?.reports.length, game.state?.pendingAction?.id, game.state?.relationships, game.state?.memories],
   () => {
     clearTimeout(timer)
     timer = setTimeout(refresh, 250)
@@ -296,7 +296,7 @@ function resetAll() {
       </div>
       <p class="small muted">
         只在成人向的戰敗事件附加在敘事規則之後：前半段是戰報（停在敵人動手的前一刻），後半段是玩家回應之後的經過（AI 判定的 narrative 也會用）。
-        可用的代換：<code v-pre>{{player}}</code> 主角名。關閉成人向時不會發生戰敗事件。
+        可用的代換：<code v-pre>{{player}}</code> 主角名。內容篩選關掉「主角非自願」或關閉戰敗色情事件時不會發生。
       </p>
       <textarea v-model="defeatText" class="rules" rows="9" spellcheck="false" />
       <div class="row defeat-head">
@@ -307,7 +307,7 @@ function resetAll() {
       </div>
       <p class="small muted">
         經過包含親密場景時附加在敘事規則之後，要求在正文詳細描寫：娼館的消費與接客、主人的邀約（答應或被推進娼館）、戰敗事件沒能脫身，以及 AI 判定認為有親密場景的行動（自由行動、長休的互動等）。
-        開啟成人向時，判定請求也會附上（只在 AI 標出 adult_scene 時適用）。可用的代換：<code v-pre>{{player}}</code> 主角名。
+        判定請求也會附上（只在 AI 標出 adult_scene 時適用）。可用的代換：<code v-pre>{{player}}</code> 主角名。
       </p>
       <textarea v-model="sceneText" class="rules" rows="9" spellcheck="false" />
     </section>
@@ -334,14 +334,13 @@ function resetAll() {
       <h2>📚 世界書</h2>
       <div class="row settings small">
         <label>注入字數上限 <input v-model.number="settings.loreBudget" type="number" min="2000" step="1000" style="width: 100px" /></label>
-        <label class="check"><input v-model="settings.adult" type="checkbox" /> 成人向條目</label>
         <label class="check"><input v-model="prompts.config.loreInJudge" type="checkbox" /> 判定請求也帶世界書</label>
         <button class="small primary" @click="addLore">＋ 新增條目</button>
         <button class="small" title="SillyTavern 世界書格式，含修改與新增的條目" @click="exportLore">📤 匯出世界書</button>
         <button class="small" title="SillyTavern 世界書，或本遊戲匯出的世界書" @click="loreInput?.click()">📥 匯入世界書</button>
         <input ref="loreInput" type="file" accept=".json,application/json" multiple hidden @change="onImportLore" />
       </div>
-      <p v-if="settings.adult" class="small muted">請確認你使用的 AI 服務的使用政策允許此類內容。</p>
+      <p class="small muted">標了成人向的條目只在成人場景（日誌帶親密場景，或判定的行動可能進入親密場景）注入。</p>
       <p class="small muted">
         常駐：每次都注入，放在前段。關鍵字觸發：報告（或判定的行動）文字裡出現關鍵字時注入，放在後段；世界書是簡體，比對時繁簡兩種寫法都會比。
         注入順序（order）越小越前面；超過字數上限時，常駐條目優先保留。<br />
@@ -392,7 +391,7 @@ function resetAll() {
             <p v-if="it.note" class="small muted">{{ it.note }}</p>
             <label>名稱 <input :value="it.comment" @change="prompts.updateLore(it.uid, { comment: inputValue($event) })" /></label>
             <label><span>關鍵字 <Hint text="用逗號或頓號分隔；「關鍵字觸發」時使用。" /></span><input :value="keysText(it)" @change="setKeys(it, inputValue($event))" /></label>
-            <label class="check"><input type="checkbox" :checked="it.adult" @change="prompts.updateLore(it.uid, { adult: ($event.target as HTMLInputElement).checked })" /> 成人向 <Hint text="設定裡開啟成人向時才注入。" /></label>
+            <label class="check"><input type="checkbox" :checked="it.adult" @change="prompts.updateLore(it.uid, { adult: ($event.target as HTMLInputElement).checked })" /> 成人向 <Hint text="只在成人場景注入（日誌帶親密場景，或判定的行動可能進入親密場景）。" /></label>
             <textarea :value="it.content" rows="10" @change="prompts.updateLore(it.uid, { content: inputValue($event) })" />
             <div class="row">
               <span class="small muted">內容修改在離開輸入框時儲存。</span>
@@ -502,7 +501,7 @@ label.check { display: inline-flex; gap: 4px; align-items: center; }
 .status.triggered { color: var(--good); border-color: var(--good); }
 .status.idle { color: var(--muted); }
 .status.off { opacity: 0.5; }
-.status.adult, .status.budget { color: var(--danger); border-color: var(--danger); }
+.status.budget { color: var(--danger); border-color: var(--danger); }
 .editor { display: grid; gap: 8px; margin: 8px 0 4px; }
 .editor label { display: grid; gap: 4px; }
 .editor label.check { display: inline-flex; }

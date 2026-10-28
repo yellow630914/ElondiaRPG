@@ -298,21 +298,6 @@ describe('hidden landmarks and town jobs', () => {
   })
 })
 
-describe('ordinary quests that need an adult-only character', () => {
-  const quest = (tags?: string[]) => sanitizeStory('o', {
-    title: '屋頂', summary: '', start: { kind: 'manual' }, start_flags: ['o'], ...(tags ? { tags } : {}),
-    nodes: [{ id: 'roof', title: '屋頂上的人', text: '', at: { where: 'npc', npc: 'npc_oboro' }, kind: 'story', success: { complete: true } }],
-  }, false)
-
-  it('warns that the quest gets stuck while adult content is off', () => {
-    expect(storyCheck(quest()).warnings.some((w) => w.includes('屋頂上的人') && w.includes('成人向角色朧'))).toBe(true)
-  })
-
-  it('does not warn when the quest itself is adult', () => {
-    expect(storyCheck(quest(['adult'])).warnings.some((w) => w.includes('成人向角色'))).toBe(false)
-  })
-})
-
 describe('options that cost money', () => {
   const pay = sanitizeStory('p', {
     title: '贖身', summary: '', start: { kind: 'manual' }, start_flags: ['p'],

@@ -219,7 +219,7 @@ function toggleTag<T extends string>(list: T[] | undefined, t: T, on: boolean): 
       </div>
       <label class="block"><span>簡介 <Hint text="冒險筆記與接任務時看到。" /></span><textarea v-model="draft.summary" rows="2" maxlength="300" /></label>
       <div class="row checks small">
-        <span>內容標籤 <Hint text="接任務時與冒險筆記顯示成警示；成人向在設定沒有開啟成人向時不開放，其他標籤玩家可以在設定裡關閉（關閉的任務不開放）。分支才有的內容（例如 NTR 分支）標在那個選項上。" /></span>
+        <span>內容標籤 <Hint text="接任務時與冒險筆記顯示成警示；成人向以外的標籤玩家可以在設定裡關閉（關閉的任務不開放）。分支才有的內容（例如 NTR 分支）標在那個選項上。" /></span>
         <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
           <input type="checkbox" :checked="draft.tags?.includes(t)" @change="draft.tags = toggleTag(draft.tags, t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
         </label>

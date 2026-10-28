@@ -14,7 +14,7 @@ import {
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { findKind } from './grid'
-import { gearName, gearPrice, gearRules, itemShown, randomGear, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
+import { gearName, gearPrice, gearRules, randomGear, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
 import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
@@ -167,7 +167,7 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const def = shopDef(type)
   const rank = locationRank(shopPlace(state).type)
   // 獨特物品、有屬性加減的裝備、主人強制裝備的東西不在商店賣（只能從事件、寶箱或主人得到）
-  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && itemShown(i) && locationRank(i.min_location ?? 'village') <= rank)
+  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank)
   return withRng(state, (rng) => {
     const deals: Deal[] = []
     // 服裝另外挑（shops.json 的 outfits），不擠掉護具與武器

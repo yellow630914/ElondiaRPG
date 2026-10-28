@@ -155,7 +155,7 @@ flowchart TD
 | [TRADE](TRADE.md) | 交易 | `trade.ts`、`negotiation.ts` |
 | [ITEMS](ITEMS.md) | 物品與裝備（資料整理） | `gear.ts`、`inventory.ts`、`tools.ts` |
 | [CRAFTING](CRAFTING.md) | 工藝 | `crafting.ts`、`craft.ts`、`recipes.ts`、`invention.ts` |
-| [WORK](WORK.md) | 工作與娼館 | `work.ts`、`brothel.ts`、`content.ts` |
+| [WORK](WORK.md) | 工作與娼館 | `work.ts`、`brothel.ts` |
 | [NPC_SYSTEM](NPC_SYSTEM.md) | NPC | `population.ts`、`interactions.ts`、`encounters.ts`、`security.ts` |
 | [TATTOOS](TATTOOS.md) | 刺青（奴隸印記、誓約印記、普通刺青） | `tattoos.ts` |
 | [LANDMARKS](LANDMARKS.md) | 城鎮的特色地標 | `landmarks.ts`、`landmarkMods.ts` |

@@ -1,7 +1,6 @@
 // 角色：屬性、三資源（生命值、行動點、法術環）的推導、升級與能力學習。
 // 公式說明見 docs/COMBAT_SYSTEM.md，數值在 data/rules/combat.json。
 
-import { adultContent } from './content'
 import { parasiteSummary, parasitesOf } from './parasites'
 import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks'
 import {
@@ -424,7 +423,7 @@ export function protagonistText(c: Character, birthplaceName?: string): string {
     c.background ? `背景：${c.background}` : '',
     perksOf(c).length ? `特質：${perksOf(c).map((p) => (p.flaw ? `${p.name}（缺陷）` : p.name)).join('、')}` : '',
     tattoosOf(c).length ? `刺青：\n${tattooSummary(c)}` : '',
-    parasitesOf(c).length && adultContent() ? `寄生物：\n${parasiteSummary(c)}` : '',
+    parasitesOf(c).length ? `寄生物：\n${parasiteSummary(c)}` : '',
   ]
   return lines.filter(Boolean).join('\n')
 }

@@ -138,7 +138,7 @@ describe('log illustrations', () => {
     expect(cast[0]).toMatchObject({ name: '艾倫', player: true })
     expect(cast[0]!.description).toContain('銀色長髮')
     const image = (setActivePinia(createPinia()), useImageSettings())
-    const p = scenePrompt(state, report as never, cast, { format: image.preprocessorFor('novelai'), adult: false, multi: true })
+    const p = scenePrompt(state, report as never, cast, { format: image.preprocessorFor('novelai'), multi: true })
     expect(p.system).toContain('Danbooru')
     expect(p.system).toContain('rating 一律 general')
     expect(p.user).toContain(cast[0]!.id)

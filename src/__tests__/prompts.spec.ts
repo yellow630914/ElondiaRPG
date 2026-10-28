@@ -20,7 +20,7 @@ const loreOpts = { adult: false, budgetChars: 20000, playerName: '艾倫' }
 
 function options(patch: Partial<ComposeOptions> = {}): ComposeOptions {
   const config = patch.config ?? defaultPromptConfig()
-  return { config, lore: loreItems(book, config.lore, config.customLore), adult: false, budgetChars: 20000, language: 'zh-Hant', ...patch }
+  return { config, lore: loreItems(book, config.lore, config.customLore), budgetChars: 20000, language: 'zh-Hant', ...patch }
 }
 
 function game(seed = 16) {
@@ -189,7 +189,7 @@ describe('prompt config', () => {
     expect(parseEntryFile('styles', JSON.stringify([{ name: 'a', content: 'x', targets: ['narration'] }]))[0]!.targets).toEqual(['narration', 'adult'])
   })
 
-  it('sends adult entries only with the adult setting on', () => {
+  it('sends adult entries only for adult scenes', () => {
     const list = normalizeConfig({ version: 2, styles: [
       { name: '一般', content: 'x', targets: ['narration'] },
       { name: '成人', content: 'y', targets: ['narration', 'adult'], adult: true },

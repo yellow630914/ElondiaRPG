@@ -5,7 +5,6 @@ import { tagDef } from '@/engine/data'
 import { npcTitle } from '@/engine/npcs'
 import { isEnslaved } from '@/engine/party'
 import { parseUse, useGame } from '@/stores/game'
-import { useSettings } from '@/stores/settings'
 import AbilityPicker from './AbilityPicker.vue'
 import JudgeToggle from './JudgeToggle.vue'
 import NameTag from './NameTag.vue'
@@ -13,7 +12,6 @@ import GameIcon from './ui/GameIcon.vue'
 
 // 打贏冒險者之後處置被制伏的人（見 docs/NPC_SYSTEM.md 第 8.2 節）
 const game = useGame()
-const settings = useSettings()
 const s = computed(() => game.state!)
 const captives = computed(() => captiveRecords(s.value))
 const busy = computed(() => game.judging || !!s.value.pendingAction)
@@ -33,7 +31,7 @@ const deeds = ref<Record<string, Record<CaptiveDeed, boolean>>>({})
 function chosen(id: string): CaptiveDeed[] {
   const d = deeds.value[id]
   if (!d) return []
-  return (['rob', 'violate'] as CaptiveDeed[]).filter((k) => d[k] && (k !== 'violate' || settings.adult))
+  return (['rob', 'violate'] as CaptiveDeed[]).filter((k) => d[k])
 }
 
 function toggle(id: string, d: CaptiveDeed, on: boolean) {
@@ -87,7 +85,7 @@ async function act(id: string) {
           <input type="checkbox" :checked="!!deeds[c.id]?.rob" :disabled="busy" @change="toggle(c.id, 'rob', ($event.target as HTMLInputElement).checked)" />
           <GameIcon name="coins" :size="13" />劫財
         </label>
-        <label v-if="settings.adult" class="small" title="成人向：趁對方無力反抗時強行佔有；對方親密度大幅下降">
+        <label class="small" title="成人向：趁對方無力反抗時強行佔有；對方親密度大幅下降">
           <input type="checkbox" :checked="!!deeds[c.id]?.violate" :disabled="busy" @change="toggle(c.id, 'violate', ($event.target as HTMLInputElement).checked)" />
           <GameIcon name="heart" :size="13" />劫色
         </label>

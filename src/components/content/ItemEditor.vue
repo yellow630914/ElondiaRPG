@@ -327,7 +327,7 @@ function setFuel(v: string) {
         <label>價格（{{ formatMoney(draft.price_cc) }}）<input v-model.number="draft.price_cc" type="number" min="0" /></label>
       </div>
       <label class="block">描述 <textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
-      <label class="check small"><input type="checkbox" :checked="!!draft.adult" @change="draft.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向：成人向內容關閉時不出現（商店、寶箱、黑市、主人強制裝備）；用成人向底材做的裝備自動算</label>
+      <label class="check small"><input type="checkbox" :checked="!!draft.adult" @change="draft.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向（內容編輯器的篩選用）</label>
       <div class="block icon-row"><span>圖示</span><IconField v-model="draft.icon" :fallback="iconFallback" /></div>
       <p v-if="draft.category === 'material'" class="small muted">材料的價格是商人的收購價（全額收購）；其他物品賣出時是一半。</p>
     </fieldset>

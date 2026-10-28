@@ -279,9 +279,8 @@ export const BUILTIN_PREPROCESSORS: ImagePreprocessor[] = [
 ]
 
 /** 交給大語言模型的預處理請求 */
-export function preprocessPrompt(semantic: string, instructions: string, adult: boolean): Prompt {
-  const safety = adult ? '' : '\n另外：不要加入裸露、性暗示或血腥的內容。'
-  return { system: `${instructions.trim()}${safety}`, user: `角色形象描述：\n${semantic}` }
+export function preprocessPrompt(semantic: string, instructions: string): Prompt {
+  return { system: instructions.trim(), user: `角色形象描述：\n${semantic}` }
 }
 
 /** 依整理方式處理模型的回覆 */

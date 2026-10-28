@@ -289,7 +289,6 @@ describe('model sources', () => {
     settings.sources[0]!.configs.anthropic = { apiKey: 'x', model: 'claude-opus-5-5' }
     settings.sources[2]!.provider = 'gemini'
     settings.sources[2]!.configs.gemini = { apiKey: 'AIza', model: 'gemini-pro-latest' }
-    settings.adult = true
     await nextTick()
     expect(settings.routes.adult).toBe(0)
     settings.routes.adult = 2
@@ -311,9 +310,8 @@ describe('model sources', () => {
     const call = vi.mocked(providers.streamNarration).mock.calls[0]!
     expect(call[0]).toBe('gemini')
     expect((call[2] as { system: string }).system).toContain('<adult_scene>')
-    // 成人向關閉時一律用敘事正文
-    settings.adult = false
-    expect(settings.narrationFeature(report)).toBe('narration')
+    // 沒有親密場景的日誌用敘事正文
+    expect(settings.narrationFeature({ ...report, narration: { ...report.narration, adult_scene: undefined } })).toBe('narration')
   })
 
   it('gives old settings an adult route matching narration', async () => {

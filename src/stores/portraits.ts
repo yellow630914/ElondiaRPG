@@ -328,7 +328,7 @@ export const usePortraits = defineStore('portraits', () => {
     if (!settings.sourceReady(src.index)) throw new Error(`「插圖提示詞預處理」的模型來源（${src.name}）還沒設定好`)
     const collector = game.usageCollector(game.originOf('tags', src))
     const { completeText } = await import('@/narrator/providers')
-    const text = await completeText(src.provider, src.config, preprocessPrompt(semantic, pre.instructions, settings.adult), signal, collector.onUsage)
+    const text = await completeText(src.provider, src.config, preprocessPrompt(semantic, pre.instructions), signal, collector.onUsage)
     collector.flush(usageKey)
     const out = cleanPreprocessed(text, pre.output)
     if (!out) throw new Error(`模型沒有回傳預處理的結果（${pre.name}）`)

@@ -9,13 +9,13 @@
     "underwear_top": "內衣／內襯", "underwear_bottom": "內褲"
   },
   "npc_outfits": {
-    "$comment": "NPC 依標籤、職業描述與體型穿的服裝（由上往下第一條符合的規則；adult 的規則只在成人向內容開著時用）。每個欄位從清單裡依角色 id 固定挑一件，第一級材料。普通人沒有戰鬥資料，這些只用在形象圖與 AI 的描述；冒險者只補空著的頭、手腕、鞋子、腿部飾品、內衣褲（不換掉護甲與下身護具）。",
+    "$comment": "NPC 依標籤、職業描述與體型穿的服裝（由上往下第一條符合的規則）。每個欄位從清單裡依角色 id 固定挑一件，第一級材料。普通人沒有戰鬥資料，這些只用在形象圖與 AI 的描述；冒險者只補空著的頭、手腕、鞋子、腿部飾品、內衣褲（不換掉護甲與下身護具）。",
     "rules": [
       { "occupations": ["女僕", "侍女", "女傭"], "body": ["fem", "andro"], "slots": { "body": ["maid_dress"], "head": ["maid_headdress"], "leg_accessory": ["thigh_highs", "stockings"], "feet": ["mary_janes"] } },
       { "occupations": ["執事", "管家"], "body": ["masc"], "slots": { "body": ["butler_suit"], "wrists": ["opera_gloves"] } },
       { "occupations": ["護士", "看護", "醫"], "body": ["fem", "andro"], "slots": { "body": ["nurse_uniform"], "head": ["nurse_cap"] } },
       { "occupations": ["巫女"], "slots": { "body": ["miko_outfit"], "feet": ["sandals"] } },
-      { "tags": ["prostitute"], "adult": true, "body": ["fem", "andro"], "slots": { "body": ["lewd_maid", "bunny_suit", "reverse_bunny", "sheer_negligee", "slit_habit", "qipao"], "head": ["bunny_ears"], "accessory": ["lace_choker"], "leg_accessory": ["fishnet", "garter_stockings", "silk_stockings"], "underwear_bottom": ["thong", "crotchless"], "underwear_top": ["pasties", "lace_bra"], "feet": ["heels"] } },
+      { "tags": ["prostitute"], "body": ["fem", "andro"], "slots": { "body": ["lewd_maid", "bunny_suit", "reverse_bunny", "sheer_negligee", "slit_habit", "qipao"], "head": ["bunny_ears"], "accessory": ["lace_choker"], "leg_accessory": ["fishnet", "garter_stockings", "silk_stockings"], "underwear_bottom": ["thong", "crotchless"], "underwear_top": ["pasties", "lace_bra"], "feet": ["heels"] } },
       { "tags": ["prostitute"], "body": ["fem", "andro"], "slots": { "body": ["qipao", "dress", "gown"], "leg_accessory": ["silk_stockings", "garter_stockings"], "feet": ["heels"], "accessory": ["lace_choker"] } },
       { "tags": ["bishop", "priest"], "body": ["fem", "andro"], "slots": { "body": ["nun_habit"], "head": ["nun_veil"] } },
       { "tags": ["royal", "noble"], "body": ["fem", "andro"], "slots": { "body": ["gown", "gothic_lolita", "dress"], "head": ["hair_ribbon", "wide_hat"], "wrists": ["opera_gloves"], "feet": ["heels"], "leg_accessory": ["silk_stockings"], "underwear_top": ["lace_bra", "bodice"], "underwear_bottom": ["lace_panties"] } },
@@ -37,7 +37,7 @@
 
   "$comment_restraint": "底材的 restraint：束縛用的底材（主人強制裝備的項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減。",
   "$comment_underwear": "內衣、內褲：布料，數值和飾品同一個模板（材料加成的三分之一）。基本款（汗衫、裹胸、兜襠布、貼身短褲、綁帶內褲）便宜、用 third（第一、二級材料沒有加成）；講究的（束腰馬甲、蕾絲胸衣、蕾絲內褲、絲帶吊襪內褲）用 third_up。",
-  "$comment_outfits": "服裝（底材的 outfit：regular 常規、anime 二次元、adult 成人向）：放進現有欄位，數值等同同欄位的布衣（上身＝長袍、下身＝長褲、鞋子＝布鞋、頭部＝兜帽、手腕＝纏腕布；長襪類腿部飾品是材料的三分之一）。比基尼鎧甲是輕甲（armor bikini）、皮革緊身衣是皮甲。adult 的底材與物品在成人向內容關閉時完全隱藏（商店、寶箱、建角、打造、NPC 配裝、主人強制裝備都不出現）。服裝不會出現在寶箱與掉落的隨機裝備裡；裁縫店每天另外上架幾件（shops.json 的 outfits）。",
+  "$comment_outfits": "服裝（底材的 outfit：regular 常規、anime 二次元、adult 成人向）：放進現有欄位，數值等同同欄位的布衣（上身＝長袍、下身＝長褲、鞋子＝布鞋、頭部＝兜帽、手腕＝纏腕布；長襪類腿部飾品是材料的三分之一）。比基尼鎧甲是輕甲（armor bikini）、皮革緊身衣是皮甲。adult 的底材與物品標成成人向（內容編輯器的篩選用）。服裝不會出現在寶箱與掉落的隨機裝備裡；裁縫店每天另外上架幾件（shops.json 的 outfits）。",
   "attrs": {
     "$comment": "裝備的屬性加減（GearSpec.attrs）：只有內容資料裡的裝備會有（編輯器設定、事件給的、主人強制裝備的），不能打造、不在商店上架。每項 ±max_change；身上所有裝備給的同一項屬性合計最多 ±cap。",
     "max_change": 3,

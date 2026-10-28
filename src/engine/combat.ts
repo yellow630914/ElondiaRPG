@@ -20,7 +20,6 @@ import {
   mulResist,
 } from './data'
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
-import { safeText } from './content'
 import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { rollDefeatEvent } from './defeat'
 import { addCondition, isNoncombatant } from './party'
@@ -407,7 +406,7 @@ export function applyTraits(c: Combatant, traits: string[]) {
   c.hp = Math.max(1, Math.round(c.maxHp * hpRatio))
   c.ai = ai
   c.traits = traits
-  c.name = `${traits.map((id) => safeText(monsterTraits.traits[id]?.name ?? id)).join('・')}的${c.name}`
+  c.name = `${traits.map((id) => monsterTraits.traits[id]?.name ?? id).join('・')}的${c.name}`
 }
 
 // ---- 查詢 ----

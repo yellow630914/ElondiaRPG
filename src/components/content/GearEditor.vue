@@ -157,7 +157,7 @@ function remove() {
           </label>
           <Hint text="服裝不會出現在寶箱與掉落的隨機裝備裡；裁縫店（鐵匠鋪、珠寶店少量）每天另外上架幾件。上身的服裝建角時也能選。" />
         </div>
-        <label class="check small"><input type="checkbox" :checked="!!base.adult" :disabled="base.outfit === 'adult'" @change="base.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向：成人向內容關閉時完全隱藏（商店、寶箱、建角、打造、NPC 配裝都不出現）</label>
+        <label class="check small"><input type="checkbox" :checked="!!base.adult" :disabled="base.outfit === 'adult'" @change="base.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向（內容編輯器的篩選用）</label>
         <label v-if="base.slot !== 'main_hand' && base.slot !== 'body'" class="check small">
           <input v-model="base.restraint" type="checkbox" :disabled="builtin" /> 束縛用（項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減，給「主人會強制裝備」的物品用
         </label>

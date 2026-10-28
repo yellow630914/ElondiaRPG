@@ -31,7 +31,6 @@ import homesJson from '@data/rules/homes.json'
 import perksJson from '@data/rules/perks.json'
 import landmarksJson from '@data/world/landmarks.json'
 import specialMapsJson from '@data/world/special_maps.json'
-import { adultContent, safeText } from './content'
 import type { RewardEffect } from './effects'
 import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality, TattooPlace } from './types'
 import type { Lighting } from './light'
@@ -91,9 +90,9 @@ export interface NpcDef {
   personality: string
   faction?: string
   appearance?: string
-  /** 成人向角色：成人向內容關閉時完全不出現（不在任何地點、不能雇用、不佔名單名額） */
+  /** 成人向角色：不佔名單名額；內容編輯器的篩選用 */
   adult?: boolean
-  /** 成人向的外貌細節（私密部位、性徵……）：只在成人向內容開著時接在外貌後面交給 AI 與形象圖，見 npcs.ts 的 appearanceOf */
+  /** 成人向的外貌細節（私密部位、性徵……）：接在外貌後面交給 AI 與形象圖，見 npcs.ts 的 appearanceOf */
   adult_appearance?: string
   /** 與其他角色的關係：角色 id → 文字 */
   relations?: Record<string, string>
@@ -247,7 +246,7 @@ export interface StoryCheck { attr: AttrId; dc: number; affinity?: StoryAffinity
 export interface StoryOutcome {
   text?: string
   /**
-   * 成人向的親密場景（只在特殊任務）：寫了而且開啟成人向時，這段經過交給「成人場景正文」，依成人場景規則詳細描寫，
+   * 成人向的親密場景（只在特殊任務）：寫了時，這段經過交給「成人場景正文」，依成人場景規則詳細描寫，
    * 不會一筆帶過；寫的是誰和誰、在哪裡、做了什麼（給 AI 看的提示，不顯示給玩家）
    */
   scene?: string
@@ -435,7 +434,7 @@ export interface LandmarkOpen {
   min_reputation?: number
   /** 官方場所：逃亡奴隸不能用 */
   official?: boolean
-  /** 成人向的場所：沒有開啟成人向時不開放也不顯示 */
+  /** 成人向的場所：不當委託地點；內容編輯器的篩選用 */
   adult?: boolean
 }
 export interface LandmarkVisit {
@@ -1217,7 +1216,7 @@ export interface MasterEventDef {
   options: MasterEventOption[]
   /** 自己輸入回應時的參考 DC（沒有時用 free_dc） */
   free_dc?: number
-  /** 成人向：設定開啟「成人向」時才會發生 */
+  /** 成人向：內容篩選關掉「主角非自願」時不發生 */
   adult?: boolean
   /** 只在經過這種設施（同一格或相鄰）時發生，機率為 chance，不在一般事件的抽選裡 */
   cell?: string
@@ -1275,7 +1274,7 @@ export interface MasterEventOption {
   fail_effects?: RewardEffect[]
   /** 覆蓋事件的耗時 */
   hours?: number
-  /** 這個回應會進入親密場景（事件的 scene）：always 一定、success / fail 檢定成功或失敗時；只在開啟成人向時 */
+  /** 這個回應會進入親密場景（事件的 scene）：always 一定、success / fail 檢定成功或失敗時 */
   adult_scene?: 'always' | 'success' | 'fail'
 }
 
@@ -1283,8 +1282,7 @@ export function contractDef(id: string): ContractDef {
   // 沒有這個模板（例如自訂內容刪掉了）：用預設的
   const c = slaveryRules.contracts[id] ?? slaveryRules.contracts[slaveryRules.roles.default]
   if (!c) throw new Error(`unknown contract: ${id}`)
-  // 關閉成人向時，娼妓契約顯示為技師契約
-  return adultContent() ? c : { ...c, name: safeText(c.name), mark: safeText(c.mark), side_effects: c.side_effects.map(safeText) }
+  return c
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
@@ -1388,9 +1386,7 @@ export const population = populationJson as unknown as {
 }
 
 export function tagDef(id: string): NpcTagDef | undefined {
-  const t = npcTags.tags[id]
-  // 關閉成人向時，娼妓顯示為技師
-  return !t || adultContent() ? t : { ...t, name: safeText(t.name), ai_hint: safeText(t.ai_hint) }
+  return npcTags.tags[id]
 }
 
 // ---- 工作與娼館 ----
@@ -1407,7 +1403,6 @@ export interface JobDef {
 }
 
 export const workRules = workJson as unknown as {
-  safe_names: [string, string][]
   hours: number[]
   degree_pay: Record<Degree, number>
   fumble_affinity: number
@@ -1491,7 +1486,7 @@ export interface ItemDef {
   seed?: SeedSpec
   /** 主人會強制主角裝上這件裝備（主人的事件 force_equip）；tags：只有這些身分的主人會用（沒有時任何主人） */
   master_force?: { tags?: string[] }
-  /** 成人向：成人向內容關閉時不出現（商店、寶箱、黑市、主人強制裝備）；用成人向底材做的裝備也算 */
+  /** 成人向的物品：內容編輯器的篩選用 */
   adult?: boolean
   /** 獨特物品可以出現在黑市（每天刷新的珍品，見 docs/ITEMS.md 3.1 節） */
   black_market?: boolean

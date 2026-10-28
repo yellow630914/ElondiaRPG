@@ -3,11 +3,9 @@
 // - 寄生裝備鎖住它的欄位（EquippedGear.locked = parasite:<id>，不綁契約）；淫紋是刺青的一種（kind: curse），未馴服時洗不掉，
 //   只有奴隸印記能把它頂掉（頂掉時沉睡，刻印師可以紋回來）；馴服之後可以自由洗掉、換掉，之後也能紋回來。
 // - 馴服（任務的結局）：寄生裝備換成馴服後的物品、淫紋變成已馴服的印記；不再自動發作，可以主動觸發（parasiteEvents.ts）。
-// - 成人向關閉時：不發作、沒有被動效果（寄生物還在身上）。
 // 規則與定義在 data/rules/parasites.json；發作事件在 travel_events.json（scope: parasite）。
 
 import parasitesJson from '@data/rules/parasites.json'
-import { adultContent } from './content'
 import { itemDef, type AttrId, type CheckFilter } from './data'
 import { placeName, tattooAt, tattoosOf } from './tattoos'
 import type { Character, GameTime, GearSlot, ParasiteState, Tattoo, TattooPlace } from './types'
@@ -92,9 +90,8 @@ export function stageName(corruption: number): string {
   return parasiteRules.stages[stageOf(corruption)]?.name ?? ''
 }
 
-/** 會發作、有被動效果的寄生物：成人向開著、沒有沉睡、還沒馴服 */
+/** 會發作、有被動效果的寄生物：沒有沉睡、還沒馴服 */
 export function activeParasites(c: Pick<Character, 'parasites'> | undefined): ParasiteState[] {
-  if (!adultContent()) return []
   return parasitesOf(c).filter((p) => !p.dormant && !p.tamed && parasiteDef(p.id))
 }
 
@@ -108,7 +105,7 @@ const dayOf = (t: GameTime) => t.day
 
 /**
  * 依時間增長侵蝕度（例如種子）：上次增長之後過了幾天就加幾次。
- * 暫停時（成人向關閉、沉睡、已馴服，或 paused 說發作關掉了）只把日子往前推、不增長，恢復時不會一次補上。
+ * 暫停時（沉睡、已馴服，或 paused 說發作關掉了）只把日子往前推、不增長，恢復時不會一次補上。
  */
 export function growParasites(c: Character, now: GameTime, paused?: (p: ParasiteState) => boolean) {
   const active = new Set(activeParasites(c))

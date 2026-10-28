@@ -168,7 +168,7 @@ export interface Report {
     player_intent?: string
     /** 戰敗事件：前半段停在對方動手前（defeat_cliffhanger），後半段是玩家回應之後（defeat_event） */
     mode?: 'defeat_cliffhanger' | 'defeat_event'
-    /** 成人向的親密場景（只在開啟成人向時）：這段經過是什麼，敘事會附上成人場景規則、在正文詳細描寫 */
+    /** 成人向的親密場景：這段經過是什麼，敘事會附上成人場景規則、在正文詳細描寫 */
     adult_scene?: string
   }
   lore_keys?: string[]
@@ -464,8 +464,6 @@ export interface RoadState {
   /** 出發時的生命值（旅行報告的前後對照） */
   hpBefore: Record<string, number>
   intent?: string
-  /** 主人的事件允許成人向 */
-  adult?: boolean
 }
 
 export interface StoryProgress {

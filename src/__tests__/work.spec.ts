@@ -3,7 +3,6 @@ import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { madamHere } from '@/engine/brothel'
-import { setAdultContent } from '@/engine/content'
 import { contractDef, geography, locationById, slaveryRules, tagDef } from '@/engine/data'
 import { cellName, enterLocation, standOn, zonesOf } from '@/engine/grid'
 import { npcRecord } from '@/engine/npcs'
@@ -31,7 +30,6 @@ function act(state: GameState, input: Parameters<typeof prepareAction>[1], natur
   return r
 }
 
-afterEach(() => setAdultContent(false))
 
 describe('brothels on the map', () => {
   it('appear in every settlement, staffed by a madam and workers', () => {
@@ -46,12 +44,7 @@ describe('brothels on the map', () => {
     expect(town.rosters!.rivervale!.members.some((id) => npcRecord(town, id)?.tags?.includes('prostitute'))).toBe(true)
   })
 
-  it('becomes a massage shop with the adult setting off', () => {
-    setAdultContent(false)
-    expect(cellName('brothel')).toBe('按摩店')
-    expect(tagDef('prostitute')!.name).toBe('技師')
-    expect(contractDef('brothel').name).toBe('技師契約')
-    setAdultContent(true)
+  it('keeps the brothel names', () => {
     expect(cellName('brothel')).toBe('娼館')
     expect(tagDef('prostitute')!.name).toBe('娼妓')
     expect(contractDef('brothel').name).toBe('娼妓契約')
@@ -129,7 +122,7 @@ describe('the brothel', () => {
       ev = maybeMasterEvent(state, 0)
     }
     expect(ev?.id).toBe('brothel_forced')
-    expect(ev?.text).toContain('按摩店')
+    expect(ev?.text).toContain('娼館')
     const money = state.money_cc
     const r = answerMasterEvent(state, 0)
     expect(validate(r)).toBe(true)

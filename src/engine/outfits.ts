@@ -1,11 +1,10 @@
 // NPC 依標籤、職業描述與體型穿的服裝（gear.json 的 npc_outfits，說明見 docs/ITEMS.md 第 2 節）。
 //
-// - 由上往下第一條符合的規則；adult 的規則只在成人向內容開著時用，成人向的底材關閉時也略過。
+// - 由上往下第一條符合的規則。
 // - 每個欄位從清單裡依角色 id 固定挑一件（第一級材料），不用遊戲的亂數。
 // - 普通人沒有戰鬥資料：服裝只算出來給形象圖與 AI 的描述用（npcOutfit）。
 // - 冒險者生成時只補空著的非護甲欄位（dressNpc），不換掉護甲與下身護具。
 
-import { adultContent } from './content'
 import { baseShown, gearName, gearRules, type MaterialKind } from './gear'
 import type { NpcDef } from './data'
 import { bodyOf } from './traits'
@@ -15,7 +14,6 @@ export interface OutfitRule {
   tags?: string[]
   occupations?: string[]
   body?: ('masc' | 'fem' | 'andro')[]
-  adult?: boolean
   slots: Partial<Record<GearSlot, string[]>>
 }
 
@@ -37,7 +35,6 @@ export function outfitRule(def: Pick<NpcDef, 'race' | 'gender' | 'tags' | 'occup
   const body = bodyOf(def.race, def.gender)
   const tags = def.tags ?? []
   return rules().find((r) => {
-    if (r.adult && !adultContent()) return false
     if (r.body?.length && !r.body.includes(body)) return false
     if (r.tags?.length && !r.tags.some((t) => tags.includes(t))) return false
     if (r.occupations?.length && !r.occupations.some((o) => def.occupation?.includes(o))) return false

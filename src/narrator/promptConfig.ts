@@ -6,7 +6,7 @@ import type { LoreItem, LoreOverride } from './lore'
 /**
  * 條目要套用到哪種請求：
  *   narration 敘事（AI 細節描述）
- *   adult     成人場景的敘事（報告帶 adult_scene，而且成人向開啟時，取代 narration）
+ *   adult     成人場景的敘事（報告帶 adult_scene 時，取代 narration）
  *   judge     判定（AI 判定主動行動，narrative 欄位）
  */
 export type PromptTarget = 'narration' | 'adult' | 'judge'
@@ -26,7 +26,7 @@ export interface PromptEntry {
   targets: PromptTarget[]
   /** 只有「其他提示詞」可以選；文風一律放在前段 */
   position?: PromptPosition
-  /** 成人向：只在設定開啟成人向時送出 */
+  /** 成人向：只在成人場景（日誌帶親密場景、行動可能進入親密場景）送出 */
   adult?: boolean
   /** 內建預設條目的 id（可以恢復原文） */
   preset?: string
@@ -296,7 +296,7 @@ export function normalizeConfig(raw: unknown): PromptConfig {
   }
 }
 
-/** 套用到某種請求、某個位置的已開啟條目（成人向的條目只在 adult 開啟時），把 {{player}} 換成主角名 */
+/** 套用到某種請求、某個位置的已開啟條目（成人向的條目只在 adult：這次是成人場景），把 {{player}} 換成主角名 */
 export function activeEntries(list: PromptEntry[], target: PromptTarget, playerName: string, opts: { position?: PromptPosition; adult: boolean }): PromptEntry[] {
   const { position, adult } = opts
   return list
