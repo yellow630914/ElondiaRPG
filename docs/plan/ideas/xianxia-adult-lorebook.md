@@ -3,7 +3,7 @@
 > 狀態：**IDEA**，還沒有決定要做；成人向。
 > 來源：玩家提供的 SillyTavern 世界書（修仙題材，46 個條目，啟用的約 6.7 萬字）。
 > 用途：當作埃隆迪亞成人向內容的素材庫：世界書條目、拘束與奴隸印記的機制、怪物與事件。設計時從這裡挑，改寫成埃隆迪亞的用語再用。
-> 依賴的現有機制：主人強制裝備與束縛用的底材（[ITEMS](../../docs/ITEMS.md) 3.2 節）、奴隸印記與契約（[TATTOOS](../../docs/TATTOOS.md) 第 2 節、`data/rules/slavery.json`）、主角作為奴隸（[COMPANIONS](../../docs/COMPANIONS.md) 2.4 節）、地下城的成人事件與寄生物（[ADULT_EVENTS](../../docs/ADULT_EVENTS.md)、[adult-events](adult-events.md)）、世界書（[PROMPTS](../../docs/PROMPTS.md) 第 5 節、[worldbook-and-prompts](worldbook-and-prompts.md)）。
+> 依賴的現有機制：主人強制裝備與束縛用的底材（[ITEMS](../../ITEMS.md) 3.2 節）、奴隸印記與契約（[TATTOOS](../../TATTOOS.md) 第 2 節、`data/rules/slavery.json`）、主角作為奴隸（[COMPANIONS](../../COMPANIONS.md) 2.4 節）、地下城的成人事件與寄生物（[ADULT_EVENTS](../../ADULT_EVENTS.md)、[adult-events](../../../worldgen/design/adult-events.md)）、世界書（[PROMPTS](../../PROMPTS.md) 第 5 節、[worldbook-and-prompts](../../../worldgen/design/worldbook-and-prompts.md)）。
 
 ## 0. 原文怎麼處理
 
@@ -110,7 +110,7 @@
 
 ## 2. 拘束、鎖具與脫縛
 
-> 💡 對應：主人強制裝備與束縛用的底材（[ITEMS](../../docs/ITEMS.md) 3.2 節）、裝備的 `locked`。
+> 💡 對應：主人強制裝備與束縛用的底材（[ITEMS](../../ITEMS.md) 3.2 節）、裝備的 `locked`。
 > 可以做的：鎖具分級（白、藍、黃、符文、陣法、魔法、寄生、詛咒、特殊），掙脫條件改成等級或檢定 DC；鑰匙做成一次性物品；新增「嘗試脫縛」行動，依拘束的層次、手有沒有被綁、身邊有沒有鏡子或尖銳物調整難度。雙面效應可以做成「束縛派」特質：穿著束縛用的底材時，戰鬥中得到對應的加成。
 > 知識庫可以做成成人向、關鍵字觸發的世界書條目（關鍵字：口球、項圈、貞操帶、後手觀音……）。
 
@@ -936,7 +936,7 @@
 
 ## 3. 奴印與主奴
 
-> 💡 對應：奴隸印記與契約（[TATTOOS](../../docs/TATTOOS.md) 第 2 節、`slavery.json`）、主角作為奴隸（[COMPANIONS](../../docs/COMPANIONS.md) 2.4 節）。
+> 💡 對應：奴隸印記與契約（[TATTOOS](../../TATTOOS.md) 第 2 節、`slavery.json`）、主角作為奴隸（[COMPANIONS](../../COMPANIONS.md) 2.4 節）。
 > 可以做的：契約分主動、被動，再分基礎、深化、永久；深化靠主人事件累積；勢力印記解除後紋樣留著（不再有效力）；被迫者心態的五個階段可以當主人事件的分期。
 
 ### 奴印体系
@@ -1085,7 +1085,7 @@
 
 ## 4. 人物塑造
 
-> 💡 對應：NPC 生成與 AI 設計居民（[NPC_SYSTEM](../../docs/NPC_SYSTEM.md)）、主人的身分標籤（`slavery.json` 的 `master_tags`）、敘事規則。
+> 💡 對應：NPC 生成與 AI 設計居民（[NPC_SYSTEM](../../NPC_SYSTEM.md)）、主人的身分標籤（`slavery.json` 的 `master_tags`）、敘事規則。
 > 「主觀態度三選一」「NPC 只能憑看得到的證據判斷」「痛苦真實原則」適合寫成成人向的常駐世界書條目或文風。
 > 反派準則裡「每一段劇情主動引入反派」「反派首要目標是主角」會讓 AI 自己編出引擎裡沒有的劇情，也會繞過「主角非自願」的內容篩選；用的時候先拿掉這兩句（原文仍完整保留在這裡）。
 
@@ -1543,7 +1543,7 @@
 ## 5. 地區風氣與場所
 
 > 💡 對應：城鎮事件、地標、娼館、奴隸市場、旅店、城門盤查。
-> 可以做的：聚落多一個「魅氣濃度」，影響成人城鎮事件的機率、入城規定與店家；每個場所的「負面事件」可以拆成城鎮事件模板。淫道宗門的「運作推演七問」可以給特殊任務與固定 NPC 的設計用（[story-design](story-design.md)）。
+> 可以做的：聚落多一個「魅氣濃度」，影響成人城鎮事件的機率、入城規定與店家；每個場所的「負面事件」可以拆成城鎮事件模板。淫道宗門的「運作推演七問」可以給特殊任務與固定 NPC 的設計用（[story-design](../../../worldgen/design/story-design.md)）。
 
 ### 淫气系统
 
@@ -1881,7 +1881,7 @@
 
 ## 6. 淫物
 
-> 💡 對應：怪物（[MONSTERS](../../docs/MONSTERS.md)）、地下城的成人事件（[ADULT_EVENTS](../../docs/ADULT_EVENTS.md)）、寄生物（`parasites.json`）。
+> 💡 對應：怪物（[MONSTERS](../../MONSTERS.md)）、地下城的成人事件（[ADULT_EVENTS](../../ADULT_EVENTS.md)）、寄生物（`parasites.json`）。
 > 淫物的級數照第 1.2 節換成層級；「與人關係」一欄可以變成商店的活體淫具、寵物或情報。
 
 ### 淫物知识-淫兽类
@@ -2734,7 +2734,7 @@ M字开脚位
 | 淫器合炼 | 要新的打造方式 | 附魔融合；佩戴時間決定加成 |
 | 女修开发度 | 多維度的身體數值，角色沒有對應的欄位 | 成人向的角色設定、AI 描寫參考 |
 | 奴欲心经 | 原本是主角專屬的功法 | 特質：暗中消解印記、多主、鎖具交換 |
-| 知识-人体改造、玩法协议-人体改造 | 沒有改造系統 | 設計稿的 #15「身體改造的詛咒」（[adult-events](adult-events.md)） |
+| 知识-人体改造、玩法协议-人体改造 | 沒有改造系統 | 設計稿的 #15「身體改造的詛咒」（[adult-events](../../../worldgen/design/adult-events.md)） |
 | 知识-NSFW女修 | 沒有對應的系統 | 奴隸市場、固定 NPC 的「標準配置」 |
 | 剧情协议-功法生成 | 沒有秘法物品 | 秘法書、技能書 |
 | 玩法知识-小巧思库、玩法协议-关键词系统 | 原本就停用 | 靈感清單 |
