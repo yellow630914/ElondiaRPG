@@ -298,8 +298,8 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   }
   const ambushed = tpl.encounter && withRng(state, (rng) => rng.chance(tpl.encounter_chance ?? 0))
   if (ambushed) {
-    // 遭遇戰不推進委託；打完可以再試一次
-    return startCombat(state, tpl.encounter, { scene, ...(intent ? { intent } : {}) })
+    // 遭遇戰打贏就算完成委託（找到東西、趕跑了搗亂的人）；打輸可以再試一次
+    return startCombat(state, tpl.encounter, { questId: quest.id, scene, ...(intent ? { intent } : {}) })
   }
 
   const report = baseReport(state, 'quest', tpl.hours)
@@ -307,7 +307,9 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   report.quest = { id: quest.id, title: quest.title, rank: quest.rank, status: 'progress' }
   report.narration = { pov: 'second_person', length: 'short', ...(intent ? { player_intent: intent } : {}) }
   let success = true
-  if (tpl.dc !== undefined) {
+  // 檢定最多失敗一次：上次失敗摸清了門路，這次一定成功
+  const retried = !!quest.flags?.failed_once
+  if (tpl.dc !== undefined && !retried) {
     const pc = player(state)
     // 任務旗標：打聽到線索 +5，消息走漏 -2
     const bonus = (quest.flags?.lead ? 5 : 0) + checkBonus(pc, { context: 'quest' })
@@ -324,9 +326,10 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
     quest.status = 'ready'
     clearQuestMarkers(state)
     if (tpl.item) report.changes.items_gained = [{ name: tpl.item, qty: tpl.qty ?? 1, owner: 'pc' }]
-    report.outcome = { result: 'success', summary: `完成「${quest.title}」，可以回公會交付了。` }
+    report.outcome = { result: 'success', summary: `${retried ? '上次摸清了門路，這次順利' : ''}完成「${quest.title}」，可以回公會交付了。` }
   } else {
-    report.outcome = { result: 'failure', summary: `「${quest.title}」這次沒有進展，花了 ${tpl.hours} 小時，可以再試一次。` }
+    quest.flags = { ...(quest.flags ?? {}), failed_once: true }
+    report.outcome = { result: 'failure', summary: `「${quest.title}」這次沒有進展，花了 ${tpl.hours} 小時；摸清了門路，下次一定能完成。` }
   }
   return commitReport(state, report)
 }
