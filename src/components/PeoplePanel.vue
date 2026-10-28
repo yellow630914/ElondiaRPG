@@ -32,10 +32,11 @@ const groups = computed(() => ([
   { key: 'commoner', title: '普通人', icon: 'users', items: people.value.filter((p) => !p.staff && p.kind === 'commoner') },
 ] as const).filter((g) => g.items.length).map((g) => {
   const near = g.items.filter((p) => p.dist <= 1).length
-  return { ...g, detail: near ? `身邊 ${near} 人` : '都不在身邊（要先走近）' }
+  return { ...g, near, detail: near ? `身邊 ${near} 人` : '都不在身邊（要先走近）' }
 }))
 const where = computed(() => currentArea(s.value).name)
-// 身邊（同一格或相鄰）的人才能互動：沒有時自動收起，有人走近時自動打開；也可以點標題手動切換
+// 身邊（同一格或相鄰）的人才能互動：沒有時自動收起，有人走近時自動打開；也可以點標題手動切換。
+// 店主與職員、冒險者、普通人三組也一樣：那一組身邊有人才展開
 const nearCount = computed(() => people.value.filter((p) => p.dist <= 1).length)
 const expanded = ref(nearCount.value > 0)
 watch(() => nearCount.value > 0, (has) => { expanded.value = has })
@@ -215,7 +216,7 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
     <p v-if="!people.length" class="small muted">這裡現在沒有別人。</p>
 
     <div>
-    <FoldMenu v-for="g in groups" :id="`people.${g.key}`" :key="g.key" class="group" :icon="g.icon" :label="g.title" :detail="g.detail" :badge="g.items.length" open>
+    <FoldMenu v-for="g in groups" :id="`people.${g.key}`" :key="g.key" class="group" :icon="g.icon" :label="g.title" :detail="g.detail" :badge="g.items.length" :auto="g.near > 0">
       <ul class="plain">
         <li v-for="p in g.items" :key="p.rec.id" :class="{ open: open === p.rec.id, far: p.dist > 1 }">
           <div :ref="(el) => lineRef(p.rec.id, el)" class="row line" @click="open = open === p.rec.id ? null : p.rec.id">
