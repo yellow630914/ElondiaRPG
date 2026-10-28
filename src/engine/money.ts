@@ -15,5 +15,5 @@ export function formatMoney(cc: number): string {
 /** 給 AI 的貨幣說明：只有一種貨幣，世界書的舊幣制要換算 */
 export function currencyRule(): string {
   const legacy = Object.entries(CURRENCY.legacy).map(([k, v]) => `1 ${k} = ${v}`).join('、')
-  return `貨幣只有阿爾貝納發行的${CURRENCY.name}（簡稱${CURRENCY.short}），金額都以${CURRENCY.name}計；不要寫銅幣、銀幣、金幣。世界書裡的舊幣制價格換算成${CURRENCY.name}：${legacy}。`
+  return `貨幣只有阿爾貝納發行的${CURRENCY.name}（簡稱${CURRENCY.short}），金額都以${CURRENCY.name}計；不要寫銅幣、銀幣、金幣。世界書裡的舊幣制價格換算成${CURRENCY.name}：${legacy}。大約的物價：1 ${CURRENCY.short}是一塊黑麵包，10 ${CURRENCY.short}是一頓酒館晚餐，精良裝備或魔法物品從 100 ${CURRENCY.short}起跳。`
 }
