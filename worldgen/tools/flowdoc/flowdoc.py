@@ -173,7 +173,7 @@ def quest(st):
     if s0.get('min_affinity'): sreq.append(f"好感 {s0['min_affinity']}")
     if s0.get('price'): sreq.append(f"情報費 {s0['price']} 白鸛")
     if s0.get('chance'): sreq.append(f"機率 {int(s0['chance'] * 100)}%")
-    if s0.get('regions'): sreq.append('地區：' + '、'.join(s0['regions']))
+    if s0.get('regions'): sreq.append('地區：' + '、'.join(regionName.get(r, r) for r in s0['regions']))
     if s0.get('items'): sreq.append('接下時拿到：' + '、'.join(s0['items']))
     rew = []
     for x in st.get('rewards', []):
@@ -350,8 +350,11 @@ if tevs:
     out.append({'name': '城鎮事件（成人向）', 'cat': '城鎮事件（成人向）', 'lv': '—', 'npc': '', 'quests': qs,
                 'flow': [{'label': '各自獨立（走上設施時依機率發生，回應之前不能移動）', 'ids': [q['id'] for q in qs], 'seq': False}]})
 for i, l in enumerate(out): l['key'] = f"L{i + 1}"
-data = json.dumps(out, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
-tpl = (HERE / 'template.html').read_text()
-assert tpl.count('__DATA__') == 1
-OUT.write_text(tpl.replace('__DATA__', data))
-print(len(out), 'lines', sum(len(l['quests']) for l in out), 'quests', collections.Counter(l['cat'] for l in out))
+
+# 直接執行時才寫出 HTML；遊戲攻略（worldgen/tools/guide/guide.py）會 import 這個檔案，用上面整理好的 out
+if __name__ == '__main__':
+    data = json.dumps(out, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
+    tpl = (HERE / 'template.html').read_text()
+    assert tpl.count('__DATA__') == 1
+    OUT.write_text(tpl.replace('__DATA__', data))
+    print(len(out), 'lines', sum(len(l['quests']) for l in out), 'quests', collections.Counter(l['cat'] for l in out))

@@ -187,6 +187,7 @@ flowchart TD
 |---|---|
 | [`../README.md`](../README.md) | 專案說明：怎麼玩、遊戲內容、自己建置、發布新版本 |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | 版本更新紀錄（新的改動先寫在「未發布」） |
+| [`guide/`](guide/README.md) | **遊戲攻略**（給玩家）：特殊任務、事件、物品與裝備的取得方式、固定 NPC 在哪裡、地標。由 `worldgen/tools/guide/guide.py` 依 `data/` 自動產生，不要手改；改了資料後重跑（測試 `guide.spec.ts` 會檢查是不是最新的） |
 | [`../worldgen/`](../worldgen/README.md) | 世界製作：給 Agent 或玩家的世界生成指南、各種內容的製作指南（`guides/`）、設計方法（`design/`）、平衡性自檢（`balance/`）、世界模板（`templates/`）、內建內容的產生腳本（`scripts/elondia/`） |
 | [`comfy/portrait-spec.md`](comfy/portrait-spec.md) | 模組化像素立繪規格（ComfyUI） |
 | [`mockups/`](mockups/) | UI 樣稿（HTML） |
@@ -197,7 +198,7 @@ flowchart TD
 
 [Wiki](https://github.com/yellow630914/ElondiaRPG/wiki) 由這些文件自動產生，不在 wiki 上直接寫：
 
-- 哪份文件變成哪一頁、放在側邊欄的哪一組（玩家指南、遊戲系統、世界製作、開發、計畫與追蹤），寫在 [`tools/wiki/build.mjs`](../tools/wiki/build.mjs) 的 `GROUPS`。文件之間的連結會改成 wiki 頁面的連結（用代號當連結文字的，例如 `[COMBAT_SYSTEM](COMBAT_SYSTEM.md)`，會顯示成頁名「戰鬥系統」），其他連結改成 GitHub 上那個版本的檔案。
+- 哪份文件變成哪一頁、放在側邊欄的哪一組（玩家指南、遊戲攻略、遊戲系統、世界製作、開發、計畫與追蹤），寫在 [`tools/wiki/build.mjs`](../tools/wiki/build.mjs) 的 `GROUPS`。文件之間的連結會改成 wiki 頁面的連結（用代號當連結文字的，例如 `[COMBAT_SYSTEM](COMBAT_SYSTEM.md)`，會顯示成頁名「戰鬥系統」），其他連結改成 GitHub 上那個版本的檔案。
 - 推送版本 tag、發布流程（`release.yml`）成功之後，[`.github/workflows/wiki.yml`](../.github/workflows/wiki.yml) 產生那一版的頁面並推到 wiki（發布失敗時不更新）；也可以在 Actions → Wiki → Run workflow 手動同步。第一次使用前要先在 GitHub 的 Wiki 頁籤按「Create the first page」建立 wiki（隨便存一頁，同步時會被覆蓋）。
 - 本機預覽：`node tools/wiki/build.mjs --out wiki-out`（`wiki-out/` 不進 git）。
 - **新增文件時要加進 `GROUPS`**（不放上 wiki 的加進 `SKIP`），否則測試 `src/__tests__/wiki.spec.ts` 會失敗。
@@ -209,4 +210,4 @@ flowchart TD
 3. **還沒做完的事寫進 [plan/](plan/README.md)**（Bug、業務邏輯問題、未來計畫、點子庫分開），不要散在各文件末尾；處理完把結論寫回系統文件，再從清單刪掉，在 plan/README 記一行完成紀錄。
 4. **新增系統時**：開一份文件，開頭寫「上層／依賴／被依賴」與程式、資料檔，再把它加進本文件的階層、依賴圖與一覽表，以及 wiki 的 `GROUPS`（第 5 節）。
 5. **不要改檔名。** 程式註解與 `data/` 的 `$comment` 會用「docs/檔名.md 第 N 節」引用文件；改章節編號時要一起搜尋 `docs/檔名` 更新。
-6. **資料整理型的表格**（MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節）沒有產生腳本，改資料時要記得同步。
+6. **資料整理型的表格**（MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節）沒有產生腳本，改資料時要記得同步。`guide/` 是產生的，改資料後重跑 `python3 worldgen/tools/guide/guide.py` 就好。

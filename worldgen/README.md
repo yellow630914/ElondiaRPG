@@ -47,6 +47,8 @@
 
 **任務線走向**：內建艾隆迪亞的所有特殊任務、地下城事件與寄生物的發作整理成一頁 [design/ElondiaQuestFlows.html](design/ElondiaQuestFlows.html)（分支、條件、檢定、效果、親密場景）；內建內容改過之後在 repo 根目錄跑 `python3 worldgen/tools/flowdoc/flowdoc.py` 重新產生。
 
+**遊戲攻略**：給玩家查的[特殊任務、事件、物品、NPC 與地標](../docs/guide/README.md)，同步到 wiki 的「遊戲攻略」；改了 `data/` 之後跑 `python3 worldgen/tools/guide/guide.py` 重新產生（沒重跑時測試會失敗）。
+
 ## 3. 完成前的檢查清單
 
 - [ ] 所有產出都在 `worldgen/worlds/<代號>/`，沒有改到 `data/`、`src/`、`docs/`
