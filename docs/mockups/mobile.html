@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0 } [hidden] { display: none !important }</style>
+<title>埃隆迪亞手機版樣稿</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=LXGW+WenKai+TC&display=swap">
+<style>
+/* 版面：手機直式單欄。上：狀態列（只看）→ 地圖（探索時大、閱讀時縮成一條）→ 日誌 → 情境按鈕 → 底部分頁列（要按的都在下面）
+   寬螢幕時旁邊多一欄「樣稿說明」。配色沿用遊戲 src/style.css 的皮革與金色，只做深色一套。 */
+:root {
+  --bg: #120d09;
+  --panel: #221a13;
+  --panel-2: #2d231a;
+  --border: #4a3a28;
+  --text: #efe4cc;
+  --muted: #9a8768;
+  --accent: #d9a54a;
+  --gold-hi: #f0d083;
+  --gold-lo: #6d5128;
+  --danger: #d8604e;
+  --good: #7cba6a;
+  --hp: #c8483a;
+  --mp: #4a83c9;
+  --parch: #ecdcb6;
+  --parch-2: #dfc896;
+  --ink: #33231a;
+  --ink-2: #6b5038;
+  --tile-street: #4a3c2c;
+  --tile-house: #15100b;
+  --tile-grass: #2c3a20;
+  --tile-tree: #1d2a16;
+  --tile-stone: #2a2622;
+  --scrim: #000000a6;
+  --font-body: 'Noto Serif TC', 'Noto Serif CJK TC', 'PMingLiU', serif;
+  --font-story: 'LXGW WenKai TC', 'Noto Serif TC', serif;
+  --fs-xs: 0.72rem; --fs-sm: 0.84rem; --fs-md: 0.95rem; --fs-lg: 1.1rem; --fs-xl: 1.5rem;
+  --radius: 4px;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px;
+  display: flex; justify-content: center; gap: 32px; overflow: hidden;
+}
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
+button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
+.ico { width: 22px; height: 22px; flex: none; }
+.ico.sm { width: 16px; height: 16px; }
+
+/* ── 手機本體 */
+.app {
+  position: relative; width: 100%; max-width: 440px; height: 100%;
+  display: flex; flex-direction: column; background: var(--bg); overflow: hidden;
+  border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+}
+.band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* 狀態列：只看不按（鈴鐺例外） */
+.status {
+  flex: none; display: flex; align-items: center; gap: 10px; padding-block: 8px;
+  background: linear-gradient(180deg, #2a2017, #1d1611); border-bottom: 1px solid var(--gold-lo);
+  font-size: var(--fs-sm); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.status .cell { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); min-width: 0; }
+.status .cell b { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.status .money b { color: var(--gold-hi); }
+.status .bell { margin-left: auto; position: relative; display: grid; place-items: center; width: 40px; height: 36px; color: var(--gold-hi); }
+.badge {
+  position: absolute; top: 0; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px;
+  background: var(--danger); color: #fff; font: 700 11px/17px system-ui, sans-serif; text-align: center;
+}
+.badge.gold { background: var(--accent); color: var(--ink); }
+.badge.dot { min-width: 9px; width: 9px; height: 9px; padding: 0; top: 6px; right: calc(50% - 18px); }
+
+/* 地圖 */
+.mapwrap { flex: none; border-bottom: 1px solid var(--border); background: var(--panel); }
+.maphead { display: flex; align-items: center; gap: 8px; padding-block: 8px; width: 100%; text-align: left; }
+.maphead .name { font-weight: 900; color: var(--gold-hi); letter-spacing: 0.06em; }
+.maphead .sub { color: var(--muted); font-size: var(--fs-xs); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.maphead .toggle { display: inline-flex; align-items: center; gap: 2px; color: var(--accent); font-size: var(--fs-sm); }
+.maphead .toggle .ico { transition: transform 0.2s; }
+.app.reading .maphead .toggle .ico { transform: rotate(180deg); }
+.grid {
+  display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding-bottom: 10px;
+  transition: opacity 0.2s;
+}
+.app.reading .grid { display: none; }
+.tile {
+  position: relative; aspect-ratio: 1; max-width: 100%; border-radius: 2px; display: grid; place-items: center;
+  font-size: var(--fs-xs); font-weight: 600; color: var(--text); line-height: 1.05; text-align: center;
+  box-shadow: inset 0 0 0 1px #00000055;
+}
+.tile.street { background: var(--tile-street); }
+.tile.house { background: var(--tile-house); cursor: default; }
+.tile.grass { background: var(--tile-grass); }
+.tile.tree { background: var(--tile-tree); cursor: default; }
+.tile.stone { background: var(--tile-stone); }
+.tile.bld { background: #4b3420; box-shadow: inset 0 0 0 1px var(--gold-lo); color: var(--gold-hi); }
+.tile.exit { background: #1f2d2a; box-shadow: inset 0 0 0 1px #7fb5a2; color: #a9d8c6; }
+.tile.near::after { content: ''; position: absolute; inset: 3px; border: 1px dashed #f0d08066; border-radius: 2px; pointer-events: none; }
+.tile.target { box-shadow: inset 0 0 0 2px var(--gold-hi); }
+.tile .who { position: absolute; right: 2px; top: 1px; font-size: 10px; color: #8fd0ff; }
+.hero {
+  position: absolute; inset: 18%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff1c6, #e2b45a 55%, #a87528);
+  box-shadow: 0 0 0 2px #120d09, 0 0 10px #f0d083aa; transition: transform 0.12s;
+}
+
+/* 日誌 */
+.log { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-block: 10px 14px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+.entry { font-size: var(--fs-sm); color: var(--muted); display: flex; gap: 8px; line-height: 1.55; }
+.entry time { flex: none; font-variant-numeric: tabular-nums; color: var(--gold-lo); }
+.entry.sys b { color: var(--text); font-weight: 600; }
+.entry.story {
+  display: block; background: linear-gradient(180deg, var(--parch), var(--parch-2)); color: var(--ink);
+  font-family: var(--font-story); font-size: 1rem; line-height: 1.85; padding: 12px 14px; border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px #b8955a, 0 4px 12px #0007;
+}
+.entry.story .who { display: block; font-family: var(--font-body); font-size: var(--fs-xs); color: var(--ink-2); margin-bottom: 4px; }
+.entry.new { animation: slide-in 0.3s ease-out; }
+@keyframes slide-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* 情境按鈕：站在設施上才出現 */
+.ctx { flex: none; padding-block: 8px; border-top: 1px solid var(--border); background: var(--panel); }
+.ctx button {
+  width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: linear-gradient(180deg, #e5b75a, #b2822f); color: #22160b; font-weight: 900; letter-spacing: 0.08em;
+  border-radius: var(--radius); box-shadow: inset 0 0 0 1px #f0d083, 0 3px 10px #0008;
+}
+
+/* 底部分頁列 */
+.tabbar { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); background: linear-gradient(180deg, #2a2017, #17110c); border-top: 1px solid var(--gold-lo); }
+.tabbar button {
+  position: relative; min-height: 58px; display: grid; justify-items: center; align-content: center; gap: 3px;
+  color: var(--muted); font-size: var(--fs-xs);
+}
+.tabbar button .ico { color: var(--accent); }
+.tabbar button.on { color: var(--gold-hi); }
+.tabbar button.on::before { content: ''; position: absolute; top: 0; left: 22%; right: 22%; height: 2px; background: var(--accent); }
+
+/* 半屏面板 */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 20; animation: fade 0.2s; }
+@keyframes fade { from { opacity: 0; } }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 72%; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #2a2017, #1d1611); border-top: 1px solid var(--accent); border-radius: 12px 12px 0 0;
+  box-shadow: 0 -10px 30px #000b; animation: up 0.22s ease-out; transition: max-height 0.22s;
+}
+.sheet.full { max-height: 94%; }
+@keyframes up { from { transform: translateY(40%); opacity: 0.4; } }
+.sheet .grip { flex: none; display: grid; place-items: center; height: 22px; width: 100%; }
+.sheet .grip::before { content: ''; width: 44px; height: 4px; border-radius: 2px; background: var(--gold-lo); }
+.sheet header { flex: none; display: flex; align-items: center; gap: 8px; padding-block: 0 10px; }
+.sheet header h2 { margin: 0; font-size: var(--fs-lg); font-weight: 900; color: var(--gold-hi); letter-spacing: 0.08em; flex: 1; text-wrap: balance; }
+.sheet header .x { width: 36px; height: 36px; display: grid; place-items: center; color: var(--muted); }
+.sheet .body { overflow-y: auto; overscroll-behavior: contain; padding-block: 0 18px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.seg { display: flex; border-bottom: 1px solid var(--border); }
+.seg button { flex: 1; padding: 8px; color: var(--muted); border-bottom: 2px solid transparent; }
+.seg button.on { color: var(--gold-hi); border-bottom-color: var(--accent); }
+.section-title { font-size: var(--fs-xs); color: var(--muted); letter-spacing: 0.12em; margin: 4px 0 -4px; }
+.list { display: flex; flex-direction: column; gap: 6px; }
+.row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #0000004d; border: 1px solid #ffffff14; border-radius: var(--radius);
+}
+.row .main { flex: 1; min-width: 0; }
+.row .main b { display: block; font-weight: 600; }
+.row .main small { color: var(--muted); font-size: var(--fs-xs); }
+.btn {
+  min-height: 40px; padding: 0 14px; border-radius: var(--radius); background: linear-gradient(180deg, #3b2c1e, #2a1f15);
+  border: 1px solid var(--gold-lo); color: var(--text); font-size: var(--fs-sm); white-space: nowrap;
+}
+.btn.primary { background: linear-gradient(180deg, #e5b75a, #b2822f); border-color: var(--gold-hi); color: #22160b; font-weight: 700; }
+.btn.wide { width: 100%; min-height: 48px; }
+.avatar {
+  flex: none; width: 40px; height: 40px; border-radius: 3px; display: grid; place-items: center; font-weight: 900;
+  background: #4b3420; color: var(--gold-hi); box-shadow: inset 0 0 0 1px var(--gold-lo);
+}
+.bar { height: 6px; border-radius: 3px; background: #5a1c16; overflow: hidden; margin-top: 4px; }
+.bar i { display: block; height: 100%; background: var(--hp); }
+.chip { font-size: var(--fs-xs); padding: 1px 6px; border-radius: 2px; background: var(--accent); color: var(--ink); font-weight: 700; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.more-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.more-grid button {
+  position: relative; min-height: 72px; display: grid; justify-items: center; align-content: center; gap: 6px;
+  background: #0000004d; border: 1px solid #ffffff14; border-radius: var(--radius); font-size: var(--fs-xs); color: var(--text);
+}
+.more-grid button .ico { color: var(--accent); }
+.more-grid .badge { top: 4px; right: 6px; }
+.empty { color: var(--muted); font-size: var(--fs-sm); padding: 10px 12px; border: 1px dashed var(--border); border-radius: var(--radius); }
+textarea {
+  width: 100%; min-height: 64px; resize: vertical; background: #0d0a07; color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px 10px; font: inherit; font-size: var(--fs-sm); box-sizing: border-box;
+}
+.muted { color: var(--muted); font-size: var(--fs-sm); line-height: 1.6; margin: 0; }
+
+/* 提示與地名卡 */
+.toast {
+  position: absolute; top: 52px; left: 50%; transform: translateX(-50%); z-index: 40; max-width: 86%;
+  background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius); padding: 8px 14px;
+  font-size: var(--fs-sm); box-shadow: 0 6px 20px #000a; animation: drop 0.2s ease-out; text-align: center;
+}
+@keyframes drop { from { opacity: 0; transform: translate(-50%, -8px); } }
+.placecard {
+  position: absolute; left: 0; right: 0; top: 34%; z-index: 39; text-align: center; pointer-events: none;
+  animation: card 1.8s ease-out forwards;
+}
+.placecard b { display: block; font-size: var(--fs-xl); font-weight: 900; letter-spacing: 0.3em; color: var(--gold-hi); text-shadow: 0 2px 0 #000, 0 0 18px #000; }
+.placecard small { color: var(--text); letter-spacing: 0.2em; text-shadow: 0 1px 0 #000; }
+@keyframes card { 0% { opacity: 0; } 15%, 70% { opacity: 1; } 100% { opacity: 0; } }
+
+/* 寬螢幕的說明欄 */
+.notes { display: none; width: 360px; padding-block: 24px; overflow-y: auto; }
+.notes h1 { font-size: var(--fs-lg); color: var(--gold-hi); letter-spacing: 0.08em; margin: 0 0 4px; }
+.notes-body h3 { font-size: var(--fs-md); color: var(--accent); margin: 16px 0 4px; }
+.notes-body p, .notes-body li { color: var(--text); font-size: var(--fs-sm); line-height: 1.7; margin: 0; }
+.notes-body ul { padding-left: 1.2em; margin: 0; }
+.notes-body .idea { color: var(--muted); }
+@media (min-width: 900px) {
+  .notes { display: block; }
+  .app { box-shadow: 0 0 40px #000c; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+
+<div class="app" id="app">
+  <div class="status band">
+    <span class="cell"><svg class="ico sm"><use href="#i-sun" id="sunUse"/></svg><b id="clock">第3天 14:00</b></span>
+    <span class="cell"><svg class="ico sm"><use href="#i-pin"/></svg><b id="town">河谷鎮</b></span>
+    <span class="cell money"><svg class="ico sm"><use href="#i-coin"/></svg><b id="money">1銀 20銅</b></span>
+    <button class="bell" id="bellBtn" aria-label="待處理"><svg class="ico"><use href="#i-bell"/></svg><span class="badge" id="bellBadge">2</span></button>
+  </div>
+
+  <div class="mapwrap">
+    <button class="maphead band" id="mapHead" aria-label="展開或收起地圖">
+      <span class="name" id="areaName">河谷鎮</span>
+      <span class="sub" id="areaSub">中央平原・點相鄰或遠處的格子移動</span>
+      <span class="toggle"><span id="toggleText">收起</span><svg class="ico sm"><use href="#i-chev"/></svg></span>
+    </button>
+    <div class="grid band" id="grid"></div>
+  </div>
+
+  <div class="log band" id="log" aria-live="polite"></div>
+
+  <div class="ctx band" id="ctx" hidden><button id="ctxBtn"></button></div>
+
+  <nav class="tabbar" id="tabbar">
+    <button data-tab="map" class="on"><svg class="ico"><use href="#i-map"/></svg><span>地圖</span></button>
+    <button data-tab="party"><svg class="ico"><use href="#i-users"/></svg><span>隊伍</span><span class="badge dot" title="有人可以升級"></span></button>
+    <button data-tab="rest"><svg class="ico"><use href="#i-moon"/></svg><span>休息</span></button>
+    <button data-tab="here"><svg class="ico"><use href="#i-here"/></svg><span>這裡</span><span class="badge gold" id="hereBadge" hidden></span></button>
+    <button data-tab="more"><svg class="ico"><use href="#i-dots"/></svg><span>更多</span><span class="badge gold">1</span></button>
+  </nav>
+</div>
+
+<aside class="notes band">
+  <h1>手機版樣稿</h1>
+  <p class="muted">直式單手操作。左邊可以直接點，寬螢幕才會看到這一欄；手機上在「更多 → 樣稿說明」。</p>
+  <div class="notes-body" id="notesBody"></div>
+</aside>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-4 3.4-6 6.5-6s5.7 2 6.5 6"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.4 0 4 1.6 4.6 4.5"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+    <symbol id="i-here" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 20c.6-3 2.8-5 5.5-5s4.9 2 5.5 5"/><circle cx="9.5" cy="9" r="3.5"/><path d="M15 4h6v5h-3l-2 2V9h-1z"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="10" width="4" height="4"/><rect x="10" y="10" width="4" height="4"/><rect x="17" y="10" width="4" height="4"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-coin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h4a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3h4"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 15l6-6 6 6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z"/><path d="M5 18a2 2 0 0 1 2-2h11M9 8h6"/></symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 6l4-2 2 2-2 4-3 0-8 8-3-3 8-8z"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-7 9 7M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></symbol>
+    <symbol id="i-script" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h10l3 3v15H6z"/><path d="M9 9h7M9 13h7M9 17h4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="10" width="14" height="10"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2-2.5 4M12 17v.5"/></symbol>
+  </defs>
+</svg>
+
+<script>
+(() => {
+  // ── 範例資料（樣稿用，不是遊戲的真資料）
+  // 圖例：. 街道  # 房屋  , 草地  T 樹  : 石地  B/G/I/M 設施  > < 出口
+  const AREAS = {
+    town: {
+      name: '河谷鎮', sub: '中央平原', start: [1, 3],
+      rows: [
+        '##G#..##',
+        '#....I.#',
+        '..M.....',
+        '.......>',
+        '#B..#...',
+        '##..##.#',
+        '#......#',
+      ],
+      places: {
+        G: { name: '冒險者公會', short: '公會', people: ['gilda'], options: [['委託板', 'board'], ['交付委託', 'turnin', 1], ['升階檢定', 'rank']] },
+        I: { name: '麥穗旅店', short: '旅店', people: ['hanna'], options: [['住宿（長休）', 'inn'], ['點一份熱湯', 'meal'], ['打聽消息', 'rumor']] },
+        M: { name: '河谷市集', short: '市集', people: ['lena'], options: [['購買', 'shop'], ['出售', 'shop']] },
+        B: { name: '鐵匠鋪', short: '鐵匠', people: ['bern'], options: [['購買武器防具', 'shop'], ['出售', 'shop'], ['修理裝備', 'repair'], ['委託打造', 'forge']] },
+      },
+      exits: { '>': { to: 'plain', label: '平原', at: [1, 3] } },
+      street: ['guard'],
+    },
+    plain: {
+      name: '河谷鎮外', sub: '中央平原・建議 F 級', start: [0, 3],
+      rows: [
+        'TT,,,,TT',
+        'T,,,,,,T',
+        ',,,::,,,',
+        '<,,::,,D',
+        ',,,,,,,T',
+        'TT,,,,TT',
+        'TTT,,TTT',
+      ],
+      places: {},
+      exits: {
+        '<': { to: 'town', label: '河谷鎮', at: [6, 3] },
+        'D': { to: 'dungeon', label: '古井', at: [2, 1] },
+      },
+      street: [],
+    },
+    dungeon: {
+      name: '古井地下城', sub: '第一層・建議 F 級', start: [1, 1],
+      rows: [
+        '########',
+        '#<::#::#',
+        '#.::#::#',
+        '#::::::#',
+        '#::##::#',
+        '#:::::>#',
+        '########',
+      ],
+      places: {},
+      exits: {
+        '<': { to: 'plain', label: '地面', at: [6, 3] },
+        '>': { to: null, label: '第二層' },
+      },
+      street: [],
+    },
+  }
+  const PEOPLE = {
+    bern: { name: '博恩', role: '鐵匠・矮人', mood: '專注' },
+    gilda: { name: '吉兒妲', role: '公會文書', mood: '忙碌' },
+    hanna: { name: '漢娜', role: '旅店老闆娘', mood: '和善' },
+    lena: { name: '蕾娜', role: '布料商人', mood: '精明' },
+    guard: { name: '巡邏衛兵', role: '河谷鎮衛兵', mood: '警戒' },
+  }
+  const STORY = {
+    bern: '鐵匠鋪裡熱得像夏天的正午。博恩把剛出爐的劍胚浸進水槽，白霧嘶的一聲竄上屋樑。他抬眼看你，用下巴指了指牆上那排還沒開鋒的短劍：「要現成的就挑那邊。要我替你打一把，得等三天。」',
+    gilda: '吉兒妲從一疊委託書後面探出頭，鼻樑上的眼鏡滑到一半。「古井那邊又有人聽見怪聲了。F 級就能接，報酬不多，但公會記你一筆。」她把蓋了章的單子推過來，指尖沾著墨。',
+    hanna: '漢娜一邊擦杯子一邊笑：「又要出城？先吃點熱的。」她壓低聲音，「昨晚有兩個外地人在打聽古井的事，付錢很爽快，說話卻不像商人。」',
+    lena: '蕾娜把一匹深藍的布攤在你面前，指腹順著紋路滑過去。「萊茵堡來的貨，這個月就這一匹。」她瞄了一眼你磨破的袖口，笑意更深了些。',
+    guard: '衛兵上下打量你一眼，手沒離開劍柄。「冒險者？天黑前別在東門外逗留，最近平原上不太平。」',
+    rumor: '鄰桌的老獵人放下酒杯：「古井底下不只一層，我年輕時見過第二層的門。門上刻著的東西，不是這一帶的字。」',
+  }
+  const NOTES = `
+    <h3>主畫面：地圖＋日誌</h3>
+    <ul>
+      <li><b>探索狀態</b>：地圖大、日誌小，連續點格子移動。</li>
+      <li><b>閱讀狀態</b>：AI 寫了一段敘事時自動切過來，地圖縮成一條。</li>
+      <li>點地圖那一條或底部「地圖」切換。</li>
+    </ul>
+    <h3>移動與切換地圖</h3>
+    <ul>
+      <li>點相鄰格子走一步；<span class="idea">（提案）點遠處的格子自動走過去，省掉連點。</span></li>
+      <li>走到青色的出口格就換區域（出城、進地下城、下一層）。</li>
+    </ul>
+    <h3>設施：情境按鈕</h3>
+    <ul><li>站在設施上，底部列上方才會出現「進入○○」，點了滑出設施選項。</li></ul>
+    <h3>底部分頁列（依使用頻率）</h3>
+    <ul>
+      <li>地圖｜隊伍（內含行囊分頁）｜休息｜這裡（人、主動行動、意圖）｜更多</li>
+      <li>拇指最好按的是下半部，所以要按的都放下面；上方狀態列只看不按。</li>
+      <li>行囊以後用得多，再升格成底部的獨立按鈕。</li>
+    </ul>
+    <h3>更多（次級選單）</h3>
+    <ul><li>關係、筆記、工藝、契約、存讀檔、快存、快讀、設定、語言、首頁、提示詞、世界。</li></ul>
+    <h3>先不做</h3>
+    <ul><li>戰鬥畫面：探索版定案後再規劃。</li><li>電腦版維持原樣，只在手機寬度換版面。</li></ul>
+  `
+
+  // ── 狀態
+  const st = {
+    area: 'town', pos: [1, 3], minutes: 3 * 1440 + 14 * 60, money: 120,
+    reading: false, sheet: null, walking: null, bell: 2, turnedIn: false,
+  }
+  const $ = (id) => document.getElementById(id)
+  const app = $('app'), grid = $('grid'), log = $('log')
+  $('notesBody').innerHTML = NOTES
+
+  // ── 時間與金錢
+  const pad = (n) => String(n).padStart(2, '0')
+  function clockText() {
+    const d = Math.floor(st.minutes / 1440), h = Math.floor((st.minutes % 1440) / 60), m = st.minutes % 60
+    return { full: `第${d}天 ${pad(h)}:${pad(m)}`, hm: `${pad(h)}:${pad(m)}`, day: h >= 6 && h < 18 }
+  }
+  function renderStatus() {
+    const c = clockText()
+    $('clock').textContent = c.full
+    $('sunUse').setAttribute('href', c.day ? '#i-sun' : '#i-moon')
+    $('money').textContent = `${Math.floor(st.money / 100)}銀 ${st.money % 100}銅`
+    $('town').textContent = AREAS[st.area].name
+    $('bellBadge').textContent = st.bell
+    $('bellBadge').hidden = !st.bell
+  }
+
+  // ── 日誌
+  function addLog(kind, html, who) {
+    const el = document.createElement('div')
+    el.className = `entry ${kind} new`
+    if (kind === 'story') el.innerHTML = `<span class="who">${who ?? ''}</span>${html}`
+    else el.innerHTML = `<time>${clockText().hm}</time><span>${html}</span>`
+    log.appendChild(el)
+    log.scrollTop = log.scrollHeight
+  }
+  function narrate(key, who) {
+    addLog('story', STORY[key], who)
+    setReading(true)
+  }
+
+  // ── 地圖
+  const at = (x, y) => AREAS[st.area].rows[y]?.[x]
+  const walkable = (ch) => ch !== undefined && ch !== '#' && ch !== 'T'
+  function cellPlace() {
+    const ch = at(...st.pos)
+    return AREAS[st.area].places[ch] ?? null
+  }
+  function peopleHere() {
+    const p = cellPlace()
+    return p ? p.people : AREAS[st.area].street
+  }
+  function renderMap() {
+    const a = AREAS[st.area]
+    $('areaName').textContent = a.name
+    const p = cellPlace()
+    $('areaSub').textContent = st.reading ? (p ? `${a.sub}・在${p.name}` : a.sub) : `${a.sub}・點格子移動`
+    $('toggleText').textContent = st.reading ? '展開地圖' : '收起'
+    grid.innerHTML = ''
+    const target = st.walking?.at(-1)
+    a.rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      const b = document.createElement('button')
+      const near = Math.abs(x - st.pos[0]) + Math.abs(y - st.pos[1]) === 1 && walkable(ch)
+      let cls = 'street', label = ''
+      if (ch === '#') cls = st.area === 'dungeon' ? 'house' : 'house'
+      else if (ch === ',') cls = 'grass'
+      else if (ch === 'T') cls = 'tree'
+      else if (ch === ':') cls = 'stone'
+      else if (a.places[ch]) { cls = 'bld'; label = a.places[ch].short }
+      else if (a.exits[ch]) { cls = 'exit'; label = a.exits[ch].label }
+      b.className = `tile ${cls}${near ? ' near' : ''}${target && target[0] === x && target[1] === y ? ' target' : ''}`
+      b.innerHTML = label
+      b.setAttribute('aria-label', label || `${x},${y}`)
+      if (!walkable(ch)) b.disabled = true
+      const ppl = a.places[ch]?.people.length
+      if (ppl) b.insertAdjacentHTML('beforeend', `<span class="who">●${ppl}</span>`)
+      if (x === st.pos[0] && y === st.pos[1]) b.insertAdjacentHTML('beforeend', '<span class="hero"></span>')
+      b.addEventListener('click', () => walkTo(x, y))
+      grid.appendChild(b)
+    }))
+  }
+  // 點遠處的格子：找最短路線，一格一格走過去
+  function path(from, to) {
+    const key = (p) => p.join(',')
+    const prev = new Map([[key(from), null]])
+    const q = [from]
+    while (q.length) {
+      const cur = q.shift()
+      if (key(cur) === key(to)) break
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const n = [cur[0] + dx, cur[1] + dy]
+        if (!walkable(at(...n)) || prev.has(key(n))) continue
+        // 出口只能當終點，不能穿過
+        if (AREAS[st.area].exits[at(...n)] && key(n) !== key(to)) continue
+        prev.set(key(n), cur)
+        q.push(n)
+      }
+    }
+    if (!prev.has(key(to))) return null
+    const out = []
+    for (let p = to; p && key(p) !== key(from); p = prev.get(key(p))) out.unshift(p)
+    return out
+  }
+  function walkTo(x, y) {
+    if (st.walking) return
+    const steps = path(st.pos, [x, y])
+    if (!steps?.length) return
+    st.walking = steps
+    const tick = () => {
+      const next = st.walking.shift()
+      st.pos = next
+      st.minutes += 5
+      const ch = at(...next)
+      const exit = AREAS[st.area].exits[ch]
+      if (exit) { st.walking = null; return useExit(exit) }
+      if (!st.walking.length) { st.walking = null; arrive() }
+      renderAll()
+      if (st.walking) setTimeout(tick, 110)
+    }
+    tick()
+  }
+  function arrive() {
+    const p = cellPlace()
+    if (p) addLog('sys', `來到<b>${p.name}</b>。`)
+  }
+  function useExit(exit) {
+    if (!exit.to) {
+      toast('樣稿只做到第一層；真的遊戲會走進第二層。')
+      st.pos = [5, 5]
+      return renderAll()
+    }
+    st.area = exit.to
+    st.pos = exit.at ?? AREAS[exit.to].start
+    const a = AREAS[st.area]
+    addLog('sys', `進入<b>${a.name}</b>。`)
+    placeCard(a.name, a.sub)
+    renderAll()
+  }
+  function setReading(on) {
+    st.reading = on
+    app.classList.toggle('reading', on)
+    renderAll()
+    log.scrollTop = log.scrollHeight
+  }
+  $('mapHead').addEventListener('click', () => setReading(!st.reading))
+
+  // ── 情境按鈕與分頁列
+  function renderCtx() {
+    const p = cellPlace()
+    $('ctx').hidden = !p
+    if (p) $('ctxBtn').textContent = `進入${p.name}`
+  }
+  $('ctxBtn').addEventListener('click', () => openSheet('place'))
+  function renderTabs() {
+    document.querySelectorAll('.tabbar button').forEach((b) => {
+      const t = b.dataset.tab
+      b.classList.toggle('on', t === 'map' ? !st.reading && !st.sheet : st.sheet === t)
+    })
+    const n = peopleHere().length
+    $('hereBadge').hidden = !n
+    $('hereBadge').textContent = n
+  }
+  $('tabbar').addEventListener('click', (e) => {
+    const b = e.target.closest('button')
+    if (!b) return
+    const t = b.dataset.tab
+    if (t === 'map') { closeSheet(); setReading(!st.reading); return }
+    st.sheet === t ? closeSheet() : openSheet(t)
+  })
+  $('bellBtn').addEventListener('click', () => openSheet('bell'))
+
+  // ── 半屏面板
+  let partyTab = 'party'
+  function sheetContent(kind) {
+    const a = AREAS[st.area]
+    if (kind === 'place') {
+      const p = cellPlace()
+      if (!p) return null
+      const opts = p.options.map(([label, act, badge]) => `
+        <button class="btn wide" data-act="${act}" style="display:flex;align-items:center;justify-content:space-between">
+          <span>${label}</span>${badge && !st.turnedIn ? `<span class="chip">${badge} 件</span>` : ''}
+        </button>`).join('')
+      return { title: p.name, body: `<div class="list">${opts}</div>${peopleRows(p.people)}` }
+    }
+    if (kind === 'here') {
+      const ppl = peopleHere()
+      return {
+        title: '這裡',
+        body: `${ppl.length ? peopleRows(ppl) : `<div class="section-title">這裡的人</div><div class="empty">身邊沒有可以互動的人。走到設施或有人的格子試試。</div>`}
+          <div class="section-title">主動行動</div>
+          <textarea id="actText" placeholder="想做什麼？例如：仔細搜查這附近的痕跡"></textarea>
+          <div class="two"><button class="btn" data-act="check">察覺檢定</button><button class="btn primary" data-act="act">送出行動</button></div>
+          <div class="section-title">意圖</div>
+          <div class="row"><div class="main"><b>調查古井的怪聲</b><small>公會委託・F 級</small></div><button class="btn" data-act="intent">更換</button></div>`,
+      }
+    }
+    if (kind === 'party') {
+      const seg = `<div class="seg"><button data-seg="party" class="${partyTab === 'party' ? 'on' : ''}">隊伍</button><button data-seg="bag" class="${partyTab === 'bag' ? 'on' : ''}">行囊</button></div>`
+      if (partyTab === 'bag') {
+        const items = [['治療藥水', '消耗品', '×3'], ['火把', '雜物', '×5'], ['短劍', '武器・普通', '×1'], ['狼皮', '材料', '×2'], ['乾糧', '食物', '×4']]
+        return { title: '隊伍', body: seg + `<div class="list">${items.map(([n, k, c]) => `<div class="row"><div class="avatar">${n[0]}</div><div class="main"><b>${n}</b><small>${k}</small></div><span class="muted">${c}</span></div>`).join('')}</div>` }
+      }
+      const mem = [['艾琳', '人類・戰士 Lv3', 82, ''], ['葛倫', '矮人・牧師 Lv3', 100, ''], ['米菈', '半精靈・遊俠 Lv2', 64, '可升級']]
+      return { title: '隊伍', body: seg + `<div class="list">${mem.map(([n, r, hp, note]) => `
+        <div class="row"><div class="avatar">${n[0]}</div><div class="main"><b>${n} ${note ? `<span class="chip">${note}</span>` : ''}</b><small>${r}・HP ${hp}%</small><div class="bar"><i style="width:${hp}%"></i></div></div><button class="btn" data-act="char">詳情</button></div>`).join('')}</div>` }
+    }
+    if (kind === 'rest') {
+      return {
+        title: '休息',
+        body: `<p class="muted">短休花 1 小時，可以用生命骰回血；長休花 8 小時，回滿生命與法術。</p>
+          <div class="row"><div class="main"><b>生命骰</b><small>艾琳 2/3・葛倫 3/3・米菈 1/2</small></div></div>
+          <div class="two"><button class="btn wide" data-act="short">短休 1 小時</button><button class="btn wide primary" data-act="long">長休 8 小時</button></div>`,
+      }
+    }
+    if (kind === 'more') {
+      const items = [['i-heart', '關係'], ['i-book', '筆記', st.turnedIn ? 0 : 1], ['i-tools', '工藝'], ['i-lock', '契約'], ['i-save', '存讀檔'], ['i-save', '快存'], ['i-save', '快讀'], ['i-gear', '設定'], ['i-globe', '語言'], ['i-script', '提示詞'], ['i-globe', '世界'], ['i-home', '首頁']]
+      return {
+        title: '更多',
+        body: `<div class="more-grid">${items.map(([i, l, b]) => `<button data-act="menu" data-label="${l}"><svg class="ico"><use href="#${i}"/></svg>${l}${b ? `<span class="badge gold">${b}</span>` : ''}</button>`).join('')}</div>
+          <button class="btn wide" data-act="notes" style="display:flex;align-items:center;justify-content:center;gap:6px"><svg class="ico sm"><use href="#i-help"/></svg>樣稿說明</button>`,
+      }
+    }
+    if (kind === 'notes') return { title: '樣稿說明', body: `<div class="notes-body">${NOTES}</div>` }
+    if (kind === 'bell') {
+      return {
+        title: '待處理',
+        body: st.bell ? `<div class="list">
+          <div class="row"><div class="avatar">米</div><div class="main"><b>米菈可以升級</b><small>選一項新能力</small></div><button class="btn primary" data-act="lvl">處理</button></div>
+          ${st.turnedIn ? '' : `<div class="row"><div class="avatar">公</div><div class="main"><b>委託可以交付</b><small>冒險者公會・清理下水道</small></div><button class="btn" data-act="goguild">前往</button></div>`}
+        </div>` : `<div class="empty">沒有需要處理的事。</div>`,
+      }
+    }
+    return null
+  }
+  function peopleRows(ids) {
+    return `<div class="section-title">這裡的人</div><div class="list">${ids.map((id) => {
+      const p = PEOPLE[id]
+      return `<div class="row"><div class="avatar">${p.name[0]}</div><div class="main"><b>${p.name}</b><small>${p.role}・${p.mood}</small></div><button class="btn primary" data-act="talk" data-id="${id}">交談</button><button class="btn" data-act="pmore" aria-label="更多互動">⋯</button></div>`
+    }).join('')}</div>`
+  }
+  function openSheet(kind) {
+    closeSheet(true)
+    const c = sheetContent(kind)
+    if (!c) return
+    st.sheet = kind
+    const scrim = document.createElement('div')
+    scrim.className = 'scrim'
+    scrim.addEventListener('click', () => closeSheet())
+    const sh = document.createElement('section')
+    sh.className = 'sheet'
+    sh.setAttribute('role', 'dialog')
+    sh.setAttribute('aria-label', c.title)
+    sh.innerHTML = `<button class="grip" aria-label="展開或縮小面板"></button>
+      <header class="band"><h2>${c.title}</h2><button class="x" aria-label="關閉"><svg class="ico"><use href="#i-x"/></svg></button></header>
+      <div class="body band">${c.body}</div>`
+    sh.querySelector('.grip').addEventListener('click', () => sh.classList.toggle('full'))
+    sh.querySelector('.x').addEventListener('click', () => closeSheet())
+    sh.addEventListener('click', onSheetClick)
+    // 往上拉展開、往下拉收起
+    sh.querySelector('.grip').addEventListener('pointerdown', (e) => {
+      const y0 = e.clientY
+      window.addEventListener('pointerup', (u) => {
+        const dy = u.clientY - y0
+        if (dy < -30) sh.classList.add('full')
+        else if (dy > 60) sh.classList.contains('full') ? sh.classList.remove('full') : closeSheet()
+      }, { once: true })
+    })
+    app.append(scrim, sh)
+    renderTabs()
+  }
+  function closeSheet(silent) {
+    app.querySelectorAll('.scrim, .sheet').forEach((el) => el.remove())
+    st.sheet = null
+    if (!silent) renderTabs()
+  }
+  function refreshSheet() {
+    const sh = app.querySelector('.sheet')
+    const c = st.sheet && sheetContent(st.sheet)
+    if (sh && c) sh.querySelector('.body').innerHTML = c.body
+  }
+  function onSheetClick(e) {
+    const seg = e.target.closest('[data-seg]')
+    if (seg) { partyTab = seg.dataset.seg; return refreshSheet() }
+    const b = e.target.closest('[data-act]')
+    if (!b) return
+    const act = b.dataset.act
+    const p = cellPlace()
+    switch (act) {
+      case 'talk': {
+        const who = PEOPLE[b.dataset.id]
+        closeSheet()
+        addLog('sys', `和<b>${who.name}</b>交談。`)
+        st.minutes += 10
+        return narrate(b.dataset.id, `${who.name}・${AREAS[st.area].name}`)
+      }
+      case 'rumor':
+        closeSheet(); st.money -= 5; st.minutes += 30
+        addLog('sys', '請鄰桌喝一杯，<b>−5銅</b>。')
+        return narrate('rumor', `麥穗旅店`)
+      case 'meal':
+        closeSheet(); st.money -= 8; st.minutes += 30
+        addLog('sys', '吃了一份熱湯，<b>−8銅</b>，全隊恢復少許生命。'); return renderAll()
+      case 'inn': case 'long':
+        closeSheet(); st.minutes += 480; if (act === 'inn') st.money -= 20
+        addLog('sys', `長休 8 小時${act === 'inn' ? '，住宿 <b>−20銅</b>' : ''}。全隊生命與法術回滿。`); return renderAll()
+      case 'short':
+        closeSheet(); st.minutes += 60
+        addLog('sys', '短休 1 小時。艾琳用了 1 顆生命骰，<b>+7 生命</b>。'); return renderAll()
+      case 'turnin':
+        if (st.turnedIn) return toast('沒有可以交付的委託。')
+        st.turnedIn = true; st.bell = Math.max(0, st.bell - 1); st.money += 60
+        closeSheet(); addLog('sys', '交付委託「清理下水道」，報酬 <b>+60銅</b>。')
+        return narrate('gilda', '吉兒妲・冒險者公會')
+      case 'goguild':
+        closeSheet()
+        if (st.area !== 'town') return toast('委託要回河谷鎮的冒險者公會交付。')
+        setReading(false)
+        return walkTo(2, 0)
+      case 'lvl': closeSheet(); return openSheet('party')
+      case 'act': {
+        const text = $('actText')?.value.trim() || '仔細搜查這附近的痕跡'
+        closeSheet(); st.minutes += 10
+        addLog('sys', `主動行動：<b>${text}</b>　察覺 d20＋3 = 15，成功。`)
+        addLog('story', '你蹲下身，在泥地上找到幾枚新鮮的腳印，鞋底的紋路很深，是城裡少見的軍靴。腳印往東門的方向去了。', '主動行動')
+        return setReading(true)
+      }
+      case 'notes': return openSheet('notes')
+      case 'menu': return toast(`樣稿：這裡會打開「${b.dataset.label}」`)
+      default: return toast(`樣稿：這裡會打開「${b.textContent.trim()}」`)
+    }
+  }
+
+  // ── 提示與地名卡
+  function toast(text) {
+    app.querySelectorAll('.toast').forEach((el) => el.remove())
+    const el = document.createElement('div')
+    el.className = 'toast'
+    el.textContent = text
+    app.appendChild(el)
+    setTimeout(() => el.remove(), 2200)
+  }
+  function placeCard(name, sub) {
+    const el = document.createElement('div')
+    el.className = 'placecard'
+    el.innerHTML = `<b>${name}</b><small>${sub}</small>`
+    app.appendChild(el)
+    setTimeout(() => el.remove(), 1900)
+  }
+
+  function renderAll() {
+    renderStatus(); renderMap(); renderCtx(); renderTabs()
+  }
+
+  // ── 開場：幾行範例日誌
+  addLog('sys', '讀取存檔「第 3 天・河谷鎮」。')
+  addLog('story', '午後的河谷鎮很安靜，只有鐵匠鋪那邊傳來一下一下的敲打聲。廣場的告示板上，公會新貼的委託在風裡翻動。', '河谷鎮')
+  addLog('sys', '這是樣稿：點地圖上的格子移動，走到設施上試試下面的按鈕。')
+  renderAll()
+})()
+</script>
