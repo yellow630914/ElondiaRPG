@@ -40,3 +40,6 @@ __screenshots__/
 
 # GitHub Wiki 的本機預覽（node tools/wiki/build.mjs）
 wiki-out
+
+# Python 快取（worldgen 的工具互相 import 時產生）
+__pycache__/
