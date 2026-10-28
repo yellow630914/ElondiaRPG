@@ -29,6 +29,14 @@
 
 ## 3. 完成紀錄
 
+### 2026-10-28 程式整理（R3～R7）
+
+- R3：拿掉舊的 `travel()` 與它的 `EVENT_CHANCE`、`resolveEvent`，測試改用 `src/__tests__/helpers/travel.ts`（`arriveAt` 直接抵達、`walkTo` 一路走完旅途）。旅途事件的機率只看 `travel_events.json` 的 `chance`。
+- R4：拿掉沒有被讀取的 `economy.json` 的 `price_variance`（整組都沒有程式讀）與 `npc_population.json` 的 `known_weight`。
+- R5：更新 `road.ts`、`travel.ts`、`crafting.ts` 開頭的過時註解。
+- R6：世界編輯器的「🖼️ 類別圖示」改成獨立分頁，物品列表不再有假的一列。
+- R7：`npm run docs:gen` 依資料檔重新產生 COMBAT_SYSTEM 第 9 節的能力表、MONSTERS 的怪物表、ITEMS 的制式裝備與消耗品、卷軸、書籍表（`src/__tests__/docTables.ts`）；`docTables.spec.ts` 檢查文件和資料檔一致，改了資料忘記重跑會失敗。ITEMS 其他的表（獨特物品、材料、底材……）照舊手寫。
+
 ### 2026-10 文件整理
 
 - 原本的 `KNOWN_ISSUES.md`（程式中發現的問題）與 `OPEN_QUESTIONS.md`（待決定事項）拆成 BUGS、LOGIC_ISSUES、ROADMAP、點子庫四份（點子庫之後再依來源拆成 `ideas/` 目錄），`UI_V2_PLAN.md` 一起搬進這個資料夾。重複的項目合併（例如 D4 與 I5 都是地下城探索彙整報告，現在是點子庫的 I7）。

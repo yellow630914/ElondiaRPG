@@ -10,11 +10,6 @@
     "legacy": { "銅幣": 1, "銀幣": 10, "金幣": 100, "白金幣": 1000 }
   },
   "commoner_living_cc_per_day": 15,
-  "price_variance": {
-    "town_baseline": "普通城鎮物價",
-    "city_or_remote": 0.3,
-    "quest_reward": 0.5
-  },
   "quest_rewards_cc": {
     "$comment": "委託報酬（白鸛幣）。solo 是單人任務；team 是團隊任務的合計：團隊以 team_size 人計，平分後約是同階單人任務的 team_mult 倍（team ≈ solo × team_mult × team_size）。leader 是 S 級「單人主導、帶領麾下勢力」的任務（另可選爵位、領地）。程式依 use 決定公會發的委託用哪一種：F～C 用單人版，B、A 用團隊合計，S 用 leader。耗時為世界書所述。",
     "team_size": 3,

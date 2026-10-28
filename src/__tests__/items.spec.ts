@@ -8,7 +8,7 @@ import { currentArea, moveTo } from '@/engine/grid'
 import { useItem } from '@/engine/inventory'
 import { Rng } from '@/engine/rng'
 import { newGame } from '@/engine/state'
-import { travel } from '@/engine/travel'
+import { arriveAt } from './helpers/travel'
 import type { GameState } from '@/engine/types'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
@@ -116,7 +116,7 @@ describe('gear sources', () => {
     let opened = false
     for (let seed = 1; seed <= 12 && !opened; seed++) {
       const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed })
-      travel(state, 'snake_creek')
+      arriveAt(state, 'snake_creek')
       const area = currentArea(state)
       const i = area.cells.findIndex((c) => c.kind === 'chest')
       if (i < 0) continue

@@ -8,7 +8,7 @@ import { applyContent, emptyMods } from '@/engine/mods'
 import { longRestBlocked } from '@/engine/rest'
 import { travelEvents } from '@/engine/road'
 import { newGame } from '@/engine/state'
-import { travel } from '@/engine/travel'
+import { arriveAt } from './helpers/travel'
 import { builtinEventRules, sanitizeTravelEvent } from '@/engine/travelEventMods'
 import type { GameState } from '@/engine/types'
 
@@ -26,7 +26,7 @@ afterEach(() => {
 function inDungeon(body: 'fem' | 'andro' | 'masc' = 'fem', seed = 3): GameState {
   const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed, gender: body === 'masc' ? '男' : '女', body })
   enterLocation(state)
-  travel(state, 'snake_creek')
+  arriveAt(state, 'snake_creek')
   return state
 }
 

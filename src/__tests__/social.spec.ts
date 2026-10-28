@@ -6,7 +6,7 @@ import {
 } from '@/engine/social'
 import { migrate, newGame } from '@/engine/state'
 import { buyRations, recruit } from '@/engine/town'
-import { travel } from '@/engine/travel'
+import { arriveAt } from './helpers/travel'
 import type { GameState } from '@/engine/types'
 import { buildPrompt } from '@/narrator/prompt'
 import { fightToEnd } from './helpers/fight'
@@ -59,7 +59,7 @@ describe('memories', () => {
     const state = game(2)
     recruit(state, 'npc_lina')
     buyRations(state, 2)
-    travel(state, 'snake_creek')
+    arriveAt(state, 'snake_creek')
     const kinds = state.memories!.map((m) => state.reports.find((r) => r.report_id === m.report)!.kind)
     expect(kinds).toEqual(['social', 'travel'])
     const trip = state.memories![1]!
@@ -113,7 +113,7 @@ describe('migration', () => {
   it('builds relationships from party members and memories from past reports', () => {
     const state = game(6)
     recruit(state, 'npc_lina')
-    travel(state, 'rivervale')
+    arriveAt(state, 'rivervale')
     const old = JSON.parse(JSON.stringify(state)) as GameState
     old.party.find((m) => m.id === 'npc_lina')!.affinity = 33
     delete old.relationships

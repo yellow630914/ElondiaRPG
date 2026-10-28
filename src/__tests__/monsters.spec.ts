@@ -6,7 +6,7 @@ import { abilities, dungeonEncounters, enemies, geography, itemDef, monsterTrait
 import { afterCombat, cellAt, currentArea, descend } from '@/engine/grid'
 import { Rng } from '@/engine/rng'
 import { newGame } from '@/engine/state'
-import { travel } from '@/engine/travel'
+import { arriveAt } from './helpers/travel'
 import type { GameState, Report } from '@/engine/types'
 
 function fightWith(group: [string, number][]): GameState {
@@ -180,7 +180,7 @@ describe('every encounter', () => {
 describe('layer bosses', () => {
   it('turn into the stairs down once defeated', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 5 })
-    travel(state, 'snake_creek')
+    arriveAt(state, 'snake_creek')
     // 從周邊走到往下的階梯，進入淺層
     const outskirts = currentArea(state)
     const j = outskirts.cells.findIndex((c) => c.kind === 'stairs_down')

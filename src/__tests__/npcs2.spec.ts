@@ -16,7 +16,7 @@ import {
 } from '@/engine/security'
 import { newGame, withRng } from '@/engine/state'
 import { dealMoney, shopKey, shopState } from '@/engine/trade'
-import { travel } from '@/engine/travel'
+import { arriveAt } from './helpers/travel'
 import type { GameState, NpcRecord } from '@/engine/types'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
@@ -429,7 +429,7 @@ describe('crime and the guards', () => {
     raiseAlert(rich, 'rivervale', 3)
     rich.money_cc = 5000
     standOn(rich, 'gate')
-    travel(rich, 'rivervale')
+    arriveAt(rich, 'rivervale')
     expect(rich.location).toBe('rivervale')
     expect(isWanted(rich, 'human_alliance')).toBe(false)
     expect(currentArea(rich).kind).toBe('settlement')
@@ -438,7 +438,7 @@ describe('crime and the guards', () => {
     raiseAlert(poor, 'rivervale', 3)
     poor.money_cc = 300
     standOn(poor, 'gate')
-    travel(poor, 'rivervale')
+    arriveAt(poor, 'rivervale')
     expect(currentArea(poor).kind).toBe('wild')
     expect(() => returnToTown(poor)).toThrow('通緝')
   })

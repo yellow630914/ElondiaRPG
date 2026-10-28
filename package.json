@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test:unit": "vitest",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "docs:gen": "UPDATE_DOCS=1 vitest run src/__tests__/docTables.spec.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

@@ -209,4 +209,4 @@ flowchart TD
 3. **還沒做完的事寫進 [plan/](plan/README.md)**（Bug、業務邏輯問題、未來計畫、點子庫分開），不要散在各文件末尾；處理完把結論寫回系統文件，再從清單刪掉，在 plan/README 記一行完成紀錄。
 4. **新增系統時**：開一份文件，開頭寫「上層／依賴／被依賴」與程式、資料檔，再把它加進本文件的階層、依賴圖與一覽表，以及 wiki 的 `GROUPS`（第 5 節）。
 5. **不要改檔名。** 程式註解與 `data/` 的 `$comment` 會用「docs/檔名.md 第 N 節」引用文件；改章節編號時要一起搜尋 `docs/檔名` 更新。
-6. **資料整理型的表格**（MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節）沒有產生腳本，改資料時要記得同步。
+6. **資料整理型的表格**（MONSTERS 的怪物表、ITEMS 的制式裝備與消耗品、卷軸、書籍表、COMBAT_SYSTEM 第 9 節）由 `npm run docs:gen` 產生，改了資料要重跑（`docTables.spec.ts` 會檢查）；ITEMS 其他的表格手寫，改資料時要記得同步。

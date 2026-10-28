@@ -7,7 +7,7 @@ import {
 import { longRest } from '@/engine/rest'
 import { newGame } from '@/engine/state'
 import { acceptQuest, guildQuests } from '@/engine/town'
-import { travel } from '@/engine/travel'
+import { arriveAt } from './helpers/travel'
 import type { GameState } from '@/engine/types'
 import { fightToEnd } from './helpers/fight'
 
@@ -178,7 +178,7 @@ describe('outskirts', () => {
 describe('dungeons', () => {
   it('generates four layers with stairs, a safe room, layer bosses guarding the stairs and a boss on the deepest layer', () => {
     const state = game(9)
-    travel(state, 'snake_creek')
+    arriveAt(state, 'snake_creek')
     expect(currentArea(state).name).toBe('蛇溪洞窟・周邊')
     expect(currentCell(state).kind).toBe('exit')
     expect(canTravelHere(state)).toBe(true)
@@ -214,7 +214,7 @@ describe('dungeons', () => {
 
   it('takes a long rest at a safe room once, consuming rations', () => {
     const state = game(4)
-    travel(state, 'whisper_crypt')
+    arriveAt(state, 'whisper_crypt')
     const area = currentArea(state)
     const safe = area.cells.findIndex((c) => c.kind === 'safe')
     state.position = { area: area.key, x: safe % area.width, y: Math.floor(safe / area.width) }
@@ -231,7 +231,7 @@ describe('dungeons', () => {
 
   it('throws everyone out of the dungeon after a defeat', () => {
     const state = game(6)
-    travel(state, 'snake_creek')
+    arriveAt(state, 'snake_creek')
     const area = currentArea(state)
     const steps = pathTo(area, position(state), (x, y) => cellAt(area, x, y)!.kind === 'encounter', ['encounter', 'trap'])
     if (!steps) return

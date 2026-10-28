@@ -1,5 +1,5 @@
 {
-  "$comment": "各地點的 NPC 名單：第一次進入地點時建立，之後相對固定（變動規則在第二階段加入）。roster = 名單人數（冒險者與普通人約 1:1，不含店主、公會職員等職員）；roster_by_location = 個別地點的名單人數（取代地點類型的人數）；local_occupations = 個別地點的普通人職業（chance 的機率取代標籤的職業描述）。具名 NPC 佔他所屬地點的名額，不受雇用的不佔。adventurer_level = 冒險者的等級範圍（抽兩次取較低者，低等級比較常見）。known_weight = 和主角有關係的人在抽選時的權重倍率。說明見 docs/NPC_SYSTEM.md 第 6 節。",
+  "$comment": "各地點的 NPC 名單：第一次進入地點時建立，之後相對固定（變動規則在第二階段加入）。roster = 名單人數（冒險者與普通人約 1:1，不含店主、公會職員等職員）；roster_by_location = 個別地點的名單人數（取代地點類型的人數）；local_occupations = 個別地點的普通人職業（chance 的機率取代標籤的職業描述）。具名 NPC 佔他所屬地點的名額，不受雇用的不佔。adventurer_level = 冒險者的等級範圍（抽兩次取較低者，低等級比較常見）。說明見 docs/NPC_SYSTEM.md 第 6 節。",
   "version": 1,
   "roster": {
     "capital": { "adventurer": 12, "commoner": 12 },
@@ -29,7 +29,6 @@
     "fortress": [1, 6]
   },
   "brothel_workers": 3,
-  "known_weight": 3,
   "turnover": {
     "$comment": "名單變動：每 period_days 天，每份名單有 chance 的機率發生一件事（未滿額時有人搬來；否則冒險者搬到他的另一個活躍地點，或旅人離開這一帶）。",
     "period_days": 3,

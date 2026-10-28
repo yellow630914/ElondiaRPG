@@ -9,7 +9,7 @@ import { formatMoney } from '@/engine/money'
 import { Rng, roll } from '@/engine/rng'
 import { newGame, withRng } from '@/engine/state'
 import { acceptQuest, canAcceptRank, doTownQuest, guildQuests, recruit, rest, turnInQuest } from '@/engine/town'
-import { travel } from '@/engine/travel'
+import { walkTo } from './helpers/travel'
 import type { GameState, Quest, QuestKind, Report } from '@/engine/types'
 import { reachable, shortestPath } from '@/engine/world'
 import { lotsOf } from '@/engine/homes'
@@ -88,7 +88,7 @@ describe('money and dice', () => {
 describe('travel', () => {
   it('moves the party, spends money and produces a valid report', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 1 })
-    const report = travel(state, 'rivervale')
+    const report = walkTo(state, 'rivervale')
     expectValid(report)
     expect(state.location).toBe('rivervale')
     expect(state.time.day).toBe(3)
@@ -98,9 +98,9 @@ describe('travel', () => {
 
   it('does not eat rations on trails any more', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'ranger', seed: 2 })
-    travel(state, 'rivervale')
+    walkTo(state, 'rivervale')
     const before = state.inventory.find((i) => i.name === '乾糧')!.qty
-    const report = travel(state, 'snowridge')
+    const report = walkTo(state, 'snowridge')
     expectValid(report)
     expect(state.inventory.find((i) => i.name === '乾糧')?.qty).toBe(before)
     expect(report.outcome.tags).not.toContain('糧食耗盡')

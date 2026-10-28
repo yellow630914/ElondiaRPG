@@ -1372,7 +1372,6 @@ export const population = populationJson as unknown as {
   /** 個別地點的普通人職業：依機率取代標籤的職業描述，例如渡口的水手 */
   local_occupations?: Record<string, { chance: number; list: string[] }>
   adventurer_level: Record<string, [number, number]>
-  known_weight: number
   turnover: { period_days: number; chance: number }
   visitors: {
     outskirts: { chance: number; adventurer: number; reunion_chance: number }
