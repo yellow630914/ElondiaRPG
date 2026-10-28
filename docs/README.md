@@ -56,7 +56,7 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
     ├─ BUGS               Bug：程式沒有照規則運作
     ├─ LOGIC_ISSUES       業務邏輯問題：程式照設計運作，但規則不合理
     ├─ ROADMAP            未來計畫：已經決定要做的事（含程式整理）
-    ├─ IDEAS              點子庫：還沒決定要不要做的構想
+    ├─ ideas/             點子庫：還沒決定要不要做的構想，依來源分成不同文件（早期設計、盤點、玩家回饋、開發討論）
     └─ UI_V2_PLAN         UI 改版的分階段計畫（樣稿在 mockups/，立繪規格在 comfy/）
 ```
 
@@ -176,7 +176,7 @@ flowchart TD
 | [plan/BUGS](plan/BUGS.md) | Bug | — |
 | [plan/LOGIC_ISSUES](plan/LOGIC_ISSUES.md) | 業務邏輯問題 | — |
 | [plan/ROADMAP](plan/ROADMAP.md) | 未來計畫 | — |
-| [plan/IDEAS](plan/IDEAS.md) | 點子庫 | — |
+| [plan/ideas/](plan/ideas/README.md) | 點子庫（依來源分開） | — |
 | [plan/UI_V2_PLAN](plan/UI_V2_PLAN.md) | UI 改版計畫 | `components/` |
 
 沒有標資料夾的程式檔都在 `src/engine/`。

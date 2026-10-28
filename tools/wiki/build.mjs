@@ -98,7 +98,11 @@ export const GROUPS = [
     { page: 'Bug', src: 'docs/plan/BUGS.md', desc: '程式沒有照規則運作的問題' },
     { page: '業務邏輯問題', src: 'docs/plan/LOGIC_ISSUES.md', desc: '程式照設計運作，但規則不合理的地方' },
     { page: '未來計畫', src: 'docs/plan/ROADMAP.md', desc: '已經決定要做的事' },
-    { page: '點子庫', src: 'docs/plan/IDEAS.md', desc: '還沒決定要不要做的構想' },
+    { page: '點子庫', src: 'docs/plan/ideas/README.md', desc: '還沒決定要不要做的構想：來源與全部點子一覽' },
+    { page: '點子：早期設計', src: 'docs/plan/ideas/early-design.md', desc: '早期設計文件裡還沒做的構想', sub: '點子的來源' },
+    { page: '點子：2026 年 10 月盤點', src: 'docs/plan/ideas/review-2026-10.md', desc: '盤點時列出、先不做的項目', sub: '點子的來源' },
+    { page: '點子：玩家回饋', src: 'docs/plan/ideas/player-feedback.md', desc: '玩家回饋引出的構想', sub: '點子的來源' },
+    { page: '點子：開發討論', src: 'docs/plan/ideas/dev-discussion.md', desc: '開發討論中提出的構想', sub: '點子的來源' },
     { page: 'UI 改版計畫', src: 'docs/plan/UI_V2_PLAN.md', desc: 'UI v2 的分階段計畫' },
   ] },
 ]
