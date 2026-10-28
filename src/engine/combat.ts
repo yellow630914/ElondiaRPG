@@ -13,7 +13,7 @@ import {
   apMaxFor, apRegenFor, attrOf, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, ATTR_IDS, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
+  abilityDef, armorDef, ATTR_IDS, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
   locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
@@ -1692,6 +1692,13 @@ export function finishCombat(state: GameState): Report {
       ...(combat.intent ? { player_intent: combat.intent } : {}),
     },
     lore_keys: [loc.name, regionById(loc.region).name, ...new Set(foes.map((f) => enemies[f.defId!]?.name ?? f.name))],
+  }
+  // 城內／近郊委託的戰鬥打贏：委託完成（採集委託順便拿到要交的東西）
+  const townQuest = quest && state.quests.find((q) => q.id === quest.id && q.template && q.status === 'ready')
+  const townTpl = townQuest ? townQuestTemplates[townQuest.template!] : undefined
+  if (townQuest && townTpl) {
+    if (townTpl.item) (report.changes.items_gained ??= []).push({ name: townTpl.item, qty: townTpl.qty ?? 1, owner: 'pc' })
+    report.outcome.summary += `完成「${townQuest.title}」，可以回公會交付了。`
   }
   if (lost.items.length || lost.money) {
     const what = [...lost.items.map((i) => `${i.name}×${i.qty}`), ...(lost.money ? [formatMoney(-lost.money)] : [])].join('、')

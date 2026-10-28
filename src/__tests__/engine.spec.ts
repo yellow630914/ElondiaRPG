@@ -16,7 +16,7 @@ import { lotsOf } from '@/engine/homes'
 import { ensureRoster } from '@/engine/population'
 import { npcRecord } from '@/engine/npcs'
 import { clearCounts, layerName, layerRank, rankForLevel } from '@/engine/materialQuests'
-import { geography, locationById, townQuestsPerTown } from '@/engine/data'
+import { geography, locationById, townQuestsPerTown, townQuestTemplates } from '@/engine/data'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
@@ -222,6 +222,46 @@ describe('quests', () => {
       // 不用打怪的委託交付時給經驗：20 × F 級的等級下限 1
       expect(done.changes.xp?.map((x) => x.amount), kind).toEqual(state.party.map(() => 20))
       if (kind === 'gather') expect(state.inventory.find((i) => i.name === '藥草')).toBeUndefined()
+    }
+  })
+
+  it('completes a check-based quest by winning the ambush, and fails a check at most once', () => {
+    const state = newGame({ name: '測試者', race: 'human', classId: 'barbarian', seed: 20 })
+    const quest = findQuest(state, (q) => q.kind === 'gather')
+    const tpl = townQuestTemplates[quest.template!]!
+    const saved = { encounter_chance: tpl.encounter_chance, dc: tpl.dc }
+    try {
+      // 遇到的怪打贏就算完成，採集的東西也一起拿到
+      acceptQuest(state, quest.id)
+      tpl.encounter_chance = 1
+      for (let tries = 0; quest.status === 'accepted' && tries < 10; tries++) {
+        state.party[0]!.hp = state.party[0]!.maxHp
+        doTownQuest(state, quest.id)
+        expect(state.combat?.questId).toBe(quest.id)
+        const report = fightToEnd(state)
+        expectValid(report)
+        if (report.outcome.result === 'victory') {
+          expect(report.outcome.summary).toContain('可以回公會交付了')
+          expect(report.changes.items_gained).toContainEqual({ name: tpl.item, qty: tpl.qty, owner: 'pc' })
+        }
+      }
+      expect(quest.status).toBe('ready')
+      expectValid(turnInQuest(state, quest.id))
+
+      // 檢定再難也只會失敗一次
+      const next = findQuest(state, (q) => q.kind === 'gather')
+      acceptQuest(state, next.id)
+      tpl.encounter_chance = 0
+      tpl.dc = 99
+      const first = doTownQuest(state, next.id) as Report
+      expect(first.outcome.result).toBe('failure')
+      expect(next.status).toBe('accepted')
+      const second = doTownQuest(state, next.id) as Report
+      expectValid(second)
+      expect(second.outcome.result).toBe('success')
+      expect(next.status).toBe('ready')
+    } finally {
+      Object.assign(tpl, saved)
     }
   })
 
