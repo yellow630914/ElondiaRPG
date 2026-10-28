@@ -16,7 +16,7 @@ import { checkModifiers } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { computeDegree, DEGREE_NAME } from './checks'
 import {
-  applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, setupFor, type MarketKind,
+  applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, inviteDc, setupFor, validateInvite, type MarketKind,
 } from './companions'
 import {
   abilities, actionRules, ATTR_IDS, attrName, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
@@ -122,6 +122,8 @@ export interface Judgment {
   invention?: Record<string, unknown>
   /** 爭取特質：AI 設計的特質（程式依成功程度夾住強度，見 perkActions.ts） */
   perk?: Record<string, unknown>
+  /** 沒有採用、要讓玩家看到原因的效果（例如入隊不符合邀請的條件）：寫進結果 */
+  notes?: string[]
 }
 
 export { computeDegree, DEGREE_NAME }
@@ -201,8 +203,10 @@ function itemNameOf(state: GameState, name: string): string {
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : NaN)
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 
-const EFFECT_OF: Partial<Record<RewardEffect['type'], EffectKind>> = {
-  affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
+/** AI 回傳的效果種類（join 是入隊：通過檢查後變成 companion 效果） */
+type JudgedEffect = RewardEffect['type'] | 'join'
+const EFFECT_OF: Partial<Record<JudgedEffect, EffectKind>> = {
+  join: 'join', affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
   money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp', mark: 'mark',
   free: 'release', change_master: 'change_master', gear: 'gear',
 }
@@ -229,13 +233,14 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   let flags = 0
   let money = 0
   const adjusted: string[] = []
+  const notes: string[] = []
   // 同一樣物品這次已經給出去、拿到的數量（AI 可能分兩筆寫同一樣東西）
   const given = new Map<string, number>()
   const got = new Map<string, number>()
   for (const e of Array.isArray(r.effects) ? r.effects : []) {
     if (!e || typeof e !== 'object') continue
     const x = e as Record<string, unknown>
-    const type = String(x.type) as RewardEffect['type']
+    const type = String(x.type) as JudgedEffect
     const kind = EFFECT_OF[type]
     if (!kind || !allowed.has(kind)) continue
     switch (type) {
@@ -398,6 +403,32 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         effects.push({ type: 'meet', npc, spot: 'inn', ...(affinity ? { affinity } : {}), ...(str(x.to_player, caps.relationship_text_chars) ? { to_player: str(x.to_player, caps.relationship_text_chars)! } : {}) })
         break
       }
+      case 'join': {
+        // 行動的對象答應入隊：成功以上，而且要符合「邀請認識的人」的所有條件（人在身邊、親密度、冷卻、空位、小隊找隊長），
+        // 檢定總值也要達到邀請的 DC。不符合時不採用，寫進結果與交給寫手
+        if (effects.some((y) => y.type === 'companion')) break
+        const npc = String(x.npc ?? p.target ?? '')
+        const who = npcRecord(state, npc)?.name ?? '對方'
+        const refuse = (why: string) => {
+          const t = `${who}沒有入隊：${why}`
+          adjusted.push(t)
+          notes.push(`（${t}）`)
+        }
+        if (!p.target || npc !== p.target) { refuse('只有這次行動的對象能入隊'); break }
+        if (degree !== 'critical' && degree !== 'success') { refuse('入隊要成功以上'); break }
+        try {
+          validateInvite(state, npc)
+        } catch (err) {
+          refuse(err instanceof Error ? err.message : String(err))
+          break
+        }
+        const inv = inviteDc(state, npc)
+        const total = p.natural + p.modifiers[attr] + situationalTotal(p)
+        const d = computeDegree(p.natural, total, inv)
+        if (d !== 'critical' && d !== 'success') { refuse(`檢定總值 ${total} 沒有達到邀請的 DC ${inv}`); break }
+        effects.push({ type: 'companion', npc, mode: 'voluntary' })
+        break
+      }
       case 'xp': {
         const amount = num(x.amount)
         if (Number.isNaN(amount) || amount <= 0) break
@@ -425,6 +456,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     effects,
     relationship_updates: updates,
     ...(adjusted.length ? { adjusted } : {}),
+    ...(notes.length ? { notes } : {}),
   }
 }
 
@@ -512,6 +544,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     else delete report.changes.money_cc
   }
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
+  if (judgment?.notes?.length) notes.push(...judgment.notes)
   if (replaced && aiMoney !== mechanicalMoney) notes.push(`金錢照判定結算為 ${formatMoney(aiMoney)}（規則原本是 ${formatMoney(mechanicalMoney)}）。`)
   if (judgment) addSuggestions(state, judgment.relationship_updates, report.report_id)
   if (judgment?.narrative) report.narration = { ...report.narration, focus: ['AI 已直接寫出經過'] }

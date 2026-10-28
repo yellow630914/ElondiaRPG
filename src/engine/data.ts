@@ -1080,7 +1080,8 @@ export const companionRules = companionsJson as unknown as {
     hours: number; base: number; per_cha_mod: number; per_level: number; max: number
     pay_chance: number; pay_chance_per_cha_mod: number; pay_per_level: number; leader_level: [number, number]
   }
-  invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number }
+  /** unhireable：不受雇用的人（統治者、機構首長……）邀請的 DC 另外加多少 */
+  invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number; unhireable?: number }
   /** 固定 NPC 的小隊（squads.ts）：整隊邀請每多一人 DC +invite_per_member；請他們帶主角同行的 DC */
   squad: { invite_per_member: number; join: { base: number; min: number; affinity_step: number; per_companion: number; level_gap: number } }
   leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
@@ -1288,7 +1289,7 @@ export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 
   | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore' | 'palace_gate'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
-  | 'release' | 'change_master' | 'gear'
+  | 'release' | 'change_master' | 'gear' | 'join'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }

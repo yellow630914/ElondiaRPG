@@ -44,11 +44,12 @@
   },
 
   "invite": {
-    "$comment": "邀請認識的人入隊：親密度至少 min_affinity。DC = base - floor(親密度 / affinity_step) + level_gap × max(0, 對方等級 - 主角等級)。",
+    "$comment": "邀請認識的人入隊：親密度至少 min_affinity。DC = base - floor(親密度 / affinity_step) + level_gap × max(0, 對方等級 - 主角等級)，不受雇用的人（統治者、機構首長……）再 +unhireable。AI 判定的自由行動讓對象入隊（join 效果）也要符合這些條件、達到這個 DC。",
     "min_affinity": 0,
     "base": 16,
     "affinity_step": 10,
-    "level_gap": 2
+    "level_gap": 2,
+    "unhireable": 6
   },
 
   "squad": {

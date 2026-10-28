@@ -7,6 +7,7 @@ import { isGuarded } from '@/engine/population'
 import { npcOutfit } from '@/engine/outfits'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
 import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
+import { inviteDc, validateInvite } from '@/engine/companions'
 import {
   geography, genderName, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
@@ -219,10 +220,27 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     release: '{"type":"free","npc":"pc"}（抹去主角的契約印記、恢復自由：只在 degree 為 critical、而且行為合理時，例如說動了能解咒的人、主人一時心軟）',
     change_master: `{"type":"change_master","npc":"${p.target ?? '<對象 id>'}"}（行動的對象成為主角的新主人，印記沿用：只在 degree 為 success 以上、對象願意收下主角時）`,
     gear: gearDoc(state, p),
+    join: joinDoc(state, p),
   }
-  // 主角不是奴隸時，不提供和契約有關的效果
-  const list = kind.effects.filter((e) => contractOf(pc) || (e !== 'release' && e !== 'change_master'))
+  // 主角不是奴隸時，不提供和契約有關的效果；入隊只在對象是認識、還不在隊伍裡的人時提供
+  const list = kind.effects.filter((e) => (contractOf(pc) || (e !== 'release' && e !== 'change_master')) && (e !== 'join' || !!effectDocs.join))
   return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>${p.kind === 'invent' ? inventionDoc(state, p) : ''}${p.kind === 'perk_pitch' ? pitchDoc(state, p) : ''}`
+}
+
+/** 入隊：行動的對象答應加入主角的隊伍；程式另外檢查邀請的條件與 DC，現在就不符合時一併說明 */
+function joinDoc(state: GameState, p: ActionPending): string {
+  const id = p.target
+  if (!id || !state.relationships?.[id] || state.party.some((m) => m.id === id)) return ''
+  let why = ''
+  let dc: number | undefined
+  try {
+    validateInvite(state, id)
+    dc = inviteDc(state, id)
+  } catch (e) {
+    why = e instanceof Error ? e.message : String(e)
+  }
+  const cond = why ? `目前不符合邀請的條件（${why}），這次寫了也不會入隊，不要在經過裡寫成已經同行` : `檢定總值要達到邀請的 DC ${dc}（不是這次行動的 DC）才會真的入隊`
+  return `{"type":"join","npc":"${id}"}（行動的對象答應加入主角的隊伍、從此同行：只在 degree 為 success 以上、對象真心願意跟著主角走時。程式另外檢查邀請的條件：人在身邊、親密度、被婉拒後的冷卻、隊伍空位、小隊要找隊長；${cond}。沒有寫這個效果時，經過裡不要寫成對方已經入隊）`
 }
 
 /** 爭取特質：AI 判斷說法合不合理，並在 perk 欄位設計特質；程式依 degree 夾住強度 */

@@ -274,7 +274,8 @@ export function inviteDc(state: GameState, npcId: string): number {
   if (!rel || !rec) throw new Error('你不認識這個人')
   const i = companionRules.invite
   const extra = companionRules.squad.invite_per_member * squadFollowers(state, npcId).length
-  return i.base - Math.floor(rel.affinity / i.affinity_step) + i.level_gap * Math.max(0, rec.level - pcOf(state).level) + tagDcMod(rec, 'invite') + extra
+  const ruler = isUnhireable(npcId) ? i.unhireable ?? 0 : 0
+  return i.base - Math.floor(rel.affinity / i.affinity_step) + i.level_gap * Math.max(0, rec.level - pcOf(state).level) + tagDcMod(rec, 'invite') + ruler + extra
 }
 
 /** ignoreRoom：只看能不能邀請，不看隊伍有沒有空位（介面會先請玩家騰出位子） */
