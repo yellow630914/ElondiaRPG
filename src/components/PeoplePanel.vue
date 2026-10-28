@@ -35,6 +35,10 @@ const groups = computed(() => ([
   return { ...g, detail: near ? `身邊 ${near} 人` : '都不在身邊（要先走近）' }
 }))
 const where = computed(() => currentArea(s.value).name)
+// 身邊（同一格或相鄰）的人才能互動：沒有時自動收起，有人走近時自動打開；也可以點標題手動切換
+const nearCount = computed(() => people.value.filter((p) => p.dist <= 1).length)
+const expanded = ref(nearCount.value > 0)
+watch(() => nearCount.value > 0, (has) => { expanded.value = has })
 // 等待判定、或有擋住行動的事件（刻印、主人的要求、戰敗事件）時，互動按鈕停用
 const busy = computed(() => !!s.value.pendingAction || game.judging || !!s.value.pendingMark || !!s.value.pendingMasterEvent || !!s.value.pendingDefeat)
 
@@ -199,9 +203,15 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
 <template>
   <section class="panel people">
     <div class="row head">
-      <h3><GameIcon name="users" :size="18" />這裡的人 <span class="sub muted">{{ where }}・{{ people.length }} 人，身邊 {{ people.filter((p) => p.dist <= 1).length }} 人</span></h3>
+      <h3>
+        <button class="ghost fold" :class="{ open: expanded }" :aria-expanded="expanded" :title="expanded ? '收起' : '展開'" @click="expanded = !expanded">
+          <GameIcon name="users" :size="18" />這裡的人 <span class="sub muted">{{ where }}・{{ people.length }} 人，身邊 {{ nearCount }} 人</span>
+          <GameIcon name="right" :size="13" class="chev" />
+        </button>
+      </h3>
       <JudgeToggle />
     </div>
+    <template v-if="expanded">
     <p v-if="!people.length" class="small muted">這裡現在沒有別人。</p>
 
     <div>
@@ -299,6 +309,7 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
     </FoldMenu>
     </div>
     <p v-if="partyFull" class="small muted">隊伍已滿（{{ partyMax(s) }} 人）<template v-if="!bound">：雇人或邀請時會先請你騰出位子</template>。</p>
+    </template>
   </section>
 </template>
 
@@ -306,6 +317,9 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
 .people .head { justify-content: space-between; }
 .people h3 { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .people h3 :deep(.game-icon) { color: var(--accent); }
+.fold { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; min-height: 0; }
+.fold .chev { transition: transform 0.15s; color: var(--muted) !important; }
+.fold.open .chev { transform: rotate(90deg); }
 .sub { font-size: var(--fs-xs); font-weight: normal; letter-spacing: 0; }
 .acts button, .detail .row button { display: inline-flex; align-items: center; gap: 4px; }
 /* 「⋯」：展開時把獻媚、偷竊、偷襲排在旁邊（同一列，放不下就換行），不浮在上面，才不會被摺疊區裁掉 */
