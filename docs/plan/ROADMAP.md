@@ -18,12 +18,4 @@
 
 ## 3. 程式整理
 
-不影響遊戲行為，有空時處理：
-
-| # | 項目 | 說明 |
-|---|---|---|
-| R3 | 拿掉舊的 `travel()` | `travel.ts` 的 `travel()` 正式流程已不用，只剩測試在用；它的 `EVENT_CHANCE`（官道 0.15）和 `travel_events.json` 的 `chance`（官道 0.3）不同，容易誤導 |
-| R4 | 拿掉沒有被讀取的設定 | `economy.json` 的 `price_variance.quest_reward`、`npc_population.json` 的 `known_weight`（`data.ts` 型別裡有，程式沒用） |
-| R5 | 更新過時的程式註解 | `road.ts` 開頭（說其他路段吃乾糧、沒乾糧會挨餓）、`travel.ts` 開頭（「遭遇戰留待之後實作」）、`crafting.ts` 開頭（「五種工藝」「之後的房屋系統」） |
-| R6 | 世界編輯器的「🖼️ 類別圖示」改成獨立分頁 | 現在是用一個假的物品列（key `\|icons`）接進物品列表，選取、複製、篩選都要特別略過它（`ContentView.vue`） |
-| R7 | 資料整理型文件的產生腳本 | MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節是資料檔的複本，沒有產生腳本，改資料容易忘記同步；補一支產生腳本，或改成只列重點、其餘看資料檔 |
+不影響遊戲行為，有空時處理。目前沒有。

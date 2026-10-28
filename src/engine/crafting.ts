@@ -1,7 +1,7 @@
-// 工藝（data/rules/crafts.json，見 docs/CRAFTING.md）：鍛造、木工、製革、裁縫、珠寶五種，各自有等級與經驗。
+// 工藝（data/rules/crafts.json，見 docs/CRAFTING.md）：鍛造、木工、製革、裁縫、珠寶、煉金、烹飪七種，各自有等級與經驗。
 // - 等級 N 可以處理第 N 級以下的材料；店主的等級依聚落規模。
 // - 自己動手（行動 make）要有對應階級的工具：低階隨身工具組（任何地方）、中階工坊（旅店、安全房展開攜帶式工坊，或在店裡租）、
-//   高階工作台（房子，之後的房屋系統）。
+//   高階工作台（擺在自己房子裡的工作台家具，見 docs/HOMES.md）。
 // - 夥伴：自願加入而且親密度夠、或奴隸才肯幫忙；雇傭的不幫忙。
 
 import { craftRules, CRAFT_IDS, itemDef, itemRules, locationById, type CraftId, type Degree } from './data'

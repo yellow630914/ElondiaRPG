@@ -67,6 +67,8 @@ const SUBS: { id: Sub; label: string }[] = [
 const content = useContent()
 const game = useGame()
 const sub = ref<Sub>('enemies')
+/** 「類別圖示」分頁：只有一個設定畫面，沒有左邊的列表 */
+const iconsTab = ref(false)
 const search = ref('')
 const filter = ref<'all' | 'custom' | 'edited'>('all')
 const category = ref('')
@@ -226,8 +228,6 @@ const options = computed(() => {
   return {}
 })
 
-/** 物品頁的「類別圖示」那一列（物品名稱不能有「|」，不會撞名） */
-const ICONS_KEY = '|icons'
 /** 特殊任務頁的「劇情計數器」那一列 */
 const COUNTERS_KEY = '|counters'
 
@@ -256,8 +256,6 @@ const rows = computed<Row[]>(() => {
         && (!matKind.value || gearRules.materials[i.gear?.material ?? '']?.kind === matKind.value)))
       .map((i) => ({ key: i.name, name: i.name, note: `${itemRules.categories[i.category]}・${formatMoney(i.price_cc)}`, status: st(!!m.items[i.name], !!m.items[i.name]?.custom) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
-    // 類別圖示的設定放在最上面（不篩選類別、取得方式時）
-    if (!category.value && !itemSource.value) list.unshift({ key: ICONS_KEY, name: '🖼️ 類別圖示', note: '8 種類別的預設圖示', status: st(Object.keys(m.categoryIcons ?? {}).length > 0, false) })
   } else if (sub.value === 'abilities') {
     list = Object.values(abilities)
       .filter((a) => !abilityType.value || a.type === abilityType.value)
@@ -382,7 +380,7 @@ const current = computed(() => {
   void content.version
   const key = selected.value[sub.value]
   if (!key) return ''
-  const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? key === ICONS_KEY || !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
+  const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
     : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? key === COUNTERS_KEY || stories.some((d) => d.id === key)
     : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key)
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
@@ -474,7 +472,7 @@ function create() {
 /** 以目前選的項目為範本複製一份自建項目 */
 function duplicate() {
   const key = current.value
-  if (!key || key === ICONS_KEY) return
+  if (!key) return
   try {
     if (sub.value === 'enemies') {
       const id = newModId('enemy')
@@ -601,9 +599,10 @@ function resetAll() {
       ⚠️ 世界存不進瀏覽器（容量滿了，多半是上傳的圖示太多或太大）：這次的修改只在關掉頁面前有效。請移除一些圖示，或先匯出世界包備份。
     </p>
     <nav class="subs row">
-      <button v-for="t in SUBS" :key="t.id" :class="{ active: sub === t.id }" @click="sub = t.id; resetFilters()">{{ t.label }}</button>
+      <button v-for="t in SUBS" :key="t.id" :class="{ active: !iconsTab && sub === t.id }" @click="iconsTab = false; sub = t.id; resetFilters()">{{ t.label }}</button>
+      <button :class="{ active: iconsTab }" @click="iconsTab = true">🖼️ 類別圖示</button>
       <span class="spacer" />
-      <span class="small muted">{{ counts[sub] }}</span>
+      <span class="small muted">{{ iconsTab ? `已自訂 ${Object.keys(content.mods.categoryIcons ?? {}).length} 種類別` : counts[sub] }}</span>
     </nav>
     <p class="small muted note">
       在這裡新增或修改怪物、物品、裝備底材、材料、技能、狀態（BUFF／DEBUFF）、特質、刺青（圖樣與奴隸印記）、固定 NPC 與特殊任務。內建的項目可以修改（隨時「恢復預設」），不能刪除；自建的項目沒有被用到時可以刪除。
@@ -611,11 +610,14 @@ function resetAll() {
     </p>
     <p v-if="content.problems.length" class="small warn-text">有些自訂內容沒辦法套用：{{ content.problems.join('；') }}</p>
 
-    <div class="layout">
+    <section v-if="iconsTab" class="panel">
+      <CategoryIconsEditor />
+    </section>
+    <div v-else class="layout">
       <section class="panel list-panel">
         <div class="row">
           <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current || current === ICONS_KEY" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+          <button class="small" :disabled="!current" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
         </div>
         <div class="row">
           <input v-model="search" placeholder="搜尋名稱" class="grow" />
@@ -806,7 +808,7 @@ function resetAll() {
         <p v-if="sub !== 'shops' && sub !== 'specialMaps' && sub !== 'tattoos'" class="small muted count">符合 {{ rows.length }} 項</p>
         <ul class="plain rows">
           <li v-for="r in rows" :key="r.key" :class="{ active: current === r.key }" @click="select(r.key)">
-            <ItemIcon v-if="sub === 'items' && r.key !== ICONS_KEY" :name="r.key" :size="18" class="row-ic" />
+            <ItemIcon v-if="sub === 'items'" :name="r.key" :size="18" class="row-ic" />
             <ItemIcon v-else-if="sub === 'bases'" :spec="{ base: r.key, material: '' }" :size="18" class="row-ic" />
             <ContentIcon v-else-if="sub === 'enemies'" kind="monster" :id="r.key" :size="16" class="row-ic" />
             <ContentIcon v-else-if="sub === 'abilities'" kind="ability" :id="r.key" :size="16" class="row-ic" />
@@ -824,7 +826,6 @@ function resetAll() {
       <section class="panel">
         <p v-if="!current" class="muted">從左邊選一個項目，或新增一個。</p>
         <EnemyEditor v-else-if="sub === 'enemies'" :id="current" :key="`e-${current}`" @deleted="select('')" />
-        <CategoryIconsEditor v-else-if="sub === 'items' && current === ICONS_KEY" key="cat-icons" />
         <ItemEditor v-else-if="sub === 'items'" :key="`i-${current}`" :name="current" @renamed="select" @deleted="select('')" />
         <AbilityEditor v-else-if="sub === 'abilities'" :id="current" :key="`a-${current}`" @deleted="select('')" />
         <StatusEditor v-else-if="sub === 'statuses'" :id="current" :key="`s-${current}`" @deleted="select('')" />

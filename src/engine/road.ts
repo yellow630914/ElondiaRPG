@@ -1,9 +1,9 @@
 // 旅途（見 docs/TRAVEL_EVENTS.md）：出發時把路程畫成一條單行道的臨時地圖，一格一天，事件出發時就擲好放在格子上。
 //
-// - 一般的路格：走進去花一天（官道住旅店付錢，其他路段吃乾糧，沒有乾糧就挨餓）。
+// - 一般的路格：走進去花一天（官道住旅店付錢；其他路段不花錢也不吃乾糧）。
 // - 事件：原本的旅途事件與自動判定（走到時揭曉）、普通的選擇事件、戰鬥、高階事件（可能進入臨時地圖：洞窟、遺跡、驛站）、
 //   特殊事件（特殊任務的開頭，stories.json 的 start.kind = travel）、主人的事件（身為奴隸時）。
-// - 途經的地點與目的地各有一格；走到目的地才產生整趟旅程的旅行報告（花費、乾糧、時間軸）。
+// - 途經的地點與目的地各有一格；走到目的地才產生整趟旅程的旅行報告（花費、時間軸）。
 // - 事件的結果可以帶進臨時地圖（side_map，出口回到原本的地方），或改去別的地點（travel_to）。
 
 import { checkBonus } from './perks'
@@ -24,7 +24,7 @@ import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory }
 import { addCounters, condMet, flagKey } from './storyFlags'
 import { gateCheck } from './security'
 import { toolBonus } from './tools'
-import { arrive, daysToHours, EVENT_CHANCE, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
+import { arrive, daysToHours, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
 import type { ContentTag } from './content'
 import type { Body } from './traits'
@@ -196,7 +196,7 @@ function buildRoad(state: GameState, from: string, to: string, legs: { from: str
   for (const i of dayCells) {
     const cell = cells[i]!
     const mode = legs[cell.road!.leg]!.mode
-    if (!rng.chance(Math.min(1, (travelEvents.chance[mode] ?? EVENT_CHANCE[mode]) * gameRule(state, 'travelEventMult')))) continue
+    if (!rng.chance(Math.min(1, (travelEvents.chance[mode] ?? 0) * gameRule(state, 'travelEventMult')))) continue
     const fits = (t: RoadTemplate) => (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && condMet(state, t.requires)
     const checks = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'check' && fits(t))
     const choices = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'choice' && fits(t))
