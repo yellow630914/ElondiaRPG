@@ -53,6 +53,11 @@ const place = (id: string) => {
     <p v-if="cur" class="small muted">進行中的遊戲會一直自動保存。開新遊戲或讀取存檔會蓋掉它（蓋掉前會先備份到自動存檔欄位）。</p>
     <button class="link credits" @click="showCredits = true"><GameIcon name="info" :size="14" /> 素材授權與致謝</button>
     <CreditsDialog :open="showCredits" @close="showCredits = false" />
+    <!-- 成人向內容一律存在（沒有開關），首頁角落提示年齡 -->
+    <div class="age" role="note" title="本遊戲含成人向內容（性描寫、奴隸、非自願等題材），僅供年滿 18 歲的玩家遊玩。NTR、非處女、主角非自願、男性對象與戰敗事件可以在「設定」的內容篩選關閉。">
+      <span class="badge">18+</span>
+      <span class="small">含成人向內容，僅供年滿 18 歲的玩家</span>
+    </div>
   </section>
 </template>
 
@@ -70,4 +75,16 @@ const place = (id: string) => {
 .big > span { display: grid; }
 .detail { font-size: var(--fs-xs); opacity: 0.8; }
 .credits { justify-self: center; display: inline-flex; gap: 4px; align-items: center; }
+.age {
+  position: fixed; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 28px); color: var(--muted); cursor: help;
+}
+.age .badge {
+  display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%;
+  border: 2px solid var(--danger); color: var(--danger); font-weight: 900; font-size: 0.85rem; background: #0008;
+}
+/* 窄螢幕：角落會壓到選單與致謝連結，改成放在頁面底部 */
+@media (max-width: 720px), (max-height: 640px) {
+  .age { position: static; justify-self: center; max-width: none; }
+}
 </style>
