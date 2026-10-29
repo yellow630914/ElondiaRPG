@@ -61,6 +61,9 @@
     "oath_quicksilver": { "kind": "oath", "name": "水銀之誓", "desc": "一道流動的銀色紋路，發誓以速度與機智取勝，放棄蠻力。", "places": ["left_arm", "right_arm", "left_calf", "right_calf"], "attrs": { "dex": 2, "int": 1, "str": -3 } },
     "oath_ascetic": { "kind": "oath", "name": "斷念之誓", "desc": "一圈灰白的念珠紋，發誓斷絕人情，只留下信仰與體魄。", "places": ["neck", "chest", "back"], "attrs": { "fai": 2, "str": 1, "cha": -3 } },
     "oath_heretic": { "kind": "oath", "name": "叛神之誓", "desc": "一枚倒置的聖印，發誓不再仰賴神明，只相信自己的頭腦與口舌。", "places": ["back", "left_thigh", "right_thigh", "belly"], "attrs": { "int": 2, "cha": 1, "fai": -3 } },
-    "oath_wild": { "kind": "oath", "name": "野性之誓", "desc": "一道獸牙狀的綠色紋，發誓回歸山野，遺忘書本與禮數。", "places": ["left_arm", "right_arm", "left_thigh", "right_thigh", "back"], "attrs": { "str": 1, "dex": 1, "int": -2 } }
+    "oath_wild": { "kind": "oath", "name": "野性之誓", "desc": "一道獸牙狀的綠色紋，發誓回歸山野，遺忘書本與禮數。", "places": ["left_arm", "right_arm", "left_thigh", "right_thigh", "back"], "attrs": { "str": 1, "dex": 1, "int": -2 } },
+    "lewd_womb": { "kind": "plain", "name": "淫紋・子宮", "desc": "小腹上一枚桃紅色的子宮形紋樣，刺的時候混了魅魔的血，動情時會微微發亮。", "places": ["belly"], "lust": { "max": 0.15 }, "price": 400, "adult": true },
+    "lewd_heart": { "kind": "plain", "name": "淫紋・心鎖", "desc": "一顆被鎖鏈纏住的心，線條是深紫色的，被碰到時會發熱。", "places": ["belly", "hips"], "lust": { "bonus": 2 }, "price": 400, "adult": true },
+    "lewd_wings": { "kind": "plain", "name": "淫紋・夜蝶", "desc": "腰後一對展開的夜蝶翅膀，翅膀上的眼紋像在看人。", "places": ["back", "hips"], "lust": { "max": 0.1, "bonus": 1 }, "price": 500, "adult": true }
   }
 }

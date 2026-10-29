@@ -129,6 +129,12 @@ export function addLewd(state: GameState, c: Character, key: LewdKey, delta: num
     if (report) (report.changes.lewd ??= []).push({ actor: c.id, stat: key, delta: after - before, after, region: r })
     return after - before
   }
+  return addLewdStat(c, key, delta, report)
+}
+
+/** 增減淫亂、敏感、忍耐、順從（基本值，不含曝露名聲）；不需要存檔的其他部分（寄生物的侵蝕成長也用） */
+export function addLewdStat(c: Character, key: Exclude<LewdKey, 'exposure'>, delta: number, report?: Report): number {
+  if (!delta) return 0
   const stats = (c.lewd ??= { ...lewdRules.defaults })
   const before = stats[key]
   // 流派特質改變成長的速度（清心寡慾：淫亂的增加減半）；零頭記著，下次一起算
@@ -190,6 +196,9 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       if (wears(m, (b) => b.outfit === 'adult')) bonus(d.adult_outfit)
       if (wears(m, (b) => !!b.restraint)) bonus(d.restraint)
       if (contractOf(m) && Object.values(m.gear ?? {}).some((g) => g?.locked)) bonus(d.locked)
+      // 奴隸印記的順從累積（條款的 submission_every）
+      const every = contractOf(m)?.terms.submission_every
+      if (every && day % every === 0) addLewd(state, m, 'submission', 1)
       if (!contractOf(m) && d.free_submission_every > 0 && day % d.free_submission_every === 0) addLewd(state, m, 'submission', -1)
       const stats = baseLewd(m)
       if (day - (stats.lastScene ?? 0) > d.idle_days && stats.lewdness > lewdRules.defaults.lewdness) addLewd(state, m, 'lewdness', -1)

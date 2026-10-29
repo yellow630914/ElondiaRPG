@@ -47,8 +47,12 @@ export function deriveFunctions(t: Omit<MarkTerms, 'functions'>): ContractFuncti
     ...(t.recapture_chance > 0 ? ['tracking' as const] : []),
     ...(t.escape_hp_ratio >= 0.3 ? ['tether' as const] : []),
     ...(t.spell_cap !== undefined ? ['spell_seal' as const] : []),
+    ...(t.submission_every ? ['submission' as const] : []),
   ]
 }
+
+/** 順從累積的天數：1～7，0 或沒寫是不累積 */
+const submissionEvery = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Math.max(1, Math.min(7, Math.round(Number(v)))) : 0)
 
 /** 模板的條款（原始文字） */
 export function termsFromTemplate(kind: string): MarkTerms {
@@ -66,6 +70,7 @@ export function termsFromTemplate(kind: string): MarkTerms {
     obedience_penalty: d.obedience_penalty,
     side_effects: [...d.side_effects],
     ...(d.spell_cap !== undefined ? { spell_cap: d.spell_cap } : {}),
+    ...(d.submission_every ? { submission_every: d.submission_every } : {}),
   }
   return { ...t, functions: deriveFunctions(t) }
 }
@@ -105,6 +110,7 @@ export function sanitizeTerms(raw: Partial<MarkTerms>, base: MarkTerms = termsFr
     side_effects: (Array.isArray(raw.side_effects) ? raw.side_effects : base.side_effects)
       .map((s) => text(s, r.side_effect_chars)).filter(Boolean).slice(0, r.side_effects),
     ...(sealed ? { spell_cap: Math.max(0, Math.min(9, Math.round(Number(raw.spell_cap)))) } : {}),
+    ...(submissionEvery(raw.submission_every ?? base.submission_every) ? { submission_every: submissionEvery(raw.submission_every ?? base.submission_every) } : {}),
   }
   return { ...terms, functions: deriveFunctions(terms) }
 }

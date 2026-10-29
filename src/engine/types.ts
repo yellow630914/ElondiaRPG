@@ -399,6 +399,8 @@ export interface MarkTerms {
   escape_hp_ratio: number
   /** 對主人的檢定懲罰（初始值） */
   obedience_penalty: number
+  /** 順從累積：戴著印記的每這麼多天，順從 +1（沒有時不累積；舊存檔刻的印記沒有） */
+  submission_every?: number
   side_effects: string[]
   functions: string[]
   /** 魔力封印：最多能施放的法術環 */

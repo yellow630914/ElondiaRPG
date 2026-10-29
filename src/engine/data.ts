@@ -1197,7 +1197,7 @@ export function conditionTone(id: string): 'good' | 'bad' | 'plain' {
   return st ? (st.kind === 'buff' ? 'good' : 'bad') : 'plain'
 }
 
-export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal'
+export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal' | 'submission'
 export interface ContractDef {
   name: string
   mark: string
@@ -1211,6 +1211,8 @@ export interface ContractDef {
   exit_dc: number
   side_effects: string[]
   escape_effects: { hp_ratio: number }
+  /** 順從累積：每這麼多天順從 +1 */
+  submission_every?: number
 }
 export interface MarketDef { name: string; price_mult: number; stock: [number, number]; races: Record<string, number> }
 export type Degree = 'critical' | 'success' | 'partial' | 'fail' | 'fumble'

@@ -1,6 +1,7 @@
 # 慾望戰鬥 S8 的資料（docs/plan/LUST_COMBAT_PLAN.md 第 12 節；規則寫在 docs/LEWD_STATS.md）：
 #   S8-3 消耗品、烹飪、鍊金、征服掉落、附魔的輔料方向
-# 寫進 data/rules/items.json、statuses.json、companions.json（非戰鬥狀態）、lewd.json（conquest）、gear.json（輔料的方向 lust）。
+#        寫進 data/rules/items.json、statuses.json、companions.json（非戰鬥狀態）、lewd.json（conquest）、gear.json（輔料的方向 lust）
+#   S8-4 淫紋（tattoos.json 的圖樣）、寄生物的階段技能與馴服技能（parasites.json、abilities.json）、奴隸印記的順從累積（slavery.json）
 # 可以重跑：先拿掉上一次寫進去的再寫。要排在 lust_park_s7.py 之後（清心茶、媚香精油在那裡）。
 import json
 import re
@@ -137,5 +138,73 @@ def write_s8_3():
     print('S8-3 items', len(ITEMS), 'statuses', len(STATUSES), 'conditions', len(CONDITIONS))
 
 
+# ---------------- S8-4 淫紋、寄生物、奴隸印記 ----------------
+LEWD_TATTOOS = {
+    "lewd_womb": {"kind": "plain", "name": "淫紋・子宮", "desc": "小腹上一枚桃紅色的子宮形紋樣，刺的時候混了魅魔的血，動情時會微微發亮。", "places": ["belly"],
+                  "lust": {"max": 0.15}, "price": 400, "adult": True},
+    "lewd_heart": {"kind": "plain", "name": "淫紋・心鎖", "desc": "一顆被鎖鏈纏住的心，線條是深紫色的，被碰到時會發熱。", "places": ["belly", "hips"],
+                   "lust": {"bonus": 2}, "price": 400, "adult": True},
+    "lewd_wings": {"kind": "plain", "name": "淫紋・夜蝶", "desc": "腰後一對展開的夜蝶翅膀，翅膀上的眼紋像在看人。", "places": ["back", "hips"],
+                   "lust": {"max": 0.1, "bonus": 1}, "price": 500, "adult": True},
+}
+
+PARASITE_ABILITIES = [
+    {"id": "para_lingerie_bind", "name": "魔導衣的纏縛", "type": "skill", "classes": ["lewd"], "unlock": 1, "ap": 2, "attr": "cha", "target": "enemy", "resolve": "attack",
+     "damage": [{"dice": "2d6", "type": "lust", "scale": {"dice": "1d6", "per": 4}, "mod": True}], "apply": [{"status": "restrained", "turns": 1, "on": "hit"}], "uses": {"per_rest": 1},
+     "desc": "（獸蟲派・馴服的魔導衣）黑色的蕾絲從身上延伸出去，把敵人纏住：2d6 + 魅力調整值慾望（每 4 級再 +1d6），命中後束縛 1 回合。每次長休一次。"},
+    {"id": "para_mark_surge", "name": "主宰之紋・解放", "type": "skill", "classes": ["lewd"], "unlock": 1, "ap": 2, "attr": "cha", "target": "all_enemies", "resolve": "save", "save": "fai",
+     "damage": [{"dice": "2d6", "type": "lust", "scale": {"dice": "1d6", "per": 3}, "mod": True}], "apply": [{"status": "sensitized", "turns": 2}], "uses": {"per_rest": 1},
+     "desc": "（獸蟲派・主宰之紋）點亮小腹上的紋樣，熱流一口氣放出去：所有敵人信仰豁免，2d6 + 魅力調整值慾望（每 3 級再 +1d6，成功減半），失敗敏感 2 回合。每次長休一次。"},
+]
+PARASITE_PATCH = {
+    "hungry_lingerie": {"tamed_ability": "para_lingerie_bind"},
+    "succubus_mark": {"tamed_ability": "para_mark_surge", "stage_abilities": [[], [], ["lust_kiss"], ["lust_kiss", "lust_smile"]], "stage_lust": [0, 0, 0, 0.2]},
+}
+SUBMISSION = {"labor": 3, "combat": 4, "arcane": 2, "brothel": 1}
+SUBMISSION_TEXT = "順從累積：戴著印記的日子，順從慢慢上升。"
+
+
+def write_s8_4():
+    p = 'data/rules/tattoos.json'
+    t = open(p).read()
+    for k in LEWD_TATTOOS:
+        t = drop_lines(t, r'\n    "' + k + r'": \{.*')
+    spaced = lambda v: json.dumps(v, ensure_ascii=False).replace('{"', '{ "').replace('}', ' }')
+    t = insert_after(t, r'\n    "oath_wild": \{.*', [f'    "{k}": {spaced(v)}' for k, v in LEWD_TATTOOS.items()])
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/abilities.json'
+    t = open(p).read()
+    for a in PARASITE_ABILITIES:
+        t = drop_lines(t, r'\n    \{"id": "' + a['id'] + r'".*')
+    t = insert_after(t, r'\n    \{"id": "lust_tide_bride".*', ['    ' + json.dumps(a, ensure_ascii=False) for a in PARASITE_ABILITIES])
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/parasites.json'
+    d = json.load(open(p))
+    for pid, patch in PARASITE_PATCH.items():
+        x = d['parasites'][pid]
+        x['tamed']['ability'] = patch['tamed_ability']
+        for k in ('stage_abilities', 'stage_lust'):
+            if k in patch:
+                x[k] = patch[k]
+    open(p, 'w').write(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
+
+    p = 'data/rules/slavery.json'
+    t = open(p).read()
+    t = re.sub(r'\n      "submission_every": \d+,', '', t)
+    for k, n in SUBMISSION.items():
+        m = re.search(r'\n    "' + k + r'": \{\n(?:.*\n)*?      "exit_dc": .*,', t)
+        t = t[:m.end()] + f'\n      "submission_every": {n},' + t[m.end():]
+    t = drop_lines(t, r'\n    "submission": ".*')
+    t = insert_after(t, r'\n    "spell_seal": ".*', [f'    "submission": {json.dumps(SUBMISSION_TEXT, ensure_ascii=False)}'])
+    json.loads(t)
+    open(p, 'w').write(t)
+    print('S8-4 tattoos', len(LEWD_TATTOOS), 'abilities', len(PARASITE_ABILITIES))
+
+
 if __name__ == '__main__':
     write_s8_3()
+    write_s8_4()

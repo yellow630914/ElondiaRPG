@@ -17,6 +17,11 @@ export interface TattooTemplate {
   places?: TattooPlace[]
   /** 誓約印記的屬性加減 */
   attrs?: Partial<Record<AttrId, number>>
+  /** 淫紋（成人向）：慾望戰鬥的效果，max 慾望上限的比例、bonus 造成的慾望 +N（docs/LEWD_STATS.md 第 14 節） */
+  lust?: { max?: number; bonus?: number }
+  /** 刺這個圖樣另外加的價錢 */
+  price?: number
+  adult?: boolean
 }
 
 export const tattooRules = tattooJson as unknown as {
@@ -48,6 +53,18 @@ export function tattooTemplate(id: string): TattooTemplate | undefined {
 
 export function tattoosOf(c: Pick<Character, 'tattoos'> | undefined): Tattoo[] {
   return c?.tattoos ?? []
+}
+
+/** 身上淫紋的慾望效果（依圖樣，加總） */
+export function tattooLust(c: Pick<Character, 'tattoos'> | undefined): { max: number; bonus: number } {
+  let max = 0
+  let bonus = 0
+  for (const t of tattoosOf(c)) {
+    const l = t.template ? tattooTemplate(t.template)?.lust : undefined
+    max += l?.max ?? 0
+    bonus += l?.bonus ?? 0
+  }
+  return { max, bonus }
 }
 
 export function tattooAt(c: Pick<Character, 'tattoos'>, place: TattooPlace): Tattoo | undefined {

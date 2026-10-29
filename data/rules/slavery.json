@@ -82,6 +82,7 @@
       "escape_dc": 17,
       "recapture_chance": 0.1,
       "exit_dc": 12,
+      "submission_every": 3,
       "side_effects": ["違抗主人的命令時印記會刺痛", "見到主人時頸部微微發熱"],
       "escape_effects": { "hp_ratio": 0.1 }
     },
@@ -95,6 +96,7 @@
       "escape_dc": 19,
       "recapture_chance": 0.2,
       "exit_dc": 14,
+      "submission_every": 4,
       "side_effects": ["無法對主人揮出武器", "離主人太遠時鎖鏈紋會收緊，呼吸困難"],
       "escape_effects": { "hp_ratio": 0.3 }
     },
@@ -109,6 +111,7 @@
       "escape_dc": 22,
       "recapture_chance": 0.35,
       "exit_dc": 16,
+      "submission_every": 2,
       "side_effects": ["法陣抽取魔力，最多只能施放 1 環法術", "主人能感知印記的位置"],
       "escape_effects": { "hp_ratio": 0.4 }
     },
@@ -123,6 +126,7 @@
       "escape_dc": 16,
       "recapture_chance": 0.25,
       "exit_dc": 15,
+      "submission_every": 1,
       "side_effects": ["主人指定的客人面前難以拒絕", "離開娼館太久時花紋會隱隱發燙"],
       "escape_effects": { "hp_ratio": 0.15 }
     }
@@ -134,7 +138,8 @@
     "income": "收益歸屬：奴隸得到的金錢有一部分（或全部）歸主人。",
     "tether": "距離束縛：逃離時印記收緊，造成額外傷害。",
     "tracking": "追蹤：逃亡期間每次休息都有機率被主人找到。",
-    "spell_seal": "魔力封印：只能施放低環的法術。"
+    "spell_seal": "魔力封印：只能施放低環的法術。",
+    "submission": "順從累積：戴著印記的日子，順從慢慢上升。"
   },
 
   "freedom": {

@@ -52,7 +52,8 @@ export function shopRefusal(state: GameState, shop: TattooShopId): string | unde
 /** 刺青的價格：刺青店固定價，刻印師依誓約加的總點數；自己描述的另外加錢 */
 export function inkPrice(shop: TattooShopId, t: Pick<NewTattoo, 'kind' | 'attrs' | 'template'>): number {
   const r = tattooShop(shop)
-  const extra = t.template ? 0 : r.custom_extra ?? 0
+  // 圖樣另外加的價錢（淫紋）；自己描述的加 custom_extra
+  const extra = t.template ? tattooTemplate(t.template)?.price ?? 0 : r.custom_extra ?? 0
   if (t.kind === 'oath') return Object.values(t.attrs ?? {}).filter((v) => (v ?? 0) > 0).reduce((sum, v) => sum + v!, 0) * (r.oath_per_point ?? 0) + extra
   return (r.ink ?? 0) + extra
 }

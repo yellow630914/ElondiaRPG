@@ -24,6 +24,7 @@ import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { rollDefeatEvent } from './defeat'
 import { inPark, parkDefeat, parkLust, saveParkLust } from './park'
 import { charmRutMult } from './charm'
+import { parasiteAbilities, parasiteStartLust } from './parasites'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { advanceBossHunts, clearCounts, LAYER_IDS } from './materialQuests'
@@ -39,7 +40,7 @@ import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
   ActorState, Character, Difficulty, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
 } from './types'
-import { contractOf } from './tattoos'
+import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
 import { addLewd, exposureAt, exposureLevel, growLewd, lewdOf } from './lewd'
 import { lockedBound, lustTotals, twoFaceCombat } from './schools'
@@ -362,6 +363,10 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     f.lustMods.convert += t.convert
     f.lustMods.bonus += Math.floor(Math.floor(exposureAt(state, ch.id, locationById(state.location).region) / L.exposure_per) * t.exposure)
       + Math.floor(exposureLevel(ch) * t.exposure_level) + Math.floor(v.sensitivity / 25) * Math.floor(t.sensitivity_bonus)
+    // 淫紋（刺青的圖樣）：慾望上限、造成的慾望
+    const ink = tattooLust(ch)
+    if (ink.max) f.lustMax = Math.round(f.lustMax * (1 + ink.max))
+    f.lustMods.bonus += ink.bonus
     if (t.burst) f.lustMods.burst = t.burst
     if (t.relief) f.lustMods.relief = t.relief
     if (t.crit_convert) f.lustMods.critConvert = t.crit_convert
@@ -384,6 +389,8 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const carried = parkLust(state, ch.id)
     if (carried) f.lust += Math.round(f.lustMax * carried)
     else if (ch.status.includes('aroused')) f.lust += Math.round(f.lustMax * r.aroused_start)
+    // 寄生物失控：高的階段帶著慾望開戰
+    f.lust += Math.round(f.lustMax * parasiteStartLust(ch))
     f.lust = Math.min(f.lust, f.lustMax - 1)
   }
 }
@@ -537,7 +544,8 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
     slots: slotsLeft(c).slice(0, spellCap(c)),
     slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, spellCap(c)),
     // 技能攜帶上限：只帶攜帶中的技能與法術（戲法全帶）
-    abilities: carriedAbilities(c, loadoutCap),
+    // 寄生物給的技能不佔攜帶上限（parasites.ts）
+    abilities: [...carriedAbilities(c, loadoutCap), ...parasiteAbilities(c)],
     weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr + gearDr,
     resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),
