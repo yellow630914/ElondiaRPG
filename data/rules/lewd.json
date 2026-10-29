@@ -61,7 +61,7 @@
   },
   "servitude": { "$comment": "隸從派：沒有主人時，流派特質的慾望效果與戰鬥修正只有 no_master 倍（向下取整）", "no_master": 0.5 },
   "two_face": {
-    "$comment": "雙面效應：底材的 bind（1～3）與 bind_kind。平常（非戰鬥的檢定）受到 penalty[bind-1] 的減值，每 endurance_per 點忍耐減輕 1；符合任一個 checks 的檢定才算，同一件只扣一次。戰鬥中：修了任何流派、而且這件鎖上了，才有 combat[bind-1] 的增益（initiative 先攻；其他是戰鬥修正；immune 免疫的狀態），乘上鎖的倍率，流派契合再 × fit（隸從派有主人時 × servitude_master），四捨五入。慾望戰鬥關閉時沒有增益，減值照算。",
+    "$comment": "雙面效應：底材的 bind（1～3）與 bind_kind。平常（非戰鬥的檢定）受到 penalty[bind-1] 的減值，每 endurance_per 點忍耐減輕 1；符合任一個 checks 的檢定才算，同一件只扣一次。戰鬥中：修了任何流派、而且這件鎖上了，才有 combat[bind-1] 的增益（initiative 先攻；其他是戰鬥修正；immune 免疫的狀態，只在 bind 3），乘上鎖的倍率，流派契合再 × fit（隸從派有主人時 × servitude_master），四捨五入。慾望戰鬥關閉時沒有增益，減值照算。",
     "endurance_per": 40,
     "fit": 1.2,
     "servitude_master": 1.4,
