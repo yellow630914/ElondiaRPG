@@ -4,7 +4,7 @@
 import { abilityApCost } from '@/engine/combat'
 import { castingAttr } from '@/engine/character'
 import { formatMoney } from '@/engine/money'
-import { gearRules, gearSummary, slotName } from '@/engine/gear'
+import { baseSlots, gearRules, gearSummary, MOD_NAME, slotName } from '@/engine/gear'
 import type { GearSlot } from '@/engine/types'
 import { notForSale } from '@/engine/trade'
 import { useSummary } from '@/engine/inventory'
@@ -73,14 +73,37 @@ function lewdSchoolTable(): string {
   }))
 }
 
+/** 拘束具：一件物品一列（程度、自帶的鎖照物品自己的），列出哪裡拿得到與多的加成 */
 function restraintTable(): string {
-  const rows = Object.entries(gearRules.bases).filter(([, b]) => b.bind && b.bind_kind).map(([id, b]) => {
-    const items = itemRules.items.filter((i) => i.gear?.base === id)
-    const sold = items.filter((i) => i.tags.length && !notForSale(i)).map((i) => i.name)
-    const forced = items.filter((i) => i.master_force).map((i) => i.name)
-    return [b.name, slotName(b.slot as GearSlot), bindLabel(b.bind_kind!, b.bind!), [sold.length ? `商店：${sold.join('、')}` : '', forced.length ? `主人強制：${forced.join('、')}` : ''].filter(Boolean).join('；') || '—']
+  const SHOP: Record<string, string> = { tailor: '裁縫店', smith: '鐵匠鋪', jeweler: '珠寶店', magic: '魔法物品店', general: '雜貨店' }
+  const LAYER: Record<string, string> = { outskirts: '近郊', shallow: '淺層', middle: '中層', deep: '深層', abyss: '底層' }
+  const slots = baseSlots()
+  const rows = itemRules.items.filter((i) => i.gear && gearRules.bases[i.gear.base]?.bind_kind && !i.gear.fused).map((i) => {
+    const b = gearRules.bases[i.gear!.base]!
+    const where: string[] = []
+    const shops = i.tags.filter((t) => SHOP[t]).map((t) => SHOP[t])
+    if (shops.length && !notForSale(i)) {
+      const cond = [i.min_location === 'city' ? '城市以上' : i.min_location === 'capital' ? '王都' : '', i.charm_min ? `魅氣 ${i.charm_min} 以上` : ''].filter(Boolean).join('、')
+      where.push(`${shops.join('、')}${cond ? `（${cond}）` : ''}`)
+    }
+    if (i.master_force) where.push(`主人強制${i.master_force.tags?.length ? `（${i.master_force.tags.map((t) => ({ villain: '惡人', noble: '貴族', royal: '皇族' } as Record<string, string>)[t] ?? t).join('、')}）` : ''}`)
+    const chests = Object.entries(gearRules.chests).filter(([k, c]) => k !== '$comment' && c.items.some(([n]) => n === i.name)).map(([k]) => LAYER[k] ?? k)
+    if (chests.length) where.push(`地下城寶箱（${chests.join('、')}）`)
+    if (lewdRules.park.chest_items.some(([n]) => n === i.name)) where.push('園區寶箱')
+    if (lewdRules.auction.pool.some(([n]) => n === i.name)) where.push('拍賣會')
+    if (Object.values(lewdRules.arena.rings).some((r) => r.rare?.items.includes(i.name))) where.push('淫鬥場的稀有獎品')
+    const drop = Object.values(enemies).filter((e) => e.loot?.some((l) => l.item === i.name)).map((e) => e.name)
+    if (drop.length) where.push(`擊敗${drop.join('、')}`)
+    const g = i.gear!
+    const extra = [
+      g.lock ? `自帶${lockName(g.lock)}` : '',
+      ...Object.entries(g.attrs ?? {}).map(([k, v]) => `${attrName(k as AttrId)} ${v! > 0 ? '+' : ''}${v}`),
+      ...Object.entries(g.enchants?.mods ?? {}).map(([k, v]) => `${MOD_NAME[k] ?? k} ${v! > 0 ? '+' : ''}${v}`),
+      g.unique ? gearSummary({ base: g.base, material: g.material, unique: g.unique }).split('・').find((x) => x.startsWith('獨特'))?.replace('獨特：', '') ?? '' : '',
+    ].filter(Boolean).join('、')
+    return [i.name, slots[b.slot] ?? slotName(b.slot as GearSlot), bindLabel(b.bind_kind!, g.bind ?? b.bind!), formatMoney(i.price_cc), where.join('；') || '—', extra || '—']
   })
-  return table(['底材', '欄位', '拘束', '物品'], rows)
+  return table(['物品', '欄位', '拘束', '價格', '哪裡拿', '另外的加成'], rows)
 }
 
 function lockTable(): string {

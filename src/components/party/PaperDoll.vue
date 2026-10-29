@@ -157,7 +157,7 @@ const totals = computed(() => {
       <p v-else class="muted small empty">{{ blocked(selected) ? '這個種族無法使用這個欄位。' : '這一格沒有裝備。' }}</p>
       <div v-if="current && bind" class="lock-row small">
         <GameIcon :name="bind.lock ? 'lock' : 'unlock'" :size="14" />
-        <span v-if="bind.lock">{{ current.locked ? (stuck?.trap ? '陷阱的' : '主人的') : '' }}{{ lockName(bind.lock) }}</span>
+        <span v-if="bind.lock">{{ current.locked ? (stuck?.trap ? '陷阱的' : '主人的') : !current.lock && current.spec.lock ? '自帶的' : '' }}{{ lockName(bind.lock) }}</span>
         <span v-else class="muted">沒有上鎖</span>
         <span class="muted">{{ bindNote }}</span>
         <template v-if="lockable(current)">
@@ -167,7 +167,7 @@ const totals = computed(() => {
           </select>
           <button class="small" :disabled="inCombat || !lockPick" @click="lockIt">上鎖</button>
         </template>
-        <button v-else-if="bind.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
+        <button v-else-if="current.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
       </div>
       <div v-if="fused" class="lock-row small">
         <span>淫器：戰鬥時展開成{{ fused.weapon }}・最近 {{ fused.of }} 天穿了 {{ fused.days }} 天</span>

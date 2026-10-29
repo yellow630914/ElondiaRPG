@@ -310,9 +310,9 @@ export function lockerOf(g: EquippedGear): string {
   return g.locked?.startsWith(TRAP_LOCK) ? '陷阱' : '主人'
 }
 
-/** 這一格的裝備能不能上鎖：拘束具（底材有 bind）、還沒上鎖、不是主人強制戴上的 */
+/** 這一格的裝備能不能上鎖：拘束具（底材有 bind）、還沒上鎖、沒有自帶的鎖、不是別人鎖上的 */
 export function lockable(g: EquippedGear | undefined): boolean {
-  return !!g && !!gearRules.bases[g.spec.base]?.bind && !g.lock && !g.locked
+  return !!g && !!gearRules.bases[g.spec.base]?.bind && !g.lock && !g.spec.lock && !g.locked
 }
 
 /** 用行囊裡的鎖替身上的拘束具上鎖（自己有鑰匙，隨時可以打開） */
@@ -324,7 +324,7 @@ export function lockGear(state: GameState, memberId: string, slot: GearSlot, loc
   const g = m.gear?.[slot]
   if (!g || !gearRules.bases[g.spec.base]?.bind) throw new Error('這一格沒有可以上鎖的拘束具')
   if (g.locked) throw new Error(`${g.name}是${lockerOf(g)}鎖上的`)
-  if (g.lock) throw new Error(`${g.name}已經上鎖了`)
+  if (g.lock || g.spec.lock) throw new Error(`${g.name}已經上鎖了`)
   g.lock = grade
   const report = itemReport(state, 0.1)
   report.changes.items_lost = [{ name: lockName, qty: 1 }]

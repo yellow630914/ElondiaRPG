@@ -665,7 +665,7 @@ export function gearSummary(spec: GearSpec): string {
   const exposure = base?.exposure ?? (base?.outfit ? lewdRules.gear.outfit[base.outfit]?.exposure ?? 0 : 0)
   if (exposure && base && lewdRules.gear.exposure_slots.includes(base.slot)) parts.push(`曝露度 ${exposure}`)
   // 雙面效應：拘束的種類與程度
-  if (base?.bind && base.bind_kind) parts.push(`${lewdRules.two_face.kinds[base.bind_kind]?.name ?? base.bind_kind} ${spec.bind ?? base.bind}`)
+  if (base?.bind && base.bind_kind) parts.push(`${lewdRules.two_face.kinds[base.bind_kind]?.name ?? base.bind_kind} ${spec.bind ?? base.bind}${spec.lock ? `（自帶${lewdRules.locks.grades[spec.lock]?.name ?? spec.lock}）` : ''}`)
   return parts.join('・')
 }
 

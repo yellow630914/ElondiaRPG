@@ -61,7 +61,9 @@ describe('gear attributes', () => {
     expect(item.gear!.attrs).toEqual({ str: 3 })
     expect(item.master_force).toEqual({ tags: ['villain'] })
     expect(notForSale(item)).toBe(true)
-    for (const i of itemRules.items.filter((x) => x.master_force)) expect(notForSale(i), i.name).toBe(true)
+    // 主人強制裝備、沒有屬性加減的（口球）有商店標籤時照樣上架；有屬性加減的不賣
+    expect(notForSale({ gear: { base: 'ball_gag', material: 'leather' }, master_force: {} })).toBe(false)
+    for (const i of itemRules.items.filter((x) => x.master_force && x.gear?.attrs)) expect(notForSale(i), i.name).toBe(true)
   })
 })
 
@@ -113,7 +115,8 @@ describe('restraint bases', () => {
     const { Rng } = await import('@/engine/rng')
     const restraints = Object.entries(gearRules.bases).filter(([, b]) => b.restraint).map(([id]) => id)
     expect(restraints).toEqual(['slave_collar', 'manacles', 'shackles', 'spiked_collar', 'choker', 'chastity_belt', 'leather_harness', 'silk_binding',
-      'blindfold', 'armbinder', 'hobble_chain', 'ballet_boots', 'rope_harness', 'shibari', 'vibe_egg', 'nipple_clamps'])
+      'blindfold', 'armbinder', 'hobble_chain', 'ballet_boots', 'rope_harness', 'shibari', 'vibe_egg', 'nipple_clamps',
+      'lace_veil', 'full_hood', 'ribbon_cuffs', 'leather_cuffs', 'ankle_bells', 'vibe_plug', 'steel_corset', 'silk_gag', 'ball_gag', 'muzzle_gag'])
     for (const i of itemRules.items.filter((x) => x.master_force)) {
       expect(restraints, i.name).toContain(i.gear!.base)
       const s = gearStats(i.gear!)

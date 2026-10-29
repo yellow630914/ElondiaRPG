@@ -1812,6 +1812,8 @@ export interface ShopTypeDef {
   catalog_tag: string
   /** 每天另外上架幾件服裝（底材有 outfit 的裝備）：[最少, 最多]；沒有時不賣服裝 */
   outfits?: [number, number]
+  /** 每天另外上架幾件拘束具（束縛用的底材）：[最少, 最多]；沒有時和一般裝備一起抽（docs/LEWD_STATS.md 第 7 節） */
+  restraints?: [number, number]
   buys: ItemCategory[]
   ai_effects: RewardEffect['type'][]
   specials: ShopSpecial[]
@@ -2083,8 +2085,8 @@ export function isChoosablePerk(id: string): boolean {
 
 export type LewdKey = 'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure'
 /** 雙面效應的拘束種類（底材的 bind_kind） */
-export type BindKind = 'legs' | 'hands' | 'eyes' | 'stim' | 'body'
-export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'stim', 'body']
+export type BindKind = 'legs' | 'hands' | 'eyes' | 'stim' | 'body' | 'mouth'
+export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'mouth', 'stim', 'body']
 /** 鎖的等級（物品的 lock、裝備上的鎖） */
 export type LockGrade = 'white' | 'blue' | 'rune' | 'gold'
 export const LOCK_GRADES: LockGrade[] = ['white', 'blue', 'rune', 'gold']
@@ -2169,7 +2171,8 @@ export const lewdRules = lewdJson as unknown as {
     item_chance: number; items: string[]; book_tier: number; book_chance: number; books: string[]
     wager: { mult: number; loss: Partial<Record<LewdKey, number>> }
     lust_convert: number
-    rings: Record<string, { name: string; desc: string; restraint?: boolean; lust_only?: boolean; tiers: EncounterGroup[] }>
+    /** rare：對手等級 tier 以上的勝場有 chance 的機率拿到 items 裡的一樣（這個擂臺專屬的獎品） */
+    rings: Record<string, { name: string; desc: string; restraint?: boolean; lust_only?: boolean; tiers: EncounterGroup[]; rare?: { tier: number; chance: number; items: string[] } }>
   }
   slave_price: { above: number; per: Partial<Record<LewdStat, number>>; per_skill: number; max: number }
   npc_schools: { tags: Record<string, { chance: number; schools: string[] }> }

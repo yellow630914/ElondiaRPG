@@ -110,9 +110,12 @@ export function settleArena(state: GameState, combat: CombatState, report: Repor
     rec.streak += 1
     rec.best = Math.max(rec.best, rec.streak)
     const { prize } = arenaPurse(m.tier, m.wager)
+    const rare = def?.rare
     const extra = withRng(state, (rng) => [
       ...(rng.chance(r.item_chance) ? [rng.pick(r.items)] : []),
       ...(m.tier >= r.book_tier && rng.chance(r.book_chance) ? [rng.pick(r.books)] : []),
+      // 這個擂臺專屬的稀有獎品（對手夠強時）
+      ...(rare?.items.length && m.tier >= rare.tier && rng.chance(rare.chance) ? [rng.pick(rare.items)] : []),
     ])
     applyEffects(state, report, [{ type: 'money', amount: prize }, ...extra.map((name) => ({ type: 'item' as const, name, qty: 1 }))])
     lines.push(`贏了，連勝 ${rec.streak} 場，獎金 ${formatMoney(prize)}${extra.length ? `，另外拿到${extra.join('、')}` : ''}。`)

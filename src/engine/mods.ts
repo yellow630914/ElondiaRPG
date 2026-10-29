@@ -796,6 +796,8 @@ export function sanitizeGearSpecLoose(g: GearSpec | undefined): GearSpec | undef
     const bind = int(g.bind, 1, 3, base.bind)
     if (bind !== base.bind) out.bind = bind
   }
+  // 自帶的鎖（拘束具才有）
+  if (base.bind && base.bind_kind && typeof g.lock === 'string' && (LOCK_GRADES as string[]).includes(g.lock)) out.lock = g.lock
   return out
 }
 
