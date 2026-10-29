@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { cellAt, CELL_ICON, CELL_NAME, cellName, currentArea, isRevealed, linkTargetName, position, sight, type Cell } from '@/engine/grid'
+import { cellAt, CELL_ICON, CELL_NAME, cellName, isRevealed, linkTargetName, position, sight, type Cell } from '@/engine/grid'
 import { isCustomShopId, itemDef, landmarkDef, locationById } from '@/engine/data'
 import { cropStatus } from '@/engine/garden'
 import { homeById } from '@/engine/homes'
-import { isHostile, peopleHere, type PresentNpc } from '@/engine/population'
+import { isHostile, type PresentNpc } from '@/engine/population'
 import { useGame } from '@/stores/game'
 import { currentLight, isDark } from '@/engine/light'
 import { sceneSpots } from '@/engine/landmarks'
@@ -15,7 +15,7 @@ import { CELL_GAME_ICON } from './ui/cellIcons'
 import { tileUrl, type TileKind } from './ui/tiles'
 
 const game = useGame()
-const area = computed(() => currentArea(game.state!))
+const area = computed(() => game.area)
 const pos = computed(() => position(game.state!))
 /** 站在通往別區的出入口上：地圖角落提示按 E */
 const linkTo = computed(() => (game.state!.combat ? null : linkTargetName(game.state!)))
@@ -106,7 +106,7 @@ function label(cell: Cell): string {
 // 地圖上的人：每格標出人數，敵對的人用紅色
 const people = computed(() => {
   const map = new Map<string, PresentNpc[]>()
-  for (const p of peopleHere(game.state!)) {
+  for (const p of game.here) {
     const k = `${p.x},${p.y}`
     map.set(k, [...(map.get(k) ?? []), p])
   }

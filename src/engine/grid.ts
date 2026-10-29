@@ -13,7 +13,7 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId, type LandmarkDef,
+  attrName, contentRevision, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
@@ -208,11 +208,12 @@ let cellOverrides: Record<string, Record<number, CellKind>> = {}
 
 export function setCellOverrides(map: Record<string, Record<number, CellKind>>) {
   cellOverrides = map
-  blockKinds.clear()
+  invalidateBlocks()
 }
-/** 地標改了位置或增減時：清掉各區塊設施的快取 */
+/** 地標改了位置或增減時：清掉各區塊設施與基底地圖的快取 */
 export function invalidateBlocks() {
   blockKinds.clear()
+  baseBlocks.clear()
 }
 /** 各聚落區塊有哪些設施（settlementBlocks 用；換位置時清掉） */
 const blockKinds = new Map<string, Set<CellKind>>()
@@ -285,7 +286,25 @@ export function layerKey(locationId: string, layer: number) {
   return `${locationId}/L${layer}`
 }
 
-/** 固定地圖的區塊（每次由資料建立，不存檔）；overlay 為 false 時不疊世界設定擺的商店 */
+/**
+ * 聚落區塊的基底地圖：只依遊戲資料（地圖、世界設定擺的商店與地標），不依存檔，建一次就記住。
+ * 房子、通道、隱藏的地標每次另外疊上去（都是換掉整格），所以每次給一份新的格子陣列，快取不會被改到。
+ * 內容改了（contentRevision）或地標、商店換位置（invalidateBlocks）時重建。
+ */
+const baseBlocks = new Map<string, Area>()
+let baseBlocksRev = -1
+function baseBlock(loc: Location, block: BlockDef): Area {
+  if (baseBlocksRev !== contentRevision()) {
+    baseBlocks.clear()
+    baseBlocksRev = contentRevision()
+  }
+  const key = settlementKey(loc.id, block.id)
+  let base = baseBlocks.get(key)
+  if (!base) baseBlocks.set(key, (base = buildBlock(loc, block)))
+  return { ...base, cells: base.cells.slice() }
+}
+
+/** 固定地圖的區塊（由資料建立，不存檔）；overlay 為 false 時不疊世界設定擺的商店 */
 function buildBlock(loc: Location, block: BlockDef, overlay = true): Area {
   const width = block.grid[0]!.length
   const height = block.grid.length
@@ -347,7 +366,7 @@ export function getArea(state: GameState, key: string): Area {
   const block = blocksFor(loc).find((b) => b.id === blockId)
   if (!block) throw new Error(`unknown area: ${key}`)
   // 待售的空地與買下的房子（依存檔，疊在固定地圖上）；特殊地圖的通道（依旗標）
-  return hideLandmarks(state, overlayConnections(state, overlayLots(state, buildBlock(loc, block))))
+  return hideLandmarks(state, overlayConnections(state, overlayLots(state, baseBlock(loc, block))))
 }
 
 /**

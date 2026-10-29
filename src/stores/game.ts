@@ -255,6 +255,11 @@ export const useGame = defineStore('game', () => {
   const controllers = new Map<string, AbortController>()
 
   const pc = computed(() => (state.value ? player(state.value) : null))
+  // 畫面共用的「現在所在的地方」：同一個狀態下只算一次，各面板不用各自重算（Vue 的 computed 會記住，相關的狀態改了才重算）。
+  // 只在遊戲畫面（有進行中的遊戲）讀
+  const here = computed(() => population.peopleHere(state.value!))
+  const area = computed(() => grid.currentArea(state.value!))
+  const cell = computed(() => grid.currentCell(state.value!))
 
   // 自動保存：每次動作後把整份遊戲寫進 IndexedDB。寫入是非同步的，寫到一半又有新的動作時，
   // 只保留最新的一份，等這次寫完再寫
@@ -956,7 +961,7 @@ export const useGame = defineStore('game', () => {
   return {
     /** 在動作的保護下改狀態：出錯時還原、顯示訊息（測試與少數元件用） */
     runAction: run,
-    state, narrations, error, saveWarning, flushed, pc, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTargets, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText, makeRoom, requireRoom,
+    state, narrations, error, saveWarning, flushed, pc, here, area, cell, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTargets, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText, makeRoom, requireRoom,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,

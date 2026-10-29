@@ -5,7 +5,6 @@ import { actionRules, ATTR_IDS, attrName, classEmoji, raceEmoji, type Degree } f
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { npcTitle } from '@/engine/npcs'
-import { peopleHere } from '@/engine/population'
 import { unmarkOffers } from '@/engine/slavery'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
@@ -52,7 +51,7 @@ function label(id: string, name: string): string {
   return rec ? `${raceEmoji(rec.race)}${name}${classEmoji(rec.class)}` : name
 }
 const partyTargets = computed(() => s.value.party.filter((m) => !m.isPlayer).map((m) => ({ id: m.id, name: label(m.id, m.name), note: '' })))
-const people = computed(() => peopleHere(s.value).map((p) => ({
+const people = computed(() => game.here.map((p) => ({
   id: p.rec.id, name: label(p.rec.id, p.rec.name), note: npcTitle(p.rec), near: p.dist <= 1, dist: p.dist,
 })))
 const nearTargets = computed(() => people.value.filter((p) => p.near))

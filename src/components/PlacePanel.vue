@@ -5,7 +5,7 @@ import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
 import { attrName, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
-import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, position, linkEntryBlock, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, DUNGEON_LAYERS, position, linkEntryBlock, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -55,8 +55,8 @@ function leaveSide() {
 const content = useContent()
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
-const area = computed(() => currentArea(s.value))
-const cell = computed(() => currentCell(s.value))
+const area = computed(() => game.area)
+const cell = computed(() => game.cell)
 // 安全的室內（地標的內部）：空地叫「室內」，不叫道路
 const insideRoom = computed(() => area.value.kind === 'special' && !!specialMaps[area.value.special ?? '']?.peaceful)
 // 地標內部有場景的格子（例如咖啡廳的小房間）

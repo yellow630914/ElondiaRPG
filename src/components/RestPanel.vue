@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { classEmoji, companionRules, raceEmoji } from '@/engine/data'
-import { currentArea, currentCell } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
 import { gameRule } from '@/engine/gameRules'
@@ -13,8 +12,8 @@ import Hint from './ui/Hint.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
-const cell = computed(() => currentCell(s.value))
-const area = computed(() => currentArea(s.value))
+const cell = computed(() => game.cell)
+const area = computed(() => game.area)
 const rations = computed(() => s.value.inventory.find((i) => i.name === '乾糧')?.qty ?? 0)
 const ambush = computed(() => ambushChance(game.state!))
 const shortHours = computed(() => gameRule(game.state, 'shortRestHours'))

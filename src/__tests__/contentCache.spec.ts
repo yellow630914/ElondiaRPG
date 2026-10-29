@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { contentRevision, landmarks, npcs, stories } from '@/engine/data'
+import { getArea } from '@/engine/grid'
+import { buyHome, lotsOf } from '@/engine/homes'
+import { newLandmark } from '@/engine/landmarkMods'
 import { applyContent, emptyMods, normalizeMods, sanitizeNpc } from '@/engine/mods'
 import { squadOf, squads } from '@/engine/squads'
 import { newGame } from '@/engine/state'
@@ -42,5 +45,33 @@ describe('caches built from content', () => {
     expect(squadOf('npc_ael')?.name).toBe('新的隊名')
     applyContent(emptyMods())
     expect(squadOf('npc_ael')?.name).toBe('旅歌隊')
+  })
+
+  it('keeps the town map cache clean: houses and edits stay in their own save', () => {
+    const lot = lotsOf('soriel')[0]!
+    const a = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'soriel' })
+    const b = newGame({ name: '艾琳', race: 'human', classId: 'fighter', seed: 7, birthplace: 'soriel' })
+    const at = (s: typeof a) => getArea(s, lot.area).cells[lot.y * getArea(s, lot.area).width + lot.x]!.kind
+    expect(at(a)).toBe('lot')
+    a.money_cc = 100000
+    buyHome(a, lot.id)
+    // 買了房子的存檔看到房子的門，另一個存檔還是空地
+    expect(at(a)).toBe('link')
+    expect(at(b)).toBe('lot')
+    // 改了拿到的地圖也不會改到快取
+    const area = getArea(b, lot.area)
+    area.cells[0] = { kind: 'water' }
+    expect(getArea(b, lot.area).cells[0]!.kind).not.toBe('water')
+  })
+
+  it('rebuilds the town map when the world moves a landmark onto it', () => {
+    const l = newLandmark('lm_cache_test', 'rhineburg')
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 3, birthplace: 'rhineburg' })
+    const kind = () => getArea(state, l.at.area).cells[l.at.y * getArea(state, l.at.area).width + l.at.x]!.kind
+    expect(kind()).not.toBe('lm_cache_test')
+    applyContent(normalizeMods({ ...emptyMods(), landmarks: { lm_cache_test: { ...l, name: '測試地標' } } }))
+    expect(kind()).toBe('lm_cache_test')
+    applyContent(emptyMods())
+    expect(kind()).not.toBe('lm_cache_test')
   })
 })

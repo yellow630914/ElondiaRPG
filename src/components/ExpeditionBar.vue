@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatMoney } from '@/engine/money'
-import { currentArea, currentCell, DUNGEON_LAYERS } from '@/engine/grid'
+import { DUNGEON_LAYERS } from '@/engine/grid'
 import { areaLighting, currentLight, isDark, isNight, lightSources } from '@/engine/light'
 import { DEFEAT_LOOT_NAME, defeatLootRule, retreatDc } from '@/engine/expedition'
 import { useGame } from '@/stores/game'
@@ -10,7 +10,7 @@ import GameIcon from './ui/GameIcon.vue'
 // 地圖下方的狀態列：光線與光源、地下城這趟探索撿到的東西、緊急撤退
 const game = useGame()
 const s = computed(() => game.state!)
-const area = computed(() => currentArea(s.value))
+const area = computed(() => game.area)
 const show = computed(() => area.value.kind !== 'settlement' && area.value.kind !== 'road')
 
 const lighting = computed(() => {
@@ -27,8 +27,8 @@ const spare = computed(() => lightSources(s.value).filter((x) => !x.permanent).r
 const expedition = computed(() => (area.value.kind === 'dungeon' && s.value.expedition?.location === s.value.location ? s.value.expedition : undefined))
 const lootCount = computed(() => expedition.value?.loot.reduce((n, l) => n + l.qty, 0) ?? 0)
 const lootTitle = computed(() => expedition.value?.loot.map((l) => `${l.name}×${l.qty}`).join('、') ?? '')
-const safe = computed(() => currentCell(s.value).kind === 'safe')
-const atEntrance = computed(() => (area.value.layer ?? 0) === 0 && currentCell(s.value).kind === 'exit')
+const safe = computed(() => game.cell.kind === 'safe')
+const atEntrance = computed(() => (area.value.layer ?? 0) === 0 && game.cell.kind === 'exit')
 const busy = computed(() => !!s.value.combat || game.judging || !!s.value.standoff)
 const night = computed(() => isNight(s.value.time))
 

@@ -5,12 +5,11 @@ import { computed, ref } from 'vue'
 import { attrName, classEmoji, raceEmoji, slaveryRules } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord, npcTitle } from '@/engine/npcs'
-import { isHostile, peopleHere } from '@/engine/population'
+import { isHostile } from '@/engine/population'
 import { isBound, isEnslaved, isFugitive } from '@/engine/party'
 import {
   atSafeSpot, contractTerms, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, unmarkOffers,
 } from '@/engine/slavery'
-import { currentArea } from '@/engine/grid'
 import { atMasterHome, currentMasterHome, homeDeadline, householdOf, houseRefusedToday, leaveDc, mayLeaveHouse, strictPoints } from '@/engine/masterHome'
 import { contractOf, placeName } from '@/engine/tattoos'
 import { locationById } from '@/engine/data'
@@ -65,7 +64,7 @@ const home = computed(() => {
 })
 const safe = computed(() => atSafeSpot(s.value))
 // 在聚落裡、主人今天還沒同意出城：可以請求
-const inTown = computed(() => currentArea(s.value).kind === 'settlement')
+const inTown = computed(() => game.area.kind === 'settlement')
 const permitted = computed(() => masterAllows(s.value))
 const refused = computed(() => masterRefusedToday(s.value))
 const text = ref('')
@@ -82,7 +81,7 @@ const offers = computed(() => unmarkOffers(s.value).filter((o) => !o.place))
 const seekTarget = ref('')
 const seekTargets = computed(() => {
   if (!enslaved.value || bound.value) return []
-  return peopleHere(s.value)
+  return game.here
     .filter((p) => p.dist <= 1 && p.rec.id !== contract.value?.master && !p.rec.tags?.includes('slave') && !isHostile(s.value, p.rec))
     .map((p) => ({ id: p.rec.id, name: `${label(p.rec.id, p.rec.name)}・${npcTitle(p.rec)}・DC ${seekMasterDc(s.value, p.rec)}${p.kind === 'commoner' ? '・不戰鬥' : ''}` }))
 })

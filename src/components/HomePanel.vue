@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { craftRules, homeRules, itemDef } from '@/engine/data'
-import { currentArea, currentCell } from '@/engine/grid'
 import {
   comfortOf, describeHome, furnitureIn, hasBed, homeOfArea, lotHere, lotPrice, ownHomeOfArea, PLACE_NAME, placeOf, residents, stayRefusal,
 } from '@/engine/homes'
@@ -16,8 +15,8 @@ import Hint from './ui/Hint.vue'
 // 房子（docs/HOMES.md）：站在待售的空地上可以買；在自己的房子裡擺家具、讓夥伴留守或帶上
 const game = useGame()
 const s = computed(() => game.state!)
-const area = computed(() => currentArea(s.value))
-const cell = computed(() => currentCell(s.value))
+const area = computed(() => game.area)
+const cell = computed(() => game.cell)
 
 // ---- 待售的空地 ----
 const lot = computed(() => lotHere(s.value, area.value, cell.value))
