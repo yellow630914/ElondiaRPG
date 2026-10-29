@@ -228,6 +228,14 @@ textarea { width: 100%; min-height: 40px; resize: none; }
 .page header .back .ico { transform: rotate(-90deg); }
 .page header h2 { text-align: center; padding-right: 64px; }
 .page .body { flex: 1; padding-block: 12px 24px; }
+/* 有分頁的頁面：左右滑換分頁（直的捲動照舊） */
+.page .body.swipeable { touch-action: pan-y; }
+.page .body .pane { display: flex; flex-direction: column; gap: 12px; }
+.page .body .pane.from-r { animation: from-r 0.2s ease-out; }
+.page .body .pane.from-l { animation: from-l 0.2s ease-out; }
+@keyframes from-r { from { transform: translateX(24%); opacity: 0; } }
+@keyframes from-l { from { transform: translateX(-24%); opacity: 0; } }
+.swipe-hint { text-align: center; font-size: var(--fs-xs); color: var(--muted); margin-top: -4px; }
 
 .seg { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
 .seg button { flex: 1 0 auto; padding: 8px 12px; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
@@ -461,6 +469,9 @@ textarea { width: 100%; min-height: 40px; resize: none; }
       <li><b>主動行動在日誌底部</b>：平常一行，點了展開。擲完骰的行動在日誌最下面等判定，判定完換成結果。</li>
       <li><b>內容多的視窗改成全螢幕頁面</b>，左上角「←返回」：隊伍、角色詳情、交易、事件、更多裡的功能。</li>
       <li><b>旅途</b>：走到城門「啟程旅行」，地圖換成旅途進度條，情境按鈕變成「前進一天」。</li>
+      <li><b>鍵盤打開時地圖自動收起</b>（在文字框打字時）；鍵盤收起、又沒有新的敘事時，地圖放回來。</li>
+      <li><b>有分頁的頁面可以左右滑換分頁</b>：隊伍（隊伍｜行囊）、角色詳情、交易。往左滑是下一頁。</li>
+      <li><b>從半屏面板打開的頁面，按返回會回到那個面板</b>（例如「更多 → 筆記 → 返回」回到「更多」，「鐵匠鋪 → 購買 → 返回」回到鐵匠鋪）。</li>
     </ul>
     <h3>主畫面：地圖＋日誌</h3>
     <ul>
@@ -518,6 +529,8 @@ textarea { width: 100%; min-height: 40px; resize: none; }
   function addLog(kind, html, who) {
     const el = document.createElement('div')
     el.className = `entry ${kind} new`
+    // 有新的敘事：鍵盤收起後也維持閱讀狀態
+    if (kind === 'story') kbRestore = null
     if (kind === 'story') el.innerHTML = `<span class="who">${who ?? ''}</span>${html}`
     else el.innerHTML = `<time>${clockText().hm}</time><span>${html}</span>`
     log.insertBefore(el, log.querySelector('.entry.pending'))
@@ -528,6 +541,28 @@ textarea { width: 100%; min-height: 40px; resize: none; }
     addLog('story', STORY[key], who)
     setReading(true)
   }
+
+  // ── 鍵盤打開（文字框拿到焦點）時收起地圖；鍵盤收起時，如果中間沒有新的敘事，放回原本的狀態
+  let kbRestore = null
+  const typing = (el) => el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && ['text', 'search', ''].includes(el.type))
+  app.addEventListener('focusin', (e) => {
+    if (!typing(e.target) || st.reading) return
+    kbRestore = { reading: false }
+    setReading(true)
+  })
+  function restoreKb() {
+    const back = kbRestore
+    kbRestore = null
+    if (back && st.reading && !back.reading) setReading(false)
+  }
+  app.addEventListener('focusout', (e) => {
+    if (!typing(e.target)) return
+    // 等一下再看：焦點換到另一個文字框時鍵盤沒收起；按「行動」送出時由 perform 決定（AI 會寫敘事就維持收起）
+    setTimeout(() => {
+      if (typing(document.activeElement) || !kbRestore) return
+      restoreKb()
+    }, 200)
+  })
 
   // ── 地圖
   const at = (x, y) => AREAS[st.area].rows[y]?.[x]
@@ -702,7 +737,7 @@ textarea { width: 100%; min-height: 40px; resize: none; }
         <button class="btn primary" id="cmpGo">行動</button>
       </div>
     </div>`
-    $('cmpFold').addEventListener('click', () => { st.composerOpen = false; renderComposer() })
+    $('cmpFold').addEventListener('click', () => { st.composerOpen = false; renderComposer(); restoreKb() })
     $('cmpAi').addEventListener('click', () => { st.ai = !st.ai; renderComposer() })
     $('cmpTarget').addEventListener('change', (e) => { if (e.target.value) st.targets.push(e.target.value); renderComposer() })
     c.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => { st.targets = st.targets.filter((x) => x !== b.dataset.rm); renderComposer() }))
@@ -731,6 +766,9 @@ textarea { width: 100%; min-height: 40px; resize: none; }
       <div class="btns"><button class="btn primary" data-judge="ai">AI 判定</button><button class="btn" data-judge="rule">依規則判定（魅力）</button></div>`
     log.appendChild(card)
     log.scrollTop = log.scrollHeight
+    // 鍵盤打開前是探索狀態：AI 會寫敘事，維持收起讓人讀；規則判定沒有敘事，地圖放回來
+    if (st.ai) kbRestore = null
+    else restoreKb()
     renderAll()
     // 開著 AI 判定時直接送出（真的遊戲也是）；判定中卡片留在原地
     if (st.ai) judge(true)
@@ -885,18 +923,33 @@ textarea { width: 100%; min-height: 40px; resize: none; }
 
   // ── 全螢幕頁面（內容多）：左上角返回；頁面裡開頁面，返回回到上一頁
   let partyTab = 'party', charTab = 'stats', shopTab = 'buy'
+  const CHAR_TABS = [['stats', '屬性與戰鬥'], ['perks', '特質'], ['gear', '裝備'], ['tattoo', '刺青'], ['abil', '能力'], ['bio', '角色設定']]
+  // 有分頁的頁面：分頁的順序與目前在哪一頁（左右滑、點分頁都走這裡）
+  const TABSETS = {
+    party: { keys: ['party', 'bag'], get: () => partyTab, set: (v) => (partyTab = v) },
+    char: { keys: CHAR_TABS.map(([k]) => k), get: () => charTab, set: (v) => (charTab = v) },
+    shop: { keys: ['buy', 'sell'], get: () => shopTab, set: (v) => (shopTab = v) },
+  }
+  const pane = (html) => `<div class="pane">${html}</div><p class="swipe-hint">← 左右滑換分頁 →</p>`
+  function setTab(kind, v) {
+    const t = TABSETS[kind]
+    const from = t.keys.indexOf(t.get()), to = t.keys.indexOf(v)
+    if (to < 0 || to === from) return
+    t.set(v)
+    refreshTop(to > from ? 'from-r' : 'from-l')
+  }
   const SHOP = [['短劍', '武器・普通', 450], ['皮甲', '防具・普通', 900], ['治療藥水', '消耗品', 120], ['火把', '雜物', 5], ['繩索（15 尺）', '雜物', 30]]
   const BAG = [['治療藥水', '消耗品', '×3'], ['火把', '雜物', '×5'], ['短劍', '武器・普通', '×1'], ['狼皮', '材料', '×2'], ['乾糧', '食物', '×4']]
   function pageContent(kind, opt = {}) {
     if (kind === 'party') {
       const seg = `<div class="seg"><button data-seg="party:party" class="${partyTab === 'party' ? 'on' : ''}">隊伍</button><button data-seg="party:bag" class="${partyTab === 'bag' ? 'on' : ''}">行囊</button></div>`
-      if (partyTab === 'bag') return { title: '隊伍', body: seg + bagRows() }
-      return { title: '隊伍', body: seg + `<div class="list">${PARTY.map((m) => `
-        <div class="row"><div class="avatar">${m.name[0]}</div><div class="main"><b>${m.name} ${m.note ? `<span class="chip">${m.note}</span>` : ''}</b><small>${m.race}・${m.cls} Lv${m.lv}・HP ${m.hp}%</small><div class="hpbar"><i style="width:${m.hp}%"></i></div></div><button class="btn" data-act="char" data-id="${m.id}">詳情</button></div>`).join('')}</div>` }
+      if (partyTab === 'bag') return { title: '隊伍', body: seg + pane(bagRows()) }
+      return { title: '隊伍', body: seg + pane(`<div class="list">${PARTY.map((m) => `
+        <div class="row"><div class="avatar">${m.name[0]}</div><div class="main"><b>${m.name} ${m.note ? `<span class="chip">${m.note}</span>` : ''}</b><small>${m.race}・${m.cls} Lv${m.lv}・HP ${m.hp}%</small><div class="hpbar"><i style="width:${m.hp}%"></i></div></div><button class="btn" data-act="char" data-id="${m.id}">詳情</button></div>`).join('')}</div>`) }
     }
     if (kind === 'char') {
       const m = PARTY.find((x) => x.id === opt.id) ?? PARTY[0]
-      const tabs = [['stats', '屬性與戰鬥'], ['perks', '特質'], ['gear', '裝備'], ['tattoo', '刺青'], ['abil', '能力'], ['bio', '角色設定']]
+      const tabs = CHAR_TABS
       const seg = `<div class="seg">${tabs.map(([k, l]) => `<button data-seg="char:${k}" class="${charTab === k ? 'on' : ''}">${l}</button>`).join('')}</div>`
       let inner
       if (charTab === 'stats') {
@@ -907,7 +960,7 @@ textarea { width: 100%; min-height: 40px; resize: none; }
         inner = `<p class="muted">慾望戰鬥（S0）之後：每個技能一個「攜帶」勾選，最多 12 個。</p><div class="list">
           ${['猛擊', '盾牌格擋', '戰吼'].map((n) => `<div class="row"><div class="main"><b>${n}</b><small>技能</small></div><label class="muted"><input type="checkbox" checked> 攜帶</label></div>`).join('')}</div>`
       } else inner = `<div class="empty">樣稿只做了「屬性與戰鬥」與「能力」兩頁。分頁太多時可以左右滑。</div>`
-      return { title: m.name, body: seg + inner }
+      return { title: m.name, body: seg + pane(inner) }
     }
     if (kind === 'shop') {
       const p = opt.place
@@ -915,7 +968,7 @@ textarea { width: 100%; min-height: 40px; resize: none; }
       const body = shopTab === 'buy'
         ? `<div class="list">${SHOP.map(([n, k, cc]) => `<div class="row"><div class="avatar">${n[0]}</div><div class="main"><b>${n}</b><small>${k}・${moneyText(cc)}</small></div><button class="btn" data-act="buy" data-cc="${cc}" data-name="${n}" ${st.money < cc ? 'disabled' : ''}>買</button></div>`).join('')}</div>`
         : bagRows(true)
-      return { title: p ?? '交易', body: `<p class="muted">持有 ${moneyText(st.money)}</p>` + seg + body }
+      return { title: p ?? '交易', body: `<p class="muted">持有 ${moneyText(st.money)}</p>` + seg + pane(body) }
     }
     if (kind === 'event') {
       return {
@@ -956,10 +1009,10 @@ textarea { width: 100%; min-height: 40px; resize: none; }
   function bagRows(sell) {
     return `<div class="list">${BAG.map(([n, k, c]) => `<div class="row"><div class="avatar">${n[0]}</div><div class="main"><b>${n}</b><small>${k}</small></div><span class="muted">${c}</span>${sell ? '<button class="btn" data-act="sell">賣</button>' : ''}</div>`).join('')}</div>`
   }
+  // 從半屏面板（更多、設施）打開的頁面蓋在面板上面，按返回就回到原本的面板
   function openPage(kind, opt = {}) {
     const c = pageContent(kind, opt)
     if (!c) return
-    closeSheet()
     const pg = document.createElement('section')
     pg.className = 'page'
     pg.setAttribute('role', 'dialog')
@@ -968,6 +1021,23 @@ textarea { width: 100%; min-height: 40px; resize: none; }
       <div class="body band">${c.body}</div>`
     pg.querySelector('.back')?.addEventListener('click', closePage)
     pg.addEventListener('click', onAct)
+    // 左右滑換分頁：橫向移動夠長、而且比直向明顯；從分頁列開始的不算（分頁列自己可以橫向捲）
+    if (TABSETS[kind]) {
+      const body = pg.querySelector('.body')
+      body.classList.add('swipeable')
+      body.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.seg')) return
+        const x0 = e.clientX, y0 = e.clientY
+        // 放開的地方可能在頁面外，聽整個視窗
+        window.addEventListener('pointerup', (u) => {
+          const dx = u.clientX - x0, dy = u.clientY - y0
+          if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+          const t = TABSETS[kind]
+          const i = t.keys.indexOf(t.get()) + (dx < 0 ? 1 : -1)
+          if (i >= 0 && i < t.keys.length) setTab(kind, t.keys[i])
+        }, { once: true })
+      })
+    }
     st.pages.push({ kind, opt, el: pg })
     app.appendChild(pg)
   }
@@ -978,12 +1048,14 @@ textarea { width: 100%; min-height: 40px; resize: none; }
   function closeAllPages() {
     while (st.pages.length) st.pages.pop().el.remove()
   }
-  function refreshTop() {
+  function refreshTop(anim) {
     const top = st.pages.at(-1)
     if (top) {
       const c = pageContent(top.kind, top.opt)
       top.el.querySelector('.body').innerHTML = c.body
       top.el.querySelector('h2').textContent = c.title
+      if (anim) top.el.querySelector('.pane')?.classList.add(anim)
+      top.el.querySelector('.seg .on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
       return
     }
     const sh = app.querySelector('.sheet')
@@ -996,10 +1068,7 @@ textarea { width: 100%; min-height: 40px; resize: none; }
     const seg = e.target.closest('[data-seg]')
     if (seg) {
       const [k, v] = seg.dataset.seg.split(':')
-      if (k === 'party') partyTab = v
-      if (k === 'char') charTab = v
-      if (k === 'shop') shopTab = v
-      return refreshTop()
+      return setTab(k, v)
     }
     const b = e.target.closest('[data-act]')
     if (!b || b.disabled) return
@@ -1037,11 +1106,11 @@ textarea { width: 100%; min-height: 40px; resize: none; }
         closeSheet(); addLog('sys', '交付委託「清理下水道」，報酬 <b>+60銅</b>。')
         return narrate('gilda', '吉兒妲・冒險者公會')
       case 'goguild':
-        closeAllPages(); renderAll()
+        closeAllPages(); closeSheet(); renderAll()
         return toast(st.area === 'town' && !st.road ? '冒險者公會在鎮上北邊（地圖上的「公會」）。' : '委託要回河谷鎮的冒險者公會交付。')
       case 'lvl': closeAllPages(); charTab = 'abil'; return openPage('char', { id: 'mira' })
       case 'char': charTab = 'stats'; return openPage('char', { id: b.dataset.id })
-      case 'shop': { const p = cellPlace(); shopTab = 'buy'; closeSheet(); return openPage('shop', { place: p?.name }) }
+      case 'shop': { const p = cellPlace(); shopTab = 'buy'; return openPage('shop', { place: p?.name }) }
       case 'buy':
         st.money -= Number(b.dataset.cc)
         addLog('sys', `買了<b>${b.dataset.name}</b>，<b>−${moneyText(Number(b.dataset.cc))}</b>。`)
