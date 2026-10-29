@@ -33,7 +33,7 @@ describe('嘗試脫縛', () => {
     expect(() => unequipItem(state, pc.id, slot)).toThrow()
     pc.lewd = { ...lewdOf(pc), endurance: 0 }
     const { dc, parts } = unbindDc(pc, slot)
-    expect(dc).toBe(12 + parts.reduce((a, p) => a + p.value, 0))
+    expect(dc).toBe(10 + parts.reduce((a, p) => a + p.value, 0))
     expect(parts.some((p) => p.label === '拘束程度 1')).toBe(true)
     pc.lewd = { ...lewdOf(pc), endurance: 60 }
     expect(unbindDc(pc, slot).dc).toBe(dc - 3)

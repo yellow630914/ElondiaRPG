@@ -21,6 +21,7 @@ import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import ArenaPanel from './ArenaPanel.vue'
 import FusePanel from './FusePanel.vue'
+import OutfitTailorPanel from './OutfitTailorPanel.vue'
 import GuardStatus from './GuardStatus.vue'
 import { isWanted, palacePersuadeDc } from '@/engine/security'
 import MarketPanel from './MarketPanel.vue'
@@ -263,6 +264,7 @@ const shopDesc = computed(() => {
         <template v-else-if="shopHere">
           <ShopPanel :key="`${shopHere}-${s.location}-${s.time.day}`" :type="shopHere" />
           <FusePanel />
+          <OutfitTailorPanel />
         </template>
 
         <template v-else-if="cell.kind === 'tavern'">

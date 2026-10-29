@@ -828,6 +828,8 @@ export interface GameState {
   exposure?: Record<string, Record<string, number>>
   /** 曝露名聲依身分標籤加減時的零頭（角色 id → 還沒算進去的部分） */
   exposureCarry?: Record<string, number>
+  /** 拍賣會今天的拍品（auction.ts；每天、每個地方重新抽） */
+  auction?: { day: number; location: string; lots: { name: string; start: number; rival: number; won?: number; lost?: boolean }[] }
   /** 淫鬥場的連勝：城（地點 id）→ 擂臺 → 目前的連勝與最好的紀錄（docs/LEWD_STATS.md 第 21 節） */
   arena?: Record<string, Record<string, { streak: number; best: number }>>
   /** 頭牌等級的累積：角色 id → 城（地點 id）→ 次數（docs/LEWD_STATS.md 第 10 節） */

@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia'
+import { consign, placeBid } from '@/engine/auction'
+import { orderOutfit } from '@/engine/outfitTailor'
 import { fuseGear, splitGear } from '@/engine/fusion'
 import { startArena } from '@/engine/arena'
 import { leavePark } from '@/engine/park'
@@ -50,7 +52,7 @@ import * as away from '@/engine/away'
 import * as partyEngine from '@/engine/party'
 import * as garden from '@/engine/garden'
 import * as invention from '@/engine/invention'
-import type { DefeatLoot, Difficulty, GameState, GearSlot, Report, TattooPlace } from '@/engine/types'
+import type { DefeatLoot, Difficulty, GameState, GearSlot, LewdStat, Report, TattooPlace } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
@@ -1017,6 +1019,9 @@ export const useGame = defineStore('game', () => {
     startArena: (ring: string, opts: { restraint?: string; wager?: boolean }) => run((s) => startArena(s, ring, opts)),
     fuseGear: (weapon: string, restraint: string) => run((s) => fuseGear(s, weapon, restraint)),
     splitGear: (name: string) => run((s) => splitGear(s, name)),
+    placeBid: (index: number, amount: number) => run((s) => placeBid(s, index, amount)),
+    consign: (name: string) => run((s) => consign(s, name)),
+    orderOutfit: (base: string, material: string, stat: LewdStat) => run((s) => orderOutfit(s, base, material, stat)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */

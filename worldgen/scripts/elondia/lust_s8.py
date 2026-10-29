@@ -219,7 +219,7 @@ STRUGGLE_STATUSES = {
 UNBIND_RULES = {
     "$comment": "脫縛（docs/LEWD_STATS.md 第 16 節）。嘗試脫縛：DC = base + 鎖的 lock_dc + 拘束程度 × bind_dc − 忍耐 / endurance_per；靈巧檢定（雙手被綁的減值照雙面效應算在檢定上）。只有別人鎖上的拘束具（主人強制戴上的）才需要；成功時鎖被弄壞、拘束具可以卸下。主人在身邊時，失敗輕度懲罰、大失敗嚴厲懲罰；大失敗順從 + fumble_submission。鑰匙（物品的 key）打開同等級以下的鎖，用一次就沒了，鎖歸自己。keys：擊敗人形的敵人（持有裝備的怪物、敵對冒險者）時 chance 的機率搜到一把，依敵人等級（levels：[最低等級, 鎖的等級]）。combat：戰鬥中的拘束（狀態有 struggle）用掙脫（自己）或撕開（隊友）擺脫，花 ap 行動點；1d20 + 熟練 + 力量、靈巧較高的調整值，DC = base + 施加者等級 × per_level + 狀態的 struggle，自己雙手被綁 + hands。",
     "attr": "dex",
-    "base": 12,
+    "base": 10,
     "lock_dc": {"white": 0, "blue": 2, "rune": 4, "gold": 6},
     "bind_dc": 1,
     "endurance_per": 20,
@@ -620,6 +620,155 @@ def write_s8_13():
     print('S8-13 slave price, npc schools, portrait')
 
 
+# ---------------- S8-14 淫服的雙面效應、淫服裁縫鋪、拍賣會、園區的事件與寶箱 ----------------
+OUTFIT_TWO_FACE = {
+    "$comment": "淫服的雙面效應（docs/LEWD_STATS.md 第 24 節）：身上的成人向服裝（底材的 outfit = adult）每件算一件，最多 max_pieces 件。平常：和 penalty_tags 的人打交道（penalty_kinds 的行動）每件 -penalty_per，最多 -penalty_max，每 endurance_per 點忍耐減輕 1。戰鬥中（慾望戰鬥開著）：修了 schools 裡的流派時每件給那一行的加成（lust_bonus 造成的魅惑傷害 +N、evade 迴避、save 豁免；禁慾派是負的）。",
+    "penalty_tags": ["noble", "royal", "priest", "bishop"], "penalty_kinds": ["chat", "gift", "flatter", "hire", "invite", "haggle", "bargain", "negotiation"],
+    "penalty_per": 1, "penalty_max": 2, "endurance_per": 40, "max_pieces": 3,
+    "schools": {"indulgence": {"lust_bonus": 1}, "exhibition": {"evade": 1}, "abstinence": {"save": -1}},
+}
+OUTFIT_TAILOR = {
+    "$comment": "淫服裁縫鋪（docs/LEWD_STATS.md 第 25 節）：魅氣濃度 charm_min 以上的城鎮，裁縫店可以訂做成人向服裝（底材的 outfit = adult），選一項慾望指標加成；加成依材料（bonus），收費 = 底材 × 材料的價格 × fee_mult + fee_base。",
+    "charm_min": 3, "fee_mult": 3, "fee_base": 150, "stats": ["lewdness", "sensitivity", "endurance", "submission"],
+    "bonus": {"linen": 4, "silk": 6, "moonsilk": 8, "spellweave": 10, "leather": 4, "hard_leather": 6, "beast_hide": 8, "dragonhide": 10, "copper": 4, "silver": 6, "gold": 8, "mithril_jewel": 10},
+}
+LUST = lambda x: {"offense": {"lust": x}}
+AUCTION_ITEMS = [
+    {"name": "魅魔女王的舊項圈", "category": "equipment", "price_cc": 3200, "tags": [], "adult": True, "desc": "魅魔女王年輕時戴過的蕾絲項圈，據說戴上的人說話會帶著女王的腔調。只在拍賣會出現。",
+     "gear": {"base": "lace_choker", "material": "moonsilk", "rarity": "epic", "lewd": {"submission": 8}, "enchants": LUST(0.25)}},
+    {"name": "夢魔的薄紗睡衣", "category": "equipment", "price_cc": 2800, "tags": [], "adult": True, "desc": "夢魔氏族的長老穿過的薄紗睡衣，穿上它睡覺會做很長的夢。只在拍賣會出現。",
+     "gear": {"base": "sheer_negligee", "material": "moonsilk", "rarity": "epic", "lewd": {"lewdness": 8, "sensitivity": 4}, "enchants": {"resist": {"lust": -0.2}}}},
+    {"name": "鍍金的鈴鐺乳環", "category": "equipment", "price_cc": 2400, "tags": [], "adult": True, "desc": "一對鍍金的乳環，各掛一顆小鈴鐺，走一步響一聲。只在拍賣會出現。",
+     "gear": {"base": "nipple_ring", "material": "gold", "rarity": "rare", "lewd": {"sensitivity": 8}, "enchants": LUST(0.2)}},
+    {"name": "交際花的黑蕾絲網襪", "category": "equipment", "price_cc": 2000, "tags": [], "adult": True, "desc": "名花樓的交際花在宴會上穿的網襪，網眼細得像蕾絲。只在拍賣會出現。",
+     "gear": {"base": "fishnet", "material": "silk", "rarity": "rare", "lewd": {"lewdness": 6}, "enchants": {"mods": {"evade": 1}}}},
+]
+PARK_OUTFITS = [
+    {"name": "牧場的乳牛裝", "category": "equipment", "price_cc": 1400, "tags": [], "adult": True, "desc": "淫獸牧場的工作服：黑白斑點的兔女郎裝，脖子上還有一顆牛鈴。",
+     "gear": {"base": "bunny_suit", "material": "silk", "rarity": "rare", "lewd": {"lewdness": 5, "sensitivity": 5}, "enchants": LUST(0.15)}},
+    {"name": "溫室的花蜜網襪", "category": "equipment", "price_cc": 900, "tags": [], "adult": True, "desc": "沾滿花蜜、黏答答的網襪，蟲子聞到味道都會靠過來。",
+     "gear": {"base": "fishnet", "material": "silk", "rarity": "rare", "lewd": {"sensitivity": 6}, "enchants": {"resist": {"lust": -0.1}}}},
+    {"name": "水族館的濕身緊身衣", "category": "equipment", "price_cc": 1500, "tags": [], "adult": True, "desc": "永遠是濕的皮緊身衣，貼在身上一點縫都沒有。",
+     "gear": {"base": "leather_bodysuit", "material": "hard_leather", "rarity": "rare", "lewd": {"endurance": 6}, "enchants": {"resist": {"lust": -0.15}}}},
+    {"name": "花園的藤蔓丁字褲", "category": "equipment", "price_cc": 800, "tags": [], "adult": True, "desc": "細藤編成的丁字褲，偶爾會自己縮緊一下。",
+     "gear": {"base": "thong", "material": "silk", "rarity": "rare", "lewd": {"lewdness": 6}, "enchants": LUST(0.1)}},
+    {"name": "劇場的舞孃薄紗", "category": "equipment", "price_cc": 1600, "tags": [], "adult": True, "desc": "夢魔劇場的舞孃穿的薄紗，在燈光下幾乎是透明的。",
+     "gear": {"base": "sheer_negligee", "material": "moonsilk", "rarity": "rare", "lewd": {"lewdness": 5, "submission": 3}, "enchants": LUST(0.2)}},
+]
+PARK_OUTFIT_CHANCE = 0.03
+BOOKS = ["《媚術入門》", "《承歡之道》", "《魅香與媚毒》", "《極樂秘典》", "《傾國》", "《清心訣》"]
+AUCTION = {
+    "$comment": "拍賣會（docs/LEWD_STATS.md 第 26 節；地標的 auction）：每天上 lots 件拍品（從 pool 依權重抽，不重複），起標價 = 物品價格 × start_ratio，對手最高出價 = 物品價格 × rival_ratio（看不到）。每件每天出一次價：出價高於對手的最高價就得標，付對手的最高價 + 物品價格 × step（不超過你的出價）。寄賣：成人向的物品與色情技能書，以物品價格 × consign_ratio 賣出，扣 consign_fee 的手續費。得標後有 watch_chance 被盯上（城鎮事件「拍賣會上被盯上」）。",
+    "lots": 3, "start_ratio": 0.6, "rival_ratio": [0.9, 1.8], "step": 0.05, "consign_ratio": [0.8, 1.6], "consign_fee": 0.1, "watch_chance": 0.5, "watch_flag": "auction_watched",
+    "pool": [[x["name"], 3] for x in AUCTION_ITEMS] + [[b, 2] for b in BOOKS] + [["《斟酒的媚態》", 1], ["《魔導刺激》", 1], ["《莊家的賭局》", 1], ["《萬眾矚目》", 1], ["《搓背的手藝》", 1], ["《熱泉的耐性》", 1], ["《十指的特別服務》", 1], ["《定格的姿態》", 1], ["《戰利品的覺悟》", 1], ["《獻祭的契紋》", 1], ["《求偶紋》", 1], ["《潮之新娘》", 1], ["黃金鑰匙", 2], ["黃金鎖", 1], ["魅魔的香精", 2]],
+}
+AUCTION_LANDMARK = {
+    "id": "lm_auction_house", "name": "月下拍賣會", "emoji": "🔨", "location": "albena", "at": {"area": "albena/market", "x": 7, "y": 1}, "types": ["market"],
+    "desc": "市集深處一棟掛著紅絲絨簾幕的樓房，每晚舉行不對外宣傳的拍賣會：色情技能書、稀有的淫具，什麼都有人出價。也收寄賣。",
+    "scene": "拍賣廳裡燈光昏暗，戴著面具的買家們坐在包廂裡舉牌，台上的拍賣官是個笑容玩味的魅魔。",
+    "open": {"adult": True}, "auction": True,
+}
+WATCH_EVENT = {"id": "town_auction_watched", "scope": "town", "tier": "normal", "kind": "choice", "cells": ["gate", "inn", "tavern", "shop"], "category": "trouble",
+    "requires": {"flags": ["auction_watched"]}, "tags": ["adult"], "cooldown_days": 1,
+    "title": "拍賣會上被盯上", "text": "從拍賣會出來之後，一直有兩個戴兜帽的人跟在後面。走到人少的地方，他們圍了上來：「剛才那件拍品，借我們看看？」",
+    "scene": "跟蹤的兩個人把主角拖進巷子，搜身搜得特別仔細，連衣服底下都不放過",
+    "options": [
+        {"label": "亮出武器嚇走他們", "check": {"attr": "str", "dc": 13}, "success": {"text": "你拔出武器，他們對看一眼，退進了巷子裡。", "effects": [{"type": "flag", "key": "story:auction_watched", "value": False}]},
+         "fail": {"text": "他們一點也不怕。一陣推擠之後，你的錢袋輕了不少。", "effects": [{"type": "money", "amount": -150}, {"type": "flag", "key": "story:auction_watched", "value": False}]}},
+        {"label": "鑽進人群甩掉他們", "check": {"attr": "dex", "dc": 13}, "success": {"text": "你拐進市集的人潮裡，再出來時他們已經不見了。", "effects": [{"type": "flag", "key": "story:auction_watched", "value": False}]},
+         "fail": {"text": "你被堵在死巷裡。他們把你從頭到腳搜了一遍，搜得特別仔細，最後拿走了一點錢才放你走。", "effects": [{"type": "money", "amount": -100}, {"type": "condition", "target": "pc", "condition": "disheveled", "add": True}, {"type": "flag", "key": "story:auction_watched", "value": False}]}, "adult_scene": "fail"},
+        {"label": "破財消災", "success": {"text": "你丟了一袋錢過去。他們掂了掂，消失在人群裡。", "effects": [{"type": "money", "amount": -80}, {"type": "flag", "key": "story:auction_watched", "value": False}]}}]}
+B = ["fem", "andro"]
+PARK_EVENTS = [
+    {"id": "dg_park_beast_milking", "scope": "dungeon", "tier": "normal", "kind": "choice", "triggers": ["trap"], "dungeons": ["park_beast"], "tags": ["adult", "pc_unwilling"], "pc_body": B,
+     "title": "牧場的擠奶台", "text": "地板突然翻開，你掉進一個木頭隔欄裡，手腳被柵欄卡住、屁股朝外——旁邊的牌子寫著「今日特選・擠奶體驗」。遠處傳來牛鈴聲，越來越近。",
+     "scene": "主角被卡在牧場的擠奶隔欄裡，淫獸一隻接一隻排隊過來，像對待母畜一樣把主角從後面「擠」到虛脫",
+     "options": [
+        {"label": "用力掰開柵欄", "check": {"attr": "str", "dc": 14}, "success": {"text": "木頭在你手裡發出斷裂聲，你在第一頭淫獸走到之前翻了出去。"},
+         "fail": {"text": "柵欄紋絲不動。牛鈴聲停在你身後。", "effects": [{"type": "condition", "target": "pc", "condition": "drained", "add": True}, {"type": "lewd", "stat": "submission", "delta": 1}]}, "adult_scene": "fail"},
+        {"label": "找卡榫的機關", "check": {"attr": "int", "dc": 13}, "success": {"text": "你摸到柵欄底下的木栓，一拔就開了。"},
+         "fail": {"text": "你找到了機關——卻是讓柵欄收得更緊的那一個。", "effects": [{"type": "condition", "target": "pc", "condition": "sensitive", "add": True}, {"type": "condition", "target": "pc", "condition": "drained", "add": True}]}, "adult_scene": "fail"},
+        {"label": "認命地等「體驗」結束", "success": {"text": "「體驗」持續了一整個時辰。柵欄鬆開時，你腿軟得站不起來，旁邊還多了一張「優良乳畜」的獎狀。", "effects": [{"type": "condition", "target": "pc", "condition": "afterglow", "add": True}, {"type": "lewd", "stat": "lewdness", "delta": 1}]}, "adult_scene": "always"}]},
+    {"id": "dg_park_insect_cocoon", "scope": "dungeon", "tier": "normal", "kind": "choice", "triggers": ["gather", "trap"], "dungeons": ["park_insect"], "tags": ["adult", "pc_unwilling"], "pc_body": B,
+     "title": "溫室的繭床", "text": "一團溫熱的絲纏住你的腳踝，一路往上捲——你被包進一個半透明的繭裡，繭壁貼著皮膚輕輕地蠕動，裡面的空氣甜得發膩。",
+     "scene": "主角被包在蟲繭裡，繭壁像無數細小的觸鬚一樣按摩、吸吮全身，甜膩的空氣讓主角一次次在繭裡高潮",
+     "options": [
+        {"label": "用刀割開繭壁", "check": {"attr": "dex", "dc": 13}, "success": {"text": "刀刃劃開絲線，你從繭裡滾了出來，渾身都是黏稠的絲。"},
+         "fail": {"text": "割開一層又長回一層。甜膩的空氣讓你的手越來越沒力氣。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": True}, {"type": "lewd", "stat": "sensitivity", "delta": 1}]}, "adult_scene": "fail"},
+        {"label": "屏住呼吸、保持清醒", "check": {"attr": "fai", "dc": 14}, "success": {"text": "你守住心神，繭找不到可乘之處，慢慢地鬆開了。"},
+         "fail": {"text": "你沒撐多久就吸了一大口甜氣，之後的事情記不太清楚了。", "effects": [{"type": "condition", "target": "pc", "condition": "dazed", "add": True}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "fail"},
+        {"label": "在繭裡睡一覺", "success": {"text": "你放棄掙扎，在溫熱的繭裡迷迷糊糊地過了好幾個小時，醒來時繭自己裂開了，身上的傷也好了大半。", "effects": [{"type": "hp", "target": "pc", "ratio": 0.3}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "always"}]},
+    {"id": "dg_park_aquarium_tank", "scope": "dungeon", "tier": "normal", "kind": "choice", "triggers": ["chest", "trap"], "dungeons": ["park_aquarium"], "tags": ["adult", "pc_unwilling"], "pc_body": B,
+     "title": "水族箱的展示", "text": "一隻觸手從水槽裡竄出來，把你整個拖進玻璃水族箱。水是溫的、呼吸得到，玻璃外面——一排遊客正貼著玻璃往裡看。",
+     "scene": "主角在水族箱裡被觸手纏住當成展品，玻璃外的遊客看著觸手一寸一寸地玩弄主角，主角想遮也遮不住",
+     "options": [
+        {"label": "砸破玻璃", "check": {"attr": "str", "dc": 15}, "success": {"text": "玻璃碎了一地，你跟著水一起沖了出來，遊客們尖叫著散開。"},
+         "fail": {"text": "玻璃厚得不像話。觸手把你轉過來，正面對著觀眾。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 3}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "fail"},
+        {"label": "對觸手獻媚，讓它鬆手", "check": {"attr": "cha", "dc": 13}, "success": {"text": "觸手好像聽懂了，把你輕輕地放回水槽邊。玻璃外有人鼓掌。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 1}]},
+         "fail": {"text": "觸手把你的獻媚當成了邀請。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 2}, {"type": "lewd", "stat": "lewdness", "delta": 1}]}, "adult_scene": "fail"},
+        {"label": "乾脆好好表演", "success": {"text": "你乾脆配合觸手，給玻璃外的觀眾來了一場表演。結束時，水族箱的工作人員塞給你一袋「演出費」。", "effects": [{"type": "money", "amount": 120}, {"type": "lewd", "stat": "exposure", "delta": 4}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "always"}]},
+    {"id": "dg_park_garden_pollen", "scope": "dungeon", "tier": "normal", "kind": "choice", "triggers": ["gather"], "dungeons": ["park_garden"], "tags": ["adult"], "pc_body": B,
+     "title": "花園的授粉時刻", "text": "整片花田在同一時間開了，粉紅色的花粉像霧一樣升起。花莖彎下來，花心對準了你——牌子上寫著「授粉時間・請勿驚慌」。",
+     "scene": "主角在花田裡被一朵朵大花輪流「授粉」，花蕊探進衣服裡，花粉沾滿全身，主角在花海裡喘得說不出話",
+     "options": [
+        {"label": "用布摀住口鼻衝出去", "check": {"attr": "dex", "dc": 13}, "success": {"text": "你拉起領口摀住口鼻，一口氣衝出花田。", "effects": [{"type": "item", "name": "媚香花蜜", "qty": 1}]},
+         "fail": {"text": "你吸進了一大口花粉，腳一軟跪在花田中間。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": True}, {"type": "condition", "target": "pc", "condition": "sensitive", "add": True}]}, "adult_scene": "fail"},
+        {"label": "趁機採花蜜", "check": {"attr": "int", "dc": 12}, "success": {"text": "你趁花朵忙著授粉，裝了滿滿兩瓶花蜜。", "effects": [{"type": "item", "name": "媚香花蜜", "qty": 2}]},
+         "fail": {"text": "你採到一半，花朵發現了你這個「花粉偷」。", "effects": [{"type": "item", "name": "媚香花蜜", "qty": 1}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "fail"},
+        {"label": "躺在花田裡享受", "success": {"text": "你躺下來，讓花朵們盡情地「授粉」。結束時渾身香得連自己都受不了。", "effects": [{"type": "item", "name": "媚香花蜜", "qty": 2}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}, {"type": "lewd", "stat": "lewdness", "delta": 1}]}, "adult_scene": "always"}]},
+    {"id": "dg_park_theater_stage", "scope": "dungeon", "tier": "normal", "kind": "choice", "triggers": ["trap", "rest"], "dungeons": ["park_theater"], "tags": ["adult", "pc_unwilling"], "pc_body": B,
+     "title": "被拉上舞台", "text": "聚光燈突然打在你身上。「今晚的特別來賓！」夢魔導演的聲音響徹劇場，你被一群舞者架著拖上了舞台，台下滿座。",
+     "scene": "主角被拉上夢魔劇場的舞台當成今晚的主秀，舞者們在聚光燈下一件件剝掉主角的衣服，台下的觀眾不停地喝采",
+     "options": [
+        {"label": "即興演出，搶回主導權", "check": {"attr": "cha", "dc": 14}, "success": {"text": "你接過話頭，演了一場讓夢魔導演都拍手的戲，全身而退，還拿了一束花。", "effects": [{"type": "xp", "amount": 40}]},
+         "fail": {"text": "你的台詞被舞者們的手打斷了。燈光很亮，台下很近。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 3}, {"type": "condition", "target": "pc", "condition": "disheveled", "add": True}]}, "adult_scene": "fail"},
+        {"label": "趁燈光一暗跳下舞台", "check": {"attr": "dex", "dc": 14}, "success": {"text": "換幕的那一瞬間，你從舞台邊緣溜了下去。"},
+         "fail": {"text": "你剛跳下去就被觀眾抬了回來，掌聲更熱烈了。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 3}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "fail"},
+        {"label": "照劇本演完", "success": {"text": "你照著夢魔導演的劇本演完了整場。謝幕時，台下的掌聲響了很久。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 5}, {"type": "money", "amount": 150}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "always"}]},
+]
+
+
+def write_s8_14():
+    p = 'data/rules/items.json'
+    t = open(p).read()
+    for it in AUCTION_ITEMS + PARK_OUTFITS:
+        t = drop_lines(t, r'\n    \{"name": ' + re.escape(json.dumps(it['name'], ensure_ascii=False)) + r'.*')
+    t = insert_after(t, r'\n    \{"name": "魅魔女王的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in AUCTION_ITEMS + PARK_OUTFITS])
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/lewd.json'
+    t = open(p).read()
+    for k in ['outfit_two_face', 'outfit_tailor', 'auction']:
+        t = drop_lines(t, r'\n  "' + k + r'": \{.*')
+    t = t.replace('\n  "park": {', ''.join(f'\n  "{k}": ' + json.dumps(v, ensure_ascii=False) + ',' for k, v in [('outfit_two_face', OUTFIT_TWO_FACE), ('outfit_tailor', OUTFIT_TAILOR), ('auction', AUCTION)]) + '\n  "park": {', 1)
+    d = json.loads(t)
+    # 園區的寶箱：成人向的服裝（chest_items 的最後面）
+    items = [x for x in d['park']['chest_items'] if x[0] not in {o['name'] for o in PARK_OUTFITS}] + [[o['name'], PARK_OUTFIT_CHANCE] for o in PARK_OUTFITS]
+    old = json.dumps(d['park']['chest_items'], ensure_ascii=False)
+    assert old in t
+    t = t.replace(old, json.dumps(items, ensure_ascii=False), 1)
+    d = json.loads(t)
+    names = {i['name'] for i in json.load(open('data/rules/items.json'))['items']}
+    for n, _ in d['auction']['pool']:
+        assert n in names, n
+    open(p, 'w').write(t)
+
+    p = 'data/world/landmarks.json'
+    doc = json.load(open(p))
+    doc['landmarks'] = [x for x in doc['landmarks'] if x['id'] != AUCTION_LANDMARK['id']] + [AUCTION_LANDMARK]
+    open(p, 'w').write(json.dumps(doc, ensure_ascii=False, indent=1))
+
+    p = 'data/rules/travel_events.json'
+    t = open(p).read()
+    for e in [WATCH_EVENT] + PARK_EVENTS:
+        t = drop_lines(t, r'\n    \{"id": "' + e['id'] + r'".*')
+    t = insert_after(t, r'\n    \{"id": "town_grope".*', ['    ' + json.dumps(e, ensure_ascii=False) for e in [WATCH_EVENT] + PARK_EVENTS])
+    json.loads(t)
+    open(p, 'w').write(t)
+    print('S8-14 auction items', len(AUCTION_ITEMS), 'park outfits', len(PARK_OUTFITS), 'park events', len(PARK_EVENTS))
+
+
 if __name__ == '__main__':
     write_s8_3()
     write_s8_4()
@@ -630,3 +779,4 @@ if __name__ == '__main__':
     write_s8_11()
     write_s8_12()
     write_s8_13()
+    write_s8_14()

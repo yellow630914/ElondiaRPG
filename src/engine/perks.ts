@@ -16,7 +16,7 @@ import {
 import { gearRules } from './gear'
 import { conditionModifiers } from './party'
 import { Rng as RngImpl, type Rng } from './rng'
-import { bindModifiers } from './schools'
+import { bindModifiers, outfitModifiers } from './schools'
 import type { Character, PerkOffer, Report } from './types'
 
 /** 有特質的角色（隊員、NPC 的角色資料）；有種族時一併算種族特質 */
@@ -87,7 +87,7 @@ export function parasiteCheckModifiers(c: Pick<Character, 'parasites' | 'tattoos
 
 /** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備 + 寄生物與印記 + 拘束具（雙面效應的平常面）（正數是加值） */
 export function checkModifiers(c: Character, ctx: CheckCtx): { label: string; value: number }[] {
-  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...pcTagModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx), ...bindModifiers(c, ctx)].filter((x) => x.value !== 0)
+  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...pcTagModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx), ...bindModifiers(c, ctx), ...outfitModifiers(c, ctx)].filter((x) => x.value !== 0)
 }
 
 /** 檢定的情境修正總和 */

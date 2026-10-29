@@ -46,7 +46,7 @@ import type {
 import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
 import { addLewd, exposureAt, exposureLevel, growLewd, lewdOf } from './lewd'
-import { bindsOf, lockedBound, lustTotals, twoFaceCombat } from './schools'
+import { bindsOf, lockedBound, lustTotals, outfitCombat, twoFaceCombat } from './schools'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
 
 export interface StatusInstance {
@@ -424,6 +424,10 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     if (bound) addMods(t.bound)
     const tf = twoFaceCombat(ch)
     addMods(tf.mods)
+    // 淫服的雙面效應：縱欲、露出派每件淫服有加成，禁慾派反過來
+    const of = outfitCombat(ch)
+    addMods(of.mods)
+    f.lustMods.bonus += of.lustBonus
     f.initiative += tf.initiative
     if (tf.immune.length) f.immune = tf.immune
     const faith = mod(f.attrs.fai) * L.faith_resist

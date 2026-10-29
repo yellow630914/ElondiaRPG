@@ -396,6 +396,8 @@ export interface LandmarkDef {
   scenes?: LandmarkScene[]
   /** 內部：一張特殊地圖（固定地圖、同一個聚落）。地標格變成入口，場景可以指定在裡面的哪一格 */
   interior?: string
+  /** 拍賣會（成人向，auction.ts；規則在 lewd.json 的 auction） */
+  auction?: boolean
 }
 /** 地標的場景（docs/LANDMARKS.md 第 6 節） */
 export interface LandmarkScene {
@@ -2111,6 +2113,15 @@ export const lewdRules = lewdJson as unknown as {
   }
   schools: Record<string, LewdSchool>
   servitude: { no_master: number }
+  outfit_two_face: {
+    penalty_tags: string[]; penalty_kinds: string[]; penalty_per: number; penalty_max: number; endurance_per: number; max_pieces: number
+    schools: Record<string, { lust_bonus?: number; evade?: number; save?: number }>
+  }
+  outfit_tailor: { charm_min: number; fee_mult: number; fee_base: number; stats: LewdStat[]; bonus: Record<string, number> }
+  auction: {
+    lots: number; start_ratio: number; rival_ratio: [number, number]; step: number; consign_ratio: [number, number]; consign_fee: number
+    watch_chance: number; watch_flag: string; pool: [string, number][]
+  }
   two_face: {
     endurance_per: number; fit: number; servitude_master: number
     kinds: Record<BindKind, { name: string; checks: CheckFilter[]; penalty: number[]; combat: (Mods & { initiative?: number })[]; immune?: string[] }>

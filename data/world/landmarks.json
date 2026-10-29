@@ -3295,6 +3295,26 @@
     "adult": true
    },
    "interior": "sm_lust_park"
+  },
+  {
+   "id": "lm_auction_house",
+   "name": "月下拍賣會",
+   "emoji": "🔨",
+   "location": "albena",
+   "at": {
+    "area": "albena/market",
+    "x": 7,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "市集深處一棟掛著紅絲絨簾幕的樓房，每晚舉行不對外宣傳的拍賣會：色情技能書、稀有的淫具，什麼都有人出價。也收寄賣。",
+   "scene": "拍賣廳裡燈光昏暗，戴著面具的買家們坐在包廂裡舉牌，台上的拍賣官是個笑容玩味的魅魔。",
+   "open": {
+    "adult": true
+   },
+   "auction": true
   }
  ]
 }

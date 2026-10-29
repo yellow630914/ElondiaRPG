@@ -169,6 +169,38 @@ export function twoFaceCombat(c: Character): TwoFace {
   return out
 }
 
+// ---- 淫服的雙面效應（docs/LEWD_STATS.md 第 24 節；lewd.json 的 outfit_two_face） ----
+
+/** 身上的成人向服裝件數（最多 max_pieces） */
+export function adultOutfitPieces(c: Pick<Character, 'gear'>): number {
+  const n = Object.values(c.gear ?? {}).filter((g) => g && gearRules.bases[g.spec.base]?.outfit === 'adult').length
+  return Math.min(lewdRules.outfit_two_face.max_pieces, n)
+}
+
+/** 平常：穿著淫服和貴族、皇族、神職的人打交道比較難（每 endurance_per 點忍耐減輕 1） */
+export function outfitModifiers(c: Character, ctx: CheckCtx): { label: string; value: number }[] {
+  const r = lewdRules.outfit_two_face
+  const n = adultOutfitPieces(c)
+  if (!n || !ctx.kind || !r.penalty_kinds.includes(ctx.kind) || !ctx.vsTags?.some((t) => r.penalty_tags.includes(t))) return []
+  const value = Math.max(0, Math.min(r.penalty_max, n * r.penalty_per) - Math.floor(lewdOf(c).endurance / r.endurance_per))
+  return value ? [{ label: `淫服（${n} 件）`, value: -value }] : []
+}
+
+/** 戰鬥中：修了縱欲、露出派的人每件淫服有加成，禁慾派反過來 */
+export function outfitCombat(c: Character): { mods: Mods; lustBonus: number } {
+  const n = adultOutfitPieces(c)
+  const out = { mods: {} as Mods, lustBonus: 0 }
+  if (!n) return out
+  for (const s of schoolsOf(c)) {
+    const row = lewdRules.outfit_two_face.schools[s]
+    if (!row) continue
+    out.lustBonus += (row.lust_bonus ?? 0) * n
+    if (row.evade) out.mods.evade = (out.mods.evade ?? 0) + row.evade * n
+    if (row.save) out.mods.save = (out.mods.save ?? 0) + row.save * n
+  }
+  return out
+}
+
 /** 身上有上鎖的拘束具（繩縛之力） */
 export function lockedBound(c: Pick<Character, 'gear'>): boolean {
   return bindsOf(c).some((b) => !!b.lock)
