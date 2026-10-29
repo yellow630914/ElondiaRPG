@@ -43,6 +43,7 @@
 | `master_home` | 主人把主角帶回主人的家（主人的事件用） |
 | `strict` | 嚴加看管的點數，正數加重、負數放寬（主人的事件用） |
 | `home_extend` | 離家期限延長幾小時（主人的事件用） |
+| `lewd` | 慾望指標的加減：`stat`（`lewdness`／`sensitivity`／`endurance`／`submission`／`exposure`）、`delta`，`target` 預設主角；曝露名聲記在目前的地區（[LEWD_STATS](LEWD_STATS.md)） |
 
 完整清單是 `effects.ts` 的 `EFFECT_TYPES`；特殊任務編輯器只開放其中一部分（見 [STORY_QUESTS](STORY_QUESTS.md) 第 2 節）。
 

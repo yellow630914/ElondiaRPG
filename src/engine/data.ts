@@ -29,6 +29,7 @@ import storiesJson from '@data/rules/stories.json'
 import craftsJson from '@data/rules/crafts.json'
 import homesJson from '@data/rules/homes.json'
 import perksJson from '@data/rules/perks.json'
+import lewdJson from '@data/rules/lewd.json'
 import landmarksJson from '@data/world/landmarks.json'
 import specialMapsJson from '@data/world/special_maps.json'
 import type { RewardEffect } from './effects'
@@ -114,6 +115,8 @@ export interface NpcDef {
   abilities?: string[]
   /** 特質（data/rules/perks.json 的 id；生成的 NPC 隨機抽，固定 NPC 可以在內容頁籤指定） */
   perks?: string[]
+  /** 慾望指標（淫亂、敏感、忍耐、順從，0～100；沒寫的依標籤與 id 固定地擲，見 docs/LEWD_STATS.md） */
+  lewd?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
   /** 初始裝備（取代依等級隨機生成的裝備；沒寫的欄位空著） */
   gear?: Partial<Record<GearSlot, GearSpec>>
   /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
@@ -168,6 +171,8 @@ export interface StoryCond {
   affinity?: Record<string, number>
   /** 主角身上的寄生物：{ 寄生物 id: { min, max（侵蝕度，含邊界）, tamed（已經馴服或還沒） } }；寫了就要身上有、而且沒有沉睡 */
   parasites?: Record<string, ParasiteRange>
+  /** 主角的慾望指標（有效值；曝露名聲看目前的地區）的範圍：{ lewdness: { min, max } }（含邊界；docs/LEWD_STATS.md） */
+  stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>
 }
 
 export interface ParasiteRange { min?: number; max?: number; tamed?: boolean }
@@ -877,6 +882,8 @@ export interface AbilityDef {
   burst?: { type?: string; mult: number; min_ratio?: number; heal?: boolean }
   /** 給目標行動點 */
   ap_give?: number
+  /** 用了之後，戰後曝露名聲 +這個數（寬衣） */
+  exposure?: number
   desc: string
 }
 const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
@@ -1341,13 +1348,15 @@ export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 
   | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore' | 'palace_gate'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
-  | 'release' | 'change_master' | 'gear' | 'join'
+  | 'release' | 'change_master' | 'gear' | 'join' | 'lewd'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
   caps: {
     affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
     item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
+    /** 慾望指標：每項每次 ±這個數 */
+    lewd: number
   }
   kinds: Record<ActionKind, {
     name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[]
@@ -1922,5 +1931,31 @@ export function choosablePerks(): PerkDef[] {
 export function isChoosablePerk(id: string): boolean {
   const p = perkDef(id)
   return !!p && !p.race
+}
+
+// ---- 慾望指標（docs/LEWD_STATS.md） ----
+
+export type LewdKey = 'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure'
+type LewdBonus = Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+export const lewdRules = lewdJson as unknown as {
+  stats: Record<LewdKey, { name: string; bands: string[]; forced_bands?: string[] }>
+  defaults: Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>
+  npc_tags: Record<string, Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', [number, number]>>>
+  npc_random: Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', [number, number]>
+  combat: {
+    endurance_max_div: number; sensitivity_base: number; sensitivity_div: number; lewd_start_per: number; lewd_start_ratio: number; lewd_decay_div: number
+    self_gain_lewd: number; self_gain_bonus: number; submission_per: number; submission_convert: number; exposure_per: number; faith_resist: number
+  }
+  gear: {
+    item_cap: number; total_cap: number; exposure_slots: string[]
+    outfit: Partial<Record<'regular' | 'anime' | 'adult', { exposure?: number; lewd?: LewdBonus }>>
+    restraint: { lewd?: LewdBonus }
+    underwear_visible: number; naked: number
+  }
+  growth: Record<'adult_scene' | 'climax' | 'climax_won' | 'brothel_work' | 'obedience' | 'disrobe', Partial<Record<LewdKey, number>>>
+  daily: {
+    adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus
+    free_submission_every: number; idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
+  }
 }
 

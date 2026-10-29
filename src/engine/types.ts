@@ -89,6 +89,8 @@ export interface Changes {
   companions?: CompanionChange[]
   /** 非戰鬥狀態（奴隸印記、逃亡、受罰）的增減 */
   conditions?: { actor: string; condition: string; added: boolean }[]
+  /** 慾望指標的增減（stat：lewdness / sensitivity / endurance / submission / exposure；曝露名聲記在 region） */
+  lewd?: { actor: string; stat: string; delta: number; after: number; region?: string }[]
   /** 特質的增減 */
   perks?: { actor: string; perk: string; name: string; added: boolean }[]
   /** 刺上或洗掉的刺青（奴隸印記另外記在 companions 的 enslaved / freed） */
@@ -171,6 +173,8 @@ export interface Report {
     mode?: 'defeat_cliffhanger' | 'defeat_event'
     /** 成人向的親密場景：這段經過是什麼，敘事會附上成人場景規則、在正文詳細描寫 */
     adult_scene?: string
+    /** 親密場景的主角不是主角本人時（派奴隸去娼館接客）：那個人的 id（慾望指標記在他身上） */
+    adult_actor?: string
   }
   lore_keys?: string[]
 }
@@ -195,6 +199,8 @@ export interface GearSpec {
   unique?: { check: CheckFilter; bonus: number }
   /** 屬性的加減（每項 ±1～±3；只有內容資料裡的裝備會有，不能打造、不在商店上架；見 docs/ITEMS.md 第 3.2 節） */
   attrs?: Partial<Record<'str' | 'dex' | 'int' | 'fai' | 'cha', number>>
+  /** 慾望指標的加減（穿著時的有效值；每件 ±10，全身合計 ±20；見 docs/LEWD_STATS.md） */
+  lewd?: Partial<Record<LewdStat, number>>
 }
 
 /** 穿在身上的裝備：物品名稱與組成（自帶組成，不必回頭查存檔） */
@@ -203,6 +209,13 @@ export interface EquippedGear {
   spec: GearSpec
   /** 主人強制裝上的（主人的 id）：契約還在時不能卸下，也不能在這個欄位換別的 */
   locked?: string
+}
+
+/** 慾望指標（docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從，0～100；曝露名聲依地區記在存檔 */
+export type LewdStat = 'lewdness' | 'sensitivity' | 'endurance' | 'submission'
+export interface LewdStats extends Record<LewdStat, number> {
+  /** 最近一次親密場景是第幾天（淫亂太久沒有親密場景會慢慢降） */
+  lastScene?: number
 }
 
 export interface Character {
@@ -225,6 +238,8 @@ export interface Character {
   usesPerRest: Record<string, number>
   /** 已學會的技能、法術、戲法 id */
   abilities: string[]
+  /** 慾望指標（沒有時用 lewd.json 的 defaults） */
+  lewd?: LewdStats
   /**
    * 攜帶中的技能與法術（存檔規則 skillLoadout 的上限，戲法不算）：戰鬥只帶這些，其他留在技能庫。
    * 沒有時帶最近學會的幾個（見 character.ts 的 carriedAbilities）
@@ -781,6 +796,8 @@ export interface GameState {
   guild?: GuildState
   /** 這個存檔的規則 */
   options?: GameOptions
+  /** 慾望指標的曝露名聲：角色 id → 地區 → 0～100（只有主角與夥伴） */
+  exposure?: Record<string, Record<string, number>>
   /** 進行中的地下城探索 */
   expedition?: Expedition
   /** 正在燒的光源 */

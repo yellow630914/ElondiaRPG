@@ -1,6 +1,8 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
 import { parasiteDef } from './parasites'
+import { LEWD_KEYS } from './lewd'
+import type { LewdKey } from './data'
 import {
   abilities, ATTR_IDS, companionRules, specialMaps, storyCounters, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
@@ -71,7 +73,7 @@ export const LAYER_NAME = DUNGEON_LAYER_NAME
 export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
   start_story: '開始特殊任務', enslave_player: '主角淪為奴隸', perk: '特質（取得的機會）', lose_perk: '失去特質', tattoo: '刺青', remove_tattoo: '洗掉刺青',
-  condition: '非戰鬥狀態', parasite: '寄生物', corruption: '寄生物的侵蝕度',
+  condition: '非戰鬥狀態', parasite: '寄生物', corruption: '寄生物的侵蝕度', lewd: '慾望指標',
 }
 /** 可以用效果給予或拿掉的非戰鬥狀態（奴隸印記、逃亡、暫時離隊由程式管理） */
 export const EFFECT_CONDITIONS = () => Object.keys(companionRules.conditions).filter((k) => !k.startsWith('$') && !['slave_mark', 'fugitive', 'away'].includes(k))
@@ -196,6 +198,11 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       case 'corruption': {
         const delta = Math.round(num(x.delta, -100, 100, 0))
         if (typeof x.parasite === 'string' && parasiteDef(x.parasite) && delta) out.push({ type: 'corruption', parasite: x.parasite, delta })
+        break
+      }
+      case 'lewd': {
+        const delta = Math.round(num(x.delta, -100, 100, 0))
+        if (LEWD_KEYS.includes(x.stat as LewdKey) && delta) out.push({ type: 'lewd', stat: x.stat as LewdKey, delta, ...(typeof x.target === 'string' && x.target ? { target: x.target } : {}) })
         break
       }
       case 'remove_tattoo': {

@@ -19,7 +19,7 @@ import { isBound, pcOf } from './party'
 import { spawnVisitors } from './population'
 import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
-import { addHours, commitReport, newReportId, withRng } from './state'
+import { addHours, advanceTime, commitReport, newReportId, withRng } from './state'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
 import { addCounters, condMet, flagKey } from './storyFlags'
 import { gateCheck } from './security'
@@ -286,7 +286,7 @@ function spendDay(state: GameState, road: RoadState, cell: Cell) {
   const meta = cell.road
   if (!meta || meta.hours <= 0 || meta.paid) return
   meta.paid = true
-  state.time = addHours(state.time, meta.hours)
+  advanceTime(state, meta.hours)
   road.hours += meta.hours
   if (road.modes[meta.leg] === 'road') road.money -= ROAD_DAILY_CC * state.party.length
 }

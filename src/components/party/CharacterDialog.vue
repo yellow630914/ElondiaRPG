@@ -8,6 +8,7 @@ import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
+import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf } from '@/engine/lewd'
 import { gameRule } from '@/engine/gameRules'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
@@ -59,6 +60,22 @@ const combat = computed<StatItem[]>(() => {
     { label: '防具', value: a.name, note: `迴避 ${signed(a.evade)}・物理減傷 ${a.dr}` },
     { label: '傷害倍率', value: affinityText(x) },
   ]
+})
+
+// 慾望指標：有效值（括號是裝備的加減）、分段；曝露名聲看目前的地區
+const lewdItems = computed<StatItem[]>(() => {
+  const x = m.value
+  const v = lewdOf(x)
+  const gear = gearLewd(x)
+  const items: StatItem[] = LEWD_STATS.map((k) => ({
+    label: lewdName(k),
+    value: v[k],
+    note: `${bandName(k, v[k], k === 'submission' && forcedSubmission(x))}${gear[k] ? `（裝備 ${signed(gear[k])}）` : ''}`,
+  }))
+  const region = locationById(s.value.location).region
+  const exp = exposureAt(s.value, x.id, region)
+  items.push({ label: lewdName('exposure'), value: exp, note: `${bandName('exposure', exp)}・身上的曝露度 ${exposureLevel(x)}` })
+  return items
 })
 
 // ---- 主角設定 ----
@@ -152,6 +169,8 @@ function saveTags() {
       <div>
         <p v-if="isNoncombatant(m)" class="small muted">無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>
         <StatGrid v-else :items="combat" />
+        <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。" /></h4>
+        <StatGrid :items="lewdItems" />
       </div>
     </section>
 
@@ -314,6 +333,7 @@ function saveTags() {
 .tag.bad { color: var(--danger); border-color: var(--danger); }
 .ability.q-uncommon { border-left-color: #2f7a1e; } .ability.q-rare { border-left-color: #1f5a9a; }
 .ability.q-epic { border-left-color: #6a3a9a; } .ability.q-legendary, .ability.q-mythic { border-left-color: #a86a10; }
+.lewd-title { margin: 14px 0 4px; color: var(--accent-2); letter-spacing: 0.1em; display: flex; align-items: center; gap: 4px; }
 .group h4 { margin: 12px 0 6px; color: var(--accent-2); letter-spacing: 0.15em; }
 .loadout { margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }
 .loadout .full { color: #a8452c; }

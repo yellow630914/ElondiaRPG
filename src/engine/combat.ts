@@ -14,7 +14,7 @@ import {
 } from './character'
 import {
   abilityDef, armorDef, ATTR_IDS, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
-  locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
+  lewdRules, locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
   mulResist,
@@ -39,6 +39,7 @@ import type {
 } from './types'
 import { contractOf } from './tattoos'
 import { tagsAllowed } from './content'
+import { addLewd, exposureAt, growLewd, lewdOf } from './lewd'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
 
 export interface StatusInstance {
@@ -122,6 +123,13 @@ export interface Combatant {
   climaxes?: number
   /** 敵方：被高潮的傷害打倒（慾望勝利） */
   lustDefeated?: boolean
+  /**
+   * 慾望指標（docs/LEWD_STATS.md）換算的修正：受到的慾望倍率（敏感）、消退的倍率與自己增加的慾望倍率（淫亂）、
+   * 傷害轉成慾望的比例加成（順從）、造成的魅惑傷害加值（曝露名聲）。沒有時都是 1 或 0
+   */
+  lustMods?: { taken: number; decay: number; self: number; convert: number; bonus: number }
+  /** 這場戰鬥裡讓曝露名聲增加的量（寬衣這類能力的 exposure），戰後記到所在的地區 */
+  exposureGain?: number
 }
 
 export type CombatAction =
@@ -317,7 +325,24 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
       if (f.traits?.includes('rut')) f.lust = Math.round(f.lustMax * r.rut_start)
     }
     const ch = state.party.find((m) => m.id === f.id) ?? (f.npcId && npcRecord(state, f.npcId) ? characterFor(state, npcRecord(state, f.npcId)!) : undefined)
-    if (ch?.status.includes('aroused')) f.lust = Math.round(f.lustMax * r.aroused_start)
+    if (!ch) continue
+    // 慾望指標：忍耐加上限，敏感改變受到的慾望，淫亂帶著慾望上場、消退得慢、自己增加的慾望多，順從讓轉換更有效，
+    // 曝露名聲（在這個地區）讓魅惑傷害變高；信仰讓人比較不受魅惑
+    const L = lewdRules.combat
+    const v = lewdOf(ch)
+    f.lustMax += Math.floor(v.endurance / L.endurance_max_div)
+    f.lustMods = {
+      taken: L.sensitivity_base + v.sensitivity / L.sensitivity_div,
+      decay: Math.max(0, 1 - v.lewdness / L.lewd_decay_div),
+      self: v.lewdness >= L.self_gain_lewd ? 1 + L.self_gain_bonus : 1,
+      convert: Math.floor(v.submission / L.submission_per) * L.submission_convert,
+      bonus: Math.floor(exposureAt(state, ch.id, locationById(state.location).region) / L.exposure_per),
+    }
+    const faith = mod(f.attrs.fai) * L.faith_resist
+    if (faith) mulResist(f.resist, { lust: Math.round(faith * 100) / 100 })
+    f.lust += Math.round(f.lustMax * Math.floor(v.lewdness / L.lewd_start_per) * L.lewd_start_ratio)
+    if (ch.status.includes('aroused')) f.lust += Math.round(f.lustMax * r.aroused_start)
+    f.lust = Math.min(f.lust, f.lustMax - 1)
   }
 }
 
@@ -340,7 +365,8 @@ const lustRatio = (c: Combatant) => (c.lustMax ? (c.lust ?? 0) / effectiveLustMa
  */
 function gainLust(combat: CombatState, target: Combatant, amount: number, effects: Effect[], opts: { selfGain?: boolean; raw?: boolean; text?: string } = {}): number {
   if (!lustOn(combat) || target.lustMax === undefined || !isActive(target)) return 0
-  const taken = opts.raw || opts.selfGain ? 1 : Math.max(0, 1 + target.statuses.reduce((s, x) => s + (statusDef(x.id).lust_mult ?? 0), 0))
+  const taken = opts.raw ? 1 : opts.selfGain ? target.lustMods?.self ?? 1
+    : Math.max(0, 1 + target.statuses.reduce((s, x) => s + (statusDef(x.id).lust_mult ?? 0), 0)) * (target.lustMods?.taken ?? 1)
   const mult = opts.raw ? 1 : (combat.lustMult ?? 1) * taken
   const max = effectiveLustMax(target)
   const incoming = Math.max(0, Math.round(amount * mult))
@@ -1128,7 +1154,9 @@ function dealDamage(
   for (const r of rolls) {
     const off = attacker ? offenseMult(attacker, r.type) : 1
     const def = defenseMult(target, r.type)
-    let amount = Math.max(0, Math.floor(r.amount * (opts.mult ?? 1) * off * def * diff))
+    // 曝露名聲：在有名的地方，造成的魅惑傷害多一點
+    const flat = r.type === 'lust' ? attacker?.lustMods?.bonus ?? 0 : 0
+    let amount = Math.max(0, Math.floor((r.amount + flat) * (opts.mult ?? 1) * off * def * diff))
     if (opts.half) amount = Math.floor(amount / 2)
     // 攻擊加成與目標的受傷倍率分開寫，標籤才不會把攻擊方的倍率說成目標的抵抗
     const round2 = (x: number) => Math.round(x * 100) / 100
@@ -1178,7 +1206,9 @@ function dealDamage(
       effects.push({ type: 'note', target: target.id, text: '閃避本能：傷害減半' })
     }
     // 承傷：受到的生命傷害一部分改成慾望（不會高潮的時候，只轉到慾望滿為止）
-    const ratio = Math.min(1, guardConvert + target.statuses.reduce((x, st) => x + (statusDef(st.id).convert ?? 0), 0))
+    // 順從：有轉換的時候，轉換的比例再加一點
+    const base = guardConvert + target.statuses.reduce((x, st) => x + (statusDef(st.id).convert ?? 0), 0)
+    const ratio = base > 0 ? Math.min(1, base + (target.lustMods?.convert ?? 0)) : 0
     if (ratio > 0 && total > 0 && lustOn(combat) && target.lustMax !== undefined) {
       const room = target.statuses.some((st) => statusDef(st.id).no_climax) ? Math.max(0, effectiveLustMax(target) - (target.lust ?? 0)) : Infinity
       converted = Math.min(Math.floor(total * ratio), room)
@@ -1487,6 +1517,8 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
     addStatus(actor, { id: 'spent', turns: 1, source: actor.id })
     push(combat, { actor: actor.id, action: `${a.name}・脫力`, result: 'none', effects: [{ type: 'status_add', target: actor.id, status: statusDef('spent').name }] })
   }
+  // 寬衣這類能力：戰後曝露名聲增加
+  if (a.exposure) actor.exposureGain = (actor.exposureGain ?? 0) + a.exposure
   // 能力本身的仇恨（堅守 +、隱匿 -）
   if (a.threat) addThreat(actor, a.threat)
   if (a.lifesteal && dealt > 0) {
@@ -1645,7 +1677,7 @@ function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
   let canAct = true
   // 慾望戰鬥：每回合消退一點（有不會消退的狀態時不消退）
   if (lustOn(combat) && (actor.lust ?? 0) > 0 && !actor.statuses.some((s) => statusDef(s.id).lust_hold)) {
-    actor.lust = Math.max(0, (actor.lust ?? 0) - Math.max(1, Math.round(effectiveLustMax(actor) * lustRules().decay)))
+    actor.lust = Math.max(0, (actor.lust ?? 0) - Math.max(1, Math.round(effectiveLustMax(actor) * lustRules().decay * (actor.lustMods?.decay ?? 1))))
   }
   // 這回合開始時才中的暈眩類狀態（媚毒、每回合增加的慾望讓人高潮）：這回合就不能行動，並且算用掉了
   const before = new Set(actor.statuses)
@@ -2053,7 +2085,11 @@ function settleLust(state: GameState, combat: CombatState, report: Report) {
     if (f.climaxes) {
       addCondition(member, 'afterglow', report)
       climaxed.push(`${f.name}（${f.climaxes} 次）`)
+      // 慾望指標：高潮讓淫亂、敏感成長；撐過來打贏的話忍耐成長
+      growLewd(state, member, 'climax', report, f.climaxes)
+      if (combat.status === 'victory' && f.hp > 0) growLewd(state, member, 'climax_won', report)
     }
+    if (f.exposureGain) addLewd(state, member, 'exposure', f.exposureGain, report)
   }
   const conquered = combat.combatants.filter((c) => c.lustDefeated).map((c) => c.name)
   if (!climaxed.length && !conquered.length) return

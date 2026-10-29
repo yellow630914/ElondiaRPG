@@ -175,13 +175,13 @@
       "effects": [{ "check": { "attrs": ["str"] }, "bonus": -1 }, { "combat": { "save": -1 } }],
       "exclusive": ["flaw_old_wound"], "npc": { "weight": 1, "tags": ["noble", "slave"], "classes": ["wizard"] } },
     { "id": "race_human", "name": "適應力", "race": "human", "desc": "全屬性 +1（已經算在人類的種族加值裡）。", "effects": [] },
-    { "id": "race_elf", "name": "星辰之裔", "race": "elf", "desc": "心靈傷害 ×0.75。", "effects": [{ "resist": { "psychic": -0.25 } }] },
+    { "id": "race_elf", "name": "星辰之裔", "race": "elf", "desc": "心靈傷害 ×0.75；矜持，受到的魅惑 ×0.9。", "effects": [{ "resist": { "psychic": -0.25, "lust": -0.1 } }] },
     { "id": "race_dwarf", "name": "熔爐之軀", "race": "dwarf", "desc": "毒素傷害 ×0.5、火焰傷害 ×0.75；身形結實顯眼，仇恨 +10%。",
       "effects": [{ "resist": { "poison": -0.5, "fire": -0.25 } }, { "combat": { "threat": 0.1 } }] },
     { "id": "race_demon", "name": "荒原血脈", "race": "demon", "desc": "火焰 ×0.5、暗影 ×0.75，但神聖傷害 ×1.25；魔族的氣息惹人注目，仇恨 +10%。",
       "effects": [{ "resist": { "fire": -0.5, "necrotic": -0.25, "radiant": 0.25 } }, { "combat": { "threat": 0.1 } }] },
-    { "id": "race_catfolk", "name": "貓之反射", "race": "catfolk", "desc": "迴避 +1、幸運一擊閾值 -1；身手輕巧不易被盯上，仇恨 -15%。",
-      "effects": [{ "combat": { "evade": 1, "crit": 1, "threat": -0.15 } }] },
+    { "id": "race_catfolk", "name": "貓之反射", "race": "catfolk", "desc": "迴避 +1、幸運一擊閾值 -1；身手輕巧不易被盯上，仇恨 -15%；天性多情，受到的魅惑 ×1.15。",
+      "effects": [{ "combat": { "evade": 1, "crit": 1, "threat": -0.15 } }, { "resist": { "lust": 0.15 } }] },
     { "id": "race_yulin", "name": "潮汐之鱗", "race": "yulin", "desc": "寒冰 ×0.5，但閃電傷害 ×1.25。", "effects": [{ "resist": { "cold": -0.5, "lightning": 0.25 } }] }
   ]
 }

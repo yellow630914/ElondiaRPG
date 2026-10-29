@@ -66,6 +66,7 @@ export const GROUPS = [
     { page: '特殊任務與劇情旗標', src: 'docs/STORY_QUESTS.md', desc: '特殊任務的結構、條件、旗標', sub: '劇情與事件' },
     { page: '事件視窗', src: 'docs/EVENTS.md', desc: '要玩家回應的事件', sub: '劇情與事件' },
     { page: '地下城的色情事件', src: 'docs/ADULT_EVENTS.md', desc: '成人向：地下城色情事件與寄生物', sub: '劇情與事件' },
+    { page: '慾望指標', src: 'docs/LEWD_STATS.md', desc: '成人向：淫亂、敏感、忍耐、順從、曝露名聲', sub: '人物與關係' },
     { page: '提示詞結構', src: 'docs/PROMPTS.md', desc: 'AI 服務、AI 開關、提示詞結構、快取、世界書注入', sub: 'AI 與呈現' },
     { page: '角色形象插圖', src: 'docs/PORTRAITS.md', desc: '形象圖的生成（OpenAI、NovelAI、ComfyUI）與上傳', sub: 'AI 與呈現' },
     { page: '介面語言', src: 'docs/I18N.md', desc: '繁體／簡體中文的介面與提示詞', sub: 'AI 與呈現' },

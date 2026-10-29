@@ -13,8 +13,8 @@ import {
   abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
-  stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
+  stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -771,6 +771,12 @@ export function sanitizeGearSpecLoose(g: GearSpec | undefined): GearSpec | undef
     const attrs = Object.fromEntries(ATTR_IDS.map((a) => [a, int(g.attrs?.[a], -max, max, 0)]).filter(([, v]) => v))
     if (Object.keys(attrs).length) out.attrs = attrs
   }
+  // 慾望指標的加減：每項 ±item_cap（docs/LEWD_STATS.md）
+  if (g.lewd && typeof g.lewd === 'object') {
+    const cap = lewdRules.gear.item_cap
+    const lewd = Object.fromEntries((['lewdness', 'sensitivity', 'endurance', 'submission'] as const).map((k) => [k, int(g.lewd?.[k], -cap, cap, 0)]).filter(([, v]) => v))
+    if (Object.keys(lewd).length) out.lewd = lewd
+  }
   return out
 }
 
@@ -955,6 +961,8 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   // 服裝的分類與成人向（成人向的服裝一定是成人向）
   if (raw.outfit && raw.outfit in OUTFIT_KINDS && out.slot !== 'main_hand' && out.slot !== 'off_hand') out.outfit = raw.outfit
   if (raw.adult || out.outfit === 'adult') out.adult = true
+  // 曝露度（慾望指標的曝露名聲）：只有上身、下身與內衣有意義
+  if (raw.exposure !== undefined && raw.exposure !== null && String(raw.exposure) !== '') out.exposure = int(raw.exposure, 0, 3, 0)
   // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
   const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body'
   if (restraint) {
@@ -1087,7 +1095,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1119,8 +1127,19 @@ function cond(v: unknown): NpcDef['requires'] {
     parasites[id] = { ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}), ...(typeof o.tamed === 'boolean' ? { tamed: o.tamed } : {}) }
   }
   const hasPar = Object.keys(parasites).length > 0
-  return flags.length || none.length || any.length || hasCount || hasAff || hasPar
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}) }
+  // 慾望指標：指標 → { min, max }（0～100，至少要有一邊）
+  const stats: NonNullable<StoryCond['stats']> = {}
+  for (const [k, x] of Object.entries(r.stats && typeof r.stats === 'object' ? r.stats : {})) {
+    if (!['lewdness', 'sensitivity', 'endurance', 'submission', 'exposure'].includes(k)) continue
+    const o = x && typeof x === 'object' ? x as { min?: unknown; max?: unknown } : {}
+    const pct = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : undefined)
+    const min = pct(o.min)
+    const max = pct(o.max)
+    if (min !== undefined || max !== undefined) stats[k as keyof typeof stats] = { ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}) }
+  }
+  const hasStats = Object.keys(stats).length > 0
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats
+    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }
@@ -1203,6 +1222,12 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   if (abil.length) out.abilities = [...new Set(abil)]
   // 特質：清單裡的（沒寫時依 id 固定地抽）
   if (Array.isArray(raw.perks)) out.perks = [...new Set(raw.perks.filter((p) => typeof p === 'string' && isChoosablePerk(p)))]
+  // 慾望指標：寫了的才存（0～100），沒寫的依標籤與 id 擲
+  if (raw.lewd && typeof raw.lewd === 'object') {
+    const lewd = Object.fromEntries((['lewdness', 'sensitivity', 'endurance', 'submission'] as const)
+      .filter((k) => typeof raw.lewd?.[k] === 'number' && Number.isFinite(raw.lewd[k])).map((k) => [k, int(raw.lewd?.[k], 0, 100, 0)]))
+    if (Object.keys(lewd).length) out.lewd = lewd
+  }
   if (raw.gear) {
     const g: NonNullable<NpcDef['gear']> = {}
     for (const slot of GEAR_SLOTS) {
@@ -1361,6 +1386,7 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.lust_cost) out.lust_cost = int(raw.lust_cost, 1, 200, 10)
   if (raw.requires_lust) out.requires_lust = Math.round(num(raw.requires_lust, 0.05, 1, 0.3) * 100) / 100
   if (raw.ap_give) out.ap_give = int(raw.ap_give, 1, 5, 1)
+  if (raw.exposure) out.exposure = int(raw.exposure, 1, 10, 1)
   if (raw.lust_transfer && (raw.lust_transfer.mode === 'spread' || raw.lust_transfer.mode === 'take')) {
     const t = raw.lust_transfer
     out.lust_transfer = t.mode === 'spread'

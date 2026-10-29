@@ -7,10 +7,10 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, mulResist, type AffinityMap, type AttrId, type Mods } from './data'
+import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type Mods } from './data'
 import { describeEffects } from './perks'
 import type { Rng } from './rng'
-import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
+import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
 
 type Scale = 'full' | 'half' | 'up' | 'third' | 'third_up' | 'res'
 export type MaterialKind = 'metal' | 'leather' | 'cloth' | 'wood' | 'jewel'
@@ -52,10 +52,29 @@ export interface BaseDef {
   outfit?: OutfitKind
   /** 成人向的底材：內容編輯器的篩選用 */
   adult?: boolean
+  /** 曝露度 0～3（慾望指標的曝露名聲用）；沒寫時依服裝種類（lewd.json 的 gear.outfit） */
+  exposure?: number
 }
 
 export type OutfitKind = 'regular' | 'anime' | 'adult'
 export const OUTFIT_KINDS: Record<OutfitKind, string> = { regular: '常規服裝', anime: '二次元服裝', adult: '成人向服裝' }
+
+const LEWD_STAT_IDS: LewdStat[] = ['lewdness', 'sensitivity', 'endurance', 'submission']
+
+/** 一件裝備的加值：底材的預設（成人向服裝、束縛用的底材）加上物品寫的，每項 ±item_cap */
+export function gearLewdOf(spec: GearSpec): Partial<Record<LewdStat, number>> {
+  const base = gearRules.bases[spec.base]
+  const out: Partial<Record<LewdStat, number>> = {}
+  const add = (b?: Partial<Record<LewdStat, number>>) => {
+    for (const k of LEWD_STAT_IDS) if (b?.[k]) out[k] = (out[k] ?? 0) + b[k]!
+  }
+  if (base?.outfit) add(lewdRules.gear.outfit[base.outfit]?.lewd)
+  if (base?.restraint) add(lewdRules.gear.restraint.lewd)
+  add(spec.lewd)
+  const cap = lewdRules.gear.item_cap
+  for (const k of LEWD_STAT_IDS) if (out[k] !== undefined) out[k] = Math.max(-cap, Math.min(cap, out[k]!))
+  return out
+}
 
 /** 這個底材存在（自訂內容可能刪掉了） */
 export function baseShown(id: string): boolean {
@@ -617,6 +636,13 @@ export function gearSummary(spec: GearSpec): string {
   if (all.length) parts.push(all.join('、'))
   if (spec.unique) parts.push(`獨特：${describeEffects([spec.unique]).replace(/。$/, '')}`)
   if (spec.attrs) parts.push(Object.entries(spec.attrs).filter(([, v]) => v).map(([k, v]) => `${attrName(k as AttrId)} ${signed(v!)}`).join('、'))
+  // 慾望指標的加減（底材的預設與物品寫的）與曝露度
+  const lewd = gearLewdOf(spec)
+  const lewdText = LEWD_STAT_IDS.filter((k) => lewd[k]).map((k) => `${lewdRules.stats[k].name} ${signed(lewd[k]!)}`)
+  if (lewdText.length) parts.push(lewdText.join('、'))
+  const base = gearRules.bases[spec.base]
+  const exposure = base?.exposure ?? (base?.outfit ? lewdRules.gear.outfit[base.outfit]?.exposure ?? 0 : 0)
+  if (exposure && base && lewdRules.gear.exposure_slots.includes(base.slot)) parts.push(`曝露度 ${exposure}`)
   return parts.join('・')
 }
 

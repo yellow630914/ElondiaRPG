@@ -25,6 +25,7 @@ import { addStrict, atMasterHome, extendDeadline, overdueChance, sendToMasterHom
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
+import { growLewd, addLewd } from './lewd'
 import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
 import { gameRule } from './gameRules'
@@ -342,6 +343,12 @@ export function setupMarking(state: GameState) {
   }
 }
 
+/** 服從懲罰 +1（最多 obedience_max）；主角的順從跟著成長（慾望指標） */
+function raiseObedience(state: GameState, c: ContractRef) {
+  c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+  growLewd(state, pcOf(state), 'obedience')
+}
+
 export function applyMarking(state: GameState, degree: Degree): string {
   const pm = state.pendingMark
   if (!pm) return ''
@@ -353,7 +360,7 @@ export function applyMarking(state: GameState, degree: Degree): string {
     if (degree === 'critical') pm.custom = true
     if (degree === 'fumble') {
       const c = contractOf(pcOf(state))
-      if (c) c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+      if (c) raiseObedience(state, c)
     }
     return { critical: '刻印的人被你說動了，讓你自己決定印記的樣子。', success: '你爭取到選擇印記的餘地。', partial: '主人照原本的打算刻印。', fail: '主人照原本的打算刻印。', fumble: '主人勃然大怒，下手更重。' }[degree]
   }
@@ -374,7 +381,7 @@ export function applyMarking(state: GameState, degree: Degree): string {
     case 'fumble': {
       pm.allowed = [sev.at(-1)!]
       const c = contractOf(pcOf(state))
-      if (c) c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+      if (c) raiseObedience(state, c)
       return '主人勃然大怒，刻下最重的印記。'
     }
   }
@@ -545,6 +552,8 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   if (e.scene && (o.adult_scene === 'always' || (o.check && o.adult_scene === (ok ? 'success' : 'fail')))) {
     report.narration = { ...report.narration, length: 'medium', adult_scene: withMaster(state, e.scene) }
   }
+  // 慾望指標：直接屈服（一定進入親密場景的回應）讓順從成長
+  if (o.adult_scene === 'always') addLewd(state, pcOf(state), 'submission', 1, report)
   delete state.pendingMasterEvent
   const notes = applyEffects(state, report, affordable(state, effects))
   if (notes.length) report.outcome.summary += notes.join('，') + '。'
@@ -650,7 +659,7 @@ export function applyReturn(state: GameState, report: Report, degree: Degree): s
       return `${c.masterName}收回了你。${punish(state, 'heavy', report)}${sent}`
     case 'fumble': {
       const line = punish(state, 'heavy', report)
-      c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+      raiseObedience(state, c)
       return `${c.masterName}收回了你，怒氣未消。${line}${sent}`
     }
   }

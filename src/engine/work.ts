@@ -15,6 +15,7 @@ import type { GameState, Report } from './types'
 import { shopPlace } from './trade'
 import { contractOf } from './tattoos'
 import { closedHere } from './landmarks'
+import { growLewd } from './lewd'
 
 /** 現在站的設施有沒有工作可做 */
 export function jobHere(state: GameState): (JobDef & { cell: string }) | undefined {
@@ -95,6 +96,12 @@ export function applyWork(state: GameState, report: Report, target: string, degr
     if (boss) addAffinity(state, report, boss, workRules.fumble_affinity, '工作出了差錯')
   }
   const worker = workerOf(state, target)
+  // 娼館：接客的人淫亂與曝露名聲成長；派奴隸去的話，親密場景記在奴隸身上
+  if (job.cell === 'brothel') {
+    const who = worker ?? state.party.find((m) => m.isPlayer)
+    if (who) growLewd(state, who, 'brothel_work', report)
+    if (worker) report.narration = { ...report.narration, adult_actor: worker.id }
+  }
   if (worker) return `你派${worker.name}去做了 ${hours} 小時的${job.name}，${pay > 0 ? `工錢 ${formatMoney(pay)} 交到你手上` : '一分錢也沒拿回來'}。`
   return `做了 ${hours} 小時的${job.name}，${pay > 0 ? `賺到 ${formatMoney(pay)}` : '一分錢也沒拿到'}。`
 }

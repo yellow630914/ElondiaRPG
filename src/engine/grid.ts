@@ -33,7 +33,7 @@ import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { homeById, overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
 import { bestTool } from './tools'
-import { addHours, commitReport, newReportId, player, withRng } from './state'
+import { addHours, advanceTime, commitReport, newReportId, player, withRng } from './state'
 import type { Character, GameState, GameTime, Report } from './types'
 import { rewardMoney } from './gameRules'
 
@@ -948,7 +948,7 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   const ny = p.y + dy
   const cell = cellAt(area, nx, ny)
   if (!walkable(cell)) throw new Error('那裡過不去')
-  state.time = addHours(state.time, stepMinutes(area) / 60)
+  advanceTime(state, stepMinutes(area) / 60)
   state.position = { area: area.key, x: nx, y: ny, prev: { x: p.x, y: p.y } }
   // 黑暗的地方：每走一格燒掉一點光源
   burnStep(state, area)
@@ -1235,7 +1235,7 @@ function pickLockAt(state: GameState, area: Area, cell: Cell, method: LockMethod
   delete cell.lock
   cell.done = true
   if (cell.intel) finishIntel(state, cell.intel)
-  state.time = addHours(state.time, 10 / 60)
+  advanceTime(state, 10 / 60)
   const opened = openChest(state, area, cell.level ?? 1)
   opened.timeline = [entry, ...(opened.timeline ?? [])]
   opened.outcome.summary = `${picker.name}${how.success}。${opened.outcome.summary ?? ''}`

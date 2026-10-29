@@ -1,11 +1,12 @@
 // 依玩家的提示詞設定組出實際送出的提示詞（遊戲與「提示詞」頁籤的預覽共用）。
 
 import type { ActionPending } from '@/engine/actions'
+import { lewdSummary } from '@/engine/lewd'
 import { protagonistText } from '@/engine/character'
 import { locationById } from '@/engine/data'
 import * as social from '@/engine/social'
 import type { GameState, Report } from '@/engine/types'
-import { actionLoreText, buildActionPrompt } from './judge'
+import { actionLoreText, buildActionPrompt, partyLewd } from './judge'
 import { loreForReport, pickLore, type LoreItem, type LoreSelection } from './lore'
 import { adultSceneOf, buildPrompt, type Prompt } from './prompt'
 import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
@@ -59,7 +60,8 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
   // 分流：帶親密場景的日誌才送成人向的條目（世界書、文風、其他提示詞）
   const adult = !!adultSceneOf(report)
   const lore = loreForReport(o.lore, report, { adult, budgetChars: o.budgetChars, playerName: name })
-  const protagonist = protagonistOf(state)
+  // 成人場景：主角與隊友的慾望指標（分段的文字）
+  const protagonist = protagonistOf(state) + (adult && state ? `\n慾望指標：${lewdSummary(state, state.party.find((m) => m.isPlayer)!)}${partyLewd(state, false)}` : '')
   const context = narrationContext(state, report)
   // 成人場景的敘事用套用到「成人場景」的條目
   const target = narrationTarget(report)

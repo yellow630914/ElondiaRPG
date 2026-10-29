@@ -3,6 +3,7 @@
 // AI 只回傳 JSON；程式負責驗證、夾住數值與套用（見 src/engine/actions.ts）。
 
 import { inActiveSquad, squadIds } from '@/engine/squads'
+import { lewdSummary } from '@/engine/lewd'
 import { isGuarded } from '@/engine/population'
 import { npcOutfit } from '@/engine/outfits'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
@@ -76,7 +77,7 @@ export function inventoryLines(state: GameState, max = 40): string {
   return lines.length ? lines.join('\n') + more : '（空的）'
 }
 
-function pcDetail(state: GameState): string {
+function pcDetail(state: GameState, adult = false): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${attrOf(pc, a)}`).join('、')
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
@@ -89,7 +90,14 @@ function pcDetail(state: GameState): string {
   const locked = forced.length ? `\n主人強制戴上、拿不下來的：${forced.join('、')}` : ''
   const contract = pcContract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pcContract)}${home ? `\n${home}` : ''}` : ''
   const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
-  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}`
+  // 慾望指標：只在可能進入親密場景的判定（數值與分段）
+  const lewd = adult ? `\n慾望指標：${lewdSummary(state, pc, true)}${partyLewd(state)}` : ''
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}`
+}
+
+/** 隊友的慾望指標（成人向的判定與敘事）：每人一行 */
+export function partyLewd(state: GameState, withNumbers = true): string {
+  return state.party.filter((m) => !m.isPlayer).map((m) => `\n${m.name}的慾望指標：${lewdSummary(state, m, withNumbers)}`).join('')
 }
 
 /** 固定 NPC 的小隊：隊名與隊員（整隊行動，不會單獨受雇） */
@@ -227,9 +235,11 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     change_master: `{"type":"change_master","npc":"${p.target ?? '<對象 id>'}"}（行動的對象成為主角的新主人，印記沿用：只在 degree 為 success 以上、對象願意收下主角時）`,
     gear: gearDoc(state, p),
     join: joinDoc(state, p),
+    lewd: `{"type":"lewd","target":"pc 或隊友 id","stat":"lewdness（淫亂）／sensitivity（敏感）／endurance（忍耐）／submission（順從）／exposure（曝露名聲）","delta":<±${caps.lewd}>}（慾望指標：只在經過明顯改變了這個人時，例如屈服讓順從上升、在眾人面前被看光讓曝露名聲上升；每項一次）`,
   }
   // 主角不是奴隸時，不提供和契約有關的效果；入隊只在對象是認識、還不在隊伍裡的人時提供
-  const list = kind.effects.filter((e) => (contractOf(pc) || (e !== 'release' && e !== 'change_master')) && (e !== 'join' || !!effectDocs.join))
+  // 慾望指標只在可能進入親密場景的行動提供
+  const list = kind.effects.filter((e) => (contractOf(pc) || (e !== 'release' && e !== 'change_master')) && (e !== 'join' || !!effectDocs.join) && (e !== 'lewd' || !!p.adultScene))
   return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>${p.kind === 'invent' ? inventionDoc(state, p) : ''}${p.kind === 'perk_pitch' ? pitchDoc(state, p) : ''}`
 }
 
@@ -360,7 +370,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
     // 成人向的戰敗事件：回應時另外附上戰敗事件規則（narrative 是後半段）
     { key: 'defeat', title: '戰敗事件規則', part: 'system', text: p.kind === 'defeat_event' && narrative ? `${fillDefeatRules(opts.defeatRules, pc.name)}\n這次的 narrative 是戰敗事件的後半段。` : '' },
     { key: 'scene', title: '成人場景規則', part: 'system', text: sceneSection(opts, pc.name, narrative) },
-    { key: 'actor', title: '主角', part: 'user', text: `<actor>\n${pcDetail(state)}\n</actor>` },
+    { key: 'actor', title: '主角', part: 'user', text: `<actor>\n${pcDetail(state, !!p.adultScene)}\n</actor>` },
     { key: 'party', title: '隊伍狀態', part: 'user', text: `<party>\n${partyLines(state)}\n</party>` },
     { key: 'inventory', title: '行囊', part: 'user', text: `<inventory>\n${inventoryLines(state)}\n</inventory>` },
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },

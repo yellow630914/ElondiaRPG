@@ -1,7 +1,8 @@
 // 不經 AI、直接把報告轉成可讀的文字戰報。AI 關閉或失敗時顯示這份。
 // 也用來把 id 換成名稱，讓送給 AI 的報告更好讀。
 
-import { abilities, attrName, className, companionRules, conditionName, geography, raceName, statuses } from '@/engine/data'
+import { abilities, attrName, className, companionRules, conditionName, geography, raceName, regionById, statuses, type LewdKey } from '@/engine/data'
+import { lewdName } from '@/engine/lewd'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import type { Effect, Report, TimelineEntry } from '@/engine/types'
@@ -102,6 +103,10 @@ export function describeChanges(report: Report): string[] {
   for (const x of c.conditions ?? []) {
     lines.push(`${names[x.actor] ?? x.actor} ${x.added ? '獲得' : '解除'}「${conditionName(x.condition)}」`)
   }
+  for (const x of c.lewd ?? []) {
+    const where = x.region ? `（${regionById(x.region).name}）` : ''
+    lines.push(`${names[x.actor] ?? x.actor} ${lewdName(x.stat as LewdKey)}${where} ${x.delta > 0 ? '+' : ''}${x.delta}（${x.after}）`)
+  }
   return lines
 }
 
@@ -152,6 +157,7 @@ export function humanizeReport(report: Report) {
       level_up: report.changes.level_up?.map((x) => ({ ...x, actor: names[x.actor] ?? x.actor })),
       affinity: report.changes.affinity?.map((a) => ({ ...a, npc: names[a.npc] ?? a.npc })),
       conditions: report.changes.conditions?.map((x) => ({ ...x, actor: names[x.actor] ?? x.actor, condition: conditionName(x.condition) })),
+      lewd: report.changes.lewd?.map((x) => ({ ...x, actor: names[x.actor] ?? x.actor, stat: lewdName(x.stat as LewdKey), ...(x.region ? { region: regionById(x.region).name } : {}) })),
       companions: report.changes.companions?.map((x) => ({ ...x, ...(x.bond ? { bond: companionRules.bonds[x.bond] } : {}) })),
     },
     ...(report.check ? { check: { ...report.check, attr: attrName(report.check.attr) } } : {}),

@@ -10,7 +10,7 @@
 import { attachParasite, changeCorruption, detachParasite, tameParasite } from './parasites'
 import { tagsAllowed } from './content'
 import { addItem } from './state'
-import { abilities, classAbilities, classes, locationById, perkDef, slaveryRules, type AttrId } from './data'
+import { abilities, classAbilities, classes, locationById, perkDef, slaveryRules, type AttrId, type LewdKey } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, carryLearned, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
@@ -32,6 +32,7 @@ import { forceEquip } from './forcedGear'
 import { addStrict, extendDeadline, sendToMasterHome } from './masterHome'
 import { addTattoo, contractOf, freePlaces, oathText, placeName, removeTattoo, tattooFromTemplate, tattooKindName, tattoosOf, type NewTattoo } from './tattoos'
 import { gameRule, rewardMoney } from './gameRules'
+import { addLewd, lewdName } from './lewd'
 
 export type NpcRef = string | NpcSpec
 
@@ -114,12 +115,14 @@ export type RewardEffect =
   | { type: 'parasite'; parasite: string; op: 'add' | 'tame' | 'remove' }
   /** 寄生物的侵蝕度加減 */
   | { type: 'corruption'; parasite: string; delta: number }
+  /** 慾望指標的加減（docs/LEWD_STATS.md）：target 預設主角；曝露名聲記在目前的地區 */
+  | { type: 'lewd'; stat: LewdKey; delta: number; target?: string }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
   'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip',
-  'parasite', 'corruption',
+  'parasite', 'corruption', 'lewd',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -397,6 +400,12 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'corruption': {
         const line = changeCorruption(pcOf(state), e.parasite, e.delta)
         if (line) notes.push(line)
+        break
+      }
+      case 'lewd': {
+        const who = e.target ? state.party.find((m) => m.id === e.target) ?? pcOf(state) : pcOf(state)
+        const d = addLewd(state, who, e.stat, e.delta, report)
+        if (d) notes.push(`${who.name}的${lewdName(e.stat)} ${d > 0 ? '+' : ''}${d}`)
         break
       }
       case 'force_equip': {

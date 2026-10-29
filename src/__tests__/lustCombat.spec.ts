@@ -31,7 +31,8 @@ afterEach(() => setContentFilters({ pc_unwilling: true }))
 describe('慾望戰鬥：基本', () => {
   it('慾望上限依等級；不死與構裝免疫魅惑，「全部」的抗性不影響魅惑', () => {
     const { me, foe } = fight([], [['skeleton', 1]])
-    expect(me.lustMax).toBe(lustMaxFor(me.level))
+    // 主角的忍耐（預設 10）再加一半到上限
+    expect(me.lustMax).toBe(lustMaxFor(me.level) + 5)
     expect(lustMaxFor(10)).toBe(60)
     expect(defenseMult(foe, 'lust')).toBe(0)
     foe.resist = { all: -0.5 }

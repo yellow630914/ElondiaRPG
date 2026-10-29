@@ -81,6 +81,7 @@
 
 - **模板**：和旅途事件放在一起（`templates`，`scope: town`），格式相同；另外用 `cells`（設施）、`location_types`（聚落規模）、`locations`（地點）、`requires`（劇情旗標）篩選，沒寫的不限。城鎮事件沒有高階。
 - **機率與冷卻**（`travel_events.json` 的 `town`）：冷卻過了（兩次城鎮事件至少隔 `cooldown_hours` 小時）才擲 `chance`；同一個事件 `repeat_days` 天內不再出現（事件可以用 `cooldown_days` 另訂）。
+- **曝露名聲**：成人向的城鎮事件，權重與整體機率 × (1 + 主角在這個地區的曝露名聲 / 100)，其他事件的機率不變（[LEWD_STATS](LEWD_STATS.md)）。
 - **類型平衡**：記住最近 `recent_size` 次的分類，候選事件的分類每出現過一次，權重就乘一次 `recent_penalty`（預設 0.35），所以不會一直遇到同一類的事。分類：人情（social）、麻煩（trouble）、機會（opportunity）、傳聞與異象（omen）、買賣（commerce）。
 - **揭曉**：檢定的事件馬上擲骰，產生一份報告；選擇的事件放進事件視窗（`state.townEvent`，🏘️），回應之前不能移動。檢定照主動行動的加值算（不加旅途類工具）。
 - 結果的移動（臨時地圖、特殊地圖、改去別的地點）和旅途事件一樣，在報告提交之後執行；臨時地圖從出口離開回到城裡。

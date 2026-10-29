@@ -12,6 +12,7 @@ import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGe
 import { bodyOf } from './traits'
 import { dressNpc } from './outfits'
 import { tattoosOf, tattooSummary } from './tattoos'
+import { npcLewd } from './lewd'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
 
@@ -292,6 +293,8 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
   // 特質：資料裡指定的，沒有時依 id 固定地抽
   const perks = npcPerksOf(def)
   if (perks.length) c.perks = [...new Set(perks)]
+  // 慾望指標：依標籤與 id 固定地擲（固定 NPC 寫了的優先）
+  c.lewd = npcLewd(def)
   syncGear(c, classDef(c.class).weapon)
   recalc(c)
   c.hp = c.maxHp
