@@ -137,6 +137,8 @@ export interface CheckInfo {
   total: number
   /** 實際的成功程度（AI 判定時由 AI 決定） */
   degree: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
+  /** AI 判為日常小事：結果至少是成功，骰值只決定過程順不順 */
+  trivial?: boolean
   /** 骰值對 DC 算出的參考成功程度；只在與實際結果不同時記錄 */
   reference_degree?: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
   source: 'ai' | 'rules'
@@ -759,6 +761,8 @@ export interface GameState {
   combat?: CombatState
   /** 在格子地圖上的位置 */
   position?: Position
+  /** 最近走過的地方（區域與設施，換了地方才記；交給 AI 銜接正文用，只留最近幾筆） */
+  trail?: { time: GameTime; location: string; spot: string }[]
   /** 隨機生成的區域（近郊、冒險區域各層） */
   areas?: Record<string, Area>
   /** 人際關係：角色 id → 條目 */

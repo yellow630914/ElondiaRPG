@@ -1327,6 +1327,10 @@ export const actionRules = actionsJson as unknown as {
     max_targets?: number
     /** 自由行動：主要對象之外每多一人，DC 增加多少 */
     extra_target_dc?: number
+    /** AI 判定時可以填花費的時間（小時）：程式夾在這個範圍，沒填時用 hours */
+    hours_range?: [number, number]
+    /** AI 判定時可以判為日常小事（difficulty: trivial）：結果至少是成功 */
+    trivial?: boolean
   }>
 }
 

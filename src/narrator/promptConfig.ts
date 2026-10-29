@@ -2,6 +2,7 @@
 // 跟著瀏覽器走（所有存檔共用），存在 localStorage（見 src/stores/prompts.ts）。
 
 import type { LoreItem, LoreOverride } from './lore'
+import { LENGTH_SCALES, type LengthScale } from './prompt'
 
 /**
  * 條目要套用到哪種請求：
@@ -43,6 +44,12 @@ export interface PromptConfig {
   customLore: LoreItem[]
   /** 判定請求也注入世界書（常駐條目放前段、觸發條目放後段） */
   loreInJudge: boolean
+  /** 正文篇幅：整體偏短、標準、偏長 */
+  lengthScale: LengthScale
+  /** 前後銜接：敘事與判定帶上一段正文的結尾，以及之後沒有寫成正文的事（幕間） */
+  continuity: boolean
+  /** 變化正文的寫法：每次在本次要求指定不同的切入方式與收尾 */
+  variety: boolean
   /** 玩家修改過的敘事規則；沒有時用預設（DEFAULT_NARRATION_RULES） */
   narrationRules?: string
   /** 玩家修改過的戰敗事件規則；沒有時用預設（DEFAULT_DEFEAT_RULES） */
@@ -257,6 +264,9 @@ export function defaultPromptConfig(): PromptConfig {
     lore: {},
     customLore: [],
     loreInJudge: false,
+    lengthScale: 'standard',
+    continuity: true,
+    variety: true,
   }
 }
 
@@ -290,6 +300,10 @@ export function normalizeConfig(raw: unknown): PromptConfig {
     lore: r.lore && typeof r.lore === 'object' ? r.lore : {},
     customLore: Array.isArray(r.customLore) ? r.customLore.filter((e) => e && typeof e.uid === 'number') : [],
     loreInJudge: !!r.loreInJudge,
+    lengthScale: LENGTH_SCALES.includes(r.lengthScale as LengthScale) ? (r.lengthScale as LengthScale) : base.lengthScale,
+    // 舊的設定沒有這兩項：開啟
+    continuity: r.continuity !== false,
+    variety: r.variety !== false,
     ...(typeof r.narrationRules === 'string' && r.narrationRules.trim() ? { narrationRules: r.narrationRules } : {}),
     ...(typeof r.defeatRules === 'string' && r.defeatRules.trim() ? { defeatRules: r.defeatRules } : {}),
     ...(typeof r.sceneRules === 'string' && r.sceneRules.trim() ? { sceneRules: r.sceneRules } : {}),

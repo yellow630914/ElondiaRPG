@@ -6,7 +6,7 @@ import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import type { Effect, Report, TimelineEntry } from '@/engine/types'
 
-function locationName(id: string): string {
+export function locationName(id: string): string {
   return geography.locations.find((l) => l.id === id)?.name ?? id
 }
 
@@ -117,7 +117,7 @@ export function describeCheck(report: Report): string | null {
   const sign = k.modifier >= 0 ? '+' : '-'
   const names = { critical: '大成功', success: '成功', partial: '部分成功', fail: '失敗', fumble: '大失敗' }
   const ref = k.reference_degree ? `（骰值參考：${names[k.reference_degree]}）` : ''
-  return `${k.action}・${attrName(k.attr)}檢定 DC ${k.dc}${adjusted}：擲出 ${k.natural} ${sign} ${Math.abs(k.modifier)} = ${k.total}，${degree}${ref}${k.source === 'ai' ? '（AI 判定）' : ''}`
+  return `${k.action}・${attrName(k.attr)}檢定 DC ${k.dc}${adjusted}：擲出 ${k.natural} ${sign} ${Math.abs(k.modifier)} = ${k.total}，${degree}${ref}${k.trivial ? '（日常小事）' : ''}${k.source === 'ai' ? '（AI 判定）' : ''}`
 }
 
 /** 送給 AI 前，把報告裡的 id 換成中文名稱。 */

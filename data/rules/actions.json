@@ -22,7 +22,7 @@
     "meet_affinity": 10,
     "hp_loss_ratio": 0.3,
     "hp_gain_ratio": 0.2,
-    "narrative_chars": 2000
+    "narrative_chars": 3000
   },
   "kinds": {
     "free": {
@@ -30,6 +30,10 @@
       "attr": "cha",
       "base": 12,
       "hours": 0.5,
+      "hours_range": [0.25, 4],
+      "$comment_hours_range": "AI 判定時依寫出的經過填花費的時間（小時），程式夾在這個範圍；沒填時用 hours",
+      "trivial": true,
+      "$comment_trivial": "AI 可以判為日常小事（difficulty: trivial）：沒有阻力的日常小事，結果至少是成功，骰值只決定過程順不順",
       "effects": ["affinity", "relationship_text", "flag", "reputation", "money", "item", "xp", "ability", "hp", "release", "change_master", "gear", "join"],
       "$comment_join": "join（行動的對象答應入隊）：只在成功以上採用，而且要符合邀請認識的人的所有條件（companions.json 的 invite：人在身邊、親密度、冷卻、空位、小隊找隊長），檢定總值也要達到邀請的 DC；不符合時不入隊，原因寫進結果",
       "$comment_gear": "gear（事件得到的裝備）：只在成功以上採用，最多一件；材料的建議等級不超過主角等級，稀有度不超過材料原本的（大成功可以高一級）",

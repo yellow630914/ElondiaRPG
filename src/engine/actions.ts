@@ -116,6 +116,10 @@ export interface Judgment {
   narrative?: string
   /** AI 認為這次的經過包含親密場景：場景是什麼 */
   adult_scene?: string
+  /** AI 判為日常小事（只有 actions.json 標了 trivial 的行動）：結果至少是成功 */
+  trivial?: boolean
+  /** AI 依經過填的花費時間（小時，只有標了 hours_range 的行動），已夾在範圍內 */
+  hours?: number
   effects: RewardEffect[]
   relationship_updates: RelationshipUpdate[]
   /** 被程式截掉的數值（AI 提議的超過上限）：交給寫手，敘事照實際結算的數字寫 */
@@ -235,11 +239,18 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   const attr = (ATTR_IDS as string[]).includes(String(r.attr)) ? (r.attr as AttrId) : p.attr
   const dcRaw = num(r.dc)
   const dc = Number.isNaN(dcRaw) ? p.base_dc : clamp(Math.round(dcRaw), p.base_dc - adj, p.base_dc + adj)
+  const kindDef = actionRules.kinds[p.kind]
+  // 日常小事：結果至少是成功（骰值只決定過程順不順），效果的門檻也照成功看
+  const trivial = !!kindDef.trivial && r.difficulty === 'trivial'
   // AI 沒寫（或寫錯）成功程度時，用骰值對 DC 算出的參考結果（和結算時一樣），效果的門檻也照這個看
-  const degree = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
+  const judged = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
     ? (r.degree as Degree)
     : computeDegree(p.natural, p.natural + p.modifiers[attr] + situationalTotal(p), dc)
-  const allowed = new Set(actionRules.kinds[p.kind].effects)
+  const degree: Degree = trivial && judged !== 'critical' ? 'success' : judged
+  const hoursRaw = num(r.hours)
+  const range = kindDef.hours_range
+  const hours = range && !Number.isNaN(hoursRaw) ? Math.round(clamp(hoursRaw, range[0], range[1]) * 4) / 4 : undefined
+  const allowed = new Set(kindDef.effects)
   const pc = pcOf(state)
   const known = (id: string) => !!state.relationships?.[id]
   const effects: RewardEffect[] = []
@@ -446,6 +457,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
     ...(clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
+    ...(trivial ? { trivial } : {}),
+    ...(hours !== undefined ? { hours } : {}),
     ...(p.kind === 'invent' && r.invention && typeof r.invention === 'object' ? { invention: r.invention as Record<string, unknown> } : {}),
     ...(p.kind === 'perk_pitch' && r.perk && typeof r.perk === 'object' ? { perk: r.perk as Record<string, unknown> } : {}),
     effects,
@@ -510,7 +523,8 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
     party: state.party.map((m) => snapshot(m, undefined, pc)),
     outcome: { result: 'neutral' },
     changes: {},
-    narration: { pov: 'second_person', length: 'short', ...(p.text ? { player_intent: p.text } : {}) },
+    // 自由行動是玩家自己描述的事，預設寫中等篇幅
+    narration: { pov: 'second_person', length: p.kind === 'free' ? 'medium' : 'short', ...(p.text ? { player_intent: p.text } : {}) },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
 }
@@ -529,10 +543,12 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const degree = judgment?.degree ?? reference
   delete state.pendingAction
 
-  const report = actionReport(state, p, p.hours ?? kind.hours)
+  const report = actionReport(state, p, judgment?.hours ?? p.hours ?? kind.hours)
   const check: CheckInfo = {
     action: kind.name, attr, base_dc: p.base_dc, dc, natural: p.natural, modifier, ...(p.situational.length ? { situational: p.situational } : {}), total, degree,
-    ...(degree !== reference ? { reference_degree: reference } : {}),
+    ...(judgment?.trivial ? { trivial: true } : {}),
+    // 日常小事的骰值只決定過程順不順，不算「和骰值不同」
+    ...(degree !== reference && !judgment?.trivial ? { reference_degree: reference } : {}),
     source: judgment ? 'ai' : 'rules',
     ...(judgment?.rationale ? { rationale: judgment.rationale } : {}),
     ...(judgment?.twist ? { twist: judgment.twist } : {}),
@@ -593,7 +609,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   report.outcome = {
     result: success ? 'success' : degree === 'partial' ? 'neutral' : 'failure',
     summary: [lead, mechanical, judgment?.summary ?? '', ...notes].filter(Boolean).join(''),
-    tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.twist ? ['出乎預料'] : [])],
+    tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.trivial ? ['日常小事'] : []), ...(judgment?.twist ? ['出乎預料'] : [])],
   }
   const committed = commitReport(state, report)
   // 特殊任務的判定：解鎖或結束的任務點，更新地圖上的 ⭐
