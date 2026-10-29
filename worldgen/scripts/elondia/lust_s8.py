@@ -205,6 +205,73 @@ def write_s8_4():
     print('S8-4 tattoos', len(LEWD_TATTOOS), 'abilities', len(PARASITE_ABILITIES))
 
 
+# ---------------- S8-6 鎖具與脫縛 ----------------
+KEYS = [
+    {"name": "白鐵鑰匙", "category": "gear", "price_cc": 30, "tags": [], "key": "white", "desc": "一把普通的小鑰匙，打得開白鐵鎖。用一次就留在鎖孔裡了（一次性）。"},
+    {"name": "藍鋼鑰匙", "category": "gear", "price_cc": 120, "tags": [], "key": "blue", "desc": "齒紋精細的藍鋼鑰匙，打得開藍鋼鎖以下的鎖。用一次就斷在鎖孔裡（一次性）。"},
+    {"name": "符文鑰匙", "category": "gear", "price_cc": 450, "tags": [], "key": "rune", "desc": "刻著解封符文的鑰匙，打得開符文鎖以下的鎖。符文用一次就褪色（一次性）。"},
+    {"name": "黃金鑰匙", "category": "gear", "price_cc": 1500, "tags": [], "key": "gold", "desc": "貴族隨身帶著的金鑰匙，什麼鎖都打得開。用一次就被鎖吞了（一次性）。"},
+]
+STRUGGLE_STATUSES = {
+    "glued": {"name": "膠膜", "kind": "debuff", "control": "stun", "struggle": 0},
+    "swallowed": {"name": "吞入", "kind": "debuff", "control": "stun", "struggle": 2, "lust_mult": 0.25},
+}
+UNBIND_RULES = {
+    "$comment": "脫縛（docs/LEWD_STATS.md 第 16 節）。嘗試脫縛：DC = base + 鎖的 lock_dc + 拘束程度 × bind_dc − 忍耐 / endurance_per；靈巧檢定（雙手被綁的減值照雙面效應算在檢定上）。只有別人鎖上的拘束具（主人強制戴上的）才需要；成功時鎖被弄壞、拘束具可以卸下。主人在身邊時，失敗輕度懲罰、大失敗嚴厲懲罰；大失敗順從 + fumble_submission。鑰匙（物品的 key）打開同等級以下的鎖，用一次就沒了，鎖歸自己。keys：擊敗人形的敵人（持有裝備的怪物、敵對冒險者）時 chance 的機率搜到一把，依敵人等級（levels：[最低等級, 鎖的等級]）。combat：戰鬥中的拘束（狀態有 struggle）用掙脫（自己）或撕開（隊友）擺脫，花 ap 行動點；1d20 + 熟練 + 力量、靈巧較高的調整值，DC = base + 施加者等級 × per_level + 狀態的 struggle，自己雙手被綁 + hands。",
+    "attr": "dex",
+    "base": 12,
+    "lock_dc": {"white": 0, "blue": 2, "rune": 4, "gold": 6},
+    "bind_dc": 1,
+    "endurance_per": 20,
+    "fumble_submission": 1,
+    "keys": {"chance": 0.1, "levels": [[1, "white"], [6, "blue"], [11, "rune"], [16, "gold"]]},
+    "combat": {"ap": 1, "base": 10, "per_level": 0.5, "hands": 2},
+}
+STATUS_SWAP = {"lp_glue": ("stunned", "glued", 2), "lp_swallow": ("stunned", "swallowed", 2)}
+
+
+def write_s8_6():
+    p = 'data/rules/items.json'
+    t = open(p).read()
+    for it in KEYS:
+        t = drop_lines(t, r'\n    \{"name": ' + re.escape(json.dumps(it['name'], ensure_ascii=False)) + r'.*')
+    t = insert_after(t, r'\n    \{ "name": "黃金鎖".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in KEYS])
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/statuses.json'
+    t = open(p).read()
+    for k in STRUGGLE_STATUSES:
+        t = drop_lines(t, r'\n    "' + k + r'": \{.*')
+    lines = [f'    "{k}": ' + json.dumps(v, ensure_ascii=False).replace('{"', '{ "').replace('}', ' }') for k, v in STRUGGLE_STATUSES.items()]
+    t = insert_after(t, r'\n    "restrained": \{.*', lines)
+    t = re.sub(r'("restrained": \{ "name": "束縛", "kind": "debuff", "disadvantage": \["evade"\], "attacked_advantage": true)( \})', r'\1, "struggle": 0\2', t)
+    t = t.replace('"attacked_advantage": true, "struggle": 0, "struggle": 0', '"attacked_advantage": true, "struggle": 0')
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/abilities.json'
+    t = open(p).read()
+    for aid, (old, new, turns) in STATUS_SWAP.items():
+        m = re.search(r'\n    \{"id": "' + aid + r'".*', t)
+        line = m.group(0)
+        line2 = re.sub(r'"status": "(' + old + '|' + new + r')", "turns": \d+', f'"status": "{new}", "turns": {turns}', line)
+        t = t.replace(line, line2)
+    t = t.replace('失敗被黏住不能行動 1 回合', '失敗被膠膜黏住不能行動 2 回合（隊友可以撕開）')
+    t = t.replace('失敗被困住不能行動 1 回合', '失敗被困在花苞裡不能行動 2 回合、受到的慾望 +25%（隊友可以撕開）')
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/lewd.json'
+    t = open(p).read()
+    t = drop_lines(t, r'\n  "unbind": \{.*')
+    t = t.replace('\n  "park": {', '\n  "unbind": ' + json.dumps(UNBIND_RULES, ensure_ascii=False) + ',\n  "park": {', 1)
+    json.loads(t)
+    open(p, 'w').write(t)
+    print('S8-6 keys', len(KEYS), 'statuses', len(STRUGGLE_STATUSES))
+
+
 if __name__ == '__main__':
     write_s8_3()
     write_s8_4()
+    write_s8_6()

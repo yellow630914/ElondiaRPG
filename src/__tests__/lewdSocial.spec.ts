@@ -32,17 +32,17 @@ describe('誘惑', () => {
     const state = game()
     const prude = someone(state, 0)
     const wanton = someone(state, 80)
-    const dcOf = (id: string) => prepareAction(state, { kind: 'seduce', target: id, text: '' }).base_dc
-    const d1 = dcOf(prude.id)
-    state.pendingAction = undefined
-    const d2 = dcOf(wanton.id)
+    const d1 = prepareAction(state, { kind: 'seduce', target: prude.id, text: '' }).base_dc
+    delete state.pendingAction
+    const p = prepareAction(state, { kind: 'seduce', target: wanton.id, text: '' })
+    const d2 = p.base_dc
     expect(d1 - d2).toBe(seduceDcMod(characterFor(state, prude)) - seduceDcMod(characterFor(state, wanton)))
     const c = characterFor(state, wanton)
     const mod80 = seduceDcMod(c)
     c.lewd = { ...lewdOf(c), lewdness: 0 }
     expect(seduceDcMod(c) - mod80).toBe(8)
-    expect(state.pendingAction?.adultScene?.on).toEqual([])
-    state.pendingAction!.natural = 20
+    expect(p.adultScene?.on).toEqual([])
+    p.natural = 20
     const r = resolveAction(state, null)
     expect(r.check?.degree).toBe('critical')
     expect(state.relationships![wanton.id]!.affinity).toBe(8)

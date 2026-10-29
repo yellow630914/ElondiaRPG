@@ -753,6 +753,8 @@ export interface StatusDef {
   no_climax?: boolean
   /** 淨化（cleanse）拿不掉 */
   no_cleanse?: boolean
+  /** 戰鬥中的拘束：可以掙脫（自己）或撕開（隊友），數字是 DC 的加減（lewd.json 的 unbind.combat） */
+  struggle?: number
   /** 受到的生命傷害有這個比例改成慾望 */
   convert?: number
   /** 被侍奉：下一次受到的攻擊由施加者代為承受，承受的傷害有這個比例改成慾望 */
@@ -1405,7 +1407,7 @@ export function contractDef(id: string): ContractDef {
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'seduce' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
+  | 'master_return' | 'seek_master' | 'unmark' | 'unbind' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore' | 'palace_gate'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear' | 'join' | 'lewd'
@@ -1618,6 +1620,8 @@ export interface ItemDef {
   adult?: boolean
   /** 鎖（lewd.json 的 locks）：可以替身上的拘束具上鎖，雙面效應的戰鬥增益才生效 */
   lock?: LockGrade
+  /** 鑰匙（docs/LEWD_STATS.md 第 16 節）：打開這個等級以下的鎖，用一次就沒了 */
+  key?: LockGrade
   /** 獨特物品可以出現在黑市（每天刷新的珍品，見 docs/ITEMS.md 3.1 節） */
   black_market?: boolean
   /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用底材或類別的圖示 */
@@ -2077,6 +2081,11 @@ export const lewdRules = lewdJson as unknown as {
   park: ParkRules
   /** 慾望勝利的「征服」掉落：打倒的怪物在高潮中屈服時，有 chance 的機率依種類多掉一件 */
   conquest: { chance: number; kinds: Record<string, string> }
+  unbind: {
+    attr: AttrId; base: number; lock_dc: Record<LockGrade, number>; bind_dc: number; endurance_per: number; fumble_submission: number
+    keys: { chance: number; levels: [number, LockGrade][] }
+    combat: { ap: number; base: number; per_level: number; hands: number }
+  }
   charm: {
     names: string[]
     regions: Record<string, number>

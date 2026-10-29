@@ -5,6 +5,7 @@ import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotName, slotsFor } from '@/engine/gear'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
+import { keysFor, stuckRestraint, unbindDc } from '@/engine/restraints'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { characterBody } from '@/engine/look'
@@ -43,6 +44,16 @@ const bindNote = computed(() => {
   if (!schoolsOf(m.value).length) return '還沒修任何慾望流派：只有平常的檢定減值'
   return b.lock ? '戰鬥中的增益生效' : '鎖上之後，戰鬥中才有增益'
 })
+// 別人鎖上的拘束具（主人強制戴上的）：嘗試脫縛或用鑰匙打開（docs/LEWD_STATS.md 第 16 節）
+const stuck = computed(() => stuckRestraint(m.value, selected.value))
+const unbind = computed(() => (stuck.value ? unbindDc(m.value, selected.value) : undefined))
+const keys = computed(() => (stuck.value ? keysFor(s.value, m.value, selected.value) : []))
+const keyPick = ref('')
+function openKey() {
+  if (!keyPick.value) return
+  void game.useKey(m.value.id, selected.value, keyPick.value)
+  keyPick.value = ''
+}
 function lockIt() {
   if (!lockPick.value) return
   void game.lockGear(m.value.id, selected.value, lockPick.value)
@@ -148,6 +159,17 @@ const totals = computed(() => {
           <button class="small" :disabled="inCombat || !lockPick" @click="lockIt">上鎖</button>
         </template>
         <button v-else-if="bind.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
+      </div>
+      <div v-if="stuck && unbind" class="lock-row small">
+        <button class="small" :disabled="inCombat" :title="`靈巧檢定，DC ${unbind.dc}（${unbind.parts.map((p) => `${p.label} ${signed(p.value)}`).join('、')}）；主人在身邊時失敗會被懲罰`" @click="game.tryUnbind(m.id, selected)">嘗試脫縛（DC {{ unbind.dc }}）</button>
+        <template v-if="keys.length">
+          <select v-model="keyPick" :disabled="inCombat">
+            <option value="">選一把鑰匙…</option>
+            <option v-for="k in keys" :key="k" :value="k">{{ k }}</option>
+          </select>
+          <button class="small" :disabled="inCombat || !keyPick" @click="openKey">用鑰匙打開</button>
+        </template>
+        <span v-else class="muted">沒有打得開{{ lockName(stuck.lock) }}的鑰匙</span>
       </div>
 
       <div class="filter">

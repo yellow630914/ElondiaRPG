@@ -494,6 +494,13 @@ function setFuel(v: string) {
           </select>
         </label>
         <Hint text="成人向（docs/LEWD_STATS.md 第 7 節）：可以在裝備欄替身上的拘束具上鎖，雙面效應的戰鬥增益才生效。" />
+        <label>鑰匙
+          <select :value="draft.key ?? ''" :disabled="!!draft.lock" @change="($event.target as HTMLSelectElement).value ? (draft.key = ($event.target as HTMLSelectElement).value as LockGrade) : delete draft.key">
+            <option value="">（不是鑰匙）</option>
+            <option v-for="g in LOCK_GRADES" :key="g" :value="g">打得開{{ lewdRules.locks.grades[g].name }}以下</option>
+          </select>
+        </label>
+        <Hint text="成人向（docs/LEWD_STATS.md 第 16 節）：打開別人鎖在身上的拘束具（主人強制戴上的），用一次就沒了，鎖歸自己。" />
       </div>
       <p class="small muted">行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。</p>
     </fieldset>

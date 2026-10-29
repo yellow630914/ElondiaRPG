@@ -33,6 +33,7 @@ import {
   type MarkChoice,
 } from './slavery'
 import { setupInteraction } from './interactions'
+import { setupUnbind } from './restraints'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, changeMaster, isBound, isEnslaved, isFugitive, joinParty,
   followRoom, leaderOf, partyMax, partyRoom, pcOf, playerEscapes, punish, recapturePlayer, removeCondition, setHp,
@@ -973,6 +974,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupSeekMaster(state, target)
     case 'unmark':
       return setupUnmark(state, target)
+    case 'unbind':
+      return setupUnbind(state, target)
     case 'work':
       return setupWork(state, target)
     case 'train':

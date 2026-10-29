@@ -291,6 +291,10 @@ function remove() {
         <label class="check"><input v-model="draft.climax_guard" type="checkbox" /> 下一次高潮不扣生命（用掉這個狀態）</label>
       </div>
       <div class="row small">
+        <label class="check"><input type="checkbox" :checked="draft.struggle !== undefined" @change="($event.target as HTMLInputElement).checked ? (draft.struggle = 0) : delete draft.struggle" /> 戰鬥中的拘束（可以掙脫、撕開）</label>
+        <template v-if="draft.struggle !== undefined">DC 加減 <input v-model.number="draft.struggle" type="number" min="-5" max="10" class="num" /></template>
+      </div>
+      <div class="row small">
         <label class="check"><input type="checkbox" :checked="!!draft.convert_low" @change="($event.target as HTMLInputElement).checked ? (draft.convert_low = { below: 0.3, ratio: 1 }) : delete draft.convert_low" /> 生命低時傷害轉成慾望</label>
         <template v-if="draft.convert_low">
           生命低於 <input v-model.number="draft.convert_low.below" type="number" min="0.05" max="1" step="0.05" class="num" />，轉換比例 <input v-model.number="draft.convert_low.ratio" type="number" min="0.05" max="1" step="0.05" class="num" />

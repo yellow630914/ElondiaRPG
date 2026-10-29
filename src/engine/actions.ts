@@ -9,6 +9,7 @@
 //    AI 關閉時依規則：預設屬性、參考 DC 與骰值決定成功程度。
 // 說明見 docs/ACTIONS.md。
 
+import { applyUnbind } from './restraints'
 import { applyExplore, withLandmark } from './landmarks'
 import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
@@ -677,6 +678,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'master_return': return applyReturn(state, report, degree)
     case 'seek_master': return applySeekMaster(state, report, p.target!, degree)
     case 'unmark': return applyUnmark(state, report, p.target!, degree)
+    case 'unbind': return applyUnbind(state, report, p.target!, degree)
     case 'work': return applyWork(state, report, p.target!, degree)
     case 'patron': return applyPatron(state, report, p.target, degree)
     case 'craft': return applyCraft(state, report, p.target!, degree, crafted)

@@ -16,8 +16,8 @@ import {
   abilityDef, armorDef, ATTR_IDS, PARK_STAMP_PREFIX, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
   lewdRules, locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
-  type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
-  mulResist,
+  type ItemDef, type LockGrade, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
+  itemRules, mulResist,
 } from './data'
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
@@ -43,7 +43,7 @@ import type {
 import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
 import { addLewd, exposureAt, exposureLevel, growLewd, lewdOf } from './lewd'
-import { lockedBound, lustTotals, twoFaceCombat } from './schools'
+import { bindsOf, lockedBound, lustTotals, twoFaceCombat } from './schools'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
 
 export interface StatusInstance {
@@ -145,12 +145,16 @@ export interface Combatant {
   exposureGain?: number
   /** 高潮了、身上有 on_release 的狀態：等這個動作結束時對敵人放出（獻祭的契紋） */
   releaseQueued?: number
+  /** 身上有「束縛雙手」的拘束具：掙脫戰鬥中的拘束比較難（lewd.json 的 unbind.combat.hands） */
+  handsBound?: boolean
 }
 
 export type CombatAction =
   | { type: 'attack'; target: string }
   | { type: 'ability'; ability: string; target?: string }
   | { type: 'defend' }
+  /** 掙脫（目標是自己）或撕開（目標是隊友）戰鬥中的拘束（狀態有 struggle） */
+  | { type: 'struggle'; target: string }
   | { type: 'flee' }
   | { type: 'end_turn' }
   /** 使用行囊裡的道具（藥劑等），目標是隊友（可以救起倒下的隊友） */
@@ -558,6 +562,7 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
     initiative: roll(rng, '1d20').total + mod(attrOf(c, 'dex')) + checkBonus(c, { context: 'initiative', attr: 'dex' }),
     saveBonus: Object.fromEntries(ATTR_IDS.map((a) => [a, perkModifiers(c, { context: 'save', attr: a }).reduce((s, x) => s + x.value, 0)])) as Partial<Record<AttrId, number>>,
     usedTurn: {}, usedCombat: {}, usedRest: { ...c.usesPerRest },
+    ...(bindsOf(c).some((b) => b.kind === 'hands') ? { handsBound: true } : {}),
   }
 }
 
@@ -740,6 +745,7 @@ export function usableAbilities(combat: CombatState, actorId: string): AbilityDe
 
 function hasAnyAction(combat: CombatState, actor: Combatant): boolean {
   if (actor.ap >= combatRules.action_costs.defend) return true
+  if (actor.ap >= lewdRules.unbind.combat.ap && struggleTargets(combat, actor).length) return true
   return usableAbilities(combat, actor.id).length > 0
 }
 
@@ -937,6 +943,10 @@ function perform(combat: CombatState, actor: Combatant, action: CombatAction, rn
       push(combat, { actor: actor.id, action: '防禦', result: 'none', effects: [{ type: 'status_add', target: actor.id, status: '防禦' }] })
       return
     }
+    case 'struggle': {
+      struggle(combat, rng, actor, action.target)
+      return
+    }
     case 'flee': {
       if (actor.ap < costs.flee) throw new Error('行動點不足')
       actor.ap -= costs.flee
@@ -962,6 +972,54 @@ function perform(combat: CombatState, actor: Combatant, action: CombatAction, rn
       return
     }
   }
+}
+
+// ---- 掙脫與撕開（docs/LEWD_STATS.md 第 16 節） ----
+
+/** 身上第一個可以掙脫的拘束（狀態有 struggle） */
+function restraintOn(c: Combatant): StatusInstance | undefined {
+  return c.statuses.find((s) => statusDef(s.id).struggle !== undefined)
+}
+
+/** 這個人可以掙脫或撕開的對象：自己，或同一邊還站著的隊友（被膠膜黏住、被吞進去的人自己動不了，要靠隊友） */
+export function struggleTargets(combat: CombatState, actor: Combatant): Combatant[] {
+  return combat.combatants.filter((c) => c.side === actor.side && !c.fled && c.hp > 0 && !!restraintOn(c))
+}
+
+/** 掙脫的 DC：base + 施加者等級 × per_level + 狀態的 struggle；自己雙手被綁再加 hands */
+export function struggleDc(combat: CombatState, actor: Combatant, target: Combatant): number {
+  const r = lewdRules.unbind.combat
+  const inst = restraintOn(target)
+  if (!inst) return 0
+  const source = combat.combatants.find((c) => c.id === inst.source)
+  return r.base + Math.floor((source?.level ?? target.level) * r.per_level) + (statusDef(inst.id).struggle ?? 0) + (actor === target && actor.handsBound ? r.hands : 0)
+}
+
+function struggle(combat: CombatState, rng: Rng, actor: Combatant, targetId: string) {
+  const r = lewdRules.unbind.combat
+  if (actor.ap < r.ap) throw new Error('行動點不足')
+  const target = struggleTargets(combat, actor).find((c) => c.id === targetId)
+  const inst = target && restraintOn(target)
+  if (!target || !inst) throw new Error('沒有可以掙脫的拘束')
+  actor.ap -= r.ap
+  const dc = struggleDc(combat, actor, target)
+  const dice = withBonus('1d20', proficiency(actor.level) + Math.max(mod(actor.attrs.str), mod(actor.attrs.dex)))
+  const total = roll(rng, dice).total
+  const ok = total >= dc
+  const name = statusDef(inst.id).name
+  if (ok) target.statuses = target.statuses.filter((s) => s !== inst)
+  push(combat, {
+    actor: actor.id, action: target === actor ? '掙脫' : '撕開', target: target.id, roll: { dice, value: total, dc },
+    result: ok ? 'success' : 'fail',
+    effects: ok ? [{ type: 'status_remove', target: target.id, text: name }] : [{ type: 'note', target: target.id, text: `${name}紋絲不動` }],
+  })
+}
+
+/** 擊敗人形的敵人時搜到的鑰匙：依敵人等級（lewd.json 的 unbind.keys） */
+export function keyForLevel(level: number): string | undefined {
+  let grade: LockGrade | undefined
+  for (const [min, g] of lewdRules.unbind.keys.levels) if (level >= min) grade = g
+  return grade ? itemRules.items.find((i) => i.key === grade)?.name : undefined
 }
 
 // ---- 道具 ----
@@ -2079,6 +2137,8 @@ export function finishCombat(state: GameState): Report {
         // 敵對冒險者：身上的裝備有機會留下來
         const rec = npcRecord(state, f.npcId)
         const worn = rec ? Object.values(characterFor(state, rec).gear ?? {}).filter((g) => !!g) : []
+        const key = rng.chance(lewdRules.unbind.keys.chance) ? keyForLevel(f.level) : undefined
+        if (key) gain(key)
         let n = 0
         while (worn.length && n < drops.adventurer.max) {
           const g = worn.splice(rng.int(0, worn.length - 1), 1)[0]!
@@ -2101,6 +2161,9 @@ export function finishCombat(state: GameState): Report {
       if (def.armed && rng.chance(Math.min(drops.armed.max_chance, drops.armed.chance + drops.armed.per_level * def.level))) {
         gain(registerGear(state, randomGear(rng, def.level)))
       }
+      // 人形的敵人身上可能搜到鑰匙（lewd.json 的 unbind.keys）
+      const key = def.armed && rng.chance(lewdRules.unbind.keys.chance) ? keyForLevel(def.level) : undefined
+      if (key) gain(key)
     }
   })
   // 戰利品的錢照存檔規則的倍率

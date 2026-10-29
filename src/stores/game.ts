@@ -983,6 +983,9 @@ export const useGame = defineStore('game', () => {
     // 拘束具的鎖（雙面效應）
     lockGear: (member: string, slot: GearSlot, lock: string) => run((s) => inventory.lockGear(s, member, slot, lock)),
     unlockGear: (member: string, slot: GearSlot) => run((s) => inventory.unlockGear(s, member, slot)),
+    // 鑰匙與脫縛（別人鎖上的拘束具）
+    useKey: (member: string, slot: GearSlot, key: string) => run((s) => inventory.useKey(s, member, slot, key)),
+    tryUnbind: (member: string, slot: GearSlot) => perform({ kind: 'unbind', target: `${member}:${slot}`, text: '' }),
     // 主人是工具人：親密度夠高時直接解約、換主人
     masterRelease: () => run((s) => masterTool.masterRelease(s)),
     masterTransfer: (npc: string) => run((s) => masterTool.masterTransfer(s, npc)),

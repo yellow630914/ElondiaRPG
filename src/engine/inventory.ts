@@ -17,6 +17,7 @@ import { addHours, commitReport, newReportId, withRng } from './state'
 import { startStory } from './story'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, Report } from './types'
 import { contractOf } from './tattoos'
+import { openWithKey } from './restraints'
 
 function itemReport(state: GameState, hours: number): Report {
   const start = { ...state.time }
@@ -322,6 +323,18 @@ export function lockGear(state: GameState, memberId: string, slot: GearSlot, loc
   const report = itemReport(state, 0.1)
   report.changes.items_lost = [{ name: lockName, qty: 1 }]
   report.outcome.summary = `${m.name}用${lockName}鎖上了${g.name}，鑰匙收在身上。`
+  return commitReport(state, report)
+}
+
+/** 用鑰匙打開別人鎖上的拘束具（docs/LEWD_STATS.md 第 16 節）：鑰匙用掉，鎖歸自己 */
+export function useKey(state: GameState, memberId: string, slot: GearSlot, key: string): Report {
+  take(state, key)
+  const m = member(state, memberId)
+  const { text, lock } = openWithKey(m, slot, key)
+  const report = itemReport(state, 0.1)
+  report.changes.items_lost = [{ name: key, qty: 1 }]
+  if (lock) report.changes.items_gained = [{ name: lock, qty: 1, owner: 'pc' }]
+  report.outcome.summary = text
   return commitReport(state, report)
 }
 

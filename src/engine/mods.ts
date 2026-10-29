@@ -823,6 +823,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (raw.adult) out.adult = true
   // 鎖（雙面效應）：替身上的拘束具上鎖
   if (category === 'gear' && raw.lock && (LOCK_GRADES as string[]).includes(raw.lock)) out.lock = raw.lock
+  // 鑰匙：打開別人鎖上的拘束具（一次性）
+  if (category === 'gear' && !out.lock && raw.key && (LOCK_GRADES as string[]).includes(raw.key)) out.key = raw.key
   // 黑市：只有獨特物品
   if (raw.black_market && gear?.unique) out.black_market = true
   if (category === 'info' && raw.intel) {
@@ -1496,6 +1498,7 @@ export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: bool
   if (raw.convert) out.convert = Math.round(num(raw.convert, 0.05, 1, 0.5) * 100) / 100
   if (raw.guard) out.guard = Math.round(num(raw.guard, 0.05, 1, 0.5) * 100) / 100
   if (raw.lust_tick) out.lust_tick = int(raw.lust_tick, 1, 100, 5)
+  if (typeof raw.struggle === 'number') out.struggle = int(raw.struggle, -5, 10, 0)
   if (raw.lust_max) out.lust_max = Math.round(num(raw.lust_max, -0.9, 3, 0.5) * 100) / 100
   if (raw.lust_scale && typeof raw.lust_scale === 'object' && ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit'].includes(String(raw.lust_scale.stat))) {
     out.lust_scale = { stat: raw.lust_scale.stat, per: int(raw.lust_scale.per, 1, 5, 1), max: int(raw.lust_scale.max, 1, 20, 5) }
