@@ -9,6 +9,7 @@
 | # | 項目 | 現況 | 相關文件 |
 |---|---|---|---|
 | R1（原 D1） | **數值平衡**：生命值、行動點、傷害、經驗值、報酬 | 都是起始值，要實際遊玩後調整（高階委託的問題見 [LOGIC_ISSUES](LOGIC_ISSUES.md) L1） | [GAME_DESIGN](../GAME_DESIGN.md)、[worldgen/balance/](../../worldgen/balance/README.md) |
+| R8（原 I14） | **慾望戰鬥**（成人向）：慾望條與慾望抗性、色情技能與流派、引爆、五項長期指標、服裝的雙面效應、奴隸與娼館的擴充、打工線技能、魅魔的遊樂園；連帶所有技能的攜帶上限 | 規則已定（2026-10-29），還沒開始；分 S0～S8 九個階段 | [LUST_COMBAT_PLAN](LUST_COMBAT_PLAN.md) |
 
 ## 2. 介面
 
