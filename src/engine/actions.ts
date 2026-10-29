@@ -264,6 +264,9 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   // 同一樣物品這次已經給出去、拿到的數量（AI 可能分兩筆寫同一樣東西）
   const given = new Map<string, number>()
   const got = new Map<string, number>()
+  // 這次有付錢（money 為負）：當成買來的東西，同一種可以拿到 item_qty_bought 個（白拿的照 item_qty）
+  const paying = (Array.isArray(r.effects) ? r.effects : []).some((e) => !!e && typeof e === 'object' && (e as Record<string, unknown>).type === 'money' && num((e as Record<string, unknown>).amount) < 0)
+  const itemQty = paying ? Math.max(caps.item_qty, caps.item_qty_bought ?? caps.item_qty) : caps.item_qty
   for (const e of Array.isArray(r.effects) ? r.effects : []) {
     if (!e || typeof e !== 'object') continue
     const x = e as Record<string, unknown>
@@ -336,7 +339,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         }
         let n: number
         if (q > 0) {
-          n = Math.min(q, Math.max(0, caps.item_qty - (got.get(name) ?? 0)))
+          n = Math.min(q, Math.max(0, itemQty - (got.get(name) ?? 0)))
           if (n < q) adjusted.push(`${name}只得到 ${n} 個（提議的 ${q} 個超過上限）`)
         } else {
           const have = (state.inventory.find((i) => i.name === name)?.qty ?? 0) - (given.get(name) ?? 0)

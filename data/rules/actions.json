@@ -15,6 +15,8 @@
     "money_cc_per_level": 30,
     "xp_per_level": 15,
     "item_qty": 1,
+    "item_qty_bought": 5,
+    "$comment_item_qty_bought": "同一次判定有付錢（money 為負）時，獲得的同一種物品最多幾個（買東西）；沒付錢時照 item_qty",
     "items": 2,
     "flags": 3,
     "relationship_text_chars": 120,

@@ -1314,7 +1314,7 @@ export const actionRules = actionsJson as unknown as {
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
   caps: {
     affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
-    item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
+    item_qty: number; item_qty_bought?: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
   }
   kinds: Record<ActionKind, {
     name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[]
