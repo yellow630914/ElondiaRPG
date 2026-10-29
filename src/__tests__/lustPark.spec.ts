@@ -189,3 +189,26 @@ describe('緋夢樂園：魅氣、戰敗、擬態寶箱、集章', () => {
     expect(parkPlaza('park_beast')).toBe(PLAZA)
   })
 })
+
+describe('緋夢樂園：背景圖', () => {
+  it('入口廣場與每個園區的每一層都有自己的背景圖', async () => {
+    const { BACKGROUNDS, backgroundKeys } = await import('@/components/fx/backgrounds')
+    const state = game()
+    enterSpecial(state, PLAZA)
+    expect(backgroundKeys(state)[0]).toBe(`special-${PLAZA}`)
+    expect(BACKGROUNDS[`special-${PLAZA}`]).toBeTruthy()
+    for (const park of PARKS) {
+      const s = game()
+      enterPark(s, park)
+      for (const layer of ['shallow', 'middle', 'deep']) {
+        if (layer !== 'shallow') {
+          // 直接把腳下改成往下的階梯（層主守著的階梯和這裡要測的無關）
+          currentCell(s).kind = 'stairs_down'
+          descend(s)
+        }
+        expect(backgroundKeys(s)[0]).toBe(`${park}-${layer}`)
+        expect(BACKGROUNDS[`${park}-${layer}`], `${park}-${layer}`).toBeTruthy()
+      }
+    }
+  })
+})
