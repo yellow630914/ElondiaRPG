@@ -232,7 +232,7 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     flag: `{"type":"flag","key":"<英數或中文>","value":true}（最多 ${caps.flags} 個，記錄劇情狀態）`,
     reputation: `{"type":"reputation","faction":"<勢力 id>","delta":<±${caps.reputation}>}（勢力 id：${geography.factions.map((f) => `${f.id}＝${f.name}`).join('、')}）`,
     money: `{"type":"money","amount":<整數${CURRENCY.name}，獲得上限 ${caps.money_cc_per_level * pc.level}；負數為花費，不超過持有>}`,
-    item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}；負數為給出持有的物品>}（最多 ${caps.items} 項）${eventItems()}`,
+    item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}${caps.item_qty_bought && caps.item_qty_bought > caps.item_qty ? `（同一次有用 money 負數付錢買的，同一種最多 ${caps.item_qty_bought}）` : ''}；負數為給出持有的物品>}（最多 ${caps.items} 項）${eventItems()}`,
     xp: `{"type":"xp","amount":<每人上限 ${caps.xp_per_level * pc.level}>}`,
     hp: `{"type":"hp","target":"pc 或隊友 id","amount":<整數，受傷為負：最多 -${Math.round(caps.hp_loss_ratio * 100)}% 最大生命值，治療最多 +${Math.round(caps.hp_gain_ratio * 100)}%>}（例如爬牆失足、被打了一拳、喝下熱湯；不會因此倒下）`,
     ability: `{"type":"ability","target":"pc 或隊友 id","ability":"能力名稱"}（技能報酬：只在 degree 為 critical、而且行為合理時，例如向高手請教、從經歷中領悟；最多一項。主角目前可以學的能力：${learnable(pc).slice(0, 15).map((a) => a.name).join('、') || '無'}）`,

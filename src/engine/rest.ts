@@ -158,6 +158,13 @@ export function ambushChance(state: GameState): number {
   return area.kind !== 'settlement' && area.kind !== 'home' && bestTool(state, 'camp') ? base / 2 : base
 }
 
+/** 休息時襲擊的怪：地下城與洞窟類的臨時地圖用那一層的遭遇，其他用這個地區的野外遭遇 */
+function ambushGroup(state: GameState) {
+  const area = currentArea(state)
+  const layer = area.layer !== undefined ? (DUNGEON_LAYERS[area.layer]?.id as DungeonLayerId) : undefined
+  return withRng(state, (rng) => (layer ? encounterFor(state.location, rng, layer) : rng.pick(wildEncounters(locationById(state.location).region))))
+}
+
 /** 自動決定要花幾顆生命骰：還差半顆骰以上的傷就繼續花 */
 export function autoHitDice(c: Character): number {
   const avg = Math.floor(hitDie(c) / 2) + 1 + hitDieBonus(c)
@@ -180,11 +187,7 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
   if (event) throw new Error(event)
   const area = currentArea(state)
   const ambushed = withRng(state, (rng) => rng.chance(ambushChance(state)))
-  if (ambushed) {
-    const layer = area.layer !== undefined ? (DUNGEON_LAYERS[area.layer]?.id as DungeonLayerId) : undefined
-    const group = withRng(state, (rng) => (layer ? encounterFor(state.location, rng, layer) : rng.pick(wildEncounters(locationById(state.location).region))))
-    return startCombat(state, group, { scene: `${area.name}（短休時遭到襲擊）`, intent: '短休時遭到襲擊' })
-  }
+  if (ambushed) return startCombat(state, ambushGroup(state), { scene: `${area.name}（短休時遭到襲擊）`, intent: '短休時遭到襲擊' })
   const report = restReport(state, gameRule(state, 'shortRestHours'), `${area.name}・短休`)
   const lines: string[] = []
   withRng(state, (rng) => {
@@ -224,8 +227,8 @@ export function campRest(state: GameState): Report | CombatState {
   if ((state.inventory.find((i) => i.name === '乾糧')?.qty ?? 0) < need) throw new Error(`需要 ${need} 份乾糧`)
   const area = currentArea(state)
   if (withRng(state, (rng) => rng.chance(ambushChance(state)))) {
-    const group = withRng(state, (rng) => rng.pick(wildEncounters(locationById(state.location).region)))
-    return startCombat(state, group, { scene: `${area.name}（紮營時遭到襲擊）`, intent: '紮營過夜時遭到襲擊' })
+    // 洞窟、遺跡類的臨時地圖：和短休一樣用那張地圖對應的地下城層
+    return startCombat(state, ambushGroup(state), { scene: `${area.name}（紮營時遭到襲擊）`, intent: '紮營過夜時遭到襲擊' })
   }
   return longRest(state, 'camp')
 }

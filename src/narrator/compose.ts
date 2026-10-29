@@ -100,7 +100,7 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
     ...(lore ? { lore } : {}),
     lengthScale: o.config.lengthScale,
-    ...(narrations && o.config.continuity ? { continuity: continuityBefore(state, narrations, state.reports.length, p.time) } : {}),
+    ...(narrations && o.config.continuity ? { continuity: continuityBefore(state, narrations, state.reports.length, p.time, adult) } : {}),
     ...(o.config.variety && !o.splitNarrative ? { variety: varietyHint(p.id) } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), ...(lore ? { lore } : {}) }

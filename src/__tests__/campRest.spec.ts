@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { companionRules, itemRules, perkDef } from '@/engine/data'
-import { enterLocation, goOutskirts } from '@/engine/grid'
+import { companionRules, dungeonEncounters, enemies, itemRules, locationById, perkDef, wildEncounters, type DungeonEncounters } from '@/engine/data'
+import { currentArea, DUNGEON_LAYERS, enterLocation, goOutskirts } from '@/engine/grid'
 import { sanitizePerkMod } from '@/engine/mods'
 import { learnablePerks } from '@/engine/perks'
 import { campRest, canCampHere, longRestBlocked, partyCamps } from '@/engine/rest'
@@ -75,6 +75,25 @@ describe('camping with 星夜露宿', () => {
     expect(state.combat).toBeTruthy()
     expect(rations(state)).toBe(before)
     expect(state.lastLongRest).toBeUndefined()
+  })
+
+  it('is ambushed by the dungeon layer of a cave-like map, like a short rest there', () => {
+    companionRules.rest.ambush.wild = 1
+    const state = outside()
+    // 當成洞窟類的臨時地圖：區域帶著地下城的層
+    const wild = new Set(wildEncounters(locationById(state.location).region).flat().map(([id]) => id))
+    const cave = Object.keys(enemies).find((id) => !wild.has(id))!
+    const table = dungeonEncounters as Record<string, DungeonEncounters>
+    const saved = table[state.location]
+    table[state.location] = { ...saved, deep: [[[cave, 1]]] } as DungeonEncounters
+    try {
+      currentArea(state).layer = DUNGEON_LAYERS.findIndex((l) => l.id === 'deep')
+      campRest(state)
+      expect(state.combat?.combatants.some((c) => c.defId === cave)).toBe(true)
+    } finally {
+      if (saved) table[state.location] = saved
+      else delete table[state.location]
+    }
   })
 
   it('needs enough rations', () => {

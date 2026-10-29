@@ -5,6 +5,7 @@ import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
 import { gameRule } from '@/engine/gameRules'
 import { ambushChance, autoHitDice, canCampHere, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, waitText, type RestPlace } from '@/engine/rest'
+import { bestTool } from '@/engine/tools'
 import { useGame } from '@/stores/game'
 import JudgeToggle from './JudgeToggle.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -16,6 +17,8 @@ const cell = computed(() => game.cell)
 const area = computed(() => game.area)
 const rations = computed(() => s.value.inventory.find((i) => i.name === '乾糧')?.qty ?? 0)
 const ambush = computed(() => ambushChance(game.state!))
+// 行囊裡的露營類工具（帳篷）：紮營時的機率已經減半
+const tent = computed(() => bestTool(s.value, 'camp'))
 const shortHours = computed(() => gameRule(game.state, 'shortRestHours'))
 const longHours = computed(() => gameRule(game.state, 'longRestHours'))
 // 野外與旅途上：隊伍裡有人會紮營（特質【星夜露宿】）時可以紮營長休
@@ -51,7 +54,7 @@ async function doLongRest(where: RestPlace) {
         <template v-if="place === 'inn'">{{ '\n' }}<b>長休</b>（住到隔天早上）：生命值、法術環全滿，回復一半生命骰。</template>
         <template v-else-if="place === 'safe'">{{ '\n' }}<b>長休</b>：安全房可以長休 {{ longHours }} 小時（每人 1 份乾糧，每間一次），短休也不會被襲擊。</template>
         <template v-else-if="place === 'home'">{{ '\n' }}<b>長休</b>：在自己家長休（住到隔天早上，免費），要有床。家具的舒適度夠高時，大家會睡得香甜（下次長休前戰鬥開始時獲得暫時生命、檢定 +1）。</template>
-        <template v-else-if="place === 'camp'">{{ '\n' }}<b>紮營長休</b> {{ longHours }} 小時：隊伍裡有人會在野外紮營（星夜露宿），每人 1 份乾糧；<template v-if="ambush">有 {{ Math.round(ambush * 100) }}% 的機率被襲擊（被襲擊就沒睡成，乾糧不扣），</template>帶帳篷時機率減半。</template>
+        <template v-else-if="place === 'camp'">{{ '\n' }}<b>紮營長休</b> {{ longHours }} 小時：隊伍裡有人會在野外紮營（星夜露宿），每人 1 份乾糧；<template v-if="ambush">有 {{ Math.round(ambush * 100) }}% 的機率被襲擊（被襲擊就沒睡成，乾糧不扣）。</template><template v-if="tent">已經算進行囊裡的{{ tent.name }}（機率減半）。</template><template v-else>帶帳篷時機率減半。</template></template>
         <template v-else>{{ '\n' }}長休要在旅店、地下城的安全房或自己的房子（隊伍裡有人有【星夜露宿】時，也可以在野外紮營）。</template>
         {{ '\n' }}兩次長休至少隔 {{ longRestGapHours() }} 小時。
       </Hint>
@@ -67,7 +70,7 @@ async function doLongRest(where: RestPlace) {
       <button v-if="place === 'inn'" :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')"><GameIcon name="moon" :size="15" />長休 <small>{{ formatMoney(innCost(s)) }}</small></button>
       <button v-else-if="place === 'safe'" :disabled="!!blocked || rations < s.party.length" @click="doLongRest('safe')"><GameIcon name="moon" :size="15" />長休 <small>乾糧 {{ s.party.length }} 份</small></button>
       <button v-else-if="place === 'home'" :disabled="!!blocked" @click="doLongRest('home')"><GameIcon name="moon" :size="15" />在家長休</button>
-      <button v-else-if="place === 'camp'" :disabled="!!blocked || rations < s.party.length" :title="ambush ? `紮營時有 ${Math.round(ambush * 100)}% 的機率被襲擊（被襲擊就沒睡成，乾糧不扣）` : ''" @click="doLongRest('camp')"><GameIcon name="moon" :size="15" />紮營長休 <small>乾糧 {{ s.party.length }} 份</small></button>
+      <button v-else-if="place === 'camp'" :disabled="!!blocked || rations < s.party.length" :title="ambush ? `紮營時有 ${Math.round(ambush * 100)}% 的機率被襲擊（${tent ? `已算進${tent.name}，` : ''}被襲擊就沒睡成，乾糧不扣）` : ''" @click="doLongRest('camp')"><GameIcon name="moon" :size="15" />紮營長休 <small>乾糧 {{ s.party.length }} 份</small></button>
       <button v-else disabled title="長休要在旅店、地下城的安全房或自己的房子"><GameIcon name="moon" :size="15" />長休 <small>不在旅店</small></button>
     </div>
     <p v-if="blocked && place" class="small muted note">{{ blocked }}</p>

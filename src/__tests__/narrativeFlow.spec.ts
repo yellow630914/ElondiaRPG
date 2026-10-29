@@ -6,7 +6,7 @@ import { enterLocation, standOn } from '@/engine/grid'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
 import { composeJudge, composeNarration, type ComposeOptions } from '@/narrator/compose'
-import { continuityForReport, tailOf } from '@/narrator/continuity'
+import { ADULT_PLACEHOLDER, continuityForReport, tailOf } from '@/narrator/continuity'
 import { loreItems, type Worldbook } from '@/narrator/lore'
 import { defaultPromptConfig, normalizeConfig } from '@/narrator/promptConfig'
 import { varietyHint } from '@/narrator/prompt'
@@ -81,6 +81,20 @@ describe('everyday actions (difficulty)', () => {
   })
 })
 
+describe('buying several of one thing', () => {
+  it('lets a paid purchase bring up to item_qty_bought of the same item, free items stay at item_qty', () => {
+    const state = game()
+    const p = prepareAction(state, { kind: 'free', text: '在市集比價後買 3 份乾糧' })
+    const bought = sanitizeJudgment(state, p, { degree: 'success', difficulty: 'trivial', effects: [{ type: 'money', amount: -12 }, { type: 'item', name: '乾糧', qty: 3 }] })
+    expect(bought.effects).toContainEqual({ type: 'item', name: '乾糧', qty: 3 })
+    expect(bought.adjusted ?? []).toHaveLength(0)
+    const many = sanitizeJudgment(state, p, { degree: 'success', effects: [{ type: 'money', amount: -40 }, { type: 'item', name: '乾糧', qty: 9 }] })
+    expect(many.effects).toContainEqual({ type: 'item', name: '乾糧', qty: actionRules.caps.item_qty_bought })
+    const gift = sanitizeJudgment(state, p, { degree: 'success', effects: [{ type: 'item', name: '乾糧', qty: 3 }] })
+    expect(gift.effects).toContainEqual({ type: 'item', name: '乾糧', qty: actionRules.caps.item_qty })
+  })
+})
+
 describe('narration length', () => {
   it('writes free actions at medium length and follows the length setting', () => {
     const state = game()
@@ -129,6 +143,38 @@ describe('continuity between narrations', () => {
     const off = composeNarration(state, r, options({ continuity: false }), narrations).prompt.user
     expect(off).not.toContain('<previous>')
     expect(off).not.toContain('<interlude>')
+  })
+
+  it('does not send adult scenes to the general narration or the judge', () => {
+    const state = game()
+    const scene = act(state, '和她回房間')
+    scene.narration!.adult_scene = '娼館的親密場景'
+    scene.outcome.summary = '和薇拉在房裡共度了一晚（成人摘要）'
+    const narrations: Record<string, { text: string; status: string }> = { [scene.report_id]: { text: '她的手指滑過你的肩……（露骨描寫）', status: 'done' } }
+    // 上一段正文是成人場景：一般日誌與一般判定只帶中性的一句
+    const next = act(state, '下樓吃早餐')
+    const plain = composeNarration(state, next, options(), narrations).prompt.user
+    expect(plain).toContain(ADULT_PLACEHOLDER)
+    expect(plain).not.toContain('露骨描寫')
+    const p = prepareAction(state, { kind: 'free', text: '問老闆今天的天氣' })
+    const judge = composeJudge(state, p, options(), narrations).prompt.user
+    expect(judge).toContain(ADULT_PLACEHOLDER)
+    expect(judge).not.toContain('露骨描寫')
+    resolveAction(state, null)
+    // 沒有寫成正文的成人日誌：幕間只寫中性的一句
+    const later = act(state, '再和她回房間')
+    later.narration!.adult_scene = '娼館的親密場景'
+    later.outcome.summary = '又和薇拉共度了一晚（成人摘要）'
+    const after = act(state, '出門買東西')
+    const c = continuityForReport(state, narrations, after)
+    expect(c.interlude.join('\n')).not.toContain('成人摘要')
+    expect(c.interlude.join('\n')).toContain(ADULT_PLACEHOLDER)
+    // 成人場景自己的請求照常帶原文
+    const adultNext = act(state, '晚上再去找她')
+    adultNext.narration!.adult_scene = '娼館的親密場景'
+    const own = continuityForReport(state, narrations, adultNext)
+    expect(own.interlude.join('\n')).toContain('成人摘要')
+    expect(own.previous).toContain('露骨描寫')
   })
 
   it('skips placeholders, unfinished narrations and reports already narrated', () => {
