@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { startArena } from '@/engine/arena'
 import { leavePark } from '@/engine/park'
 import { charmGatePass } from '@/engine/charm'
 import { DIFFICULTY_DEFS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
@@ -1012,6 +1013,7 @@ export const useGame = defineStore('game', () => {
     leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s), { onMap: true }),
     leavePark: () => run((s) => leavePark(s), { onMap: true }),
     charmGatePass: () => run((s) => charmGatePass(s)),
+    startArena: (ring: string, opts: { restraint?: string; wager?: boolean }) => run((s) => startArena(s, ring, opts)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */

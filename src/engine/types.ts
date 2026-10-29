@@ -820,6 +820,8 @@ export interface GameState {
   options?: GameOptions
   /** 慾望指標的曝露名聲：角色 id → 地區 → 0～100（只有主角與夥伴） */
   exposure?: Record<string, Record<string, number>>
+  /** 淫鬥場的連勝：城（地點 id）→ 擂臺 → 目前的連勝與最好的紀錄（docs/LEWD_STATS.md 第 21 節） */
+  arena?: Record<string, Record<string, { streak: number; best: number }>>
   /** 頭牌等級的累積：角色 id → 城（地點 id）→ 次數（docs/LEWD_STATS.md 第 10 節） */
   brothelRank?: Record<string, Record<string, number>>
   /** 自由的夥伴答應去娼館接客的那一天：角色 id → 第幾天 */

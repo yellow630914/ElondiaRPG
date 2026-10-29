@@ -8,6 +8,7 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { settleArena } from './arena'
 import { checkBonus, perkModifiers } from './perks'
 import {
   apMaxFor, apRegenFor, attrOf, attrsOf, carriedAbilities, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
@@ -38,7 +39,7 @@ import { applyEffects } from './effects'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
-  ActorState, Character, Difficulty, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
+  ActorState, Character, Difficulty, Effect, GameState, GameTime, GearSlot, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
 } from './types'
 import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
@@ -165,6 +166,10 @@ export type CombatAction =
 export interface CombatState {
   /** 存檔規則：慾望戰鬥的倍率（開戰時記下；沒有或 0 表示關閉） */
   lustMult?: number
+  /** 淫鬥場的比賽（arena.ts）：輸了不損失錢、沒有戰敗事件；戰後發獎金、拿掉上場前戴的拘束具 */
+  arena?: ArenaMatch
+  /** 性戰場：生命傷害關閉，非魅惑的傷害改成慾望；雙方都用我方的「三次」規則 */
+  lustOnly?: boolean
   /** 存檔規則：隊伍撤退的 DC 加減（開戰時記下） */
   fleeDcMod?: number
   /** 存檔規則：難度（開戰時記下；普通難度不記，舊存檔沒有也算普通） */
@@ -199,6 +204,16 @@ export interface CombatState {
   unseen?: boolean
 }
 
+/** 淫鬥場的一場比賽 */
+export interface ArenaMatch {
+  ring: string
+  tier: number
+  fee: number
+  wager?: boolean
+  /** 拘束戰鬥場：上場前戴上的拘束具與欄位 */
+  restraint?: { name: string; slot: GearSlot }
+}
+
 export interface CombatOptions {
   intent?: string
   questId?: string
@@ -217,6 +232,10 @@ export interface CombatOptions {
   aggressor?: 'party' | 'npc'
   /** 主角偷襲時沒有人看到 */
   unseen?: boolean
+  /** 淫鬥場的比賽（arena.ts） */
+  arena?: ArenaMatch
+  /** 性戰場：只算慾望 */
+  lustOnly?: boolean
 }
 
 const COMBAT_MINUTES_PER_ROUND = 1
@@ -254,7 +273,8 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       for (let i = 0; i < n; i++) {
         seen[defId] = (seen[defId] ?? 0) + 1
         const suffix = counts[defId]! > 1 ? ` ${String.fromCharCode(64 + seen[defId]!)}` : ''
-        const f = fromEnemy(`e${idx++}`, defId, suffix, rng, bonus, diff, charmRutMult(state.location))
+        // 淫鬥場的對手不會是年幼的
+        const f = fromEnemy(`e${idx++}`, defId, suffix, rng, bonus, diff, charmRutMult(state.location), opts.arena ? ['young'] : [])
         if (g === 0 && defId === headliner) f.headliner = true
         fighters.push(f)
       }
@@ -300,6 +320,8 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       ...(opts.dark ? { dark: true } : {}),
       ...(opts.aggressor ? { aggressor: opts.aggressor } : {}),
       ...(opts.unseen ? { unseen: true } : {}),
+      ...(opts.arena ? { arena: opts.arena } : {}),
+      ...(opts.lustOnly ? { lustOnly: true } : {}),
     }
     state.combat = combat
     if (!beginTurn(combat, rng)) nextTurn(combat, rng)
@@ -477,7 +499,7 @@ function fireReleases(combat: CombatState, rng: Rng) {
 function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
   const r = lustRules()
   target.lust = 0
-  if (target.side === 'enemy') {
+  if (target.side === 'enemy' && !combat.lustOnly) {
     const dmg = Math.max(1, Math.round(target.maxHp * r.enemy_climax_hp))
     const loss = Math.min(target.hp, dmg)
     target.hp -= loss
@@ -489,6 +511,7 @@ function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
     }
     return
   }
+  // 性戰場：敵人也用我方的規則（高潮不扣生命，第三次倒下算慾望勝利）
   target.climaxes = (target.climaxes ?? 0) + 1
   effects.push({ type: 'status_add', target: target.id, status: statusDef('climax').name })
   // 獻祭的契紋：高潮時對敵人放出（等這個動作結束時，fireReleases）
@@ -498,7 +521,8 @@ function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
     target.hp = 0
     effects.push({ type: 'status_add', target: target.id, status: '倒下', text: `第 ${target.climaxes} 次高潮，無法再戰鬥` })
     dropConcentration(combat, target, effects)
-    noteAffinity(combat, target.id, -1, '在戰鬥中倒下')
+    if (target.side === 'enemy') target.lustDefeated = true
+    else noteAffinity(combat, target.id, -1, '在戰鬥中倒下')
     return
   }
   // 精力藥：這一次高潮不扣生命（用掉）
@@ -507,7 +531,7 @@ function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
     target.statuses = target.statuses.filter((x) => x !== guard)
     effects.push({ type: 'status_remove', target: target.id, status: statusDef(guard.id).name, text: '高潮沒有扣生命' })
   }
-  const loss = guard ? 0 : Math.max(0, Math.min(Math.round(target.maxHp * r.party_climax_hp), target.hp - 1))
+  const loss = guard || combat.lustOnly ? 0 : Math.max(0, Math.min(Math.round(target.maxHp * r.party_climax_hp), target.hp - 1))
   if (loss > 0) {
     target.hp -= loss
     effects.push({ type: 'damage', target: target.id, amount: loss, text: '高潮' })
@@ -573,7 +597,7 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
  * 一隻怪物上場。難度係數（diff）乘在最大生命與造成的傷害上（普通難度是 1，和沒有這個規則時一樣；頭目與各區域的小怪各有一組，見 difficultyFor）；
  * 生命先乘難度再套特徵，兩邊的倍率因此是相乘的。敵對的 NPC（冒險者）不受難度影響——他們的生命是自己的角色資料。
  */
-function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 0, diff: DifficultyDef = DIFFICULTY_DEFS.normal, rutMult = 1): Combatant {
+function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 0, diff: DifficultyDef = DIFFICULTY_DEFS.normal, rutMult = 1, exclude: string[] = []): Combatant {
   const def = enemies[defId]
   if (!def) throw new Error(`unknown enemy: ${defId}`)
   const coef = difficultyFor(diff, defId)
@@ -594,7 +618,7 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 
     ...(isLayerBoss(defId) ? { boss: true } : {}),
     ...(coef.damage !== 1 ? { dmgMult: coef.damage } : {}),
   }
-  applyTraits(c, rollTraits(rng, def, bonus, rutMult))
+  applyTraits(c, rollTraits(rng, def, bonus, rutMult, exclude))
   return c
 }
 
@@ -622,13 +646,13 @@ function traitBonus(state: GameState, opts: CombatOptions): number {
  * 擲出怪物的特徵：資料上固定的特徵，加上 0～max 個隨機特徵（互斥的不會同時出現；發情要怪物有 rut 旗標）。
  * rutMult：「發情」的權重倍率（魅氣濃度，charm.ts）
  */
-export function rollTraits(rng: Rng, def: Pick<EnemyDef, 'traits' | 'rut'>, bonus = 0, rutMult = 1): string[] {
+export function rollTraits(rng: Rng, def: Pick<EnemyDef, 'traits' | 'rut'>, bonus = 0, rutMult = 1, exclude: string[] = []): string[] {
   const r = monsterTraits.roll
   const out = [...(def.traits ?? [])]
   for (let i = 0; i < r.max; i++) {
     if (!rng.chance(r.chance + bonus)) break
     const pool = Object.entries(monsterTraits.traits).filter(([id, t]) =>
-      !out.includes(id)
+      !out.includes(id) && !exclude.includes(id)
       && !(t.excludes ?? []).some((x) => out.includes(x))
       && !out.some((o) => monsterTraits.traits[o]?.excludes?.includes(id))
       && (!t.requires || !!def[t.requires]))
@@ -1300,6 +1324,8 @@ function dealDamage(
       target = guardian
     }
   }
+  // 性戰場：非魅惑的傷害改成一部分慾望（生命傷害關閉）
+  if (combat.lustOnly) rolls = rolls.map((r) => (r.type === 'lust' ? r : { ...r, type: 'lust', amount: Math.floor(r.amount * lewdRules.arena.lust_convert) }))
   let physical = 0
   let other = 0
   let lust = 0
@@ -2187,7 +2213,7 @@ export function finishCombat(state: GameState): Report {
   money = rewardMoney(state, money)
   // 戰敗：損失一成的錢；有人搬來救兵時不損失。在地下城裡：這趟撿到的東西依存檔規則失去
   let lost: { items: ItemDelta[]; money: number } = { items: [], money: 0 }
-  if (combat.status === 'defeat' && !rescued) {
+  if (combat.status === 'defeat' && !rescued && !combat.arena) {
     money = -Math.floor(state.money_cc * 0.1)
     lost = withRng(state, (rng) => defeatLoss(state, rng, combat.location))
     money += Math.max(lost.money, -(state.money_cc + money))
@@ -2272,7 +2298,8 @@ export function finishCombat(state: GameState): Report {
   // 慾望戰鬥：戰後留下的狀態、慾望勝利與高潮寫進戰報（交給成人場景的寫手）
   settleLust(state, combat, report)
   // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）；園區改成那個園區的專屬戰敗
-  if (combat.status === 'defeat' && !rescued && !parkDefeat(state, report)) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes, combat.combatants.reduce((n, c) => n + (c.side === 'party' ? c.climaxes ?? 0 : 0), 0)))
+  if (combat.arena) settleArena(state, combat, report)
+  else if (combat.status === 'defeat' && !rescued && !parkDefeat(state, report)) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes, combat.combatants.reduce((n, c) => n + (c.side === 'party' ? c.climaxes ?? 0 : 0), 0)))
   // 園區：打倒最終層主蓋一個章
   if (victory && cellHere?.kind === 'boss' && !cellHere.then && inPark(state)) {
     const stamp = `${PARK_STAMP_PREFIX}${combat.location}`

@@ -532,6 +532,45 @@ def write_s8_10():
     print('S8-10 goods', len(CHARM_GOODS), 'events', len(EXPOSURE_EVENTS), 'quests', len(ADULT_QUESTS))
 
 
+# ---------------- S8-11 淫鬥場 ----------------
+ARENA = {
+    "$comment": "淫鬥場（docs/LEWD_STATS.md 第 21 節）：魅氣濃度 charm_min 以上的聚落，站在 cells 的設施（娼館、酒館）可以報名；慾望戰鬥關閉時沒有。報名費 fee；三種擂臺（rings），每贏 streak_per_tier 場往上一級對手（tiers 是各級的對手組合），輸了連勝歸零。獎金 = prize.base + prize.per_tier × 對手等級（0 起算）；勝場另外有 item_chance 拿到 items 裡的一樣，對手等級 book_tier 以上有 book_chance 拿到 books 裡的一本。賭注賽（wager）：報名費與獎金 × wager.mult，輸了曝露名聲、順從另外上升（wager.loss）。restraint：上場前選一件行囊裡的拘束具戴上、用白鐵鎖鎖上，打完拿掉。lust_only：性戰場——生命傷害關閉，非魅惑的傷害改成 lust_convert 比例的慾望；雙方都用我方的「三次」規則（高潮不扣生命，第三次倒下）。輸了不會損失錢、不會有戰敗事件。",
+    "charm_min": 3, "cells": ["brothel", "tavern"], "fee": 30, "streak_per_tier": 2,
+    "prize": {"base": 60, "per_tier": 50},
+    "item_chance": 0.3, "items": ["媚藥瓶", "清心茶", "媚香精油"],
+    "book_tier": 3, "book_chance": 0.1,
+    "books": ["《斟酒的媚態》", "《魔導刺激》", "《莊家的賭局》", "《萬眾矚目》", "《搓背的手藝》", "《熱泉的耐性》", "《十指的特別服務》", "《定格的姿態》", "《戰利品的覺悟》", "《獻祭的契紋》", "《求偶紋》", "《潮之新娘》"],
+    "wager": {"mult": 3, "loss": {"exposure": 3, "submission": 1}},
+    "lust_convert": 0.5,
+    "rings": {
+        "beast": {"name": "淫物場", "desc": "和園區運來的淫獸、淫蟲打：考的是慾望攻擊與慾望勝利。",
+                  "tiers": [[["lp_lewd_cat", 1]], [["lp_lewd_cat", 2]], [["lp_lewd_monkey", 1]], [["lp_lewd_hound", 1]], [["lp_lewd_fox", 1]], [["lp_rut_boar", 1]], [["lp_nine_tail", 1]]]},
+        "bound": {"name": "拘束戰鬥場", "desc": "上場前選一件拘束具戴上、鎖好，打完拿掉：考的是雙面效應。", "restraint": True,
+                  "tiers": [[["bandit", 2]], [["highway_robber", 1]], [["tea_road_bandit", 2]], [["slaver_thug", 1]], [["brand_raider", 2]], [["slaver_captain", 1]]]},
+        "lust": {"name": "性戰場", "desc": "生命傷害關閉，只算慾望；先讓對方高潮三次的贏。", "lust_only": True,
+                 "tiers": [[["lp_succ_dancer", 1]], [["lp_incubus", 1]], [["lp_succ_diva", 1]], [["honor_succubus", 1]], [["lp_succ_lead", 1]], [["incubus_enforcer", 1]]]},
+    },
+}
+
+
+def write_s8_11():
+    p = 'data/rules/lewd.json'
+    t = open(p).read()
+    t = drop_lines(t, r'\n  "arena": \{.*')
+    t = t.replace('\n  "park": {', '\n  "arena": ' + json.dumps(ARENA, ensure_ascii=False) + ',\n  "park": {', 1)
+    d = json.loads(t)
+    enemies = {e['id'] for e in json.load(open('data/rules/enemies.json'))['enemies']}
+    items = {i['name'] for i in json.load(open('data/rules/items.json'))['items']}
+    for ring in d['arena']['rings'].values():
+        for tier in ring['tiers']:
+            for mid, _ in tier:
+                assert mid in enemies, mid
+    for n in d['arena']['books'] + d['arena']['items']:
+        assert n in items, n
+    open(p, 'w').write(t)
+    print('S8-11 arena rings', len(ARENA['rings']))
+
+
 if __name__ == '__main__':
     write_s8_3()
     write_s8_4()
@@ -539,3 +578,4 @@ if __name__ == '__main__':
     write_s8_7()
     write_s8_9()
     write_s8_10()
+    write_s8_11()

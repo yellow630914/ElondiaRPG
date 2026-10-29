@@ -19,6 +19,7 @@ import { useGame } from '@/stores/game'
 import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
+import ArenaPanel from './ArenaPanel.vue'
 import GuardStatus from './GuardStatus.vue'
 import { isWanted, palacePersuadeDc } from '@/engine/security'
 import MarketPanel from './MarketPanel.vue'
@@ -264,6 +265,7 @@ const shopDesc = computed(() => {
 
         <template v-else-if="cell.kind === 'tavern'">
           <TavernPanel :key="`${s.location}-${s.time.day}`" />
+          <ArenaPanel />
         </template>
 
         <template v-else-if="cell.kind === 'guild'">
@@ -371,6 +373,7 @@ const shopDesc = computed(() => {
 
         <template v-else-if="cell.kind === 'brothel'">
           <BrothelPanel />
+          <ArenaPanel />
         </template>
 
         <template v-else-if="cell.kind === 'safe'">
