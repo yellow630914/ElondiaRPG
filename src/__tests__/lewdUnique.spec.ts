@@ -99,4 +99,14 @@ describe('獨特技能的戰鬥效果', () => {
     expect(defenseMult({ ...me, statuses: [{ id: 'frozen_pose', turns: 1 }] } as typeof me, 'lust')).toBeGreaterThan(0)
     void combat
   })
+
+  it('獻祭的契紋：引爆時傷害所有敵人', () => {
+    const { state, combat, me } = fight(['lust_sacrifice_sigil', 'burst_release'])
+    act(state, { type: 'ability', ability: 'lust_sacrifice_sigil' })
+    me.lust = Math.round(me.lustMax! * 0.8)
+    const foe = combat.combatants.find((c) => c.side === 'enemy')!
+    const hp = foe.hp
+    act(state, { type: 'ability', ability: 'burst_release' })
+    expect(foe.hp).toBeLessThan(hp)
+  })
 })

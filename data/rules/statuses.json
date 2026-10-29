@@ -106,7 +106,7 @@
     "hot_spring": { "name": "熱泉的耐性", "kind": "buff", "lust_hold": true, "lust_max": 0.3, "no_cleanse": true },
     "frozen_pose": { "name": "定格", "kind": "buff", "control": "stun", "resist": { "all": -1 }, "no_cleanse": true },
     "spoils_resolve": { "name": "戰利品的覺悟", "kind": "buff", "convert_low": { "below": 0.3, "ratio": 1 } },
-    "sacrifice_sigil": { "name": "獻祭的契紋", "kind": "buff", "on_release": { "amount": 6, "level": true, "type": "shadow" }, "no_cleanse": true },
+    "sacrifice_sigil": { "name": "獻祭的契紋", "kind": "buff", "on_release": { "amount": 6, "level": true, "type": "necrotic" }, "no_cleanse": true },
     "courtship_mark": { "name": "求偶紋", "kind": "debuff", "resist": { "lust": 0.5 } },
     "tide_bride": { "name": "潮之新娘", "kind": "buff", "no_climax": true, "lust_dump": true, "no_cleanse": true }
   }

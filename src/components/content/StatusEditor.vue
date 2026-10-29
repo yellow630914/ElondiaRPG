@@ -296,7 +296,7 @@ function remove() {
         </template>
       </div>
       <div class="row small">
-        <label class="check"><input type="checkbox" :checked="!!draft.on_release" @change="($event.target as HTMLInputElement).checked ? (draft.on_release = { amount: 6, level: true, type: 'shadow' }) : delete draft.on_release" /> 高潮或引爆時對所有敵人造成傷害</label>
+        <label class="check"><input type="checkbox" :checked="!!draft.on_release" @change="($event.target as HTMLInputElement).checked ? (draft.on_release = { amount: 6, level: true, type: 'necrotic' }) : delete draft.on_release" /> 高潮或引爆時對所有敵人造成傷害</label>
         <template v-if="draft.on_release">
           <input v-model.number="draft.on_release.amount" type="number" min="0" max="200" class="num" />
           <label class="check"><input v-model="draft.on_release.level" type="checkbox" /> + 等級</label>
