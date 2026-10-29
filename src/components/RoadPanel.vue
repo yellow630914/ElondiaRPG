@@ -8,6 +8,7 @@ import { useGame } from '@/stores/game'
 import { eventDialogOpen } from './events/eventQueue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import { isMobile } from './mobile/mobile'
 
 // 旅途：單行道一格一天往前走；事件出發時就擲好放在格子上（事件、戰鬥）
 const game = useGame()
@@ -45,7 +46,8 @@ const legs = computed(() => [...new Set((s.value.road?.modes ?? []).map((m) => M
     </div>
 
     <p v-else-if="area.kind !== 'road'" class="small">目前在{{ area.name }}：從出口離開就回到旅途。</p>
-    <div v-else class="row">
+    <!-- 手機版：往前走的按鈕在畫面下方的情境按鈕（MobileGame） -->
+    <div v-else-if="!isMobile" class="row">
       <button class="primary" :disabled="busy || atEnd" @click="game.move(1, 0)">往前走一天 <GameIcon name="arrowRight" :size="14" /></button>
       <button :disabled="busy || atEnd" title="遇到事件、戰鬥或抵達時停下" @click="game.walkRoad()">一路走下去 <GameIcon name="play" :size="14" /></button>
     </div>

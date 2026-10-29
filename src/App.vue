@@ -36,6 +36,8 @@ import SaveDialog from '@/components/SaveDialog.vue'
 import SettingsView from '@/components/SettingsView.vue'
 import EventCenter from '@/components/events/EventCenter.vue'
 import PartyStrip from '@/components/PartyStrip.vue'
+import MobileGame, { type MobileOpen } from '@/components/mobile/MobileGame.vue'
+import { isMobile } from '@/components/mobile/mobile'
 import GameIcon from '@/components/ui/GameIcon.vue'
 import AmbientLayer from '@/components/fx/AmbientLayer.vue'
 import BackgroundLayer from '@/components/fx/BackgroundLayer.vue'
@@ -188,6 +190,32 @@ const showLeft = computed(() => !narrow.value || inCombat.value || sideTab.value
 const showRight = computed(() => !inCombat.value && (!narrow.value || sideTab.value === 'here'))
 const onNarrow = (e: MediaQueryListEvent) => { narrow.value = e.matches }
 
+// ── 手機版（720px 以下）：冒險頁換成 MobileGame，對話框變成全螢幕頁面（AppDialog）
+const mobileGame = computed(() => isMobile.value && !!game.state && tab.value === 'adventure')
+const mobileHud = computed(() => {
+  const st = game.state!
+  return { day: st.time.day, clock: clock.value ?? '', daytime: daytime.value, place: locationById(st.location).name, money: formatMoney(moneyShown.value), crime: crime.value }
+})
+const mobileBadges = computed(() => ({ party: pendingSkills.value, relations: suggestionCount.value, notebook: readyQuests.value, contract: canAskMaster.value }))
+// 隊伍頁：手機上隊伍與行囊是同一頁的兩個分頁
+const partyPage = ref<'party' | 'bag'>('party')
+function onMobileOpen(what: MobileOpen) {
+  switch (what) {
+    case 'party': partyPage.value = 'party'; showParty.value = true; break
+    case 'relations': showRelations.value = true; break
+    case 'notebook': showNotebook.value = true; break
+    case 'craft': showCraft.value = true; break
+    case 'contract': showContract.value = true; break
+    case 'saves': showSaves.value = true; break
+    case 'settings': showSettings.value = true; break
+    case 'logsettings': openSettings('models'); break
+    case 'prompts': tab.value = 'prompts'; break
+    case 'content': tab.value = 'content'; break
+    case 'home': void goHome(); break
+    case 'quickload': askQuickLoad(); break
+  }
+}
+
 function askQuickLoad() {
   if (!game.state || confirm('讀取快速存檔？目前的進度會先自動存一份。')) void game.quickLoad()
 }
@@ -222,7 +250,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header class="top">
+  <header v-if="!(isMobile && game.state)" class="top">
     <div class="logo"><GameIcon name="sword" :size="24" /><h1>埃隆迪亞大陸</h1></div>
     <nav v-if="game.state" class="tabs">
       <button v-for="t in TABS" :key="t.id" :class="{ active: tab === t.id }" @click="tab = t.id"><GameIcon :name="t.icon" :size="15" />{{ t.label }}</button>
@@ -280,10 +308,19 @@ onBeforeUnmount(() => {
     <PromptsView v-else-if="screen === 'prompts'" />
   </template>
 
+  <!-- 手機版：提示詞、世界頁的上方只有一條「回到冒險」 -->
+  <nav v-if="isMobile && game.state && tab !== 'adventure'" class="m-back">
+    <button class="ghost" @click="tab = 'adventure'"><GameIcon name="right" :size="16" class="flip" />回到冒險</button>
+  </nav>
+  <MobileGame
+    v-if="mobileGame"
+    :hud="mobileHud" :events="eventCount" :blocking-event="blockingEvent" :badges="mobileBadges" :enslaved="enslaved"
+    @open="onMobileOpen"
+  />
   <PromptsView v-if="game.state && tab === 'prompts'" />
   <ContentView v-if="game.state && tab === 'content'" />
 
-  <main v-if="game.state" v-show="tab === 'adventure'" class="game" :class="{ combat: inCombat }">
+  <main v-if="game.state && !isMobile" v-show="tab === 'adventure'" class="game" :class="{ combat: inCombat }">
     <nav v-if="narrow && !inCombat" class="panel side-tabs">
       <button :class="{ active: sideTab === 'map' }" @click="sideTab = 'map'"><GameIcon name="map" :size="15" />地圖／隊伍</button>
       <button :class="{ active: sideTab === 'here' }" @click="sideTab = 'here'"><GameIcon name="users" :size="15" />這裡／地點</button>
@@ -318,7 +355,12 @@ onBeforeUnmount(() => {
   </main>
 
   <AppDialog :open="showParty" title="隊伍" icon="users" width="1200px" @close="showParty = false">
-    <PartyCards @detail="openCharacter" />
+    <nav v-if="isMobile" class="m-seg">
+      <button :class="{ on: partyPage === 'party' }" @click="partyPage = 'party'">隊伍</button>
+      <button :class="{ on: partyPage === 'bag' }" @click="partyPage = 'bag'">行囊</button>
+    </nav>
+    <InventoryView v-if="isMobile && partyPage === 'bag'" />
+    <PartyCards v-else @detail="openCharacter" />
   </AppDialog>
   <CharacterDialog v-if="game.state" v-model:member="charMember" v-model:tab="charTab" :open="charOpen" @close="charOpen = false" />
   <AppDialog :open="showInventory" title="行囊" icon="backpack" width="1000px" @close="showInventory = false">
@@ -435,6 +477,14 @@ onBeforeUnmount(() => {
 .toolbar button :deep(.game-icon) { color: var(--accent); }
 .toolbar button:hover:not(:disabled) { background: #c99a4512; color: var(--gold-hi); }
 .toolbar .note { font-size: var(--fs-xs); line-height: 16px; padding: 0 4px; border-radius: 2px; background: var(--accent); color: #1a1008; font-weight: 700; }
+
+/* 手機版 */
+.m-back { display: flex; margin: -6px -10px 8px; }
+.m-back button { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
+.m-back .flip, .m-back :deep(.flip) { transform: scaleX(-1); }
+.m-seg { display: flex; margin: -4px 0 12px; border-bottom: 1px solid var(--border); }
+.m-seg button { flex: 1; padding: 8px; background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; box-shadow: none; color: var(--muted); }
+.m-seg button.on { color: var(--title); border-bottom-color: var(--accent); }
 
 @media (max-width: 1380px) {
   .game { grid-template-columns: 320px minmax(0, 1fr) 320px; }

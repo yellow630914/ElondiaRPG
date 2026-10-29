@@ -21,6 +21,7 @@ import FoldMenu from './ui/FoldMenu.vue'
 import NameTag from './NameTag.vue'
 import Avatar from './ui/Avatar.vue'
 import GameIcon from './ui/GameIcon.vue'
+import { isMobile, OPEN_ACTION_EVENT } from './mobile/mobile'
 
 // 這裡的人：和主角同一個地點、同一個地區的 NPC（見 docs/NPC_SYSTEM.md 第 7 節）
 const game = useGame()
@@ -102,6 +103,8 @@ function toAction(p: PresentNpc) {
     if (game.actionTargets.length >= max) game.flash(`主動行動最多 ${max} 個對象，先移掉一位`)
     else game.actionTargets = [...game.actionTargets, p.rec.id]
   }
+  // 手機版：關掉「這裡」面板、展開日誌底部的主動行動列（MobileGame、ActionPanel 都聽這個事件）
+  if (isMobile.value) return void window.dispatchEvent(new Event(OPEN_ACTION_EVENT))
   document.querySelector('.action-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   document.querySelector<HTMLTextAreaElement>('.action-bar textarea.free')?.focus({ preventScroll: true })
 }

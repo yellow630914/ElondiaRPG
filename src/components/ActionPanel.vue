@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { actionRules, attrName, classEmoji, raceEmoji } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
@@ -11,9 +11,11 @@ import { useSettings } from '@/stores/settings'
 import JudgeToggle from './JudgeToggle.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import { isMobile, OPEN_ACTION_EVENT } from './mobile/mobile'
 
 // 冒險日誌底部的主動行動橫條。擲完骰等待判定的行動、要先面對的刻印顯示在日誌最下面（PendingActionCard），
 // 那段時間這裡不能送出新的行動。
+// 手機版平常收成一行「主動行動：想做什麼…」，點了才展開（docs/plan/MOBILE_UI_PLAN.md 2.5 節）。
 
 const game = useGame()
 const settings = useSettings()
@@ -64,6 +66,18 @@ function grow(e: Event) {
   // 長到上限之前不顯示捲軸
   el.style.overflowY = el.scrollHeight + 2 > 160 ? 'auto' : 'hidden'
 }
+// ---- 手機版：收起與展開 ----
+const expanded = ref(false)
+const folded = computed(() => isMobile.value && !expanded.value)
+async function expand() {
+  expanded.value = true
+  await nextTick()
+  freeBox.value?.focus()
+}
+const onOpenAction = () => { void expand() }
+window.addEventListener(OPEN_ACTION_EVENT, onOpenAction)
+onBeforeUnmount(() => window.removeEventListener(OPEN_ACTION_EVENT, onOpenAction))
+
 function doFree() {
   const u = parseUse(use.value)
   const [first, ...rest] = targets.value
@@ -73,6 +87,11 @@ function doFree() {
   if (freeBox.value) freeBox.value.style.height = freeBox.value.style.overflowY = ''
   // 對象每次重選：不然下一個沒有對象的行動會被算在上一個人身上
   targets.value = []
+  // 手機版送出後收起（鍵盤跟著收起）
+  if (isMobile.value) {
+    freeBox.value?.blur()
+    expanded.value = false
+  }
 }
 
 // ---- 請法師拆誓約印記（紋樣留下來變成普通刺青）；奴隸契約在工具列的「契約」（ContractDialog） ----
@@ -85,7 +104,14 @@ function unmark(target: string) {
 </script>
 
 <template>
-  <section class="action-bar">
+  <section v-if="folded" class="action-bar folded">
+    <button type="button" class="open" :disabled="busy" @click="expand">
+      <GameIcon name="d20" :size="16" />
+      <span>{{ busy ? '先在日誌裡完成等待判定的行動' : '主動行動：想做什麼…' }}</span>
+      <span v-if="targets.length" class="who">對象 {{ targets.map(nameOf).join('、') }}</span>
+    </button>
+  </section>
+  <section v-else class="action-bar">
     <ul v-if="oathOffers.length" class="plain small offers">
       <li v-for="o in oathOffers" :key="o.target">
         <strong>{{ o.name }}</strong>（{{ o.helper }}）・{{ attrName(o.attr) }} DC {{ o.dc }}・{{ o.fee_cc ? formatMoney(o.fee_cc) : '免費' }}
@@ -99,6 +125,7 @@ function unmark(target: string) {
         <Hint :text="`用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，${aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）'}。`" />
       </h3>
       <JudgeToggle />
+      <button v-if="isMobile" type="button" class="ghost small fold" aria-label="收起主動行動" @click="expanded = false"><GameIcon name="down" :size="14" /></button>
       <select v-model="pick" class="target" title="對象" :disabled="targets.length >= maxTargets" @change="addTarget">
         <option value="">{{ !targets.length ? '（沒有特定對象）' : targets.length >= maxTargets ? `已選 ${maxTargets} 人` : '＋ 再加一位對象' }}</option>
         <optgroup v-if="partyTargets.length" label="隊伍">
@@ -133,6 +160,14 @@ function unmark(target: string) {
 </template>
 
 <style scoped>
+/* 手機版收起時：一行像輸入框的按鈕 */
+.folded .open {
+  width: 100%; min-height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px; text-align: left;
+  border: 1px solid var(--border); border-radius: 20px; background: var(--input-bg); box-shadow: none; color: var(--muted); font-size: var(--fs-sm);
+}
+.folded .open :deep(.game-icon) { color: var(--accent); flex: none; }
+.folded .who { margin-left: auto; color: var(--accent); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fold { margin-left: auto; }
 /* 日誌底部的一條：標題、AI 開關、對象、能力、文字框與送出排成一排；放不下時文字框連同送出鈕換到下一行 */
 .action-bar { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
 .action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
