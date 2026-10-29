@@ -17,7 +17,7 @@ import {
 } from './character'
 import {
   abilities, abilityDef, armorDef, ATTR_IDS, PARK_STAMP_PREFIX, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
-  geography, lewdRules, locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
+  contentRevision, geography, lewdRules, locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LockGrade, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
   itemRules, mulResist,
@@ -354,11 +354,17 @@ export function lustMaxFor(level: number): number {
 /** 頭目：地下城的層主、有低血大招的特殊任務頭目（和難度係數的分法一樣，gameRules.ts 的 difficultyFor） */
 const isHeadEnemy = (id: string) => isLayerBoss(id) || Object.keys(enemies[id]?.ability_hp_below ?? {}).length > 0
 
-const typicalHp: Record<number, number> = {}
+let typicalHp: Record<number, number> = {}
+let typicalHpRev = -1
 /**
  * 同等級一般怪物（遭遇表裡、不是頭目）的生命中位數。高等級沒有一般怪物，用最接近的等級照等級比例推算。
+ * 依內容算一次就記住，世界設定換了（contentRevision 變了）重算。
  */
 function typicalEnemyHp(level: number): number {
+  if (typicalHpRev !== contentRevision()) {
+    typicalHp = {}
+    typicalHpRev = contentRevision()
+  }
   if (typicalHp[level] !== undefined) return typicalHp[level]!
   const ids = new Set<string>()
   const add = (groups: EncounterGroup[] | undefined) => groups?.forEach((g) => g.forEach(([id]) => ids.add(id)))
