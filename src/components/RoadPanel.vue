@@ -24,12 +24,15 @@ const position = computed(() => s.value.position?.x ?? 0)
 const pending = computed(() => (s.value.roadEvent ? roadTemplate(s.value.roadEvent.template) : undefined))
 const busy = computed(() => !!s.value.roadEvent || !!s.value.combat || !!s.value.pendingMasterEvent || !!s.value.standoff || !!s.value.pendingAction || game.judging)
 const legs = computed(() => [...new Set((s.value.road?.modes ?? []).map((m) => MODE_NAME[m as keyof typeof MODE_NAME]))].join('、'))
+const ROAD_HINT = '旅途是單行道，一格一天。地圖上的圖示：問號是事件、劍是戰鬥、星星是特殊事件、鎖是主人的事件、房子是途經的地點、靶心是目的地。'
 </script>
 
 <template>
   <section v-if="progress" class="panel road-panel">
-    <h3 class="title"><GameIcon name="compass" :size="16" />前往{{ locationById(progress.to).name }}的旅途<Hint text="旅途是單行道，一格一天。地圖上的圖示：問號是事件、劍是戰鬥、星星是特殊事件、鎖是主人的事件、房子是途經的地點、靶心是目的地。" /></h3>
+    <!-- 手機版：地圖面板的標題已經寫了「前往○○的旅途」 -->
+    <h3 v-if="!isMobile" class="title"><GameIcon name="compass" :size="16" />前往{{ locationById(progress.to).name }}的旅途<Hint :text="ROAD_HINT" /></h3>
     <p class="small">
+      <Hint v-if="isMobile" :text="ROAD_HINT" />
       第 {{ progress.day }} 天（全程約 {{ progress.days }} 天）・{{ legs }}
       <template v-if="cell.town">・{{ cell.kind === 'waypoint' ? '途經' : '從' }}{{ locationById(cell.town).name }}{{ cell.kind === 'waypoint' ? '' : '出發' }}</template>
     </p>

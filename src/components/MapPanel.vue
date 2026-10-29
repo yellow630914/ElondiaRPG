@@ -29,7 +29,7 @@ const showWorldMap = ref(false)
 
 <template>
   <section class="panel">
-    <div class="row" style="justify-content: space-between; align-items: flex-start">
+    <div class="row head" style="justify-content: space-between; align-items: flex-start">
       <div>
         <h2 class="title"><GameIcon name="pin" :size="20" />{{ area.name }}</h2>
         <p class="muted small" style="margin: 0">
@@ -41,7 +41,7 @@ const showWorldMap = ref(false)
       </div>
       <div class="row tools">
         <Hint text="點擊相鄰的格子移動，或使用方向鍵 / WASD。走到建築上就能使用它的功能。" />
-        <button class="small" @click="showWorldMap = true"><GameIcon name="map" :size="14" /> 世界地圖</button>
+        <button class="small" aria-label="世界地圖" @click="showWorldMap = true"><GameIcon name="map" :size="14" /><span class="wm"> 世界地圖</span></button>
       </div>
     </div>
     <ExpeditionBar />
@@ -59,4 +59,10 @@ const showWorldMap = ref(false)
 .title { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 .title :deep(.game-icon) { color: var(--accent); }
 .tools { gap: 6px; flex-wrap: nowrap; }
+/* 手機：標題與工具同一排，世界地圖只剩圖示 */
+@media (max-width: 720px) {
+  .head { flex-wrap: nowrap; }
+  .head > div:first-child { min-width: 0; }
+  .wm { display: none; }
+}
 </style>

@@ -62,8 +62,9 @@ const roadEnd = computed(() => (s.value.position?.x ?? 0) >= area.value.width - 
 // ── 半屏面板
 type Sheet = 'here' | 'rest' | 'place' | 'more'
 const sheet = ref<Sheet | null>(null)
-const SHEET_TITLE: Record<Sheet, string> = { here: '這裡', rest: '休息', place: '', more: '更多' }
-const sheetTitle = computed(() => (sheet.value === 'place' ? (place.value ? place.value.name : '地點') : sheet.value ? SHEET_TITLE[sheet.value] : ''))
+// 休息、設施面板自己有標題（與說明），面板上不再寫一次
+const SHEET_TITLE: Record<Sheet, string> = { here: '這裡', rest: '', place: '', more: '更多' }
+const sheetTitle = computed(() => (sheet.value ? SHEET_TITLE[sheet.value] : ''))
 function toggleSheet(k: Sheet) {
   sheet.value = sheet.value === k ? null : k
 }

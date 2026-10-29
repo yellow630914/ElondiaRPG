@@ -58,7 +58,7 @@ const rentShops = computed(() => {
 
 <style scoped>
 .crafts { display: grid; gap: 8px; }
-.table { overflow-x: auto; }
+.table { overflow-x: auto; min-width: 0; }
 table { border-collapse: collapse; width: 100%; }
 .tabs { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 .tabs .active { border-color: var(--accent); color: var(--accent); }

@@ -91,7 +91,7 @@ onMounted(() => toBottom(true))
       <h2><GameIcon name="book" :size="20" />冒險日誌</h2>
       <span class="spacer" />
       <JudgeToggle show="narration" />
-      <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易紀錄</label>
+      <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易<span class="long">紀錄</span></label>
     </header>
     <p v-if="needsSource" class="ai-missing small row">
       <GameIcon name="warning" :size="15" />
@@ -162,6 +162,13 @@ onMounted(() => toBottom(true))
 .archived { display: grid; gap: 2px; padding: 6px 8px; margin-bottom: 6px; border-left: 2px solid var(--border); }
 .archived .story { white-space: pre-wrap; margin: 4px 0 0; }
 .empty { text-align: center; margin-top: 40px; }
+/* 手機：標題、AI 開關、隱藏交易排成一排 */
+@media (max-width: 720px) {
+  .log-head { gap: 8px; flex-wrap: nowrap; padding-bottom: 6px; }
+  .log-head h2 { font-size: var(--fs-md); white-space: nowrap; }
+  .log-head label { white-space: nowrap; }
+  .long { display: none; }
+}
 @media (max-width: 900px) {
   .feed { height: auto; max-height: 80vh; }
 }
