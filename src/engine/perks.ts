@@ -47,7 +47,8 @@ export function hasPerk(c: PerkHolder, id: string): boolean {
 export function matches(f: CheckFilter, ctx: CheckCtx): boolean {
   if (f.attrs?.length && (!ctx.attr || !f.attrs.includes(ctx.attr))) return false
   if (f.contexts?.length && !f.contexts.includes(ctx.context)) return false
-  if (f.kinds?.length && (!ctx.kind || !f.kinds.includes(ctx.kind))) return false
+  // 誘惑也吃獻媚的加值（特質、獨特裝備）
+  if (f.kinds?.length && (!ctx.kind || !(f.kinds.includes(ctx.kind) || (ctx.kind === 'seduce' && f.kinds.includes('flatter'))))) return false
   if (f.vs_tags?.length && !f.vs_tags.some((t) => ctx.vsTags?.includes(t))) return false
   return true
 }
@@ -489,7 +490,7 @@ export const PERK_CATEGORIES: Record<string, string> = {
   social: '社交與交易', explore: '探索與潛行', combat: '戰鬥', body: '體質', craft: '學識與技藝', bond: '主從與束縛', lewd: '慾望流派', other: '其他',
 }
 
-const SOCIAL_KINDS = ['chat', 'gift', 'flatter', 'haggle', 'bargain', 'intimidate', 'bluff', 'hire', 'invite', 'rest_talk', 'black_market', 'patron']
+const SOCIAL_KINDS = ['chat', 'gift', 'flatter', 'seduce', 'haggle', 'bargain', 'intimidate', 'bluff', 'hire', 'invite', 'rest_talk', 'black_market', 'patron']
 const EXPLORE_CONTEXTS = ['trap', 'lock', 'travel', 'road', 'stealth', 'retreat']
 const BOND_KINDS = ['escape', 'negotiate', 'marking', 'master_permit', 'master_leave', 'master_event', 'unmark']
 const CRAFT_KINDS = ['craft', 'make', 'produce', 'invent', 'work']

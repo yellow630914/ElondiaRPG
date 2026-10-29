@@ -217,12 +217,12 @@ const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : t
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 
 /**
- * 慾望指標的情境修正（docs/LEWD_STATS.md）：淫亂高的人獻媚比較容易（淫蕩 +1、淫亂 +2）；
+ * 慾望指標的情境修正（docs/LEWD_STATS.md）：淫亂高的人獻媚、誘惑比較容易（淫蕩 +1、淫亂 +2）；
  * 曝露名聲高（在這一帶遠近馳名以上）時，對貴族、皇族、神官唬騙比較難（-1、人盡皆知 -2）
  */
 function lewdModifiers(state: GameState, c: Character, kind: string, vsTags?: string[]): { label: string; value: number }[] {
   const out: { label: string; value: number }[] = []
-  if (kind === 'flatter') {
+  if (kind === 'flatter' || kind === 'seduce') {
     const v = lewdOf(c).lewdness
     const bonus = v >= 80 ? 2 : v >= 60 ? 1 : 0
     if (bonus) out.push({ label: `淫亂（${bandName('lewdness', v)}）`, value: bonus })
@@ -665,6 +665,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'chat':
     case 'gift':
     case 'flatter':
+    case 'seduce':
     case 'steal':
     case 'attack': return applyInteraction(state, report, p.kind, p.target!, degree, p.item)
     case 'bluff':

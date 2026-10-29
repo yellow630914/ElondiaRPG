@@ -138,7 +138,8 @@ export function participantsOf(state: GameState, report: Report): string[] {
 function memoryImportance(report: Report): Memory['importance'] | null {
   switch (report.kind) {
     case 'combat':
-      return report.outcome.result === 'defeat' || report.outcome.tags?.includes('隊員倒下') ? 2 : 1
+      // 戰敗、有隊員倒下、一起經歷的慾望勝利比較難忘
+      return report.outcome.result === 'defeat' || report.outcome.tags?.some((t) => t === '隊員倒下' || t === '慾望勝利') ? 2 : 1
     case 'quest':
       return report.quest?.status === 'completed' ? 3 : report.quest?.status === 'accepted' ? 2 : null
     case 'social':

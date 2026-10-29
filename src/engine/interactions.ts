@@ -1,22 +1,24 @@
-// 和這裡的人互動：聊天、送禮、獻媚、偷竊、偷襲（見 docs/NPC_SYSTEM.md 第 8 節）。
+// 和這裡的人互動：聊天、送禮、獻媚、誘惑、偷竊、偷襲（見 docs/NPC_SYSTEM.md 第 8 節；誘惑見 docs/LEWD_STATS.md 第 15 節）。
 // 都是主動行動：先擲骰，再由 AI 或規則判定；親密度、偷到的東西、警戒與聲望由程式依成功程度決定，
 // AI 只能補充關係文字與旗標。
 
-import { lifeTier } from './character'
+import { gearAffinities, lifeTier, mod } from './character'
 import { startCombat } from './combat'
-import { actionRules, economy, itemDef, itemRules, locationById, npcTags, tagDcMod, tagDef, type ActionKind, type Degree } from './data'
+import { actionRules, economy, itemDef, itemRules, lewdRules, locationById, mulResist, npcTags, tagDcMod, tagDef, type ActionKind, type Degree } from './data'
+import { adultScene, type AdultScene } from './content'
 import { currentArea } from './grid'
 import { formatMoney } from './money'
-import { npcKind, npcRecord, npcTitle, registerNpc } from './npcs'
+import { addLewdStat, lewdOf } from './lewd'
+import { characterFor, npcKind, npcRecord, npcTitle, registerNpc } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { isGuarded, nearbyPeople, presentHere } from './population'
 import { consequences, securityRules } from './security'
 import { ensureRelationship } from './social'
 import { withRng } from './state'
-import type { GameState, NpcRecord, Report } from './types'
+import type { Character, GameState, NpcRecord, Report } from './types'
 
-export type InteractionKind = 'chat' | 'gift' | 'flatter' | 'steal' | 'attack'
-export const INTERACTIONS: InteractionKind[] = ['chat', 'gift', 'flatter', 'steal', 'attack']
+export type InteractionKind = 'chat' | 'gift' | 'flatter' | 'seduce' | 'steal' | 'attack'
+export const INTERACTIONS: InteractionKind[] = ['chat', 'gift', 'flatter', 'seduce', 'steal', 'attack']
 
 export function isInteraction(kind: ActionKind): kind is InteractionKind {
   return (INTERACTIONS as string[]).includes(kind)
@@ -42,8 +44,8 @@ export function giftBonus(state: GameState, rec: Pick<NpcRecord, 'tags'>, item: 
   return (k.value_steps ?? []).filter((step) => price >= threshold * step).length
 }
 
-/** 這次互動各成功程度的親密度變化（聊天、送禮、獻媚） */
-export function affinityTable(state: GameState, kind: 'chat' | 'gift' | 'flatter', rec: NpcRecord, item?: string): Record<Degree, number> {
+/** 這次互動各成功程度的親密度變化（聊天、送禮、獻媚、誘惑） */
+export function affinityTable(state: GameState, kind: 'chat' | 'gift' | 'flatter' | 'seduce', rec: NpcRecord, item?: string): Record<Degree, number> {
   const base = { ...actionRules.kinds[kind].affinity! }
   if (kind === 'gift' && item) {
     const bonus = giftBonus(state, rec, item)
@@ -62,6 +64,7 @@ export interface InteractionSetup {
   situational: { label: string; value: number }[]
   outcomes: Partial<Record<Degree, string>>
   scene: string
+  adultScene?: AdultScene
 }
 
 /** 參考 DC 與各成功程度的結果；也檢查對象在不在、禮物有沒有 */
@@ -90,17 +93,21 @@ export function setupInteraction(state: GameState, kind: InteractionKind, target
   if (rel) dc -= Math.floor(rel.affinity / 25)
   // 標籤的修正（例如好人比較好相處）
   dc += tagDcMod(rec, kind)
+  if (kind === 'seduce') dc += seduceDcMod(npcCharacter(state, rec))
   const situational: { label: string; value: number }[] = []
   if (kind === 'flatter' && def.status_dc) {
     const gap = wealthOf(rec) - 2
     if (gap > 0) situational.push({ label: '對方身分高貴', value: -def.status_dc * gap })
   }
   const table = affinityTable(state, kind, rec, item)
+  const lewdGain = kind === 'seduce' ? def.lewd_gain ?? {} : {}
   const outcomes = Object.fromEntries(
-    (Object.keys(table) as Degree[]).map((d) => [d, `${rec.name}的親密度 ${signed(table[d])}${kind === 'gift' && d === 'fumble' ? '，禮物被退回' : ''}`]),
+    (Object.keys(table) as Degree[]).map((d) => [d, `${rec.name}的親密度 ${signed(table[d])}${kind === 'gift' && d === 'fumble' ? '，禮物被退回' : ''}${lewdGain[d] ? `，淫亂 +${lewdGain[d]}` : ''}`]),
   ) as Record<Degree, string>
   const where = locationById(state.location).name
-  return { dc, targetName: rec.name, situational, outcomes, scene: `${where}・${npcTitle(rec)}${rec.name}` }
+  // 誘惑：有沒有進入親密場景由 AI 依經過判定
+  const intimate = kind === 'seduce' ? adultScene(`誘惑${rec.name}`, []) : {}
+  return { dc, targetName: rec.name, situational, outcomes, scene: `${where}・${npcTitle(rec)}${rec.name}`, ...intimate }
 }
 
 /** 套用機制結果：親密度、送出的禮物、偷到的東西、開戰 */
@@ -109,8 +116,12 @@ export function applyInteraction(state: GameState, report: Report, kind: Interac
   if (kind === 'steal') return applySteal(state, report, rec, degree)
   if (kind === 'attack') return applyAttack(state, report, rec, degree)
   const delta = affinityTable(state, kind, rec, item)[degree]
-  const reason = { chat: '聊天', gift: item ? `收到${item}` : '收到禮物', flatter: '被奉承' }[kind]
+  const reason = { chat: '聊天', gift: item ? `收到${item}` : '收到禮物', flatter: '被奉承', seduce: '被誘惑' }[kind]
   if (delta) addAffinity(state, report, target, delta, reason)
+  if (kind === 'seduce') {
+    const gain = actionRules.kinds.seduce.lewd_gain?.[degree] ?? 0
+    if (gain && npcLewdGain(state, rec, gain, report)) return `${rec.name}被撩得心神不寧。`
+  }
   if (kind === 'gift' && item) {
     if (degree === 'fumble') return `${rec.name}把${item}退了回來。`
     report.changes.items_lost = [...(report.changes.items_lost ?? []), { name: item, qty: 1 }]
@@ -118,6 +129,41 @@ export function applyInteraction(state: GameState, report: Report, kind: Interac
     return `把${item}${value ? `（價值 ${formatMoney(value)}）` : ''}送給了${rec.name}。`
   }
   return ''
+}
+
+// ---- 誘惑 ----
+
+/** 不在隊上的人的角色資料：隊友用隊伍裡的，其他照 NPC 資料生成（慾望指標用存檔裡記下的） */
+function npcCharacter(state: GameState, rec: NpcRecord): Character {
+  return state.party.find((m) => m.id === rec.id) ?? characterFor(state, rec)
+}
+
+/**
+ * 誘惑的 DC 修正：對方的慾望抗性換算（信仰與裝備；受到的慾望每少 resist_per 一級 +1，容易受影響的反過來 −1）
+ * − 對方淫亂 / lewd_per
+ */
+export function seduceDcMod(c: Character): number {
+  const k = actionRules.kinds.seduce
+  const resist = { ...gearAffinities(c).resist }
+  const faith = mod(c.attrs.fai) * lewdRules.combat.faith_resist
+  if (faith) mulResist(resist, { lust: faith })
+  const r = -(resist.lust ?? 0)
+  const fromResist = r > 0 ? Math.floor(r / (k.resist_per ?? 0.1) + 1e-9) : Math.ceil(r / (k.resist_per ?? 0.1) - 1e-9)
+  return fromResist - Math.floor(lewdOf(c).lewdness / (k.lewd_per ?? 10))
+}
+
+/**
+ * 誘惑成功：對方的淫亂增加。隊友、留守的夥伴改角色資料；其他人記在存檔的 NPC 資料上（固定 NPC 第一次被改時複製進存檔），
+ * 之後生成角色、入隊都照這個值。回傳實際增加的量。
+ */
+export function npcLewdGain(state: GameState, rec: NpcRecord, delta: number, report?: Report): number {
+  const member = state.party.find((m) => m.id === rec.id) ?? rec.character
+  if (member) return addLewdStat(member, 'lewdness', delta, report)
+  const stored = state.npcs?.[rec.id] ?? registerNpc(state, JSON.parse(JSON.stringify(rec)) as NpcRecord)
+  const c = characterFor(state, stored)
+  const d = addLewdStat(c, 'lewdness', delta, report)
+  if (d) stored.lewd = { ...stored.lewd, lewdness: lewdOf(c).lewdness }
+  return d
 }
 
 // ---- 偷竊 ----

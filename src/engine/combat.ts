@@ -25,7 +25,7 @@ import { rollDefeatEvent } from './defeat'
 import { inPark, parkDefeat, parkLust, saveParkLust } from './park'
 import { charmRutMult } from './charm'
 import { parasiteAbilities, parasiteStartLust } from './parasites'
-import { addCondition, isNoncombatant } from './party'
+import { addCondition, isNoncombatant, pcOf } from './party'
 import { contractTerms } from './slavery'
 import { advanceBossHunts, clearCounts, LAYER_IDS } from './materialQuests'
 import { bossMerit } from './guild'
@@ -136,6 +136,8 @@ export interface Combatant {
     /** 流派特質（docs/LEWD_STATS.md 第 6 節）：引爆的傷害倍率加成、消退慾望的倍率加成、受到幸運一擊時改成慾望的比例、
      * 慾望一半以上時每回合回復的生命、高潮時回復最大生命的比例、生命低於一半時的戰鬥修正 */
     burst?: number; relief?: number; critConvert?: number; regen?: number; climaxHeal?: number; wounded?: Mods
+    /** 分擔慾望的效率：主角記 pc，隊友記對主角的親密度（lewd.json 的 combat.bond_step） */
+    pc?: boolean; affinity?: number
   }
   /** 免疫的狀態（雙面效應：束縛雙手不會被繳械、遮住視線不會被致盲） */
   immune?: string[]
@@ -354,6 +356,8 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
       convert: Math.floor(v.submission / L.submission_per) * L.submission_convert,
       bonus: Math.floor(exposureAt(state, ch.id, locationById(state.location).region) / L.exposure_per),
     }
+    if (ch.id === pcOf(state).id) f.lustMods.pc = true
+    else if (state.party.some((m) => m.id === ch.id)) f.lustMods.affinity = ch.affinity ?? state.relationships?.[ch.id]?.affinity ?? 0
     // 流派特質（docs/LEWD_STATS.md 第 6 節）與雙面效應（第 7 節）
     const t = lustTotals(ch)
     const bound = lockedBound(ch)
@@ -1692,6 +1696,8 @@ function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
   if (a.lust_relief) relieveLust(target, a.lust_relief * (1 + (actor.lustMods?.relief ?? 0)), effects)
   const t = a.lust_transfer
   if (t) {
+    // 親密度高的人之間分擔得比較好：傳過去的慾望少一些
+    const share = (n: number, from: Combatant, to: Combatant) => Math.max(0, Math.round(n * (1 - bondShare(from, to))))
     const others = alliesOf(combat, actor).filter((x) => x !== actor && x.lustMax !== undefined)
     if (t.mode === 'spread') {
       const each = others.length ? Math.floor(Math.floor((actor.lust ?? 0) * (t.ratio ?? 0)) / others.length) : 0
@@ -1699,7 +1705,7 @@ function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
       else {
         relieveLust(actor, each * others.length, effects)
         for (const o of others) {
-          gainLust(combat, o, each, effects, { raw: true })
+          gainLust(combat, o, share(each, actor, o), effects, { raw: true })
           const shield = t.shield_per ? Math.floor(each / t.shield_per) : 0
           if (shield > 0 && isActive(o)) {
             o.tempHp = Math.max(o.tempHp, shield)
@@ -1709,7 +1715,7 @@ function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
       }
     } else {
       let taken = 0
-      for (const o of others) taken += relieveLust(o, t.amount ?? 0, effects)
+      for (const o of others) taken += share(relieveLust(o, t.amount ?? 0, effects), o, actor)
       // 潮之新娘：吸過來的慾望不會讓自己高潮，下一回合開始時一起消退
       if (taken > 0) gainLust(combat, actor, taken, effects, { raw: true, ...(t.dump ? { noClimax: true } : {}) })
       else effects.push({ type: 'note', target: actor.id, text: '沒有慾望可以吸過來' })
@@ -1721,6 +1727,19 @@ function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
     target.ap = Math.min(target.apMax, target.ap + a.ap_give)
     effects.push({ type: 'note', target: target.id, text: `行動點 +${target.ap - before}` })
   }
+}
+
+/**
+ * 分擔慾望時兩人之間的親密度換算的減免（lewd.json 的 combat.bond_*）：主角和隊友看隊友對主角的親密度，
+ * 兩位隊友之間取比較低的；不在隊上的人（友方 NPC、敵人）沒有
+ */
+export function bondShare(a: Combatant, b: Combatant): number {
+  const L = lewdRules.combat
+  const ma = a.lustMods
+  const mb = b.lustMods
+  const aff = ma?.pc ? mb?.affinity : mb?.pc ? ma?.affinity : ma?.affinity !== undefined && mb?.affinity !== undefined ? Math.min(ma.affinity, mb.affinity) : undefined
+  if (!aff || aff <= 0) return 0
+  return Math.min(L.bond_max, Math.floor(aff / L.bond_step) * L.bond_share)
 }
 
 /** 可回復的最高法術環：已用掉、且不超過等級一半的環數。 */

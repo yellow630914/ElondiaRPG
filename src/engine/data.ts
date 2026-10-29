@@ -1404,7 +1404,7 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
-  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
+  | 'chat' | 'gift' | 'flatter' | 'seduce' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
   | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore' | 'palace_gate'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
@@ -1425,6 +1425,10 @@ export const actionRules = actionsJson as unknown as {
     value_steps?: number[]
     wealth_scale?: number[]
     status_dc?: number
+    /** 誘惑：成功時對方淫亂的增加、慾望抗性每多少換 1 點 DC、對方淫亂每多少點 DC −1 */
+    lewd_gain?: Partial<Record<Degree, number>>
+    resist_per?: number
+    lewd_per?: number
     /** 自由行動：一次最多幾個對象（含主要對象） */
     max_targets?: number
     /** 自由行動：主要對象之外每多一人，DC 增加多少 */
@@ -1461,7 +1465,7 @@ export interface NpcTagDef {
   /** 互斥的標籤（不會同時擁有） */
   exclusive?: string[]
   /** 和帶這個標籤的人互動時的參考 DC 修正 */
-  dc_mods?: Partial<Record<'chat' | 'gift' | 'flatter' | 'hire' | 'invite', number>>
+  dc_mods?: Partial<Record<'chat' | 'gift' | 'flatter' | 'seduce' | 'hire' | 'invite', number>>
   /** 不會因關係差而在野外動手（被攻擊過才會） */
   never_hostile?: boolean
   /** 對他犯罪被發現時，額外的聲望變化 */
@@ -2036,6 +2040,7 @@ export const lewdRules = lewdJson as unknown as {
   combat: {
     endurance_max_div: number; sensitivity_base: number; sensitivity_div: number; lewd_start_per: number; lewd_start_ratio: number; lewd_decay_div: number
     self_gain_lewd: number; self_gain_bonus: number; submission_per: number; submission_convert: number; exposure_per: number; faith_resist: number
+    bond_step: number; bond_share: number; bond_max: number
   }
   gear: {
     item_cap: number; total_cap: number; exposure_slots: string[]

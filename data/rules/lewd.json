@@ -20,7 +20,7 @@
   },
   "npc_random": { "lewdness": [5, 40], "sensitivity": [30, 70], "endurance": [5, 30], "submission": [5, 30] },
   "combat": {
-    "$comment": "慾望上限 + 忍耐 / endurance_max_div；受到的慾望 × (sensitivity_base + 敏感 / sensitivity_div)；淫亂每 lewd_start_per 點開戰帶上限 lewd_start_ratio 的慾望，消退 × (1 - 淫亂 / lewd_decay_div)；淫亂 self_gain_lewd 以上自己增加的慾望 × (1 + self_gain_bonus)；順從每 submission_per 點，傷害轉成慾望的比例 + submission_convert（有轉換的狀態時）；曝露名聲每 exposure_per 點，在那個地區造成的魅惑傷害 +1；信仰調整值每 1 點，魅惑抗性 faith_resist。",
+    "$comment": "慾望上限 + 忍耐 / endurance_max_div；受到的慾望 × (sensitivity_base + 敏感 / sensitivity_div)；淫亂每 lewd_start_per 點開戰帶上限 lewd_start_ratio 的慾望，消退 × (1 - 淫亂 / lewd_decay_div)；淫亂 self_gain_lewd 以上自己增加的慾望 × (1 + self_gain_bonus)；順從每 submission_per 點，傷害轉成慾望的比例 + submission_convert（有轉換的狀態時）；曝露名聲每 exposure_per 點，在那個地區造成的魅惑傷害 +1；信仰調整值每 1 點，魅惑抗性 faith_resist。分擔慾望（情熱傳染、獻身這類 lust_transfer）時，兩人之間的親密度（隊友對主角的；兩位隊友之間取比較低的）每 bond_step 點，傳過去的慾望少 bond_share（最多 bond_max），分得越多、對方承受越少。",
     "endurance_max_div": 2,
     "sensitivity_base": 0.75,
     "sensitivity_div": 200,
@@ -32,7 +32,10 @@
     "submission_per": 20,
     "submission_convert": 0.05,
     "exposure_per": 20,
-    "faith_resist": -0.05
+    "faith_resist": -0.05,
+    "bond_step": 25,
+    "bond_share": 0.1,
+    "bond_max": 0.4
   },
   "gear": {
     "item_cap": 10,

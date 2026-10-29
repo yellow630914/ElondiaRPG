@@ -866,6 +866,7 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
     case 'chat':
     case 'gift':
     case 'flatter':
+    case 'seduce':
     case 'steal':
     case 'attack':
       return setupInteraction(state, kind, target, item)
