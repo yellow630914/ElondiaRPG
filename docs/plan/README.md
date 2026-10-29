@@ -11,6 +11,7 @@
 | [ROADMAP](ROADMAP.md) | 未來計畫 | R | **已經決定要做**、還沒做完的事（含不影響遊戲的程式整理） |
 | [ideas/](ideas/README.md) | 點子庫（依來源分成不同文件） | I | **還沒決定要不要做**的構想 |
 | [UI_V2_PLAN](UI_V2_PLAN.md) | UI 改版計畫 | P | 單一大型工作的分階段計畫（完成度記在 ROADMAP） |
+| [LUST_COMBAT_PLAN](LUST_COMBAT_PLAN.md) | 慾望戰鬥（成人向）的實作計畫 | S | 同上（ROADMAP R8） |
 
 ## 2. 流程
 

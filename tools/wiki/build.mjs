@@ -124,8 +124,8 @@ export const GROUPS = [
   ] },
 ]
 
-/** 不放上 wiki 的文件：素材資料夾的說明（只對改程式的人有用）、玩家提供的第三方原文素材 */
-export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/ideas/xianxia-adult-lorebook.md']
+/** 不放上 wiki 的文件：素材資料夾的說明（只對改程式的人有用）、玩家提供的第三方原文素材、以它為素材的成人向計畫 */
+export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/ideas/xianxia-adult-lorebook.md', 'docs/plan/LUST_COMBAT_PLAN.md']
 
 const srcList = (p) => (Array.isArray(p.src) ? p.src : [p.src])
 const fileOf = (src) => src.split('#')[0]
