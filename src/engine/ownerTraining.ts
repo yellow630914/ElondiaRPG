@@ -1,11 +1,14 @@
 // 調教（成人向；主角對自己的奴隸，docs/LEWD_STATS.md 第 9 節）：
 // 選一個課程，從 slavery.json 的 owner_events 抽一件同課程的事件（主人事件格式），主角從回應裡選一個、自己擲檢定。
 // DC 減去奴隸的順從、親密度很低時變難；成功時套用課程的指標與親密度，同一課程成功幾次保證學會這個課程的一個技能；
-// 失敗而且親密度很低時反彈（親密度再降、記一段怨恨的記憶）。規則與數值在 data/rules/lewd.json 的 training。
+// 失敗而且親密度很低時反彈（親密度再降、記一段怨恨的記憶，有機會趁機逃走）。規則與數值在 data/rules/lewd.json 的 training。
+// 在自己家裡、擺了調教家具（調教室）時檢定有加值（docs/LEWD_STATS.md 第 19 節）。
 
 import { abilities, lewdRules, masterEventPool, type LewdKey, type MasterEventDef } from './data'
 import { addLewd } from './lewd'
-import { addAffinity, pcOf } from './party'
+import { currentArea } from './grid'
+import { ownHomeOfArea, trainingRoomOf } from './homes'
+import { addAffinity, addCondition, pcOf } from './party'
 import { addMemory } from './social'
 import { teachAbility } from './effects'
 import { withRng } from './state'
@@ -65,9 +68,12 @@ export function trainingDcMods(state: GameState, slave: Character): { label: str
   const r = rules()
   const sub = Math.floor((slave.lewd?.submission ?? lewdRules.defaults.submission) / r.sub_div)
   const aff = state.relationships?.[slave.id]?.affinity ?? 0
+  const home = ownHomeOfArea(state, currentArea(state))
+  const room = home ? trainingRoomOf(home) : 0
   return [
     ...(sub ? [{ label: `${slave.name}的順從`, value: sub }] : []),
     ...(aff < r.low_affinity ? [{ label: '親密度很低', value: -r.low_dc }] : []),
+    ...(room ? [{ label: '調教室', value: room }] : []),
   ]
 }
 
@@ -101,6 +107,11 @@ export function afterTraining(state: GameState, report: Report, slave: Character
       summary: `${pcOf(state).name}的「${course.name}」調教讓${slave.name}心生怨恨`, importance: 2,
     })
     notes.push(`${slave.name}看你的眼神多了一分怨恨`)
+    // 趁機逃走：暫時離隊，印記會把人拉回來（回到聚落或安全房時歸隊）
+    if (withRng(state, (rng) => rng.chance(r.escape_chance))) {
+      addCondition(slave, 'away', report)
+      notes.push(`${slave.name}趁你不注意逃走了，印記會把人拉回來（回到聚落或安全房時歸隊）`)
+    }
   }
   return notes
 }

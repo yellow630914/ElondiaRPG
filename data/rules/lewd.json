@@ -99,7 +99,7 @@
   },
   "training": {
     "$comment": "調教（主角對自己的奴隸；docs/LEWD_STATS.md 第 9 節）：選課程，從 slavery.json 的 owner_events 抽一件同課程的事件，主角擲檢定。DC 另外減去奴隸的順從 / sub_div，親密度低於 low_affinity 時 +low_dc。成功時套用課程的 stats（指標）與 affinity，同一課程成功 progress 次保證學會這個課程事件掛的一個技能（事件寫了 progress 時用事件的）。失敗而且親密度低於 backlash_affinity 時反彈：親密度再 backlash_delta，記一段怨恨的記憶。",
-    "sub_div": 10, "low_affinity": 0, "low_dc": 2, "progress": 3, "backlash_affinity": -20, "backlash_delta": -3,
+    "sub_div": 10, "low_affinity": 0, "low_dc": 2, "progress": 3, "backlash_affinity": -20, "backlash_delta": -3, "room_max": 3, "resident_submission": 1, "escape_chance": 0.3,
     "courses": {
       "serve": { "name": "侍奉", "attr": "cha", "stats": { "submission": 2 }, "desc": "伺候主人的規矩與心思" },
       "endure": { "name": "忍耐", "attr": "str", "stats": { "endurance": 2 }, "desc": "撐住刺激、不准自己先投降" },

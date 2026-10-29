@@ -354,8 +354,89 @@ def write_s8_7():
     print('S8-7 abilities', len(FOE_ABILITIES), 'monsters', len(FOE_PATCH))
 
 
+# ---------------- S8-9 家具與調教 ----------------
+TRAINING_FURNITURE = [
+    {"name": "調教台", "category": "furniture", "price_cc": 1200, "tags": ["tailor"], "adult": True, "min_location": "city",
+     "furniture": {"places": ["indoor", "basement"], "function": "training", "training": 2, "icon": "⛓️"},
+     "desc": "包著軟皮的長台，四角都有扣環，旁邊的架子掛滿了各式道具。擺在家裡，在家調教時檢定 +2；留在家裡的奴隸每天順從 +1。"},
+    {"name": "刑架", "category": "furniture", "price_cc": 600, "tags": ["smith"], "adult": True,
+     "furniture": {"places": ["indoor", "basement", "yard"], "function": "training", "training": 1, "icon": "🪵"},
+     "desc": "X 字形的木架，手腕、腳踝的位置都有鐵環。擺在家裡，在家調教時檢定 +1；留在家裡的奴隸每天順從 +1。"},
+    {"name": "拘束台", "category": "furniture", "price_cc": 800, "tags": ["smith"], "adult": True,
+     "furniture": {"places": ["indoor", "basement"], "function": "training", "training": 1, "icon": "🛏️"},
+     "desc": "鐵框加上皮帶的窄台，躺上去就動彈不得。擺在家裡，在家調教時檢定 +1；留在家裡的奴隸每天順從 +1。"},
+]
+TRAINING_ROOM = {"room_max": 3, "resident_submission": 1, "escape_chance": 0.3}
+HOME_EVENTS = [
+    {"id": "home_rack", "weight": 2, "at_home": True, "adult": True, "tags_none": ["good"], "scene": "被{master}綁在刑架上",
+     "text": "{master}把你帶到地下室，牆邊立著一座 X 字形的刑架，鐵環在燭光下閃著冷光。「今天就在這裡反省吧。」",
+     "hours": 0.5, "options": [
+        {"label": "乖乖讓主人綁上去", "adult_scene": "always", "result": "你自己把手腕伸進鐵環。{master}慢慢地扣上，一直到天亮才把你放下來。",
+         "effects": [{"type": "affinity", "npc": "master", "delta": 3, "reason": "乖乖受罰"}, {"type": "lewd", "stat": "submission", "delta": 1}], "hours": 6},
+        {"label": "求主人手下留情", "check": {"attr": "cha", "dc": 14}, "success": "{master}看你可憐的樣子，只綁了一個時辰就放你下來。",
+         "fail": "{master}笑著說求饒的樣子更好看，把鐵環又扣緊了一格。", "adult_scene": "fail",
+         "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "會撒嬌"}], "fail_effects": [{"type": "lewd", "stat": "sensitivity", "delta": 1}, {"type": "condition", "target": "pc", "condition": "drained", "add": True}], "hours": 2},
+        {"label": "掙扎著不肯過去", "stance": "resist", "check": {"attr": "str", "dc": 16}, "success": "你甩開{master}的手，{master}沉著臉，終究沒有硬來。",
+         "fail": "{master}叫來僕人按住你，綁得比平常更緊。", "adult_scene": "fail",
+         "effects_success": [{"type": "affinity", "npc": "master", "delta": -2, "reason": "不肯受罰"}], "fail_effects": [{"type": "condition", "target": "pc", "condition": "punished", "add": True}, {"type": "strict", "delta": 1}]}]},
+    {"id": "home_restraint_bed", "weight": 2, "at_home": True, "adult": True, "scene": "在{master}的拘束台上過夜",
+     "text": "{master}的寢室旁多了一張鐵框窄台，皮帶一條條垂在兩側。「今晚睡這裡。」",
+     "hours": 0.25, "options": [
+        {"label": "躺上去，讓主人扣上皮帶", "adult_scene": "always", "result": "皮帶一條條收緊，你一整夜都動彈不得，{master}時不時過來看你。",
+         "effects": [{"type": "affinity", "npc": "master", "delta": 3, "reason": "順從"}, {"type": "lewd", "stat": "endurance", "delta": 1}], "hours": 8},
+        {"label": "說服主人讓你睡在床邊就好", "check": {"attr": "cha", "dc": 13}, "success": "{master}想了想，丟了一條毯子給你，讓你睡在床腳。",
+         "fail": "{master}搖搖頭，指了指那張台子。", "adult_scene": "fail",
+         "effects_success": [{"type": "condition", "target": "pc", "condition": "relaxed", "add": True}], "fail_effects": [{"type": "lewd", "stat": "submission", "delta": 1}], "hours": 8},
+        {"label": "趁主人不注意，鬆開一條皮帶", "stance": "resist", "check": {"attr": "dex", "dc": 15}, "success": "半夜你悄悄鬆開一條皮帶，總算能翻個身。",
+         "fail": "{master}一早就發現皮帶鬆了，加罰你在台上多躺半天。",
+         "effects_success": [{"type": "condition", "target": "pc", "condition": "well_rested", "add": True}], "fail_effects": [{"type": "condition", "target": "pc", "condition": "punished", "add": True}, {"type": "affinity", "npc": "master", "delta": -2, "reason": "偷偷鬆綁"}], "hours": 8}]},
+    {"id": "home_training_room", "weight": 2, "at_home": True, "adult": True, "affinity_min": 10, "scene": "在{master}的調教室裡",
+     "text": "{master}推開一扇你沒進去過的門：裡面是一間擺滿道具的調教室，正中央是一張包著軟皮的長台。「從今天開始，每天都來這裡。」",
+     "hours": 0.25, "teaches": ["lust_grovel"], "options": [
+        {"label": "跪下來說「請主人調教」", "adult_scene": "always", "learn": True, "result": "{master}滿意地摸了摸你的頭，花了整個下午教你怎麼當一個好奴隸。",
+         "effects": [{"type": "affinity", "npc": "master", "delta": 4, "reason": "主動求調教"}, {"type": "lewd", "stat": "submission", "delta": 2}], "hours": 4},
+        {"label": "低著頭，跟著進去", "check": {"attr": "fai", "dc": 13}, "success": "你咬著牙撐過了這一天，心裡那條線還在。",
+         "fail": "一個下午過去，你已經記不得自己原本在堅持什麼。", "adult_scene": "always",
+         "effects_success": [{"type": "lewd", "stat": "endurance", "delta": 1}], "fail_effects": [{"type": "lewd", "stat": "submission", "delta": 1}, {"type": "condition", "target": "pc", "condition": "dazed", "add": True}], "hours": 4},
+        {"label": "站在門口不肯進去", "stance": "resist", "check": {"attr": "fai", "dc": 15}, "success": "{master}看了你很久，最後把門關上了。「總有一天你會自己走進來。」",
+         "fail": "{master}拉著你的項圈把你拖了進去。", "adult_scene": "fail",
+         "effects_success": [{"type": "affinity", "npc": "master", "delta": -2, "reason": "不肯進調教室"}], "fail_effects": [{"type": "condition", "target": "pc", "condition": "punished", "add": True}, {"type": "lewd", "stat": "submission", "delta": 1}], "hours": 3}]},
+]
+
+
+def write_s8_9():
+    p = 'data/rules/items.json'
+    t = open(p).read()
+    for it in TRAINING_FURNITURE:
+        t = drop_lines(t, r'\n    \{"name": ' + re.escape(json.dumps(it['name'], ensure_ascii=False)) + r'.*')
+    t = insert_after(t, r'\n    \{ "name": "石雕像".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in TRAINING_FURNITURE])
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/lewd.json'
+    d = json.loads(open(p).read())
+    t = open(p).read()
+    for k, v in TRAINING_ROOM.items():
+        t = re.sub(r', "' + k + r'": [\d.]+', '', t)
+    t = t.replace('"backlash_delta": ' + str(d['training']['backlash_delta']), '"backlash_delta": ' + str(d['training']['backlash_delta']) + ''.join(f', "{k}": {v}' for k, v in TRAINING_ROOM.items()), 1)
+    assert json.loads(t)['training']['room_max'] == 3
+    open(p, 'w').write(t)
+
+    p = 'data/rules/slavery.json'
+    t = open(p).read()
+    for e in HOME_EVENTS:
+        t = drop_lines(t, r'\n      \{ ?"id": "' + e['id'] + r'".*')
+    # 主人事件多半是多行的物件：接在「打掃房子」前面
+    anchor = '\n      { "id": "home_chores"'
+    t = t.replace(anchor, '\n' + ''.join('      ' + json.dumps(e, ensure_ascii=False) + ',\n' for e in HOME_EVENTS) + anchor[1:], 1)
+    json.loads(t)
+    open(p, 'w').write(t)
+    print('S8-9 furniture', len(TRAINING_FURNITURE), 'home events', len(HOME_EVENTS))
+
+
 if __name__ == '__main__':
     write_s8_3()
     write_s8_4()
     write_s8_6()
     write_s8_7()
+    write_s8_9()

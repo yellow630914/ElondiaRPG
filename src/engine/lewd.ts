@@ -1,6 +1,7 @@
 // 慾望指標（成人向；docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從記在角色身上，曝露名聲依地區記在存檔。
 // 規則與數值在 data/rules/lewd.json。戰鬥的換算在 combat.ts（慾望上限、受到的慾望、初始慾望……）。
 
+import { residents, trainingRoomOf } from './homes'
 import { abilities, lewdRules, locationById, stories, type LewdKey } from './data'
 import { charmExposureMult, spreadExposure } from './charm'
 import { gearLewdOf, gearRules } from './gear'
@@ -202,6 +203,11 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       if (!contractOf(m) && d.free_submission_every > 0 && day % d.free_submission_every === 0) addLewd(state, m, 'submission', -1)
       const stats = baseLewd(m)
       if (day - (stats.lastScene ?? 0) > d.idle_days && stats.lewdness > lewdRules.defaults.lewdness) addLewd(state, m, 'lewdness', -1)
+    }
+    // 調教室：留在擺了調教家具的房子裡的奴隸，每天順從上升（docs/LEWD_STATS.md 第 19 節）
+    for (const home of Object.values(state.homes ?? {})) {
+      if (!trainingRoomOf(home)) continue
+      for (const c of residents(state, home.id)) if (c.bond === 'slave') addLewd(state, c, 'submission', lewdRules.training.resident_submission)
     }
     // 曝露名聲傳到相鄰地區
     spreadExposure(state)

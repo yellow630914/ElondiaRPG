@@ -861,8 +861,9 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     const places = (Array.isArray(f.places) ? f.places : []).filter((p): p is FurniturePlace => p === 'indoor' || p === 'yard' || p === 'basement')
     out.furniture = {
       places: places.length ? [...new Set(places)] : ['indoor'],
-      ...(f.function === 'bed' || f.function === 'workbench' || f.function === 'garden' ? { function: f.function } : {}),
+      ...(f.function === 'bed' || f.function === 'workbench' || f.function === 'garden' || f.function === 'training' ? { function: f.function } : {}),
       ...(f.function === 'workbench' ? { craft: CRAFT_IDS.includes(f.craft as never) ? f.craft : 'smithing' } : {}),
+      ...(f.function === 'training' ? { training: int(f.training, 1, 3, 1) } : {}),
       ...(int(f.comfort, 0, 10, 0) ? { comfort: int(f.comfort, 0, 10, 0) } : {}),
       ...(typeof f.icon === 'string' && f.icon.trim() ? { icon: [...f.icon.trim()].slice(0, 2).join('') } : {}),
     }

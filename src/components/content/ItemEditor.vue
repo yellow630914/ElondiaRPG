@@ -111,10 +111,12 @@ const toolText = computed(() => toolSummary(draft.value.tool))
 // 家具
 const furn = computed(() => (draft.value.furniture ??= { places: ['indoor'] }))
 function setFurnFunction(v: string) {
-  if (v === 'bed' || v === 'workbench' || v === 'garden') furn.value.function = v
+  if (v === 'bed' || v === 'workbench' || v === 'garden' || v === 'training') furn.value.function = v
   else delete furn.value.function
   if (v === 'workbench') furn.value.craft ??= 'smithing'
   else delete furn.value.craft
+  if (v === 'training') furn.value.training ??= 1
+  else delete furn.value.training
 }
 function toggleFurnPlace(p: FurniturePlace) {
   const list = furn.value.places
@@ -514,8 +516,10 @@ function setFuel(v: string) {
             <option value="bed">床（在家長休）</option>
             <option value="workbench">高階工作台</option>
             <option value="garden">苗圃（可以播種）</option>
+            <option value="training">調教室（成人向：在家調教加值、奴隸每天順從 +1）</option>
           </select>
         </label>
+        <label v-if="furn.function === 'training'">調教加值 <input v-model.number="furn.training" type="number" min="1" max="3" /></label>
         <label v-if="furn.function === 'workbench'">工藝
           <select v-model="furn.craft">
             <option v-for="c in CRAFT_IDS" :key="c" :value="c">{{ craftRules.skills[c].name }}</option>

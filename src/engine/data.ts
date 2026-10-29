@@ -1932,9 +1932,11 @@ export type FurniturePlace = 'indoor' | 'yard' | 'basement'
 
 export interface FurnitureSpec {
   places: FurniturePlace[]
-  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃 */
-  function?: 'bed' | 'workbench' | 'garden'
+  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃；training：調教室的家具（docs/LEWD_STATS.md 第 19 節） */
+  function?: 'bed' | 'workbench' | 'garden' | 'training'
   craft?: CraftId
+  /** 調教室的家具：在家調教時的檢定加值 */
+  training?: number
   comfort?: number
   icon?: string
 }
@@ -2090,6 +2092,8 @@ export const lewdRules = lewdJson as unknown as {
   master_tool: { release_affinity: number; new_master_affinity: number; hours: number; submission_dc_per: number; stance_per: number }
   training: {
     sub_div: number; low_affinity: number; low_dc: number; progress: number; backlash_affinity: number; backlash_delta: number
+    /** 調教室（家具的 training）：在家調教的加值上限、留在家裡的奴隸每天的順從、反彈時逃走的機率 */
+    room_max: number; resident_submission: number; escape_chance: number
     courses: Record<string, { name: string; attr: AttrId; stats: Partial<Record<LewdKey, number>>; affinity?: number; desc: string }>
   }
   brothel: {
