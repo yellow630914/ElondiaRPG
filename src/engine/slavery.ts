@@ -630,7 +630,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     time: { start, end: addHours(start, o.hours ?? e.hours) },
     location: { at: area.location, region: loc.region, scene: area.name },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', summary: `${pm.text}${pool === 'master' || pool === 'owner' ? '你' : who}選擇${o.label}。`, tags: [POOL_TAG[pool]] },
+    outcome: { result: 'neutral', summary: `${pm.text}${pool === 'master' || pool === 'owner' || roles.subject === pc ? '你' : who}選擇${o.label}。`, tags: [POOL_TAG[pool]] },
     changes: {},
     narration: { pov: 'second_person', length: 'short', focus },
     lore_keys: [loc.name, regionById(loc.region).name],

@@ -163,7 +163,8 @@ export function twoFaceCombat(c: Character): TwoFace {
       if (key === 'initiative') out.initiative += n
       else out.mods[key as keyof Mods] = (out.mods[key as keyof Mods] ?? 0) + n
     }
-    for (const s of k.immune ?? []) if (!out.immune.includes(s)) out.immune.push(s)
+    // 免疫只在程度 3（docs/LEWD_STATS.md 第 22 節的表）
+    if (b.bind >= 3) for (const s of k.immune ?? []) if (!out.immune.includes(s)) out.immune.push(s)
     out.active.push({ name: b.name, kind: b.kind, mult: Math.round(mult * 100) / 100 })
   }
   return out
