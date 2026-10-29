@@ -5,7 +5,9 @@ import {
   type AttrId, type ItemIntel, type ItemUse, type ToolKind,
 } from '@/engine/data'
 import { gearPrice, gearRules, gearSummary, rarityName, RARITY_ORDER } from '@/engine/gear'
-import { actionRules, DUNGEON_LAYER_NAME, npcTags, perkRules, slaveryRules, tagDef } from '@/engine/data'
+import { actionRules, DUNGEON_LAYER_NAME, lewdRules, LOCK_GRADES, npcTags, perkRules, slaveryRules, tagDef, type LockGrade } from '@/engine/data'
+import { LEWD_STATS, lewdName } from '@/engine/lewd'
+import type { LewdStat } from '@/engine/types'
 import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod, SYSTEM_CONDITIONS } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -112,10 +114,12 @@ const toolText = computed(() => toolSummary(draft.value.tool))
 // 家具
 const furn = computed(() => (draft.value.furniture ??= { places: ['indoor'] }))
 function setFurnFunction(v: string) {
-  if (v === 'bed' || v === 'workbench' || v === 'garden') furn.value.function = v
+  if (v === 'bed' || v === 'workbench' || v === 'garden' || v === 'training') furn.value.function = v
   else delete furn.value.function
   if (v === 'workbench') furn.value.craft ??= 'smithing'
   else delete furn.value.craft
+  if (v === 'training') furn.value.training ??= 1
+  else delete furn.value.training
 }
 function toggleFurnPlace(p: FurniturePlace) {
   const list = furn.value.places
@@ -218,6 +222,17 @@ function setGearAttr(a: string, v: number) {
   else delete attrs[a]
   if (Object.keys(attrs).length) g.attrs = attrs
   else delete g.attrs
+}
+// 慾望指標的加減（docs/LEWD_STATS.md 第 3 節）
+const lewdCap = lewdRules.gear.item_cap
+function setGearLewd(k: LewdStat, v: number) {
+  const g = draft.value.gear
+  if (!g) return
+  const lewd = { ...(g.lewd ?? {}) }
+  if (v) lewd[k] = Math.max(-lewdCap, Math.min(lewdCap, Math.round(v)))
+  else delete lewd[k]
+  if (Object.keys(lewd).length) g.lewd = lewd
+  else delete g.lewd
 }
 const masterTags = Object.keys(slaveryRules.master_tags.tags)
 function setMasterForce(on: boolean) {
@@ -345,6 +360,12 @@ function setFuel(v: string) {
             <option v-for="(n, k) in LOCS" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
+        <label class="small" title="成人向（docs/LEWD_STATS.md 第 20 節）：魅氣濃度至少這麼高的聚落才買得到（淫市的貨）">魅氣濃度 ≥
+          <select :value="draft.charm_min ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.charm_min = Number(($event.target as HTMLSelectElement).value)) : delete draft.charm_min">
+            <option value="">（不限）</option>
+            <option v-for="n in [2, 3, 4]" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </label>
       </div>
       <p v-if="draft.category === 'equipment'" class="small muted">裝備在商店是每天隨機上架幾樣，不是每天都有。</p>
       <div class="row checks">
@@ -385,6 +406,7 @@ function setFuel(v: string) {
         <label>回復法術環（N 環以下）<input v-model.number="use.slot" type="number" min="0" max="9" /></label>
         <label>暫時生命 <input v-model.number="use.temp_hp" type="number" min="0" /></label>
         <label>行動點 <input v-model.number="use.ap" type="number" min="0" max="10" /></label>
+        <label title="戰鬥中：負數消退慾望（清心茶 −30），正數算自己增加的慾望">慾望 <input v-model.number="use.lust" type="number" min="-200" max="200" /></label>
         <label>救起倒下的隊友（最大生命 %）<input type="number" min="0" max="100" :value="Math.round((use.revive ?? 0) * 100)" @change="use.revive = Number(($event.target as HTMLInputElement).value) / 100 || undefined" /></label>
         <label>給自己或隊友的狀態
           <select :value="use.status?.id ?? ''" @change="use.status = ($event.target as HTMLSelectElement).value ? { id: ($event.target as HTMLSelectElement).value, turns: use.status?.turns ?? 3 } : undefined">
@@ -475,6 +497,22 @@ function setFuel(v: string) {
         </label>
       </div>
       <p class="small muted">照明：在黑暗的地方每走一格燒掉一點。「燒什麼」填燃料物品的名稱（例如油燈燒燈油，燈油本身要填能照亮幾格）；空白而且有「能照亮幾格」時燒掉工具本身（火把）；都沒有時不會燒掉（魔法照明石）。</p>
+      <div class="row small">
+        <label>鎖
+          <select :value="draft.lock ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.lock = ($event.target as HTMLSelectElement).value as LockGrade) : delete draft.lock">
+            <option value="">（不是鎖）</option>
+            <option v-for="g in LOCK_GRADES" :key="g" :value="g">{{ lewdRules.locks.grades[g].name }}（×{{ lewdRules.locks.grades[g].mult }}）</option>
+          </select>
+        </label>
+        <Hint text="成人向（docs/LEWD_STATS.md 第 7 節）：可以在裝備欄替身上的拘束具上鎖，雙面效應的戰鬥增益才生效。" />
+        <label>鑰匙
+          <select :value="draft.key ?? ''" :disabled="!!draft.lock" @change="($event.target as HTMLSelectElement).value ? (draft.key = ($event.target as HTMLSelectElement).value as LockGrade) : delete draft.key">
+            <option value="">（不是鑰匙）</option>
+            <option v-for="g in LOCK_GRADES" :key="g" :value="g">打得開{{ lewdRules.locks.grades[g].name }}以下</option>
+          </select>
+        </label>
+        <Hint text="成人向（docs/LEWD_STATS.md 第 16 節）：打開別人鎖在身上的拘束具（主人強制戴上的），用一次就沒了，鎖歸自己。" />
+      </div>
       <p class="small muted">行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。</p>
     </fieldset>
 
@@ -487,8 +525,10 @@ function setFuel(v: string) {
             <option value="bed">床（在家長休）</option>
             <option value="workbench">高階工作台</option>
             <option value="garden">苗圃（可以播種）</option>
+            <option value="training">調教室（成人向：在家調教加值、奴隸每天順從 +1）</option>
           </select>
         </label>
+        <label v-if="furn.function === 'training'">調教加值 <input v-model.number="furn.training" type="number" min="1" max="3" /></label>
         <label v-if="furn.function === 'workbench'">工藝
           <select v-model="furn.craft">
             <option v-for="c in CRAFT_IDS" :key="c" :value="c">{{ craftRules.skills[c].name }}</option>
@@ -656,6 +696,12 @@ function setFuel(v: string) {
           <span>屬性加減（每項 ±{{ attrMax }}） <Hint :text="`身上裝備的同一項合計最多 ±${gearRules.attrs.cap}。`" />：</span>
           <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }}
             <input type="number" class="num" :min="-attrMax" :max="attrMax" :value="draft.gear.attrs?.[a] ?? 0" @input="setGearAttr(a, Number(($event.target as HTMLInputElement).value))" />
+          </label>
+        </div>
+        <div class="row small">
+          <span>慾望指標加減（每項 ±{{ lewdCap }}） <Hint :text="`成人向（docs/LEWD_STATS.md 第 3 節）。穿著時的有效值；底材的預設（成人向服裝、束縛用）另外加，全身每項合計 ±${lewdRules.gear.total_cap}。`" />：</span>
+          <label v-for="k in LEWD_STATS" :key="k">{{ lewdName(k) }}
+            <input type="number" class="num" :min="-lewdCap" :max="lewdCap" :value="draft.gear.lewd?.[k] ?? 0" @input="setGearLewd(k, Number(($event.target as HTMLInputElement).value))" />
           </label>
         </div>
         <label class="check small">

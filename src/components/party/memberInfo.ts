@@ -26,7 +26,7 @@ export const TYPE_NAME = { skill: '技能', spell: '法術', cantrip: '戲法' }
 /** 裝備欄位的圖示（物品圖示做好之前先用欄位圖示） */
 export const SLOT_ICON: Record<GearSlot, IconName> = {
   main_hand: 'sword', off_hand: 'shield', head: 'crown', body: 'shirt', legs: 'shirt', wrists: 'hand', feet: 'arrowDown',
-  belt: 'minus', accessory: 'gem', ring_1: 'target', ring_2: 'target', piercing_1: 'sparkles', piercing_2: 'sparkles', leg_accessory: 'sparkles',
+  belt: 'minus', accessory: 'gem', ring_1: 'target', ring_2: 'target', piercing_1: 'sparkles', piercing_2: 'sparkles', leg_accessory: 'sparkles', extra_1: 'sparkles',
   underwear_top: 'shirt', underwear_bottom: 'shirt',
 }
 

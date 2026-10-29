@@ -116,6 +116,7 @@ function remove() {
         <label>服從懲罰 <input v-model.number="draft.obedience_penalty" type="number" :min="L.obedience_penalty[0]" :max="L.obedience_penalty[1]" /></label>
         <label class="check"><input v-model="sealed" type="checkbox" /> 魔力封印</label>
         <label v-if="sealed">最多施放幾環 <input v-model.number="draft.spell_cap" type="number" :min="L.spell_cap[0]" :max="L.spell_cap[1]" /></label>
+        <label title="戴著印記的每這麼多天，順從 +1（0 是不累積；成人向）">順從累積（天） <input v-model.number="draft.submission_every" type="number" min="0" max="7" /></label>
       </div>
       <p class="small muted">範圍比玩家自訂印記寬：談判、逃離 DC {{ L.negotiate_dc.join('～') }}、出城 DC {{ L.exit_dc.join('～') }}、被找到 0～{{ L.recapture_chance[1] * 100 }}%、反噬 0～{{ L.escape_hp_ratio[1] * 100 }}%、服從懲罰 0～{{ L.obedience_penalty[1] }}；超出時自動調整。</p>
     </fieldset>

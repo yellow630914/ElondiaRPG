@@ -1,7 +1,9 @@
 // 城鎮行動：旅店休息、酒館招募、公會委託、補給、升級選技能。
 
+import { tagsAllowed } from './content'
+import { condMet } from './storyFlags'
 import { checkBonus } from './perks'
-import { abilityQuality, proficiency, rerollAbilityChoices, snapshot } from './character'
+import { abilityQuality, carryLearned, proficiency, rerollAbilityChoices, setCarried, snapshot } from './character'
 import { setQuestDeadline } from './deadlines'
 import { dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit, questXp } from './guild'
 import { startCombat, type CombatState } from './combat'
@@ -23,7 +25,7 @@ import { formatMoney } from './money'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type { GameState, GuildRank, Quest, Report } from './types'
 import { shortestPath } from './world'
-import { rewardMoney } from './gameRules'
+import { gameRule, rewardMoney } from './gameRules'
 import { squadMates } from './squads'
 
 export { INN_CC_PER_PERSON } from './rest'
@@ -228,7 +230,9 @@ export function guildQuests(state: GameState): Quest[] {
   state.flags[boardKey] = state.time.day
   withRng(state, (rng) => {
     // 以地標為標的的範本：城裡要有符合類型的地標
-    const pool = Object.values(townQuestTemplates).filter((t) => !t.landmark || landmarksFor(state, state.location, t.landmark).length)
+    // 有條件的範本（成人向的委託要曝露名聲或淫亂）：條件成立、內容篩選允許才發布
+    const pool = Object.values(townQuestTemplates).filter((t) => (!t.landmark || landmarksFor(state, state.location, t.landmark).length)
+      && condMet(state, t.requires) && tagsAllowed(t.tags))
     for (let i = 0; i < townQuestsPerTown && pool.length > 0; i++) {
       const tpl = pool.splice(rng.int(0, pool.length - 1), 1)[0]!
       const lm = tpl.landmark ? rng.pick(landmarksFor(state, state.location, tpl.landmark)) : undefined
@@ -408,6 +412,17 @@ export function abandonQuest(state: GameState, questId: string): Report {
 
 // ---- 升級 ----
 
+/** 學會新能力時攜帶已滿的提示 */
+export const LIBRARY_NOTE = '攜帶的技能已滿，先放進技能庫（角色詳情的「能力」頁可以替換）。'
+
+/** 把學會的技能或法術帶上，或放回技能庫（存檔規則 skillLoadout；戰鬥中不能換） */
+export function setAbilityCarried(state: GameState, memberId: string, abilityId: string, on: boolean) {
+  if (state.combat) throw new Error('戰鬥中不能更換攜帶的技能')
+  const member = state.party.find((m) => m.id === memberId)
+  if (!member) throw new Error('隊伍中沒有這位角色')
+  setCarried(member, abilityId, on, gameRule(state, 'skillLoadout'))
+}
+
 /** 重抽升級時的能力選項（不推進時間，也不產生報告） */
 export function rerollAbility(state: GameState, memberId: string, max?: number): string[] {
   const member = state.party.find((m) => m.id === memberId)
@@ -423,10 +438,11 @@ export function chooseAbility(state: GameState, memberId: string, abilityId: str
   delete member.abilityRerollsUsed
   if (member.pendingAbilityChoices!.length === 0) delete member.pendingAbilityChoices
   member.abilities.push(abilityId)
+  const carried = carryLearned(member, abilityId, gameRule(state, 'skillLoadout'))
   const a = abilityDef(abilityId)
   const report = baseReport(state, 'action', 0)
   const kind = a.type === 'spell' ? `${a.circle} 環法術` : a.type === 'cantrip' ? '戲法' : '技能'
-  report.outcome.summary = `${member.name}習得${kind}【${a.name}】。`
+  report.outcome.summary = `${member.name}習得${kind}【${a.name}】。${carried ? '' : LIBRARY_NOTE}`
   report.changes.skills_gained = [{ actor: member.id, skill: a.name, quality: abilityQuality(a), source: 'level_up' }]
   report.narration = { length: 'short' }
   return commitReport(state, report)

@@ -229,6 +229,7 @@ const wearOptions = computed(() => wearChoices())
           <option v-for="m in interiors" :key="m.id" :value="m.id">{{ m.name }}</option>
         </select>
       </label>
+      <label class="check small"><input type="checkbox" :checked="!!draft.auction" @change="($event.target as HTMLInputElement).checked ? (draft.auction = true) : delete draft.auction" /> 拍賣會（成人向：每天的拍品、出價、寄賣，規則在 lewd.json 的 auction）</label>
       <p class="small muted">條件成立時可以選的固定場景（例如解鎖的特殊區域）：付錢、花時間，在場的人加好感，交給 AI 寫經過；成人向的場景照成人場景規則詳細描寫。預設每 3 天一次，場景之間共用。</p>
       <div v-for="(sc, i) in draft.scenes ?? []" :key="i" class="scene-box">
         <div class="row"><b>場景 {{ i + 1 }}</b><span class="spacer" /><button class="small warn" @click="removeScene(i)">刪除</button></div>

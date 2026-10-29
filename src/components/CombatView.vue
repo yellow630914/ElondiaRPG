@@ -2,14 +2,14 @@
 import { useSummary } from '@/engine/inventory'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
-  abilityApCost, combatItems, currentActor, isActive, itemNeedsTarget, itemTargets, multLabel, threatMultOf, threatShares, unusableReason, validTargets,
+  abilityApCost, combatItems, currentActor, defenseMult, effectiveLustMax, isActive, itemNeedsTarget, itemTargets, multLabel, struggleDc, struggleTargets, threatMultOf, threatShares, unusableReason, validTargets,
   type Combatant,
 } from '@/engine/combat'
 import { luckyThreshold } from '@/engine/character'
-import { abilityDef, combatRules, damageTypeName, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
+import { abilityDef, combatRules, damageTypeName, lewdRules, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { describeCombatLine } from '@/narrator/describe'
 import { banner, fxOn, flash, floatText, screenFlash, screenShake, shake, shatter } from '@/fx/fx'
-import { BUFF_COLOR, CRIT_COLOR, DEBUFF_COLOR, HEAL_COLOR, MISS_COLOR, PHYSICAL_COLOR, cuesFor, unplayedHpDelta } from '@/fx/combatFx'
+import { BUFF_COLOR, CRIT_COLOR, DEBUFF_COLOR, HEAL_COLOR, LUST_COLOR, MISS_COLOR, PHYSICAL_COLOR, cuesFor, unplayedHpDelta, unplayedLustDelta } from '@/fx/combatFx'
 import type { TimelineEntry } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
@@ -29,13 +29,23 @@ const log = ref<HTMLElement | null>(null)
 const costs = combatRules.action_costs
 
 /** 已選擇、等待指定目標的行動 */
-const pending = ref<{ kind: 'attack' } | { kind: 'ability'; ability: AbilityDef } | { kind: 'item'; item: string } | null>(null)
+const pending = ref<{ kind: 'attack' } | { kind: 'struggle' } | { kind: 'ability'; ability: AbilityDef } | { kind: 'item'; item: string } | null>(null)
 
 const targets = computed(() => {
   if (!actor.value || !pending.value) return []
   if (pending.value.kind === 'item') return itemTargets(combat.value, pending.value.item)
+  if (pending.value.kind === 'struggle') return struggleTargets(combat.value, actor.value)
   return validTargets(combat.value, actor.value.id, pending.value.kind === 'ability' ? pending.value.ability : undefined)
 })
+
+// 掙脫（自己）、撕開（隊友）戰鬥中的拘束：只有一個對象時直接做
+const struggleAp = lewdRules.unbind.combat.ap
+const bound = computed(() => (actor.value ? struggleTargets(combat.value, actor.value) : []))
+const struggleTitle = computed(() => bound.value.map((t) => `${t.id === actor.value?.id ? '掙脫' : `撕開${t.name}身上的`}拘束：DC ${struggleDc(combat.value, actor.value!, t)}`).join('\n'))
+function struggle() {
+  if (bound.value.length === 1) send({ type: 'struggle', target: bound.value[0]!.id })
+  else pending.value = { kind: 'struggle' }
+}
 
 // 道具：行囊裡可以在戰鬥中使用的東西
 const items = computed(() => combatItems(game.state!))
@@ -109,6 +119,11 @@ function cardRef(id: string, el: unknown) {
 const hpDelta = computed(() => unplayedHpDelta(combat.value.timeline.slice(played.value)))
 /** 畫面上的 HP（還沒播到的傷害先不扣） */
 const shownHp = (c: Combatant) => Math.max(0, Math.min(c.maxHp, c.hp + (hpDelta.value[c.id] ?? 0)))
+const lustDelta = computed(() => unplayedLustDelta(combat.value.timeline.slice(played.value)))
+/** 畫面上的慾望（還沒播到的先不算）；慾望戰鬥關閉時沒有慾望條 */
+const shownLust = (c: Combatant) => Math.max(0, Math.min(effectiveLustMax(c), (c.lust ?? 0) - (lustDelta.value[c.id] ?? 0)))
+/** 有慾望條：慾望戰鬥開著，而且不是免疫魅惑的敵人 */
+const hasLustBar = (c: Combatant) => c.lustMax !== undefined && !(c.side === 'enemy' && defenseMult(c, 'lust') === 0 && !c.lust)
 /** 畫面上倒下了嗎（致命的那一下還沒播到時先不算） */
 const shownDown = (c: Combatant) => !isActive(c) && !(c.hp === 0 && (hpDelta.value[c.id] ?? 0) > 0)
 
@@ -144,6 +159,12 @@ function play(t: TimelineEntry) {
         const el = cards.get(cue.target)
         floatText(el, `+${cue.amount}`, { color: HEAL_COLOR })
         flash(el, HEAL_COLOR)
+        break
+      }
+      case 'lust': {
+        const el = cards.get(cue.target)
+        floatText(el, `${cue.amount > 0 ? '♥+' : '♥'}${cue.amount}`, { color: LUST_COLOR, slide: cue.amount < 0 })
+        if (cue.amount > 0) flash(el, LUST_COLOR)
         break
       }
       case 'crit':
@@ -233,6 +254,7 @@ function chooseTarget(id: string) {
   const p = pending.value
   if (!p) return
   if (p.kind === 'item') send({ type: 'item', item: p.item, target: id })
+  else if (p.kind === 'struggle') send({ type: 'struggle', target: id })
   else send(p.kind === 'attack' ? { type: 'attack', target: id } : { type: 'ability', ability: p.ability.id, target: id })
 }
 
@@ -317,6 +339,10 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
               </span>
               <span v-if="c.slotMax.length" class="slots small muted" :title="slotsText(c)">環 {{ slotsShort(c) }}</span>
             </div>
+            <div v-if="hasLustBar(c)" class="l2 lust" :title="`慾望 ${c.lust ?? 0}/${effectiveLustMax(c)}：滿了會高潮`">
+              <span class="hpbar"><span class="bar lust"><span class="fill" :style="{ width: pct(shownLust(c), effectiveLustMax(c)) }" /></span>
+                <span class="num">♥ {{ shownLust(c) }}/{{ effectiveLustMax(c) }}</span></span>
+            </div>
             <div class="l3 small">
               <span v-if="isActive(c)" class="threat muted" :title="`仇恨值 ${Math.round(c.threat ?? 0)}・累積倍率 ×${threatMultOf(c).toFixed(2)}（職業、裝備、天賦與狀態）。敵人依仇恨加權選目標，不是絕對的。`">
                 <GameIcon name="target" :size="12" />{{ Math.round((shares[c.id] ?? 0) * 100) }}%
@@ -353,6 +379,10 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
                 <span class="num">{{ shownHp(c) }}/{{ c.maxHp }}</span>
               </span>
               <span class="tag">{{ damageTypeName(c.weapon.type) }}攻擊</span>
+            </div>
+            <div v-if="hasLustBar(c)" class="l2 lust" :title="`慾望 ${c.lust ?? 0}/${effectiveLustMax(c)}：滿了會高潮`">
+              <span class="hpbar"><span class="bar lust"><span class="fill" :style="{ width: pct(shownLust(c), effectiveLustMax(c)) }" /></span>
+                <span class="num">♥ {{ shownLust(c) }}/{{ effectiveLustMax(c) }}</span></span>
             </div>
             <div class="l3 small">
               <span v-for="t in affinityTags(c)" :key="t.text" class="tag" :class="t.kind">{{ t.text }}</span>
@@ -401,6 +431,9 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
             {{ actor.weapon.name }}攻擊 <span class="small">{{ costs.weapon_attack }} AP・{{ damageTypeName(actor.weapon.type) }}</span>
           </button>
           <button :disabled="actor.ap < costs.defend" @click="send({ type: 'defend' })">防禦 <span class="small muted">{{ costs.defend }} AP</span></button>
+          <button v-if="bound.length" :disabled="actor.ap < struggleAp" :title="`力量或靈巧（較高的）+ 熟練檢定\n${struggleTitle}`" @click="struggle">
+            {{ bound.some((t) => t.id === actor!.id) ? '掙脫' : '撕開' }} <span class="small muted">{{ struggleAp }} AP</span>
+          </button>
           <button class="danger" :disabled="actor.ap < costs.flee" @click="send({ type: 'flee' })">撤退 <span class="small">{{ costs.flee }} AP</span></button>
           <button @click="send({ type: 'end_turn' })">結束回合</button>
         </div>
@@ -500,6 +533,9 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .l3 .tag, .l2 .tag { margin: 0; }
 .hpbar { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 70px; }
 .hpbar .bar { flex: 1; height: 8px; }
+/* 慾望條：粉紅色，比 HP 條細 */
+.l2.lust .bar { height: 5px; }
+.bar.lust > span { background: linear-gradient(180deg, #ff9ccb, #e0508f 50%, #9a2a5c); }
 /* HP 殘影：白色的一段先留著，再慢慢追上真實值 */
 .bar > span.ghost { position: absolute; left: 0; top: 0; background: #fff6e0cc; transition: width 0.45s ease-out 0.35s; }
 .bar > span.ghost::after { display: none; }

@@ -255,9 +255,10 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
                   <GameIcon name="hand" :size="13" />{{ hiring === p.rec.id ? '收起' : bound ? '向主人提議雇用' : '雇用' }}
                 </button>
                 <details class="more">
-                  <summary class="small" title="獻媚、偷竊、偷襲" aria-label="更多互動"><GameIcon name="more" :size="16" /></summary>
+                  <summary class="small" title="獻媚、誘惑、偷竊、偷襲" aria-label="更多互動"><GameIcon name="more" :size="16" /></summary>
                   <div class="more-list">
                     <button class="small" :disabled="busy" title="魅力檢定：奉承、討好；失敗會降低親密度，對貴族更難" @click="interact('flatter', p)">獻媚</button>
+                    <button class="small" :disabled="busy" title="魅力檢定：勾引、挑逗；對方信仰虔誠、戴著清心的護符比較難，越淫亂越容易。成功時親密度上升、對方淫亂 +1，失敗會降低親密度" @click="interact('seduce', p)">誘惑</button>
                     <button class="small" :disabled="busy || guarded(p, 'steal')" :title="guarded(p, 'steal') ? GUARDED : '靈巧檢定：偷錢或東西；被發現會降低親密度，在城裡還會提高衛兵警戒、降低聲望'" @click="interact('steal', p)">偷竊</button>
                     <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy || guarded(p, 'attack')" :title="guarded(p, 'attack') ? GUARDED : '靈巧檢定：成功就先手開戰；被看到會有衛兵與聲望的後果'" @click="attack(p)">偷襲</button>
                   </div>

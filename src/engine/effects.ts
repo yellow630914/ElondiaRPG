@@ -10,9 +10,9 @@
 import { attachParasite, changeCorruption, detachParasite, tameParasite } from './parasites'
 import { tagsAllowed } from './content'
 import { addItem } from './state'
-import { abilities, classAbilities, classes, locationById, perkDef, slaveryRules, type AttrId } from './data'
+import { abilities, classAbilities, classes, locationById, masterEventPool, perkDef, slaveryRules, type AbilityDef, type AttrId, type LewdKey, type MasterEventPool } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
-import { abilityChoices, abilityQuality, learnable, learnAbility, maxCircle, recalc } from './character'
+import { abilityChoices, abilityQuality, carryLearned, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import { changeHitDice, changeSlots } from './resources'
@@ -22,7 +22,7 @@ import {
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
 import { gearKnown, registerGear, syncGear } from './gear'
-import type { GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
+import type { Character, GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
 import { inActiveSquad } from './squads'
 import { joinGroup, queueJoin } from './away'
@@ -31,7 +31,8 @@ import { contractKind, randomMaster } from './slavery'
 import { forceEquip } from './forcedGear'
 import { addStrict, extendDeadline, sendToMasterHome } from './masterHome'
 import { addTattoo, contractOf, freePlaces, oathText, placeName, removeTattoo, tattooFromTemplate, tattooKindName, tattoosOf, type NewTattoo } from './tattoos'
-import { rewardMoney } from './gameRules'
+import { gameRule, rewardMoney } from './gameRules'
+import { addLewd, lewdName } from './lewd'
 
 export type NpcRef = string | NpcSpec
 
@@ -114,12 +115,19 @@ export type RewardEffect =
   | { type: 'parasite'; parasite: string; op: 'add' | 'tame' | 'remove' }
   /** 寄生物的侵蝕度加減 */
   | { type: 'corruption'; parasite: string; delta: number }
+  /** 慾望指標的加減（docs/LEWD_STATS.md）：target 預設主角；曝露名聲記在目前的地區 */
+  | { type: 'lewd'; stat: LewdKey; delta: number; target?: string }
+  /**
+   * 從事件庫（主人事件、調教、娼館的打工與受訓）掛的技能（teaches）裡，抽一個 target 還沒學、等級也夠的色情技能學會；
+   * 全部學過時套用 fallback。target 預設主角
+   */
+  | { type: 'ability_pool'; pool: MasterEventPool; target?: string; fallback?: RewardEffect[] }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
   'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip',
-  'parasite', 'corruption',
+  'parasite', 'corruption', 'lewd', 'ability_pool',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -151,6 +159,22 @@ export function affordable(state: GameState, effects: RewardEffect[], report?: R
       return { ...x, amount: -paid }
     })
     .filter((x) => x.type !== 'money' || x.amount !== 0)
+}
+
+
+/** 學會一個色情技能（事件、受訓、光顧娼婦、調教）：記進報告、能帶就帶上；回傳日誌的一句 */
+export function teachAbility(state: GameState, report: Report, who: Character, id: string): string {
+  const a = learnAbility(who, id)
+  ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: a.name, quality: abilityQuality(a), source: 'insight' })
+  const carried = carryLearned(who, a.id, gameRule(state, 'skillLoadout'))
+  return `${who.name}學會了【${a.name}】${carried ? '' : '（攜帶已滿，先放進技能庫）'}`
+}
+
+/** 事件庫掛的技能裡，這個人還沒學、等級也夠的色情技能，隨機抽一個（ability_pool） */
+export function poolAbility(state: GameState, who: Character, pool: MasterEventPool): AbilityDef | undefined {
+  const ids = [...new Set(masterEventPool(pool).flatMap((e) => e.teaches ?? []))]
+  const open = ids.map((id) => abilities[id]).filter((a): a is AbilityDef => !!a && a.classes.includes('lewd') && !who.abilities.includes(a.id) && (a.unlock ?? 1) <= who.level)
+  return open.length ? withRng(state, (rng) => rng.pick(open)) : undefined
 }
 
 /** 套用效果，回傳每個效果的簡短說明（無法套用的會註明原因）。 */
@@ -399,6 +423,19 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         if (line) notes.push(line)
         break
       }
+      case 'ability_pool': {
+        const who = e.target ? state.party.find((m) => m.id === e.target) ?? pcOf(state) : pcOf(state)
+        const pick = poolAbility(state, who, e.pool)
+        if (pick) notes.push(teachAbility(state, report, who, pick.id))
+        else if (e.fallback?.length) notes.push(...applyEffects(state, report, e.fallback.filter((x) => x.type !== 'ability_pool')))
+        break
+      }
+      case 'lewd': {
+        const who = e.target ? state.party.find((m) => m.id === e.target) ?? pcOf(state) : pcOf(state)
+        const d = addLewd(state, who, e.stat, e.delta, report)
+        if (d) notes.push(`${who.name}的${lewdName(e.stat)} ${d > 0 ? '+' : ''}${d}`)
+        break
+      }
       case 'force_equip': {
         const line = forceEquip(state, report, e.npc, e.item)
         notes.push(line || '主人沒有挑到要你戴的東西')
@@ -455,11 +492,12 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
             notes.push(`${who.name}已經會【${named.name}】了`)
             break
           }
-          const own = classAbilities(who.class).some((a) => a.id === named.id)
+          const own = classAbilities(who.class).some((a) => a.id === named.id) || named.classes.includes('lewd')
           if (own && (named.type !== 'spell' || (named.circle ?? 1) <= maxCircle(who))) {
             learnAbility(who, named.id)
             ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: named.name, quality: abilityQuality(named), source: 'insight' })
-            notes.push(`${who.name}領悟了【${named.name}】`)
+            const carried = carryLearned(who, named.id, gameRule(state, 'skillLoadout'))
+            notes.push(`${who.name}領悟了【${named.name}】${carried ? '' : '（攜帶已滿，先放進技能庫）'}`)
             break
           }
           const choices = withRng(state, (rng) => abilityChoices(who, rng, 3))

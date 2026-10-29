@@ -6,7 +6,7 @@
 // - 夥伴可以留在家裡（不算離隊）：不佔隊伍人數、不參加戰鬥，回家時可以帶上。
 
 import { snapshot } from './character'
-import { craftRules, geography, homeRules, itemDef, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
+import { craftRules, geography, homeRules, itemDef, lewdRules, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
 import { blocksFor, placeAt, position, settlementKey, type Area, type Cell } from './grid'
 import { npcRecord, registerNpc } from './npcs'
 import { partyMax, partyRoom } from './party'
@@ -401,7 +401,8 @@ export const PLACE_NAME: Record<FurniturePlace, string> = { indoor: '室內', ya
 /** 家具的一行說明：功能、舒適度、能放的地方 */
 export function furnitureSummary(f: FurnitureSpec | undefined): string {
   if (!f) return ''
-  const fn = f.function === 'bed' ? '床' : f.function === 'workbench' ? `${f.craft ? craftRules.skills[f.craft].name : ''}的高階工作台` : f.function === 'garden' ? '苗圃' : ''
+  const fn = f.function === 'bed' ? '床' : f.function === 'workbench' ? `${f.craft ? craftRules.skills[f.craft].name : ''}的高階工作台`
+    : f.function === 'garden' ? '苗圃' : f.function === 'training' ? `調教室（在家調教 +${f.training ?? 0}）` : ''
   return [fn, f.comfort ? `舒適 +${f.comfort}` : '', `放在${f.places.map((p) => PLACE_NAME[p]).join('、')}`].filter(Boolean).join('，')
 }
 
@@ -417,6 +418,15 @@ export function furnitureIn(home: Home): { name: string; area: string; x: number
 /** 舒適度：所有家具的 comfort 加總 */
 export function comfortOf(home: Home): number {
   return furnitureIn(home).reduce((n, f) => n + (itemDef(f.name)?.furniture?.comfort ?? 0), 0)
+}
+
+/** 調教室：房子裡調教家具的加值合計（lewd.json 的 training.room_max 為上限） */
+export function trainingRoomOf(home: Home): number {
+  const sum = furnitureIn(home).reduce((n, f) => {
+    const spec = itemDef(f.name)?.furniture
+    return n + (spec?.function === 'training' ? spec.training ?? 0 : 0)
+  }, 0)
+  return Math.min(lewdRules.training.room_max, sum)
 }
 
 export function hasBed(home: Home): boolean {

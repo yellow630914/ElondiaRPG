@@ -1,6 +1,7 @@
 // 角色：屬性、三資源（生命值、行動點、法術環）的推導、升級與能力學習。
 // 公式說明見 docs/COMBAT_SYSTEM.md，數值在 data/rules/combat.json。
 
+import { pcTagSummary } from './pcTags'
 import { parasiteSummary, parasitesOf } from './parasites'
 import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks'
 import {
@@ -12,6 +13,7 @@ import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGe
 import { bodyOf } from './traits'
 import { dressNpc } from './outfits'
 import { tattoosOf, tattooSummary } from './tattoos'
+import { npcLewd } from './lewd'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
 
@@ -292,6 +294,8 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
   // 特質：資料裡指定的，沒有時依 id 固定地抽
   const perks = npcPerksOf(def)
   if (perks.length) c.perks = [...new Set(perks)]
+  // 慾望指標：依標籤與 id 固定地擲（固定 NPC 寫了的優先）
+  c.lewd = npcLewd(def)
   syncGear(c, classDef(c.class).weapon)
   recalc(c)
   c.hp = c.maxHp
@@ -352,13 +356,85 @@ export function rerollAbilityChoices(c: Character, rng: Rng, max = progression.a
   return picked
 }
 
-/** 學會一項能力（事件、任務的技能報酬）。必須是這個職業的能力且尚未學會。 */
+/** 學會一項能力（事件、任務的技能報酬、技能書）。必須是這個職業的能力或不分職業的色情技能，且尚未學會。 */
 export function learnAbility(c: Character, id: string): AbilityDef {
-  const a = classAbilities(c.class).find((x) => x.id === id)
+  const a = classAbilities(c.class).find((x) => x.id === id) ?? (abilityTable[id]?.classes.includes('lewd') ? abilityTable[id] : undefined)
   if (!a) throw new Error('這個職業學不了這項能力')
   if (c.abilities.includes(id)) throw new Error('已經學會了')
   c.abilities.push(id)
   return a
+}
+
+/** 技能書下一個能學的能力：還沒學、學得了（自己職業的或色情技能）的第一個；等級不夠時回傳原因 */
+export function nextBookAbility(c: Character, list: string[]): { ability?: AbilityDef; reason?: string } {
+  const open = list.map((id) => abilityTable[id]).filter((a): a is AbilityDef => !!a && !c.abilities.includes(a.id)
+    && (a.classes.includes('lewd') || classAbilities(c.class).some((x) => x.id === a.id)))
+  if (!open.length) return { reason: `${c.name}已經學會書裡能學的能力了` }
+  const ready = open.find((a) => (a.unlock ?? 1) <= c.level)
+  if (ready) return { ability: ready }
+  const next = open[0]!
+  return { reason: `等級不夠：書裡下一個能力【${next.name}】要 ${next.unlock} 級` }
+}
+
+// ---- 技能攜帶上限（存檔規則 skillLoadout）：學會的能力都在技能庫，戰鬥只帶攜帶中的；戲法不算 ----
+
+/** 這項能力算不算進攜帶上限（戲法有自己的上限，一直都帶著） */
+export function countsForLoadout(id: string): boolean {
+  return abilityTable[id]?.type !== 'cantrip'
+}
+
+/**
+ * 攜帶中、算進上限的能力（依學會的順序）。cap 為 0 表示不限。
+ * 沒選過時（以及上限調低、選的比上限多時）自動挑：先帶職業的起始能力（重擊、偷襲、治療術這類核心技能），其他帶最近學會的。
+ */
+function carriedCounted(c: Pick<Character, 'abilities' | 'loadout' | 'class'>, cap: number): string[] {
+  const counted = c.abilities.filter(countsForLoadout)
+  if (cap <= 0) return counted
+  const picked = c.loadout ? counted.filter((id) => c.loadout!.includes(id)) : counted
+  if (picked.length <= cap) return picked
+  const core = new Set((classDef(c.class)?.start ?? []).filter((id) => picked.includes(id)).slice(0, cap))
+  const room = cap - core.size
+  const rest = room > 0 ? picked.filter((id) => !core.has(id)).slice(-room) : []
+  const keep = new Set([...core, ...rest])
+  return picked.filter((id) => keep.has(id))
+}
+
+/** 戰鬥時帶上的能力：攜帶中的技能與法術，加上所有戲法 */
+export function carriedAbilities(c: Character, cap: number): string[] {
+  const keep = new Set(carriedCounted(c, cap))
+  return c.abilities.filter((id) => !countsForLoadout(id) || keep.has(id))
+}
+
+/** 攜帶了幾個、技能庫還有幾個（都不算戲法） */
+export function loadoutUsage(c: Character, cap: number): { carried: number; library: number } {
+  const carried = carriedCounted(c, cap).length
+  return { carried, library: c.abilities.filter(countsForLoadout).length - carried }
+}
+
+/** 剛學會一項能力（已經放進 abilities）：還有空位就帶上，滿了就留在技能庫。回傳有沒有帶上 */
+export function carryLearned(c: Character, id: string, cap: number): boolean {
+  if (cap <= 0 || !countsForLoadout(id)) return true
+  const before = carriedCounted({ abilities: c.abilities.filter((x) => x !== id), loadout: c.loadout, class: c.class }, cap)
+  if (before.length < cap) {
+    if (c.loadout) c.loadout = [...before, id]
+    return true
+  }
+  // 帶滿了：記下原本帶的，新學的留在技能庫（不擠掉舊的）
+  c.loadout = before
+  return false
+}
+
+/** 把一項學會的技能或法術帶上，或放回技能庫 */
+export function setCarried(c: Character, id: string, on: boolean, cap: number) {
+  if (!c.abilities.includes(id)) throw new Error('還沒學會這項能力')
+  if (!countsForLoadout(id)) throw new Error('戲法不算在攜帶上限裡，一直都帶著')
+  if (cap <= 0) throw new Error('目前不限攜帶數量，全部都帶著')
+  const now = carriedCounted(c, cap)
+  if (on) {
+    if (now.includes(id)) return
+    if (now.length >= cap) throw new Error(`已經帶滿 ${cap} 個，先放回一個`)
+    c.loadout = [...now, id]
+  } else c.loadout = now.filter((x) => x !== id)
 }
 
 /** 加經驗值並處理升級；回傳升了幾級。會直接修改角色。 */
@@ -419,6 +495,7 @@ export function snapshot(c: Character, before?: Character, player?: Character): 
 export function protagonistText(c: Character, birthplaceName?: string): string {
   const lines = [
     `${c.name}｜${c.gender ? `${c.gender}｜` : ''}${attributeRules.races[c.race]?.name ?? c.race}・${classDef(c.class).name} Lv.${c.level}${birthplaceName ? `｜出身：${birthplaceName}` : ''}`,
+    c.tags?.length ? `身分：${pcTagSummary(c)}` : '',
     c.appearance ? `外貌：${c.appearance}` : '',
     c.background ? `背景：${c.background}` : '',
     perksOf(c).length ? `特質：${perksOf(c).map((p) => (p.flaw ? `${p.name}（缺陷）` : p.name)).join('、')}` : '',

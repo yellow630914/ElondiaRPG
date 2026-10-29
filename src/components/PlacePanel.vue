@@ -4,8 +4,8 @@ import { deadlineText, questDeadlineDays } from '@/engine/deadlines'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
-import { canTravelHere, CELL_ICON, CELL_NAME, cellName, DUNGEON_LAYERS, position, linkEntryBlock, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
+import { attrName, isCustomShopId, landmarkDef, locationById, parkPlaza, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
+import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, position, linkEntryBlock, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
@@ -19,6 +19,9 @@ import { useGame } from '@/stores/game'
 import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
+import ArenaPanel from './ArenaPanel.vue'
+import FusePanel from './FusePanel.vue'
+import OutfitTailorPanel from './OutfitTailorPanel.vue'
 import GuardStatus from './GuardStatus.vue'
 import { isWanted, palacePersuadeDc } from '@/engine/security'
 import MarketPanel from './MarketPanel.vue'
@@ -260,10 +263,13 @@ const shopDesc = computed(() => {
 
         <template v-else-if="shopHere">
           <ShopPanel :key="`${shopHere}-${s.location}-${s.time.day}`" :type="shopHere" />
+          <FusePanel />
+          <OutfitTailorPanel />
         </template>
 
         <template v-else-if="cell.kind === 'tavern'">
           <TavernPanel :key="`${s.location}-${s.time.day}`" />
+          <ArenaPanel />
         </template>
 
         <template v-else-if="cell.kind === 'guild'">
@@ -331,6 +337,11 @@ const shopDesc = computed(() => {
           <ShopPanel :key="`wanderer-${s.location}-${s.time.day}`" type="wanderer" />
         </template>
 
+        <template v-else-if="cell.kind === 'exit' && parkPlaza(area.location) && area.kind === 'dungeon'">
+          <p class="muted small">{{ area.name }}的出口，通往{{ specialMaps[parkPlaza(area.location)!]?.name }}。</p>
+          <button @click="game.leavePark()">回到{{ specialMaps[parkPlaza(area.location)!]?.name }}</button>
+        </template>
+
         <template v-else-if="cell.kind === 'exit' && area.kind === 'special'">
           <p class="muted small">{{ area.name }}的出口。</p>
           <button @click="game.leaveSpecial()">離開，回到{{ s.special?.back ? '進來前的地方' : here.name }}</button>
@@ -366,6 +377,7 @@ const shopDesc = computed(() => {
 
         <template v-else-if="cell.kind === 'brothel'">
           <BrothelPanel />
+          <ArenaPanel />
         </template>
 
         <template v-else-if="cell.kind === 'safe'">

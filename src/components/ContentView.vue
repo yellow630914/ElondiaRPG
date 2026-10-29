@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
+import { abilities, className, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { builtinSpecialMap, newSpecialMap, newSpecialMapId } from '@/engine/specialMapMods'
@@ -38,6 +38,8 @@ import MarkEditor from './content/MarkEditor.vue'
 import MarkRulesEditor from './content/MarkRulesEditor.vue'
 import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
 import TravelEventEditor from './content/TravelEventEditor.vue'
+import MasterEventEditor from './content/MasterEventEditor.vue'
+import { allMasterEvents, builtinMasterEvent, masterEventById, newMasterEvent, POOL_IDS } from '@/engine/masterEventMods'
 import EventRulesEditor from './content/EventRulesEditor.vue'
 import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
 import ItemIcon from './items/ItemIcon.vue'
@@ -48,7 +50,7 @@ import { builtinTravelEvent, DUNGEON_TRIGGERS, newTravelEvent } from '@/engine/t
 import { parasiteRules } from '@/engine/parasites'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'shops' | 'events' | 'npcs' | 'stories'
+type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
   { id: 'items', label: '🎒 物品' },
@@ -62,6 +64,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'specialMaps', label: '🗺️ 特殊地圖' },
   { id: 'shops', label: '🏪 商店' },
   { id: 'events', label: '🎲 事件' },
+  { id: 'masterEvents', label: '⛓️ 主奴與娼館' },
   { id: 'npcs', label: '🧑 固定 NPC' },
   { id: 'stories', label: '⭐ 特殊任務' },
 ]
@@ -100,6 +103,7 @@ function resetFilters() {
   pickStatusType.value = false
   tattooKind.value = ''
   eventScope.value = ''
+  masterPool.value = ''
   gearSlot.value = ''
   matKind.value = ''
   perkCat.value = ''
@@ -116,13 +120,15 @@ function resetFilters() {
   storyLevel.value = ''
   storyNpc.value = ''
 }
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', shops: '', events: '', npcs: '', stories: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', shops: '', events: '', masterEvents: '', npcs: '', stories: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
 const tattooKind = ref('')
 // 狀態：增益、減益、非戰鬥狀態（列表的 key：戰鬥狀態是 id，非戰鬥狀態是 c:<id>）
 const statusKind = ref('')
 // 事件：旅途、城鎮（列表的 key 是事件 id，rules 是事件設定）
 const eventScope = ref('')
+// 主奴與娼館：事件庫
+const masterPool = ref('')
 /** 清單上的效果簡述：第一項效果，太長就截斷（完整的在編輯畫面） */
 function shortStatus(s: Parameters<typeof describeStatus>[0]): string {
   const parts = describeStatus(s).split('；')
@@ -340,6 +346,16 @@ const rows = computed<Row[]>(() => {
     const narrowed = placeFilter.value || adultFilter.value || tagFilter.value || bodyFilter.value || flagFilter.value.trim()
     const rules = narrowed ? [] : [{ key: 'rules', name: '⚙️ 事件設定', note: '機率、權重、冷卻', status: st(!!m.eventRules?.rules, false), sort: 3 }]
     list = [...evs, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+  } else if (sub.value === 'masterEvents') {
+    list = allMasterEvents()
+      .filter((x) => !masterPool.value || x.pool === masterPool.value)
+      .filter((x) => adultMatch(!!x.def.adult))
+      .map(({ pool, def }) => ({
+        key: def.id, name: def.text.replace(/\{master\}/g, '主人').slice(0, 28) || def.id,
+        note: `${MASTER_EVENT_POOLS[pool]}${def.adult ? '・成人向' : ''}${def.teaches?.length ? `・技能 ${def.teaches.length}` : ''}`,
+        status: st(!!m.masterEvents?.[def.id], !builtinMasterEvent(def.id)), sort: POOL_IDS.indexOf(pool),
+      }))
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'stories') {
     const counters = { key: COUNTERS_KEY, name: '🔢 劇情計數器', note: `${Object.keys(storyCounters).length} 個`, status: st(Object.keys(m.counters ?? {}).length > 0, false) }
     const band = STORY_BANDS[storyLevel.value]
@@ -386,7 +402,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), masterEvents: n(m.masterEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -400,6 +416,7 @@ const current = computed(() => {
     : sub.value === 'landmarks' ? !!landmarks[key]
     : sub.value === 'specialMaps' ? !!specialMaps[key]
     : sub.value === 'events' ? key === 'rules' || travelEvents.templates.some((t) => t.id === key)
+    : sub.value === 'masterEvents' ? !!masterEventById(key)
     : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
     : !!gearRules.materials[key]
   return exists ? key : ''
@@ -486,6 +503,10 @@ function create() {
       const id = newModId('event')
       content.saveTravelEvent(id, newTravelEvent(id, eventScope.value === 'town' || eventScope.value === 'dungeon' || eventScope.value === 'parasite' ? eventScope.value : 'road'))
       select(id)
+    } else if (sub.value === 'masterEvents') {
+      const id = newModId('mevent')
+      content.saveMasterEvent(id, newMasterEvent(id, (POOL_IDS as string[]).includes(masterPool.value) ? masterPool.value as MasterEventPool : 'master'))
+      select(id)
     } else if (sub.value === 'bases') {
       const id = newModId('base')
       content.saveBase(id, newBase(), true)
@@ -543,6 +564,11 @@ function duplicate() {
       const id = newModId('event')
       const src = JSON.parse(JSON.stringify(content.mods.travelEvents?.[key] ?? travelEvents.templates.find((t) => t.id === key)))
       content.saveTravelEvent(id, { ...src, id, title: `${src.title}2`.slice(0, 20), custom: true })
+      select(id)
+    } else if (sub.value === 'masterEvents') {
+      const id = newModId('mevent')
+      const found = masterEventById(key)!
+      content.saveMasterEvent(id, { ...JSON.parse(JSON.stringify(content.mods.masterEvents?.[key] ?? found.def)), pool: found.pool, custom: true })
       select(id)
     } else if (sub.value === 'stories') {
       const id = newModId('story')
@@ -606,7 +632,7 @@ function duplicate() {
   }
 }
 
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', shops: '＋ 新增商店', events: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
 // ---- 匯出、匯入、重設 ----
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -840,6 +866,17 @@ function resetAll() {
           <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
           <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
         </div>
+        <div v-if="sub === 'masterEvents'" class="row">
+          <select v-model="masterPool" class="grow">
+            <option value="">所有事件庫</option>
+            <option v-for="p in POOL_IDS" :key="p" :value="p">{{ MASTER_EVENT_POOLS[p] }}</option>
+          </select>
+          <select v-model="adultFilter">
+            <option value="">成人向與一般</option>
+            <option value="yes">🔞 成人向</option>
+            <option value="no">一般</option>
+          </select>
+        </div>
         <div v-if="sub === 'abilities'" class="row">
           <select v-model="abilityType" class="grow">
             <option value="">所有種類</option>
@@ -847,7 +884,7 @@ function resetAll() {
           </select>
           <select v-model="abilityClass" class="grow">
             <option value="">所有職業</option>
-            <option v-for="c in abilityClasses()" :key="c" :value="c">{{ c === 'monster' ? '怪物' : className(c) }}</option>
+            <option v-for="c in abilityClasses()" :key="c" :value="c">{{ c === 'monster' ? '怪物' : c === 'lewd' ? '色情技能（不分職業）' : className(c) }}</option>
           </select>
         </div>
         <p v-if="sub !== 'shops' && sub !== 'specialMaps' && sub !== 'tattoos'" class="small muted count">符合 {{ rows.length }} 項</p>
@@ -888,6 +925,7 @@ function resetAll() {
           <EventRulesEditor v-if="current === 'rules'" key="ev-rules" />
           <TravelEventEditor v-else :id="current" :key="`ev-${current}`" @deleted="select('')" />
         </template>
+        <MasterEventEditor v-else-if="sub === 'masterEvents'" :id="current" :key="`me-${current}`" @deleted="select('')" />
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
         <CountersEditor v-else-if="sub === 'stories' && current === COUNTERS_KEY" key="counters" />
         <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" @open="select" />

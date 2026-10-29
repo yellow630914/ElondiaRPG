@@ -2,10 +2,11 @@
 // 內建的地圖每一項都可以改、不能刪；自建的地圖沒有被用到時可以刪。
 
 import {
-  DUNGEON_LAYER_IDS, enemies, geography, isSpecialMapId, itemDef, landmarks, npcs as namedNpcs, shopRules, specialKey, specialMapLegend, specialMaps, stories,
+  DUNGEON_LAYER_IDS, enemies, geography, isSpecialMapId, itemDef, landmarks, parkPlaza, npcs as namedNpcs, shopRules, specialKey, specialMapLegend, specialMaps, stories,
   type DungeonLayerId, type EncounterGroup, type ShopType, type SpecialConnection, type SpecialMapDef,
 } from './data'
 import { settlementArea, type CellKind } from './grid'
+import { parkOfLink } from './park'
 import { isLotCell } from './homes'
 import type { Lighting } from './light'
 import { cleanFlag } from './storyFlags'
@@ -136,6 +137,13 @@ export function sanitizeSpecialMapMod(
       if (!c || !inside(c.at) || typeof c.to?.area !== 'string') continue
       const area = c.to.area
       if (area === specialKey(id)) continue
+      // 通往園區（主題地下城）：那座地下城要寫這張地圖是它的入口廣場
+      const park = parkOfLink(area)
+      if (park !== undefined) {
+        if (parkPlaza(park) !== id) continue
+        connections.push({ at: { x: c.at.x, y: c.at.y }, to: { area, x: 0, y: 0 } })
+        continue
+      }
       const size = targetSize(area, known)
       if (!size) continue
       const { x, y } = c.to

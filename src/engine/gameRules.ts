@@ -8,6 +8,7 @@ import { companionRules, combatRules, enemies, isLayerBoss, MINION_TIERS, minion
 import securityJson from '@data/rules/security.json'
 import slaveryJson from '@data/rules/slavery.json'
 import parasitesJson from '@data/rules/parasites.json'
+import lewdJson from '@data/rules/lewd.json'
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
 export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange'>
@@ -38,7 +39,10 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   masterEventMult: { label: '主人事件的機率', hint: `被主人帶著時，主人突發事件的機率乘上這個倍率（預設：走動每一步 ${pct(slaveryJson.master_events.step_chance)}、旅行每趟 ${pct(slaveryJson.master_events.travel_chance)}）。0 表示主人不會突然提出要求（離家逾期的「主人要回家」照樣會發生）。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
   parasiteMult: { label: '寄生發作的機率', hint: `身上的寄生物（寄生裝備、淫紋、寄生種子）發作的機率乘上這個倍率（預設：走動每一步 ${pct(parasitesJson.step_chance)}、旅途每天 ${pct(parasitesJson.travel_chance)}、長休之後 ${pct(parasitesJson.rest_chance)}；支配階段加倍）。0 表示不會發作。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發作' },
   dungeonEventMult: { label: '地下城事件的機率', hint: '地下城與近郊的色情事件（觸發陷阱、打開寶箱、採集、安全房長休）的機率乘上這個倍率。0 表示不會發生。成人向內容。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
+  brothelEventMult: { label: '娼館事件的機率', hint: `在娼館打工（接客）結束時發生事件的機率乘上這個倍率（預設 ${pct(lewdJson.brothel.work_event.base)}，淫亂越高越容易，最高 ${pct(lewdJson.brothel.work_event.max)}）。0 表示不會發生。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
   eventDc: { label: '事件檢定的難度', hint: '地下城事件與寄生物發作的檢定 DC 加減（這兩種事件的 DC 本來就依層、主角等級與侵蝕度的階段調整）。負數比較容易。成人向內容。', default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
+  lustMult: { label: '慾望戰鬥', hint: '戰鬥中所有慾望增加的倍率（慾望攻擊、媚毒、自己增加的慾望……）。慾望滿了會高潮：我方停止行動一回合、失去三分之一的生命（不會因此死亡，一場高潮三次倒下）；敵方受到三分之一生命的傷害。0 表示關閉：沒有慾望條，色情技能不能用，敵人也不用慾望攻擊。成人向內容。', default: 1, min: 0, max: 2, step: 0.25, unit: '倍', zero: '關閉' },
+  skillLoadout: { label: '技能攜帶上限', hint: '每個角色戰鬥時最多帶幾個技能與法術（戲法不算）。學會的能力都留在技能庫，在角色詳情的「能力」頁勾選要帶哪些，戰鬥以外隨時可以換；超過上限時先帶最近學會的。0 表示不限，全部帶上。', default: 12, min: 0, max: 30, step: 1, unit: '個', zero: '不限' },
   escapeDc: { label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
 }
 

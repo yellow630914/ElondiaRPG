@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, itemRules, landmarks, locationById, shopRules, specialMapLegend, specialMaps, type EncounterGroup, type ShopType, type SpecialConnection } from '@/engine/data'
 import { CELL_ICON, cellName, settlementArea, type CellKind } from '@/engine/grid'
 import { builtinSpecialMap, LIGHTINGS, MAP_CHARS, mapSize, SPECIAL_MAP_LIMITS, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
+import { PARK_LINK } from '@/engine/park'
 import type { CellRef } from '@/engine/shopMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -222,11 +223,14 @@ function addConn() {
   draft.value.conns.push({ at: { x: 0, y: 0 }, to: { area: '', x: 0, y: 0 }, flagsText: '', flagsNoneText: '' })
   tool.value = `conn:${draft.value.conns.length - 1}`
 }
-function connKind(c: Conn): 'town' | 'map' {
-  return c.to.area.startsWith('sm/') ? 'map' : 'town'
+/** 以這張地圖為入口廣場的園區（主題地下城，geography 的 park） */
+const parks = computed(() => geography.locations.filter((l) => l.park === props.id))
+function connKind(c: Conn): 'town' | 'map' | 'park' {
+  return c.to.area.startsWith('sm/') ? 'map' : c.to.area.startsWith(PARK_LINK) ? 'park' : 'town'
 }
-function setConnKind(c: Conn, kind: 'town' | 'map') {
-  c.to = kind === 'map' ? { area: otherMaps.value[0] ? `sm/${otherMaps.value[0].id}` : '', x: 0, y: 0 } : { area: '', x: 0, y: 0 }
+function setConnKind(c: Conn, kind: 'town' | 'map' | 'park') {
+  c.to = kind === 'map' ? { area: otherMaps.value[0] ? `sm/${otherMaps.value[0].id}` : '', x: 0, y: 0 }
+    : kind === 'park' ? { area: parks.value[0] ? `${PARK_LINK}${parks.value[0].id}` : '', x: 0, y: 0 } : { area: '', x: 0, y: 0 }
 }
 function townRef(c: Conn): CellRef | null {
   return c.to.area && !c.to.area.startsWith('sm/') ? { area: c.to.area, x: c.to.x, y: c.to.y } : null
@@ -448,6 +452,7 @@ function remove() {
             <span>接到</span>
             <label class="check"><input type="radio" :checked="connKind(c) === 'town'" @change="setConnKind(c, 'town')" /> 城鎮區塊</label>
             <label class="check"><input type="radio" :checked="connKind(c) === 'map'" :disabled="!otherMaps.length" @change="setConnKind(c, 'map')" /> 特殊地圖</label>
+            <label v-if="parks.length" class="check" title="以這張地圖為入口廣場的園區（主題地下城）：走上去等於從入口進那座地下城"><input type="radio" :checked="connKind(c) === 'park'" @change="setConnKind(c, 'park')" /> 園區</label>
             <span class="spacer" />
             <button class="small warn" @click="draft.conns.splice(ci, 1); tool = '#'">刪除</button>
           </div>
@@ -455,6 +460,9 @@ function remove() {
             <p class="small">城鎮那一頭：{{ townText(c) }}</p>
             <CellPicker :model-value="townRef(c)" :location="draft.location" marker="🔗" walls @update:model-value="pickTown(c, $event)" />
           </template>
+          <label v-else-if="connKind(c) === 'park'" class="small">園區
+            <select v-model="c.to.area"><option v-for="l in parks" :key="l.id" :value="`${PARK_LINK}${l.id}`">{{ l.name }}</option></select>
+          </label>
           <template v-else>
             <label class="small">地圖
               <select v-model="c.to.area"><option v-for="m in otherMaps" :key="m.id" :value="`sm/${m.id}`">{{ m.name }}</option></select>

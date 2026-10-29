@@ -6,15 +6,17 @@
 // - 缺陷（flaw）：負的效果。建立角色時最多選兩個、每個換一個一般特質的名額；事件直接給（不是機會），
 //   受訓或事件的 lose_perk 克服。AI 設計的特質不能是缺陷。
 
+import { pcTagModifiers } from './pcTags'
 import { activeParasites, parasiteDef, parasiteEffects, stageName } from './parasites'
 import {
-  actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
-  type PerkDef, type PerkEffect,
+  actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, lewdRules, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
+  type LustPerk, type PerkDef, type PerkEffect,
   mulResist,
 } from './data'
 import { gearRules } from './gear'
 import { conditionModifiers } from './party'
 import { Rng as RngImpl, type Rng } from './rng'
+import { bindModifiers, outfitModifiers } from './schools'
 import type { Character, PerkOffer, Report } from './types'
 
 /** 有特質的角色（隊員、NPC 的角色資料）；有種族時一併算種族特質 */
@@ -46,7 +48,8 @@ export function hasPerk(c: PerkHolder, id: string): boolean {
 export function matches(f: CheckFilter, ctx: CheckCtx): boolean {
   if (f.attrs?.length && (!ctx.attr || !f.attrs.includes(ctx.attr))) return false
   if (f.contexts?.length && !f.contexts.includes(ctx.context)) return false
-  if (f.kinds?.length && (!ctx.kind || !f.kinds.includes(ctx.kind))) return false
+  // 誘惑也吃獻媚的加值（特質、獨特裝備）
+  if (f.kinds?.length && (!ctx.kind || !(f.kinds.includes(ctx.kind) || (ctx.kind === 'seduce' && f.kinds.includes('flatter'))))) return false
   if (f.vs_tags?.length && !f.vs_tags.some((t) => ctx.vsTags?.includes(t))) return false
   return true
 }
@@ -82,9 +85,9 @@ export function parasiteCheckModifiers(c: Pick<Character, 'parasites' | 'tattoos
   return out
 }
 
-/** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備 + 寄生物與印記（正數是加值） */
+/** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備 + 寄生物與印記 + 拘束具（雙面效應的平常面）（正數是加值） */
 export function checkModifiers(c: Character, ctx: CheckCtx): { label: string; value: number }[] {
-  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx)].filter((x) => x.value !== 0)
+  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...pcTagModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx), ...bindModifiers(c, ctx), ...outfitModifiers(c, ctx)].filter((x) => x.value !== 0)
 }
 
 /** 檢定的情境修正總和 */
@@ -136,12 +139,21 @@ function effectPower(e: PerkEffect): number {
   return Object.values(e.offense).reduce((s: number, v) => s + (v ?? 0) * 4, 0)
 }
 
+/** 流派特質的慾望效果的強度（約略；有條件的戰鬥修正算一半） */
+function lustPower(l: LustPerk | undefined): number {
+  if (!l) return 0
+  const mods = [l.wounded, l.master, l.bound].reduce((s, m) => s + Object.values(m ?? {}).reduce((x: number, v) => x + Math.abs(v ?? 0), 0) / 2, 0)
+  return (l.max ?? 0) / 5 + (l.bound_max ?? 0) / 10 + Math.abs(l.taken ?? 0) * 4 + (l.self ?? 0) * 4 + (l.convert ?? 0) * 10 + (l.burst ?? 0) * 5
+    + (l.relief ?? 0) * 2 + (l.crit_convert ?? 0) * 2 + (l.regen ?? 0) / 2 + (l.climax_heal ?? 0) * 5 + (l.exposure ?? 0) + (l.exposure_level ?? 0)
+    + (l.endurance_max ?? 0) / 2 + (l.sensitivity_bonus ?? 0) + Object.values(l.growth ?? {}).reduce((x: number, v) => x + Math.abs(v ?? 0), 0) + mods
+}
+
 /** 特質的強度（約略）：比較用；缺陷是負的（大約抵銷一個一般特質） */
 /** 能在野外紮營長休（camp）算的強度：省下旅店的錢、不用回城就能補滿 */
 const CAMP_POWER = 3
 
-export function perkPower(p: Pick<PerkDef, 'effects'> & Pick<Partial<PerkDef>, 'camp'>): number {
-  return Math.round((p.effects.reduce((s, e) => s + effectPower(e), 0) + (p.camp ? CAMP_POWER : 0)) * 2) / 2
+export function perkPower(p: Pick<PerkDef, 'effects'> & Partial<Pick<PerkDef, 'lust' | 'camp'>>): number {
+  return Math.round((p.effects.reduce((s, e) => s + effectPower(e), 0) + lustPower(p.lust) + (p.camp ? CAMP_POWER : 0)) * 2) / 2
 }
 
 // ---- 自訂特質 ----
@@ -314,6 +326,7 @@ export function learnablePerks(c: Character): PerkDef[] {
     if (hasPerk(c, p.id) || p.flaw) return false
     if (p.requires?.races?.length && !p.requires.races.includes(c.race)) return false
     if (p.requires?.classes?.length && !p.requires.classes.includes(c.class)) return false
+    if (p.requires?.perks?.some((id) => !own.some((o) => o.id === id))) return false
     if (own.some((o) => o.exclusive?.includes(p.id) || p.exclusive?.includes(o.id))) return false
     return true
   })
@@ -332,7 +345,8 @@ export function offerPerks(c: Character, source: string, options: string[], pitc
 /** 升級時：到了 perks.json 的 levelup.levels 就給一次三選一（可以寫說法交給 AI） */
 export function levelUpPerkOffer(c: Character, level: number, rng: Rng): PerkOffer | undefined {
   if (!perkRules.levelup.levels.includes(level)) return undefined
-  const pool = [...learnablePerks(c)]
+  // 慾望流派的特質不進升級的選項（從受訓、書本、事件學）
+  const pool = learnablePerks(c).filter((p) => !p.school)
   const picks: string[] = []
   while (picks.length < perkRules.levelup.choices && pool.length) picks.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]!.id)
   return offerPerks(c, `升到 ${level} 級`, picks)
@@ -404,7 +418,18 @@ export function npcPerksOf(rec: { id: string; perks?: string[]; tags?: string[];
   if (rec.perks) return rec.perks.filter(isChoosablePerk)
   let h = 2166136261
   for (const ch of `${rec.id}:perks`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0
-  return rollNpcPerks(new RngImpl(h), rec)
+  const out = rollNpcPerks(new RngImpl(h), rec)
+  // 娼妓、奴隸：有機會帶一個流派的入門特質（另外依 id 擲，不影響原本的特質；docs/LEWD_STATS.md 第 23 節）
+  let hs = 2166136261
+  for (const ch of `${rec.id}:school`) hs = Math.imul(hs ^ ch.charCodeAt(0), 16777619) >>> 0
+  const rng = new RngImpl(hs)
+  for (const tag of rec.tags ?? []) {
+    const r = lewdRules.npc_schools.tags[tag]
+    if (!r || !rng.chance(r.chance)) continue
+    const pick = rng.pick(r.schools)
+    if (perkDef(pick) && !out.includes(pick) && !out.some((o) => perkDef(o)?.school)) out.push(pick)
+  }
+  return out
 }
 
 /** 特質的名字清單（給 AI 與畫面）；缺陷標明 */
@@ -477,17 +502,18 @@ export function pitchTarget(member: string, offer: string): string {
 // ---- 分類（建角時依分類折疊） ----
 
 export const PERK_CATEGORIES: Record<string, string> = {
-  social: '社交與交易', explore: '探索與潛行', combat: '戰鬥', body: '體質', craft: '學識與技藝', bond: '主從與束縛', other: '其他',
+  social: '社交與交易', explore: '探索與潛行', combat: '戰鬥', body: '體質', craft: '學識與技藝', bond: '主從與束縛', lewd: '慾望流派', other: '其他',
 }
 
-const SOCIAL_KINDS = ['chat', 'gift', 'flatter', 'haggle', 'bargain', 'intimidate', 'bluff', 'hire', 'invite', 'rest_talk', 'black_market', 'patron']
+const SOCIAL_KINDS = ['chat', 'gift', 'flatter', 'seduce', 'haggle', 'bargain', 'intimidate', 'bluff', 'hire', 'invite', 'rest_talk', 'black_market', 'patron']
 const EXPLORE_CONTEXTS = ['trap', 'lock', 'travel', 'road', 'stealth', 'retreat']
 const BOND_KINDS = ['escape', 'negotiate', 'marking', 'master_permit', 'master_leave', 'master_event', 'unmark']
 const CRAFT_KINDS = ['craft', 'make', 'produce', 'invent', 'work']
 
 /** 特質的分類：寫了就用，否則依第一個效果推斷（戰鬥修正→戰鬥、抗性與增傷→體質、檢定看屬性、情境與行動） */
-export function perkCategory(p: Pick<PerkDef, 'category' | 'effects'>): string {
+export function perkCategory(p: Pick<PerkDef, 'category' | 'effects'> & Partial<Pick<PerkDef, 'school' | 'lust'>>): string {
   if (p.category && PERK_CATEGORIES[p.category]) return p.category
+  if (p.school || p.lust) return 'lewd'
   for (const e of p.effects) {
     if ('combat' in e) return 'combat'
     if ('resist' in e || 'offense' in e) return 'body'

@@ -1,4 +1,10 @@
 import { defineStore } from 'pinia'
+import { consign, placeBid } from '@/engine/auction'
+import { orderOutfit } from '@/engine/outfitTailor'
+import { fuseGear, splitGear } from '@/engine/fusion'
+import { startArena } from '@/engine/arena'
+import { leavePark } from '@/engine/park'
+import { charmGatePass } from '@/engine/charm'
 import { DIFFICULTY_DEFS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
@@ -16,6 +22,9 @@ import * as rest from '@/engine/rest'
 import * as trade from '@/engine/trade'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
+import * as masterTool from '@/engine/masterTool'
+import * as ownerTraining from '@/engine/ownerTraining'
+import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
 import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
@@ -43,7 +52,7 @@ import * as away from '@/engine/away'
 import * as partyEngine from '@/engine/party'
 import * as garden from '@/engine/garden'
 import * as invention from '@/engine/invention'
-import type { DefeatLoot, Difficulty, GameState, GearSlot, Report, TattooPlace } from '@/engine/types'
+import type { DefeatLoot, Difficulty, GameState, GearSlot, LewdStat, Report, TattooPlace } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
@@ -980,6 +989,15 @@ export const useGame = defineStore('game', () => {
     eatMeal: (id: string) => run((s) => meals.eatMeal(s, id)),
     equipItem: (name: string, member: string, slot?: GearSlot) => run((s) => inventory.equipItem(s, name, member, slot)),
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
+    // 拘束具的鎖（雙面效應）
+    lockGear: (member: string, slot: GearSlot, lock: string) => run((s) => inventory.lockGear(s, member, slot, lock)),
+    unlockGear: (member: string, slot: GearSlot) => run((s) => inventory.unlockGear(s, member, slot)),
+    // 鑰匙與脫縛（別人鎖上的拘束具）
+    useKey: (member: string, slot: GearSlot, key: string) => run((s) => inventory.useKey(s, member, slot, key)),
+    tryUnbind: (member: string, slot: GearSlot) => perform({ kind: 'unbind', target: `${member}:${slot}`, text: '' }),
+    // 主人是工具人：親密度夠高時直接解約、換主人
+    masterRelease: () => run((s) => masterTool.masterRelease(s)),
+    masterTransfer: (npc: string) => run((s) => masterTool.masterTransfer(s, npc)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     // 旅行：畫出旅途的單行道，一格一天往前走（road.ts）
     travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent), { onMap: true }),
@@ -1001,6 +1019,14 @@ export const useGame = defineStore('game', () => {
     reinkParasite: (id: string, kind: 'curse' | 'covered') => run((s) => parasiteEvents.reinkAtCarver(s, id, kind)),
     leaveSide: () => run((s) => road.leaveSide(s)),
     leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s), { onMap: true }),
+    leavePark: () => run((s) => leavePark(s), { onMap: true }),
+    charmGatePass: () => run((s) => charmGatePass(s)),
+    startArena: (ring: string, opts: { restraint?: string; wager?: boolean }) => run((s) => startArena(s, ring, opts)),
+    fuseGear: (weapon: string, restraint: string) => run((s) => fuseGear(s, weapon, restraint)),
+    splitGear: (name: string) => run((s) => splitGear(s, name)),
+    placeBid: (index: number, amount: number) => run((s) => placeBid(s, index, amount)),
+    consign: (name: string) => run((s) => consign(s, name)),
+    orderOutfit: (base: string, material: string, stat: LewdStat) => run((s) => orderOutfit(s, base, material, stat)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */
@@ -1035,6 +1061,8 @@ export const useGame = defineStore('game', () => {
     washTattoo: (place: TattooPlace) => run((s) => tattooShop.washTattoo(s, place)),
     chooseAbility: (member: string, ability: string) => run((s) => town.chooseAbility(s, member, ability)),
     rerollAbility: (member: string) => run((s) => town.rerollAbility(s, member, useSettings().rerollLimit())),
+    // 技能攜帶上限：把學會的技能帶上或放回技能庫
+    setAbilityCarried: (member: string, ability: string, on: boolean) => run((s) => town.setAbilityCarried(s, member, ability, on)),
     spendAttr: (member: string, attr: AttrId) =>
       run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),
@@ -1168,6 +1196,12 @@ export const useGame = defineStore('game', () => {
     buyCurio: (item: string) => run((s) => companions.buyCurio(s, item)),
     chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
     answerMasterEvent: (index: number) => run((s) => slavery.answerMasterEvent(s, index)),
+    // 調教（主角對自己的奴隸）、娼館受訓、提議夥伴去接客（docs/LEWD_STATS.md 第 9、10 節）
+    startTraining: (slave: string, course: string) => run((s) => { ownerTraining.startTraining(s, slave, course); return {} }),
+    startBrothelTraining: (who?: string) => run((s) => brothelLife.startBrothelTraining(s, who)),
+    proposeWork: (who: string) => run((s) => brothelLife.proposeWork(s, who)),
+    // 等待回應的主人事件在內容編輯器被刪掉了：作廢
+    dropMissingMasterEvent: () => run((s) => slavery.dropMissingMasterEvent(s)),
     // 成人向的戰敗事件：設定改成不發生（主角非自願、戰敗事件）時直接離開
     skipDefeatEvent: () => run(defeat.skipDefeatEvent),
     offerSelf: (kind: companions.MarketKind) => run((s) => companions.offerSelf(s, kind)),

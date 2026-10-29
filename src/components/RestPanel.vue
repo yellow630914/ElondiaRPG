@@ -4,7 +4,7 @@ import { classEmoji, companionRules, raceEmoji } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
 import { gameRule } from '@/engine/gameRules'
-import { ambushChance, autoHitDice, canCampHere, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, waitText, type RestPlace } from '@/engine/rest'
+import { ambushChance, autoHitDice, canCampHere, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, slaveRoomCost, slaveRoomOpen, waitText, type RestPlace } from '@/engine/rest'
 import { bestTool } from '@/engine/tools'
 import { useGame } from '@/stores/game'
 import JudgeToggle from './JudgeToggle.vue'
@@ -68,6 +68,11 @@ async function doLongRest(where: RestPlace) {
     <div class="btns">
       <button @click="game.shortRest()"><GameIcon name="mug" :size="15" />短休 <small>{{ shortHours }} 小時{{ ambush ? `・襲擊 ${Math.round(ambush * 100)}%` : '' }}</small></button>
       <button v-if="place === 'inn'" :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')"><GameIcon name="moon" :size="15" />長休 <small>{{ formatMoney(innCost(s)) }}</small></button>
+      <button
+        v-if="place === 'inn' && slaveRoomOpen(s)" :disabled="!!blocked || s.money_cc < slaveRoomCost(s)"
+        title="成人向：魅氣濃的城鎮，旅店有便宜的奴房。全隊照樣長休；主角被鎖在床頭過一夜（主角非自願），順從 +1，有機會學會色情技能，醒來時虛脫。"
+        @click="doLongRest('slave_room')"
+      ><GameIcon name="moon" :size="15" />住奴房 <small>{{ formatMoney(slaveRoomCost(s)) }}</small></button>
       <button v-else-if="place === 'safe'" :disabled="!!blocked || rations < s.party.length" @click="doLongRest('safe')"><GameIcon name="moon" :size="15" />長休 <small>乾糧 {{ s.party.length }} 份</small></button>
       <button v-else-if="place === 'home'" :disabled="!!blocked" @click="doLongRest('home')"><GameIcon name="moon" :size="15" />在家長休</button>
       <button v-else-if="place === 'camp'" :disabled="!!blocked || rations < s.party.length" :title="ambush ? `紮營時有 ${Math.round(ambush * 100)}% 的機率被襲擊（${tent ? `已算進${tent.name}，` : ''}被襲擊就沒睡成，乾糧不扣）` : ''" @click="doLongRest('camp')"><GameIcon name="moon" :size="15" />紮營長休 <small>乾糧 {{ s.party.length }} 份</small></button>

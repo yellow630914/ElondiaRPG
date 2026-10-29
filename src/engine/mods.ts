@@ -13,20 +13,22 @@ import {
   abilities, attributeRules, ATTR_IDS, bumpContentRevision, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
-  stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, type ConditionDef, slaveryRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
+  stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
+  type Control, type LuckRoll, type StatusDef, type ConditionDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId, BIND_KINDS, LOCK_GRADES,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
 import { cleanPerkEffects, describeEffects, PERK_CATEGORIES, type PerkLimits } from './perks'
+import { sanitizeLustPerk, schoolDef } from './schools'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
 import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type CounterMod } from './counterMods'
+import { applyMasterEvent, builtinMasterEvent, restoreMasterEvents, sanitizeMasterEvent, type MasterEventMod } from './masterEventMods'
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
@@ -126,6 +128,8 @@ export interface ContentMods {
   /** 旅途事件與城鎮事件（整份）；eventRules 只有一筆 rules：路段機率、種類權重、城鎮事件的機率與冷卻 */
   travelEvents: Record<string, TravelEventMod>
   eventRules: Record<string, EventRulesMod>
+  /** 主人事件格式的事件（主人的突發事件、調教、娼館；舊的自訂內容沒有這一欄） */
+  masterEvents?: Record<string, MasterEventMod>
   /** 類別的圖示（依類別 id；舊的自訂內容沒有這一欄） */
   categoryIcons: Record<string, CategoryIconMod>
   /** 劇情計數器（舊的自訂內容沒有這一欄） */
@@ -138,7 +142,7 @@ export interface CategoryIconMod {
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, categoryIcons: {}, counters: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, masterEvents: {}, categoryIcons: {}, counters: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -253,6 +257,7 @@ function restore() {
   restoreLandmarks()
   restoreSpecialMaps()
   restoreTravelEvents()
+  restoreMasterEvents()
   restoreCounters()
   setCategoryIcons({})
   setCustomGear([], [])
@@ -584,6 +589,7 @@ export function applyContent(mods: ContentMods): string[] {
   // 旅途與城鎮事件（物品、特殊地圖、商店都套用之後：結果與設施會用到）
   tryEach('事件', mods.travelEvents ?? {}, (id, m) => applyTravelEvent(id, sanitizeTravelEvent(id, m, !!m.custom)))
   tryEach('事件設定', mods.eventRules ?? {}, (_id, m) => applyEventRules(sanitizeEventRules(m)))
+  tryEach('主奴與娼館的事件', mods.masterEvents ?? {}, (id, m) => applyMasterEvent(id, sanitizeMasterEvent(id, m, !!m.custom)))
   setCategoryIcons(Object.fromEntries(Object.entries(mods.categoryIcons ?? {}).map(([k, v]) => [k, v.icon])))
   // 自建的底材與裝備：建角時也能選
   setCustomGear(
@@ -753,6 +759,9 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   // 書籍：可以學的特質（清單裡的）
   const perks = (Array.isArray(u.perks) ? u.perks : []).filter((id) => typeof id === 'string' && isChoosablePerk(id)).slice(0, 6)
   if (perks.length) out.perks = perks
+  // 技能書：依序學會的能力
+  const abil = (Array.isArray(u.abilities) ? u.abilities : []).filter((id) => typeof id === 'string' && !!abilities[id] && !abilities[id]!.classes.includes('monster')).slice(0, 8)
+  if (abil.length) out.abilities = [...new Set(abil)]
   if (u.heal && DICE.test(String(u.heal).replace(/\s+/g, ''))) out.heal = String(u.heal).replace(/\s+/g, '')
   if (u.slot) out.slot = int(u.slot, 1, 9, 1)
   const cleanse = (u.cleanse ?? []).filter((s) => !!statuses[s])
@@ -760,6 +769,8 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   if (u.status?.id && statuses[u.status.id]) out.status = { id: u.status.id, turns: int(u.status.turns, 1, 20, 3) }
   if (u.temp_hp) out.temp_hp = int(u.temp_hp, 1, 999, 10)
   if (u.ap) out.ap = int(u.ap, 1, 10, 1)
+  if (u.lust) out.lust = int(u.lust, -200, 200, 0) || undefined
+  if (!out.lust) delete out.lust
   if (u.revive) out.revive = Math.round(num(u.revive, 0.01, 1, 0.3) * 100) / 100
   if (u.damage?.dice && DICE.test(String(u.damage.dice).replace(/\s+/g, ''))) {
     out.damage = { dice: String(u.damage.dice).replace(/\s+/g, ''), type: DAMAGE_IDS().includes(u.damage.type) ? u.damage.type : 'fire' }
@@ -774,7 +785,7 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   if (u.escape) out.escape = true
   if ((out.damage || out.apply) && u.area === 'all') out.area = 'all'
   else if (out.damage || out.apply) out.area = 'one'
-  if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.revive || out.cleanse || out.escape) {
+  if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.lust || out.revive || out.cleanse || out.escape) {
     if (!(out.heal || out.slot) || u.combat_only) out.combat_only = true
   }
   return Object.keys(out).length ? out : undefined
@@ -797,6 +808,12 @@ export function sanitizeGearSpecLoose(g: GearSpec | undefined): GearSpec | undef
     const max = gearRules.attrs.max_change
     const attrs = Object.fromEntries(ATTR_IDS.map((a) => [a, int(g.attrs?.[a], -max, max, 0)]).filter(([, v]) => v))
     if (Object.keys(attrs).length) out.attrs = attrs
+  }
+  // 慾望指標的加減：每項 ±item_cap（docs/LEWD_STATS.md）
+  if (g.lewd && typeof g.lewd === 'object') {
+    const cap = lewdRules.gear.item_cap
+    const lewd = Object.fromEntries((['lewdness', 'sensitivity', 'endurance', 'submission'] as const).map((k) => [k, int(g.lewd?.[k], -cap, cap, 0)]).filter(([, v]) => v))
+    if (Object.keys(lewd).length) out.lewd = lewd
   }
   return out
 }
@@ -834,6 +851,12 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
   if (raw.adult) out.adult = true
+  // 鎖（雙面效應）：替身上的拘束具上鎖
+  if (category === 'gear' && raw.lock && (LOCK_GRADES as string[]).includes(raw.lock)) out.lock = raw.lock
+  // 淫市的貨：魅氣濃度至少多少才買得到
+  if (raw.charm_min) out.charm_min = int(raw.charm_min, 1, 4, 3)
+  // 鑰匙：打開別人鎖上的拘束具（一次性）
+  if (category === 'gear' && !out.lock && raw.key && (LOCK_GRADES as string[]).includes(raw.key)) out.key = raw.key
   // 黑市：只有獨特物品
   if (raw.black_market && gear?.unique) out.black_market = true
   if (category === 'info' && raw.intel) {
@@ -870,8 +893,9 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     const places = (Array.isArray(f.places) ? f.places : []).filter((p): p is FurniturePlace => p === 'indoor' || p === 'yard' || p === 'basement')
     out.furniture = {
       places: places.length ? [...new Set(places)] : ['indoor'],
-      ...(f.function === 'bed' || f.function === 'workbench' || f.function === 'garden' ? { function: f.function } : {}),
+      ...(f.function === 'bed' || f.function === 'workbench' || f.function === 'garden' || f.function === 'training' ? { function: f.function } : {}),
       ...(f.function === 'workbench' ? { craft: CRAFT_IDS.includes(f.craft as never) ? f.craft : 'smithing' } : {}),
+      ...(f.function === 'training' ? { training: int(f.training, 1, 3, 1) } : {}),
       ...(int(f.comfort, 0, 10, 0) ? { comfort: int(f.comfort, 0, 10, 0) } : {}),
       ...(typeof f.icon === 'string' && f.icon.trim() ? { icon: [...f.icon.trim()].slice(0, 2).join('') } : {}),
     }
@@ -982,6 +1006,13 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   // 服裝的分類與成人向（成人向的服裝一定是成人向）
   if (raw.outfit && raw.outfit in OUTFIT_KINDS && out.slot !== 'main_hand' && out.slot !== 'off_hand') out.outfit = raw.outfit
   if (raw.adult || out.outfit === 'adult') out.adult = true
+  // 曝露度（慾望指標的曝露名聲）：只有上身、下身與內衣有意義
+  if (raw.exposure !== undefined && raw.exposure !== null && String(raw.exposure) !== '') out.exposure = int(raw.exposure, 0, 3, 0)
+  // 雙面效應（docs/LEWD_STATS.md 第 7 節）：拘束的程度與種類（表單還沒有這兩個欄位，整理時保留）
+  if (raw.bind && raw.bind_kind && (BIND_KINDS as string[]).includes(raw.bind_kind)) {
+    out.bind = int(raw.bind, 1, 3, 1)
+    out.bind_kind = raw.bind_kind
+  }
   // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
   const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body'
   if (restraint) {
@@ -1101,6 +1132,9 @@ export function normalizeMods(raw: unknown): ContentMods {
     if (typeof id === 'string' && id.length <= 60) out.travelEvents[id] = sanitizeTravelEvent(id, v, !!v.custom || !builtinTravelEvent(id), newShops)
   }
   if (r.eventRules?.rules) out.eventRules.rules = sanitizeEventRules(r.eventRules.rules)
+  for (const [id, v] of Object.entries(r.masterEvents ?? {})) {
+    if (typeof id === 'string' && id.length <= 60 && v && typeof v === 'object') (out.masterEvents ??= {})[id] = sanitizeMasterEvent(id, v, !!v.custom || !builtinMasterEvent(id))
+  }
   for (const [k, v] of Object.entries(r.categoryIcons ?? {})) {
     const icon = sanitizeIcon(v?.icon)
     if (icon && CATEGORIES.includes(k as ItemCategory)) out.categoryIcons[k] = { icon }
@@ -1119,7 +1153,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1151,8 +1185,19 @@ function cond(v: unknown): NpcDef['requires'] {
     parasites[id] = { ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}), ...(typeof o.tamed === 'boolean' ? { tamed: o.tamed } : {}) }
   }
   const hasPar = Object.keys(parasites).length > 0
-  return flags.length || none.length || any.length || hasCount || hasAff || hasPar
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}) }
+  // 慾望指標：指標 → { min, max }（0～100，至少要有一邊）
+  const stats: NonNullable<StoryCond['stats']> = {}
+  for (const [k, x] of Object.entries(r.stats && typeof r.stats === 'object' ? r.stats : {})) {
+    if (!['lewdness', 'sensitivity', 'endurance', 'submission', 'exposure'].includes(k)) continue
+    const o = x && typeof x === 'object' ? x as { min?: unknown; max?: unknown } : {}
+    const pct = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : undefined)
+    const min = pct(o.min)
+    const max = pct(o.max)
+    if (min !== undefined || max !== undefined) stats[k as keyof typeof stats] = { ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}) }
+  }
+  const hasStats = Object.keys(stats).length > 0
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats
+    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }
@@ -1235,6 +1280,15 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   if (abil.length) out.abilities = [...new Set(abil)]
   // 特質：清單裡的（沒寫時依 id 固定地抽）
   if (Array.isArray(raw.perks)) out.perks = [...new Set(raw.perks.filter((p) => typeof p === 'string' && isChoosablePerk(p)))]
+  // 慾望指標：寫了的才存（0～100），沒寫的依標籤與 id 擲
+  if (raw.lewd && typeof raw.lewd === 'object') {
+    const lewd = Object.fromEntries((['lewdness', 'sensitivity', 'endurance', 'submission'] as const)
+      .filter((k) => typeof raw.lewd?.[k] === 'number' && Number.isFinite(raw.lewd[k])).map((k) => [k, int(raw.lewd?.[k], 0, 100, 0)]))
+    if (Object.keys(lewd).length) out.lewd = lewd
+  }
+  // 娼婦光顧時會教的色情技能
+  const teaches = [...new Set((Array.isArray(raw.teaches) ? raw.teaches : []).filter((id) => typeof id === 'string' && abilities[id]?.classes.includes('lewd')))].slice(0, 12)
+  if (teaches.length) out.teaches = teaches
   if (raw.gear) {
     const g: NonNullable<NpcDef['gear']> = {}
     for (const slot of GEAR_SLOTS) {
@@ -1242,7 +1296,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
       const base = spec && gearRules.bases[spec.base]
       if (!spec || !base) continue
       // 底材要放得進這個欄位（戒指放兩個戒指欄）
-      if (baseFits(base.slot, slot)) g[slot] = spec
+      if (baseFits(base.slot, slot, base)) g[slot] = spec
     }
     if (Object.keys(g).length) out.gear = g
   }
@@ -1294,7 +1348,7 @@ export const ABILITY_TARGETS: Record<AbilityTarget, string> = {
 export const ABILITY_RESOLVES: Record<AbilityDef['resolve'], string> = { attack: '命中骰對迴避', save: '目標豁免', auto: '必中' }
 /** 可以學這個能力的職業（monster：怪物用） */
 export function abilityClasses(): string[] {
-  return [...Object.keys(classes).filter((c) => !classes[c]!.noncombat), 'monster']
+  return [...Object.keys(classes).filter((c) => !classes[c]!.noncombat), 'monster', 'lewd']
 }
 
 function damagePart(v: unknown): DamagePart | undefined {
@@ -1307,6 +1361,7 @@ function damagePart(v: unknown): DamagePart | undefined {
   if (p.type && DAMAGE_IDS().includes(p.type)) out.type = p.type
   if (p.mod) out.mod = true
   if (p.scale?.dice && DICE.test(String(p.scale.dice))) out.scale = { dice: String(p.scale.dice), per: int(p.scale.per, 1, 20, 4) }
+  if (p.pierce && out.type === 'lust') out.pierce = true
   return out
 }
 
@@ -1318,6 +1373,9 @@ function applyDef(v: unknown): ApplyDef | undefined {
   if (a.to && ['target', 'self', 'allies', 'enemies'].includes(a.to)) out.to = a.to
   if (a.on && ['hit', 'fail', 'always'].includes(a.on)) out.on = a.on
   if (a.save && ATTR_IDS.includes(a.save)) out.save = a.save
+  if (a.if_lust) out.if_lust = Math.round(num(a.if_lust, 0.05, 1, 0.5) * 100) / 100
+  if (a.if_slave) out.if_slave = true
+  if (a.if_weaker) out.if_weaker = true
   if (a.value && typeof a.value === 'object') {
     const val: NonNullable<ApplyDef['value']> = {}
     if (a.value.dice && DICE.test(String(a.value.dice))) val.dice = String(a.value.dice)
@@ -1384,8 +1442,33 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   // 治療、護盾、淨化、回復法術環、直接擊倒只有必中（auto）的結算會處理：其他結算方式拿掉，免得看起來有效
   if (resolve !== 'auto') for (const k of ['heal', 'shield', 'cleanse', 'recover_slot', 'kill'] as const) delete out[k]
   if (raw.lifesteal) out.lifesteal = Math.round(num(raw.lifesteal, 0.05, 1, 0.5) * 100) / 100
+  if (raw.vs_slave && raw.vs_slave !== 1) out.vs_slave = Math.round(num(raw.vs_slave, 0.25, 4, 2) * 100) / 100
   if (raw.hp_limit) out.hp_limit = int(raw.hp_limit, 1, 9999, 30)
   if (raw.threat) out.threat = int(raw.threat, -50, 50, 0)
+  // 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）
+  if (raw.lust_gain?.flat) out.lust_gain = { flat: int(raw.lust_gain.flat, 1, 200, 10) }
+  if (raw.lust_relief) out.lust_relief = int(raw.lust_relief, 1, 200, 10)
+  if (raw.lust_cost) out.lust_cost = int(raw.lust_cost, 1, 200, 10)
+  if (raw.requires_lust) out.requires_lust = Math.round(num(raw.requires_lust, 0.05, 1, 0.3) * 100) / 100
+  if (raw.ap_give) out.ap_give = int(raw.ap_give, 1, 5, 1)
+  if (raw.exposure) out.exposure = int(raw.exposure, 1, 10, 1)
+  if (raw.lust_transfer && (raw.lust_transfer.mode === 'spread' || raw.lust_transfer.mode === 'take')) {
+    const t = raw.lust_transfer
+    out.lust_transfer = t.mode === 'spread'
+      ? { mode: 'spread', ratio: Math.round(num(t.ratio, 0.05, 1, 0.3) * 100) / 100, ...(t.shield_per ? { shield_per: int(t.shield_per, 1, 50, 5) } : {}) }
+      : { mode: 'take', amount: int(t.amount, 1, 999, 20), ...(t.dump ? { dump: true } : {}) }
+  }
+  if (raw.gamble && typeof raw.gamble === 'object' && statuses[String(raw.gamble.status)]) {
+    out.gamble = { status: String(raw.gamble.status), turns: int(raw.gamble.turns, 1, 20, 3), lust: int(raw.gamble.lust, 0, 200, 20) }
+  }
+  if (raw.burst && typeof raw.burst === 'object') {
+    const b = raw.burst
+    out.burst = {
+      mult: Math.round(num(b.mult, 0.1, 3, 0.5) * 100) / 100,
+      ...(b.heal ? { heal: true } : { type: DAMAGE_IDS().includes(String(b.type)) && b.type !== 'lust' ? String(b.type) : 'fire' }),
+      ...(b.min_ratio ? { min_ratio: Math.round(num(b.min_ratio, 0.05, 1, 0.5) * 100) / 100 } : {}),
+    }
+  }
   if (custom) out.custom = true
   return out
 }
@@ -1451,6 +1534,23 @@ export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: bool
   if (raw.control && raw.control in STATUS_CONTROLS) out.control = raw.control
   if (raw.special && raw.special in STATUS_SPECIALS) out.special = raw.special
   if (raw.charges) out.charges = int(raw.charges, 1, 10, 1)
+  // 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）
+  if (raw.lust_mult) out.lust_mult = Math.round(num(raw.lust_mult, -1, 3, 0) * 100) / 100
+  if (raw.convert) out.convert = Math.round(num(raw.convert, 0.05, 1, 0.5) * 100) / 100
+  if (raw.guard) out.guard = Math.round(num(raw.guard, 0.05, 1, 0.5) * 100) / 100
+  if (raw.lust_tick) out.lust_tick = int(raw.lust_tick, 1, 100, 5)
+  if (typeof raw.struggle === 'number') out.struggle = int(raw.struggle, -5, 10, 0)
+  if (raw.lust_max) out.lust_max = Math.round(num(raw.lust_max, -0.9, 3, 0.5) * 100) / 100
+  if (raw.lust_scale && typeof raw.lust_scale === 'object' && ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit'].includes(String(raw.lust_scale.stat))) {
+    out.lust_scale = { stat: raw.lust_scale.stat, per: int(raw.lust_scale.per, 1, 5, 1), max: int(raw.lust_scale.max, 1, 20, 5) }
+  }
+  for (const k of ['no_climax', 'no_cleanse', 'lust_hold', 'lust_dump', 'climax_guard'] as const) if (raw[k]) out[k] = true
+  if (raw.convert_low && typeof raw.convert_low === 'object') {
+    out.convert_low = { below: Math.round(num(raw.convert_low.below, 0.05, 1, 0.3) * 100) / 100, ratio: Math.round(num(raw.convert_low.ratio, 0.05, 1, 1) * 100) / 100 }
+  }
+  if (raw.on_release && typeof raw.on_release === 'object' && DAMAGE_IDS().includes(String(raw.on_release.type)) && raw.on_release.type !== 'lust') {
+    out.on_release = { amount: int(raw.on_release.amount, 0, 200, 6), type: String(raw.on_release.type), ...(raw.on_release.level ? { level: true } : {}) }
+  }
   if (custom) out.custom = true
   return out
 }
@@ -1603,7 +1703,8 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   if (flaw) out.flaw = true
   const races = (raw.requires?.races ?? []).filter((r) => !!attributeRules.races[r])
   const cls = (raw.requires?.classes ?? []).filter((k) => !!classes[k])
-  if (!race && (races.length || cls.length)) out.requires = { ...(races.length ? { races } : {}), ...(cls.length ? { classes: cls } : {}) }
+  const pre = [...new Set(raw.requires?.perks ?? [])].filter((x) => x !== id && known(x))
+  if (!race && (races.length || cls.length || pre.length)) out.requires = { ...(races.length ? { races } : {}), ...(cls.length ? { classes: cls } : {}), ...(pre.length ? { perks: pre } : {}) }
   const ex = [...new Set(raw.exclusive ?? [])].filter((x) => x !== id && known(x))
   if (!race && ex.length) out.exclusive = ex
   if (!race && raw.train && Array.isArray(raw.train.cells)) {
@@ -1628,6 +1729,10 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   if (raw.category && PERK_CATEGORIES[raw.category]) out.category = raw.category
   // 能在野外紮營長休（種族特質也可以，例如自訂一個親近自然的種族）
   if (raw.camp === true) out.camp = true
+  // 慾望流派：流派與慾望效果（表單還沒有這兩個欄位，整理時保留）
+  if (!race && raw.school && schoolDef(raw.school)) out.school = raw.school
+  const lust = race ? undefined : sanitizeLustPerk(raw.lust)
+  if (lust) out.lust = lust
   if (custom) out.custom = true
   return out
 }

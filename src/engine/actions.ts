@@ -9,6 +9,7 @@
 //    AI 關閉時依規則：預設屬性、參考 DC 與骰值決定成功程度。
 // 說明見 docs/ACTIONS.md。
 
+import { applyUnbind } from './restraints'
 import { applyExplore, withLandmark } from './landmarks'
 import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
@@ -19,7 +20,7 @@ import {
   applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, inviteDc, setupFor, validateInvite, type MarketKind,
 } from './companions'
 import {
-  abilities, actionRules, ATTR_IDS, attrName, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
+  abilities, actionRules, ATTR_IDS, attrName, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
@@ -28,6 +29,7 @@ import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, apply
 import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
+import { bandName, currentRegion, exposureAt, LEWD_KEYS, lewdOf } from './lewd'
 import { applyCraft, applyMake, craftPart, parseCraftTarget } from './craft'
 import { applyProduce } from './recipes'
 import { applyInvent } from './invention'
@@ -164,7 +166,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const pc = (setup.actor && memberOrResident(state, currentArea(state), setup.actor)) || pcOf(state)
   // 情境修正：這次行動的特殊情況，加上非戰鬥狀態與特質（對象的標籤也算，例如「對貴族 +1」）
   const vsTags = (input.target && npcRecord(state, input.target)?.tags) || undefined
-  const situational = [...setup.situational, ...checkModifiers(pc, { context: 'action', kind: input.kind, attr: setup.attr ?? kind.attr, ...(vsTags ? { vsTags } : {}) })].filter((x) => x.value !== 0)
+  const situational = [...setup.situational, ...checkModifiers(pc, { context: 'action', kind: input.kind, attr: setup.attr ?? kind.attr, ...(vsTags ? { vsTags } : {}) }), ...lewdModifiers(state, pc, input.kind, vsTags)].filter((x) => x.value !== 0)
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
   let used: AbilityUse | undefined
   let user: Character | undefined
@@ -219,12 +221,31 @@ function itemNameOf(state: GameState, name: string): string {
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : NaN)
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 
+/**
+ * 慾望指標的情境修正（docs/LEWD_STATS.md）：淫亂高的人獻媚、誘惑比較容易（淫蕩 +1、淫亂 +2）；
+ * 曝露名聲高（在這一帶遠近馳名以上）時，對貴族、皇族、神官唬騙比較難（-1、人盡皆知 -2）
+ */
+function lewdModifiers(state: GameState, c: Character, kind: string, vsTags?: string[]): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = []
+  if (kind === 'flatter' || kind === 'seduce') {
+    const v = lewdOf(c).lewdness
+    const bonus = v >= 80 ? 2 : v >= 60 ? 1 : 0
+    if (bonus) out.push({ label: `淫亂（${bandName('lewdness', v)}）`, value: bonus })
+  }
+  if (kind === 'bluff' && vsTags?.some((t) => ['noble', 'royal', 'priest', 'bishop'].includes(t))) {
+    const e = exposureAt(state, c.id, currentRegion(state))
+    const pen = e >= 80 ? -2 : e >= 60 ? -1 : 0
+    if (pen) out.push({ label: `曝露名聲（${bandName('exposure', e)}）`, value: pen })
+  }
+  return out
+}
+
 /** AI 回傳的效果種類（join 是入隊：通過檢查後變成 companion 效果） */
 type JudgedEffect = RewardEffect['type'] | 'join'
 const EFFECT_OF: Partial<Record<JudgedEffect, EffectKind>> = {
   join: 'join', affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
   money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp', mark: 'mark',
-  free: 'release', change_master: 'change_master', gear: 'gear',
+  free: 'release', change_master: 'change_master', gear: 'gear', lewd: 'lewd',
 }
 
 /**
@@ -362,6 +383,18 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         if (!who || Number.isNaN(amount) || effects.some((y) => y.type === 'hp' && y.target === who.id)) break
         const a = clamp(Math.round(amount), -Math.ceil(who.maxHp * caps.hp_loss_ratio), Math.ceil(who.maxHp * caps.hp_gain_ratio))
         if (a) effects.push({ type: 'hp', target: who.id, amount: a })
+        break
+      }
+      case 'lewd': {
+        // 慾望指標：每人每項一次，±caps.lewd；只在可能進入親密場景的行動
+        const target = String(x.target ?? 'pc')
+        const who = target === 'pc' ? pc : state.party.find((m) => m.id === target)
+        const stat = String(x.stat ?? '') as LewdKey
+        const delta = num(x.delta)
+        if (!p.adultScene || !who || !LEWD_KEYS.includes(stat) || Number.isNaN(delta)) break
+        if (effects.some((y) => y.type === 'lewd' && (y.target ?? pc.id) === who.id && y.stat === stat)) break
+        const d = clamp(Math.round(delta), -caps.lewd, caps.lewd)
+        if (d) effects.push({ type: 'lewd', stat, delta: d, target: who.id })
         break
       }
       case 'ability': {
@@ -652,6 +685,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'chat':
     case 'gift':
     case 'flatter':
+    case 'seduce':
     case 'steal':
     case 'attack': return applyInteraction(state, report, p.kind, p.target!, degree, p.item)
     case 'bluff':
@@ -663,6 +697,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'master_return': return applyReturn(state, report, degree)
     case 'seek_master': return applySeekMaster(state, report, p.target!, degree)
     case 'unmark': return applyUnmark(state, report, p.target!, degree)
+    case 'unbind': return applyUnbind(state, report, p.target!, degree)
     case 'work': return applyWork(state, report, p.target!, degree)
     case 'patron': return applyPatron(state, report, p.target, degree)
     case 'craft': return applyCraft(state, report, p.target!, degree, crafted)

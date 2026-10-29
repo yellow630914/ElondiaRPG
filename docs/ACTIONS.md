@@ -60,7 +60,7 @@
 | 類別 | 行動 |
 |---|---|
 | 一般 | 自由行動 `free`、長休時的互動 `rest_talk` |
-| 交流 | 聊天 `chat`、送禮 `gift`、獻媚 `flatter`、雇傭談判 `hire`、邀請入隊 `invite`（固定 NPC 小隊整隊邀請）、請小隊帶你同行 `squad_join`、向主人提議雇人或買奴隸 `propose` |
+| 交流 | 聊天 `chat`、送禮 `gift`、獻媚 `flatter`、誘惑 `seduce`（[LEWD_STATS](LEWD_STATS.md) 第 15 節）、雇傭談判 `hire`、邀請入隊 `invite`（固定 NPC 小隊整隊邀請）、請小隊帶你同行 `squad_join`、向主人提議雇人或買奴隸 `propose` |
 | 交易 | 殺價 `haggle`（奴隸市場）、交涉價格 `bargain`、談判 `negotiation`、打聽黑市 `black_market` |
 | 犯罪與對峙 | 偷竊 `steal`、偷襲 `attack`、蒙混過關 `bluff`、威嚇 `intimidate` |
 | 奴隸 | 刻印 `marking`、請求主人同意出城 `master_permit`、請求主人讓你出門 `master_leave`、回應主人 `master_event`、談判解除契約 `negotiate`、逃離主人 `escape`、回到主人身邊 `master_return`、投靠新主人 `seek_master`、解除印記 `unmark` |
@@ -90,7 +90,7 @@ AI 關閉時（也是給 AI 的參考結果，`actions.json` 的 `degrees`）：
 
 ## 4. AI 效果的上限
 
-`actions.json` 的 `caps`（每次行動）：親密度每人 ±8、聲望 ±2、金錢每級 30 白鸛、經驗每級 15、物品每種 1 個（同一次有付錢買的，每種最多 5 個；最多 2 種）、旗標 3 個、生命值每人最多失去 30%／回復 20% 最大生命值（不會因此倒下）、認識新的人親密度 ±10。被動事件與委託則可以直接用 [EFFECTS](EFFECTS.md) 的 `hp`、`slot`、`hit_dice` 增減資源。
+`actions.json` 的 `caps`（每次行動）：親密度每人 ±8、聲望 ±2、金錢每級 30 白鸛、經驗每級 15、物品每種 1 個（同一次有付錢買的，每種最多 5 個；最多 2 種）、旗標 3 個、生命值每人最多失去 30%／回復 20% 最大生命值（不會因此倒下）、認識新的人親密度 ±10、慾望指標每人每項 ±3（`lewd`，只在可能進入親密場景的行動提供，見 [LEWD_STATS](LEWD_STATS.md)）。被動事件與委託則可以直接用 [EFFECTS](EFFECTS.md) 的 `hp`、`slot`、`hit_dice` 增減資源。
 
 花費與給出的東西合計不超過持有的（同一次判定分好幾筆也一樣；先賺到的錢可以接著花）。聲望只認得 `geography.json` 裡的勢力（id 或名稱，判定提示詞會列出 id），其他名字略過。AI 提議的金錢或物品數量被截掉時，報告的 `narration.focus` 會寫出實際結算的數字，讓寫手照著寫。
 

@@ -15,6 +15,7 @@ import { pcOf } from './party'
 import { applyPendingMove, applyRoadOutcome, roll, travelEvents, type RoadTemplate } from './road'
 import { commitReport, newReportId, withRng } from './state'
 import { condMet } from './storyFlags'
+import { exposureAt } from './lewd'
 import type { GameState, GameTime, Report } from './types'
 
 /** 可以遇到事件的設施（自建商店另外算） */
@@ -52,7 +53,13 @@ export function townWeight(state: GameState, t: RoadTemplate): number {
   const rules = travelEvents.town
   const recent = state.townEvents?.recent ?? []
   const times = t.category ? recent.filter((c) => c === t.category).length : 0
-  return Math.pow(rules?.recent_penalty ?? 0.4, times)
+  return Math.pow(rules?.recent_penalty ?? 0.4, times) * adultBoost(state, t)
+}
+
+/** 成人向的城鎮事件：主角在這個地區的曝露名聲越高越容易遇到（× (1 + 曝露名聲 / 100)；慾望指標） */
+function adultBoost(state: GameState, t: RoadTemplate): number {
+  if (!t.tags?.includes('adult')) return 1
+  return 1 + exposureAt(state, pcOf(state).id, locationById(state.location).region) / 100
 }
 
 /**
@@ -73,8 +80,11 @@ export function maybeTownEvent(state: GameState): { report?: Report } {
   const list = townCandidates(state, area, cell.kind)
   if (!list.length) return {}
   const pick = withRng(state, (rng) => {
-    if (!rng.chance(rules.chance)) return undefined
+    // 曝露名聲讓成人向事件的權重變高；整體機率跟著放大同樣的比例，其他事件的機率不變
     const weights = list.map((t) => townWeight(state, t))
+    const plain = list.map((t) => townWeight(state, t) / adultBoost(state, t))
+    const boost = weights.reduce((a, b) => a + b, 0) / Math.max(1e-9, plain.reduce((a, b) => a + b, 0))
+    if (!rng.chance(Math.min(1, rules.chance * boost))) return undefined
     let r = rng.next() * weights.reduce((a, b) => a + b, 0)
     for (let i = 0; i < list.length; i++) if ((r -= weights[i]!) < 0) return { t: list[i]!, natural: rng.int(1, 20) }
     return { t: list.at(-1)!, natural: rng.int(1, 20) }

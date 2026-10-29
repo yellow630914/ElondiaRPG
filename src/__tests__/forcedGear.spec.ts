@@ -112,7 +112,8 @@ describe('restraint bases', () => {
     const { gearStats, ordinaryBases, randomGear, creationSlots, sanitizeGearSpec } = await import('@/engine/gear')
     const { Rng } = await import('@/engine/rng')
     const restraints = Object.entries(gearRules.bases).filter(([, b]) => b.restraint).map(([id]) => id)
-    expect(restraints).toEqual(['slave_collar', 'manacles', 'shackles', 'spiked_collar', 'choker', 'chastity_belt', 'leather_harness', 'silk_binding'])
+    expect(restraints).toEqual(['slave_collar', 'manacles', 'shackles', 'spiked_collar', 'choker', 'chastity_belt', 'leather_harness', 'silk_binding',
+      'blindfold', 'armbinder', 'hobble_chain', 'ballet_boots', 'rope_harness', 'shibari', 'vibe_egg', 'nipple_clamps'])
     for (const i of itemRules.items.filter((x) => x.master_force)) {
       expect(restraints, i.name).toContain(i.gear!.base)
       const s = gearStats(i.gear!)

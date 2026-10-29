@@ -197,6 +197,11 @@
             "properties": { "actor": { "type": "string" }, "condition": { "type": "string" }, "added": { "type": "boolean" } }
           }
         },
+        "lewd": {
+          "type": "array",
+          "description": "慾望指標的增減（淫亂、敏感、忍耐、順從；曝露名聲記地區）。",
+          "items": { "type": "object", "required": ["actor", "stat", "delta", "after"], "properties": { "actor": { "type": "string" }, "stat": { "type": "string" }, "delta": { "type": "integer" }, "after": { "type": "integer" }, "region": { "type": "string" } } }
+        },
         "perks": {
           "type": "array",
           "description": "特質的增減（學會或失去）。",
@@ -275,7 +280,8 @@
         "focus": { "type": "array", "items": { "type": "string" } },
         "player_intent": { "type": "string", "description": "玩家在 UI 上選擇的意圖或自由輸入的備註" },
         "mode": { "enum": ["defeat_cliffhanger", "defeat_event"], "description": "特殊的敘事：戰敗事件的前半段（停在對方動手前）與後半段（玩家回應之後）" },
-        "adult_scene": { "type": "string", "description": "成人向的親密場景（只在開啟成人向時）：這段經過是什麼；敘事會附上成人場景規則，在正文詳細描寫" }
+        "adult_scene": { "type": "string", "description": "成人向的親密場景（只在開啟成人向時）：這段經過是什麼；敘事會附上成人場景規則，在正文詳細描寫" },
+        "adult_actor": { "type": "string", "description": "親密場景的主角不是主角本人時（派奴隸去娼館接客）：那個人的 id" }
       }
     },
     "lore_keys": {

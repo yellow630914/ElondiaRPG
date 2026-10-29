@@ -1,0 +1,191 @@
+{
+  "$comment": "慾望戰鬥的五項長期指標（docs/LEWD_STATS.md；計畫 docs/plan/LUST_COMBAT_PLAN.md 第 5、6 節）。淫亂、敏感、忍耐、順從記在角色身上（0～100），曝露名聲依地區記在存檔。stats：名稱與分段（每 20 一段；順從在有奴隸契約時用 forced_bands）。defaults：主角與舊存檔沒有記錄時的值。npc_tags：生成的 NPC 依標籤擲的範圍（多個標籤取最後符合的），其他用 npc_random。combat：戰鬥的換算。gear：裝備的加值上限，以及底材的預設（outfit 的種類、束縛用的底材；個別底材在 gear.json 寫 exposure）；曝露度只算上身、下身與看得到的內衣。growth：事件造成的成長。daily：每天的變化。",
+  "version": 1,
+  "stats": {
+    "lewdness": { "name": "淫亂", "bands": ["純情", "好奇", "開放", "淫蕩", "淫亂"] },
+    "sensitivity": { "name": "敏感", "bands": ["遲鈍", "略鈍", "正常", "敏感", "極敏"] },
+    "endurance": { "name": "忍耐", "bands": ["初萌", "漸成", "精熟", "入微", "隨心"] },
+    "submission": { "name": "順從", "bands": ["生疏", "配合", "習慣", "忠誠", "奉獻"], "forced_bands": ["恨與反抗", "懲罰與絕望", "麻木與認命", "依賴與習慣", "真心臣服"] },
+    "exposure": { "name": "曝露名聲", "bands": ["沒人知道", "有些傳聞", "小有名氣", "遠近馳名", "人盡皆知"] }
+  },
+  "defaults": { "lewdness": 10, "sensitivity": 50, "endurance": 10, "submission": 10 },
+  "npc_tags": {
+    "prostitute": { "lewdness": [50, 80], "sensitivity": [45, 70], "endurance": [20, 45] },
+    "slave": { "submission": [40, 80], "endurance": [30, 50] },
+    "villain": { "lewdness": [40, 70] },
+    "noble": { "lewdness": [0, 20] },
+    "royal": { "lewdness": [0, 20] },
+    "priest": { "lewdness": [0, 20] },
+    "bishop": { "lewdness": [0, 15] }
+  },
+  "npc_random": { "lewdness": [5, 40], "sensitivity": [30, 70], "endurance": [5, 30], "submission": [5, 30] },
+  "combat": {
+    "$comment": "慾望上限 + 忍耐 / endurance_max_div；受到的慾望 × (sensitivity_base + 敏感 / sensitivity_div)；淫亂每 lewd_start_per 點開戰帶上限 lewd_start_ratio 的慾望，消退 × (1 - 淫亂 / lewd_decay_div)；淫亂 self_gain_lewd 以上自己增加的慾望 × (1 + self_gain_bonus)；順從每 submission_per 點，傷害轉成慾望的比例 + submission_convert（有轉換的狀態時）；曝露名聲每 exposure_per 點，在那個地區造成的魅惑傷害 +1；信仰調整值每 1 點，魅惑抗性 faith_resist。分擔慾望（情熱傳染、獻身這類 lust_transfer）時，兩人之間的親密度（隊友對主角的；兩位隊友之間取比較低的）每 bond_step 點，傳過去的慾望少 bond_share（最多 bond_max），分得越多、對方承受越少。",
+    "endurance_max_div": 2,
+    "sensitivity_base": 0.75,
+    "sensitivity_div": 200,
+    "lewd_start_per": 20,
+    "lewd_start_ratio": 0.05,
+    "lewd_decay_div": 200,
+    "self_gain_lewd": 60,
+    "self_gain_bonus": 0.25,
+    "submission_per": 20,
+    "submission_convert": 0.05,
+    "exposure_per": 20,
+    "faith_resist": -0.05,
+    "bond_step": 25,
+    "bond_share": 0.1,
+    "bond_max": 0.4
+  },
+  "gear": {
+    "item_cap": 10,
+    "total_cap": 20,
+    "exposure_slots": ["body", "legs", "underwear_top", "underwear_bottom"],
+    "outfit": {
+      "adult": { "exposure": 2, "lewd": { "lewdness": 5 } }
+    },
+    "restraint": { "lewd": { "submission": 5, "endurance": 3 } },
+    "underwear_visible": 2,
+    "naked": 3
+  },
+  "schools": {
+    "$comment": "流派（docs/LEWD_STATS.md 第 6 節）：entry 入門特質、advanced 進階特質（perks.json，category lewd）。流派只是特質，不限制能學的色情技能。fit：雙面效應契合的拘束種類（×two_face.fit）。",
+    "servitude": { "name": "隸從派", "group": "奴隸系", "role": "承傷、護主", "entry": "school_servitude", "advanced": "servitude_vow", "fit": [] },
+    "punishment": { "name": "刑罰派", "group": "奴隸系", "role": "承傷、反擊", "entry": "school_punishment", "advanced": "trained_body", "fit": ["legs", "hands", "eyes", "body"] },
+    "bondage": { "name": "束縛派", "group": "奴隸系", "role": "防禦、穩定", "entry": "school_bondage", "advanced": "rope_strength", "fit": ["legs", "hands", "eyes", "body"] },
+    "indulgence": { "name": "縱欲派", "group": "淫亂系", "role": "增益、爆發", "entry": "school_indulgence", "advanced": "wanton_blaze", "fit": [] },
+    "flesh": { "name": "肉體派", "group": "淫亂系", "role": "續戰", "entry": "school_flesh", "advanced": "afterglow_memory", "fit": ["stim"] },
+    "beast": { "name": "獸蟲派", "group": "淫亂系", "role": "毒與寄生", "entry": "school_beast", "advanced": "hive_bond", "fit": [] },
+    "abstinence": { "name": "禁慾派", "group": "反制", "role": "抗性、淨化", "entry": "school_abstinence", "advanced": "pure_heart", "fit": [] },
+    "exhibition": { "name": "露出派", "group": "淫亂系", "role": "曝露、魅惑", "entry": "school_exhibition", "advanced": "center_stage", "fit": [] }
+  },
+  "servitude": { "$comment": "隸從派：沒有主人時，流派特質的慾望效果與戰鬥修正只有 no_master 倍（向下取整）", "no_master": 0.5 },
+  "two_face": {
+    "$comment": "雙面效應：底材的 bind（1～3）與 bind_kind。平常（非戰鬥的檢定）受到 penalty[bind-1] 的減值，每 endurance_per 點忍耐減輕 1；符合任一個 checks 的檢定才算，同一件只扣一次。戰鬥中：修了任何流派、而且這件鎖上了，才有 combat[bind-1] 的增益（initiative 先攻；其他是戰鬥修正；immune 免疫的狀態），乘上鎖的倍率，流派契合再 × fit（隸從派有主人時 × servitude_master），四捨五入。慾望戰鬥關閉時沒有增益，減值照算。",
+    "endurance_per": 40,
+    "fit": 1.2,
+    "servitude_master": 1.4,
+    "kinds": {
+      "legs": { "name": "限制行走", "checks": [{ "attrs": ["dex"] }, { "contexts": ["travel", "road", "retreat", "stealth"] }], "penalty": [1, 2, 3],
+        "combat": [{ "initiative": 2 }, { "initiative": 4 }, { "initiative": 5, "ap_regen": 1 }] },
+      "hands": { "name": "束縛雙手", "checks": [{ "attrs": ["str", "dex"] }, { "contexts": ["lock", "trap"] }], "penalty": [1, 2, 3],
+        "combat": [{ "dr": 1 }, { "dr": 2 }, { "dr": 3 }], "immune": ["disarmed"] },
+      "eyes": { "name": "遮住視線", "checks": [{ "attrs": ["int"] }, { "contexts": ["trap", "lock", "stealth", "travel", "road"] }], "penalty": [1, 2, 3],
+        "combat": [{ "evade": 1 }, { "evade": 2 }, { "evade": 3 }], "immune": ["blinded"] },
+      "stim": { "name": "持續刺激", "checks": [{ "attrs": ["int", "fai"] }, { "contexts": ["negotiation"] }], "penalty": [1, 2, 3],
+        "combat": [{ "save": 1 }, { "ap_regen": 1 }, { "ap_regen": 1, "save": 1 }] },
+      "body": { "name": "全身拘束", "checks": [{}], "penalty": [1, 1, 2],
+        "combat": [{ "save": 1 }, { "hit": 1, "evade": 1, "save": 1 }, { "hit": 1, "evade": 1, "save": 1, "dr": 1, "damage": 1 }] }
+    }
+  },
+  "locks": {
+    "$comment": "鎖（物品的 lock）：拘束具要鎖上，雙面效應的戰鬥增益才生效；鎖越好倍率越高。自己鎖的隨時可以打開（鎖放回行囊）；主人強制戴上的依主人的身分（master_tags，沒有符合時 master_default）。",
+    "grades": {
+      "white": { "name": "白鐵鎖", "mult": 1 },
+      "blue": { "name": "藍鋼鎖", "mult": 1.1 },
+      "rune": { "name": "符文鎖", "mult": 1.2 },
+      "gold": { "name": "黃金鎖", "mult": 1.3 }
+    },
+    "master_default": "white",
+    "master_tags": { "villain": "blue", "noble": "rune", "royal": "gold" }
+  },
+  "master_tool": {
+    "$comment": "主角當奴隸時主人是工具人（計畫 7.2 節）：和主人的親密度 release_affinity 以上可以直接解約、換主人；新主人要認識、親密度 new_master_affinity 以上、在同一座聚落、不是奴隸也沒有敵意。submission_dc_per：順從每這麼多點，逃離與談判解約的 DC +1（親密度夠高直接解約時不看）。stance_per：主人事件的回應有 stance 時，順從每這麼多點，屈服（submit）的檢定 +1、抵抗（resist）-1。",
+    "release_affinity": 60,
+    "new_master_affinity": 40,
+    "hours": 1,
+    "submission_dc_per": 25,
+    "stance_per": 20
+  },
+  "training": {
+    "$comment": "調教（主角對自己的奴隸；docs/LEWD_STATS.md 第 9 節）：選課程，從 slavery.json 的 owner_events 抽一件同課程的事件，主角擲檢定。DC 另外減去奴隸的順從 / sub_div，親密度低於 low_affinity 時 +low_dc。成功時套用課程的 stats（指標）與 affinity，同一課程成功 progress 次保證學會這個課程事件掛的一個技能（事件寫了 progress 時用事件的）。失敗而且親密度低於 backlash_affinity 時反彈：親密度再 backlash_delta，記一段怨恨的記憶。",
+    "sub_div": 10, "low_affinity": 0, "low_dc": 2, "progress": 3, "backlash_affinity": -20, "backlash_delta": -3, "room_max": 3, "resident_submission": 1, "escape_chance": 0.3,
+    "courses": {
+      "serve": { "name": "侍奉", "attr": "cha", "stats": { "submission": 2 }, "desc": "伺候主人的規矩與心思" },
+      "endure": { "name": "忍耐", "attr": "str", "stats": { "endurance": 2 }, "desc": "撐住刺激、不准自己先投降" },
+      "pain": { "name": "疼痛", "attr": "str", "stats": { "submission": 1, "endurance": 1 }, "affinity": -1, "desc": "把痛楚當成獎賞" },
+      "words": { "name": "言語", "attr": "int", "stats": { "lewdness": 1, "sensitivity": 1 }, "desc": "說出口的話與聽進去的話" },
+      "exposure": { "name": "露出", "attr": "cha", "stats": { "exposure": 2 }, "desc": "在別人的目光下抬起頭" },
+      "bind": { "name": "束縛", "attr": "dex", "stats": { "endurance": 1, "submission": 1 }, "desc": "被綁住時也能安分" },
+      "charm": { "name": "魅惑", "attr": "cha", "stats": { "lewdness": 1, "sensitivity": 1 }, "desc": "勾人的眼神與吻" }
+    }
+  },
+  "brothel": {
+    "$comment": "娼館（docs/LEWD_STATS.md 第 10 節）。work_event：娼館打工結束時擲一次，機率 = base + 淫亂 × per_lewd（最多 max），從 brothel_events.work 抽（頭牌等級夠、掛的技能還沒全學過的事件）。ranks：頭牌等級，每個人在每座城的娼館各自累積（工作一次 +work、打工事件 +event）；娼館的時薪每級 +wage_per_rank。train：受訓的時數、學費 = price_base + price_per_unlock × 技能的解鎖等級，每級頭牌等級打 discount_per_rank 的折扣；全部學過時「複習」給 review 的效果。patron：光顧娼婦（親密度 affinity_min 以上）成功時有 chance 機會教主角一個技能；她的淫亂決定能教到幾級的技能（tiers）；沒有指定清單（固定 NPC 的 teaches）時用 default。propose：提議自由的夥伴去娼館接客：主角擲魅力，DC = dc − 對方淫亂 / lewd_div − 親密度 / affinity_div + 身分修正（tags），成功當天都可以派；工錢分 share 給主角。",
+    "work_event": { "base": 0.15, "per_lewd": 0.001, "max": 0.3 },
+    "ranks": [
+      { "min": 0, "name": "見習" }, { "min": 5, "name": "熟手" }, { "min": 15, "name": "紅牌" }, { "min": 30, "name": "頭牌" }, { "min": 60, "name": "花魁" }
+    ],
+    "rank_gain": { "work": 1, "event": 2 },
+    "wage_per_rank": 0.15,
+    "train": { "price_base": 150, "price_per_unlock": 40, "discount_per_rank": 0.1, "review": [{ "type": "lewd", "stat": "lewdness", "delta": 2 }, { "type": "money", "amount": 20 }] },
+    "patron": {
+      "affinity_min": 40, "chance": 0.5,
+      "tiers": [{ "lewd": 0, "unlock": 1 }, { "lewd": 40, "unlock": 5 }, { "lewd": 60, "unlock": 9 }, { "lewd": 80, "unlock": 13 }],
+      "default": ["lust_glance", "lust_tease", "lust_whisper", "lust_self_tease", "lust_perfume", "lust_ally_tease", "lust_kiss", "lust_dance", "lust_smile"]
+    },
+    "propose": { "attr": "cha", "dc": 15, "lewd_div": 10, "affinity_div": 25, "tags": { "noble": 4, "royal": 4, "priest": 4, "bishop": 4, "prostitute": -4 }, "share": 0.5, "fail_affinity": -2, "fumble_affinity": -6 }
+  },
+  "growth": {
+    "adult_scene": { "lewdness": 1 },
+    "climax": { "lewdness": 1, "sensitivity": 1 },
+    "climax_won": { "endurance": 1 },
+    "brothel_work": { "lewdness": 2, "exposure": 2 },
+    "obedience": { "submission": 1 },
+    "disrobe": { "exposure": 1 }
+  },
+  "daily": {
+    "adult_outfit": { "lewdness": 1 },
+    "restraint": { "endurance": 1 },
+    "locked": { "submission": 1 },
+    "free_submission_every": 3,
+    "idle_days": 7,
+    "exposure_decay": 1,
+    "exposure_per_level": 2,
+    "settlements": ["capital", "city", "town", "village", "port", "outpost", "fortress"]
+  },
+  "conquest": {"$comment": "慾望勝利的「征服」掉落（docs/LEWD_STATS.md 第 13 節）：怪物在高潮中屈服（慾望勝利）時，有 chance 的機率依種類（kinds）多掉一件材料。不死與構裝不吃魅惑，人形不掉。", "chance": 0.5, "kinds": {"beast": "淫獸的媚腺", "demon": "魅魔的香精", "fey": "妖精的花露", "plant": "媚香花蜜", "spirit": "夢魔的鱗粉", "elemental": "媚液結晶"}},
+  "charm": {
+    "$comment": "魅氣濃度（docs/LEWD_STATS.md 第 12 節）：每個聚落 1～4，地區預設 regions，個別地點 locations 覆蓋。exposure_mult：在這裡穿著曝露的服裝時，曝露名聲每天累積的倍率（依濃度，第 0 個不用）；rut_mult：近郊與地下城的怪物擲到「發情」的權重倍率；spread：每個地區的曝露名聲讓相鄰地區（有路相連）慢慢追到它的 ratio，每天 +1；gate：濃度 min 以上的城門可以照規矩戴上拘束具進城（item 戴上、lock 的鎖鎖上，當天不用盤查）；ai：給 AI 的一句風氣（成人向的判定與敘事）。",
+    "names": ["", "清淨", "尋常", "放縱", "淫靡"],
+    "regions": { "central": 2, "north": 2, "south": 4, "forest": 1, "east_sea": 2, "west": 2 },
+    "locations": { "albena": 3, "tidehaven": 3, "coast_ferry": 3, "ashport": 3, "soriel": 1 },
+    "exposure_mult": [0, 0.5, 1, 1.5, 2],
+    "rut_mult": [0, 0.5, 1, 1.5, 2],
+    "spread": { "ratio": 0.3 },
+    "gate": { "min": 4, "item": "腕鐐", "lock": "white" },
+    "ai": [
+      "",
+      "這一帶風氣保守：人們穿得嚴實，衣衫不整的人會招來側目與議論。",
+      "這一帶風氣尋常：大膽的打扮會引人注目，但不至於引起騷動。",
+      "這一帶風氣放縱：街上不乏衣著暴露的人，娼館與黑市的生意興隆，大膽的打扮只換來幾聲口哨。",
+      "這一帶淫靡成風：魅氣濃得化不開，衣不蔽體、戴著拘束具的人隨處可見，人們把情慾當成日常。"
+    ]
+  },
+  "unbind": {"$comment": "脫縛（docs/LEWD_STATS.md 第 16 節）。嘗試脫縛：DC = base + 鎖的 lock_dc + 拘束程度 × bind_dc − 忍耐 / endurance_per；靈巧檢定（雙手被綁的減值照雙面效應算在檢定上）。只有別人鎖上的拘束具（主人強制戴上的）才需要；成功時鎖被弄壞、拘束具可以卸下。主人在身邊時，失敗輕度懲罰、大失敗嚴厲懲罰；大失敗順從 + fumble_submission。鑰匙（物品的 key）打開同等級以下的鎖，用一次就沒了，鎖歸自己。keys：擊敗人形的敵人（持有裝備的怪物、敵對冒險者）時 chance 的機率搜到一把，依敵人等級（levels：[最低等級, 鎖的等級]）。combat：戰鬥中的拘束（狀態有 struggle）用掙脫（自己）或撕開（隊友）擺脫，花 ap 行動點；1d20 + 熟練 + 力量、靈巧較高的調整值，DC = base + 施加者等級 × per_level + 狀態的 struggle，自己雙手被綁 + hands。", "attr": "dex", "base": 10, "lock_dc": {"white": 0, "blue": 2, "rune": 4, "gold": 6}, "bind_dc": 1, "endurance_per": 20, "fumble_submission": 1, "keys": {"chance": 0.1, "levels": [[1, "white"], [6, "blue"], [11, "rune"], [16, "gold"]]}, "combat": {"ap": 1, "base": 10, "per_level": 0.5, "hands": 2}},
+  "slave_room": {"$comment": "驛站的奴房（docs/LEWD_STATS.md 第 20 節）：魅氣濃度 charm_min 以上的聚落，旅店多一個便宜的選項（玩家自己選；內容篩選關掉「主角非自願」時沒有）。全隊和住旅店一樣長休，房錢是旅店的 cost_ratio；主角順從 + submission，learn_chance 的機率學會 abilities 裡的一個色情技能，醒來時 condition。", "charm_min": 3, "cost_ratio": 0.3, "submission": 1, "learn_chance": 0.25, "abilities": ["lust_endure", "lust_grovel", "lust_pour_charm"], "condition": "drained", "scene": "主角住進驛站的奴房：一整晚被鎖在床頭，路過的客人都能推門進來"},
+  "arena": {"$comment": "淫鬥場（docs/LEWD_STATS.md 第 21 節）：魅氣濃度 charm_min 以上的聚落，站在 cells 的設施（娼館、酒館）可以報名；慾望戰鬥關閉時沒有。報名費 fee；三種擂臺（rings），每贏 streak_per_tier 場往上一級對手（tiers 是各級的對手組合），輸了連勝歸零。獎金 = prize.base + prize.per_tier × 對手等級（0 起算）；勝場另外有 item_chance 拿到 items 裡的一樣，對手等級 book_tier 以上有 book_chance 拿到 books 裡的一本。賭注賽（wager）：報名費與獎金 × wager.mult，輸了曝露名聲、順從另外上升（wager.loss）。restraint：上場前選一件行囊裡的拘束具戴上、用白鐵鎖鎖上，打完拿掉。lust_only：性戰場——生命傷害關閉，非魅惑的傷害改成 lust_convert 比例的慾望；雙方都用我方的「三次」規則（高潮不扣生命，第三次倒下）。輸了不會損失錢、不會有戰敗事件。", "charm_min": 3, "cells": ["brothel", "tavern"], "fee": 30, "streak_per_tier": 2, "prize": {"base": 60, "per_tier": 50}, "item_chance": 0.3, "items": ["媚藥瓶", "清心茶", "媚香精油"], "book_tier": 3, "book_chance": 0.1, "books": ["《斟酒的媚態》", "《魔導刺激》", "《莊家的賭局》", "《萬眾矚目》", "《搓背的手藝》", "《熱泉的耐性》", "《十指的特別服務》", "《定格的姿態》", "《戰利品的覺悟》", "《獻祭的契紋》", "《求偶紋》", "《潮之新娘》"], "wager": {"mult": 3, "loss": {"exposure": 3, "submission": 1}}, "lust_convert": 0.5, "rings": {"beast": {"name": "淫物場", "desc": "和園區運來的淫獸、淫蟲打：考的是慾望攻擊與慾望勝利。", "tiers": [[["lp_lewd_cat", 1]], [["lp_lewd_cat", 2]], [["lp_lewd_monkey", 1]], [["lp_lewd_hound", 1]], [["lp_lewd_fox", 1]], [["lp_rut_boar", 1]], [["lp_nine_tail", 1]]]}, "bound": {"name": "拘束戰鬥場", "desc": "上場前選一件拘束具戴上、鎖好，打完拿掉：考的是雙面效應。", "restraint": true, "tiers": [[["bandit", 2]], [["highway_robber", 1]], [["tea_road_bandit", 2]], [["slaver_thug", 1]], [["brand_raider", 2]], [["slaver_captain", 1]]]}, "lust": {"name": "性戰場", "desc": "生命傷害關閉，只算慾望；先讓對方高潮三次的贏。", "lust_only": true, "tiers": [[["lp_succ_dancer", 1]], [["lp_incubus", 1]], [["lp_succ_diva", 1]], [["honor_succubus", 1]], [["lp_succ_lead", 1]], [["incubus_enforcer", 1]]]}}},
+  "fusion": {"$comment": "淫器合煉（docs/LEWD_STATS.md 第 22 節）：在 shops 的店把一件武器和一件拘束具合成「淫器」，收 fee_cc；平常是拘束具（雙面效應照算，日常的檢定減值 × penalty_mult），戰鬥時展開成那件武器。最近 days 天裡穿了幾天決定武器傷害的倍率（tiers：[至少幾天, 倍率]，由高到低）；更少時展開不了（照原本的武器打）。可以在同一種店拆回原本的兩件，不收錢。", "shops": ["smithy"], "fee_cc": 400, "days": 10, "tiers": [[9, 1.5], [7, 1.0], [4, 0.5]], "penalty_mult": 1.5},
+  "slave_price": {"$comment": "奴隸的身價（docs/LEWD_STATS.md 第 23 節）：指標超過 above 的部分每點 × per（四項各自的權重），加上會的色情技能每個 per_skill，合計最多 + max；乘在原本的身價上（市場上的奴隸、主角出售自己）。", "above": 50, "per": {"submission": 0.006, "lewdness": 0.004, "sensitivity": 0.002, "endurance": 0.003}, "per_skill": 0.04, "max": 0.6},
+  "npc_schools": {"$comment": "娼妓、奴隸 NPC 帶流派的入門特質（依 id 固定地擲，內容頁籤指定了特質的固定 NPC 不擲）：tags 的標籤有 chance 的機率帶 schools 裡的一個。", "tags": {"prostitute": {"chance": 0.5, "schools": ["school_indulgence", "school_exhibition", "school_flesh"]}, "slave": {"chance": 0.4, "schools": ["school_servitude", "school_bondage", "school_punishment"]}}},
+  "portrait": {"$comment": "形象圖的慾望氣質（docs/PORTRAITS.md 第 2 節的 {allure}）：淫亂、曝露名聲（目前的地區）達到門檻時，用最高的那一句英文描述。", "lewdness": [[40, "a hint of allure in the eyes"], [60, "seductive gaze, faintly flushed cheeks"], [80, "openly sultry expression, flushed cheeks, inviting pose"]], "exposure": [[60, "confident, provocative pose, aware of being watched"], [80, "notorious exhibitionist air, deliberately revealing pose"]]},
+  "outfit_two_face": {"$comment": "淫服的雙面效應（docs/LEWD_STATS.md 第 24 節）：身上的成人向服裝（底材的 outfit = adult）每件算一件，最多 max_pieces 件。平常：和 penalty_tags 的人打交道（penalty_kinds 的行動）每件 -penalty_per，最多 -penalty_max，每 endurance_per 點忍耐減輕 1。戰鬥中（慾望戰鬥開著）：修了 schools 裡的流派時每件給那一行的加成（lust_bonus 造成的魅惑傷害 +N、evade 迴避、save 豁免；禁慾派是負的）。", "penalty_tags": ["noble", "royal", "priest", "bishop"], "penalty_kinds": ["chat", "gift", "flatter", "hire", "invite", "haggle", "bargain", "negotiation"], "penalty_per": 1, "penalty_max": 2, "endurance_per": 40, "max_pieces": 3, "schools": {"indulgence": {"lust_bonus": 1}, "exhibition": {"evade": 1}, "abstinence": {"save": -1}}},
+  "outfit_tailor": {"$comment": "淫服裁縫鋪（docs/LEWD_STATS.md 第 25 節）：魅氣濃度 charm_min 以上的城鎮，裁縫店可以訂做成人向服裝（底材的 outfit = adult），選一項慾望指標加成；加成依材料（bonus），收費 = 底材 × 材料的價格 × fee_mult + fee_base。", "charm_min": 3, "fee_mult": 3, "fee_base": 150, "stats": ["lewdness", "sensitivity", "endurance", "submission"], "bonus": {"linen": 4, "silk": 6, "moonsilk": 8, "spellweave": 10, "leather": 4, "hard_leather": 6, "beast_hide": 8, "dragonhide": 10, "copper": 4, "silver": 6, "gold": 8, "mithril_jewel": 10}},
+  "auction": {"$comment": "拍賣會（docs/LEWD_STATS.md 第 26 節；地標的 auction）：每天上 lots 件拍品（從 pool 依權重抽，不重複），起標價 = 物品價格 × start_ratio，對手最高出價 = 物品價格 × rival_ratio（看不到）。每件每天出一次價：出價高於對手的最高價就得標，付對手的最高價 + 物品價格 × step（不超過你的出價）。寄賣：成人向的物品與色情技能書，以物品價格 × consign_ratio 賣出，扣 consign_fee 的手續費。得標後有 watch_chance 被盯上（城鎮事件「拍賣會上被盯上」）。", "lots": 3, "start_ratio": 0.6, "rival_ratio": [0.9, 1.8], "step": 0.05, "consign_ratio": [0.8, 1.6], "consign_fee": 0.1, "watch_chance": 0.5, "watch_flag": "auction_watched", "pool": [["魅魔女王的舊項圈", 3], ["夢魔的薄紗睡衣", 3], ["鍍金的鈴鐺乳環", 3], ["交際花的黑蕾絲網襪", 3], ["《媚術入門》", 2], ["《承歡之道》", 2], ["《魅香與媚毒》", 2], ["《極樂秘典》", 2], ["《傾國》", 2], ["《清心訣》", 2], ["《斟酒的媚態》", 1], ["《魔導刺激》", 1], ["《莊家的賭局》", 1], ["《萬眾矚目》", 1], ["《搓背的手藝》", 1], ["《熱泉的耐性》", 1], ["《十指的特別服務》", 1], ["《定格的姿態》", 1], ["《戰利品的覺悟》", 1], ["《獻祭的契紋》", 1], ["《求偶紋》", 1], ["《潮之新娘》", 1], ["黃金鑰匙", 2], ["黃金鎖", 1], ["魅魔的香精", 2]]},
+  "park": {
+    "$comment": "魅魔的遊樂園（docs/LUST_PARK.md）。step_lust：在園區裡每走一格，全隊的魅氣（跨戰鬥保留的慾望，慾望上限的比例）增加多少，走路最多累積到 step_cap；trap_lust：沒察覺的陷阱是媚藥機關，觸發的人魅氣增加多少（取代陷阱的傷害）；mimic_chance：園區的寶箱是擬態寶箱的機率，mimics 依層（1 淺層、2 中層、3 深層）；chest_items：園區的寶箱另外擲的物品；defeats：各園區的專屬戰敗（scene 交給成人場景的寫手、summary 寫進戰報、effects 套用、hours 經過的時間）。",
+    "step_lust": 0.01,
+    "step_cap": 0.4,
+    "trap_lust": 0.2,
+    "mimic_chance": 0.25,
+    "mimics": {"1": "lp_mimic_s", "2": "lp_mimic_m", "3": "lp_mimic_d"},
+    "chest_items": [["清心茶", 0.3], ["媚香精油", 0.3], ["《極樂秘典》", 0.04], ["《傾國》", 0.02], ["《斟酒的媚態》", 0.012], ["《戰利品的覺悟》", 0.012], ["《求偶紋》", 0.012], ["《十指的特別服務》", 0.012], ["《熱泉的耐性》", 0.012], ["《魔導刺激》", 0.012], ["《搓背的手藝》", 0.012], ["《潮之新娘》", 0.012], ["《萬眾矚目》", 0.012], ["《定格的姿態》", 0.012], ["《莊家的賭局》", 0.012], ["《獻祭的契紋》", 0.012], ["牧場的乳牛裝", 0.03], ["溫室的花蜜網襪", 0.03], ["水族館的濕身緊身衣", 0.03], ["花園的藤蔓丁字褲", 0.03], ["劇場的舞孃薄紗", 0.03]],
+    "defeats": {
+      "park_beast": {"scene": "主角在淫獸牧場倒下，被淫獸們拖進獸舍、關進圍欄當一晚的「展示動物」：牧場的淫獸輪流爬上來騎主角，魅魔們帶著遊客在圍欄外面看，一直到天亮", "summary": "被淫獸們拖進獸舍，當了一整晚的展示動物，天亮才被魅魔們放回入口廣場。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "lewd", "stat": "lewdness", "delta": 2}], "hours": 10},
+      "park_insect": {"scene": "主角在蟲之溫室倒下，被蟲子們搬到溫室深處當成苗床：黏液把主角固定在溫床上，寄生蜂與蛞蝓輪流在主角身上產卵、留下種子，媚液泡得主角一直在高潮", "summary": "被當成溫室的苗床，身上被留下了寄生植物的種子；魅魔園丁把你從溫床上剝下來，丟回入口廣場。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "parasite", "op": "add", "parasite": "parasite_seed"}], "hours": 6},
+      "park_aquarium": {"scene": "主角在觸手水族館倒下，被觸手們放進展示水槽給遊客觀賞：透明的水槽裡，觸手纏住主角的四肢、鑽進身體，玻璃外面擠滿了指指點點的遊客", "summary": "被放進展示水槽給遊客看了一整個下午，閉館時才被撈出來送回入口廣場；來看的人可不少。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "lewd", "stat": "exposure", "delta": 8}], "hours": 8},
+      "park_garden": {"scene": "主角在淫植花園倒下，被一朵巨大的花苞吞進去，困在裡面半天：花瓣與花蕊包住全身慢慢揉弄，花蜜灌滿了身體，最後帶著發情被吐出來", "summary": "被花苞吞進去困了半天，渾身花蜜地被吐出來，自己走回了入口廣場。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "lewd", "stat": "sensitivity", "delta": 2}], "hours": 12},
+      "park_theater": {"scene": "主角在夢魔劇場倒下，被拉上舞台當當晚表演的主角：魅魔與夢魔在滿座的觀眾面前一個接一個玩弄主角，主角在全場的歡呼聲裡被逼到一次又一次高潮", "summary": "被拉上舞台當了當晚表演的主角，滿座的觀眾都看見了；謝幕之後才被送回入口廣場。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "lewd", "stat": "exposure", "delta": 15}], "hours": 6}
+    }
+  }
+}

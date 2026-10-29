@@ -3,7 +3,9 @@ import { computed } from 'vue'
 import { abilities, ATTR_IDS, attrName, conditionName, contractDef, geography, itemRules, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
-import { EFFECT_CONDITIONS, STORY_EFFECTS } from '@/engine/storyMods'
+import { EFFECT_CONDITIONS, MASTER_EVENT_EFFECTS, STORY_EFFECTS } from '@/engine/storyMods'
+import { LEWD_KEYS, lewdName } from '@/engine/lewd'
+import { MASTER_EVENT_POOLS } from '@/engine/data'
 import { oathError, oathText, TATTOO_PLACES, placeName, tattooKindName, tattooRules } from '@/engine/tattoos'
 import { parasiteRules } from '@/engine/parasites'
 import { useContent } from '@/stores/content'
@@ -12,8 +14,15 @@ import Hint from '../ui/Hint.vue'
 // 效果的清單（任務點的結果、完成的報酬）：金錢、物品、裝備、經驗、聲望、親密度、記憶、能力、入隊、生命值
 const model = defineModel<RewardEffect[] | undefined>()
 // 只開放某些效果（例如地標的參訪不能讓主角淪為奴隸）；沒有時全部
-const props = defineProps<{ types?: RewardEffect['type'][] }>()
-const effectOptions = computed(() => Object.entries(STORY_EFFECTS).filter(([t]) => !props.types || props.types.includes(t as RewardEffect['type'])))
+// master：主人事件格式（主人事件、調教、娼館）：效果清單換成 MASTER_EVENT_EFFECTS，親密度可以選「主人」
+const props = defineProps<{ types?: RewardEffect['type'][]; master?: boolean }>()
+const LABELS = computed(() => (props.master ? MASTER_EVENT_EFFECTS : STORY_EFFECTS))
+const effectOptions = computed(() => Object.entries(LABELS.value).filter(([t]) => !props.types || props.types.includes(t as RewardEffect['type'])))
+const ALL_LABELS: Partial<Record<RewardEffect['type'], string>> = { ...STORY_EFFECTS, ...MASTER_EVENT_EFFECTS }
+const masterGear = computed(() => {
+  void content.version
+  return itemRules.items.filter((i) => i.master_force).map((i) => i.name)
+})
 const content = useContent()
 // 可以給的非戰鬥狀態（含自建的）
 const conditionList = computed(() => {
@@ -52,6 +61,13 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   remove_tattoo: () => ({ type: 'remove_tattoo', kind: 'plain' }),
   parasite: () => ({ type: 'parasite', parasite: parasiteIds[0]!, op: 'add' }),
   corruption: () => ({ type: 'corruption', parasite: parasiteIds[0]!, delta: 10 }),
+  lewd: () => ({ type: 'lewd', stat: 'lewdness', delta: 1 }),
+  ability_pool: () => ({ type: 'ability_pool', pool: 'master', fallback: [{ type: 'lewd', stat: 'lewdness', delta: 3 }] }),
+  strict: () => ({ type: 'strict', delta: 1 }),
+  home_extend: () => ({ type: 'home_extend', hours: 24 }),
+  master_home: () => ({ type: 'master_home' }),
+  force_equip: () => ({ type: 'force_equip', npc: 'master' }),
+  flag: () => ({ type: 'flag', key: '', value: true }),
 }
 const parasiteIds = Object.keys(parasiteRules.parasites)
 // 刺青：圖樣，或自己描述（誓約要填屬性的加減）
@@ -143,7 +159,7 @@ function setBase(r: Row, base: string) {
   <div class="effects">
     <datalist id="effect-items"><option v-for="n in items" :key="n" :value="n" /></datalist>
     <div v-for="(r, i) in rows" :key="i" class="row">
-      <span class="tag">{{ STORY_EFFECTS[r.type] ?? r.type }}</span>
+      <span class="tag">{{ ALL_LABELS[r.type] ?? r.type }}</span>
       <template v-if="r.type === 'money'"><input v-model.number="r.amount" type="number" class="num" />白鸛幣（負數為花費）</template>
       <template v-else-if="r.type === 'item'">
         <input v-model="r.name" list="effect-items" class="grow" placeholder="物品名稱" />
@@ -170,9 +186,11 @@ function setBase(r: Row, base: string) {
       </template>
       <template v-else-if="r.type === 'affinity' || r.type === 'companion'">
         <select v-model="r.npc">
+          <option v-if="master && r.type === 'affinity'" value="master">主人</option>
           <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
         </select>
         <input v-if="r.type === 'affinity'" v-model.number="r.delta" type="number" class="num" />
+        <input v-if="r.type === 'affinity'" v-model="r.reason" maxlength="40" placeholder="原因（選填）" />
         <select v-else v-model="r.mode">
           <option value="voluntary">自願入隊</option>
           <option value="hired">雇傭入隊</option>
@@ -267,13 +285,46 @@ function setBase(r: Row, base: string) {
         <template v-else><input v-model.number="r.delta" type="number" min="-100" max="100" class="num" />點</template>
         <Hint :text="r.type === 'parasite' ? '對象是主角。寄生：寄生裝備穿上並鎖住、淫紋刻在小腹（已經有同一種、或小腹是奴隸印記時不寄生）；馴服：換成馴服後的物品或印記，不再自動發作；拿掉：寄生物離開身體。' : '主角身上這個寄生物的侵蝕度加減（0～100，決定階段）；沉睡或已馴服時不變。'" />
       </template>
+      <template v-else-if="r.type === 'lewd'">
+        <select v-model="r.stat"><option v-for="k in LEWD_KEYS" :key="k" :value="k">{{ lewdName(k) }}</option></select>
+        <input v-model.number="r.delta" type="number" min="-100" max="100" class="num" />
+        <Hint text="主角的慾望指標（docs/LEWD_STATS.md）；曝露名聲記在目前的地區。" />
+      </template>
+      <template v-else-if="r.type === 'ability_pool'">
+        <select v-model="r.pool"><option v-for="(n, k) in MASTER_EVENT_POOLS" :key="k" :value="k">{{ n }}</option></select>
+        <span class="small muted">從這個事件庫掛的技能抽一個還沒學的；都學過時：</span>
+        <EffectsEditor v-model="(r as Record<string, unknown>).fallback as RewardEffect[] | undefined" :master="master" :types="['money', 'xp', 'lewd', 'affinity', 'memory']" />
+      </template>
+      <template v-else-if="r.type === 'strict'"><input v-model.number="r.delta" type="number" min="-5" max="5" class="num" />點 <Hint text="出門與出城的 DC 加減（主人的家）。" /></template>
+      <template v-else-if="r.type === 'home_extend'"><input v-model.number="r.hours" type="number" class="num" />小時</template>
+      <template v-else-if="r.type === 'master_home'"><span class="small muted">把主角帶回主人的家（沒有家時沒事）</span></template>
+      <template v-else-if="r.type === 'force_equip'">
+        <select :value="r.item ?? ''" @change="($event.target as HTMLSelectElement).value ? (r.item = ($event.target as HTMLSelectElement).value) : delete r.item">
+          <option value="">隨機挑一件主人會用的</option>
+          <option v-for="n in masterGear" :key="n" :value="n">{{ n }}</option>
+        </select>
+        <span class="small muted">主人替主角裝上並鎖住，契約還在時拿不下來</span>
+      </template>
+      <template v-else-if="r.type === 'flag'">
+        <input v-model="r.key" maxlength="40" placeholder="旗標" />
+        <select v-model="r.value"><option :value="true">設定</option><option :value="false">清除</option></select>
+      </template>
       <template v-else-if="r.type === 'condition'">
         <select v-model="r.add"><option :value="true">得到</option><option :value="false">去掉</option></select>
         <select v-model="r.condition"><option v-for="[k, n] in conditionList" :key="k" :value="k">{{ n }}</option></select>
         <Hint text="對象是主角；多半持續到下次長休。" />
       </template>
       <template v-else-if="r.type === 'hp'">
-        <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）
+        <template v-if="r.amount !== undefined">
+          <input v-model.number="r.amount" type="number" class="num" />點生命值（主角）
+        </template>
+        <template v-else>
+          <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）
+        </template>
+        <select v-if="master" :value="r.amount !== undefined ? 'amount' : 'ratio'" @change="($event.target as HTMLSelectElement).value === 'amount' ? (delete r.ratio, r.amount = -3) : (delete r.amount, r.ratio = -0.2)">
+          <option value="ratio">比例</option>
+          <option value="amount">點數</option>
+        </select>
       </template>
       <button class="small x" @click="remove(i)">×</button>
     </div>

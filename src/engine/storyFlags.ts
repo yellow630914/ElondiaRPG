@@ -4,6 +4,7 @@
 // 名稱以 ai: 開頭時直接讀 AI 判定寫下的旗標（例如 ai:答應幫忙），讓劇情可以接上 AI 的判定。
 
 import { storyCounters, type StoryCond } from './data'
+import { currentRegion, exposureAt, lewdOf } from './lewd'
 import type { GameState } from './types'
 
 export const STORY_PREFIX = 'story:'
@@ -42,6 +43,19 @@ export function condMet(state: GameState, cond: StoryCond | undefined): boolean 
       if (r.tamed !== undefined && !!p.tamed !== r.tamed) return false
       return (r.min === undefined || p.corruption >= r.min) && (r.max === undefined || p.corruption <= r.max)
     })
+    && statsMet(state, cond.stats)
+}
+
+/** 慾望指標的條件：主角的有效值（曝露名聲看目前的地區）在範圍內 */
+function statsMet(state: GameState, stats: StoryCond['stats']): boolean {
+  if (!stats || !Object.keys(stats).length) return true
+  const pc = state.party.find((m) => m.isPlayer)
+  if (!pc) return false
+  const v = lewdOf(pc)
+  return Object.entries(stats).every(([k, r]) => {
+    const x = k === 'exposure' ? exposureAt(state, pc.id, currentRegion(state)) : v[k as keyof typeof v]
+    return x !== undefined && (r?.min === undefined || x >= r.min) && (r?.max === undefined || x <= r.max)
+  })
 }
 
 // ---- 劇情計數器（data/rules/counters.json） ----

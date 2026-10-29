@@ -42,7 +42,9 @@ describe('race talents as race perks', () => {
         // 裝備的減傷後來改成只擋物理（算在 armorDr），比對時加回去
         const gearDr = gearBonuses(c).mods.dr ?? 0
         const baseMods = gearDr ? { ...cb.baseMods, dr: (cb.baseMods.dr ?? 0) + gearDr } : cb.baseMods
-        const now = { g, threat: cb.threat, threatMult: cb.threatMult, resist: cb.resist, offense: cb.offense, baseMods }
+        // 魅惑（慾望戰鬥）是之後才加的屬性：種族特質與信仰給的魅惑抗性不在快照裡
+        const noLust = <T extends object>(m: T) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== 'lust')) as T
+        const now = { g: { ...g, resist: noLust(g.resist) }, threat: cb.threat, threatMult: cb.threatMult, resist: noLust(cb.resist), offense: cb.offense, baseMods }
         expect(JSON.parse(JSON.stringify(now)), `${race}/${cls}`).toEqual(snapshot[`${race}/${cls}`])
         n++
       }

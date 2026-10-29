@@ -7,6 +7,8 @@
 
 import parasitesJson from '@data/rules/parasites.json'
 import { itemDef, type AttrId, type CheckFilter } from './data'
+import { addLewdStat } from './lewd'
+import { schoolsOf } from './schools'
 import { placeName, tattooAt, tattoosOf } from './tattoos'
 import type { Character, GameTime, GearSlot, ParasiteState, Tattoo, TattooPlace } from './types'
 
@@ -31,6 +33,10 @@ export interface ParasiteDef {
   grow_per_day?: number
   /** 各階段的被動效果（依階段的順序；每一項是一種檢定的加減） */
   stage_effects?: { check: CheckFilter; bonus: number }[][]
+  /** 各階段給的戰鬥技能（還沒馴服時；不佔攜帶上限） */
+  stage_abilities?: string[][]
+  /** 各階段開戰時帶著的慾望（慾望上限的比例；失控） */
+  stage_lust?: number[]
   /** 解咒：DC 與價錢的基準（侵蝕度越高越難、越貴）；沒有時不能解咒 */
   remove?: { dc: number; price: number }
   /** 刻印師把淫紋紋回來的價錢 */
@@ -46,6 +52,8 @@ export interface ParasiteDef {
     text: string
     /** 主動觸發之後得到的非戰鬥狀態（companions.json 的 conditions） */
     buff?: string
+    /** 獸蟲派：馴服之後變成這個戰鬥技能（每次長休一次） */
+    ability?: string
   }
 }
 
@@ -116,8 +124,42 @@ export function growParasites(c: Character, now: GameTime, paused?: (p: Parasite
     p.grown = dayOf(now)
     if (!active.has(p) || paused?.(p)) continue
     const grow = parasiteDef(p.id)?.grow_per_day ?? 0
-    if (grow) p.corruption = clamp(p.corruption + grow * days)
+    if (grow) {
+      const before = p.corruption
+      p.corruption = clamp(p.corruption + grow * days)
+      corruptionGrowth(c, before, p.corruption)
+    }
   }
+}
+
+/** 侵蝕度每跨過 10 點：淫亂 +1、敏感 +1（只算上升；docs/LEWD_STATS.md 第 14 節） */
+export function corruptionGrowth(c: Character, before: number, after: number) {
+  const steps = Math.floor(after / 10) - Math.floor(before / 10)
+  if (steps <= 0) return
+  addLewdStat(c, 'lewdness', steps)
+  addLewdStat(c, 'sensitivity', steps)
+}
+
+/**
+ * 寄生物給的戰鬥技能（不佔攜帶上限）：還沒馴服的依階段（魅魔的契紋：共生是魅惑之吻、支配再加傾國一笑），
+ * 修了獸蟲派的人，馴服的寄生物變成每次長休一次的技能
+ */
+export function parasiteAbilities(c: Character): string[] {
+  const out: string[] = []
+  const beast = schoolsOf(c).includes('beast')
+  for (const p of parasitesOf(c)) {
+    const def = parasiteDef(p.id)
+    if (!def || p.dormant) continue
+    if (p.tamed) {
+      if (beast && def.tamed?.ability) out.push(def.tamed.ability)
+    } else out.push(...(def.stage_abilities?.[stageOf(p.corruption)] ?? []))
+  }
+  return [...new Set(out)].filter((id) => !c.abilities.includes(id))
+}
+
+/** 失控：還沒馴服的寄生物在高的階段，開戰時帶著慾望（慾望上限的比例） */
+export function parasiteStartLust(c: Character): number {
+  return activeParasites(c).filter((p) => !p.tamed).reduce((s, p) => s + (parasiteDef(p.id)?.stage_lust?.[stageOf(p.corruption)] ?? 0), 0)
 }
 
 /** 侵蝕度加減（沉睡、已馴服的不動）；回傳說明 */
@@ -126,7 +168,9 @@ export function changeCorruption(c: Character, id: string, delta: number): strin
   const def = parasiteDef(id)
   if (!p || !def || p.dormant || p.tamed || !delta) return ''
   const before = stageOf(p.corruption)
+  const raw = p.corruption
   p.corruption = clamp(p.corruption + delta)
+  corruptionGrowth(c, raw, p.corruption)
   const after = stageOf(p.corruption)
   const stage = after !== before ? `，進入「${parasiteRules.stages[after]!.name}」` : ''
   return `${def.name}的侵蝕度${delta > 0 ? '上升' : '下降'}到 ${p.corruption}${stage}`

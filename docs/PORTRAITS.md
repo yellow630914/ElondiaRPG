@@ -22,7 +22,7 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 
 ## 2. 提示詞
 
-**形象插圖的提示詞模板**（可以修改、恢復預設）把角色的資料填進去：`{name}` `{gender}` `{race}` `{role}`（職業或身分）`{level}` `{appearance}` `{personality}` `{background}` `{gear}`（身上的裝備；內衣、內褲被上身、下身的衣物蓋住時標「穿在裡面」）`{tattoos}`（刺青與印記：部位、名稱與外觀）`{composition}`（構圖）`{style}`（畫風）。代號的值是空的那一行整行拿掉。預設模板是英文的框架（單人、面向觀眾、簡單背景、不要文字與浮水印），角色的外貌等描述照原文填入。
+**形象插圖的提示詞模板**（可以修改、恢復預設）把角色的資料填進去：`{name}` `{gender}` `{race}` `{role}`（職業或身分）`{level}` `{appearance}` `{personality}` `{background}` `{gear}`（身上的裝備；內衣、內褲被上身、下身的衣物蓋住時標「穿在裡面」）`{tattoos}`（刺青與印記：部位、名稱與外觀）`{composition}`（構圖）`{allure}`（慾望的氣質：淫亂、曝露名聲夠高時的一句英文描述，[LEWD_STATS](LEWD_STATS.md) 第 23 節）`{style}`（畫風）。代號的值是空的那一行整行拿掉。預設模板是英文的框架（單人、面向觀眾、簡單背景、不要文字與浮水印），角色的外貌等描述照原文填入。
 
 **構圖**依刺青與裝備的部位自動選（`imageInfo.ts` 的 `portraitComposition`）：大腿、小腿的刺青或腿部飾品 → `full body`；小腹、臀部的刺青或露出來的內褲 → `cowboy shot`；其他 → `upper body`。以前的預設模板把構圖寫死成 upper body，下半身的刺青會在預處理時被丟掉、也畫不出來：沒改過的舊預設模板讀設定時換成新的；自己改過、沒有 `{composition}` 的模板，裡面寫死的 upper body 也會照這個規則換掉。內建的三份預處理指示也要求保留每個刺青、印記與裝備的部位，並照描述的構圖。
 

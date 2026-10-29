@@ -61,7 +61,8 @@ describe('world', () => {
   })
 
   it('connects every place on the map', () => {
-    for (const l of geography.locations) expect(shortestPath('soriel', l.id), l.id).not.toBeNull()
+    // 主題地下城的園區（park）只能從入口廣場的通道進出，沒有路線
+    for (const l of geography.locations.filter((x) => !x.park)) expect(shortestPath('soriel', l.id), l.id).not.toBeNull()
     expect(shortestPath('canglue', 'tidehaven')?.legs[0]?.fare).toBe(80)
     expect(shortestPath('coral_bay', 'canglue')?.legs[0]?.fare).toBe(0)
     expect(shortestPath('ashport', 'coral_bay')?.days).toEqual([3, 4])

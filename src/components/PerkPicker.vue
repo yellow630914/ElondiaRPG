@@ -14,7 +14,7 @@ import type { IconName } from './ui/iconPaths'
 const perks = defineModel<string[]>('perks', { required: true })
 const custom = defineModel<PerkDef[]>('custom', { required: true })
 const props = defineProps<{ race: string; cls: string }>()
-const allowed = (p: PerkDef) => (!p.requires?.races?.length || p.requires.races.includes(props.race)) && (!p.requires?.classes?.length || p.requires.classes.includes(props.cls))
+const allowed = (p: PerkDef) => !p.requires?.perks?.length && (!p.requires?.races?.length || p.requires.races.includes(props.race)) && (!p.requires?.classes?.length || p.requires.classes.includes(props.cls))
 const list = computed(() => choosablePerks().filter((p) => !p.flaw && allowed(p)))
 const flaws = computed(() => choosablePerks().filter((p) => p.flaw && allowed(p)))
 const picked = computed(() => [...perkRules.perks.filter((x) => perks.value.includes(x.id)), ...custom.value])
@@ -31,7 +31,7 @@ function blocked(p: PerkDef): boolean {
   const c = count.value
   return p.flaw ? c.flaws >= rules.max_flaws : c.slots !== null && c.normal >= c.slots
 }
-const CAT_ICON: Record<string, IconName> = { social: 'message', explore: 'compass', combat: 'sword', body: 'heart', craft: 'book', bond: 'lock', other: 'sparkles' }
+const CAT_ICON: Record<string, IconName> = { social: 'message', explore: 'compass', combat: 'sword', body: 'heart', craft: 'book', bond: 'lock', lewd: 'fire', other: 'sparkles' }
 
 /** 依分類分組（只列有東西的分類） */
 function groups(list: PerkDef[]) {

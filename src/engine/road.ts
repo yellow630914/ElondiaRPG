@@ -19,14 +19,15 @@ import { isBound, pcOf } from './party'
 import { spawnVisitors } from './population'
 import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
-import { addHours, commitReport, newReportId, withRng } from './state'
+import { addHours, advanceTime, commitReport, newReportId, withRng } from './state'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
 import { addCounters, condMet, flagKey } from './storyFlags'
 import { gateCheck } from './security'
 import { toolBonus } from './tools'
 import { arrive, daysToHours, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
-import type { ContentTag } from './content'
+import { tagsAllowed, type ContentTag } from './content'
+import { characterBody } from './look'
 import type { Body } from './traits'
 import { shortestPath } from './world'
 import { enterWaystation } from './trade'
@@ -196,7 +197,9 @@ function buildRoad(state: GameState, from: string, to: string, legs: { from: str
     const cell = cells[i]!
     const mode = legs[cell.road!.leg]!.mode
     if (!rng.chance(Math.min(1, (travelEvents.chance[mode] ?? 0) * gameRule(state, 'travelEventMult')))) continue
+    // 成人向的旅途事件：內容篩選、主角的體型（和城鎮事件一樣）
     const fits = (t: RoadTemplate) => (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && condMet(state, t.requires)
+      && tagsAllowed(t.tags) && (!t.pc_body?.length || t.pc_body.includes(characterBody(pcOf(state))))
     const checks = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'check' && fits(t))
     const choices = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'choice' && fits(t))
     const advanced = travelEvents.templates.filter((t) => t.tier === 'advanced' && fits(t))
@@ -286,7 +289,7 @@ function spendDay(state: GameState, road: RoadState, cell: Cell) {
   const meta = cell.road
   if (!meta || meta.hours <= 0 || meta.paid) return
   meta.paid = true
-  state.time = addHours(state.time, meta.hours)
+  advanceTime(state, meta.hours)
   road.hours += meta.hours
   if (road.modes[meta.leg] === 'road') road.money -= ROAD_DAILY_CC * state.party.length
 }

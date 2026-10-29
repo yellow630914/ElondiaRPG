@@ -89,7 +89,7 @@ describe('sending your own slaves to work', () => {
     const r = act(state, { kind: 'work', target: workTarget(4, rec.id), text: '' }, 15)
     expect(r.outcome.summary).toContain(`派${rec.name}去做了 4 小時`)
     expect(state.money_cc).toBeGreaterThan(money)
-    expect(() => prepareAction(state, { kind: 'work', target: workTarget(4, 'nobody'), text: '' })).toThrow('奴隸')
+    expect(() => prepareAction(state, { kind: 'work', target: workTarget(4, 'nobody'), text: '' })).toThrow('隊伍裡沒有這位夥伴')
   })
 })
 

@@ -127,7 +127,7 @@ describe('character creation catalogs', () => {
     const { perkCategory, PERK_CATEGORIES } = await import('@/engine/perks')
     const list = perkRules.perks.filter((p) => !p.race)
     for (const p of list) expect(PERK_CATEGORIES[p.category ?? '']).toBeTruthy()
-    const agree = list.filter((p) => perkCategory({ effects: p.effects }) === p.category).length
+    const agree = list.filter((p) => perkCategory({ effects: p.effects, school: p.school, lust: p.lust }) === p.category).length
     expect(agree / list.length).toBeGreaterThan(0.7)
   })
 })

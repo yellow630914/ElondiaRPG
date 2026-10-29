@@ -32369,6 +32369,7 @@
                 "scene": "慶功宴的大桌上，整隊冒險者和酒客輪流幹主角：一個接一個、前後兩三個一起，主角被翻來覆去地用嘴與下身服侍，射得滿身都是，一直被輪到天亮。",
                 "effects": [
                   { "type": "item", "name": "看板娘的圍裙", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_pour_charm" },
                   { "type": "affinity", "npc": "npc_greta_silverscale", "delta": 10, "reason": "一個人撐過了整間店" },
                   { "type": "memory", "summary": "在銀鱗旅店的慶功宴上，一個人應付了整間店的客人。格蕾塔把看板娘的圍裙給了你。", "importance": 3 }
                 ],
@@ -32383,6 +32384,7 @@
                 "scene": "格蕾塔和主角並肩跪在酒館的大桌上，客人排成兩列輪流幹她們，兩個人被並排從後面頂著，有時被要求互相舔乾淨；格蕾塔一邊被幹一邊喊著收錢，一直到天亮。",
                 "effects": [
                   { "type": "item", "name": "看板娘的圍裙", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_pour_charm" },
                   { "type": "affinity", "npc": "npc_greta_silverscale", "delta": 15, "reason": "和她一起撐過了整間店" },
                   { "type": "memory", "summary": "在銀鱗旅店的慶功宴上，和老闆娘格蕾塔一起應付了整間店的客人。她把看板娘的圍裙給了你。", "importance": 3 }
                 ],
@@ -32598,6 +32600,7 @@
                 "scene": "希爾德加德用魔力構築出發光的粗大假陽具，把主角壓在實驗台上直接插入猛幹，一邊幹一邊把尺寸與震動往上調，主角被幹到連續高潮、失神，她最後在主角體內射出大量發燙的魔力汁液。",
                 "effects": [
                   { "type": "item", "name": "實驗用的魔導項圈", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_arcane_stim" },
                   { "type": "affinity", "npc": "npc_hildegard", "delta": 15, "reason": "撐完了最後的實驗" },
                   { "type": "memory", "summary": "在怪人之塔被希爾德加德用魔法構築的「法師之屌」幹了一整夜。她把記錄讀數的魔導項圈給了你。", "importance": 3 }
                 ],
@@ -32612,6 +32615,7 @@
                 "scene": "希爾德加德構築出兩根魔力假陽具，一根插進主角的陰部、一根捅進後庭，兩根同時震動漲大、前後輪流抽送，主角被雙穴貫穿到哭叫失神，最後兩根一起在主角體內射出魔力汁液。",
                 "effects": [
                   { "type": "item", "name": "實驗用的魔導項圈", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_arcane_stim" },
                   { "type": "affinity", "npc": "npc_hildegard", "delta": 15, "reason": "提出了雙通道的實驗" },
                   { "type": "memory", "summary": "在怪人之塔被希爾德加德用兩根「法師之屌」前後一起幹了一整夜。她把記錄讀數的魔導項圈給了你。", "importance": 3 }
                 ],
@@ -32830,6 +32834,7 @@
                 "scene": "大獎之夜，贏家把兔女郎裝的主角帶進樓上的房間，撕開網襪、扯下兔女郎裝，在床上、窗邊、擺滿籌碼的桌上換著姿勢幹主角一整夜，射了好幾次，主角戴著兔耳被幹到腿軟。",
                 "effects": [
                   { "type": "item", "name": "黃金骰子的兔女郎裝", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_dealer_gamble" },
                   { "type": "affinity", "npc": "npc_victor_dice", "delta": 10, "reason": "當了大獎之夜的大獎" },
                   { "type": "memory", "summary": "在黃金骰子賭場的大獎之夜，被贏家帶走了一整晚。維克托把頭牌兔女郎的制服給了你。", "importance": 3 }
                 ],
@@ -32844,6 +32849,7 @@
                 "scene": "維克托把主角帶進擠滿大戶的貴賓室，宣布莊家請客，主角穿著兔女郎裝被一個接一個的貴賓輪流幹，前後同時被插、嘴裡也塞著，在沙發之間被傳來傳去，維克托抽著雪茄在旁邊記帳，一直到天亮。",
                 "effects": [
                   { "type": "item", "name": "黃金骰子的兔女郎裝", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_dealer_gamble" },
                   { "type": "affinity", "npc": "npc_victor_dice", "delta": 15, "reason": "替莊家請了全場的客" },
                   { "type": "memory", "summary": "在黃金骰子賭場的大獎之夜選了莊家，被維克托分享給了貴賓室裡所有的大戶。他把頭牌兔女郎的制服給了你。", "importance": 3 }
                 ],
@@ -33063,6 +33069,7 @@
                 "scene": "夜間表演的大帳篷裡，主角跳完舞跪在毯子中間，被四五個駝商與部落頭人輪流幹，有時前後兩個一起、嘴裡再含一根，金鈴隨著每一次衝撞響了一整夜。",
                 "effects": [
                   { "type": "item", "name": "夜之舞孃的腳鍊", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_dance" },
                   { "type": "money", "amount": 300 },
                   { "type": "affinity", "npc": "npc_nashira", "delta": 15, "reason": "一個人跳完了夜間表演" },
                   { "type": "memory", "summary": "在沙堡營地的夜間表演上，一個人侍奉了帳篷裡所有的客人。娜希拉把祖傳的金鈴腳鍊給了你。", "importance": 3 }
@@ -33078,6 +33085,7 @@
                 "scene": "大帳篷裡，娜希拉和主角並排跪在毯子上，客人們分成兩邊輪流幹她們，兩個舞孃被並排從後面頂著，有時被要求互相舔、一起含同一根，金鈴與貓尾巴一起甩動，一直到天亮。",
                 "effects": [
                   { "type": "item", "name": "夜之舞孃的腳鍊", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_dance" },
                   { "type": "money", "amount": 150 },
                   { "type": "affinity", "npc": "npc_nashira", "delta": 20, "reason": "和她一起跳完了夜間表演" },
                   { "type": "memory", "summary": "在沙堡營地的夜間表演上，和娜希拉一起侍奉了帳篷裡所有的客人。她把祖傳的金鈴腳鍊給了你。", "importance": 3 }
@@ -33297,6 +33305,7 @@
                 "scene": "伯爵的寢室裡，退役將軍命令主角脫光，把主角按在大床上粗暴地從後面猛幹，換著姿勢一次接一次，射在主角體內好幾次，一直操到天快亮。",
                 "effects": [
                   { "type": "item", "name": "伯爵府的女僕裝", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_grovel" },
                   { "type": "affinity", "npc": "npc_count_krause", "delta": 20, "reason": "陪了他一整夜" },
                   { "type": "memory", "summary": "在克勞澤伯爵府，成年禮的夜晚被伯爵叫進寢室幹了一整夜。管家把繡著家紋的女僕裝給了你。", "importance": 3 }
                 ],
@@ -33311,6 +33320,7 @@
                 "scene": "少爺盧卡斯急躁地把主角拉上床，掀起女僕裙直接插入，年輕的他一整夜要了主角五次，從正面、從後面、讓主角騎在上面，每次都射在主角體內。",
                 "effects": [
                   { "type": "item", "name": "伯爵府的女僕裝", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_grovel" },
                   { "type": "affinity", "npc": "npc_lukas_krause", "delta": 20, "reason": "陪他過了成年禮的夜晚" },
                   { "type": "memory", "summary": "在克勞澤伯爵府，成年禮的夜晚陪少爺盧卡斯睡了一整夜。管家把繡著家紋的女僕裝給了你。", "importance": 3 }
                 ],
@@ -33325,6 +33335,7 @@
                 "scene": "伯爵的大床上，伯爵與少爺一前一後同時幹主角：一個插在主角的下身、一個塞在主角嘴裡，再換成前後兩穴一起，兩人輪流換位置、互不相讓，主角被夾在中間幹了一整夜。",
                 "effects": [
                   { "type": "item", "name": "伯爵府的女僕裝", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_grovel" },
                   { "type": "affinity", "npc": "npc_count_krause", "delta": 15, "reason": "成年禮的夜晚" },
                   { "type": "affinity", "npc": "npc_lukas_krause", "delta": 15, "reason": "成年禮的夜晚" },
                   { "type": "memory", "summary": "在克勞澤伯爵府，成年禮的夜晚同時陪伯爵和少爺睡了一整夜。管家把繡著家紋的女僕裝給了你。", "importance": 3 }
@@ -33547,6 +33558,7 @@
                 "scene": "主角在聖殿區大門前轉身脫掉網襪，全身赤裸地對著擠滿整條朝聖大道的人群張開雙臂，讓所有人看清楚每一寸身體，在歡呼與口哨聲裡站了很久。",
                 "effects": [
                   { "type": "item", "name": "露出狂的網襪", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_center_stage" },
                   { "type": "money", "amount": 300 },
                   { "type": "memory", "summary": "穿著一雙網襪走完了索里耶爾的朝聖大道，在聖殿區門口對著整條街脫光。貝托把賭金和那雙網襪給了你。", "importance": 3 }
                 ],
@@ -33561,6 +33573,7 @@
                 "scene": "醉醺醺的水手們把只穿破網襪的主角拖進巷子，按在木箱上從後面輪流插入，一個接一個射在主角體內，巷口還有人排隊等著，直到審判廷的騎士趕來。",
                 "effects": [
                   { "type": "item", "name": "露出狂的網襪", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_center_stage" },
                   { "type": "money", "amount": 200 },
                   { "type": "memory", "summary": "在索里耶爾的朝聖大道上被人群拖進巷子輪流侵犯。貝托把賭金和那雙破網襪給了你。", "importance": 3 }
                 ],
@@ -33780,6 +33793,7 @@
                 "scene": "深池裡，熟客們把主角托在水面上輪流插入，有人抓著主角的胸部、有人從後面進入、有人按著主角的頭要主角含住，海水與精液從主角的腿間流出，一直到天亮。",
                 "effects": [
                   { "type": "item", "name": "澡堂的珍珠胸鍊", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_back_scrub" },
                   { "type": "money", "amount": 400 },
                   { "type": "memory", "summary": "在潮汐港珍珠澡堂的深池裡被熟客們輪流玩到天亮。老闆娘珊瑚把珍珠胸鍊給了你。", "importance": 3 }
                 ],
@@ -33794,6 +33808,7 @@
                 "scene": "主角抓著深池的石沿翹起屁股，熟客們兩個一組，一個從後面插入、一個塞進主角嘴裡，一組結束換下一組，有人輪了第二次，直到天亮。",
                 "effects": [
                   { "type": "item", "name": "澡堂的珍珠胸鍊", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_back_scrub" },
                   { "type": "money", "amount": 450 },
                   { "type": "memory", "summary": "在潮汐港珍珠澡堂的深池裡，趴在池邊一次讓兩個熟客上，撐到天亮。老闆娘珊瑚把珍珠胸鍊給了你。", "importance": 3 }
                 ],
@@ -34024,6 +34039,7 @@
                 "scene": "溫泉池裡，主角靠在池邊的石頭上，二十幾個醉醺醺的矮人礦工在熱水裡一個接一個地插入主角，輪完一圈又從頭開始，精液在熱水裡漂散，一直到天亮。",
                 "effects": [
                   { "type": "item", "name": "溫泉旅館的浴衣", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_hot_spring" },
                   { "type": "money", "amount": 500 },
                   { "type": "memory", "summary": "在鐵爐堡熔岩溫泉旅館的礦工慶典上，被醉醺醺的礦工們在池子裡輪流上到天亮。老闆葛倫把那件浴衣給了你。", "importance": 3 }
                 ],
@@ -34038,6 +34054,7 @@
                 "scene": "主角躺在溫泉池邊的石床上張開雙腿，矮人礦工們排成一列，一個上完換下一個插入主角，有人排了第二次，主角在熱氣裡被一路幹到天亮。",
                 "effects": [
                   { "type": "item", "name": "溫泉旅館的浴衣", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_hot_spring" },
                   { "type": "money", "amount": 550 },
                   { "type": "memory", "summary": "在鐵爐堡熔岩溫泉旅館的礦工慶典上，躺在石床上讓礦工們排隊上到天亮。老闆葛倫把那件浴衣給了你。", "importance": 3 }
                 ],
@@ -34247,6 +34264,7 @@
                 "scene": "主角趴在按摩床上，百夫長從後面插入、副官塞進主角嘴裡，兩人換位置再來一次；最後漢斯一邊用手按壓主角的敏感處一邊插入主角，直到主角高潮叫出聲。",
                 "effects": [
                   { "type": "item", "name": "按摩師的薄紗手套", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_ten_fingers" },
                   { "type": "money", "amount": 500 },
                   { "type": "memory", "summary": "在萊茵堡下城區的按摩店，讓百夫長、副官和師傅漢斯給了「最後一步」，出師了。漢斯把薄紗手套給了你。", "importance": 3 }
                 ],
@@ -34261,6 +34279,7 @@
                 "scene": "主角跨坐在百夫長身上讓他插入，副官同時從後面進入主角的後庭，主角嘴裡含著漢斯的陰莖，三個男人一起在主角體內抽送，按摩床被壓塌一角，最後三人都射在主角身上與體內。",
                 "effects": [
                   { "type": "item", "name": "按摩師的薄紗手套", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_ten_fingers" },
                   { "type": "money", "amount": 600 },
                   {
                     "type": "memory",
@@ -34467,6 +34486,7 @@
                 "scene": "鎖上門的畫室裡，巴托羅把全裸的主角壓在高台的舊毯子上粗暴地做愛，從正面、從背後，射在主角身上後又拿起畫筆畫主角被幹完的模樣。",
                 "effects": [
                   { "type": "item", "name": "畫家模特兒的絲袍", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_frozen_pose" },
                   { "type": "memory", "summary": "在阿爾貝納河畔的畫室，被畫家巴托羅幹完之後畫成了一張畫，拿到了畫室的模特兒絲袍。", "importance": 2 }
                 ],
                 "set_flags": ["paint_done"],
@@ -34480,6 +34500,7 @@
                 "scene": "畫室的高台上，巴托羅先和主角做愛，三個學徒在旁邊看；接著學徒們輪流上來，有時兩個一起從前後同時進入主角，巴托羅在旁邊指導姿勢，直到四個人都射過。",
                 "effects": [
                   { "type": "item", "name": "畫家模特兒的絲袍", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_frozen_pose" },
                   { "type": "money", "amount": 200 },
                   { "type": "memory", "summary": "在阿爾貝納河畔的畫室，給巴托羅和三個學徒上了一堂「素描課」，拿到了畫室的模特兒絲袍。", "importance": 2 }
                 ],
@@ -34682,6 +34703,7 @@
                 "scene": "卡格在鮮血試煉場中央、整個戰團的圍觀與吼叫下，把主角按倒在沙地上粗暴地做愛，從背後抓著主角的腰狠狠撞擊，射完後把主角扛起來繞場示眾。",
                 "effects": [
                   { "type": "item", "name": "戰利品的獸骨腰帶", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_spoils" },
                   { "type": "memory", "summary": "在獸骨荒丘的大戰利品之夜，在整個血角戰團面前當了團長卡格的戰利品，戴上了戰利品的獸骨腰帶。", "importance": 2 }
                 ],
                 "set_flags": ["horn_done"],
@@ -34695,6 +34717,7 @@
                 "scene": "大戰利品之夜，整支血角戰團排隊輪流和主角做愛：卡格第一個，接著是一個又一個獸人戰士，常常前後同時進入主角，在試煉場的沙地上一直做到天亮，每個人完事後在主角的腰帶上刻一道痕。",
                 "effects": [
                   { "type": "item", "name": "戰利品的獸骨腰帶", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_spoils" },
                   { "type": "money", "amount": 400 },
                   { "type": "memory", "summary": "在獸骨荒丘的大戰利品之夜，當了整支血角戰團的戰利品，腰帶上多了幾十道刻痕。", "importance": 2 }
                 ],
@@ -34896,6 +34919,7 @@
                 "scene": "出師宴上，全裸的主角躺在擺滿水果甜點的長桌上，戴面具的宮廷貴客們輪流和主角做愛，有時三個人同時用主角的嘴與身體，一直到天亮，主角身上沾滿了精液與糖漿。",
                 "effects": [
                   { "type": "item", "name": "侍寢見習的魅魔絲衣", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_kiss" },
                   { "type": "memory", "summary": "在血羽城堡侍寢見習館的出師宴上當了主菜，被宮廷的貴客們享用到天亮，拿到了侍寢見習的魅魔絲衣。", "importance": 2 }
                 ],
                 "set_flags": ["court_done"],
@@ -34909,6 +34933,7 @@
                 "scene": "主角從長桌上爬下來，主動爬向一位又一位戴面具的貴客，跪著用嘴、躺著張腿、騎在身上擺腰，一個接一個地服侍整個大廳的人，直到所有人都滿足。",
                 "effects": [
                   { "type": "item", "name": "侍寢見習的魅魔絲衣", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_kiss" },
                   { "type": "money", "amount": 300 },
                   { "type": "memory", "summary": "在血羽城堡侍寢見習館的出師宴上，把整個大廳的貴客伺候了一遍，拿到了侍寢見習的魅魔絲衣。", "importance": 2 }
                 ],
@@ -35110,6 +35135,7 @@
                 "scene": "魔神的化身借瑟維昂發燙的身體把主角按在黑石祭壇上反覆佔有，每次射進主角體內時主角的小腹都灼熱發光，跪成一圈的信徒們一邊唱頌一邊自瀆，最後在主角的小腹烙下淫紋。",
                 "effects": [
                   { "type": "item", "name": "祭品的血紅頸環", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_sacrifice_sigil" },
                   { "type": "money", "amount": 600 },
                   { "type": "parasite", "parasite": "succubus_mark", "op": "add" },
                   { "type": "memory", "summary": "在餘燼裂隙深處的獻祭之夜，被魔神的化身在祭壇上佔有，小腹留下了淫紋，拿走了祭品的血紅頸環和一堆錢。", "importance": 2 }
@@ -35125,6 +35151,7 @@
                 "scene": "主角在祭壇上翻身騎上被化身附身的瑟維昂，主動擺腰把化身榨乾，再命令目瞪口呆的信徒們一個個上祭壇，輪流被主角騎在身下或用嘴榨出來，直到天亮。",
                 "effects": [
                   { "type": "item", "name": "祭品的血紅頸環", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_sacrifice_sigil" },
                   { "type": "memory", "summary": "在餘燼裂隙深處的獻祭之夜，反過來騎垮了魔神的化身、接管了儀式，帶走了祭品的血紅頸環。", "importance": 2 }
                 ],
                 "set_flags": ["pyre_done"],
@@ -35507,6 +35534,7 @@
                 "scene": "主角跪在小禮拜堂的祭壇上，五座城的神父圍成一圈輪流幹主角，前後一起、一個射完換下一個，阿嘉莎坐在長椅上數錢、指揮他們換姿勢；主角的修女服被扯開，從嘴到下身都被射滿，一直弄到天亮。",
                 "effects": [
                   { "type": "item", "name": "巡禮者的懺悔頭紗", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "burst_release" },
                   { "type": "money", "amount": 200 },
                   { "type": "condition", "target": "pc", "condition": "drained", "add": true },
                   { "type": "affinity", "npc": "npc_sister_agathe", "delta": 10, "reason": "替她賺了最後一筆" },
@@ -35527,6 +35555,7 @@
                 "scene": "主角把阿嘉莎拖上祭壇，兩人並排跪著，五個神父分成兩邊輪流幹她們，前面的人塞進嘴裡、後面的人從背後頂，換來換去；阿嘉莎的修女服被掀到腰上，和主角一起被幹到天亮。",
                 "effects": [
                   { "type": "item", "name": "巡禮者的懺悔頭紗", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "burst_release" },
                   { "type": "money", "amount": 150 },
                   { "type": "condition", "target": "pc", "condition": "drained", "add": true },
                   { "type": "affinity", "npc": "npc_sister_agathe", "delta": 5, "reason": "被拖下水" },
@@ -35543,6 +35572,7 @@
                 "scene": "主角把阿嘉莎推到祭壇前，五個神父先輪流幹她，把她按在聖壇上前後一起上，接著再輪到主角；主角和阿嘉莎被輪流抽送、互相舔乾淨，一直到天亮，阿嘉莎的錢袋倒在祭壇上撒了一地。",
                 "effects": [
                   { "type": "item", "name": "巡禮者的懺悔頭紗", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "burst_release" },
                   { "type": "money", "amount": 300 },
                   { "type": "condition", "target": "pc", "condition": "afterglow", "add": true },
                   { "type": "affinity", "npc": "npc_sister_agathe", "delta": -5, "reason": "被你推出去先挨" },
@@ -35760,6 +35790,7 @@
                 "scene": "主角全裸躺在月輝之母銀白色的樹根上張開雙腿，排成長列的男人一個接一個壓上來和主角交合、射在主角體內，一整夜沒有停過，直到主角小腹被灌得微微鼓起，精液沿著樹根往下流。",
                 "effects": [
                   { "type": "item", "name": "豐饒祭的花冠", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "burst_bliss" },
                   { "type": "money", "amount": 300 },
                   {
                     "type": "memory",
@@ -35778,6 +35809,7 @@
                 "scene": "主角跨坐在月輝之母的樹根上，同時被三個男人佔有：一個從下面插入、一個從後面插入、一個插在主角嘴裡，三人射完就換下一組，一整夜輪了好幾十人，主角渾身沾滿精液與花瓣。",
                 "effects": [
                   { "type": "item", "name": "豐饒祭的花冠", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "burst_bliss" },
                   { "type": "money", "amount": 300 },
                   { "type": "memory", "summary": "在銀月城外的祭林，騎在月輝之母的根上一次應付三個男人，當完了豐饒祭的巫女，拿到了豐饒祭的花冠。", "importance": 2 }
                 ],
@@ -35983,6 +36015,7 @@
                 "scene": "篝火前的獸皮上，十一個赤鬃戰士一個接一個和主角交合，每人射在主角體內後就在主角脖子的皮繩上串一顆獸牙，一整夜輪完，主角渾身是汗與精液，連手指都抬不起來。",
                 "effects": [
                   { "type": "item", "name": "求偶祭的獸牙項鍊", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_courtship_mark" },
                   { "type": "money", "amount": 300 },
                   { "type": "memory", "summary": "在赤鬃部落的篝火夜被十一個戰士一個一個領走，脖子上串滿了獸牙。", "importance": 2 }
                 ],
@@ -35997,6 +36030,7 @@
                 "scene": "主角在篝火前被整群赤鬃戰士同時佔有：好幾根同時插在主角的嘴裡、前面與後面，其他人圍在旁邊等著換位，射在主角臉上、胸口與體內，主角被幹到昏過去又醒來，一直到篝火熄滅。",
                 "effects": [
                   { "type": "item", "name": "求偶祭的獸牙項鍊", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_courtship_mark" },
                   { "type": "money", "amount": 300 },
                   { "type": "memory", "summary": "在赤鬃部落的篝火夜讓整群戰士一起上，皮繩上串了十六顆獸牙。", "importance": 2 }
                 ],
@@ -36218,6 +36252,7 @@
                 "scene": "主角躺在退潮後冰冷的礁石上，全鎮的漁夫一個接一個爬上來和主角交合、射在主角體內，潮水一點一點漲上來，從腳踝淹到大腿再淹到腰，最後一個漁夫射完時主角半泡在海水裡，渾身都是精液與海水。",
                 "effects": [
                   { "type": "item", "name": "潮汐祭的貝殼腰鍊", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_tide_bride" },
                   { "type": "money", "amount": 350 },
                   {
                     "type": "memory",
@@ -36236,6 +36271,7 @@
                 "scene": "主角跪在退潮的礁石上，漁夫們一次三四個圍上來，同時插在主角的嘴裡、前面與後面，其他人在旁邊等著換，射在主角臉上、背上與體內，潮水漲到主角腰間時全鎮的男人都已經輪過一遍。",
                 "effects": [
                   { "type": "item", "name": "潮汐祭的貝殼腰鍊", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_tide_bride" },
                   { "type": "money", "amount": 350 },
                   {
                     "type": "memory",
@@ -36253,6 +36289,71 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 650 }, { "type": "xp", "amount": 1600 }]
+    },
+    {
+      "id": "park_stamps",
+      "title": "緋夢樂園的集章卡",
+      "summary": "緋夢樂園的五個園區各有一個章，打倒園區最深處的層主就蓋得到。集滿五個章，接待員蜜菈說女王準備了獎品。",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_park_greeter",
+        "min_level": 11,
+        "requires": {
+          "flags": [
+            "park_stamp_park_beast",
+            "park_stamp_park_insect",
+            "park_stamp_park_aquarium",
+            "park_stamp_park_garden",
+            "park_stamp_park_theater"
+          ]
+        },
+        "text": "蜜菈看到你的集章卡，眼睛都亮了，尾巴搖個不停：「哇——五個章都蓋滿了！你是今年第一個呢。」她把卡片收進胸口，「女王陛下說要親自挑獎品給你。跟我來，到後面的貴賓室挑一個吧——別擔心，這次真的只是挑獎品。」"
+      },
+      "start_flags": ["park_stamps_start"],
+      "nodes": [
+        {
+          "id": "prize",
+          "title": "在貴賓室挑一件獎品",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_park_greeter" },
+          "requires": { "flags": ["park_stamps_start"] },
+          "text": "貴賓室裡鋪著紅絨布，桌上擺著兩個絲綢包著的盒子，還有一本燙金的書。蜜菈說：「書是送的。兩個盒子挑一個——頸環戴著出門比較方便，吊帶襪是女王陛下自己穿過的喔。」",
+          "options": [
+            {
+              "label": "挑頸環",
+              "success": {
+                "text": "你拿起那條黑色蕾絲的頸環，心形的寶石在燈下閃著粉紅色的光。蜜菈親手替你戴上，在你耳邊說：「以後來玩，報這條頸環就好，女王陛下會記得你。」",
+                "effects": [
+                  { "type": "item", "name": "緋夢樂園的通行頸環", "qty": 1 },
+                  { "type": "item", "name": "《傾國》", "qty": 1 },
+                  { "type": "money", "amount": 800 },
+                  { "type": "memory", "summary": "集滿了緋夢樂園五個園區的章，在貴賓室挑了通行頸環，還拿到了一本《傾國》。", "importance": 2 }
+                ],
+                "set_flags": ["park_stamps_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "挑吊帶襪",
+              "success": {
+                "text": "你打開盒子，黑絲上繡著暗紅色的薔薇，還留著一點女王的香味。蜜菈吃吃地笑：「女王陛下說，穿著它上台的人，就是下一場的主角了。」",
+                "effects": [
+                  { "type": "item", "name": "魅魔女王的吊帶襪", "qty": 1 },
+                  { "type": "item", "name": "《傾國》", "qty": 1 },
+                  { "type": "money", "amount": 800 },
+                  { "type": "memory", "summary": "集滿了緋夢樂園五個園區的章，在貴賓室挑了魅魔女王穿過的吊帶襪，還拿到了一本《傾國》。", "importance": 2 }
+                ],
+                "set_flags": ["park_stamps_done"],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1000 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }

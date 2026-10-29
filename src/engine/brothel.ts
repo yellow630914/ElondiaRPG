@@ -11,6 +11,7 @@ import { npcRecord } from './npcs'
 import { addAffinity, addCondition, isBound, pcOf } from './party'
 import { madamId, presentHere } from './population'
 import { ensureRelationship } from './social'
+import { patronTeach } from './brothelLife'
 import type { GameState, NpcRecord, Report } from './types'
 
 export function atBrothel(state: GameState): boolean {
@@ -84,6 +85,11 @@ export function applyPatron(state: GameState, report: Report, target: string | u
     }
   }
   if (rec) addAffinity(state, report, rec.id, r.affinity[degree], '在娼館的一晚')
+  // 親密度夠的娼婦有機會教主角一手（docs/LEWD_STATS.md 第 10 節）
+  if (rec) {
+    const taught = patronTeach(state, report, rec, degree)
+    if (taught) lines.push(`${taught}。`)
+  }
   return lines.join('')
 }
 

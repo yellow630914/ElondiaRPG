@@ -95,7 +95,7 @@ export function fineDue(state: GameState, locId = state.location): { amount: num
   return { amount: alertFine(state, locId), wanted: false }
 }
 
-function securityReport(state: GameState, summary: string, result: Report['outcome']['result'], scene?: string): Report {
+export function securityReport(state: GameState, summary: string, result: Report['outcome']['result'], scene?: string): Report {
   const loc = locationById(state.location)
   const pc = pcOf(state)
   const start = { ...state.time }
