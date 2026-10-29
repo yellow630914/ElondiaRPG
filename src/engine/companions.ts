@@ -20,7 +20,7 @@ import { setupStoryCheck } from './story'
 import { setupDefeatEvent } from './defeat'
 import { attrOf, lifeTier, mod, snapshot } from './character'
 import {
-  actionRules, combatRules, companionRules, contractDef, itemDef, itemRules, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
+  actionRules, combatRules, companionRules, contractDef, itemDef, itemRules, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules, lewdRules,
   tagDcMod, tagDef, type ActionKind, type AttrId, type Degree, type MarketDef, type NpcKind,
 } from './data'
 import type { Rng } from './rng'
@@ -49,6 +49,7 @@ import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
 import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
+import { lewdOf } from './lewd'
 import { gameRule } from './gameRules'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
@@ -665,14 +666,19 @@ export function negotiateDc(state: GameState): number {
   // 主人的身分：好人比較願意放手，惡人不肯
   const tags = npcRecord(state, contract.master)?.tags ?? []
   const who = tags.reduce((sum, t) => sum + (slaveryRules.master_tags.tags[t]?.negotiate ?? 0), 0)
-  return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus + angry + who
+  return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus + angry + who + submissionDc(pc)
+}
+
+/** 順從（慾望指標）讓人更難離開主人：每 master_tool.submission_dc_per 點，逃離與談判解約的 DC +1 */
+export function submissionDc(c: Character): number {
+  return Math.floor(lewdOf(c).submission / lewdRules.master_tool.submission_dc_per)
 }
 
 export function escapeDc(state: GameState): number {
   const pc = pcOf(state)
   const contract = contractOf(pc)
   if (!contract || !isBound(state)) throw new Error('你不是被主人帶著的奴隸')
-  return contractTerms(contract).escape_dc
+  return contractTerms(contract).escape_dc + submissionDc(pc)
 }
 
 /** 對主人的檢定都受到服從懲罰 */

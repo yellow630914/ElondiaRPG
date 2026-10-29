@@ -13,6 +13,8 @@ import {
 import { currentArea } from '@/engine/grid'
 import { atMasterHome, currentMasterHome, homeDeadline, householdOf, houseRefusedToday, leaveDc, mayLeaveHouse, strictPoints } from '@/engine/masterHome'
 import { contractOf, placeName } from '@/engine/tattoos'
+import { masterToolStatus, newMasterCandidates } from '@/engine/masterTool'
+import { submissionDc } from '@/engine/companions'
 import { locationById } from '@/engine/data'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
@@ -41,10 +43,13 @@ const terms = computed(() => {
   const c = contract.value
   if (!c) return []
   const t = c.def
+  // 順從（慾望指標）讓人更難離開主人
+  const sub = submissionDc(s.value.party.find((m) => m.isPlayer)!)
+  const subNote = sub ? `順從 +${sub}` : ''
   return [
     { k: '收益歸主人', v: pct(t.income_share), note: '工作、交易得到的錢' },
-    { k: '談判解除', v: `DC ${t.negotiate_dc}`, note: '要在安全的地方' },
-    { k: '逃離', v: `DC ${t.escape_dc}`, note: '' },
+    { k: '談判解除', v: `DC ${t.negotiate_dc + sub}`, note: ['要在安全的地方', subNote].filter(Boolean).join('・') },
+    { k: '逃離', v: `DC ${t.escape_dc + sub}`, note: subNote },
     { k: '出城', v: `DC ${t.exit_dc}`, note: '請求主人同意出城' },
     { k: '逃亡時被找到', v: pct(t.recapture_chance), note: '每次休息' },
     { k: '逃離反噬', v: `${pct(t.escape_hp_ratio)} 生命值`, note: '' },
@@ -80,6 +85,19 @@ const whereabouts = computed(() => masterWhereabouts(s.value))
 const nearMaster = computed(() => masterNearby(s.value))
 const offers = computed(() => unmarkOffers(s.value).filter((o) => !o.place))
 const seekTarget = ref('')
+// 主人是工具人：親密度夠高時直接解約、換主人（敘事上仍是主人的決定）
+const tool = computed(() => (bound.value ? masterToolStatus(s.value) : null))
+const transferTargets = computed(() => (tool.value?.ready ? newMasterCandidates(s.value) : []))
+const transferTo = ref('')
+function release() {
+  void game.masterRelease()
+  emit('close')
+}
+function transfer() {
+  if (!transferTo.value) return
+  void game.masterTransfer(transferTo.value)
+  emit('close')
+}
 const seekTargets = computed(() => {
   if (!enslaved.value || bound.value) return []
   return peopleHere(s.value)
@@ -138,6 +156,18 @@ function act(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_leave' | '
         <tr v-if="!atHome && !inTown"><th>行動</th><td>跟著主人；談判要在安全的地方，逃離隨時都可以</td></tr>
         </tbody>
       </table>
+      <template v-if="tool">
+        <h4><GameIcon name="heart" :size="14" /> 和主人的關係 <Hint :text="`親密度 ${tool.need} 以上時，可以直接請主人解約，或請主人把你轉讓給附近一位熟人（親密度 40 以上、不是奴隸）。不用擲骰、不用付錢；故事裡仍然是主人做的決定。`" /></h4>
+        <p v-if="!tool.ready" class="small muted">親密度 {{ tool.affinity }}／{{ tool.need }}：還不夠親近，只能談判或逃走。</p>
+        <div v-else class="row actions">
+          <button :disabled="game.judging" @click="release">請主人解除契約</button>
+          <select v-model="transferTo" :disabled="!transferTargets.length">
+            <option value="">{{ transferTargets.length ? '請主人把你轉讓給…' : '附近沒有可以轉讓的熟人' }}</option>
+            <option v-for="t in transferTargets" :key="t.id" :value="t.id">{{ label(t.id, t.name) }}・{{ npcTitle(t) }}</option>
+          </select>
+          <button :disabled="!transferTo || game.judging" @click="transfer">換主人</button>
+        </div>
+      </template>
       <h4><GameIcon name="d20" :size="14" /> 你的做法</h4>
       <textarea v-model="text" rows="3" placeholder="描述你打算怎麼說服主人、用什麼理由請求出門或出城，或怎麼逃走" />
       <AbilityPicker v-model="use" />

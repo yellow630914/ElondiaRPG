@@ -7,7 +7,7 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type Mods } from './data'
+import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type BindKind, type Mods } from './data'
 import { describeEffects } from './perks'
 import type { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
@@ -54,6 +54,9 @@ export interface BaseDef {
   adult?: boolean
   /** 曝露度 0～3（慾望指標的曝露名聲用）；沒寫時依服裝種類（lewd.json 的 gear.outfit） */
   exposure?: number
+  /** 雙面效應（lewd.json 的 two_face）：拘束的程度 1～3 與種類；平常是檢定減值，修了流派、鎖上時戰鬥中反轉成增益 */
+  bind?: number
+  bind_kind?: BindKind
 }
 
 export type OutfitKind = 'regular' | 'anime' | 'adult'
@@ -643,6 +646,8 @@ export function gearSummary(spec: GearSpec): string {
   const base = gearRules.bases[spec.base]
   const exposure = base?.exposure ?? (base?.outfit ? lewdRules.gear.outfit[base.outfit]?.exposure ?? 0 : 0)
   if (exposure && base && lewdRules.gear.exposure_slots.includes(base.slot)) parts.push(`曝露度 ${exposure}`)
+  // 雙面效應：拘束的種類與程度
+  if (base?.bind && base.bind_kind) parts.push(`${lewdRules.two_face.kinds[base.bind_kind]?.name ?? base.bind_kind} ${base.bind}`)
   return parts.join('・')
 }
 

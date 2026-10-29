@@ -884,6 +884,8 @@ export interface AbilityDef {
   ap_give?: number
   /** 用了之後，戰後曝露名聲 +這個數（寬衣） */
   exposure?: number
+  /** 慾望流派（lewd.json 的 schools）：要先學會這個流派的入門特質，技能書才教得會 */
+  school?: string
   desc: string
 }
 const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
@@ -1550,6 +1552,8 @@ export interface ItemDef {
   master_force?: { tags?: string[] }
   /** 成人向的物品：內容編輯器的篩選用 */
   adult?: boolean
+  /** 鎖（lewd.json 的 locks）：可以替身上的拘束具上鎖，雙面效應的戰鬥增益才生效 */
+  lock?: LockGrade
   /** 獨特物品可以出現在黑市（每天刷新的珍品，見 docs/ITEMS.md 3.1 節） */
   black_market?: boolean
   /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用底材或類別的圖示 */
@@ -1889,7 +1893,8 @@ export interface PerkDef {
   flaw?: boolean
   /** 種族特質（原本的種族天賦）：這個種族的角色自動擁有，不寫進存檔；不能選、不能學、不會失去 */
   race?: string
-  requires?: { races?: string[]; classes?: string[] }
+  /** perks：要先有這些特質（流派的進階特質要先入門） */
+  requires?: { races?: string[]; classes?: string[]; perks?: string[] }
   /** 和這些特質互斥 */
   exclusive?: string[]
   /** 可以在這些設施花錢學（缺陷：花錢克服） */
@@ -1902,6 +1907,10 @@ export interface PerkDef {
   rarity?: string
   /** 分類（建角時依分類折疊，見 perks.ts 的 PERK_CATEGORIES）；沒寫時依效果推斷 */
   category?: string
+  /** 慾望流派（lewd.json 的 schools）：入門或進階特質 */
+  school?: string
+  /** 流派特質的慾望效果（docs/LEWD_STATS.md 第 6 節） */
+  lust?: LustPerk
 }
 
 export const perkRules = perksJson as unknown as {
@@ -1936,6 +1945,28 @@ export function isChoosablePerk(id: string): boolean {
 // ---- 慾望指標（docs/LEWD_STATS.md） ----
 
 export type LewdKey = 'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure'
+/** 雙面效應的拘束種類（底材的 bind_kind） */
+export type BindKind = 'legs' | 'hands' | 'eyes' | 'stim' | 'body'
+export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'stim', 'body']
+/** 鎖的等級（物品的 lock、裝備上的鎖） */
+export type LockGrade = 'white' | 'blue' | 'rune' | 'gold'
+export const LOCK_GRADES: LockGrade[] = ['white', 'blue', 'rune', 'gold']
+/** 慾望流派（lewd.json 的 schools） */
+export interface LewdSchool { name: string; group: string; role: string; entry: string; advanced: string; fit: BindKind[] }
+/**
+ * 流派特質的慾望效果（PerkDef.lust；慾望戰鬥關閉時不生效）。數值都是加在基本值上的：
+ * max 慾望上限、taken 受到的慾望倍率、self 自己增加的慾望倍率、convert 傷害轉成慾望的比例（有轉換的狀態時）、
+ * burst 引爆的傷害倍率、relief 消退慾望的倍率、crit_convert 受到幸運一擊時改成慾望的比例、regen 慾望一半以上時每回合回復的生命、
+ * climax_heal 高潮時回復最大生命的比例、exposure 曝露名聲的魅惑傷害加值倍率、exposure_level 穿著的曝露度每 1 點的魅惑傷害、
+ * endurance_max 忍耐每 20 點的慾望上限、sensitivity_bonus 敏感每 25 點的魅惑傷害、growth 指標成長的倍率（-0.5 = 減半）、
+ * wounded 生命低於一半時的戰鬥修正、master 主人在隊伍裡時的戰鬥修正（奴之誓）、bound 穿著上鎖的拘束具時的戰鬥修正、bound_max 同上的慾望上限
+ */
+export interface LustPerk {
+  max?: number; taken?: number; self?: number; convert?: number; burst?: number; relief?: number; crit_convert?: number; regen?: number
+  climax_heal?: number; exposure?: number; exposure_level?: number; endurance_max?: number; sensitivity_bonus?: number
+  growth?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+  wounded?: Mods; master?: Mods; bound?: Mods; bound_max?: number
+}
 type LewdBonus = Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
 export const lewdRules = lewdJson as unknown as {
   stats: Record<LewdKey, { name: string; bands: string[]; forced_bands?: string[] }>
@@ -1952,6 +1983,14 @@ export const lewdRules = lewdJson as unknown as {
     restraint: { lewd?: LewdBonus }
     underwear_visible: number; naked: number
   }
+  schools: Record<string, LewdSchool>
+  servitude: { no_master: number }
+  two_face: {
+    endurance_per: number; fit: number; servitude_master: number
+    kinds: Record<BindKind, { name: string; checks: CheckFilter[]; penalty: number[]; combat: (Mods & { initiative?: number })[]; immune?: string[] }>
+  }
+  locks: { grades: Record<LockGrade, { name: string; mult: number }>; master_default: LockGrade; master_tags: Record<string, LockGrade> }
+  master_tool: { release_affinity: number; new_master_affinity: number; hours: number; submission_dc_per: number }
   growth: Record<'adult_scene' | 'climax' | 'climax_won' | 'brothel_work' | 'obedience' | 'disrobe', Partial<Record<LewdKey, number>>>
   daily: {
     adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus

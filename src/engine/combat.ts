@@ -39,7 +39,8 @@ import type {
 } from './types'
 import { contractOf } from './tattoos'
 import { tagsAllowed } from './content'
-import { addLewd, exposureAt, growLewd, lewdOf } from './lewd'
+import { addLewd, exposureAt, exposureLevel, growLewd, lewdOf } from './lewd'
+import { lockedBound, lustTotals, twoFaceCombat } from './schools'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
 
 export interface StatusInstance {
@@ -127,7 +128,14 @@ export interface Combatant {
    * 慾望指標（docs/LEWD_STATS.md）換算的修正：受到的慾望倍率（敏感）、消退的倍率與自己增加的慾望倍率（淫亂）、
    * 傷害轉成慾望的比例加成（順從）、造成的魅惑傷害加值（曝露名聲）。沒有時都是 1 或 0
    */
-  lustMods?: { taken: number; decay: number; self: number; convert: number; bonus: number }
+  lustMods?: {
+    taken: number; decay: number; self: number; convert: number; bonus: number
+    /** 流派特質（docs/LEWD_STATS.md 第 6 節）：引爆的傷害倍率加成、消退慾望的倍率加成、受到幸運一擊時改成慾望的比例、
+     * 慾望一半以上時每回合回復的生命、高潮時回復最大生命的比例、生命低於一半時的戰鬥修正 */
+    burst?: number; relief?: number; critConvert?: number; regen?: number; climaxHeal?: number; wounded?: Mods
+  }
+  /** 免疫的狀態（雙面效應：束縛雙手不會被繳械、遮住視線不會被致盲） */
+  immune?: string[]
   /** 這場戰鬥裡讓曝露名聲增加的量（寬衣這類能力的 exposure），戰後記到所在的地區 */
   exposureGain?: number
 }
@@ -338,6 +346,30 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
       convert: Math.floor(v.submission / L.submission_per) * L.submission_convert,
       bonus: Math.floor(exposureAt(state, ch.id, locationById(state.location).region) / L.exposure_per),
     }
+    // 流派特質（docs/LEWD_STATS.md 第 6 節）與雙面效應（第 7 節）
+    const t = lustTotals(ch)
+    const bound = lockedBound(ch)
+    f.lustMax += Math.round(t.max + Math.floor(v.endurance / 20) * t.endurance_max + (bound ? t.bound_max : 0))
+    f.lustMods.taken *= Math.max(0, 1 + t.taken)
+    f.lustMods.self += t.self
+    f.lustMods.convert += t.convert
+    f.lustMods.bonus += Math.floor(Math.floor(exposureAt(state, ch.id, locationById(state.location).region) / L.exposure_per) * t.exposure)
+      + Math.floor(exposureLevel(ch) * t.exposure_level) + Math.floor(v.sensitivity / 25) * Math.floor(t.sensitivity_bonus)
+    if (t.burst) f.lustMods.burst = t.burst
+    if (t.relief) f.lustMods.relief = t.relief
+    if (t.crit_convert) f.lustMods.critConvert = t.crit_convert
+    if (t.regen) f.lustMods.regen = t.regen
+    if (t.climax_heal) f.lustMods.climaxHeal = t.climax_heal
+    if (Object.keys(t.wounded).length) f.lustMods.wounded = t.wounded
+    const addMods = (m: Mods) => { for (const [k, x] of Object.entries(m)) f.baseMods[k as keyof Mods] = (f.baseMods[k as keyof Mods] ?? 0) + (x ?? 0) }
+    // 奴之誓：主人和自己同一邊上場
+    const master = contractOf(ch)?.master
+    if (master && fighters.some((o) => o.side === f.side && (o.id === master || o.npcId === master) && o !== f)) addMods(t.master)
+    if (bound) addMods(t.bound)
+    const tf = twoFaceCombat(ch)
+    addMods(tf.mods)
+    f.initiative += tf.initiative
+    if (tf.immune.length) f.immune = tf.immune
     const faith = mod(f.attrs.fai) * L.faith_resist
     if (faith) mulResist(f.resist, { lust: Math.round(faith * 100) / 100 })
     f.lust += Math.round(f.lustMax * Math.floor(v.lewdness / L.lewd_start_per) * L.lewd_start_ratio)
@@ -427,6 +459,8 @@ function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
     target.hp -= loss
     effects.push({ type: 'damage', target: target.id, amount: loss, text: '高潮' })
   }
+  // 回味（肉體派）：高潮時回復一部分生命
+  if (target.lustMods?.climaxHeal) heal(target, Math.round(target.maxHp * target.lustMods.climaxHeal), effects)
   addStatus(target, { id: 'climax', turns: 1, source: target.id })
   addStatus(target, { id: 'afterglow_combat', turns: r.afterglow_turns, source: target.id })
 }
@@ -680,6 +714,8 @@ function modsOf(c: Combatant): Required<Mods> {
     for (const [k, v] of Object.entries(m ?? {})) total[k as keyof Mods] += v ?? 0
   }
   add(c.baseMods)
+  // 流派特質：生命低於一半時（刑罰派）
+  if (c.lustMods?.wounded && c.hp * 2 < c.maxHp) add(c.lustMods.wounded)
   for (const s of c.statuses) {
     const def = statusDef(s.id)
     add(def.mods)
@@ -767,6 +803,7 @@ export function multLabel(m: number): string {
 
 /** 加上狀態；層主抵抗了控制時回傳 false（不加） */
 function addStatus(c: Combatant, inst: StatusInstance): boolean {
+  if (c.immune?.includes(inst.id)) return false
   const def = statusDef(inst.id)
   // 自己造成的（引爆後的脫力）不受層主的控制保護影響
   if (c.boss && def.control && def.kind === 'debuff' && inst.source !== c.id) {
@@ -792,7 +829,7 @@ function addStatus(c: Combatant, inst: StatusInstance): boolean {
 /** 對敵人加狀態並記到戰報；層主抵抗控制時記一筆說明 */
 function inflict(target: Combatant, inst: StatusInstance, effects: Effect[]) {
   if (addStatus(target, inst)) effects.push({ type: 'status_add', target: target.id, status: statusDef(inst.id).name })
-  else effects.push({ type: 'note', target: target.id, text: `${statusDef(inst.id).name}：層主抵抗了控制` })
+  else effects.push({ type: 'note', target: target.id, text: `${statusDef(inst.id).name}：${target.immune?.includes(inst.id) ? '免疫' : '層主抵抗了控制'}` })
 }
 
 function dropConcentration(combat: CombatState, caster: Combatant, effects?: Effect[]) {
@@ -1130,7 +1167,7 @@ function rollParts(rng: Rng, actor: Combatant, a: AbilityDef | undefined, parts:
  */
 function dealDamage(
   combat: CombatState, rng: Rng, attacker: Combatant | null, target: Combatant, rolls: DamageRoll[],
-  effects: Effect[], opts: { mult?: number; half?: boolean; dot?: boolean } = {},
+  effects: Effect[], opts: { mult?: number; half?: boolean; dot?: boolean; crit?: boolean } = {},
 ): number {
   // 被侍奉：敵人的攻擊（和投擲的道具）由施加者代為承受，承受的傷害一部分改成慾望；持續傷害不算
   let guardConvert = 0
@@ -1208,7 +1245,9 @@ function dealDamage(
     // 承傷：受到的生命傷害一部分改成慾望（不會高潮的時候，只轉到慾望滿為止）
     // 順從：有轉換的時候，轉換的比例再加一點
     const base = guardConvert + target.statuses.reduce((x, st) => x + (statusDef(st.id).convert ?? 0), 0)
-    const ratio = base > 0 ? Math.min(1, base + (target.lustMods?.convert ?? 0)) : 0
+    let ratio = base > 0 ? Math.min(1, base + (target.lustMods?.convert ?? 0)) : 0
+    // 調教的身體（刑罰派）：受到幸運一擊時，一部分的傷害改成慾望
+    if (opts.crit && target.lustMods?.critConvert) ratio = Math.min(1, ratio + target.lustMods.critConvert)
     if (ratio > 0 && total > 0 && lustOn(combat) && target.lustMax !== undefined) {
       const room = target.statuses.some((st) => statusDef(st.id).no_climax) ? Math.max(0, effectiveLustMax(target) - (target.lust ?? 0)) : Infinity
       converted = Math.min(Math.floor(total * ratio), room)
@@ -1358,7 +1397,7 @@ function weaponAttack(combat: CombatState, rng: Rng, actor: Combatant, target: C
   if (r.hit) {
     const rolls = rollParts(rng, actor, undefined, [{ weapon: true }], r.lucky)
     rolls.push(...onHitExtras(actor, target, rng, effects))
-    dealDamage(combat, rng, actor, target, rolls, effects)
+    dealDamage(combat, rng, actor, target, rolls, effects, { crit: r.lucky })
   }
   push(combat, { actor: actor.id, action, target: target.id, roll: r.roll, result: r.result, effects })
 }
@@ -1477,7 +1516,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
           if (a.damage?.length) {
             const rolls = rollParts(rng, actor, a, a.damage, r.lucky)
             if (a.damage.some((p) => p.weapon)) rolls.push(...onHitExtras(actor, target, rng, effects))
-            dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: a.mult ?? 1 })
+            dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: a.mult ?? 1, crit: r.lucky })
           }
           applyStatuses(combat, rng, actor, a, target, 'hit', effects)
         }
@@ -1573,13 +1612,15 @@ function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
 /** 慾望戰鬥的自動結算：引爆的傷害或治療、增減慾望、慾望在隊伍裡移動、給行動點 */
 function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityDef, target: Combatant, effects: Effect[], spent: number) {
   if (a.burst && spent > 0) {
-    const amount = Math.floor(spent * a.burst.mult) + mod(actor.attrs[attrFor(actor, a)])
+    // 慾焰（縱欲派）：引爆的傷害倍率加成
+    const amount = Math.floor((Math.floor(spent * a.burst.mult) + mod(actor.attrs[attrFor(actor, a)])) * (1 + (actor.lustMods?.burst ?? 0)))
     if (a.burst.heal) heal(target, amount, effects)
     // 引爆的傷害是一般屬性，不經過擲骰
     else dealDamage(combat, rng, actor, target, [{ amount, type: a.burst.type ?? 'force', weapon: false }], effects)
   }
   if (a.lust_gain) gainLust(combat, target, a.lust_gain.flat, effects, { selfGain: true })
-  if (a.lust_relief) relieveLust(target, a.lust_relief, effects)
+  // 清心寡慾（禁慾派）：消退慾望的效果加成
+  if (a.lust_relief) relieveLust(target, a.lust_relief * (1 + (actor.lustMods?.relief ?? 0)), effects)
   const t = a.lust_transfer
   if (t) {
     const others = alliesOf(combat, actor).filter((x) => x !== actor && x.lustMax !== undefined)
@@ -1675,6 +1716,12 @@ function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
   actor.usedTurn = {}
   actor.ap = Math.min(actor.apMax, actor.ap + Math.max(0, actor.apRegen + modsOf(actor).ap_regen))
   let canAct = true
+  // 回味（肉體派）：慾望在一半以上時回復生命
+  if (lustOn(combat) && actor.lustMods?.regen && isActive(actor) && lustRatio(actor) >= 0.5 && actor.hp < actor.maxHp) {
+    const effects: Effect[] = []
+    heal(actor, Math.round(actor.lustMods.regen + Math.floor(actor.level / 4)), effects)
+    push(combat, { actor: actor.id, action: '回味', result: 'none', effects })
+  }
   // 慾望戰鬥：每回合消退一點（有不會消退的狀態時不消退）
   if (lustOn(combat) && (actor.lust ?? 0) > 0 && !actor.statuses.some((s) => statusDef(s.id).lust_hold)) {
     actor.lust = Math.max(0, (actor.lust ?? 0) - Math.max(1, Math.round(effectiveLustMax(actor) * lustRules().decay * (actor.lustMods?.decay ?? 1))))

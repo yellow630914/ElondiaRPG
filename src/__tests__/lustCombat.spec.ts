@@ -225,6 +225,9 @@ describe('技能書', () => {
     useItem(state, '《媚術入門》', pc.id)
     expect(pc.abilities).toContain('lust_tease')
     addItem(state.inventory, '《情焰秘法》', 1)
+    // 流派的技能要先入門（docs/LEWD_STATS.md 第 6 節）
+    expect(() => useItem(state, '《情焰秘法》', pc.id)).toThrow('還沒入門縱欲派')
+    pc.perks = [...(pc.perks ?? []), 'school_indulgence']
     expect(() => useItem(state, '《情焰秘法》', pc.id)).toThrow('5 級')
   })
 })

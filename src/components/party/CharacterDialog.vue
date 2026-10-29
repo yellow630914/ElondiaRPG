@@ -3,12 +3,14 @@ import { computed, reactive, ref, watch } from 'vue'
 import {
   abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
-import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules, tagDef } from '@/engine/data'
+import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules, statusDef, tagDef } from '@/engine/data'
 import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
 import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf } from '@/engine/lewd'
+import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
+import { MOD_NAME } from '@/engine/gear'
 import { gameRule } from '@/engine/gameRules'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
@@ -75,8 +77,27 @@ const lewdItems = computed<StatItem[]>(() => {
   const region = locationById(s.value.location).region
   const exp = exposureAt(s.value, x.id, region)
   items.push({ label: lewdName('exposure'), value: exp, note: `${bandName('exposure', exp)}・身上的曝露度 ${exposureLevel(x)}` })
+  // 流派與雙面效應（docs/LEWD_STATS.md 第 6、7 節）
+  const schools = schoolsOf(x)
+  items.push({ label: '流派', value: schools.length ? schools.map(schoolName).join('、') : '沒有', note: schools.includes('servitude') ? (hasMaster(x) ? '有主人：隸從派全效' : '沒有主人：隸從派一半效果') : '' })
+  const binds = bindsOf(x)
+  if (binds.length) {
+    const tf = twoFaceCombat(x)
+    items.push({
+      label: '拘束',
+      value: binds.map((b) => `${b.name}（${bindLabel(b.kind, b.bind)}${b.lock ? `・${lockName(b.lock)}` : ''}）`).join('、'),
+      note: tf.active.length ? `戰鬥中：${twoFaceText(tf)}` : schools.length ? '鎖上之後戰鬥中才有增益' : '沒修流派：只有平常的檢定減值',
+    })
+  }
   return items
 })
+
+function twoFaceText(tf: ReturnType<typeof twoFaceCombat>): string {
+  const parts = Object.entries(tf.mods).filter(([, v]) => v).map(([k, v]) => `${MOD_NAME[k] ?? k} ${signed(v ?? 0)}`)
+  if (tf.initiative) parts.unshift(`先攻 ${signed(tf.initiative)}`)
+  if (tf.immune.length) parts.push(`免疫${tf.immune.map((id) => statusDef(id).name).join('、')}`)
+  return parts.join('・')
+}
 
 // ---- 主角設定 ----
 // ── 特效：加屬性點時數字彈一下；選中的能力卡發光、在能力清單裡翻面出現；新學會的特質卡翻過來
@@ -169,7 +190,7 @@ function saveTags() {
       <div>
         <p v-if="isNoncombatant(m)" class="small muted">無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>
         <StatGrid v-else :items="combat" />
-        <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。" /></h4>
+        <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。流派從受訓學（娼館、神殿、裁縫店……）；拘束具平常是檢定減值，修了流派又上了鎖，戰鬥中反轉成增益。" /></h4>
         <StatGrid :items="lewdItems" />
       </div>
     </section>

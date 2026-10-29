@@ -16,6 +16,7 @@ import * as rest from '@/engine/rest'
 import * as trade from '@/engine/trade'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
+import * as masterTool from '@/engine/masterTool'
 import * as meals from '@/engine/meals'
 import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
@@ -975,6 +976,12 @@ export const useGame = defineStore('game', () => {
     eatMeal: (id: string) => run((s) => meals.eatMeal(s, id)),
     equipItem: (name: string, member: string, slot?: GearSlot) => run((s) => inventory.equipItem(s, name, member, slot)),
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
+    // 拘束具的鎖（雙面效應）
+    lockGear: (member: string, slot: GearSlot, lock: string) => run((s) => inventory.lockGear(s, member, slot, lock)),
+    unlockGear: (member: string, slot: GearSlot) => run((s) => inventory.unlockGear(s, member, slot)),
+    // 主人是工具人：親密度夠高時直接解約、換主人
+    masterRelease: () => run((s) => masterTool.masterRelease(s)),
+    masterTransfer: (npc: string) => run((s) => masterTool.masterTransfer(s, npc)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     // 旅行：畫出旅途的單行道，一格一天往前走（road.ts）
     travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent), { onMap: true }),

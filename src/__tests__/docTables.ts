@@ -4,10 +4,12 @@
 import { abilityApCost } from '@/engine/combat'
 import { castingAttr } from '@/engine/character'
 import { formatMoney } from '@/engine/money'
-import { gearRules, gearSummary } from '@/engine/gear'
+import { gearRules, gearSummary, slotName } from '@/engine/gear'
+import type { GearSlot } from '@/engine/types'
 import { notForSale } from '@/engine/trade'
 import { useSummary } from '@/engine/inventory'
-import { abilities, attrName, classes, itemRules, perkDef, shopRules, type ItemDef, damageTypeName, dungeonEncounters, enemies, geography, locationById, regionById, stories, wildEncounterTables, type AbilityDef, type AttrId, type EnemyDef } from '@/engine/data'
+import { bindLabel, lockName, schoolDef, schoolIds, schoolName } from '@/engine/schools'
+import { abilities, attrName, classes, itemRules, lewdRules, LOCK_GRADES, perkDef, shopRules, type ItemDef, damageTypeName, dungeonEncounters, enemies, geography, locationById, regionById, stories, wildEncounterTables, type AbilityDef, type AttrId, type EnemyDef } from '@/engine/data'
 
 export interface GenBlock {
   file: string
@@ -57,7 +59,35 @@ function monsterAbilities(): string {
 function lewdAbilities(): string {
   const list = Object.values(abilities).filter((a) => a.classes.includes('lewd')).sort((a, b) => (a.unlock ?? 1) - (b.unlock ?? 1))
   const book = (id: string) => itemRules.items.filter((i) => i.use?.abilities?.includes(id)).map((i) => i.name).join('、') || '—'
-  return table(['等級', '名稱', 'AP', '效果', '技能書'], list.map((a) => [a.unlock ?? 1, a.name, abilityApCost(a), a.desc, book(a.id)]))
+  return table(['等級', '名稱', '流派', 'AP', '效果', '技能書'], list.map((a) => [a.unlock ?? 1, a.name, a.school ? schoolName(a.school) : '—', abilityApCost(a), a.desc, book(a.id)]))
+}
+
+// ---- LEWD_STATS：流派特質、拘束具與鎖 ----
+
+function lewdSchoolTable(): string {
+  return table(['流派', '偏向', '定位', '入門', '進階', '受訓（設施、學費）'], schoolIds().map((id) => {
+    const d = schoolDef(id)!
+    const p = (x: string) => perkDef(x)
+    const where = (x: string) => { const t = p(x)?.train; return t ? `${t.cells.join('、')} ${formatMoney(t.price_cc)}` : '—' }
+    return [d.name, d.group, d.role, `**${p(d.entry)?.name}**：${p(d.entry)?.desc}`, `**${p(d.advanced)?.name}**：${p(d.advanced)?.desc}`, `${where(d.entry)}／${where(d.advanced)}`]
+  }))
+}
+
+function restraintTable(): string {
+  const rows = Object.entries(gearRules.bases).filter(([, b]) => b.bind && b.bind_kind).map(([id, b]) => {
+    const items = itemRules.items.filter((i) => i.gear?.base === id)
+    const sold = items.filter((i) => i.tags.length && !notForSale(i)).map((i) => i.name)
+    const forced = items.filter((i) => i.master_force).map((i) => i.name)
+    return [b.name, slotName(b.slot as GearSlot), bindLabel(b.bind_kind!, b.bind!), [sold.length ? `商店：${sold.join('、')}` : '', forced.length ? `主人強制：${forced.join('、')}` : ''].filter(Boolean).join('；') || '—']
+  })
+  return table(['底材', '欄位', '拘束', '物品'], rows)
+}
+
+function lockTable(): string {
+  return table(['鎖', '倍率', '物品', '價格'], LOCK_GRADES.map((g) => {
+    const item = itemRules.items.find((i) => i.lock === g)
+    return [lockName(g), `×${lewdRules.locks.grades[g].mult}`, item?.name ?? '—', item ? formatMoney(item.price_cc) : '—']
+  }))
 }
 
 // ---- MONSTERS：各區域的怪物表 ----
@@ -217,6 +247,9 @@ export const BLOCKS: GenBlock[] = [
   { file: 'docs/COMBAT_SYSTEM.md', name: 'class-abilities', render: classAbilityLists },
   { file: 'docs/COMBAT_SYSTEM.md', name: 'monster-abilities', render: monsterAbilities },
   { file: 'docs/COMBAT_SYSTEM.md', name: 'lewd-abilities', render: lewdAbilities },
+  { file: 'docs/LEWD_STATS.md', name: 'lewd-schools', render: lewdSchoolTable },
+  { file: 'docs/LEWD_STATS.md', name: 'restraints', render: restraintTable },
+  { file: 'docs/LEWD_STATS.md', name: 'locks', render: lockTable },
   ...monsterBlocks(),
   { file: 'docs/ITEMS.md', name: 'items-standard', render: standardGear },
   { file: 'docs/ITEMS.md', name: 'items-consumables', render: () => usableTable('consumable') },

@@ -2,10 +2,11 @@
 // 免費給主角裝上並鎖住；契約還在時不能卸下，也不能在那個欄位換別的（inventory.ts 的 lockedGear）。
 
 import { itemRules } from './data'
-import { gearKnown, slotName } from './gear'
+import { gearKnown, gearRules, slotName } from './gear'
 import { freeSlotsFor, putOn } from './inventory'
 import { npcRecord } from './npcs'
 import { pcOf } from './party'
+import { masterLockGrade } from './schools'
 import { withRng } from './state'
 import type { GameState, Report } from './types'
 
@@ -27,7 +28,10 @@ export function forceEquip(state: GameState, report: Report, master: string, ite
   const name = item && pool.includes(item) ? item : pool.length ? withRng(state, (rng) => rng.pick(pool)) : undefined
   if (!name) return ''
   const spec = itemRules.items.find((i) => i.name === name)!.gear!
-  const { target, back } = putOn(pcOf(state), name, spec, undefined, master)
+  const pc = pcOf(state)
+  const { target, back } = putOn(pc, name, spec, undefined, master)
+  // 拘束具：主人用自己的鎖鎖上（依身分，雙面效應的倍率）
+  if (gearRules.bases[spec.base]?.bind) pc.gear![target]!.lock = masterLockGrade(rec?.tags ?? [])
   if (back.length) (report.changes.items_gained ??= []).push(...back.map((n) => ({ name: n, qty: 1, owner: 'pc' })))
   return `${rec?.name ?? '主人'}替主角在${slotName(target)}裝上了【${name}】，契約還在時拿不下來${back.length ? `（${back.join('、')}收進行囊）` : ''}`
 }

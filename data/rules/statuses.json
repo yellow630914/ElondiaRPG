@@ -99,6 +99,8 @@
     "pain_pleasure": { "name": "痛即是悅", "kind": "buff", "convert": 0.5 },
     "guarded": { "name": "受到侍奉", "kind": "buff", "guard": 0.5, "charges": 1 },
     "enduring": { "name": "忍耐", "kind": "buff", "lust_max": 0.5, "lust_hold": true },
-    "groveling": { "name": "跪伏", "kind": "buff", "mods": { "dr": 2 } }
+    "groveling": { "name": "跪伏", "kind": "buff", "mods": { "dr": 2 } },
+    "pure_mind": { "name": "淨念", "kind": "buff", "lust_mult": -0.5 },
+    "bind_stance": { "name": "縛身", "kind": "buff", "mods": { "dr": 2, "save": 2 } }
   }
 }

@@ -3,6 +3,7 @@
 
 import { lewdRules, locationById, type LewdKey } from './data'
 import { gearLewdOf, gearRules } from './gear'
+import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
 import { contractOf } from './tattoos'
 import type { Character, GameState, LewdStat, LewdStats, Report } from './types'
 
@@ -129,6 +130,16 @@ export function addLewd(state: GameState, c: Character, key: LewdKey, delta: num
   }
   const stats = (c.lewd ??= { ...lewdRules.defaults })
   const before = stats[key]
+  // 流派特質改變成長的速度（清心寡慾：淫亂的增加減半）；零頭記著，下次一起算
+  const g = delta > 0 ? lustTotals(c).growth[key] ?? 0 : 0
+  if (g) {
+    const raw = delta * Math.max(0, 1 + g) + (stats.carry?.[key] ?? 0)
+    delta = Math.floor(raw)
+    const rest = Math.round((raw - delta) * 100) / 100
+    if (rest) (stats.carry ??= {})[key] = rest
+    else if (stats.carry) delete stats.carry[key]
+    if (!delta) return 0
+  }
   stats[key] = clamp(before + delta)
   const d = stats[key] - before
   if (d && report) (report.changes.lewd ??= []).push({ actor: c.id, stat: key, delta: d, after: stats[key] })
@@ -193,5 +204,9 @@ export function lewdSummary(state: Pick<GameState, 'exposure' | 'location'>, c: 
   const parts = LEWD_STATS.map((k) => `${lewdName(k)}：${bandName(k, v[k], k === 'submission' && forcedSubmission(c))}${n(v[k])}`)
   const exp = exposureAt(state, c.id, currentRegion(state))
   parts.push(`${lewdName('exposure')}：在這一帶${bandName('exposure', exp)}${n(exp)}`)
+  const schools = schoolsOf(c)
+  if (schools.length) parts.push(`慾望流派：${schools.map(schoolName).join('、')}`)
+  const binds = bindsOf(c)
+  if (binds.length) parts.push(`身上的拘束：${binds.map((b) => `${b.name}${b.lock ? '（上鎖）' : ''}`).join('、')}`)
   return parts.join('；')
 }

@@ -43,7 +43,7 @@
     { "check": { "contexts": ["negotiation"] }, "bonus": 1 },
     { "combat": { "hit": 1 } }, { "resist": { "fire": -0.25 } }
   ],
-  "requires": { "races": [], "classes": [] },   // 只有這些種族或職業可以學（不寫＝都可以）
+  "requires": { "races": [], "classes": [], "perks": [] },   // 只有這些種族或職業可以學；perks：要先有這些特質（不寫＝都可以）
   "exclusive": [],                               // 互斥的特質
   "train": { "cells": ["tavern"], "price_cc": 300, "hours": 8, "attr": "cha", "dc": 12 },   // 可以在哪裡受訓
   "npc": { "weight": 2, "tags": ["merchant"], "classes": ["bard"] },                         // NPC 抽到的權重
@@ -53,6 +53,8 @@
   "category": "social"                           // 選填：分類，建角時依分類折疊（見 4.1 節）；不寫時依效果推斷
 }
 ```
+
+慾望流派的特質（成人向，分類「慾望流派」）另外有 `school`（流派）與 `lust`（慾望效果：慾望上限、受到的慾望、轉換、引爆……），共 16 個（8 個流派各一個入門、一個進階），不進升級的三選一；規則與清單見 [LEWD_STATS](LEWD_STATS.md) 第 6 節。強度把 `lust` 也算進去（有條件的戰鬥修正算一半）。
 
 `check` 的欄位：同一欄位是「或」，不同欄位是「且」；全部不寫＝所有檢定。
 

@@ -39,7 +39,7 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 │   ├─ STORY_QUESTS       特殊任務、劇情旗標
 │   ├─ EVENTS             事件視窗（要玩家回應的事件）
 │   ├─ ADULT_EVENTS       成人向：地下城的色情事件、寄生物
-│   └─ LEWD_STATS         成人向：慾望指標（淫亂、敏感、忍耐、順從、曝露名聲）
+│   └─ LEWD_STATS         成人向：慾望指標、慾望流派、雙面效應與鎖、主人是工具人
 │
 ├─ AI 與呈現
 │   ├─ PROMPTS            AI 服務、AI 開關、提示詞結構、快取、世界書注入
@@ -176,7 +176,7 @@ flowchart TD
 | [CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) | 內容引用與保護 | `usage.ts`、`mods.ts` |
 | [SAVES](SAVES.md) | 存檔 | `stores/saves.ts`、`stores/game.ts`、`state.ts` |
 | [ADULT_EVENTS](ADULT_EVENTS.md) | 地下城的色情事件、寄生物（成人向） | `dungeonEvents.ts`、`parasites.ts`、`parasiteEvents.ts` |
-| [LEWD_STATS](LEWD_STATS.md) | 慾望指標（成人向） | `lewd.ts` |
+| [LEWD_STATS](LEWD_STATS.md) | 慾望指標、流派、雙面效應（成人向） | `lewd.ts`、`schools.ts`、`masterTool.ts` |
 | [plan/README](plan/README.md) | 計畫與追蹤：分類、流程、完成紀錄 | — |
 | [plan/BUGS](plan/BUGS.md) | Bug | — |
 | [plan/LOGIC_ISSUES](plan/LOGIC_ISSUES.md) | 業務邏輯問題 | — |

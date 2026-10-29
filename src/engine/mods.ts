@@ -14,13 +14,14 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId, BIND_KINDS, LOCK_GRADES,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
 import { cleanPerkEffects, describeEffects, PERK_CATEGORIES, type PerkLimits } from './perks'
+import { sanitizeLustPerk, schoolDef } from './schools'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
@@ -813,6 +814,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
   if (raw.adult) out.adult = true
+  // 鎖（雙面效應）：替身上的拘束具上鎖
+  if (category === 'gear' && raw.lock && (LOCK_GRADES as string[]).includes(raw.lock)) out.lock = raw.lock
   // 黑市：只有獨特物品
   if (raw.black_market && gear?.unique) out.black_market = true
   if (category === 'info' && raw.intel) {
@@ -963,6 +966,11 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   if (raw.adult || out.outfit === 'adult') out.adult = true
   // 曝露度（慾望指標的曝露名聲）：只有上身、下身與內衣有意義
   if (raw.exposure !== undefined && raw.exposure !== null && String(raw.exposure) !== '') out.exposure = int(raw.exposure, 0, 3, 0)
+  // 雙面效應（docs/LEWD_STATS.md 第 7 節）：拘束的程度與種類（表單還沒有這兩個欄位，整理時保留）
+  if (raw.bind && raw.bind_kind && (BIND_KINDS as string[]).includes(raw.bind_kind)) {
+    out.bind = int(raw.bind, 1, 3, 1)
+    out.bind_kind = raw.bind_kind
+  }
   // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
   const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body'
   if (restraint) {
@@ -1387,6 +1395,7 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.requires_lust) out.requires_lust = Math.round(num(raw.requires_lust, 0.05, 1, 0.3) * 100) / 100
   if (raw.ap_give) out.ap_give = int(raw.ap_give, 1, 5, 1)
   if (raw.exposure) out.exposure = int(raw.exposure, 1, 10, 1)
+  if (raw.school && schoolDef(raw.school)) out.school = raw.school
   if (raw.lust_transfer && (raw.lust_transfer.mode === 'spread' || raw.lust_transfer.mode === 'take')) {
     const t = raw.lust_transfer
     out.lust_transfer = t.mode === 'spread'
@@ -1566,7 +1575,8 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   if (flaw) out.flaw = true
   const races = (raw.requires?.races ?? []).filter((r) => !!attributeRules.races[r])
   const cls = (raw.requires?.classes ?? []).filter((k) => !!classes[k])
-  if (!race && (races.length || cls.length)) out.requires = { ...(races.length ? { races } : {}), ...(cls.length ? { classes: cls } : {}) }
+  const pre = [...new Set(raw.requires?.perks ?? [])].filter((x) => x !== id && known(x))
+  if (!race && (races.length || cls.length || pre.length)) out.requires = { ...(races.length ? { races } : {}), ...(cls.length ? { classes: cls } : {}), ...(pre.length ? { perks: pre } : {}) }
   const ex = [...new Set(raw.exclusive ?? [])].filter((x) => x !== id && known(x))
   if (!race && ex.length) out.exclusive = ex
   if (!race && raw.train && Array.isArray(raw.train.cells)) {
@@ -1589,6 +1599,10 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   }
   if (raw.rarity && RARITY_ORDER.includes(raw.rarity)) out.rarity = raw.rarity
   if (raw.category && PERK_CATEGORIES[raw.category]) out.category = raw.category
+  // 慾望流派：流派與慾望效果（表單還沒有這兩個欄位，整理時保留）
+  if (!race && raw.school && schoolDef(raw.school)) out.school = raw.school
+  const lust = race ? undefined : sanitizeLustPerk(raw.lust)
+  if (lust) out.lust = lust
   if (custom) out.custom = true
   return out
 }

@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -209,6 +209,8 @@ export interface EquippedGear {
   spec: GearSpec
   /** 主人強制裝上的（主人的 id）：契約還在時不能卸下，也不能在這個欄位換別的 */
   locked?: string
+  /** 裝上的鎖（docs/LEWD_STATS.md 第 7 節）：拘束具鎖上，雙面效應的戰鬥增益才生效；自己鎖的可以隨時打開 */
+  lock?: LockGrade
 }
 
 /** 慾望指標（docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從，0～100；曝露名聲依地區記在存檔 */
@@ -216,6 +218,8 @@ export type LewdStat = 'lewdness' | 'sensitivity' | 'endurance' | 'submission'
 export interface LewdStats extends Record<LewdStat, number> {
   /** 最近一次親密場景是第幾天（淫亂太久沒有親密場景會慢慢降） */
   lastScene?: number
+  /** 成長減慢時（流派特質）還沒滿一點的零頭 */
+  carry?: Partial<Record<LewdStat, number>>
 }
 
 export interface Character {
