@@ -10,7 +10,7 @@
 import { attachParasite, changeCorruption, detachParasite, tameParasite } from './parasites'
 import { tagsAllowed } from './content'
 import { addItem } from './state'
-import { abilities, classAbilities, classes, locationById, perkDef, slaveryRules, type AttrId, type LewdKey } from './data'
+import { abilities, classAbilities, classes, locationById, masterEventPool, perkDef, slaveryRules, type AbilityDef, type AttrId, type LewdKey, type MasterEventPool } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, carryLearned, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
@@ -22,7 +22,7 @@ import {
 import { addMemory, addSuggestions, ensureRelationship } from './social'
 import { withRng } from './state'
 import { gearKnown, registerGear, syncGear } from './gear'
-import type { GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
+import type { Character, GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
 import { inActiveSquad } from './squads'
 import { joinGroup, queueJoin } from './away'
@@ -117,12 +117,17 @@ export type RewardEffect =
   | { type: 'corruption'; parasite: string; delta: number }
   /** 慾望指標的加減（docs/LEWD_STATS.md）：target 預設主角；曝露名聲記在目前的地區 */
   | { type: 'lewd'; stat: LewdKey; delta: number; target?: string }
+  /**
+   * 從事件庫（主人事件、調教、娼館的打工與受訓）掛的技能（teaches）裡，抽一個 target 還沒學、等級也夠的色情技能學會；
+   * 全部學過時套用 fallback。target 預設主角
+   */
+  | { type: 'ability_pool'; pool: MasterEventPool; target?: string; fallback?: RewardEffect[] }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
   'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip',
-  'parasite', 'corruption', 'lewd',
+  'parasite', 'corruption', 'lewd', 'ability_pool',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -154,6 +159,14 @@ export function affordable(state: GameState, effects: RewardEffect[], report?: R
       return { ...x, amount: -paid }
     })
     .filter((x) => x.type !== 'money' || x.amount !== 0)
+}
+
+
+/** 事件庫掛的技能裡，這個人還沒學、等級也夠的色情技能，隨機抽一個（ability_pool） */
+export function poolAbility(state: GameState, who: Character, pool: MasterEventPool): AbilityDef | undefined {
+  const ids = [...new Set(masterEventPool(pool).flatMap((e) => e.teaches ?? []))]
+  const open = ids.map((id) => abilities[id]).filter((a): a is AbilityDef => !!a && a.classes.includes('lewd') && !who.abilities.includes(a.id) && (a.unlock ?? 1) <= who.level)
+  return open.length ? withRng(state, (rng) => rng.pick(open)) : undefined
 }
 
 /** 套用效果，回傳每個效果的簡短說明（無法套用的會註明原因）。 */
@@ -400,6 +413,17 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'corruption': {
         const line = changeCorruption(pcOf(state), e.parasite, e.delta)
         if (line) notes.push(line)
+        break
+      }
+      case 'ability_pool': {
+        const who = e.target ? state.party.find((m) => m.id === e.target) ?? pcOf(state) : pcOf(state)
+        const pick = poolAbility(state, who, e.pool)
+        if (pick) {
+          learnAbility(who, pick.id)
+          ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: pick.name, quality: abilityQuality(pick), source: 'insight' })
+          const carried = carryLearned(who, pick.id, gameRule(state, 'skillLoadout'))
+          notes.push(`${who.name}學會了【${pick.name}】${carried ? '' : '（攜帶已滿，先放進技能庫）'}`)
+        } else if (e.fallback?.length) notes.push(...applyEffects(state, report, e.fallback.filter((x) => x.type !== 'ability_pool')))
         break
       }
       case 'lewd': {

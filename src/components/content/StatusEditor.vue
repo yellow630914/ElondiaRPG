@@ -5,6 +5,7 @@ import { builtinStatus, LUCK_ROLLS, STATUS_CONTROLS, STATUS_SPECIALS, type Statu
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 狀態（BUFF／DEBUFF）的編輯表單：數值修正、幸運骰、優勢劣勢、傷害倍率、持續效果、命中附加、控制。存檔前是草稿
 const props = defineProps<{ id: string }>()
@@ -263,6 +264,29 @@ function remove() {
             <option v-for="(n, k) in STATUS_SPECIALS" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>慾望戰鬥 <Hint text="成人向（docs/COMBAT_SYSTEM.md 第 8.5 節）；存檔規則「慾望戰鬥」關閉時沒有作用。" /></legend>
+      <div class="grid">
+        <label>受到的慾望倍率 ± <input v-model.number="draft.lust_mult" type="number" min="-1" max="3" step="0.05" placeholder="—" /></label>
+        <label>生命傷害轉成慾望的比例 <input v-model.number="draft.convert" type="number" min="0" max="1" step="0.05" placeholder="—" /></label>
+        <label><span>被侍奉（代受）的轉換比例 <Hint text="下一次受到的攻擊由施加者承受，承受的傷害這個比例改成慾望。" /></span><input v-model.number="draft.guard" type="number" min="0" max="1" step="0.05" placeholder="—" /></label>
+        <label>每回合慾望 + <input v-model.number="draft.lust_tick" type="number" min="0" max="100" placeholder="—" /></label>
+        <label>慾望上限倍率 ± <input v-model.number="draft.lust_max" type="number" min="-0.9" max="3" step="0.05" placeholder="—" /></label>
+      </div>
+      <div class="row small">
+        <label class="check"><input type="checkbox" :checked="!!draft.lust_scale" @change="($event.target as HTMLInputElement).checked ? (draft.lust_scale = { stat: 'damage', per: 1, max: 5 }) : delete draft.lust_scale" /> 依慾望的修正</label>
+        <template v-if="draft.lust_scale">
+          慾望每 10%，<select v-model="draft.lust_scale.stat"><option v-for="(n, k) in MODS" :key="k" :value="k">{{ n }}</option></select>
+          + <input v-model.number="draft.lust_scale.per" type="number" min="1" max="5" class="num" />（最多 <input v-model.number="draft.lust_scale.max" type="number" min="1" max="20" class="num" />）
+        </template>
+      </div>
+      <div class="row small">
+        <label class="check"><input v-model="draft.lust_hold" type="checkbox" /> 慾望不會消退</label>
+        <label class="check"><input v-model="draft.no_climax" type="checkbox" /> 不會高潮</label>
+        <label class="check"><input v-model="draft.no_cleanse" type="checkbox" /> 淨化拿不掉</label>
       </div>
     </fieldset>
   </div>

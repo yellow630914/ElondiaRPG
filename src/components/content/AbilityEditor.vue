@@ -52,6 +52,43 @@ const usage = computed(() => {
   return content.usageOf('ability', props.id)
 })
 
+// ---- 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） ----
+const lustGain = computed({
+  get: () => draft.value.lust_gain?.flat,
+  set: (v: number | undefined) => { if (v) draft.value.lust_gain = { flat: v }; else delete draft.value.lust_gain },
+})
+const transferMode = computed({
+  get: () => draft.value.lust_transfer?.mode ?? '',
+  set: (v: string) => {
+    if (v === 'spread') draft.value.lust_transfer = { mode: 'spread', ratio: 0.3, shield_per: 5 }
+    else if (v === 'take') draft.value.lust_transfer = { mode: 'take', amount: 20 }
+    else delete draft.value.lust_transfer
+  },
+})
+const burstOn = computed({
+  get: () => !!draft.value.burst,
+  set: (v: boolean) => { if (v) draft.value.burst = { mult: 0.5, type: 'fire' }; else delete draft.value.burst },
+})
+const burstKind = computed({
+  get: () => (draft.value.burst?.heal ? 'heal' : draft.value.burst?.type ?? 'fire'),
+  set: (v: string) => {
+    const b = draft.value.burst!
+    if (v === 'heal') { b.heal = true; delete b.type } else { delete b.heal; b.type = v }
+  },
+})
+const requiresPct = computed({
+  get: () => (draft.value.requires_lust ? Math.round(draft.value.requires_lust * 100) : undefined),
+  set: (v: number | undefined) => { if (v) draft.value.requires_lust = v / 100; else delete draft.value.requires_lust },
+})
+function ifLustPct(a: ApplyDef): number | undefined {
+  return a.if_lust ? Math.round(a.if_lust * 100) : undefined
+}
+function setIfLust(a: ApplyDef, v: string) {
+  const n = Number(v)
+  if (n > 0) a.if_lust = n / 100
+  else delete a.if_lust
+}
+
 function toggleClass(c: string, on: boolean) {
   const set = new Set(draft.value.classes)
   if (on) set.add(c)
@@ -257,9 +294,45 @@ function remove() {
           <option value="">（不能豁免）</option>
           <option v-for="x in ATTR_IDS" :key="x" :value="x">{{ attrName(x) }}豁免</option>
         </select>
+        <label title="目標的慾望達到上限的這個比例才套用">慾望 ≥ <input class="num" type="number" min="0" max="100" :value="ifLustPct(a)" placeholder="—" @input="setIfLust(a, ($event.target as HTMLInputElement).value)" />%</label>
         <button class="small" @click="draft.apply!.splice(i, 1)">移除</button>
       </div>
       <button class="small" @click="addApply">＋ 狀態</button>
+    </fieldset>
+
+    <fieldset>
+      <legend>慾望戰鬥 <Hint text="成人向（docs/COMBAT_SYSTEM.md 第 8.5 節）。魅惑傷害在上面的「傷害」選屬性「魅惑」。存檔規則「慾望戰鬥」關閉時，有這些欄位的能力不能用；「主角非自願」關掉時敵人不用。" /></legend>
+      <div class="grid">
+        <label>目標的慾望 + <input v-model.number="lustGain" type="number" min="0" max="200" placeholder="—" /></label>
+        <label>目標的慾望 − <input v-model.number="draft.lust_relief" type="number" min="0" max="200" placeholder="—" /></label>
+        <label>消耗自己的慾望 <input v-model.number="draft.lust_cost" type="number" min="0" max="200" placeholder="—" /></label>
+        <label>自己的慾望至少（%） <input v-model.number="requiresPct" type="number" min="0" max="100" placeholder="—" /></label>
+        <label>給目標行動點 <input v-model.number="draft.ap_give" type="number" min="0" max="5" placeholder="—" /></label>
+        <label>戰後曝露名聲 + <input v-model.number="draft.exposure" type="number" min="0" max="10" placeholder="—" /></label>
+        <label>慾望在隊友之間移動
+          <select v-model="transferMode">
+            <option value="">（不移動）</option>
+            <option value="spread">把自己的慾望分給其他友軍</option>
+            <option value="take">從其他每位友軍吸過來</option>
+          </select>
+        </label>
+        <template v-if="draft.lust_transfer?.mode === 'spread'">
+          <label>分出的比例 <input v-model.number="draft.lust_transfer.ratio" type="number" min="0.05" max="1" step="0.05" /></label>
+          <label>每幾點給 1 臨時生命 <input v-model.number="draft.lust_transfer.shield_per" type="number" min="0" max="50" placeholder="不給" /></label>
+        </template>
+        <label v-else-if="draft.lust_transfer?.mode === 'take'">每人吸多少 <input v-model.number="draft.lust_transfer.amount" type="number" min="1" max="200" /></label>
+      </div>
+      <div class="row small">
+        <label class="check"><input v-model="burstOn" type="checkbox" /> 引爆 <Hint text="消耗全部的慾望，造成慾望 × 倍率 + 屬性調整值的傷害（或治療目標）；用了立刻結束回合，下一回合脫力。" /></label>
+        <template v-if="draft.burst">
+          倍率 <input v-model.number="draft.burst.mult" type="number" min="0.1" max="3" step="0.05" class="num" />
+          <select v-model="burstKind">
+            <option value="heal">治療</option>
+            <option v-for="t in damageIds.filter((x) => x !== 'lust')" :key="t" :value="t">{{ damageTypeName(t) }}傷害</option>
+          </select>
+          慾望至少 <input class="num" type="number" min="0" max="100" :value="draft.burst.min_ratio ? Math.round(draft.burst.min_ratio * 100) : undefined" placeholder="—" @input="draft.burst.min_ratio = Number(($event.target as HTMLInputElement).value) / 100 || undefined" />%
+        </template>
+      </div>
     </fieldset>
 
     <fieldset>

@@ -2,10 +2,10 @@
 
 import { parasiteDef } from './parasites'
 import { LEWD_KEYS } from './lewd'
-import type { LewdKey } from './data'
+import type { LewdKey, MasterEventPool } from './data'
 import {
   abilities, ATTR_IDS, companionRules, specialMaps, storyCounters, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
-  type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
+  type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, MASTER_EVENT_POOLS,
 } from './data'
 import type { RewardEffect } from './effects'
 import { blockKeys, CELL_NAME, settlementArea, type CellKind } from './grid'
@@ -73,7 +73,13 @@ export const LAYER_NAME = DUNGEON_LAYER_NAME
 export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
   start_story: '開始特殊任務', enslave_player: '主角淪為奴隸', perk: '特質（取得的機會）', lose_perk: '失去特質', tattoo: '刺青', remove_tattoo: '洗掉刺青',
-  condition: '非戰鬥狀態', parasite: '寄生物', corruption: '寄生物的侵蝕度', lewd: '慾望指標',
+  condition: '非戰鬥狀態', parasite: '寄生物', corruption: '寄生物的侵蝕度', lewd: '慾望指標', ability_pool: '學會事件庫的技能',
+}
+/** 主人事件格式（主人事件、調教、娼館；docs/CONTENT_EDITOR.md）的效果可以用的種類 */
+export const MASTER_EVENT_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
+  money: '金錢', item: '物品', xp: '經驗值', affinity: '親密度', memory: '記憶', condition: '非戰鬥狀態', hp: '生命值', tattoo: '刺青',
+  lewd: '慾望指標', ability: '學會能力', ability_pool: '學會事件庫的技能', strict: '嚴加看管', home_extend: '延長離家期限', master_home: '帶回主人的家',
+  force_equip: '強制裝備', flag: '旗標',
 }
 /** 可以用效果給予或拿掉的非戰鬥狀態（奴隸印記、逃亡、暫時離隊由程式管理） */
 export const EFFECT_CONDITIONS = () => Object.keys(companionRules.conditions).filter((k) => !k.startsWith('$') && !['slave_mark', 'fugitive', 'away'].includes(k))
@@ -119,7 +125,8 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       }
       case 'xp': {
         const amount = int(x.amount, 0, 1e6, 0)
-        if (amount) out.push({ type: 'xp', amount })
+        // target：只給這個人（主人事件寫 pc）；沒有時全隊
+        if (amount) out.push({ type: 'xp', amount, ...(x.target === 'pc' ? { target: 'pc' } : {}) })
         break
       }
       case 'reputation': {
@@ -151,8 +158,11 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
         break
       }
       case 'hp': {
+        // 比例（最大生命值）或固定的點數（主人事件用）
         const ratio = Math.round(num(x.ratio, -0.9, 1, 0) * 100) / 100
+        const amount = x.ratio === undefined ? int(x.amount, -999, 999, 0) : 0
         if (ratio) out.push({ type: 'hp', target: 'pc', ratio })
+        else if (amount) out.push({ type: 'hp', target: 'pc', amount })
         break
       }
       case 'start_story': {
@@ -203,6 +213,35 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       case 'lewd': {
         const delta = Math.round(num(x.delta, -100, 100, 0))
         if (LEWD_KEYS.includes(x.stat as LewdKey) && delta) out.push({ type: 'lewd', stat: x.stat as LewdKey, delta, ...(typeof x.target === 'string' && x.target ? { target: x.target } : {}) })
+        break
+      }
+      case 'ability_pool': {
+        const pool = (Object.keys(MASTER_EVENT_POOLS) as MasterEventPool[]).includes(x.pool as MasterEventPool) ? x.pool as MasterEventPool : 'master'
+        const fallback = sanitizeEffects(x.fallback).filter((y) => y.type !== 'ability_pool')
+        out.push({ type: 'ability_pool', pool, ...(typeof x.target === 'string' && x.target ? { target: x.target } : {}), ...(fallback.length ? { fallback } : {}) })
+        break
+      }
+      case 'strict': {
+        const delta = int(x.delta, -5, 5, 0)
+        if (delta) out.push({ type: 'strict', delta })
+        break
+      }
+      case 'home_extend': {
+        const hours = int(x.hours, -240, 240, 0)
+        if (hours) out.push({ type: 'home_extend', hours })
+        break
+      }
+      case 'master_home':
+        out.push({ type: 'master_home' })
+        break
+      case 'force_equip': {
+        const item = str(x.item, 30)
+        out.push({ type: 'force_equip', npc: str(x.npc, 60) || 'master', ...(item ? { item } : {}) })
+        break
+      }
+      case 'flag': {
+        const key = str(x.key, 40)
+        if (key) out.push({ type: 'flag', key, value: typeof x.value === 'number' || typeof x.value === 'string' ? x.value : x.value !== false })
         break
       }
       case 'remove_tattoo': {

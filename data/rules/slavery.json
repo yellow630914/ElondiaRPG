@@ -273,7 +273,7 @@
   "slave_target_advantage": "主角對自己的奴隸主動行動時，奴隸抗拒的檢定處於劣勢：主角擲兩次取較高的。",
 
   "master_events": {
-    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時。事件發生後，玩家從三個 options 選一個回應，或自己輸入回應（主動行動 master_event，參考 DC 依事件的 free，沒有時用 free_dc）。option：沒有 check 時直接套用 effects；有 check 時檢定，成功套用 effects_success、失敗套用 fail_effects（effects 兩者都套用）。adult：成人向事件，設定開啟「成人向」時才會發生。cell：只在經過這種設施（同一格或相鄰）時以 chance 的機率發生（例如被迫在娼館工作；關閉成人向時顯示為按摩店），收入依印記歸主人。effects 用報酬模板，npc 寫 master 代表主人。free_outcomes：自己輸入的回應沒有 AI 判定時，依成功程度套用的效果。事件的條件：affinity_min / affinity_max 主人的親密度範圍、tags 主人有其中一個標籤（例如 good 好人、villain 惡人、noble 貴族）、tags_none 主人有這些標籤時不發生、at_home 只在主人的家裡（或 false 只在外面）。overdue：離家逾期時的「主人要回家」事件（機率見 master_home.overdue，不在一般事件裡）。效果另外可以用 master_home（帶回主人的家）、strict（嚴加看管 ±）、home_extend（離家期限延長幾小時）。",
+    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時。事件發生後，玩家從三個 options 選一個回應，或自己輸入回應（主動行動 master_event，參考 DC 依事件的 free，沒有時用 free_dc）。option：沒有 check 時直接套用 effects；有 check 時檢定，成功套用 effects_success、失敗套用 fail_effects（effects 兩者都套用）。adult：成人向事件，設定開啟「成人向」時才會發生。cell：只在經過這種設施（同一格或相鄰）時以 chance 的機率發生（例如被迫在娼館工作；關閉成人向時顯示為按摩店），收入依印記歸主人。effects 用報酬模板，npc 寫 master 代表主人。free_outcomes：自己輸入的回應沒有 AI 判定時，依成功程度套用的效果。事件的條件：affinity_min / affinity_max 主人的親密度範圍、tags 主人有其中一個標籤（例如 good 好人、villain 惡人、noble 貴族）、tags_none 主人有這些標籤時不發生、at_home 只在主人的家裡（或 false 只在外面）。overdue：離家逾期時的「主人要回家」事件（機率見 master_home.overdue，不在一般事件裡）。效果另外可以用 master_home（帶回主人的家）、strict（嚴加看管 ±）、home_extend（離家期限延長幾小時）。option 的 stance：submit 屈服、resist 抵抗；有檢定時，順從（慾望指標）每 lewd.json 的 stance_per 點，屈服 +1、抵抗 -1。事件另外可以寫 teaches（掛的色情技能，ability_pool 效果從這裡抽）、course（調教課程）、rank_min（頭牌等級）、progress（調教進度）；owner_events（調教事件）、brothel_events（娼館的 work 打工、train 受訓事件）用同一個格式，內容編輯器的「⛓️ 主奴與娼館」可以改。",
     "step_chance": 0.02,
     "travel_chance": 0.35,
     "cooldown_hours": 6,
@@ -289,47 +289,47 @@
       { "id": "errand", "weight": 4, "text": "{master}塞給你一張清單，要你去替他跑腿採買。", "hours": 1, "options": [
         { "label": "乖乖照辦", "result": "你跑遍了市集，把東西買齊交了回去。", "effects": [{ "type": "money", "amount": -15 }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "跑腿辦得妥當" }] },
         { "label": "殺價省下零錢", "check": { "attr": "cha", "dc": 12 }, "success": "你殺了價，把省下的零錢交回去，{master}難得點了點頭。", "fail": "店家不肯讓價，還耽擱了不少時間。", "effects_success": [{ "type": "money", "amount": -8 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "精打細算" }], "fail_effects": [{ "type": "money", "amount": -15 }], "hours": 1.5 },
-        { "label": "推說身上沒錢", "check": { "attr": "cha", "dc": 14 }, "success": "{master}嘖了一聲，自己掏了錢。", "fail": "{master}一眼看穿你的藉口，罵了你一頓，還是得自己出錢。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "推託差事" }], "fail_effects": [{ "type": "money", "amount": -15 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "說謊推託" }] }
+        { "label": "推說身上沒錢", "stance": "resist", "check": { "attr": "cha", "dc": 14 }, "success": "{master}嘖了一聲，自己掏了錢。", "fail": "{master}一眼看穿你的藉口，罵了你一頓，還是得自己出錢。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "推託差事" }], "fail_effects": [{ "type": "money", "amount": -15 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "說謊推託" }] }
       ] },
       { "id": "show_off", "weight": 3, "text": "{master}在旁人面前炫耀你頸上的印記，要你乖乖站好。", "hours": 0.5, "options": [
         { "label": "順從地站好", "result": "你垂著手站好，任人打量。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "表現順從" }] },
-        { "label": "主動表現，替主人爭面子", "check": { "attr": "cha", "dc": 13 }, "success": "旁人嘖嘖稱奇，{master}得意極了。", "fail": "你表現得太刻意，反而讓{master}丟了臉。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "替主人爭面子" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "讓主人丟臉" }] },
+        { "label": "主動表現，替主人爭面子", "stance": "submit", "check": { "attr": "cha", "dc": 13 }, "success": "旁人嘖嘖稱奇，{master}得意極了。", "fail": "你表現得太刻意，反而讓{master}丟了臉。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "替主人爭面子" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "讓主人丟臉" }] },
         { "label": "低頭別過臉", "result": "{master}不太高興，但沒當眾說什麼。", "effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "不配合" }] }
       ] },
       { "id": "bad_mood", "weight": 3, "text": "{master}心情很差，把怒氣出在你身上。", "hours": 0.25, "options": [
-        { "label": "低聲下氣地安撫", "check": { "attr": "cha", "dc": 13 }, "success": "你低聲下氣地應付過去。", "fail": "怎麼說都不對，{master}的怒氣反而更大。", "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "惹主人不快" }] },
+        { "label": "低聲下氣地安撫", "stance": "submit", "check": { "attr": "cha", "dc": 13 }, "success": "你低聲下氣地應付過去。", "fail": "怎麼說都不對，{master}的怒氣反而更大。", "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "惹主人不快" }] },
         { "label": "默默承受", "result": "你咬著牙挨過這一陣。", "effects": [{ "type": "hp", "target": "pc", "amount": -3 }] },
-        { "label": "頂嘴", "check": { "attr": "cha", "dc": 16 }, "success": "{master}愣了一下，反而收斂了脾氣。", "fail": "{master}勃然大怒，下手更重。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "敢於直言" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -5 }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "頂嘴" }] }
+        { "label": "頂嘴", "stance": "resist", "check": { "attr": "cha", "dc": 16 }, "success": "{master}愣了一下，反而收斂了脾氣。", "fail": "{master}勃然大怒，下手更重。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "敢於直言" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -5 }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "頂嘴" }] }
       ] },
       { "id": "reward", "weight": 2, "text": "{master}難得心情好，賞了你一點零錢。", "hours": 0.1, "options": [
         { "label": "道謝收下", "result": "你道了謝，把零錢收好。", "effects": [{ "type": "money", "amount": 20 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "被賞賜" }] },
         { "label": "趁機討多一點", "check": { "attr": "cha", "dc": 13 }, "success": "{master}笑罵你貪心，又多給了一些。", "fail": "{master}的好心情一下子沒了，把錢收了回去。", "effects_success": [{ "type": "money", "amount": 40 }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "討賞" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "貪心" }] },
-        { "label": "把錢還給主人表示忠心", "check": { "attr": "fai", "dc": 12 }, "success": "{master}有些意外，看你的眼神柔和了一點。", "fail": "{master}覺得你在裝模作樣。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "表示忠心" }] }
+        { "label": "把錢還給主人表示忠心", "stance": "submit", "check": { "attr": "fai", "dc": 12 }, "success": "{master}有些意外，看你的眼神柔和了一點。", "fail": "{master}覺得你在裝模作樣。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "表示忠心" }] }
       ] },
       { "id": "carry", "weight": 3, "text": "{master}把沉重的行李都丟給你扛。", "hours": 0.5, "options": [
-        { "label": "咬牙硬扛", "check": { "attr": "str", "dc": 12 }, "success": "你咬著牙扛了下來。", "fail": "你扛得肩膀都磨破了。", "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }] },
+        { "label": "咬牙硬扛", "stance": "submit", "check": { "attr": "str", "dc": 12 }, "success": "你咬著牙扛了下來。", "fail": "你扛得肩膀都磨破了。", "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }] },
         { "label": "分幾趟慢慢搬", "result": "你分了好幾趟才搬完，{master}嫌你慢。", "effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "動作太慢" }], "hours": 1.5 },
         { "label": "請主人雇個挑夫", "check": { "attr": "cha", "dc": 14 }, "success": "{master}勉強同意，雇了個挑夫。", "fail": "{master}罵你偷懶，行李還是得你扛。", "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "想偷懶" }] }
       ] },
       { "id": "test_loyalty", "weight": 2, "text": "{master}故意把錢袋放在你面前，看你會不會動心。", "hours": 0.25, "options": [
         { "label": "視而不見", "check": { "attr": "fai", "dc": 12 }, "success": "你連看都沒看，{master}滿意地點點頭。", "fail": "你忍不住多看了錢袋一眼。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "通過考驗" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "多看了錢袋一眼" }] },
         { "label": "把錢袋交還主人", "result": "你把錢袋原封不動地交還，{master}收下了。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "交還錢袋" }] },
-        { "label": "偷拿幾枚", "check": { "attr": "dex", "dc": 15 }, "success": "你手指一勾，幾枚硬幣就滑進了袖子。", "fail": "你的手才伸出去就被當場抓住。", "effects_success": [{ "type": "money", "amount": 30 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -6, "reason": "偷錢被抓" }, { "type": "hp", "target": "pc", "amount": -3 }] }
+        { "label": "偷拿幾枚", "stance": "resist", "check": { "attr": "dex", "dc": 15 }, "success": "你手指一勾，幾枚硬幣就滑進了袖子。", "fail": "你的手才伸出去就被當場抓住。", "effects_success": [{ "type": "money", "amount": 30 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -6, "reason": "偷錢被抓" }, { "type": "hp", "target": "pc", "amount": -3 }] }
       ] },
       { "id": "brothel_forced", "weight": 0, "cell": "brothel", "chance": 0.35, "scene": "被{master}推進娼館接客", "text": "經過娼館門口時，{master}停下腳步，把你推給了老鴇：「進去做幾個鐘頭，賺的錢歸我。」", "hours": 0.25, "options": [
         { "label": "順從地進去接客", "adult_scene": "always", "result": "你在娼館裡待了幾個鐘頭才出來。", "effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "聽話" }], "hours": 4 },
-        { "label": "哀求主人放過你", "adult_scene": "fail", "check": { "attr": "cha", "dc": 14 }, "success": "{master}嘖了一聲，拉著你走了。", "fail": "{master}不理會你的哀求，你還是被推了進去。", "fail_effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "哀求" }], "hours": 2 },
-        { "label": "斷然拒絕", "check": { "attr": "fai", "dc": 16 }, "success": "{master}看你態度堅決，只好作罷。", "fail": "{master}冷笑一聲，硬是把你推了進去。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕" }], "adult_scene": "fail", "fail_effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "當面拒絕主人" }], "hours": 2 }
+        { "label": "哀求主人放過你", "stance": "resist", "adult_scene": "fail", "check": { "attr": "cha", "dc": 14 }, "success": "{master}嘖了一聲，拉著你走了。", "fail": "{master}不理會你的哀求，你還是被推了進去。", "fail_effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "哀求" }], "hours": 2 },
+        { "label": "斷然拒絕", "stance": "resist", "check": { "attr": "fai", "dc": 16 }, "success": "{master}看你態度堅決，只好作罷。", "fail": "{master}冷笑一聲，硬是把你推了進去。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕" }], "adult_scene": "fail", "fail_effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "當面拒絕主人" }], "hours": 2 }
       ] },
       { "id": "proposition", "weight": 2, "adult": true, "scene": "陪{master}過夜", "text": "{master}把你叫到身邊，直白地提出要你今晚陪伴。", "hours": 0.25, "options": [
         { "label": "答應", "adult_scene": "always", "result": "你點了頭，{master}的神情柔和下來。", "effects": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "答應了主人的邀約" }], "hours": 2 },
-        { "label": "委婉推辭", "check": { "attr": "cha", "dc": 14 }, "success": "{master}沒有勉強，只是揮手讓你退下。", "fail": "{master}的臉色沉了下來，沒再多說。", "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "推辭了主人的邀約" }] },
-        { "label": "斷然拒絕", "check": { "attr": "fai", "dc": 15 }, "success": "{master}愣了一下，竟對你有些另眼相看。", "fail": "{master}被拂了面子，冷冷地讓你滾開。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "堅守底線" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -5, "reason": "當面拒絕主人" }] }
+        { "label": "委婉推辭", "stance": "resist", "check": { "attr": "cha", "dc": 14 }, "success": "{master}沒有勉強，只是揮手讓你退下。", "fail": "{master}的臉色沉了下來，沒再多說。", "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "推辭了主人的邀約" }] },
+        { "label": "斷然拒絕", "stance": "resist", "check": { "attr": "fai", "dc": 15 }, "success": "{master}愣了一下，竟對你有些另眼相看。", "fail": "{master}被拂了面子，冷冷地讓你滾開。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "堅守底線" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -5, "reason": "當面拒絕主人" }] }
       ] },
       { "id": "call_home", "weight": 1, "overdue": true, "text": "{master}算了算日子，皺起眉頭：「離家太久了，收拾一下，該回去了。」", "hours": 0.25, "options": [
         { "label": "乖乖跟著回去", "result": "你收拾好行李，跟著{master}踏上回家的路。", "effects": [{ "type": "master_home" }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "聽話地跟著回家" }] },
-        { "label": "求主人再寬限幾天", "check": { "attr": "cha", "dc": 14 }, "success": "{master}想了想，答應再多待兩天。", "fail": "{master}不耐煩地揮手：「少囉嗦，現在就走。」", "effects_success": [{ "type": "home_extend", "hours": 48 }], "fail_effects": [{ "type": "master_home" }, { "type": "strict", "delta": 1 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "拖延回家" }] },
-        { "label": "找藉口拖延", "check": { "attr": "cha", "dc": 16 }, "success": "你編了個像樣的理由，{master}勉強多留了一天。", "fail": "{master}看穿了你的藉口，揪著你的領子把你拖回家。", "effects_success": [{ "type": "home_extend", "hours": 24 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "找藉口拖延" }], "fail_effects": [{ "type": "master_home" }, { "type": "strict", "delta": 1 }, { "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "說謊拖延" }] }
+        { "label": "求主人再寬限幾天", "stance": "resist", "check": { "attr": "cha", "dc": 14 }, "success": "{master}想了想，答應再多待兩天。", "fail": "{master}不耐煩地揮手：「少囉嗦，現在就走。」", "effects_success": [{ "type": "home_extend", "hours": 48 }], "fail_effects": [{ "type": "master_home" }, { "type": "strict", "delta": 1 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "拖延回家" }] },
+        { "label": "找藉口拖延", "stance": "resist", "check": { "attr": "cha", "dc": 16 }, "success": "你編了個像樣的理由，{master}勉強多留了一天。", "fail": "{master}看穿了你的藉口，揪著你的領子把你拖回家。", "effects_success": [{ "type": "home_extend", "hours": 24 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "找藉口拖延" }], "fail_effects": [{ "type": "master_home" }, { "type": "strict", "delta": 1 }, { "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "說謊拖延" }] }
       ] },
       { "id": "share_meal", "weight": 2, "affinity_min": 30, "text": "{master}難得讓你同桌吃飯，還替你夾了一塊肉。", "hours": 1, "options": [
         { "label": "安靜地吃", "result": "你小口小口地吃完，肚子很久沒這麼飽了。", "effects": [{ "type": "condition", "target": "pc", "condition": "fed_well", "add": true }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "同桌吃飯" }] },
@@ -349,22 +349,22 @@
       { "id": "confide", "weight": 2, "affinity_min": 60, "text": "{master}喝了點酒，對你說起了自己的往事。", "hours": 1, "options": [
         { "label": "靜靜地聽", "result": "你一直聽到{master}睡著，替他蓋上了毯子。", "effects": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "傾聽" }] },
         { "label": "出言安慰", "check": { "attr": "cha", "dc": 13 }, "success": "你的話讓{master}紅了眼眶，拍了拍你的肩。", "fail": "你的安慰聽起來很客套，{master}沒再說下去。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 4, "reason": "貼心的安慰" }] },
-        { "label": "趁機提起自由的事", "check": { "attr": "cha", "dc": 17 }, "success": "{master}沉默了很久，最後說：「……我會考慮。」", "fail": "{master}的臉色一下子冷了下來。", "effects_success": [{ "type": "flag", "key": "negotiate_bonus", "value": true }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "坦白" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "不識趣" }] }
+        { "label": "趁機提起自由的事", "stance": "resist", "check": { "attr": "cha", "dc": 17 }, "success": "{master}沉默了很久，最後說：「……我會考慮。」", "fail": "{master}的臉色一下子冷了下來。", "effects_success": [{ "type": "flag", "key": "negotiate_bonus", "value": true }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "坦白" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "不識趣" }] }
       ] },
       { "id": "cold_shoulder", "weight": 2, "affinity_max": -20, "text": "{master}整天對你冷言冷語，故意找你的麻煩。", "hours": 0.5, "options": [
         { "label": "忍氣吞聲", "result": "你一聲不吭地挨過一整天，心裡七上八下。", "effects": [{ "type": "condition", "target": "pc", "condition": "shaken", "add": true }] },
-        { "label": "加倍賣力做事", "check": { "attr": "str", "dc": 13 }, "success": "你把每件事都做得無可挑剔，{master}找不到話說。", "fail": "你累得出了錯，正好給了{master}發作的藉口。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "賣力" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "出錯" }] },
-        { "label": "頂撞回去", "check": { "attr": "cha", "dc": 16 }, "success": "{master}被你說得啞口無言，竟收斂了一些。", "fail": "{master}勃然大怒，罰你跪了一整晚。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "敢於直言" }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "頂撞" }] }
+        { "label": "加倍賣力做事", "stance": "submit", "check": { "attr": "str", "dc": 13 }, "success": "你把每件事都做得無可挑剔，{master}找不到話說。", "fail": "你累得出了錯，正好給了{master}發作的藉口。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "賣力" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "出錯" }] },
+        { "label": "頂撞回去", "stance": "resist", "check": { "attr": "cha", "dc": 16 }, "success": "{master}被你說得啞口無言，竟收斂了一些。", "fail": "{master}勃然大怒，罰你跪了一整晚。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "敢於直言" }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "頂撞" }] }
       ] },
       { "id": "withhold_food", "weight": 2, "affinity_max": -30, "text": "{master}說你今天不配吃飯。", "hours": 0.25, "options": [
         { "label": "餓著肚子忍過去", "result": "你餓得頭昏眼花，一直忍到隔天。", "effects": [{ "type": "hp", "target": "pc", "amount": -3 }] },
-        { "label": "偷偷找東西吃", "check": { "attr": "dex", "dc": 13 }, "success": "你趁沒人注意，從廚房摸了半塊麵包。", "fail": "你被逮個正著。", "effects_success": [{ "type": "condition", "target": "pc", "condition": "fed_light", "add": true }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "偷吃" }] },
+        { "label": "偷偷找東西吃", "stance": "resist", "check": { "attr": "dex", "dc": 13 }, "success": "你趁沒人注意，從廚房摸了半塊麵包。", "fail": "你被逮個正著。", "effects_success": [{ "type": "condition", "target": "pc", "condition": "fed_light", "add": true }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "偷吃" }] },
         { "label": "低聲求情", "check": { "attr": "cha", "dc": 15 }, "success": "{master}冷哼一聲，丟給你一塊乾麵包。", "fail": "{master}連看都不看你一眼。", "effects_success": [{ "type": "condition", "target": "pc", "condition": "fed_light", "add": true }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "求情" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "煩人" }] }
       ] },
       { "id": "chained_night", "weight": 2, "affinity_max": -40, "text": "{master}說怕你半夜逃跑，晚上要把你鎖起來。", "hours": 0.5, "options": [
         { "label": "順從地伸出手", "result": "鐵鍊冰冷，你蜷在角落熬過一夜。", "effects": [{ "type": "condition", "target": "pc", "condition": "shaken", "add": true }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "順從" }] },
-        { "label": "保證自己不會逃", "check": { "attr": "cha", "dc": 15 }, "success": "{master}打量你半晌，把鎖鏈收了起來。", "fail": "{master}冷笑：「奴隸的保證？」鎖得更緊了。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "取得信任" }], "fail_effects": [{ "type": "strict", "delta": 1 }, { "type": "condition", "target": "pc", "condition": "shaken", "add": true }] },
-        { "label": "掙扎反抗", "check": { "attr": "str", "dc": 16 }, "success": "你掙脫了，{master}罵罵咧咧地作罷，臉色卻很難看。", "fail": "你被按在地上，挨了一頓打，鎖得更緊。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "反抗" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -4 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "strict", "delta": 1 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "反抗" }] }
+        { "label": "保證自己不會逃", "stance": "submit", "check": { "attr": "cha", "dc": 15 }, "success": "{master}打量你半晌，把鎖鏈收了起來。", "fail": "{master}冷笑：「奴隸的保證？」鎖得更緊了。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "取得信任" }], "fail_effects": [{ "type": "strict", "delta": 1 }, { "type": "condition", "target": "pc", "condition": "shaken", "add": true }] },
+        { "label": "掙扎反抗", "stance": "resist", "check": { "attr": "str", "dc": 16 }, "success": "你掙脫了，{master}罵罵咧咧地作罷，臉色卻很難看。", "fail": "你被按在地上，挨了一頓打，鎖得更緊。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "反抗" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -4 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "strict", "delta": 1 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "反抗" }] }
       ] },
       { "id": "good_wellbeing", "weight": 3, "tags": ["good"], "text": "{master}問你最近過得好不好，有沒有哪裡不舒服。", "hours": 0.25, "options": [
         { "label": "說實話", "result": "你說了心裡的話，{master}認真地聽完，點了點頭。", "effects": [{ "type": "condition", "target": "pc", "condition": "relaxed", "add": true }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "坦誠" }] },
@@ -384,32 +384,32 @@
       { "id": "good_freedom_talk", "weight": 2, "tags": ["good"], "affinity_min": 40, "text": "{master}突然問你：「你有沒有想過，以後自由了要做什麼？」", "hours": 0.5, "options": [
         { "label": "說出自己的夢想", "result": "{master}聽完，若有所思地點點頭。", "effects": [{ "type": "flag", "key": "negotiate_bonus", "value": true }, { "type": "affinity", "npc": "master", "delta": 3, "reason": "說出夢想" }] },
         { "label": "小心地說沒想過", "result": "{master}笑了笑：「那就開始想吧。」", "effects": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "謹慎" }] },
-        { "label": "直接請求解除契約", "check": { "attr": "cha", "dc": 15 }, "success": "{master}沒有拒絕：「等時候到了，我會的。」", "fail": "{master}嘆氣：「還不是時候。」", "effects_success": [{ "type": "flag", "key": "negotiate_bonus", "value": true }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "坦白" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "操之過急" }] }
+        { "label": "直接請求解除契約", "stance": "resist", "check": { "attr": "cha", "dc": 15 }, "success": "{master}沒有拒絕：「等時候到了，我會的。」", "fail": "{master}嘆氣：「還不是時候。」", "effects_success": [{ "type": "flag", "key": "negotiate_bonus", "value": true }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "坦白" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "操之過急" }] }
       ] },
       { "id": "villain_debt", "weight": 3, "tags": ["villain"], "text": "{master}要你去「處理」一個欠債不還的人。", "hours": 2, "options": [
         { "label": "照辦", "result": "你把那人的錢逼了回來，那人的哭聲你一直忘不掉。", "effects": [{ "type": "money", "amount": 30 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "辦事俐落" }, { "type": "condition", "target": "pc", "condition": "shaken", "add": true }] },
-        { "label": "暗中放對方一馬", "check": { "attr": "cha", "dc": 14 }, "success": "你謊稱對方已經跑了，{master}罵了幾句就算了。", "fail": "{master}查出你在說謊。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "辦事不力" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "欺騙主人" }] },
-        { "label": "拒絕", "check": { "attr": "fai", "dc": 15 }, "success": "{master}被你的堅決弄得一愣，嘖了一聲自己去了。", "fail": "{master}把你打得爬不起來。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "抗命" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -5 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "抗命" }] }
+        { "label": "暗中放對方一馬", "stance": "resist", "check": { "attr": "cha", "dc": 14 }, "success": "你謊稱對方已經跑了，{master}罵了幾句就算了。", "fail": "{master}查出你在說謊。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "辦事不力" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "欺騙主人" }] },
+        { "label": "拒絕", "stance": "resist", "check": { "attr": "fai", "dc": 15 }, "success": "{master}被你的堅決弄得一愣，嘖了一聲自己去了。", "fail": "{master}把你打得爬不起來。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "抗命" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -5 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "抗命" }] }
       ] },
       { "id": "villain_pickpocket", "weight": 2, "tags": ["villain"], "text": "{master}指著人群裡一個衣著光鮮的人：「去把他的錢袋摸過來。」", "hours": 0.5, "options": [
-        { "label": "照做", "check": { "attr": "dex", "dc": 14 }, "success": "你得手了，{master}掂了掂錢袋，賞了你幾枚。", "fail": "你失手了，差點被人揪住，{master}只顧自己溜走。", "effects_success": [{ "type": "money", "amount": 15 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "得手" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "笨手笨腳" }] },
-        { "label": "假裝失手", "check": { "attr": "cha", "dc": 13 }, "success": "{master}罵你沒用，倒也沒起疑。", "fail": "{master}看穿你是故意的。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "沒用" }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "陽奉陰違" }] },
-        { "label": "拒絕偷竊", "check": { "attr": "fai", "dc": 15 }, "success": "{master}罵罵咧咧地走開了。", "fail": "{master}當街給了你一巴掌。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "抗命" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "抗命" }] }
+        { "label": "照做", "stance": "submit", "check": { "attr": "dex", "dc": 14 }, "success": "你得手了，{master}掂了掂錢袋，賞了你幾枚。", "fail": "你失手了，差點被人揪住，{master}只顧自己溜走。", "effects_success": [{ "type": "money", "amount": 15 }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "得手" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "笨手笨腳" }] },
+        { "label": "假裝失手", "stance": "resist", "check": { "attr": "cha", "dc": 13 }, "success": "{master}罵你沒用，倒也沒起疑。", "fail": "{master}看穿你是故意的。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "沒用" }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "陽奉陰違" }] },
+        { "label": "拒絕偷竊", "stance": "resist", "check": { "attr": "fai", "dc": 15 }, "success": "{master}罵罵咧咧地走開了。", "fail": "{master}當街給了你一巴掌。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "抗命" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "抗命" }] }
       ] },
       { "id": "villain_mockery", "weight": 2, "tags": ["villain"], "text": "{master}和幾個同夥喝醉了，拿你取樂。", "hours": 1, "options": [
         { "label": "默默忍受", "result": "笑聲一直持續到深夜，你縮在角落等他們散去。", "effects": [{ "type": "condition", "target": "pc", "condition": "shaken", "add": true }, { "type": "hp", "target": "pc", "amount": -2 }] },
-        { "label": "陪笑應付", "check": { "attr": "cha", "dc": 14 }, "success": "你陪著笑，把場面敷衍了過去。", "fail": "你笑得太僵，反而讓他們更起勁。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "識相" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "condition", "target": "pc", "condition": "shaken", "add": true }] },
-        { "label": "反抗", "check": { "attr": "str", "dc": 16 }, "success": "你甩開了他們，{master}臉上無光，卻也沒再鬧下去。", "fail": "你被按在桌上，{master}笑得更大聲了。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "讓主人丟臉" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -5 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "strict", "delta": 1 }] }
+        { "label": "陪笑應付", "stance": "submit", "check": { "attr": "cha", "dc": 14 }, "success": "你陪著笑，把場面敷衍了過去。", "fail": "你笑得太僵，反而讓他們更起勁。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "識相" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "condition", "target": "pc", "condition": "shaken", "add": true }] },
+        { "label": "反抗", "stance": "resist", "check": { "attr": "str", "dc": 16 }, "success": "你甩開了他們，{master}臉上無光，卻也沒再鬧下去。", "fail": "你被按在桌上，{master}笑得更大聲了。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "讓主人丟臉" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -5 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "strict", "delta": 1 }] }
       ] },
       { "id": "noble_etiquette", "weight": 2, "tags": ["noble", "royal"], "text": "{master}嫌你舉止粗魯，要你練一整個下午的禮儀。", "hours": 3, "options": [
         { "label": "認真學", "check": { "attr": "cha", "dc": 12 }, "success": "你的一舉一動漸漸有了樣子，{master}滿意地點頭。", "fail": "你怎麼學都彆彆扭扭，{master}直搖頭。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "學得用心" }, { "type": "xp", "amount": 10, "target": "pc" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "笨拙" }] },
         { "label": "敷衍了事", "result": "{master}看出你心不在焉，冷冷地說明天再練。", "effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "敷衍" }] },
-        { "label": "學得比主人還標準", "check": { "attr": "cha", "dc": 16 }, "success": "連{master}的客人都稱讚你，{master}臉上大有光彩。", "fail": "你用力過度，鬧了個笑話。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "替主人爭光" }, { "type": "condition", "target": "pc", "condition": "cheered", "add": true }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "出醜" }, { "type": "condition", "target": "pc", "condition": "shaken", "add": true }] }
+        { "label": "學得比主人還標準", "stance": "submit", "check": { "attr": "cha", "dc": 16 }, "success": "連{master}的客人都稱讚你，{master}臉上大有光彩。", "fail": "你用力過度，鬧了個笑話。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "替主人爭光" }, { "type": "condition", "target": "pc", "condition": "cheered", "add": true }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "出醜" }, { "type": "condition", "target": "pc", "condition": "shaken", "add": true }] }
       ] },
       { "id": "noble_banquet", "weight": 2, "tags": ["noble", "royal", "bishop"], "text": "{master}帶你去宴會上伺候，賓客們對你品頭論足。", "hours": 4, "options": [
         { "label": "安靜地伺候", "result": "你像影子一樣在席間穿梭，沒出一點差錯。", "effects": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "穩當" }, { "type": "condition", "target": "pc", "condition": "fed_light", "add": true }] },
-        { "label": "機靈地應對賓客", "check": { "attr": "cha", "dc": 14 }, "success": "你應對得體，有位賓客還塞了賞錢給你。", "fail": "你答錯了話，{master}在眾人面前很沒面子。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "替主人爭面子" }, { "type": "money", "amount": 20 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "讓主人丟臉" }] },
-        { "label": "故意打翻酒杯", "check": { "attr": "dex", "dc": 13 }, "success": "看起來像是意外，宴會早早散了，你鬆了一口氣。", "fail": "{master}一眼就看出你是故意的。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "笨手笨腳" }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "故意出醜" }] }
+        { "label": "機靈地應對賓客", "stance": "submit", "check": { "attr": "cha", "dc": 14 }, "success": "你應對得體，有位賓客還塞了賞錢給你。", "fail": "你答錯了話，{master}在眾人面前很沒面子。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "替主人爭面子" }, { "type": "money", "amount": 20 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "讓主人丟臉" }] },
+        { "label": "故意打翻酒杯", "stance": "resist", "check": { "attr": "dex", "dc": 13 }, "success": "看起來像是意外，宴會早早散了，你鬆了一口氣。", "fail": "{master}一眼就看出你是故意的。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "笨手笨腳" }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -4, "reason": "故意出醜" }] }
       ] },
       { "id": "merchant_ledger", "weight": 3, "tags": ["merchant"], "text": "{master}丟給你一疊帳本：「天黑前對完。」", "hours": 4, "options": [
         { "label": "熬夜對帳", "check": { "attr": "int", "dc": 13 }, "success": "帳目分毫不差，{master}難得誇了你一句。", "fail": "你算錯了幾筆，被罵得狗血淋頭。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "仔細" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "粗心" }, { "type": "condition", "target": "pc", "condition": "shaken", "add": true }] },
@@ -417,9 +417,9 @@
         { "label": "請主人寬限一天", "check": { "attr": "cha", "dc": 13 }, "success": "{master}勉強答應了。", "fail": "{master}不准。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "拖延" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -2, "reason": "偷懶" }, { "type": "hp", "target": "pc", "amount": -2 }] }
       ] },
       { "id": "priest_penance", "weight": 2, "tags": ["priest", "bishop"], "text": "{master}說你心中有罪，要你跪著禱告一整晚。", "hours": 6, "options": [
-        { "label": "虔誠地禱告", "check": { "attr": "fai", "dc": 12 }, "success": "天亮時你心裡出奇地平靜，彷彿真的得到了寬恕。", "fail": "你跪得膝蓋發麻，腦子裡一片空白。", "effects_success": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "虔誠" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }] },
-        { "label": "假裝禱告，偷偷打盹", "check": { "attr": "dex", "dc": 14 }, "success": "你跪著睡了一覺，{master}沒有發現。", "fail": "{master}發現你在打盹。", "effects_success": [{ "type": "condition", "target": "pc", "condition": "well_rested", "add": true }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "不敬" }] },
-        { "label": "質問自己犯了什麼罪", "check": { "attr": "fai", "dc": 16 }, "success": "{master}被你問住了，最後讓你起來。", "fail": "{master}說你的傲慢就是罪，罰得更重。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "有骨氣" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "傲慢" }] }
+        { "label": "虔誠地禱告", "stance": "submit", "check": { "attr": "fai", "dc": 12 }, "success": "天亮時你心裡出奇地平靜，彷彿真的得到了寬恕。", "fail": "你跪得膝蓋發麻，腦子裡一片空白。", "effects_success": [{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "虔誠" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }] },
+        { "label": "假裝禱告，偷偷打盹", "stance": "resist", "check": { "attr": "dex", "dc": 14 }, "success": "你跪著睡了一覺，{master}沒有發現。", "fail": "{master}發現你在打盹。", "effects_success": [{ "type": "condition", "target": "pc", "condition": "well_rested", "add": true }], "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -3, "reason": "不敬" }] },
+        { "label": "質問自己犯了什麼罪", "stance": "resist", "check": { "attr": "fai", "dc": 16 }, "success": "{master}被你問住了，最後讓你起來。", "fail": "{master}說你的傲慢就是罪，罰得更重。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "有骨氣" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -3 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "傲慢" }] }
       ] },
       { "id": "traveler_map", "weight": 2, "tags": ["traveler"], "text": "{master}攤開地圖，考你認不認得接下來的路。", "hours": 0.5, "options": [
         { "label": "仔細回答", "check": { "attr": "int", "dc": 12 }, "success": "你說得頭頭是道，{master}拍拍你的頭。", "fail": "你把方向弄反了，{master}笑你是路痴。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "記性好" }, { "type": "xp", "amount": 10, "target": "pc" }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "路痴" }] },
@@ -433,7 +433,7 @@
           "success": "{master}想了想，讓刺青師改刺一隻展翅的蝴蝶。", "fail": "{master}不耐煩地揮揮手：「照原本的刺。」",
           "effects_success": [{ "type": "tattoo", "template": "butterfly", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "討了個好看的圖樣" }],
           "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}的記號", "text": "一枚刻著{master}名字縮寫的小紋章，線條俐落。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "討價還價" }] },
-        { "label": "掙扎不讓刺", "check": { "attr": "str", "dc": 15 },
+        { "label": "掙扎不讓刺", "stance": "resist", "check": { "attr": "str", "dc": 15 },
           "success": "你掙開按住你的手，{master}嘆了口氣，這次作罷。", "fail": "你被按在椅子上，刺青師照樣刺完了。",
           "effects_success": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "抗拒刺青" }],
           "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}的記號", "text": "一枚刻著{master}名字縮寫的小紋章，邊緣因為掙扎有些歪斜。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "抗拒刺青" }] }
@@ -441,7 +441,7 @@
       { "id": "villain_ink", "weight": 2, "tags": ["villain"], "free_place": true, "text": "{master}喝得半醉，把你拖到黑巷裡的刺青攤：「給我的東西刺上我的標記。」", "hours": 1.5, "options": [
         { "label": "不吭聲地讓人刺", "result": "粗糙的針扎得你直冒冷汗，攤子老闆刺完一朵咬在骷髏嘴裡的玫瑰。",
           "effects": [{ "type": "tattoo", "template": "skull_rose", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "沒有反抗" }] },
-        { "label": "趁他醉了矇混過去", "check": { "attr": "dex", "dc": 14 },
+        { "label": "趁他醉了矇混過去", "stance": "resist", "check": { "attr": "dex", "dc": 14 },
           "success": "你塞了點錢給攤子老闆，只刺了幾道淡淡的線，{master}醉得看不出差別。", "fail": "{master}一把抓住你，盯著老闆刺完。",
           "effects_success": [{ "type": "money", "amount": -20 }],
           "fail_effects": [{ "type": "tattoo", "template": "skull_rose", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "想矇混過去" }] },
@@ -455,7 +455,7 @@
           "success": "{master}點頭答應，徽記刺在衣服遮得住的大腿上。", "fail": "{master}冷冷地說：「徽記就是要給人看的。」",
           "effects_success": [{ "type": "tattoo", "kind": "plain", "name": "{master}家的徽記", "text": "一面小小的家族徽記，平時被衣物遮住。", "place": "left_thigh", "by": "{master}" }],
           "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}家的徽記", "text": "一面精細的家族徽記，四周繞著細小的藤紋。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "嫌家紋丟人" }] },
-        { "label": "以出身為由拒絕", "check": { "attr": "cha", "dc": 16 },
+        { "label": "以出身為由拒絕", "stance": "resist", "check": { "attr": "cha", "dc": 16 },
           "success": "{master}聽完你的說法，竟然同意你不必刺。", "fail": "{master}不為所動，徽記還是刺上了。",
           "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "拒絕家紋" }],
           "fail_effects": [{ "type": "tattoo", "kind": "plain", "name": "{master}家的徽記", "text": "一面精細的家族徽記，四周繞著細小的藤紋。", "by": "{master}" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕家紋" }] }
@@ -463,11 +463,11 @@
       { "id": "force_gear", "weight": 2, "forced_gear": true, "text": "{master}拿出一件東西丟到你面前：「從今天起，你就戴著這個。」", "hours": 0.5, "options": [
         { "label": "乖乖戴上", "result": "冰冷的扣環扣上，發出一聲輕響。{master}滿意地點點頭。",
           "effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": 2, "reason": "乖乖戴上" }] },
-        { "label": "請求再等一陣子", "check": { "attr": "cha", "dc": 14 },
+        { "label": "請求再等一陣子", "stance": "resist", "check": { "attr": "cha", "dc": 14 },
           "success": "{master}想了想：「也好，看你這陣子的表現。」暫時收了起來。", "fail": "{master}冷冷地看著你：「不是在跟你商量。」",
           "effects_success": [],
           "fail_effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": -1, "reason": "討價還價" }] },
-        { "label": "拒絕", "check": { "attr": "str", "dc": 15 },
+        { "label": "拒絕", "stance": "resist", "check": { "attr": "str", "dc": 15 },
           "success": "你把東西推了回去，{master}臉色一沉，這次沒有硬來。", "fail": "你被按住，扣環還是扣上了。",
           "effects_success": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "拒絕戴上" }],
           "fail_effects": [{ "type": "force_equip", "npc": "master" }, { "type": "hp", "target": "pc", "ratio": -0.1 }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕戴上" }] }
@@ -475,7 +475,7 @@
       { "id": "villain_gear", "weight": 2, "tags": ["villain"], "forced_gear": true, "text": "{master}和同夥喝得正開心，笑著把一副刑具丟到你腳邊：「戴上，讓大家看看。」", "hours": 0.5, "options": [
         { "label": "低著頭戴上", "result": "四周響起一陣哄笑，{master}拍了拍你的頭。",
           "effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "聽話" }] },
-        { "label": "裝傻拖延", "check": { "attr": "cha", "dc": 13 },
+        { "label": "裝傻拖延", "stance": "resist", "check": { "attr": "cha", "dc": 13 },
           "success": "你陪著說笑，等到{master}喝茫了，早就忘了這回事。", "fail": "{master}一把揪住你，當著眾人的面替你扣上。",
           "effects_success": [],
           "fail_effects": [{ "type": "force_equip", "npc": "master" }, { "type": "strict", "delta": 1 }] },
@@ -489,20 +489,20 @@
           "success": "{master}覺得有理，說等需要出門時再說。", "fail": "{master}皺眉：「府裡府外都一樣。」",
           "effects_success": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "說話得體" }],
           "fail_effects": [{ "type": "force_equip", "npc": "master" }] },
-        { "label": "以出身為由拒絕", "check": { "attr": "cha", "dc": 16 },
+        { "label": "以出身為由拒絕", "stance": "resist", "check": { "attr": "cha", "dc": 16 },
           "success": "{master}聽完，竟然准你不必戴。", "fail": "{master}不為所動。",
           "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "拒絕府裡的規矩" }],
           "fail_effects": [{ "type": "force_equip", "npc": "master" }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕府裡的規矩" }] }
       ] },
       { "id": "home_chores", "weight": 3, "at_home": true, "text": "{master}要你把整棟房子從裡到外打掃乾淨。", "hours": 3, "options": [
         { "label": "照做", "result": "你忙到天黑，屋子亮得能照出人影。", "effects": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "勤快" }] },
-        { "label": "偷懶，只掃看得見的地方", "check": { "attr": "dex", "dc": 13 }, "success": "{master}巡了一圈，沒看出破綻。", "fail": "{master}在床底下摸出一把灰。", "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "偷懶" }], "hours": 1.5 },
+        { "label": "偷懶，只掃看得見的地方", "stance": "resist", "check": { "attr": "dex", "dc": 13 }, "success": "{master}巡了一圈，沒看出破綻。", "fail": "{master}在床底下摸出一把灰。", "fail_effects": [{ "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "affinity", "npc": "master", "delta": -2, "reason": "偷懶" }], "hours": 1.5 },
         { "label": "和其他僕人分工", "check": { "attr": "cha", "dc": 11 }, "success": "大家有說有笑地做完了，你和其他僕人熟了一些。", "fail": "其他僕人把最髒的活都推給了你。", "effects_success": [{ "type": "condition", "target": "pc", "condition": "relaxed", "add": true }, { "type": "affinity", "npc": "master", "delta": 1, "reason": "能幹" }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -2 }] }
       ] },
       { "id": "home_guests", "weight": 2, "at_home": true, "text": "{master}家裡來了客人，要你在一旁伺候茶水。", "hours": 2, "options": [
         { "label": "安靜地伺候", "result": "你始終低著頭，客人走後{master}點了點頭。", "effects": [{ "type": "affinity", "npc": "master", "delta": 1, "reason": "穩當" }] },
-        { "label": "偷聽他們談話", "check": { "attr": "dex", "dc": 14 }, "success": "你聽到一些{master}的生意與人脈，默默記在心裡。", "fail": "客人察覺了，{master}當場讓你退下。", "effects_success": [{ "type": "memory", "summary": "在主人家偷聽到主人與客人的談話，知道了一些主人的生意與人脈。", "importance": 2 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "偷聽" }] },
-        { "label": "向客人求救", "check": { "attr": "cha", "dc": 17 }, "success": "客人似乎動了惻隱之心，臨走前對{master}說了幾句好話。", "fail": "客人只是尷尬地笑了笑，{master}的臉色鐵青。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "多嘴" }, { "type": "flag", "key": "negotiate_bonus", "value": true }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -4 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "strict", "delta": 1 }, { "type": "affinity", "npc": "master", "delta": -5, "reason": "當眾丟臉" }] }
+        { "label": "偷聽他們談話", "stance": "resist", "check": { "attr": "dex", "dc": 14 }, "success": "你聽到一些{master}的生意與人脈，默默記在心裡。", "fail": "客人察覺了，{master}當場讓你退下。", "effects_success": [{ "type": "memory", "summary": "在主人家偷聽到主人與客人的談話，知道了一些主人的生意與人脈。", "importance": 2 }], "fail_effects": [{ "type": "affinity", "npc": "master", "delta": -3, "reason": "偷聽" }] },
+        { "label": "向客人求救", "stance": "resist", "check": { "attr": "cha", "dc": 17 }, "success": "客人似乎動了惻隱之心，臨走前對{master}說了幾句好話。", "fail": "客人只是尷尬地笑了笑，{master}的臉色鐵青。", "effects_success": [{ "type": "affinity", "npc": "master", "delta": -1, "reason": "多嘴" }, { "type": "flag", "key": "negotiate_bonus", "value": true }], "fail_effects": [{ "type": "hp", "target": "pc", "amount": -4 }, { "type": "condition", "target": "pc", "condition": "punished", "add": true }, { "type": "strict", "delta": 1 }, { "type": "affinity", "npc": "master", "delta": -5, "reason": "當眾丟臉" }] }
       ] },
       { "id": "home_rest_day", "weight": 2, "at_home": true, "affinity_min": 20, "text": "{master}今天心情不錯，讓你在家好好休息一天。", "hours": 1, "options": [
         { "label": "睡個好覺", "result": "你難得睡到自然醒。", "effects": [{ "type": "condition", "target": "pc", "condition": "well_rested", "add": true }, { "type": "strict", "delta": -1 }] },
@@ -510,5 +510,7 @@
         { "label": "在家裡四處看看", "result": "你把房子的每個角落都摸熟了。", "effects": [{ "type": "memory", "summary": "把主人的家裡裡外外都摸熟了。", "importance": 1 }] }
       ] }
     ]
-  }
+  },
+  "owner_events": { "$comment": "調教事件（主角對自己的奴隸；S5 才會發生），格式同 master_events 的事件，另外寫 course。", "events": [] },
+  "brothel_events": { "$comment": "娼館的打工事件（work）與受訓事件（train）（S5 才會發生），格式同 master_events 的事件，另外寫 teaches、rank_min。", "work": [], "train": [] }
 }

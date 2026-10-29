@@ -7,7 +7,7 @@
 
 import { checkModifiers, modifierNote } from './perks'
 import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
-import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type UnmarkServiceDef } from './data'
+import { contractDef, lewdRules, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type MasterEventOption, type UnmarkServiceDef } from './data'
 import { isMadam, nearBrothel } from './brothel'
 import { adultScene, tagsAllowed } from './content'
 import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
@@ -25,8 +25,8 @@ import { addStrict, atMasterHome, extendDeadline, overdueChance, sendToMasterHom
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
-import { growLewd, addLewd } from './lewd'
-import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
+import { growLewd, addLewd, lewdOf } from './lewd'
+import type { Character, ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
 import { gameRule } from './gameRules'
 
@@ -502,6 +502,18 @@ function withMaster(state: GameState, s: string): string {
   return s.split('{master}').join(contractOf(pcOf(state))?.masterName ?? '主人')
 }
 
+/** 等待回應的事件還在不在（內容編輯器可能刪掉了自建的事件） */
+export function pendingEventExists(state: GameState): boolean {
+  const pm = state.pendingMasterEvent
+  return !!pm && slaveryRules.master_events.events.some((x) => x.id === pm.id)
+}
+
+/** 等待回應的事件已經不存在：作廢 */
+export function dropMissingMasterEvent(state: GameState): Record<string, never> {
+  if (state.pendingMasterEvent && !pendingEventExists(state)) delete state.pendingMasterEvent
+  return {}
+}
+
 /** 等待回應的事件定義 */
 export function pendingEventDef(state: GameState): MasterEventDef {
   const pm = state.pendingMasterEvent
@@ -535,7 +547,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   let effects = forMaster(o.effects, c.master, c.masterName)
   if (o.check) {
     // 非戰鬥狀態與特質（主人的標籤也算）
-    const extra = checkModifiers(pc, { context: 'master_event', attr: o.check.attr, vsTags: npcRecord(state, c.master)?.tags ?? [] })
+    const extra = [...checkModifiers(pc, { context: 'master_event', attr: o.check.attr, vsTags: npcRecord(state, c.master)?.tags ?? [] }), ...stanceModifiers(pc, o.stance)]
     const dice = withBonus('1d20', mod(attrOf(pc, o.check.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
     const r = withRng(state, (rng) => roll(rng, dice))
     const ok = r.total >= o.check.dc
@@ -558,6 +570,13 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   const notes = applyEffects(state, report, affordable(state, effects))
   if (notes.length) report.outcome.summary += notes.join('，') + '。'
   return commitReport(state, report)
+}
+
+/** 屈服或抵抗的回應：順從（慾望指標）高的人屈服比較容易、抵抗比較難 */
+export function stanceModifiers(c: Character, stance: MasterEventOption['stance']): { label: string; value: number }[] {
+  if (!stance) return []
+  const n = Math.floor(lewdOf(c).submission / lewdRules.master_tool.stance_per)
+  return n ? [{ label: stance === 'submit' ? '順從・屈服' : '順從・抵抗', value: stance === 'submit' ? n : -n }] : []
 }
 
 /** 自己輸入回應（主動行動 master_event） */

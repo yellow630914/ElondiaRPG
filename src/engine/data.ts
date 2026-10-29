@@ -1253,6 +1253,23 @@ export const slaveryRules = slaveryJson as unknown as {
     free_dc: number; free_outcomes: Record<Degree, RewardEffect[]>
     events: MasterEventDef[]
   }
+  /** 調教事件（主角對自己的奴隸；S5） */
+  owner_events: { events: MasterEventDef[] }
+  /** 娼館的打工與受訓事件（S5） */
+  brothel_events: { work: MasterEventDef[]; train: MasterEventDef[] }
+}
+
+/** 共用主人事件格式的事件庫（內容編輯器「⛓️ 主奴與娼館」） */
+export type MasterEventPool = 'master' | 'owner' | 'brothel_work' | 'brothel_train'
+export const MASTER_EVENT_POOLS: Record<MasterEventPool, string> = { master: '主人的突發事件', owner: '調教事件', brothel_work: '娼館打工事件', brothel_train: '娼館受訓事件' }
+
+/** 這個事件庫的事件清單（直接改這個陣列就會生效） */
+export function masterEventPool(pool: MasterEventPool): MasterEventDef[] {
+  const r = slaveryRules as unknown as { owner_events?: { events: MasterEventDef[] }; brothel_events?: { work: MasterEventDef[]; train: MasterEventDef[] } }
+  if (pool === 'master') return slaveryRules.master_events.events
+  if (pool === 'owner') return ((r.owner_events ??= { events: [] }).events ??= [])
+  const b = (r.brothel_events ??= { work: [], train: [] })
+  return pool === 'brothel_work' ? (b.work ??= []) : (b.train ??= [])
 }
 
 /** 主人家裡的人的一種組成：spouse 是伴侶出現的機率，其他是人數範圍 */
@@ -1296,6 +1313,14 @@ export interface MasterEventDef {
   free_place?: boolean
   /** 有這位主人會強制主角裝上的東西時才發生（items.json 的 master_force） */
   forced_gear?: boolean
+  /** 掛的色情技能（ability_pool 效果從事件庫裡還沒學的技能抽；娼館的事件只抽打工的人還沒學的） */
+  teaches?: string[]
+  /** 調教課程（調教事件） */
+  course?: string
+  /** 要求的頭牌等級（娼館的事件） */
+  rank_min?: number
+  /** 同一個課程成功幾次保證學會一個技能（調教事件） */
+  progress?: number
 }
 
 export interface UnmarkServiceDef {
@@ -1334,6 +1359,8 @@ export interface MasterEventOption {
   hours?: number
   /** 這個回應會進入親密場景（事件的 scene）：always 一定、success / fail 檢定成功或失敗時 */
   adult_scene?: 'always' | 'success' | 'fail'
+  /** 屈服（submit）或抵抗（resist）：有檢定時依順從加減（lewd.json 的 master_tool.stance_per） */
+  stance?: 'submit' | 'resist'
 }
 
 export function contractDef(id: string): ContractDef {
@@ -1988,7 +2015,7 @@ export const lewdRules = lewdJson as unknown as {
     kinds: Record<BindKind, { name: string; checks: CheckFilter[]; penalty: number[]; combat: (Mods & { initiative?: number })[]; immune?: string[] }>
   }
   locks: { grades: Record<LockGrade, { name: string; mult: number }>; master_default: LockGrade; master_tags: Record<string, LockGrade> }
-  master_tool: { release_affinity: number; new_master_affinity: number; hours: number; submission_dc_per: number }
+  master_tool: { release_affinity: number; new_master_affinity: number; hours: number; submission_dc_per: number; stance_per: number }
   growth: Record<'adult_scene' | 'climax' | 'climax_won' | 'brothel_work' | 'obedience' | 'disrobe', Partial<Record<LewdKey, number>>>
   daily: {
     adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, damageTypeName, damageTypes, equipment, itemRules } from '@/engine/data'
+import { ATTR_IDS, attrName, BIND_KINDS, damageTypeName, damageTypes, equipment, itemRules, lewdRules, type BindKind } from '@/engine/data'
 import { baseSlots, gearRules, gearSummary, OUTFIT_KINDS, rarityName, RARITY_ORDER, type OutfitKind } from '@/engine/gear'
 import { builtinBase, builtinMaterial, type BaseMod, type MaterialMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -45,6 +45,19 @@ function setOutfit(v: string) {
   if (v) base.value.outfit = v as OutfitKind
   else delete base.value.outfit
   if (v === 'adult') base.value.adult = true
+}
+function setExposure(v: string) {
+  if (v === '') delete base.value.exposure
+  else base.value.exposure = Number(v)
+}
+function setBindKind(v: string) {
+  if (v) {
+    base.value.bind_kind = v as BindKind
+    base.value.bind ??= 1
+  } else {
+    delete base.value.bind_kind
+    delete base.value.bind
+  }
 }
 const mat = ref<MaterialMod>(props.kind === 'material' ? currentMaterial() : ({} as MaterialMod))
 const text = () => JSON.stringify(props.kind === 'base' ? base.value : mat.value)
@@ -161,6 +174,24 @@ function remove() {
         <label v-if="base.slot !== 'main_hand' && base.slot !== 'body'" class="check small">
           <input v-model="base.restraint" type="checkbox" :disabled="builtin" /> 束縛用（項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減，給「主人會強制裝備」的物品用
         </label>
+        <div v-if="base.slot !== 'main_hand' && base.slot !== 'off_hand'" class="row small">
+          <label v-if="lewdRules.gear.exposure_slots.includes(base.slot)">曝露度
+            <select :value="base.exposure ?? ''" @change="setExposure(($event.target as HTMLSelectElement).value)">
+              <option value="">（依服裝分類：{{ base.outfit === 'adult' ? lewdRules.gear.outfit.adult?.exposure ?? 0 : 0 }}）</option>
+              <option v-for="n in [0, 1, 2, 3]" :key="n" :value="n">{{ n }}</option>
+            </select>
+          </label>
+          <template v-if="base.restraint">
+            <label>拘束
+              <select :value="base.bind_kind ?? ''" @change="setBindKind(($event.target as HTMLSelectElement).value)">
+                <option value="">（沒有雙面效應）</option>
+                <option v-for="k in BIND_KINDS" :key="k" :value="k">{{ lewdRules.two_face.kinds[k].name }}</option>
+              </select>
+            </label>
+            <label v-if="base.bind_kind">程度 <select v-model.number="base.bind"><option v-for="n in [1, 2, 3]" :key="n" :value="n">{{ n }}</option></select></label>
+          </template>
+          <Hint text="曝露度 0～3：上身、下身、內衣的曝露名聲用（docs/LEWD_STATS.md 第 3 節）。拘束：束縛用的底材平常是檢定減值，修了慾望流派、上了鎖時戰鬥中反轉成增益（第 7 節）。" />
+        </div>
         <p v-if="builtin" class="small muted">內建底材不能改欄位與材料類型；改名只影響之後新打造或生成的裝備，目錄裡的制式裝備沿用原本的名稱。</p>
       </fieldset>
 

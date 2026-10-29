@@ -87,11 +87,12 @@
     "master_tags": { "villain": "blue", "noble": "rune", "royal": "gold" }
   },
   "master_tool": {
-    "$comment": "主角當奴隸時主人是工具人（計畫 7.2 節）：和主人的親密度 release_affinity 以上可以直接解約、換主人；新主人要認識、親密度 new_master_affinity 以上、在同一座聚落、不是奴隸也沒有敵意。submission_dc_per：順從每這麼多點，逃離與談判解約的 DC +1（親密度夠高直接解約時不看）。",
+    "$comment": "主角當奴隸時主人是工具人（計畫 7.2 節）：和主人的親密度 release_affinity 以上可以直接解約、換主人；新主人要認識、親密度 new_master_affinity 以上、在同一座聚落、不是奴隸也沒有敵意。submission_dc_per：順從每這麼多點，逃離與談判解約的 DC +1（親密度夠高直接解約時不看）。stance_per：主人事件的回應有 stance 時，順從每這麼多點，屈服（submit）的檢定 +1、抵抗（resist）-1。",
     "release_affinity": 60,
     "new_master_affinity": 40,
     "hours": 1,
-    "submission_dc_per": 25
+    "submission_dc_per": 25,
+    "stance_per": 20
   },
   "growth": {
     "adult_scene": { "lewdness": 1 },

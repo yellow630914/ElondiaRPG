@@ -1171,6 +1171,8 @@ export const useGame = defineStore('game', () => {
     buyCurio: (item: string) => run((s) => companions.buyCurio(s, item)),
     chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
     answerMasterEvent: (index: number) => run((s) => slavery.answerMasterEvent(s, index)),
+    // 等待回應的主人事件在內容編輯器被刪掉了：作廢
+    dropMissingMasterEvent: () => run((s) => slavery.dropMissingMasterEvent(s)),
     // 成人向的戰敗事件：設定改成不發生（主角非自願、戰敗事件）時直接離開
     skipDefeatEvent: () => run(defeat.skipDefeatEvent),
     offerSelf: (kind: companions.MarketKind) => run((s) => companions.offerSelf(s, kind)),
