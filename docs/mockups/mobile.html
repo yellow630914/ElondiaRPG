@@ -230,8 +230,9 @@ textarea { width: 100%; min-height: 40px; resize: none; }
 .page .body { flex: 1; padding-block: 12px 24px; }
 /* 有分頁的頁面：所有分頁並排在一條軌道上，左右滑時跟著手指，放開後用緩動停到位置（直的捲動照舊） */
 .page .body.swipeable { touch-action: pan-y; }
-.viewport { overflow: hidden; margin-inline: -2px; padding-inline: 2px; transition: height 0.3s cubic-bezier(0.22, 0.61, 0.36, 1); }
-.track { display: flex; align-items: flex-start; will-change: transform; transition: transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.viewport { overflow: hidden; transition: height 0.3s cubic-bezier(0.22, 0.61, 0.36, 1); }
+/* 分頁之間留一段空白，隔壁頁的邊不會露出來 */
+.track { --gap: 32px; display: flex; gap: var(--gap); align-items: flex-start; will-change: transform; transition: transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1); }
 .pane { flex: 0 0 100%; min-width: 0; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
 .seg { position: relative; }
 .seg button.on { border-bottom-color: transparent; }
@@ -1017,9 +1018,10 @@ textarea { width: 100%; min-height: 40px; resize: none; }
     const t = TABSETS[kind]
     const vp = pg.querySelector('.viewport'), track = pg.querySelector('.track'), seg = pg.querySelector('.seg'), ink = seg.querySelector('.ink')
     const i = t.tabs.findIndex(([k]) => k === t.get())
-    const w = vp.clientWidth || 1
+    // 用每一頁自己的寬度（軌道寬的 100%）來算，才不會一頁一頁累積誤差
+    const w = track.children[0]?.getBoundingClientRect().width || 1
     track.style.transition = vp.style.transition = ink.style.transition = animate ? '' : 'none'
-    track.style.transform = `translateX(${-i * w + offset}px)`
+    track.style.transform = `translateX(calc(${-i} * (100% + var(--gap)) + ${offset}px))`
     // 底線跟著拖動的比例移到隔壁分頁
     const btns = [...seg.querySelectorAll('button')]
     const p = -offset / w
@@ -1048,7 +1050,7 @@ textarea { width: 100%; min-height: 40px; resize: none; }
       let axis = null, dx = 0, last = { x: x0, t: performance.now() }, v = 0
       const t = TABSETS[kind]
       const i = t.tabs.findIndex(([k]) => k === t.get())
-      const w = pg.querySelector('.viewport').clientWidth
+      const w = pg.querySelector('.pane')?.getBoundingClientRect().width || 1
       const move = (m) => {
         const mx = m.clientX - x0, my = m.clientY - y0
         if (!axis) {
