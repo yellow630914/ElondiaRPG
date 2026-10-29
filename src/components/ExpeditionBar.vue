@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatMoney } from '@/engine/money'
-import { currentArea, currentCell, DUNGEON_LAYERS } from '@/engine/grid'
+import { DUNGEON_LAYERS } from '@/engine/grid'
 import { areaLighting, currentLight, isDark, isNight, lightSources } from '@/engine/light'
 import { DEFEAT_LOOT_NAME, defeatLootRule, retreatDc } from '@/engine/expedition'
+import { dungeonFirstLayer } from '@/engine/data'
+import { inPark } from '@/engine/park'
 import { useGame } from '@/stores/game'
 import GameIcon from './ui/GameIcon.vue'
 
 // 地圖下方的狀態列：光線與光源、地下城這趟探索撿到的東西、緊急撤退
 const game = useGame()
 const s = computed(() => game.state!)
-const area = computed(() => currentArea(s.value))
+const area = computed(() => game.area)
 const show = computed(() => area.value.kind !== 'settlement' && area.value.kind !== 'road')
 
 const lighting = computed(() => {
@@ -27,8 +29,10 @@ const spare = computed(() => lightSources(s.value).filter((x) => !x.permanent).r
 const expedition = computed(() => (area.value.kind === 'dungeon' && s.value.expedition?.location === s.value.location ? s.value.expedition : undefined))
 const lootCount = computed(() => expedition.value?.loot.reduce((n, l) => n + l.qty, 0) ?? 0)
 const lootTitle = computed(() => expedition.value?.loot.map((l) => `${l.name}×${l.qty}`).join('、') ?? '')
-const safe = computed(() => currentCell(s.value).kind === 'safe')
-const atEntrance = computed(() => (area.value.layer ?? 0) === 0 && currentCell(s.value).kind === 'exit')
+const safe = computed(() => game.cell.kind === 'safe')
+const atEntrance = computed(() => (area.value.layer ?? 0) === dungeonFirstLayer(area.value.location) && game.cell.kind === 'exit')
+// 園區的魅氣：跨戰鬥保留的慾望
+const parkLust = computed(() => (inPark(s.value) ? s.value.party.map((m) => ({ name: m.name, pct: Math.round((s.value.expedition?.lust?.[m.id] ?? 0) * 100) })) : []))
 const busy = computed(() => !!s.value.combat || game.judging || !!s.value.standoff)
 const night = computed(() => isNight(s.value.time))
 
@@ -55,6 +59,9 @@ function retreat() {
         <GameIcon name="backpack" :size="13" /> 這趟：最深到{{ DUNGEON_LAYERS[expedition.deepest]?.name }}・撿到 {{ lootCount }} 件<template v-if="expedition.money_cc">、{{ formatMoney(expedition.money_cc) }}</template>
       </span>
       <span class="muted" title="可以在設定的「這個存檔的規則」修改">（戰敗時：{{ DEFEAT_LOOT_NAME[defeatLootRule(s)] }}）</span>
+      <span v-if="parkLust.length" class="lust" title="魅氣：在園區裡慾望跨戰鬥保留，每走一格慢慢增加；回到入口廣場就散了">
+        <GameIcon name="heart" :size="13" /> 魅氣 {{ parkLust.map((x) => `${x.name} ${x.pct}%`).join('、') }}
+      </span>
       <button v-if="!atEntrance" class="small" :disabled="busy" @click="retreat"><GameIcon name="door" :size="13" /> {{ safe ? '從安全房撤出' : '緊急撤退' }}</button>
     </div>
   </div>
@@ -66,4 +73,5 @@ function retreat() {
 .ok { color: var(--accent); }
 .exp :deep(.game-icon) { vertical-align: -2px; }
 .warn { color: var(--danger); }
+.lust { color: #e0508f; }
 </style>

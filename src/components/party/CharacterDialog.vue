@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import {
-  abilityQuality, apMaxFor, apRegenFor, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
+  abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
-import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules, tagDef } from '@/engine/data'
+import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules, statusDef, tagDef } from '@/engine/data'
 import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
+import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf } from '@/engine/lewd'
+import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
+import { courseStatus, trainees, trainingBlocked } from '@/engine/ownerTraining'
+import { MOD_NAME } from '@/engine/gear'
+import { gameRule } from '@/engine/gameRules'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import { flash, floatText } from '@/fx/fx'
@@ -60,6 +65,48 @@ const combat = computed<StatItem[]>(() => {
   ]
 })
 
+// 調教：主角自己的奴隸（docs/LEWD_STATS.md 第 9 節）
+const canTrain = computed(() => trainees(s.value).some((x) => x.id === m.value.id))
+const courses = computed(() => (canTrain.value ? courseStatus(m.value) : []))
+const course = ref('serve')
+const courseDesc = computed(() => courses.value.find((c) => c.id === course.value)?.desc ?? '')
+const trainBlock = computed(() => (canTrain.value ? trainingBlocked(s.value, m.value, course.value) : '不能調教'))
+
+// 慾望指標：有效值（括號是裝備的加減）、分段；曝露名聲看目前的地區
+const lewdItems = computed<StatItem[]>(() => {
+  const x = m.value
+  const v = lewdOf(x)
+  const gear = gearLewd(x)
+  const items: StatItem[] = LEWD_STATS.map((k) => ({
+    label: lewdName(k),
+    value: v[k],
+    note: `${bandName(k, v[k], k === 'submission' && forcedSubmission(x))}${gear[k] ? `（裝備 ${signed(gear[k])}）` : ''}`,
+  }))
+  const region = locationById(s.value.location).region
+  const exp = exposureAt(s.value, x.id, region)
+  items.push({ label: lewdName('exposure'), value: exp, note: `${bandName('exposure', exp)}・身上的曝露度 ${exposureLevel(x)}` })
+  // 流派與雙面效應（docs/LEWD_STATS.md 第 6、7 節）
+  const schools = schoolsOf(x)
+  items.push({ label: '流派', value: schools.length ? schools.map(schoolName).join('、') : '沒有', note: schools.includes('servitude') ? (hasMaster(x) ? '有主人：隸從派全效' : '沒有主人：隸從派一半效果') : '' })
+  const binds = bindsOf(x)
+  if (binds.length) {
+    const tf = twoFaceCombat(x)
+    items.push({
+      label: '拘束',
+      value: binds.map((b) => `${b.name}（${bindLabel(b.kind, b.bind)}${b.lock ? `・${lockName(b.lock)}` : ''}）`).join('、'),
+      note: tf.active.length ? `戰鬥中：${twoFaceText(tf)}` : schools.length ? '鎖上之後戰鬥中才有增益' : '沒修流派：只有平常的檢定減值',
+    })
+  }
+  return items
+})
+
+function twoFaceText(tf: ReturnType<typeof twoFaceCombat>): string {
+  const parts = Object.entries(tf.mods).filter(([, v]) => v).map(([k, v]) => `${MOD_NAME[k] ?? k} ${signed(v ?? 0)}`)
+  if (tf.initiative) parts.unshift(`先攻 ${signed(tf.initiative)}`)
+  if (tf.immune.length) parts.push(`免疫${tf.immune.map((id) => statusDef(id).name).join('、')}`)
+  return parts.join('・')
+}
+
 // ---- 主角設定 ----
 // ── 特效：加屬性點時數字彈一下；選中的能力卡發光、在能力清單裡翻面出現；新學會的特質卡翻過來
 const popped = ref('')
@@ -71,6 +118,10 @@ function spend(attr: string) {
   requestAnimationFrame(() => (popped.value = attr))
   popTimer = setTimeout(() => (popped.value = ''), 500)
 }
+// 技能攜帶上限（存檔規則）：攜帶中的技能與法術；戲法不算
+const loadoutCap = computed(() => gameRule(s.value, 'skillLoadout'))
+const carried = computed(() => new Set(carriedAbilities(m.value, loadoutCap.value)))
+const carriedCount = computed(() => m.value.abilities.filter((id) => countsForLoadout(id) && carried.value.has(id)).length)
 const learned = ref('')
 function pick(e: MouseEvent, id: string) {
   const el = e.currentTarget as HTMLElement
@@ -147,6 +198,8 @@ function saveTags() {
       <div>
         <p v-if="isNoncombatant(m)" class="small muted">無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>
         <StatGrid v-else :items="combat" />
+        <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。流派從受訓學（娼館、神殿、裁縫店……）；拘束具平常是檢定減值，修了流派又上了鎖，戰鬥中反轉成增益。" /></h4>
+        <StatGrid :items="lewdItems" />
       </div>
     </section>
 
@@ -194,6 +247,16 @@ function saveTags() {
             <span class="tag">服從懲罰 -{{ contractFor(m)!.obedience }}</span>
           </div>
           <button v-if="contractOf(m)?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
+          <div v-if="canTrain" class="training">
+            <h4><GameIcon name="lock" :size="14" /> 調教 <Hint text="成人向（docs/LEWD_STATS.md 第 9 節）。選一個課程，抽一件調教事件，由你選做法、擲檢定；奴隸越順從越容易，親密度很低時變難。成功時指標成長，同一課程成功幾次保證學會一個技能；親密度很低時失敗會留下怨恨。" /></h4>
+            <div class="row">
+              <select v-model="course">
+                <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}（{{ c.progress }}/{{ c.need }}）{{ c.open.length ? `・還能學：${c.open.join('、')}` : '' }}</option>
+              </select>
+              <button class="small" :disabled="!!trainBlock" :title="trainBlock ?? ''" @click="game.startTraining(m.id, course); emit('close')">開始調教</button>
+            </div>
+            <p v-if="courseDesc" class="small muted">{{ courseDesc }}</p>
+          </div>
         </div>
         <template v-if="!editingProfile">
           <dl class="kv">
@@ -253,11 +316,23 @@ function saveTags() {
           </button>
         </div>
       </div>
+      <p v-if="loadoutCap > 0 && m.abilities.some(countsForLoadout)" class="loadout small">
+        攜帶 <b :class="{ full: carriedCount >= loadoutCap }">{{ carriedCount }} / {{ loadoutCap }}</b>
+        <Hint text="戰鬥中只能用攜帶的技能與法術（戲法不算，一直都帶著）；沒帶的留在技能庫，戰鬥以外隨時可以換。上限在設定的「這個存檔的規則」調整。" />
+      </p>
       <div v-for="g in groupedAbilities(m)" :key="g.type" class="group">
         <h4>{{ TYPE_NAME[g.type] }}</h4>
         <div class="abilities">
-          <article v-for="a in g.items" :key="a.id" class="ability" :class="[`q-${abilityQuality(a)}`, { flip: learned === a.id }]">
-            <header><ContentIcon kind="ability" :def="a" :size="20" /><b>{{ a.name }}</b><span class="tag">{{ QUALITY_NAME[abilityQuality(a)] }}</span></header>
+          <article v-for="a in g.items" :key="a.id" class="ability" :class="[`q-${abilityQuality(a)}`, { flip: learned === a.id, benched: !carried.has(a.id) }]">
+            <header>
+              <ContentIcon kind="ability" :def="a" :size="20" /><b>{{ a.name }}</b><span class="tag">{{ QUALITY_NAME[abilityQuality(a)] }}</span>
+              <button
+                v-if="loadoutCap > 0 && countsForLoadout(a.id)" class="carry small" :class="carried.has(a.id) ? 'ghost' : 'sec'"
+                :disabled="inCombat || (!carried.has(a.id) && carriedCount >= loadoutCap)"
+                :title="inCombat ? '戰鬥中不能換' : carried.has(a.id) ? '放回技能庫' : carriedCount >= loadoutCap ? '已經帶滿，先放回一個' : '帶上'"
+                @click="game.setAbilityCarried(m.id, a.id, !carried.has(a.id))"
+              >{{ carried.has(a.id) ? '攜帶中' : '技能庫' }}</button>
+            </header>
             <div class="meta small muted">{{ abilityMeta(a) }}</div>
             <p class="small">{{ a.desc }}</p>
           </article>
@@ -297,7 +372,12 @@ function saveTags() {
 .tag.bad { color: var(--danger); border-color: var(--danger); }
 .ability.q-uncommon { border-left-color: #2f7a1e; } .ability.q-rare { border-left-color: #1f5a9a; }
 .ability.q-epic { border-left-color: #6a3a9a; } .ability.q-legendary, .ability.q-mythic { border-left-color: #a86a10; }
+.lewd-title { margin: 14px 0 4px; color: var(--accent-2); letter-spacing: 0.1em; display: flex; align-items: center; gap: 4px; }
 .group h4 { margin: 12px 0 6px; color: var(--accent-2); letter-spacing: 0.15em; }
+.loadout { margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }
+.loadout .full { color: #a8452c; }
+.ability.benched { opacity: 0.6; }
+.ability .carry { margin-left: auto; padding: 1px 8px; }
 .choose { padding: 10px; border: 1px dashed var(--accent); border-radius: 3px; margin-bottom: 8px; background: #fff3cf66; }
 .choose .head { justify-content: space-between; }
 .options { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; margin-top: 8px; }

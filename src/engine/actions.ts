@@ -9,6 +9,7 @@
 //    AI 關閉時依規則：預設屬性、參考 DC 與骰值決定成功程度。
 // 說明見 docs/ACTIONS.md。
 
+import { applyUnbind } from './restraints'
 import { applyExplore, withLandmark } from './landmarks'
 import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
@@ -19,7 +20,7 @@ import {
   applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, inviteDc, setupFor, validateInvite, type MarketKind,
 } from './companions'
 import {
-  abilities, actionRules, ATTR_IDS, attrName, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind,
+  abilities, actionRules, ATTR_IDS, attrName, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
@@ -28,6 +29,7 @@ import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, apply
 import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
+import { bandName, currentRegion, exposureAt, LEWD_KEYS, lewdOf } from './lewd'
 import { applyCraft, applyMake, craftPart, parseCraftTarget } from './craft'
 import { applyProduce } from './recipes'
 import { applyInvent } from './invention'
@@ -116,6 +118,10 @@ export interface Judgment {
   narrative?: string
   /** AI 認為這次的經過包含親密場景：場景是什麼 */
   adult_scene?: string
+  /** AI 判為日常小事（只有 actions.json 標了 trivial 的行動）：結果至少是成功 */
+  trivial?: boolean
+  /** AI 依經過填的花費時間（小時，只有標了 hours_range 的行動），已夾在範圍內 */
+  hours?: number
   effects: RewardEffect[]
   relationship_updates: RelationshipUpdate[]
   /** 被程式截掉的數值（AI 提議的超過上限）：交給寫手，敘事照實際結算的數字寫 */
@@ -160,7 +166,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const pc = (setup.actor && memberOrResident(state, currentArea(state), setup.actor)) || pcOf(state)
   // 情境修正：這次行動的特殊情況，加上非戰鬥狀態與特質（對象的標籤也算，例如「對貴族 +1」）
   const vsTags = (input.target && npcRecord(state, input.target)?.tags) || undefined
-  const situational = [...setup.situational, ...checkModifiers(pc, { context: 'action', kind: input.kind, attr: setup.attr ?? kind.attr, ...(vsTags ? { vsTags } : {}) })].filter((x) => x.value !== 0)
+  const situational = [...setup.situational, ...checkModifiers(pc, { context: 'action', kind: input.kind, attr: setup.attr ?? kind.attr, ...(vsTags ? { vsTags } : {}) }), ...lewdModifiers(state, pc, input.kind, vsTags)].filter((x) => x.value !== 0)
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
   let used: AbilityUse | undefined
   let user: Character | undefined
@@ -215,12 +221,31 @@ function itemNameOf(state: GameState, name: string): string {
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : NaN)
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 
+/**
+ * 慾望指標的情境修正（docs/LEWD_STATS.md）：淫亂高的人獻媚、誘惑比較容易（淫蕩 +1、淫亂 +2）；
+ * 曝露名聲高（在這一帶遠近馳名以上）時，對貴族、皇族、神官唬騙比較難（-1、人盡皆知 -2）
+ */
+function lewdModifiers(state: GameState, c: Character, kind: string, vsTags?: string[]): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = []
+  if (kind === 'flatter' || kind === 'seduce') {
+    const v = lewdOf(c).lewdness
+    const bonus = v >= 80 ? 2 : v >= 60 ? 1 : 0
+    if (bonus) out.push({ label: `淫亂（${bandName('lewdness', v)}）`, value: bonus })
+  }
+  if (kind === 'bluff' && vsTags?.some((t) => ['noble', 'royal', 'priest', 'bishop'].includes(t))) {
+    const e = exposureAt(state, c.id, currentRegion(state))
+    const pen = e >= 80 ? -2 : e >= 60 ? -1 : 0
+    if (pen) out.push({ label: `曝露名聲（${bandName('exposure', e)}）`, value: pen })
+  }
+  return out
+}
+
 /** AI 回傳的效果種類（join 是入隊：通過檢查後變成 companion 效果） */
 type JudgedEffect = RewardEffect['type'] | 'join'
 const EFFECT_OF: Partial<Record<JudgedEffect, EffectKind>> = {
   join: 'join', affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
   money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp', mark: 'mark',
-  free: 'release', change_master: 'change_master', gear: 'gear',
+  free: 'release', change_master: 'change_master', gear: 'gear', lewd: 'lewd',
 }
 
 /**
@@ -235,11 +260,18 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   const attr = (ATTR_IDS as string[]).includes(String(r.attr)) ? (r.attr as AttrId) : p.attr
   const dcRaw = num(r.dc)
   const dc = Number.isNaN(dcRaw) ? p.base_dc : clamp(Math.round(dcRaw), p.base_dc - adj, p.base_dc + adj)
+  const kindDef = actionRules.kinds[p.kind]
+  // 日常小事：結果至少是成功（骰值只決定過程順不順），效果的門檻也照成功看
+  const trivial = !!kindDef.trivial && r.difficulty === 'trivial'
   // AI 沒寫（或寫錯）成功程度時，用骰值對 DC 算出的參考結果（和結算時一樣），效果的門檻也照這個看
-  const degree = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
+  const judged = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
     ? (r.degree as Degree)
     : computeDegree(p.natural, p.natural + p.modifiers[attr] + situationalTotal(p), dc)
-  const allowed = new Set(actionRules.kinds[p.kind].effects)
+  const degree: Degree = trivial && judged !== 'critical' ? 'success' : judged
+  const hoursRaw = num(r.hours)
+  const range = kindDef.hours_range
+  const hours = range && !Number.isNaN(hoursRaw) ? Math.round(clamp(hoursRaw, range[0], range[1]) * 4) / 4 : undefined
+  const allowed = new Set(kindDef.effects)
   const pc = pcOf(state)
   const known = (id: string) => !!state.relationships?.[id]
   const effects: RewardEffect[] = []
@@ -253,6 +285,9 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   // 同一樣物品這次已經給出去、拿到的數量（AI 可能分兩筆寫同一樣東西）
   const given = new Map<string, number>()
   const got = new Map<string, number>()
+  // 這次有付錢（money 為負）：當成買來的東西，同一種可以拿到 item_qty_bought 個（白拿的照 item_qty）
+  const paying = (Array.isArray(r.effects) ? r.effects : []).some((e) => !!e && typeof e === 'object' && (e as Record<string, unknown>).type === 'money' && num((e as Record<string, unknown>).amount) < 0)
+  const itemQty = paying ? Math.max(caps.item_qty, caps.item_qty_bought ?? caps.item_qty) : caps.item_qty
   for (const e of Array.isArray(r.effects) ? r.effects : []) {
     if (!e || typeof e !== 'object') continue
     const x = e as Record<string, unknown>
@@ -325,7 +360,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         }
         let n: number
         if (q > 0) {
-          n = Math.min(q, Math.max(0, caps.item_qty - (got.get(name) ?? 0)))
+          n = Math.min(q, Math.max(0, itemQty - (got.get(name) ?? 0)))
           if (n < q) adjusted.push(`${name}只得到 ${n} 個（提議的 ${q} 個超過上限）`)
         } else {
           const have = (state.inventory.find((i) => i.name === name)?.qty ?? 0) - (given.get(name) ?? 0)
@@ -348,6 +383,18 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         if (!who || Number.isNaN(amount) || effects.some((y) => y.type === 'hp' && y.target === who.id)) break
         const a = clamp(Math.round(amount), -Math.ceil(who.maxHp * caps.hp_loss_ratio), Math.ceil(who.maxHp * caps.hp_gain_ratio))
         if (a) effects.push({ type: 'hp', target: who.id, amount: a })
+        break
+      }
+      case 'lewd': {
+        // 慾望指標：每人每項一次，±caps.lewd；只在可能進入親密場景的行動
+        const target = String(x.target ?? 'pc')
+        const who = target === 'pc' ? pc : state.party.find((m) => m.id === target)
+        const stat = String(x.stat ?? '') as LewdKey
+        const delta = num(x.delta)
+        if (!p.adultScene || !who || !LEWD_KEYS.includes(stat) || Number.isNaN(delta)) break
+        if (effects.some((y) => y.type === 'lewd' && (y.target ?? pc.id) === who.id && y.stat === stat)) break
+        const d = clamp(Math.round(delta), -caps.lewd, caps.lewd)
+        if (d) effects.push({ type: 'lewd', stat, delta: d, target: who.id })
         break
       }
       case 'ability': {
@@ -446,6 +493,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
     ...(clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
+    ...(trivial ? { trivial } : {}),
+    ...(hours !== undefined ? { hours } : {}),
     ...(p.kind === 'invent' && r.invention && typeof r.invention === 'object' ? { invention: r.invention as Record<string, unknown> } : {}),
     ...(p.kind === 'perk_pitch' && r.perk && typeof r.perk === 'object' ? { perk: r.perk as Record<string, unknown> } : {}),
     effects,
@@ -510,7 +559,8 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
     party: state.party.map((m) => snapshot(m, undefined, pc)),
     outcome: { result: 'neutral' },
     changes: {},
-    narration: { pov: 'second_person', length: 'short', ...(p.text ? { player_intent: p.text } : {}) },
+    // 自由行動是玩家自己描述的事，預設寫中等篇幅
+    narration: { pov: 'second_person', length: p.kind === 'free' ? 'medium' : 'short', ...(p.text ? { player_intent: p.text } : {}) },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
 }
@@ -529,10 +579,12 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const degree = judgment?.degree ?? reference
   delete state.pendingAction
 
-  const report = actionReport(state, p, p.hours ?? kind.hours)
+  const report = actionReport(state, p, judgment?.hours ?? p.hours ?? kind.hours)
   const check: CheckInfo = {
     action: kind.name, attr, base_dc: p.base_dc, dc, natural: p.natural, modifier, ...(p.situational.length ? { situational: p.situational } : {}), total, degree,
-    ...(degree !== reference ? { reference_degree: reference } : {}),
+    ...(judgment?.trivial ? { trivial: true } : {}),
+    // 日常小事的骰值只決定過程順不順，不算「和骰值不同」
+    ...(degree !== reference && !judgment?.trivial ? { reference_degree: reference } : {}),
     source: judgment ? 'ai' : 'rules',
     ...(judgment?.rationale ? { rationale: judgment.rationale } : {}),
     ...(judgment?.twist ? { twist: judgment.twist } : {}),
@@ -593,7 +645,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   report.outcome = {
     result: success ? 'success' : degree === 'partial' ? 'neutral' : 'failure',
     summary: [lead, mechanical, judgment?.summary ?? '', ...notes].filter(Boolean).join(''),
-    tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.twist ? ['出乎預料'] : [])],
+    tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.trivial ? ['日常小事'] : []), ...(judgment?.twist ? ['出乎預料'] : [])],
   }
   const committed = commitReport(state, report)
   // 特殊任務的判定：解鎖或結束的任務點，更新地圖上的 ⭐
@@ -633,6 +685,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'chat':
     case 'gift':
     case 'flatter':
+    case 'seduce':
     case 'steal':
     case 'attack': return applyInteraction(state, report, p.kind, p.target!, degree, p.item)
     case 'bluff':
@@ -644,6 +697,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'master_return': return applyReturn(state, report, degree)
     case 'seek_master': return applySeekMaster(state, report, p.target!, degree)
     case 'unmark': return applyUnmark(state, report, p.target!, degree)
+    case 'unbind': return applyUnbind(state, report, p.target!, degree)
     case 'work': return applyWork(state, report, p.target!, degree)
     case 'patron': return applyPatron(state, report, p.target, degree)
     case 'craft': return applyCraft(state, report, p.target!, degree, crafted)

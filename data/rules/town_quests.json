@@ -91,6 +91,8 @@
     { "id": "lm_sparring", "landmark": ["military"], "kind": "patrol", "area": "town", "title": "在{landmark}擔任陪練對手", "scene": "{town}・{landmark}的練武場",
       "hours": 3, "dc": 12, "reward_cc": [35, 50], "rewards": [{ "type": "ability", "target": "pc", "chance": 0.2 }] },
     { "id": "lm_herb_survey", "landmark": ["nature"], "kind": "gather", "area": "town", "title": "在{landmark}一帶採集藥草", "scene": "{town}・{landmark}",
-      "hours": 3, "dc": 10, "item": "藥草", "qty": 2, "reward_cc": [30, 45] }
+      "hours": 3, "dc": 10, "item": "藥草", "qty": 2, "reward_cc": [30, 45] },
+    {"id": "dancer_standin", "spot": "tavern", "kind": "patrol", "area": "town", "title": "替{town}酒館的舞孃代班一晚", "scene": "{town}酒館的小舞台，台下的酒客吹著口哨", "hours": 5, "dc": 12, "reward_cc": [90, 130], "requires": {"stats": {"lewdness": {"min": 40}}}, "tags": ["adult"], "rewards": [{"type": "lewd", "stat": "exposure", "delta": 2}]},
+    {"id": "noble_banquet_act", "spot": "inn", "kind": "patrol", "area": "town", "title": "{town}貴族宴會的餘興表演", "scene": "{town}旅店的宴會廳，包場的貴族們等著看你", "hours": 4, "dc": 13, "reward_cc": [160, 220], "requires": {"stats": {"exposure": {"min": 60}}}, "tags": ["adult"], "rewards": [{"type": "lewd", "stat": "exposure", "delta": 3}, {"type": "lewd", "stat": "lewdness", "delta": 1}]}
   ]
 }

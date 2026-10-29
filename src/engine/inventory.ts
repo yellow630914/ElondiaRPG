@@ -2,10 +2,11 @@
 
 import { PARASITE_LOCK } from './parasites'
 import { hasPerk, offerPerks } from './perks'
-import { recalc, snapshot } from './character'
+import { abilityQuality, carryLearned, learnAbility, nextBookAbility, recalc, snapshot } from './character'
+import { gameRule } from './gameRules'
 import {
-  attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates,
-  type ItemIntel, type ItemUse,
+  abilities, attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates,
+  type ItemIntel, type ItemUse, type LockGrade,
 } from './data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
@@ -16,6 +17,7 @@ import { addHours, commitReport, newReportId, withRng } from './state'
 import { startStory } from './story'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, Report } from './types'
 import { contractOf } from './tattoos'
+import { openWithKey } from './restraints'
 
 function itemReport(state: GameState, hours: number): Report {
   const start = { ...state.time }
@@ -105,7 +107,7 @@ export function readIntelItem(state: GameState, name: string): Report {
 
 export function canUse(name: string): boolean {
   const use = itemDef(name)?.use
-  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length)) || !!toolDef(itemDef(name)?.tool)?.condition
+  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length || !!use.abilities?.length)) || !!toolDef(itemDef(name)?.tool)?.condition
 }
 
 /** 消耗品效果的一行說明 */
@@ -114,6 +116,7 @@ export function useSummary(use?: ItemUse): string {
   const parts: string[] = []
   if (use.condition) parts.push(`「${conditionName(use.condition)}」：${companionRules.conditions[use.condition]?.desc ?? ''}`)
   if (use.perks?.length) parts.push(`讀了有機會學會特質：${use.perks.map((id) => perkDef(id)?.name ?? id).join('、')}`)
+  if (use.abilities?.length) parts.push(`每讀一次學會下一個能力：${use.abilities.map((id) => `${abilities[id]?.name ?? id}（${abilities[id]?.unlock ?? 1} 級）`).join('、')}`)
   if (use.revive) parts.push(`救起倒下的隊友（${Math.round(use.revive * 100)}% 生命）`)
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
@@ -158,6 +161,15 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
     offerPerks(m, `讀了「${name}」`, options)
     report.time.end = addHours(report.time.start, 4)
     text = `讀完之後，有機會學會：${options.map((id) => perkDef(id)?.name ?? id).join('、')}`
+  } else if (def.use.abilities?.length) {
+    // 技能書：學會下一個還沒學、等級也夠的能力
+    const next = nextBookAbility(m, def.use.abilities)
+    if (!next.ability) throw new Error(next.reason)
+    const a = learnAbility(m, next.ability.id)
+    const carried = carryLearned(m, a.id, gameRule(state, 'skillLoadout'))
+    report.time.end = addHours(report.time.start, 4)
+    report.changes.skills_gained = [{ actor: m.id, skill: a.name, quality: abilityQuality(a), source: 'study' }]
+    text = `學會了【${a.name}】${carried ? '' : '（攜帶的技能已滿，先放進技能庫）'}`
   } else if (def.use.condition) {
     const got = gainCondition(m, def.use.condition, report)
     if (!got) throw new Error(`${m.name}${companionRules.conditions[def.use.condition]?.group === 'meal' ? '已經吃得比這更好了' : '已經喝不下了'}`)
@@ -273,7 +285,70 @@ export function unequipItem(state: GameState, memberId: string, slot: GearSlot):
   syncGear(m, classDef(m.class).weapon)
   recalc(m)
   const report = itemReport(state, 0.1)
-  report.changes.items_gained = [{ name: g.name, qty: 1, owner: 'pc' }]
-  report.outcome.summary = `${m.name}卸下了${g.name}。`
+  // 自己裝的鎖：打開，鎖放回行囊
+  const lock = g.lock && !g.locked ? lockItemName(g.lock) : undefined
+  report.changes.items_gained = [{ name: g.name, qty: 1, owner: 'pc' }, ...(lock ? [{ name: lock, qty: 1, owner: 'pc' }] : [])]
+  report.outcome.summary = `${m.name}${lock ? `打開${lock}，` : ''}卸下了${g.name}。`
+  return commitReport(state, report)
+}
+
+// ---- 鎖（雙面效應，docs/LEWD_STATS.md 第 7 節） ----
+
+/** 這個等級的鎖是哪一件物品（打開時放回行囊） */
+export function lockItemName(grade: LockGrade): string | undefined {
+  return itemRules.items.find((i) => i.lock === grade)?.name
+}
+
+/** 行囊裡的鎖 */
+export function lockItems(state: GameState): { name: string; grade: LockGrade }[] {
+  return state.inventory.filter((i) => i.qty > 0 && itemDef(i.name)?.lock).map((i) => ({ name: i.name, grade: itemDef(i.name)!.lock! }))
+}
+
+/** 這一格的裝備能不能上鎖：拘束具（底材有 bind）、還沒上鎖、不是主人強制戴上的 */
+export function lockable(g: EquippedGear | undefined): boolean {
+  return !!g && !!gearRules.bases[g.spec.base]?.bind && !g.lock && !g.locked
+}
+
+/** 用行囊裡的鎖替身上的拘束具上鎖（自己有鑰匙，隨時可以打開） */
+export function lockGear(state: GameState, memberId: string, slot: GearSlot, lockName: string): Report {
+  take(state, lockName)
+  const grade = itemDef(lockName)?.lock
+  if (!grade) throw new Error(`${lockName}不是鎖`)
+  const m = member(state, memberId)
+  const g = m.gear?.[slot]
+  if (!g || !gearRules.bases[g.spec.base]?.bind) throw new Error('這一格沒有可以上鎖的拘束具')
+  if (g.locked) throw new Error(`${g.name}是主人鎖上的`)
+  if (g.lock) throw new Error(`${g.name}已經上鎖了`)
+  g.lock = grade
+  const report = itemReport(state, 0.1)
+  report.changes.items_lost = [{ name: lockName, qty: 1 }]
+  report.outcome.summary = `${m.name}用${lockName}鎖上了${g.name}，鑰匙收在身上。`
+  return commitReport(state, report)
+}
+
+/** 用鑰匙打開別人鎖上的拘束具（docs/LEWD_STATS.md 第 16 節）：鑰匙用掉，鎖歸自己 */
+export function useKey(state: GameState, memberId: string, slot: GearSlot, key: string): Report {
+  take(state, key)
+  const m = member(state, memberId)
+  const { text, lock } = openWithKey(m, slot, key)
+  const report = itemReport(state, 0.1)
+  report.changes.items_lost = [{ name: key, qty: 1 }]
+  if (lock) report.changes.items_gained = [{ name: lock, qty: 1, owner: 'pc' }]
+  report.outcome.summary = text
+  return commitReport(state, report)
+}
+
+/** 打開自己裝的鎖，鎖放回行囊 */
+export function unlockGear(state: GameState, memberId: string, slot: GearSlot): Report {
+  if (state.combat) throw new Error('戰鬥中不能這麼做')
+  const m = member(state, memberId)
+  const g = m.gear?.[slot]
+  if (!g?.lock) throw new Error('這一格沒有上鎖')
+  if (g.locked) throw new Error(`${g.name}是主人鎖上的，鑰匙不在你身上`)
+  const name = lockItemName(g.lock)
+  delete g.lock
+  const report = itemReport(state, 0.1)
+  if (name) report.changes.items_gained = [{ name, qty: 1, owner: 'pc' }]
+  report.outcome.summary = `${m.name}打開了${g.name}上的${name ?? '鎖'}。`
   return commitReport(state, report)
 }

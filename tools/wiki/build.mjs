@@ -66,6 +66,8 @@ export const GROUPS = [
     { page: '特殊任務與劇情旗標', src: 'docs/STORY_QUESTS.md', desc: '特殊任務的結構、條件、旗標', sub: '劇情與事件' },
     { page: '事件視窗', src: 'docs/EVENTS.md', desc: '要玩家回應的事件', sub: '劇情與事件' },
     { page: '地下城的色情事件', src: 'docs/ADULT_EVENTS.md', desc: '成人向：地下城色情事件與寄生物', sub: '劇情與事件' },
+    { page: '慾望指標', src: 'docs/LEWD_STATS.md', desc: '成人向：慾望指標、慾望流派、雙面效應與鎖', sub: '人物與關係' },
+    { page: '魅魔的遊樂園', src: 'docs/LUST_PARK.md', desc: '成人向：主題地下城「緋夢樂園」', sub: '劇情與事件' },
     { page: '提示詞結構', src: 'docs/PROMPTS.md', desc: 'AI 服務、AI 開關、提示詞結構、快取、世界書注入', sub: 'AI 與呈現' },
     { page: '角色形象插圖', src: 'docs/PORTRAITS.md', desc: '形象圖的生成（OpenAI、NovelAI、ComfyUI）與上傳', sub: 'AI 與呈現' },
     { page: '介面語言', src: 'docs/I18N.md', desc: '繁體／簡體中文的介面與提示詞', sub: 'AI 與呈現' },
@@ -108,6 +110,7 @@ export const GROUPS = [
     { page: '內建內容的產生腳本', src: 'worldgen/scripts/elondia/README.md', desc: '艾隆迪亞內建內容的產生腳本與執行順序' },
     { page: '世界生成計畫', src: 'worldgen/PLAN.md', desc: 'worldgen 的工作計畫' },
     { page: '像素素材管線', src: 'tools/pixel/README.md', desc: '像素圖示與地圖格的素材管線' },
+    { page: '背景圖的生圖腳本', src: 'tools/backgrounds/README.md', desc: '背景圖的提示詞與 ComfyUI、NovelAI、ChatGPT 生圖腳本' },
     { page: '模組化像素立繪規格', src: 'docs/comfy/portrait-spec.md', desc: '用 ComfyUI 產生立繪素材的規格' },
   ] },
   { name: '計畫與追蹤', pages: [
@@ -125,8 +128,8 @@ export const GROUPS = [
   ] },
 ]
 
-/** 不放上 wiki 的文件：素材資料夾的說明（只對改程式的人有用）、玩家提供的第三方原文素材 */
-export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/ideas/xianxia-adult-lorebook.md']
+/** 不放上 wiki 的文件：素材資料夾的說明（只對改程式的人有用）、玩家提供的第三方原文素材、以它為素材的成人向計畫 */
+export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/ideas/xianxia-adult-lorebook.md', 'docs/plan/LUST_COMBAT_PLAN.md', 'tools/backgrounds/park_prompts.md']
 
 const srcList = (p) => (Array.isArray(p.src) ? p.src : [p.src])
 const fileOf = (src) => src.split('#')[0]

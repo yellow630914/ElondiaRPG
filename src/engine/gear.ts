@@ -7,10 +7,10 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, weaponDef, mulResist, type AffinityMap, type AttrId, type Mods } from './data'
+import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type BindKind, type Mods } from './data'
 import { describeEffects } from './perks'
-import type { Rng } from './rng'
-import type { Character, EquippedGear, GameState, GearSlot, GearSpec } from './types'
+import { Rng } from './rng'
+import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
 
 type Scale = 'full' | 'half' | 'up' | 'third' | 'third_up' | 'res'
 export type MaterialKind = 'metal' | 'leather' | 'cloth' | 'wood' | 'jewel'
@@ -52,10 +52,32 @@ export interface BaseDef {
   outfit?: OutfitKind
   /** 成人向的底材：內容編輯器的篩選用 */
   adult?: boolean
+  /** 曝露度 0～3（慾望指標的曝露名聲用）；沒寫時依服裝種類（lewd.json 的 gear.outfit） */
+  exposure?: number
+  /** 雙面效應（lewd.json 的 two_face）：拘束的程度 1～3 與種類；平常是檢定減值，修了流派、鎖上時戰鬥中反轉成增益 */
+  bind?: number
+  bind_kind?: BindKind
 }
 
 export type OutfitKind = 'regular' | 'anime' | 'adult'
 export const OUTFIT_KINDS: Record<OutfitKind, string> = { regular: '常規服裝', anime: '二次元服裝', adult: '成人向服裝' }
+
+const LEWD_STAT_IDS: LewdStat[] = ['lewdness', 'sensitivity', 'endurance', 'submission']
+
+/** 一件裝備的加值：底材的預設（成人向服裝、束縛用的底材）加上物品寫的，每項 ±item_cap */
+export function gearLewdOf(spec: GearSpec): Partial<Record<LewdStat, number>> {
+  const base = gearRules.bases[spec.base]
+  const out: Partial<Record<LewdStat, number>> = {}
+  const add = (b?: Partial<Record<LewdStat, number>>) => {
+    for (const k of LEWD_STAT_IDS) if (b?.[k]) out[k] = (out[k] ?? 0) + b[k]!
+  }
+  if (base?.outfit) add(lewdRules.gear.outfit[base.outfit]?.lewd)
+  if (base?.restraint) add(lewdRules.gear.restraint.lewd)
+  add(spec.lewd)
+  const cap = lewdRules.gear.item_cap
+  for (const k of LEWD_STAT_IDS) if (out[k] !== undefined) out[k] = Math.max(-cap, Math.min(cap, out[k]!))
+  return out
+}
 
 /** 這個底材存在（自訂內容可能刪掉了） */
 export function baseShown(id: string): boolean {
@@ -127,8 +149,18 @@ export function baseSlotName(slot: BaseSlot): string {
   return gearRules.slots[(group?.[0] ?? slot) as GearSlot] ?? slot
 }
 
-/** 這種底材能不能放進這個欄位 */
-export function baseFits(baseSlot: BaseSlot, slot: GearSlot): boolean {
+/** 額外飾品欄（docs/ITEMS.md 第 2 節）：首飾、戒指、穿孔飾品、腿部飾品，以及任何部位的拘束具都能放 */
+export const EXTRA_SLOT: GearSlot = 'extra_1'
+const EXTRA_BASE_SLOTS: BaseSlot[] = ['accessory', 'ring', 'piercing', 'leg_accessory']
+
+/** 這種底材能不能放進額外飾品欄 */
+export function fitsExtra(base: Pick<BaseDef, 'slot' | 'restraint' | 'bind'> | undefined): boolean {
+  return !!base && (EXTRA_BASE_SLOTS.includes(base.slot) || !!base.restraint || !!base.bind)
+}
+
+/** 這種底材能不能放進這個欄位（額外飾品欄要傳底材，才看得出是不是拘束具） */
+export function baseFits(baseSlot: BaseSlot, slot: GearSlot, base?: Pick<BaseDef, 'slot' | 'restraint' | 'bind'>): boolean {
+  if (slot === EXTRA_SLOT) return fitsExtra(base ?? { slot: baseSlot })
   return baseSlot === slot || !!gearRules.slot_groups[baseSlot]?.includes(slot)
 }
 
@@ -263,7 +295,9 @@ export function gearSpecOf(state: Pick<GameState, 'customItems'> | undefined, na
 export function slotsFor(spec: GearSpec): GearSlot[] {
   if (!gearKnown(spec)) return []
   const slot = gearStats(spec).slot
-  return gearRules.slot_groups[slot] ?? [slot as GearSlot]
+  const own = gearRules.slot_groups[slot] ?? [slot as GearSlot]
+  // 原本的部位排前面：原本的部位有空時先放那裡，都滿了才放額外飾品欄
+  return fitsExtra(gearRules.bases[spec.base]) ? [...own, EXTRA_SLOT] : own
 }
 
 // ---- 角色身上的裝備 ----
@@ -431,7 +465,7 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
       const custom = fromClass.length
         ? [...customGear.bases].filter((id) => {
           const b = gearRules.bases[id]
-          return !!b && !b.restraint && baseFits(b.slot, slot) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
+          return !!b && !b.restraint && baseFits(b.slot, slot, b) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
         })
         : []
       // 上身另外可以選服裝（不能比職業的護甲類型重：比基尼鎧甲是金屬、皮革緊身衣是皮革）
@@ -444,7 +478,7 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
     }
     // 頭、腿等護具：不能比職業的護甲類型重（布 < 皮革 < 金屬）；飾品不限
     const bases = Object.entries(gearRules.bases)
-      .filter(([id, b]) => !b.restraint && baseShown(id) && baseFits(b.slot, slot) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
+      .filter(([id, b]) => !b.restraint && baseShown(id) && baseFits(b.slot, slot, b) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
       .map(([id]) => id)
     if (bases.length) out.push({ slot, template: false, bases })
   }
@@ -469,7 +503,7 @@ export const SLOT_CATEGORY: Record<GearSlot, 'weapon' | 'armor' | 'accessory'> =
   main_hand: 'weapon', off_hand: 'weapon',
   head: 'armor', body: 'armor', legs: 'armor', wrists: 'armor', feet: 'armor', belt: 'armor',
   accessory: 'accessory', ring_1: 'accessory', ring_2: 'accessory', piercing_1: 'accessory', piercing_2: 'accessory', leg_accessory: 'accessory',
-  underwear_top: 'accessory', underwear_bottom: 'accessory',
+  underwear_top: 'accessory', underwear_bottom: 'accessory', extra_1: 'accessory',
 }
 
 /** 建角時每個欄位可以選的所有裝備（底材 × 第 1～max_tier 級材料），預算都算好了 */
@@ -589,6 +623,12 @@ export function generateLoadout(classId: string, level: number, rng: Rng, race?:
   for (const slot of PIECE_SLOTS) if (rng.chance(pieceChance)) put(slot, PIECE_BASES[t.pieces][slot])
   const jewelChance = Math.min(l.jewelry_max, l.jewelry_base + l.jewelry_per_level * level)
   for (const j of JEWELRY) if (rng.chance(jewelChance)) put(j.slot, rng.pick(JEWELRY_BASES[j.group]))
+  // 額外飾品欄：和其他飾品一樣的機率，從所有飾品底材抽。用另一條亂數（不消耗 rng），其他欄位擲出來的結果和以前一樣
+  const extra = new Rng((rng.state ^ 0x5bd1e995) | 0)
+  if (extra.chance(jewelChance)) {
+    const base = extra.pick(Object.values(JEWELRY_BASES).flat())
+    if (!blocked.has(EXTRA_SLOT)) out[EXTRA_SLOT] = piece(base, rollTier(extra, gearRules.bases[base]!.kind, level))
+  }
   return out
 }
 
@@ -617,6 +657,15 @@ export function gearSummary(spec: GearSpec): string {
   if (all.length) parts.push(all.join('、'))
   if (spec.unique) parts.push(`獨特：${describeEffects([spec.unique]).replace(/。$/, '')}`)
   if (spec.attrs) parts.push(Object.entries(spec.attrs).filter(([, v]) => v).map(([k, v]) => `${attrName(k as AttrId)} ${signed(v!)}`).join('、'))
+  // 慾望指標的加減（底材的預設與物品寫的）與曝露度
+  const lewd = gearLewdOf(spec)
+  const lewdText = LEWD_STAT_IDS.filter((k) => lewd[k]).map((k) => `${lewdRules.stats[k].name} ${signed(lewd[k]!)}`)
+  if (lewdText.length) parts.push(lewdText.join('、'))
+  const base = gearRules.bases[spec.base]
+  const exposure = base?.exposure ?? (base?.outfit ? lewdRules.gear.outfit[base.outfit]?.exposure ?? 0 : 0)
+  if (exposure && base && lewdRules.gear.exposure_slots.includes(base.slot)) parts.push(`曝露度 ${exposure}`)
+  // 雙面效應：拘束的種類與程度
+  if (base?.bind && base.bind_kind) parts.push(`${lewdRules.two_face.kinds[base.bind_kind]?.name ?? base.bind_kind} ${base.bind}`)
   return parts.join('・')
 }
 

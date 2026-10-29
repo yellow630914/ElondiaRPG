@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AuctionPanel from './AuctionPanel.vue'
 import { computed, ref } from 'vue'
 import { blockedReason, insideLandmark, interiorBlocked, landmarkClosed, landmarkHere, sceneBlocked, sceneCastNames, scenesHere } from '@/engine/landmarks'
 import { attrName, specialMaps } from '@/engine/data'
@@ -55,6 +56,7 @@ function explore() {
       <p v-if="x.cast" class="muted">在場：{{ x.cast }}</p>
       <button class="small" :disabled="!!x.blocked || game.judging || !!s.pendingAction" :title="x.blocked ?? ''" @click="game.playLandmarkScene(x.index)">{{ x.blocked ?? x.scene.title }}</button>
     </div>
+    <AuctionPanel v-if="l.auction" />
     <FoldMenu v-if="l.explore" :id="`landmark.explore`" class="item" icon="search" :label="l.explore.title" :detail="`${attrName(l.explore.attr)}檢定，參考 DC ${l.explore.dc}・${l.explore.hours} 小時`">
       <p v-if="l.explore.desc" class="muted">{{ l.explore.desc }}</p>
       <p class="muted">成功：{{ gains(l.explore.effects) || '有所收穫' }}{{ l.explore.critical?.length ? `；大成功另外 ${gains(l.explore.critical)}` : '' }}。{{ (l.explore.cooldown_days ?? 7) }} 天後才能再試。</p>

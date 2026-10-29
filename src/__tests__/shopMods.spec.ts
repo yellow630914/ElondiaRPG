@@ -77,10 +77,10 @@ describe('built-in shop edits', () => {
     const c = editableWorld()
     c.setShopTraining('temple', ['iron_will', 'devout', 'artisan'])
     expect(perkDef('artisan')!.train!.cells).toEqual([...builtinPerk('artisan')!.train!.cells, 'temple'])
-    expect(Object.keys(useContent().mods.perks).sort()).toEqual(['artisan', 'flaw_drunkard', 'flaw_old_wound', 'temple_friend'])
+    expect(Object.keys(useContent().mods.perks).sort()).toEqual(['artisan', 'flaw_drunkard', 'flaw_old_wound', 'pure_heart', 'school_abstinence', 'temple_friend'])
     // 拿掉最後一個地點就不能受訓；加回去沿用內建的設定，和內建一樣的不再另外存
     expect(perkDef('temple_friend')!.train).toBeUndefined()
-    c.setShopTraining('temple', ['iron_will', 'devout', 'temple_friend', 'flaw_drunkard', 'flaw_old_wound'])
+    c.setShopTraining('temple', ['iron_will', 'devout', 'temple_friend', 'flaw_drunkard', 'flaw_old_wound', 'school_abstinence', 'pure_heart'])
     expect(perkDef('temple_friend')!.train!.cells).toEqual(['temple'])
     expect(Object.keys(useContent().mods.perks)).toEqual([])
   })

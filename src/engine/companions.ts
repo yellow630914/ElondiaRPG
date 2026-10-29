@@ -9,6 +9,7 @@
 // 需要檢定的部分（雇傭談判、殺價、邀請、打聽黑市、談判解除契約、逃離）走主動行動（actions.ts），
 // 這裡提供參考 DC、各成功程度的機制結果，以及套用結果的函式。
 
+import { pcTagMult } from './pcTags'
 import { setupPitch, setupTrain } from './perkActions'
 import { setupLeave } from './masterHome'
 import type { AdultScene } from './content'
@@ -20,7 +21,7 @@ import { setupStoryCheck } from './story'
 import { setupDefeatEvent } from './defeat'
 import { attrOf, lifeTier, mod, snapshot } from './character'
 import {
-  actionRules, combatRules, companionRules, contractDef, itemDef, itemRules, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules,
+  actionRules, combatRules, companionRules, contractDef, itemDef, itemRules, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules, lewdRules,
   tagDcMod, tagDef, type ActionKind, type AttrId, type Degree, type MarketDef, type NpcKind,
 } from './data'
 import type { Rng } from './rng'
@@ -33,6 +34,7 @@ import {
   type MarkChoice,
 } from './slavery'
 import { setupInteraction } from './interactions'
+import { setupUnbind } from './restraints'
 import {
   addAffinity, assertFree, enslavePlayer, freePlayer, freeSlave, changeMaster, isBound, isEnslaved, isFugitive, joinParty,
   followRoom, leaderOf, partyMax, partyRoom, pcOf, playerEscapes, punish, recapturePlayer, removeCondition, setHp,
@@ -49,6 +51,7 @@ import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
 import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
+import { lewdOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
 import { gameRule } from './gameRules'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
@@ -441,7 +444,7 @@ export function marketStock(state: GameState, kind: MarketKind): SlaveListing[] 
       const level = Math.max(1, Math.min(20, pc.level + rng.int(-2, 1)))
       const rec = generateNpc(state, rng, { race, level, background: rng.pick(npcPool.slave_backgrounds) }, 'slv')
       const contract = contractKind(weightedPick(rng, slaveryRules.market_contracts[kind]))
-      return { npc: rec.id, price_cc: slavePrice(rec, def.price_mult, rng), contract }
+      return { npc: rec.id, price_cc: slavePrice(rec, def.price_mult, rng, slaveValueMult(npcLewd(rec), 0)), contract }
     })
   })
   markets[key] = { day: state.time.day, stock }
@@ -614,7 +617,8 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
       tags: madam ? ['prostitute', 'merchant'] : [buyer.tag], ...(madam ? { occupation: '老鴇' } : {}),
     }, 'mst')
     const contract = contractKind(madam ? slaveryRules.roles.madam : weightedPick(rng, s.contract_weights))
-    const price = slavePrice(pc, def.price_mult, rng)
+    // 主角出售自己：指標與色情技能讓身價變高
+    const price = slavePrice(pc, def.price_mult, rng, slaveValueOf(pc) * pcTagMult(pc, 'slave_price_mult'))
     return { master, contract, price }
   })
   if (!deal) {
@@ -665,14 +669,19 @@ export function negotiateDc(state: GameState): number {
   // 主人的身分：好人比較願意放手，惡人不肯
   const tags = npcRecord(state, contract.master)?.tags ?? []
   const who = tags.reduce((sum, t) => sum + (slaveryRules.master_tags.tags[t]?.negotiate ?? 0), 0)
-  return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus + angry + who
+  return def.negotiate_dc - Math.floor(masterAff / slaveryRules.freedom.negotiate.affinity_step) - bonus + angry + who + submissionDc(pc)
+}
+
+/** 順從（慾望指標）讓人更難離開主人：每 master_tool.submission_dc_per 點，逃離與談判解約的 DC +1 */
+export function submissionDc(c: Character): number {
+  return Math.floor(lewdOf(c).submission / lewdRules.master_tool.submission_dc_per)
 }
 
 export function escapeDc(state: GameState): number {
   const pc = pcOf(state)
   const contract = contractOf(pc)
   if (!contract || !isBound(state)) throw new Error('你不是被主人帶著的奴隸')
-  return contractTerms(contract).escape_dc
+  return contractTerms(contract).escape_dc + submissionDc(pc)
 }
 
 /** 對主人的檢定都受到服從懲罰 */
@@ -860,6 +869,7 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
     case 'chat':
     case 'gift':
     case 'flatter':
+    case 'seduce':
     case 'steal':
     case 'attack':
       return setupInteraction(state, kind, target, item)
@@ -966,6 +976,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupSeekMaster(state, target)
     case 'unmark':
       return setupUnmark(state, target)
+    case 'unbind':
+      return setupUnbind(state, target)
     case 'work':
       return setupWork(state, target)
     case 'train':

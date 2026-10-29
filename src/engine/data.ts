@@ -29,10 +29,11 @@ import storiesJson from '@data/rules/stories.json'
 import craftsJson from '@data/rules/crafts.json'
 import homesJson from '@data/rules/homes.json'
 import perksJson from '@data/rules/perks.json'
+import lewdJson from '@data/rules/lewd.json'
 import landmarksJson from '@data/world/landmarks.json'
 import specialMapsJson from '@data/world/special_maps.json'
 import type { RewardEffect } from './effects'
-import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality, TattooPlace } from './types'
+import type { GearSlot, GearSpec, GuildRank, LewdStat, QuestKind, SkillQuality, TattooPlace } from './types'
 import type { Lighting } from './light'
 
 // ---- 地理 ----
@@ -51,6 +52,8 @@ export interface Location {
   /** 這個地點生成 NPC 的種族權重；沒寫時用所屬地區的預設 */
   races?: Record<string, number>
   note?: string
+  /** 主題地下城的園區：從這張特殊地圖（入口廣場）的通道進出，沒有周邊、不能直接旅行到（docs/LUST_PARK.md） */
+  park?: string
 }
 export interface Route {
   a: string
@@ -114,6 +117,10 @@ export interface NpcDef {
   abilities?: string[]
   /** 特質（data/rules/perks.json 的 id；生成的 NPC 隨機抽，固定 NPC 可以在內容頁籤指定） */
   perks?: string[]
+  /** 慾望指標（淫亂、敏感、忍耐、順從，0～100；沒寫的依標籤與 id 固定地擲，見 docs/LEWD_STATS.md） */
+  lewd?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+  /** 娼婦：光顧時可能教主角的色情技能（docs/LEWD_STATS.md 第 10 節；沒寫時用 lewd.json 的 brothel.patron.default） */
+  teaches?: string[]
   /** 初始裝備（取代依等級隨機生成的裝備；沒寫的欄位空著） */
   gear?: Partial<Record<GearSlot, GearSpec>>
   /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
@@ -168,6 +175,8 @@ export interface StoryCond {
   affinity?: Record<string, number>
   /** 主角身上的寄生物：{ 寄生物 id: { min, max（侵蝕度，含邊界）, tamed（已經馴服或還沒） } }；寫了就要身上有、而且沒有沉睡 */
   parasites?: Record<string, ParasiteRange>
+  /** 主角的慾望指標（有效值；曝露名聲看目前的地區）的範圍：{ lewdness: { min, max } }（含邊界；docs/LEWD_STATS.md） */
+  stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>
 }
 
 export interface ParasiteRange { min?: number; max?: number; tamed?: boolean }
@@ -335,6 +344,15 @@ export interface StoryDef {
   time_limit?: number
 }
 
+// ---- 內容的版本 ----
+// 套用世界設定（applyContent）或還原成內建時加一：依內容算出來的快取（任務用到的地標、小隊表……）
+// 看這個數字決定要不要重算。只跟遊戲資料有關，不跟存檔有關，不寫進存檔。
+let contentRev = 0
+export const contentRevision = () => contentRev
+export function bumpContentRevision() {
+  contentRev++
+}
+
 /** 內建的特殊任務；內容頁籤的修改套用在這份清單上 */
 export const stories = (storiesJson as unknown as { stories: StoryDef[] }).stories
 
@@ -387,6 +405,8 @@ export interface LandmarkDef {
   scenes?: LandmarkScene[]
   /** 內部：一張特殊地圖（固定地圖、同一個聚落）。地標格變成入口，場景可以指定在裡面的哪一格 */
   interior?: string
+  /** 拍賣會（成人向，auction.ts；規則在 lewd.json 的 auction） */
+  auction?: boolean
 }
 /** 地標的場景（docs/LANDMARKS.md 第 6 節） */
 export interface LandmarkScene {
@@ -681,6 +701,13 @@ export const combatRules = combatJson as unknown as {
   cantrip: { scale_levels: number[]; known_base: number; known_every_levels: number }
   quality_by_level: { levels: [number, number]; quality: SkillQuality }[]
   quality_by_circle: SkillQuality[]
+  /** 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） */
+  lust: {
+    max_base: number; max_per_level: number; decay: number
+    party_climax_hp: number; afterglow_turns: number; down_after: number; enemy_climax_hp: number
+    aroused_start: number; rut_start: number; aroused_after: number
+    kind_resist: Record<string, number>
+  }
   defeat_event: {
     npc_tags: string[]; monster_traits: string[]; exclude_traits: string[]
     check: { attr: AttrId; dc: number }
@@ -688,7 +715,25 @@ export const combatRules = combatJson as unknown as {
     free_dc: number
     money_loss: Record<Degree, number>
     shaken_on: Degree[]
+    /** 這場戰鬥我方每高潮一次，起意的 DC 降低多少（最多 climax_max） */
+    climax_dc: number
+    climax_max: number
+    /** 回應的結果對主角五項指標的加減 */
+    lewd: Partial<Record<Degree, Partial<Record<LewdStat, number>>>>
+    /** 敵人的類型（docs/LEWD_STATS.md 第 18 節） */
+    villains: Record<string, DefeatVillain>
   }
+}
+
+/** 戰敗事件裡敵人的類型：依標籤或職業；effects 是 effects.ts 的 RewardEffect */
+export interface DefeatVillain {
+  name: string
+  tags?: string[]
+  classes?: string[]
+  default?: boolean
+  hint: string
+  effects?: Partial<Record<Degree, unknown[]>>
+  money?: Partial<Record<Degree, number>>
 }
 
 export interface DamageTypeDef { id: string; name: string; group: string }
@@ -730,6 +775,35 @@ export interface StatusDef {
   control?: Control
   special?: 'undying' | 'halve_next' | 'reduce_next'
   charges?: number
+  // ---- 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） ----
+  /** 受到的慾望倍率加減（敏感 +0.25、高潮餘韻 -0.5） */
+  lust_mult?: number
+  /** 這段時間不會高潮（慾望停在上限） */
+  no_climax?: boolean
+  /** 淨化（cleanse）拿不掉 */
+  no_cleanse?: boolean
+  /** 戰鬥中的拘束：可以掙脫（自己）或撕開（隊友），數字是 DC 的加減（lewd.json 的 unbind.combat） */
+  struggle?: number
+  /** 受到的生命傷害有這個比例改成慾望 */
+  convert?: number
+  /** 被侍奉：下一次受到的攻擊由施加者代為承受，承受的傷害有這個比例改成慾望 */
+  guard?: number
+  /** 依目前慾望的比例給修正：慾望每 10%，stat +per（最多 max） */
+  lust_scale?: { stat: keyof Mods; per: number; max: number }
+  /** 每回合開始慾望 +這個數 */
+  lust_tick?: number
+  /** 慾望上限的倍率加減 */
+  lust_max?: number
+  /** 慾望不會自然消退 */
+  lust_hold?: boolean
+  /** 生命低於最大生命的 below 時，受到的生命傷害這個比例改成慾望（戰利品的覺悟） */
+  convert_low?: { below: number; ratio: number }
+  /** 高潮或引爆時，對所有敵人造成 amount（+ 等級）的 type 傷害（獻祭的契紋） */
+  on_release?: { amount: number; level?: boolean; type: string }
+  /** 下一個自己的回合開始時，慾望全部消退（潮之新娘） */
+  lust_dump?: boolean
+  /** 下一次高潮不扣生命（用掉這個狀態；精力藥） */
+  climax_guard?: boolean
 }
 export const statuses = (statusesJson as unknown as { statuses: Record<string, StatusDef> }).statuses
 
@@ -769,6 +843,14 @@ export function describeStatus(s: StatusDef): string {
   if (s.control) parts.push(CONTROL_NAME[s.control])
   if (s.special) parts.push(SPECIAL_NAME[s.special])
   if (s.charges) parts.push(`生效 ${s.charges} 次後消失`)
+  if (s.lust_mult) parts.push(`受到的慾望 ×${Math.round((1 + s.lust_mult) * 100) / 100}`)
+  if (s.no_climax) parts.push('不會高潮')
+  if (s.convert) parts.push(`受到的生命傷害 ${Math.round(s.convert * 100)}% 改成慾望`)
+  if (s.guard) parts.push(`下一次受到的攻擊由施加者代為承受（${Math.round(s.guard * 100)}% 改成慾望）`)
+  if (s.lust_scale) parts.push(`慾望每 10%，${STATUS_MOD_NAME[s.lust_scale.stat] ?? s.lust_scale.stat} +${s.lust_scale.per}（最多 +${s.lust_scale.max}）`)
+  if (s.lust_tick) parts.push(`每回合慾望 +${s.lust_tick}`)
+  if (s.lust_max) parts.push(`慾望上限 ×${Math.round((1 + s.lust_max) * 100) / 100}`)
+  if (s.lust_hold) parts.push('慾望不會消退')
   return parts.join('；') || '沒有效果'
 }
 
@@ -783,6 +865,8 @@ export interface DamagePart {
   mod?: boolean
   weapon?: boolean
   scale?: { dice: string; per: number }
+  /** 魅惑傷害：目標的受傷倍率至少 ×0.5（對免疫魅惑的不死、構裝也有效） */
+  pierce?: boolean
 }
 export interface ApplyDef {
   status: string
@@ -791,6 +875,12 @@ export interface ApplyDef {
   on?: 'hit' | 'fail' | 'always'
   save?: AttrId
   value?: { dice?: string; mod?: boolean; level?: boolean; flat?: number }
+  /** 目標的慾望達到上限的這個比例才套用 */
+  if_lust?: number
+  /** 目標身上有奴隸印記才套用（驅奴術） */
+  if_slave?: boolean
+  /** 目標的等級比施放者低才套用（威壓） */
+  if_weaker?: boolean
 }
 export interface AbilityDef {
   id: string
@@ -823,9 +913,31 @@ export interface AbilityDef {
   concentration?: boolean
   cleanse?: boolean
   lifesteal?: number
+  /** 對身上有奴隸印記的目標，傷害乘上這個數（驅奴術） */
+  vs_slave?: number
   recover_slot?: boolean
   hp_limit?: number
   kill?: boolean
+  // ---- 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） ----
+  /** 增加目標的慾望 */
+  lust_gain?: { flat: number }
+  /** 消退目標的慾望 */
+  lust_relief?: number
+  /** 消耗自己的慾望（不夠就不能用） */
+  lust_cost?: number
+  /** 慾望在隊伍裡移動：spread 把自己 ratio 的慾望平分給其他友軍（每 shield_per 點給 1 點臨時生命）；take 從其他每位友軍吸 amount 過來 */
+  /** dump：吸過來的慾望不會讓自己高潮（停在上限），下一個自己的回合開始時全部消退 */
+  lust_transfer?: { mode: 'spread' | 'take'; ratio?: number; amount?: number; shield_per?: number; dump?: boolean }
+  /** 擲一次：一半機會全體友軍得到 status（turns 回合），否則全體友軍慾望 + lust */
+  gamble?: { status: string; turns: number; lust: number }
+  /** 自己的慾望至少要上限的這個比例才能用 */
+  requires_lust?: number
+  /** 引爆：消耗全部的慾望，造成慾望 × mult + 屬性調整值的 type 傷害（heal 時改成治療目標）；用了立刻結束回合，下一回合脫力 */
+  burst?: { type?: string; mult: number; min_ratio?: number; heal?: boolean }
+  /** 給目標行動點 */
+  ap_give?: number
+  /** 用了之後，戰後曝露名聲 +這個數（寬衣） */
+  exposure?: number
   desc: string
 }
 const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
@@ -918,6 +1030,16 @@ export interface DungeonEncounters {
 export function dungeonDepth(id: string): number {
   return dungeonEncounters[id]?.abyss?.length ? 5 : 4
 }
+/** 主題地下城的園區（從入口廣場進出）：回傳入口廣場的特殊地圖 id */
+export function parkPlaza(id: string | undefined): string | undefined {
+  return id ? locationIndex.get(id)?.park : undefined
+}
+/** 打倒園區的最終層主時引擎設定的旗標（集章）：park_stamp_<園區 id> */
+export const PARK_STAMP_PREFIX = 'park_stamp_'
+/** 地下城最上面一層的編號：一般是周邊（0），園區沒有周邊，從淺層（1）開始 */
+export function dungeonFirstLayer(id: string): number {
+  return parkPlaza(id) ? 1 : 0
+}
 /** 這隻怪物是不是某座地下城某一層的層主（含內容編輯放上去的層主） */
 export function isLayerBoss(id: string): boolean {
   return Object.values(dungeonEncounters).some((e) => e.boss?.[0]?.[0] === id || Object.values(e.bosses ?? {}).some((g) => g?.[0]?.[0] === id))
@@ -965,6 +1087,8 @@ export interface MonsterTraitDef {
   offense?: AffinityMap
   xp_mult?: number
   ai?: MonsterAi
+  /** 帶著這個特徵時多會的技能（發情的野獸會撲上來） */
+  abilities?: string[]
   excludes?: string[]
   /** 怪物資料上要有這個旗標才會擲到 */
   requires?: 'rut'
@@ -974,6 +1098,8 @@ export interface MonsterAi {
   /** 對仇恨的在意程度：選目標的權重 = floor + 仇恨 × focus（預設 1） */
   focus?: number
   prefer?: 'weakest' | 'caster'
+  /** 慾望攻擊的偏好：挑技能時慾望攻擊的分數乘上這個數（發情 1.5） */
+  lust?: number
   flee_below?: number
   never_flee?: boolean
 }
@@ -1004,6 +1130,10 @@ export interface TownQuestTemplate {
   reward_cc: [number, number]
   /** 交付時的額外報酬（報酬模板，見 effects.ts） */
   rewards?: RewardEffect[]
+  /** 發布的條件（劇情旗標、慾望指標……；成人向的委託要曝露名聲或淫亂，docs/LEWD_STATS.md 第 20 節） */
+  requires?: StoryCond
+  /** 內容標籤（成人向） */
+  tags?: string[]
 }
 export type MaterialQuestKind = 'gather_wild' | 'gather_dungeon' | 'drop_wild' | 'drop_dungeon' | 'boss_hunt'
 export interface MaterialQuestDef {
@@ -1058,6 +1188,8 @@ export interface ConditionDef {
   combat_mods?: Mods
   /** 每場戰鬥開始時的暫時生命 */
   combat_temp_hp?: number
+  /** 每場戰鬥的慾望上限倍率加減（壯陽料理：0.2 = +20%） */
+  combat_lust_max?: number
   /** 同一組只留一個：rank 高的取代低的，低的蓋不掉高的（用餐） */
   group?: string
   rank?: number
@@ -1104,13 +1236,22 @@ export function conditionTone(id: string): 'good' | 'bad' | 'plain' {
     // 戰鬥修正（命中、傷害、減傷……；仇恨值不算好壞）加總的正負
     const combat = Object.entries(c.combat_mods ?? {}).reduce((t, [k, v]) => (k === 'threat' ? t : t + (v ?? 0)), 0)
     if (combat < 0) return 'bad'
-    return (c.check_penalty ?? 0) < 0 || c.combat_temp_hp || c.group || combat > 0 ? 'good' : 'plain'
+    return (c.check_penalty ?? 0) < 0 || c.combat_temp_hp || c.combat_lust_max || c.group || combat > 0 ? 'good' : 'plain'
   }
   const st = statuses[id]
   return st ? (st.kind === 'buff' ? 'good' : 'bad') : 'plain'
 }
 
-export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal'
+/** 非戰鬥狀態的效果簡述（內容編輯器的清單與編輯畫面） */
+export function describeCondition(c: ConditionDef): string {
+  const parts: string[] = []
+  if (c.check_penalty) parts.push(`${c.check_attrs?.length ? c.check_attrs.map(attrName).join('、') : '所有'}檢定 ${c.check_penalty < 0 ? '+' : '-'}${Math.abs(c.check_penalty)}`)
+  if (c.combat_temp_hp) parts.push(`每場戰鬥開始時暫時生命 ${c.combat_temp_hp}`)
+  if (c.combat_mods && Object.values(c.combat_mods).some(Boolean)) parts.push(`戰鬥中${describeStatus({ name: '', kind: 'buff', mods: c.combat_mods })}`)
+  return parts.join('；') || '沒有數值效果'
+}
+
+export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal' | 'submission'
 export interface ContractDef {
   name: string
   mark: string
@@ -1124,6 +1265,8 @@ export interface ContractDef {
   exit_dc: number
   side_effects: string[]
   escape_effects: { hp_ratio: number }
+  /** 順從累積：每這麼多天順從 +1 */
+  submission_every?: number
 }
 export interface MarketDef { name: string; price_mult: number; stock: [number, number]; races: Record<string, number> }
 export type Degree = 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
@@ -1195,6 +1338,23 @@ export const slaveryRules = slaveryJson as unknown as {
     free_dc: number; free_outcomes: Record<Degree, RewardEffect[]>
     events: MasterEventDef[]
   }
+  /** 調教事件（主角對自己的奴隸；S5） */
+  owner_events: { events: MasterEventDef[] }
+  /** 娼館的打工與受訓事件（S5） */
+  brothel_events: { work: MasterEventDef[]; train: MasterEventDef[] }
+}
+
+/** 共用主人事件格式的事件庫（內容編輯器「⛓️ 主奴與娼館」） */
+export type MasterEventPool = 'master' | 'owner' | 'brothel_work' | 'brothel_train'
+export const MASTER_EVENT_POOLS: Record<MasterEventPool, string> = { master: '主人的突發事件', owner: '調教事件', brothel_work: '娼館打工事件', brothel_train: '娼館受訓事件' }
+
+/** 這個事件庫的事件清單（直接改這個陣列就會生效） */
+export function masterEventPool(pool: MasterEventPool): MasterEventDef[] {
+  const r = slaveryRules as unknown as { owner_events?: { events: MasterEventDef[] }; brothel_events?: { work: MasterEventDef[]; train: MasterEventDef[] } }
+  if (pool === 'master') return slaveryRules.master_events.events
+  if (pool === 'owner') return ((r.owner_events ??= { events: [] }).events ??= [])
+  const b = (r.brothel_events ??= { work: [], train: [] })
+  return pool === 'brothel_work' ? (b.work ??= []) : (b.train ??= [])
 }
 
 /** 主人家裡的人的一種組成：spouse 是伴侶出現的機率，其他是人數範圍 */
@@ -1238,6 +1398,14 @@ export interface MasterEventDef {
   free_place?: boolean
   /** 有這位主人會強制主角裝上的東西時才發生（items.json 的 master_force） */
   forced_gear?: boolean
+  /** 掛的色情技能（ability_pool 效果從事件庫裡還沒學的技能抽；娼館的事件只抽打工的人還沒學的） */
+  teaches?: string[]
+  /** 調教課程（調教事件） */
+  course?: string
+  /** 要求的頭牌等級（娼館的事件） */
+  rank_min?: number
+  /** 同一個課程成功幾次保證學會一個技能（調教事件） */
+  progress?: number
 }
 
 export interface UnmarkServiceDef {
@@ -1276,6 +1444,10 @@ export interface MasterEventOption {
   hours?: number
   /** 這個回應會進入親密場景（事件的 scene）：always 一定、success / fail 檢定成功或失敗時 */
   adult_scene?: 'always' | 'success' | 'fail'
+  /** 屈服（submit）或抵抗（resist）：有檢定時依順從加減（lewd.json 的 master_tool.stance_per） */
+  stance?: 'submit' | 'resist'
+  /** 成功時（沒有檢定時一定）學會事件掛的一個還沒學的技能（teaches） */
+  learn?: boolean
 }
 
 export function contractDef(id: string): ContractDef {
@@ -1286,17 +1458,19 @@ export function contractDef(id: string): ContractDef {
 }
 
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
-  | 'chat' | 'gift' | 'flatter' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
-  | 'master_return' | 'seek_master' | 'unmark' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
+  | 'chat' | 'gift' | 'flatter' | 'seduce' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'marking' | 'master_event'
+  | 'master_return' | 'seek_master' | 'unmark' | 'unbind' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore' | 'palace_gate'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
-  | 'release' | 'change_master' | 'gear' | 'join'
+  | 'release' | 'change_master' | 'gear' | 'join' | 'lewd'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
   caps: {
     affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
-    item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
+    item_qty: number; item_qty_bought?: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
+    /** 慾望指標：每項每次 ±這個數 */
+    lewd: number
   }
   kinds: Record<ActionKind, {
     name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[]
@@ -1305,10 +1479,18 @@ export const actionRules = actionsJson as unknown as {
     value_steps?: number[]
     wealth_scale?: number[]
     status_dc?: number
+    /** 誘惑：成功時對方淫亂的增加、慾望抗性每多少換 1 點 DC、對方淫亂每多少點 DC −1 */
+    lewd_gain?: Partial<Record<Degree, number>>
+    resist_per?: number
+    lewd_per?: number
     /** 自由行動：一次最多幾個對象（含主要對象） */
     max_targets?: number
     /** 自由行動：主要對象之外每多一人，DC 增加多少 */
     extra_target_dc?: number
+    /** AI 判定時可以填花費的時間（小時）：程式夾在這個範圍，沒填時用 hours */
+    hours_range?: [number, number]
+    /** AI 判定時可以判為日常小事（difficulty: trivial）：結果至少是成功 */
+    trivial?: boolean
   }>
 }
 
@@ -1341,7 +1523,7 @@ export interface NpcTagDef {
   /** 互斥的標籤（不會同時擁有） */
   exclusive?: string[]
   /** 和帶這個標籤的人互動時的參考 DC 修正 */
-  dc_mods?: Partial<Record<'chat' | 'gift' | 'flatter' | 'hire' | 'invite', number>>
+  dc_mods?: Partial<Record<'chat' | 'gift' | 'flatter' | 'seduce' | 'hire' | 'invite', number>>
   /** 不會因關係差而在野外動手（被攻擊過才會） */
   never_hostile?: boolean
   /** 對他犯罪被發現時，額外的聲望變化 */
@@ -1349,7 +1531,28 @@ export interface NpcTagDef {
   /** false：主角不能選這個標籤（例如奴隸、娼妓，由各自的系統決定） */
   player?: boolean
   /** 主角帶著這個標籤時的效果（見 engine/pcTags.ts） */
-  pc_effects?: { bypass_reputation?: boolean }
+  pc_effects?: PcTagEffects
+}
+
+/** 主角帶著這個標籤時的效果（docs/NPC_SYSTEM.md 4.1 節；pcTags.ts） */
+export interface PcTagEffects {
+  /** 所有要聲望的場所都不看聲望 */
+  bypass_reputation?: boolean
+  /** 檢定的加減（篩選和特質同格式，vs_tags 是對方的標籤） */
+  checks?: { check: CheckFilter; bonus: number }[]
+  /** 商店的買價、賣價倍率 */
+  buy_mult?: number
+  sell_mult?: number
+  /** 神殿服務（神殿的交易、洗刺青、解除契約）的收費倍率 */
+  service_mult?: number
+  /** 曝露名聲累積的倍率（成人向） */
+  exposure_mult?: number
+  /** 主角被賣時的身價倍率（成人向） */
+  slave_price_mult?: number
+  /** 戰鬥中的慾望抗性（負數是受到的慾望變少；成人向） */
+  lust_resist?: number
+  /** 給 AI 的身分說明 */
+  hint?: string
 }
 
 /** 標籤的 DC 修正：所有標籤相加 */
@@ -1438,12 +1641,16 @@ export interface ItemUse {
   condition?: string
   /** 書籍：讀了之後有機會學會其中一個特質（perks.json 的 id；也可以寫說法交給 AI） */
   perks?: string[]
+  /** 技能書：每讀一次（約 4 小時）學會清單裡下一個還沒學、等級也夠（能力的 unlock）的能力；色情技能誰都能學，職業能力要是自己職業的 */
+  abilities?: string[]
   heal?: string
   slot?: number
   cleanse?: string[]
   status?: { id: string; turns: number }
   temp_hp?: number
   ap?: number
+  /** 戰鬥中：慾望增減（負數消退，正數算自己增加的慾望） */
+  lust?: number
   revive?: number
   /** 投擲：對敵人造成傷害（area 為 all 時波及所有敵人） */
   damage?: { dice: string; type: string }
@@ -1474,6 +1681,8 @@ export interface ItemDef {
   forge?: { materials: string[] }
   /** 最低要在哪種規模的聚落才買得到 */
   min_location?: string
+  /** 魅氣濃度至少這麼高的聚落才買得到（淫市的貨，docs/LEWD_STATS.md 第 20 節） */
+  charm_min?: number
   /** 事件可能出現：AI 判定主動行動時可以把它當成報酬 */
   event?: boolean
   /** 雜物的工具模板（items.json 的 tools） */
@@ -1488,6 +1697,10 @@ export interface ItemDef {
   master_force?: { tags?: string[] }
   /** 成人向的物品：內容編輯器的篩選用 */
   adult?: boolean
+  /** 鎖（lewd.json 的 locks）：可以替身上的拘束具上鎖，雙面效應的戰鬥增益才生效 */
+  lock?: LockGrade
+  /** 鑰匙（docs/LEWD_STATS.md 第 16 節）：打開這個等級以下的鎖，用一次就沒了 */
+  key?: LockGrade
   /** 獨特物品可以出現在黑市（每天刷新的珍品，見 docs/ITEMS.md 3.1 節） */
   black_market?: boolean
   /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用底材或類別的圖示 */
@@ -1770,9 +1983,11 @@ export type FurniturePlace = 'indoor' | 'yard' | 'basement'
 
 export interface FurnitureSpec {
   places: FurniturePlace[]
-  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃 */
-  function?: 'bed' | 'workbench' | 'garden'
+  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃；training：調教室的家具（docs/LEWD_STATS.md 第 19 節） */
+  function?: 'bed' | 'workbench' | 'garden' | 'training'
   craft?: CraftId
+  /** 調教室的家具：在家調教時的檢定加值 */
+  training?: number
   comfort?: number
   icon?: string
 }
@@ -1827,7 +2042,8 @@ export interface PerkDef {
   flaw?: boolean
   /** 種族特質（原本的種族天賦）：這個種族的角色自動擁有，不寫進存檔；不能選、不能學、不會失去 */
   race?: string
-  requires?: { races?: string[]; classes?: string[] }
+  /** perks：要先有這些特質（流派的進階特質要先入門） */
+  requires?: { races?: string[]; classes?: string[]; perks?: string[] }
   /** 和這些特質互斥 */
   exclusive?: string[]
   /** 可以在這些設施花錢學（缺陷：花錢克服） */
@@ -1840,6 +2056,12 @@ export interface PerkDef {
   rarity?: string
   /** 分類（建角時依分類折疊，見 perks.ts 的 PERK_CATEGORIES）；沒寫時依效果推斷 */
   category?: string
+  /** 能在城外的野外、旅途上紮營長休（rest.ts 的 campRest）：隊伍裡有一個人有就可以 */
+  camp?: boolean
+  /** 慾望流派（lewd.json 的 schools）：入門或進階特質（流派只是特質，不限制能學的技能） */
+  school?: string
+  /** 流派特質的慾望效果（docs/LEWD_STATS.md 第 6 節） */
+  lust?: LustPerk
 }
 
 export const perkRules = perksJson as unknown as {
@@ -1869,5 +2091,134 @@ export function choosablePerks(): PerkDef[] {
 export function isChoosablePerk(id: string): boolean {
   const p = perkDef(id)
   return !!p && !p.race
+}
+
+// ---- 慾望指標（docs/LEWD_STATS.md） ----
+
+export type LewdKey = 'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure'
+/** 雙面效應的拘束種類（底材的 bind_kind） */
+export type BindKind = 'legs' | 'hands' | 'eyes' | 'stim' | 'body'
+export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'stim', 'body']
+/** 鎖的等級（物品的 lock、裝備上的鎖） */
+export type LockGrade = 'white' | 'blue' | 'rune' | 'gold'
+export const LOCK_GRADES: LockGrade[] = ['white', 'blue', 'rune', 'gold']
+/** 慾望流派（lewd.json 的 schools） */
+export interface LewdSchool { name: string; group: string; role: string; entry: string; advanced: string; fit: BindKind[] }
+/**
+ * 流派特質的慾望效果（PerkDef.lust；慾望戰鬥關閉時不生效）。數值都是加在基本值上的：
+ * max 慾望上限、taken 受到的慾望倍率、self 自己增加的慾望倍率、convert 傷害轉成慾望的比例（有轉換的狀態時）、
+ * burst 引爆的傷害倍率、relief 消退慾望的倍率、crit_convert 受到幸運一擊時改成慾望的比例、regen 慾望一半以上時每回合回復的生命、
+ * climax_heal 高潮時回復最大生命的比例、exposure 曝露名聲的魅惑傷害加值倍率、exposure_level 穿著的曝露度每 1 點的魅惑傷害、
+ * endurance_max 忍耐每 20 點的慾望上限、sensitivity_bonus 敏感每 25 點的魅惑傷害、growth 指標成長的倍率（-0.5 = 減半）、
+ * wounded 生命低於一半時的戰鬥修正、master 主人在隊伍裡時的戰鬥修正（奴之誓）、bound 穿著上鎖的拘束具時的戰鬥修正、bound_max 同上的慾望上限
+ */
+export interface LustPerk {
+  max?: number; taken?: number; self?: number; convert?: number; burst?: number; relief?: number; crit_convert?: number; regen?: number
+  climax_heal?: number; exposure?: number; exposure_level?: number; endurance_max?: number; sensitivity_bonus?: number
+  growth?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+  wounded?: Mods; master?: Mods; bound?: Mods; bound_max?: number
+}
+type LewdBonus = Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+export const lewdRules = lewdJson as unknown as {
+  stats: Record<LewdKey, { name: string; bands: string[]; forced_bands?: string[] }>
+  defaults: Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>
+  npc_tags: Record<string, Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', [number, number]>>>
+  npc_random: Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', [number, number]>
+  combat: {
+    endurance_max_div: number; sensitivity_base: number; sensitivity_div: number; lewd_start_per: number; lewd_start_ratio: number; lewd_decay_div: number
+    self_gain_lewd: number; self_gain_bonus: number; submission_per: number; submission_convert: number; exposure_per: number; faith_resist: number
+    bond_step: number; bond_share: number; bond_max: number
+  }
+  gear: {
+    item_cap: number; total_cap: number; exposure_slots: string[]
+    outfit: Partial<Record<'regular' | 'anime' | 'adult', { exposure?: number; lewd?: LewdBonus }>>
+    restraint: { lewd?: LewdBonus }
+    underwear_visible: number; naked: number
+  }
+  schools: Record<string, LewdSchool>
+  servitude: { no_master: number }
+  outfit_two_face: {
+    penalty_tags: string[]; penalty_kinds: string[]; penalty_per: number; penalty_max: number; endurance_per: number; max_pieces: number
+    schools: Record<string, { lust_bonus?: number; evade?: number; save?: number }>
+  }
+  outfit_tailor: { charm_min: number; fee_mult: number; fee_base: number; stats: LewdStat[]; bonus: Record<string, number> }
+  auction: {
+    lots: number; start_ratio: number; rival_ratio: [number, number]; step: number; consign_ratio: [number, number]; consign_fee: number
+    watch_chance: number; watch_flag: string; pool: [string, number][]
+  }
+  two_face: {
+    endurance_per: number; fit: number; servitude_master: number
+    kinds: Record<BindKind, { name: string; checks: CheckFilter[]; penalty: number[]; combat: (Mods & { initiative?: number })[]; immune?: string[] }>
+  }
+  locks: { grades: Record<LockGrade, { name: string; mult: number }>; master_default: LockGrade; master_tags: Record<string, LockGrade> }
+  master_tool: { release_affinity: number; new_master_affinity: number; hours: number; submission_dc_per: number; stance_per: number }
+  training: {
+    sub_div: number; low_affinity: number; low_dc: number; progress: number; backlash_affinity: number; backlash_delta: number
+    /** 調教室（家具的 training）：在家調教的加值上限、留在家裡的奴隸每天的順從、反彈時逃走的機率 */
+    room_max: number; resident_submission: number; escape_chance: number
+    courses: Record<string, { name: string; attr: AttrId; stats: Partial<Record<LewdKey, number>>; affinity?: number; desc: string }>
+  }
+  brothel: {
+    work_event: { base: number; per_lewd: number; max: number }
+    ranks: { min: number; name: string }[]
+    rank_gain: { work: number; event: number }
+    wage_per_rank: number
+    train: { price_base: number; price_per_unlock: number; discount_per_rank: number; review: RewardEffect[] }
+    patron: { affinity_min: number; chance: number; tiers: { lewd: number; unlock: number }[]; default: string[] }
+    propose: { attr: AttrId; dc: number; lewd_div: number; affinity_div: number; tags: Record<string, number>; share: number; fail_affinity: number; fumble_affinity: number }
+  }
+  growth: Record<'adult_scene' | 'climax' | 'climax_won' | 'brothel_work' | 'obedience' | 'disrobe', Partial<Record<LewdKey, number>>>
+  daily: {
+    adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus
+    free_submission_every: number; idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
+  }
+  park: ParkRules
+  /** 慾望勝利的「征服」掉落：打倒的怪物在高潮中屈服時，有 chance 的機率依種類多掉一件 */
+  conquest: { chance: number; kinds: Record<string, string> }
+  arena: {
+    charm_min: number; cells: string[]; fee: number; streak_per_tier: number
+    prize: { base: number; per_tier: number }
+    item_chance: number; items: string[]; book_tier: number; book_chance: number; books: string[]
+    wager: { mult: number; loss: Partial<Record<LewdKey, number>> }
+    lust_convert: number
+    rings: Record<string, { name: string; desc: string; restraint?: boolean; lust_only?: boolean; tiers: EncounterGroup[] }>
+  }
+  slave_price: { above: number; per: Partial<Record<LewdStat, number>>; per_skill: number; max: number }
+  npc_schools: { tags: Record<string, { chance: number; schools: string[] }> }
+  portrait: Partial<Record<'lewdness' | 'exposure', [number, string][]>>
+  fusion: { shops: string[]; fee_cc: number; days: number; tiers: [number, number][]; penalty_mult: number }
+  slave_room: {
+    charm_min: number; cost_ratio: number; submission: number; learn_chance: number; abilities: string[]; condition: string; scene: string
+  }
+  unbind: {
+    attr: AttrId; base: number; lock_dc: Record<LockGrade, number>; bind_dc: number; endurance_per: number; fumble_submission: number
+    keys: { chance: number; levels: [number, LockGrade][] }
+    combat: { ap: number; base: number; per_level: number; hands: number }
+  }
+  charm: {
+    names: string[]
+    regions: Record<string, number>
+    locations: Record<string, number>
+    exposure_mult: number[]
+    rut_mult: number[]
+    spread: { ratio: number }
+    gate: { min: number; item: string; lock: string }
+    ai: string[]
+  }
+}
+/** 主題地下城（魅魔的遊樂園）的規則：魅氣、擬態寶箱、寶箱加料、各園區的專屬戰敗 */
+export interface ParkRules {
+  /** 每走一格，全隊的魅氣（跨戰鬥保留的慾望，慾望上限的比例）增加多少；走路最多累積到 step_cap */
+  step_lust: number
+  step_cap: number
+  /** 園區的陷阱沒察覺時（媚藥機關），觸發的人魅氣增加多少（取代陷阱的傷害） */
+  trap_lust: number
+  /** 園區的寶箱有這個機率是擬態寶箱（打開時變成戰鬥）；mimics 依層（1 淺層、2 中層、3 深層）的怪物 */
+  mimic_chance: number
+  mimics: Record<string, string>
+  /** 園區的寶箱另外擲的物品 [名稱, 機率] */
+  chest_items: [string, number][]
+  /** 每個園區（地點 id）的專屬戰敗：AI 的成人場景、摘要、效果、經過的時間 */
+  defeats: Record<string, { scene: string; summary: string; effects: RewardEffect[]; hours: number }>
 }
 

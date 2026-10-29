@@ -5,15 +5,18 @@
 // - 主角身為奴隸：出城、旅行前要主人同意（檢定依印記的 exit_dc）；成為奴隸時有刻印檢定，結果決定能選哪些印記；
 //   移動與旅行時可能遇到主人的突發事件：主角從三種回應選一個，或自己輸入回應交給 AI 判定。
 
+import { pcTagMult } from './pcTags'
 import { checkModifiers, modifierNote } from './perks'
 import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
-import { contractDef, locationById, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type UnmarkServiceDef } from './data'
-import { isMadam, nearBrothel } from './brothel'
+import { abilities, contractDef, lewdRules, locationById, masterEventPool, type MasterEventPool, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type MasterEventOption, type UnmarkServiceDef } from './data'
+import { isMadam, madamHere, nearBrothel } from './brothel'
 import { adultScene, tagsAllowed } from './content'
 import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
 import { meetsReputation } from './security'
 import { forcedGearPool } from './forcedGear'
-import { affordable, applyEffects, type RewardEffect } from './effects'
+import { affordable, applyEffects, teachAbility, type RewardEffect } from './effects'
+import { afterTraining, trainingDcMods } from './ownerTraining'
+import { afterBrothelTraining } from './brothelLife'
 import { formatMoney } from './money'
 import { currentArea, currentCell, getArea } from './grid'
 import { generateNpc, npcKind, npcRecord, registerNpc, weightedPick } from './npcs'
@@ -25,7 +28,8 @@ import { addStrict, atMasterHome, extendDeadline, overdueChance, sendToMasterHom
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
-import type { ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
+import { growLewd, addLewd, lewdOf } from './lewd'
+import type { Character, ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
 import { gameRule } from './gameRules'
 
@@ -44,8 +48,12 @@ export function deriveFunctions(t: Omit<MarkTerms, 'functions'>): ContractFuncti
     ...(t.recapture_chance > 0 ? ['tracking' as const] : []),
     ...(t.escape_hp_ratio >= 0.3 ? ['tether' as const] : []),
     ...(t.spell_cap !== undefined ? ['spell_seal' as const] : []),
+    ...(t.submission_every ? ['submission' as const] : []),
   ]
 }
+
+/** 順從累積的天數：1～7，0 或沒寫是不累積 */
+const submissionEvery = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Math.max(1, Math.min(7, Math.round(Number(v)))) : 0)
 
 /** 模板的條款（原始文字） */
 export function termsFromTemplate(kind: string): MarkTerms {
@@ -63,6 +71,7 @@ export function termsFromTemplate(kind: string): MarkTerms {
     obedience_penalty: d.obedience_penalty,
     side_effects: [...d.side_effects],
     ...(d.spell_cap !== undefined ? { spell_cap: d.spell_cap } : {}),
+    ...(d.submission_every ? { submission_every: d.submission_every } : {}),
   }
   return { ...t, functions: deriveFunctions(t) }
 }
@@ -102,6 +111,7 @@ export function sanitizeTerms(raw: Partial<MarkTerms>, base: MarkTerms = termsFr
     side_effects: (Array.isArray(raw.side_effects) ? raw.side_effects : base.side_effects)
       .map((s) => text(s, r.side_effect_chars)).filter(Boolean).slice(0, r.side_effects),
     ...(sealed ? { spell_cap: Math.max(0, Math.min(9, Math.round(Number(raw.spell_cap)))) } : {}),
+    ...(submissionEvery(raw.submission_every ?? base.submission_every) ? { submission_every: submissionEvery(raw.submission_every ?? base.submission_every) } : {}),
   }
   return { ...terms, functions: deriveFunctions(terms) }
 }
@@ -342,6 +352,12 @@ export function setupMarking(state: GameState) {
   }
 }
 
+/** 服從懲罰 +1（最多 obedience_max）；主角的順從跟著成長（慾望指標） */
+function raiseObedience(state: GameState, c: ContractRef) {
+  c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+  growLewd(state, pcOf(state), 'obedience')
+}
+
 export function applyMarking(state: GameState, degree: Degree): string {
   const pm = state.pendingMark
   if (!pm) return ''
@@ -353,7 +369,7 @@ export function applyMarking(state: GameState, degree: Degree): string {
     if (degree === 'critical') pm.custom = true
     if (degree === 'fumble') {
       const c = contractOf(pcOf(state))
-      if (c) c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+      if (c) raiseObedience(state, c)
     }
     return { critical: '刻印的人被你說動了，讓你自己決定印記的樣子。', success: '你爭取到選擇印記的餘地。', partial: '主人照原本的打算刻印。', fail: '主人照原本的打算刻印。', fumble: '主人勃然大怒，下手更重。' }[degree]
   }
@@ -374,7 +390,7 @@ export function applyMarking(state: GameState, degree: Degree): string {
     case 'fumble': {
       pm.allowed = [sev.at(-1)!]
       const c = contractOf(pcOf(state))
-      if (c) c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+      if (c) raiseObedience(state, c)
       return '主人勃然大怒，刻下最重的印記。'
     }
   }
@@ -495,24 +511,118 @@ function withMaster(state: GameState, s: string): string {
   return s.split('{master}').join(contractOf(pcOf(state))?.masterName ?? '主人')
 }
 
+/** 等待回應的事件在哪一個事件庫 */
+function pendingPool(state: GameState): MasterEventPool {
+  return state.pendingMasterEvent?.pool ?? 'master'
+}
+
+/** 等待回應的事件還在不在（內容編輯器可能刪掉了自建的事件） */
+export function pendingEventExists(state: GameState): boolean {
+  const pm = state.pendingMasterEvent
+  return !!pm && masterEventPool(pendingPool(state)).some((x) => x.id === pm.id)
+}
+
+/** 等待回應的事件已經不存在：作廢 */
+export function dropMissingMasterEvent(state: GameState): Record<string, never> {
+  if (state.pendingMasterEvent && !pendingEventExists(state)) delete state.pendingMasterEvent
+  return {}
+}
+
 /** 等待回應的事件定義 */
 export function pendingEventDef(state: GameState): MasterEventDef {
   const pm = state.pendingMasterEvent
-  const e = pm && slaveryRules.master_events.events.find((x) => x.id === pm.id)
-  if (!e) throw new Error('現在沒有主人的要求')
+  const e = pm && masterEventPool(pendingPool(state)).find((x) => x.id === pm.id)
+  if (!e) throw new Error('現在沒有等待回應的事件')
   return e
 }
 
-/** 從三個回應裡選一個：有檢定的依規則擲骰 */
+/**
+ * 主人事件格式的事件裡的角色（docs/LEWD_STATS.md 第 8～10 節）：
+ * 擲骰的人（roller）、事件的主角（subject：指標、技能記在他身上）、對方（other：效果的 npc 寫 master 指的人、文字的 {master}）。
+ * 主人的突發事件：主角對主人；調教：主角擲骰、對象是奴隸；娼館：接客或受訓的人自己擲骰，對方是老鴇
+ */
+export interface EventRoles {
+  roller: Character
+  subject: Character
+  other?: { id: string; name: string }
+  /** 沒有對方時 {master} 換成的稱呼 */
+  otherTitle: string
+  /** 對方的身分標籤（檢定的對象標籤） */
+  tags: string[]
+  /** 額外的檢定修正（調教：奴隸的順從、親密度） */
+  dcMods: { label: string; value: number }[]
+}
+
+export function eventRoles(state: GameState): EventRoles {
+  const pm = state.pendingMasterEvent
+  const pc = pcOf(state)
+  const pool = pendingPool(state)
+  const member = (id?: string) => (id ? state.party.find((m) => m.id === id) : undefined)
+  if (pool === 'owner') {
+    const slave = member(pm?.actor)
+    if (!slave) throw new Error('要調教的奴隸不在隊伍裡')
+    return { roller: pc, subject: slave, other: { id: slave.id, name: slave.name }, otherTitle: slave.name, tags: npcRecord(state, slave.id)?.tags ?? [], dcMods: trainingDcMods(state, slave) }
+  }
+  if (pool === 'brothel_work' || pool === 'brothel_train') {
+    const who = member(pm?.actor) ?? pc
+    const madam = madamHere(state)
+    return { roller: who, subject: who, ...(madam ? { other: { id: madam.id, name: madam.name } } : {}), otherTitle: '老鴇', tags: madam?.tags ?? [], dcMods: [] }
+  }
+  const c = contractOf(pc)
+  return {
+    roller: pc, subject: pc, ...(c?.master ? { other: { id: c.master, name: c.masterName } } : {}), otherTitle: '主人',
+    tags: (c?.master ? npcRecord(state, c.master)?.tags : undefined) ?? [], dcMods: [],
+  }
+}
+
+/** 文字裡的 {master}（對方）與 {actor}（事件的主角） */
+export function eventText(roles: EventRoles, s: string): string {
+  return s.split('{master}').join(roles.other?.name ?? roles.otherTitle).split('{actor}').join(roles.subject.name)
+}
+
+/** 效果裡的 master 換成對方；事件的主角不是主角本人時，指標、技能、生命、狀態給事件的主角 */
+const SUBJECT_EFFECTS = new Set(['lewd', 'ability_pool', 'ability', 'hp', 'condition'])
+function forEvent(effects: RewardEffect[] | undefined, roles: EventRoles, pc: Character): RewardEffect[] {
+  const out: RewardEffect[] = []
+  for (const e of effects ?? []) {
+    let x = e as RewardEffect & { target?: string; npc?: string }
+    if (x.type === 'tattoo') x = { ...x, ...(x.name ? { name: eventText(roles, x.name) } : {}), ...(x.text ? { text: eventText(roles, x.text) } : {}), ...(x.by ? { by: eventText(roles, x.by) } : {}) }
+    if ('npc' in x && x.npc === 'master') {
+      if (!roles.other) continue
+      x = { ...x, npc: roles.other.id }
+    }
+    if (roles.subject !== pc && SUBJECT_EFFECTS.has(x.type) && (!x.target || x.target === 'pc')) x = { ...x, target: roles.subject.id }
+    out.push(x as RewardEffect)
+  }
+  return out
+}
+
+/** 學會事件掛的一個還沒學的色情技能（回應的 learn） */
+function learnFromEvent(state: GameState, report: Report, who: Character, e: MasterEventDef): string | undefined {
+  const open = (e.teaches ?? []).filter((id) => abilities[id]?.classes.includes('lewd') && !who.abilities.includes(id))
+  if (!open.length) return undefined
+  return teachAbility(state, report, who, withRng(state, (rng) => rng.pick(open)))
+}
+
+const POOL_TAG: Record<MasterEventPool, string> = { master: '主人', owner: '調教', brothel_work: '娼館', brothel_train: '娼館受訓' }
+
+/** 從回應裡選一個：有檢定的依規則擲骰 */
 export function answerMasterEvent(state: GameState, index: number): Report {
   const e = pendingEventDef(state)
-  const o = e.options[index]
-  if (!o) throw new Error('沒有這個選項')
+  const o0 = e.options[index]
+  if (!o0) throw new Error('沒有這個選項')
+  const pm = state.pendingMasterEvent!
+  const pool = pendingPool(state)
+  const roles = eventRoles(state)
+  const o = { ...o0, label: eventText(roles, o0.label) }
   const pc = pcOf(state)
-  const c = contractOf(pc)!
   const area = currentArea(state)
   const loc = locationById(area.location)
   const start = { ...state.time }
+  const who = roles.subject === pc ? '主角' : roles.subject.name
+  const focus = pool === 'master' ? [`${roles.other?.name ?? '主人'}的突發要求`, `主角的回應：${o.label}`]
+    : pool === 'owner' ? [`主角調教${roles.subject.name}`, `主角的做法：${o.label}`]
+    : [`${who}在娼館${pool === 'brothel_train' ? '受訓' : '接客'}`, `${who}的應對：${o.label}`]
   const report: Report = {
     schema_version: '0.1',
     report_id: newReportId(state),
@@ -520,39 +630,60 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     time: { start, end: addHours(start, o.hours ?? e.hours) },
     location: { at: area.location, region: loc.region, scene: area.name },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', summary: `${state.pendingMasterEvent!.text}你選擇${o.label}。`, tags: ['主人'] },
+    outcome: { result: 'neutral', summary: `${pm.text}${pool === 'master' || pool === 'owner' ? '你' : who}選擇${o.label}。`, tags: [POOL_TAG[pool]] },
     changes: {},
-    narration: { pov: 'second_person', length: 'short', focus: [`${c.masterName}的突發要求`, `主角的回應：${o.label}`] },
+    narration: { pov: 'second_person', length: 'short', focus },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
-  let effects = forMaster(o.effects, c.master, c.masterName)
+  let effects = forEvent(o.effects, roles, pc)
+  let ok = !o.check
   if (o.check) {
-    // 非戰鬥狀態與特質（主人的標籤也算）
-    const extra = checkModifiers(pc, { context: 'master_event', attr: o.check.attr, vsTags: npcRecord(state, c.master)?.tags ?? [] })
-    const dice = withBonus('1d20', mod(attrOf(pc, o.check.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
+    // 非戰鬥狀態與特質（對方的標籤也算）、屈服或抵抗、調教的修正
+    const r0 = roles.roller
+    const extra = [
+      ...checkModifiers(r0, { context: pool === 'master' ? 'master_event' : 'action', attr: o.check.attr, vsTags: roles.tags }),
+      ...stanceModifiers(roles.subject, o.stance), ...roles.dcMods,
+    ]
+    const dice = withBonus('1d20', mod(attrOf(r0, o.check.attr)) + proficiency(r0.level) + extra.reduce((s, x) => s + x.value, 0))
     const r = withRng(state, (rng) => roll(rng, dice))
-    const ok = r.total >= o.check.dc
-    report.timeline = [{ seq: 1, time: start, actor: 'pc', action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
-    effects = [...effects, ...forMaster(ok ? o.effects_success : o.fail_effects, c.master, c.masterName)]
+    ok = r.total >= o.check.dc
+    report.timeline = [{ seq: 1, time: start, actor: r0.id, action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
+    effects = [...effects, ...forEvent(ok ? o.effects_success : o.fail_effects, roles, pc)]
     report.outcome.result = ok ? 'success' : 'failure'
     const after = ok ? o.success : o.fail
-    if (after) report.outcome.summary += withMaster(state, after)
+    if (after) report.outcome.summary += eventText(roles, after)
   } else if (o.result) {
-    report.outcome.summary += withMaster(state, o.result)
+    report.outcome.summary += eventText(roles, o.result)
   }
-  // 成人向：這個回應進入親密場景時，敘事要詳細描寫
-  const ok = report.outcome.result === 'success'
+  // 成人向：這個回應進入親密場景時，敘事要詳細描寫（事件的主角不是主角本人時，指標記在他身上）
   if (e.scene && (o.adult_scene === 'always' || (o.check && o.adult_scene === (ok ? 'success' : 'fail')))) {
-    report.narration = { ...report.narration, length: 'medium', adult_scene: withMaster(state, e.scene) }
+    report.narration = { ...report.narration, length: 'medium', adult_scene: eventText(roles, e.scene), ...(roles.subject !== pc ? { adult_actor: roles.subject.id } : {}) }
   }
+  // 慾望指標：直接屈服（一定進入親密場景的回應）讓順從成長
+  if (o.adult_scene === 'always') addLewd(state, roles.subject, 'submission', 1, report)
   delete state.pendingMasterEvent
   const notes = applyEffects(state, report, affordable(state, effects))
+  // 學會事件掛的技能：回應寫了 learn 而且成功；娼館受訓一定學會（全部學過時複習）
+  if (o.learn && ok) {
+    const line = learnFromEvent(state, report, roles.subject, e)
+    if (line) notes.push(line)
+  }
+  if (pool === 'owner') notes.push(...afterTraining(state, report, roles.subject, e, ok))
+  if (pool === 'brothel_train') notes.push(...afterBrothelTraining(state, report, roles.subject, pm))
   if (notes.length) report.outcome.summary += notes.join('，') + '。'
   return commitReport(state, report)
 }
 
+/** 屈服或抵抗的回應：順從（慾望指標）高的人屈服比較容易、抵抗比較難 */
+export function stanceModifiers(c: Character, stance: MasterEventOption['stance']): { label: string; value: number }[] {
+  if (!stance) return []
+  const n = Math.floor(lewdOf(c).submission / lewdRules.master_tool.stance_per)
+  return n ? [{ label: stance === 'submit' ? '順從・屈服' : '順從・抵抗', value: stance === 'submit' ? n : -n }] : []
+}
+
 /** 自己輸入回應（主動行動 master_event） */
 export function setupMasterEvent(state: GameState) {
+  if (pendingPool(state) !== 'master') throw new Error('這個事件只能從選項裡選')
   const e = pendingEventDef(state)
   const c = contractOf(pcOf(state))!
   return {
@@ -650,7 +781,7 @@ export function applyReturn(state: GameState, report: Report, degree: Degree): s
       return `${c.masterName}收回了你。${punish(state, 'heavy', report)}${sent}`
     case 'fumble': {
       const line = punish(state, 'heavy', report)
-      c.obedience = Math.min(slaveryRules.freedom.obedience_max, c.obedience + 1)
+      raiseObedience(state, c)
       return `${c.masterName}收回了你，怒氣未消。${line}${sent}`
     }
   }
@@ -796,7 +927,8 @@ export function unmarkOffers(state: GameState): UnmarkOffer[] {
     for (const [id, def] of Object.entries(u.services) as [UnmarkServiceId, UnmarkServiceDef][]) {
       const base = { service: id, name: def.name, desc: def.desc, attr: def.attr }
       const dc = strength - def.dc_offset + (isFugitive(state) ? def.fugitive_dc ?? 0 : 0) - (sealed ? def.arcane_bonus ?? 0 : 0)
-      const fee = strength * def.price_per_point
+      // 神殿的服務：神職的身分打折
+      const fee = Math.round(strength * def.price_per_point * (def.cell === 'temple' ? pcTagMult(pcOf(state), 'service_mult') : 1))
       if (!unmarkRepOk(state, def)) continue
       if (def.where === 'cell' && cell === def.cell) out.push({ ...base, target: id, dc, fee_cc: fee })
       if (def.where === 'black_market' && cell === def.cell && blackMarketKnown(state)) out.push({ ...base, target: id, dc, fee_cc: fee })

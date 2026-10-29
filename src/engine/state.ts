@@ -3,7 +3,7 @@
 import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
 import { pruneSpecialMaps } from './specialMaps'
-import { abilities, attributeRules, classDef, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, companionRules, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
@@ -13,6 +13,7 @@ import { Rng } from './rng'
 import type { Character, ContractRef, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, MarkTerms, Report } from './types'
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
+import { backfillLewdSkills, lewdDaily, noteAdultScene } from './lewd'
 import { sanitizePcTags } from './pcTags'
 import { occupationFor } from './npcs'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
@@ -356,6 +357,8 @@ export function migrate(state: GameState): GameState {
   pruneStatuses(state)
   pruneAbilities(state)
   prunePerks(state)
+  // 打工線的獨特色情技能（v0.4 起，慾望戰鬥 S6）：已經完成的任務線補發
+  backfillLewdSkills(state)
   // 依存檔格式的版本依序轉換
   for (const [v, step] of SCHEMA_STEPS) {
     if ((state.schema ?? 1) >= v) continue
@@ -369,9 +372,16 @@ export function migrate(state: GameState): GameState {
   return state
 }
 
-/** 自訂內容刪掉的狀態：從進行中的戰鬥拿掉（讀檔時，以及自訂內容改變之後） */
+/**
+ * 自訂內容刪掉的狀態（讀檔時，以及自訂內容改變之後）：戰鬥狀態從進行中的戰鬥拿掉；
+ * 自建的非戰鬥狀態（mod_cond_ 開頭）從角色身上拿掉。
+ */
 export function pruneStatuses(state: GameState) {
   for (const x of state.combat?.combatants ?? []) if (x.statuses.some((s) => !statuses[s.id])) x.statuses = x.statuses.filter((s) => !!statuses[s.id])
+  const gone = (id: string) => id.startsWith('mod_cond_') && !companionRules.conditions[id]
+  for (const c of [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((x): x is Character => !!x)]) {
+    if (c.status?.some(gone)) c.status = c.status.filter((id) => !gone(id))
+  }
 }
 
 /** 自訂內容刪掉的能力：從角色身上拿掉（讀檔時，以及自訂內容改變之後） */
@@ -430,6 +440,13 @@ export function withRng<T>(state: GameState, fn: (rng: Rng) => T): T {
   }
 }
 
+/** 推進遊戲時間（走格子、旅途、開寶箱這類不產生報告的動作）：跨日時結算每天的變化 */
+export function advanceTime(state: GameState, hours: number) {
+  const prevDay = state.time.day
+  state.time = addHours(state.time, hours)
+  lewdDaily(state, prevDay, state.time.day)
+}
+
 export function addHours(time: GameTime, hours: number): Required<GameTime> {
   const totalMinutes =
     ((time.day - 1) * 24 + (time.hour ?? 0)) * 60 + (time.minute ?? 0) + Math.round(hours * 60)
@@ -480,7 +497,11 @@ export function commitReport(state: GameState, report: Report): Report {
     const scene = report.location.scene && !report.location.scene.includes(special.name) ? `${report.location.scene}・` : ''
     report.location.scene = `${scene}${special.name}（${special.desc.slice(0, 120)}）`
   }
+  const prevDay = state.time.day
   state.time = { day: report.time.end.day, hour: report.time.end.hour ?? 0, minute: report.time.end.minute ?? 0 }
+  // 慾望指標：跨過的每一天（曝露名聲、服裝……）與親密場景
+  lewdDaily(state, prevDay, state.time.day)
+  noteAdultScene(state, report)
   if (report.kind === 'travel' && report.outcome.result === 'arrived' && report.location.to) {
     locationById(report.location.to)
     state.location = report.location.to

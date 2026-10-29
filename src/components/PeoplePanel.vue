@@ -5,11 +5,11 @@ import { affinityStage } from '@/engine/character'
 import { askingFor, proposeDc, squadOptions } from '@/engine/companions'
 import { actionRules, genderName, raceName, tagDef } from '@/engine/data'
 import { isBound, partyMax, partyRoom } from '@/engine/party'
-import { cellAt, CELL_NAME, cellName, currentArea, position } from '@/engine/grid'
+import { cellAt, CELL_NAME, cellName, position } from '@/engine/grid'
 import { affinityTable, itemValue, type InteractionKind } from '@/engine/interactions'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcRecord, npcTitle } from '@/engine/npcs'
-import { isGuarded, isHostile, peopleHere, type PresentNpc } from '@/engine/population'
+import { isGuarded, isHostile, type PresentNpc } from '@/engine/population'
 import { inActiveSquad } from '@/engine/squads'
 import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
@@ -25,7 +25,7 @@ import GameIcon from './ui/GameIcon.vue'
 // 這裡的人：和主角同一個地點、同一個地區的 NPC（見 docs/NPC_SYSTEM.md 第 7 節）
 const game = useGame()
 const s = computed(() => game.state!)
-const people = computed(() => peopleHere(s.value))
+const people = computed(() => game.here)
 const groups = computed(() => ([
   { key: 'staff', title: '店主與職員', icon: 'store', items: people.value.filter((p) => p.staff) },
   { key: 'adventurer', title: '冒險者', icon: 'sword', items: people.value.filter((p) => !p.staff && p.kind === 'adventurer') },
@@ -34,7 +34,7 @@ const groups = computed(() => ([
   const near = g.items.filter((p) => p.dist <= 1).length
   return { ...g, near, detail: near ? `身邊 ${near} 人` : '都不在身邊（要先走近）' }
 }))
-const where = computed(() => currentArea(s.value).name)
+const where = computed(() => game.area.name)
 // 身邊（同一格或相鄰）的人才能互動：沒有時自動收起，有人走近時自動打開；也可以點標題手動切換。
 // 店主與職員、冒險者、普通人三組也一樣：那一組身邊有人才展開
 const nearCount = computed(() => people.value.filter((p) => p.dist <= 1).length)
@@ -87,7 +87,7 @@ function whereIs(p: PresentNpc): string {
   const dx = p.x - me.x
   const dy = p.y - me.y
   const dir = `${dx < 0 ? '西' : dx > 0 ? '東' : ''}${dy < 0 ? '北' : dy > 0 ? '南' : ''}`
-  const cell = cellAt(currentArea(s.value), p.x, p.y)
+  const cell = cellAt(game.area, p.x, p.y)
   return `在${dir ? `${dir}方` : '這裡'}的${cell ? cellName(cell.kind) : '某處'}（${p.dist} 格）`
 }
 
@@ -255,9 +255,10 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
                   <GameIcon name="hand" :size="13" />{{ hiring === p.rec.id ? '收起' : bound ? '向主人提議雇用' : '雇用' }}
                 </button>
                 <details class="more">
-                  <summary class="small" title="獻媚、偷竊、偷襲" aria-label="更多互動"><GameIcon name="more" :size="16" /></summary>
+                  <summary class="small" title="獻媚、誘惑、偷竊、偷襲" aria-label="更多互動"><GameIcon name="more" :size="16" /></summary>
                   <div class="more-list">
                     <button class="small" :disabled="busy" title="魅力檢定：奉承、討好；失敗會降低親密度，對貴族更難" @click="interact('flatter', p)">獻媚</button>
+                    <button class="small" :disabled="busy" title="魅力檢定：勾引、挑逗；對方信仰虔誠、戴著清心的護符比較難，越淫亂越容易。成功時親密度上升、對方淫亂 +1，失敗會降低親密度" @click="interact('seduce', p)">誘惑</button>
                     <button class="small" :disabled="busy || guarded(p, 'steal')" :title="guarded(p, 'steal') ? GUARDED : '靈巧檢定：偷錢或東西；被發現會降低親密度，在城裡還會提高衛兵警戒、降低聲望'" @click="interact('steal', p)">偷竊</button>
                     <button v-if="p.kind === 'adventurer' && !p.staff" class="small danger" :disabled="busy || guarded(p, 'attack')" :title="guarded(p, 'attack') ? GUARDED : '靈巧檢定：成功就先手開戰；被看到會有衛兵與聲望的後果'" @click="attack(p)">偷襲</button>
                   </div>

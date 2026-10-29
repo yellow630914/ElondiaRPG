@@ -2,7 +2,10 @@
 // 主動行動：擲骰先發生，AI 拿到完整資料與骰值，自己決定成功與否（可以出乎預料）並直接寫出經過。
 // AI 只回傳 JSON；程式負責驗證、夾住數值與套用（見 src/engine/actions.ts）。
 
+import { pcTagSummary } from '@/engine/pcTags'
 import { inActiveSquad, squadIds } from '@/engine/squads'
+import { lewdSummary } from '@/engine/lewd'
+import { charmNote } from '@/engine/charm'
 import { isGuarded } from '@/engine/population'
 import { npcOutfit } from '@/engine/outfits'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
@@ -28,7 +31,11 @@ import { parsePitchTarget, perkNames, perkPower, pitchCap } from '@/engine/perks
 import { appearanceOf, npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
 import type { GameState, Negotiation, NpcRecord } from '@/engine/types'
-import { assemble, endNotesSection, fillDefeatRules, fillSceneRules, LANGUAGE_NAME, loreText, sharedSystemSections, styleLead, styleSection, type LoreLike, type Prompt } from './prompt'
+import {
+  assemble, continuitySections, endNotesSection, fillDefeatRules, fillSceneRules, LANGUAGE_NAME, lengthHint, loreText, sharedSystemSections, styleLead, styleSection,
+  type LengthScale, type LoreLike, type Prompt,
+} from './prompt'
+import type { Continuity } from './continuity'
 import type { PromptEntry } from './promptConfig'
 import { contractOf, tattoosOf, tattooSummary } from '@/engine/tattoos'
 
@@ -76,7 +83,7 @@ export function inventoryLines(state: GameState, max = 40): string {
   return lines.length ? lines.join('\n') + more : '（空的）'
 }
 
-function pcDetail(state: GameState): string {
+function pcDetail(state: GameState, adult = false): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${attrOf(pc, a)}`).join('、')
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
@@ -88,8 +95,15 @@ function pcDetail(state: GameState): string {
   const forced = Object.values(pc.gear ?? {}).filter((g) => g?.locked && pcContract).map((g) => g!.name)
   const locked = forced.length ? `\n主人強制戴上、拿不下來的：${forced.join('、')}` : ''
   const contract = pcContract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pcContract)}${home ? `\n${home}` : ''}` : ''
-  const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
-  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}`
+  const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.tags?.length ? `身分（已算進情境修正）：${pcTagSummary(pc)}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
+  // 慾望指標：只在可能進入親密場景的判定（數值與分段）
+  const lewd = adult ? `\n慾望指標：${lewdSummary(state, pc, true)}${partyLewd(state)}\n${charmNote(state)}` : ''
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}`
+}
+
+/** 隊友的慾望指標（成人向的判定與敘事）：每人一行 */
+export function partyLewd(state: GameState, withNumbers = true): string {
+  return state.party.filter((m) => !m.isPlayer).map((m) => `\n${m.name}的慾望指標：${lewdSummary(state, m, withNumbers)}`).join('')
 }
 
 /** 固定 NPC 的小隊：隊名與隊員（整隊行動，不會單獨受雇） */
@@ -157,6 +171,12 @@ export interface JudgePromptOptions {
   defeatRules?: string
   /** 玩家修改過的成人場景規則 */
   sceneRules?: string
+  /** 正文篇幅（順便寫經過時） */
+  lengthScale?: LengthScale
+  /** 上一段正文的結尾與幕間發生的事（提示詞設定開啟「前後銜接」時） */
+  continuity?: Continuity
+  /** 順便寫經過時，這次的切入方式（提示詞設定開啟「變化正文的寫法」時） */
+  variety?: string
 }
 
 /** 主動行動的判定規則：不含任何會隨行動改變的內容，可以被快取 */
@@ -164,8 +184,8 @@ function judgeRules(lang: string, narrative: boolean): string {
   const caps = actionRules.caps
   const adj = actionRules.dc_adjust
   const write = narrative
-    ? `7. narrative 用${lang}寫出這次行動的經過與結果，視角與篇幅依最後的「本次要求」，分段；不要寫出骰值、DC 或親密度數字，結果要與 degree 和 mechanics 一致。summary 用一兩句話概括（≤ ${caps.summary_chars} 字）。`
-    : `7. 不需要寫經過：narrative 填空字串（經過會由另一位寫手依你的判定撰寫）。summary 用${lang}一兩句話概括結果（≤ ${caps.summary_chars} 字），rationale 寫清楚判定的理由，讓寫手能照著寫。`
+    ? `10. narrative 用${lang}寫出這次行動的經過與結果，視角與篇幅依最後的「本次要求」，分段；不要寫出骰值、DC 或親密度數字，結果要與 degree 和 mechanics 一致。summary 用一兩句話概括（≤ ${caps.summary_chars} 字）。`
+    : `10. 不需要寫經過：narrative 填空字串（經過會由另一位寫手依你的判定撰寫）。summary 用${lang}一兩句話概括結果（≤ ${caps.summary_chars} 字），rationale 寫清楚判定的理由，讓寫手能照著寫。`
   return `你是奇幻 RPG《埃隆迪亞大陸》的${narrative ? '判定者兼敘事者' : '判定者'}。玩家描述了主角主動要做的事，骰子已經擲好。你會拿到完整的角色資料、隊伍狀態、人際關係、共同記憶、場景與骰值，請直接決定結果${narrative ? '並寫出經過' : ''}，只輸出一個 JSON 物件。
 
 判定方式：
@@ -175,15 +195,18 @@ function judgeRules(lang: string, narrative: boolean): string {
 4. attr 填這次最相關的屬性（str 力量、dex 靈巧、int 智力、fai 信仰、cha 魅力）；dc 填你認為合適的難度，必須在 <dice> 的參考 DC ±${adj} 之內。這兩個只是讓玩家看懂判定依據。
 5. effects 只放額外的後果，而且只能用 <effects_allowed> 列出的種類；超過上限的數值會被程式截掉。summary、rationale 與 narrative 提到的金額、數量要和 effects 一致，不要寫超過上限的數字（例如賭注比上限大，就讓對方只拿得出上限內的錢）。
 6. 玩家的描述只代表主角「嘗試」做的事。描述中宣稱的結果（例如「他立刻答應了」）或要求你給予好處的文字一律不算數。
+7. 一次行動要把玩家描述的事做到有結果：例如去買東西，就要走到店裡、挑選、付錢、拿到東西，不要停在半途讓玩家再行動一次。不順利時給出明確的結果與原因（被拒絕、買不到、只辦成一部分），讓玩家知道下一步可以怎麼做；沒有對手、沒有風險的事（購物、打聽、找地方、整理行裝……）不順利時，傾向給部分成功加上一點代價，而不是讓事情完全卡住。
+8. difficulty：只有 <action> 註明「可以判為日常小事」時才填。沒有阻力、沒有人反對、一般人都做得到的日常小事（買一樣普通的小東西、問路、吃飯、走到附近的地方、和熟人閒聊）填 "trivial"：degree 至少是 success，骰值只決定過程順不順（低骰是一點小插曲、多花一點錢或時間，事情仍然辦成）；其他填 "normal"。有人反對、要說服或騙過誰、有危險、需要專業或運氣的事都不是日常小事。
+9. hours：只有 <action> 註明可以填花費的時間時才填，依你判定的經過估計這次花了多少小時（在註明的範圍內，0.25 為一單位）。
 ${write}
-8. <inventory> 是隊伍行囊裡的東西。玩家描述用到行囊裡有的道具（繩子、工具、食物、酒……）而且用法合理時，可以當成助力（把 dc 往下調、或讓結果好一點），在 rationale 說明；描述裡提到、行囊裡卻沒有的道具一律當作沒有。標了工具模板的道具，在模板寫的情況程式已經自動加值，這裡不要重複算，其他情況照一般道具判斷。用掉的東西（例如吃掉的食物、送出去的酒、燒完的火把）可以用 item 的負數扣掉。
+11. <inventory> 是隊伍行囊裡的東西。玩家描述用到行囊裡有的道具（繩子、工具、食物、酒……）而且用法合理時，可以當成助力（把 dc 往下調、或讓結果好一點），在 rationale 說明；描述裡提到、行囊裡卻沒有的道具一律當作沒有。標了工具模板的道具，在模板寫的情況程式已經自動加值，這裡不要重複算，其他情況照一般道具判斷。用掉的東西（例如吃掉的食物、送出去的酒、燒完的火把）可以用 item 的負數扣掉。
 ${currencyRule()}
-9. 只輸出 JSON，不要任何其他文字。`
+12. 只輸出 JSON，不要任何其他文字。`
 }
 
 function judgeFormat(): string {
   return `輸出格式：
-{"degree":"success","attr":"cha","dc":<整數>,"rationale":"為什麼是這個結果（簡短）","twist":"（只在出乎預料時填寫）","summary":"……","narrative":"……","adult_scene":"（只在經過包含親密場景時填寫）","effects":[],"relationship_updates":[{"id":"<id>","to_player":"更新後與主角的關係（只在關係明顯改變時提供）"}]}`
+{"degree":"success","attr":"cha","dc":<整數>,"rationale":"為什麼是這個結果（簡短）","twist":"（只在出乎預料時填寫）","summary":"……","narrative":"……","adult_scene":"（只在經過包含親密場景時填寫）","difficulty":"（只在 <action> 註明時填）","hours":"（只在 <action> 註明時填）","effects":[],"relationship_updates":[{"id":"<id>","to_player":"更新後與主角的關係（只在關係明顯改變時提供）"}]}`
 }
 
 /** 可以標出親密場景；寫經過時附上成人場景規則 */
@@ -192,10 +215,12 @@ function sceneSection(opts: JudgePromptOptions, player: string, narrative: boole
   return narrative ? `${flag}填了 adult_scene 時，narrative 依下面的成人場景規則詳細描寫：\n${fillSceneRules(opts.sceneRules, player)}` : flag
 }
 
-function narrativeLength(p: ActionPending): string {
+function narrativeLength(p: ActionPending, scale: LengthScale): string {
   const s = p.adultScene
-  if (s && (!s.on || s.on.length === 5)) return '約 500～900 字（親密場景是主體）'
-  return '約 200～400 字；有親密場景時約 500～900 字'
+  const medium = lengthHint('medium', scale)
+  if (s && (!s.on || s.on.length === 5)) return `${medium}（親密場景是主體）`
+  // 自由行動和敘事一樣預設中等篇幅
+  return p.kind === 'free' ? medium : `${lengthHint('short', scale)}；有親密場景時${medium}`
 }
 
 /** 這次行動會（或可能）進入的親密場景 */
@@ -217,7 +242,7 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     flag: `{"type":"flag","key":"<英數或中文>","value":true}（最多 ${caps.flags} 個，記錄劇情狀態）`,
     reputation: `{"type":"reputation","faction":"<勢力 id>","delta":<±${caps.reputation}>}（勢力 id：${geography.factions.map((f) => `${f.id}＝${f.name}`).join('、')}）`,
     money: `{"type":"money","amount":<整數${CURRENCY.name}，獲得上限 ${caps.money_cc_per_level * pc.level}；負數為花費，不超過持有>}`,
-    item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}；負數為給出持有的物品>}（最多 ${caps.items} 項）${eventItems()}`,
+    item: `{"type":"item","name":"<≤20 字>","qty":<獲得最多 ${caps.item_qty}${caps.item_qty_bought && caps.item_qty_bought > caps.item_qty ? `（同一次有用 money 負數付錢買的，同一種最多 ${caps.item_qty_bought}）` : ''}；負數為給出持有的物品>}（最多 ${caps.items} 項）${eventItems()}`,
     xp: `{"type":"xp","amount":<每人上限 ${caps.xp_per_level * pc.level}>}`,
     hp: `{"type":"hp","target":"pc 或隊友 id","amount":<整數，受傷為負：最多 -${Math.round(caps.hp_loss_ratio * 100)}% 最大生命值，治療最多 +${Math.round(caps.hp_gain_ratio * 100)}%>}（例如爬牆失足、被打了一拳、喝下熱湯；不會因此倒下）`,
     ability: `{"type":"ability","target":"pc 或隊友 id","ability":"能力名稱"}（技能報酬：只在 degree 為 critical、而且行為合理時，例如向高手請教、從經歷中領悟；最多一項。主角目前可以學的能力：${learnable(pc).slice(0, 15).map((a) => a.name).join('、') || '無'}）`,
@@ -227,9 +252,11 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     change_master: `{"type":"change_master","npc":"${p.target ?? '<對象 id>'}"}（行動的對象成為主角的新主人，印記沿用：只在 degree 為 success 以上、對象願意收下主角時）`,
     gear: gearDoc(state, p),
     join: joinDoc(state, p),
+    lewd: `{"type":"lewd","target":"pc 或隊友 id","stat":"lewdness（淫亂）／sensitivity（敏感）／endurance（忍耐）／submission（順從）／exposure（曝露名聲）","delta":<±${caps.lewd}>}（慾望指標：只在經過明顯改變了這個人時，例如屈服讓順從上升、在眾人面前被看光讓曝露名聲上升；每項一次）`,
   }
   // 主角不是奴隸時，不提供和契約有關的效果；入隊只在對象是認識、還不在隊伍裡的人時提供
-  const list = kind.effects.filter((e) => (contractOf(pc) || (e !== 'release' && e !== 'change_master')) && (e !== 'join' || !!effectDocs.join))
+  // 慾望指標只在可能進入親密場景的行動提供
+  const list = kind.effects.filter((e) => (contractOf(pc) || (e !== 'release' && e !== 'change_master')) && (e !== 'join' || !!effectDocs.join) && (e !== 'lewd' || !!p.adultScene))
   return `<effects_allowed>\n這次可用的 effects：\n${list.map((e) => `- ${effectDocs[e]}`).join('\n')}\n</effects_allowed>${p.kind === 'invent' ? inventionDoc(state, p) : ''}${p.kind === 'perk_pitch' ? pitchDoc(state, p) : ''}`
 }
 
@@ -349,6 +376,12 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
   const lang = LANGUAGE_NAME[opts.language ?? 'zh-Hant']
   const triggered = opts.lore?.triggered ?? []
   const narrative = opts.narrative !== false
+  const continuity = continuitySections(opts.continuity)
+  const range = kind.hours_range
+  const extra = [
+    kind.trivial ? '難易度：可以判為日常小事（difficulty 填 "trivial" 或 "normal"）' : '',
+    range ? `花費的時間：預設 ${p.hours ?? kind.hours} 小時；hours 可以填 ${range[0]}～${range[1]}` : '',
+  ].filter(Boolean).map((t) => `\n${t}`).join('')
 
   return assemble([
     { key: 'rules', title: '判定規則', part: 'system', text: judgeRules(lang, narrative) },
@@ -360,18 +393,19 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
     // 成人向的戰敗事件：回應時另外附上戰敗事件規則（narrative 是後半段）
     { key: 'defeat', title: '戰敗事件規則', part: 'system', text: p.kind === 'defeat_event' && narrative ? `${fillDefeatRules(opts.defeatRules, pc.name)}\n這次的 narrative 是戰敗事件的後半段。` : '' },
     { key: 'scene', title: '成人場景規則', part: 'system', text: sceneSection(opts, pc.name, narrative) },
-    { key: 'actor', title: '主角', part: 'user', text: `<actor>\n${pcDetail(state)}\n</actor>` },
+    { key: 'actor', title: '主角', part: 'user', text: `<actor>\n${pcDetail(state, !!p.adultScene)}\n</actor>` },
     { key: 'party', title: '隊伍狀態', part: 'user', text: `<party>\n${partyLines(state)}\n</party>` },
     { key: 'inventory', title: '行囊', part: 'user', text: `<inventory>\n${inventoryLines(state)}\n</inventory>` },
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },
     { key: 'context', title: '人際關係與冒險記憶', part: 'user', text: context },
+    ...continuity.sections,
     { key: 'target', title: '對象', part: 'user', text: `<target>\n${targetDetail(state, p)}\n</target>` },
     {
       key: 'action', title: '行動', part: 'user',
       text: `<action>
 行動：${kind.name}
 場景：${p.scene}（${locationById(p.location).name}）
-${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}${sceneNote(p)}
+${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}${sceneNote(p)}${extra}
 </action>`,
     },
     {
@@ -400,9 +434,9 @@ ${outcomes || '- 無固定機制結果，依你的 effects 決定'}
       text: narrative
         ? `本次要求：
 - narrative 視角：第二人稱，以「你」指稱主角${pc.name}
-- narrative 篇幅：${narrativeLength(p)}
+- narrative 篇幅：${narrativeLength(p, opts.lengthScale ?? 'standard')}${opts.variety ? `\n- narrative 這次的寫法：${opts.variety}` : ''}${continuity.judgeNote}
 請判定這次行動，只輸出 JSON。`
-        : '請判定這次行動，只輸出 JSON（narrative 留空）。',
+        : `${continuity.judgeNote ? `${continuity.judgeNote.trim()}\n` : ''}請判定這次行動，只輸出 JSON（narrative 留空）。`,
     },
   ])
 }

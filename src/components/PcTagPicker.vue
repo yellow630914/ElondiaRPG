@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { tagDef, tagsExclusive } from '@/engine/data'
-import { PC_TAG_MAX, pcTagChoices } from '@/engine/pcTags'
+import { PC_TAG_MAX, pcTagChoices, pcTagEffectLines } from '@/engine/pcTags'
 
 // 主角的身分標籤（和 NPC 共用 npc_tags.json）：最多 3 個，互斥的不能同時選
 const tags = defineModel<string[]>({ required: true })
@@ -17,10 +17,8 @@ function toggle(id: string) {
   if (tags.value.includes(id)) tags.value = tags.value.filter((t) => t !== id)
   else if (!blocked(id)) tags.value = [...tags.value, id]
 }
-const EFFECT: Record<string, string> = { bypass_reputation: '不必聲望也能進入王城、地標與神殿的服務' }
 function effects(id: string): string {
-  const e = tagDef(id)?.pc_effects ?? {}
-  return Object.entries(e).filter(([, on]) => on).map(([k]) => EFFECT[k] ?? k).join('、')
+  return pcTagEffectLines(id).join('、')
 }
 </script>
 

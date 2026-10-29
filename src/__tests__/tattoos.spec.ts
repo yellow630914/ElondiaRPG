@@ -49,10 +49,11 @@ describe('tattoo data', () => {
   })
 
   it('derives the same mark functions the templates used to list', () => {
-    expect(termsFromTemplate('labor').functions).toEqual(['identity', 'obedience', 'income', 'tracking'])
-    expect(termsFromTemplate('combat').functions).toEqual(['identity', 'obedience', 'income', 'tracking', 'tether'])
+    // 順從累積（submission）：模板寫了 submission_every 的才有（慾望戰鬥 S8）
+    expect(termsFromTemplate('labor').functions).toEqual(['identity', 'obedience', 'income', 'tracking', 'submission'])
+    expect(termsFromTemplate('combat').functions).toEqual(['identity', 'obedience', 'income', 'tracking', 'tether', 'submission'])
     expect(termsFromTemplate('arcane').functions).toContain('spell_seal')
-    expect(deriveFunctions({ ...termsFromTemplate('labor'), income_share: 0, recapture_chance: 0 })).toEqual(['identity', 'obedience'])
+    expect(deriveFunctions({ ...termsFromTemplate('labor'), income_share: 0, recapture_chance: 0, submission_every: undefined })).toEqual(['identity', 'obedience'])
   })
 
   it('reads the template roles and market weights from data', () => {

@@ -2,8 +2,9 @@
 import { computed, ref } from 'vue'
 import mapUrl from '../../assets/map/elondia-map.webp'
 import { geography, locationById } from '@/engine/data'
-import { currentArea, DUNGEON_LAYERS } from '@/engine/grid'
+import { DUNGEON_LAYERS } from '@/engine/grid'
 import { layerRank } from '@/engine/materialQuests'
+import { charmLevel, charmName } from '@/engine/charm'
 import { useGame } from '@/stores/game'
 import AppDialog from './AppDialog.vue'
 import AreaMap from './AreaMap.vue'
@@ -14,7 +15,7 @@ import Hint from './ui/Hint.vue'
 const game = useGame()
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
-const area = computed(() => currentArea(s.value))
+const area = computed(() => game.area)
 const layerName = computed(() => (area.value.kind === 'dungeon' && area.value.layer !== undefined ? DUNGEON_LAYERS[area.value.layer]?.name : undefined))
 /** 建議階級：看目前這一層的怪物（地下城沒有整座的階級） */
 const layerRankHere = computed(() => {
@@ -35,6 +36,7 @@ const showWorldMap = ref(false)
           {{ here.name }}・{{ geography.regions.find((r) => r.id === here.region)?.name }}
           <span v-if="layerName">・{{ layerName }}</span>
           <span v-if="layerRankHere" class="tag">建議 {{ layerRankHere }} 級</span>
+          <span v-if="here.type !== 'dungeon'" class="tag" title="魅氣濃度（1～4）：曝露名聲累積的速度、近郊的怪物發情的機率、城裡的風氣">魅氣・{{ charmName(charmLevel(here.id)) }}</span>
         </p>
       </div>
       <div class="row tools">

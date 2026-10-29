@@ -29,3 +29,5 @@
 ## 4. 生圖
 
 48 個場景（6 地區、26 城鎮、16 地下城）的提示詞與 OpenRouter 生圖腳本另外整理（共用畫風：史詩奇幻概念畫、帶一點油畫筆觸、主體偏一側、中間低對比）。生好之後挑一張、照第 2 節的檔名轉成 webp 放進 `src/assets/backgrounds/`。
+
+緋夢樂園（[LUST_PARK](LUST_PARK.md)）的 16 個場景（入口廣場 `special-sm_lust_park`、五個園區的淺層、中層、深層 `park_*-shallow` 這類）的提示詞與腳本在 `tools/backgrounds/`（見那裡的 README.md）：ComfyUI（Checkpoint、UNet、自訂工作流程，和遊戲的 ComfyUI 設定組合同一套）、NovelAI、ChatGPT（不含成人內容）三個生圖腳本，以及裁成 1536×864 webp 的 `finalize.py`。還沒有生成圖，放進去就會自動用上。

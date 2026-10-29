@@ -2,8 +2,11 @@
 import { computed, ref, watch } from 'vue'
 import {
   actionRules, ATTR_IDS, attributeRules, attrName, choosablePerks, className, combatClasses, damageTypes, landmarks, npcTags, perkRules, shopRules,
-  type AffinityMap, type AttrId, type CheckFilter, type Mods, type PerkEffect,
+  type AffinityMap, type AttrId, type CheckFilter, type LustPerk, type Mods, type PerkEffect,
 } from '@/engine/data'
+import { schoolIds, schoolName } from '@/engine/schools'
+import { LEWD_STATS, lewdName } from '@/engine/lewd'
+import type { LewdStat } from '@/engine/types'
 import { builtinPerk, perkEditorLimits, TRAIN_CELLS, type PerkMod } from '@/engine/mods'
 import { cellName, type CellKind } from '@/engine/grid'
 import { describeEffects, perkCategory, perkPower, PERK_CATEGORIES } from '@/engine/perks'
@@ -38,6 +41,10 @@ const draft = ref<PerkMod>(current())
 function setCategory(c: string) {
   if (c) draft.value.category = c
   else delete draft.value.category
+}
+function setCamp(on: boolean) {
+  if (on) draft.value.camp = true
+  else delete draft.value.camp
 }
 
 function setRarity(r: string) {
@@ -109,12 +116,12 @@ function toggleList(list: string[] | undefined, v: string, on: boolean): string[
   else set.delete(v)
   return set.size ? [...set] : undefined
 }
-function setRequires(key: 'races' | 'classes', v: string, on: boolean) {
+function setRequires(key: 'races' | 'classes' | 'perks', v: string, on: boolean) {
   const r = { ...(draft.value.requires ?? {}) }
   const next = toggleList(r[key], v, on)
   if (next) r[key] = next
   else delete r[key]
-  if (r.races || r.classes) draft.value.requires = r
+  if (r.races || r.classes || r.perks) draft.value.requires = r
   else delete draft.value.requires
 }
 function setExclusive(v: string, on: boolean) {
@@ -122,6 +129,40 @@ function setExclusive(v: string, on: boolean) {
   if (next) draft.value.exclusive = next
   else delete draft.value.exclusive
 }
+// ---- 慾望流派（docs/LEWD_STATS.md 第 6 節）：流派與慾望效果 ----
+const LUST_NUMS: [keyof LustPerk, string, number][] = [
+  ['max', '慾望上限 +', 1], ['taken', '受到的慾望倍率 ±', 0.05], ['self', '自己增加的慾望倍率 +', 0.05], ['convert', '傷害轉成慾望的比例 +', 0.05],
+  ['burst', '引爆的傷害倍率 +', 0.05], ['relief', '消退慾望的倍率 +', 0.05], ['crit_convert', '受到幸運一擊時改成慾望的比例', 0.05],
+  ['regen', '慾望一半以上時每回合回復生命', 1], ['climax_heal', '高潮時回復最大生命的比例', 0.05], ['exposure', '曝露名聲的魅惑傷害倍率 +', 0.25],
+  ['exposure_level', '曝露度每 1 點的魅惑傷害', 1], ['endurance_max', '忍耐每 20 點的慾望上限', 1], ['sensitivity_bonus', '敏感每 25 點的魅惑傷害', 1],
+  ['bound_max', '有上鎖的拘束具時慾望上限 +', 1],
+]
+const LUST_MODS: [keyof LustPerk, string][] = [['wounded', '生命低於一半時'], ['master', '主人在隊伍裡時（奴之誓）'], ['bound', '有上鎖的拘束具時']]
+const MOD_KEYS: [keyof Mods, string][] = [['hit', '命中'], ['evade', '迴避'], ['save', '豁免'], ['damage', '傷害'], ['dr', '減傷'], ['ap_regen', '行動點回復']]
+function lustNum(k: keyof LustPerk): number | undefined {
+  return draft.value.lust?.[k] as number | undefined
+}
+function setLust(k: keyof LustPerk, v: unknown) {
+  const l = { ...(draft.value.lust ?? {}) } as Record<string, unknown>
+  const empty = v === undefined || v === '' || (typeof v === 'number' && !v) || (typeof v === 'object' && !Object.keys(v as object).length)
+  if (empty) delete l[k]
+  else l[k] = v
+  if (Object.keys(l).length) draft.value.lust = l as LustPerk
+  else delete draft.value.lust
+}
+function setLustMod(k: keyof LustPerk, m: keyof Mods, v: number) {
+  const cur = { ...((draft.value.lust?.[k] as Mods | undefined) ?? {}) }
+  if (v) cur[m] = v
+  else delete cur[m]
+  setLust(k, cur)
+}
+function setGrowth(stat: LewdStat, v: number) {
+  const cur = { ...(draft.value.lust?.growth ?? {}) }
+  if (v) cur[stat] = v
+  else delete cur[stat]
+  setLust('growth', cur)
+}
+
 function setTrain(on: boolean) {
   if (on) draft.value.train = { cells: ['guild'], price_cc: 300, hours: 8, attr: 'str', dc: 12 }
   else delete draft.value.train
@@ -190,6 +231,7 @@ function remove() {
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="perkRules.custom.name_chars" /></label>
         <label v-if="!race" class="check"><input v-model="draft.flaw" type="checkbox" /> 缺陷 <Hint text="負的效果；不會出現在學特質的機會裡，事件直接給，受訓是克服它。" /></label>
+        <label class="check"><input :checked="!!draft.camp" type="checkbox" @change="setCamp(($event.target as HTMLInputElement).checked)" /> 能在野外紮營長休 <Hint text="隊伍裡有一個人有這個特質，就能在近郊的野外、旅途的道路與臨時地圖長休：每人 1 份乾糧，照那裡的機率可能被襲擊（帶帳篷減半）。效果可以留空。" /></label>
       </div>
       <label class="block"><span>描述 <Hint :text="`玩家與 AI 看到的；空白時依效果產生：${auto}`" /></span><textarea v-model="draft.desc" rows="2" :maxlength="perkRules.custom.desc_chars" /></label>
       <div class="grid">
@@ -287,10 +329,46 @@ function remove() {
           </label>
         </div>
         <details class="small">
+          <summary>要先有這些特質（{{ draft.requires?.perks?.length ?? 0 }}）</summary>
+          <label v-for="p in others" :key="p.id" class="check">
+            <input type="checkbox" :checked="draft.requires?.perks?.includes(p.id)" @change="setRequires('perks', p.id, ($event.target as HTMLInputElement).checked)" /> {{ p.name }}
+          </label>
+        </details>
+        <details class="small">
           <summary>和這些特質互斥（{{ draft.exclusive?.length ?? 0 }}）</summary>
           <label v-for="p in others" :key="p.id" class="check">
             <input type="checkbox" :checked="draft.exclusive?.includes(p.id)" @change="setExclusive(p.id, ($event.target as HTMLInputElement).checked)" /> {{ p.name }}
           </label>
+        </details>
+      </fieldset>
+
+      <fieldset>
+        <legend>慾望流派 <Hint text="成人向（docs/LEWD_STATS.md 第 6 節）。流派特質不進升級的三選一；慾望效果在慾望戰鬥裡生效（存檔規則關閉時沒有作用）。隸從派沒有主人時一半效果。" /></legend>
+        <label class="small">流派
+          <select :value="draft.school ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.school = ($event.target as HTMLSelectElement).value) : delete draft.school">
+            <option value="">（不是流派特質）</option>
+            <option v-for="id in schoolIds()" :key="id" :value="id">{{ schoolName(id) }}</option>
+          </select>
+        </label>
+        <details class="small" :open="!!draft.lust">
+          <summary>慾望效果（{{ Object.keys(draft.lust ?? {}).length }}）</summary>
+          <div class="grid">
+            <label v-for="[k, n, step] in LUST_NUMS" :key="k">{{ n }}
+              <input type="number" :step="step" :value="lustNum(k)" placeholder="—" @input="setLust(k, Number(($event.target as HTMLInputElement).value) || undefined)" />
+            </label>
+          </div>
+          <div class="row small">
+            <span>指標成長的倍率（-0.5 = 減半）：</span>
+            <label v-for="st in LEWD_STATS" :key="st">{{ lewdName(st) }}
+              <input type="number" class="num" step="0.25" min="-1" max="1" :value="draft.lust?.growth?.[st]" placeholder="—" @input="setGrowth(st, Number(($event.target as HTMLInputElement).value))" />
+            </label>
+          </div>
+          <div v-for="[k, n] in LUST_MODS" :key="k" class="row small">
+            <span>{{ n }}：</span>
+            <label v-for="[m, mn] in MOD_KEYS" :key="m">{{ mn }}
+              <input type="number" class="num" min="-3" max="3" :value="(draft.lust?.[k] as Mods | undefined)?.[m]" placeholder="—" @input="setLustMod(k, m, Number(($event.target as HTMLInputElement).value))" />
+            </label>
+          </div>
         </details>
       </fieldset>
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { pcTagMult } from '@/engine/pcTags'
 import { computed, reactive, ref, watch } from 'vue'
 import { ATTR_IDS, attrName } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
@@ -65,7 +66,12 @@ function ink() {
 }
 
 // ---- 洗刺青 ----
-const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'slave').map((t) => ({ t, price: removePrice(props.shop, t.kind, t.kind !== 'curse' || !!t.tamed) })))
+// 神殿洗刺青：神職的身分打折（身分標籤）
+const serviceMult = computed(() => (props.shop === 'temple' ? pcTagMult(pc.value, 'service_mult') : 1))
+const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'slave').map((t) => {
+  const base = removePrice(props.shop, t.kind, t.kind !== 'curse' || !!t.tamed)
+  return { t, price: base === undefined ? undefined : Math.round(base * serviceMult.value) }
+}))
 
 // ---- 寄生物：解咒（神殿、刻印師）與紋回來（刻印師） ----
 const cures = computed(() => (props.shop === 'parlor' ? [] : cureOffers(s.value)))

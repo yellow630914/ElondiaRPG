@@ -138,7 +138,8 @@ export function askingPrice(level: number, rng?: Rng): number {
 }
 
 /** 奴隸價格：依世界書的層級與種族區間（見 data/rules/slavery.json）。 */
-export function slavePrice(c: { race: string; class: string; level: number }, marketMult = 1, rng?: Rng): number {
+/** lewdMult：指標與色情技能讓身價變高（lewd.ts 的 slaveValueMult） */
+export function slavePrice(c: { race: string; class: string; level: number }, marketMult = 1, rng?: Rng, lewdMult = 1): number {
   const p = slaveryRules.prices_cc
   const tier = lifeTier(c.level)
   const group = p.race_group[c.race] ?? 'human'
@@ -149,6 +150,7 @@ export function slavePrice(c: { race: string; class: string; level: number }, ma
   if (tier > 3) price *= p.beyond_tier3_mult ** (tier - 3)
   price *= (p.race_mult[c.race] ?? 1) * (p.class_mult[c.class] ?? 1) * marketMult
   if (rng) price *= 1 - p.variance + rng.next() * 2 * p.variance
+  price *= lewdMult
   return Math.max(100, Math.round(price / 10) * 10)
 }
 

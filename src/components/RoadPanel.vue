@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { locationById } from '@/engine/data'
-import { currentArea, currentCell } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { roadProgress, roadTemplate } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
@@ -17,8 +16,8 @@ const progress = computed(() => {
   void s.value.time.hour
   return roadProgress(s.value)
 })
-const cell = computed(() => currentCell(s.value))
-const area = computed(() => currentArea(s.value))
+const cell = computed(() => game.cell)
+const area = computed(() => game.area)
 const atEnd = computed(() => position.value >= area.value.width - 1)
 const position = computed(() => s.value.position?.x ?? 0)
 const pending = computed(() => (s.value.roadEvent ? roadTemplate(s.value.roadEvent.template) : undefined))

@@ -794,6 +794,14 @@ print('dressed quests', apply_dress(BATCH))
 from adult_scenes26 import place_scenes
 print('scenes', place_scenes(BATCH, BATCH23))
 
+# 打工線的獨特色情技能（lust_skills_s6.py）：結局拿到獨特色情裝備的地方，接著學會那條線的技能
+from lust_skills_s6 import place_skills
+print('lust skills', place_skills(BATCH))
+
+# 魅魔的遊樂園的集章任務（lust_park_s7.py）
+from lust_park_s7 import PARK_STORIES
+BATCH = BATCH + PARK_STORIES
+
 # 地下城線的底層層主戰可以重試：不寫失敗的結果，輸了任務點保持開放（Lv.11 打 13 級的層主多半會輸，讓玩家練等之後再來）
 _enemy_data = json.load(open('data/rules/enemies.json'))
 ABYSS_BOSSES = {g[0] for t in _enemy_data['encounters'].values() for g in (t.get('bosses') or {}).get('abyss', []) if _enemy_data['enemies'] and any(e['id'] == g[0] and e['level'] >= 13 for e in _enemy_data['enemies'])}

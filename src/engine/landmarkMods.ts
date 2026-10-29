@@ -144,6 +144,8 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>): Land
   // 內部：同一個聚落的固定特殊地圖
   const inner = typeof raw.interior === 'string' ? specialMaps[raw.interior] : undefined
   if (inner?.grid?.length && inner.location === location) out.interior = inner.id
+  // 拍賣會（成人向，auction.ts）
+  if (raw.auction) out.auction = true
   // 場景：要有名稱與經過；內部的格子要在地圖裡、走得進去
   const scenes = (Array.isArray(raw.scenes) ? raw.scenes : []).map((x) => sanitizeScene(x, out.interior)).filter((x): x is LandmarkScene => !!x).slice(0, L.scenes)
   if (scenes.length) out.scenes = scenes

@@ -18,7 +18,7 @@
 | `flag` | 劇情旗標 |
 | `quest_reward` | 委託報酬按百分比調整（談判的結果） |
 | `quest_flag` | 委託的任務旗標，例如 `lead`（委託檢定 +5，情報商與情報物品給的線索）、`negotiated` |
-| `ability` | 技能報酬：學會新能力。可指定能力（id 或名稱）、給一次「N 選一」的學習機會（`choices`），或加上取得機率（`chance`）。指定的能力是這個職業的、法術的環階夠時直接學會（不受等級的品質與解鎖限制）；已經會了只提示；不是這個職業的或環階不夠時，改成一次三選一並提示原因（不會隨機換成別的）。沒有指定時從目前可以學的隨機挑一項。記錄在報告的 `skills_gained`，來源為 `insight` |
+| `ability` | 技能報酬：學會新能力。可指定能力（id 或名稱）、給一次「N 選一」的學習機會（`choices`），或加上取得機率（`chance`）。指定的能力是這個職業的（或不分職業的色情技能）、法術的環階夠時直接學會（不受等級的品質與解鎖限制）；已經會了只提示；不是這個職業的或環階不夠時，改成一次三選一並提示原因（不會隨機換成別的）。沒有指定時從目前可以學的隨機挑一項。記錄在報告的 `skills_gained`，來源為 `insight` |
 | `companion` | 新增夥伴：`voluntary` 自願、`hired` 雇傭、`slave` 奴隸（可指定契約）。對象可以是已登場的 NPC，也可以是一份規格（名字、種族、職業、等級……），程式會生成並登錄。隊伍放不下時不會出錯，也不會丟掉：記成等主角決定的入隊（騰出位子或放棄，見 [COMPANIONS](COMPANIONS.md) 第 2.7 節）；小隊整隊或整隊不來 |
 | `join_party` | 主角加入別人的隊伍（隊長、隊員，可附簽約金）。放不下時同樣等主角騰出位子或放棄 |
 | `leave` | 某人離隊 |
@@ -43,6 +43,8 @@
 | `master_home` | 主人把主角帶回主人的家（主人的事件用） |
 | `strict` | 嚴加看管的點數，正數加重、負數放寬（主人的事件用） |
 | `home_extend` | 離家期限延長幾小時（主人的事件用） |
+| `ability_pool` | 從事件庫（`pool`：`master` 主人事件、`owner` 調教、`brothel_work` 娼館打工、`brothel_train` 娼館受訓）所有事件掛的技能（`teaches`）裡，抽一個 `target`（預設主角）還沒學、等級也夠的色情技能學會；都學過時套用 `fallback`（[CONTENT_EDITOR](CONTENT_EDITOR.md) 3.98 節） |
+| `lewd` | 慾望指標的加減：`stat`（`lewdness`／`sensitivity`／`endurance`／`submission`／`exposure`）、`delta`，`target` 預設主角；曝露名聲記在目前的地區（[LEWD_STATS](LEWD_STATS.md)） |
 
 完整清單是 `effects.ts` 的 `EFFECT_TYPES`；特殊任務編輯器只開放其中一部分（見 [STORY_QUESTS](STORY_QUESTS.md) 第 2 節）。
 

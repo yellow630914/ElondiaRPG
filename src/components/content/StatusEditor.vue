@@ -5,6 +5,7 @@ import { builtinStatus, LUCK_ROLLS, STATUS_CONTROLS, STATUS_SPECIALS, type Statu
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
+import Hint from '../ui/Hint.vue'
 
 // 狀態（BUFF／DEBUFF）的編輯表單：數值修正、幸運骰、優勢劣勢、傷害倍率、持續效果、命中附加、控制。存檔前是草稿
 const props = defineProps<{ id: string }>()
@@ -263,6 +264,49 @@ function remove() {
             <option v-for="(n, k) in STATUS_SPECIALS" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>慾望戰鬥 <Hint text="成人向（docs/COMBAT_SYSTEM.md 第 8.5 節）；存檔規則「慾望戰鬥」關閉時沒有作用。" /></legend>
+      <div class="grid">
+        <label>受到的慾望倍率 ± <input v-model.number="draft.lust_mult" type="number" min="-1" max="3" step="0.05" placeholder="—" /></label>
+        <label>生命傷害轉成慾望的比例 <input v-model.number="draft.convert" type="number" min="0" max="1" step="0.05" placeholder="—" /></label>
+        <label><span>被侍奉（代受）的轉換比例 <Hint text="下一次受到的攻擊由施加者承受，承受的傷害這個比例改成慾望。" /></span><input v-model.number="draft.guard" type="number" min="0" max="1" step="0.05" placeholder="—" /></label>
+        <label>每回合慾望 + <input v-model.number="draft.lust_tick" type="number" min="0" max="100" placeholder="—" /></label>
+        <label>慾望上限倍率 ± <input v-model.number="draft.lust_max" type="number" min="-0.9" max="3" step="0.05" placeholder="—" /></label>
+      </div>
+      <div class="row small">
+        <label class="check"><input type="checkbox" :checked="!!draft.lust_scale" @change="($event.target as HTMLInputElement).checked ? (draft.lust_scale = { stat: 'damage', per: 1, max: 5 }) : delete draft.lust_scale" /> 依慾望的修正</label>
+        <template v-if="draft.lust_scale">
+          慾望每 10%，<select v-model="draft.lust_scale.stat"><option v-for="(n, k) in MODS" :key="k" :value="k">{{ n }}</option></select>
+          + <input v-model.number="draft.lust_scale.per" type="number" min="1" max="5" class="num" />（最多 <input v-model.number="draft.lust_scale.max" type="number" min="1" max="20" class="num" />）
+        </template>
+      </div>
+      <div class="row small">
+        <label class="check"><input v-model="draft.lust_hold" type="checkbox" /> 慾望不會消退</label>
+        <label class="check"><input v-model="draft.no_climax" type="checkbox" /> 不會高潮</label>
+        <label class="check"><input v-model="draft.no_cleanse" type="checkbox" /> 淨化拿不掉</label>
+        <label class="check"><input v-model="draft.lust_dump" type="checkbox" /> 下一個自己的回合開始時慾望全部消退</label>
+        <label class="check"><input v-model="draft.climax_guard" type="checkbox" /> 下一次高潮不扣生命（用掉這個狀態）</label>
+      </div>
+      <div class="row small">
+        <label class="check"><input type="checkbox" :checked="draft.struggle !== undefined" @change="($event.target as HTMLInputElement).checked ? (draft.struggle = 0) : delete draft.struggle" /> 戰鬥中的拘束（可以掙脫、撕開）</label>
+        <template v-if="draft.struggle !== undefined">DC 加減 <input v-model.number="draft.struggle" type="number" min="-5" max="10" class="num" /></template>
+      </div>
+      <div class="row small">
+        <label class="check"><input type="checkbox" :checked="!!draft.convert_low" @change="($event.target as HTMLInputElement).checked ? (draft.convert_low = { below: 0.3, ratio: 1 }) : delete draft.convert_low" /> 生命低時傷害轉成慾望</label>
+        <template v-if="draft.convert_low">
+          生命低於 <input v-model.number="draft.convert_low.below" type="number" min="0.05" max="1" step="0.05" class="num" />，轉換比例 <input v-model.number="draft.convert_low.ratio" type="number" min="0.05" max="1" step="0.05" class="num" />
+        </template>
+      </div>
+      <div class="row small">
+        <label class="check"><input type="checkbox" :checked="!!draft.on_release" @change="($event.target as HTMLInputElement).checked ? (draft.on_release = { amount: 6, level: true, type: 'necrotic' }) : delete draft.on_release" /> 高潮或引爆時對所有敵人造成傷害</label>
+        <template v-if="draft.on_release">
+          <input v-model.number="draft.on_release.amount" type="number" min="0" max="200" class="num" />
+          <label class="check"><input v-model="draft.on_release.level" type="checkbox" /> + 等級</label>
+          <select v-model="draft.on_release.type"><option v-for="t in damageTypes.types.filter((x) => x.id !== 'lust')" :key="t.id" :value="t.id">{{ damageTypeName(t.id) }}</option></select>
+        </template>
       </div>
     </fieldset>
   </div>

@@ -113,6 +113,15 @@ function remove() {
         </label>
       </div>
     </fieldset>
+    <fieldset v-if="draft.kind === 'plain'">
+      <legend>淫紋（成人向） <Hint text="慾望戰鬥的效果：慾望上限的比例（0.15 = +15%）、造成的慾望 +N。都是 0 時只是外觀。" /></legend>
+      <div class="grid">
+        <label>慾望上限 <input type="number" min="0" max="0.5" step="0.05" :value="draft.lust?.max ?? 0" @input="draft.lust = { ...draft.lust, max: Number(($event.target as HTMLInputElement).value) || undefined }" /></label>
+        <label>造成的慾望 + <input type="number" min="0" max="5" :value="draft.lust?.bonus ?? 0" @input="draft.lust = { ...draft.lust, bonus: Number(($event.target as HTMLInputElement).value) || undefined }" /></label>
+        <label>另外加的價錢 <input v-model.number="draft.price" type="number" min="0" max="10000" /></label>
+        <label class="check"><input v-model="draft.adult" type="checkbox" /> 成人向</label>
+      </div>
+    </fieldset>
     <fieldset>
       <legend>建議的部位 <Hint text="沒勾時任何部位都可以。" /></legend>
       <div class="row">

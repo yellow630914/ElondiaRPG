@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { choosablePerks, KEEPER_SHOPS, perkDef, shopRules } from '@/engine/data'
+import { abilities, choosablePerks, KEEPER_SHOPS, perkDef, shopRules } from '@/engine/data'
 import { npcTraits } from '@/engine/traits'
 import { npcPerksOf } from '@/engine/perks'
+import { LEWD_STATS, lewdName, npcLewd } from '@/engine/lewd'
+import type { LewdStat } from '@/engine/types'
 import { computed, ref, watch } from 'vue'
 import { createNpc } from '@/engine/character'
 import {
@@ -39,6 +41,25 @@ function current(): NpcMod {
   return clone(content.mods.npcs[props.id] ?? (namedNpcs.find((n) => n.id === props.id) as NpcMod))
 }
 const draft = ref<NpcMod>(current())
+// 慾望指標：空著時依標籤與 id 擲（灰字顯示擲出來的值）
+const rolledLewd = computed(() => npcLewd({ id: props.id, tags: draft.value.tags }))
+function setLewd(k: LewdStat, v: string) {
+  const n = Number(v)
+  const lewd = { ...(draft.value.lewd ?? {}) }
+  if (v === '' || !Number.isFinite(n)) delete lewd[k]
+  else lewd[k] = Math.max(0, Math.min(100, Math.round(n)))
+  if (Object.keys(lewd).length) draft.value.lewd = lewd
+  else delete draft.value.lewd
+}
+// 娼婦會教的技能
+const lewdAbilities = computed(() => Object.values(abilities).filter((a) => a.classes.includes('lewd')))
+function toggleTeach(id: string, on: boolean) {
+  const set = new Set(draft.value.teaches ?? [])
+  if (on) set.add(id)
+  else set.delete(id)
+  if (set.size) draft.value.teaches = [...set]
+  else delete draft.value.teaches
+}
 // 比較時略過空的條件（表單會先建立空的 requires 物件）
 const emptyCond = (x: { flags?: string[]; flags_none?: string[]; affinity?: Record<string, number> } | undefined) => !!x && !x.flags?.length && !x.flags_none?.length && !Object.keys(x.affinity ?? {}).length
 const snap = (v: unknown) => JSON.stringify(v, (k, x) => (k === 'requires' && emptyCond(x) ? undefined : x))
@@ -146,7 +167,7 @@ const customGear = computed({
   },
 })
 function basesFor(slot: GearSlot) {
-  return Object.entries(gearRules.bases).filter(([, b]) => baseFits(b.slot, slot))
+  return Object.entries(gearRules.bases).filter(([, b]) => baseFits(b.slot, slot, b))
 }
 function materialsFor(base: string) {
   const kind = gearRules.bases[base]?.kind
@@ -434,6 +455,16 @@ const occupations = computed(() => {
         <button class="small" :disabled="!pickPerk" @click="addPerk">＋ 加入</button>
         <button v-if="draft.perks" class="small" @click="delete draft.perks">恢復隨機</button>
       </div>
+      <div class="row lewd">
+        <span class="small">慾望指標 <Hint text="0～100（成人向，見 docs/LEWD_STATS.md）。空著時依標籤與 id 固定地擲，灰字是擲出來的值。" /></span>
+        <label v-for="k in LEWD_STATS" :key="k" class="small">{{ lewdName(k) }}
+          <input type="number" min="0" max="100" :value="draft.lewd?.[k] ?? ''" :placeholder="String(rolledLewd[k])" @change="setLewd(k, ($event.target as HTMLInputElement).value)" />
+        </label>
+      </div>
+      <details v-if="draft.tags?.includes('prostitute')" class="small">
+        <summary>光顧時會教的技能（{{ draft.teaches?.length ?? 0 }}） <Hint text="成人向（docs/LEWD_STATS.md 第 10 節）。親密度 40 以上、光顧成功時有機會教主角一個；她的淫亂決定能教到幾級。沒勾時用預設的清單。" /></summary>
+        <label v-for="a in lewdAbilities" :key="a.id" class="check"><input type="checkbox" :checked="draft.teaches?.includes(a.id)" @change="toggleTeach(a.id, ($event.target as HTMLInputElement).checked)" /> {{ a.name }}</label>
+      </details>
       <label class="check small"><input v-model="customGear" type="checkbox" /> 指定初始裝備 <Hint text="不勾時依等級隨機生成。" /></label>
       <template v-if="draft.gear">
         <div v-for="slot in SLOTS" :key="slot" class="row">
@@ -460,7 +491,9 @@ const occupations = computed(() => {
   </div>
 </template>
 
-<style scoped src="./editor.css"></style>
+<style scoped src="./editor.css">.lewd label { display: inline-flex; align-items: center; gap: 4px; }
+.lewd input { width: 4.5em; }
+</style>
 <style scoped>
 .stage { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 .slot { width: 3em; }

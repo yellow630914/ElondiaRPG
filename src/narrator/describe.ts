@@ -1,12 +1,13 @@
 // 不經 AI、直接把報告轉成可讀的文字戰報。AI 關閉或失敗時顯示這份。
 // 也用來把 id 換成名稱，讓送給 AI 的報告更好讀。
 
-import { abilities, attrName, className, companionRules, conditionName, geography, raceName, statuses } from '@/engine/data'
+import { abilities, attrName, className, companionRules, conditionName, geography, raceName, regionById, statuses, type LewdKey } from '@/engine/data'
+import { lewdName } from '@/engine/lewd'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import type { Effect, Report, TimelineEntry } from '@/engine/types'
 
-function locationName(id: string): string {
+export function locationName(id: string): string {
   return geography.locations.find((l) => l.id === id)?.name ?? id
 }
 
@@ -19,6 +20,7 @@ function describeEffect(e: Effect, names: Record<string, string>): string {
   switch (e.type) {
     case 'damage': return `${who} 受到 ${e.amount} 點${e.element ? `${e.element}` : ''}傷害${e.text ? `（${e.text}）` : ''}`
     case 'heal': return `${who} 回復 ${e.amount} HP`
+    case 'lust': return (e.amount ?? 0) >= 0 ? `${who} 慾望 +${e.amount}${e.text ? `（${e.text}）` : ''}` : `${who} 慾望 ${e.amount}`
     case 'status_add': {
       if (e.status === '死亡' || e.status === '倒下') return `${who} 倒下了`
       const buff = Object.values(statuses).find((s) => s.name === e.status)?.kind === 'buff'
@@ -101,6 +103,10 @@ export function describeChanges(report: Report): string[] {
   for (const x of c.conditions ?? []) {
     lines.push(`${names[x.actor] ?? x.actor} ${x.added ? '獲得' : '解除'}「${conditionName(x.condition)}」`)
   }
+  for (const x of c.lewd ?? []) {
+    const where = x.region ? `（${regionById(x.region).name}）` : ''
+    lines.push(`${names[x.actor] ?? x.actor} ${lewdName(x.stat as LewdKey)}${where} ${x.delta > 0 ? '+' : ''}${x.delta}（${x.after}）`)
+  }
   return lines
 }
 
@@ -117,7 +123,7 @@ export function describeCheck(report: Report): string | null {
   const sign = k.modifier >= 0 ? '+' : '-'
   const names = { critical: '大成功', success: '成功', partial: '部分成功', fail: '失敗', fumble: '大失敗' }
   const ref = k.reference_degree ? `（骰值參考：${names[k.reference_degree]}）` : ''
-  return `${k.action}・${attrName(k.attr)}檢定 DC ${k.dc}${adjusted}：擲出 ${k.natural} ${sign} ${Math.abs(k.modifier)} = ${k.total}，${degree}${ref}${k.source === 'ai' ? '（AI 判定）' : ''}`
+  return `${k.action}・${attrName(k.attr)}檢定 DC ${k.dc}${adjusted}：擲出 ${k.natural} ${sign} ${Math.abs(k.modifier)} = ${k.total}，${degree}${ref}${k.trivial ? '（日常小事）' : ''}${k.source === 'ai' ? '（AI 判定）' : ''}`
 }
 
 /** 送給 AI 前，把報告裡的 id 換成中文名稱。 */
@@ -151,6 +157,7 @@ export function humanizeReport(report: Report) {
       level_up: report.changes.level_up?.map((x) => ({ ...x, actor: names[x.actor] ?? x.actor })),
       affinity: report.changes.affinity?.map((a) => ({ ...a, npc: names[a.npc] ?? a.npc })),
       conditions: report.changes.conditions?.map((x) => ({ ...x, actor: names[x.actor] ?? x.actor, condition: conditionName(x.condition) })),
+      lewd: report.changes.lewd?.map((x) => ({ ...x, actor: names[x.actor] ?? x.actor, stat: lewdName(x.stat as LewdKey), ...(x.region ? { region: regionById(x.region).name } : {}) })),
       companions: report.changes.companions?.map((x) => ({ ...x, ...(x.bond ? { bond: companionRules.bonds[x.bond] } : {}) })),
     },
     ...(report.check ? { check: { ...report.check, attr: attrName(report.check.attr) } } : {}),

@@ -53,6 +53,15 @@ export function sanitizeTattooMod(raw: Partial<TattooMod>, custom: boolean): Tat
     if (oathError(attrs)) return undefined
     out.attrs = attrs
   }
+  // 淫紋（普通刺青）：慾望上限的比例、造成的慾望；刺的時候另外加的價錢；成人向
+  if (kind === 'plain' && raw.lust && typeof raw.lust === 'object') {
+    const max = clamp(raw.lust.max, [0, 0.5], 0, false)
+    const bonus = clamp(raw.lust.bonus, [0, 5], 0)
+    if (max || bonus) out.lust = { ...(max ? { max } : {}), ...(bonus ? { bonus } : {}) }
+  }
+  const price = clamp(raw.price, [0, 10000], 0)
+  if (price) out.price = price
+  if (raw.adult) out.adult = true
   if (custom) out.custom = true
   return out
 }
@@ -92,6 +101,9 @@ export function sanitizeMarkMod(raw: Partial<MarkMod>, custom: boolean): MarkMod
     side_effects: (Array.isArray(raw.side_effects) ? raw.side_effects : []).map((s) => str(s, L.side_effect_chars)).filter(Boolean).slice(0, L.side_effects),
   }
   if (raw.spell_cap !== undefined && raw.spell_cap !== null && Number.isFinite(Number(raw.spell_cap))) out.spell_cap = clamp(raw.spell_cap, L.spell_cap, 1)
+  // 順從累積：每這麼多天順從 +1（0 是不累積）
+  const every = clamp(raw.submission_every, [0, 7], 0)
+  if (every) out.submission_every = every
   if (custom) out.custom = true
   return out
 }

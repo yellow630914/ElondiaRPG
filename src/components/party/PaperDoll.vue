@@ -3,7 +3,10 @@ import { computed, ref, watch } from 'vue'
 import { gearAffinities, weaponFor } from '@/engine/character'
 import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotName, slotsFor } from '@/engine/gear'
-import { lockedGear } from '@/engine/inventory'
+import { lockable, lockedGear, lockItems } from '@/engine/inventory'
+import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
+import { keysFor, stuckRestraint, unbindDc } from '@/engine/restraints'
+import { fusionMult, fusionRules, wornDaysOf } from '@/engine/fusion'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { characterBody } from '@/engine/look'
@@ -20,7 +23,7 @@ const s = computed(() => game.state!)
 const m = computed(() => props.member)
 const inCombat = computed(() => !!s.value.combat)
 
-const LEFT: GearSlot[] = ['head', 'accessory', 'body', 'underwear_top', 'wrists', 'main_hand', 'belt', 'legs']
+const LEFT: GearSlot[] = ['head', 'accessory', 'body', 'underwear_top', 'wrists', 'main_hand', 'belt', 'legs', 'extra_1']
 const RIGHT: GearSlot[] = ['piercing_1', 'piercing_2', 'ring_1', 'ring_2', 'off_hand', 'underwear_bottom', 'leg_accessory', 'feet']
 
 const selected = ref<GearSlot>('main_hand')
@@ -31,6 +34,39 @@ const blocked = (slot: GearSlot) => (gearRules.races[m.value.race]?.blocked ?? [
 const current = computed(() => m.value.gear?.[selected.value])
 
 const rarityOf = (spec: GearSpec | undefined) => specRarity(spec) || 'common'
+
+// 拘束具的鎖（雙面效應，docs/LEWD_STATS.md 第 7 節）：鎖上、修了流派，戰鬥中才有增益
+const bind = computed(() => bindsOf(m.value).find((b) => b.slot === selected.value))
+const locks = computed(() => lockItems(s.value))
+const lockPick = ref('')
+const bindNote = computed(() => {
+  const b = bind.value
+  if (!b) return ''
+  if (!schoolsOf(m.value).length) return '還沒修任何慾望流派：只有平常的檢定減值'
+  return b.lock ? '戰鬥中的增益生效' : '鎖上之後，戰鬥中才有增益'
+})
+// 淫器：穿了幾天、戰鬥時展開的倍率（docs/LEWD_STATS.md 第 22 節）
+const fused = computed(() => {
+  const g = current.value
+  if (!g?.spec.fused) return undefined
+  const days = wornDaysOf(s.value, m.value, g.name)
+  return { weapon: g.spec.fused.weaponName, days, of: fusionRules().days, mult: fusionMult(days) }
+})
+// 別人鎖上的拘束具（主人強制戴上的）：嘗試脫縛或用鑰匙打開（docs/LEWD_STATS.md 第 16 節）
+const stuck = computed(() => stuckRestraint(m.value, selected.value))
+const unbind = computed(() => (stuck.value ? unbindDc(m.value, selected.value) : undefined))
+const keys = computed(() => (stuck.value ? keysFor(s.value, m.value, selected.value) : []))
+const keyPick = ref('')
+function openKey() {
+  if (!keyPick.value) return
+  void game.useKey(m.value.id, selected.value, keyPick.value)
+  keyPick.value = ''
+}
+function lockIt() {
+  if (!lockPick.value) return
+  void game.lockGear(m.value.id, selected.value, lockPick.value)
+  lockPick.value = ''
+}
 function chips(spec: GearSpec): string[] {
   return gearSummary(spec).split('・').slice(1)
 }
@@ -118,6 +154,35 @@ const totals = computed(() => {
         >卸下</button>
       </div>
       <p v-else class="muted small empty">{{ blocked(selected) ? '這個種族無法使用這個欄位。' : '這一格沒有裝備。' }}</p>
+      <div v-if="current && bind" class="lock-row small">
+        <GameIcon :name="bind.lock ? 'lock' : 'unlock'" :size="14" />
+        <span v-if="bind.lock">{{ current.locked ? '主人的' : '' }}{{ lockName(bind.lock) }}</span>
+        <span v-else class="muted">沒有上鎖</span>
+        <span class="muted">{{ bindNote }}</span>
+        <template v-if="lockable(current)">
+          <select v-model="lockPick" :disabled="inCombat || !locks.length">
+            <option value="">{{ locks.length ? '選一把鎖…' : '行囊裡沒有鎖' }}</option>
+            <option v-for="l in locks" :key="l.name" :value="l.name">{{ l.name }}</option>
+          </select>
+          <button class="small" :disabled="inCombat || !lockPick" @click="lockIt">上鎖</button>
+        </template>
+        <button v-else-if="bind.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
+      </div>
+      <div v-if="fused" class="lock-row small">
+        <span>淫器：戰鬥時展開成{{ fused.weapon }}・最近 {{ fused.of }} 天穿了 {{ fused.days }} 天</span>
+        <span :class="fused.mult ? '' : 'muted'">{{ fused.mult ? `傷害 ×${fused.mult}` : '還展開不了' }}</span>
+      </div>
+      <div v-if="stuck && unbind" class="lock-row small">
+        <button class="small" :disabled="inCombat" :title="`靈巧檢定，DC ${unbind.dc}（${unbind.parts.map((p) => `${p.label} ${signed(p.value)}`).join('、')}）；主人在身邊時失敗會被懲罰`" @click="game.tryUnbind(m.id, selected)">嘗試脫縛（DC {{ unbind.dc }}）</button>
+        <template v-if="keys.length">
+          <select v-model="keyPick" :disabled="inCombat">
+            <option value="">選一把鑰匙…</option>
+            <option v-for="k in keys" :key="k" :value="k">{{ k }}</option>
+          </select>
+          <button class="small" :disabled="inCombat || !keyPick" @click="openKey">用鑰匙打開</button>
+        </template>
+        <span v-else class="muted">沒有打得開{{ lockName(stuck.lock) }}的鑰匙</span>
+      </div>
 
       <div class="filter">
         <span class="label">行囊中可以裝備的物品</span>
@@ -158,6 +223,7 @@ const totals = computed(() => {
 .slot:hover:not(:disabled) { border-color: #c99a45; color: #efe4cc; }
 .slot.sel { border-color: #f0d083; box-shadow: 0 0 0 1px #f0d083, 0 0 12px #f0d08355; }
 .slot.blocked { opacity: 0.4; }
+.lock-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .box { width: 38px; height: 38px; display: grid; place-items: center; background: #120d09; border: 1px solid #000; box-shadow: inset 0 0 0 1px #5a4630; color: #4a3a28; }
 .slot.filled .box { color: #e8d8b8; box-shadow: inset 0 0 0 1px #6d5128; }
 .slot.locked .box { color: #d8604e; }

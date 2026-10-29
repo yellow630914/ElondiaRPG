@@ -98,7 +98,7 @@
   ],
   "quality_by_circle": ["common", "common", "uncommon", "uncommon", "rare", "rare", "epic", "epic", "legendary"],
   "defeat_event": {
-    "$comment": "成人向的戰敗事件（設定關閉成人向時不會發生）。戰敗而且沒有人搬來救兵時，還站著的敵人裡有符合條件的（NPC 有 npc_tags 的標籤，或怪物擲到 monster_traits 的特徵；有 exclude_traits 的怪物不算），擲 1d20 + check 屬性的調整值，達到 DC 就觸發（魅力越高越容易引起敵人的興趣）。戰報的敘事停在對方準備動手的前一刻，等玩家回應：options 三選一或自己輸入（主動行動 defeat_event，參考 DC 為 free_dc）。結果依成功程度：再損失 money_loss 比例的錢、shaken_on 的程度加上「驚魂未定」；之後和一般戰敗一樣（地下城回到入口、近郊回到城門）。",
+    "$comment": "成人向的戰敗事件（設定關閉成人向時不會發生）。戰敗而且沒有人搬來救兵時，還站著的敵人裡有符合條件的（NPC 有 npc_tags 的標籤，或怪物擲到 monster_traits 的特徵；有 exclude_traits 的怪物不算），擲 1d20 + check 屬性的調整值，達到 DC 就觸發（魅力越高越容易引起敵人的興趣）。戰報的敘事停在對方準備動手的前一刻，等玩家回應：options 三選一或自己輸入（主動行動 defeat_event，參考 DC 為 free_dc）。結果依成功程度：再損失 money_loss 比例的錢、shaken_on 的程度加上「驚魂未定」、lewd 的指標加減，敵人的類型（villains）另外加上結果；這場戰鬥我方每高潮一次，起意的 DC − climax_dc（最多 climax_max）；之後和一般戰敗一樣（地下城回到入口、近郊回到城門）。",
     "npc_tags": ["villain"],
     "monster_traits": ["rut"],
     "exclude_traits": ["young"],
@@ -110,6 +110,39 @@
     ],
     "free_dc": 13,
     "money_loss": { "critical": 0, "success": 0, "partial": 0.05, "fail": 0.1, "fumble": 0.15 },
+    "climax_dc": 1,
+    "climax_max": 4,
+    "lewd": {
+      "$comment": "回應的結果對主角五項指標的加減（docs/LEWD_STATS.md 第 18 節）",
+      "critical": { "endurance": 1 }, "success": { "endurance": 1 }, "partial": { "sensitivity": 1 },
+      "fail": { "lewdness": 1, "submission": 1 }, "fumble": { "lewdness": 2, "submission": 2 }
+    },
+    "villains": {
+      "$comment": "敵人的類型決定戰敗事件的走向（第一位起意的 NPC；依標籤或職業，都不符合時是 default 的那一種；怪物沒有類型）：hint 交給 AI 寫後續，effects 是沒能脫身（fail / fumble）時另外的結果，money 是再搜走的錢的比例",
+      "knowledge": { "name": "知識型", "classes": ["wizard", "bard"], "hint": "用契約的陷阱、握在手上的把柄與咒術要脅主角，讓主角自己開口答應",
+        "effects": { "fail": [{ "type": "lewd", "stat": "exposure", "delta": 3 }], "fumble": [{ "type": "lewd", "stat": "exposure", "delta": 5 }, { "type": "lewd", "stat": "submission", "delta": 1 }] } },
+      "martial": { "name": "武鬥型", "default": true, "hint": "用繩索、拘束具與刑罰讓主角屈服，享受主角掙扎的樣子",
+        "effects": { "fail": [{ "type": "condition", "target": "pc", "condition": "drained", "add": true }], "fumble": [{ "type": "condition", "target": "pc", "condition": "drained", "add": true }, { "type": "lewd", "stat": "sensitivity", "delta": 1 }] } },
+      "merchant": { "name": "商賈型", "tags": ["merchant", "noble"], "hint": "打量主角的身價，盤算把主角賣掉，或逼主角簽下還不完的債",
+        "money": { "fail": 0.1, "fumble": 0.2 } },
+      "religious": { "name": "宗教型", "tags": ["priest", "bishop"], "classes": ["cleric", "paladin"], "hint": "以淨化、贖罪為名，說這是在洗去主角身上的污穢",
+        "effects": { "fail": [{ "type": "condition", "target": "pc", "condition": "dazed", "add": true }], "fumble": [{ "type": "condition", "target": "pc", "condition": "dazed", "add": true }, { "type": "lewd", "stat": "submission", "delta": 1 }] } }
+    },
     "shaken_on": ["fail", "fumble"]
+  },
+
+  "lust": {
+    "$comment": "慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）。慾望上限 = max_base + max_per_level × 等級。每回合開始消退上限的 decay。我方慾望滿了高潮：停止行動一回合、失去最大生命的 party_climax_hp（最多扣到剩 1），之後 afterglow_turns 回合受到的慾望減半、不會再高潮；一場戰鬥高潮 down_after 次就倒下。敵方高潮：受到最大生命 enemy_climax_hp 的真實傷害（可以致死），用高潮收尾算慾望勝利。開戰的初始慾望：發情的角色 aroused_start、有 rut 特徵的怪物 rut_start（上限的比例）。戰後慾望至少 aroused_after 的人得到「發情」，高潮過的人得到「餘韻」。kind_resist：依怪物種類的預設慾望抗性（個別怪物的 resist.lust 覆寫）。",
+    "max_base": 30,
+    "max_per_level": 3,
+    "decay": 0.05,
+    "party_climax_hp": 0.33,
+    "afterglow_turns": 2,
+    "down_after": 3,
+    "enemy_climax_hp": 0.33,
+    "aroused_start": 0.2,
+    "rut_start": 0.3,
+    "aroused_after": 0.5,
+    "kind_resist": { "undead": -1, "construct": -1, "elemental": -0.75, "spirit": -0.5, "fey": 0.25 }
   }
 }

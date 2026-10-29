@@ -42,7 +42,8 @@ describe('monster data', () => {
       const bosses = (['shallow', 'middle', 'deep'] as const).map((l) => t.bosses![l]![0]![0])
       expect(new Set(bosses).size, d.id).toBe(3)
       const all = [...own, ...bosses]
-      expect(all.length, d.id).toBe(11)
+      // 主題地下城的園區沒有周邊：淺層、中層、深層各兩種，加三隻層主
+      expect(all.length, d.id).toBe(d.park ? 9 : 11)
       for (const id of all) {
         expect(seen.has(id), `${id} 出現在兩座地下城`).toBe(false)
         seen.add(id)

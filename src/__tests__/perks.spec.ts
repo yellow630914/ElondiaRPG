@@ -146,7 +146,7 @@ describe('getting perks', () => {
     addItem(state.inventory, '《行旅手札》', 1)
     const r = useItem(state, '《行旅手札》', 'pc')
     expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
-    expect(pcOf(state).perkOffers?.[0]).toMatchObject({ source: '讀了「《行旅手札》」', options: ['pathfinder', 'survivor', 'watchful'] })
+    expect(pcOf(state).perkOffers?.[0]).toMatchObject({ source: '讀了「《行旅手札》」', options: ['pathfinder', 'survivor', 'watchful', 'star_sleeper'] })
   })
 
   it('comes from training, for a fee', () => {

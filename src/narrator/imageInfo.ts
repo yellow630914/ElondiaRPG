@@ -1,8 +1,9 @@
 // 插圖生成：服務的模板（ChatGPT、NovelAI、ComfyUI）、角色形象插圖的提示詞、生圖提示詞的預處理（交給大語言模型改寫）。
 // 送出請求的程式在 imageProviders.ts；設定存在瀏覽器（stores/image.ts），見 docs/PORTRAITS.md。
 
-import { className, genderName, raceName } from '@/engine/data'
-import { gearName } from '@/engine/gear'
+import { className, genderName, lewdRules, raceName } from '@/engine/data'
+import { currentRegion, exposureAt, lewdOf, npcLewd } from '@/engine/lewd'
+import { gearName, gearRules } from '@/engine/gear'
 import { npcOutfit } from '@/engine/outfits'
 import { appearanceOf, npcRecord, npcTitle } from '@/engine/npcs'
 import { placeName, tattooDesc, tattooName, tattoosOf } from '@/engine/tattoos'
@@ -121,6 +122,15 @@ export interface PortraitSubject {
   tattoos: string[]
   /** 構圖：刺青、腿部飾品、露出的內褲在下半身時拉遠（full body、cowboy shot），否則 upper body */
   composition?: string
+  /** 慾望的氣質：淫亂、曝露名聲達到門檻時的一句英文描述（lewd.json 的 portrait） */
+  allure?: string
+}
+
+/** 淫亂、曝露名聲（目前的地區）換成形象圖的氣質描述：各取達到的最高一句 */
+export function portraitAllure(lewdness: number, exposure: number): string {
+  const r = lewdRules.portrait
+  const pick = (rows: [number, string][] | undefined, v: number) => [...(rows ?? [])].reverse().find(([min]) => v >= min)?.[1]
+  return [pick(r.lewdness, lewdness), pick(r.exposure, exposure)].filter(Boolean).join(', ')
 }
 
 // 下半身的刺青部位與裝備欄位：形象圖要拉遠才畫得到
@@ -144,7 +154,8 @@ function wornGear(gear: Partial<Record<GearSlot, EquippedGear>> | undefined): { 
     const over = cover[slot]
     const hidden = !!over && !!gear?.[over]
     names.push(hidden ? `${g.name}（穿在裡面）` : g.name)
-    if (!hidden) visible.push(slot)
+    // 額外飾品欄：照底材原本的部位（腿部飾品要拉遠構圖）
+    if (!hidden) visible.push(slot === 'extra_1' ? gearRules.bases[g.spec?.base ?? '']?.slot ?? slot : slot)
   }
   return { names, visible }
 }
@@ -179,11 +190,12 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
       return `${placeName(t.place)}：${name || desc}${name && desc ? `（${desc}）` : ''}`
     }),
     composition: portraitComposition(tattoos.map((t) => t.place), worn.visible),
+    allure: portraitAllure((m ?? rec?.character ? lewdOf((m ?? rec!.character)!) : npcLewd(rec!)).lewdness, m ? exposureAt(state, m.id, currentRegion(state)) : 0),
   }
 }
 
-/** 預設的形象插圖提示詞（{代號} 會換成角色的資料；值是空的那一行整行拿掉） */
-export const DEFAULT_PORTRAIT_TEMPLATE = [
+/** 加上 {allure} 之前的預設模板（讀設定時換成新的預設） */
+const PORTRAIT_TEMPLATE_V2 = [
   'A single-character portrait illustration for a fantasy role-playing game.',
   'Character: {name}, {gender} {race}, {role}.',
   'Appearance: {appearance}',
@@ -195,8 +207,22 @@ export const DEFAULT_PORTRAIT_TEMPLATE = [
   'Art style: {style}',
 ].join('\n')
 
+/** 預設的形象插圖提示詞（{代號} 會換成角色的資料；值是空的那一行整行拿掉） */
+export const DEFAULT_PORTRAIT_TEMPLATE = [
+  'A single-character portrait illustration for a fantasy role-playing game.',
+  'Character: {name}, {gender} {race}, {role}.',
+  'Appearance: {appearance}',
+  'Outfit and equipment: {gear}',
+  'Tattoos and marks: {tattoos}',
+  'Personality, shown through expression and pose: {personality}',
+  'Allure: {allure}',
+  'Background story hints: {background}',
+  'Composition: {composition}, facing the viewer, simple softly lit fantasy background, only one person, no text, no watermark.',
+  'Art style: {style}',
+].join('\n')
+
 /** 以前的預設模板（構圖寫死 upper body）：讀設定時換成新的預設 */
-export const LEGACY_PORTRAIT_TEMPLATES = [DEFAULT_PORTRAIT_TEMPLATE.replace('{composition}', 'upper body')]
+export const LEGACY_PORTRAIT_TEMPLATES = [PORTRAIT_TEMPLATE_V2.replace('{composition}', 'upper body'), PORTRAIT_TEMPLATE_V2]
 
 export const DEFAULT_STYLE = 'detailed anime-style fantasy illustration, painterly shading, soft lighting'
 
@@ -207,6 +233,7 @@ export function portraitPrompt(subject: PortraitSubject, template: string, style
     level: subject.level ? String(subject.level) : '', appearance: subject.appearance, personality: subject.personality,
     background: subject.background.slice(0, 200), gear: subject.gear.join('、'), tattoos: (subject.tattoos ?? []).join('；'), style,
     composition: subject.composition ?? 'upper body',
+    allure: subject.allure ?? '',
   }
   // 自訂的模板沒有 {composition}：寫死的 upper body 換成需要的構圖（下半身的刺青、腿部飾品才畫得到）
   if (!template.includes('{composition}') && values.composition !== 'upper body') template = template.replace(/upper[ -]body/gi, values.composition!)

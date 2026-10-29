@@ -49,8 +49,11 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     if (state.captives?.npcs.length) out.push({ id: `captives:${hash(state.captives)}`, kind: 'captives', icon: '⛓️', title: '戰後處置', blocking: true })
     if (state.pendingMark) out.push({ id: `mark:${hash(state.pendingMark)}`, kind: 'mark', icon: '🔥', title: '刻下契約印記', blocking: true })
     if (state.pendingMasterEvent) {
-      const master = contractOf(state.party.find((m) => m.isPlayer))?.masterName || '主人'
-      out.push({ id: `master:${hash(state.pendingMasterEvent)}`, kind: 'master', icon: '⛓️', title: `${master}的要求`, blocking: true })
+      const pm = state.pendingMasterEvent
+      const actor = state.party.find((m) => m.id === pm.actor)?.name
+      const title = pm.pool === 'owner' ? `調教${actor ?? ''}` : pm.pool === 'brothel_work' ? `${actor ?? ''}在娼館接客` : pm.pool === 'brothel_train' ? `${actor ?? ''}在娼館受訓`
+        : `${contractOf(state.party.find((m) => m.isPlayer))?.masterName || '主人'}的要求`
+      out.push({ id: `master:${hash(pm)}`, kind: 'master', icon: pm.pool?.startsWith('brothel') ? '🌹' : '⛓️', title, blocking: true })
     }
     if (state.dungeonEvent) out.push({ id: `dungeon:${state.dungeonEvent.template}:${state.dungeonEvents?.last ?? 0}`, kind: 'dungeon', icon: '⚠️', title: pendingDungeonEvent(state)?.title ?? '眼前的處境', blocking: true })
     if (state.parasiteEvent) out.push({ id: `parasite:${state.parasiteEvent.template}:${state.parasiteEvents?.last ?? 0}`, kind: 'parasite', icon: '💗', title: pendingParasiteEvent(state)?.title ?? '身上的寄生物', blocking: true })

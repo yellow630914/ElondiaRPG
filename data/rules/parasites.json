@@ -121,7 +121,8 @@
         "item": "馴服的魔導衣",
         "scene": "主角主動喚醒已經馴服的魔導衣：黑色的蕾絲照著主角的心意在身上游走、收緊、撫弄，主角想要多少就給多少，想停就停。這一次是主角在使用它。",
         "text": "你喚醒了魔導衣。它乖乖地照著你的意思動，直到你滿足為止。",
-        "buff": "parasite_glow"
+        "buff": "parasite_glow",
+        "ability": "para_lingerie_bind"
       }
     },
     "succubus_mark": {
@@ -216,8 +217,26 @@
         },
         "scene": "主角主動點亮主宰之紋：紋樣的熱流照著主角的意思在身體裡奔湧，主角任由慾望漲滿、再一口氣釋放，完全由自己掌控節奏。",
         "text": "你點亮了主宰之紋。熱流在身體裡奔湧，最後化成一股滿足的倦意。",
-        "buff": "parasite_glow"
-      }
+        "buff": "parasite_glow",
+        "ability": "para_mark_surge"
+      },
+      "stage_abilities": [
+        [],
+        [],
+        [
+          "lust_kiss"
+        ],
+        [
+          "lust_kiss",
+          "lust_smile"
+        ]
+      ],
+      "stage_lust": [
+        0,
+        0,
+        0,
+        0.2
+      ]
     },
     "parasite_seed": {
       "name": "寄生植物的種子",

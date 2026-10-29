@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { attrName } from '@/engine/data'
-import { currentCell } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { overcomablePerks, trainablePerks } from '@/engine/perks'
 import { useGame } from '@/stores/game'
@@ -13,7 +12,7 @@ const game = useGame()
 const s = computed(() => game.state!)
 const pc = computed(() => s.value.party.find((m) => m.isPlayer)!)
 // 身上的缺陷可以在這裡克服的，排在前面
-const list = computed(() => [...overcomablePerks(pc.value, currentCell(s.value).kind), ...trainablePerks(pc.value, currentCell(s.value).kind)])
+const list = computed(() => [...overcomablePerks(pc.value, game.cell.kind), ...trainablePerks(pc.value, game.cell.kind)])
 const text = ref('')
 
 function train(id: string) {

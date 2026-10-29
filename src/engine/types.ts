@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -39,7 +39,8 @@ export interface ActorState {
 }
 
 export interface Effect {
-  type: 'damage' | 'heal' | 'status_add' | 'status_remove' | 'move' | 'item' | 'flag' | 'note'
+  /** lust：慾望的增減（amount 負數是消退），見 combat.ts 的慾望戰鬥 */
+  type: 'damage' | 'heal' | 'status_add' | 'status_remove' | 'move' | 'item' | 'flag' | 'note' | 'lust'
   target?: string
   amount?: number
   element?: string
@@ -88,6 +89,8 @@ export interface Changes {
   companions?: CompanionChange[]
   /** 非戰鬥狀態（奴隸印記、逃亡、受罰）的增減 */
   conditions?: { actor: string; condition: string; added: boolean }[]
+  /** 慾望指標的增減（stat：lewdness / sensitivity / endurance / submission / exposure；曝露名聲記在 region） */
+  lewd?: { actor: string; stat: string; delta: number; after: number; region?: string }[]
   /** 特質的增減 */
   perks?: { actor: string; perk: string; name: string; added: boolean }[]
   /** 刺上或洗掉的刺青（奴隸印記另外記在 companions 的 enslaved / freed） */
@@ -137,6 +140,8 @@ export interface CheckInfo {
   total: number
   /** 實際的成功程度（AI 判定時由 AI 決定） */
   degree: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
+  /** AI 判為日常小事：結果至少是成功，骰值只決定過程順不順 */
+  trivial?: boolean
   /** 骰值對 DC 算出的參考成功程度；只在與實際結果不同時記錄 */
   reference_degree?: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
   source: 'ai' | 'rules'
@@ -170,6 +175,8 @@ export interface Report {
     mode?: 'defeat_cliffhanger' | 'defeat_event'
     /** 成人向的親密場景：這段經過是什麼，敘事會附上成人場景規則、在正文詳細描寫 */
     adult_scene?: string
+    /** 親密場景的主角不是主角本人時（派奴隸去娼館接客）：那個人的 id（慾望指標記在他身上） */
+    adult_actor?: string
   }
   lore_keys?: string[]
 }
@@ -178,7 +185,7 @@ export interface Report {
 
 /** 裝備欄位（gear.json 的 slots） */
 export type GearSlot = 'main_hand' | 'off_hand' | 'head' | 'body' | 'legs' | 'wrists' | 'feet' | 'belt' | 'accessory' | 'ring_1' | 'ring_2'
-  | 'piercing_1' | 'piercing_2' | 'leg_accessory' | 'underwear_top' | 'underwear_bottom'
+  | 'piercing_1' | 'piercing_2' | 'leg_accessory' | 'underwear_top' | 'underwear_bottom' | 'extra_1'
 
 /** 一件裝備的組成：底材 × 材料（＋稀有度與附魔） */
 export interface GearSpec {
@@ -194,6 +201,10 @@ export interface GearSpec {
   unique?: { check: CheckFilter; bonus: number }
   /** 屬性的加減（每項 ±1～±3；只有內容資料裡的裝備會有，不能打造、不在商店上架；見 docs/ITEMS.md 第 3.2 節） */
   attrs?: Partial<Record<'str' | 'dex' | 'int' | 'fai' | 'cha', number>>
+  /** 慾望指標的加減（穿著時的有效值；每件 ±10，全身合計 ±20；見 docs/LEWD_STATS.md） */
+  lewd?: Partial<Record<LewdStat, number>>
+  /** 淫器（docs/LEWD_STATS.md 第 22 節）：和拘束具合煉的武器（組成與原本的名稱），拆開時還原；restraint 是拘束具原本的名稱 */
+  fused?: { weapon: GearSpec; weaponName: string; restraint: string }
 }
 
 /** 穿在身上的裝備：物品名稱與組成（自帶組成，不必回頭查存檔） */
@@ -202,6 +213,17 @@ export interface EquippedGear {
   spec: GearSpec
   /** 主人強制裝上的（主人的 id）：契約還在時不能卸下，也不能在這個欄位換別的 */
   locked?: string
+  /** 裝上的鎖（docs/LEWD_STATS.md 第 7 節）：拘束具鎖上，雙面效應的戰鬥增益才生效；自己鎖的可以隨時打開 */
+  lock?: LockGrade
+}
+
+/** 慾望指標（docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從，0～100；曝露名聲依地區記在存檔 */
+export type LewdStat = 'lewdness' | 'sensitivity' | 'endurance' | 'submission'
+export interface LewdStats extends Record<LewdStat, number> {
+  /** 最近一次親密場景是第幾天（淫亂太久沒有親密場景會慢慢降） */
+  lastScene?: number
+  /** 成長減慢時（流派特質）還沒滿一點的零頭 */
+  carry?: Partial<Record<LewdStat, number>>
 }
 
 export interface Character {
@@ -224,6 +246,17 @@ export interface Character {
   usesPerRest: Record<string, number>
   /** 已學會的技能、法術、戲法 id */
   abilities: string[]
+  /** 慾望指標（沒有時用 lewd.json 的 defaults） */
+  lewd?: LewdStats
+  /** 調教的進度：課程 → 成功的次數（docs/LEWD_STATS.md 第 9 節） */
+  trainProgress?: Record<string, number>
+  /** 淫器穿在身上的日子：物品名稱 → 最近穿著的那幾天（docs/LEWD_STATS.md 第 22 節） */
+  wornDays?: Record<string, number[]>
+  /**
+   * 攜帶中的技能與法術（存檔規則 skillLoadout 的上限，戲法不算）：戰鬥只帶這些，其他留在技能庫。
+   * 沒有時帶最近學會的幾個（見 character.ts 的 carriedAbilities）
+   */
+  loadout?: string[]
   /** 武器與上身防具的基本類型（equipment.json）；有裝備欄位時由主手與上身的裝備決定 */
   weapon: string
   armor: string
@@ -372,6 +405,8 @@ export interface MarkTerms {
   escape_hp_ratio: number
   /** 對主人的檢定懲罰（初始值） */
   obedience_penalty: number
+  /** 順從累積：戴著印記的每這麼多天，順從 +1（沒有時不累積；舊存檔刻的印記沒有） */
+  submission_every?: number
   side_effects: string[]
   functions: string[]
   /** 魔力封印：最多能施放的法術環 */
@@ -487,13 +522,23 @@ export interface PendingDefeat {
   scene: string
   /** 戰報 id（敘事停在動手前的那一份） */
   report: string
+  /** 敵人的類型（combat.json 的 defeat_event.villains；怪物沒有） */
+  villain?: string
 }
 
 export interface PendingMasterEvent {
-  /** slavery.json master_events.events 的 id */
+  /** 事件的 id（在 pool 那個事件庫裡） */
   id: string
-  /** 已經代入主人名字的事件描述 */
+  /** 已經代入名字的事件描述 */
   text: string
+  /** 事件庫（沒有時是主人的突發事件） */
+  pool?: MasterEventPool
+  /** 事件的主角：調教的奴隸、去娼館接客或受訓的人（沒有時是主角） */
+  actor?: string
+  /** 娼館受訓：這次一定學會的技能 */
+  teach?: string
+  /** 娼館：在哪一座城的娼館（頭牌等級用） */
+  place?: string
 }
 
 export interface PendingMark {
@@ -699,7 +744,13 @@ export interface GameOptions {
   masterEventMult?: number
   parasiteMult?: number
   dungeonEventMult?: number
+  /** 娼館打工事件的機率倍率（docs/LEWD_STATS.md 第 10 節） */
+  brothelEventMult?: number
   eventDc?: number
+  /** 每個角色戰鬥時最多攜帶幾個技能與法術（戲法不算）；0 = 不限 */
+  skillLoadout?: number
+  /** 慾望戰鬥：所有慾望增加的倍率；0 = 關閉 */
+  lustMult?: number
   /** 允許在遊戲中更換主角的身分標籤（見 engine/pcTags.ts） */
   tagChange?: boolean
 }
@@ -713,6 +764,10 @@ export interface Expedition {
   /** 這趟撿到、還沒帶出地下城的物品與錢（戰敗時依規則失去） */
   loot: InventoryItem[]
   money_cc: number
+  /** 主題地下城的園區：從入口廣場的哪一格進來、進來前的特殊地圖紀錄（回廣場時還原） */
+  park?: { area: string; x: number; y: number; special?: GameState['special'] }
+  /** 園區的魅氣：每個人跨戰鬥保留的慾望（慾望上限的比例） */
+  lust?: Record<string, number>
 }
 
 /** 正在燒的光源：物品名稱與還能照亮幾格 */
@@ -759,6 +814,8 @@ export interface GameState {
   combat?: CombatState
   /** 在格子地圖上的位置 */
   position?: Position
+  /** 最近走過的地方（區域與設施，換了地方才記；交給 AI 銜接正文用，只留最近幾筆） */
+  trail?: { time: GameTime; location: string; spot: string }[]
   /** 隨機生成的區域（近郊、冒險區域各層） */
   areas?: Record<string, Area>
   /** 人際關係：角色 id → 條目 */
@@ -771,6 +828,18 @@ export interface GameState {
   guild?: GuildState
   /** 這個存檔的規則 */
   options?: GameOptions
+  /** 慾望指標的曝露名聲：角色 id → 地區 → 0～100（只有主角與夥伴） */
+  exposure?: Record<string, Record<string, number>>
+  /** 曝露名聲依身分標籤加減時的零頭（角色 id → 還沒算進去的部分） */
+  exposureCarry?: Record<string, number>
+  /** 拍賣會今天的拍品（auction.ts；每天、每個地方重新抽） */
+  auction?: { day: number; location: string; lots: { name: string; start: number; rival: number; won?: number; lost?: boolean }[] }
+  /** 淫鬥場的連勝：城（地點 id）→ 擂臺 → 目前的連勝與最好的紀錄（docs/LEWD_STATS.md 第 21 節） */
+  arena?: Record<string, Record<string, { streak: number; best: number }>>
+  /** 頭牌等級的累積：角色 id → 城（地點 id）→ 次數（docs/LEWD_STATS.md 第 10 節） */
+  brothelRank?: Record<string, Record<string, number>>
+  /** 自由的夥伴答應去娼館接客的那一天：角色 id → 第幾天 */
+  workConsent?: Record<string, number>
   /** 進行中的地下城探索 */
   expedition?: Expedition
   /** 正在燒的光源 */

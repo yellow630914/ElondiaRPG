@@ -2,6 +2,7 @@
 // 刺青店刺普通刺青、刻印師刻誓約印記；洗刺青：刺青店只洗普通刺青，刻印師與神殿都能洗（神殿便宜但要聲望）。
 // 奴隸印記的解除另外走解除印記（slavery.ts 的 unmarkOffers，有檢定）。
 
+import { pcTagMult } from './pcTags'
 import { recalc } from './character'
 import { locationById } from './data'
 import { currentCell } from './grid'
@@ -52,7 +53,8 @@ export function shopRefusal(state: GameState, shop: TattooShopId): string | unde
 /** 刺青的價格：刺青店固定價，刻印師依誓約加的總點數；自己描述的另外加錢 */
 export function inkPrice(shop: TattooShopId, t: Pick<NewTattoo, 'kind' | 'attrs' | 'template'>): number {
   const r = tattooShop(shop)
-  const extra = t.template ? 0 : r.custom_extra ?? 0
+  // 圖樣另外加的價錢（淫紋）；自己描述的加 custom_extra
+  const extra = t.template ? tattooTemplate(t.template)?.price ?? 0 : r.custom_extra ?? 0
   if (t.kind === 'oath') return Object.values(t.attrs ?? {}).filter((v) => (v ?? 0) > 0).reduce((sum, v) => sum + v!, 0) * (r.oath_per_point ?? 0) + extra
   return (r.ink ?? 0) + extra
 }
@@ -118,7 +120,9 @@ export function washTattoo(state: GameState, place: TattooPlace): Report {
   if (!t) throw new Error(`${placeName(place)}沒有刺青`)
   if (t.kind === 'slave') throw new Error('奴隸印記要解除契約才能去掉')
   if (t.kind === 'curse' && !t.tamed) throw new Error('未馴服的詛咒印記洗不掉，要解咒')
-  const price = removePrice(shop, t.kind)
+  const base = removePrice(shop, t.kind)
+  // 神殿洗刺青：神職的身分打折
+  const price = base === undefined ? undefined : Math.round(base * (shop === 'temple' ? pcTagMult(pcOf(state), 'service_mult') : 1))
   if (price === undefined) throw new Error(`${tattooShop(shop).name}不洗${tattooKindName(t.kind)}`)
   if (state.money_cc < price) throw new Error(`錢不夠（要 ${formatMoney(price)}）`)
   const report = shopReport(state, shop)
