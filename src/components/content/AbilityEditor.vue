@@ -249,6 +249,7 @@ function remove() {
           <option v-for="t in damageIds" :key="t" :value="t">{{ damageTypeName(t) }}</option>
         </select>
         <label class="check"><input v-model="d.mod" type="checkbox" /> 加屬性調整值</label>
+        <label v-if="d.type === 'lust'" class="check" title="目標的魅惑受傷倍率至少 ×0.5（對不死、構裝也有效）"><input v-model="d.pierce" type="checkbox" /> 穿透</label>
         <label>每 <input :value="d.scale?.per ?? ''" class="num" type="number" min="1" max="20" placeholder="4" @input="d.scale && (d.scale.per = Number(($event.target as HTMLInputElement).value) || 4)" /> 級多</label>
         <input :value="d.scale?.dice ?? ''" class="num" placeholder="（不加）" @change="setScale(d, ($event.target as HTMLInputElement).value.trim())" />
         <button class="small" @click="draft.damage!.splice(i, 1)">移除</button>
@@ -320,7 +321,19 @@ function remove() {
           <label>分出的比例 <input v-model.number="draft.lust_transfer.ratio" type="number" min="0.05" max="1" step="0.05" /></label>
           <label>每幾點給 1 臨時生命 <input v-model.number="draft.lust_transfer.shield_per" type="number" min="0" max="50" placeholder="不給" /></label>
         </template>
-        <label v-else-if="draft.lust_transfer?.mode === 'take'">每人吸多少 <input v-model.number="draft.lust_transfer.amount" type="number" min="1" max="200" /></label>
+        <template v-else-if="draft.lust_transfer?.mode === 'take'">
+          <label>每人吸多少 <input v-model.number="draft.lust_transfer.amount" type="number" min="1" max="999" /></label>
+          <label class="check" title="吸過來的慾望不會讓自己高潮，下一個自己的回合開始時全部消退"><input v-model="draft.lust_transfer.dump" type="checkbox" /> 下回合全部消退</label>
+        </template>
+      </div>
+      <div class="row small">
+        <label class="check"><input type="checkbox" :checked="!!draft.gamble" @change="($event.target as HTMLInputElement).checked ? (draft.gamble = { status: statusList[0]!.id, turns: 3, lust: 20 }) : delete draft.gamble" /> 賭局</label>
+        <template v-if="draft.gamble">
+          一半機會全體友軍得到
+          <select v-model="draft.gamble.status"><option v-for="x in statusList" :key="x.id" :value="x.id">{{ x.name }}</option></select>
+          <input v-model.number="draft.gamble.turns" type="number" min="1" max="20" class="num" /> 回合，否則全體友軍慾望 +
+          <input v-model.number="draft.gamble.lust" type="number" min="0" max="200" class="num" />
+        </template>
       </div>
       <div class="row small">
         <label class="check"><input v-model="burstOn" type="checkbox" /> 引爆 <Hint text="消耗全部的慾望，造成慾望 × 倍率 + 屬性調整值的傷害（或治療目標）；用了立刻結束回合，下一回合脫力。" /></label>

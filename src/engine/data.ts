@@ -763,6 +763,12 @@ export interface StatusDef {
   lust_max?: number
   /** 慾望不會自然消退 */
   lust_hold?: boolean
+  /** 生命低於最大生命的 below 時，受到的生命傷害這個比例改成慾望（戰利品的覺悟） */
+  convert_low?: { below: number; ratio: number }
+  /** 高潮或引爆時，對所有敵人造成 amount（+ 等級）的 type 傷害（獻祭的契紋） */
+  on_release?: { amount: number; level?: boolean; type: string }
+  /** 下一個自己的回合開始時，慾望全部消退（潮之新娘） */
+  lust_dump?: boolean
 }
 export const statuses = (statusesJson as unknown as { statuses: Record<string, StatusDef> }).statuses
 
@@ -824,6 +830,8 @@ export interface DamagePart {
   mod?: boolean
   weapon?: boolean
   scale?: { dice: string; per: number }
+  /** 魅惑傷害：目標的受傷倍率至少 ×0.5（對免疫魅惑的不死、構裝也有效） */
+  pierce?: boolean
 }
 export interface ApplyDef {
   status: string
@@ -877,7 +885,10 @@ export interface AbilityDef {
   /** 消耗自己的慾望（不夠就不能用） */
   lust_cost?: number
   /** 慾望在隊伍裡移動：spread 把自己 ratio 的慾望平分給其他友軍（每 shield_per 點給 1 點臨時生命）；take 從其他每位友軍吸 amount 過來 */
-  lust_transfer?: { mode: 'spread' | 'take'; ratio?: number; amount?: number; shield_per?: number }
+  /** dump：吸過來的慾望不會讓自己高潮（停在上限），下一個自己的回合開始時全部消退 */
+  lust_transfer?: { mode: 'spread' | 'take'; ratio?: number; amount?: number; shield_per?: number; dump?: boolean }
+  /** 擲一次：一半機會全體友軍得到 status（turns 回合），否則全體友軍慾望 + lust */
+  gamble?: { status: string; turns: number; lust: number }
   /** 自己的慾望至少要上限的這個比例才能用 */
   requires_lust?: number
   /** 引爆：消耗全部的慾望，造成慾望 × mult + 屬性調整值的 type 傷害（heal 時改成治療目標）；用了立刻結束回合，下一回合脫力 */

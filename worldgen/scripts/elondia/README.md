@@ -8,7 +8,7 @@
 
 | 腳本 | 寫進 | 說明 |
 |---|---|---|
-| `story_batch1.py` | `data/rules/stories.json` | 所有特殊任務：匯入 `story_batch2`～`story_batch30`，再套用 `epic_places.place_epics`（史詩頭目戰的特殊地圖）、`uniq23.place_gear`（任務的獨特裝備）、`adult_scenes26.place_scenes`（親密場景）。以 git 的 `2fa8ee9` 版的 stories.json 為底，後面接上這些批次 |
+| `story_batch1.py` | `data/rules/stories.json` | 所有特殊任務：匯入 `story_batch2`～`story_batch30`，再套用 `epic_places.place_epics`（史詩頭目戰的特殊地圖）、`uniq23.place_gear`（任務的獨特裝備）、`adult_scenes26.place_scenes`（親密場景）、`lust_skills_s6.place_skills`（打工線的獨特技能，接在結局的獎勵物品後面）。以 git 的 `2fa8ee9` 版的 stories.json 為底，後面接上這些批次 |
 | `uniq23.py` | `data/rules/items.json` | 任務的獨特裝備 149 件 |
 | `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態 |
 | `parasites25.py` | `data/rules/parasites.json`、`items.json`、`companions.json`、`travel_events.json` | 寄生物的規則、物品、發作事件 |

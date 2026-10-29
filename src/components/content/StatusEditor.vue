@@ -287,6 +287,21 @@ function remove() {
         <label class="check"><input v-model="draft.lust_hold" type="checkbox" /> 慾望不會消退</label>
         <label class="check"><input v-model="draft.no_climax" type="checkbox" /> 不會高潮</label>
         <label class="check"><input v-model="draft.no_cleanse" type="checkbox" /> 淨化拿不掉</label>
+        <label class="check"><input v-model="draft.lust_dump" type="checkbox" /> 下一個自己的回合開始時慾望全部消退</label>
+      </div>
+      <div class="row small">
+        <label class="check"><input type="checkbox" :checked="!!draft.convert_low" @change="($event.target as HTMLInputElement).checked ? (draft.convert_low = { below: 0.3, ratio: 1 }) : delete draft.convert_low" /> 生命低時傷害轉成慾望</label>
+        <template v-if="draft.convert_low">
+          生命低於 <input v-model.number="draft.convert_low.below" type="number" min="0.05" max="1" step="0.05" class="num" />，轉換比例 <input v-model.number="draft.convert_low.ratio" type="number" min="0.05" max="1" step="0.05" class="num" />
+        </template>
+      </div>
+      <div class="row small">
+        <label class="check"><input type="checkbox" :checked="!!draft.on_release" @change="($event.target as HTMLInputElement).checked ? (draft.on_release = { amount: 6, level: true, type: 'shadow' }) : delete draft.on_release" /> 高潮或引爆時對所有敵人造成傷害</label>
+        <template v-if="draft.on_release">
+          <input v-model.number="draft.on_release.amount" type="number" min="0" max="200" class="num" />
+          <label class="check"><input v-model="draft.on_release.level" type="checkbox" /> + 等級</label>
+          <select v-model="draft.on_release.type"><option v-for="t in damageTypes.types.filter((x) => x.id !== 'lust')" :key="t.id" :value="t.id">{{ damageTypeName(t.id) }}</option></select>
+        </template>
       </div>
     </fieldset>
   </div>

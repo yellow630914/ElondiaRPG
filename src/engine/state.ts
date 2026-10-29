@@ -13,7 +13,7 @@ import { Rng } from './rng'
 import type { Character, ContractRef, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, MarkTerms, Report } from './types'
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
-import { lewdDaily, noteAdultScene } from './lewd'
+import { backfillLewdSkills, lewdDaily, noteAdultScene } from './lewd'
 import { sanitizePcTags } from './pcTags'
 import { occupationFor } from './npcs'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
@@ -357,6 +357,8 @@ export function migrate(state: GameState): GameState {
   pruneStatuses(state)
   pruneAbilities(state)
   prunePerks(state)
+  // 打工線的獨特色情技能（v0.4 起，慾望戰鬥 S6）：已經完成的任務線補發
+  backfillLewdSkills(state)
   // 依存檔格式的版本依序轉換
   for (const [v, step] of SCHEMA_STEPS) {
     if ((state.schema ?? 1) >= v) continue

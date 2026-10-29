@@ -1319,6 +1319,7 @@ function damagePart(v: unknown): DamagePart | undefined {
   if (p.type && DAMAGE_IDS().includes(p.type)) out.type = p.type
   if (p.mod) out.mod = true
   if (p.scale?.dice && DICE.test(String(p.scale.dice))) out.scale = { dice: String(p.scale.dice), per: int(p.scale.per, 1, 20, 4) }
+  if (p.pierce && out.type === 'lust') out.pierce = true
   return out
 }
 
@@ -1410,7 +1411,10 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
     const t = raw.lust_transfer
     out.lust_transfer = t.mode === 'spread'
       ? { mode: 'spread', ratio: Math.round(num(t.ratio, 0.05, 1, 0.3) * 100) / 100, ...(t.shield_per ? { shield_per: int(t.shield_per, 1, 50, 5) } : {}) }
-      : { mode: 'take', amount: int(t.amount, 1, 200, 20) }
+      : { mode: 'take', amount: int(t.amount, 1, 999, 20), ...(t.dump ? { dump: true } : {}) }
+  }
+  if (raw.gamble && typeof raw.gamble === 'object' && statuses[String(raw.gamble.status)]) {
+    out.gamble = { status: String(raw.gamble.status), turns: int(raw.gamble.turns, 1, 20, 3), lust: int(raw.gamble.lust, 0, 200, 20) }
   }
   if (raw.burst && typeof raw.burst === 'object') {
     const b = raw.burst
@@ -1494,7 +1498,13 @@ export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: bool
   if (raw.lust_scale && typeof raw.lust_scale === 'object' && ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit'].includes(String(raw.lust_scale.stat))) {
     out.lust_scale = { stat: raw.lust_scale.stat, per: int(raw.lust_scale.per, 1, 5, 1), max: int(raw.lust_scale.max, 1, 20, 5) }
   }
-  for (const k of ['no_climax', 'no_cleanse', 'lust_hold'] as const) if (raw[k]) out[k] = true
+  for (const k of ['no_climax', 'no_cleanse', 'lust_hold', 'lust_dump'] as const) if (raw[k]) out[k] = true
+  if (raw.convert_low && typeof raw.convert_low === 'object') {
+    out.convert_low = { below: Math.round(num(raw.convert_low.below, 0.05, 1, 0.3) * 100) / 100, ratio: Math.round(num(raw.convert_low.ratio, 0.05, 1, 1) * 100) / 100 }
+  }
+  if (raw.on_release && typeof raw.on_release === 'object' && DAMAGE_IDS().includes(String(raw.on_release.type)) && raw.on_release.type !== 'lust') {
+    out.on_release = { amount: int(raw.on_release.amount, 0, 200, 6), type: String(raw.on_release.type), ...(raw.on_release.level ? { level: true } : {}) }
+  }
   if (custom) out.custom = true
   return out
 }

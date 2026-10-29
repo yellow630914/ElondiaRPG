@@ -101,6 +101,13 @@
     "enduring": { "name": "忍耐", "kind": "buff", "lust_max": 0.5, "lust_hold": true },
     "groveling": { "name": "跪伏", "kind": "buff", "mods": { "dr": 2 } },
     "pure_mind": { "name": "淨念", "kind": "buff", "lust_mult": -0.5 },
-    "bind_stance": { "name": "縛身", "kind": "buff", "mods": { "dr": 2, "save": 2 } }
+    "bind_stance": { "name": "縛身", "kind": "buff", "mods": { "dr": 2, "save": 2 } },
+    "dealer_luck": { "name": "莊家的好運", "kind": "buff", "mods": { "crit": 2 } },
+    "hot_spring": { "name": "熱泉的耐性", "kind": "buff", "lust_hold": true, "lust_max": 0.3, "no_cleanse": true },
+    "frozen_pose": { "name": "定格", "kind": "buff", "control": "stun", "resist": { "all": -1 }, "no_cleanse": true },
+    "spoils_resolve": { "name": "戰利品的覺悟", "kind": "buff", "convert_low": { "below": 0.3, "ratio": 1 } },
+    "sacrifice_sigil": { "name": "獻祭的契紋", "kind": "buff", "on_release": { "amount": 6, "level": true, "type": "shadow" }, "no_cleanse": true },
+    "courtship_mark": { "name": "求偶紋", "kind": "debuff", "resist": { "lust": 0.5 } },
+    "tide_bride": { "name": "潮之新娘", "kind": "buff", "no_climax": true, "lust_dump": true, "no_cleanse": true }
   }
 }

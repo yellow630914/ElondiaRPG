@@ -1,7 +1,7 @@
 // 慾望指標（成人向；docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從記在角色身上，曝露名聲依地區記在存檔。
 // 規則與數值在 data/rules/lewd.json。戰鬥的換算在 combat.ts（慾望上限、受到的慾望、初始慾望……）。
 
-import { lewdRules, locationById, type LewdKey } from './data'
+import { abilities, lewdRules, locationById, stories, type LewdKey } from './data'
 import { gearLewdOf, gearRules } from './gear'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
 import { contractOf } from './tattoos'
@@ -209,4 +209,39 @@ export function lewdSummary(state: Pick<GameState, 'exposure' | 'location'>, c: 
   const binds = bindsOf(c)
   if (binds.length) parts.push(`身上的拘束：${binds.map((b) => `${b.name}${b.lock ? '（上鎖）' : ''}`).join('、')}`)
   return parts.join('；')
+}
+
+// ---- 舊存檔：補發打工線的獨特技能（慾望戰鬥 S6，docs/LEWD_STATS.md 第 11 節） ----
+
+/** 任務的結果裡直接給的色情技能（ability 效果寫了 ability 的） */
+function storyLewdSkills(def: { nodes: unknown[] }): string[] {
+  const out = new Set<string>()
+  const walk = (o: unknown) => {
+    if (Array.isArray(o)) o.forEach(walk)
+    else if (o && typeof o === 'object') {
+      const r = o as Record<string, unknown>
+      if (r.type === 'ability' && typeof r.ability === 'string' && abilities[r.ability]?.classes.includes('lewd')) out.add(r.ability)
+      Object.values(r).forEach(walk)
+    }
+  }
+  walk(def.nodes)
+  return [...out]
+}
+
+/** 已經完成的任務線給的色情技能，主角還沒學會的補上（讀檔時；回傳補了哪些） */
+export function backfillLewdSkills(state: GameState): string[] {
+  const pc = state.party.find((m) => m.isPlayer)
+  if (!pc) return []
+  const added: string[] = []
+  for (const p of Object.values(state.stories ?? {})) {
+    if (p.status !== 'completed') continue
+    const def = stories.find((s) => s.id === p.id)
+    if (!def) continue
+    for (const id of storyLewdSkills(def)) {
+      if (pc.abilities.includes(id)) continue
+      pc.abilities.push(id)
+      added.push(id)
+    }
+  }
+  return added
 }
