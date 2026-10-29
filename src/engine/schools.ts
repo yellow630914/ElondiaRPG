@@ -1,5 +1,5 @@
 // 慾望流派與雙面效應（成人向；docs/LEWD_STATS.md 第 6、7 節）：
-// - 流派：入門與進階特質（perks.json 的 school、lust）。學會入門之後，技能書裡這個流派的技能（abilities.json 的 school）才學得到。
+// - 流派：入門與進階特質（perks.json 的 school、lust）。流派只是特質，不限制能學的色情技能。
 //   流派特質的慾望效果（PerkDef.lust）在開戰時換算（combat.ts 的 initLust）；隸從派沒有主人時一半效果。
 // - 雙面效應：拘束具（底材的 bind、bind_kind）平常是檢定減值；修了流派、鎖上時，戰鬥中反轉成增益。
 // - 鎖：拘束具要鎖上（自己用鎖、或主人強制戴上的），戰鬥增益才生效；鎖越好倍率越高。

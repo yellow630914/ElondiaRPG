@@ -884,8 +884,6 @@ export interface AbilityDef {
   ap_give?: number
   /** 用了之後，戰後曝露名聲 +這個數（寬衣） */
   exposure?: number
-  /** 慾望流派（lewd.json 的 schools）：要先學會這個流派的入門特質，技能書才教得會 */
-  school?: string
   desc: string
 }
 const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
@@ -1907,7 +1905,7 @@ export interface PerkDef {
   rarity?: string
   /** 分類（建角時依分類折疊，見 perks.ts 的 PERK_CATEGORIES）；沒寫時依效果推斷 */
   category?: string
-  /** 慾望流派（lewd.json 的 schools）：入門或進階特質 */
+  /** 慾望流派（lewd.json 的 schools）：入門或進階特質（流派只是特質，不限制能學的技能） */
   school?: string
   /** 流派特質的慾望效果（docs/LEWD_STATS.md 第 6 節） */
   lust?: LustPerk

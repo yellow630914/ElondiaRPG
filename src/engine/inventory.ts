@@ -17,7 +17,6 @@ import { addHours, commitReport, newReportId, withRng } from './state'
 import { startStory } from './story'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, Report } from './types'
 import { contractOf } from './tattoos'
-import { schoolName } from './schools'
 
 function itemReport(state: GameState, hours: number): Report {
   const start = { ...state.time }
@@ -116,7 +115,7 @@ export function useSummary(use?: ItemUse): string {
   const parts: string[] = []
   if (use.condition) parts.push(`「${conditionName(use.condition)}」：${companionRules.conditions[use.condition]?.desc ?? ''}`)
   if (use.perks?.length) parts.push(`讀了有機會學會特質：${use.perks.map((id) => perkDef(id)?.name ?? id).join('、')}`)
-  if (use.abilities?.length) parts.push(`每讀一次學會下一個能力：${use.abilities.map((id) => `${abilities[id]?.name ?? id}（${abilities[id]?.unlock ?? 1} 級${abilities[id]?.school ? `・${schoolName(abilities[id]!.school!)}` : ''}）`).join('、')}`)
+  if (use.abilities?.length) parts.push(`每讀一次學會下一個能力：${use.abilities.map((id) => `${abilities[id]?.name ?? id}（${abilities[id]?.unlock ?? 1} 級）`).join('、')}`)
   if (use.revive) parts.push(`救起倒下的隊友（${Math.round(use.revive * 100)}% 生命）`)
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)

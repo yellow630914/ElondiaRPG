@@ -1395,7 +1395,6 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.requires_lust) out.requires_lust = Math.round(num(raw.requires_lust, 0.05, 1, 0.3) * 100) / 100
   if (raw.ap_give) out.ap_give = int(raw.ap_give, 1, 5, 1)
   if (raw.exposure) out.exposure = int(raw.exposure, 1, 10, 1)
-  if (raw.school && schoolDef(raw.school)) out.school = raw.school
   if (raw.lust_transfer && (raw.lust_transfer.mode === 'spread' || raw.lust_transfer.mode === 'take')) {
     const t = raw.lust_transfer
     out.lust_transfer = t.mode === 'spread'

@@ -46,7 +46,7 @@
     "naked": 3
   },
   "schools": {
-    "$comment": "流派（docs/LEWD_STATS.md 第 6 節）：entry 入門特質、advanced 進階特質（perks.json，category lewd）。學會入門之後，技能書裡這個流派的技能（abilities.json 的 school）才學得到。fit：雙面效應契合的拘束種類（×two_face.fit）。",
+    "$comment": "流派（docs/LEWD_STATS.md 第 6 節）：entry 入門特質、advanced 進階特質（perks.json，category lewd）。流派只是特質，不限制能學的色情技能。fit：雙面效應契合的拘束種類（×two_face.fit）。",
     "servitude": { "name": "隸從派", "group": "奴隸系", "role": "承傷、護主", "entry": "school_servitude", "advanced": "servitude_vow", "fit": [] },
     "punishment": { "name": "刑罰派", "group": "奴隸系", "role": "承傷、反擊", "entry": "school_punishment", "advanced": "trained_body", "fit": ["legs", "hands", "eyes", "body"] },
     "bondage": { "name": "束縛派", "group": "奴隸系", "role": "防禦、穩定", "entry": "school_bondage", "advanced": "rope_strength", "fit": ["legs", "hands", "eyes", "body"] },

@@ -13,7 +13,6 @@ import { bodyOf } from './traits'
 import { dressNpc } from './outfits'
 import { tattoosOf, tattooSummary } from './tattoos'
 import { npcLewd } from './lewd'
-import { schoolName, schoolsOf } from './schools'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
 
@@ -365,19 +364,11 @@ export function learnAbility(c: Character, id: string): AbilityDef {
   return a
 }
 
-/**
- * 技能書下一個能學的能力：還沒學、學得了（自己職業的或色情技能）的第一個；等級不夠時回傳原因。
- * 慾望流派的技能（school）要先學會那個流派的入門特質（docs/LEWD_STATS.md 第 6 節）
- */
+/** 技能書下一個能學的能力：還沒學、學得了（自己職業的或色情技能）的第一個；等級不夠時回傳原因 */
 export function nextBookAbility(c: Character, list: string[]): { ability?: AbilityDef; reason?: string } {
-  const learnable = list.map((id) => abilityTable[id]).filter((a): a is AbilityDef => !!a && !c.abilities.includes(a.id)
+  const open = list.map((id) => abilityTable[id]).filter((a): a is AbilityDef => !!a && !c.abilities.includes(a.id)
     && (a.classes.includes('lewd') || classAbilities(c.class).some((x) => x.id === a.id)))
-  const schools = schoolsOf(c)
-  const open = learnable.filter((a) => !a.school || schools.includes(a.school))
-  if (!open.length) {
-    const locked = [...new Set(learnable.map((a) => a.school).filter((x): x is string => !!x))]
-    return { reason: locked.length ? `${c.name}還沒入門${locked.map(schoolName).join('、')}，學不會書裡剩下的技能` : `${c.name}已經學會書裡能學的能力了` }
-  }
+  if (!open.length) return { reason: `${c.name}已經學會書裡能學的能力了` }
   const ready = open.find((a) => (a.unlock ?? 1) <= c.level)
   if (ready) return { ability: ready }
   const next = open[0]!

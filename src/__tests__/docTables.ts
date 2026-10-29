@@ -8,7 +8,7 @@ import { gearRules, gearSummary, slotName } from '@/engine/gear'
 import type { GearSlot } from '@/engine/types'
 import { notForSale } from '@/engine/trade'
 import { useSummary } from '@/engine/inventory'
-import { bindLabel, lockName, schoolDef, schoolIds, schoolName } from '@/engine/schools'
+import { bindLabel, lockName, schoolDef, schoolIds } from '@/engine/schools'
 import { abilities, attrName, classes, itemRules, lewdRules, LOCK_GRADES, perkDef, shopRules, type ItemDef, damageTypeName, dungeonEncounters, enemies, geography, locationById, regionById, stories, wildEncounterTables, type AbilityDef, type AttrId, type EnemyDef } from '@/engine/data'
 
 export interface GenBlock {
@@ -59,7 +59,7 @@ function monsterAbilities(): string {
 function lewdAbilities(): string {
   const list = Object.values(abilities).filter((a) => a.classes.includes('lewd')).sort((a, b) => (a.unlock ?? 1) - (b.unlock ?? 1))
   const book = (id: string) => itemRules.items.filter((i) => i.use?.abilities?.includes(id)).map((i) => i.name).join('、') || '—'
-  return table(['等級', '名稱', '流派', 'AP', '效果', '技能書'], list.map((a) => [a.unlock ?? 1, a.name, a.school ? schoolName(a.school) : '—', abilityApCost(a), a.desc, book(a.id)]))
+  return table(['等級', '名稱', 'AP', '效果', '技能書'], list.map((a) => [a.unlock ?? 1, a.name, abilityApCost(a), a.desc, book(a.id)]))
 }
 
 // ---- LEWD_STATS：流派特質、拘束具與鎖 ----
