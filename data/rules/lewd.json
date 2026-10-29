@@ -94,6 +94,35 @@
     "submission_dc_per": 25,
     "stance_per": 20
   },
+  "training": {
+    "$comment": "調教（主角對自己的奴隸；docs/LEWD_STATS.md 第 9 節）：選課程，從 slavery.json 的 owner_events 抽一件同課程的事件，主角擲檢定。DC 另外減去奴隸的順從 / sub_div，親密度低於 low_affinity 時 +low_dc。成功時套用課程的 stats（指標）與 affinity，同一課程成功 progress 次保證學會這個課程事件掛的一個技能（事件寫了 progress 時用事件的）。失敗而且親密度低於 backlash_affinity 時反彈：親密度再 backlash_delta，記一段怨恨的記憶。",
+    "sub_div": 10, "low_affinity": 0, "low_dc": 2, "progress": 3, "backlash_affinity": -20, "backlash_delta": -3,
+    "courses": {
+      "serve": { "name": "侍奉", "attr": "cha", "stats": { "submission": 2 }, "desc": "伺候主人的規矩與心思" },
+      "endure": { "name": "忍耐", "attr": "str", "stats": { "endurance": 2 }, "desc": "撐住刺激、不准自己先投降" },
+      "pain": { "name": "疼痛", "attr": "str", "stats": { "submission": 1, "endurance": 1 }, "affinity": -1, "desc": "把痛楚當成獎賞" },
+      "words": { "name": "言語", "attr": "int", "stats": { "lewdness": 1, "sensitivity": 1 }, "desc": "說出口的話與聽進去的話" },
+      "exposure": { "name": "露出", "attr": "cha", "stats": { "exposure": 2 }, "desc": "在別人的目光下抬起頭" },
+      "bind": { "name": "束縛", "attr": "dex", "stats": { "endurance": 1, "submission": 1 }, "desc": "被綁住時也能安分" },
+      "charm": { "name": "魅惑", "attr": "cha", "stats": { "lewdness": 1, "sensitivity": 1 }, "desc": "勾人的眼神與吻" }
+    }
+  },
+  "brothel": {
+    "$comment": "娼館（docs/LEWD_STATS.md 第 10 節）。work_event：娼館打工結束時擲一次，機率 = base + 淫亂 × per_lewd（最多 max），從 brothel_events.work 抽（頭牌等級夠、掛的技能還沒全學過的事件）。ranks：頭牌等級，每個人在每座城的娼館各自累積（工作一次 +work、打工事件 +event）；娼館的時薪每級 +wage_per_rank。train：受訓的時數、學費 = price_base + price_per_unlock × 技能的解鎖等級，每級頭牌等級打 discount_per_rank 的折扣；全部學過時「複習」給 review 的效果。patron：光顧娼婦（親密度 affinity_min 以上）成功時有 chance 機會教主角一個技能；她的淫亂決定能教到幾級的技能（tiers）；沒有指定清單（固定 NPC 的 teaches）時用 default。propose：提議自由的夥伴去娼館接客：主角擲魅力，DC = dc − 對方淫亂 / lewd_div − 親密度 / affinity_div + 身分修正（tags），成功當天都可以派；工錢分 share 給主角。",
+    "work_event": { "base": 0.15, "per_lewd": 0.001, "max": 0.3 },
+    "ranks": [
+      { "min": 0, "name": "見習" }, { "min": 5, "name": "熟手" }, { "min": 15, "name": "紅牌" }, { "min": 30, "name": "頭牌" }, { "min": 60, "name": "花魁" }
+    ],
+    "rank_gain": { "work": 1, "event": 2 },
+    "wage_per_rank": 0.15,
+    "train": { "price_base": 150, "price_per_unlock": 40, "discount_per_rank": 0.1, "review": [{ "type": "lewd", "stat": "lewdness", "delta": 2 }, { "type": "money", "amount": 20 }] },
+    "patron": {
+      "affinity_min": 40, "chance": 0.5,
+      "tiers": [{ "lewd": 0, "unlock": 1 }, { "lewd": 40, "unlock": 5 }, { "lewd": 60, "unlock": 9 }, { "lewd": 80, "unlock": 13 }],
+      "default": ["lust_glance", "lust_tease", "lust_whisper", "lust_self_tease", "lust_perfume", "lust_ally_tease", "lust_kiss", "lust_dance", "lust_smile"]
+    },
+    "propose": { "attr": "cha", "dc": 15, "lewd_div": 10, "affinity_div": 25, "tags": { "noble": 4, "royal": 4, "priest": 4, "bishop": 4, "prostitute": -4 }, "share": 0.5, "fail_affinity": -2, "fumble_affinity": -6 }
+  },
   "growth": {
     "adult_scene": { "lewdness": 1 },
     "climax": { "lewdness": 1, "sensitivity": 1 },

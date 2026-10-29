@@ -21,7 +21,7 @@ function game(): GameState {
 
 describe('主人事件格式：整理與內建事件', () => {
   it('內建的事件整理過後不變（效果、回應、條件都保留）', () => {
-    for (const e of slaveryRules.master_events.events) {
+    for (const { def: e } of allMasterEvents()) {
       const m = sanitizeMasterEvent(e.id, { ...builtinMasterEvent(e.id)! }, false)
       expect(m.options.length, e.id).toBe(e.options.length)
       for (const [i, o] of e.options.entries()) {
@@ -30,7 +30,8 @@ describe('主人事件格式：整理與內建事件', () => {
         expect(s.stance).toBe(o.stance)
         for (const k of ['effects', 'effects_success', 'fail_effects'] as const) expect(s[k] ?? [], `${e.id} ${o.label} ${k}`).toEqual(o[k] ?? [])
       }
-      for (const k of ['tags', 'tags_none', 'at_home', 'overdue', 'free_place', 'forced_gear', 'cell', 'adult', 'scene'] as const) expect(m[k], `${e.id} ${k}`).toEqual(e[k])
+      for (const k of ['tags', 'tags_none', 'at_home', 'overdue', 'free_place', 'forced_gear', 'cell', 'adult', 'scene', 'teaches', 'course', 'rank_min'] as const) expect(m[k], `${e.id} ${k}`).toEqual(e[k])
+      for (const [i, o] of e.options.entries()) expect(m.options[i]!.learn, `${e.id} ${o.label}`).toBe(o.learn)
     }
   })
 
@@ -44,9 +45,10 @@ describe('主人事件格式：整理與內建事件', () => {
     applyContent(normalizeMods(JSON.parse(JSON.stringify(mods))))
     expect(masterEventPool('brothel_train').map((e) => e.id)).toContain('mevent_x')
     expect(slaveryRules.master_events.events.map((e) => e.id)).toContain('mevent_y')
-    expect(allMasterEvents().length).toBe(slaveryRules.master_events.events.length + 1)
+    const before = allMasterEvents().length
     applyContent(emptyMods())
-    expect(masterEventPool('brothel_train')).toEqual([])
+    expect(allMasterEvents().length).toBe(before - 2)
+    expect(masterEventPool('brothel_train').map((e) => e.id)).not.toContain('mevent_x')
   })
 
   it('主人事件的效果：嚴加看管、帶回家、強制裝備、旗標、事件庫的技能都整理得出來', () => {
@@ -82,14 +84,15 @@ describe('屈服與抵抗、事件庫的技能', () => {
   })
 
   it('ability_pool：從事件庫掛的技能抽一個還沒學的；都學過時套用 fallback', () => {
-    const mods = emptyMods()
-    mods.masterEvents = { mevent_t: sanitizeMasterEvent('mevent_t', { pool: 'brothel_train', text: '受訓', options: [{ label: '學' }], teaches: ['lust_glance'] }, true) }
-    applyContent(mods)
     const state = game()
     const pc = pcOf(state)
-    const effects = [{ type: 'ability_pool' as const, pool: 'brothel_train' as const, fallback: [{ type: 'lewd' as const, stat: 'lewdness' as const, delta: 3 }] }]
+    // 調教事件「侍奉」課程掛的技能：肉盾侍奉、縱慾共鳴、獻身；先學會其他的，只剩一個
+    const all = [...new Set(masterEventPool('owner').flatMap((e) => e.teaches ?? []))]
+    pc.level = 20
+    pc.abilities.push(...all.filter((id) => id !== 'lust_guard'))
+    const effects = [{ type: 'ability_pool' as const, pool: 'owner' as const, fallback: [{ type: 'lewd' as const, stat: 'lewdness' as const, delta: 3 }] }]
     applyEffects(state, baseReport(state, 'event', 0), effects)
-    expect(pc.abilities).toContain('lust_glance')
+    expect(pc.abilities).toContain('lust_guard')
     const before = pc.lewd?.lewdness ?? lewdRules.defaults.lewdness
     applyEffects(state, baseReport(state, 'event', 0), effects)
     expect(pc.lewd!.lewdness).toBe(before + 3)

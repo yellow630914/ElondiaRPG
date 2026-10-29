@@ -88,6 +88,8 @@ describe('adult scenes', () => {
     const state = game()
     standOn(state, 'brothel')
     expect(act(state, { kind: 'work', target: '4', text: '' }, 15).narration?.adult_scene).toContain('接客')
+    // 接客時可能遇到打工事件（docs/LEWD_STATS.md 第 10 節）：這裡不管它
+    delete state.pendingMasterEvent
     standOn(state, 'tavern')
     expect(act(state, { kind: 'work', target: '4', text: '' }, 15).narration?.adult_scene).toBeUndefined()
   })

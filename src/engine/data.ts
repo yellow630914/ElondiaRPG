@@ -117,6 +117,8 @@ export interface NpcDef {
   perks?: string[]
   /** 慾望指標（淫亂、敏感、忍耐、順從，0～100；沒寫的依標籤與 id 固定地擲，見 docs/LEWD_STATS.md） */
   lewd?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+  /** 娼婦：光顧時可能教主角的色情技能（docs/LEWD_STATS.md 第 10 節；沒寫時用 lewd.json 的 brothel.patron.default） */
+  teaches?: string[]
   /** 初始裝備（取代依等級隨機生成的裝備；沒寫的欄位空著） */
   gear?: Partial<Record<GearSlot, GearSpec>>
   /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
@@ -1361,6 +1363,8 @@ export interface MasterEventOption {
   adult_scene?: 'always' | 'success' | 'fail'
   /** 屈服（submit）或抵抗（resist）：有檢定時依順從加減（lewd.json 的 master_tool.stance_per） */
   stance?: 'submit' | 'resist'
+  /** 成功時（沒有檢定時一定）學會事件掛的一個還沒學的技能（teaches） */
+  learn?: boolean
 }
 
 export function contractDef(id: string): ContractDef {
@@ -2016,6 +2020,19 @@ export const lewdRules = lewdJson as unknown as {
   }
   locks: { grades: Record<LockGrade, { name: string; mult: number }>; master_default: LockGrade; master_tags: Record<string, LockGrade> }
   master_tool: { release_affinity: number; new_master_affinity: number; hours: number; submission_dc_per: number; stance_per: number }
+  training: {
+    sub_div: number; low_affinity: number; low_dc: number; progress: number; backlash_affinity: number; backlash_delta: number
+    courses: Record<string, { name: string; attr: AttrId; stats: Partial<Record<LewdKey, number>>; affinity?: number; desc: string }>
+  }
+  brothel: {
+    work_event: { base: number; per_lewd: number; max: number }
+    ranks: { min: number; name: string }[]
+    rank_gain: { work: number; event: number }
+    wage_per_rank: number
+    train: { price_base: number; price_per_unlock: number; discount_per_rank: number; review: RewardEffect[] }
+    patron: { affinity_min: number; chance: number; tiers: { lewd: number; unlock: number }[]; default: string[] }
+    propose: { attr: AttrId; dc: number; lewd_div: number; affinity_div: number; tags: Record<string, number>; share: number; fail_affinity: number; fumble_affinity: number }
+  }
   growth: Record<'adult_scene' | 'climax' | 'climax_won' | 'brothel_work' | 'obedience' | 'disrobe', Partial<Record<LewdKey, number>>>
   daily: {
     adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus

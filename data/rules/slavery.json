@@ -508,9 +508,209 @@
         { "label": "睡個好覺", "result": "你難得睡到自然醒。", "effects": [{ "type": "condition", "target": "pc", "condition": "well_rested", "add": true }, { "type": "strict", "delta": -1 }] },
         { "label": "幫主人做點事", "result": "{master}笑說你閒不住，心裡卻很受用。", "effects": [{ "type": "affinity", "npc": "master", "delta": 2, "reason": "勤快" }] },
         { "label": "在家裡四處看看", "result": "你把房子的每個角落都摸熟了。", "effects": [{ "type": "memory", "summary": "把主人的家裡裡外外都摸熟了。", "importance": 1 }] }
+      ] },
+      { "id": "lewd_lesson", "weight": 2, "hours": 2, "adult": true, "text": "{master}說商人的奴隸要懂得替主人擋下麻煩，今晚要親自教你。", "scene": "{master}讓主角貼身伺候，教主角怎麼用身體替主人擋下一切。", "tags": ["merchant"], "teaches": ["lust_guard", "lust_resonance"], "options": [
+        { "label": "認真學", "check": {"attr": "cha", "dc": 13}, "stance": "submit", "success": "{master}很滿意你的學習態度。", "fail": "你學得笨手笨腳。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 2, "reason": "學得認真"}], "learn": true, "adult_scene": "success" },
+        { "label": "敷衍了事", "result": "{master}看出你在敷衍，沒說什麼。", "effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "敷衍"}] },
+        { "label": "推說身體不舒服", "check": {"attr": "cha", "dc": 14}, "stance": "resist", "success": "{master}放過了你。", "fail": "{master}冷笑一聲，照樣把你拉了過去。", "fail_effects": [{"type": "affinity", "npc": "master", "delta": -2, "reason": "裝病"}, {"type": "condition", "target": "pc", "condition": "punished", "add": true}], "adult_scene": "fail" }
+      ] },
+      { "id": "show_off_body", "weight": 2, "hours": 2, "adult": true, "text": "{master}在宴會上要你站到眾人面前，讓客人好好欣賞。", "scene": "在{master}的命令下，主角站在宴會廳中央，任由賓客的目光在身上流連。", "tags": ["noble", "royal"], "teaches": ["lust_glance", "lust_smile"], "options": [
+        { "label": "大方地展示", "check": {"attr": "cha", "dc": 13}, "stance": "submit", "success": "賓客們讚嘆不已，{master}臉上有光。", "fail": "你僵在那裡，表情尷尬。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 2, "reason": "替主人爭面子"}, {"type": "lewd", "stat": "exposure", "delta": 2}], "learn": true, "adult_scene": "success" },
+        { "label": "害羞地低著頭", "result": "你紅著臉站完了全程。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 1}] },
+        { "label": "找藉口躲開", "check": {"attr": "dex", "dc": 14}, "stance": "resist", "success": "你趁亂溜回了後廳。", "fail": "{master}當眾把你拉了回來。", "fail_effects": [{"type": "affinity", "npc": "master", "delta": -3, "reason": "當眾丟臉"}, {"type": "lewd", "stat": "exposure", "delta": 2}] }
+      ] },
+      { "id": "lend_out", "weight": 2, "hours": 2, "adult": true, "text": "{master}說一位老朋友今晚寂寞，要把你借給他一晚。", "scene": "主角被送到{master}朋友的房裡，度過了漫長的一夜。", "tags": ["villain", "merchant"], "teaches": ["lust_endure", "lust_devote"], "options": [
+        { "label": "順從地去", "check": {"attr": "cha", "dc": 12}, "stance": "submit", "success": "那位朋友很滿意，{master}也收到了謝禮。", "fail": "你表現得不太好。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 2, "reason": "沒給主人丟臉"}, {"type": "lewd", "stat": "submission", "delta": 1}], "learn": true, "adult_scene": "always" },
+        { "label": "求{master}換個方式", "check": {"attr": "cha", "dc": 15}, "stance": "resist", "success": "{master}想了想，改讓你去陪酒就好。", "fail": "{master}不耐煩地揮手，你還是得去。", "fail_effects": [{"type": "affinity", "npc": "master", "delta": -2, "reason": "討價還價"}], "adult_scene": "fail" },
+        { "label": "斷然拒絕", "check": {"attr": "fai", "dc": 16}, "stance": "resist", "success": "{master}瞪了你一眼，沒再提。", "fail": "{master}大怒，硬把你送了過去。", "effects_success": [{"type": "affinity", "npc": "master", "delta": -2, "reason": "拒絕主人"}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -4, "reason": "違抗主人"}, {"type": "condition", "target": "pc", "condition": "punished", "add": true}], "adult_scene": "fail" }
+      ] },
+      { "id": "slave_contest", "weight": 2, "hours": 2, "adult": true, "text": "{master}帶你去參加奴隸們的比賽，看誰最能取悅觀眾。", "scene": "競技場上，主角和其他奴隸一起表演，在歡呼聲中拚命取悅台下的觀眾。", "tags": ["villain", "noble"], "teaches": ["lust_dance", "lust_disrobe"], "options": [
+        { "label": "全力以赴", "check": {"attr": "dex", "dc": 14}, "stance": "submit", "success": "你拿下了第一，{master}得意極了。", "fail": "你輸給了別人家的奴隸。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 3, "reason": "替主人贏得比賽"}, {"type": "money", "amount": 50}, {"type": "lewd", "stat": "exposure", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "輸了比賽"}], "learn": true, "adult_scene": "success" },
+        { "label": "隨便應付", "result": "你在台上敷衍地表演完。", "effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "表演敷衍"}] },
+        { "label": "故意輸掉", "check": {"attr": "int", "dc": 13}, "stance": "resist", "success": "沒人看出你是故意的。", "fail": "{master}看穿了你，臉色鐵青。", "fail_effects": [{"type": "affinity", "npc": "master", "delta": -3, "reason": "故意輸掉"}, {"type": "strict", "delta": 1}] }
+      ] },
+      { "id": "pain_discipline", "weight": 2, "hours": 2, "adult": true, "text": "{master}說你最近太放肆了，要好好管教一番。", "scene": "{master}的手掌與鞭子一次次落下，主角在疼痛裡學著順從。", "tags": ["villain"], "teaches": ["lust_pain"], "options": [
+        { "label": "咬牙承受", "check": {"attr": "str", "dc": 13}, "stance": "submit", "success": "你一聲不吭地撐了下來，{master}的眼神裡多了點什麼。", "fail": "你痛得叫了出來。", "effects_success": [{"type": "lewd", "stat": "endurance", "delta": 1}], "fail_effects": [{"type": "hp", "target": "pc", "ratio": -0.1}], "learn": true, "adult_scene": "always" },
+        { "label": "求饒", "check": {"attr": "cha", "dc": 13}, "success": "{master}停了手。", "fail": "{master}打得更重了。", "fail_effects": [{"type": "hp", "target": "pc", "ratio": -0.15}] },
+        { "label": "瞪著{master}", "check": {"attr": "fai", "dc": 16}, "stance": "resist", "success": "{master}被你看得收了手。", "fail": "{master}更生氣了。", "fail_effects": [{"type": "affinity", "npc": "master", "delta": -3, "reason": "瞪主人"}, {"type": "hp", "target": "pc", "ratio": -0.2}] }
+      ] },
+      { "id": "court_charm", "weight": 2, "hours": 2, "adult": true, "text": "{master}要你學會宮廷裡的魅惑之術，以後好替府上拉攏貴客。", "scene": "{master}請來的女官一點點教主角怎麼用眼神與唇舌讓人失了心神。", "tags": ["noble", "royal"], "teaches": ["lust_kiss", "lust_whisper"], "options": [
+        { "label": "用心學", "check": {"attr": "cha", "dc": 14}, "stance": "submit", "success": "女官說你天生就是這塊料。", "fail": "你學得很吃力。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 2, "reason": "用心學"}, {"type": "lewd", "stat": "lewdness", "delta": 1}], "learn": true, "adult_scene": "success" },
+        { "label": "只學禮儀的部分", "result": "你只學了禮儀，女官也沒多說。", "effects": [{"type": "xp", "amount": 10, "target": "pc"}] },
+        { "label": "推說學不來", "check": {"attr": "cha", "dc": 14}, "stance": "resist", "success": "{master}嘆了口氣，沒再勉強。", "fail": "{master}讓你學到深夜。", "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "推託"}] }
       ] }
     ]
   },
-  "owner_events": { "$comment": "調教事件（主角對自己的奴隸；S5 才會發生），格式同 master_events 的事件，另外寫 course。", "events": [] },
-  "brothel_events": { "$comment": "娼館的打工事件（work）與受訓事件（train）（S5 才會發生），格式同 master_events 的事件，另外寫 teaches、rank_min。", "work": [], "train": [] }
+  "owner_events": {
+    "$comment": "調教事件（主角對自己的奴隸；docs/LEWD_STATS.md 第 9 節），格式同 master_events 的事件，另外寫 course（lewd.json 的 training.courses）；{actor} 與 {master} 都換成奴隸的名字，效果的 master 指奴隸，指標與技能記在奴隸身上。",
+    "events": [
+      { "id": "own_serve_tea", "course": "serve", "weight": 2, "hours": 3, "adult": true, "text": "你要{actor}學著在你回來時奉茶、更衣，伺候到你滿意為止。", "scene": "{actor}跪在主角腳邊，替主角寬衣、奉茶，一舉一動都在學著取悅主人。", "teaches": ["lust_guard", "lust_resonance"], "options": [
+        { "label": "耐心地一步步教", "check": {"attr": "cha", "dc": 12}, "success": "{actor}學得很快，動作越來越自然。", "fail": "{actor}手忙腳亂，茶灑了一地。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "主人耐心地教"}] },
+        { "label": "要求做到完美才准休息", "check": {"attr": "cha", "dc": 15}, "success": "反覆練到深夜，{actor}終於做得無可挑剔。", "fail": "{actor}累得發抖，還是做不好。", "effects_success": [{"type": "lewd", "stat": "submission", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "被逼到深夜"}], "learn": true, "adult_scene": "success" },
+        { "label": "隨口吩咐幾句", "result": "{actor}照著做了，但看得出還不太懂你的意思。" }
+      ] },
+      { "id": "own_serve_guard", "course": "serve", "weight": 2, "hours": 3, "adult": true, "text": "你教{actor}在危險時擋在你身前——不只是在戰場上。", "scene": "{actor}貼身跟在主角身邊，學著用自己的身體替主人承受一切。", "teaches": ["lust_guard", "lust_devote"], "options": [
+        { "label": "用溫和的方式示範", "check": {"attr": "cha", "dc": 12}, "success": "{actor}點點頭，眼神認真起來。", "fail": "{actor}不太明白為什麼要這樣做。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "被溫和地對待"}] },
+        { "label": "讓{actor}親身體會替你承受", "check": {"attr": "str", "dc": 15}, "success": "{actor}咬牙撐了下來，第一次真正明白了侍奉的意思。", "fail": "{actor}受不了，縮成一團。", "effects_success": [{"type": "lewd", "stat": "endurance", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "被逼著硬撐"}], "learn": true, "adult_scene": "success" },
+        { "label": "只說了規矩就算了", "result": "{actor}默默記下了規矩。" }
+      ] },
+      { "id": "own_endure_edge", "course": "endure", "weight": 2, "hours": 3, "adult": true, "text": "你要{actor}學會忍耐：再怎麼難受，沒有你的允許不准先投降。", "scene": "主角一次次把{actor}逼到邊緣又停下，看{actor}在忍耐中顫抖。", "teaches": ["lust_endure", "lust_devote"], "options": [
+        { "label": "循序漸進地延長", "check": {"attr": "str", "dc": 12}, "success": "{actor}撐得比上次更久了。", "fail": "{actor}很快就撐不住了。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "主人沒有太勉強"}] },
+        { "label": "一次逼到極限", "check": {"attr": "str", "dc": 15}, "success": "{actor}咬破了嘴唇，還是撐到了你說可以。", "fail": "{actor}在你允許之前就崩潰了。", "effects_success": [{"type": "lewd", "stat": "endurance", "delta": 1}], "fail_effects": [{"type": "lewd", "stat": "sensitivity", "delta": 1}], "learn": true, "adult_scene": "always" },
+        { "label": "今天點到為止", "result": "你沒有逼得太緊，{actor}鬆了一口氣。", "effects": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "主人手下留情"}] }
+      ] },
+      { "id": "own_endure_wait", "course": "endure", "weight": 2, "hours": 3, "adult": true, "text": "你讓{actor}跪在房間角落等你，一整個下午不准動。", "scene": "{actor}跪在角落，在主角的注視下一動也不敢動。", "teaches": ["lust_endure", "lust_bind_stance"], "options": [
+        { "label": "偶爾過去摸摸頭", "check": {"attr": "cha", "dc": 12}, "success": "{actor}安分地等完了整個下午。", "fail": "{actor}還是忍不住偷偷挪了身子。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "被摸了頭"}] },
+        { "label": "一直盯著，動一下就重來", "check": {"attr": "str", "dc": 14}, "success": "{actor}像石像一樣跪到了天黑。", "fail": "{actor}的腿麻得撐不住，倒了下來。", "effects_success": [{"type": "lewd", "stat": "submission", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "被罰重來"}], "learn": true },
+        { "label": "讓{actor}跪一會兒就好", "result": "{actor}跪了半個時辰，你就讓他起來了。" }
+      ] },
+      { "id": "own_pain_whip", "course": "pain", "weight": 2, "hours": 3, "adult": true, "text": "你拿出了軟鞭，告訴{actor}痛也可以是一種獎賞。", "scene": "軟鞭一下下落在{actor}的身上，痛楚裡漸漸混進了別的感覺。", "teaches": ["lust_pain"], "options": [
+        { "label": "輕輕地、一邊安撫一邊打", "check": {"attr": "cha", "dc": 13}, "success": "{actor}的呼吸漸漸變了，痛楚裡似乎多了點別的東西。", "fail": "{actor}只覺得痛。", "effects_success": [{"type": "lewd", "stat": "sensitivity", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "被打了"}], "adult_scene": "success" },
+        { "label": "打到{actor}求饒為止", "check": {"attr": "str", "dc": 15}, "success": "{actor}哭著求饒，聲音裡卻帶著顫抖的甜。", "fail": "{actor}痛得蜷起身子，眼神裡只有害怕。", "effects_success": [{"type": "lewd", "stat": "submission", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -2, "reason": "被打到求饒"}], "learn": true, "adult_scene": "success" },
+        { "label": "嚇唬一下就收手", "result": "鞭子在空中響了一聲，{actor}嚇得發抖，你收了起來。" }
+      ] },
+      { "id": "own_pain_wax", "course": "pain", "weight": 2, "hours": 3, "adult": true, "text": "你點起了蠟燭，讓{actor}躺好不准躲。", "scene": "熱蠟一滴滴落在{actor}的皮膚上，每一滴都讓{actor}輕輕彈起。", "teaches": ["lust_pain"], "options": [
+        { "label": "從遠處慢慢滴", "check": {"attr": "dex", "dc": 12}, "success": "{actor}從一開始的發抖，到後來竟主動挺起了身子。", "fail": "{actor}一直躲。", "effects_success": [{"type": "lewd", "stat": "sensitivity", "delta": 1}], "adult_scene": "success" },
+        { "label": "貼近、滴在最敏感的地方", "check": {"attr": "str", "dc": 15}, "success": "{actor}咬著唇忍住了，身體卻比嘴巴誠實。", "fail": "{actor}痛得叫出聲，翻身躲開。", "effects_success": [{"type": "lewd", "stat": "endurance", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "燙得太痛"}], "learn": true, "adult_scene": "success" },
+        { "label": "吹熄蠟燭", "result": "你吹熄了蠟燭，今天就到這裡。", "effects": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "主人沒有繼續"}] }
+      ] },
+      { "id": "own_words_whisper", "course": "words", "weight": 2, "hours": 3, "adult": true, "text": "你要{actor}學著在你耳邊說出那些難以啟齒的話。", "scene": "{actor}紅著臉貼在主角耳邊，一句句說出主角要求的話。", "teaches": ["lust_whisper", "lust_glance"], "options": [
+        { "label": "一句一句地教", "check": {"attr": "int", "dc": 12}, "success": "{actor}說得越來越順，聲音也越來越軟。", "fail": "{actor}羞得說不出口。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}], "adult_scene": "success" },
+        { "label": "要{actor}自己想出更露骨的", "check": {"attr": "int", "dc": 15}, "success": "{actor}低聲說出的話讓你都愣了一下。", "fail": "{actor}支支吾吾，什麼都說不出來。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "被逼著說"}], "learn": true, "adult_scene": "success" },
+        { "label": "聽{actor}念一段書就好", "result": "{actor}念了一段情詩，念得磕磕絆絆。" }
+      ] },
+      { "id": "own_words_confess", "course": "words", "weight": 2, "hours": 3, "adult": true, "text": "你讓{actor}一邊被你撫摸，一邊把自己的感覺說出來。", "scene": "主角的手在{actor}身上游移，{actor}斷斷續續地描述著自己的感覺。", "teaches": ["lust_whisper", "lust_tease"], "options": [
+        { "label": "溫柔地引導", "check": {"attr": "cha", "dc": 12}, "success": "{actor}說得很老實，連自己都沒發覺的事也說了出來。", "fail": "{actor}只會一直說「不知道」。", "effects_success": [{"type": "lewd", "stat": "sensitivity", "delta": 1}], "adult_scene": "success" },
+        { "label": "說錯一個字就停手", "check": {"attr": "int", "dc": 14}, "success": "{actor}拚命地找著字眼，越說越投入。", "fail": "{actor}急得快哭了。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}], "learn": true, "adult_scene": "always" },
+        { "label": "讓{actor}自己說想說的", "result": "{actor}說了些不著邊際的話，你笑了笑。", "effects": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "主人沒有逼迫"}] }
+      ] },
+      { "id": "own_exposure_walk", "course": "exposure", "weight": 2, "hours": 3, "adult": true, "text": "你讓{actor}只披一件薄外衣，陪你在城裡走一圈。", "scene": "{actor}披著薄薄的外衣走在街上，每一道路人的目光都讓{actor}縮緊了身子。", "teaches": ["lust_disrobe"], "options": [
+        { "label": "走人少的小巷", "check": {"attr": "cha", "dc": 12}, "success": "{actor}一路緊抓著外衣，卻也撐完了全程。", "fail": "{actor}半路就躲到你身後不肯走。", "effects_success": [{"type": "lewd", "stat": "exposure", "delta": 1}] },
+        { "label": "專挑熱鬧的大街", "check": {"attr": "cha", "dc": 15}, "success": "{actor}抬起了頭，像是在享受那些目光。", "fail": "{actor}羞得蹲在路邊。", "effects_success": [{"type": "lewd", "stat": "exposure", "delta": 2}, {"type": "lewd", "stat": "lewdness", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "被拉到大街上"}], "learn": true, "adult_scene": "success" },
+        { "label": "在旅店房間裡練習就好", "result": "你讓{actor}在窗邊站了一會兒，就讓他穿回衣服。" }
+      ] },
+      { "id": "own_exposure_pose", "course": "exposure", "weight": 2, "hours": 3, "adult": true, "text": "你讓{actor}在你面前一件件脫下衣服，擺出你要的姿勢。", "scene": "{actor}在主角面前一件件褪下衣衫，照著吩咐擺出一個又一個羞人的姿勢。", "teaches": ["lust_disrobe", "lust_aura"], "options": [
+        { "label": "慢慢來，讓{actor}習慣", "check": {"attr": "cha", "dc": 12}, "success": "{actor}的動作從僵硬變得自然。", "fail": "{actor}手一直遮著。", "effects_success": [{"type": "lewd", "stat": "exposure", "delta": 1}], "adult_scene": "success" },
+        { "label": "打開窗戶，讓外面也看得見", "check": {"attr": "cha", "dc": 15}, "success": "{actor}紅著臉，卻沒有拉上窗簾。", "fail": "{actor}衝過去把窗關上了。", "effects_success": [{"type": "lewd", "stat": "exposure", "delta": 2}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "太羞恥了"}], "learn": true, "adult_scene": "always" },
+        { "label": "脫一件就好", "result": "{actor}脫下外衣，你點點頭讓他穿回去。" }
+      ] },
+      { "id": "own_bind_rope", "course": "bind", "weight": 2, "hours": 3, "adult": true, "text": "你拿出麻繩，教{actor}被綁住時怎麼安分地等待。", "scene": "麻繩一圈圈纏上{actor}的身體，{actor}在繩結裡慢慢放鬆下來。", "teaches": ["lust_grovel", "lust_bind_stance"], "options": [
+        { "label": "綁得鬆一點", "check": {"attr": "dex", "dc": 12}, "success": "{actor}在繩子裡安靜地待了一個時辰。", "fail": "{actor}一直掙扎，繩子勒出了紅痕。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "綁得不痛"}], "adult_scene": "success" },
+        { "label": "綁成動彈不得的姿勢", "check": {"attr": "dex", "dc": 15}, "success": "{actor}被綁得一動也不能動，眼神卻漸漸迷濛。", "fail": "{actor}慌了，拚命地扭。", "effects_success": [{"type": "lewd", "stat": "submission", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "被綁得太緊"}], "learn": true, "adult_scene": "success" },
+        { "label": "只綁住手腕", "result": "你綁住了{actor}的手腕，一會兒就解開了。" }
+      ] },
+      { "id": "own_bind_kneel", "course": "bind", "weight": 2, "hours": 3, "adult": true, "text": "你要{actor}學著跪伏乞求——而且要真心的。", "scene": "{actor}跪伏在主角腳邊，額頭貼著地板，一遍遍地乞求。", "teaches": ["lust_grovel"], "options": [
+        { "label": "示範給{actor}看", "check": {"attr": "cha", "dc": 12}, "success": "{actor}學得有模有樣。", "fail": "{actor}的姿勢一直不對。", "effects_success": [{"type": "lewd", "stat": "submission", "delta": 1}] },
+        { "label": "要求到你滿意為止", "check": {"attr": "dex", "dc": 15}, "success": "{actor}的乞求聽起來讓人心軟。", "fail": "{actor}跪得腿發抖，聲音卻越來越硬。", "effects_success": [{"type": "lewd", "stat": "submission", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "跪到發抖"}], "learn": true, "adult_scene": "success" },
+        { "label": "讓{actor}跪一下就好", "result": "{actor}跪了一下，你就讓他起來了。" }
+      ] },
+      { "id": "own_charm_kiss", "course": "charm", "weight": 2, "hours": 3, "adult": true, "text": "你教{actor}怎麼用一個吻讓人失神。", "scene": "主角一次次示範，{actor}學著用唇、用舌、用呼吸去勾人。", "teaches": ["lust_kiss", "lust_glance"], "options": [
+        { "label": "一次次示範", "check": {"attr": "cha", "dc": 13}, "success": "{actor}的吻讓你都有點心跳加速。", "fail": "{actor}吻得太生硬了。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}], "adult_scene": "success" },
+        { "label": "要{actor}吻到你失神為止", "check": {"attr": "cha", "dc": 16}, "success": "{actor}的吻讓你一時忘了自己在教什麼。", "fail": "{actor}累得嘴唇都腫了，還是不得要領。", "effects_success": [{"type": "lewd", "stat": "sensitivity", "delta": 1}], "learn": true, "adult_scene": "always" },
+        { "label": "講解要領就好", "result": "你講了些要領，{actor}似懂非懂。" }
+      ] },
+      { "id": "own_charm_meditate", "course": "charm", "weight": 2, "hours": 3, "adult": true, "text": "你讓{actor}閉上眼，學著把慾念沉進身體裡、化成力量。", "scene": "{actor}閉著眼，在主角的引導下讓慾念一點點積滿全身。", "teaches": ["lust_meditate", "lust_temper"], "options": [
+        { "label": "一邊引導一邊撫摸", "check": {"attr": "cha", "dc": 13}, "success": "{actor}的呼吸漸漸變得又深又熱。", "fail": "{actor}一直分心。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}], "adult_scene": "success" },
+        { "label": "不准{actor}發洩，一直積到深夜", "check": {"attr": "int", "dc": 16}, "success": "{actor}睜開眼時，眼神亮得嚇人。", "fail": "{actor}受不了，求你讓他解脫。", "effects_success": [{"type": "lewd", "stat": "endurance", "delta": 1}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "被吊了一整晚"}], "learn": true, "adult_scene": "always" },
+        { "label": "讓{actor}自己冥想", "result": "{actor}自己冥想了一會兒，看不出有什麼長進。" }
+      ] }
+    ]
+  },
+  "brothel_events": {
+    "$comment": "娼館的打工事件（work）與受訓事件（train）（docs/LEWD_STATS.md 第 10 節），格式同 master_events 的事件，另外寫 teaches（掛的技能）、rank_min（要求的頭牌等級）。{actor} 是接客或受訓的人，{master} 與效果的 master 是老鴇；指標與技能記在接客或受訓的人身上。受訓一定學會一個還沒學的技能（回應只決定怎麼學）。",
+    "work": [
+      { "id": "bw_regular", "weight": 2, "hours": 1, "adult": true, "text": "一位熟客點名要{actor}，說想試點新花樣。", "scene": "{actor}陪著熟客嘗試新的玩法，一邊摸索一邊讓客人盡興。", "teaches": ["lust_tease", "lust_whisper"], "options": [
+        { "label": "順著客人的意思", "check": {"attr": "cha", "dc": 12}, "success": "客人很滿意，還多給了小費。", "fail": "{actor}有點跟不上客人的節奏。", "effects_success": [{"type": "money", "amount": 15}], "learn": true, "adult_scene": "always" },
+        { "label": "反過來主導", "check": {"attr": "cha", "dc": 15}, "success": "客人被{actor}撩得神魂顛倒。", "fail": "客人不太高興，覺得{actor}太放肆。", "effects_success": [{"type": "money", "amount": 30}, {"type": "lewd", "stat": "lewdness", "delta": 1}], "learn": true, "adult_scene": "success" },
+        { "label": "婉拒新花樣", "result": "{actor}笑著把話題帶開，客人也沒堅持。" }
+      ] },
+      { "id": "bw_shy_noble", "weight": 2, "hours": 1, "adult": true, "text": "一位年輕的貴族少爺紅著臉走進來，連看都不敢看{actor}。", "scene": "{actor}一點點引導著羞澀的少爺，讓他放鬆下來。", "teaches": ["lust_glance"], "options": [
+        { "label": "溫柔地引導", "check": {"attr": "cha", "dc": 12}, "success": "少爺離開時依依不捨，還說會再來。", "fail": "少爺太緊張了，什麼也沒做就走了。", "effects_success": [{"type": "money", "amount": 20}], "learn": true, "adult_scene": "success" },
+        { "label": "用眼神勾他", "check": {"attr": "cha", "dc": 14}, "success": "少爺被看得腿都軟了。", "fail": "少爺嚇得逃了出去。", "effects_success": [{"type": "money", "amount": 25}], "learn": true, "adult_scene": "success" },
+        { "label": "陪他聊天就好", "result": "{actor}陪少爺聊了一晚，少爺說這是他最開心的一晚。", "effects": [{"type": "money", "amount": 10}] }
+      ] },
+      { "id": "bw_mercenary", "weight": 2, "hours": 1, "adult": true, "text": "一個滿身酒氣的傭兵點了{actor}，下手很重。", "scene": "粗魯的傭兵把{actor}壓在床上，{actor}在疼痛裡咬牙撐著。", "teaches": ["lust_pain", "lust_endure"], "options": [
+        { "label": "咬牙撐過去", "check": {"attr": "str", "dc": 13}, "success": "{actor}撐了過來，傭兵丟下一大袋錢。", "fail": "{actor}受了點傷。", "effects_success": [{"type": "money", "amount": 30}, {"type": "lewd", "stat": "endurance", "delta": 1}], "fail_effects": [{"type": "hp", "target": "pc", "ratio": -0.1}], "learn": true, "adult_scene": "always" },
+        { "label": "叫{master}來", "result": "{master}帶著打手進來，把傭兵轟了出去。", "effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "麻煩老鴇處理"}] },
+        { "label": "灌醉他", "check": {"attr": "int", "dc": 13}, "success": "傭兵醉倒了，{actor}輕鬆收了錢。", "fail": "傭兵越喝越兇。", "effects_success": [{"type": "money", "amount": 15}], "fail_effects": [{"type": "hp", "target": "pc", "ratio": -0.1}] }
+      ] },
+      { "id": "bw_couple", "weight": 2, "hours": 1, "adult": true, "text": "一對夫妻一起上門，想請{actor}陪他們過一晚。", "scene": "{actor}周旋在夫妻兩人之間，把熱度在三人之間傳來傳去。", "teaches": ["lust_spread", "lust_ally_tease"], "rank_min": 1, "options": [
+        { "label": "讓兩個人都盡興", "check": {"attr": "cha", "dc": 14}, "success": "夫妻倆走的時候手牽著手，感情好像更好了。", "fail": "{actor}顧此失彼，有一個人被冷落了。", "effects_success": [{"type": "money", "amount": 35}], "learn": true, "adult_scene": "always" },
+        { "label": "專心伺候其中一位", "check": {"attr": "cha", "dc": 12}, "success": "另一位在旁邊看得入迷。", "fail": "兩人為此吵了起來。", "effects_success": [{"type": "money", "amount": 20}], "adult_scene": "success" },
+        { "label": "婉拒", "result": "{actor}客氣地推辭了，{master}有點不高興。", "effects": [{"type": "affinity", "npc": "master", "delta": -1, "reason": "推掉了客人"}] }
+      ] },
+      { "id": "bw_dance", "weight": 2, "hours": 1, "adult": true, "text": "大廳今晚客人很多，{master}要{actor}上台跳一支舞助興。", "scene": "{actor}在台上隨著樂聲擺動，一件件衣物隨著舞步落下。", "teaches": ["lust_dance", "lust_disrobe"], "rank_min": 1, "options": [
+        { "label": "跳一支撩人的舞", "check": {"attr": "dex", "dc": 13}, "success": "台下掌聲雷動，打賞丟了滿台。", "fail": "{actor}踩錯了拍子。", "effects_success": [{"type": "money", "amount": 30}, {"type": "lewd", "stat": "exposure", "delta": 1}], "learn": true, "adult_scene": "success" },
+        { "label": "邊跳邊脫", "check": {"attr": "cha", "dc": 15}, "success": "最後一件落地時，全場都安靜了。", "fail": "{actor}脫到一半就慌了。", "effects_success": [{"type": "money", "amount": 45}, {"type": "lewd", "stat": "exposure", "delta": 2}], "learn": true, "adult_scene": "always" },
+        { "label": "規規矩矩地跳", "result": "{actor}跳了一支普通的舞，客人反應平平。" }
+      ] },
+      { "id": "bw_banquet", "weight": 2, "hours": 1, "adult": true, "text": "一位大商人包下了整晚，要{actor}在宴席上陪酒。", "scene": "宴席上，{actor}依偎在商人身邊，一杯杯酒、一個個吻，把整桌人都迷得神魂顛倒。", "teaches": ["lust_kiss", "lust_perfume"], "rank_min": 2, "options": [
+        { "label": "用吻灌酒", "check": {"attr": "cha", "dc": 15}, "success": "商人笑得合不攏嘴，宴席熱鬧到天亮。", "fail": "{actor}自己先醉了。", "effects_success": [{"type": "money", "amount": 60}], "learn": true, "adult_scene": "success" },
+        { "label": "點起特製的香", "check": {"attr": "int", "dc": 14}, "success": "整桌人都被香氣迷住了。", "fail": "香太濃，有人被嗆得咳嗽。", "effects_success": [{"type": "money", "amount": 40}], "learn": true },
+        { "label": "安分地倒酒", "result": "{actor}整晚安分地倒酒，拿到了該拿的錢。", "effects": [{"type": "money", "amount": 20}] }
+      ] },
+      { "id": "bw_rival", "weight": 2, "hours": 1, "adult": true, "text": "同行的紅牌看{actor}不順眼，故意把難纏的客人推給{actor}。", "options": [
+        { "label": "把客人搶回自己的節奏", "check": {"attr": "cha", "dc": 14}, "success": "難纏的客人反而成了{actor}的熟客。", "fail": "客人把氣全出在{actor}身上。", "effects_success": [{"type": "money", "amount": 25}], "fail_effects": [{"type": "condition", "target": "pc", "condition": "shaken", "add": true}] },
+        { "label": "找{master}評理", "check": {"attr": "cha", "dc": 12}, "success": "{master}站在{actor}這邊。", "fail": "{master}嫌{actor}多事。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 2, "reason": "講理"}], "fail_effects": [{"type": "affinity", "npc": "master", "delta": -2, "reason": "多事"}] },
+        { "label": "忍下來", "result": "{actor}默默接下了客人，什麼也沒說。", "effects": [{"type": "lewd", "stat": "endurance", "delta": 1}] }
+      ] },
+      { "id": "bw_famous", "weight": 2, "hours": 1, "adult": true, "text": "一位有名的詩人慕名而來，說想見見這裡最好的人。", "scene": "詩人在{actor}的一個笑容裡失了魂，整晚只顧著寫詩。", "teaches": ["lust_smile", "lust_aura"], "rank_min": 3, "options": [
+        { "label": "一個笑容就讓他失神", "check": {"attr": "cha", "dc": 16}, "success": "詩人寫了一首詩，從此{actor}的名字傳遍了城裡。", "fail": "詩人覺得名不副實。", "effects_success": [{"type": "money", "amount": 80}, {"type": "lewd", "stat": "exposure", "delta": 2}], "learn": true, "adult_scene": "success" },
+        { "label": "用整個房間的氣氛迷住他", "check": {"attr": "cha", "dc": 15}, "success": "詩人說這一晚是他一生最美的夢。", "fail": "詩人坐立不安地走了。", "effects_success": [{"type": "money", "amount": 60}], "learn": true, "adult_scene": "success" },
+        { "label": "陪他談詩", "result": "{actor}陪詩人談了一晚的詩，詩人很盡興。", "effects": [{"type": "money", "amount": 30}] }
+      ] },
+      { "id": "bw_quiet", "weight": 1, "hours": 1, "adult": true, "text": "今晚生意冷清，{actor}和其他姑娘們閒聊打發時間。", "options": [
+        { "label": "聽前輩們傳授心得", "check": {"attr": "int", "dc": 11}, "success": "前輩教了{actor}幾招。", "fail": "{actor}聽得一頭霧水。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "早點休息", "result": "{actor}早早睡了。", "effects": [{"type": "condition", "target": "pc", "condition": "well_rested", "add": true}] },
+        { "label": "幫{master}打點雜事", "result": "{master}看在眼裡。", "effects": [{"type": "affinity", "npc": "master", "delta": 2, "reason": "幫忙打點"}] }
+      ] }
+    ],
+    "train": [
+      { "id": "bt_basics", "weight": 2, "hours": 6, "adult": true, "text": "{master}親自教{actor}這一行的基本功：眼神、手、聲音。", "scene": "{master}手把手地教{actor}怎麼看人、怎麼碰人、怎麼說話。", "teaches": ["lust_glance", "lust_tease", "lust_whisper", "lust_self_tease"], "options": [
+        { "label": "認真地學", "check": {"attr": "cha", "dc": 12}, "success": "{master}點點頭：「有天分。」", "fail": "{actor}學得很吃力。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 13}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}把該記的都記下了。" }
+      ] },
+      { "id": "bt_calm", "weight": 2, "hours": 6, "adult": true, "text": "{master}教{actor}怎麼在一晚接好幾個客人之後，讓自己和姊妹們的心靜下來。", "teaches": ["lust_calm", "lust_pure_mind"], "options": [
+        { "label": "認真地學", "check": {"attr": "fai", "dc": 12}, "success": "{actor}學會了讓心沉下來的方法。", "fail": "{actor}靜不下心。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 13}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}學了幾個靜心的口訣。" }
+      ] },
+      { "id": "bt_sharing", "weight": 2, "hours": 6, "adult": true, "text": "幾位姊妹教{actor}怎麼和同伴一起接客、互相照應。", "scene": "{actor}和姊妹們一起練習，學著把客人的熱度在彼此之間傳遞。", "teaches": ["lust_spread", "lust_ally_tease", "lust_resonance"], "rank_min": 1, "options": [
+        { "label": "認真地學", "check": {"attr": "cha", "dc": 13}, "success": "姊妹們誇{actor}學得快。", "fail": "{actor}老是跟不上大家的默契。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 14}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}學了幾個暗號。" }
+      ] },
+      { "id": "bt_service", "weight": 2, "hours": 6, "adult": true, "text": "{master}教{actor}伺候貴客的規矩：替人擋酒、擋麻煩、擋一切。", "scene": "{actor}跪在地上一遍遍練習，學著怎麼把自己獻給客人。", "teaches": ["lust_guard", "lust_devote", "lust_grovel"], "rank_min": 1, "options": [
+        { "label": "認真地學", "check": {"attr": "cha", "dc": 13}, "success": "{actor}的姿態讓{master}很滿意。", "fail": "{actor}的動作一直不夠恭順。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 14}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}把規矩背了下來。" }
+      ] },
+      { "id": "bt_perfume", "weight": 2, "hours": 6, "adult": true, "text": "樓上的調香師教{actor}怎麼調配讓人意亂情迷的香與藥。", "teaches": ["lust_perfume", "lust_venom_touch"], "rank_min": 1, "options": [
+        { "label": "認真地學", "check": {"attr": "int", "dc": 13}, "success": "{actor}調出了一瓶連調香師都稱讚的香。", "fail": "{actor}把自己熏得頭昏腦脹。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 14}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}記下了幾個配方。" }
+      ] },
+      { "id": "bt_body", "weight": 2, "hours": 6, "adult": true, "text": "{master}帶{actor}到地下室，教怎麼承受那些下手重的客人。", "scene": "地下室裡，{actor}被綁起來、被打、被逼到極限，學著把痛楚變成別的東西。", "teaches": ["lust_pain", "lust_endure", "lust_bind_stance"], "rank_min": 2, "options": [
+        { "label": "認真地學", "check": {"attr": "str", "dc": 14}, "success": "{actor}撐過了一整夜的訓練。", "fail": "{actor}撐到一半就求饒了。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 15}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}只學了怎麼保護自己。" }
+      ] },
+      { "id": "bt_stage", "weight": 2, "hours": 6, "adult": true, "text": "舞孃教{actor}怎麼在台上用舞步和衣裳勾住全場的目光。", "scene": "{actor}在空無一人的舞台上一遍遍練習，每一次轉身都落下一件衣裳。", "teaches": ["lust_disrobe", "lust_dance", "lust_aura"], "rank_min": 2, "options": [
+        { "label": "認真地學", "check": {"attr": "dex", "dc": 14}, "success": "{actor}的舞連舞孃都看呆了。", "fail": "{actor}跳得手腳不協調。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 15}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}學了幾個基本舞步。" }
+      ] },
+      { "id": "bt_kiss", "weight": 2, "hours": 6, "adult": true, "text": "館裡的頭牌把{actor}叫到房裡，說要教一點真正的功夫。", "scene": "頭牌捧著{actor}的臉，一個吻、一個吻地教，直到{actor}腿軟。", "teaches": ["lust_kiss", "lust_meditate", "lust_temper"], "rank_min": 3, "options": [
+        { "label": "認真地學", "check": {"attr": "cha", "dc": 15}, "success": "頭牌笑著說：「你很快就要搶我的客人了。」", "fail": "頭牌搖搖頭：「還差得遠。」", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 16}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}記下了頭牌說的要領。" }
+      ] },
+      { "id": "bt_secret", "weight": 2, "hours": 6, "adult": true, "text": "花魁難得願意見{actor}，說要傳授幾手壓箱底的秘技。", "scene": "花魁在燭光下對{actor}展示了那些讓人傾國的手段。", "teaches": ["lust_smile", "lust_surge", "lust_hymn"], "rank_min": 4, "options": [
+        { "label": "認真地學", "check": {"attr": "cha", "dc": 16}, "success": "花魁說{actor}是她見過最有天分的人。", "fail": "花魁嘆了口氣，還是把該教的教完了。", "effects_success": [{"type": "affinity", "npc": "master", "delta": 1, "reason": "學得認真"}], "adult_scene": "success" },
+        { "label": "請前輩私下指點", "check": {"attr": "cha", "dc": 17}, "success": "前輩傾囊相授，還多教了幾個小訣竅。", "fail": "前輩只隨口說了幾句。", "effects_success": [{"type": "lewd", "stat": "lewdness", "delta": 1}] },
+        { "label": "照本宣科", "result": "{actor}把花魁的話一字一句記下。" }
+      ] }
+    ]
+  }
 }

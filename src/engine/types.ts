@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { Memory, Relationship } from './social'
@@ -244,6 +244,8 @@ export interface Character {
   abilities: string[]
   /** 慾望指標（沒有時用 lewd.json 的 defaults） */
   lewd?: LewdStats
+  /** 調教的進度：課程 → 成功的次數（docs/LEWD_STATS.md 第 9 節） */
+  trainProgress?: Record<string, number>
   /**
    * 攜帶中的技能與法術（存檔規則 skillLoadout 的上限，戲法不算）：戰鬥只帶這些，其他留在技能庫。
    * 沒有時帶最近學會的幾個（見 character.ts 的 carriedAbilities）
@@ -515,10 +517,18 @@ export interface PendingDefeat {
 }
 
 export interface PendingMasterEvent {
-  /** slavery.json master_events.events 的 id */
+  /** 事件的 id（在 pool 那個事件庫裡） */
   id: string
-  /** 已經代入主人名字的事件描述 */
+  /** 已經代入名字的事件描述 */
   text: string
+  /** 事件庫（沒有時是主人的突發事件） */
+  pool?: MasterEventPool
+  /** 事件的主角：調教的奴隸、去娼館接客或受訓的人（沒有時是主角） */
+  actor?: string
+  /** 娼館受訓：這次一定學會的技能 */
+  teach?: string
+  /** 娼館：在哪一座城的娼館（頭牌等級用） */
+  place?: string
 }
 
 export interface PendingMark {
@@ -802,6 +812,10 @@ export interface GameState {
   options?: GameOptions
   /** 慾望指標的曝露名聲：角色 id → 地區 → 0～100（只有主角與夥伴） */
   exposure?: Record<string, Record<string, number>>
+  /** 頭牌等級的累積：角色 id → 城（地點 id）→ 次數（docs/LEWD_STATS.md 第 10 節） */
+  brothelRank?: Record<string, Record<string, number>>
+  /** 自由的夥伴答應去娼館接客的那一天：角色 id → 第幾天 */
+  workConsent?: Record<string, number>
   /** 進行中的地下城探索 */
   expedition?: Expedition
   /** 正在燒的光源 */

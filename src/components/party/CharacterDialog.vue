@@ -10,6 +10,7 @@ import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
 import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf } from '@/engine/lewd'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
+import { courseStatus, trainees, trainingBlocked } from '@/engine/ownerTraining'
 import { MOD_NAME } from '@/engine/gear'
 import { gameRule } from '@/engine/gameRules'
 import { useGame } from '@/stores/game'
@@ -63,6 +64,13 @@ const combat = computed<StatItem[]>(() => {
     { label: '傷害倍率', value: affinityText(x) },
   ]
 })
+
+// 調教：主角自己的奴隸（docs/LEWD_STATS.md 第 9 節）
+const canTrain = computed(() => trainees(s.value).some((x) => x.id === m.value.id))
+const courses = computed(() => (canTrain.value ? courseStatus(m.value) : []))
+const course = ref('serve')
+const courseDesc = computed(() => courses.value.find((c) => c.id === course.value)?.desc ?? '')
+const trainBlock = computed(() => (canTrain.value ? trainingBlocked(s.value, m.value, course.value) : '不能調教'))
 
 // 慾望指標：有效值（括號是裝備的加減）、分段；曝露名聲看目前的地區
 const lewdItems = computed<StatItem[]>(() => {
@@ -239,6 +247,16 @@ function saveTags() {
             <span class="tag">服從懲罰 -{{ contractFor(m)!.obedience }}</span>
           </div>
           <button v-if="contractOf(m)?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
+          <div v-if="canTrain" class="training">
+            <h4><GameIcon name="lock" :size="14" /> 調教 <Hint text="成人向（docs/LEWD_STATS.md 第 9 節）。選一個課程，抽一件調教事件，由你選做法、擲檢定；奴隸越順從越容易，親密度很低時變難。成功時指標成長，同一課程成功幾次保證學會一個技能；親密度很低時失敗會留下怨恨。" /></h4>
+            <div class="row">
+              <select v-model="course">
+                <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}（{{ c.progress }}/{{ c.need }}）{{ c.open.length ? `・還能學：${c.open.join('、')}` : '' }}</option>
+              </select>
+              <button class="small" :disabled="!!trainBlock" :title="trainBlock ?? ''" @click="game.startTraining(m.id, course); emit('close')">開始調教</button>
+            </div>
+            <p v-if="courseDesc" class="small muted">{{ courseDesc }}</p>
+          </div>
         </div>
         <template v-if="!editingProfile">
           <dl class="kv">

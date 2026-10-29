@@ -162,6 +162,14 @@ export function affordable(state: GameState, effects: RewardEffect[], report?: R
 }
 
 
+/** 學會一個色情技能（事件、受訓、光顧娼婦、調教）：記進報告、能帶就帶上；回傳日誌的一句 */
+export function teachAbility(state: GameState, report: Report, who: Character, id: string): string {
+  const a = learnAbility(who, id)
+  ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: a.name, quality: abilityQuality(a), source: 'insight' })
+  const carried = carryLearned(who, a.id, gameRule(state, 'skillLoadout'))
+  return `${who.name}學會了【${a.name}】${carried ? '' : '（攜帶已滿，先放進技能庫）'}`
+}
+
 /** 事件庫掛的技能裡，這個人還沒學、等級也夠的色情技能，隨機抽一個（ability_pool） */
 export function poolAbility(state: GameState, who: Character, pool: MasterEventPool): AbilityDef | undefined {
   const ids = [...new Set(masterEventPool(pool).flatMap((e) => e.teaches ?? []))]
@@ -418,12 +426,8 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'ability_pool': {
         const who = e.target ? state.party.find((m) => m.id === e.target) ?? pcOf(state) : pcOf(state)
         const pick = poolAbility(state, who, e.pool)
-        if (pick) {
-          learnAbility(who, pick.id)
-          ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: pick.name, quality: abilityQuality(pick), source: 'insight' })
-          const carried = carryLearned(who, pick.id, gameRule(state, 'skillLoadout'))
-          notes.push(`${who.name}學會了【${pick.name}】${carried ? '' : '（攜帶已滿，先放進技能庫）'}`)
-        } else if (e.fallback?.length) notes.push(...applyEffects(state, report, e.fallback.filter((x) => x.type !== 'ability_pool')))
+        if (pick) notes.push(teachAbility(state, report, who, pick.id))
+        else if (e.fallback?.length) notes.push(...applyEffects(state, report, e.fallback.filter((x) => x.type !== 'ability_pool')))
         break
       }
       case 'lewd': {

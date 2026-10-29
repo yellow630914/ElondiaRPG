@@ -201,6 +201,7 @@ function remove() {
             <option v-if="o.check" value="success">成功時進入</option>
             <option v-if="o.check" value="fail">失敗時進入</option>
           </select>
+          <label v-if="draft.teaches?.length" class="check" title="成功時（沒有檢定時一定）學會事件掛的一個還沒學的技能"><input v-model="o.learn" type="checkbox" /> 學會掛的技能</label>
           <label>小時 <input v-model.number="o.hours" type="number" min="0.25" max="24" step="0.25" class="num" :placeholder="String(draft.hours)" /></label>
           <button class="small" :disabled="draft.options.length <= 1" @click="draft.options.splice(i, 1)">移除</button>
         </div>

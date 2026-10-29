@@ -1244,6 +1244,9 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
       .filter((k) => typeof raw.lewd?.[k] === 'number' && Number.isFinite(raw.lewd[k])).map((k) => [k, int(raw.lewd?.[k], 0, 100, 0)]))
     if (Object.keys(lewd).length) out.lewd = lewd
   }
+  // 娼婦光顧時會教的色情技能
+  const teaches = [...new Set((Array.isArray(raw.teaches) ? raw.teaches : []).filter((id) => typeof id === 'string' && abilities[id]?.classes.includes('lewd')))].slice(0, 12)
+  if (teaches.length) out.teaches = teaches
   if (raw.gear) {
     const g: NonNullable<NpcDef['gear']> = {}
     for (const slot of GEAR_SLOTS) {

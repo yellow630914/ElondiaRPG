@@ -17,6 +17,8 @@ import * as trade from '@/engine/trade'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
 import * as masterTool from '@/engine/masterTool'
+import * as ownerTraining from '@/engine/ownerTraining'
+import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
 import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
@@ -1171,6 +1173,10 @@ export const useGame = defineStore('game', () => {
     buyCurio: (item: string) => run((s) => companions.buyCurio(s, item)),
     chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
     answerMasterEvent: (index: number) => run((s) => slavery.answerMasterEvent(s, index)),
+    // 調教（主角對自己的奴隸）、娼館受訓、提議夥伴去接客（docs/LEWD_STATS.md 第 9、10 節）
+    startTraining: (slave: string, course: string) => run((s) => { ownerTraining.startTraining(s, slave, course); return {} }),
+    startBrothelTraining: (who?: string) => run((s) => brothelLife.startBrothelTraining(s, who)),
+    proposeWork: (who: string) => run((s) => brothelLife.proposeWork(s, who)),
     // 等待回應的主人事件在內容編輯器被刪掉了：作廢
     dropMissingMasterEvent: () => run((s) => slavery.dropMissingMasterEvent(s)),
     // 成人向的戰敗事件：設定改成不發生（主角非自願、戰敗事件）時直接離開
