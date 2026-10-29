@@ -8,7 +8,7 @@
 
 import { activeParasites, parasiteDef, parasiteEffects, stageName } from './parasites'
 import {
-  actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
+  actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, lewdRules, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
   type LustPerk, type PerkDef, type PerkEffect,
   mulResist,
 } from './data'
@@ -414,7 +414,18 @@ export function npcPerksOf(rec: { id: string; perks?: string[]; tags?: string[];
   if (rec.perks) return rec.perks.filter(isChoosablePerk)
   let h = 2166136261
   for (const ch of `${rec.id}:perks`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0
-  return rollNpcPerks(new RngImpl(h), rec)
+  const out = rollNpcPerks(new RngImpl(h), rec)
+  // 娼妓、奴隸：有機會帶一個流派的入門特質（另外依 id 擲，不影響原本的特質；docs/LEWD_STATS.md 第 23 節）
+  let hs = 2166136261
+  for (const ch of `${rec.id}:school`) hs = Math.imul(hs ^ ch.charCodeAt(0), 16777619) >>> 0
+  const rng = new RngImpl(hs)
+  for (const tag of rec.tags ?? []) {
+    const r = lewdRules.npc_schools.tags[tag]
+    if (!r || !rng.chance(r.chance)) continue
+    const pick = rng.pick(r.schools)
+    if (perkDef(pick) && !out.includes(pick) && !out.some((o) => perkDef(o)?.school)) out.push(pick)
+  }
+  return out
 }
 
 /** 特質的名字清單（給 AI 與畫面）；缺陷標明 */

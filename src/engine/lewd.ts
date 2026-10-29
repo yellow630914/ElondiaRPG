@@ -217,6 +217,20 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
   }
 }
 
+// ---- 奴隸的身價（docs/LEWD_STATS.md 第 23 節） ----
+
+/** 指標超過門檻的部分與會的色情技能讓身價變高：回傳倍率（lewd.json 的 slave_price） */
+export function slaveValueMult(stats: Record<LewdStat, number>, lewdSkills: number): number {
+  const r = lewdRules.slave_price
+  const fromStats = (Object.entries(r.per) as [LewdStat, number][]).reduce((s, [k, w]) => s + Math.max(0, (stats[k] ?? 0) - r.above) * w, 0)
+  return 1 + Math.min(r.max, fromStats + lewdSkills * r.per_skill)
+}
+
+/** 這個人的身價倍率：指標與學會的色情技能 */
+export function slaveValueOf(c: Pick<Character, 'lewd' | 'gear' | 'abilities'>): number {
+  return slaveValueMult(lewdOf(c), c.abilities.filter((id) => abilities[id]?.classes.includes('lewd')).length)
+}
+
 // ---- 給 AI ----
 
 /** 一行分段的說明（例如「淫亂：開放；敏感：敏感；忍耐：漸成；順從：配合；在這一帶小有名氣」） */

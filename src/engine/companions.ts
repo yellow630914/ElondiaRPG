@@ -50,7 +50,7 @@ import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
 import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
-import { lewdOf } from './lewd'
+import { lewdOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
 import { gameRule } from './gameRules'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
@@ -443,7 +443,7 @@ export function marketStock(state: GameState, kind: MarketKind): SlaveListing[] 
       const level = Math.max(1, Math.min(20, pc.level + rng.int(-2, 1)))
       const rec = generateNpc(state, rng, { race, level, background: rng.pick(npcPool.slave_backgrounds) }, 'slv')
       const contract = contractKind(weightedPick(rng, slaveryRules.market_contracts[kind]))
-      return { npc: rec.id, price_cc: slavePrice(rec, def.price_mult, rng), contract }
+      return { npc: rec.id, price_cc: slavePrice(rec, def.price_mult, rng, slaveValueMult(npcLewd(rec), 0)), contract }
     })
   })
   markets[key] = { day: state.time.day, stock }
@@ -616,7 +616,8 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
       tags: madam ? ['prostitute', 'merchant'] : [buyer.tag], ...(madam ? { occupation: '老鴇' } : {}),
     }, 'mst')
     const contract = contractKind(madam ? slaveryRules.roles.madam : weightedPick(rng, s.contract_weights))
-    const price = slavePrice(pc, def.price_mult, rng)
+    // 主角出售自己：指標與色情技能讓身價變高
+    const price = slavePrice(pc, def.price_mult, rng, slaveValueOf(pc))
     return { master, contract, price }
   })
   if (!deal) {

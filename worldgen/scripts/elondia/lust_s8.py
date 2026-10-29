@@ -588,6 +588,38 @@ def write_s8_12():
     print('S8-12 fusion')
 
 
+# ---------------- S8-13 奴隸的身價、NPC 的流派、形象圖 ----------------
+SLAVE_PRICE = {
+    "$comment": "奴隸的身價（docs/LEWD_STATS.md 第 23 節）：指標超過 above 的部分每點 × per（四項各自的權重），加上會的色情技能每個 per_skill，合計最多 + max；乘在原本的身價上（市場上的奴隸、主角出售自己）。",
+    "above": 50, "per": {"submission": 0.006, "lewdness": 0.004, "sensitivity": 0.002, "endurance": 0.003}, "per_skill": 0.04, "max": 0.6,
+}
+NPC_SCHOOLS = {
+    "$comment": "娼妓、奴隸 NPC 帶流派的入門特質（依 id 固定地擲，內容頁籤指定了特質的固定 NPC 不擲）：tags 的標籤有 chance 的機率帶 schools 裡的一個。",
+    "tags": {"prostitute": {"chance": 0.5, "schools": ["school_indulgence", "school_exhibition", "school_flesh"]},
+             "slave": {"chance": 0.4, "schools": ["school_servitude", "school_bondage", "school_punishment"]}},
+}
+PORTRAIT = {
+    "$comment": "形象圖的慾望氣質（docs/PORTRAITS.md 第 2 節的 {allure}）：淫亂、曝露名聲（目前的地區）達到門檻時，用最高的那一句英文描述。",
+    "lewdness": [[40, "a hint of allure in the eyes"], [60, "seductive gaze, faintly flushed cheeks"], [80, "openly sultry expression, flushed cheeks, inviting pose"]],
+    "exposure": [[60, "confident, provocative pose, aware of being watched"], [80, "notorious exhibitionist air, deliberately revealing pose"]],
+}
+
+
+def write_s8_13():
+    p = 'data/rules/lewd.json'
+    t = open(p).read()
+    for k in ['slave_price', 'npc_schools', 'portrait']:
+        t = drop_lines(t, r'\n  "' + k + r'": \{.*')
+    t = t.replace('\n  "park": {', '\n  "slave_price": ' + json.dumps(SLAVE_PRICE, ensure_ascii=False) + ',\n  "npc_schools": ' + json.dumps(NPC_SCHOOLS, ensure_ascii=False) + ',\n  "portrait": ' + json.dumps(PORTRAIT, ensure_ascii=False) + ',\n  "park": {', 1)
+    d = json.loads(t)
+    perks = {x['id'] for x in json.load(open('data/rules/perks.json'))['perks']}
+    for v in d['npc_schools']['tags'].values():
+        for sid in v['schools']:
+            assert sid in perks, sid
+    open(p, 'w').write(t)
+    print('S8-13 slave price, npc schools, portrait')
+
+
 if __name__ == '__main__':
     write_s8_3()
     write_s8_4()
@@ -597,3 +629,4 @@ if __name__ == '__main__':
     write_s8_10()
     write_s8_11()
     write_s8_12()
+    write_s8_13()

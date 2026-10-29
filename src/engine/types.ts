@@ -742,6 +742,8 @@ export interface GameOptions {
   masterEventMult?: number
   parasiteMult?: number
   dungeonEventMult?: number
+  /** 娼館打工事件的機率倍率（docs/LEWD_STATS.md 第 10 節） */
+  brothelEventMult?: number
   eventDc?: number
   /** 每個角色戰鬥時最多攜帶幾個技能與法術（戲法不算）；0 = 不限 */
   skillLoadout?: number

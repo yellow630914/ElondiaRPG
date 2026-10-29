@@ -2,6 +2,7 @@
 // 打工與受訓的事件是主人事件格式（slavery.json 的 brothel_events），由接客或受訓的人自己擲骰（「誰擲骰就用誰的」）。
 // 規則與數值在 data/rules/lewd.json 的 brothel。
 
+import { gameRule } from './gameRules'
 import { abilities, attrName, lewdRules, masterEventPool, npcs as namedNpcs, type AbilityDef, type Degree, type MasterEventDef } from './data'
 import { attrOf, mod, proficiency } from './character'
 import { applyEffects, teachAbility } from './effects'
@@ -85,7 +86,8 @@ export function afterBrothelWork(state: GameState, who: Character): string {
   addRank(state, who.id, rules().rank_gain.work)
   const list = workEventsFor(state, who)
   if (!list.length || state.pendingMasterEvent) return ''
-  if (!withRng(state, (rng) => rng.chance(workEventChance(who)))) return ''
+  // 存檔規則：娼館事件的機率倍率
+  if (!withRng(state, (rng) => rng.chance(Math.min(1, workEventChance(who) * gameRule(state, 'brothelEventMult'))))) return ''
   const e = pickWeighted(state, list)
   addRank(state, who.id, rules().rank_gain.event)
   state.pendingMasterEvent = { id: e.id, pool: 'brothel_work', ...(who.isPlayer ? {} : { actor: who.id }), place: state.location, text: textFor(state, e, who) }
