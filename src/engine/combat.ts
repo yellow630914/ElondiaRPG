@@ -2272,7 +2272,7 @@ export function finishCombat(state: GameState): Report {
   // 慾望戰鬥：戰後留下的狀態、慾望勝利與高潮寫進戰報（交給成人場景的寫手）
   settleLust(state, combat, report)
   // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）；園區改成那個園區的專屬戰敗
-  if (combat.status === 'defeat' && !rescued && !parkDefeat(state, report)) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes))
+  if (combat.status === 'defeat' && !rescued && !parkDefeat(state, report)) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes, combat.combatants.reduce((n, c) => n + (c.side === 'party' ? c.climaxes ?? 0 : 0), 0)))
   // 園區：打倒最終層主蓋一個章
   if (victory && cellHere?.kind === 'boss' && !cellHere.then && inPark(state)) {
     const stamp = `${PARK_STAMP_PREFIX}${combat.location}`

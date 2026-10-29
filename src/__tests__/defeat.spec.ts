@@ -6,7 +6,8 @@ import { buildActionPrompt } from '@/narrator/judge'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat, startCombat } from '@/engine/combat'
 import { combatRules } from '@/engine/data'
-import { defeatEventFoes, skipDefeatEvent } from '@/engine/defeat'
+import { climaxDcCut, defeatEventFoes, skipDefeatEvent, villainOf } from '@/engine/defeat'
+import { lewdOf } from '@/engine/lewd'
 import { afterCombat, currentArea, goOutskirts } from '@/engine/grid'
 import { generateNpc } from '@/engine/npcs'
 import { newGame, withRng } from '@/engine/state'
@@ -129,5 +130,40 @@ describe('defeat event', () => {
     skipDefeatEvent(state)
     expect(state.pendingDefeat).toBeUndefined()
     expect(currentArea(state).kind).toBe('settlement')
+  })
+})
+
+describe('戰敗事件的連動（S8）', () => {
+  it('敵人的類型依標籤與職業；怪物沒有類型', () => {
+    const state = game()
+    const npc = (tags: string[], cls: string) => withRng(state, (rng) => generateNpc(state, rng, { tags, level: 3, location: state.location, class: cls }))
+    expect(villainOf(state, [{ npcId: npc(['villain', 'merchant'], 'fighter').id }])).toBe('merchant')
+    expect(villainOf(state, [{ npcId: npc(['villain'], 'wizard').id }])).toBe('knowledge')
+    expect(villainOf(state, [{ npcId: npc(['villain'], 'cleric').id }])).toBe('religious')
+    expect(villainOf(state, [{ npcId: npc(['villain'], 'fighter').id }])).toBe('martial')
+    expect(villainOf(state, [{}])).toBeUndefined()
+  })
+
+  it('我方高潮得越多越容易起意（最多 −4）', () => {
+    expect(climaxDcCut(0)).toBe(0)
+    expect(climaxDcCut(2)).toBe(2)
+    expect(climaxDcCut(9)).toBe(4)
+  })
+
+  it('沒能脫身時改五項指標，敵人的類型另外加上結果', () => {
+    rules.check.dc = -100
+    const state = game()
+    lose(state)
+    state.pendingDefeat!.villain = 'religious'
+    const pc = state.party[0]!
+    const before = lewdOf(pc)
+    const p = prepareAction(state, { kind: 'defeat_event', target: 'opt:2', text: '' })
+    expect(p.scene).toContain('宗教型')
+    p.natural = 1
+    resolveAction(state, null)
+    // 親密場景本身也會讓淫亂成長
+    expect(lewdOf(pc).lewdness).toBeGreaterThanOrEqual(before.lewdness + 2)
+    expect(lewdOf(pc).submission).toBeGreaterThanOrEqual(before.submission + 3)
+    expect(pc.status).toContain('dazed')
   })
 })

@@ -516,6 +516,8 @@ export interface PendingDefeat {
   scene: string
   /** 戰報 id（敘事停在動手前的那一份） */
   report: string
+  /** 敵人的類型（combat.json 的 defeat_event.villains；怪物沒有） */
+  villain?: string
 }
 
 export interface PendingMasterEvent {

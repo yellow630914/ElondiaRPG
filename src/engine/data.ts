@@ -33,7 +33,7 @@ import lewdJson from '@data/rules/lewd.json'
 import landmarksJson from '@data/world/landmarks.json'
 import specialMapsJson from '@data/world/special_maps.json'
 import type { RewardEffect } from './effects'
-import type { GearSlot, GearSpec, GuildRank, QuestKind, SkillQuality, TattooPlace } from './types'
+import type { GearSlot, GearSpec, GuildRank, LewdStat, QuestKind, SkillQuality, TattooPlace } from './types'
 import type { Lighting } from './light'
 
 // ---- 地理 ----
@@ -704,7 +704,25 @@ export const combatRules = combatJson as unknown as {
     free_dc: number
     money_loss: Record<Degree, number>
     shaken_on: Degree[]
+    /** 這場戰鬥我方每高潮一次，起意的 DC 降低多少（最多 climax_max） */
+    climax_dc: number
+    climax_max: number
+    /** 回應的結果對主角五項指標的加減 */
+    lewd: Partial<Record<Degree, Partial<Record<LewdStat, number>>>>
+    /** 敵人的類型（docs/LEWD_STATS.md 第 18 節） */
+    villains: Record<string, DefeatVillain>
   }
+}
+
+/** 戰敗事件裡敵人的類型：依標籤或職業；effects 是 effects.ts 的 RewardEffect */
+export interface DefeatVillain {
+  name: string
+  tags?: string[]
+  classes?: string[]
+  default?: boolean
+  hint: string
+  effects?: Partial<Record<Degree, unknown[]>>
+  money?: Partial<Record<Degree, number>>
 }
 
 export interface DamageTypeDef { id: string; name: string; group: string }
