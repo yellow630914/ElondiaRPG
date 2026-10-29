@@ -228,14 +228,14 @@ textarea { width: 100%; min-height: 40px; resize: none; }
 .page header .back .ico { transform: rotate(-90deg); }
 .page header h2 { text-align: center; padding-right: 64px; }
 .page .body { flex: 1; padding-block: 12px 24px; }
-/* 有分頁的頁面：左右滑換分頁（直的捲動照舊） */
+/* 有分頁的頁面：所有分頁並排在一條軌道上，左右滑時跟著手指，放開後用緩動停到位置（直的捲動照舊） */
 .page .body.swipeable { touch-action: pan-y; }
-.page .body .pane { display: flex; flex-direction: column; gap: 12px; }
-.page .body .pane.from-r { animation: from-r 0.2s ease-out; }
-.page .body .pane.from-l { animation: from-l 0.2s ease-out; }
-@keyframes from-r { from { transform: translateX(24%); opacity: 0; } }
-@keyframes from-l { from { transform: translateX(-24%); opacity: 0; } }
-.swipe-hint { text-align: center; font-size: var(--fs-xs); color: var(--muted); margin-top: -4px; }
+.viewport { overflow: hidden; margin-inline: -2px; padding-inline: 2px; transition: height 0.3s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.track { display: flex; align-items: flex-start; will-change: transform; transition: transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.pane { flex: 0 0 100%; min-width: 0; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+.seg { position: relative; }
+.seg button.on { border-bottom-color: transparent; }
+.seg .ink { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); pointer-events: none; transition: transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1), width 0.34s cubic-bezier(0.22, 0.61, 0.36, 1); }
 
 .seg { display: flex; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
 .seg button { flex: 1 0 auto; padding: 8px 12px; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
@@ -470,7 +470,8 @@ textarea { width: 100%; min-height: 40px; resize: none; }
       <li><b>內容多的視窗改成全螢幕頁面</b>，左上角「←返回」：隊伍、角色詳情、交易、事件、更多裡的功能。</li>
       <li><b>旅途</b>：走到城門「啟程旅行」，地圖換成旅途進度條，情境按鈕變成「前進一天」。</li>
       <li><b>鍵盤打開時地圖自動收起</b>（在文字框打字時）；鍵盤收起、又沒有新的敘事時，地圖放回來。</li>
-      <li><b>有分頁的頁面可以左右滑換分頁</b>：隊伍（隊伍｜行囊）、角色詳情、交易。往左滑是下一頁。</li>
+      <li><b>有分頁的頁面可以左右滑換分頁</b>：隊伍（隊伍｜行囊）、角色詳情、交易。內容和底線跟著手指移動，拉過四分之一或甩得夠快就換頁，不然彈回。</li>
+      <li><b>手機的返回鍵</b>（Android 返回鍵、iPhone 邊緣右滑）和左上角「返回」一樣：先關頁面，再關半屏面板，都關了才離開。</li>
       <li><b>從半屏面板打開的頁面，按返回會回到那個面板</b>（例如「更多 → 筆記 → 返回」回到「更多」，「鐵匠鋪 → 購買 → 返回」回到鐵匠鋪）。</li>
     </ul>
     <h3>主畫面：地圖＋日誌</h3>
@@ -501,7 +502,7 @@ textarea { width: 100%; min-height: 40px; resize: none; }
   const st = {
     area: 'town', pos: [4, 5], minutes: 3 * 1440 + 14 * 60, money: 120,
     reading: false, sheet: null, pages: [], bell: 2, turnedIn: false,
-    road: null, composerOpen: false, targets: [], ai: true, pending: null, judging: false,
+    road: null, composerOpen: false, targets: [], ai: true, pending: null, judging: false, draft: '',
   }
   const $ = (id) => document.getElementById(id)
   const app = $('app'), grid = $('grid'), log = $('log')
@@ -557,9 +558,10 @@ textarea { width: 100%; min-height: 40px; resize: none; }
   }
   app.addEventListener('focusout', (e) => {
     if (!typing(e.target)) return
-    // 等一下再看：焦點換到另一個文字框時鍵盤沒收起；按「行動」送出時由 perform 決定（AI 會寫敘事就維持收起）
+    // 等一下再看：焦點換到另一個文字框、或還在主動行動列裡（選對象、能力）時維持收起；
+    // 按「行動」送出時由 perform 決定（AI 會寫敘事就維持收起）
     setTimeout(() => {
-      if (typing(document.activeElement) || !kbRestore) return
+      if (typing(document.activeElement) || $('composer').contains(document.activeElement) || !kbRestore) return
       restoreKb()
     }, 200)
   })
@@ -645,7 +647,8 @@ textarea { width: 100%; min-height: 40px; resize: none; }
   function setReading(on) {
     st.reading = on
     app.classList.toggle('reading', on)
-    renderAll()
+    // 不重畫主動行動列：重畫會換掉文字框，焦點跑掉、鍵盤就收起來了
+    renderStatus(); renderMap(); renderCtx(); renderTabs()
     log.scrollTop = log.scrollHeight
   }
   $('mapHead').addEventListener('click', () => setReading(!st.reading))
@@ -706,6 +709,8 @@ textarea { width: 100%; min-height: 40px; resize: none; }
   function renderComposer() {
     const c = $('composer')
     const busy = !!st.pending || st.judging
+    // 正在文字框裡打字時不重畫（保住焦點與鍵盤）
+    if (st.composerOpen && c.contains(document.activeElement) && document.activeElement.id === 'cmpText') return
     if (!st.composerOpen) {
       c.innerHTML = `<button class="closed" id="cmpOpen" ${busy ? 'disabled' : ''}>
         <svg class="ico sm"><use href="#i-d20"/></svg>
@@ -733,13 +738,14 @@ textarea { width: 100%; min-height: 40px; resize: none; }
       </div>
       ${st.targets.length ? `<div class="chips">${st.targets.map((id, i) => `<span class="tchip${i === 0 ? ' main' : ''}">${i === 0 ? '主要・' : ''}${nameOf(id)}<button data-rm="${id}" aria-label="移掉${nameOf(id)}">×</button></span>`).join('')}</div>` : ''}
       <div class="line">
-        <textarea id="cmpText" rows="1" placeholder="例如：買一份甜點給蕾娜，順便問她布是從哪裡來的"></textarea>
+        <textarea id="cmpText" rows="1" placeholder="例如：買一份甜點給蕾娜，順便問她布是從哪裡來的">${st.draft.replace(/</g, '&lt;')}</textarea>
         <button class="btn primary" id="cmpGo">行動</button>
       </div>
     </div>`
     $('cmpFold').addEventListener('click', () => { st.composerOpen = false; renderComposer(); restoreKb() })
+    $('cmpText').addEventListener('input', (e) => { st.draft = e.target.value })
     $('cmpAi').addEventListener('click', () => { st.ai = !st.ai; renderComposer() })
-    $('cmpTarget').addEventListener('change', (e) => { if (e.target.value) st.targets.push(e.target.value); renderComposer() })
+    $('cmpTarget').addEventListener('change', (e) => { if (e.target.value) st.targets.push(e.target.value); renderComposer(); $('cmpTarget').focus() })
     c.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => { st.targets = st.targets.filter((x) => x !== b.dataset.rm); renderComposer() }))
     $('cmpGo').addEventListener('click', () => {
       const text = $('cmpText').value.trim()
@@ -749,6 +755,9 @@ textarea { width: 100%; min-height: 40px; resize: none; }
   }
   // 擲骰 → 日誌最下面出現等待判定的卡片 → 判定完換成結果
   function perform(text) {
+    // 送出後收起鍵盤（手機上點按鈕時焦點可能還留在文字框）
+    if (document.activeElement?.id === 'cmpText') document.activeElement.blur()
+    st.draft = ''
     const natural = 1 + Math.floor(Math.random() * 20)
     const target = st.targets[0]
     st.pending = { text, natural, dc: 12, target, attr: 4 }
@@ -914,62 +923,55 @@ textarea { width: 100%; min-height: 40px; resize: none; }
     })
     app.append(scrim, sh)
     renderTabs()
+    syncHistory()
   }
+  // silent：馬上要換成另一個面板（瀏覽記錄那一筆留著給新的面板）
   function closeSheet(silent) {
     app.querySelectorAll('.scrim, .sheet').forEach((el) => el.remove())
     st.sheet = null
-    if (!silent) renderTabs()
+    if (!silent) { renderTabs(); syncHistory() }
   }
 
   // ── 全螢幕頁面（內容多）：左上角返回；頁面裡開頁面，返回回到上一頁
   let partyTab = 'party', charTab = 'stats', shopTab = 'buy'
-  const CHAR_TABS = [['stats', '屬性與戰鬥'], ['perks', '特質'], ['gear', '裝備'], ['tattoo', '刺青'], ['abil', '能力'], ['bio', '角色設定']]
-  // 有分頁的頁面：分頁的順序與目前在哪一頁（左右滑、點分頁都走這裡）
-  const TABSETS = {
-    party: { keys: ['party', 'bag'], get: () => partyTab, set: (v) => (partyTab = v) },
-    char: { keys: CHAR_TABS.map(([k]) => k), get: () => charTab, set: (v) => (charTab = v) },
-    shop: { keys: ['buy', 'sell'], get: () => shopTab, set: (v) => (shopTab = v) },
-  }
-  const pane = (html) => `<div class="pane">${html}</div><p class="swipe-hint">← 左右滑換分頁 →</p>`
-  function setTab(kind, v) {
-    const t = TABSETS[kind]
-    const from = t.keys.indexOf(t.get()), to = t.keys.indexOf(v)
-    if (to < 0 || to === from) return
-    t.set(v)
-    refreshTop(to > from ? 'from-r' : 'from-l')
-  }
   const SHOP = [['短劍', '武器・普通', 450], ['皮甲', '防具・普通', 900], ['治療藥水', '消耗品', 120], ['火把', '雜物', 5], ['繩索（15 尺）', '雜物', 30]]
   const BAG = [['治療藥水', '消耗品', '×3'], ['火把', '雜物', '×5'], ['短劍', '武器・普通', '×1'], ['狼皮', '材料', '×2'], ['乾糧', '食物', '×4']]
-  function pageContent(kind, opt = {}) {
-    if (kind === 'party') {
-      const seg = `<div class="seg"><button data-seg="party:party" class="${partyTab === 'party' ? 'on' : ''}">隊伍</button><button data-seg="party:bag" class="${partyTab === 'bag' ? 'on' : ''}">行囊</button></div>`
-      if (partyTab === 'bag') return { title: '隊伍', body: seg + pane(bagRows()) }
-      return { title: '隊伍', body: seg + pane(`<div class="list">${PARTY.map((m) => `
-        <div class="row"><div class="avatar">${m.name[0]}</div><div class="main"><b>${m.name} ${m.note ? `<span class="chip">${m.note}</span>` : ''}</b><small>${m.race}・${m.cls} Lv${m.lv}・HP ${m.hp}%</small><div class="hpbar"><i style="width:${m.hp}%"></i></div></div><button class="btn" data-act="char" data-id="${m.id}">詳情</button></div>`).join('')}</div>`) }
-    }
-    if (kind === 'char') {
-      const m = PARTY.find((x) => x.id === opt.id) ?? PARTY[0]
-      const tabs = CHAR_TABS
-      const seg = `<div class="seg">${tabs.map(([k, l]) => `<button data-seg="char:${k}" class="${charTab === k ? 'on' : ''}">${l}</button>`).join('')}</div>`
-      let inner
-      if (charTab === 'stats') {
-        inner = `<div class="row"><div class="avatar big">${m.name[0]}</div><div class="main"><b>${m.name}</b><small>${m.race}・${m.cls}・Lv${m.lv}</small><div class="hpbar"><i style="width:${m.hp}%"></i></div><small>生命 ${m.hp}%・EXP 210／450</small></div></div>
+  const CHAR_TABS = [['stats', '屬性與戰鬥'], ['perks', '特質'], ['gear', '裝備'], ['tattoo', '刺青'], ['abil', '能力'], ['bio', '角色設定']]
+  // 有分頁的頁面：分頁的順序、名稱、目前在哪一頁、每一頁的內容。所有分頁並排在一條軌道上，左右滑時整條跟著手指移動
+  const TABSETS = {
+    party: {
+      tabs: [['party', '隊伍'], ['bag', '行囊']], get: () => partyTab, set: (v) => (partyTab = v),
+      render: (k) => (k === 'bag' ? bagRows() : `<div class="list">${PARTY.map((m) => `
+        <div class="row"><div class="avatar">${m.name[0]}</div><div class="main"><b>${m.name} ${m.note ? `<span class="chip">${m.note}</span>` : ''}</b><small>${m.race}・${m.cls} Lv${m.lv}・HP ${m.hp}%</small><div class="hpbar"><i style="width:${m.hp}%"></i></div></div><button class="btn" data-act="char" data-id="${m.id}">詳情</button></div>`).join('')}</div>`),
+    },
+    char: {
+      tabs: CHAR_TABS, get: () => charTab, set: (v) => (charTab = v),
+      render: (k, opt) => {
+        const m = PARTY.find((x) => x.id === opt.id) ?? PARTY[0]
+        if (k === 'stats') return `<div class="row"><div class="avatar big">${m.name[0]}</div><div class="main"><b>${m.name}</b><small>${m.race}・${m.cls}・Lv${m.lv}</small><div class="hpbar"><i style="width:${m.hp}%"></i></div><small>生命 ${m.hp}%・EXP 210／450</small></div></div>
           <div class="stats">${ATTRS.map((n, i) => `<div><b>${m.attrs[i]}</b><small>${n}</small></div>`).join('')}</div>
           <p class="muted">慾望戰鬥（S1）會在生命條下面加一條慾望條，這裡和隊伍卡都要留位置。</p>`
-      } else if (charTab === 'abil') {
-        inner = `<p class="muted">慾望戰鬥（S0）之後：每個技能一個「攜帶」勾選，最多 12 個。</p><div class="list">
+        if (k === 'abil') return `<p class="muted">慾望戰鬥（S0）之後：每個技能一個「攜帶」勾選，最多 12 個。</p><div class="list">
           ${['猛擊', '盾牌格擋', '戰吼'].map((n) => `<div class="row"><div class="main"><b>${n}</b><small>技能</small></div><label class="muted"><input type="checkbox" checked> 攜帶</label></div>`).join('')}</div>`
-      } else inner = `<div class="empty">樣稿只做了「屬性與戰鬥」與「能力」兩頁。分頁太多時可以左右滑。</div>`
-      return { title: m.name, body: seg + pane(inner) }
-    }
-    if (kind === 'shop') {
-      const p = opt.place
-      const seg = `<div class="seg"><button data-seg="shop:buy" class="${shopTab === 'buy' ? 'on' : ''}">店裡的商品</button><button data-seg="shop:sell" class="${shopTab === 'sell' ? 'on' : ''}">我的行囊</button></div>`
-      const body = shopTab === 'buy'
-        ? `<div class="list">${SHOP.map(([n, k, cc]) => `<div class="row"><div class="avatar">${n[0]}</div><div class="main"><b>${n}</b><small>${k}・${moneyText(cc)}</small></div><button class="btn" data-act="buy" data-cc="${cc}" data-name="${n}" ${st.money < cc ? 'disabled' : ''}>買</button></div>`).join('')}</div>`
-        : bagRows(true)
-      return { title: p ?? '交易', body: `<p class="muted">持有 ${moneyText(st.money)}</p>` + seg + pane(body) }
-    }
+        return `<div class="empty">樣稿只做了「屬性與戰鬥」與「能力」兩頁，這一頁（${CHAR_TABS.find(([x]) => x === k)[1]}）只是示意。</div>`
+      },
+    },
+    shop: {
+      tabs: [['buy', '店裡的商品'], ['sell', '我的行囊']], get: () => shopTab, set: (v) => (shopTab = v),
+      render: (k) => (k === 'buy'
+        ? `<div class="list">${SHOP.map(([n, kk, cc]) => `<div class="row"><div class="avatar">${n[0]}</div><div class="main"><b>${n}</b><small>${kk}・${moneyText(cc)}</small></div><button class="btn" data-act="buy" data-cc="${cc}" data-name="${n}" ${st.money < cc ? 'disabled' : ''}>買</button></div>`).join('')}</div>`
+        : bagRows(true)),
+    },
+  }
+  function tabbed(kind, opt, head = '') {
+    const t = TABSETS[kind]
+    return `${head}<div class="seg">${t.tabs.map(([k, l]) => `<button data-seg="${kind}:${k}" class="${t.get() === k ? 'on' : ''}">${l}</button>`).join('')}<span class="ink"></span></div>
+      <div class="viewport"><div class="track">${t.tabs.map(([k]) => `<div class="pane" data-key="${k}">${t.render(k, opt)}</div>`).join('')}</div></div>`
+  }
+  function pageContent(kind, opt = {}) {
+    if (kind === 'party') return { title: '隊伍', body: tabbed('party', opt) }
+    if (kind === 'char') return { title: (PARTY.find((x) => x.id === opt.id) ?? PARTY[0]).name, body: tabbed('char', opt) }
+    if (kind === 'shop') return { title: opt.place ?? '交易', body: tabbed('shop', opt, `<p class="muted">持有 ${moneyText(st.money)}</p>`) }
     if (kind === 'event') {
       return {
         title: '翻覆的商隊',
@@ -1002,13 +1004,95 @@ textarea { width: 100%; min-height: 40px; resize: none; }
         提示詞: '提示詞管理（電腦版的上方分頁）。',
         世界: '世界管理與編輯器（電腦版的上方分頁；編輯器在手機上可能只能看）。',
       }
-      return { title: opt.label, body: `<div class="empty">${DESC[opt.label] ?? opt.label}<br>樣稿只示範這一頁會是全螢幕、左上角可以返回。</div>` }
+      return { title: opt.label, body: `<div class="empty">${DESC[opt.label] ?? opt.label}<br>樣稿只示範這一頁會是全螢幕、左上角可以返回；也可以按手機的返回鍵。</div>` }
     }
     return null
   }
   function bagRows(sell) {
     return `<div class="list">${BAG.map(([n, k, c]) => `<div class="row"><div class="avatar">${n[0]}</div><div class="main"><b>${n}</b><small>${k}</small></div><span class="muted">${c}</span>${sell ? '<button class="btn" data-act="sell">賣</button>' : ''}</div>`).join('')}</div>`
   }
+
+  // 分頁軌道的位置：offset 是手指拖動中的位移（px）；animate 時用緩動滑過去，拖動中不加動畫才會黏手
+  function placeTrack(pg, kind, offset = 0, animate = true) {
+    const t = TABSETS[kind]
+    const vp = pg.querySelector('.viewport'), track = pg.querySelector('.track'), seg = pg.querySelector('.seg'), ink = seg.querySelector('.ink')
+    const i = t.tabs.findIndex(([k]) => k === t.get())
+    const w = vp.clientWidth || 1
+    track.style.transition = vp.style.transition = ink.style.transition = animate ? '' : 'none'
+    track.style.transform = `translateX(${-i * w + offset}px)`
+    // 底線跟著拖動的比例移到隔壁分頁
+    const btns = [...seg.querySelectorAll('button')]
+    const p = -offset / w
+    const j = Math.max(0, Math.min(btns.length - 1, i + Math.sign(p)))
+    const f = Math.min(1, Math.abs(p))
+    const a = btns[i], b = btns[j]
+    ink.style.width = `${a.offsetWidth + (b.offsetWidth - a.offsetWidth) * f}px`
+    ink.style.transform = `translateX(${a.offsetLeft + (b.offsetLeft - a.offsetLeft) * f}px)`
+    btns.forEach((x, n) => x.classList.toggle('on', n === i))
+    // 高度跟著目前的分頁（各分頁內容長短不同）
+    const pane = track.children[i]
+    vp.style.height = `${pane.offsetHeight}px`
+    if (animate) a.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  }
+  function setTab(kind, v) {
+    const top = st.pages.at(-1)
+    TABSETS[kind].set(v)
+    if (top) placeTrack(top.el, kind)
+  }
+  function bindSwipe(pg, kind) {
+    const vp = pg.querySelector('.body')
+    vp.classList.add('swipeable')
+    vp.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.seg') || !e.isPrimary) return
+      const x0 = e.clientX, y0 = e.clientY
+      let axis = null, dx = 0, last = { x: x0, t: performance.now() }, v = 0
+      const t = TABSETS[kind]
+      const i = t.tabs.findIndex(([k]) => k === t.get())
+      const w = pg.querySelector('.viewport').clientWidth
+      const move = (m) => {
+        const mx = m.clientX - x0, my = m.clientY - y0
+        if (!axis) {
+          if (Math.abs(mx) < 8 && Math.abs(my) < 8) return
+          axis = Math.abs(mx) > Math.abs(my) ? 'x' : 'y'
+          if (axis === 'y') return end()
+        }
+        dx = mx
+        // 第一頁往右、最後一頁往左：拉得動但有阻力
+        if ((i === 0 && dx > 0) || (i === t.tabs.length - 1 && dx < 0)) dx *= 0.3
+        const now = performance.now()
+        v = (m.clientX - last.x) / Math.max(1, now - last.t)
+        last = { x: m.clientX, t: now }
+        placeTrack(pg, kind, dx, false)
+      }
+      const up = () => {
+        end()
+        if (axis !== 'x') return
+        // 拉超過四分之一、或甩得夠快就換頁，否則彈回
+        let j = i
+        if (dx < -w / 4 || v < -0.45) j = i + 1
+        else if (dx > w / 4 || v > 0.45) j = i - 1
+        j = Math.max(0, Math.min(t.tabs.length - 1, j))
+        t.set(t.tabs[j][0])
+        placeTrack(pg, kind)
+        // 拖動結束時不要觸發按鈕（放開後馬上跟著的那一下 click）
+        if (Math.abs(dx) > 8) {
+          const eat = (c) => { c.stopPropagation(); c.preventDefault() }
+          window.addEventListener('click', eat, { capture: true, once: true })
+          setTimeout(() => window.removeEventListener('click', eat, { capture: true }), 300)
+        }
+      }
+      const end = () => {
+        window.removeEventListener('pointermove', move)
+        window.removeEventListener('pointerup', up)
+        window.removeEventListener('pointercancel', cancel)
+      }
+      const cancel = () => { end(); if (axis === 'x') placeTrack(pg, kind) }
+      window.addEventListener('pointermove', move)
+      window.addEventListener('pointerup', up)
+      window.addEventListener('pointercancel', cancel)
+    })
+  }
+
   // 從半屏面板（更多、設施）打開的頁面蓋在面板上面，按返回就回到原本的面板
   function openPage(kind, opt = {}) {
     const c = pageContent(kind, opt)
@@ -1021,47 +1105,61 @@ textarea { width: 100%; min-height: 40px; resize: none; }
       <div class="body band">${c.body}</div>`
     pg.querySelector('.back')?.addEventListener('click', closePage)
     pg.addEventListener('click', onAct)
-    // 左右滑換分頁：橫向移動夠長、而且比直向明顯；從分頁列開始的不算（分頁列自己可以橫向捲）
-    if (TABSETS[kind]) {
-      const body = pg.querySelector('.body')
-      body.classList.add('swipeable')
-      body.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('.seg')) return
-        const x0 = e.clientX, y0 = e.clientY
-        // 放開的地方可能在頁面外，聽整個視窗
-        window.addEventListener('pointerup', (u) => {
-          const dx = u.clientX - x0, dy = u.clientY - y0
-          if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
-          const t = TABSETS[kind]
-          const i = t.keys.indexOf(t.get()) + (dx < 0 ? 1 : -1)
-          if (i >= 0 && i < t.keys.length) setTab(kind, t.keys[i])
-        }, { once: true })
-      })
-    }
-    st.pages.push({ kind, opt, el: pg })
+    st.pages.push({ kind, opt, el: pg, noBack: !!c.noBack })
     app.appendChild(pg)
+    if (TABSETS[kind]) {
+      placeTrack(pg, kind, 0, false)
+      bindSwipe(pg, kind)
+    }
+    syncHistory()
   }
   function closePage() {
     st.pages.pop()?.el.remove()
     renderAll()
+    syncHistory()
   }
   function closeAllPages() {
     while (st.pages.length) st.pages.pop().el.remove()
+    syncHistory()
   }
-  function refreshTop(anim) {
+  function refreshTop() {
     const top = st.pages.at(-1)
     if (top) {
       const c = pageContent(top.kind, top.opt)
       top.el.querySelector('.body').innerHTML = c.body
       top.el.querySelector('h2').textContent = c.title
-      if (anim) top.el.querySelector('.pane')?.classList.add(anim)
-      top.el.querySelector('.seg .on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+      if (TABSETS[top.kind]) placeTrack(top.el, top.kind, 0, false)
       return
     }
     const sh = app.querySelector('.sheet')
     const c = st.sheet && sheetContent(st.sheet)
     if (sh && c) sh.querySelector('.body').innerHTML = c.body
   }
+
+  // ── 手機的返回鍵（Android 返回鍵、iPhone 邊緣右滑、瀏覽器上一頁）：先關最上層的頁面，再關半屏面板，都關了才離開
+  // 每打開一層就在瀏覽記錄放一筆；用畫面上的按鈕關掉時，把多的那筆退回去（退回時的 popstate 不算按返回）
+  let pushed = 0, ignorePop = 0
+  function syncHistory() {
+    if (ignorePop) return
+    const want = st.pages.length + (st.sheet ? 1 : 0)
+    try {
+      while (pushed < want) { history.pushState({ elondia: pushed + 1 }, ''); pushed++ }
+      if (pushed > want) { ignorePop++; history.go(want - pushed); pushed = want }
+    } catch {
+      // 瀏覽記錄不能用時，返回鍵照瀏覽器原本的行為
+    }
+  }
+  window.addEventListener('popstate', () => {
+    if (ignorePop) { ignorePop--; return syncHistory() }
+    pushed = Math.max(0, pushed - 1)
+    const top = st.pages.at(-1)
+    if (top?.noBack) {
+      toast('先選一個選項')
+      return syncHistory()
+    }
+    if (top) return closePage()
+    if (st.sheet) return closeSheet()
+  })
 
   // ── 面板與頁面裡的按鈕
   function onAct(e) {
