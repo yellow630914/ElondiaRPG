@@ -59,6 +59,7 @@ const SLOT_ART: Record<BaseSlot, Partial<Record<MaterialKind, IconRef>> & { any:
   ring: { any: { art: 'ring' } }, ring_1: { any: { art: 'ring' } }, ring_2: { any: { art: 'ring' } },
   piercing: { any: { art: 'earring' } }, piercing_1: { any: { art: 'earring' } }, piercing_2: { any: { art: 'earring' } },
   leg_accessory: { any: { art: 'anklet' } },
+  extra_1: { any: { art: 'earring' } },
   underwear_top: { any: { art: 'camisole' }, metal: { art: 'camisole' }, leather: { art: 'camisole' } },
   underwear_bottom: { any: { art: 'briefs' }, metal: { art: 'briefs' } },
 }

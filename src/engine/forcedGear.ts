@@ -2,7 +2,7 @@
 // 免費給主角裝上並鎖住；契約還在時不能卸下，也不能在那個欄位換別的（inventory.ts 的 lockedGear）。
 
 import { itemRules } from './data'
-import { gearKnown, gearRules, slotName } from './gear'
+import { EXTRA_SLOT, gearKnown, gearRules, slotName } from './gear'
 import { freeSlotsFor, putOn } from './inventory'
 import { npcRecord } from './npcs'
 import { pcOf } from './party'
@@ -29,7 +29,9 @@ export function forceEquip(state: GameState, report: Report, master: string, ite
   if (!name) return ''
   const spec = itemRules.items.find((i) => i.name === name)!.gear!
   const pc = pcOf(state)
-  const { target, back } = putOn(pc, name, spec, undefined, master)
+  // 戴在原本的部位，不放額外飾品欄（docs/ITEMS.md 第 2 節）
+  const native = freeSlotsFor(pc, spec).filter((x) => x !== EXTRA_SLOT)
+  const { target, back } = putOn(pc, name, spec, native.find((x) => !pc.gear?.[x]) ?? native[0], master)
   // 拘束具：主人用自己的鎖鎖上（依身分，雙面效應的倍率）
   if (gearRules.bases[spec.base]?.bind) pc.gear![target]!.lock = masterLockGrade(rec?.tags ?? [])
   if (back.length) (report.changes.items_gained ??= []).push(...back.map((n) => ({ name: n, qty: 1, owner: 'pc' })))

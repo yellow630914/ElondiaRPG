@@ -167,7 +167,7 @@ const customGear = computed({
   },
 })
 function basesFor(slot: GearSlot) {
-  return Object.entries(gearRules.bases).filter(([, b]) => baseFits(b.slot, slot))
+  return Object.entries(gearRules.bases).filter(([, b]) => baseFits(b.slot, slot, b))
 }
 function materialsFor(base: string) {
   const kind = gearRules.bases[base]?.kind

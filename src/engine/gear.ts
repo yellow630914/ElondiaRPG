@@ -9,7 +9,7 @@
 import gearJson from '@data/rules/gear.json'
 import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type BindKind, type Mods } from './data'
 import { describeEffects } from './perks'
-import type { Rng } from './rng'
+import { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
 
 type Scale = 'full' | 'half' | 'up' | 'third' | 'third_up' | 'res'
@@ -149,8 +149,18 @@ export function baseSlotName(slot: BaseSlot): string {
   return gearRules.slots[(group?.[0] ?? slot) as GearSlot] ?? slot
 }
 
-/** 這種底材能不能放進這個欄位 */
-export function baseFits(baseSlot: BaseSlot, slot: GearSlot): boolean {
+/** 額外飾品欄（docs/ITEMS.md 第 2 節）：首飾、戒指、穿孔飾品、腿部飾品，以及任何部位的拘束具都能放 */
+export const EXTRA_SLOT: GearSlot = 'extra_1'
+const EXTRA_BASE_SLOTS: BaseSlot[] = ['accessory', 'ring', 'piercing', 'leg_accessory']
+
+/** 這種底材能不能放進額外飾品欄 */
+export function fitsExtra(base: Pick<BaseDef, 'slot' | 'restraint' | 'bind'> | undefined): boolean {
+  return !!base && (EXTRA_BASE_SLOTS.includes(base.slot) || !!base.restraint || !!base.bind)
+}
+
+/** 這種底材能不能放進這個欄位（額外飾品欄要傳底材，才看得出是不是拘束具） */
+export function baseFits(baseSlot: BaseSlot, slot: GearSlot, base?: Pick<BaseDef, 'slot' | 'restraint' | 'bind'>): boolean {
+  if (slot === EXTRA_SLOT) return fitsExtra(base ?? { slot: baseSlot })
   return baseSlot === slot || !!gearRules.slot_groups[baseSlot]?.includes(slot)
 }
 
@@ -285,7 +295,9 @@ export function gearSpecOf(state: Pick<GameState, 'customItems'> | undefined, na
 export function slotsFor(spec: GearSpec): GearSlot[] {
   if (!gearKnown(spec)) return []
   const slot = gearStats(spec).slot
-  return gearRules.slot_groups[slot] ?? [slot as GearSlot]
+  const own = gearRules.slot_groups[slot] ?? [slot as GearSlot]
+  // 原本的部位排前面：原本的部位有空時先放那裡，都滿了才放額外飾品欄
+  return fitsExtra(gearRules.bases[spec.base]) ? [...own, EXTRA_SLOT] : own
 }
 
 // ---- 角色身上的裝備 ----
@@ -453,7 +465,7 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
       const custom = fromClass.length
         ? [...customGear.bases].filter((id) => {
           const b = gearRules.bases[id]
-          return !!b && !b.restraint && baseFits(b.slot, slot) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
+          return !!b && !b.restraint && baseFits(b.slot, slot, b) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
         })
         : []
       // 上身另外可以選服裝（不能比職業的護甲類型重：比基尼鎧甲是金屬、皮革緊身衣是皮革）
@@ -466,7 +478,7 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
     }
     // 頭、腿等護具：不能比職業的護甲類型重（布 < 皮革 < 金屬）；飾品不限
     const bases = Object.entries(gearRules.bases)
-      .filter(([id, b]) => !b.restraint && baseShown(id) && baseFits(b.slot, slot) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
+      .filter(([id, b]) => !b.restraint && baseShown(id) && baseFits(b.slot, slot, b) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
       .map(([id]) => id)
     if (bases.length) out.push({ slot, template: false, bases })
   }
@@ -491,7 +503,7 @@ export const SLOT_CATEGORY: Record<GearSlot, 'weapon' | 'armor' | 'accessory'> =
   main_hand: 'weapon', off_hand: 'weapon',
   head: 'armor', body: 'armor', legs: 'armor', wrists: 'armor', feet: 'armor', belt: 'armor',
   accessory: 'accessory', ring_1: 'accessory', ring_2: 'accessory', piercing_1: 'accessory', piercing_2: 'accessory', leg_accessory: 'accessory',
-  underwear_top: 'accessory', underwear_bottom: 'accessory',
+  underwear_top: 'accessory', underwear_bottom: 'accessory', extra_1: 'accessory',
 }
 
 /** 建角時每個欄位可以選的所有裝備（底材 × 第 1～max_tier 級材料），預算都算好了 */
@@ -611,6 +623,12 @@ export function generateLoadout(classId: string, level: number, rng: Rng, race?:
   for (const slot of PIECE_SLOTS) if (rng.chance(pieceChance)) put(slot, PIECE_BASES[t.pieces][slot])
   const jewelChance = Math.min(l.jewelry_max, l.jewelry_base + l.jewelry_per_level * level)
   for (const j of JEWELRY) if (rng.chance(jewelChance)) put(j.slot, rng.pick(JEWELRY_BASES[j.group]))
+  // 額外飾品欄：和其他飾品一樣的機率，從所有飾品底材抽。用另一條亂數（不消耗 rng），其他欄位擲出來的結果和以前一樣
+  const extra = new Rng((rng.state ^ 0x5bd1e995) | 0)
+  if (extra.chance(jewelChance)) {
+    const base = extra.pick(Object.values(JEWELRY_BASES).flat())
+    if (!blocked.has(EXTRA_SLOT)) out[EXTRA_SLOT] = piece(base, rollTier(extra, gearRules.bases[base]!.kind, level))
+  }
   return out
 }
 

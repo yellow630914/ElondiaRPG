@@ -1254,7 +1254,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
       const base = spec && gearRules.bases[spec.base]
       if (!spec || !base) continue
       // 底材要放得進這個欄位（戒指放兩個戒指欄）
-      if (baseFits(base.slot, slot)) g[slot] = spec
+      if (baseFits(base.slot, slot, base)) g[slot] = spec
     }
     if (Object.keys(g).length) out.gear = g
   }

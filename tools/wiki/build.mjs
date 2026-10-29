@@ -110,6 +110,7 @@ export const GROUPS = [
     { page: '內建內容的產生腳本', src: 'worldgen/scripts/elondia/README.md', desc: '艾隆迪亞內建內容的產生腳本與執行順序' },
     { page: '世界生成計畫', src: 'worldgen/PLAN.md', desc: 'worldgen 的工作計畫' },
     { page: '像素素材管線', src: 'tools/pixel/README.md', desc: '像素圖示與地圖格的素材管線' },
+    { page: '背景圖的生圖腳本', src: 'tools/backgrounds/README.md', desc: '背景圖的提示詞與 ComfyUI、NovelAI、ChatGPT 生圖腳本' },
     { page: '模組化像素立繪規格', src: 'docs/comfy/portrait-spec.md', desc: '用 ComfyUI 產生立繪素材的規格' },
   ] },
   { name: '計畫與追蹤', pages: [
@@ -127,7 +128,7 @@ export const GROUPS = [
 ]
 
 /** 不放上 wiki 的文件：素材資料夾的說明（只對改程式的人有用）、玩家提供的第三方原文素材、以它為素材的成人向計畫 */
-export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/ideas/xianxia-adult-lorebook.md', 'docs/plan/LUST_COMBAT_PLAN.md']
+export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/ideas/xianxia-adult-lorebook.md', 'docs/plan/LUST_COMBAT_PLAN.md', 'tools/backgrounds/park_prompts.md']
 
 const srcList = (p) => (Array.isArray(p.src) ? p.src : [p.src])
 const fileOf = (src) => src.split('#')[0]

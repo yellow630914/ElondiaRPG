@@ -2,7 +2,7 @@
 // 送出請求的程式在 imageProviders.ts；設定存在瀏覽器（stores/image.ts），見 docs/PORTRAITS.md。
 
 import { className, genderName, raceName } from '@/engine/data'
-import { gearName } from '@/engine/gear'
+import { gearName, gearRules } from '@/engine/gear'
 import { npcOutfit } from '@/engine/outfits'
 import { appearanceOf, npcRecord, npcTitle } from '@/engine/npcs'
 import { placeName, tattooDesc, tattooName, tattoosOf } from '@/engine/tattoos'
@@ -144,7 +144,8 @@ function wornGear(gear: Partial<Record<GearSlot, EquippedGear>> | undefined): { 
     const over = cover[slot]
     const hidden = !!over && !!gear?.[over]
     names.push(hidden ? `${g.name}（穿在裡面）` : g.name)
-    if (!hidden) visible.push(slot)
+    // 額外飾品欄：照底材原本的部位（腿部飾品要拉遠構圖）
+    if (!hidden) visible.push(slot === 'extra_1' ? gearRules.bases[g.spec?.base ?? '']?.slot ?? slot : slot)
   }
   return { names, visible }
 }

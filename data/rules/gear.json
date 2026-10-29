@@ -6,7 +6,7 @@
     "main_hand": "主手", "off_hand": "副手", "head": "頭部", "body": "上身", "legs": "下身",
     "wrists": "手腕", "feet": "鞋子", "belt": "腰帶", "accessory": "首飾", "ring_1": "戒指", "ring_2": "戒指",
     "piercing_1": "穿孔飾品", "piercing_2": "穿孔飾品", "leg_accessory": "腿部飾品",
-    "underwear_top": "內衣／內襯", "underwear_bottom": "內褲"
+    "underwear_top": "內衣／內襯", "underwear_bottom": "內褲", "extra_1": "額外飾品"
   },
   "npc_outfits": {
     "$comment": "NPC 依標籤、職業描述與體型穿的服裝（由上往下第一條符合的規則）。每個欄位從清單裡依角色 id 固定挑一件，第一級材料。普通人沒有戰鬥資料，這些只用在形象圖與 AI 的描述；冒險者只補空著的頭、手腕、鞋子、腿部飾品、內衣褲（不換掉護甲與下身護具）。",
