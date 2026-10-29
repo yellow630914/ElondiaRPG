@@ -30,7 +30,7 @@
 | I7 | 地下城探索彙整報告 | AI、玩法 | [early-design](early-design.md#i7) |
 | I8 | 遭遇的動態組合 | 玩法 | [review-2026-10](review-2026-10.md#i8) |
 | I9 | S 級內容 | 玩法 | [review-2026-10](review-2026-10.md#i9) |
-| I10 | 主角身分標籤的更多效果 | 玩法 | [dev-discussion](dev-discussion.md#i10) |
+| I10 | 主角身分標籤的更多效果（已決定要做，排在 R8 慾望戰鬥之後一起做） | 玩法 | [dev-discussion](dev-discussion.md#i10) |
 | I11 | 人物面板的單人「邀請入隊」 | 介面 | [player-feedback](player-feedback.md#i11) |
 | I12 | 世界頁籤補上還不能改的資料 | 自訂內容 | [review-2026-10](review-2026-10.md#i12) |
 | I13 | 淫氣世界世界書整理成成人向素材庫（拘束與脫縛、奴印、淫物、場景玩法） | 成人向內容 | [xianxia-adult-lorebook](xianxia-adult-lorebook.md) |
