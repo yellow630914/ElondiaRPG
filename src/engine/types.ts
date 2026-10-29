@@ -201,6 +201,8 @@ export interface GearSpec {
   attrs?: Partial<Record<'str' | 'dex' | 'int' | 'fai' | 'cha', number>>
   /** 慾望指標的加減（穿著時的有效值；每件 ±10，全身合計 ±20；見 docs/LEWD_STATS.md） */
   lewd?: Partial<Record<LewdStat, number>>
+  /** 淫器（docs/LEWD_STATS.md 第 22 節）：和拘束具合煉的武器（組成與原本的名稱），拆開時還原；restraint 是拘束具原本的名稱 */
+  fused?: { weapon: GearSpec; weaponName: string; restraint: string }
 }
 
 /** 穿在身上的裝備：物品名稱與組成（自帶組成，不必回頭查存檔） */
@@ -246,6 +248,8 @@ export interface Character {
   lewd?: LewdStats
   /** 調教的進度：課程 → 成功的次數（docs/LEWD_STATS.md 第 9 節） */
   trainProgress?: Record<string, number>
+  /** 淫器穿在身上的日子：物品名稱 → 最近穿著的那幾天（docs/LEWD_STATS.md 第 22 節） */
+  wornDays?: Record<string, number[]>
   /**
    * 攜帶中的技能與法術（存檔規則 skillLoadout 的上限，戲法不算）：戰鬥只帶這些，其他留在技能庫。
    * 沒有時帶最近學會的幾個（見 character.ts 的 carriedAbilities）

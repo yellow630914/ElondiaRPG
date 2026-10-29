@@ -8,6 +8,7 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { fusedWeapon } from './fusion'
 import { settleArena } from './arena'
 import { checkBonus, perkModifiers } from './perks'
 import {
@@ -150,6 +151,8 @@ export interface Combatant {
   handsBound?: boolean
   /** 身上有奴隸印記：驅奴術這類能力比較有效 */
   slave?: boolean
+  /** 淫器展開的武器傷害倍率（fusion.ts；穿著的天數決定） */
+  weaponMult?: number
 }
 
 export type CombatAction =
@@ -260,6 +263,14 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     // 無法戰鬥的隊員（普通人）不上場
     const fighters: Combatant[] = state.party.filter((c) => c.hp > 0 && !isNoncombatant(c)).map((c) => fromCharacter(c, rng, cap))
     if (fighters.length === 0) throw new Error('隊伍沒有能戰鬥的成員')
+    // 淫器：戰鬥時展開成合煉的武器（穿夠天數才行；docs/LEWD_STATS.md 第 22 節）
+    for (const f of fighters) {
+      const fw = fusedWeapon(state, state.party.find((m) => m.id === f.id)!)
+      if (fw) {
+        f.weapon = { ...fw.weapon, name: fw.weapon.name || fw.name }
+        f.weaponMult = fw.mult
+      }
+    }
     const counts: Record<string, number> = {}
     for (const [id, n] of enemyGroup) counts[id] = (counts[id] ?? 0) + n
     const seen: Record<string, number> = {}
@@ -1289,7 +1300,7 @@ function rollParts(rng: Rng, actor: Combatant, a: AbilityDef | undefined, parts:
   const flatDamage = modsOf(actor).damage
   return parts.map((p) => {
     if (p.weapon) {
-      const amount = rollDice(rng, actor.weapon.dice, diceMult) + mod(actor.attrs[actor.weapon.attr]) + flatDamage
+      const amount = Math.floor((rollDice(rng, actor.weapon.dice, diceMult) + mod(actor.attrs[actor.weapon.attr]) + flatDamage) * (actor.weaponMult ?? 1))
       return { amount, type: actor.weapon.type, weapon: true }
     }
     let amount = rollDice(rng, p.dice ?? '1d4', diceMult)

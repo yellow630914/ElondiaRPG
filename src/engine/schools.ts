@@ -122,7 +122,9 @@ export function bindModifiers(c: Character, ctx: CheckCtx): { label: string; val
   for (const b of binds) {
     const k = r.kinds[b.kind]
     if (!k.checks.some((f) => matches(f, ctx))) continue
-    const value = Math.max(0, (k.penalty[b.bind - 1] ?? 0) - ease)
+    // 淫器：日常的減值加重（lewd.json 的 fusion.penalty_mult）
+    const fused = !!c.gear?.[b.slot]?.spec.fused
+    const value = Math.round(Math.max(0, (k.penalty[b.bind - 1] ?? 0) - ease) * (fused ? lewdRules.fusion.penalty_mult : 1))
     if (value) out.push({ label: `拘束【${b.name}】`, value: -value })
   }
   return out

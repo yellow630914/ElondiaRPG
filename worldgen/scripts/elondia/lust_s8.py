@@ -571,6 +571,23 @@ def write_s8_11():
     print('S8-11 arena rings', len(ARENA['rings']))
 
 
+# ---------------- S8-12 淫器合煉 ----------------
+FUSION = {
+    "$comment": "淫器合煉（docs/LEWD_STATS.md 第 22 節）：在 shops 的店把一件武器和一件拘束具合成「淫器」，收 fee_cc；平常是拘束具（雙面效應照算，日常的檢定減值 × penalty_mult），戰鬥時展開成那件武器。最近 days 天裡穿了幾天決定武器傷害的倍率（tiers：[至少幾天, 倍率]，由高到低）；更少時展開不了（照原本的武器打）。可以在同一種店拆回原本的兩件，不收錢。",
+    "shops": ["smithy"], "fee_cc": 400, "days": 10, "tiers": [[9, 1.5], [7, 1.0], [4, 0.5]], "penalty_mult": 1.5,
+}
+
+
+def write_s8_12():
+    p = 'data/rules/lewd.json'
+    t = open(p).read()
+    t = drop_lines(t, r'\n  "fusion": \{.*')
+    t = t.replace('\n  "park": {', '\n  "fusion": ' + json.dumps(FUSION, ensure_ascii=False) + ',\n  "park": {', 1)
+    json.loads(t)
+    open(p, 'w').write(t)
+    print('S8-12 fusion')
+
+
 if __name__ == '__main__':
     write_s8_3()
     write_s8_4()
@@ -579,3 +596,4 @@ if __name__ == '__main__':
     write_s8_9()
     write_s8_10()
     write_s8_11()
+    write_s8_12()

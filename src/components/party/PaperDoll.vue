@@ -6,6 +6,7 @@ import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rar
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
 import { keysFor, stuckRestraint, unbindDc } from '@/engine/restraints'
+import { fusionMult, fusionRules, wornDaysOf } from '@/engine/fusion'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { characterBody } from '@/engine/look'
@@ -43,6 +44,13 @@ const bindNote = computed(() => {
   if (!b) return ''
   if (!schoolsOf(m.value).length) return '還沒修任何慾望流派：只有平常的檢定減值'
   return b.lock ? '戰鬥中的增益生效' : '鎖上之後，戰鬥中才有增益'
+})
+// 淫器：穿了幾天、戰鬥時展開的倍率（docs/LEWD_STATS.md 第 22 節）
+const fused = computed(() => {
+  const g = current.value
+  if (!g?.spec.fused) return undefined
+  const days = wornDaysOf(s.value, m.value, g.name)
+  return { weapon: g.spec.fused.weaponName, days, of: fusionRules().days, mult: fusionMult(days) }
 })
 // 別人鎖上的拘束具（主人強制戴上的）：嘗試脫縛或用鑰匙打開（docs/LEWD_STATS.md 第 16 節）
 const stuck = computed(() => stuckRestraint(m.value, selected.value))
@@ -159,6 +167,10 @@ const totals = computed(() => {
           <button class="small" :disabled="inCombat || !lockPick" @click="lockIt">上鎖</button>
         </template>
         <button v-else-if="bind.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
+      </div>
+      <div v-if="fused" class="lock-row small">
+        <span>淫器：戰鬥時展開成{{ fused.weapon }}・最近 {{ fused.of }} 天穿了 {{ fused.days }} 天</span>
+        <span :class="fused.mult ? '' : 'muted'">{{ fused.mult ? `傷害 ×${fused.mult}` : '還展開不了' }}</span>
       </div>
       <div v-if="stuck && unbind" class="lock-row small">
         <button class="small" :disabled="inCombat" :title="`靈巧檢定，DC ${unbind.dc}（${unbind.parts.map((p) => `${p.label} ${signed(p.value)}`).join('、')}）；主人在身邊時失敗會被懲罰`" @click="game.tryUnbind(m.id, selected)">嘗試脫縛（DC {{ unbind.dc }}）</button>

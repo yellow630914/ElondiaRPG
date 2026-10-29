@@ -1,6 +1,7 @@
 // 慾望指標（成人向；docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從記在角色身上，曝露名聲依地區記在存檔。
 // 規則與數值在 data/rules/lewd.json。戰鬥的換算在 combat.ts（慾望上限、受到的慾望、初始慾望……）。
 
+import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
 import { abilities, lewdRules, locationById, stories, type LewdKey } from './data'
 import { charmExposureMult, spreadExposure } from './charm'
@@ -204,6 +205,8 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       const stats = baseLewd(m)
       if (day - (stats.lastScene ?? 0) > d.idle_days && stats.lewdness > lewdRules.defaults.lewdness) addLewd(state, m, 'lewdness', -1)
     }
+    // 淫器：記下穿著的日子（fusion.ts）
+    recordFusedWear(state, day)
     // 調教室：留在擺了調教家具的房子裡的奴隸，每天順從上升（docs/LEWD_STATS.md 第 19 節）
     for (const home of Object.values(state.homes ?? {})) {
       if (!trainingRoomOf(home)) continue

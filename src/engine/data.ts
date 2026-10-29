@@ -2127,6 +2127,7 @@ export const lewdRules = lewdJson as unknown as {
     lust_convert: number
     rings: Record<string, { name: string; desc: string; restraint?: boolean; lust_only?: boolean; tiers: EncounterGroup[] }>
   }
+  fusion: { shops: string[]; fee_cc: number; days: number; tiers: [number, number][]; penalty_mult: number }
   slave_room: {
     charm_min: number; cost_ratio: number; submission: number; learn_chance: number; abilities: string[]; condition: string; scene: string
   }

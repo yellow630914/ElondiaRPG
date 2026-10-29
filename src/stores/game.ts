@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { fuseGear, splitGear } from '@/engine/fusion'
 import { startArena } from '@/engine/arena'
 import { leavePark } from '@/engine/park'
 import { charmGatePass } from '@/engine/charm'
@@ -1014,6 +1015,8 @@ export const useGame = defineStore('game', () => {
     leavePark: () => run((s) => leavePark(s), { onMap: true }),
     charmGatePass: () => run((s) => charmGatePass(s)),
     startArena: (ring: string, opts: { restraint?: string; wager?: boolean }) => run((s) => startArena(s, ring, opts)),
+    fuseGear: (weapon: string, restraint: string) => run((s) => fuseGear(s, weapon, restraint)),
+    splitGear: (name: string) => run((s) => splitGear(s, name)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */
