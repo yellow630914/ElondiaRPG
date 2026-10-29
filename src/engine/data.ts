@@ -1858,6 +1858,8 @@ export interface PerkDef {
   rarity?: string
   /** 分類（建角時依分類折疊，見 perks.ts 的 PERK_CATEGORIES）；沒寫時依效果推斷 */
   category?: string
+  /** 能在城外的野外、旅途上紮營長休（rest.ts 的 campRest）：隊伍裡有一個人有就可以 */
+  camp?: boolean
 }
 
 export const perkRules = perksJson as unknown as {

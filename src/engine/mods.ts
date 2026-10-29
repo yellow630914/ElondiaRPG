@@ -1626,6 +1626,8 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   }
   if (raw.rarity && RARITY_ORDER.includes(raw.rarity)) out.rarity = raw.rarity
   if (raw.category && PERK_CATEGORIES[raw.category]) out.category = raw.category
+  // 能在野外紮營長休（種族特質也可以，例如自訂一個親近自然的種族）
+  if (raw.camp === true) out.camp = true
   if (custom) out.custom = true
   return out
 }

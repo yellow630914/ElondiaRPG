@@ -1007,8 +1007,9 @@ export const useGame = defineStore('game', () => {
     longRest: async (place: rest.RestPlace, talk?: { text: string; target?: string }) => {
       const withTalk = !!talk?.text.trim()
       // 有互動時，長休本身不另外寫敘事：和互動合成一段（互動的報告會帶上長休的經過）
-      const report = run((s) => rest.longRest(s, place), { narrate: !withTalk })
-      if (report && withTalk) await perform({ kind: 'rest_talk', text: talk!.text, ...(talk!.target ? { target: talk!.target } : {}) })
+      // 野外紮營可能被襲擊（回傳戰鬥）：被襲擊時不做長休時的互動
+      const report = run((s) => (place === 'camp' ? rest.campRest(s) : rest.longRest(s, place)), { narrate: !withTalk })
+      if (report && 'report_id' in report && withTalk) await perform({ kind: 'rest_talk', text: talk!.text, ...(talk!.target ? { target: talk!.target } : {}) })
       return report
     },
     abandonQuest: (id: string) => run((s) => town.abandonQuest(s, id)),

@@ -137,8 +137,11 @@ function effectPower(e: PerkEffect): number {
 }
 
 /** 特質的強度（約略）：比較用；缺陷是負的（大約抵銷一個一般特質） */
-export function perkPower(p: Pick<PerkDef, 'effects'>): number {
-  return Math.round(p.effects.reduce((s, e) => s + effectPower(e), 0) * 2) / 2
+/** 能在野外紮營長休（camp）算的強度：省下旅店的錢、不用回城就能補滿 */
+const CAMP_POWER = 3
+
+export function perkPower(p: Pick<PerkDef, 'effects'> & Pick<Partial<PerkDef>, 'camp'>): number {
+  return Math.round((p.effects.reduce((s, e) => s + effectPower(e), 0) + (p.camp ? CAMP_POWER : 0)) * 2) / 2
 }
 
 // ---- 自訂特質 ----

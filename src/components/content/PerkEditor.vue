@@ -39,6 +39,10 @@ function setCategory(c: string) {
   if (c) draft.value.category = c
   else delete draft.value.category
 }
+function setCamp(on: boolean) {
+  if (on) draft.value.camp = true
+  else delete draft.value.camp
+}
 
 function setRarity(r: string) {
   if (r) draft.value.rarity = r
@@ -190,6 +194,7 @@ function remove() {
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="perkRules.custom.name_chars" /></label>
         <label v-if="!race" class="check"><input v-model="draft.flaw" type="checkbox" /> 缺陷 <Hint text="負的效果；不會出現在學特質的機會裡，事件直接給，受訓是克服它。" /></label>
+        <label class="check"><input :checked="!!draft.camp" type="checkbox" @change="setCamp(($event.target as HTMLInputElement).checked)" /> 能在野外紮營長休 <Hint text="隊伍裡有一個人有這個特質，就能在近郊的野外、旅途的道路與臨時地圖長休：每人 1 份乾糧，照那裡的機率可能被襲擊（帶帳篷減半）。效果可以留空。" /></label>
       </div>
       <label class="block"><span>描述 <Hint :text="`玩家與 AI 看到的；空白時依效果產生：${auto}`" /></span><textarea v-model="draft.desc" rows="2" :maxlength="perkRules.custom.desc_chars" /></label>
       <div class="grid">
