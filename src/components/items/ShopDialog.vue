@@ -10,6 +10,8 @@ import NameTag from '../NameTag.vue'
 import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
 import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
+import SwipeTabs from '../mobile/SwipeTabs.vue'
+import { isMobile } from '../mobile/mobile'
 import ContentTagChips from '../ContentTagChips.vue'
 import { storyDef, storyMaxCost } from '@/engine/story'
 
@@ -17,6 +19,9 @@ import { storyDef, storyMaxCost } from '@/engine/story'
 const props = defineProps<{ type: ShopType; loading?: boolean }>()
 const game = useGame()
 const s = computed(() => game.state!)
+// 手機版的分頁：店裡的商品｜你的行囊
+const SIDES = [{ id: 'buy', label: '店裡的商品' }, { id: 'sell', label: '你的行囊' }]
+const side = ref('buy')
 const key = computed(() => shopKey(s.value, props.type))
 const shop = computed(() => {
   const cur = s.value.shops?.[key.value]
@@ -121,117 +126,123 @@ function sell(name: string, have: number) {
     <p v-if="game.error" class="error small"><GameIcon name="warning" :size="13" /> {{ game.error }}</p>
     <p v-else-if="last" class="last small"><GameIcon name="check" :size="13" /> {{ last }}</p>
 
-    <div class="cols">
-      <!-- 店裡的商品 -->
-      <section class="col">
-        <h3 class="head"><GameIcon name="store" :size="17" />店裡的商品</h3>
-        <nav class="row chips">
-          <button class="small" :class="{ active: filter === 'all' }" @click="filter = 'all'">全部 {{ deals.length }}</button>
-          <button v-for="g in groups" :key="g" class="small" :class="{ active: filter === g }" @click="filter = g">
-            <GameIcon v-if="g === 'special'" name="sparkles" :size="14" /><ItemIcon v-else :category="g" :size="14" /> {{ groupName(g) }}
-          </button>
-        </nav>
-        <div class="row tools">
-          <input v-model="query" class="grow search" type="search" placeholder="搜尋名稱或效果" />
-          <select v-model="sort" class="small" aria-label="排序">
-            <option value="default">預設排序</option>
-            <option value="cheap">價格低到高</option>
-            <option value="dear">價格高到低</option>
-            <option value="name">名稱</option>
-          </select>
-        </div>
-        <p v-if="!deals.length" class="small muted">今天沒有東西可以買了。</p>
-        <p v-else-if="!shownDeals.length" class="small muted">沒有符合的商品。</p>
-        <div class="list">
-          <ul v-if="specialDeals.length" class="plain specials">
-            <li v-for="d in specialDeals" :key="d.id" class="entry">
-              <div class="row top">
-                <span class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
-                <strong class="grow">{{ d.title }} <ContentTagChips v-if="dealStory(d)" :tags="dealStory(d)!.tags" /></strong>
-                <span class="price">{{ costText(s, key, d) }}</span>
-              </div>
-              <div class="small effect">得到：{{ d.gets.map((g) => effectText(s, g, shop?.keeper)).join('、') }}</div>
-              <div v-if="d.desc" class="small muted">{{ d.desc }}</div>
-              <div v-if="dealStory(d) && storyMaxCost(dealStory(d)!)" class="small muted">任務途中有要付錢的地方（一次最多 {{ formatMoney(storyMaxCost(dealStory(d)!)) }}），錢不夠時那一步不能選</div>
-              <div class="row actions">
-                <span v-if="d.stock < 20" class="small muted">剩 {{ d.stock }}</span>
-                <span class="grow" />
-                <button class="small primary" :disabled="busy || !affordable(d)" @click="buy(d)">買下</button>
-                <button v-if="price(d) > 0" class="small" :disabled="d.haggled || busy" @click="haggling = haggling === d.id ? null : d.id">{{ d.haggled ? '已交涉過' : '交涉' }}</button>
-              </div>
-              <div v-if="haggling === d.id" class="row">
-                <input v-model="haggleText[d.id]" class="grow" placeholder="怎麼交涉？例如：挑出瑕疵、搬出熟人、請店主喝一杯" />
-                <button class="small" :disabled="busy" @click="bargain(d)">交涉（檢定）</button>
-              </div>
-            </li>
-          </ul>
-          <ul v-if="itemDeals.length" class="plain rows">
-            <li v-for="d in itemDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
-              <div class="line" @click="toggle(d.id)">
-                <span class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="22" /></span>
-                <span class="what">
-                  <strong>{{ d.title }}</strong>
-                  <span class="small muted">{{ categoryName(s, itemName(d)) }}</span>
-                  <span v-if="itemEffect(s, itemName(d))" class="small effect">{{ itemEffect(s, itemName(d)) }}</span>
-                </span>
-                <span class="price">{{ costText(s, key, d) }}</span>
-                <span class="stock small muted">{{ d.stock < 20 ? `剩 ${d.stock}` : '' }}</span>
-                <span class="btns" @click.stop>
-                  <input v-if="d.stock > 1" v-model.number="buyQty[d.id]" class="num" type="number" min="1" :max="d.stock" placeholder="1" />
-                  <button class="small primary" :disabled="busy || !affordable(d, qtyOf(d))" @click="buy(d)">
-                    {{ qtyOf(d) > 1 ? `買 ${qtyOf(d)} 個（${formatMoney(price(d) * qtyOf(d))}）` : '買下' }}
-                  </button>
-                  <button v-if="price(d) > 0" class="small" :disabled="d.haggled || busy" @click="haggling = haggling === d.id ? null : d.id">{{ d.haggled ? '已交涉' : '交涉' }}</button>
-                </span>
-              </div>
-              <div v-if="expanded === d.id" class="more small">
-                <div v-if="itemEffect(s, itemName(d))" class="effect">{{ itemEffect(s, itemName(d)) }}</div>
-                <div v-if="d.desc || itemText(s, itemName(d))" class="muted">{{ d.desc ?? itemText(s, itemName(d)) }}</div>
-              </div>
-              <div v-if="haggling === d.id" class="row haggle">
-                <input v-model="haggleText[d.id]" class="grow" placeholder="怎麼交涉？例如：挑出瑕疵、搬出熟人、請店主喝一杯" />
-                <button class="small" :disabled="busy" @click="bargain(d)">交涉（檢定）</button>
-              </div>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- 行囊 -->
-      <section class="col">
-        <h3 class="head"><GameIcon name="backpack" :size="17" />你的行囊</h3>
-        <div class="row small">
-          <span class="muted">這間店收：{{ buysText || '不收東西' }}</span>
-          <span class="grow" />
-          <label class="check"><input v-model="onlySellable" type="checkbox" /> 只顯示能賣的</label>
-        </div>
-        <p v-if="!bag.length" class="small muted">{{ onlySellable ? '沒有這間店收的東西。' : '行囊是空的。' }}</p>
-        <ul class="plain list">
-          <li v-for="i in bag" :key="i.name" class="entry" :class="{ dim: i.price === null }">
-            <div class="row top">
-              <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="24" /></span>
-              <strong class="grow">{{ i.name }}</strong>
-              <span class="qty">×{{ i.qty }}</span>
+    <!-- 電腦版左右兩欄；手機版變成「店裡的商品｜你的行囊」兩個分頁，可以左右滑 -->
+    <SwipeTabs v-model="side" :tabs="SIDES" :swipe="isMobile" :bar="isMobile" all class="cols">
+      <template #default="{ id }">
+        <template v-if="id === 'buy'">
+          <!-- 店裡的商品 -->
+          <section class="col">
+            <h3 class="head"><GameIcon name="store" :size="17" />店裡的商品</h3>
+            <nav class="row chips">
+              <button class="small" :class="{ active: filter === 'all' }" @click="filter = 'all'">全部 {{ deals.length }}</button>
+              <button v-for="g in groups" :key="g" class="small" :class="{ active: filter === g }" @click="filter = g">
+                <GameIcon v-if="g === 'special'" name="sparkles" :size="14" /><ItemIcon v-else :category="g" :size="14" /> {{ groupName(g) }}
+              </button>
+            </nav>
+            <div class="row tools">
+              <input v-model="query" class="grow search" type="search" placeholder="搜尋名稱或效果" />
+              <select v-model="sort" class="small" aria-label="排序">
+                <option value="default">預設排序</option>
+                <option value="cheap">價格低到高</option>
+                <option value="dear">價格高到低</option>
+                <option value="name">名稱</option>
+              </select>
             </div>
-            <div class="small">
-              <span class="muted">{{ categoryName(s, i.name) }}</span>
-              <span v-if="itemEffect(s, i.name)" class="effect">・{{ itemEffect(s, i.name) }}</span>
+            <p v-if="!deals.length" class="small muted">今天沒有東西可以買了。</p>
+            <p v-else-if="!shownDeals.length" class="small muted">沒有符合的商品。</p>
+            <div class="list">
+              <ul v-if="specialDeals.length" class="plain specials">
+                <li v-for="d in specialDeals" :key="d.id" class="entry">
+                  <div class="row top">
+                    <span class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
+                    <strong class="grow">{{ d.title }} <ContentTagChips v-if="dealStory(d)" :tags="dealStory(d)!.tags" /></strong>
+                    <span class="price">{{ costText(s, key, d) }}</span>
+                  </div>
+                  <div class="small effect">得到：{{ d.gets.map((g) => effectText(s, g, shop?.keeper)).join('、') }}</div>
+                  <div v-if="d.desc" class="small muted">{{ d.desc }}</div>
+                  <div v-if="dealStory(d) && storyMaxCost(dealStory(d)!)" class="small muted">任務途中有要付錢的地方（一次最多 {{ formatMoney(storyMaxCost(dealStory(d)!)) }}），錢不夠時那一步不能選</div>
+                  <div class="row actions">
+                    <span v-if="d.stock < 20" class="small muted">剩 {{ d.stock }}</span>
+                    <span class="grow" />
+                    <button class="small primary" :disabled="busy || !affordable(d)" @click="buy(d)">買下</button>
+                    <button v-if="price(d) > 0" class="small" :disabled="d.haggled || busy" @click="haggling = haggling === d.id ? null : d.id">{{ d.haggled ? '已交涉過' : '交涉' }}</button>
+                  </div>
+                  <div v-if="haggling === d.id" class="row">
+                    <input v-model="haggleText[d.id]" class="grow" placeholder="怎麼交涉？例如：挑出瑕疵、搬出熟人、請店主喝一杯" />
+                    <button class="small" :disabled="busy" @click="bargain(d)">交涉（檢定）</button>
+                  </div>
+                </li>
+              </ul>
+              <ul v-if="itemDeals.length" class="plain rows">
+                <li v-for="d in itemDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
+                  <div class="line" @click="toggle(d.id)">
+                    <span class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="22" /></span>
+                    <span class="what">
+                      <strong>{{ d.title }}</strong>
+                      <span class="small muted">{{ categoryName(s, itemName(d)) }}</span>
+                      <span v-if="itemEffect(s, itemName(d))" class="small effect">{{ itemEffect(s, itemName(d)) }}</span>
+                    </span>
+                    <span class="price">{{ costText(s, key, d) }}</span>
+                    <span class="stock small muted">{{ d.stock < 20 ? `剩 ${d.stock}` : '' }}</span>
+                    <span class="btns" @click.stop>
+                      <input v-if="d.stock > 1" v-model.number="buyQty[d.id]" class="num" type="number" min="1" :max="d.stock" placeholder="1" />
+                      <button class="small primary" :disabled="busy || !affordable(d, qtyOf(d))" @click="buy(d)">
+                        {{ qtyOf(d) > 1 ? `買 ${qtyOf(d)} 個（${formatMoney(price(d) * qtyOf(d))}）` : '買下' }}
+                      </button>
+                      <button v-if="price(d) > 0" class="small" :disabled="d.haggled || busy" @click="haggling = haggling === d.id ? null : d.id">{{ d.haggled ? '已交涉' : '交涉' }}</button>
+                    </span>
+                  </div>
+                  <div v-if="expanded === d.id" class="more small">
+                    <div v-if="itemEffect(s, itemName(d))" class="effect">{{ itemEffect(s, itemName(d)) }}</div>
+                    <div v-if="d.desc || itemText(s, itemName(d))" class="muted">{{ d.desc ?? itemText(s, itemName(d)) }}</div>
+                  </div>
+                  <div v-if="haggling === d.id" class="row haggle">
+                    <input v-model="haggleText[d.id]" class="grow" placeholder="怎麼交涉？例如：挑出瑕疵、搬出熟人、請店主喝一杯" />
+                    <button class="small" :disabled="busy" @click="bargain(d)">交涉（檢定）</button>
+                  </div>
+                </li>
+              </ul>
             </div>
-            <div class="row actions">
-              <template v-if="i.price !== null">
-                <span class="small">收購 {{ formatMoney(i.price) }} / 個</span>
-                <span class="grow" />
-                <input v-if="i.qty > 1" v-model.number="sellQty[i.name]" class="num" type="number" min="1" :max="i.qty" placeholder="1" />
-                <button class="small" :disabled="busy" @click="sell(i.name, i.qty)">
-                  賣 {{ sellN(i.name, i.qty) > 1 ? `${sellN(i.name, i.qty)} 個（${formatMoney(i.price * sellN(i.name, i.qty))}）` : `（${formatMoney(i.price)}）` }}
-                </button>
-              </template>
-              <span v-else class="small muted">{{ isUniqueItem(s, i.name) ? '獨特裝備不能賣' : '這間店不收' }}</span>
+          </section>
+        </template>
+        <template v-else>
+          <!-- 行囊 -->
+          <section class="col">
+            <h3 class="head"><GameIcon name="backpack" :size="17" />你的行囊</h3>
+            <div class="row small">
+              <span class="muted">這間店收：{{ buysText || '不收東西' }}</span>
+              <span class="grow" />
+              <label class="check"><input v-model="onlySellable" type="checkbox" /> 只顯示能賣的</label>
             </div>
-          </li>
-        </ul>
-      </section>
-    </div>
+            <p v-if="!bag.length" class="small muted">{{ onlySellable ? '沒有這間店收的東西。' : '行囊是空的。' }}</p>
+            <ul class="plain list">
+              <li v-for="i in bag" :key="i.name" class="entry" :class="{ dim: i.price === null }">
+                <div class="row top">
+                  <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="24" /></span>
+                  <strong class="grow">{{ i.name }}</strong>
+                  <span class="qty">×{{ i.qty }}</span>
+                </div>
+                <div class="small">
+                  <span class="muted">{{ categoryName(s, i.name) }}</span>
+                  <span v-if="itemEffect(s, i.name)" class="effect">・{{ itemEffect(s, i.name) }}</span>
+                </div>
+                <div class="row actions">
+                  <template v-if="i.price !== null">
+                    <span class="small">收購 {{ formatMoney(i.price) }} / 個</span>
+                    <span class="grow" />
+                    <input v-if="i.qty > 1" v-model.number="sellQty[i.name]" class="num" type="number" min="1" :max="i.qty" placeholder="1" />
+                    <button class="small" :disabled="busy" @click="sell(i.name, i.qty)">
+                      賣 {{ sellN(i.name, i.qty) > 1 ? `${sellN(i.name, i.qty)} 個（${formatMoney(i.price * sellN(i.name, i.qty))}）` : `（${formatMoney(i.price)}）` }}
+                    </button>
+                  </template>
+                  <span v-else class="small muted">{{ isUniqueItem(s, i.name) ? '獨特裝備不能賣' : '這間店不收' }}</span>
+                </div>
+              </li>
+            </ul>
+          </section>
+        </template>
+      </template>
+    </SwipeTabs>
   </div>
 </template>
 
@@ -249,6 +260,8 @@ function sell(name: string, have: number) {
 @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
 .col { display: grid; gap: 6px; align-content: start; min-width: 0; }
 .col h3 { margin: 0; color: var(--accent-2); }
+/* 手機版：分頁列已經寫了是哪一邊 */
+.cols.swipe .col > h3.head { display: none; }
 .chips { gap: 4px; }
 .chips button.active { border-color: var(--accent); color: var(--accent); }
 .list { display: grid; gap: 6px; margin: 0; max-height: calc(100vh - 350px); overflow-y: auto; padding-right: 2px; align-content: start; }
@@ -262,6 +275,12 @@ function sell(name: string, have: number) {
 .item-row.open { background: #c99a4510; }
 .item-row .line { display: grid; grid-template-columns: 30px minmax(0, 1fr) 5.5em 3em minmax(11.5em, auto); gap: 8px; align-items: center; min-height: 44px; padding: 3px 8px; cursor: pointer; }
 .item-row .line:hover { background: #c99a450a; }
+/* 手機：圖示、名稱、價錢一排，庫存與按鈕換到下一排 */
+@media (max-width: 720px) {
+  .item-row .line { grid-template-columns: 30px minmax(0, 1fr) auto; row-gap: 2px; }
+  .item-row .line .stock { grid-column: 2; }
+  .item-row .line .btns { grid-column: 2 / -1; flex-wrap: wrap; }
+}
 .what { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
 .what strong { flex-shrink: 0; }
 .what .effect { overflow: hidden; text-overflow: ellipsis; }

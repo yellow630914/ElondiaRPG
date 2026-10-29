@@ -38,6 +38,7 @@ import EventCenter from '@/components/events/EventCenter.vue'
 import PartyStrip from '@/components/PartyStrip.vue'
 import MobileGame, { type MobileOpen } from '@/components/mobile/MobileGame.vue'
 import { isMobile } from '@/components/mobile/mobile'
+import SwipeTabs from '@/components/mobile/SwipeTabs.vue'
 import GameIcon from '@/components/ui/GameIcon.vue'
 import AmbientLayer from '@/components/fx/AmbientLayer.vue'
 import BackgroundLayer from '@/components/fx/BackgroundLayer.vue'
@@ -198,7 +199,8 @@ const mobileHud = computed(() => {
 })
 const mobileBadges = computed(() => ({ party: pendingSkills.value, relations: suggestionCount.value, notebook: readyQuests.value, contract: canAskMaster.value }))
 // 隊伍頁：手機上隊伍與行囊是同一頁的兩個分頁
-const partyPage = ref<'party' | 'bag'>('party')
+const partyPage = ref('party')
+const PARTY_PAGES = [{ id: 'party', label: '隊伍' }, { id: 'bag', label: '行囊' }]
 function onMobileOpen(what: MobileOpen) {
   switch (what) {
     case 'party': partyPage.value = 'party'; showParty.value = true; break
@@ -355,11 +357,13 @@ onBeforeUnmount(() => {
   </main>
 
   <AppDialog :open="showParty" title="隊伍" icon="users" width="1200px" @close="showParty = false">
-    <nav v-if="isMobile" class="m-seg">
-      <button :class="{ on: partyPage === 'party' }" @click="partyPage = 'party'">隊伍</button>
-      <button :class="{ on: partyPage === 'bag' }" @click="partyPage = 'bag'">行囊</button>
-    </nav>
-    <InventoryView v-if="isMobile && partyPage === 'bag'" />
+    <!-- 手機版：隊伍與行囊是同一頁的兩個分頁，可以左右滑 -->
+    <SwipeTabs v-if="isMobile" v-model="partyPage" :tabs="PARTY_PAGES" swipe bar>
+      <template #default="{ id }">
+        <InventoryView v-if="id === 'bag'" />
+        <PartyCards v-else @detail="openCharacter" />
+      </template>
+    </SwipeTabs>
     <PartyCards v-else @detail="openCharacter" />
   </AppDialog>
   <CharacterDialog v-if="game.state" v-model:member="charMember" v-model:tab="charTab" :open="charOpen" @close="charOpen = false" />
@@ -483,9 +487,6 @@ onBeforeUnmount(() => {
 .m-back { display: flex; margin: -6px -10px 8px; }
 .m-back button { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
 .m-back .flip, .m-back :deep(.flip) { transform: scaleX(-1); }
-.m-seg { display: flex; margin: -4px 0 12px; border-bottom: 1px solid var(--border); }
-.m-seg button { flex: 1; padding: 8px; background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; box-shadow: none; color: var(--muted); }
-.m-seg button.on { color: var(--title); border-bottom-color: var(--accent); }
 
 @media (max-width: 1380px) {
   .game { grid-template-columns: 320px minmax(0, 1fr) 320px; }

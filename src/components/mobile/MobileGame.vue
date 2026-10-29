@@ -47,9 +47,9 @@ const cell = computed(() => game.cell)
 const PLAIN = new Set(['floor', 'wall', 'water', 'road'])
 const place = computed(() => {
   if (area.value.kind === 'home') return { verb: '查看', name: '房屋' }
-  const k = cell.value.kind
-  if (cell.value.storyNode) return { verb: '查看', name: '任務點' }
-  if (PLAIN.has(k)) return null
+  const k = cell.value?.kind
+  if (cell.value?.storyNode) return { verb: '查看', name: '任務點' }
+  if (!k || PLAIN.has(k)) return null
   const shop = k === 'inn' ? 'inn' : shopTypeForCell(k)
   const name = (shop && shopTitle(shopPlace(s.value).id, shop)?.name) || cellName(k) || '這裡'
   const building = !!shop || ['guild', 'tavern', 'temple', 'gate', 'brothel', 'lot', 'manor'].includes(k) || k.startsWith('lm_')
