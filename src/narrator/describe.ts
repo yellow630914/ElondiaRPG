@@ -19,6 +19,7 @@ function describeEffect(e: Effect, names: Record<string, string>): string {
   switch (e.type) {
     case 'damage': return `${who} 受到 ${e.amount} 點${e.element ? `${e.element}` : ''}傷害${e.text ? `（${e.text}）` : ''}`
     case 'heal': return `${who} 回復 ${e.amount} HP`
+    case 'lust': return (e.amount ?? 0) >= 0 ? `${who} 慾望 +${e.amount}${e.text ? `（${e.text}）` : ''}` : `${who} 慾望 ${e.amount}`
     case 'status_add': {
       if (e.status === '死亡' || e.status === '倒下') return `${who} 倒下了`
       const buff = Object.values(statuses).find((s) => s.name === e.status)?.kind === 'buff'

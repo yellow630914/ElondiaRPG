@@ -681,6 +681,13 @@ export const combatRules = combatJson as unknown as {
   cantrip: { scale_levels: number[]; known_base: number; known_every_levels: number }
   quality_by_level: { levels: [number, number]; quality: SkillQuality }[]
   quality_by_circle: SkillQuality[]
+  /** 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） */
+  lust: {
+    max_base: number; max_per_level: number; decay: number
+    party_climax_hp: number; afterglow_turns: number; down_after: number; enemy_climax_hp: number
+    aroused_start: number; rut_start: number; aroused_after: number
+    kind_resist: Record<string, number>
+  }
   defeat_event: {
     npc_tags: string[]; monster_traits: string[]; exclude_traits: string[]
     check: { attr: AttrId; dc: number }
@@ -730,6 +737,25 @@ export interface StatusDef {
   control?: Control
   special?: 'undying' | 'halve_next' | 'reduce_next'
   charges?: number
+  // ---- 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） ----
+  /** 受到的慾望倍率加減（敏感 +0.25、高潮餘韻 -0.5） */
+  lust_mult?: number
+  /** 這段時間不會高潮（慾望停在上限） */
+  no_climax?: boolean
+  /** 淨化（cleanse）拿不掉 */
+  no_cleanse?: boolean
+  /** 受到的生命傷害有這個比例改成慾望 */
+  convert?: number
+  /** 被侍奉：下一次受到的攻擊由施加者代為承受，承受的傷害有這個比例改成慾望 */
+  guard?: number
+  /** 依目前慾望的比例給修正：慾望每 10%，stat +per（最多 max） */
+  lust_scale?: { stat: keyof Mods; per: number; max: number }
+  /** 每回合開始慾望 +這個數 */
+  lust_tick?: number
+  /** 慾望上限的倍率加減 */
+  lust_max?: number
+  /** 慾望不會自然消退 */
+  lust_hold?: boolean
 }
 export const statuses = (statusesJson as unknown as { statuses: Record<string, StatusDef> }).statuses
 
@@ -769,6 +795,14 @@ export function describeStatus(s: StatusDef): string {
   if (s.control) parts.push(CONTROL_NAME[s.control])
   if (s.special) parts.push(SPECIAL_NAME[s.special])
   if (s.charges) parts.push(`生效 ${s.charges} 次後消失`)
+  if (s.lust_mult) parts.push(`受到的慾望 ×${Math.round((1 + s.lust_mult) * 100) / 100}`)
+  if (s.no_climax) parts.push('不會高潮')
+  if (s.convert) parts.push(`受到的生命傷害 ${Math.round(s.convert * 100)}% 改成慾望`)
+  if (s.guard) parts.push(`下一次受到的攻擊由施加者代為承受（${Math.round(s.guard * 100)}% 改成慾望）`)
+  if (s.lust_scale) parts.push(`慾望每 10%，${STATUS_MOD_NAME[s.lust_scale.stat] ?? s.lust_scale.stat} +${s.lust_scale.per}（最多 +${s.lust_scale.max}）`)
+  if (s.lust_tick) parts.push(`每回合慾望 +${s.lust_tick}`)
+  if (s.lust_max) parts.push(`慾望上限 ×${Math.round((1 + s.lust_max) * 100) / 100}`)
+  if (s.lust_hold) parts.push('慾望不會消退')
   return parts.join('；') || '沒有效果'
 }
 
@@ -791,6 +825,8 @@ export interface ApplyDef {
   on?: 'hit' | 'fail' | 'always'
   save?: AttrId
   value?: { dice?: string; mod?: boolean; level?: boolean; flat?: number }
+  /** 目標的慾望達到上限的這個比例才套用 */
+  if_lust?: number
 }
 export interface AbilityDef {
   id: string
@@ -826,6 +862,21 @@ export interface AbilityDef {
   recover_slot?: boolean
   hp_limit?: number
   kill?: boolean
+  // ---- 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） ----
+  /** 增加目標的慾望 */
+  lust_gain?: { flat: number }
+  /** 消退目標的慾望 */
+  lust_relief?: number
+  /** 消耗自己的慾望（不夠就不能用） */
+  lust_cost?: number
+  /** 慾望在隊伍裡移動：spread 把自己 ratio 的慾望平分給其他友軍（每 shield_per 點給 1 點臨時生命）；take 從其他每位友軍吸 amount 過來 */
+  lust_transfer?: { mode: 'spread' | 'take'; ratio?: number; amount?: number; shield_per?: number }
+  /** 自己的慾望至少要上限的這個比例才能用 */
+  requires_lust?: number
+  /** 引爆：消耗全部的慾望，造成慾望 × mult + 屬性調整值的 type 傷害（heal 時改成治療目標）；用了立刻結束回合，下一回合脫力 */
+  burst?: { type?: string; mult: number; min_ratio?: number; heal?: boolean }
+  /** 給目標行動點 */
+  ap_give?: number
   desc: string
 }
 const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
@@ -1438,6 +1489,8 @@ export interface ItemUse {
   condition?: string
   /** 書籍：讀了之後有機會學會其中一個特質（perks.json 的 id；也可以寫說法交給 AI） */
   perks?: string[]
+  /** 技能書：每讀一次（約 4 小時）學會清單裡下一個還沒學、等級也夠（能力的 unlock）的能力；色情技能誰都能學，職業能力要是自己職業的 */
+  abilities?: string[]
   heal?: string
   slot?: number
   cleanse?: string[]

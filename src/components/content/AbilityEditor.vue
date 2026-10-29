@@ -151,7 +151,7 @@ function remove() {
         <span>誰可以學：</span>
         <label v-for="c in classList" :key="c" class="check">
           <input type="checkbox" :checked="draft.classes.includes(c)" @change="toggleClass(c, ($event.target as HTMLInputElement).checked)" />
-          {{ c === 'monster' ? '怪物' : className(c) }}
+          {{ c === 'monster' ? '怪物' : c === 'lewd' ? '色情技能（不分職業）' : className(c) }}
         </label>
       </div>
       <p class="small muted">技能依等級學；法術要有那一環的法術環，花一個法術環；戲法不花行動點、每回合一次。怪物不能用法術。</p>

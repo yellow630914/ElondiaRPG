@@ -52,6 +52,13 @@ function monsterAbilities(): string {
   return table(['名稱', 'AP', '效果'], list.map((a) => [a.name, abilityApCost(a), desc(a)]))
 }
 
+// ---- COMBAT_SYSTEM 第 8.5 節：色情技能（不分職業） ----
+
+function lewdAbilities(): string {
+  const list = Object.values(abilities).filter((a) => a.classes.includes('lewd')).sort((a, b) => (a.unlock ?? 1) - (b.unlock ?? 1))
+  const book = (id: string) => itemRules.items.filter((i) => i.use?.abilities?.includes(id)).map((i) => i.name).join('、') || '—'
+  return table(['等級', '名稱', 'AP', '效果', '技能書'], list.map((a) => [a.unlock ?? 1, a.name, abilityApCost(a), a.desc, book(a.id)]))
+}
 
 // ---- MONSTERS：各區域的怪物表 ----
 
@@ -192,8 +199,13 @@ function standardGear(): string {
 // ---- ITEMS 第 6 節：消耗品、卷軸、書籍 ----
 
 function usableTable(category: string): string {
-  const list = itemRules.items.filter((i) => i.category === category && !i.use?.perks)
+  const list = itemRules.items.filter((i) => i.category === category && !i.use?.perks && !i.use?.abilities)
   return table(['物品', '效果', '價格', '販售', '說明'], list.map((i) => [i.name, useSummary(i.use), formatMoney(i.price_cc), soldAt(i), i.desc ?? '']))
+}
+
+function skillBookTable(): string {
+  const list = itemRules.items.filter((i) => i.use?.abilities)
+  return table(['書', '價格', '販售', '依序學會'], list.map((i) => [i.name, formatMoney(i.price_cc), soldAt(i), i.use!.abilities!.map((id) => `${abilities[id]?.name ?? id}（${abilities[id]?.unlock ?? 1} 級）`).join('、')]))
 }
 
 function bookTable(): string {
@@ -204,11 +216,13 @@ function bookTable(): string {
 export const BLOCKS: GenBlock[] = [
   { file: 'docs/COMBAT_SYSTEM.md', name: 'class-abilities', render: classAbilityLists },
   { file: 'docs/COMBAT_SYSTEM.md', name: 'monster-abilities', render: monsterAbilities },
+  { file: 'docs/COMBAT_SYSTEM.md', name: 'lewd-abilities', render: lewdAbilities },
   ...monsterBlocks(),
   { file: 'docs/ITEMS.md', name: 'items-standard', render: standardGear },
   { file: 'docs/ITEMS.md', name: 'items-consumables', render: () => usableTable('consumable') },
   { file: 'docs/ITEMS.md', name: 'items-scrolls', render: () => usableTable('scroll') },
   { file: 'docs/ITEMS.md', name: 'items-books', render: bookTable },
+  { file: 'docs/ITEMS.md', name: 'items-skill-books', render: skillBookTable },
 ]
 
 /** 把文件裡每個產生區塊換成新的內容；回傳新的全文 */

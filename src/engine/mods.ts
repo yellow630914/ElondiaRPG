@@ -723,6 +723,9 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   // 書籍：可以學的特質（清單裡的）
   const perks = (Array.isArray(u.perks) ? u.perks : []).filter((id) => typeof id === 'string' && isChoosablePerk(id)).slice(0, 6)
   if (perks.length) out.perks = perks
+  // 技能書：依序學會的能力
+  const abil = (Array.isArray(u.abilities) ? u.abilities : []).filter((id) => typeof id === 'string' && !!abilities[id] && !abilities[id]!.classes.includes('monster')).slice(0, 8)
+  if (abil.length) out.abilities = [...new Set(abil)]
   if (u.heal && DICE.test(String(u.heal).replace(/\s+/g, ''))) out.heal = String(u.heal).replace(/\s+/g, '')
   if (u.slot) out.slot = int(u.slot, 1, 9, 1)
   const cleanse = (u.cleanse ?? []).filter((s) => !!statuses[s])
@@ -1259,7 +1262,7 @@ export const ABILITY_TARGETS: Record<AbilityTarget, string> = {
 export const ABILITY_RESOLVES: Record<AbilityDef['resolve'], string> = { attack: '命中骰對迴避', save: '目標豁免', auto: '必中' }
 /** 可以學這個能力的職業（monster：怪物用） */
 export function abilityClasses(): string[] {
-  return [...Object.keys(classes).filter((c) => !classes[c]!.noncombat), 'monster']
+  return [...Object.keys(classes).filter((c) => !classes[c]!.noncombat), 'monster', 'lewd']
 }
 
 function damagePart(v: unknown): DamagePart | undefined {
@@ -1283,6 +1286,7 @@ function applyDef(v: unknown): ApplyDef | undefined {
   if (a.to && ['target', 'self', 'allies', 'enemies'].includes(a.to)) out.to = a.to
   if (a.on && ['hit', 'fail', 'always'].includes(a.on)) out.on = a.on
   if (a.save && ATTR_IDS.includes(a.save)) out.save = a.save
+  if (a.if_lust) out.if_lust = Math.round(num(a.if_lust, 0.05, 1, 0.5) * 100) / 100
   if (a.value && typeof a.value === 'object') {
     const val: NonNullable<ApplyDef['value']> = {}
     if (a.value.dice && DICE.test(String(a.value.dice))) val.dice = String(a.value.dice)
@@ -1351,6 +1355,26 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.lifesteal) out.lifesteal = Math.round(num(raw.lifesteal, 0.05, 1, 0.5) * 100) / 100
   if (raw.hp_limit) out.hp_limit = int(raw.hp_limit, 1, 9999, 30)
   if (raw.threat) out.threat = int(raw.threat, -50, 50, 0)
+  // 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）
+  if (raw.lust_gain?.flat) out.lust_gain = { flat: int(raw.lust_gain.flat, 1, 200, 10) }
+  if (raw.lust_relief) out.lust_relief = int(raw.lust_relief, 1, 200, 10)
+  if (raw.lust_cost) out.lust_cost = int(raw.lust_cost, 1, 200, 10)
+  if (raw.requires_lust) out.requires_lust = Math.round(num(raw.requires_lust, 0.05, 1, 0.3) * 100) / 100
+  if (raw.ap_give) out.ap_give = int(raw.ap_give, 1, 5, 1)
+  if (raw.lust_transfer && (raw.lust_transfer.mode === 'spread' || raw.lust_transfer.mode === 'take')) {
+    const t = raw.lust_transfer
+    out.lust_transfer = t.mode === 'spread'
+      ? { mode: 'spread', ratio: Math.round(num(t.ratio, 0.05, 1, 0.3) * 100) / 100, ...(t.shield_per ? { shield_per: int(t.shield_per, 1, 50, 5) } : {}) }
+      : { mode: 'take', amount: int(t.amount, 1, 200, 20) }
+  }
+  if (raw.burst && typeof raw.burst === 'object') {
+    const b = raw.burst
+    out.burst = {
+      mult: Math.round(num(b.mult, 0.1, 3, 0.5) * 100) / 100,
+      ...(b.heal ? { heal: true } : { type: DAMAGE_IDS().includes(String(b.type)) && b.type !== 'lust' ? String(b.type) : 'fire' }),
+      ...(b.min_ratio ? { min_ratio: Math.round(num(b.min_ratio, 0.05, 1, 0.5) * 100) / 100 } : {}),
+    }
+  }
   if (custom) out.custom = true
   return out
 }
@@ -1416,6 +1440,16 @@ export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: bool
   if (raw.control && raw.control in STATUS_CONTROLS) out.control = raw.control
   if (raw.special && raw.special in STATUS_SPECIALS) out.special = raw.special
   if (raw.charges) out.charges = int(raw.charges, 1, 10, 1)
+  // 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）
+  if (raw.lust_mult) out.lust_mult = Math.round(num(raw.lust_mult, -1, 3, 0) * 100) / 100
+  if (raw.convert) out.convert = Math.round(num(raw.convert, 0.05, 1, 0.5) * 100) / 100
+  if (raw.guard) out.guard = Math.round(num(raw.guard, 0.05, 1, 0.5) * 100) / 100
+  if (raw.lust_tick) out.lust_tick = int(raw.lust_tick, 1, 100, 5)
+  if (raw.lust_max) out.lust_max = Math.round(num(raw.lust_max, -0.9, 3, 0.5) * 100) / 100
+  if (raw.lust_scale && typeof raw.lust_scale === 'object' && ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit'].includes(String(raw.lust_scale.stat))) {
+    out.lust_scale = { stat: raw.lust_scale.stat, per: int(raw.lust_scale.per, 1, 5, 1), max: int(raw.lust_scale.max, 1, 20, 5) }
+  }
+  for (const k of ['no_climax', 'no_cleanse', 'lust_hold'] as const) if (raw[k]) out[k] = true
   if (custom) out.custom = true
   return out
 }

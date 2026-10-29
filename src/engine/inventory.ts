@@ -2,9 +2,10 @@
 
 import { PARASITE_LOCK } from './parasites'
 import { hasPerk, offerPerks } from './perks'
-import { recalc, snapshot } from './character'
+import { abilityQuality, carryLearned, learnAbility, nextBookAbility, recalc, snapshot } from './character'
+import { gameRule } from './gameRules'
 import {
-  attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates,
+  abilities, attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates,
   type ItemIntel, type ItemUse,
 } from './data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotsFor, syncGear, wearName } from './gear'
@@ -105,7 +106,7 @@ export function readIntelItem(state: GameState, name: string): Report {
 
 export function canUse(name: string): boolean {
   const use = itemDef(name)?.use
-  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length)) || !!toolDef(itemDef(name)?.tool)?.condition
+  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length || !!use.abilities?.length)) || !!toolDef(itemDef(name)?.tool)?.condition
 }
 
 /** 消耗品效果的一行說明 */
@@ -114,6 +115,7 @@ export function useSummary(use?: ItemUse): string {
   const parts: string[] = []
   if (use.condition) parts.push(`「${conditionName(use.condition)}」：${companionRules.conditions[use.condition]?.desc ?? ''}`)
   if (use.perks?.length) parts.push(`讀了有機會學會特質：${use.perks.map((id) => perkDef(id)?.name ?? id).join('、')}`)
+  if (use.abilities?.length) parts.push(`每讀一次學會下一個能力：${use.abilities.map((id) => `${abilities[id]?.name ?? id}（${abilities[id]?.unlock ?? 1} 級）`).join('、')}`)
   if (use.revive) parts.push(`救起倒下的隊友（${Math.round(use.revive * 100)}% 生命）`)
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
@@ -158,6 +160,15 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
     offerPerks(m, `讀了「${name}」`, options)
     report.time.end = addHours(report.time.start, 4)
     text = `讀完之後，有機會學會：${options.map((id) => perkDef(id)?.name ?? id).join('、')}`
+  } else if (def.use.abilities?.length) {
+    // 技能書：學會下一個還沒學、等級也夠的能力
+    const next = nextBookAbility(m, def.use.abilities)
+    if (!next.ability) throw new Error(next.reason)
+    const a = learnAbility(m, next.ability.id)
+    const carried = carryLearned(m, a.id, gameRule(state, 'skillLoadout'))
+    report.time.end = addHours(report.time.start, 4)
+    report.changes.skills_gained = [{ actor: m.id, skill: a.name, quality: abilityQuality(a), source: 'study' }]
+    text = `學會了【${a.name}】${carried ? '' : '（攜帶的技能已滿，先放進技能庫）'}`
   } else if (def.use.condition) {
     const got = gainCondition(m, def.use.condition, report)
     if (!got) throw new Error(`${m.name}${companionRules.conditions[def.use.condition]?.group === 'meal' ? '已經吃得比這更好了' : '已經喝不下了'}`)

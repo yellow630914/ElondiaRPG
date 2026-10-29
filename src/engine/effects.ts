@@ -455,7 +455,7 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
             notes.push(`${who.name}已經會【${named.name}】了`)
             break
           }
-          const own = classAbilities(who.class).some((a) => a.id === named.id)
+          const own = classAbilities(who.class).some((a) => a.id === named.id) || named.classes.includes('lewd')
           if (own && (named.type !== 'spell' || (named.circle ?? 1) <= maxCircle(who))) {
             learnAbility(who, named.id)
             ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: named.name, quality: abilityQuality(named), source: 'insight' })

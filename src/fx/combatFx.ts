@@ -16,6 +16,7 @@ const ELEMENT_COLOR: Record<string, string> = {
   暗影: '#b07cff',
   奧術: '#d58cff',
   心靈: '#ff8cc8',
+  魅惑: '#ff7ab8',
 }
 export const PHYSICAL_COLOR = '#f4ece0'
 export const HEAL_COLOR = '#7cdc6a'
@@ -23,6 +24,8 @@ export const MISS_COLOR = '#a89a84'
 export const CRIT_COLOR = '#ffd34d'
 export const BUFF_COLOR = '#7cc8ff'
 export const DEBUFF_COLOR = '#c27cff'
+/** 慾望（魅惑）的顏色 */
+export const LUST_COLOR = '#ff7ab8'
 
 export function elementColor(element?: string): string {
   return (element && ELEMENT_COLOR[element]) || PHYSICAL_COLOR
@@ -36,6 +39,8 @@ export type CombatCue =
   | { kind: 'crit'; target: string }
   | { kind: 'down'; target: string; enemy: boolean }
   | { kind: 'status'; target: string; name: string; buff: boolean }
+  /** 慾望的增減（負數是消退） */
+  | { kind: 'lust'; target: string; amount: number }
 
 const DOWN = new Set(['倒下', '死亡'])
 
@@ -57,9 +62,10 @@ export function cuesFor(t: TimelineEntry): CombatCue[] {
   for (const [target, s] of sums) cues.push({ kind: 'damage', target, amount: s.amount, color: elementColor(s.element), crit, area })
   for (const e of effects) {
     if (e.type === 'heal' && e.target && (e.amount ?? 0) > 0) cues.push({ kind: 'heal', target: e.target, amount: e.amount! })
+    if (e.type === 'lust' && e.target && e.amount) cues.push({ kind: 'lust', target: e.target, amount: e.amount })
   }
   if (crit && t.target && sums.size) cues.push({ kind: 'crit', target: t.target })
-  const landed = sums.size > 0 || effects.some((e) => e.type === 'heal' || e.type === 'status_add')
+  const landed = sums.size > 0 || effects.some((e) => e.type === 'heal' || e.type === 'status_add' || e.type === 'lust')
   if (t.target && t.target !== t.actor && !landed && !t.roll?.save && (t.result === 'fail' || t.result === 'fumble')) {
     cues.push({ kind: 'miss', target: t.target, text: '失手' })
   }
@@ -84,6 +90,15 @@ export function unplayedHpDelta(pending: TimelineEntry[]): Record<string, number
       if (e.type === 'damage') out[e.target] = (out[e.target] ?? 0) + e.amount
       else if (e.type === 'heal') out[e.target] = (out[e.target] ?? 0) - e.amount
     }
+  }
+  return out
+}
+
+/** 還沒播到的紀錄對慾望的影響（增加為正）：慾望條和 HP 條一樣播到那一筆才變 */
+export function unplayedLustDelta(pending: TimelineEntry[]): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const t of pending) {
+    for (const e of t.effects ?? []) if (e.type === 'lust' && e.target && e.amount) out[e.target] = (out[e.target] ?? 0) + e.amount
   }
   return out
 }

@@ -38,6 +38,7 @@ import type {
   ActorState, Character, Difficulty, Effect, GameState, GameTime, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
 } from './types'
 import { contractOf } from './tattoos'
+import { tagsAllowed } from './content'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
 
 export interface StatusInstance {
@@ -114,6 +115,13 @@ export interface Combatant {
   xpMult?: number
   /** 難度（存檔規則）：造成的傷害乘上這個係數；普通難度沒有這個欄位 */
   dmgMult?: number
+  /** 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）：目前的慾望與上限；慾望戰鬥關閉時沒有這兩個欄位 */
+  lust?: number
+  lustMax?: number
+  /** 我方：這場戰鬥高潮了幾次（三次倒下） */
+  climaxes?: number
+  /** 敵方：被高潮的傷害打倒（慾望勝利） */
+  lustDefeated?: boolean
 }
 
 export type CombatAction =
@@ -126,6 +134,8 @@ export type CombatAction =
   | { type: 'item'; item: string; target: string }
 
 export interface CombatState {
+  /** 存檔規則：慾望戰鬥的倍率（開戰時記下；沒有或 0 表示關閉） */
+  lustMult?: number
   /** 存檔規則：隊伍撤退的 DC 加減（開戰時記下） */
   fleeDcMod?: number
   /** 存檔規則：難度（開戰時記下；普通難度不記，舊存檔沒有也算普通） */
@@ -229,6 +239,8 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       if (!rec || rec.dead || state.party.some((m) => m.id === id)) continue
       fighters.push({ ...fromCharacter(characterFor(state, rec), rng, cap), side: 'party', npcId: rec.id, ally: true })
     }
+    const lustMult = gameRule(state, 'lustMult')
+    initLust(state, fighters, lustMult)
     // 黑暗中又沒有光：隊伍這邊看不清楚，命中降低（怪物習慣黑暗）
     if (opts.dark) for (const f of fighters) if (f.side === 'party') f.baseMods.hit = (f.baseMods.hit ?? 0) + lightingRules.dark.hit
     // 先手：被偷襲的一方排在最後
@@ -238,6 +250,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       .map((f) => f.id)
     const combat: CombatState = {
       id: `c-${state.nextReportNo}`,
+      ...(lustMult > 0 ? { lustMult } : {}),
       ...(gameRule(state, 'escapeDc') ? { fleeDcMod: gameRule(state, 'escapeDc') } : {}),
       ...(difficultyOf(state) !== 'normal' ? { difficulty: difficultyOf(state) } : {}),
       location: state.location,
@@ -264,6 +277,132 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     runEnemyTurns(combat, rng)
     return combat
   })
+}
+
+// ---- 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） ----
+
+const lustRules = () => combatRules.lust
+
+/** 慾望上限（依等級） */
+export function lustMaxFor(level: number): number {
+  return lustRules().max_base + lustRules().max_per_level * level
+}
+
+/** 和慾望有關的能力：色情技能，或會造成、增減慾望的能力（慾望戰鬥關閉時不能用；「主角非自願」關掉時敵人不用） */
+export function isLustAbility(a: AbilityDef): boolean {
+  return a.classes.includes('lewd') || !!a.burst || !!a.lust_gain || !!a.lust_relief || !!a.lust_cost || !!a.lust_transfer || !!a.requires_lust
+    || !!a.damage?.some((p) => p.type === 'lust')
+    || !!a.apply?.some((x) => { const s = statusDef(x.status); return s.dot?.type === 'lust' || (s.lust_mult ?? 0) > 0 })
+}
+
+/**
+ * 開戰時：每個人的慾望與上限、怪物依種類的預設慾望抗性、發情的人與發情期的怪物帶著慾望上場。
+ * 慾望戰鬥關閉、「主角非自願」關掉時，敵人拿掉和慾望有關的能力（沒有其他技能就普通攻擊）；年幼的怪物一律不參與。
+ */
+function initLust(state: GameState, fighters: Combatant[], mult: number) {
+  const r = lustRules()
+  const enemyLust = mult > 0 && tagsAllowed(['pc_unwilling'])
+  for (const f of fighters) {
+    const young = !!f.traits?.includes('young')
+    if (f.side === 'enemy' && (!enemyLust || young)) f.abilities = f.abilities.filter((id) => !isLustAbility(abilityDef(id)))
+    if (mult <= 0) continue
+    f.lust = 0
+    f.lustMax = lustMaxFor(f.level)
+    if (f.side === 'party') f.climaxes = 0
+    if (f.defId) {
+      const def = enemies[f.defId]
+      const kd = def?.kind ? r.kind_resist[def.kind] : undefined
+      if (def?.resist?.lust === undefined && kd) mulResist(f.resist, { lust: kd })
+      if (young) f.resist.lust = -1
+      if (f.traits?.includes('rut')) f.lust = Math.round(f.lustMax * r.rut_start)
+    }
+    const ch = state.party.find((m) => m.id === f.id) ?? (f.npcId && npcRecord(state, f.npcId) ? characterFor(state, npcRecord(state, f.npcId)!) : undefined)
+    if (ch?.status.includes('aroused')) f.lust = Math.round(f.lustMax * r.aroused_start)
+  }
+}
+
+function lustOn(combat: CombatState): boolean {
+  return (combat.lustMult ?? 0) > 0
+}
+
+/** 目前的慾望上限：基本上限乘上狀態的加減（忍耐） */
+export function effectiveLustMax(c: Combatant): number {
+  if (c.lustMax === undefined) return 0
+  const plus = c.statuses.reduce((s, x) => s + (statusDef(x.id).lust_max ?? 0), 0)
+  return Math.max(1, Math.round(c.lustMax * (1 + plus)))
+}
+
+const lustRatio = (c: Combatant) => (c.lustMax ? (c.lust ?? 0) / effectiveLustMax(c) : 0)
+
+/**
+ * 增加慾望：乘上存檔規則的倍率；不是自己增加的（selfGain）再乘上狀態的加減（敏感、高潮餘韻）；
+ * raw（傷害轉成的慾望）照原數。滿了就高潮（有「不會高潮」的狀態時停在上限）。回傳實際增加的量。
+ */
+function gainLust(combat: CombatState, target: Combatant, amount: number, effects: Effect[], opts: { selfGain?: boolean; raw?: boolean; text?: string } = {}): number {
+  if (!lustOn(combat) || target.lustMax === undefined || !isActive(target)) return 0
+  const taken = opts.raw || opts.selfGain ? 1 : Math.max(0, 1 + target.statuses.reduce((s, x) => s + (statusDef(x.id).lust_mult ?? 0), 0))
+  const mult = opts.raw ? 1 : (combat.lustMult ?? 1) * taken
+  const max = effectiveLustMax(target)
+  const incoming = Math.max(0, Math.round(amount * mult))
+  if (incoming <= 0) {
+    if (opts.text) effects.push({ type: 'note', target: target.id, text: `慾望沒有增加（${opts.text}）` })
+    return 0
+  }
+  // 慾望最多到上限；已經停在上限（高潮餘韻剛結束、忍耐結束）時，再受到慾望就高潮
+  const gained = Math.min(incoming, Math.max(0, max - (target.lust ?? 0)))
+  if (gained > 0) {
+    target.lust = (target.lust ?? 0) + gained
+    effects.push({ type: 'lust', target: target.id, amount: gained, ...(opts.text ? { text: opts.text } : {}) })
+  }
+  if ((target.lust ?? 0) >= max && !target.statuses.some((s) => statusDef(s.id).no_climax)) climax(combat, target, effects)
+  return gained
+}
+
+/** 消退慾望 */
+function relieveLust(target: Combatant, amount: number, effects: Effect[]): number {
+  const cut = Math.min(target.lust ?? 0, Math.max(0, Math.round(amount)))
+  if (cut <= 0) return 0
+  target.lust = (target.lust ?? 0) - cut
+  effects.push({ type: 'lust', target: target.id, amount: -cut })
+  return cut
+}
+
+/**
+ * 高潮：慾望歸零。我方停止行動一回合、失去最大生命的三分之一（最多扣到剩 1），之後一段時間受到的慾望減半、不會再高潮；
+ * 一場戰鬥第三次高潮就倒下。敵方受到最大生命三分之一的真實傷害（不看抗性、減傷、臨時生命，可以致死），被這樣打倒算慾望勝利。
+ */
+function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
+  const r = lustRules()
+  target.lust = 0
+  if (target.side === 'enemy') {
+    const dmg = Math.max(1, Math.round(target.maxHp * r.enemy_climax_hp))
+    const loss = Math.min(target.hp, dmg)
+    target.hp -= loss
+    effects.push({ type: 'damage', target: target.id, amount: loss, text: '高潮・真實傷害' })
+    if (target.hp === 0) {
+      target.lustDefeated = true
+      effects.push({ type: 'status_add', target: target.id, status: '死亡', text: '慾望勝利' })
+      dropConcentration(combat, target, effects)
+    }
+    return
+  }
+  target.climaxes = (target.climaxes ?? 0) + 1
+  effects.push({ type: 'status_add', target: target.id, status: statusDef('climax').name })
+  if (target.climaxes >= r.down_after) {
+    // 第三次：倒下（不算死亡，戰後照常以 1 HP 歸隊）
+    target.hp = 0
+    effects.push({ type: 'status_add', target: target.id, status: '倒下', text: `第 ${target.climaxes} 次高潮，無法再戰鬥` })
+    dropConcentration(combat, target, effects)
+    noteAffinity(combat, target.id, -1, '在戰鬥中倒下')
+    return
+  }
+  const loss = Math.max(0, Math.min(Math.round(target.maxHp * r.party_climax_hp), target.hp - 1))
+  if (loss > 0) {
+    target.hp -= loss
+    effects.push({ type: 'damage', target: target.id, amount: loss, text: '高潮' })
+  }
+  addStatus(target, { id: 'climax', turns: 1, source: target.id })
+  addStatus(target, { id: 'afterglow_combat', turns: r.afterglow_turns, source: target.id })
 }
 
 function spellCap(c: Character): number {
@@ -469,6 +608,16 @@ export function unusableReason(combat: CombatState, actor: Combatant, abilityId:
   if (abilityApCost(a) > actor.ap) return '行動點不足'
   if (a.type === 'spell' && slotFor(actor, a.circle ?? 1) === null) return '沒有法術環'
   if (a.recover_slot && recoverableSlot(actor) === null) return '沒有可回復的法術環'
+  // 慾望戰鬥：關閉時不能用；要消耗或依靠慾望的，慾望要夠
+  if (isLustAbility(a)) {
+    if (!lustOn(combat) || actor.lustMax === undefined) return '慾望戰鬥已關閉'
+    const lust = actor.lust ?? 0
+    const max = effectiveLustMax(actor)
+    if (a.lust_cost && lust < a.lust_cost) return '慾望不足'
+    if (a.requires_lust && lust < max * a.requires_lust) return '慾望不足'
+    if (a.burst && (lust <= 0 || lust < max * (a.burst.min_ratio ?? 0))) return '慾望不足'
+    if (a.lust_transfer?.mode === 'spread' && lust <= 0) return '沒有慾望可以分'
+  }
   if ((a.target === 'enemy' || a.target === 'all_enemies' || a.target === 'random_enemies') && foesOf(combat, actor).length === 0) return '沒有目標'
   return null
 }
@@ -505,7 +654,12 @@ function modsOf(c: Combatant): Required<Mods> {
     for (const [k, v] of Object.entries(m ?? {})) total[k as keyof Mods] += v ?? 0
   }
   add(c.baseMods)
-  for (const s of c.statuses) add(statusDef(s.id).mods)
+  for (const s of c.statuses) {
+    const def = statusDef(s.id)
+    add(def.mods)
+    // 依慾望的修正（渴望之舞）：慾望每 10% 加一次
+    if (def.lust_scale && c.lustMax) total[def.lust_scale.stat] += Math.min(def.lust_scale.max, Math.floor(lustRatio(c) * 10) * def.lust_scale.per)
+  }
   return total
 }
 
@@ -550,12 +704,18 @@ function d20(rng: Rng, adv: number): number {
   return adv > 0 ? Math.max(a, b) : Math.min(a, b)
 }
 
-function affinity(map: AffinityMap, statusMaps: (AffinityMap | undefined)[], type: string): number {
+/** 加成與抗性要看的鍵：屬性本身、所屬群組、全部（魅惑自成一組，不受「全部」影響） */
+function affinityKeys(type: string): string[] {
   const group = damageType(type).group
+  return [...new Set([type, group, ...(group === 'lust' ? [] : ['all'])])]
+}
+
+function affinity(map: AffinityMap, statusMaps: (AffinityMap | undefined)[], type: string): number {
+  const keys = affinityKeys(type)
   let sum = 0
   for (const m of [map, ...statusMaps]) {
     if (!m) continue
-    sum += (m[type] ?? 0) + (m[group] ?? 0) + (m.all ?? 0)
+    for (const k of keys) sum += m[k] ?? 0
   }
   return sum
 }
@@ -566,11 +726,11 @@ export function offenseMult(c: Combatant, type: string): number {
 
 /** 受到的傷害倍率：抗性是乘算，屬性本身、所屬群組、全部，以及每個狀態各乘一次（見 mulResist） */
 export function defenseMult(c: Combatant, type: string): number {
-  const group = damageType(type).group
+  const keys = affinityKeys(type)
   let m = 1
   for (const map of [c.resist, ...c.statuses.map((s) => statusDef(s.id).resist)]) {
     if (!map) continue
-    for (const k of new Set([type, group, 'all'])) m *= Math.max(0, 1 + (map[k] ?? 0))
+    for (const k of keys) m *= Math.max(0, 1 + (map[k] ?? 0))
   }
   return Math.round(m * 10000) / 10000
 }
@@ -582,7 +742,8 @@ export function multLabel(m: number): string {
 /** 加上狀態；層主抵抗了控制時回傳 false（不加） */
 function addStatus(c: Combatant, inst: StatusInstance): boolean {
   const def = statusDef(inst.id)
-  if (c.boss && def.control && def.kind === 'debuff') {
+  // 自己造成的（引爆後的脫力）不受層主的控制保護影響
+  if (c.boss && def.control && def.kind === 'debuff' && inst.source !== c.id) {
     // 層主：控制最多 1 回合，被控制後到下一個自己的回合結束前都免疫控制
     if ((c.controlGuard ?? 0) > 0) return false
     inst = { ...inst, turns: Math.min(inst.turns, combatRules.boss.control_turns) }
@@ -635,7 +796,8 @@ export function act(state: GameState, action: CombatAction): CombatState {
       if (action.type === 'item') useItem(combat, rng, actor, action.item, action.target)
       else perform(combat, actor, action, rng)
       checkEnd(combat)
-      if (combat.status === 'ongoing' && (!isActive(actor) || !hasAnyAction(combat, actor) || action.type === 'flee')) {
+      // 自己的回合中高潮或引爆（暈眩類）：這個回合就此結束
+      if (combat.status === 'ongoing' && (!isActive(actor) || !hasAnyAction(combat, actor) || action.type === 'flee' || controls(actor).has('stun'))) {
         endTurn(combat, rng)
       }
     }
@@ -819,7 +981,7 @@ function accrueThreat(combat: CombatState, entry: Omit<TimelineEntry, 'seq' | 'r
   const sideOf = (id?: string) => combat.combatants.find((c) => c.id === id)?.side
   let gain = 0
   for (const e of entry.effects ?? []) {
-    if (e.type === 'damage' && sideOf(e.target) && sideOf(e.target) !== actor.side) gain += (e.amount ?? 0) * g.damage
+    if ((e.type === 'damage' || (e.type === 'lust' && (e.amount ?? 0) > 0)) && sideOf(e.target) && sideOf(e.target) !== actor.side) gain += (e.amount ?? 0) * g.damage
     if (e.type === 'heal' && e.target !== actor.id && sideOf(e.target) === actor.side) gain += (e.amount ?? 0) * g.heal
     if (e.type === 'status_add' && e.target !== actor.id && e.status !== '倒下') gain += g.status
   }
@@ -935,15 +1097,31 @@ function rollParts(rng: Rng, actor: Combatant, a: AbilityDef | undefined, parts:
 }
 
 /**
- * 套用加成、減傷與特殊狀態後扣血。回傳實際造成的傷害。
+ * 套用加成、減傷與特殊狀態後扣血。回傳實際造成的傷害（魅惑屬性造成的慾望也算在內）。
  * mult 為技能倍率，half 為豁免成功減半。
+ * 慾望戰鬥：魅惑屬性不扣生命，改成增加慾望；被侍奉的人受到的攻擊由侍奉者代為承受；
+ * 痛即是悅之類的狀態把受到的生命傷害一部分改成慾望。
  */
 function dealDamage(
   combat: CombatState, rng: Rng, attacker: Combatant | null, target: Combatant, rolls: DamageRoll[],
-  effects: Effect[], opts: { mult?: number; half?: boolean } = {},
+  effects: Effect[], opts: { mult?: number; half?: boolean; dot?: boolean } = {},
 ): number {
+  // 被侍奉：敵人的攻擊（和投擲的道具）由施加者代為承受，承受的傷害一部分改成慾望；持續傷害不算
+  let guardConvert = 0
+  if (!opts.dot && (!attacker || attacker.side !== target.side)) {
+    const g = target.statuses.find((s) => statusDef(s.id).guard)
+    const guardian = g && combat.combatants.find((c) => c.id === g.source && c !== target && isActive(c))
+    if (g && guardian) {
+      guardConvert = statusDef(g.id).guard ?? 0
+      consume(target, [g])
+      effects.push({ type: 'note', target: target.id, text: `${guardian.name}代為承受` })
+      target = guardian
+    }
+  }
   let physical = 0
   let other = 0
+  let lust = 0
+  const lustNotes: string[] = []
   const parts: { effect: Effect; physical: boolean }[] = []
   // 難度係數：怪物造成的傷害乘上這個（普通難度沒有這個欄位）
   const diff = attacker?.dmgMult ?? 1
@@ -952,9 +1130,6 @@ function dealDamage(
     const def = defenseMult(target, r.type)
     let amount = Math.max(0, Math.floor(r.amount * (opts.mult ?? 1) * off * def * diff))
     if (opts.half) amount = Math.floor(amount / 2)
-    const isPhysical = damageType(r.type).group === 'physical'
-    if (isPhysical) physical += amount
-    else other += amount
     // 攻擊加成與目標的受傷倍率分開寫，標籤才不會把攻擊方的倍率說成目標的抵抗
     const round2 = (x: number) => Math.round(x * 100) / 100
     const notes = [
@@ -962,6 +1137,15 @@ function dealDamage(
       ...(Math.abs(diff - 1) > 0.001 ? [`難度 ×${round2(diff)}`] : []),
       ...(Math.abs(def - 1) > 0.001 ? [`${multLabel(def)} ×${round2(def)}`] : []),
     ]
+    // 魅惑：不扣生命，最後加進慾望
+    if (r.type === 'lust') {
+      lust += amount
+      lustNotes.push(...notes)
+      continue
+    }
+    const isPhysical = damageType(r.type).group === 'physical'
+    if (isPhysical) physical += amount
+    else other += amount
     const effect: Effect = {
       type: 'damage', target: target.id, amount, element: damageTypeName(r.type),
       ...(notes.length ? { text: notes.join('，') } : {}),
@@ -969,35 +1153,50 @@ function dealDamage(
     effects.push(effect)
     parts.push({ effect, physical: isPhysical })
   }
-  // 戰報的每一筆傷害照實際扣掉的寫：各種減免依序扣，說明寫在扣到的那一筆
-  const deflect = hasSpecial(target, 'reduce_next')
-  let deflected = 0
-  if (deflect && physical > 0) {
-    deflected = Math.min(physical, deflect.value ?? 0)
-    physical -= deflected
-    consume(target, [deflect])
+  let total = 0
+  let converted = 0
+  if (parts.length) {
+    // 戰報的每一筆傷害照實際扣掉的寫：各種減免依序扣，說明寫在扣到的那一筆
+    const deflect = hasSpecial(target, 'reduce_next')
+    let deflected = 0
+    if (deflect && physical > 0) {
+      deflected = Math.min(physical, deflect.value ?? 0)
+      physical -= deflected
+      consume(target, [deflect])
+    }
+    const armorCut = Math.min(physical, target.armorDr)
+    physical -= armorCut
+    const sum = physical + other
+    total = Math.max(0, sum - modsOf(target).dr)
+    const statusCut = sum - total
+    const uncanny = hasSpecial(target, 'halve_next')
+    let halved = 0
+    if (uncanny && total > 0) {
+      halved = total - Math.floor(total / 2)
+      total -= halved
+      consume(target, [uncanny])
+      effects.push({ type: 'note', target: target.id, text: '閃避本能：傷害減半' })
+    }
+    // 承傷：受到的生命傷害一部分改成慾望（不會高潮的時候，只轉到慾望滿為止）
+    const ratio = Math.min(1, guardConvert + target.statuses.reduce((x, st) => x + (statusDef(st.id).convert ?? 0), 0))
+    if (ratio > 0 && total > 0 && lustOn(combat) && target.lustMax !== undefined) {
+      const room = target.statuses.some((st) => statusDef(st.id).no_climax) ? Math.max(0, effectiveLustMax(target) - (target.lust ?? 0)) : Infinity
+      converted = Math.min(Math.floor(total * ratio), room)
+      total -= converted
+    }
+    settleDamageParts(parts, [
+      { amount: deflected, physical: true, label: '偏轉' },
+      { amount: armorCut, physical: true, label: '減傷' },
+      { amount: statusCut, physical: false, label: '減傷' },
+      { amount: halved, physical: false, label: '減半' },
+      { amount: converted, physical: false, label: '轉成慾望' },
+    ])
+    applyHpLoss(combat, rng, target, total, effects)
   }
-  const armorCut = Math.min(physical, target.armorDr)
-  physical -= armorCut
-  const sum = physical + other
-  let total = Math.max(0, sum - modsOf(target).dr)
-  const statusCut = sum - total
-  const uncanny = hasSpecial(target, 'halve_next')
-  let halved = 0
-  if (uncanny && total > 0) {
-    halved = total - Math.floor(total / 2)
-    total -= halved
-    consume(target, [uncanny])
-    effects.push({ type: 'note', target: target.id, text: '閃避本能：傷害減半' })
-  }
-  settleDamageParts(parts, [
-    { amount: deflected, physical: true, label: '偏轉' },
-    { amount: armorCut, physical: true, label: '減傷' },
-    { amount: statusCut, physical: false, label: '減傷' },
-    { amount: halved, physical: false, label: '減半' },
-  ])
-  applyHpLoss(combat, rng, target, total, effects)
-  return total
+  let gained = 0
+  if (converted > 0) gained += gainLust(combat, target, converted, effects, { raw: true, text: '傷害轉成慾望' })
+  if (rolls.some((r) => r.type === 'lust')) gained += gainLust(combat, target, lust, effects, { ...(lustNotes.length ? { text: lustNotes.join('，') } : {}) })
+  return total + gained
 }
 
 /**
@@ -1178,6 +1377,10 @@ function applyStatuses(
         effects.push({ type: 'note', target: r.id, text: '生命值過高，無效' })
         continue
       }
+      if (ap.if_lust !== undefined && lustRatio(r) < ap.if_lust) {
+        effects.push({ type: 'note', target: r.id, text: `${statusDef(ap.status).name}：慾望不夠高，無效` })
+        continue
+      }
       if (ap.save) {
         const s = savingThrow(rng, r, ap.save, saveDc(actor, a))
         if (s.success) {
@@ -1210,6 +1413,18 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
   if (a.uses?.per_combat !== undefined) actor.usedCombat[a.id] = (actor.usedCombat[a.id] ?? 0) + 1
   if (a.uses?.per_rest !== undefined) actor.usedRest[a.id] = (actor.usedRest[a.id] ?? 0) + 1
   if (a.concentration) dropConcentration(combat, actor)
+  // 慾望戰鬥：消耗慾望；引爆把全部的慾望拿出來（結算完附加脫力）
+  if (a.lust_cost) {
+    const effects: Effect[] = []
+    relieveLust(actor, a.lust_cost, effects)
+    push(combat, { actor: actor.id, action: `${a.name}・消耗慾望`, result: 'none', effects })
+  }
+  const spent = a.burst ? actor.lust ?? 0 : 0
+  if (a.burst) {
+    const effects: Effect[] = []
+    relieveLust(actor, spent, effects)
+    push(combat, { actor: actor.id, action: `${a.name}・引爆慾望`, result: 'none', effects })
+  }
 
   const targets = pickTargets(combat, rng, actor, a, targetId)
   if (a.concentration) actor.concentration = a.id
@@ -1246,7 +1461,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
         }
         if (!s.success) applyStatuses(combat, rng, actor, a, target, 'fail', effects)
       } else {
-        resolveAuto(combat, rng, actor, a, target, effects)
+        resolveAuto(combat, rng, actor, a, target, effects, spent)
         dealt += effects.filter((e) => e.type === 'damage').reduce((sum, e) => sum + (e.amount ?? 0), 0)
         applyStatuses(combat, rng, actor, a, target, 'always', effects)
       }
@@ -1267,6 +1482,11 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
     }
   }
 
+  // 引爆之後脫力：立刻結束回合（act 與 enemyTurn 看到暈眩類就停），下一回合不能行動
+  if (a.burst) {
+    addStatus(actor, { id: 'spent', turns: 1, source: actor.id })
+    push(combat, { actor: actor.id, action: `${a.name}・脫力`, result: 'none', effects: [{ type: 'status_add', target: actor.id, status: statusDef('spent').name }] })
+  }
   // 能力本身的仇恨（堅守 +、隱匿 -）
   if (a.threat) addThreat(actor, a.threat)
   if (a.lifesteal && dealt > 0) {
@@ -1281,7 +1501,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
   }
 }
 
-function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityDef, target: Combatant, effects: Effect[]) {
+function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityDef, target: Combatant, effects: Effect[], spent = 0) {
   if (a.kill && a.hp_limit !== undefined) {
     if (target.hp <= a.hp_limit) applyHpLoss(combat, rng, target, target.hp + target.tempHp, effects)
     else effects.push({ type: 'note', target: target.id, text: '生命值過高，無效' })
@@ -1290,6 +1510,7 @@ function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
   if (a.damage?.length) {
     dealDamage(combat, rng, actor, target, rollParts(rng, actor, a, a.damage, false), effects, { mult: a.mult ?? 1 })
   }
+  resolveLust(combat, rng, actor, a, target, effects, spent)
   if (a.heal) {
     const h = a.heal
     const amount = h.full
@@ -1305,7 +1526,7 @@ function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
   }
   if (a.cleanse) {
     const before = target.statuses.length
-    target.statuses = target.statuses.filter((s) => statusDef(s.id).kind !== 'debuff')
+    target.statuses = target.statuses.filter((s) => statusDef(s.id).kind !== 'debuff' || statusDef(s.id).no_cleanse)
     if (target.statuses.length < before) effects.push({ type: 'status_remove', target: target.id, text: '移除負面狀態' })
   }
   if (a.recover_slot) {
@@ -1314,6 +1535,47 @@ function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
       actor.slots[circle - 1]! += 1
       effects.push({ type: 'note', target: actor.id, text: `回復一個 ${circle} 環法術環` })
     }
+  }
+}
+
+/** 慾望戰鬥的自動結算：引爆的傷害或治療、增減慾望、慾望在隊伍裡移動、給行動點 */
+function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityDef, target: Combatant, effects: Effect[], spent: number) {
+  if (a.burst && spent > 0) {
+    const amount = Math.floor(spent * a.burst.mult) + mod(actor.attrs[attrFor(actor, a)])
+    if (a.burst.heal) heal(target, amount, effects)
+    // 引爆的傷害是一般屬性，不經過擲骰
+    else dealDamage(combat, rng, actor, target, [{ amount, type: a.burst.type ?? 'force', weapon: false }], effects)
+  }
+  if (a.lust_gain) gainLust(combat, target, a.lust_gain.flat, effects, { selfGain: true })
+  if (a.lust_relief) relieveLust(target, a.lust_relief, effects)
+  const t = a.lust_transfer
+  if (t) {
+    const others = alliesOf(combat, actor).filter((x) => x !== actor && x.lustMax !== undefined)
+    if (t.mode === 'spread') {
+      const each = others.length ? Math.floor(Math.floor((actor.lust ?? 0) * (t.ratio ?? 0)) / others.length) : 0
+      if (each <= 0) effects.push({ type: 'note', target: actor.id, text: '沒有可以分的對象' })
+      else {
+        relieveLust(actor, each * others.length, effects)
+        for (const o of others) {
+          gainLust(combat, o, each, effects, { raw: true })
+          const shield = t.shield_per ? Math.floor(each / t.shield_per) : 0
+          if (shield > 0 && isActive(o)) {
+            o.tempHp = Math.max(o.tempHp, shield)
+            effects.push({ type: 'note', target: o.id, text: `臨時生命值 ${shield}` })
+          }
+        }
+      }
+    } else {
+      let taken = 0
+      for (const o of others) taken += relieveLust(o, t.amount ?? 0, effects)
+      if (taken > 0) gainLust(combat, actor, taken, effects, { raw: true })
+      else effects.push({ type: 'note', target: actor.id, text: '沒有慾望可以吸過來' })
+    }
+  }
+  if (a.ap_give && isActive(target)) {
+    const before = target.ap
+    target.ap = Math.min(target.apMax, target.ap + a.ap_give)
+    effects.push({ type: 'note', target: target.id, text: `行動點 +${target.ap - before}` })
   }
 }
 
@@ -1381,12 +1643,23 @@ function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
   actor.usedTurn = {}
   actor.ap = Math.min(actor.apMax, actor.ap + Math.max(0, actor.apRegen + modsOf(actor).ap_regen))
   let canAct = true
+  // 慾望戰鬥：每回合消退一點（有不會消退的狀態時不消退）
+  if (lustOn(combat) && (actor.lust ?? 0) > 0 && !actor.statuses.some((s) => statusDef(s.id).lust_hold)) {
+    actor.lust = Math.max(0, (actor.lust ?? 0) - Math.max(1, Math.round(effectiveLustMax(actor) * lustRules().decay)))
+  }
+  // 這回合開始時才中的暈眩類狀態（媚毒、每回合增加的慾望讓人高潮）：這回合就不能行動，並且算用掉了
+  const before = new Set(actor.statuses)
   for (const s of [...actor.statuses]) {
     const def = statusDef(s.id)
+    if (def.lust_tick && isActive(actor)) {
+      const effects: Effect[] = []
+      gainLust(combat, actor, def.lust_tick, effects, { selfGain: true })
+      if (effects.length) push(combat, { actor: actor.id, action: def.name, result: 'none', effects })
+    }
     const source = combat.combatants.find((c) => c.id === s.source) ?? null
     if (def.dot) {
       const effects: Effect[] = []
-      dealDamage(combat, rng, source, actor, [{ amount: rollDice(rng, def.dot.dice, 1), type: def.dot.type, weapon: false }], effects)
+      dealDamage(combat, rng, source, actor, [{ amount: rollDice(rng, def.dot.dice, 1), type: def.dot.type, weapon: false }], effects, { dot: true })
       push(combat, { actor: actor.id, action: `${def.name}發作`, result: 'none', effects })
     }
     if (def.hot && isActive(actor)) {
@@ -1409,6 +1682,12 @@ function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
       push(combat, { actor: actor.id, action: `${def.name}・無法行動`, result: 'none' })
     }
     if (s.turns > 0) s.turns -= 1
+  }
+  for (const s of actor.statuses) {
+    if (before.has(s) || statusDef(s.id).control !== 'stun' || !isActive(actor)) continue
+    canAct = false
+    s.turns -= 1
+    push(combat, { actor: actor.id, action: `${statusDef(s.id).name}・無法行動`, result: 'none' })
   }
   actor.statuses = actor.statuses.filter((s) => s.turns > 0 || LINGERING_CONTROL.has(statusDef(s.id).control ?? ''))
   checkEnd(combat)
@@ -1440,7 +1719,7 @@ function runEnemyTurns(combat: CombatState, rng: Rng) {
  * - 想逃：生命低於特徵的 flee_below 時嘗試撤退。
  */
 function enemyTurn(combat: CombatState, actor: Combatant, rng: Rng) {
-  for (let step = 0; step < 6 && combat.status === 'ongoing' && isActive(actor); step++) {
+  for (let step = 0; step < 6 && combat.status === 'ongoing' && isActive(actor) && !controls(actor).has('stun'); step++) {
     const foes = foesOf(combat, actor)
     if (foes.length === 0) return
     if (wantsToFlee(actor) && actor.ap >= combatRules.action_costs.flee) {
@@ -1486,6 +1765,18 @@ export function chooseAction(combat: CombatState, rng: Rng, actor: Combatant, ta
   const options: { ability: AbilityDef; target?: string; score: number }[] = []
   for (const a of usableAbilities(combat, actor.id)) {
     const limited = a.uses?.per_combat !== undefined || a.uses?.per_rest !== undefined || a.type === 'spell' ? 0.3 : 0
+    // 引爆：慾望快滿時才用（引爆之後會脫力）
+    if (a.burst) {
+      if (lustRatio(actor) < 0.7) continue
+      options.push({ ability: a, ...(a.target === 'enemy' ? { target: target.id } : {}), score: 3 })
+      continue
+    }
+    // 魅惑的攻擊：對免疫的目標不用；目標快高潮時比較想用
+    const lustHit = !!a.damage?.some((p) => p.type === 'lust')
+    const lustScore = (who: Combatant[]) => {
+      const m = Math.max(0, ...who.map((w) => defenseMult(w, 'lust')))
+      return m <= 0 ? 0 : Math.min(1.5, m) * (who.some((w) => lustRatio(w) >= 0.7) ? 1.4 : 1)
+    }
     // 治療：只在有人受傷時，給最需要的人
     if (a.heal) {
       const pool = a.target === 'self' ? [actor] : a.target === 'all_allies' ? allies
@@ -1513,11 +1804,15 @@ export function chooseAction(combat: CombatState, rng: Rng, actor: Combatant, ta
     if (a.target === 'enemy') {
       // 純減益：對方已經有就不用
       if (!a.damage?.length && !freshStatuses(a, target, ['target'])) continue
-      options.push({ ability: a, target: target.id, score: (a.damage?.length ? 2.4 : 2) + limited })
+      const base = (a.damage?.length ? 2.4 : 2) + limited
+      const score = lustHit ? base * lustScore([target]) : base
+      if (score > 0) options.push({ ability: a, target: target.id, score })
       continue
     }
     // 範圍或隨機目標：人越多越划算
-    options.push({ ability: a, score: (foes.length >= 2 ? 2 + 0.7 * (foes.length - 1) : 1) + limited })
+    const base = (foes.length >= 2 ? 2 + 0.7 * (foes.length - 1) : 1) + limited
+    const score = lustHit ? base * lustScore(foes) : base
+    if (score > 0) options.push({ ability: a, score })
   }
   if (!options.length) return null
   // 生命低時才解開的技能（狂暴、垂死反撲）：解開了就比較想用
@@ -1586,7 +1881,7 @@ export function finishCombat(state: GameState): Report {
   const others: ActorState[] = [...allies, ...foes.map((f): ActorState => ({
     id: f.id, name: f.name, level: f.level,
     hp: [combat.startHp[f.id] ?? f.maxHp, f.hp, f.maxHp],
-    status: f.hp === 0 ? [capturing && f.npcId ? '被制伏' : '死亡'] : f.fled ? ['逃走'] : f.statuses.map((s) => statusDef(s.id).name),
+    status: f.hp === 0 ? [capturing && f.npcId ? '被制伏' : f.lustDefeated ? '在高潮中屈服' : '死亡'] : f.fled ? ['逃走'] : f.statuses.map((s) => statusDef(s.id).name),
   }))]
 
   let money = 0
@@ -1715,6 +2010,8 @@ export function finishCombat(state: GameState): Report {
       action: `${x.name}：救助或逃跑（親密度）`, roll: { dice: '1d20', value: x.total, dc: nc.defeat_check.dc }, result: x.rescue ? 'success' : 'fail',
     }]
   }
+  // 慾望戰鬥：戰後留下的狀態、慾望勝利與高潮寫進戰報（交給成人場景的寫手）
+  settleLust(state, combat, report)
   // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）
   if (combat.status === 'defeat' && !rescued) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes))
   // 特殊任務的戰鬥任務點：依勝負套用結果
@@ -1739,6 +2036,36 @@ export function finishCombat(state: GameState): Report {
   const committed = commitReport(state, report)
   if (combat.story) refreshStoryMarkers(state)
   return committed
+}
+
+/**
+ * 慾望戰鬥的戰後：慾望還很高的人「發情」、高潮過的人「餘韻」（非戰鬥狀態，下次長休解除）；
+ * 有人高潮或慾望勝利時，報告帶上成人場景，經過由成人場景的寫手描寫。
+ */
+function settleLust(state: GameState, combat: CombatState, report: Report) {
+  if (!lustOn(combat)) return
+  const r = lustRules()
+  const climaxed: string[] = []
+  for (const member of state.party) {
+    const f = combat.combatants.find((c) => c.id === member.id)
+    if (!f || f.lustMax === undefined) continue
+    if ((f.lust ?? 0) >= f.lustMax * r.aroused_after) addCondition(member, 'aroused', report)
+    if (f.climaxes) {
+      addCondition(member, 'afterglow', report)
+      climaxed.push(`${f.name}（${f.climaxes} 次）`)
+    }
+  }
+  const conquered = combat.combatants.filter((c) => c.lustDefeated).map((c) => c.name)
+  if (!climaxed.length && !conquered.length) return
+  const tags = [...(climaxed.length ? ['高潮'] : []), ...(conquered.length ? ['慾望勝利'] : [])]
+  report.outcome.tags = [...(report.outcome.tags ?? []), ...tags]
+  if (conquered.length) report.outcome.summary = `${report.outcome.summary ?? ''}${conquered.join('、')}在高潮中屈服（慾望勝利）。`
+  if (climaxed.length) report.outcome.summary = `${report.outcome.summary ?? ''}戰鬥中高潮：${climaxed.join('、')}。`
+  const scene = [
+    ...(climaxed.length ? [`${climaxed.join('、')}在戰鬥中被慾望逼到高潮`] : []),
+    ...(conquered.length ? [`${conquered.join('、')}在慾望的交鋒中敗下陣來，在高潮中屈服`] : []),
+  ].join('；')
+  report.narration = { ...report.narration, adult_scene: `戰鬥中的慾望攻防：${scene}。照戰鬥的經過寫，親密的部分只寫到戰況需要的程度` }
 }
 
 /**

@@ -111,5 +111,20 @@
     "free_dc": 13,
     "money_loss": { "critical": 0, "success": 0, "partial": 0.05, "fail": 0.1, "fumble": 0.15 },
     "shaken_on": ["fail", "fumble"]
+  },
+
+  "lust": {
+    "$comment": "慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）。慾望上限 = max_base + max_per_level × 等級。每回合開始消退上限的 decay。我方慾望滿了高潮：停止行動一回合、失去最大生命的 party_climax_hp（最多扣到剩 1），之後 afterglow_turns 回合受到的慾望減半、不會再高潮；一場戰鬥高潮 down_after 次就倒下。敵方高潮：受到最大生命 enemy_climax_hp 的真實傷害（可以致死），用高潮收尾算慾望勝利。開戰的初始慾望：發情的角色 aroused_start、有 rut 特徵的怪物 rut_start（上限的比例）。戰後慾望至少 aroused_after 的人得到「發情」，高潮過的人得到「餘韻」。kind_resist：依怪物種類的預設慾望抗性（個別怪物的 resist.lust 覆寫）。",
+    "max_base": 30,
+    "max_per_level": 3,
+    "decay": 0.05,
+    "party_climax_hp": 0.33,
+    "afterglow_turns": 2,
+    "down_after": 3,
+    "enemy_climax_hp": 0.33,
+    "aroused_start": 0.2,
+    "rut_start": 0.3,
+    "aroused_after": 0.5,
+    "kind_resist": { "undead": -1, "construct": -1, "elemental": -0.75, "spirit": -0.5, "fey": 0.25 }
   }
 }

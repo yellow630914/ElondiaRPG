@@ -36,7 +36,8 @@ describe('data integrity', () => {
     for (const a of Object.values(abilities)) {
       for (const ap of a.apply ?? []) expect(statuses[ap.status], `${a.id} → ${ap.status}`).toBeDefined()
       for (const d of a.damage ?? []) if (d.type) expect(typeIds.has(d.type), `${a.id} → ${d.type}`).toBe(true)
-      for (const c of a.classes) expect(c === 'monster' || !!classes[c], `${a.id} → ${c}`).toBe(true)
+      // monster：怪物專用；lewd：不分職業的色情技能
+      for (const c of a.classes) expect(c === 'monster' || c === 'lewd' || !!classes[c], `${a.id} → ${c}`).toBe(true)
       if (a.type === 'spell') expect(a.circle, a.id).toBeGreaterThanOrEqual(1)
       if (a.type === 'skill' && !a.classes.includes('monster')) expect(a.unlock, a.id).toBeGreaterThanOrEqual(1)
     }
@@ -303,7 +304,7 @@ describe('combat rules', () => {
   it('lets every ability in the data resolve without errors', () => {
     let used = 0
     for (const a of Object.values(abilities)) {
-      const classId = a.classes.find((c) => c !== 'monster') ?? 'fighter'
+      const classId = a.classes.find((c) => c !== 'monster' && c !== 'lewd') ?? 'fighter'
       const state = stateWith(classId, 20, used + 1)
       // 不用層主：層主的傷害加成可能在輪到主角之前就把人打倒
       startCombat(state, [['crypt_wight', 1], ['goblin', 2]])
@@ -314,6 +315,8 @@ describe('combat rules', () => {
       pc.slots = [9, 9, 9, 9, 9, 9, 9, 9, 9]
       pc.slotMax = [9, 9, 9, 9, 9, 9, 9, 9, 9]
       if (a.recover_slot) pc.slots[0] = 0
+      // 慾望戰鬥：要消耗或依靠慾望的能力，先給一些慾望
+      if (pc.lustMax) pc.lust = Math.round(pc.lustMax * 0.6)
       for (const e of state.combat!.combatants) if (e.side === 'enemy') e.hp = e.maxHp = 500
       const reason = unusableReason(state.combat!, pc, a.id)
       expect(reason, a.id).toBeNull()

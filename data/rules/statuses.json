@@ -85,6 +85,20 @@
     "moonbeam": { "name": "月華光束", "kind": "debuff", "dot": { "dice": "2d10", "type": "radiant" } },
     "spike_growth": { "name": "荊棘叢生", "kind": "debuff", "dot": { "dice": "2d4", "type": "piercing" } },
     "insect_plague": { "name": "昆蟲瘟疫", "kind": "debuff", "dot": { "dice": "4d10", "type": "piercing" } },
-    "blade_barrier": { "name": "劍刃屏障", "kind": "debuff", "dot": { "dice": "4d10", "type": "slashing" } }
+    "blade_barrier": { "name": "劍刃屏障", "kind": "debuff", "dot": { "dice": "4d10", "type": "slashing" } },
+    "climax": { "name": "高潮", "kind": "debuff", "control": "stun", "no_cleanse": true },
+    "afterglow_combat": { "name": "高潮餘韻", "kind": "buff", "lust_mult": -0.5, "no_climax": true, "no_cleanse": true },
+    "spent": { "name": "脫力", "kind": "debuff", "control": "stun", "no_cleanse": true },
+    "aphrodisiac": { "name": "媚毒", "kind": "debuff", "dot": { "dice": "1d6", "type": "lust" } },
+    "sensitized": { "name": "敏感", "kind": "debuff", "lust_mult": 0.25 },
+    "disrobed": { "name": "寬衣", "kind": "buff", "offense": { "lust": 0.5 } },
+    "longing_dance": { "name": "渴望之舞", "kind": "buff", "lust_scale": { "stat": "damage", "per": 1, "max": 5 } },
+    "lust_surge": { "name": "情慾高漲", "kind": "buff", "lust_tick": 8, "mods": { "damage": 1 } },
+    "charm_veil": { "name": "魅惑光環", "kind": "buff", "attacked_disadvantage": true },
+    "charm_glow": { "name": "魅惑的光", "kind": "buff", "lust_tick": 5 },
+    "pain_pleasure": { "name": "痛即是悅", "kind": "buff", "convert": 0.5 },
+    "guarded": { "name": "受到侍奉", "kind": "buff", "guard": 0.5, "charges": 1 },
+    "enduring": { "name": "忍耐", "kind": "buff", "lust_max": 0.5, "lust_hold": true },
+    "groveling": { "name": "跪伏", "kind": "buff", "mods": { "dr": 2 } }
   }
 }

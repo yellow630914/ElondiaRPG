@@ -802,7 +802,7 @@ function resetAll() {
           </select>
           <select v-model="abilityClass" class="grow">
             <option value="">所有職業</option>
-            <option v-for="c in abilityClasses()" :key="c" :value="c">{{ c === 'monster' ? '怪物' : className(c) }}</option>
+            <option v-for="c in abilityClasses()" :key="c" :value="c">{{ c === 'monster' ? '怪物' : c === 'lewd' ? '色情技能（不分職業）' : className(c) }}</option>
           </select>
         </div>
         <p v-if="sub !== 'shops' && sub !== 'specialMaps' && sub !== 'tattoos'" class="small muted count">符合 {{ rows.length }} 項</p>

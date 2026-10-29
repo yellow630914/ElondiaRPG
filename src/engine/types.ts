@@ -39,7 +39,8 @@ export interface ActorState {
 }
 
 export interface Effect {
-  type: 'damage' | 'heal' | 'status_add' | 'status_remove' | 'move' | 'item' | 'flag' | 'note'
+  /** lust：慾望的增減（amount 負數是消退），見 combat.ts 的慾望戰鬥 */
+  type: 'damage' | 'heal' | 'status_add' | 'status_remove' | 'move' | 'item' | 'flag' | 'note' | 'lust'
   target?: string
   amount?: number
   element?: string
@@ -707,6 +708,8 @@ export interface GameOptions {
   eventDc?: number
   /** 每個角色戰鬥時最多攜帶幾個技能與法術（戲法不算）；0 = 不限 */
   skillLoadout?: number
+  /** 慾望戰鬥：所有慾望增加的倍率；0 = 關閉 */
+  lustMult?: number
   /** 允許在遊戲中更換主角的身分標籤（見 engine/pcTags.ts） */
   tagChange?: boolean
 }

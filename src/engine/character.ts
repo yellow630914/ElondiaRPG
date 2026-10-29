@@ -352,13 +352,24 @@ export function rerollAbilityChoices(c: Character, rng: Rng, max = progression.a
   return picked
 }
 
-/** 學會一項能力（事件、任務的技能報酬）。必須是這個職業的能力且尚未學會。 */
+/** 學會一項能力（事件、任務的技能報酬、技能書）。必須是這個職業的能力或不分職業的色情技能，且尚未學會。 */
 export function learnAbility(c: Character, id: string): AbilityDef {
-  const a = classAbilities(c.class).find((x) => x.id === id)
+  const a = classAbilities(c.class).find((x) => x.id === id) ?? (abilityTable[id]?.classes.includes('lewd') ? abilityTable[id] : undefined)
   if (!a) throw new Error('這個職業學不了這項能力')
   if (c.abilities.includes(id)) throw new Error('已經學會了')
   c.abilities.push(id)
   return a
+}
+
+/** 技能書下一個能學的能力：還沒學、學得了（自己職業的或色情技能）的第一個；等級不夠時回傳原因 */
+export function nextBookAbility(c: Character, list: string[]): { ability?: AbilityDef; reason?: string } {
+  const open = list.map((id) => abilityTable[id]).filter((a): a is AbilityDef => !!a && !c.abilities.includes(a.id)
+    && (a.classes.includes('lewd') || classAbilities(c.class).some((x) => x.id === a.id)))
+  if (!open.length) return { reason: `${c.name}已經學會書裡能學的能力了` }
+  const ready = open.find((a) => (a.unlock ?? 1) <= c.level)
+  if (ready) return { ability: ready }
+  const next = open[0]!
+  return { reason: `等級不夠：書裡下一個能力【${next.name}】要 ${next.unlock} 級` }
 }
 
 // ---- 技能攜帶上限（存檔規則 skillLoadout）：學會的能力都在技能庫，戰鬥只帶攜帶中的；戲法不算 ----

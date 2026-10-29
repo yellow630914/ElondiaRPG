@@ -119,6 +119,7 @@
 | 長休的時間 | `longRestHours` | 8 | 2～12 小時 | 旅店與家裡照樣住到隔天早上 |
 | 衛兵警戒多久降一級 | `alertDecayDays` | 7 | 1～30 天 | |
 | 黑市每天的珍品 | `blackMarketGear` | 3 | 0～10 件 | 黑市每天刷新幾件獨特裝備（[ITEMS](ITEMS.md) 3.1 節）；0 = 不賣 |
+| 慾望戰鬥 | `lustMult` | 1 | 0～2 倍 | 戰鬥中所有慾望增加的倍率；0 = 關閉（沒有慾望條、色情技能不能用、敵人不用慾望攻擊；[COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 8.5 節）。成人向 |
 | 技能攜帶上限 | `skillLoadout` | 12 | 0～30 個 | 每個角色戰鬥時最多帶幾個技能與法術（戲法不算）；0 = 不限（[COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 7 節） |
 | 逃跑與撤退的難度 | `escapeDc` | 0 | −10～+10 | 戰鬥中隊伍撤退（開戰時記在 `CombatState.fleeDcMod`）與地下城緊急撤退的 DC；敵人逃跑不受影響 |
 

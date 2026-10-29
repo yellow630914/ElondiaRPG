@@ -1,5 +1,5 @@
 {
-  "$comment": "傷害屬性與加成。每個攻擊都帶屬性；攻擊方的「攻擊加成」與防禦方的「受傷倍率」都以 1 為基礎值，來源（裝備、技能、狀態、種族天賦）以加減累加：最終傷害 = 擲骰傷害 × 攻擊加成 × 受傷倍率。受傷倍率 -0.5 代表抗性（×0.5）、+0.5 代表弱點（×1.5）、累加到 0 以下視為免疫（×0）。加成可以寫在單一屬性、群組（physical / elemental / divine / arcane）或 all 上，三者會疊加。防具的「減傷」只對物理群組生效，狀態給的減傷對所有屬性生效。",
+  "$comment": "傷害屬性與加成。魅惑（lust）是慾望戰鬥的屬性：造成的不是生命傷害而是慾望（見 combat.json 的 lust），自成一組（不在 groups 裡），不受 all 的加成與抗性影響。每個攻擊都帶屬性；攻擊方的「攻擊加成」與防禦方的「受傷倍率」都以 1 為基礎值，來源（裝備、技能、狀態、種族天賦）以加減累加：最終傷害 = 擲骰傷害 × 攻擊加成 × 受傷倍率。受傷倍率 -0.5 代表抗性（×0.5）、+0.5 代表弱點（×1.5）、累加到 0 以下視為免疫（×0）。加成可以寫在單一屬性、群組（physical / elemental / divine / arcane）或 all 上，三者會疊加。防具的「減傷」只對物理群組生效，狀態給的減傷對所有屬性生效。",
   "version": 1,
   "types": [
     { "id": "bludgeoning", "name": "鈍擊", "group": "physical" },
@@ -14,7 +14,8 @@
     { "id": "radiant", "name": "神聖", "group": "divine" },
     { "id": "necrotic", "name": "暗影", "group": "divine" },
     { "id": "force", "name": "奧術", "group": "arcane" },
-    { "id": "psychic", "name": "心靈", "group": "arcane" }
+    { "id": "psychic", "name": "心靈", "group": "arcane" },
+    { "id": "lust", "name": "魅惑", "group": "lust" }
   ],
   "groups": {
     "physical": "物理",
