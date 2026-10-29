@@ -34,3 +34,7 @@
 | I11 | 人物面板的單人「邀請入隊」 | 介面 | [player-feedback](player-feedback.md#i11) |
 | I12 | 世界頁籤補上還不能改的資料 | 自訂內容 | [review-2026-10](review-2026-10.md#i12) |
 | I13 | 淫氣世界世界書整理成成人向素材庫（拘束與脫縛、奴印、淫物、場景玩法） | 成人向內容 | [xianxia-adult-lorebook](xianxia-adult-lorebook.md) |
+| I15 | 正文的前後銜接：上一段正文與「兩則之間」發生的事 | AI | [player-feedback](player-feedback.md#i15) |
+| I16 | 正文的預設篇幅與篇幅設定 | AI | [player-feedback](player-feedback.md#i16) |
+| I17 | 依難易度判定：簡單的事一輪完成 | AI、玩法 | [player-feedback](player-feedback.md#i17) |
+| I18 | 正文的結構與格式不要每次一樣 | AI | [player-feedback](player-feedback.md#i18) |
