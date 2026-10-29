@@ -70,7 +70,12 @@
     { "id": "sunscorch", "name": "烈日草原", "region": "west", "type": "village", "races": { "catfolk": 85, "human": 10, "dwarf": 2, "elf": 1, "yulin": 1, "demon": 1 }, "faction": "wild_tribes", "note": "赤鬃部落；不在地圖上" },
     { "id": "stilltide_oasis", "name": "靜潮綠洲", "region": "west", "type": "village", "races": { "catfolk": 85, "human": 10, "dwarf": 2, "elf": 1, "yulin": 1, "demon": 1 }, "faction": "wild_tribes", "note": "月尾部落；不在地圖上" },
     { "id": "echo_canyon", "name": "回音峽谷", "region": "west", "type": "dungeon", "note": "夜爪部落；不在地圖上" },
-    { "id": "quicksand_temple", "name": "流沙聖殿", "region": "west", "type": "dungeon" }
+    { "id": "quicksand_temple", "name": "流沙聖殿", "region": "west", "type": "dungeon" },
+    { "id": "park_beast", "name": "淫獸牧場", "region": "south", "type": "dungeon", "park": "sm_lust_park" },
+    { "id": "park_insect", "name": "蟲之溫室", "region": "south", "type": "dungeon", "park": "sm_lust_park" },
+    { "id": "park_aquarium", "name": "觸手水族館", "region": "south", "type": "dungeon", "park": "sm_lust_park" },
+    { "id": "park_garden", "name": "淫植花園", "region": "south", "type": "dungeon", "park": "sm_lust_park" },
+    { "id": "park_theater", "name": "夢魔劇場", "region": "south", "type": "dungeon", "park": "sm_lust_park" }
   ],
   "routes": [
     { "a": "soriel", "b": "rhineburg", "days": [5, 5], "mode": "road" },

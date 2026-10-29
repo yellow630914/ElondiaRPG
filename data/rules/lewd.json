@@ -140,5 +140,21 @@
     "exposure_decay": 1,
     "exposure_per_level": 2,
     "settlements": ["capital", "city", "town", "village", "port", "outpost", "fortress"]
+  },
+  "park": {
+    "$comment": "魅魔的遊樂園（docs/LUST_PARK.md）。step_lust：在園區裡每走一格，全隊的魅氣（跨戰鬥保留的慾望，慾望上限的比例）增加多少，走路最多累積到 step_cap；trap_lust：沒察覺的陷阱是媚藥機關，觸發的人魅氣增加多少（取代陷阱的傷害）；mimic_chance：園區的寶箱是擬態寶箱的機率，mimics 依層（1 淺層、2 中層、3 深層）；chest_items：園區的寶箱另外擲的物品；defeats：各園區的專屬戰敗（scene 交給成人場景的寫手、summary 寫進戰報、effects 套用、hours 經過的時間）。",
+    "step_lust": 0.01,
+    "step_cap": 0.4,
+    "trap_lust": 0.2,
+    "mimic_chance": 0.25,
+    "mimics": {"1": "lp_mimic_s", "2": "lp_mimic_m", "3": "lp_mimic_d"},
+    "chest_items": [["清心茶", 0.3], ["媚香精油", 0.3], ["《極樂秘典》", 0.04], ["《傾國》", 0.02], ["《斟酒的媚態》", 0.012], ["《戰利品的覺悟》", 0.012], ["《求偶紋》", 0.012], ["《十指的特別服務》", 0.012], ["《熱泉的耐性》", 0.012], ["《魔導刺激》", 0.012], ["《搓背的手藝》", 0.012], ["《潮之新娘》", 0.012], ["《萬眾矚目》", 0.012], ["《定格的姿態》", 0.012], ["《莊家的賭局》", 0.012], ["《獻祭的契紋》", 0.012]],
+    "defeats": {
+      "park_beast": {"scene": "主角在淫獸牧場倒下，被淫獸們拖進獸舍、關進圍欄當一晚的「展示動物」：牧場的淫獸輪流爬上來騎主角，魅魔們帶著遊客在圍欄外面看，一直到天亮", "summary": "被淫獸們拖進獸舍，當了一整晚的展示動物，天亮才被魅魔們放回入口廣場。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "lewd", "stat": "lewdness", "delta": 2}], "hours": 10},
+      "park_insect": {"scene": "主角在蟲之溫室倒下，被蟲子們搬到溫室深處當成苗床：黏液把主角固定在溫床上，寄生蜂與蛞蝓輪流在主角身上產卵、留下種子，媚液泡得主角一直在高潮", "summary": "被當成溫室的苗床，身上被留下了寄生植物的種子；魅魔園丁把你從溫床上剝下來，丟回入口廣場。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "parasite", "op": "add", "parasite": "parasite_seed"}], "hours": 6},
+      "park_aquarium": {"scene": "主角在觸手水族館倒下，被觸手們放進展示水槽給遊客觀賞：透明的水槽裡，觸手纏住主角的四肢、鑽進身體，玻璃外面擠滿了指指點點的遊客", "summary": "被放進展示水槽給遊客看了一整個下午，閉館時才被撈出來送回入口廣場；來看的人可不少。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "lewd", "stat": "exposure", "delta": 8}], "hours": 8},
+      "park_garden": {"scene": "主角在淫植花園倒下，被一朵巨大的花苞吞進去，困在裡面半天：花瓣與花蕊包住全身慢慢揉弄，花蜜灌滿了身體，最後帶著發情被吐出來", "summary": "被花苞吞進去困了半天，渾身花蜜地被吐出來，自己走回了入口廣場。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "lewd", "stat": "sensitivity", "delta": 2}], "hours": 12},
+      "park_theater": {"scene": "主角在夢魔劇場倒下，被拉上舞台當當晚表演的主角：魅魔與夢魔在滿座的觀眾面前一個接一個玩弄主角，主角在全場的歡呼聲裡被逼到一次又一次高潮", "summary": "被拉上舞台當了當晚表演的主角，滿座的觀眾都看見了；謝幕之後才被送回入口廣場。", "effects": [{"type": "condition", "target": "pc", "condition": "aroused", "add": true}, {"type": "lewd", "stat": "exposure", "delta": 15}], "hours": 6}
+    }
   }
 }

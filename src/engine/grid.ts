@@ -13,7 +13,7 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, type BossLayerId, type LandmarkDef,
+  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
@@ -29,6 +29,7 @@ import { assertMasterAllows } from './slavery'
 import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
 import { maybeDungeonEvent } from './dungeonEvents'
+import { enterPark, mimicFor, parkOfLink, parkRules, parkTrap, returnToPlaza, stepParkLust } from './park'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { homeById, overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
@@ -63,6 +64,8 @@ export interface Cell {
   link?: { area: string; x: number; y: number }
   /** 寶箱：這一層怪物的最高等級（決定內容） */
   level?: number
+  /** 園區的擬態寶箱：打開時變成和這隻怪物的戰鬥 */
+  mimic?: string
   /** 上鎖的寶箱：開鎖的 DC（打開之後拿掉） */
   lock?: number
   /** 打倒守在這裡的層主後，格子變成這種設施（淺層、中層的層主守著往下的階梯） */
@@ -492,8 +495,10 @@ export function enterLocation(state: GameState) {
   if (loc.type === 'dungeon') {
     // 進入地下城：開始一趟新的探索
     startExpedition(state, loc.id)
-    const area = withRng(state, (rng) => generateLayer(state, loc, 0, rng))
+    const first = dungeonFirstLayer(loc.id)
+    const area = withRng(state, (rng) => generateLayer(state, loc, first, rng))
     storeArea(state, area)
+    reachLayer(state, first)
     const entry = findKind(area, 'exit')!
     spawnVisitors(state, area, entry)
     placeAt(state, area, entry.x, entry.y)
@@ -629,7 +634,7 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
     y = ny
     cells[y * width + x] = { kind: 'floor' }
   }
-  cells[start] = { kind: layer === 0 ? 'exit' : 'stairs_up' }
+  cells[start] = { kind: layer === dungeonFirstLayer(loc.id) ? 'exit' : 'stairs_up' }
   const used = new Set([start])
   // 入口旁的安全房
   const nearStart = [start - width, start - 1, start + 1].find((i) => cells[i]?.kind === 'floor')
@@ -672,8 +677,10 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   }
   // 寶箱：內容依這一層怪物的最高等級
   const level = Math.max(1, ...table.flat().map(([id]) => enemies[id]?.level ?? 1))
+  const mimic = parkPlaza(loc.id) ? mimicFor(area) : undefined
   for (const i of randomCells(rng, area, spec.chests ? between(rng, spec.chests) : 0, used)) {
-    cells[i] = { kind: 'chest', level, ...chestLock(rng, spec) }
+    // 園區：有機會是擬態寶箱
+    cells[i] = mimic && enemies[mimic] && rng.chance(parkRules().mimic_chance) ? { kind: 'chest', level, mimic } : { kind: 'chest', level, ...chestLock(rng, spec) }
     used.add(i)
   }
   ensureQuestTargets(state, area, rng, table)
@@ -952,6 +959,8 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   state.position = { area: area.key, x: nx, y: ny, prev: { x: p.x, y: p.y } }
   // 黑暗的地方：每走一格燒掉一點光源
   burnStep(state, area)
+  // 園區：魅氣慢慢增加
+  stepParkLust(state, area)
   reveal(area, nx, ny, sight(state, area))
   return enterCell(state, area, nx, ny, cell!)
 }
@@ -985,6 +994,8 @@ export function linkTargetName(state: GameState): string | null {
   const cell = currentCell(state)
   if (cell.kind !== 'link' || !cell.link) return null
   const key = cell.link.area
+  const park = parkOfLink(key)
+  if (park) return locationById(park).name
   try {
     return key.startsWith('sm/') ? specialMapOfKey(key)?.name ?? '別處' : getArea(state, key).name
   } catch {
@@ -995,7 +1006,7 @@ export function linkTargetName(state: GameState): string | null {
 /** 腳下的路口通往的區域（不是路口或找不到時是 undefined） */
 function linkTarget(state: GameState): Area | undefined {
   const cell = currentCell(state)
-  if (cell.kind !== 'link' || !cell.link || cell.link.area.startsWith('sm/')) return undefined
+  if (cell.kind !== 'link' || !cell.link || cell.link.area.startsWith('sm/') || parkOfLink(cell.link.area)) return undefined
   try {
     return getArea(state, cell.link.area)
   } catch {
@@ -1033,6 +1044,12 @@ export function crossLink(state: GameState): StepResult {
   const p = position(state)
   const cell = cellAt(area, p.x, p.y)
   if (cell?.kind !== 'link' || !cell.link) throw new Error('這裡沒有通往別處的路')
+  // 入口廣場通往園區：從入口進那座地下城
+  const park = parkOfLink(cell.link.area)
+  if (park) {
+    enterPark(state, park, { area: area.key, x: p.x, y: p.y })
+    return {}
+  }
   const target = getArea(state, cell.link.area)
   // 貴族區與王城有衛兵把守
   const blocked = zoneEntryBlock(state, target.zone)
@@ -1107,6 +1124,14 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
     }
     case 'chest': {
       if (cell.done) return {}
+      // 園區的擬態寶箱：打開時跳起來，變成一格遭遇（打贏就清除）
+      if (cell.mimic && enemies[cell.mimic]) {
+        const group: EncounterGroup = [[cell.mimic, 1]]
+        Object.assign(cell, { kind: 'encounter', group })
+        delete cell.mimic
+        delete cell.level
+        return { combat: startCombat(state, group, { scene: `${area.name}・擬態寶箱`, cell: { area: area.key, x, y }, dark: inDarkness(state, area), surprise: 'enemy' }) }
+      }
       // 上鎖的寶箱：站在上面選開鎖的方式（靈巧、力量或智力）
       if (cell.lock) return {}
       cell.done = true
@@ -1155,7 +1180,9 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   const effects: NonNullable<Report['timeline']>[number]['effects'] = []
   // 沒察覺：可能是色情陷阱（地下城事件），事件取代陷阱的傷害
   const event = !success && maybeDungeonEvent(state, 'trap')
-  if (!success && !event) {
+  // 園區：沒察覺的陷阱是媚藥機關，不扣生命、魅氣大增（下一場戰鬥帶著慾望開場）
+  const lewdTrap = !success && !event && parkPlaza(area.location) ? parkTrap(state, scout.id) : 0
+  if (!success && !event && !lewdTrap) {
     const dmg = withRng(state, (rng) => roll(rng, spec.trap_damage).total)
     scout.hp = Math.max(1, scout.hp - dmg)
     effects.push({ type: 'damage', target: scout.id, amount: dmg })
@@ -1168,7 +1195,8 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   report.party = state.party.map((m, i) => snapshot(m, before[i], player(state)))
   report.outcome = {
     result: success ? 'success' : 'failure',
-    summary: success ? `${scout.name}及時察覺${area.name}的陷阱。` : event ? `${scout.name}沒有察覺${area.name}的陷阱——機關對準的是你。` : `${scout.name}觸發了${area.name}的陷阱。`,
+    summary: success ? `${scout.name}及時察覺${area.name}的陷阱。` : event ? `${scout.name}沒有察覺${area.name}的陷阱——機關對準的是你。`
+      : lewdTrap ? `${scout.name}觸發了${area.name}的媚藥機關，甜膩的霧噴了一身（魅氣 +${Math.round(lewdTrap * 100)}%）。` : `${scout.name}觸發了${area.name}的陷阱。`,
     tags: ['陷阱', ...(dark ? ['黑暗'] : [])],
   }
   report.lore_keys!.push(loc.name)
@@ -1266,8 +1294,9 @@ function openChest(state: GameState, area: Area, level: number): Report {
     if (x) x.qty++
     else items.push({ name, qty: 1, owner: 'pc' })
   }
+  const extra = parkPlaza(area.location) ? parkRules().chest_items : []
   const money = withRng(state, (rng) => {
-    for (const [name, p] of t.items) if (itemDef(name) && rng.chance(p)) add(name)
+    for (const [name, p] of [...t.items, ...extra]) if (itemDef(name) && rng.chance(p)) add(name)
     if (rng.chance(t.gear)) add(registerGear(state, randomGear(rng, level)))
     if (t.gear_extra && rng.chance(t.gear_extra)) add(registerGear(state, randomGear(rng, level)))
     for (const [tier, p] of t.forge) {
@@ -1450,6 +1479,9 @@ export function afterDefeat(state: GameState) {
     specialDefeat(state)
   } else if (area?.kind === 'road') {
     // 旅途上倒下：留在原地，醒來繼續趕路
+  } else if (loc.type === 'dungeon' && parkPlaza(loc.id)) {
+    // 園區：被送回入口廣場
+    returnToPlaza(state)
   } else if (loc.type === 'dungeon') {
     // 被救出地下城：這趟探索結束（撿到的東西在戰報裡已經依規則失去），重新進入
     enterLocation(state)
@@ -1460,7 +1492,7 @@ export function afterDefeat(state: GameState) {
 
 /** 回到地下城周邊的入口（撤退成功） */
 function placeAtEntrance(state: GameState) {
-  const area = getArea(state, layerKey(state.location, 0))
+  const area = getArea(state, layerKey(state.location, dungeonFirstLayer(state.location)))
   const exit = findKind(area, 'exit')!
   placeAt(state, area, exit.x, exit.y)
 }
@@ -1474,7 +1506,7 @@ export function retreat(state: GameState): StepResult {
   assertNoStandoff(state)
   const area = currentArea(state)
   if (area.kind !== 'dungeon') throw new Error('只有在地下城裡才能撤退')
-  if ((area.layer ?? 0) === 0 && currentCell(state).kind === 'exit') throw new Error('已經在入口了')
+  if ((area.layer ?? 0) === dungeonFirstLayer(area.location) && currentCell(state).kind === 'exit') throw new Error('已經在入口了')
   const r = attemptRetreat(state, area, currentCell(state).kind === 'safe')
   if (r.escaped) {
     placeAtEntrance(state)
@@ -1493,5 +1525,5 @@ export function retreat(state: GameState): StepResult {
 export function canTravelHere(state: GameState): boolean {
   const area = currentArea(state)
   const cell = currentCell(state)
-  return (area.kind === 'settlement' && cell.kind === 'gate') || (area.kind === 'dungeon' && cell.kind === 'exit')
+  return (area.kind === 'settlement' && cell.kind === 'gate') || (area.kind === 'dungeon' && cell.kind === 'exit' && !parkPlaza(area.location))
 }

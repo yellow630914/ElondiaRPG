@@ -752,6 +752,10 @@ export interface Expedition {
   /** 這趟撿到、還沒帶出地下城的物品與錢（戰敗時依規則失去） */
   loot: InventoryItem[]
   money_cc: number
+  /** 主題地下城的園區：從入口廣場的哪一格進來、進來前的特殊地圖紀錄（回廣場時還原） */
+  park?: { area: string; x: number; y: number; special?: GameState['special'] }
+  /** 園區的魅氣：每個人跨戰鬥保留的慾望（慾望上限的比例） */
+  lust?: Record<string, number>
 }
 
 /** 正在燒的光源：物品名稱與還能照亮幾格 */

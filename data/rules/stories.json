@@ -36289,6 +36289,71 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 650 }, { "type": "xp", "amount": 1600 }]
+    },
+    {
+      "id": "park_stamps",
+      "title": "緋夢樂園的集章卡",
+      "summary": "緋夢樂園的五個園區各有一個章，打倒園區最深處的層主就蓋得到。集滿五個章，接待員蜜菈說女王準備了獎品。",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_park_greeter",
+        "min_level": 11,
+        "requires": {
+          "flags": [
+            "park_stamp_park_beast",
+            "park_stamp_park_insect",
+            "park_stamp_park_aquarium",
+            "park_stamp_park_garden",
+            "park_stamp_park_theater"
+          ]
+        },
+        "text": "蜜菈看到你的集章卡，眼睛都亮了，尾巴搖個不停：「哇——五個章都蓋滿了！你是今年第一個呢。」她把卡片收進胸口，「女王陛下說要親自挑獎品給你。跟我來，到後面的貴賓室挑一個吧——別擔心，這次真的只是挑獎品。」"
+      },
+      "start_flags": ["park_stamps_start"],
+      "nodes": [
+        {
+          "id": "prize",
+          "title": "在貴賓室挑一件獎品",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_park_greeter" },
+          "requires": { "flags": ["park_stamps_start"] },
+          "text": "貴賓室裡鋪著紅絨布，桌上擺著兩個絲綢包著的盒子，還有一本燙金的書。蜜菈說：「書是送的。兩個盒子挑一個——頸環戴著出門比較方便，吊帶襪是女王陛下自己穿過的喔。」",
+          "options": [
+            {
+              "label": "挑頸環",
+              "success": {
+                "text": "你拿起那條黑色蕾絲的頸環，心形的寶石在燈下閃著粉紅色的光。蜜菈親手替你戴上，在你耳邊說：「以後來玩，報這條頸環就好，女王陛下會記得你。」",
+                "effects": [
+                  { "type": "item", "name": "緋夢樂園的通行頸環", "qty": 1 },
+                  { "type": "item", "name": "《傾國》", "qty": 1 },
+                  { "type": "money", "amount": 800 },
+                  { "type": "memory", "summary": "集滿了緋夢樂園五個園區的章，在貴賓室挑了通行頸環，還拿到了一本《傾國》。", "importance": 2 }
+                ],
+                "set_flags": ["park_stamps_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "挑吊帶襪",
+              "success": {
+                "text": "你打開盒子，黑絲上繡著暗紅色的薔薇，還留著一點女王的香味。蜜菈吃吃地笑：「女王陛下說，穿著它上台的人，就是下一場的主角了。」",
+                "effects": [
+                  { "type": "item", "name": "魅魔女王的吊帶襪", "qty": 1 },
+                  { "type": "item", "name": "《傾國》", "qty": 1 },
+                  { "type": "money", "amount": 800 },
+                  { "type": "memory", "summary": "集滿了緋夢樂園五個園區的章，在貴賓室挑了魅魔女王穿過的吊帶襪，還拿到了一本《傾國》。", "importance": 2 }
+                ],
+                "set_flags": ["park_stamps_done"],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1000 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }

@@ -328,6 +328,33 @@
         "#######E#######"
       ],
       "connections": [{"at": {"x": 7, "y": 6}, "to": {"area": "rivervale/upper", "x": 8, "y": 2}, "requires": {"flags": ["drg_ach_in"]}}]
+    },
+    "sm_lust_park": {
+      "name": "緋夢樂園・入口廣場",
+      "location": "bloodplume",
+      "desc": "魅魔們經營的遊樂園「緋夢樂園」的入口廣場：粉紅色的燈籠串滿整片天空，旋轉木馬上坐著半裸的魅魔，兩座噴泉流著甜得發膩的香水。北邊五道拱門各通往一個園區——淫獸牧場、蟲之溫室、觸手水族館、淫植花園、夢魔劇場；接待員蜜菈站在廣場中央，發集章卡給新來的客人。",
+      "lighting": "lit",
+      "refresh": true,
+      "peaceful": true,
+      "grid": [
+        "###########",
+        "#.#.#.#.#.#",
+        "#.........#",
+        "#.........#",
+        "#.........#",
+        "#S~~...~~.#",
+        "#.........#",
+        "#####E#####"
+      ],
+      "entry": { "x": 5, "y": 6 },
+      "connections": [
+        {"at": {"x": 1, "y": 1}, "to": {"area": "dungeon/park_beast", "x": 0, "y": 0}},
+        {"at": {"x": 3, "y": 1}, "to": {"area": "dungeon/park_insect", "x": 0, "y": 0}},
+        {"at": {"x": 5, "y": 1}, "to": {"area": "dungeon/park_aquarium", "x": 0, "y": 0}},
+        {"at": {"x": 7, "y": 1}, "to": {"area": "dungeon/park_garden", "x": 0, "y": 0}},
+        {"at": {"x": 9, "y": 1}, "to": {"area": "dungeon/park_theater", "x": 0, "y": 0}}
+      ],
+      "shops": [{"shop": "general", "x": 1, "y": 3}, {"shop": "tailor", "x": 9, "y": 3}]
     }
   }
 }

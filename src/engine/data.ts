@@ -52,6 +52,8 @@ export interface Location {
   /** 這個地點生成 NPC 的種族權重；沒寫時用所屬地區的預設 */
   races?: Record<string, number>
   note?: string
+  /** 主題地下城的園區：從這張特殊地圖（入口廣場）的通道進出，沒有周邊、不能直接旅行到（docs/LUST_PARK.md） */
+  park?: string
 }
 export interface Route {
   a: string
@@ -988,6 +990,16 @@ export interface DungeonEncounters {
 /** 這座地下城有幾層（有底層時 5 層） */
 export function dungeonDepth(id: string): number {
   return dungeonEncounters[id]?.abyss?.length ? 5 : 4
+}
+/** 主題地下城的園區（從入口廣場進出）：回傳入口廣場的特殊地圖 id */
+export function parkPlaza(id: string | undefined): string | undefined {
+  return id ? locationIndex.get(id)?.park : undefined
+}
+/** 打倒園區的最終層主時引擎設定的旗標（集章）：park_stamp_<園區 id> */
+export const PARK_STAMP_PREFIX = 'park_stamp_'
+/** 地下城最上面一層的編號：一般是周邊（0），園區沒有周邊，從淺層（1）開始 */
+export function dungeonFirstLayer(id: string): number {
+  return parkPlaza(id) ? 1 : 0
 }
 /** 這隻怪物是不是某座地下城某一層的層主（含內容編輯放上去的層主） */
 export function isLayerBoss(id: string): boolean {
@@ -2049,5 +2061,21 @@ export const lewdRules = lewdJson as unknown as {
     adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus
     free_submission_every: number; idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
   }
+  park: ParkRules
+}
+/** 主題地下城（魅魔的遊樂園）的規則：魅氣、擬態寶箱、寶箱加料、各園區的專屬戰敗 */
+export interface ParkRules {
+  /** 每走一格，全隊的魅氣（跨戰鬥保留的慾望，慾望上限的比例）增加多少；走路最多累積到 step_cap */
+  step_lust: number
+  step_cap: number
+  /** 園區的陷阱沒察覺時（媚藥機關），觸發的人魅氣增加多少（取代陷阱的傷害） */
+  trap_lust: number
+  /** 園區的寶箱有這個機率是擬態寶箱（打開時變成戰鬥）；mimics 依層（1 淺層、2 中層、3 深層）的怪物 */
+  mimic_chance: number
+  mimics: Record<string, string>
+  /** 園區的寶箱另外擲的物品 [名稱, 機率] */
+  chest_items: [string, number][]
+  /** 每個園區（地點 id）的專屬戰敗：AI 的成人場景、摘要、效果、經過的時間 */
+  defeats: Record<string, { scene: string; summary: string; effects: RewardEffect[]; hours: number }>
 }
 

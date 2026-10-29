@@ -3275,6 +3275,26 @@
      ]
     }
    ]
+  },
+  {
+   "id": "lm_lust_park",
+   "name": "緋夢樂園的售票亭",
+   "emoji": "🎡",
+   "location": "bloodplume",
+   "at": {
+    "area": "bloodplume/gate",
+    "x": 6,
+    "y": 4
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "城門邊一座粉紅色的售票亭，招牌上畫著一個眨眼的魅魔：「緋夢樂園——讓你玩到腿軟」。走進去就是遊樂園的入口廣場。",
+   "scene": "城門邊的粉紅色售票亭，掛滿了心形的燈籠，售票口的魅魔對每個路過的人拋媚眼。",
+   "open": {
+    "adult": true
+   },
+   "interior": "sm_lust_park"
   }
  ]
 }

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { leavePark } from '@/engine/park'
 import { DIFFICULTY_DEFS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landmarks'
 import * as perkActions from '@/engine/perkActions'
@@ -1005,6 +1006,7 @@ export const useGame = defineStore('game', () => {
     reinkParasite: (id: string, kind: 'curse' | 'covered') => run((s) => parasiteEvents.reinkAtCarver(s, id, kind)),
     leaveSide: () => run((s) => road.leaveSide(s)),
     leaveSpecial: () => run((s) => specialMaps.leaveSpecial(s), { onMap: true }),
+    leavePark: () => run((s) => leavePark(s), { onMap: true }),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */

@@ -4,7 +4,7 @@ import { deadlineText, questDeadlineDays } from '@/engine/deadlines'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, isCustomShopId, landmarkDef, locationById, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
+import { attrName, isCustomShopId, landmarkDef, locationById, parkPlaza, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
 import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, position, linkEntryBlock, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
@@ -329,6 +329,11 @@ const shopDesc = computed(() => {
         <template v-else-if="cell.kind === 'merchant'">
           <p class="muted small">照著情報找到的流浪商人：賣城裡少見的材料、藥劑、卷軸與幾件優良裝備。</p>
           <ShopPanel :key="`wanderer-${s.location}-${s.time.day}`" type="wanderer" />
+        </template>
+
+        <template v-else-if="cell.kind === 'exit' && parkPlaza(area.location) && area.kind === 'dungeon'">
+          <p class="muted small">{{ area.name }}的出口，通往{{ specialMaps[parkPlaza(area.location)!]?.name }}。</p>
+          <button @click="game.leavePark()">回到{{ specialMaps[parkPlaza(area.location)!]?.name }}</button>
         </template>
 
         <template v-else-if="cell.kind === 'exit' && area.kind === 'special'">

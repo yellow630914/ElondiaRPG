@@ -13,7 +13,7 @@ import {
   apMaxFor, apRegenFor, attrOf, attrsOf, carriedAbilities, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, ATTR_IDS, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
+  abilityDef, armorDef, ATTR_IDS, PARK_STAMP_PREFIX, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
   lewdRules, locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
@@ -22,6 +22,7 @@ import {
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { rollDefeatEvent } from './defeat'
+import { inPark, parkDefeat, parkLust, saveParkLust } from './park'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { advanceBossHunts, clearCounts, LAYER_IDS } from './materialQuests'
@@ -375,7 +376,10 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const faith = mod(f.attrs.fai) * L.faith_resist
     if (faith) mulResist(f.resist, { lust: Math.round(faith * 100) / 100 })
     f.lust += Math.round(f.lustMax * Math.floor(v.lewdness / L.lewd_start_per) * L.lewd_start_ratio)
-    if (ch.status.includes('aroused')) f.lust += Math.round(f.lustMax * r.aroused_start)
+    // 園區的魅氣：跨戰鬥保留的慾望（已經包含戰後的發情，不另外加）
+    const carried = parkLust(state, ch.id)
+    if (carried) f.lust += Math.round(f.lustMax * carried)
+    else if (ch.status.includes('aroused')) f.lust += Math.round(f.lustMax * r.aroused_start)
     f.lust = Math.min(f.lust, f.lustMax - 1)
   }
 }
@@ -2139,8 +2143,17 @@ export function finishCombat(state: GameState): Report {
   }
   // 慾望戰鬥：戰後留下的狀態、慾望勝利與高潮寫進戰報（交給成人場景的寫手）
   settleLust(state, combat, report)
-  // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）
-  if (combat.status === 'defeat' && !rescued) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes))
+  // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）；園區改成那個園區的專屬戰敗
+  if (combat.status === 'defeat' && !rescued && !parkDefeat(state, report)) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes))
+  // 園區：打倒最終層主蓋一個章
+  if (victory && cellHere?.kind === 'boss' && !cellHere.then && inPark(state)) {
+    const stamp = `${PARK_STAMP_PREFIX}${combat.location}`
+    if (!state.flags[stamp]) {
+      report.changes.flags = { ...(report.changes.flags ?? {}), [stamp]: true }
+      report.outcome.summary = `${report.outcome.summary ?? ''}在集章卡上蓋了${locationById(combat.location).name}的章。`
+      report.outcome.tags = [...(report.outcome.tags ?? []), '集章']
+    }
+  }
   // 特殊任務的戰鬥任務點：依勝負套用結果
   if (combat.story) applyStoryCombat(state, report, combat.story, combat.status)
   // 打死了任務需要的角色：那個任務失敗
@@ -2172,6 +2185,8 @@ export function finishCombat(state: GameState): Report {
 function settleLust(state: GameState, combat: CombatState, report: Report) {
   if (!lustOn(combat)) return
   const r = lustRules()
+  // 園區：剩下的慾望記成魅氣，帶到下一場
+  saveParkLust(state, Object.fromEntries(combat.combatants.filter((c) => c.side === 'party' && !c.ally && c.lustMax).map((c) => [c.id, (c.lust ?? 0) / c.lustMax!])))
   const climaxed: string[] = []
   for (const member of state.party) {
     const f = combat.combatants.find((c) => c.id === member.id)

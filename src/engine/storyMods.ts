@@ -5,7 +5,7 @@ import { LEWD_KEYS } from './lewd'
 import type { LewdKey, MasterEventPool } from './data'
 import {
   abilities, ATTR_IDS, companionRules, specialMaps, storyCounters, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
-  type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, MASTER_EVENT_POOLS,
+  type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, MASTER_EVENT_POOLS, PARK_STAMP_PREFIX,
 } from './data'
 import type { RewardEffect } from './effects'
 import { blockKeys, CELL_NAME, settlementArea, type CellKind } from './grid'
@@ -499,7 +499,8 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
   const externalSets = new Set(others.filter((s) => s.id !== def.id).flatMap((s) => [...(s.start_flags ?? []), ...s.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.set_flags ?? []))]))
   const usage = flagUsage(def)
   for (const u of usage) {
-    if (u.requiredBy.length && !u.setBy.length && !u.flag.startsWith('ai:') && !externalSets.has(u.flag)) {
+    // ai: 開頭的由 AI 判定設定；park_stamp_ 開頭的由引擎在打倒園區的最終層主時設定
+    if (u.requiredBy.length && !u.setBy.length && !u.flag.startsWith('ai:') && !u.flag.startsWith(PARK_STAMP_PREFIX) && !externalSets.has(u.flag)) {
       warn.push(`旗標 🚩${u.flag} 在任務裡沒有地方會設定（可能由 AI 判定或其他任務設定），否則需要它的「${u.requiredBy.join('」「')}」不會出現`)
     }
   }
