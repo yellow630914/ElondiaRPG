@@ -771,6 +771,8 @@ export interface StatusDef {
   on_release?: { amount: number; level?: boolean; type: string }
   /** 下一個自己的回合開始時，慾望全部消退（潮之新娘） */
   lust_dump?: boolean
+  /** 下一次高潮不扣生命（用掉這個狀態；精力藥） */
+  climax_guard?: boolean
 }
 export const statuses = (statusesJson as unknown as { statuses: Record<string, StatusDef> }).statuses
 
@@ -1141,6 +1143,8 @@ export interface ConditionDef {
   combat_mods?: Mods
   /** 每場戰鬥開始時的暫時生命 */
   combat_temp_hp?: number
+  /** 每場戰鬥的慾望上限倍率加減（壯陽料理：0.2 = +20%） */
+  combat_lust_max?: number
   /** 同一組只留一個：rank 高的取代低的，低的蓋不掉高的（用餐） */
   group?: string
   rank?: number
@@ -1187,7 +1191,7 @@ export function conditionTone(id: string): 'good' | 'bad' | 'plain' {
     // 戰鬥修正（命中、傷害、減傷……；仇恨值不算好壞）加總的正負
     const combat = Object.entries(c.combat_mods ?? {}).reduce((t, [k, v]) => (k === 'threat' ? t : t + (v ?? 0)), 0)
     if (combat < 0) return 'bad'
-    return (c.check_penalty ?? 0) < 0 || c.combat_temp_hp || c.group || combat > 0 ? 'good' : 'plain'
+    return (c.check_penalty ?? 0) < 0 || c.combat_temp_hp || c.combat_lust_max || c.group || combat > 0 ? 'good' : 'plain'
   }
   const st = statuses[id]
   return st ? (st.kind === 'buff' ? 'good' : 'bad') : 'plain'
@@ -1560,6 +1564,8 @@ export interface ItemUse {
   status?: { id: string; turns: number }
   temp_hp?: number
   ap?: number
+  /** 戰鬥中：慾望增減（負數消退，正數算自己增加的慾望） */
+  lust?: number
   revive?: number
   /** 投擲：對敵人造成傷害（area 為 all 時波及所有敵人） */
   damage?: { dice: string; type: string }
@@ -2062,6 +2068,8 @@ export const lewdRules = lewdJson as unknown as {
     free_submission_every: number; idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
   }
   park: ParkRules
+  /** 慾望勝利的「征服」掉落：打倒的怪物在高潮中屈服時，有 chance 的機率依種類多掉一件 */
+  conquest: { chance: number; kinds: Record<string, string> }
   charm: {
     names: string[]
     regions: Record<string, number>

@@ -739,6 +739,8 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   if (u.status?.id && statuses[u.status.id]) out.status = { id: u.status.id, turns: int(u.status.turns, 1, 20, 3) }
   if (u.temp_hp) out.temp_hp = int(u.temp_hp, 1, 999, 10)
   if (u.ap) out.ap = int(u.ap, 1, 10, 1)
+  if (u.lust) out.lust = int(u.lust, -200, 200, 0) || undefined
+  if (!out.lust) delete out.lust
   if (u.revive) out.revive = Math.round(num(u.revive, 0.01, 1, 0.3) * 100) / 100
   if (u.damage?.dice && DICE.test(String(u.damage.dice).replace(/\s+/g, ''))) {
     out.damage = { dice: String(u.damage.dice).replace(/\s+/g, ''), type: DAMAGE_IDS().includes(u.damage.type) ? u.damage.type : 'fire' }
@@ -753,7 +755,7 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   if (u.escape) out.escape = true
   if ((out.damage || out.apply) && u.area === 'all') out.area = 'all'
   else if (out.damage || out.apply) out.area = 'one'
-  if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.revive || out.cleanse || out.escape) {
+  if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.lust || out.revive || out.cleanse || out.escape) {
     if (!(out.heal || out.slot) || u.combat_only) out.combat_only = true
   }
   return Object.keys(out).length ? out : undefined
@@ -1498,7 +1500,7 @@ export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: bool
   if (raw.lust_scale && typeof raw.lust_scale === 'object' && ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit'].includes(String(raw.lust_scale.stat))) {
     out.lust_scale = { stat: raw.lust_scale.stat, per: int(raw.lust_scale.per, 1, 5, 1), max: int(raw.lust_scale.max, 1, 20, 5) }
   }
-  for (const k of ['no_climax', 'no_cleanse', 'lust_hold', 'lust_dump'] as const) if (raw[k]) out[k] = true
+  for (const k of ['no_climax', 'no_cleanse', 'lust_hold', 'lust_dump', 'climax_guard'] as const) if (raw[k]) out[k] = true
   if (raw.convert_low && typeof raw.convert_low === 'object') {
     out.convert_low = { below: Math.round(num(raw.convert_low.below, 0.05, 1, 0.3) * 100) / 100, ratio: Math.round(num(raw.convert_low.ratio, 0.05, 1, 1) * 100) / 100 }
   }

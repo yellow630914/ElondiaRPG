@@ -108,6 +108,8 @@
     "spoils_resolve": { "name": "戰利品的覺悟", "kind": "buff", "convert_low": { "below": 0.3, "ratio": 1 } },
     "sacrifice_sigil": { "name": "獻祭的契紋", "kind": "buff", "on_release": { "amount": 6, "level": true, "type": "necrotic" }, "no_cleanse": true },
     "courtship_mark": { "name": "求偶紋", "kind": "debuff", "resist": { "lust": 0.5 } },
-    "tide_bride": { "name": "潮之新娘", "kind": "buff", "no_climax": true, "lust_dump": true, "no_cleanse": true }
+    "tide_bride": { "name": "潮之新娘", "kind": "buff", "no_climax": true, "lust_dump": true, "no_cleanse": true },
+    "calm_draught": { "name": "冷靜", "kind": "buff", "resist": { "lust": -0.5 } },
+    "vigor_draught": { "name": "精力充沛", "kind": "buff", "climax_guard": true }
   }
 }

@@ -141,6 +141,7 @@
     "exposure_per_level": 2,
     "settlements": ["capital", "city", "town", "village", "port", "outpost", "fortress"]
   },
+  "conquest": {"$comment": "慾望勝利的「征服」掉落（docs/LEWD_STATS.md 第 13 節）：怪物在高潮中屈服（慾望勝利）時，有 chance 的機率依種類（kinds）多掉一件材料。不死與構裝不吃魅惑，人形不掉。", "chance": 0.5, "kinds": {"beast": "淫獸的媚腺", "demon": "魅魔的香精", "fey": "妖精的花露", "plant": "媚香花蜜", "spirit": "夢魔的鱗粉", "elemental": "媚液結晶"}},
   "charm": {
     "$comment": "魅氣濃度（docs/LEWD_STATS.md 第 12 節）：每個聚落 1～4，地區預設 regions，個別地點 locations 覆蓋。exposure_mult：在這裡穿著曝露的服裝時，曝露名聲每天累積的倍率（依濃度，第 0 個不用）；rut_mult：近郊與地下城的怪物擲到「發情」的權重倍率；spread：每個地區的曝露名聲讓相鄰地區（有路相連）慢慢追到它的 ratio，每天 +1；gate：濃度 min 以上的城門可以照規矩戴上拘束具進城（item 戴上、lock 的鎖鎖上，當天不用盤查）；ai：給 AI 的一句風氣（成人向的判定與敘事）。",
     "names": ["", "清淨", "尋常", "放縱", "淫靡"],

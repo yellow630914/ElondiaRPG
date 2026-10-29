@@ -395,6 +395,7 @@ function setFuel(v: string) {
         <label>回復法術環（N 環以下）<input v-model.number="use.slot" type="number" min="0" max="9" /></label>
         <label>暫時生命 <input v-model.number="use.temp_hp" type="number" min="0" /></label>
         <label>行動點 <input v-model.number="use.ap" type="number" min="0" max="10" /></label>
+        <label title="戰鬥中：負數消退慾望（清心茶 −30），正數算自己增加的慾望">慾望 <input v-model.number="use.lust" type="number" min="-200" max="200" /></label>
         <label>救起倒下的隊友（最大生命 %）<input type="number" min="0" max="100" :value="Math.round((use.revive ?? 0) * 100)" @change="use.revive = Number(($event.target as HTMLInputElement).value) / 100 || undefined" /></label>
         <label>給自己或隊友的狀態
           <select :value="use.status?.id ?? ''" @change="use.status = ($event.target as HTMLSelectElement).value ? { id: ($event.target as HTMLSelectElement).value, turns: use.status?.turns ?? 3 } : undefined">

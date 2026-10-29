@@ -343,6 +343,9 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const L = lewdRules.combat
     const v = lewdOf(ch)
     f.lustMax += Math.floor(v.endurance / L.endurance_max_div)
+    // 非戰鬥狀態的慾望上限（壯陽料理）
+    const condMax = ch.status.reduce((s, id) => s + (companionRules.conditions[id]?.combat_lust_max ?? 0), 0)
+    if (condMax) f.lustMax = Math.round(f.lustMax * (1 + condMax))
     f.lustMods = {
       taken: L.sensitivity_base + v.sensitivity / L.sensitivity_div,
       decay: Math.max(0, 1 - v.lewdness / L.lewd_decay_div),
@@ -481,7 +484,13 @@ function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
     noteAffinity(combat, target.id, -1, '在戰鬥中倒下')
     return
   }
-  const loss = Math.max(0, Math.min(Math.round(target.maxHp * r.party_climax_hp), target.hp - 1))
+  // 精力藥：這一次高潮不扣生命（用掉）
+  const guard = target.statuses.find((x) => statusDef(x.id).climax_guard)
+  if (guard) {
+    target.statuses = target.statuses.filter((x) => x !== guard)
+    effects.push({ type: 'status_remove', target: target.id, status: statusDef(guard.id).name, text: '高潮沒有扣生命' })
+  }
+  const loss = guard ? 0 : Math.max(0, Math.min(Math.round(target.maxHp * r.party_climax_hp), target.hp - 1))
   if (loss > 0) {
     target.hp -= loss
     effects.push({ type: 'damage', target: target.id, amount: loss, text: '高潮' })
@@ -972,8 +981,8 @@ export function itemTargets(combat: CombatState, name: string): Combatant[] {
   if (use.revive) return allies.filter((c) => c.hp === 0)
   if (use.heal) return allies.filter((c) => c.hp < c.maxHp)
   if (use.slot) return allies.filter((c) => isActive(c) && restorableCircle(c, use.slot!) !== null)
-  if (use.cleanse && !use.status && !use.temp_hp && !use.ap) return allies.filter((c) => isActive(c) && c.statuses.some((x) => use.cleanse!.includes(x.id)))
-  if (use.status || use.temp_hp || use.ap || use.cleanse) return allies.filter(isActive)
+  if (use.cleanse && !use.status && !use.temp_hp && !use.ap && !use.lust) return allies.filter((c) => isActive(c) && c.statuses.some((x) => use.cleanse!.includes(x.id)))
+  if (use.status || use.temp_hp || use.ap || use.cleanse || use.lust) return allies.filter(isActive)
   return []
 }
 
@@ -1033,6 +1042,11 @@ function useItem(combat: CombatState, rng: Rng, actor: Combatant, name: string, 
       const before = target.ap
       target.ap = Math.min(target.apMax, target.ap + use.ap)
       effects.push({ type: 'note', target: target.id, text: `行動點 +${target.ap - before}` })
+    }
+    // 慾望：負數消退（清心茶），正數增加（自己增加的慾望）
+    if (use.lust && target.lustMax !== undefined && lustOn(combat)) {
+      if (use.lust < 0) relieveLust(target, -use.lust, effects)
+      else gainLust(combat, target, use.lust, effects, { selfGain: true })
     }
   }
   combat.itemsUsed = { ...combat.itemsUsed, [name]: (combat.itemsUsed?.[name] ?? 0) + 1 }
@@ -2050,6 +2064,9 @@ export function finishCombat(state: GameState): Report {
       const def = enemies[f.defId!]
       if (!def) continue
       if (def.money_cc) money += rng.int(def.money_cc[0], def.money_cc[1])
+      // 慾望勝利的「征服」掉落：依怪物的種類（lewd.json 的 conquest）
+      const conquest = f.lustDefeated && def.kind ? lewdRules.conquest.kinds[def.kind] : undefined
+      if (conquest && rng.chance(lewdRules.conquest.chance)) gain(conquest)
       for (const l of def.loot ?? []) {
         if (rng.chance(l.chance)) gain(l.item, l.qty ?? 1)
       }

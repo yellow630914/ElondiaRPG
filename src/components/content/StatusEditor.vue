@@ -288,6 +288,7 @@ function remove() {
         <label class="check"><input v-model="draft.no_climax" type="checkbox" /> 不會高潮</label>
         <label class="check"><input v-model="draft.no_cleanse" type="checkbox" /> 淨化拿不掉</label>
         <label class="check"><input v-model="draft.lust_dump" type="checkbox" /> 下一個自己的回合開始時慾望全部消退</label>
+        <label class="check"><input v-model="draft.climax_guard" type="checkbox" /> 下一次高潮不扣生命（用掉這個狀態）</label>
       </div>
       <div class="row small">
         <label class="check"><input type="checkbox" :checked="!!draft.convert_low" @change="($event.target as HTMLInputElement).checked ? (draft.convert_low = { below: 0.3, ratio: 1 }) : delete draft.convert_low" /> 生命低時傷害轉成慾望</label>
