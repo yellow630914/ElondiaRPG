@@ -121,6 +121,7 @@ export const GROUPS = [
     { page: '點子：玩家回饋', src: 'docs/plan/ideas/player-feedback.md', desc: '玩家回饋引出的構想', sub: '點子的來源' },
     { page: '點子：開發討論', src: 'docs/plan/ideas/dev-discussion.md', desc: '開發討論中提出的構想', sub: '點子的來源' },
     { page: 'UI 改版計畫', src: 'docs/plan/UI_V2_PLAN.md', desc: 'UI v2 的分階段計畫' },
+    { page: '手機版 UI 計畫', src: 'docs/plan/MOBILE_UI_PLAN.md', desc: '手機直式版面的規劃與決定' },
   ] },
 ]
 

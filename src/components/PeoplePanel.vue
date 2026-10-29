@@ -95,15 +95,15 @@ function attack(p: PresentNpc) {
   if (confirm(`偷襲${p.rec.name}？被人看到的話，這裡與${p.rec.name}常去的地方都會提高警戒、降低聲望。`)) interact('attack', p)
 }
 
-/** 帶到「主動行動」：加進對象（還沒選人時就是主要對象），捲到主動行動面板 */
+/** 帶到「主動行動」：加進對象（還沒選人時就是主要對象），捲到日誌底部的主動行動列 */
 function toAction(p: PresentNpc) {
   const max = actionRules.kinds.free.max_targets ?? 1
   if (!game.actionTargets.includes(p.rec.id)) {
     if (game.actionTargets.length >= max) game.flash(`主動行動最多 ${max} 個對象，先移掉一位`)
     else game.actionTargets = [...game.actionTargets, p.rec.id]
   }
-  document.querySelector('.action-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  document.querySelector<HTMLTextAreaElement>('.action-panel textarea:last-of-type')?.focus({ preventScroll: true })
+  document.querySelector('.action-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  document.querySelector<HTMLTextAreaElement>('.action-bar textarea.free')?.focus({ preventScroll: true })
 }
 
 // 一國之主這類人：不能偷襲、偷竊（內容頁籤的設定）

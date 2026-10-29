@@ -6,12 +6,15 @@ import { useSettings } from '@/stores/settings'
 import { formatTokens } from '@/narrator/describe'
 import { ARCHIVE_USAGE, OTHER_USAGE, usageFeatureName, usageSourceLabel } from '@/stores/game'
 import { formatTime } from '@/engine/state'
+import ActionPanel from './ActionPanel.vue'
+import PendingActionCard from './PendingActionCard.vue'
 import ReportCard from './ReportCard.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import JudgeToggle from './JudgeToggle.vue'
 
 // 冒險頁中間的日誌：舊的在上、新的在下，有新紀錄時捲到最下面。
+// 最下面是等待判定的行動（判定完換成它的日誌），日誌底部是主動行動的輸入列。
 const PAGE = 30
 const game = useGame()
 const settings = useSettings()
@@ -75,6 +78,8 @@ async function toBottom(force = false) {
 }
 
 watch(latest, () => toBottom(true))
+// 擲完骰、等待判定的行動出現在最下面
+watch(() => !!game.state?.pendingAction || !!game.state?.pendingMark, (on) => { if (on) void toBottom(true) })
 // 串流敘事時，若玩家正在看最新的內容就跟著捲動
 watch(streamingText, () => toBottom())
 onMounted(() => toBottom(true))
@@ -124,7 +129,9 @@ onMounted(() => toBottom(true))
       </template>
       <p v-if="reports.length === 0" class="muted empty">還沒有任何紀錄。從地圖上走到酒館、公會或城門，開始你的冒險吧。</p>
       <ReportCard v-for="r in reports" :key="r.report_id" :report="r" />
+      <PendingActionCard />
     </div>
+    <ActionPanel />
   </section>
 </template>
 
@@ -144,7 +151,7 @@ onMounted(() => toBottom(true))
 .spacer { flex: 1; }
 .feed {
   overflow-y: auto;
-  height: calc(100vh - 250px);
+  height: calc(100vh - 300px);
   min-height: 420px;
   padding: 10px 4px 0 0;
   display: flex;
