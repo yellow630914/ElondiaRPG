@@ -39,7 +39,7 @@ describe('額外飾品欄', () => {
     putOn(pc, gearName(blind), blind, EXTRA_SLOT)
     expect(pc.gear?.head?.spec.base).toBe('hood')
     expect(pc.gear?.[EXTRA_SLOT]?.spec.base).toBe('blindfold')
-    expect(bindModifiers(pc, { attr: 'int' }).length).toBeGreaterThan(0)
+    expect(bindModifiers(pc, { context: 'action', attr: 'int' }).length).toBeGreaterThan(0)
   })
 
   it('主人強制的拘束具戴在原本的部位', () => {
