@@ -224,6 +224,11 @@ export interface Character {
   usesPerRest: Record<string, number>
   /** 已學會的技能、法術、戲法 id */
   abilities: string[]
+  /**
+   * 攜帶中的技能與法術（存檔規則 skillLoadout 的上限，戲法不算）：戰鬥只帶這些，其他留在技能庫。
+   * 沒有時帶最近學會的幾個（見 character.ts 的 carriedAbilities）
+   */
+  loadout?: string[]
   /** 武器與上身防具的基本類型（equipment.json）；有裝備欄位時由主手與上身的裝備決定 */
   weapon: string
   armor: string
@@ -700,6 +705,8 @@ export interface GameOptions {
   parasiteMult?: number
   dungeonEventMult?: number
   eventDc?: number
+  /** 每個角色戰鬥時最多攜帶幾個技能與法術（戲法不算）；0 = 不限 */
+  skillLoadout?: number
   /** 允許在遊戲中更換主角的身分標籤（見 engine/pcTags.ts） */
   tagChange?: boolean
 }

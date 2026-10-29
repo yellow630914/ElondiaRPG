@@ -1029,6 +1029,8 @@ export const useGame = defineStore('game', () => {
     washTattoo: (place: TattooPlace) => run((s) => tattooShop.washTattoo(s, place)),
     chooseAbility: (member: string, ability: string) => run((s) => town.chooseAbility(s, member, ability)),
     rerollAbility: (member: string) => run((s) => town.rerollAbility(s, member, useSettings().rerollLimit())),
+    // 技能攜帶上限：把學會的技能帶上或放回技能庫
+    setAbilityCarried: (member: string, ability: string, on: boolean) => run((s) => town.setAbilityCarried(s, member, ability, on)),
     spendAttr: (member: string, attr: AttrId) =>
       run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),

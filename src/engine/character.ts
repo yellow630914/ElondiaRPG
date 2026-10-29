@@ -361,6 +361,67 @@ export function learnAbility(c: Character, id: string): AbilityDef {
   return a
 }
 
+// ---- 技能攜帶上限（存檔規則 skillLoadout）：學會的能力都在技能庫，戰鬥只帶攜帶中的；戲法不算 ----
+
+/** 這項能力算不算進攜帶上限（戲法有自己的上限，一直都帶著） */
+export function countsForLoadout(id: string): boolean {
+  return abilityTable[id]?.type !== 'cantrip'
+}
+
+/**
+ * 攜帶中、算進上限的能力（依學會的順序）。cap 為 0 表示不限。
+ * 沒選過時（以及上限調低、選的比上限多時）自動挑：先帶職業的起始能力（重擊、偷襲、治療術這類核心技能），其他帶最近學會的。
+ */
+function carriedCounted(c: Pick<Character, 'abilities' | 'loadout' | 'class'>, cap: number): string[] {
+  const counted = c.abilities.filter(countsForLoadout)
+  if (cap <= 0) return counted
+  const picked = c.loadout ? counted.filter((id) => c.loadout!.includes(id)) : counted
+  if (picked.length <= cap) return picked
+  const core = new Set((classDef(c.class)?.start ?? []).filter((id) => picked.includes(id)).slice(0, cap))
+  const room = cap - core.size
+  const rest = room > 0 ? picked.filter((id) => !core.has(id)).slice(-room) : []
+  const keep = new Set([...core, ...rest])
+  return picked.filter((id) => keep.has(id))
+}
+
+/** 戰鬥時帶上的能力：攜帶中的技能與法術，加上所有戲法 */
+export function carriedAbilities(c: Character, cap: number): string[] {
+  const keep = new Set(carriedCounted(c, cap))
+  return c.abilities.filter((id) => !countsForLoadout(id) || keep.has(id))
+}
+
+/** 攜帶了幾個、技能庫還有幾個（都不算戲法） */
+export function loadoutUsage(c: Character, cap: number): { carried: number; library: number } {
+  const carried = carriedCounted(c, cap).length
+  return { carried, library: c.abilities.filter(countsForLoadout).length - carried }
+}
+
+/** 剛學會一項能力（已經放進 abilities）：還有空位就帶上，滿了就留在技能庫。回傳有沒有帶上 */
+export function carryLearned(c: Character, id: string, cap: number): boolean {
+  if (cap <= 0 || !countsForLoadout(id)) return true
+  const before = carriedCounted({ abilities: c.abilities.filter((x) => x !== id), loadout: c.loadout, class: c.class }, cap)
+  if (before.length < cap) {
+    if (c.loadout) c.loadout = [...before, id]
+    return true
+  }
+  // 帶滿了：記下原本帶的，新學的留在技能庫（不擠掉舊的）
+  c.loadout = before
+  return false
+}
+
+/** 把一項學會的技能或法術帶上，或放回技能庫 */
+export function setCarried(c: Character, id: string, on: boolean, cap: number) {
+  if (!c.abilities.includes(id)) throw new Error('還沒學會這項能力')
+  if (!countsForLoadout(id)) throw new Error('戲法不算在攜帶上限裡，一直都帶著')
+  if (cap <= 0) throw new Error('目前不限攜帶數量，全部都帶著')
+  const now = carriedCounted(c, cap)
+  if (on) {
+    if (now.includes(id)) return
+    if (now.length >= cap) throw new Error(`已經帶滿 ${cap} 個，先放回一個`)
+    c.loadout = [...now, id]
+  } else c.loadout = now.filter((x) => x !== id)
+}
+
 /** 加經驗值並處理升級；回傳升了幾級。會直接修改角色。 */
 export function gainXp(c: Character, amount: number, rng: Rng): number {
   c.xp += amount

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue'
 import { lastSeen, stateKey } from '@/fx/seen'
-import { affinityStage, apMaxFor, apRegenFor, attrsOf, castingAttr, guildRankFor, mod, proficiency, xpToNext } from '@/engine/character'
+import { affinityStage, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, guildRankFor, loadoutUsage, mod, proficiency, xpToNext } from '@/engine/character'
+import { gameRule } from '@/engine/gameRules'
 import { playerRank } from '@/engine/guild'
 import { abilityDef, attributeRules, attrName, className, classDef, companionRules, conditionName, conditionTone, genderDef, genderName, raceName } from '@/engine/data'
 import { gearSummary, SLOTS, slotName } from '@/engine/gear'
@@ -25,6 +26,8 @@ const emit = defineEmits<{ detail: [member: string, tab: CharTab] }>()
 const game = useGame()
 const s = computed(() => game.state!)
 const inCombat = computed(() => !!s.value.combat)
+// 技能攜帶上限：卡片上列攜帶中的能力
+const loadoutCap = computed(() => gameRule(s.value, 'skillLoadout'))
 const leader = computed(() => leaderOf(s.value))
 const bound = computed(() => isBound(s.value))
 
@@ -152,8 +155,9 @@ function canDismiss(m: Character) {
       <button v-if="!isNoncombatant(m) && m.abilities.length" class="sec ghost" @click="emit('detail', m.id, 'abilities')">
         <span class="label">能力</span>
         <span class="items">
-          <span v-for="id in m.abilities.slice(0, 8)" :key="id" class="tag" :title="abilityDef(id).desc">{{ abilityDef(id).name }}</span>
-          <span v-if="m.abilities.length > 8" class="muted small">等 {{ m.abilities.length }} 項</span>
+          <span v-for="id in carriedAbilities(m, loadoutCap).slice(0, 8)" :key="id" class="tag" :title="abilityDef(id).desc">{{ abilityDef(id).name }}</span>
+          <span v-if="carriedAbilities(m, loadoutCap).length > 8" class="muted small">等 {{ carriedAbilities(m, loadoutCap).length }} 項</span>
+          <span v-if="loadoutUsage(m, loadoutCap).library" class="muted small">（技能庫 {{ loadoutUsage(m, loadoutCap).library }}）</span>
         </span>
         <span class="go">詳情<GameIcon name="right" :size="12" /></span>
       </button>

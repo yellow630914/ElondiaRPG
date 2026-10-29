@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import {
-  abilityQuality, apMaxFor, apRegenFor, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
+  abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
 import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules, tagDef } from '@/engine/data'
 import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
+import { gameRule } from '@/engine/gameRules'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import { flash, floatText } from '@/fx/fx'
@@ -71,6 +72,10 @@ function spend(attr: string) {
   requestAnimationFrame(() => (popped.value = attr))
   popTimer = setTimeout(() => (popped.value = ''), 500)
 }
+// 技能攜帶上限（存檔規則）：攜帶中的技能與法術；戲法不算
+const loadoutCap = computed(() => gameRule(s.value, 'skillLoadout'))
+const carried = computed(() => new Set(carriedAbilities(m.value, loadoutCap.value)))
+const carriedCount = computed(() => m.value.abilities.filter((id) => countsForLoadout(id) && carried.value.has(id)).length)
 const learned = ref('')
 function pick(e: MouseEvent, id: string) {
   const el = e.currentTarget as HTMLElement
@@ -253,11 +258,23 @@ function saveTags() {
           </button>
         </div>
       </div>
+      <p v-if="loadoutCap > 0 && m.abilities.some(countsForLoadout)" class="loadout small">
+        攜帶 <b :class="{ full: carriedCount >= loadoutCap }">{{ carriedCount }} / {{ loadoutCap }}</b>
+        <Hint text="戰鬥中只能用攜帶的技能與法術（戲法不算，一直都帶著）；沒帶的留在技能庫，戰鬥以外隨時可以換。上限在設定的「這個存檔的規則」調整。" />
+      </p>
       <div v-for="g in groupedAbilities(m)" :key="g.type" class="group">
         <h4>{{ TYPE_NAME[g.type] }}</h4>
         <div class="abilities">
-          <article v-for="a in g.items" :key="a.id" class="ability" :class="[`q-${abilityQuality(a)}`, { flip: learned === a.id }]">
-            <header><ContentIcon kind="ability" :def="a" :size="20" /><b>{{ a.name }}</b><span class="tag">{{ QUALITY_NAME[abilityQuality(a)] }}</span></header>
+          <article v-for="a in g.items" :key="a.id" class="ability" :class="[`q-${abilityQuality(a)}`, { flip: learned === a.id, benched: !carried.has(a.id) }]">
+            <header>
+              <ContentIcon kind="ability" :def="a" :size="20" /><b>{{ a.name }}</b><span class="tag">{{ QUALITY_NAME[abilityQuality(a)] }}</span>
+              <button
+                v-if="loadoutCap > 0 && countsForLoadout(a.id)" class="carry small" :class="carried.has(a.id) ? 'ghost' : 'sec'"
+                :disabled="inCombat || (!carried.has(a.id) && carriedCount >= loadoutCap)"
+                :title="inCombat ? '戰鬥中不能換' : carried.has(a.id) ? '放回技能庫' : carriedCount >= loadoutCap ? '已經帶滿，先放回一個' : '帶上'"
+                @click="game.setAbilityCarried(m.id, a.id, !carried.has(a.id))"
+              >{{ carried.has(a.id) ? '攜帶中' : '技能庫' }}</button>
+            </header>
             <div class="meta small muted">{{ abilityMeta(a) }}</div>
             <p class="small">{{ a.desc }}</p>
           </article>
@@ -298,6 +315,10 @@ function saveTags() {
 .ability.q-uncommon { border-left-color: #2f7a1e; } .ability.q-rare { border-left-color: #1f5a9a; }
 .ability.q-epic { border-left-color: #6a3a9a; } .ability.q-legendary, .ability.q-mythic { border-left-color: #a86a10; }
 .group h4 { margin: 12px 0 6px; color: var(--accent-2); letter-spacing: 0.15em; }
+.loadout { margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }
+.loadout .full { color: #a8452c; }
+.ability.benched { opacity: 0.6; }
+.ability .carry { margin-left: auto; padding: 1px 8px; }
 .choose { padding: 10px; border: 1px dashed var(--accent); border-radius: 3px; margin-bottom: 8px; background: #fff3cf66; }
 .choose .head { justify-content: space-between; }
 .options { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; margin-top: 8px; }

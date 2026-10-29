@@ -119,6 +119,7 @@
 | 長休的時間 | `longRestHours` | 8 | 2～12 小時 | 旅店與家裡照樣住到隔天早上 |
 | 衛兵警戒多久降一級 | `alertDecayDays` | 7 | 1～30 天 | |
 | 黑市每天的珍品 | `blackMarketGear` | 3 | 0～10 件 | 黑市每天刷新幾件獨特裝備（[ITEMS](ITEMS.md) 3.1 節）；0 = 不賣 |
+| 技能攜帶上限 | `skillLoadout` | 12 | 0～30 個 | 每個角色戰鬥時最多帶幾個技能與法術（戲法不算）；0 = 不限（[COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 7 節） |
 | 逃跑與撤退的難度 | `escapeDc` | 0 | −10～+10 | 戰鬥中隊伍撤退（開戰時記在 `CombatState.fleeDcMod`）與地下城緊急撤退的 DC；敵人逃跑不受影響 |
 
 另外兩項是這台瀏覽器的設定、不跟存檔走：兩次長休的間隔、走一格花的時間（`stores/settings.ts`）。

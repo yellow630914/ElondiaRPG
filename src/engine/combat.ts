@@ -10,7 +10,7 @@
 
 import { checkBonus, perkModifiers } from './perks'
 import {
-  apMaxFor, apRegenFor, attrOf, attrsOf, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
+  apMaxFor, apRegenFor, attrOf, attrsOf, carriedAbilities, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
   abilityDef, armorDef, ATTR_IDS, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
@@ -198,8 +198,9 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     const npcs = (opts.npcs ?? []).map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r)
     // 玩家刪掉的自建怪物（舊地圖上可能還有）略過
     const enemyGroup = (group ?? (npcs.length ? [] : encounterFor(state.location, rng))).filter(([id]) => !!enemies[id])
+    const cap = gameRule(state, 'skillLoadout')
     // 無法戰鬥的隊員（普通人）不上場
-    const fighters: Combatant[] = state.party.filter((c) => c.hp > 0 && !isNoncombatant(c)).map((c) => fromCharacter(c, rng))
+    const fighters: Combatant[] = state.party.filter((c) => c.hp > 0 && !isNoncombatant(c)).map((c) => fromCharacter(c, rng, cap))
     if (fighters.length === 0) throw new Error('隊伍沒有能戰鬥的成員')
     const counts: Record<string, number> = {}
     for (const [id, n] of enemyGroup) counts[id] = (counts[id] ?? 0) + n
@@ -220,13 +221,13 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       }
     })
     for (const rec of npcs) {
-      fighters.push({ ...fromCharacter(characterFor(state, rec), rng), side: 'enemy', npcId: rec.id })
+      fighters.push({ ...fromCharacter(characterFor(state, rec), rng, cap), side: 'enemy', npcId: rec.id })
     }
     // 在場的友方：和隊伍一起行動（由玩家操作），戰後不留下狀態
     for (const id of opts.allies ?? []) {
       const rec = npcRecord(state, id)
       if (!rec || rec.dead || state.party.some((m) => m.id === id)) continue
-      fighters.push({ ...fromCharacter(characterFor(state, rec), rng), side: 'party', npcId: rec.id, ally: true })
+      fighters.push({ ...fromCharacter(characterFor(state, rec), rng, cap), side: 'party', npcId: rec.id, ally: true })
     }
     // 黑暗中又沒有光：隊伍這邊看不清楚，命中降低（怪物習慣黑暗）
     if (opts.dark) for (const f of fighters) if (f.side === 'party') f.baseMods.hit = (f.baseMods.hit ?? 0) + lightingRules.dark.hit
@@ -271,7 +272,7 @@ function spellCap(c: Character): number {
   return cap ?? 9
 }
 
-function fromCharacter(c: Character, rng: Rng): Combatant {
+function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
   const gear = gearAffinities(c)
   const armor = armorDef(c.armor)
   const apMax = apMaxFor(c.level, attrsOf(c))
@@ -300,7 +301,8 @@ function fromCharacter(c: Character, rng: Rng): Combatant {
     // 魔導束縛契約：只能施放 spell_cap 環以下的法術
     slots: slotsLeft(c).slice(0, spellCap(c)),
     slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, spellCap(c)),
-    abilities: [...c.abilities],
+    // 技能攜帶上限：只帶攜帶中的技能與法術（戲法全帶）
+    abilities: carriedAbilities(c, loadoutCap),
     weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr + gearDr,
     resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),

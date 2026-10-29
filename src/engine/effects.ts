@@ -12,7 +12,7 @@ import { tagsAllowed } from './content'
 import { addItem } from './state'
 import { abilities, classAbilities, classes, locationById, perkDef, slaveryRules, type AttrId } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
-import { abilityChoices, abilityQuality, learnable, learnAbility, maxCircle, recalc } from './character'
+import { abilityChoices, abilityQuality, carryLearned, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
 import { changeHitDice, changeSlots } from './resources'
@@ -31,7 +31,7 @@ import { contractKind, randomMaster } from './slavery'
 import { forceEquip } from './forcedGear'
 import { addStrict, extendDeadline, sendToMasterHome } from './masterHome'
 import { addTattoo, contractOf, freePlaces, oathText, placeName, removeTattoo, tattooFromTemplate, tattooKindName, tattoosOf, type NewTattoo } from './tattoos'
-import { rewardMoney } from './gameRules'
+import { gameRule, rewardMoney } from './gameRules'
 
 export type NpcRef = string | NpcSpec
 
@@ -459,7 +459,8 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           if (own && (named.type !== 'spell' || (named.circle ?? 1) <= maxCircle(who))) {
             learnAbility(who, named.id)
             ;(report.changes.skills_gained ??= []).push({ actor: who.id, skill: named.name, quality: abilityQuality(named), source: 'insight' })
-            notes.push(`${who.name}領悟了【${named.name}】`)
+            const carried = carryLearned(who, named.id, gameRule(state, 'skillLoadout'))
+            notes.push(`${who.name}領悟了【${named.name}】${carried ? '' : '（攜帶已滿，先放進技能庫）'}`)
             break
           }
           const choices = withRng(state, (rng) => abilityChoices(who, rng, 3))
