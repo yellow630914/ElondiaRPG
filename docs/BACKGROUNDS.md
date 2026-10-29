@@ -24,10 +24,10 @@
 
 ## 3. 目前有的圖
 
-48 張基本版：6 個地區、26 個城鎮、16 座地下城都有（webp，1536×864，共約 8.5 MB）。另外有緋夢樂園的 16 張（入口廣場 `special-sm_lust_park`，五個園區的淺層、中層、深層 `park_*-shallow`、`-middle`、`-deep`；1536×864，共約 2.4 MB）。其他時段版（`-dawn`、`-day`、`-dusk`、`-night`）與一般地下城的分層版還沒有，放進來就會自動用上。其他特殊地圖用所屬地點的圖。
+48 張基本版：6 個地區、26 個城鎮、16 座地下城都有（webp，1536×864，共約 8.5 MB）。時段版（`-dawn`、`-day`、`-dusk`、`-night`）與地下城的分層版（`-shallow`……）還沒有，放進來就會自動用上。特殊地圖用所屬地點的圖。
 
 ## 4. 生圖
 
 48 個場景（6 地區、26 城鎮、16 地下城）的提示詞與 OpenRouter 生圖腳本另外整理（共用畫風：史詩奇幻概念畫、帶一點油畫筆觸、主體偏一側、中間低對比）。生好之後挑一張、照第 2 節的檔名轉成 webp 放進 `src/assets/backgrounds/`。
 
-緋夢樂園（[LUST_PARK](LUST_PARK.md)）的 16 個場景（入口廣場 `special-sm_lust_park`、五個園區的淺層、中層、深層 `park_*-shallow` 這類）的提示詞與腳本在 `tools/backgrounds/`（見那裡的 README.md）：ComfyUI（Checkpoint、UNet、自訂工作流程，和遊戲的 ComfyUI 設定組合同一套）、NovelAI、ChatGPT（不含成人內容）三個生圖腳本，以及裁成 1536×864 webp 的 `finalize.py`。目前收的 16 張是用 ChatGPT（`gpt-image-2`，medium，16:9）生的，不含人物、不含成人內容。
+緋夢樂園（[LUST_PARK](LUST_PARK.md)）的 16 個場景（入口廣場 `special-sm_lust_park`、五個園區的淺層、中層、深層 `park_*-shallow` 這類）的提示詞與腳本在 `tools/backgrounds/`（見那裡的 README.md）：ComfyUI（Checkpoint、UNet、自訂工作流程，和遊戲的 ComfyUI 設定組合同一套）、NovelAI、ChatGPT（不含成人內容）三個生圖腳本，以及裁成 1536×864 webp 的 `finalize.py`。還沒有生成圖，放進去就會自動用上。
