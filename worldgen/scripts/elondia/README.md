@@ -18,7 +18,7 @@
 | `npc_looks27.py` | `data/world/npcs.json` | 固定 NPC 的外貌細節（資料在 `npc_looks27.json`；要排在 `work26.py` 之後，因為 work26 會重寫打工線的委託人） |
 | `lust_park_s7.py` | `data/rules/abilities.json`、`enemies.json`、`items.json`、`lewd.json`、`data/world/geography.json`、`maps.json`、`special_maps.json`、`landmarks.json`、`npcs.json` | 魅魔的遊樂園「緋夢樂園」（慾望戰鬥 S7，[LUST_PARK](../../../docs/LUST_PARK.md)）：怪物、技能、物品、五個園區、入口廣場、售票亭、接待員、園區的規則；集章任務由 `story_batch1.py` 匯入。要排在 `interiors23.py`、`epic_places.py`、`uniq23.py`、`work26.py`、`npc_looks27.py` 之後（它們會重寫同一個檔案）。可以重跑；怪物的生命與攻擊加成在 `TUNE` |
 | `lust_s8.py` | `data/rules/items.json`、`statuses.json`、`companions.json`、`lewd.json`、`gear.json`、`tattoos.json`、`abilities.json`、`parasites.json`、`slavery.json` | 慾望戰鬥 S8 的資料（[LEWD_STATS](../../../docs/LEWD_STATS.md) 第 13 節起）：消耗品、料理、征服掉落、輔料的魅惑方向、淫紋、寄生物的階段、印記的順從累積、鑰匙與戰鬥中的拘束。要排在 `lust_park_s7.py` 之後。可以重跑 |
-| `lust_s9.py` | `data/rules/gear.json`、`items.json`、`lewd.json`、`shops.json`、`enemies.json` | 慾望戰鬥 S9 的資料（[LEWD_STATS](../../../docs/LEWD_STATS.md) 第 7、27 節）：封住嘴巴、16 件拘束具、商店每天另外上架的拘束具、寶箱與其他來源。要排在 `lust_s8.py` 之後。可以重跑 |
+| `lust_s9.py` | `data/rules/gear.json`、`items.json`、`lewd.json`、`shops.json`、`enemies.json`、`travel_events.json` | 慾望戰鬥 S9 的資料（[LEWD_STATS](../../../docs/LEWD_STATS.md) 第 7、27 節、[ADULT_EVENTS](../../../docs/ADULT_EVENTS.md) 第 4 節）：封住嘴巴、16 件拘束具、商店每天另外上架的拘束具、寶箱與其他來源；24 件地下城事件（也寫 `travel_events.json`）。要排在 `lust_s8.py` 之後。可以重跑 |
 | `docgear24.py` | `docs/ITEMS.md` 3.1.1 節 | 任務的獨特裝備表 |
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |
 | `../../tools/guide/guide.py` | `docs/guide/` | 給玩家的遊戲攻略，同步到 wiki（`data/` 改過之後都要重跑；沒重跑時測試 `guide.spec.ts` 會失敗） |
