@@ -13,7 +13,7 @@ import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
 import {
-  locationById, npcs as namedNpcs, regionById, specialMaps, stories, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
+  contentRevision, locationById, npcs as namedNpcs, regionById, specialMaps, stories, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
@@ -95,12 +95,29 @@ export function storyOffersHere(state: GameState): StoryDef[] {
  */
 export function storyNeedsLandmark(state: GameState, id: string): boolean {
   const atCell = (n: StoryNode) => n.at.where === 'cell' && n.at.cell === id
-  return stories.some((def) => {
+  // 只看用到這個地標的任務（每走一步、每個地標都會問一次，掃全部任務太慢）
+  return storiesAtLandmark(id).some((def) => {
     const p = state.stories?.[def.id]
     if (p) return p.status === 'active' && !storyPaused(def) && def.nodes.some((n) => !p.done.includes(n.id) && atCell(n))
-    const uses = def.nodes.some(atCell) || (def.start.kind === 'npc' && !!def.start.npc && namedNpcs.find((n) => n.id === def.start.npc)?.landmark === id)
-    return uses && canStart(state, def)
+    return canStart(state, def)
   })
+}
+
+/** 地標 → 用到它的任務（任務點在這一格，或委託人待在這個地標）；內容改了（contentRevision）才重算 */
+let landmarkStories: { rev: number; map: Map<string, StoryDef[]> } | undefined
+function storiesAtLandmark(id: string): StoryDef[] {
+  if (landmarkStories?.rev !== contentRevision()) {
+    const npcLandmark = new Map(namedNpcs.filter((n) => n.landmark).map((n) => [n.id, n.landmark!]))
+    const map = new Map<string, StoryDef[]>()
+    for (const def of stories) {
+      const ids = new Set(def.nodes.flatMap((n) => (n.at.where === 'cell' && n.at.cell ? [n.at.cell] : [])))
+      const giver = def.start.kind === 'npc' && def.start.npc ? npcLandmark.get(def.start.npc) : undefined
+      if (giver) ids.add(giver)
+      for (const x of ids) map.set(x, [...(map.get(x) ?? []), def])
+    }
+    landmarkStories = { rev: contentRevision(), map }
+  }
+  return landmarkStories.map.get(id) ?? []
 }
 
 /** 被制伏、等你處置的人 */

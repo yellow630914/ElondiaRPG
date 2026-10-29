@@ -10,7 +10,7 @@
 import { parasiteDef } from './parasites'
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, bumpContentRevision, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
@@ -210,6 +210,7 @@ function replaceRecord<T>(target: Record<string, T>, source: Record<string, T>) 
 
 /** 把遊戲資料還原成內建的樣子 */
 function restore() {
+  bumpContentRevision()
   replaceRecord(enemies, snapshot.enemies)
   replaceRecord(dungeonEncounters as Record<string, DungeonEncounters>, snapshot.dungeon)
   replaceRecord(wildEncounterTables as Record<string, unknown>, snapshot.wild as Record<string, unknown>)
@@ -562,6 +563,8 @@ export function applyContent(mods: ContentMods): string[] {
     Object.entries(mods.bases).filter(([id, b]) => b.custom && gearRules.bases[id]).map(([id]) => id),
     Object.entries(mods.items).filter(([n, m]) => m.custom && itemDef(n)?.gear).map(([n]) => n),
   )
+  // 套用完再加一次：套用途中有快取被重算的話，套用後一定重算
+  bumpContentRevision()
   return problems
 }
 

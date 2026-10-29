@@ -335,6 +335,15 @@ export interface StoryDef {
   time_limit?: number
 }
 
+// ---- 內容的版本 ----
+// 套用世界設定（applyContent）或還原成內建時加一：依內容算出來的快取（任務用到的地標、小隊表……）
+// 看這個數字決定要不要重算。只跟遊戲資料有關，不跟存檔有關，不寫進存檔。
+let contentRev = 0
+export const contentRevision = () => contentRev
+export function bumpContentRevision() {
+  contentRev++
+}
+
 /** 內建的特殊任務；內容頁籤的修改套用在這份清單上 */
 export const stories = (storiesJson as unknown as { stories: StoryDef[] }).stories
 

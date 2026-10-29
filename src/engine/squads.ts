@@ -5,7 +5,7 @@
 // - 小隊不能拆開：隊員不會單獨出現在雇用與邀請名單，只能整隊邀請入隊，或請他們帶主角同行。
 // - 整隊入隊的人身上記著 squad（隊長的 id）：親密度太低離隊、遣散時整隊一起走。
 
-import { companionRules, npcs as namedNpcs, tagDcMod, type StoryCond } from './data'
+import { companionRules, contentRevision, npcs as namedNpcs, tagDcMod, type StoryCond } from './data'
 import { hashString, npcRecord } from './npcs'
 import { pcOf } from './party'
 import { condMet } from './storyFlags'
@@ -19,8 +19,24 @@ export interface Squad {
   requires?: StoryCond
 }
 
-/** 所有小隊（內容頁籤的設定）：隊長不能是別隊的隊員，同一個人只算進第一個列出他的小隊，不存在的 id 略過 */
-export function squads(): Squad[] {
+/** 所有小隊（內容頁籤的設定）：隊長不能是別隊的隊員，同一個人只算進第一個列出他的小隊，不存在的 id 略過。
+ * 內容改了（contentRevision）才重算；回傳的清單不要修改 */
+export function squads(): readonly Squad[] {
+  return squadTable().list
+}
+
+let table: { rev: number; list: Squad[]; byId: Map<string, Squad> } | undefined
+function squadTable() {
+  if (table?.rev !== contentRevision()) {
+    const list = buildSquads()
+    const byId = new Map<string, Squad>()
+    for (const s of list) for (const id of [s.leader, ...s.members]) if (!byId.has(id)) byId.set(id, s)
+    table = { rev: contentRevision(), list, byId }
+  }
+  return table
+}
+
+function buildSquads(): Squad[] {
   const ids = new Set(namedNpcs.map((n) => n.id))
   const leaders = new Set(namedNpcs.filter((n) => n.squad?.members.length).map((n) => n.id))
   const taken = new Set<string>()
@@ -38,7 +54,7 @@ export function squads(): Squad[] {
 
 /** 這個人所屬的小隊（隊長或隊員） */
 export function squadOf(id: string): Squad | undefined {
-  return squads().find((s) => s.leader === id || s.members.includes(id))
+  return squadTable().byId.get(id)
 }
 
 export function squadIds(s: Squad): string[] {
