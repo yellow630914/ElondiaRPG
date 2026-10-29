@@ -3,7 +3,7 @@
 
 import { PARASITE_LOCK } from './parasites'
 import { snapshot } from './character'
-import { attrName, classes, combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, type AttrId, type Bond } from './data'
+import { attrName, classes, combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, TRAP_LOCK, type AttrId, type Bond } from './data'
 import { characterFor, npcRecord, registerNpc } from './npcs'
 import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
@@ -260,8 +260,8 @@ export function freePlayer(state: GameState, report?: Report, reason?: string) {
   if (!clearContract(pc)) return
   // 主人強制裝上的東西：契約解除後可以拿下了
   for (const g of Object.values(pc.gear ?? {})) {
-    if (!g?.locked || g.locked.startsWith(PARASITE_LOCK)) continue
-    // 主人的鎖跟著主人走
+    if (!g?.locked || g.locked.startsWith(PARASITE_LOCK) || g.locked.startsWith(TRAP_LOCK)) continue
+    // 主人的鎖跟著主人走（陷阱鎖不受契約影響）
     delete g.locked
     delete g.lock
   }

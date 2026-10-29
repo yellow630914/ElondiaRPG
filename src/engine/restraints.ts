@@ -1,8 +1,9 @@
-// 鑰匙與脫縛（docs/LEWD_STATS.md 第 16 節）：別人鎖在身上的拘束具（主人強制戴上的）可以試著掙開，或用鑰匙打開。
+// 鑰匙與脫縛（docs/LEWD_STATS.md 第 16 節）：別人鎖在身上的拘束具（主人強制戴上的、陷阱鎖住的）可以試著掙開，或用鑰匙打開；
+// 陷阱鎖住的也可以在鐵匠鋪花錢剪掉（第 27 節）。
 // 自己鎖的隨時可以打開（inventory.ts 的 unlockGear），不需要這些。
 // 戰鬥中的拘束（狀態有 struggle）用掙脫、撕開擺脫，見 combat.ts。
 
-import { classDef, itemDef, itemRules, lewdRules, LOCK_GRADES, type Degree, type LockGrade } from './data'
+import { classDef, itemDef, itemRules, lewdRules, LOCK_GRADES, TRAP_LOCK, type Degree, type LockGrade } from './data'
 import { slotName, syncGear } from './gear'
 import { recalc } from './character'
 import { addLewdStat, lewdOf } from './lewd'
@@ -11,17 +12,23 @@ import { isFugitive, pcOf, punish } from './party'
 import { bindsOf, lockName } from './schools'
 import { masterNearby } from './slavery'
 import { contractOf } from './tattoos'
+import { currentCell } from './grid'
+import { formatMoney } from './money'
+import { commitReport } from './state'
+import { baseReport } from './town'
 import type { Character, GameState, GearSlot, Report } from './types'
 
 export const unbindRules = () => lewdRules.unbind
 
-/** 這一格是別人鎖上、自己打不開的拘束具：主人強制戴上的（契約還在時），寄生物不算 */
-export function stuckRestraint(m: Character, slot: GearSlot): { name: string; lock: LockGrade; bind: number; master: string } | undefined {
+/** 這一格是別人鎖上、自己打不開的拘束具：主人強制戴上的（契約還在時）、陷阱鎖住的；寄生物不算 */
+export function stuckRestraint(m: Character, slot: GearSlot): { name: string; lock: LockGrade; bind: number; master: string; trap?: boolean } | undefined {
   const g = m.gear?.[slot]
-  if (!g?.locked || g.locked.startsWith(PARASITE_LOCK) || !contractOf(m)) return undefined
+  if (!g?.locked || g.locked.startsWith(PARASITE_LOCK)) return undefined
+  const trap = g.locked.startsWith(TRAP_LOCK)
+  if (!trap && !contractOf(m)) return undefined
   const b = bindsOf(m).find((x) => x.slot === slot)
   if (!b) return undefined
-  return { name: g.name, lock: b.lock ?? lewdRules.locks.master_default, bind: b.bind, master: g.locked }
+  return { name: g.name, lock: b.lock ?? lewdRules.locks.master_default, bind: b.bind, master: g.locked, ...(trap ? { trap } : {}) }
 }
 
 /** 身上所有掙不開的拘束具 */
@@ -137,4 +144,36 @@ export function openWithKey(m: Character, slot: GearSlot, key: string): { text: 
   release(m, slot)
   const lock = itemRules.items.find((i) => i.lock === s.lock)?.name
   return { text: `${m.name}用${key}打開了${s.name}上的${lockName(s.lock)}，可以把它卸下來了。`, ...(lock ? { lock } : {}) }
+}
+
+// ---- 鐵匠剪鎖（陷阱鎖住的，docs/LEWD_STATS.md 第 27 節） ----
+
+/** 站在能剪鎖的店（lewd.json 的 unbind.cut.shops） */
+export function cutLockHere(state: GameState): boolean {
+  return unbindRules().cut.shops.includes(currentCell(state).kind)
+}
+
+/** 剪掉這一格陷阱鎖的價錢（不是陷阱鎖時 undefined；主人的鎖不能剪） */
+export function cutLockFee(m: Character, slot: GearSlot): number | undefined {
+  const s = stuckRestraint(m, slot)
+  return s?.trap ? unbindRules().cut.fee_cc[s.lock] : undefined
+}
+
+/** 請鐵匠剪掉陷阱鎖：收錢，鎖被剪壞（不歸自己），拘束具留在身上、之後可以自己卸下 */
+export function cutLock(state: GameState, memberId: string, slot: GearSlot): Report {
+  if (state.combat) throw new Error('戰鬥中不能這麼做')
+  if (!cutLockHere(state)) throw new Error('要在鐵匠鋪才能剪鎖')
+  const m = state.party.find((x) => x.id === memberId)
+  if (!m) throw new Error('沒有這個隊員')
+  const s = stuckRestraint(m, slot)
+  if (!s) throw new Error(`${slotName(slot)}沒有鎖住的拘束具`)
+  if (!s.trap) throw new Error(`${s.name}是主人鎖上的，鐵匠不敢剪`)
+  const fee = cutLockFee(m, slot)!
+  if (state.money_cc < fee) throw new Error(`錢不夠（要 ${formatMoney(fee)}）`)
+  release(m, slot)
+  const r = baseReport(state, 'trade', 1)
+  r.changes.money_cc = -fee
+  r.outcome.summary = `鐵匠剪斷了${m.name}${s.name}上的${lockName(s.lock)}，收費 ${formatMoney(fee)}。${s.name}可以卸下了。`
+  r.outcome.tags = ['剪鎖']
+  return commitReport(state, r)
 }

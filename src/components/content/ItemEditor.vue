@@ -222,6 +222,17 @@ function setGearAttr(a: string, v: number) {
 }
 // 慾望指標的加減（docs/LEWD_STATS.md 第 3 節）
 const lewdCap = lewdRules.gear.item_cap
+// 物品自己的拘束程度（底材是拘束具時）
+const gearBindBase = computed(() => {
+  const base = draft.value.gear ? gearRules.bases[draft.value.gear.base] : undefined
+  return base?.bind && base.bind_kind ? base : undefined
+})
+function setGearBind(v: string) {
+  const g = draft.value.gear
+  if (!g) return
+  if (v) g.bind = Number(v)
+  else delete g.bind
+}
 function setGearLewd(k: LewdStat, v: number) {
   const g = draft.value.gear
   if (!g) return
@@ -700,6 +711,15 @@ function setFuel(v: string) {
           <label v-for="k in LEWD_STATS" :key="k">{{ lewdName(k) }}
             <input type="number" class="num" :min="-lewdCap" :max="lewdCap" :value="draft.gear.lewd?.[k] ?? 0" @input="setGearLewd(k, Number(($event.target as HTMLInputElement).value))" />
           </label>
+        </div>
+        <div v-if="gearBindBase" class="row small">
+          <label>拘束程度
+            <select :value="draft.gear.bind ?? ''" @change="setGearBind(($event.target as HTMLSelectElement).value)">
+              <option value="">（照底材：{{ gearBindBase.bind }}）</option>
+              <option v-for="n in [1, 2, 3]" :key="n" :value="n">{{ n }}</option>
+            </select>
+          </label>
+          <Hint :text="`底材是拘束具（${lewdRules.two_face.kinds[gearBindBase.bind_kind!]?.name ?? gearBindBase.bind_kind}）時，這件物品可以有自己的程度，蓋過底材的設定；種類照底材（docs/LEWD_STATS.md 第 7 節）。`" />
         </div>
         <label class="check small">
           <input type="checkbox" :checked="!!draft.master_force" @change="setMasterForce(($event.target as HTMLInputElement).checked)" />

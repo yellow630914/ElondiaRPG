@@ -177,7 +177,17 @@ export interface StoryCond {
   parasites?: Record<string, ParasiteRange>
   /** 主角的慾望指標（有效值；曝露名聲看目前的地區）的範圍：{ lewdness: { min, max } }（含邊界；docs/LEWD_STATS.md） */
   stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>
+  /** 所在地的魅氣濃度（1～4，含邊界；docs/LEWD_STATS.md 第 12 節） */
+  charm?: CounterRange
+  /** 主角身上戴著什麼（寫 true 要有、false 要沒有；docs/LEWD_STATS.md 第 27 節） */
+  wearing?: WearingCond
 }
+
+/**
+ * 主角身上戴著什麼：bind 任何拘束具、bind_kind 這一種拘束具（要有）、locked 別人鎖上的（主人或陷阱）、
+ * adult_outfit 成人向服裝、mark 奴隸印記
+ */
+export interface WearingCond { bind?: boolean; bind_kind?: BindKind; locked?: boolean; adult_outfit?: boolean; mark?: boolean }
 
 export interface ParasiteRange { min?: number; max?: number; tamed?: boolean }
 
@@ -2078,6 +2088,8 @@ export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'stim', 'body']
 /** 鎖的等級（物品的 lock、裝備上的鎖） */
 export type LockGrade = 'white' | 'blue' | 'rune' | 'gold'
 export const LOCK_GRADES: LockGrade[] = ['white', 'blue', 'rune', 'gold']
+/** 陷阱鎖（事件的 restrain 鎖在主角身上的）：EquippedGear.locked 的前綴，不綁契約（docs/LEWD_STATS.md 第 27 節） */
+export const TRAP_LOCK = 'trap:'
 /** 慾望流派（lewd.json 的 schools） */
 export interface LewdSchool { name: string; group: string; role: string; entry: string; advanced: string; fit: BindKind[] }
 /**
@@ -2170,6 +2182,8 @@ export const lewdRules = lewdJson as unknown as {
     attr: AttrId; base: number; lock_dc: Record<LockGrade, number>; bind_dc: number; endurance_per: number; fumble_submission: number
     keys: { chance: number; levels: [number, LockGrade][] }
     combat: { ap: number; base: number; per_level: number; hands: number }
+    /** 鐵匠剪鎖：只剪陷阱鎖（docs/LEWD_STATS.md 第 27 節） */
+    cut: { shops: string[]; fee_cc: Record<LockGrade, number> }
   }
   charm: {
     names: string[]

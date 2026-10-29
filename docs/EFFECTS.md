@@ -36,6 +36,7 @@
 | `tattoo` | 主角刺青：圖樣或自己描述（普通刺青、誓約印記），可以指定部位（見 [TATTOOS](TATTOOS.md) 第 5 節） |
 | `remove_tattoo` | 洗掉主角的刺青：指定部位，或某一種全部（奴隸印記不受影響） |
 | `force_equip` | 主人強制主角裝上一件「主人會強制裝備」的物品並鎖住（`npc` 是主人，主人的事件寫 `master`；`item` 沒寫時依主人的身分隨機挑；見 [ITEMS](ITEMS.md) 3.2 節） |
+| `restrain` | 陷阱鎖：把一件拘束具（`item`）戴到主角身上、用 `lock`（`white`／`blue`／`rune`／`gold`，預設白鐵）的鎖鎖住；不用契約、離開地下城也還鎖著，脫縛、鑰匙或鐵匠剪鎖才拿得下來。內容篩選關掉「主角非自願」時不生效（[LEWD_STATS](LEWD_STATS.md) 第 27 節） |
 | `enslave_player` | 主角淪為奴隸（只有特殊任務能用，旅途與城鎮事件寫了會被拿掉；見 [STORY_QUESTS](STORY_QUESTS.md)） |
 | `mark` | 刻印時提議的印記名稱與描述（只是文字，數值依模板） |
 | `free` | 解除契約：`npc` 為 `pc` 時是主角獲釋 |

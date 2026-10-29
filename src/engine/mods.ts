@@ -14,7 +14,7 @@ import {
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId, BIND_KINDS, LOCK_GRADES,
+  type Control, type LuckRoll, type StatusDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId, BIND_KINDS, type BindKind, LOCK_GRADES,
 } from './data'
 import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS } from './gear'
 import { settlementArea, ZONES } from './grid'
@@ -29,6 +29,7 @@ import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandma
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
 import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type CounterMod } from './counterMods'
 import { applyMasterEvent, builtinMasterEvent, restoreMasterEvents, sanitizeMasterEvent, type MasterEventMod } from './masterEventMods'
+import { applyBindRules, restoreBindRules, sanitizeBindRules, type BindRulesMod } from './bindRulesMods'
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
@@ -120,6 +121,8 @@ export interface ContentMods {
   /** 旅途事件與城鎮事件（整份）；eventRules 只有一筆 rules：路段機率、種類權重、城鎮事件的機率與冷卻 */
   travelEvents: Record<string, TravelEventMod>
   eventRules: Record<string, EventRulesMod>
+  /** 雙面效應的設定（只有 rules 一筆；舊的自訂內容沒有這一欄） */
+  bindRules?: Record<string, BindRulesMod>
   /** 主人事件格式的事件（主人的突發事件、調教、娼館；舊的自訂內容沒有這一欄） */
   masterEvents?: Record<string, MasterEventMod>
   /** 類別的圖示（依類別 id；舊的自訂內容沒有這一欄） */
@@ -134,7 +137,7 @@ export interface CategoryIconMod {
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, masterEvents: {}, categoryIcons: {}, counters: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -234,6 +237,7 @@ function restore() {
   restoreLandmarks()
   restoreSpecialMaps()
   restoreTravelEvents()
+  restoreBindRules()
   restoreMasterEvents()
   restoreCounters()
   setCategoryIcons({})
@@ -561,6 +565,7 @@ export function applyContent(mods: ContentMods): string[] {
   // 旅途與城鎮事件（物品、特殊地圖、商店都套用之後：結果與設施會用到）
   tryEach('事件', mods.travelEvents ?? {}, (id, m) => applyTravelEvent(id, sanitizeTravelEvent(id, m, !!m.custom)))
   tryEach('事件設定', mods.eventRules ?? {}, (_id, m) => applyEventRules(sanitizeEventRules(m)))
+  tryEach('雙面效應設定', mods.bindRules ?? {}, (_id, m) => applyBindRules(sanitizeBindRules(m)))
   tryEach('主奴與娼館的事件', mods.masterEvents ?? {}, (id, m) => applyMasterEvent(id, sanitizeMasterEvent(id, m, !!m.custom)))
   setCategoryIcons(Object.fromEntries(Object.entries(mods.categoryIcons ?? {}).map(([k, v]) => [k, v.icon])))
   // 自建的底材與裝備：建角時也能選
@@ -785,6 +790,12 @@ export function sanitizeGearSpecLoose(g: GearSpec | undefined): GearSpec | undef
     const lewd = Object.fromEntries((['lewdness', 'sensitivity', 'endurance', 'submission'] as const).map((k) => [k, int(g.lewd?.[k], -cap, cap, 0)]).filter(([, v]) => v))
     if (Object.keys(lewd).length) out.lewd = lewd
   }
+  // 物品自己的拘束程度（底材是拘束具時；和底材一樣時不寫，docs/LEWD_STATS.md 第 7 節）
+  const base = gearRules.bases[g.base]!
+  if (base.bind && base.bind_kind && g.bind !== undefined) {
+    const bind = int(g.bind, 1, 3, base.bind)
+    if (bind !== base.bind) out.bind = bind
+  }
   return out
 }
 
@@ -978,7 +989,7 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   if (raw.adult || out.outfit === 'adult') out.adult = true
   // 曝露度（慾望指標的曝露名聲）：只有上身、下身與內衣有意義
   if (raw.exposure !== undefined && raw.exposure !== null && String(raw.exposure) !== '') out.exposure = int(raw.exposure, 0, 3, 0)
-  // 雙面效應（docs/LEWD_STATS.md 第 7 節）：拘束的程度與種類（表單還沒有這兩個欄位，整理時保留）
+  // 雙面效應（docs/LEWD_STATS.md 第 7 節）：拘束的程度與種類
   if (raw.bind && raw.bind_kind && (BIND_KINDS as string[]).includes(raw.bind_kind)) {
     out.bind = int(raw.bind, 1, 3, 1)
     out.bind_kind = raw.bind_kind
@@ -1097,6 +1108,7 @@ export function normalizeMods(raw: unknown): ContentMods {
     if (typeof id === 'string' && id.length <= 60) out.travelEvents[id] = sanitizeTravelEvent(id, v, !!v.custom || !builtinTravelEvent(id), newShops)
   }
   if (r.eventRules?.rules) out.eventRules.rules = sanitizeEventRules(r.eventRules.rules)
+  if (r.bindRules?.rules) (out.bindRules ??= {}).rules = sanitizeBindRules(r.bindRules.rules)
   for (const [id, v] of Object.entries(r.masterEvents ?? {})) {
     if (typeof id === 'string' && id.length <= 60 && v && typeof v === 'object') (out.masterEvents ??= {})[id] = sanitizeMasterEvent(id, v, !!v.custom || !builtinMasterEvent(id))
   }
@@ -1118,7 +1130,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1161,8 +1173,19 @@ function cond(v: unknown): NpcDef['requires'] {
     if (min !== undefined || max !== undefined) stats[k as keyof typeof stats] = { ...(min !== undefined ? { min } : {}), ...(max !== undefined ? { max } : {}) }
   }
   const hasStats = Object.keys(stats).length > 0
-  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}) }
+  // 魅氣濃度：{ min, max }（1～4，至少要有一邊）
+  const co = r.charm && typeof r.charm === 'object' ? r.charm as { min?: unknown; max?: unknown } : {}
+  const lv = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(1, Math.min(4, Math.round(n))) : undefined)
+  const charm = { ...(lv(co.min) !== undefined ? { min: lv(co.min) } : {}), ...(lv(co.max) !== undefined ? { max: lv(co.max) } : {}) }
+  const hasCharm = Object.keys(charm).length > 0
+  // 主角戴著什麼：bind、locked、adult_outfit、mark 是布林；bind_kind 是拘束的種類
+  const wo = r.wearing && typeof r.wearing === 'object' ? r.wearing as Record<string, unknown> : {}
+  const wearing: NonNullable<StoryCond['wearing']> = {}
+  for (const k of ['bind', 'locked', 'adult_outfit', 'mark'] as const) if (typeof wo[k] === 'boolean') wearing[k] = wo[k] as boolean
+  if (typeof wo.bind_kind === 'string' && (BIND_KINDS as string[]).includes(wo.bind_kind)) wearing.bind_kind = wo.bind_kind as BindKind
+  const hasWear = Object.keys(wearing).length > 0
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear
+    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }

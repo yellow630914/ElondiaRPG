@@ -107,7 +107,8 @@ export function bindsOf(c: Pick<Character, 'gear'>): BindInfo[] {
     if (!g || !base?.bind || !base.bind_kind || !BIND_KINDS.includes(base.bind_kind)) continue
     const masterLock = g.locked && !g.locked.startsWith(PARASITE_LOCK) ? lewdRules.locks.master_default : undefined
     const lock = g.lock ?? masterLock
-    out.push({ slot: slot as GearSlot, name: g.name, kind: base.bind_kind, bind: Math.max(1, Math.min(3, Math.round(base.bind))), ...(lock ? { lock } : {}) })
+    // 物品自己的程度蓋過底材的（GearSpec.bind）
+    out.push({ slot: slot as GearSlot, name: g.name, kind: base.bind_kind, bind: Math.max(1, Math.min(3, Math.round(g.spec.bind ?? base.bind))), ...(lock ? { lock } : {}) })
   }
   return out
 }

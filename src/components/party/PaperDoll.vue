@@ -5,7 +5,8 @@ import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotName, slotsFor } from '@/engine/gear'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
-import { keysFor, stuckRestraint, unbindDc } from '@/engine/restraints'
+import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc } from '@/engine/restraints'
+import { formatMoney } from '@/engine/money'
 import { fusionMult, fusionRules, wornDaysOf } from '@/engine/fusion'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -149,14 +150,14 @@ const totals = computed(() => {
         </div>
         <button
           class="small" :disabled="inCombat || !!lockedGear(m, selected)"
-          :title="lockedGear(m, selected) ? '主人強制戴上的，契約還在時不能拿下' : inCombat ? '戰鬥中不能換裝備' : ''"
+          :title="lockedGear(m, selected) ? (stuck?.trap ? '被陷阱鎖住了：要脫縛、用鑰匙或找鐵匠剪鎖' : '主人強制戴上的，契約還在時不能拿下') : inCombat ? '戰鬥中不能換裝備' : ''"
           @click="game.unequipItem(m.id, selected)"
         >卸下</button>
       </div>
       <p v-else class="muted small empty">{{ blocked(selected) ? '這個種族無法使用這個欄位。' : '這一格沒有裝備。' }}</p>
       <div v-if="current && bind" class="lock-row small">
         <GameIcon :name="bind.lock ? 'lock' : 'unlock'" :size="14" />
-        <span v-if="bind.lock">{{ current.locked ? '主人的' : '' }}{{ lockName(bind.lock) }}</span>
+        <span v-if="bind.lock">{{ current.locked ? (stuck?.trap ? '陷阱的' : '主人的') : '' }}{{ lockName(bind.lock) }}</span>
         <span v-else class="muted">沒有上鎖</span>
         <span class="muted">{{ bindNote }}</span>
         <template v-if="lockable(current)">
@@ -182,6 +183,10 @@ const totals = computed(() => {
           <button class="small" :disabled="inCombat || !keyPick" @click="openKey">用鑰匙打開</button>
         </template>
         <span v-else class="muted">沒有打得開{{ lockName(stuck.lock) }}的鑰匙</span>
+        <template v-if="stuck.trap">
+          <button v-if="cutLockHere(s)" class="small" :disabled="inCombat || s.money_cc < (cutLockFee(m, selected) ?? 0)" @click="game.cutLock(m.id, selected)">請鐵匠剪鎖（{{ formatMoney(cutLockFee(m, selected) ?? 0) }}）</button>
+          <span v-else class="muted">陷阱的鎖：也可以到鐵匠鋪花 {{ formatMoney(cutLockFee(m, selected) ?? 0) }} 剪掉</span>
+        </template>
       </div>
 
       <div class="filter">

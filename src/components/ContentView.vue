@@ -40,6 +40,7 @@ import TravelEventEditor from './content/TravelEventEditor.vue'
 import MasterEventEditor from './content/MasterEventEditor.vue'
 import { allMasterEvents, builtinMasterEvent, masterEventById, newMasterEvent, POOL_IDS } from '@/engine/masterEventMods'
 import EventRulesEditor from './content/EventRulesEditor.vue'
+import BindRulesEditor from './content/BindRulesEditor.vue'
 import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
 import ItemIcon from './items/ItemIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
@@ -236,6 +237,8 @@ const options = computed(() => {
 
 /** 特殊任務頁的「劇情計數器」那一列 */
 const COUNTERS_KEY = '|counters'
+/** 裝備底材清單裡的「雙面效應設定」 */
+const BIND_RULES_KEY = '|bind_rules'
 
 type Status = 'custom' | 'edited' | ''
 interface Row { key: string; name: string; note: string; status: Status; sort?: number }
@@ -373,6 +376,8 @@ const rows = computed<Row[]>(() => {
     list = Object.entries(gearRules.bases)
       .filter(([, b]) => (!gearSlot.value || b.slot === gearSlot.value) && (!matKind.value || b.kind === matKind.value))
       .map(([id, b]) => ({ key: id, name: b.name, note: `${KINDS[b.kind]}・${formatMoney(b.price)}`, status: st(!!m.bases[id], !builtinBase(id)) }))
+    // 雙面效應設定（拘束具的減值與戰鬥增益）：不篩選時排在最後
+    if (!gearSlot.value && !matKind.value) list.push({ key: BIND_RULES_KEY, name: '⚙️ 雙面效應設定', note: '拘束具的減值、戰鬥增益、鎖', status: st(!!m.bindRules?.rules, false) })
   } else {
     list = Object.entries(gearRules.materials)
       .filter(([, x]) => !matKind.value || x.kind === matKind.value)
@@ -396,7 +401,7 @@ const current = computed(() => {
   void content.version
   const key = selected.value[sub.value]
   if (!key) return ''
-  const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? !!gearRules.bases[key]
+  const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? key === BIND_RULES_KEY || !!gearRules.bases[key]
     : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? key === COUNTERS_KEY || stories.some((d) => d.id === key)
     : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? !!statuses[key] : sub.value === 'perks' ? !!perkDef(key)
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
@@ -643,7 +648,7 @@ function resetAll() {
       <section class="panel list-panel">
         <div class="row">
           <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+          <button class="small" :disabled="!current || current === 'rules' || current.startsWith('|')" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
         </div>
         <div class="row">
           <input v-model="search" placeholder="搜尋名稱" class="grow" />
@@ -846,7 +851,7 @@ function resetAll() {
         <ul class="plain rows">
           <li v-for="r in rows" :key="r.key" :class="{ active: current === r.key }" @click="select(r.key)">
             <ItemIcon v-if="sub === 'items'" :name="r.key" :size="18" class="row-ic" />
-            <ItemIcon v-else-if="sub === 'bases'" :spec="{ base: r.key, material: '' }" :size="18" class="row-ic" />
+            <ItemIcon v-else-if="sub === 'bases' && r.key !== BIND_RULES_KEY" :spec="{ base: r.key, material: '' }" :size="18" class="row-ic" />
             <ContentIcon v-else-if="sub === 'enemies'" kind="monster" :id="r.key" :size="16" class="row-ic" />
             <ContentIcon v-else-if="sub === 'abilities'" kind="ability" :id="r.key" :size="16" class="row-ic" />
             <ContentIcon v-else-if="sub === 'materials'" kind="material" :id="r.key" :size="16" class="row-ic" />
@@ -883,6 +888,7 @@ function resetAll() {
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
         <CountersEditor v-else-if="sub === 'stories' && current === COUNTERS_KEY" key="counters" />
         <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" @open="select" />
+        <BindRulesEditor v-else-if="sub === 'bases' && current === BIND_RULES_KEY" key="bind-rules" />
         <GearEditor v-else-if="sub === 'bases'" :id="current" :key="`b-${current}`" kind="base" @deleted="select('')" />
         <GearEditor v-else :id="current" :key="`m-${current}`" kind="material" @deleted="select('')" />
       </section>

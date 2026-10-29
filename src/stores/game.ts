@@ -13,6 +13,7 @@ import { setPcTags } from '@/engine/pcTags'
 import * as dungeonEvents from '@/engine/dungeonEvents'
 import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as deadlines from '@/engine/deadlines'
+import * as restraints from '@/engine/restraints'
 import { pitchTarget } from '@/engine/perks'
 import { computed, ref, toRaw, watch } from 'vue'
 import * as actions from '@/engine/actions'
@@ -990,6 +991,8 @@ export const useGame = defineStore('game', () => {
     // 鑰匙與脫縛（別人鎖上的拘束具）
     useKey: (member: string, slot: GearSlot, key: string) => run((s) => inventory.useKey(s, member, slot, key)),
     tryUnbind: (member: string, slot: GearSlot) => perform({ kind: 'unbind', target: `${member}:${slot}`, text: '' }),
+    // 陷阱鎖：在鐵匠鋪花錢剪掉
+    cutLock: (member: string, slot: GearSlot) => run((s) => restraints.cutLock(s, member, slot)),
     // 主人是工具人：親密度夠高時直接解約、換主人
     masterRelease: () => run((s) => masterTool.masterRelease(s)),
     masterTransfer: (npc: string) => run((s) => masterTool.masterTransfer(s, npc)),

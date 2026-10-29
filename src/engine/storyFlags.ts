@@ -3,8 +3,13 @@
 // 作者寫的旗標名稱（例如 met_elder）存在 GameState.flags 的 story:<名稱>，和程式自己用的旗標分開。
 // 名稱以 ai: 開頭時直接讀 AI 判定寫下的旗標（例如 ai:答應幫忙），讓劇情可以接上 AI 的判定。
 
-import { storyCounters, type StoryCond } from './data'
+import { charmLevel } from './charm'
+import { storyCounters, TRAP_LOCK, type StoryCond } from './data'
+import { gearRules } from './gear'
 import { currentRegion, exposureAt, lewdOf } from './lewd'
+import { PARASITE_LOCK } from './parasites'
+import { bindsOf } from './schools'
+import { contractOf } from './tattoos'
 import type { GameState } from './types'
 
 export const STORY_PREFIX = 'story:'
@@ -44,6 +49,28 @@ export function condMet(state: GameState, cond: StoryCond | undefined): boolean 
       return (r.min === undefined || p.corruption >= r.min) && (r.max === undefined || p.corruption <= r.max)
     })
     && statsMet(state, cond.stats)
+    && (!cond.charm || inRange(charmLevel(state.location), cond.charm))
+    && wearingMet(state, cond.wearing)
+}
+
+const inRange = (v: number, r: { min?: number; max?: number }) => (r.min === undefined || v >= r.min) && (r.max === undefined || v <= r.max)
+
+/** 主角身上戴著什麼（docs/LEWD_STATS.md 第 27 節）：寫了的每一項都要相符 */
+function wearingMet(state: GameState, w: StoryCond['wearing']): boolean {
+  if (!w) return true
+  const pc = state.party.find((m) => m.isPlayer)
+  if (!pc) return false
+  const binds = bindsOf(pc)
+  const gear = Object.values(pc.gear ?? {})
+  const facts = {
+    bind: binds.length > 0,
+    // 別人鎖上的：主人鎖上的（契約還在時）、陷阱鎖住的；寄生裝備不算
+    locked: gear.some((g) => g?.locked && !g.locked.startsWith(PARASITE_LOCK) && (g.locked.startsWith(TRAP_LOCK) || !!contractOf(pc))),
+    adult_outfit: gear.some((g) => g && gearRules.bases[g.spec.base]?.outfit === 'adult'),
+    mark: pc.status.includes('slave_mark'),
+  }
+  if (w.bind_kind && !binds.some((b) => b.kind === w.bind_kind)) return false
+  return (Object.keys(facts) as (keyof typeof facts)[]).every((k) => w[k] === undefined || w[k] === facts[k])
 }
 
 /** 慾望指標的條件：主角的有效值（曝露名聲看目前的地區）在範圍內 */

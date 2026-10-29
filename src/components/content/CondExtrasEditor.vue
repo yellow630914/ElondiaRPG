@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { storyCounters, type CounterRange, type ParasiteRange, type StoryCond } from '@/engine/data'
+import { BIND_KINDS, lewdRules, storyCounters, type BindKind, type CounterRange, type ParasiteRange, type StoryCond, type WearingCond } from '@/engine/data'
+import { charmRules } from '@/engine/charm'
+import { LEWD_KEYS, lewdName } from '@/engine/lewd'
 import { parasiteRules } from '@/engine/parasites'
 import { useContent } from '@/stores/content'
 import FlagInput from './FlagInput.vue'
 
-// 條件的進階部分：至少一個旗標成立（或）、劇情計數器的範圍、主角身上的寄生物（見 docs/STORY_QUESTS.md 第 1.1 節）
+// 條件的進階部分：至少一個旗標成立（或）、劇情計數器的範圍、主角身上的寄生物（見 docs/STORY_QUESTS.md 第 1.1 節）；
+// 成人向：主角的慾望指標、所在地的魅氣濃度、主角身上戴著什麼（docs/LEWD_STATS.md 第 27 節）
 const cond = defineModel<StoryCond>({ required: true })
 const content = useContent()
 const counterIds = computed(() => {
@@ -20,6 +23,9 @@ function put(next: Partial<StoryCond>) {
   if (!out.flags_any?.length) delete out.flags_any
   if (!out.counters || !Object.keys(out.counters).length) delete out.counters
   if (!out.parasites || !Object.keys(out.parasites).length) delete out.parasites
+  if (!out.stats || !Object.keys(out.stats).length) delete out.stats
+  if (!out.charm || (out.charm.min === undefined && out.charm.max === undefined)) delete out.charm
+  if (!out.wearing || !Object.keys(out.wearing).length) delete out.wearing
   cond.value = out
 }
 const any = computed({
@@ -56,6 +62,41 @@ function addP() {
 function removeP(id: string) {
   const { [id]: _drop, ...rest } = cond.value.parasites ?? {}
   put({ parasites: rest })
+}
+// 慾望指標（有效值；曝露名聲看目前的地區）：0～100
+function setStat(k: (typeof LEWD_KEYS)[number], side: 'min' | 'max', v: string) {
+  const stats = { ...(cond.value.stats ?? {}) }
+  const r: CounterRange = { ...(stats[k] ?? {}), [side]: num(v) }
+  if (r[side] === undefined) delete r[side]
+  if (r.min === undefined && r.max === undefined) delete stats[k]
+  else stats[k] = r
+  put({ stats })
+}
+// 魅氣濃度 1～4
+const charmNames = charmRules().names
+function setCharm(side: 'min' | 'max', v: string) {
+  const c: CounterRange = { ...(cond.value.charm ?? {}) }
+  if (v) c[side] = Number(v)
+  else delete c[side]
+  put({ charm: c })
+}
+// 戴著什麼：每一項「不限／要有／要沒有」
+const WEAR_FLAGS: [keyof Omit<WearingCond, 'bind_kind'>, string][] = [['bind', '任何拘束具'], ['locked', '別人鎖上的拘束具（主人或陷阱）'], ['adult_outfit', '成人向服裝'], ['mark', '奴隸印記']]
+function wearOf(k: keyof Omit<WearingCond, 'bind_kind'>): string {
+  const v = cond.value.wearing?.[k]
+  return v === undefined ? '' : v ? 'yes' : 'no'
+}
+function setWear(k: keyof Omit<WearingCond, 'bind_kind'>, v: string) {
+  const w: WearingCond = { ...(cond.value.wearing ?? {}) }
+  if (v) w[k] = v === 'yes'
+  else delete w[k]
+  put({ wearing: w })
+}
+function setBindKind(v: string) {
+  const w: WearingCond = { ...(cond.value.wearing ?? {}) }
+  if (v) w.bind_kind = v as BindKind
+  else delete w.bind_kind
+  put({ wearing: w })
 }
 function tamedOf(r: ParasiteRange): string {
   return r.tamed === undefined ? '' : r.tamed ? 'yes' : 'no'
@@ -97,6 +138,38 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
     </span>
     <button class="small" @click="addP">＋ 寄生物條件</button>
   </div>
+  <details class="small" :open="!!(cond.stats || cond.charm || cond.wearing)">
+    <summary>成人向的條件（慾望指標、魅氣濃度、戴著什麼）</summary>
+    <div class="row small">
+      主角的慾望指標
+      <span v-for="k in LEWD_KEYS" :key="k" class="row">
+        {{ lewdName(k) }} ≥ <input :value="cond.stats?.[k]?.min ?? ''" type="number" min="0" max="100" class="num" placeholder="不限" @change="setStat(k, 'min', ($event.target as HTMLInputElement).value)" />
+        且 ≤ <input :value="cond.stats?.[k]?.max ?? ''" type="number" min="0" max="100" class="num" placeholder="不限" @change="setStat(k, 'max', ($event.target as HTMLInputElement).value)" />
+      </span>
+    </div>
+    <div class="row small">
+      所在地的魅氣濃度
+      <select :value="cond.charm?.min ?? ''" @change="setCharm('min', ($event.target as HTMLSelectElement).value)">
+        <option value="">最低不限</option><option v-for="n in [1, 2, 3, 4]" :key="n" :value="n">至少 {{ n }}（{{ charmNames[n] }}）</option>
+      </select>
+      <select :value="cond.charm?.max ?? ''" @change="setCharm('max', ($event.target as HTMLSelectElement).value)">
+        <option value="">最高不限</option><option v-for="n in [1, 2, 3, 4]" :key="n" :value="n">最多 {{ n }}（{{ charmNames[n] }}）</option>
+      </select>
+    </div>
+    <div class="row small">
+      主角身上
+      <label v-for="[k, n] in WEAR_FLAGS" :key="k" class="row">{{ n }}
+        <select :value="wearOf(k)" @change="setWear(k, ($event.target as HTMLSelectElement).value)">
+          <option value="">不限</option><option value="yes">要有</option><option value="no">要沒有</option>
+        </select>
+      </label>
+      <label class="row">戴著這種拘束具
+        <select :value="cond.wearing?.bind_kind ?? ''" @change="setBindKind(($event.target as HTMLSelectElement).value)">
+          <option value="">不限</option><option v-for="k in BIND_KINDS" :key="k" :value="k">{{ lewdRules.two_face.kinds[k].name }}</option>
+        </select>
+      </label>
+    </div>
+  </details>
 </template>
 
 <style scoped src="./editor.css"></style>
