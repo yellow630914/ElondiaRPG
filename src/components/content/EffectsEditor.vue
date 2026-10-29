@@ -14,8 +14,12 @@ const model = defineModel<RewardEffect[] | undefined>()
 // 只開放某些效果（例如地標的參訪不能讓主角淪為奴隸）；沒有時全部
 const props = defineProps<{ types?: RewardEffect['type'][] }>()
 const effectOptions = computed(() => Object.entries(STORY_EFFECTS).filter(([t]) => !props.types || props.types.includes(t as RewardEffect['type'])))
-const conditionList = EFFECT_CONDITIONS().map((k) => [k, conditionName(k)] as const)
 const content = useContent()
+// 可以給的非戰鬥狀態（含自建的）
+const conditionList = computed(() => {
+  void content.version
+  return EFFECT_CONDITIONS().map((k) => [k, conditionName(k)] as const)
+})
 const list = computed(() => model.value ?? [])
 const items = computed(() => {
   void content.version
