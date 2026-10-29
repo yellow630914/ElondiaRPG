@@ -11,6 +11,7 @@ import { commitReport, withRng } from './state'
 import { flagKey } from './storyFlags'
 import { baseReport } from './town'
 import { itemValue } from './interactions'
+import { isUniqueItem } from './trade'
 import type { GameState, Report } from './types'
 
 export const auctionRules = () => lewdRules.auction
@@ -90,7 +91,8 @@ export function placeBid(state: GameState, index: number, amount: number): Repor
 export function consignable(state: GameState): string[] {
   return state.inventory.filter((i) => {
     const d = itemDef(i.name)
-    if (!d || i.qty <= 0 || !d.price_cc) return false
+    // 獨特裝備和商店一樣不收
+    if (!d || i.qty <= 0 || !d.price_cc || isUniqueItem(state, i.name)) return false
     return !!d.adult || !!d.use?.abilities?.some((id) => abilities[id]?.classes.includes('lewd'))
   }).map((i) => i.name)
 }

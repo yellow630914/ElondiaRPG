@@ -22,7 +22,7 @@ const band = computed(() => reputationBand(s.value))
 const pct = (n: number) => `${n > 0 ? '+' : ''}${Math.round(n * 100)}%`
 const blockedToday = computed(() => s.value.gateBlock?.[loc.value.id] === s.value.time.day)
 // 魅氣濃度 4 的城門：照規矩戴上拘束具進城（docs/LEWD_STATS.md 第 12 節）
-const charmGate = computed(() => props.canPay && !wanted.value && charmGateOpen(s.value) && s.value.gatePass?.[loc.value.id] !== s.value.time.day)
+const charmGate = computed(() => props.canPay && charmGateOpen(s.value) && s.value.gatePass?.[loc.value.id] !== s.value.time.day)
 </script>
 
 <template>

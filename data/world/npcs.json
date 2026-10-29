@@ -126,7 +126,7 @@
       "appearance": "身高 170 公分，三十多歲的法師學院院長，身形瘦長、總是懶洋洋地駝著背；黑長髮隨便紮起，還插著一支忘了拿下來的羽毛筆。半睜的深紫色眼睛下掛著黑眼圈，膚色是不見天日的蒼白，嘴角常掛著毒舌前的冷笑。法師袍上沾著墨水，袖口捲到手肘，外頭隨便罩著院長的深色披肩，口袋裡塞滿畫著巨龍投影圖的草稿；一聽到「高維巨龍」，眼睛就突然亮起來。",
       "background": "帝國法師學院院長，正在研究龍的「投影現象」。她相信七種龍其實是同一種存在的不同切面，這個理論讓她被教廷盯上。",
       "relations": { "npc_ael": "常來旁聽的精靈學者，她覺得他太認真", "npc_evenna_starword": "用信件爭論龍的本質的筆友" } },
-    { "id": "npc_park_greeter", "name": "蜜菈", "gender": "female", "race": "demon", "class": "bard", "level": 9, "location": "bloodplume", "hire_cc": 0, "no_attack": true, "adult": true,
+    { "id": "npc_park_greeter", "name": "蜜菈", "gender": "female", "race": "demon", "class": "bard", "level": 9, "location": "bloodplume", "hire_cc": 0, "unhireable": true, "no_attack": true, "adult": true,
       "kind": "commoner", "tags": ["merchant"], "occupation": "緋夢樂園的接待員", "fixed": { "area": "sm/sm_lust_park", "x": 5, "y": 3 },
       "personality": "笑容甜得膩人，說話一半是宣傳詞、一半是黃色笑話；對客人有求必應，對打輸的客人更是熱情。",
       "appearance": "身高約 165 公分，看起來二十出頭的魅魔，粉紅色的短髮上別著一頂小小的禮帽，一對小角從髮間探出來，背後一對蝙蝠翅膀收得很整齊；穿著紅色燕尾服式的短外套與極短的褶裙，胸前別著「接待員」的名牌，手上永遠拿著一疊集章卡。",

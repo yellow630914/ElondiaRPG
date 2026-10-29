@@ -440,7 +440,7 @@ LANDMARK = {
     "interior": PLAZA,
 }
 
-GREETER_LINE = ('    { "id": "' + GREETER + '", "name": "蜜菈", "gender": "female", "race": "demon", "class": "bard", "level": 9, "location": "bloodplume", "hire_cc": 0, "no_attack": true, "adult": true,\n'
+GREETER_LINE = ('    { "id": "' + GREETER + '", "name": "蜜菈", "gender": "female", "race": "demon", "class": "bard", "level": 9, "location": "bloodplume", "hire_cc": 0, "unhireable": true, "no_attack": true, "adult": true,\n'
                 '      "kind": "commoner", "tags": ["merchant"], "occupation": "緋夢樂園的接待員", "fixed": { "area": "sm/' + PLAZA + '", "x": 5, "y": 3 },\n'
                 '      "personality": "笑容甜得膩人，說話一半是宣傳詞、一半是黃色笑話；對客人有求必應，對打輸的客人更是熱情。",\n'
                 '      "appearance": "身高約 165 公分，看起來二十出頭的魅魔，粉紅色的短髮上別著一頂小小的禮帽，一對小角從髮間探出來，背後一對蝙蝠翅膀收得很整齊；穿著紅色燕尾服式的短外套與極短的褶裙，胸前別著「接待員」的名牌，手上永遠拿著一疊集章卡。",\n'
