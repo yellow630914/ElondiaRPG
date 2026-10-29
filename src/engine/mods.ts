@@ -823,6 +823,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (raw.adult) out.adult = true
   // 鎖（雙面效應）：替身上的拘束具上鎖
   if (category === 'gear' && raw.lock && (LOCK_GRADES as string[]).includes(raw.lock)) out.lock = raw.lock
+  // 淫市的貨：魅氣濃度至少多少才買得到
+  if (raw.charm_min) out.charm_min = int(raw.charm_min, 1, 4, 3)
   // 鑰匙：打開別人鎖上的拘束具（一次性）
   if (category === 'gear' && !out.lock && raw.key && (LOCK_GRADES as string[]).includes(raw.key)) out.key = raw.key
   // 黑市：只有獨特物品

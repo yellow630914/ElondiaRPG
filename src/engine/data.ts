@@ -1119,6 +1119,10 @@ export interface TownQuestTemplate {
   reward_cc: [number, number]
   /** 交付時的額外報酬（報酬模板，見 effects.ts） */
   rewards?: RewardEffect[]
+  /** 發布的條件（劇情旗標、慾望指標……；成人向的委託要曝露名聲或淫亂，docs/LEWD_STATS.md 第 20 節） */
+  requires?: StoryCond
+  /** 內容標籤（成人向） */
+  tags?: string[]
 }
 export type MaterialQuestKind = 'gather_wild' | 'gather_dungeon' | 'drop_wild' | 'drop_dungeon' | 'boss_hunt'
 export interface MaterialQuestDef {
@@ -1632,6 +1636,8 @@ export interface ItemDef {
   forge?: { materials: string[] }
   /** 最低要在哪種規模的聚落才買得到 */
   min_location?: string
+  /** 魅氣濃度至少這麼高的聚落才買得到（淫市的貨，docs/LEWD_STATS.md 第 20 節） */
+  charm_min?: number
   /** 事件可能出現：AI 判定主動行動時可以把它當成報酬 */
   event?: boolean
   /** 雜物的工具模板（items.json 的 tools） */
@@ -2113,6 +2119,9 @@ export const lewdRules = lewdJson as unknown as {
   park: ParkRules
   /** 慾望勝利的「征服」掉落：打倒的怪物在高潮中屈服時，有 chance 的機率依種類多掉一件 */
   conquest: { chance: number; kinds: Record<string, string> }
+  slave_room: {
+    charm_min: number; cost_ratio: number; submission: number; learn_chance: number; abilities: string[]; condition: string; scene: string
+  }
   unbind: {
     attr: AttrId; base: number; lock_dc: Record<LockGrade, number>; bind_dc: number; endurance_per: number; fumble_submission: number
     keys: { chance: number; levels: [number, LockGrade][] }

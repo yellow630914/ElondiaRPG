@@ -1,5 +1,7 @@
 // 城鎮行動：旅店休息、酒館招募、公會委託、補給、升級選技能。
 
+import { tagsAllowed } from './content'
+import { condMet } from './storyFlags'
 import { checkBonus } from './perks'
 import { abilityQuality, carryLearned, proficiency, rerollAbilityChoices, setCarried, snapshot } from './character'
 import { setQuestDeadline } from './deadlines'
@@ -228,7 +230,9 @@ export function guildQuests(state: GameState): Quest[] {
   state.flags[boardKey] = state.time.day
   withRng(state, (rng) => {
     // 以地標為標的的範本：城裡要有符合類型的地標
-    const pool = Object.values(townQuestTemplates).filter((t) => !t.landmark || landmarksFor(state, state.location, t.landmark).length)
+    // 有條件的範本（成人向的委託要曝露名聲或淫亂）：條件成立、內容篩選允許才發布
+    const pool = Object.values(townQuestTemplates).filter((t) => (!t.landmark || landmarksFor(state, state.location, t.landmark).length)
+      && condMet(state, t.requires) && tagsAllowed(t.tags))
     for (let i = 0; i < townQuestsPerTown && pool.length > 0; i++) {
       const tpl = pool.splice(rng.int(0, pool.length - 1), 1)[0]!
       const lm = tpl.landmark ? rng.pick(landmarksFor(state, state.location, tpl.landmark)) : undefined

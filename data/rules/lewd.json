@@ -163,6 +163,7 @@
     ]
   },
   "unbind": {"$comment": "脫縛（docs/LEWD_STATS.md 第 16 節）。嘗試脫縛：DC = base + 鎖的 lock_dc + 拘束程度 × bind_dc − 忍耐 / endurance_per；靈巧檢定（雙手被綁的減值照雙面效應算在檢定上）。只有別人鎖上的拘束具（主人強制戴上的）才需要；成功時鎖被弄壞、拘束具可以卸下。主人在身邊時，失敗輕度懲罰、大失敗嚴厲懲罰；大失敗順從 + fumble_submission。鑰匙（物品的 key）打開同等級以下的鎖，用一次就沒了，鎖歸自己。keys：擊敗人形的敵人（持有裝備的怪物、敵對冒險者）時 chance 的機率搜到一把，依敵人等級（levels：[最低等級, 鎖的等級]）。combat：戰鬥中的拘束（狀態有 struggle）用掙脫（自己）或撕開（隊友）擺脫，花 ap 行動點；1d20 + 熟練 + 力量、靈巧較高的調整值，DC = base + 施加者等級 × per_level + 狀態的 struggle，自己雙手被綁 + hands。", "attr": "dex", "base": 12, "lock_dc": {"white": 0, "blue": 2, "rune": 4, "gold": 6}, "bind_dc": 1, "endurance_per": 20, "fumble_submission": 1, "keys": {"chance": 0.1, "levels": [[1, "white"], [6, "blue"], [11, "rune"], [16, "gold"]]}, "combat": {"ap": 1, "base": 10, "per_level": 0.5, "hands": 2}},
+  "slave_room": {"$comment": "驛站的奴房（docs/LEWD_STATS.md 第 20 節）：魅氣濃度 charm_min 以上的聚落，旅店多一個便宜的選項（玩家自己選；內容篩選關掉「主角非自願」時沒有）。全隊和住旅店一樣長休，房錢是旅店的 cost_ratio；主角順從 + submission，learn_chance 的機率學會 abilities 裡的一個色情技能，醒來時 condition。", "charm_min": 3, "cost_ratio": 0.3, "submission": 1, "learn_chance": 0.25, "abilities": ["lust_endure", "lust_grovel", "lust_pour_charm"], "condition": "drained", "scene": "主角住進驛站的奴房：一整晚被鎖在床頭，路過的客人都能推門進來"},
   "park": {
     "$comment": "魅魔的遊樂園（docs/LUST_PARK.md）。step_lust：在園區裡每走一格，全隊的魅氣（跨戰鬥保留的慾望，慾望上限的比例）增加多少，走路最多累積到 step_cap；trap_lust：沒察覺的陷阱是媚藥機關，觸發的人魅氣增加多少（取代陷阱的傷害）；mimic_chance：園區的寶箱是擬態寶箱的機率，mimics 依層（1 淺層、2 中層、3 深層）；chest_items：園區的寶箱另外擲的物品；defeats：各園區的專屬戰敗（scene 交給成人場景的寫手、summary 寫進戰報、effects 套用、hours 經過的時間）。",
     "step_lust": 0.01,

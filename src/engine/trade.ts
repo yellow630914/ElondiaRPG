@@ -6,6 +6,7 @@
 // - 主角想殺價、交涉時才是主動行動（bargain）：成功程度決定這筆交易的價格倍率。
 // - 價格 = 目錄價 × 地點倍率；購買時再扣親密度折扣（每點 0.2%，最多 10%）與談判得到的長期折扣。
 
+import { charmLevel } from './charm'
 import { snapshot } from './character'
 import {
   companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, isCustomShopId, shopDef, shopRules, slaveryRules,
@@ -167,7 +168,10 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const def = shopDef(type)
   const rank = locationRank(shopPlace(state).type)
   // 獨特物品、有屬性加減的裝備、主人強制裝備的東西不在商店賣（只能從事件、寶箱或主人得到）
-  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank)
+  const place = shopPlace(state)
+  // 淫市的貨：魅氣濃度夠高的聚落才有（驛站沒有）
+  const charm = place.waystation ? 0 : charmLevel(place.id)
+  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank && (!i.charm_min || charm >= i.charm_min))
   return withRng(state, (rng) => {
     const deals: Deal[] = []
     // 服裝另外挑（shops.json 的 outfits），不擠掉護具與武器

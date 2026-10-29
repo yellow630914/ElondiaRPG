@@ -357,6 +357,12 @@ function setFuel(v: string) {
             <option v-for="(n, k) in LOCS" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
+        <label class="small" title="成人向（docs/LEWD_STATS.md 第 20 節）：魅氣濃度至少這麼高的聚落才買得到（淫市的貨）">魅氣濃度 ≥
+          <select :value="draft.charm_min ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.charm_min = Number(($event.target as HTMLSelectElement).value)) : delete draft.charm_min">
+            <option value="">（不限）</option>
+            <option v-for="n in [2, 3, 4]" :key="n" :value="n">{{ n }}</option>
+          </select>
+        </label>
       </div>
       <p v-if="draft.category === 'equipment'" class="small muted">裝備在商店是每天隨機上架幾樣，不是每天都有。</p>
       <div class="row checks">

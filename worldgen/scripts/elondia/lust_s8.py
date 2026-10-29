@@ -434,9 +434,108 @@ def write_s8_9():
     print('S8-9 furniture', len(TRAINING_FURNITURE), 'home events', len(HOME_EVENTS))
 
 
+# ---------------- S8-10 城鎮、商店、旅途、場所 ----------------
+CHARM_GOODS = [
+    {"name": "媚香蠟燭", "category": "consumable", "price_cc": 90, "tags": ["general"], "adult": True, "charm_min": 3,
+     "use": {"condition": "aroused"}, "desc": "淫市裡賣的粉紅色蠟燭，點起來滿屋子甜膩的香氣。聞過的人發情（開戰時帶著慾望），想靠引爆、自我挑逗打的人會想要。"},
+    {"name": "鈴鐺頸環", "category": "equipment", "price_cc": 260, "tags": ["tailor"], "adult": True, "charm_min": 3,
+     "gear": {"base": "choker", "material": "silk", "lewd": {"submission": 5, "lewdness": 5}},
+     "desc": "綴著一顆小金鈴的絲質頸環，走一步響一聲。淫市的裁縫說，戴上它的人會越來越聽話。"},
+]
+SLAVE_ROOM = {
+    "$comment": "驛站的奴房（docs/LEWD_STATS.md 第 20 節）：魅氣濃度 charm_min 以上的聚落，旅店多一個便宜的選項（玩家自己選；內容篩選關掉「主角非自願」時沒有）。全隊和住旅店一樣長休，房錢是旅店的 cost_ratio；主角順從 + submission，learn_chance 的機率學會 abilities 裡的一個色情技能，醒來時 condition。",
+    "charm_min": 3, "cost_ratio": 0.3, "submission": 1, "learn_chance": 0.25, "abilities": ["lust_endure", "lust_grovel", "lust_pour_charm"], "condition": "drained",
+    "scene": "主角住進驛站的奴房：一整晚被鎖在床頭，路過的客人都能推門進來",
+}
+EXPOSURE_EVENTS = [
+    {"id": "town_fan", "scope": "town", "tier": "normal", "kind": "choice", "cells": ["tavern", "inn", "shop"], "category": "social",
+     "requires": {"stats": {"exposure": {"min": 40}}}, "tags": ["adult", "male_partner"], "pc_body": ["fem", "andro"], "cooldown_days": 7,
+     "title": "認出你的人", "text": "鄰桌的年輕人一直偷看你，終於鼓起勇氣湊過來：「你、你就是那個……大家都在說的冒險者吧？我、我能請你喝一杯嗎？」",
+     "scene": "主角讓崇拜者帶回房間，年輕人笨手笨腳卻熱情得要命，主角一邊教一邊享受，天亮時對方還捨不得放手",
+     "options": [
+        {"label": "笑著讓他請", "check": {"attr": "cha", "dc": 11}, "success": {"text": "你們聊了一晚上，他把你的冒險故事一字不漏地記了下來，臨走前硬塞了一袋錢給你。", "effects": [{"type": "money", "amount": 40}, {"type": "lewd", "stat": "exposure", "delta": 2}]},
+         "fail": {"text": "他喝多了，開始大聲問那些傳聞是不是真的，整間店的人都轉過頭來看你。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 4}]}},
+        {"label": "帶他回房間", "success": {"text": "你牽著他的手上了樓。第二天他紅著臉離開，說這是他這輩子最好的一晚。", "effects": [{"type": "lewd", "stat": "lewdness", "delta": 1}, {"type": "lewd", "stat": "exposure", "delta": 3}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "always"},
+        {"label": "裝作認錯人", "check": {"attr": "int", "dc": 12}, "success": {"text": "你說他認錯人了。他愣了一下，紅著臉道歉走開。"},
+         "fail": {"text": "他一臉「我懂」的表情，說會替你保密——然後轉頭就跟朋友說了。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 2}]}}]},
+    {"id": "town_noble_salon", "scope": "town", "tier": "normal", "kind": "choice", "cells": ["tavern", "inn", "jeweler", "tailor"], "category": "opportunity",
+     "location_types": ["city", "capital"], "requires": {"stats": {"exposure": {"min": 60}}}, "tags": ["adult", "male_partner"], "pc_body": ["fem", "andro"], "cooldown_days": 14,
+     "title": "貴族沙龍的邀請", "text": "一個穿著體面的僕人遞上一張燙金的請柬：「我家主人久仰您的大名，今晚的私人沙龍，想請您當座上賓。」請柬背面用小字寫著：穿得少一點。",
+     "scene": "主角在貴族的私人沙龍裡被當成餘興節目，賓客們輪流上前，一整晚沒有停過",
+     "options": [
+        {"label": "赴約，當今晚的主角", "success": {"text": "沙龍裡的人都知道你是誰。你被當成今晚的主菜，天亮時口袋裡塞滿了賞錢，名聲也傳得更遠了。", "effects": [{"type": "money", "amount": 300}, {"type": "lewd", "stat": "exposure", "delta": 5}, {"type": "lewd", "stat": "lewdness", "delta": 2}, {"type": "condition", "target": "pc", "condition": "drained", "add": True}]}, "adult_scene": "always"},
+        {"label": "赴約，但只陪聊", "check": {"attr": "cha", "dc": 15}, "success": {"text": "你用談吐把整場沙龍的焦點留在故事上，主人很滿意，還說要介紹幾個委託給你。", "effects": [{"type": "money", "amount": 120}, {"type": "xp", "amount": 40}]},
+         "fail": {"text": "賓客們對故事沒興趣，你被半推半就地拉進了內廳。", "effects": [{"type": "lewd", "stat": "exposure", "delta": 3}, {"type": "condition", "target": "pc", "condition": "disheveled", "add": True}]}, "adult_scene": "fail"},
+        {"label": "婉拒", "success": {"text": "你把請柬還給僕人。他鞠了個躬，什麼也沒說。"}}]},
+    {"id": "town_guard_toll", "scope": "town", "tier": "normal", "kind": "choice", "cells": ["gate"], "category": "trouble",
+     "requires": {"stats": {"exposure": {"min": 60}}}, "tags": ["adult", "pc_unwilling", "male_partner"], "pc_body": ["fem", "andro"], "cooldown_days": 10,
+     "title": "衛兵的「通行費」", "text": "城門的衛兵一看到你就笑了：「喲，這不是那個有名的……」他攔下你，壓低聲音：「通行費得另外算。去後面的崗哨，讓兄弟們檢查一下。」",
+     "scene": "主角被衛兵帶進城門邊的崗哨，換班的衛兵一個接一個進來「檢查」，直到天黑才放主角走",
+     "options": [
+        {"label": "跟他去崗哨", "success": {"text": "你在崗哨裡待到天黑。出來的時候，衛兵們對你客氣多了，說以後進出不用排隊。", "effects": [{"type": "lewd", "stat": "submission", "delta": 1}, {"type": "lewd", "stat": "exposure", "delta": 2}, {"type": "condition", "target": "pc", "condition": "drained", "add": True}]}, "adult_scene": "always"},
+        {"label": "亮出冒險者公會的牌子", "check": {"attr": "cha", "dc": 14}, "success": {"text": "你冷冷地說公會會很樂意聽聽這件事。衛兵的臉色變了，揮手放行。"},
+         "fail": {"text": "衛兵嗤笑一聲：「公會？他們才不管你這種人。」你被拖進了崗哨。", "effects": [{"type": "lewd", "stat": "submission", "delta": 1}, {"type": "condition", "target": "pc", "condition": "drained", "add": True}]}, "adult_scene": "fail"},
+        {"label": "塞錢了事", "success": {"text": "你塞了幾枚銀幣過去。衛兵掂了掂，不太滿意，但還是放你過去了。", "effects": [{"type": "money", "amount": -30}]}}]},
+    {"id": "road_recognized", "tier": "normal", "kind": "choice", "category": "social", "modes": ["road", "trail"],
+     "requires": {"stats": {"exposure": {"min": 40}}}, "tags": ["adult", "male_partner"], "pc_body": ["fem", "andro"],
+     "title": "路上被認出來", "text": "迎面而來的商隊放慢了速度。領頭的商人盯著你看了好一會兒，眼睛一亮：「哎呀，這不是……！我在城裡聽過你的事。順路的話，晚上一起紮營吧？」",
+     "scene": "主角在商隊的營火邊被商人們圍著，一個接一個地帶進帳篷",
+     "options": [
+        {"label": "一起紮營，陪他們過夜", "success": {"text": "那一晚的營地很熱鬧。天亮時商人們送了你一些補給，還說下次一定要再遇到。", "effects": [{"type": "item", "name": "乾糧", "qty": 3}, {"type": "money", "amount": 60}, {"type": "lewd", "stat": "exposure", "delta": 2}, {"type": "condition", "target": "pc", "condition": "afterglow", "add": True}]}, "adult_scene": "always"},
+        {"label": "一起紮營，但只是聊天", "check": {"attr": "cha", "dc": 13}, "success": {"text": "你講了一晚上的冒險故事，商人們聽得入迷，天亮時送了你一包補給。", "effects": [{"type": "item", "name": "乾糧", "qty": 2}]},
+         "fail": {"text": "商人們聽著聽著，手就不太安分了。你好不容易才脫身，回到隊伍時衣服都皺了。", "effects": [{"type": "condition", "target": "pc", "condition": "disheveled", "add": True}]}},
+        {"label": "婉拒，繼續趕路", "success": {"text": "你揮揮手，商隊遺憾地走遠了。"}}]},
+]
+
+ADULT_QUESTS = [
+    {"id": "dancer_standin", "spot": "tavern", "kind": "patrol", "area": "town", "title": "替{town}酒館的舞孃代班一晚", "scene": "{town}酒館的小舞台，台下的酒客吹著口哨",
+     "hours": 5, "dc": 12, "reward_cc": [90, 130], "requires": {"stats": {"lewdness": {"min": 40}}}, "tags": ["adult"],
+     "rewards": [{"type": "lewd", "stat": "exposure", "delta": 2}]},
+    {"id": "noble_banquet_act", "spot": "inn", "kind": "patrol", "area": "town", "title": "{town}貴族宴會的餘興表演", "scene": "{town}旅店的宴會廳，包場的貴族們等著看你",
+     "hours": 4, "dc": 13, "reward_cc": [160, 220], "requires": {"stats": {"exposure": {"min": 60}}}, "tags": ["adult"],
+     "rewards": [{"type": "lewd", "stat": "exposure", "delta": 3}, {"type": "lewd", "stat": "lewdness", "delta": 1}]},
+]
+
+
+def write_s8_10():
+    p = 'data/rules/items.json'
+    t = open(p).read()
+    for it in CHARM_GOODS:
+        t = drop_lines(t, r'\n    \{"name": ' + re.escape(json.dumps(it['name'], ensure_ascii=False)) + r'.*')
+    t = insert_after(t, r'\n    \{"name": "魅魔女王的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in CHARM_GOODS])
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/lewd.json'
+    t = open(p).read()
+    t = drop_lines(t, r'\n  "slave_room": \{.*')
+    t = t.replace('\n  "park": {', '\n  "slave_room": ' + json.dumps(SLAVE_ROOM, ensure_ascii=False) + ',\n  "park": {', 1)
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/travel_events.json'
+    t = open(p).read()
+    for e in EXPOSURE_EVENTS:
+        t = drop_lines(t, r'\n    \{"id": "' + e['id'] + r'".*')
+    t = insert_after(t, r'\n    \{"id": "town_grope".*', ['    ' + json.dumps(e, ensure_ascii=False) for e in EXPOSURE_EVENTS])
+    json.loads(t)
+    open(p, 'w').write(t)
+    p = 'data/rules/town_quests.json'
+    t = open(p).read()
+    for q in ADULT_QUESTS:
+        t = drop_lines(t, r'\n    \{"id": "' + q['id'] + r'".*')
+    # 範本多半是多行的物件：接在陣列的最後
+    end = t.rindex('\n  ]')
+    t = t[:end] + ',\n' + ',\n'.join('    ' + json.dumps(q, ensure_ascii=False) for q in ADULT_QUESTS) + t[end:]
+    json.loads(t)
+    open(p, 'w').write(t)
+    print('S8-10 goods', len(CHARM_GOODS), 'events', len(EXPOSURE_EVENTS), 'quests', len(ADULT_QUESTS))
+
+
 if __name__ == '__main__':
     write_s8_3()
     write_s8_4()
     write_s8_6()
     write_s8_7()
     write_s8_9()
+    write_s8_10()

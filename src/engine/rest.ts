@@ -11,7 +11,11 @@ import { maybeParasiteEvent } from './parasiteEvents'
 import { checkBonus } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
-import { classDef, companionRules, homeRules, locationById, regionById, slaveryRules, specialMaps, wildEncounters, type DungeonLayerId } from './data'
+import { abilities, classDef, companionRules, homeRules, lewdRules, locationById, regionById, slaveryRules, specialMaps, wildEncounters, type DungeonLayerId } from './data'
+import { charmLevel } from './charm'
+import { tagsAllowed } from './content'
+import { teachAbility } from './effects'
+import { addLewd } from './lewd'
 import { currentArea, currentCell, DUNGEON_LAYERS } from './grid'
 import { comfortOf, hasBed, homeOfArea } from './homes'
 import { formatMoney } from './money'
@@ -32,6 +36,18 @@ export const INN_CC_PER_PERSON = 15
 export function innCost(state: GameState): number {
   const mult = isFugitive(state) ? 2 : 1
   return INN_CC_PER_PERSON * state.party.length * mult
+}
+
+// ---- 驛站的奴房（成人向，docs/LEWD_STATS.md 第 20 節） ----
+
+/** 這間旅店有沒有奴房：魅氣濃度夠高、內容篩選沒有關掉「主角非自願」 */
+export function slaveRoomOpen(state: GameState): boolean {
+  return charmLevel(state.location) >= lewdRules.slave_room.charm_min && tagsAllowed(['pc_unwilling'])
+}
+
+/** 奴房的房錢：旅店的 cost_ratio */
+export function slaveRoomCost(state: GameState): number {
+  return Math.max(1, Math.round(innCost(state) * lewdRules.slave_room.cost_ratio))
 }
 
 export function hitDie(c: Character): number {
@@ -103,7 +119,8 @@ export function longRestBlocked(state: GameState, place: RestPlace): string | nu
     // 主人的家：睡在下人房，不用自己的床
     if (!home.master && !hasBed(home)) return '家裡還沒有床'
   }
-  if (place === 'inn' && cell.kind !== 'inn') return '要在旅店才能長休'
+  if ((place === 'inn' || place === 'slave_room') && cell.kind !== 'inn') return '要在旅店才能長休'
+  if (place === 'slave_room' && !slaveRoomOpen(state)) return '這裡的旅店沒有奴房'
   if (place === 'safe' && cell.kind !== 'safe') return '要在安全房才能長休'
   if (place === 'safe' && cell.done) return '這間安全房已經長休過了'
   const wait = longRestWait(state)
@@ -193,7 +210,7 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
 
 /** 長休：旅店（付費，到隔天早上）或安全房（每人 1 份乾糧，8 小時）。 */
 /** 長休的地方：旅店、地下城的安全房、自己的房子（要有床） */
-export type RestPlace = 'inn' | 'safe' | 'home'
+export type RestPlace = 'inn' | 'safe' | 'home' | 'slave_room'
 
 export function longRest(state: GameState, place: RestPlace): Report {
   const blocked = longRestBlocked(state, place)
@@ -203,11 +220,11 @@ export function longRest(state: GameState, place: RestPlace): Report {
   let scene = `${area.name}的安全房`
   let costText = ''
   const report = restReport(state, hours, scene)
-  if (place === 'inn') {
-    const cost = innCost(state)
+  if (place === 'inn' || place === 'slave_room') {
+    const cost = place === 'slave_room' ? slaveRoomCost(state) : innCost(state)
     if (state.money_cc < cost) throw new Error('旅費不足')
     hours = Math.max(hours, (24 - state.time.hour + 8) % 24 || 24)
-    scene = `${locationById(state.location).name}的旅店`
+    scene = `${locationById(state.location).name}的旅店${place === 'slave_room' ? '（奴房）' : ''}`
     report.changes.money_cc = -cost
     costText = `，花費 ${formatMoney(cost)}${isFugitive(state) ? '（身上的印記讓老闆加了價）' : ''}`
   } else if (place === 'home') {
@@ -244,12 +261,13 @@ export function longRest(state: GameState, place: RestPlace): Report {
   const rested = !!home && comfortOf(home) >= homeRules.comfort_rested
   if (rested) for (const m of state.party) addCondition(m, 'well_rested', report)
   clearInviteCooldowns(state)
+  const room = place === 'slave_room' ? slaveRoomNight(state, report) : []
   const checks = restChecks(state, report, place)
   state.lastLongRest = { ...report.time.end }
   report.outcome = {
     result: 'success',
-    summary: [`在${scene}好好睡了一覺${costText}。`, ...(rested ? ['家裡佈置得很舒服，大家都睡得很香甜。'] : []), ...checks].join(''),
-    tags: ['長休', ...(place === 'safe' ? ['安全房'] : place === 'home' ? ['在家'] : [])],
+    summary: [place === 'slave_room' ? `大家在${scene}過了一夜${costText}。` : `在${scene}好好睡了一覺${costText}。`, ...(rested ? ['家裡佈置得很舒服，大家都睡得很香甜。'] : []), ...room, ...checks].join(''),
+    tags: ['長休', ...(place === 'safe' ? ['安全房'] : place === 'home' ? ['在家'] : place === 'slave_room' ? ['奴房'] : [])],
   }
   const committed = commitReport(state, report)
   // 安全房醒來之前：夜襲、淫夢（地下城事件）
@@ -257,6 +275,20 @@ export function longRest(state: GameState, place: RestPlace): Report {
   // 醒來的時候：寄生物可能發作
   maybeParasiteEvent(state, 'rest')
   return committed
+}
+
+/** 奴房的一夜：主角順從上升、可能學會一個色情技能，醒來時虛脫；敘事交給成人場景的寫手 */
+function slaveRoomNight(state: GameState, report: Report): string[] {
+  const r = lewdRules.slave_room
+  const pc = pcOf(state)
+  const lines = ['主角被鎖在奴房的床頭過了一夜，路過的客人都能推門進來。']
+  addLewd(state, pc, 'submission', r.submission, report)
+  const open = r.abilities.filter((id) => abilities[id] && !pc.abilities.includes(id))
+  const learn = open.length && withRng(state, (rng) => rng.chance(r.learn_chance)) ? withRng(state, (rng) => rng.pick(open)) : undefined
+  if (learn) lines.push(`${teachAbility(state, report, pc, learn)}。`)
+  if (companionRules.conditions[r.condition]) addCondition(pc, r.condition, report)
+  report.narration = { ...report.narration, length: 'medium', adult_scene: r.scene }
+  return lines
 }
 
 // ---- 休息時的離隊檢查 ----
