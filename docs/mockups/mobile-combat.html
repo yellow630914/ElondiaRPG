@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0 } [hidden] { display: none !important }</style>
+<title>埃隆迪亞戰鬥樣稿</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&display=swap">
+<style>
+/* 版面：手機直式單欄。上：戰鬥列（場景、回合、選單）→ 敵人（兩欄小卡）→ 戰鬥紀錄（最新兩行，點了看全部）→ 我方（兩欄小卡）
+   → 行動區（目前行動的人、行動點、基本動作、技能分頁）。戰鬥中不顯示底部分頁列，空間都給戰場。
+   寬螢幕時旁邊多一欄「樣稿說明」。配色沿用遊戲 src/style.css 的皮革與金色、慾望條的粉紅。 */
+:root {
+  --bg: #120d09;
+  --panel: #221a13;
+  --border: #4a3a28;
+  --text: #efe4cc;
+  --muted: #9a8768;
+  --accent: #d9a54a;
+  --gold-hi: #f0d083;
+  --gold-lo: #6d5128;
+  --danger: #d8604e;
+  --good: #7cba6a;
+  --hp: #c8483a;
+  --hp-lo: #3a1512;
+  --lust: #e0508f;
+  --lust-hi: #ff9ccb;
+  --mp: #4a83c9;
+  --heal: #7cd88a;
+  --crit: #ffd34d;
+  --scrim: #000000a6;
+  --font-body: 'Noto Serif TC', 'Noto Serif CJK TC', 'PMingLiU', serif;
+  --fs-xs: 0.72rem; --fs-sm: 0.84rem; --fs-md: 0.95rem; --fs-lg: 1.1rem; --fs-xl: 1.5rem;
+  --radius: 4px;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 15px;
+  display: flex; justify-content: center; gap: 32px; overflow: hidden;
+}
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; -webkit-user-select: none; user-select: none; }
+button:disabled { cursor: default; }
+button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
+.ico { width: 18px; height: 18px; flex: none; }
+.ico.sm { width: 14px; height: 14px; }
+
+.app {
+  position: relative; width: 100%; max-width: 440px; height: 100%; display: flex; flex-direction: column; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 0%, #3a1c1255, transparent 60%), var(--bg);
+  border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+}
+.band { padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
+
+/* 戰鬥列 */
+.topbar {
+  flex: none; display: flex; align-items: center; gap: 8px; padding-block: 6px; min-height: 40px; box-sizing: border-box;
+  background: linear-gradient(180deg, #2a1712, #1d1210); border-bottom: 1px solid #7a2f22;
+}
+.topbar .scene { display: inline-flex; align-items: center; gap: 6px; font-weight: 900; color: var(--gold-hi); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar .scene .ico { color: var(--danger); }
+.topbar .round { margin-left: auto; font-size: var(--fs-sm); color: var(--gold-hi); border: 1px solid var(--gold-lo); border-radius: 2px; padding: 1px 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.topbar .menu { width: 36px; height: 34px; display: grid; place-items: center; color: var(--muted); }
+
+/* 戰場：敵人在上、我方在下（靠近拇指的是自己人與行動） */
+.field { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; padding-block: 8px; }
+.side-head { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); letter-spacing: 0.12em; color: var(--muted); }
+.side-head .ico { width: 13px; height: 13px; }
+.side-head.foe { color: #e08a7c; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.card {
+  position: relative; display: flex; flex-direction: column; gap: 3px; padding: 6px 8px 7px; text-align: left; min-width: 0;
+  background: #0006; border: 1px solid #ffffff14; border-radius: 3px; transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s, transform 0.15s;
+}
+.card .n { display: flex; align-items: center; gap: 4px; font-size: var(--fs-sm); font-weight: 600; min-width: 0; }
+.card .n b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.card .n .lv { margin-left: auto; font-size: var(--fs-xs); color: var(--muted); font-weight: 400; flex: none; }
+.card .n .crown { color: var(--crit); flex: none; }
+.bar { position: relative; height: 7px; border-radius: 1px; background: var(--hp-lo); overflow: hidden; box-shadow: inset 0 0 0 1px #000a; }
+.bar > i { display: block; height: 100%; background: linear-gradient(180deg, #ff7a66, var(--hp) 55%, #8e2a20); transition: width 0.35s ease-out; }
+.bar.lust { height: 4px; background: #2a1020; }
+.bar.lust > i { background: linear-gradient(180deg, var(--lust-hi), var(--lust)); }
+.nums { display: flex; justify-content: space-between; font-size: var(--fs-xs); color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.nums .hp { color: var(--text); }
+.nums .ls { color: var(--lust-hi); }
+.chips { display: flex; gap: 3px; flex-wrap: nowrap; overflow: hidden; min-height: 16px; }
+.chip { font-size: 10px; line-height: 15px; padding: 0 4px; border-radius: 2px; border: 1px solid #ffffff22; color: var(--text); white-space: nowrap; }
+.chip.buff { border-color: #4f8a52; color: #a6dba8; }
+.chip.debuff { border-color: #8a3a3a; color: #f0a8a0; }
+.chip.lewd { border-color: #8a3a66; color: var(--lust-hi); }
+.chip.more { color: var(--muted); }
+.pips { display: inline-flex; gap: 2px; }
+.pips i { width: 6px; height: 6px; border-radius: 50%; background: #ffffff22; }
+.pips i.on { background: var(--gold-hi); box-shadow: 0 0 4px #f0d08088; }
+.card.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 12px #d9a54a44; }
+.card.down { opacity: 0.4; filter: grayscale(0.8); }
+.card.target { border-color: var(--gold-hi); box-shadow: 0 0 0 2px var(--gold-hi), 0 0 14px #f0d083aa; animation: glow 1.2s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 0 2px var(--gold-hi), 0 0 4px #f0d08055; } }
+.card.dim { opacity: 0.35; }
+.card.hit { animation: hit 0.3s; }
+@keyframes hit { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
+.float {
+  position: absolute; right: 8px; top: -4px; font-weight: 900; font-size: 1rem; pointer-events: none; text-shadow: 0 1px 0 #000, 0 0 6px #000;
+  animation: float 1s ease-out forwards;
+}
+@keyframes float { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-22px); } }
+
+/* 戰鬥紀錄：只露最新兩行，點了看全部 */
+.ticker {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: #1a1410; text-align: left; width: 100%; box-sizing: border-box; font-size: var(--fs-sm);
+}
+.ticker .lines { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ticker .lines span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.ticker .lines span:last-child { color: var(--text); }
+.ticker .all { flex: none; font-size: var(--fs-xs); color: var(--accent); }
+
+/* 行動區 */
+.actions { flex: none; border-top: 1px solid var(--gold-lo); background: linear-gradient(180deg, #2a2017, #17110c); padding-block: 8px 10px; display: flex; flex-direction: column; gap: 8px; }
+.who { display: flex; align-items: center; gap: 8px; }
+.who b { color: var(--gold-hi); font-weight: 900; }
+.who .ap { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--muted); }
+.who .end { margin-left: auto; }
+.btn {
+  min-height: 42px; padding: 0 12px; border-radius: var(--radius); background: linear-gradient(180deg, #3b2c1e, #2a1f15);
+  border: 1px solid var(--gold-lo); color: var(--text); font-size: var(--fs-sm); white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+}
+.btn small { color: var(--muted); font-size: var(--fs-xs); }
+.btn.primary { background: linear-gradient(180deg, #e5b75a, #b2822f); border-color: var(--gold-hi); color: #22160b; font-weight: 700; }
+.btn.primary small { color: #4a3216; }
+.btn.danger { border-color: #8a3a2e; color: #f0a8a0; }
+.btn:disabled { opacity: 0.4; }
+.btn.sm { min-height: 34px; padding: 0 10px; }
+.basics { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 6px; }
+.tabs { display: flex; border-bottom: 1px solid var(--border); }
+.tabs button { flex: 1; padding: 6px 4px; font-size: var(--fs-sm); color: var(--muted); border-bottom: 2px solid transparent; }
+.tabs button.on { color: var(--gold-hi); border-bottom-color: var(--accent); }
+.tabs button .cnt { font-size: var(--fs-xs); color: var(--muted); margin-left: 2px; }
+.skills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 148px; overflow-y: auto; overscroll-behavior: contain; }
+.skill {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 8px; min-height: 46px; text-align: left; min-width: 0;
+  background: #0005; border: 1px solid #ffffff1a; border-radius: var(--radius); font-size: var(--fs-sm);
+}
+.skill b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.skill small { font-size: var(--fs-xs); color: var(--muted); }
+.skill.lewd { border-color: #6a2a4c; }
+.skill.lewd b { color: var(--lust-hi); }
+.skill.off { opacity: 0.4; }
+.skill.pressing { transform: scale(0.97); border-color: var(--accent); }
+.empty { color: var(--muted); font-size: var(--fs-sm); padding: 10px 4px; grid-column: 1 / -1; }
+.picking { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px dashed var(--gold-hi); border-radius: var(--radius); }
+.picking span { flex: 1; font-size: var(--fs-sm); }
+.picking b { color: var(--gold-hi); }
+.result { text-align: center; display: flex; flex-direction: column; gap: 8px; padding-block: 6px; }
+.result h2 { margin: 0; font-size: var(--fs-xl); letter-spacing: 0.3em; color: var(--gold-hi); }
+.result p { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+.enemy-turn { text-align: center; color: #e08a7c; font-size: var(--fs-sm); padding: 18px 0; letter-spacing: 0.1em; }
+
+/* 半屏面板 */
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 20; animation: fade 0.2s; }
+@keyframes fade { from { opacity: 0; } }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 21; max-height: 72%; display: flex; flex-direction: column;
+  background: linear-gradient(180deg, #2a2017, #1d1611); border-top: 1px solid var(--accent); border-radius: 12px 12px 0 0;
+  box-shadow: 0 -10px 30px #000b; animation: up 0.22s ease-out;
+}
+@keyframes up { from { transform: translateY(40%); opacity: 0.4; } }
+.sheet .grip { height: 20px; display: grid; place-items: center; }
+.sheet .grip::before { content: ''; width: 44px; height: 4px; border-radius: 2px; background: var(--gold-lo); }
+.sheet header { display: flex; align-items: center; gap: 8px; padding-block: 0 8px; }
+.sheet header h2 { margin: 0; flex: 1; font-size: var(--fs-lg); color: var(--gold-hi); }
+.sheet header .x { width: 36px; height: 36px; display: grid; place-items: center; color: var(--muted); }
+.sheet .body { overflow-y: auto; padding-block: 0 16px; display: flex; flex-direction: column; gap: 10px; font-size: var(--fs-sm); line-height: 1.6; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+.round-head { color: var(--accent); font-size: var(--fs-xs); letter-spacing: 0.12em; margin-top: 6px; }
+.log-line { color: var(--text); }
+.log-line.foe { color: #f0b0a6; }
+.log-line.lewd { color: var(--lust-hi); }
+.toast {
+  position: absolute; left: 50%; bottom: 40%; transform: translateX(-50%); z-index: 40; max-width: 86%;
+  background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius); padding: 8px 14px; font-size: var(--fs-sm);
+  box-shadow: 0 6px 20px #000a; animation: fade 0.2s; text-align: center;
+}
+.banner {
+  position: absolute; left: 0; right: 0; top: 38%; z-index: 30; text-align: center; pointer-events: none;
+  font-size: 1.8rem; font-weight: 900; letter-spacing: 0.4em; color: var(--gold-hi); text-shadow: 0 2px 0 #000, 0 0 20px #000;
+  animation: bn 1.2s ease-out forwards;
+}
+@keyframes bn { 0% { opacity: 0; transform: scale(1.3); } 20%, 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; } }
+
+.notes { display: none; width: 360px; padding-block: 24px; overflow-y: auto; }
+.notes h1 { font-size: var(--fs-lg); color: var(--gold-hi); letter-spacing: 0.08em; margin: 0 0 4px; }
+.notes-body h3 { font-size: var(--fs-md); color: var(--accent); margin: 16px 0 4px; }
+.notes-body p, .notes-body li { color: var(--text); font-size: var(--fs-sm); line-height: 1.7; margin: 0; }
+.notes-body ul { padding-left: 1.2em; margin: 0; }
+.notes-body .q { color: var(--gold-hi); }
+@media (min-width: 900px) { .notes { display: block; } .app { box-shadow: 0 0 40px #000c; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="app" id="app">
+  <header class="topbar band">
+    <span class="scene"><svg class="ico"><use href="#i-sword"/></svg>戰鬥・古井第一層</span>
+    <span class="round" id="round">第 1 回合</span>
+    <button class="menu" id="menuBtn" aria-label="選單"><svg class="ico"><use href="#i-dots"/></svg></button>
+  </header>
+  <main class="field band" id="field"></main>
+  <section class="actions band" id="actions"></section>
+</div>
+
+<aside class="notes band">
+  <h1>戰鬥樣稿</h1>
+  <p class="muted" style="color:var(--muted);font-size:var(--fs-sm)">可以實際打一場。寬螢幕才會看到這一欄；手機上在右上角「⋯ → 樣稿說明」。</p>
+  <div class="notes-body" id="notesBody"></div>
+</aside>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-sword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M14 4h6v6L9 21l-3-3L17 7"/><path d="M4 16l4 4M3 21l2-2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/></symbol>
+    <symbol id="i-skull" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 11a7 7 0 0 1 14 0v4h-3v4H8v-4H5z"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="10" width="4" height="4"/><rect x="10" y="10" width="4" height="4"/><rect x="17" y="10" width="4" height="4"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l5 4 4-6 4 6 5-4-2 11H5z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-scroll" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M10 8h6M10 12h6"/></symbol>
+  </defs>
+</svg>
+
+<script>
+(() => {
+  // ── 範例資料（樣稿用，數字不是遊戲的真規則）
+  const SK = {
+    slash: { name: '重擊', cat: 'skill', ap: 3, target: 'foe', desc: '全力揮擊：命中 −1，額外 1d8 傷害。', dmg: [8, 14] },
+    guard: { name: '盾牌格擋', cat: 'skill', ap: 1, target: 'self', desc: '到下一回合前受到的傷害 −3。', buff: '格擋' },
+    shout: { name: '戰吼', cat: 'skill', ap: 2, target: 'none', desc: '吸引所有敵人的注意（仇恨 +50%）。', buff: '挑釁' },
+    heal: { name: '治療術', cat: 'spell', ap: 2, target: 'ally', desc: '一環法術：回復 2d6+3 生命。', heal: [5, 15], slot: 1 },
+    bless: { name: '祝福', cat: 'spell', ap: 1, target: 'ally', desc: '一環法術：三回合內命中 +2。', buff: '祝福', slot: 1 },
+    calm: { name: '清心咒', cat: 'spell', ap: 1, target: 'ally', desc: '一環法術：慾望 −15。', calm: 15, slot: 1 },
+    volley: { name: '連射', cat: 'skill', ap: 3, target: 'foe', desc: '射兩箭，每箭 1d6+2。', dmg: [6, 16] },
+    kiss: { name: '魅惑之吻', cat: 'lewd', ap: 2, target: 'foe', desc: '色情技能（魅力）：對方慾望 +12。對無慾望的敵人無效。', lust: 12 },
+    gaze: { name: '媚眼', cat: 'lewd', ap: 1, target: 'foe', desc: '色情技能（魅力）：對方慾望 +6，一回合內命中 −1。', lust: 6 },
+    dodge: { name: '閃身', cat: 'skill', ap: 1, target: 'self', desc: '到下一回合前閃避 +2。', buff: '閃身' },
+  }
+  const ITEMS = [{ name: '治療藥水', qty: 3, ap: 2, target: 'ally', desc: '回復 12 生命。', heal: [12, 12] }, { name: '清心香', qty: 1, ap: 2, target: 'ally', desc: '慾望 −20。', calm: 20 }]
+  const PARTY = [
+    { id: 'erin', name: '艾琳', side: 'party', lv: 3, hp: 38, max: 38, lust: 0, lmax: 40, ap: 4, amax: 4, weapon: ['長劍', 2, [5, 10]], skills: ['slash', 'guard', 'shout'], st: [] },
+    { id: 'gren', name: '葛倫', side: 'party', lv: 3, hp: 31, max: 31, lust: 0, lmax: 44, ap: 4, amax: 4, weapon: ['戰錘', 2, [4, 9]], skills: ['heal', 'bless', 'calm'], slots: 3, st: [] },
+    { id: 'mira', name: '米菈', side: 'party', lv: 2, hp: 24, max: 24, lust: 8, lmax: 36, ap: 4, amax: 4, weapon: ['短弓', 2, [4, 8]], skills: ['volley', 'kiss', 'gaze', 'dodge'], st: [] },
+  ]
+  const FOES = [
+    { id: 'g1', name: '哥布林', side: 'foe', lv: 1, hp: 21, max: 21, lust: 0, lmax: 33, atk: [3, 7], kind: '斬擊', st: [] },
+    { id: 'g2', name: '哥布林弓手', side: 'foe', lv: 1, hp: 17, max: 17, lust: 0, lmax: 30, atk: [2, 6], kind: '穿刺', st: [] },
+    { id: 'rat', name: '巨鼠', side: 'foe', lv: 1, hp: 18, max: 18, lust: null, lmax: null, atk: [2, 5], kind: '穿刺', st: [{ name: '毒素抗性', kind: 'buff' }] },
+    { id: 'suc', name: '魅魔學院的優等生', side: 'foe', lv: 3, hp: 34, max: 34, lust: 0, lmax: 40, atk: [3, 6], kind: '慾望', lewd: true, boss: true, st: [] },
+  ]
+  const NOTES = `
+    <h3>版面（直拿）</h3>
+    <ul>
+      <li><b>戰鬥中不顯示底部分頁列</b>，空間都給戰場；右上角「⋯」放隊伍、設定、戰鬥紀錄。</li>
+      <li><b>敵人在上、我方在下</b>，行動區在最下面（拇指最好按）。卡片兩欄，四對四也不用捲動。</li>
+      <li>每張卡片：名字、等級、生命條、<b>慾望條</b>（粉紅、細一點）、我方的行動點、狀態（放不下的變成「+N」）。</li>
+      <li><b>戰鬥紀錄</b>只露最新兩行，點了從下面滑出完整紀錄（依回合分段）。</li>
+    </ul>
+    <h3>操作</h3>
+    <ul>
+      <li>點「長劍攻擊」或技能 → 能選的卡片發亮 → 點卡片就出手；行動區變成「選擇目標…［取消］」。</li>
+      <li>只有一個目標可選（例如只剩一隻敵人）時直接出手。</li>
+      <li><b>手機沒有滑鼠提示</b>：<b>長按</b>技能或卡片看說明；點到不能用的技能會說原因。</li>
+      <li>技能分成「技能｜法術｜色情｜道具」分頁，一頁三欄；攜帶上限 12 個，最多四排。</li>
+      <li>「結束回合」在目前行動的人旁邊；「防禦」「撤退」和武器攻擊排在一起。</li>
+    </ul>
+    <h3>想問你的</h3>
+    <ul>
+      <li class="q">戰鬥中隱藏底部分頁列可以嗎？</li>
+      <li class="q">敵人在上、我方在下，還是反過來？</li>
+      <li class="q">長按看說明可以嗎？還是要每個技能旁邊放一個「?」</li>
+      <li class="q">技能的分頁：依類型（技能／法術／色情／道具），還是全部放一起、常用的排前面？</li>
+    </ul>
+  `
+  const $ = (id) => document.getElementById(id)
+  $('notesBody').innerHTML = NOTES
+
+  // ── 狀態
+  const clone = (x) => JSON.parse(JSON.stringify(x))
+  let st
+  function reset() {
+    st = { party: clone(PARTY), foes: clone(FOES), round: 1, turn: 0, log: [{ r: 1, t: '戰鬥開始。古井深處傳來濕黏的笑聲。', k: '' }], pending: null, tab: 'skill', busy: false, result: null, items: clone(ITEMS), slots: { gren: 3 } }
+    render()
+  }
+  const all = () => [...st.foes, ...st.party]
+  const alive = (c) => c.hp > 0 && !c.fled
+  const actor = () => st.party[st.turn]
+  const rnd = ([a, b]) => a + Math.floor(Math.random() * (b - a + 1))
+  function log(t, k = '') { st.log.push({ r: st.round, t, k }) }
+
+  // ── 畫面
+  function card(c) {
+    const a = actor()
+    const isTarget = st.pending && canTarget(st.pending, c)
+    const cls = ['card', c.hp <= 0 ? 'down' : '', !st.result && !st.busy && a && a.id === c.id ? 'current' : '', isTarget ? 'target' : '', st.pending && !isTarget ? 'dim' : ''].join(' ')
+    const sts = c.st.slice(0, 2).map((s) => `<span class="chip ${s.kind}">${s.name}${s.turns ? ` ${s.turns}` : ''}</span>`).join('') + (c.st.length > 2 ? `<span class="chip more">+${c.st.length - 2}</span>` : '')
+    const lust = c.lmax ? `<div class="bar lust"><i style="width:${(c.lust / c.lmax) * 100}%"></i></div>` : ''
+    const ap = c.side === 'party' ? `<span class="pips">${Array.from({ length: c.amax }, (_, i) => `<i class="${i < c.ap ? 'on' : ''}"></i>`).join('')}</span>` : `<span>${c.kind}</span>`
+    return `<button class="${cls}" data-id="${c.id}" aria-label="${c.name}">
+      <span class="n">${c.boss ? '<svg class="ico sm crown"><use href="#i-crown"/></svg>' : ''}<b>${c.name}</b><span class="lv">Lv.${c.lv}</span></span>
+      <div class="bar"><i style="width:${(Math.max(0, c.hp) / c.max) * 100}%"></i></div>
+      ${lust}
+      <span class="nums"><span class="hp">${Math.max(0, c.hp)}/${c.max}</span>${c.lmax ? `<span class="ls">♥ ${c.lust}/${c.lmax}</span>` : ''}${ap}</span>
+      <span class="chips">${c.hp <= 0 ? '<span class="chip debuff">倒下</span>' : sts}</span>
+    </button>`
+  }
+  function render() {
+    $('round').textContent = `第 ${st.round} 回合`
+    const last = st.log.slice(-2)
+    $('field').innerHTML = `
+      <div class="side-head foe"><svg class="ico"><use href="#i-skull"/></svg>敵人</div>
+      <div class="cards">${st.foes.map(card).join('')}</div>
+      <button class="ticker" id="ticker"><span class="lines">${last.map((l) => `<span>${l.t}</span>`).join('')}</span><span class="all">全部紀錄 ›</span></button>
+      <div class="side-head"><svg class="ico"><use href="#i-shield"/></svg>隊伍</div>
+      <div class="cards">${st.party.map(card).join('')}</div>`
+    renderActions()
+  }
+  function renderActions() {
+    const el = $('actions')
+    if (st.result) {
+      el.innerHTML = `<div class="result"><h2>${st.result === 'win' ? '勝利' : '戰敗'}</h2>
+        <p>${st.result === 'win' ? '經驗 +45・哥布林的短刀・3 白鶴' : '全員倒下……'}</p>
+        <button class="btn primary" data-act="finish">結束戰鬥並產生戰報</button></div>`
+      return
+    }
+    if (st.busy) { el.innerHTML = `<div class="enemy-turn">敵人的回合…</div>`; return }
+    const a = actor()
+    if (st.pending) {
+      const p = st.pending
+      el.innerHTML = `<div class="who"><b>${a.name}</b><span class="ap"><span class="pips">${Array.from({ length: a.amax }, (_, i) => `<i class="${i < a.ap ? 'on' : ''}"></i>`).join('')}</span>${a.ap} AP</span></div>
+        <div class="picking"><span>選擇目標：<b>${p.label}</b>（${p.ap} AP）・點發亮的卡片</span><button class="btn sm" data-act="cancel">取消</button></div>`
+      return
+    }
+    const list = a.skills.map((k) => ({ k, ...SK[k] }))
+    const cats = [['skill', '技能'], ['spell', '法術'], ['lewd', '色情'], ['item', '道具']].filter(([c]) => c === 'item' ? st.items.some((i) => i.qty) : list.some((s) => s.cat === c))
+    if (!cats.some(([c]) => c === st.tab)) st.tab = cats[0]?.[0] ?? 'skill'
+    const shown = st.tab === 'item'
+      ? st.items.filter((i) => i.qty).map((i, n) => {
+        const why = a.ap < i.ap ? '行動點不足' : ''
+        return `<button class="skill ${why ? 'off' : ''}" data-item="${n}" data-why="${why}"><b>${i.name} ×${i.qty}</b><small>${i.ap} AP</small></button>`
+      }).join('')
+      : list.filter((s) => s.cat === st.tab).map((s) => {
+        const why = reason(a, s)
+        return `<button class="skill ${s.cat === 'lewd' ? 'lewd' : ''} ${why ? 'off' : ''}" data-skill="${s.k}" data-why="${why}"><b>${s.name}</b><small>${s.ap} AP${s.slot ? `・${s.slot} 環` : ''}</small></button>`
+      }).join('')
+    el.innerHTML = `
+      <div class="who"><b>${a.name}</b><span class="ap"><span class="pips">${Array.from({ length: a.amax }, (_, i) => `<i class="${i < a.ap ? 'on' : ''}"></i>`).join('')}</span>剩 ${a.ap} AP</span>
+        <button class="btn sm end" data-act="end">結束回合</button></div>
+      <div class="basics">
+        <button class="btn primary" data-act="attack" ${a.ap < a.weapon[1] ? 'disabled' : ''}>${a.weapon[0]}攻擊 <small>${a.weapon[1]} AP</small></button>
+        <button class="btn" data-act="defend" ${a.ap < 1 ? 'disabled' : ''}>防禦 <small>1 AP</small></button>
+        <button class="btn danger" data-act="flee" ${a.ap < 2 ? 'disabled' : ''}>撤退 <small>2 AP</small></button>
+      </div>
+      <nav class="tabs">${cats.map(([c, l]) => `<button data-tab="${c}" class="${st.tab === c ? 'on' : ''}">${l}<span class="cnt">${c === 'item' ? st.items.filter((i) => i.qty).length : list.filter((s) => s.cat === c).length}</span></button>`).join('')}</nav>
+      <div class="skills">${shown || '<div class="empty">沒有可以用的。</div>'}</div>`
+  }
+  function reason(a, s) {
+    if (a.ap < s.ap) return '行動點不足'
+    if (s.slot && (st.slots[a.id] ?? 0) <= 0) return '法術環用完了'
+    return ''
+  }
+
+  // ── 行動
+  function canTarget(p, c) {
+    if (!alive(c)) return false
+    if (p.target === 'foe') return c.side === 'foe' && (!p.lust || c.lmax)
+    if (p.target === 'ally') return c.side === 'party'
+    return false
+  }
+  function begin(p) {
+    const a = actor()
+    if (p.target === 'self') return resolve(p, a)
+    if (p.target === 'none') return resolve(p, null)
+    const cands = all().filter((c) => canTarget(p, c))
+    if (!cands.length) return toast('沒有可以選的目標。')
+    if (cands.length === 1) return resolve(p, cands[0])
+    st.pending = p
+    render()
+  }
+  function resolve(p, t) {
+    const a = actor()
+    st.pending = null
+    a.ap -= p.ap
+    if (p.slot) st.slots[a.id] -= 1
+    if (p.item) p.item.qty -= 1
+    if (p.dmg || p.weapon) {
+      const roll = 1 + Math.floor(Math.random() * 20)
+      if (roll <= 3) { log(`${a.name}的${p.label}：沒打中${t.name}。`); fx(t, 'miss', '#9aa') }
+      else {
+        const crit = roll === 20
+        let d = rnd(p.dmg ?? p.weapon) * (crit ? 2 : 1)
+        t.hp -= d
+        log(`${a.name}的${p.label}${crit ? '（爆擊）' : ''}：${t.name} −${d}${t.hp <= 0 ? '，倒下' : ''}。`)
+        fx(t, `−${d}`, crit ? 'var(--crit)' : '#ff7a66')
+      }
+    } else if (p.heal) {
+      const h = rnd(p.heal); t.hp = Math.min(t.max, t.hp + h)
+      log(`${a.name}的${p.label}：${t.name} +${h} 生命。`); fx(t, `+${h}`, 'var(--heal)')
+    } else if (p.calm) {
+      t.lust = Math.max(0, t.lust - p.calm)
+      log(`${a.name}的${p.label}：${t.name}的慾望 −${p.calm}。`); fx(t, `♥−${p.calm}`, 'var(--lust-hi)')
+    } else if (p.lust) {
+      t.lust = Math.min(t.lmax, t.lust + p.lust)
+      log(`${a.name}的${p.label}：${t.name}的慾望 +${p.lust}。`, 'lewd'); fx(t, `♥+${p.lust}`, 'var(--lust-hi)')
+      climax(t)
+    } else if (p.buff) {
+      const who = t ?? a
+      if (!who.st.some((s) => s.name === p.buff)) who.st.push({ name: p.buff, kind: 'buff', turns: 2 })
+      log(`${a.name}的${p.label}${t && t !== a ? `：${t.name}` : ''}。`)
+    } else if (p.defend) {
+      a.st.push({ name: '防禦', kind: 'buff', turns: 1 }); log(`${a.name}採取防禦姿勢。`)
+    }
+    if (checkEnd()) return render()
+    render()
+  }
+  function climax(t) {
+    if (!t.lmax || t.lust < t.lmax) return
+    t.lust = 0
+    if (t.side === 'foe') {
+      const d = Math.round(t.max * 0.33); t.hp -= d
+      log(`${t.name}高潮了！失神中受到 ${d} 點真實傷害${t.hp <= 0 ? '，倒下' : ''}。`, 'lewd'); fx(t, `高潮 −${d}`, 'var(--lust-hi)')
+    } else {
+      t.st.push({ name: '高潮', kind: 'lewd', turns: 1 }); t.ap = 0
+      log(`${t.name}高潮了，下一回合無法行動。`, 'lewd'); fx(t, '高潮', 'var(--lust-hi)')
+    }
+  }
+  function endTurn() {
+    st.pending = null
+    let n = st.turn + 1
+    while (n < st.party.length && !alive(st.party[n])) n++
+    if (n < st.party.length) { st.turn = n; return render() }
+    enemyPhase()
+  }
+  async function enemyPhase() {
+    st.busy = true
+    render()
+    for (const f of st.foes.filter(alive)) {
+      await wait(650)
+      const targets = st.party.filter(alive)
+      if (!targets.length) break
+      const t = targets[Math.floor(Math.random() * targets.length)]
+      if (f.lewd && t.lmax) {
+        const v = rnd([7, 12]); t.lust = Math.min(t.lmax, t.lust + v)
+        log(`${f.name}對${t.name}拋了個媚眼：${t.name}的慾望 +${v}。`, 'lewd'); fx(t, `♥+${v}`, 'var(--lust-hi)')
+        climax(t)
+      } else {
+        let d = rnd(f.atk)
+        if (t.st.some((s) => s.name === '格擋' || s.name === '防禦')) d = Math.max(0, d - 3)
+        t.hp -= d
+        log(`${f.name}攻擊${t.name}：−${d}${t.hp <= 0 ? '，倒下' : ''}。`, 'foe'); fx(t, `−${d}`, '#ff7a66')
+      }
+      render()
+      if (checkEnd()) { st.busy = false; return render() }
+    }
+    await wait(450)
+    // 新回合：狀態少一回合、行動點回復
+    st.round += 1
+    for (const c of all()) c.st = c.st.map((s) => ({ ...s, turns: s.turns ? s.turns - 1 : s.turns })).filter((s) => s.turns === undefined || s.turns > 0)
+    for (const c of st.party) if (alive(c)) c.ap = c.st.some((s) => s.name === '高潮') ? 0 : Math.min(c.amax, c.ap + 2)
+    st.turn = st.party.findIndex(alive)
+    st.busy = false
+    log(`第 ${st.round} 回合。`)
+    render()
+  }
+  function checkEnd() {
+    if (!st.foes.some(alive)) { st.result = 'win'; log('敵人全滅。'); banner('勝利'); return true }
+    if (!st.party.some(alive)) { st.result = 'lose'; banner('戰敗'); return true }
+    return false
+  }
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+
+  // ── 特效與提示
+  function fx(c, text, color) {
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`.card[data-id="${c.id}"]`)
+      if (!el) return
+      el.classList.add('hit')
+      const f = document.createElement('span'); f.className = 'float'; f.textContent = text; f.style.color = color
+      el.appendChild(f)
+      setTimeout(() => f.remove(), 1000)
+    })
+  }
+  function toast(t) {
+    document.querySelectorAll('.toast').forEach((e) => e.remove())
+    const el = document.createElement('div'); el.className = 'toast'; el.textContent = t; $('app').appendChild(el)
+    setTimeout(() => el.remove(), 2000)
+  }
+  function banner(t) {
+    const el = document.createElement('div'); el.className = 'banner'; el.textContent = t; $('app').appendChild(el)
+    setTimeout(() => el.remove(), 1300)
+  }
+
+  // ── 半屏面板（說明、完整紀錄、選單）
+  function sheet(title, body) {
+    closeSheet()
+    const s = document.createElement('div'); s.className = 'scrim'; s.addEventListener('click', closeSheet)
+    const sh = document.createElement('section'); sh.className = 'sheet'
+    sh.innerHTML = `<div class="grip"></div><header class="band"><h2>${title}</h2><button class="x" aria-label="關閉"><svg class="ico"><use href="#i-x"/></svg></button></header><div class="body band">${body}</div>`
+    sh.querySelector('.x').addEventListener('click', closeSheet)
+    sh.addEventListener('click', (e) => { const b = e.target.closest('[data-menu]'); if (b) onMenu(b.dataset.menu) })
+    $('app').append(s, sh)
+  }
+  function closeSheet() { document.querySelectorAll('.scrim, .sheet').forEach((e) => e.remove()) }
+  function infoCard(c) {
+    const sts = c.st.length ? c.st.map((s) => `<span class="chip ${s.kind}">${s.name}${s.turns ? ` ${s.turns}` : ''}</span>`).join(' ') : '無'
+    sheet(c.name, `<dl class="kv">
+      <dt>生命</dt><dd>${Math.max(0, c.hp)} / ${c.max}</dd>
+      ${c.lmax ? `<dt>慾望</dt><dd>${c.lust} / ${c.lmax}（滿了會高潮）</dd>` : '<dt>慾望</dt><dd>沒有慾望（色情技能無效）</dd>'}
+      ${c.side === 'party' ? `<dt>行動點</dt><dd>${c.ap} / ${c.amax}（每回合 +2）</dd><dt>武器</dt><dd>${c.weapon[0]}</dd>` : `<dt>攻擊</dt><dd>${c.kind}</dd>`}
+      <dt>狀態</dt><dd>${sts}</dd>
+      ${c.side === 'foe' ? '<dt>仇恨</dt><dd>電腦版的滑鼠提示（仇恨、抗性、特性）都搬到這裡。</dd>' : ''}
+    </dl>`)
+  }
+  function infoSkill(s, why) {
+    sheet(s.name, `<p style="margin:0">${s.desc}</p><dl class="kv"><dt>花費</dt><dd>${s.ap} AP${s.slot ? `・${s.slot} 環法術` : ''}</dd>${why ? `<dt>現在</dt><dd style="color:var(--danger)">${why}</dd>` : ''}</dl>`)
+  }
+  function fullLog() {
+    let html = '', r = 0
+    for (const l of st.log) {
+      if (l.r !== r) { r = l.r; html += `<div class="round-head">第 ${r} 回合</div>` }
+      html += `<div class="log-line ${l.k}">${l.t}</div>`
+    }
+    sheet('戰鬥紀錄', html)
+    const b = document.querySelector('.sheet .body'); b.scrollTop = b.scrollHeight
+  }
+  function onMenu(k) {
+    if (k === 'log') return fullLog()
+    if (k === 'notes') return sheet('樣稿說明', `<div class="notes-body">${NOTES}</div>`)
+    if (k === 'reset') { closeSheet(); return reset() }
+    toast(`樣稿：這裡會打開「${k}」（全螢幕頁面）`)
+  }
+  $('menuBtn').addEventListener('click', () => sheet('選單', `
+    <button class="btn" data-menu="log">戰鬥紀錄</button>
+    <button class="btn" data-menu="隊伍">隊伍（角色詳情）</button>
+    <button class="btn" data-menu="設定">設定</button>
+    <button class="btn" data-menu="notes">樣稿說明</button>
+    <button class="btn" data-menu="reset">重新開始這場戰鬥</button>`))
+
+  // ── 點擊與長按：長按看說明，點一下使用
+  let pressTimer = null, longPressed = false
+  document.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('.skill, .card')
+    if (!el) return
+    longPressed = false
+    el.classList.add('pressing')
+    pressTimer = setTimeout(() => {
+      longPressed = true
+      el.classList.remove('pressing')
+      if (navigator.vibrate) try { navigator.vibrate(10) } catch {}
+      if (el.dataset.skill) infoSkill(SK[el.dataset.skill], el.dataset.why)
+      else if (el.dataset.item) { const i = st.items.filter((x) => x.qty)[Number(el.dataset.item)]; infoSkill({ name: i.name, desc: i.desc, ap: i.ap }, el.dataset.why) }
+      else if (el.dataset.id) infoCard(all().find((c) => c.id === el.dataset.id))
+    }, 450)
+  })
+  const clearPress = () => { clearTimeout(pressTimer); document.querySelectorAll('.pressing').forEach((x) => x.classList.remove('pressing')) }
+  document.addEventListener('pointerup', clearPress)
+  document.addEventListener('pointercancel', clearPress)
+  document.addEventListener('contextmenu', (e) => { if (e.target.closest('.skill, .card')) e.preventDefault() })
+  $('app').addEventListener('click', (e) => {
+    if (longPressed) { longPressed = false; return }
+    if (e.target.closest('#ticker')) return fullLog()
+    const c = e.target.closest('.card')
+    if (c) {
+      const t = all().find((x) => x.id === c.dataset.id)
+      if (st.pending) return canTarget(st.pending, t) ? resolve(st.pending, t) : undefined
+      return infoCard(t)
+    }
+    if (st.busy || st.result && !e.target.closest('[data-act="finish"]')) return
+    const tab = e.target.closest('[data-tab]')
+    if (tab) { st.tab = tab.dataset.tab; return renderActions() }
+    const sk = e.target.closest('[data-skill]')
+    if (sk) {
+      if (sk.dataset.why) return toast(`${SK[sk.dataset.skill].name}：${sk.dataset.why}`)
+      const s = SK[sk.dataset.skill]
+      return begin({ ...s, label: s.name })
+    }
+    const it = e.target.closest('[data-item]')
+    if (it) {
+      if (it.dataset.why) return toast(it.dataset.why)
+      const i = st.items.filter((x) => x.qty)[Number(it.dataset.item)]
+      return begin({ ...i, label: i.name, item: i })
+    }
+    const act = e.target.closest('[data-act]')?.dataset.act
+    const a = actor()
+    if (act === 'attack') return begin({ label: `${a.weapon[0]}攻擊`, ap: a.weapon[1], target: 'foe', weapon: a.weapon[2] })
+    if (act === 'defend') return resolve({ label: '防禦', ap: 1, defend: true }, a)
+    if (act === 'flee') { toast('樣稿：撤退會擲檢定，成功就離開戰鬥。'); return }
+    if (act === 'end') return endTurn()
+    if (act === 'cancel') { st.pending = null; return render() }
+    if (act === 'finish') { toast('樣稿：這裡會產生戰報，回到冒險畫面。'); return setTimeout(reset, 1200) }
+  })
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && st.pending) { st.pending = null; render() } })
+
+  reset()
+})()
+</script>
