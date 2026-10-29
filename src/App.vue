@@ -454,9 +454,10 @@ onBeforeUnmount(() => {
 }
 .left { grid-area: left; }
 .center { grid-area: center; min-width: 0; }
-/* 右欄固定在畫面上、自己捲動：捲右欄不會把地圖和日誌捲走 */
+/* 右欄固定在畫面上、自己捲動：捲右欄不會把地圖和日誌捲走。
+   高度扣掉上方的標題列（約 94px），底部和中間欄對齊（LogView 的 100vh - 300px），內容再多也不會把整頁撐高 */
 .right {
-  grid-area: right; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto;
+  grid-area: right; position: sticky; top: 12px; max-height: calc(100vh - 118px); overflow-y: auto;
   overscroll-behavior: contain; scrollbar-width: thin; padding-right: 2px;
 }
 .game.combat { grid-template-areas: 'left center center'; }

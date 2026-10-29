@@ -6,7 +6,7 @@ import { formatMoney } from '@/engine/money'
 import { outfitChoices, outfitOrder, outfitTailorHere } from '@/engine/outfitTailor'
 import type { LewdStat } from '@/engine/types'
 import { useGame } from '@/stores/game'
-import Hint from './ui/Hint.vue'
+import FoldMenu from './ui/FoldMenu.vue'
 
 // 淫服裁縫鋪（成人向，docs/LEWD_STATS.md 第 25 節）：魅氣濃的城鎮，訂做帶慾望指標加成的成人向服裝
 const game = useGame()
@@ -24,8 +24,7 @@ const order = computed(() => {
 </script>
 
 <template>
-  <div v-if="show" class="tailor small">
-    <h4>訂做淫服 <Hint text="魅氣濃的城鎮，裁縫願意照你的身材訂做成人向的服裝，選一項慾望指標加成；材料越好加越多。" /></h4>
+  <FoldMenu v-if="show" id="place.outfit" class="tailor small" icon="shirt" label="訂做淫服" detail="照身材訂做成人向的服裝，選一項慾望指標加成；材料越好加越多">
     <div class="row">
       <select v-model="base"><option v-for="c in choices" :key="c.base" :value="c.base">{{ c.name }}</option></select>
       <select v-model="material"><option value="">（材料）</option><option v-for="m in materials" :key="m" :value="m">{{ gearRules.materials[m]?.name ?? m }}</option></select>
@@ -35,10 +34,9 @@ const order = computed(() => {
       <span class="muted">{{ gearRules.materials[order.material]?.name }}・{{ lewdName(stat) }} +{{ order.bonus }}</span>
       <button class="small primary" :disabled="s.money_cc < order.price" @click="game.orderOutfit(base, order.material, stat)">訂做（{{ formatMoney(order.price) }}）</button>
     </div>
-  </div>
+  </FoldMenu>
 </template>
 
 <style scoped>
-.tailor { margin-top: 0.6rem; border-top: 1px dashed var(--border, #444); padding-top: 0.4rem; }
 .row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin: 0.3rem 0; }
 </style>

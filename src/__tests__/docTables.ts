@@ -4,8 +4,7 @@
 import { abilityApCost } from '@/engine/combat'
 import { castingAttr } from '@/engine/character'
 import { formatMoney } from '@/engine/money'
-import { gearRules, gearSummary, slotName } from '@/engine/gear'
-import type { GearSlot } from '@/engine/types'
+import { baseSlotName, gearRules, gearSummary, type BaseSlot } from '@/engine/gear'
 import { notForSale } from '@/engine/trade'
 import { useSummary } from '@/engine/inventory'
 import { bindLabel, lockName, schoolDef, schoolIds } from '@/engine/schools'
@@ -78,7 +77,7 @@ function restraintTable(): string {
     const items = itemRules.items.filter((i) => i.gear?.base === id)
     const sold = items.filter((i) => i.tags.length && !notForSale(i)).map((i) => i.name)
     const forced = items.filter((i) => i.master_force).map((i) => i.name)
-    return [b.name, slotName(b.slot as GearSlot), bindLabel(b.bind_kind!, b.bind!), [sold.length ? `商店：${sold.join('、')}` : '', forced.length ? `主人強制：${forced.join('、')}` : ''].filter(Boolean).join('；') || '—']
+    return [b.name, baseSlotName(b.slot as BaseSlot), bindLabel(b.bind_kind!, b.bind!), [sold.length ? `商店：${sold.join('、')}` : '', forced.length ? `主人強制：${forced.join('、')}` : ''].filter(Boolean).join('；') || '—']
   })
   return table(['底材', '欄位', '拘束', '物品'], rows)
 }
