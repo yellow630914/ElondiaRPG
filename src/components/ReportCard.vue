@@ -154,6 +154,7 @@ async function copyPrompt() {
       <span class="muted">對 DC {{ roll.dc }}<template v-if="roll.dc !== roll.base_dc">（參考 {{ roll.base_dc }}）</template></span>
       <span v-show="!rolling" class="verdict" :class="roll.degree">{{ DEGREE[roll.degree] }}</span>
       <span v-if="roll.reference_degree" class="muted">（骰值參考：{{ DEGREE[roll.reference_degree] }}）</span>
+      <span v-if="roll.trivial" class="tag" title="AI 判為日常小事：結果至少是成功，骰值只決定過程順不順">日常小事</span>
       <span v-if="roll.source === 'ai'" class="tag">AI 判定</span>
     </div>
     <p v-if="report.check?.twist || report.check?.rationale" class="small reason">

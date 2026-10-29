@@ -491,6 +491,29 @@ export function standOn(state: GameState, kind: CellKind): boolean {
 export function placeAt(state: GameState, area: Area, x: number, y: number) {
   state.position = { area: area.key, x, y }
   reveal(area, x, y, sight(state, area))
+  noteSpot(state, area, cellAt(area, x, y))
+}
+
+// ---- 走過的地方（交給 AI 的前後銜接，見 narrator/continuity.ts） ----
+
+const SPOT_KINDS = new Set<string>(['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver', 'lot', 'manor', 'merchant'])
+const TRAIL_MAX = 12
+
+/** 站的地方叫什麼：區域名稱，站在設施或地標上時加上它的名字 */
+export function spotName(area: Area, cell?: Cell): string {
+  const kind = cell?.kind
+  const named = kind && (SPOT_KINDS.has(kind) || shopRules.types[kind as ShopType]?.custom || landmarkDef(kind)) ? cellName(kind) : ''
+  return named ? `${area.name}・${named}` : area.name
+}
+
+/** 換了地方時記一筆（只留最近幾筆） */
+function noteSpot(state: GameState, area: Area, cell?: Cell) {
+  if (area.kind === 'road') return
+  const spot = spotName(area, cell)
+  const trail = (state.trail ??= [])
+  if (trail.at(-1)?.spot === spot) return
+  trail.push({ time: { ...state.time }, location: area.location, spot })
+  if (trail.length > TRAIL_MAX) trail.splice(0, trail.length - TRAIL_MAX)
 }
 
 /** 寶箱有沒有上鎖（依這一層的 chest_lock） */
@@ -972,6 +995,7 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   // 黑暗的地方：每走一格燒掉一點光源
   burnStep(state, area)
   reveal(area, nx, ny, sight(state, area))
+  noteSpot(state, area, cell)
   return enterCell(state, area, nx, ny, cell!)
 }
 

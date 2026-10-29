@@ -258,6 +258,7 @@
         },
         "total": { "type": "integer" },
         "degree": { "enum": ["critical", "success", "partial", "fail", "fumble"] },
+        "trivial": { "type": "boolean", "description": "AI 判為日常小事（自由行動）：結果至少是成功，骰值只決定過程順不順" },
         "reference_degree": { "enum": ["critical", "success", "partial", "fail", "fumble"], "description": "骰值對 DC 算出的參考成功程度；只在與實際結果不同時記錄" },
         "source": { "enum": ["ai", "rules"] },
         "rationale": { "type": "string" },

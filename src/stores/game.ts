@@ -764,7 +764,7 @@ export const useGame = defineStore('game', () => {
   // 世界書、繁簡轉換字典與各家 SDK 都很大，用到時才載入
   async function composeFor(report: Report) {
     const [{ composeNarration }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
-    return composeNarration(state.value, report, opts)
+    return composeNarration(state.value, report, opts, narrations.value)
   }
 
   async function promptFor(report: Report): Promise<Prompt> {
@@ -787,7 +787,7 @@ export const useGame = defineStore('game', () => {
       }
     }
     const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
-    return { ...composeJudge(st, pending, opts), sample: !s.pendingAction }
+    return { ...composeJudge(st, pending, opts, narrations.value), sample: !s.pendingAction }
   }
 
   /** 請「敘事正文」（帶親密場景時是「成人場景正文」）的模型寫出這則日誌的經過。manual：玩家在日誌上手動要求（AI 細節描述關閉時也顯示） */
@@ -854,7 +854,7 @@ export const useGame = defineStore('game', () => {
       const { completeText } = await import('@/narrator/providers')
       const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
       let thinking = ''
-      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts).prompt, undefined, collector.onUsage, (t) => { thinking += t })
+      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts, narrations.value).prompt, undefined, collector.onUsage, (t) => { thinking += t })
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型；
       // 數值被程式截掉時也不採用（判定寫的是截掉前的數字），交給寫手照實際結算的數字重寫

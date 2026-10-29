@@ -7,7 +7,8 @@ import * as social from '@/engine/social'
 import type { GameState, Report } from '@/engine/types'
 import { actionLoreText, buildActionPrompt } from './judge'
 import { loreForReport, pickLore, type LoreItem, type LoreSelection } from './lore'
-import { adultSceneOf, buildPrompt, type Prompt } from './prompt'
+import { adultSceneOf, buildPrompt, varietyHint, type Prompt } from './prompt'
+import { continuityBefore, continuityForReport, type NarrationLike } from './continuity'
 import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
 import { toOutputScript } from './script'
 
@@ -54,7 +55,8 @@ export function narrationTarget(report: Report): Extract<PromptTarget, 'narratio
   return adultSceneOf(report) ? 'adult' : 'narration'
 }
 
-export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions): Composed {
+/** narrations：日誌的敘事（前後銜接用；沒有時不帶） */
+export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions, narrations?: Record<string, NarrationLike>): Composed {
   const name = playerName(state)
   // 分流：帶親密場景的日誌才送成人向的條目（世界書、文風、其他提示詞）
   const adult = !!adultSceneOf(report)
@@ -74,11 +76,14 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     ...(o.config.narrationRules ? { rules: o.config.narrationRules } : {}),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
+    lengthScale: o.config.lengthScale,
+    ...(state && narrations && o.config.continuity ? { continuity: continuityForReport(state, narrations, report) } : {}),
+    ...(o.config.variety ? { variety: varietyHint(report.report_id, report.narration?.mode === 'defeat_cliffhanger') } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), lore }
 }
 
-export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptions): Composed {
+export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptions, narrations?: Record<string, NarrationLike>): Composed {
   const name = playerName(state)
   // 分流：行動可能進入親密場景（娼館、主人的要求、戰敗事件……）時才送成人向的條目
   const adult = !!p.adultScene
@@ -94,6 +99,9 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
     ...(lore ? { lore } : {}),
+    lengthScale: o.config.lengthScale,
+    ...(narrations && o.config.continuity ? { continuity: continuityBefore(state, narrations, state.reports.length, p.time) } : {}),
+    ...(o.config.variety && !o.splitNarrative ? { variety: varietyHint(p.id) } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), ...(lore ? { lore } : {}) }
 }
