@@ -23,6 +23,7 @@ import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { rollDefeatEvent } from './defeat'
 import { inPark, parkDefeat, parkLust, saveParkLust } from './park'
+import { charmRutMult } from './charm'
 import { addCondition, isNoncombatant } from './party'
 import { contractTerms } from './slavery'
 import { advanceBossHunts, clearCounts, LAYER_IDS } from './materialQuests'
@@ -244,7 +245,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       for (let i = 0; i < n; i++) {
         seen[defId] = (seen[defId] ?? 0) + 1
         const suffix = counts[defId]! > 1 ? ` ${String.fromCharCode(64 + seen[defId]!)}` : ''
-        const f = fromEnemy(`e${idx++}`, defId, suffix, rng, bonus, diff)
+        const f = fromEnemy(`e${idx++}`, defId, suffix, rng, bonus, diff, charmRutMult(state.location))
         if (g === 0 && defId === headliner) f.headliner = true
         fighters.push(f)
       }
@@ -543,7 +544,7 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
  * 一隻怪物上場。難度係數（diff）乘在最大生命與造成的傷害上（普通難度是 1，和沒有這個規則時一樣；頭目與各區域的小怪各有一組，見 difficultyFor）；
  * 生命先乘難度再套特徵，兩邊的倍率因此是相乘的。敵對的 NPC（冒險者）不受難度影響——他們的生命是自己的角色資料。
  */
-function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 0, diff: DifficultyDef = DIFFICULTY_DEFS.normal): Combatant {
+function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 0, diff: DifficultyDef = DIFFICULTY_DEFS.normal, rutMult = 1): Combatant {
   const def = enemies[defId]
   if (!def) throw new Error(`unknown enemy: ${defId}`)
   const coef = difficultyFor(diff, defId)
@@ -564,7 +565,7 @@ function fromEnemy(id: string, defId: string, suffix: string, rng: Rng, bonus = 
     ...(isLayerBoss(defId) ? { boss: true } : {}),
     ...(coef.damage !== 1 ? { dmgMult: coef.damage } : {}),
   }
-  applyTraits(c, rollTraits(rng, def, bonus))
+  applyTraits(c, rollTraits(rng, def, bonus, rutMult))
   return c
 }
 
@@ -588,8 +589,11 @@ function traitBonus(state: GameState, opts: CombatOptions): number {
   return b.wild ?? 0
 }
 
-/** 擲出怪物的特徵：資料上固定的特徵，加上 0～max 個隨機特徵（互斥的不會同時出現；發情要怪物有 rut 旗標） */
-export function rollTraits(rng: Rng, def: Pick<EnemyDef, 'traits' | 'rut'>, bonus = 0): string[] {
+/**
+ * 擲出怪物的特徵：資料上固定的特徵，加上 0～max 個隨機特徵（互斥的不會同時出現；發情要怪物有 rut 旗標）。
+ * rutMult：「發情」的權重倍率（魅氣濃度，charm.ts）
+ */
+export function rollTraits(rng: Rng, def: Pick<EnemyDef, 'traits' | 'rut'>, bonus = 0, rutMult = 1): string[] {
   const r = monsterTraits.roll
   const out = [...(def.traits ?? [])]
   for (let i = 0; i < r.max; i++) {
@@ -600,7 +604,7 @@ export function rollTraits(rng: Rng, def: Pick<EnemyDef, 'traits' | 'rut'>, bonu
       && !out.some((o) => monsterTraits.traits[o]?.excludes?.includes(id))
       && (!t.requires || !!def[t.requires]))
     if (!pool.length) break
-    out.push(weightedPick(rng, Object.fromEntries(pool.map(([id, t]) => [id, t.weight]))))
+    out.push(weightedPick(rng, Object.fromEntries(pool.map(([id, t]) => [id, id === 'rut' ? t.weight * rutMult : t.weight]))))
   }
   return out
 }

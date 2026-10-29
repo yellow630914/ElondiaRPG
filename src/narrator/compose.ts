@@ -2,6 +2,7 @@
 
 import type { ActionPending } from '@/engine/actions'
 import { lewdSummary } from '@/engine/lewd'
+import { charmNote } from '@/engine/charm'
 import { protagonistText } from '@/engine/character'
 import { locationById } from '@/engine/data'
 import * as social from '@/engine/social'
@@ -61,7 +62,7 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
   const adult = !!adultSceneOf(report)
   const lore = loreForReport(o.lore, report, { adult, budgetChars: o.budgetChars, playerName: name })
   // 成人場景：主角與隊友的慾望指標（分段的文字）
-  const protagonist = protagonistOf(state) + (adult && state ? `\n慾望指標：${lewdSummary(state, state.party.find((m) => m.isPlayer)!)}${partyLewd(state, false)}` : '')
+  const protagonist = protagonistOf(state) + (adult && state ? `\n慾望指標：${lewdSummary(state, state.party.find((m) => m.isPlayer)!)}${partyLewd(state, false)}\n${charmNote(state)}` : '')
   const context = narrationContext(state, report)
   // 成人場景的敘事用套用到「成人場景」的條目
   const target = narrationTarget(report)

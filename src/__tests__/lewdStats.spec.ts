@@ -79,7 +79,8 @@ describe('慾望指標：增減與每天的變化', () => {
 
   it('在城裡穿曝露的服裝，曝露名聲每天累積；穿成人向服裝淫亂成長、穿束縛忍耐成長', () => {
     const { state, pc } = game()
-    state.location = 'soriel'
+    // 尋常的魅氣濃度（×1，charm.ts）
+    state.location = 'rhineburg'
     wear(pc, 'body', 'bunny_suit')
     wear(pc, 'accessory', 'slave_collar')
     lewdDaily(state, 1, 4)

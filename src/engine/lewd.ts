@@ -2,6 +2,7 @@
 // 規則與數值在 data/rules/lewd.json。戰鬥的換算在 combat.ts（慾望上限、受到的慾望、初始慾望……）。
 
 import { abilities, lewdRules, locationById, stories, type LewdKey } from './data'
+import { charmExposureMult, spreadExposure } from './charm'
 import { gearLewdOf, gearRules } from './gear'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
 import { contractOf } from './tattoos'
@@ -183,7 +184,8 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       const map = state.exposure?.[m.id]
       if (map) for (const r of Object.keys(map)) addLewd(state, m, 'exposure', -d.exposure_decay, undefined, r)
       const level = exposureLevel(m)
-      if (inTown && level > 0) addLewd(state, m, 'exposure', level * d.exposure_per_level, undefined, loc.region)
+      // 魅氣濃度越高累積得越快（charm.ts）
+      if (inTown && level > 0) addLewd(state, m, 'exposure', Math.round(level * d.exposure_per_level * charmExposureMult(loc.id)), undefined, loc.region)
       const bonus = (b: Partial<Record<LewdKey, number>>) => { for (const [k, v] of Object.entries(b)) if (v) addLewd(state, m, k as LewdKey, v) }
       if (wears(m, (b) => b.outfit === 'adult')) bonus(d.adult_outfit)
       if (wears(m, (b) => !!b.restraint)) bonus(d.restraint)
@@ -192,6 +194,8 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       const stats = baseLewd(m)
       if (day - (stats.lastScene ?? 0) > d.idle_days && stats.lewdness > lewdRules.defaults.lewdness) addLewd(state, m, 'lewdness', -1)
     }
+    // 曝露名聲傳到相鄰地區
+    spreadExposure(state)
   }
 }
 

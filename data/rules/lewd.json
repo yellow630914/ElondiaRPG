@@ -141,6 +141,23 @@
     "exposure_per_level": 2,
     "settlements": ["capital", "city", "town", "village", "port", "outpost", "fortress"]
   },
+  "charm": {
+    "$comment": "魅氣濃度（docs/LEWD_STATS.md 第 12 節）：每個聚落 1～4，地區預設 regions，個別地點 locations 覆蓋。exposure_mult：在這裡穿著曝露的服裝時，曝露名聲每天累積的倍率（依濃度，第 0 個不用）；rut_mult：近郊與地下城的怪物擲到「發情」的權重倍率；spread：每個地區的曝露名聲讓相鄰地區（有路相連）慢慢追到它的 ratio，每天 +1；gate：濃度 min 以上的城門可以照規矩戴上拘束具進城（item 戴上、lock 的鎖鎖上，當天不用盤查）；ai：給 AI 的一句風氣（成人向的判定與敘事）。",
+    "names": ["", "清淨", "尋常", "放縱", "淫靡"],
+    "regions": { "central": 2, "north": 2, "south": 4, "forest": 1, "east_sea": 2, "west": 2 },
+    "locations": { "albena": 3, "tidehaven": 3, "coast_ferry": 3, "ashport": 3, "soriel": 1 },
+    "exposure_mult": [0, 0.5, 1, 1.5, 2],
+    "rut_mult": [0, 0.5, 1, 1.5, 2],
+    "spread": { "ratio": 0.3 },
+    "gate": { "min": 4, "item": "腕鐐", "lock": "white" },
+    "ai": [
+      "",
+      "這一帶風氣保守：人們穿得嚴實，衣衫不整的人會招來側目與議論。",
+      "這一帶風氣尋常：大膽的打扮會引人注目，但不至於引起騷動。",
+      "這一帶風氣放縱：街上不乏衣著暴露的人，娼館與黑市的生意興隆，大膽的打扮只換來幾聲口哨。",
+      "這一帶淫靡成風：魅氣濃得化不開，衣不蔽體、戴著拘束具的人隨處可見，人們把情慾當成日常。"
+    ]
+  },
   "park": {
     "$comment": "魅魔的遊樂園（docs/LUST_PARK.md）。step_lust：在園區裡每走一格，全隊的魅氣（跨戰鬥保留的慾望，慾望上限的比例）增加多少，走路最多累積到 step_cap；trap_lust：沒察覺的陷阱是媚藥機關，觸發的人魅氣增加多少（取代陷阱的傷害）；mimic_chance：園區的寶箱是擬態寶箱的機率，mimics 依層（1 淺層、2 中層、3 深層）；chest_items：園區的寶箱另外擲的物品；defeats：各園區的專屬戰敗（scene 交給成人場景的寫手、summary 寫進戰報、effects 套用、hours 經過的時間）。",
     "step_lust": 0.01,

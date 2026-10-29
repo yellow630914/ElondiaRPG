@@ -2062,6 +2062,16 @@ export const lewdRules = lewdJson as unknown as {
     free_submission_every: number; idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
   }
   park: ParkRules
+  charm: {
+    names: string[]
+    regions: Record<string, number>
+    locations: Record<string, number>
+    exposure_mult: number[]
+    rut_mult: number[]
+    spread: { ratio: number }
+    gate: { min: number; item: string; lock: string }
+    ai: string[]
+  }
 }
 /** 主題地下城（魅魔的遊樂園）的規則：魅氣、擬態寶箱、寶箱加料、各園區的專屬戰敗 */
 export interface ParkRules {
