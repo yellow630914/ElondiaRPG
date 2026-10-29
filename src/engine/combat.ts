@@ -13,7 +13,7 @@ import {
   apMaxFor, apRegenFor, attrOf, attrsOf, carriedAbilities, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilityDef, armorDef, ATTR_IDS, PARK_STAMP_PREFIX, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
+  abilities, abilityDef, armorDef, ATTR_IDS, PARK_STAMP_PREFIX, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
   lewdRules, locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LockGrade, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
@@ -147,6 +147,8 @@ export interface Combatant {
   releaseQueued?: number
   /** 身上有「束縛雙手」的拘束具：掙脫戰鬥中的拘束比較難（lewd.json 的 unbind.combat.hands） */
   handsBound?: boolean
+  /** 身上有奴隸印記：驅奴術這類能力比較有效 */
+  slave?: boolean
 }
 
 export type CombatAction =
@@ -563,6 +565,7 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
     saveBonus: Object.fromEntries(ATTR_IDS.map((a) => [a, perkModifiers(c, { context: 'save', attr: a }).reduce((s, x) => s + x.value, 0)])) as Partial<Record<AttrId, number>>,
     usedTurn: {}, usedCombat: {}, usedRest: { ...c.usesPerRest },
     ...(bindsOf(c).some((b) => b.kind === 'hands') ? { handsBound: true } : {}),
+    ...(contractOf(c) ? { slave: true } : {}),
   }
 }
 
@@ -658,6 +661,8 @@ export function applyTraits(c: Combatant, traits: string[]) {
     if (t.ai?.prefer) ai.prefer = t.ai.prefer
     if (t.ai?.flee_below) ai.flee_below = Math.max(ai.flee_below ?? 0, t.ai.flee_below)
     if (t.ai?.never_flee) ai.never_flee = true
+    if (t.ai?.lust) ai.lust = (ai.lust ?? 1) * t.ai.lust
+    for (const id of t.abilities ?? []) if (abilities[id] && !c.abilities.includes(id)) c.abilities.push(id)
   }
   if (ai.never_flee) delete ai.flee_below
   c.hp = Math.max(1, Math.round(c.maxHp * hpRatio))
@@ -1564,6 +1569,11 @@ function applyStatuses(
         effects.push({ type: 'note', target: r.id, text: '生命值過高，無效' })
         continue
       }
+      if (ap.if_slave && !r.slave) continue
+      if (ap.if_weaker && r.level >= actor.level) {
+        effects.push({ type: 'note', target: r.id, text: `${statusDef(ap.status).name}：等級不比對方低，無效` })
+        continue
+      }
       if (ap.if_lust !== undefined && lustRatio(r) < ap.if_lust) {
         effects.push({ type: 'note', target: r.id, text: `${statusDef(ap.status).name}：慾望不夠高，無效` })
         continue
@@ -1584,6 +1594,11 @@ function applyStatuses(
       }, effects)
     }
   }
+}
+
+/** 驅奴術這類能力對身上有奴隸印記的人的傷害倍率 */
+function slaveMult(a: AbilityDef, target: Combatant): number {
+  return a.vs_slave && target.slave ? a.vs_slave : 1
 }
 
 function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityDef, targetId?: string) {
@@ -1634,7 +1649,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
           if (a.damage?.length) {
             const rolls = rollParts(rng, actor, a, a.damage, r.lucky)
             if (a.damage.some((p) => p.weapon)) rolls.push(...onHitExtras(actor, target, rng, effects))
-            dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: a.mult ?? 1, crit: r.lucky })
+            dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target), crit: r.lucky })
           }
           applyStatuses(combat, rng, actor, a, target, 'hit', effects)
         }
@@ -1644,7 +1659,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityD
         result = s.success ? 'fail' : 'success'
         if (a.damage?.length && !(s.success && a.on_save === 'none')) {
           const rolls = rollParts(rng, actor, a, a.damage, false)
-          dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: a.mult ?? 1, half: s.success })
+          dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target), half: s.success })
         }
         if (!s.success) applyStatuses(combat, rng, actor, a, target, 'fail', effects)
       } else {
@@ -2007,9 +2022,10 @@ export function chooseAction(combat: CombatState, rng: Rng, actor: Combatant, ta
     }
     // 魅惑的攻擊：對免疫的目標不用；目標快高潮時比較想用
     const lustHit = !!a.damage?.some((p) => p.type === 'lust')
+    // 發情的怪物比較想用慾望攻擊（特徵的 ai.lust）
     const lustScore = (who: Combatant[]) => {
       const m = Math.max(0, ...who.map((w) => defenseMult(w, 'lust')))
-      return m <= 0 ? 0 : Math.min(1.5, m) * (who.some((w) => lustRatio(w) >= 0.7) ? 1.4 : 1)
+      return m <= 0 ? 0 : Math.min(1.5, m) * (who.some((w) => lustRatio(w) >= 0.7) ? 1.4 : 1) * (actor.ai?.lust ?? 1)
     }
     // 治療：只在有人受傷時，給最需要的人
     if (a.heal) {
@@ -2036,8 +2052,9 @@ export function chooseAction(combat: CombatState, rng: Rng, actor: Combatant, ta
       continue
     }
     if (a.target === 'enemy') {
-      // 純減益：對方已經有就不用
+      // 純減益：對方已經有就不用；威壓這類只對等級低的人有效
       if (!a.damage?.length && !freshStatuses(a, target, ['target'])) continue
+      if (!a.damage?.length && a.apply?.every((x) => x.if_weaker) && target.level >= actor.level) continue
       const base = (a.damage?.length ? 2.4 : 2) + limited
       const score = lustHit ? base * lustScore([target]) : base
       if (score > 0) options.push({ ability: a, target: target.id, score })

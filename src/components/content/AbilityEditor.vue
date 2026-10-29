@@ -267,6 +267,7 @@ function remove() {
           <label>護盾（每級）<input v-model.number="draft.shield!.level" type="number" min="0" max="10" /></label>
         </template>
         <label>吸血（傷害的比例）<input v-model.number="draft.lifesteal" type="number" min="0" max="1" step="0.05" /></label>
+        <label title="目標身上有奴隸印記時，傷害乘上這個數（驅奴術）">對奴隸的傷害 ×<input v-model.number="draft.vs_slave" type="number" min="0" max="4" step="0.25" /></label>
       </div>
       <p v-if="draft.resolve !== 'auto'" class="small muted">治療、護盾、移除負面狀態、回復法術環與直接擊倒只在結算方式是「必中」時有效。</p>
       <div v-if="draft.resolve === 'auto'" class="row checks small">
@@ -296,6 +297,8 @@ function remove() {
           <option v-for="x in ATTR_IDS" :key="x" :value="x">{{ attrName(x) }}豁免</option>
         </select>
         <label title="目標的慾望達到上限的這個比例才套用">慾望 ≥ <input class="num" type="number" min="0" max="100" :value="ifLustPct(a)" placeholder="—" @input="setIfLust(a, ($event.target as HTMLInputElement).value)" />%</label>
+        <label class="check" title="目標身上有奴隸印記才套用（驅奴術）"><input v-model="a.if_slave" type="checkbox" /> 只對奴隸</label>
+        <label class="check" title="目標的等級比施放者低才套用（威壓）"><input v-model="a.if_weaker" type="checkbox" /> 只對等級低的</label>
         <button class="small" @click="draft.apply!.splice(i, 1)">移除</button>
       </div>
       <button class="small" @click="addApply">＋ 狀態</button>

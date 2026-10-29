@@ -67,6 +67,7 @@
     "glued": { "name": "膠膜", "kind": "debuff", "control": "stun", "struggle": 0 },
     "swallowed": { "name": "吞入", "kind": "debuff", "control": "stun", "struggle": 2, "lust_mult": 0.25 },
     "exposed": { "name": "破綻", "kind": "debuff", "mods": { "evade": -3 } },
+    "overawed": { "name": "威壓", "kind": "debuff", "mods": { "save": -1 }, "lust_mult": 0.25 },
     "chilled": { "name": "寒霜", "kind": "debuff", "mods": { "evade": -2 } },
     "shocked": { "name": "電擊", "kind": "debuff", "mods": { "ap_regen": -1 } },
     "stunned": { "name": "暈眩", "kind": "debuff", "control": "stun" },

@@ -271,7 +271,91 @@ def write_s8_6():
     print('S8-6 keys', len(KEYS), 'statuses', len(STRUGGLE_STATUSES))
 
 
+# ---------------- S8-7 敵人的手段 ----------------
+FOE_ABILITIES = [
+    {"id": "h_aphro_incense", "name": "催情術", "type": "skill", "classes": ["monster"], "ap": 3, "attr": "cha", "target": "all_enemies", "resolve": "save", "save": "fai",
+     "damage": [{"dice": "1d8", "type": "lust", "scale": {"dice": "1d6", "per": 4}}], "uses": {"per_combat": 1},
+     "desc": "念出一段催情的咒文，不用香也不用藥：所有敵人信仰豁免，1d8 慾望（每 4 級再 +1d6，成功減半）。每場戰鬥一次。"},
+    {"id": "h_slave_drive", "name": "驅奴術", "type": "skill", "classes": ["monster"], "ap": 2, "attr": "cha", "target": "enemy", "resolve": "save", "save": "fai",
+     "damage": [{"dice": "1d6", "type": "lust", "scale": {"dice": "1d6", "per": 4}}], "vs_slave": 2, "apply": [{"status": "stunned", "turns": 1, "if_slave": True}], "uses": {"per_combat": 1},
+     "desc": "對著奴隸印記喊出驅使的口令：信仰豁免，1d6 慾望（每 4 級再 +1d6，成功減半）；身上有奴隸印記的人慾望加倍，失敗時還被口令定住 1 回合。每場戰鬥一次。"},
+    {"id": "h_overawe", "name": "威壓", "type": "skill", "classes": ["monster"], "ap": 1, "attr": "str", "target": "enemy", "resolve": "save", "save": "cha",
+     "apply": [{"status": "overawed", "turns": 3, "if_weaker": True}], "uses": {"per_combat": 1},
+     "desc": "居高臨下地瞪著對方：魅力豁免，等級比自己低的人失敗時被威壓 3 回合（受到的慾望 +25%、豁免 -1）。每場戰鬥一次。"},
+    {"id": "rut_mount", "name": "發情撲上", "type": "skill", "classes": ["monster"], "ap": 2, "attr": "str", "target": "enemy", "resolve": "attack",
+     "damage": [{"dice": "1d6", "type": "lust", "scale": {"dice": "1d6", "per": 3}}], "apply": [{"status": "prone", "turns": 1, "on": "hit"}],
+     "desc": "發情的野獸整個撲上來磨蹭：1d6 慾望（每 3 級再 +1d6），命中後倒地 1 回合。"},
+]
+FOE_STATUSES = {"overawed": {"name": "威壓", "kind": "debuff", "mods": {"save": -1}, "lust_mult": 0.25}}
+# 人形的敵人、吸血蝠：補上色情技能（沒有寫在這裡的保持原樣）
+FOE_PATCH = {
+    "slaver_thug": ["h_slave_drive", "h_overawe"],
+    "slaver_captain": ["h_slave_drive", "h_overawe", "h_aphro_incense"],
+    "kidnapper_bandit": ["h_slave_drive", "h_overawe"],
+    "brand_raider": ["h_slave_drive"],
+    "grave_robber_chief": ["h_overawe"],
+    "ashport_robber": ["h_overawe"],
+    "highway_robber": ["h_overawe"],
+    "tea_road_bandit": ["h_overawe"],
+    "dune_bandit": ["h_overawe"],
+    "pilgrim_raider": ["h_overawe"],
+    "catnip_bandit": ["h_aphro_incense"],
+    "blood_priest": ["h_aphro_incense"],
+    "blood_bat": ["m_lust_kiss"],
+}
+RUT_TRAIT = {"abilities": ["rut_mount"], "lust": 1.5}
+RUT_DESC = "正值發情期，躁動好鬥：傷害 +1、豁免 -1；注意力渙散，比較不受仇恨牽引；比較想用慾望攻擊，還會撲上來磨蹭（技能「發情撲上」）；受到的魅惑 ×1.25，開戰時帶著慾望（慾望戰鬥）。只會出現在資料標明 rut 的怪物身上。"
+ALL_FOE_ABILITY_IDS = sorted({x for v in FOE_PATCH.values() for x in v})
+
+
+def write_s8_7():
+    p = 'data/rules/abilities.json'
+    t = open(p).read()
+    for a in FOE_ABILITIES:
+        t = drop_lines(t, r'\n    \{"id": "' + a['id'] + r'".*')
+    t = insert_after(t, r'\n    \{"id": "m_lust_kiss".*', ['    ' + json.dumps(a, ensure_ascii=False) for a in FOE_ABILITIES])
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/statuses.json'
+    t = open(p).read()
+    for k in FOE_STATUSES:
+        t = drop_lines(t, r'\n    "' + k + r'": \{.*')
+    lines = [f'    "{k}": ' + json.dumps(v, ensure_ascii=False).replace('{"', '{ "').replace('}', ' }') for k, v in FOE_STATUSES.items()]
+    t = insert_after(t, r'\n    "exposed": \{.*', lines)
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/enemies.json'
+    t = open(p).read()
+    for mid, extra in FOE_PATCH.items():
+        m = re.search(r'\n    \{"id": "' + mid + r'".*', t)
+        line = m.group(0)
+        am = re.search(r'"abilities": \[([^\]]*)\]', line)
+        have = [x.strip().strip('"') for x in am.group(1).split(',') if x.strip()]
+        have = [x for x in have if x not in ALL_FOE_ABILITY_IDS or x in extra]
+        for x in extra:
+            if x not in have:
+                have.append(x)
+        line2 = line[:am.start()] + '"abilities": ' + json.dumps(have, ensure_ascii=False) + line[am.end():]
+        t = t.replace(line, line2)
+    json.loads(t)
+    open(p, 'w').write(t)
+
+    p = 'data/rules/monster_traits.json'
+    d = json.loads(open(p).read())
+    t = open(p).read()
+    old_desc = d['traits']['rut']['desc']
+    t = t.replace(json.dumps(old_desc, ensure_ascii=False), json.dumps(RUT_DESC, ensure_ascii=False))
+    t = re.sub(r'("xp_mult": 1.1, "ai": \{ "focus": 0.5)(, "lust": [\d.]+)?( \})(, "abilities": \[[^\]]*\])?', r'\1, "lust": 1.5\3, "abilities": ["rut_mount"]', t)
+    json.loads(t)
+    assert json.loads(t)['traits']['rut']['abilities'] == ['rut_mount']
+    open(p, 'w').write(t)
+    print('S8-7 abilities', len(FOE_ABILITIES), 'monsters', len(FOE_PATCH))
+
+
 if __name__ == '__main__':
     write_s8_3()
     write_s8_4()
     write_s8_6()
+    write_s8_7()

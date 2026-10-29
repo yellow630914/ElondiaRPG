@@ -848,6 +848,10 @@ export interface ApplyDef {
   value?: { dice?: string; mod?: boolean; level?: boolean; flat?: number }
   /** 目標的慾望達到上限的這個比例才套用 */
   if_lust?: number
+  /** 目標身上有奴隸印記才套用（驅奴術） */
+  if_slave?: boolean
+  /** 目標的等級比施放者低才套用（威壓） */
+  if_weaker?: boolean
 }
 export interface AbilityDef {
   id: string
@@ -880,6 +884,8 @@ export interface AbilityDef {
   concentration?: boolean
   cleanse?: boolean
   lifesteal?: number
+  /** 對身上有奴隸印記的目標，傷害乘上這個數（驅奴術） */
+  vs_slave?: number
   recover_slot?: boolean
   hp_limit?: number
   kill?: boolean
@@ -1052,6 +1058,8 @@ export interface MonsterTraitDef {
   offense?: AffinityMap
   xp_mult?: number
   ai?: MonsterAi
+  /** 帶著這個特徵時多會的技能（發情的野獸會撲上來） */
+  abilities?: string[]
   excludes?: string[]
   /** 怪物資料上要有這個旗標才會擲到 */
   requires?: 'rut'
@@ -1061,6 +1069,8 @@ export interface MonsterAi {
   /** 對仇恨的在意程度：選目標的權重 = floor + 仇恨 × focus（預設 1） */
   focus?: number
   prefer?: 'weakest' | 'caster'
+  /** 慾望攻擊的偏好：挑技能時慾望攻擊的分數乘上這個數（發情 1.5） */
+  lust?: number
   flee_below?: number
   never_flee?: boolean
 }

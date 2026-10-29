@@ -1336,6 +1336,8 @@ function applyDef(v: unknown): ApplyDef | undefined {
   if (a.on && ['hit', 'fail', 'always'].includes(a.on)) out.on = a.on
   if (a.save && ATTR_IDS.includes(a.save)) out.save = a.save
   if (a.if_lust) out.if_lust = Math.round(num(a.if_lust, 0.05, 1, 0.5) * 100) / 100
+  if (a.if_slave) out.if_slave = true
+  if (a.if_weaker) out.if_weaker = true
   if (a.value && typeof a.value === 'object') {
     const val: NonNullable<ApplyDef['value']> = {}
     if (a.value.dice && DICE.test(String(a.value.dice))) val.dice = String(a.value.dice)
@@ -1402,6 +1404,7 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   // 治療、護盾、淨化、回復法術環、直接擊倒只有必中（auto）的結算會處理：其他結算方式拿掉，免得看起來有效
   if (resolve !== 'auto') for (const k of ['heal', 'shield', 'cleanse', 'recover_slot', 'kill'] as const) delete out[k]
   if (raw.lifesteal) out.lifesteal = Math.round(num(raw.lifesteal, 0.05, 1, 0.5) * 100) / 100
+  if (raw.vs_slave && raw.vs_slave !== 1) out.vs_slave = Math.round(num(raw.vs_slave, 0.25, 4, 2) * 100) / 100
   if (raw.hp_limit) out.hp_limit = int(raw.hp_limit, 1, 9999, 30)
   if (raw.threat) out.threat = int(raw.threat, -50, 50, 0)
   // 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）
