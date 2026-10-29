@@ -4,6 +4,7 @@
 #        商店每天另外上架的拘束具（shops.json 的 restraints）、拍賣會（auction.pool）、拘束戰鬥場的稀有獎品（arena.rings.bound.rare）、捕奴隊隊長的掉落（enemies.json）、主人的池子（master_force）
 #   S9-3 地下城事件 24 件（travel_events.json，scope: dungeon；docs/ADULT_EVENTS.md 第 4 節）
 #   S9-4 魅氣濃的城鎮事件 20 件（travel_events.json，scope: town；docs/ADULT_EVENTS.md 第 9 節）
+#   S9-5 旅途事件 8 件（travel_events.json，scope: road；docs/ADULT_EVENTS.md 第 10 節）
 # 可以重跑：先拿掉上一次寫進去的再寫。要排在 lust_s8.py 之後（淫鬥場、拍賣會、園區的寶箱在那裡重寫）。
 import json
 import re
@@ -814,7 +815,131 @@ def write_s9_4():
     print('S9-4 town events', len(TOWN_EVENTS), 'charm 4', len(charm4), 'opportunities', len(chance))
 
 
+# ---------------- S9-5 旅途事件 ----------------
+def rd(id, title, text, category, options, tags=MEN, scene=None, modes=None, regions=None, requires=None, body=True):
+    return {"id": id, "tier": "normal", "kind": "choice", "category": category, **({"modes": modes} if modes else {}),
+            **({"regions": regions} if regions else {}), **({"requires": requires} if requires else {}), "tags": tags,
+            **({"pc_body": BODY} if body else {}), "title": title, "text": text, **({"scene": scene} if scene else {}), "options": options}
+
+
+ROAD_EVENTS = [
+    rd('rd_slaver_patrol', '路上的捕奴隊',
+       '一隊騎馬的捕奴人從坡後冒出來，領頭的拿著一疊通緝畫像，一張一張地對著你的臉比。「不是這個……不過也不錯。」他舔了舔嘴唇。',
+       'trouble', [
+           opt('往樹林裡跑', out('你鑽進樹林，馬進不來。他們罵了幾聲就走了。'),
+               ('dex', 14), out('馬比你快。他們把你按在地上銬起來，「檢查」到盡興才發現你不在名單上——手銬倒是懶得拿回去。', restrain('皮手銬'), cond('drained')), scene='fail'),
+           opt('拔劍', out('你砍倒了領頭的，其他人一哄而散。他的腰包裡有一把鑰匙。', give('白鐵鑰匙'), money(60), xp(40)),
+               ('str', 15), out('寡不敵眾。你被他們用藍鋼手銬銬住，丟在路邊。', restrain('皮手銬', 'blue'), cond('drained'), cond('disheveled'))),
+           opt('束手就擒', out('你放下武器。他們把你帶到路邊「驗貨」，驗完才發現抓錯人，留下手銬就走了。', restrain('皮手銬'), cond('afterglow'), lewd('submission', 1)), scene='always'),
+       ], tags=MEN_UNWILLING, modes=['road', 'trail', 'wild'], regions=['south', 'west'],
+       scene='捕奴隊把主角銬住按在路邊，藉口驗貨把主角從頭到腳檢查了一遍，一個接一個地「確認品質」'),
+    rd('rd_peddler_cart', '行商的貨車',
+       '一輛蓋著帆布的貨車停在路邊，行商掀開帆布一角：手銬、口球、各種鎖和鑰匙掛了一整排。「冒險者？總有用得上的時候。」',
+       'commerce', [
+           opt('買一把鑰匙', out('你買了一把藍鋼鑰匙。', money(-90), give('藍鋼鑰匙'))),
+           opt('殺價買一副手銬', out('行商被你說動，便宜賣了。', money(-60), give('絲帶手銬')),
+               ('cha', 13), out('行商不肯讓，你照原價買了。', money(-100), give('絲帶手銬'))),
+           opt('問他收不收「別的」', out('行商把你拉進貨車後面。出來的時候，你拿到了一把符文鑰匙，外加一副他「送你試用」的手銬。', give('符文鑰匙'), give('絲帶手銬'), cond('afterglow')), scene='always'),
+       ], modes=['road', 'trail'],
+       scene='行商把主角拉進蓋著帆布的貨車裡，在一整排拘束具之間用身體抵了一把符文鑰匙的錢'),
+    rd('rd_hot_spring', '路邊的溫泉',
+       '路邊的岩縫冒著熱氣，是一處沒人管的野溫泉。已經有幾個旅人泡在裡面，朝你揮手：「水很舒服喔，一起來吧。」',
+       'opportunity', [
+           opt('一個人泡在角落', out('熱水泡得你渾身舒坦，旅途的疲勞一掃而空。', heal(0.5), cond('relaxed'))),
+           opt('不泡，繼續趕路', out('你揮揮手走了。')),
+           opt('和他們一起泡', out('熱水裡大家越靠越近，誰的手碰到誰都分不清了。泡完的時候你全身發軟，傷倒是全好了。', heal(1), cond('relaxed'), cond('afterglow'), lewd('sensitivity', 1)), scene='always'),
+       ], tags=WILLING, body=False, modes=['road', 'trail', 'wild'],
+       scene='主角和幾個不認識的旅人泡在路邊的野溫泉裡，在熱氣裡越靠越近，最後在水裡糾纏成一團'),
+    rd('rd_lust_shrine', '路邊的淫神小祠',
+       '路邊有一座小小的神祠，供著一尊姿態撩人的女神像，祭台上放著香油錢和……幾件貼身衣物。',
+       'omen', [
+           opt('放下香油錢', out('你放了幾枚錢，心裡莫名地踏實。', money(-20), {"type": "condition", "target": "pc", "condition": "blessed", "add": True})),
+           opt('把祭台上的錢拿走', out('你把錢收進口袋。什麼事也沒發生——至少現在還沒有。', money(60)),
+               ('fai', 13), out('錢一碰到手，一股熱流就從指尖竄進身體裡。你在祠前蹲了很久才站得起來。', money(60), cond('aroused'), cond('sensitive'))),
+           opt('照規矩獻上貼身衣物', out('你脫下貼身的衣物放上祭台，在神像前跪了一會兒。起身時，女神好像對你笑了一下——你懂了一種冥想的法子。',
+                                   learn('lust_meditate'), lewd('lewdness', 1), lewd('exposure', 1)), scene='always'),
+       ], tags=WILLING, body=False, regions=['south'],
+       scene='主角在路邊的淫神小祠前脫下貼身衣物獻上祭台，赤裸地跪在撩人的女神像前，感覺到神像的目光在身上游走'),
+    rd('rd_bound_caravan', '被商隊撞見',
+       '你身上的拘束具在趕路時叮噹作響。迎面而來的商隊放慢了速度，每個人都盯著你看。',
+       'social', [
+           opt('若無其事地走過去', out('你抬頭挺胸地走過去，商隊的人反而不好意思看了。', lewd('endurance', 1)),
+               ('cha', 14), out('你的臉紅透了。商隊的人一路指指點點，到了下一個城鎮，大家都在說這件事。', lewd('exposure', 2))),
+           opt('躲進路邊的樹林', out('你躲到他們走遠才出來。'),
+               ('dex', 13), out('被綁著跑不快，你在樹林邊被看了個精光。', lewd('exposure', 1), cond('disheveled'))),
+           opt('請他們幫忙', out('商隊的男人們很樂意「幫忙」。他們幫了很久，也看了很久——最後送了你一程，還留下一些乾糧。', give('乾糧', 2), lewd('exposure', 2), cond('afterglow')), scene='always'),
+       ], requires={"wearing": {"bind": True}},
+       scene='戴著拘束具的主角請路過的商隊幫忙，商隊的男人們藉口幫忙解開，把主角圍在中間摸了個遍'),
+    rd('rd_rut_pack', '發情的野獸群',
+       '一群眼睛發紅的野狼從草叢裡圍了上來，牠們沒有齜牙，而是嗅著空氣，喘著粗氣——是發情期，而牠們聞到了你。',
+       'trouble', [
+           opt('爬上樹', out('你三兩下爬上樹。狼群在樹下轉了半天，終於散了。', xp(25)),
+               ('dex', 14), out('樹皮太滑，你被拖了下來。狼群圍著你，直到發情的熱度退了才離開。', cond('drained'), cond('disheveled'), lewd('sensitivity', 1)), scene='fail'),
+           opt('用火把趕走牠們', out('火光一晃，狼群夾著尾巴逃了。'),
+               ('int', 14), out('火把被撲滅了。你只能用手臂護著頭，任由牠們在身上嗅來嗅去。', cond('shaken'), cond('aroused'))),
+           opt('不動', out('你一動也不動。領頭的狼在你身上嗅了很久，舔了你幾下，最後帶著狼群走了。', cond('aroused'), cond('shaken'))),
+       ], tags=UNWILLING, body=False, modes=['trail', 'wild'], regions=['south'],
+       scene='發情的狼群把主角拖倒在草地上，熱烘烘的鼻息和舌頭在主角身上到處嗅舔'),
+    rd('rd_noble_host', '鄉紳的款待',
+       '路邊莊園的管家攔下你：「我家主人認得您的家紋，請務必到莊園休息一晚。」莊園主人親自出來迎接，眼神在你身上停了很久。',
+       'opportunity', [
+           opt('接受款待', out('莊園的床又軟又暖，早餐豐盛得像宴會。', cond('well_rested'), cond('fed_well'))),
+           opt('請他派人護送一程', out('莊園主人爽快地答應，還送了你一袋路費。', money(120), xp(30)),
+               ('cha', 13), out('莊園主人說護衛都派出去了，只能請你自己保重。')),
+           opt('接受「特別的款待」', out('晚宴之後，莊園主人親自到你的房間來「款待」。天亮時，你的行囊裡多了一袋金幣和一封介紹信。', money(250), cond('afterglow'), lewd('lewdness', 1)), scene='always'),
+       ], modes=['road'], requires={"pc_tags": ["noble", "royal"]},
+       scene='莊園主人在晚宴之後來到主角的客房，以款待貴族的禮數，一整晚親自伺候主角'),
+    rd('rd_priest_confession', '路邊的告解',
+       '一個旅人在路邊跪下攔住你：「神官大人，請聽我告解。」他告解的內容越說越露骨，最後抬頭看著你：「請您……用您的方式赦免我。」',
+       'social', [
+           opt('聽完、給他赦免的禱詞', out('你聽完了，替他唸了赦免的禱詞。他哭著道謝，你也覺得心裡平靜。', {"type": "condition", "target": "pc", "condition": "blessed", "add": True}, xp(30)),
+               ('fai', 13), out('你聽著聽著，臉越來越紅，禱詞唸得結結巴巴。', cond('aroused'))),
+           opt('婉拒', out('你說告解要到神殿去。他失望地讓開了路。')),
+           opt('用「您的方式」赦免他', out('你帶他到路邊的樹後，用你的方式赦免了他的罪——他走的時候，在你手裡塞了一筆奉獻。', money(80), cond('afterglow'), lewd('lewdness', 1)), scene='always'),
+       ], modes=['road', 'trail'], requires={"pc_tags": ["priest", "bishop"]},
+       scene='身為神官的主角在路邊的樹後，用自己的身體「赦免」一個告解者的罪'),
+]
+
+
+def write_s9_5():
+    p = 'data/rules/travel_events.json'
+    t = open(p).read()
+    for e in ROAD_EVENTS:
+        t = drop_lines(t, r'\n    \{"id": "' + e['id'] + r'".*')
+    t = insert_after(t, r'\n    \{"id": "road_recognized".*', ['    ' + json.dumps(e, ensure_ascii=False) for e in ROAD_EVENTS])
+    d = json.loads(t)
+    items = {i['name'] for i in json.load(open('data/rules/items.json'))['items']}
+    conditions = set(json.load(open('data/rules/companions.json'))['conditions'])
+    ab = json.load(open('data/rules/abilities.json'))['abilities']
+    abilities = set(ab) if isinstance(ab, dict) else {a['id'] for a in ab}
+    regions = {r['id'] for r in json.load(open('data/world/geography.json'))['regions']}
+    tags = set(json.load(open('data/rules/npc_tags.json'))['tags'])
+    for e in ROAD_EVENTS:
+        assert set(e.get('regions', [])) <= regions, e['id']
+        assert set(e.get('requires', {}).get('pc_tags', [])) <= tags, e['id']
+        for o in e['options']:
+            for res in (o.get('success'), o.get('fail')):
+                for x in (res or {}).get('effects', []):
+                    if x['type'] in ('item', 'restrain'):
+                        assert x.get('name', x.get('item')) in items, x
+                    if x['type'] == 'ability':
+                        assert x['ability'] in abilities, x
+                    if x['type'] == 'condition':
+                        assert x['condition'] in conditions, x
+                    if x['type'] == 'restrain':
+                        assert 'pc_unwilling' in e['tags'], e['id']
+            if o.get('adult_scene'):
+                assert e.get('scene'), e['id']
+    assert len(ROAD_EVENTS) == 8
+    willing = [e for e in ROAD_EVENTS if 'pc_unwilling' not in e['tags']]
+    assert len(willing) >= 4, len(willing)
+    assert len({e['id'] for e in d['templates']}) == len(d['templates'])
+    open(p, 'w').write(t)
+    print('S9-5 road events', len(ROAD_EVENTS), 'willing', len(willing))
+
+
 if __name__ == '__main__':
     write_s9_2()
     write_s9_3()
     write_s9_4()
+    write_s9_5()

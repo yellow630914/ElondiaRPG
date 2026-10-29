@@ -51,6 +51,7 @@ export function condMet(state: GameState, cond: StoryCond | undefined): boolean 
     && statsMet(state, cond.stats)
     && (!cond.charm || inRange(charmLevel(state.location), cond.charm))
     && wearingMet(state, cond.wearing)
+    && (!cond.pc_tags?.length || !!state.party.find((m) => m.isPlayer)?.tags?.some((t) => cond.pc_tags!.includes(t)))
 }
 
 const inRange = (v: number, r: { min?: number; max?: number }) => (r.min === undefined || v >= r.min) && (r.max === undefined || v <= r.max)

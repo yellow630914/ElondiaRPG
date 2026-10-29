@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { BIND_KINDS, lewdRules, storyCounters, type BindKind, type CounterRange, type ParasiteRange, type StoryCond, type WearingCond } from '@/engine/data'
 import { charmRules } from '@/engine/charm'
 import { LEWD_KEYS, lewdName } from '@/engine/lewd'
+import { pcTagChoices } from '@/engine/pcTags'
 import { parasiteRules } from '@/engine/parasites'
 import { useContent } from '@/stores/content'
 import FlagInput from './FlagInput.vue'
@@ -26,6 +27,7 @@ function put(next: Partial<StoryCond>) {
   if (!out.stats || !Object.keys(out.stats).length) delete out.stats
   if (!out.charm || (out.charm.min === undefined && out.charm.max === undefined)) delete out.charm
   if (!out.wearing || !Object.keys(out.wearing).length) delete out.wearing
+  if (!out.pc_tags?.length) delete out.pc_tags
   cond.value = out
 }
 const any = computed({
@@ -98,6 +100,14 @@ function setBindKind(v: string) {
   else delete w.bind_kind
   put({ wearing: w })
 }
+// 主角的身分標籤：勾的裡面至少有一個
+const pcTagList = pcTagChoices()
+function togglePcTag(id: string, on: boolean) {
+  const next = new Set(cond.value.pc_tags ?? [])
+  if (on) next.add(id)
+  else next.delete(id)
+  put({ pc_tags: [...next] })
+}
 function tamedOf(r: ParasiteRange): string {
   return r.tamed === undefined ? '' : r.tamed ? 'yes' : 'no'
 }
@@ -137,6 +147,10 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
       <button class="small" @click="removeP(id)">移除</button>
     </span>
     <button class="small" @click="addP">＋ 寄生物條件</button>
+  </div>
+  <div class="row small">
+    主角的身分標籤（至少一個）
+    <label v-for="[id, t] in pcTagList" :key="id" class="check"><input type="checkbox" :checked="cond.pc_tags?.includes(id)" @change="togglePcTag(id, ($event.target as HTMLInputElement).checked)" /> {{ t.name }}</label>
   </div>
   <details class="small" :open="!!(cond.stats || cond.charm || cond.wearing)">
     <summary>成人向的條件（慾望指標、魅氣濃度、戴著什麼）</summary>

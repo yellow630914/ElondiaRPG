@@ -181,6 +181,8 @@ export interface StoryCond {
   charm?: CounterRange
   /** 主角身上戴著什麼（寫 true 要有、false 要沒有；docs/LEWD_STATS.md 第 27 節） */
   wearing?: WearingCond
+  /** 主角至少有其中一個身分標籤（npc_tags.json 的 id；docs/NPC_SYSTEM.md 4.1 節） */
+  pc_tags?: string[]
 }
 
 /**
