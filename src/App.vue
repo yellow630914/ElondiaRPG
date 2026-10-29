@@ -12,7 +12,6 @@ import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import { useContent } from '@/stores/content'
 import HomeView from '@/components/HomeView.vue'
-import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import NotebookView from '@/components/NotebookView.vue'
 import CraftDialog from '@/components/CraftDialog.vue'
@@ -295,7 +294,6 @@ onBeforeUnmount(() => {
       <RoadPanel v-if="game.state.road && !inCombat" />
       <template v-if="!inCombat">
         <RestPanel />
-        <ActionPanel />
         <IntentPanel />
       </template>
     </aside>

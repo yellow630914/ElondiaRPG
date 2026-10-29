@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { DEGREE_NAME, situationalTotal } from '@/engine/actions'
-import { actionRules, ATTR_IDS, attrName, classEmoji, raceEmoji, type Degree } from '@/engine/data'
+import { actionRules, attrName, classEmoji, raceEmoji } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { npcTitle } from '@/engine/npcs'
@@ -12,24 +11,16 @@ import { useSettings } from '@/stores/settings'
 import JudgeToggle from './JudgeToggle.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
-import { eventDialogOpen } from './events/eventQueue'
+
+// 冒險日誌底部的主動行動橫條。擲完骰等待判定的行動、要先面對的刻印顯示在日誌最下面（PendingActionCard），
+// 那段時間這裡不能送出新的行動。
 
 const game = useGame()
 const settings = useSettings()
 const s = computed(() => game.state!)
-const pending = computed(() => s.value.pendingAction)
 const aiOn = computed(() => settings.judgesWithAi())
-
-const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
-
-// ---- 等待判定的行動 ----
-const DEGREES = Object.keys(DEGREE_NAME) as Degree[]
-const totals = computed(() => {
-  const p = pending.value
-  if (!p) return []
-  const sit = situationalTotal(p)
-  return ATTR_IDS.map((a) => ({ attr: a, total: p.natural + p.modifiers[a] + sit, isDefault: a === p.attr }))
-})
+/** 有行動等待判定、正在判定，或要先刻印 */
+const busy = computed(() => !!s.value.pendingAction || !!s.value.pendingMark || game.judging)
 
 // ---- 自由行動 ----
 const text = ref('')
@@ -91,65 +82,24 @@ function unmark(target: string) {
   void game.perform({ kind: 'unmark', text: '', target, ...(u ? { use: u } : {}) })
   use.value = ''
 }
-
-// ---- 刻印 ----
-const pendingMark = computed(() => s.value.pendingMark)
 </script>
 
 <template>
-  <section v-if="pending" class="panel pending">
-    <h3><GameIcon name="d20" :size="16" /> {{ actionRules.kinds[pending.kind].name }}<template v-if="pending.targetName">（{{ pending.targetName }}）</template></h3>
-    <p v-if="pending.text" class="small">「{{ pending.text }}」</p>
-    <p v-if="pending.offer_cc !== undefined" class="small">出價：{{ formatMoney(pending.offer_cc) }}</p>
-    <p v-if="pending.item" class="small">禮物：{{ pending.item }}</p>
-    <p class="small">
-      自然骰 <strong class="dice">{{ pending.natural }}</strong>・參考 DC {{ pending.base_dc }}
-      <Hint text="骰值是給 AI 的參考；AI 會依角色、關係與情勢決定結果，可能出乎預料。" />
-    </p>
-    <p v-if="pending.situational.length" class="small muted">
-      情境修正：<span v-for="x in pending.situational" :key="x.label">{{ x.label }} {{ signed(x.value) }} </span>
-    </p>
-    <div class="row small totals">
-      <span v-for="t in totals" :key="t.attr" :class="{ def: t.isDefault }">{{ attrName(t.attr) }} {{ t.total }}</span>
-    </div>
-    <ul v-if="Object.keys(pending.outcomes).length" class="plain small outcomes">
-      <template v-for="d in DEGREES" :key="d">
-        <li v-if="pending.outcomes[d]"><span class="tag">{{ DEGREE_NAME[d] }}</span> {{ pending.outcomes[d] }}</li>
-      </template>
+  <section class="action-bar">
+    <ul v-if="oathOffers.length" class="plain small offers">
+      <li v-for="o in oathOffers" :key="o.target">
+        <strong>{{ o.name }}</strong>（{{ o.helper }}）・{{ attrName(o.attr) }} DC {{ o.dc }}・{{ o.fee_cc ? formatMoney(o.fee_cc) : '免費' }}
+        <button class="small" :disabled="busy || s.money_cc < o.fee_cc" @click="unmark(o.target)">拆掉誓約</button>
+        <span class="muted">{{ o.desc }}</span>
+      </li>
     </ul>
-    <div class="row">
-      <button class="primary" :disabled="game.judging || !settings.ready('judge')" @click="game.judge(true)">
-        {{ game.judging ? 'AI 判定中…' : 'AI 判定' }}
-      </button>
-      <button :disabled="game.judging" @click="game.judge(false)">依規則判定（{{ attrName(pending.attr) }}）</button>
-    </div>
-    <p v-if="!settings.ready('judge')" class="small muted">「主動行動判定」的模型來源尚未設定，只能依規則判定。</p>
-  </section>
-
-  <section v-else-if="pendingMark" class="panel pending">
-    <h3><GameIcon name="fire" :size="16" /> 刻下契約印記</h3>
-    <p class="small">要先面對刻印，才能做別的事。</p>
-    <button class="small primary" @click="eventDialogOpen = true"><GameIcon name="bell" :size="14" /> 開啟事件視窗</button>
-  </section>
-
-  <section v-else class="panel action-panel">
-    <div class="row head">
-      <h3><GameIcon name="d20" :size="16" />主動行動</h3>
+    <div class="action-row">
+      <h3>
+        <GameIcon name="d20" :size="16" />主動行動
+        <Hint :text="`用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，${aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）'}。`" />
+      </h3>
       <JudgeToggle />
-      <Hint :text="`用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，${aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）'}。`" />
-    </div>
-    <template v-if="oathOffers.length">
-      <ul class="plain small offers">
-        <li v-for="o in oathOffers" :key="o.target">
-          <strong>{{ o.name }}</strong>（{{ o.helper }}）・{{ attrName(o.attr) }} DC {{ o.dc }}・{{ o.fee_cc ? formatMoney(o.fee_cc) : '免費' }}
-          <button class="small" :disabled="game.judging || s.money_cc < o.fee_cc" @click="unmark(o.target)">拆掉誓約</button>
-          <br /><span class="muted">{{ o.desc }}</span>
-        </li>
-      </ul>
-      <hr />
-    </template>
-    <div class="pick">
-      <select v-model="pick" title="對象" :disabled="targets.length >= maxTargets" @change="addTarget">
+      <select v-model="pick" class="target" title="對象" :disabled="targets.length >= maxTargets" @change="addTarget">
         <option value="">{{ !targets.length ? '（沒有特定對象）' : targets.length >= maxTargets ? `已選 ${maxTargets} 人` : '＋ 再加一位對象' }}</option>
         <optgroup v-if="partyTargets.length" label="隊伍">
           <option v-for="t in partyTargets" :key="t.id" :value="t.id" :disabled="targets.includes(t.id)">{{ t.name }}</option>
@@ -161,7 +111,15 @@ const pendingMark = computed(() => s.value.pendingMark)
           <option v-for="t in farTargets" :key="t.id" :value="t.id" disabled>{{ t.name }}・{{ t.note }}・{{ t.dist }} 格</option>
         </optgroup>
       </select>
-      <AbilityPicker v-model="use" />
+      <AbilityPicker v-model="use" class="ability" />
+      <div class="send">
+        <textarea
+          ref="freeBox" v-model="text" class="free" rows="1"
+          :placeholder="busy ? '先在日誌裡完成等待判定的行動' : '例如：買一份甜點給莉娜，順便問她怕水的原因'"
+          @input="grow"
+        />
+        <button class="primary" :disabled="!text.trim() || busy" @click="doFree">行動</button>
+      </div>
     </div>
     <div v-if="targets.length" class="chips">
       <span v-for="(id, i) in targets" :key="id" class="chip" :class="{ main: i === 0 }">
@@ -171,20 +129,18 @@ const pendingMark = computed(() => s.value.pendingMark)
       </span>
       <Hint :text="TARGETS_HINT" :width="300" />
     </div>
-    <div class="send">
-      <textarea ref="freeBox" v-model="text" class="free" rows="1" placeholder="例如：買一份甜點給莉娜，順便問她怕水的原因" @input="grow" />
-      <button class="primary" :disabled="!text.trim() || game.judging" @click="doFree">行動</button>
-    </div>
   </section>
 </template>
 
 <style scoped>
-.pending { border-color: var(--accent); }
-.action-panel { padding: 12px 14px; }
-.head { gap: 8px; margin-bottom: 8px; }
-.head h3 { margin: 0; display: flex; align-items: center; gap: 6px; flex: 1; }
-.head h3 :deep(.game-icon) { color: var(--accent); }
-.pick { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+/* 日誌底部的一條：標題、AI 開關、對象、能力、文字框與送出排成一排；放不下時文字框連同送出鈕換到下一行 */
+.action-bar { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+.action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.action-row h3 { margin: 0; display: flex; align-items: center; gap: 6px; font-size: var(--fs-md); white-space: nowrap; }
+.action-row h3 :deep(.game-icon) { color: var(--accent); }
+.action-row .target, .action-row .ability { flex: 0 1 140px; }
+.send { flex: 1 1 300px; display: flex; gap: 6px; align-items: flex-end; }
+.send textarea.free { flex: 1; margin: 0; min-height: 36px; resize: none; overflow-y: hidden; }
 .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 2px; padding: 1px 2px 1px 6px; border: 1px solid var(--border); border-radius: 3px; font-size: var(--fs-sm); background: #0003; }
 .chip.main { border-color: var(--accent); }
@@ -193,13 +149,5 @@ const pendingMark = computed(() => s.value.pendingMark)
 .chip button.name:disabled { cursor: default; opacity: 1; }
 .chip .x { color: var(--muted); }
 .chip .x:hover { color: var(--danger); }
-.send { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; align-items: stretch; }
-.send textarea.free { margin: 6px 0 0; min-height: 36px; resize: none; overflow-y: hidden; }
-.send button { margin-top: 6px; }
-.dice { color: var(--accent); font-size: 1.2rem; }
-.totals { gap: 12px; }
-.totals .def { color: var(--accent); }
-.outcomes { margin: 6px 0; display: grid; gap: 2px; }
-.offers { display: grid; gap: 4px; margin: 6px 0; }
-hr { border: none; border-top: 1px dashed var(--border); margin: 10px 0; }
+.offers { display: grid; gap: 4px; margin: 0 0 8px; }
 </style>
