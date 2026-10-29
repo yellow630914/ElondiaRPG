@@ -3,6 +3,7 @@
 #        取得方式：商店（物品的 tags）、地下城寶箱（gear.json 的 chests）、園區寶箱（lewd.json 的 park.chest_items）、
 #        商店每天另外上架的拘束具（shops.json 的 restraints）、拍賣會（auction.pool）、拘束戰鬥場的稀有獎品（arena.rings.bound.rare）、捕奴隊隊長的掉落（enemies.json）、主人的池子（master_force）
 #   S9-3 地下城事件 24 件（travel_events.json，scope: dungeon；docs/ADULT_EVENTS.md 第 4 節）
+#   S9-4 魅氣濃的城鎮事件 20 件（travel_events.json，scope: town；docs/ADULT_EVENTS.md 第 9 節）
 # 可以重跑：先拿掉上一次寫進去的再寫。要排在 lust_s8.py 之後（淫鬥場、拍賣會、園區的寶箱在那裡重寫）。
 import json
 import re
@@ -567,6 +568,253 @@ def write_s9_3():
     print('S9-3 dungeon events', len(DUNGEON_EVENTS), 'willing', len(willing))
 
 
+# ---------------- S9-4 魅氣濃的城鎮事件 ----------------
+MEN = ['adult', 'male_partner']
+MEN_UNWILLING = ['adult', 'pc_unwilling', 'male_partner']
+CHARM3 = {"charm": {"min": 3}}
+CHARM4 = {"charm": {"min": 4}}
+
+
+def tn(id, title, text, cells, category, options, tags=MEN, scene=None, requires=CHARM3, body=True, cooldown=None, types=None):
+    return {"id": id, "scope": "town", "tier": "normal", "kind": "choice", "cells": cells, "category": category,
+            **({"location_types": types} if types else {}), "requires": requires, "tags": tags,
+            **({"pc_body": BODY} if body else {}), **({"cooldown_days": cooldown} if cooldown else {}),
+            "title": title, "text": text, **({"scene": scene} if scene else {}), "options": options}
+
+
+def uncond(c):
+    return {"type": "condition", "target": "pc", "condition": c, "add": False}
+
+
+TOWN_EVENTS = [
+    # ---- 酒館 ----
+    tn('tn_strip_dice', '桌上的脫衣骰局',
+       '角落那桌在玩骰子，輸一把脫一件。桌上已經有兩個人只剩內衣了，莊家朝你招手：「來一局？贏的人把桌上的錢全拿走。」',
+       ['tavern'], 'opportunity', [
+           opt('上桌擲骰', out('你手氣正旺，一件都沒脫就把桌上的錢掃進口袋。', money(150)),
+               ('int', 14), out('你輸了一把又一把，最後只剩一件內衣走出酒館，全場都在吹口哨。', cond('disheveled'), lewd('exposure', 2))),
+           opt('在旁邊看', out('你看了幾局，學到了莊家出千的手法。', xp(20))),
+           opt('把自己當賭注', out('你把自己押上桌。贏的人拿走了你一整晚——你拿走了桌上一半的錢。', money(250), cond('afterglow'), lewd('exposure', 2)), scene='always'),
+       ], scene='主角在酒館角落的賭桌上把自己當成賭注，被贏家當著全桌賭客的面抱上樓享用了一整晚'),
+    tn('tn_dancer_short', '舞孃缺人',
+       '酒館老闆急得團團轉：今晚的舞孃病了，台下坐滿了等著看的客人。他看到你，眼睛一亮：「你身材不錯——頂一場？錢照付。」',
+       ['tavern', 'brothel'], 'opportunity', [
+           opt('上台跳一場', out('你跳得比原本的舞孃還好，台下的賞錢丟了一地。', money(120), lewd('exposure', 2)),
+               ('dex', 14), out('你踩到裙擺跌了一跤，衣服掉了一半——客人反而叫得更大聲。', money(60), lewd('exposure', 3), cond('disheveled'))),
+           opt('婉拒', out('老闆嘆了口氣，請你喝了一杯當作打擾。', cond('cheered'))),
+           opt('跳完再陪客人', out('你跳完舞，又被幾個出手大方的客人包了下來，一直陪到打烊。', money(220), cond('drained'), lewd('lewdness', 1)), scene='always'),
+       ], scene='主角替病倒的舞孃上台，跳到只剩幾片布料，之後被台下出手最大方的客人們帶進包廂輪流陪到打烊'),
+    tn('tn_drinker_wager', '酒客的賭注',
+       '一桌喝得滿臉通紅的傭兵把你攔下：「跟我們拚酒！喝贏了，桌上的錢歸你；喝輸了——你歸我們一晚。」',
+       ['tavern'], 'trouble', [
+           opt('跟他們拚', out('你喝倒了最後一個人，把桌上的錢收得乾乾淨淨。', money(180)),
+               ('str', 15), out('你先倒了。醒來的時候在他們的房間裡，身上什麼都沒穿。', cond('drained'), cond('disheveled'), lewd('submission', 1)), scene='fail'),
+           opt('笑著推掉', out('你三言兩語把他們哄得哈哈大笑，還被請了一杯。', cond('cheered')),
+               ('cha', 13), out('他們不讓你走，摟著你的腰灌了你好幾杯才放手。', cond('tipsy'), cond('aroused'))),
+           opt('直接認輸', out('你乾脆地認輸，跟他們上了樓。傭兵們很盡興，臨走前多塞了你幾枚銀幣。', money(40), cond('drained'), cond('afterglow')), scene='always'),
+       ], tags=MEN_UNWILLING,
+       scene='主角被拚酒贏了的傭兵們帶回房間，醉醺醺的主角被一桌的傭兵輪流壓在床上，一直到天亮'),
+    # ---- 旅店 ----
+    tn('tn_inn_thin_wall', '隔壁房間的聲音',
+       '旅店的牆很薄。隔壁房間的床板吱嘎作響，喘息聲一陣比一陣大，聽起來不只兩個人。',
+       ['inn'], 'social', [
+           opt('敲牆抗議', out('隔壁安靜了，接著傳來一陣竊笑。你總算睡著了。', cond('well_rested')),
+               ('cha', 12), out('隔壁回敲了兩下，聲音反而更大了。你一夜沒睡。', cond('aroused'))),
+           opt('從門縫偷看', out('你看到了不該看的東西，回房間時臉還是燙的。', cond('aroused'), xp(10)),
+               ('dex', 13), out('門突然開了。裡面的人看到你，笑著把你拉了進去。', cond('afterglow'), cond('disheveled')), scene='fail'),
+           opt('敲門加入', out('他們很歡迎你。你們一直鬧到天亮，旅店老闆隔天看你的眼神很奇妙。', cond('afterglow'), lewd('lewdness', 1)), scene='always'),
+       ], tags=WILLING, body=False,
+       scene='主角走進隔壁吵鬧的房間，加入了一群不認識的旅客，一直鬧到天亮'),
+    tn('tn_inn_extra_service', '老闆娘的附加服務',
+       '老闆娘一邊替你登記，一邊壓低聲音：「旅途辛苦吧？樓上有熱水，還有我親自的按摩——加一點錢，還有『特別』的。」',
+       ['inn'], 'commerce', [
+           opt('只要熱水和按摩', out('老闆娘的手藝很好，你睡得像個嬰兒。', money(-20), cond('relaxed'), cond('well_rested'))),
+           opt('婉拒', out('她眨眨眼：「改變主意隨時找我。」')),
+           opt('加錢要特別的', out('老闆娘的「特別服務」讓你忘了旅途的疲憊，也忘了自己是誰。', money(-50), cond('relaxed'), cond('well_rested'), cond('afterglow'), lewd('sensitivity', 1)), scene='always'),
+       ], tags=WILLING, body=False,
+       scene='旅店的老闆娘在熱水房裡替主角按摩，手從肩膀一路往下，「特別服務」做得又慢又仔細'),
+    # ---- 城門 ----
+    tn('tn_gate_lust_tax', '淫氣稅',
+       '城門口的告示寫著：「本城徵收淫氣稅，外地人入城每人一份。」衛兵上下打量你：「付錢，或者付『別的』。」',
+       ['gate'], 'trouble', [
+           opt('乖乖付錢', out('你付了稅。衛兵有點失望地放行。', money(-40))),
+           opt('跟他講價', out('你搬出一套法條，衛兵聽得頭昏，乾脆揮手讓你進去。', xp(20)),
+               ('cha', 14), out('衛兵說稅不能少——但可以用「別的」補。他的手在你身上補了很久。', money(-20), cond('aroused'), cond('disheveled'))),
+           opt('付「別的」', out('你跟著衛兵進了崗哨。出來的時候，他在你手背上蓋了一個「已繳稅」的章。', cond('afterglow'), lewd('exposure', 1)), scene='always'),
+       ], tags=MEN_UNWILLING, requires=CHARM4,
+       scene='主角在城門的崗哨裡用身體繳了淫氣稅，衛兵們輪流「驗收」，最後在主角手背蓋上已繳稅的章'),
+    tn('tn_gate_body_search', '女衛兵的檢身',
+       '一個高個子的女衛兵把你帶進檢查室：「這一帶走私的媚藥很多，要徹底檢查。」她戴上手套，叫你把衣服全脫了。',
+       ['gate'], 'trouble', [
+           opt('亮出冒險者公會的牌子', out('她看了牌子，嘖了一聲，揮手讓你走。'),
+               ('cha', 14), out('「公會的人最會藏東西了。」她的檢查變得格外仔細。', cond('aroused'), cond('disheveled'))),
+           opt('塞錢', out('她把錢收進口袋，草草摸了兩下就放你走。', money(-30))),
+           opt('乖乖配合', out('你脫光讓她檢查。她檢查得非常、非常徹底——最後紅著臉說「沒問題」。', cond('afterglow'), lewd('exposure', 1)), scene='always'),
+       ], tags=UNWILLING, body=False,
+       scene='女衛兵在檢查室裡叫主角脫光，戴著手套一寸一寸地「搜查」主角身上每一個能藏東西的地方'),
+    tn('tn_gate_restrained', '戴著拘束具進城',
+       '衛兵看到你身上的拘束具，把長槍一橫：「哪家的奴隸？主人呢？沒有主人的奴隸，按規矩要先扣下來。」',
+       ['gate'], 'trouble', [
+           opt('解釋是自己戴的', out('你解釋了半天，衛兵終於信了，還有點佩服地看著你。', lewd('exposure', 1)),
+               ('cha', 14), out('衛兵不信，把你帶進崗哨「等主人來領」。等了一整個下午，沒有主人來，衛兵們倒是輪流來了。', cond('drained'), lewd('submission', 1), lewd('exposure', 2)), scene='fail'),
+           opt('掙開他們跑進城', out('你趁他們不注意鑽過人群，跑進了城裡。'),
+               ('dex', 14), out('被綁著跑不快。你被按在城牆邊「教訓」了一頓。', cond('disheveled'), cond('shaken'))),
+           opt('說主人派你來辦事', out('衛兵露出了心照不宣的笑容：「那主人應該不介意我們先檢查一下貨。」', cond('afterglow'), lewd('submission', 1)), scene='always'),
+       ], tags=MEN_UNWILLING, requires={"charm": {"min": 3}, "wearing": {"bind": True}},
+       scene='戴著拘束具的主角被衛兵當成走失的奴隸扣在崗哨裡，衛兵們藉口「檢查貨」輪流把主角玩了一個下午'),
+    # ---- 商店 ----
+    tn('tn_tailor_model', '試穿新品的模特兒',
+       '裁縫店裡擠滿了客人，老闆娘一看到你就拉住：「就是你了！今天新到的淫服，幫我穿給客人們看看，賣出去分你錢。」',
+       ['tailor'], 'opportunity', [
+           opt('答應試穿', out('你換了一套又一套，客人們搶著下訂。老闆娘塞給你一把錢。', money(100), lewd('exposure', 2))),
+           opt('婉拒', out('老闆娘噘著嘴去找別人了。')),
+           opt('試穿，讓客人摸摸布料', out('客人們不只摸布料。等到打烊，你的口袋和身體都被塞得滿滿的。', money(200), lewd('exposure', 3), cond('afterglow')), scene='always'),
+       ], scene='主角在裁縫店裡穿著一件件淫服給客人看，客人們藉口摸布料，把手伸進了衣服底下'),
+    tn('tn_restraint_trial', '拘束具的試用會',
+       '店裡在辦拘束具的試用會：戴上新貨撐過一刻鐘不出聲的人，那件就送他。台上已經有人戴著口球滿臉通紅了。',
+       ['tailor', 'smithy'], 'commerce', [
+           opt('上台試戴', out('你咬緊牙關撐過了一刻鐘，店主把那副手銬送給了你。', give('皮手銬')),
+               ('fai', 14), out('你撐不到一半就叫出了聲。店主笑著說：「可愛，這個送你當紀念。」', give('絲巾口塞'), lewd('submission', 1))),
+           opt('在台下看', out('你看完了整場，對拘束具多了不少了解。', xp(20))),
+           opt('一件一件試到最後', out('你從手銬試到口球，在台上被拘束了整整一個下午。店主很滿意，把你試過的口球送給了你。', give('口球'), lewd('submission', 1), lewd('endurance', 1)), scene='always'),
+       ], tags=WILLING, body=False,
+       scene='主角在店裡的試用會上被一件件拘束具輪流鎖上，戴著口球在眾人面前忍著不出聲'),
+    tn('tn_locksmith_pitch', '鎖匠的推銷',
+       '一個揹著工具箱的鎖匠攔住你：「拘束具的鑰匙要不要？什麼鎖都開得了——被人鎖住的時候，你會感謝我的。」',
+       ['smithy', 'shop', 'jeweler'], 'commerce', [
+           opt('買一把', out('你買了一把藍鋼鑰匙。', money(-100), give('藍鋼鑰匙'))),
+           opt('殺價', out('鎖匠被你說得直搖頭，最後打了對折。', money(-60), give('藍鋼鑰匙')),
+               ('cha', 14), out('鎖匠不肯讓，你只好照原價買。', money(-100), give('藍鋼鑰匙'))),
+           opt('問他收不收「別的」', out('鎖匠的眼神亮了。他把你帶進後巷，完事之後給了你一把更好的鑰匙。', give('符文鑰匙'), cond('afterglow')), scene='always'),
+       ], scene='鎖匠把主角帶進後巷，用身體換了一把符文鑰匙'),
+    # ---- 神殿（魅氣濃度 4） ----
+    tn('tn_lust_festival', '淫神的祭典',
+       '神殿前的廣場在辦祭典：信徒們穿著幾乎透明的祭袍遊行，祭司站在台上高喊：「今年的聖女還缺一位！」',
+       ['temple'], 'omen', [
+           opt('跟著遊行', out('你換上祭袍跟著遊行，整座城的人都看到了你。', lewd('exposure', 3), cond('cheered'))),
+           opt('去求一支籤', out('籤上寫著大吉。祭司替你祝福。', {"type": "condition", "target": "pc", "condition": "blessed", "add": True}),
+               ('fai', 14), out('籤上寫著「慾」。祭司笑著說今晚你會很忙。', cond('aroused'))),
+           opt('當祭典的聖女', out('你被抬上祭台，獻給了淫神——和所有的信徒。祭典結束時，祭司把一整袋奉獻金交給你，還教了你一首讚歌。',
+                                money(300), learn('lust_hymn'), cond('drained'), lewd('exposure', 4)), scene='always'),
+       ], requires=CHARM4, cooldown=20,
+       scene='主角穿著透明的祭袍被當成聖女抬上祭台，在整座城的信徒面前被獻給淫神，信徒們一個接一個上前領受聖女的「祝福」'),
+    tn('tn_purification', '巫女的潔淨儀式',
+       '神殿的巫女叫住你：「你身上沾了很多不好的東西。讓我替你潔淨——用我們這裡的方式。」她身上只披著一條白紗。',
+       ['temple'], 'opportunity', [
+           opt('只要普通的祝福', out('巫女替你灑了聖水，唸了禱詞。', money(-30), {"type": "condition", "target": "pc", "condition": "blessed", "add": True})),
+           opt('婉拒', out('巫女點點頭，說你想通了再來。')),
+           opt('接受潔淨', out('巫女用她的身體替你一寸一寸地「洗」乾淨。結束時，身上的疲憊和熱都散了。',
+                             uncond('drained'), uncond('aroused'), uncond('sensitive'), {"type": "condition", "target": "pc", "condition": "blessed", "add": True}, cond('relaxed')), scene='always'),
+       ], tags=WILLING, requires=CHARM4, body=False,
+       scene='只披著白紗的巫女在神殿的浴池裡，用自己的身體一寸一寸地替主角「潔淨」'),
+    # ---- 公會 ----
+    tn('tn_guild_bound_escort', '特殊的護衛委託',
+       '公會的櫃檯小姐壓低聲音：「有一個貴族指名要你當護衛，報酬很好——條件是一路上要戴著他準備的手銬。」',
+       ['guild'], 'opportunity', [
+           opt('接，戴上手銬', out('你戴著手銬護送他走完全程。他很守信用地付了錢——手銬的鑰匙倒是「忘了」給你。', money(250), restrain('皮手銬', 'blue'), lewd('submission', 1)), scene='always'),
+           opt('談條件，不戴', out('貴族勉強同意了，報酬打了折。', money(120), xp(30)),
+               ('cha', 15), out('貴族不同意，委託取消了。')),
+           opt('拒絕', out('櫃檯小姐鬆了口氣：「我就說你不會接。」')),
+       ], tags=MEN_UNWILLING,
+       scene='主角戴著貴族準備的手銬當護衛，一路上被雇主藉口檢查護衛摸遍全身，到了旅店更是不用說'),
+    tn('tn_guild_spar', '冒險者之間的「切磋」',
+       '一個魁梧的冒險者攔住你：「聽說你很強？來切磋一下。規矩是——輸的人今晚要聽贏的。」周圍的冒險者都在起鬨。',
+       ['guild', 'tavern'], 'social', [
+           opt('比力氣', out('你把他摔在地上，全場歡呼。他乖乖請你喝了一整晚的酒。', money(50), xp(40)),
+               ('str', 14), out('你被他壓在地上動不了。他笑著把你扛上了樓。', cond('drained'), cond('afterglow')), scene='fail'),
+           opt('比誰比較會說', out('你把他說得啞口無言，周圍的人笑成一團。', xp(30), cond('cheered')),
+               ('cha', 14), out('他根本不想聽你說話。', cond('shaken'))),
+           opt('直接認輸', out('你舉手認輸，跟他上了樓。他比想像中溫柔。', cond('afterglow')), scene='always'),
+       ], tags=MEN_UNWILLING,
+       scene='主角輸了切磋，被魁梧的冒險者扛上公會樓上的房間，照規矩聽了他一整晚'),
+    # ---- 娼館 ----
+    tn('tn_brothel_request', '客人指名',
+       '你剛走進娼館，媽媽桑就迎上來：「有位客人看到你進門，指名要你——不管你是不是我們這裡的人。他出的價錢很好。」',
+       ['brothel'], 'opportunity', [
+           opt('接下來', out('客人很滿意，媽媽桑抽了一成，剩下的都是你的。', money(200), cond('afterglow'), lewd('lewdness', 1)), scene='always'),
+           opt('抬價', out('客人二話不說付了兩倍。', money(400), cond('drained'), cond('afterglow')),
+               ('cha', 15), out('客人覺得你太貪心，走了。媽媽桑白了你一眼。'), scene='success'),
+           opt('拒絕', out('媽媽桑聳聳肩：「可惜了。」')),
+       ], scene='主角被娼館的客人指名，在最好的房間裡陪了他一整晚'),
+    tn('tn_brothel_top_invite', '頭牌的邀請',
+       '娼館的頭牌靠在樓梯口，對你勾勾手指：「今晚的客人很難伺候，我一個人應付不來。陪我一起——我教你幾招。」',
+       ['brothel'], 'opportunity', [
+           opt('一起伺候客人', out('頭牌手把手地教，你學得很快。客人走的時候腿都軟了。',
+                                {"type": "ability_pool", "pool": "brothel_work", "fallback": [money(150)]}, money(100), cond('drained')), scene='always'),
+           opt('只跟她學，不接客', out('她教了你一個眼神。只是一個眼神，就讓你明白了很多事。', learn('lust_glance')),
+               ('cha', 14), out('她說你學得太慢，要你看她示範——你看得臉紅心跳。', cond('aroused'))),
+           opt('婉拒', out('她笑了笑：「下次。」')),
+       ], scene='主角和娼館的頭牌一起伺候難纏的客人，頭牌一邊示範一邊手把手地教主角怎麼讓客人腿軟'),
+    # ---- 街頭（好幾種設施） ----
+    tn('tn_slave_parade', '遊街示眾的奴隸',
+       '一隊奴隸被鐵鍊串著從大街上走過，身上只有拘束具，脖子上掛著價牌。路人對她們指指點點，有人伸手去摸。',
+       ['gate', 'tavern', 'shop'], 'omen', [
+           opt('遞一杯水給最後那個', out('她抬頭看了你一眼，小聲說了謝謝。押隊的人沒說什麼。', xp(20), cond('cheered'))),
+           opt('打聽她們是從哪來的', out('你從押隊的人嘴裡套出了奴隸商的路線。', xp(40)),
+               ('cha', 13), out('押隊的人上下打量你：「你也想來？」你趕緊走開。', cond('shaken'))),
+           opt('跟著看到最後', out('你跟著隊伍走到奴隸市場，看著她們一個個被拍賣。回到旅店時，你的心跳還沒平復。', cond('aroused'), lewd('lewdness', 1)), scene='always'),
+       ], tags=WILLING, requires=CHARM4, body=False,
+       scene='主角跟著遊街的奴隸隊伍走到奴隸市場，看著她們只戴著拘束具一個個被摸、被叫價、被買走'),
+    tn('tn_mistaken_slave', '被當成奴隸',
+       '一個喝醉的商人看到你身上的拘束具，伸手就拉住你的鍊子：「這是誰家的奴隸？借我玩一晚，錢我照付。」',
+       ['tavern', 'inn', 'shop', 'gate'], 'trouble', [
+           opt('冷冷地糾正他', out('你一字一句地說你不是任何人的奴隸。他酒醒了一半，道歉跑了。'),
+               ('cha', 14), out('他根本不聽，拉著你的鍊子就往巷子裡走。', cond('disheveled'), cond('shaken'))),
+           opt('甩開他', out('你一甩手，他摔了個四腳朝天。'),
+               ('str', 13), out('被綁著使不上力。他笑著把你拉進了懷裡。', cond('aroused'), cond('disheveled'))),
+           opt('順著他的話', out('你低下頭，讓他牽著鍊子走。他玩了一整晚，天亮時真的照付了錢。', money(120), cond('afterglow'), lewd('submission', 1)), scene='always'),
+       ], tags=MEN_UNWILLING, requires={"charm": {"min": 3}, "wearing": {"bind": True}},
+       scene='喝醉的商人把戴著拘束具的主角當成別人家的奴隸，牽著鍊子帶回房間玩了一整晚'),
+    tn('tn_noble_carriage', '貴族的馬車',
+       '一輛黑色的馬車在你身邊停下，車簾掀開一角，裡面的人遞出一枚金幣：「上來坐坐吧，我有事想跟你談——在車上。」',
+       ['gate', 'shop', 'tavern'], 'opportunity', [
+           opt('上車', out('馬車繞了城好幾圈。下車的時候，你的衣服皺了，錢袋鼓了。', money(250), lewd('exposure', 1), cond('afterglow')), scene='always'),
+           opt('上車談生意', out('你把話題拉回生意上。對方很欣賞你，給了你一筆委託的訂金。', money(150), xp(40)),
+               ('cha', 15), out('對方對生意沒興趣，車簾一放下就把你拉進了懷裡。', money(100), cond('afterglow')), scene='fail'),
+           opt('不上車', out('車簾放下，馬車走了。')),
+       ], requires=CHARM4, types=['city', 'capital', 'town'],
+       scene='主角上了貴族的馬車，車簾放下之後，馬車載著兩人在城裡繞了一圈又一圈'),
+]
+
+
+def write_s9_4():
+    p = 'data/rules/travel_events.json'
+    t = open(p).read()
+    for e in TOWN_EVENTS:
+        t = drop_lines(t, r'\n    \{"id": "' + e['id'] + r'".*')
+    t = insert_after(t, r'\n    \{"id": "town_guard_toll".*', ['    ' + json.dumps(e, ensure_ascii=False) for e in TOWN_EVENTS])
+    d = json.loads(t)
+    items = {i['name'] for i in json.load(open('data/rules/items.json'))['items']}
+    conditions = set(json.load(open('data/rules/companions.json'))['conditions'])
+    ab = json.load(open('data/rules/abilities.json'))['abilities']
+    abilities = set(ab) if isinstance(ab, dict) else {a['id'] for a in ab}
+    cells = {'inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver'}
+    for e in TOWN_EVENTS:
+        assert set(e['cells']) <= cells, e['id']
+        assert e['requires']['charm']['min'] >= 3, e['id']
+        for o in e['options']:
+            for res in (o.get('success'), o.get('fail')):
+                for x in (res or {}).get('effects', []):
+                    if x['type'] in ('item', 'restrain'):
+                        assert x.get('name', x.get('item')) in items, x
+                    if x['type'] == 'ability':
+                        assert x['ability'] in abilities, x
+                    if x['type'] == 'condition':
+                        assert x['condition'] in conditions, x
+                    if x['type'] == 'restrain':
+                        assert 'pc_unwilling' in e['tags'], e['id']
+            if o.get('adult_scene'):
+                assert e.get('scene'), e['id']
+    assert len(TOWN_EVENTS) == 20
+    charm4 = [e for e in TOWN_EVENTS if e['requires']['charm']['min'] == 4]
+    chance = [e for e in TOWN_EVENTS if e['category'] in ('opportunity', 'commerce')]
+    assert len(charm4) == 5 and len(chance) >= 10, (len(charm4), len(chance))
+    assert len({e['id'] for e in d['templates']}) == len(d['templates'])
+    open(p, 'w').write(t)
+    print('S9-4 town events', len(TOWN_EVENTS), 'charm 4', len(charm4), 'opportunities', len(chance))
+
+
 if __name__ == '__main__':
     write_s9_2()
     write_s9_3()
+    write_s9_4()
