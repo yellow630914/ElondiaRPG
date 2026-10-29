@@ -1,6 +1,7 @@
 // 慾望指標（成人向；docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從記在角色身上，曝露名聲依地區記在存檔。
 // 規則與數值在 data/rules/lewd.json。戰鬥的換算在 combat.ts（慾望上限、受到的慾望、初始慾望……）。
 
+import { pcTagMult } from './pcTags'
 import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
 import { abilities, lewdRules, locationById, stories, type LewdKey } from './data'
@@ -121,6 +122,16 @@ export function currentRegion(state: Pick<GameState, 'location'>): string {
 export function addLewd(state: GameState, c: Character, key: LewdKey, delta: number, report?: Report, region?: string): number {
   if (!delta) return 0
   if (key === 'exposure') {
+    // 主角的身分標籤：貴族、皇族的風流事傳得快，平民沒人在意（零頭記著，下次一起算）
+    const mult = delta > 0 ? pcTagMult(c, 'exposure_mult') : 1
+    if (mult !== 1) {
+      const raw = delta * mult + (state.exposureCarry?.[c.id] ?? 0)
+      delta = Math.floor(raw)
+      const rest = Math.round((raw - delta) * 100) / 100
+      if (rest) (state.exposureCarry ??= {})[c.id] = rest
+      else if (state.exposureCarry) delete state.exposureCarry[c.id]
+      if (!delta) return 0
+    }
     const r = region ?? currentRegion(state)
     const map = ((state.exposure ??= {})[c.id] ??= {})
     const before = map[r] ?? 0

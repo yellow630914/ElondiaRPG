@@ -1507,7 +1507,28 @@ export interface NpcTagDef {
   /** false：主角不能選這個標籤（例如奴隸、娼妓，由各自的系統決定） */
   player?: boolean
   /** 主角帶著這個標籤時的效果（見 engine/pcTags.ts） */
-  pc_effects?: { bypass_reputation?: boolean }
+  pc_effects?: PcTagEffects
+}
+
+/** 主角帶著這個標籤時的效果（docs/NPC_SYSTEM.md 4.1 節；pcTags.ts） */
+export interface PcTagEffects {
+  /** 所有要聲望的場所都不看聲望 */
+  bypass_reputation?: boolean
+  /** 檢定的加減（篩選和特質同格式，vs_tags 是對方的標籤） */
+  checks?: { check: CheckFilter; bonus: number }[]
+  /** 商店的買價、賣價倍率 */
+  buy_mult?: number
+  sell_mult?: number
+  /** 神殿服務（神殿的交易、洗刺青、解除契約）的收費倍率 */
+  service_mult?: number
+  /** 曝露名聲累積的倍率（成人向） */
+  exposure_mult?: number
+  /** 主角被賣時的身價倍率（成人向） */
+  slave_price_mult?: number
+  /** 戰鬥中的慾望抗性（負數是受到的慾望變少；成人向） */
+  lust_resist?: number
+  /** 給 AI 的身分說明 */
+  hint?: string
 }
 
 /** 標籤的 DC 修正：所有標籤相加 */

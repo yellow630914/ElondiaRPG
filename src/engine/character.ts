@@ -1,6 +1,7 @@
 // 角色：屬性、三資源（生命值、行動點、法術環）的推導、升級與能力學習。
 // 公式說明見 docs/COMBAT_SYSTEM.md，數值在 data/rules/combat.json。
 
+import { pcTagSummary } from './pcTags'
 import { parasiteSummary, parasitesOf } from './parasites'
 import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks'
 import {
@@ -494,6 +495,7 @@ export function snapshot(c: Character, before?: Character, player?: Character): 
 export function protagonistText(c: Character, birthplaceName?: string): string {
   const lines = [
     `${c.name}｜${c.gender ? `${c.gender}｜` : ''}${attributeRules.races[c.race]?.name ?? c.race}・${classDef(c.class).name} Lv.${c.level}${birthplaceName ? `｜出身：${birthplaceName}` : ''}`,
+    c.tags?.length ? `身分：${pcTagSummary(c)}` : '',
     c.appearance ? `外貌：${c.appearance}` : '',
     c.background ? `背景：${c.background}` : '',
     perksOf(c).length ? `特質：${perksOf(c).map((p) => (p.flaw ? `${p.name}（缺陷）` : p.name)).join('、')}` : '',

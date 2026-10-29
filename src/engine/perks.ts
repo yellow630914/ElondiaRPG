@@ -6,6 +6,7 @@
 // - 缺陷（flaw）：負的效果。建立角色時最多選兩個、每個換一個一般特質的名額；事件直接給（不是機會），
 //   受訓或事件的 lose_perk 克服。AI 設計的特質不能是缺陷。
 
+import { pcTagModifiers } from './pcTags'
 import { activeParasites, parasiteDef, parasiteEffects, stageName } from './parasites'
 import {
   actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, lewdRules, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
@@ -86,7 +87,7 @@ export function parasiteCheckModifiers(c: Pick<Character, 'parasites' | 'tattoos
 
 /** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備 + 寄生物與印記 + 拘束具（雙面效應的平常面）（正數是加值） */
 export function checkModifiers(c: Character, ctx: CheckCtx): { label: string; value: number }[] {
-  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx), ...bindModifiers(c, ctx)].filter((x) => x.value !== 0)
+  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...pcTagModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx), ...bindModifiers(c, ctx)].filter((x) => x.value !== 0)
 }
 
 /** 檢定的情境修正總和 */

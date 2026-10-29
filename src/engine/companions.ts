@@ -9,6 +9,7 @@
 // 需要檢定的部分（雇傭談判、殺價、邀請、打聽黑市、談判解除契約、逃離）走主動行動（actions.ts），
 // 這裡提供參考 DC、各成功程度的機制結果，以及套用結果的函式。
 
+import { pcTagMult } from './pcTags'
 import { setupPitch, setupTrain } from './perkActions'
 import { setupLeave } from './masterHome'
 import type { AdultScene } from './content'
@@ -617,7 +618,7 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
     }, 'mst')
     const contract = contractKind(madam ? slaveryRules.roles.madam : weightedPick(rng, s.contract_weights))
     // 主角出售自己：指標與色情技能讓身價變高
-    const price = slavePrice(pc, def.price_mult, rng, slaveValueOf(pc))
+    const price = slavePrice(pc, def.price_mult, rng, slaveValueOf(pc) * pcTagMult(pc, 'slave_price_mult'))
     return { master, contract, price }
   })
   if (!deal) {

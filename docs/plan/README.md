@@ -30,6 +30,10 @@
 
 ## 3. 完成紀錄
 
+### 2026-10-29 主角身分標籤的效果（點子 I10）
+
+- 9 個主角可選的標籤都有了效果（檢定的加減、商店與神殿的價格、曝露名聲的累積、被賣時的身價、戰鬥中的慾望抗性），寫在 `npc_tags.json` 的 `pc_effects`，規則見 [NPC_SYSTEM](../NPC_SYSTEM.md) 4.1 節；AI 的主角資料寫出身分。
+
 ### 2026-10-28 程式整理（R3～R7）
 
 - R3：拿掉舊的 `travel()` 與它的 `EVENT_CHANCE`、`resolveEvent`，測試改用 `src/__tests__/helpers/travel.ts`（`arriveAt` 直接抵達、`walkTo` 一路走完旅途）。旅途事件的機率只看 `travel_events.json` 的 `chance`。

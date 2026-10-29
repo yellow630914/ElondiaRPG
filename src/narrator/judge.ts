@@ -2,6 +2,7 @@
 // 主動行動：擲骰先發生，AI 拿到完整資料與骰值，自己決定成功與否（可以出乎預料）並直接寫出經過。
 // AI 只回傳 JSON；程式負責驗證、夾住數值與套用（見 src/engine/actions.ts）。
 
+import { pcTagSummary } from '@/engine/pcTags'
 import { inActiveSquad, squadIds } from '@/engine/squads'
 import { lewdSummary } from '@/engine/lewd'
 import { charmNote } from '@/engine/charm'
@@ -90,7 +91,7 @@ function pcDetail(state: GameState, adult = false): string {
   const forced = Object.values(pc.gear ?? {}).filter((g) => g?.locked && pcContract).map((g) => g!.name)
   const locked = forced.length ? `\n主人強制戴上、拿不下來的：${forced.join('、')}` : ''
   const contract = pcContract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pcContract)}${home ? `\n${home}` : ''}` : ''
-  const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
+  const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.tags?.length ? `身分（已算進情境修正）：${pcTagSummary(pc)}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
   // 慾望指標：只在可能進入親密場景的判定（數值與分段）
   const lewd = adult ? `\n慾望指標：${lewdSummary(state, pc, true)}${partyLewd(state)}\n${charmNote(state)}` : ''
   return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}`

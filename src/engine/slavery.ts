@@ -5,6 +5,7 @@
 // - 主角身為奴隸：出城、旅行前要主人同意（檢定依印記的 exit_dc）；成為奴隸時有刻印檢定，結果決定能選哪些印記；
 //   移動與旅行時可能遇到主人的突發事件：主角從三種回應選一個，或自己輸入回應交給 AI 判定。
 
+import { pcTagMult } from './pcTags'
 import { checkModifiers, modifierNote } from './perks'
 import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
 import { abilities, contractDef, lewdRules, locationById, masterEventPool, type MasterEventPool, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type MasterEventOption, type UnmarkServiceDef } from './data'
@@ -926,7 +927,8 @@ export function unmarkOffers(state: GameState): UnmarkOffer[] {
     for (const [id, def] of Object.entries(u.services) as [UnmarkServiceId, UnmarkServiceDef][]) {
       const base = { service: id, name: def.name, desc: def.desc, attr: def.attr }
       const dc = strength - def.dc_offset + (isFugitive(state) ? def.fugitive_dc ?? 0 : 0) - (sealed ? def.arcane_bonus ?? 0 : 0)
-      const fee = strength * def.price_per_point
+      // 神殿的服務：神職的身分打折
+      const fee = Math.round(strength * def.price_per_point * (def.cell === 'temple' ? pcTagMult(pcOf(state), 'service_mult') : 1))
       if (!unmarkRepOk(state, def)) continue
       if (def.where === 'cell' && cell === def.cell) out.push({ ...base, target: id, dc, fee_cc: fee })
       if (def.where === 'black_market' && cell === def.cell && blackMarketKnown(state)) out.push({ ...base, target: id, dc, fee_cc: fee })

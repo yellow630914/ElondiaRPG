@@ -8,6 +8,7 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { pcTagLustResist } from './pcTags'
 import { fusedWeapon } from './fusion'
 import { settleArena } from './arena'
 import { checkBonus, perkModifiers } from './perks'
@@ -427,6 +428,9 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     if (tf.immune.length) f.immune = tf.immune
     const faith = mod(f.attrs.fai) * L.faith_resist
     if (faith) mulResist(f.resist, { lust: Math.round(faith * 100) / 100 })
+    // 主角的身分標籤：神職的人比較不受魅惑
+    const tagResist = pcTagLustResist(ch)
+    if (tagResist) mulResist(f.resist, { lust: tagResist })
     f.lust += Math.round(f.lustMax * Math.floor(v.lewdness / L.lewd_start_per) * L.lewd_start_ratio)
     // 園區的魅氣：跨戰鬥保留的慾望（已經包含戰後的發情，不另外加）
     const carried = parkLust(state, ch.id)

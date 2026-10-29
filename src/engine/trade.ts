@@ -6,6 +6,7 @@
 // - 主角想殺價、交涉時才是主動行動（bargain）：成功程度決定這筆交易的價格倍率。
 // - 價格 = 目錄價 × 地點倍率；購買時再扣親密度折扣（每點 0.2%，最多 10%）與談判得到的長期折扣。
 
+import { pcTagMult } from './pcTags'
 import { charmLevel } from './charm'
 import { snapshot } from './character'
 import {
@@ -288,7 +289,9 @@ export function discount(state: GameState, key: string): number {
 /** 這筆交易實際要付的錢：折扣後，再依這裡所屬勢力的聲望調整（見 security.json） */
 export function dealMoney(state: GameState, key: string, deal: Deal): number {
   const base = deal.gives.filter((g) => g.type === 'money').reduce((s, g) => s + (g.amount ?? 0), 0)
-  return base > 0 ? Math.max(1, Math.round(base * (1 - discount(state, key)) * (1 + reputationBand(state).buy))) : 0
+  // 主角的身分標籤：商人買得便宜、貴族被喊高價；神殿的服務看神職的身分
+  const tag = pcTagMult(pcOf(state), typeOf(key) === 'temple' ? 'service_mult' : 'buy_mult')
+  return base > 0 ? Math.max(1, Math.round(base * (1 - discount(state, key)) * (1 + reputationBand(state).buy) * tag)) : 0
 }
 
 /** 收購價：目錄價 × 收購比例（材料是全價）× 地點倍率 × 親密度加成 × 聲望倍率 */
@@ -298,7 +301,7 @@ export function sellPrice(state: GameState, key: string, name: string): number |
   const value = itemValue(state, name)
   if (!cat || value === undefined || !shopDef(type).buys.includes(cat) || isUniqueItem(state, name)) return null
   const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
-  return Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell)))
+  return Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
 }
 
 // ---- 交易 ----

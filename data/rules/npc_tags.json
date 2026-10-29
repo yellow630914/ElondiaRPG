@@ -1,5 +1,5 @@
 {
-  "$comment": "NPC 標籤：決定活躍地點、生成機率，並給 AI 當作身分參考。kinds = 適用的 NPC 類型（commoner 普通人、adventurer 冒險者）。commoner_weight = 普通人的主要標籤權重（每位普通人抽一個主要標籤）；adventurer_chance = 冒險者帶這個標籤的機率（各自獨立）；extra_chance = 已有其他標籤時再加上這個標籤的機率（例如商人＋旅人 = 行商）。location_types = 只在這些類型的地點生成（沒寫為全部）。zone_weights 覆寫該 NPC 在各地區的權重（town 一般、noble 貴族區、palace 王城、temple 神殿、outskirts 近郊、dungeon 地下城）；地點沒有的地區會併入 town。haunt_extra = 除了所屬地點，再加入幾個相鄰的地點（沿道路，權重 haunt_extra_weight）。occupations 是普通人的職業描述；wealth 是財富等級（1 平民～4 皇族，送禮與偷竊用）。exclusive = 互斥的標籤（不會同時擁有）；dc_mods = 和帶這個標籤的人互動時的參考 DC 修正（chat、gift、flatter、hire、invite）；never_hostile = 不會因關係差而在野外動手；crime_reputation = 對他犯罪被發現時額外的聲望變化。class_mult = 冒險者依職業調整 adventurer_chance 的倍率（沒寫的職業是 1；例如聖騎士很少是惡人、常是好人）。主角也可以帶標籤（建角時最多 3 個，見 engine/pcTags.ts）：player = false 的標籤主角不能選（奴隸、娼妓由各自的系統決定）；pc_effects = 主角帶著這個標籤時的效果（bypass_reputation：所有要聲望的場所都不看聲望，例如王城、地標、神殿的服務）。說明見 docs/NPC_SYSTEM.md 第 4 節。",
+  "$comment": "NPC 標籤：決定活躍地點、生成機率，並給 AI 當作身分參考。kinds = 適用的 NPC 類型（commoner 普通人、adventurer 冒險者）。commoner_weight = 普通人的主要標籤權重（每位普通人抽一個主要標籤）；adventurer_chance = 冒險者帶這個標籤的機率（各自獨立）；extra_chance = 已有其他標籤時再加上這個標籤的機率（例如商人＋旅人 = 行商）。location_types = 只在這些類型的地點生成（沒寫為全部）。zone_weights 覆寫該 NPC 在各地區的權重（town 一般、noble 貴族區、palace 王城、temple 神殿、outskirts 近郊、dungeon 地下城）；地點沒有的地區會併入 town。haunt_extra = 除了所屬地點，再加入幾個相鄰的地點（沿道路，權重 haunt_extra_weight）。occupations 是普通人的職業描述；wealth 是財富等級（1 平民～4 皇族，送禮與偷竊用）。exclusive = 互斥的標籤（不會同時擁有）；dc_mods = 和帶這個標籤的人互動時的參考 DC 修正（chat、gift、flatter、hire、invite）；never_hostile = 不會因關係差而在野外動手；crime_reputation = 對他犯罪被發現時額外的聲望變化。class_mult = 冒險者依職業調整 adventurer_chance 的倍率（沒寫的職業是 1；例如聖騎士很少是惡人、常是好人）。主角也可以帶標籤（建角時最多 3 個，見 engine/pcTags.ts）：player = false 的標籤主角不能選（奴隸、娼妓由各自的系統決定）；pc_effects = 主角帶著這個標籤時的效果（見 docs/NPC_SYSTEM.md 4.1 節）：bypass_reputation 所有要聲望的場所都不看聲望；checks 檢定的加減（check 是篩選，和特質同格式，vs_tags 是對方的標籤）；buy_mult / sell_mult 商店的買價、賣價倍率；service_mult 神殿服務的收費倍率；exposure_mult 曝露名聲累積的倍率；slave_price_mult 主角被賣時的身價倍率；lust_resist 戰鬥中的慾望抗性（負數是受到的慾望變少）；hint 給 AI 的身分說明。說明見 docs/NPC_SYSTEM.md 第 4 節。",
   "version": 1,
   "kinds": {
     "commoner": {
@@ -31,6 +31,7 @@
   "tags": {
     "traveler": {
       "name": "旅人", "emoji": "🧳", "kinds": ["commoner", "adventurer"],
+      "pc_effects": {"checks": [{"check": {"contexts": ["travel", "road"]}, "bonus": 2}], "hint": "走過很多地方的旅人，熟悉路上的門道"},
       "commoner_weight": 0, "adventurer_chance": 0.35, "extra_chance": 0.15,
       "haunt_extra": [2, 4], "haunt_extra_weight": [0.5, 0.9],
       "wealth": 1,
@@ -38,6 +39,7 @@
     },
     "merchant": {
       "name": "商人", "emoji": "💰", "kinds": ["commoner"],
+      "pc_effects": {"checks": [{"check": {"kinds": ["haggle", "bargain"]}, "bonus": 2}, {"check": {"contexts": ["negotiation"]}, "bonus": 1}], "buy_mult": 0.95, "sell_mult": 1.1, "hint": "做生意的人，懂行情、會殺價"},
       "commoner_weight": 22,
       "zone_weights": { "town": 1.2, "outskirts": 0.1 },
       "wealth": 2,
@@ -46,6 +48,7 @@
     },
     "commoner": {
       "name": "平民", "emoji": "🧺", "kinds": ["commoner"],
+      "pc_effects": {"checks": [{"check": {"contexts": ["gate", "stealth"]}, "bonus": 1}], "exposure_mult": 0.75, "hint": "不起眼的平民，混在人群裡沒人多看一眼"},
       "commoner_weight": 60,
       "zone_weights": { "town": 1, "outskirts": 0.5 },
       "wealth": 1,
@@ -61,6 +64,7 @@
     },
     "noble": {
       "name": "貴族", "emoji": "🎩", "kinds": ["commoner", "adventurer"],
+      "pc_effects": {"checks": [{"check": {"kinds": ["chat", "flatter", "hire", "invite", "seduce"], "vs_tags": ["noble", "royal"]}, "bonus": 2}, {"check": {"kinds": ["intimidate", "bluff"], "vs_tags": ["commoner", "merchant", "traveler"]}, "bonus": 1}, {"check": {"contexts": ["gate"]}, "bonus": 1}], "buy_mult": 1.1, "exposure_mult": 1.5, "slave_price_mult": 1.5, "hint": "出身貴族，談吐與排場都看得出來；醜聞傳得特別快"},
       "commoner_weight": 8, "adventurer_chance": 0.05,
       "location_types": ["capital", "city", "port"],
       "zone_weights": { "town": 0.5, "noble": 1.5 },
@@ -70,7 +74,8 @@
       "ai_hint": "貴族出身，重視身分、禮節與家族名聲"
     },
     "royal": {
-      "name": "皇族", "emoji": "👑", "kinds": ["commoner"], "pc_effects": { "bypass_reputation": true },
+      "name": "皇族", "emoji": "👑", "kinds": ["commoner"],
+      "pc_effects": {"bypass_reputation": true, "checks": [{"check": {"kinds": ["chat", "flatter", "hire", "invite", "seduce"], "vs_tags": ["noble", "royal"]}, "bonus": 3}, {"check": {"kinds": ["intimidate"]}, "bonus": 2}, {"check": {"contexts": ["gate"]}, "bonus": 2}], "buy_mult": 1.15, "exposure_mult": 2, "slave_price_mult": 2, "hint": "王族成員，地位崇高；王族的風流事一夜之間就傳遍全國"},
       "commoner_weight": 0.6,
       "location_types": ["capital"],
       "zone_weights": { "town": 0.1, "noble": 1, "palace": 2 },
@@ -80,6 +85,7 @@
     },
     "priest": {
       "name": "神官", "emoji": "🙏", "kinds": ["commoner", "adventurer"],
+      "pc_effects": {"checks": [{"check": {"kinds": ["chat", "flatter", "gift", "hire", "invite"], "vs_tags": ["priest", "bishop", "good"]}, "bonus": 2}, {"check": {"kinds": ["seduce"]}, "bonus": -2}], "service_mult": 0.8, "lust_resist": -0.1, "slave_price_mult": 1.3, "hint": "神職人員，受人敬重；神官的身分讓人不敢輕佻"},
       "commoner_weight": 8, "adventurer_chance": 0.08,
       "class_mult": { "cleric": 4, "paladin": 2.5, "monk": 1.5, "rogue": 0.3, "barbarian": 0.3 },
       "zone_weights": { "town": 0.6, "noble": 0.4, "temple": 1.2 },
@@ -89,6 +95,7 @@
     },
     "bishop": {
       "name": "主教", "emoji": "✝️", "kinds": ["commoner"],
+      "pc_effects": {"checks": [{"check": {"kinds": ["chat", "flatter", "gift", "hire", "invite"], "vs_tags": ["priest", "bishop", "good"]}, "bonus": 3}, {"check": {"kinds": ["seduce"]}, "bonus": -3}, {"check": {"contexts": ["gate"]}, "bonus": 1}], "service_mult": 0.6, "lust_resist": -0.2, "slave_price_mult": 1.6, "hint": "教會的主教，地位崇高、受人敬畏"},
       "commoner_weight": 1,
       "location_types": ["capital", "city"],
       "zone_weights": { "town": 0.1, "noble": 0.6, "temple": 1.5 },
@@ -99,6 +106,7 @@
     "good": {
       "$comment": "好人：心地善良、樂於助人。和惡人互斥（exclusive）。dc_mods：和他互動的參考 DC 修正（聊天、送禮、獻媚、雇傭、邀請入隊都比較容易）；never_hostile：不會因為關係差就在野外動手（被攻擊過才會）；crime_reputation：偷他的東西被發現、當著人偷襲他時，聲望再多扣這麼多。當主人時的效果見 slavery.json（master_tags、master_home、master_events 的 tags）。",
       "name": "好人", "emoji": "🕊️", "kinds": ["commoner", "adventurer"],
+      "pc_effects": {"checks": [{"check": {"kinds": ["chat", "gift", "flatter", "hire", "invite"], "vs_tags": ["good"]}, "bonus": 2}, {"check": {"kinds": ["bluff"]}, "bonus": -1}], "hint": "出了名的好人，善良正直，不擅長說謊"},
       "commoner_weight": 6, "adventurer_chance": 0.12,
       "class_mult": { "paladin": 3, "cleric": 2, "monk": 1.5, "druid": 1.3, "rogue": 0.5, "barbarian": 0.8 },
       "exclusive": ["villain"],
@@ -110,6 +118,7 @@
     },
     "villain": {
       "name": "惡人", "emoji": "🗡️", "kinds": ["adventurer"],
+      "pc_effects": {"checks": [{"check": {"kinds": ["intimidate"]}, "bonus": 2}, {"check": {"kinds": ["chat", "hire", "invite"], "vs_tags": ["villain"]}, "bonus": 2}, {"check": {"kinds": ["chat", "gift", "flatter", "hire", "invite"], "vs_tags": ["good"]}, "bonus": -2}], "hint": "惡名在外的人，道上的人敬三分，正派人士避之唯恐不及"},
       "adventurer_chance": 0.1,
       "class_mult": { "paladin": 0.1, "cleric": 0.3, "monk": 0.5, "druid": 0.6, "bard": 0.8, "rogue": 2, "barbarian": 1.4 },
       "zone_weights": { "town": 0.6, "outskirts": 0.8, "dungeon": 0.9 },
