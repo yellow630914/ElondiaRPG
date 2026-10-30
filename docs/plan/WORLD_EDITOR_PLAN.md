@@ -1,6 +1,6 @@
 # 世界編輯器計畫：局部匯入、介面整理、任務流程圖、特殊任務生成器
 
-> 上層：[計畫與追蹤](README.md)（ROADMAP R11）。狀態：**E5 進行中**（進度見 2.3 節），E1～E4 還沒開始。
+> 上層：[計畫與追蹤](README.md)（ROADMAP R11）。狀態：**E5 完成**（只剩「新增先不存」延後，見 2.3 節），E1～E4 還沒開始。
 > 依 v0.4.0 之後的程式盤點。系統文件：[CONTENT_EDITOR](../CONTENT_EDITOR.md)（世界頁籤）、[CONTENT_DEPENDENCIES](../CONTENT_DEPENDENCIES.md)（引用與保護）、[STORY_QUESTS](../STORY_QUESTS.md)（特殊任務格式）、[PROMPTS](../PROMPTS.md)（AI 呼叫）。
 > 做完的部分寫回系統文件，從這裡刪掉，在 README 的「完成紀錄」記一行；玩家看得到的改動寫進 CHANGELOG 的「未發布」。
 
@@ -258,9 +258,9 @@ E5 介面整理（純 UI，可以和上面平行做）
 |---|---|---|
 | E5-0 | 來回測試（每個編輯器開內建項目、不改就存，內容不能變；任務點編輯器另外測一組涵蓋所有欄位的任務點） | ✅ `editorRoundTrip*.spec.ts`（jsdom：happy-dom 的 `<select>` 不釋放選項，記憶體會用完） |
 | E5a | 外殼：分組、篩選、設定按鈕、唯讀、頁尾、說明、斷點 | ✅ |
-| E5b | 共用元件 | 完成：`EditorHeader`（19 個編輯器）、`RequiresEditor`（9 處）、`CheckList`（內容標籤、主角形象）、物品名稱與旗標的自動完成只畫一次。還沒做：`CheckRow`（屬性＋DC）、`MonsterGroupRows`、`OptionCard`、`CellPicker` 換掉四份格子、用詞統一（✕／移除） |
-| E5c | 收起區塊與摘要 | 完成：`FoldSet` 取代 110 個 fieldset（記住收起狀態、收起時標「・有設定」）。還沒做：選項與結果的一行摘要、長說明改成 Hint |
-| E5d | 未儲存保護 | ✅ `unsaved.ts`；「新增先不存」延後 |
+| E5b | 共用元件 | ✅ `EditorHeader`（19 個編輯器）、`RequiresEditor`（9 處）、`CheckList`（內容標籤、主角形象）、`CellGrid`（五處小地圖）、`MonsterPick`（三處）、`CheckRow`（五處）、選項卡片的樣式共用、移除一列一律「✕」、物品名稱與旗標的自動完成只畫一次。地標的探索與打工在表格版面裡，屬性與 DC 照表格的樣子不換 |
+| E5c | 收起區塊與摘要 | ✅ `FoldSet` 取代 110 個 fieldset（記住收起狀態、收起時標「・有設定」）；結果的一行摘要（`OutcomeEditor`）；21 段長的固定說明改成一行的 `HelpText` |
+| E5d | 未儲存保護 | ✅ `unsaved.ts`；「新增先不存」延後（要讓每個編輯器能編還沒存的項目，改動大） |
 | E5e | CSS 小錯 | ✅ |
 | — | 文件：CONTENT_EDITOR 第 0 節、STORY_QUESTS 第 3 節 | ✅ 已寫進已完成的部分 |
 

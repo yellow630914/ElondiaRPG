@@ -184,7 +184,7 @@ function toggleCheck(o: StoryOption, on: boolean) {
           <template v-if="o.check">
             <CheckRow :check="o.check" />
           </template>
-          <button class="small" @click="node.options!.splice(i, 1)">移除選項</button>
+          <button class="small" @click="node.options!.splice(i, 1)" title="移除這個選項">✕</button>
         </div>
         <CheckList v-model="o.tags" label="選項的內容標籤" hint="設定裡關掉的標籤，這個選項不會出現（例如 NTR 分支）。" :options="CONTENT_TAG_OPTIONS" />
         <StoryAffinityEditor v-if="o.check" v-model="o.check" />
@@ -202,5 +202,4 @@ function toggleCheck(o: StoryOption, on: boolean) {
 <style scoped src="./editor.css"></style>
 <style scoped>
 .node { display: grid; gap: 6px; }
-.option { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 </style>

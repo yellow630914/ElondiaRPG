@@ -8,6 +8,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 狀態（BUFF／DEBUFF）的編輯表單：數值修正、幸運骰、優勢劣勢、傷害倍率、持續效果、命中附加、控制。存檔前是草稿
 const props = defineProps<{ id: string }>()
@@ -129,7 +130,7 @@ function remove() {
       @save="save" @discard="discard" @restore="restore" @remove="remove"
     />
     <p class="small muted">id：{{ id }}・效果：{{ preview }}</p>
-    <p class="small muted">持續回合由施加的能力或物品決定，在擁有者的回合開始時 -1。狀態要由能力（技能編輯器的「狀態」）或物品施加才會出現在戰鬥裡。</p>
+    <HelpText text="持續回合由施加的能力或物品決定，在擁有者的回合開始時 -1。狀態要由能力（技能編輯器的「狀態」）或物品施加才會出現在戰鬥裡。" />
     <UsageNote :usage="usage" :deletable="!builtin" />
 
     <FoldSet>
@@ -193,7 +194,7 @@ function remove() {
           </select>
           <input type="number" step="0.05" min="-1" max="2" class="num" :value="v" @input="setAffinity(field, k, k, Number(($event.target as HTMLInputElement).value))" />
           <span class="muted">×{{ Math.round((1 + v) * 100) / 100 }}</span>
-          <button class="small" @click="removeAffinity(field, k)">移除</button>
+          <button class="small" @click="removeAffinity(field, k)" title="移除">✕</button>
         </div>
         <button class="small" @click="addAffinity(field)">＋ {{ field === 'resist' ? '受到的傷害倍率' : '造成的傷害倍率' }}</button>
       </div>

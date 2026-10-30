@@ -30,7 +30,7 @@ function remove(id: string) {
 <template>
   <div class="row small picker">
     <span>{{ label }}</span>
-    <span v-for="id in model ?? []" :key="id" class="tag chip">{{ name(id) }} <button class="x" :title="`拿掉${name(id)}`" @click="remove(id)">×</button></span>
+    <span v-for="id in model ?? []" :key="id" class="tag chip">{{ name(id) }} <button class="x" :title="`拿掉${name(id)}`" @click="remove(id)">✕</button></span>
     <select class="add" @change="add">
       <option value="">＋ 加入角色…</option>
       <optgroup v-for="[loc, list] in groups" :key="loc" :label="loc">

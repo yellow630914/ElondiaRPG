@@ -15,6 +15,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 裝備底材與材料的編輯表單
 const props = defineProps<{ kind: 'base' | 'material'; id: string }>()
@@ -216,7 +217,7 @@ function remove() {
 
       <FoldSet v-if="!base.restraint">
         <template #legend>固定加成與材料成長</template>
-        <p class="small muted">固定加成不論材料都有；材料成長：材料的加成（鐵 0、鋼 1、秘銀 2、精金 4、星隕鐵 6）依比例加到這一項。</p>
+        <HelpText text="固定加成不論材料都有；材料成長：材料的加成（鐵 0、鋼 1、秘銀 2、精金 4、星隕鐵 6）依比例加到這一項。" />
         <div class="grid">
           <label v-for="(n, k) in MOD_NAME" :key="k">{{ n }}
             <span class="pair">

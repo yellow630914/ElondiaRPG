@@ -91,7 +91,7 @@ const picked = computed(() => (target.value.fixed && block.value ? target.value.
           <option v-for="z in ZONES" :key="z" :value="z">{{ ZONE_NAME[z] }}</option>
         </select>
         <label class="small">權重 <input v-model.number="h.weight" class="num" type="number" min="0.01" step="0.1" /></label>
-        <button class="small" @click="target.haunts!.splice(i, 1)">移除</button>
+        <button class="small" @click="target.haunts!.splice(i, 1)" title="移除">✕</button>
       </div>
       <button class="small" @click="addHaunt">＋ 活躍地點</button>
       <p v-if="!target.haunts?.length" class="small muted">沒有活躍地點時，要認識之後才找得到（在所屬地點的城區）。</p>

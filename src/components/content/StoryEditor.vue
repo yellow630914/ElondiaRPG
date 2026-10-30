@@ -20,6 +20,7 @@ import RequiresEditor from './RequiresEditor.vue'
 import CheckList from './CheckList.vue'
 import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 特殊任務的編輯表單：開頭、任務點（依劇情旗標解鎖）、完成報酬；下方檢查任務鏈與旗標的流向
 const props = defineProps<{ id: string }>()
@@ -256,7 +257,7 @@ function remove() {
 
     <FoldSet>
       <template #legend>任務點（{{ draft.nodes.length }}）</template>
-      <p class="small muted">任務點在解鎖條件（劇情旗標）成立時出現；用結果設定的旗標串起順序與分支。同時解鎖多個任務點時，玩家可以自己選順序。</p>
+      <HelpText text="任務點在解鎖條件（劇情旗標）成立時出現；用結果設定的旗標串起順序與分支。同時解鎖多個任務點時，玩家可以自己選順序。" />
       <div v-for="(n, i) in draft.nodes" :key="i" class="node-card" :class="{ open: open === i }">
         <div class="row node-head" @click="open = open === i ? null : i">
           <span>{{ ICON[n.kind] }}</span>
@@ -268,7 +269,7 @@ function remove() {
           <button class="small" title="往上" @click.stop="move(i, -1)">▲</button>
           <button class="small" title="往下" @click.stop="move(i, 1)">▼</button>
           <button class="small" title="複製" @click.stop="duplicate(i)">📄</button>
-          <button class="small" title="刪除" @click.stop="removeNode(i)">🗑️</button>
+          <button class="small" title="刪除" @click.stop="removeNode(i)">✕</button>
         </div>
         <StoryNodeEditor v-if="open === i" v-model="draft.nodes[i]!" :locked-id="doneInSave.has(draft.nodes[i]!.id)" />
       </div>

@@ -337,7 +337,7 @@ function setBase(r: Row, base: string) {
           <option value="amount">點數</option>
         </select>
       </template>
-      <button class="small x" @click="remove(i)">×</button>
+      <button class="small x" @click="remove(i)" title="移除">✕</button>
     </div>
     <select class="small" :value="''" @change="add(($event.target as HTMLSelectElement).value as RewardEffect['type']); ($event.target as HTMLSelectElement).value = ''">
       <option value="">＋ 效果…</option>

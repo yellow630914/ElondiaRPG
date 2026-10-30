@@ -38,3 +38,5 @@ label.check { display: inline-flex; gap: 4px; align-items: center; }
 .chip .gate input { width: 3.2em; padding: 0 2px; }
 /* 圖示欄位（物品、底材） */
 .icon-row { display: grid; gap: 2px; font-size: 0.9rem; }
+/* 選項與回應的卡片（任務點的選項、事件的選項、主人事件的回應） */
+.option { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; margin-bottom: 6px; }

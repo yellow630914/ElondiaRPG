@@ -8,6 +8,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 非戰鬥狀態（用餐、喝酒、受罰、祝福……，companions.json 的 conditions）的編輯表單：內建的可以修改，自建的沒有被用到時可以刪除，存檔前是草稿
 const props = defineProps<{ id: string }>()
@@ -135,10 +136,8 @@ function remove() {
       @save="save" @discard="discard" @restore="restore" @remove="remove"
     />
     <p class="small muted">id：{{ id }}・效果：{{ preview }}</p>
-    <p class="small muted">
-      非戰鬥狀態記在每個角色身上（不是戰鬥中的 BUFF／DEBUFF），由用餐、食物、工具、事件、地標或休息給予。
-      修改後，已經有這個狀態的角色馬上照新的效果算。自建的狀態要在事件、特殊任務、地標的效果選「獲得狀態」，或在物品的使用效果選它，才會給到角色身上。
-    </p>
+    <HelpText text="非戰鬥狀態記在每個角色身上（不是戰鬥中的 BUFF／DEBUFF），由用餐、食物、工具、事件、地標或休息給予。
+      修改後，已經有這個狀態的角色馬上照新的效果算。自建的狀態要在事件、特殊任務、地標的效果選「獲得狀態」，或在物品的使用效果選它，才會給到角色身上。" />
     <p v-if="system" class="small warn-text">這是由遊戲規則加上與解除的狀態：解除時機、同組與疊加不能改，只能改名稱、說明與效果。</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 

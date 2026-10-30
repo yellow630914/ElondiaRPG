@@ -14,6 +14,7 @@ import type { DrawSource } from '../items/itemIcon'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 怪物的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -222,7 +223,7 @@ function remove() {
 
     <FoldSet>
       <template #legend>抗性與攻擊加成</template>
-      <p class="small muted">受到的傷害倍率：-1 免疫、-0.5 減半、+0.5 弱點（×1.5）。攻擊加成是造成傷害的倍率加減。</p>
+      <HelpText text="受到的傷害倍率：-1 免疫、-0.5 減半、+0.5 弱點（×1.5）。攻擊加成是造成傷害的倍率加減。" />
       <AffinityRows v-model="draft.resist" label="抗性" />
       <AffinityRows v-model="draft.offense" label="攻擊加成" :max="7" />
     </FoldSet>
@@ -239,7 +240,7 @@ function remove() {
               @change="setGate(a, ($event.target as HTMLInputElement).value)"
             />%
           </label>
-          <button class="x" @click="removeAbility(a)">×</button>
+          <button class="x" @click="removeAbility(a)" title="移除">✕</button>
         </span>
         <span v-if="!draft.abilities?.length" class="small muted">（只用普通攻擊）</span>
       </div>
@@ -255,7 +256,7 @@ function remove() {
         </select>
         <button class="small" :disabled="!pickAbility" @click="addAbility">＋ 加入</button>
       </div>
-      <p class="small muted">怪物沒有法術環，所以不能用法術。「生命 ≤ X%」填了的技能要等生命降到那裡才能用（狂暴、垂死反撲），解開後 AI 會比較想用；空白是隨時能用。</p>
+      <HelpText text="怪物沒有法術環，所以不能用法術。「生命 ≤ X%」填了的技能要等生命降到那裡才能用（狂暴、垂死反撲），解開後 AI 會比較想用；空白是隨時能用。" />
       <div class="row checks">
         <span class="small">固定特徵：</span>
         <label v-for="(t, id) in monsterTraits.traits" :key="id" class="check small" :title="t.desc">
@@ -270,7 +271,7 @@ function remove() {
         <input v-model="l.item" list="cv-item-names" placeholder="物品名稱" class="grow" />
         <label class="small">機率 <input class="num" type="number" min="1" max="100" :value="percent(l.chance)" @input="l.chance = Number(($event.target as HTMLInputElement).value) / 100" />%</label>
         <label class="small">數量 <input v-model.number="l.qty" class="num" type="number" min="1" placeholder="1" /></label>
-        <button class="small" @click="draft.loot!.splice(i, 1)">移除</button>
+        <button class="small" @click="draft.loot!.splice(i, 1)" title="移除">✕</button>
         <span v-if="l.item && !itemNames.includes(l.item)" class="small warn-text">目錄裡沒有這個物品</span>
       </div>
       <button class="small" @click="addLoot">＋ 掉落物</button>
@@ -287,7 +288,7 @@ function remove() {
           </label>
         </div>
       </template>
-      <p class="small muted">另外加入：每一組是遭遇表裡的一個選項（遭遇時從所有選項平均抽一個），權重是放幾組。層主會取代原本的層主（包括原本的護衛）；要護衛時另外選。</p>
+      <HelpText text="另外加入：每一組是遭遇表裡的一個選項（遭遇時從所有選項平均抽一個），權重是放幾組。層主會取代原本的層主（包括原本的護衛）；要護衛時另外選。" />
       <div v-for="(s, i) in draft.spawns ?? []" :key="i" class="row">
         <select v-model="s.table" class="grow">
           <option v-for="t in tables" :key="t.key" :value="t.key">{{ t.label }}</option>
@@ -303,7 +304,7 @@ function remove() {
           </label>
           <label v-if="s.guards?.length" class="small"><input v-model.number="s.guards[0]![1]" class="num" type="number" min="1" max="4" /> 隻</label>
         </template>
-        <button class="small" @click="draft.spawns!.splice(i, 1)">移除</button>
+        <button class="small" @click="draft.spawns!.splice(i, 1)" title="移除">✕</button>
       </div>
       <button class="small" @click="addSpawn">＋ 出現地點</button>
     </FoldSet>

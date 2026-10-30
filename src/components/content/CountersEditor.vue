@@ -7,6 +7,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { counterValue } from '@/engine/storyFlags'
 import Hint from '../ui/Hint.vue'
+import HelpText from './HelpText.vue'
 
 // 劇情計數器：任務與事件的結果加減、條件要求範圍（說明見 docs/STORY_QUESTS.md 第 1.1 節）
 const content = useContent()
@@ -68,10 +69,8 @@ const num = (s: string): number | undefined => (s.trim() === '' || !Number.isFin
 <template>
   <div class="editor">
     <h3>🔢 劇情計數器</h3>
-    <p class="small muted">
-      特殊任務、旅途與城鎮事件的結果可以加減計數器，任務的接取條件、任務點、選項、固定 NPC 的出現與事件的條件可以要求計數器在某個範圍內。
-      例如人類方的政治故事線各自讓「人類世界的走向」主和 +1、主戰 -1，最後的史詩線看它是正是負決定走和平或開戰。
-    </p>
+    <HelpText text="特殊任務、旅途與城鎮事件的結果可以加減計數器，任務的接取條件、任務點、選項、固定 NPC 的出現與事件的條件可以要求計數器在某個範圍內。
+      例如人類方的政治故事線各自讓「人類世界的走向」主和 +1、主戰 -1，最後的史詩線看它是正是負決定走和平或開戰。" />
     <div v-for="r in rows" :key="r.id" class="stage">
       <div class="row">
         <b>{{ r.draft.name }}</b> <code class="small muted">{{ r.id }}</code>

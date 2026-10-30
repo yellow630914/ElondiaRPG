@@ -7,6 +7,7 @@ import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 雙面效應設定（docs/LEWD_STATS.md 第 7 節）：各種拘束的平常減值、受影響的檢定、戰鬥增益、免疫的狀態；忍耐、流派與鎖的倍率
 const content = useContent()
@@ -78,7 +79,7 @@ const filterText = (f: CheckFilter) => {
       :title="'⚙️ 雙面效應設定'" :kind="'rules'" :edited="edited" :dirty="dirty"
       @save="save" @discard="reset" @restore="restore"
     />
-    <p class="small muted">拘束具（底材的「拘束」種類與程度 1～3，物品可以有自己的程度）平常是檢定的減值；修了任何慾望流派、而且上了鎖時，戰鬥中反轉成增益（乘上鎖的倍率，流派契合再乘）。慾望戰鬥關閉時沒有增益，減值照算。</p>
+    <HelpText text="拘束具（底材的「拘束」種類與程度 1～3，物品可以有自己的程度）平常是檢定的減值；修了任何慾望流派、而且上了鎖時，戰鬥中反轉成增益（乘上鎖的倍率，流派契合再乘）。慾望戰鬥關閉時沒有增益，減值照算。" />
     <FoldSet>
       <template #legend>倍率</template>
       <div class="grid">
@@ -112,7 +113,7 @@ const filterText = (f: CheckFilter) => {
           <span class="muted">情境：</span>
           <label v-for="c in BIND_CONTEXTS" :key="c" class="check"><input type="checkbox" :checked="f.contexts?.includes(c)" @change="setContext(f, c, ($event.target as HTMLInputElement).checked)" /> {{ BIND_CONTEXT_NAME[c] }}</label>
           <span class="spacer" />
-          <button class="small" :disabled="draft.kinds[k].checks.length <= 1" @click="draft.kinds[k].checks.splice(i, 1)">移除這組</button>
+          <button class="small" :disabled="draft.kinds[k].checks.length <= 1" @click="draft.kinds[k].checks.splice(i, 1)" title="移除這一組">✕</button>
         </div>
         <div class="muted">同一組裡屬性和情境都勾時，兩個都要符合；都不勾是所有檢定。</div>
       </div>

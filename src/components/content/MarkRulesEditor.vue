@@ -8,6 +8,7 @@ import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 印記的用途與權重：預設印記、老鴇的印記、刻印檢定的輕重順序、奴隸市場與自賣的權重
 const content = useContent()
@@ -77,13 +78,13 @@ function restore() {
     </FoldSet>
     <FoldSet>
       <template #legend>刻印檢定的輕重順序（由輕到重）</template>
-      <p class="small muted">成為奴隸時的刻印檢定：成功可以選主人打算的或更輕的，失敗加重一級，大失敗最重。不在清單裡的印記只會從事件、市場或自訂出現。</p>
+      <HelpText text="成為奴隸時的刻印檢定：成功可以選主人打算的或更輕的，失敗加重一級，大失敗最重。不在清單裡的印記只會從事件、市場或自訂出現。" />
       <ol class="small">
         <li v-for="(id, i) in draft.severity" :key="id">
           {{ name(id) }}
           <button class="small" :disabled="i === 0" @click="move(i, -1)">↑</button>
           <button class="small" :disabled="i === draft.severity.length - 1" @click="move(i, 1)">↓</button>
-          <button class="small" :disabled="draft.severity.length <= 1" @click="draft.severity.splice(i, 1)">移除</button>
+          <button class="small" :disabled="draft.severity.length <= 1" @click="draft.severity.splice(i, 1)" title="移除">✕</button>
         </li>
       </ol>
       <select class="small" :value="''" @change="draft.severity.push(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">

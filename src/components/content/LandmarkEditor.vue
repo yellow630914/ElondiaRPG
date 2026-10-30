@@ -19,6 +19,7 @@ import RequiresEditor from './RequiresEditor.vue'
 import CheckList from './CheckList.vue'
 import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 城鎮特色地標的編輯表單：名稱、圖示、說明、AI 的氛圍、類型、位置，以及開放條件、參訪、場景、探索、打工與受訓。
 // 內建的不能換聚落、不能刪除
@@ -221,9 +222,9 @@ const wearOptions = computed(() => wearChoices())
         </select>
       </label>
       <label class="check small"><input type="checkbox" :checked="!!draft.auction" @change="($event.target as HTMLInputElement).checked ? (draft.auction = true) : delete draft.auction" /> 拍賣會（成人向：每天的拍品、出價、寄賣，規則在 lewd.json 的 auction）</label>
-      <p class="small muted">條件成立時可以選的固定場景（例如解鎖的特殊區域）：付錢、花時間，在場的人加好感，交給 AI 寫經過；成人向的場景照成人場景規則詳細描寫。預設每 3 天一次，場景之間共用。</p>
+      <HelpText text="條件成立時可以選的固定場景（例如解鎖的特殊區域）：付錢、花時間，在場的人加好感，交給 AI 寫經過；成人向的場景照成人場景規則詳細描寫。預設每 3 天一次，場景之間共用。" />
       <div v-for="(sc, i) in draft.scenes ?? []" :key="i" class="scene-box">
-        <div class="row"><b>場景 {{ i + 1 }}</b><span class="spacer" /><button class="small warn" @click="removeScene(i)">刪除</button></div>
+        <div class="row"><b>場景 {{ i + 1 }}</b><span class="spacer" /><button class="small warn" @click="removeScene(i)" title="刪除這一項">✕</button></div>
         <div class="grid">
           <label>名稱 <input v-model="sc.title" :maxlength="LANDMARK_LIMITS.title_chars" /></label>
           <label>花費（白鸛） <input v-model.number="sc.money_cc" type="number" min="0" /></label>
@@ -247,7 +248,7 @@ const wearOptions = computed(() => wearChoices())
         <div v-for="(c, j) in sc.cast ?? []" :key="j" class="grid">
           <label>角色 <select v-model="c.npc"><option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option></select></label>
           <label>這些旗標成立才在場 <FlagInput v-model="c.flags" /></label>
-          <label class="check"><button class="small" @click="sc.cast!.splice(j, 1)">移除</button></label>
+          <label class="check"><button class="small" @click="sc.cast!.splice(j, 1)" title="移除">✕</button></label>
         </div>
         <div class="row">
           <button class="small" :disabled="(sc.cast?.length ?? 0) >= LANDMARK_LIMITS.cast" @click="(sc.cast ??= []).push({ npc: namedNpcs[0]!.id })">＋ 加一個角色</button>
@@ -287,7 +288,7 @@ const wearOptions = computed(() => wearChoices())
     </FoldSet>
     <FoldSet>
       <template #legend>受訓</template>
-      <p class="small muted">勾選的特質可以在這裡受訓（缺陷是克服）。受訓的價格、時數與檢定在「特質」頁設定，存在各特質上：恢復這個地標的預設不會改回受訓清單。</p>
+      <HelpText text="勾選的特質可以在這裡受訓（缺陷是克服）。受訓的價格、時數與檢定在「特質」頁設定，存在各特質上：恢復這個地標的預設不會改回受訓清單。" />
       <div class="row checks small">
         <label v-for="p in trainPerks" :key="p.id" class="check" :title="p.desc">
           <input type="checkbox" :checked="draft.train.includes(p.id)" @change="toggleTrain(p.id, ($event.target as HTMLInputElement).checked)" />

@@ -224,7 +224,7 @@ function remove() {
           </select>
           <label v-if="draft.teaches?.length" class="check" title="成功時（沒有檢定時一定）學會事件掛的一個還沒學的技能"><input v-model="o.learn" type="checkbox" /> 學會掛的技能</label>
           <label>小時 <input v-model.number="o.hours" type="number" min="0.25" max="24" step="0.25" class="num" :placeholder="String(draft.hours)" /></label>
-          <button class="small" :disabled="draft.options.length <= 1" @click="draft.options.splice(i, 1)">移除</button>
+          <button class="small" :disabled="draft.options.length <= 1" @click="draft.options.splice(i, 1)" title="移除">✕</button>
         </div>
         <template v-if="o.check">
           <label class="block small">成功 <input v-model="o.success" :maxlength="L.result_chars" class="grow" /></label>
@@ -241,6 +241,3 @@ function remove() {
 </template>
 
 <style scoped src="./editor.css"></style>
-<style scoped>
-.option { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; margin-bottom: 6px; }
-</style>

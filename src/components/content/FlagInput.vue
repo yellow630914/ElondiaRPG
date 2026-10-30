@@ -22,7 +22,7 @@ function remove(f: string) {
 
 <template>
   <span class="flag-input">
-    <span v-for="f in model ?? []" :key="f" class="tag chip">🚩 {{ f }} <button class="x" @click="remove(f)">×</button></span>
+    <span v-for="f in model ?? []" :key="f" class="tag chip">🚩 {{ f }} <button class="x" @click="remove(f)" title="移除">✕</button></span>
     <input v-model="text" list="cv-known-flags" :placeholder="placeholder ?? '旗標名稱'" class="flag-text" @keydown.enter.prevent="add" @change="add" />
   </span>
 </template>

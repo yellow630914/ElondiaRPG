@@ -24,6 +24,7 @@ import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import RequiresEditor from './RequiresEditor.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 固定 NPC 的編輯表單：不會因為名單變動消失；可以固定在聚落的某一格、只在劇情旗標符合時出現
 const props = defineProps<{ id: string }>()
@@ -332,14 +333,14 @@ const occupations = computed(() => {
 
     <FoldSet>
       <template #legend>依劇情旗標改變出沒</template>
-      <p class="small muted">例如因為某個事件搬家：加一組「🚩a_moved 成立時：所屬萊茵堡、活躍地點萊茵堡城區」。由上往下找第一組條件成立的設定，都不成立時用上面的設定（沒有填任何旗標的一組，儲存時會被移除）。是同一個角色，親密度、關係與記憶都會延續。</p>
+      <HelpText text="例如因為某個事件搬家：加一組「🚩a_moved 成立時：所屬萊茵堡、活躍地點萊茵堡城區」。由上往下找第一組條件成立的設定，都不成立時用上面的設定（沒有填任何旗標的一組，儲存時會被移除）。是同一個角色，親密度、關係與記憶都會延續。" />
       <div v-for="(st, i) in draft.stages ?? []" :key="i" class="stage">
         <div class="row">
           <b class="small">第 {{ i + 1 }} 組</b>
           <span class="spacer" />
           <button class="small" title="往上" @click="moveStage(i, -1)">▲</button>
           <button class="small" title="往下" @click="moveStage(i, 1)">▼</button>
-          <button class="small" @click="draft.stages!.splice(i, 1)">移除</button>
+          <button class="small" @click="draft.stages!.splice(i, 1)" title="移除">✕</button>
         </div>
         <RequiresEditor :model-value="st.requires" label="這一組的條件" @update:model-value="(v) => (st.requires = v)" />
         <label class="small">時段 <Hint text="只在白天（6～18 時）或只在夜裡成立，例如只在夜裡營業的地方；其他時候照下一組或上面的設定。" />
@@ -411,7 +412,7 @@ const occupations = computed(() => {
         <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }} <input v-model.number="draft.attrs[a]" type="number" min="1" max="30" /></label>
       </div>
       <div class="chips">
-        <span v-for="a in draft.abilities ?? []" :key="a" class="tag chip" :title="abilityTable[a]?.desc">{{ abilityTable[a]?.name ?? a }} <button class="x" @click="removeAbility(a)">×</button></span>
+        <span v-for="a in draft.abilities ?? []" :key="a" class="tag chip" :title="abilityTable[a]?.desc">{{ abilityTable[a]?.name ?? a }} <button class="x" @click="removeAbility(a)" title="移除">✕</button></span>
         <span v-if="!draft.abilities?.length" class="small muted">技能：依職業與等級隨機學（{{ previewAbilities || '無' }}）</span>
       </div>
       <div class="row">
@@ -427,7 +428,7 @@ const occupations = computed(() => {
         <button class="small" :disabled="!pickAbility" @click="addAbility">＋ 加入</button>
       </div>
       <div class="chips">
-        <span v-for="id in draft.perks ?? []" :key="id" class="tag chip" :title="perkDef(id)?.desc">🌟 {{ perkDef(id)?.name ?? id }} <button class="x" @click="removePerk(id)">×</button></span>
+        <span v-for="id in draft.perks ?? []" :key="id" class="tag chip" :title="perkDef(id)?.desc">🌟 {{ perkDef(id)?.name ?? id }} <button class="x" @click="removePerk(id)" title="移除">✕</button></span>
         <span v-if="!draft.perks" class="small muted">特質：依 id 固定地抽（{{ npcPerksOf(draft).map((id) => perkDef(id)?.name).join('、') || '無' }}）</span>
         <span v-else-if="!draft.perks.length" class="small muted">特質：沒有</span>
       </div>

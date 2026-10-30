@@ -15,6 +15,7 @@ import RequiresEditor from './RequiresEditor.vue'
 import FoldSet from './FoldSet.vue'
 import CellGrid from './CellGrid.vue'
 import MonsterPick from './MonsterPick.vue'
+import HelpText from './HelpText.vue'
 
 // 特殊地圖的編輯表單：基本資料（所屬地點、給 AI 的描述、光線、刷新）、版面（畫格子或隨機挖）、
 // 額外的隨機內容、遭遇表與採集物、通道（接到城鎮區塊的牆或別張特殊地圖）。內建的不能刪除
@@ -359,7 +360,7 @@ function remove() {
           :title-of="(i) => `(${i % size[0]}, ${Math.floor(i / size[0])}) ${cellName(paintKinds[i] ?? 'wall')}`"
           @down="(i) => down(i % size[0], Math.floor(i / size[0]))" @enter="(i) => enter(i % size[0], Math.floor(i / size[0]))"
         />
-        <p class="small muted">選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；BOSS 格的怪物在下方「BOSS 格」指定；沒有出口時只能從通道進出。</p>
+        <HelpText text="選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；BOSS 格的怪物在下方「BOSS 格」指定；沒有出口時只能從通道進出。" />
       </template>
     </FoldSet>
 
@@ -378,7 +379,7 @@ function remove() {
 
     <FoldSet>
       <template #legend>遭遇表（選填）</template>
-      <p class="small muted">空白時：所屬地點是地下城就用「陷阱、寶箱比照」那一層的遭遇，其他用地區的城郊遭遇表。強敵是最強的一組再多一隻。</p>
+      <HelpText text="空白時：所屬地點是地下城就用「陷阱、寶箱比照」那一層的遭遇，其他用地區的城郊遭遇表。強敵是最強的一組再多一隻。" />
       <div v-for="(g, gi) in draft.table ?? []" :key="gi" class="row small">
         <span>第 {{ gi + 1 }} 組：</span>
         <MonsterPick v-for="(m, mi) in g" :key="mi" :entry="m" :min="L.group_count[0]" :max="L.group_count[1]" @remove="g.splice(mi, 1); if (!g.length) removeGroup(gi)" />
@@ -406,7 +407,7 @@ function remove() {
     <FoldSet>
       <template #legend>採集物（選填）</template>
       <div class="chips">
-        <span v-for="(n, i) in draft.resource_items ?? []" :key="n" class="tag chip">{{ n }} <button class="x" @click="draft.resource_items!.splice(i, 1)">×</button></span>
+        <span v-for="(n, i) in draft.resource_items ?? []" :key="n" class="tag chip">{{ n }} <button class="x" @click="draft.resource_items!.splice(i, 1)" title="移除">✕</button></span>
         <span v-if="!draft.resource_items?.length" class="small muted">（沒有時用地下城的採集表）</span>
       </div>
       <div class="row">
@@ -424,7 +425,7 @@ function remove() {
           <select v-model="s.shop"><option v-for="o in shopList" :key="o.id" :value="o.id">{{ o.name }}</option></select>
           <span>在（{{ s.x }}, {{ s.y }}）</span>
           <button class="small" :class="{ primary: tool === `shop:${si}` }" @click="tool = `shop:${si}`">在地圖上選</button>
-          <button class="small warn" @click="removeShop(si)">刪除</button>
+          <button class="small warn" @click="removeShop(si)" title="刪除這一項">✕</button>
         </div>
         <button class="small" :disabled="(draft.shops?.length ?? 0) >= L.shops" @click="addShop">＋ 擺一家店</button>
       </template>
@@ -434,7 +435,7 @@ function remove() {
       <template #legend>通道</template>
       <p v-if="draft.mode !== 'fixed'" class="small muted">只有固定地圖可以設定通道；隨機地圖只能由事件傳送進來。</p>
       <template v-else>
-        <p class="small muted">通道把這張地圖的一格和另一張地圖（城鎮區塊的牆或水、或別張特殊地圖的任一格）接起來，打開時兩頭都變成通道、互相走得過去。寫了旗標的話，旗標成立才打開。</p>
+        <HelpText text="通道把這張地圖的一格和另一張地圖（城鎮區塊的牆或水、或別張特殊地圖的任一格）接起來，打開時兩頭都變成通道、互相走得過去。寫了旗標的話，旗標成立才打開。" />
         <div v-for="(c, ci) in draft.conns" :key="ci" class="conn">
           <div class="row small">
             <strong>通道 {{ ci + 1 }}</strong>
@@ -445,7 +446,7 @@ function remove() {
             <label class="check"><input type="radio" :checked="connKind(c) === 'map'" :disabled="!otherMaps.length" @change="setConnKind(c, 'map')" /> 特殊地圖</label>
             <label v-if="parks.length" class="check" title="以這張地圖為入口廣場的園區（主題地下城）：走上去等於從入口進那座地下城"><input type="radio" :checked="connKind(c) === 'park'" @change="setConnKind(c, 'park')" /> 園區</label>
             <span class="spacer" />
-            <button class="small warn" @click="draft.conns.splice(ci, 1); tool = '#'">刪除</button>
+            <button class="small warn" @click="draft.conns.splice(ci, 1); tool = '#'" title="刪除這一項">✕</button>
           </div>
           <template v-if="connKind(c) === 'town'">
             <p class="small">城鎮那一頭：{{ townText(c) }}</p>

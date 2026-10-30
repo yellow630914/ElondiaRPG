@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { geography, npcs as namedNpcs, specialMaps, type StoryOutcome } from '@/engine/data'
+import { computed, ref } from 'vue'
+import { geography, npcs as namedNpcs, specialMaps, storyCounters, type StoryOutcome } from '@/engine/data'
 import { travelEvents } from '@/engine/road'
 import { SIDE_MAPS, STORY_EFFECTS, STORY_SCENE_CHARS } from '@/engine/storyMods'
 import type { RewardEffect } from '@/engine/effects'
@@ -24,6 +24,30 @@ function addDeath(id: string) {
 function enable(on: boolean) {
   model.value = on ? {} : undefined
 }
+// 一行摘要：寫了內容的結果預設收起來，只看這一行（點標題展開）
+const open = ref(!model.value?.text)
+const summary = computed(() => {
+  const x = o.value
+  if (!x) return ''
+  const name = (id: string) => namedNpcs.find((n) => n.id === id)?.name ?? id
+  const parts: string[] = []
+  if (x.text) parts.push(`「${x.text.length > 18 ? `${x.text.slice(0, 18)}…` : x.text}」`)
+  if (x.scene) parts.push('💗 親密場景')
+  if (x.set_flags?.length) parts.push(`→ ${x.set_flags.map((f) => `🚩${f}`).join('、')}`)
+  if (x.clear_flags?.length) parts.push(`清除 ${x.clear_flags.map((f) => `🚩${f}`).join('、')}`)
+  for (const [k, v] of Object.entries(x.counters ?? {})) parts.push(`${storyCounters[k]?.name ?? k} ${v > 0 ? '+' : ''}${v}`)
+  for (const d of x.deaths ?? []) parts.push(`💀 ${name(d)}`)
+  if (x.join) parts.push(`${name(x.join)} 同行`)
+  if (x.leave) parts.push(`${name(x.leave)} 離開`)
+  if (x.side_map) parts.push(`進入${travelEvents.side_maps[x.side_map]?.name ?? x.side_map}`)
+  if (x.special_map) parts.push(`傳送到${specialMaps[x.special_map]?.name ?? x.special_map}`)
+  if (x.travel_to) parts.push(`改去${geography.locations.find((l) => l.id === x.travel_to)?.name ?? x.travel_to}`)
+  for (const e of x.effects ?? []) parts.push(e.type === 'money' ? `${e.amount > 0 ? '+' : ''}${e.amount} 白鸛` : STORY_EFFECTS[e.type] ?? e.type)
+  if (x.complete) parts.push('✅ 完成任務')
+  if (x.fail_quest) parts.push('❌ 任務失敗')
+  if (x.retry) parts.push('↻ 可以再來')
+  return parts.join('；')
+})
 const end = computed({
   get: () => (o.value?.complete ? 'complete' : o.value?.fail_quest ? 'fail' : ''),
   set: (v: string) => {
@@ -38,12 +62,16 @@ const end = computed({
 
 <template>
   <div class="outcome">
-    <label class="check small head">
-      <input v-if="props.optional" type="checkbox" :checked="!!o" @change="enable(($event.target as HTMLInputElement).checked)" />
-      <b>{{ label }}</b>
+    <div class="row small head">
+      <button v-if="o" type="button" class="fold" :title="open ? '收起' : '展開'" :aria-expanded="open" @click="open = !open">{{ open ? '▾' : '▸' }}</button>
+      <label class="check">
+        <input v-if="props.optional" type="checkbox" :checked="!!o" @change="enable(($event.target as HTMLInputElement).checked)" />
+        <b>{{ label }}</b>
+      </label>
       <span v-if="props.optional && !o" class="muted">{{ props.event ? '（沒有寫結果：什麼也沒發生）' : '（沒有寫結果：任務點保持開放，可以再試）' }}</span>
-    </label>
-    <template v-if="o">
+      <span v-else-if="o && !open" class="muted summary-line" @click="open = true">{{ summary || '（還沒有寫內容）' }}</span>
+    </div>
+    <div v-if="o" v-show="open" class="body">
       <label class="block small">發生的事（給玩家與 AI）<textarea v-model="o.text" rows="2" maxlength="400" /></label>
       <label v-if="!props.event" class="block small">
         <span>親密場景（成人向，可以空著）<Hint text="寫了，這段經過就交給「成人場景正文」，依成人場景規則詳細描寫、不會一筆帶過。寫誰和誰、在哪裡、做了什麼；只給 AI 看。任務要標「成人向」。" /></span>
@@ -54,7 +82,7 @@ const end = computed({
       <CounterDeltasEditor v-model="o.counters" />
       <div v-if="!props.event" class="row small">
         死去的角色 <Hint text="故事裡的死亡：這些固定 NPC 在這裡死去（不用和他戰鬥），之後不再出現；需要他的其他任務會失敗。要和他戰鬥時，改用一隻代替他的怪物。" />
-        <span v-for="(d, i) in o.deaths ?? []" :key="d" class="tag chip">{{ namedNpcs.find((n) => n.id === d)?.name ?? d }} <button class="x" @click="o.deaths!.splice(i, 1); if (!o.deaths!.length) delete o.deaths">×</button></span>
+        <span v-for="(d, i) in o.deaths ?? []" :key="d" class="tag chip">{{ namedNpcs.find((n) => n.id === d)?.name ?? d }} <button class="x" @click="o.deaths!.splice(i, 1); if (!o.deaths!.length) delete o.deaths" title="移除">✕</button></span>
         <select :value="''" @change="addDeath(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
           <option value="">＋ 選擇角色</option>
           <option v-for="n in namedNpcs" :key="n.id" :value="n.id" :disabled="o.deaths?.includes(n.id)">{{ n.name }}</option>
@@ -98,12 +126,15 @@ const end = computed({
         </select>
         <label class="check"><input v-model="o.retry" type="checkbox" /> 之後可以再來一次 <Hint text="不結束這個任務點。" /></label>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
 <style scoped src="./editor.css"></style>
 <style scoped>
 .outcome { display: grid; gap: 4px; border-left: 3px solid var(--border); padding-left: 8px; }
-.head { gap: 6px; }
+.head { gap: 6px; flex-wrap: nowrap; }
+.fold { padding: 0 4px; min-height: 0; line-height: 1.2; border: none; background: none; color: var(--accent); cursor: pointer; }
+.summary-line { cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.body { display: grid; gap: 4px; }
 </style>

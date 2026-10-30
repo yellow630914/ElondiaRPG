@@ -281,7 +281,7 @@ function remove() {
             <option v-if="o.check" value="success">成功時進入</option>
             <option v-if="o.check" value="fail">失敗時進入</option>
           </select>
-          <button class="small" @click="draft.options!.splice(i, 1)">移除</button>
+          <button class="small" @click="draft.options!.splice(i, 1)" title="移除">✕</button>
         </div>
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" optional event />
         <OutcomeEditor v-if="o.check" v-model="o.fail" label="失敗" optional event />
@@ -292,6 +292,3 @@ function remove() {
 </template>
 
 <style scoped src="./editor.css"></style>
-<style scoped>
-.option { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; margin-bottom: 6px; }
-</style>

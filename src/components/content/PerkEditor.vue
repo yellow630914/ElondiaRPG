@@ -261,7 +261,7 @@ function remove() {
         <div class="row">
           <b class="small">{{ { check: '檢定加值', combat: '戰鬥修正', resist: '抗性（受到的傷害倍率）', offense: '增傷（造成的傷害倍率）' }[kindOf(e)] }}</b>
           <span class="spacer" />
-          <button class="small" @click="draft.effects.splice(i, 1)">移除</button>
+          <button class="small" @click="draft.effects.splice(i, 1)" title="移除">✕</button>
         </div>
         <template v-if="'check' in e">
           <label class="small">加值 <input v-model.number="e.bonus" type="number" :min="limits.check_bonus[0]" :max="limits.check_bonus[1]" class="num" /></label>
@@ -294,7 +294,7 @@ function remove() {
             </select>
             倍率 {{ v >= 0 ? '+' : '' }}{{ v }}（×{{ 1 + v }}）
             <input type="number" step="0.25" :value="v" class="num" @input="setAffinity('resist' in e ? e.resist : e.offense, k, k, Number(($event.target as HTMLInputElement).value))" />
-            <button class="small" @click="delete ('resist' in e ? e.resist : e.offense)[k]">×</button>
+            <button class="small" @click="delete ('resist' in e ? e.resist : e.offense)[k]" title="移除">✕</button>
           </div>
           <button class="small" @click="setAffinity('resist' in e ? e.resist : e.offense, '', dmgTypes.find(([id]) => !(id in ('resist' in e ? e.resist : e.offense)))?.[0] ?? dmgTypes[0]![0], 'resist' in e ? -0.25 : 0.25)">＋ 傷害類型</button>
         </template>

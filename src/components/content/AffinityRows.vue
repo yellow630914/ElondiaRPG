@@ -38,7 +38,7 @@ function add() {
       </select>
       <input type="number" step="0.25" :min="-1" :max="props.max" :value="v" @change="set(k, k, Number(($event.target as HTMLInputElement).value))" />
       <span class="small muted">×{{ Math.max(0, Math.round((1 + v) * 100) / 100) }}</span>
-      <button class="small" @click="remove(k)">×</button>
+      <button class="small" @click="remove(k)" title="移除">✕</button>
     </span>
     <button class="small" @click="add">＋</button>
   </div>

@@ -24,6 +24,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 物品的編輯表單：基本資料、出現的地方（商店、掉落、寶箱、採集、事件）、消耗品效果、裝備組成
 const props = defineProps<{ name: string }>()
@@ -399,7 +400,7 @@ function setFuel(v: string) {
           </select>
           <label class="small">機率 <input class="num" type="number" min="1" max="100" :value="Math.round(d.chance * 100)" @input="d.chance = Number(($event.target as HTMLInputElement).value) / 100" />%</label>
           <label class="small">數量 <input v-model.number="d.qty" class="num" type="number" min="1" /></label>
-          <button class="small" @click="drops.splice(i, 1)">移除</button>
+          <button class="small" @click="drops.splice(i, 1)" title="移除">✕</button>
         </div>
         <button class="small" @click="addDrop">＋ 掉落的怪物</button>
         <p class="small muted">掉落設定存在怪物身上（和怪物編輯頁的掉落物是同一份）。</p>
@@ -509,7 +510,7 @@ function setFuel(v: string) {
           <input v-model.number="draft.burns" type="number" min="0" max="999" />
         </label>
       </div>
-      <p class="small muted">照明：在黑暗的地方每走一格燒掉一點。「燒什麼」填燃料物品的名稱（例如油燈燒燈油，燈油本身要填能照亮幾格）；空白而且有「能照亮幾格」時燒掉工具本身（火把）；都沒有時不會燒掉（魔法照明石）。</p>
+      <HelpText text="照明：在黑暗的地方每走一格燒掉一點。「燒什麼」填燃料物品的名稱（例如油燈燒燈油，燈油本身要填能照亮幾格）；空白而且有「能照亮幾格」時燒掉工具本身（火把）；都沒有時不會燒掉（魔法照明石）。" />
       <div class="row small">
         <label>鎖
           <select :value="draft.lock ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.lock = ($event.target as HTMLSelectElement).value as LockGrade) : delete draft.lock">
@@ -526,7 +527,7 @@ function setFuel(v: string) {
         </label>
         <Hint text="成人向（docs/LEWD_STATS.md 第 16 節）：打開別人鎖在身上的拘束具（主人強制戴上的），用一次就沒了，鎖歸自己。" />
       </div>
-      <p class="small muted">行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。</p>
+      <HelpText text="行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。" />
     </FoldSet>
 
     <FoldSet v-if="draft.category === 'furniture'">
@@ -576,7 +577,7 @@ function setFuel(v: string) {
         <div v-for="(x, i) in draft.recipe.inputs" :key="i" class="row">
           <input v-model="x.name" list="recipe-items" placeholder="材料名稱" />
           ×<input v-model.number="x.qty" type="number" min="1" max="99" class="qty" />
-          <button class="small" :disabled="draft.recipe.inputs.length <= 1" @click="draft.recipe.inputs.splice(i, 1)">刪除</button>
+          <button class="small" :disabled="draft.recipe.inputs.length <= 1" @click="draft.recipe.inputs.splice(i, 1)" title="刪除這一項">✕</button>
         </div>
         <button v-if="draft.recipe.inputs.length < 6" class="small" @click="draft.recipe.inputs.push({ name: '', qty: 1 })">＋ 材料</button>
         <p class="small muted">做的人擲{{ craftRules.skills[draft.recipe.craft].name }}的屬性檢定，加工藝等級；DC {{ craftRules.recipe.dc[(draft.recipe.level || 1) - 1] }}，工具要{{ craftRules.tool_tier_names[craftRules.tool_tier[(draft.recipe.level || 1) - 1]! - 1] }}。材料最多 6 種；沒填名稱的材料不會存。</p>
@@ -598,7 +599,7 @@ function setFuel(v: string) {
         </div>
         <div v-for="(_, i) in draft.seed.yields" :key="i" class="row">
           <input v-model="draft.seed.yields[i]" list="recipe-items" placeholder="長出的物品" />
-          <button class="small" :disabled="draft.seed.yields.length <= 1" @click="draft.seed.yields.splice(i, 1)">刪除</button>
+          <button class="small" :disabled="draft.seed.yields.length <= 1" @click="draft.seed.yields.splice(i, 1)" title="刪除這一項">✕</button>
         </div>
         <button v-if="draft.seed.yields.length < 5" class="small" @click="draft.seed.yields.push('')">＋ 作物</button>
         <p class="small muted">有好幾種作物時，收成時隨機長出其中一種。</p>
@@ -645,7 +646,7 @@ function setFuel(v: string) {
           </select>
         </label>
       </div>
-      <p class="small muted">在行囊按「🔍 解讀」：和向情報商買情報一樣記進冒險筆記，用掉這件物品。AI 自創的情報物品是解讀地點附近隨機的事件點。</p>
+      <HelpText text="在行囊按「🔍 解讀」：和向情報商買情報一樣記進冒險筆記，用掉這件物品。AI 自創的情報物品是解讀地點附近隨機的事件點。" />
     </FoldSet>
 
     <FoldSet v-if="draft.category === 'equipment'">

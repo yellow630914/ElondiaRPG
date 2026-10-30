@@ -128,7 +128,7 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
       </select>
       ≥ <input :value="r.min ?? ''" type="number" class="num" placeholder="不限" @change="setRow(id, id, { ...r, min: num(($event.target as HTMLInputElement).value) })" />
       且 ≤ <input :value="r.max ?? ''" type="number" class="num" placeholder="不限" @change="setRow(id, id, { ...r, max: num(($event.target as HTMLInputElement).value) })" />
-      <button class="small" @click="remove(id)">移除</button>
+      <button class="small" @click="remove(id)" title="移除">✕</button>
     </span>
     <button v-if="counterIds.length" class="small" @click="add">＋ 計數器條件</button>
   </div>
@@ -144,7 +144,7 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
       <select :value="tamedOf(r)" @change="setTamed(id, r, ($event.target as HTMLSelectElement).value)">
         <option value="">馴服不限</option><option value="yes">已馴服</option><option value="no">還沒馴服</option>
       </select>
-      <button class="small" @click="removeP(id)">移除</button>
+      <button class="small" @click="removeP(id)" title="移除">✕</button>
     </span>
     <button class="small" @click="addP">＋ 寄生物條件</button>
   </div>

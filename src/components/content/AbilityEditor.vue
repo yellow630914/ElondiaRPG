@@ -245,7 +245,7 @@ function remove() {
         <label v-if="d.type === 'lust'" class="check" title="目標的魅惑受傷倍率至少 ×0.5（對不死、構裝也有效）"><input v-model="d.pierce" type="checkbox" /> 穿透</label>
         <label>每 <input :value="d.scale?.per ?? ''" class="num" type="number" min="1" max="20" placeholder="4" @input="d.scale && (d.scale.per = Number(($event.target as HTMLInputElement).value) || 4)" /> 級多</label>
         <input :value="d.scale?.dice ?? ''" class="num" placeholder="（不加）" @change="setScale(d, ($event.target as HTMLInputElement).value.trim())" />
-        <button class="small" @click="draft.damage!.splice(i, 1)">移除</button>
+        <button class="small" @click="draft.damage!.splice(i, 1)" title="移除">✕</button>
       </div>
       <button class="small" @click="addDamage">＋ 傷害</button>
     </FoldSet>
@@ -292,7 +292,7 @@ function remove() {
         <label title="目標的慾望達到上限的這個比例才套用">慾望 ≥ <input class="num" type="number" min="0" max="100" :value="ifLustPct(a)" placeholder="—" @input="setIfLust(a, ($event.target as HTMLInputElement).value)" />%</label>
         <label class="check" title="目標身上有奴隸印記才套用（驅奴術）"><input v-model="a.if_slave" type="checkbox" /> 只對奴隸</label>
         <label class="check" title="目標的等級比施放者低才套用（威壓）"><input v-model="a.if_weaker" type="checkbox" /> 只對等級低的</label>
-        <button class="small" @click="draft.apply!.splice(i, 1)">移除</button>
+        <button class="small" @click="draft.apply!.splice(i, 1)" title="移除">✕</button>
       </div>
       <button class="small" @click="addApply">＋ 狀態</button>
     </FoldSet>

@@ -7,6 +7,7 @@ import { CATEGORY_ORDER } from '../items/itemInfo'
 import { categoryArt, refPath } from '../items/itemIcon'
 import IconField from './IconField.vue'
 import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 類別圖示：8 種物品類別的預設圖示。沒有自己的圖、也不是裝備的物品用這裡的圖；換了立刻儲存
 const content = useContent()
@@ -40,9 +41,7 @@ function restore() {
       <span class="spacer" />
       <button class="small" :disabled="!edited || content.readOnly" @click="restore">↩️ 類別圖示全部恢復預設</button>
     </div>
-    <p class="small muted">
-      物品的圖示依序找：物品自己上傳的圖 → 裝備的底材圖（底材頁可以上傳）→ 這裡的類別圖。換了立刻儲存，存在這個世界裡。
-    </p>
+    <HelpText text="物品的圖示依序找：物品自己上傳的圖 → 裝備的底材圖（底材頁可以上傳）→ 這裡的類別圖。換了立刻儲存，存在這個世界裡。" />
     <p v-if="content.readOnly" class="small muted">原版世界不能直接修改：換圖示時會自動建立自己的世界並切換過去。</p>
     <FoldSet>
       <template #legend>類別</template>
