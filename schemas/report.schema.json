@@ -38,6 +38,20 @@
       "description": "敵人、NPC 等非玩家方角色",
       "items": { "$ref": "#/$defs/actor_state" }
     },
+    "bystanders": {
+      "type": "array",
+      "description": "旁邊的人（不參與這次事件）：名字、身分與正在做什麼，交給敘事當背景",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "role", "doing"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "role": { "type": "string" },
+          "doing": { "type": "string" }
+        }
+      }
+    },
     "quest": {
       "type": "object",
       "properties": {

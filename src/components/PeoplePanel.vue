@@ -10,6 +10,7 @@ import { affinityTable, itemValue, type InteractionKind } from '@/engine/interac
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcRecord, npcTitle } from '@/engine/npcs'
 import { isGuarded, isHostile, type PresentNpc } from '@/engine/population'
+import { npcActivity } from '@/engine/activities'
 import { inActiveSquad } from '@/engine/squads'
 import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
@@ -72,6 +73,9 @@ watch(() => [stateKey(game.state), people.value.map((p) => `${p.rec.id}=${rel(p.
 function rel(id: string) {
   return s.value.relationships?.[id]
 }
+
+/** 每個人正在做什麼（固定亂數，依時段記住；不用 AI） */
+const doing = computed(() => Object.fromEntries(people.value.map((p) => [p.rec.id, npcActivity(s.value, p, game.area)])))
 
 function hostile(p: PresentNpc): boolean {
   return isHostile(s.value, p.rec)
@@ -233,6 +237,7 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
             <span v-for="t in tagsOf(p.rec)" :key="t.name" class="tag small" :title="t.ai_hint">{{ t.emoji }}{{ t.name }}</span>
             <span v-if="rel(p.rec.id)" class="tag known" :title="`親密度 ${rel(p.rec.id)!.affinity}`"><GameIcon name="heart" :size="11" />{{ affinityStage(rel(p.rec.id)!.affinity) }}</span>
           </div>
+          <div v-if="doing[p.rec.id] && !captive(p)" class="doing small muted" :title="doing[p.rec.id]" @click="open = open === p.rec.id ? null : p.rec.id">{{ doing[p.rec.id] }}</div>
 
           <div v-if="open === p.rec.id" class="detail small">
             <div class="muted">{{ genderName(p.rec.gender) }}・{{ raceName(p.rec.race) }}<template v-if="p.rec.lineage">（{{ p.rec.lineage }}）</template>・{{ npcTitle(p.rec) }} Lv.{{ p.rec.level }}</div>
@@ -344,7 +349,9 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
 .known { color: var(--accent); border-color: var(--gold-lo); }
 .why { margin: 0; }
 .bad { color: var(--danger); border-color: var(--danger); }
-li.far .line { opacity: 0.7; }
+li.far .line, li.far .doing { opacity: 0.7; }
+/* 正在做什麼：名字下面一行，對齊頭像右邊 */
+.doing { padding-left: 34px; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 li.open { background: #c99a4510; outline: 1px solid var(--gold-lo); border-radius: 3px; padding: 6px; }
 .detail { display: grid; gap: 4px; margin-top: 4px; grid-template-columns: minmax(0, 1fr); }
 .detail input, .detail select { min-width: 0; }

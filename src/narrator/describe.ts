@@ -144,6 +144,8 @@ export function humanizeReport(report: Report) {
     },
     party: report.party.map(actor),
     others: report.others?.map(actor),
+    // 旁邊的人另外放在 <bystanders>
+    bystanders: undefined,
     timeline: report.timeline?.map((t) => ({
       ...t,
       actor: names[t.actor] ?? t.actor,

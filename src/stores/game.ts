@@ -15,6 +15,7 @@ import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as deadlines from '@/engine/deadlines'
 import * as restraints from '@/engine/restraints'
 import { pitchTarget } from '@/engine/perks'
+import { noteBystanders } from '@/engine/activities'
 import { computed, ref, toRaw, watch } from 'vue'
 import * as actions from '@/engine/actions'
 import * as combat from '@/engine/combat'
@@ -365,6 +366,8 @@ export const useGame = defineStore('game', () => {
       saveSoon()
       const settings = useSettings()
       const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
+      // 旁邊的人在做什麼：交給敘事當背景（不用 AI，見 activities.ts）
+      if (report) noteBystanders(state.value, report)
       // 自動存檔：長休、抵達目的地
       if (report?.kind === 'rest' && report.outcome.tags?.includes('長休')) void autoSave('長休')
       if (report?.kind === 'travel' && report.outcome.result === 'arrived') void autoSave('抵達')

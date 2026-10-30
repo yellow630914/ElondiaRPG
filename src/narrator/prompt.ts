@@ -123,6 +123,12 @@ export function continuitySections(c?: Continuity): { sections: PromptSection[];
 }
 
 /** 把區塊依序接成 system 與 user（空的區塊略過） */
+/** 旁邊的人（報告的 bystanders）：名字、身分與正在做什麼，一人一行 */
+export function bystandersText(report: Pick<Report, 'bystanders'>): string {
+  const list = report.bystanders ?? []
+  return list.length ? `<bystanders>\n${list.map((b) => `- ${b.name}（${b.role}）：${b.doing}`).join('\n')}\n</bystanders>` : ''
+}
+
 export function assemble(sections: PromptSection[]): Prompt {
   const kept = sections.filter((s) => s.text.trim())
   const join = (part: PromptSection['part']) =>
@@ -306,6 +312,9 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
     : report.narration?.mode === 'defeat_event' ? '\n- 戰敗事件的後半段：依主角的反應與成功程度寫出經過' : ''
   const sceneLine = scene ? `\n- 成人場景：${scene}；依 <adult_scene> 的規則在正文中詳細描寫經過` : ''
   const variety = opts.variety ? `\n- 這次的寫法：${opts.variety}` : ''
+  const bystanders = report.bystanders?.length
+    ? '\n- <bystanders> 是剛好在旁邊的人和他們正在做的事，不是這次事件的參與者：可以當背景帶過一兩筆，讓場景有人在過日子；不要讓他們加入事件或搶戲，也不要替他們做決定'
+    : ''
 
   return assemble([
     { key: 'rules', title: '敘事規則', part: 'system', text: rules },
@@ -320,13 +329,14 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },
     { key: 'context', title: '人際關係與冒險記憶', part: 'user', text: opts.context ?? '' },
     ...continuity.sections,
+    { key: 'bystanders', title: '旁邊的人', part: 'user', text: bystandersText(report) },
     { key: 'report', title: '報告', part: 'user', text: `<report>\n${JSON.stringify(humanizeReport(report), null, 2)}\n</report>` },
     endNotesSection(opts.endNotes),
     {
       key: 'request', title: '本次要求', part: 'user',
       text: `本次要求：
 - 視角：${pov}
-- 篇幅：${length}${defeat}${sceneLine}${variety}${continuity.narrationNote}${intent}${focus}
+- 篇幅：${length}${defeat}${sceneLine}${variety}${bystanders}${continuity.narrationNote}${intent}${focus}
 請依照上述報告寫出這次事件的詳細經過。`,
     },
   ])

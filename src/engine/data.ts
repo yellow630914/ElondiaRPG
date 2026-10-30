@@ -20,6 +20,7 @@ import slaveryJson from '@data/rules/slavery.json'
 import actionsJson from '@data/rules/actions.json'
 import npcPoolJson from '@data/world/npc_pool.json'
 import npcTagsJson from '@data/rules/npc_tags.json'
+import npcActivitiesJson from '@data/rules/npc_activities.json'
 import populationJson from '@data/rules/npc_population.json'
 import itemsJson from '@data/rules/items.json'
 import shopsJson from '@data/rules/shops.json'
@@ -1587,6 +1588,29 @@ export const npcTags = npcTagsJson as unknown as {
   gendered_occupations?: { female: string; male: string; neutral: string }[]
   tags: Record<string, NpcTagDef>
 }
+
+/** NPC 正在做什麼的時段（見 data/rules/npc_activities.json、activities.ts） */
+export type ActivityPeriod = 'dawn' | 'day' | 'evening' | 'night'
+/** 一條活動規則：沒寫的條件不限，條件越多越優先 */
+export interface ActivityRule {
+  at?: string[]
+  area?: string[]
+  kind?: NpcKind
+  staff?: boolean
+  tags?: string[]
+  occupation?: string[]
+  personality?: string[]
+  when?: ActivityPeriod[]
+  hostile?: boolean
+  weight?: number
+  list: string[]
+}
+export const npcActivities = npcActivitiesJson as unknown as {
+  slot_hours: number
+  periods: Record<ActivityPeriod, [number, number]>
+  rules: ActivityRule[]
+}
+
 export const population = populationJson as unknown as {
   /** 有娼館的城鎮，名單上至少有幾位娼妓 */
   brothel_workers: number
