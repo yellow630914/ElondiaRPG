@@ -345,6 +345,39 @@ const abilityTabs = computed<AbilityTab[]>(() => [
   { id: 'item', label: '道具', count: items.value.length },
 ].filter((t) => t.count > 0))
 const abilityTab = ref('skill')
+// 名字放不下時來回捲動（敵人名字後面的 A、B 才看得到）；換字、換寬度時重新量
+const marqueeFit = (el: HTMLElement) => {
+  const over = el.scrollWidth - el.clientWidth
+  el.classList.toggle('run', over > 1)
+  if (over > 1) {
+    el.style.setProperty('--marq-d', `${-over}px`)
+    el.style.setProperty('--marq-t', `${Math.max(3, over / 12 + 2)}s`)
+  }
+}
+const marqueeObs = typeof ResizeObserver === 'function' ? new ResizeObserver((es) => { for (const e of es) marqueeFit(e.target as HTMLElement) }) : null
+const vMarquee = {
+  mounted: (el: HTMLElement) => { marqueeFit(el); marqueeObs?.observe(el) },
+  updated: (el: HTMLElement) => marqueeFit(el),
+  unmounted: (el: HTMLElement) => marqueeObs?.unobserve(el),
+}
+onBeforeUnmount(() => marqueeObs?.disconnect())
+// 手機：選目標時把能選的卡片捲進畫面（矮螢幕上敵人可能在行動區下面）
+watch(pending, (p) => {
+  if (!p || !isMobile.value) return
+  void nextTick(() => {
+    const f = field.value
+    const cards = f?.querySelectorAll<HTMLElement>('.targetable')
+    if (!f || !cards?.length) return
+    // 盡量讓全部能選的卡片都在畫面裡；放不下時以第一張為準
+    const base = f.getBoundingClientRect().top - f.scrollTop
+    const top = cards[0]!.getBoundingClientRect().top - base
+    const bottom = cards[cards.length - 1]!.getBoundingClientRect().bottom - base
+    let y = f.scrollTop
+    if (bottom > y + f.clientHeight) y = bottom - f.clientHeight
+    if (top < y) y = top
+    if (y !== f.scrollTop) f.scrollTo({ top: y, behavior: 'smooth' })
+  })
+})
 watch(abilityTabs, (tabs) => { if (!tabs.some((t) => t.id === abilityTab.value)) abilityTab.value = tabs[0]?.id ?? 'skill' }, { immediate: true })
 
 /** 卡片上最多兩個狀態，其餘「+N」（長按看全部） */
@@ -507,7 +540,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
           >
             <div class="l1">
               <span v-if="c.headliner" class="crown" title="以 BOSS 出場"><GameIcon name="crown" :size="14" /></span>
-              <strong class="fname foe-name"><ContentIcon v-if="c.defId" kind="monster" :id="c.defId" :size="22" />{{ c.name }}</strong>
+              <strong class="fname foe-name"><ContentIcon v-if="c.defId" kind="monster" :id="c.defId" :size="22" /><span v-marquee class="marquee"><span>{{ c.name }}</span></span></strong>
               <span class="small muted">Lv.{{ c.level }}</span>
               <span v-if="downText(c)" class="tag bad state">{{ downText(c) }}</span>
             </div>
@@ -557,12 +590,14 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
         <h3 class="title"><GameIcon name="d20" :size="16" />{{ actor.name }} 的行動</h3>
         <span class="tag ap-left">剩餘 <strong>{{ actor.ap }}</strong> AP</span>
         <button v-if="isMobile && !pending" class="small end-turn" @click="send({ type: 'end_turn' })">結束回合</button>
+        <!-- 手機：取消固定在這一行的右邊，目標再多也不會被擠出畫面 -->
+        <button v-if="isMobile && pending" class="small end-turn" @click="pending = null">取消</button>
       </div>
       <template v-if="pending">
         <p class="small muted">{{ isMobile ? '選擇目標：點發亮的卡片，或用下面的按鈕' : '選擇目標：點上方發亮的卡片，或用下面的按鈕（Esc 取消）' }}</p>
-        <div class="row">
+        <div class="row targets">
           <button v-for="t in targets" :key="t.id" @click="chooseTarget(t.id)">{{ t.name }}（{{ t.hp }}/{{ t.maxHp }}）</button>
-          <button class="small" @click="pending = null">取消</button>
+          <button v-if="!isMobile" class="small" @click="pending = null">取消</button>
         </div>
       </template>
       <template v-else>
@@ -750,6 +785,15 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .fighter.targetable:hover { box-shadow: 0 0 0 1px var(--gold-hi), 0 0 14px #f0d08399; }
 .l1, .l2 { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .l1 .fname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.l1 .foe-name { display: flex; align-items: center; }
+.marquee { display: block; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.marquee.run { text-overflow: clip; }
+.marquee.run > span { display: inline-block; animation: marquee var(--marq-t, 4s) ease-in-out infinite alternate; }
+@keyframes marquee { 0%, 20% { transform: translateX(0); } 80%, 100% { transform: translateX(var(--marq-d, 0)); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee.run { text-overflow: ellipsis; }
+  .marquee.run > span { display: inline; animation: none; }
+}
 .l1 > .small { white-space: nowrap; }
 .state { margin-left: auto; padding: 0 5px; }
 .l3 { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; min-height: 0; }
@@ -840,6 +884,8 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .actions.m { position: static; margin: 0; padding: 8px 10px 10px; box-shadow: none; border-left: none; border-right: none; border-radius: 0; }
 .actions.m .end-turn { margin-left: auto; }
 .actions.m .row { flex-wrap: nowrap; gap: 6px; }
+.actions.m .targets { overflow-x: auto; padding-bottom: 2px; }
+.actions.m .targets button { flex: none; }
 .actions.m .basics { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); margin: 6px 0; }
 .actions.m .basics button { min-height: 42px; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-skills :deep(.st-bar) { margin-bottom: 6px; }

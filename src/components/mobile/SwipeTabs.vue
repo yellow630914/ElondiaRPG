@@ -42,7 +42,11 @@ function place(offset = 0, animate = true, scrollBar = animate) {
     const a = btns[i], b = btns[j] ?? a
     ink.style.width = `${a.offsetWidth + (b.offsetWidth - a.offsetWidth) * f}px`
     ink.style.transform = `translateX(${a.offsetLeft + (b.offsetLeft - a.offsetLeft) * f}px)`
-    if (scrollBar) a.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+    // 分頁列只橫向捲到看得到目前的分頁（不用 scrollIntoView：它也會捲動外層的頁面）
+    const bar = barEl.value
+    if (scrollBar && bar && (a.offsetLeft < bar.scrollLeft || a.offsetLeft + a.offsetWidth > bar.scrollLeft + bar.clientWidth)) {
+      bar.scrollTo({ left: a.offsetLeft - (bar.clientWidth - a.offsetWidth) / 2, behavior: animate ? 'smooth' : 'auto' })
+    }
   }
 }
 function select(id: string) {
@@ -54,7 +58,8 @@ watch(() => props.swipe, (on) => { if (on) nextTick(() => place(0, false)) })
 // 目前分頁的內容長高或變矮時（展開清單、載入），容器跟著變
 let ro: ResizeObserver | null = null
 onMounted(() => {
-  nextTick(() => place(0, false))
+  // 一打開就在後面的分頁（例如升級時直接開「能力」）：分頁列也要捲過去
+  nextTick(() => place(0, false, true))
   if (typeof ResizeObserver === 'function') {
     ro = new ResizeObserver(() => { if (props.swipe && !dragging) place(0, true, false) })
     watch([trackEl, idx], () => {

@@ -19,7 +19,7 @@ import { eventDialogOpen } from '../events/eventQueue'
 import GameIcon from '../ui/GameIcon.vue'
 import type { IconName } from '../ui/iconPaths'
 import BottomSheet from './BottomSheet.vue'
-import { OPEN_ACTION_EVENT } from './mobile'
+import { OPEN_ACTION_EVENT, guardExit } from './mobile'
 
 // 手機版的冒險畫面（寬度 720px 以下，見 docs/plan/MOBILE_UI_PLAN.md）：
 // 上：狀態列（只看）→ 地圖（探索時大、閱讀時縮成一條）→ 日誌與主動行動列 → 情境按鈕 → 底部分頁列。
@@ -73,6 +73,9 @@ function toggleSheet(k: Sheet) {
 const onOpenAction = () => { sheet.value = null }
 window.addEventListener(OPEN_ACTION_EVENT, onOpenAction)
 onBeforeUnmount(() => window.removeEventListener(OPEN_ACTION_EVENT, onOpenAction))
+// 冒險畫面上沒有面板時按返回鍵：先提示，兩秒內再按一次才離開遊戲
+guardExit(() => game.flash('再按一次返回鍵離開遊戲'))
+onBeforeUnmount(() => guardExit(null))
 // 換了格子、開始戰鬥：設施面板關掉（內容已經不是同一個地方）
 watch(() => `${area.value.key}|${s.value.position?.x},${s.value.position?.y}`, () => { if (sheet.value === 'place') sheet.value = null })
 watch(inCombat, (on) => { if (on) sheet.value = null })
@@ -117,8 +120,12 @@ watch(narrating, (id) => { if (id) reading.value = true })
 const root = ref<HTMLElement | null>(null)
 let kb: { reports: number } | null = null
 const typing = (el: Element | null) => el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && ['text', 'search', ''].includes(el.type))
+// 打字時（鍵盤打開）情境按鈕與分頁列也藏起來，把高度讓給日誌與文字框
+const kbOpen = ref(false)
 function onFocusIn(e: FocusEvent) {
-  if (!typing(e.target as Element) || reading.value) return
+  if (!typing(e.target as Element)) return
+  kbOpen.value = true
+  if (reading.value) return
   kb = { reports: s.value.reports.length }
   reading.value = true
 }
@@ -126,6 +133,7 @@ function onFocusOut(e: FocusEvent) {
   if (!typing(e.target as Element)) return
   setTimeout(() => {
     const now = document.activeElement
+    if (!typing(now)) kbOpen.value = false
     // 換到另一個文字框、或還在主動行動列裡（選對象、能力）：鍵盤沒收起或馬上會再打開
     if (!kb || typing(now) || (now && root.value?.querySelector('.action-bar')?.contains(now))) return
     const before = kb
@@ -137,7 +145,7 @@ function onFocusOut(e: FocusEvent) {
 </script>
 
 <template>
-  <div ref="root" class="mobile-game" @focusin="onFocusIn" @focusout="onFocusOut">
+  <div ref="root" class="mobile-game" :class="{ typing: kbOpen }" @focusin="onFocusIn" @focusout="onFocusOut">
     <!-- 狀態列：只看不按（待處理的鈴鐺除外） -->
     <header v-if="!inCombat" class="status">
       <span class="cell"><GameIcon :name="hud.daytime ? 'sun' : 'moon'" :size="14" :class="hud.daytime ? 'sun' : 'night'" /><b>第{{ hud.day }}天 {{ hud.clock }}</b></span>
@@ -266,6 +274,7 @@ function onFocusOut(e: FocusEvent) {
 .ctx button { flex: 1; min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; letter-spacing: 0.06em; }
 .ctx.two button:last-child { flex: 0 0 auto; font-weight: 400; }
 
+.typing .ctx, .typing .tabbar { display: none; }
 .tabbar { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); background: linear-gradient(180deg, #2a2017, #17110c); border-top: 1px solid var(--gold-lo); }
 .tabbar button {
   position: relative; min-height: 56px; padding: 0; display: grid; justify-items: center; align-content: center; gap: 2px;
