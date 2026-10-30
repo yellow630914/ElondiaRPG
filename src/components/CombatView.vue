@@ -18,6 +18,7 @@ import ContentIcon from './icons/ContentIcon.vue'
 import BottomSheet from './mobile/BottomSheet.vue'
 import SwipeTabs from './mobile/SwipeTabs.vue'
 import { isMobile } from './mobile/mobile'
+import { vMarquee } from './marquee'
 
 const emit = defineEmits<{ finished: []; open: [what: 'party' | 'settings'] }>()
 const game = useGame()
@@ -345,22 +346,6 @@ const abilityTabs = computed<AbilityTab[]>(() => [
   { id: 'item', label: '道具', count: items.value.length },
 ].filter((t) => t.count > 0))
 const abilityTab = ref('skill')
-// 名字放不下時來回捲動（敵人名字後面的 A、B 才看得到）；換字、換寬度時重新量
-const marqueeFit = (el: HTMLElement) => {
-  const over = el.scrollWidth - el.clientWidth
-  el.classList.toggle('run', over > 1)
-  if (over > 1) {
-    el.style.setProperty('--marq-d', `${-over}px`)
-    el.style.setProperty('--marq-t', `${Math.max(3, over / 12 + 2)}s`)
-  }
-}
-const marqueeObs = typeof ResizeObserver === 'function' ? new ResizeObserver((es) => { for (const e of es) marqueeFit(e.target as HTMLElement) }) : null
-const vMarquee = {
-  mounted: (el: HTMLElement) => { marqueeFit(el); marqueeObs?.observe(el) },
-  updated: (el: HTMLElement) => marqueeFit(el),
-  unmounted: (el: HTMLElement) => marqueeObs?.unobserve(el),
-}
-onBeforeUnmount(() => marqueeObs?.disconnect())
 // 手機：選目標時把能選的卡片捲進畫面（矮螢幕上敵人可能在行動區下面）
 watch(pending, (p) => {
   if (!p || !isMobile.value) return
@@ -786,14 +771,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .l1, .l2 { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .l1 .fname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .l1 .foe-name { display: flex; align-items: center; }
-.marquee { display: block; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.marquee.run { text-overflow: clip; }
-.marquee.run > span { display: inline-block; animation: marquee var(--marq-t, 4s) ease-in-out infinite alternate; }
-@keyframes marquee { 0%, 20% { transform: translateX(0); } 80%, 100% { transform: translateX(var(--marq-d, 0)); } }
-@media (prefers-reduced-motion: reduce) {
-  .marquee.run { text-overflow: ellipsis; }
-  .marquee.run > span { display: inline; animation: none; }
-}
+.foe-name .marquee { flex: 1 1 auto; }
 .l1 > .small { white-space: nowrap; }
 .state { margin-left: auto; padding: 0 5px; }
 .l3 { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; min-height: 0; }

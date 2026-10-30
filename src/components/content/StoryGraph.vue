@@ -6,6 +6,7 @@ import { NODE_KINDS, START_KINDS } from '@/engine/storyMods'
 import { layoutGraph, storyGraph, type EdgeKind, type GraphNode } from '@/engine/storyGraph'
 import { CONTENT_TAGS } from '@/engine/content'
 import { measureEdges } from './graphEdges'
+import { vMarquee } from '../marquee'
 
 // 特殊任務的流程圖（docs/plan/roadmap/WORLD_EDITOR_PLAN.md E3）：左到右分層，任務點是卡片、每個結果是一個出口，
 // 結果設定的旗標連到需要它的任務點。點任務點送出 open（編輯器在下面打開它）。
@@ -83,13 +84,13 @@ const tagName = (t: string) => CONTENT_TAGS[t as keyof typeof CONTENT_TAGS]?.nam
             <!-- 開頭 -->
             <div v-if="id === 'start'" :ref="setEl('start')" class="card start" @mouseenter="hover = 'start'" @mouseleave="hover = null">
               <b>▶ 開頭</b>
-              <div class="small muted">{{ START_KINDS[def.start.kind] }}{{ def.start.min_level ? `・Lv.${def.start.min_level}` : '' }}</div>
-              <div v-if="def.start_flags?.length" class="small">→ {{ def.start_flags.map((f) => `🚩${f}`).join('、') }}</div>
+              <div v-marquee class="marquee small muted"><span>{{ START_KINDS[def.start.kind] }}{{ def.start.min_level ? `・Lv.${def.start.min_level}` : '' }}</span></div>
+              <div v-if="def.start_flags?.length" v-marquee class="marquee small"><span>→ {{ def.start_flags.map((f) => `🚩${f}`).join('、') }}</span></div>
             </div>
             <!-- 任務外面的旗標 -->
             <div v-else-if="extById.get(id)" :ref="setEl(id)" class="card ext" :class="extById.get(id)!.source" @mouseenter="hover = id" @mouseleave="hover = null">
-              <div class="small">☁ 🚩{{ extById.get(id)!.flag }}</div>
-              <div class="small muted">{{ SOURCE[extById.get(id)!.source] }}{{ extById.get(id)!.stories.length ? `：${extById.get(id)!.stories.map((s) => s.title).slice(0, 2).join('、')}` : '' }}</div>
+              <div v-marquee class="marquee small"><span>☁ 🚩{{ extById.get(id)!.flag }}</span></div>
+              <div v-marquee class="marquee small muted"><span>{{ SOURCE[extById.get(id)!.source] }}{{ extById.get(id)!.stories.length ? `：${extById.get(id)!.stories.map((s) => s.title).slice(0, 2).join('、')}` : '' }}</span></div>
             </div>
             <!-- 完成、失敗 -->
             <div v-else-if="id === 'complete' || id === 'fail'" :ref="setEl(id)" class="card end" :class="id">{{ id === 'complete' ? '✅ 完成任務' : '❌ 任務失敗' }}</div>
@@ -102,26 +103,28 @@ const tagName = (t: string) => CONTENT_TAGS[t as keyof typeof CONTENT_TAGS]?.nam
             >
               <div class="n-head">
                 <span>{{ KIND_ICON[nodeById.get(id)!.kind] }}</span>
-                <b :title="nodeTitle(nodeById.get(id)!)">{{ nodeById.get(id)!.title }}</b>
+                <b v-marquee class="marquee" :title="nodeTitle(nodeById.get(id)!)"><span>{{ nodeById.get(id)!.title }}</span></b>
                 <span v-if="done?.includes(id)" title="目前的存檔完成過">✔</span>
                 <span v-else-if="unlocked?.includes(id)" title="目前的存檔現在解鎖">●</span>
                 <span v-if="nodeById.get(id)!.urgent" class="tag" title="緊急：走到時一定要先處理">緊急</span>
               </div>
-              <div class="small muted">{{ placeText(def.nodes[nodeById.get(id)!.index]!) }}</div>
-              <div v-if="nodeById.get(id)!.conds.length" class="small conds">{{ nodeById.get(id)!.conds.join('；') }}</div>
+              <div v-marquee class="marquee small muted"><span>{{ placeText(def.nodes[nodeById.get(id)!.index]!) }}</span></div>
+              <div v-if="nodeById.get(id)!.conds.length" v-marquee class="marquee small conds"><span>{{ nodeById.get(id)!.conds.join('；') }}</span></div>
               <div
                 v-for="p in nodeById.get(id)!.ports" :key="p.id" :ref="setEl(p.id)" class="port small"
                 :class="{ fail: p.fail, stuck: p.stuck }" :title="p.stuck ? '選了之後可能沒有任務點可以進行' : ''"
                 @mouseenter.stop="hover = p.id" @mouseleave="hover = id"
               >
-                <span class="p-label">{{ p.label }}</span>
-                <span v-for="t in p.tags" :key="t" class="tag">{{ tagName(t) }}</span>
-                <span v-if="p.sets.length" class="sets">→ {{ p.sets.map((f) => `🚩${f}`).join(' ') }}</span>
-                <span v-if="p.clears.length" class="muted">清除 {{ p.clears.map((f) => `🚩${f}`).join(' ') }}</span>
-                <span v-if="p.notes.length" class="muted notes">{{ p.notes.join('、') }}</span>
-                <span v-if="p.end === 'retry'" title="這個任務點不結束，之後可以再來">↻</span>
-                <span v-if="p.end === 'complete'">✅</span>
-                <span v-if="p.end === 'fail'">❌</span>
+                <span v-marquee class="marquee"><span class="line">
+                  <span class="p-label">{{ p.label }}</span>
+                  <span v-for="t in p.tags" :key="t" class="tag">{{ tagName(t) }}</span>
+                  <span v-if="p.sets.length" class="sets">→ {{ p.sets.map((f) => `🚩${f}`).join(' ') }}</span>
+                  <span v-if="p.clears.length" class="muted">清除 {{ p.clears.map((f) => `🚩${f}`).join(' ') }}</span>
+                  <span v-if="p.end === 'retry'" title="這個任務點不結束，之後可以再來">↻</span>
+                  <span v-if="p.end === 'complete'">✅</span>
+                  <span v-if="p.end === 'fail'">❌</span>
+                </span></span>
+                <span v-if="p.notes.length" v-marquee class="marquee muted"><span>{{ p.notes.join('、') }}</span></span>
               </div>
               <div v-if="nodeById.get(id)!.retryOnFail" class="port small muted">失敗：可以再試 ↻</div>
             </div>
@@ -155,7 +158,7 @@ const tagName = (t: string) => CONTENT_TAGS[t as keyof typeof CONTENT_TAGS]?.nam
 .edges .lit path { stroke-width: 3; opacity: 1; }
 .edges text { font-size: 10px; fill: var(--text, currentColor); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }
 .col { display: flex; flex-direction: column; gap: 18px; position: relative; z-index: 1; }
-.card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px; max-width: 260px; display: grid; gap: 2px; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px; max-width: 260px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .card.start { border-color: var(--gold-lo); }
 .card.ext { border-style: dashed; max-width: 200px; }
 .card.ext.none { border-color: var(--danger); }
@@ -168,13 +171,14 @@ const tagName = (t: string) => CONTENT_TAGS[t as keyof typeof CONTENT_TAGS]?.nam
 .node.done { opacity: 0.75; }
 .node.now { box-shadow: 0 0 0 2px var(--gold-hi, var(--accent)), 0 0 12px #f0d08366; }
 .n-head { display: flex; gap: 4px; align-items: center; }
-.n-head b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.n-head { min-width: 0; }
+.n-head b { flex: 0 1 auto; }
 .conds { color: var(--accent); }
-.port { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; border-top: 1px dashed var(--border); padding-top: 2px; }
+.port { display: grid; grid-template-columns: minmax(0, 1fr); border-top: 1px dashed var(--border); padding-top: 2px; }
+.port .line > * + * { margin-left: 6px; }
 .port .p-label { font-weight: bold; }
 .port.fail .p-label { color: var(--danger); }
 .port.stuck { background: color-mix(in srgb, var(--danger) 15%, transparent); }
-.port .notes { flex-basis: 100%; }
 .sets { color: var(--accent); }
 .warn-text { color: var(--danger); }
 .tag { font-size: 0.8em; }
