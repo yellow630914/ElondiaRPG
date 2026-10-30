@@ -193,6 +193,7 @@ const onNarrow = (e: MediaQueryListEvent) => { narrow.value = e.matches }
 
 // ── 手機版（720px 以下）：冒險頁換成 MobileGame，對話框變成全螢幕頁面（AppDialog）
 const mobileGame = computed(() => isMobile.value && !!game.state && tab.value === 'adventure')
+const mobileDim = computed(() => isMobile.value && (game.state ? tab.value !== 'adventure' : screen.value === 'worlds' || screen.value === 'prompts'))
 const mobileHud = computed(() => {
   const st = game.state!
   return { day: st.time.day, clock: clock.value ?? '', daytime: daytime.value, place: locationById(st.location).name, money: formatMoney(moneyShown.value), crime: crime.value }
@@ -284,6 +285,8 @@ onBeforeUnmount(() => {
     </div>
   </header>
   <BackgroundLayer />
+  <!-- 手機版的提示詞、世界頁：說明文字直接壓在背景圖上，背景亮的地方讀不清楚，蓋一層暗色 -->
+  <div v-if="mobileDim" class="m-dim" aria-hidden="true" />
   <AmbientLayer v-if="game.state" />
   <Transition name="notice">
     <div v-if="game.notice" class="notice">{{ game.notice }}</div>
@@ -484,6 +487,16 @@ onBeforeUnmount(() => {
 .toolbar .note { font-size: var(--fs-xs); line-height: 16px; padding: 0 4px; border-radius: 2px; background: var(--accent); color: #1a1008; font-weight: 700; }
 
 /* 手機版 */
+.m-dim { position: fixed; inset: 0; z-index: -1; background: #0f0b08d9; pointer-events: none; }
+/* 上方列擠成一排：標題縮小，右邊的按鈕只留圖示（語言的下拉選單照舊） */
+@media (max-width: 720px) {
+  .top { flex-wrap: nowrap; gap: 8px; padding-bottom: 8px; margin-bottom: 10px; }
+  .logo { gap: 6px; min-width: 0; }
+  .logo h1 { font-size: 1.1rem; letter-spacing: 0.12em; white-space: nowrap; }
+  .tabs button { padding: 6px 8px; white-space: nowrap; }
+  .top-buttons .icon { min-width: 40px; }
+  .top-buttons .icon > span { display: none; }
+}
 .m-back { display: flex; margin: -6px -10px 8px; }
 .m-back button { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
 .m-back .flip, .m-back :deep(.flip) { transform: scaleX(-1); }
