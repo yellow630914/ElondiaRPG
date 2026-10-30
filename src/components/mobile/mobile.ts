@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-// 手機版：寬度 720px 以下換成手機的版面（docs/plan/MOBILE_UI_PLAN.md）。平板橫拿照舊是電腦版。
+// 手機版：寬度 720px 以下換成手機的版面（docs/MOBILE_UI.md）。平板橫拿照舊是電腦版。
 const QUERY = '(max-width: 720px)'
 const mql = typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(QUERY) : null
 export const isMobile = ref(!!mql?.matches)

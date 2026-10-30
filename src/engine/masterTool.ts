@@ -1,4 +1,4 @@
-// 主角當奴隸時，主人是工具人（成人向；計畫 docs/plan/LUST_COMBAT_PLAN.md 第 7.2 節、docs/COMPANIONS.md 2.4 節）：
+// 主角當奴隸時，主人是工具人（成人向；docs/LEWD_STATS.md 第 8 節、docs/COMPANIONS.md 2.4 節）：
 // 系統上主人只是讓隸從派生效的條件，主角保有主導權。和主人的親密度夠高時，契約面板可以直接解約、換主人（不擲骰、不付錢）；
 // 敘事上仍然寫成主人的決定（主人准許、主人安排、把主角轉讓出去）。數值在 data/rules/lewd.json 的 master_tool。
 

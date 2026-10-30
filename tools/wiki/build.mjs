@@ -72,6 +72,7 @@ export const GROUPS = [
     { page: '角色形象插圖', src: 'docs/PORTRAITS.md', desc: '形象圖的生成（OpenAI、NovelAI、ComfyUI）與上傳', sub: 'AI 與呈現' },
     { page: '介面語言', src: 'docs/I18N.md', desc: '繁體／簡體中文的介面與提示詞', sub: 'AI 與呈現' },
     { page: '背景圖', src: 'docs/BACKGROUNDS.md', desc: '依地區、城鎮、地下城換的背景', sub: 'AI 與呈現' },
+    { page: '手機版畫面', src: 'docs/MOBILE_UI.md', desc: '寬度 720px 以下的版面、返回鍵、滑動分頁、戰鬥畫面', sub: 'AI 與呈現' },
     { page: '自訂內容', src: 'docs/CONTENT_EDITOR.md', desc: '世界頁籤：修改與新增內容、世界包', sub: '內容與存檔' },
     { page: '內容之間的依賴與保護', src: 'docs/CONTENT_DEPENDENCIES.md', desc: '內容的引用、刪除與改名的保護', sub: '內容與存檔' },
     { page: '存檔', src: 'docs/SAVES.md', desc: '存檔位置、匯出匯入、存檔格式版本', sub: '內容與存檔' },
@@ -114,25 +115,24 @@ export const GROUPS = [
     { page: '模組化像素立繪規格', src: 'docs/comfy/portrait-spec.md', desc: '用 ComfyUI 產生立繪素材的規格' },
   ] },
   { name: '計畫與追蹤', pages: [
-    { page: '計畫與追蹤', src: 'docs/plan/README.md', desc: '分類、流程、完成紀錄' },
+    { page: '計畫與追蹤', src: 'docs/plan/README.md', desc: '分類與流程' },
     { page: 'Bug', src: 'docs/plan/BUGS.md', desc: '程式沒有照規則運作的問題' },
     { page: '業務邏輯問題', src: 'docs/plan/LOGIC_ISSUES.md', desc: '程式照設計運作，但規則不合理的地方' },
     { page: '未來計畫', src: 'docs/plan/ROADMAP.md', desc: '已經決定要做的事' },
     { page: '點子庫', src: 'docs/plan/ideas/README.md', desc: '還沒決定要不要做的構想：來源與全部點子一覽' },
-    { page: '點子：早期設計', src: 'docs/plan/ideas/early-design.md', desc: '早期設計文件裡還沒做的構想', sub: '點子的來源' },
-    { page: '點子：2026 年 10 月盤點', src: 'docs/plan/ideas/review-2026-10.md', desc: '盤點時列出、先不做的項目', sub: '點子的來源' },
+    { page: '點子：早期設計', src: 'docs/plan/ideas/early-design.md', desc: '早期設計與放比較久的構想', sub: '點子的來源' },
     { page: '點子：玩家回饋', src: 'docs/plan/ideas/player-feedback.md', desc: '玩家回饋引出的構想', sub: '點子的來源' },
     { page: '點子：開發討論', src: 'docs/plan/ideas/dev-discussion.md', desc: '開發討論中提出的構想', sub: '點子的來源' },
-    { page: 'UI 改版計畫', src: 'docs/plan/UI_V2_PLAN.md', desc: 'UI v2 的分階段計畫' },
-    { page: '手機版 UI 計畫', src: 'docs/plan/MOBILE_UI_PLAN.md', desc: '手機直式版面的規劃與決定' },
-    { page: '角色線計畫', src: 'docs/plan/CHARACTER_LINES_PLAN.md', desc: '白百合巡禮與琥珀的角色線（R9）' },
-    { page: '世界編輯器計畫', src: 'docs/plan/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
+    { page: '手機版畫面：剩下的事', src: 'docs/plan/roadmap/MOBILE_UI_PLAN.md', desc: '手機版畫面還沒做的部分（R10）' },
+    { page: '角色線計畫', src: 'docs/plan/roadmap/CHARACTER_LINES_PLAN.md', desc: '白百合巡禮與琥珀的角色線（R9）' },
+    { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
+    { page: '已完成', src: 'docs/plan/roadmap/COMPLETED.md', desc: '做完的計畫：做了什麼、規則寫在哪份文件' },
   ] },
 ]
 
-/** 不放上 wiki 的文件：素材資料夾的說明（只對改程式的人有用）、玩家提供的第三方原文素材、以它為素材的成人向計畫 */
-export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/ideas/xianxia-adult-lorebook.md', 'docs/plan/LUST_COMBAT_PLAN.md', 'tools/backgrounds/park_prompts.md']
+/** 不放上 wiki 的文件：素材資料夾的說明（只對改程式的人有用）、引用玩家提供的第三方素材的成人向計畫、生圖提示詞 */
+export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/roadmap/LUST_COMBAT_PLAN.md', 'tools/backgrounds/park_prompts.md']
 
 const srcList = (p) => (Array.isArray(p.src) ? p.src : [p.src])
 const fileOf = (src) => src.split('#')[0]

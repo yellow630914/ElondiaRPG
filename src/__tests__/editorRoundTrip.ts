@@ -1,4 +1,4 @@
-// 世界編輯器的來回測試（docs/plan/WORLD_EDITOR_PLAN.md E5-0）：整理編輯器的畫面時不能改到資料。
+// 世界編輯器的來回測試（世界編輯器的介面整理 E5，紀錄見 docs/plan/roadmap/COMPLETED.md）：整理編輯器的畫面時不能改到資料。
 // 每種編輯器掛上一批內建項目：剛打開時不能是「未儲存」，不改任何東西直接儲存，存進世界的內容要和快照一樣。
 // 畫面整理前後都要通過；快照真的要變（改了資料的形狀）時，先確認是故意的再更新。
 import { beforeEach, describe, expect, it } from 'vitest'

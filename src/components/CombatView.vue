@@ -328,7 +328,7 @@ watch(
 
 const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功撤退', ongoing: '' }
 
-// ── 手機版（docs/plan/MOBILE_UI_PLAN.md 6 節）：我方在上、敵人在下，兩欄小卡；紀錄只露最新兩行；
+// ── 手機版（docs/MOBILE_UI.md 第 4 節）：我方在上、敵人在下，兩欄小卡；紀錄只露最新兩行；
 // 技能依類型分頁；長按卡片或技能看說明（電腦版的滑鼠提示）。
 const isLewd = (a: AbilityDef) => a.classes?.includes('lewd') ?? false
 function tabAbilities(id: string): AbilityDef[] {

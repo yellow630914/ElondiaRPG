@@ -21,7 +21,7 @@ import type { IconName } from '../ui/iconPaths'
 import BottomSheet from './BottomSheet.vue'
 import { OPEN_ACTION_EVENT, guardExit } from './mobile'
 
-// 手機版的冒險畫面（寬度 720px 以下，見 docs/plan/MOBILE_UI_PLAN.md）：
+// 手機版的冒險畫面（寬度 720px 以下，見 docs/MOBILE_UI.md）：
 // 上：狀態列（只看）→ 地圖（探索時大、閱讀時縮成一條）→ 日誌與主動行動列 → 情境按鈕 → 底部分頁列。
 // 這裡、休息、設施、更多用半屏面板；隊伍與更多裡的功能是全螢幕頁面（App 的對話框，手機上自動全螢幕）。
 export type MobileOpen = 'party' | 'relations' | 'notebook' | 'craft' | 'contract' | 'saves' | 'settings' | 'prompts' | 'content' | 'home' | 'quickload' | 'logsettings'

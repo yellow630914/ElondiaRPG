@@ -1,4 +1,4 @@
-// 資料整理型文件的產生器（docs/plan/ROADMAP.md R7）：MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節裡照資料檔整理的表格。
+// 資料整理型文件的產生器（docs/README.md 第 6 節；做成時的紀錄見 docs/plan/roadmap/COMPLETED.md 的 R7）：MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節裡照資料檔整理的表格。
 // 文件裡用 <!-- gen:名稱 --> 和 <!-- /gen:名稱 --> 包住產生的部分，中間的內容每次重新產生；其他文字照常手寫。
 // `npm run docs:gen` 重寫文件，docTables.spec.ts 檢查文件和資料檔一致（改了資料忘記重跑就會失敗）。
 import { abilityApCost } from '@/engine/combat'

@@ -1,8 +1,8 @@
 # 角色線計畫：白百合巡禮、琥珀
 
-> 上層：[計畫與追蹤](README.md)（ROADMAP R9）。
-> 2026-10-30 盤點「陰柔或中性形象、還沒有角色線的固定角色」時決定要做的兩條角色線。做完之後，已完成的部分寫進 [elondia-storylines](../../worldgen/design/elondia-storylines.md) 第 5 節（新的一批），這份計畫刪掉，在 README 的「完成紀錄」記一行。
-> 設計規則見 [story-design](../../worldgen/design/story-design.md)；格式見 [guides/stories](../../worldgen/guides/stories.md)；系統規則見 [STORY_QUESTS](../STORY_QUESTS.md)。
+> 上層：[ROADMAP](../ROADMAP.md) R9。
+> 2026-10-30 盤點「陰柔或中性形象、還沒有角色線的固定角色」時決定要做的兩條角色線。做完之後，已完成的部分寫進 [elondia-storylines](../../../worldgen/design/elondia-storylines.md) 第 5 節（新的一批），這份計畫刪掉，在[已完成](COMPLETED.md)記一段。
+> 設計規則見 [story-design](../../../worldgen/design/story-design.md)；格式見 [guides/stories](../../../worldgen/guides/stories.md)；系統規則見 [STORY_QUESTS](../../STORY_QUESTS.md)。
 
 ## 1. 範圍
 
@@ -142,7 +142,7 @@
 | 「去霧谷看看她母親的家」 | 要 `fog_lifted`（迷霧那條線揭開了結界）。塞夫帶路，精靈王庭聲望 +；琥珀的階段換成「知道自己從哪裡來的精靈」 | `amb_lover`、`amb_mist` |
 | 「留在索里耶爾」 | 「我是索里耶爾跑最快的精靈，這次是真的。」冒險者公會聲望 +；琥珀的階段換成「不用再跑的精靈」 | `amb_lover`、`amb_soriel` |
 
-兩個結局都可以邀她入隊，她也會把母親那只霧銀耳墜送給主角（獨特飾品，效果照 [balance/items](../../worldgen/balance/items.md)，例如潛行、逃跑判定的加值）。
+兩個結局都可以邀她入隊，她也會把母親那只霧銀耳墜送給主角（獨特飾品，效果照 [balance/items](../../../worldgen/balance/items.md)，例如潛行、逃跑判定的加值）。
 
 **四、耳墜的另一隻**（`amb_x_rooftop`，B，Lv.11，成人向，琥珀開頭，要 `amb_lover`、好感 40）
 
@@ -170,4 +170,4 @@
 2. `npcs.json`：三人加 `no_attack`；琥珀加 `adult_appearance`；三人加結局之後的 `stages`（換背景）。
 3. 霧銀耳墜加進物品（獨特飾品）。
 4. 跑世界檢查到 0 錯誤，再跑 `worldgen/tools/flowdoc/flowdoc.py` 與 `worldgen/tools/guide/guide.py` 更新流程圖和攻略頁。flowdoc 依簡介結尾的「（白百合巡禮・一）」分線；線名裡沒有角色名字時，要四分之三以上的任務由同一個人開頭才會分到「角色線」，所以白百合的四個任務都由格溫德琳開頭、琥珀的都由琥珀開頭。
-5. 寫進 [elondia-storylines](../../worldgen/design/elondia-storylines.md) 第 5 節（第三十一批）與 [STORY_QUESTS](../STORY_QUESTS.md) 開頭的批次清單；CHANGELOG 的「未發布」記一行。
+5. 寫進 [elondia-storylines](../../../worldgen/design/elondia-storylines.md) 第 5 節（第三十一批）與 [STORY_QUESTS](../../STORY_QUESTS.md) 開頭的批次清單；CHANGELOG 的「未發布」記一行。

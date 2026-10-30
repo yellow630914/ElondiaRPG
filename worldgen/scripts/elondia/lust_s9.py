@@ -1,4 +1,4 @@
-# 慾望戰鬥 S9 的資料（docs/plan/LUST_COMBAT_PLAN.md 第 19 節；規則寫在 docs/LEWD_STATS.md）：
+# 慾望戰鬥 S9 的資料（規則寫在 docs/LEWD_STATS.md）：
 #   S9-2 新的拘束種類「封住嘴巴」（lewd.json 的 two_face.kinds.mouth、流派的契合）、16 件拘束具（gear.json 的底材、items.json 的物品）、
 #        取得方式：商店（物品的 tags）、地下城寶箱（gear.json 的 chests）、園區寶箱（lewd.json 的 park.chest_items）、
 #        商店每天另外上架的拘束具（shops.json 的 restraints）、拍賣會（auction.pool）、拘束戰鬥場的稀有獎品（arena.rings.bound.rare）、捕奴隊隊長的掉落（enemies.json）、主人的池子（master_force）
