@@ -6,7 +6,9 @@
 
 ## 1. 待修
 
-目前沒有。
+| # | 問題 | 現況 | 相關 |
+|---|---|---|---|
+| B15 | **「travel」情境的檢定加值都沒有作用** | 2026-10-28 拿掉舊的 `travel()`（01cc499）之後，沒有任何檢定再用 `context: 'travel'`；旅途事件用的是 `road`。所以這些寫在 `travel` 的加值現在都不會生效：特質識途老馬、野外求生，缺陷怕水、路痴、懼高；旅人身分標籤（`npc_tags.json` 的 `pc_effects`）；拘束具雙面效應的限制行走、遮住視線（`lewd.json` 的 `two_face.kinds`）；豐饒祭花冠的獨特加值。要決定：把 `travel` 併進 `road`（改資料），或旅途事件的檢定同時算兩個情境（改 `road.ts`）。`perks.ts` 的 `EXPLORE_CONTEXTS`、`bindRulesMods.ts` 的 `BIND_CONTEXTS` 也要跟著改 | [PERKS](../PERKS.md) 第 1 節、[TRAVEL_EVENTS](../TRAVEL_EVENTS.md) |
 
 ## 2. 待確認是不是 Bug
 

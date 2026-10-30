@@ -4,6 +4,7 @@
 import { abilityApCost } from '@/engine/combat'
 import { castingAttr } from '@/engine/character'
 import { formatMoney } from '@/engine/money'
+import { cellName, type CellKind } from '@/engine/grid'
 import { baseSlots, gearRules, gearSummary, MOD_NAME, slotName } from '@/engine/gear'
 import type { GearSlot } from '@/engine/types'
 import { notForSale } from '@/engine/trade'
@@ -68,7 +69,7 @@ function lewdSchoolTable(): string {
   return table(['流派', '偏向', '定位', '入門', '進階', '受訓（設施、學費）'], schoolIds().map((id) => {
     const d = schoolDef(id)!
     const p = (x: string) => perkDef(x)
-    const where = (x: string) => { const t = p(x)?.train; return t ? `${t.cells.join('、')} ${formatMoney(t.price_cc)}` : '—' }
+    const where = (x: string) => { const t = p(x)?.train; return t ? `${t.cells.map((c) => cellName(c as CellKind) || c).join('、')} ${formatMoney(t.price_cc)}` : '—' }
     return [d.name, d.group, d.role, `**${p(d.entry)?.name}**：${p(d.entry)?.desc}`, `**${p(d.advanced)?.name}**：${p(d.advanced)?.desc}`, `${where(d.entry)}／${where(d.advanced)}`]
   }))
 }
