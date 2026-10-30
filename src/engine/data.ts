@@ -1506,7 +1506,11 @@ export const actionRules = actionsJson as unknown as {
   }>
 }
 
-export interface GenderDef { name: string; color: string; weight: number; names: 'm' | 'f' | 'any' }
+export interface GenderDef {
+  name: string; color: string; weight: number; names: 'm' | 'f' | 'any'
+  /** 交給 AI 時接在性別後面的身體說明（偽娘、TS、扶她），見 genderPrompt */
+  ai?: string
+}
 export const npcPool = npcPoolJson as unknown as {
   genders: Record<string, GenderDef>
   outfits: string[]
@@ -1913,6 +1917,13 @@ export function genderDef(g?: string): (GenderDef & { id: string }) | undefined 
 
 export function genderName(g?: string): string {
   return genderDef(g)?.name ?? g ?? ''
+}
+
+/** 交給 AI 的性別：顯示名稱，偽娘、TS、扶她再附上身體的說明（例如 TS 沒有陰唇）；對應不到的主角性別照原文 */
+export function genderPrompt(g?: string): string {
+  const def = genderDef(g)
+  if (!def) return g ?? ''
+  return def.ai ? `${def.name}（${def.ai}）` : def.name
 }
 
 export function raceEmoji(id: string): string {

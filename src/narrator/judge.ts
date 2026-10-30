@@ -12,7 +12,7 @@ import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/c
 import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import { inviteDc, validateInvite } from '@/engine/companions'
 import {
-  geography, genderName, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
+  geography, genderPrompt, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses, perkDef, perkRules, TRAP_LOCK, type PerkDef,
 } from '@/engine/data'
@@ -63,7 +63,7 @@ export function partyLines(state: GameState): string {
     const conds = m.status.map(conditionName).join('、')
     const c = contractOf(m)
     const mark = c && !m.isPlayer ? `｜印記：${contractTerms(c).name}（${contractTerms(c).mark}）` : ''
-    return `- ${m.name}（${bond}${m.gender ? `・${genderName(m.gender)}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
+    return `- ${m.name}（${bond}${m.gender ? `・${genderPrompt(m.gender)}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
   }).join('\n')
 }
 
@@ -109,7 +109,7 @@ function pcDetail(state: GameState, adult = false): string {
   const stuck = stuckGear(pc)
   const locked = stuck.length ? `\n身上拿不下來的（主角自己卸不掉，照戴著處理）：${stuck.join('、')}` : ''
   const contract = pcContract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pcContract)}${home ? `\n${home}` : ''}` : ''
-  const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.tags?.length ? `身分（已算進情境修正）：${pcTagSummary(pc)}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
+  const profile = [pc.gender ? `性別：${genderPrompt(pc.gender)}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.tags?.length ? `身分（已算進情境修正）：${pcTagSummary(pc)}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
   // 慾望指標：只在可能進入親密場景的判定（數值與分段）
   const lewd = adult ? `\n慾望指標：${lewdSummary(state, pc, true)}${partyLewd(state)}\n${charmNote(state)}` : ''
   return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}`
@@ -158,7 +158,7 @@ function npcDetail(state: GameState, id: string, label: string, fallback?: strin
   const rel = state.relationships?.[id]
   if (!rec) return `${label}：${fallback ?? id}`
   const lines = [
-    `${label} ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderName(rec.gender)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
+    `${label} ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderPrompt(rec.gender)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
     `身分：${npcIdentity(rec)}`,
     `性格：${rec.personality}`,
     appearanceOf(rec.id, rec.appearance) ? `外貌：${appearanceOf(rec.id, rec.appearance)}` : '',
@@ -464,7 +464,7 @@ export function buildRosterPrompt(state: GameState, locId: string): Prompt | nul
   const faction = loc.faction ? geography.factions.find((f) => f.id === loc.faction)?.name ?? '' : ''
   const lines = list.map((r) => {
     const tags = (r.tags ?? []).map((t) => tagDef(t)?.name).filter(Boolean).join('、')
-    return `- id: ${r.id}｜${npcKind(r) === 'adventurer' ? `冒險者・${className(r.class)}` : `普通人・${r.occupation ?? '平民'}`}｜${genderName(r.gender)}｜${raceName(r.race)}${r.lineage ? `（${r.lineage}）` : ''} Lv.${r.level}${tags ? `｜標籤：${tags}` : ''}｜目前的草稿：${r.name}｜外貌：${r.appearance ?? ''}｜性格：${r.personality}`
+    return `- id: ${r.id}｜${npcKind(r) === 'adventurer' ? `冒險者・${className(r.class)}` : `普通人・${r.occupation ?? '平民'}`}｜${genderPrompt(r.gender)}｜${raceName(r.race)}${r.lineage ? `（${r.lineage}）` : ''} Lv.${r.level}${tags ? `｜標籤：${tags}` : ''}｜目前的草稿：${r.name}｜外貌：${r.appearance ?? ''}｜性格：${r.personality}`
   }).join('\n')
   const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為這個地點的居民重新設計名字、外貌、性格與一句背景，讓他們符合種族、性別、身分（冒險者或普通人、職業、標籤）與所在地的風土；普通人可以把職業描述改得更具體。種族、血統、性別、類型、冒險者的職業與等級不可更改，名字要符合性別，彼此不要重複；草稿的外貌與性格是依世界書的種族設定組出來的，潤飾時保留其中的種族特徵（例如耳尾、角、鰓裂、膚色）與主要的性格基調，只把文字寫得更自然。只輸出 JSON：{"npcs":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字","occupation":"普通人才填，≤10 字"}]}`
   const user = `地點：${loc.name}（${region}${faction ? `，${faction}` : ''}）\n居民：\n${lines}`

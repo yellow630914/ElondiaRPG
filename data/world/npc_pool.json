@@ -2,12 +2,12 @@
   "$comment": "程式生成 NPC 用的性別與服裝素材（名字、外貌與性格在 npc_traits.json）。AI 開啟時，名單上的人的名字、外貌與性格可以改由 AI 潤飾；數值（種族、職業、等級、要價）一律由程式決定。",
   "version": 1,
   "genders": {
-    "$comment": "NPC 的性別：顯示名稱、名字的代表色與生成權重。名字會依性別從 names 的 m（男名）或 f（女名）挑選。",
+    "$comment": "NPC 的性別：顯示名稱、名字的代表色與生成權重。名字會依性別從 names 的 m（男名）或 f（女名）挑選。ai：交給 AI 時接在性別後面的身體說明（主角的性別文字能對應到這幾種時也帶），讓正文與判定不要套用一般男性或女性的身體。",
     "male": { "name": "男性", "color": "#6fa8dc", "weight": 44, "names": "m" },
     "female": { "name": "女性", "color": "#e88aa8", "weight": 44, "names": "f" },
-    "femboy": { "name": "偽娘", "color": "#c39bd3", "weight": 3, "names": "m" },
-    "ts": { "name": "TS", "color": "#f0b36b", "weight": 3, "names": "f" },
-    "futa": { "name": "扶她", "color": "#d96bd0", "weight": 2, "names": "f" },
+    "femboy": { "name": "偽娘", "color": "#c39bd3", "weight": 3, "names": "m", "ai": "生理男性：有陰莖與睪丸、平胸，外表與打扮像女孩" },
+    "ts": { "name": "TS", "color": "#f0b36b", "weight": 3, "names": "f", "ai": "跨性別女性：外表是女性、有乳房，下體是陰莖與睪丸，沒有陰道與陰唇" },
+    "futa": { "name": "扶她", "color": "#d96bd0", "weight": 2, "names": "f", "ai": "女性的身體，有乳房與陰道，同時長著陰莖" },
     "unknown": { "name": "未知", "color": "#b8ab96", "weight": 4, "names": "any" }
   },
   "outfits": [
