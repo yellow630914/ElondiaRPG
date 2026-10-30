@@ -21,7 +21,7 @@
 - AI 替隨機事件換皮（開場描述、台詞）。
 - 世界書「引力值」。
 
-「AI 依一段文字生成特殊任務」已經排進 [ROADMAP](../ROADMAP.md) R11（特殊任務生成器）；早期提案的「事件導演」做成了城鎮事件（[TRAVEL_EVENTS](../../TRAVEL_EVENTS.md) 第 6 節）。
+「AI 依一段文字生成特殊任務」已經做成世界編輯器的「✨ AI 編排」（[ROADMAP](../ROADMAP.md) R11 E4）；早期提案的「事件導演」做成了城鎮事件（[TRAVEL_EVENTS](../../TRAVEL_EVENTS.md) 第 6 節）。
 
 ### I6
 

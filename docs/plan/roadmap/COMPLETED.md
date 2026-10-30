@@ -2,6 +2,13 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-10-30 特殊任務生成器（R11 的 E4）
+
+- 世界編輯器特殊任務頁籤的「✨ AI 編排」（`content/QuestGenDialog.vue`、`stores/questGen.ts`）：描述 → 大綱（可以改）→ 完整內容 → 沙盒檢查（有錯誤時交回 AI 修，最多 2 次）→ 流程圖預覽 → 加入世界（走局部匯入的寫入）；草稿存在瀏覽器。
+- 提示詞（`narrator/questGenSpec.ts`，列舉值由程式的常數產生）與目錄（`narrator/questCatalog.ts`）；新的 AI 功能「世界設計」（`designer`）。
+- 整理（`engine/questGen.ts`）：代號換 id、旗標前綴、報酬與價格依等級、新怪物、技能、狀態的數值夾在內建的範圍、地標找格子、特殊地圖做成隨機地圖；不允許的種類拿掉並列出。
+- 測試：`questGen.spec.ts`、`questGenSpec.spec.ts`、`questGenStore.spec.ts`（固定的 AI 回覆）。規則寫在 [STORY_QUESTS](../../STORY_QUESTS.md) 第 3 節、[PROMPTS](../../PROMPTS.md) 第 8 節；沒做的（怪物的模擬、大綱的圖……）留在 [WORLD_EDITOR_PLAN](WORLD_EDITOR_PLAN.md) 第 4 節。
+
 ### 2026-10-30 文件整理（v0.4.0 之後）
 
 - `docs/*` 的系統文件逐份對過程式與資料（36 份），改正數量、規則與漏寫的功能；途中找到的程式問題修掉四個：

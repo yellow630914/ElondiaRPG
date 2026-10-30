@@ -37,6 +37,8 @@ import { pruneAbilities, prunePerks, pruneStatuses } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
 import { enemyUsage, gearUsage, itemUsage, npcUsage, perkUsage, renameItemInState, storyUsage } from '@/engine/usage'
 import { useGame } from './game'
+import { storyReach } from '@/engine/storyReach'
+import { GEN_KINDS, genFlagPrefix, type GenKind } from '@/engine/questGen'
 import { buildRefs, closure, contentKeys, fingerprint, pickMods, REF_SECTIONS, splitKey, type RefGraph, type RefKey } from '@/engine/contentRefs'
 import { buildPackage, compareRows, type ImportChoice, type ImportPackage, type ImportRow } from '@/engine/contentImport'
 
@@ -1058,6 +1060,48 @@ export const useContent = defineStore('content', () => {
     }
   }
 
+  /**
+   * 特殊任務生成器（E4）的檢查（沙盒，不改目前的世界）：整理後疊到目前的世界上，跑任務檢查與可達性。
+   * - mods：整理過的內容（之後照這份寫入）
+   * - errors：要交回 AI 修的（任務檢查的錯誤、到不了的任務點、走不到完成、整理時不見的項目）
+   * - warnings：只提醒的（任務檢查的提醒、可能卡住的結果、套用時的問題）
+   */
+  function checkGenerated(pkgMods: Partial<ContentMods>, storyId: string): { mods: Partial<ContentMods>; errors: string[]; warnings: string[] } {
+    try {
+      const before = new Set(applyContent(mods.value))
+      const merged = normalizeMods(withPackage(mods.value, { mods: pkgMods, renamed: [], skipped: [], fingerprints: {} }))
+      const problems = applyContent(merged).filter((p) => !before.has(p))
+      const errors: string[] = []
+      const warnings: string[] = []
+      const keys = contentKeys(pkgMods as ContentMods)
+      for (const k of keys) {
+        const [section, id] = splitKey(k)
+        if (!(merged[section] as Record<string, unknown> | undefined)?.[id]) errors.push(`${GEN_KINDS[section as GenKind] ?? section} ${id} 整理後不見了（id、位置或必填的欄位不對）`)
+      }
+      const def = stories.find((s) => s.id === storyId)
+      if (!def) errors.push('任務整理後不見了')
+      else {
+        const c = storyCheck(def)
+        errors.push(...c.errors)
+        // 可達性的前兩項（到不了、走不到完成）對生成的任務算錯誤：一定要修
+        const reach = storyReach(def)
+        for (const id of reach.unreachable) errors.push(`任務點「${def.nodes.find((n) => n.id === id)?.title ?? id}」（${id}）不會解鎖：需要的旗標在這個任務裡怎麼走都設定不到`)
+        if (!reach.canComplete) errors.push('沒有任何一條路走得到「完成任務」')
+        // 這個任務自己的旗標（程式加了前綴的）沒有地方設定：AI 寫錯了名字或漏了設定
+        const own = genFlagPrefix(storyId)
+        for (const u of flagUsage(def)) if (u.flag.startsWith(own) && u.requiredBy.length && !u.setBy.length) errors.push(`旗標 🚩${u.flag} 沒有任何結果設定，需要它的「${u.requiredBy.join('」「')}」不會出現`)
+        warnings.push(...c.warnings.filter((w) => !w.includes('不會解鎖：') && !w.startsWith('沒有任何一條路')), ...problems)
+      }
+      const out = pickMods(merged, new Set(keys.filter((k) => {
+        const [section, id] = splitKey(k)
+        return !!(merged[section] as Record<string, unknown> | undefined)?.[id]
+      })))
+      return { mods: out, errors, warnings }
+    } finally {
+      apply()
+    }
+  }
+
   /** 寫進目前的世界（原版世界時 save() 自動建立自己的世界），記下匯入紀錄 */
   function importPackage(pkg: ImportPackage): number {
     const keys = contentKeys(pkg.mods as ContentMods)
@@ -1101,6 +1145,6 @@ export const useContent = defineStore('content', () => {
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods,
-    importSource, analyzeSource, compareImport, packageFor, precheckImport, importPackage, exportPicked,
+    importSource, analyzeSource, compareImport, packageFor, precheckImport, checkGenerated, importPackage, exportPicked,
   }
 })
