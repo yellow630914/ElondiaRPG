@@ -16,7 +16,7 @@
 
 | # | 項目 | 現況 | 相關文件 |
 |---|---|---|---|
-| R10 | **手機版 UI**：720px 以下換成直式版面（地圖、日誌、主動行動、全螢幕頁面、旅途進度條、戰鬥畫面） | 在 `claude/serene-cerf-g6v7w8` 進行，M1～M4 已完成、等實機測試，還沒合併（2026-10-30） | [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) |
+| R10 | **手機版 UI**：720px 以下換成直式版面（地圖、日誌、主動行動、全螢幕頁面、旅途進度條、戰鬥畫面） | M1～M4 已完成並合併（2026-10-30），等實機測試後調整（計畫第 5 節）；已知：開戰時的地名過場在手機寬度會斷成兩行 | [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) |
 | R2 | **UI v2 剩下的部分** | P0～P5、P7 已完成；P6 模組化像素立繪擱置；地圖格要不要改用 ComfyUI 生成的 tileset 還沒決定 | [UI_V2_PLAN](UI_V2_PLAN.md)、[comfy/portrait-spec.md](../comfy/portrait-spec.md) |
 
 ## 3. 程式整理

@@ -12,7 +12,7 @@
 | [ideas/](ideas/README.md) | 點子庫（依來源分成不同文件） | I | **還沒決定要不要做**的構想 |
 | [UI_V2_PLAN](UI_V2_PLAN.md) | UI 改版計畫 | P | 單一大型工作的分階段計畫（完成度記在 ROADMAP） |
 | [LUST_COMBAT_PLAN](LUST_COMBAT_PLAN.md) | 慾望戰鬥（成人向）的實作計畫 | S | 同上（ROADMAP R8） |
-| [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) | 手機版 UI 計畫 | M | 同上（ROADMAP R10；實作在 `claude/serene-cerf-g6v7w8`，合併時那邊的版本為準） |
+| [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) | 手機版 UI 計畫 | M | 同上（ROADMAP R10；M1～M4 已合併，待實機測試） |
 | [RETROSPECTIVE](RETROSPECTIVE.md) | 開發回顧：問題盤點 | — | 開發以來遇到的問題、原因、防範與建議（2026-10-30） |
 | [CHARACTER_LINES_PLAN](CHARACTER_LINES_PLAN.md) | 角色線計畫（白百合巡禮、琥珀） | — | 同上（ROADMAP R9） |
 
