@@ -5,6 +5,8 @@
 #   S9-3 地下城事件 24 件（travel_events.json，scope: dungeon；docs/ADULT_EVENTS.md 第 4 節）
 #   S9-4 魅氣濃的城鎮事件 20 件（travel_events.json，scope: town；docs/ADULT_EVENTS.md 第 9 節）
 #   S9-5 旅途事件 8 件（travel_events.json，scope: road；docs/ADULT_EVENTS.md 第 10 節）
+#   S9-6 淫服補充：12 種成人向服裝的底材（gear.json）、前三級材料的制式品與 6 件獨特品（items.json）、
+#        取得方式（寶箱、園區寶箱、拍賣會、性戰場的稀有獎品、夢魔氏族的執行者的掉落）；docs/ITEMS.md 第 2 節
 # 可以重跑：先拿掉上一次寫進去的再寫。要排在 lust_s8.py 之後（淫鬥場、拍賣會、園區的寶箱在那裡重寫）。
 import json
 import re
@@ -938,8 +940,130 @@ def write_s9_5():
     print('S9-5 road events', len(ROAD_EVENTS), 'willing', len(willing))
 
 
+# ---------------- S9-6 淫服補充 ----------------
+def outfit(slot, name, kind, price, scale, desc, exposure=None, armor=None):
+    return {"slot": slot, "name": name, "kind": kind, **({"armor": armor} if armor else {}), "price": price, "scale": scale,
+            **({"exposure": exposure} if exposure is not None else {}), "outfit": "adult", "adult": True, "desc": desc}
+
+
+OUTFIT_BASES = {
+    "micro_bikini": outfit("body", "微比基尼", "cloth", 60, {"save": "up"}, "三片巴掌大的布和幾條細繩，遮住的比露出的少得多。", 3, "cloth"),
+    "sling_swimsuit": outfit("body", "吊帶泳衣", "cloth", 80, {"save": "up"}, "從肩膀拉到胯下的一條 V 字形布帶，正面背面都只有那一條。", 3, "cloth"),
+    "dancer_veils": outfit("body", "舞孃紗衣", "cloth", 150, {"save": "up"}, "層層疊疊的半透明紗巾，綴著金幣與小鈴，轉起來什麼都藏不住。", 2, "cloth"),
+    "open_gown": outfit("body", "開胸晚禮服", "cloth", 300, {"save": "up"}, "裙擺曳地、胸口卻一路開到肚臍的晚禮服，淫靡之地的貴婦們最愛的款式。", 2, "cloth"),
+    "micro_skirt": outfit("legs", "超短裙", "cloth", 30, {"save": "half"}, "短到一彎腰就什麼都看得見的裙子。", 2),
+    "assless_chaps": outfit("legs", "無襠皮褲", "leather", 120, {"evade": "half"}, "只包住兩條腿的皮褲，胯下和臀部是空的。", 3),
+    "platform_heels": outfit("feet", "水晶高跟鞋", "cloth", 60, {"evade": "half"}, "透明鞋跟高得嚇人的厚底高跟鞋，舞台上的舞孃都穿這個。"),
+    "latex_gloves": outfit("wrists", "乳膠長手套", "leather", 60, {"crit": "third", "save": "half"}, "亮面的黑色長手套，緊緊貼著手臂一直包到肩膀。"),
+    "garter_belt": outfit("belt", "吊襪腰帶", "cloth", 40, {"save": "half"}, "掛著四條吊帶的蕾絲腰帶，扣在網襪或長襪上。"),
+    "cupless_bra": outfit("underwear_top", "開胸胸罩", "cloth", 40, {"save": "third"}, "只有托底和肩帶的胸罩，該遮的地方是空的。", 3),
+    "succubus_horns": outfit("head", "魅魔角頭飾", "jewel", 80, {"save": "up"}, "一對彎彎的黑角裝在髮箍上，角尖鑲著小寶石，戴上就像個魅魔。"),
+    "body_chain": outfit("accessory", "身體鍊", "jewel", 150, {"save": "third_up"}, "從頸子垂到胸前、再纏過腰間的細鍊，隨著呼吸閃閃發亮。"),
+}
+# 最露骨的（曝露度 3）只在魅氣濃度 3 以上的城鎮賣
+CHARM_ONLY = {"micro_bikini", "sling_swimsuit", "assless_chaps", "cupless_bra"}
+SHOP_OF = {"cloth": "tailor", "leather": "tailor", "jewel": "jeweler"}
+TIERS = {"cloth": ["linen", "silk", "moonsilk"], "leather": ["leather", "hard_leather", "beast_hide"], "jewel": ["copper", "silver", "gold"]}
+
+
+def std_name(materials, base, mat):
+    """和 gear.ts 的 gearName 相同的制式名稱"""
+    m = materials[mat]
+    b = OUTFIT_BASES[base]['name']
+    if m['kind'] == 'leather' and b.startswith('皮'):
+        return b if m['tier'] == 1 else m['name'] + (b[1:] if m['name'].endswith('皮') else b)
+    return m['name'] + b
+
+
+OUTFIT_UNIQUES = [
+    item('魅魔女王的晚禮服', 3600, ['unique'], '魅魔女王在宴會上穿過一次就賞給下人的晚禮服——胸口開得比任何一件都低，裙擺上的寶石卻是真的。',
+         {"base": "open_gown", "material": "moonsilk", "attrs": {"cha": 2}, "lewd": {"lewdness": 5}}),
+    item('流沙聖殿的舞孃紗衣', 2400, ['unique'], '古代神殿的舞孃獻舞時穿的紗衣，金幣上刻著已經沒人看得懂的祈禱文。',
+         {"base": "dancer_veils", "material": "silk", "attrs": {"dex": 1, "cha": 1}}),
+    item('潮汐港的微比基尼', 1800, ['unique'], '觸手水族館的「濕身展示」用的比基尼，泡過水之後會變得更透。',
+         {"base": "micro_bikini", "material": "silk", "attrs": {"dex": 1}, "lewd": {"sensitivity": 5}}),
+    item('黑薔薇的乳膠手套', 2600, ['unique'], '性戰場的冠軍才拿得到的手套：指尖碰到哪裡，哪裡就軟下去。',
+         {"base": "latex_gloves", "material": "hard_leather", "attrs": {"dex": 1}, "unique": {"check": {"kinds": ["seduce"]}, "bonus": 2}}),
+    item('夜蝶的吊襪腰帶', 2000, ['unique'], '傳說中某位頭牌從不離身的吊襪腰帶，扣上之後腰會自己知道該怎麼擺。',
+         {"base": "garter_belt", "material": "silk", "lewd": {"lewdness": 4, "endurance": 4}}),
+    item('夢魔氏族的角冠', 3200, ['unique'], '夢魔氏族的執行者頭上的角冠，不是裝飾——是從前一任主人頭上拔下來的真角。',
+         {"base": "succubus_horns", "material": "gold", "attrs": {"cha": 1, "int": 1}}),
+]
+OUTFIT_SOURCES = {
+    "chests": {"deep": [["流沙聖殿的舞孃紗衣", 0.02]], "abyss": [["夜蝶的吊襪腰帶", 0.03]]},
+    "park": [["潮汐港的微比基尼", 0.02]],
+    "auction": [["魅魔女王的晚禮服", 2]],
+    "arena": {"ring": "lust", "rare": {"tier": 5, "chance": 0.25, "items": ["黑薔薇的乳膠手套"]}},
+    "loot": {"enemy": "incubus_enforcer", "item": "夢魔氏族的角冠", "chance": 0.2},
+}
+
+
+def write_s9_6():
+    g = json.load(open('data/rules/gear.json'))
+    materials = g['materials']
+    # 底材
+    p = 'data/rules/gear.json'
+    t = open(p).read()
+    for k in OUTFIT_BASES:
+        t = drop_lines(t, r'\n    "' + k + r'": \{.*')
+    t = insert_after(t, r'\n    "fishnet": \{.*', [f'    "{k}": ' + json.dumps(v, ensure_ascii=False) for k, v in OUTFIT_BASES.items()])
+    for layer, rows in OUTFIT_SOURCES['chests'].items():
+        def add(v, rows=rows):
+            mine = {n for n, _ in rows}
+            v['items'] = [x for x in v['items'] if x[0] not in mine] + rows
+        t = edit_line(t, r'^    "' + layer + r'": ', add)
+    json.loads(t)
+    open(p, 'w').write(t)
+    # 制式品（前三級材料，價格 = 底材價格 × 材料倍率）與獨特品
+    std = []
+    for base, b in OUTFIT_BASES.items():
+        for mat in TIERS[b['kind']]:
+            assert materials[mat]['kind'] == b['kind'], (base, mat)
+            std.append({"name": std_name(materials, base, mat), "category": "equipment", "price_cc": round(b['price'] * materials[mat]['price']),
+                        "tags": [SHOP_OF[b['kind']]], **({"charm_min": 3} if base in CHARM_ONLY else {}), "gear": {"base": base, "material": mat}})
+    new_items = std + OUTFIT_UNIQUES
+    p = 'data/rules/items.json'
+    t = open(p).read()
+    for i in new_items:
+        t = drop_lines(t, r'\n    \{ ?"name": "' + re.escape(i['name']) + r'".*')
+    t = insert_after(t, r'\n    \{ "name": "月影絲網襪".*', ['    ' + json.dumps(i, ensure_ascii=False) for i in new_items])
+    d = json.loads(t)
+    names = [i['name'] for i in d['items']]
+    assert len(names) == len(set(names)), [n for n in names if names.count(n) > 1][:5]
+    open(p, 'w').write(t)
+    # 園區寶箱、拍賣會、性戰場的稀有獎品
+    unique_names = {i['name'] for i in OUTFIT_UNIQUES}
+    p = 'data/rules/lewd.json'
+    t = open(p).read()
+    d = json.loads(t)
+    park = [x for x in d['park']['chest_items'] if x[0] not in unique_names] + OUTFIT_SOURCES['park']
+    t = re.sub(r'^(    "chest_items": )(.*?)(,?)$', lambda m: m.group(1) + json.dumps(park, ensure_ascii=False) + m.group(3), t, count=1, flags=re.M)
+
+    def auction(v):
+        v['pool'] = [x for x in v['pool'] if x[0] not in unique_names] + OUTFIT_SOURCES['auction']
+    t = edit_line(t, r'^  "auction": ', auction)
+
+    def arena(v):
+        v['rings'][OUTFIT_SOURCES['arena']['ring']]['rare'] = OUTFIT_SOURCES['arena']['rare']
+    t = edit_line(t, r'^  "arena": ', arena)
+    json.loads(t)
+    open(p, 'w').write(t)
+    # 夢魔氏族的執行者的掉落
+    p = 'data/rules/enemies.json'
+    t = open(p).read()
+    src = OUTFIT_SOURCES['loot']
+    m = re.search(r'^    (\{"id": "' + src['enemy'] + r'".*?\})(,?)$', t, re.M)
+    e = json.loads(m.group(1))
+    e['loot'] = [x for x in e.get('loot', []) if x['item'] != src['item']] + [{"item": src['item'], "chance": src['chance']}]
+    t = t[:m.start(1)] + json.dumps(e, ensure_ascii=False) + t[m.end(1):]
+    json.loads(t)
+    open(p, 'w').write(t)
+    print('S9-6 outfit bases', len(OUTFIT_BASES), 'standard items', len(std), 'uniques', len(OUTFIT_UNIQUES))
+
+
 if __name__ == '__main__':
     write_s9_2()
     write_s9_3()
     write_s9_4()
     write_s9_5()
+    write_s9_6()
