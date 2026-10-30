@@ -13,7 +13,7 @@
 
 ## 2. 全部點子
 
-編號在整個點子庫裡不重複（不分來源），新點子接著往下編；做完、放棄或搬到 ROADMAP 的編號空著不再用（I10、I15、I16、I18 已做；I13 淫氣世界世界書已經用在 R8；I14 搬到 R8；I5 的前半搬到 R11）。
+編號在整個點子庫裡不重複（不分來源），新點子接著往下編；做完、放棄或搬到 ROADMAP 的編號空著不再用（I10、I15、I16、I18、I22 已做；I13 淫氣世界世界書已經用在 R8；I14 搬到 R8；I5 的前半搬到 R11）。
 
 | # | 點子 | 分類 | 來源 |
 |---|---|---|---|
@@ -32,4 +32,3 @@
 | I19 | 模組化像素立繪 | 介面、美術 | [early-design](early-design.md#i19) |
 | I20 | 地圖格改用生成的 tileset | 介面、美術 | [early-design](early-design.md#i20) |
 | I21 | 看得到附近的人在做什麼（不用 AI 的 NPC 日常） | 玩法、AI | [player-feedback](player-feedback.md#i21) |
-| I22 | 日誌插圖自動生成，圖放在看得到的地方 | 介面、AI | [player-feedback](player-feedback.md#i22) |
