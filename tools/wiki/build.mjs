@@ -125,6 +125,8 @@ export const GROUPS = [
     { page: '點子：開發討論', src: 'docs/plan/ideas/dev-discussion.md', desc: '開發討論中提出的構想', sub: '點子的來源' },
     { page: 'UI 改版計畫', src: 'docs/plan/UI_V2_PLAN.md', desc: 'UI v2 的分階段計畫' },
     { page: '手機版 UI 計畫', src: 'docs/plan/MOBILE_UI_PLAN.md', desc: '手機直式版面的規劃與決定' },
+    { page: '角色線計畫', src: 'docs/plan/CHARACTER_LINES_PLAN.md', desc: '白百合巡禮與琥珀的角色線（R9）' },
+    { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
   ] },
 ]
 

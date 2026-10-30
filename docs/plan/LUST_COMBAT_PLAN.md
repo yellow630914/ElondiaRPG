@@ -1,6 +1,6 @@
 # 慾望戰鬥實作計畫（色情戰鬥玩法）
 
-> 上層：[計畫與追蹤](README.md)。狀態：**進行中**，S0～S9 已完成，剩下第 17 節的實作時再確認的小事與各節「留到之後的部分」（[ROADMAP](ROADMAP.md) R8）；成人向。原本是點子庫的 I14，2026-10-29 專案擁有者回覆了所有待決定事項，結論見第 0.2 節。
+> 上層：[計畫與追蹤](README.md)。狀態：**S0～S9 已完成，v0.4.0（2026-10-30）發布**；剩下第 17 節的實作時再確認的小事與各節「留到之後的部分」（[ROADMAP](ROADMAP.md) R8）；成人向。原本是點子庫的 I14，2026-10-29 專案擁有者回覆了所有待決定事項，結論見第 0.2 節。
 > 素材：I13 的淫氣世界世界書（[xianxia-adult-lorebook](ideas/xianxia-adult-lorebook.md)，原文在擁有者的私人頁面），借用的條目見第 18 節。
 > 依賴的現有機制：戰鬥（[COMBAT_SYSTEM](../COMBAT_SYSTEM.md)：`Combatant`、抗性、狀態、敵人 AI、戰敗事件）、特質（[PERKS](../PERKS.md)）、裝備（[ITEMS](../ITEMS.md)、`gear.json` 的 `outfit`）、奴隸與主人事件（[COMPANIONS](../COMPANIONS.md) 2.4 節、`slavery.json`）、打工與娼館（[WORK](../WORK.md)）、打工的任務線（[ADULT_EVENTS](../ADULT_EVENTS.md) 第 8 節）、地下城（[DUNGEON_DESIGN](../DUNGEON_DESIGN.md)）、特殊地圖（[SPECIAL_MAPS](../SPECIAL_MAPS.md)）、寄生物、內容編輯器（[CONTENT_EDITOR](../CONTENT_EDITOR.md)）、存檔規則（[SAVES](../SAVES.md) 第 7 節）、給 AI 的資料（[PROMPTS](../PROMPTS.md)）。
 

@@ -12,7 +12,9 @@
 | [ideas/](ideas/README.md) | 點子庫（依來源分成不同文件） | I | **還沒決定要不要做**的構想 |
 | [UI_V2_PLAN](UI_V2_PLAN.md) | UI 改版計畫 | P | 單一大型工作的分階段計畫（完成度記在 ROADMAP） |
 | [LUST_COMBAT_PLAN](LUST_COMBAT_PLAN.md) | 慾望戰鬥（成人向）的實作計畫 | S | 同上（ROADMAP R8） |
-| [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) | 手機版 UI 計畫 | — | 手機直式版面的規劃與決定（規劃中） |
+| [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) | 手機版 UI 計畫 | M | 同上（ROADMAP R10；實作在 `claude/serene-cerf-g6v7w8`，合併時那邊的版本為準） |
+| [RETROSPECTIVE](RETROSPECTIVE.md) | 開發回顧：問題盤點 | — | 開發以來遇到的問題、原因、防範與建議（2026-10-30） |
+| [CHARACTER_LINES_PLAN](CHARACTER_LINES_PLAN.md) | 角色線計畫（白百合巡禮、琥珀） | — | 同上（ROADMAP R9） |
 
 ## 2. 流程
 
@@ -30,6 +32,19 @@
 - 系統文件裡不寫「待決定」「之後再做」，改成連到這裡的編號。
 
 ## 3. 完成紀錄
+
+### 2026-10-30 v0.4.0：慾望戰鬥（R8 的 S0～S9）
+
+- 慾望戰鬥的九個階段全部完成並發布：技能攜帶上限、戰鬥核心、長期指標與服裝、流派與雙面效應、事件編輯器、奴隸與娼館、打工線技能、緋夢樂園、S8 的連動、S9 的拘束具與事件。規則在 [COMBAT_SYSTEM](../COMBAT_SYSTEM.md) 第 8.5 節、[LEWD_STATS](../LEWD_STATS.md)、[LUST_PARK](../LUST_PARK.md)；沒做的部分留在 [LUST_COMBAT_PLAN](LUST_COMBAT_PLAN.md)，R8 改成收尾。
+- 固定 NPC 的內建形象圖（54 位，`src/assets/portraits/`，[PORTRAITS](../PORTRAITS.md)）；轉檔腳本 `tools/portraits/finalize.py`。
+- 存檔格式升到 11（「魅魔女王」改名「緋夢夫人」的物品名稱遷移）。
+
+### 2026-10-28～29 v0.3.6、v0.3.7
+
+- 城鎮移動的效能：任務用到的地標、小隊表、城鎮的基底地圖依內容版本（`contentRevision`）算一次就記住，畫面共用所在地點；王都每步的腳本時間約 45 ms → 9 ms（[CONTENT_DEPENDENCIES](../CONTENT_DEPENDENCIES.md) 的快取一節）。
+- 主動行動可以選最多 3 個對象（[ACTIONS](../ACTIONS.md)）；主動行動移到冒險日誌底部、等待判定的行動顯示在日誌裡。
+- 玩家回饋：特質【星夜露宿】，可以在野外紮營長休（[PERKS](../PERKS.md)）。盤點特質取得方式時發現的缺口記成 [LOGIC_ISSUES](LOGIC_ISSUES.md) L5。
+- 拿掉「成人向」開關，AI 改成依日誌分流成人場景（[PROMPTS](../PROMPTS.md)）。
 
 ### 2026-10-29 正文的銜接、篇幅與判定（I15～I18，玩家心得）
 
