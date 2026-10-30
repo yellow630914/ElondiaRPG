@@ -15,8 +15,11 @@ import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import GameIcon from './ui/GameIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
+import BottomSheet from './mobile/BottomSheet.vue'
+import SwipeTabs from './mobile/SwipeTabs.vue'
+import { isMobile } from './mobile/mobile'
 
-const emit = defineEmits<{ finished: [] }>()
+const emit = defineEmits<{ finished: []; open: [what: 'party' | 'settings'] }>()
 const game = useGame()
 const combat = computed(() => game.state!.combat!)
 // 仇恨值：敵人選目標的機率（不是絕對的）
@@ -300,13 +303,115 @@ watch(
 )
 
 const resultText = { victory: '勝利！', defeat: '戰敗……', fled: '成功撤退', ongoing: '' }
+
+// ── 手機版（docs/plan/MOBILE_UI_PLAN.md 6 節）：我方在上、敵人在下，兩欄小卡；紀錄只露最新兩行；
+// 技能依類型分頁；長按卡片或技能看說明（電腦版的滑鼠提示）。
+const isLewd = (a: AbilityDef) => a.classes?.includes('lewd') ?? false
+function tabAbilities(id: string): AbilityDef[] {
+  const list = actor.value ? actor.value.abilities.map(abilityDef) : []
+  if (id === 'skill') return list.filter((x) => x.type === 'skill' && !isLewd(x))
+  if (id === 'spell') return list.filter((x) => x.type === 'spell' && !isLewd(x)).sort((x, y) => (x.circle ?? 0) - (y.circle ?? 0))
+  if (id === 'cantrip') return list.filter((x) => x.type === 'cantrip' && !isLewd(x))
+  if (id === 'lewd') return list.filter(isLewd)
+  return []
+}
+interface AbilityTab { id: string; label: string; count: number }
+const abilityTabs = computed<AbilityTab[]>(() => [
+  ...([['skill', '技能'], ['spell', '法術'], ['cantrip', '戲法'], ['lewd', '色情']] as const).map(([id, label]) => ({ id, label, count: tabAbilities(id).length })),
+  { id: 'item', label: '道具', count: items.value.length },
+].filter((t) => t.count > 0))
+const abilityTab = ref('skill')
+watch(abilityTabs, (tabs) => { if (!tabs.some((t) => t.id === abilityTab.value)) abilityTab.value = tabs[0]?.id ?? 'skill' }, { immediate: true })
+
+/** 卡片上最多兩個狀態，其餘「+N」（長按看全部） */
+const MAX_TAGS = 2
+const shownStatuses = (c: Combatant) => (isMobile.value ? c.statuses.slice(0, MAX_TAGS) : c.statuses)
+const moreStatuses = (c: Combatant) => (isMobile.value ? Math.max(0, c.statuses.length - MAX_TAGS) : 0)
+
+/** 夾在敵我之間的紀錄：最新兩行 */
+const tickerLines = computed(() => rounds.value.flatMap((g) => g.lines).slice(-2).map((l) => l.text))
+const logOpen = ref(false)
+const menuOpen = ref(false)
+
+// 長按（約 0.45 秒）看說明；手指移動就取消（讓捲動與左右滑照常）。長按後放開的那一下不算點擊
+type Info = { kind: 'fighter'; id: string } | { kind: 'ability'; id: string } | { kind: 'item'; name: string }
+const info = ref<Info | null>(null)
+let longPressed = false
+function press(e: PointerEvent, what: Info) {
+  if (!isMobile.value || !e.isPrimary) return
+  longPressed = false
+  const x0 = e.clientX, y0 = e.clientY
+  const stop = () => {
+    clearTimeout(hold)
+    window.removeEventListener('pointerup', stop)
+    window.removeEventListener('pointercancel', stop)
+    window.removeEventListener('pointermove', move)
+  }
+  const move = (m: PointerEvent) => { if (Math.hypot(m.clientX - x0, m.clientY - y0) > 10) stop() }
+  const hold = setTimeout(() => {
+    longPressed = true
+    info.value = what
+    stop()
+    try { navigator.vibrate?.(10) } catch { /* 不能震動就算了 */ }
+  }, 450)
+  window.addEventListener('pointerup', stop)
+  window.addEventListener('pointercancel', stop)
+  window.addEventListener('pointermove', move)
+}
+function consumeLong(): boolean {
+  if (!longPressed) return false
+  longPressed = false
+  return true
+}
+/** 點卡片：選目標時出手；手機上平常點一下看詳情 */
+function onCard(c: Combatant) {
+  if (consumeLong()) return
+  if (pending.value) {
+    if (isTarget(c)) chooseTarget(c.id)
+    return
+  }
+  if (isMobile.value) info.value = { kind: 'fighter', id: c.id }
+}
+/** 手機上不能用的技能照樣可以點：說出原因（手機沒有滑鼠提示） */
+function tapAbility(a: AbilityDef) {
+  if (consumeLong()) return
+  const r = reason(a)
+  if (r) return game.flash(`${a.name}：${r}`)
+  choose(a)
+}
+function tapItem(name: string) {
+  if (consumeLong()) return
+  if (actor.value && actor.value.ap < costs.item) return game.flash(`${name}：行動點不足`)
+  chooseItem(name)
+}
+const infoFighter = computed(() => {
+  const i = info.value
+  return i?.kind === 'fighter' ? combat.value.combatants.find((c) => c.id === i.id) ?? null : null
+})
+const infoAbility = computed(() => (info.value?.kind === 'ability' ? abilityDef(info.value.id) : null))
+const infoItem = computed(() => {
+  const i = info.value
+  return i?.kind === 'item' ? items.value.find((x) => x.name === i.name) ?? null : null
+})
+const infoTitle = computed(() => infoFighter.value?.name ?? infoAbility.value?.name ?? infoItem.value?.name ?? '')
+function pickMenu(what: 'log' | 'party' | 'settings') {
+  menuOpen.value = false
+  if (what === 'log') logOpen.value = true
+  else emit('open', what)
+}
 /** 結束時的結果與按鈕：特效播完才出現 */
 const showResult = computed(() => combat.value.status !== 'ongoing' && played.value >= combat.value.timeline.length)
 </script>
 
 <template>
-  <section ref="field" class="panel field" :class="{ picking: !!pending, lost: showResult && combat.status === 'defeat' }">
-    <div class="row field-head">
+  <!-- 手機版：戰鬥中沒有底部分頁列，上方一條「戰鬥・場景｜回合｜⋯」 -->
+  <header v-if="isMobile" class="m-top">
+    <span class="scene"><GameIcon name="sword" :size="16" />戰鬥<template v-if="combat.scene">・{{ combat.scene }}</template></span>
+    <span class="tag round">第 {{ combat.round }} 回合</span>
+    <button class="ghost m-menu" aria-label="選單" @click="menuOpen = true"><GameIcon name="more" :size="18" /></button>
+  </header>
+  <section ref="field" class="panel field" :class="{ picking: !!pending, lost: showResult && combat.status === 'defeat', m: isMobile }">
+    <div v-if="!isMobile" class="row field-head">
       <h2 class="title"><GameIcon name="sword" :size="20" />戰鬥・{{ combat.scene ?? '' }}</h2>
       <span v-if="pending" class="pick-hint">點選發亮的卡片當目標（Esc 取消）</span>
       <span class="tag round">第 {{ combat.round }} 回合</span>
@@ -322,11 +427,13 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
             :ref="(el) => cardRef(c.id, el)"
             class="fighter"
             :class="{ current: actor?.id === c.id, down: shownDown(c), fled: c.fled, targetable: pending && isTarget(c), dim: pending && !isTarget(c) }"
-            @click="pending && isTarget(c) && chooseTarget(c.id)"
+            @click="onCard(c)"
+            @pointerdown="press($event, { kind: 'fighter', id: c.id })"
+            @contextmenu="isMobile && $event.preventDefault()"
           >
             <div class="l1">
               <NameTag :id="c.id" class="fname" />
-              <span class="small muted">Lv.{{ c.level }}・幸運 {{ luckyThreshold(c.attrs) }}+</span>
+              <span class="small muted">Lv.{{ c.level }}<template v-if="!isMobile">・幸運 {{ luckyThreshold(c.attrs) }}+</template></span>
               <span v-if="downText(c)" class="tag bad state">{{ downText(c) }}</span>
             </div>
             <div class="l2">
@@ -344,18 +451,23 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
                 <span class="num">♥ {{ shownLust(c) }}/{{ effectiveLustMax(c) }}</span></span>
             </div>
             <div class="l3 small">
-              <span v-if="isActive(c)" class="threat muted" :title="`仇恨值 ${Math.round(c.threat ?? 0)}・累積倍率 ×${threatMultOf(c).toFixed(2)}（職業、裝備、天賦與狀態）。敵人依仇恨加權選目標，不是絕對的。`">
+              <span v-if="isActive(c) && !isMobile" class="threat muted" :title="`仇恨值 ${Math.round(c.threat ?? 0)}・累積倍率 ×${threatMultOf(c).toFixed(2)}（職業、裝備、天賦與狀態）。敵人依仇恨加權選目標，不是絕對的。`">
                 <GameIcon name="target" :size="12" />{{ Math.round((shares[c.id] ?? 0) * 100) }}%
                 <span class="bar"><i :style="{ width: `${Math.round((shares[c.id] ?? 0) * 100)}%` }" /></span>
               </span>
-              <span v-for="st in c.statuses" :key="st.id" class="tag" :class="statusDef(st.id).kind" :title="statusTitle(st.id)">
+              <span v-for="st in shownStatuses(c)" :key="st.id" class="tag" :class="statusDef(st.id).kind" :title="statusTitle(st.id)">
                 {{ statusDef(st.id).name }}{{ st.turns < 99 ? ` ${st.turns}` : '' }}
               </span>
-              <span v-if="c.concentration" class="tag">專注：{{ abilityDef(c.concentration).name }}</span>
+              <span v-if="moreStatuses(c)" class="tag">+{{ moreStatuses(c) }}</span>
+              <span v-if="c.concentration && !isMobile" class="tag">專注：{{ abilityDef(c.concentration).name }}</span>
             </div>
           </div>
         </div>
       </div>
+      <button v-if="isMobile" type="button" class="ticker" @click="logOpen = true">
+        <span class="lines"><span v-for="(t, i) in tickerLines" :key="i">{{ t }}</span><span v-if="!tickerLines.length">戰鬥開始。</span></span>
+        <span class="all">全部紀錄 ›</span>
+      </button>
       <div>
         <h3 class="title side foe"><GameIcon name="skull" :size="16" />敵人</h3>
         <div class="cards">
@@ -365,7 +477,9 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
             :ref="(el) => cardRef(c.id, el)"
             class="fighter"
             :class="{ current: actor?.id === c.id, down: shownDown(c), fled: c.fled, targetable: pending && isTarget(c), dim: pending && !isTarget(c), headliner: c.headliner }"
-            @click="pending && isTarget(c) && chooseTarget(c.id)"
+            @click="onCard(c)"
+            @pointerdown="press($event, { kind: 'fighter', id: c.id })"
+            @contextmenu="isMobile && $event.preventDefault()"
           >
             <div class="l1">
               <span v-if="c.headliner" class="crown" title="以 BOSS 出場"><GameIcon name="crown" :size="14" /></span>
@@ -385,11 +499,12 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
                 <span class="num">♥ {{ shownLust(c) }}/{{ effectiveLustMax(c) }}</span></span>
             </div>
             <div class="l3 small">
-              <span v-for="t in affinityTags(c)" :key="t.text" class="tag" :class="t.kind">{{ t.text }}</span>
-              <span v-for="t in c.traits ?? []" :key="t" class="tag trait" :title="monsterTraits.traits[t]?.desc ?? ''">{{ monsterTraits.traits[t]?.name ?? t }}</span>
-              <span v-for="st in c.statuses" :key="st.id" class="tag" :class="statusDef(st.id).kind" :title="statusTitle(st.id)">
+              <span v-for="t in isMobile ? [] : affinityTags(c)" :key="t.text" class="tag" :class="t.kind">{{ t.text }}</span>
+              <span v-for="t in isMobile ? [] : c.traits ?? []" :key="t" class="tag trait" :title="monsterTraits.traits[t]?.desc ?? ''">{{ monsterTraits.traits[t]?.name ?? t }}</span>
+              <span v-for="st in shownStatuses(c)" :key="st.id" class="tag" :class="statusDef(st.id).kind" :title="statusTitle(st.id)">
                 {{ statusDef(st.id).name }}{{ st.turns < 99 ? ` ${st.turns}` : '' }}
               </span>
+              <span v-if="moreStatuses(c)" class="tag">+{{ moreStatuses(c) }}</span>
             </div>
           </div>
         </div>
@@ -397,7 +512,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
     </div>
   </section>
 
-  <section class="panel log-panel">
+  <section v-if="!isMobile" class="panel log-panel">
     <h3 class="title"><GameIcon name="scroll" :size="16" />戰鬥紀錄</h3>
     <div ref="log" class="log small">
       <div v-for="g in rounds" :key="g.key" class="round-group">
@@ -412,14 +527,15 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
     </div>
   </section>
 
-  <section class="panel actions">
+  <section class="panel actions" :class="{ m: isMobile }">
     <template v-if="combat.status === 'ongoing' && actor">
       <div class="row" style="justify-content: space-between">
         <h3 class="title"><GameIcon name="d20" :size="16" />{{ actor.name }} 的行動</h3>
         <span class="tag ap-left">剩餘 <strong>{{ actor.ap }}</strong> AP</span>
+        <button v-if="isMobile && !pending" class="small end-turn" @click="send({ type: 'end_turn' })">結束回合</button>
       </div>
       <template v-if="pending">
-        <p class="small muted">選擇目標：點上方發亮的卡片，或用下面的按鈕（Esc 取消）</p>
+        <p class="small muted">{{ isMobile ? '選擇目標：點發亮的卡片，或用下面的按鈕' : '選擇目標：點上方發亮的卡片，或用下面的按鈕（Esc 取消）' }}</p>
         <div class="row">
           <button v-for="t in targets" :key="t.id" @click="chooseTarget(t.id)">{{ t.name }}（{{ t.hp }}/{{ t.maxHp }}）</button>
           <button class="small" @click="pending = null">取消</button>
@@ -428,16 +544,16 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
       <template v-else>
         <div class="row basics">
           <button class="primary" :disabled="actor.ap < costs.weapon_attack" @click="pending = { kind: 'attack' }">
-            {{ actor.weapon.name }}攻擊 <span class="small">{{ costs.weapon_attack }} AP・{{ damageTypeName(actor.weapon.type) }}</span>
+            {{ actor.weapon.name }}攻擊 <span class="small">{{ costs.weapon_attack }} AP<template v-if="!isMobile">・{{ damageTypeName(actor.weapon.type) }}</template></span>
           </button>
           <button :disabled="actor.ap < costs.defend" @click="send({ type: 'defend' })">防禦 <span class="small muted">{{ costs.defend }} AP</span></button>
           <button v-if="bound.length" :disabled="actor.ap < struggleAp" :title="`力量或靈巧（較高的）+ 熟練檢定\n${struggleTitle}`" @click="struggle">
             {{ bound.some((t) => t.id === actor!.id) ? '掙脫' : '撕開' }} <span class="small muted">{{ struggleAp }} AP</span>
           </button>
           <button class="danger" :disabled="actor.ap < costs.flee" @click="send({ type: 'flee' })">撤退 <span class="small">{{ costs.flee }} AP</span></button>
-          <button @click="send({ type: 'end_turn' })">結束回合</button>
+          <button v-if="!isMobile" @click="send({ type: 'end_turn' })">結束回合</button>
         </div>
-        <div class="groups">
+        <div v-if="!isMobile" class="groups">
           <div v-for="g in groups" :key="g.name" class="group">
             <h4 class="small muted">{{ g.name }}</h4>
             <div class="row">
@@ -471,6 +587,32 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
             </div>
           </div>
         </div>
+        <!-- 手機版：技能依類型分頁，可以左右滑；不能用的照樣能點（說出原因），長按看說明 -->
+        <SwipeTabs v-if="isMobile" v-model="abilityTab" :tabs="abilityTabs" swipe bar class="m-skills">
+          <template #tab="{ tab: t }">{{ t.label }}<span class="cnt">{{ (t as AbilityTab).count }}</span></template>
+          <template #default="{ id }">
+            <div class="m-grid">
+              <template v-if="id === 'item'">
+                <button
+                  v-for="i in items" :key="i.name" class="ability" :class="{ off: actor.ap < costs.item }"
+                  @pointerdown="press($event, { kind: 'item', name: i.name })" @contextmenu.prevent @click="tapItem(i.name)"
+                >
+                  <span class="an">{{ i.name }} ×{{ i.qty }}</span>
+                  <span class="small muted sub2">{{ costs.item }} AP</span>
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  v-for="a in tabAbilities(id)" :key="a.id" class="ability" :class="{ off: reason(a) !== null, lewd: isLewd(a) }"
+                  @pointerdown="press($event, { kind: 'ability', id: a.id })" @contextmenu.prevent @click="tapAbility(a)"
+                >
+                  <span class="an"><ContentIcon kind="ability" :def="a" :size="16" />{{ a.name }}</span>
+                  <span class="small muted sub2">{{ costText(a) }}</span>
+                </button>
+              </template>
+            </div>
+          </template>
+        </SwipeTabs>
       </template>
     </template>
     <template v-else-if="showResult">
@@ -478,6 +620,64 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
       <button class="primary" @click="finish">結束戰鬥並產生戰報</button>
     </template>
   </section>
+
+  <template v-if="isMobile">
+    <BottomSheet :open="!!info" :title="infoTitle" @close="info = null">
+      <dl v-if="infoFighter" class="m-info">
+        <dt>生命</dt><dd>{{ shownHp(infoFighter) }} / {{ infoFighter.maxHp }}<template v-if="infoFighter.tempHp">（臨時 {{ infoFighter.tempHp }}）</template><template v-if="downText(infoFighter)">・{{ downText(infoFighter) }}</template></dd>
+        <template v-if="hasLustBar(infoFighter)"><dt>慾望</dt><dd>{{ shownLust(infoFighter) }} / {{ effectiveLustMax(infoFighter) }}（滿了會高潮）</dd></template>
+        <template v-if="infoFighter.side === 'party'">
+          <dt>行動點</dt><dd>{{ infoFighter.ap }} / {{ infoFighter.apMax }}（每回合 +{{ infoFighter.apRegen }}）</dd>
+          <template v-if="infoFighter.slotMax.length"><dt>法術環</dt><dd>{{ slotsText(infoFighter) }}</dd></template>
+          <dt>幸運一擊</dt><dd>自然骰 {{ luckyThreshold(infoFighter.attrs) }} 以上</dd>
+          <template v-if="isActive(infoFighter)"><dt>仇恨</dt><dd>{{ Math.round((shares[infoFighter.id] ?? 0) * 100) }}%（累積倍率 ×{{ threatMultOf(infoFighter).toFixed(2) }}）。敵人依仇恨加權選目標，不是絕對的。</dd></template>
+          <template v-if="infoFighter.concentration"><dt>專注</dt><dd>{{ abilityDef(infoFighter.concentration).name }}</dd></template>
+        </template>
+        <template v-else>
+          <dt>等級</dt><dd>Lv.{{ infoFighter.level }}<template v-if="infoFighter.headliner">・以 BOSS 出場</template></dd>
+          <dt>攻擊</dt><dd>{{ damageTypeName(infoFighter.weapon.type) }}</dd>
+          <template v-if="affinityTags(infoFighter).length"><dt>抗性</dt><dd><span v-for="t in affinityTags(infoFighter)" :key="t.text" class="tag" :class="t.kind">{{ t.text }}</span></dd></template>
+          <template v-if="infoFighter.traits?.length"><dt>特性</dt><dd><div v-for="t in infoFighter.traits" :key="t"><b>{{ monsterTraits.traits[t]?.name ?? t }}</b>：{{ monsterTraits.traits[t]?.desc ?? '' }}</div></dd></template>
+        </template>
+        <dt>狀態</dt>
+        <dd>
+          <div v-for="st in infoFighter.statuses" :key="st.id">{{ statusTitle(st.id) }}{{ st.turns < 99 ? `・剩 ${st.turns} 回合` : '' }}</div>
+          <template v-if="!infoFighter.statuses.length">無</template>
+        </dd>
+      </dl>
+      <div v-else-if="infoAbility" class="m-info">
+        <p>{{ infoAbility.desc }}</p>
+        <dl>
+          <dt>花費</dt><dd>{{ costText(infoAbility) }}</dd>
+          <template v-if="reason(infoAbility)"><dt>現在</dt><dd class="bad">{{ reason(infoAbility) }}</dd></template>
+        </dl>
+      </div>
+      <div v-else-if="infoItem" class="m-info">
+        <p>{{ infoItem.def.desc }}</p>
+        <dl><dt>效果</dt><dd>{{ itemEffect(infoItem.name) }}</dd><dt>花費</dt><dd>{{ costs.item }} AP</dd></dl>
+      </div>
+    </BottomSheet>
+    <BottomSheet :open="logOpen" title="戰鬥紀錄" @close="logOpen = false">
+      <div class="m-log small">
+        <div v-for="g in rounds" :key="g.key">
+          <h4 v-if="g.round" class="round-head">第 {{ g.round }} 回合</h4>
+          <div v-for="(l, i) in g.lines" :key="i" class="line">
+            {{ l.text }}
+            <div v-for="(t, k) in l.targets ?? []" :key="k" class="sub">{{ t.text }}</div>
+            <div v-if="l.detail" class="muted detail">{{ l.detail }}</div>
+          </div>
+        </div>
+        <div v-if="played === 0" class="muted">戰鬥開始。</div>
+      </div>
+    </BottomSheet>
+    <BottomSheet :open="menuOpen" title="選單" @close="menuOpen = false">
+      <div class="m-menu-list">
+        <button @click="pickMenu('log')"><GameIcon name="scroll" :size="18" />戰鬥紀錄</button>
+        <button @click="pickMenu('party')"><GameIcon name="users" :size="18" />隊伍</button>
+        <button @click="pickMenu('settings')"><GameIcon name="settings" :size="18" />設定</button>
+      </div>
+    </BottomSheet>
+  </template>
 </template>
 
 <style scoped>
@@ -586,4 +786,54 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 @media (max-width: 720px) {
   .sides { grid-template-columns: 1fr; }
 }
+
+/* ── 手機版（MobileGame 裡：上方列、可捲動的戰場、固定在下面的行動區） */
+.m-top {
+  flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 12px; min-height: 40px; box-sizing: border-box;
+  background: linear-gradient(180deg, #2a1712, #1d1210); border-bottom: 1px solid #7a2f22;
+}
+.m-top .scene { flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 6px; font-weight: 900; color: var(--gold-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-top .scene :deep(.game-icon) { color: var(--danger); }
+.m-top .m-menu { width: 36px; height: 34px; padding: 0; display: grid; place-items: center; border: none; }
+.field.m { padding: 8px 10px; margin: 0; }
+/* 敵人貼在行動區上方（拇指好點），多出來的空白留在我方下面 */
+.field.m .sides { display: flex; flex-direction: column; gap: 8px; margin-top: 0; min-height: 100%; }
+.field.m .ticker { margin-top: auto; }
+.field.m .side { font-size: var(--fs-xs); letter-spacing: 0.12em; }
+.field.m .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.field.m .fighter { padding: 5px 7px; cursor: pointer; -webkit-touch-callout: none; user-select: none; }
+.field.m .hpbar { min-width: 0; }
+/* 卡片上只留生命、慾望、行動點與狀態；武器屬性、法術環、仇恨、抗性、特性在長按（點一下）的詳情裡 */
+.field.m .l2 > .tag, .field.m .l2 .slots { display: none; }
+.ticker {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 10px; text-align: left; box-sizing: border-box;
+  background: #1a1410; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: none; font-size: var(--fs-sm);
+}
+.ticker .lines { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ticker .lines span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.ticker .lines span:last-child { color: var(--text); }
+.ticker .all { flex: none; font-size: var(--fs-xs); color: var(--accent); }
+.actions.m { position: static; margin: 0; padding: 8px 10px 10px; box-shadow: none; border-left: none; border-right: none; border-radius: 0; }
+.actions.m .end-turn { margin-left: auto; }
+.actions.m .row { flex-wrap: nowrap; gap: 6px; }
+.actions.m .basics { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); margin: 6px 0; }
+.actions.m .basics button { min-height: 42px; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-skills :deep(.st-bar) { margin-bottom: 6px; }
+.m-skills .cnt { margin-left: 2px; font-size: var(--fs-xs); color: var(--muted); }
+.m-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; max-height: 152px; overflow-y: auto; overscroll-behavior: contain; }
+.m-grid .ability { min-width: 0; max-width: none; min-height: 46px; padding: 4px 6px; -webkit-touch-callout: none; user-select: none; }
+.m-grid .ability.off { opacity: 0.45; }
+.m-grid .ability.lewd .an { color: #ff9ccb; }
+.m-info { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: var(--fs-sm); line-height: 1.6; }
+.m-info p { grid-column: 1 / -1; margin: 0; }
+.m-info dl { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; }
+.m-info dt { color: var(--muted); }
+.m-info dd { margin: 0; min-width: 0; }
+.m-info .bad { color: var(--danger); }
+.m-log .round-head { margin: 8px 0 2px; color: var(--accent); font-size: var(--fs-xs); letter-spacing: 0.12em; }
+.m-log .line { padding: 2px 0; }
+.m-log .sub { padding-left: 1em; color: var(--muted); }
+.m-log .detail { font-size: var(--fs-xs); padding-left: 1em; }
+.m-menu-list { display: grid; gap: 6px; }
+.m-menu-list button { display: flex; align-items: center; gap: 8px; min-height: 46px; justify-content: flex-start; }
 </style>

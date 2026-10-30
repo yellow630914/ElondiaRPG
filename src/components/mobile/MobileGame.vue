@@ -136,7 +136,7 @@ function onFocusOut(e: FocusEvent) {
 <template>
   <div ref="root" class="mobile-game" @focusin="onFocusIn" @focusout="onFocusOut">
     <!-- 狀態列：只看不按（待處理的鈴鐺除外） -->
-    <header class="status">
+    <header v-if="!inCombat" class="status">
       <span class="cell"><GameIcon :name="hud.daytime ? 'sun' : 'moon'" :size="14" :class="hud.daytime ? 'sun' : 'night'" /><b>第{{ hud.day }}天 {{ hud.clock }}</b></span>
       <span class="cell place"><GameIcon name="pin" :size="14" /><b>{{ hud.place }}</b></span>
       <span class="cell money"><GameIcon name="coins" :size="14" /><b>{{ hud.money }}</b></span>
@@ -155,8 +155,8 @@ function onFocusOut(e: FocusEvent) {
     </div>
 
     <template v-if="inCombat">
-      <!-- 戰鬥畫面的手機版之後再規劃（等慾望條定案）；先照原本的畫面捲動 -->
-      <main class="combat"><CombatView /></main>
+      <!-- 戰鬥：CombatView 的手機版（上方列、戰場、行動區），不顯示狀態列與底部分頁列（計畫 6 節） -->
+      <main class="combat"><CombatView @open="emit('open', $event)" /></main>
     </template>
     <template v-else>
       <!-- 地圖：探索時大、閱讀時縮成一條 -->
@@ -188,7 +188,7 @@ function onFocusOut(e: FocusEvent) {
       </div>
     </template>
 
-    <nav class="tabbar">
+    <nav v-if="!inCombat" class="tabbar">
       <button :class="{ on: !reading && !sheet && !inCombat }" @click="sheet = null; reading = !reading"><GameIcon name="map" :size="22" /><span>地圖</span></button>
       <button @click="sheet = null; emit('open', 'party')"><GameIcon name="users" :size="22" /><span>隊伍</span><i v-if="badges.party" class="dot" /></button>
       <button :class="{ on: sheet === 'rest' }" :disabled="inCombat" @click="toggleSheet('rest')"><GameIcon name="bed" :size="22" /><span>休息</span></button>
@@ -251,7 +251,8 @@ function onFocusOut(e: FocusEvent) {
 .log-area { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 8px 8px 0; }
 .log-area :deep(.log) { flex: 1; min-height: 0; margin: 0; padding: 10px 10px 6px; }
 .log-area :deep(.log .feed) { flex: 1; height: auto; min-height: 0; max-height: none; }
-.combat { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+.combat { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.combat :deep(.field) { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-left: none; border-right: none; border-radius: 0; }
 
 .ctx { flex: none; display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--border); background: #221a13; }
 .ctx button { flex: 1; min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; letter-spacing: 0.06em; }
