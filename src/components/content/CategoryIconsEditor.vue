@@ -37,7 +37,7 @@ function restore() {
       <h3>🖼️ 類別圖示</h3>
       <span class="tag">{{ edited ? '已修改' : '內建' }}</span>
       <span class="spacer" />
-      <button class="small" :disabled="!edited || content.readOnly" @click="restore">↩️ 全部恢復預設</button>
+      <button class="small" :disabled="!edited || content.readOnly" @click="restore">↩️ 類別圖示全部恢復預設</button>
     </div>
     <p class="small muted">
       物品的圖示依序找：物品自己上傳的圖 → 裝備的底材圖（底材頁可以上傳）→ 這裡的類別圖。換了立刻儲存，存在這個世界裡。

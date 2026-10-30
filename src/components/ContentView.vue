@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import WorldBar from './WorldBar.vue'
 import { abilities, className, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
@@ -62,7 +62,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'abilities', label: '✨ 技能' },
   { id: 'statuses', label: '🌀 狀態' },
   { id: 'perks', label: '🌟 特質' },
-  { id: 'tattoos', label: '🖋️ 刺青' },
+  { id: 'tattoos', label: '🖋️ 刺青與印記' },
   { id: 'landmarks', label: '🏛️ 地標' },
   { id: 'specialMaps', label: '🗺️ 特殊地圖' },
   { id: 'shops', label: '🏪 商店' },
@@ -71,11 +71,39 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'npcs', label: '🧑 固定 NPC' },
   { id: 'stories', label: '⭐ 特殊任務' },
 ]
+/** 頁籤分成幾組（上面一排是組，下面一排是組裡的頁籤）；icons 是物品組裡的「類別圖示」 */
+type Tab = Sub | 'icons'
+const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
+  { id: 'combat', label: '⚔️ 戰鬥', tabs: ['enemies', 'abilities', 'statuses'] },
+  { id: 'people', label: '🧬 角色', tabs: ['npcs', 'perks', 'tattoos'] },
+  { id: 'items', label: '🎒 物品', tabs: ['items', 'bases', 'materials', 'icons'] },
+  { id: 'places', label: '🗺️ 地點', tabs: ['landmarks', 'specialMaps', 'shops'] },
+  { id: 'story', label: '⭐ 劇情', tabs: ['stories', 'events', 'masterEvents'] },
+]
+const tabLabel = (t: Tab) => (t === 'icons' ? '🖼️ 類別圖示' : SUBS.find((x) => x.id === t)!.label)
 const content = useContent()
 const game = useGame()
 const sub = ref<Sub>('enemies')
 /** 「類別圖示」分頁：只有一個設定畫面，沒有左邊的列表 */
 const iconsTab = ref(false)
+const tab = computed<Tab>(() => (iconsTab.value ? 'icons' : sub.value))
+const group = computed(() => GROUPS.find((g) => g.tabs.includes(tab.value))!)
+/** 每一組上次看的頁籤（切回這一組時回到那裡） */
+const lastTab: Record<string, Tab> = {}
+function openTab(t: Tab) {
+  if (t === tab.value) return
+  if (t === 'icons') iconsTab.value = true
+  else {
+    iconsTab.value = false
+    sub.value = t
+  }
+  lastTab[group.value.id] = t
+  resetFilters()
+}
+function openGroup(id: string) {
+  const g = GROUPS.find((x) => x.id === id)!
+  openTab(lastTab[g.id] ?? g.tabs[0]!)
+}
 const search = ref('')
 const filter = ref<'all' | 'custom' | 'edited'>('all')
 const category = ref('')
@@ -95,33 +123,8 @@ const sources = computed(() => {
   return itemSourceIndex()
 })
 function resetFilters() {
-  category.value = ''
-  enemyKind.value = ''
-  enemyPlace.value = ''
-  enemyLevel.value = ''
-  itemSource.value = ''
-  abilityType.value = ''
-  abilityClass.value = ''
-  statusKind.value = ''
+  for (const m of ALL_FILTER_MODELS) m.value = ''
   pickStatusType.value = false
-  tattooKind.value = ''
-  eventScope.value = ''
-  masterPool.value = ''
-  gearSlot.value = ''
-  matKind.value = ''
-  perkCat.value = ''
-  placeFilter.value = ''
-  adultFilter.value = ''
-  tagFilter.value = ''
-  bodyFilter.value = ''
-  flagFilter.value = ''
-  npcGender.value = ''
-  npcRace.value = ''
-  npcKind.value = ''
-  npcJob.value = ''
-  npcTag.value = ''
-  storyLevel.value = ''
-  storyNpc.value = ''
 }
 const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', shops: '', events: '', masterEvents: '', npcs: '', stories: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
@@ -160,7 +163,7 @@ const adultFilter = ref('')
 const tagFilter = ref('')
 const bodyFilter = ref('')
 const flagFilter = ref('')
-// 固定 NPC：性別、種族、身分、職業、標籤；特殊任務：建議等級、固定 NPC
+// 固定 NPC：性別、種族、身分、職業、標籤；特殊任務：主角等級、固定 NPC
 const npcGender = ref('')
 const npcRace = ref('')
 const npcKind = ref('')
@@ -244,10 +247,111 @@ const options = computed(() => {
   return {}
 })
 
+// ---- 篩選列：每一頁宣告自己的篩選，畫面用同一套元件畫 ----
+type Opt = [string, string]
+interface FilterDef {
+  model: Ref<string>
+  /** 篩選的名稱（使用中的篩選顯示成「名稱：值」） */
+  name: string
+  /** 下拉選單「不篩選」那一項的文字 */
+  all?: string
+  options?: () => Opt[]
+  /** 文字輸入（自動完成用的清單） */
+  list?: 'flags' | 'npcs'
+  /** 只在某些情況顯示（例如選了裝備類別才有欄位） */
+  when?: () => boolean
+}
+const entries = (o: Record<string, string>): Opt[] => Object.entries(o)
+const ADULT_OPTS: Opt[] = [['yes', '🔞 成人向'], ['no', '一般']]
+const adultDef: FilterDef = { model: adultFilter, name: '成人向', all: '成人向與一般', options: () => ADULT_OPTS }
+const flagDef: FilterDef = { model: flagFilter, name: '旗標', list: 'flags', all: '旗標（條件或設定的）' }
+const tagDef_: FilterDef = { model: tagFilter, name: '內容標籤', all: '所有內容標籤', options: () => Object.entries(CONTENT_TAGS).map(([k, t]) => [k, t.name]) }
+const bodyDef: FilterDef = { model: bodyFilter, name: '主角形象', all: '所有主角形象', options: () => [['any', '不限形象'], ...Object.entries(BODY_NAME).map(([k, n]) => [k, `只給${n}`] as Opt)] }
+const placeDef = (none?: string): FilterDef => ({ model: placeFilter, name: '地點', all: '所有地點', options: () => [...(options.value.places ?? []), ...(none ? [['none', none] as Opt] : [])] })
+const slotDef: FilterDef = { model: gearSlot, name: '欄位', all: '所有欄位', options: () => entries(BASE_SLOTS) }
+const matKindDef: FilterDef = { model: matKind, name: '材料類型', all: '所有材料類型', options: () => entries(KINDS) }
+const FILTERS: Record<Sub, FilterDef[]> = {
+  enemies: [
+    { model: enemyKind, name: '種類', all: '所有種類', options: () => entries(ENEMY_KINDS) },
+    { model: enemyLevel, name: '等級', all: '所有等級', options: () => Object.keys(LEVEL_BANDS).map((k) => [k, `${k} 級`]) },
+    { model: enemyPlace, name: '出現地點', all: '所有出現地點', options: () => [...placeOptions.map((p) => [p.key, p.label] as Opt), ['none', '沒有出現地點']] },
+  ],
+  items: [
+    { model: category, name: '類別', all: '所有類別', options: () => entries(itemRules.categories) },
+    { model: itemSource, name: '取得方式', all: '所有取得方式', options: () => entries(ITEM_SOURCE_NAME) },
+    { ...slotDef, when: () => category.value === 'equipment' },
+    { ...matKindDef, when: () => category.value === 'equipment' },
+    adultDef,
+  ],
+  bases: [slotDef, matKindDef, adultDef],
+  materials: [matKindDef],
+  abilities: [
+    { model: abilityType, name: '種類', all: '所有種類', options: () => entries(ABILITY_TYPES) },
+    { model: abilityClass, name: '職業', all: '所有職業', options: () => abilityClasses().map((c) => [c, c === 'monster' ? '怪物' : c === 'lewd' ? '色情技能（不分職業）' : className(c)]) },
+  ],
+  statuses: [{ model: statusKind, name: '種類', all: '所有狀態', options: () => [['buff', '🟢 增益（BUFF）'], ['debuff', '🔴 減益（DEBUFF）'], ['cond', '🏕️ 非戰鬥狀態（用餐、喝酒……）']] }],
+  perks: [{ model: perkCat, name: '分類', all: '所有分類', options: () => [...entries(PERK_CATEGORIES), ['race', '種族天賦']] }],
+  tattoos: [{ model: tattooKind, name: '種類', all: '所有刺青與印記', options: () => [['plain', '🖋️ 普通刺青'], ['oath', '📜 誓約印記'], ['slave', '⛓️ 奴隸印記']] }],
+  landmarks: [placeDef(), adultDef, flagDef],
+  specialMaps: [],
+  shops: [],
+  events: [
+    { model: eventScope, name: '種類', all: '所有事件', options: () => [['road', '🧭 旅途事件'], ['town', '🏘️ 城鎮事件'], ['dungeon', '⚠️ 地下城事件'], ['parasite', '💗 寄生物的發作']] },
+    placeDef('沒有限制地點'), adultDef, tagDef_, bodyDef, flagDef,
+  ],
+  masterEvents: [
+    { model: masterPool, name: '事件庫', all: '所有事件庫', options: () => POOL_IDS.map((p) => [p, MASTER_EVENT_POOLS[p]]) },
+    adultDef,
+  ],
+  npcs: [
+    placeDef(),
+    { model: npcJob, name: '職業', all: '所有職業', options: () => options.value.jobs ?? [] },
+    { model: npcGender, name: '性別', all: '所有性別', options: () => options.value.genders ?? [] },
+    { model: npcRace, name: '種族', all: '所有種族', options: () => options.value.races ?? [] },
+    { model: npcKind, name: '身分', all: '所有身分', options: () => entries(NPC_KINDS) },
+    { model: npcTag, name: '標籤', all: '所有標籤', options: () => options.value.tags ?? [] },
+    adultDef, flagDef,
+  ],
+  stories: [
+    { model: storyLevel, name: '主角等級', all: '所有主角等級', options: () => Object.keys(STORY_BANDS).map((k) => [k, `Lv.${k}`]) },
+    { model: storyNpc, name: '固定 NPC', list: 'npcs', all: '固定 NPC 名稱' },
+    tagDef_, adultDef, bodyDef, flagDef,
+  ],
+}
+const ALL_FILTER_MODELS = [...new Set(Object.values(FILTERS).flat().map((f) => f.model))]
+/** 篩選列直接顯示幾個，其他收進「更多篩選」 */
+const PRIMARY_FILTERS = 2
+const filterDefs = computed(() => (iconsTab.value ? [] : FILTERS[sub.value].filter((f) => !f.when || f.when())))
+const primaryFilters = computed(() => filterDefs.value.slice(0, PRIMARY_FILTERS))
+const moreFilters = computed(() => filterDefs.value.slice(PRIMARY_FILTERS))
+const moreActive = computed(() => moreFilters.value.filter((f) => f.model.value.trim()))
+const anyFilter = computed(() => !!search.value.trim() || filter.value !== 'all' || filterDefs.value.some((f) => f.model.value.trim()))
+function filterValueName(f: FilterDef): string {
+  const v = f.model.value
+  return f.options?.().find(([k]) => k === v)?.[1] ?? v
+}
+function clearFilters() {
+  search.value = ''
+  filter.value = 'all'
+  resetFilters()
+}
+
 /** 特殊任務頁的「劇情計數器」那一列 */
 const COUNTERS_KEY = '|counters'
 /** 裝備底材清單裡的「雙面效應設定」 */
 const BIND_RULES_KEY = '|bind_rules'
+/** 每一頁只有一筆的設定：放在清單上方的固定按鈕（不跟著篩選消失） */
+const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() => {
+  void content.version
+  const m = content.mods
+  if (iconsTab.value) return []
+  if (sub.value === 'events') return [{ key: 'rules', label: '⚙️ 事件設定', edited: !!m.eventRules?.rules }]
+  if (sub.value === 'tattoos') return [{ key: 'rules', label: '⚙️ 印記設定', edited: !!m.markRules?.rules }]
+  if (sub.value === 'bases') return [{ key: BIND_RULES_KEY, label: '⚙️ 雙面效應設定', edited: !!m.bindRules?.rules }]
+  if (sub.value === 'stories') return [{ key: COUNTERS_KEY, label: `🔢 劇情計數器（${Object.keys(storyCounters).length}）`, edited: Object.keys(m.counters ?? {}).length > 0 }]
+  return []
+})
+const isSetting = (key: string) => key === 'rules' || key.startsWith('|')
 
 type Status = 'custom' | 'edited' | ''
 interface Row { key: string; name: string; note: string; status: Status; sort?: number }
@@ -270,6 +374,7 @@ const rows = computed<Row[]>(() => {
     list = itemRules.items
       .filter((i) => !category.value || i.category === category.value)
       .filter((i) => !itemSource.value || !!sources.value.get(i.name)?.has(itemSource.value))
+      .filter((i) => adultMatch(!!i.adult))
       .filter((i) => category.value !== 'equipment' || ((!gearSlot.value || gearRules.bases[i.gear?.base ?? '']?.slot === gearSlot.value)
         && (!matKind.value || gearRules.materials[i.gear?.material ?? '']?.kind === matKind.value)))
       .map((i) => ({ key: i.name, name: i.name, note: `${itemRules.categories[i.category]}・${formatMoney(i.price_cc)}`, status: st(!!m.items[i.name], !!m.items[i.name]?.custom) }))
@@ -309,8 +414,7 @@ const rows = computed<Row[]>(() => {
     const marks = !k || k === 'slave'
       ? Object.keys(slaveryRules.contracts).map((id) => ({ key: `m:${id}`, name: `⛓️ ${contractDef(id).name}`, note: placeName(contractDef(id).place), status: st(!!m.marks?.[id], !builtinMark(id)), sort: 2 }))
       : []
-    const rules = !k || k === 'slave' ? [{ key: 'rules', name: '⚙️ 印記設定', note: '用途、輕重順序、權重', status: st(!!m.markRules?.rules, false), sort: 3 }] : []
-    list = [...tats, ...marks, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+    list = [...tats, ...marks].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'landmarks') {
     list = Object.values(landmarks)
       .filter((l) => !placeFilter.value || l.location === placeFilter.value)
@@ -348,9 +452,7 @@ const rows = computed<Row[]>(() => {
           : `${(t.modes ?? []).map((m) => MODE_NAME[m]).join('、') || '任何路段'}・${t.kind === 'check' ? '檢定' : '選擇'}`,
         status: st(!!m.travelEvents?.[t.id], !builtinTravelEvent(t.id)), sort: t.scope === 'town' ? 1 : t.scope === 'dungeon' ? 2 : t.scope === 'parasite' ? 2.5 : 0,
       }))
-    const narrowed = placeFilter.value || adultFilter.value || tagFilter.value || bodyFilter.value || flagFilter.value.trim()
-    const rules = narrowed ? [] : [{ key: 'rules', name: '⚙️ 事件設定', note: '機率、權重、冷卻', status: st(!!m.eventRules?.rules, false), sort: 3 }]
-    list = [...evs, ...rules].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+    list = evs.sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'masterEvents') {
     list = allMasterEvents()
       .filter((x) => !masterPool.value || x.pool === masterPool.value)
@@ -362,11 +464,9 @@ const rows = computed<Row[]>(() => {
       }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'stories') {
-    const counters = { key: COUNTERS_KEY, name: '🔢 劇情計數器', note: `${Object.keys(storyCounters).length} 個`, status: st(Object.keys(m.counters ?? {}).length > 0, false) }
     const band = STORY_BANDS[storyLevel.value]
     const who = storyNpc.value.trim()
-    const narrowed = band || who || adultFilter.value || tagFilter.value || bodyFilter.value || flagFilter.value.trim()
-    list = [...(narrowed ? [] : [counters]), ...stories
+    list = stories
       .filter((d) => !band || ((d.start.min_level ?? 1) >= band[0] && (d.start.min_level ?? 1) <= band[1]))
       .filter((d) => adultMatch(!!d.tags?.includes('adult')))
       .filter((d) => !tagFilter.value || !!d.tags?.includes(tagFilter.value))
@@ -374,7 +474,7 @@ const rows = computed<Row[]>(() => {
       .filter((d) => flagMatch(d))
       .filter((d) => !who || [...npcsIn(d)].some((id) => (namedNpcs.find((n) => n.id === id)?.name ?? id).includes(who)))
       .map((d) => ({ key: d.id, name: d.title, note: `${START_KINDS[d.start.kind]}・${d.nodes.length} 個任務點`, status: st(!!m.stories[d.id], !builtinStory(d.id)) }))
-      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))]
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'npcs') {
     const job = npcJob.value
     list = namedNpcs
@@ -384,15 +484,15 @@ const rows = computed<Row[]>(() => {
       .filter((n) => !npcKind.value || (n.kind ?? (n.class ? 'adventurer' : 'commoner')) === npcKind.value)
       .filter((n) => !job || (job.startsWith('c:') ? n.class === job.slice(2) : !n.class && n.occupation === job.slice(2)))
       .filter((n) => !npcTag.value || !!n.tags?.includes(npcTag.value))
+      .filter((n) => adultMatch(!!n.adult))
       .filter((n) => flagMatch(n))
       .map((n) => ({ key: n.id, name: n.name, note: `${locationById(n.location).name}・${n.class ? className(n.class) : n.occupation ?? '普通人'} Lv.${n.level}`, status: st(!!m.npcs[n.id], !builtinNpc(n.id)) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'bases') {
     list = Object.entries(gearRules.bases)
       .filter(([, b]) => (!gearSlot.value || b.slot === gearSlot.value) && (!matKind.value || b.kind === matKind.value))
+      .filter(([, b]) => adultMatch(!!b.adult || b.outfit === 'adult'))
       .map(([id, b]) => ({ key: id, name: b.name, note: `${KINDS[b.kind]}・${formatMoney(b.price)}`, status: st(!!m.bases[id], !builtinBase(id)) }))
-    // 雙面效應設定（拘束具的減值與戰鬥增益）：不篩選時排在最後
-    if (!gearSlot.value && !matKind.value) list.push({ key: BIND_RULES_KEY, name: '⚙️ 雙面效應設定', note: '拘束具的減值、戰鬥增益、鎖', status: st(!!m.bindRules?.rules, false) })
   } else {
     list = Object.entries(gearRules.materials)
       .filter(([, x]) => !matKind.value || x.kind === matKind.value)
@@ -435,7 +535,7 @@ function select(key: string) {
 
 // 手機版：平常只有清單；選了項目，編輯表單變成全螢幕頁面，左上角（或手機的返回鍵）回到清單
 const editing = computed(() => isMobile.value && !!current.value)
-const subLabel = computed(() => SUBS.find((t) => t.id === sub.value)?.label ?? '')
+const subLabel = computed(() => tabLabel(sub.value))
 let dropLayer: (() => void) | null = null
 watch(editing, (on) => {
   if (on && !dropLayer) dropLayer = pushLayer(() => select(''))
@@ -654,6 +754,23 @@ function duplicate() {
 
 const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
+// 上方的說明：關掉之後不再顯示（只記在這個瀏覽器）
+const INTRO_KEY = 'elondia.ui.contentIntroHidden'
+const showIntro = ref(true)
+try {
+  showIntro.value = localStorage.getItem(INTRO_KEY) !== '1'
+} catch {
+  // 讀不到就照常顯示
+}
+function hideIntro() {
+  showIntro.value = false
+  try {
+    localStorage.setItem(INTRO_KEY, '1')
+  } catch {
+    // 寫不進去：只在這次關掉
+  }
+}
+
 // ---- 匯出、匯入、重設 ----
 const fileInput = ref<HTMLInputElement | null>(null)
 function exportAll() {
@@ -664,7 +781,7 @@ async function onImport(e: Event) {
   const f = input.files?.[0]
   input.value = ''
   if (!f) return
-  if (!confirm('匯入會取代目前所有的自訂內容，確定嗎？')) return
+  if (!confirm(`匯入會取代世界「${content.activeName}」目前所有的自訂內容，確定嗎？`)) return
   try {
     content.importMods(await f.text())
     game.flash('已匯入自訂內容')
@@ -673,7 +790,7 @@ async function onImport(e: Event) {
   }
 }
 function resetAll() {
-  if (confirm('刪除所有自建的內容，並把修改過的內建項目全部恢復預設？')) content.resetAll()
+  if (confirm(`刪除世界「${content.activeName}」所有自建的內容，並把修改過的內建項目全部恢復預設？`)) content.resetAll()
 }
 </script>
 
@@ -683,16 +800,24 @@ function resetAll() {
     <p v-if="content.persistFailed" class="persist-warn small">
       ⚠️ 世界存不進瀏覽器（容量滿了，多半是上傳的圖示太多或太大）：這次的修改只在關掉頁面前有效。請移除一些圖示，或先匯出世界包備份。
     </p>
-    <nav class="subs row">
-      <button v-for="t in SUBS" :key="t.id" :class="{ active: !iconsTab && sub === t.id }" @click="iconsTab = false; sub = t.id; resetFilters()">{{ t.label }}</button>
-      <button :class="{ active: iconsTab }" @click="iconsTab = true">🖼️ 類別圖示</button>
+    <nav class="groups row" aria-label="內容的分類">
+      <button v-for="g in GROUPS" :key="g.id" :class="{ active: group.id === g.id }" @click="openGroup(g.id)">{{ g.label }}</button>
       <span class="spacer" />
       <span class="small muted">{{ iconsTab ? `已自訂 ${Object.keys(content.mods.categoryIcons ?? {}).length} 種類別` : counts[sub] }}</span>
     </nav>
-    <p class="small muted note">
-      在這裡新增或修改怪物、物品、裝備底材、材料、技能、狀態（BUFF／DEBUFF）、特質、刺青（圖樣與奴隸印記）、固定 NPC 與特殊任務。內建的項目可以修改（隨時「恢復預設」），不能刪除；自建的項目沒有被用到時可以刪除。
-      修改存在目前的世界裡（用這個世界的存檔都會受影響），儲存後立刻生效（已經生成的地圖、商店清單要等下次重新生成）。
+    <nav class="subs row" aria-label="頁籤">
+      <button v-for="t in group.tabs" :key="t" class="small" :class="{ active: tab === t }" @click="openTab(t)">{{ tabLabel(t) }}</button>
+    </nav>
+    <p v-if="content.readOnly" class="small read-only">
+      🔒 原版世界不能修改，這裡只能瀏覽。要自訂內容，在上方的世界列「＋ 新的世界」或「📄 複製這個世界」。
     </p>
+    <div v-if="showIntro" class="intro small muted">
+      <p>
+        在這裡新增或修改這個世界的內容。內建的項目可以修改（隨時「恢復預設」），不能刪除；自建的項目沒有被用到時可以刪除。
+        修改存在目前的世界裡，用這個世界的存檔都會受影響；儲存後立刻生效（已經生成的地圖、今天的商店清單要等下次重新生成）。
+      </p>
+      <button class="ghost small" title="不再顯示這段說明" @click="hideIntro">✕</button>
+    </div>
     <p v-if="content.problems.length" class="small warn-text">有些自訂內容沒辦法套用：{{ content.problems.join('；') }}</p>
 
     <section v-if="iconsTab" class="panel">
@@ -701,8 +826,13 @@ function resetAll() {
     <div v-else class="layout">
       <section class="panel list-panel">
         <div class="row">
-          <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current || current === 'rules' || current.startsWith('|')" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製</button>
+          <button class="small primary" :disabled="content.readOnly" @click="create">{{ NEW_LABEL[sub] }}</button>
+          <button class="small" :disabled="content.readOnly || !current || isSetting(current)" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製這一項</button>
+          <span class="spacer" />
+          <button
+            v-for="x in SETTINGS" :key="x.key" class="small" :class="{ active: current === x.key }"
+            :title="x.edited ? '已修改' : ''" @click="select(x.key)"
+          >{{ x.label }}{{ x.edited ? '・已修改' : '' }}</button>
         </div>
         <div v-if="sub === 'statuses' && pickStatusType" class="pick-type">
           <span class="small muted">新狀態的類型：</span>
@@ -717,201 +847,40 @@ function resetAll() {
             <option value="edited">修改過的內建</option>
           </select>
         </div>
-        <div v-if="sub === 'items'" class="row">
-          <select v-model="category" class="grow">
-            <option value="">所有類別</option>
-            <option v-for="(n, k) in itemRules.categories" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="itemSource" class="grow">
-            <option value="">所有取得方式</option>
-            <option v-for="(n, k) in ITEM_SOURCE_NAME" :key="k" :value="k">{{ n }}</option>
-          </select>
+        <div v-if="filterDefs.length" class="row">
+          <template v-for="f in primaryFilters" :key="f.name">
+            <input v-if="f.list" v-model="f.model.value" :list="f.list === 'flags' ? 'cv-flags' : 'cv-npcs'" :placeholder="f.all" class="grow" />
+            <select v-else v-model="f.model.value" class="grow">
+              <option value="">{{ f.all }}</option>
+              <option v-for="[k, n] in f.options!()" :key="k" :value="k">{{ n }}</option>
+            </select>
+          </template>
         </div>
-        <div v-if="sub === 'items' && category === 'equipment'" class="row">
-          <select v-model="gearSlot" class="grow">
-            <option value="">所有欄位</option>
-            <option v-for="(n, k) in BASE_SLOTS" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="matKind" class="grow">
-            <option value="">所有材料類型</option>
-            <option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option>
-          </select>
+        <details v-if="moreFilters.length" class="more-filters">
+          <summary class="small">更多篩選{{ moreActive.length ? `（使用中 ${moreActive.length}）` : '' }}</summary>
+          <div class="row">
+            <template v-for="f in moreFilters" :key="f.name">
+              <input v-if="f.list" v-model="f.model.value" :list="f.list === 'flags' ? 'cv-flags' : 'cv-npcs'" :placeholder="f.all" class="grow" />
+              <select v-else v-model="f.model.value" class="grow">
+                <option value="">{{ f.all }}</option>
+                <option v-for="[k, n] in f.options!()" :key="k" :value="k">{{ n }}</option>
+              </select>
+            </template>
+          </div>
+        </details>
+        <div v-if="moreActive.length" class="row chips-row">
+          <button v-for="f in moreActive" :key="f.name" class="chip small" :title="`取消「${f.name}」的篩選`" @click="f.model.value = ''">{{ f.name }}：{{ filterValueName(f) }} ✕</button>
         </div>
-        <div v-if="sub === 'bases'" class="row">
-          <select v-model="gearSlot" class="grow">
-            <option value="">所有欄位</option>
-            <option v-for="(n, k) in BASE_SLOTS" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="matKind" class="grow">
-            <option value="">所有材料類型</option>
-            <option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option>
-          </select>
-        </div>
-        <div v-if="sub === 'materials'" class="row">
-          <select v-model="matKind" class="grow">
-            <option value="">所有材料類型</option>
-            <option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option>
-          </select>
-        </div>
-        <div v-if="sub === 'perks'" class="row">
-          <select v-model="perkCat" class="grow">
-            <option value="">所有分類</option>
-            <option v-for="(n, k) in PERK_CATEGORIES" :key="k" :value="k">{{ n }}</option>
-            <option value="race">種族天賦</option>
-          </select>
-        </div>
-        <div v-if="sub === 'landmarks'" class="row">
-          <select v-model="placeFilter" class="grow">
-            <option value="">所有地點</option>
-            <option v-for="[k, n] in options.places ?? []" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="adultFilter">
-            <option value="">成人向與一般</option>
-            <option value="yes">🔞 成人向</option>
-            <option value="no">一般</option>
-          </select>
-          <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
-          <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
-        </div>
-        <div v-if="sub === 'npcs'" class="row">
-          <select v-model="placeFilter" class="grow">
-            <option value="">所有地點</option>
-            <option v-for="[k, n] in options.places ?? []" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="npcGender">
-            <option value="">所有性別</option>
-            <option v-for="[k, n] in options.genders ?? []" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="npcRace">
-            <option value="">所有種族</option>
-            <option v-for="[k, n] in options.races ?? []" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="npcKind">
-            <option value="">所有身分</option>
-            <option v-for="(n, k) in NPC_KINDS" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="npcJob" class="grow">
-            <option value="">所有職業</option>
-            <option v-for="[k, n] in options.jobs ?? []" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="npcTag" class="grow">
-            <option value="">所有標籤</option>
-            <option v-for="[k, n] in options.tags ?? []" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
-          <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
-        </div>
-        <div v-if="sub === 'stories'" class="row">
-          <select v-model="storyLevel">
-            <option value="">所有建議等級</option>
-            <option v-for="(_, k) in STORY_BANDS" :key="k" :value="k">Lv.{{ k }}</option>
-          </select>
-          <select v-model="tagFilter" class="grow">
-            <option value="">所有內容標籤</option>
-            <option v-for="(t, k) in CONTENT_TAGS" :key="k" :value="k">{{ t.name }}</option>
-          </select>
-          <select v-model="adultFilter">
-            <option value="">成人向與一般</option>
-            <option value="yes">🔞 成人向</option>
-            <option value="no">一般</option>
-          </select>
-          <select v-model="bodyFilter">
-            <option value="">所有主角形象</option>
-            <option value="any">不限形象</option>
-            <option v-for="(n, k) in BODY_NAME" :key="k" :value="k">只給{{ n }}</option>
-          </select>
-          <input v-model="storyNpc" list="cv-npcs" placeholder="固定 NPC 名稱" class="grow" />
-          <datalist id="cv-npcs"><option v-for="n in options.npcNames ?? []" :key="n" :value="n" /></datalist>
-          <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
-          <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
-        </div>
-        <div v-if="sub === 'enemies'" class="row">
-          <select v-model="enemyKind" class="grow">
-            <option value="">所有種類</option>
-            <option v-for="(n, k) in ENEMY_KINDS" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="enemyLevel">
-            <option value="">所有等級</option>
-            <option v-for="(_, k) in LEVEL_BANDS" :key="k" :value="k">{{ k }} 級</option>
-          </select>
-          <select v-model="enemyPlace" class="grow">
-            <option value="">所有出現地點</option>
-            <option v-for="p in placeOptions" :key="p.key" :value="p.key">{{ p.label }}</option>
-            <option value="none">沒有出現地點</option>
-          </select>
-        </div>
-        <div v-if="sub === 'statuses'" class="row">
-          <select v-model="statusKind" class="grow">
-            <option value="">所有狀態</option>
-            <option value="buff">🟢 增益（BUFF）</option>
-            <option value="debuff">🔴 減益（DEBUFF）</option>
-            <option value="cond">🏕️ 非戰鬥狀態（用餐、喝酒……）</option>
-          </select>
-        </div>
-        <div v-if="sub === 'tattoos'" class="row">
-          <select v-model="tattooKind" class="grow">
-            <option value="">所有刺青與印記</option>
-            <option value="plain">🖋️ 普通刺青</option>
-            <option value="oath">📜 誓約印記</option>
-            <option value="slave">⛓️ 奴隸印記與印記設定</option>
-          </select>
-        </div>
-        <div v-if="sub === 'events'" class="row">
-          <select v-model="eventScope" class="grow">
-            <option value="">所有事件</option>
-            <option value="road">🧭 旅途事件</option>
-            <option value="town">🏘️ 城鎮事件</option>
-            <option value="dungeon">⚠️ 地下城事件</option>
-            <option value="parasite">💗 寄生物的發作</option>
-          </select>
-          <select v-model="placeFilter" class="grow">
-            <option value="">所有地點</option>
-            <option v-for="[k, n] in options.places ?? []" :key="k" :value="k">{{ n }}</option>
-            <option value="none">沒有限制地點</option>
-          </select>
-          <select v-model="adultFilter">
-            <option value="">成人向與一般</option>
-            <option value="yes">🔞 成人向</option>
-            <option value="no">一般</option>
-          </select>
-          <select v-model="tagFilter" class="grow">
-            <option value="">所有內容標籤</option>
-            <option v-for="(t, k) in CONTENT_TAGS" :key="k" :value="k">{{ t.name }}</option>
-          </select>
-          <select v-model="bodyFilter">
-            <option value="">所有主角形象</option>
-            <option value="any">不限形象</option>
-            <option v-for="(n, k) in BODY_NAME" :key="k" :value="k">只給{{ n }}</option>
-          </select>
-          <input v-model="flagFilter" list="cv-flags" placeholder="旗標（條件或設定的）" class="grow" />
-          <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
-        </div>
-        <div v-if="sub === 'masterEvents'" class="row">
-          <select v-model="masterPool" class="grow">
-            <option value="">所有事件庫</option>
-            <option v-for="p in POOL_IDS" :key="p" :value="p">{{ MASTER_EVENT_POOLS[p] }}</option>
-          </select>
-          <select v-model="adultFilter">
-            <option value="">成人向與一般</option>
-            <option value="yes">🔞 成人向</option>
-            <option value="no">一般</option>
-          </select>
-        </div>
-        <div v-if="sub === 'abilities'" class="row">
-          <select v-model="abilityType" class="grow">
-            <option value="">所有種類</option>
-            <option v-for="(n, k) in ABILITY_TYPES" :key="k" :value="k">{{ n }}</option>
-          </select>
-          <select v-model="abilityClass" class="grow">
-            <option value="">所有職業</option>
-            <option v-for="c in abilityClasses()" :key="c" :value="c">{{ c === 'monster' ? '怪物' : c === 'lewd' ? '色情技能（不分職業）' : className(c) }}</option>
-          </select>
-        </div>
-        <p v-if="sub !== 'shops' && sub !== 'specialMaps' && sub !== 'tattoos'" class="small muted count">符合 {{ rows.length }} 項</p>
+        <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
+        <datalist id="cv-npcs"><option v-for="n in options.npcNames ?? []" :key="n" :value="n" /></datalist>
+        <p class="small muted count">
+          符合 {{ rows.length }} 項
+          <button v-if="anyFilter" class="ghost small" @click="clearFilters">清除篩選</button>
+        </p>
         <ul class="plain rows">
           <li v-for="r in rows" :key="r.key" :class="{ active: current === r.key }" @click="select(r.key)">
             <ItemIcon v-if="sub === 'items'" :name="r.key" :size="18" class="row-ic" />
-            <ItemIcon v-else-if="sub === 'bases' && r.key !== BIND_RULES_KEY" :spec="{ base: r.key, material: '' }" :size="18" class="row-ic" />
+            <ItemIcon v-else-if="sub === 'bases'" :spec="{ base: r.key, material: '' }" :size="18" class="row-ic" />
             <ContentIcon v-else-if="sub === 'enemies'" kind="monster" :id="r.key" :size="16" class="row-ic" />
             <ContentIcon v-else-if="sub === 'abilities'" kind="ability" :id="r.key" :size="16" class="row-ic" />
             <ContentIcon v-else-if="sub === 'materials'" kind="material" :id="r.key" :size="16" class="row-ic" />
@@ -962,34 +931,53 @@ function resetAll() {
     <div class="row footer small">
       <span class="muted">這些內容屬於世界「{{ content.activeName }}」，用這個世界的存檔共用。</span>
       <span class="spacer" />
-      <button class="small" @click="exportAll">📤 匯出自訂內容</button>
-      <button class="small" title="會取代目前所有的自訂內容" @click="fileInput?.click()">📥 匯入自訂內容</button>
+      <details class="world-menu">
+        <summary class="small">⋯ 這個世界的全部內容</summary>
+        <div class="menu">
+          <button class="small" :disabled="content.readOnly" @click="exportAll">📤 匯出自訂內容（內容檔）</button>
+          <button class="small" :disabled="content.readOnly" title="會取代這個世界目前所有的自訂內容" @click="fileInput?.click()">📥 匯入內容檔，取代全部內容…</button>
+          <button class="small danger" :disabled="content.readOnly" @click="resetAll">↩️ 全部恢復預設…</button>
+        </div>
+      </details>
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onImport" />
-      <button class="small danger" @click="resetAll">全部恢復預設</button>
     </div>
   </div>
 </template>
 
 <style scoped>
 .content-view { display: grid; gap: 10px; max-width: 1400px; margin: 0 auto; }
-.subs { gap: 6px; }
+.groups, .subs { gap: 6px; }
+.groups button.active { border-color: var(--accent); color: var(--accent); background: var(--panel-2); }
+.subs { padding-left: 4px; border-left: 2px solid var(--gold-lo); }
 .pick-type { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px; border: 1px dashed var(--border); border-radius: var(--radius); }
-.subs button.active { border-color: var(--accent); color: var(--accent); }
+.subs button.active, .list-panel button.active { border-color: var(--accent); color: var(--accent); }
+.read-only { margin: 0; padding: 6px 10px; border: 1px solid var(--gold-lo); border-radius: var(--radius); color: var(--accent); }
+.intro { display: flex; gap: 6px; align-items: flex-start; padding: 6px 10px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); }
+.intro p { margin: 0; flex: 1; line-height: 1.7; }
+.more-filters summary { cursor: pointer; color: var(--accent); }
+.more-filters .row { margin-top: 6px; }
+.chips-row .chip { padding: 0 8px; border-radius: 999px; }
+.world-menu { position: relative; }
+.world-menu summary { cursor: pointer; list-style: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.world-menu .menu { position: absolute; right: 0; bottom: calc(100% + 4px); z-index: 5; display: grid; gap: 4px; padding: 6px; min-width: 240px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 6px 16px #000a; }
 .spacer { flex: 1; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.note { margin: 0; line-height: 1.7; }
 .warn-text { color: var(--danger); }
 .layout { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 10px; align-items: start; }
-@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+/* 和手機版同一個斷點（mobile/mobile.ts 的 720px） */
+@media (max-width: 720px) { .layout { grid-template-columns: 1fr; } }
 /* 手機版：編輯表單是全螢幕頁面（清單留在底下，返回後捲動位置還在） */
 .editor.m-page {
   position: fixed; inset: 0; z-index: 30; margin: 0; border: none; border-radius: 0; overflow-y: auto; overscroll-behavior: contain;
   background: var(--bg); padding: 0 12px calc(16px + env(safe-area-inset-bottom, 0px));
 }
+.editor.m-page { --m-head-h: calc(48px + env(safe-area-inset-top, 0px)); }
 .m-head {
-  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; min-height: 48px; margin: 0 -12px 10px; padding: env(safe-area-inset-top, 0px) 12px 0;
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px; height: var(--m-head-h); margin: 0 -12px 10px; padding: env(safe-area-inset-top, 0px) 12px 0;
   background: linear-gradient(180deg, #2a2017, #1d1611); border-bottom: 1px solid var(--gold-lo);
 }
+/* 編輯器自己的表頭（名稱、儲存……）停在「返回清單」那一條的下面，不會把它蓋住 */
+.editor.m-page :deep(.editor > .head) { top: var(--m-head-h); }
 .m-head button { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
 .m-head .flip { transform: scaleX(-1); }
 .m-head .muted { margin-left: auto; }

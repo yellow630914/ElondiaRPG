@@ -208,7 +208,7 @@ function toggleTag<T extends string>(list: T[] | undefined, t: T, on: boolean): 
       <legend>基本</legend>
       <div class="grid">
         <label>任務名稱 <input v-model="draft.title" maxlength="30" /></label>
-        <label>建議等級
+        <label>建議的公會階級
           <select v-model="draft.rank">
             <option :value="undefined">（不限）</option>
             <option v-for="r in RANK_ORDER" :key="r" :value="r">{{ r }}</option>
