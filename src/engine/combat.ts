@@ -2387,7 +2387,7 @@ export function finishCombat(state: GameState): Report {
 
 /**
  * 慾望戰鬥的戰後：慾望還很高的人「發情」、高潮過的人「餘韻」（非戰鬥狀態，下次長休解除）；
- * 有人高潮或慾望勝利時，報告帶上成人場景，經過由成人場景的寫手描寫。
+ * 戰鬥中出現色情要素（有人被挑起慾望、被剝去衣物，或有人高潮、慾望勝利）時，報告帶上成人場景，經過由成人場景的寫手描寫。
  */
 function settleLust(state: GameState, combat: CombatState, report: Report) {
   if (!lustOn(combat)) return
@@ -2409,16 +2409,24 @@ function settleLust(state: GameState, combat: CombatState, report: Report) {
     if (f.exposureGain) addLewd(state, member, 'exposure', f.exposureGain, report)
   }
   const conquered = combat.combatants.filter((c) => c.lustDefeated).map((c) => c.name)
-  if (!climaxed.length && !conquered.length) return
+  // 沒有人高潮、屈服，但戰鬥中有人被挑起慾望或被剝去衣物：一樣是成人場景（交給成人場景的寫手）
+  const nameOf = (id: string) => combat.combatants.find((c) => c.id === id)?.name ?? id
+  const aroused = [...new Set((combat.timeline ?? []).flatMap((t) => t.effects ?? [])
+    .filter((e) => e.type === 'lust' && (e.amount ?? 0) > 0 && e.target).map((e) => nameOf(e.target!)))]
+  const stripped = combat.combatants.filter((c) => c.exposureGain).map((c) => c.name)
+  if (!climaxed.length && !conquered.length && !aroused.length && !stripped.length) return
   const tags = [...(climaxed.length ? ['高潮'] : []), ...(conquered.length ? ['慾望勝利'] : [])]
-  report.outcome.tags = [...(report.outcome.tags ?? []), ...tags]
+  if (tags.length) report.outcome.tags = [...(report.outcome.tags ?? []), ...tags]
   if (conquered.length) report.outcome.summary = `${report.outcome.summary ?? ''}${conquered.join('、')}在高潮中屈服（慾望勝利）。`
   if (climaxed.length) report.outcome.summary = `${report.outcome.summary ?? ''}戰鬥中高潮：${climaxed.join('、')}。`
   const scene = [
     ...(climaxed.length ? [`${climaxed.join('、')}在戰鬥中被慾望逼到高潮`] : []),
     ...(conquered.length ? [`${conquered.join('、')}在慾望的交鋒中敗下陣來，在高潮中屈服`] : []),
+    ...(!climaxed.length && !conquered.length && aroused.length ? [`${aroused.join('、')}在交手中被挑起了慾望`] : []),
+    ...(stripped.length ? [`${stripped.join('、')}在戰鬥中被剝去了衣物`] : []),
   ].join('；')
-  report.narration = { ...report.narration, adult_scene: `戰鬥中的慾望攻防：${scene}。照戰鬥的經過寫，親密的部分只寫到戰況需要的程度` }
+  const adult = `戰鬥中的慾望攻防：${scene}。照戰鬥的經過寫，親密的部分只寫到戰況需要的程度`
+  report.narration = { ...report.narration, adult_scene: adult, ...(climaxed.length || conquered.length ? {} : { tease: adult }) }
 }
 
 /**

@@ -179,6 +179,8 @@ export interface Report {
     adult_scene?: string
     /** 親密場景的主角不是主角本人時（派奴隸去娼館接客）：那個人的 id（慾望指標記在他身上） */
     adult_actor?: string
+    /** 戰鬥中只有挑逗、剝衣（沒有人高潮或屈服）時的成人場景：一樣交給成人場景的寫手，但不算親密場景（淫亂不因此成長）。adult_scene 被別的場景換掉時就不再相同 */
+    tease?: string
   }
   lore_keys?: string[]
 }

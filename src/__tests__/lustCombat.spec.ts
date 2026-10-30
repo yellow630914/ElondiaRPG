@@ -141,6 +141,27 @@ describe('慾望戰鬥：高潮', () => {
     expect(report.narration?.adult_scene).toContain('屈服')
     expect(report.others?.find((o) => o.id === foe.id)?.status).toContain('在高潮中屈服')
   })
+  it('沒有人高潮，但有人被挑起慾望：一樣交給成人場景的寫手；沒有色情要素的戰鬥不交', () => {
+    const { state, me, foe } = fight(['lust_whisper'])
+    myTurn(state, me)
+    act(state, { type: 'ability', ability: 'lust_whisper', target: foe.id })
+    expect(foe.lust).toBeGreaterThan(0)
+    expect(foe.lustDefeated).toBeFalsy()
+    // 用一般的方式收尾
+    foe.hp = 0
+    state.combat!.status = 'victory'
+    const report = finishCombat(state)
+    expect(report.narration?.adult_scene).toContain('被挑起了慾望')
+    expect(report.outcome.tags ?? []).not.toContain('高潮')
+    // 只是挑逗：不算親密場景，淫亂不因此成長
+    expect(report.narration?.tease).toBe(report.narration?.adult_scene)
+    expect(report.changes.lewd ?? []).toEqual([])
+
+    const plain = fight([], [['goblin', 1]], 0)
+    plain.foe.hp = 0
+    plain.state.combat!.status = 'victory'
+    expect(finishCombat(plain.state).narration?.adult_scene).toBeUndefined()
+  })
 })
 
 describe('慾望戰鬥：技能', () => {

@@ -174,6 +174,8 @@ export function growLewd(state: GameState, c: Character, kind: keyof typeof lewd
 /** 親密場景：報告帶成人場景時，場景的主角（通常是主角本人）淫亂成長，並記下日子（太久沒有親密場景會慢慢降） */
 export function noteAdultScene(state: GameState, report: Report) {
   if (!report.narration?.adult_scene) return
+  // 戰鬥中只有挑逗、剝衣：交給成人場景的寫手，但不算親密場景（後來換成別的場景時照算）
+  if (report.narration.tease === report.narration.adult_scene) return
   const who = report.narration.adult_actor
   const m = who ? state.party.find((x) => x.id === who) : state.party.find((x) => x.isPlayer)
   if (!m) return
