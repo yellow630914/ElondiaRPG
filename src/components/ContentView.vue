@@ -44,6 +44,7 @@ import EventRulesEditor from './content/EventRulesEditor.vue'
 import BindRulesEditor from './content/BindRulesEditor.vue'
 import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
 import ImportPickerDialog from './content/ImportPickerDialog.vue'
+import QuestGenDialog from './content/QuestGenDialog.vue'
 import StorylineOverview from './content/StorylineOverview.vue'
 import type { RefKey } from '@/engine/contentRefs'
 import ItemIcon from './items/ItemIcon.vue'
@@ -780,6 +781,12 @@ const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '�
 
 // ---- 局部匯入、匯出（E2） ----
 const showImport = ref(false)
+/** ✨ AI 編排特殊任務（E4） */
+const showGen = ref(false)
+function onGenerated(id: string) {
+  showGen.value = false
+  void select(id)
+}
 const picking = ref(false)
 const pickedKeys = ref<Set<RefKey>>(new Set())
 /** 清單的 key → 內容的 key（區塊:id） */
@@ -873,6 +880,7 @@ function resetAll() {
       <section class="panel list-panel">
         <div class="row">
           <button class="small primary" :disabled="unsavedEdits" :title="unsavedEdits ? UNSAVED_HINT : ''" @click="create">{{ NEW_LABEL[sub] }}</button>
+          <button v-if="sub === 'stories'" class="small" :disabled="unsavedEdits" :title="unsavedEdits ? UNSAVED_HINT : '寫一段描述，讓 AI 編排新的特殊任務（需要的 NPC、物品、地標、地圖、怪物也一起做）'" @click="showGen = true">✨ AI 編排</button>
           <button
             class="small" :disabled="!current || isSetting(current) || unsavedEdits"
             :title="unsavedEdits ? UNSAVED_HINT : '以選取的項目為範本，建立一個自建項目'" @click="duplicate"
@@ -1007,6 +1015,7 @@ function resetAll() {
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onImport" />
     </div>
     <ImportPickerDialog v-if="showImport" :open="showImport" @close="showImport = false" />
+    <QuestGenDialog v-if="showGen" :open="showGen" @close="showGen = false" @created="onGenerated" />
   </div>
 </template>
 

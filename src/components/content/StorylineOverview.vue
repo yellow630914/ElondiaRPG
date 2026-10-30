@@ -6,6 +6,7 @@ import { storylines, type LineEdge } from '@/engine/storylines'
 import { layerLayout } from '@/engine/storyGraph'
 import { useContent } from '@/stores/content'
 import { measureEdges } from './graphEdges'
+import { vMarquee } from '../marquee'
 import HelpText from './HelpText.vue'
 
 // 故事線總覽（docs/plan/roadmap/WORLD_EDITOR_PLAN.md E3c）：任務與任務之間怎麼接。
@@ -118,13 +119,13 @@ watch([line, showFlags], () => void nextTick(measure))
                 v-for="id in col" :key="id" :ref="setEl(id)" class="card" :title="byId.get(id)?.summary"
                 @click="emit('open', id)" @mouseenter="hover = id" @mouseleave="hover = null"
               >
-                <b>{{ byId.get(id)?.title ?? id }}</b>
-                <div class="small muted">
+                <b v-marquee class="marquee"><span>{{ byId.get(id)?.title ?? id }}</span></b>
+                <div v-marquee class="marquee small muted"><span>
                   {{ byId.get(id)?.rank ? `${byId.get(id)!.rank} 級・` : '' }}{{ byId.get(id)?.start.min_level ? `Lv.${byId.get(id)!.start.min_level}・` : '' }}{{ START_KINDS[byId.get(id)!.start.kind] }}・{{ byId.get(id)?.nodes.length }} 個任務點
-                </div>
+                </span></div>
                 <div v-if="byId.get(id)?.tags?.includes('adult')" class="small tag-line">🔞 成人向</div>
-                <div v-if="counters(id).length" class="small counters">🔢 {{ counters(id).join('、') }}</div>
-                <div v-if="line.outside[id]?.length" class="small muted">呼應：{{ line.outside[id]!.map((x) => byId.get(x)?.title ?? x).slice(0, 3).join('、') }}{{ line.outside[id]!.length > 3 ? ' 等' : '' }}</div>
+                <div v-if="counters(id).length" v-marquee class="marquee small counters"><span>🔢 {{ counters(id).join('、') }}</span></div>
+                <div v-if="line.outside[id]?.length" v-marquee class="marquee small muted"><span>呼應：{{ line.outside[id]!.map((x) => byId.get(x)?.title ?? x).slice(0, 3).join('、') }}{{ line.outside[id]!.length > 3 ? ' 等' : '' }}</span></div>
               </div>
             </div>
           </div>
@@ -164,7 +165,7 @@ watch([line, showFlags], () => void nextTick(measure))
 .edges .lit path { stroke-width: 3; opacity: 1; }
 .edges text { font-size: 10px; fill: var(--text, currentColor); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; }
 .col { display: flex; flex-direction: column; gap: 18px; position: relative; z-index: 1; }
-.card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px; max-width: 240px; display: grid; gap: 2px; cursor: pointer; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 8px; max-width: 240px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; cursor: pointer; }
 .card:hover { border-color: var(--accent); }
 .tag-line { color: var(--danger); }
 .counters { color: var(--accent); }

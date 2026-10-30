@@ -24,7 +24,7 @@ function reducedMotion(): boolean {
 }
 
 /** 會呼叫 AI 的功能（見 docs/PROMPTS.md 第 1 節） */
-export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'tags'
+export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'tags' | 'designer'
 
 export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: boolean }[] = [
   { id: 'narration', name: '敘事正文', desc: '所有日誌的詳細經過：戰鬥、旅行、事件，以及主動行動判定之後的經過；也可以在每則日誌手動生成', prose: true },
@@ -34,6 +34,7 @@ export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: bo
   { id: 'shop', name: '商店清單', desc: '「AI 設計 → 商店清單」開啟時：每間店每天第一次進店時，設計今天的交易清單（JSON）', prose: false },
   { id: 'negotiation', name: '談判方式', desc: '「AI 設計 → 談判方式」開啟時：開始談判時設計可以採取的方式（JSON）', prose: false },
   { id: 'tags', name: '插圖提示詞預處理', desc: '生成形象插圖前，依選的預處理指示改寫角色描述（例如轉成 Danbooru 標籤、JSON），插圖設定選了「生圖提示詞預處理」時才用；日誌插圖整理分鏡也用這個來源', prose: false },
+  { id: 'designer', name: '世界設計', desc: '世界編輯器的「✨ AI 編排」：依一段描述編排新的特殊任務（大綱、完整內容與修正，JSON）；輸入很長，建議用推理強的模型', prose: false },
 ]
 
 /** AI 設計：和擲骰無關、由 AI 生成內容的功能，各自開關（舊版跟著「AI 判定」一起開關） */

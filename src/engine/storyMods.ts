@@ -488,7 +488,8 @@ export function flagUsage(def: StoryDef): FlagUse[] {
 }
 
 /** 這個聚落有沒有這種設施 */
-function hasFacility(location: string, kind: CellKind): boolean {
+/** 聚落有沒有這種設施（任何一個區塊） */
+export function hasFacility(location: string, kind: CellKind): boolean {
   return blockKeys(location).some((k) => settlementArea(k)?.cells.some((c) => c.kind === kind))
 }
 
