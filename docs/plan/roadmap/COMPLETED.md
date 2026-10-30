@@ -13,6 +13,13 @@
 - 點子庫：已經變成 ROADMAP 的刪掉（I13 淫氣世界世界書 → R8；I5 的前半 → R11），2026-10 盤點的點子（I8、I9、I12）與 UI v2 沒做的部分併進早期發想。
 - 手機版的版面規則寫成系統文件 [MOBILE_UI](../../MOBILE_UI.md)。
 
+### 2026-10-30 特殊任務的流程圖（R11 的 E3）
+
+- 可達性（`src/engine/storyReach.ts`）：列舉「完成了哪些任務點＋任務自己的旗標」的每一種狀態，找出不會解鎖的任務點、走不到完成、選了會卡住的結果；加進「檢查任務鏈」的提醒，內建任務零筆。
+- 流程圖（`storyGraph.ts`、`content/StoryGraph.vue`）：分層排版、結果的出口、旗標的線、任務外面的旗標、存檔進度；任務編輯器「📋 清單／🕸️ 流程圖」。
+- 故事線總覽（`storylines.ts`、`content/StorylineOverview.vue`）：接取條件、開始特殊任務、不能有、呼應；特殊任務頁籤的「🗺️ 故事線總覽」。
+- 測試：`storyReach.spec.ts`、`storyGraph.spec.ts`、`storylines.spec.ts`。規則寫在 [STORY_QUESTS](../../STORY_QUESTS.md) 第 3 節；沒做的（手機直排、flowdoc 改用同一份模型）留在 [WORLD_EDITOR_PLAN](WORLD_EDITOR_PLAN.md)。
+
 ### 2026-10-30 局部匯入與匯出（R11 的 E1、E2）
 
 - 關聯（`src/engine/contentRefs.ts`）：寫了誰的 id 或名稱、物品 ← 掉落它的怪物、制式裝備 → 自建的底材與材料、旗標與計數器的讀 → 寫；選一項一定連同它用到的東西（閉包），反方向只列出來。

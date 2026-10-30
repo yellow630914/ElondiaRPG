@@ -153,21 +153,15 @@ export function storyGraph(def: StoryDef, others: StoryDef[] = stories): StoryGr
 }
 
 /**
- * 分層排版（左到右）：每一欄是一層。第 0 欄是開頭與外面的旗標，最後一欄是完成與失敗；
- * 任務點放在「最長的前置路徑」那一層（回頭的邊不算），同一欄依前一欄的位置排（重心法兩輪）。
+ * 分層排版（左到右）：ids 放在「最長的前置路徑」那一層（回頭的邊不算），first 固定在第 0 欄、last 固定在最後一欄；
+ * 同一欄依連過來的位置排（重心法兩輪）。edges 只放決定前後的邊。回傳每一欄的 id。
  */
-export function layoutGraph(g: StoryGraph): string[][] {
-  const portNode = new Map(g.nodes.flatMap((n) => n.ports.map((p) => [p.id, n.id] as const)))
-  const src = (from: string) => portNode.get(from) ?? from
-  // 任務點之間的前後（只看解鎖的邊）
-  const preds = new Map<string, Set<string>>(g.nodes.map((n) => [n.id, new Set()]))
-  for (const e of g.edges) {
-    if (e.kind !== 'unlock' && e.kind !== 'any' && e.kind !== 'start') continue
-    const from = src(e.from)
-    if (preds.has(e.to) && from !== e.to) preds.get(e.to)!.add(from)
-  }
-  // 拿掉回頭的邊：照任務點的順序做 DFS
-  const state = new Map<string, 0 | 1 | 2>()
+export function layerLayout(ids: string[], edges: { from: string; to: string }[], first: string[] = [], last: string[] = []): string[][] {
+  const inner = new Set(ids)
+  const preds = new Map<string, Set<string>>(ids.map((id) => [id, new Set()]))
+  for (const e of edges) if (preds.has(e.to) && e.from !== e.to && (inner.has(e.from) || first.includes(e.from))) preds.get(e.to)!.add(e.from)
+  // 拿掉回頭的邊：照給的順序做 DFS
+  const state = new Map<string, 1 | 2>()
   const back = new Set<string>()
   const succ = new Map<string, string[]>()
   for (const [to, ps] of preds) for (const p of ps) succ.set(p, [...(succ.get(p) ?? []), to])
@@ -179,27 +173,26 @@ export function layoutGraph(g: StoryGraph): string[][] {
     }
     state.set(id, 2)
   }
-  for (const r of ['start', ...g.externals.map((x) => x.id), ...g.nodes.map((n) => n.id)]) if (!state.get(r)) visit(r)
-  const rank = new Map<string, number>([['start', 0], ...g.externals.map((x) => [x.id, 0] as [string, number])])
+  for (const r of [...first, ...ids]) if (!state.get(r)) visit(r)
+  const rank = new Map<string, number>(first.map((id) => [id, 0]))
   const rankOf = (id: string, seen = new Set<string>()): number => {
     if (rank.has(id)) return rank.get(id)!
     if (seen.has(id)) return 1
     seen.add(id)
     const ps = [...(preds.get(id) ?? [])].filter((p) => !back.has(`${p}>${id}`))
-    const r = ps.length ? Math.max(...ps.map((p) => rankOf(p, seen))) + 1 : 1
+    const r = ps.length ? Math.max(...ps.map((p) => rankOf(p, seen))) + 1 : first.length ? 1 : 0
     rank.set(id, r)
     return r
   }
-  for (const n of g.nodes) rankOf(n.id)
-  const last = Math.max(1, ...g.nodes.map((n) => rank.get(n.id)!)) + 1
-  const ends = ['complete', 'fail'].filter((t) => g.edges.some((e) => e.to === t))
-  const cols: string[][] = Array.from({ length: last + 1 }, () => [])
-  cols[0]!.push('start', ...g.externals.map((x) => x.id))
-  for (const n of g.nodes) cols[rank.get(n.id)!]!.push(n.id)
-  cols[last]!.push(...ends)
+  for (const id of ids) rankOf(id)
+  const end = Math.max(0, ...ids.map((id) => rank.get(id)!)) + 1
+  const cols: string[][] = Array.from({ length: end + 1 }, () => [])
+  cols[0]!.push(...first)
+  for (const id of ids) cols[rank.get(id)!]!.push(id)
+  cols[end]!.push(...last)
   // 重心法：依前一欄連過來的位置排
   const into = new Map<string, string[]>()
-  for (const e of g.edges) into.set(e.to, [...(into.get(e.to) ?? []), src(e.from)])
+  for (const e of edges) into.set(e.to, [...(into.get(e.to) ?? []), e.from])
   for (let pass = 0; pass < 2; pass++) {
     const pos = new Map<string, number>()
     for (const col of cols) col.forEach((id, i) => pos.set(id, i))
@@ -213,4 +206,13 @@ export function layoutGraph(g: StoryGraph): string[][] {
     }
   }
   return cols.filter((c) => c.length)
+}
+
+/** 任務流程圖的排版：第 0 欄開頭與外面的旗標，最後一欄完成與失敗 */
+export function layoutGraph(g: StoryGraph): string[][] {
+  const portNode = new Map(g.nodes.flatMap((n) => n.ports.map((p) => [p.id, n.id] as const)))
+  const src = (from: string) => portNode.get(from) ?? from
+  const order = g.edges.filter((e) => e.kind === 'unlock' || e.kind === 'any' || e.kind === 'start' || e.kind === 'end').map((e) => ({ from: src(e.from), to: e.to }))
+  const ends = ['complete', 'fail'].filter((t) => g.edges.some((e) => e.to === t))
+  return layerLayout(g.nodes.map((n) => n.id), order, ['start', ...g.externals.map((x) => x.id)], ends)
 }

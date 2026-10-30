@@ -5,6 +5,7 @@ import { placeText } from '@/engine/story'
 import { NODE_KINDS, START_KINDS } from '@/engine/storyMods'
 import { layoutGraph, storyGraph, type EdgeKind, type GraphNode } from '@/engine/storyGraph'
 import { CONTENT_TAGS } from '@/engine/content'
+import { measureEdges } from './graphEdges'
 
 // 特殊任務的流程圖（docs/plan/roadmap/WORLD_EDITOR_PLAN.md E3）：左到右分層，任務點是卡片、每個結果是一個出口，
 // 結果設定的旗標連到需要它的任務點。點任務點送出 open（編輯器在下面打開它）。
@@ -34,33 +35,11 @@ interface Drawn { d: string; kind: EdgeKind; to: string; from: string; flag?: st
 const paths = shallowRef<Drawn[]>([])
 const size = ref({ w: 0, h: 0 })
 function measure() {
-  const r = root.value?.getBoundingClientRect()
-  if (!r) return
-  size.value = { w: root.value!.scrollWidth, h: root.value!.scrollHeight }
-  const box = (id: string) => {
-    const b = els.get(id)?.getBoundingClientRect()
-    return b ? { l: b.left - r.left, r: b.right - r.left, t: b.top - r.top, b: b.bottom - r.top, my: (b.top + b.bottom) / 2 - r.top } : undefined
-  }
-  const out: Drawn[] = []
-  for (const e of graph.value.edges) {
-    const a = box(e.from)
-    const b = box(e.to)
-    if (!a || !b) continue
-    let d: string
-    if (e.from.startsWith(`${e.to}#`)) {
-      // 自己清除自己需要的旗標：出口繞回卡片上方的小圈
-      d = `M ${a.r} ${a.my} C ${a.r + 30} ${a.my}, ${a.r + 30} ${b.t - 14}, ${(b.l + b.r) / 2} ${b.t - 14} L ${(b.l + b.r) / 2} ${b.t}`
-    } else if (b.l > a.r) {
-      const dx = Math.max(40, (b.l - a.r) / 2)
-      d = `M ${a.r} ${a.my} C ${a.r + dx} ${a.my}, ${b.l - dx} ${b.my}, ${b.l} ${b.my}`
-    } else {
-      // 往回（或同一欄）：從下面繞過去
-      const low = Math.max(a.b, b.b) + 24
-      d = `M ${a.r} ${a.my} C ${a.r + 40} ${a.my}, ${a.r + 40} ${low}, ${(a.r + b.l) / 2} ${low} S ${b.l - 40} ${b.my}, ${b.l} ${b.my}`
-    }
-    out.push({ d, kind: e.kind, to: e.to, from: e.from, flag: e.flag, x: (a.r + b.l) / 2, y: (a.my + b.my) / 2, ok: e.to === 'complete' })
-  }
-  paths.value = out
+  if (!root.value) return
+  size.value = { w: root.value.scrollWidth, h: root.value.scrollHeight }
+  // 自己清除自己需要的旗標：出口繞回卡片上方的小圈
+  paths.value = measureEdges(root.value, els, graph.value.edges, (e) => e.from.startsWith(`${e.to}#`))
+    .map(({ edge: e, d, x, y }) => ({ d, kind: e.kind, to: e.to, from: e.from, flag: e.flag, x, y, ok: e.to === 'complete' }))
 }
 let ro: ResizeObserver | undefined
 onMounted(() => {
@@ -155,7 +134,7 @@ const tagName = (t: string) => CONTENT_TAGS[t as keyof typeof CONTENT_TAGS]?.nam
 </template>
 
 <style scoped>
-.graph-wrap { display: grid; gap: 6px; }
+.graph-wrap { display: grid; gap: 6px; min-width: 0; max-width: 100%; }
 .bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .check { display: inline-flex; gap: 4px; align-items: center; }
 .legend { display: inline-flex; gap: 4px; align-items: center; color: var(--muted); }

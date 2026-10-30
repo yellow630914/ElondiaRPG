@@ -44,6 +44,7 @@ import EventRulesEditor from './content/EventRulesEditor.vue'
 import BindRulesEditor from './content/BindRulesEditor.vue'
 import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
 import ImportPickerDialog from './content/ImportPickerDialog.vue'
+import StorylineOverview from './content/StorylineOverview.vue'
 import type { RefKey } from '@/engine/contentRefs'
 import ItemIcon from './items/ItemIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
@@ -343,6 +344,8 @@ function clearFilters() {
 const COUNTERS_KEY = '|counters'
 /** 裝備底材清單裡的「雙面效應設定」 */
 const BIND_RULES_KEY = '|bind_rules'
+/** 特殊任務頁的「故事線總覽」 */
+const STORYLINES_KEY = '|storylines'
 /** 每一頁只有一筆的設定：放在清單上方的固定按鈕（不跟著篩選消失） */
 const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() => {
   void content.version
@@ -351,7 +354,7 @@ const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() 
   if (sub.value === 'events') return [{ key: 'rules', label: '⚙️ 事件設定', edited: !!m.eventRules?.rules }]
   if (sub.value === 'tattoos') return [{ key: 'rules', label: '⚙️ 印記設定', edited: !!m.markRules?.rules }]
   if (sub.value === 'bases') return [{ key: BIND_RULES_KEY, label: '⚙️ 雙面效應設定', edited: !!m.bindRules?.rules }]
-  if (sub.value === 'stories') return [{ key: COUNTERS_KEY, label: `🔢 劇情計數器（${Object.keys(storyCounters).length}）`, edited: Object.keys(m.counters ?? {}).length > 0 }]
+  if (sub.value === 'stories') return [{ key: STORYLINES_KEY, label: '🗺️ 故事線總覽', edited: false }, { key: COUNTERS_KEY, label: `🔢 劇情計數器（${Object.keys(storyCounters).length}）`, edited: Object.keys(m.counters ?? {}).length > 0 }]
   return []
 })
 /** 編輯器共用的自動完成清單（cv-item-names、cv-known-flags） */
@@ -529,7 +532,7 @@ const current = computed(() => {
   const key = selected.value[sub.value]
   if (!key) return ''
   const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? key === BIND_RULES_KEY || !!gearRules.bases[key]
-    : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? key === COUNTERS_KEY || stories.some((d) => d.id === key)
+    : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? key === COUNTERS_KEY || key === STORYLINES_KEY || stories.some((d) => d.id === key)
     : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? (key.startsWith('c:') ? conditionIds().includes(key.slice(2)) : !!statuses[key]) : sub.value === 'perks' ? !!perkDef(key)
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
     : sub.value === 'landmarks' ? !!landmarks[key]
@@ -981,6 +984,7 @@ function resetAll() {
         <MasterEventEditor v-else-if="sub === 'masterEvents'" :id="current" :key="`me-${current}`" @deleted="select('')" />
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
         <CountersEditor v-else-if="sub === 'stories' && current === COUNTERS_KEY" key="counters" />
+        <StorylineOverview v-else-if="sub === 'stories' && current === STORYLINES_KEY" key="storylines" @open="select" />
         <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" @open="select" />
         <BindRulesEditor v-else-if="sub === 'bases' && current === BIND_RULES_KEY" key="bind-rules" />
         <GearEditor v-else-if="sub === 'bases'" :id="current" :key="`b-${current}`" kind="base" @deleted="select('')" />
