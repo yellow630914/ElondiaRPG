@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { useContent } from '@/stores/content'
+import { unsavedEdits } from './unsaved'
 
 // 編輯器的表頭：名稱、內建／自建、未儲存，和儲存、放棄修改、恢復預設或刪除。捲動時留在畫面上。
 // kind：builtin 內建（可以恢復預設）、custom 自建（可以刪除）、rules 只有一筆的設定（可以恢復預設，標籤只有「內建／已修改」）。
-// 原版世界（唯讀）時儲存、恢復預設、刪除都停用。
+// 原版世界（唯讀）時儲存、恢復預設、刪除都停用。有未儲存的修改時回報給未儲存保護（unsaved.ts）。
 const props = withDefaults(defineProps<{
   title: string
   kind: 'builtin' | 'custom' | 'rules'
@@ -22,6 +23,9 @@ const content = useContent()
 
 const tag = computed(() => (props.kind === 'custom' ? '自建' : props.kind === 'rules' ? (props.edited ? '已修改' : '內建') : props.edited ? '內建・已修改' : '內建'))
 const readOnly = computed(() => content.readOnly)
+// 回報給未儲存保護（同一時間只有一個編輯器打開）
+watch(() => props.dirty, (v) => { unsavedEdits.value = v }, { immediate: true })
+onBeforeUnmount(() => { unsavedEdits.value = false })
 </script>
 
 <template>

@@ -46,6 +46,7 @@ import { edgePulse, floatText, placeCard, tween } from '@/fx/fx'
 import { stateKey } from '@/fx/seen'
 import type { IconName } from '@/components/ui/iconPaths'
 import { activeEvents, eventDialogOpen, pendingEvents } from '@/components/events/eventQueue'
+import { confirmDiscard, unsavedEdits } from '@/components/content/unsaved'
 
 // 提示詞頁籤會載入整本世界書，切過去時才載入
 const PromptsView = defineAsyncComponent(() => import('@/components/PromptsView.vue'))
@@ -111,10 +112,19 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: 'content', label: '世界', icon: 'world' },
 ]
 const tab = ref<Tab>('adventure')
+/** 換頁籤：離開世界頁時，世界編輯器有未儲存的修改先問一次 */
+function setTab(t: Tab) {
+  if (tab.value === 'content' && t !== 'content' && !confirmDiscard()) return
+  tab.value = t
+}
 
 // 沒有載入遊戲時：首頁與它的幾個畫面（開新遊戲、世界管理、提示詞管理）
 type Screen = 'home' | 'new' | 'worlds' | 'prompts'
 const screen = ref<Screen>('home')
+function setScreen(s: Screen) {
+  if (screen.value === 'worlds' && s !== 'worlds' && !confirmDiscard()) return
+  screen.value = s
+}
 const content = useContent()
 // 進入遊戲時切到冒險頁；回到首頁時從首頁開始
 watch(() => !!game.state, (inGame) => {
@@ -124,6 +134,7 @@ watch(() => !!game.state, (inGame) => {
   } else screen.value = 'home'
 })
 async function goHome() {
+  if (!confirmDiscard()) return
   closeDialogs()
   await game.toHome()
 }
@@ -212,7 +223,7 @@ function onMobileOpen(what: MobileOpen) {
     case 'saves': showSaves.value = true; break
     case 'settings': showSettings.value = true; break
     case 'logsettings': openSettings('models'); break
-    case 'prompts': tab.value = 'prompts'; break
+    case 'prompts': setTab('prompts'); break
     case 'content': tab.value = 'content'; break
     case 'home': void goHome(); break
     case 'quickload': askQuickLoad(); break
@@ -236,7 +247,8 @@ function onKey(e: KeyboardEvent) {
 }
 // 自動保存失敗時，離開頁面前提醒一下
 function onLeave(e: BeforeUnloadEvent) {
-  if (!game.saveWarning) return
+  // 世界編輯器有未儲存的修改時也提醒
+  if (!game.saveWarning && !unsavedEdits.value) return
   e.preventDefault()
   e.returnValue = ''
 }
@@ -256,10 +268,10 @@ onBeforeUnmount(() => {
   <header v-if="!(isMobile && game.state)" class="top">
     <div class="logo"><GameIcon name="sword" :size="24" /><h1>埃隆迪亞大陸</h1></div>
     <nav v-if="game.state" class="tabs">
-      <button v-for="t in TABS" :key="t.id" :class="{ active: tab === t.id }" @click="tab = t.id"><GameIcon :name="t.icon" :size="15" />{{ t.label }}</button>
+      <button v-for="t in TABS" :key="t.id" :class="{ active: tab === t.id }" @click="setTab(t.id)"><GameIcon :name="t.icon" :size="15" />{{ t.label }}</button>
     </nav>
     <nav v-else-if="screen !== 'home'" class="tabs">
-      <button @click="screen = 'home'"><GameIcon name="home" :size="15" />首頁</button>
+      <button @click="setScreen('home')"><GameIcon name="home" :size="15" />首頁</button>
     </nav>
     <div v-if="game.state" class="hud">
       <span class="cell" title="遊戲時間"><GameIcon name="calendar" :size="15" /><span class="label">第</span><b>{{ game.state.time.day }}</b><span class="label">天</span><b>{{ clock }}</b><GameIcon :name="daytime ? 'sun' : 'moon'" :size="15" :class="daytime ? 'sun' : 'night'" /></span>
@@ -315,7 +327,7 @@ onBeforeUnmount(() => {
 
   <!-- 手機版：提示詞、世界頁的上方只有一條「回到冒險」 -->
   <nav v-if="isMobile && game.state && tab !== 'adventure'" class="m-back">
-    <button class="ghost" @click="tab = 'adventure'"><GameIcon name="right" :size="16" class="flip" />回到冒險</button>
+    <button class="ghost" @click="setTab('adventure')"><GameIcon name="right" :size="16" class="flip" />回到冒險</button>
   </nav>
   <MobileGame
     v-if="mobileGame"

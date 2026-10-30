@@ -51,6 +51,7 @@ import { builtinTravelEvent, DUNGEON_TRIGGERS, newTravelEvent } from '@/engine/t
 import { parasiteRules } from '@/engine/parasites'
 import { isMobile, pushLayer } from './mobile/mobile'
 import GameIcon from './ui/GameIcon.vue'
+import { confirmDiscard } from './content/unsaved'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
 type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
@@ -91,7 +92,7 @@ const group = computed(() => GROUPS.find((g) => g.tabs.includes(tab.value))!)
 /** 每一組上次看的頁籤（切回這一組時回到那裡） */
 const lastTab: Record<string, Tab> = {}
 function openTab(t: Tab) {
-  if (t === tab.value) return
+  if (t === tab.value || !confirmDiscard()) return
   if (t === 'icons') iconsTab.value = true
   else {
     iconsTab.value = false
@@ -530,6 +531,7 @@ const current = computed(() => {
 })
 
 function select(key: string) {
+  if (key === selected.value[sub.value] || !confirmDiscard()) return
   selected.value[sub.value] = key
 }
 

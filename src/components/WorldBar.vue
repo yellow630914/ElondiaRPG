@@ -4,6 +4,7 @@ import { modTotal, useContent, VANILLA, VANILLA_NAME } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { dateStamp, download } from './download'
+import { confirmDiscard } from './content/unsaved'
 
 // 世界管理：好幾套自訂內容。開新遊戲時選一個，存檔記住；遊戲進行中不能切換（可以修改它的內容）
 const content = useContent()
@@ -22,14 +23,21 @@ function run(fn: () => void) {
   }
 }
 
-function switchTo(id: string) {
+function switchTo(id: string, select?: HTMLSelectElement) {
+  // 有未儲存的修改又不放棄：選單換回目前的世界
+  if (!confirmDiscard()) {
+    if (select) select.value = content.active
+    return
+  }
   run(() => content.switchWorld(id))
 }
 function createNew() {
+  if (!confirmDiscard()) return
   const name = prompt('新世界的名字（從原版開始，沒有任何自訂內容）', '新的世界')
   if (name !== null) run(() => content.switchWorld(content.createWorld(name)))
 }
 function duplicate() {
+  if (!confirmDiscard()) return
   const name = prompt('複製出來的世界叫什麼？', `${content.activeName}（複製）`)
   if (name !== null) run(() => {
     const id = content.createWorld(name, content.active === VANILLA ? undefined : content.active)
@@ -42,6 +50,7 @@ function rename() {
   if (name) run(() => content.renameWorld(content.active, name))
 }
 function remove() {
+  if (!confirmDiscard()) return
   if (confirm(`刪除世界「${content.activeName}」？裡面的自訂內容會一起刪掉。用這個世界的存檔，讀檔時會用存檔附上的內容還原（沒有附上時改用原版世界）。`)) run(() => content.deleteWorld(content.active))
 }
 async function importAsNew(e: Event) {
@@ -50,6 +59,7 @@ async function importAsNew(e: Event) {
   input.value = ''
   if (!file) return
   const text = await file.text()
+  if (!confirmDiscard()) return
   run(() => {
     const r = content.importWorld(text, file.name.replace(/\.json$/i, ''))
     if (!locked.value) content.switchWorld(r.id)
@@ -72,7 +82,7 @@ function exportPackage() {
   <section class="panel world-bar">
     <div class="row">
       <strong>🌍 世界</strong>
-      <select :value="content.active" :disabled="locked" @change="switchTo(($event.target as HTMLSelectElement).value)">
+      <select :value="content.active" :disabled="locked" @change="switchTo(($event.target as HTMLSelectElement).value, $event.target as HTMLSelectElement)">
         <option :value="VANILLA">{{ VANILLA_NAME }}（不能修改）</option>
         <option v-for="w in content.worlds" :key="w.id" :value="w.id">{{ w.name }}（{{ modTotal(w.mods) }} 項自訂內容）</option>
       </select>
