@@ -153,8 +153,9 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 8：金屬靴子的底材改名（鐵靴 → 戰靴，免得變成「鐵鐵靴」）：同上
  * 9：7、8 只換掉剛好等於制式名稱的字串；這一步連帶稀有度前綴、編號的自訂裝備（優良鐵鐵靴、精製秘銀鐵腰帶（2）……）一起改，自訂物品的鍵也跟著改
  * 10：特殊任務的獨特裝備改名（不再用「某某人的材質類型」）：行囊、裝備、商店裡的舊名稱跟著改
+ * 11：緋夢樂園的「魅魔女王」改叫「緋夢夫人」（免得和魔王莉莎爾搞混）：用她命名的物品跟著改
  */
-export const SAVE_SCHEMA = 10
+export const SAVE_SCHEMA = 11
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -203,7 +204,15 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [10, (s) => {
     renameValues(s, UNIQUE_GEAR_RENAMES)
   }],
+  [11, (s) => {
+    renameValues(s, PARK_HOSTESS_RENAMES)
+  }],
 ]
+
+/** 存檔格式 11：用緋夢樂園的主人命名的物品（舊名「魅魔女王」） */
+const PARK_HOSTESS_RENAMES: Record<string, string> = Object.fromEntries(
+  ['吊帶襪', '黑薔薇', '舊項圈', '晚禮服'].map((n) => [`魅魔女王的${n}`, `緋夢夫人的${n}`]),
+)
 
 /** 存檔格式 10：特殊任務獨特裝備的舊名稱 → 新名稱 */
 const UNIQUE_GEAR_RENAMES: Record<string, string> = {

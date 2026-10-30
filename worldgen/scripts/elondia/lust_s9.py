@@ -976,7 +976,7 @@ def std_name(materials, base, mat):
 
 
 OUTFIT_UNIQUES = [
-    item('魅魔女王的晚禮服', 3600, ['unique'], '魅魔女王在宴會上穿過一次就賞給下人的晚禮服——胸口開得比任何一件都低，裙擺上的寶石卻是真的。',
+    item('緋夢夫人的晚禮服', 3600, ['unique'], '緋夢夫人在宴會上穿過一次就賞給下人的晚禮服——胸口開得比任何一件都低，裙擺上的寶石卻是真的。',
          {"base": "open_gown", "material": "moonsilk", "attrs": {"cha": 2}, "lewd": {"lewdness": 5}}),
     item('流沙聖殿的舞孃紗衣', 2400, ['unique'], '古代神殿的舞孃獻舞時穿的紗衣，金幣上刻著已經沒人看得懂的祈禱文。',
          {"base": "dancer_veils", "material": "silk", "attrs": {"dex": 1, "cha": 1}}),
@@ -992,7 +992,7 @@ OUTFIT_UNIQUES = [
 OUTFIT_SOURCES = {
     "chests": {"deep": [["流沙聖殿的舞孃紗衣", 0.02]], "abyss": [["夜蝶的吊襪腰帶", 0.03]]},
     "park": [["潮汐港的微比基尼", 0.02]],
-    "auction": [["魅魔女王的晚禮服", 2]],
+    "auction": [["緋夢夫人的晚禮服", 2]],
     "arena": {"ring": "lust", "rare": {"tier": 5, "chance": 0.25, "items": ["黑薔薇的乳膠手套"]}},
     "loot": {"enemy": "incubus_enforcer", "item": "夢魔氏族的角冠", "chance": 0.2},
 }

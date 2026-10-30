@@ -175,7 +175,7 @@ def mon(i, name, kind, lv, main, weapon, ab, resist, desc, loot, boss=False, eva
 
 
 MAT = {'park_beast': '淫獸的柔毛', 'park_insect': '媚液結晶', 'park_aquarium': '觸手的黏膜', 'park_garden': '媚香花蜜', 'park_theater': '夢魔的鱗粉'}
-TROPHY = {'park_beast': '黑鬃的鬃毛', 'park_insect': '蟲后的蜜蠟', 'park_aquarium': '觸手母體的心核', 'park_garden': '千花魅后的花蕊', 'park_theater': '魅魔女王的黑薔薇'}
+TROPHY = {'park_beast': '黑鬃的鬃毛', 'park_insect': '蟲后的蜜蠟', 'park_aquarium': '觸手母體的心核', 'park_garden': '千花魅后的花蕊', 'park_theater': '緋夢夫人的黑薔薇'}
 # 打工線獨特技能的技能書：深層層主保證掉、中層層主一半、淺層層主三分之一
 BOOKS = {
     'park_beast': ('《斟酒的媚態》', '《戰利品的覺悟》', '《求偶紋》'),
@@ -307,7 +307,7 @@ def park_monsters():
             '夢魔劇場淺層的層主：叼著雪茄的胖惡魔，劇場的錢都歸他管，付不出票錢的人就拿身體抵；守著往後台的門。', boss_loot(P, 0), boss=True, below='lp_lust_tide'),
         mon('lp_boss_director', '後台的夢魔導演', 'spirit', 10, 'cha', ('2d10', 'psychic', 'cha'), ['lp_dream', 'lp_encore', 'm_lust_kiss', 'lp_lust_tide'], {**WEAK_HOLY, "physical": -0.25, "lust": 0.25},
             '夢魔劇場中層的層主：把春夢排成戲的導演，演員不夠的時候就把闖進後台的人寫進劇本裡。', boss_loot(P, 1), boss=True, evade=1, below='lp_lust_tide'),
-        mon('lp_boss_queen', '魅魔女王', 'demon', 13, 'cha', ('4d8', 'slashing', 'dex'), ['m_lust_kiss', 'lp_encore', 'death_decree', 'lp_lust_tide'], {**WEAK_HOLY, "fire": -0.5, "lust": 0.25},
+        mon('lp_boss_queen', '緋夢夫人', 'demon', 13, 'cha', ('4d8', 'slashing', 'dex'), ['m_lust_kiss', 'lp_encore', 'death_decree', 'lp_lust_tide'], {**WEAK_HOLY, "fire": -0.5, "lust": 0.25},
             '緋夢樂園的主人、夢魔劇場的最終層主：每晚的壓軸都由她親自上台，被她選中的人會在全場的注視下高潮到天亮。', boss_loot(P, 2), boss=True, evade=2, below='lp_lust_tide', extra={"dex": 18}),
     ]
     mimic_loot = lambda lv: [(TEA, 0.5, 1), (OIL, 0.5, 1)] + ([('《極樂秘典》', 0.05, 1)] if lv >= 9 else [])
@@ -350,7 +350,7 @@ ITEMS = [
     material('蟲后的蜜蠟', 1200, '苗床的蟲后巢裡的蜜蠟，溫溫的、軟軟的，聞起來像甜膩的體香。'),
     material('觸手母體的心核', 1300, '觸手母體最深處的一顆肉核，離開水之後還在一跳一跳地動。'),
     material('千花魅后的花蕊', 1300, '千花魅后的花蕊，一千種花香混在一起，聞一下就腿軟。'),
-    material('魅魔女王的黑薔薇', 1500, '魅魔女王別在胸前的黑薔薇，永遠不會凋謝；據說是她從第一個被她征服的人身上摘下來的。'),
+    material('緋夢夫人的黑薔薇', 1500, '緋夢夫人別在胸前的黑薔薇，永遠不會凋謝；據說是她從第一個被她征服的人身上摘下來的。'),
     {"name": TEA, "category": "consumable", "price_cc": 60, "tags": ["general"], "adult": True, "use": {"lust": -30, "cleanse": ["aphrodisiac", "sensitized"]},
      "desc": "加了薄荷與苦草的冷茶，喝一口就清醒過來：慾望 −30，解除媚毒與敏感。戰鬥中使用。",
      "recipe": {"craft": "alchemy", "level": 3, "inputs": [{"name": "藥草", "qty": 2}], "cost_cc": 10, "hours": 1}},
@@ -360,8 +360,8 @@ ITEMS = [
     {"name": "緋夢樂園的通行頸環", "category": "equipment", "price_cc": 3200, "tags": ["unique"], "adult": True,
      "desc": "集滿五個章的人才拿得到的頸環，黑色蕾絲上掛著一顆粉紅色的心形寶石。戴著它在血羽城堡走一圈，魅魔們都會對你眨眼睛。",
      "gear": {"base": "lace_choker", "material": "moonsilk", "rarity": "epic", "attrs": {"cha": 2}, "enchants": {"mods": {"save": 1, "evade": 1}}, "unique": {"check": {"kinds": ["flatter", "chat"]}, "bonus": 3}}},
-    {"name": "魅魔女王的吊帶襪", "category": "equipment", "price_cc": 3200, "tags": ["unique"], "adult": True,
-     "desc": "魅魔女王在壓軸演出穿過的吊帶襪，黑絲上繡著暗紅色的薔薇；穿上它的人站上任何舞台都不會怯場。",
+    {"name": "緋夢夫人的吊帶襪", "category": "equipment", "price_cc": 3200, "tags": ["unique"], "adult": True,
+     "desc": "緋夢夫人在壓軸演出穿過的吊帶襪，黑絲上繡著暗紅色的薔薇；穿上它的人站上任何舞台都不會怯場。",
      "gear": {"base": "garter_stockings", "material": "moonsilk", "rarity": "epic", "attrs": {"cha": 1, "dex": 1}, "enchants": {"mods": {"evade": 1, "crit": 1}}, "unique": {"check": {"contexts": ["initiative"]}, "bonus": 3}}},
 ]
 
@@ -445,7 +445,7 @@ GREETER_LINE = ('    { "id": "' + GREETER + '", "name": "蜜菈", "gender": "fem
                 '      "personality": "笑容甜得膩人，說話一半是宣傳詞、一半是黃色笑話；對客人有求必應，對打輸的客人更是熱情。",\n'
                 '      "appearance": "身高約 165 公分，看起來二十出頭的魅魔，粉紅色的短髮上別著一頂小小的禮帽，一對小角從髮間探出來，背後一對蝙蝠翅膀收得很整齊；穿著紅色燕尾服式的短外套與極短的褶裙，胸前別著「接待員」的名牌，手上永遠拿著一疊集章卡。",\n'
                 '      "adult_appearance": "外套底下什麼都沒穿，一彎腰就看得到；尾巴尖是心形的，高興的時候會左右搖。",\n'
-                '      "background": "魅魔女王手下的接待員，負責在入口廣場發集章卡、說明園區的規矩、替打輸被送回來的客人擦乾身體。她說樂園的宗旨是「讓每一位客人都盡興而歸」——不管客人願不願意。集滿五個園區的章的人，可以找她換女王親自準備的獎品。",\n'
+                '      "background": "緋夢夫人手下的接待員，負責在入口廣場發集章卡、說明園區的規矩、替打輸被送回來的客人擦乾身體。她說樂園的宗旨是「讓每一位客人都盡興而歸」——不管客人願不願意。集滿五個園區的章的人，可以找她換女王親自準備的獎品。",\n'
                 '      "relations": {} },\n')
 
 
@@ -460,20 +460,20 @@ def _done(text, gear_name, memory):
 
 PARK_STORIES = [{
     "id": "park_stamps", "title": "緋夢樂園的集章卡",
-    "summary": "緋夢樂園的五個園區各有一個章，打倒園區最深處的層主就蓋得到。集滿五個章，接待員蜜菈說女王準備了獎品。",
+    "summary": "緋夢樂園的五個園區各有一個章，打倒園區最深處的層主就蓋得到。集滿五個章，接待員蜜菈說夫人準備了獎品。",
     "tags": ["adult"], "rank": "B", "merit": 5,
     "start": {"kind": "npc", "npc": GREETER, "min_level": 11, "requires": {"flags": list(STAMPS)},
-              "text": "蜜菈看到你的集章卡，眼睛都亮了，尾巴搖個不停：「哇——五個章都蓋滿了！你是今年第一個呢。」她把卡片收進胸口，「女王陛下說要親自挑獎品給你。跟我來，到後面的貴賓室挑一個吧——別擔心，這次真的只是挑獎品。」"},
+              "text": "蜜菈看到你的集章卡，眼睛都亮了，尾巴搖個不停：「哇——五個章都蓋滿了！你是今年第一個呢。」她把卡片收進胸口，「夫人說要親自挑獎品給你。跟我來，到後面的貴賓室挑一個吧——別擔心，這次真的只是挑獎品。」"},
     "start_flags": ["park_stamps_start"],
     "nodes": [{
         "id": "prize", "title": "在貴賓室挑一件獎品", "kind": "choice", "at": {"where": "npc", "npc": GREETER},
         "requires": {"flags": ["park_stamps_start"]},
-        "text": "貴賓室裡鋪著紅絨布，桌上擺著兩個絲綢包著的盒子，還有一本燙金的書。蜜菈說：「書是送的。兩個盒子挑一個——頸環戴著出門比較方便，吊帶襪是女王陛下自己穿過的喔。」",
+        "text": "貴賓室裡鋪著紅絨布，桌上擺著兩個絲綢包著的盒子，還有一本燙金的書。蜜菈說：「書是送的。兩個盒子挑一個——頸環戴著出門比較方便，吊帶襪是夫人自己穿過的喔。」",
         "options": [
-            {"label": "挑頸環", "success": _done("你拿起那條黑色蕾絲的頸環，心形的寶石在燈下閃著粉紅色的光。蜜菈親手替你戴上，在你耳邊說：「以後來玩，報這條頸環就好，女王陛下會記得你。」",
+            {"label": "挑頸環", "success": _done("你拿起那條黑色蕾絲的頸環，心形的寶石在燈下閃著粉紅色的光。蜜菈親手替你戴上，在你耳邊說：「以後來玩，報這條頸環就好，夫人會記得你。」",
                                                 "緋夢樂園的通行頸環", "集滿了緋夢樂園五個園區的章，在貴賓室挑了通行頸環，還拿到了一本《傾國》。")},
-            {"label": "挑吊帶襪", "success": _done("你打開盒子，黑絲上繡著暗紅色的薔薇，還留著一點女王的香味。蜜菈吃吃地笑：「女王陛下說，穿著它上台的人，就是下一場的主角了。」",
-                                                  "魅魔女王的吊帶襪", "集滿了緋夢樂園五個園區的章，在貴賓室挑了魅魔女王穿過的吊帶襪，還拿到了一本《傾國》。")},
+            {"label": "挑吊帶襪", "success": _done("你打開盒子，黑絲上繡著暗紅色的薔薇，還留著一點夫人的香味。蜜菈吃吃地笑：「夫人說，穿著它上台的人，就是下一場的主角了。」",
+                                                  "緋夢夫人的吊帶襪", "集滿了緋夢樂園五個園區的章，在貴賓室挑了緋夢夫人穿過的吊帶襪，還拿到了一本《傾國》。")},
         ],
     }],
     "rewards": [{"type": "money", "amount": 1000}, {"type": "xp", "amount": 2000}],

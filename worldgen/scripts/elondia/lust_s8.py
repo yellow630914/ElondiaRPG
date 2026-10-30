@@ -101,7 +101,7 @@ def write_s8_3():
     prices = {x['name']: x['price_cc'] for x in json.loads(t)['items']}
     prices.update({x['name']: x['price_cc'] for x in ITEMS})
     check_recipes(ITEMS, prices)
-    t = insert_after(t, r'\n    \{"name": "魅魔女王的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in ITEMS])
+    t = insert_after(t, r'\n    \{"name": "緋夢夫人的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in ITEMS])
     json.loads(t)
     open(p, 'w').write(t)
 
@@ -503,7 +503,7 @@ def write_s8_10():
     t = open(p).read()
     for it in CHARM_GOODS:
         t = drop_lines(t, r'\n    \{"name": ' + re.escape(json.dumps(it['name'], ensure_ascii=False)) + r'.*')
-    t = insert_after(t, r'\n    \{"name": "魅魔女王的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in CHARM_GOODS])
+    t = insert_after(t, r'\n    \{"name": "緋夢夫人的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in CHARM_GOODS])
     json.loads(t)
     open(p, 'w').write(t)
 
@@ -635,7 +635,7 @@ OUTFIT_TAILOR = {
 }
 LUST = lambda x: {"offense": {"lust": x}}
 AUCTION_ITEMS = [
-    {"name": "魅魔女王的舊項圈", "category": "equipment", "price_cc": 3200, "tags": [], "adult": True, "desc": "魅魔女王年輕時戴過的蕾絲項圈，據說戴上的人說話會帶著女王的腔調。只在拍賣會出現。",
+    {"name": "緋夢夫人的舊項圈", "category": "equipment", "price_cc": 3200, "tags": [], "adult": True, "desc": "緋夢夫人年輕時戴過的蕾絲項圈，據說戴上的人說話會帶著夫人的腔調。只在拍賣會出現。",
      "gear": {"base": "lace_choker", "material": "moonsilk", "rarity": "epic", "lewd": {"submission": 8}, "enchants": LUST(0.25)}},
     {"name": "夢魔的薄紗睡衣", "category": "equipment", "price_cc": 2800, "tags": [], "adult": True, "desc": "夢魔氏族的長老穿過的薄紗睡衣，穿上它睡覺會做很長的夢。只在拍賣會出現。",
      "gear": {"base": "sheer_negligee", "material": "moonsilk", "rarity": "epic", "lewd": {"lewdness": 8, "sensitivity": 4}, "enchants": {"resist": {"lust": -0.2}}}},
@@ -734,7 +734,7 @@ def write_s8_14():
     t = open(p).read()
     for it in AUCTION_ITEMS + PARK_OUTFITS:
         t = drop_lines(t, r'\n    \{"name": ' + re.escape(json.dumps(it['name'], ensure_ascii=False)) + r'.*')
-    t = insert_after(t, r'\n    \{"name": "魅魔女王的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in AUCTION_ITEMS + PARK_OUTFITS])
+    t = insert_after(t, r'\n    \{"name": "緋夢夫人的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in AUCTION_ITEMS + PARK_OUTFITS])
     json.loads(t)
     open(p, 'w').write(t)
 

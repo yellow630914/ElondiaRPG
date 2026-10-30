@@ -40,13 +40,13 @@ describe('S9-6 淫服補充', () => {
   })
 
   it('6 件獨特品：寶箱、園區寶箱、拍賣會、性戰場、夢魔氏族的執行者', () => {
-    for (const n of ['魅魔女王的晚禮服', '流沙聖殿的舞孃紗衣', '潮汐港的微比基尼', '黑薔薇的乳膠手套', '夜蝶的吊襪腰帶', '夢魔氏族的角冠']) {
+    for (const n of ['緋夢夫人的晚禮服', '流沙聖殿的舞孃紗衣', '潮汐港的微比基尼', '黑薔薇的乳膠手套', '夜蝶的吊襪腰帶', '夢魔氏族的角冠']) {
       expect(itemDef(n)?.gear, n).toBeTruthy()
     }
     expect(gearRules.chests.deep!.items.map(([n]) => n)).toContain('流沙聖殿的舞孃紗衣')
     expect(gearRules.chests.abyss!.items.map(([n]) => n)).toContain('夜蝶的吊襪腰帶')
     expect(lewdRules.park.chest_items.map(([n]) => n)).toContain('潮汐港的微比基尼')
-    expect(lewdRules.auction.pool.map(([n]) => n)).toContain('魅魔女王的晚禮服')
+    expect(lewdRules.auction.pool.map(([n]) => n)).toContain('緋夢夫人的晚禮服')
     expect(arenaRules().rings.lust!.rare!.items).toEqual(['黑薔薇的乳膠手套'])
     expect(enemies.incubus_enforcer!.loot).toContainEqual({ item: '夢魔氏族的角冠', chance: 0.2 })
   })
