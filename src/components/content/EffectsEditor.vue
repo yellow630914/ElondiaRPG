@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { abilities, ATTR_IDS, attrName, conditionName, contractDef, geography, itemRules, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
+import { abilities, ATTR_IDS, attrName, conditionName, contractDef, geography, itemRules, lewdRules, LOCK_GRADES, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
 import { EFFECT_CONDITIONS, MASTER_EVENT_EFFECTS, STORY_EFFECTS } from '@/engine/storyMods'
@@ -22,6 +22,11 @@ const ALL_LABELS: Partial<Record<RewardEffect['type'], string>> = { ...STORY_EFF
 const masterGear = computed(() => {
   void content.version
   return itemRules.items.filter((i) => i.master_force).map((i) => i.name)
+})
+// 陷阱鎖：底材有雙面效應的物品（拘束具）
+const restraintItems = computed(() => {
+  void content.version
+  return itemRules.items.filter((i) => i.gear && gearRules.bases[i.gear.base]?.bind).map((i) => i.name)
 })
 const content = useContent()
 // 可以給的非戰鬥狀態（含自建的）
@@ -67,6 +72,7 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   home_extend: () => ({ type: 'home_extend', hours: 24 }),
   master_home: () => ({ type: 'master_home' }),
   force_equip: () => ({ type: 'force_equip', npc: 'master' }),
+  restrain: () => ({ type: 'restrain', item: restraintItems.value[0] ?? '' }),
   flag: () => ({ type: 'flag', key: '', value: true }),
 }
 const parasiteIds = Object.keys(parasiteRules.parasites)
@@ -304,6 +310,16 @@ function setBase(r: Row, base: string) {
           <option v-for="n in masterGear" :key="n" :value="n">{{ n }}</option>
         </select>
         <span class="small muted">主人替主角裝上並鎖住，契約還在時拿不下來</span>
+      </template>
+      <template v-else-if="r.type === 'restrain'">
+        <select v-model="r.item">
+          <option v-if="r.item && !restraintItems.includes(r.item as string)" :value="r.item">{{ r.item }}（不是拘束具）</option>
+          <option v-for="n in restraintItems" :key="n" :value="n">{{ n }}</option>
+        </select>
+        <select :value="r.lock ?? 'white'" @change="($event.target as HTMLSelectElement).value === 'white' ? delete r.lock : (r.lock = ($event.target as HTMLSelectElement).value)">
+          <option v-for="g in LOCK_GRADES" :key="g" :value="g">{{ lewdRules.locks.grades[g].name }}</option>
+        </select>
+        <Hint text="把這件拘束具戴到主角身上、用這種鎖鎖住（不用契約，離開地下城也還鎖著）：要脫縛、用鑰匙或找鐵匠剪鎖才拿得下來，拿下後歸主角。內容篩選關掉「主角非自願」時不生效。" />
       </template>
       <template v-else-if="r.type === 'flag'">
         <input v-model="r.key" maxlength="40" placeholder="旗標" />

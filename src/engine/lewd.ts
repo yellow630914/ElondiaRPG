@@ -4,7 +4,7 @@
 import { pcTagMult } from './pcTags'
 import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
-import { abilities, lewdRules, locationById, stories, type LewdKey } from './data'
+import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey } from './data'
 import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
 import { gearLewdOf, gearRules } from './gear'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
@@ -210,7 +210,8 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       const bonus = (b: Partial<Record<LewdKey, number>>) => { for (const [k, v] of Object.entries(b)) if (v) addLewd(state, m, k as LewdKey, v) }
       if (wears(m, (b) => b.outfit === 'adult')) bonus(d.adult_outfit)
       if (wears(m, (b) => !!b.restraint)) bonus(d.restraint)
-      if (contractOf(m) && Object.values(m.gear ?? {}).some((g) => g?.locked)) bonus(d.locked)
+      // 被鎖住的拘束具：主人鎖上的（契約還在時）或陷阱鎖住的
+      if (Object.values(m.gear ?? {}).some((g) => g?.locked && (contractOf(m) || g.locked.startsWith(TRAP_LOCK)))) bonus(d.locked)
       // 奴隸印記的順從累積（條款的 submission_every）
       const every = contractOf(m)?.terms.submission_every
       if (every && day % every === 0) addLewd(state, m, 'submission', 1)

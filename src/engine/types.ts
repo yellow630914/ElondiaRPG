@@ -205,6 +205,10 @@ export interface GearSpec {
   lewd?: Partial<Record<LewdStat, number>>
   /** 淫器（docs/LEWD_STATS.md 第 22 節）：和拘束具合煉的武器（組成與原本的名稱），拆開時還原；restraint 是拘束具原本的名稱 */
   fused?: { weapon: GearSpec; weaponName: string; restraint: string }
+  /** 拘束程度 1～3，蓋過底材的 bind（種類照底材；docs/LEWD_STATS.md 第 7 節） */
+  bind?: number
+  /** 自帶的鎖（拘束具）：戴上就算鎖上，雙面效應用這個等級；拿不下來的鎖，不能打開也不會變成行囊裡的鎖 */
+  lock?: LockGrade
 }
 
 /** 穿在身上的裝備：物品名稱與組成（自帶組成，不必回頭查存檔） */

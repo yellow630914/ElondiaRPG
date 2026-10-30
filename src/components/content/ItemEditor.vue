@@ -225,6 +225,23 @@ function setGearAttr(a: string, v: number) {
 }
 // 慾望指標的加減（docs/LEWD_STATS.md 第 3 節）
 const lewdCap = lewdRules.gear.item_cap
+// 物品自己的拘束程度（底材是拘束具時）
+const gearBindBase = computed(() => {
+  const base = draft.value.gear ? gearRules.bases[draft.value.gear.base] : undefined
+  return base?.bind && base.bind_kind ? base : undefined
+})
+function setGearLock(v: string) {
+  const g = draft.value.gear
+  if (!g) return
+  if (v) g.lock = v as LockGrade
+  else delete g.lock
+}
+function setGearBind(v: string) {
+  const g = draft.value.gear
+  if (!g) return
+  if (v) g.bind = Number(v)
+  else delete g.bind
+}
 function setGearLewd(k: LewdStat, v: number) {
   const g = draft.value.gear
   if (!g) return
@@ -704,6 +721,21 @@ function setFuel(v: string) {
             <input type="number" class="num" :min="-lewdCap" :max="lewdCap" :value="draft.gear.lewd?.[k] ?? 0" @input="setGearLewd(k, Number(($event.target as HTMLInputElement).value))" />
           </label>
         </div>
+        <div v-if="gearBindBase" class="row small">
+          <label>拘束程度
+            <select :value="draft.gear.bind ?? ''" @change="setGearBind(($event.target as HTMLSelectElement).value)">
+              <option value="">（照底材：{{ gearBindBase.bind }}）</option>
+              <option v-for="n in [1, 2, 3]" :key="n" :value="n">{{ n }}</option>
+            </select>
+          </label>
+          <label>自帶的鎖
+            <select :value="draft.gear.lock ?? ''" @change="setGearLock(($event.target as HTMLSelectElement).value)">
+              <option value="">（沒有）</option>
+              <option v-for="g in LOCK_GRADES" :key="g" :value="g">{{ lewdRules.locks.grades[g].name }}</option>
+            </select>
+          </label>
+          <Hint :text="`底材是拘束具（${lewdRules.two_face.kinds[gearBindBase.bind_kind!]?.name ?? gearBindBase.bind_kind}）時，這件物品可以有自己的程度，蓋過底材的設定；種類照底材。自帶的鎖：戴上就算鎖上（雙面效應用這個等級），不能打開、也不會變成行囊裡的鎖（docs/LEWD_STATS.md 第 7 節）。`" />
+        </div>
         <label class="check small">
           <input type="checkbox" :checked="!!draft.master_force" @change="setMasterForce(($event.target as HTMLInputElement).checked)" />
           主人會強制裝備：主角是奴隸時，主人的事件可能挑這件替主角裝上，契約還在時拿不下來
@@ -714,7 +746,8 @@ function setFuel(v: string) {
             <input type="checkbox" :checked="draft.master_force.tags?.includes(t)" @change="toggleMasterTag(t, ($event.target as HTMLInputElement).checked)" /> {{ tagDef(t)?.name ?? t }}
           </label>
         </div>
-        <p v-if="draft.gear.attrs || draft.master_force" class="small muted">有屬性加減或主人會強制裝備的東西不在商店上架、AI 交易也不會賣。</p>
+        <p v-if="draft.gear.attrs" class="small muted">有屬性加減的東西不在商店上架、AI 交易也不會賣。</p>
+        <p v-else-if="draft.master_force" class="small muted">主人會強制裝備的東西沒有勾商店時不上架；勾了照樣在那種店賣。</p>
       </template>
     </fieldset>
 

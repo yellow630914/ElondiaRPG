@@ -69,7 +69,7 @@ export interface RoadTemplate {
   triggers?: DungeonTrigger[]
   /** 地下城：只在這些地點（地下城的 id；近郊是那座聚落的 id；沒有時任何地點） */
   dungeons?: string[]
-  /** 地下城：只在這些地區（沒有時任何地區） */
+  /** 地下城：只在這些地區；旅途：這一段路要去的地區（沒有時任何地區） */
   regions?: string[]
   /** 地下城：哪幾層（0 近郊、1 淺層、2 中層、3 深層、4 底層；沒有時任何一層） */
   layers?: number[]
@@ -198,8 +198,9 @@ function buildRoad(state: GameState, from: string, to: string, legs: { from: str
     const mode = legs[cell.road!.leg]!.mode
     if (!rng.chance(Math.min(1, (travelEvents.chance[mode] ?? 0) * gameRule(state, 'travelEventMult')))) continue
     // 成人向的旅途事件：內容篩選、主角的體型（和城鎮事件一樣）
-    const fits = (t: RoadTemplate) => (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && condMet(state, t.requires)
-      && tagsAllowed(t.tags) && (!t.pc_body?.length || t.pc_body.includes(characterBody(pcOf(state))))
+    // 地區：這一段路要去的地區（旅途事件在規劃路線時就決定）
+    const legRegion = locationById(legs[cell.road!.leg]!.to).region
+    const fits = (t: RoadTemplate) => roadEventFits(state, t, mode, legRegion)
     const checks = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'check' && fits(t))
     const choices = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'choice' && fits(t))
     const advanced = travelEvents.templates.filter((t) => t.tier === 'advanced' && fits(t))
@@ -448,6 +449,21 @@ function locationExists(id: string): boolean {
   }
 }
 
+/**
+ * 這件旅途事件能不能出現在這一段路：路段、地區（這一段路要去的地區）、條件、內容篩選、主角的體型。
+ * 規劃路線時就決定，所以條件看的是出發時的狀態（魅氣濃度、地點看的是出發的地方）
+ */
+export function roadEventFits(state: GameState, t: RoadTemplate, mode: RouteMode, region: string): boolean {
+  return (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && (!t.regions?.length || t.regions.includes(region))
+    && condMet(state, t.requires) && tagsAllowed(t.tags) && (!t.pc_body?.length || t.pc_body.includes(characterBody(pcOf(state))))
+}
+
+/** 這個選項會不會進入親密場景（旅途、城鎮、地下城事件共用） */
+export function sceneOn(o: RoadOption, ok: boolean): boolean {
+  if (!o.adult_scene) return false
+  return o.adult_scene === 'always' || (!!o.check && o.adult_scene === (ok ? 'success' : 'fail'))
+}
+
 /** 等待回應的旅途事件：選一個選項（有檢定的依規則擲骰） */
 export function answerRoadEvent(state: GameState, index: number): Report {
   const ev = state.roadEvent
@@ -465,6 +481,8 @@ export function answerRoadEvent(state: GameState, index: number): Report {
   const lines = [`${tpl.title}：${o.label}。`, ...applyRoadOutcome(state, report, ok ? o.success : o.fail)]
   report.outcome = { result: o.check ? (ok ? 'success' : 'failure') : 'neutral', summary: lines.join(''), tags: ['旅途', tpl.tier === 'advanced' ? '高階事件' : '旅途事件'] }
   report.narration = { ...report.narration, focus: [tpl.text, `主角的選擇：${o.label}`] }
+  // 成人向：選項帶 adult_scene 時交給成人場景的寫手（和城鎮、地下城事件一樣）
+  if (tpl.scene && sceneOn(o, ok)) report.narration = { ...report.narration, length: 'medium', adult_scene: tpl.scene }
   const cell = currentArea(state).cells[ev.x]
   if (cell) cell.done = true
   delete state.roadEvent
