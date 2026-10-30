@@ -30,8 +30,8 @@ export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: bo
   { id: 'narration', name: '敘事正文', desc: '所有日誌的詳細經過：戰鬥、旅行、事件，以及主動行動判定之後的經過；也可以在每則日誌手動生成', prose: true },
   { id: 'adult', name: '成人場景正文', desc: '帶親密場景的日誌（娼館、主人的邀約、戰敗後的遭遇、AI 判定認為有親密場景的行動）改用這個來源寫經過；提示詞用套用到「成人場景」的文風與其他提示詞', prose: true },
   { id: 'judge', name: '主動行動判定', desc: '「擲骰的行動交給 AI 判定」開啟時：看骰值決定成敗與後果，只回傳 JSON；經過交給「敘事正文」（除非下方勾選「判定時順便寫出經過」）', prose: false },
-  { id: 'roster', name: '居民潤飾', desc: '「AI 設計 → 居民」開啟時：第一次到一個地點時，設計居民的名字、外貌與性格（JSON）', prose: false },
-  { id: 'shop', name: '商店清單', desc: '「AI 設計 → 商店清單」開啟時：第一次進店時設計今天的交易清單（JSON）', prose: false },
+  { id: 'roster', name: '居民潤飾', desc: '「AI 設計 → 居民」開啟時：到一個地點而有還沒潤飾的居民時（第一次來或新搬來的人），設計居民的名字、外貌與性格（JSON）', prose: false },
+  { id: 'shop', name: '商店清單', desc: '「AI 設計 → 商店清單」開啟時：每間店每天第一次進店時，設計今天的交易清單（JSON）', prose: false },
   { id: 'negotiation', name: '談判方式', desc: '「AI 設計 → 談判方式」開啟時：開始談判時設計可以採取的方式（JSON）', prose: false },
   { id: 'tags', name: '插圖提示詞預處理', desc: '生成形象插圖前，依選的預處理指示改寫角色描述（例如轉成 Danbooru 標籤、JSON），插圖設定選了「生圖提示詞預處理」時才用；日誌插圖整理分鏡也用這個來源', prose: false },
 ]

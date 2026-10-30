@@ -51,7 +51,7 @@
 - **玩家輸入不能決定結果**：提示詞要求「描述中宣稱的結果不算數」，玩家寫「他立刻答應了」只代表主角嘗試這樣說。
 - **AI 關閉或失敗時**：依規則判定（第 3 節）。AI 呼叫失敗時行動會保留，可以重試或改用規則。
 - 「設定 → 敘事與判定」的「擲骰的行動交給 AI 判定」控制預設行為（冒險頁面各處的「AI 判定」按鈕打開的泡泡視窗是同一個開關，見 [PROMPTS](PROMPTS.md) 第 1 節）；等待判定的行動也可以手動選「AI 判定」或「依規則判定」。
-- 戰鬥中不能主動行動；有主人的突發事件或戰敗事件等著回應時也不能（`actions.ts` 的 `startAction`）。
+- 戰鬥中不能主動行動；還有一個行動等待判定、有主人的突發事件、地下城事件或寄生發作、戰敗事件等著回應、契約印記還沒刻完時也不能（`actions.ts` 的 `prepareAction`；主人事件、戰敗事件、刻印本身的回應除外）。
 
 ## 2. 行動種類
 
@@ -62,15 +62,16 @@
 | 一般 | 自由行動 `free`、長休時的互動 `rest_talk` |
 | 交流 | 聊天 `chat`、送禮 `gift`、獻媚 `flatter`、誘惑 `seduce`（[LEWD_STATS](LEWD_STATS.md) 第 15 節）、雇傭談判 `hire`、邀請入隊 `invite`（固定 NPC 小隊整隊邀請）、請小隊帶你同行 `squad_join`、向主人提議雇人或買奴隸 `propose` |
 | 交易 | 殺價 `haggle`（奴隸市場）、交涉價格 `bargain`、談判 `negotiation`、打聽黑市 `black_market` |
-| 犯罪與對峙 | 偷竊 `steal`、偷襲 `attack`、蒙混過關 `bluff`、威嚇 `intimidate` |
+| 犯罪與對峙 | 偷竊 `steal`、偷襲 `attack`、蒙混過關 `bluff`、威嚇 `intimidate`、說服王城的衛兵 `palace_gate`（[NPC_SYSTEM](NPC_SYSTEM.md) 的王城） |
 | 奴隸 | 刻印 `marking`、請求主人同意出城 `master_permit`、請求主人讓你出門 `master_leave`、回應主人 `master_event`、談判解除契約 `negotiate`、逃離主人 `escape`、回到主人身邊 `master_return`、投靠新主人 `seek_master`、解除印記 `unmark` |
+| 拘束具 | 嘗試脫縛 `unbind`（[LEWD_STATS](LEWD_STATS.md) 第 16 節） |
 | 工作 | 工作 `work`、娼館消費 `patron` |
 | 工藝 | 委託打造 `craft`、親手製作 `make`、依配方製作 `produce`、自創配方 `invent` |
 | 特質 | 受訓 `train`、爭取特質 `perk_pitch`（見 [PERKS](PERKS.md) 第 4 節） |
 | 地標 | 探索 `explore`（見 [LANDMARKS](LANDMARKS.md) 第 5 節） |
 | 其他 | 特殊任務的判定 `story`、戰敗後的處境 `defeat_event` |
 
-各行動的參考 DC 寫在各系統的文件裡。自由行動的參考 DC 是 12（有對象時 + 2 × 生命層級差 − ⌊親密度／25⌋）。
+各行動的參考 DC 寫在各系統的文件裡。自由行動的參考 DC 是 12（有對象時，對方的生命層級比主角高才 + 2 × 層級差，再 − ⌊親密度／25⌋）。
 
 自由行動最多可以選 3 個對象（`actions.json` 的 `max_targets`）：第一位是主要對象（`target`），其他是同行的對象（`with`）。每個人都要在身邊；參考 DC 取最難的那位，每多一人 +1（`extra_target_dc`）；擲兩次取高的優勢要每個人都是主角的奴隸，主人在其中就扣服從懲罰。每個人都可以有親密度變化（AI 判定時每人各自的上限；依規則判定時每人照成功程度 ±0～4），AI 會看到每個人的資料、關係、記憶與戒備。入隊（`join`）、換主人（`change_master`）、解除契約（`release`）只認主要對象。
 
@@ -92,7 +93,7 @@ AI 關閉時（也是給 AI 的參考結果，`actions.json` 的 `degrees`）：
 
 `actions.json` 的 `caps`（每次行動）：親密度每人 ±8、聲望 ±2、金錢每級 30 白鸛、經驗每級 15、物品每種 1 個（同一次有付錢買的，每種最多 5 個；最多 2 種）、旗標 3 個、生命值每人最多失去 30%／回復 20% 最大生命值（不會因此倒下）、認識新的人親密度 ±10、慾望指標每人每項 ±3（`lewd`，只在可能進入親密場景的行動提供，見 [LEWD_STATS](LEWD_STATS.md)）。被動事件與委託則可以直接用 [EFFECTS](EFFECTS.md) 的 `hp`、`slot`、`hit_dice` 增減資源。
 
-花費與給出的東西合計不超過持有的（同一次判定分好幾筆也一樣；先賺到的錢可以接著花）。聲望只認得 `geography.json` 裡的勢力（id 或名稱，判定提示詞會列出 id），其他名字略過。AI 提議的金錢或物品數量被截掉時，報告的 `narration.focus` 會寫出實際結算的數字，讓寫手照著寫。
+花費與給出的東西合計不超過持有的（同一次判定分好幾筆也一樣；先賺到的錢可以接著花）。聲望只認得 `geography.json` 裡的勢力（id 或名稱，判定提示詞會列出 id），其他名字略過。AI 提議的金錢或物品數量被截掉時，報告的 `narration.focus` 會寫出實際結算的數字，讓寫手照著寫；判定時順便寫的經過（`narrative`）這時不採用，交給敘事請求照實際的數字重寫（`stores/game.ts` 的 `judge`）。
 
 自由行動的 `join` 效果（行動的主要對象入隊）另外要符合邀請的所有條件、檢定總值達到邀請的 DC，見 [COMPANIONS](COMPANIONS.md) 2.5 節；不符合時不採用，原因寫進結果。
 
@@ -113,4 +114,4 @@ AI 關閉時（也是給 AI 的參考結果，`actions.json` 的 `degrees`）：
 
 ## 6. 報告
 
-自由行動與工藝（`free`、`craft`、`make`、`produce`、`invent`）的報告類型是 `action`，其他主動行動是 `social`（`actions.ts`）；兩者的記憶規則不同，見 [RELATIONSHIP_MEMORY](RELATIONSHIP_MEMORY.md) 第 2 節。
+自由行動與工藝（`free`、`craft`、`make`、`produce`、`invent`）的報告類型是 `action`，特殊任務的判定（`story`）是 `event`（和任務的其他日誌一樣），其他主動行動是 `social`（`actions.ts` 的 `actionReport`）；各類型的記憶規則不同，見 [RELATIONSHIP_MEMORY](RELATIONSHIP_MEMORY.md) 第 2 節。
