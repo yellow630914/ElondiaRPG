@@ -532,6 +532,8 @@ export interface PendingDefeat {
   report: string
   /** 敵人的類型（combat.json 的 defeat_event.villains；怪物沒有） */
   villain?: string
+  /** 玩家按「戰敗」時選了主動：主角是自願認輸的（只影響文字） */
+  willing?: boolean
 }
 
 export interface PendingMasterEvent {

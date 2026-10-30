@@ -79,14 +79,16 @@ export function rollDefeatEvent(state: GameState, rng: Rng, report: Report, foes
   if (!hit) return false
   const names = eligible.map((f) => f.name)
   const villain = villainOf(state, eligible)
+  const willing = report.outcome.tags?.includes('主動認輸')
   state.pendingDefeat = {
     foes: eligible.map((f) => ({ name: f.name, ...(f.npcId ? { npc: f.npcId } : {}) })),
     location: report.location.at, scene: report.location.scene ?? locationById(report.location.at).name, report: report.report_id,
     ...(villain ? { villain } : {}),
+    ...(willing ? { willing } : {}),
   }
   report.narration = {
     ...report.narration, mode: 'defeat_cliffhanger',
-    focus: [...(report.narration?.focus ?? []), `${names.join('、')}圍上倒地的主角，準備動手`],
+    focus: [...(report.narration?.focus ?? []), `${names.join('、')}圍上${willing ? '放棄抵抗' : '倒地'}的主角，準備動手`],
   }
   report.outcome.summary = `${report.outcome.summary ?? ''}${names.join('、')}圍了上來，看向你的眼神不懷好意……`
   report.outcome.tags = [...(report.outcome.tags ?? []), '戰敗事件']
@@ -115,7 +117,7 @@ export function setupDefeatEvent(state: GameState, target?: string) {
     ...adultScene(`戰敗後落入${ev.foes.map((f) => f.name).join('、')}手中`, ['fail', 'fumble']),
     dc: o.dc, ...(o.attr ? { attr: o.attr } : {}), situational: [],
     targetName: ev.foes.map((f) => f.name).join('、'),
-    scene: `${ev.scene}・戰敗後被${ev.foes.map((f) => f.name).join('、')}圍住（${o.label}）${v ? `；對方是${v.name}的人：${v.hint}` : ''}`,
+    scene: `${ev.scene}・戰敗後被${ev.foes.map((f) => f.name).join('、')}圍住（${o.label}）${ev.willing ? '；主角是自己放棄抵抗、主動認輸的' : ''}${v ? `；對方是${v.name}的人：${v.hint}` : ''}`,
     outcomes: Object.fromEntries((['critical', 'success', 'partial', 'fail', 'fumble'] as Degree[]).map((d) => [d, {
       critical: '找到破綻全身而退', success: '設法脫身', partial: '勉強脫身', fail: '沒能擺脫', fumble: '吃了大虧',
     }[d] + loss(d) + shaken(d)])) as Partial<Record<Degree, string>>,

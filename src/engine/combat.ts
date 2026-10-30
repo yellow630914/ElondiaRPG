@@ -163,11 +163,15 @@ export type CombatAction =
   /** 掙脫（目標是自己）或撕開（目標是隊友）戰鬥中的拘束（狀態有 struggle） */
   | { type: 'struggle'; target: string }
   | { type: 'flee' }
+  /** 自願戰敗：willing＝主角主動認輸，否則是不幸落敗。規則和一般戰敗一樣，只影響交給 AI 的文字 */
+  | { type: 'surrender'; willing: boolean }
   | { type: 'end_turn' }
   /** 使用行囊裡的道具（藥劑等），目標是隊友（可以救起倒下的隊友） */
   | { type: 'item'; item: string; target: string }
 
 export interface CombatState {
+  /** 玩家按了「戰敗」：willing＝主角主動認輸，unlucky＝不幸落敗（只影響文字） */
+  surrender?: 'willing' | 'unlucky'
   /** 存檔規則：慾望戰鬥的倍率（開戰時記下；沒有或 0 表示關閉） */
   lustMult?: number
   /** 淫鬥場的比賽（arena.ts）：輸了不損失錢、沒有戰敗事件；戰後發獎金、拿掉上場前戴的拘束具 */
@@ -1041,6 +1045,20 @@ function perform(combat: CombatState, actor: Combatant, action: CombatAction, rn
         if (actor.side === 'party') combat.status = 'fled'
         else actor.fled = true
       }
+      return
+    }
+    case 'surrender': {
+      // 玩家自願戰敗：上場的隊員全部倒下，之後和一般戰敗一樣（損失、救兵、戰敗事件）
+      combat.surrender = action.willing ? 'willing' : 'unlucky'
+      const down = combat.combatants.filter((c) => c.side === 'party' && !c.ally && c.hp > 0)
+      for (const c of down) c.hp = 0
+      push(combat, {
+        actor: actor.id,
+        action: action.willing ? '主動認輸：放下武器，不再抵抗' : '不幸落敗：再也撐不下去，倒在敵人面前',
+        result: 'none',
+        effects: down.map((c) => ({ type: 'note' as const, target: c.id, text: action.willing ? '放棄抵抗' : '倒下' })),
+      })
+      combat.status = 'defeat'
       return
     }
     case 'ability': {
@@ -2326,6 +2344,14 @@ export function finishCombat(state: GameState): Report {
       ...(combat.intent ? { player_intent: combat.intent } : {}),
     },
     lore_keys: [loc.name, regionById(loc.region).name, ...new Set(foes.map((f) => enemies[f.defId!]?.name ?? f.name))],
+  }
+  // 玩家自願戰敗：規則照一般戰敗，只告訴寫手主角是主動認輸還是不幸落敗
+  if (combat.surrender === 'willing') {
+    report.outcome.summary += '你主動放下武器認輸。'
+    report.outcome.tags = [...(report.outcome.tags ?? []), '主動認輸']
+    report.narration!.focus = [...(report.narration!.focus ?? []), '這場戰敗是主角自願的：主角在戰鬥中主動放棄抵抗、向敵人認輸（不是被打倒）。寫出主角放下武器、任由對方處置的動作與心理']
+  } else if (combat.surrender === 'unlucky') {
+    report.narration!.focus = [...(report.narration!.focus ?? []), '這場戰敗不是主角願意的：照 timeline 的戰況，寫出主角被逼到極限、終於不敵倒下的經過']
   }
   // 城內／近郊委託的戰鬥打贏：委託完成（採集委託順便拿到要交的東西）
   const townQuest = quest && state.quests.find((q) => q.id === quest.id && q.template && q.status === 'ready')

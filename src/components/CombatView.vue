@@ -84,6 +84,44 @@ function send(action: Parameters<typeof game.act>[0]) {
   game.act(action)
 }
 
+// 自願戰敗：左邊切換「不幸／主動」（記在這個瀏覽器），右邊的「戰敗」長按一秒才以戰敗結束（避免誤觸）；規則和一般戰敗一樣，只影響交給 AI 的文字
+const SURRENDER = 'elondia.surrender'
+const willing = ref(readWilling())
+function readWilling(): boolean {
+  try {
+    return localStorage.getItem(SURRENDER) === 'willing'
+  } catch {
+    return false
+  }
+}
+function toggleWilling() {
+  willing.value = !willing.value
+  try {
+    localStorage.setItem(SURRENDER, willing.value ? 'willing' : 'unlucky')
+  } catch {
+    // 記不住也沒關係
+  }
+}
+const HOLD_MS = 1000
+/** 長按「戰敗」：按住時填滿，放開或移開就取消 */
+const holding = ref(false)
+let holdTimer: ReturnType<typeof setTimeout> | undefined
+function holdStart(e?: Event) {
+  if (e instanceof PointerEvent && e.button !== 0) return
+  if (holding.value) return
+  holding.value = true
+  holdTimer = setTimeout(() => {
+    holding.value = false
+    send({ type: 'surrender', willing: willing.value })
+  }, HOLD_MS)
+}
+function holdCancel() {
+  holding.value = false
+  if (holdTimer) clearTimeout(holdTimer)
+  holdTimer = undefined
+}
+onBeforeUnmount(holdCancel)
+
 function choose(a: AbilityDef) {
   if (a.target === 'enemy' || a.target === 'ally' || a.target === 'ally_or_downed') pending.value = { kind: 'ability', ability: a }
   else send({ type: 'ability', ability: a.id })
@@ -611,6 +649,20 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
           </button>
           <button class="danger" :disabled="actor.ap < costs.flee" @click="send({ type: 'flee' })">撤退 <span class="small">{{ costs.flee }} AP</span></button>
           <button v-if="!isMobile" @click="send({ type: 'end_turn' })">結束回合</button>
+          <!-- 自願戰敗：放在最右邊，「戰敗」要長按 -->
+          <span class="surrender" role="group" aria-label="自願戰敗">
+            <button
+              class="mode" :class="{ on: willing }" :aria-pressed="willing"
+              :title="willing ? '主動：主角自己放棄抵抗、向敵人認輸（點一下切換成不幸）' : '不幸：主角是力戰不敵才倒下的（點一下切換成主動）'"
+              @click="toggleWilling"
+            >{{ willing ? '主動' : '不幸' }}</button>
+            <button
+              class="danger go" :class="{ holding }" :style="{ '--hold': `${HOLD_MS}ms` }"
+              title="長按一秒：直接以戰敗結束這場戰鬥（規則和一般戰敗一樣，左邊的選擇只影響正文）"
+              @pointerdown="holdStart" @pointerup="holdCancel" @pointerleave="holdCancel" @pointercancel="holdCancel" @contextmenu.prevent
+              @keydown.enter.prevent="holdStart()" @keydown.space.prevent="holdStart()" @keyup="holdCancel" @blur="holdCancel"
+            ><span class="fill" />戰敗</button>
+          </span>
         </div>
         <div v-if="!isMobile" class="groups">
           <div v-for="g in groups" :key="g.name" class="group">
@@ -843,6 +895,15 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .actions { position: sticky; bottom: 0; z-index: 5; box-shadow: 0 -10px 24px #000c; margin-bottom: 0; background-color: var(--bg); }
 .actions h3 { margin: 0; }
 .basics { margin: 6px 0 4px; }
+/* 自願戰敗：「不幸／主動」和「戰敗」連成一顆按鈕 */
+.surrender { display: inline-flex; margin-left: auto; }
+.surrender > button { margin: 0; }
+.surrender .mode { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right-width: 0; min-width: 3.2em; color: var(--muted); }
+.surrender .mode.on { color: var(--accent); }
+.surrender .go { position: relative; overflow: hidden; border-top-left-radius: 0; border-bottom-left-radius: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
+/* 長按的進度：按住時從左填到右，放開就退回 */
+.surrender .go .fill { position: absolute; inset: 0; background: currentColor; opacity: 0.25; transform: scaleX(0); transform-origin: left; pointer-events: none; }
+.surrender .go.holding .fill { transform: scaleX(1); transition: transform var(--hold) linear; }
 .groups { max-height: 30vh; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 0 18px; align-items: flex-start; }
 .group { min-width: 0; }
 .group .row { gap: 4px; }
@@ -887,6 +948,8 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .actions.m .targets { overflow-x: auto; padding-bottom: 2px; }
 .actions.m .targets button { flex: none; }
 .actions.m .basics { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); margin: 6px 0; }
+.actions.m .surrender { display: flex; min-width: 0; }
+.actions.m .surrender > button { flex: 1; min-width: 0; }
 .actions.m .basics button { min-height: 42px; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-skills :deep(.st-bar) { margin-bottom: 6px; }
 .m-skills .cnt { margin-left: 2px; font-size: var(--fs-xs); color: var(--muted); }
