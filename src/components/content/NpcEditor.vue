@@ -491,10 +491,10 @@ const occupations = computed(() => {
   </div>
 </template>
 
-<style scoped src="./editor.css">.lewd label { display: inline-flex; align-items: center; gap: 4px; }
-.lewd input { width: 4.5em; }
-</style>
+<style scoped src="./editor.css"></style>
 <style scoped>
+.lewd label { display: inline-flex; align-items: center; gap: 4px; }
+.lewd input { width: 4.5em; }
 .stage { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 .slot { width: 3em; }
 .pct { width: 5em; }

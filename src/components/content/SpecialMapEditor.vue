@@ -348,8 +348,8 @@ function remove() {
           <button v-for="p in palette" :key="p.ch" class="small" :class="{ primary: tool === p.ch }" :title="p.name" @click="tool = p.ch">{{ p.icon || p.ch }} {{ p.name }}</button>
           <button class="small" :class="{ primary: tool === 'entry' }" title="被事件傳送進來時站的位置" @click="tool = 'entry'">📍 入口</button>
         </div>
-        <p v-if="tool.startsWith('conn:')" class="small warn-text">點地圖上的一格，當作通道 {{ Number(tool.slice(5)) + 1 }} 在這張地圖的位置。</p>
-        <p v-if="tool.startsWith('shop:')" class="small warn-text">點地圖上的一格擺這家店。</p>
+        <p v-if="tool.startsWith('conn:')" class="small tip">點地圖上的一格，當作通道 {{ Number(tool.slice(5)) + 1 }} 在這張地圖的位置。</p>
+        <p v-if="tool.startsWith('shop:')" class="small tip">點地圖上的一格擺這家店。</p>
         <div class="cells" :style="{ gridTemplateColumns: `repeat(${size[0]}, 24px)` }">
           <template v-for="y in size[1]" :key="y">
             <button
@@ -406,7 +406,7 @@ function remove() {
             <button class="x" @click="removeBossMonster(c.x, c.y, mi)">×</button>
           </span>
         </template>
-        <span v-else class="warn-text">沒指定怪物：照強敵的規則</span>
+        <span v-else class="tip">沒指定怪物：照強敵的規則</span>
         <button class="small" :disabled="(bossAt(c.x, c.y)?.group.length ?? 0) >= L.group_types" @click="addBossMonster(c.x, c.y)">＋ 怪物</button>
       </div>
     </fieldset>
@@ -488,10 +488,10 @@ function remove() {
   </div>
 </template>
 
-<style scoped src="./editor.css">.interior-note { border-left: 3px solid var(--accent); padding-left: 8px; margin-top: 4px; }
-.interior-note ul { margin: 2px 0 0; padding-left: 18px; }
-</style>
+<style scoped src="./editor.css"></style>
 <style scoped>
+.interior-note { border-left: 3px solid var(--accent); padding-left: 8px; margin-top: 4px; }
+.interior-note ul { margin: 2px 0 0; padding-left: 18px; }
 .cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; user-select: none; }
 .cell { width: 24px; height: 24px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
 .small-cells .cell { width: 18px; height: 18px; font-size: 10px; }
@@ -500,6 +500,6 @@ function remove() {
 .cell.picked { outline: 2px solid var(--accent); }
 .palette { flex-wrap: wrap; gap: 4px; }
 .conn { border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px; display: grid; gap: 6px; }
-.warn-text { color: var(--accent); }
+.tip { color: var(--accent); }
 .boss { flex-wrap: wrap; align-items: center; gap: 4px 6px; border-top: 1px dashed var(--border); padding-top: 4px; }
 </style>
