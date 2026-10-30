@@ -2,20 +2,23 @@
 // AI 只寫劇情與結構，下面這些由程式決定：
 // - id：新東西用代號（$npc1、$item1……），換成正式的 id（物品是名稱），所有引用跟著改；文字裡的代號換成名字
 // - 旗標：不是現有任務設定的旗標一律加上這個任務的前綴（g<短碼>_），不會和其他任務撞名
-// - 完成報酬（金錢、經驗）、建議階級、物品價格、NPC 的雇用價依建議等級算
+// - 完成報酬（金錢、經驗）、建議階級、物品價格、NPC 的雇用價依建議等級算；中途給的金錢、經驗各自加總不超過完成報酬
+// - 新怪物的等級不超過建議等級 +3（頭目 +5）；太難的戰鬥、地下城的層、特殊地圖只提醒
+// - 以任務為主體：任務沒用到的新東西拿掉
 // - 新怪物、技能、狀態的數值夾在內建同等級的範圍（超出的拉回邊緣，記一筆「已調整」）
 // - 地標的格子：在那個聚落找一格空地；特殊地圖只做隨機地圖（遭遇表用指定的怪物）
 // 不允許的種類（特質、刺青、印記、事件……）與沒有勾選允許的新東西整項拿掉，記一筆說明。
 // 最後的整理與檢查（normalizeMods、storyCheck、可達性）在沙盒裡做：見 stores/content.ts 的 checkGenerated。
 
 import {
-  abilities, enemies, geography, itemDef, landmarkTypes, npcs as namedNpcs, PARK_STAMP_PREFIX, statuses, stories,
-  type AbilityDef, type EnemyDef, type StatusDef, type StoryDef,
+  abilities, dungeonEncounters, DUNGEON_LAYER_NAME, enemies, geography, itemDef, specialMaps, landmarkTypes, npcs as namedNpcs, PARK_STAMP_PREFIX, statuses, stories,
+  type AbilityDef, type DungeonLayerId, type EnemyDef, type StatusDef, type StoryDef,
 } from './data'
 import { guildRankFor } from './character'
 import { blockKeys, settlementArea } from './grid'
 import { landmarkSpotProblem } from './landmarkMods'
-import { builtinEnemy, builtinNpc, builtinStatus, builtinAbility, type ContentMods } from './mods'
+import { builtinEnemy, builtinNpc, builtinStatus, builtinAbility, emptyMods, type ContentMods } from './mods'
+import { buildRefs, closure, refKey } from './contentRefs'
 import { builtinStory } from './storyMods'
 import { cleanFlag } from './storyFlags'
 import { copyItemName } from './contentImport'
@@ -37,14 +40,19 @@ export interface GenInput {
   npcs?: string[]
   /** 建議等級（沒填時看 AI 寫的 min_level，再沒有時 5） */
   level?: number
-  /** 任務點數量上限 */
-  maxNodes: number
+  /** 任務點數量上限（空白：不限制） */
+  maxNodes?: number
   /** 可以用的內容標籤（成人向只有在設定開放時才能勾） */
   tags: string[]
   /** 允許新增哪些東西 */
   allow: Record<GenKind, boolean>
   /** 允許「主角淪為奴隸」 */
   enslave?: boolean
+}
+
+/** 玩家填的數字：欄位清空時是空字串，當作沒填 */
+export function pinned(v: unknown): number | undefined {
+  return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined
 }
 
 export function defaultGenInput(): GenInput {
@@ -61,6 +69,8 @@ export interface GenResult {
   adjusted: string[]
   /** 拿掉了什麼（不允許的種類、沒勾選的、寫錯的） */
   dropped: string[]
+  /** 要提醒的（太難的戰鬥、地下城的層、特殊地圖） */
+  warnings: string[]
 }
 
 type Obj = Record<string, unknown>
@@ -225,6 +235,7 @@ export function landmarkSpot(location: string, taken: Set<string>): { area: stri
 
 // ---- 主程式 ----
 
+const locationName = (id: string) => geography.locations.find((l) => l.id === id)?.name ?? id
 const isSettlement = (id: unknown) => typeof id === 'string' && geography.locations.some((l) => l.id === id && l.type !== 'dungeon')
 const isLocation = (id: unknown) => typeof id === 'string' && geography.locations.some((l) => l.id === id)
 
@@ -317,7 +328,7 @@ export function buildGenerated(reply: unknown, input: GenInput, code = Math.rand
   if (input.startKind) start.kind = input.startKind
   if (input.location && (start.kind === 'guild' || start.kind === 'informant')) start.location = input.location
   if (start.kind === 'npc' && !start.npc && input.npcs?.[0]) start.npc = input.npcs[0]
-  const level = clamp(Math.round(input.level ?? (Number(start.min_level) || 5)), 1, 20)
+  const level = clamp(Math.round(pinned(input.level) ?? (Number(start.min_level) || 5)), 1, 20)
   start.min_level = level
   const reward = rewardFor(level)
   storyR.rank = reward.rank
@@ -331,14 +342,17 @@ export function buildGenerated(reply: unknown, input: GenInput, code = Math.rand
   const nodes = (Array.isArray(storyR.nodes) ? storyR.nodes : []).filter(isObj)
   storyR.nodes = nodes
   const outcomes = (n: Obj) => [n.success, n.fail, ...(Array.isArray(n.options) ? n.options.filter(isObj).flatMap((o) => [o.success, o.fail]) : [])].filter(isObj)
-  let midMoney = 0
-  for (const n of nodes) for (const o of outcomes(n)) for (const e of (Array.isArray(o.effects) ? o.effects : []).filter(isObj)) if (e.type === 'money' && Number(e.amount) > 0) midMoney += Number(e.amount)
-  if (midMoney > reward.money) {
-    const ratio = reward.money / midMoney
-    for (const n of nodes) for (const o of outcomes(n)) for (const e of (Array.isArray(o.effects) ? o.effects : []).filter(isObj)) if (e.type === 'money' && Number(e.amount) > 0) e.amount = Math.max(1, Math.floor(Number(e.amount) * ratio))
-    adjusted.push(`中途給的金錢加總超過完成報酬，按比例減少`)
+  // 中途給的金錢、經驗：各自加總不超過完成報酬
+  const gains = (type: 'money' | 'xp') => nodes.flatMap((n) => outcomes(n).flatMap((o) => (Array.isArray(o.effects) ? o.effects : []).filter((e): e is Obj => isObj(e) && e.type === type && Number(e.amount) > 0)))
+  for (const [type, cap, label] of [['money', reward.money, '金錢'], ['xp', reward.xp, '經驗']] as const) {
+    const list = gains(type)
+    const mid = list.reduce((s, e) => s + Number(e.amount), 0)
+    if (mid <= cap) continue
+    for (const e of list) e.amount = Math.max(1, Math.floor((Number(e.amount) * cap) / mid))
+    adjusted.push(`中途給的${label}加總 ${mid} 超過完成報酬 ${cap}，按比例減少`)
   }
-  if (nodes.length > input.maxNodes) adjusted.push(`任務點有 ${nodes.length} 個，超過上限 ${input.maxNodes} 個（照留，可以在編輯器刪減）`)
+  const maxNodes = pinned(input.maxNodes)
+  if (maxNodes && nodes.length > maxNodes) adjusted.push(`任務點有 ${nodes.length} 個，超過上限 ${maxNodes} 個（照留，可以在編輯器刪減）`)
 
   // 5. 內容標籤、成人場景、主角淪為奴隸
   const allowTags = new Set(input.tags)
@@ -421,6 +435,8 @@ export function buildGenerated(reply: unknown, input: GenInput, code = Math.rand
   }
 
   // 7. 新怪物（樣板複製或直接寫），數值對照同等級
+  const bosses = new Set<string>()
+  for (const n of nodes) for (const g of (Array.isArray(n.enemies) ? n.enemies : [])) if (Array.isArray(g) && Number(g[1] ?? 1) === 1) bosses.add(String(g[0]))
   if (entries.enemies.length) mods.enemies = {}
   for (const e of entries.enemies) {
     const tpl = typeof e.raw.template === 'string' ? enemies[e.raw.template] : undefined
@@ -428,7 +444,11 @@ export function buildGenerated(reply: unknown, input: GenInput, code = Math.rand
     if (tpl) for (const k of ['abilities', 'loot', 'kind'] as const) if (e.raw[k] !== undefined) out[k] = e.raw[k]
     for (const k of ['id', 'ref', 'template', 'spawns', 'habitats', 'exclude', 'icon']) delete out[k]
     out.custom = true
-    const lv = clamp(Math.round(Number(out.level) || level), 1, 20)
+    // 等級夾在建議等級附近：頭目（戰鬥裡只出現一隻）+5，其他 +3；照樣板的數值跟著樣板，不能改等級，只提醒
+    const want = clamp(Math.round(Number(out.level) || level), 1, 20)
+    const cap = Math.min(20, level + (bosses.has(e.id) ? BOSS_OVER : MINION_OVER))
+    const lv = tpl ? want : Math.min(want, cap)
+    if (!tpl && lv < want) adjusted.push(`新怪物「${str(out.name, 20)}」的等級 ${want} 比建議等級 ${level} 高太多，改成 ${lv}`)
     out.level = lv
     if (!tpl) clampEnemy(out, lv, adjusted)
     // 技能：只能用現有的或這次新增的（不能是法術）
@@ -516,7 +536,61 @@ export function buildGenerated(reply: unknown, input: GenInput, code = Math.rand
     }
     mods.specialMaps![e.id] = out as never
   }
-  return { storyId, mods, notes: str(reply.notes, 2000), adjusted, dropped }
+  // 12. 以任務為主體：任務（直接或間接）沒用到的新東西拿掉
+  const used = closure(buildRefs({ ...emptyMods(), ...mods } as ContentMods), [refKey('stories', storyId)])
+  const unused: string[] = []
+  for (const kind of Object.keys(GEN_KINDS) as GenKind[]) {
+    const sec = mods[kind] as Record<string, { name?: string }> | undefined
+    if (!sec) continue
+    for (const [id, v] of Object.entries(sec)) {
+      if (used.has(refKey(kind, id))) continue
+      unused.push(`${GEN_KINDS[kind]}「${v.name ?? id}」`)
+      delete sec[id]
+    }
+    if (!Object.keys(sec).length) delete mods[kind]
+  }
+  if (unused.length) dropped.push(`任務沒有用到，拿掉了：${unused.join('、')}`)
+  return { storyId, mods, notes: str(reply.notes, 2000), adjusted, dropped, warnings: difficultyWarnings(nodes, mods, level) }
+}
+
+/** 怪物等級可以高出建議等級多少：一般 */
+export const MINION_OVER = 3
+/** 頭目（戰鬥裡只有一隻） */
+export const BOSS_OVER = 5
+
+/** 遭遇表裡怪物等級的中位數（沒有時 0） */
+function tableLevel(groups: unknown, extra: Partial<ContentMods>['enemies']): number {
+  const lv = (Array.isArray(groups) ? groups : []).flatMap((g) => (Array.isArray(g) ? g : []))
+    .map((x) => (Array.isArray(x) ? (extra?.[String(x[0])] ?? enemies[String(x[0])])?.level ?? 0 : 0)).filter((n) => n > 0)
+  return median(lv)
+}
+
+/** 戰鬥、地下城的層、特殊地圖比建議等級難太多時提醒（不改，交給玩家決定） */
+function difficultyWarnings(nodes: Obj[], mods: Partial<ContentMods>, level: number): string[] {
+  const out = new Set<string>()
+  const title = (n: Obj) => str(n.title, 40) || str(n.id, 40)
+  const fresh = mods.enemies ?? {}
+  for (const n of nodes) {
+    const groups = (Array.isArray(n.enemies) ? n.enemies : []).filter(Array.isArray)
+    for (const g of groups) {
+      const def = fresh[String(g[0])] ?? enemies[String(g[0])]
+      const cap = level + (Number(g[1] ?? 1) === 1 ? BOSS_OVER : MINION_OVER)
+      if (def && def.level > cap) out.add(`任務點「${title(n)}」的「${def.name}」是 Lv.${def.level}，比建議等級 ${level} 高很多`)
+    }
+    const at = isObj(n.at) ? n.at : undefined
+    if (at?.where === 'dungeon' && typeof at.location === 'string' && typeof at.layer === 'string') {
+      const lv = tableLevel(dungeonEncounters[at.location]?.[at.layer as DungeonLayerId], fresh)
+      if (lv > level + MINION_OVER) out.add(`任務點「${title(n)}」在 ${locationName(at.location)}的${DUNGEON_LAYER_NAME[at.layer as DungeonLayerId] ?? at.layer}，那裡的怪物大約 Lv.${lv}，比建議等級 ${level} 難很多`)
+    }
+    const maps = [at?.where === 'special' ? at.special_map : undefined, ...[n.success, n.fail, ...(Array.isArray(n.options) ? n.options.filter(isObj).flatMap((o) => [o.success, o.fail]) : [])].filter(isObj).map((o) => o.special_map)]
+    for (const id of maps) {
+      if (typeof id !== 'string') continue
+      const sm = mods.specialMaps?.[id] ?? specialMaps[id]
+      const lv = tableLevel(sm?.table, fresh)
+      if (sm && lv > level + MINION_OVER) out.add(`特殊地圖「${sm.name}」裡的怪物大約 Lv.${lv}，比建議等級 ${level} 難很多`)
+    }
+  }
+  return [...out]
 }
 
 /** 把骰子縮到平均不超過 cap（減少骰子數，再不夠時換小一號的骰子） */

@@ -11,12 +11,12 @@ import { vMarquee } from '../marquee'
 // 特殊任務的流程圖（docs/plan/roadmap/WORLD_EDITOR_PLAN.md E3）：左到右分層，任務點是卡片、每個結果是一個出口，
 // 結果設定的旗標連到需要它的任務點。點任務點送出 open（編輯器在下面打開它）。
 // 只讀草稿，不另外存東西；有存檔進度時，完成過的任務點打勾、現在解鎖的發亮。
-const props = defineProps<{ def: StoryDef; selected?: number | null; done?: string[]; unlocked?: string[] }>()
+const props = defineProps<{ def: StoryDef; selected?: number | null; done?: string[]; unlocked?: string[]; names?: Record<string, string> }>()
 const emit = defineEmits<{ open: [number] }>()
 
 const KIND_ICON: Record<string, string> = { story: '📜', check: '🎲', combat: '⚔️', choice: '🔀' }
 const SOURCE: Record<string, string> = { story: '其他任務', ai: 'AI 判定', park: '園區印章', none: '沒有人設定' }
-const graph = computed(() => storyGraph(props.def))
+const graph = computed(() => storyGraph(props.def, undefined, props.names))
 const cols = computed(() => layoutGraph(graph.value))
 const nodeById = computed(() => new Map(graph.value.nodes.map((n) => [n.id, n])))
 const extById = computed(() => new Map(graph.value.externals.map((x) => [x.id, x])))
@@ -61,7 +61,7 @@ const tagName = (t: string) => CONTENT_TAGS[t as keyof typeof CONTENT_TAGS]?.nam
 
 <template>
   <div class="graph-wrap">
-    <div class="row small bar">
+    <div class="row small graph-bar">
       <label class="check"><input v-model="showFlags" type="checkbox" /> 在線上顯示旗標名稱</label>
       <label class="check" title="平常只在滑過相關的卡片時畫"><input v-model="showMinor" type="checkbox" /> 一直顯示「不能有」與「清除」的線</label>
       <span class="legend"><i class="ln unlock" />需要 <i class="ln any" />任一 <i class="ln block" />不能有 <i class="ln clear" />清除</span>
@@ -138,7 +138,7 @@ const tagName = (t: string) => CONTENT_TAGS[t as keyof typeof CONTENT_TAGS]?.nam
 
 <style scoped>
 .graph-wrap { display: grid; gap: 6px; min-width: 0; max-width: 100%; }
-.bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.graph-bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .check { display: inline-flex; gap: 4px; align-items: center; }
 .legend { display: inline-flex; gap: 4px; align-items: center; color: var(--muted); }
 .legend .ln { display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--accent); margin-left: 6px; }

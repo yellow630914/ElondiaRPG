@@ -7,7 +7,7 @@ import { CONTENT_TAGS } from '@/engine/content'
 import { CELL_NAME } from '@/engine/grid'
 import { ABILITY_RESOLVES, ABILITY_TARGETS, ENEMY_KINDS } from '@/engine/mods'
 import { LAYER_NAME, NODE_KINDS, START_KINDS, STORY_CELLS, STORY_EFFECTS, WHERE_NAME } from '@/engine/storyMods'
-import { GEN_KINDS, type GenInput } from '@/engine/questGen'
+import { GEN_KINDS, pinned, type GenInput } from '@/engine/questGen'
 import { LIGHTINGS } from '@/engine/specialMapMods'
 import type { Prompt } from './prompt'
 
@@ -50,11 +50,18 @@ export function designerSystem(input: GenInput): string {
 6. 內容標籤只能用：${tags}。沒有 adult 時不能寫親密場景（scene）。
 7. 每個任務點要有路可以走到（需要的旗標要有前面的結果設定），至少一條路走到「完成任務」（complete）。分支要有意義：不同選擇有不同的後果或結局。
 
+# 平衡（程式只檢查一部分，請自己守住）
+- 戰鬥的對手接近建議等級${pinned(input.level) ? `（${pinned(input.level)}）` : ''}：一般敵人不超過 +3 級，頭目不超過 +5 級；地下城的層、特殊地圖的難度也要配合建議等級。
+- 中途給的金錢、經驗是小額的，加起來不要超過完成報酬。報酬不要給現有的獨特裝備。
+- 新怪物：抗性（resist）寫在 -0.5～0.5 之間（-1 是免疫，不要寫）；掉落（loot）只放這次的任務道具或普通材料，機率 0.5 以下；不寫 money_cc。
+- 新技能：傷害、治療和同等級的內建怪物技能差不多；暈眩這類控制 1～2 回合。新狀態不要寫全抗性或大幅加成。
+- 新物品是任務道具或信物，不寫使用效果（use）。
+
 # 特殊任務（story）
 - title（≤30 字）、summary（≤300 字，冒險筆記上的簡介）、tags（內容標籤）、time_limit（天，選填）
 - start：開頭。kind 是 ${list(START_KINDS)}。guild 要寫 location（有公會的城鎮）；npc 要寫 npc；travel 可以寫 regions、chance；informant 可以寫 location、price。都可以寫 min_level（建議等級）、text（開頭的描述，≤400 字）、requires（接取條件）。
 - start_flags：任務開始時成立的旗標（第一個任務點通常需要它）。
-- nodes：任務點（最多 ${input.maxNodes} 個），每一個：
+- nodes：任務點${pinned(input.maxNodes) ? `（最多 ${pinned(input.maxNodes)} 個）` : ''}，每一個：
   - id（英數與底線）、title（≤40 字，冒險筆記上的目標，寫出地點）、text（≤600 字，觸發時的描述）
   - at：在哪裡。where 是 ${list(WHERE_NAME)}。
     - settlement、cell、outskirts 要寫 location（聚落）；cell 要寫 cell：${cells}，或這個聚落的地標 id（新地標寫 $lm 代號）；那個聚落要有這種設施（看目錄）。
@@ -90,10 +97,12 @@ function request(input: GenInput, catalog: string): string {
     input.startKind ? `開頭方式：${START_KINDS[input.startKind]}` : '',
     input.location ? `地點：${input.location}` : '',
     input.npcs?.length ? `要用的現有 NPC：${input.npcs.join('、')}` : '',
-    input.level ? `建議等級：${input.level}` : '',
-    `任務點最多 ${input.maxNodes} 個`,
+    pinned(input.level) ? `建議等級：${pinned(input.level)}` : '',
+    pinned(input.maxNodes) ? `任務點最多 ${pinned(input.maxNodes)} 個` : '',
   ].filter(Boolean)
-  return `# 玩家的描述\n${input.prompt.trim()}\n\n# 指定\n${pins.map((p) => `- ${p}`).join('\n')}\n\n# 目錄（可以引用的現有內容）\n${catalog}`
+  // 沒有指定任何東西時整段不送
+  const pinText = pins.length ? `\n\n# 指定\n${pins.map((p) => `- ${p}`).join('\n')}` : ''
+  return `# 玩家的描述\n${input.prompt.trim()}${pinText}\n\n# 目錄（可以引用的現有內容）\n${catalog}`
 }
 
 /** 大綱的格式 */

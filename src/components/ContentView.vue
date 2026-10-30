@@ -1064,8 +1064,10 @@ function resetAll() {
 .rows li { display: flex; gap: 6px; align-items: center; padding: 3px 6px; border-radius: var(--radius); cursor: pointer; }
 .rows li:hover { background: var(--panel-2); }
 .rows li.active { background: var(--panel-2); outline: 1px solid var(--accent); }
-.rows .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.note-r { white-space: nowrap; }
+.rows .name { flex: 1; min-width: 5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 說明讓位給名字：放不下時說明先縮（選取匯出多了勾選框時名字不會只剩一個字） */
+.note-r { white-space: nowrap; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rows li > input, .rows li > .tag { flex: none; }
 .row-ic { color: var(--accent); }
 .persist-warn { margin: 0; padding: 6px 10px; border: 1px solid var(--danger); border-radius: var(--radius); color: var(--danger); }
 .footer { border-top: 1px solid var(--border); padding-top: 8px; }

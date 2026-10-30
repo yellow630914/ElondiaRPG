@@ -67,6 +67,17 @@ describe('designer spec', () => {
     expect(c.user).toContain('錯誤一')
   })
 
+  it('leaves out the pins that are empty (cleared fields included)', () => {
+    const pinned = outlinePrompt({ ...input, level: 8, maxNodes: 5 }, '')
+    expect(pinned.user).toContain('建議等級：8')
+    expect(pinned.user).toContain('任務點最多 5 個')
+    expect(pinned.system).toContain('（最多 5 個）')
+    const empty = outlinePrompt({ ...input, level: '' as never, maxNodes: '' as never }, '')
+    expect(empty.user).not.toContain('# 指定')
+    expect(empty.system).not.toContain('最多  個')
+    expect(empty.system).toContain('# 平衡')
+  })
+
   it('formats an outline as editable text', () => {
     const t = outlineText({ title: '燈塔', premise: '前提', start: '公會', nodes: [{ id: 'n1', title: '打聽', kind: 'story', where: '酒館', branches: ['接 n2'] }], new: [{ ref: '$npc1', kind: 'npcs', name: '格倫', why: '守夜人' }] })
     expect(t).toContain('# 燈塔')

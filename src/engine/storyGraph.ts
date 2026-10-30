@@ -67,9 +67,11 @@ export interface StoryGraph {
   reach: StoryReach
 }
 
-const npcName = (id: string) => npcs.find((n) => n.id === id)?.name ?? id
+/** 名稱：extra 是還沒加進世界的東西（AI 編排的預覽：新 NPC、特殊地圖） */
+const nameOf = (extra: Record<string, string>) => (id: string) => extra[id] ?? npcs.find((n) => n.id === id)?.name ?? id
 
-function notesOf(o: StoryOutcome): string[] {
+function notesOf(o: StoryOutcome, extra: Record<string, string>): string[] {
+  const npcName = nameOf(extra)
   const out: string[] = []
   if (o.scene) out.push('💗 親密場景')
   if (o.join) out.push(`＋同行 ${npcName(o.join)}`)
@@ -77,7 +79,7 @@ function notesOf(o: StoryOutcome): string[] {
   for (const d of o.deaths ?? []) out.push(`💀 ${npcName(d)}`)
   if (o.travel_to) out.push(`➜ ${geography.locations.find((l) => l.id === o.travel_to)?.name ?? o.travel_to}`)
   if (o.side_map) out.push('➜ 臨時地圖')
-  if (o.special_map) out.push(`➜ ${specialMaps[o.special_map]?.name ?? o.special_map}`)
+  if (o.special_map) out.push(`➜ ${extra[o.special_map] ?? specialMaps[o.special_map]?.name ?? o.special_map}`)
   for (const [k, v] of Object.entries(o.counters ?? {})) out.push(`${storyCounters[k]?.name ?? k} ${v > 0 ? '+' : ''}${v}`)
   for (const e of o.effects ?? []) {
     if (e.type === 'start_story') out.push(`▶ ${stories.find((s) => s.id === e.story)?.title ?? e.story}`)
@@ -87,7 +89,8 @@ function notesOf(o: StoryOutcome): string[] {
   return out
 }
 
-export function storyGraph(def: StoryDef, others: StoryDef[] = stories): StoryGraph {
+export function storyGraph(def: StoryDef, others: StoryDef[] = stories, extra: Record<string, string> = {}): StoryGraph {
+  const npcName = nameOf(extra)
   const reach = storyReach(def)
   const stuck = new Set(reach.stuck.map((x) => `${x.node}\u0000${x.label}`))
   const nodes: GraphNode[] = def.nodes.map((n, index) => {
@@ -106,7 +109,7 @@ export function storyGraph(def: StoryDef, others: StoryDef[] = stories): StoryGr
         id: `${n.id}#${i}`, node: n.id, label: p.label, fail: p.label === '失敗' || p.label === '落敗' || p.label.endsWith('」失敗'),
         sets: o.set_flags ?? [], clears: o.clear_flags ?? [],
         ...(o.complete ? { end: 'complete' as const } : o.fail_quest ? { end: 'fail' as const } : o.retry ? { end: 'retry' as const } : {}),
-        notes: notesOf(o), tags: option?.tags ?? [], stuck: stuck.has(`${n.id}\u0000${p.label}`),
+        notes: notesOf(o, extra), tags: option?.tags ?? [], stuck: stuck.has(`${n.id}\u0000${p.label}`),
       }
     })
     return {

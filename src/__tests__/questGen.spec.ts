@@ -115,6 +115,43 @@ describe('buildGenerated', () => {
     expect(buildGenerated(r, input(), 'test').dropped.some((d) => d.includes('$npc9'))).toBe(true)
   })
 
+  it('caps mid-story xp like money', () => {
+    const r = reply()
+    r.story.nodes[0]!.success!.effects = [{ type: 'xp', amount: 1000 }, { type: 'xp', amount: 3000 }] as never
+    const g = buildGenerated(r, input({ level: 4 }), 'test')
+    const want = rewardFor(4)
+    const xp = (g.mods.stories!.mod_story_gtest!.nodes[0]!.success!.effects as { amount: number }[]).reduce((s, e) => s + e.amount, 0)
+    expect(xp).toBeLessThanOrEqual(want.xp)
+    expect(g.adjusted.some((a) => a.includes('中途給的經驗'))).toBe(true)
+  })
+
+  it('caps new monster levels near the suggested level and warns about hard places', () => {
+    const r = reply()
+    r.new.enemies[0]!.level = 20
+    r.story.nodes[0]!.at = { where: 'dungeon', location: 'ember_rift', layer: 'deep' } as never
+    const g = buildGenerated(r, input({ level: 4 }), 'test')
+    // 只出現一隻：算頭目，+5
+    expect(g.mods.enemies!.mod_enemy_gtest_1!.level).toBe(9)
+    expect(g.adjusted.some((a) => a.includes('比建議等級 4 高太多'))).toBe(true)
+    expect(g.warnings.some((w) => w.includes('深層'))).toBe(true)
+  })
+
+  it('treats cleared number fields as not pinned', () => {
+    const r = reply()
+    r.story.start.min_level = 7
+    const g = buildGenerated(r, input({ level: '' as never, maxNodes: '' as never }), 'test')
+    expect(g.mods.stories!.mod_story_gtest!.start.min_level).toBe(7)
+    expect(g.adjusted.some((a) => a.includes('任務點有'))).toBe(false)
+  })
+
+  it('drops new things the quest does not use', () => {
+    const r = reply()
+    r.new.landmarks.push({ ref: '$lm2', location: 'soriel', name: '沒用到的倉庫', emoji: '📦', desc: '', types: [] })
+    const g = buildGenerated(r, input(), 'test')
+    expect(Object.keys(g.mods.landmarks!)).toEqual(['lm_gtest_1'])
+    expect(g.dropped.some((d) => d.includes('沒用到的倉庫'))).toBe(true)
+  })
+
   it('throws without a story', () => {
     expect(() => buildGenerated({ notes: 'x' }, input())).toThrow()
   })

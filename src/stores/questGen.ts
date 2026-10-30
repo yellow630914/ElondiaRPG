@@ -162,7 +162,7 @@ export const useQuestGen = defineStore('questGen', () => {
   function evaluate(text: string): GenCheck {
     const gen = buildGenerated(extractJson(text), input.value, code || (code = Math.random().toString(36).slice(2, 6)))
     const check = useContent().checkGenerated(gen.mods, gen.storyId)
-    return { gen, ...check }
+    return { gen, ...check, warnings: [...gen.warnings, ...check.warnings] }
   }
 
   /** 第 ③～④ 段：完整內容，有錯誤時交回 AI 修（最多 FIX_ROUNDS 次） */

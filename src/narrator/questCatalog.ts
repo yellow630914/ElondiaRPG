@@ -7,7 +7,7 @@ import {
 } from '@/engine/data'
 import { CELL_NAME } from '@/engine/grid'
 import { hasFacility, STORY_CELLS } from '@/engine/storyMods'
-import type { GenInput } from '@/engine/questGen'
+import { pinned, type GenInput } from '@/engine/questGen'
 
 const LIMITS = { npcs: 30, landmarks: 30, enemies: 40, abilities: 40, statuses: 30, items: 30, flags: 40, stories: 10 }
 const TYPE_NAME: Record<string, string> = { capital: '首都', city: '城市', town: '城鎮', village: '村莊', outpost: '據點', port: '港口', fortress: '要塞', dungeon: '地下城' }
@@ -36,7 +36,7 @@ function abilityLine(a: AbilityDef): string {
 /** 整理目錄（純文字） */
 export function questCatalog(input: GenInput): string {
   const prompt = input.prompt
-  const level = input.level ?? 5
+  const level = pinned(input.level) ?? 5
   const out: string[] = []
 
   // 地點：全部列出，聚落附上有哪些設施

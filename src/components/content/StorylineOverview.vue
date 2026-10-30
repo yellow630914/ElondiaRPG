@@ -100,7 +100,7 @@ watch([line, showFlags], () => void nextTick(measure))
         </ul>
       </div>
       <div v-if="line" class="pane">
-        <div class="row small bar">
+        <div class="row small graph-bar">
           <b>{{ line.name }}</b>
           <label class="check"><input v-model="showFlags" type="checkbox" /> 在線上顯示旗標</label>
           <span class="legend"><i class="ln unlock" />開放 <i class="ln start" />直接開啟 <i class="ln block" />關掉 <i class="ln echo" />呼應</span>
@@ -148,7 +148,7 @@ watch([line, showFlags], () => void nextTick(measure))
 .lines li.active { outline: 1px solid var(--accent); }
 .lines .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pane { display: grid; gap: 6px; min-width: 0; max-width: 100%; }
-.bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.graph-bar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
 .check { display: inline-flex; gap: 4px; align-items: center; }
 .legend { display: inline-flex; gap: 4px; align-items: center; color: var(--muted); }
 .legend .ln { display: inline-block; width: 18px; border-top: 2px solid var(--accent); margin-left: 6px; }

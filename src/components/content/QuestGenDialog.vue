@@ -48,6 +48,11 @@ const added = computed(() => {
     .map((k) => ({ k, name: MOD_SECTION_NAMES[k], items: Object.entries((m[k] ?? {}) as Record<string, { name?: string }>).map(([id, v]) => v.name ?? id) }))
     .filter((g) => g.items.length)
 })
+/** 還沒加進世界的新 NPC、特殊地圖：流程圖用名字顯示 */
+const newNames = computed(() => {
+  const m = gen.result?.mods
+  return Object.fromEntries([...Object.entries(m?.npcs ?? {}), ...Object.entries(m?.specialMaps ?? {})].map(([id, v]) => [id, (v as { name?: string }).name ?? id]))
+})
 const BUSY: Record<string, string> = { outline: '正在寫大綱…', full: '正在寫完整的任務…', fix: '檢查有錯誤，正在請 AI 修正…' }
 
 function accept() {
@@ -94,8 +99,8 @@ function startOver() {
               <option v-for="l in settlements" :key="l.id" :value="l.id">{{ l.name }}</option>
             </select>
           </label>
-          <label>建議等級 <input v-model.number="gen.input.level" type="number" min="1" max="20" placeholder="5" /></label>
-          <label>任務點最多 <input v-model.number="gen.input.maxNodes" type="number" min="2" max="12" /> 個</label>
+          <label>建議等級 <input v-model.number="gen.input.level" type="number" min="1" max="20" placeholder="交給 AI" /></label>
+          <label>任務點最多 <input v-model.number="gen.input.maxNodes" type="number" min="2" max="12" placeholder="不限" /> 個</label>
         </div>
         <div class="row small">
           要用的現有角色
@@ -126,7 +131,7 @@ function startOver() {
 
       <!-- ③ 預覽 -->
       <template v-else-if="gen.result && story">
-        <StoryGraph :def="story" />
+        <StoryGraph :def="story" :names="newNames" />
         <div class="cols small">
           <div>
             <h4>📜 {{ story.title }}</h4>
@@ -180,7 +185,7 @@ function startOver() {
 .gen p { margin: 0; }
 .field { display: grid; gap: 4px; }
 .pins { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
-.pins input[type='number'] { width: 4.5em; }
+.pins input[type='number'] { width: 5.5em; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .check { display: inline-flex; gap: 3px; align-items: center; }
 .link { background: none; border: none; padding: 0 2px; cursor: pointer; color: inherit; }
