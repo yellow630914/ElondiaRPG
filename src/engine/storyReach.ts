@@ -18,14 +18,17 @@ export interface ReachPort {
   outcome: StoryOutcome
 }
 
+/** 選項的名稱加上引號（本來就有「」的不再加） */
+export const quoteLabel = (s: string) => (s.startsWith('「') && s.endsWith('」') ? s : `「${s}」`)
+
 /** 一個任務點的所有結果（和 storyMods.ts 的 outcomesOf 一樣的名稱） */
 export function portsOf(n: StoryNode): ReachPort[] {
   const out: ReachPort[] = []
   if (n.success) out.push({ node: n.id, label: n.kind === 'combat' ? '勝利' : '成功', outcome: n.success })
   if (n.fail) out.push({ node: n.id, label: n.kind === 'combat' ? '落敗' : '失敗', outcome: n.fail })
   for (const o of n.options ?? []) {
-    if (o.success) out.push({ node: n.id, label: `「${o.label}」${o.check ? '成功' : ''}`, outcome: o.success })
-    if (o.fail) out.push({ node: n.id, label: `「${o.label}」失敗`, outcome: o.fail })
+    if (o.success) out.push({ node: n.id, label: `${quoteLabel(o.label)}${o.check ? '成功' : ''}`, outcome: o.success })
+    if (o.fail) out.push({ node: n.id, label: `${quoteLabel(o.label)}失敗`, outcome: o.fail })
   }
   return out
 }

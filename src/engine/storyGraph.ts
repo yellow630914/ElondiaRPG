@@ -6,7 +6,7 @@
 
 import { geography, npcs, specialMaps, stories, storyCounters, PARK_STAMP_PREFIX, type StoryDef, type StoryNodeKind, type StoryOutcome } from './data'
 import { STORY_EFFECTS } from './storyMods'
-import { portsOf, storyReach, type StoryReach } from './storyReach'
+import { portsOf, quoteLabel, storyReach, type StoryReach } from './storyReach'
 
 export interface GraphPort {
   /** `節點 id#第幾個出口` */
@@ -101,7 +101,7 @@ export function storyGraph(def: StoryDef, others: StoryDef[] = stories): StoryGr
     if (n.wear?.length) conds.push(`限定穿著 ${n.wear.join('、')}`)
     const ports: GraphPort[] = portsOf(n).map((p, i) => {
       const o = p.outcome
-      const option = n.options?.find((x) => p.label.startsWith(`「${x.label}」`))
+      const option = n.options?.find((x) => p.label.startsWith(quoteLabel(x.label)))
       return {
         id: `${n.id}#${i}`, node: n.id, label: p.label, fail: p.label === '失敗' || p.label === '落敗' || p.label.endsWith('」失敗'),
         sets: o.set_flags ?? [], clears: o.clear_flags ?? [],
