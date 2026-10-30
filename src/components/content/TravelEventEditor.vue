@@ -6,14 +6,15 @@ import { travelEvents, type RoadOption } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { parasiteRules } from '@/engine/parasites'
 import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, PARASITE_MOMENTS, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
-import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import type { DungeonTrigger, EventScope } from '@/engine/road'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
-import CondExtrasEditor from './CondExtrasEditor.vue'
-import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
+import RequiresEditor from './RequiresEditor.vue'
+import CheckList from './CheckList.vue'
+import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
 
 // 旅途事件、城鎮事件、地下城事件或寄生物的發作的編輯表單：在哪裡出現、檢定或選項、結果
 const props = defineProps<{ id: string }>()
@@ -44,7 +45,6 @@ const parasite = computed(() => draft.value.scope === 'parasite')
 // 發生在主角身上的事件（地下城事件、寄生物的發作）：只有選擇，主角自己擲
 const onPc = computed(() => dungeon.value || parasite.value)
 const parasiteIds = Object.keys(parasiteRules.parasites)
-const BODY_NAME = { fem: '女性形象', andro: '中性', masc: '男性形象' } as const
 function setScope(v: string) {
   const scope = (['town', 'dungeon', 'parasite'].includes(v) ? v : undefined) as EventScope | undefined
   draft.value.scope = scope
@@ -123,16 +123,10 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : '🧭' }} {{ draft.title || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="`${town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : '🧭'} ${draft.title || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <p class="small muted">
       id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : parasite ? '寄生物的發作：身上有這個寄生物（沒馴服、沒沉睡）時，走動、旅途或長休之後依 parasites.json 的機率（乘上存檔規則「寄生發作的機率」與階段的倍率）出現；選項的結果通常是侵蝕度的加減（效果「寄生物的侵蝕度」）。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
       {{ onPc ? '事件發生在主角身上：檢定由主角自己擲。' : '檢定由隊伍裡最擅長那個屬性的人來擲。' }}
@@ -250,24 +244,14 @@ function remove() {
 
     <fieldset>
       <legend>內容 <Hint text="內容標籤：設定沒有開啟或關掉時這個事件不出現。親密場景：選項勾了「進入親密場景」時，敘事依這段描寫。" /></legend>
-      <div class="row small"><b>內容標籤</b>
-        <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
-          <input type="checkbox" :checked="draft.tags?.includes(t)" @change="toggle('tags', t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
-        </label>
-      </div>
-      <div class="row small"><b>只給這些主角</b>
-        <label v-for="(n, b) in BODY_NAME" :key="b" class="check">
-          <input type="checkbox" :checked="draft.pc_body?.includes(b)" @change="toggle('pc_body', b, ($event.target as HTMLInputElement).checked)" /> {{ n }}
-        </label>
-      </div>
+      <CheckList v-model="draft.tags" label="內容標籤" :options="CONTENT_TAG_OPTIONS" />
+      <CheckList v-model="draft.pc_body" label="只給這些主角" :options="BODY_OPTIONS" />
       <label class="block">親密場景（成人向，可以空著）<textarea v-model="draft.scene" rows="2" maxlength="200" /></label>
     </fieldset>
 
     <fieldset>
       <legend>劇情條件</legend>
-      <div class="row small">需要旗標 <FlagInput v-model="requires.flags" placeholder="全部成立才出現" /></div>
-      <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
-      <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (draft.requires = v)" />
+      <RequiresEditor :model-value="requires" label="出現的條件" placeholder="全部成立才出現" @update:model-value="(v) => (draft.requires = v)" />
     </fieldset>
 
     <fieldset v-if="draft.kind === 'check'">

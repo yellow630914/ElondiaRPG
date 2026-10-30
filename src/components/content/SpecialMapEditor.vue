@@ -10,7 +10,8 @@ import { useGame } from '@/stores/game'
 import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
-import FlagInput from './FlagInput.vue'
+import EditorHeader from './EditorHeader.vue'
+import RequiresEditor from './RequiresEditor.vue'
 
 // 特殊地圖的編輯表單：基本資料（所屬地點、給 AI 的描述、光線、刷新）、版面（畫格子或隨機挖）、
 // 額外的隨機內容、遭遇表與採集物、通道（接到城鎮區塊的牆或別張特殊地圖）。內建的不能刪除
@@ -290,16 +291,10 @@ function remove() {
 
 <template>
   <div class="editor" @mouseup="painting = false" @mouseleave="painting = false">
-    <div class="row head">
-      <h3>🗺️ {{ draft.name }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small warn" :disabled="usage.length > 0" @click="remove">🗑️ 刪除</button>
-    </div>
+    <EditorHeader
+      :title="`🗺️ ${draft.name}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <p class="small muted">
       id：{{ id }}。特殊地圖可以被特殊任務的事件傳送進來、放任務點，或用通道接到城鎮區塊的牆、別張特殊地圖。
       裡面只能在安全點（或旅店格）長休，不能直接出發旅行；從出口離開回到進來前的地方，倒下時被送回所屬地點。改了版面或內容的設定，存檔裡的這張地圖會重新生成。
@@ -477,10 +472,10 @@ function remove() {
             </div>
             <p v-else class="small muted">那張是隨機地圖，沒辦法接通道。</p>
           </template>
-          <div class="grid small">
-            <label>要有這些旗標才打開 <FlagInput :model-value="splitFlags(c.flagsText)" placeholder="旗標（可以不填）" @update:model-value="c.flagsText = ($event ?? []).join('、')" /></label>
-            <label>有這些旗標時關閉 <FlagInput :model-value="splitFlags(c.flagsNoneText)" placeholder="旗標（可以不填）" @update:model-value="c.flagsNoneText = ($event ?? []).join('、')" /></label>
-          </div>
+          <RequiresEditor
+            :model-value="{ flags: splitFlags(c.flagsText), flags_none: splitFlags(c.flagsNoneText) }" label="通道打開的條件" placeholder="可以不填" :extras="false"
+            @update:model-value="(v) => { c.flagsText = (v.flags ?? []).join('、'); c.flagsNoneText = (v.flags_none ?? []).join('、') }"
+          />
         </div>
         <button class="small" :disabled="draft.conns.length >= L.connections" @click="addConn">＋ 新增通道</button>
       </template>

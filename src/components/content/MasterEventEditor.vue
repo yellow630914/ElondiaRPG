@@ -6,6 +6,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import EffectsEditor from './EffectsEditor.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
 
 // 主人事件格式的編輯表單（主人的突發事件、調教、娼館的打工與受訓）：條件、描述、回應（檢定、結果、效果）
 const props = defineProps<{ id: string }>()
@@ -117,16 +118,10 @@ function remove() {
 
 <template>
   <div class="editor" @change="clampNumber">
-    <div class="row head">
-      <h3>⛓️ {{ draft.text.slice(0, 24) || '（沒有描述）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="`⛓️ ${draft.text.slice(0, 24) || '（沒有描述）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <p class="small muted">id：{{ id }}。{{ POOL_HELP[draft.pool] }}</p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
 

@@ -17,6 +17,7 @@ import Hint from '../ui/Hint.vue'
 import ContentIcon from '../icons/ContentIcon.vue'
 import { perkRarity } from '../icons/perkArt'
 import { RARITY_ORDER, rarityName } from '@/engine/gear'
+import EditorHeader from './EditorHeader.vue'
 
 // 特質的編輯表單：效果（檢定加值、戰鬥修正、抗性、增傷）、條件、互斥、訓練、NPC 的權重。
 // 種族特質只能改名稱、描述與效果（依種族自動擁有）。抗性可以是弱點；勾了「缺陷」的特質才能有負的檢定加值與戰鬥修正。
@@ -206,20 +207,12 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="race" class="tag">種族</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button
-        v-else class="small danger" :disabled="usage.length > 0"
-        :title="usage.length ? '還有地方用到這個特質，不能刪除' : ''" @click="remove"
-      >刪除</button>
-    </div>
+    <EditorHeader
+      :title="draft.name || '（未命名）'" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="discard" @restore="restore" @remove="remove"
+    >
+      <template #tags><span v-if="race" class="tag">種族</span></template>
+    </EditorHeader>
     <p class="small muted">id：{{ id }}・強度約 {{ perkPower(draft) }}</p>
     <p v-if="race" class="small muted">
       種族特質：{{ attributeRules.races[draft.race!]?.name }}的角色自動擁有（不寫進存檔），不能選、受訓或從書裡學，也不會失去；可以改名稱、描述與效果。

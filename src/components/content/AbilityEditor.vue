@@ -10,6 +10,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import ContentIcon from '../icons/ContentIcon.vue'
 import { abilityGlyph, abilityGlyphName } from '../icons/abilityArt'
+import EditorHeader from './EditorHeader.vue'
 
 // 能力（技能、法術、戲法）的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -147,19 +148,10 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button
-        v-else class="small danger" :disabled="usage.length > 0"
-        :title="usage.length ? '還有地方用到這個能力，不能刪除' : ''" @click="remove"
-      >刪除</button>
-    </div>
+    <EditorHeader
+      :title="draft.name || '（未命名）'" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="discard" @restore="restore" @remove="remove"
+    />
     <p class="small muted">id：{{ id }}</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 

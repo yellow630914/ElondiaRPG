@@ -5,6 +5,7 @@ import { currentEventRules, DUNGEON_TRIGGERS, EVENT_LAYERS, ROUTE_MODES, type Ev
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
 
 // 事件設定：旅途各種路段每天發生事件的機率、事件種類的權重；城鎮事件的機率、冷卻與分類平衡
 const content = useContent()
@@ -38,15 +39,10 @@ const WEIGHT_NAME = { auto: '原本的旅途事件與普通檢定', choice: '普
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>⚙️ 事件設定</h3>
-      <span class="tag">{{ edited ? '已修改' : '內建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-    </div>
+    <EditorHeader
+      :title="'⚙️ 事件設定'" :kind="'rules'" :edited="edited" :dirty="dirty"
+      @save="save" @discard="reset" @restore="restore"
+    />
     <fieldset>
       <legend>旅途：每天發生事件的機率（0～1）</legend>
       <div class="grid">

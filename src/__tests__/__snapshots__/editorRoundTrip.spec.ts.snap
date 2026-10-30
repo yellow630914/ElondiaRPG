@@ -121,41 +121,6 @@ exports[`world editor round trip > enemies: opening and saving without changes k
 }
 `;
 
-exports[`world editor round trip > events: opening and saving without changes keeps the data 1`] = `
-{
-  "collapsed_tunnel": "575bb36ee0a8",
-  "dg_adv_prisoner": "575bb36ee0a8",
-  "dg_blood_altar": "575bb36ee0a8",
-  "dg_cursed_lingerie": "575bb36ee0a8",
-  "dg_ghost_touch": "575bb36ee0a8",
-  "dg_glow_spores": "575bb36ee0a8",
-  "dg_park_garden_pollen": "575bb36ee0a8",
-  "dg_pink_mist": "575bb36ee0a8",
-  "dg_rune_room": "575bb36ee0a8",
-  "dg_tide_mermaid": "575bb36ee0a8",
-  "dg_trap_gag": "575bb36ee0a8",
-  "guild_novice": "575bb36ee0a8",
-  "herb_patch": "575bb36ee0a8",
-  "informant_freebie": "575bb36ee0a8",
-  "night_howls": "575bb36ee0a8",
-  "pe_lin_hungry": "575bb36ee0a8",
-  "pe_lin_symbiosis": "575bb36ee0a8",
-  "pe_mark_other_half": "575bb36ee0a8",
-  "pe_mark_thirst": "575bb36ee0a8",
-  "pe_seed_sap": "575bb36ee0a8",
-  "rd_hot_spring": "575bb36ee0a8",
-  "shop_bulk_sale": "575bb36ee0a8",
-  "stuck_wagon": "575bb36ee0a8",
-  "tn_drinker_wager": "575bb36ee0a8",
-  "tn_guild_bound_escort": "575bb36ee0a8",
-  "tn_mistaken_slave": "575bb36ee0a8",
-  "tn_tailor_model": "575bb36ee0a8",
-  "town_fan": "575bb36ee0a8",
-  "town_grope": "575bb36ee0a8",
-  "waystation": "575bb36ee0a8",
-}
-`;
-
 exports[`world editor round trip > items: opening and saving without changes keeps the data 1`] = `
 {
   "乾糧": "8437b9fa880a",
@@ -201,36 +166,6 @@ exports[`world editor round trip > items: opening and saving without changes kee
 }
 `;
 
-exports[`world editor round trip > landmarks: opening and saving without changes keeps the data 1`] = `
-{
-  "lm_abyss_exchange": "575bb36ee0a8",
-  "lm_bed_school": "575bb36ee0a8",
-  "lm_blood_oath_valley": "575bb36ee0a8",
-  "lm_blood_trial_ground": "575bb36ee0a8",
-  "lm_dawn_sanctum": "575bb36ee0a8",
-  "lm_deep_tide_pier": "575bb36ee0a8",
-  "lm_ebony_night": "575bb36ee0a8",
-  "lm_everlit_beacon": "575bb36ee0a8",
-  "lm_golem_arena": "575bb36ee0a8",
-  "lm_granite_rampart": "575bb36ee0a8",
-  "lm_idol_backstage": "575bb36ee0a8",
-  "lm_judgment_cloister": "575bb36ee0a8",
-  "lm_knight_academy": "575bb36ee0a8",
-  "lm_krause_manor": "575bb36ee0a8",
-  "lm_lower_massage": "575bb36ee0a8",
-  "lm_mire_herb_beds": "575bb36ee0a8",
-  "lm_nightmare_maze": "575bb36ee0a8",
-  "lm_old_stone_bridge": "575bb36ee0a8",
-  "lm_pilgrim_bath": "575bb36ee0a8",
-  "lm_redmane_council": "575bb36ee0a8",
-  "lm_reef_light_pillar": "575bb36ee0a8",
-  "lm_sandcastle_keep": "575bb36ee0a8",
-  "lm_spring_of_life": "575bb36ee0a8",
-  "lm_star_platform": "575bb36ee0a8",
-  "lm_windoath_tower": "575bb36ee0a8",
-}
-`;
-
 exports[`world editor round trip > markRules: opening and saving without changes keeps the data 1`] = `
 {
   "markRules": "ee932cb6fb9e",
@@ -243,31 +178,6 @@ exports[`world editor round trip > marks: opening and saving without changes kee
   "brothel": "d6d8a021747e",
   "combat": "8b17ba0241d6",
   "labor": "aee30d03ea9b",
-}
-`;
-
-exports[`world editor round trip > masterEvents: opening and saving without changes keeps the data 1`] = `
-{
-  "bt_body": "575bb36ee0a8",
-  "bt_calm": "575bb36ee0a8",
-  "bw_mercenary": "575bb36ee0a8",
-  "bw_rival": "575bb36ee0a8",
-  "chained_night": "575bb36ee0a8",
-  "errand": "575bb36ee0a8",
-  "force_gear": "575bb36ee0a8",
-  "good_freedom_talk": "575bb36ee0a8",
-  "home_rest_day": "575bb36ee0a8",
-  "home_restraint_bed": "575bb36ee0a8",
-  "lend_out": "575bb36ee0a8",
-  "noble_etiquette": "575bb36ee0a8",
-  "own_charm_kiss": "575bb36ee0a8",
-  "own_exposure_walk": "575bb36ee0a8",
-  "own_pain_whip": "575bb36ee0a8",
-  "own_serve_tea": "575bb36ee0a8",
-  "proposition": "575bb36ee0a8",
-  "reward": "575bb36ee0a8",
-  "teach": "575bb36ee0a8",
-  "traveler_map": "575bb36ee0a8",
 }
 `;
 
@@ -288,41 +198,6 @@ exports[`world editor round trip > materials: opening and saving without changes
   "steel": "4495f387c301",
   "worldtree": "c255b59bf297",
   "yew": "4af65d92edf2",
-}
-`;
-
-exports[`world editor round trip > npcs: opening and saving without changes keeps the data 1`] = `
-{
-  "npc_alexander": "dd5a3d731223",
-  "npc_aya": "8ad4d538531f",
-  "npc_bertho_bath": "547d1d994114",
-  "npc_brandt_copperbeard": "bb666c9f4739",
-  "npc_bruk": "33f6c1c457d0",
-  "npc_camilla": "f66495841c31",
-  "npc_carlos_blacksail": "f7f615fdbefc",
-  "npc_carlton_silent": "1e27d8ca5e43",
-  "npc_clara": "9335851745dc",
-  "npc_dilia_copperbeard": "e564c2a2e45f",
-  "npc_eileen": "71ac3fe73d79",
-  "npc_ignaz_goldscale": "9fcbc8cbbacd",
-  "npc_ilania": "40273b07632f",
-  "npc_karen": "09530aa087d9",
-  "npc_kargh_warband": "bcabcb719f80",
-  "npc_kaspar_nord": "57f9c9afb47b",
-  "npc_liandra_spring": "22e863e8889c",
-  "npc_lina": "4f1c7eb4d2b7",
-  "npc_liv_hunter": "ea978adec228",
-  "npc_marina": "d52d800d989b",
-  "npc_noel": "7680a5a52e56",
-  "npc_pope_gregory": "a2d8d2d366ab",
-  "npc_raden_granny": "d15b5ce399cc",
-  "npc_sebastian_eger": "9bb01ac5efc9",
-  "npc_stella": "89ef23118e12",
-  "npc_tali_liaison": "dd0c662be99e",
-  "npc_toma_pearl": "6932dd144fc9",
-  "npc_valerie": "085848c7e76b",
-  "npc_victor_dice": "a5e61980885a",
-  "npc_wolfgang": "31121cc05ec1",
 }
 `;
 
@@ -367,35 +242,6 @@ exports[`world editor round trip > rules: opening and saving without changes kee
 }
 `;
 
-exports[`world editor round trip > shops: opening and saving without changes keeps the data 1`] = `
-{
-  "general": "575bb36ee0a8",
-  "informant": "575bb36ee0a8",
-  "jeweler": "575bb36ee0a8",
-  "magic": "575bb36ee0a8",
-  "smithy": "575bb36ee0a8",
-  "tailor": "575bb36ee0a8",
-  "tavern": "575bb36ee0a8",
-  "temple": "575bb36ee0a8",
-  "wanderer": "575bb36ee0a8",
-}
-`;
-
-exports[`world editor round trip > specialMaps: opening and saving without changes keeps the data 1`] = `
-{
-  "sm_acheron_echo": "575bb36ee0a8",
-  "sm_honor_hole": "575bb36ee0a8",
-  "sm_kagni_heart": "575bb36ee0a8",
-  "sm_maid_cafe": "575bb36ee0a8",
-  "sm_rhineburg_cistern": "575bb36ee0a8",
-  "sm_rhineburg_ramparts": "575bb36ee0a8",
-  "sm_rhineburg_sewer": "575bb36ee0a8",
-  "sm_sorian_dream": "575bb36ee0a8",
-  "sm_soriel_belltower": "575bb36ee0a8",
-  "sm_succubus_banquet": "575bb36ee0a8",
-}
-`;
-
 exports[`world editor round trip > statuses: opening and saving without changes keeps the data 1`] = `
 {
   "barkskin": "775663e0a904",
@@ -423,21 +269,6 @@ exports[`world editor round trip > statuses: opening and saving without changes 
   "storm_aura": "7682b90c71fc",
   "swallowed": "561bd7338b1b",
   "undying": "ac759510d028",
-}
-`;
-
-exports[`world editor round trip > stories: opening and saving without changes keeps the data 1`] = `
-{
-  "dawn_throne_ambush": "63aefc20ca09",
-  "echo_seal_log": "a41b4b95da6e",
-  "group_rulers_tea": "04779a99e7a2",
-  "inn_skirt": "ea069b88c091",
-  "isadora_elope": "3dc6a48a0920",
-  "par_lin_feed": "6352a0171978",
-  "par_mark_find": "ea77353b4339",
-  "par_mark_help": "8469547e72f1",
-  "serena_councillor": "509fad75f151",
-  "vsec_after_hours": "732c8e8874c0",
 }
 `;
 

@@ -5,6 +5,7 @@ import { BIND_COMBAT_KEYS, BIND_COMBAT_NAME, BIND_CONTEXT_NAME, BIND_CONTEXTS, c
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
 
 // 雙面效應設定（docs/LEWD_STATS.md 第 7 節）：各種拘束的平常減值、受影響的檢定、戰鬥增益、免疫的狀態；忍耐、流派與鎖的倍率
 const content = useContent()
@@ -72,15 +73,10 @@ const filterText = (f: CheckFilter) => {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>⚙️ 雙面效應設定</h3>
-      <span class="tag">{{ edited ? '已修改' : '內建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-    </div>
+    <EditorHeader
+      :title="'⚙️ 雙面效應設定'" :kind="'rules'" :edited="edited" :dirty="dirty"
+      @save="save" @discard="reset" @restore="restore"
+    />
     <p class="small muted">拘束具（底材的「拘束」種類與程度 1～3，物品可以有自己的程度）平常是檢定的減值；修了任何慾望流派、而且上了鎖時，戰鬥中反轉成增益（乘上鎖的倍率，流派契合再乘）。慾望戰鬥關閉時沒有增益，減值照算。</p>
     <fieldset>
       <legend>倍率</legend>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { computed, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { geography, itemRules, npcs as namedNpcs, stories, type StoryNode } from '@/engine/data'
@@ -11,12 +10,15 @@ import { builtinStory, copyStory, flagUsage, NODE_KINDS, newNode, progressBreaks
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import EffectsEditor from './EffectsEditor.vue'
-import CondExtrasEditor from './CondExtrasEditor.vue'
 import FlagInput from './FlagInput.vue'
 import NameListInput from './NameListInput.vue'
 import StoryNodeEditor from './StoryNodeEditor.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
+import RequiresEditor from './RequiresEditor.vue'
+import CheckList from './CheckList.vue'
+import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
 
 // 特殊任務的編輯表單：開頭、任務點（依劇情旗標解鎖）、完成報酬；下方檢查任務鏈與旗標的流向
 const props = defineProps<{ id: string }>()
@@ -165,29 +167,14 @@ function remove() {
   }
   emit('deleted')
 }
-const BODIES = [['masc', '男性形象'], ['fem', '女性形象'], ['andro', '中性']] as const
-/** 勾選或取消一個標籤（全部取消時拿掉欄位） */
-function toggleTag<T extends string>(list: T[] | undefined, t: T, on: boolean): T[] | undefined {
-  const next = on ? [...new Set([...(list ?? []), t])] : (list ?? []).filter((x) => x !== t)
-  return next.length ? next : undefined
-}
 </script>
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ draft.title || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button
-        class="small primary" :disabled="!dirty || check.errors.length > 0 || breaks.length > 0"
-        :title="check.errors.length ? '任務鏈有錯誤，修正後才能儲存' : breaks.length ? '這次修改會弄壞目前存檔的任務進度' : ''" @click="save"
-      >💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="draft.title || '（未命名）'" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :blocked="check.errors.length ? '任務鏈有錯誤，修正後才能儲存' : breaks.length ? '這次修改會弄壞目前存檔的任務進度' : ''" :usage="usage"
+      @save="save" @discard="discard" @restore="restore" @remove="remove"
+    />
     <UsageNote :usage="usage" :deletable="!builtin" />
     <p v-if="progress?.status === 'active'" class="small warn-text">
       目前的存檔正在進行這個任務（完成了 {{ progress.done.length }} 個任務點）：完成過的任務點 id 不能改；改旗標名稱或解鎖條件可能讓這個存檔的任務卡住。
@@ -218,12 +205,7 @@ function toggleTag<T extends string>(list: T[] | undefined, t: T, on: boolean): 
         <label><span>期限 <Hint text="開始後幾天內要完成，空白不限。" /></span><input v-model.number="draft.time_limit" type="number" min="0" max="365" placeholder="不限" /></label>
       </div>
       <label class="block"><span>簡介 <Hint text="冒險筆記與接任務時看到。" /></span><textarea v-model="draft.summary" rows="2" maxlength="300" /></label>
-      <div class="row checks small">
-        <span>內容標籤 <Hint text="接任務時與冒險筆記顯示成警示；成人向以外的標籤玩家可以在設定裡關閉（關閉的任務不開放）。分支才有的內容（例如 NTR 分支）標在那個選項上。" /></span>
-        <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
-          <input type="checkbox" :checked="draft.tags?.includes(t)" @change="draft.tags = toggleTag(draft.tags, t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
-        </label>
-      </div>
+      <CheckList v-model="draft.tags" label="內容標籤" hint="接任務時與冒險筆記顯示成警示；成人向以外的標籤玩家可以在設定裡關閉（關閉的任務不開放）。分支才有的內容（例如 NTR 分支）標在那個選項上。" :options="CONTENT_TAG_OPTIONS" />
     </fieldset>
 
     <fieldset>
@@ -258,12 +240,7 @@ function toggleTag<T extends string>(list: T[] | undefined, t: T, on: boolean): 
         <label v-if="draft.start.kind === 'informant'">情報的價格（白鸛幣） <input v-model.number="draft.start.price" type="number" min="0" /></label>
         <label>主角至少幾級 <input v-model.number="draft.start.min_level" type="number" min="1" max="20" placeholder="不限" /></label>
       </div>
-      <div class="row checks small">
-        <span>只給這些主角 <Hint text="依主角的體型（建角時選的體態；沒選時依種族與性別）。都不勾＝都可以，例如做給女性主角的任務只勾女性形象。" /></span>
-        <label v-for="[b, label] in BODIES" :key="b" class="check">
-          <input type="checkbox" :checked="draft.start.pc_body?.includes(b)" @change="draft.start.pc_body = toggleTag(draft.start.pc_body, b, ($event.target as HTMLInputElement).checked)" /> {{ label }}
-        </label>
-      </div>
+      <CheckList v-model="draft.start.pc_body" label="只給這些主角" hint="依主角的體型（建角時選的體態；沒選時依種族與性別）。都不勾＝都可以，例如做給女性主角的任務只勾女性形象。" :options="BODY_OPTIONS" />
       <div v-if="draft.start.kind === 'travel'" class="row checks small">
         <span>只在前往這些地區時（不勾＝任何地區）：</span>
         <label v-for="r in geography.regions" :key="r.id" class="check">
@@ -271,9 +248,7 @@ function toggleTag<T extends string>(list: T[] | undefined, t: T, on: boolean): 
         </label>
       </div>
       <label class="block"><span>開頭的事件描述 <Hint text="旅途、情報商、NPC 拜託時看到；沒有時用簡介。" /></span><textarea v-model="draft.start.text" rows="2" maxlength="400" /></label>
-      <div class="row small">接取需要旗標 <FlagInput v-model="startReq.flags" /></div>
-      <div class="row small">這些旗標成立時不出現 <FlagInput v-model="startReq.flags_none" /></div>
-      <CondExtrasEditor :model-value="startReq" @update:model-value="(v) => (draft.start.requires = v)" />
+      <RequiresEditor :model-value="startReq" label="接取條件" @update:model-value="(v) => (draft.start.requires = v)" />
       <div class="row small">開始時設定的旗標 <Hint text="任務鏈的第一個旗標。" /> <FlagInput v-model="draft.start_flags" /></div>
       <div class="row small">接下任務時拿到的物品 <Hint text="各一件，例如打工的制服；搭配任務點的「限定穿著」。" /> <NameListInput v-model="draft.start.items" :options="itemOptions" placeholder="物品名稱" /></div>
     </fieldset>

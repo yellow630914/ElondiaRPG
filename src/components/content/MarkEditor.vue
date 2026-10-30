@@ -9,6 +9,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
 
 // 奴隸印記模板的編輯表單。刻印時把條款存一份在角色身上，改模板只影響之後刻的
 const props = defineProps<{ id: string }>()
@@ -81,16 +82,10 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>⛓️ {{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" :disabled="usage.length > 0" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="`⛓️ ${draft.name || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="discard" @restore="restore" @remove="remove"
+    />
     <p class="small muted">id：{{ id }}。功能依數值推得：{{ functionNames }}。已經刻在角色身上的印記不受修改影響。要讓它出現在刻印檢定、市場或老鴇身上，到「印記設定」加進去。</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
     <fieldset>

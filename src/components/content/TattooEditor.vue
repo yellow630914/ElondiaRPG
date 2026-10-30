@@ -8,6 +8,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
 
 // 刺青圖樣（普通刺青、誓約印記）的編輯表單。角色身上的刺青是刺上時存的一份，改圖樣只影響之後刺的
 const props = defineProps<{ id: string }>()
@@ -80,16 +81,10 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>🖋️ {{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty || !!problem" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="draft = current()">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" :disabled="usage.length > 0" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="`🖋️ ${draft.name || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :blocked="problem ?? ''" :usage="usage"
+      @save="save" @discard="draft = current()" @restore="restore" @remove="remove"
+    />
     <p class="small muted">id：{{ id }}。普通刺青只是外觀；誓約印記的屬性有加有減（加總為 0、每項 ±{{ max }} 以內、最多 {{ tattooRules.oath.max_attrs }} 項）。已經刺在角色身上的不受修改影響。</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
     <fieldset>

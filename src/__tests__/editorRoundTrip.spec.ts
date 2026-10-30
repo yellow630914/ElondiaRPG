@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-// 世界編輯器的來回測試（說明見 editorRoundTrip.ts）
-import { CASES, roundTripSuite, storyNodeSuite } from './editorRoundTrip'
+// 世界編輯器的來回測試（說明見 editorRoundTrip.ts）。分成幾個檔案：每個檔案一個 worker，記憶體才夠。
+import { roundTripSuite } from './editorRoundTrip'
 
-roundTripSuite(...Object.keys(CASES))
-storyNodeSuite()
+roundTripSuite(...['enemies', 'items', 'bases', 'materials', 'abilities', 'statuses', 'conditions', 'perks', 'tattoos', 'marks', 'rules', 'markRules', 'bindRules'])

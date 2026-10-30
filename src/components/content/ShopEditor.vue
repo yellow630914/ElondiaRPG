@@ -13,6 +13,7 @@ import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import ComboInput from './ComboInput.vue'
+import EditorHeader from './EditorHeader.vue'
 
 // 商店的編輯表單。內建的店：圖示、描述、AI 特別商品、店主設定、固定清單、收購類別、工作、受訓與位置（只能移動）；
 // 店名、店種、上架的物品類型與店的專屬功能不能改。自建的店每一項都可以改，沒有專屬功能
@@ -168,16 +169,10 @@ const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t)
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ draft.emoji }} {{ custom ? draft.name : def.name }}</h3>
-      <span class="tag">{{ custom ? '自建' : edited ? '內建・已修改' : '內建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="!custom" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small warn" :disabled="usage.length > 0" @click="remove">🗑️ 刪除</button>
-    </div>
+    <EditorHeader
+      :title="`${draft.emoji} ${custom ? draft.name : def.name}`" :kind="custom ? 'custom' : 'builtin'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <p v-if="!custom" class="small muted">id：{{ id }}。內建的店只能改這裡列出的項目；店名、上架的物品類型（{{ catalogName }}的目錄）與店的專屬功能不能改，也不能刪除。</p>
     <p v-else class="small muted">id：{{ id }}。自建的店沒有專屬功能（治療、招募、情報、刺青……），只有交易、打工、受訓與委託打造。</p>
     <UsageNote :usage="usage" :deletable="custom" />

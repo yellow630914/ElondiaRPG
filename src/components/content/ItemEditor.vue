@@ -22,6 +22,7 @@ import IconField from './IconField.vue'
 import ContentIcon from '../icons/ContentIcon.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
 
 // 物品的編輯表單：基本資料、出現的地方（商店、掉落、寶箱、採集、事件）、消耗品效果、裝備組成
 const props = defineProps<{ name: string }>()
@@ -335,16 +336,10 @@ function setFuel(v: string) {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ name }}</h3>
-      <span class="tag">{{ custom ? '自建' : edited ? '內建・已修改' : '內建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="!custom" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="name" :kind="custom ? 'custom' : 'builtin'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <UsageNote :usage="usage" :deletable="custom" />
 
     <fieldset>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { computed } from 'vue'
 import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
 import { wearChoices } from '@/engine/gear'
@@ -7,14 +6,14 @@ import { CELL_ICON, cellName, type CellKind } from '@/engine/grid'
 import { specialPreview, storySpotProblem } from '@/engine/specialMapMods'
 import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
 import { travelEvents } from '@/engine/road'
-import FlagInput from './FlagInput.vue'
 import NameListInput from './NameListInput.vue'
 import NpcPicker from './NpcPicker.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
-import CondExtrasEditor from './CondExtrasEditor.vue'
-import AffinityCondEditor from './AffinityCondEditor.vue'
 import StoryAffinityEditor from './StoryAffinityEditor.vue'
 import Hint from '../ui/Hint.vue'
+import RequiresEditor from './RequiresEditor.vue'
+import CheckList from './CheckList.vue'
+import { CONTENT_TAG_OPTIONS } from './checks'
 
 // 一個任務點：在哪裡、解鎖的條件、種類（劇情、判定、戰鬥、選擇）、結果
 const node = defineModel<StoryNode>({ required: true })
@@ -79,11 +78,6 @@ function toggleCheck(o: StoryOption, on: boolean) {
     delete o.check
     delete o.fail
   }
-}
-function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
-  const next = on ? [...new Set([...(o.tags ?? []), t])] : (o.tags ?? []).filter((x) => x !== t)
-  if (next.length) o.tags = next
-  else delete o.tags
 }
 </script>
 
@@ -157,10 +151,7 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
       </template>
       <p v-else class="small muted">隨機地圖：⭐ 隨機放在一格空地（不能指定格子）。</p>
     </template>
-    <div class="row small">解鎖需要旗標 <FlagInput v-model="requires.flags" placeholder="全部成立才解鎖" /></div>
-    <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
-    <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (node.requires = v)" />
-    <AffinityCondEditor :model-value="requires" label="解鎖需要好感" @update:model-value="(v) => (node.requires = v)" />
+    <RequiresEditor :model-value="requires" label="解鎖條件" placeholder="全部成立才解鎖" affinity @update:model-value="(v) => (node.requires = v)" />
     <div class="row small">限定穿著 <Hint text="主角要穿著這些才能進行（任務點照樣出現，按鈕停用並說明）。寫底材（例如 bunny_suit）時任何一件兔女郎裝都算，寫物品名稱時要那一件。" /> <NameListInput v-model="node.wear" :options="wearOptions" placeholder="底材或物品名稱" /></div>
     <NpcPicker v-model="node.allies" label="在場的友方固定 NPC：" :exclude="node.foes" />
     <p v-if="node.allies?.length" class="small muted">
@@ -204,15 +195,9 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
           </template>
           <button class="small" @click="node.options!.splice(i, 1)">移除選項</button>
         </div>
-        <div class="row checks small">
-          <span>選項的內容標籤 <Hint text="設定裡關掉的標籤，這個選項不會出現（例如 NTR 分支）。" /></span>
-          <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
-            <input type="checkbox" :checked="o.tags?.includes(t)" @change="setOptionTag(o, t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
-          </label>
-        </div>
+        <CheckList v-model="o.tags" label="選項的內容標籤" hint="設定裡關掉的標籤，這個選項不會出現（例如 NTR 分支）。" :options="CONTENT_TAG_OPTIONS" />
         <StoryAffinityEditor v-if="o.check" v-model="o.check" />
-        <AffinityCondEditor :model-value="o.requires ?? {}" label="這個選項出現需要" @update:model-value="(v) => (o.requires = v)" />
-        <CondExtrasEditor :model-value="o.requires ?? {}" @update:model-value="(v) => (o.requires = v)" />
+        <RequiresEditor :model-value="o.requires ?? {}" label="這個選項出現的條件" placeholder="全部成立才出現" affinity @update:model-value="(v) => (o.requires = v)" />
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" />
         <OutcomeEditor v-if="o.check" v-model="o.fail" label="失敗" optional />
       </div>

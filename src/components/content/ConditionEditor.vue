@@ -6,6 +6,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
 
 // 非戰鬥狀態（用餐、喝酒、受罰、祝福……，companions.json 的 conditions）的編輯表單：內建的可以修改，自建的沒有被用到時可以刪除，存檔前是草稿
 const props = defineProps<{ id: string }>()
@@ -128,19 +129,10 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>🏕️ {{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button
-        v-else class="small danger" :disabled="usage.length > 0"
-        :title="usage.length ? '還有地方用到這個狀態，不能刪除' : ''" @click="remove"
-      >刪除</button>
-    </div>
+    <EditorHeader
+      :title="`🏕️ ${draft.name || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="discard" @restore="restore" @remove="remove"
+    />
     <p class="small muted">id：{{ id }}・效果：{{ preview }}</p>
     <p class="small muted">
       非戰鬥狀態記在每個角色身上（不是戰鬥中的 BUFF／DEBUFF），由用餐、食物、工具、事件、地標或休息給予。

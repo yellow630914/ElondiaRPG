@@ -17,13 +17,12 @@ import { Rng } from '@/engine/rng'
 import type { GearSlot } from '@/engine/types'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
-import CondExtrasEditor from './CondExtrasEditor.vue'
-import FlagInput from './FlagInput.vue'
-import AffinityCondEditor from './AffinityCondEditor.vue'
 import ComboInput from './ComboInput.vue'
 import NpcPlacementEditor from './NpcPlacementEditor.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
+import RequiresEditor from './RequiresEditor.vue'
 
 // 固定 NPC 的編輯表單：不會因為名單變動消失；可以固定在聚落的某一格、只在劇情旗標符合時出現
 const props = defineProps<{ id: string }>()
@@ -255,16 +254,10 @@ const occupations = computed(() => {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="draft.name || '（未命名）'" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="discard" @restore="restore" @remove="remove"
+    />
     <UsageNote :usage="usage" :deletable="!builtin" />
     <p class="small muted">id：{{ id }}（特殊任務用這個 id 指定角色）・已經登場過的角色，出現條件與固定格子會跟著這裡改，其他資料以存檔裡的為準。</p>
 
@@ -333,13 +326,7 @@ const occupations = computed(() => {
         </label>
         <span class="small muted">取代所屬地點那間店自動生成的店主（交易、交涉、委託打造都找他，平常待在店裡）。他在隊伍裡、死亡或劇情旗標不符時，換回生成的店主。</span>
       </div>
-      <div class="row">
-        <span class="small">只在這些劇情旗標成立時出現：</span><FlagInput v-model="requires.flags" />
-      </div>
-      <div class="row">
-        <span class="small">這些旗標成立時不出現：</span><FlagInput v-model="requires.flags_none" />
-      </div>
-      <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (draft.requires = v)" />
+      <RequiresEditor :model-value="requires" label="出現的條件" placeholder="全部成立才出現" @update:model-value="(v) => (draft.requires = v)" />
     </fieldset>
 
     <fieldset>
@@ -353,9 +340,7 @@ const occupations = computed(() => {
           <button class="small" title="往下" @click="moveStage(i, 1)">▼</button>
           <button class="small" @click="draft.stages!.splice(i, 1)">移除</button>
         </div>
-        <div class="row small">這些旗標都成立時 <FlagInput v-model="st.requires.flags" /></div>
-        <div class="row small">而且這些旗標都不成立 <FlagInput v-model="st.requires.flags_none" /></div>
-        <CondExtrasEditor :model-value="st.requires" @update:model-value="(v) => (st.requires = v)" />
+        <RequiresEditor :model-value="st.requires" label="這一組的條件" @update:model-value="(v) => (st.requires = v)" />
         <label class="small">時段 <Hint text="只在白天（6～18 時）或只在夜裡成立，例如只在夜裡營業的地方；其他時候照下一組或上面的設定。" />
           <select v-model="st.hours">
             <option :value="undefined">任何時候</option>
@@ -410,9 +395,7 @@ const occupations = computed(() => {
             </template>
           </div>
           <p v-if="!draft.squad.members.length" class="small warn">還沒有隊員：儲存時不會建立小隊。</p>
-          <div class="row small">小隊成立的條件：這些旗標都成立 <FlagInput v-model="squadReq.flags" /></div>
-          <div class="row small">而且這些旗標都不成立 <FlagInput v-model="squadReq.flags_none" /></div>
-          <AffinityCondEditor :model-value="squadReq" label="而且好感至少：" @update:model-value="draft.squad!.requires = $event" />
+          <RequiresEditor :model-value="squadReq" label="小隊成立的條件" :extras="false" affinity @update:model-value="draft.squad!.requires = $event" />
         </template>
       </template>
     </fieldset>

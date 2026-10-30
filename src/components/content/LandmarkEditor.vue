@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ATTR_IDS, attrName, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkRules, specialMaps, type LandmarkScene } from '@/engine/data'
-import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
-import { BODIES, BODY_NAME } from '@/engine/traits'
 import { settlementArea } from '@/engine/grid'
 import { builtinLandmark, LANDMARK_EFFECTS, LANDMARK_LIMITS, landmarkTraining, landmarkUsage, type LandmarkMod } from '@/engine/landmarkMods'
 import { builtinPerk } from '@/engine/mods'
@@ -16,6 +14,10 @@ import Hint from '../ui/Hint.vue'
 import FlagInput from './FlagInput.vue'
 import NameListInput from './NameListInput.vue'
 import { wearChoices } from '@/engine/gear'
+import EditorHeader from './EditorHeader.vue'
+import RequiresEditor from './RequiresEditor.vue'
+import CheckList from './CheckList.vue'
+import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
 
 // 城鎮特色地標的編輯表單：名稱、圖示、說明、AI 的氛圍、類型、位置，以及開放條件、參訪、場景、探索、打工與受訓。
 // 內建的不能換聚落、不能刪除
@@ -104,12 +106,6 @@ function setSpot(sc: LandmarkScene, k: 'x' | 'y', v: string) {
   }
   sc.spot = { ...(sc.spot ?? { x: 0, y: 0 }), [k]: Math.max(0, Math.floor(Number(v) || 0)) }
 }
-function toggleList<T extends string>(list: T[] | undefined, v: T, on: boolean): T[] | undefined {
-  const set = new Set(list ?? [])
-  if (on) set.add(v)
-  else set.delete(v)
-  return set.size ? [...set] : undefined
-}
 function toggleExplore(on: boolean) {
   if (on) draft.value.explore = { title: '四處探索', attr: 'int', dc: 12, hours: 2, effects: [{ type: 'money', amount: 30 }] }
   else delete draft.value.explore
@@ -150,16 +146,10 @@ const wearOptions = computed(() => wearChoices())
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ draft.emoji }} {{ draft.name }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small warn" :disabled="usage.length > 0" @click="remove">🗑️ 刪除</button>
-    </div>
+    <EditorHeader
+      :title="`${draft.emoji} ${draft.name}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <p class="small muted">id：{{ id }}。地標是聚落地圖上的一格：特殊任務的任務點、固定 NPC 的站點、公會委託的標的都可以指定它，生成的居民也會依類型聚到這裡。{{ builtin ? '內建的地標只能在同一個聚落裡移動、不能刪除。' : '' }}</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
     <fieldset>
@@ -201,10 +191,10 @@ const wearOptions = computed(() => wearChoices())
       </div>
       <label class="check small"><input v-model="open.official" type="checkbox" /> 官方場所 <Hint text="逃亡奴隸不能用。" /></label>
       <label class="check small"><input v-model="open.adult" type="checkbox" /> 成人向的場所 <Hint text="不當委託地點；內容編輯器的篩選用。" /></label>
-      <div class="grid">
-        <label>劇情旗標成立時才開放 <FlagInput :model-value="splitFlags(draft.flagsText)" @update:model-value="draft.flagsText = ($event ?? []).join('、')" /></label>
-        <label>這些旗標成立時不開放 <FlagInput :model-value="splitFlags(draft.flagsNoneText)" @update:model-value="draft.flagsNoneText = ($event ?? []).join('、')" /></label>
-      </div>
+      <RequiresEditor
+        :model-value="{ flags: splitFlags(draft.flagsText), flags_none: splitFlags(draft.flagsNoneText) }" label="開放的條件" placeholder="全部成立才開放" :extras="false"
+        @update:model-value="(v) => { draft.flagsText = (v.flags ?? []).join('、'); draft.flagsNoneText = (v.flags_none ?? []).join('、') }"
+      />
       <label class="check small"><input v-model="open.hidden" type="checkbox" /> 旗標的條件不成立時不顯示 <Hint text="地圖上看起來是普通的道路，條件成立後才出現（例如完成任務後才開幕的店、秘密俱樂部）。要有旗標的條件才有效。" /></label>
     </fieldset>
     <fieldset>
@@ -248,24 +238,10 @@ const wearOptions = computed(() => wearChoices())
         </div>
         <label class="block">說明（玩家看的） <input v-model="sc.desc" :maxlength="LANDMARK_LIMITS.desc_chars" /></label>
         <label class="block"><span>經過（交給 AI） <Hint text="這段場景是什麼；{cast} 會換成在場的人。" /></span><textarea v-model="sc.scene" rows="3" :maxlength="LANDMARK_LIMITS.scene_text_chars" /></label>
-        <div class="row checks small">
-          <span>內容標籤：</span>
-          <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
-            <input type="checkbox" :checked="sc.tags?.includes(t)" @change="sc.tags = toggleList(sc.tags, t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
-          </label>
-        </div>
-        <div class="row checks small">
-          <span>只給這些主角 <Hint text="依主角的體型；都不勾＝都可以。" />：</span>
-          <label v-for="b in BODIES" :key="b" class="check">
-            <input type="checkbox" :checked="sc.pc_body?.includes(b)" @change="sc.pc_body = toggleList(sc.pc_body, b, ($event.target as HTMLInputElement).checked)" /> {{ BODY_NAME[b] }}
-          </label>
-        </div>
+        <CheckList v-model="sc.tags" label="內容標籤" :options="CONTENT_TAG_OPTIONS" />
+        <CheckList v-model="sc.pc_body" label="只給這些主角" hint="依主角的體型；都不勾＝都可以。" :options="BODY_OPTIONS" />
         <div class="row small">限定穿著 <Hint text="主角要穿著這些才能選（例如打工的制服）。寫底材時任何一件同種的服裝都算。" /> <NameListInput v-model="sc.wear" :options="wearOptions" placeholder="底材或物品名稱" /></div>
-        <div class="grid">
-          <label>這些旗標成立時才出現 <FlagInput v-model="sc.requires!.flags" /></label>
-          <label>這些旗標成立時不出現 <FlagInput v-model="sc.requires!.flags_none" /></label>
-          <label>任一個成立時出現 <FlagInput v-model="sc.requires!.flags_any" /></label>
-        </div>
+        <RequiresEditor :model-value="sc.requires!" label="場景出現的條件" placeholder="全部成立才出現" :extras="false" any @update:model-value="(v) => (sc.requires = v)" />
         <div class="small">在場的固定 NPC（最多 {{ LANDMARK_LIMITS.cast }} 個） <Hint text="寫了旗標的人，旗標成立才在場；沒寫的人一定在場（死了或被抓走時這個場景不出現）。" /></div>
         <div v-for="(c, j) in sc.cast ?? []" :key="j" class="grid">
           <label>角色 <select v-model="c.npc"><option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option></select></label>

@@ -10,7 +10,7 @@ import { oathText, placeName, tattooRules } from '@/engine/tattoos'
 import { perkCategory, perkPower, PERK_CATEGORIES } from '@/engine/perks'
 import { baseSlots, gearRules } from '@/engine/gear'
 import { CONTENT_TAGS } from '@/engine/content'
-import { BODY_NAME } from '@/engine/traits'
+import { BODY_LABEL } from './content/checks'
 import {
   ABILITY_TYPES, abilityClasses, builtinAbility, builtinBase, builtinEnemy, builtinMaterial, builtinNpc, builtinPerk, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions,
   ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk, builtinStatus, newStatus, newCondition,
@@ -266,7 +266,7 @@ const ADULT_OPTS: Opt[] = [['yes', '🔞 成人向'], ['no', '一般']]
 const adultDef: FilterDef = { model: adultFilter, name: '成人向', all: '成人向與一般', options: () => ADULT_OPTS }
 const flagDef: FilterDef = { model: flagFilter, name: '旗標', list: 'flags', all: '旗標（條件或設定的）' }
 const tagDef_: FilterDef = { model: tagFilter, name: '內容標籤', all: '所有內容標籤', options: () => Object.entries(CONTENT_TAGS).map(([k, t]) => [k, t.name]) }
-const bodyDef: FilterDef = { model: bodyFilter, name: '主角形象', all: '所有主角形象', options: () => [['any', '不限形象'], ...Object.entries(BODY_NAME).map(([k, n]) => [k, `只給${n}`] as Opt)] }
+const bodyDef: FilterDef = { model: bodyFilter, name: '主角形象', all: '所有主角形象', options: () => [['any', '不限形象'], ...Object.entries(BODY_LABEL).map(([k, n]) => [k, `只給${n}`] as Opt)] }
 const placeDef = (none?: string): FilterDef => ({ model: placeFilter, name: '地點', all: '所有地點', options: () => [...(options.value.places ?? []), ...(none ? [['none', none] as Opt] : [])] })
 const slotDef: FilterDef = { model: gearSlot, name: '欄位', all: '所有欄位', options: () => entries(BASE_SLOTS) }
 const matKindDef: FilterDef = { model: matKind, name: '材料類型', all: '所有材料類型', options: () => entries(KINDS) }
