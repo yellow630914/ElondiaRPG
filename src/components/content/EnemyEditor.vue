@@ -266,9 +266,8 @@ function remove() {
 
     <FoldSet>
       <template #legend>掉落物</template>
-      <datalist id="item-names"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
       <div v-for="(l, i) in draft.loot ?? []" :key="i" class="row">
-        <input v-model="l.item" list="item-names" placeholder="物品名稱" class="grow" />
+        <input v-model="l.item" list="cv-item-names" placeholder="物品名稱" class="grow" />
         <label class="small">機率 <input class="num" type="number" min="1" max="100" :value="percent(l.chance)" @input="l.chance = Number(($event.target as HTMLInputElement).value) / 100" />%</label>
         <label class="small">數量 <input v-model.number="l.qty" class="num" type="number" min="1" placeholder="1" /></label>
         <button class="small" @click="draft.loot!.splice(i, 1)">移除</button>

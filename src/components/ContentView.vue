@@ -352,6 +352,15 @@ const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() 
   if (sub.value === 'stories') return [{ key: COUNTERS_KEY, label: `🔢 劇情計數器（${Object.keys(storyCounters).length}）`, edited: Object.keys(m.counters ?? {}).length > 0 }]
   return []
 })
+/** 編輯器共用的自動完成清單（cv-item-names、cv-known-flags） */
+const allItemNames = computed(() => {
+  void content.version
+  return itemRules.items.map((i) => i.name)
+})
+const knownFlags = computed(() => {
+  void content.version
+  return content.knownFlags()
+})
 const isSetting = (key: string) => key === 'rules' || key.startsWith('|')
 
 type Status = 'custom' | 'edited' | ''
@@ -875,6 +884,9 @@ function resetAll() {
         </div>
         <datalist id="cv-flags"><option v-for="f in options.flags ?? []" :key="f" :value="f" /></datalist>
         <datalist id="cv-npcs"><option v-for="n in options.npcNames ?? []" :key="n" :value="n" /></datalist>
+        <!-- 編輯器共用的自動完成：所有物品的名稱、內容裡用過的旗標（每個欄位各畫一份太多） -->
+        <datalist id="cv-item-names"><option v-for="n in allItemNames" :key="n" :value="n" /></datalist>
+        <datalist id="cv-known-flags"><option v-for="f in knownFlags" :key="f" :value="f" /></datalist>
         <p class="small muted count">
           符合 {{ rows.length }} 項
           <button v-if="anyFilter" class="ghost small" @click="clearFilters">清除篩選</button>

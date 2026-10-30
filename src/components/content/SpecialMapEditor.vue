@@ -414,8 +414,7 @@ function remove() {
         <span v-if="!draft.resource_items?.length" class="small muted">（沒有時用地下城的採集表）</span>
       </div>
       <div class="row">
-        <input v-model="pickItem" list="sm-items" placeholder="物品名稱" @keydown.enter="addItem" />
-        <datalist id="sm-items"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
+        <input v-model="pickItem" list="cv-item-names" placeholder="物品名稱" @keydown.enter="addItem" />
         <button class="small" @click="addItem">＋ 加入</button>
       </div>
     </FoldSet>

@@ -1,18 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { cleanFlag } from '@/engine/storyFlags'
-import { useContent } from '@/stores/content'
 
-// 劇情旗標的清單：一個一個加入，有自動完成（內容頁籤裡用過的旗標）
+// 劇情旗標的清單：一個一個加入，有自動完成（內容頁籤裡用過的旗標：世界頁的 cv-known-flags，只算一次）
 const model = defineModel<string[] | undefined>()
 defineProps<{ placeholder?: string }>()
-const content = useContent()
 const text = ref('')
-const listId = `flags-${Math.random().toString(36).slice(2, 8)}`
-const known = computed(() => {
-  void content.version
-  return content.knownFlags()
-})
 
 function add() {
   const f = cleanFlag(text.value)
@@ -30,8 +23,7 @@ function remove(f: string) {
 <template>
   <span class="flag-input">
     <span v-for="f in model ?? []" :key="f" class="tag chip">🚩 {{ f }} <button class="x" @click="remove(f)">×</button></span>
-    <input v-model="text" :list="listId" :placeholder="placeholder ?? '旗標名稱'" class="flag-text" @keydown.enter.prevent="add" @change="add" />
-    <datalist :id="listId"><option v-for="f in known" :key="f" :value="f" /></datalist>
+    <input v-model="text" list="cv-known-flags" :placeholder="placeholder ?? '旗標名稱'" class="flag-text" @keydown.enter.prevent="add" @change="add" />
   </span>
 </template>
 
