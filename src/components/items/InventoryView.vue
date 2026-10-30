@@ -120,7 +120,7 @@ const target = reactive<Record<string, string>>({})
 <style scoped>
 .money { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 .money :deep(.game-icon) { color: var(--accent); }
-.inventory { display: grid; gap: 8px; }
+.inventory { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .head { justify-content: space-between; }
 .tabs { gap: 4px; }

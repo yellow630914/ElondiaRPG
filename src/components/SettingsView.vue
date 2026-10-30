@@ -273,6 +273,14 @@ function doReset() {
 .routes { border-collapse: collapse; width: 100%; }
 .routes td { border-bottom: 1px solid var(--border); padding: 6px 8px 6px 0; vertical-align: top; }
 .routes .name { white-space: nowrap; font-weight: 600; }
+/* 手機：用途名稱和來源一排，說明換到下一排佔滿寬度 */
+@media (max-width: 720px) {
+  .routes, .routes tbody { display: block; }
+  .routes tr { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; align-items: center; border-bottom: 1px solid var(--border); padding: 6px 0; }
+  .routes td { border-bottom: none; padding: 0; }
+  .routes td select { width: 100%; }
+  .routes td.muted { grid-column: 1 / -1; padding-top: 4px; }
+}
 .note { color: var(--accent-2); }
 .form label, .form .field { display: grid; gap: 4px; }
 .form label.check { display: flex; gap: 6px; align-items: center; }

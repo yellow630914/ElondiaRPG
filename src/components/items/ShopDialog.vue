@@ -257,14 +257,16 @@ function sell(name: string, have: number) {
 .error { color: var(--danger); margin: 0; }
 .last { color: var(--accent); margin: 0; }
 .cols { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; align-items: start; }
-@media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
-.col { display: grid; gap: 6px; align-content: start; min-width: 0; }
+@media (max-width: 760px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; min-width: 0; }
 .col h3 { margin: 0; color: var(--accent-2); }
 /* 手機版：分頁列已經寫了是哪一邊 */
 .cols.swipe .col > h3.head { display: none; }
 .chips { gap: 4px; }
 .chips button.active { border-color: var(--accent); color: var(--accent); }
 .list { display: grid; gap: 6px; margin: 0; max-height: calc(100vh - 350px); overflow-y: auto; padding-right: 2px; align-content: start; }
+/* 手機：清單自己會捲，橫滑要留給分頁切換（不然瀏覽器把橫滑當成清單的捲動） */
+.cols.swipe .list { touch-action: pan-y; }
 .specials { display: grid; gap: 6px; }
 .tools { flex-wrap: nowrap; }
 .search { min-width: 0; }
