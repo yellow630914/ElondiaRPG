@@ -8,7 +8,8 @@ import { outfitChoices } from '@/engine/outfitTailor'
 import { pcOf } from '@/engine/party'
 import { adultOutfitPieces } from '@/engine/schools'
 import { addItem, newGame } from '@/engine/state'
-import { notForSale } from '@/engine/trade'
+import { consignable } from '@/engine/auction'
+import { isUniqueItem, notForSale, sellPrice, shopKey } from '@/engine/trade'
 
 const NEW = ['micro_bikini', 'sling_swimsuit', 'dancer_veils', 'open_gown', 'micro_skirt', 'assless_chaps', 'platform_heels', 'latex_gloves', 'garter_belt', 'cupless_bra', 'succubus_horns', 'body_chain']
 
@@ -48,6 +49,20 @@ describe('S9-6 淫服補充', () => {
     expect(lewdRules.park.chest_items.map(([n]) => n)).toContain('潮汐港的微比基尼')
     expect(lewdRules.auction.pool.map(([n]) => n)).toContain('緋夢夫人的晚禮服')
     expect(arenaRules().rings.lust!.rare!.items).toEqual(['黑薔薇的乳膠手套'])
-    expect(enemies.incubus_enforcer!.loot).toContainEqual({ item: '夢魔氏族的角冠', chance: 0.2 })
+    expect(enemies.incubus_enforcer!.loot).toContainEqual({ item: '夢魔氏族的角冠', chance: 0.65 })
+  })
+
+  it('標了 unique 的獨特品（沒有獨特效果的也算）：商店不收、拍賣會不收', () => {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 2, birthplace: 'albena' })
+    enterLocation(state)
+    const uniques = itemRules.items.filter((i) => i.tags.includes('unique') && i.gear && !i.gear.unique).map((i) => i.name)
+    expect(uniques).toEqual(expect.arrayContaining(['緋夢夫人的晚禮服', '夜蝶的吊襪腰帶', '囚徒的符文枷', '獵奴人的鎖鏈']))
+    for (const n of uniques) {
+      addItem(state.inventory, n, 1)
+      expect(isUniqueItem(state, n), n).toBe(true)
+      expect(sellPrice(state, shopKey(state, 'tailor'), n), n).toBeNull()
+    }
+    expect(consignable(state).filter((n) => uniques.includes(n))).toEqual([])
+    expect(notForSale(itemDef('夜蝶的吊襪腰帶')!)).toBe(true)
   })
 })

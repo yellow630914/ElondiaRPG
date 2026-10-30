@@ -14,7 +14,7 @@ import { inviteDc, validateInvite } from '@/engine/companions'
 import {
   geography, genderName, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
-  abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses, perkDef, perkRules, type PerkDef,
+  abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses, perkDef, perkRules, TRAP_LOCK, type PerkDef,
 } from '@/engine/data'
 import { capsSource, capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarget, type InventCategory } from '@/engine/invention'
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
@@ -22,15 +22,17 @@ import { itemValue } from '@/engine/interactions'
 import { itemCategory, shopKey, shopPlace } from '@/engine/trade'
 import { shopTitle } from '@/engine/shopNames'
 import { toolSummary } from '@/engine/tools'
-import { intelSummary } from '@/engine/inventory'
+import { intelSummary, lockedGear } from '@/engine/inventory'
 import { craftPart, craftRarity, parseCraftTarget } from '@/engine/craft'
-import { gearName, gearRules, ordinaryBases, rarityName, rarityPoints } from '@/engine/gear'
+import { gearName, gearRules, ordinaryBases, rarityName, rarityPoints, slotName } from '@/engine/gear'
 import { contractTerms, markSummary } from '@/engine/slavery'
 import { masterHomeSummary } from '@/engine/masterHome'
 import { parsePitchTarget, perkNames, perkPower, pitchCap } from '@/engine/perks'
 import { appearanceOf, npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
-import type { GameState, Negotiation, NpcRecord } from '@/engine/types'
+import type { Character, GameState, GearSlot, Negotiation, NpcRecord } from '@/engine/types'
+import { PARASITE_LOCK } from '@/engine/parasites'
+import { lockName } from '@/engine/schools'
 import {
   assemble, continuitySections, endNotesSection, fillDefeatRules, fillSceneRules, LANGUAGE_NAME, lengthHint, loreText, sharedSystemSections, styleLead, styleSection,
   type LengthScale, type LoreLike, type Prompt,
@@ -83,6 +85,18 @@ export function inventoryLines(state: GameState, max = 40): string {
   return lines.length ? lines.join('\n') + more : '（空的）'
 }
 
+/** 拿不下來的裝備：主人強制戴上的（契約還在時）、陷阱鎖住的、寄生的，註明是哪一種與鎖的等級 */
+function stuckGear(m: Character): string[] {
+  return (Object.keys(m.gear ?? {}) as GearSlot[]).flatMap((slot) => {
+    const g = lockedGear(m, slot)
+    if (!g?.locked) return []
+    if (g.locked.startsWith(PARASITE_LOCK)) return [`${g.name}（${slotName(slot)}・寄生，馴服或解咒之前拿不下來）`]
+    const lock = g.lock ?? g.spec.lock
+    const who = g.locked.startsWith(TRAP_LOCK) ? '陷阱鎖住' : '主人強制戴上'
+    return [`${g.name}（${slotName(slot)}・${who}${lock ? `・${lockName(lock)}` : ''}）`]
+  })
+}
+
 function pcDetail(state: GameState, adult = false): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${attrOf(pc, a)}`).join('、')
@@ -92,8 +106,8 @@ function pcDetail(state: GameState, adult = false): string {
   // 特質：程式已經算進檢定的加值（情境修正），這裡讓 AI 判定時參考角色的特長
   const perks = perkNames(pc)
   const tattoos = tattoosOf(pc).length ? `\n刺青（誓約印記的屬性已算進上面的屬性）：\n${tattooSummary(pc)}` : ''
-  const forced = Object.values(pc.gear ?? {}).filter((g) => g?.locked && pcContract).map((g) => g!.name)
-  const locked = forced.length ? `\n主人強制戴上、拿不下來的：${forced.join('、')}` : ''
+  const stuck = stuckGear(pc)
+  const locked = stuck.length ? `\n身上拿不下來的（主角自己卸不掉，照戴著處理）：${stuck.join('、')}` : ''
   const contract = pcContract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pcContract)}${home ? `\n${home}` : ''}` : ''
   const profile = [pc.gender ? `性別：${pc.gender}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.tags?.length ? `身分（已算進情境修正）：${pcTagSummary(pc)}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
   // 慾望指標：只在可能進入親密場景的判定（數值與分段）
