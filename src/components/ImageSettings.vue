@@ -127,8 +127,16 @@ function resetService() {
       <fieldset class="pre">
         <legend class="small">
           <GameIcon name="notebook" :size="16" />日誌插圖
-          <Hint text="冒險日誌每則的「⋯」→「生成插圖」：先用「插圖提示詞預處理」的模型來源把日誌整理成分鏡（誰在畫面上、站在哪、在做什麼），再照上面選的生圖服務與預處理的寫法出圖，掛在那則日誌下面。NovelAI 的 V4 模型可以分開描述每個人與位置；ChatGPT 會把登場角色的形象圖當參考圖；ComfyUI 接成一段提示詞，三人以上容易混在一起。" />
+          <Hint text="冒險日誌每則底下的插圖按鈕（或下面的自動生成）：先用「插圖提示詞預處理」的模型來源把日誌整理成分鏡（誰在畫面上、站在哪、在做什麼），再照上面選的生圖服務與預處理的寫法出圖，掛在那則日誌下面。NovelAI 的 V4 模型可以分開描述每個人與位置；ChatGPT 會把登場角色的形象圖當參考圖；ComfyUI 接成一段提示詞，三人以上容易混在一起。" />
         </legend>
+        <label>
+          <span>自動生成 <Hint warn :width="320" text="每一張圖都要花錢：先用「插圖提示詞預處理」的模型整理分鏡（花 token），再送一次生圖（ChatGPT、NovelAI 依張數計費）。只在正文第一次寫完時畫；沒有正文的日誌不畫，重寫經過也不會重畫（要重畫按日誌底下的插圖按鈕）。生圖服務或預處理的模型來源沒設定好時不會自動畫。" /></span>
+          <select v-model="image.sceneAuto">
+            <option value="off">關閉</option>
+            <option value="adult">只畫成人場景</option>
+            <option value="all">每一則（有正文的日誌）</option>
+          </select>
+        </label>
         <label>成人場景改用
           <select v-model="image.sceneAdultService">
             <option value="">和一般場景一樣（{{ info.name }}）</option>
@@ -138,6 +146,7 @@ function resetService() {
         <p class="small muted">
           ChatGPT 不畫成人內容；日誌是成人場景（帶親密場景）時改用這裡選的服務（要先切到那個服務填好 key 與網址）。
           <span v-if="image.sceneAdultService && !image.ready(image.sceneAdultService)" class="warn-text">{{ imageServiceInfo(image.sceneAdultService).name }} 還沒設定好。</span>
+          <span v-else-if="image.sceneAuto !== 'off' && image.sceneService(true) === 'openai'" class="warn-text">成人場景不會自動畫：要先在這裡指定 NovelAI 或 ComfyUI。</span>
         </p>
       </fieldset>
 

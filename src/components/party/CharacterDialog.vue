@@ -3,7 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import {
   abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
-import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, locationById, slaveryRules, statusDef, tagDef } from '@/engine/data'
+import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, genderName, locationById, slaveryRules, statusDef, tagDef } from '@/engine/data'
 import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
@@ -270,7 +270,7 @@ function saveTags() {
             <template v-if="!editingProfile">
               <dl class="kv">
                 <template v-if="m.personality"><dt>個性</dt><dd>{{ m.personality }}</dd></template>
-                <template v-if="m.gender"><dt>性別</dt><dd>{{ m.gender }}</dd></template>
+                <template v-if="m.gender"><dt>性別</dt><dd>{{ genderName(m.gender) }}</dd></template>
                 <template v-if="m.isPlayer"><dt>體型</dt><dd>{{ BODY_NAME[characterBody(m)] }}<span v-if="!m.body" class="muted">（依種族與性別）</span></dd></template>
                 <template v-if="m.birthplace"><dt>出身</dt><dd>{{ locationById(m.birthplace).name }}</dd></template>
                 <template v-if="m.isPlayer && (m.tags?.length || canChangeTags)">

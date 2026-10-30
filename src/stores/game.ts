@@ -15,6 +15,7 @@ import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as deadlines from '@/engine/deadlines'
 import * as restraints from '@/engine/restraints'
 import { pitchTarget } from '@/engine/perks'
+import { noteBystanders } from '@/engine/activities'
 import { computed, ref, toRaw, watch } from 'vue'
 import * as actions from '@/engine/actions'
 import * as combat from '@/engine/combat'
@@ -63,6 +64,7 @@ import type { ContentMods } from '@/engine/mods'
 import { useContent, VANILLA, VANILLA_NAME, type WorldRef } from './content'
 import { usePortraits } from './portraits'
 import { usePrompts } from './prompts'
+import { useScenes } from './scenes'
 import { AI_FEATURES, useSettings, type AiFeature } from './settings'
 import { archiveOldReports } from './logArchive'
 import { withoutIcons } from '@/engine/itemIcons'
@@ -364,6 +366,8 @@ export const useGame = defineStore('game', () => {
       saveSoon()
       const settings = useSettings()
       const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
+      // 旁邊的人在做什麼：交給敘事當背景（不用 AI，見 activities.ts）
+      if (report) noteBystanders(state.value, report)
       // 自動存檔：長休、抵達目的地
       if (report?.kind === 'rest' && report.outcome.tags?.includes('長休')) void autoSave('長休')
       if (report?.kind === 'travel' && report.outcome.result === 'arrived') void autoSave('抵達')
@@ -807,7 +811,10 @@ export const useGame = defineStore('game', () => {
     const controller = new AbortController()
     controllers.set(report.report_id, controller)
     // 判定時的思考過程留著
-    const judgeThinking = narrations.value[report.report_id]?.judgeThinking
+    const before = narrations.value[report.report_id]
+    const judgeThinking = before?.judgeThinking
+    // 重寫已經寫好的經過：不自動重畫插圖（要重畫用日誌底下的按鈕）
+    const rewrite = before?.status === 'done' && !before.placeholder && !!before.text.trim()
     narrations.value[report.report_id] = { text: '', status: 'streaming', ...(opts.manual ? { manual: true } : {}), ...(judgeThinking ? { judgeThinking } : {}) }
     const entry = narrations.value[report.report_id]!
     try {
@@ -826,6 +833,7 @@ export const useGame = defineStore('game', () => {
       if (state.value && updates.length) social.addSuggestions(state.value, updates, report.report_id)
       entry.status = 'done'
       save()
+      if (!rewrite && text.trim() && state.value) void useScenes().auto(state.value, report)
     } catch (e) {
       entry.status = 'error'
       entry.error = controller.signal.aborted ? '已取消' : e instanceof Error ? e.message : String(e)
@@ -877,7 +885,10 @@ export const useGame = defineStore('game', () => {
       const rewrite = !!report && !!judgment.narrative && settings.narrationFeature(report) === 'adult' && settings.sourceIndex('adult') !== settings.sourceIndex('judge')
       if (report && rewrite) {
         if (settings.autoNarrates(report) && settings.ready('adult')) void narrate(report)
-      } else if (report && judgment.narrative) narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+      } else if (report && judgment.narrative) {
+        narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+        if (judgment.narrative.trim()) void useScenes().auto(s, report)
+      }
       // 判定的思考過程：記在這則日誌（還沒有敘事時先放一個空的）
       if (report && thinking.trim()) {
         const entry = narrations.value[report.report_id]

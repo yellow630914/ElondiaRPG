@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
-import { gainXp, rerollsLeft, snapshot } from '@/engine/character'
-import { GENDER_IDS, genderDef, npcPool } from '@/engine/data'
+import { gainXp, protagonistText, rerollsLeft, snapshot } from '@/engine/character'
+import { GENDER_IDS, genderDef, genderPrompt, npcPool } from '@/engine/data'
 import { clearQuestMarkers, currentArea, enterLocation, goOutskirts, standOn } from '@/engine/grid'
 import { generateNpc } from '@/engine/npcs'
 import { npcTraits } from '@/engine/traits'
@@ -64,6 +64,19 @@ describe('npc gender', () => {
     expect(genderDef('偽娘')?.id).toBe('femboy')
     expect(genderDef('男')?.color).toBe(npcPool.genders.male!.color)
     expect(genderDef('看心情')).toBeUndefined()
+  })
+
+  it('tells the AI what body the non-binary genders have', () => {
+    // TS 沒有陰唇：性別後面附上身體的說明，主角自由填的性別能對應到時也帶
+    expect(genderPrompt('ts')).toContain('沒有陰道與陰唇')
+    expect(genderPrompt('TS')).toBe(genderPrompt('ts'))
+    expect(genderPrompt('偽娘')).toContain('陰莖')
+    expect(genderPrompt('female')).toBe('女性')
+    expect(genderPrompt('看心情')).toBe('看心情')
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 3, gender: 'TS' })
+    const pc = state.party[0]!
+    expect(protagonistText(pc)).toContain('TS（跨性別女性')
+    expect(snapshot(pc).gender).toContain('沒有陰道與陰唇')
   })
 })
 

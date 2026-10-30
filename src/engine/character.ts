@@ -5,7 +5,7 @@ import { pcTagSummary } from './pcTags'
 import { parasiteSummary, parasitesOf } from './parasites'
 import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks'
 import {
-  abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderName, progression, weaponDef,
+  abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, combatRules, genderPrompt, progression, weaponDef,
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
   mulResist,
 } from './data'
@@ -484,7 +484,8 @@ export function snapshot(c: Character, before?: Character, player?: Character): 
     equipment: c.gear ? Object.values(c.gear).filter((g) => !!g).map((g) => g!.name) : [weaponDef(c.weapon).name, armorDef(c.armor).name],
   }
   if (c.personality) state.personality = c.personality
-  if (c.gender) state.gender = genderName(c.gender)
+  // 報告的角色快照交給 AI：偽娘、TS、扶她附上身體的說明
+  if (c.gender) state.gender = genderPrompt(c.gender)
   if (player && !c.isPlayer && c.affinity !== undefined) {
     state.attitude = `${powerGapAttitude(c.level, player.level)} / ${affinityStage(c.affinity)}`
   }
@@ -494,7 +495,7 @@ export function snapshot(c: Character, before?: Character, player?: Character): 
 /** 主角的設定（性別、出身、外貌、背景），交給 AI 參考。 */
 export function protagonistText(c: Character, birthplaceName?: string): string {
   const lines = [
-    `${c.name}｜${c.gender ? `${c.gender}｜` : ''}${attributeRules.races[c.race]?.name ?? c.race}・${classDef(c.class).name} Lv.${c.level}${birthplaceName ? `｜出身：${birthplaceName}` : ''}`,
+    `${c.name}｜${c.gender ? `${genderPrompt(c.gender)}｜` : ''}${attributeRules.races[c.race]?.name ?? c.race}・${classDef(c.class).name} Lv.${c.level}${birthplaceName ? `｜出身：${birthplaceName}` : ''}`,
     c.tags?.length ? `身分：${pcTagSummary(c)}` : '',
     c.appearance ? `外貌：${c.appearance}` : '',
     c.background ? `背景：${c.background}` : '',

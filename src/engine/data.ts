@@ -20,6 +20,7 @@ import slaveryJson from '@data/rules/slavery.json'
 import actionsJson from '@data/rules/actions.json'
 import npcPoolJson from '@data/world/npc_pool.json'
 import npcTagsJson from '@data/rules/npc_tags.json'
+import npcActivitiesJson from '@data/rules/npc_activities.json'
 import populationJson from '@data/rules/npc_population.json'
 import itemsJson from '@data/rules/items.json'
 import shopsJson from '@data/rules/shops.json'
@@ -1506,7 +1507,11 @@ export const actionRules = actionsJson as unknown as {
   }>
 }
 
-export interface GenderDef { name: string; color: string; weight: number; names: 'm' | 'f' | 'any' }
+export interface GenderDef {
+  name: string; color: string; weight: number; names: 'm' | 'f' | 'any'
+  /** 交給 AI 時接在性別後面的身體說明（偽娘、TS、扶她），見 genderPrompt */
+  ai?: string
+}
 export const npcPool = npcPoolJson as unknown as {
   genders: Record<string, GenderDef>
   outfits: string[]
@@ -1583,6 +1588,29 @@ export const npcTags = npcTagsJson as unknown as {
   gendered_occupations?: { female: string; male: string; neutral: string }[]
   tags: Record<string, NpcTagDef>
 }
+
+/** NPC 正在做什麼的時段（見 data/rules/npc_activities.json、activities.ts） */
+export type ActivityPeriod = 'dawn' | 'day' | 'evening' | 'night'
+/** 一條活動規則：沒寫的條件不限，條件越多越優先 */
+export interface ActivityRule {
+  at?: string[]
+  area?: string[]
+  kind?: NpcKind
+  staff?: boolean
+  tags?: string[]
+  occupation?: string[]
+  personality?: string[]
+  when?: ActivityPeriod[]
+  hostile?: boolean
+  weight?: number
+  list: string[]
+}
+export const npcActivities = npcActivitiesJson as unknown as {
+  slot_hours: number
+  periods: Record<ActivityPeriod, [number, number]>
+  rules: ActivityRule[]
+}
+
 export const population = populationJson as unknown as {
   /** 有娼館的城鎮，名單上至少有幾位娼妓 */
   brothel_workers: number
@@ -1913,6 +1941,13 @@ export function genderDef(g?: string): (GenderDef & { id: string }) | undefined 
 
 export function genderName(g?: string): string {
   return genderDef(g)?.name ?? g ?? ''
+}
+
+/** 交給 AI 的性別：顯示名稱，偽娘、TS、扶她再附上身體的說明（例如 TS 沒有陰唇）；對應不到的主角性別照原文 */
+export function genderPrompt(g?: string): string {
+  const def = genderDef(g)
+  if (!def) return g ?? ''
+  return def.ai ? `${def.name}（${def.ai}）` : def.name
 }
 
 export function raceEmoji(id: string): string {

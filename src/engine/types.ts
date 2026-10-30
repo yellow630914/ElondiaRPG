@@ -158,6 +158,8 @@ export interface Report {
   location: { at: string; to?: string; region?: string; scene?: string; weather?: string }
   party: ActorState[]
   others?: ActorState[]
+  /** 旁邊的人（不參與這次事件）：名字、身分與正在做什麼，交給敘事當背景（activities.ts 的 noteBystanders） */
+  bystanders?: { id: string; name: string; role: string; doing: string }[]
   quest?: { id?: string; title?: string; rank?: GuildRank; status?: 'accepted' | 'progress' | 'completed' | 'failed' | 'abandoned' | 'expired' }
   /** 特殊任務：哪個任務、哪個任務點 */
   story?: { id: string; title: string; node?: string; status: 'started' | 'progress' | 'completed' | 'failed' }

@@ -1,7 +1,7 @@
 // 日誌插圖：請大語言模型把一則日誌整理成一張圖的分鏡（誰在畫面上、站在哪、在做什麼、整體畫面），再組成生圖提示詞。
 // 多人場景：NovelAI 的 V4 模型每個角色分開描述、標出位置；其他服務接成一段提示詞。見 docs/PORTRAITS.md 第 7 節。
 
-import { locationById, regionById } from '@/engine/data'
+import { genderPrompt, locationById, regionById } from '@/engine/data'
 import type { GameState, Report } from '@/engine/types'
 import { portraitSubject, type ImagePreprocessor, type ImageServiceId } from './imageInfo'
 import type { SceneCharacter } from './imageProviders'
@@ -37,7 +37,7 @@ export function sceneCast(state: GameState, report: Report): SceneCastMember[] {
     if (!s) continue
     const player = !!state.party.find((m) => m.id === id)?.isPlayer
     const description = [
-      [s.gender, s.race, s.role].filter(Boolean).join(' '),
+      [genderPrompt(s.gender), s.race, s.role].filter(Boolean).join(' '),
       s.appearance && `外貌：${s.appearance}`,
       s.gear.length ? `裝備：${s.gear.slice(0, 6).join('、')}` : '',
       s.tattoos.length ? `刺青與印記：${s.tattoos.join('；')}` : '',
