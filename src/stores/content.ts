@@ -981,7 +981,7 @@ export const useContent = defineStore('content', () => {
 
   return {
     mods, problems, version, usageOf,
-    worlds, active, activeName, readOnly, worldName, switchWorld, createWorld, linkPromptSet, importWorld, exportWorld, renameWorld, deleteWorld, enterWorld, worldForImport,
+    worlds, active, activeName, readOnly, forkName, worldName, switchWorld, createWorld, linkPromptSet, importWorld, exportWorld, renameWorld, deleteWorld, enterWorld, worldForImport,
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,

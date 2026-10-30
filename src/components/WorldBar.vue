@@ -23,21 +23,21 @@ function run(fn: () => void) {
   }
 }
 
-function switchTo(id: string, select?: HTMLSelectElement) {
+async function switchTo(id: string, select?: HTMLSelectElement) {
   // 有未儲存的修改又不放棄：選單換回目前的世界
-  if (!confirmDiscard()) {
+  if (!(await confirmDiscard())) {
     if (select) select.value = content.active
     return
   }
   run(() => content.switchWorld(id))
 }
-function createNew() {
-  if (!confirmDiscard()) return
+async function createNew() {
+  if (!(await confirmDiscard())) return
   const name = prompt('新世界的名字（從原版開始，沒有任何自訂內容）', '新的世界')
   if (name !== null) run(() => content.switchWorld(content.createWorld(name)))
 }
-function duplicate() {
-  if (!confirmDiscard()) return
+async function duplicate() {
+  if (!(await confirmDiscard())) return
   const name = prompt('複製出來的世界叫什麼？', `${content.activeName}（複製）`)
   if (name !== null) run(() => {
     const id = content.createWorld(name, content.active === VANILLA ? undefined : content.active)
@@ -49,8 +49,8 @@ function rename() {
   const name = prompt('世界的名字', content.activeName)
   if (name) run(() => content.renameWorld(content.active, name))
 }
-function remove() {
-  if (!confirmDiscard()) return
+async function remove() {
+  if (!(await confirmDiscard())) return
   if (confirm(`刪除世界「${content.activeName}」？裡面的自訂內容會一起刪掉。用這個世界的存檔，讀檔時會用存檔附上的內容還原（沒有附上時改用原版世界）。`)) run(() => content.deleteWorld(content.active))
 }
 async function importAsNew(e: Event) {
@@ -59,7 +59,7 @@ async function importAsNew(e: Event) {
   input.value = ''
   if (!file) return
   const text = await file.text()
-  if (!confirmDiscard()) return
+  if (!(await confirmDiscard())) return
   run(() => {
     const r = content.importWorld(text, file.name.replace(/\.json$/i, ''))
     if (!locked.value) content.switchWorld(r.id)
@@ -91,7 +91,7 @@ function exportPackage() {
       <button class="small" :disabled="content.readOnly" @click="rename">✏️ 改名</button>
       <label class="small file" title="世界包（內容＋提示詞）或內容檔">📥 匯入成新的世界<input type="file" accept=".json,application/json" @change="importAsNew" /></label>
       <button class="small" :disabled="content.readOnly" title="這個世界的內容，加上綁定（或目前用）的提示詞組" @click="exportPackage">📦 匯出世界包</button>
-      <button class="small danger" :disabled="content.readOnly || locked" @click="remove">🗑️ 刪除</button>
+      <button class="small danger" :disabled="content.readOnly || locked" title="刪除整個世界和它所有的自訂內容" @click="remove">💥 刪除這個世界</button>
     </div>
     <p class="small muted">
       <template v-if="locked">進行中的遊戲用的是「{{ content.activeName }}」，遊戲中不能切換世界（可以修改它的內容）。回到首頁再切換。</template>
@@ -105,7 +105,6 @@ function exportPackage() {
       </select>
       <span class="muted">切換到這個世界（開新遊戲、讀檔、繼續）時，提示詞組跟著切換。</span>
     </div>
-    <p v-if="content.readOnly" class="small muted">原版世界不能直接修改：在下面新增、複製或儲存修改時，會自動建立自己的世界並切換過去；也可以先「＋ 新的世界」。</p>
     <p v-if="msg" class="small note">{{ msg }}</p>
   </section>
 </template>

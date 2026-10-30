@@ -402,7 +402,7 @@ const occupations = computed(() => {
       </template>
     </FoldSet>
 
-    <FoldSet>
+    <FoldSet filled>
       <template #legend>能力值、技能與裝備</template>
       <p class="small muted">
         預覽：{{ className(preview.class) }} Lv.{{ preview.level }}・生命 {{ preview.maxHp }}・{{ ATTR_IDS.map((a) => `${attrName(a)} ${preview.attrs[a]}`).join('、') }}

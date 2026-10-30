@@ -277,7 +277,7 @@ function remove() {
       <button class="small" @click="addLoot">＋ 掉落物</button>
     </FoldSet>
 
-    <FoldSet>
+    <FoldSet :filled="nowPlaces.length > 0">
       <template #legend>出現地點</template>
       <p class="small">目前出現在：{{ nowPlaces.map((p) => `${p.label}${p.groups > 1 ? `（${p.groups} 組）` : ''}`).join('、') || '（沒有，不會遇到）' }}</p>
       <template v-if="builtinPlaces.length">
