@@ -10,6 +10,7 @@ import CombatView from '../CombatView.vue'
 import IntentPanel from '../IntentPanel.vue'
 import LogView from '../LogView.vue'
 import MapPanel from '../MapPanel.vue'
+import NegotiationPanel from '../NegotiationPanel.vue'
 import PeoplePanel from '../PeoplePanel.vue'
 import PlacePanel from '../PlacePanel.vue'
 import RestPanel from '../RestPanel.vue'
@@ -77,6 +78,8 @@ watch(() => `${area.value.key}|${s.value.position?.x},${s.value.position?.y}`, (
 watch(inCombat, (on) => { if (on) sheet.value = null })
 
 const nearby = computed(() => nearbyPeople(s.value).length)
+/** 談判進行中：「這裡」按鈕上一個紅點（進行中的事在「這裡」面板） */
+const negotiating = computed(() => (s.value.negotiations?.length ?? 0) > 0)
 const moreBadge = computed(() => props.badges.relations + props.badges.notebook + (props.badges.contract ? 1 : 0))
 type MoreItem = { icon: IconName; label: string; open?: MobileOpen; run?: () => void; badge?: number | string }
 const moreItems = computed<MoreItem[]>(() => [
@@ -192,17 +195,22 @@ function onFocusOut(e: FocusEvent) {
       <button :class="{ on: !reading && !sheet && !inCombat }" @click="sheet = null; reading = !reading"><GameIcon name="map" :size="22" /><span>地圖</span></button>
       <button @click="sheet = null; emit('open', 'party')"><GameIcon name="users" :size="22" /><span>隊伍</span><i v-if="badges.party" class="dot" /></button>
       <button :class="{ on: sheet === 'rest' }" :disabled="inCombat" @click="toggleSheet('rest')"><GameIcon name="bed" :size="22" /><span>休息</span></button>
-      <button :class="{ on: sheet === 'here' }" :disabled="inCombat" @click="toggleSheet('here')"><GameIcon name="message" :size="22" /><span>這裡</span><i v-if="nearby" class="badge gold">{{ nearby }}</i></button>
+      <button :class="{ on: sheet === 'here' }" :disabled="inCombat" @click="toggleSheet('here')"><GameIcon name="message" :size="22" /><span>這裡</span><i v-if="nearby" class="badge gold">{{ nearby }}</i><i v-else-if="negotiating" class="dot" /></button>
       <button :class="{ on: sheet === 'more' }" @click="toggleSheet('more')"><GameIcon name="more" :size="22" /><span>更多</span><i v-if="moreBadge" class="badge gold">{{ moreBadge }}</i></button>
     </nav>
 
+    <!-- 談判的對話框：談判可能從設施面板、這裡的人或酒館開始，對話框掛在這裡才都打得開（列在「這裡」面板） -->
+    <NegotiationPanel mode="dialog" />
+
     <BottomSheet :open="!!sheet" :title="sheetTitle" @close="sheet = null">
+      <!-- 這裡：身邊的人、進行中的事（談判、特殊任務、委託）、行動備註；走在街上也看得到 -->
       <template v-if="sheet === 'here'">
         <PeoplePanel />
+        <PlacePanel part="ongoing" />
         <IntentPanel />
       </template>
       <RestPanel v-else-if="sheet === 'rest'" />
-      <PlacePanel v-else-if="sheet === 'place'" />
+      <PlacePanel v-else-if="sheet === 'place'" part="place" />
       <div v-else-if="sheet === 'more'" class="more-grid">
         <button v-for="m in moreItems" :key="m.label" type="button" @click="pickMore(m)">
           <GameIcon :name="m.icon" :size="22" />{{ m.label }}<i v-if="m.badge" class="badge gold">{{ m.badge }}</i>

@@ -14,6 +14,8 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
 // 進行中的談判：地點面板只留一列（繼續、放棄），內容在對話框裡；剛開始的談判自動打開對話框
+// mode：手機版的列在「這裡」面板（list），對話框掛在冒險畫面上（dialog），不管談判從哪裡開始都打得開；電腦版兩個一起（all）
+const props = withDefaults(defineProps<{ mode?: 'all' | 'list' | 'dialog' }>(), { mode: 'all' })
 const game = useGame()
 const settings = useSettings()
 const s = computed(() => game.state!)
@@ -35,7 +37,7 @@ function free(id: string) {
 </script>
 
 <template>
-  <section v-for="n in list" :key="n.id" class="panel nego">
+  <section v-for="n in mode === 'dialog' ? [] : list" :key="n.id" class="panel nego">
     <div class="row nego-bar">
       <h3 class="title"><GameIcon name="hand" :size="16" />{{ n.title }}</h3>
       <span class="small muted grow">和 <NameTag :id="n.counterpart" />・還可以談 {{ n.attempts }} 次</span>
@@ -44,7 +46,7 @@ function free(id: string) {
     </div>
   </section>
 
-  <AppDialog :open="!!cur" :title="cur?.title ?? '談判'" icon="hand" width="720px" stay @close="shown = null">
+  <AppDialog v-if="props.mode !== 'list'" :open="!!cur" :title="cur?.title ?? '談判'" icon="hand" width="720px" stay @close="shown = null">
     <div v-if="cur" class="nego-body">
       <table class="kv">
         <tbody>

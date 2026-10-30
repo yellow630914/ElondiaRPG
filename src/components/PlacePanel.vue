@@ -46,6 +46,7 @@ import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
 import { shopKindName, shopTitle, type NamedShop } from '@/engine/shopNames'
 import { shopPlace, shopTypeForCell } from '@/engine/trade'
 import { CELL_GAME_ICON } from './ui/cellIcons'
+import { isMobile } from './mobile/mobile'
 
 const game = useGame()
 
@@ -56,6 +57,10 @@ function leaveSide() {
   game.leaveSide()
 }
 const content = useContent()
+// 手機版把面板拆成兩半：設施面板只畫這一格（place），「這裡」面板畫進行中的事（ongoing）；電腦版整個畫（all）
+const props = withDefaults(defineProps<{ part?: 'all' | 'place' | 'ongoing' }>(), { part: 'all' })
+const showPlace = computed(() => props.part !== 'ongoing')
+const showOngoing = computed(() => props.part !== 'place')
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
 const area = computed(() => game.area)
@@ -209,9 +214,9 @@ const shopDesc = computed(() => {
 <template>
     <div class="place">
       <!-- 待售的空地、自己的房子 -->
-      <HomePanel />
+      <HomePanel v-if="showPlace" />
       <!-- 目前所在格子（房子裡由上面的房屋區塊顯示） -->
-      <section v-if="area.kind !== 'road' && area.kind !== 'home'" class="panel">
+      <section v-if="showPlace && area.kind !== 'road' && area.kind !== 'home'" class="panel">
         <!-- 特殊任務的任務點和地圖上一樣是 ⭐，不要顯示成委託地點 -->
         <h3 v-if="cell.storyNode" class="place-title"><GameIcon name="star" :size="18" />特殊任務的任務點</h3>
         <SceneBanner v-else-if="banner" :kind="banner.kind" :name="banner.name" :tag="banner.tag" :icon="CELL_GAME_ICON[cell.kind]">
@@ -409,22 +414,26 @@ const shopDesc = computed(() => {
         </div>
       </section>
 
-      <NegotiationPanel />
+      <!-- 進行中的事（談判、委託）：手機版放在「這裡」面板，走在街上也看得到。
+           特殊任務（這裡可以接的、這裡的任務點）跟著位置走：設施面板與「這裡」面板都有 -->
+      <NegotiationPanel v-if="showOngoing" :mode="isMobile ? 'list' : 'all'" />
       <StoryPanel />
+      <template v-if="showOngoing">
 
-      <section v-if="activeQuests.length" class="panel">
-        <FoldMenu id="quests.active" icon="scroll" label="進行中的委託" :detail="activeQuests.some((q) => canTurnIn(s, q)) ? `${activeQuests.filter((q) => canTurnIn(s, q)).length} 件可以交付` : '委託的進度與地點'" :badge="activeQuests.length" :tone="activeQuests.some((q) => canTurnIn(s, q)) ? 'gold' : undefined">
-        <ul class="plain small">
-          <li v-for="q in activeQuests" :key="q.id">
-            <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ questProgressText(s, q) }}）
-            <span v-if="q.flags?.lead" class="tag">有線索 +5</span>
-            <div class="muted">{{ questWhere(q) }}</div>
-          </li>
-        </ul>
-        </FoldMenu>
-      </section>
+        <section v-if="activeQuests.length" class="panel">
+          <FoldMenu id="quests.active" icon="scroll" label="進行中的委託" :detail="activeQuests.some((q) => canTurnIn(s, q)) ? `${activeQuests.filter((q) => canTurnIn(s, q)).length} 件可以交付` : '委託的進度與地點'" :badge="activeQuests.length" :tone="activeQuests.some((q) => canTurnIn(s, q)) ? 'gold' : undefined">
+          <ul class="plain small">
+            <li v-for="q in activeQuests" :key="q.id">
+              <span class="tag">{{ q.rank }}</span> {{ q.title }}（{{ questProgressText(s, q) }}）
+              <span v-if="q.flags?.lead" class="tag">有線索 +5</span>
+              <div class="muted">{{ questWhere(q) }}</div>
+            </li>
+          </ul>
+          </FoldMenu>
+        </section>
+      </template>
 
-      <section v-if="canTravelHere(s)" class="panel travel">
+      <section v-if="showPlace && canTravelHere(s)" class="panel travel">
         <BuildingMenu :items="travelMenu" @pick="showTravel = true" />
         <AppDialog :open="showTravel" title="啟程旅行" icon="compass" width="860px" @close="showTravel = false">
           <TravelDialog @close="showTravel = false" />

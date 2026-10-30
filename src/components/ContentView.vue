@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import WorldBar from './WorldBar.vue'
 import { abilities, className, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
@@ -49,6 +49,8 @@ import { travelEvents } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { builtinTravelEvent, DUNGEON_TRIGGERS, newTravelEvent } from '@/engine/travelEventMods'
 import { parasiteRules } from '@/engine/parasites'
+import { isMobile, pushLayer } from './mobile/mobile'
+import GameIcon from './ui/GameIcon.vue'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
 type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
@@ -430,6 +432,19 @@ const current = computed(() => {
 function select(key: string) {
   selected.value[sub.value] = key
 }
+
+// 手機版：平常只有清單；選了項目，編輯表單變成全螢幕頁面，左上角（或手機的返回鍵）回到清單
+const editing = computed(() => isMobile.value && !!current.value)
+const subLabel = computed(() => SUBS.find((t) => t.id === sub.value)?.label ?? '')
+let dropLayer: (() => void) | null = null
+watch(editing, (on) => {
+  if (on && !dropLayer) dropLayer = pushLayer(() => select(''))
+  else if (!on && dropLayer) {
+    dropLayer()
+    dropLayer = null
+  }
+}, { immediate: true })
+onBeforeUnmount(() => dropLayer?.())
 
 // 新增狀態時選類型（戰鬥狀態：技能與物品在戰鬥中施加；非戰鬥狀態：記在角色身上，事件、食物、地標給予）
 const pickStatusType = ref(false)
@@ -910,7 +925,11 @@ function resetAll() {
         </ul>
       </section>
 
-      <section class="panel">
+      <section v-if="!isMobile || current" class="panel editor" :class="{ 'm-page': editing }">
+        <header v-if="editing" class="m-head">
+          <button class="ghost" @click="select('')"><GameIcon name="right" :size="16" class="flip" />返回清單</button>
+          <span class="muted small">{{ subLabel }}</span>
+        </header>
         <p v-if="!current" class="muted">從左邊選一個項目，或新增一個。</p>
         <EnemyEditor v-else-if="sub === 'enemies'" :id="current" :key="`e-${current}`" @deleted="select('')" />
         <ItemEditor v-else-if="sub === 'items'" :key="`i-${current}`" :name="current" @renamed="select" @deleted="select('')" />
@@ -962,6 +981,18 @@ function resetAll() {
 .warn-text { color: var(--danger); }
 .layout { display: grid; grid-template-columns: minmax(240px, 320px) 1fr; gap: 10px; align-items: start; }
 @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+/* 手機版：編輯表單是全螢幕頁面（清單留在底下，返回後捲動位置還在） */
+.editor.m-page {
+  position: fixed; inset: 0; z-index: 30; margin: 0; border: none; border-radius: 0; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--bg); padding: 0 12px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.m-head {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; min-height: 48px; margin: 0 -12px 10px; padding: env(safe-area-inset-top, 0px) 12px 0;
+  background: linear-gradient(180deg, #2a2017, #1d1611); border-bottom: 1px solid var(--gold-lo);
+}
+.m-head button { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
+.m-head .flip { transform: scaleX(-1); }
+.m-head .muted { margin-left: auto; }
 .list-panel { display: grid; gap: 6px; position: sticky; top: 8px; }
 .grow { flex: 1; min-width: 100px; }
 .count { margin: 0; }
