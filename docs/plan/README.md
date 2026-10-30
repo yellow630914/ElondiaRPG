@@ -13,6 +13,7 @@
 | [UI_V2_PLAN](UI_V2_PLAN.md) | UI 改版計畫 | P | 單一大型工作的分階段計畫（完成度記在 ROADMAP） |
 | [LUST_COMBAT_PLAN](LUST_COMBAT_PLAN.md) | 慾望戰鬥（成人向）的實作計畫 | S | 同上（ROADMAP R8） |
 | [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) | 手機版 UI 計畫 | — | 手機直式版面的規劃與決定（規劃中） |
+| [CHARACTER_LINES_PLAN](CHARACTER_LINES_PLAN.md) | 角色線計畫（白百合巡禮、琥珀） | — | 同上（ROADMAP R9） |
 
 ## 2. 流程
 
