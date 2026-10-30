@@ -1,5 +1,6 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
+import { storyReach } from './storyReach'
 import { parasiteDef } from './parasites'
 import { LEWD_KEYS } from './lewd'
 import { LOCK_GRADES, type LewdKey, type LockGrade, type MasterEventPool } from './data'
@@ -593,6 +594,12 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
       err.push(`${t}：${geography.locations.find((l) => l.id === n.at.location)?.name ?? n.at.location}沒有${CELL_NAME[n.at.cell as CellKind] ?? n.at.cell}`)
     }
   }
+  // 可達性（storyReach.ts）：到不了的任務點、走不到完成、選了會卡住的結果（寬鬆的估計，只提醒）
+  const reach = storyReach(def)
+  const title = (id: string) => def.nodes.find((n) => n.id === id)?.title ?? id
+  for (const id of reach.unreachable) warn.push(`任務點「${title(id)}」不會解鎖：需要的旗標在這個任務裡怎麼走都設定不到`)
+  if (!reach.canComplete && def.nodes.some((n) => outcomesOf(n).some(({ o }) => o.complete))) warn.push('沒有任何一條路走得到「完成任務」：會完成任務的任務點都不會解鎖')
+  for (const x of reach.stuck) warn.push(`任務點「${title(x.node)}」${x.label.startsWith('「') ? `選${x.label}` : `的結果「${x.label}」`}之後，可能沒有任務點可以進行（任務沒完成也沒失敗，只能放棄）`)
   return { errors: err, warnings: warn }
 }
 
