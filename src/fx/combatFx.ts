@@ -32,7 +32,8 @@ export function elementColor(element?: string): string {
 }
 
 export type CombatCue =
-  | { kind: 'damage'; target: string; amount: number; color: string; crit: boolean; area: boolean }
+  /** climax：這筆傷害是高潮造成的（數字等高潮的特效播完才跳） */
+  | { kind: 'damage'; target: string; amount: number; color: string; crit: boolean; area: boolean; climax?: boolean }
   | { kind: 'heal'; target: string; amount: number }
   | { kind: 'miss'; target: string; text: string }
   | { kind: 'fumble'; actor: string }
@@ -41,8 +42,12 @@ export type CombatCue =
   | { kind: 'status'; target: string; name: string; buff: boolean }
   /** 慾望的增減（負數是消退） */
   | { kind: 'lust'; target: string; amount: number }
+  /** 高潮（我方掛上「高潮」狀態、敵人受到「高潮・真實傷害」） */
+  | { kind: 'climax'; target: string; name: string }
 
 const DOWN = new Set(['倒下', '死亡'])
+/** 高潮的狀態名稱（紀錄裡存的是名稱） */
+const CLIMAX = () => statuses.climax?.name ?? '高潮'
 
 export function cuesFor(t: TimelineEntry): CombatCue[] {
   const effects = t.effects ?? []
@@ -51,15 +56,18 @@ export function cuesFor(t: TimelineEntry): CombatCue[] {
   const area = hitTargets.size > 1
   const crit = t.result === 'critical'
   // 一個目標受到好幾種傷害時合成一個數字，顏色取最大的那一種
-  const sums = new Map<string, { amount: number; top: number; element?: string }>()
+  const sums = new Map<string, { amount: number; top: number; element?: string; climax?: boolean }>()
+  // 高潮的目標：我方掛上高潮狀態，敵人受到「高潮・真實傷害」
+  const climaxed = new Set(effects.filter((e) => e.target && ((e.type === 'status_add' && e.status === CLIMAX()) || (e.type === 'damage' && e.text?.startsWith(CLIMAX())))).map((e) => e.target!))
   for (const e of effects) {
     if (e.type !== 'damage' || !e.target) continue
     const s = sums.get(e.target) ?? { amount: 0, top: -1 }
+    if (e.text?.startsWith(CLIMAX())) s.climax = true
     s.amount += e.amount ?? 0
     if ((e.amount ?? 0) > s.top) { s.top = e.amount ?? 0; s.element = e.element }
     sums.set(e.target, s)
   }
-  for (const [target, s] of sums) cues.push({ kind: 'damage', target, amount: s.amount, color: elementColor(s.element), crit, area })
+  for (const [target, s] of sums) cues.push({ kind: 'damage', target, amount: s.amount, color: elementColor(s.element), crit, area, ...(s.climax ? { climax: true } : {}) })
   for (const e of effects) {
     if (e.type === 'heal' && e.target && (e.amount ?? 0) > 0) cues.push({ kind: 'heal', target: e.target, amount: e.amount! })
     if (e.type === 'lust' && e.target && e.amount) cues.push({ kind: 'lust', target: e.target, amount: e.amount })
@@ -70,8 +78,9 @@ export function cuesFor(t: TimelineEntry): CombatCue[] {
     cues.push({ kind: 'miss', target: t.target, text: '失手' })
   }
   if (t.result === 'fumble') cues.push({ kind: 'fumble', actor: t.actor })
+  for (const target of climaxed) cues.push({ kind: 'climax', target, name: CLIMAX() })
   for (const e of effects) {
-    if (e.type !== 'status_add' || !e.target || !e.status) continue
+    if (e.type !== 'status_add' || !e.target || !e.status || e.status === CLIMAX()) continue
     if (DOWN.has(e.status)) cues.push({ kind: 'down', target: e.target, enemy: e.status === '死亡' })
     else cues.push({ kind: 'status', target: e.target, name: e.status, buff: Object.values(statuses).find((x) => x.name === e.status)?.kind === 'buff' })
   }

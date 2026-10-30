@@ -299,6 +299,12 @@ ul.plain > li:last-child { border-bottom: none; }
 .fx-float.big { font-size: 1.8rem; }
 .fx-float.slide { font-size: 0.95rem; font-weight: 700; }
 .fx-pixel { position: fixed; display: block; image-rendering: pixelated; box-shadow: 1px 1px 0 #0008; }
+/* 慾望：像素愛心（飄字前面、粒子）、卡片上的粉色光暈、高潮時圍著卡片的呼吸燈 */
+.fx-float .fx-heart { display: inline-block; vertical-align: -0.1em; margin-right: 4px; filter: drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000) drop-shadow(0 2px 0 #000) drop-shadow(0 -2px 0 #000) drop-shadow(0 0 6px #ff7ab8); }
+.fx-heart-particle { position: fixed; display: block; line-height: 0; }
+.fx-heart-particle .fx-heart { filter: drop-shadow(1px 1px 0 #0009) drop-shadow(0 0 4px #ff7ab8aa); }
+.fx-pink-glow { position: fixed; border-radius: 6px; background: radial-gradient(ellipse at center, #ff7ab877 0%, #ff4f9a33 55%, transparent 80%); mix-blend-mode: screen; }
+.fx-climax-ring { position: fixed; border-radius: 9px; border: 1px solid #ffb3d6; }
 .fx-vignette { position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 45%, #000a 100%); }
 .fx-vignette.boss { background: radial-gradient(ellipse at center, transparent 40%, #5a0c0699 85%, #000c 100%); }
 .fx-vignette.victory { background: radial-gradient(ellipse at center, #f0d08322 0%, transparent 45%, #0007 100%); }

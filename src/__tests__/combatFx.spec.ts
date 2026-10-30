@@ -28,6 +28,15 @@ describe('戰鬥特效', () => {
     expect(cues.filter((c) => c.kind === 'damage').map((c) => c.kind === 'damage' && c.area)).toEqual([true, true])
   })
 
+  it('高潮：我方掛上高潮狀態、敵人受到高潮的真實傷害，各播一次高潮（不另外飄狀態名稱）', () => {
+    const party = cuesFor(entry({ target: 'p1', effects: [{ type: 'lust', target: 'p1', amount: 9 }, { type: 'damage', target: 'p1', amount: 20, text: '高潮' }, { type: 'status_add', target: 'p1', status: '高潮' }] }))
+    expect(party.filter((c) => c.kind === 'climax')).toEqual([{ kind: 'climax', target: 'p1', name: '高潮' }])
+    expect(party.some((c) => c.kind === 'status')).toBe(false)
+    expect(party.find((c) => c.kind === 'damage')).toMatchObject({ climax: true })
+    const foe = cuesFor(entry({ target: 'e1', effects: [{ type: 'lust', target: 'e1', amount: 30 }, { type: 'damage', target: 'e1', amount: 99, text: '高潮・真實傷害' }, { type: 'status_add', target: 'e1', status: '死亡', text: '慾望勝利' }] }))
+    expect(foe.map((c) => c.kind)).toEqual(['damage', 'lust', 'climax', 'down'])
+  })
+
   it('幸運一擊、失手、大失敗、倒下', () => {
     const crit = cuesFor(entry({ target: 'e1', result: 'critical', effects: [{ type: 'damage', target: 'e1', amount: 12 }, { type: 'status_add', target: 'e1', status: '死亡' }] }))
     expect(crit.map((c) => c.kind)).toEqual(['damage', 'crit', 'down'])

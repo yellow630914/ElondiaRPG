@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useSummary } from '@/engine/inventory'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import {
   abilityApCost, combatItems, currentActor, defenseMult, effectiveLustMax, isActive, itemNeedsTarget, itemTargets, multLabel, struggleDc, struggleTargets, threatMultOf, threatShares, unusableReason, validTargets,
   type Combatant,
@@ -8,7 +8,7 @@ import {
 import { luckyThreshold } from '@/engine/character'
 import { abilityDef, combatRules, damageTypeName, lewdRules, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { describeCombatLine } from '@/narrator/describe'
-import { banner, fxOn, flash, floatText, screenFlash, screenShake, shake, shatter } from '@/fx/fx'
+import { banner, climaxBreath, fxOn, flash, floatText, lustHit, screenFlash, screenShake, shake, shatter } from '@/fx/fx'
 import { BUFF_COLOR, CRIT_COLOR, DEBUFF_COLOR, HEAL_COLOR, LUST_COLOR, MISS_COLOR, PHYSICAL_COLOR, cuesFor, unplayedHpDelta, unplayedLustDelta } from '@/fx/combatFx'
 import type { TimelineEntry } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -118,7 +118,9 @@ function cardRef(id: string, el: unknown) {
 }
 const hpDelta = computed(() => unplayedHpDelta(combat.value.timeline.slice(played.value)))
 /** 畫面上的 HP（還沒播到的傷害先不扣） */
-const shownHp = (c: Combatant) => Math.max(0, Math.min(c.maxHp, c.hp + (hpDelta.value[c.id] ?? 0)))
+/** 高潮造成的傷害：等高潮的特效破裂之後才從 HP 條扣掉 */
+const heldHp = reactive<Record<string, number>>({})
+const shownHp = (c: Combatant) => Math.max(0, Math.min(c.maxHp, c.hp + (hpDelta.value[c.id] ?? 0) + (heldHp[c.id] ?? 0)))
 const lustDelta = computed(() => unplayedLustDelta(combat.value.timeline.slice(played.value)))
 /** 畫面上的慾望（還沒播到的先不算）；慾望戰鬥關閉時沒有慾望條 */
 const shownLust = (c: Combatant) => Math.max(0, Math.min(effectiveLustMax(c), (c.lust ?? 0) - (lustDelta.value[c.id] ?? 0)))
@@ -146,13 +148,31 @@ function pump() {
 
 function play(t: TimelineEntry) {
   const enemyIds = new Set(foes.value.map((c) => c.id))
-  for (const cue of cuesFor(t)) {
+  const cues = cuesFor(t)
+  // 高潮：先播圍著卡片的粉光呼吸燈，傷害數字與倒下等它破裂之後才播
+  const climaxWait = new Map<string, number>()
+  for (const cue of cues) if (cue.kind === 'climax') climaxWait.set(cue.target, Math.round(climaxBreath(cards.get(cue.target), cue.name) * 0.95))
+  const later = (target: string, fn: () => void) => {
+    const wait = climaxWait.get(target)
+    if (wait) setTimeout(fn, wait)
+    else fn()
+  }
+  for (const cue of cues) {
     switch (cue.kind) {
       case 'damage': {
         const el = cards.get(cue.target)
-        floatText(el, cue.amount > 0 ? `-${cue.amount}` : '0', { color: cue.amount > 0 ? cue.color : MISS_COLOR, big: cue.crit })
-        if (cue.amount > 0) shake(el, cue.crit ? 2 : 1)
-        flash(el, cue.area || cue.color !== PHYSICAL_COLOR ? cue.color : '#ff5a4a', cue.crit)
+        const show = () => {
+          floatText(el, cue.amount > 0 ? `-${cue.amount}` : '0', { color: cue.amount > 0 ? cue.color : MISS_COLOR, big: cue.crit })
+          if (cue.amount > 0) shake(el, cue.crit ? 2 : 1)
+          flash(el, cue.area || cue.color !== PHYSICAL_COLOR ? cue.color : '#ff5a4a', cue.crit)
+        }
+        if (cue.climax && climaxWait.has(cue.target)) {
+          heldHp[cue.target] = (heldHp[cue.target] ?? 0) + cue.amount
+          later(cue.target, () => {
+            heldHp[cue.target] = Math.max(0, (heldHp[cue.target] ?? 0) - cue.amount)
+            show()
+          })
+        } else show()
         break
       }
       case 'heal': {
@@ -162,9 +182,10 @@ function play(t: TimelineEntry) {
         break
       }
       case 'lust': {
+        // 增加：粉色閃光、像素愛心的飄字與粉色粒子；消退：愛心飄字從側邊滑過
         const el = cards.get(cue.target)
-        floatText(el, `${cue.amount > 0 ? '♥+' : '♥'}${cue.amount}`, { color: LUST_COLOR, slide: cue.amount < 0 })
-        if (cue.amount > 0) flash(el, LUST_COLOR)
+        if (cue.amount > 0) lustHit(el, cue.amount, t.result === 'critical')
+        else floatText(el, `${cue.amount}`, { color: LUST_COLOR, slide: true, heart: true })
         break
       }
       case 'crit':
@@ -191,8 +212,11 @@ function play(t: TimelineEntry) {
         // 敵人碎成像素；我方卡片的褪色下沉由 CSS 處理
         if (cue.enemy || enemyIds.has(cue.target)) {
           const el = cards.get(cue.target)
-          setTimeout(() => shatter(el), 180)
+          later(cue.target, () => setTimeout(() => shatter(el), 180))
         }
+        break
+      case 'climax':
+        // 已經在上面開始播了
         break
     }
   }
