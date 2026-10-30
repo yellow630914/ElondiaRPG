@@ -1,0 +1,457 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`world editor round trip > abilities: opening and saving without changes keeps the data 1`] = `
+{
+  "acid_spit": "5b260e3aeaba",
+  "awakened_astral": "e2f8e3062378",
+  "barkskin": "6e780f9bb1f5",
+  "bursting_arrow": "c5175e26a6b0",
+  "call_lightning": "f92e19aaa415",
+  "death_mark": "be0422c4a5e5",
+  "dissonant_whispers": "55505e335cc2",
+  "divine_fury": "a26565c82b2f",
+  "dread_ambusher": "e1ac78f94272",
+  "final_strike": "fda428322512",
+  "flame_strike": "6cc0023bddab",
+  "forcecage": "46dcea53dd5c",
+  "h_slave_drive": "6befd8e57246",
+  "heavens_wrath": "1da133826ebc",
+  "lp_ovipositor": "eb81e7b5c319",
+  "lust_guard": "90771263550f",
+  "lust_meditate": "1d4fae16e09e",
+  "lust_ten_fingers": "2b855ee2f5b3",
+  "lust_venom_touch": "57f4f2a375c6",
+  "petrify_gaze": "1426e826ec02",
+  "power_strike": "c8abaccd459f",
+  "quivering_palm": "1faa52674ae0",
+  "raging_storm": "df3dee797a31",
+  "siren_song": "1b1874187900",
+  "soul_harvest": "b60abb26d707",
+  "thunderwave": "ecb3bd2b6e0d",
+  "toll_the_dead": "31763facb39d",
+  "turn_undead": "3c454dc1cb84",
+  "venom_bite": "ba6802c95b84",
+  "watchers_will": "c4d127820e99",
+}
+`;
+
+exports[`world editor round trip > bases: opening and saving without changes keeps the data 1`] = `
+{
+  "breast_band": "b65331df611c",
+  "cat_ears": "7fe5ff6fb9d3",
+  "chain": "74ec558203fe",
+  "crotchless": "ccb83ec5b5c4",
+  "garter_briefs": "8e07d8322a24",
+  "micro_skirt": "89bc12af282a",
+  "navel_ember": "47f169a94d22",
+  "pendant_fire": "9655b4260f7e",
+  "pleated_skirt": "5c96c9aabdb1",
+  "rapier": "a99af0d0d52e",
+  "sash": "51b6b18b30a1",
+  "shield": "386adc5d9caa",
+  "silk_binding": "aa19ee083738",
+  "slave_collar": "a5ce58ff9771",
+  "slit_habit": "3aee6f44c094",
+  "steel_corset": "9e6849a38556",
+  "stockings": "1d50508d159f",
+  "vambraces": "e108bd6248a4",
+  "vibe_egg": "92918fb44e10",
+  "yukata": "4c7905e02ef4",
+}
+`;
+
+exports[`world editor round trip > bindRules: opening and saving without changes keeps the data 1`] = `
+{
+  "bindRules": "185fba95e3a9",
+}
+`;
+
+exports[`world editor round trip > conditions: opening and saving without changes keeps the data 1`] = `
+{
+  "aroused": "575bb36ee0a8",
+  "away": "575bb36ee0a8",
+  "blessed": "575bb36ee0a8",
+  "cheered": "575bb36ee0a8",
+  "dazed": "575bb36ee0a8",
+  "disheveled": "575bb36ee0a8",
+  "fed_fine": "575bb36ee0a8",
+  "fed_legend": "575bb36ee0a8",
+  "fed_light": "575bb36ee0a8",
+  "fed_well": "575bb36ee0a8",
+  "fugitive": "575bb36ee0a8",
+  "honed": "575bb36ee0a8",
+  "sensitive": "575bb36ee0a8",
+  "slave_mark": "575bb36ee0a8",
+  "virile": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > enemies: opening and saving without changes keeps the data 1`] = `
+{
+  "acheron_echo_army": "5e74d366cca7",
+  "ancestor_spirit": "4d3983ac68de",
+  "ash_hyena": "6f871f3b1087",
+  "blood_horror": "8aeec60f5b3e",
+  "bloodhorn_champion": "18acf917e768",
+  "crypt_lich": "2f0072e80567",
+  "este_duel_knight": "e6a537cf5253",
+  "fallen_elf_archer": "d23362c370ea",
+  "feast_brawler": "7a6b1d636e89",
+  "giant_rat": "dcb6187736f3",
+  "guild_golem": "aef6fc4a3708",
+  "ice_troll_chief": "5558927bc2fa",
+  "imperial_knight": "ec234dba7d34",
+  "inquisition_hunter": "7ea7011ade73",
+  "kraken_tentacle": "822c895d1614",
+  "lp_aphro_slime": "617798eeb943",
+  "lp_honey_pitcher": "73fa6b875355",
+  "mist_scale_guardian": "3053bcafdd19",
+  "pirate_gunner": "bae527a81695",
+  "pirate_mate": "21818ab3d115",
+  "pirate_printer_thug": "2aca103f904a",
+  "pollen_moth": "a610a669abf4",
+  "shatterhorn_agent": "0b6cef8a5fd2",
+  "slag_crawler": "be1bdad5fece",
+  "smuggler_boss": "35f8d7e31b43",
+  "storm_gargoyle": "75b23111613e",
+  "tea_road_bandit": "847ccc706996",
+  "thorn_colossus": "0de32a75f4bd",
+  "thousand_year_bloom": "a17f9bb58313",
+  "white_flame_avatar": "17167a776d15",
+}
+`;
+
+exports[`world editor round trip > events: opening and saving without changes keeps the data 1`] = `
+{
+  "collapsed_tunnel": "575bb36ee0a8",
+  "dg_adv_prisoner": "575bb36ee0a8",
+  "dg_blood_altar": "575bb36ee0a8",
+  "dg_cursed_lingerie": "575bb36ee0a8",
+  "dg_ghost_touch": "575bb36ee0a8",
+  "dg_glow_spores": "575bb36ee0a8",
+  "dg_park_garden_pollen": "575bb36ee0a8",
+  "dg_pink_mist": "575bb36ee0a8",
+  "dg_rune_room": "575bb36ee0a8",
+  "dg_tide_mermaid": "575bb36ee0a8",
+  "dg_trap_gag": "575bb36ee0a8",
+  "guild_novice": "575bb36ee0a8",
+  "herb_patch": "575bb36ee0a8",
+  "informant_freebie": "575bb36ee0a8",
+  "night_howls": "575bb36ee0a8",
+  "pe_lin_hungry": "575bb36ee0a8",
+  "pe_lin_symbiosis": "575bb36ee0a8",
+  "pe_mark_other_half": "575bb36ee0a8",
+  "pe_mark_thirst": "575bb36ee0a8",
+  "pe_seed_sap": "575bb36ee0a8",
+  "rd_hot_spring": "575bb36ee0a8",
+  "shop_bulk_sale": "575bb36ee0a8",
+  "stuck_wagon": "575bb36ee0a8",
+  "tn_drinker_wager": "575bb36ee0a8",
+  "tn_guild_bound_escort": "575bb36ee0a8",
+  "tn_mistaken_slave": "575bb36ee0a8",
+  "tn_tailor_model": "575bb36ee0a8",
+  "town_fan": "575bb36ee0a8",
+  "town_grope": "575bb36ee0a8",
+  "waystation": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > items: opening and saving without changes keeps the data 1`] = `
+{
+  "乾糧": "8437b9fa880a",
+  "五線譜": "43472c373bbc",
+  "亞麻女僕裝": "e703d9bd08e6",
+  "低語皇帝的冠冕": "0a58ceb62a99",
+  "修女的念珠": "132df198d6a2",
+  "兩極": "ef106d9eeba3",
+  "兩百年誓約": "e5c73effb1f8",
+  "千花魅后的花蕊": "48aff8f5d354",
+  "回音殘響石": "ec2c47796d46",
+  "寄魂藤": "e857511e4c90",
+  "山路皮圖": "1eee3b9a8945",
+  "星辰石幸運之戒": "9da51e39c06d",
+  "星辰石抗雷項鍊": "c4e942e3acc3",
+  "晨霧聖典殘頁": "c6017a11335b",
+  "月影絲汗衫": "63045b66bff8",
+  "月影絲綁帶內褲": "a599c9624df0",
+  "月影絲蕾絲頸環": "cb602de8a23e",
+  "木板床": "5921d8b09720",
+  "桅頂之眼": "9fcc31a24579",
+  "活力藥劑": "1e180da120c0",
+  "海神遺骨": "b43b1997753e",
+  "深海鱗片": "6c37a022fb10",
+  "異界之門的碎片": "303e82c342d9",
+  "皮革面罩口枷": "0bee1da19fc9",
+  "硬皮乳膠長手套": "afe6876a6105",
+  "硬皮甲": "763613dea1c2",
+  "祭品的血紅頸環": "da5d1982832a",
+  "禿鷲長羽": "99b486dc4a83",
+  "秘銀巨斧": "69793402d403",
+  "秘銀炎紋臍環": "d7a7afef7793",
+  "符文鑰匙": "cf492cc8d933",
+  "精金短劍": "973d2db588d0",
+  "絲綢短裙": "4591c3036451",
+  "絲綢開檔內褲": "022e57efa365",
+  "菇菌孢子": "9f13836f3d40",
+  "藥草": "fa2f26366ff9",
+  "金製法器寶珠": "72d071ddb329",
+  "鐵比基尼鎧甲": "b0e4444d7326",
+  "鐵護腰": "51778146920b",
+  "鐵護臂": "3e168f97a654",
+}
+`;
+
+exports[`world editor round trip > landmarks: opening and saving without changes keeps the data 1`] = `
+{
+  "lm_abyss_exchange": "575bb36ee0a8",
+  "lm_bed_school": "575bb36ee0a8",
+  "lm_blood_oath_valley": "575bb36ee0a8",
+  "lm_blood_trial_ground": "575bb36ee0a8",
+  "lm_dawn_sanctum": "575bb36ee0a8",
+  "lm_deep_tide_pier": "575bb36ee0a8",
+  "lm_ebony_night": "575bb36ee0a8",
+  "lm_everlit_beacon": "575bb36ee0a8",
+  "lm_golem_arena": "575bb36ee0a8",
+  "lm_granite_rampart": "575bb36ee0a8",
+  "lm_idol_backstage": "575bb36ee0a8",
+  "lm_judgment_cloister": "575bb36ee0a8",
+  "lm_knight_academy": "575bb36ee0a8",
+  "lm_krause_manor": "575bb36ee0a8",
+  "lm_lower_massage": "575bb36ee0a8",
+  "lm_mire_herb_beds": "575bb36ee0a8",
+  "lm_nightmare_maze": "575bb36ee0a8",
+  "lm_old_stone_bridge": "575bb36ee0a8",
+  "lm_pilgrim_bath": "575bb36ee0a8",
+  "lm_redmane_council": "575bb36ee0a8",
+  "lm_reef_light_pillar": "575bb36ee0a8",
+  "lm_sandcastle_keep": "575bb36ee0a8",
+  "lm_spring_of_life": "575bb36ee0a8",
+  "lm_star_platform": "575bb36ee0a8",
+  "lm_windoath_tower": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > markRules: opening and saving without changes keeps the data 1`] = `
+{
+  "markRules": "ee932cb6fb9e",
+}
+`;
+
+exports[`world editor round trip > marks: opening and saving without changes keeps the data 1`] = `
+{
+  "arcane": "ade936cf7164",
+  "brothel": "d6d8a021747e",
+  "combat": "8b17ba0241d6",
+  "labor": "aee30d03ea9b",
+}
+`;
+
+exports[`world editor round trip > masterEvents: opening and saving without changes keeps the data 1`] = `
+{
+  "bt_body": "575bb36ee0a8",
+  "bt_calm": "575bb36ee0a8",
+  "bw_mercenary": "575bb36ee0a8",
+  "bw_rival": "575bb36ee0a8",
+  "chained_night": "575bb36ee0a8",
+  "errand": "575bb36ee0a8",
+  "force_gear": "575bb36ee0a8",
+  "good_freedom_talk": "575bb36ee0a8",
+  "home_rest_day": "575bb36ee0a8",
+  "home_restraint_bed": "575bb36ee0a8",
+  "lend_out": "575bb36ee0a8",
+  "noble_etiquette": "575bb36ee0a8",
+  "own_charm_kiss": "575bb36ee0a8",
+  "own_exposure_walk": "575bb36ee0a8",
+  "own_pain_whip": "575bb36ee0a8",
+  "own_serve_tea": "575bb36ee0a8",
+  "proposition": "575bb36ee0a8",
+  "reward": "575bb36ee0a8",
+  "teach": "575bb36ee0a8",
+  "traveler_map": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > materials: opening and saving without changes keeps the data 1`] = `
+{
+  "adamantine": "17b6b4baa9cb",
+  "copper": "0f35f3ff02da",
+  "dragonhide": "b00fa6a83874",
+  "hard_leather": "ca2621b167bc",
+  "iron": "fd6e8d411e4d",
+  "leather": "6c7300037ad2",
+  "linen": "3a55b32c3316",
+  "mithril_jewel": "1eb78c632245",
+  "oak": "d442b461fb72",
+  "silk": "5e8021e601b1",
+  "silver": "9d057c963614",
+  "spellweave": "3624c6c8f05d",
+  "steel": "4495f387c301",
+  "worldtree": "c255b59bf297",
+  "yew": "4af65d92edf2",
+}
+`;
+
+exports[`world editor round trip > npcs: opening and saving without changes keeps the data 1`] = `
+{
+  "npc_alexander": "dd5a3d731223",
+  "npc_aya": "8ad4d538531f",
+  "npc_bertho_bath": "547d1d994114",
+  "npc_brandt_copperbeard": "bb666c9f4739",
+  "npc_bruk": "33f6c1c457d0",
+  "npc_camilla": "f66495841c31",
+  "npc_carlos_blacksail": "f7f615fdbefc",
+  "npc_carlton_silent": "1e27d8ca5e43",
+  "npc_clara": "9335851745dc",
+  "npc_dilia_copperbeard": "e564c2a2e45f",
+  "npc_eileen": "71ac3fe73d79",
+  "npc_ignaz_goldscale": "9fcbc8cbbacd",
+  "npc_ilania": "40273b07632f",
+  "npc_karen": "09530aa087d9",
+  "npc_kargh_warband": "bcabcb719f80",
+  "npc_kaspar_nord": "57f9c9afb47b",
+  "npc_liandra_spring": "22e863e8889c",
+  "npc_lina": "4f1c7eb4d2b7",
+  "npc_liv_hunter": "ea978adec228",
+  "npc_marina": "d52d800d989b",
+  "npc_noel": "7680a5a52e56",
+  "npc_pope_gregory": "a2d8d2d366ab",
+  "npc_raden_granny": "d15b5ce399cc",
+  "npc_sebastian_eger": "9bb01ac5efc9",
+  "npc_stella": "89ef23118e12",
+  "npc_tali_liaison": "dd0c662be99e",
+  "npc_toma_pearl": "6932dd144fc9",
+  "npc_valerie": "085848c7e76b",
+  "npc_victor_dice": "a5e61980885a",
+  "npc_wolfgang": "31121cc05ec1",
+}
+`;
+
+exports[`world editor round trip > perks: opening and saving without changes keeps the data 1`] = `
+{
+  "defiant": "b3034898bea0",
+  "flaw_acrophobia": "c2877e4f3c1b",
+  "flaw_coward": "92cd3220cfa0",
+  "flaw_hydrophobic": "c4c93d248df9",
+  "flaw_old_wound": "b755dfba63d2",
+  "flaw_shy": "8f5eccc86143",
+  "hard_worker": "fbfaaf65f29c",
+  "hive_bond": "9ccadb03146e",
+  "iron_will": "f7f690619a18",
+  "keen_eye": "7f84916db74f",
+  "lucky": "152a127ccd36",
+  "menacing": "26c36490ccac",
+  "merchant_eye": "64ea39fc9726",
+  "pathfinder": "4468cb4473f3",
+  "poison_tolerance": "61dda4a1315c",
+  "race_demon": "115222c7d145",
+  "race_human": "41eea24d0f92",
+  "race_yulin": "6dda27d3b550",
+  "respectable": "b70570fcdd1c",
+  "school_abstinence": "242f825c1a19",
+  "school_flesh": "0f3a21752984",
+  "school_punishment": "760840a1dadb",
+  "seductive": "a54dbe0fd992",
+  "servitude_vow": "e965563e40a8",
+  "silver_tongue": "502aa3aa2cbb",
+  "star_sleeper": "36cb30227a34",
+  "temple_friend": "b1ef9a4e7b07",
+  "thick_skin": "6cec503885c8",
+  "trap_sense": "8f1e67754a7f",
+  "wanton_blaze": "1ab0599ca22c",
+}
+`;
+
+exports[`world editor round trip > rules: opening and saving without changes keeps the data 1`] = `
+{
+  "eventRules": "3b9bf135c584",
+}
+`;
+
+exports[`world editor round trip > shops: opening and saving without changes keeps the data 1`] = `
+{
+  "general": "575bb36ee0a8",
+  "informant": "575bb36ee0a8",
+  "jeweler": "575bb36ee0a8",
+  "magic": "575bb36ee0a8",
+  "smithy": "575bb36ee0a8",
+  "tailor": "575bb36ee0a8",
+  "tavern": "575bb36ee0a8",
+  "temple": "575bb36ee0a8",
+  "wanderer": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > specialMaps: opening and saving without changes keeps the data 1`] = `
+{
+  "sm_acheron_echo": "575bb36ee0a8",
+  "sm_honor_hole": "575bb36ee0a8",
+  "sm_kagni_heart": "575bb36ee0a8",
+  "sm_maid_cafe": "575bb36ee0a8",
+  "sm_rhineburg_cistern": "575bb36ee0a8",
+  "sm_rhineburg_ramparts": "575bb36ee0a8",
+  "sm_rhineburg_sewer": "575bb36ee0a8",
+  "sm_sorian_dream": "575bb36ee0a8",
+  "sm_soriel_belltower": "575bb36ee0a8",
+  "sm_succubus_banquet": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > statuses: opening and saving without changes keeps the data 1`] = `
+{
+  "barkskin": "775663e0a904",
+  "blur": "3dcdb7e14077",
+  "burning": "ba65db961eaf",
+  "call_lightning": "03b9418d29f7",
+  "crusader": "19b2e9c70bb6",
+  "dancing": "952ac9e87b6a",
+  "deadly_rhythm": "c4df95f732a3",
+  "dealer_luck": "f18b2c64d5a6",
+  "defending": "84d04e56e7ae",
+  "faith_shield": "69a5bc0b5c6f",
+  "guarded": "67ad1152085d",
+  "hindered": "91b5c0a18481",
+  "insect_plague": "b715ca35f22b",
+  "inspired_greater": "f29d5574866f",
+  "lust_surge": "9923d20a9626",
+  "outlined": "84d81913191d",
+  "potion_poison_ward": "2050f4e627eb",
+  "precise": "6a46d49890ff",
+  "sacred_weapon": "23af44578e33",
+  "sacrifice_sigil": "f0765b23ea6c",
+  "shocked": "4811f1b9074a",
+  "spent": "9c58b543db02",
+  "storm_aura": "7682b90c71fc",
+  "swallowed": "561bd7338b1b",
+  "undying": "ac759510d028",
+}
+`;
+
+exports[`world editor round trip > stories: opening and saving without changes keeps the data 1`] = `
+{
+  "dawn_throne_ambush": "63aefc20ca09",
+  "echo_seal_log": "a41b4b95da6e",
+  "group_rulers_tea": "04779a99e7a2",
+  "inn_skirt": "ea069b88c091",
+  "isadora_elope": "3dc6a48a0920",
+  "par_lin_feed": "6352a0171978",
+  "par_mark_find": "ea77353b4339",
+  "par_mark_help": "8469547e72f1",
+  "serena_councillor": "509fad75f151",
+  "vsec_after_hours": "732c8e8874c0",
+}
+`;
+
+exports[`world editor round trip > tattoos: opening and saving without changes keeps the data 1`] = `
+{
+  "anchor_wave": "e0e3e7aea6bb",
+  "heart_name": "be62a2cff7e5",
+  "lotus": "5327b3cdabe5",
+  "mercenary_crest": "c210912b64b6",
+  "moon_phases": "e902fe04c431",
+  "oath_berserker": "38c12ee2d654",
+  "oath_devout": "e6dca0b5fb54",
+  "oath_quicksilver": "cceb2acbd8f6",
+  "oath_wild": "07a9b2f0197b",
+  "thorn_vine": "8522fc4209a6",
+}
+`;
