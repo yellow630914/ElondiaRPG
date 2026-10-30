@@ -1777,7 +1777,7 @@ export function newNpc(id: string): NpcMod {
 
 /** 新的 id（自建項目） */
 export function newModId(prefix: string): string {
-  return `mod_${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`
+  return `mod_${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10).padEnd(8, '0')}`
 }
 
 /** 新怪物的預設值 */

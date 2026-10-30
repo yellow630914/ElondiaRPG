@@ -85,7 +85,7 @@ export function canListItem(name: string): boolean {
 }
 
 export function newShopId(): string {
-  return `shop_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`
+  return `shop_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10).padEnd(8, '0')}`
 }
 
 export function newShop(): ShopMod {

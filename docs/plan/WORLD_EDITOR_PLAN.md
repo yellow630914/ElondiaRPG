@@ -1,6 +1,6 @@
 # 世界編輯器計畫：局部匯入、介面整理、任務流程圖、特殊任務生成器
 
-> 上層：[計畫與追蹤](README.md)（ROADMAP R11）。狀態：**E5 完成**（只剩「新增先不存」延後，見 2.3 節），E1～E4 還沒開始。
+> 上層：[計畫與追蹤](README.md)（ROADMAP R11）。狀態：**E5、E1、E2 完成**（E5 只剩「新增先不存」延後，見 2.3 節；E1、E2 見 1.6 節），E3、E4 還沒開始。
 > 依 v0.4.0 之後的程式盤點。系統文件：[CONTENT_EDITOR](../CONTENT_EDITOR.md)（世界頁籤）、[CONTENT_DEPENDENCIES](../CONTENT_DEPENDENCIES.md)（引用與保護）、[STORY_QUESTS](../STORY_QUESTS.md)（特殊任務格式）、[PROMPTS](../PROMPTS.md)（AI 呼叫）。
 > 做完的部分寫回系統文件，從這裡刪掉，在 README 的「完成紀錄」記一行；玩家看得到的改動寫進 CHANGELOG 的「未發布」。
 
@@ -134,8 +134,15 @@ E5 介面整理（純 UI，可以和上面平行做）
 
 ### 1.6 工作項目
 
-| # | 內容 | 改到的地方 |
+| # | 內容 | 進度 |
 |---|---|---|
+| E1 | `contentRefs.ts`：關聯（字串與物件 key 對到 id、物品 ← 掉落的怪物、制式裝備 → 底材與材料、旗標與計數器的讀 → 寫）、閉包、反方向、指紋、改名 | ✅ `contentRefs.spec.ts`。和 `usage.ts` 的一致性測試沒有做：`usage.ts` 回傳的是給人看的說明，不是 key；改用「帶入後整理不能改掉任何東西」的預檢查與測試把關 |
+| E1b | `newModId` 等的亂數加長到 8 碼 | ✅ 自建的 id 是「時間 + 8 碼亂數」（`newModId`、`newLandmarkId`、`newSpecialMapId`、`newShopId`） |
+| E2a | 對話框：來源（檔案／其他世界）、閉包清單、衝突三選一（含另存一份）、新版本、沙盒預檢查 | ✅ `contentImport.ts`、`ImportPickerDialog.vue`、`partialImport.spec.ts` |
+| E2b | 局部匯出（選取模式＋閉包＋指紋） | ✅ |
+| E2c | 文件：CONTENT_EDITOR 第 0 節、CONTENT_DEPENDENCIES 第 1.1 節 | ✅ |
+
+---|---|---|
 | E1 | `contentRefs.ts`：每種內容的關聯（含旗標、計數器的讀寫）、`closure(sel, source)` 算閉包、`rewriteRefs(pack, renames)` 改名；和 `usage.ts` 的一致性測試 | 新檔、新測試；不改既有規則 |
 | E1b | `newModId` 等的亂數加長到 8 碼 | `engine/mods.ts`、`landmarkMods.ts`、`specialMapMods.ts`、`shopMods.ts` |
 | E2a | 對話框：來源（檔案／其他世界）、閉包清單、衝突三選一、指紋、沙盒預檢查；接上 `diffMods`／`mergeMods` | `stores/content.ts`、新元件、`ContentView.vue` 頁尾、`WorldBar.vue` |
