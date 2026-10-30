@@ -35,13 +35,18 @@ const CELL_SHOP: Record<string, ShopType> = {
  * 不在商店上架的物品：獨特物品、有屬性加減的裝備。主人強制裝備的東西沒有商店標籤（tags）時本來就不上架；
  * 有標籤的（例如口球）也在店裡賣
  */
-export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'>): boolean {
-  return !!i.gear?.unique || !!i.gear?.attrs
+export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'> & { tags?: string[] }): boolean {
+  return !!i.gear?.unique || !!i.gear?.attrs || !!i.tags?.includes('unique')
 }
 
-/** 獨特裝備（任務與寶箱給的、獨一無二的東西）：不能賣給商店，也不能拿去和人交換 */
+/**
+ * 獨特裝備（任務與寶箱給的、獨一無二的東西）：不能賣給商店，也不能拿去和人交換。
+ * 有獨特效果（gear.unique）的，或標了 unique 標籤的（例如只有屬性、慾望指標的獨特淫服）
+ */
 export function isUniqueItem(state: Pick<GameState, 'customItems'>, name: string): boolean {
-  return !!(itemDef(name)?.gear?.unique ?? state.customItems?.[name]?.gear?.unique)
+  const def = itemDef(name)
+  if (def) return !!def.gear?.unique || !!def.tags?.includes('unique')
+  return !!state.customItems?.[name]?.gear?.unique
 }
 
 export function shopTypeForCell(cellKind: string): ShopType | null {

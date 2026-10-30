@@ -31,6 +31,10 @@ describe('S9-3 地下城事件', () => {
     for (const id of ['dg_adv_lust_altar', 'dg_adv_succubus_trial', 'dg_adv_prisoner']) expect(mine.find((t) => t.id === id)!.layers).toEqual([3, 4])
   })
 
+  it('對象是人形男性的事件標「男性對象」', () => {
+    for (const id of ['dg_crypt_wedding', 'dg_abbey_confession', 'dg_sand_altar']) expect(mine.find((t) => t.id === id)!.tags, id).toContain('male_partner')
+  })
+
   it('關掉「主角非自願」時，地下城還有至少 8 件成人向事件', () => {
     setContentFilters({ pc_unwilling: false })
     try {
