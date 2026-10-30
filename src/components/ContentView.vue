@@ -43,6 +43,9 @@ import { allMasterEvents, builtinMasterEvent, masterEventById, newMasterEvent, P
 import EventRulesEditor from './content/EventRulesEditor.vue'
 import BindRulesEditor from './content/BindRulesEditor.vue'
 import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
+import ImportPickerDialog from './content/ImportPickerDialog.vue'
+import StorylineOverview from './content/StorylineOverview.vue'
+import type { RefKey } from '@/engine/contentRefs'
 import ItemIcon from './items/ItemIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
 import { travelEvents } from '@/engine/road'
@@ -341,6 +344,8 @@ function clearFilters() {
 const COUNTERS_KEY = '|counters'
 /** 裝備底材清單裡的「雙面效應設定」 */
 const BIND_RULES_KEY = '|bind_rules'
+/** 特殊任務頁的「故事線總覽」 */
+const STORYLINES_KEY = '|storylines'
 /** 每一頁只有一筆的設定：放在清單上方的固定按鈕（不跟著篩選消失） */
 const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() => {
   void content.version
@@ -349,7 +354,7 @@ const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() 
   if (sub.value === 'events') return [{ key: 'rules', label: '⚙️ 事件設定', edited: !!m.eventRules?.rules }]
   if (sub.value === 'tattoos') return [{ key: 'rules', label: '⚙️ 印記設定', edited: !!m.markRules?.rules }]
   if (sub.value === 'bases') return [{ key: BIND_RULES_KEY, label: '⚙️ 雙面效應設定', edited: !!m.bindRules?.rules }]
-  if (sub.value === 'stories') return [{ key: COUNTERS_KEY, label: `🔢 劇情計數器（${Object.keys(storyCounters).length}）`, edited: Object.keys(m.counters ?? {}).length > 0 }]
+  if (sub.value === 'stories') return [{ key: STORYLINES_KEY, label: '🗺️ 故事線總覽', edited: false }, { key: COUNTERS_KEY, label: `🔢 劇情計數器（${Object.keys(storyCounters).length}）`, edited: Object.keys(m.counters ?? {}).length > 0 }]
   return []
 })
 /** 編輯器共用的自動完成清單（cv-item-names、cv-known-flags） */
@@ -527,7 +532,7 @@ const current = computed(() => {
   const key = selected.value[sub.value]
   if (!key) return ''
   const exists = sub.value === 'enemies' ? !!enemies[key] : sub.value === 'items' ? !!itemDef(key) : sub.value === 'bases' ? key === BIND_RULES_KEY || !!gearRules.bases[key]
-    : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? key === COUNTERS_KEY || stories.some((d) => d.id === key)
+    : sub.value === 'npcs' ? namedNpcs.some((n) => n.id === key) : sub.value === 'stories' ? key === COUNTERS_KEY || key === STORYLINES_KEY || stories.some((d) => d.id === key)
     : sub.value === 'abilities' ? !!abilities[key] : sub.value === 'statuses' ? (key.startsWith('c:') ? conditionIds().includes(key.slice(2)) : !!statuses[key]) : sub.value === 'perks' ? !!perkDef(key)
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
     : sub.value === 'landmarks' ? !!landmarks[key]
@@ -773,6 +778,28 @@ function duplicateKey(key: string) {
 const UNSAVED_HINT = '這一項還有未儲存的修改：先儲存或放棄修改，才能新增或複製'
 const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
+// ---- 局部匯入、匯出（E2） ----
+const showImport = ref(false)
+const picking = ref(false)
+const pickedKeys = ref<Set<RefKey>>(new Set())
+/** 清單的 key → 內容的 key（區塊:id） */
+function refOf(key: string): RefKey {
+  if (sub.value === 'statuses') return key.startsWith('c:') ? `conditions:${key.slice(2)}` : `statuses:${key}`
+  if (sub.value === 'tattoos') return key.startsWith('t:') ? `tattoos:${key.slice(2)}` : `marks:${key.slice(2)}`
+  return `${sub.value === 'events' ? 'travelEvents' : sub.value}:${key}`
+}
+function togglePick(key: string, on: boolean) {
+  const next = new Set(pickedKeys.value)
+  if (on) next.add(refOf(key))
+  else next.delete(refOf(key))
+  pickedKeys.value = next
+}
+function exportPicked() {
+  const out = content.exportPicked([...pickedKeys.value])
+  download(`elondia-content-${content.activeName}-${dateStamp()}.json`, out.text)
+  game.flash(`已匯出選的 ${pickedKeys.value.size} 項，連同用到的共 ${out.count} 項`)
+}
+
 // 上方的說明：關掉之後不再顯示（只記在這個瀏覽器）
 const INTRO_KEY = 'elondia.ui.contentIntroHidden'
 const showIntro = ref(true)
@@ -850,6 +877,7 @@ function resetAll() {
             class="small" :disabled="!current || isSetting(current) || unsavedEdits"
             :title="unsavedEdits ? UNSAVED_HINT : '以選取的項目為範本，建立一個自建項目'" @click="duplicate"
           >📄 複製這一項</button>
+          <button class="small" :class="{ active: picking }" title="勾幾項（自建或修改過的），匯出成內容檔：會連同它們用到的東西" @click="picking = !picking">☑ 選取匯出</button>
           <span class="spacer" />
           <button
             v-for="x in SETTINGS" :key="x.key" class="small" :class="{ active: current === x.key }"
@@ -902,8 +930,18 @@ function resetAll() {
           符合 {{ rows.length }} 項
           <button v-if="anyFilter" class="ghost small" @click="clearFilters">清除篩選</button>
         </p>
+        <div v-if="picking" class="row pick-bar small">
+          <span>已選 {{ pickedKeys.size }} 項</span>
+          <button class="small primary" :disabled="!pickedKeys.size" @click="exportPicked">📤 匯出選取的項目</button>
+          <button class="small" :disabled="!pickedKeys.size" @click="pickedKeys = new Set()">清除</button>
+          <span class="muted">只有自建或修改過的項目可以選。</span>
+        </div>
         <ul class="plain rows">
           <li v-for="r in rows" :key="r.key" :class="{ active: current === r.key }" @click="select(r.key)">
+            <input
+              v-if="picking && r.status" type="checkbox" :checked="pickedKeys.has(refOf(r.key))" title="匯出這一項"
+              @click.stop @change="togglePick(r.key, ($event.target as HTMLInputElement).checked)"
+            />
             <ItemIcon v-if="sub === 'items'" :name="r.key" :size="18" class="row-ic" />
             <ItemIcon v-else-if="sub === 'bases'" :spec="{ base: r.key, material: '' }" :size="18" class="row-ic" />
             <ContentIcon v-else-if="sub === 'enemies'" kind="monster" :id="r.key" :size="16" class="row-ic" />
@@ -946,6 +984,7 @@ function resetAll() {
         <MasterEventEditor v-else-if="sub === 'masterEvents'" :id="current" :key="`me-${current}`" @deleted="select('')" />
         <NpcEditor v-else-if="sub === 'npcs'" :id="current" :key="`n-${current}`" @deleted="select('')" />
         <CountersEditor v-else-if="sub === 'stories' && current === COUNTERS_KEY" key="counters" />
+        <StorylineOverview v-else-if="sub === 'stories' && current === STORYLINES_KEY" key="storylines" @open="select" />
         <StoryEditor v-else-if="sub === 'stories'" :id="current" :key="`s-${current}`" @deleted="select('')" @open="select" />
         <BindRulesEditor v-else-if="sub === 'bases' && current === BIND_RULES_KEY" key="bind-rules" />
         <GearEditor v-else-if="sub === 'bases'" :id="current" :key="`b-${current}`" kind="base" @deleted="select('')" />
@@ -958,7 +997,8 @@ function resetAll() {
       <span class="spacer" />
       <details class="world-menu">
         <summary class="small">⋯ 這個世界的全部內容</summary>
-        <div class="menu">
+        <div class="menu" @click="($event.currentTarget as HTMLElement).closest('details')!.open = false">
+          <button class="small" @click="showImport = true">📥 從檔案或其他世界帶入幾項…</button>
           <button class="small" :disabled="content.readOnly" @click="exportAll">📤 匯出自訂內容（內容檔）</button>
           <button class="small" title="會取代這個世界目前所有的自訂內容（原版世界時存成新的世界）" @click="fileInput?.click()">📥 匯入內容檔，取代全部內容…</button>
           <button class="small danger" :disabled="content.readOnly" @click="resetAll">↩️ 全部恢復預設…</button>
@@ -966,6 +1006,7 @@ function resetAll() {
       </details>
       <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="onImport" />
     </div>
+    <ImportPickerDialog v-if="showImport" :open="showImport" @close="showImport = false" />
   </div>
 </template>
 
@@ -982,6 +1023,7 @@ function resetAll() {
 .more-filters summary { cursor: pointer; color: var(--accent); }
 .more-filters .row { margin-top: 6px; }
 .chips-row .chip { padding: 0 8px; border-radius: 999px; }
+.pick-bar { padding: 4px 6px; border: 1px dashed var(--gold-lo); border-radius: var(--radius); }
 .world-menu { position: relative; }
 .world-menu summary { cursor: pointer; list-style: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 6px; }
 .world-menu .menu { position: absolute; right: 0; bottom: calc(100% + 4px); z-index: 5; display: grid; gap: 4px; padding: 6px; min-width: 240px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 6px 16px #000a; }

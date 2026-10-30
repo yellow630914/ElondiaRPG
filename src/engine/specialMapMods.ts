@@ -44,7 +44,7 @@ export function builtinSpecialMap(id: string): SpecialMapDef | undefined {
 }
 
 export function newSpecialMapId(): string {
-  return `sm_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`
+  return `sm_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10).padEnd(8, '0')}`
 }
 
 /** 新地圖：一間小石室，下方是出口 */

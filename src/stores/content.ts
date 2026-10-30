@@ -37,6 +37,8 @@ import { pruneAbilities, prunePerks, pruneStatuses } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
 import { enemyUsage, gearUsage, itemUsage, npcUsage, perkUsage, renameItemInState, storyUsage } from '@/engine/usage'
 import { useGame } from './game'
+import { buildRefs, closure, contentKeys, fingerprint, pickMods, REF_SECTIONS, splitKey, type RefGraph, type RefKey } from '@/engine/contentRefs'
+import { buildPackage, compareRows, type ImportChoice, type ImportPackage, type ImportRow } from '@/engine/contentImport'
 
 /** 舊版只有一套自訂內容 */
 const LEGACY_KEY = 'elondia.content'
@@ -55,6 +57,8 @@ export interface World {
   updated: number
   /** 綁定的提示詞組：切換到這個世界時一起切換（世界包匯入時綁定，也可以在世界管理改） */
   promptSet?: string
+  /** 局部匯入的紀錄：每一項匯入時的指紋（之後再匯入同一項時，看得出是不是新版本、這裡有沒有改過） */
+  imported?: Record<string, string>
 }
 
 interface WorldsFile {
@@ -85,7 +89,7 @@ export interface ModsDiff {
   same: number
 }
 
-function modLabel(section: Section, id: string, v: unknown): string {
+export function modLabel(section: Section, id: string, v: unknown): string {
   const o = v as { name?: string; title?: string }
   if (section === 'markRules' || section === 'eventRules' || section === 'bindRules') return MOD_SECTION_NAMES[section]
   if (section === 'categoryIcons') return `${MOD_SECTION_NAMES[section]}「${itemRules.categories[id as ItemCategory] ?? id}」`
@@ -102,7 +106,12 @@ function loadWorlds(): WorldsFile {
       const f = JSON.parse(raw) as Partial<WorldsFile>
       const worlds = (Array.isArray(f.worlds) ? f.worlds : [])
         .filter((w): w is World => !!w && typeof w.id === 'string' && w.id !== VANILLA)
-        .map((w) => ({ id: w.id, name: String(w.name || '未命名的世界').slice(0, 30), mods: normalizeMods(w.mods), updated: Number(w.updated) || 0 }))
+        .map((w) => ({
+          id: w.id, name: String(w.name || '未命名的世界').slice(0, 30), mods: normalizeMods(w.mods), updated: Number(w.updated) || 0,
+          // 綁定的提示詞組與匯入紀錄（以前讀回來時漏掉 promptSet：重新整理後綁定就不見了）
+          ...(typeof w.promptSet === 'string' ? { promptSet: w.promptSet } : {}),
+          ...(w.imported && typeof w.imported === 'object' ? { imported: w.imported } : {}),
+        }))
       return { active: worlds.some((w) => w.id === f.active) ? f.active! : VANILLA, worlds }
     }
     const legacy = localStorage.getItem(LEGACY_KEY)
@@ -974,6 +983,108 @@ export const useContent = defineStore('content', () => {
     return n
   }
 
+  // ---- 局部匯入、匯出（docs/plan/WORLD_EDITOR_PLAN.md E1、E2） ----
+
+  /** 讀局部匯入的來源：內容檔、世界包（只取內容），或這個瀏覽器的另一個世界 */
+  function importSource(from: { text: string } | { world: string }): { name: string; mods: ContentMods; picked: RefKey[] } {
+    if ('world' in from) {
+      const w = worlds.value.find((x) => x.id === from.world)
+      if (!w) throw new Error('找不到那個世界')
+      return { name: w.name, mods: normalizeMods(JSON.parse(JSON.stringify(w.mods))), picked: [] }
+    }
+    const raw = JSON.parse(from.text) as { meta?: { picked?: unknown } }
+    const file = parseWorldFile(raw)
+    const { meta, ...content } = file.content as Partial<ContentMods> & { meta?: { picked?: unknown } }
+    const picked = Array.isArray(meta?.picked) ? meta!.picked.filter((k): k is string => typeof k === 'string') : []
+    const out = { name: file.name ?? '檔案', mods: normalizeMods(content), picked }
+    // normalizeMods 會先登錄自建的內容：恢復成目前的世界
+    apply()
+    return out
+  }
+
+  /** 來源的關聯（制式裝備的名稱要用來源的內容查：先在沙盒裡套用來源，算完恢復） */
+  function analyzeSource(source: ContentMods): RefGraph {
+    try {
+      applyContent(source)
+      return buildRefs(source)
+    } finally {
+      apply()
+    }
+  }
+
+  /** 和目前的世界比較：新增、一樣、衝突（含是不是上次匯入之後沒改過的新版本） */
+  function compareImport(source: ContentMods, keys: Iterable<RefKey>): ImportRow[] {
+    const w = worlds.value.find((x) => x.id === active.value)
+    return compareRows(mods.value, source, keys, w?.imported ?? {})
+  }
+
+  function packageFor(source: ContentMods, rows: ImportRow[], choices: Record<RefKey, ImportChoice>): ImportPackage {
+    return buildPackage(mods.value, source, rows, choices)
+  }
+
+  /** 把包裡的項目疊到一份內容上（不改傳進來的） */
+  function withPackage(base: ContentMods, pkg: ImportPackage): ContentMods {
+    const out = JSON.parse(JSON.stringify(base)) as ContentMods
+    for (const section of REF_SECTIONS) {
+      const add = pkg.mods[section] as Record<string, unknown> | undefined
+      if (add) Object.assign(((out as unknown as Record<string, Record<string, unknown>>)[section] ??= {}), JSON.parse(JSON.stringify(add)))
+    }
+    return out
+  }
+
+  /**
+   * 預檢查（沙盒，不改目前的世界）：
+   * - changed：整理之後和包裡不一樣的項目（多半是引用拿不到被拿掉：照理不會有，有就是關聯漏了）
+   * - errors：有錯誤的特殊任務（整包不能匯入）
+   * - problems：套用時新出現的問題（例如地標、商店擺不上去）
+   */
+  function precheckImport(pkg: ImportPackage): { changed: RefKey[]; errors: string[]; problems: string[] } {
+    try {
+      const before = new Set(applyContent(mods.value))
+      const merged = normalizeMods(withPackage(mods.value, pkg))
+      const keys = contentKeys(pkg.mods as ContentMods)
+      const changed = keys.filter((k) => {
+        const [section, id] = splitKey(k)
+        const a = (merged[section] as Record<string, unknown> | undefined)?.[id]
+        const b = (pkg.mods[section] as Record<string, unknown> | undefined)?.[id]
+        return JSON.stringify(a) !== JSON.stringify(b)
+      })
+      const storyIds = new Set(Object.keys(pkg.mods.stories ?? {}))
+      const errors = storyIds.size ? dropBrokenStories(merged, storyIds) : []
+      const problems = applyContent(merged).filter((p) => !before.has(p))
+      return { changed, errors, problems }
+    } finally {
+      apply()
+    }
+  }
+
+  /** 寫進目前的世界（原版世界時 save() 自動建立自己的世界），記下匯入紀錄 */
+  function importPackage(pkg: ImportPackage): number {
+    const keys = contentKeys(pkg.mods as ContentMods)
+    if (!keys.length) return 0
+    mods.value = withPackage(mods.value, pkg)
+    save()
+    const w = worlds.value.find((x) => x.id === active.value)
+    if (w) {
+      w.imported = { ...(w.imported ?? {}), ...pkg.fingerprints }
+      persist()
+    }
+    return keys.length
+  }
+
+  /** 局部匯出：選的項目加上它們用到的全部（目前的世界），存成一般的內容檔 */
+  function exportPicked(picked: RefKey[]): { text: string; count: number } {
+    const graph = buildRefs(mods.value)
+    const keys = closure(graph, picked)
+    const content = pickMods(mods.value, keys)
+    const fingerprints = Object.fromEntries([...keys].map((k) => [k, fingerprint(entryOfMods(k))]))
+    return { text: JSON.stringify({ type: 'elondia-content', meta: { picked, fingerprints }, ...content }, null, 2), count: keys.size }
+  }
+  function entryOfMods(k: RefKey) {
+    const [section, id] = splitKey(k)
+    return (mods.value[section] as Record<string, unknown> | undefined)?.[id]
+  }
+
   function resetAll() {
     mods.value = emptyMods()
     save()
@@ -990,5 +1101,6 @@ export const useContent = defineStore('content', () => {
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods,
+    importSource, analyzeSource, compareImport, packageFor, precheckImport, importPackage, exportPicked,
   }
 })

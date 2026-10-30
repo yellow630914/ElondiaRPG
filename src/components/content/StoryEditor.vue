@@ -21,6 +21,8 @@ import CheckList from './CheckList.vue'
 import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
 import FoldSet from './FoldSet.vue'
 import HelpText from './HelpText.vue'
+import StoryGraph from './StoryGraph.vue'
+import { condMet } from '@/engine/storyFlags'
 
 // 特殊任務的編輯表單：開頭、任務點（依劇情旗標解鎖）、完成報酬；下方檢查任務鏈與旗標的流向
 const props = defineProps<{ id: string }>()
@@ -61,6 +63,27 @@ const breaks = computed(() => {
   return dirty.value && game.state ? progressBreaks(game.state, storyDef(props.id), draft.value) : []
 })
 const flags = computed(() => flagUsage(draft.value))
+// 任務點的兩種看法：清單（每個任務點一列，點開編輯），或流程圖（點任務點在下面編輯）；記在這個瀏覽器
+const VIEW_KEY = 'elondia.ui.storyView'
+const nodeView = ref<'list' | 'graph'>('list')
+try {
+  if (localStorage.getItem(VIEW_KEY) === 'graph') nodeView.value = 'graph'
+} catch {
+  // 讀不到就用清單
+}
+watch(nodeView, (v) => {
+  try {
+    localStorage.setItem(VIEW_KEY, v)
+  } catch {
+    // 存不進去：只在這次有效
+  }
+})
+/** 目前的存檔進行這個任務時，現在解鎖、還沒完成的任務點（流程圖上發亮） */
+const unlockedNow = computed(() => {
+  const st = game.state
+  if (!st || progress.value?.status !== 'active') return []
+  return draft.value.nodes.filter((n) => !progress.value!.done.includes(n.id) && condMet(st, n.requires)).map((n) => n.id)
+})
 const ICON: Record<StoryNode['kind'], string> = { story: '📜', check: '🎲', combat: '⚔️', choice: '🔀' }
 
 function setsOf(n: StoryNode): string[] {
@@ -258,7 +281,16 @@ function remove() {
     <FoldSet>
       <template #legend>任務點（{{ draft.nodes.length }}）</template>
       <HelpText text="任務點在解鎖條件（劇情旗標）成立時出現；用結果設定的旗標串起順序與分支。同時解鎖多個任務點時，玩家可以自己選順序。" />
-      <div v-for="(n, i) in draft.nodes" :key="i" class="node-card" :class="{ open: open === i }">
+      <div class="row small view-switch">
+        <button class="small" :class="{ active: nodeView === 'list' }" @click="nodeView = 'list'">📋 清單</button>
+        <button class="small" :class="{ active: nodeView === 'graph' }" @click="nodeView = 'graph'">🕸️ 流程圖</button>
+        <span v-if="nodeView === 'graph'" class="muted">點任務點在下面編輯；滑過卡片或結果，連到它的線會變粗。</span>
+      </div>
+      <StoryGraph
+        v-if="nodeView === 'graph'" :def="draft" :selected="open" :done="progress?.status === 'active' ? progress.done : undefined" :unlocked="unlockedNow"
+        @open="(i) => (open = i)"
+      />
+      <div v-for="(n, i) in draft.nodes" v-show="nodeView === 'list' || open === i" :key="i" class="node-card" :class="{ open: open === i }">
         <div class="row node-head" @click="open = open === i ? null : i">
           <span>{{ ICON[n.kind] }}</span>
           <b class="grow">{{ n.title }}</b>
@@ -317,6 +349,7 @@ function remove() {
 .block-note { border: 1px solid var(--danger); border-radius: var(--radius); padding: 6px 8px; }
 .node-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 6px; display: grid; gap: 6px; }
 .node-card.open { border-color: var(--accent); }
+.view-switch button.active { border-color: var(--accent); color: var(--accent); }
 .node-head { cursor: pointer; gap: 6px; }
 .tag.set { border-color: var(--accent); }
 .flags { border-collapse: collapse; width: 100%; }

@@ -17,7 +17,7 @@
 | # | 項目 | 現況 | 細節 |
 |---|---|---|---|
 | R10 | **手機版畫面**：實機測試、已知的小問題 | M1～M4 已完成並合併（2026-10-30，規則見 [MOBILE_UI](../MOBILE_UI.md)）；等實機測試 | [roadmap/MOBILE_UI_PLAN](roadmap/MOBILE_UI_PLAN.md) |
-| R11 | **世界編輯器**：局部匯入／匯出（有關聯就一起帶）、特殊任務流程圖、AI 特殊任務生成器 | E5 介面整理已完成（「新增先不存」延後）；E1～E4 還沒開始 | [roadmap/WORLD_EDITOR_PLAN](roadmap/WORLD_EDITOR_PLAN.md) |
+| R11 | **世界編輯器**：局部匯入／匯出（有關聯就一起帶）、特殊任務流程圖、AI 特殊任務生成器 | E5 介面整理、E1 關聯、E2 局部匯入與匯出、E3 流程圖完成；E4 還沒開始 | [roadmap/WORLD_EDITOR_PLAN](roadmap/WORLD_EDITOR_PLAN.md) |
 
 UI v2 已完成（原 R2）；沒做的模組化像素立繪、地圖格 tileset 移到點子庫 I19、I20。
 

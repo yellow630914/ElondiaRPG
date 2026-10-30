@@ -24,6 +24,21 @@
 - 點子庫：已經變成 ROADMAP 的刪掉（I13 淫氣世界世界書 → R8；I5 的前半 → R11），2026-10 盤點的點子（I8、I9、I12）與 UI v2 沒做的部分併進早期發想。
 - 手機版的版面規則寫成系統文件 [MOBILE_UI](../../MOBILE_UI.md)。
 
+### 2026-10-30 特殊任務的流程圖（R11 的 E3）
+
+- 可達性（`src/engine/storyReach.ts`）：列舉「完成了哪些任務點＋任務自己的旗標」的每一種狀態，找出不會解鎖的任務點、走不到完成、選了會卡住的結果；加進「檢查任務鏈」的提醒，內建任務零筆。
+- 流程圖（`storyGraph.ts`、`content/StoryGraph.vue`）：分層排版、結果的出口、旗標的線、任務外面的旗標、存檔進度；任務編輯器「📋 清單／🕸️ 流程圖」。
+- 故事線總覽（`storylines.ts`、`content/StorylineOverview.vue`）：接取條件、開始特殊任務、不能有、呼應；特殊任務頁籤的「🗺️ 故事線總覽」。
+- 測試：`storyReach.spec.ts`、`storyGraph.spec.ts`、`storylines.spec.ts`。規則寫在 [STORY_QUESTS](../../STORY_QUESTS.md) 第 3 節；沒做的（手機直排、flowdoc 改用同一份模型）留在 [WORLD_EDITOR_PLAN](WORLD_EDITOR_PLAN.md)。
+
+### 2026-10-30 局部匯入與匯出（R11 的 E1、E2）
+
+- 關聯（`src/engine/contentRefs.ts`）：寫了誰的 id 或名稱、物品 ← 掉落它的怪物、制式裝備 → 自建的底材與材料、旗標與計數器的讀 → 寫；選一項一定連同它用到的東西（閉包），反方向只列出來。
+- 局部匯入（`contentImport.ts`、`content/ImportPickerDialog.vue`）：來源是檔案或另一個世界；一樣的沿用，不同的選取代、保留或另存一份（id 加 8 碼指紋、物品名稱加「（2）」、另存的任務自己的旗標加後綴）；沙盒預檢查；世界記下匯入時的指紋，看得出新版本。
+- 局部匯出：清單「☑ 選取匯出」，連同用到的東西，`meta` 記勾了哪幾項與指紋。
+- 自建項目的 id 亂數加長到 8 碼；修好世界綁定的提示詞組重新整理後會不見。
+- 測試：`contentRefs.spec.ts`、`partialImport.spec.ts`。規則寫在 [CONTENT_EDITOR](../../CONTENT_EDITOR.md) 第 0 節、[CONTENT_DEPENDENCIES](../../CONTENT_DEPENDENCIES.md) 第 1.1 節；沒做的留在 [WORLD_EDITOR_PLAN](WORLD_EDITOR_PLAN.md)。
+
 ### 2026-10-30 世界編輯器的介面整理（R11 的 E5）
 
 - 頁籤分成五組（戰鬥、角色、物品、地點、劇情）、篩選列由設定產生、原版世界只能瀏覽（修改時自動建立「我的世界」並切換過去）、頁尾收成選單。
