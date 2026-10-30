@@ -15,6 +15,7 @@ import EditorHeader from './EditorHeader.vue'
 import RequiresEditor from './RequiresEditor.vue'
 import CheckList from './CheckList.vue'
 import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
+import FoldSet from './FoldSet.vue'
 
 // 旅途事件、城鎮事件、地下城事件或寄生物的發作的編輯表單：在哪裡出現、檢定或選項、結果
 const props = defineProps<{ id: string }>()
@@ -133,8 +134,8 @@ function remove() {
     </p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>標題 <input v-model="draft.title" maxlength="20" /></label>
         <label>在哪裡
@@ -167,10 +168,10 @@ function remove() {
         <label v-if="dungeon">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.dungeon?.repeat_days ?? 3)" /></label>
       </div>
       <label class="block">描述（給玩家與 AI）<textarea v-model="draft.text" rows="3" maxlength="400" /></label>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="dungeon">
-      <legend>出現的地方 <Hint text="每一項沒勾時不限（觸發點至少勾一個）。" /></legend>
+    <FoldSet v-if="dungeon">
+      <template #legend>出現的地方 <Hint text="每一項沒勾時不限（觸發點至少勾一個）。" /></template>
       <div class="row small"><b>觸發點</b>
         <label v-for="(n, k) in DUNGEON_TRIGGERS" :key="k" class="check">
           <input type="checkbox" :checked="draft.triggers?.includes(k)" @change="toggle<DungeonTrigger>('triggers', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
@@ -191,9 +192,9 @@ function remove() {
           <input type="checkbox" :checked="draft.dungeons?.includes(l.id)" @change="toggle('dungeons', l.id, ($event.target as HTMLInputElement).checked)" /> {{ l.name }}
         </label>
       </div>
-    </fieldset>
-    <fieldset v-else-if="parasite">
-      <legend>哪一種寄生物 <Hint text="階段與時機沒勾時不限。" /></legend>
+    </FoldSet>
+    <FoldSet v-else-if="parasite">
+      <template #legend>哪一種寄生物 <Hint text="階段與時機沒勾時不限。" /></template>
       <div class="row small">
         <select v-model="draft.parasite">
           <option v-for="p in parasiteIds" :key="p" :value="p">{{ parasiteRules.parasites[p]!.name }}</option>
@@ -209,9 +210,9 @@ function remove() {
           <input type="checkbox" :checked="draft.moments?.includes(k)" @change="toggle('moments', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
         </label>
       </div>
-    </fieldset>
-    <fieldset v-else-if="!town">
-      <legend>路段 <Hint text="沒勾時任何路段都會出現。" /></legend>
+    </FoldSet>
+    <FoldSet v-else-if="!town">
+      <template #legend>路段 <Hint text="沒勾時任何路段都會出現。" /></template>
       <div class="row">
         <label v-for="m in ROUTE_MODES" :key="m" class="check small">
           <input type="checkbox" :checked="draft.modes?.includes(m)" @change="toggle<RouteMode>('modes', m, ($event.target as HTMLInputElement).checked)" /> {{ MODE_NAME[m] }}
@@ -222,9 +223,9 @@ function remove() {
           <input type="checkbox" :checked="draft.regions?.includes(r.id)" @change="toggle('regions', r.id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}
         </label>
       </div>
-    </fieldset>
-    <fieldset v-else>
-      <legend>出現的地方 <Hint text="每一項沒勾時不限。" /></legend>
+    </FoldSet>
+    <FoldSet v-else>
+      <template #legend>出現的地方 <Hint text="每一項沒勾時不限。" /></template>
       <div class="row small"><b>設施</b>
         <label v-for="c in townEventCells()" :key="c" class="check">
           <input type="checkbox" :checked="draft.cells?.includes(c)" @change="toggle('cells', c, ($event.target as HTMLInputElement).checked)" /> {{ cellLabel(c) }}
@@ -240,32 +241,32 @@ function remove() {
           <input type="checkbox" :checked="draft.locations?.includes(l.id)" @change="toggle('locations', l.id, ($event.target as HTMLInputElement).checked)" /> {{ l.name }}
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>內容 <Hint text="內容標籤：設定沒有開啟或關掉時這個事件不出現。親密場景：選項勾了「進入親密場景」時，敘事依這段描寫。" /></legend>
+    <FoldSet>
+      <template #legend>內容 <Hint text="內容標籤：設定沒有開啟或關掉時這個事件不出現。親密場景：選項勾了「進入親密場景」時，敘事依這段描寫。" /></template>
       <CheckList v-model="draft.tags" label="內容標籤" :options="CONTENT_TAG_OPTIONS" />
       <CheckList v-model="draft.pc_body" label="只給這些主角" :options="BODY_OPTIONS" />
       <label class="block">親密場景（成人向，可以空著）<textarea v-model="draft.scene" rows="2" maxlength="200" /></label>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>劇情條件</legend>
+    <FoldSet>
+      <template #legend>劇情條件</template>
       <RequiresEditor :model-value="requires" label="出現的條件" placeholder="全部成立才出現" @update:model-value="(v) => (draft.requires = v)" />
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.kind === 'check'">
-      <legend>檢定 <Hint v-if="draft.tier === 'advanced'" text="成功時接著出現下面的選項。" /></legend>
+    <FoldSet v-if="draft.kind === 'check'">
+      <template #legend>檢定 <Hint v-if="draft.tier === 'advanced'" text="成功時接著出現下面的選項。" /></template>
       <div class="row small">
         <select v-model="draft.check!.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
         DC <input v-model.number="draft.check!.dc" type="number" min="1" max="40" class="num" />
       </div>
       <OutcomeEditor v-model="draft.success" label="成功" optional event />
       <OutcomeEditor v-model="draft.fail" label="失敗" optional event />
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.kind === 'choice' || draft.tier === 'advanced'">
-      <legend>選項（最多 5 個）</legend>
+    <FoldSet v-if="draft.kind === 'choice' || draft.tier === 'advanced'">
+      <template #legend>選項（最多 5 個）</template>
       <div v-for="(o, i) in draft.options ?? []" :key="i" class="option">
         <div class="row small">
           <input v-model="o.label" maxlength="30" class="grow" />
@@ -287,7 +288,7 @@ function remove() {
         <OutcomeEditor v-if="o.check" v-model="o.fail" label="失敗" optional event />
       </div>
       <button class="small" :disabled="(draft.options?.length ?? 0) >= 5" @click="addOption">＋ 選項</button>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

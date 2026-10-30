@@ -7,6 +7,7 @@ import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 狀態（BUFF／DEBUFF）的編輯表單：數值修正、幸運骰、優勢劣勢、傷害倍率、持續效果、命中附加、控制。存檔前是草稿
 const props = defineProps<{ id: string }>()
@@ -131,8 +132,8 @@ function remove() {
     <p class="small muted">持續回合由施加的能力或物品決定，在擁有者的回合開始時 -1。狀態要由能力（技能編輯器的「狀態」）或物品施加才會出現在戰鬥裡。</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" maxlength="10" /></label>
         <label>種類
@@ -143,10 +144,10 @@ function remove() {
         </label>
         <label>生效幾次後消失 <input v-model.number="draft.charges" type="number" min="0" max="10" placeholder="不限（看回合）" /></label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>數值修正（負的是減益）</legend>
+    <FoldSet>
+      <template #legend>數值修正（負的是減益）</template>
       <div class="grid">
         <label v-for="(n, k) in MODS" :key="k">{{ n }}
           <input
@@ -155,10 +156,10 @@ function remove() {
           />
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>擲骰</legend>
+    <FoldSet>
+      <template #legend>擲骰</template>
       <div class="row small">
         <label>幸運骰 <input v-model="draft.luck" class="num" placeholder="1d4 或 -1d4" /></label>
         <span>作用在：</span>
@@ -180,10 +181,10 @@ function remove() {
         <label class="check"><input v-model="draft.attacked_advantage" type="checkbox" /> 被攻擊時對方優勢</label>
         <label class="check"><input v-model="draft.attacked_disadvantage" type="checkbox" /> 被攻擊時對方劣勢</label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>傷害倍率（-0.25 = ×0.75）</legend>
+    <FoldSet>
+      <template #legend>傷害倍率（-0.25 = ×0.75）</template>
       <div v-for="field in (['resist', 'offense'] as const)" :key="field">
         <b class="small">{{ field === 'resist' ? '受到的傷害' : '造成的傷害' }}</b>
         <div v-for="[k, v] in rows(draft[field])" :key="k" class="row small">
@@ -196,10 +197,10 @@ function remove() {
         </div>
         <button class="small" @click="addAffinity(field)">＋ {{ field === 'resist' ? '受到的傷害倍率' : '造成的傷害倍率' }}</button>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>持續效果（回合開始時）</legend>
+    <FoldSet>
+      <template #legend>持續效果（回合開始時）</template>
       <div class="row small">
         <label class="check"><input type="checkbox" :checked="!!draft.dot" @change="toggleTyped('dot', ($event.target as HTMLInputElement).checked)" /> 持續傷害</label>
         <template v-if="draft.dot">
@@ -218,10 +219,10 @@ function remove() {
           <label class="check"><input v-model="draft.pulse.mod" type="checkbox" /> 加施放者的屬性調整值</label>
         </template>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>武器命中時</legend>
+    <FoldSet>
+      <template #legend>武器命中時</template>
       <div class="row small">
         <select :value="onHitKind" @change="setOnHit(($event.target as HTMLSelectElement).value as OnHitKind)">
           <option value="">（沒有）</option>
@@ -239,10 +240,10 @@ function remove() {
           <input v-model.number="draft.on_hit.turns" class="num" type="number" min="1" max="20" /> 回合
         </template>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>控制與特殊</legend>
+    <FoldSet>
+      <template #legend>控制與特殊</template>
       <div class="grid">
         <label>控制
           <select :value="draft.control ?? ''" @change="draft.control = (($event.target as HTMLSelectElement).value || undefined) as StatusMod['control']">
@@ -257,10 +258,10 @@ function remove() {
           </select>
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>慾望戰鬥 <Hint text="成人向（docs/COMBAT_SYSTEM.md 第 8.5 節）；存檔規則「慾望戰鬥」關閉時沒有作用。" /></legend>
+    <FoldSet>
+      <template #legend>慾望戰鬥 <Hint text="成人向（docs/COMBAT_SYSTEM.md 第 8.5 節）；存檔規則「慾望戰鬥」關閉時沒有作用。" /></template>
       <div class="grid">
         <label>受到的慾望倍率 ± <input v-model.number="draft.lust_mult" type="number" min="-1" max="3" step="0.05" placeholder="—" /></label>
         <label>生命傷害轉成慾望的比例 <input v-model.number="draft.convert" type="number" min="0" max="1" step="0.05" placeholder="—" /></label>
@@ -300,7 +301,7 @@ function remove() {
           <select v-model="draft.on_release.type"><option v-for="t in damageTypes.types.filter((x) => x.id !== 'lust')" :key="t.id" :value="t.id">{{ damageTypeName(t.id) }}</option></select>
         </template>
       </div>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

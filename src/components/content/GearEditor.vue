@@ -14,6 +14,7 @@ import { baseArt, refPath } from '../items/itemIcon'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 裝備底材與材料的編輯表單
 const props = defineProps<{ kind: 'base' | 'material'; id: string }>()
@@ -140,8 +141,8 @@ function remove() {
     <p class="small muted">id：{{ id }}</p>
 
     <template v-if="kind === 'base'">
-      <fieldset>
-        <legend>底材</legend>
+      <FoldSet>
+        <template #legend>底材</template>
         <div class="grid">
           <label>名稱 <input v-model="base.name" maxlength="12" /></label>
           <label>欄位
@@ -188,10 +189,10 @@ function remove() {
           <Hint text="曝露度 0～3：上身、下身、內衣的曝露名聲用（docs/LEWD_STATS.md 第 3 節）。拘束：束縛用的底材平常是檢定減值，修了慾望流派、上了鎖時戰鬥中反轉成增益（第 7 節）。" />
         </div>
         <p v-if="builtin" class="small muted">內建底材不能改欄位與材料類型；改名只影響之後新打造或生成的裝備，目錄裡的制式裝備沿用原本的名稱。</p>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset v-if="base.slot === 'main_hand' && base.weaponDef">
-        <legend>武器</legend>
+      <FoldSet v-if="base.slot === 'main_hand' && base.weaponDef">
+        <template #legend>武器</template>
         <div class="grid">
           <label>傷害骰 <input v-model="base.weaponDef.dice" placeholder="1d8" /></label>
           <label>傷害類型
@@ -202,19 +203,19 @@ function remove() {
           </label>
         </div>
         <p v-if="builtin" class="small muted">內建底材的武器數值是共用的：同一種武器（職業的起始武器、NPC）會一起改。</p>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset v-if="base.slot === 'body' && base.armorDef">
-        <legend>防具</legend>
+      <FoldSet v-if="base.slot === 'body' && base.armorDef">
+        <template #legend>防具</template>
         <div class="grid">
           <label>迴避 <input v-model.number="base.armorDef.evade" type="number" /></label>
           <label>減傷 <input v-model.number="base.armorDef.dr" type="number" min="0" /></label>
         </div>
         <AffinityRows v-model="base.armorDef.resist" label="抗性" />
-      </fieldset>
+      </FoldSet>
 
-      <fieldset v-if="!base.restraint">
-        <legend>固定加成與材料成長</legend>
+      <FoldSet v-if="!base.restraint">
+        <template #legend>固定加成與材料成長</template>
         <p class="small muted">固定加成不論材料都有；材料成長：材料的加成（鐵 0、鋼 1、秘銀 2、精金 4、星隕鐵 6）依比例加到這一項。</p>
         <div class="grid">
           <label v-for="(n, k) in MOD_NAME" :key="k">{{ n }}
@@ -227,12 +228,12 @@ function remove() {
             </span>
           </label>
         </div>
-      </fieldset>
+      </FoldSet>
     </template>
 
     <template v-else>
-      <fieldset>
-        <legend>材料</legend>
+      <FoldSet>
+        <template #legend>材料</template>
         <div class="grid">
           <label>名稱 <input v-model="mat.name" maxlength="8" /></label>
           <label>類型
@@ -257,16 +258,16 @@ function remove() {
             <span class="small muted">依類型與等級自動決定，顏色依稀有度；暫時不能上傳。</span>
           </div>
         </div>
-      </fieldset>
+      </FoldSet>
     </template>
 
-    <fieldset>
-      <legend>制式裝備（{{ catalog.length }} 件）</legend>
+    <FoldSet>
+      <template #legend>制式裝備（{{ catalog.length }} 件）</template>
       <p class="small muted">自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備；儲存後更新。</p>
       <ul class="plain small list">
         <li v-for="i in catalog" :key="i.name"><b>{{ i.name }}</b>　{{ gearSummary(i.gear!) }}　{{ formatMoney(i.price_cc) }}</li>
       </ul>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

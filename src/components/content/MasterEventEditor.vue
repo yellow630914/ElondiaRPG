@@ -7,6 +7,7 @@ import { useGame } from '@/stores/game'
 import EffectsEditor from './EffectsEditor.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 主人事件格式的編輯表單（主人的突發事件、調教、娼館的打工與受訓）：條件、描述、回應（檢定、結果、效果）
 const props = defineProps<{ id: string }>()
@@ -125,8 +126,8 @@ function remove() {
     <p class="small muted">id：{{ id }}。{{ POOL_HELP[draft.pool] }}</p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>事件庫
           <select :value="draft.pool" :disabled="builtin" @change="setPool(($event.target as HTMLSelectElement).value)">
@@ -142,10 +143,10 @@ function remove() {
       </div>
       <label class="block">描述（給玩家與 AI）<textarea v-model="draft.text" rows="3" :maxlength="L.text_chars" /></label>
       <label class="block">親密場景（成人向，可以空著）<textarea v-model="draft.scene" rows="2" :maxlength="L.scene_chars" /></label>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>條件 <Hint text="沒填、沒勾時不限。" /></legend>
+    <FoldSet>
+      <template #legend>條件 <Hint text="沒填、沒勾時不限。" /></template>
       <div class="row small">
         主人的親密度 <input v-model.number="draft.affinity_min" type="number" min="-100" max="100" class="num" placeholder="下限" />
         ～ <input v-model.number="draft.affinity_max" type="number" min="-100" max="100" class="num" placeholder="上限" />
@@ -178,10 +179,10 @@ function remove() {
           <label class="check"><input v-model="draft.forced_gear" type="checkbox" /> 主人有會強制裝備的東西</label>
         </div>
       </template>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>掛的技能 <Hint text="效果「學會事件庫的技能」從同一個事件庫所有事件掛的技能裡，抽一個還沒學的。娼館的事件只抽打工的人還沒學過的技能所掛的事件。" /></legend>
+    <FoldSet>
+      <template #legend>掛的技能 <Hint text="效果「學會事件庫的技能」從同一個事件庫所有事件掛的技能裡，抽一個還沒學的。娼館的事件只抽打工的人還沒學過的技能所掛的事件。" /></template>
       <div class="row small">
         <label v-for="a in lewdAbilities" :key="a.id" class="check">
           <input type="checkbox" :checked="draft.teaches?.includes(a.id)" @change="toggle('teaches', a.id, ($event.target as HTMLInputElement).checked)" /> {{ a.name }}
@@ -198,10 +199,10 @@ function remove() {
         <label v-if="draft.pool === 'owner'">成功幾次保證學會 <input v-model.number="draft.progress" type="number" min="1" max="10" class="num" /></label>
         <label v-if="isBrothel">要求的頭牌等級 <input v-model.number="draft.rank_min" type="number" min="0" max="10" class="num" /></label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>回應（最多 {{ L.options }} 個）</legend>
+    <FoldSet>
+      <template #legend>回應（最多 {{ L.options }} 個）</template>
       <div v-for="(o, i) in draft.options" :key="i" class="option">
         <div class="row small">
           <input v-model="o.label" :maxlength="L.label_chars" class="grow" />
@@ -235,7 +236,7 @@ function remove() {
         <div class="row small"><span class="muted">{{ o.check ? '不論成敗都套用' : '效果' }}</span><EffectsEditor v-model="o.effects" master /></div>
       </div>
       <button class="small" :disabled="draft.options.length >= L.options" @click="addOption">＋ 回應</button>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

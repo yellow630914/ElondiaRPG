@@ -6,6 +6,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 事件設定：旅途各種路段每天發生事件的機率、事件種類的權重；城鎮事件的機率、冷卻與分類平衡
 const content = useContent()
@@ -43,20 +44,20 @@ const WEIGHT_NAME = { auto: '原本的旅途事件與普通檢定', choice: '普
       :title="'⚙️ 事件設定'" :kind="'rules'" :edited="edited" :dirty="dirty"
       @save="save" @discard="reset" @restore="restore"
     />
-    <fieldset>
-      <legend>旅途：每天發生事件的機率（0～1）</legend>
+    <FoldSet>
+      <template #legend>旅途：每天發生事件的機率（0～1）</template>
       <div class="grid">
         <label v-for="m in ROUTE_MODES" :key="m">{{ MODE_NAME[m] }} <input v-model.number="draft.chance[m]" type="number" min="0" max="1" step="0.05" class="num" /></label>
       </div>
-    </fieldset>
-    <fieldset>
-      <legend>旅途：事件種類的權重 <Hint text="戰鬥只在官道、山道、荒野、地底。" /></legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>旅途：事件種類的權重 <Hint text="戰鬥只在官道、山道、荒野、地底。" /></template>
       <div class="grid">
         <label v-for="(n, k) in WEIGHT_NAME" :key="k">{{ n }} <input v-model.number="draft.weights[k]" type="number" min="0" max="20" step="0.5" class="num" /></label>
       </div>
-    </fieldset>
-    <fieldset>
-      <legend>城鎮事件</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>城鎮事件</template>
       <div class="grid">
         <label>走上設施時的機率（0～1）<input v-model.number="draft.town.chance" type="number" min="0" max="1" step="0.01" class="num" /></label>
         <label>兩次事件至少隔幾小時 <input v-model.number="draft.town.cooldown_hours" type="number" min="0" max="168" class="num" /></label>
@@ -65,16 +66,16 @@ const WEIGHT_NAME = { auto: '原本的旅途事件與普通檢定', choice: '普
         <label>記住最近幾次的分類 <input v-model.number="draft.town.recent_size" type="number" min="0" max="10" class="num" /></label>
       </div>
       <p class="small muted">分類：{{ Object.values(draft.town.categories).join('、') }}。同一個分類最近出現過一次，權重就乘一次，所以不會一直遇到同一類的事。</p>
-    </fieldset>
-    <fieldset>
-      <legend>地下城事件 <Hint text="在地下城與近郊觸發陷阱（沒察覺時）、打開寶箱、採集、在安全房長休之後的機率。內建的地下城事件都是成人向。" /></legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>地下城事件 <Hint text="在地下城與近郊觸發陷阱（沒察覺時）、打開寶箱、採集、在安全房長休之後的機率。內建的地下城事件都是成人向。" /></template>
       <div class="grid">
         <label v-for="(n, k) in DUNGEON_TRIGGERS" :key="k">{{ n }}的機率（0～1）<input v-model.number="draft.dungeon.chance[k]" type="number" min="0" max="1" step="0.01" class="num" /></label>
         <label>兩次事件至少隔幾小時 <input v-model.number="draft.dungeon.cooldown_hours" type="number" min="0" max="168" class="num" /></label>
         <label>同一事件預設幾天後才會再出現 <input v-model.number="draft.dungeon.repeat_days" type="number" min="0" max="60" class="num" /></label>
         <label v-for="(n, i) in EVENT_LAYERS" :key="n"><span>{{ n }}普通難度的 DC <Hint text="選項寫的 DC 以 14 為「普通」：實際 DC = 這一層的 DC +（寫的 DC − 14）。" /></span><input v-model.number="draft.dungeon.dc![i]" type="number" min="5" max="30" class="num" /></label>
       </div>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

@@ -6,6 +6,7 @@ import { useGame } from '@/stores/game'
 import { CATEGORY_ORDER } from '../items/itemInfo'
 import { categoryArt, refPath } from '../items/itemIcon'
 import IconField from './IconField.vue'
+import FoldSet from './FoldSet.vue'
 
 // 類別圖示：8 種物品類別的預設圖示。沒有自己的圖、也不是裝備的物品用這裡的圖；換了立刻儲存
 const content = useContent()
@@ -43,15 +44,15 @@ function restore() {
       物品的圖示依序找：物品自己上傳的圖 → 裝備的底材圖（底材頁可以上傳）→ 這裡的類別圖。換了立刻儲存，存在這個世界裡。
     </p>
     <p v-if="content.readOnly" class="small warn-text">原版世界不能修改：先在世界管理建立一個新的世界。</p>
-    <fieldset>
-      <legend>類別</legend>
+    <FoldSet>
+      <template #legend>類別</template>
       <div class="cats">
         <div v-for="c in CATEGORY_ORDER" :key="c" class="cat">
           <span class="name">{{ itemRules.categories[c] }}</span>
           <IconField :model-value="iconOf(c)" :fallback="builtin(c)" :disabled="content.readOnly" @update:model-value="set(c, $event)" />
         </div>
       </div>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

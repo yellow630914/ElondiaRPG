@@ -10,6 +10,7 @@ import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 奴隸印記模板的編輯表單。刻印時把條款存一份在角色身上，改模板只影響之後刻的
 const props = defineProps<{ id: string }>()
@@ -88,8 +89,8 @@ function remove() {
     />
     <p class="small muted">id：{{ id }}。功能依數值推得：{{ functionNames }}。已經刻在角色身上的印記不受修改影響。要讓它出現在刻印檢定、市場或老鴇身上，到「印記設定」加進去。</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="L.name_chars" /></label>
         <label>部位
@@ -98,9 +99,9 @@ function remove() {
       </div>
       <label class="wide"><span>印記的樣子與感覺 <Hint text="會交給 AI 描寫。" /></span><textarea v-model="draft.mark" rows="2" :maxlength="L.mark_chars" /></label>
       <label class="wide">副作用（一行一項，最多 {{ L.side_effects }} 項）<textarea v-model="sideText" rows="3" /></label>
-    </fieldset>
-    <fieldset>
-      <legend>數值</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>數值</template>
       <div class="grid">
         <label>收益歸主人（0～1）<input v-model.number="draft.income_share" type="number" step="0.05" :min="L.income_share[0]" :max="L.income_share[1]" /></label>
         <label>談判 DC <input v-model.number="draft.negotiate_dc" type="number" :min="L.negotiate_dc[0]" :max="L.negotiate_dc[1]" /></label>
@@ -114,7 +115,7 @@ function remove() {
         <label title="戴著印記的每這麼多天，順從 +1（0 是不累積；成人向）">順從累積（天） <input v-model.number="draft.submission_every" type="number" min="0" max="7" /></label>
       </div>
       <p class="small muted">範圍比玩家自訂印記寬：談判、逃離 DC {{ L.negotiate_dc.join('～') }}、出城 DC {{ L.exit_dc.join('～') }}、被找到 0～{{ L.recapture_chance[1] * 100 }}%、反噬 0～{{ L.escape_hp_ratio[1] * 100 }}%、服從懲罰 0～{{ L.obedience_penalty[1] }}；超出時自動調整。</p>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

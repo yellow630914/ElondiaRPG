@@ -23,6 +23,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import RequiresEditor from './RequiresEditor.vue'
+import FoldSet from './FoldSet.vue'
 
 // 固定 NPC 的編輯表單：不會因為名單變動消失；可以固定在聚落的某一格、只在劇情旗標符合時出現
 const props = defineProps<{ id: string }>()
@@ -261,8 +262,8 @@ const occupations = computed(() => {
     <UsageNote :usage="usage" :deletable="!builtin" />
     <p class="small muted">id：{{ id }}（特殊任務用這個 id 指定角色）・已經登場過的角色，出現條件與固定格子會跟著這裡改，其他資料以存檔裡的為準。</p>
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名字 <input v-model="draft.name" maxlength="16" /></label>
         <label>性別
@@ -312,10 +313,10 @@ const occupations = computed(() => {
           <input type="checkbox" :checked="draft.tags?.includes(k)" @change="draft.tags = ($event.target as HTMLInputElement).checked ? [...(draft.tags ?? []), k] : (draft.tags ?? []).filter((x) => x !== k)" /> {{ t.name }}
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>出現的地方</legend>
+    <FoldSet>
+      <template #legend>出現的地方</template>
       <NpcPlacementEditor v-model="draft" allow-landmark />
       <div class="row">
         <label class="small">擔任店主
@@ -327,10 +328,10 @@ const occupations = computed(() => {
         <span class="small muted">取代所屬地點那間店自動生成的店主（交易、交涉、委託打造都找他，平常待在店裡）。他在隊伍裡、死亡或劇情旗標不符時，換回生成的店主。</span>
       </div>
       <RequiresEditor :model-value="requires" label="出現的條件" placeholder="全部成立才出現" @update:model-value="(v) => (draft.requires = v)" />
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>依劇情旗標改變出沒</legend>
+    <FoldSet>
+      <template #legend>依劇情旗標改變出沒</template>
       <p class="small muted">例如因為某個事件搬家：加一組「🚩a_moved 成立時：所屬萊茵堡、活躍地點萊茵堡城區」。由上往下找第一組條件成立的設定，都不成立時用上面的設定（沒有填任何旗標的一組，儲存時會被移除）。是同一個角色，親密度、關係與記憶都會延續。</p>
       <div v-for="(st, i) in draft.stages ?? []" :key="i" class="stage">
         <div class="row">
@@ -367,10 +368,10 @@ const occupations = computed(() => {
         </details>
       </div>
       <button class="small" @click="addStage">＋ 依旗標改變出沒</button>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>小隊</legend>
+    <FoldSet>
+      <template #legend>小隊</template>
       <p v-if="memberOf" class="small muted">是「{{ memberOf.name }}」的小隊「{{ memberOf.squad!.name }}」的隊員：跟著隊長出沒，不能單獨雇用或邀請（要改到隊長那邊編輯）。</p>
       <template v-else>
         <p class="small muted">
@@ -398,10 +399,10 @@ const occupations = computed(() => {
           <RequiresEditor :model-value="squadReq" label="小隊成立的條件" :extras="false" affinity @update:model-value="draft.squad!.requires = $event" />
         </template>
       </template>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>能力值、技能與裝備</legend>
+    <FoldSet>
+      <template #legend>能力值、技能與裝備</template>
       <p class="small muted">
         預覽：{{ className(preview.class) }} Lv.{{ preview.level }}・生命 {{ preview.maxHp }}・{{ ATTR_IDS.map((a) => `${attrName(a)} ${preview.attrs[a]}`).join('、') }}
       </p>
@@ -469,7 +470,7 @@ const occupations = computed(() => {
         </div>
       </template>
       <p v-else class="small muted">裝備（隨機）：{{ Object.values(preview.gear ?? {}).map((g) => g!.name).join('、') || '無' }}</p>
-    </fieldset>
+    </FoldSet>
     <p class="small muted">所屬地點：{{ locationById(draft.location).name }}。具名角色在所屬地點的名單上，不會因為名單變動消失或被取代。</p>
   </div>
 </template>

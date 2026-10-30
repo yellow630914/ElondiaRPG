@@ -14,6 +14,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import ComboInput from './ComboInput.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 商店的編輯表單。內建的店：圖示、描述、AI 特別商品、店主設定、固定清單、收購類別、工作、受訓與位置（只能移動）；
 // 店名、店種、上架的物品類型與店的專屬功能不能改。自建的店每一項都可以改，沒有專屬功能
@@ -176,17 +177,17 @@ const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t)
     <p v-if="!custom" class="small muted">id：{{ id }}。內建的店只能改這裡列出的項目；店名、上架的物品類型（{{ catalogName }}的目錄）與店的專屬功能不能改，也不能刪除。</p>
     <p v-else class="small muted">id：{{ id }}。自建的店沒有專屬功能（治療、招募、情報、刺青……），只有交易、打工、受訓與委託打造。</p>
     <UsageNote :usage="usage" :deletable="custom" />
-    <fieldset>
-      <legend>外觀</legend>
+    <FoldSet>
+      <template #legend>外觀</template>
       <div class="grid">
         <label v-if="custom">店名 <input v-model="draft.name" :maxlength="SHOP_LIMITS.name_chars" /></label>
         <label>圖示 <input v-model="draft.emoji" maxlength="8" /></label>
       </div>
       <label class="block"><span>描述 <Hint text="商店畫面上的說明。" /></span><textarea v-model="draft.desc" rows="2" :maxlength="SHOP_LIMITS.desc_chars" /></label>
       <label class="check small"><input v-model="draft.ai" type="checkbox" /> AI 判定開啟時，請 AI 設計今天的特別商品 <Hint text="關掉就只有規則的商品。" /></label>
-    </fieldset>
-    <fieldset>
-      <legend>店主</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>店主</template>
       <div class="grid">
         <label>職稱 <ComboInput v-model="draft.title" :options="titles" :maxlength="8" placeholder="店主、掌櫃……（可以自己輸入）" /></label>
       </div>
@@ -196,9 +197,9 @@ const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t)
       </div>
       <p class="small muted">改了之後，新生成的店主才會用新的職稱與標籤；已經登場的店主不變。要指定某個地點的店主，到「固定 NPC」設定「擔任店主」。</p>
       <p v-if="keepers.length" class="small">目前擔任這種店店主的固定 NPC：{{ keepers.join('、') }}</p>
-    </fieldset>
-    <fieldset>
-      <legend>交易清單</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>交易清單</template>
       <label v-if="custom" class="small">平常上架
         <select v-model="draft.catalog">
           <option value="">只賣固定清單</option>
@@ -225,9 +226,9 @@ const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t)
         <span class="muted">收購的類別：</span>
         <label v-for="[k, n] in categories" :key="k" class="check"><input type="checkbox" :checked="draft.buys.includes(k)" @change="draft.buys = toggle(draft.buys, k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
       </div>
-    </fieldset>
-    <fieldset>
-      <legend>工作</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>工作</template>
       <label v-if="custom" class="check small"><input type="checkbox" :checked="!!draft.work" @change="toggleWork(($event.target as HTMLInputElement).checked)" /> 可以在這裡打工</label>
       <template v-if="draft.work">
         <div class="grid">
@@ -241,9 +242,9 @@ const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t)
         <label class="block">描述 <textarea v-model="draft.work.desc" rows="2" :maxlength="SHOP_LIMITS.desc_chars" /></label>
       </template>
       <p v-else-if="!custom" class="small muted">這種店沒有打工。</p>
-    </fieldset>
-    <fieldset>
-      <legend>受訓</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>受訓</template>
       <template v-if="trainable">
         <p class="small muted">勾選的特質可以在這種店受訓（缺陷是克服）。受訓的價格、時數與檢定在「特質」頁設定，存在各特質上{{ custom ? '' : '：恢復這家店的預設不會改回受訓清單' }}。</p>
         <div class="row checks small">
@@ -254,16 +255,16 @@ const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t)
         </div>
       </template>
       <p v-else class="small muted">這種店不能受訓。</p>
-    </fieldset>
-    <fieldset v-if="custom">
-      <legend>委託打造</legend>
+    </FoldSet>
+    <FoldSet v-if="custom">
+      <template #legend>委託打造</template>
       <div class="row checks small">
         <span class="muted">接這些材料的打造委託 <Hint text="店主的工藝等級照一般店主。" />：</span>
         <label v-for="[k, n] in CRAFT_KINDS" :key="k" class="check"><input type="checkbox" :checked="draft.craft.includes(k)" @change="draft.craft = toggle(draft.craft, k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
       </div>
-    </fieldset>
-    <fieldset>
-      <legend>位置</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>位置</template>
       <template v-if="!custom">
         <p class="small muted">內建的店只能移動、不能刪除：在同一個聚落裡搬到一格空地（道路）。舊存檔讀進來時地圖會跟著變。</p>
         <p v-if="!draft.moves.length" class="small muted">這種店不在聚落的地圖上。</p>
@@ -290,7 +291,7 @@ const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t)
           <button class="small" @click="addOpen = false">取消</button>
         </template>
       </template>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

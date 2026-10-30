@@ -18,6 +18,7 @@ import EditorHeader from './EditorHeader.vue'
 import RequiresEditor from './RequiresEditor.vue'
 import CheckList from './CheckList.vue'
 import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
+import FoldSet from './FoldSet.vue'
 
 // 城鎮特色地標的編輯表單：名稱、圖示、說明、AI 的氛圍、類型、位置，以及開放條件、參訪、場景、探索、打工與受訓。
 // 內建的不能換聚落、不能刪除
@@ -152,8 +153,8 @@ const wearOptions = computed(() => wearChoices())
     />
     <p class="small muted">id：{{ id }}。地標是聚落地圖上的一格：特殊任務的任務點、固定 NPC 的站點、公會委託的標的都可以指定它，生成的居民也會依類型聚到這裡。{{ builtin ? '內建的地標只能在同一個聚落裡移動、不能刪除。' : '' }}</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="LANDMARK_LIMITS.name_chars" /></label>
         <label>圖示 <input v-model="draft.emoji" maxlength="8" /></label>
@@ -166,18 +167,18 @@ const wearOptions = computed(() => wearChoices())
           <input type="checkbox" :checked="draft.types.includes(k)" :disabled="!draft.types.includes(k) && draft.types.length >= LANDMARK_LIMITS.types" @change="toggleType(k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
         </label>
       </div>
-    </fieldset>
-    <fieldset>
-      <legend>位置</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>位置</template>
       <div class="row small">
         <span>{{ draft.at.area ? placeText(draft.at) : '還沒選' }}</span>
         <button class="small" @click="picking = !picking">{{ picking ? '收起' : builtin ? '移動' : '選位置' }}</button>
       </div>
       <p class="small muted">{{ builtin ? '在同一個聚落裡搬到一格空地（道路），可以換區塊。' : '選聚落與區塊，點一格空地（道路）。' }}舊存檔讀進來時地圖會跟著變。</p>
       <CellPicker v-if="picking" :model-value="draft.at.area ? draft.at : null" :location="draft.location" :lock-location="builtin" :marker="draft.emoji" :self="id" @update:model-value="pick" />
-    </fieldset>
-    <fieldset>
-      <legend>開放的條件</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>開放的條件</template>
       <p class="small muted">不開放時不能參訪、探索、打工與受訓（公會委託照樣可以做）。</p>
       <div class="grid">
         <label>時段
@@ -196,9 +197,9 @@ const wearOptions = computed(() => wearChoices())
         @update:model-value="(v) => { draft.flagsText = (v.flags ?? []).join('、'); draft.flagsNoneText = (v.flags_none ?? []).join('、') }"
       />
       <label class="check small"><input v-model="open.hidden" type="checkbox" /> 旗標的條件不成立時不顯示 <Hint text="地圖上看起來是普通的道路，條件成立後才出現（例如完成任務後才開幕的店、秘密俱樂部）。要有旗標的條件才有效。" /></label>
-    </fieldset>
-    <fieldset>
-      <legend>參訪</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>參訪</template>
       <label class="check small"><input type="checkbox" :checked="!!draft.visit" @change="toggleVisit(($event.target as HTMLInputElement).checked)" /> 可以參訪 <Hint text="花錢或時間，得到效果；不用檢定。" /></label>
       <template v-if="draft.visit">
         <div class="grid">
@@ -210,9 +211,9 @@ const wearOptions = computed(() => wearChoices())
         <label class="block">說明 <input v-model="draft.visit.desc" :maxlength="LANDMARK_LIMITS.desc_chars" /></label>
         <div class="small">效果（最多 {{ LANDMARK_LIMITS.effects }} 個）：<EffectsEditor v-model="draft.visit.effects" :types="LANDMARK_EFFECTS" /></div>
       </template>
-    </fieldset>
-    <fieldset>
-      <legend>場景（最多 {{ LANDMARK_LIMITS.scenes }} 個）</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>場景（最多 {{ LANDMARK_LIMITS.scenes }} 個）</template>
       <label class="small">內部（特殊地圖） <Hint text="同一個聚落的固定特殊地圖：地標格變成入口，從地圖的出口離開時回到地標格；場景可以指定在裡面的哪一格。" />
         <select v-model="draft.interior">
           <option :value="undefined">沒有</option>
@@ -255,9 +256,9 @@ const wearOptions = computed(() => wearChoices())
         <div class="small">效果（最多 {{ LANDMARK_LIMITS.effects }} 個）：<EffectsEditor v-model="sc.effects" :types="LANDMARK_EFFECTS" /></div>
       </div>
       <button class="small" :disabled="(draft.scenes?.length ?? 0) >= LANDMARK_LIMITS.scenes" @click="addScene">＋ 新增場景</button>
-    </fieldset>
-    <fieldset>
-      <legend>探索</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>探索</template>
       <label class="check small"><input type="checkbox" :checked="!!draft.explore" @change="toggleExplore(($event.target as HTMLInputElement).checked)" /> 可以探索 <Hint text="主動行動的檢定，成功得到效果。" /></label>
       <template v-if="draft.explore">
         <div class="grid">
@@ -271,9 +272,9 @@ const wearOptions = computed(() => wearChoices())
         <div class="small">成功的效果：<EffectsEditor v-model="draft.explore.effects" :types="LANDMARK_EFFECTS" /></div>
         <div class="small">大成功另外的效果：<EffectsEditor v-model="draft.explore.critical" :types="LANDMARK_EFFECTS" /></div>
       </template>
-    </fieldset>
-    <fieldset>
-      <legend>打工</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>打工</template>
       <label class="check small"><input type="checkbox" :checked="!!draft.work" @change="toggleWork(($event.target as HTMLInputElement).checked)" /> 可以在這裡打工 <Hint text="和設施的工作一樣。" /></label>
       <template v-if="draft.work">
         <div class="grid">
@@ -283,9 +284,9 @@ const wearOptions = computed(() => wearChoices())
         </div>
         <label class="block">描述 <input v-model="draft.work.desc" :maxlength="LANDMARK_LIMITS.desc_chars" /></label>
       </template>
-    </fieldset>
-    <fieldset>
-      <legend>受訓</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>受訓</template>
       <p class="small muted">勾選的特質可以在這裡受訓（缺陷是克服）。受訓的價格、時數與檢定在「特質」頁設定，存在各特質上：恢復這個地標的預設不會改回受訓清單。</p>
       <div class="row checks small">
         <label v-for="p in trainPerks" :key="p.id" class="check" :title="p.desc">
@@ -293,7 +294,7 @@ const wearOptions = computed(() => wearChoices())
           {{ p.flaw ? '⚠️' : '' }}{{ p.name }}
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

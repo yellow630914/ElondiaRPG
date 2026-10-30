@@ -6,6 +6,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 雙面效應設定（docs/LEWD_STATS.md 第 7 節）：各種拘束的平常減值、受影響的檢定、戰鬥增益、免疫的狀態；忍耐、流派與鎖的倍率
 const content = useContent()
@@ -78,25 +79,25 @@ const filterText = (f: CheckFilter) => {
       @save="save" @discard="reset" @restore="restore"
     />
     <p class="small muted">拘束具（底材的「拘束」種類與程度 1～3，物品可以有自己的程度）平常是檢定的減值；修了任何慾望流派、而且上了鎖時，戰鬥中反轉成增益（乘上鎖的倍率，流派契合再乘）。慾望戰鬥關閉時沒有增益，減值照算。</p>
-    <fieldset>
-      <legend>倍率</legend>
+    <FoldSet>
+      <template #legend>倍率</template>
       <div class="grid">
         <label><span>忍耐每幾點減輕 1 點減值 <Hint text="平常的檢定減值：每件拘束具各自扣掉 忍耐 ÷ 這個數（無條件捨去）。" /></span><input v-model.number="draft.endurance_per" type="number" min="1" max="100" class="num" /></label>
         <label><span>流派契合的倍率 <Hint text="修的流派的「契合」包含這種拘束時，戰鬥增益再乘上這個數。" /></span><input v-model.number="draft.fit" type="number" min="0" max="5" step="0.05" class="num" /></label>
         <label><span>隸從派有主人時的倍率 <Hint text="修了隸從派、而且有主人時用這個數（取代流派契合）。" /></span><input v-model.number="draft.servitude_master" type="number" min="0" max="5" step="0.05" class="num" /></label>
       </div>
-    </fieldset>
-    <fieldset>
-      <legend>鎖 <Hint text="戰鬥增益乘上鎖的倍率；沒上鎖時沒有增益。" /></legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>鎖 <Hint text="戰鬥增益乘上鎖的倍率；沒上鎖時沒有增益。" /></template>
       <div class="grid">
         <label v-for="g in LOCK_GRADES" :key="g">
           <span>{{ g }}</span>
           <span class="pair"><input v-model="draft.locks[g].name" maxlength="12" /> × <input v-model.number="draft.locks[g].mult" type="number" min="0" max="5" step="0.05" /></span>
         </label>
       </div>
-    </fieldset>
-    <fieldset v-for="k in BIND_KINDS" :key="k">
-      <legend>{{ draft.kinds[k].name }}（{{ k }}）</legend>
+    </FoldSet>
+    <FoldSet v-for="k in BIND_KINDS" :key="k">
+      <template #legend>{{ draft.kinds[k].name }}（{{ k }}）</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.kinds[k].name" maxlength="12" /></label>
         <label v-for="lv in [0, 1, 2]" :key="lv">程度 {{ lv + 1 }} 的減值 <input v-model.number="draft.kinds[k].penalty[lv]" type="number" min="0" max="10" class="num" /></label>
@@ -133,7 +134,7 @@ const filterText = (f: CheckFilter) => {
           <label v-for="s in debuffs" :key="s.id" class="check"><input type="checkbox" :checked="draft.kinds[k].immune?.includes(s.id)" @change="setImmune(k, s.id, ($event.target as HTMLInputElement).checked)" /> {{ s.name }}</label>
         </div>
       </details>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

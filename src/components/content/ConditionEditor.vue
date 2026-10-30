@@ -7,6 +7,7 @@ import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 非戰鬥狀態（用餐、喝酒、受罰、祝福……，companions.json 的 conditions）的編輯表單：內建的可以修改，自建的沒有被用到時可以刪除，存檔前是草稿
 const props = defineProps<{ id: string }>()
@@ -141,8 +142,8 @@ function remove() {
     <p v-if="system" class="small warn-text">這是由遊戲規則加上與解除的狀態：解除時機、同組與疊加不能改，只能改名稱、說明與效果。</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" maxlength="10" /></label>
         <label class="check">
@@ -151,10 +152,10 @@ function remove() {
         </label>
       </div>
       <label class="block"><span>說明 <Hint text="滑過狀態、吃東西前看到的說明。改了數字之後記得一起改，說明不會自動更新。" /></span><textarea v-model="draft.desc" rows="2" maxlength="160" /></label>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>主動行動的檢定</legend>
+    <FoldSet>
+      <template #legend>主動行動的檢定</template>
       <div class="row small">
         <label>加值（負的是減值） <input v-model.number="checkBonus" type="number" min="-5" max="5" class="num" placeholder="—" /></label>
         <span>作用在：</span>
@@ -163,10 +164,10 @@ function remove() {
         </label>
         <span class="muted">（都不勾＝所有屬性）</span>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>每場戰鬥</legend>
+    <FoldSet>
+      <template #legend>每場戰鬥</template>
       <div class="grid">
         <label>開始時的暫時生命 <input v-model.number="draft.combat_temp_hp" type="number" min="0" max="50" placeholder="—" /></label>
         <label v-for="(n, k) in MODS" :key="k">{{ n }}
@@ -177,10 +178,10 @@ function remove() {
         </label>
       </div>
       <p class="small muted">幾個狀態的暫時生命取最高的，不會相加；加減值會相加。</p>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset :disabled="system">
-      <legend>獲得的規則</legend>
+    <FoldSet :disabled="system">
+      <template #legend>獲得的規則</template>
       <div class="grid">
         <label>同組（同組只留等級最高的）
           <input :value="draft.group ?? ''" list="cond-groups" placeholder="不分組" @change="setGroup(($event.target as HTMLInputElement).value)" />
@@ -200,7 +201,7 @@ function remove() {
           <input type="checkbox" :checked="draft.replaces?.includes(o.id)" @change="toggleReplace(o.id, ($event.target as HTMLInputElement).checked)" /> {{ o.name }}
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

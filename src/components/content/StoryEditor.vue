@@ -19,6 +19,7 @@ import EditorHeader from './EditorHeader.vue'
 import RequiresEditor from './RequiresEditor.vue'
 import CheckList from './CheckList.vue'
 import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
+import FoldSet from './FoldSet.vue'
 
 // 特殊任務的編輯表單：開頭、任務點（依劇情旗標解鎖）、完成報酬；下方檢查任務鏈與旗標的流向
 const props = defineProps<{ id: string }>()
@@ -191,8 +192,8 @@ function remove() {
     </div>
     <p class="small muted">id：{{ id }}・旗標名稱只用在劇情（存成 story:名稱）；以 ai: 開頭的名稱讀 AI 判定寫下的旗標。</p>
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>任務名稱 <input v-model="draft.title" maxlength="30" /></label>
         <label>建議的公會階級
@@ -206,10 +207,10 @@ function remove() {
       </div>
       <label class="block"><span>簡介 <Hint text="冒險筆記與接任務時看到。" /></span><textarea v-model="draft.summary" rows="2" maxlength="300" /></label>
       <CheckList v-model="draft.tags" label="內容標籤" hint="接任務時與冒險筆記顯示成警示；成人向以外的標籤玩家可以在設定裡關閉（關閉的任務不開放）。分支才有的內容（例如 NTR 分支）標在那個選項上。" :options="CONTENT_TAG_OPTIONS" />
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>開頭</legend>
+    <FoldSet>
+      <template #legend>開頭</template>
       <div class="grid">
         <label>從哪裡開始
           <select :value="draft.start.kind" @change="setStartKind(($event.target as HTMLSelectElement).value as StoryMod['start']['kind'])">
@@ -251,10 +252,10 @@ function remove() {
       <RequiresEditor :model-value="startReq" label="接取條件" @update:model-value="(v) => (draft.start.requires = v)" />
       <div class="row small">開始時設定的旗標 <Hint text="任務鏈的第一個旗標。" /> <FlagInput v-model="draft.start_flags" /></div>
       <div class="row small">接下任務時拿到的物品 <Hint text="各一件，例如打工的制服；搭配任務點的「限定穿著」。" /> <NameListInput v-model="draft.start.items" :options="itemOptions" placeholder="物品名稱" /></div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>任務點（{{ draft.nodes.length }}）</legend>
+    <FoldSet>
+      <template #legend>任務點（{{ draft.nodes.length }}）</template>
       <p class="small muted">任務點在解鎖條件（劇情旗標）成立時出現；用結果設定的旗標串起順序與分支。同時解鎖多個任務點時，玩家可以自己選順序。</p>
       <div v-for="(n, i) in draft.nodes" :key="i" class="node-card" :class="{ open: open === i }">
         <div class="row node-head" @click="open = open === i ? null : i">
@@ -272,15 +273,15 @@ function remove() {
         <StoryNodeEditor v-if="open === i" v-model="draft.nodes[i]!" :locked-id="doneInSave.has(draft.nodes[i]!.id)" />
       </div>
       <button class="small" @click="addNode">＋ 任務點</button>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>完成報酬（獨特報酬）</legend>
+    <FoldSet>
+      <template #legend>完成報酬（獨特報酬）</template>
       <EffectsEditor v-model="draft.rewards" />
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>檢查任務鏈</legend>
+    <FoldSet>
+      <template #legend>檢查任務鏈</template>
       <p v-if="!check.errors.length && !check.warnings.length" class="small">✅ 沒有發現問題。</p>
       <template v-if="check.errors.length">
         <p class="small warn-text">⛔ 錯誤（修正後才能儲存）：</p>
@@ -306,7 +307,7 @@ function remove() {
           </tr>
         </tbody>
       </table>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

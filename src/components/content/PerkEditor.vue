@@ -18,6 +18,7 @@ import ContentIcon from '../icons/ContentIcon.vue'
 import { perkRarity } from '../icons/perkArt'
 import { RARITY_ORDER, rarityName } from '@/engine/gear'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 特質的編輯表單：效果（檢定加值、戰鬥修正、抗性、增傷）、條件、互斥、訓練、NPC 的權重。
 // 種族特質只能改名稱、描述與效果（依種族自動擁有）。抗性可以是弱點；勾了「缺陷」的特質才能有負的檢定加值與戰鬥修正。
@@ -219,8 +220,8 @@ function remove() {
     </p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="perkRules.custom.name_chars" /></label>
         <label v-if="!race" class="check"><input v-model="draft.flaw" type="checkbox" /> 缺陷 <Hint text="負的效果；不會出現在學特質的機會裡，事件直接給，受訓是克服它。" /></label>
@@ -248,10 +249,10 @@ function remove() {
           <span class="small muted">{{ draft.flaw ? '缺陷：裂開的徽章、向下的箭紋' : '徽章、向上的箭紋' }}，箭紋依強度（{{ perkPower(draft) }}），顏色依稀有度；暫時不能上傳。</span>
         </div>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>效果（最多 {{ limits.effects }} 個）</legend>
+    <FoldSet>
+      <template #legend>效果（最多 {{ limits.effects }} 個）</template>
       <p class="small muted">
         檢定加值 {{ limits.check_bonus[0] }}～{{ limits.check_bonus[1] }}、戰鬥修正 {{ limits.combat[0] }}～{{ limits.combat[1] }}（仇恨倍率 {{ limits.threat![0] }}～{{ limits.threat![1] }}）、
         抗性 {{ limits.resist[0] }}～+{{ limits.resist[1] }}（正的是弱點，可以用來平衡強項）、增傷 {{ limits.offense![0] }}～{{ limits.offense![1] }}。{{ draft.flaw ? '缺陷可以有負的檢定加值與戰鬥修正。' : '負的檢定加值與戰鬥修正要勾「缺陷」。' }}
@@ -304,11 +305,11 @@ function remove() {
         <button class="small" :disabled="draft.effects.length >= limits.effects" @click="addEffect('resist')">＋ 抗性</button>
         <button class="small" :disabled="draft.effects.length >= limits.effects" @click="addEffect('offense')">＋ 增傷</button>
       </div>
-    </fieldset>
+    </FoldSet>
 
     <template v-if="!race">
-      <fieldset>
-        <legend>條件與互斥</legend>
+      <FoldSet>
+        <template #legend>條件與互斥</template>
         <div class="row checks small">
           <span>只有這些種族可以學（不勾＝不限）：</span>
           <label v-for="[id, r] in races" :key="id" class="check">
@@ -333,10 +334,10 @@ function remove() {
             <input type="checkbox" :checked="draft.exclusive?.includes(p.id)" @change="setExclusive(p.id, ($event.target as HTMLInputElement).checked)" /> {{ p.name }}
           </label>
         </details>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset>
-        <legend>慾望流派 <Hint text="成人向（docs/LEWD_STATS.md 第 6 節）。流派特質不進升級的三選一；慾望效果在慾望戰鬥裡生效（存檔規則關閉時沒有作用）。隸從派沒有主人時一半效果。" /></legend>
+      <FoldSet>
+        <template #legend>慾望流派 <Hint text="成人向（docs/LEWD_STATS.md 第 6 節）。流派特質不進升級的三選一；慾望效果在慾望戰鬥裡生效（存檔規則關閉時沒有作用）。隸從派沒有主人時一半效果。" /></template>
         <label class="small">流派
           <select :value="draft.school ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.school = ($event.target as HTMLSelectElement).value) : delete draft.school">
             <option value="">（不是流派特質）</option>
@@ -363,10 +364,10 @@ function remove() {
             </label>
           </div>
         </details>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset>
-        <legend>訓練</legend>
+      <FoldSet>
+        <template #legend>訓練</template>
         <label class="check small"><input type="checkbox" :checked="!!draft.train" @change="setTrain(($event.target as HTMLInputElement).checked)" /> 可以在設施花錢學</label>
         <template v-if="draft.train">
           <div class="row checks small">
@@ -384,10 +385,10 @@ function remove() {
             <label>DC <input v-model.number="draft.train.dc" type="number" min="5" max="30" /></label>
           </div>
         </template>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset>
-        <legend>NPC</legend>
+      <FoldSet>
+        <template #legend>NPC</template>
         <div class="grid">
           <label>NPC 抽到的權重（0＝不會抽到） <input type="number" min="0" max="10" :value="draft.npc?.weight ?? 0" @input="setNpcWeight(($event.target as HTMLInputElement).value)" /></label>
         </div>
@@ -405,7 +406,7 @@ function remove() {
             </label>
           </details>
         </template>
-      </fieldset>
+      </FoldSet>
     </template>
   </div>
 </template>

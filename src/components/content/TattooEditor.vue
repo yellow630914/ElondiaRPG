@@ -9,6 +9,7 @@ import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 刺青圖樣（普通刺青、誓約印記）的編輯表單。角色身上的刺青是刺上時存的一份，改圖樣只影響之後刺的
 const props = defineProps<{ id: string }>()
@@ -87,8 +88,8 @@ function remove() {
     />
     <p class="small muted">id：{{ id }}。普通刺青只是外觀；誓約印記的屬性有加有減（加總為 0、每項 ±{{ max }} 以內、最多 {{ tattooRules.oath.max_attrs }} 項）。已經刺在角色身上的不受修改影響。</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" maxlength="12" /></label>
         <label>種類
@@ -99,32 +100,32 @@ function remove() {
         </label>
       </div>
       <label class="wide"><span>外觀 <Hint text="會交給 AI 描寫。" /></span><textarea v-model="draft.desc" rows="2" maxlength="160" /></label>
-    </fieldset>
-    <fieldset v-if="draft.kind === 'oath'">
-      <legend>屬性的加減 <span class="small" :class="problem ? 'warn-text' : 'muted'">{{ problem ?? oathText(draft.attrs ?? {}) }}</span></legend>
+    </FoldSet>
+    <FoldSet v-if="draft.kind === 'oath'">
+      <template #legend>屬性的加減 <span class="small" :class="problem ? 'warn-text' : 'muted'">{{ problem ?? oathText(draft.attrs ?? {}) }}</span></template>
       <div class="grid">
         <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }}
           <input type="number" :min="-max" :max="max" :value="draft.attrs?.[a] ?? 0" @input="setAttr(a, Number(($event.target as HTMLInputElement).value))" />
         </label>
       </div>
-    </fieldset>
-    <fieldset v-if="draft.kind === 'plain'">
-      <legend>淫紋（成人向） <Hint text="慾望戰鬥的效果：慾望上限的比例（0.15 = +15%）、造成的慾望 +N。都是 0 時只是外觀。" /></legend>
+    </FoldSet>
+    <FoldSet v-if="draft.kind === 'plain'">
+      <template #legend>淫紋（成人向） <Hint text="慾望戰鬥的效果：慾望上限的比例（0.15 = +15%）、造成的慾望 +N。都是 0 時只是外觀。" /></template>
       <div class="grid">
         <label>慾望上限 <input type="number" min="0" max="0.5" step="0.05" :value="draft.lust?.max ?? 0" @input="draft.lust = { ...draft.lust, max: Number(($event.target as HTMLInputElement).value) || undefined }" /></label>
         <label>造成的慾望 + <input type="number" min="0" max="5" :value="draft.lust?.bonus ?? 0" @input="draft.lust = { ...draft.lust, bonus: Number(($event.target as HTMLInputElement).value) || undefined }" /></label>
         <label>另外加的價錢 <input v-model.number="draft.price" type="number" min="0" max="10000" /></label>
         <label class="check"><input v-model="draft.adult" type="checkbox" /> 成人向</label>
       </div>
-    </fieldset>
-    <fieldset>
-      <legend>建議的部位 <Hint text="沒勾時任何部位都可以。" /></legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>建議的部位 <Hint text="沒勾時任何部位都可以。" /></template>
       <div class="row">
         <label v-for="p in TATTOO_PLACES" :key="p" class="check small">
           <input type="checkbox" :checked="draft.places?.includes(p)" @change="togglePlace(p, ($event.target as HTMLInputElement).checked)" /> {{ placeName(p) }}
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

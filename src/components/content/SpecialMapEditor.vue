@@ -12,6 +12,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import RequiresEditor from './RequiresEditor.vue'
+import FoldSet from './FoldSet.vue'
 
 // 特殊地圖的編輯表單：基本資料（所屬地點、給 AI 的描述、光線、刷新）、版面（畫格子或隨機挖）、
 // 額外的隨機內容、遭遇表與採集物、通道（接到城鎮區塊的牆或別張特殊地圖）。內建的不能刪除
@@ -301,8 +302,8 @@ function remove() {
     </p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="L.name_chars" /></label>
         <label>所屬地點
@@ -327,10 +328,10 @@ function remove() {
         </ul>
         <span v-else class="muted">還沒有任何場景。</span>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>版面</legend>
+    <FoldSet>
+      <template #legend>版面</template>
       <div class="row small">
         <label class="check"><input type="radio" :checked="draft.mode === 'fixed'" @change="setMode('fixed')" /> 固定地圖（自己畫）</label>
         <label class="check"><input type="radio" :checked="draft.mode === 'random'" @change="setMode('random')" /> 隨機地圖 <Hint text="從下方中央的出口挖出通道。" /></label>
@@ -356,10 +357,10 @@ function remove() {
         </div>
         <p class="small muted">選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；BOSS 格的怪物在下方「BOSS 格」指定；沒有出口時只能從通道進出。</p>
       </template>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>額外的隨機內容（最少～最多） <Hint text="撒在空地上。" /></legend>
+    <FoldSet>
+      <template #legend>額外的隨機內容（最少～最多） <Hint text="撒在空地上。" /></template>
       <div class="grid">
         <label v-for="[k, n] in ([['encounters', '遭遇'], ['traps', '陷阱'], ['resources', '資源'], ['chests', '寶箱']] as const)" :key="k">{{ n }}
           <span class="row">
@@ -369,10 +370,10 @@ function remove() {
         </label>
         <label>強敵 <input v-model.number="draft.elites" type="number" min="0" :max="L.elites[1]" /></label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>遭遇表（選填）</legend>
+    <FoldSet>
+      <template #legend>遭遇表（選填）</template>
       <p class="small muted">空白時：所屬地點是地下城就用「陷阱、寶箱比照」那一層的遭遇，其他用地區的城郊遭遇表。強敵是最強的一組再多一隻。</p>
       <div v-for="(g, gi) in draft.table ?? []" :key="gi" class="row small">
         <span>第 {{ gi + 1 }} 組：</span>
@@ -385,10 +386,10 @@ function remove() {
         <button class="small warn" @click="removeGroup(gi)">刪除這組</button>
       </div>
       <button class="small" :disabled="(draft.table?.length ?? 0) >= L.table" @click="addGroup">＋ 新增一組</button>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.mode === 'fixed'">
-      <legend>BOSS 格 <Hint text="在版面用「BOSS」畫上的格子，每一格各自指定守在那裡的怪物（一組，最多 4 種）與名字。名字顯示在地圖與戰鬥的場景；沒指定怪物時照強敵的規則（遭遇表最大的一組再多一隻）。打倒之後不再出現（會刷新的地圖再進來時重來）。" /></legend>
+    <FoldSet v-if="draft.mode === 'fixed'">
+      <template #legend>BOSS 格 <Hint text="在版面用「BOSS」畫上的格子，每一格各自指定守在那裡的怪物（一組，最多 4 種）與名字。名字顯示在地圖與戰鬥的場景；沒指定怪物時照強敵的規則（遭遇表最大的一組再多一隻）。打倒之後不再出現（會刷新的地圖再進來時重來）。" /></template>
       <p v-if="!bossCells.length" class="small muted">版面上還沒有 BOSS 格。選上面的「👑 BOSS」在地圖上畫一格。</p>
       <div v-for="(c, bi) in bossCells" :key="`${c.x},${c.y}`" class="row small boss">
         <strong>👑{{ bi + 1 }}</strong>
@@ -404,10 +405,10 @@ function remove() {
         <span v-else class="tip">沒指定怪物：照強敵的規則</span>
         <button class="small" :disabled="(bossAt(c.x, c.y)?.group.length ?? 0) >= L.group_types" @click="addBossMonster(c.x, c.y)">＋ 怪物</button>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>採集物（選填）</legend>
+    <FoldSet>
+      <template #legend>採集物（選填）</template>
       <div class="chips">
         <span v-for="(n, i) in draft.resource_items ?? []" :key="n" class="tag chip">{{ n }} <button class="x" @click="draft.resource_items!.splice(i, 1)">×</button></span>
         <span v-if="!draft.resource_items?.length" class="small muted">（沒有時用地下城的採集表）</span>
@@ -417,10 +418,10 @@ function remove() {
         <datalist id="sm-items"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
         <button class="small" @click="addItem">＋ 加入</button>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>商店</legend>
+    <FoldSet>
+      <template #legend>商店</template>
       <p v-if="draft.mode !== 'fixed'" class="small muted">只有固定地圖可以擺商店。</p>
       <template v-else>
         <p class="small muted">擺在這張地圖上的店（內建店種或自建的店），站上去就能交易；物價與貨色照所屬地點。</p>
@@ -432,10 +433,10 @@ function remove() {
         </div>
         <button class="small" :disabled="(draft.shops?.length ?? 0) >= L.shops" @click="addShop">＋ 擺一家店</button>
       </template>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>通道</legend>
+    <FoldSet>
+      <template #legend>通道</template>
       <p v-if="draft.mode !== 'fixed'" class="small muted">只有固定地圖可以設定通道；隨機地圖只能由事件傳送進來。</p>
       <template v-else>
         <p class="small muted">通道把這張地圖的一格和另一張地圖（城鎮區塊的牆或水、或別張特殊地圖的任一格）接起來，打開時兩頭都變成通道、互相走得過去。寫了旗標的話，旗標成立才打開。</p>
@@ -479,7 +480,7 @@ function remove() {
         </div>
         <button class="small" :disabled="draft.conns.length >= L.connections" @click="addConn">＋ 新增通道</button>
       </template>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

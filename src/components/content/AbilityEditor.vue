@@ -11,6 +11,7 @@ import Hint from '../ui/Hint.vue'
 import ContentIcon from '../icons/ContentIcon.vue'
 import { abilityGlyph, abilityGlyphName } from '../icons/abilityArt'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 能力（技能、法術、戲法）的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -155,8 +156,8 @@ function remove() {
     <p class="small muted">id：{{ id }}</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" maxlength="16" /></label>
         <label>種類
@@ -192,10 +193,10 @@ function remove() {
           <Hint text="屬性：第一個寫了傷害屬性的傷害；只有武器傷害的算「武器」；沒有傷害的依治療、護盾，或對敵人（削弱）、對自己與隊友（強化）。" />
         </div>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>目標與判定</legend>
+    <FoldSet>
+      <template #legend>目標與判定</template>
       <div class="grid">
         <label>目標
           <select v-model="draft.target">
@@ -226,10 +227,10 @@ function remove() {
       <div v-if="draft.resolve === 'attack'" class="row checks small">
         <label class="check"><input v-model="draft.adv" type="checkbox" /> 優勢（擲兩次取高）</label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>傷害</legend>
+    <FoldSet>
+      <template #legend>傷害</template>
       <div v-for="(d, i) in draft.damage ?? []" :key="i" class="row small">
         <select :value="d.weapon ? 'weapon' : 'dice'" @change="setDamageSource(d, ($event.target as HTMLSelectElement).value === 'weapon')">
           <option value="weapon">武器傷害</option>
@@ -247,10 +248,10 @@ function remove() {
         <button class="small" @click="draft.damage!.splice(i, 1)">移除</button>
       </div>
       <button class="small" @click="addDamage">＋ 傷害</button>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>治療與護盾</legend>
+    <FoldSet>
+      <template #legend>治療與護盾</template>
       <div class="grid">
         <template v-if="draft.resolve === 'auto'">
           <label>治療（骰子）<input v-model="draft.heal!.dice" placeholder="1d8" /></label>
@@ -268,10 +269,10 @@ function remove() {
         <label class="check"><input v-model="draft.heal!.level" type="checkbox" /> 加等級</label>
         <label class="check"><input v-model="draft.heal!.full" type="checkbox" /> 回滿</label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>狀態</legend>
+    <FoldSet>
+      <template #legend>狀態</template>
       <div v-for="(a, i) in draft.apply ?? []" :key="i" class="row small">
         <select v-model="a.status" class="grow">
           <option v-for="s in statusList" :key="s.id" :value="s.id">{{ s.kind === 'buff' ? '🟢' : '🔴' }} {{ s.name }}</option>
@@ -294,10 +295,10 @@ function remove() {
         <button class="small" @click="draft.apply!.splice(i, 1)">移除</button>
       </div>
       <button class="small" @click="addApply">＋ 狀態</button>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>慾望戰鬥 <Hint text="成人向（docs/COMBAT_SYSTEM.md 第 8.5 節）。魅惑傷害在上面的「傷害」選屬性「魅惑」。存檔規則「慾望戰鬥」關閉時，有這些欄位的能力不能用；「主角非自願」關掉時敵人不用。" /></legend>
+    <FoldSet>
+      <template #legend>慾望戰鬥 <Hint text="成人向（docs/COMBAT_SYSTEM.md 第 8.5 節）。魅惑傷害在上面的「傷害」選屬性「魅惑」。存檔規則「慾望戰鬥」關閉時，有這些欄位的能力不能用；「主角非自願」關掉時敵人不用。" /></template>
       <div class="grid">
         <label>目標的慾望 + <input v-model.number="lustGain" type="number" min="0" max="200" placeholder="—" /></label>
         <label>目標的慾望 − <input v-model.number="draft.lust_relief" type="number" min="0" max="200" placeholder="—" /></label>
@@ -341,10 +342,10 @@ function remove() {
           慾望至少 <input class="num" type="number" min="0" max="100" :value="draft.burst.min_ratio ? Math.round(draft.burst.min_ratio * 100) : undefined" placeholder="—" @input="draft.burst.min_ratio = Number(($event.target as HTMLInputElement).value) / 100 || undefined" />%
         </template>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>次數與其他</legend>
+    <FoldSet>
+      <template #legend>次數與其他</template>
       <div class="grid">
         <label>每回合幾次 <input v-model.number="draft.uses!.per_turn" type="number" min="0" max="10" placeholder="不限" /></label>
         <label>每場戰鬥幾次 <input v-model.number="draft.uses!.per_combat" type="number" min="0" max="10" placeholder="不限" /></label>
@@ -361,7 +362,7 @@ function remove() {
           <label class="check"><input v-model="draft.kill" type="checkbox" /> 直接擊倒 <Hint text="配合上面的「目標生命值上限」使用。" /></label>
         </template>
       </div>
-    </fieldset>
+    </FoldSet>
 
     <label class="block"><span>說明 <Hint text="玩家與 AI 看到的。" /></span><textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
   </div>

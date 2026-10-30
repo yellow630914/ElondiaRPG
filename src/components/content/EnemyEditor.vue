@@ -13,6 +13,7 @@ import { MONSTER_BAND_COLOR, MONSTER_BAND_LEVELS, monsterArtPath, monsterBand } 
 import type { DrawSource } from '../items/itemIcon'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 怪物的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -163,8 +164,8 @@ function remove() {
     <UsageNote :usage="usage" :deletable="!builtin" />
     <p class="small muted">id：{{ id }}</p>
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" maxlength="20" /></label>
         <label>等級 <input v-model.number="draft.level" type="number" min="1" max="30" /></label>
@@ -191,10 +192,10 @@ function remove() {
         <label class="check"><input v-model="draft.rut" type="checkbox" /> 可能擲到「發情」</label>
       </div>
       <label class="block"><span>描述 <Hint text="給 AI 的外觀與習性。" /></span><textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>屬性與普通攻擊</legend>
+    <FoldSet>
+      <template #legend>屬性與普通攻擊</template>
       <div class="grid">
         <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }} <input v-model.number="draft.attrs[a]" type="number" min="1" max="30" /></label>
       </div>
@@ -217,17 +218,17 @@ function remove() {
           </select>
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>抗性與攻擊加成</legend>
+    <FoldSet>
+      <template #legend>抗性與攻擊加成</template>
       <p class="small muted">受到的傷害倍率：-1 免疫、-0.5 減半、+0.5 弱點（×1.5）。攻擊加成是造成傷害的倍率加減。</p>
       <AffinityRows v-model="draft.resist" label="抗性" />
       <AffinityRows v-model="draft.offense" label="攻擊加成" :max="7" />
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>技能</legend>
+    <FoldSet>
+      <template #legend>技能</template>
       <div class="chips">
         <span v-for="a in draft.abilities ?? []" :key="a" class="tag chip" :title="abilities[a]?.desc">
           {{ abilities[a]?.name ?? a }}
@@ -261,10 +262,10 @@ function remove() {
           <input type="checkbox" :checked="draft.traits?.includes(String(id))" @change="toggleTrait(String(id), ($event.target as HTMLInputElement).checked)" /> {{ t.name }}
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>掉落物</legend>
+    <FoldSet>
+      <template #legend>掉落物</template>
       <datalist id="item-names"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
       <div v-for="(l, i) in draft.loot ?? []" :key="i" class="row">
         <input v-model="l.item" list="item-names" placeholder="物品名稱" class="grow" />
@@ -274,10 +275,10 @@ function remove() {
         <span v-if="l.item && !itemNames.includes(l.item)" class="small warn-text">目錄裡沒有這個物品</span>
       </div>
       <button class="small" @click="addLoot">＋ 掉落物</button>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>出現地點</legend>
+    <FoldSet>
+      <template #legend>出現地點</template>
       <p class="small">目前出現在：{{ nowPlaces.map((p) => `${p.label}${p.groups > 1 ? `（${p.groups} 組）` : ''}`).join('、') || '（沒有，不會遇到）' }}</p>
       <template v-if="builtinPlaces.length">
         <p class="small muted">內建的遭遇表 <Hint text="勾選就從那裡移除；遭遇表不會被清空。" />：</p>
@@ -306,7 +307,7 @@ function remove() {
         <button class="small" @click="draft.spawns!.splice(i, 1)">移除</button>
       </div>
       <button class="small" @click="addSpawn">＋ 出現地點</button>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 
