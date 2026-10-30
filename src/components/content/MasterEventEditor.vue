@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { abilities, ATTR_IDS, attrName, lewdRules, MASTER_EVENT_POOLS, slaveryRules, tagDef, type MasterEventOption, type MasterEventPool } from '@/engine/data'
+import { abilities, lewdRules, MASTER_EVENT_POOLS, slaveryRules, tagDef, type MasterEventOption, type MasterEventPool } from '@/engine/data'
 import { builtinMasterEvent, masterEventById, masterEventWarnings, MASTER_EVENT_LIMITS, POOL_IDS, type MasterEventMod } from '@/engine/masterEventMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -8,6 +8,7 @@ import EffectsEditor from './EffectsEditor.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import CheckRow from './CheckRow.vue'
 
 // 主人事件格式的編輯表單（主人的突發事件、調教、娼館的打工與受訓）：條件、描述、回應（檢定、結果、效果）
 const props = defineProps<{ id: string }>()
@@ -208,8 +209,7 @@ function remove() {
           <input v-model="o.label" :maxlength="L.label_chars" class="grow" />
           <label class="check"><input type="checkbox" :checked="!!o.check" @change="toggleCheck(o, ($event.target as HTMLInputElement).checked)" /> 要檢定</label>
           <template v-if="o.check">
-            <select v-model="o.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-            DC <input v-model.number="o.check.dc" type="number" min="1" max="40" class="num" />
+            <CheckRow :check="o.check" />
             <select v-model="o.stance" title="依順從加減">
               <option :value="undefined">（不看順從）</option>
               <option value="submit">屈服（順從高加值）</option>

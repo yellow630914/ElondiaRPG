@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, geography, type LocationType, type RouteMode } from '@/engine/data'
+import { geography, type LocationType, type RouteMode } from '@/engine/data'
 import { cellName, type CellKind } from '@/engine/grid'
 import { travelEvents, type RoadOption } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
@@ -16,6 +16,7 @@ import RequiresEditor from './RequiresEditor.vue'
 import CheckList from './CheckList.vue'
 import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
 import FoldSet from './FoldSet.vue'
+import CheckRow from './CheckRow.vue'
 
 // 旅途事件、城鎮事件、地下城事件或寄生物的發作的編輯表單：在哪裡出現、檢定或選項、結果
 const props = defineProps<{ id: string }>()
@@ -258,8 +259,7 @@ function remove() {
     <FoldSet v-if="draft.kind === 'check'">
       <template #legend>檢定 <Hint v-if="draft.tier === 'advanced'" text="成功時接著出現下面的選項。" /></template>
       <div class="row small">
-        <select v-model="draft.check!.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-        DC <input v-model.number="draft.check!.dc" type="number" min="1" max="40" class="num" />
+        <CheckRow :check="draft.check!" />
       </div>
       <OutcomeEditor v-model="draft.success" label="成功" optional event />
       <OutcomeEditor v-model="draft.fail" label="失敗" optional event />
@@ -272,8 +272,7 @@ function remove() {
           <input v-model="o.label" maxlength="30" class="grow" />
           <label class="check"><input type="checkbox" :checked="!!o.check" @change="toggleCheck(o, ($event.target as HTMLInputElement).checked)" /> 要檢定</label>
           <template v-if="o.check">
-            <select v-model="o.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-            DC <input v-model.number="o.check.dc" type="number" min="1" max="40" class="num" />
+            <CheckRow :check="o.check" />
             <Hint v-if="onPc" :text="`14 是「普通」：實際 DC 依${parasite ? '主角等級與侵蝕度的階段' : '地下城的層'}調整，寫 12 就是比普通容易 2、寫 16 比普通難 2。`" />
           </template>
           <select v-if="draft.scene" v-model="o.adult_scene" class="small" title="這個選項進入親密場景">

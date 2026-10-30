@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
+import { geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
 import { wearChoices } from '@/engine/gear'
-import { CELL_ICON, cellName, type CellKind } from '@/engine/grid'
+import { cellName, type CellKind } from '@/engine/grid'
 import { specialPreview, storySpotProblem } from '@/engine/specialMapMods'
 import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
 import { travelEvents } from '@/engine/road'
@@ -14,6 +14,9 @@ import Hint from '../ui/Hint.vue'
 import RequiresEditor from './RequiresEditor.vue'
 import CheckList from './CheckList.vue'
 import { CONTENT_TAG_OPTIONS } from './checks'
+import CellGrid from './CellGrid.vue'
+import MonsterPick from './MonsterPick.vue'
+import CheckRow from './CheckRow.vue'
 
 // 一個任務點：在哪裡、解鎖的條件、種類（劇情、判定、戰鬥、選擇）、結果
 const node = defineModel<StoryNode>({ required: true })
@@ -30,7 +33,6 @@ const cellOptions = computed(() => [
   ...landmarksIn(node.value.at.location ?? '').map((l) => l.id as CellKind),
 ])
 const wearOptions = computed(() => wearChoices())
-const enemyList = computed(() => Object.values(enemies).sort((a, b) => a.level - b.level))
 
 function setKind(kind: StoryNode['kind']) {
   node.value.kind = kind
@@ -142,12 +144,7 @@ function toggleCheck(o: StoryOption, on: boolean) {
           <button v-if="spotPicked >= 0" class="small" @click="clearSpot">改回隨機</button>
         </p>
         <p v-if="spotProblem" class="small warn-text">那一格：{{ spotProblem }}，遊戲裡會隨機放在一格空地。</p>
-        <div class="cells" :style="{ gridTemplateColumns: `repeat(${spotMap.width}, 22px)` }">
-          <button
-            v-for="(c, i) in spotMap.cells" :key="i" class="cell" :class="[c.kind, { picked: i === spotPicked, off: !spotOk(i) }]"
-            :title="cellName(c.kind)" @click="pickSpot(i)"
-          >{{ i === spotPicked ? '⭐' : CELL_ICON[c.kind] ?? '' }}</button>
-        </div>
+        <CellGrid :kinds="spotMap.cells.map((c) => c.kind)" :width="spotMap.width" :picked="spotPicked" :is-off="(i) => !spotOk(i)" @pick="pickSpot" />
       </template>
       <p v-else class="small muted">隨機地圖：⭐ 隨機放在一格空地（不能指定格子）。</p>
     </template>
@@ -161,8 +158,7 @@ function toggleCheck(o: StoryOption, on: boolean) {
     <template v-if="node.kind === 'check' && node.check">
       <div class="row small">
         檢定
-        <select v-model="node.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-        DC <input v-model.number="node.check.dc" type="number" min="1" max="40" class="num" />
+        <CheckRow :check="node.check" />
         <Hint text="可以描述做法交給 AI 判定；大成功、成功、部分成功都算成功。" />
       </div>
       <StoryAffinityEditor v-model="node.check" />
@@ -172,11 +168,7 @@ function toggleCheck(o: StoryOption, on: boolean) {
 
     <template v-else-if="node.kind === 'combat'">
       <div v-for="(g, i) in node.enemies ?? []" :key="i" class="row small">
-        <select v-model="g[0]" class="grow">
-          <option v-for="e in enemyList" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option>
-        </select>
-        ×<input v-model.number="g[1]" type="number" min="1" max="6" class="num" />
-        <button class="small" @click="node.enemies!.splice(i, 1)">移除</button>
+        <MonsterPick :entry="g" @remove="node.enemies!.splice(i, 1)" />
       </div>
       <button class="small" @click="(node.enemies ??= []).push(['bandit', 1])">＋ 怪物</button>
       <NpcPicker v-model="node.foes" label="敵對的固定 NPC：" :exclude="node.allies" />
@@ -190,8 +182,7 @@ function toggleCheck(o: StoryOption, on: boolean) {
           選項 <input v-model="o.label" maxlength="30" />
           <label class="check"><input type="checkbox" :checked="!!o.check" @change="toggleCheck(o, ($event.target as HTMLInputElement).checked)" /> 要檢定</label>
           <template v-if="o.check">
-            <select v-model="o.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-            DC <input v-model.number="o.check.dc" type="number" min="1" max="40" class="num" />
+            <CheckRow :check="o.check" />
           </template>
           <button class="small" @click="node.options!.splice(i, 1)">移除選項</button>
         </div>
@@ -211,11 +202,5 @@ function toggleCheck(o: StoryOption, on: boolean) {
 <style scoped src="./editor.css"></style>
 <style scoped>
 .node { display: grid; gap: 6px; }
-.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; }
-.cell { width: 22px; height: 22px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
-.cell.wall { background: var(--border); }
-.cell.water { background: #2a4a6a; }
-.cell.off { cursor: default; opacity: 0.6; }
-.cell.picked { outline: 2px solid var(--accent); opacity: 1; }
 .option { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 </style>

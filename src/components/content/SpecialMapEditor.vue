@@ -13,6 +13,8 @@ import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import RequiresEditor from './RequiresEditor.vue'
 import FoldSet from './FoldSet.vue'
+import CellGrid from './CellGrid.vue'
+import MonsterPick from './MonsterPick.vue'
 
 // 特殊地圖的編輯表單：基本資料（所屬地點、給 AI 的描述、光線、刷新）、版面（畫格子或隨機挖）、
 // 額外的隨機內容、遭遇表與採集物、通道（接到城鎮區塊的牆或別張特殊地圖）。內建的不能刪除
@@ -83,6 +85,11 @@ function resize(w: number, h: number) {
 function charAt(x: number, y: number) {
   return draft.value.grid?.[y]?.[x] ?? '#'
 }
+/** 畫筆用的格子種類（一排一排攤平） */
+const paintKinds = computed(() => Array.from({ length: size.value[0] * size.value[1] }, (_, i) => legend[charAt(i % size.value[0], Math.floor(i / size.value[0]))]))
+/** 另一張地圖的格子（通道的另一頭）：每一排可能不一樣長，照最長的攤平 */
+const gridWidth = (rows: string[]) => Math.max(...rows.map((r) => r.length))
+const gridKinds = (rows: string[]) => rows.flatMap((r) => [...r.padEnd(gridWidth(rows), '#')].map((ch) => legend[ch]))
 function paint(x: number, y: number) {
   const t = tool.value
   if (t === 'entry') {
@@ -346,15 +353,12 @@ function remove() {
         </div>
         <p v-if="tool.startsWith('conn:')" class="small tip">點地圖上的一格，當作通道 {{ Number(tool.slice(5)) + 1 }} 在這張地圖的位置。</p>
         <p v-if="tool.startsWith('shop:')" class="small tip">點地圖上的一格擺這家店。</p>
-        <div class="cells" :style="{ gridTemplateColumns: `repeat(${size[0]}, 24px)` }">
-          <template v-for="y in size[1]" :key="y">
-            <button
-              v-for="x in size[0]" :key="`${x}-${y}`" class="cell" :class="legend[charAt(x - 1, y - 1)]"
-              :title="`(${x - 1}, ${y - 1}) ${cellName(legend[charAt(x - 1, y - 1)] ?? 'wall')}`"
-              @mousedown.prevent="down(x - 1, y - 1)" @mouseenter="enter(x - 1, y - 1)"
-            >{{ markerAt(x - 1, y - 1) || CELL_ICON[legend[charAt(x - 1, y - 1)] ?? 'wall'] || '' }}</button>
-          </template>
-        </div>
+        <CellGrid
+          :kinds="paintKinds" :width="size[0]" :size="24" paint
+          :icon="(i) => markerAt(i % size[0], Math.floor(i / size[0])) || undefined"
+          :title-of="(i) => `(${i % size[0]}, ${Math.floor(i / size[0])}) ${cellName(paintKinds[i] ?? 'wall')}`"
+          @down="(i) => down(i % size[0], Math.floor(i / size[0]))" @enter="(i) => enter(i % size[0], Math.floor(i / size[0]))"
+        />
         <p class="small muted">選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；BOSS 格的怪物在下方「BOSS 格」指定；沒有出口時只能從通道進出。</p>
       </template>
     </FoldSet>
@@ -377,13 +381,9 @@ function remove() {
       <p class="small muted">空白時：所屬地點是地下城就用「陷阱、寶箱比照」那一層的遭遇，其他用地區的城郊遭遇表。強敵是最強的一組再多一隻。</p>
       <div v-for="(g, gi) in draft.table ?? []" :key="gi" class="row small">
         <span>第 {{ gi + 1 }} 組：</span>
-        <span v-for="(m, mi) in g" :key="mi" class="row">
-          <select v-model="m[0]"><option v-for="e in monsterList" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option></select>
-          ×<input v-model.number="m[1]" type="number" :min="L.group_count[0]" :max="L.group_count[1]" style="width: 3.5em" />
-          <button class="x" @click="g.splice(mi, 1); if (!g.length) removeGroup(gi)">×</button>
-        </span>
+        <MonsterPick v-for="(m, mi) in g" :key="mi" :entry="m" :min="L.group_count[0]" :max="L.group_count[1]" @remove="g.splice(mi, 1); if (!g.length) removeGroup(gi)" />
         <button class="small" :disabled="g.length >= L.group_types" @click="addMonster(g)">＋ 怪物</button>
-        <button class="small warn" @click="removeGroup(gi)">刪除這組</button>
+        <button class="small" title="刪除這一組" @click="removeGroup(gi)">✕ 這一組</button>
       </div>
       <button class="small" :disabled="(draft.table?.length ?? 0) >= L.table" @click="addGroup">＋ 新增一組</button>
     </FoldSet>
@@ -396,11 +396,7 @@ function remove() {
         <span class="muted">（{{ c.x }}, {{ c.y }}）</span>
         <input :value="bossAt(c.x, c.y)?.name ?? ''" :maxlength="L.boss_name_chars" placeholder="名字（選填，例如 下水道之王）" style="width: 13em" @change="setBossName(c.x, c.y, ($event.target as HTMLInputElement).value)" />
         <template v-if="bossAt(c.x, c.y)?.group.length">
-          <span v-for="(m, mi) in bossAt(c.x, c.y)!.group" :key="mi" class="row">
-            <select v-model="m[0]"><option v-for="e in monsterList" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option></select>
-            ×<input v-model.number="m[1]" type="number" :min="L.group_count[0]" :max="L.group_count[1]" style="width: 3.5em" />
-            <button class="x" @click="removeBossMonster(c.x, c.y, mi)">×</button>
-          </span>
+          <MonsterPick v-for="(m, mi) in bossAt(c.x, c.y)!.group" :key="mi" :entry="m" :min="L.group_count[0]" :max="L.group_count[1]" @remove="removeBossMonster(c.x, c.y, mi)" />
         </template>
         <span v-else class="tip">沒指定怪物：照強敵的規則</span>
         <button class="small" :disabled="(bossAt(c.x, c.y)?.group.length ?? 0) >= L.group_types" @click="addBossMonster(c.x, c.y)">＋ 怪物</button>
@@ -462,14 +458,10 @@ function remove() {
             <label class="small">地圖
               <select v-model="c.to.area"><option v-for="m in otherMaps" :key="m.id" :value="`sm/${m.id}`">{{ m.name }}</option></select>
             </label>
-            <div v-if="targetGrid(c).length" class="cells small-cells" :style="{ gridTemplateColumns: `repeat(${Math.max(...targetGrid(c).map((r) => r.length))}, 18px)` }">
-              <template v-for="(row, ty) in targetGrid(c)" :key="ty">
-                <button
-                  v-for="(ch, tx) in [...row]" :key="`${tx}-${ty}`" class="cell" :class="[legend[ch], { picked: c.to.x === tx && c.to.y === ty }]"
-                  @click="c.to.x = tx; c.to.y = ty"
-                >{{ c.to.x === tx && c.to.y === ty ? '🔗' : CELL_ICON[legend[ch] ?? 'wall'] || '' }}</button>
-              </template>
-            </div>
+            <CellGrid
+              v-if="targetGrid(c).length" :kinds="gridKinds(targetGrid(c))" :width="gridWidth(targetGrid(c))" :size="18" marker="🔗"
+              :picked="c.to.y * gridWidth(targetGrid(c)) + c.to.x" @pick="(i) => { c.to.x = i % gridWidth(targetGrid(c)); c.to.y = Math.floor(i / gridWidth(targetGrid(c))) }"
+            />
             <p v-else class="small muted">那張是隨機地圖，沒辦法接通道。</p>
           </template>
           <RequiresEditor
@@ -487,12 +479,6 @@ function remove() {
 <style scoped>
 .interior-note { border-left: 3px solid var(--accent); padding-left: 8px; margin-top: 4px; }
 .interior-note ul { margin: 2px 0 0; padding-left: 18px; }
-.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; user-select: none; }
-.cell { width: 24px; height: 24px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
-.small-cells .cell { width: 18px; height: 18px; font-size: 10px; }
-.cell.wall { background: var(--border); }
-.cell.water { background: #2a4a6a; }
-.cell.picked { outline: 2px solid var(--accent); }
 .palette { flex-wrap: wrap; gap: 4px; }
 .conn { border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px; display: grid; gap: 6px; }
 .tip { color: var(--accent); }

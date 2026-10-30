@@ -2,7 +2,8 @@
 import { computed, watch } from 'vue'
 import { geography, landmarkDef, landmarksIn, regionById, specialMaps, type Haunt } from '@/engine/data'
 import { specialPreview } from '@/engine/specialMapMods'
-import { blockKeys, CELL_ICON, cellName, settlementArea, ZONES, type Zone } from '@/engine/grid'
+import { blockKeys, cellName, settlementArea, ZONES, type Zone } from '@/engine/grid'
+import CellGrid from './CellGrid.vue'
 
 // 固定 NPC 出沒的地方：所屬地點，加上活躍地點或固定在聚落的一格（預設的設定與「依劇情旗標改變出沒」共用）
 export interface Placement { location: string; haunts?: Haunt[]; fixed?: { area: string; x: number; y: number }; landmark?: string }
@@ -107,12 +108,10 @@ const picked = computed(() => (target.value.fixed && block.value ? target.value.
         </select>
       </label>
       <p class="small muted">點一格決定站的位置（{{ target.fixed.x }}, {{ target.fixed.y }}：{{ block && picked >= 0 ? cellName(block.cells[picked]!.kind) : '' }}）。</p>
-      <div v-if="block" class="cells" :style="{ gridTemplateColumns: `repeat(${block.width}, 22px)` }">
-        <button
-          v-for="(c, i) in block.cells" :key="i" class="cell" :class="[c.kind, { picked: i === picked }]"
-          :title="cellName(c.kind)" @click="pickCell(i)"
-        >{{ i === picked ? '🧍' : CELL_ICON[c.kind] ?? '' }}</button>
-      </div>
+      <CellGrid
+        v-if="block" :kinds="block.cells.map((c) => c.kind)" :width="block.width" :picked="picked" marker="🧍"
+        :is-off="(i) => block!.cells[i]!.kind === 'wall' || block!.cells[i]!.kind === 'water'" @pick="pickCell"
+      />
     </template>
   </div>
 </template>
@@ -120,9 +119,4 @@ const picked = computed(() => (target.value.fixed && block.value ? target.value.
 <style scoped src="./editor.css"></style>
 <style scoped>
 .placement { display: grid; gap: 6px; }
-.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; }
-.cell { width: 22px; height: 22px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
-.cell.wall { background: var(--border); cursor: default; }
-.cell.water { background: #2a4a6a; cursor: default; }
-.cell.picked { outline: 2px solid var(--accent); }
 </style>
