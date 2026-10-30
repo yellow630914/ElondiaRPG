@@ -25,7 +25,7 @@
 | I2 | 敘事輸出檢查 | AI | [early-design](early-design.md#i2) |
 | I3 | 敘事不承諾判定沒給的東西 | AI | [player-feedback](player-feedback.md#i3) |
 | I4 | 規則判定時提示「要物品要開 AI 判定」 | AI | [player-feedback](player-feedback.md#i4) |
-| I5 | AI 生成特殊任務、替事件換皮 | AI | [early-design](early-design.md#i5) |
+| I5 | 替事件換皮（「AI 生成特殊任務」2026-10-30 搬到 [ROADMAP](../ROADMAP.md) R11） | AI | [early-design](early-design.md#i5) |
 | I6 | 暗殺、背叛的專門機制 | 玩法 | [early-design](early-design.md#i6) |
 | I7 | 地下城探索彙整報告 | AI、玩法 | [early-design](early-design.md#i7) |
 | I8 | 遭遇的動態組合 | 玩法 | [review-2026-10](review-2026-10.md#i8) |

@@ -15,6 +15,7 @@
 | [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) | 手機版 UI 計畫 | M | 同上（ROADMAP R10；M1～M4 已合併，待實機測試） |
 | [RETROSPECTIVE](RETROSPECTIVE.md) | 開發回顧：問題盤點 | — | 開發以來遇到的問題、原因、防範與建議（2026-10-30） |
 | [CHARACTER_LINES_PLAN](CHARACTER_LINES_PLAN.md) | 角色線計畫（白百合巡禮、琥珀） | — | 同上（ROADMAP R9） |
+| [WORLD_EDITOR_PLAN](WORLD_EDITOR_PLAN.md) | 世界編輯器計畫（局部匯入、介面整理、任務流程圖、特殊任務生成器） | E | 同上（ROADMAP R11） |
 
 ## 2. 流程
 
