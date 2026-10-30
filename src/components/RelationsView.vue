@@ -205,8 +205,8 @@ const suggestionDraft = reactive<Record<string, string>>({})
           <div class="row">
             <button class="small" @click="startEdit(r)">編輯</button>
             <button
-              v-if="promotable(r.id)" class="small" :disabled="content.readOnly"
-              :title="content.readOnly ? `${VANILLA_NAME}不能修改：要先建立自己的世界，再用那個世界開始遊戲` : '把這個人目前的樣子（能力值、技能、特質、裝備、出沒的地方）存進目前的世界，之後可以在內容頁籤編輯；親密度與記憶延續'"
+              v-if="promotable(r.id)" class="small"
+              :title="(content.readOnly ? `${VANILLA_NAME}不能直接修改：會自動建立自己的世界，這場遊戲也改用它。` : '') + '把這個人目前的樣子（能力值、技能、特質、裝備、出沒的地方）存進目前的世界，之後可以在內容頁籤編輯；親密度與記憶延續'"
               @click="promote(r.id, r.name)"
             ><GameIcon name="bookmark" :size="13" /> 存成固定 NPC</button>
           </div>

@@ -44,6 +44,8 @@ const WORLDS_KEY = 'elondia.worlds'
 /** 原版世界：沒有任何自訂內容，不能修改 */
 export const VANILLA = 'vanilla'
 export const VANILLA_NAME = '原版世界'
+/** 在原版世界修改內容時，自動建立的世界的名字 */
+export const FORK_NAME = '我的世界'
 
 export interface World {
   id: string
@@ -160,12 +162,33 @@ export const useContent = defineStore('content', () => {
     version.value++
   }
 
+  /** 自動建立的世界的名字：「我的世界」，同名時加數字 */
+  function forkName(): string {
+    const names = new Set(worlds.value.map((w) => w.name))
+    if (!names.has(FORK_NAME)) return FORK_NAME
+    for (let i = 2; ; i++) if (!names.has(`${FORK_NAME} ${i}`)) return `${FORK_NAME} ${i}`
+  }
+
+  /**
+   * 原版世界不能直接修改：把這次的修改存成一個新的世界（原版的複本加上這次的修改）並切換過去。
+   * 進行中的遊戲也改用這個世界（除了這次的修改，內容和原版一樣），之後的存檔記住它；原版世界的其他存檔不受影響。
+   */
+  function forkVanilla() {
+    const id = createWorld(forkName(), undefined, mods.value)
+    useWorld(id)
+    const game = useGame()
+    if (game.state) game.state.world = { id, name: worldName(id) }
+    game.flash(`原版世界不能直接修改：已自動建立「${worldName(id)}」並切換過去，這次的修改存在那裡${game.state ? '（進行中的遊戲也改用它）' : ''}。`)
+  }
+
   function save() {
-    // 原版世界不能改：丟掉這次的修改
+    // 原版世界不能直接改：有修改時自動複製成新的世界（沒有修改就什麼都不做）
     if (readOnly.value) {
-      mods.value = emptyMods()
-      apply()
-      throw new Error('原版世界不能修改：先在世界管理建立一個新的世界')
+      if (!modTotal(mods.value)) {
+        apply()
+        return
+      }
+      forkVanilla()
     }
     const w = worlds.value.find((x) => x.id === active.value)
     if (w) {
@@ -495,7 +518,7 @@ export const useContent = defineStore('content', () => {
 
   /** 把存檔裡生成的人存成固定 NPC（同一個 id，關係與記憶延續；存檔的紀錄由呼叫的地方改，見 game.promoteNpc） */
   function promoteNpc(state: GameState, id: string) {
-    if (readOnly.value) throw new Error(`${VANILLA_NAME}不能修改：請先在內容頁籤建立自己的世界，再用那個世界開始遊戲`)
+    // 原版世界時 save() 會自動建立自己的世界（進行中的遊戲跟著改用它）
     mods.value.npcs[id] = npcModFromState(state, id)
     save()
   }

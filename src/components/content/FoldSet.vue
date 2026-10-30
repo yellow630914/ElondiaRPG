@@ -3,9 +3,10 @@ import { getCurrentInstance, onMounted, ref } from 'vue'
 
 // 可以收起的區塊（取代編輯器裡的 <fieldset><legend>）：標題前面的 ▾／▸ 收起或展開。
 // 收起的狀態依「哪個編輯器的哪個區塊」記在這個瀏覽器（換到同一種的下一項時照舊）；
-// 沒記過時照 filled：寫了 :filled="false"（這一塊沒有資料）就先收起來，其他預設展開。
+// 沒記過時預設展開；寫了 start-folded 的先收起來。
 // 收起來時內容照樣留著（只是不顯示），標題旁標「・有設定」：裡面有填了字或數字的欄位、勾了的勾選框。
-const props = defineProps<{ filled?: boolean }>()
+// 注意：沒傳的布林 prop 是 false（不是 undefined），所以用「預設收起」而不是「有沒有資料」
+const props = defineProps<{ startFolded?: boolean }>()
 const KEY = 'elondia.ui.folds'
 const editor = (getCurrentInstance()?.parent?.type as { __name?: string } | undefined)?.__name ?? ''
 const root = ref<HTMLFieldSetElement | null>(null)
@@ -24,7 +25,7 @@ onMounted(() => {
   // 標題的文字去掉數字與括號（「任務點（3）」和「任務點（4）」是同一塊）
   const text = root.value?.querySelector(':scope > legend .fold-label')?.textContent ?? ''
   key = `${editor}:${text.replace(/[\d（）()、～…：:]+/g, '').trim().slice(0, 20)}`
-  folded.value = readAll()[key] ?? props.filled === false
+  folded.value = readAll()[key] ?? props.startFolded
   check()
 })
 /** 裡面有沒有填東西（下拉選單不算：多半有預設值） */

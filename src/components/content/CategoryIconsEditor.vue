@@ -43,13 +43,13 @@ function restore() {
     <p class="small muted">
       物品的圖示依序找：物品自己上傳的圖 → 裝備的底材圖（底材頁可以上傳）→ 這裡的類別圖。換了立刻儲存，存在這個世界裡。
     </p>
-    <p v-if="content.readOnly" class="small warn-text">原版世界不能修改：先在世界管理建立一個新的世界。</p>
+    <p v-if="content.readOnly" class="small muted">原版世界不能直接修改：換圖示時會自動建立自己的世界並切換過去。</p>
     <FoldSet>
       <template #legend>類別</template>
       <div class="cats">
         <div v-for="c in CATEGORY_ORDER" :key="c" class="cat">
           <span class="name">{{ itemRules.categories[c] }}</span>
-          <IconField :model-value="iconOf(c)" :fallback="builtin(c)" :disabled="content.readOnly" @update:model-value="set(c, $event)" />
+          <IconField :model-value="iconOf(c)" :fallback="builtin(c)" @update:model-value="set(c, $event)" />
         </div>
       </div>
     </FoldSet>

@@ -17,7 +17,7 @@ import {
   builtinMark, builtinTattoo, conditionIds,
 } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
-import { useContent } from '@/stores/content'
+import { FORK_NAME, useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { dateStamp, download } from './download'
 import AbilityEditor from './content/AbilityEditor.vue'
@@ -820,7 +820,7 @@ function resetAll() {
       <button v-for="t in group.tabs" :key="t" class="small" :class="{ active: tab === t }" @click="openTab(t)">{{ tabLabel(t) }}</button>
     </nav>
     <p v-if="content.readOnly" class="small read-only">
-      🔒 原版世界不能修改，這裡只能瀏覽。要自訂內容，在上方的世界列「＋ 新的世界」或「📄 複製這個世界」。
+      🔒 原版世界不能直接修改：新增、複製或儲存修改時，會自動建立「{{ FORK_NAME }}」（原版的複本）並切換過去，修改存在那裡{{ game.state ? '，進行中的遊戲也改用它' : '' }}。
     </p>
     <div v-if="showIntro" class="intro small muted">
       <p>
@@ -837,8 +837,8 @@ function resetAll() {
     <div v-else class="layout">
       <section class="panel list-panel">
         <div class="row">
-          <button class="small primary" :disabled="content.readOnly" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="content.readOnly || !current || isSetting(current)" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製這一項</button>
+          <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
+          <button class="small" :disabled="!current || isSetting(current)" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製這一項</button>
           <span class="spacer" />
           <button
             v-for="x in SETTINGS" :key="x.key" class="small" :class="{ active: current === x.key }"
@@ -949,7 +949,7 @@ function resetAll() {
         <summary class="small">⋯ 這個世界的全部內容</summary>
         <div class="menu">
           <button class="small" :disabled="content.readOnly" @click="exportAll">📤 匯出自訂內容（內容檔）</button>
-          <button class="small" :disabled="content.readOnly" title="會取代這個世界目前所有的自訂內容" @click="fileInput?.click()">📥 匯入內容檔，取代全部內容…</button>
+          <button class="small" title="會取代這個世界目前所有的自訂內容（原版世界時存成新的世界）" @click="fileInput?.click()">📥 匯入內容檔，取代全部內容…</button>
           <button class="small danger" :disabled="content.readOnly" @click="resetAll">↩️ 全部恢復預設…</button>
         </div>
       </details>

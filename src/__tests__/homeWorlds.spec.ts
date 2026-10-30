@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { enemies } from '@/engine/data'
 import { applyContent, builtinEnemy, emptyMods } from '@/engine/mods'
-import { useContent, VANILLA } from '@/stores/content'
+import { FORK_NAME, useContent, VANILLA } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { localStorageStore, preloadCurrent, useCurrentStore, useSlotStore, type CurrentData, type CurrentStore } from '@/stores/saves'
@@ -39,11 +39,25 @@ afterEach(() => {
 })
 
 describe('worlds', () => {
-  it('keep the original world read-only and let you make editable copies', () => {
+  it('copy the original world into 我的世界 when you change it, and let you make editable copies', () => {
     const c = useContent()
     expect(c.active).toBe(VANILLA)
-    expect(() => c.saveEnemy('goblin', { ...enemies.goblin!, hp: 50 })).toThrow('原版世界不能修改')
+    // 原版世界不能直接改：自動建立「我的世界」，修改存在那裡，原版不受影響
+    c.saveEnemy('goblin', { ...enemies.goblin!, hp: 50 })
+    const mine = c.worlds.find((w) => w.name === FORK_NAME)!
+    expect(c.active).toBe(mine.id)
+    expect(enemies.goblin!.hp).toBe(50)
+    expect(mine.mods.enemies.goblin?.hp).toBe(50)
+    c.switchWorld(VANILLA)
     expect(enemies.goblin!.hp).toBe(builtinEnemy('goblin')!.hp)
+    // 再改一次：名字不重複
+    c.saveEnemy('goblin', { ...enemies.goblin!, hp: 60 })
+    expect(c.activeName).toBe(`${FORK_NAME} 2`)
+    // 沒有修改（恢復預設）不建立世界
+    c.switchWorld(VANILLA)
+    c.restoreEnemy('goblin')
+    expect(c.active).toBe(VANILLA)
+    expect(c.worlds).toHaveLength(2)
     const id = c.createWorld('哥布林強化版')
     c.switchWorld(id)
     c.saveEnemy('goblin', { ...enemies.goblin!, hp: 50 })
@@ -92,6 +106,23 @@ describe('worlds', () => {
     expect(g.continueGame()).toBe(true)
     expect(c.active).toBe(id)
     expect(enemies.goblin!.hp).toBe(44)
+  })
+
+  it('move a game on the original world to 我的世界 when you change the content while playing', async () => {
+    const c = useContent()
+    const g = useGame()
+    g.start('艾倫', 'human', 'fighter', undefined, {})
+    expect(g.state!.world?.id ?? VANILLA).toBe(VANILLA)
+    c.saveEnemy('goblin', { ...enemies.goblin!, hp: 47 })
+    expect(c.activeName).toBe(FORK_NAME)
+    expect(g.state!.world).toEqual({ id: c.active, name: FORK_NAME })
+    expect(enemies.goblin!.hp).toBe(47)
+    // 回首頁再繼續：回到「我的世界」
+    await g.toHome()
+    c.switchWorld(VANILLA)
+    expect(g.continueGame()).toBe(true)
+    expect(c.activeName).toBe(FORK_NAME)
+    expect(enemies.goblin!.hp).toBe(47)
   })
 
   it('fall back to the bundled content or the original world when a save’s world is gone', async () => {

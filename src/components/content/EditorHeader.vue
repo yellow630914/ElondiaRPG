@@ -5,7 +5,7 @@ import { unsavedEdits } from './unsaved'
 
 // 編輯器的表頭：名稱、內建／自建、未儲存，和儲存、放棄修改、恢復預設或刪除。捲動時留在畫面上。
 // kind：builtin 內建（可以恢復預設）、custom 自建（可以刪除）、rules 只有一筆的設定（可以恢復預設，標籤只有「內建／已修改」）。
-// 原版世界（唯讀）時儲存、恢復預設、刪除都停用。有未儲存的修改時回報給未儲存保護（unsaved.ts）。
+// 原版世界：儲存時自動建立自己的世界（stores/content.ts 的 forkVanilla）；恢復預設、刪除停用（沒有東西可以恢復或刪）。有未儲存的修改時回報給未儲存保護（unsaved.ts）。
 const props = withDefaults(defineProps<{
   title: string
   kind: 'builtin' | 'custom' | 'rules'
@@ -36,8 +36,8 @@ onBeforeUnmount(() => { unsavedEdits.value = false })
     <span v-if="dirty" class="tag unsaved">未儲存</span>
     <span class="spacer" />
     <button
-      class="small primary" :disabled="readOnly || !dirty || !!blocked"
-      :title="readOnly ? '原版世界不能修改' : blocked" @click="emit('save')"
+      class="small primary" :disabled="!dirty || !!blocked"
+      :title="blocked || (readOnly ? '原版世界不能直接修改：儲存時自動建立自己的世界並切換過去' : '')" @click="emit('save')"
     >💾 儲存</button>
     <button class="small" :disabled="!dirty" @click="emit('discard')">放棄修改</button>
     <button v-if="kind !== 'custom'" class="small" :disabled="readOnly || !edited" @click="emit('restore')">↩️ 恢復預設</button>

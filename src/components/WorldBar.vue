@@ -105,7 +105,7 @@ function exportPackage() {
       </select>
       <span class="muted">切換到這個世界（開新遊戲、讀檔、繼續）時，提示詞組跟著切換。</span>
     </div>
-    <p v-if="content.readOnly" class="small warn-text">原版世界不能修改：要自訂內容，先建立或複製一個世界。</p>
+    <p v-if="content.readOnly" class="small muted">原版世界不能直接修改：在下面新增、複製或儲存修改時，會自動建立自己的世界並切換過去；也可以先「＋ 新的世界」。</p>
     <p v-if="msg" class="small note">{{ msg }}</p>
   </section>
 </template>
