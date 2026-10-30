@@ -17,7 +17,7 @@ import {
   builtinMark, builtinTattoo, conditionIds,
 } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
-import { FORK_NAME, useContent } from '@/stores/content'
+import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { dateStamp, download } from './download'
 import AbilityEditor from './content/AbilityEditor.vue'
@@ -53,7 +53,7 @@ import { builtinTravelEvent, DUNGEON_TRIGGERS, newTravelEvent } from '@/engine/t
 import { parasiteRules } from '@/engine/parasites'
 import { isMobile, pushLayer } from './mobile/mobile'
 import GameIcon from './ui/GameIcon.vue'
-import { confirmDiscard } from './content/unsaved'
+import { confirmDiscard, unsavedEdits } from './content/unsaved'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
 type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
@@ -93,8 +93,8 @@ const tab = computed<Tab>(() => (iconsTab.value ? 'icons' : sub.value))
 const group = computed(() => GROUPS.find((g) => g.tabs.includes(tab.value))!)
 /** 每一組上次看的頁籤（切回這一組時回到那裡） */
 const lastTab: Record<string, Tab> = {}
-function openTab(t: Tab) {
-  if (t === tab.value || !confirmDiscard()) return
+async function openTab(t: Tab) {
+  if (t === tab.value || !(await confirmDiscard())) return
   if (t === 'icons') iconsTab.value = true
   else {
     iconsTab.value = false
@@ -541,8 +541,8 @@ const current = computed(() => {
   return exists ? key : ''
 })
 
-function select(key: string) {
-  if (key === selected.value[sub.value] || !confirmDiscard()) return
+async function select(key: string) {
+  if (key === selected.value[sub.value] || !(await confirmDiscard())) return
   selected.value[sub.value] = key
 }
 
@@ -567,14 +567,13 @@ function createStatus(type: 'combat' | 'cond') {
     if (type === 'combat') {
       const id = newModId('status')
       content.saveStatus(id, newStatus(statusKind.value === 'debuff' ? 'debuff' : 'buff'))
-      if (statusKind.value === 'cond') statusKind.value = ''
       select(id)
     } else {
       const id = newModId('cond')
       content.saveCondition(id, newCondition())
-      if (statusKind.value === 'buff' || statusKind.value === 'debuff') statusKind.value = ''
       select(`c:${id}`)
     }
+    clearFilters()
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
   }
@@ -602,6 +601,7 @@ function create() {
     } else if (sub.value === 'statuses') {
       // 先選類型：戰鬥狀態或非戰鬥狀態
       pickStatusType.value = !pickStatusType.value
+      return
     } else if (sub.value === 'perks') {
       const id = newModId('perk')
       content.savePerk(id, newPerk(id))
@@ -649,8 +649,8 @@ function create() {
       content.saveMaterial(id, newMaterial(), true)
       select(id)
     }
-    filter.value = 'all'
-    search.value = ''
+    // 新的項目可能不符合目前的篩選：全部解除，讓它出現在清單裡
+    clearFilters()
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
   }
@@ -662,109 +662,117 @@ function duplicate() {
   // 非戰鬥狀態不能自建
   if (!key) return
   try {
-    if (sub.value === 'enemies') {
-      const id = newModId('enemy')
-      const src = JSON.parse(JSON.stringify(content.mods.enemies[key] ?? enemies[key]))
-      delete src.spawns
-      delete src.exclude
-      content.saveEnemy(id, { ...src, name: `${src.name}（複製）`, custom: true })
-      select(id)
-    } else if (sub.value === 'items') {
-      let name = `${key}（複製）`.slice(0, 20)
-      for (let i = 2; itemDef(name) || game.state?.customItems?.[name]; i++) name = `${key.slice(0, 15)}（複製${i}）`
-      content.saveItem(name, { ...JSON.parse(JSON.stringify(itemDef(key))), custom: true })
-      select(name)
-    } else if (sub.value === 'landmarks') {
-      // 複製：同一個聚落另一格空地
-      const id = newLandmarkId()
-      const src = landmarks[key]!
-      content.saveLandmark(id, { ...JSON.parse(JSON.stringify(src)), ...newLandmark(id, src.location), name: `${src.name}2`.slice(0, 12), emoji: src.emoji, desc: src.desc, types: [...src.types], ...(src.scene ? { scene: src.scene } : {}) })
-      select(id)
-    } else if (sub.value === 'specialMaps') {
-      // 複製：通道不帶走（另一頭還接著原本的地圖）
-      const id = newSpecialMapId()
-      const src = JSON.parse(JSON.stringify(specialMaps[key]))
-      delete src.connections
-      content.saveSpecialMap(id, { ...src, id, name: `${src.name}2`.slice(0, 16), custom: true })
-      select(id)
-    } else if (sub.value === 'shops') {
-      // 複製內建的店不會帶走專屬功能與位置
-      const id = newShopId()
-      content.saveShop(id, shopAsCustom(key))
-      select(id)
-    } else if (sub.value === 'events') {
-      if (key === 'rules') return
-      const id = newModId('event')
-      const src = JSON.parse(JSON.stringify(content.mods.travelEvents?.[key] ?? travelEvents.templates.find((t) => t.id === key)))
-      content.saveTravelEvent(id, { ...src, id, title: `${src.title}2`.slice(0, 20), custom: true })
-      select(id)
-    } else if (sub.value === 'masterEvents') {
-      const id = newModId('mevent')
-      const found = masterEventById(key)!
-      content.saveMasterEvent(id, { ...JSON.parse(JSON.stringify(content.mods.masterEvents?.[key] ?? found.def)), pool: found.pool, custom: true })
-      select(id)
-    } else if (sub.value === 'stories') {
-      const id = newModId('story')
-      // 開頭旗標換成新任務自己的（和原本的重複算錯誤）
-      content.saveStory(id, copyStory(content.mods.stories[key] ?? stories.find((d) => d.id === key)!, id))
-      select(id)
-    } else if (sub.value === 'perks') {
-      // 複製種族特質會變成一般的特質
-      const id = newModId('perk')
-      const src = JSON.parse(JSON.stringify(content.mods.perks[key] ?? perkDef(key)))
-      delete src.race
-      content.savePerk(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
-      select(id)
-    } else if (sub.value === 'tattoos') {
-      if (key === 'rules') return
-      const raw = key.slice(2)
-      if (key.startsWith('t:')) {
-        const id = newModId('tattoo')
-        const src = JSON.parse(JSON.stringify(content.mods.tattoos?.[raw] ?? tattooRules.templates[raw]))
-        content.saveTattoo(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
-        select(`t:${id}`)
-      } else {
-        const id = newModId('mark')
-        const src = JSON.parse(JSON.stringify(content.mods.marks?.[raw] ?? slaveryRules.contracts[raw]))
-        content.saveMark(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
-        select(`m:${id}`)
-      }
-    } else if (sub.value === 'statuses' && key.startsWith('c:')) {
-      const id = newModId('cond')
-      const src = JSON.parse(JSON.stringify(companionRules.conditions[key.slice(2)]))
-      content.saveCondition(id, { ...src, name: `${src.name}2`.slice(0, 10), custom: true })
-      select(`c:${id}`)
-    } else if (sub.value === 'statuses') {
-      const id = newModId('status')
-      const src = JSON.parse(JSON.stringify(content.mods.statuses[key] ?? statuses[key]))
-      content.saveStatus(id, { ...src, name: `${src.name}2`.slice(0, 10), custom: true })
-      select(id)
-    } else if (sub.value === 'abilities') {
-      const id = newModId('ability')
-      const src = JSON.parse(JSON.stringify(content.mods.abilities[key] ?? abilities[key]))
-      content.saveAbility(id, { ...src, name: `${src.name}2`.slice(0, 16), custom: true })
-      select(id)
-    } else if (sub.value === 'npcs') {
-      const id = newModId('npc')
-      const src = JSON.parse(JSON.stringify(content.mods.npcs[key] ?? namedNpcs.find((n) => n.id === key)))
-      content.saveNpc(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
-      select(id)
-    } else if (sub.value === 'bases') {
-      const id = newModId('base')
-      const src = JSON.parse(JSON.stringify(content.mods.bases[key] ?? gearRules.bases[key]))
-      content.saveBase(id, { ...src, name: `${src.name}2` }, true)
-      select(id)
-    } else {
-      const id = newModId('mat')
-      const src = JSON.parse(JSON.stringify(content.mods.materials[key] ?? gearRules.materials[key]))
-      content.saveMaterial(id, { ...src, name: `${src.name}2` }, true)
-      select(id)
-    }
+    duplicateKey(key)
+    // 複製出來的項目可能不符合目前的篩選：全部解除
+    clearFilters()
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
   }
 }
+/** 以 key 為範本複製一份自建項目並選取它 */
+function duplicateKey(key: string) {
+  if (sub.value === 'enemies') {
+    const id = newModId('enemy')
+    const src = JSON.parse(JSON.stringify(content.mods.enemies[key] ?? enemies[key]))
+    delete src.spawns
+    delete src.exclude
+    content.saveEnemy(id, { ...src, name: `${src.name}（複製）`, custom: true })
+    select(id)
+  } else if (sub.value === 'items') {
+    let name = `${key}（複製）`.slice(0, 20)
+    for (let i = 2; itemDef(name) || game.state?.customItems?.[name]; i++) name = `${key.slice(0, 15)}（複製${i}）`
+    content.saveItem(name, { ...JSON.parse(JSON.stringify(itemDef(key))), custom: true })
+    select(name)
+  } else if (sub.value === 'landmarks') {
+    // 複製：同一個聚落另一格空地
+    const id = newLandmarkId()
+    const src = landmarks[key]!
+    content.saveLandmark(id, { ...JSON.parse(JSON.stringify(src)), ...newLandmark(id, src.location), name: `${src.name}2`.slice(0, 12), emoji: src.emoji, desc: src.desc, types: [...src.types], ...(src.scene ? { scene: src.scene } : {}) })
+    select(id)
+  } else if (sub.value === 'specialMaps') {
+    // 複製：通道不帶走（另一頭還接著原本的地圖）
+    const id = newSpecialMapId()
+    const src = JSON.parse(JSON.stringify(specialMaps[key]))
+    delete src.connections
+    content.saveSpecialMap(id, { ...src, id, name: `${src.name}2`.slice(0, 16), custom: true })
+    select(id)
+  } else if (sub.value === 'shops') {
+    // 複製內建的店不會帶走專屬功能與位置
+    const id = newShopId()
+    content.saveShop(id, shopAsCustom(key))
+    select(id)
+  } else if (sub.value === 'events') {
+    if (key === 'rules') return
+    const id = newModId('event')
+    const src = JSON.parse(JSON.stringify(content.mods.travelEvents?.[key] ?? travelEvents.templates.find((t) => t.id === key)))
+    content.saveTravelEvent(id, { ...src, id, title: `${src.title}2`.slice(0, 20), custom: true })
+    select(id)
+  } else if (sub.value === 'masterEvents') {
+    const id = newModId('mevent')
+    const found = masterEventById(key)!
+    content.saveMasterEvent(id, { ...JSON.parse(JSON.stringify(content.mods.masterEvents?.[key] ?? found.def)), pool: found.pool, custom: true })
+    select(id)
+  } else if (sub.value === 'stories') {
+    const id = newModId('story')
+    // 開頭旗標換成新任務自己的（和原本的重複算錯誤）
+    content.saveStory(id, copyStory(content.mods.stories[key] ?? stories.find((d) => d.id === key)!, id))
+    select(id)
+  } else if (sub.value === 'perks') {
+    // 複製種族特質會變成一般的特質
+    const id = newModId('perk')
+    const src = JSON.parse(JSON.stringify(content.mods.perks[key] ?? perkDef(key)))
+    delete src.race
+    content.savePerk(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
+    select(id)
+  } else if (sub.value === 'tattoos') {
+    if (key === 'rules') return
+    const raw = key.slice(2)
+    if (key.startsWith('t:')) {
+      const id = newModId('tattoo')
+      const src = JSON.parse(JSON.stringify(content.mods.tattoos?.[raw] ?? tattooRules.templates[raw]))
+      content.saveTattoo(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
+      select(`t:${id}`)
+    } else {
+      const id = newModId('mark')
+      const src = JSON.parse(JSON.stringify(content.mods.marks?.[raw] ?? slaveryRules.contracts[raw]))
+      content.saveMark(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
+      select(`m:${id}`)
+    }
+  } else if (sub.value === 'statuses' && key.startsWith('c:')) {
+    const id = newModId('cond')
+    const src = JSON.parse(JSON.stringify(companionRules.conditions[key.slice(2)]))
+    content.saveCondition(id, { ...src, name: `${src.name}2`.slice(0, 10), custom: true })
+    select(`c:${id}`)
+  } else if (sub.value === 'statuses') {
+    const id = newModId('status')
+    const src = JSON.parse(JSON.stringify(content.mods.statuses[key] ?? statuses[key]))
+    content.saveStatus(id, { ...src, name: `${src.name}2`.slice(0, 10), custom: true })
+    select(id)
+  } else if (sub.value === 'abilities') {
+    const id = newModId('ability')
+    const src = JSON.parse(JSON.stringify(content.mods.abilities[key] ?? abilities[key]))
+    content.saveAbility(id, { ...src, name: `${src.name}2`.slice(0, 16), custom: true })
+    select(id)
+  } else if (sub.value === 'npcs') {
+    const id = newModId('npc')
+    const src = JSON.parse(JSON.stringify(content.mods.npcs[key] ?? namedNpcs.find((n) => n.id === key)))
+    content.saveNpc(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
+    select(id)
+  } else if (sub.value === 'bases') {
+    const id = newModId('base')
+    const src = JSON.parse(JSON.stringify(content.mods.bases[key] ?? gearRules.bases[key]))
+    content.saveBase(id, { ...src, name: `${src.name}2` }, true)
+    select(id)
+  } else {
+    const id = newModId('mat')
+    const src = JSON.parse(JSON.stringify(content.mods.materials[key] ?? gearRules.materials[key]))
+    content.saveMaterial(id, { ...src, name: `${src.name}2` }, true)
+    select(id)
+  }
+}
 
+/** 有未儲存的修改時不能新增或複製（新的項目會先存進世界） */
+const UNSAVED_HINT = '這一項還有未儲存的修改：先儲存或放棄修改，才能新增或複製'
 const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
 // ---- 局部匯入、匯出（E2） ----
@@ -844,7 +852,7 @@ function resetAll() {
       <button v-for="t in group.tabs" :key="t" class="small" :class="{ active: tab === t }" @click="openTab(t)">{{ tabLabel(t) }}</button>
     </nav>
     <p v-if="content.readOnly" class="small read-only">
-      🔒 原版世界不能直接修改：新增、複製或儲存修改時，會自動建立「{{ FORK_NAME }}」（原版的複本）並切換過去，修改存在那裡{{ game.state ? '，進行中的遊戲也改用它' : '' }}。
+      🔒 原版世界不能直接修改：新增、複製或儲存修改時，會自動建立「{{ content.forkName() }}」（原版的複本）並切換過去，修改存在那裡{{ game.state ? '，進行中的遊戲也改用它。' : '；也可以先在上面「＋ 新的世界」。' }}
     </p>
     <div v-if="showIntro" class="intro small muted">
       <p>
@@ -861,8 +869,11 @@ function resetAll() {
     <div v-else class="layout">
       <section class="panel list-panel">
         <div class="row">
-          <button class="small primary" @click="create">{{ NEW_LABEL[sub] }}</button>
-          <button class="small" :disabled="!current || isSetting(current)" title="以選取的項目為範本，建立一個自建項目" @click="duplicate">📄 複製這一項</button>
+          <button class="small primary" :disabled="unsavedEdits" :title="unsavedEdits ? UNSAVED_HINT : ''" @click="create">{{ NEW_LABEL[sub] }}</button>
+          <button
+            class="small" :disabled="!current || isSetting(current) || unsavedEdits"
+            :title="unsavedEdits ? UNSAVED_HINT : '以選取的項目為範本，建立一個自建項目'" @click="duplicate"
+          >📄 複製這一項</button>
           <button class="small" :class="{ active: picking }" title="勾幾項（自建或修改過的），匯出成內容檔：會連同它們用到的東西" @click="picking = !picking">☑ 選取匯出</button>
           <span class="spacer" />
           <button
@@ -870,7 +881,7 @@ function resetAll() {
             :title="x.edited ? '已修改' : ''" @click="select(x.key)"
           >{{ x.label }}{{ x.edited ? '・已修改' : '' }}</button>
         </div>
-        <div v-if="sub === 'statuses' && pickStatusType" class="pick-type">
+        <div v-if="sub === 'statuses' && pickStatusType && !unsavedEdits" class="pick-type">
           <span class="small muted">新狀態的類型：</span>
           <button class="small" title="技能或物品在戰鬥中施加，持續幾回合" @click="createStatus('combat')">⚔️ 戰鬥狀態（BUFF／DEBUFF）</button>
           <button class="small" title="記在角色身上，事件、特殊任務、地標、食物給予，可以設定長休時解除" @click="createStatus('cond')">🏕️ 非戰鬥狀態</button>

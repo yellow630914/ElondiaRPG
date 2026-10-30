@@ -1,4 +1,4 @@
-# 慾望戰鬥 S8 的資料（docs/plan/LUST_COMBAT_PLAN.md 第 12 節；規則寫在 docs/LEWD_STATS.md）：
+# 慾望戰鬥 S8 的資料（規則寫在 docs/LEWD_STATS.md）：
 #   S8-3 消耗品、烹飪、鍊金、征服掉落、附魔的輔料方向
 #        寫進 data/rules/items.json、statuses.json、companions.json（非戰鬥狀態）、lewd.json（conquest）、gear.json（輔料的方向 lust）
 #   S8-4 淫紋（tattoos.json 的圖樣）、寄生物的階段技能與馴服技能（parasites.json、abilities.json）、奴隸印記的順從累積（slavery.json）

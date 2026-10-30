@@ -28,7 +28,7 @@ import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
 import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type CounterMod } from './counterMods'
-import { applyMasterEvent, builtinMasterEvent, restoreMasterEvents, sanitizeMasterEvent, type MasterEventMod } from './masterEventMods'
+import { allMasterEvents, applyMasterEvent, builtinMasterEvent, restoreMasterEvents, sanitizeMasterEvent, type MasterEventMod } from './masterEventMods'
 import { applyBindRules, restoreBindRules, sanitizeBindRules, type BindRulesMod } from './bindRulesMods'
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
@@ -1672,14 +1672,18 @@ export function newAbility(id: string): AbilityMod {
 }
 
 /**
- * 哪些地方用到這個能力（刪除前檢查）：職業的初始能力、怪物、固定 NPC、特殊任務的獎勵，
- * 以及目前存檔裡的角色（隊伍與登場過的人）。
+ * 哪些地方用到這個能力（刪除前檢查）：職業的初始能力、怪物、固定 NPC（自己的與教人的）、特殊任務的獎勵、
+ * 主奴與娼館的事件掛的技能，以及目前存檔裡的角色（隊伍與登場過的人）。
  */
 export function abilityUsage(id: string, state?: GameState | null): string[] {
   const out: string[] = []
   for (const [cid, c] of Object.entries(classes)) if (c.start?.includes(id)) out.push(`職業「${c.name ?? cid}」的初始能力`)
   for (const e of Object.values(enemies)) if (e.abilities?.includes(id)) out.push(`怪物「${e.name}」`)
-  for (const n of namedNpcs) if (n.abilities?.includes(id)) out.push(`固定 NPC「${n.name}」`)
+  for (const n of namedNpcs) {
+    if (n.abilities?.includes(id)) out.push(`固定 NPC「${n.name}」`)
+    else if (n.teaches?.includes(id)) out.push(`固定 NPC「${n.name}」教的技能`)
+  }
+  for (const { def } of allMasterEvents()) if (def.teaches?.includes(id)) out.push(`主奴、娼館的事件「${def.id}」`)
   for (const s of stories) {
     const effects = [...(s.rewards ?? []), ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])].flatMap((o) => o?.effects ?? []))]
     if (effects.some((e) => e.type === 'ability' && e.ability === id)) out.push(`特殊任務「${s.title}」的獎勵`)

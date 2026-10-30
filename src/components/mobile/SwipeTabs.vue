@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-// 可以左右滑的分頁（手機版，docs/plan/MOBILE_UI_PLAN.md 2.6 節）。
+// 可以左右滑的分頁（手機版，docs/MOBILE_UI.md 第 3 節）。
 // swipe 時所有分頁並排在一條軌道上，內容與分頁底線跟著手指移動；放開後拉過四分之一寬、或甩得夠快就換頁，不然彈回。
 // 一開始先判斷方向：橫的才接手，直的交給上下捲動。第一頁往右、最後一頁往左拉得動但有阻力。
 // 軌道的位移用每一頁自己的寬度（百分比）算，分頁之間留間距（樣稿 v2.2 用外層寬度算，越後面的分頁偏越多）。

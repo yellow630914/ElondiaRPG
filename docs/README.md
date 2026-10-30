@@ -46,7 +46,8 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 │   ├─ PROMPTS            AI 服務、AI 開關、提示詞結構、快取、世界書注入
 │   ├─ PORTRAITS          角色形象插圖
 │   ├─ I18N               介面語言與提示詞的繁簡轉換
-│   └─ BACKGROUNDS        背景圖
+│   ├─ BACKGROUNDS        背景圖
+│   └─ MOBILE_UI          手機版畫面（720px 以下）
 │
 ├─ 內容與存檔
 │   ├─ CONTENT_EDITOR     自訂內容與世界
@@ -54,14 +55,13 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 │   └─ SAVES              存檔位置、匯出匯入、存檔格式版本
 │
 └─ plan/（計畫與追蹤：還沒做完的事）
-    ├─ README             放在哪裡、流程、完成紀錄
+    ├─ README             放在哪裡、流程
     ├─ BUGS               Bug：程式沒有照規則運作
     ├─ LOGIC_ISSUES       業務邏輯問題：程式照設計運作，但規則不合理
     ├─ ROADMAP            未來計畫：已經決定要做的事（含程式整理）
-    ├─ ideas/             點子庫：還沒決定要不要做的構想，依來源分成不同文件（早期設計、盤點、玩家回饋、開發討論）
-    ├─ UI_V2_PLAN         UI 改版的分階段計畫（樣稿在 mockups/，立繪規格在 comfy/）
-    ├─ LUST_COMBAT_PLAN   慾望戰鬥（成人向）的分階段計畫
-    └─ CHARACTER_LINES_PLAN 角色線計畫（白百合巡禮、琥珀）
+    ├─ RETROSPECTIVE      開發回顧：問題盤點
+    ├─ roadmap/           ROADMAP 項目的細節計畫（只寫還沒做的部分）與已完成的紀錄（COMPLETED）
+    └─ ideas/             點子庫：還沒決定要不要做的構想，依來源分成不同文件（早期設計、玩家回饋、開發討論）
 ```
 
 ## 2. 依賴關係
@@ -177,20 +177,20 @@ flowchart TD
 | [PORTRAITS](PORTRAITS.md) | 插圖 | `narrator/imageInfo.ts`、`imageProviders.ts`、`comfy.ts` |
 | [I18N](I18N.md) | 介面語言、提示詞的繁簡轉換 | `i18n/uiScript.ts`、`narrator/script.ts`、`script.ts` |
 | [BACKGROUNDS](BACKGROUNDS.md) | 背景圖 | `components/fx/backgrounds.ts`、`BackgroundLayer.vue` |
+| [MOBILE_UI](MOBILE_UI.md) | 手機版畫面（720px 以下） | `components/mobile/`、`CombatView.vue` |
 | [CONTENT_EDITOR](CONTENT_EDITOR.md) | 自訂內容 | `mods.ts`、`stores/content.ts` |
 | [CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) | 內容引用與保護 | `usage.ts`、`mods.ts` |
 | [SAVES](SAVES.md) | 存檔 | `stores/saves.ts`、`stores/game.ts`、`state.ts` |
 | [ADULT_EVENTS](ADULT_EVENTS.md) | 地下城的色情事件、寄生物（成人向） | `dungeonEvents.ts`、`parasites.ts`、`parasiteEvents.ts` |
 | [LEWD_STATS](LEWD_STATS.md) | 慾望指標、流派、雙面效應（成人向） | `lewd.ts`、`schools.ts`、`masterTool.ts` |
 | [LUST_PARK](LUST_PARK.md) | 魅魔的遊樂園：主題地下城（成人向） | `park.ts` |
-| [plan/README](plan/README.md) | 計畫與追蹤：分類、流程、完成紀錄 | — |
+| [plan/README](plan/README.md) | 計畫與追蹤：分類、流程 | — |
 | [plan/BUGS](plan/BUGS.md) | Bug | — |
 | [plan/LOGIC_ISSUES](plan/LOGIC_ISSUES.md) | 業務邏輯問題 | — |
 | [plan/ROADMAP](plan/ROADMAP.md) | 未來計畫 | — |
+| [plan/RETROSPECTIVE](plan/RETROSPECTIVE.md) | 開發回顧：問題盤點 | — |
+| [plan/roadmap/](plan/roadmap/COMPLETED.md) | ROADMAP 項目的細節計畫（R8 慾望戰鬥的收尾、R9 角色線、R10 手機版、R11 世界編輯器）與已完成的紀錄 | — |
 | [plan/ideas/](plan/ideas/README.md) | 點子庫（依來源分開） | — |
-| [plan/UI_V2_PLAN](plan/UI_V2_PLAN.md) | UI 改版計畫 | `components/` |
-| [plan/LUST_COMBAT_PLAN](plan/LUST_COMBAT_PLAN.md) | 慾望戰鬥（成人向）的實作計畫 | `engine/combat.ts` 等 |
-| [plan/CHARACTER_LINES_PLAN](plan/CHARACTER_LINES_PLAN.md) | 角色線計畫（白百合巡禮、琥珀） | `data/rules/stories.json` |
 
 沒有標資料夾的程式檔都在 `src/engine/`。
 
@@ -221,7 +221,7 @@ flowchart TD
 
 1. **以程式為準。** 改了程式就改文件；發現文件和程式不同，照程式改文件（程式本身有問題時，沒照規則跑的記到 [plan/BUGS](plan/BUGS.md)，規則不合理的記到 [plan/LOGIC_ISSUES](plan/LOGIC_ISSUES.md)）。
 2. **一件事只寫在一個地方。** 其他文件只放連結。例如效果種類只寫在 EFFECTS、主動行動的流程只寫在 ACTIONS、價格公式只寫在 TRADE 第 3 節、休息規則只寫在 COMPANIONS 第 5 節。
-3. **還沒做完的事寫進 [plan/](plan/README.md)**（Bug、業務邏輯問題、未來計畫、點子庫分開），不要散在各文件末尾；處理完把結論寫回系統文件，再從清單刪掉，在 plan/README 記一行完成紀錄。
+3. **還沒做完的事寫進 [plan/](plan/README.md)**（Bug、業務邏輯問題、未來計畫、點子庫分開），不要散在各文件末尾；處理完把結論寫回系統文件，再從清單刪掉，在 [plan/roadmap/COMPLETED](plan/roadmap/COMPLETED.md) 記一段。
 4. **新增系統時**：開一份文件，開頭寫「上層／依賴／被依賴」與程式、資料檔，再把它加進本文件的階層、依賴圖與一覽表，以及 wiki 的 `GROUPS`（第 5 節）。
 5. **不要改檔名。** 程式註解與 `data/` 的 `$comment` 會用「docs/檔名.md 第 N 節」引用文件；改章節編號時要一起搜尋 `docs/檔名` 更新。
 6. **資料整理型的表格**（MONSTERS 的怪物表、ITEMS 的制式裝備與消耗品、卷軸、書籍表、COMBAT_SYSTEM 第 9 節）由 `npm run docs:gen` 產生，改了資料要重跑（`docTables.spec.ts` 會檢查）；ITEMS 其他的表格手寫，改資料時要記得同步。 `guide/`（遊戲攻略）也是產生的，改資料後重跑 `python3 worldgen/tools/guide/guide.py`（`guide.spec.ts` 會檢查）。

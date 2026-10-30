@@ -16,39 +16,45 @@ const msg = ref('')
 const newId = ref('')
 
 interface Row { id: string; draft: CounterMod; builtin: boolean; edited: boolean }
-const rows = ref<Row[]>([])
-function load() {
-  void content.version
-  rows.value = Object.entries(storyCounters).map(([id, c]) => ({
+function rowOf(id: string): Row {
+  return {
     id,
-    draft: { ...c },
+    draft: { ...storyCounters[id]! },
     builtin: !!builtinCounter(id),
     edited: !!content.mods.counters?.[id] && !content.mods.counters[id]!.custom,
-  }))
+  }
 }
-load()
+const rows = ref<Row[]>(Object.keys(storyCounters).map(rowOf))
 const usage = computed(() => {
   void content.version
   return Object.fromEntries(rows.value.map((r) => [r.id, counterUsage(r.id)]))
 })
 
-function run(fn: () => void, ok: string) {
+/** 只重新載入這一列（其他列還沒存的修改留著）；計數器不在了就拿掉這一列 */
+function reload(id: string) {
+  const i = rows.value.findIndex((r) => r.id === id)
+  if (!storyCounters[id]) {
+    if (i >= 0) rows.value.splice(i, 1)
+  } else if (i >= 0) rows.value[i] = rowOf(id)
+  else rows.value.push(rowOf(id))
+}
+function run(id: string, fn: () => void, ok: string) {
   try {
     fn()
     msg.value = ok
-    load()
+    reload(id)
   } catch (e) {
     msg.value = (e as Error).message
   }
 }
 function save(r: Row) {
-  run(() => content.saveCounter(r.id, r.draft), `已儲存「${r.draft.name}」`)
+  run(r.id, () => content.saveCounter(r.id, r.draft), `已儲存「${r.draft.name}」`)
 }
 function restore(r: Row) {
-  run(() => content.restoreCounter(r.id), `已恢復「${r.draft.name}」的預設`)
+  run(r.id, () => content.restoreCounter(r.id), `已恢復「${r.draft.name}」的預設`)
 }
 function remove(r: Row) {
-  run(() => content.deleteCounter(r.id), `已刪除「${r.draft.name}」`)
+  run(r.id, () => content.deleteCounter(r.id), `已刪除「${r.draft.name}」`)
 }
 function create() {
   const id = cleanCounterId(newId.value)
@@ -60,7 +66,7 @@ function create() {
     msg.value = '已經有這個 id 的計數器了'
     return
   }
-  run(() => content.saveCounter(id, newCounter()), `已新增計數器 ${id}`)
+  run(id, () => content.saveCounter(id, newCounter()), `已新增計數器 ${id}`)
   newId.value = ''
 }
 const num = (s: string): number | undefined => (s.trim() === '' || !Number.isFinite(Number(s)) ? undefined : Math.round(Number(s)))

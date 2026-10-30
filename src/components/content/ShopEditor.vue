@@ -264,7 +264,7 @@ const titles = computed(() => [...new Set(Object.values(shopRules.types).map((t)
         <label v-for="[k, n] in CRAFT_KINDS" :key="k" class="check"><input type="checkbox" :checked="draft.craft.includes(k)" @change="draft.craft = toggle(draft.craft, k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
       </div>
     </FoldSet>
-    <FoldSet>
+    <FoldSet filled>
       <template #legend>位置</template>
       <template v-if="!custom">
         <p class="small muted">內建的店只能移動、不能刪除：在同一個聚落裡搬到一格空地（道路）。舊存檔讀進來時地圖會跟著變。</p>

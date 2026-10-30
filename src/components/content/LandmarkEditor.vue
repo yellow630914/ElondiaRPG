@@ -169,7 +169,7 @@ const wearOptions = computed(() => wearChoices())
         </label>
       </div>
     </FoldSet>
-    <FoldSet>
+    <FoldSet filled>
       <template #legend>位置</template>
       <div class="row small">
         <span>{{ draft.at.area ? placeText(draft.at) : '還沒選' }}</span>

@@ -1,5 +1,5 @@
 {
-  "$comment": "慾望戰鬥的五項長期指標（docs/LEWD_STATS.md；計畫 docs/plan/LUST_COMBAT_PLAN.md 第 5、6 節）。淫亂、敏感、忍耐、順從記在角色身上（0～100），曝露名聲依地區記在存檔。stats：名稱與分段（每 20 一段；順從在有奴隸契約時用 forced_bands）。defaults：主角與舊存檔沒有記錄時的值。npc_tags：生成的 NPC 依標籤擲的範圍（多個標籤取最後符合的），其他用 npc_random。combat：戰鬥的換算。gear：裝備的加值上限，以及底材的預設（outfit 的種類、束縛用的底材；個別底材在 gear.json 寫 exposure）；曝露度只算上身、下身與看得到的內衣。growth：事件造成的成長。daily：每天的變化。",
+  "$comment": "慾望戰鬥的五項長期指標（docs/LEWD_STATS.md）。淫亂、敏感、忍耐、順從記在角色身上（0～100），曝露名聲依地區記在存檔。stats：名稱與分段（每 20 一段；順從在有奴隸契約時用 forced_bands）。defaults：主角與舊存檔沒有記錄時的值。npc_tags：生成的 NPC 依標籤擲的範圍（多個標籤取最後符合的），其他用 npc_random。combat：戰鬥的換算。gear：裝備的加值上限，以及底材的預設（outfit 的種類、束縛用的底材；個別底材在 gear.json 寫 exposure）；曝露度只算上身、下身與看得到的內衣。growth：事件造成的成長。daily：每天的變化。",
   "version": 1,
   "stats": {
     "lewdness": { "name": "淫亂", "bands": ["純情", "好奇", "開放", "淫蕩", "淫亂"] },

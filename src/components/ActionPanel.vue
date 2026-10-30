@@ -15,7 +15,7 @@ import { isMobile, OPEN_ACTION_EVENT } from './mobile/mobile'
 
 // 冒險日誌底部的主動行動橫條。擲完骰等待判定的行動、要先面對的刻印顯示在日誌最下面（PendingActionCard），
 // 那段時間這裡不能送出新的行動。
-// 手機版平常收成一行「主動行動：想做什麼…」，點了才展開（docs/plan/MOBILE_UI_PLAN.md 2.5 節）。
+// 手機版平常收成一行「主動行動：想做什麼…」，點了才展開（docs/MOBILE_UI.md 1.3 節）。
 
 const game = useGame()
 const settings = useSettings()

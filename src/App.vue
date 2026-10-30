@@ -35,6 +35,7 @@ import RestPanel from '@/components/RestPanel.vue'
 import SaveDialog from '@/components/SaveDialog.vue'
 import SettingsView from '@/components/SettingsView.vue'
 import EventCenter from '@/components/events/EventCenter.vue'
+import UnsavedDialog from '@/components/content/UnsavedDialog.vue'
 import PartyStrip from '@/components/PartyStrip.vue'
 import MobileGame, { type MobileOpen } from '@/components/mobile/MobileGame.vue'
 import { isMobile } from '@/components/mobile/mobile'
@@ -113,16 +114,16 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
 ]
 const tab = ref<Tab>('adventure')
 /** 換頁籤：離開世界頁時，世界編輯器有未儲存的修改先問一次 */
-function setTab(t: Tab) {
-  if (tab.value === 'content' && t !== 'content' && !confirmDiscard()) return
+async function setTab(t: Tab) {
+  if (tab.value === 'content' && t !== 'content' && !(await confirmDiscard())) return
   tab.value = t
 }
 
 // 沒有載入遊戲時：首頁與它的幾個畫面（開新遊戲、世界管理、提示詞管理）
 type Screen = 'home' | 'new' | 'worlds' | 'prompts'
 const screen = ref<Screen>('home')
-function setScreen(s: Screen) {
-  if (screen.value === 'worlds' && s !== 'worlds' && !confirmDiscard()) return
+async function setScreen(s: Screen) {
+  if (screen.value === 'worlds' && s !== 'worlds' && !(await confirmDiscard())) return
   screen.value = s
 }
 const content = useContent()
@@ -134,7 +135,7 @@ watch(() => !!game.state, (inGame) => {
   } else screen.value = 'home'
 })
 async function goHome() {
-  if (!confirmDiscard()) return
+  if (!(await confirmDiscard())) return
   closeDialogs()
   await game.toHome()
 }
@@ -405,6 +406,7 @@ onBeforeUnmount(() => {
   </AppDialog>
 
   <MakeRoomDialog />
+  <UnsavedDialog />
   <EventCenter v-if="game.state" @open-party="onOpenParty" @open-relations="tab = 'adventure'; showRelations = true" />
 </template>
 

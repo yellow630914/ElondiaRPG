@@ -195,7 +195,7 @@ function remove() {
       </div>
     </FoldSet>
 
-    <FoldSet>
+    <FoldSet filled>
       <template #legend>目標與判定</template>
       <div class="grid">
         <label>目標

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, watch } from 'vue'
 import { useContent } from '@/stores/content'
-import { unsavedEdits } from './unsaved'
+import { unsavedEdits, unsavedSave } from './unsaved'
 
 // 編輯器的表頭：名稱、內建／自建、未儲存，和儲存、放棄修改、恢復預設或刪除。捲動時留在畫面上。
 // kind：builtin 內建（可以恢復預設）、custom 自建（可以刪除）、rules 只有一筆的設定（可以恢復預設，標籤只有「內建／已修改」）。
@@ -25,7 +25,12 @@ const tag = computed(() => (props.kind === 'custom' ? '自建' : props.kind === 
 const readOnly = computed(() => content.readOnly)
 // 回報給未儲存保護（同一時間只有一個編輯器打開）
 watch(() => props.dirty, (v) => { unsavedEdits.value = v }, { immediate: true })
-onBeforeUnmount(() => { unsavedEdits.value = false })
+// 未儲存的對話框按「儲存」時用這個編輯器的儲存
+watch(() => props.blocked, (b) => { unsavedSave.value = { save: () => emit('save'), blocked: b } }, { immediate: true })
+onBeforeUnmount(() => {
+  unsavedEdits.value = false
+  unsavedSave.value = null
+})
 </script>
 
 <template>

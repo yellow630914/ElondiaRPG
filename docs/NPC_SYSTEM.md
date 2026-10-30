@@ -13,7 +13,7 @@
 
 ## 2. 程式與資料
 
-- 程式：`src/engine/population.ts`（名單、活躍地點、每日位置、這裡的人、名單變動、野外訪客）、`interactions.ts`（聊天、送禮、獻媚、誘惑、偷竊、偷襲）、`encounters.ts`（對峙）、`security.ts`（警戒、通緝、罰金、城門盤查、王城）、`traits.ts`（名字、外貌、性格）、`npcs.ts`（NPC 登錄）。
+- 程式：`src/engine/population.ts`（名單、活躍地點、每日位置、這裡的人、名單變動、野外訪客）、`interactions.ts`（聊天、送禮、獻媚、誘惑、偷竊、偷襲）、`encounters.ts`（對峙）、`security.ts`（警戒、通緝、罰金、城門盤查、王城）、`traits.ts`（名字、外貌、性格）、`npcs.ts`（NPC 登錄）、`squads.ts`（固定 NPC 的小隊）、`captives.ts`（戰後處置）、`pcTags.ts`（主角的身分標籤）。
 - 資料：`data/rules/npc_tags.json`、`npc_population.json`、`security.json`；`data/world/npcs.json`（具名 NPC）、`npc_traits.json`、`npc_pool.json`。
 - 相關文件：上層 [GAME_DESIGN](GAME_DESIGN.md)；依賴 [ACTIONS](ACTIONS.md)（互動都是主動行動）、[WORLD](WORLD.md)（地點與地區）；被依賴 [COMPANIONS](COMPANIONS.md)（雇傭、主人的身分）、[TRADE](TRADE.md)（聲望影響價格）。
 
@@ -33,6 +33,10 @@
 | `no_attack`、`no_steal` | 固定 NPC：不可偷襲（只有冒險者）、不可偷竊；一國之主用，只能透過特殊任務交手 |
 | `adult` | 固定 NPC：成人向角色。不佔名單名額（`population.ts` 的 `outsideQuota`）；內容編輯器可以依它篩選 |
 | `adult_appearance` | 固定 NPC：成人向的外貌細節（私密部位、性徵）。接在外貌後面，交給 AI（行動判定的對象、人際關係）與形象圖；跟著內容頁籤的設定走，不存進存檔（`npcs.ts` 的 `appearanceOf`） |
+| `unhireable` | 固定 NPC：不受雇用（統治者、機構首長……）：不在雇用名單、不佔名單名額，邀請入隊 DC 另加（[COMPANIONS](COMPANIONS.md) 第 2.5 節） |
+| `perks`、`lewd`、`teaches` | 固定 NPC：指定的特質（[PERKS](PERKS.md) 第 5 節）、慾望指標、娼婦光顧時會教的技能（[LEWD_STATS](LEWD_STATS.md) 第 5、10 節）；沒寫的照規則生成 |
+| `fixed`、`landmark`、`keeper` | 固定 NPC：固定站的格子、待在某個地標、擔任這種店的店主；有這些欄位時不看活躍地點 |
+| `requires`、`stages` | 固定 NPC：只在劇情旗標符合時出現；依旗標改變所屬地點與出沒 |
 | `character` | 戰鬥資料（入隊過、或戰鬥時才產生） |
 | `lineage` | 血統、部族、氏族（見第 13 節） |
 
@@ -62,7 +66,7 @@
 
 ## 4. 標籤
 
-標籤定義在 `data/rules/npc_tags.json`，NPC 可以同時有多個。目前的用途：決定活躍地點與生成機率，並傳給 AI 當作身分參考。
+標籤定義在 `data/rules/npc_tags.json`，NPC 可以同時有多個。用途：決定活躍地點與生成機率、互動的參考 DC（`dc_mods`）、當主人時的事件與規則（[COMPANIONS](COMPANIONS.md)）、慾望指標的範圍與流派（[LEWD_STATS](LEWD_STATS.md) 第 5、23 節），並傳給 AI 當作身分參考。
 
 | 標籤 | 適用 | 活躍地點數 | 地區傾向 | 稀有度 | 說明 |
 |---|---|---|---|---|---|
@@ -110,7 +114,7 @@
 
 | 標籤 | 效果 |
 |---|---|
-| 旅人 | 旅途的危險與事件 +2 |
+| 旅人 | 旅途上的事件 +2（`travel` 與 `road` 都寫，只算一次，見 [PERKS](PERKS.md) 第 1 節） |
 | 商人 | 殺價、交涉 +2，談判 +1；商店買價 −5%、賣價 +10% |
 | 平民 | 城門盤查、潛行 +1；曝露名聲累積 ×0.75（沒人在意平民的風流事） |
 | 貴族 | 對貴族、皇族聊天、獻媚、誘惑、雇用、邀請 +2；對平民、商人、旅人威嚇、蒙混 +1；城門盤查 +1；商店買價 +10%（看人喊價）；曝露名聲累積 ×1.5（醜聞傳得快）；被賣時身價 ×1.5 |

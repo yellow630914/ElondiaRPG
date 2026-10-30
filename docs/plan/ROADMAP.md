@@ -2,24 +2,25 @@
 
 > 上層：[計畫與追蹤](README.md)。
 > 這裡記**已經決定要做**、還沒做完的事，包括不影響遊戲的程式整理。還沒決定要不要做的構想放在 [點子庫](ideas/README.md)。
-> 做完之後從這裡刪掉，在 [README](README.md) 的「完成紀錄」記一行；新增的功能同時寫進 [CHANGELOG](../../CHANGELOG.md) 的「未發布」。
+> 細節多的項目在 [`roadmap/`](roadmap/) 另開一份計畫，只寫還沒做的部分。做完之後從這裡刪掉，在 [已完成](roadmap/COMPLETED.md) 記一段；新增的功能同時寫進 [CHANGELOG](../../CHANGELOG.md) 的「未發布」。
 
 ## 1. 遊戲
 
-| # | 項目 | 現況 | 相關文件 |
+| # | 項目 | 現況 | 細節 |
 |---|---|---|---|
-| R1（原 D1） | **數值平衡**：生命值、行動點、傷害、經驗值、報酬 | 都是起始值，要實際遊玩後調整（高階委託的問題見 [LOGIC_ISSUES](LOGIC_ISSUES.md) L1） | [GAME_DESIGN](../GAME_DESIGN.md)、[worldgen/balance/](../../worldgen/balance/README.md) |
-| R8（原 I14） | **慾望戰鬥**（成人向）的收尾 | S0～S9 全部完成，v0.4.0（2026-10-30）發布。剩下計畫各節「留到之後的部分」與第 17 節的小事，例如：神殿的淨化、聲望交叉與「放蕩的貴族」、老師與秘法書、寄生類的雙面效應、園區規則的編輯器、新園區、淫物的特殊目標規則；數值要實際遊玩後調整（併入 R1） | [LUST_COMBAT_PLAN](LUST_COMBAT_PLAN.md) |
-| R9 | **角色線：白百合巡禮（奧菈莉婭＆格溫德琳）、全城跑最快的精靈（琥珀）**：陰柔、中性形象的固定角色還沒有角色線的補上；各四個任務（一～三非成人向，四成人向） | 規劃完成（2026-10-30），還沒做成資料；有三個待決定（計畫第 5 節） | [CHARACTER_LINES_PLAN](CHARACTER_LINES_PLAN.md) |
+| R1（原 D1） | **數值平衡**：生命值、行動點、傷害、經驗值、報酬，以及慾望戰鬥的係數 | 都是起始值，要實際遊玩後調整（高階委託的問題見 [LOGIC_ISSUES](LOGIC_ISSUES.md) L1；慾望戰鬥要調的數值見 R8 的計畫第 3 節） | [GAME_DESIGN](../GAME_DESIGN.md)、[worldgen/balance/](../../worldgen/balance/README.md) |
+| R8（原 I14） | **慾望戰鬥的收尾**（成人向）：神殿的淨化、聲望交叉與「放蕩的貴族」、流派的老師與秘法書、寄生類的雙面效應、園區規則的編輯器、新園區、防具的淫器合煉 | S0～S9 已在 v0.4.0 發布；剩下的都還沒開始 | [roadmap/LUST_COMBAT_PLAN](roadmap/LUST_COMBAT_PLAN.md) |
+| R9 | **角色線：白百合巡禮（奧菈莉婭＆格溫德琳）、全城跑最快的精靈（琥珀）**：陰柔、中性形象的固定角色還沒有角色線的補上；各四個任務（一～三非成人向，四成人向） | 規劃完成（2026-10-30），還沒做成資料；有三個待決定（計畫第 5 節） | [roadmap/CHARACTER_LINES_PLAN](roadmap/CHARACTER_LINES_PLAN.md) |
 
-## 2. 介面
+## 2. 介面與工具
 
-| # | 項目 | 現況 | 相關文件 |
+| # | 項目 | 現況 | 細節 |
 |---|---|---|---|
-| R11 | **世界編輯器**：局部匯入／匯出（有關聯就一起帶）、介面整理（不改引擎）、特殊任務流程圖、AI 特殊任務生成器（點子庫 I5 的前半） | E5 介面整理、E1 關聯、E2 局部匯入與匯出完成（計畫第 1.6、2.3 節）；E3、E4 還沒開始 | [WORLD_EDITOR_PLAN](WORLD_EDITOR_PLAN.md) |
-| R10 | **手機版 UI**：720px 以下換成直式版面（地圖、日誌、主動行動、全螢幕頁面、旅途進度條、戰鬥畫面） | M1～M4 已完成並合併（2026-10-30），等實機測試後調整（計畫第 5 節）；已知：開戰時的地名過場在手機寬度會斷成兩行 | [MOBILE_UI_PLAN](MOBILE_UI_PLAN.md) |
-| R2 | **UI v2 剩下的部分** | P0～P5、P7 已完成；P6 模組化像素立繪擱置；地圖格要不要改用 ComfyUI 生成的 tileset 還沒決定 | [UI_V2_PLAN](UI_V2_PLAN.md)、[comfy/portrait-spec.md](../comfy/portrait-spec.md) |
+| R10 | **手機版畫面**：實機測試、已知的小問題 | M1～M4 已完成並合併（2026-10-30，規則見 [MOBILE_UI](../MOBILE_UI.md)）；等實機測試 | [roadmap/MOBILE_UI_PLAN](roadmap/MOBILE_UI_PLAN.md) |
+| R11 | **世界編輯器**：局部匯入／匯出（有關聯就一起帶）、特殊任務流程圖、AI 特殊任務生成器 | E5 介面整理、E1 關聯、E2 局部匯入與匯出完成；E3、E4 還沒開始 | [roadmap/WORLD_EDITOR_PLAN](roadmap/WORLD_EDITOR_PLAN.md) |
+
+UI v2 已完成（原 R2）；沒做的模組化像素立繪、地圖格 tileset 移到點子庫 I19、I20。
 
 ## 3. 程式整理
 
-不影響遊戲行為，有空時處理。目前沒有。
+不影響遊戲行為，有空時處理。目前沒有。開發流程的建議（CI、可達性檢查、存檔的穩定 id……）在 [RETROSPECTIVE](RETROSPECTIVE.md) 第 12 節，還沒決定要不要做。

@@ -119,7 +119,7 @@ pnpm build             # 型別檢查 + 建置到 dist/（相對路徑，放在�
 | [`docs/README.md`](docs/README.md) | **文件地圖**：所有設計文件的階層、依賴關係與一覽 |
 | [`docs/I18N.md`](docs/I18N.md) | 介面語言（繁體／簡體中文） |
 | [`docs/GAME_DESIGN.md`](docs/GAME_DESIGN.md) | 總綱：核心原則、遊戲迴圈、報告格式、AI 敘事管線、系統地圖 |
-| [`docs/plan/`](docs/plan/README.md) | 計畫與追蹤：Bug、業務邏輯問題、未來計畫、點子庫、UI 改版計畫 |
+| [`docs/plan/`](docs/plan/README.md) | 計畫與追蹤：Bug、業務邏輯問題、未來計畫（細節在 `roadmap/`）、點子庫、開發回顧 |
 | [`docs/guide/`](docs/guide/README.md) | 遊戲攻略：特殊任務、事件、物品與裝備的取得方式、固定 NPC、地標（依遊戲資料自動產生，也在 [Wiki](https://github.com/yellow630914/ElondiaRPG/wiki)） |
 | [`worldgen/`](worldgen/README.md) | 世界生成：指南、模板、平衡性自檢、世界包範例 |
 | [`CHANGELOG.md`](CHANGELOG.md) | 版本更新紀錄 |

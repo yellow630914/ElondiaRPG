@@ -281,7 +281,7 @@ function remove() {
       <EffectsEditor v-model="draft.rewards" />
     </FoldSet>
 
-    <FoldSet>
+    <FoldSet filled>
       <template #legend>檢查任務鏈</template>
       <p v-if="!check.errors.length && !check.warnings.length" class="small">✅ 沒有發現問題。</p>
       <template v-if="check.errors.length">
