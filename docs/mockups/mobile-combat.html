@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&display=swap">
 <style>
-/* 版面：手機直式單欄。上：戰鬥列（場景、回合、選單）→ 敵人（兩欄小卡）→ 戰鬥紀錄（最新兩行，點了看全部）→ 我方（兩欄小卡）
+/* 版面：手機直式單欄。上：戰鬥列（場景、回合、選單）→ 我方（兩欄小卡）→ 戰鬥紀錄（最新兩行，點了看全部）→ 敵人（兩欄小卡，貼近行動區）
    → 行動區（目前行動的人、行動點、基本動作、技能分頁）。戰鬥中不顯示底部分頁列，空間都給戰場。
    寬螢幕時旁邊多一欄「樣稿說明」。配色沿用遊戲 src/style.css 的皮革與金色、慾望條的粉紅。 */
 :root {
@@ -63,7 +63,7 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
 .topbar .round { margin-left: auto; font-size: var(--fs-sm); color: var(--gold-hi); border: 1px solid var(--gold-lo); border-radius: 2px; padding: 1px 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .topbar .menu { width: 36px; height: 34px; display: grid; place-items: center; color: var(--muted); }
 
-/* 戰場：敵人在上、我方在下（靠近拇指的是自己人與行動） */
+/* 戰場：我方在上、敵人在下（敵人貼近行動區，選目標時拇指最好點） */
 .field { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; padding-block: 8px; }
 .side-head { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); letter-spacing: 0.12em; color: var(--muted); }
 .side-head .ico { width: 13px; height: 13px; }
@@ -260,7 +260,7 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
     <h3>版面（直拿）</h3>
     <ul>
       <li><b>戰鬥中不顯示底部分頁列</b>，空間都給戰場；右上角「⋯」放隊伍、設定、戰鬥紀錄。</li>
-      <li><b>敵人在上、我方在下</b>，行動區在最下面（拇指最好按）。卡片兩欄，四對四也不用捲動。</li>
+      <li><b>我方在上、敵人在下</b>（已定），敵人貼近行動區，攻擊時拇指最好點。卡片兩欄，四對四也不用捲動。</li>
       <li>每張卡片：名字、等級、生命條、<b>慾望條</b>（粉紅、細一點）、我方的行動點、狀態（放不下的變成「+N」）。</li>
       <li><b>戰鬥紀錄</b>只露最新兩行，點了從下面滑出完整紀錄（依回合分段）。</li>
     </ul>
@@ -272,12 +272,12 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
       <li>技能分成「技能｜法術｜色情｜道具」分頁，一頁三欄；攜帶上限 12 個，最多四排。</li>
       <li>「結束回合」在目前行動的人旁邊；「防禦」「撤退」和武器攻擊排在一起。</li>
     </ul>
-    <h3>想問你的</h3>
+    <h3>已定（v2）</h3>
     <ul>
-      <li class="q">戰鬥中隱藏底部分頁列可以嗎？</li>
-      <li class="q">敵人在上、我方在下，還是反過來？</li>
-      <li class="q">長按看說明可以嗎？還是要每個技能旁邊放一個「?」</li>
-      <li class="q">技能的分頁：依類型（技能／法術／色情／道具），還是全部放一起、常用的排前面？</li>
+      <li>戰鬥中隱藏底部分頁列。</li>
+      <li>我方在上、敵人在下。</li>
+      <li>長按看說明。</li>
+      <li>技能依類型分頁：技能｜法術｜戲法｜色情｜道具。</li>
     </ul>
   `
   const $ = (id) => document.getElementById(id)
@@ -316,11 +316,11 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
     $('round').textContent = `第 ${st.round} 回合`
     const last = st.log.slice(-2)
     $('field').innerHTML = `
-      <div class="side-head foe"><svg class="ico"><use href="#i-skull"/></svg>敵人</div>
-      <div class="cards">${st.foes.map(card).join('')}</div>
-      <button class="ticker" id="ticker"><span class="lines">${last.map((l) => `<span>${l.t}</span>`).join('')}</span><span class="all">全部紀錄 ›</span></button>
       <div class="side-head"><svg class="ico"><use href="#i-shield"/></svg>隊伍</div>
-      <div class="cards">${st.party.map(card).join('')}</div>`
+      <div class="cards">${st.party.map(card).join('')}</div>
+      <button class="ticker" id="ticker"><span class="lines">${last.map((l) => `<span>${l.t}</span>`).join('')}</span><span class="all">全部紀錄 ›</span></button>
+      <div class="side-head foe"><svg class="ico"><use href="#i-skull"/></svg>敵人</div>
+      <div class="cards">${st.foes.map(card).join('')}</div>`
     renderActions()
   }
   function renderActions() {
