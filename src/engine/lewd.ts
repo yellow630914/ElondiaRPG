@@ -4,8 +4,8 @@
 import { pcTagMult } from './pcTags'
 import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
-import { abilities, lewdRules, locationById, stories, type LewdKey } from './data'
-import { charmExposureMult, spreadExposure } from './charm'
+import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey } from './data'
+import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
 import { gearLewdOf, gearRules } from './gear'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
 import { contractOf } from './tattoos'
@@ -201,14 +201,17 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
     const day = fromDay + i
     for (const m of state.party) {
       const map = state.exposure?.[m.id]
-      if (map) for (const r of Object.keys(map)) addLewd(state, m, 'exposure', -d.exposure_decay, undefined, r)
+      // 還在追相鄰地區目標的地區這一天不淡掉（charm.ts 的 spreadExposure）
+      const chasing = map ? chasingRegions(state, m.id) : undefined
+      if (map) for (const r of Object.keys(map)) if (!chasing!.has(r)) addLewd(state, m, 'exposure', -d.exposure_decay, undefined, r)
       const level = exposureLevel(m)
       // 魅氣濃度越高累積得越快（charm.ts）
       if (inTown && level > 0) addLewd(state, m, 'exposure', Math.round(level * d.exposure_per_level * charmExposureMult(loc.id)), undefined, loc.region)
       const bonus = (b: Partial<Record<LewdKey, number>>) => { for (const [k, v] of Object.entries(b)) if (v) addLewd(state, m, k as LewdKey, v) }
       if (wears(m, (b) => b.outfit === 'adult')) bonus(d.adult_outfit)
       if (wears(m, (b) => !!b.restraint)) bonus(d.restraint)
-      if (contractOf(m) && Object.values(m.gear ?? {}).some((g) => g?.locked)) bonus(d.locked)
+      // 被鎖住的拘束具：主人鎖上的（契約還在時）或陷阱鎖住的
+      if (Object.values(m.gear ?? {}).some((g) => g?.locked && (contractOf(m) || g.locked.startsWith(TRAP_LOCK)))) bonus(d.locked)
       // 奴隸印記的順從累積（條款的 submission_every）
       const every = contractOf(m)?.terms.submission_every
       if (every && day % every === 0) addLewd(state, m, 'submission', 1)

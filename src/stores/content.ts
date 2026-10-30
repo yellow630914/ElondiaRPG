@@ -27,6 +27,7 @@ import { pruneDungeonEvent } from '@/engine/dungeonEvents'
 import { pruneParasiteEvent } from '@/engine/parasiteEvents'
 import { builtinCounter, counterUsage, sanitizeCounter, type CounterMod } from '@/engine/counterMods'
 import { cleanCounterId } from '@/engine/mods'
+import { sanitizeBindRules, type BindRulesMod } from '@/engine/bindRulesMods'
 import { builtinTravelEvent, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from '@/engine/travelEventMods'
 import { builtinMasterEvent, sanitizeMasterEvent, type MasterEventMod } from '@/engine/masterEventMods'
 import { computePlacements, sanitizeShopMod, shopUsage, type ShopMod } from '@/engine/shopMods'
@@ -63,9 +64,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'masterEvents', 'categoryIcons', 'counters']
+const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器',
+  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器',
 }
 
 export interface ModsDiffEntry {
@@ -84,7 +85,7 @@ export interface ModsDiff {
 
 function modLabel(section: Section, id: string, v: unknown): string {
   const o = v as { name?: string; title?: string }
-  if (section === 'markRules') return MOD_SECTION_NAMES[section]
+  if (section === 'markRules' || section === 'eventRules' || section === 'bindRules') return MOD_SECTION_NAMES[section]
   if (section === 'categoryIcons') return `${MOD_SECTION_NAMES[section]}「${itemRules.categories[id as ItemCategory] ?? id}」`
   if (section === 'shops') return `${MOD_SECTION_NAMES[section]}「${shopRules.types[id as ShopType]?.name ?? id}」`
   const name = section === 'items' ? id : o.title ?? o.name ?? id
@@ -801,6 +802,14 @@ export const useContent = defineStore('content', () => {
     delete mods.value.eventRules?.rules
     save()
   }
+  function saveBindRules(draft: Partial<BindRulesMod>) {
+    ;(mods.value.bindRules ??= {}).rules = sanitizeBindRules(draft)
+    save()
+  }
+  function restoreBindRules() {
+    delete mods.value.bindRules?.rules
+    save()
+  }
 
   // ---- 主奴與娼館的事件（主人事件格式） ----
 
@@ -956,7 +965,7 @@ export const useContent = defineStore('content', () => {
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, deleteCondition, restoreCondition,
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
-    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
+    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods,
   }
 })

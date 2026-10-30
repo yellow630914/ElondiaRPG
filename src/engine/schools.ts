@@ -106,8 +106,10 @@ export function bindsOf(c: Pick<Character, 'gear'>): BindInfo[] {
     const base = g ? gearRules.bases[g.spec.base] : undefined
     if (!g || !base?.bind || !base.bind_kind || !BIND_KINDS.includes(base.bind_kind)) continue
     const masterLock = g.locked && !g.locked.startsWith(PARASITE_LOCK) ? lewdRules.locks.master_default : undefined
-    const lock = g.lock ?? masterLock
-    out.push({ slot: slot as GearSlot, name: g.name, kind: base.bind_kind, bind: Math.max(1, Math.min(3, Math.round(base.bind))), ...(lock ? { lock } : {}) })
+    // 裝上的鎖 → 物品自帶的鎖 → 主人的預設鎖
+    const lock = g.lock ?? g.spec.lock ?? masterLock
+    // 物品自己的程度蓋過底材的（GearSpec.bind）
+    out.push({ slot: slot as GearSlot, name: g.name, kind: base.bind_kind, bind: Math.max(1, Math.min(3, Math.round(g.spec.bind ?? base.bind))), ...(lock ? { lock } : {}) })
   }
   return out
 }
@@ -163,7 +165,8 @@ export function twoFaceCombat(c: Character): TwoFace {
       if (key === 'initiative') out.initiative += n
       else out.mods[key as keyof Mods] = (out.mods[key as keyof Mods] ?? 0) + n
     }
-    for (const s of k.immune ?? []) if (!out.immune.includes(s)) out.immune.push(s)
+    // 免疫只在程度 3（docs/LEWD_STATS.md 第 22 節的表）
+    if (b.bind >= 3) for (const s of k.immune ?? []) if (!out.immune.includes(s)) out.immune.push(s)
     out.active.push({ name: b.name, kind: b.kind, mult: Math.round(mult * 100) / 100 })
   }
   return out

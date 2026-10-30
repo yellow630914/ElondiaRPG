@@ -203,6 +203,7 @@ flowchart TD
 | [`comfy/portrait-spec.md`](comfy/portrait-spec.md) | 模組化像素立繪規格（ComfyUI） |
 | [`mockups/`](mockups/) | UI 樣稿（HTML） |
 | [`../tools/pixel/`](../tools/pixel/README.md) | 像素素材管線 |
+| `../tools/portraits/finalize.py` | 固定 NPC 的內建形象圖：把遊戲匯出的形象圖轉成 `src/assets/portraits/<npc id>.webp`（說明見 [PORTRAITS](PORTRAITS.md)） |
 | [`../src/assets/backgrounds/`](../src/assets/backgrounds/README.md)、[`../src/assets/scenes/`](../src/assets/scenes/README.md) | 背景圖、建築場景圖的檔名規則 |
 
 ## 5. GitHub Wiki

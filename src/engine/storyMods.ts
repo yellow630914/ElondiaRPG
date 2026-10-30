@@ -2,7 +2,7 @@
 
 import { parasiteDef } from './parasites'
 import { LEWD_KEYS } from './lewd'
-import type { LewdKey, MasterEventPool } from './data'
+import { LOCK_GRADES, type LewdKey, type LockGrade, type MasterEventPool } from './data'
 import {
   abilities, ATTR_IDS, companionRules, specialMaps, storyCounters, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, MASTER_EVENT_POOLS, PARK_STAMP_PREFIX,
@@ -74,6 +74,7 @@ export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
   start_story: '開始特殊任務', enslave_player: '主角淪為奴隸', perk: '特質（取得的機會）', lose_perk: '失去特質', tattoo: '刺青', remove_tattoo: '洗掉刺青',
   condition: '非戰鬥狀態', parasite: '寄生物', corruption: '寄生物的侵蝕度', lewd: '慾望指標', ability_pool: '學會事件庫的技能',
+  restrain: '陷阱鎖（鎖上拘束具）',
 }
 /** 主人事件格式（主人事件、調教、娼館；docs/CONTENT_EDITOR.md）的效果可以用的種類 */
 export const MASTER_EVENT_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
@@ -237,6 +238,12 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       case 'force_equip': {
         const item = str(x.item, 30)
         out.push({ type: 'force_equip', npc: str(x.npc, 60) || 'master', ...(item ? { item } : {}) })
+        break
+      }
+      case 'restrain': {
+        const item = str(x.item, 30)
+        const lock = typeof x.lock === 'string' && (LOCK_GRADES as string[]).includes(x.lock) ? x.lock as LockGrade : undefined
+        if (item) out.push({ type: 'restrain', item, ...(lock && lock !== 'white' ? { lock } : {}) })
         break
       }
       case 'flag': {

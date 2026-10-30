@@ -36,6 +36,9 @@
 | `affinity` | 角色的好感至少多少 |
 | `parasites` | 主角身上的寄生物：`{ "succubus_mark": { "min": 30, "max": 100, "tamed": false } }`（寫了就要身上有、而且沒有沉睡；侵蝕度含邊界，`tamed` 要已馴服或還沒，不寫不限；見 [ADULT_EVENTS](ADULT_EVENTS.md) 第 6 節） |
 | `stats` | 主角的慾望指標（有效值；曝露名聲看目前的地區）：`{ "lewdness": { "min": 40 }, "exposure": { "max": 20 } }`（含邊界；見 [LEWD_STATS](LEWD_STATS.md)） |
+| `charm` | 所在地的魅氣濃度（1～4）：`{ "min": 3 }`（含邊界；見 [LEWD_STATS](LEWD_STATS.md) 第 12、27 節） |
+| `pc_tags` | 主角至少有其中一個身分標籤：`["noble", "royal"]`（`npc_tags.json` 的 id；見 [NPC_SYSTEM](NPC_SYSTEM.md) 4.1 節） |
+| `wearing` | 主角身上戴著什麼：`bind`（任何拘束具）、`locked`（別人鎖上的）、`adult_outfit`（成人向服裝）、`mark`（奴隸印記）寫 `true` 要有、`false` 要沒有；`bind_kind` 要戴著這一種拘束具（見 [LEWD_STATS](LEWD_STATS.md) 第 27 節） |
 
 **劇情計數器**（`data/rules/counters.json`，內容頁籤「⭐ 特殊任務 → 🔢 劇情計數器」新增與修改，跟著世界匯出匯入）：結果的 `counters`（`{ "human_stance": 1 }`）加減數值，條件的 `counters` 要求範圍。計數器有名稱、說明、初始值與上下限；存檔裡存在 `flags` 的 `count:<id>`。內建兩個：`human_stance`（人類世界的走向）、`demon_stance`（魔族世界的走向），政治故事線主和 +1、主戰 -1，史詩線看正負決定走和平或開戰。任務用到不存在的計數器是錯誤；被用到的自建計數器不能刪除。
 

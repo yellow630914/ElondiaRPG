@@ -120,6 +120,15 @@ describe('save schema', () => {
     expect(relabeled.inventory.find((i) => i.name === '半重')?.qty).toBe(1)
     expect(relabeled.party[0]!.gear?.ring_1?.name).toBe('月光之言')
 
+    // 緋夢樂園的「魅魔女王」改叫「緋夢夫人」：用她命名的物品跟著改
+    const park = JSON.parse(JSON.stringify(state)) as GameState
+    park.schema = 10
+    park.inventory.push({ name: '魅魔女王的黑薔薇', qty: 2 })
+    park.party[0]!.gear = { ...park.party[0]!.gear, leg_accessory: { name: '魅魔女王的吊帶襪', spec: { base: 'garter_stockings', material: 'moonsilk' } } }
+    const hostess = migrate(park)
+    expect(hostess.inventory.find((i) => i.name === '緋夢夫人的黑薔薇')?.qty).toBe(2)
+    expect(hostess.party[0]!.gear?.leg_accessory?.name).toBe('緋夢夫人的吊帶襪')
+
     const future = { ...state, schema: SAVE_SCHEMA + 1 }
     expect(() => assertSchema(future)).toThrow('比較新版本')
     expect(() => migrate(JSON.parse(JSON.stringify(future)))).toThrow('比較新版本')

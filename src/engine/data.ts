@@ -177,7 +177,19 @@ export interface StoryCond {
   parasites?: Record<string, ParasiteRange>
   /** 主角的慾望指標（有效值；曝露名聲看目前的地區）的範圍：{ lewdness: { min, max } }（含邊界；docs/LEWD_STATS.md） */
   stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>
+  /** 所在地的魅氣濃度（1～4，含邊界；docs/LEWD_STATS.md 第 12 節） */
+  charm?: CounterRange
+  /** 主角身上戴著什麼（寫 true 要有、false 要沒有；docs/LEWD_STATS.md 第 27 節） */
+  wearing?: WearingCond
+  /** 主角至少有其中一個身分標籤（npc_tags.json 的 id；docs/NPC_SYSTEM.md 4.1 節） */
+  pc_tags?: string[]
 }
+
+/**
+ * 主角身上戴著什麼：bind 任何拘束具、bind_kind 這一種拘束具（要有）、locked 別人鎖上的（主人或陷阱）、
+ * adult_outfit 成人向服裝、mark 奴隸印記
+ */
+export interface WearingCond { bind?: boolean; bind_kind?: BindKind; locked?: boolean; adult_outfit?: boolean; mark?: boolean }
 
 export interface ParasiteRange { min?: number; max?: number; tamed?: boolean }
 
@@ -1824,6 +1836,8 @@ export interface ShopTypeDef {
   catalog_tag: string
   /** 每天另外上架幾件服裝（底材有 outfit 的裝備）：[最少, 最多]；沒有時不賣服裝 */
   outfits?: [number, number]
+  /** 每天另外上架幾件拘束具（束縛用的底材）：[最少, 最多]；沒有時和一般裝備一起抽（docs/LEWD_STATS.md 第 7 節） */
+  restraints?: [number, number]
   buys: ItemCategory[]
   ai_effects: RewardEffect['type'][]
   specials: ShopSpecial[]
@@ -2097,11 +2111,13 @@ export function isChoosablePerk(id: string): boolean {
 
 export type LewdKey = 'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure'
 /** 雙面效應的拘束種類（底材的 bind_kind） */
-export type BindKind = 'legs' | 'hands' | 'eyes' | 'stim' | 'body'
-export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'stim', 'body']
+export type BindKind = 'legs' | 'hands' | 'eyes' | 'stim' | 'body' | 'mouth'
+export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'mouth', 'stim', 'body']
 /** 鎖的等級（物品的 lock、裝備上的鎖） */
 export type LockGrade = 'white' | 'blue' | 'rune' | 'gold'
 export const LOCK_GRADES: LockGrade[] = ['white', 'blue', 'rune', 'gold']
+/** 陷阱鎖（事件的 restrain 鎖在主角身上的）：EquippedGear.locked 的前綴，不綁契約（docs/LEWD_STATS.md 第 27 節） */
+export const TRAP_LOCK = 'trap:'
 /** 慾望流派（lewd.json 的 schools） */
 export interface LewdSchool { name: string; group: string; role: string; entry: string; advanced: string; fit: BindKind[] }
 /**
@@ -2181,7 +2197,8 @@ export const lewdRules = lewdJson as unknown as {
     item_chance: number; items: string[]; book_tier: number; book_chance: number; books: string[]
     wager: { mult: number; loss: Partial<Record<LewdKey, number>> }
     lust_convert: number
-    rings: Record<string, { name: string; desc: string; restraint?: boolean; lust_only?: boolean; tiers: EncounterGroup[] }>
+    /** rare：對手等級 tier 以上的勝場有 chance 的機率拿到 items 裡的一樣（這個擂臺專屬的獎品） */
+    rings: Record<string, { name: string; desc: string; restraint?: boolean; lust_only?: boolean; tiers: EncounterGroup[]; rare?: { tier: number; chance: number; items: string[] } }>
   }
   slave_price: { above: number; per: Partial<Record<LewdStat, number>>; per_skill: number; max: number }
   npc_schools: { tags: Record<string, { chance: number; schools: string[] }> }
@@ -2194,6 +2211,8 @@ export const lewdRules = lewdJson as unknown as {
     attr: AttrId; base: number; lock_dc: Record<LockGrade, number>; bind_dc: number; endurance_per: number; fumble_submission: number
     keys: { chance: number; levels: [number, LockGrade][] }
     combat: { ap: number; base: number; per_level: number; hands: number }
+    /** 鐵匠剪鎖：只剪陷阱鎖（docs/LEWD_STATS.md 第 27 節） */
+    cut: { shops: string[]; fee_cc: Record<LockGrade, number> }
   }
   charm: {
     names: string[]

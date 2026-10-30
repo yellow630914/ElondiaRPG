@@ -10,7 +10,7 @@
 import { attachParasite, changeCorruption, detachParasite, tameParasite } from './parasites'
 import { tagsAllowed } from './content'
 import { addItem } from './state'
-import { abilities, classAbilities, classes, locationById, masterEventPool, perkDef, slaveryRules, type AbilityDef, type AttrId, type LewdKey, type MasterEventPool } from './data'
+import { abilities, classAbilities, classes, locationById, masterEventPool, perkDef, slaveryRules, type AbilityDef, type AttrId, type LewdKey, type LockGrade, type MasterEventPool } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, carryLearned, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
@@ -28,7 +28,7 @@ import { inActiveSquad } from './squads'
 import { joinGroup, queueJoin } from './away'
 import { startStory, storyDef } from './story'
 import { contractKind, randomMaster } from './slavery'
-import { forceEquip } from './forcedGear'
+import { forceEquip, restrainPc } from './forcedGear'
 import { addStrict, extendDeadline, sendToMasterHome } from './masterHome'
 import { addTattoo, contractOf, freePlaces, oathText, placeName, removeTattoo, tattooFromTemplate, tattooKindName, tattoosOf, type NewTattoo } from './tattoos'
 import { gameRule, rewardMoney } from './gameRules'
@@ -111,6 +111,8 @@ export type RewardEffect =
   | { type: 'remove_tattoo'; place?: TattooPlace; kind?: 'plain' | 'oath' }
   /** 主人強制主角裝上一件裝備並鎖住（npc 是主人；item 沒寫時從主人會用的裡面隨機挑，見 forcedGear.ts） */
   | { type: 'force_equip'; npc: string; item?: string }
+  /** 陷阱鎖：把一件拘束具戴到主角身上、用 lock 等級（預設白鐵）的鎖鎖住；脫縛、鑰匙或鐵匠剪鎖才拿得下（docs/LEWD_STATS.md 第 27 節） */
+  | { type: 'restrain'; item: string; lock?: LockGrade }
   /** 主角的寄生物（parasites.json）：寄生（add）、馴服（tame）、拿掉（remove） */
   | { type: 'parasite'; parasite: string; op: 'add' | 'tame' | 'remove' }
   /** 寄生物的侵蝕度加減 */
@@ -126,7 +128,7 @@ export type RewardEffect =
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
-  'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip',
+  'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip', 'restrain',
   'parasite', 'corruption', 'lewd', 'ability_pool',
 ]
 
@@ -439,6 +441,11 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'force_equip': {
         const line = forceEquip(state, report, e.npc, e.item)
         notes.push(line || '主人沒有挑到要你戴的東西')
+        break
+      }
+      case 'restrain': {
+        const line = restrainPc(state, report, e.item, e.lock)
+        if (line) notes.push(line)
         break
       }
       case 'remove_tattoo': {

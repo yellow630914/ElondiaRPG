@@ -113,6 +113,8 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
   if (scope === 'road') {
     const modes = pick(raw.modes, ROUTE_MODES)
     if (modes.length) out.modes = modes
+    const regions = pick(raw.regions, geography.regions.map((r) => r.id))
+    if (regions.length) out.regions = regions
   } else if (scope === 'dungeon') {
     const triggers = pick(raw.triggers, Object.keys(DUNGEON_TRIGGERS) as DungeonTrigger[])
     if (triggers.length) out.triggers = triggers

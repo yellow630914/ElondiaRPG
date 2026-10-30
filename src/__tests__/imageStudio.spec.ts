@@ -9,7 +9,7 @@ import { composeScene, parseScenePlan, sceneCast, scenePrompt } from '@/narrator
 import { enterLocation } from '@/engine/grid'
 import { newGame } from '@/engine/state'
 import { useImageSettings } from '@/stores/image'
-import { MAX_VERSIONS, portraitKey, usePortraits } from '@/stores/portraits'
+import { builtinPortrait, currentPortraitBlob, MAX_VERSIONS, portraitKey, usePortraits } from '@/stores/portraits'
 
 // 縮放底圖要用瀏覽器的 canvas：測試裡原樣回傳
 vi.mock('@/narrator/imageUtils', async (orig) => ({
@@ -224,5 +224,33 @@ describe('portrait versions', () => {
     expect(portraits.describe(state, id)).toBe('只畫一個戴面具的弓箭手')
     await portraits.setDescription(key, null)
     expect(portraits.describe(state, id)).toContain('艾倫')
+  })
+
+  it('shows a fixed NPC\'s built-in portrait until the player has their own, and tweaks from it', async () => {
+    const fetchMock = openai()
+    const state = game()
+    const id = 'npc_ren'
+    const key = portraitKey(state, id)
+    const portraits = usePortraits()
+    const builtin = builtinPortrait(id)!
+    expect(builtin).toMatch(/npc_ren.*\.webp/)
+    await portraits.load(key)
+    expect(portraits.urls[key]).toBe(builtin)
+    expect(portraits.records[key]).toBeUndefined()
+    // 生成的人沒有內建圖
+    await portraits.load(portraitKey(state, state.party[0]!.id))
+    expect(portraits.urls[portraitKey(state, state.party[0]!.id)]).toBeNull()
+    expect(await currentPortraitBlob(key)).toBeDefined()
+    // 微調：以內建圖為底，成為自己的第一版
+    await portraits.tweak(state, id, 'smile')
+    expect(portraits.jobs[key]).toBeUndefined()
+    expect(fetchMock.mock.calls.some((c) => String(c[0]) === builtin)).toBe(true)
+    expect(fetchMock.mock.calls.at(-1)![0]).toBe('https://api.openai.com/v1/images/edits')
+    expect(portraits.records[key]).toMatchObject({ from: 'tweak' })
+    expect(portraits.urls[key]).toMatch(/^blob:/)
+    // 刪掉自己的圖：換回內建圖；內建圖不跟著存檔匯出
+    await portraits.remove(key)
+    expect(portraits.urls[key]).toBe(builtin)
+    expect(Object.keys(await portraits.exportFor(state.seed))).not.toContain(id)
   })
 })

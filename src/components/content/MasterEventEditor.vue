@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { abilities, ATTR_IDS, attrName, MASTER_EVENT_POOLS, slaveryRules, tagDef, type MasterEventOption, type MasterEventPool } from '@/engine/data'
+import { abilities, ATTR_IDS, attrName, lewdRules, MASTER_EVENT_POOLS, slaveryRules, tagDef, type MasterEventOption, type MasterEventPool } from '@/engine/data'
 import { builtinMasterEvent, masterEventById, masterEventWarnings, MASTER_EVENT_LIMITS, POOL_IDS, type MasterEventMod } from '@/engine/masterEventMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -39,6 +39,28 @@ const lewdAbilities = computed(() => {
   return Object.values(abilities).filter((a) => a.classes.includes('lewd')).sort((a, b) => (a.unlock ?? 1) - (b.unlock ?? 1))
 })
 const L = MASTER_EVENT_LIMITS
+const courses = Object.entries(lewdRules.training.courses).map(([id, c]) => ({ id, name: c.name }))
+/** 上方的說明依事件庫換 */
+const POOL_HELP: Record<MasterEventPool, string> = {
+  master: '主人的突發事件：主角被主人帶著時，走動與旅行後依權重抽一件（經過娼館、離家逾期的事件另外擲）。玩家從回應裡選一個，或自己輸入回應交給 AI 判定。文字裡的 {master} 會換成主人的名字；效果的親密度選「主人」就是主角的主人。',
+  owner: '調教事件：主角在有調教家具的房子調教自己的奴隸時，從選的課程的事件裡依權重抽一件。玩家選主角的做法，檢定由主角擲。文字裡的 {actor} 和 {master} 都是被調教的奴隸；效果的指標、技能給奴隸，親密度選「主人」也是奴隸。',
+  brothel_work: '娼館打工事件：在娼館接客結束時依權重抽一件（主角或隊員都可能）。文字裡的 {actor} 是接客的人，{master} 是老鴇；效果的指標、技能給接客的人。',
+  brothel_train: '娼館受訓事件：在娼館受訓時依權重抽一件，一定學會掛的其中一個技能。文字裡的 {actor} 是受訓的人，{master} 是老鴇；效果的指標、技能給受訓的人。',
+}
+
+/** 數字輸入框超出 min／max 時夾回去（不然存檔時才默默被夾住） */
+function clampNumber(ev: Event) {
+  const el = ev.target as HTMLInputElement
+  if (el.tagName !== 'INPUT' || el.type !== 'number' || el.value === '') return
+  const v = Number(el.value)
+  const lo = el.min === '' ? -Infinity : Number(el.min)
+  const hi = el.max === '' ? Infinity : Number(el.max)
+  const c = Math.max(lo, Math.min(hi, v))
+  if (c !== v) {
+    el.value = String(c)
+    el.dispatchEvent(new Event('input'))
+  }
+}
 
 function toggle(field: 'tags' | 'tags_none' | 'teaches', v: string, on: boolean) {
   const set = new Set<string>(draft.value[field] ?? [])
@@ -94,7 +116,7 @@ function remove() {
 </script>
 
 <template>
-  <div class="editor">
+  <div class="editor" @change="clampNumber">
     <div class="row head">
       <h3>⛓️ {{ draft.text.slice(0, 24) || '（沒有描述）' }}</h3>
       <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
@@ -105,10 +127,7 @@ function remove() {
       <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
       <button v-else class="small danger" @click="remove">刪除</button>
     </div>
-    <p class="small muted">
-      id：{{ id }}。主人的突發事件：主角被主人帶著時，走動與旅行後依權重抽一件（經過娼館、離家逾期的事件另外擲）。玩家從回應裡選一個，或自己輸入回應交給 AI 判定。
-      文字裡的 {master} 會換成主人的名字；效果的親密度選「主人」就是主角的主人。
-    </p>
+    <p class="small muted">id：{{ id }}。{{ POOL_HELP[draft.pool] }}</p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
 
     <fieldset>
@@ -119,7 +138,7 @@ function remove() {
             <option v-for="p in POOL_IDS" :key="p" :value="p">{{ MASTER_EVENT_POOLS[p] }}</option>
           </select>
         </label>
-        <label>權重 <input v-model.number="draft.weight" type="number" min="0" max="20" step="0.5" class="num" /></label>
+        <label>權重（0～20） <input v-model.number="draft.weight" type="number" min="0" max="20" step="0.5" class="num" /></label>
         <label>花的時間（小時） <input v-model.number="draft.hours" type="number" min="0.25" max="24" step="0.25" class="num" /></label>
         <label><span>自己回應的參考 DC <Hint :text="`沒填時用 ${slaveryRules.master_events.free_dc}。`" /></span>
           <input v-model.number="draft.free_dc" type="number" min="5" max="30" class="num" :placeholder="String(slaveryRules.master_events.free_dc)" />
@@ -174,7 +193,13 @@ function remove() {
         </label>
       </div>
       <div class="row small">
-        <label v-if="draft.pool === 'owner'">調教課程 <input v-model="draft.course" maxlength="12" /></label>
+        <label v-if="draft.pool === 'owner'">調教課程
+          <select v-model="draft.course">
+            <option :value="undefined">（選一個課程）</option>
+            <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}</option>
+            <option v-if="draft.course && !courses.some((c) => c.id === draft.course)" :value="draft.course">{{ draft.course }}（沒有這個課程）</option>
+          </select>
+        </label>
         <label v-if="draft.pool === 'owner'">成功幾次保證學會 <input v-model.number="draft.progress" type="number" min="1" max="10" class="num" /></label>
         <label v-if="isBrothel">要求的頭牌等級 <input v-model.number="draft.rank_min" type="number" min="0" max="10" class="num" /></label>
       </div>

@@ -9,7 +9,7 @@ import { extractJson } from '@/narrator/judge'
 import { composeScene, parseScenePlan, sceneCast, scenePrompt, type ScenePlan } from '@/narrator/sceneInfo'
 import { useGame } from './game'
 import { useImageSettings } from './image'
-import { idbDelete, idbGet, idbKeys, idbPut, portraitKey, usePortraits, type PortraitRecord } from './portraits'
+import { currentPortraitBlob, idbDelete, idbGet, idbKeys, idbPut, portraitKey, usePortraits, type PortraitRecord } from './portraits'
 import { useSettings } from './settings'
 
 export interface SceneRecord extends PortraitRecord {
@@ -118,8 +118,8 @@ export const useScenes = defineStore('scenes', () => {
       let references: Blob[] = []
       if (service === 'openai') {
         for (const c of p.characters) {
-          const rec = await idbGet<PortraitRecord>(portraitKey(state, c.id)).catch(() => undefined)
-          if (rec?.blob) references.push(rec.blob)
+          const blob = await currentPortraitBlob(portraitKey(state, c.id)).catch(() => undefined)
+          if (blob) references.push(blob)
         }
         references = references.slice(0, 4)
       }

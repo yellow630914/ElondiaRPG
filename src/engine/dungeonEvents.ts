@@ -13,7 +13,7 @@ import { characterBody } from './look'
 import { pcOf } from './party'
 import { parasiteOf, parasiteRules, stageOf } from './parasites'
 import { checkModifiers, modifierNote } from './perks'
-import { applyPendingMove, applyRoadOutcome, travelEvents, type DungeonTrigger, type RoadOption, type RoadTemplate } from './road'
+import { applyPendingMove, applyRoadOutcome, sceneOn, travelEvents, type DungeonTrigger, type RoadOption, type RoadTemplate } from './road'
 import { commitReport, newReportId, withRng } from './state'
 import { condMet } from './storyFlags'
 import type { GameState, GameTime, Report } from './types'
@@ -132,11 +132,8 @@ export function pcEventReport(state: GameState, title: string, tag: string): Rep
   }
 }
 
-/** 這個選項會不會進入親密場景（城鎮事件也用） */
-export function sceneOn(o: RoadOption, ok: boolean): boolean {
-  if (!o.adult_scene) return false
-  return o.adult_scene === 'always' || (!!o.check && o.adult_scene === (ok ? 'success' : 'fail'))
-}
+// 這個選項會不會進入親密場景（城鎮事件也用；定義在 road.ts，旅途事件也用）
+export { sceneOn } from './road'
 
 /** 主角回應一個選項：有檢定的由主角擲骰（非戰鬥狀態與特質也算），套用結果、寫進報告；回傳檢定有沒有成功 */
 export function resolvePcOption(state: GameState, report: Report, t: RoadTemplate, o: RoadOption, tag: string, scene = t.scene): boolean {

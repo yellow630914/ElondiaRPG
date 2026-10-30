@@ -31,9 +31,12 @@ const CELL_SHOP: Record<string, ShopType> = {
   shop: 'general', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant',
 }
 
-/** 不在商店上架的物品：獨特物品、有屬性加減的裝備、主人強制裝備的東西 */
+/**
+ * 不在商店上架的物品：獨特物品、有屬性加減的裝備。主人強制裝備的東西沒有商店標籤（tags）時本來就不上架；
+ * 有標籤的（例如口球）也在店裡賣
+ */
 export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'>): boolean {
-  return !!i.gear?.unique || !!i.gear?.attrs || !!i.master_force
+  return !!i.gear?.unique || !!i.gear?.attrs
 }
 
 /** 獨特裝備（任務與寶箱給的、獨一無二的東西）：不能賣給商店，也不能拿去和人交換 */
@@ -168,7 +171,7 @@ function itemDeal(state: GameState, name: string, stock: number, markup = 1, pri
 function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const def = shopDef(type)
   const rank = locationRank(shopPlace(state).type)
-  // 獨特物品、有屬性加減的裝備、主人強制裝備的東西不在商店賣（只能從事件、寶箱或主人得到）
+  // 獨特物品、有屬性加減的裝備不在商店賣（只能從事件、寶箱或主人得到）
   const place = shopPlace(state)
   // 淫市的貨：魅氣濃度夠高的聚落才有（驛站沒有）
   const charm = place.waystation ? 0 : charmLevel(place.id)
@@ -177,8 +180,11 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
     const deals: Deal[] = []
     // 服裝另外挑（shops.json 的 outfits），不擠掉護具與武器
     const isOutfit = (i: ItemDef) => !!(i.gear && gearRules.bases[i.gear.base]?.outfit)
-    const equipment = available.filter((i) => i.category === 'equipment' && !isOutfit(i))
+    // 拘束具也另外挑（shops.json 的 restraints），不然在幾百件衣物裡幾乎抽不到
+    const isRestraint = (i: ItemDef) => !!def.restraints && !!(i.gear && gearRules.bases[i.gear.base]?.restraint)
+    const equipment = available.filter((i) => i.category === 'equipment' && !isOutfit(i) && !isRestraint(i))
     const outfits = available.filter((i) => i.category === 'equipment' && isOutfit(i))
+    const restraints = available.filter((i) => i.category === 'equipment' && isRestraint(i))
     const pickSome = <T>(list: T[], n: number) => [...list].sort(() => rng.next() - 0.5).slice(0, n)
     for (const i of available) {
       if (i.category === 'equipment') continue
@@ -200,6 +206,9 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
         if (!pool.length) break
         picked.add(weightedPick(rng, Object.fromEntries(pool.map((i) => [i.name, gearWeight(i)]))))
       }
+    }
+    if (def.restraints && restraints.length) {
+      for (const i of pickSome(restraints, rng.int(def.restraints[0], def.restraints[1]))) picked.add(i.name)
     }
     for (const name of picked) deals.push(itemDeal(state, name, 1))
     // 魔法物品店：每天隨機上架消耗品與材料（材料以收購價加成賣出，依聚落規模限制價格）；書（特質、技能）只在本來賣它的店

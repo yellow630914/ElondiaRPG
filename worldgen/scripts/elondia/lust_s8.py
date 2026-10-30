@@ -101,7 +101,7 @@ def write_s8_3():
     prices = {x['name']: x['price_cc'] for x in json.loads(t)['items']}
     prices.update({x['name']: x['price_cc'] for x in ITEMS})
     check_recipes(ITEMS, prices)
-    t = insert_after(t, r'\n    \{"name": "魅魔女王的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in ITEMS])
+    t = insert_after(t, r'\n    \{"name": "緋夢夫人的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in ITEMS])
     json.loads(t)
     open(p, 'w').write(t)
 
@@ -217,7 +217,7 @@ STRUGGLE_STATUSES = {
     "swallowed": {"name": "吞入", "kind": "debuff", "control": "stun", "struggle": 2, "lust_mult": 0.25},
 }
 UNBIND_RULES = {
-    "$comment": "脫縛（docs/LEWD_STATS.md 第 16 節）。嘗試脫縛：DC = base + 鎖的 lock_dc + 拘束程度 × bind_dc − 忍耐 / endurance_per；靈巧檢定（雙手被綁的減值照雙面效應算在檢定上）。只有別人鎖上的拘束具（主人強制戴上的）才需要；成功時鎖被弄壞、拘束具可以卸下。主人在身邊時，失敗輕度懲罰、大失敗嚴厲懲罰；大失敗順從 + fumble_submission。鑰匙（物品的 key）打開同等級以下的鎖，用一次就沒了，鎖歸自己。keys：擊敗人形的敵人（持有裝備的怪物、敵對冒險者）時 chance 的機率搜到一把，依敵人等級（levels：[最低等級, 鎖的等級]）。combat：戰鬥中的拘束（狀態有 struggle）用掙脫（自己）或撕開（隊友）擺脫，花 ap 行動點；1d20 + 熟練 + 力量、靈巧較高的調整值，DC = base + 施加者等級 × per_level + 狀態的 struggle，自己雙手被綁 + hands。",
+    "$comment": "脫縛（docs/LEWD_STATS.md 第 16 節）。嘗試脫縛：DC = base + 鎖的 lock_dc + 拘束程度 × bind_dc − 忍耐 / endurance_per；靈巧檢定（雙手被綁的減值照雙面效應算在檢定上）。只有別人鎖上的拘束具（主人強制戴上的、陷阱鎖住的）才需要；成功時鎖被弄壞、拘束具可以卸下。主人在身邊時，失敗輕度懲罰、大失敗嚴厲懲罰；大失敗順從 + fumble_submission。鑰匙（物品的 key）打開同等級以下的鎖，用一次就沒了，鎖歸自己。keys：擊敗人形的敵人（持有裝備的怪物、敵對冒險者）時 chance 的機率搜到一把，依敵人等級（levels：[最低等級, 鎖的等級]）。cut：陷阱鎖（事件的 restrain，第 27 節）可以在 shops 的店請人剪掉，依鎖的等級收 fee_cc；主人的鎖不能剪。combat：戰鬥中的拘束（狀態有 struggle）用掙脫（自己）或撕開（隊友）擺脫，花 ap 行動點；1d20 + 熟練 + 力量、靈巧較高的調整值，DC = base + 施加者等級 × per_level + 狀態的 struggle，自己雙手被綁 + hands。",
     "attr": "dex",
     "base": 10,
     "lock_dc": {"white": 0, "blue": 2, "rune": 4, "gold": 6},
@@ -226,6 +226,7 @@ UNBIND_RULES = {
     "fumble_submission": 1,
     "keys": {"chance": 0.1, "levels": [[1, "white"], [6, "blue"], [11, "rune"], [16, "gold"]]},
     "combat": {"ap": 1, "base": 10, "per_level": 0.5, "hands": 2},
+    "cut": {"shops": ["smithy"], "fee_cc": {"white": 50, "blue": 200, "rune": 800, "gold": 3000}},
 }
 STATUS_SWAP = {"lp_glue": ("stunned", "glued", 2), "lp_swallow": ("stunned", "swallowed", 2)}
 
@@ -502,7 +503,7 @@ def write_s8_10():
     t = open(p).read()
     for it in CHARM_GOODS:
         t = drop_lines(t, r'\n    \{"name": ' + re.escape(json.dumps(it['name'], ensure_ascii=False)) + r'.*')
-    t = insert_after(t, r'\n    \{"name": "魅魔女王的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in CHARM_GOODS])
+    t = insert_after(t, r'\n    \{"name": "緋夢夫人的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in CHARM_GOODS])
     json.loads(t)
     open(p, 'w').write(t)
 
@@ -634,7 +635,7 @@ OUTFIT_TAILOR = {
 }
 LUST = lambda x: {"offense": {"lust": x}}
 AUCTION_ITEMS = [
-    {"name": "魅魔女王的舊項圈", "category": "equipment", "price_cc": 3200, "tags": [], "adult": True, "desc": "魅魔女王年輕時戴過的蕾絲項圈，據說戴上的人說話會帶著女王的腔調。只在拍賣會出現。",
+    {"name": "緋夢夫人的舊項圈", "category": "equipment", "price_cc": 3200, "tags": [], "adult": True, "desc": "緋夢夫人年輕時戴過的蕾絲項圈，據說戴上的人說話會帶著夫人的腔調。只在拍賣會出現。",
      "gear": {"base": "lace_choker", "material": "moonsilk", "rarity": "epic", "lewd": {"submission": 8}, "enchants": LUST(0.25)}},
     {"name": "夢魔的薄紗睡衣", "category": "equipment", "price_cc": 2800, "tags": [], "adult": True, "desc": "夢魔氏族的長老穿過的薄紗睡衣，穿上它睡覺會做很長的夢。只在拍賣會出現。",
      "gear": {"base": "sheer_negligee", "material": "moonsilk", "rarity": "epic", "lewd": {"lewdness": 8, "sensitivity": 4}, "enchants": {"resist": {"lust": -0.2}}}},
@@ -733,7 +734,7 @@ def write_s8_14():
     t = open(p).read()
     for it in AUCTION_ITEMS + PARK_OUTFITS:
         t = drop_lines(t, r'\n    \{"name": ' + re.escape(json.dumps(it['name'], ensure_ascii=False)) + r'.*')
-    t = insert_after(t, r'\n    \{"name": "魅魔女王的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in AUCTION_ITEMS + PARK_OUTFITS])
+    t = insert_after(t, r'\n    \{"name": "緋夢夫人的吊帶襪".*', ['    ' + json.dumps(x, ensure_ascii=False) for x in AUCTION_ITEMS + PARK_OUTFITS])
     json.loads(t)
     open(p, 'w').write(t)
 

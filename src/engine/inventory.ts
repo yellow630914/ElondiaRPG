@@ -5,7 +5,7 @@ import { hasPerk, offerPerks } from './perks'
 import { abilityQuality, carryLearned, learnAbility, nextBookAbility, recalc, snapshot } from './character'
 import { gameRule } from './gameRules'
 import {
-  abilities, attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates,
+  abilities, attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK,
   type ItemIntel, type ItemUse, type LockGrade,
 } from './data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotsFor, syncGear, wearName } from './gear'
@@ -195,11 +195,11 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
  * 穿上裝備：放進指定的欄位（沒指定時挑第一個空的、可以放的欄位）。
  * 雙手武器會空出副手；換下來的裝備放回行囊。
  */
-/** 不能拿下的裝備：主人強制裝上的（契約還在時）、寄生裝備（馴服或解咒之前） */
+/** 不能拿下的裝備：主人強制裝上的（契約還在時）、陷阱鎖住的、寄生裝備（馴服或解咒之前） */
 export function lockedGear(m: Character, slot: GearSlot): EquippedGear | undefined {
   const g = m.gear?.[slot]
   if (!g?.locked) return undefined
-  return g.locked.startsWith(PARASITE_LOCK) || contractOf(m) ? g : undefined
+  return g.locked.startsWith(PARASITE_LOCK) || g.locked.startsWith(TRAP_LOCK) || contractOf(m) ? g : undefined
 }
 
 /**
@@ -222,6 +222,7 @@ export function wearLocks(m: Character, wear: string[] | undefined): string[] {
 function assertUnlocked(m: Character, slot: GearSlot) {
   const g = lockedGear(m, slot)
   if (g?.locked?.startsWith(PARASITE_LOCK)) throw new Error(`${g.name}緊緊貼在身上，脫不下來（寄生裝備：馴服或解咒之後才能拿下）`)
+  if (g?.locked?.startsWith(TRAP_LOCK)) throw new Error(`${g.name}被鎖住了，自己打不開（要脫縛、用鑰匙或找鐵匠剪鎖）`)
   if (g) throw new Error(`${g.name}是主人強制戴上的，契約還在時不能拿下`)
 }
 
@@ -304,9 +305,14 @@ export function lockItems(state: GameState): { name: string; grade: LockGrade }[
   return state.inventory.filter((i) => i.qty > 0 && itemDef(i.name)?.lock).map((i) => ({ name: i.name, grade: itemDef(i.name)!.lock! }))
 }
 
-/** 這一格的裝備能不能上鎖：拘束具（底材有 bind）、還沒上鎖、不是主人強制戴上的 */
+/** 誰鎖上的（別人的鎖）：陷阱或主人 */
+export function lockerOf(g: EquippedGear): string {
+  return g.locked?.startsWith(TRAP_LOCK) ? '陷阱' : '主人'
+}
+
+/** 這一格的裝備能不能上鎖：拘束具（底材有 bind）、還沒上鎖、沒有自帶的鎖、不是別人鎖上的 */
 export function lockable(g: EquippedGear | undefined): boolean {
-  return !!g && !!gearRules.bases[g.spec.base]?.bind && !g.lock && !g.locked
+  return !!g && !!gearRules.bases[g.spec.base]?.bind && !g.lock && !g.spec.lock && !g.locked
 }
 
 /** 用行囊裡的鎖替身上的拘束具上鎖（自己有鑰匙，隨時可以打開） */
@@ -317,8 +323,8 @@ export function lockGear(state: GameState, memberId: string, slot: GearSlot, loc
   const m = member(state, memberId)
   const g = m.gear?.[slot]
   if (!g || !gearRules.bases[g.spec.base]?.bind) throw new Error('這一格沒有可以上鎖的拘束具')
-  if (g.locked) throw new Error(`${g.name}是主人鎖上的`)
-  if (g.lock) throw new Error(`${g.name}已經上鎖了`)
+  if (g.locked) throw new Error(`${g.name}是${lockerOf(g)}鎖上的`)
+  if (g.lock || g.spec.lock) throw new Error(`${g.name}已經上鎖了`)
   g.lock = grade
   const report = itemReport(state, 0.1)
   report.changes.items_lost = [{ name: lockName, qty: 1 }]
@@ -344,7 +350,7 @@ export function unlockGear(state: GameState, memberId: string, slot: GearSlot): 
   const m = member(state, memberId)
   const g = m.gear?.[slot]
   if (!g?.lock) throw new Error('這一格沒有上鎖')
-  if (g.locked) throw new Error(`${g.name}是主人鎖上的，鑰匙不在你身上`)
+  if (g.locked) throw new Error(`${g.name}是${lockerOf(g)}鎖上的，鑰匙不在你身上`)
   const name = lockItemName(g.lock)
   delete g.lock
   const report = itemReport(state, 0.1)
