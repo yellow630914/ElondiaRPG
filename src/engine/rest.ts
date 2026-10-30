@@ -93,12 +93,13 @@ export function waitText(minutes: number): string {
   return [h ? `${h} 小時` : '', m ? `${m} 分` : ''].filter(Boolean).join(' ') || '0 分'
 }
 
-/** 擋住休息（短休、長休）的事件：對峙、刻印、主人的要求、戰敗事件；沒有時回傳 null */
+/** 擋住休息（短休、長休）的事件：對峙、刻印、主人的要求、旅途與城鎮的選擇、戰敗事件；沒有時回傳 null */
 export function restEventBlock(state: GameState): string | null {
   if (state.standoff) return '先處理眼前的對峙'
   if (state.pendingMark) return '先完成契約印記的刻印'
   if (state.pendingMasterEvent) return '先回應主人的要求'
   if (state.dungeonEvent || state.parasiteEvent) return '先應付眼前的處境'
+  if (state.townEvent || state.roadEvent) return '先決定怎麼應付眼前的事'
   if (state.pendingDefeat) return '先應付眼前的處境'
   if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
   if (state.pendingJoins?.length) return '先決定要不要讓想入隊的人加入（騰出位子或放棄）'
@@ -127,7 +128,6 @@ export function longRestBlocked(state: GameState, place: RestPlace): string | nu
   if (event) return event
   const cell = currentCell(state)
   if (place === 'camp') {
-    if (state.roadEvent) return '先處理旅途上的事件'
     if (!(CAMP_AREAS as readonly string[]).includes(currentArea(state).kind)) return '要在城外的野外或旅途上才能紮營'
     if (!partyCamps(state)) return '隊伍裡要有人懂得在野外紮營（特質【星夜露宿】）'
   }

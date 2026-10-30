@@ -1023,7 +1023,9 @@ def write_s9_6():
         for mat in TIERS[b['kind']]:
             assert materials[mat]['kind'] == b['kind'], (base, mat)
             std.append({"name": std_name(materials, base, mat), "category": "equipment", "price_cc": round(b['price'] * materials[mat]['price']),
-                        "tags": [SHOP_OF[b['kind']]], **({"charm_min": 3} if base in CHARM_ONLY else {}), "gear": {"base": base, "material": mat}})
+                        "tags": [SHOP_OF[b['kind']]], **({"charm_min": 3} if base in CHARM_ONLY else {}), "gear": {"base": base, "material": mat},
+                        # 第三級材料和其他制式品一樣要城市以上才賣
+                        **({"min_location": "city"} if materials[mat]['tier'] == 3 else {})})
     new_items = std + OUTFIT_UNIQUES
     p = 'data/rules/items.json'
     t = open(p).read()

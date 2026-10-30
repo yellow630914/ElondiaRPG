@@ -25,6 +25,8 @@ export type PerkHolder = Pick<Character, 'perks' | 'customPerks'> & { race?: str
 /** 這次檢定是什麼：情境、主動行動的種類、屬性、對象的標籤 */
 export interface CheckCtx {
   context: CheckContext
+  /** 這次檢定也算這些情境（旅途事件同時是 road 與 travel）；一個條件只算一次 */
+  also?: CheckContext[]
   kind?: ActionKind
   attr?: AttrId
   vsTags?: string[]
@@ -47,7 +49,7 @@ export function hasPerk(c: PerkHolder, id: string): boolean {
 
 export function matches(f: CheckFilter, ctx: CheckCtx): boolean {
   if (f.attrs?.length && (!ctx.attr || !f.attrs.includes(ctx.attr))) return false
-  if (f.contexts?.length && !f.contexts.includes(ctx.context)) return false
+  if (f.contexts?.length && !f.contexts.includes(ctx.context) && !ctx.also?.some((x) => f.contexts!.includes(x))) return false
   // 誘惑也吃獻媚的加值（特質、獨特裝備）
   if (f.kinds?.length && (!ctx.kind || !(f.kinds.includes(ctx.kind) || (ctx.kind === 'seduce' && f.kinds.includes('flatter'))))) return false
   if (f.vs_tags?.length && !f.vs_tags.some((t) => ctx.vsTags?.includes(t))) return false

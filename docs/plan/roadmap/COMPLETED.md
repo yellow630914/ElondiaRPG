@@ -4,6 +4,11 @@
 
 ### 2026-10-30 文件整理（v0.4.0 之後）
 
+- `docs/*` 的系統文件逐份對過程式與資料（36 份），改正數量、規則與漏寫的功能；途中找到的程式問題修掉四個：
+  - B15：拿掉舊的 `travel()` 後，只寫「旅行途中的危險」（`travel`）的加減沒有作用（野外求生、怕水、懼高、紅溪蛇鱗）。旅途事件的檢定改成同時算 `road` 與 `travel`，一個條件兩個都寫只算一次（`perks.ts` 的 `CheckCtx.also`、`road.ts` 的 `roll`）。
+  - B16：等待中的城鎮事件、旅途事件沒有擋住短休與旅店長休（`rest.ts` 的 `restEventBlock`）。
+  - B17：刪自建技能時沒檢查固定 NPC 與主奴、娼館事件的 `teaches`（`mods.ts` 的 `abilityUsage`）。
+  - B18：12 件第三級材料的淫服沒有「城市以上」（`lust_s9.py` 補上 `min_location`）。
 - `docs/plan` 只留五份：BUGS、LOGIC_ISSUES、README、RETROSPECTIVE、ROADMAP；各項計畫的細節搬到 `roadmap/`，只留還沒做的部分；做完的部分收在這份。
 - 點子庫：已經變成 ROADMAP 的刪掉（I13 淫氣世界世界書 → R8；I5 的前半 → R11），2026-10 盤點的點子（I8、I9、I12）與 UI v2 沒做的部分併進早期發想。
 - 手機版的版面規則寫成系統文件 [MOBILE_UI](../../MOBILE_UI.md)。

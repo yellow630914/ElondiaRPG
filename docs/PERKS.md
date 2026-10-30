@@ -18,7 +18,7 @@
 | gate | 城門盤查、說服王城的衛兵 | `security.ts`、`companions.ts`（`palace_gate`） |
 | trap | 察覺陷阱（隊伍裡靈巧最高的人） | `grid.ts` |
 | lock | 開鎖（負責開鎖的人） | `grid.ts` |
-| travel | 旅行途中的危險：舊的 `travel()` 拿掉之後沒有檢定用這個情境，特質與身分標籤寫的「旅行途中的危險」目前沒有作用 | － |
+| travel | 旅行途中的危險：旅途事件的檢定除了 `road` 也算這個情境（同一個條件兩個都寫只算一次，`road.ts` 的 `roll`） | 旅途事件 |
 | road | 旅途上的事件（隊伍裡最擅長的人；城鎮事件改用 action） | `road.ts` |
 | quest | 執行一般委託 | `town.ts` |
 | retreat | 撤出地下城（帶路的人） | `expedition.ts` |
