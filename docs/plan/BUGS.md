@@ -9,6 +9,8 @@
 | # | 問題 | 現況 | 相關 |
 |---|---|---|---|
 | B15 | **「travel」情境的檢定加值都沒有作用** | 2026-10-28 拿掉舊的 `travel()`（01cc499）之後，沒有任何檢定再用 `context: 'travel'`；旅途事件用的是 `road`。所以這些寫在 `travel` 的加值現在都不會生效：特質識途老馬、野外求生，缺陷怕水、路痴、懼高；旅人身分標籤（`npc_tags.json` 的 `pc_effects`）；拘束具雙面效應的限制行走、遮住視線（`lewd.json` 的 `two_face.kinds`）；豐饒祭花冠的獨特加值。要決定：把 `travel` 併進 `road`（改資料），或旅途事件的檢定同時算兩個情境（改 `road.ts`）。`perks.ts` 的 `EXPLORE_CONTEXTS`、`bindRulesMods.ts` 的 `BIND_CONTEXTS` 也要跟著改 | [PERKS](../PERKS.md) 第 1 節、[TRAVEL_EVENTS](../TRAVEL_EVENTS.md) |
+| B16 | **城鎮事件、旅途事件等待中還能休息** | `rest.ts` 的 `restEventBlock` 沒檢查 `townEvent`、`roadEvent`：城鎮的選擇事件等待中時能短休、能在旅店長休；旅途事件等待中時能短休，只有紮營會擋（`longRestBlocked`）。移動有擋（`grid.ts`），`components/events/eventQueue.ts` 的註解也說這類事件不處理就不能移動、休息 | [EVENTS](../EVENTS.md)、[DUNGEON_DESIGN](../DUNGEON_DESIGN.md) |
+| B17 | **自建技能被事件或 NPC 教的時候還能刪** | `mods.ts` 的 `abilityUsage` 沒看固定 NPC（娼婦）的 `teaches`，也沒看主奴、娼館事件的 `teaches`；刪掉後這些地方留著不存在的技能 id | [CONTENT_DEPENDENCIES](../CONTENT_DEPENDENCIES.md) |
 
 ## 2. 待確認是不是 Bug
 
