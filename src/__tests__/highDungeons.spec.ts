@@ -193,12 +193,16 @@ describe('高等地下城的材料與底材', () => {
   }
   const bossesOf = (d: string) => Object.values(dungeonEncounters[d]!.bosses!).map((g) => g![0]![0])
 
-  it('第 6 級只從 Lv.13～16 的層主掉、第 7 級只從 Lv.17～20；非成人向的兩座各自涵蓋五種類型', () => {
+  it('第 6 級只從 Lv.13～16 的層主掉、第 7 級只從 Lv.17～20；歷史、歡愉各一套，每一座涵蓋自己那一套的五種類型', () => {
+    const series = { history_rift: '時隙鋼', history_corridor: '編年鋼', forbidden_garden: '異鄉合金', pleasure_palace: '鱗光金' } as Record<string, string>
+    const metal = (d: string) => bossesOf(d).flatMap((b) => enemies[b]!.loot ?? []).map((l) => itemDef(l.item)?.forge?.materials[0]).filter((m) => m && gearRules.materials[m]!.kind === 'metal' && gearRules.materials[m]!.tier >= 6)
+    for (const [d, name] of Object.entries(series)) expect(new Set(metal(d).map((m) => gearRules.materials[m!]!.name)), d).toEqual(new Set([name]))
+    expect(Object.values(gearRules.materials).filter((m) => m.tier >= 6).length).toBe(20)
     for (const [d, tier] of [['history_rift', 6], ['forbidden_garden', 6], ['history_corridor', 7], ['pleasure_palace', 7]] as const) {
       const drops = bossesOf(d).flatMap((b) => (enemies[b]!.loot ?? []).map((l) => ({ ...l, t: tierOf(l.item) }))).filter((l) => l.t && l.t.tier >= 6)
       expect(drops.every((l) => l.t!.tier === tier), d).toBe(true)
       expect(drops.every((l) => l.chance >= 0.8), d).toBe(true)
-      if (d.startsWith('history')) expect(new Set(drops.map((l) => l.t!.kind)), d).toEqual(new Set(MATERIAL_KINDS))
+      expect(new Set(drops.map((l) => l.t!.kind)), d).toEqual(new Set(MATERIAL_KINDS))
     }
     // 其他怪物都不掉第 6、7 級
     const high = new Set(['history_rift', 'forbidden_garden', 'history_corridor', 'pleasure_palace'].flatMap(bossesOf))
@@ -241,11 +245,11 @@ describe('高等地下城的材料與底材', () => {
     }
   })
 
-  it('一般的新底材有七個等級的制式品，第四級以下在商店賣', () => {
+  it('一般的新底材有七個等級（第 6、7 級兩套）的制式品，第四級以下在商店賣', () => {
     for (const id of ['greatsword', 'halberd', 'spear', 'crossbow', 'whip', 'tower_shield', 'parrying_dagger', 'grimoire', 'scale_mail']) {
       const b = gearRules.bases[id]!
       const mats = Object.entries(gearRules.materials).filter(([, m]) => m.kind === b.kind)
-      expect(mats.length, id).toBe(7)
+      expect(mats.length, id).toBe(9)
       for (const [mid, m] of mats) {
         const it = itemDef(gearName({ base: id, material: mid }))
         expect(it?.gear, `${id} ${mid}`).toEqual({ base: id, material: mid })
