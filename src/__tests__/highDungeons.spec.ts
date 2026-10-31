@@ -1,0 +1,183 @@
+import { describe, expect, it } from 'vitest'
+import { finishCombat, startCombat } from '@/engine/combat'
+import { dungeonEncounters, enemies, geography, lewdRules, specialMaps, stories } from '@/engine/data'
+import { crossLink, currentArea, currentCell, enterLocation, findKind, generateLayer, layerKey, placeAt, storeArea } from '@/engine/grid'
+import { mimicFor, PARK_LINK } from '@/engine/park'
+import { startJourney } from '@/engine/road'
+import { connectionOpen, enterSpecial } from '@/engine/specialMaps'
+import { newGame, withRng } from '@/engine/state'
+import { condMet, hasFlag, locationOpen, openFor, setFlag } from '@/engine/storyFlags'
+import { guildQuests } from '@/engine/town'
+import { reachable, shortestPath } from '@/engine/world'
+import type { GameState } from '@/engine/types'
+
+// 高等級的地下城（docs/DUNGEON_DESIGN.md 第 8 節、docs/LUST_PARK.md 第 8 節）：
+// 歷史裂縫、歷史迴廊（劇情條件成立才出現的地點）；禁果庭園、歡愉秘宮（緋夢樂園底下，入口廣場的鐵柵）。
+const PLAZA = 'sm_lust_park'
+const STAMPS = ['park_beast', 'park_insect', 'park_aquarium', 'park_garden', 'park_theater'].map((p) => `park_stamp_${p}`)
+const story = (id: string) => stories.find((s) => s.id === id)!
+
+function game(birthplace = 'rivervale'): GameState {
+  const state = newGame({ name: '莉雅', race: 'human', classId: 'fighter', seed: 5, birthplace })
+  enterLocation(state)
+  return state
+}
+
+const levels = (id: string, layer: 'outskirts' | 'shallow' | 'middle' | 'deep') => dungeonEncounters[id]![layer].flat().map(([m]) => enemies[m]!.level)
+const bossLevel = (id: string, layer: 'shallow' | 'middle' | 'deep') => enemies[dungeonEncounters[id]!.bosses![layer]![0]![0]]!.level
+
+describe('高等級的地下城：資料', () => {
+  it('填上 13～16、17～20 級：每一層的怪物與層主照等級帶往下加深', () => {
+    for (const [id, base] of [['history_rift', 13], ['history_corridor', 17], ['forbidden_garden', 13], ['pleasure_palace', 17]] as const) {
+      const park = !!geography.locations.find((l) => l.id === id)!.park
+      if (!park) expect(levels(id, 'outskirts'), id).toEqual(expect.arrayContaining([base]))
+      expect(Math.min(...levels(id, 'shallow')), id).toBe(base)
+      expect(Math.max(...levels(id, 'deep')), id).toBe(base + 3)
+      expect([bossLevel(id, 'shallow'), bossLevel(id, 'middle'), bossLevel(id, 'deep')], id).toEqual([base + 1, base + 2, base + 3])
+    }
+    // 歷史的兩座：最終層主會重新聚形，原因是阿契隆；緋夢樂園底下的兩座是莉薇婭的遺跡
+    for (const id of ['history_rift', 'history_corridor']) expect(enemies[dungeonEncounters[id]!.bosses!.deep![0]![0]]!.desc, id).toContain('阿契隆')
+    expect(enemies.fg_boss_forbidden_tree!.desc).toContain('莉薇婭')
+    expect(enemies.pp_boss_succubus_mother!.desc).toContain('所有魅魔的源頭')
+  })
+
+  it('歷史裂縫在政治史詩開始時出現，歷史迴廊在政治史詩完成時出現', () => {
+    const at = (id: string) => geography.locations.find((l) => l.id === id)!
+    expect(at('history_rift').requires).toEqual({ flags: ['pol_start'] })
+    expect(at('history_corridor').requires).toEqual({ flags: ['pol_done'] })
+    expect(story('pol_storm_eve').start_flags).toContain('pol_start')
+    expect(story('pol_acheron_gaze').nodes.find((n) => n.id === 'eye')!.options!.every((o) => o.success?.set_flags?.includes('pol_done'))).toBe(true)
+  })
+})
+
+describe('劇情條件成立才出現的地點', () => {
+  it('旅行的目的地、路徑與出發都看條件；成立之後才列出', () => {
+    const state = game()
+    const ids = () => reachable(state.location, openFor(state)).map((r) => r.id)
+    expect(locationOpen(state, 'history_rift')).toBe(false)
+    expect(ids()).not.toContain('history_rift')
+    expect(ids()).not.toContain('history_corridor')
+    expect(shortestPath('rivervale', 'history_rift', openFor(state))).toBeNull()
+    // 沒有篩選時（舊的呼叫）照樣算得出路
+    expect(shortestPath('rivervale', 'history_rift')?.days).toEqual([1, 1])
+    expect(() => startJourney(state, 'history_rift')).toThrow()
+    setFlag(state, 'pol_start')
+    expect(ids()).toContain('history_rift')
+    expect(ids()).not.toContain('history_corridor')
+    setFlag(state, 'pol_done')
+    expect(ids()).toContain('history_corridor')
+  })
+
+  it('公會不會發還沒出現的地下城的委託', () => {
+    const state = game()
+    state.party[0]!.level = 15
+    const targets = (s: GameState) => guildQuests(s).filter((q) => q.area === 'dungeon').map((q) => q.target)
+    expect(targets(state)).not.toContain('history_rift')
+    const later = game()
+    later.party[0]!.level = 15
+    setFlag(later, 'pol_start')
+    // 委託板每天擲一次：多看幾天，總會有歷史裂縫的委託
+    let seen = false
+    for (let d = 0; d < 20 && !seen; d++) {
+      later.time.day += 1
+      seen = targets(later).includes('history_rift')
+    }
+    expect(seen).toBe(true)
+  })
+})
+
+describe('緋夢樂園底下的遺跡', () => {
+  const gate = (park: string) => specialMaps[PLAZA]!.connections!.find((c) => c.to.area === `${PARK_LINK}${park}`)!
+
+  it('集滿五個章打開禁果庭園的鐵柵；緋夢之下完成才打開歡愉秘宮', () => {
+    const state = game('bloodplume')
+    expect(connectionOpen(state, gate('forbidden_garden'))).toBe(false)
+    for (const f of STAMPS.slice(0, 4)) setFlag(state, f)
+    expect(connectionOpen(state, gate('forbidden_garden'))).toBe(false)
+    setFlag(state, STAMPS[4]!)
+    expect(connectionOpen(state, gate('forbidden_garden'))).toBe(true)
+    expect(connectionOpen(state, gate('pleasure_palace'))).toBe(false)
+    setFlag(state, 'lpe_done')
+    expect(connectionOpen(state, gate('pleasure_palace'))).toBe(true)
+    // 打開之後，廣場上那一格變成通道，走上去進到遺跡的淺層
+    enterSpecial(state, PLAZA)
+    const c = gate('forbidden_garden')
+    expect(currentArea(state).cells[c.at.y * currentArea(state).width + c.at.x]!.kind).toBe('link')
+    placeAt(state, currentArea(state), c.at.x, c.at.y)
+    crossLink(state)
+    expect(state.location).toBe('forbidden_garden')
+    expect(currentArea(state).key).toBe(layerKey('forbidden_garden', 1))
+  })
+
+  it('關著的時候廣場上是普通的地板', () => {
+    const state = game('bloodplume')
+    enterSpecial(state, PLAZA)
+    const c = gate('pleasure_palace')
+    expect(currentArea(state).cells[c.at.y * currentArea(state).width + c.at.x]!.kind).toBe('floor')
+  })
+
+  it('有自己的擬態寶箱、自己的戰敗；打倒最終層主不蓋集章卡', () => {
+    expect(lewdRules.park.defeats.forbidden_garden).toBeDefined()
+    expect(lewdRules.park.defeats.pleasure_palace).toBeDefined()
+    const state = game('bloodplume')
+    for (const f of STAMPS) setFlag(state, f)
+    enterSpecial(state, PLAZA)
+    const c = gate('forbidden_garden')
+    placeAt(state, currentArea(state), c.at.x, c.at.y)
+    crossLink(state)
+    const loc = geography.locations.find((l) => l.id === 'forbidden_garden')!
+    const area = withRng(state, (rng) => generateLayer(state, loc, 3, rng))
+    expect(mimicFor(area)).toBe('fg_mimic')
+    storeArea(state, area)
+    const b = findKind(area, 'boss')!
+    state.position = { area: area.key, x: b.x, y: b.y }
+    startCombat(state, area.cells[b.y * area.width + b.x]!.group!, { cell: { area: area.key, x: b.x, y: b.y } })
+    for (const x of state.combat!.combatants) if (x.side === 'enemy') x.hp = 0
+    state.combat!.status = 'victory'
+    const report = finishCombat(state)
+    expect(report.outcome.tags ?? []).not.toContain('集章')
+    expect(hasFlag(state, 'park_stamp_forbidden_garden')).toBe(false)
+    expect(currentCell(state)).toBeTruthy()
+  })
+
+  it('舊存檔沒有前綴的集章旗標照樣算數', () => {
+    const state = game('bloodplume')
+    for (const f of STAMPS) state.flags[f] = true
+    expect(condMet(state, { flags: STAMPS })).toBe(true)
+    expect(connectionOpen(state, gate('forbidden_garden'))).toBe(true)
+  })
+})
+
+describe('緋夢之下與眾歡獨樂', () => {
+  it('緋夢之下：五個章開頭，Lv.13、14、16，一路在禁果庭園，結局打開歡愉秘宮', () => {
+    const ids = ['lpe_missing_guests', 'lpe_toy_box', 'lpe_forbidden_tree']
+    expect(ids.map((id) => story(id).start.min_level)).toEqual([13, 14, 16])
+    expect([...story(ids[0]!).start.requires!.flags!].sort()).toEqual([...STAMPS].sort())
+    expect(story(ids[1]!).start.requires?.flags).toEqual(['lpe_1_done'])
+    expect(story(ids[2]!).start.requires?.flags).toEqual(['lpe_2_done'])
+    for (const id of ids) expect(story(id).tags, id).toContain('adult')
+    const last = story(ids[2]!)
+    expect(last.nodes.find((n) => n.id === 'door')!.options!.every((o) => o.success?.set_flags?.includes('lpe_done'))).toBe(true)
+    const tree = last.nodes.find((n) => n.id === 'tree')!
+    expect(tree.enemies?.[0]?.[0]).toBe('fg_boss_forbidden_tree')
+    expect(tree.fail?.retry).toBe(true)
+    expect(stories.flatMap((s) => s.nodes).filter((n) => n.at.where === 'dungeon' && n.at.location === 'forbidden_garden').length).toBeGreaterThanOrEqual(5)
+  })
+
+  it('眾歡獨樂：緋夢之下之後，Lv.18、20；莉薇婭的投影是頭目加一隻手下，輸了可以重試，祂不說話也不認得人', () => {
+    expect(['livia_origin', 'livia_revel'].map((id) => story(id).start.min_level)).toEqual([18, 20])
+    expect(story('livia_origin').start.requires?.flags).toEqual(['lpe_done'])
+    expect(story('livia_revel').start.requires?.flags).toEqual(['livia_1_done'])
+    const fight = story('livia_revel').nodes.find((n) => n.id === 'dragon')!
+    expect(fight.at).toMatchObject({ where: 'dungeon', location: 'pleasure_palace', layer: 'deep' })
+    expect(fight.enemies?.map(([e, n]) => [e, n])).toEqual([['livia_projection', 1], ['pp_first_succubus', 1]])
+    expect(fight.fail?.retry).toBe(true)
+    expect(enemies.livia_projection!.ability_hp_below).toBeTruthy()
+    expect(enemies.livia_projection!.desc).toContain('不知道你在這裡')
+    expect(story('livia_revel').nodes.find((n) => n.id === 'end')!.options!.every((o) => o.success?.set_flags?.includes('livia_done'))).toBe(true)
+    // 刻文：觀者最在乎凡人，歡愉其次，歷史第三
+    const text = story('livia_origin').nodes.find((n) => n.id === 'inscription')!.success!.text!
+    expect(text.indexOf('觀者')).toBeLessThan(text.indexOf('歡愉'))
+    expect(text.indexOf('歡愉')).toBeLessThan(text.indexOf('歷史'))
+  })
+})

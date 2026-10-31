@@ -15,6 +15,7 @@ import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, que
 import { bestTool } from '@/engine/tools'
 import type { Quest } from '@/engine/types'
 import { reachable } from '@/engine/world'
+import { openFor } from '@/engine/storyFlags'
 import { useGame } from '@/stores/game'
 import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
@@ -148,7 +149,7 @@ const rations = computed(() => s.value.inventory.find((i) => i.name === '乾糧'
 // ---- 旅行：目的地在對話框裡（TravelDialog） ----
 const showTravel = ref(false)
 const travelMenu = computed<MenuItem[]>(() => {
-  const list = reachable(s.value.location)
+  const list = reachable(s.value.location, openFor(s.value))
   const near = list.filter((d) => locationById(d.id).region === here.value.region).length
   return [{ id: 'travel', icon: 'compass', label: '啟程旅行', detail: `這個地區 ${near} 個・其他地區 ${list.length - near} 個`, badge: list.length }]
 })

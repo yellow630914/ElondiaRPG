@@ -26,7 +26,7 @@ import {
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { rollDefeatEvent } from './defeat'
-import { inPark, parkDefeat, parkLust, saveParkLust } from './park'
+import { inPark, parkDefeat, parkLust, parkStamps, saveParkLust } from './park'
 import { charmRutMult } from './charm'
 import { parasiteAbilities, parasiteStartLust } from './parasites'
 import { addCondition, isNoncombatant, pcOf } from './party'
@@ -46,6 +46,7 @@ import type {
 } from './types'
 import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
+import { flagKey, hasFlag } from './storyFlags'
 import { addLewd, exposureAt, exposureLevel, growLewd, lewdOf } from './lewd'
 import { bindsOf, lockedBound, lustTotals, outfitCombat, twoFaceCombat } from './schools'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
@@ -2383,10 +2384,11 @@ export function finishCombat(state: GameState): Report {
   if (combat.arena) settleArena(state, combat, report)
   else if (combat.status === 'defeat' && !rescued && !parkDefeat(state, report)) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes, combat.combatants.reduce((n, c) => n + (c.side === 'party' ? c.climaxes ?? 0 : 0), 0)))
   // 園區：打倒最終層主蓋一個章
-  if (victory && cellHere?.kind === 'boss' && !cellHere.then && inPark(state)) {
+  if (victory && cellHere?.kind === 'boss' && !cellHere.then && inPark(state) && parkStamps(combat.location)) {
+    // 集章旗標是劇情旗標（story: 前綴），特殊任務與入口廣場的鐵柵才讀得到
     const stamp = `${PARK_STAMP_PREFIX}${combat.location}`
-    if (!state.flags[stamp]) {
-      report.changes.flags = { ...(report.changes.flags ?? {}), [stamp]: true }
+    if (!hasFlag(state, stamp)) {
+      report.changes.flags = { ...(report.changes.flags ?? {}), [flagKey(stamp)]: true }
       report.outcome.summary = `${report.outcome.summary ?? ''}在集章卡上蓋了${locationById(combat.location).name}的章。`
       report.outcome.tags = [...(report.outcome.tags ?? []), '集章']
     }

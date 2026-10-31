@@ -21,7 +21,7 @@ import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
 import { addHours, advanceTime, commitReport, newReportId, withRng } from './state'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
-import { addCounters, condMet, flagKey } from './storyFlags'
+import { addCounters, condMet, flagKey, openFor } from './storyFlags'
 import { gateCheck } from './security'
 import { toolBonus } from './tools'
 import { arrive, daysToHours, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
@@ -143,7 +143,7 @@ export const ROAD_KEY = 'road'
  */
 export function startJourney(state: GameState, destination: string, intent?: string, ): Report | undefined {
   if (state.road) throw new Error('已經在旅途中了')
-  const path = shortestPath(state.location, destination)
+  const path = shortestPath(state.location, destination, openFor(state))
   if (!path || path.legs.length === 0) throw new Error(`無法前往 ${destination}`)
   assertNoStandoff(state)
   assertMasterAllows(state)
