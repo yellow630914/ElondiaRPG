@@ -386,7 +386,8 @@
           },
           "fail": {
             "text": "你們試了一整晚，只知道湯裡混了某種會讓人嗜睡的花粉。院長翻遍了藥典，最後指著一行模糊的字：「這種花……也許只長在晨霧修道院的深層。」",
-            "set_flags": ["dthr_lotus"]
+            "set_flags": ["dthr_lotus"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -472,7 +473,8 @@
           "success": {
             "text": "喪鐘在黎明時響起。不到一個時辰，城裡就傳開了消息：落選的一方不打算接受洛倫佐的選擇。",
             "set_flags": ["dthr_king_dead"],
-            "deaths": ["npc_alexander"]
+            "deaths": ["npc_alexander"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -498,6 +500,7 @@
           "text": "安納塔西亞以樞機主教的身分宣布「王位繼承尚待教廷裁定」，聖殿騎士佔據了日輪廣場的神殿，要在那裡為她加冕。白甲的騎士們在神殿的台階上排成一列，金色的聖環在晨光裡發亮。",
           "at": { "where": "cell", "location": "dawnlight", "cell": "temple" },
           "requires": { "flags": ["dthr_king_dead", "dthr_back_prince"] },
+          "hours": "day",
           "kind": "combat",
           "enemies": [["ring_templar", 3]],
           "success": {
@@ -955,6 +958,7 @@
           "text": "那天晚上，莉莉安敲了你的房門。她沒有變身，穿著樸素的睡衣，抱著那顆不再說話的寶石：「星之心睡著了。我想……跟你說實話。變身的副作用每次都要好幾個小時才會退，十年來我都是一個人熬過去的。今天是第一次，旁邊有人。」",
           "at": { "where": "cell", "location": "dawnlight", "cell": "inn" },
           "requires": { "flags": ["lil_fought"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -966,7 +970,8 @@
                   { "type": "affinity", "npc": "npc_lilian", "delta": 15, "reason": "陪她熬過變身的副作用" },
                   { "type": "memory", "summary": "莉莉安變身的副作用發作時，第一次有人陪在她身邊——那個人是你。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -975,7 +980,8 @@
                 "text": "你們聊了一整夜：她十五歲時怎麼撿到寶石、第一次變身有多興奮、二十歲以後被叫「阿姨」有多崩潰。天亮時她伸了個懶腰：「謝謝你。下次的考驗……我會比較有心理準備。」",
                 "set_flags": ["lil_1_done"],
                 "effects": [{ "type": "affinity", "npc": "npc_lilian", "delta": 10, "reason": "陪她聊到天亮" }],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -1121,7 +1127,8 @@
                   { "type": "companion", "npc": "npc_lilian", "mode": "voluntary" }
                 ],
                 "complete": true,
-                "scene": "莉莉安解除變身後第一次和主角上床：她脫下魔法少女服，羞澀又急切地親吻、撫摸主角，在旅店的床上和主角做愛到天亮，高潮時緊緊抓著主角，說再也不放手。"
+                "scene": "莉莉安解除變身後第一次和主角上床：她脫下魔法少女服，羞澀又急切地親吻、撫摸主角，在旅店的床上和主角做愛到天亮，高潮時緊緊抓著主角，說再也不放手。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -1134,7 +1141,8 @@
                   { "type": "memory", "summary": "莉莉安從魔法少女畢業了，成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "當晚主角就去找莉莉安，她把主角拉進房間，一件件脫掉衣服，和主角在她的小床上做愛；她生澀卻大膽，一次結束後又纏著主角要第二次。"
+                "scene": "當晚主角就去找莉莉安，她把主角拉進房間，一件件脫掉衣服，和主角在她的小床上做愛；她生澀卻大膽，一次結束後又纏著主角要第二次。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -1348,6 +1356,7 @@
           "text": "軍議前夜，你在城門附近撞見一群蒙面人——鐵十字會的殘黨。他們要在軍議前除掉證人，再把屍體丟到城外，讓這場刺殺看起來像是魔族幹的。",
           "at": { "where": "cell", "location": "rhineburg", "cell": "gate" },
           "requires": { "flags": ["rwar_council"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["iron_cross_blade", 3]],
           "success": {
@@ -1357,7 +1366,8 @@
           "fail": {
             "text": "你們被打得狼狽不堪，所幸城門的衛兵聽到動靜趕來，刺客逃進了夜色裡。第二天，你帶著一身的繃帶走進了軍議廳——這本身就是最好的證詞。",
             "set_flags": ["rwar_safe"],
-            "effects": [{ "type": "hp", "ratio": -0.2 }]
+            "effects": [{ "type": "hp", "ratio": -0.2 }],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -1715,6 +1725,7 @@
           "text": "深夜，一個披著斗篷的人敲開你的房門——是伊莎朵拉，手上沒有馬鞭。「父親要把本小姐嫁給雷歐哈特將軍，那個滿嘴榮耀的吵鬧鬼。」她抓著斗篷的邊，聲音越來越小，「本小姐找護衛，其實是想找一個……能帶我逃走的人。」",
           "at": { "where": "cell", "location": "rhineburg", "cell": "inn" },
           "requires": { "flags": ["isa_shopped"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -1844,6 +1855,7 @@
           "text": "你用伊芙的鑰匙打開侯爵府的後門。伊莎朵拉已經換好了旅行的衣服，手上提著一只小得可憐的行李箱，眼睛哭得通紅。「……你遲到了。」她的聲音在發抖，「本小姐差點以為你不來了。」",
           "at": { "where": "npc", "npc": "npc_isadora" },
           "requires": { "flags": ["isa_elope"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "她把行李箱塞給你，自己緊緊抓著你的手臂。穿過花園時，她回頭看了一眼母親的畫像，什麼都沒說。",
@@ -1870,6 +1882,7 @@
           "text": "城外的小丘上，天快亮了。伊莎朵拉第一次沒有用「本小姐」：「我什麼都沒帶，只帶了自己。這樣……可以嗎？」",
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["isa_free"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -1884,7 +1897,8 @@
                   { "type": "memory", "summary": "帶著伊莎朵拉從萊茵堡私奔，在河谷鎮租了一間小屋。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "河谷鎮的小屋裡，伊莎朵拉第一次和主角做愛：高傲的大小姐笨拙地解開衣帶，一邊哭一邊要主角抱緊她，在主角身下第一次叫出主角的名字，直到天亮。"
+                "scene": "河谷鎮的小屋裡，伊莎朵拉第一次和主角做愛：高傲的大小姐笨拙地解開衣帶，一邊哭一邊要主角抱緊她，在主角身下第一次叫出主角的名字，直到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -1900,7 +1914,8 @@
                   { "type": "memory", "summary": "帶著伊莎朵拉回到侯爵府提親，侯爵答應了。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "伊莎朵拉當晚溜進主角在侯爵府的客房，主動吻上主角、褪下睡袍，在絲綢床單上和主角做愛；大小姐咬著枕頭壓低聲音，最後還是忍不住叫了出來。"
+                "scene": "伊莎朵拉當晚溜進主角在侯爵府的客房，主動吻上主角、褪下睡袍，在絲綢床單上和主角做愛；大小姐咬著枕頭壓低聲音，最後還是忍不住叫了出來。",
+                "time": { "until": "morning" }
               },
               "fail": {
                 "text": "侯爵把你們趕出了大門。伊莎朵拉卻笑了，笑得像個普通的女孩子：「本小姐早就說過了吧？走，我們私奔。」你們在河谷鎮租了一間小屋，她把那條馬鞭掛在牆上。",
@@ -2137,11 +2152,13 @@
           "text": "會議前夜，一隊狂信的騎士在城門集結，要「在異端的會議開始之前淨化它」。他們的白甲上，聖環被塗成了黑色。",
           "at": { "where": "cell", "location": "soriel", "cell": "gate" },
           "requires": { "flags": ["doct_council"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["zealot_templar", 3]],
           "success": {
             "text": "狂信者們倒下了，城門的鐘聲照常響起。天亮時，主教們的馬車一輛接一輛駛進聖城。",
-            "set_flags": ["doct_guarded"]
+            "set_flags": ["doct_guarded"],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "你們撐不住了，所幸伊莎貝拉帶著騎士團趕來，把狂信者們押走。你帶著一身的傷走進了聖環主殿。",
@@ -2550,6 +2567,7 @@
           "text": "那天晚上，阿雅在禮拜堂的台階上等你，懷裡抱著那本祈禱書：「我想知道……一個修女有這種念頭，是罪嗎？」",
           "at": { "where": "npc", "npc": "npc_aya" },
           "requires": { "flags": ["aya_confessed"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -2660,7 +2678,8 @@
                   { "type": "affinity", "npc": "npc_aya", "delta": 10, "reason": "讓她去實現祈禱書裡的事" },
                   { "type": "memory", "summary": "讓修女阿雅獨自走進港區的夜色，去實現祈禱書裡的妄想。天亮時她回到你身邊，說要把一切都告訴你。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -2704,6 +2723,7 @@
           "text": "夜深了，禮拜堂裡只剩下你們兩個。阿雅把祈禱書放在祭壇的燭火旁：「這本書陪了我十年。現在，我不需要它了。」",
           "at": { "where": "npc", "npc": "npc_aya" },
           "requires": { "flags": ["aya_safe"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -2716,7 +2736,8 @@
                   { "type": "memory", "summary": "和阿雅一起燒掉了那本祈禱書，她成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "阿雅在禮拜堂的燭光下脫下修女服，和主角在祭壇前的長椅上做愛；壓抑了十年的修女生澀卻熱烈，一邊顫抖著喊主角的名字一邊迎合，直到天亮。"
+                "scene": "阿雅在禮拜堂的燭光下脫下修女服，和主角在祭壇前的長椅上做愛；壓抑了十年的修女生澀卻熱烈，一邊顫抖著喊主角的名字一邊迎合，直到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -2729,7 +2750,8 @@
                   { "type": "memory", "summary": "阿雅在祈禱書的最後一頁寫下了你，她成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "阿雅照著祈禱書最後一頁寫下的故事，一頁一頁地和主角實現：從親吻、褪去修女服到在床上交合，每實現一頁就紅著臉念出下一頁。"
+                "scene": "阿雅照著祈禱書最後一頁寫下的故事，一頁一頁地和主角實現：從親吻、褪去修女服到在床上交合，每實現一頁就紅著臉念出下一頁。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -2760,10 +2782,12 @@
           "text": "地下室裡燈光昏暗，燻香混著酒氣。阿雅褪下頭巾，走進那群高大黝黑的水手中間，回頭看了你一眼——那一眼裡有羞恥、有興奮，也有一個問題。",
           "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
           "requires": { "flags": ["aya_club_start"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "那一夜很長。天亮前，阿雅裹著一件不屬於她的外套回到你身邊，渾身發燙，靠在你肩上一字一句地把一切都告訴了你。「我還是我嗎？」她問。",
-            "set_flags": ["aya_club_seen"]
+            "set_flags": ["aya_club_seen"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -2785,6 +2809,7 @@
           "text": "天亮了，你們坐在港口的石階上。阿雅抱著膝蓋，等你的回答。",
           "at": { "where": "npc", "npc": "npc_aya" },
           "requires": { "flags": ["aya_club_safe"] },
+          "hours": "day",
           "kind": "choice",
           "options": [
             {
@@ -2983,7 +3008,8 @@
                   { "type": "affinity", "npc": "npc_kaspar_nord", "delta": 10, "reason": "護送使者到會談" },
                   { "type": "memory", "summary": "在河谷鎮的銀鱗旅店地下室，替帝國與魔族的停戰派安排了一場秘密會談。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -3026,11 +3052,13 @@
           "text": "會談前夜，一隊黑環狂信騎士衝向城門，要「在異端與異端的協定簽下之前，把橋燒了」。",
           "at": { "where": "cell", "location": "rivervale", "cell": "gate" },
           "requires": { "flags": ["rv_summit"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["zealot_templar", 3]],
           "success": {
             "text": "狂信騎士們倒在城門下。天亮時，四國的旗幟在舊石橋上一字排開。",
-            "set_flags": ["rv_held"]
+            "set_flags": ["rv_held"],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "你們撐不住了，所幸鎮上的冒險者們聞聲趕來，把狂信騎士趕出了城。你帶著一身的傷走上了舊石橋。",
@@ -3324,6 +3352,7 @@
           "text": "她的房間裡燃著淡淡的蓮香，窗外是阿爾貝納的燈火。瑟蕾娜替你斟了一杯酒，薄紗從肩上滑落一半也不去管：「你想要什麼？大部分的人都知道自己想要什麼。」",
           "at": { "where": "cell", "location": "albena", "cell": "brothel" },
           "requires": { "flags": ["ser_start"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -3334,7 +3363,8 @@
                 "effects": [
                   { "type": "money", "amount": -300 },
                   { "type": "affinity", "npc": "npc_serena", "delta": 10, "reason": "陪她度過一夜" }
-                ]
+                ],
+                "time": { "until": "morning" }
               }
             },
             {
@@ -3342,7 +3372,8 @@
               "success": {
                 "text": "瑟蕾娜愣了一下，然後第一次真正地笑了。你們聊了一整夜：你走過的路、你見過的城市。說到沿海渡口的時候，她靜靜地聽完，小聲說：「我從來沒看過海。」",
                 "set_flags": ["ser_sea"],
-                "effects": [{ "type": "affinity", "npc": "npc_serena", "delta": 15, "reason": "只是陪她聊天" }]
+                "effects": [{ "type": "affinity", "npc": "npc_serena", "delta": 15, "reason": "只是陪她聊天" }],
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -3689,7 +3720,8 @@
           "kind": "story",
           "success": {
             "text": "她讓你們守在燈塔下面：「他們會從崖邊的小路上來。我老了，打不動了。」",
-            "set_flags": ["port_watch"]
+            "set_flags": ["port_watch"],
+            "time": { "until": "night" }
           }
         },
         {
@@ -3698,15 +3730,18 @@
           "text": "半夜，兩個披著斗篷的人從崖邊的小路爬上來，手裡提著水桶與沙袋。斗篷下露出審判廷的印章：「為了不讓異端的禮物送到魔族手上，這盞燈必須熄。」",
           "at": { "where": "cell", "location": "coast_ferry", "cell": "lm_ferry_lighthouse" },
           "requires": { "flags": ["port_watch"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["cloister_questioner", 2]],
           "success": {
             "text": "審問官們倒下了，燈塔的火一夜都沒熄。天亮時，帝國的商船安然停進了港口，船長派人送來一桶上好的葡萄酒。",
-            "set_flags": ["port_ship_safe"]
+            "set_flags": ["port_ship_safe"],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "你們被逼到燈室的門口。審問官正要潑水，海倫婆婆抄起一根燈芯鉗朝他們的手敲了下去——燈塔的火，一夜都沒熄。",
-            "set_flags": ["port_ship_safe"]
+            "set_flags": ["port_ship_safe"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -3771,6 +3806,7 @@
           "text": "會議前夜，一隊黑環狂信騎士在城門集結，要「在異端的港口會議開始之前，讓碼頭工人的代表閉嘴」。",
           "at": { "where": "cell", "location": "coast_ferry", "cell": "gate" },
           "requires": { "flags": ["port_council"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["zealot_templar", 3]],
           "success": {
@@ -3868,6 +3904,7 @@
           "text": "月亮升起時，河面上浮起一個水做的少女，輪廓淡得幾乎看不見。她歪著頭看你，聲音像水滴落在石頭上：「你……看得見我？好久沒有人看得見我了。」",
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["spr_start"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "fai", "dc": 13 },
           "success": {
@@ -4031,7 +4068,7 @@
         "kind": "guild",
         "location": "rivervale",
         "min_level": 11,
-        "requires": { "flags": ["spr_2_done"] },
+        "requires": { "flags": ["spr_2_done"], "after": { "story": "spirit_upstream", "days": 3 } },
         "text": "奧斯溫親自來公會找你：「河底醒了。」他的手在發抖，「兩百年來在這條河上戰死的士兵，都沉在舊石橋下面。流水之靈一直在安撫他們——現在她撐不住了。」"
       },
       "start_flags": ["spr_deep"],
@@ -4113,6 +4150,7 @@
           "text": "爐火劈啪作響。艾蜜莉亞喝到第三杯，臉頰泛紅，靠著你的肩膀說起她的丈夫：藍鷺號的水手，兩年前出海，說好半年就回來。「渡口的人都說我該改嫁了。」她笑了笑，手卻握緊了胸前的婚戒，「可是我連他是生是死都不知道。」",
           "at": { "where": "cell", "location": "coast_ferry", "cell": "tavern" },
           "requires": { "flags": ["ame_start"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -4120,7 +4158,8 @@
               "success": {
                 "text": "她靠著你睡著了，呼吸裡帶著酒氣與海風的味道。天亮前醒來時，她發現自己的手還搭在你的胸口，臉紅得說不出話，卻沒有把手收回去。",
                 "set_flags": ["ame_close"],
-                "effects": [{ "type": "affinity", "npc": "npc_amelia", "delta": 15, "reason": "陪她熬過一個寂寞的夜" }]
+                "effects": [{ "type": "affinity", "npc": "npc_amelia", "delta": 15, "reason": "陪她熬過一個寂寞的夜" }],
+                "time": { "until": "morning" }
               }
             },
             {
@@ -4207,12 +4246,14 @@
           "text": "渡船離港的時候，艾蜜莉亞一直站在船尾，看著海鷗亭的屋頂越來越小。夜裡，她敲開你的船艙：「我睡不著。」她在你身邊坐下，靠得很近，「如果他真的……我該怎麼辦？」",
           "at": { "where": "cell", "location": "coast_ferry", "cell": "gate" },
           "requires": { "flags": ["ame_trip"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "那一夜海很平靜。她在你懷裡睡著了，手裡還握著那枚婚戒。",
             "set_flags": ["ame_aboard"],
             "join": "npc_amelia",
-            "travel_to": "tidehaven"
+            "travel_to": "tidehaven",
+            "time": { "until": "morning" }
           }
         },
         {
@@ -4313,6 +4354,7 @@
           "text": "暴風雨的夜裡，海鷗亭的門被踹開。黑帆的打手們甩著濕透的斗篷走進來，打翻了一張桌子：「老闆娘，我們老大說，妳的嘴巴該縫起來了。」艾蜜莉亞站在吧台後面，握著一根擀麵棍，卻沒有退後。",
           "at": { "where": "cell", "location": "coast_ferry", "cell": "tavern" },
           "requires": { "flags": ["ame_storm"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["blacksail_enforcer", 3]],
           "success": {
@@ -4326,6 +4368,7 @@
           "text": "雨停了。艾蜜莉亞把店裡收拾乾淨，在爐火前坐下，從胸前的項鍊上解下那枚婚戒，放在你的手心裡：「我想把它丟進海裡。可是……我不想一個人去。」",
           "at": { "where": "npc", "npc": "npc_amelia" },
           "requires": { "flags": ["ame_safe"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -4338,7 +4381,8 @@
                   { "type": "memory", "summary": "陪艾蜜莉亞把婚戒丟進了沿海渡口的海裡，她成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "艾蜜莉亞在海鷗亭的爐火前解開圍裙和衣裳，和主角做愛；守寡兩年的身體敏感而渴求，她騎在主角身上哭著高潮，之後才在主角懷裡安心睡著。"
+                "scene": "艾蜜莉亞在海鷗亭的爐火前解開圍裙和衣裳，和主角做愛；守寡兩年的身體敏感而渴求，她騎在主角身上哭著高潮，之後才在主角懷裡安心睡著。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -4351,7 +4395,8 @@
                   { "type": "memory", "summary": "艾蜜莉亞走出了兩年的等待，成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "海鷗亭二樓的房間裡，艾蜜莉亞撲進主角懷裡，兩人在她的床上做愛到天亮；她一次又一次地要主角，像要把兩年的寂寞一口氣填滿。"
+                "scene": "海鷗亭二樓的房間裡，艾蜜莉亞撲進主角懷裡，兩人在她的床上做愛到天亮；她一次又一次地要主角，像要把兩年的寂寞一口氣填滿。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -4561,6 +4606,7 @@
           "text": "表決前夜，風誓塔的燈火被一陣風吹熄。黑暗裡，幾個沒有臉的人影翻過塔頂的欄杆——不是蒙面，是戴著光滑得像蛋殼的白色面具。",
           "at": { "where": "cell", "location": "albena", "cell": "lm_windoath_tower" },
           "requires": { "flags": ["cw_vote"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["faceless_blade", 3]],
           "success": {
@@ -4725,6 +4771,7 @@
           "text": "你用蠟塞住了耳朵，划著小船循著歌聲往洞裡去。洞口比上次寬了，潮水把你推了進去。",
           "at": { "where": "cell", "location": "coast_ferry", "cell": "lm_ferry_lighthouse" },
           "requires": { "flags": ["cave_song"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "歌聲越來越近，蠟塞也擋不住了。洞穴深處的礁石上，坐著一個半人半魚的女人。",
@@ -4816,6 +4863,7 @@
           "text": "大潮的夜裡，海蝕洞最深處的海水真的退乾了，露出一條長滿海藻的斜坡，一路通往海底。斜坡兩旁站著一排排蒼白的人影——北星號的水手們。",
           "at": { "where": "cell", "location": "coast_ferry", "cell": "lm_ferry_lighthouse" },
           "requires": { "flags": ["cave_deep"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "水手們沒有攔你，只是默默地看著你往下走。斜坡盡頭的黑暗裡，有什麼巨大的東西在呼吸。",
@@ -4909,7 +4957,8 @@
               "success": {
                 "text": "伊蓮娜點點頭，嘴角似乎動了一下：「今晚。研究室。」她轉身走了兩步，又回過頭來，「……謝謝。」",
                 "set_flags": ["wl_yes"],
-                "effects": [{ "type": "affinity", "npc": "npc_elena", "delta": 10, "reason": "答應當媒介提供者" }]
+                "effects": [{ "type": "affinity", "npc": "npc_elena", "delta": 10, "reason": "答應當媒介提供者" }],
+                "time": { "until": "night" }
               }
             },
             {
@@ -4950,6 +4999,7 @@
           "text": "第二天一早，伊蓮娜衝進你的房間：「逃了。」昨晚的實驗殘留物在桶子裡凝成了史萊姆，連夜溜出了研究室，正在城外的田裡吃農夫的蘿蔔。",
           "at": { "where": "outskirts", "location": "albena" },
           "requires": { "flags": ["wl_lit"] },
+          "hours": "day",
           "kind": "combat",
           "enemies": [["mana_slime", 2]],
           "success": {
@@ -5010,7 +5060,8 @@
               "success": {
                 "text": "她說了一整夜：被除名的那一天、被燒掉的論文、伊蓮娜被丟在研究室門口的那個雪夜。說到最後，她把酒瓶放下了：「……我喝酒，是因為我不想記得自己曾經很厲害。」",
                 "set_flags": ["wl_heard"],
-                "effects": [{ "type": "affinity", "npc": "npc_camilla", "delta": 10, "reason": "聽完她的故事" }]
+                "effects": [{ "type": "affinity", "npc": "npc_camilla", "delta": 10, "reason": "聽完她的故事" }],
+                "time": { "until": "morning" }
               }
             },
             {
@@ -5051,6 +5102,7 @@
           "text": "卡蜜拉把最後一瓶酒倒進了河裡。回到研究室，她難得清醒地坐在書桌前，翻開了十年沒碰的論文草稿。伊蓮娜靠在你身邊，小聲說：「謝謝。」然後，她看了看師父，又看了看你，「今晚。實驗。三個人。」",
           "at": { "where": "npc", "npc": "npc_elena" },
           "requires": { "flags": ["wl_debt"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -5063,7 +5115,8 @@
                   { "type": "affinity", "npc": "npc_elena", "delta": 15, "reason": "陪她們度過那一夜" },
                   { "type": "memory", "summary": "陪卡蜜拉戒了酒，擋下了討債人。那一夜，三個人在研究室裡做了最成功的一次實驗。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -5150,7 +5203,8 @@
                   { "type": "memory", "summary": "卡蜜拉重回魔導師工會，成了特別研究員。你成了研究室的一員——卡蜜拉與伊蓮娜兩人的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "慶祝的那一夜，卡蜜拉和伊蓮娜一起和主角做愛：卡蜜拉溫柔地引導、親吻，伊蓮娜面無表情卻熱切地「收集」，三人在研究室裡從晚上做到隔天中午。"
+                "scene": "慶祝的那一夜，卡蜜拉和伊蓮娜一起和主角做愛：卡蜜拉溫柔地引導、親吻，伊蓮娜面無表情卻熱切地「收集」，三人在研究室裡從晚上做到隔天中午。",
+                "time": { "until": "morning", "hours": 4 }
               }
             },
             {
@@ -5165,7 +5219,8 @@
                   { "type": "memory", "summary": "卡蜜拉重回魔導師工會，和伊蓮娜一起加入了你的隊伍——兩人都是你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "出發前一夜，卡蜜拉和伊蓮娜以「實地研究的前置作業」為由，一起把主角推上研究室的床，一個親吻愛撫、一個騎在主角身上收集媒介，三人纏綿到深夜。"
+                "scene": "出發前一夜，卡蜜拉和伊蓮娜以「實地研究的前置作業」為由，一起把主角推上研究室的床，一個親吻愛撫、一個騎在主角身上收集媒介，三人纏綿到深夜。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -5384,6 +5439,7 @@
           "text": "遞交條約的前一夜，一隊穿著白色鎧甲的近衛騎士在城門前停下，說是護送將軍的「儀仗」——人數卻足夠占領一座城門。帶頭的騎士笑了笑：「讓開吧，冒險者。明天之後，這座城門也是帝國的了。」",
           "at": { "where": "cell", "location": "albena", "cell": "gate" },
           "requires": { "flags": ["annex_treaty"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["white_rook_guard", 3]],
           "success": {
@@ -5696,7 +5752,8 @@
                   { "type": "memory", "summary": "在索里耶爾護送帝國的密使覲見教皇，讓停戰之後的人類與魔族開始談了。", "importance": 3 }
                 ],
                 "complete": true,
-                "counters": { "human_stance": 1 }
+                "counters": { "human_stance": 1 },
+                "time": { "until": "morning" }
               },
               "fail": {
                 "text": "審判長沒有讓路，但伊莎貝拉把劍插在了聖座的門前：「這扇門，騎士團開。」密使進去了。代價是騎士團長被停職三個月——她笑著說正好休假。",
@@ -5829,11 +5886,13 @@
           "success": {
             "text": "你和薩洛討價還價了一整個下午，最後換成了一筆錢。他寫下一個名字：議會首席的私人秘書。「她今晚會去城外的舊磨坊，把最後一批文件交出去。」",
             "set_flags": ["def_name"],
-            "effects": [{ "type": "money", "amount": -300 }]
+            "effects": [{ "type": "money", "amount": -300 }],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "薩洛寫下一個名字：議會首席的私人秘書。「今晚，城外的舊磨坊。」他微笑著，「記得，你欠我一件事。」",
-            "set_flags": ["def_name", "def_owes_salo"]
+            "set_flags": ["def_name", "def_owes_salo"],
+            "time": { "until": "night" }
           }
         },
         {
@@ -5912,6 +5971,7 @@
           "text": "照凱打聽到的消息，密探頭子會在今晚從城門混出城。你們等到半夜，一輛載著木桶的馬車駛近城門，車伕座位旁邊坐著三個穿著白色鎧甲的騎士——他們連偽裝都懶得做了。",
           "at": { "where": "cell", "location": "albena", "cell": "gate" },
           "requires": { "flags": ["def_master"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["white_rook_guard", 3]],
           "success": {
@@ -5991,6 +6051,7 @@
           "text": "那天晚上回到旅店，你的房間裡擺滿了花：枕頭上、窗台上、靴子裡。桌上有一張卡片：「你喜歡的應該是藍色的吧？你今天在廣場上看了藍色的花三次。——你的好朋友蕾娜」",
           "at": { "where": "cell", "location": "dawnlight", "cell": "inn" },
           "requires": { "flags": ["lena_start"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "int", "dc": 13 },
           "success": {
@@ -6099,7 +6160,8 @@
               "label": "請他寫一封完整的信",
               "success": {
                 "text": "湯姆寫了一整晚，寫滿了三張紙。最後一行是：「謝謝妳記得我。希望妳也記得妳自己。」他把信交給你，像是放下了一塊石頭。",
-                "set_flags": ["lena_letter"]
+                "set_flags": ["lena_letter"],
+                "time": { "until": "morning" }
               }
             },
             {
@@ -6184,7 +6246,8 @@
                   { "type": "memory", "summary": "賣花姑娘蕾娜學會了把愛放輕一點，成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "蕾娜解開白色蕾絲洋裝，和主角做愛；她照著記得的主角喜好，溫柔又仔細地取悅主角，被主角進入時抱得剛剛好，高潮時一遍遍說著喜歡。"
+                "scene": "蕾娜解開白色蕾絲洋裝，和主角做愛；她照著記得的主角喜好，溫柔又仔細地取悅主角，被主角進入時抱得剛剛好，高潮時一遍遍說著喜歡。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -6197,7 +6260,8 @@
                   { "type": "memory", "summary": "賣花姑娘蕾娜成了你的戀人。你說她重一點也沒關係。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "滿屋子的花裡，蕾娜紅著臉脫下洋裝，和主角在鋪滿花瓣的床上做愛；她熱烈又黏人，一次結束後又纏上來要第二次。"
+                "scene": "滿屋子的花裡，蕾娜紅著臉脫下洋裝，和主角在鋪滿花瓣的床上做愛；她熱烈又黏人，一次結束後又纏上來要第二次。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -6249,11 +6313,13 @@
           "allies": ["npc_valerie"],
           "success": {
             "text": "霧影靈體散了。你的手臂上多了兩道傷口，瓦萊莉滿意地點頭：「很好，深度適中。今晚，我們做對照實驗。」",
-            "set_flags": ["val_wounded"]
+            "set_flags": ["val_wounded"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "你們被逼出了修道院，你身上的傷比計畫的多了一倍。瓦萊莉一邊包紮一邊說：「樣本數增加了。今晚的實驗會很有價值。」",
-            "set_flags": ["val_wounded"]
+            "set_flags": ["val_wounded"],
+            "time": { "until": "night" }
           }
         },
         {
@@ -6262,6 +6328,7 @@
           "text": "那天晚上，研究室只點了一盞燈。瓦萊莉解開白袍，表情和白天一模一樣：「左臂用治療術，右臂用另一種方法。我會每隔一刻鐘記錄一次癒合的程度。」她停了一下，「……這是為了研究。」",
           "at": { "where": "cell", "location": "dawnlight", "cell": "lm_healers_academy" },
           "requires": { "flags": ["val_wounded"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -6273,7 +6340,8 @@
                   { "type": "affinity", "npc": "npc_valerie", "delta": 15, "reason": "成了她的臨床樣本" },
                   { "type": "memory", "summary": "成了治癒者學院研究醫師瓦萊莉的「臨床樣本」，對照實驗的數據很顯著。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -6282,7 +6350,8 @@
                 "text": "瓦萊莉愣了很久，眼鏡後面的眼睛眨了眨：「……我不知道。這不在我的研究範圍。」她把病歷夾抱在胸前，「但我會把它列為下一個研究題目。」那一夜的實驗，她沒有記錄。",
                 "set_flags": ["val_1_done"],
                 "effects": [{ "type": "affinity", "npc": "npc_valerie", "delta": 10, "reason": "問了一個她答不出來的問題" }],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -6317,11 +6386,13 @@
           "check": { "attr": "cha", "dc": 15 },
           "success": {
             "text": "情報商告訴你：打手們今晚會在城外的舊倉庫等著收贖金，副教授本人不會出現。",
-            "set_flags": ["val_lead"]
+            "set_flags": ["val_lead"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商只說了一個地點：城外的舊倉庫，今晚。",
-            "set_flags": ["val_lead"]
+            "set_flags": ["val_lead"],
+            "time": { "until": "night" }
           }
         },
         {
@@ -6358,7 +6429,8 @@
                   { "type": "affinity", "npc": "npc_valerie", "delta": 15, "reason": "說她的記錄寫得很好" },
                   { "type": "memory", "summary": "替瓦萊莉搶回了被偷的實驗記錄，還說她寫得很好。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -6427,7 +6499,8 @@
                   { "type": "memory", "summary": "在治癒者學院的聽證會上替瓦萊莉作證，她留在學院，成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "瓦萊莉在研究室裡脫下白袍和所有衣物，和主角做愛；平常冷靜理性的治癒師不觀察也不記錄，只是失控地喘息、迎合主角，直到天亮。"
+                "scene": "瓦萊莉在研究室裡脫下白袍和所有衣物，和主角做愛；平常冷靜理性的治癒師不觀察也不記錄，只是失控地喘息、迎合主角，直到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -6671,7 +6744,8 @@
                   { "type": "memory", "summary": "伊芙違抗了侯爵的命令，選擇留在你身邊。從此你們互相服侍。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "城外的小旅店裡，伊芙脫下女僕裝，把一百五十年的第一次交給主角：先是生澀的顫抖，接著以女僕長的完美把「服侍」做到極致，也要主角同樣服侍她，兩人交纏到天亮。"
+                "scene": "城外的小旅店裡，伊芙脫下女僕裝，把一百五十年的第一次交給主角：先是生澀的顫抖，接著以女僕長的完美把「服侍」做到極致，也要主角同樣服侍她，兩人交纏到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -6685,7 +6759,8 @@
                   { "type": "memory", "summary": "伊芙違抗了侯爵的命令，跟著你一起旅行。她說要服侍你，直到你學會服侍她。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "伊芙以「教主角學會被服侍」為名，在旅店的床上為主角寬衣、親吻，用唇舌和身體一點一點地服侍，最後才紅著臉讓主角佔有她的第一次。"
+                "scene": "伊芙以「教主角學會被服侍」為名，在旅店的床上為主角寬衣、親吻，用唇舌和身體一點一點地服侍，最後才紅著臉讓主角佔有她的第一次。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -6802,12 +6877,14 @@
           "check": { "attr": "cha", "dc": 15 },
           "success": {
             "text": "老魔族告訴你交易的地點：城外的廢棄石窯，今晚。「賣家是個人類打手。拿錢辦事的那種。」",
-            "set_flags": ["vsec_where"]
+            "set_flags": ["vsec_where"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "老魔族收了一大筆錢才肯開口：城外的廢棄石窯，今晚。",
             "set_flags": ["vsec_where"],
-            "effects": [{ "type": "money", "amount": -150 }]
+            "effects": [{ "type": "money", "amount": -150 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -7147,6 +7224,7 @@
           "text": "回到城牆上，夜風吹動莉莎爾的紅髮。「人類與魔族的停戰，我撐了二十年。」她望著北方，「可是龍醒了。歷史之龍在看著我們——停戰之後，會是什麼？」她轉向你，「我需要一雙在人類那邊的眼睛。不是密探，是一個我信得過的人。你願意嗎？」",
           "at": { "where": "npc", "npc": "npc_veronica" },
           "requires": { "flags": ["lis_spine"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -7172,7 +7250,8 @@
                   { "type": "affinity", "npc": "npc_lisar", "delta": 25, "reason": "說只當她的朋友" },
                   { "type": "memory", "summary": "在血羽城堡的城牆上，魔王莉莎爾說，好久沒有人當她的朋友了。你們看了一整夜的星星。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -7694,6 +7773,7 @@
           "text": "夜深了，酒館的燈一盞一盞熄掉。你一回頭，對面的椅子上已經坐了一個穿著黑衣的女子——你完全沒聽見她進來。她看著你，張了張嘴，又閉上。過了很久，她只說了兩個字：「……信。」",
           "at": { "where": "cell", "location": "shadow_vale", "cell": "tavern" },
           "requires": { "flags": ["noc_start"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "cha", "dc": 13 },
           "success": {
@@ -7712,6 +7792,7 @@
           "text": "你們走出酒館時，諾克緹絲突然停下來，拉住你的袖子。路邊的影子裡爬出了幾團扭曲的東西——她在夢與現實之間行走時，有些夢裡的東西跟著她出來了。",
           "at": { "where": "outskirts", "location": "shadow_vale" },
           "requires": { "flags": ["noc_known"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["dream_stalker", 2]],
           "success": {
@@ -7729,6 +7810,7 @@
           "text": "回到酒館，你攤開信紙，拿起筆，看著諾克緹絲。她坐在對面，雙手緊緊握著，等你寫下第一行。",
           "at": { "where": "cell", "location": "shadow_vale", "cell": "tavern" },
           "requires": { "flags": ["noc_trust"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -7740,7 +7822,8 @@
                   { "type": "affinity", "npc": "npc_noctis", "delta": 15, "reason": "替她寫下了十年的心意" },
                   { "type": "memory", "summary": "替暗影氏族之主諾克緹絲寫了一封給魔王莉莎爾的情書，寫滿了十年來她沒說出口的話。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -7789,11 +7872,13 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你查出了流言的源頭：一個血角氏族的密探，最近一直在議會的走廊裡跟蹤諾克緹絲，想讓莉莎爾懷疑她。今晚，他會在城外和格羅姆的人碰頭。",
-            "set_flags": ["noc_spy"]
+            "set_flags": ["noc_spy"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "你只知道流言是血角的人放出來的，碰頭的地點在城外。",
-            "set_flags": ["noc_spy"]
+            "set_flags": ["noc_spy"],
+            "time": { "until": "night" }
           }
         },
         {
@@ -7973,11 +8058,13 @@
           "text": "城外的小屋裡，莫菲握著你的手睡著了。半夜，她的影子開始扭動，幾團別人的夢從影子裡爬出來，想把她拖回去加班。",
           "at": { "where": "outskirts", "location": "shadow_vale" },
           "requires": { "flags": ["mor_door"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["dream_stalker", 2]],
           "success": {
             "text": "夢魘被你擋了回去。莫菲在你手邊翻了個身，打了一個小小的呼嚕。天亮時她醒來，伸了一個長長的懶腰：「……我睡了一整晚。沒有加班。」她看著你，眼睛第一次是清醒的。",
-            "set_flags": ["mor_slept"]
+            "set_flags": ["mor_slept"],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "夢魘把你撲倒了，莫菲被吵醒了——但她看著你被夢魘壓著的樣子，噗哧一聲笑了出來，一揮手就把它們變成了蝴蝶。「……好久沒笑了。」",
@@ -8056,6 +8143,7 @@
           "text": "莫菲坐在枯樹林的中央，努力不睡著。月亮暗下來的時候，兩隻翅膀比人還大的夢蛾從黑暗裡飄了出來，翅膀上的花紋像一雙雙半閉的眼睛。",
           "at": { "where": "outskirts", "location": "shadow_vale" },
           "requires": { "flags": ["mor_woods"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["nightmare_moth", 2]],
           "success": {
@@ -8084,7 +8172,8 @@
                   { "type": "affinity", "npc": "npc_morphe", "delta": 15, "reason": "陪她找到了一半的安眠" },
                   { "type": "memory", "summary": "替莫菲抓到了夢蛾的鱗粉。她只用了一半，留著進別人夢裡的鑰匙——第一個去的是你的夢。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -8114,7 +8203,7 @@
         "kind": "npc",
         "npc": "npc_morphe",
         "min_level": 11,
-        "requires": { "flags": ["mor_2_done"] },
+        "requires": { "flags": ["mor_2_done"], "after": { "story": "morphe_moth_dust", "days": 3 } },
         "text": "莫菲醒來的時候，滿臉是汗：「我夢見了一條龍。不是誰的夢——是龍自己的夢。」她抓著你的手，「夢境之龍索利安。很多年前，它在迷堂裡出現過一次。那一次，夢裡的每一扇門都開著，只有一扇關著——門邊沒有人。我一直覺得，那扇門缺一個守門人。」她看著你，「我想，那個人是你。」"
       },
       "start_flags": ["mor_dragon"],
@@ -8592,6 +8681,7 @@
           "text": "新月夜沒有月光，只有試煉場四周的火盆。鐵門升起，兩頭渾身流著血的巨獸衝了出來，眼睛紅得像炭。看臺上，布魯克扯著嗓子大喊你的名字。",
           "at": { "where": "cell", "location": "bone_hills", "cell": "lm_blood_trial_ground" },
           "requires": { "flags": ["trl_taught"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["newmoon_beast", 2]],
           "success": {
@@ -8609,6 +8699,7 @@
           "text": "烏爾瑪用血在你的額頭上畫了一道血角的紋：「從今晚起，你是血角的戰士——只要你點頭。點了頭，荒丘上的血角都會把你當兄弟；也會有人把你當成格羅姆的人。」",
           "at": { "where": "npc", "npc": "npc_ulma_bloodtrial" },
           "requires": { "flags": ["trl_survived"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -9155,7 +9246,8 @@
                   { "type": "affinity", "npc": "npc_lila_listener", "delta": 20, "reason": "陪她看了第一次的海" },
                   { "type": "memory", "summary": "帶寂墓聖堂的莉菈溜出去，到灰港鎮看了她這輩子第一次的海。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "night" }
               }
             },
             {
@@ -9320,7 +9412,8 @@
                   { "type": "affinity", "npc": "npc_morg_herbwife", "delta": 15, "reason": "免費幫她煎藥" },
                   { "type": "memory", "summary": "在腐沼村替莫格婆婆採藥、煎藥，一個發燒的半魔孩子退燒了。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "hours": 5 }
               }
             },
             {
@@ -9491,6 +9584,7 @@
           "text": "祭典一直辦到天亮。村民們圍著營火跳一種很醜的舞，普露露學得最快，尼克跳得最差。莫格婆婆坐在角落裡，難得地沒有罵人，只是看著。",
           "at": { "where": "npc", "npc": "npc_morg_herbwife" },
           "requires": { "flags": ["rot_saved"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -9504,7 +9598,8 @@
                   { "type": "reputation", "faction": "demon_council", "delta": 5 },
                   { "type": "memory", "summary": "在腐沼村的豐收祭上，拉著莫格婆婆跳了一整夜的舞。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -9634,6 +9729,7 @@
           "text": "午夜，霧從海上湧了過來。碼頭的盡頭，一艘破爛的黑帆船慢慢地浮現，沒有聲音，沒有燈火。船舷邊站著一排模糊的人影——有人類，也有魔族。",
           "at": { "where": "cell", "location": "ashport", "cell": "lm_greysail_pier" },
           "requires": { "flags": ["hm_ship"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "fai", "dc": 15 },
           "success": {
@@ -9724,6 +9820,7 @@
           "text": "港外的礁石灘上，一隊穿著白甲的陸戰隊正從小艇上跳下來，盾牌上的聖環在月光下發亮。帶隊的騎士高喊：「異端的和約，必須在簽字前燒掉！」",
           "at": { "where": "outskirts", "location": "ashport" },
           "requires": { "flags": ["hm_treaty"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["crusade_marine", 3]],
           "success": {
@@ -10677,7 +10774,8 @@
                   { "type": "affinity", "npc": "npc_helga_malt", "delta": 10, "reason": "喝了她三杯酒" },
                   { "type": "memory", "summary": "替鐵爐堡的釀酒師赫爾嘉找來了冰麥，喝了她三杯新酒。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning", "hours": 4 }
               }
             },
             {
@@ -10722,7 +10820,8 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你沒有逼他，只是問他師父最近好不好。學徒哭了：某個氏族的人用他母親的債逼他，在酒裡加了酸石粉。收買他的人今晚會在城外的舊倉庫等他回報。",
-            "set_flags": ["brew_found"]
+            "set_flags": ["brew_found"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "學徒一口咬定什麼都不知道，可他的手指出賣了他。你跟著他走出酒館，一路跟到了城外的舊倉庫。",
@@ -10989,12 +11088,14 @@
           "success": {
             "text": "你掄了一整天，手臂麻得抬不起來。傍晚，劍胚在你的錘下發出了鐘聲一樣的鳴響。瑪格達難得地拍了拍你的肩：「好心跳。」",
             "set_flags": ["smith_forged"],
-            "effects": [{ "type": "affinity", "npc": "npc_magda_ironforge", "delta": 10, "reason": "替她掄了一整天的錘" }]
+            "effects": [{ "type": "affinity", "npc": "npc_magda_ironforge", "delta": 10, "reason": "替她掄了一整天的錘" }],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "你掄到下午就掄不動了，瑪格達接過錘子，忍著手腕的痛打完了最後一百錘。劍成了，她的手腕腫了起來。",
             "set_flags": ["smith_forged"],
-            "effects": [{ "type": "hp", "ratio": -0.1 }]
+            "effects": [{ "type": "hp", "ratio": -0.1 }],
+            "time": { "hours": 6 }
           }
         },
         {
@@ -11125,11 +11226,13 @@
           "success": {
             "text": "你寫了一整夜：心火的鍛紋、無火的回路、兩把劍砍在熔渣元素上的樣子、今晚的火把與學徒的眼淚。歐文讀完，沉默了很久：「……這不是證詞，這是一首詩。議會會聽的。」",
             "set_flags": ["smith_testimony"],
-            "effects": [{ "type": "affinity", "npc": "npc_owen_copperbeard", "delta": 10, "reason": "寫了一份好證詞" }]
+            "effects": [{ "type": "affinity", "npc": "npc_owen_copperbeard", "delta": 10, "reason": "寫了一份好證詞" }],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "你的證詞寫得亂七八糟，歐文幫你改到天亮。「沒關係，」他打了個呵欠，「議會最喜歡聽真話，就算說得很難聽。」",
-            "set_flags": ["smith_testimony"]
+            "set_flags": ["smith_testimony"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -11710,6 +11813,7 @@
           "text": "井口的水映著月光。蕾伊拉看著井，又看著你：「你陪我走到這裡的。你說——該怎麼辦？」",
           "at": { "where": "npc", "npc": "npc_leila" },
           "requires": { "flags": ["wat_asked"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -11782,12 +11886,14 @@
           "check": { "attr": "int", "dc": 13 },
           "success": {
             "text": "你從情報商的帳本上看出了端倪：這艘船每個月來一次，卸的貨從來不經過港務。時間是午夜，北邊的海灣。",
-            "set_flags": ["smg_tip"]
+            "set_flags": ["smg_tip"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商收了一筆錢，才肯畫一張北邊海灣的地圖給你。",
             "set_flags": ["smg_tip"],
-            "effects": [{ "type": "money", "amount": -80 }]
+            "effects": [{ "type": "money", "amount": -80 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -11796,6 +11902,7 @@
           "text": "午夜的海灣裡，幾個水手正把木箱從小艇上搬到沙灘。看見你，他們扔下箱子，抽出了彎刀：「黑帆的貨，誰敢碰？」",
           "at": { "where": "outskirts", "location": "tidehaven" },
           "requires": { "flags": ["smg_tip"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["smuggler_deckhand", 3]],
           "success": {
@@ -11860,7 +11967,7 @@
         "kind": "npc",
         "npc": "npc_carlos_blacksail",
         "min_level": 8,
-        "requires": { "flags": ["smg_1_done"] },
+        "requires": { "flags": ["smg_1_done"], "after": { "story": "smg_blacksail_cargo", "days": 3 } },
         "text": "卡洛斯風度翩翩地替你拉開椅子：「你截過我的船。我欣賞你。」他把一個用鹽封住的小木箱放在桌上，「這是從骷髏潮島帶回來的。我的人碰過它的，三個都瘋了。我需要一個不會瘋的人，把它送到城外的倉庫。」"
       },
       "start_flags": ["smg_skull"],
@@ -11962,6 +12069,7 @@
           "text": "城外的私人碼頭上，三個甩著濕透斗篷的打手攔住了議會的搜查隊。他們看見你，笑了：「又是你。黑帆先生說，你今晚會來。」",
           "at": { "where": "outskirts", "location": "tidehaven" },
           "requires": { "flags": ["smg_raid"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["blacksail_enforcer", 3]],
           "success": {
@@ -12082,6 +12190,7 @@
           "text": "退潮時，海灘上的水窪映著月光，每一個水窪裡都有一個人影——你的人影。它們慢半拍地動著，然後，一個接一個地從水窪裡爬了出來。",
           "at": { "where": "outskirts", "location": "coral_bay" },
           "requires": { "flags": ["sin_pattern"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["mirror_wraith", 3]],
           "success": {
@@ -12310,7 +12419,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -12431,7 +12541,8 @@
           "success": {
             "text": "你陪瑟隆一起聽風鈴，聽到天黑。他終於說了：點火的人穿著人類探險隊的衣服，可他們跑起來的樣子，是精靈——被王庭流放的精靈術士，想讓王庭和人類決裂，好讓流放者回不了家的人永遠回不了家。「這件事，」瑟隆說，「三百年來，我只告訴過卡蘭西爾的父親。」",
             "set_flags": ["acc_truth_heard"],
-            "effects": [{ "type": "affinity", "npc": "npc_theron_blind", "delta": 15, "reason": "陪他聽了一晚的風鈴" }]
+            "effects": [{ "type": "affinity", "npc": "npc_theron_blind", "delta": 15, "reason": "陪他聽了一晚的風鈴" }],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "瑟隆只說了一半：「點火的人，穿著人類的衣服。可他們跑起來……不像人類。」他搖了搖頭，「去古林的灰燼裡看看吧。灰燼不會說謊。」",
@@ -12620,6 +12731,7 @@
           "text": "艾溫娜的觀星儀架在根界的屋頂上。那顆星確實不閃，像是有人在夜空上挖了一個小洞，洞的另一邊有光。你看著看著，眼皮越來越重。",
           "at": { "where": "npc", "npc": "npc_evenna_starword" },
           "requires": { "flags": ["shd_start"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "int", "dc": 13 },
           "success": {
@@ -12639,6 +12751,7 @@
           "text": "城外的螢光林裡，幾個夢遊的精靈閉著眼睛往前走，身邊飛著一群螢火蟲般的光點。光點感覺到你，聚成了人形，發出像夢話一樣的嗡嗡聲，朝你撲過來。",
           "at": { "where": "outskirts", "location": "silvermoon" },
           "requires": { "flags": ["shd_dir"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["dream_firefly", 3]],
           "success": {
@@ -12648,7 +12761,8 @@
           "fail": {
             "text": "螢靈把你們逼退了，最後隨著天亮自己消失。夢遊的精靈們醒了過來，都說夢見了同一條用霧做成的龍。",
             "set_flags": ["shd_woke"],
-            "effects": [{ "type": "hp", "ratio": -0.1 }]
+            "effects": [{ "type": "hp", "ratio": -0.1 }],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -12731,6 +12845,7 @@
           "text": "崗哨外的邊境林地裡，兩頭半透明的獵犬正把一個睡著的哨兵圍在中間，一口一口地咬著他身邊的霧氣。哨兵在夢裡發出痛苦的呻吟。",
           "at": { "where": "outskirts", "location": "windspeak" },
           "requires": { "flags": ["shd_inside"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["dream_hound", 2]],
           "success": {
@@ -12740,7 +12855,8 @@
           "fail": {
             "text": "獵犬把你們逼退了，卻在天亮時消失。睡著的哨兵醒了，迷迷糊糊地說：「龍……游過去了。」",
             "set_flags": ["shd_hounds"],
-            "effects": [{ "type": "hp", "ratio": -0.15 }]
+            "effects": [{ "type": "hp", "ratio": -0.15 }],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -12856,7 +12972,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -12869,7 +12986,8 @@
                   { "type": "reputation", "faction": "elf_court", "delta": 10 },
                   { "type": "memory", "summary": "在風語崗哨外見到了夢境之龍索利安的投影。艾溫娜算出來，祂只是游到了夢最多的地方。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -13286,6 +13404,7 @@
           "text": "大宴的第三夜，結界外的海裡亮起了幾點燈光。幾個喝了化形藥、長著臨時鰓的人類傭兵正在結界外鑿洞——收藏家的人，想趁宴會偷偷運貨出去。",
           "at": { "where": "outskirts", "location": "canglue" },
           "requires": { "flags": ["vault_lead"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["collector_diver", 2]],
           "success": {
@@ -13589,7 +13708,8 @@
                   { "type": "affinity", "npc": "npc_raden_granny", "delta": 20, "reason": "跟她學了接珊瑚" },
                   { "type": "memory", "summary": "替滄月闕的螺鈿婆婆從珊瑚灣帶回了暖流珊瑚，親手接上了生病的礁光柱。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -13602,7 +13722,8 @@
                   { "type": "reputation", "faction": "four_seasons", "delta": 5 },
                   { "type": "memory", "summary": "替滄月闕的螺鈿婆婆帶回了暖流珊瑚，還替她找到了第一個徒弟。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -13828,6 +13949,7 @@
           "text": "月光沙丘上，一片銀色的草在夜風裡發著微光。兩頭和人一樣大的銀色猞猁趴在草叢裡，聞到你的味道，慢慢地站了起來，喉嚨裡發出低沉的咕嚕聲。",
           "at": { "where": "outskirts", "location": "stilltide_oasis" },
           "requires": { "flags": ["nip_place"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["moon_lynx", 2]],
           "success": {
@@ -13898,6 +14020,7 @@
           "text": "營地外的沙丘上，兩頭比駱駝還大的沙漠巨獅正低著頭狂奔，鬃毛在月光下像燃燒的金沙，眼睛裡全是貓薄荷帶來的狂熱。",
           "at": { "where": "outskirts", "location": "sandcastle" },
           "requires": { "flags": ["nip_lions"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["sand_lion", 2]],
           "success": {
@@ -13920,12 +14043,14 @@
           "check": { "attr": "dex", "dc": 17 },
           "success": {
             "text": "你在沙丘之間跑了一整夜，兩頭巨獅跟在後面，像兩隻追毛線球的小貓。天亮時，你把貓薄荷灑在沙漠深處的岩石上，巨獅們在岩石邊打滾、翻肚子，最後睡著了。你一個人走回營地，腿都快斷了。",
-            "set_flags": ["nip_lured"]
+            "set_flags": ["nip_lured"],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "你跑到一半就被追上了，巨獅把你撲倒在沙丘上——然後開始舔你手上的貓薄荷。你被舔了一整夜，天亮時渾身黏黏的，但巨獅們心滿意足地走了。",
             "set_flags": ["nip_lured"],
-            "effects": [{ "type": "hp", "ratio": -0.1 }]
+            "effects": [{ "type": "hp", "ratio": -0.1 }],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -14090,7 +14215,8 @@
           },
           "fail": {
             "text": "你被發現了，那人起身就走。可薩芙的人一直跟在後面——第二天一早，一張紙條塞在你的枕頭下：「沙暴之夜，燒沙痕的帳篷。商會營地在東邊。」",
-            "set_flags": ["scs_plan"]
+            "set_flags": ["scs_plan"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -14117,6 +14243,7 @@
           "text": "薩芙在月光下等你：「把帳冊給我，夜爪會在天亮前處理掉那個傭兵小頭目。乾淨，安靜。」她看著你，「或者，你可以交給葛雷——用人類的方法。」",
           "at": { "where": "npc", "npc": "npc_saff_nightclaw" },
           "requires": { "flags": ["scs_ledger"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -14260,6 +14387,7 @@
           "text": "夜裡的靜泉祭壇，泉面反射著淡淡的銀藍光。銀鈴把泉水舀進月形的銀碗裡：「這一次，你也看。兩個人看見的，比較準。」",
           "at": { "where": "cell", "location": "stilltide_oasis", "cell": "lm_stillspring_altar" },
           "requires": { "flags": ["rite_start"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "fai", "dc": 13 },
           "success": {
@@ -14296,6 +14424,7 @@
           "text": "大祭禮娜伊薇只在夜裡出現在祭壇邊。銀鈴抓著你的衣角：「如果告訴她，她會擔心。如果不告訴她……」",
           "at": { "where": "npc", "npc": "npc_naivee" },
           "requires": { "flags": ["rite_calmed"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -14368,6 +14497,7 @@
           "text": "龜裂的草原上，兩頭雷角犀正在吃荊棘。牠們的角在陽光下閃著藍白色的電光，蹄子一踏，草原就裂開一道縫。",
           "at": { "where": "outskirts", "location": "sunscorch" },
           "requires": { "flags": ["rite_first"] },
+          "hours": "day",
           "kind": "combat",
           "enemies": [["thunder_rhino", 2]],
           "success": {
@@ -14684,7 +14814,8 @@
                   { "type": "affinity", "npc": "npc_talo_redmane", "delta": 10, "reason": "陪他救回了戰士" },
                   { "type": "memory", "summary": "在西邊沙漠的巨塔下，把被塔吸引的赤鬃戰士綁回了營地。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -16584,7 +16715,8 @@
           },
           "fail": {
             "text": "你算不出來，艾溫娜一個人算了一整夜：「深層。光最強的地方。」",
-            "set_flags": ["msr_light"]
+            "set_flags": ["msr_light"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -16759,12 +16891,14 @@
           "check": { "attr": "int", "dc": 13 },
           "success": {
             "text": "你們算出了迴廊今晚的位置，還有入口打開的時辰。菲恩鬆了一口氣：「準時到，女神會比較高興。」",
-            "set_flags": ["thc_found"]
+            "set_flags": ["thc_found"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "你們算錯了，在森林裡繞了一整夜，天亮時才找到入口。菲恩的臉色更白了。",
             "set_flags": ["thc_found"],
-            "effects": [{ "type": "hp", "ratio": -0.05 }]
+            "effects": [{ "type": "hp", "ratio": -0.05 }],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -17126,7 +17260,8 @@
           },
           "fail": {
             "text": "你看不懂，艾溫娜一個人研究到天亮：「裂縫。根上有一道裂縫，孢子從那裡來。」",
-            "set_flags": ["vh_map"]
+            "set_flags": ["vh_map"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -18225,7 +18360,8 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你想了一夜，終於想通了：這不是在問「人」——赫塔尼人崇拜太陽，四條腿是日出時的四道光，兩條腿是正午時的影子，晚上……沒有腿，因為太陽已經下山了。答案是「太陽的一天」。",
-            "set_flags": ["qst_answer"]
+            "set_flags": ["qst_answer"],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "你想不出答案。老祭司說：「赫塔尼人崇拜太陽。答案一定和太陽有關。」",
@@ -18533,6 +18669,7 @@
           "text": "露西菈的房間裡，計畫表攤在桌上，最後一項還是塗黑的。她坐在床邊，手指絞著洋裝的裙擺：「最後一項……我不知道該不該寫出來。」",
           "at": { "where": "npc", "npc": "npc_lucia" },
           "requires": { "flags": ["luc_chosen"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -18544,7 +18681,8 @@
                   { "type": "affinity", "npc": "npc_lucia", "delta": 15, "reason": "陪她慢慢來" },
                   { "type": "memory", "summary": "陪魅魔露西菈完成了計畫表上的約會。最後一項，你們說好慢慢來。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -18556,7 +18694,8 @@
                   { "type": "affinity", "npc": "npc_lucia", "delta": 20, "reason": "替她念出了最後一項" },
                   { "type": "memory", "summary": "陪魅魔露西菈完成了計畫表上的每一項約會，包括最後那一項。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -18634,7 +18773,8 @@
                   { "type": "memory", "summary": "陪魅魔露西菈考過了第八次畢業考。她不是用魅惑術，而是真的愛上了你。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "畢業舞會後，露西菈在學院宿舍和主角做愛——魅魔的第一次：她緊張得尾巴打結，淫紋亮得像燈，主角溫柔地進入她時她哭著笑，之後本能甦醒，一次又一次地纏著主角。"
+                "scene": "畢業舞會後，露西菈在學院宿舍和主角做愛——魅魔的第一次：她緊張得尾巴打結，淫紋亮得像燈，主角溫柔地進入她時她哭著笑，之後本能甦醒，一次又一次地纏著主角。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -18874,6 +19014,7 @@
           "text": "卡珊卓燒掉了契約，讓人把薩洛克丟出了血羽城堡。那天晚上，黑薔薇關了門。她坐在高背椅上，看著你，第一次沒有拿鞭子：「我說過，我在等一個能讓我心甘情願跪下的人。」她站起來，走到你面前，「讓我看看，你是不是那個人。」",
           "at": { "where": "npc", "npc": "npc_cassandra" },
           "requires": { "flags": ["cas_won"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "cha", "dc": 17 },
           "success": {
@@ -18903,7 +19044,8 @@
                   { "type": "memory", "summary": "卡珊卓在你面前心甘情願地跪下，把十二年前的項圈交給你。你替她重新戴上——現在，它提醒她是為了誰而跪。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "卡珊卓戴著主角替她扣上的頸環，第一次把主導權交出去：她赤裸地跪著，被主角牽著頸環、命令、佔有，高冷的女王在主角身下失控地哀求與高潮。"
+                "scene": "卡珊卓戴著主角替她扣上的頸環，第一次把主導權交出去：她赤裸地跪著，被主角牽著頸環、命令、佔有，高冷的女王在主角身下失控地哀求與高潮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -18916,7 +19058,8 @@
                   { "type": "memory", "summary": "卡珊卓把十二年前的項圈交給你，你把它丟進了壁爐。她說：輕了。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "卡珊卓拉著主角上了黑薔薇二樓的寢室，沒有鞭子也沒有規矩，像普通戀人一樣和主角做愛；她摸著空空的脖子一次次高潮，溫柔得不像女王。"
+                "scene": "卡珊卓拉著主角上了黑薔薇二樓的寢室，沒有鞭子也沒有規矩，像普通戀人一樣和主角做愛；她摸著空空的脖子一次次高潮，溫柔得不像女王。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -19045,12 +19188,14 @@
           "success": {
             "text": "情報商把別館的位置和後門的暗號都告訴了你。蘿娜在你身後低聲說：「我也去。」",
             "set_flags": ["twin_found"],
-            "effects": [{ "type": "affinity", "npc": "npc_rona", "delta": 5, "reason": "帶上了她" }]
+            "effects": [{ "type": "affinity", "npc": "npc_rona", "delta": 5, "reason": "帶上了她" }],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商收了一大筆錢才肯說：「城外的別館。今晚。」",
             "set_flags": ["twin_found"],
-            "effects": [{ "type": "money", "amount": -150 }]
+            "effects": [{ "type": "money", "amount": -150 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -19077,6 +19222,7 @@
           "text": "那天晚上，蘿娜替妹妹洗了澡、換了衣服、哄她睡著，然後走進了你的房間。她沒有拿茶，也沒有拿本子：「第三題，取消。」她坐在你旁邊，聲音很輕，「……您已經合格了。我只是不想承認。」",
           "at": { "where": "npc", "npc": "npc_rona" },
           "requires": { "flags": ["twin_saved"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -19089,7 +19235,8 @@
                   { "type": "affinity", "npc": "npc_lana", "delta": 15, "reason": "把她救了回來" },
                   { "type": "memory", "summary": "從紅月亭救回了雙子女僕的妹妹菈娜。姊姊蘿娜說，你已經合格了——她只是不想承認。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -19102,7 +19249,8 @@
                   { "type": "affinity", "npc": "npc_rona", "delta": 15, "reason": "懂她們" },
                   { "type": "memory", "summary": "從紅月亭救回了雙子女僕的妹妹菈娜。最後一題，讓菈娜來出。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -19151,6 +19299,7 @@
           "text": "那天晚上，蘿娜拿出一條黑色的緞帶，蒙住了你的眼睛：「真正的最後一題。」你聽見兩個人的腳步聲，一左一右，「我們會說同一句話。猜猜看，哪一個是我，哪一個是菈娜。」",
           "at": { "where": "npc", "npc": "npc_rona" },
           "requires": { "flags": ["twin_won"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "cha", "dc": 17 },
           "success": {
@@ -19181,7 +19330,8 @@
                   { "type": "memory", "summary": "和黑薔薇的雙子女僕蘿娜、菈娜成為戀人：要嫁，就嫁給同一個人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "蘿娜和菈娜一起和主角上床：蘿娜冷靜地指揮、菈娜熱情地搞砸，雙子輪流和主角做愛、互相親吻，三人在床上笑著交纏到天亮。"
+                "scene": "蘿娜和菈娜一起和主角上床：蘿娜冷靜地指揮、菈娜熱情地搞砸，雙子輪流和主角做愛、互相親吻，三人在床上笑著交纏到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -19196,7 +19346,8 @@
                   { "type": "memory", "summary": "和黑薔薇的雙子女僕蘿娜、菈娜成為戀人。卡珊卓說：她們早就是你的了。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "黑薔薇提早關門的那一夜，雙子女僕把主角帶進她們的房間，一左一右地脫掉主角的衣服，輪流和主角做愛，最後三個人擠在一張床上睡著。"
+                "scene": "黑薔薇提早關門的那一夜，雙子女僕把主角帶進她們的房間，一左一右地脫掉主角的衣服，輪流和主角做愛，最後三個人擠在一張床上睡著。",
+                "time": { "until": "morning", "hours": 12 }
               }
             }
           ]
@@ -19694,6 +19845,7 @@
           "text": "那天晚上，零號坐在你的床邊，把手放在你的手上：「開始記錄。」她的魔核一點一點地亮起來，「……零點一度。零點三度。」她的聲音開始不穩，「一度。兩度。——無法記錄。數值超出量測範圍。」",
           "at": { "where": "npc", "npc": "npc_zero" },
           "requires": { "flags": ["zero_free"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "cha", "dc": 17 },
           "success": {
@@ -19723,7 +19875,8 @@
                   { "type": "memory", "summary": "替機偶零號寫下了「喜歡」的定義：想和對方一起更新所有的數據。她成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "零號測試「未測試功能」：她認真地確認雙方同意、脫下衣物，讓主角撫摸魔核周圍溫熱的人工皮膚；和主角做愛時體溫與魔核的光一起升高，高潮時報告「數值超出量測範圍」。"
+                "scene": "零號測試「未測試功能」：她認真地確認雙方同意、脫下衣物，讓主角撫摸魔核周圍溫熱的人工皮膚；和主角做愛時體溫與魔核的光一起升高，高潮時報告「數值超出量測範圍」。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -19736,7 +19889,8 @@
                   { "type": "memory", "summary": "機偶零號的研究結論只有兩個字：是你。她成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "零號寫下「是你」之後，在主角的床上測試了所有的未測試功能：第一次的觸碰就讓魔核亮得刺眼，她生澀卻專注地學習、配合，和主角交合到天亮。"
+                "scene": "零號寫下「是你」之後，在主角的床上測試了所有的未測試功能：第一次的觸碰就讓魔核亮得刺眼，她生澀卻專注地學習、配合，和主角交合到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -19751,7 +19905,8 @@
                   { "type": "memory", "summary": "機偶零號的「喜歡」研究，寫進了千爐工坊新一代耕作機偶的核心。她成了你的戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "零號說完「只喜歡你一個人」，認真地問了雙方同意，然後在工坊樓上和主角做愛；她一邊學一邊記錄，最後連記錄都忘了，只剩魔核一閃一閃的光。"
+                "scene": "零號說完「只喜歡你一個人」，認真地問了雙方同意，然後在工坊樓上和主角做愛；她一邊學一邊記錄，最後連記錄都忘了，只剩魔核一閃一閃的光。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -19915,7 +20070,8 @@
                   { "type": "affinity", "npc": "npc_karen", "delta": 20, "reason": "被她打倒了" },
                   { "type": "memory", "summary": "陪機偶校場的冠軍卡蓮揭穿了格倫的假比賽。那一夜，她說換她打倒你。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -20004,7 +20160,8 @@
                   { "type": "memory", "summary": "在熔火堡壘的校場大賽決賽打倒了冠軍卡蓮。她在全場面前跪下：誰打倒她，她就是誰的。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "卡蓮把主角扛回家，以「戰利品要盡義務」為由和主角做愛：熔岩紋路一明一暗，她力氣大又好勝，把主角壓在身下、再被主角翻過來，兩人像比賽一樣做到天亮。"
+                "scene": "卡蓮把主角扛回家，以「戰利品要盡義務」為由和主角做愛：熔岩紋路一明一暗，她力氣大又好勝，把主角壓在身下、再被主角翻過來，兩人像比賽一樣做到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -20017,7 +20174,8 @@
                   { "type": "memory", "summary": "在熔火堡壘的校場大賽決賽打倒了冠軍卡蓮。你說，她不是戰利品，是對手，也是戀人。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "卡蓮當晚就要比「另一種比法」：她紅著臉卸下鎧甲，和主角在床上較勁誰先高潮，熔岩紋路燒得發燙，輸了就再比一次。"
+                "scene": "卡蓮當晚就要比「另一種比法」：她紅著臉卸下鎧甲，和主角在床上較勁誰先高潮，熔岩紋路燒得發燙，輸了就再比一次。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -20154,11 +20312,13 @@
           "success": {
             "text": "天亮的時候，報告變成了一份無懈可擊的公文：「目標無害。建議持續觀察。」朧看著它，又看著被你刪掉的那一疊紙，最後把那一疊收進了懷裡：「……這些，我留著。」",
             "set_flags": ["oboro_rewritten"],
-            "effects": [{ "type": "affinity", "npc": "npc_oboro", "delta": 10, "reason": "陪她改了一整夜" }]
+            "effects": [{ "type": "affinity", "npc": "npc_oboro", "delta": 10, "reason": "陪她改了一整夜" }],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "改到最後，你們都睡著了。朧醒來的時候，發現自己靠在你的肩上，報告上多了一行她夢話時寫的字。她用墨把那一行塗掉了，塗得很用力。",
-            "set_flags": ["oboro_rewritten"]
+            "set_flags": ["oboro_rewritten"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -20239,6 +20399,7 @@
           "text": "月光下的礁岸上，兩個戴著白色鱗面具的追影無聲地站了起來。他們沒有拔刀，只是說：「朧。回去。」朧往你身後退了半步——她從來沒有在任何人身後過。",
           "at": { "where": "outskirts", "location": "tidehaven" },
           "requires": { "flags": ["oboro_recall"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["frost_tracker", 2]],
           "success": {
@@ -20275,6 +20436,7 @@
           "text": "回到潮汐港的那天晚上，朧把一張紙放在你的枕頭邊，然後站在窗邊背對著你。紙上只有一行字：「新任務報告・第一號：目標是我喜歡的人。」",
           "at": { "where": "npc", "npc": "npc_oboro" },
           "requires": { "flags": ["oboro_kept"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -20287,7 +20449,8 @@
                   { "type": "memory", "summary": "冬璃宮的隱密朧的新任務：監視你，直到她看膩為止。她說不會看膩。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "朧解開忍裝，鱗片從腰側一路亮起，和主角「實習」房中術：只學過理論的影子緊張又認真，在主角的引導下一步步做到最後，高潮時第一次發出了聲音。"
+                "scene": "朧解開忍裝，鱗片從腰側一路亮起，和主角「實習」房中術：只學過理論的影子緊張又認真，在主角的引導下一步步做到最後，高潮時第一次發出了聲音。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -20300,7 +20463,8 @@
                   { "type": "memory", "summary": "冬璃宮的隱密朧在你面前摘下了面巾。她說，不想當影子了，想當朧。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "朧摘下面巾，和主角在潮汐港的房間裡做愛；不再是影子的她要主角看著她的整張臉，鱗片在每一次高潮時一片片亮起來。"
+                "scene": "朧摘下面巾，和主角在潮汐港的房間裡做愛；不再是影子的她要主角看著她的整張臉，鱗片在每一次高潮時一片片亮起來。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -20424,12 +20588,14 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你問到了烙印幫的據點：沙漠邊緣的舊驛站，每隔七天有一批『貨』運出去。今晚，就是第七天。",
-            "set_flags": ["belv_found"]
+            "set_flags": ["belv_found"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商收了一大筆錢才肯開口：「舊驛站。今晚。」貝爾維婭已經走出去了。",
             "set_flags": ["belv_found"],
-            "effects": [{ "type": "money", "amount": -150 }]
+            "effects": [{ "type": "money", "amount": -150 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -20456,6 +20622,7 @@
           "text": "回營地的路上，貝爾維婭一句話也沒說。到了帳篷，她突然抓住你的衣領，把你推倒在毯子上：「……弄壞我。」她的眼睛紅著，「像他們那樣。這樣我就不會再想起他們了。」",
           "at": { "where": "npc", "npc": "npc_belvia" },
           "requires": { "flags": ["belv_raided"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -20467,7 +20634,8 @@
                   { "type": "affinity", "npc": "npc_belvia", "delta": 20, "reason": "抱住她，什麼也沒做" },
                   { "type": "memory", "summary": "貓魅族武僧貝爾維婭要你像那些盜賊一樣對她。你只是抱住她，讓她哭了一整夜。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -20479,7 +20647,8 @@
                   { "type": "affinity", "npc": "npc_belvia", "delta": 20, "reason": "用自己的方式對她" },
                   { "type": "memory", "summary": "貓魅族武僧貝爾維婭要你像那些盜賊一樣對她。你沒有，你用自己的方式——她說，原來不一樣。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -20604,7 +20773,8 @@
           "success": {
             "text": "你聽了整整一個下午。艾琳說到最後，聲音小了下去：「婚禮的前一夜，有人闖進了我家。」她低頭看著婚紗胸口那道撕裂的痕跡，「……我不記得之後的事了。只記得，我在等他。」",
             "set_flags": ["eil_heard"],
-            "effects": [{ "type": "affinity", "npc": "npc_eileen", "delta": 10, "reason": "聽她說了一整個下午" }]
+            "effects": [{ "type": "affinity", "npc": "npc_eileen", "delta": 10, "reason": "聽她說了一整個下午" }],
+            "time": { "hours": 4 }
           },
           "fail": {
             "text": "你聽著聽著睡著了。醒來的時候，艾琳正趴在你身邊——當然，是飄在你身邊——看著你：「人睡覺的樣子，好懷念。」她沒有生氣，「我再說一次吧。這次說短一點。」",
@@ -21006,7 +21176,8 @@
                   { "type": "affinity", "npc": "npc_pururu", "delta": 20, "reason": "教了她大人的事" },
                   { "type": "memory", "summary": "腐沼村的史萊姆娘普露露用沼珠替你做了一枚戒指。那一夜，你教了她大人的事——她學得很快。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -21097,7 +21268,8 @@
                   { "type": "memory", "summary": "在腐沼村辦了村子的第一場婚禮，和史萊姆娘普露露。你說：不管她是什麼形狀，你都願意。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "新婚之夜，普露露用學過的每一種形狀和主角做愛：史萊姆的身體包覆、吸吮、填滿主角，又變回少女的模樣讓主角進入，粉紅色的身體在高潮時發著光。"
+                "scene": "新婚之夜，普露露用學過的每一種形狀和主角做愛：史萊姆的身體包覆、吸吮、填滿主角，又變回少女的模樣讓主角進入，粉紅色的身體在高潮時發著光。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -21111,7 +21283,8 @@
                   { "type": "memory", "summary": "在腐沼村辦了村子的第一場婚禮，和史萊姆娘普露露。證婚人是巡邏隊長尼克，念錯了三次。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "婚宴散了以後，普露露把主角拉進新房，整個人包住主角，從史萊姆的形狀到少女的形狀一種一種地和主角做愛，鬧到天亮。"
+                "scene": "婚宴散了以後，普露露把主角拉進新房，整個人包住主角，從史萊姆的形狀到少女的形狀一種一種地和主角做愛，鬧到天亮。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -21248,6 +21421,7 @@
           "text": "森語之環的古樹圍成了一個圓。艾拉妮雅一走進去，月光就從樹梢落下來，落在她身上，她整個人亮了起來，花香濃得連古樹都在發抖。奧克塔維亞說，要有人陪她唱完一整首古老的鎮靜之歌。",
           "at": { "where": "cell", "location": "mosswhisper", "cell": "lm_whispering_ring" },
           "requires": { "flags": ["ila_escorted"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "fai", "dc": 15 },
           "success": {
@@ -21266,6 +21440,7 @@
           "text": "森語之環的夜裡，艾拉妮雅縮在古樹下，用長袍緊緊裹著自己：「奧克塔維亞都告訴我了。」她的聲音很小，「三百年了，我一直把你們當孩子……現在才發現，你不是孩子。」她看著你，「……你可以走，我不會怪你。」",
           "at": { "where": "npc", "npc": "npc_ilania" },
           "requires": { "flags": ["ila_aware"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -21277,7 +21452,8 @@
                   { "type": "affinity", "npc": "npc_ilania", "delta": 20, "reason": "陪她度過了第一夜" },
                   { "type": "memory", "summary": "陪苔語村的精靈艾拉妮雅度過了月華期的第一夜。她說，三百年來一直把大家當孩子，現在才發現你不是。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -21289,7 +21465,8 @@
                   { "type": "affinity", "npc": "npc_ilania", "delta": 15, "reason": "陪她慢慢來" },
                   { "type": "memory", "summary": "陪苔語村的精靈艾拉妮雅在森語之環度過了月華期的第一夜。你們只是依偎著看月亮。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -21338,6 +21515,7 @@
           "text": "月亮升到了最高。艾拉妮雅站在森語之環的中央，整個人在月光裡發著光：「我活了三百多年，照顧了三代人的孩子。」她看著你，「我以為我對每個人的愛都一樣。」她搖了搖頭，「不一樣。你不一樣。」",
           "at": { "where": "cell", "location": "mosswhisper", "cell": "lm_whispering_ring" },
           "requires": { "flags": ["ila_cleared"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "cha", "dc": 17 },
           "success": {
@@ -21355,6 +21533,7 @@
           "text": "天亮了。月華期過去了，花香淡了，艾拉妮雅頭上的小花一朵一朵地合上。她醒來，看著躺在身邊的你，慢吞吞地眨了眨眼，臉一點一點地紅了：「……哎呀。」她拉起毯子遮住了臉，「月華期過去了，可是……心跳還是好快。」",
           "at": { "where": "npc", "npc": "npc_ilania" },
           "requires": { "flags": ["ila_confessed"] },
+          "hours": "day",
           "kind": "choice",
           "options": [
             {
@@ -21521,7 +21700,8 @@
           },
           "fail": {
             "text": "你們翻了一下午，什麼也沒找到。最後是櫃台小姐看不下去，偷偷用筆圈出了一條規定，咳了一聲：「我什麼都沒做。」",
-            "set_flags": ["mimi_loophole"]
+            "set_flags": ["mimi_loophole"],
+            "time": { "hours": 4 }
           }
         },
         {
@@ -21548,6 +21728,7 @@
           "text": "小店面裡，茶葉堆滿了一整面牆。米米靠在你身上，一直蹭來蹭去，臉紅紅的：「好奇怪喵……今天一直好熱喵。」她的尾巴纏住了你的手腕，「是不是太累了喵？」你知道，這是貓魅族的發情期——她自己大概還不知道。",
           "at": { "where": "npc", "npc": "npc_mimi" },
           "requires": { "flags": ["mimi_arrived"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -21559,7 +21740,8 @@
                   { "type": "affinity", "npc": "npc_mimi", "delta": 20, "reason": "陪她度過了發情期" },
                   { "type": "memory", "summary": "晨光城的米米在紅茶店裡第一次遇上了發情期，她自己都不知道。你告訴了她——然後陪她度過了那一夜。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -21602,6 +21784,7 @@
           "text": "開張前的那一夜，城外的路上，一隊傭兵正往城裡走，手裡提著油桶。他們的隊長笑著：「燒了就好。一間小茶店，誰會在乎？」",
           "at": { "where": "outskirts", "location": "dawnlight" },
           "requires": { "flags": ["mimi_opening"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["tea_guild_merc", 2]],
           "success": {
@@ -21620,15 +21803,18 @@
           "text": "開張的早上，門口排了長長的隊：部落的族人、城裡的工匠、洗衣婦、碼頭工人，還有偷偷換了便服的貴族女僕們。米米一個人在店裡跑來跑去，打翻了第一壺茶，第二壺，第三壺——",
           "at": { "where": "npc", "npc": "npc_mimi" },
           "requires": { "flags": ["mimi_saved"] },
+          "hours": "day",
           "kind": "check",
           "check": { "attr": "dex", "dc": 17 },
           "success": {
             "text": "你捲起袖子，接下了端茶和收錢的活。米米只負責泡茶——泡茶的時候她不冒失。到了傍晚，最後一個客人喝完了最後一杯，說了一句：「很好喝。」米米在櫃台後面哭了。",
-            "set_flags": ["mimi_opened"]
+            "set_flags": ["mimi_opened"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "你們一起打翻了好幾壺茶，客人們卻沒有一個人走——他們笑著幫忙撿杯子、擦桌子，有人自己動手倒茶。到了傍晚，店裡亂成一團，每個人都說：「很好喝。」",
-            "set_flags": ["mimi_opened"]
+            "set_flags": ["mimi_opened"],
+            "time": { "until": "night" }
           }
         },
         {
@@ -21649,7 +21835,8 @@
                   { "type": "memory", "summary": "陪晨光城的米米開了「大家的紅茶」，一杯一銅幣。打烊之後，她請你喝了部落裡只在結婚時喝的茶。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "米米在茶店樓上把主角推倒，鈴鐺叮噹作響：貓族的少女一邊喵喵叫一邊騎在主角身上，尾巴纏著主角，冒失卻熱情地做了一整夜。"
+                "scene": "米米在茶店樓上把主角推倒，鈴鐺叮噹作響：貓族的少女一邊喵喵叫一邊騎在主角身上，尾巴纏著主角，冒失卻熱情地做了一整夜。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -21662,7 +21849,8 @@
                   { "type": "memory", "summary": "陪晨光城的米米開了「大家的紅茶」，一杯一銅幣。你說，最好的茶是她那天泡的每一杯。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "米米親完主角，就拉著主角上了樓：她把主角推倒在小床上，鈴鐺響個不停，一邊害羞地喵喵叫，一邊熱情地和主角做愛到天亮。"
+                "scene": "米米親完主角，就拉著主角上了樓：她把主角推倒在小床上，鈴鐺響個不停，一邊害羞地喵喵叫，一邊熱情地和主角做愛到天亮。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -21828,7 +22016,8 @@
                   { "type": "affinity", "npc": "npc_stella", "delta": 20, "reason": "抱住了她" },
                   { "type": "memory", "summary": "陪星屑三重奏的史黛拉在雨裡唱完了一場沒有舞台的演唱會。那一夜，她說只想當你一個人的太陽。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -21840,7 +22029,8 @@
                   { "type": "affinity", "npc": "npc_stella", "delta": 15, "reason": "煮了熱湯給她" },
                   { "type": "memory", "summary": "陪星屑三重奏的史黛拉在雨裡唱完了一場沒有舞台的演唱會。你煮了熱湯給她，她說你太溫柔了。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "hours": 4 }
               }
             }
           ]
@@ -21871,6 +22061,7 @@
           "text": "演唱會的前一夜，一群穿著灰袍、提著火把的狂信徒往舞台走去：「靡靡之音，敗壞人心！」他們舉起了火把，「燒了它！」",
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["stella_concert"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["zealot_guard", 2]],
           "success": {
@@ -22054,12 +22245,14 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你們認出了蠟印的殘痕：一個沒落男爵家的家紋。男爵的兒子是星屑三重奏所有演唱會的常客，總是坐在最後一排，從不鼓掌。他雇了人，今晚要「接」諾瓦回家。",
-            "set_flags": ["noir_traced"]
+            "set_flags": ["noir_traced"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商收了一大筆錢才說：「上城區的男爵少爺。他雇了打手，今晚動手。」",
             "set_flags": ["noir_traced"],
-            "effects": [{ "type": "money", "amount": -150 }]
+            "effects": [{ "type": "money", "amount": -150 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -22086,6 +22279,7 @@
           "text": "那天晚上，諾瓦敲開了你的房門，抱著枕頭，面無表情：「我睡不著。」她走進來，坐在你的床邊，「……別誤會。只是因為你比較近。」她沉默了很久，「你知道我的歌是寫給誰的嗎？」",
           "at": { "where": "npc", "npc": "npc_noir" },
           "requires": { "flags": ["noir_safe"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -22097,7 +22291,8 @@
                   { "type": "affinity", "npc": "npc_noir", "delta": 20, "reason": "猜到了史黛拉" },
                   { "type": "memory", "summary": "星屑三重奏的諾瓦說，她的歌以前是寫給史黛拉的——現在不只了。那一夜，她黏著你不放。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -22381,7 +22576,8 @@
                   { "type": "affinity", "npc": "npc_pom", "delta": 20, "reason": "抱住了害怕的她" },
                   { "type": "memory", "summary": "替星屑三重奏撕掉了黑心劇場的合約。經紀人波姆說她一直很怕——那一夜，她不想一個人睡。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -22471,7 +22667,8 @@
                   { "type": "memory", "summary": "星屑三重奏的經紀人波姆，為自己簽了第一份合約：護衛合約，永久有效。你簽了名。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "波姆把主角壓在床上「履行合約」：貓耳經紀人一條一條地念條款、一條一條地做，從親吻到騎在主角身上，緞帶散了一床，第四十八條履行到天亮。"
+                "scene": "波姆把主角壓在床上「履行合約」：貓耳經紀人一條一條地念條款、一條一條地做，從親吻到騎在主角身上，緞帶散了一床，第四十八條履行到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -22484,7 +22681,8 @@
                   { "type": "memory", "summary": "星屑三重奏的經紀人波姆寫了一份護衛合約。你說不用合約，你本來就會留下——她記在了帳本上，永遠。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "波姆哭完，把主角拉到床上「履行口頭約定」：她一邊抽著鼻子一邊脫掉衣服，騎在主角身上做愛，尾巴豎得直直的，說每一次都要記在帳本上。"
+                "scene": "波姆哭完，把主角拉到床上「履行口頭約定」：她一邊抽著鼻子一邊脫掉衣服，騎在主角身上做愛，尾巴豎得直直的，說每一次都要記在帳本上。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -22607,12 +22805,14 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你查到了子爵少爺的藏身處：城外一間廢棄的獵屋。他雇了幾個打手，約好今晚在那裡交易。",
-            "set_flags": ["marg_found"]
+            "set_flags": ["marg_found"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商收了一大筆錢才肯說：「城外的獵屋。今晚。」",
             "set_flags": ["marg_found"],
-            "effects": [{ "type": "money", "amount": -150 }]
+            "effects": [{ "type": "money", "amount": -150 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -22732,6 +22932,7 @@
           "text": "舞會散場，瑪格麗特沒有回伯爵府，而是拉著你走進了皇宮花園的深處。她靠在玫瑰叢邊，摘下了最後一根髮簪，深紅色的長髮散了下來：「明天，整個帝都都會知道艾森伯爵夫人和一個冒險者跳了一整晚的舞。」她看著你，「你怕嗎？」",
           "at": { "where": "npc", "npc": "npc_margarete" },
           "requires": { "flags": ["marg_danced"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -22744,7 +22945,8 @@
                   { "type": "memory", "summary": "在皇宮的化裝舞會上和艾森伯爵夫人瑪格麗特跳了一整晚的舞。她說，她怕了十五年，從今晚開始換別人怕她。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "皇宮花園的玫瑰叢陰影裡，瑪格麗特撩起禮服、散下紅髮，和主角做愛；帝國最完美的夫人丟掉所有禮節，咬著主角的肩膀壓抑叫聲，在月光下一次次高潮。"
+                "scene": "皇宮花園的玫瑰叢陰影裡，瑪格麗特撩起禮服、散下紅髮，和主角做愛；帝國最完美的夫人丟掉所有禮節，咬著主角的肩膀壓抑叫聲，在月光下一次次高潮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -22880,12 +23082,14 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你拿到了黑市車隊的路線：今晚，他們會從城外的舊磨坊出發，車上裝的是本該送到前線的補給——包括莉澤洛特的麵包。",
-            "set_flags": ["liese_route"]
+            "set_flags": ["liese_route"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商收了一大筆錢才肯說：「舊磨坊。今晚。」",
             "set_flags": ["liese_route"],
-            "effects": [{ "type": "money", "amount": -150 }]
+            "effects": [{ "type": "money", "amount": -150 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -22912,6 +23116,7 @@
           "text": "麵包店裡，莉澤洛特在烤一爐新的麵包——這次她要親手交給前線的信使。烤爐的火光映在她臉上，她揉麵團揉得很用力：「三個月。他以為我忘了他。」她停了下來，手按在麵團上，「……其實，我有時候也會忘記他長什麼樣子。」她轉過頭，「這樣，是不是很壞？」",
           "at": { "where": "npc", "npc": "npc_lieselotte" },
           "requires": { "flags": ["liese_caught"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -22923,7 +23128,8 @@
                   { "type": "affinity", "npc": "npc_lieselotte", "delta": 20, "reason": "抱住了她" },
                   { "type": "memory", "summary": "替萊茵堡的莉澤洛特追回了寄往前線的麵包。那一夜在烤爐邊，她說不想再說沒關係了。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -22966,6 +23172,7 @@
           "text": "收穫節的前一夜，城外的路上，幾個穿著破爛第三軍團制服的老兵正在磨刀：「下城區那間麵包店，收穫節一天能賺一整年的錢。」他們抬起頭，看見了你，「……又是個多管閒事的。」",
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["liese_festival"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["deserter_veteran", 2]],
           "success": {
@@ -23001,6 +23208,7 @@
           "text": "收穫節的夜晚，整個萊茵堡都在放煙火。莉澤洛特關上了麵包店的門，坐在烤爐邊，手裡拿著那封取消休假的信：「我嫁給他的時候，以為一年見一次也沒關係。」她把信放進了烤爐，看著它燒起來，「……我還是愛他。可是我也……」她轉過頭看你，說不下去。",
           "at": { "where": "npc", "npc": "npc_lieselotte" },
           "requires": { "flags": ["liese_done_day"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -23013,7 +23221,8 @@
                   { "type": "memory", "summary": "陪萊茵堡麥穗麵包店的莉澤洛特過了收穫節。她還愛著前線的丈夫——你說，她不用選。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "收穫節的煙火下，莉澤洛特把主角推倒在麵粉袋上，帶著寂寞與罪惡感熱烈地和主角做愛，兩人渾身沾滿麵粉，她高潮時哭著把臉埋在主角胸口。"
+                "scene": "收穫節的煙火下，莉澤洛特把主角推倒在麵粉袋上，帶著寂寞與罪惡感熱烈地和主角做愛，兩人渾身沾滿麵粉，她高潮時哭著把臉埋在主角胸口。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -23026,7 +23235,8 @@
                   { "type": "memory", "summary": "陪萊茵堡麥穗麵包店的莉澤洛特過了收穫節。她寫信給前線的丈夫說了實話——丈夫回信說：妳要幸福。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "收到回信的那天晚上，莉澤洛特在麵包店樓上的房間裡和主角做愛；這一次沒有罪惡感，她溫柔地、慢慢地要主角，結束後說想一起烤明天的第一爐麵包。"
+                "scene": "收到回信的那天晚上，莉澤洛特在麵包店樓上的房間裡和主角做愛；這一次沒有罪惡感，她溫柔地、慢慢地要主角，結束後說想一起烤明天的第一爐麵包。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -23073,6 +23283,7 @@
           "text": "那幾個醉漢裡，有一個是盜印商的眼線。當天晚上，盜印商的打手就跟著克拉拉出了城——他們想知道紫丁香是誰，好搶下一卷的原稿。",
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["clara_pages"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["pirate_printer_thug", 3]],
           "success": {
@@ -23239,6 +23450,7 @@
           "text": "審問的前一夜，禁書總審查官親自帶人來圖書館搜查原稿。你和克拉拉帶著原稿從後門逃出城，審查官們追了上來，手裡的聖印閃著白光：「交出淫書！」",
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["clara_trial"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["chief_book_inquisitor", 1], ["book_inquisitor", 1]],
           "success": {
@@ -23274,6 +23486,7 @@
           "text": "審問結束的那天晚上，克拉拉把第十二卷的最後一章交給你。她的丈夫當天就搬去了研究室住，留下一張紙條：「我從來不了解妳。對不起。」克拉拉看著你讀完最後一章，摘下了眼鏡：「最後一章，我寫了一個結局。」她走到你面前，「可是，我想聽你寫的那一個。」",
           "at": { "where": "npc", "npc": "npc_clara" },
           "requires": { "flags": ["clara_cleared"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -23286,7 +23499,8 @@
                   { "type": "memory", "summary": "陪萊茵堡的克拉拉——紫丁香——撐過了教廷的審問。她說，下一卷要寫一個幸福的故事。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "克拉拉摘下眼鏡，和主角在圖書館的書架間做愛：寫了十二卷官能小說的作者第一次親身體驗，她一邊顫抖一邊低聲念出小說裡的台詞，最後忘了所有台詞。"
+                "scene": "克拉拉摘下眼鏡，和主角在圖書館的書架間做愛：寫了十二卷官能小說的作者第一次親身體驗，她一邊顫抖一邊低聲念出小說裡的台詞，最後忘了所有台詞。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -23299,7 +23513,8 @@
                   { "type": "memory", "summary": "陪萊茵堡的克拉拉——紫丁香——撐過了教廷的審問。你們一起寫了第十二卷的最後一章：未完待續。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "克拉拉和主角一起寫最後一章，寫到情節最熱的地方，她放下筆把主角拉到稿紙堆上，照著剛寫下的句子和主角做愛，一句一句地寫進身體裡。"
+                "scene": "克拉拉和主角一起寫最後一章，寫到情節最熱的地方，她放下筆把主角拉到稿紙堆上，照著剛寫下的句子和主角做愛，一句一句地寫進身體裡。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -23336,7 +23551,8 @@
           },
           "fail": {
             "text": "第八杯的時候，你趴在了桌上。伊莎貝拉大笑著把你扛到了旅店：「酒量不錯了，比我的副團長好！」她把你丟在床上，「明天早上，城門口見。」",
-            "set_flags": ["isab_drunk"]
+            "set_flags": ["isab_drunk"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -23420,12 +23636,14 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你查到了追捕者們出城的路線：南門外的舊驛道。他們不打算讓那孩子活著上審判庭——死掉的證物，不會開口替奧托說話。",
-            "set_flags": ["isab_route"]
+            "set_flags": ["isab_route"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商收了一大筆錢才肯說：「南門外的舊驛道。今晚。」",
             "set_flags": ["isab_route"],
-            "effects": [{ "type": "money", "amount": -150 }]
+            "effects": [{ "type": "money", "amount": -150 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -23452,6 +23670,7 @@
           "text": "審判庭上，那個魔族孩子說出了一切：是奧托救了她，替她包紮，把自己的乾糧分給她。旁聽席一片安靜。奧托被放了出來。那天晚上，伊莎貝拉在酒館裡一杯都沒喝，只是坐著：「我這個團長，差一點就保不住他。」她看著你，「……謝謝你。」",
           "at": { "where": "npc", "npc": "npc_isabella_rowan" },
           "requires": { "flags": ["isab_child"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -23698,6 +23917,7 @@
           "text": "典禮的前一夜，城外的訓練場上，幾個佩戴鐵十字徽章的人在搬木箱，箱子裡是煙火和傳單：「主和派的將軍不配給騎士致詞！」",
           "at": { "where": "outskirts", "location": "rhineburg" },
           "requires": { "flags": ["brun_speech"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["iron_cross_zealot", 2]],
           "success": {
@@ -23805,15 +24025,18 @@
           "text": "夜裡，暴風雪來了。巨魔們還會再來，援軍還要兩天。布倫希爾德站在木牆上，一動也不動，雪落滿了她的肩膀。她說，北境的將軍不能睡——睡著的人，就不會再醒來。",
           "at": { "where": "npc", "npc": "npc_brunhild" },
           "requires": { "flags": ["brun_held"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "str", "dc": 17 },
           "success": {
             "text": "你陪她站了一整夜。天亮的時候，暴風雪停了，地平線上出現了第一軍團的旗幟——援軍提前一天到了。布倫希爾德看著旗幟，轉頭看你，雪從她的睫毛上掉了下來：「……我們活下來了。」",
-            "set_flags": ["brun_dawn"]
+            "set_flags": ["brun_dawn"],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "後半夜你撐不住，靠在她身上睡著了。醒來的時候，你身上蓋著她的披風，她站在你前面，擋住了所有的風雪。地平線上，第一軍團的旗幟出現了。她低頭看你：「……你睡著的樣子，很暖。」",
-            "set_flags": ["brun_dawn"]
+            "set_flags": ["brun_dawn"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -23886,6 +24109,7 @@
           "text": "天剛亮，卡菈已經跑出了一里遠。沙丘後面，一群沙丘鬣狗正圍著一頭受傷的羚羊。卡菈回頭看你，咧嘴一笑：「跟上了？那就一起上！」",
           "at": { "where": "outskirts", "location": "sunscorch" },
           "requires": { "flags": ["kara_start"] },
+          "hours": "day",
           "kind": "combat",
           "enemies": [["dune_hyena", 3]],
           "success": {
@@ -24110,6 +24334,7 @@
           "text": "營火邊，全營地的族人都在看。卡菈拿著自己剪下的那撮赤紅鬃毛，手在抖——你第一次看見她的手在抖：「赤鬃的伴侶，要把彼此的鬃毛編進對方的頭髮裡。」她看著你，「……你沒有鬃毛。那就用頭髮。」",
           "at": { "where": "npc", "npc": "npc_kara_redmane" },
           "requires": { "flags": ["kara_fought"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -24122,7 +24347,8 @@
                   { "type": "affinity", "npc": "npc_talo_redmane", "delta": 10, "reason": "成了母親的伴侶" },
                   { "type": "memory", "summary": "和赤鬃族長卡菈立下了鬃毛之誓：一起獵下風暴巨鵬，把彼此的鬃毛編在一起。一輩子。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -24291,6 +24517,7 @@
           "text": "夜裡的海灘，漣脫下了陸地洋裝，雙腿化回了魚尾，泡在淺灘上，月光照在她的鱗片上：「……今天，是我上岸以來最開心的一天。」她看著你，「陸地人開心的時候，會做什麼？」",
           "at": { "where": "npc", "npc": "npc_ren" },
           "requires": { "flags": ["ren_beach"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -24302,7 +24529,8 @@
                   { "type": "affinity", "npc": "npc_ren", "delta": 20, "reason": "在海裡吻了她" },
                   { "type": "memory", "summary": "陪潮汐港的漣過了她上岸以來的第一個休假。那一夜在月光的淺灘裡，她教你玉璘族在水裡的親吻。", "importance": 2 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -24345,6 +24573,7 @@
           "text": "潮祭之夜，海面上浮起了成千上萬的光點——那是回家的玉璘族。可是航道上，兩條礁海蛇浮了上來，張開嘴，等著吃掉落單的人。漣握緊了你的手：「……牠們每年都在。」",
           "at": { "where": "outskirts", "location": "tidehaven" },
           "requires": { "flags": ["ren_return"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["reef_serpent", 2]],
           "success": {
@@ -24380,6 +24609,7 @@
           "text": "海底的夏瀾殿，珊瑚發著光，魚群繞著你們游。漣的家人們圍著你，好奇地看著這個陸地人。漣牽著你的手，帶你游進了她從小長大的房間——一個巨大的貝殼，裡面鋪滿了柔軟的海草。她轉過身：「……陸地很好。可是，我最想給你看的，是這裡。」",
           "at": { "where": "npc", "npc": "npc_ren" },
           "requires": { "flags": ["ren_blessed"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -24405,7 +24635,8 @@
                   { "type": "memory", "summary": "潮祭之夜，和玉璘族的漣一起回到了海底的夏瀾殿，然後一起回到了陸地。她說：陸地也是家了。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "漣在貝殼房間裡把一切交給主角：她溫柔地吻遍主角耳後的鰓痕，和主角在海草床上做愛到天亮，浮出海面之前又纏著主角要了一次。"
+                "scene": "漣在貝殼房間裡把一切交給主角：她溫柔地吻遍主角耳後的鰓痕，和主角在海草床上做愛到天亮，浮出海面之前又纏著主角要了一次。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -24619,6 +24850,7 @@
           "text": "第三天的夜裡，瑪蒂爾達的馬車在城外的河堤上被攔了下來。兩個穿著黑衣的刺客從橋下翻上來，手裡的短刀塗著毒：「羅森議員。有人付了很多錢，要妳的命。」",
           "at": { "where": "outskirts", "location": "albena" },
           "requires": { "flags": ["mat_assassins"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["guild_assassin", 2]],
           "success": {
@@ -24705,16 +24937,19 @@
           "text": "月光下的生命之泉邊，一個戴著兜帽的精靈坐在石頭上，銀髮從兜帽裡一直流到地上——她大概不知道這有多顯眼。她的聲音像在吟詩：「人類。告訴我，你們的城市，晚上也有月光嗎？」",
           "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
           "requires": { "flags": ["ith_start"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "int", "dc": 13 },
           "success": {
             "text": "你說了晨光城的燈火、潮汐港的船帆、血羽城堡夜裡的紅光。她一句一句地聽，聽到天快亮了，才輕聲說：「……一千年，我只知道書上寫的外面。」她站起來，兜帽滑落了一點，露出一雙淡金色的眼睛，「明晚，再說給我聽。」",
             "set_flags": ["ith_heard"],
-            "effects": [{ "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "說了一整夜的外面" }]
+            "effects": [{ "type": "affinity", "npc": "npc_ithrandil", "delta": 10, "reason": "說了一整夜的外面" }],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "你說得結結巴巴，可她一點也不在意，聽得很認真，偶爾問一些奇怪的問題：「人類的麵包，為什麼要烤？」天亮的時候，她笑了：「你說話的樣子，很有趣。」",
-            "set_flags": ["ith_heard"]
+            "set_flags": ["ith_heard"],
+            "time": { "until": "morning" }
           }
         },
         {
@@ -24741,6 +24976,7 @@
           "text": "回到生命之泉，兜帽精靈坐在石頭上，看著泉水裡的月亮：「你早就知道我是誰了吧。」她摘下兜帽，銀白的藤蔓冠在月光下發亮，「……一千年來，沒有人敢在我面前說『麵包要烤』這種話。」",
           "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
           "requires": { "flags": ["ith_forest"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -25193,6 +25429,7 @@
           "text": "教國回來的路上，你們在官道邊的小旅店過夜。安納塔西亞坐在窗邊，看著星星：「我的問題是——」她停了很久，「王座和道路，你覺得我該選哪一個？」她轉過頭，碧色的眼睛裡沒有算計，「……這次不是政治。我真的不知道。」",
           "at": { "where": "npc", "npc": "npc_anastasia" },
           "requires": { "flags": ["ana_safe"] },
+          "hours": "night",
           "kind": "check",
           "check": { "attr": "cha", "dc": 17 },
           "success": {
@@ -25310,6 +25547,7 @@
           "text": "宰相府的書房裡，公文堆得比人還高。艾蕾諾拉頭也不抬：「放下就可以走了。」你沒有走。她抬起頭，看見你手裡的午餐，皺起眉頭：「……我說過我不需要。」",
           "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
           "requires": { "flags": ["ele_lunch"] },
+          "hours": "day",
           "kind": "choice",
           "options": [
             {
@@ -25642,12 +25880,14 @@
           "check": { "attr": "int", "dc": 15 },
           "success": {
             "text": "你拿到了碎角派的計畫：今晚，他們的刺客會在城外的舊石場集合，帶著火油和人類的衣服。",
-            "set_flags": ["lisr_plot"]
+            "set_flags": ["lisr_plot"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "情報商收了一大筆錢才肯說：「城外的舊石場。今晚。」",
             "set_flags": ["lisr_plot"],
-            "effects": [{ "type": "money", "amount": -150 }]
+            "effects": [{ "type": "money", "amount": -150 }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -25674,6 +25914,7 @@
           "text": "血誓碑谷的月光下，莉莎爾一個人站在碑林之間，沒有戴兜帽，赤紅的雙翼收在身後：「我聽說了。」她轉過身看你，「人類的眼睛，看見了魔族看不見的東西。」她頓了頓，「……可是你為什麼要幫我？我是魔王。」",
           "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
           "requires": { "flags": ["lisr_stopped"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -25761,6 +26002,7 @@
           "text": "碑谷的月光下，莉莎爾重新戴上了冠環，看著石碑上的兩個名字，很久沒有說話。然後她轉過身，赤紅的雙翼慢慢地合攏，把你們兩個人都包了進去：「我推行了一輩子的律法。」她的聲音很輕，「這是第一條，我自己想遵守的。」",
           "at": { "where": "cell", "location": "bloodplume", "cell": "lm_blood_oath_valley" },
           "requires": { "flags": ["lisr_sworn"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -25772,7 +26014,8 @@
                   { "type": "affinity", "npc": "npc_lisar", "delta": 25, "reason": "和她立下了血誓" },
                   { "type": "memory", "summary": "在血誓碑谷和赤翼之君莉莎爾立下了伴侶的血誓。她說，這是她推行了一輩子的律法裡，第一條自己想遵守的。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -26104,6 +26347,7 @@
           "text": "沙龍的小圓桌邊，莉澤洛特端著一大盤剛出爐的點心，看見你，笑容僵住了。克拉拉抱著手稿，眼鏡後的灰色眼睛眨了眨，臉一點一點地紅了。瑪格麗特搖著羽扇，慢條斯理地倒茶：「看來，不用介紹了。」三雙眼睛同時看著你。",
           "at": { "where": "npc", "npc": "npc_margarete" },
           "requires": { "flags": ["wives_tea"] },
+          "hours": "day",
           "kind": "check",
           "check": { "attr": "cha", "dc": 17 },
           "success": {
@@ -26139,6 +26383,7 @@
           "text": "沙龍的燈重新點了起來。三個人坐在一起，像是開了一場會議。最後，瑪格麗特代表發言：「我們談過了。」莉澤洛特點頭，克拉拉低著頭在筆記本上寫字。瑪格麗特看著你，「我們都不打算放手。所以——」她用羽扇指著你，「你要怎麼辦？」",
           "at": { "where": "npc", "npc": "npc_margarete" },
           "requires": { "flags": ["wives_safe"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -26156,7 +26401,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning", "hours": 4 }
               }
             },
             {
@@ -26235,6 +26481,7 @@
           "text": "演唱會辦完了。最後一首歌，三個人對著第一排正中間的你一起唱——全場都看見了。散場之後，後台的門鎖上了。史黛拉、諾瓦、波姆三個人站在你面前，舞台裝還沒換下來。波姆笑得很甜：「時間分配表撕掉了。」諾瓦別開臉：「……所以，要一起。」史黛拉握住了你的手：「大家的笑容是我的力量——你的，是我們的。」",
           "at": { "where": "npc", "npc": "npc_stella" },
           "requires": { "flags": ["idol_road"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -26252,7 +26499,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -26266,7 +26514,8 @@
                   { "type": "affinity", "npc": "npc_pom", "delta": 10, "reason": "記得她們的舞台裝" },
                   { "type": "memory", "summary": "星屑三重奏的史黛拉、諾瓦、波姆在同一天發現了彼此，最後決定要一起。後台亂成了一團，舞台裝一件也沒皺。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -26315,6 +26564,7 @@
           "text": "條約簽完的當晚，鐵十字會和碎角派的殘黨聯手了——兩個本該互相仇恨的主戰派，為了破壞和平站在了一起。他們埋伏在城外的河堤上，等著五位統治者的馬車經過。",
           "at": { "where": "outskirts", "location": "albena" },
           "requires": { "flags": ["rulers_signed"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["warhawk_remnant", 2]],
           "success": {
@@ -26352,7 +26602,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "night" }
               }
             },
             {
@@ -26372,7 +26623,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -26436,6 +26688,7 @@
           "text": "營火邊，三個人坐成一圈，等著裁判宣布結果。伊莎貝拉喝著酒，布倫希爾德吃著蘋果派，卡菈啃著巨蜥的腿。她們看著你，表情一模一樣——期待，又有點不安。",
           "at": { "where": "npc", "npc": "npc_isabella_rowan" },
           "requires": { "flags": ["athletes_hunted"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -26453,7 +26706,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -26882,7 +27136,8 @@
                   { "type": "reputation", "faction": "rhine_empire", "delta": 5 },
                   { "type": "memory", "summary": "清剿主戰派：鐵十字會的首領海因里希在父親的墓前說了實話，自己解散了鐵十字會。", "importance": 3 }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -27018,6 +27273,7 @@
           "text": "鐘樓的頂層，聖戰派的大審判官穿著白金色的長袍，手裡捧著聖戰詔書的抄本，身邊站著他的審判官。鐘繩已經握在他的手裡：「鐘聲響起，聖戰就開始了。」他看見你，舉起了聖印——聖光亮得像正午。",
           "at": { "where": "special", "special_map": "sm_soriel_belltower", "x": 2, "y": 1 },
           "requires": { "flags": ["pol_p3_truth"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["grand_inquisitor", 1], ["crusade_inquisitor", 1]],
           "success": {
@@ -27140,6 +27396,7 @@
           "text": "天亮時，魔族的先鋒出現在了地平線上：燃燒的戰旗、赤紅的鎧甲、翅膀遮天的飛行部隊。冒險者們握緊了武器。先鋒的隊長在河的對岸舉起了戰斧。",
           "at": { "where": "outskirts", "location": "rivervale" },
           "requires": { "flags": ["pol_h1_ready"] },
+          "hours": "day",
           "kind": "combat",
           "enemies": [["crimson_vanguard", 3], ["crimson_royal_guard", 1]],
           "success": {
@@ -27211,11 +27468,13 @@
           "check": { "attr": "int", "dc": 19 },
           "success": {
             "text": "你和老水手一起擬了一個計畫：夜裡從海上摸進燈塔，天亮前拿下它，讓守備軍自己撤退。市集那一邊，一個平民也不用碰。",
-            "set_flags": ["pol_h2_plan"]
+            "set_flags": ["pol_h2_plan"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "計畫擬得不夠周全——可是老水手說，他會在天亮前把市集那一邊的居民都叫醒，讓他們躲進地窖。",
-            "set_flags": ["pol_h2_plan"]
+            "set_flags": ["pol_h2_plan"],
+            "time": { "until": "night" }
           }
         },
         {
@@ -27224,11 +27483,13 @@
           "text": "夜裡的燈塔下，赤翼的守備兵們舉著長戟，鎧甲上的燃燒羽紋在火光裡閃爍。他們看見你們從海裡爬上來，吹響了號角。",
           "at": { "where": "outskirts", "location": "ashport" },
           "requires": { "flags": ["pol_h2_plan"] },
+          "hours": "night",
           "kind": "combat",
           "enemies": [["crimson_garrison", 3], ["crimson_royal_guard", 1]],
           "success": {
             "text": "燈塔拿下了。天亮時，赤翼的守備軍看著燈塔上的帝國旗幟，沉默地收起了長戟，坐船撤回了南方。市集裡的居民走出地窖，人類和魔族站在一起，看著空蕩蕩的碼頭。",
-            "set_flags": ["pol_h2_won"]
+            "set_flags": ["pol_h2_won"],
+            "time": { "until": "morning" }
           },
           "fail": {
             "text": "守備兵們把你們逼回了海裡，可是燈塔的燈在打鬥中被打翻了——沒有燈，補給船進不了港。三天後，赤翼的守備軍撤走了。",
@@ -27424,6 +27685,7 @@
           "text": "天亮時，聖戰軍的先鋒出現在北邊的山坡上：白金色的旗幟、閃著聖光的長槍、齊聲的聖歌。先鋒的隊長舉起了聖印：「為了神，解放灰港鎮！」",
           "at": { "where": "outskirts", "location": "ashport" },
           "requires": { "flags": ["pol_d1_ready"] },
+          "hours": "day",
           "kind": "combat",
           "enemies": [["crusade_vanguard", 3], ["crusade_inquisitor", 1]],
           "success": {
@@ -27977,7 +28239,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -28078,7 +28341,8 @@
                 "text": "你在夢與夢之間走了很久，在每一個夢的盡頭點起一盞燈，像天亮。夢一個接一個地流向燈光，流出了索利安的鱗片——祂沒有阻止，也沒有察覺。那天早上，銀月城的精靈們同時醒了過來，很多人哭了——因為他們終於記得自己夢見了什麼。",
                 "set_flags": ["drg_sor_done", "drg_sor_wake"],
                 "effects": [{ "type": "memory", "summary": "巨龍史詩：在夢的盡頭擋下夢境之龍索利安的投影。你在每個夢的盡頭點起天亮的燈，夢流了出去，精靈們醒了。", "importance": 3 }],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -28110,7 +28374,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "night" }
               }
             }
           ]
@@ -28212,7 +28477,8 @@
                     "importance": 3
                   }
                 ],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -28490,6 +28756,7 @@
           "text": "伊格妮絲解開了工作服的釦子，裡面是被汗水浸透的貼身衣，精悍的身體上全是鍛造留下的細小傷疤。「我的手很粗，」她低聲說，「你不要笑。」",
           "at": { "where": "npc", "npc": "npc_ignis_forge" },
           "requires": { "flags": ["ign_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -28502,7 +28769,8 @@
                   { "type": "memory", "summary": "伊格妮絲在千爐工坊的工作台上，第一次和不是機器的東西在一起——那是你。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你握住她滿是舊疤的手，一根一根地吻她的指尖。她的呼吸亂了，把你拉到工作台上，吻得毫無技巧卻非常認真。你們在圖紙堆裡脫光了彼此，她跨在你身上，一邊動一邊喘著說這比任何機偶都難調，最後在你懷裡繃緊了全身，髮絲亮得像整座工坊重新點火。"
+                "scene": "你握住她滿是舊疤的手，一根一根地吻她的指尖。她的呼吸亂了，把你拉到工作台上，吻得毫無技巧卻非常認真。你們在圖紙堆裡脫光了彼此，她跨在你身上，一邊動一邊喘著說這比任何機偶都難調，最後在你懷裡繃緊了全身，髮絲亮得像整座工坊重新點火。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -28515,7 +28783,8 @@
                   { "type": "memory", "summary": "伊格妮絲把你當成她這輩子最用心調整的作品，在千爐工坊試了一整夜。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "「那就照妳的方式。」她眼睛一亮，像拿到新圖紙一樣把你從頭到腳摸了一遍，哪裡會讓你喘、哪裡會讓你發抖，她都記下來，然後一樣一樣試。她用嘴、用手，最後用整個身體，直到你們兩個都汗濕地癱在圖紙上。她靠著你的胸口，滿足地說：「數據很漂亮。要再測一次。」"
+                "scene": "「那就照妳的方式。」她眼睛一亮，像拿到新圖紙一樣把你從頭到腳摸了一遍，哪裡會讓你喘、哪裡會讓你發抖，她都記下來，然後一樣一樣試。她用嘴、用手，最後用整個身體，直到你們兩個都汗濕地癱在圖紙上。她靠著你的胸口，滿足地說：「數據很漂亮。要再測一次。」",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -28546,6 +28815,7 @@
           "text": "陰影之谷的夜晚很安靜。諾克緹絲走在你旁邊，一句話也不說，影子卻一直悄悄地往你那邊靠，靠到最後，兩個人的影子疊在了一起。",
           "at": { "where": "npc", "npc": "npc_noctis" },
           "requires": { "flags": ["noc_x_start"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "走到谷底的時候，她停下來，第一次在你面前摘下了無面面具。底下是一張墨藍微光、緊張得要命的臉。",
@@ -28684,6 +28954,7 @@
           "text": "試煉場空無一人。烏爾瑪丟給你一把練習用的木斧：「獎賞要先打贏才拿得到。」你們在月光下打了很久，打到兩個人都氣喘吁吁，最後滾在血沙上，她壓著你，你也壓著她。",
           "at": { "where": "npc", "npc": "npc_ulma_bloodtrial" },
           "requires": { "flags": ["trl_x_start"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "她低頭看著你，汗從細長彎曲的角尖滴下來：「……算你贏。」",
@@ -28697,6 +28968,7 @@
           "text": "帳篷裡鋪著厚厚的獸皮。烏爾瑪把皮甲一扯就丟到角落，苔綠色的身體結實得像一棵老樹，到處是戰鬥留下的疤：「血角不搞那些軟綿綿的。」可她說這句話的時候，耳朵是紅的。",
           "at": { "where": "npc", "npc": "npc_ulma_bloodtrial" },
           "requires": { "flags": ["trl_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -28709,7 +28981,8 @@
                   { "type": "memory", "summary": "試煉場的場主烏爾瑪把勝利者的獎賞給了你——在她的帳篷裡，打了一整夜。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "那一夜像另一場試煉。她把你摔在獸皮上，你翻過來壓住她，兩個人在帳篷裡扭打、啃咬、喘息，誰也不肯先讓。她用大腿夾住你的腰，指甲在你背上劃出一道道紅痕，最後她在你身下吼出來，聲音大得整個營地都聽得見——第二天沒有一個戰士敢提這件事。"
+                "scene": "那一夜像另一場試煉。她把你摔在獸皮上，你翻過來壓住她，兩個人在帳篷裡扭打、啃咬、喘息，誰也不肯先讓。她用大腿夾住你的腰，指甲在你背上劃出一道道紅痕，最後她在你身下吼出來，聲音大得整個營地都聽得見——第二天沒有一個戰士敢提這件事。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -28860,7 +29133,8 @@
                   { "type": "memory", "summary": "莉菈照著旅行書的最後一頁和你過了一夜，然後說，要把這一夜寫成自己的第一章。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "「那就照著書來。」她認真地點頭，翻開書，一行一行地唸，一行一行地做——唸到一半就唸不下去了，因為她已經跨在你身上，喘得說不出話。書掉在床邊，翻到哪一頁都沒有人管了。天亮時她窩在你懷裡說：「我要寫一本新的旅行書。第一章就是這裡。」"
+                "scene": "「那就照著書來。」她認真地點頭，翻開書，一行一行地唸，一行一行地做——唸到一半就唸不下去了，因為她已經跨在你身上，喘得說不出話。書掉在床邊，翻到哪一頁都沒有人管了。天亮時她窩在你懷裡說：「我要寫一本新的旅行書。第一章就是這裡。」",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -28973,6 +29247,7 @@
           "text": "赫爾嘉解開了圍裙和襯衫，豐滿圓潤的身體在燈下泛著酒意的紅。她把你拉到一堆麥稈上，打了一個小小的嗝，自己先笑了起來：「我、我沒醉。矮人不會醉。我只是……很想要你。」",
           "at": { "where": "npc", "npc": "npc_helga_malt" },
           "requires": { "flags": ["brew_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -28985,7 +29260,8 @@
                   { "type": "memory", "summary": "「酒桶」赫爾嘉打開了出師那年釀的酒，和你在酒窖的麥稈上醉了一整夜。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你們都醉了，醉得很開心。她在麥稈上滾來滾去，把你壓在下面親得到處都是酒味，你把她翻過來，吻遍她圓潤柔軟的身體。她叫起來很大聲，一點也不害羞，抓著你一次又一次地要，最後抱著你在酒桶邊睡著了，嘴裡還在嘟囔：「再一杯……再一次……」"
+                "scene": "你們都醉了，醉得很開心。她在麥稈上滾來滾去，把你壓在下面親得到處都是酒味，你把她翻過來，吻遍她圓潤柔軟的身體。她叫起來很大聲，一點也不害羞，抓著你一次又一次地要，最後抱著你在酒桶邊睡著了，嘴裡還在嘟囔：「再一杯……再一次……」",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -29042,6 +29318,7 @@
           "text": "房間裡點著一盞香燈。蕾伊拉的舞衣上的金幣一枚一枚地解下來，薄紗一層一層地落地，小麥色的肌膚上只剩下腳踝的鈴鐺。她在你面前跳了起來，腰肢扭得像水，尾巴勾著你的下巴：「這一支，叫『只給你』。」",
           "at": { "where": "npc", "npc": "npc_leila" },
           "requires": { "flags": ["wat_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -29054,7 +29331,8 @@
                   { "type": "memory", "summary": "貓魅族舞孃蕾伊拉在潮汐港的小房間裡，為你一個人跳完了那支舞——最後一段，是在你身上跳的。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你一直看到最後。舞的最後一個動作，是她跨坐到你身上，把你的手放在她的腰上。鈴鐺一聲一聲地響，跟著她起伏的節奏，快一點、再快一點，她仰起頭、尾巴繃得筆直，在你身上顫抖著跳完了最後一拍。那一夜鈴鐺響到天亮。"
+                "scene": "你一直看到最後。舞的最後一個動作，是她跨坐到你身上，把你的手放在她的腰上。鈴鐺一聲一聲地響，跟著她起伏的節奏，快一點、再快一點，她仰起頭、尾巴繃得筆直，在你身上顫抖著跳完了最後一拍。那一夜鈴鐺響到天亮。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -29180,6 +29458,7 @@
           "text": "寢殿裡鋪著雪白的獸毛。璃月取下了雪玉璜環，解開繡著螺鈿紋樣的衣袍，雪白的肌膚、如冰的鱗尾，在燭光下美得不像真的。「玉璘族的鱗尾，」她把你的手拉過去，「只給伴侶碰。」",
           "at": { "where": "npc", "npc": "npc_rigetsu" },
           "requires": { "flags": ["vault_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -29192,7 +29471,8 @@
                   { "type": "memory", "summary": "冬璃宮主璃月把只給伴侶碰的鱗尾交給了你，在寢殿裡度過了一夜。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你的手沿著她冰涼的鱗尾慢慢往上，她整個人顫了一下，咬著唇沒有出聲。你一路往上吻，鱗片在你嘴下一片一片地發燙，她終於忍不住叫了出來，鱗尾纏住你的腿把你拉得更近。那一夜，冷冰冰的宮主在你身下融化了好幾次。"
+                "scene": "你的手沿著她冰涼的鱗尾慢慢往上，她整個人顫了一下，咬著唇沒有出聲。你一路往上吻，鱗片在你嘴下一片一片地發燙，她終於忍不住叫了出來，鱗尾纏住你的腿把你拉得更近。那一夜，冷冰冰的宮主在你身下融化了好幾次。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -29236,6 +29516,7 @@
           "text": "帳環市集的燈一盞一盞熄掉，阿茲爾把小商品一樣一樣收進箱子裡，一邊收一邊跟你殺價——殺的是明天早餐誰請。殺到最後他輸了，笑著搖頭：「第一次輸得這麼開心。」",
           "at": { "where": "npc", "npc": "npc_azir_camel" },
           "requires": { "flags": ["nip_x_start"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "他把最後一個箱子扣上，轉過身，金色的貓眼在暗處亮了起來。",
@@ -29330,7 +29611,8 @@
                   { "type": "memory", "summary": "伊莎貝拉兌現了她的賭注。她學得很快，那一夜你們都沒怎麼睡。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你教她，她學得很快——快得讓你招架不住。她抱你抱得很緊，吻你吻得很用力，每一處都要你教，學會了就加倍還你。她在你身下的時候像在衝鋒，一點也不保留，叫得整條走廊都聽得見；第二天早上，騎士團的小子們全都去打掃馬廄了。"
+                "scene": "你教她，她學得很快——快得讓你招架不住。她抱你抱得很緊，吻你吻得很用力，每一處都要你教，學會了就加倍還你。她在你身下的時候像在衝鋒，一點也不保留，叫得整條走廊都聽得見；第二天早上，騎士團的小子們全都去打掃馬廄了。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -29443,6 +29725,7 @@
           "text": "你們在月光下追了一整晚的獵物。卡菈跑在你前面，回頭看你跟不跟得上；你跟上了，她就笑著跑得更快。最後獵物倒下的時候，你們兩個都撲倒在草地上，她壓在你身上，喘著氣，眼睛亮得嚇人。",
           "at": { "where": "npc", "npc": "npc_kara_redmane" },
           "requires": { "flags": ["kara_x_start"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "「抓到了。」她說——說的不是獵物。",
@@ -29456,6 +29739,7 @@
           "text": "篝火燒得劈啪響。卡菈扯掉身上的獸骨和戰利品，赤裸的身體結實修長，尾巴高高地豎著。她繞著你走了一圈，像在打量獵物：「赤鬃的女人求偶的時候，不會等男人或女人開口。」",
           "at": { "where": "npc", "npc": "npc_kara_redmane" },
           "requires": { "flags": ["kara_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -29550,7 +29834,8 @@
                   { "type": "memory", "summary": "你把瑪蒂爾達的契約改成了互相的。她抱著那份契約睡了一整夜。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你拿起筆，在契約上加了一行：「——你也屬於她。」瑪蒂爾達愣住了，然後笑得眼淚都流了出來。她撲到你身上，像拆禮物一樣拆開你的衣服，又甜又大膽地要你，荷葉邊的床單被你們滾得亂七八糟。天亮時她抱著那份契約睡著了。"
+                "scene": "你拿起筆，在契約上加了一行：「——你也屬於她。」瑪蒂爾達愣住了，然後笑得眼淚都流了出來。她撲到你身上，像拆禮物一樣拆開你的衣服，又甜又大膽地要你，荷葉邊的床單被你們滾得亂七八糟。天亮時她抱著那份契約睡著了。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -29581,6 +29866,7 @@
           "text": "月光森林裡的每一棵樹都在發光。伊瑟蘭迪爾走在你身邊，告訴你每一棵樹的名字、每一棵樹活了多少年。走到最老的那一棵前面，她停了下來，摘下了白銀藤蔓編成的冠。",
           "at": { "where": "npc", "npc": "npc_ithrandil" },
           "requires": { "flags": ["ith_x_start"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "「這頂冠，戴了九百年。」她把冠放在樹根上，「今晚，我不想當女王。」",
@@ -29594,6 +29880,7 @@
           "text": "泉水的光照在她身上。伊瑟蘭迪爾解開了長袍，修長白皙的身體美得像月光凝成的，長髮像銀色的瀑布一樣披在身後。她拉著你走進淺淺的泉水裡：「在精靈的語言裡，『愛』和『記住』是同一個字。」",
           "at": { "where": "npc", "npc": "npc_ithrandil" },
           "requires": { "flags": ["ith_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -29606,7 +29893,8 @@
                   { "type": "memory", "summary": "精靈女王伊瑟蘭迪爾在生命之泉邊，用精靈的方式記住了你。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你在泉水裡吻她，從她的唇到她的頸、到她的胸口。泉水溫暖得像她的體溫，她靠著你、纏著你，在水裡和你交纏在一起。她從來沒有失態過，那一夜卻在你懷裡失態了一次又一次，最後抱著你，用精靈語在你耳邊說了很長的一句話——你聽不懂，但你知道是什麼意思。"
+                "scene": "你在泉水裡吻她，從她的唇到她的頸、到她的胸口。泉水溫暖得像她的體溫，她靠著你、纏著你，在水裡和你交纏在一起。她從來沒有失態過，那一夜卻在你懷裡失態了一次又一次，最後抱著你，用精靈語在你耳邊說了很長的一句話——你聽不懂，但你知道是什麼意思。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -29619,7 +29907,8 @@
                   { "type": "memory", "summary": "你用了一整夜慢慢地愛精靈女王伊瑟蘭迪爾。她說，那是她九百年來最短的一夜。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你沒有急。你用了整整一夜，很慢很慢地愛她，像她有一千年可以等，像你也有。她說凡人總是太匆忙，可是那一夜你一點也不匆忙，慢得她最後忍不住抓著你求你，聲音不再像吟詩，只像一個想要被愛的女人。"
+                "scene": "你沒有急。你用了整整一夜，很慢很慢地愛她，像她有一千年可以等，像你也有。她說凡人總是太匆忙，可是那一夜你一點也不匆忙，慢得她最後忍不住抓著你求你，聲音不再像吟詩，只像一個想要被愛的女人。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -29650,6 +29939,7 @@
           "text": "她熟門熟路地帶你繞過城牆的巡邏，從一條排水溝鑽了出去，笑得停不下來。月光下她跑在你前面，嬌小的身影輕快得像一隻鳥。",
           "at": { "where": "npc", "npc": "npc_anastasia" },
           "requires": { "flags": ["ana_x_start"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "跑到獵人小屋門口，她喘著氣回頭看你：「第二個秘密是——我想要你，已經想很久了。」",
@@ -29723,7 +30013,8 @@
           "success": {
             "text": "天黑的時候，她挽著你的手，在你耳邊說：「接下來的時間，不准談公事。」",
             "set_flags": ["ele_x_date"],
-            "effects": [{ "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 5, "reason": "一起度過的時光" }]
+            "effects": [{ "type": "affinity", "npc": "npc_eleanora_rhine", "delta": 5, "reason": "一起度過的時光" }],
+            "time": { "until": "night" }
           }
         },
         {
@@ -29732,6 +30023,7 @@
           "text": "私室裡沒有一份公文。艾蕾諾拉解開裙子，金髮散在背上，身體因為長年伏案而有點單薄，卻線條分明。她把你拉到床上，第一次露出了不是宰相的表情：「我管了二十年的帝國。今晚，我不想管任何事。」",
           "at": { "where": "npc", "npc": "npc_eleanora_rhine" },
           "requires": { "flags": ["ele_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -29757,7 +30049,8 @@
                   { "type": "memory", "summary": "艾蕾諾拉用處理國事的效率愛了你一整夜，然後說要提前三個月排下一次休假。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "「那妳就用處理國事的效率來。」她笑了，然後真的用處理國事的效率——精準、迅速、有條不紊地把你拆開、吻遍、要了一次又一次。她做什麼都是第一名，這件事也不例外。天亮時她看著窗外，說：「下一次休假，我要提前三個月排。」"
+                "scene": "「那妳就用處理國事的效率來。」她笑了，然後真的用處理國事的效率——精準、迅速、有條不紊地把你拆開、吻遍、要了一次又一次。她做什麼都是第一名，這件事也不例外。天亮時她看著窗外，說：「下一次休假，我要提前三個月排。」",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -29788,6 +30081,7 @@
           "text": "晚宴只有兩個人。莉莎爾坐在長桌的另一頭，緋紅的肌膚在燭光下透亮，金色的豎瞳一直看著你。菜一道一道地上，她一口也沒吃，只是看著你吃。",
           "at": { "where": "npc", "npc": "npc_lisar" },
           "requires": { "flags": ["lisr_x_start"] },
+          "hours": "night",
           "kind": "story",
           "success": {
             "text": "最後一道菜撤下的時候，她站起來，繞過長桌，走到你身邊：「我看夠了。」",
@@ -29826,7 +30120,8 @@
                   { "type": "memory", "summary": "赤翼之君莉莎爾在寢宮裡，用她從沒用過的魅魔技藝要了你一整夜。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "「那就做妳想做的。」她笑了，那是魅魔的笑。她把你壓在帷幔下，用千年來只在書上讀過、從沒用過的魅魔技藝，一點一點地把你逼到崩潰邊緣，又在最後一刻停下來，看著你、吻你、再繼續。直到天亮，你都分不清是她在要你，還是你在要她。"
+                "scene": "「那就做妳想做的。」她笑了，那是魅魔的笑。她把你壓在帷幔下，用千年來只在書上讀過、從沒用過的魅魔技藝，一點一點地把你逼到崩潰邊緣，又在最後一刻停下來，看著你、吻你、再繼續。直到天亮，你都分不清是她在要你，還是你在要她。",
+                "time": { "until": "morning" }
               }
             }
           ]
@@ -29870,6 +30165,7 @@
           "text": "櫻汐解開櫻色廣袖羅裳，珊瑚紅的長髮散在肩上，玉色的鱗尾在燭光下像一條流動的玉河。她把你拉到鋪滿花瓣的床上，咬著你的耳朵說：「宴會的最後一道菜，是我。」",
           "at": { "where": "npc", "npc": "npc_sakurashio" },
           "requires": { "flags": ["sak_x_date"] },
+          "hours": "night",
           "kind": "choice",
           "options": [
             {
@@ -29882,7 +30178,8 @@
                   { "type": "memory", "summary": "潮主櫻汐的私宴上，最後一道菜是她自己。你品嚐了一整夜。", "importance": 3 }
                 ],
                 "complete": true,
-                "scene": "你慢慢地品嚐——從她的唇、她的頸、她的胸口，一路到她鱗尾與肌膚交界的那一圈，那裡敏感得讓她一碰就叫出聲。她在花瓣裡扭動，鱗尾纏著你不放，叫得比任何一場宴會的歌聲都動聽。那一夜，最後一道菜上了很多次。"
+                "scene": "你慢慢地品嚐——從她的唇、她的頸、她的胸口，一路到她鱗尾與肌膚交界的那一圈，那裡敏感得讓她一碰就叫出聲。她在花瓣裡扭動，鱗尾纏著你不放，叫得比任何一場宴會的歌聲都動聽。那一夜，最後一道菜上了很多次。",
+                "time": { "until": "morning" }
               }
             },
             {
@@ -29962,6 +30259,60 @@
             {
               "label": "做成長劍",
               "success": {
+                "text": "迪莉婭把長劍的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_0"]
+              }
+            },
+            {
+              "label": "做成戰鎚",
+              "success": {
+                "text": "迪莉婭把戰鎚的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_1"]
+              }
+            },
+            {
+              "label": "做成巨斧",
+              "success": {
+                "text": "迪莉婭把巨斧的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_2"]
+              }
+            },
+            {
+              "label": "做成細劍",
+              "success": {
+                "text": "迪莉婭把細劍的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_3"]
+              }
+            },
+            {
+              "label": "做成鎚矛",
+              "success": {
+                "text": "迪莉婭把鎚矛的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_4"]
+              }
+            },
+            {
+              "label": "做成護臂",
+              "success": {
+                "text": "迪莉婭把護臂的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_5"]
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_new_design_test"] }
+        },
+        {
+          "id": "collect",
+          "title": "向迪莉婭取回打造好的武器",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_dilia_copperbeard" },
+          "text": "三天過去了。迪莉婭的工作台上蓋著一塊布，她揉著發紅的眼睛等你。",
+          "requires": { "flags": ["gear_new_design_ordered"], "after": { "story": "gear_new_design", "node": "pick", "days": 3 } },
+          "options": [
+            {
+              "label": "取回「無紋」",
+              "requires": { "flags": ["gear_new_design_ordered_0"] },
+              "success": {
                 "text": "三天之後，迪莉婭把「無紋」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
                   { "type": "item", "name": "無紋", "qty": 1 },
@@ -29971,7 +30322,8 @@
               }
             },
             {
-              "label": "做成戰鎚",
+              "label": "取回「穩定器」",
+              "requires": { "flags": ["gear_new_design_ordered_1"] },
               "success": {
                 "text": "三天之後，迪莉婭把「穩定器」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -29982,7 +30334,8 @@
               }
             },
             {
-              "label": "做成巨斧",
+              "label": "取回「第四十三稿」",
+              "requires": { "flags": ["gear_new_design_ordered_2"] },
               "success": {
                 "text": "三天之後，迪莉婭把「第四十三稿」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -29993,7 +30346,8 @@
               }
             },
             {
-              "label": "做成細劍",
+              "label": "取回「無火之針」",
+              "requires": { "flags": ["gear_new_design_ordered_3"] },
               "success": {
                 "text": "三天之後，迪莉婭把「無火之針」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -30004,7 +30358,8 @@
               }
             },
             {
-              "label": "做成鎚矛",
+              "label": "取回「七棱星」",
+              "requires": { "flags": ["gear_new_design_ordered_4"] },
               "success": {
                 "text": "三天之後，迪莉婭把「七棱星」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -30015,7 +30370,8 @@
               }
             },
             {
-              "label": "做成護臂",
+              "label": "取回「拳之設計」",
+              "requires": { "flags": ["gear_new_design_ordered_5"] },
               "success": {
                 "text": "三天之後，迪莉婭把「拳之設計」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -30025,8 +30381,7 @@
                 "complete": true
               }
             }
-          ],
-          "requires": { "flags": ["gear_new_design_test"] }
+          ]
         }
       ],
       "rewards": [{ "type": "money", "amount": 3000 }, { "type": "xp", "amount": 2500 }]
@@ -30049,6 +30404,7 @@
         {
           "id": "field",
           "title": "在鐵爐堡近郊的古戰場擋下重演的亡兵",
+          "hours": "night",
           "kind": "combat",
           "at": { "where": "outskirts", "location": "ironforge" },
           "text": "月亮升起的時候，古戰場上的亡兵一排一排地站了起來，舉起生鏽的劍，喊著兩百年前的口號。「黎明」的碎片在他們腳下的泥裡發著微光。",
@@ -30059,7 +30415,8 @@
           },
           "fail": {
             "text": "你們撐不住，只搶到了四截碎片就退了下來。第二天晚上再去的時候，剩下的兩截被亡兵插在了戰場中央——像是在等你。你拿到了。",
-            "set_flags": ["gear_broken_legend_field"]
+            "set_flags": ["gear_broken_legend_field"],
+            "time": { "hours": 24 }
           },
           "requires": { "flags": ["gear_broken_legend_start"] }
         },
@@ -30218,6 +30575,60 @@
             {
               "label": "做成板甲",
               "success": {
+                "text": "伊格妮絲把板甲的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_0"]
+              }
+            },
+            {
+              "label": "做成鍊甲",
+              "success": {
+                "text": "伊格妮絲把鍊甲的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_1"]
+              }
+            },
+            {
+              "label": "做成皮甲",
+              "success": {
+                "text": "伊格妮絲把皮甲的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_2"]
+              }
+            },
+            {
+              "label": "做成武僧袍",
+              "success": {
+                "text": "伊格妮絲把武僧袍的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_3"]
+              }
+            },
+            {
+              "label": "做成長袍",
+              "success": {
+                "text": "伊格妮絲把長袍的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_4"]
+              }
+            },
+            {
+              "label": "做成樂師皮甲",
+              "success": {
+                "text": "伊格妮絲把樂師皮甲的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_5"]
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_forge_mech_armor_trial"] }
+        },
+        {
+          "id": "collect",
+          "title": "向伊格妮絲取回打造好的機甲",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_ignis_forge" },
+          "text": "一週過去了。工坊的牆上掛著一副還在輕輕轉動關節的機甲，伊格妮絲朝你招手。",
+          "requires": { "flags": ["gear_forge_mech_armor_ordered"], "after": { "story": "gear_forge_mech_armor", "node": "pick", "days": 7 } },
+          "options": [
+            {
+              "label": "取回「半重」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_0"] },
+              "success": {
                 "text": "一週之後，「半重」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
                   { "type": "item", "name": "半重", "qty": 1 },
@@ -30227,7 +30638,8 @@
               }
             },
             {
-              "label": "做成鍊甲",
+              "label": "取回「千環無偏」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_1"] },
               "success": {
                 "text": "一週之後，「千環無偏」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30238,7 +30650,8 @@
               }
             },
             {
-              "label": "做成皮甲",
+              "label": "取回「彈簧之躍」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_2"] },
               "success": {
                 "text": "一週之後，「彈簧之躍」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30249,7 +30662,8 @@
               }
             },
             {
-              "label": "做成武僧袍",
+              "label": "取回「發條一推」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_3"] },
               "success": {
                 "text": "一週之後，「發條一推」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30260,7 +30674,8 @@
               }
             },
             {
-              "label": "做成長袍",
+              "label": "取回「袖中齒輪」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_4"] },
               "success": {
                 "text": "一週之後，「袖中齒輪」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30271,7 +30686,8 @@
               }
             },
             {
-              "label": "做成樂師皮甲",
+              "label": "取回「不修的故障」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_5"] },
               "success": {
                 "text": "一週之後，「不修的故障」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30281,8 +30697,7 @@
                 "complete": true
               }
             }
-          ],
-          "requires": { "flags": ["gear_forge_mech_armor_trial"] }
+          ]
         }
       ],
       "rewards": [{ "type": "money", "amount": 3000 }, { "type": "xp", "amount": 2500 }]
@@ -30315,7 +30730,8 @@
           },
           "fail": {
             "text": "你看了一整夜也看不出來。天亮的時候，瑟爾突然拍了一下桌子：「倒著寫的！」你們都太累了，誰也沒力氣高興。",
-            "set_flags": ["gear_giant_armory_song"]
+            "set_flags": ["gear_giant_armory_song"],
+            "time": { "until": "morning" }
           },
           "requires": { "flags": ["gear_giant_armory_start"] }
         },
@@ -30332,7 +30748,8 @@
           },
           "fail": {
             "text": "你們退出了武庫，巨人魂沒有追出來。瑟爾說牠們只守門，不追人。第二天你們再進去，牠們累了——或者說，三千年第一次有人連續來兩天，牠們也很困惑。你們過去了。",
-            "set_flags": ["gear_giant_armory_guards"]
+            "set_flags": ["gear_giant_armory_guards"],
+            "time": { "hours": 24 }
           },
           "requires": { "flags": ["gear_giant_armory_song"] }
         },
@@ -30460,7 +30877,8 @@
           },
           "fail": {
             "text": "你們被蟲群逼了出來。等到天黑，蟲群睡了，你們才偷偷溜進去。寶庫的門後，那個沒回來的人靠在牆邊，手裡還握著一盞燈。",
-            "set_flags": ["gear_another_treasure_queen"]
+            "set_flags": ["gear_another_treasure_queen"],
+            "time": { "until": "night" }
           },
           "requires": { "flags": ["gear_another_treasure_map"] }
         },
@@ -30549,6 +30967,7 @@
         {
           "id": "sail",
           "title": "在灰港鎮的港口陪哈根船長辨認海圖",
+          "hours": "night",
           "kind": "check",
           "at": { "where": "cell", "location": "ashport", "cell": "gate" },
           "text": "哈根把兩半海圖拼在一起，用手指沿著上面的星位一點一點地摸過去：「我的眼睛不好了。你來看——這顆星，現在是不是還在那裡？」",
@@ -30559,7 +30978,8 @@
           },
           "fail": {
             "text": "你看錯了一顆星，船在外海繞了兩天。第三天早上，哈根突然指著遠處：「桅桿！」——是他用那隻獨眼找到的。",
-            "set_flags": ["gear_last_sea_chart_sail"]
+            "set_flags": ["gear_last_sea_chart_sail"],
+            "time": { "until": "morning", "hours": 48 }
           },
           "requires": { "flags": ["gear_last_sea_chart_start"] }
         },
@@ -30676,7 +31096,8 @@
           },
           "fail": {
             "text": "你們退出了熔爐。等到第二天，傳令者的歌聲變弱了——牠們也受了傷。這一次，你們把牠們趕走了。",
-            "set_flags": ["gear_star_heart_forge_heralds"]
+            "set_flags": ["gear_star_heart_forge_heralds"],
+            "time": { "hours": 24 }
           },
           "requires": { "flags": ["gear_star_heart_forge_start"] }
         },
@@ -31341,7 +31762,8 @@
           "text": "伊蓮娜在黑板上畫了一個圓，又畫了一個箭頭：「媒介。進去。魔力。出來。」她指著圓說，「它。跟我的魔導。一樣。可是它，沒有主人。」她轉過身，「餵它的人。是主人。被它餵的人。是食物。」",
           "success": {
             "text": "你聽懂了：魔導衣一直在「吃」你，所以它把你當成了食物。只要你換一種方式——由你決定什麼時候、用什麼餵它——它就會慢慢地把你當成主人。伊蓮娜點頭：「對。練習。今晚。榮譽洞。」",
-            "set_flags": ["par_lin_feed_theory"]
+            "set_flags": ["par_lin_feed_theory"],
+            "time": { "until": "night" }
           },
           "requires": { "flags": ["par_lin_feed_start"] }
         },
@@ -32175,6 +32597,7 @@
         {
           "id": "shift",
           "title": "在銀鱗旅店值第一個晚班",
+          "hours": "night",
           "kind": "check",
           "at": { "where": "cell", "location": "rivervale", "cell": "lm_silverscale_inn" },
           "text": "傍晚的銀鱗旅店擠滿了冒險者和腳夫。你端著托盤在桌子之間穿梭，短裙每走一步就往上縮一點；每經過一桌，就有一隻手「不小心」擦過你的大腿。",
@@ -32182,7 +32605,8 @@
           "success": {
             "text": "整晚你一滴酒都沒灑，那些手也一隻都沒得逞——至少沒有完全得逞。打烊時圍裙口袋裡塞滿了小費，格蕾塔數了數，抽走了一半。",
             "effects": [{ "type": "money", "amount": 40 }],
-            "set_flags": ["inn_skirt_shift"]
+            "set_flags": ["inn_skirt_shift"],
+            "time": { "hours": 4 }
           },
           "fail": {
             "text": "托盤翻了兩次，屁股被捏了不知道幾次。客人們笑得很開心，小費反而給得更多。格蕾塔一邊擦桌子一邊說：「明天裙子再改短一點。」",
@@ -32260,6 +32684,7 @@
         {
           "id": "under",
           "title": "在紅鬍子那桌的桌子底下",
+          "hours": "night",
           "kind": "check",
           "at": { "where": "cell", "location": "rivervale", "cell": "lm_silverscale_inn" },
           "text": "紅鬍子那桌今晚坐了五個人。你掀起桌布鑽進去的時候，上面傳來一陣口哨聲。桌子底下又暗又悶，五雙靴子、五條褲子，有人已經解開了褲帶。上面的人照樣喝酒、擲骰子、大聲說笑，像是什麼事都沒有。",
@@ -32282,6 +32707,7 @@
         {
           "id": "more",
           "title": "應付要更多的常客",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "rivervale", "cell": "lm_silverscale_inn" },
           "text": "打烊後，紅鬍子把你堵在後門：「桌底下的不夠。今晚加錢，你知道我要什麼。」他身後還站著兩個同伴，正在數錢。格蕾塔在吧台後面擦杯子，頭也沒抬：「後面的倉庫空著。」",
@@ -32296,7 +32722,8 @@
                   { "type": "affinity", "npc": "npc_greta_silverscale", "delta": 5, "reason": "多賺了一筆" }
                 ],
                 "set_flags": ["inn_2_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -32339,6 +32766,7 @@
         {
           "id": "feast",
           "title": "撐過銀鱗旅店的慶功宴",
+          "hours": "night",
           "kind": "check",
           "at": { "where": "cell", "location": "rivervale", "cell": "lm_silverscale_inn" },
           "text": "慶功宴從傍晚開到半夜。你在一桌又一桌的冒險者之間倒酒，短裙早就被掀到腰上，圍裙下面什麼也沒穿——那是他們的要求。隊長拍著桌子：「酒喝夠了！看板娘，上桌！」",
@@ -32358,6 +32786,7 @@
         {
           "id": "prize",
           "title": "應付整間店的客人",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "rivervale", "cell": "lm_silverscale_inn" },
           "text": "整間店的人都在等。格蕾塔把擀麵棍放下，問你：「一個人上，還是我陪你？」",
@@ -32374,7 +32803,8 @@
                   { "type": "memory", "summary": "在銀鱗旅店的慶功宴上，一個人應付了整間店的客人。格蕾塔把看板娘的圍裙給了你。", "importance": 3 }
                 ],
                 "set_flags": ["inn_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -32389,7 +32819,8 @@
                   { "type": "memory", "summary": "在銀鱗旅店的慶功宴上，和老闆娘格蕾塔一起應付了整間店的客人。她把看板娘的圍裙給了你。", "importance": 3 }
                 ],
                 "set_flags": ["inn_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -32605,7 +33036,8 @@
                   { "type": "memory", "summary": "在怪人之塔被希爾德加德用魔法構築的「法師之屌」幹了一整夜。她把記錄讀數的魔導項圈給了你。", "importance": 3 }
                 ],
                 "set_flags": ["odd_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -32620,7 +33052,8 @@
                   { "type": "memory", "summary": "在怪人之塔被希爾德加德用兩根「法師之屌」前後一起幹了一整夜。她把記錄讀數的魔導項圈給了你。", "importance": 3 }
                 ],
                 "set_flags": ["odd_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -32804,6 +33237,7 @@
         {
           "id": "cheat",
           "title": "在大獎之夜揪出出老千的人",
+          "hours": "night",
           "kind": "check",
           "at": { "where": "cell", "location": "albena", "cell": "lm_golden_dice" },
           "text": "賭場擠滿了人，最後一張賭桌上只剩下三個玩家。你端著酒在桌邊走來走去，被每一個人摸了一把。其中一個戴戒指的商人，每次擲骰子之前都會碰一下戒指。",
@@ -32823,6 +33257,7 @@
         {
           "id": "prize",
           "title": "成為今晚的大獎",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "albena", "cell": "lm_golden_dice" },
           "text": "最後一把骰子停了下來。整間賭場歡聲雷動，贏家朝你走來，解著褲帶。維克托站在樓梯上：「規矩是規矩。不過頭牌可以選——跟贏家走，還是歸莊家。」",
@@ -32839,7 +33274,8 @@
                   { "type": "memory", "summary": "在黃金骰子賭場的大獎之夜，被贏家帶走了一整晚。維克托把頭牌兔女郎的制服給了你。", "importance": 3 }
                 ],
                 "set_flags": ["dice_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -32854,7 +33290,8 @@
                   { "type": "memory", "summary": "在黃金骰子賭場的大獎之夜選了莊家，被維克托分享給了貴賓室裡所有的大戶。他把頭牌兔女郎的制服給了你。", "importance": 3 }
                 ],
                 "set_flags": ["dice_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -32884,6 +33321,7 @@
         {
           "id": "dance",
           "title": "在帳環市集跳第一場舞",
+          "hours": "day",
           "kind": "check",
           "at": { "where": "cell", "location": "sandcastle", "cell": "lm_tent_ring_bazaar" },
           "text": "正午的帳環市集，鼓聲響起，你在人群圍成的圈子中央跳舞。薄紗隨著你的轉身飛起來，底下什麼都看得到；金幣叮噹作響，汗水順著你的腰往下流。觀眾越圍越多。",
@@ -33039,6 +33477,7 @@
         {
           "id": "rehearse",
           "title": "和娜希拉練最後一段",
+          "hours": "night",
           "kind": "check",
           "at": { "where": "npc", "npc": "npc_nashira" },
           "text": "月亮升起來了。娜希拉在沙丘上教你夜間表演的最後一段：怎麼一邊扭一邊把客人的手引到自己身上，怎麼跪下去的時候鈴鐺還在響。她從後面貼著你示範，手直接伸進你的薄紗裡，教你哪裡該讓人碰。",
@@ -33058,6 +33497,7 @@
         {
           "id": "audience",
           "title": "跳完夜間表演",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "npc", "npc": "npc_nashira" },
           "text": "沙丘上的大帳篷點了一盞燈，四五個駝商和部落頭人圍坐在毯子上，錢袋堆在中間。娜希拉替你扣上金鈴，問你：「一個人，還是兩個？」",
@@ -33075,7 +33515,8 @@
                   { "type": "memory", "summary": "在沙堡營地的夜間表演上，一個人侍奉了帳篷裡所有的客人。娜希拉把祖傳的金鈴腳鍊給了你。", "importance": 3 }
                 ],
                 "set_flags": ["dance_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -33091,7 +33532,8 @@
                   { "type": "memory", "summary": "在沙堡營地的夜間表演上，和娜希拉一起侍奉了帳篷裡所有的客人。她把祖傳的金鈴腳鍊給了你。", "importance": 3 }
                 ],
                 "set_flags": ["dance_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -33140,6 +33582,7 @@
         {
           "id": "lukas",
           "title": "應付少爺的惡作劇",
+          "hours": "day",
           "kind": "choice",
           "at": { "where": "cell", "location": "rhineburg", "cell": "lm_krause_manor" },
           "text": "下午茶的時候，盧卡斯把你叫進他的房間，翹著腳坐在床上：「上一個為什麼辭職你知道嗎？因為她不肯陪我玩。」他拍了拍身邊的位子，「坐過來。」管家站在門外，什麼都沒說。",
@@ -33294,6 +33737,7 @@
         {
           "id": "night",
           "title": "成年禮的夜晚",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "rhineburg", "cell": "lm_krause_manor" },
           "text": "宴會散了。走廊的兩頭，各有一扇門留著一條縫。左邊是伯爵的寢室，右邊是少爺的房間。管家從你身邊經過：「快一點。兩位都在等。」",
@@ -33310,7 +33754,8 @@
                   { "type": "memory", "summary": "在克勞澤伯爵府，成年禮的夜晚被伯爵叫進寢室幹了一整夜。管家把繡著家紋的女僕裝給了你。", "importance": 3 }
                 ],
                 "set_flags": ["maid_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -33325,7 +33770,8 @@
                   { "type": "memory", "summary": "在克勞澤伯爵府，成年禮的夜晚陪少爺盧卡斯睡了一整夜。管家把繡著家紋的女僕裝給了你。", "importance": 3 }
                 ],
                 "set_flags": ["maid_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -33341,7 +33787,8 @@
                   { "type": "memory", "summary": "在克勞澤伯爵府，成年禮的夜晚同時陪伯爵和少爺睡了一整夜。管家把繡著家紋的女僕裝給了你。", "importance": 3 }
                 ],
                 "set_flags": ["maid_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -33527,6 +33974,7 @@
         {
           "id": "market",
           "title": "穿著網襪走過索里耶爾的商業街",
+          "hours": "day",
           "kind": "check",
           "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
           "text": "正午的商業街擠滿了朝聖者和商販。你只穿著一雙什麼也遮不住的網襪走出來，整條街一下子安靜了，然後炸開了鍋：有人尖叫、有人吹口哨、有人拿著蘋果核丟你，更多的人跟在你後面，越跟越多。",
@@ -33782,6 +34230,7 @@
         {
           "id": "night",
           "title": "在深池撐到天亮",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "tidehaven", "cell": "lm_pearl_bath" },
           "text": "深池的水溫溫的，熟客們圍成一圈，把你圍在中間。珊瑚坐在池邊抽著煙斗：「天亮還早呢。」",
@@ -33798,7 +34247,8 @@
                   { "type": "memory", "summary": "在潮汐港珍珠澡堂的深池裡被熟客們輪流玩到天亮。老闆娘珊瑚把珍珠胸鍊給了你。", "importance": 3 }
                 ],
                 "set_flags": ["bath_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -33813,7 +34263,8 @@
                   { "type": "memory", "summary": "在潮汐港珍珠澡堂的深池裡，趴在池邊一次讓兩個熟客上，撐到天亮。老闆娘珊瑚把珍珠胸鍊給了你。", "importance": 3 }
                 ],
                 "set_flags": ["bath_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -34007,6 +34458,7 @@
         {
           "id": "party",
           "title": "在熔岩溫泉的慶典上撐住",
+          "hours": "night",
           "kind": "check",
           "at": { "where": "cell", "location": "ironforge", "cell": "lm_ironforge_onsen" },
           "text": "整個晚上，你的浴衣被扯開了不知道幾次。你在五十個礦工之間送酒、被摸、被拉進水裡、又被抱上岸。熱氣、酒氣和汗味混在一起，你已經分不清身上的手是誰的。",
@@ -34014,7 +34466,8 @@
           "success": {
             "text": "你撐住了，一邊送酒一邊讓他們摸，一滴酒都沒灑。到了半夜，礦工們不要酒了——他們要你。",
             "scene": "慶典的溫泉池裡，五十個醉醺醺的礦工輪流扯開主角的浴衣，揉捏主角的胸部、屁股，把主角拉進水裡又抱上岸，手指一次次伸進主角的身體。",
-            "set_flags": ["onsen_dawn_party"]
+            "set_flags": ["onsen_dawn_party"],
+            "time": { "hours": 3 }
           },
           "fail": {
             "text": "你撐不住，被一群礦工抬起來丟進了池子中央。浴衣漂走了，你光著身子被一圈礦工圍住。",
@@ -34028,6 +34481,7 @@
         {
           "id": "dawn",
           "title": "和礦工們泡到天亮",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "ironforge", "cell": "lm_ironforge_onsen" },
           "text": "半夜過後，池子裡只剩下最能喝的二十幾個礦工，全都盯著你。葛倫醉倒在池邊，手裡還抱著酒桶，含糊地說：「……撐到天亮……浴衣就是你的……」",
@@ -34044,7 +34498,8 @@
                   { "type": "memory", "summary": "在鐵爐堡熔岩溫泉旅館的礦工慶典上，被醉醺醺的礦工們在池子裡輪流上到天亮。老闆葛倫把那件浴衣給了你。", "importance": 3 }
                 ],
                 "set_flags": ["onsen_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -34059,7 +34514,8 @@
                   { "type": "memory", "summary": "在鐵爐堡熔岩溫泉旅館的礦工慶典上，躺在石床上讓礦工們排隊上到天亮。老闆葛倫把那件浴衣給了你。", "importance": 3 }
                 ],
                 "set_flags": ["onsen_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -34539,11 +34995,13 @@
           "enemies": [["bloodhorn_berserker", 2]],
           "success": {
             "text": "兩個狂戰士倒在沙地上。卡格大笑著拍你的背：「打得好！可是規矩是規矩——今晚的酒宴，你一樣要坐主桌。」",
-            "set_flags": ["horn_feast_bout"]
+            "set_flags": ["horn_feast_bout"],
+            "time": { "until": "night" }
           },
           "fail": {
             "text": "你被打趴在沙地上，一個狂戰士踩著你的背舉起斧頭，全場歡呼。卡格把你拎起來：「輸家。今晚的酒宴，你是菜。」",
-            "set_flags": ["horn_feast_bout"]
+            "set_flags": ["horn_feast_bout"],
+            "time": { "until": "night" }
           },
           "requires": { "flags": ["horn_feast_start"] }
         },
@@ -34625,6 +35083,7 @@
         {
           "id": "serve",
           "title": "服侍今晚的贏家",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "bone_hills", "cell": "tavern" },
           "text": "戈薩把濕布丟開，躺回獸皮上，張開了腿：「贏家不動。戰利品動。」",
@@ -34636,7 +35095,8 @@
                 "scene": "主角跪在獸人戰士戈薩的腿間用嘴服侍他，他按著主角的頭深深頂進喉嚨裡射精，睡一會兒醒來又按著主角再來，一整夜三次。",
                 "effects": [{ "type": "money", "amount": 300 }],
                 "set_flags": ["horn_2_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -34646,7 +35106,8 @@
                 "scene": "主角跨坐在躺著不動的戈薩身上主動擺腰做愛，後來戈薩抓著主角的腰狠狠往下按，一整夜在主角體內射了好幾次。",
                 "effects": [{ "type": "money", "amount": 300 }],
                 "set_flags": ["horn_2_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -34675,6 +35136,7 @@
         {
           "id": "champions",
           "title": "在鮮血試煉場撐過大戰利品之夜",
+          "hours": "night",
           "kind": "combat",
           "at": { "where": "cell", "location": "bone_hills", "cell": "lm_blood_trial_ground" },
           "text": "今晚的試煉場點滿了火把，整個戰團都來了。上場的是戰團最強的勇士，和一個紅了眼的狂戰士。卡格在場邊喊：「贏了你選，輸了我們選！」",
@@ -34692,6 +35154,7 @@
         {
           "id": "choose",
           "title": "選擇當誰的戰利品",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "bone_hills", "cell": "lm_blood_trial_ground" },
           "text": "火把照著試煉場中央，整個戰團圍成一圈，敲著盾牌等你開口。卡格抱著胳膊站在最前面。",
@@ -34722,7 +35185,8 @@
                   { "type": "memory", "summary": "在獸骨荒丘的大戰利品之夜，當了整支血角戰團的戰利品，腰帶上多了幾十道刻痕。", "importance": 2 }
                 ],
                 "set_flags": ["horn_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -34860,7 +35324,8 @@
                 "scene": "主角躺在大床上任由老領主慢條斯理地玩弄：用乾瘦的手指撫摸、舔舐主角的全身，再慢慢地插入主角，一次又一次，一直玩到半夜。",
                 "effects": [{ "type": "money", "amount": 400 }],
                 "set_flags": ["court_2_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "night" }
               }
             }
           ],
@@ -34908,6 +35373,7 @@
         {
           "id": "feast",
           "title": "在出師宴上當主菜",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "bloodplume", "cell": "lm_bed_school" },
           "text": "侍寢見習館的大廳裡擠滿了宮廷的貴客，男的女的都有，全都戴著面具。你一絲不掛地躺在大廳中央的長桌上，身上擺滿了水果和甜點。帶頭的魅魔敲了敲杯子：「主菜上桌。各位，請用。」",
@@ -34923,7 +35389,8 @@
                   { "type": "memory", "summary": "在血羽城堡侍寢見習館的出師宴上當了主菜，被宮廷的貴客們享用到天亮，拿到了侍寢見習的魅魔絲衣。", "importance": 2 }
                 ],
                 "set_flags": ["court_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -34938,7 +35405,8 @@
                   { "type": "memory", "summary": "在血羽城堡侍寢見習館的出師宴上，把整個大廳的貴客伺候了一遍，拿到了侍寢見習的魅魔絲衣。", "importance": 2 }
                 ],
                 "set_flags": ["court_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -35032,7 +35500,7 @@
         "npc": "npc_servion_cult",
         "min_level": 12,
         "pc_body": ["fem", "andro"],
-        "requires": { "flags": ["pyre_1_done"] },
+        "requires": { "flags": ["pyre_1_done"], "after": { "story": "pyre_cleanse", "days": 3 } },
         "text": "瑟維昂在餘燼裂隙的入口等你，身後站著十幾個白袍信徒，每個人的白袍底下都什麼也沒穿。「歡迎，祭品。」他終於不演了，笑容和善得讓人發冷，「獻給魔神之前，祭品要接受每一位信徒的祝福。報酬照付——你是來賺錢的，我們是來獻祭的，大家各取所需。」"
       },
       "start_flags": ["pyre_prelude_start"],
@@ -35068,7 +35536,8 @@
                 "scene": "主角躺在餘燼裂隙入口的黑布上，十幾個白袍信徒一個接一個地插入主角、射在主角體內，主角被要求數著人數，數到十一就數不清了，瑟維昂在主角小腹上畫下記號。",
                 "effects": [{ "type": "money", "amount": 500 }],
                 "set_flags": ["pyre_2_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -35124,6 +35593,7 @@
         {
           "id": "offer",
           "title": "決定獻祭之夜的結局",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "dungeon", "location": "ember_rift", "layer": "deep" },
           "text": "你被放上滾燙的黑石祭壇。瑟維昂脫下白袍，身上的咒文一條條亮起來，眼睛變成了火焰的顏色——化身降臨了。信徒們跪成一圈，等著看祭品被佔有。",
@@ -35155,7 +35625,8 @@
                   { "type": "memory", "summary": "在餘燼裂隙深處的獻祭之夜，反過來騎垮了魔神的化身、接管了儀式，帶走了祭品的血紅頸環。", "importance": 2 }
                 ],
                 "set_flags": ["pyre_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -35286,6 +35757,7 @@
         {
           "id": "line",
           "title": "門外排隊的士兵",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "rhineburg", "cell": "temple" },
           "text": "神父扣好神袍，朝門外點了點頭：「明天開拔的孩子們也有罪要贖。你是巡禮者，替他們贖，比我念一百遍經文還靈。」門開了，第一個士兵已經在解皮帶。",
@@ -35302,7 +35774,8 @@
                   { "type": "memory", "summary": "在萊茵堡的軍中禮拜堂，替明天開拔的一整排士兵「贖罪」到天亮。", "importance": 2 }
                 ],
                 "set_flags": ["conf_2_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -35316,7 +35789,8 @@
                   { "type": "memory", "summary": "在萊茵堡的軍中禮拜堂，被隨軍神父按在祭壇上幹了一整夜。", "importance": 2 }
                 ],
                 "set_flags": ["conf_2_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -35523,6 +35997,7 @@
         {
           "id": "graduation",
           "title": "巡禮的結業",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "rivervale", "cell": "temple" },
           "text": "五個神父把小禮拜堂的門閂上，在祭壇前站成一圈。阿嘉莎把一條繡著五道聖環的黑紗頭巾放在祭壇上：「結業的獎品。怎麼結業，你自己選——我抽三成。」",
@@ -35545,7 +36020,8 @@
                   }
                 ],
                 "set_flags": ["conf_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -35562,7 +36038,8 @@
                   { "type": "memory", "summary": "在河谷鎮的小禮拜堂，把阿嘉莎也拖上祭壇，和她並排被五座城的神父「結業」。她把巡禮者的懺悔頭紗給了你。", "importance": 3 }
                 ],
                 "set_flags": ["conf_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -35579,7 +36056,8 @@
                   { "type": "memory", "summary": "在河谷鎮的小禮拜堂，把阿嘉莎推到五座城的神父面前先挨，自己再上。她的錢袋和巡禮者的懺悔頭紗都歸了你。", "importance": 3 }
                 ],
                 "set_flags": ["conf_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -35633,6 +36111,7 @@
         {
           "id": "seed_test",
           "title": "在苔語村的旅店試種",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "cell", "location": "mosswhisper", "cell": "inn" },
           "text": "瑟芙說檢查還差最後一項：「試種」。旅店的大房間裡，五個村裡的年輕男人已經脫了衣服等著，「看看你一個晚上收得下幾個。收得越多，今年的收成越好。」",
@@ -35644,7 +36123,8 @@
                 "scene": "旅店的大房間裡，主角穿著薄紗躺在草蓆上，五個村裡的年輕男人一個接一個壓上來和主角交合，每個人都射在主角體內，瑟芙在旁邊數數，要主角夾緊不准漏出來。",
                 "effects": [{ "type": "memory", "summary": "在苔語村被選為豐饒祭的外族巫女，通過了長老的身體檢查，一個晚上收下了五個村裡男人的種子。", "importance": 2 }],
                 "set_flags": ["fert_1_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -35654,7 +36134,8 @@
                 "scene": "主角讓五個村裡的男人同時上：一個插在嘴裡、一個從後面插入、兩手各握一根，第五個在主角背上磨蹭，男人們換了好幾輪位置，全都射在主角身上與體內。",
                 "effects": [{ "type": "memory", "summary": "在苔語村被選為豐饒祭的外族巫女，一個晚上同時應付了五個村裡的男人。", "importance": 2 }],
                 "set_flags": ["fert_1_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -35684,6 +36165,7 @@
         {
           "id": "dance",
           "title": "在生命之泉前跳祈願的舞",
+          "hours": "night",
           "kind": "check",
           "at": { "where": "cell", "location": "silvermoon", "cell": "lm_spring_of_life" },
           "text": "泉水邊點滿了月光燈，城裡的精靈男人圍成一圈。你赤著腳、穿著透光的紗衣開始跳，每轉一圈就有一隻手伸進來：揉胸、捏屁股、手指從腿間抹過去，有人把泉水潑在你身上，紗衣黏在皮膚上跟沒穿一樣。",
@@ -35691,7 +36173,8 @@
           "success": {
             "text": "你踩著鼓點一路跳到半夜，被摸遍了也沒亂掉一步。圍觀的精靈把祈願的銀幣丟進泉水裡，嘩啦啦響。",
             "effects": [{ "type": "money", "amount": 120 }],
-            "set_flags": ["fert_dance_dance"]
+            "set_flags": ["fert_dance_dance"],
+            "time": { "hours": 3 }
           },
           "fail": {
             "text": "你被摸得腳步亂了，摔在泉水邊。圍觀的人一擁而上，說是要扶你，扶了很久。",
@@ -35779,6 +36262,7 @@
         {
           "id": "rite",
           "title": "在月輝之母的根上收下種子",
+          "hours": "night",
           "kind": "choice",
           "at": { "where": "outskirts", "location": "silvermoon" },
           "text": "瑟芙站在樹根旁，舉起一束白花：「豐饒祭，開始。」第一個男人已經爬了上來。隊伍長得看不到尾巴，月亮才剛升起。",
@@ -35799,7 +36283,8 @@
                   }
                 ],
                 "set_flags": ["fert_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -35814,7 +36299,8 @@
                   { "type": "memory", "summary": "在銀月城外的祭林，騎在月輝之母的根上一次應付三個男人，當完了豐饒祭的巫女，拿到了豐饒祭的花冠。", "importance": 2 }
                 ],
                 "set_flags": ["fert_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -36020,7 +36506,8 @@
                   { "type": "memory", "summary": "在赤鬃部落的篝火夜被十一個戰士一個一個領走，脖子上串滿了獸牙。", "importance": 2 }
                 ],
                 "set_flags": ["mate_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             },
             {
@@ -36035,7 +36522,8 @@
                   { "type": "memory", "summary": "在赤鬃部落的篝火夜讓整群戰士一起上，皮繩上串了十六顆獸牙。", "importance": 2 }
                 ],
                 "set_flags": ["mate_done"],
-                "complete": true
+                "complete": true,
+                "time": { "until": "morning" }
               }
             }
           ],
@@ -36227,6 +36715,7 @@
         {
           "id": "ebb",
           "title": "走上退潮後露出來的新娘礁",
+          "hours": "night",
           "kind": "story",
           "at": { "where": "outskirts", "location": "coral_bay" },
           "text": "月光下，海水退得遠遠的，露出一大片濕滑的黑色礁石。你赤著腳踩過滿地的海藻和貝殼，走到最遠的那塊平坦礁石上。回頭一看，全鎮的漁夫舉著火把，從岸邊一路排到礁石上，排成一條長長的火龍。",

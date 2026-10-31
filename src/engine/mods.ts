@@ -1167,7 +1167,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown; after?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1223,8 +1223,13 @@ function cond(v: unknown): NpcDef['requires'] {
   const hasWear = Object.keys(wearing).length > 0
   // 主角的身分標籤（至少一個）：只收存在的標籤
   const pcTags = [...new Set((Array.isArray(r.pc_tags) ? r.pc_tags : []).filter((t): t is string => typeof t === 'string' && !!npcTags.tags[t]))]
-  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}) }
+  // 某個特殊任務（或任務點）結束後幾天（1～60 天；任務不存在由 storyCheck 提醒）
+  const ao = r.after && typeof r.after === 'object' ? r.after as { story?: unknown; node?: unknown; days?: unknown } : {}
+  const afterStory = typeof ao.story === 'string' ? ao.story.trim().slice(0, 60) : ''
+  const afterDays = typeof ao.days === 'number' && Number.isFinite(ao.days) ? Math.max(1, Math.min(60, Math.round(ao.days))) : 1
+  const after = afterStory ? { story: afterStory, ...(typeof ao.node === 'string' && ao.node.trim() ? { node: ao.node.trim().slice(0, 40) } : {}), days: afterDays } : undefined
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length || after
+    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}), ...(after ? { after } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }
