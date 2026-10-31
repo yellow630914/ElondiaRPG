@@ -24,6 +24,7 @@ import sys
 sys.path.insert(0, 'worldgen/scripts/elondia')
 import lust_park_s7 as s7  # noqa: E402
 from lust_park_s7 import remove_block, drop_lines  # noqa: E402
+from high_gear31 import DROPS as gear_drops  # noqa: E402
 
 PREFIXES = ('hr_', 'hc_', 'fg_', 'pp_', 'livia_')
 STAMPS = list(s7.STAMPS)
@@ -159,24 +160,21 @@ def mon(i, name, kind, lv, main, wtype, ab, resist, desc, loot, boss=False, evad
 MAT = {'history_rift': '時隙的碎片', 'history_corridor': '凝固的時光', 'forbidden_garden': '禁果的果汁', 'pleasure_palace': '歡愉的鱗光'}
 RARE = {'history_rift': '重演的戰旗殘片', 'history_corridor': '編年的書頁', 'forbidden_garden': '庭園的金蘋果', 'pleasure_palace': '魅魔的初啼'}
 TROPHY = {'history_rift': '不肯結束的號角', 'history_corridor': '那一眼的殘光', 'forbidden_garden': '一顆完整的禁果', 'pleasure_palace': '魅魔之母的心跳'}
-FORGE = {'history_rift': ('精金礦石', '星隕鐵塊'), 'history_corridor': ('精金礦石', '星隕鐵塊'),
-         'forbidden_garden': ('魔織布匹', '星輝絲'), 'pleasure_palace': ('魔織布匹', '星輝絲')}
 TEA, OIL = s7.TEA, s7.OIL
 
 
 def mob_loot(d, lv, top):
-    out = [(MAT[d], 0.6, 2 if top else 1)]
+    out = [(MAT[d], 0.8, 2 if top else 1)]
     if d in ('forbidden_garden', 'pleasure_palace'):
         out.append((TEA if lv % 2 else OIL, 0.12, 1))
     return out
 
 
 def boss_loot(d, layer):
-    """layer：0 淺層、1 中層、2 深層（最終層主）"""
-    common, rare = FORGE[d]
+    """layer：0 淺層、1 中層、2 深層（最終層主）。第 5～7 級的打造材料、專屬底材的裝備與獨特裝備另外接在後面（high_gear31.py 的 DROPS）"""
     if layer < 2:
-        return [(RARE[d], 1, 2 + layer), (MAT[d], 1, 3 + layer), (common, 0.25 + 0.15 * layer, 1)]
-    return [(TROPHY[d], 1, 1), (RARE[d], 1, 3), (common, 1, 1), (rare, 0.08 if d in ('history_rift', 'forbidden_garden') else 0.15, 1)]
+        return [(RARE[d], 1, 2 + layer), (MAT[d], 1, 3 + layer)]
+    return [(TROPHY[d], 1, 1), (RARE[d], 1, 3)]
 
 
 UNDEAD = {"poison": -0.5, "necrotic": -0.25, "radiant": 0.25}
@@ -399,6 +397,11 @@ def park_block(old):
 
 def all_monsters():
     groups = {'history_rift': rift(), 'history_corridor': corridor(), 'forbidden_garden': garden(), 'pleasure_palace': palace()}
+    # 層主的高階打造材料、專屬底材的裝備與獨特裝備（high_gear31.py）
+    drops = gear_drops()
+    for e in [m for g in groups.values() for m in g]:
+        for n, c, q in drops.get(e['id'], []):
+            e['loot'].append({"item": n, "chance": c} if q == 1 else {"item": n, "chance": c, "qty": q})
     return groups, extras()
 
 

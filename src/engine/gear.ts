@@ -46,6 +46,8 @@ export interface BaseDef {
   desc?: string
   /** 束縛用的底材（主人強制裝備的項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡 */
   restraint?: boolean
+  /** 地下城專屬的底材（例如歷史裂縫的錯時刃）：只靠層主掉落取得，不能打造，不會出現在寶箱、商店、建角與 AI 生成的裝備裡（docs/ITEMS.md 第 4.5 節） */
+  exclusive?: boolean
   /** 玩家在世界裡上傳的圖示（data URL，見 itemIcons.ts）；沒有時用內建的底材圖 */
   icon?: string
   /** 服裝（regular 常規、anime 二次元、adult 成人向）：不出現在寶箱與掉落的隨機裝備；裁縫店每天另外上架 */
@@ -84,9 +86,9 @@ export function baseShown(id: string): boolean {
   return !!gearRules.bases[id]
 }
 
-/** 可以打造、隨機生成的底材（不含束縛用的） */
+/** 可以打造、隨機生成的底材（不含束縛用的、地下城專屬的） */
 export function ordinaryBases(): string[] {
-  return Object.entries(gearRules.bases).filter(([id, b]) => !b.restraint && baseShown(id)).map(([id]) => id)
+  return Object.entries(gearRules.bases).filter(([id, b]) => !b.restraint && !b.exclusive && baseShown(id)).map(([id]) => id)
 }
 
 /** 寶箱與掉落的隨機裝備用的底材（再去掉服裝） */
@@ -359,7 +361,7 @@ export function equipped(name: string, spec: GearSpec): EquippedGear {
   return { name, spec }
 }
 
-/** 材料類型裡指定等級的材料（tier 1～5） */
+/** 材料類型裡指定等級的材料（tier 1～7） */
 function materialOf(kind: MaterialKind, tier: number): string {
   const list = Object.entries(gearRules.materials).filter(([, m]) => m.kind === kind)
   // 沒有剛好這一級的材料時，用最接近的（同樣接近時取低的）
@@ -465,7 +467,7 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
       const custom = fromClass.length
         ? [...customGear.bases].filter((id) => {
           const b = gearRules.bases[id]
-          return !!b && !b.restraint && baseFits(b.slot, slot, b) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
+          return !!b && !b.restraint && !b.exclusive && baseFits(b.slot, slot, b) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
         })
         : []
       // 上身另外可以選服裝（不能比職業的護甲類型重：比基尼鎧甲是金屬、皮革緊身衣是皮革）
@@ -478,7 +480,7 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
     }
     // 頭、腿等護具：不能比職業的護甲類型重（布 < 皮革 < 金屬）；飾品不限
     const bases = Object.entries(gearRules.bases)
-      .filter(([id, b]) => !b.restraint && baseShown(id) && baseFits(b.slot, slot, b) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
+      .filter(([id, b]) => !b.restraint && !b.exclusive && baseShown(id) && baseFits(b.slot, slot, b) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
       .map(([id]) => id)
     if (bases.length) out.push({ slot, template: false, bases })
   }
@@ -587,7 +589,8 @@ function rollTier(rng: Rng, kind: MaterialKind, level: number): number {
   const r = rng.next()
   let tier = r < l.top ? top : r < l.top + l.below ? top - 1 : top - 2
   tier = Math.max(1, tier)
-  if (tier === 5 && !rng.chance(l.legendary)) tier = 4
+  // 第 5 級以上是傳說材料：大多降回第 4 級
+  if (tier >= 5 && !rng.chance(l.legendary)) tier = 4
   return tier
 }
 
@@ -759,7 +762,7 @@ export function sanitizeGearSpec(raw: unknown, limits: GearLimits): GearSpec | u
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
   const base = limits.base ?? findBase(r.base ?? r.slot)
   // 束縛用的底材不給 AI 用
-  if (!base || gearRules.bases[base]!.restraint) return undefined
+  if (!base || gearRules.bases[base]!.restraint || gearRules.bases[base]!.exclusive) return undefined
   const kind = gearRules.bases[base]!.kind
   let material = limits.material ?? findMaterial(r.material, kind) ?? materialOf(kind, 1)
   if (gearRules.materials[material]!.level > limits.maxLevel) {
@@ -889,3 +892,6 @@ export function forgeItemFor(kind: MaterialKind, tier: number): string | undefin
 }
 
 export const MATERIAL_KINDS: MaterialKind[] = ['metal', 'leather', 'cloth', 'wood', 'jewel']
+
+/** 材料等級的上限（第 6、7 級只從 Lv.13～20 的地下城取得；打造的工錢、DC 與工藝等級都到這一級） */
+export const MAX_TIER = 7

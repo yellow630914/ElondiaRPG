@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { finishCombat, startCombat } from '@/engine/combat'
-import { dungeonEncounters, enemies, geography, lewdRules, specialMaps, stories } from '@/engine/data'
+import { craftRules, dungeonEncounters, enemies, geography, itemDef, itemRules, lewdRules, specialMaps, stories } from '@/engine/data'
+import { forgeItemFor, gearName, gearRules, MATERIAL_KINDS, MAX_TIER, ordinaryBases, randomBases, randomGear, sanitizeGearSpec } from '@/engine/gear'
+import { craftTarget, parseCraftTarget } from '@/engine/craft'
+import { GEAR_SHOP } from '@/engine/mods'
+import { Rng } from '@/engine/rng'
 import { crossLink, currentArea, currentCell, enterLocation, findKind, generateLayer, layerKey, placeAt, storeArea } from '@/engine/grid'
 import { mimicFor, PARK_LINK } from '@/engine/park'
 import { startJourney } from '@/engine/road'
@@ -179,5 +183,83 @@ describe('緋夢之下與眾歡獨樂', () => {
     const text = story('livia_origin').nodes.find((n) => n.id === 'inscription')!.success!.text!
     expect(text.indexOf('觀者')).toBeLessThan(text.indexOf('歡愉'))
     expect(text.indexOf('歡愉')).toBeLessThan(text.indexOf('歷史'))
+  })
+})
+
+describe('高等地下城的材料與底材', () => {
+  const tierOf = (item: string) => {
+    const m = itemDef(item)?.forge?.materials[0]
+    return m ? { tier: gearRules.materials[m]!.tier, kind: gearRules.materials[m]!.kind } : undefined
+  }
+  const bossesOf = (d: string) => Object.values(dungeonEncounters[d]!.bosses!).map((g) => g![0]![0])
+
+  it('第 6 級只從 Lv.13～16 的層主掉、第 7 級只從 Lv.17～20；非成人向的兩座各自涵蓋五種類型', () => {
+    for (const [d, tier] of [['history_rift', 6], ['forbidden_garden', 6], ['history_corridor', 7], ['pleasure_palace', 7]] as const) {
+      const drops = bossesOf(d).flatMap((b) => (enemies[b]!.loot ?? []).map((l) => ({ ...l, t: tierOf(l.item) }))).filter((l) => l.t && l.t.tier >= 6)
+      expect(drops.every((l) => l.t!.tier === tier), d).toBe(true)
+      expect(drops.every((l) => l.chance >= 0.8), d).toBe(true)
+      if (d.startsWith('history')) expect(new Set(drops.map((l) => l.t!.kind)), d).toEqual(new Set(MATERIAL_KINDS))
+    }
+    // 其他怪物都不掉第 6、7 級
+    const high = new Set(['history_rift', 'forbidden_garden', 'history_corridor', 'pleasure_palace'].flatMap(bossesOf))
+    const others = Object.values(enemies).filter((e) => !high.has(e.id) && (e.loot ?? []).some((l) => (tierOf(l.item)?.tier ?? 0) >= 6))
+    expect(others.map((e) => e.id)).toEqual([])
+    // 每一種第 6、7 級的材料都有打造材料
+    for (const [id, m] of Object.entries(gearRules.materials).filter(([, x]) => x.tier >= 6)) expect(forgeItemFor(m.kind, m.tier), id).toBeTruthy()
+  })
+
+  it('打造延伸到第 7 級：工錢、DC、工藝等級與工具都有第 7 級', () => {
+    expect(MAX_TIER).toBe(7)
+    expect(gearRules.craft.fee.length).toBe(MAX_TIER)
+    expect(gearRules.craft.dc.length).toBe(MAX_TIER)
+    expect(craftRules.max_level).toBe(MAX_TIER)
+    expect(craftRules.tool_tier.length).toBe(MAX_TIER)
+    expect(craftRules.xp_to_next.length).toBe(MAX_TIER - 1)
+    expect(craftRules.shop_levels.capital![1]).toBe(MAX_TIER)
+  })
+
+  it('地下城專屬的底材只靠層主掉落：不在隨機裝備、AI 的清單與制式品裡，也不能打造', () => {
+    const exclusive = Object.entries(gearRules.bases).filter(([, b]) => b.exclusive).map(([id]) => id)
+    expect(exclusive.length).toBe(10)
+    const random = new Set(randomBases())
+    const ordinary = new Set(ordinaryBases())
+    for (const id of exclusive) {
+      expect(random.has(id), id).toBe(false)
+      expect(ordinary.has(id), id).toBe(false)
+      const items = itemRules.items.filter((i) => i.gear?.base === id)
+      expect(items.length, id).toBe(1)
+      const item = items[0]!
+      expect(item.tags ?? [], id).not.toContain(GEAR_SHOP[gearRules.bases[id]!.kind]!)
+      const droppers = Object.values(enemies).filter((e) => (e.loot ?? []).some((l) => l.item === item.name))
+      expect(droppers.length, id).toBe(1)
+      expect(gearRules.materials[item.gear!.material]!.tier, id).toBeGreaterThanOrEqual(6)
+      expect(sanitizeGearSpec({ base: id, material: item.gear!.material }, { maxLevel: 20 }), id).toBeUndefined()
+    }
+    for (const id of exclusive) {
+      const mat = Object.entries(gearRules.materials).find(([, m]) => m.kind === gearRules.bases[id]!.kind && m.tier === 6)![0]
+      expect(() => parseCraftTarget(craftTarget(id, mat)), id).toThrow('不能打造')
+    }
+  })
+
+  it('一般的新底材有七個等級的制式品，第四級以下在商店賣', () => {
+    for (const id of ['greatsword', 'halberd', 'spear', 'crossbow', 'whip', 'tower_shield', 'parrying_dagger', 'grimoire', 'scale_mail']) {
+      const b = gearRules.bases[id]!
+      const mats = Object.entries(gearRules.materials).filter(([, m]) => m.kind === b.kind)
+      expect(mats.length, id).toBe(7)
+      for (const [mid, m] of mats) {
+        const it = itemDef(gearName({ base: id, material: mid }))
+        expect(it?.gear, `${id} ${mid}`).toEqual({ base: id, material: mid })
+        expect((it!.tags ?? []).length > 0, `${id} ${mid}`).toBe(m.tier <= 4)
+      }
+    }
+  })
+
+  it('隨機裝備的第 5 級以上大多降回第 4 級，不會超過角色等級的建議材料', () => {
+    const rng = new Rng(3)
+    const tiers = Array.from({ length: 400 }, () => gearRules.materials[randomGear(rng, 20, ['longsword']).material]!.tier)
+    expect(Math.max(...tiers)).toBeLessThanOrEqual(7)
+    expect(tiers.filter((t) => t >= 5).length / tiers.length).toBeLessThan(0.3)
+    const low = Array.from({ length: 200 }, () => gearRules.materials[randomGear(rng, 16, ['longsword']).material]!.tier)
+    expect(Math.max(...low)).toBeLessThanOrEqual(5)
   })
 })
