@@ -36,7 +36,7 @@ import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Light
 import { bestTool } from './tools'
 import { addHours, advanceTime, commitReport, newReportId, player, withRng } from './state'
 import type { Character, GameState, GameTime, Quest, Report } from './types'
-import { rewardMoney } from './gameRules'
+import { gameRule, rewardMoney } from './gameRules'
 
 export type CellKind =
   | 'floor' | 'wall' | 'water'
@@ -1256,6 +1256,14 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   return commitReport(state, report)
 }
 
+/** 一個採集點採到幾份：存檔規則的採集量，小數的部分是機率 */
+export function gatherQty(state: GameState): number {
+  const mult = gameRule(state, 'gatherMult')
+  const base = Math.floor(mult)
+  const extra = mult - base
+  return Math.max(1, base + (extra > 0 && withRng(state, (rng) => rng.chance(extra)) ? 1 : 0))
+}
+
 function gather(state: GameState, area: Area, item: string): Report {
   const report = eventReport(state, area, 10)
   report.kind = 'action'
@@ -1264,8 +1272,9 @@ function gather(state: GameState, area: Area, item: string): Report {
     report.changes.money_cc = money
     report.outcome = { result: 'success', summary: `在${area.name}找到一些古錢。` }
   } else {
-    report.changes.items_gained = [{ name: item, qty: 1, owner: 'pc' }]
-    report.outcome = { result: 'success', summary: `在${area.name}採集到${item}。` }
+    const qty = gatherQty(state)
+    report.changes.items_gained = [{ name: item, qty, owner: 'pc' }]
+    report.outcome = { result: 'success', summary: `在${area.name}採集到${item}${qty > 1 ? ` ×${qty}` : ''}。` }
   }
   return commitReport(state, report)
 }

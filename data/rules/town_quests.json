@@ -19,10 +19,10 @@
     "per_town": 1,
     "dungeon_quests": 3,
     "dungeon_kinds": { "gather_dungeon": 1, "drop_dungeon": 2, "boss_hunt": 1 },
-    "gather_wild": { "rank": "F", "qty": [3, 5] },
-    "gather_dungeon": { "rank": "E", "layer": "outskirts", "qty": [2, 4] },
-    "drop_wild": { "ranks": ["F", "E"], "qty": [2, 4] },
-    "drop_dungeon": { "ranks": ["F", "A"], "qty": [2, 4] },
+    "gather_wild": { "rank": "F", "qty": [2, 3] },
+    "gather_dungeon": { "rank": "E", "layer": "outskirts", "qty": [1, 3] },
+    "drop_wild": { "ranks": ["F", "E"], "qty": [1, 3] },
+    "drop_dungeon": { "ranks": ["F", "A"], "qty": [1, 3] },
     "boss_hunt": { "ranks": ["F", "A"], "qty": [1, 1], "reward_mult": 1.5 }
   },
   "templates": [

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { economy, enemies, materialQuestRules } from '@/engine/data'
-import { enterLocation, generateLayer, goOutskirts, standOn } from '@/engine/grid'
+import { enterLocation, gatherQty, generateLayer, goOutskirts, standOn } from '@/engine/grid'
+import { gameRule } from '@/engine/gameRules'
 import { advanceBossHunts, canTurnIn, deliverable, rankForLevel, RANK_ORDER, rewardFor, rewardRange } from '@/engine/materialQuests'
 import { locationById } from '@/engine/data'
 import { newGame, withRng } from '@/engine/state'
@@ -87,6 +88,16 @@ describe('material quests', () => {
     for (const k of ['gather_wild', 'drop_wild', 'gather_dungeon', 'drop_dungeon', 'boss_hunt']) expect(seen, k).toContain(k)
   })
 
+  it('gathers as many as the save rule says (default 2, fractions are a chance)', () => {
+    const state = game()
+    expect(gatherQty(state)).toBe(2)
+    state.options = { ...state.options!, gatherMult: 1 }
+    expect(gatherQty(state)).toBe(1)
+    state.options = { ...state.options!, gatherMult: 1.5 }
+    const seen = new Set(Array.from({ length: 40 }, () => gatherQty(state)))
+    expect([...seen].sort()).toEqual([1, 2])
+  })
+
   it('makes sure the outskirts have enough gathering points, and pays more for extra', () => {
     const state = game()
     const q = take(state, (x) => x.kind === 'gather_wild')
@@ -94,7 +105,8 @@ describe('material quests', () => {
     expect(goOutskirts(state)).toBeUndefined()
     const area = state.areas![`${state.location}/outskirts`]!
     const spots = area.cells.filter((c) => c.kind === 'resource' && c.item === q.item).length
-    expect(spots).toBeGreaterThanOrEqual(Math.min(materialQuestRules.max_cells, q.goal))
+    // 每格採到的份數照存檔規則的採集量（預設 2）
+    expect(spots).toBeGreaterThanOrEqual(Math.min(materialQuestRules.max_cells, Math.ceil(q.goal / gameRule(state, 'gatherMult'))))
 
     give(state, q.item!, q.goal - 1)
     expect(canTurnIn(state, q)).toBe(false)

@@ -758,6 +758,8 @@ export interface GameOptions {
   shortRestHours?: number
   longRestHours?: number
   alertDecayDays?: number
+  /** 每個採集點採到幾份（小數是機率） */
+  gatherMult?: number
   /** 戰鬥撤退與地下城緊急撤退的 DC 加減 */
   escapeDc?: number
   /** 黑市每天刷新幾件珍品（獨特裝備） */
