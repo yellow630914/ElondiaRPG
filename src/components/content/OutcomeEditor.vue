@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { geography, npcs as namedNpcs, specialMaps, storyCounters, type StoryOutcome } from '@/engine/data'
 import { travelEvents } from '@/engine/road'
 import { SIDE_MAPS, STORY_EFFECTS, STORY_SCENE_CHARS } from '@/engine/storyMods'
+import { MAX_JUMP_HOURS, TARGET_NAME, timeJumpText, type TimeTarget } from '@/engine/timeOfDay'
 import type { RewardEffect } from '@/engine/effects'
 import EffectsEditor from './EffectsEditor.vue'
 import FlagInput from './FlagInput.vue'
@@ -41,6 +42,7 @@ const summary = computed(() => {
   if (x.leave) parts.push(`${name(x.leave)} 離開`)
   if (x.side_map) parts.push(`進入${travelEvents.side_maps[x.side_map]?.name ?? x.side_map}`)
   if (x.special_map) parts.push(`傳送到${specialMaps[x.special_map]?.name ?? x.special_map}`)
+  if (x.time) parts.push(`🕑 ${timeJumpText(x.time)}`)
   if (x.travel_to) parts.push(`改去${geography.locations.find((l) => l.id === x.travel_to)?.name ?? x.travel_to}`)
   for (const e of x.effects ?? []) parts.push(e.type === 'money' ? `${e.amount > 0 ? '+' : ''}${e.amount} 白鸛` : STORY_EFFECTS[e.type] ?? e.type)
   if (x.complete) parts.push('✅ 完成任務')
@@ -48,6 +50,15 @@ const summary = computed(() => {
   if (x.retry) parts.push('↻ 可以再來')
   return parts.join('；')
 })
+// 結束時把時間往前推：經過幾小時、再推到夜裡或隔天早上（都沒有時拿掉）
+function setTime(patch: { hours?: number; until?: TimeTarget | '' }) {
+  if (!o.value) return
+  const t = { ...o.value.time, ...patch }
+  const hours = Math.min(MAX_JUMP_HOURS, Math.max(0, Math.round(Number(t.hours) || 0)))
+  const next = { ...(hours ? { hours } : {}), ...(t.until ? { until: t.until } : {}) }
+  if (next.hours || next.until) o.value.time = next
+  else delete o.value.time
+}
 const end = computed({
   get: () => (o.value?.complete ? 'complete' : o.value?.fail_quest ? 'fail' : ''),
   set: (v: string) => {
@@ -115,6 +126,14 @@ const end = computed({
         <select v-model="o.travel_to">
           <option :value="undefined">（無）</option>
           <option v-for="l in geography.locations.filter((x) => !props.event || x.type !== 'dungeon')" :key="l.id" :value="l.id">{{ l.name }}</option>
+        </select>
+      </div>
+      <div class="row small">
+        結束時的時間 <Hint text="這件事結束時把時間往前推：先經過幾小時，再推到夜裡（20 點，已經是夜裡時不動）或隔天早上（8 點）。例如夜裡的密會結束後「到隔天早上」，就不會在大白天看到月亮。只往前推；旅途中不調整。" />
+        經過 <input type="number" min="0" :max="MAX_JUMP_HOURS" class="num" :value="o.time?.hours ?? ''" placeholder="0" @change="setTime({ hours: Number(($event.target as HTMLInputElement).value) })" /> 小時，
+        <select :value="o.time?.until ?? ''" @change="setTime({ until: ($event.target as HTMLSelectElement).value as TimeTarget | '' })">
+          <option value="">不調整時段</option>
+          <option v-for="(n, k) in TARGET_NAME" :key="k" :value="k">再{{ n }}</option>
         </select>
       </div>
       <EffectsEditor v-model="o.effects" :types="props.event ? EVENT_EFFECTS : undefined" />

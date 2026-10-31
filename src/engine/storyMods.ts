@@ -19,6 +19,7 @@ import type { GameState } from './types'
 import { travelEvents } from './road'
 import { isTattooPlace, oathError, tattooTemplate } from './tattoos'
 import { mapSize, storySpotProblem } from './specialMapMods'
+import { MAX_JUMP_HOURS } from './timeOfDay'
 
 export interface StoryMod extends StoryDef {
   custom?: boolean
@@ -303,7 +304,20 @@ function outcome(v: unknown): StoryOutcome | undefined {
   if (typeof o.side_map === 'string' && SIDE_MAPS().includes(o.side_map)) out.side_map = o.side_map
   if (typeof o.special_map === 'string' && specialMaps[o.special_map]) out.special_map = o.special_map
   if (isLoc(o.travel_to)) out.travel_to = o.travel_to
+  const time = timeJump(o.time)
+  if (time) out.time = time
   return out
+}
+
+/** 結果的時間：經過的小時（整數，最多十天）與推到夜裡或早上 */
+function timeJump(v: unknown): StoryOutcome['time'] {
+  if (!v || typeof v !== 'object') return undefined
+  const t = v as NonNullable<StoryOutcome['time']>
+  const out: NonNullable<StoryOutcome['time']> = {}
+  const hours = Math.round(Number(t.hours))
+  if (Number.isFinite(hours) && hours > 0) out.hours = Math.min(MAX_JUMP_HOURS, hours)
+  if (t.until === 'night' || t.until === 'morning') out.until = t.until
+  return out.hours || out.until ? out : undefined
 }
 
 /** 臨時地圖的種類（travel_events.json 的 side_maps） */
@@ -354,6 +368,7 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
   const allies = (n.allies ?? []).map((a) => str(a, 60)).filter(Boolean)
   if (allies.length) out.allies = [...new Set(allies)]
   if (n.urgent) out.urgent = true
+  if (n.hours === 'day' || n.hours === 'night') out.hours = n.hours
   if (kind === 'check') out.check = check(n.check) ?? { attr: 'int', dc: 12 }
   if (kind === 'combat') {
     const g = group(n.enemies)

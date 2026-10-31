@@ -20,6 +20,7 @@ import { spawnVisitors } from './population'
 import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
 import { addHours, advanceTime, commitReport, newReportId, withRng } from './state'
+import { applyTimeJump } from './timeOfDay'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
 import { addCounters, condMet, flagKey } from './storyFlags'
 import { gateCheck } from './security'
@@ -430,6 +431,9 @@ export function applyRoadOutcome(state: GameState, report: Report, o: StoryOutco
   // 錢不夠付時扣到 0 為止
   const notes = o.effects?.length ? applyEffects(state, report, affordable(state, o.effects, report)) : []
   if (notes.length) lines.push(notes.join('，') + '。')
+  // 結束時把時間往前推（旅途中不調整）
+  const later = applyTimeJump(state, report, o.time)
+  if (later) lines.push(later)
   queueMove(state, o)
   return lines
 }

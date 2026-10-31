@@ -40,6 +40,10 @@ function setKind(kind: StoryNode['kind']) {
   if (kind === 'choice') node.value.options ??= [{ label: '選項一', success: {} }, { label: '選項二', success: {} }]
   if (kind === 'combat') node.value.enemies ??= [['bandit', 1]]
 }
+function setHours(v: string) {
+  if (v === 'day' || v === 'night') node.value.hours = v
+  else delete node.value.hours
+}
 function setWhere(w: StoryNode['at']['where']) {
   node.value.at = { ...node.value.at, where: w }
   if (w === 'cell') node.value.at.cell ??= 'tavern'
@@ -97,6 +101,13 @@ function toggleCheck(o: StoryOption, on: boolean) {
     <label class="block"><span>事件描述 <Hint text="觸發時看到的，也會交給 AI。" /></span><textarea v-model="node.text" rows="3" maxlength="600" /></label>
     <label class="check"><input type="checkbox" :checked="!!node.urgent" @change="($event.target as HTMLInputElement).checked ? (node.urgent = true) : delete node.urgent" /> 緊急
       <Hint text="走到任務點時要先處理，不能移動或休息。不緊急（預設）：多一個「稍候」，這次先略過、不記日誌，離開這裡之後再來還會遇到。緊急：只能處理或「放棄」，選了任務線就中斷（適合旅途上、臨時地圖裡這種過了就沒有的場面）。" /></label>
+    <label class="check">時段
+      <select :value="node.hours ?? ''" @change="setHours(($event.target as HTMLSelectElement).value)">
+        <option value="">不限</option>
+        <option value="day">只在白天（6～18 點）</option>
+        <option value="night">只在夜裡（18～6 點）</option>
+      </select>
+      <Hint text="時段不對時不算在任務點上：不會跳出來、不擋路，⭐ 照樣在地圖上。站在任務點上時，地點面板會提醒要等，也可以在原地等到那個時段。適合月下、深夜、清晨這類場景。" /></label>
 
     <div class="grid">
       <label>在哪裡
