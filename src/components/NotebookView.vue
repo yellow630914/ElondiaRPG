@@ -11,13 +11,14 @@ import { activeNodes, placeText, storyPaused } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
 import type { Quest } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import BestiaryPanel from './BestiaryPanel.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 
-// 冒險筆記：一般委託、特殊任務（目前的目標與經過）、情報
+// 冒險筆記：一般委託、特殊任務（目前的目標與經過）、情報（買到的與打聽到的傳聞）、怪物圖鑑
 const game = useGame()
 const s = computed(() => game.state!)
-type Tab = 'quests' | 'stories' | 'intel'
+type Tab = 'quests' | 'stories' | 'intel' | 'bestiary'
 const tab = ref<Tab>('quests')
 
 // ---- 一般委託 ----
@@ -70,6 +71,7 @@ const counts = computed(() => ({
       <button :class="{ active: tab === 'quests' }" @click="tab = 'quests'"><GameIcon name="scroll" :size="15" />一般委託 <span v-if="counts.quests" class="tag">{{ counts.quests }}</span></button>
       <button :class="{ active: tab === 'stories' }" @click="tab = 'stories'"><GameIcon name="star" :size="15" />特殊任務 <span v-if="counts.stories" class="tag">{{ counts.stories }}</span></button>
       <button :class="{ active: tab === 'intel' }" @click="tab = 'intel'"><GameIcon name="eye" :size="15" />情報 <span v-if="counts.intel" class="tag">{{ counts.intel }}</span></button>
+      <button :class="{ active: tab === 'bestiary' }" @click="tab = 'bestiary'"><GameIcon name="skull" :size="15" />圖鑑</button>
     </nav>
 
     <template v-if="tab === 'quests'">
@@ -121,18 +123,23 @@ const counts = computed(() => ({
       </div>
     </template>
 
+    <BestiaryPanel v-else-if="tab === 'bestiary'" />
+
     <template v-else>
-      <p v-if="!intel.length" class="muted">還沒有買過情報。情報商賣附近的事件點與特殊任務的消息。</p>
+      <p v-if="!intel.length" class="muted">還沒有情報。情報商賣附近的事件點與特殊任務的消息；向人打聽到的傳聞也記在這裡。</p>
       <div v-for="it in intel" :key="it.id" class="card" :class="it.status">
         <div class="row">
-          <b class="grow"><GameIcon v-if="it.kind === 'story'" name="star" :size="13" /> {{ it.title }}</b>
+          <b class="grow"><GameIcon v-if="it.kind === 'story'" name="star" :size="13" /><GameIcon v-else-if="it.kind === 'rumor'" name="message" :size="13" /> {{ it.title }}</b>
           <span v-if="it.event" class="tag">{{ EVENT[it.event] }}</span>
-          <span class="tag" :class="{ ok: it.status === 'active' }">{{ STATUS[it.status] }}</span>
+          <span v-if="it.kind === 'rumor'" class="tag">傳聞</span>
+          <span v-else class="tag" :class="{ ok: it.status === 'active' }">{{ STATUS[it.status] }}</span>
         </div>
         <p v-if="it.text" class="small">{{ it.text }}</p>
         <div class="small muted">
           <template v-if="it.kind === 'point'">地點：{{ intelPlace(it) }}・第 {{ it.until }} 天前有效・</template>
-          {{ formatTime(it.time) }}{{ it.source ? `在${locationById(it.from).name}解讀「${it.source}」得到` : `在${locationById(it.from).name}的情報商買到` }}
+          <template v-else-if="it.location">地點：{{ locationById(it.location).name }}・</template>
+          <template v-if="it.monster && enemies[it.monster]">怪物：{{ enemies[it.monster]!.name }}・</template>
+          {{ formatTime(it.time) }}{{ it.npc ? `在${locationById(it.from).name}聽${it.npc}說的` : it.source ? `在${locationById(it.from).name}解讀「${it.source}」得到` : `在${locationById(it.from).name}的情報商買到` }}
         </div>
       </div>
     </template>

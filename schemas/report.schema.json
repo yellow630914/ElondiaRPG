@@ -281,7 +281,8 @@
         "reference_degree": { "enum": ["critical", "success", "partial", "fail", "fumble"], "description": "骰值對 DC 算出的參考成功程度；只在與實際結果不同時記錄" },
         "source": { "enum": ["ai", "rules"] },
         "rationale": { "type": "string" },
-        "twist": { "type": "string", "description": "AI 讓結果出乎預料時的說明" }
+        "twist": { "type": "string", "description": "AI 讓結果出乎預料時的說明" },
+        "findings": { "type": "string", "description": "打聽、詢問得到的具體內容（AI 判定）：寫手要讓角色把它說出來" }
       }
     },
     "narration": {

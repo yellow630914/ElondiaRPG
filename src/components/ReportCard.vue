@@ -154,6 +154,8 @@ async function copyPrompt() {
       <template v-if="report.check?.twist"><span class="twist"><GameIcon name="sparkles" :size="13" /> 出乎預料：{{ report.check.twist }}</span><br v-if="report.check?.rationale" /></template>
       <span v-if="report.check?.rationale" class="muted">判定理由：{{ report.check.rationale }}</span>
     </p>
+    <!-- 打聽到的具體內容（AI 判定的 findings）：不用讀完正文也看得到 -->
+    <div v-if="report.check?.findings" class="small findings"><b><GameIcon name="eye" :size="13" /> 得知</b><div>{{ report.check.findings }}</div></div>
     <div v-if="narration?.status === 'streaming' && !showStory" class="small muted"><button class="small" @click="game.cancelNarration(report.report_id)">停止</button></div>
 
     <details v-if="thinking.length" class="thinking small">
@@ -255,6 +257,8 @@ async function copyPrompt() {
 .verdict.fumble { color: #ff6a50; text-shadow: 0 0 8px #ff6a5066; }
 .reason { margin: 0 0 8px; }
 .twist { color: var(--accent-2); }
+.findings { margin: 0 0 8px; padding: 6px 10px; border-left: 2px solid var(--gold-lo); background: #0003; white-space: pre-line; }
+.findings b { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 600; }
 
 .story { margin: 8px 0; }
 .story .err { color: var(--danger); }

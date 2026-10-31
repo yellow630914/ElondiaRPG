@@ -8,6 +8,7 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { noteFight } from './bestiary'
 import { pcTagLustResist } from './pcTags'
 import { fusedWeapon } from './fusion'
 import { settleArena } from './arena'
@@ -2345,6 +2346,9 @@ export function finishCombat(state: GameState): Report {
     },
     lore_keys: [loc.name, regionById(loc.region).name, ...new Set(foes.map((f) => enemies[f.defId!]?.name ?? f.name))],
   }
+  // 怪物圖鑑：在場的怪物記成遭遇、倒下的記一次擊敗
+  const charted = noteFight(state, foes)
+  if (charted.length) report.outcome.summary += `圖鑑新增：${charted.join('、')}。`
   // 玩家自願戰敗：規則照一般戰敗，只告訴寫手主角是主動認輸還是不幸落敗
   if (combat.surrender === 'willing') {
     report.outcome.summary += '你主動放下武器認輸。'

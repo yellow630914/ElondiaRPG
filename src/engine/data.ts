@@ -1475,13 +1475,13 @@ export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 
   | 'master_return' | 'seek_master' | 'unmark' | 'unbind' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore' | 'palace_gate'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
-  | 'release' | 'change_master' | 'gear' | 'join' | 'lewd'
+  | 'release' | 'change_master' | 'gear' | 'join' | 'lewd' | 'rumor'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
   caps: {
     affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
-    item_qty: number; item_qty_bought?: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
+    item_qty: number; item_qty_bought?: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; findings_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
     /** 慾望指標：每項每次 ±這個數 */
     lewd: number
   }

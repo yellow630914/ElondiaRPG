@@ -312,6 +312,10 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
     : report.narration?.mode === 'defeat_event' ? '\n- 戰敗事件的後半段：依主角的反應與成功程度寫出經過' : ''
   const sceneLine = scene ? `\n- 成人場景：${scene}；依 <adult_scene> 的規則在正文中詳細描寫經過` : ''
   const variety = opts.variety ? `\n- 這次的寫法：${opts.variety}` : ''
+  // 打聽、詢問得到的具體內容：要寫進正文，不能只寫「講解了具體情況」
+  const findings = report.check?.findings
+    ? '\n- 報告的 check.findings 是主角這次得知的具體內容：要讓角色在正文裡把它說出來（可以換成角色的口吻、分幾句說，但內容不能少也不能改；不要寫成「講解了具體情況」這類空話）。地名、怪物以 findings 為準，不要另外編'
+    : ''
   const bystanders = report.bystanders?.length
     ? '\n- <bystanders> 是剛好在旁邊的人和他們正在做的事，不是這次事件的參與者：可以當背景帶過一兩筆，讓場景有人在過日子；不要讓他們加入事件或搶戲，也不要替他們做決定'
     : ''
@@ -336,7 +340,7 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
       key: 'request', title: '本次要求', part: 'user',
       text: `本次要求：
 - 視角：${pov}
-- 篇幅：${length}${defeat}${sceneLine}${variety}${bystanders}${continuity.narrationNote}${intent}${focus}
+- 篇幅：${length}${defeat}${sceneLine}${variety}${findings}${bystanders}${continuity.narrationNote}${intent}${focus}
 請依照上述報告寫出這次事件的詳細經過。`,
     },
   ])

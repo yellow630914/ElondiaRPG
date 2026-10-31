@@ -37,6 +37,7 @@ import { currentArea } from './grid'
 import { memberOrResident } from './homes'
 import type { AdultScene } from './content'
 import { applyDefeatResponse } from './defeat'
+import { rumorFrom } from './intel'
 import { applyStoryCheck, refreshStoryMarkers } from './story'
 import { applyPendingMove } from './road'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
@@ -116,6 +117,8 @@ export interface Judgment {
   summary?: string
   /** AI 直接寫出的結果經過（作為報告的敘事） */
   narrative?: string
+  /** 打聽、詢問得到的具體內容（寫手要讓角色把它說出來） */
+  findings?: string
   /** AI 認為這次的經過包含親密場景：場景是什麼 */
   adult_scene?: string
   /** AI 判為日常小事（只有 actions.json 標了 trivial 的行動）：結果至少是成功 */
@@ -245,7 +248,7 @@ type JudgedEffect = RewardEffect['type'] | 'join'
 const EFFECT_OF: Partial<Record<JudgedEffect, EffectKind>> = {
   join: 'join', affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
   money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp', mark: 'mark',
-  free: 'release', change_master: 'change_master', gear: 'gear', lewd: 'lewd',
+  free: 'release', change_master: 'change_master', gear: 'gear', lewd: 'lewd', rumor: 'rumor',
 }
 
 /**
@@ -466,6 +469,14 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         effects.push({ type: 'meet', npc, spot: 'inn', ...(affinity ? { affinity } : {}), ...(str(x.to_player, caps.relationship_text_chars) ? { to_player: str(x.to_player, caps.relationship_text_chars)! } : {}) })
         break
       }
+      case 'rumor': {
+        // 每次最多一則；地點與怪物由程式驗證（intel.ts 的 rumorFrom）
+        if (effects.some((y) => y.type === 'rumor')) break
+        const informant = p.target ? npcRecord(state, p.target)?.name : undefined
+        const rumor = rumorFrom(state, x, degree, informant)
+        if (rumor) effects.push(rumor)
+        break
+      }
       case 'join':
         // 入隊在其他效果之後檢查（同一次判定的親密度變化要算進去）
         joinAsk ??= x
@@ -491,6 +502,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     degree,
     ...(clipText(r.summary, caps.summary_chars) ? { summary: clipText(r.summary, caps.summary_chars) } : {}),
     ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
+    ...(clipText(r.findings, caps.findings_chars) ? { findings: clipText(r.findings, caps.findings_chars) } : {}),
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
     ...(clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
     ...(trivial ? { trivial } : {}),
@@ -588,6 +600,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
     source: judgment ? 'ai' : 'rules',
     ...(judgment?.rationale ? { rationale: judgment.rationale } : {}),
     ...(judgment?.twist ? { twist: judgment.twist } : {}),
+    ...(judgment?.findings ? { findings: judgment.findings } : {}),
   }
   report.check = check
   if (p.spent?.length) report.changes.resources = [...p.spent]

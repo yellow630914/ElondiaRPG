@@ -3,6 +3,7 @@ import type { CombatState } from './combat'
 import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
+import type { BestiaryEntry } from './bestiary'
 import type { Memory, Relationship } from './social'
 
 // 報告型別對應 schemas/report.schema.json，修改時兩邊要同步。
@@ -148,6 +149,8 @@ export interface CheckInfo {
   rationale?: string
   /** AI 讓結果出乎預料時的說明 */
   twist?: string
+  /** 打聽、詢問得到的具體內容（AI 判定的 findings）：寫手要讓角色把它說出來 */
+  findings?: string
 }
 
 export interface Report {
@@ -471,7 +474,8 @@ export interface PendingJoin {
 /** 情報（冒險筆記）：事件點（在近郊或地下城的某一層放一個事件）或特殊任務的消息 */
 export interface Intel {
   id: string
-  kind: 'point' | 'story'
+  /** point：事件點；story：特殊任務的消息；rumor：向人打聽到的傳聞（只有文字，記在情報頁） */
+  kind: 'point' | 'story' | 'rumor'
   title: string
   text: string
   /** 從哪座城鎮的情報商買到、什麼時候 */
@@ -490,6 +494,10 @@ export interface Intel {
   story?: string
   /** 解讀情報物品得到的：物品名稱（沒有時是向情報商買的） */
   source?: string
+  /** 向人打聽到的：告訴主角的人（名字） */
+  npc?: string
+  /** 傳聞提到的怪物（enemies 的 id，點亮圖鑑） */
+  monster?: string
   status: 'active' | 'done' | 'expired'
 }
 
@@ -917,6 +925,8 @@ export interface GameState {
   special?: { back?: { area: string; x: number; y: number }; location: string; visited: string[] }
   /** 冒險筆記的情報 */
   intel?: Intel[]
+  /** 怪物圖鑑：怪物 id → 聽說、遭遇、擊敗（bestiary.ts） */
+  bestiary?: Record<string, BestiaryEntry>
   /** 事件結果要求的移動（進入臨時地圖、改去別的地點），在報告提交之後執行 */
   pendingMove?: { side_map?: string; special_map?: string; travel_to?: string; /** 特殊任務的結果帶進臨時地圖 */ story?: string }
   /** 特殊任務按了「稍候」的任務點：任務點 → 當時的地方（離開那裡之後再來會再觸發） */

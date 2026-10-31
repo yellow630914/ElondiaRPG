@@ -10,7 +10,7 @@
 import { attachParasite, changeCorruption, detachParasite, tameParasite } from './parasites'
 import { tagsAllowed } from './content'
 import { addItem } from './state'
-import { abilities, classAbilities, classes, locationById, masterEventPool, perkDef, slaveryRules, type AbilityDef, type AttrId, type LewdKey, type LockGrade, type MasterEventPool } from './data'
+import { abilities, classAbilities, classes, enemies, locationById, masterEventPool, perkDef, slaveryRules, type AbilityDef, type AttrId, type LewdKey, type LockGrade, type MasterEventPool } from './data'
 import { grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, carryLearned, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
@@ -24,6 +24,7 @@ import { withRng } from './state'
 import { gearKnown, registerGear, syncGear } from './gear'
 import type { Character, GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
+import { hearOf } from './bestiary'
 import { inActiveSquad } from './squads'
 import { joinGroup, queueJoin } from './away'
 import { startStory, storyDef } from './story'
@@ -87,6 +88,11 @@ export type RewardEffect =
   | { type: 'meet'; npc: NpcSpec; affinity?: number; to_player?: string; spot?: string }
   /** 情報：在近郊或地下城的某一層放一個事件點（戰鬥、寶物、流浪商人），記在冒險筆記 */
   | { type: 'intel'; intel: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> }
+  /**
+   * 向人打聽到的傳聞（AI 判定的 rumor，程式驗證過地點與怪物）：記在冒險筆記的情報頁；
+   * point 是驗證過、可以放事件點的傳聞（某處盤踞著某種怪物）；monster 點亮怪物圖鑑
+   */
+  | { type: 'rumor'; title: string; text: string; npc?: string; location?: string; monster?: string; point?: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> }
   /** 開始一個特殊任務（情報商賣的任務消息） */
   | { type: 'start_story'; story: string }
   /** 主人把主角帶回主人的家（主人的事件用） */
@@ -129,7 +135,7 @@ export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
   'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip', 'restrain',
-  'parasite', 'corruption', 'lewd', 'ability_pool',
+  'parasite', 'corruption', 'lewd', 'ability_pool', 'rumor',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -545,6 +551,15 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'intel': {
         const it = addIntel(state, { ...e.intel, kind: 'point' })
         notes.push(`記下情報「${it.title}」`)
+        break
+      }
+      case 'rumor': {
+        const extra = { ...(e.npc ? { npc: e.npc } : {}), ...(e.monster ? { monster: e.monster } : {}) }
+        const it = e.point
+          ? addIntel(state, { ...e.point, title: e.title || e.point.title, text: e.text || e.point.text, kind: 'point', ...extra })
+          : addIntel(state, { kind: 'rumor', title: e.title, text: e.text, ...(e.location ? { location: e.location } : {}), ...extra })
+        notes.push(e.point ? `記下情報「${it.title}」（地圖上會出現事件點）` : `記下傳聞「${it.title}」`)
+        if (e.monster && hearOf(state, e.monster, e.npc)) notes.push(`怪物圖鑑點亮：${enemies[e.monster]?.name ?? e.monster}`)
         break
       }
       case 'start_story': {
