@@ -562,6 +562,13 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     if (e.type === 'perk') for (const id of [e.perk, ...(e.options ?? [])]) if (id && !perkDef(id)) err.push(`效果裡的特質 ${id} 不存在`)
     if (e.type === 'start_story' && e.story === def.id) err.push('效果要開始的是這個任務自己')
   }
+  // 「某個任務（任務點）結束後幾天」：那個任務、任務點要存在
+  const conds = [def.start.requires, ...def.nodes.flatMap((n) => [n.requires, ...(n.options ?? []).map((o) => o.requires)])]
+  for (const a of conds.map((c) => c?.after).filter((x): x is NonNullable<StoryCond['after']> => !!x)) {
+    const target = a.story === def.id ? def : others.find((x) => x.id === a.story)
+    if (!target) err.push(`條件「${a.story} 結束後 ${a.days} 天」的特殊任務不存在`)
+    else if (a.node && !target.nodes.some((n) => n.id === a.node)) err.push(`條件「${target.title}的 ${a.node} 結束後 ${a.days} 天」的任務點不存在`)
+  }
   for (const name of def.start.items ?? []) if (!itemDef(name)) err.push(`接下任務時拿到的物品「${name}」不存在`)
   for (const n of def.nodes) for (const w of n.wear ?? []) {
     if (!itemDef(w) && !gearRules.bases[w]) err.push(`任務點「${n.title}」限定的穿著「${w}」不是物品，也不是裝備底材`)

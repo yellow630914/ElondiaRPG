@@ -8,7 +8,7 @@ import { canTurnIn, isMaterialQuest, layerName, questProgressText } from '@/engi
 import { formatMoney } from '@/engine/money'
 import { examsFirst } from '@/engine/guild'
 import { formatTime } from '@/engine/state'
-import { activeNodes, placeText, storyPaused } from '@/engine/story'
+import { activeNodes, nodesWaitingForDays, placeText, storyPaused } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
 import type { Quest } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -41,8 +41,10 @@ const myStories = computed(() => {
   void s.value.time.minute
   void s.value.flags
   const nodes = activeNodes(s.value)
+  // 只差「幾天之後」的任務點：寫出第幾天以後再來
+  const later = nodesWaitingForDays(s.value)
   return Object.values(s.value.stories ?? {})
-    .map((p) => ({ p, def: stories.find((d) => d.id === p.id), goals: nodes.filter((n) => n.def.id === p.id) }))
+    .map((p) => ({ p, def: stories.find((d) => d.id === p.id), goals: nodes.filter((n) => n.def.id === p.id), later: later.filter((n) => n.def.id === p.id) }))
     .filter((x) => x.def)
     .sort((a, b) => Number(a.p.status !== 'active') - Number(b.p.status !== 'active'))
 })
@@ -99,7 +101,7 @@ const counts = computed(() => ({
 
     <template v-else-if="tab === 'stories'">
       <p v-if="!myStories.length" class="muted">還沒有特殊任務。固定的人物、公會、旅途上的事件或情報商都可能帶來特別的委託。</p>
-      <div v-for="{ p, def, goals } in myStories" :key="p.id" class="card" :class="p.status">
+      <div v-for="{ p, def, goals, later } in myStories" :key="p.id" class="card" :class="p.status">
         <div class="row">
           <span v-if="def!.rank" class="tag">{{ def!.rank }}</span>
           <b class="grow">{{ def!.title }} <ContentTagChips :tags="def!.tags" /></b>
@@ -112,8 +114,9 @@ const counts = computed(() => ({
           <b>目前的目標</b>
           <ul class="plain goals">
             <li v-for="g in goals" :key="g.ref"><GameIcon name="target" :size="12" /> {{ g.node.title }} <span class="muted">（{{ placeText(g.node, s) }}）</span></li>
+            <li v-for="g in later" :key="g.ref" class="muted"><GameIcon name="hourglass" :size="12" /> {{ g.node.title }}（{{ placeText(g.node, s) }}・{{ formatTime(g.from) }} 以後）</li>
             <li v-if="storyPaused(def!)" class="muted">（設定的內容篩選關掉了這個任務的標籤，任務暫停中；重新開啟後接著進行）</li>
-            <li v-else-if="!goals.length" class="muted">（現在沒有可以進行的目標）</li>
+            <li v-else-if="!goals.length && !later.length" class="muted">（現在沒有可以進行的目標）</li>
           </ul>
         </div>
         <FoldMenu class="history" icon="notes" label="經過" :detail="p.log.length ? `最近：${p.log.at(-1)!.text.slice(0, 24)}${p.log.at(-1)!.text.length > 24 ? '…' : ''}` : ''" :badge="p.log.length" :open="p.status === 'active'">

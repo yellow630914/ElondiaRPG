@@ -184,7 +184,14 @@ export interface StoryCond {
   wearing?: WearingCond
   /** 主角至少有其中一個身分標籤（npc_tags.json 的 id；docs/NPC_SYSTEM.md 4.1 節） */
   pc_tags?: string[]
+  /**
+   * 某個特殊任務（或它的某個任務點）結束之後至少過了幾天（docs/STORY_QUESTS.md「幾天之後」）：
+   * 「三天後來取件」「三天後在餘燼裂隙」——時間照常走，玩家這幾天可以做別的事。那個任務還沒結束時不成立
+   */
+  after?: AfterCond
 }
+
+export interface AfterCond { story: string; node?: string; days: number }
 
 /**
  * 主角身上戴著什麼：bind 任何拘束具、bind_kind 這一種拘束具（要有）、locked 別人鎖上的（主人或陷阱）、

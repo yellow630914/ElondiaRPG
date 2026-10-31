@@ -26,11 +26,11 @@ import { presentHere } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { applyTimeJump, dayPartOk, DAY_PART_NAME, hoursUntil } from './timeOfDay'
-import { addCounters, clampCounters, condMet, flagKey } from './storyFlags'
+import { addCounters, afterFrom, clampCounters, condMet, flagKey } from './storyFlags'
 import { tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
-import type { GameState, NpcRecord, Report, StoryProgress } from './types'
+import type { GameState, GameTime, NpcRecord, Report, StoryProgress } from './types'
 
 export function storyDef(id: string): StoryDef | undefined {
   return stories.find((s) => s.id === id)
@@ -172,8 +172,9 @@ function allyNames(state: GameState, node: StoryNode): string {
   return (node.allies ?? []).map((id) => npcRecord(state, id)?.name).filter(Boolean).join('、')
 }
 
-function log(p: StoryProgress, state: GameState, text: string, node?: string) {
-  p.log.push({ time: { ...state.time }, text, ...(node ? { node } : {}) })
+/** 冒險筆記的經過：at 是這件事結束的時間（報告的結束時間，含結果推進的時間；沒有時是現在） */
+function log(p: StoryProgress, state: GameState, text: string, node?: string, at?: GameTime) {
+  p.log.push({ time: { ...(at ?? state.time) }, text, ...(node ? { node } : {}) })
 }
 
 function setFlags(report: Report, names: string[] | undefined, value: boolean) {
@@ -222,6 +223,27 @@ export function activeNodes(state: GameState): ActiveNode[] {
     for (const node of def.nodes) {
       if (p.done.includes(node.id) || !condMet(state, node.requires)) continue
       out.push({ def, node, ref: nodeRef(def.id, node.id) })
+    }
+  }
+  return out
+}
+
+/**
+ * 只差「幾天之後」的任務點（其他條件都成立、時間還沒到）：冒險筆記寫「第幾天以後」，玩家知道什麼時候回來。
+ * from 是開放的時間
+ */
+export function nodesWaitingForDays(state: GameState): (ActiveNode & { from: GameTime })[] {
+  const out: (ActiveNode & { from: GameTime })[] = []
+  for (const p of Object.values(state.stories ?? {})) {
+    if (p.status !== 'active') continue
+    const def = storyDef(p.id)
+    if (!def || storyPaused(def)) continue
+    for (const node of def.nodes) {
+      const after = node.requires?.after
+      if (!after || p.done.includes(node.id) || condMet(state, node.requires)) continue
+      const { after: _, ...rest } = node.requires!
+      const from = afterFrom(state, after)
+      if (from && condMet(state, rest)) out.push({ def, node, ref: nodeRef(def.id, node.id), from })
     }
   }
   return out
@@ -583,7 +605,7 @@ function resolveOutcome(
   if (state.pendingMove?.side_map) state.pendingMove.story = def.id
   if (!outcome.retry) progress.done = [...new Set([...progress.done, node.id])]
   else waitHere(state, nodeRef(def.id, node.id))
-  log(progress, state, `${node.title}${label ? `（${label}）` : ''}：${outcome.text ?? (success ? '完成' : '失敗')}`, node.id)
+  log(progress, state, `${node.title}${label ? `（${label}）` : ''}：${outcome.text ?? (success ? '完成' : '失敗')}`, node.id, report.time.end)
   if (outcome.complete) finishStory(state, report, progress, def, 'completed', lines)
   else if (outcome.fail_quest) finishStory(state, report, progress, def, 'failed', lines)
   return lines
@@ -599,7 +621,8 @@ function leaveGuest(state: GameState, report: Report, progress: StoryProgress, i
 
 function finishStory(state: GameState, report: Report, progress: StoryProgress, def: StoryDef, status: 'completed' | 'failed', lines: string[]) {
   progress.status = status
-  progress.ended = { ...state.time }
+  // 結束的時間是這份報告結束的時候（「結束後幾天」從這裡算）
+  progress.ended = { ...report.time.end }
   report.story = { id: def.id, title: def.title, ...(report.story?.node ? { node: report.story.node } : {}), status }
   if (status === 'completed') report.changes.merit = (report.changes.merit ?? 0) + (def.merit ?? storyMerit())
   if (status === 'completed' && def.rewards?.length) {
@@ -610,7 +633,7 @@ function finishStory(state: GameState, report: Report, progress: StoryProgress, 
     lines.push(status === 'completed' ? `完成特殊任務「${def.title}」。` : `特殊任務「${def.title}」失敗了。`)
   }
   for (const g of [...(progress.guests ?? [])]) leaveGuest(state, report, progress, g, lines)
-  log(progress, state, status === 'completed' ? '任務完成' : '任務失敗')
+  log(progress, state, status === 'completed' ? '任務完成' : '任務失敗', undefined, report.time.end)
   report.outcome.tags = [...new Set([...(report.outcome.tags ?? []), status === 'completed' ? '任務完成' : '任務失敗'])]
 }
 

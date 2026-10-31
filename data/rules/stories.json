@@ -4068,7 +4068,7 @@
         "kind": "guild",
         "location": "rivervale",
         "min_level": 11,
-        "requires": { "flags": ["spr_2_done"] },
+        "requires": { "flags": ["spr_2_done"], "after": { "story": "spirit_upstream", "days": 3 } },
         "text": "奧斯溫親自來公會找你：「河底醒了。」他的手在發抖，「兩百年來在這條河上戰死的士兵，都沉在舊石橋下面。流水之靈一直在安撫他們——現在她撐不住了。」"
       },
       "start_flags": ["spr_deep"],
@@ -8203,7 +8203,7 @@
         "kind": "npc",
         "npc": "npc_morphe",
         "min_level": 11,
-        "requires": { "flags": ["mor_2_done"] },
+        "requires": { "flags": ["mor_2_done"], "after": { "story": "morphe_moth_dust", "days": 3 } },
         "text": "莫菲醒來的時候，滿臉是汗：「我夢見了一條龍。不是誰的夢——是龍自己的夢。」她抓著你的手，「夢境之龍索利安。很多年前，它在迷堂裡出現過一次。那一次，夢裡的每一扇門都開著，只有一扇關著——門邊沒有人。我一直覺得，那扇門缺一個守門人。」她看著你，「我想，那個人是你。」"
       },
       "start_flags": ["mor_dragon"],
@@ -11967,7 +11967,7 @@
         "kind": "npc",
         "npc": "npc_carlos_blacksail",
         "min_level": 8,
-        "requires": { "flags": ["smg_1_done"] },
+        "requires": { "flags": ["smg_1_done"], "after": { "story": "smg_blacksail_cargo", "days": 3 } },
         "text": "卡洛斯風度翩翩地替你拉開椅子：「你截過我的船。我欣賞你。」他把一個用鹽封住的小木箱放在桌上，「這是從骷髏潮島帶回來的。我的人碰過它的，三個都瘋了。我需要一個不會瘋的人，把它送到城外的倉庫。」"
       },
       "start_flags": ["smg_skull"],
@@ -30259,6 +30259,60 @@
             {
               "label": "做成長劍",
               "success": {
+                "text": "迪莉婭把長劍的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_0"]
+              }
+            },
+            {
+              "label": "做成戰鎚",
+              "success": {
+                "text": "迪莉婭把戰鎚的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_1"]
+              }
+            },
+            {
+              "label": "做成巨斧",
+              "success": {
+                "text": "迪莉婭把巨斧的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_2"]
+              }
+            },
+            {
+              "label": "做成細劍",
+              "success": {
+                "text": "迪莉婭把細劍的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_3"]
+              }
+            },
+            {
+              "label": "做成鎚矛",
+              "success": {
+                "text": "迪莉婭把鎚矛的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_4"]
+              }
+            },
+            {
+              "label": "做成護臂",
+              "success": {
+                "text": "迪莉婭把護臂的設計圖釘在牆上，捲起袖子：「三天。三天之後來拿。」",
+                "set_flags": ["gear_new_design_ordered", "gear_new_design_ordered_5"]
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_new_design_test"] }
+        },
+        {
+          "id": "collect",
+          "title": "向迪莉婭取回打造好的武器",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_dilia_copperbeard" },
+          "text": "三天過去了。迪莉婭的工作台上蓋著一塊布，她揉著發紅的眼睛等你。",
+          "requires": { "flags": ["gear_new_design_ordered"], "after": { "story": "gear_new_design", "node": "pick", "days": 3 } },
+          "options": [
+            {
+              "label": "取回「無紋」",
+              "requires": { "flags": ["gear_new_design_ordered_0"] },
+              "success": {
                 "text": "三天之後，迪莉婭把「無紋」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
                   { "type": "item", "name": "無紋", "qty": 1 },
@@ -30268,7 +30322,8 @@
               }
             },
             {
-              "label": "做成戰鎚",
+              "label": "取回「穩定器」",
+              "requires": { "flags": ["gear_new_design_ordered_1"] },
               "success": {
                 "text": "三天之後，迪莉婭把「穩定器」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -30279,7 +30334,8 @@
               }
             },
             {
-              "label": "做成巨斧",
+              "label": "取回「第四十三稿」",
+              "requires": { "flags": ["gear_new_design_ordered_2"] },
               "success": {
                 "text": "三天之後，迪莉婭把「第四十三稿」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -30290,7 +30346,8 @@
               }
             },
             {
-              "label": "做成細劍",
+              "label": "取回「無火之針」",
+              "requires": { "flags": ["gear_new_design_ordered_3"] },
               "success": {
                 "text": "三天之後，迪莉婭把「無火之針」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -30301,7 +30358,8 @@
               }
             },
             {
-              "label": "做成鎚矛",
+              "label": "取回「七棱星」",
+              "requires": { "flags": ["gear_new_design_ordered_4"] },
               "success": {
                 "text": "三天之後，迪莉婭把「七棱星」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -30312,7 +30370,8 @@
               }
             },
             {
-              "label": "做成護臂",
+              "label": "取回「拳之設計」",
+              "requires": { "flags": ["gear_new_design_ordered_5"] },
               "success": {
                 "text": "三天之後，迪莉婭把「拳之設計」交到你手上，眼睛下面是兩圈黑眼圈：「這是無火之鐵的第一件正式作品。它的名字會寫在議會的紀錄上——旁邊是你的名字。」",
                 "effects": [
@@ -30322,8 +30381,7 @@
                 "complete": true
               }
             }
-          ],
-          "requires": { "flags": ["gear_new_design_test"] }
+          ]
         }
       ],
       "rewards": [{ "type": "money", "amount": 3000 }, { "type": "xp", "amount": 2500 }]
@@ -30357,7 +30415,8 @@
           },
           "fail": {
             "text": "你們撐不住，只搶到了四截碎片就退了下來。第二天晚上再去的時候，剩下的兩截被亡兵插在了戰場中央——像是在等你。你拿到了。",
-            "set_flags": ["gear_broken_legend_field"]
+            "set_flags": ["gear_broken_legend_field"],
+            "time": { "hours": 24 }
           },
           "requires": { "flags": ["gear_broken_legend_start"] }
         },
@@ -30516,6 +30575,60 @@
             {
               "label": "做成板甲",
               "success": {
+                "text": "伊格妮絲把板甲的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_0"]
+              }
+            },
+            {
+              "label": "做成鍊甲",
+              "success": {
+                "text": "伊格妮絲把鍊甲的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_1"]
+              }
+            },
+            {
+              "label": "做成皮甲",
+              "success": {
+                "text": "伊格妮絲把皮甲的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_2"]
+              }
+            },
+            {
+              "label": "做成武僧袍",
+              "success": {
+                "text": "伊格妮絲把武僧袍的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_3"]
+              }
+            },
+            {
+              "label": "做成長袍",
+              "success": {
+                "text": "伊格妮絲把長袍的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_4"]
+              }
+            },
+            {
+              "label": "做成樂師皮甲",
+              "success": {
+                "text": "伊格妮絲把樂師皮甲的設計圖攤在機偶旁邊，咬著鉛筆：「一週。一週之後來拿。」",
+                "set_flags": ["gear_forge_mech_armor_ordered", "gear_forge_mech_armor_ordered_5"]
+              }
+            }
+          ],
+          "requires": { "flags": ["gear_forge_mech_armor_trial"] }
+        },
+        {
+          "id": "collect",
+          "title": "向伊格妮絲取回打造好的機甲",
+          "kind": "choice",
+          "at": { "where": "npc", "npc": "npc_ignis_forge" },
+          "text": "一週過去了。工坊的牆上掛著一副還在輕輕轉動關節的機甲，伊格妮絲朝你招手。",
+          "requires": { "flags": ["gear_forge_mech_armor_ordered"], "after": { "story": "gear_forge_mech_armor", "node": "pick", "days": 7 } },
+          "options": [
+            {
+              "label": "取回「半重」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_0"] },
+              "success": {
                 "text": "一週之後，「半重」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
                   { "type": "item", "name": "半重", "qty": 1 },
@@ -30525,7 +30638,8 @@
               }
             },
             {
-              "label": "做成鍊甲",
+              "label": "取回「千環無偏」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_1"] },
               "success": {
                 "text": "一週之後，「千環無偏」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30536,7 +30650,8 @@
               }
             },
             {
-              "label": "做成皮甲",
+              "label": "取回「彈簧之躍」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_2"] },
               "success": {
                 "text": "一週之後，「彈簧之躍」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30547,7 +30662,8 @@
               }
             },
             {
-              "label": "做成武僧袍",
+              "label": "取回「發條一推」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_3"] },
               "success": {
                 "text": "一週之後，「發條一推」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30558,7 +30674,8 @@
               }
             },
             {
-              "label": "做成長袍",
+              "label": "取回「袖中齒輪」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_4"] },
               "success": {
                 "text": "一週之後，「袖中齒輪」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30569,7 +30686,8 @@
               }
             },
             {
-              "label": "做成樂師皮甲",
+              "label": "取回「不修的故障」",
+              "requires": { "flags": ["gear_forge_mech_armor_ordered_5"] },
               "success": {
                 "text": "一週之後，「不修的故障」掛在工坊的牆上，關節還在輕輕地轉。伊格妮絲把它取下來交給你：「它已經記住你的動作了。不要讓別人穿——它會鬧脾氣。」",
                 "effects": [
@@ -30579,8 +30697,7 @@
                 "complete": true
               }
             }
-          ],
-          "requires": { "flags": ["gear_forge_mech_armor_trial"] }
+          ]
         }
       ],
       "rewards": [{ "type": "money", "amount": 3000 }, { "type": "xp", "amount": 2500 }]
@@ -30631,7 +30748,8 @@
           },
           "fail": {
             "text": "你們退出了武庫，巨人魂沒有追出來。瑟爾說牠們只守門，不追人。第二天你們再進去，牠們累了——或者說，三千年第一次有人連續來兩天，牠們也很困惑。你們過去了。",
-            "set_flags": ["gear_giant_armory_guards"]
+            "set_flags": ["gear_giant_armory_guards"],
+            "time": { "hours": 24 }
           },
           "requires": { "flags": ["gear_giant_armory_song"] }
         },
@@ -30860,7 +30978,8 @@
           },
           "fail": {
             "text": "你看錯了一顆星，船在外海繞了兩天。第三天早上，哈根突然指著遠處：「桅桿！」——是他用那隻獨眼找到的。",
-            "set_flags": ["gear_last_sea_chart_sail"]
+            "set_flags": ["gear_last_sea_chart_sail"],
+            "time": { "until": "morning", "hours": 48 }
           },
           "requires": { "flags": ["gear_last_sea_chart_start"] }
         },
@@ -30977,7 +31096,8 @@
           },
           "fail": {
             "text": "你們退出了熔爐。等到第二天，傳令者的歌聲變弱了——牠們也受了傷。這一次，你們把牠們趕走了。",
-            "set_flags": ["gear_star_heart_forge_heralds"]
+            "set_flags": ["gear_star_heart_forge_heralds"],
+            "time": { "hours": 24 }
           },
           "requires": { "flags": ["gear_star_heart_forge_start"] }
         },
@@ -35380,7 +35500,7 @@
         "npc": "npc_servion_cult",
         "min_level": 12,
         "pc_body": ["fem", "andro"],
-        "requires": { "flags": ["pyre_1_done"] },
+        "requires": { "flags": ["pyre_1_done"], "after": { "story": "pyre_cleanse", "days": 3 } },
         "text": "瑟維昂在餘燼裂隙的入口等你，身後站著十幾個白袍信徒，每個人的白袍底下都什麼也沒穿。「歡迎，祭品。」他終於不演了，笑容和善得讓人發冷，「獻給魔神之前，祭品要接受每一位信徒的祝福。報酬照付——你是來賺錢的，我們是來獻祭的，大家各取所需。」"
       },
       "start_flags": ["pyre_prelude_start"],
