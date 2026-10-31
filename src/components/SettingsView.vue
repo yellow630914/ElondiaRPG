@@ -156,6 +156,9 @@ function doReset() {
             <option value="off">關閉</option>
           </select>
         </label>
+        <label v-if="settings.defeatAdult !== 'off'" class="check">
+          <input v-model="settings.defeatAlways" type="checkbox" /> 戰敗色情事件一定發生 <Hint text="不擲「敵人起意」的魅力檢定：戰敗、沒有救兵，而且還站著的敵人裡有會起意的（惡人、發情的怪物……），就一定進入戰敗事件。不死、構裝這類不會起意的敵人照樣不會。" />
+        </label>
       </div>
     </section>
 

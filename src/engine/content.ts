@@ -34,6 +34,17 @@ export function setDefeatAdult(m: DefeatAdultMode) {
   defeatMode = m
 }
 
+/** 戰敗色情事件一定發生：不擲「敵人起意」，有會起意的敵人就觸發 */
+let defeatAlways = false
+
+export function setDefeatAlways(on: boolean) {
+  defeatAlways = on
+}
+
+export function defeatAlwaysOn(): boolean {
+  return defeatAlways
+}
+
 /** 這位主角（體型）現在會不會遇到戰敗色情事件：主角非自願要開著，再看戰敗事件的設定 */
 export function defeatAdultAllowed(body: 'masc' | 'fem' | 'andro'): boolean {
   if (!tagsAllowed(['pc_unwilling']) || defeatMode === 'off') return false

@@ -8,7 +8,7 @@
 // 內容篩選關掉「主角非自願」或戰敗事件的設定關閉時不會發生；已經在等待回應時關閉，可以直接略過。
 
 import { attrOf, mod } from './character'
-import { adultScene, defeatAdultAllowed } from './content'
+import { adultScene, defeatAdultAllowed, defeatAlwaysOn } from './content'
 import { characterBody } from './look'
 import { combatRules, locationById, regionById, type AttrId, type Degree, type DefeatVillain } from './data'
 import { applyEffects, type RewardEffect } from './effects'
@@ -64,19 +64,25 @@ export function rollDefeatEvent(state: GameState, rng: Rng, report: Report, foes
   if (!eligible.length) return false
   const r = rules()
   const pc = pcOf(state)
-  // 刻意不加熟練加值：這不是主角的技能檢定，而是看外表與氣質能不能引起敵人的興趣
-  const dice = withBonus('1d20', mod(attrOf(pc, r.check.attr)))
-  const res = roll(rng, dice)
-  const dc = r.check.dc - climaxDcCut(climaxes)
-  const hit = res.total >= dc
-  const entry: TimelineEntry = {
-    seq: (report.timeline?.length ?? 0) + 1, time: report.time.end, actor: 'pc',
-    // 魅力越高越容易引起敵人的興趣：總值達到 DC 時觸發
-    action: hit ? '倒下之後：魅力引起了敵人的興趣' : '倒下之後：敵人沒有起意（魅力）',
-    roll: { dice, value: res.total, dc }, result: hit ? 'success' : 'fail',
+  const seq = (report.timeline?.length ?? 0) + 1
+  if (defeatAlwaysOn()) {
+    // 設定「一定發生」：不擲骰，有會起意的敵人就觸發
+    report.timeline = [...(report.timeline ?? []), { seq, time: report.time.end, actor: 'pc', action: '倒下之後：敵人起了意（設定：一定發生）', result: 'success' }]
+  } else {
+    // 刻意不加熟練加值：這不是主角的技能檢定，而是看外表與氣質能不能引起敵人的興趣
+    const dice = withBonus('1d20', mod(attrOf(pc, r.check.attr)))
+    const res = roll(rng, dice)
+    const dc = r.check.dc - climaxDcCut(climaxes)
+    const hit = res.total >= dc
+    const entry: TimelineEntry = {
+      seq, time: report.time.end, actor: 'pc',
+      // 魅力越高越容易引起敵人的興趣：總值達到 DC 時觸發
+      action: hit ? '倒下之後：魅力引起了敵人的興趣' : '倒下之後：敵人沒有起意（魅力）',
+      roll: { dice, value: res.total, dc }, result: hit ? 'success' : 'fail',
+    }
+    report.timeline = [...(report.timeline ?? []), entry]
+    if (!hit) return false
   }
-  report.timeline = [...(report.timeline ?? []), entry]
-  if (!hit) return false
   const names = eligible.map((f) => f.name)
   const villain = villainOf(state, eligible)
   const willing = report.outcome.tags?.includes('主動認輸')

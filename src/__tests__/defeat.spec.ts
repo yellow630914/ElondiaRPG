@@ -6,6 +6,7 @@ import { buildActionPrompt } from '@/narrator/judge'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { act, currentActor, finishCombat, startCombat } from '@/engine/combat'
 import { combatRules } from '@/engine/data'
+import { setDefeatAdult, setDefeatAlways } from '@/engine/content'
 import { climaxDcCut, defeatEventFoes, skipDefeatEvent, villainOf } from '@/engine/defeat'
 import { lewdOf } from '@/engine/lewd'
 import { afterCombat, currentArea, goOutskirts } from '@/engine/grid'
@@ -22,6 +23,8 @@ const dc = rules.check.dc
 
 afterEach(() => {
   rules.check.dc = dc
+  setDefeatAlways(false)
+  setDefeatAdult('all')
 })
 
 function game(): GameState {
@@ -120,6 +123,25 @@ describe('defeat event', () => {
     expect(defeatEventFoes(state, [foe(['rut', 'young'])])).toHaveLength(0)
     expect(defeatEventFoes(state, [foe(['huge'])])).toHaveLength(0)
     expect(defeatEventFoes(state, [{ ...foe(['rut']), hp: 0 }])).toHaveLength(0)
+  })
+
+  it('always triggers with the「一定發生」setting, without a charisma roll', () => {
+    rules.check.dc = 999
+    setDefeatAlways(true)
+    const state = game()
+    const r = lose(state)
+    expect(state.pendingDefeat).toBeDefined()
+    const entry = r.timeline!.find((t) => t.action.includes('一定發生'))!
+    expect(entry.result).toBe('success')
+    expect(entry.roll).toBeUndefined()
+    // 還是要有會起意的敵人；戰敗色情事件關閉時也不發生
+    const plain = game()
+    lose(plain, ['merchant'])
+    expect(plain.pendingDefeat).toBeUndefined()
+    setDefeatAdult('off')
+    const off = game()
+    lose(off)
+    expect(off.pendingDefeat).toBeUndefined()
   })
 
   it('can be skipped when the settings no longer allow it', () => {
