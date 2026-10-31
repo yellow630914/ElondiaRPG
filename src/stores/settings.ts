@@ -116,6 +116,8 @@ interface SavedSettings {
   defeatAdult: DefeatAdultMode
   /** 戰敗色情事件一定發生（不擲「敵人起意」） */
   defeatAlways: boolean
+  /** 讀檔、開新遊戲前，先把目前（或還沒繼續）的進度存進自動存檔欄位 */
+  backupBeforeSwitch: boolean
   language: 'zh-Hant' | 'zh-Hans'
   /** 介面語言（畫面上的文字；AI 的輸出語言是 language） */
   uiLanguage: UiLanguage
@@ -166,6 +168,7 @@ function defaults(): SavedSettings {
     contentFilters: { ntr: true, non_virgin: true, pc_unwilling: true, male_partner: true },
     defeatAdult: 'all',
     defeatAlways: false,
+    backupBeforeSwitch: true,
     language: 'zh-Hant',
     uiLanguage: 'zh-Hant',
     loreBudget: 12000,
@@ -237,6 +240,7 @@ export const useSettings = defineStore('settings', () => {
   watch(defeatAdult, setDefeatAdult, { immediate: true })
   const defeatAlways = ref(initial.defeatAlways === true)
   watch(defeatAlways, setDefeatAlways, { immediate: true })
+  const backupBeforeSwitch = ref(initial.backupBeforeSwitch !== false)
   const language = ref(initial.language)
   const uiLanguage = ref(initial.uiLanguage)
   watch(uiLanguage, applyUiLanguage, { immediate: true })
@@ -253,7 +257,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatAlways, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -276,6 +280,7 @@ export const useSettings = defineStore('settings', () => {
         contentFilters: { ...contentFilters.value },
         defeatAdult: defeatAdult.value,
         defeatAlways: defeatAlways.value,
+        backupBeforeSwitch: backupBeforeSwitch.value,
         language: language.value,
         uiLanguage: uiLanguage.value === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant',
         loreBudget: loreBudget.value,
@@ -376,7 +381,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatAlways, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })

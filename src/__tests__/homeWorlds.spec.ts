@@ -5,6 +5,7 @@ import { applyContent, builtinEnemy, emptyMods } from '@/engine/mods'
 import { FORK_NAME, useContent, VANILLA } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
+import { useSettings } from '@/stores/settings'
 import { localStorageStore, preloadCurrent, useCurrentStore, useSlotStore, type CurrentData, type CurrentStore } from '@/stores/saves'
 
 /** 記憶體裡的「進行中的遊戲」 */
@@ -180,6 +181,20 @@ describe('home screen', () => {
     expect(backup.name).toContain('開新遊戲前')
     await next.loadSlot(backup.id)
     expect(next.state!.money_cc).toBe(123)
+  })
+  it('does not back up the game you have not continued when the setting is off', async () => {
+    const g = useGame()
+    g.start('艾倫', 'human', 'fighter')
+    g.editProfile({})
+    await g.flushed()
+    await reload()
+    useSettings().backupBeforeSwitch = false
+    const next = useGame()
+    next.start('貝拉', 'human', 'fighter')
+    await new Promise((r) => setTimeout(r, 20))
+    await next.refreshSlots()
+    expect(next.slots.some((m) => m.kind === 'auto')).toBe(false)
+    expect(next.hasProgress).toBe(true)
   })
 })
 

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { localStorageStore, parseSaveFile, preloadCurrent, QUICK_SLOT, useCurrentStore, useSlotStore, type CurrentData, type CurrentStore } from '@/stores/saves'
 import { useGame } from '@/stores/game'
+import { useSettings } from '@/stores/settings'
 
 describe('save slots', () => {
   beforeEach(() => {
@@ -25,6 +26,17 @@ describe('save slots', () => {
     expect(backup.name).toContain('讀檔前')
     await g.loadSlot(backup.id)
     expect(g.state!.money_cc).toBe(1)
+  })
+
+  it('skips the backup before loading when the setting is off', async () => {
+    const g = useGame()
+    useSettings().backupBeforeSwitch = false
+    g.start('艾倫', 'human', 'fighter')
+    await g.saveToSlot('出發前')
+    g.state!.money_cc = 1
+    await g.loadSlot(g.slots.find((m) => m.name === '出發前')!.id)
+    expect(g.state!.money_cc).toBe(500)
+    expect(g.slots.some((m) => m.kind === 'auto')).toBe(false)
   })
 
   it('quick saves and quick loads', async () => {

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { formatTime } from '@/engine/state'
 import { locationById } from '@/engine/data'
 import { slotTitle, type SlotMeta } from '@/stores/saves'
+import { useSettings } from '@/stores/settings'
 import { useGame, type ImportPreview } from '@/stores/game'
 import NameTag from './NameTag.vue'
 import { download } from './download'
@@ -11,6 +12,7 @@ import Hint from './ui/Hint.vue'
 
 const emit = defineEmits<{ loaded: [] }>()
 const game = useGame()
+const settings = useSettings()
 const newName = ref('')
 const renaming = ref<string | null>(null)
 const renameText = ref('')
@@ -47,10 +49,10 @@ async function overwrite(m: SlotMeta) {
 }
 
 async function load(m: SlotMeta) {
-  if (game.state && !confirm(`讀取「${m.name}」？目前的進度會先自動存一份。`)) return
+  if (game.state && !confirm(`讀取「${m.name}」？${settings.backupBeforeSwitch ? '目前的進度會先自動存一份。' : '目前的進度沒有存的部分會不見（設定裡關掉了讀檔前的備份）。'}`)) return
   // 首頁：還沒繼續的遊戲會被蓋掉
   const cur = game.resumeMeta
-  if (!game.state && cur && !confirm(`讀取「${m.name}」會蓋掉進行中的遊戲（${slotTitle(cur)}）。\n它會先備份到自動存檔欄位，之後可以再讀回來。確定讀取？`)) return
+  if (!game.state && cur && !confirm(`讀取「${m.name}」會蓋掉進行中的遊戲（${slotTitle(cur)}）。\n${settings.backupBeforeSwitch ? '它會先備份到自動存檔欄位，之後可以再讀回來。' : '設定裡關掉了備份，蓋掉之後就找不回來。'}確定讀取？`)) return
   await game.loadSlot(m.id)
   if (game.state) emit('loaded')
 }
@@ -132,7 +134,7 @@ function skipImport() {
         <button class="primary" @click="saveNew"><GameIcon name="save" :size="15" /> 新增存檔</button>
         <button @click="game.quickSave()"><GameIcon name="zap" :size="15" /> 快速存檔</button>
         <button @click="exportSlot()"><GameIcon name="upload" :size="15" /> 匯出目前進度</button>
-        <Hint text="快捷鍵：F8 或 Ctrl+S 快速存檔，F9 快速讀檔。長休、抵達目的地與讀檔前會自動存檔（保留最近 3 份）。" />
+        <Hint text="快捷鍵：F8 或 Ctrl+S 快速存檔，F9 快速讀檔。長休、抵達目的地與讀檔前會自動存檔（保留最近 3 份；讀檔前的那份可以在設定的「存檔」頁關掉）。" />
       </div>
     </section>
 

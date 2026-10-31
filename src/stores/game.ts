@@ -553,11 +553,11 @@ export const useGame = defineStore('game', () => {
     }
   }
 
-  /** 還沒按「繼續」的遊戲要被蓋掉前：先存進自動存檔欄位（不用載入） */
+  /** 還沒按「繼續」的遊戲要被蓋掉前：先存進自動存檔欄位（不用載入）；設定關掉備份時直接放掉 */
   async function backupResume(reason: string) {
     const r = resume.value
     resume.value = null
-    if (!r?.state) return
+    if (!r?.state || !useSettings().backupBeforeSwitch) return
     try {
       await autoSave(reason, { state: JSON.parse(r.state) as GameState, narrations: parseJson(r.narrations) ?? {}, usage: parseJson(r.usage) ?? {} })
     } catch {
@@ -612,12 +612,12 @@ export const useGame = defineStore('game', () => {
     error.value = null
   }
 
-  /** 讀檔：先把目前的進度自動存一份，免得誤讀 */
+  /** 讀檔：先把目前的進度自動存一份，免得誤讀（設定可以關掉） */
   async function loadSlot(id: string) {
     try {
       const data = await slotStore().get(id)
       if (!data) throw new Error('找不到這個存檔')
-      if (state.value) await autoSave('讀檔前')
+      if (state.value && useSettings().backupBeforeSwitch) await autoSave('讀檔前')
       await backupResume('讀檔前')
       applySnapshot(data)
       flash('📂 已讀取存檔')
@@ -740,7 +740,7 @@ export const useGame = defineStore('game', () => {
   function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>, profile: Omit<NewGameOptions, 'name' | 'race' | 'classId' | 'bonus' | 'seed'> = {}, world?: string) {
     const content = useContent()
     if (world !== undefined && world !== content.active) content.switchWorld(world)
-    // 還沒繼續的遊戲會被蓋掉：先備份
+    // 還沒繼續的遊戲會被蓋掉：先備份（設定關掉時不備份）
     void backupResume('開新遊戲前')
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
     state.value.world = { id: content.active, name: content.activeName }
