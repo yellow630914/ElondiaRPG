@@ -6,7 +6,7 @@
 // - 成人向的事件（tags、pc_body、scene）和地下城事件一樣：內容設定關掉的標籤不出現，選項帶 adult_scene 時敘事進入親密場景。
 
 import { snapshot } from './character'
-import { tagsAllowed } from './content'
+import { pcBodyAllowed, tagsAllowed } from './content'
 import { locationById, regionById, shopRules } from './data'
 import { sceneOn } from './dungeonEvents'
 import { currentArea, position, type Area } from './grid'
@@ -43,7 +43,7 @@ export function townCandidates(state: GameState, area: Area, cellKind: string): 
     && (!t.location_types?.length || t.location_types.includes(loc.type))
     && (!t.locations?.length || t.locations.includes(loc.id))
     && tagsAllowed(t.tags)
-    && (!t.pc_body?.length || t.pc_body.includes(body))
+    && pcBodyAllowed(t.pc_body, body)
     && condMet(state, t.requires)
     && (seen[t.id] === undefined || day - seen[t.id]! >= (t.cooldown_days ?? repeat)))
 }

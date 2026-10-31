@@ -6,7 +6,7 @@
 
 import { gameRule } from './gameRules'
 import { attrOf, mod, proficiency, snapshot } from './character'
-import { tagsAllowed } from './content'
+import { pcBodyAllowed, tagsAllowed } from './content'
 import { locationById, regionById } from './data'
 import { currentArea, type Area } from './grid'
 import { characterBody } from './look'
@@ -74,7 +74,7 @@ export function dungeonCandidates(state: GameState, area: Area, trigger: Dungeon
     && (!t.regions?.length || t.regions.includes(loc.region))
     && (!t.layers?.length || t.layers.includes(layer))
     && tagsAllowed(t.tags)
-    && (!t.pc_body?.length || t.pc_body.includes(body))
+    && pcBodyAllowed(t.pc_body, body)
     && condMet(state, t.requires)
     && (seen[t.id] === undefined || day - seen[t.id]! >= (t.cooldown_days ?? repeat)))
 }
