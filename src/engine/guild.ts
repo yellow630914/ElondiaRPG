@@ -123,6 +123,11 @@ export function postExam(state: GameState): Quest | undefined {
 
 export const isExam = (q: Pick<Quest, 'flags'>) => !!q.flags?.exam
 
+/** 委託清單的順序：晉升考核置頂，其他照原本的順序 */
+export function examsFirst<T extends Pick<Quest, 'flags'>>(quests: T[]): T[] {
+  return [...quests.filter(isExam), ...quests.filter((q) => !isExam(q))]
+}
+
 /** 功績寫進狀態（commitReport 時） */
 export function addMerit(state: GameState, n: number) {
   if (!n) return

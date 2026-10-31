@@ -6,6 +6,7 @@ import { enemies, locationById, stories } from '@/engine/data'
 import { expireIntel, intelPlace } from '@/engine/intel'
 import { canTurnIn, isMaterialQuest, layerName, questProgressText } from '@/engine/materialQuests'
 import { formatMoney } from '@/engine/money'
+import { examsFirst } from '@/engine/guild'
 import { formatTime } from '@/engine/state'
 import { activeNodes, placeText, storyPaused } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
@@ -23,7 +24,7 @@ const tab = ref<Tab>('quests')
 
 // ---- 一般委託 ----
 const AREA: Record<Quest['area'], string> = { town: '城內', outskirts: '近郊', dungeon: '冒險區域' }
-const active = computed(() => s.value.quests.filter((q) => q.status === 'accepted' || q.status === 'ready'))
+const active = computed(() => examsFirst(s.value.quests.filter((q) => q.status === 'accepted' || q.status === 'ready')))
 const finished = computed(() => s.value.quests.filter((q) => q.status === 'completed').slice(-20).reverse())
 function where(q: Quest): string {
   if (q.area === 'dungeon') return `${locationById(q.target).name}${q.layer ? `・${layerName(q.layer)}` : ''}`

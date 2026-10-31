@@ -6,7 +6,7 @@ import { defeatLoss, expeditionRules } from '@/engine/expedition'
 import {
   afterCombat, currentArea, currentCell, descend, enterLocation, findKind, generateLayer, layerKey, moveTo, placeAt, retreat, storeArea,
 } from '@/engine/grid'
-import { examQuest, playerRank, promotionStatus } from '@/engine/guild'
+import { examQuest, examsFirst, playerRank, promotionStatus } from '@/engine/guild'
 import { areaLighting, burnStep, currentLight, inDarkness, isDark, layerLighting, sightIn } from '@/engine/light'
 import { advanceBossHunts } from '@/engine/materialQuests'
 import { startJourney } from '@/engine/road'
@@ -167,6 +167,8 @@ describe('guild rank', () => {
     const exam = guildQuests(state).find((x) => x.flags?.exam)!
     expect(exam.rank).toBe('E')
     expect(exam.title).toContain('晉升考核')
+    // 委託板上置頂（考核比其他委託晚發布，排在最後）
+    expect(examsFirst(guildQuests(state))[0]!.id).toBe(exam.id)
     expect(canAcceptRank(state, 'E')).toBe(false)
     acceptQuest(state, exam.id)
     // 委託板更新也不會撤下考核

@@ -10,7 +10,7 @@ import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
 import { canNegotiate } from '@/engine/negotiation'
 import { canAcceptRank, guildQuests, questSpot, questTemplate, templeCost } from '@/engine/town'
-import { examQuest, isExam, promotionStatus } from '@/engine/guild'
+import { examQuest, examsFirst, isExam, promotionStatus } from '@/engine/guild'
 import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, questProgressText, rewardFor } from '@/engine/materialQuests'
 import { bestTool } from '@/engine/tools'
 import type { Quest } from '@/engine/types'
@@ -100,17 +100,17 @@ const quests = ref<Quest[]>([])
 watch(
   () => [cell.value.kind, area.value.key] as const,
   ([kind]) => {
-    if (kind === 'guild') quests.value = game.visitGuild()
+    if (kind === 'guild') quests.value = examsFirst(game.visitGuild())
   },
   { immediate: true },
 )
 function refreshQuests() {
-  quests.value = guildQuests(s.value)
+  quests.value = examsFirst(guildQuests(s.value))
 }
 
 const promo = computed(() => promotionStatus(s.value))
 const exam = computed(() => examQuest(s.value))
-const activeQuests = computed(() => s.value.quests.filter((q) => q.status === 'accepted' || q.status === 'ready'))
+const activeQuests = computed(() => examsFirst(s.value.quests.filter((q) => q.status === 'accepted' || q.status === 'ready')))
 // 材料委託可以過量交付：選要交幾份（預設全部）
 const turnInQty = ref<Record<string, number>>({})
 function turnIn(q: Quest) {
