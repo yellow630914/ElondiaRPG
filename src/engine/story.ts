@@ -27,7 +27,7 @@ import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { applyTimeJump, dayPartOk, DAY_PART_NAME, hoursUntil } from './timeOfDay'
 import { addCounters, afterFrom, clampCounters, condMet, flagKey } from './storyFlags'
-import { tagsAllowed } from './content'
+import { pcBodyAllowed, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
 import type { GameState, GameTime, NpcRecord, Report, StoryProgress } from './types'
@@ -67,7 +67,7 @@ export function storyRankOk(state: GameState, def: Pick<StoryDef, 'rank'>): bool
 export function canStart(state: GameState, def: StoryDef): boolean {
   if (state.stories?.[def.id]) return false
   if (!tagsAllowed(def.tags)) return false
-  if (def.start.pc_body?.length && !def.start.pc_body.includes(characterBody(pcOf(state)))) return false
+  if (!pcBodyAllowed(def.start.pc_body, characterBody(pcOf(state)))) return false
   if (!storyRankOk(state, def)) return false
   if (def.start.min_level && pcOf(state).level < def.start.min_level) return false
   if (def.start.kind === 'npc' && def.start.npc && def.start.min_affinity !== undefined

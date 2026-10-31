@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, type DefeatAdultMode, type FilterTag } from '@/engine/content'
+import { setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, setMascBodyContent, type DefeatAdultMode, type FilterTag } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { setLongRestGap } from '@/engine/rest'
@@ -116,6 +116,8 @@ interface SavedSettings {
   defeatAdult: DefeatAdultMode
   /** 隊友的戰敗色情事件（主角不會遇到時改由隊友遇到）：全部的隊友、男性形象的隊友不發生、關閉 */
   defeatCompanion: DefeatAdultMode
+  /** 陽剛體型也能遇到「只給陰柔、中性」的成人內容（預設關） */
+  mascBodyContent: boolean
   /** 戰敗色情事件一定發生（不擲「敵人起意」） */
   defeatAlways: boolean
   /** 讀檔、開新遊戲前，先把目前（或還沒繼續）的進度存進自動存檔欄位 */
@@ -170,6 +172,7 @@ function defaults(): SavedSettings {
     contentFilters: { ntr: true, non_virgin: true, pc_unwilling: true, male_partner: true },
     defeatAdult: 'all',
     defeatCompanion: 'not_masc',
+    mascBodyContent: false,
     defeatAlways: false,
     backupBeforeSwitch: true,
     language: 'zh-Hant',
@@ -244,6 +247,8 @@ export const useSettings = defineStore('settings', () => {
   watch(defeatAdult, setDefeatAdult, { immediate: true })
   const defeatCompanion = ref(initial.defeatCompanion)
   watch(defeatCompanion, setDefeatCompanion, { immediate: true })
+  const mascBodyContent = ref(initial.mascBodyContent === true)
+  watch(mascBodyContent, setMascBodyContent, { immediate: true })
   const defeatAlways = ref(initial.defeatAlways === true)
   watch(defeatAlways, setDefeatAlways, { immediate: true })
   const backupBeforeSwitch = ref(initial.backupBeforeSwitch !== false)
@@ -263,7 +268,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -286,6 +291,7 @@ export const useSettings = defineStore('settings', () => {
         contentFilters: { ...contentFilters.value },
         defeatAdult: defeatAdult.value,
         defeatCompanion: defeatCompanion.value,
+        mascBodyContent: mascBodyContent.value,
         defeatAlways: defeatAlways.value,
         backupBeforeSwitch: backupBeforeSwitch.value,
         language: language.value,
@@ -388,7 +394,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })
