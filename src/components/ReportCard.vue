@@ -9,6 +9,7 @@ import type { Report } from '@/engine/types'
 import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
 import { visibleNarration } from '@/narrator/judge'
 import { usageFeatureName, usageSourceLabel, useGame } from '@/stores/game'
+import { undoConfirmText } from '@/stores/undo'
 import { inventedIn } from '@/engine/invention'
 import { useSettings } from '@/stores/settings'
 import { useImageSettings } from '@/stores/image'
@@ -21,6 +22,15 @@ import type { IconName } from './ui/iconPaths'
 const props = defineProps<{ report: Report }>()
 const game = useGame()
 const settings = useSettings()
+
+// 回退（stores/undo.ts）：最近幾輪的日誌可以撤銷，連同之後的日誌
+const undoSteps = computed(() => {
+  const i = game.undoReports.indexOf(props.report.report_id)
+  return i < 0 ? 0 : game.undoReports.length - i
+})
+function undoHere() {
+  if (confirm(undoConfirmText(undoSteps.value))) game.undo(props.report.report_id)
+}
 
 const KIND: Record<Report['kind'], { name: string; icon: IconName }> = {
   travel: { name: '旅行', icon: 'road' }, combat: { name: '戰鬥', icon: 'sword' }, action: { name: '行動', icon: 'd20' },
@@ -133,6 +143,7 @@ async function copyPrompt() {
         <div class="menu-list">
           <button class="small ghost" @click="copyPrompt"><GameIcon name="copy" :size="14" /> {{ copied ? '已複製' : '複製提示詞' }}</button>
           <button class="small ghost" @click="showRaw = !showRaw"><GameIcon name="code" :size="14" /> {{ showRaw ? '隱藏' : '顯示' }}報告 JSON</button>
+          <button v-if="undoSteps" class="small ghost" :disabled="game.judging" @click="undoHere"><GameIcon name="undo" :size="14" /> 回退到這則之前（{{ undoSteps }} 步）</button>
         </div>
       </details>
     </header>
