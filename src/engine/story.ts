@@ -30,6 +30,7 @@ import { addCounters, afterFrom, clampCounters, condMet, flagKey } from './story
 import { tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
+import { restEventBlock } from './rest'
 import type { GameState, GameTime, NpcRecord, Report, StoryProgress } from './types'
 
 export function storyDef(id: string): StoryDef | undefined {
@@ -256,9 +257,9 @@ export function nodeIsHere(state: GameState, n: ActiveNode): boolean {
   return nodeIsHereAnyTime(state, n)
 }
 
-/** 任務點的時段；旅途上的任務點不看時段（旅途不能停下來等，限定時段可能永遠遇不到） */
+/** 任務點的時段；旅途上與臨時地圖裡的任務點不看時段（旅途不能停下來等、離開臨時地圖等於放棄，限定時段可能永遠遇不到） */
 export function nodeHours(node: Pick<StoryNode, 'hours' | 'at'>): StoryNode['hours'] {
-  return node.at.where === 'road' ? undefined : node.hours
+  return node.at.where === 'road' || node.at.where === 'side' ? undefined : node.hours
 }
 
 /** 主角在不在任務點上（不看時段） */
@@ -299,6 +300,9 @@ export function waitForNode(state: GameState, ref: string): Report {
   if (dayPartOk(state.time, part)) throw new Error('現在就可以進行')
   if (!nodeIsHereAnyTime(state, n)) throw new Error('要在任務點才能等')
   if (state.road) throw new Error('旅途中沒辦法停下來等')
+  // 和休息一樣：俘虜、對峙、事件……要先處理
+  const blocked = restEventBlock(state)
+  if (blocked) throw new Error(blocked)
   const hours = hoursUntil(state.time, part === 'night' ? 'night' : 'morning')
   const report = storyReport(state, n.def, 'progress', hours, n.node)
   const name = DAY_PART_NAME[part]
