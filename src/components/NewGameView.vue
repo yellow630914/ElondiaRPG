@@ -191,7 +191,8 @@ function slaveStart(): SlaveStart | undefined {
 function start() {
   // 進行中的遊戲會被蓋掉：提醒（會先備份到自動存檔欄位）
   const cur = game.resumeMeta
-  if (cur && !confirm(`進行中的遊戲（${slotTitle(cur)}）會被新的冒險蓋掉。\n它會先備份到自動存檔欄位，之後可以從「讀取存檔」找回。確定開新遊戲？`)) return
+  const backup = settings.backupBeforeSwitch ? '它會先備份到自動存檔欄位，之後可以從「讀取存檔」找回。' : '設定裡關掉了備份，蓋掉之後就找不回來。'
+  if (cur && !confirm(`進行中的遊戲（${slotTitle(cur)}）會被新的冒險蓋掉。\n${backup}確定開新遊戲？`)) return
   if (gearOver.value) {
     game.error = `起始裝備超過預算（${gearSpent.value}／${gearBudget.value} 點）`
     return

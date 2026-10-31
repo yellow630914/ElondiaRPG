@@ -3,14 +3,15 @@
 exports[`world editor round trip > stories: opening and saving without changes keeps the data 1`] = `
 {
   "dawn_throne_ambush": "63aefc20ca09",
-  "echo_seal_log": "a41b4b95da6e",
-  "group_rulers_tea": "04779a99e7a2",
-  "inn_skirt": "ea069b88c091",
-  "isadora_elope": "3dc6a48a0920",
-  "par_lin_feed": "6352a0171978",
+  "group_rulers_tea": "7db688232ab9",
+  "inn_skirt": "9fb626bf5301",
+  "isadora_elope": "bb21664d0da8",
+  "par_lin_feed": "b7fa76724310",
   "par_mark_find": "ea77353b4339",
   "par_mark_help": "8469547e72f1",
   "serena_councillor": "509fad75f151",
+  "smuggler_ledger": "6d61ef3334f7",
+  "spirit_drowned": "8172db3d83de",
   "vsec_after_hours": "732c8e8874c0",
 }
 `;

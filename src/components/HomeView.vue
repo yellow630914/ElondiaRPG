@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { locationById } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import { useContent } from '@/stores/content'
+import { useSettings } from '@/stores/settings'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import GameIcon from './ui/GameIcon.vue'
@@ -11,6 +12,7 @@ import CreditsDialog from './home/CreditsDialog.vue'
 // 首頁：繼續（有進行中的遊戲時）、開新遊戲、讀取存檔、世界管理、提示詞管理
 const emit = defineEmits<{ new: []; load: []; worlds: []; prompts: []; settings: [] }>()
 const game = useGame()
+const settings = useSettings()
 const content = useContent()
 const prompts = usePrompts()
 const cur = computed(() => game.resumeMeta)
@@ -50,7 +52,7 @@ const place = (id: string) => {
       <button class="big" @click="emit('settings')"><GameIcon name="settings" :size="22" /><span>設定</span></button>
     </div>
 
-    <p v-if="cur" class="small muted">進行中的遊戲會一直自動保存。開新遊戲或讀取存檔會蓋掉它（蓋掉前會先備份到自動存檔欄位）。</p>
+    <p v-if="cur" class="small muted">進行中的遊戲會一直自動保存。開新遊戲或讀取存檔會蓋掉它（{{ settings.backupBeforeSwitch ? '蓋掉前會先備份到自動存檔欄位' : '設定裡關掉了備份，蓋掉就找不回來' }}）。</p>
     <button class="link credits" @click="showCredits = true"><GameIcon name="info" :size="14" /> 素材授權與致謝</button>
     <CreditsDialog :open="showCredits" @close="showCredits = false" />
     <!-- 成人向內容一律存在（沒有開關），首頁角落提示年齡 -->

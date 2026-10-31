@@ -380,6 +380,8 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
   const adj = actionRules.dc_adjust
   const sit = situationalTotal(p)
   const pc = state.party.find((m) => m.isPlayer)!
+  // 隊友的戰敗事件：被圍住的那位隊友
+  const defeatMate = p.kind === 'defeat_event' && p.actor ? state.party.find((m) => m.id === p.actor) : undefined
   const totals = ATTR_IDS.map((a) => `${a}（${attrName(a)}）：${p.natural} ${signed(p.modifiers[a])}${sit ? ` ${signed(sit)}` : ''} = ${p.natural + p.modifiers[a] + sit}`).join('\n')
   const outcomes = (Object.keys(DEGREE_NAME) as (keyof typeof DEGREE_NAME)[])
     .filter((d) => p.outcomes[d])
@@ -407,7 +409,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
     ...sharedSystemSections({ instructions: opts.instructions, constantLore: opts.lore?.constant }),
     // 只有部分判定才有的規則放在 system 的最後（和敘事請求一樣），前面的規則、文風、常駐世界書、前段提示詞可以共用快取。
     // 成人向的戰敗事件：回應時另外附上戰敗事件規則（narrative 是後半段）
-    { key: 'defeat', title: '戰敗事件規則', part: 'system', text: p.kind === 'defeat_event' && narrative ? `${fillDefeatRules(opts.defeatRules, pc.name)}\n這次的 narrative 是戰敗事件的後半段。` : '' },
+    { key: 'defeat', title: '戰敗事件規則', part: 'system', text: p.kind === 'defeat_event' && narrative ? `${fillDefeatRules(opts.defeatRules, pc.name, defeatMate?.name)}\n這次的 narrative 是戰敗事件的後半段。` : '' },
     { key: 'scene', title: '成人場景規則', part: 'system', text: sceneSection(opts, pc.name, narrative) },
     { key: 'actor', title: '主角', part: 'user', text: `<actor>\n${pcDetail(state, !!p.adultScene)}\n</actor>` },
     { key: 'party', title: '隊伍狀態', part: 'user', text: `<party>\n${partyLines(state)}\n</party>` },
@@ -418,6 +420,8 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
     // 打聽、詢問：附上這一帶真的存在的地點與怪物，不讓判定編造地名
     { key: 'world_facts', title: '這一帶的地點與怪物', part: 'user', text: wantsWorldFacts(p) ? worldFacts(state) : '' },
     { key: 'target', title: '對象', part: 'user', text: `<target>\n${targetDetail(state, p)}\n</target>` },
+    // 隊友的戰敗事件：被圍住、由玩家替他選擇反應的隊友（判定只寫 narrative 以外時也要知道是誰）
+    { key: 'defeat_victim', title: '被圍住的隊友', part: 'user', text: defeatMate ? `<defeat_victim>\n${npcDetail(state, defeatMate.id, '被圍住的隊友', defeatMate.name)}\n這次戰敗後被圍住的是${defeatMate.name}，不是主角；玩家描述的是${defeatMate.name}的反應，擲骰的也是${defeatMate.name}。慾望指標（lewd）的 target 寫 ${defeatMate.id}。\n</defeat_victim>` : '' },
     {
       key: 'action', title: '行動', part: 'user',
       text: `<action>

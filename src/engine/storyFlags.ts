@@ -10,7 +10,7 @@ import { currentRegion, exposureAt, lewdOf } from './lewd'
 import { PARASITE_LOCK } from './parasites'
 import { bindsOf } from './schools'
 import { contractOf } from './tattoos'
-import type { GameState } from './types'
+import type { GameState, GameTime } from './types'
 
 export const STORY_PREFIX = 'story:'
 
@@ -53,6 +53,29 @@ export function condMet(state: GameState, cond: StoryCond | undefined): boolean 
     && (!cond.charm || inRange(charmLevel(state.location), cond.charm))
     && wearingMet(state, cond.wearing)
     && (!cond.pc_tags?.length || !!state.party.find((m) => m.isPlayer)?.tags?.some((t) => cond.pc_tags!.includes(t)))
+    && afterMet(state, cond.after)
+}
+
+const minutesOf = (t: GameTime) => ((t.day - 1) * 24 + (t.hour ?? 0)) * 60 + (t.minute ?? 0)
+
+/** 「某個特殊任務（或任務點）結束後幾天」從什麼時候起成立；那個任務（任務點）還沒結束時 undefined */
+export function afterFrom(state: GameState, after: NonNullable<StoryCond['after']>): GameTime | undefined {
+  const p = state.stories?.[after.story]
+  if (!p) return undefined
+  let ended: GameTime | undefined
+  if (after.node) {
+    if (!p.done.includes(after.node)) return undefined
+    ended = [...p.log].reverse().find((e) => e.node === after.node)?.time ?? p.ended
+  } else ended = p.ended
+  if (!ended) return undefined
+  const at = minutesOf(ended) + after.days * 24 * 60
+  return { day: Math.floor(at / 1440) + 1, hour: Math.floor((at % 1440) / 60), minute: at % 60 }
+}
+
+function afterMet(state: GameState, after: StoryCond['after']): boolean {
+  if (!after) return true
+  const from = afterFrom(state, after)
+  return !!from && minutesOf(state.time) >= minutesOf(from)
 }
 
 const inRange = (v: number, r: { min?: number; max?: number }) => (r.min === undefined || v >= r.min) && (r.max === undefined || v <= r.max)

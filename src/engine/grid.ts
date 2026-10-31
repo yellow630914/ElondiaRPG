@@ -18,7 +18,7 @@ import {
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
-import { questTargets } from './materialQuests'
+import { isMaterialQuest, questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers, sideNodesOpen, storyNeedsLandmark } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
 import { ensureIntelPoints, finishIntel } from './intel'
@@ -35,8 +35,8 @@ import { homeById, overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
 import { bestTool } from './tools'
 import { addHours, advanceTime, commitReport, newReportId, player, withRng } from './state'
-import type { Character, GameState, GameTime, Report } from './types'
-import { rewardMoney } from './gameRules'
+import type { Character, GameState, GameTime, Quest, Report } from './types'
+import { gameRule, rewardMoney } from './gameRules'
 
 export type CellKind =
   | 'floor' | 'wall' | 'water'
@@ -621,11 +621,21 @@ export function ensureQuestTargets(state: GameState, area: Area, rng: Rng, table
   }
 }
 
+/** 要站在 ❗ 上執行的近郊委託（城鎮委託範本的近郊委託）。材料委託也在近郊，但是靠採集點與戰鬥點（ensureQuestTargets），沒有 ❗ */
+function hasQuestMarker(q: Pick<Quest, 'area' | 'kind' | 'status'>): boolean {
+  return q.area === 'outskirts' && q.status === 'accepted' && !isMaterialQuest(q)
+}
+
 /** 在近郊標出已接取的近郊委託地點（接委託時近郊已經生成過也會補上）。 */
 function ensureQuestMarkers(state: GameState, area: Area, rng: Rng) {
+  // 舊版會替材料委託放 ❗，站上去按「執行委託」會出現「找不到這個委託」：順便拿掉
+  const material = new Set(state.quests.filter(isMaterialQuest).map((q) => q.id))
+  area.cells.forEach((c, i) => {
+    if (c.kind === 'quest' && !c.storyNode && c.questId && material.has(c.questId)) area.cells[i] = { kind: 'floor' }
+  })
   const marked = new Set(area.cells.map((c) => c.questId).filter(Boolean))
   for (const q of state.quests) {
-    if (q.giver !== area.location || q.area !== 'outskirts' || q.status !== 'accepted' || marked.has(q.id)) continue
+    if (q.giver !== area.location || !hasQuestMarker(q) || marked.has(q.id)) continue
     const [i] = randomCells(rng, area, 1, new Set([area.cells.findIndex((c) => c.kind === 'exit')]))
     if (i === undefined) return
     area.cells[i] = { kind: 'quest', questId: q.id }
@@ -634,7 +644,7 @@ function ensureQuestMarkers(state: GameState, area: Area, rng: Rng) {
 
 /** 已完成（或不再進行中）的委託，把近郊的委託地點標記拿掉。 */
 export function clearQuestMarkers(state: GameState) {
-  const active = new Set(state.quests.filter((q) => q.status === 'accepted').map((q) => q.id))
+  const active = new Set(state.quests.filter(hasQuestMarker).map((q) => q.id))
   for (const area of Object.values(state.areas ?? {})) {
     area.cells.forEach((c, i) => {
       // 特殊任務的任務點由 story.ts 管理
@@ -1246,6 +1256,14 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   return commitReport(state, report)
 }
 
+/** 一個採集點採到幾份：存檔規則的採集量，小數的部分是機率 */
+export function gatherQty(state: GameState): number {
+  const mult = gameRule(state, 'gatherMult')
+  const base = Math.floor(mult)
+  const extra = mult - base
+  return Math.max(1, base + (extra > 0 && withRng(state, (rng) => rng.chance(extra)) ? 1 : 0))
+}
+
 function gather(state: GameState, area: Area, item: string): Report {
   const report = eventReport(state, area, 10)
   report.kind = 'action'
@@ -1254,8 +1272,9 @@ function gather(state: GameState, area: Area, item: string): Report {
     report.changes.money_cc = money
     report.outcome = { result: 'success', summary: `在${area.name}找到一些古錢。` }
   } else {
-    report.changes.items_gained = [{ name: item, qty: 1, owner: 'pc' }]
-    report.outcome = { result: 'success', summary: `在${area.name}採集到${item}。` }
+    const qty = gatherQty(state)
+    report.changes.items_gained = [{ name: item, qty, owner: 'pc' }]
+    report.outcome = { result: 'success', summary: `在${area.name}採集到${item}${qty > 1 ? ` ×${qty}` : ''}。` }
   }
   return commitReport(state, report)
 }

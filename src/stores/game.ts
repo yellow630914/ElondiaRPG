@@ -66,7 +66,8 @@ import { usePortraits } from './portraits'
 import { usePrompts } from './prompts'
 import { useScenes } from './scenes'
 import { AI_FEATURES, useSettings, type AiFeature } from './settings'
-import { archiveOldReports } from './logArchive'
+import { archiveOldReports, mergeUsage } from './logArchive'
+import { actionInputOf, firstNewReport, midTurn, restoreTurn, UNDO_STEPS, type UndoStep } from './undo'
 import { withoutIcons } from '@/engine/itemIcons'
 import {
   AUTO_SLOTS, currentStore, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, takePreloaded,
@@ -75,7 +76,7 @@ import {
 
 export { ARCHIVE_USAGE } from './logArchive'
 
-/** 不屬於任何一則日誌的 AI 呼叫（酒館候選人、商店清單、談判方式、失敗的判定） */
+/** 不屬於任何一則日誌的 AI 呼叫（酒館候選人、商店清單、談判方式、失敗的判定、回退掉的日誌） */
 export const OTHER_USAGE = '_other'
 
 export interface UsageEntry {
@@ -355,6 +356,7 @@ export const useGame = defineStore('game', () => {
     error.value = null
     // 動作中途出錯時還原成動作之前的狀態（不會留下改到一半的存檔）
     const before = snapshotState(state.value)
+    const lastReport = state.value.reports.at(-1)?.report_id
     try {
       const result = fn(state.value)
       // 期限：逾期的委託與特殊任務（各自產生報告）
@@ -363,6 +365,7 @@ export const useGame = defineStore('game', () => {
       story.forgetStoryWaits(state.value)
       // 日誌太長時把舊的封存（token 用量另外合計，見 logArchive.ts）
       archiveOldReports(state.value, useSettings().logKeepLimit(), narrations.value, usage.value)
+      recordTurn(before, lastReport)
       saveSoon()
       const settings = useSettings()
       const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
@@ -382,6 +385,75 @@ export const useGame = defineStore('game', () => {
       else error.value = msg
       return undefined
     }
+  }
+
+  // ---- 回退（undo.ts）：最近 UNDO_STEPS 輪開始前的狀態，只放在記憶體 ----
+  let undoStack: UndoStep[] = []
+  /** 進行中這一輪開始前的狀態（產生日誌時記進 undoStack） */
+  let turnStart: GameState | null = null
+  /** 畫面用：可以回退到哪幾則日誌之前（舊的在前） */
+  const undoReports = ref<string[]>([])
+  /** 剛回退掉的是主動行動：可以用同樣的行動重擲 */
+  const redoInput = ref<actions.ActionInput | null>(null)
+
+  function syncUndo() {
+    undoReports.value = undoStack.map((u) => u.report)
+  }
+
+  function clearUndo() {
+    undoStack = []
+    turnStart = null
+    redoInput.value = null
+    syncUndo()
+  }
+
+  /** 動作成功之後：記下這一輪開始前的狀態；產生了新的日誌就算一輪 */
+  function recordTurn(before: GameState, lastReport: string | undefined) {
+    if (!turnStart || !midTurn(before)) turnStart = before
+    const report = firstNewReport(state.value!, lastReport)
+    if (!report) return
+    undoStack.push({ state: turnStart, report, ...(before.pendingAction ? { redo: actionInputOf(before.pendingAction) } : {}) })
+    if (undoStack.length > UNDO_STEPS) undoStack.shift()
+    turnStart = null
+    redoInput.value = null
+    syncUndo()
+  }
+
+  /** 回退：撤銷到 report 那一則日誌之前（不給時撤銷最近一輪）。被撤銷的日誌的敘事一起刪掉，token 用量算在「其他」 */
+  function undo(report?: string): boolean {
+    const s = state.value
+    if (!s || judging.value || !undoStack.length) return false
+    const i = report ? undoStack.findIndex((u) => u.report === report) : undoStack.length - 1
+    if (i < 0) return false
+    const step = undoStack[i]!
+    const steps = undoStack.length - i
+    undoStack = undoStack.slice(0, i)
+    turnStart = null
+    const { state: restored, removed } = restoreTurn(toRaw(s), step.state)
+    for (const id of removed) {
+      controllers.get(id)?.abort()
+      delete narrations.value[id]
+      const u = usage.value[id]
+      if (u) {
+        mergeUsage((usage.value[OTHER_USAGE] ??= { input: 0, output: 0, calls: 0 }), u)
+        delete usage.value[id]
+      }
+    }
+    state.value = restored
+    error.value = null
+    redoInput.value = step.redo ?? null
+    syncUndo()
+    save()
+    flash(`↶ 已回退 ${steps} 步`)
+    return true
+  }
+
+  /** 回退之後用同樣的行動重擲 */
+  async function redo() {
+    const input = redoInput.value
+    if (!input) return
+    redoInput.value = null
+    await perform(input)
   }
 
   /** 動作前的一份複本（裡面混進響應式物件時改用 JSON） */
@@ -553,11 +625,11 @@ export const useGame = defineStore('game', () => {
     }
   }
 
-  /** 還沒按「繼續」的遊戲要被蓋掉前：先存進自動存檔欄位（不用載入） */
+  /** 還沒按「繼續」的遊戲要被蓋掉前：先存進自動存檔欄位（不用載入）；設定關掉備份時直接放掉 */
   async function backupResume(reason: string) {
     const r = resume.value
     resume.value = null
-    if (!r?.state) return
+    if (!r?.state || !useSettings().backupBeforeSwitch) return
     try {
       await autoSave(reason, { state: JSON.parse(r.state) as GameState, narrations: parseJson(r.narrations) ?? {}, usage: parseJson(r.usage) ?? {} })
     } catch {
@@ -568,6 +640,7 @@ export const useGame = defineStore('game', () => {
   /** 載入一份遊戲：先切到它的世界，再補上新欄位 */
   function enter(data: SaveData) {
     for (const c of controllers.values()) c.abort()
+    clearUndo()
     const world = useContent().enterWorld(data.state.world, data.content)
     state.value = load(data.state)
     state.value.world = { id: world.id, name: world.name }
@@ -602,6 +675,7 @@ export const useGame = defineStore('game', () => {
   async function toHome() {
     if (!state.value) return
     for (const c of controllers.values()) c.abort()
+    clearUndo()
     save()
     await flushed()
     const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
@@ -612,12 +686,12 @@ export const useGame = defineStore('game', () => {
     error.value = null
   }
 
-  /** 讀檔：先把目前的進度自動存一份，免得誤讀 */
+  /** 讀檔：先把目前的進度自動存一份，免得誤讀（設定可以關掉） */
   async function loadSlot(id: string) {
     try {
       const data = await slotStore().get(id)
       if (!data) throw new Error('找不到這個存檔')
-      if (state.value) await autoSave('讀檔前')
+      if (state.value && useSettings().backupBeforeSwitch) await autoSave('讀檔前')
       await backupResume('讀檔前')
       applySnapshot(data)
       flash('📂 已讀取存檔')
@@ -740,8 +814,9 @@ export const useGame = defineStore('game', () => {
   function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>, profile: Omit<NewGameOptions, 'name' | 'race' | 'classId' | 'bonus' | 'seed'> = {}, world?: string) {
     const content = useContent()
     if (world !== undefined && world !== content.active) content.switchWorld(world)
-    // 還沒繼續的遊戲會被蓋掉：先備份
+    // 還沒繼續的遊戲會被蓋掉：先備份（設定關掉時不備份）
     void backupResume('開新遊戲前')
+    clearUndo()
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
     state.value.world = { id: content.active, name: content.activeName }
     grid.enterLocation(state.value)
@@ -757,6 +832,7 @@ export const useGame = defineStore('game', () => {
 
   function reset() {
     for (const c of controllers.values()) c.abort()
+    clearUndo()
     state.value = null
     resume.value = null
     narrations.value = {}
@@ -982,6 +1058,7 @@ export const useGame = defineStore('game', () => {
   return {
     /** 在動作的保護下改狀態：出錯時還原、顯示訊息（測試與少數元件用） */
     runAction: run,
+    undoReports, redoInput, undo, redo, dismissRedo: () => (redoInput.value = null),
     state, narrations, error, saveWarning, flushed, pc, here, area, cell, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTargets, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText, makeRoom, requireRoom,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
@@ -1093,6 +1170,8 @@ export const useGame = defineStore('game', () => {
     abandonStory: (id: string) => run((s) => story.abandonStory(s, id)),
     // 走到不緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發
     waitStory: (ref: string) => run((s) => story.waitStory(s, ref)),
+    // 只在白天或夜裡的任務點：在原地等到那個時段
+    waitForStoryNode: (ref: string) => run((s) => story.waitForNode(s, ref)),
     act: (action: combat.CombatAction) => run((s) => combat.act(s, action)),
     finishCombat: () =>
       run((s) => {

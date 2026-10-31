@@ -7,6 +7,7 @@
 import { geography, npcs, specialMaps, stories, storyCounters, PARK_STAMP_PREFIX, type StoryDef, type StoryNodeKind, type StoryOutcome } from './data'
 import { STORY_EFFECTS } from './storyMods'
 import { portsOf, quoteLabel, storyReach, type StoryReach } from './storyReach'
+import { timeJumpText } from './timeOfDay'
 
 export interface GraphPort {
   /** `節點 id#第幾個出口` */
@@ -77,6 +78,7 @@ function notesOf(o: StoryOutcome, extra: Record<string, string>): string[] {
   if (o.join) out.push(`＋同行 ${npcName(o.join)}`)
   if (o.leave) out.push(`－同行 ${npcName(o.leave)}`)
   for (const d of o.deaths ?? []) out.push(`💀 ${npcName(d)}`)
+  if (o.time) out.push(`🕑 ${timeJumpText(o.time)}`)
   if (o.travel_to) out.push(`➜ ${geography.locations.find((l) => l.id === o.travel_to)?.name ?? o.travel_to}`)
   if (o.side_map) out.push('➜ 臨時地圖')
   if (o.special_map) out.push(`➜ ${extra[o.special_map] ?? specialMaps[o.special_map]?.name ?? o.special_map}`)

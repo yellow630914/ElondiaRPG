@@ -25,11 +25,12 @@ import { joinParty, leaveParty, pcOf } from './party'
 import { presentHere } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
-import { addCounters, clampCounters, condMet, flagKey } from './storyFlags'
+import { applyTimeJump, dayPartOk, DAY_PART_NAME, hoursUntil } from './timeOfDay'
+import { addCounters, afterFrom, clampCounters, condMet, flagKey } from './storyFlags'
 import { tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
-import type { GameState, NpcRecord, Report, StoryProgress } from './types'
+import type { GameState, GameTime, NpcRecord, Report, StoryProgress } from './types'
 
 export function storyDef(id: string): StoryDef | undefined {
   return stories.find((s) => s.id === id)
@@ -171,8 +172,9 @@ function allyNames(state: GameState, node: StoryNode): string {
   return (node.allies ?? []).map((id) => npcRecord(state, id)?.name).filter(Boolean).join('、')
 }
 
-function log(p: StoryProgress, state: GameState, text: string, node?: string) {
-  p.log.push({ time: { ...state.time }, text, ...(node ? { node } : {}) })
+/** 冒險筆記的經過：at 是這件事結束的時間（報告的結束時間，含結果推進的時間；沒有時是現在） */
+function log(p: StoryProgress, state: GameState, text: string, node?: string, at?: GameTime) {
+  p.log.push({ time: { ...(at ?? state.time) }, text, ...(node ? { node } : {}) })
 }
 
 function setFlags(report: Report, names: string[] | undefined, value: boolean) {
@@ -226,8 +228,41 @@ export function activeNodes(state: GameState): ActiveNode[] {
   return out
 }
 
+/**
+ * 只差「幾天之後」的任務點（其他條件都成立、時間還沒到）：冒險筆記寫「第幾天以後」，玩家知道什麼時候回來。
+ * from 是開放的時間
+ */
+export function nodesWaitingForDays(state: GameState): (ActiveNode & { from: GameTime })[] {
+  const out: (ActiveNode & { from: GameTime })[] = []
+  for (const p of Object.values(state.stories ?? {})) {
+    if (p.status !== 'active') continue
+    const def = storyDef(p.id)
+    if (!def || storyPaused(def)) continue
+    for (const node of def.nodes) {
+      const after = node.requires?.after
+      if (!after || p.done.includes(node.id) || condMet(state, node.requires)) continue
+      const { after: _, ...rest } = node.requires!
+      const from = afterFrom(state, after)
+      if (from && condMet(state, rest)) out.push({ def, node, ref: nodeRef(def.id, node.id), from })
+    }
+  }
+  return out
+}
+
 /** 主角現在所在的地方有沒有這個任務點 */
 export function nodeIsHere(state: GameState, n: ActiveNode): boolean {
+  // 只在白天或夜裡的任務點：時段不對時不算在這裡（不跳出、不擋路），到了那個時段再來
+  if (!dayPartOk(state.time, nodeHours(n.node))) return false
+  return nodeIsHereAnyTime(state, n)
+}
+
+/** 任務點的時段；旅途上的任務點不看時段（旅途不能停下來等，限定時段可能永遠遇不到） */
+export function nodeHours(node: Pick<StoryNode, 'hours' | 'at'>): StoryNode['hours'] {
+  return node.at.where === 'road' ? undefined : node.hours
+}
+
+/** 主角在不在任務點上（不看時段） */
+function nodeIsHereAnyTime(state: GameState, n: ActiveNode): boolean {
   const at = n.node.at
   // 檢定參考好感的角色被制伏了：等處置完再說
   const ref = n.node.check?.affinity?.npc
@@ -251,6 +286,27 @@ export function nodesHere(state: GameState): ActiveNode[] {
   return activeNodes(state).filter((n) => nodeIsHere(state, n))
 }
 
+/** 站在任務點上、但時段不對的任務點（地點面板提醒要等到白天或夜裡） */
+export function nodesWaitingForTime(state: GameState): ActiveNode[] {
+  return activeNodes(state).filter((n) => !dayPartOk(state.time, nodeHours(n.node)) && nodeIsHereAnyTime(state, n))
+}
+
+/** 在原地等到這個任務點的時段（白天是早上 8 點，夜裡是 20 點）：記一則簡短的日誌 */
+export function waitForNode(state: GameState, ref: string): Report {
+  const n = activeNodes(state).find((x) => x.ref === ref)
+  const part = n && nodeHours(n.node)
+  if (!n || !part) throw new Error('這個任務點不用等')
+  if (dayPartOk(state.time, part)) throw new Error('現在就可以進行')
+  if (!nodeIsHereAnyTime(state, n)) throw new Error('要在任務點才能等')
+  if (state.road) throw new Error('旅途中沒辦法停下來等')
+  const hours = hoursUntil(state.time, part === 'night' ? 'night' : 'morning')
+  const report = storyReport(state, n.def, 'progress', hours, n.node)
+  const name = DAY_PART_NAME[part]
+  report.outcome = { result: 'neutral', summary: `在${currentArea(state).name}等到${name}，準備「${n.def.title}」的${n.node.title}。`, tags: ['等待'] }
+  report.narration = { pov: 'second_person', length: 'short', focus: [`為了特殊任務「${n.def.title}」等到${name}`] }
+  return commitReport(state, report)
+}
+
 function active(state: GameState, ref: string): ActiveNode & { progress: StoryProgress } {
   const { def, node } = parseRef(ref)
   const progress = state.stories?.[def.id]
@@ -258,8 +314,14 @@ function active(state: GameState, ref: string): ActiveNode & { progress: StoryPr
   return { def, node, ref, progress }
 }
 
-/** 地點的說明（冒險筆記用） */
+/** 地點的說明（冒險筆記用）；只在白天或夜裡的任務點加上時段 */
 export function placeText(n: StoryNode, state?: GameState): string {
+  const where = placeName(n, state)
+  const part = nodeHours(n)
+  return part ? `${where}・只在${DAY_PART_NAME[part]}` : where
+}
+
+function placeName(n: StoryNode, state?: GameState): string {
   const at = n.at
   const loc = at.location ? locationById(at.location).name : ''
   const LAYER = DUNGEON_LAYER_NAME
@@ -535,12 +597,15 @@ function resolveOutcome(
     }
   }
   if (outcome.leave) leaveGuest(state, report, progress, outcome.leave, lines)
+  // 結束時把時間往前推（推到夜裡、隔天早上）
+  const later = applyTimeJump(state, report, outcome.time)
+  if (later) lines.push(later)
   // 進入臨時地圖、改去別的地點：報告提交之後執行
   queueMove(state, outcome)
   if (state.pendingMove?.side_map) state.pendingMove.story = def.id
   if (!outcome.retry) progress.done = [...new Set([...progress.done, node.id])]
   else waitHere(state, nodeRef(def.id, node.id))
-  log(progress, state, `${node.title}${label ? `（${label}）` : ''}：${outcome.text ?? (success ? '完成' : '失敗')}`, node.id)
+  log(progress, state, `${node.title}${label ? `（${label}）` : ''}：${outcome.text ?? (success ? '完成' : '失敗')}`, node.id, report.time.end)
   if (outcome.complete) finishStory(state, report, progress, def, 'completed', lines)
   else if (outcome.fail_quest) finishStory(state, report, progress, def, 'failed', lines)
   return lines
@@ -556,7 +621,8 @@ function leaveGuest(state: GameState, report: Report, progress: StoryProgress, i
 
 function finishStory(state: GameState, report: Report, progress: StoryProgress, def: StoryDef, status: 'completed' | 'failed', lines: string[]) {
   progress.status = status
-  progress.ended = { ...state.time }
+  // 結束的時間是這份報告結束的時候（「結束後幾天」從這裡算）
+  progress.ended = { ...report.time.end }
   report.story = { id: def.id, title: def.title, ...(report.story?.node ? { node: report.story.node } : {}), status }
   if (status === 'completed') report.changes.merit = (report.changes.merit ?? 0) + (def.merit ?? storyMerit())
   if (status === 'completed' && def.rewards?.length) {
@@ -567,7 +633,7 @@ function finishStory(state: GameState, report: Report, progress: StoryProgress, 
     lines.push(status === 'completed' ? `完成特殊任務「${def.title}」。` : `特殊任務「${def.title}」失敗了。`)
   }
   for (const g of [...(progress.guests ?? [])]) leaveGuest(state, report, progress, g, lines)
-  log(progress, state, status === 'completed' ? '任務完成' : '任務失敗')
+  log(progress, state, status === 'completed' ? '任務完成' : '任務失敗', undefined, report.time.end)
   report.outcome.tags = [...new Set([...(report.outcome.tags ?? []), status === 'completed' ? '任務完成' : '任務失敗'])]
 }
 

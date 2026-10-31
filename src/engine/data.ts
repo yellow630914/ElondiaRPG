@@ -186,7 +186,14 @@ export interface StoryCond {
   wearing?: WearingCond
   /** 主角至少有其中一個身分標籤（npc_tags.json 的 id；docs/NPC_SYSTEM.md 4.1 節） */
   pc_tags?: string[]
+  /**
+   * 某個特殊任務（或它的某個任務點）結束之後至少過了幾天（docs/STORY_QUESTS.md「幾天之後」）：
+   * 「三天後來取件」「三天後在餘燼裂隙」——時間照常走，玩家這幾天可以做別的事。那個任務還沒結束時不成立
+   */
+  after?: AfterCond
 }
+
+export interface AfterCond { story: string; node?: string; days: number }
 
 /**
  * 主角身上戴著什麼：bind 任何拘束具、bind_kind 這一種拘束具（要有）、locked 別人鎖上的（主人或陷阱）、
@@ -294,6 +301,8 @@ export interface StoryOutcome {
   special_map?: string
   /** 改去別的地點：旅途中直接抵達那裡，不在旅途時被帶到那裡 */
   travel_to?: string
+  /** 結束時把時間往前推（timeOfDay.ts）：先推到夜裡（20 點）或隔天早上（8 點），再經過 hours 小時；旅途中不調整 */
+  time?: { hours?: number; until?: 'night' | 'morning' }
 }
 
 export interface StoryOption {
@@ -320,6 +329,8 @@ export interface StoryNode {
   requires?: StoryCond
   /** 限定穿著：每一項是物品名稱或裝備底材的 id（例如 bunny_suit，任何一件兔女郎裝都算），主角都穿在身上才能進行（任務點照樣出現，按鈕停用並說明） */
   wear?: string[]
+  /** 只在白天或夜裡進行（timeOfDay.ts）：時段不對時不算在任務點上（不跳出、不擋路），⭐ 照樣在地圖上 */
+  hours?: 'day' | 'night'
   kind: StoryNodeKind
   check?: StoryCheck
   /** 戰鬥：怪物（遭遇表的格式）與固定 NPC */

@@ -390,7 +390,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
       }
       case 'lewd': {
         // 慾望指標：每人每項一次，±caps.lewd；只在可能進入親密場景的行動
-        const target = String(x.target ?? 'pc')
+        // 隊友的戰敗事件：沒寫對象時是被圍住的那位隊友
+        const target = String(x.target ?? (p.kind === 'defeat_event' && p.actor ? p.actor : 'pc'))
         const who = target === 'pc' ? pc : state.party.find((m) => m.id === target)
         const stat = String(x.stat ?? '') as LewdKey
         const delta = num(x.delta)
@@ -624,7 +625,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const others = targets.map((id) => state.relationships?.[id]).filter((rel) => !!rel && !report.party.some((x) => x.id === rel.id))
   if (others.length) report.others = others.map((rel) => ({ id: rel!.id, name: rel!.name }))
   report.timeline = [{
-    seq: 1, time: report.time.start, actor: 'pc', action: `${kind.name}（${attrName(attr)}${p.rolls ? `・優勢 ${p.rolls.join('、')}` : ''}）`,
+    seq: 1, time: report.time.start, actor: p.actor ?? 'pc', action: `${kind.name}（${attrName(attr)}${p.rolls ? `・優勢 ${p.rolls.join('、')}` : ''}）`,
     ...(p.target && !p.target.includes(':') ? { target: p.target } : {}),
     roll: { dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc },
     result: degree === 'fail' ? 'fail' : degree,

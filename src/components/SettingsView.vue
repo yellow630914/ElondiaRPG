@@ -173,7 +173,15 @@ function doReset() {
             <option value="off">關閉</option>
           </select>
         </label>
-        <label v-if="settings.defeatAdult !== 'off'" class="check">
+        <label>
+          <span class="lab">隊友的戰敗色情事件 <Hint text="主角不會遇到戰敗色情事件時（上面設成關閉或「男性形象的主角不發生」、或關閉了「主角非自願」），改由還在場的隊友遇到：符合這裡設定的隊友裡魅力最高的那位。玩家替那位隊友選擇反應（虛與委蛇、掙扎、咬牙撐過，或自己描述），由隊友擲骰，結果也記在隊友身上。無法戰鬥的隊員戰敗時已經跑開了，不算。主角會遇到時照舊是主角。" /></span>
+          <select v-model="settings.defeatCompanion">
+            <option value="all">開啟</option>
+            <option value="not_masc">男性形象的隊友不發生</option>
+            <option value="off">關閉</option>
+          </select>
+        </label>
+        <label v-if="settings.defeatAdult !== 'off' || settings.defeatCompanion !== 'off'" class="check">
           <input v-model="settings.defeatAlways" type="checkbox" /> 戰敗色情事件一定發生 <Hint text="不擲「敵人起意」的魅力檢定：戰敗、沒有救兵，而且還站著的敵人裡有會起意的（惡人、發情的怪物……），就一定進入戰敗事件。不死、構裝這類不會起意的敵人照樣不會。" />
         </label>
       </div>
@@ -265,6 +273,10 @@ function doReset() {
       <button class="danger" @click="doReset">放棄目前的進度並回到開始畫面</button>
     </div>
     <p class="small muted">存檔欄位裡的存檔不會被刪除。</p>
+    <label class="check">
+      <input v-model="settings.backupBeforeSwitch" type="checkbox" /> 讀檔、開新遊戲前先備份到自動存檔
+      <Hint text="開著時，讀檔前會把目前的進度存一份；在首頁開新遊戲或讀檔、蓋掉還沒繼續的遊戲前，也會先把它存一份。都存進自動存檔欄位（和長休、抵達目的地的自動存檔輪流用最近 3 格）。關掉時不存，自動存檔欄位只留長休、抵達的存檔，但誤讀或誤開新遊戲就找不回原本的進度。" />
+    </label>
     <h3 class="head"><GameIcon name="book" :size="17" />日誌瘦身</h3>
     <div class="form">
       <label>

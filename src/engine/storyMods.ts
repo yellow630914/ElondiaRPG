@@ -19,6 +19,7 @@ import type { GameState } from './types'
 import { travelEvents } from './road'
 import { isTattooPlace, oathError, tattooTemplate } from './tattoos'
 import { mapSize, storySpotProblem } from './specialMapMods'
+import { MAX_JUMP_HOURS } from './timeOfDay'
 
 export interface StoryMod extends StoryDef {
   custom?: boolean
@@ -303,7 +304,20 @@ function outcome(v: unknown): StoryOutcome | undefined {
   if (typeof o.side_map === 'string' && SIDE_MAPS().includes(o.side_map)) out.side_map = o.side_map
   if (typeof o.special_map === 'string' && specialMaps[o.special_map]) out.special_map = o.special_map
   if (isLoc(o.travel_to)) out.travel_to = o.travel_to
+  const time = timeJump(o.time)
+  if (time) out.time = time
   return out
+}
+
+/** 結果的時間：經過的小時（整數，最多十天）與推到夜裡或早上 */
+function timeJump(v: unknown): StoryOutcome['time'] {
+  if (!v || typeof v !== 'object') return undefined
+  const t = v as NonNullable<StoryOutcome['time']>
+  const out: NonNullable<StoryOutcome['time']> = {}
+  const hours = Math.round(Number(t.hours))
+  if (Number.isFinite(hours) && hours > 0) out.hours = Math.min(MAX_JUMP_HOURS, hours)
+  if (t.until === 'night' || t.until === 'morning') out.until = t.until
+  return out.hours || out.until ? out : undefined
 }
 
 /** 臨時地圖的種類（travel_events.json 的 side_maps） */
@@ -354,6 +368,8 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
   const allies = (n.allies ?? []).map((a) => str(a, 60)).filter(Boolean)
   if (allies.length) out.allies = [...new Set(allies)]
   if (n.urgent) out.urgent = true
+  // 旅途上的任務點不限時段（旅途不能停下來等）
+  if ((n.hours === 'day' || n.hours === 'night') && out.at.where !== 'road') out.hours = n.hours
   if (kind === 'check') out.check = check(n.check) ?? { attr: 'int', dc: 12 }
   if (kind === 'combat') {
     const g = group(n.enemies)
@@ -545,6 +561,13 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     if (e.type === 'enslave_player' && typeof e.master === 'string' && !npcIds.has(e.master)) err.push(`效果裡的主人 ${e.master} 不存在`)
     if (e.type === 'perk') for (const id of [e.perk, ...(e.options ?? [])]) if (id && !perkDef(id)) err.push(`效果裡的特質 ${id} 不存在`)
     if (e.type === 'start_story' && e.story === def.id) err.push('效果要開始的是這個任務自己')
+  }
+  // 「某個任務（任務點）結束後幾天」：那個任務、任務點要存在
+  const conds = [def.start.requires, ...def.nodes.flatMap((n) => [n.requires, ...(n.options ?? []).map((o) => o.requires)])]
+  for (const a of conds.map((c) => c?.after).filter((x): x is NonNullable<StoryCond['after']> => !!x)) {
+    const target = a.story === def.id ? def : others.find((x) => x.id === a.story)
+    if (!target) err.push(`條件「${a.story} 結束後 ${a.days} 天」的特殊任務不存在`)
+    else if (a.node && !target.nodes.some((n) => n.id === a.node)) err.push(`條件「${target.title}的 ${a.node} 結束後 ${a.days} 天」的任務點不存在`)
   }
   for (const name of def.start.items ?? []) if (!itemDef(name)) err.push(`接下任務時拿到的物品「${name}」不存在`)
   for (const n of def.nodes) for (const w of n.wear ?? []) {

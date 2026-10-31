@@ -4,13 +4,14 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
 import { gainXp, protagonistText, rerollsLeft, snapshot } from '@/engine/character'
 import { GENDER_IDS, genderDef, genderPrompt, npcPool } from '@/engine/data'
-import { clearQuestMarkers, currentArea, enterLocation, goOutskirts, standOn } from '@/engine/grid'
+import { clearQuestMarkers, currentArea, enterLocation, goOutskirts, questRunnableHere, standOn } from '@/engine/grid'
+import { isMaterialQuest } from '@/engine/materialQuests'
 import { generateNpc } from '@/engine/npcs'
 import { npcTraits } from '@/engine/traits'
 import { areaOf, peopleHere, presentHere } from '@/engine/population'
 import { longRest } from '@/engine/rest'
 import { newGame, withRng } from '@/engine/state'
-import { acceptQuest, chooseAbility, dismiss, guildQuests, recruit, rerollAbility } from '@/engine/town'
+import { acceptQuest, chooseAbility, dismiss, guildQuests, questSpot, recruit, rerollAbility } from '@/engine/town'
 import type { GameState, Report } from '@/engine/types'
 import { Rng } from '@/engine/rng'
 
@@ -29,7 +30,7 @@ describe('quest markers', () => {
   it('removes the ❗ marker once the outskirts quest is no longer in progress', () => {
     const state = game(1)
     standOn(state, 'guild')
-    const q = guildQuests(state).find((x) => x.area === 'outskirts')!
+    const q = guildQuests(state).find((x) => x.area === 'outskirts' && !isMaterialQuest(x))!
     acceptQuest(state, q.id)
     standOn(state, 'gate')
     goOutskirts(state)
@@ -38,6 +39,27 @@ describe('quest markers', () => {
     q.status = 'ready'
     clearQuestMarkers(state)
     expect(area.cells.some((c) => c.kind === 'quest')).toBe(false)
+  })
+
+  it('gives material quests no ❗ marker (they have no 執行委託) and removes old ones', () => {
+    const state = game(1)
+    standOn(state, 'guild')
+    const list = guildQuests(state)
+    const gather = list.find((x) => x.kind === 'gather_wild')!
+    const drop = list.find((x) => x.kind === 'drop_wild')!
+    acceptQuest(state, gather.id)
+    acceptQuest(state, drop.id)
+    standOn(state, 'gate')
+    goOutskirts(state)
+    const area = currentArea(state)
+    expect(area.cells.some((c) => c.kind === 'quest')).toBe(false)
+    expect(questRunnableHere(state, { ...drop, spot: questSpot(drop) })).toBe(false)
+    // 舊存檔：材料委託已經有 ❗，再進近郊時拿掉
+    const i = area.cells.findIndex((c) => c.kind === 'floor')
+    area.cells[i] = { kind: 'quest', questId: drop.id }
+    standOn(state, 'gate')
+    goOutskirts(state)
+    expect(currentArea(state).cells.some((c) => c.kind === 'quest' && c.questId === drop.id)).toBe(false)
   })
 })
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { npcs as namedNpcs, storyCounters, type StoryCond } from '@/engine/data'
+import { npcs as namedNpcs, stories, storyCounters, type StoryCond } from '@/engine/data'
 import { parasiteRules } from '@/engine/parasites'
 import AffinityCondEditor from './AffinityCondEditor.vue'
 import CondExtrasEditor from './CondExtrasEditor.vue'
@@ -44,6 +44,7 @@ const moreSummary = computed(() => {
     for (const [id, r] of Object.entries(c.counters ?? {})) out.push(`${storyCounters[id]?.name ?? id}${r.min !== undefined ? ` ≥ ${r.min}` : ''}${r.max !== undefined ? ` ≤ ${r.max}` : ''}`)
     for (const id of Object.keys(c.parasites ?? {})) out.push(`身上有${parasiteRules.parasites[id]?.name ?? id}`)
     if (c.pc_tags?.length) out.push('主角的身分')
+    if (c.after) out.push(`${stories.find((d) => d.id === c.after!.story)?.title ?? c.after.story}${c.after.node ? `的 ${c.after.node}` : ''}結束 ${c.after.days} 天後`)
     if (c.stats || c.charm || c.wearing) out.push('成人向的條件')
   }
   return out.join('；')
@@ -55,7 +56,7 @@ const moreSummary = computed(() => {
     <div class="row"><span class="k">{{ label }}：要有</span><FlagInput v-model="flags" :placeholder="placeholder" /></div>
     <div v-if="none" class="row"><span class="k">不能有</span><FlagInput v-model="flagsNone" placeholder="任一成立就不行" /></div>
     <details v-if="hasMore" class="more" :open="!!moreSummary">
-      <summary>更多條件{{ moreSummary ? `：${moreSummary}` : `（${[extras || any ? '至少一個成立' : '', affinity ? '好感' : '', extras ? '計數器、寄生物、身分、成人向' : ''].filter(Boolean).join('、')}）` }}</summary>
+      <summary>更多條件{{ moreSummary ? `：${moreSummary}` : `（${[extras || any ? '至少一個成立' : '', affinity ? '好感' : '', extras ? '計數器、寄生物、身分、幾天之後、成人向' : ''].filter(Boolean).join('、')}）` }}</summary>
       <div class="more-body">
         <div v-if="any && !extras" class="row"><span class="k">至少一個成立</span><FlagInput v-model="flagsAny" placeholder="任一成立即可" /></div>
         <AffinityCondEditor v-if="affinity" :model-value="cond" label="好感至少" @update:model-value="cond = $event" />

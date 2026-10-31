@@ -1145,7 +1145,7 @@
         { "id": "deep", "name": "深層", "encounters": [3, 5], "traps": [2, 3], "resources": [1, 3], "chests": [1, 2], "elites": 1, "guard": true, "boss": true, "trap_dc": 15, "trap_damage": "3d6", "chest_lock": [0.6, 16] },
         { "id": "abyss", "name": "底層", "encounters": [3, 5], "traps": [2, 4], "resources": [1, 3], "chests": [2, 2], "elites": 1, "boss": true, "trap_dc": 17, "trap_damage": "4d6", "chest_lock": [0.7, 18] }
       ],
-      "resource_items": ["鐵礦石", "夜光蘑菇", "古錢"]
+      "resource_items": ["鐵礦石", "夜光蘑菇", "熒光苔蘚", "古錢"]
     }
   }
 }

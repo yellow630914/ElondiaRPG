@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BIND_KINDS, lewdRules, storyCounters, type BindKind, type CounterRange, type ParasiteRange, type StoryCond, type WearingCond } from '@/engine/data'
+import { BIND_KINDS, lewdRules, stories, storyCounters, type AfterCond, type BindKind, type CounterRange, type ParasiteRange, type StoryCond, type WearingCond } from '@/engine/data'
 import { charmRules } from '@/engine/charm'
 import { LEWD_KEYS, lewdName } from '@/engine/lewd'
 import { pcTagChoices } from '@/engine/pcTags'
@@ -28,6 +28,7 @@ function put(next: Partial<StoryCond>) {
   if (!out.charm || (out.charm.min === undefined && out.charm.max === undefined)) delete out.charm
   if (!out.wearing || !Object.keys(out.wearing).length) delete out.wearing
   if (!out.pc_tags?.length) delete out.pc_tags
+  if (!out.after) delete out.after
   cond.value = out
 }
 const any = computed({
@@ -108,6 +109,19 @@ function togglePcTag(id: string, on: boolean) {
   else next.delete(id)
   put({ pc_tags: [...next] })
 }
+// 某個特殊任務（或任務點）結束後至少幾天：「三天後來取件」「三天後在餘燼裂隙」
+const storyList = computed(() => {
+  void content.version
+  return stories.map((d) => ({ id: d.id, title: d.title, nodes: d.nodes.map((n) => ({ id: n.id, title: n.title })) }))
+})
+const afterNodes = computed(() => storyList.value.find((d) => d.id === cond.value.after?.story)?.nodes ?? [])
+function setAfter(patch: Partial<AfterCond> | null) {
+  if (!patch) return put({ after: undefined })
+  const next = { days: 3, ...cond.value.after, ...patch } as AfterCond
+  if (!next.story) return put({ after: undefined })
+  if (!next.node) delete next.node
+  put({ after: next })
+}
 function tamedOf(r: ParasiteRange): string {
   return r.tamed === undefined ? '' : r.tamed ? 'yes' : 'no'
 }
@@ -147,6 +161,22 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
       <button class="small" @click="removeP(id)" title="移除">✕</button>
     </span>
     <button class="small" @click="addP">＋ 寄生物條件</button>
+  </div>
+  <div class="row small">
+    結束後幾天
+    <select :value="cond.after?.story ?? ''" @change="setAfter({ story: ($event.target as HTMLSelectElement).value, node: undefined })">
+      <option value="">不限</option>
+      <option v-for="d in storyList" :key="d.id" :value="d.id">{{ d.title }}</option>
+      <option v-if="cond.after && !storyList.some((d) => d.id === cond.after!.story)" :value="cond.after.story">{{ cond.after.story }}（不存在）</option>
+    </select>
+    <template v-if="cond.after">
+      <select :value="cond.after.node ?? ''" @change="setAfter({ node: ($event.target as HTMLSelectElement).value || undefined })">
+        <option value="">整個任務結束</option>
+        <option v-for="n in afterNodes" :key="n.id" :value="n.id">任務點「{{ n.title }}」結束</option>
+      </select>
+      之後至少 <input :value="cond.after.days" type="number" min="1" max="60" class="num" @change="setAfter({ days: Math.max(1, Math.min(60, num(($event.target as HTMLInputElement).value) ?? 1)) })" /> 天
+      <button class="small" title="移除" @click="setAfter(null)">✕</button>
+    </template>
   </div>
   <div class="row small">
     主角的身分標籤（至少一個）
