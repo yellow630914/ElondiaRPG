@@ -1170,6 +1170,8 @@ export const useGame = defineStore('game', () => {
     abandonStory: (id: string) => run((s) => story.abandonStory(s, id)),
     // 走到不緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發
     waitStory: (ref: string) => run((s) => story.waitStory(s, ref)),
+    // 只在白天或夜裡的任務點：在原地等到那個時段
+    waitForStoryNode: (ref: string) => run((s) => story.waitForNode(s, ref)),
     act: (action: combat.CombatAction) => run((s) => combat.act(s, action)),
     finishCombat: () =>
       run((s) => {
