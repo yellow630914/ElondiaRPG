@@ -48,7 +48,7 @@
 - **AI 判定**：用文字描述主角要做的事，擲骰後由 AI 決定成敗並寫出經過，數值後果由程式夾在上限內。
 - **AI 設計**：AI 設計各地居民、商店的特別商品與談判方式，三項各自開關（店名不經 AI，照地區規則生成或手寫）。
 - 所有 AI 開關都在「設定 → 敘事與判定」；冒險頁面的「AI 判定」「AI 細節描述」按鈕會打開泡泡視窗，是同一組開關，每一項的「?」寫出會影響哪些行為。
-- **服務**：Anthropic、OpenAI、Google Gemini、Google Vertex AI（API key 或服務帳戶 JSON），以及 OpenAI 相容格式（DeepSeek、阿里雲百煉、智譜、Moonshot、OpenRouter、Ollama……）。可以設定三個模型來源，再指定每個功能用哪一個（例如正文用寫作好的模型、判定用便宜的模型）；每則日誌顯示用掉的 token。見 [`docs/PROMPTS.md`](docs/PROMPTS.md)。
+- **服務**：Anthropic、OpenAI、Google Gemini、Google Vertex AI（API key 或服務帳戶 JSON），以及 OpenAI 相容格式（DeepSeek、阿里雲百煉、智譜、Moonshot、OpenRouter、Ollama……）。可以設定多個模型來源（預設三個，最多八個），再指定每個功能用哪一個（例如正文用寫作好的模型、判定用便宜的模型）；每則日誌顯示用掉的 token。見 [`docs/PROMPTS.md`](docs/PROMPTS.md)。
 - **插圖**：替主角、夥伴與 NPC 生成形象圖（OpenAI、NovelAI、ComfyUI），可以先請語言模型把描述轉成標籤；也可以上傳自己的圖。見 [`docs/PORTRAITS.md`](docs/PORTRAITS.md)。
 
 ## 遊戲內容

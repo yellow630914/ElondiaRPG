@@ -55,7 +55,9 @@ export interface ModelSource {
   configs: Record<ProviderId, ProviderConfig>
 }
 
+/** 模型來源的數量：預設 3 個，可以新增到 SOURCE_MAX 個、刪到剩 1 個 */
 export const SOURCE_COUNT = 3
+export const SOURCE_MAX = 8
 
 /** 自動寫出經過的日誌種類 */
 export type NarrateKind = 'action' | 'combat' | 'travel' | 'event' | 'rest' | 'social' | 'trade'
@@ -190,13 +192,14 @@ function load(): SavedSettings {
       const first: ModelSource = { name: '來源 1', provider: saved.provider ?? 'anthropic', configs: { ...defaultConfigs(), ...saved.configs } }
       sources = [first, cloneSource(first, '來源 2'), cloneSource(first, '來源 3')]
     }
-    sources = Array.from({ length: SOURCE_COUNT }, (_, i) => {
+    const count = Math.min(SOURCE_MAX, Math.max(1, sources.length))
+    sources = Array.from({ length: count }, (_, i) => {
       const s = sources![i] ?? cloneSource(sources![0] ?? base.sources[0]!, `來源 ${i + 1}`)
       return { name: s.name || `來源 ${i + 1}`, provider: s.provider ?? 'anthropic', configs: { ...defaultConfigs(), ...s.configs } }
     })
     // 舊版沒有「成人場景正文」：和敘事正文用同一個來源
     const routes = { ...defaultRoutes(), ...(saved.routes ? { adult: saved.routes.narration ?? 0 } : {}), ...saved.routes }
-    for (const k of Object.keys(routes) as AiFeature[]) if (!(routes[k] >= 0 && routes[k] < SOURCE_COUNT)) routes[k] = 0
+    for (const k of Object.keys(routes) as AiFeature[]) if (!(routes[k] >= 0 && routes[k] < sources.length)) routes[k] = 0
     // 舊版的「成人向」開關已經拿掉
     const { autoNarrate: _a, provider: _p, configs: _c, adult: _adult, ...rest } = saved
     const defeatAdult = (['all', 'not_masc', 'off'] as const).includes(saved.defeatAdult as DefeatAdultMode) ? saved.defeatAdult! : base.defeatAdult
@@ -334,6 +337,26 @@ export const useSettings = defineStore('settings', () => {
     return aiNarration.value || (kind === 'action' && report.check?.source === 'ai')
   }
 
+  /** 新增一個來源（先複製來源 1 的服務與 key，只要改模型就好）；回傳新來源的位置，到上限時 -1 */
+  function addSource(): number {
+    if (sources.value.length >= SOURCE_MAX) return -1
+    const names = new Set(sources.value.map((s) => s.name))
+    let n = sources.value.length + 1
+    while (names.has(`來源 ${n}`)) n++
+    sources.value.push(cloneSource(sources.value[0]!, `來源 ${n}`))
+    return sources.value.length - 1
+  }
+
+  /** 刪掉一個來源（至少留一個）：用它的功能改用第一個來源，後面的來源往前移 */
+  function removeSource(index: number) {
+    if (sources.value.length <= 1 || !sources.value[index]) return
+    sources.value.splice(index, 1)
+    for (const k of Object.keys(routes.value) as AiFeature[]) {
+      const r = routes.value[k]
+      routes.value[k] = r === index ? 0 : r > index ? r - 1 : r
+    }
+  }
+
   /** 把一個來源的設定複製到另一個（例如只想換模型） */
   function copySource(from: number, to: number) {
     const src = sources.value[from]
@@ -354,6 +377,6 @@ export const useSettings = defineStore('settings', () => {
 
   return {
     sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatAlways, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
-    sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource,
+    sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })

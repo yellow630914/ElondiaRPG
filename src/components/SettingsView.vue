@@ -8,7 +8,7 @@ import { gearRules } from '@/engine/gear'
 import type { StepPlace } from '@/engine/grid'
 import mapsJson from '@data/world/maps.json'
 import { useGame } from '@/stores/game'
-import { AI_FEATURES, useSettings } from '@/stores/settings'
+import { AI_FEATURES, SOURCE_MAX, useSettings } from '@/stores/settings'
 import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
@@ -26,6 +26,19 @@ const game = useGame()
 const saveRules = computed(() => Object.fromEntries((Object.keys(RULE_DEFS) as NumericRule[])
   .filter((k) => game.state?.options?.[k] !== undefined).map((k) => [k, game.state!.options![k]!])) as Partial<Record<NumericRule, number>>)
 const source = ref(0)
+function addSource() {
+  const i = settings.addSource()
+  if (i >= 0) source.value = i
+}
+function removeSource() {
+  const s = settings.sources[source.value]
+  if (!s) return
+  const used = AI_FEATURES.filter((f) => settings.routes[f.id] === source.value).map((f) => f.name)
+  const first = settings.sources[source.value === 0 ? 1 : 0]!.name
+  if (!confirm(`刪除「${s.name}」？${used.length ? `用它的功能（${used.join('、')}）會改用「${first}」。` : ''}`)) return
+  settings.removeSource(source.value)
+  source.value = Math.min(source.value, settings.sources.length - 1)
+}
 // 設定分成幾個頁籤（記住上次看的那一頁）
 const PAGES = [
   { id: 'models', label: '模型', icon: 'settings' },
@@ -68,14 +81,18 @@ function doReset() {
   <template v-if="page === 'models'">
     <section class="panel">
       <h2 class="head"><GameIcon name="settings" :size="20" />模型來源
-        <Hint text="可以設定三個模型來源（例如一個擅長寫作的模型、一個便宜的模型），再在下方指定每個功能用哪一個。API key 只會存在這個瀏覽器的 localStorage，請求直接從瀏覽器送往你選擇的服務。請勿在共用電腦上保存 key。" />
+        <Hint text="可以設定多個模型來源（預設三個，最多八個；例如一個擅長寫作的模型、一個便宜的模型），再在下方指定每個功能用哪一個。API key 只會存在這個瀏覽器的 localStorage，請求直接從瀏覽器送往你選擇的服務。請勿在共用電腦上保存 key。" />
       </h2>
       <nav class="row tabs">
         <button v-for="(s, i) in settings.sources" :key="i" :class="{ active: source === i }" @click="source = i">
           <span class="dot" :class="{ ready: settings.sourceReady(i) }" :title="settings.sourceReady(i) ? '已設定' : '未設定'" />{{ s.name }}
         </button>
+        <button v-if="settings.sources.length < SOURCE_MAX" class="ghost" title="新增一個來源（先複製來源 1 的服務與 key）" @click="addSource">＋ 新增來源</button>
       </nav>
-      <ModelSourceEditor :key="source" :index="source" />
+      <ModelSourceEditor :key="`${source}-${settings.sources.length}`" :index="source" />
+      <div v-if="settings.sources.length > 1" class="row">
+        <button class="ghost small danger" @click="removeSource">🗑️ 刪除「{{ settings.sources[source]?.name }}」</button>
+      </div>
     </section>
 
     <section class="panel">

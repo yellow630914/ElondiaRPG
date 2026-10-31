@@ -212,6 +212,29 @@ describe('model sources', () => {
     expect(settings.designs('shop')).toBe(true)
   })
 
+  it('adds sources up to the limit and removes them, moving the features that used them', async () => {
+    const { useSettings, SOURCE_MAX } = await import('@/stores/settings')
+    const settings = useSettings()
+    settings.sources[0]!.configs.anthropic = { apiKey: 'k', model: 'claude-sonnet-5-5' }
+    expect(settings.addSource()).toBe(3)
+    expect(settings.sources[3]).toMatchObject({ name: '來源 4', provider: 'anthropic' })
+    expect(settings.sources[3]!.configs.anthropic.apiKey).toBe('k')
+    while (settings.addSource() >= 0) { /* 加到上限 */ }
+    expect(settings.sources.length).toBe(SOURCE_MAX)
+    settings.routes.judge = 3
+    settings.routes.narration = 5
+    settings.removeSource(3)
+    expect(settings.sources.length).toBe(SOURCE_MAX - 1)
+    expect(settings.routes.judge).toBe(0)
+    expect(settings.routes.narration).toBe(4)
+    for (let i = settings.sources.length; i > 1; i--) settings.removeSource(0)
+    settings.removeSource(0)
+    expect(settings.sources.length).toBe(1)
+    await nextTick()
+    // 存起來的數量照實際的
+    expect(JSON.parse(localStorage.getItem('elondia.settings')!).sources).toHaveLength(1)
+  })
+
   it('switches the AI designs separately from AI judging', async () => {
     localStorage.setItem('elondia.settings', JSON.stringify({ sources: [{ name: '來源 1', provider: 'gemini', configs: { gemini: { apiKey: 'AIza', model: 'gemini-pro-latest' } } }], aiJudge: true, aiDesign: { roster: false, shop: true, negotiation: false } }))
     const { useSettings } = await import('@/stores/settings')
