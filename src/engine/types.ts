@@ -178,6 +178,8 @@ export interface Report {
     player_intent?: string
     /** 戰敗事件：前半段停在對方動手前（defeat_cliffhanger），後半段是玩家回應之後（defeat_event） */
     mode?: 'defeat_cliffhanger' | 'defeat_event'
+    /** 戰敗事件被圍住的是隊友：那位隊員的 id（沒有時是主角） */
+    defeat_victim?: string
     /** 成人向的親密場景：這段經過是什麼，敘事會附上成人場景規則、在正文詳細描寫 */
     adult_scene?: string
     /** 親密場景的主角不是主角本人時（派奴隸去娼館接客）：那個人的 id（慾望指標記在他身上） */
@@ -542,6 +544,8 @@ export interface PendingDefeat {
   villain?: string
   /** 玩家按「戰敗」時選了主動：主角是自願認輸的（只影響文字） */
   willing?: boolean
+  /** 被圍住的是隊友（隊員 id）：主角不會遇到戰敗事件時改由隊友遇到，玩家替這位隊友選擇反應；沒有時是主角 */
+  victim?: string
 }
 
 export interface PendingMasterEvent {

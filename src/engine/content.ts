@@ -45,6 +45,19 @@ export function defeatAlwaysOn(): boolean {
   return defeatAlways
 }
 
+/** 隊友的戰敗色情事件（主角不會遇到時，改由隊友遇到）：全部的隊友、男性形象的隊友不發生、關閉 */
+let defeatCompanionMode: DefeatAdultMode = 'not_masc'
+
+export function setDefeatCompanion(m: DefeatAdultMode) {
+  defeatCompanionMode = m
+}
+
+/** 這位隊友（體型）現在會不會遇到戰敗色情事件：只看隊友的設定（「主角非自願」只管主角） */
+export function defeatCompanionAllowed(body: 'masc' | 'fem' | 'andro'): boolean {
+  if (defeatCompanionMode === 'off') return false
+  return defeatCompanionMode !== 'not_masc' || body !== 'masc'
+}
+
 /** 這位主角（體型）現在會不會遇到戰敗色情事件：主角非自願要開著，再看戰敗事件的設定 */
 export function defeatAdultAllowed(body: 'masc' | 'fem' | 'andro'): boolean {
   if (!tagsAllowed(['pc_unwilling']) || defeatMode === 'off') return false

@@ -245,8 +245,14 @@ export const DEFAULT_DEFEAT_RULES = `<defeat_event>
 3. 不可改變報告的結果、數值與損失；敵人的言行依它們的種類、性格與世界書；主角的反應要符合 <protagonist> 的設定。
 </defeat_event>`
 
-export function fillDefeatRules(template: string | undefined, player: string): string {
-  return (template?.trim() ? template : DEFAULT_DEFEAT_RULES).split('{{player}}').join(player)
+export function fillDefeatRules(template: string | undefined, player: string, victim?: string): string {
+  const rules = (template?.trim() ? template : DEFAULT_DEFEAT_RULES).split('{{player}}').join(player)
+  return victim ? `${rules}\n${defeatVictimNote(victim, player)}` : rules
+}
+
+/** 隊友的戰敗事件（被圍住的不是主角）：接在戰敗事件規則後面，說明規則裡的「主角」這次指的是那位隊友 */
+export function defeatVictimNote(victim: string, player: string): string {
+  return `這次被敵人圍住的是隊友${victim}，不是主角：上面的規則裡寫「主角」或${player}的地方，倒下後被圍住、做出反應、承受結果的都是${victim}，${victim}的言行要符合這位隊友的性格與設定。主角${player}也倒在一旁，無力介入（可以寫${player}看在眼裡的心情，但不要讓${player}出手改變結果）。`
 }
 
 /**
@@ -307,9 +313,12 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
 
   const intent = report.narration?.player_intent ? `\n玩家意圖：${report.narration.player_intent}` : ''
   const focus = report.narration?.focus?.length ? `\n描寫重點：${report.narration.focus.join('、')}` : ''
+  // 隊友的戰敗事件：被圍住的隊友的名字
+  const victimId = report.narration?.defeat_victim
+  const victim = victimId ? report.party.find((m) => m.id === victimId)?.name ?? victimId : undefined
   const defeat = report.narration?.mode === 'defeat_cliffhanger'
-    ? '\n- 戰敗事件的前半段：停在敵人準備動手的前一刻，等玩家決定反應'
-    : report.narration?.mode === 'defeat_event' ? '\n- 戰敗事件的後半段：依主角的反應與成功程度寫出經過' : ''
+    ? `\n- 戰敗事件的前半段：停在敵人準備動手的前一刻，等玩家決定${victim ? `${victim}的` : ''}反應`
+    : report.narration?.mode === 'defeat_event' ? `\n- 戰敗事件的後半段：依${victim ?? '主角'}的反應與成功程度寫出經過` : ''
   const sceneLine = scene ? `\n- 成人場景：${scene}；依 <adult_scene> 的規則在正文中詳細描寫經過` : ''
   const variety = opts.variety ? `\n- 這次的寫法：${opts.variety}` : ''
   // 打聽、詢問得到的具體內容：要寫進正文，不能只寫「講解了具體情況」
@@ -326,7 +335,7 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
     ...sharedSystemSections({ instructions: opts.instructions, constantLore: constant }),
     // 只有部分日誌才有的規則放在 system 的最後：前面的規則、文風、常駐世界書和一般日誌一樣，可以共用快取
     // 成人向的戰敗事件：另外一套規則
-    { key: 'defeat', title: '戰敗事件規則', part: 'system', text: report.narration?.mode ? fillDefeatRules(opts.defeatRules, opts.playerName) : '' },
+    { key: 'defeat', title: '戰敗事件規則', part: 'system', text: report.narration?.mode ? fillDefeatRules(opts.defeatRules, opts.playerName, victim) : '' },
     // 成人向的親密場景：要求在正文詳細描寫經過
     { key: 'scene', title: '成人場景規則', part: 'system', text: scene ? fillSceneRules(opts.sceneRules, opts.playerName) : '' },
     { key: 'protagonist', title: '主角設定', part: 'user', text: opts.protagonist ? `<protagonist>\n${opts.protagonist}\n</protagonist>` : '' },
