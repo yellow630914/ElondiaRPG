@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 import worldbook from '../../data/worldbook/elondia.worldbook.json'
 import { pcBodyAllowed, setMascBodyContent } from '@/engine/content'
 import { stories } from '@/engine/data'
-import { enterLocation } from '@/engine/grid'
+import { enterLocation, getArea, placeAt } from '@/engine/grid'
 import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
 import { prepareAction } from '@/engine/actions'
 import { newGame } from '@/engine/state'
-import { canStart } from '@/engine/story'
+import { activeNodes, canStart, playNode, startStory, storyPauseReason } from '@/engine/story'
 import type { StoryMod } from '@/engine/storyMods'
 import { baseReport } from '@/engine/town'
 import type { GameState } from '@/engine/types'
@@ -25,6 +25,12 @@ function game(body: 'masc' | 'fem'): GameState {
   state.party[0]!.body = body
   enterLocation(state)
   return state
+}
+
+/** 站到晨光城的怪人之塔（希爾德加德的任務點） */
+function atTower(state: GameState) {
+  state.location = 'dawnlight'
+  placeAt(state, getArea(state, 'dawnlight/gate'), 5, 1)
 }
 
 const options = { config: defaultPromptConfig(), lore: loreItems(worldbook as unknown as Worldbook, {}, []), budgetChars: 20000, language: 'zh-Hant' as const }
@@ -72,5 +78,48 @@ describe('陽剛體型也能遇到限定陰柔、中性的成人內容', () => {
     const p = prepareAction(judged, { kind: 'free', text: '和貴賓喝一杯' })
     expect(composeJudge(judged, p, options).prompt.system).toContain(NOTE)
     expect(buildActionPrompt(judged, p, '', { narrative: true }).system).not.toContain(NOTE)
+  })
+
+  it('pauses a limited story already under way when the setting is turned off, and resumes when it is back on', () => {
+    setMascBodyContent(true)
+    const state = game('masc')
+    state.party[0]!.level = 13
+    startStory(state, 'odd_measure')
+    atTower(state)
+    const nodes = () => activeNodes(state).filter((n) => n.def.id === 'odd_measure')
+    expect(nodes().length).toBe(1)
+    setMascBodyContent(false)
+    expect(storyPauseReason(state, stories.find((s) => s.id === 'odd_measure')!)).toBe('body')
+    expect(nodes()).toEqual([])
+    expect(state.stories!.odd_measure!.status).toBe('active')
+    expect(() => playNode(state, 'odd_measure:strip')).toThrow('沒辦法進行')
+    setMascBodyContent(true)
+    expect(nodes().length).toBe(1)
+    // 體型改回陰柔也接著進行
+    setMascBodyContent(false)
+    state.party[0]!.body = 'fem'
+    expect(nodes().length).toBe(1)
+  })
+
+  it('also tells the AI about the body on non-intimate steps of limited content', () => {
+    setMascBodyContent(true)
+    const state = game('masc')
+    state.party[0]!.level = 13
+    startStory(state, 'odd_measure')
+    atTower(state)
+    const ref = activeNodes(state).find((n) => n.def.id === 'odd_measure')!.ref
+    const r = playNode(state, ref) as ReturnType<typeof baseReport>
+    expect(r.narration?.adult_scene).toBeUndefined()
+    expect(r.narration?.body_limited).toBe(true)
+    expect(composeNarration(state, r, options).prompt.system).toContain(NOTE)
+    // 報告本身不帶這個旗標
+    expect(composeNarration(state, r, options).prompt.user).not.toContain('body_limited')
+    // 陰柔主角不附
+    const fem = game('fem')
+    fem.party[0]!.level = 13
+    startStory(fem, 'odd_measure')
+    atTower(fem)
+    const rf = playNode(fem, activeNodes(fem).find((n) => n.def.id === 'odd_measure')!.ref) as ReturnType<typeof baseReport>
+    expect(composeNarration(fem, rf, options).prompt.system).not.toContain(NOTE)
   })
 })

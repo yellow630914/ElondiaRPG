@@ -263,5 +263,6 @@ export function playLandmarkScene(state: GameState, index: number): Report {
   else r.scene = state.time.day
   report.outcome = { result: 'success', summary: `在${l.name}${sc.title}：${text}` }
   if (sc.tags?.includes('adult')) report.narration = { ...report.narration, length: 'long', adult_scene: text }
+  if (sc.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   return commitReport(state, report)
 }

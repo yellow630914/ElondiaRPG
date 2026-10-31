@@ -160,6 +160,7 @@ export function answerTownEvent(state: GameState, index: number): Report {
   report.outcome = { result: o.check ? (ok ? 'success' : 'failure') : 'neutral', summary: lines.join(''), tags: ['城鎮事件'] }
   report.narration = { ...report.narration, focus: [t.text, `主角的選擇：${o.label}`] }
   if (t.scene && sceneOn(o, ok)) report.narration = { ...report.narration, length: 'medium', adult_scene: t.scene }
+  if (t.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   delete state.townEvent
   const committed = commitReport(state, report)
   applyPendingMove(state)

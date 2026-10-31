@@ -183,7 +183,7 @@ function doReset() {
         </label>
         <label class="check">
           <input v-model="settings.mascBodyContent" type="checkbox" /> 陽剛體型也能遇到「只給陰柔、中性」的成人內容
-          <Hint text="有一部分成人向內容限定陰柔、中性體型的主角：18 條打工、儀式的特殊任務線，地下城事件（全部），部分城鎮、旅途事件與地標的場景；連帶兩種主要的寄生物也只能從那裡得到。勾選後陽剛體型的主角也會遇到。看的是體型（陽剛、陰柔、中性），不是性別；體型在建立角色或角色設定裡可以改。" />
+          <Hint text="有一部分成人向內容限定陰柔、中性體型的主角：17 條打工、儀式的特殊任務線，地下城事件（全部），部分城鎮、旅途事件與地標的場景；連帶兩種主要的寄生物也只能從那裡得到。勾選後陽剛體型的主角也會遇到。看的是體型（陽剛、陰柔、中性），不是性別；體型在建立角色或角色設定裡可以改。" />
         </label>
         <p v-if="settings.mascBodyContent" class="small body-warn"><GameIcon name="caution" :size="16" class="warn-icon" />這些內容是照陰柔、中性的主角寫的：角色的身分不會變（陽剛體型的主角一樣會當兔女郎、女僕、新娘），固定的事件文字也可能寫到不符合主角身體的部位。AI 寫經過時會照主角的身體改寫，但不保證每次都自然。</p>
         <label v-if="settings.defeatAdult !== 'off' || settings.defeatCompanion !== 'off'" class="check">

@@ -100,7 +100,7 @@ export function storyNeedsLandmark(state: GameState, id: string): boolean {
   // 只看用到這個地標的任務（每走一步、每個地標都會問一次，掃全部任務太慢）
   return storiesAtLandmark(id).some((def) => {
     const p = state.stories?.[def.id]
-    if (p) return p.status === 'active' && !storyPaused(def) && def.nodes.some((n) => !p.done.includes(n.id) && atCell(n))
+    if (p) return p.status === 'active' && !storyPaused(state, def) && def.nodes.some((n) => !p.done.includes(n.id) && atCell(n))
     return canStart(state, def)
   })
 }
@@ -199,6 +199,7 @@ export function startStory(state: GameState, id: string, opts: { text?: string; 
   const locks = storyWearLocks(state, def)
   report.outcome = { result: 'success', summary: `接下特殊任務「${def.title}」：${def.summary}${locks ? `（${locks}）` : ''}`, tags: [...new Set([...(report.outcome.tags ?? []), '特殊任務'])] }
   report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), text] }
+  if (def.start.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   if (opts.report) return report
   const committed = commitReport(state, report)
   refreshStoryMarkers(state)
@@ -209,9 +210,18 @@ export function startStory(state: GameState, id: string, opts: { text?: string; 
 
 export interface ActiveNode { def: StoryDef; node: StoryNode; ref: string }
 
-/** 任務的內容標籤在設定裡被關掉時暫停（成人向、NTR、男性對象……）：任務點不出現、不擋人，重新開啟後接著進行 */
-export function storyPaused(def: Pick<StoryDef, 'tags'>): boolean {
-  return !tagsAllowed(def.tags)
+/**
+ * 任務暫停的原因：內容標籤在設定裡被關掉（成人向、NTR、男性對象……），或主角的體型不符合任務的限定（pc_body：
+ * 「陽剛體型也能遇到」的設定關掉了，或在角色設定改了體型）。任務點不出現、不擋人，重新開啟（改回來）後接著進行
+ */
+export function storyPauseReason(state: GameState, def: Pick<StoryDef, 'tags' | 'start'>): 'tags' | 'body' | undefined {
+  if (!tagsAllowed(def.tags)) return 'tags'
+  if (!pcBodyAllowed(def.start.pc_body, characterBody(pcOf(state)))) return 'body'
+  return undefined
+}
+
+export function storyPaused(state: GameState, def: Pick<StoryDef, 'tags' | 'start'>): boolean {
+  return !!storyPauseReason(state, def)
 }
 
 /** 進行中的任務裡已經解鎖、還沒結束的任務點 */
@@ -220,7 +230,7 @@ export function activeNodes(state: GameState): ActiveNode[] {
   for (const p of Object.values(state.stories ?? {})) {
     if (p.status !== 'active') continue
     const def = storyDef(p.id)
-    if (!def || storyPaused(def)) continue
+    if (!def || storyPaused(state, def)) continue
     for (const node of def.nodes) {
       if (p.done.includes(node.id) || !condMet(state, node.requires)) continue
       out.push({ def, node, ref: nodeRef(def.id, node.id) })
@@ -238,7 +248,7 @@ export function nodesWaitingForDays(state: GameState): (ActiveNode & { from: Gam
   for (const p of Object.values(state.stories ?? {})) {
     if (p.status !== 'active') continue
     const def = storyDef(p.id)
-    if (!def || storyPaused(def)) continue
+    if (!def || storyPaused(state, def)) continue
     for (const node of def.nodes) {
       const after = node.requires?.after
       if (!after || p.done.includes(node.id) || condMet(state, node.requires)) continue
@@ -314,7 +324,7 @@ export function waitForNode(state: GameState, ref: string): Report {
 function active(state: GameState, ref: string): ActiveNode & { progress: StoryProgress } {
   const { def, node } = parseRef(ref)
   const progress = state.stories?.[def.id]
-  if (!progress || progress.status !== 'active' || storyPaused(def) || progress.done.includes(node.id) || !condMet(state, node.requires)) throw new Error('這個任務點現在沒辦法進行')
+  if (!progress || progress.status !== 'active' || storyPaused(state, def) || progress.done.includes(node.id) || !condMet(state, node.requires)) throw new Error('這個任務點現在沒辦法進行')
   return { def, node, ref, progress }
 }
 
@@ -567,6 +577,7 @@ function resolveOutcome(
   report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), node.text, ...(outcome?.text ? [outcome.text] : [])] }
   // 親密場景：依成人場景規則詳細描寫（交給成人場景正文）
   if (outcome?.scene) report.narration = { ...report.narration, length: report.narration?.length === 'long' ? 'long' : 'medium', adult_scene: outcome.scene }
+  if (def.start.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   if (!outcome) {
     if (!success) {
       lines.push('這次沒有進展，之後可以再試一次。')

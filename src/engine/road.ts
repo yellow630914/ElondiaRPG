@@ -488,6 +488,7 @@ export function answerRoadEvent(state: GameState, index: number): Report {
   report.narration = { ...report.narration, focus: [tpl.text, `主角的選擇：${o.label}`] }
   // 成人向：選項帶 adult_scene 時交給成人場景的寫手（和城鎮、地下城事件一樣）
   if (tpl.scene && sceneOn(o, ok)) report.narration = { ...report.narration, length: 'medium', adult_scene: tpl.scene }
+  if (tpl.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   const cell = currentArea(state).cells[ev.x]
   if (cell) cell.done = true
   delete state.roadEvent

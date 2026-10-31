@@ -348,6 +348,8 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
     { key: 'defeat', title: '戰敗事件規則', part: 'system', text: report.narration?.mode ? fillDefeatRules(opts.defeatRules, opts.playerName, victim) : '' },
     // 成人向的親密場景：要求在正文詳細描寫經過
     { key: 'scene', title: '成人場景規則', part: 'system', text: scene ? `${fillSceneRules(opts.sceneRules, opts.playerName)}${opts.bodyNote ? `\n${opts.bodyNote}` : ''}` : '' },
+    // 限定陰柔、中性主角的內容，不是親密場景的那幾段（任務點、事件的固定文字也會寫到身體）：一樣提醒照主角的身體寫
+    { key: 'body', title: '主角的身體', part: 'system', text: !scene && opts.bodyNote && report.narration?.body_limited ? opts.bodyNote : '' },
     { key: 'protagonist', title: '主角設定', part: 'user', text: opts.protagonist ? `<protagonist>\n${opts.protagonist}\n</protagonist>` : '' },
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },
     { key: 'context', title: '人際關係與冒險記憶', part: 'user', text: opts.context ?? '' },

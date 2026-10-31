@@ -152,6 +152,7 @@ export function resolvePcOption(state: GameState, report: Report, t: RoadTemplat
   report.outcome = { result: o.check ? (ok ? 'success' : 'failure') : 'neutral', summary: lines.join(''), tags: [tag] }
   report.narration = { ...report.narration, focus: [t.text, `主角的回應：${o.label}`] }
   if (scene && sceneOn(o, ok)) report.narration = { ...report.narration, length: 'medium', adult_scene: scene }
+  if (t.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   return ok
 }
 
