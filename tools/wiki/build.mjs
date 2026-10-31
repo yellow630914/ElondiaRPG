@@ -126,6 +126,7 @@ export const GROUPS = [
     { page: '手機版畫面：剩下的事', src: 'docs/plan/roadmap/MOBILE_UI_PLAN.md', desc: '手機版畫面還沒做的部分（R10）' },
     { page: '角色線計畫', src: 'docs/plan/roadmap/CHARACTER_LINES_PLAN.md', desc: '白百合巡禮與琥珀的角色線（R9）' },
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
+    { page: '特殊任務時段計畫', src: 'docs/plan/roadmap/STORY_TIME_PLAN.md', desc: '內建特殊任務與事件的時段盤點與套用（R12）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
     { page: '已完成', src: 'docs/plan/roadmap/COMPLETED.md', desc: '做完的計畫：做了什麼、規則寫在哪份文件' },
   ] },

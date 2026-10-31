@@ -1,6 +1,6 @@
 // 特殊任務與事件的時段（docs/STORY_QUESTS.md「時段」）：
 // - 任務點只在白天或夜裡進行（StoryNode.hours）：時段不對時不算「在這裡」，不跳出、不擋路，⭐ 照樣在地圖上，到了那個時段再來（或在原地等）。
-// - 結果把時間往前推（StoryOutcome.time）：經過幾小時，或推到夜裡、隔天早上。只往前推，不會倒回去；旅途中不調整（旅程照天數走）。
+// - 結果把時間往前推（StoryOutcome.time）：推到夜裡或隔天早上，再經過幾小時（「第二天中午」＝隔天早上再 4 小時）。只往前推，不會倒回去；旅途中不調整（旅程照天數走）。
 // 白天與夜裡和光線、固定 NPC 的出沒、地標的開放時間一樣看 maps.json 的 lighting.day_hours（light.ts 的 isNight）。
 
 import { isNight } from './light'
@@ -10,7 +10,7 @@ import type { GameState, GameTime, Report } from './types'
 export type DayPart = 'day' | 'night'
 export type TimeTarget = 'night' | 'morning'
 
-/** 結果的時間：先經過 hours 小時，再推到下一個 until 的時刻 */
+/** 結果的時間：先推到下一個 until 的時刻，再經過 hours 小時 */
 export interface TimeJump {
   hours?: number
   until?: TimeTarget
@@ -37,15 +37,14 @@ export function hoursUntil(time: GameTime, until: TimeTarget): number {
 
 /** 時間推到哪裡（沒有要推時是原本的時間） */
 export function jumpFrom(time: GameTime, j: TimeJump | undefined): Required<GameTime> {
-  let t = addHours(time, Math.max(0, Math.min(MAX_JUMP_HOURS, j?.hours ?? 0)))
-  if (j?.until) t = addHours(t, hoursUntil(t, j.until))
-  return t
+  const t = j?.until ? addHours(time, hoursUntil(time, j.until)) : addHours(time, 0)
+  return addHours(t, Math.max(0, Math.min(MAX_JUMP_HOURS, j?.hours ?? 0)))
 }
 
-/** 結果的說明（冒險筆記、編輯器）：「經過 3 小時，再到夜裡（20 點）」 */
+/** 結果的說明（冒險筆記、編輯器）：「到隔天早上（8 點），再經過 4 小時」 */
 export function timeJumpText(j: TimeJump | undefined): string {
   if (!j) return ''
-  return [j.hours ? `經過 ${j.hours} 小時` : '', j.until ? TARGET_NAME[j.until] : ''].filter(Boolean).join('，再')
+  return [j.until ? TARGET_NAME[j.until] : '', j.hours ? `經過 ${j.hours} 小時` : ''].filter(Boolean).join('，再')
 }
 
 /**

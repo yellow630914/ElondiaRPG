@@ -230,8 +230,13 @@ export function activeNodes(state: GameState): ActiveNode[] {
 /** 主角現在所在的地方有沒有這個任務點 */
 export function nodeIsHere(state: GameState, n: ActiveNode): boolean {
   // 只在白天或夜裡的任務點：時段不對時不算在這裡（不跳出、不擋路），到了那個時段再來
-  if (!dayPartOk(state.time, n.node.hours)) return false
+  if (!dayPartOk(state.time, nodeHours(n.node))) return false
   return nodeIsHereAnyTime(state, n)
+}
+
+/** 任務點的時段；旅途上的任務點不看時段（旅途不能停下來等，限定時段可能永遠遇不到） */
+export function nodeHours(node: Pick<StoryNode, 'hours' | 'at'>): StoryNode['hours'] {
+  return node.at.where === 'road' ? undefined : node.hours
 }
 
 /** 主角在不在任務點上（不看時段） */
@@ -261,21 +266,22 @@ export function nodesHere(state: GameState): ActiveNode[] {
 
 /** 站在任務點上、但時段不對的任務點（地點面板提醒要等到白天或夜裡） */
 export function nodesWaitingForTime(state: GameState): ActiveNode[] {
-  return activeNodes(state).filter((n) => !dayPartOk(state.time, n.node.hours) && nodeIsHereAnyTime(state, n))
+  return activeNodes(state).filter((n) => !dayPartOk(state.time, nodeHours(n.node)) && nodeIsHereAnyTime(state, n))
 }
 
 /** 在原地等到這個任務點的時段（白天是早上 8 點，夜裡是 20 點）：記一則簡短的日誌 */
 export function waitForNode(state: GameState, ref: string): Report {
   const n = activeNodes(state).find((x) => x.ref === ref)
-  if (!n?.node.hours) throw new Error('這個任務點不用等')
-  if (dayPartOk(state.time, n.node.hours)) throw new Error('現在就可以進行')
+  const part = n && nodeHours(n.node)
+  if (!n || !part) throw new Error('這個任務點不用等')
+  if (dayPartOk(state.time, part)) throw new Error('現在就可以進行')
   if (!nodeIsHereAnyTime(state, n)) throw new Error('要在任務點才能等')
   if (state.road) throw new Error('旅途中沒辦法停下來等')
-  const hours = hoursUntil(state.time, n.node.hours === 'night' ? 'night' : 'morning')
+  const hours = hoursUntil(state.time, part === 'night' ? 'night' : 'morning')
   const report = storyReport(state, n.def, 'progress', hours, n.node)
-  const part = DAY_PART_NAME[n.node.hours]
-  report.outcome = { result: 'neutral', summary: `在${currentArea(state).name}等到${part}，準備「${n.def.title}」的${n.node.title}。`, tags: ['等待'] }
-  report.narration = { pov: 'second_person', length: 'short', focus: [`為了特殊任務「${n.def.title}」等到${part}`] }
+  const name = DAY_PART_NAME[part]
+  report.outcome = { result: 'neutral', summary: `在${currentArea(state).name}等到${name}，準備「${n.def.title}」的${n.node.title}。`, tags: ['等待'] }
+  report.narration = { pov: 'second_person', length: 'short', focus: [`為了特殊任務「${n.def.title}」等到${name}`] }
   return commitReport(state, report)
 }
 
@@ -289,7 +295,8 @@ function active(state: GameState, ref: string): ActiveNode & { progress: StoryPr
 /** 地點的說明（冒險筆記用）；只在白天或夜裡的任務點加上時段 */
 export function placeText(n: StoryNode, state?: GameState): string {
   const where = placeName(n, state)
-  return n.hours ? `${where}・只在${DAY_PART_NAME[n.hours]}` : where
+  const part = nodeHours(n)
+  return part ? `${where}・只在${DAY_PART_NAME[part]}` : where
 }
 
 function placeName(n: StoryNode, state?: GameState): string {

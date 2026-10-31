@@ -50,7 +50,7 @@ const summary = computed(() => {
   if (x.retry) parts.push('↻ 可以再來')
   return parts.join('；')
 })
-// 結束時把時間往前推：經過幾小時、再推到夜裡或隔天早上（都沒有時拿掉）
+// 結束時把時間往前推：推到夜裡或隔天早上、再經過幾小時（都沒有時拿掉）
 function setTime(patch: { hours?: number; until?: TimeTarget | '' }) {
   if (!o.value) return
   const t = { ...o.value.time, ...patch }
@@ -129,12 +129,12 @@ const end = computed({
         </select>
       </div>
       <div class="row small">
-        結束時的時間 <Hint text="這件事結束時把時間往前推：先經過幾小時，再推到夜裡（20 點，已經是夜裡時不動）或隔天早上（8 點）。例如夜裡的密會結束後「到隔天早上」，就不會在大白天看到月亮。只往前推；旅途中不調整。" />
-        經過 <input type="number" min="0" :max="MAX_JUMP_HOURS" class="num" :value="o.time?.hours ?? ''" placeholder="0" @change="setTime({ hours: Number(($event.target as HTMLInputElement).value) })" /> 小時，
+        結束時的時間 <Hint text="這件事結束時把時間往前推：先推到夜裡（20 點，已經是夜裡時不動）或隔天早上（8 點），再經過幾小時。例如夜裡的密會結束後「到隔天早上」，就不會在大白天看到月亮；「第二天中午」是到隔天早上、再經過 4 小時；「三天後」只寫 72 小時。只往前推；旅途中不調整。" />
         <select :value="o.time?.until ?? ''" @change="setTime({ until: ($event.target as HTMLSelectElement).value as TimeTarget | '' })">
           <option value="">不調整時段</option>
-          <option v-for="(n, k) in TARGET_NAME" :key="k" :value="k">再{{ n }}</option>
+          <option v-for="(n, k) in TARGET_NAME" :key="k" :value="k">{{ n }}</option>
         </select>
+        ，再經過 <input type="number" min="0" :max="MAX_JUMP_HOURS" class="num" :value="o.time?.hours ?? ''" placeholder="0" @change="setTime({ hours: Number(($event.target as HTMLInputElement).value) })" /> 小時
       </div>
       <EffectsEditor v-model="o.effects" :types="props.event ? EVENT_EFFECTS : undefined" />
       <div v-if="!props.event" class="row small">

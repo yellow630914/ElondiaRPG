@@ -28,7 +28,7 @@ const tryst: StoryMod = {
   id: 'tryst', title: '月下之約', summary: '', start: { kind: 'guild', location: 'soriel' }, start_flags: ['t_started'], custom: true,
   nodes: [
     { id: 'meet', title: '月下碰面', text: '', at: { where: 'cell', location: 'soriel', cell: 'tavern' }, kind: 'story', hours: 'night', requires: { flags: ['t_started'] }, success: { set_flags: ['t_met'], time: { until: 'morning' } } },
-    { id: 'report', title: '回公會', text: '', at: { where: 'cell', location: 'soriel', cell: 'guild' }, kind: 'story', requires: { flags: ['t_met'] }, success: { complete: true, time: { hours: 2, until: 'night' } } },
+    { id: 'report', title: '回公會', text: '', at: { where: 'cell', location: 'soriel', cell: 'guild' }, kind: 'story', requires: { flags: ['t_met'] }, success: { complete: true, time: { until: 'night', hours: 2 } } },
   ],
 }
 
@@ -44,7 +44,9 @@ describe('time of day helpers', () => {
     expect(hoursUntil({ day: 1, hour: 22, minute: 30 }, 'morning')).toBe(9.5)
     expect(hoursUntil({ day: 1, hour: 3, minute: 0 }, 'morning')).toBe(5)
     expect(hoursUntil({ day: 1, hour: 9, minute: 0 }, 'morning')).toBe(23)
-    expect(jumpFrom({ day: 1, hour: 10, minute: 0 }, { hours: 30, until: 'night' })).toEqual({ day: 2, hour: 20, minute: 0 })
+    // 先推到時段，再經過幾小時：第二天中午、三天後的夜裡
+    expect(jumpFrom({ day: 1, hour: 22, minute: 0 }, { until: 'morning', hours: 4 })).toEqual({ day: 2, hour: 12, minute: 0 })
+    expect(jumpFrom({ day: 1, hour: 10, minute: 0 }, { until: 'night', hours: 72 })).toEqual({ day: 4, hour: 20, minute: 0 })
     expect(jumpFrom({ day: 1, hour: 10, minute: 0 }, { hours: 9999 })).toEqual({ day: 11, hour: 10, minute: 0 })
   })
 
@@ -55,6 +57,8 @@ describe('time of day helpers', () => {
     expect(s.nodes[0]!.hours).toBe('night')
     expect(s.nodes[0]!.success?.time).toEqual({ until: 'morning' })
     expect(sanitizeStory('x', { ...tryst, nodes: [{ ...tryst.nodes[0]!, hours: 'noon' as never }] }, true).nodes[0]!.hours).toBeUndefined()
+    // 旅途上的任務點不限時段
+    expect(sanitizeStory('x', { ...tryst, nodes: [{ ...tryst.nodes[0]!, at: { where: 'road' } }] }, true).nodes[0]!.hours).toBeUndefined()
   })
 })
 
@@ -92,8 +96,8 @@ describe('story nodes only at night or by day', () => {
 
     standOn(state, 'guild')
     playNode(state, 'tryst:report')
-    // 9 點 + 2 小時 = 11 點，再推到夜裡 20 點
-    expect(state.time).toMatchObject({ day: 2, hour: 20, minute: 0 })
+    // 9 點推到夜裡 20 點，再 2 小時 = 22 點
+    expect(state.time).toMatchObject({ day: 2, hour: 22, minute: 0 })
     expect(state.stories?.tryst?.status).toBe('completed')
   })
 })

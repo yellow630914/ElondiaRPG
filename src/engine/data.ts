@@ -292,7 +292,7 @@ export interface StoryOutcome {
   special_map?: string
   /** 改去別的地點：旅途中直接抵達那裡，不在旅途時被帶到那裡 */
   travel_to?: string
-  /** 結束時把時間往前推（timeOfDay.ts）：先經過 hours 小時，再推到夜裡（20 點）或隔天早上（8 點）；旅途中不調整 */
+  /** 結束時把時間往前推（timeOfDay.ts）：先推到夜裡（20 點）或隔天早上（8 點），再經過 hours 小時；旅途中不調整 */
   time?: { hours?: number; until?: 'night' | 'morning' }
 }
 
