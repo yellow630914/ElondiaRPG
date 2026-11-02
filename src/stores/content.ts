@@ -943,9 +943,9 @@ export const useContent = defineStore('content', () => {
   /**
    * 匯入內建世界：和內建比較，只留改過的與新增的，建立成新的世界（不動原版與其他世界）。
    * 回傳新世界的 id 與匯入結果（改了哪些、新增哪些、被調整的欄位、整筆略過的、有錯誤沒匯入的特殊任務）；
-   * 匯入結果也記在新世界上。什麼都沒改時不建立世界（id 是 undefined）
+   * 匯入結果也記在新世界上。什麼都沒改時（或 dryRun）不建立世界（id 是 undefined）
    */
-  function importBuiltinWorld(bytes: Uint8Array, name: string, file = ''): { id?: string; diff: BuiltinWorldDiff; report: BuiltinImportReport } {
+  function importBuiltinWorld(bytes: Uint8Array, name: string, file = '', o: { dryRun?: boolean } = {}): { id?: string; diff: BuiltinWorldDiff; report: BuiltinImportReport } {
     const read = readBuiltinWorldZip(bytes)
     let diff: BuiltinWorldDiff
     let incoming: ContentMods
@@ -961,7 +961,8 @@ export const useContent = defineStore('content', () => {
       apply()
     }
     const report = importReport(file, diff, read.errors, [...new Set(found)])
-    if (!hasChanges(diff)) return { diff, report }
+    // dryRun：只檢查（匯入前先看有沒有改動，有才問世界的名字），不建立世界
+    if (!hasChanges(diff) || o.dryRun) return { diff, report }
     const id = createWorld(name.trim() || '匯入的內建世界', undefined, incoming)
     const w = worlds.value.find((x) => x.id === id)!
     w.importReport = report

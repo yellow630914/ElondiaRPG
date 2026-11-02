@@ -5,6 +5,7 @@ import { finishCombat, startCombat } from '@/engine/combat'
 import { combatRules, enemies } from '@/engine/data'
 import { setDefeatAlways, setMonsterGirl, setMonsterGirlChance } from '@/engine/content'
 import { afterCombat, goOutskirts } from '@/engine/grid'
+import { applyDefeatResponse } from '@/engine/defeat'
 import { sanitizeEnemy } from '@/engine/mods'
 import { prepareAction } from '@/engine/actions'
 import { newGame } from '@/engine/state'
@@ -218,5 +219,35 @@ describe('monster girl personality and habits', () => {
     expect(odd?.personality).toBeUndefined()
     // 機率空白：照設定（不寫進資料）
     expect(sanitizeEnemy('goblin', { ...base, girl: { name: 'a', desc: 'b', chance: '' } } as never, false).girl).toEqual({ name: 'a', desc: 'b' })
+  })
+})
+
+describe('monster girls across midnight', () => {
+  it('the defeat event uses the day the fight started, like the narration before it', () => {
+    setMonsterGirl('all')
+    setMonsterGirlChance(50)
+    // 找一個開戰那天擲到、隔天沒擲到的存檔
+    let state: GameState | undefined
+    for (let seed = 1; seed < 200 && !state; seed++) {
+      if (girlRolled('goblin', `${seed}:1`) && !girlRolled('goblin', `${seed}:2`)) {
+        state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed })
+      }
+    }
+    goOutskirts(state!)
+    state!.time = { ...state!.time, day: 1, hour: 23, minute: 59 }
+    const report = lose(state!)
+    expect(report.time.start.day).toBe(1)
+    expect(state!.time.day).toBe(2)
+    expect(state!.pendingDefeat?.day).toBe(1)
+    const girl = `哥布林 → ${enemies.goblin!.girl!.name}`
+    expect(composeNarration(state!, report, options()).prompt.user).toContain(girl)
+    prepareAction(state!, { kind: 'defeat_event', target: 'opt:0', text: '' })
+    expect(composeJudge(state!, state!.pendingAction!, options()).prompt.user).toContain(girl)
+    // 回應的報告（隔天）也照開戰那天
+    const after = JSON.parse(JSON.stringify(report)) as typeof report
+    after.time = { start: { ...state!.time }, end: { ...state!.time } }
+    applyDefeatResponse(state!, after, 'fail')
+    expect(after.narration?.girl_day).toBe(1)
+    expect(composeNarration(state!, after, options()).prompt.user).toContain(girl)
   })
 })
