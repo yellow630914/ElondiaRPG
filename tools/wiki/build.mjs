@@ -128,6 +128,8 @@ export const GROUPS = [
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
     { page: '高等地下城計畫', src: 'docs/plan/roadmap/HIGH_DUNGEONS_PLAN.md', desc: '歷史裂縫、歷史迴廊、禁果庭園、歡愉秘宮（R12）' },
     { page: '特殊任務時段計畫', src: 'docs/plan/roadmap/STORY_TIME_PLAN.md', desc: '內建特殊任務與事件的時段盤點與套用（R13）' },
+    { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
+    { page: '地點編輯器計畫', src: 'docs/plan/roadmap/LOCATION_EDITOR_PLAN.md', desc: '先做自建地下城：依賴關係、設定畫面、存檔的保護（R16）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
     { page: '已完成', src: 'docs/plan/roadmap/COMPLETED.md', desc: '做完的計畫：做了什麼、規則寫在哪份文件' },
   ] },
