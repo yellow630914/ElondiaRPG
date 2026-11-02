@@ -52,16 +52,16 @@ describe('export the built-in world', () => {
 })
 
 describe('import the built-in world', () => {
-  it('records nothing when nothing changed: every section reads back the same as built-in', () => {
+  it('records nothing when nothing changed: every section reads back the same as built-in, and no world is made', () => {
     const content = useContent()
     const r = content.importBuiltinWorld(content.exportBuiltinWorld(), '原封不動')
-    expect(r.summary).toBe('沒有任何改動')
+    expect(r.report.summary).toBe('沒有任何改動')
+    expect(r.report.lines).toEqual([])
     expect(r.diff.adjusted).toEqual([])
     expect(r.diff.skipped).toEqual([])
-    expect(r.errors).toEqual([])
-    const w = content.worlds.find((x) => x.id === r.id)!
-    expect(w.name).toBe('原封不動')
-    for (const s of BUILTIN_SECTIONS) expect(Object.keys((w.mods as unknown as Record<string, object>)[s.key] ?? {}), s.key).toEqual([])
+    // 什麼都沒改：不建立世界
+    expect(r.id).toBeUndefined()
+    expect(content.worlds.some((w) => w.name === '原封不動')).toBe(false)
   })
 
   it('keeps only changed and new entries, cannot delete built-ins, and a new id is a new entry', () => {
@@ -79,12 +79,17 @@ describe('import the built-in world', () => {
     const shops = read(files, 'content/shops.json')
     shops.general = { ...shops.general, name: '改不了的名字', desc: '新的說明' }
     write(files, 'content/shops.json', shops)
-    const r = content.importBuiltinWorld(zipSync(files), '我的修改')
+    const r = content.importBuiltinWorld(zipSync(files), '我的修改', 'mine.zip')
     expect(r.diff.changed).toEqual({ enemies: ['goblin'], shops: ['general'] })
     expect(r.diff.added).toEqual({ enemies: ['mod_enemy_fox'] })
-    expect(r.summary).toBe('改了 怪物 1、商店 1；新增 怪物 1')
+    expect(r.report.summary).toBe('改了 怪物 1、商店 1；新增 怪物 1')
+    // 匯入結果記在新的世界上，重新載入也還在
+    const w = content.worlds.find((x) => x.id === r.id)!
+    expect(w.importReport).toMatchObject({ file: 'mine.zip', summary: r.report.summary, warn: false })
+    setActivePinia(createPinia())
+    expect(useContent().worlds.find((x) => x.id === r.id)?.importReport?.summary).toBe(r.report.summary)
     // 切到新的世界：改的生效、刪不掉的照原版、新增的是自建
-    content.switchWorld(r.id)
+    content.switchWorld(r.id!)
     expect(enemies.goblin!.name).toBe('綠皮小鬼')
     expect(enemies.goblin!.girl?.personality).toBe('好奇又膽小')
     expect(enemies.giant_rat?.name).toBe('巨鼠')
@@ -105,7 +110,8 @@ describe('import the built-in world', () => {
     conds.my_buff = { name: '好心情', desc: '檢定 +1', check_penalty: -1 }
     write(files, 'content/conditions.json', conds)
     const r = content.importBuiltinWorld(zipSync(files), '有問題的修改')
-    expect(r.diff.adjusted.some((x) => x.startsWith('怪物 哥布林：') && x.includes('level'))).toBe(true)
+    // 被調整的欄位寫出前後的值
+    expect(r.diff.adjusted.some((x) => x.startsWith('怪物 哥布林：') && x.includes('level：999 → 30'))).toBe(true)
     expect(r.diff.skipped.some((x) => x.includes('好心情'))).toBe(true)
     expect(r.diff.changed.enemies).toEqual(['goblin'])
   })
@@ -162,5 +168,40 @@ describe('saving a built-in entry unchanged keeps its data', () => {
     expect(out.enemies.crusade_inquisitor!.offense?.all).toBe(monsters.crusade_inquisitor!.offense?.all)
     const garden = out.specialMaps.sm_lust_park!.connections!.find((c) => c.to.area === 'dungeon/forbidden_garden')
     expect(garden?.requires?.flags).toHaveLength(5)
+  })
+})
+
+describe('import feedback', () => {
+  it('explains JSON errors in Chinese with line and column', async () => {
+    const { jsonErrorText } = await import('@/engine/builtinWorld')
+    const why = (text: string) => {
+      try {
+        JSON.parse(text)
+      } catch (e) {
+        return jsonErrorText(text, e)
+      }
+      return ''
+    }
+    expect(why('{\n  "a": 1\n  "b": 2\n}')).toBe('第 3 行第 3 字附近：少了逗號（,）或右大括號（}）')
+    expect(why('{\n  "a": 1,\n}')).toMatch(/^第 3 行第 1 字附近：.*多了逗號/)
+    expect(why('{ "a": [1, 2 }')).toContain('右中括號')
+    expect(why('{ "a": ')).toContain('檔案在中途就結束了')
+    expect(why("{ 'a': 1 }")).toContain('第 1 行第 3 字附近')
+    // 認不得的原因附上原文
+    expect(jsonErrorText('', new Error('something odd'))).toBe('JSON 格式錯誤（something odd）')
+  })
+
+  it('warns when a file cannot be read: that kind stays built-in, and the rest is still imported', () => {
+    const content = useContent()
+    const files = unzipSync(content.exportBuiltinWorld())
+    files[ROOT + 'content/items.json'] = strToU8('{\n  "解毒劑": {}\n  "x": 1\n}')
+    const monsters = read(files, 'content/enemies.json')
+    monsters.goblin = { ...monsters.goblin, name: '綠皮小鬼' }
+    write(files, 'content/enemies.json', monsters)
+    const r = content.importBuiltinWorld(zipSync(files), '有壞檔')
+    expect(r.id).toBeTruthy()
+    expect(r.report.warn).toBe(true)
+    const bad = r.report.lines.find((l) => l.label.startsWith('讀不了'))!
+    expect(bad.items).toEqual(['物品（content/items.json）讀不了，物品全部照原版：第 3 行第 3 字附近：少了逗號（,）或右大括號（}）'])
   })
 })

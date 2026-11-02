@@ -137,6 +137,41 @@ export function buildBuiltinWorldZip(entries: SectionEntries, readme: { md: stri
   return zipSync(files, { level: 6 })
 }
 
+/**
+ * JSON 讀不了時給玩家看的說明：中文的原因，加上第幾行第幾字（瀏覽器的錯誤訊息是英文，而且各家寫法不同；
+ * 有位置的換算成行與字，認不得的原因附上原文）
+ */
+export function jsonErrorText(text: string, e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e)
+  let line: number | undefined
+  let col: number | undefined
+  const lc = /line (\d+) column (\d+)/i.exec(msg)
+  if (lc) {
+    line = Number(lc[1])
+    col = Number(lc[2])
+  } else {
+    const pos = /position (\d+)/i.exec(msg)
+    if (pos) {
+      const before = text.slice(0, Number(pos[1]))
+      line = before.split('\n').length
+      col = before.length - before.lastIndexOf('\n')
+    }
+  }
+  const rules: [RegExp, string][] = [
+    [/unexpected end|end of (the )?data|unterminated|unexpected eof/i, '檔案在中途就結束了：括號或引號沒有成對'],
+    [/after property value|expected ',' or '}'/i, '少了逗號（,）或右大括號（}）'],
+    [/after array element|expected ',' or '\]'/i, '少了逗號（,）或右中括號（]）'],
+    [/double-quoted property name|property name or '}'|expected property name|expected string literal/i, '這裡要寫用雙引號括起來的欄位名稱；多半是最後一項後面多了逗號，或欄位名稱用了單引號'],
+    [/bad control character|control character/i, '文字裡有換行或定位字元：文字裡的換行要寫成 \\n'],
+    [/bad escaped|bad escape|invalid escape/i, '反斜線（\\）的寫法不對：文字裡要寫反斜線時寫成 \\\\'],
+    [/unexpected non-whitespace|after json/i, '資料結束之後還有多的東西（多半是多了一個右大括號，或兩份資料接在一起）'],
+    [/unexpected token|unexpected character|unrecognized token|is not valid json/i, '這裡出現了不該有的字元（常見的是單引號、中文標點的逗號或引號、多了逗號）'],
+  ]
+  const why = rules.find(([re]) => re.test(msg))?.[1]
+  const where = line ? `第 ${line} 行第 ${col} 字附近：` : ''
+  return `${where}${why ?? 'JSON 格式錯誤'}${why ? '' : `（${msg}）`}`
+}
+
 export interface ReadBuiltinWorld {
   content: SectionEntries
   /** 讀不了的檔案（JSON 格式錯誤……） */
@@ -159,24 +194,29 @@ export function readBuiltinWorldZip(bytes: Uint8Array): ReadBuiltinWorld {
   if (!manifestPath) throw new Error('zip 裡找不到 world.json：請保留匯出時的檔案結構（world.json 與 content 資料夾）')
   const base = manifestPath.slice(0, -'world.json'.length)
   const errors: string[] = []
+  const manifestText = strFromU8(files[manifestPath]!)
+  let m: Partial<BuiltinWorldManifest>
   try {
-    const m = JSON.parse(strFromU8(files[manifestPath]!)) as Partial<BuiltinWorldManifest>
-    if (m.type !== BUILTIN_WORLD_TYPE) throw new Error('world.json 不是「匯出內建世界」的檔案')
+    m = JSON.parse(manifestText) as Partial<BuiltinWorldManifest>
   } catch (e) {
-    throw new Error(e instanceof SyntaxError ? `world.json 的 JSON 格式錯誤：${e.message}` : (e as Error).message)
+    throw new Error(`world.json 讀不了：${jsonErrorText(manifestText, e)}`)
   }
+  if (m?.type !== BUILTIN_WORLD_TYPE) throw new Error('world.json 不是「匯出內建世界」的檔案')
   const content: SectionEntries = {}
   for (const s of BUILTIN_SECTIONS) {
     const path = base + fileOf(s.key)
     const file = files[path]
     if (!file) continue
+    const text = strFromU8(file)
+    let v: unknown
     try {
-      const v = JSON.parse(strFromU8(file)) as unknown
-      if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('最外層要是 { "id": {…}, … }')
-      content[s.key] = v as Entries
+      v = JSON.parse(text)
     } catch (e) {
-      errors.push(`${s.name}（${fileOf(s.key)}）讀不了，整份略過：${(e as Error).message}`)
+      errors.push(`${s.name}（${fileOf(s.key)}）讀不了，${s.name}全部照原版：${jsonErrorText(text, e)}`)
+      continue
     }
+    if (!v || typeof v !== 'object' || Array.isArray(v)) errors.push(`${s.name}（${fileOf(s.key)}）讀不了，${s.name}全部照原版：最外層要是 { "id": {…}, … }`)
+    else content[s.key] = v as Entries
   }
   const known = new Set(BUILTIN_SECTIONS.map((s) => base + fileOf(s.key)))
   for (const n of names) {
@@ -192,19 +232,28 @@ export function canonical(v: unknown): string {
   return JSON.stringify(v, (_k, x: unknown) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => a.localeCompare(b))) : x))
 }
 
-/** 兩份資料不一樣的欄位（最多 n 個；陣列只到陣列本身） */
-function changedPaths(a: unknown, b: unknown, n = 3, path = ''): string[] {
+/** 給玩家看的值：短的照寫，長的截斷 */
+function shown(v: unknown): string {
+  const t = typeof v === 'string' ? `「${v}」` : JSON.stringify(v) ?? ''
+  return t.length > 40 ? `${t.slice(0, 38)}…` : t
+}
+
+/** 兩份資料不一樣的欄位（最多 n 個；陣列只到陣列本身），寫成「level：999 → 20」「foo：拿掉了（原本 3）」 */
+function changedFields(a: unknown, b: unknown, n = 3, path = ''): string[] {
   if (canonical(a) === canonical(b)) return []
   if (a && b && typeof a === 'object' && typeof b === 'object' && !Array.isArray(a) && !Array.isArray(b)) {
     const out: string[] = []
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
       if (k === 'custom') continue
-      out.push(...changedPaths((a as Entries)[k], (b as Entries)[k], n - out.length, path ? `${path}.${k}` : k))
+      out.push(...changedFields((a as Entries)[k], (b as Entries)[k], n - out.length, path ? `${path}.${k}` : k))
       if (out.length >= n) break
     }
     return out
   }
-  return [path || '（整筆）']
+  const name = path || '（整筆）'
+  if (b === undefined) return [`${name}：拿掉了（寫的是 ${shown(a)}）`]
+  if (a === undefined) return [`${name}：補上 ${shown(b)}`]
+  return [`${name}：${shown(a)} → ${shown(b)}`]
 }
 
 export interface BuiltinWorldDiff {
@@ -251,8 +300,8 @@ export function diffBuiltinWorld(user: SectionEntries, builtin: SectionEntries):
       ;((isBuiltin ? out.changed : out.added)[s.key] ??= []).push(id)
       // 寫的和整理後的不一樣：被調整或拿掉的欄位（商店整理後只記和內建不一樣的地方，不比）
       if (s.key !== 'shops') {
-        const paths = changedPaths(raw, kept)
-        if (paths.length) out.adjusted.push(`${label}：${paths.join('、')}`)
+        const fields = changedFields(raw, kept)
+        if (fields.length) out.adjusted.push(`${label}：${fields.join('；')}`)
       }
     }
   }
@@ -265,4 +314,33 @@ export function diffSummary(d: Pick<BuiltinWorldDiff, 'changed' | 'added'>): str
   const changed = part(d.changed)
   const added = part(d.added)
   return [changed && `改了 ${changed}`, added && `新增 ${added}`].filter(Boolean).join('；') || '沒有任何改動'
+}
+
+/** 匯入結果（記在建立的世界上，之後可以再看）：每類最多 MAX_REPORT_ITEMS 項 */
+export interface BuiltinImportReport {
+  /** 匯入的時間（毫秒） */
+  at: number
+  file: string
+  summary: string
+  /** 有沒有要特別注意的（讀不了的檔案） */
+  warn: boolean
+  lines: { label: string; items: string[]; more?: number }[]
+}
+
+export const MAX_REPORT_ITEMS = 100
+
+/** 整理成匯入結果 */
+export function importReport(file: string, d: BuiltinWorldDiff, errors: string[], problems: string[], at = Date.now()): BuiltinImportReport {
+  const lines = [
+    { label: '讀不了的檔案（那一種全部照原版）', items: errors },
+    { label: '整筆略過的項目', items: d.skipped },
+    { label: '不合規則、被調整或拿掉的欄位', items: d.adjusted },
+    { label: '套用時發現的問題（有錯誤沒匯入的特殊任務、引用不存在的東西……）', items: problems },
+  ].filter((l) => l.items.length).map((l) => ({ label: l.label, items: l.items.slice(0, MAX_REPORT_ITEMS), ...(l.items.length > MAX_REPORT_ITEMS ? { more: l.items.length - MAX_REPORT_ITEMS } : {}) }))
+  return { at, file, summary: diffSummary(d), warn: errors.length > 0, lines }
+}
+
+/** 有沒有改到任何東西 */
+export function hasChanges(d: Pick<BuiltinWorldDiff, 'changed' | 'added'>): boolean {
+  return Object.values(d.changed).some((x) => x?.length) || Object.values(d.added).some((x) => x?.length)
 }

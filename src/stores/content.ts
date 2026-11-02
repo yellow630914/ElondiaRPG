@@ -41,7 +41,7 @@ import { storyReach } from '@/engine/storyReach'
 import { GEN_KINDS, genFlagPrefix, type GenKind } from '@/engine/questGen'
 import { buildRefs, closure, contentKeys, fingerprint, pickMods, REF_SECTIONS, splitKey, type RefGraph, type RefKey } from '@/engine/contentRefs'
 import { buildPackage, compareRows, type ImportChoice, type ImportPackage, type ImportRow } from '@/engine/contentImport'
-import { buildBuiltinWorldZip, builtinWorldEntries, diffBuiltinWorld, diffSummary, readBuiltinWorldZip, type BuiltinWorldDiff } from '@/engine/builtinWorld'
+import { buildBuiltinWorldZip, builtinWorldEntries, diffBuiltinWorld, hasChanges, importReport, readBuiltinWorldZip, type BuiltinImportReport, type BuiltinWorldDiff } from '@/engine/builtinWorld'
 import { builtinWorldReadme } from '@/engine/builtinWorldReadme'
 
 /** 舊版只有一套自訂內容 */
@@ -63,6 +63,8 @@ export interface World {
   promptSet?: string
   /** 局部匯入的紀錄：每一項匯入時的指紋（之後再匯入同一項時，看得出是不是新版本、這裡有沒有改過） */
   imported?: Record<string, string>
+  /** 從「匯入內建世界」建立的：當時的匯入結果（世界管理可以再看一次） */
+  importReport?: BuiltinImportReport
 }
 
 interface WorldsFile {
@@ -115,6 +117,7 @@ function loadWorlds(): WorldsFile {
           // 綁定的提示詞組與匯入紀錄（以前讀回來時漏掉 promptSet：重新整理後綁定就不見了）
           ...(typeof w.promptSet === 'string' ? { promptSet: w.promptSet } : {}),
           ...(w.imported && typeof w.imported === 'object' ? { imported: w.imported } : {}),
+          ...(w.importReport && typeof w.importReport === 'object' && Array.isArray(w.importReport.lines) ? { importReport: w.importReport } : {}),
         }))
       return { active: worlds.some((w) => w.id === f.active) ? f.active! : VANILLA, worlds }
     }
@@ -939,9 +942,10 @@ export const useContent = defineStore('content', () => {
 
   /**
    * 匯入內建世界：和內建比較，只留改過的與新增的，建立成新的世界（不動原版與其他世界）。
-   * 回傳新世界的 id 與匯入結果（改了哪些、新增哪些、被調整的欄位、整筆略過的、有錯誤沒匯入的特殊任務）
+   * 回傳新世界的 id 與匯入結果（改了哪些、新增哪些、被調整的欄位、整筆略過的、有錯誤沒匯入的特殊任務）；
+   * 匯入結果也記在新世界上。什麼都沒改時不建立世界（id 是 undefined）
    */
-  function importBuiltinWorld(bytes: Uint8Array, name: string): { id: string; diff: BuiltinWorldDiff; summary: string; errors: string[]; problems: string[] } {
+  function importBuiltinWorld(bytes: Uint8Array, name: string, file = ''): { id?: string; diff: BuiltinWorldDiff; report: BuiltinImportReport } {
     const read = readBuiltinWorldZip(bytes)
     let diff: BuiltinWorldDiff
     let incoming: ContentMods
@@ -956,8 +960,13 @@ export const useContent = defineStore('content', () => {
       // 整理時自建的狀態、特質會暫時登錄進遊戲資料：恢復成目前的世界
       apply()
     }
+    const report = importReport(file, diff, read.errors, [...new Set(found)])
+    if (!hasChanges(diff)) return { diff, report }
     const id = createWorld(name.trim() || '匯入的內建世界', undefined, incoming)
-    return { id, diff, summary: diffSummary(diff), errors: read.errors, problems: [...new Set(found)] }
+    const w = worlds.value.find((x) => x.id === id)!
+    w.importReport = report
+    persist()
+    return { id, diff, report }
   }
 
   /** 匯入內容檔：asNew 時建立成新的世界，否則取代目前世界的內容 */
