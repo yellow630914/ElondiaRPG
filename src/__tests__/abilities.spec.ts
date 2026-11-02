@@ -16,14 +16,15 @@ describe('custom abilities', () => {
       name: '烈焰斬',
       classes: ['fighter', 'nobody', 'monster'],
       damage: [{ weapon: true, type: 'fire' }, { dice: 'oops' }, { dice: '2d6', type: 'nope' }],
-      apply: [{ status: 'burning_x', turns: 2 }, { status: 'stunned', turns: 99, on: 'hit', save: 'str' }],
+      apply: [{ status: 'burning_x', turns: 2 }, { status: 'stunned', turns: 50, on: 'hit', save: 'str' }, { status: 'hindered', turns: 99, to: 'self' }],
       mult: '' as unknown as number,
       uses: { per_combat: 1 },
       heal: {},
     }, true)
     expect(a.classes).toEqual(['fighter', 'monster'])
     expect(a.damage).toEqual([{ weapon: true, type: 'fire' }, { dice: '2d6' }])
-    expect(a.apply).toEqual([{ status: 'stunned', turns: 20, on: 'hit', save: 'str' }])
+    // 超過 20 回合拉回 20；99 是「整場戰鬥」
+    expect(a.apply).toEqual([{ status: 'stunned', turns: 20, on: 'hit', save: 'str' }, { status: 'hindered', turns: 99, to: 'self' }])
     expect(a.mult).toBeUndefined()
     expect(a.heal).toBeUndefined()
     expect(a).toMatchObject({ unlock: 1, uses: { per_combat: 1 }, custom: true })

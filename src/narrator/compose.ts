@@ -15,7 +15,7 @@ import { characterBody } from '@/engine/look'
 import { continuityBefore, continuityForReport, type NarrationLike } from './continuity'
 import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
 import { toOutputScript } from './script'
-import { monsterGirlsIn, monstersText, reportFocus, reportMonsters } from './monsters'
+import { girlSeed, monsterGirlsIn, monstersText, reportFocus, reportGirlSeed, reportMonsters } from './monsters'
 
 export interface ComposeOptions {
   config: PromptConfig
@@ -79,7 +79,7 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
   // 成人場景的敘事用套用到「成人場景」的條目
   const target = narrationTarget(report)
   // 登場的怪物：外觀與習性（魔物娘的設定打開、這段經過的主角符合時換成魔物娘）
-  const monsters = monstersText(reportMonsters(report), monsterGirlsIn(state, reportFocus(report)))
+  const monsters = monstersText(reportMonsters(report), monsterGirlsIn(state, reportFocus(report)), reportGirlSeed(state, report))
   const prompt = buildPrompt(report, lore, {
     playerName: name,
     language: o.language,
@@ -110,7 +110,7 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     : undefined
   // 戰敗事件的回應：圍上來的怪物的外觀（魔物娘的設定看被圍住的人）
   const monsters = p.kind === 'defeat_event'
-    ? monstersText([...new Set((state.pendingDefeat?.foes ?? []).map((f) => f.monster).filter((m): m is string => !!m))], monsterGirlsIn(state, p.actor))
+    ? monstersText([...new Set((state.pendingDefeat?.foes ?? []).map((f) => f.monster).filter((m): m is string => !!m))], monsterGirlsIn(state, p.actor), girlSeed(state, state.time.day))
     : ''
   const prompt = buildActionPrompt(state, p, judgeContext(state, p), {
     language: o.language,

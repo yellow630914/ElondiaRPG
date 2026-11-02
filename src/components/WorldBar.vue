@@ -76,6 +76,36 @@ function link(setId: string) {
 function exportPackage() {
   run(() => download(`elondia-world-${content.activeName}-${dateStamp()}.json`, content.exportWorld()))
 }
+
+// ---- 內建世界：匯出原版的全部內容（zip，附說明），改好之後匯入成新的世界 ----
+/** 上一次匯入的結果（改了哪些、被調整的欄位、略過的……） */
+const report = ref<{ title: string; lines: { label: string; items: string[] }[] } | null>(null)
+function exportBuiltin() {
+  run(() => download(`elondia-builtin-world-${dateStamp()}.zip`, content.exportBuiltinWorld(), 'application/zip'))
+}
+async function importBuiltin(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  if (!(await confirmDiscard())) return
+  const name = prompt('匯入成新的世界，叫什麼名字？', file.name.replace(/\.zip$/i, ''))
+  if (name === null) return
+  report.value = null
+  run(() => {
+    const r = content.importBuiltinWorld(bytes, name)
+    if (!locked.value) content.switchWorld(r.id)
+    msg.value = `已匯入成新的世界「${content.worldName(r.id)}」：${r.summary}${locked.value ? '（回到首頁才能切換過去）' : ''}`
+    const lines = [
+      { label: '讀不了的檔案', items: r.errors },
+      { label: '整筆略過的項目', items: r.diff.skipped },
+      { label: '不合規則、被調整或拿掉的欄位', items: r.diff.adjusted },
+      { label: '套用時發現的問題（有錯誤沒匯入的特殊任務、引用不存在的東西……）', items: r.problems },
+    ].filter((x) => x.items.length)
+    report.value = lines.length ? { title: `匯入「${content.worldName(r.id)}」時要注意的地方`, lines } : null
+  })
+}
 </script>
 
 <template>
@@ -91,6 +121,8 @@ function exportPackage() {
       <button class="small" :disabled="content.readOnly" @click="rename">✏️ 改名</button>
       <label class="small file" title="世界包（內容＋提示詞）或內容檔">📥 匯入成新的世界<input type="file" accept=".json,application/json" @change="importAsNew" /></label>
       <button class="small" :disabled="content.readOnly" title="這個世界的內容，加上綁定（或目前用）的提示詞組" @click="exportPackage">📦 匯出世界包</button>
+      <button class="small" title="原版世界的全部內容（怪物、物品、技能、任務……），一種一個 JSON 檔，附說明（README），包成 zip。改好之後用「匯入內建世界」建立成新的世界" @click="exportBuiltin">📤 匯出內建世界</button>
+      <label class="small file" title="匯入改過的內建世界（zip）：只記改過與新增的項目，建立成新的世界；規則和內容編輯器一樣（內建的不能刪除、id 不能改）">📥 匯入內建世界<input type="file" accept=".zip,application/zip" @change="importBuiltin" /></label>
       <button class="small danger" :disabled="content.readOnly || locked" title="刪除整個世界和它所有的自訂內容" @click="remove">💥 刪除這個世界</button>
     </div>
     <p class="small muted">
@@ -106,6 +138,14 @@ function exportPackage() {
       <span class="muted">切換到這個世界（開新遊戲、讀檔、繼續）時，提示詞組跟著切換。</span>
     </div>
     <p v-if="msg" class="small note">{{ msg }}</p>
+    <details v-if="report" class="small report" open>
+      <summary>{{ report.title }}</summary>
+      <div v-for="l in report.lines" :key="l.label">
+        <b>{{ l.label }}（{{ l.items.length }}）</b>
+        <ul><li v-for="(x, i) in l.items.slice(0, 50)" :key="i">{{ x }}</li><li v-if="l.items.length > 50" class="muted">……還有 {{ l.items.length - 50 }} 項</li></ul>
+      </div>
+      <button class="small" @click="report = null">關閉</button>
+    </details>
   </section>
 </template>
 
@@ -116,4 +156,5 @@ function exportPackage() {
 .file { position: relative; cursor: pointer; padding: 2px 8px; border: 1px solid var(--border); border-radius: 6px; }
 .file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .note { color: var(--accent-2); }
+.report ul { margin: 2px 0 6px; padding-left: 1.4em; max-height: 14em; overflow: auto; }
 </style>

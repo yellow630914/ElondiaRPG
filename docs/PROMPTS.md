@@ -182,7 +182,7 @@ user（後段：每次不同）
 | `<previous>` | 上一段正文的結尾（約 300 字） | 前後銜接（3.1 節） |
 | `<interlude>` | 上一段正文之後、這次事件之前沒有寫成正文的事 | 前後銜接（3.1 節） |
 | `<bystanders>` | 旁邊不參與這次事件的人（最多 4 人）：名字、身分、正在做什麼；本次要求說明只當背景帶過，不讓他們加入事件或搶戲 | 報告的 `bystanders`（[NPC_SYSTEM](NPC_SYSTEM.md) 7.1 節，不用 AI） |
-| `<monsters>` | 登場的怪物：每種一行外觀與習性（怪物資料的 `desc`）；設定「魔物娘」打開、這段經過的主角符合時，有魔物娘形態的寫成「原本的名字 → 魔物娘的名字：外觀」，並說明照右邊寫（[MONSTERS](MONSTERS.md)） | 報告 `others[].monster`、怪物資料（`narrator/monsters.ts`） |
+| `<monsters>` | 登場的怪物：每種一行外觀與習性（怪物資料的 `desc`）；設定「魔物娘」打開、這段經過的主角符合時，有魔物娘形態、而且這一天擲到魔物娘的寫成「原本的名字 → 魔物娘的名字：外觀　性情：…　習性：…」，並說明照右邊寫（[MONSTERS](MONSTERS.md)） | 報告 `others[].monster`、怪物資料（`narrator/monsters.ts`） |
 | `<report>` | 報告 JSON（id 換成中文名稱；`bystanders` 放在上一列，不重複；怪物的 `monster` 拿掉） | 遊戲引擎 |
 | `<notes>` | 放在後段的其他提示詞 | 提示詞頁籤 |
 | 本次要求 | 視角（`narration.pov`）、篇幅（`narration.length` 依「正文篇幅」換成字數）、這次的寫法（3.2 節）、打聽到的內容的說明（報告有 `check.findings` 時，要讓角色說出來）、旁邊的人的說明（有 `<bystanders>` 時）、前後銜接的說明、玩家意圖、描寫重點 | 報告、提示詞設定 |

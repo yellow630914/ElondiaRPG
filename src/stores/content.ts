@@ -41,6 +41,8 @@ import { storyReach } from '@/engine/storyReach'
 import { GEN_KINDS, genFlagPrefix, type GenKind } from '@/engine/questGen'
 import { buildRefs, closure, contentKeys, fingerprint, pickMods, REF_SECTIONS, splitKey, type RefGraph, type RefKey } from '@/engine/contentRefs'
 import { buildPackage, compareRows, type ImportChoice, type ImportPackage, type ImportRow } from '@/engine/contentImport'
+import { buildBuiltinWorldZip, builtinWorldEntries, diffBuiltinWorld, diffSummary, readBuiltinWorldZip, type BuiltinWorldDiff } from '@/engine/builtinWorld'
+import { builtinWorldReadme } from '@/engine/builtinWorldReadme'
 
 /** 舊版只有一套自訂內容 */
 const LEGACY_KEY = 'elondia.content'
@@ -921,6 +923,43 @@ export const useContent = defineStore('content', () => {
     return JSON.stringify({ type: 'elondia-content', ...mods.value }, null, 2)
   }
 
+  // ---- 匯出、匯入內建世界（engine/builtinWorld.ts） ----
+
+  /** 匯出內建世界：原版的全部可編輯內容，一種一個 JSON 檔，附 README，包成 zip */
+  function exportBuiltinWorld(date = new Date()): Uint8Array {
+    try {
+      applyContent(emptyMods())
+      const entries = builtinWorldEntries()
+      const day = date.toISOString().slice(0, 10)
+      return buildBuiltinWorldZip(entries, builtinWorldReadme(entries, day), date)
+    } finally {
+      apply()
+    }
+  }
+
+  /**
+   * 匯入內建世界：和內建比較，只留改過的與新增的，建立成新的世界（不動原版與其他世界）。
+   * 回傳新世界的 id 與匯入結果（改了哪些、新增哪些、被調整的欄位、整筆略過的、有錯誤沒匯入的特殊任務）
+   */
+  function importBuiltinWorld(bytes: Uint8Array, name: string): { id: string; diff: BuiltinWorldDiff; summary: string; errors: string[]; problems: string[] } {
+    const read = readBuiltinWorldZip(bytes)
+    let diff: BuiltinWorldDiff
+    let incoming: ContentMods
+    let found: string[]
+    try {
+      applyContent(emptyMods())
+      diff = diffBuiltinWorld(read.content, builtinWorldEntries())
+      incoming = normalizeMods(diff.mods)
+      // 有錯誤的特殊任務不匯入（和其他匯入一樣）；套用一次，看看還有什麼問題（引用不存在的東西……）
+      found = [...dropBrokenStories(incoming), ...applyContent(incoming)]
+    } finally {
+      // 整理時自建的狀態、特質會暫時登錄進遊戲資料：恢復成目前的世界
+      apply()
+    }
+    const id = createWorld(name.trim() || '匯入的內建世界', undefined, incoming)
+    return { id, diff, summary: diffSummary(diff), errors: read.errors, problems: [...new Set(found)] }
+  }
+
   /** 匯入內容檔：asNew 時建立成新的世界，否則取代目前世界的內容 */
   function importMods(text: string, asNew?: string): string | undefined {
     // 世界包也收：只取內容（提示詞要用「匯入世界包」）
@@ -1144,7 +1183,7 @@ export const useContent = defineStore('content', () => {
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, deleteCondition, restoreCondition,
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
-    exportMods, importMods, resetAll, diffMods, mergeMods,
+    exportMods, importMods, resetAll, diffMods, mergeMods, exportBuiltinWorld, importBuiltinWorld,
     importSource, analyzeSource, compareImport, packageFor, precheckImport, checkGenerated, importPackage, exportPicked,
   }
 })

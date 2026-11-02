@@ -20,6 +20,7 @@
     "@fontsource/noto-serif-tc": "5.3.1",
     "@google/genai": "^2.30.0",
     "@vue/devtools-api": "^8.2.1",
+    "fflate": "^0.8.3",
     "openai": "^7.39.0",
     "opencc-js": "^1.4.2",
     "pinia": "^4.0.3",

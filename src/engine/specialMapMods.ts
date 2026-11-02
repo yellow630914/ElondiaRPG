@@ -17,7 +17,7 @@ export interface SpecialMapMod extends SpecialMapDef {
 
 export const SPECIAL_MAP_LIMITS = {
   name_chars: 16, desc_chars: 300, size: [3, 20], carve: [5, 400], count: [0, 20], elites: [0, 5],
-  connections: 8, table: 8, group_types: 4, group_count: [1, 6], items: 6, flags: 4, shops: 8, bosses: 8, boss_name_chars: 12,
+  connections: 8, table: 8, group_types: 4, group_count: [1, 6], items: 6, flags: 8, shops: 8, bosses: 8, boss_name_chars: 12,
 } as const
 export const LIGHTINGS: Record<Lighting, string> = { lit: '一直有光', daylight: '白天有光', dark: '黑暗' }
 /** 固定地圖可以畫的格子（共用的圖例） */
@@ -133,6 +133,11 @@ export function sanitizeSpecialMapMod(
   // 通道（只有固定地圖）
   if (out.grid) {
     const connections: SpecialConnection[] = []
+    const connRequires = (r: SpecialConnection['requires']): Pick<SpecialConnection, 'requires'> => {
+      const flags = [...new Set((r?.flags ?? []).map(cleanFlag).filter(Boolean))].slice(0, L.flags)
+      const none = [...new Set((r?.flags_none ?? []).map(cleanFlag).filter(Boolean))].slice(0, L.flags)
+      return flags.length || none.length ? { requires: { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}) } } : {}
+    }
     for (const c of (Array.isArray(raw.connections) ? raw.connections : []).slice(0, L.connections)) {
       if (!c || !inside(c.at) || typeof c.to?.area !== 'string') continue
       const area = c.to.area
@@ -141,7 +146,8 @@ export function sanitizeSpecialMapMod(
       const park = parkOfLink(area)
       if (park !== undefined) {
         if (parkPlaza(park) !== id) continue
-        connections.push({ at: { x: c.at.x, y: c.at.y }, to: { area, x: 0, y: 0 } })
+        // 開放條件照樣留著（例如禁斷花園要先集滿五個園區的印章）
+        connections.push({ at: { x: c.at.x, y: c.at.y }, to: { area, x: 0, y: 0 }, ...connRequires(c.requires) })
         continue
       }
       const size = targetSize(area, known)
@@ -153,11 +159,7 @@ export function sanitizeSpecialMapMod(
         const kind = settlementArea(area, false)?.cells[y * size[0] + x]?.kind
         if ((kind !== 'wall' && kind !== 'water') || isLotCell(area, x, y)) continue
       }
-      const conn: SpecialConnection = { at: { x: c.at.x, y: c.at.y }, to: { area, x, y } }
-      const flags = [...new Set((c.requires?.flags ?? []).map(cleanFlag).filter(Boolean))].slice(0, L.flags)
-      const none = [...new Set((c.requires?.flags_none ?? []).map(cleanFlag).filter(Boolean))].slice(0, L.flags)
-      if (flags.length || none.length) conn.requires = { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}) }
-      connections.push(conn)
+      connections.push({ at: { x: c.at.x, y: c.at.y }, to: { area, x, y }, ...connRequires(c.requires) })
     }
     if (connections.length) out.connections = connections
     // 商店：存在的店種，一格一家

@@ -1085,10 +1085,16 @@ export interface EnemyDef {
   /** 上傳的圖示（data URL，只給這一隻怪物）；沒有時依種類與等級用內建的圖 */
   icon?: string
 }
-/** 怪物的魔物娘形態：name 是給 AI 的稱呼（例如「狼娘」），desc 是外觀與習性（成年女性的身體，保留原本種族的特徵） */
+/** 怪物的魔物娘形態：name 是給 AI 的稱呼（例如「狼娘」），desc 是外觀（成年女性的身體，保留原本種族的特徵） */
 export interface MonsterGirl {
   name: string
   desc: string
+  /** 性情（給 AI 的敘事，插圖不用） */
+  personality?: string
+  /** 習性（給 AI 的敘事，插圖不用） */
+  habits?: string
+  /** 以魔物娘出現的機率（0～100）；沒寫時照設定的「魔物娘出現機率」 */
+  chance?: number
 }
 export type EncounterGroup = [string, number][]
 export type DungeonLayerId = 'outskirts' | 'shallow' | 'middle' | 'deep' | 'abyss'

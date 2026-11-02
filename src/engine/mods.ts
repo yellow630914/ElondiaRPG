@@ -725,7 +725,8 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   }
   const res = affinity(raw.resist)
   if (res) out.resist = res
-  const off = affinity(raw.offense, 7)
+  // 層主、強敵的全傷害倍率可以到 7 以上（例如血祭司 7.26、十字軍審判官 10.01）
+  const off = affinity(raw.offense, 20)
   if (off) out.offense = off
   // 怪物沒有法術環：只能用技能與戲法
   const abil = (raw.abilities ?? []).filter((a) => !!abilities[a] && abilities[a]!.type !== 'spell')
@@ -742,7 +743,16 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   if (raw.rut) out.rut = raw.rut === 'field' ? 'field' : true
   const girlName = str(raw.girl?.name, 20)
   const girlDesc = str(raw.girl?.desc, 300)
-  if (girlName && girlDesc) out.girl = { name: girlName, desc: girlDesc }
+  if (girlName && girlDesc) {
+    out.girl = { name: girlName, desc: girlDesc }
+    const personality = str(raw.girl?.personality, 200)
+    const habits = str(raw.girl?.habits, 200)
+    if (personality) out.girl.personality = personality
+    if (habits) out.girl.habits = habits
+    // 機率沒寫（空白）時照設定；寫了就是 0～100 的整數
+    const chance = raw.girl?.chance as unknown
+    if (chance !== undefined && chance !== null && chance !== '' && Number.isFinite(Number(chance))) out.girl.chance = int(chance, 0, 100, 100)
+  }
   const traits = (raw.traits ?? []).filter((t) => !!monsterTraits.traits[t])
   if (traits.length) out.traits = traits
   if (str(raw.desc, 200)) out.desc = str(raw.desc, 200)
@@ -848,7 +858,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     name: cleanItemName(name) || '未命名的物品',
     category,
     price_cc: int(raw.price_cc, 0, 1e8, 10),
-    tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t)),
+    // unique：獨特物品（不會在商店、黑市與 NPC 的換裝出現；沒有勾選框，照原樣留著）
+    tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t) || t === 'unique'),
   }
   if (str(raw.desc, 200)) out.desc = str(raw.desc, 200)
   const icon = sanitizeIcon(raw.icon)
@@ -1407,7 +1418,8 @@ function applyDef(v: unknown): ApplyDef | undefined {
   if (!v || typeof v !== 'object') return undefined
   const a = v as ApplyDef
   if (!a.status || !statuses[a.status]) return undefined
-  const out: ApplyDef = { status: a.status, turns: int(a.turns, 1, 20, 2) }
+  // 1～20 回合，或 99＝整場戰鬥（內建的熱泉的耐性）
+  const out: ApplyDef = { status: a.status, turns: Number(a.turns) === 99 ? 99 : int(a.turns, 1, 20, 2) }
   if (a.to && ['target', 'self', 'allies', 'enemies'].includes(a.to)) out.to = a.to
   if (a.on && ['hit', 'fail', 'always'].includes(a.on)) out.on = a.on
   if (a.save && ATTR_IDS.includes(a.save)) out.save = a.save
@@ -1628,6 +1640,9 @@ export function sanitizeCondition(id: string, raw: Partial<ConditionMod>, custom
   if (m) out.combat_mods = m
   const hp = int(raw.combat_temp_hp, 0, 50, 0)
   if (hp) out.combat_temp_hp = hp
+  // 慾望上限倍率加減（壯陽料理 0.2 = +20%）
+  const lustMax = Math.round(num(raw.combat_lust_max, -0.9, 2, 0) * 100) / 100
+  if (lustMax) out.combat_lust_max = lustMax
   // 系統狀態：照內建的
   const src = base && SYSTEM_CONDITIONS.includes(id) ? base : raw
   if (src.clears === 'long_rest') out.clears = 'long_rest'
@@ -1780,7 +1795,8 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
     }
   }
   if (!race && raw.npc) {
-    const weight = Math.round(num(raw.npc.weight, 0, 10, 0))
+    // 權重可以是小數（例如【幸運】0.5：比一般特質少見）
+    const weight = Math.round(num(raw.npc.weight, 0, 10, 0) * 10) / 10
     const tags = (raw.npc.tags ?? []).filter((t) => !!npcTags.tags[t])
     const ncls = (raw.npc.classes ?? []).filter((k) => !!classes[k])
     if (weight > 0) out.npc = { weight, ...(tags.length ? { tags } : {}), ...(ncls.length ? { classes: ncls } : {}) }

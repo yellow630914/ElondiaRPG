@@ -47,12 +47,23 @@ const rutMode = computed<'' | 'any' | 'field'>({
     else delete draft.value.rut
   },
 })
-// 魔物娘的名字與外觀：兩欄都寫了才算（儲存時其中一欄空白就拿掉）
-function setGirl(k: 'name' | 'desc', v: string) {
-  const g = { name: draft.value.girl?.name ?? '', desc: draft.value.girl?.desc ?? '', [k]: v }
-  if (!g.name && !g.desc) delete draft.value.girl
+// 魔物娘：名字與外觀都寫了才算（儲存時其中一欄空白就拿掉）；性情、習性、機率可以不寫
+function setGirl(k: 'name' | 'desc' | 'personality' | 'habits', v: string) {
+  const g: NonNullable<typeof draft.value.girl> = { ...draft.value.girl, name: draft.value.girl?.name ?? '', desc: draft.value.girl?.desc ?? '', [k]: v }
+  if (!v && (k === 'personality' || k === 'habits')) delete g[k]
+  if (!g.name && !g.desc && !g.personality && !g.habits && g.chance === undefined) delete draft.value.girl
   else draft.value.girl = g
 }
+// 魔物娘出現機率：空白照設定
+const girlChance = computed<number | ''>({
+  get: () => draft.value.girl?.chance ?? '',
+  set: (v) => {
+    const g = { ...draft.value.girl, name: draft.value.girl?.name ?? '', desc: draft.value.girl?.desc ?? '' }
+    if (v === '' || v === null || !Number.isFinite(Number(v))) delete g.chance
+    else g.chance = Math.max(0, Math.min(100, Math.round(Number(v))))
+    draft.value.girl = g
+  },
+})
 const builtin = computed(() => !!builtinEnemy(props.id))
 const edited = computed(() => builtin.value && !!content.mods.enemies[props.id])
 
@@ -217,8 +228,17 @@ function remove() {
       <label class="block"><span>魔物娘的名字 <Hint text="設定「魔物娘」打開時，交給 AI 的稱呼（例如「狼娘」）。畫面上的名字不變。名字和外觀都寫了才算；都不寫就沒有魔物娘形態，照原本的樣子。" /></span>
         <input class="girl-name" :value="draft.girl?.name ?? ''" maxlength="20" @input="setGirl('name', ($event.target as HTMLInputElement).value)" />
       </label>
-      <label class="block"><span>魔物娘的外觀 <Hint text="成年女性的身體，保留原本種族的特徵（耳朵、尾巴、鱗片、觸手……）與習性。不要寫成未成年的樣子。" /></span>
+      <label class="block"><span>魔物娘的外觀 <Hint text="成年女性的身體，保留原本種族的特徵（耳朵、尾巴、鱗片、觸手……）。不要寫成未成年的樣子。插圖的分鏡只用這一欄。" /></span>
         <textarea :value="draft.girl?.desc ?? ''" rows="2" maxlength="300" @input="setGirl('desc', ($event.target as HTMLTextAreaElement).value)" />
+      </label>
+      <label class="block"><span>魔物娘的性情 <Hint text="可以不寫。她的個性與待人的態度（例如「好奇又膽小，被盯著看就躲」）。戰鬥、戰敗事件的敘事會附上；插圖不用。" /></span>
+        <textarea :value="draft.girl?.personality ?? ''" rows="2" maxlength="200" @input="setGirl('personality', ($event.target as HTMLTextAreaElement).value)" />
+      </label>
+      <label class="block"><span>魔物娘的習性 <Hint text="可以不寫。她怎麼生活、怎麼狩獵或求偶、對人類的興趣。戰鬥、戰敗事件的敘事會附上；插圖不用。" /></span>
+        <textarea :value="draft.girl?.habits ?? ''" rows="2" maxlength="200" @input="setGirl('habits', ($event.target as HTMLTextAreaElement).value)" />
+      </label>
+      <label><span>魔物娘出現機率 <Hint text="0～100。空白時照「⚙️ 設定 → 敘事與判定」的魔物娘出現機率；寫 0 就一定照原本的樣子，100 就一定是魔物娘（設定打開、主角符合時）。" /></span>
+        <input v-model="girlChance" type="number" min="0" max="100" placeholder="照設定" class="girl-chance" />
       </label>
     </FoldSet>
 
@@ -341,4 +361,5 @@ function remove() {
 <style scoped src="./editor.css"></style>
 <style scoped>
 label.block input.girl-name { width: min(100%, 16em); }
+input.girl-chance { width: 6em; }
 </style>

@@ -1,6 +1,6 @@
-/** 讓瀏覽器下載一個文字檔 */
-export function download(name: string, text: string, type = 'application/json') {
-  const url = URL.createObjectURL(new Blob([text], { type }))
+/** 讓瀏覽器下載一個檔案（文字或二進位，例如 zip） */
+export function download(name: string, text: string | Uint8Array, type = 'application/json') {
+  const url = URL.createObjectURL(new Blob([text as BlobPart], { type }))
   const a = document.createElement('a')
   a.href = url
   a.download = name

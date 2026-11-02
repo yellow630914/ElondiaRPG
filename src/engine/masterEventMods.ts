@@ -73,7 +73,7 @@ function option(raw: Partial<MasterEventOption> | undefined, scene: boolean): Ma
   }
   const e = sanitizeEffects(raw?.effects)
   if (e.length) o.effects = e
-  if (has(raw?.hours)) o.hours = num(raw?.hours, 0.25, 24, 1)
+  if (has(raw?.hours)) o.hours = num(raw?.hours, 0.1, 24, 1)
   if (raw?.learn) o.learn = true
   const a = raw?.adult_scene
   if (scene && (a === 'always' || (o.check && (a === 'success' || a === 'fail')))) o.adult_scene = a
@@ -88,7 +88,7 @@ export function sanitizeMasterEvent(id: string, raw: Partial<MasterEventMod>, cu
     id, pool,
     weight: num(raw.weight, 0, 20, 1, 1),
     text: str(raw.text, L.text_chars),
-    hours: num(raw.hours, 0.25, 24, 1),
+    hours: num(raw.hours, 0.1, 24, 1),
     options: [],
   }
   const scene = str(raw.scene, L.scene_chars)

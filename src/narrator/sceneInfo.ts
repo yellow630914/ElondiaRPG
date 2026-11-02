@@ -6,7 +6,7 @@ import type { GameState, Report } from '@/engine/types'
 import { portraitSubject, type ImagePreprocessor, type ImageServiceId } from './imageInfo'
 import { novelAIV4, type SceneCharacter } from './imageProviders'
 import type { Prompt } from './prompt'
-import { monsterGirlsIn, monsterLines, reportFocus, reportMonsters } from './monsters'
+import { monsterGirlsIn, monsterLines, reportFocus, reportGirlSeed, reportMonsters } from './monsters'
 
 export type SceneRating = 'general' | 'suggestive' | 'explicit'
 export type ScenePosition = 'left' | 'center' | 'right'
@@ -96,9 +96,10 @@ export function scenePrompt(
 /** 登場的怪物（寫在 scene 裡）：外觀；魔物娘的設定打開時，標了「→」的畫成魔物娘（成年女性） */
 function monsterScene(state: GameState, report: Report): string[] {
   const girls = monsterGirlsIn(state, reportFocus(report))
-  const lines = monsterLines(reportMonsters(report), girls)
+  // 插圖只要外觀（性情、習性畫不出來，只會讓分鏡變長）
+  const lines = monsterLines(reportMonsters(report), girls, { seed: reportGirlSeed(state, report) })
   if (!lines.length) return []
-  const note = girls && lines.some((l) => l.includes(' → ')) ? '（標了「→」的畫成右邊的魔物娘：成年女性，保留原本種族的特徵）' : ''
+  const note = lines.some((l) => l.includes(' → ')) ? '（標了「→」的畫成右邊的魔物娘：成年女性，保留原本種族的特徵）' : ''
   return [`\n登場的怪物（寫在 scene 裡）${note}：`, ...lines]
 }
 
