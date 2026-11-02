@@ -13,6 +13,7 @@ import { describeEffects, perkCategory, perkPower, PERK_CATEGORIES } from '@/eng
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
+import SourceNote from './SourceNote.vue'
 import Hint from '../ui/Hint.vue'
 import ContentIcon from '../icons/ContentIcon.vue'
 import { perkRarity } from '../icons/perkArt'
@@ -219,6 +220,7 @@ function remove() {
       種族特質：{{ attributeRules.races[draft.race!]?.name }}的角色自動擁有（不寫進存檔），不能選、受訓或從書裡學，也不會失去；可以改名稱、描述與效果。
     </p>
     <UsageNote :usage="usage" :deletable="!builtin" />
+    <SourceNote kind="perk" :id="id" />
 
     <FoldSet>
       <template #legend>基本</template>

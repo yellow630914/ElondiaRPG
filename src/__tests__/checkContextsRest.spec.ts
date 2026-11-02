@@ -50,7 +50,7 @@ describe('被教的技能列進引用（B17）', () => {
     const before = npc.teaches
     npc.teaches = [id]
     try {
-      expect(abilityUsage(id)).toContain(`固定 NPC「${npc.name}」教的技能`)
+      expect(abilityUsage(id)).toContain(`固定 NPC「${npc.name}」（光顧時會教）`)
     } finally {
       if (before) npc.teaches = before
       else delete npc.teaches
@@ -61,6 +61,7 @@ describe('被教的技能列進引用（B17）', () => {
     const ev = masterEventPool('brothel_train').find((e) => e.teaches?.length)!
     const id = ev.teaches![0]!
     expect(abilities[id]).toBeTruthy()
-    expect(abilityUsage(id)).toContain(`主奴、娼館的事件「${ev.id}」`)
+    // 寫成「事件庫「id：開頭幾個字…」（會教）」
+    expect(abilityUsage(id).some((u) => u.includes(`「${ev.id}：`) && u.endsWith('（會教）'))).toBe(true)
   })
 })

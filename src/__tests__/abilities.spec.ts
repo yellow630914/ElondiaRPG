@@ -48,6 +48,17 @@ describe('custom abilities', () => {
     expect(abilityUsage('mod_ability_y')).toEqual(['怪物「新的怪物」'])
   })
 
+  it('也列出寄生物、技能書、事件、事件庫、怪物特徵這些拿得到能力的地方；色情技能與怪物技能都有來源', () => {
+    expect(abilityUsage('para_lingerie_bind')).toEqual(['寄生物「渴求的魔導衣」（馴服之後、有獸蟲派時可以用，不分先後）'])
+    expect(abilityUsage('para_mark_surge')).toEqual(['寄生物「魅魔的契紋」（馴服之後、有獸蟲派時可以用，不分先後）'])
+    expect(abilityUsage('lust_kiss').some((u) => u.startsWith('寄生物「魅魔的契紋」（還沒馴服'))).toBe(true)
+    expect(abilityUsage('lust_bind_stance').some((u) => u.startsWith('地下城事件「會自己穿上的繩衣」'))).toBe(true)
+    expect(abilityUsage('lust_glance').some((u) => u.startsWith('技能書'))).toBe(true)
+    expect(abilityUsage('rut_mount').some((u) => u.startsWith('怪物特徵'))).toBe(true)
+    const orphans = Object.values(abilities).filter((x) => !x.classes.some((c) => c !== 'lewd' && c !== 'monster') && abilityUsage(x.id).length === 0)
+    expect(orphans.map((x) => x.id)).toEqual([])
+  })
+
   it('reports where an ability is used, including the current save, and prunes deleted ones', () => {
     applyContent(mods({ abilities: { mod_ability_z: newAbility('mod_ability_z') } }))
     const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 3 })

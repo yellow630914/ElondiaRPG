@@ -7,10 +7,11 @@
 // - 自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備。
 // 說明見 docs/CONTENT_EDITOR.md。
 
-import { parasiteDef } from './parasites'
+import { parasiteDef, parasiteRules } from './parasites'
+import { travelEvents } from './road'
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, bumpContentRevision, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, bumpContentRevision, MASTER_EVENT_POOLS, masterEventPool, type MasterEventPool, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
@@ -33,7 +34,7 @@ import { applyBindRules, restoreBindRules, sanitizeBindRules, type BindRulesMod 
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
-import { travelEvents } from './road'
+import { invalidateSources } from './sources'
 import { sanitizeIcon, setCategoryIcons } from './itemIcons'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
@@ -474,6 +475,8 @@ function repriceCatalog(mods: ContentMods) {
 /** 把覆寫套用到遊戲資料（先還原成內建的樣子）。壞掉的項目略過，回傳略過的原因 */
 export function applyContent(mods: ContentMods): string[] {
   restore()
+  // 「怎麼拿到」的索引跟著內容重建（下次查詢時）
+  invalidateSources()
   const problems: string[] = []
   const tryEach = <T>(label: string, list: Record<string, T>, fn: (key: string, v: T) => void) => {
     for (const [k, v] of Object.entries(list)) {
@@ -1715,23 +1718,51 @@ export function newAbility(id: string): AbilityMod {
   }
 }
 
+/** 一份資料裡有沒有「學會這個能力」的效果（`{ type: 'ability', ability: id }`，任何深度） */
+function teachesAbility(node: unknown, id: string): boolean {
+  if (!node || typeof node !== 'object') return false
+  if (Array.isArray(node)) return node.some((x) => teachesAbility(x, id))
+  const o = node as Record<string, unknown>
+  if (o.type === 'ability' && o.ability === id) return true
+  return Object.values(o).some((x) => teachesAbility(x, id))
+}
+
 /**
- * 哪些地方用到這個能力（刪除前檢查）：職業的初始能力、怪物、固定 NPC（自己的與教人的）、特殊任務的獎勵、
- * 主奴與娼館的事件掛的技能，以及目前存檔裡的角色（隊伍與登場過的人）。
+ * 哪些地方用到這個能力（刪除前檢查，也讓內容編輯器看得出這個能力怎麼拿到）：職業的初始能力、怪物與怪物特徵、固定 NPC（會的、娼婦會教的）、
+ * 特殊任務、旅途／城鎮／地下城事件、地標、主奴與娼館的事件（會教的與獎勵）、技能書、寄生物（還沒馴服的階段、馴服之後有獸蟲派時可以用的）、
+ * 奴房與娼館恩客預設會教的，以及目前存檔裡的角色（隊伍與登場過的人）。
  */
 export function abilityUsage(id: string, state?: GameState | null): string[] {
   const out: string[] = []
   for (const [cid, c] of Object.entries(classes)) if (c.start?.includes(id)) out.push(`職業「${c.name ?? cid}」的初始能力`)
   for (const e of Object.values(enemies)) if (e.abilities?.includes(id)) out.push(`怪物「${e.name}」`)
+  for (const t of Object.values(monsterTraits.traits)) if (t.abilities?.includes(id)) out.push(`怪物特徵「${t.name}」`)
   for (const n of namedNpcs) {
     if (n.abilities?.includes(id)) out.push(`固定 NPC「${n.name}」`)
-    else if (n.teaches?.includes(id)) out.push(`固定 NPC「${n.name}」教的技能`)
+    if (n.teaches?.includes(id)) out.push(`固定 NPC「${n.name}」（光顧時會教）`)
   }
-  for (const { def } of allMasterEvents()) if (def.teaches?.includes(id)) out.push(`主奴、娼館的事件「${def.id}」`)
-  for (const s of stories) {
-    const effects = [...(s.rewards ?? []), ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])].flatMap((o) => o?.effects ?? []))]
-    if (effects.some((e) => e.type === 'ability' && e.ability === id)) out.push(`特殊任務「${s.title}」的獎勵`)
+  for (const s of stories) if (teachesAbility([s.rewards, s.nodes], id)) out.push(`特殊任務「${s.title}」的獎勵`)
+  for (const t of travelEvents.templates) {
+    if (!teachesAbility(t.options ?? [t.success, t.fail], id)) continue
+    const where = t.scope === 'town' ? '城鎮事件' : t.scope === 'dungeon' ? '地下城事件' : t.scope === 'parasite' ? '寄生物的發作' : '旅途事件'
+    out.push(`${where}「${t.title}」`)
   }
+  for (const l of Object.values(landmarks)) if (teachesAbility(l, id)) out.push(`地標「${l.name}」`)
+  for (const [pool, name] of Object.entries(MASTER_EVENT_POOLS) as [MasterEventPool, string][]) {
+    for (const e of masterEventPool(pool)) {
+      // 主奴與娼館的事件沒有標題：用 id 與開頭的幾個字
+      const label = `${e.id}：${e.text.replace(/\{master\}/g, '主人').slice(0, 12)}…`
+      if (e.teaches?.includes(id)) out.push(`${name}「${label}」（會教）`)
+      else if (teachesAbility(e.options, id)) out.push(`${name}「${label}」的獎勵`)
+    }
+  }
+  for (const i of itemRules.items) if (i.use?.abilities?.includes(id)) out.push(`技能書「${i.name}」`)
+  for (const [pid, p] of Object.entries(parasiteRules.parasites)) {
+    if (p.stage_abilities?.some((list) => list.includes(id))) out.push(`寄生物「${p.name ?? pid}」（還沒馴服時依階段給的）`)
+    if (p.tamed?.ability === id) out.push(`寄生物「${p.name ?? pid}」（馴服之後、有獸蟲派時可以用，不分先後）`)
+  }
+  if (lewdRules.slave_room?.abilities?.includes(id)) out.push('驛站的奴房（可能學會）')
+  if (lewdRules.brothel?.patron?.default?.includes(id)) out.push('娼館的娼婦光顧時預設會教的')
   if (state) {
     const who = [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((c): c is Character => !!c)]
     for (const c of who) {

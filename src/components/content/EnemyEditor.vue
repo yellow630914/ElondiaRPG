@@ -8,6 +8,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
 import UsageNote from './UsageNote.vue'
+import SourceNote from './SourceNote.vue'
 import IconField from './IconField.vue'
 import { MONSTER_BAND_COLOR, MONSTER_BAND_LEVELS, monsterArtPath, monsterBand } from '../icons/monsterArt'
 import type { DrawSource } from '../items/itemIcon'
@@ -189,6 +190,7 @@ function remove() {
       @save="save" @discard="discard" @restore="restore" @remove="remove"
     />
     <UsageNote :usage="usage" :deletable="!builtin" />
+    <SourceNote kind="enemy" :id="id" />
     <p class="small muted">id：{{ id }}</p>
 
     <FoldSet>

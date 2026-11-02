@@ -54,6 +54,8 @@ const usage = computed(() => {
   void content.version
   return content.usageOf('ability', props.id)
 })
+/** 照職業與等級學的職業（色情技能、怪物不算） */
+const ownClasses = computed(() => draft.value.classes.filter((c) => c !== 'lewd' && c !== 'monster').map((c) => className(c)))
 
 // ---- 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） ----
 const lustGain = computed({
@@ -155,7 +157,8 @@ function remove() {
       @save="save" @discard="discard" @restore="restore" @remove="remove"
     />
     <p class="small muted">id：{{ id }}</p>
-    <UsageNote :usage="usage" :deletable="!builtin" />
+    <UsageNote :usage="usage" :deletable="!builtin" label="怎麼拿到、哪裡用到" open />
+    <p v-if="!usage.length" class="small muted">{{ ownClasses.length ? `照職業與等級學（${ownClasses.join('、')}）；目前沒有其他地方給這個能力。` : '目前沒有任何地方給這個能力：職業、怪物、事件、技能書都沒有用到，遊戲裡拿不到。' }}</p>
 
     <FoldSet>
       <template #legend>基本</template>
@@ -186,6 +189,7 @@ function remove() {
         </label>
       </div>
       <p class="small muted">技能依等級學；法術要有那一環的法術環，花一個法術環；戲法不花行動點、每回合一次。怪物不能用法術。</p>
+      <p v-if="draft.classes.includes('lewd')" class="small muted">色情技能不會出現在升級的選擇裡，「幾級可以學」只決定技能書的順序與事件教的時候要幾級；要從上面「怎麼拿到」列的地方取得（技能書、事件、娼館、寄生物……）。</p>
       <div class="block icon-row">
         <span>圖示</span>
         <div class="row">
