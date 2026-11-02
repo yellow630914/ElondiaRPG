@@ -1589,7 +1589,7 @@ function teachesAbility(node: unknown, id: string): boolean {
 
 /**
  * 哪些地方用到這個能力（刪除前檢查，也讓內容編輯器看得出這個能力怎麼拿到）：職業的初始能力、怪物與怪物特徵、固定 NPC（會的、娼婦會教的）、
- * 特殊任務、旅途／城鎮／地下城事件、地標、主奴與娼館的事件（會教的與獎勵）、技能書、寄生物（還沒馴服的階段、修了獸蟲派時馴服的）、
+ * 特殊任務、旅途／城鎮／地下城事件、地標、主奴與娼館的事件（會教的與獎勵）、技能書、寄生物（還沒馴服的階段、馴服之後有獸蟲派時可以用的）、
  * 奴房與娼館恩客預設會教的，以及目前存檔裡的角色（隊伍與登場過的人）。
  */
 export function abilityUsage(id: string, state?: GameState | null): string[] {
@@ -1619,7 +1619,7 @@ export function abilityUsage(id: string, state?: GameState | null): string[] {
   for (const i of itemRules.items) if (i.use?.abilities?.includes(id)) out.push(`技能書「${i.name}」`)
   for (const [pid, p] of Object.entries(parasiteRules.parasites)) {
     if (p.stage_abilities?.some((list) => list.includes(id))) out.push(`寄生物「${p.name ?? pid}」（還沒馴服時依階段給的）`)
-    if (p.tamed?.ability === id) out.push(`寄生物「${p.name ?? pid}」（馴服之後，修了獸蟲派時給的）`)
+    if (p.tamed?.ability === id) out.push(`寄生物「${p.name ?? pid}」（馴服之後、有獸蟲派時可以用，不分先後）`)
   }
   if (lewdRules.slave_room?.abilities?.includes(id)) out.push('驛站的奴房（可能學會）')
   if (lewdRules.brothel?.patron?.default?.includes(id)) out.push('娼館的娼婦光顧時預設會教的')

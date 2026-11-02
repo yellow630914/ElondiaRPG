@@ -60,6 +60,18 @@ describe('寄生物', () => {
     pc.perks = [...(pc.perks ?? []), 'school_beast']
     expect(parasiteAbilities(pc)).toEqual(['para_mark_surge'])
   })
+
+  it('先修獸蟲派、之後才被寄生並馴服也一樣：不分先後，兩個條件都在就有；失去其中一個就沒有', () => {
+    const state = game()
+    const pc = pcOf(state)
+    pc.perks = [...(pc.perks ?? []), 'school_beast']
+    attachParasite(pc, 'succubus_mark', state.time)
+    expect(parasiteAbilities(pc)).not.toContain('para_mark_surge')
+    tameParasite(pc, 'succubus_mark')
+    expect(parasiteAbilities(pc)).toEqual(['para_mark_surge'])
+    pc.perks = pc.perks.filter((p) => p !== 'school_beast')
+    expect(parasiteAbilities(pc)).toEqual([])
+  })
 })
 
 describe('奴隸印記的順從累積', () => {
