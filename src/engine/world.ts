@@ -21,14 +21,20 @@ interface Edge {
 }
 
 const adjacency = new Map<string, Edge[]>()
-for (const route of geography.routes) {
-  if (!route.days) continue
-  const r = route as Route & { days: [number, number] }
-  for (const [x, y] of [[r.a, r.b], [r.b, r.a]] as const) {
-    if (!adjacency.has(x)) adjacency.set(x, [])
-    adjacency.get(x)!.push({ to: y, route: r })
+
+/** 依 geography.routes 重建路線圖（自建地下城的路線套用或還原之後呼叫） */
+export function rebuildRoutes() {
+  adjacency.clear()
+  for (const route of geography.routes) {
+    if (!route.days) continue
+    const r = route as Route & { days: [number, number] }
+    for (const [x, y] of [[r.a, r.b], [r.b, r.a]] as const) {
+      if (!adjacency.has(x)) adjacency.set(x, [])
+      adjacency.get(x)!.push({ to: y, route: r })
+    }
   }
 }
+rebuildRoutes()
 
 export function neighbors(id: string): Edge[] {
   return adjacency.get(id) ?? []

@@ -3,6 +3,7 @@
 import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
 import { pruneSpecialMaps } from './specialMaps'
+import { pruneLocations } from './pruneLocations'
 import { abilities, attributeRules, classDef, companionRules, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
@@ -378,6 +379,8 @@ export function migrate(state: GameState): GameState {
   setSaveItems(Object.values(state.inventions ?? {}))
   // 這個世界沒有的特殊地圖
   pruneSpecialMaps(state)
+  // 這個世界沒有的自建地下城：人在裡面時送回聚落（格子位置清掉，load 會重新進入地點）
+  pruneLocations(state)
   return state
 }
 

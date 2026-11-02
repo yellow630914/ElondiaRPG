@@ -5,6 +5,7 @@
 // 另存的特殊任務，自己寫的劇情旗標也加上同一個後綴（不然開頭旗標和原本的任務重複，兩個任務會互相觸發）。
 // 這裡只算要寫進去的東西；寫入、整理與檢查在 stores/content.ts。
 
+import { geography } from './data'
 import { entryOf, fingerprint, refKey, rewriteRefs, splitKey, type RefKey, type Section } from './contentRefs'
 import type { ContentMods } from './mods'
 
@@ -52,6 +53,17 @@ export function copyId(section: Section, id: string, hash: string): string {
   return `${id}_${hash}`
 }
 
+/** 另存一份的地下城名稱：「（2）」「（3）」，最多 16 字，不能和其他地點重複 */
+function copyDungeonName(name: string, taken: Set<string>): string {
+  for (let i = 2; ; i++) {
+    const n = `${name.slice(0, 16 - String(i).length - 2)}（${i}）`
+    if (!taken.has(n)) {
+      taken.add(n)
+      return n
+    }
+  }
+}
+
 /** 另存一份的物品名稱：看得懂的「（2）」「（3）」，不能和兩邊已有的名稱重複 */
 export function copyItemName(name: string, taken: Set<string>): string {
   for (let i = 2; ; i++) {
@@ -81,6 +93,7 @@ export function buildPackage(target: ContentMods, source: ContentMods, rows: Imp
   const take: RefKey[] = []
   const takenItems = new Set([...Object.keys(target.items), ...Object.keys(source.items)])
   const copiedStories: string[] = []
+  const copiedDungeons = new Set<RefKey>()
   for (const row of rows) {
     const choice = row.status === 'conflict' ? choices[row.key] ?? defaultChoice(row) : undefined
     if (row.status === 'same' || choice === 'keep') {
@@ -95,18 +108,22 @@ export function buildPackage(target: ContentMods, source: ContentMods, rows: Imp
     renames.set(id, next)
     renamed.push([row.key, refKey(section, next)])
     if (section === 'stories') copiedStories.push(row.key)
+    if (section === 'dungeons') copiedDungeons.add(row.key)
   }
   // 另存的任務自己寫的旗標：加上新 id 的後綴（開頭旗標不能和原本的任務重複）
   for (const key of copiedStories) {
     const hash = fingerprint(entryOf(source, key))
     for (const f of storyWrites(entryOf(source, key))) if (!renames.has(f)) renames.set(f, `${f.slice(0, 31)}_${hash}`)
   }
+  const dungeonNames = new Set([...geography.locations.map((l) => l.name), ...Object.values({ ...target.dungeons, ...source.dungeons }).map((d) => d.name)])
   const mods: Partial<Record<Section, Record<string, unknown>>> = {}
   const fingerprints: Record<RefKey, string> = {}
   for (const key of take) {
     const [section, id] = splitKey(key)
     const entry = rewriteRefs(JSON.parse(JSON.stringify(entryOf(source, key))), renames)
     const newId = renames.get(id) ?? id
+    // 另存的地下城：名稱加上「（2）」（地點的名稱不能重複）
+    if (copiedDungeons.has(key)) (entry as { name: string }).name = copyDungeonName((entry as { name: string }).name, dungeonNames)
     ;(mods[section] ??= {})[newId] = entry
     fingerprints[refKey(section, newId)] = fingerprint(entry)
   }

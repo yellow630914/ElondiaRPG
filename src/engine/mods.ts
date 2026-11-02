@@ -27,6 +27,7 @@ import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, s
 import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
+import { applyDungeonMod, isCustomDungeon, restoreDungeons, sanitizeDungeonMod, type DungeonMod } from './dungeonMods'
 import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type CounterMod } from './counterMods'
 import { allMasterEvents, applyMasterEvent, builtinMasterEvent, restoreMasterEvents, sanitizeMasterEvent, type MasterEventMod } from './masterEventMods'
 import { applyBindRules, restoreBindRules, sanitizeBindRules, type BindRulesMod } from './bindRulesMods'
@@ -137,6 +138,8 @@ export interface ContentMods {
   categoryIcons: Record<string, CategoryIconMod>
   /** 劇情計數器（舊的自訂內容沒有這一欄） */
   counters: Record<string, CounterMod>
+  /** 自建的地下城（舊的自訂內容沒有這一欄，讀取時補上） */
+  dungeons: Record<string, DungeonMod>
 }
 
 /** 類別的圖示：玩家上傳的圖（data URL），沒有的類別用內建的圖 */
@@ -145,7 +148,7 @@ export interface CategoryIconMod {
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {}, dungeons: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -242,6 +245,8 @@ function restore() {
   replaceRecord(enemies, snapshot.enemies)
   replaceRecord(dungeonEncounters as Record<string, DungeonEncounters>, snapshot.dungeon)
   replaceRecord(wildEncounterTables as Record<string, unknown>, snapshot.wild as Record<string, unknown>)
+  // 自建地下城的地點、路線與光線（遭遇表在上一行已經還原）
+  restoreDungeons()
   itemRules.items.splice(0, itemRules.items.length, ...clone(snapshot.items))
   replaceRecord(gearRules.bases, snapshot.bases)
   replaceRecord(gearRules.materials, snapshot.materials)
@@ -471,6 +476,23 @@ function repriceCatalog(mods: ContentMods) {
   }
 }
 
+/** 自建地下城的遭遇表裡已經不存在的怪物拿掉（組空了整組拿掉） */
+function pruneDungeonTables() {
+  for (const [id, t] of Object.entries(dungeonEncounters)) {
+    if (!isCustomDungeon(id)) continue
+    for (const layer of CHEST_LAYERS) {
+      const groups = t[layer]
+      if (groups) groups.splice(0, groups.length, ...groups.map((g) => g.filter(([e]) => !!enemies[e])).filter((g) => g.length))
+    }
+    for (const [layer, g] of Object.entries(t.bosses ?? {})) {
+      const kept = (g ?? []).filter(([e]) => !!enemies[e])
+      if (kept.length) t.bosses![layer as 'shallow'] = kept
+      else delete t.bosses![layer as 'shallow']
+    }
+    if (t.abyss && !t.abyss.length) delete t.abyss
+  }
+}
+
 /** 把覆寫套用到遊戲資料（先還原成內建的樣子）。壞掉的項目略過，回傳略過的原因 */
 export function applyContent(mods: ContentMods): string[] {
   restore()
@@ -501,6 +523,8 @@ export function applyContent(mods: ContentMods): string[] {
     slaveryRules.contracts[id] = strip(m, ['custom'])
   })
   tryEach('印記設定', mods.markRules ?? {}, (_id, m) => applyMarkRules(sanitizeMarkRules(m, new Set(Object.keys(slaveryRules.contracts)), builtinMarkRules())))
+  // 自建地下城（地點、路線、遭遇表）最先：特殊地圖、任務、事件、情報物品與怪物的出現地點都會檢查地點存不存在
+  tryEach('地下城', mods.dungeons ?? {}, (_id, m) => applyDungeonMod(m))
   tryEach('地標', mods.landmarks ?? {}, (id, m) => {
     const l = sanitizeLandmarkMod(id, m)
     applyLandmarkMod(id, l)
@@ -581,6 +605,8 @@ export function applyContent(mods: ContentMods): string[] {
     enemies[id] = { ...strip(m, ['custom', 'spawns', 'exclude']), id }
   })
   tryEach('怪物的出現地點', mods.enemies, (id, m) => applyPlacements(id, m))
+  // 自建地下城的遭遇表：拿掉已經不存在的怪物（被刪掉、匯入時取代）
+  pruneDungeonTables()
   // 劇情計數器（固定 NPC、任務與事件的條件會用到）
   tryEach('劇情計數器', mods.counters ?? {}, (id, m) => applyCounter(id, sanitizeCounter(m, !!m.custom)))
   tryEach('固定 NPC', mods.npcs, (id, m) => {
@@ -699,6 +725,8 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   const money = raw.money_cc && raw.money_cc.length === 2 ? [int(raw.money_cc[0], 0, 1e6, 0), int(raw.money_cc[1], 0, 1e6, 0)] as [number, number] : undefined
   const spawns = (raw.spawns ?? [])
     .filter((p) => p && typeof p.table === 'string' && tableOptions().some((t) => t.key === p.table))
+    // 自建地下城的遭遇表記在地下城上（dungeonMods.ts），不記在怪物身上
+    .filter((p) => !isCustomDungeon(p.table.split(':')[1] ?? ''))
     .map((p) => {
       const out: Placement = { table: p.table, count: int(p.count, 1, 6, 1), ...(int(p.weight, 1, 5, 1) > 1 ? { weight: int(p.weight, 1, 5, 1) } : {}) }
       if (p.table.startsWith('boss:')) {
@@ -1091,6 +1119,15 @@ export function normalizeMods(raw: unknown): ContentMods {
   for (const [id, v] of Object.entries(r.marks ?? {})) out.marks[id] = sanitizeMarkMod(v, !!v.custom || !snapshot.marks[id])
   for (const [id, m] of Object.entries(out.marks)) if (m.custom && !slaveryRules.contracts[id]) slaveryRules.contracts[id] = strip(m, ['custom'])
   if (r.markRules?.rules) out.markRules.rules = sanitizeMarkRules(r.markRules.rules, new Set([...Object.keys(snapshot.marks), ...Object.keys(out.marks)]), builtinMarkRules())
+  // 自建地下城：特殊地圖、任務、事件、物品的情報會檢查地點存不存在，先登錄（遭遇表可以用同一包裡的怪物）
+  for (const [id, v] of Object.entries(r.dungeons ?? {})) {
+    try {
+      out.dungeons[id] = sanitizeDungeonMod(id, v, (x) => !!enemies[x] || !!r.enemies?.[x])
+    } catch {
+      // id 不對的：略過
+    }
+  }
+  for (const [id, d] of Object.entries(out.dungeons)) if (!geography.locations.some((l) => l.id === id)) applyDungeonMod(d)
   for (const [id, v] of Object.entries(r.abilities ?? {})) out.abilities[id] = sanitizeAbility(id, v, !!v.custom || !snapshot.abilities[id])
   // 怪物、固定 NPC 與任務的整理會檢查能力存不存在：先把自建的能力登錄進去（之後 applyContent 會重新套用一次）
   for (const [id, a] of Object.entries(out.abilities)) if (a.custom && !abilities[id]) abilities[id] = { ...strip(a, ['custom']), id }

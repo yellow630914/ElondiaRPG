@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { affinityStage } from '@/engine/character'
-import { locationById } from '@/engine/data'
+import { locationById, locationName } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import { nameOf as npcName, type Memory, type Relationship } from '@/engine/social'
 import { useGame } from '@/stores/game'
@@ -200,7 +200,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
             </template>
             <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
             <template v-if="whereNow(r.id)"><dt>所在</dt><dd>{{ whereNow(r.id) }}</dd></template>
-            <template v-if="r.firstMet"><dt>初次見面</dt><dd>{{ formatTime(r.firstMet.time) }}・{{ locationById(r.firstMet.location).name }}</dd></template>
+            <template v-if="r.firstMet"><dt>初次見面</dt><dd>{{ formatTime(r.firstMet.time) }}・{{ locationName(r.firstMet.location) }}</dd></template>
           </dl>
           <div class="row">
             <button class="small" @click="startEdit(r)">編輯</button>
@@ -249,7 +249,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
         </select>
         <select v-model="filterLocation">
           <option value="">所有地點</option>
-          <option v-for="id in memoryLocations" :key="id" :value="id">{{ locationById(id).name }}</option>
+          <option v-for="id in memoryLocations" :key="id" :value="id">{{ locationName(id) }}</option>
         </select>
       </div>
 
@@ -274,7 +274,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
         <li v-for="m in memories" :key="m.id" class="memory">
           <div class="row small meta">
             <span>{{ formatTime(m.time) }}</span>
-            <span>{{ m.scene ?? locationById(m.location).name }}</span>
+            <span>{{ m.scene ?? locationName(m.location) }}</span>
             <span class="muted">{{ m.participants.map(nameOf).join('、') }}</span>
             <span v-if="m.merged" class="tag" title="記憶超過 200 筆時，舊的日常記憶會合併成摘要">合併 {{ m.merged }} 筆</span>
             <span class="spacer" />

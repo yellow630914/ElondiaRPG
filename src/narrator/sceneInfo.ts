@@ -1,7 +1,7 @@
 // 日誌插圖：請大語言模型把一則日誌整理成一張圖的分鏡（誰在畫面上、站在哪、在做什麼、整體畫面），再組成生圖提示詞。
 // 多人場景：NovelAI 的 V4 模型每個角色分開描述、標出位置；其他服務接成一段提示詞。見 docs/PORTRAITS.md 第 7 節。
 
-import { genderPrompt, locationById, regionById } from '@/engine/data'
+import { findLocation, genderPrompt, locationName, regionById } from '@/engine/data'
 import type { GameState, Report } from '@/engine/types'
 import { portraitSubject, type ImagePreprocessor, type ImageServiceId } from './imageInfo'
 import type { SceneCharacter } from './imageProviders'
@@ -57,7 +57,7 @@ const TIME_NAME = (hour = 12) => (hour >= 5 && hour < 7 ? '黎明' : hour >= 7 &
 export function scenePrompt(
   state: GameState, report: Report, cast: SceneCastMember[], opts: { format?: ImagePreprocessor; multi: boolean; narration?: string },
 ): Prompt {
-  const loc = locationById(report.location.at)
+  const loc = findLocation(report.location.at)
   // 分流：帶親密場景的日誌才可以畫成人場景
   const adult = !!report.narration?.adult_scene
   const system = [
@@ -79,7 +79,7 @@ export function scenePrompt(
       : '\nscene 與每個角色的 prompt 都用英文自然語言描述。',
   ].filter(Boolean).join('\n')
   const user = [
-    `地點：${loc.name}（${regionById(loc.region).name}）${report.location.scene ? `・${report.location.scene}` : ''}`,
+    `地點：${loc ? `${loc.name}（${regionById(loc.region).name}）` : locationName(report.location.at)}${report.location.scene ? `・${report.location.scene}` : ''}`,
     `時間：第 ${report.time.start.day} 天・${TIME_NAME(report.time.start.hour)}`,
     `經過：${report.outcome.summary ?? ''}`,
     report.check?.action ? `主角的行動：${report.check.action}` : '',

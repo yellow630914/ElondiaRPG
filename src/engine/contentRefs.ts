@@ -15,7 +15,7 @@ export type Section = Exclude<keyof ContentMods, 'version'>
 /** 一項內容：`區塊:id`（物品是 `items:名稱`） */
 export type RefKey = string
 
-export const REF_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
+export const REF_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
 /** 只有一筆的設定（或依類別的圖示）：可以被選，但不會因為字串剛好一樣就被當成關聯 */
 const SINGLETONS = new Set<Section>(['markRules', 'eventRules', 'bindRules', 'categoryIcons'])
 
