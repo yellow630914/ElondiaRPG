@@ -256,6 +256,37 @@ function changedFields(a: unknown, b: unknown, n = 3, path = ''): string[] {
   return [`${name}：${shown(a)} → ${shown(b)}`]
 }
 
+/**
+ * 整理玩家寫的內容（比較前）：id 去掉前後空白（去掉後是內建的那一筆就當那一筆），
+ * 不是物件的整筆略過、照原版（寫成 null、字串、數字、陣列……），去掉空白後重複的 id 只留第一筆
+ */
+function tidyEntries(user: SectionEntries, builtin: SectionEntries, skipped: string[]): SectionEntries {
+  const out: SectionEntries = {}
+  for (const s of BUILTIN_SECTIONS) {
+    const mine = user[s.key]
+    if (!mine) continue
+    const base = builtin[s.key] ?? {}
+    const kept: Entries = {}
+    for (const [rawId, raw] of Object.entries(mine)) {
+      const id = rawId.trim()
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        const what = raw === null ? 'null' : Array.isArray(raw) ? '陣列' : typeof raw === 'string' ? '文字' : typeof raw === 'number' ? '數字' : typeof raw
+        skipped.push(`${s.name} ${id || rawId}：要寫成 { … }，這裡寫的是${what === 'null' ? ' null ' : what}，整筆略過${id in base ? '（內建的照原版）' : ''}`)
+        continue
+      }
+      if (!id || id in kept) {
+        skipped.push(`${s.name} 「${rawId}」：${id ? `去掉前後的空白之後和「${id}」重複` : 'id 是空的'}，整筆略過`)
+        continue
+      }
+      const entry = clone(raw) as Record<string, unknown>
+      if (typeof entry.id === 'string' && entry.id !== id && entry.id.trim() === id) entry.id = id
+      kept[id] = entry
+    }
+    out[s.key] = kept
+  }
+  return out
+}
+
 export interface BuiltinWorldDiff {
   /** 要存進新世界的內容（改過的內建項目與新增的項目） */
   mods: ContentMods
@@ -272,11 +303,12 @@ export interface BuiltinWorldDiff {
  * 和內建比較（呼叫前要先套用原版；會整理 user，自建的狀態、特質……會暫時登錄進遊戲資料，呼叫的人之後要重新套用內容）。
  * builtin 是 builtinWorldEntries() 的結果
  */
-export function diffBuiltinWorld(user: SectionEntries, builtin: SectionEntries): BuiltinWorldDiff {
+export function diffBuiltinWorld(input: SectionEntries, builtin: SectionEntries): BuiltinWorldDiff {
+  const out: BuiltinWorldDiff = { mods: normalizeMods({}), changed: {}, added: {}, adjusted: [], skipped: [] }
+  const user = tidyEntries(input, builtin, out.skipped)
   const builtinNorm = normalizeMods({ version: 1, ...clone(builtin) }) as unknown as Record<string, Entries>
   const userNorm = normalizeMods({ version: 1, ...clone(user) }) as unknown as Record<string, Entries>
-  const mods = normalizeMods({}) as unknown as Record<string, Entries>
-  const out: BuiltinWorldDiff = { mods: mods as unknown as ContentMods, changed: {}, added: {}, adjusted: [], skipped: [] }
+  const mods = out.mods as unknown as Record<string, Entries>
   for (const s of BUILTIN_SECTIONS) {
     const mine = user[s.key]
     if (!mine) continue
@@ -284,12 +316,17 @@ export function diffBuiltinWorld(user: SectionEntries, builtin: SectionEntries):
     const base = builtin[s.key] ?? {}
     for (const [id, raw] of Object.entries(mine)) {
       const label = `${s.name} ${(raw as { name?: string } | null)?.name ?? id}`
+      // 物品的 id 就是名字：只改 name 不改鍵時，name 會照鍵（沒有效果），提醒一行
+      const itemName = s.key === 'items' ? (raw as { name?: unknown }).name : undefined
+      if (typeof itemName === 'string' && itemName.trim() && itemName.trim() !== id) {
+        out.adjusted.push(`物品 ${id}：name 寫的是「${itemName.trim()}」，和鍵「${id}」不一樣；物品的名字就是鍵，name 照鍵。要改名請改鍵（改了鍵等於新增一個物品）`)
+      }
       // 單筆的設定只認 rules
       if (s.single && id !== 'rules') {
         out.skipped.push(`${label}：這一種只有 rules 一筆`)
         continue
       }
-      const kept = norm[id] ?? norm[id.trim()]
+      const kept = norm[id]
       if (kept === undefined) {
         out.skipped.push(`${label}：id 或格式不對，整筆略過${id in base ? '（內建的照原版）' : ''}`)
         continue
@@ -300,7 +337,8 @@ export function diffBuiltinWorld(user: SectionEntries, builtin: SectionEntries):
       ;((isBuiltin ? out.changed : out.added)[s.key] ??= []).push(id)
       // 寫的和整理後的不一樣：被調整或拿掉的欄位（商店整理後只記和內建不一樣的地方，不比）
       if (s.key !== 'shops') {
-        const fields = changedFields(raw, kept)
+        // 物品的 name 和鍵不一樣已經另外提醒過
+        const fields = changedFields(raw, kept, 4).filter((f) => !(itemName !== undefined && f.startsWith('name：'))).slice(0, 3)
         if (fields.length) out.adjusted.push(`${label}：${fields.join('；')}`)
       }
     }

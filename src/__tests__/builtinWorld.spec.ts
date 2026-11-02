@@ -205,3 +205,61 @@ describe('import feedback', () => {
     expect(bad.items).toEqual(['物品（content/items.json）讀不了，物品全部照原版：第 3 行第 3 字附近：少了逗號（,）或右大括號（}）'])
   })
 })
+
+describe('import edge cases', () => {
+  it('skips entries that are not objects and keeps the built-in one', () => {
+    const content = useContent()
+    const files = unzipSync(content.exportBuiltinWorld())
+    const monsters = read(files, 'content/enemies.json') as Record<string, unknown>
+    monsters.goblin = null
+    monsters.wolf = 'abc'
+    monsters.bandit = [] as unknown
+    monsters.giant_rat = { ...(monsters.giant_rat as object), name: '大老鼠' }
+    write(files, 'content/enemies.json', monsters)
+    const r = content.importBuiltinWorld(zipSync(files), '壞掉的幾筆')
+    expect(r.diff.changed).toEqual({ enemies: ['giant_rat'] })
+    expect(r.diff.skipped.filter((x) => x.includes('整筆略過（內建的照原版）'))).toHaveLength(3)
+    content.switchWorld(r.id!)
+    expect(enemies.goblin!.name).toBe('哥布林')
+    expect(enemies.wolf!.name).toBe('灰狼')
+  })
+
+  it('trims ids before matching built-ins, and skips duplicates after trimming', () => {
+    const content = useContent()
+    const files = unzipSync(content.exportBuiltinWorld())
+    const monsters = read(files, 'content/enemies.json')
+    const goblin = monsters.goblin!
+    delete monsters.goblin
+    monsters[' goblin '] = { ...goblin, name: '綠皮小鬼' }
+    monsters['wolf '] = { ...monsters.wolf, name: '重複的灰狼' }
+    write(files, 'content/enemies.json', monsters)
+    const r = content.importBuiltinWorld(zipSync(files), '空白')
+    expect(r.diff.changed).toEqual({ enemies: ['goblin'] })
+    expect(r.diff.added).toEqual({})
+    expect(r.diff.adjusted).toEqual([])
+    expect(r.diff.skipped.some((x) => x.includes('重複'))).toBe(true)
+  })
+
+  it('warns when an item name differs from its key', () => {
+    const content = useContent()
+    const files = unzipSync(content.exportBuiltinWorld())
+    const items = read(files, 'content/items.json')
+    items['乾糧'] = { ...items['乾糧'], name: '乾糧改' }
+    write(files, 'content/items.json', items)
+    const r = content.importBuiltinWorld(zipSync(files), '改名')
+    expect(r.id).toBeUndefined()
+    expect(r.report.lines.some((l) => l.items.some((x) => x.includes('要改名請改鍵')))).toBe(true)
+  })
+
+  it('a dry run checks without making a world', () => {
+    const content = useContent()
+    const files = unzipSync(content.exportBuiltinWorld())
+    const monsters = read(files, 'content/enemies.json')
+    monsters.goblin = { ...monsters.goblin, name: '綠皮小鬼' }
+    write(files, 'content/enemies.json', monsters)
+    const r = content.importBuiltinWorld(zipSync(files), '試試', '', { dryRun: true })
+    expect(r.id).toBeUndefined()
+    expect(r.diff.changed).toEqual({ enemies: ['goblin'] })
+    expect(content.worlds).toHaveLength(0)
+  })
+})

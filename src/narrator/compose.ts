@@ -110,7 +110,7 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     : undefined
   // 戰敗事件的回應：圍上來的怪物的外觀（魔物娘的設定看被圍住的人）
   const monsters = p.kind === 'defeat_event'
-    ? monstersText([...new Set((state.pendingDefeat?.foes ?? []).map((f) => f.monster).filter((m): m is string => !!m))], monsterGirlsIn(state, p.actor), girlSeed(state, state.time.day))
+    ? monstersText([...new Set((state.pendingDefeat?.foes ?? []).map((f) => f.monster).filter((m): m is string => !!m))], monsterGirlsIn(state, p.actor), girlSeed(state, state.pendingDefeat?.day ?? state.time.day))
     : ''
   const prompt = buildActionPrompt(state, p, judgeContext(state, p), {
     language: o.language,

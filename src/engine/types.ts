@@ -182,6 +182,8 @@ export interface Report {
     mode?: 'defeat_cliffhanger' | 'defeat_event'
     /** 戰敗事件被圍住的是隊友：那位隊員的 id（沒有時是主角） */
     defeat_victim?: string
+    /** 擲魔物娘用的日子（戰敗事件的回應：照那場戰鬥開始的日子，和戰敗前情一致）；沒有時看報告開始的日子 */
+    girl_day?: number
     /** 成人向的親密場景：這段經過是什麼，敘事會附上成人場景規則、在正文詳細描寫 */
     adult_scene?: string
     /** 這段經過來自限定陰柔、中性主角的內容（特殊任務、事件、地標場景的 pc_body）：陽剛體型的主角玩到時，敘事附上照主角身體寫的說明（narrator 的 mascBodyNote） */
@@ -550,6 +552,8 @@ export interface PendingDefeat {
   willing?: boolean
   /** 被圍住的是隊友（隊員 id）：主角不會遇到戰敗事件時改由隊友遇到，玩家替這位隊友選擇反應；沒有時是主角 */
   victim?: string
+  /** 那場戰鬥開始的日子：戰敗事件擲魔物娘照這天（和戰敗前情一致；舊存檔沒有時看現在） */
+  day?: number
 }
 
 export interface PendingMasterEvent {

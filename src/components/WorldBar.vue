@@ -5,7 +5,7 @@ import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { dateStamp, download } from './download'
 import { confirmDiscard } from './content/unsaved'
-import type { BuiltinImportReport } from '@/engine/builtinWorld'
+import { hasChanges, type BuiltinImportReport } from '@/engine/builtinWorld'
 import GameIcon from './ui/GameIcon.vue'
 
 // 世界管理：好幾套自訂內容。開新遊戲時選一個，存檔記住；遊戲進行中不能切換（可以修改它的內容）
@@ -103,9 +103,15 @@ async function importBuiltin(e: Event) {
   if (!file) return
   const bytes = new Uint8Array(await file.arrayBuffer())
   if (!(await confirmDiscard())) return
-  const name = prompt('匯入成新的世界，叫什麼名字？', file.name.replace(/\.zip$/i, ''))
-  if (name === null) return
   report.value = null
+  // 先檢查有沒有改動（讀不了、什麼都沒改時不問名字）
+  let changed = false
+  run(() => {
+    changed = hasChanges(content.importBuiltinWorld(bytes, '', file.name, { dryRun: true }).diff)
+  })
+  if (msgKind.value === 'error') return
+  const name = changed ? prompt('匯入成新的世界，叫什麼名字？', file.name.replace(/\.zip$/i, '')) : ''
+  if (name === null) return
   run(() => {
     const r = content.importBuiltinWorld(bytes, name, file.name)
     const unreadable = r.report.lines.find((l) => l.label.startsWith('讀不了'))?.items.length ?? 0

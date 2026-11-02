@@ -35,9 +35,9 @@ export function girlSeed(state: GameState | null, day: number): string {
   return `${state?.seed ?? 0}:${day}`
 }
 
-/** 報告的那一天（擲魔物娘用） */
+/** 報告的那一天（擲魔物娘用）：戰敗事件的回應照那場戰鬥的日子（narration.girl_day） */
 export function reportGirlSeed(state: GameState | null, report: Report): string {
-  return girlSeed(state, report.time.start.day)
+  return girlSeed(state, report.narration?.girl_day ?? report.time.start.day)
 }
 
 /** 這種怪物這次以魔物娘出現嗎（設定與主角已經符合時才問）：怪物自己的機率，沒寫時照設定 */
