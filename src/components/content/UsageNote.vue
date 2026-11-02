@@ -1,11 +1,12 @@
 <script setup lang="ts">
-// 用到這一項的地方（其他內容與目前的存檔）；自建項目要都拿掉之後才能刪
-defineProps<{ usage: string[]; deletable: boolean }>()
+// 用到這一項的地方（其他內容與目前的存檔）；自建項目要都拿掉之後才能刪。
+// label 換掉摘要的說法（例如技能的「怎麼拿到」），open 預設展開
+defineProps<{ usage: string[]; deletable: boolean; label?: string; open?: boolean }>()
 </script>
 
 <template>
-  <details v-if="usage.length" class="usage small">
-    <summary>🔗 有 {{ usage.length }} 個地方用到{{ deletable ? '（都拿掉之後才能刪除）' : '' }}</summary>
+  <details v-if="usage.length" class="usage small" :open="open">
+    <summary>🔗 {{ label ?? '有幾個地方用到' }}（{{ usage.length }}）{{ deletable ? '：都拿掉之後才能刪除' : '' }}</summary>
     <ul>
       <li v-for="u in usage" :key="u">{{ u }}</li>
     </ul>
