@@ -8,6 +8,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
 import UsageNote from './UsageNote.vue'
+import SourceNote from './SourceNote.vue'
 import IconField from './IconField.vue'
 import { MONSTER_BAND_COLOR, MONSTER_BAND_LEVELS, monsterArtPath, monsterBand } from '../icons/monsterArt'
 import type { DrawSource } from '../items/itemIcon'
@@ -166,6 +167,7 @@ function remove() {
       <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
     </div>
     <UsageNote :usage="usage" :deletable="!builtin" />
+    <SourceNote kind="enemy" :id="id" />
     <p class="small muted">id：{{ id }}</p>
 
     <fieldset>

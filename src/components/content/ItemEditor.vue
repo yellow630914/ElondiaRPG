@@ -21,6 +21,7 @@ import AffinityRows from './AffinityRows.vue'
 import IconField from './IconField.vue'
 import ContentIcon from '../icons/ContentIcon.vue'
 import UsageNote from './UsageNote.vue'
+import SourceNote from './SourceNote.vue'
 import Hint from '../ui/Hint.vue'
 
 // 物品的編輯表單：基本資料、出現的地方（商店、掉落、寶箱、採集、事件）、消耗品效果、裝備組成
@@ -343,6 +344,7 @@ function setFuel(v: string) {
       <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
     </div>
     <UsageNote :usage="usage" :deletable="custom" />
+    <SourceNote kind="item" :id="name" />
 
     <fieldset>
       <legend>基本</legend>

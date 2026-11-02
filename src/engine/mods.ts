@@ -34,6 +34,7 @@ import { applyBindRules, restoreBindRules, sanitizeBindRules, type BindRulesMod 
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
+import { invalidateSources } from './sources'
 import { sanitizeIcon, setCategoryIcons } from './itemIcons'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
@@ -452,6 +453,8 @@ function repriceCatalog(mods: ContentMods) {
 /** 把覆寫套用到遊戲資料（先還原成內建的樣子）。壞掉的項目略過，回傳略過的原因 */
 export function applyContent(mods: ContentMods): string[] {
   restore()
+  // 「怎麼拿到」的索引跟著內容重建（下次查詢時）
+  invalidateSources()
   const problems: string[] = []
   const tryEach = <T>(label: string, list: Record<string, T>, fn: (key: string, v: T) => void) => {
     for (const [k, v] of Object.entries(list)) {

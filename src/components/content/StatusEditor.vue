@@ -5,6 +5,7 @@ import { builtinStatus, LUCK_ROLLS, STATUS_CONTROLS, STATUS_SPECIALS, type Statu
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
+import SourceNote from './SourceNote.vue'
 import Hint from '../ui/Hint.vue'
 
 // 狀態（BUFF／DEBUFF）的編輯表單：數值修正、幸運骰、優勢劣勢、傷害倍率、持續效果、命中附加、控制。存檔前是草稿
@@ -138,6 +139,7 @@ function remove() {
     <p class="small muted">id：{{ id }}・效果：{{ preview }}</p>
     <p class="small muted">持續回合由施加的能力或物品決定，在擁有者的回合開始時 -1。狀態要由能力（技能編輯器的「狀態」）或物品施加才會出現在戰鬥裡。</p>
     <UsageNote :usage="usage" :deletable="!builtin" />
+    <SourceNote kind="status" :id="id" />
 
     <fieldset>
       <legend>基本</legend>
