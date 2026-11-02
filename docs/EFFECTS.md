@@ -9,7 +9,7 @@
 
 | 種類 | 說明 |
 |---|---|
-| `money` | 金錢（白鸛幣），負數為花費 |
+| `money` | 金錢（白鸛幣），負數為花費。得到的錢乘上存檔規則「報酬與戰利品的錢」的倍率（`gameRules.ts` 的 `rewardMoney`），付出去的不變 |
 | `item` | 物品；qty 負數為失去 |
 | `gear` | 裝備：`spec`（底材 × 材料＋稀有度與附魔，已依 `gear.json` 整理）與選填的 `name`、`desc`；新的裝備登錄在存檔的 `customItems`，制式品沿用目錄名稱（見 [ITEMS](ITEMS.md)） |
 | `affinity` | 某人的親密度增減 |
@@ -46,6 +46,8 @@
 | `home_extend` | 離家期限延長幾小時（主人的事件用） |
 | `ability_pool` | 從事件庫（`pool`：`master` 主人事件、`owner` 調教、`brothel_work` 娼館打工、`brothel_train` 娼館受訓）所有事件掛的技能（`teaches`）裡，抽一個 `target`（預設主角）還沒學、等級也夠的色情技能學會；都學過時套用 `fallback`（[CONTENT_EDITOR](CONTENT_EDITOR.md) 3.98 節） |
 | `lewd` | 慾望指標的加減：`stat`（`lewdness`／`sensitivity`／`endurance`／`submission`／`exposure`）、`delta`，`target` 預設主角；曝露名聲記在目前的地區（[LEWD_STATS](LEWD_STATS.md)） |
+| `parasite` | 主角的寄生物（`parasites.json`）：`op` 是 `add` 寄生、`tame` 馴服、`remove` 拿掉（見 [ADULT_EVENTS](ADULT_EVENTS.md) 第 6 節） |
+| `corruption` | 寄生物的侵蝕度加減（`parasite`、`delta`）；休眠或已經馴服的寄生物不變 |
 
 完整清單是 `effects.ts` 的 `EFFECT_TYPES`；特殊任務編輯器只開放其中一部分（見 [STORY_QUESTS](STORY_QUESTS.md) 第 2 節）。
 
@@ -64,8 +66,9 @@
 
 ## 3. 誰在用
 
-- **公會委託**：交付時用這個模板；`town_quests.json` 的範本可以加 `rewards` 給額外報酬。目前「夜間巡邏」「偵查商道」有 15% 機率領悟新能力，「討伐哥布林」有 20% 機率得到一次三選一的學習機會。
+- **公會委託**：交付時用這個模板；`town_quests.json` 的範本可以加 `rewards` 給額外報酬。目前「夜間巡邏」「偵查商道」「調查地標的怪聲」有 15% 機率領悟新能力，「替學者找齊資料」「擔任陪練對手」20%，「討伐哥布林」有 20% 機率得到一次三選一的學習機會；「舞孃代班」「貴族宴會的餘興表演」加曝露（與淫亂）。
 - **主動行動**：AI 可以提出的效果依行動種類限定（`actions.json` 各 kind 的 `effects`）；AI 判定為大成功時可以給一項技能報酬（例如向高手請教）。
 - **交易與談判**：交易清單的「得到」、談判各成功程度的結果（見 [TRADE](TRADE.md)）。
 - **特殊任務**：任務點的結果與完成報酬。
 - **主人的突發事件**：選項的結果（`slavery.json` 的 `master_events`）。
+- **其他**：旅途、城鎮與地下城事件的選項（[TRAVEL_EVENTS](TRAVEL_EVENTS.md)、[ADULT_EVENTS](ADULT_EVENTS.md)）、地標（[LANDMARKS](LANDMARKS.md)）、戰敗事件、娼館與打工（[WORK](WORK.md)）、鬥技場、緋夢樂園，以及打造與發明做出的裝備（`gear`）。

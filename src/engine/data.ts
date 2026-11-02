@@ -20,6 +20,7 @@ import slaveryJson from '@data/rules/slavery.json'
 import actionsJson from '@data/rules/actions.json'
 import npcPoolJson from '@data/world/npc_pool.json'
 import npcTagsJson from '@data/rules/npc_tags.json'
+import npcActivitiesJson from '@data/rules/npc_activities.json'
 import populationJson from '@data/rules/npc_population.json'
 import itemsJson from '@data/rules/items.json'
 import shopsJson from '@data/rules/shops.json'
@@ -54,6 +55,10 @@ export interface Location {
   note?: string
   /** 主題地下城的園區：從這張特殊地圖（入口廣場）的通道進出，沒有周邊、不能直接旅行到（docs/LUST_PARK.md） */
   park?: string
+  /** 劇情條件成立前不存在：旅行的目的地、委託、情報與給 AI 的地點都不列出（docs/DUNGEON_DESIGN.md 第 1 節） */
+  requires?: StoryCond
+  /** 這裡的寶箱與人形怪物掉的隨機裝備優先用這一套材料（gear.json 材料的 series；例如緋夢樂園底下的遺跡是 pleasure） */
+  material_series?: string
 }
 export interface Route {
   a: string
@@ -199,7 +204,14 @@ export interface StoryCond {
   wearing?: WearingCond
   /** 主角至少有其中一個身分標籤（npc_tags.json 的 id；docs/NPC_SYSTEM.md 4.1 節） */
   pc_tags?: string[]
+  /**
+   * 某個特殊任務（或它的某個任務點）結束之後至少過了幾天（docs/STORY_QUESTS.md「幾天之後」）：
+   * 「三天後來取件」「三天後在餘燼裂隙」——時間照常走，玩家這幾天可以做別的事。那個任務還沒結束時不成立
+   */
+  after?: AfterCond
 }
+
+export interface AfterCond { story: string; node?: string; days: number }
 
 /**
  * 主角身上戴著什麼：bind 任何拘束具、bind_kind 這一種拘束具（要有）、locked 別人鎖上的（主人或陷阱）、
@@ -307,6 +319,8 @@ export interface StoryOutcome {
   special_map?: string
   /** 改去別的地點：旅途中直接抵達那裡，不在旅途時被帶到那裡 */
   travel_to?: string
+  /** 結束時把時間往前推（timeOfDay.ts）：先推到夜裡（20 點）或隔天早上（8 點），再經過 hours 小時；旅途中不調整 */
+  time?: { hours?: number; until?: 'night' | 'morning' }
 }
 
 export interface StoryOption {
@@ -333,10 +347,14 @@ export interface StoryNode {
   requires?: StoryCond
   /** 限定穿著：每一項是物品名稱或裝備底材的 id（例如 bunny_suit，任何一件兔女郎裝都算），主角都穿在身上才能進行（任務點照樣出現，按鈕停用並說明） */
   wear?: string[]
+  /** 只在白天或夜裡進行（timeOfDay.ts）：時段不對時不算在任務點上（不跳出、不擋路），⭐ 照樣在地圖上 */
+  hours?: 'day' | 'night'
   kind: StoryNodeKind
   check?: StoryCheck
   /** 戰鬥：怪物（遭遇表的格式）與固定 NPC */
   enemies?: EncounterGroup
+  /** 戰鬥：怪物裡「只在野外發情」（rut: field）的也可以擲到發情（任務需要時才寫） */
+  rut?: boolean
   foes?: string[]
   /** 在場的友方固定 NPC：站在任務點旁邊、戰鬥時站在隊伍這邊、判定與敘事時列為在場的人 */
   allies?: string[]
@@ -372,8 +390,38 @@ export interface StoryDef {
   time_limit?: number
 }
 
+// ---- 內容的版本 ----
+// 套用世界設定（applyContent）或還原成內建時加一：依內容算出來的快取（任務用到的地標、小隊表……）
+// 看這個數字決定要不要重算。只跟遊戲資料有關，不跟存檔有關，不寫進存檔。
+let contentRev = 0
+export const contentRevision = () => contentRev
+export function bumpContentRevision() {
+  contentRev++
+}
+
+/**
+ * 依 id 查清單的索引（每走一步會查上千次，線性搜尋太慢）。記下每個 id 的位置，取用時確認那個位置還是同一個 id：
+ * 自訂內容增刪、換掉某一筆時對不上就重建，所以不必跟著內容的版本走，直接改陣列也不會拿到舊的
+ */
+export function indexById<T extends { id: string }>(list: T[]): (id: string) => T | undefined {
+  let pos = new Map<string, number>()
+  const rebuild = () => {
+    pos = new Map()
+    list.forEach((x, i) => { if (!pos.has(x.id)) pos.set(x.id, i) })
+  }
+  return (id) => {
+    const i = pos.get(id)
+    if (i !== undefined && list[i]?.id === id) return list[i]
+    rebuild()
+    const j = pos.get(id)
+    return j === undefined ? undefined : list[j]
+  }
+}
+
 /** 內建的特殊任務；內容頁籤的修改套用在這份清單上 */
 export const stories = (storiesJson as unknown as { stories: StoryDef[] }).stories
+/** 依 id 找特殊任務（索引，見 indexById） */
+export const storyById = indexById(stories)
 
 export type NpcKind = 'commoner' | 'adventurer'
 
@@ -384,6 +432,8 @@ export interface Haunt {
   weight: number
 }
 export const npcs = (npcsJson as unknown as { npcs: NpcDef[] }).npcs
+/** 依 id 找固定 NPC（索引，見 indexById） */
+export const namedNpcById = indexById(npcs)
 
 // ---- 城鎮的特色地標（docs/LANDMARKS.md） ----
 
@@ -679,6 +729,8 @@ export interface ClassDef {
   hit_die: number
   /** 無法戰鬥：同行但不參與戰鬥、不分經驗（普通人入隊時用） */
   noncombat?: boolean
+  /** 職業本身的受傷倍率加減（武僧的卸力：物理 -0.25），和防具、特質一樣相乘 */
+  resist?: AffinityMap
 }
 export const classes = (classesJson as unknown as { classes: Record<string, ClassDef> }).classes
 /** 普通人入隊時的職業 */
@@ -957,7 +1009,26 @@ export interface AbilityDef {
   ap_give?: number
   /** 用了之後，戰後曝露名聲 +這個數（寬衣） */
   exposure?: number
+  /** 升環（只有法術）：用比 circle 高的法術環施放時，每高一環多的效果（upcast.ts） */
+  upcast?: UpcastDef
   desc: string
+}
+/** 升環：每高一環多的效果，數值照 D&D 5e 的升環規則 */
+export interface UpcastDef {
+  /** 傷害多擲的骰子，加在 damage 的第 part 筆（預設第一筆） */
+  dice?: string
+  part?: number
+  /** 治療多擲的骰子、多的固定值 */
+  heal?: string
+  heal_flat?: number
+  /** 隨機敵人的次數（魔法飛彈的飛彈、連環閃電的跳躍） */
+  count?: number
+  /** 攻擊次數（灼熱射線的射線） */
+  hits?: number
+  /** 臨時生命 */
+  shield?: number
+  /** 施加的持續傷害、每回合攻擊的狀態（月華光束、靈體武器……）每次多擲的骰子 */
+  status_dice?: string
 }
 const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
 /** 所有能力（玩家自訂的內容會改這份：見 mods.ts） */
@@ -1016,14 +1087,30 @@ export interface EnemyDef {
   kind?: string
   /** 持有裝備的人形怪物：打倒時有機會掉落裝備（gear.json 的 drops.armed） */
   armed?: boolean
-  /** 可以擲到「發情」特徵（monster_traits.json 的 requires） */
-  rut?: boolean
+  /**
+   * 可以擲到「發情」特徵（monster_traits.json 的 requires）：true 是在哪裡都可能；
+   * field 是只在近郊、旅途、地下城的遭遇（特殊任務的戰鬥任務點要寫 rut 才擲，淫鬥場不擲）
+   */
+  rut?: boolean | 'field'
+  /** 魔物娘的樣子（設定「魔物娘」打開時，交給 AI 的名字與外觀換成這個；docs/MONSTERS.md 的「魔物娘」） */
+  girl?: MonsterGirl
   /** 一定帶著的特徵（例如層主天生巨大） */
   traits?: string[]
   /** 給 AI 的一句描述（外觀與習性） */
   desc?: string
   /** 上傳的圖示（data URL，只給這一隻怪物）；沒有時依種類與等級用內建的圖 */
   icon?: string
+}
+/** 怪物的魔物娘形態：name 是給 AI 的稱呼（例如「狼娘」），desc 是外觀（成年女性的身體，保留原本種族的特徵） */
+export interface MonsterGirl {
+  name: string
+  desc: string
+  /** 性情（給 AI 的敘事，插圖不用） */
+  personality?: string
+  /** 習性（給 AI 的敘事，插圖不用） */
+  habits?: string
+  /** 以魔物娘出現的機率（0～100）；沒寫時照設定的「魔物娘出現機率」 */
+  chance?: number
 }
 export type EncounterGroup = [string, number][]
 export type DungeonLayerId = 'outskirts' | 'shallow' | 'middle' | 'deep' | 'abyss'
@@ -1261,6 +1348,15 @@ export function conditionTone(id: string): 'good' | 'bad' | 'plain' {
   return st ? (st.kind === 'buff' ? 'good' : 'bad') : 'plain'
 }
 
+/** 非戰鬥狀態的效果簡述（內容編輯器的清單與編輯畫面） */
+export function describeCondition(c: ConditionDef): string {
+  const parts: string[] = []
+  if (c.check_penalty) parts.push(`${c.check_attrs?.length ? c.check_attrs.map(attrName).join('、') : '所有'}檢定 ${c.check_penalty < 0 ? '+' : '-'}${Math.abs(c.check_penalty)}`)
+  if (c.combat_temp_hp) parts.push(`每場戰鬥開始時暫時生命 ${c.combat_temp_hp}`)
+  if (c.combat_mods && Object.values(c.combat_mods).some(Boolean)) parts.push(`戰鬥中${describeStatus({ name: '', kind: 'buff', mods: c.combat_mods })}`)
+  return parts.join('；') || '沒有數值效果'
+}
+
 export type ContractFunction = 'identity' | 'obedience' | 'income' | 'tether' | 'tracking' | 'spell_seal' | 'submission'
 export interface ContractDef {
   name: string
@@ -1472,13 +1568,13 @@ export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 
   | 'master_return' | 'seek_master' | 'unmark' | 'unbind' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
   | 'train' | 'perk_pitch' | 'explore' | 'palace_gate'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
-  | 'release' | 'change_master' | 'gear' | 'join' | 'lewd'
+  | 'release' | 'change_master' | 'gear' | 'join' | 'lewd' | 'rumor'
 export const actionRules = actionsJson as unknown as {
   dc_adjust: number
   degrees: { critical_margin: number; partial_margin: number; fumble_margin: number }
   caps: {
     affinity: number; reputation: number; money_cc_per_level: number; xp_per_level: number
-    item_qty: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
+    item_qty: number; item_qty_bought?: number; items: number; flags: number; relationship_text_chars: number; summary_chars: number; findings_chars: number; narrative_chars: number; meet_affinity: number; hp_loss_ratio: number; hp_gain_ratio: number
     /** 慾望指標：每項每次 ±這個數 */
     lewd: number
   }
@@ -1497,10 +1593,18 @@ export const actionRules = actionsJson as unknown as {
     max_targets?: number
     /** 自由行動：主要對象之外每多一人，DC 增加多少 */
     extra_target_dc?: number
+    /** AI 判定時可以填花費的時間（小時）：程式夾在這個範圍，沒填時用 hours */
+    hours_range?: [number, number]
+    /** AI 判定時可以判為日常小事（difficulty: trivial）：結果至少是成功 */
+    trivial?: boolean
   }>
 }
 
-export interface GenderDef { name: string; color: string; weight: number; names: 'm' | 'f' | 'any' }
+export interface GenderDef {
+  name: string; color: string; weight: number; names: 'm' | 'f' | 'any'
+  /** 交給 AI 時接在性別後面的身體說明（偽娘、TS、扶她），見 genderPrompt */
+  ai?: string
+}
 export const npcPool = npcPoolJson as unknown as {
   genders: Record<string, GenderDef>
   outfits: string[]
@@ -1577,6 +1681,29 @@ export const npcTags = npcTagsJson as unknown as {
   gendered_occupations?: { female: string; male: string; neutral: string }[]
   tags: Record<string, NpcTagDef>
 }
+
+/** NPC 正在做什麼的時段（見 data/rules/npc_activities.json、activities.ts） */
+export type ActivityPeriod = 'dawn' | 'day' | 'evening' | 'night'
+/** 一條活動規則：沒寫的條件不限，條件越多越優先 */
+export interface ActivityRule {
+  at?: string[]
+  area?: string[]
+  kind?: NpcKind
+  staff?: boolean
+  tags?: string[]
+  occupation?: string[]
+  personality?: string[]
+  when?: ActivityPeriod[]
+  hostile?: boolean
+  weight?: number
+  list: string[]
+}
+export const npcActivities = npcActivitiesJson as unknown as {
+  slot_hours: number
+  periods: Record<ActivityPeriod, [number, number]>
+  rules: ActivityRule[]
+}
+
 export const population = populationJson as unknown as {
   /** 有娼館的城鎮，名單上至少有幾位娼妓 */
   brothel_workers: number
@@ -1909,6 +2036,13 @@ export function genderName(g?: string): string {
   return genderDef(g)?.name ?? g ?? ''
 }
 
+/** 交給 AI 的性別：顯示名稱，偽娘、TS、扶她再附上身體的說明（例如 TS 沒有陰唇）；對應不到的主角性別照原文 */
+export function genderPrompt(g?: string): string {
+  const def = genderDef(g)
+  if (!def) return g ?? ''
+  return def.ai ? `${def.name}（${def.ai}）` : def.name
+}
+
 export function raceEmoji(id: string): string {
   return attributeRules.races[id]?.emoji ?? ''
 }
@@ -2064,6 +2198,8 @@ export interface PerkDef {
   rarity?: string
   /** 分類（建角時依分類折疊，見 perks.ts 的 PERK_CATEGORIES）；沒寫時依效果推斷 */
   category?: string
+  /** 能在城外的野外、旅途上紮營長休（rest.ts 的 campRest）：隊伍裡有一個人有就可以 */
+  camp?: boolean
   /** 慾望流派（lewd.json 的 schools）：入門或進階特質（流派只是特質，不限制能學的技能） */
   school?: string
   /** 流派特質的慾望效果（docs/LEWD_STATS.md 第 6 節） */
@@ -2233,6 +2369,10 @@ export interface ParkRules {
   /** 園區的寶箱有這個機率是擬態寶箱（打開時變成戰鬥）；mimics 依層（1 淺層、2 中層、3 深層）的怪物 */
   mimic_chance: number
   mimics: Record<string, string>
+  /** 個別園區自己的擬態寶箱（地點 id → 依層的怪物），覆蓋 mimics；例如緋夢樂園底下的遺跡（docs/LUST_PARK.md 第 8 節） */
+  mimics_at?: Record<string, Record<string, string>>
+  /** 不蓋集章卡的園區（地點 id）：打倒最終層主不立 park_stamp_ 旗標 */
+  unstamped?: string[]
   /** 園區的寶箱另外擲的物品 [名稱, 機率] */
   chest_items: [string, number][]
   /** 每個園區（地點 id）的專屬戰敗：AI 的成人場景、摘要、效果、經過的時間 */

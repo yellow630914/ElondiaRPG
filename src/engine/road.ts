@@ -9,7 +9,7 @@
 import { checkBonus } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat } from './combat'
-import { enemies, locationById, regionById, slaveryRules, specialMaps, stories, wildEncounters, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryCond, type StoryOutcome } from './data'
+import { enemies, locationById, regionById, slaveryRules, specialMaps, stories, wildEncounters, type AttrId, type CheckContext, type LocationType, type RouteMode, type StoryCheck, type StoryCond, type StoryOutcome } from './data'
 import { affordable, applyEffects } from './effects'
 import {
   assertNoStandoff, clearAreas, currentArea, ensureQuestTargets, findKind, generateSide, placeAt, position, reveal, storeArea, substituteGroup,
@@ -20,13 +20,14 @@ import { spawnVisitors } from './population'
 import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
 import { addHours, advanceTime, commitReport, newReportId, withRng } from './state'
+import { applyTimeJump } from './timeOfDay'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
-import { addCounters, condMet, flagKey } from './storyFlags'
+import { addCounters, condMet, flagKey, openFor } from './storyFlags'
 import { gateCheck } from './security'
 import { toolBonus } from './tools'
 import { arrive, daysToHours, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
 import type { GameState, Report, RoadState, TimelineEntry } from './types'
-import { tagsAllowed, type ContentTag } from './content'
+import { pcBodyAllowed, tagsAllowed, type ContentTag } from './content'
 import { characterBody } from './look'
 import type { Body } from './traits'
 import { shortestPath } from './world'
@@ -143,7 +144,7 @@ export const ROAD_KEY = 'road'
  */
 export function startJourney(state: GameState, destination: string, intent?: string, ): Report | undefined {
   if (state.road) throw new Error('已經在旅途中了')
-  const path = shortestPath(state.location, destination)
+  const path = shortestPath(state.location, destination, openFor(state))
   if (!path || path.legs.length === 0) throw new Error(`無法前往 ${destination}`)
   assertNoStandoff(state)
   assertMasterAllows(state)
@@ -296,14 +297,15 @@ function spendDay(state: GameState, road: RoadState, cell: Cell) {
 }
 
 /** 隊伍裡最擅長這個屬性的人的檢定修正 */
-function bestBonus(state: GameState, attr: AttrId, context: 'road' | 'action'): { name: string; bonus: number } {
+function bestBonus(state: GameState, attr: AttrId, context: 'road' | 'action', also?: CheckContext[]): { name: string; bonus: number } {
   const best = [...state.party].filter((m) => m.hp > 0).sort((a, b) => attrOf(b, attr) - attrOf(a, attr))[0] ?? pcOf(state)
-  return { name: best.name, bonus: mod(attrOf(best, attr)) + proficiency(best.level) + checkBonus(best, { context, attr }) }
+  return { name: best.name, bonus: mod(attrOf(best, attr)) + proficiency(best.level) + checkBonus(best, { context, attr, also }) }
 }
 
 /** 事件的檢定：隊伍裡最擅長那個屬性的人來擲。旅途上另加旅途類工具；城鎮事件（scope town）照主動行動算 */
 export function roll(state: GameState, check: StoryCheck, natural: number, scope: EventScope = 'road'): { ok: boolean; entry: Omit<TimelineEntry, 'seq'> } {
-  const best = bestBonus(state, check.attr, scope === 'town' ? 'action' : 'road')
+  // 旅途事件也吃「旅行」情境的加減（識途老馬、路痴、旅人標籤……）
+  const best = bestBonus(state, check.attr, scope === 'town' ? 'action' : 'road', scope === 'road' ? ['travel'] : undefined)
   const name = best.name
   // 旅途類的工具（地圖、指南針）讓旅途事件的檢定容易一點
   const bonus = best.bonus + (scope === 'town' ? 0 : toolBonus(state, 'travel'))
@@ -429,6 +431,9 @@ export function applyRoadOutcome(state: GameState, report: Report, o: StoryOutco
   // 錢不夠付時扣到 0 為止
   const notes = o.effects?.length ? applyEffects(state, report, affordable(state, o.effects, report)) : []
   if (notes.length) lines.push(notes.join('，') + '。')
+  // 結束時把時間往前推（旅途中不調整）
+  const later = applyTimeJump(state, report, o.time)
+  if (later) lines.push(later)
   queueMove(state, o)
   return lines
 }
@@ -455,7 +460,7 @@ function locationExists(id: string): boolean {
  */
 export function roadEventFits(state: GameState, t: RoadTemplate, mode: RouteMode, region: string): boolean {
   return (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && (!t.regions?.length || t.regions.includes(region))
-    && condMet(state, t.requires) && tagsAllowed(t.tags) && (!t.pc_body?.length || t.pc_body.includes(characterBody(pcOf(state))))
+    && condMet(state, t.requires) && tagsAllowed(t.tags) && pcBodyAllowed(t.pc_body, characterBody(pcOf(state)))
 }
 
 /** 這個選項會不會進入親密場景（旅途、城鎮、地下城事件共用） */
@@ -483,6 +488,7 @@ export function answerRoadEvent(state: GameState, index: number): Report {
   report.narration = { ...report.narration, focus: [tpl.text, `主角的選擇：${o.label}`] }
   // 成人向：選項帶 adult_scene 時交給成人場景的寫手（和城鎮、地下城事件一樣）
   if (tpl.scene && sceneOn(o, ok)) report.narration = { ...report.narration, length: 'medium', adult_scene: tpl.scene }
+  if (tpl.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   const cell = currentArea(state).cells[ev.x]
   if (cell) cell.done = true
   delete state.roadEvent

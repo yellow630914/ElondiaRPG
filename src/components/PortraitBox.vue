@@ -3,7 +3,7 @@ import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { portraitSubject } from '@/narrator/imageInfo'
 import { useGame } from '@/stores/game'
 import { useImageSettings } from '@/stores/image'
-import { portraitKey, TWEAKS, usePortraits } from '@/stores/portraits'
+import { builtinPortrait, portraitKey, TWEAKS, usePortraits } from '@/stores/portraits'
 import GameIcon from './ui/GameIcon.vue'
 
 // 角色的形象插圖（一般模式）：顯示、生成（插圖設定的服務）、✨ 微調（以這張為底重畫）、翻看舊版、上傳、刪除；點圖片放大。
@@ -17,6 +17,8 @@ const s = computed(() => game.state!)
 const key = computed(() => portraitKey(s.value, props.id))
 const url = computed(() => portraits.urls[key.value])
 const record = computed(() => portraits.records[key.value])
+// 顯示的是固定 NPC 的內建形象圖（還沒有自己的圖）
+const builtin = computed(() => !!url.value && !record.value)
 const job = computed(() => portraits.jobs[key.value])
 const canDescribe = computed(() => !!portraitSubject(s.value, props.id))
 const large = computed(() => props.size === 'large')
@@ -73,7 +75,8 @@ async function onFile(e: Event) {
   }
 }
 function remove() {
-  if (confirm('刪除這張形象圖？（生成過的其他版還留在「進階」裡）')) void portraits.remove(key.value)
+  const back = builtinPortrait(props.id) ? '，會換回內建形象圖' : ''
+  if (confirm(`刪除這張形象圖？（生成過的其他版還留在「進階」裡${back}）`)) void portraits.remove(key.value)
 }
 const STAGE = { tags: '預處理提示詞中…', image: '生成圖片中…', error: '' }
 const name = computed(() => portraitSubject(s.value, props.id)?.name ?? '')
@@ -105,12 +108,13 @@ const name = computed(() => portraitSubject(s.value, props.id)?.name ?? '')
             <GameIcon name="wand" :size="13" /> 微調
           </button>
           <button class="small" title="上傳自己的圖片" @click="fileInput?.click()"><GameIcon name="upload" :size="13" /> 上傳</button>
-          <button v-if="url" class="small" title="刪除形象圖" aria-label="刪除形象圖" @click="remove"><GameIcon name="trash" :size="13" /></button>
+          <button v-if="record" class="small" title="刪除形象圖" aria-label="刪除形象圖" @click="remove"><GameIcon name="trash" :size="13" /></button>
           <button v-if="large && canDescribe" class="small ghost" title="進階：自己改描述或提示詞重送、調以圖生圖的強度、塗遮罩局部重繪" @click="studio = true">
             <GameIcon name="sliders" :size="13" /> 進階
           </button>
           <input ref="fileInput" type="file" accept="image/*" hidden @change="onFile" />
         </div>
+        <p v-if="builtin && large && (!job || job.stage === 'error')" class="small muted">內建形象圖。生成或上傳之後換成你的圖，可以用「✨ 微調」以這張為底重畫。</p>
 
         <div v-if="tweakOpen && large && url && (!job || job.stage === 'error')" class="tweak">
           <div class="chips">

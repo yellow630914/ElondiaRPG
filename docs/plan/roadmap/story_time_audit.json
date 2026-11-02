@@ -1,0 +1,3497 @@
+{
+ "$comment": "特殊任務時段的盤點（docs/plan/roadmap/STORY_TIME_PLAN.md）：每一項是建議的設定，套用前照計畫的確認方式檢查。hours：任務點只在白天或夜裡；outcomes[].time：結果結束時的時間（key 是 success / fail / optN.success 這種）。",
+ "version": 1,
+ "nodes": [
+  {
+   "story": "lilian_successor",
+   "node": "night",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "那天晚上，莉莉安敲了房門",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "她在你身邊待到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "你們聊了一整夜"
+    }
+   ]
+  },
+  {
+   "story": "isadora_interview",
+   "node": "secret",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "深夜，一個披著斗篷的人"
+  },
+  {
+   "story": "isadora_elope",
+   "node": "rescue",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "深夜潛進侯爵府"
+  },
+  {
+   "story": "aya_prayer_book",
+   "node": "steps",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "那天晚上，阿雅在台階上等"
+  },
+  {
+   "story": "aya_ebony_club",
+   "node": "answer",
+   "confidence": "high",
+   "hours": "day",
+   "hours_why": "天亮了，坐在港口石階上"
+  },
+  {
+   "story": "rivervale_cellar",
+   "node": "cellar",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "燈亮了一整夜。天亮時"
+    }
+   ]
+  },
+  {
+   "story": "serena_golden_lotus",
+   "node": "night",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "度過一夜，窗外燈火",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天快亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "你們聊了一整夜"
+    }
+   ]
+  },
+  {
+   "story": "port_charter",
+   "node": "gate",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "會議前夜"
+  },
+  {
+   "story": "spirit_river_girl",
+   "node": "meet",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "夜裡…月亮升起時"
+  },
+  {
+   "story": "amelia_ring",
+   "node": "storm",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "暴風雨的夜裡"
+  },
+  {
+   "story": "commerce_council_vote",
+   "node": "night",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "表決前夜"
+  },
+  {
+   "story": "seacave_siren",
+   "node": "descend",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "在漲潮的夜裡"
+  },
+  {
+   "story": "seacave_drowned_crew",
+   "node": "descend",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "大潮的夜裡"
+  },
+  {
+   "story": "lab_sober",
+   "node": "talk",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "她說了一整夜"
+    }
+   ]
+  },
+  {
+   "story": "annex_protection_treaty",
+   "node": "rooks",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "遞交條約的前一夜"
+  },
+  {
+   "story": "defense_spymaster",
+   "node": "trap",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "今晚…等到半夜"
+  },
+  {
+   "story": "lena_good_friend",
+   "node": "everywhere",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "那天晚上回到旅店"
+  },
+  {
+   "story": "valerie_sample",
+   "node": "field",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚，我們做對照實驗"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚的實驗會很有價值"
+    }
+   ]
+  },
+  {
+   "story": "valerie_stolen_paper",
+   "node": "return",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上…一直補到天亮"
+    }
+   ]
+  },
+  {
+   "story": "noctis_ghostwriter",
+   "node": "meet",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "夜裡…夜深了"
+  },
+  {
+   "story": "morphe_moth_dust",
+   "node": "moths",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月亮暗下來的時候"
+  },
+  {
+   "story": "trial_bloodhorn_warrior",
+   "node": "beasts",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "新月夜沒有月光"
+  },
+  {
+   "story": "hm_ghost_ship",
+   "node": "pier",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "午夜，霧從海上湧來"
+  },
+  {
+   "story": "hm_abyss_treaty",
+   "node": "marines",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "聖環在月光下發亮"
+  },
+  {
+   "story": "smith_council_verdict",
+   "node": "testimony",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "你寫了一整夜"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "幫你改到天亮"
+    }
+   ]
+  },
+  {
+   "story": "wat_spring_heart",
+   "node": "choose",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "井口的水映著月光"
+  },
+  {
+   "story": "smg_blacksail_cargo",
+   "node": "beach",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "午夜的海灣裡"
+  },
+  {
+   "story": "sinor_lagging_mirror",
+   "node": "mirrors",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "水窪映著月光"
+  },
+  {
+   "story": "acc_kalanthil_courtesy",
+   "node": "theron",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "陪瑟隆聽風鈴，聽到天黑"
+    }
+   ]
+  },
+  {
+   "story": "shadow_extra_star",
+   "node": "star",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "在夜空上挖了一個小洞"
+  },
+  {
+   "story": "vault_banquet_guest",
+   "node": "divers",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "大宴的第三夜"
+  },
+  {
+   "story": "nip_moonlight_herb",
+   "node": "lynx",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "銀色的草在夜風裡發著微光"
+  },
+  {
+   "story": "nip_sand_lions",
+   "node": "lions",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "鬃毛在月光下"
+  },
+  {
+   "story": "nip_sand_lions",
+   "node": "lure",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "跑了一整夜。天亮時"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "被舔了一整夜，天亮時"
+    }
+   ]
+  },
+  {
+   "story": "rite_broken_moon",
+   "node": "altar",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "夜裡的靜泉祭壇"
+  },
+  {
+   "story": "bab_restless_builders",
+   "node": "drag",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "拖了一整夜才回到營地"
+    }
+   ]
+  },
+  {
+   "story": "qst_sun_oracle",
+   "node": "riddle",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "你想了一夜，終於想通"
+    }
+   ]
+  },
+  {
+   "story": "cas_queen_kneels",
+   "node": "will",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "那天晚上，黑薔薇關了門"
+  },
+  {
+   "story": "twin_same_person",
+   "node": "blind",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "那天晚上，蘿娜拿出緞帶"
+  },
+  {
+   "story": "zero_definition",
+   "node": "data",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "那天晚上，零號坐在床邊"
+  },
+  {
+   "story": "kar_rigged_match",
+   "node": "match",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……天亮時她說"
+    }
+   ]
+  },
+  {
+   "story": "oboro_shadow_heart",
+   "node": "trackers",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月光下的礁岸上"
+  },
+  {
+   "story": "oboro_shadow_heart",
+   "node": "confess",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "回到潮汐港的那天晚上",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜的報告"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜，她做了"
+    }
+   ]
+  },
+  {
+   "story": "pru_ring_and_date",
+   "node": "ring",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……天亮的時候"
+    }
+   ]
+  },
+  {
+   "story": "ila_moon_bloom",
+   "node": "ring",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月光從樹梢落下來"
+  },
+  {
+   "story": "ila_moon_bloom",
+   "node": "night",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "森語之環的夜裡",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "第二天早上"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜依偎著看月亮"
+    }
+   ]
+  },
+  {
+   "story": "ila_hundred_years",
+   "node": "confess",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月亮升到了最高"
+  },
+  {
+   "story": "ila_hundred_years",
+   "node": "dawn",
+   "confidence": "high",
+   "hours": "day",
+   "hours_why": "天亮了。月華期過去了"
+  },
+  {
+   "story": "mimi_opening_day",
+   "node": "mercs",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "開張前的那一夜"
+  },
+  {
+   "story": "stella_star_confession",
+   "node": "zealots",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "演唱會的前一夜，提著火把"
+  },
+  {
+   "story": "liese_harvest_festival",
+   "node": "deserters",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "收穫節的前一夜"
+  },
+  {
+   "story": "clara_lilac_reader",
+   "node": "pirates",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "當天晚上，打手跟著出城"
+  },
+  {
+   "story": "clara_last_chapter",
+   "node": "inquisitors",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "審問的前一夜"
+  },
+  {
+   "story": "clara_last_chapter",
+   "node": "last",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "審問結束的那天晚上",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……天亮的時候"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "寫了一整夜……天亮"
+    }
+   ]
+  },
+  {
+   "story": "isab_young_knight",
+   "node": "trial",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "那天晚上，在酒館裡"
+  },
+  {
+   "story": "brun_academy_speech",
+   "node": "zealots",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "典禮的前一夜"
+  },
+  {
+   "story": "brun_frost_shield",
+   "node": "wall",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "夜裡，暴風雪來了",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "陪她站了一整夜。天亮"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "後半夜睡著了，醒來"
+    }
+   ]
+  },
+  {
+   "story": "kara_great_hunt",
+   "node": "hyenas",
+   "confidence": "high",
+   "hours": "day",
+   "hours_why": "天剛亮"
+  },
+  {
+   "story": "ren_land_holiday",
+   "node": "night",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "夜裡的海灘，月光",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮的時候"
+    }
+   ]
+  },
+  {
+   "story": "ren_tide_home",
+   "node": "serpents",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "潮祭之夜"
+  },
+  {
+   "story": "mat_honest_contract",
+   "node": "assassins",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "第三天的夜裡"
+  },
+  {
+   "story": "ith_moon_query",
+   "node": "questions",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月光下的生命之泉邊",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "聽到天快亮了"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮的時候"
+    }
+   ]
+  },
+  {
+   "story": "ith_moon_query",
+   "node": "unmask",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "泉水裡的月亮"
+  },
+  {
+   "story": "ana_crown_and_road",
+   "node": "choice",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "旅店過夜，看著星星"
+  },
+  {
+   "story": "lisr_court_currents",
+   "node": "report",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "血誓碑谷的月光下"
+  },
+  {
+   "story": "group_rulers_tea",
+   "node": "warhawks",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "條約簽完的當晚"
+  },
+  {
+   "story": "pol_peace_iron_cross",
+   "node": "judge",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "你陪他站到天亮"
+    }
+   ]
+  },
+  {
+   "story": "drg_babelin",
+   "node": "end",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt2.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "塔頂看星星。天亮的時候"
+    }
+   ]
+  },
+  {
+   "story": "noc_be_loved",
+   "node": "date",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "陰影之谷的夜晚"
+  },
+  {
+   "story": "trl_victor_rite",
+   "node": "date",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "在月光下打了很久"
+  },
+  {
+   "story": "kara_mating_hunt",
+   "node": "date",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "在月光下追了一整晚"
+  },
+  {
+   "story": "ana_cardinal_vows",
+   "node": "date",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月光下她跑在你前面"
+  },
+  {
+   "story": "ele_off_duty",
+   "node": "night",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "「今晚，我不想管」",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    }
+   ]
+  },
+  {
+   "story": "gear_new_design",
+   "node": "pick",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天之後交到你手上"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天之後交到你手上"
+    },
+    {
+     "key": "opt2.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天之後交到你手上"
+    },
+    {
+     "key": "opt3.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天之後交到你手上"
+    },
+    {
+     "key": "opt4.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天之後交到你手上"
+    },
+    {
+     "key": "opt5.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天之後交到你手上"
+    }
+   ]
+  },
+  {
+   "story": "gear_forge_mech_armor",
+   "node": "pick",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "hours": 168
+     },
+     "why": "一週之後"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "hours": 168
+     },
+     "why": "一週之後"
+    },
+    {
+     "key": "opt2.success",
+     "time": {
+      "hours": 168
+     },
+     "why": "一週之後"
+    },
+    {
+     "key": "opt3.success",
+     "time": {
+      "hours": 168
+     },
+     "why": "一週之後"
+    },
+    {
+     "key": "opt4.success",
+     "time": {
+      "hours": 168
+     },
+     "why": "一週之後"
+    },
+    {
+     "key": "opt5.success",
+     "time": {
+      "hours": 168
+     },
+     "why": "一週之後"
+    }
+   ]
+  },
+  {
+   "story": "gear_giant_armory",
+   "node": "song",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "看了一整夜。天亮的時候"
+    }
+   ]
+  },
+  {
+   "story": "gear_another_treasure",
+   "node": "queen",
+   "confidence": "high",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "等到天黑"
+    }
+   ]
+  },
+  {
+   "story": "inn_table",
+   "node": "under",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "紅鬍子那桌今晚"
+  },
+  {
+   "story": "inn_feast",
+   "node": "feast",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "慶功宴從傍晚開到半夜"
+  },
+  {
+   "story": "dice_jackpot",
+   "node": "prize",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "今晚的大獎",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一整晚…天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮時"
+    }
+   ]
+  },
+  {
+   "story": "dance_bazaar",
+   "node": "dance",
+   "confidence": "high",
+   "hours": "day",
+   "hours_why": "正午的帳環市集"
+  },
+  {
+   "story": "dance_night",
+   "node": "rehearse",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月亮升起來了"
+  },
+  {
+   "story": "dance_night",
+   "node": "audience",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "夜間表演，帳篷點燈",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "響了一整夜。天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    }
+   ]
+  },
+  {
+   "story": "maid_skirt",
+   "node": "lukas",
+   "confidence": "high",
+   "hours": "day",
+   "hours_why": "下午茶的時候"
+  },
+  {
+   "story": "maid_night",
+   "node": "night",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "成年禮的夜晚，宴會散了",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "操到天快亮；早上五點"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "一個晚上；早上五點"
+    },
+    {
+     "key": "opt2.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜；早上五點"
+    }
+   ]
+  },
+  {
+   "story": "expo_parade",
+   "node": "market",
+   "confidence": "high",
+   "hours": "day",
+   "hours_why": "正午的商業街"
+  },
+  {
+   "story": "bath_deep",
+   "node": "night",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "「天亮還早呢」",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時被撈上池邊"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮前就輪完一圈"
+    }
+   ]
+  },
+  {
+   "story": "onsen_dawn",
+   "node": "dawn",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "半夜過後",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    }
+   ]
+  },
+  {
+   "story": "horn_winner",
+   "node": "serve",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "今晚的贏家",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "按了一整夜。天亮時"
+    }
+   ]
+  },
+  {
+   "story": "horn_trophy",
+   "node": "champions",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "今晚的試煉場點滿火把"
+  },
+  {
+   "story": "fert_rite",
+   "node": "rite",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月亮才剛升起",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "一整夜；月亮下山時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "月亮下山時"
+    }
+   ]
+  },
+  {
+   "story": "brine_spring",
+   "node": "ebb",
+   "confidence": "high",
+   "hours": "night",
+   "hours_why": "月光下，退潮"
+  },
+  {
+   "story": "dawn_throne_poison",
+   "node": "academy",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "試了一整晚"
+    }
+   ]
+  },
+  {
+   "story": "dawn_throne_crown",
+   "node": "deathbed",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "喪鐘在黎明時響起"
+    }
+   ]
+  },
+  {
+   "story": "dawn_throne_crown",
+   "node": "coup_princess",
+   "confidence": "medium",
+   "hours": "day",
+   "hours_why": "聖環在晨光裡發亮"
+  },
+  {
+   "story": "lilian_graduation",
+   "node": "ceremony",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上…做愛到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "當晚你就去找她了"
+    }
+   ]
+  },
+  {
+   "story": "rhine_council",
+   "node": "ambush",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "軍議前夜",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "第二天，你帶著繃帶走進"
+    }
+   ]
+  },
+  {
+   "story": "isadora_elope",
+   "node": "vow",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "天快亮了",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "第一個晚上…哭又笑到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上，沒有回房間"
+    }
+   ]
+  },
+  {
+   "story": "doctrine_council",
+   "node": "zealots",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "會議前夜",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時，主教們的馬車"
+    }
+   ]
+  },
+  {
+   "story": "aya_harbor",
+   "node": "want",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時她回到禮拜堂"
+    }
+   ]
+  },
+  {
+   "story": "aya_last_confession",
+   "node": "burn",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "夜深了",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "燭火一直燒到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上…一頁一頁地實現"
+    }
+   ]
+  },
+  {
+   "story": "aya_ebony_club",
+   "node": "club",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "那一夜很長（結果）",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜很長。天亮前"
+    }
+   ]
+  },
+  {
+   "story": "rivervale_summit",
+   "node": "gate",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "會談前夜",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時，四國的旗幟"
+    }
+   ]
+  },
+  {
+   "story": "port_lighthouse",
+   "node": "helen",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚燈不會熄，守在燈塔下"
+    }
+   ]
+  },
+  {
+   "story": "port_lighthouse",
+   "node": "saboteurs",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "半夜，兩個人爬上來",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "一夜都沒熄。天亮時"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "燈塔的火，一夜都沒熄"
+    }
+   ]
+  },
+  {
+   "story": "spirit_upstream",
+   "node": "drain",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天後…濺了你一身水"
+    }
+   ]
+  },
+  {
+   "story": "amelia_lonely_night",
+   "node": "drink",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "（結果）天亮前醒來",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "靠著你睡著…天亮前醒來"
+    }
+   ]
+  },
+  {
+   "story": "amelia_white_gull",
+   "node": "board",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "夜裡，她敲開你的船艙",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…在你懷裡睡著"
+    }
+   ]
+  },
+  {
+   "story": "amelia_ring",
+   "node": "ring",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "陪艾蜜莉亞過完這一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "今晚…天亮前睡著"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "燈一直亮到天亮"
+    }
+   ]
+  },
+  {
+   "story": "lab_medium",
+   "node": "explain",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚。研究室。"
+    }
+   ]
+  },
+  {
+   "story": "lab_medium",
+   "node": "slime",
+   "confidence": "medium",
+   "hours": "day",
+   "hours_why": "第二天一早，衝進房間"
+  },
+  {
+   "story": "lab_sober",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "那天晚上的研究室",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上的實驗…天亮時"
+    }
+   ]
+  },
+  {
+   "story": "lab_guild_return",
+   "node": "home",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning",
+      "hours": 4
+     },
+     "why": "持續到第二天中午"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "出發前的那一夜"
+    }
+   ]
+  },
+  {
+   "story": "spy_secret_envoy",
+   "node": "audience",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "待了一整夜。天亮時"
+    }
+   ]
+  },
+  {
+   "story": "defense_mole",
+   "node": "salo",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "一整個下午；今晚舊磨坊"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚，城外的舊磨坊"
+    }
+   ]
+  },
+  {
+   "story": "lena_runaway",
+   "node": "letter",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "湯姆寫了一整晚"
+    }
+   ]
+  },
+  {
+   "story": "lena_lighter_love",
+   "node": "answer",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上，解開洋裝"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "第二天…那天晚上"
+    }
+   ]
+  },
+  {
+   "story": "valerie_sample",
+   "node": "experiment",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "那天晚上，研究室",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜的實驗"
+    }
+   ]
+  },
+  {
+   "story": "valerie_stolen_paper",
+   "node": "trace",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "打手們今晚會在舊倉庫"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "城外的舊倉庫，今晚"
+    }
+   ]
+  },
+  {
+   "story": "valerie_hearing",
+   "node": "verdict",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮時"
+    }
+   ]
+  },
+  {
+   "story": "eve_master",
+   "node": "serve",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上…交纏到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上…從床上開始"
+    }
+   ]
+  },
+  {
+   "story": "veronica_little_book",
+   "node": "trace",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "廢棄石窯，今晚"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "廢棄石窯，今晚"
+    }
+   ]
+  },
+  {
+   "story": "lisar_far_sight",
+   "node": "far",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "夜風吹動莉莎爾的紅髮",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "陪你看了一整夜的星星"
+    }
+   ]
+  },
+  {
+   "story": "noctis_ghostwriter",
+   "node": "dreams",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "（結果）今晚聽她說過"
+  },
+  {
+   "story": "noctis_ghostwriter",
+   "node": "write",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "（結果）寫了一整夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "寫了一整夜。天亮時"
+    }
+   ]
+  },
+  {
+   "story": "noctis_undelivered",
+   "node": "rumor",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚，他會在城外碰頭"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "碰頭地點在城外（同晚）"
+    }
+   ]
+  },
+  {
+   "story": "morphe_insomnia",
+   "node": "watch",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "半夜，她的影子開始扭動",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時她醒來"
+    }
+   ]
+  },
+  {
+   "story": "morphe_moth_dust",
+   "node": "pillow",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮前"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "睡了三天三夜"
+    }
+   ]
+  },
+  {
+   "story": "trial_bloodhorn_warrior",
+   "node": "title",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "從今晚起"
+  },
+  {
+   "story": "lila_first_trip",
+   "node": "sea",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "night"
+     },
+     "why": "天黑的時候"
+    }
+   ]
+  },
+  {
+   "story": "rot_herb_errand",
+   "node": "deliver",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "hours": 5
+     },
+     "why": "整整一個下午…傍晚"
+    }
+   ]
+  },
+  {
+   "story": "rot_harvest_festival",
+   "node": "festival",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "祭典一直辦到天亮；營火",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮的時候"
+    }
+   ]
+  },
+  {
+   "story": "brew_cellar_queue",
+   "node": "taste",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning",
+      "hours": 4
+     },
+     "why": "醒來已是第二天中午"
+    }
+   ]
+  },
+  {
+   "story": "brew_bribed_cask",
+   "node": "culprit",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚會在舊倉庫等他回報"
+    }
+   ]
+  },
+  {
+   "story": "smith_heartfire_test",
+   "node": "hammer",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "掄了一整天，傍晚"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "hours": 6
+     },
+     "why": "掄到下午+最後一百錘"
+    }
+   ]
+  },
+  {
+   "story": "smg_blacksail_cargo",
+   "node": "tip",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "時間是午夜"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "情報：今晚北邊海灣"
+    }
+   ]
+  },
+  {
+   "story": "smg_blacksail_cargo",
+   "node": "report",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天後黑衣人在酒館找到你"
+    }
+   ]
+  },
+  {
+   "story": "smg_under_council_eyes",
+   "node": "enforcers",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "黑帆先生說，你今晚會來"
+  },
+  {
+   "story": "sinor_fog_locked",
+   "node": "question",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "停了一整夜，天亮才散"
+    }
+   ]
+  },
+  {
+   "story": "shadow_extra_star",
+   "node": "wisps",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "夢遊精靈；fail隨著天亮消失",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "隨著天亮自己消失"
+    }
+   ]
+  },
+  {
+   "story": "shadow_same_dream",
+   "node": "hounds",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "睡著的哨兵；fail天亮時消失",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "卻在天亮時消失"
+    }
+   ]
+  },
+  {
+   "story": "shadow_sorian_projection",
+   "node": "ask",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "你們觀測了一整夜"
+    }
+   ]
+  },
+  {
+   "story": "reef_coral_sickness",
+   "node": "graft",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "接了一整夜。天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "學了一整夜。天亮時"
+    }
+   ]
+  },
+  {
+   "story": "scs_nightclaw_intel",
+   "node": "tail",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "第二天一早，紙條在枕頭下"
+    }
+   ]
+  },
+  {
+   "story": "scs_nightclaw_intel",
+   "node": "give",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "薩芙在月光下等你"
+  },
+  {
+   "story": "rite_broken_moon",
+   "node": "tell",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "娜伊薇只在夜裡出現在祭壇邊"
+  },
+  {
+   "story": "rite_redmane_games",
+   "node": "rhino",
+   "confidence": "medium",
+   "hours": "day",
+   "hours_why": "角在陽光下閃著電光"
+  },
+  {
+   "story": "msr_shard_avatar",
+   "node": "chart",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "艾溫娜一個人算了一整夜"
+    }
+   ]
+  },
+  {
+   "story": "thc_moonlight_pilgrimage",
+   "node": "moon",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "算出迴廊今晚的位置"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "繞了一整夜，天亮時"
+    }
+   ]
+  },
+  {
+   "story": "vh_alien_bloom",
+   "node": "petal",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "艾溫娜一個人研究到天亮"
+    }
+   ]
+  },
+  {
+   "story": "luc_succubus_manual",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果寫「那一夜」",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……聊到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……天亮時"
+    }
+   ]
+  },
+  {
+   "story": "luc_eighth_exam",
+   "node": "after",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "跳了一整夜的舞"
+    }
+   ]
+  },
+  {
+   "story": "cas_queen_kneels",
+   "node": "collar",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……把自己交給了"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "今晚，不用任何規矩"
+    }
+   ]
+  },
+  {
+   "story": "twin_lana_song",
+   "node": "find",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚城外別館演唱會"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "城外的別館。今晚。"
+    }
+   ]
+  },
+  {
+   "story": "twin_lana_song",
+   "node": "after",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "那天晚上，蘿娜……走進房間",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……第一次不完美"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "第二天早上，菈娜來找你"
+    }
+   ]
+  },
+  {
+   "story": "twin_same_person",
+   "node": "promise",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "三個人笑到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning",
+      "hours": 12
+     },
+     "why": "第二天……那天晚上"
+    }
+   ]
+  },
+  {
+   "story": "zero_definition",
+   "node": "final",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……測試"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "魔核在那一夜沒有暗"
+    },
+    {
+     "key": "opt2.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上……魔核整夜亮著"
+    }
+   ]
+  },
+  {
+   "story": "kar_arena_trophy",
+   "node": "trophy",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "盡到了天亮。第二天早上"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上……另一種比法"
+    }
+   ]
+  },
+  {
+   "story": "oboro_report",
+   "node": "rewrite",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮的時候"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "都睡著了。朧醒來"
+    }
+   ]
+  },
+  {
+   "story": "belv_old_brand",
+   "node": "intel",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚，就是第七天"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "舊驛站。今晚。"
+    }
+   ]
+  },
+  {
+   "story": "belv_old_brand",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "標題：那天晚上的貝爾維婭",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮的時候她醒來"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時她說"
+    }
+   ]
+  },
+  {
+   "story": "eil_ghost_bride",
+   "node": "listen",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "hours": 4
+     },
+     "why": "聽了整整一個下午"
+    }
+   ]
+  },
+  {
+   "story": "pru_swamp_wedding",
+   "node": "vows",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜的新婚之夜"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜的新婚之夜"
+    }
+   ]
+  },
+  {
+   "story": "mimi_tea_guild",
+   "node": "petition",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "hours": 4
+     },
+     "why": "你們翻了一下午"
+    }
+   ]
+  },
+  {
+   "story": "mimi_tea_guild",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "標題：那天晚上的米米",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜，小店面的茶香"
+    }
+   ]
+  },
+  {
+   "story": "mimi_opening_day",
+   "node": "open",
+   "confidence": "medium",
+   "hours": "day",
+   "hours_why": "開張的早上",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "到了傍晚"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "到了傍晚"
+    }
+   ]
+  },
+  {
+   "story": "mimi_opening_day",
+   "node": "close",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "響了一整夜。天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上……上樓了"
+    }
+   ]
+  },
+  {
+   "story": "stella_empty_seats",
+   "node": "rain",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……一直到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "hours": 4
+     },
+     "why": "半夜她醒來"
+    }
+   ]
+  },
+  {
+   "story": "noir_fan_letters",
+   "node": "trace",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚要「接」諾瓦"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚動手"
+    }
+   ]
+  },
+  {
+   "story": "noir_fan_letters",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "那天晚上，諾瓦敲開房門",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……天亮時"
+    }
+   ]
+  },
+  {
+   "story": "pom_theater_contract",
+   "node": "deal",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "今晚，不想一個人睡"
+    }
+   ]
+  },
+  {
+   "story": "pom_guard_contract",
+   "node": "sign",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "今晚全部履行"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天晚上……也履行了"
+    }
+   ]
+  },
+  {
+   "story": "marg_unsent_letters",
+   "node": "trace",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "約好今晚在那裡交易"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "城外的獵屋。今晚。"
+    }
+   ]
+  },
+  {
+   "story": "marg_masked_ball",
+   "node": "choice",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "舞會散場，皇宮花園深處",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜……天亮時"
+    }
+   ]
+  },
+  {
+   "story": "liese_front_basket",
+   "node": "trace",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚從舊磨坊出發"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "舊磨坊。今晚。"
+    }
+   ]
+  },
+  {
+   "story": "liese_front_basket",
+   "node": "oven",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "標題：在烤爐邊等天亮",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜，烤爐的火沒熄"
+    }
+   ]
+  },
+  {
+   "story": "liese_harvest_festival",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "收穫節的夜晚，放煙火",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "燒到了天亮。第二天早上"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "她寫了一整夜的信"
+    }
+   ]
+  },
+  {
+   "story": "isab_drinking_bet",
+   "node": "drink",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning"
+     },
+     "why": "丟在床上；明天早上見"
+    }
+   ]
+  },
+  {
+   "story": "isab_young_knight",
+   "node": "proof",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚送出城，下一步在當晚"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "「今晚」"
+    }
+   ]
+  },
+  {
+   "story": "kara_mane_oath",
+   "node": "braid",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "營火邊；那一夜的營火",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "營火燒到了天亮"
+    }
+   ]
+  },
+  {
+   "story": "ren_tide_home",
+   "node": "sea",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果寫那一夜(海底)",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮的時候"
+    }
+   ]
+  },
+  {
+   "story": "ele_chancellor_lunch",
+   "node": "eat",
+   "confidence": "medium",
+   "hours": "day",
+   "hours_why": "讓她吃一頓午餐"
+  },
+  {
+   "story": "lisr_court_currents",
+   "node": "intel",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚，刺客在舊石場集合"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "「今晚」"
+    }
+   ]
+  },
+  {
+   "story": "lisr_crimson_vow",
+   "node": "after",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "碑谷的月光下",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…燈亮到天亮"
+    }
+   ]
+  },
+  {
+   "story": "group_wives_tea",
+   "node": "tea",
+   "confidence": "medium",
+   "hours": "day",
+   "hours_why": "下午茶"
+  },
+  {
+   "story": "group_wives_tea",
+   "node": "decide",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "沙龍的燈重新點起；那一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning",
+      "hours": 4
+     },
+     "why": "關門到了第二天中午"
+    }
+   ]
+  },
+  {
+   "story": "group_idol_backstage",
+   "node": "backstage",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "散場之後；那一夜的後台",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮的時候"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜"
+    }
+   ]
+  },
+  {
+   "story": "group_rulers_tea",
+   "node": "tea",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "night"
+     },
+     "why": "從下午持續到深夜"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…燈一直亮著"
+    }
+   ]
+  },
+  {
+   "story": "group_athletes",
+   "node": "result",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "營火邊；那一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "一直聊到了天亮"
+    }
+   ]
+  },
+  {
+   "story": "pol_peace_crusade",
+   "node": "bell",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果：索里耶爾的夜"
+  },
+  {
+   "story": "pol_war_h_rivervale",
+   "node": "vanguard",
+   "confidence": "medium",
+   "hours": "day",
+   "hours_why": "天亮時，先鋒出現"
+  },
+  {
+   "story": "pol_war_h_ashport",
+   "node": "harbor",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "計畫夜裡摸進燈塔"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "夜襲，天亮前"
+    }
+   ]
+  },
+  {
+   "story": "pol_war_h_ashport",
+   "node": "lighthouse",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "夜裡的燈塔下",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時，守備軍撤"
+    }
+   ]
+  },
+  {
+   "story": "pol_war_d_ashport",
+   "node": "vanguard",
+   "confidence": "medium",
+   "hours": "day",
+   "hours_why": "天亮時，先鋒出現"
+  },
+  {
+   "story": "drg_sinor",
+   "node": "end",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "第二天清晨，孩子們唱"
+    }
+   ]
+  },
+  {
+   "story": "drg_sorian",
+   "node": "end",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那天早上，精靈醒來"
+    },
+    {
+     "key": "opt2.success",
+     "time": {
+      "until": "night"
+     },
+     "why": "那天晚上，精靈醒了"
+    }
+   ]
+  },
+  {
+   "story": "ign_test_run",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "在千爐工坊過夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "標題：過夜"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "標題：過夜"
+    }
+   ]
+  },
+  {
+   "story": "trl_victor_rite",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果：那一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜像另一場試煉"
+    }
+   ]
+  },
+  {
+   "story": "lila_grown_wish",
+   "node": "night",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時她窩在你懷裡"
+    }
+   ]
+  },
+  {
+   "story": "brew_private_cask",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "「我想記得今晚」",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "抱著你在酒桶邊睡著"
+    }
+   ]
+  },
+  {
+   "story": "wat_desert_dance",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果：那一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "鈴鐺響到天亮"
+    }
+   ]
+  },
+  {
+   "story": "vault_winter_palace",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "燭光；那一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜"
+    }
+   ]
+  },
+  {
+   "story": "nip_desert_bargain",
+   "node": "date",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "市集的燈一盞盞熄掉"
+  },
+  {
+   "story": "isab_bet_paid",
+   "node": "night",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "第二天早上"
+    }
+   ]
+  },
+  {
+   "story": "kara_mating_hunt",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "篝火；對著月亮吼叫"
+  },
+  {
+   "story": "mat_no_fine_print",
+   "node": "night",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時她抱著契約睡著"
+    }
+   ]
+  },
+  {
+   "story": "ith_moonwell_night",
+   "node": "date",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "月光森林；「今晚」"
+  },
+  {
+   "story": "ith_moonwell_night",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "泉邊；那一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "用了整整一夜"
+    }
+   ]
+  },
+  {
+   "story": "ele_off_duty",
+   "node": "date",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "天黑的時候"
+    }
+   ]
+  },
+  {
+   "story": "lisr_red_night",
+   "node": "date",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "晚宴，燭光"
+  },
+  {
+   "story": "lisr_red_night",
+   "node": "night",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "直到天亮"
+    }
+   ]
+  },
+  {
+   "story": "sak_tide_bed",
+   "node": "night",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "燭光；那一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜"
+    }
+   ]
+  },
+  {
+   "story": "gear_broken_legend",
+   "node": "field",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "月亮升起的時候",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "hours": 24
+     },
+     "why": "第二天晚上再去"
+    }
+   ]
+  },
+  {
+   "story": "gear_giant_armory",
+   "node": "guards",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "hours": 24
+     },
+     "why": "第二天你們再進去"
+    }
+   ]
+  },
+  {
+   "story": "gear_last_sea_chart",
+   "node": "sail",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "辨認星位，星是否還在",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "until": "morning",
+      "hours": 48
+     },
+     "why": "繞了兩天。第三天早上"
+    }
+   ]
+  },
+  {
+   "story": "gear_star_heart_forge",
+   "node": "heralds",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "fail",
+     "time": {
+      "hours": 24
+     },
+     "why": "等到第二天"
+    }
+   ]
+  },
+  {
+   "story": "par_lin_feed",
+   "node": "theory",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "「今晚。榮譽洞」"
+    }
+   ]
+  },
+  {
+   "story": "inn_skirt",
+   "node": "shift",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "晚班；傍晚的旅店",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "hours": 4
+     },
+     "why": "整晚…打烊時"
+    }
+   ]
+  },
+  {
+   "story": "inn_table",
+   "node": "more",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "打烊後；今晚加錢",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "出來的時候天快亮了"
+    }
+   ]
+  },
+  {
+   "story": "inn_feast",
+   "node": "prize",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果：那一夜/今晚",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    }
+   ]
+  },
+  {
+   "story": "odd_exchange",
+   "node": "exchange",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    }
+   ]
+  },
+  {
+   "story": "dice_jackpot",
+   "node": "cheat",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "大獎之夜"
+  },
+  {
+   "story": "onsen_dawn",
+   "node": "party",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "整個晚上",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "hours": 3
+     },
+     "why": "到了半夜"
+    }
+   ]
+  },
+  {
+   "story": "horn_feast",
+   "node": "bout",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚的酒宴"
+    },
+    {
+     "key": "fail",
+     "time": {
+      "until": "night"
+     },
+     "why": "今晚的酒宴"
+    }
+   ]
+  },
+  {
+   "story": "horn_trophy",
+   "node": "choose",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "火把；那一夜",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮時"
+    }
+   ]
+  },
+  {
+   "story": "court_lord",
+   "node": "bed",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "night"
+     },
+     "why": "玩到半夜才結束"
+    }
+   ]
+  },
+  {
+   "story": "court_banquet",
+   "node": "feast",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果：那一夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "宴會開到天亮"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜"
+    }
+   ]
+  },
+  {
+   "story": "pyre_cleanse",
+   "node": "oil",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天後，餘燼裂隙"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "hours": 72
+     },
+     "why": "三天後，餘燼裂隙"
+    }
+   ]
+  },
+  {
+   "story": "pyre_prelude",
+   "node": "bless",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時他照價付錢"
+    }
+   ]
+  },
+  {
+   "story": "pyre_offering",
+   "node": "offer",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "獻祭之夜",
+   "outcomes": [
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "那一夜…天亮時"
+    }
+   ]
+  },
+  {
+   "story": "conf_chapel",
+   "node": "line",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果：跪了一整夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "一整夜。天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "罵了一整夜"
+    }
+   ]
+  },
+  {
+   "story": "conf_last",
+   "node": "graduation",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "結果：整夜",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    },
+    {
+     "key": "opt2.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "整夜…天亮時"
+    }
+   ]
+  },
+  {
+   "story": "fert_chosen",
+   "node": "seed_test",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "一個晚上收得下幾個",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "看了一整晚"
+    }
+   ]
+  },
+  {
+   "story": "fert_dance",
+   "node": "dance",
+   "confidence": "medium",
+   "hours": "night",
+   "hours_why": "月光燈；跳到半夜",
+   "outcomes": [
+    {
+     "key": "success",
+     "time": {
+      "hours": 3
+     },
+     "why": "一路跳到半夜"
+    }
+   ]
+  },
+  {
+   "story": "mate_bonfire",
+   "node": "claim",
+   "confidence": "medium",
+   "outcomes": [
+    {
+     "key": "opt0.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "天亮時"
+    },
+    {
+     "key": "opt1.success",
+     "time": {
+      "until": "morning"
+     },
+     "why": "篝火熄滅…天亮時"
+    }
+   ]
+  }
+ ]
+}

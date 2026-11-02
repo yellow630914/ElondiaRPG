@@ -1,10 +1,10 @@
-// 主角當奴隸時，主人是工具人（成人向；計畫 docs/plan/LUST_COMBAT_PLAN.md 第 7.2 節、docs/COMPANIONS.md 2.4 節）：
+// 主角當奴隸時，主人是工具人（成人向；docs/LEWD_STATS.md 第 8 節、docs/COMPANIONS.md 2.4 節）：
 // 系統上主人只是讓隸從派生效的條件，主角保有主導權。和主人的親密度夠高時，契約面板可以直接解約、換主人（不擲骰、不付錢）；
 // 敘事上仍然寫成主人的決定（主人准許、主人安排、把主角轉讓出去）。數值在 data/rules/lewd.json 的 master_tool。
 
 import { lewdRules } from './data'
 import { changeMaster, freePlayer, isBound, pcOf } from './party'
-import { isHostile, peopleHere } from './population'
+import { isHostile, isUnhireable, peopleHere } from './population'
 import { commitReport } from './state'
 import { contractOf } from './tattoos'
 import { baseReport } from './town'
@@ -33,7 +33,7 @@ export function newMasterCandidates(state: GameState): NpcRecord[] {
   const current = contractOf(pcOf(state))?.master
   return peopleHere(state)
     .map((p) => p.rec)
-    .filter((r) => r.id !== current && !r.dead && !r.tags?.includes('slave') && !isHostile(state, r))
+    .filter((r) => r.id !== current && !r.dead && !isUnhireable(r.id) && !r.tags?.includes('slave') && !isHostile(state, r))
     .filter((r) => (state.relationships?.[r.id]?.affinity ?? 0) >= rules().new_master_affinity)
 }
 
@@ -61,7 +61,7 @@ export function masterRelease(state: GameState): Report {
 export function masterTransfer(state: GameState, npcId: string): Report {
   if (!masterToolReady(state)) throw new Error('和主人還不夠親近，主人不會答應')
   const next = newMasterCandidates(state).find((r) => r.id === npcId)
-  if (!next) throw new Error('這個人不能成為新主人（要在附近、夠熟、不是奴隸）')
+  if (!next) throw new Error('這個人不能成為新主人（要在附近、夠熟、不是奴隸、會收人）')
   const old = contractOf(pcOf(state))!.masterName
   const report = toolReport(state, [`${old}安排把主角轉讓給${next.name}`, `${next.name}成為主角的新主人`])
   changeMaster(state, next, report, `${old}把主角轉讓給${next.name}`)

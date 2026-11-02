@@ -13,6 +13,9 @@ import ContentIcon from '../icons/ContentIcon.vue'
 import { baseArt, refPath } from '../items/itemIcon'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 裝備底材與材料的編輯表單
 const props = defineProps<{ kind: 'base' | 'material'; id: string }>()
@@ -131,22 +134,16 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ kind === 'base' ? base.name : mat.name }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="kind === 'base' ? base.name : mat.name" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <UsageNote :usage="usage" :deletable="!builtin" />
     <p class="small muted">id：{{ id }}</p>
 
     <template v-if="kind === 'base'">
-      <fieldset>
-        <legend>底材</legend>
+      <FoldSet>
+        <template #legend>底材</template>
         <div class="grid">
           <label>名稱 <input v-model="base.name" maxlength="12" /></label>
           <label>欄位
@@ -171,6 +168,7 @@ function remove() {
           <Hint text="服裝不會出現在寶箱與掉落的隨機裝備裡；裁縫店（鐵匠鋪、珠寶店少量）每天另外上架幾件。上身的服裝建角時也能選。" />
         </div>
         <label class="check small"><input type="checkbox" :checked="!!base.adult" :disabled="base.outfit === 'adult'" @change="base.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向（內容編輯器的篩選用）</label>
+        <label class="check small"><input type="checkbox" :checked="!!base.exclusive" :disabled="builtin" @change="base.exclusive = ($event.target as HTMLInputElement).checked || undefined" /> 地下城專屬：只靠掉落取得（層主的掉落物寫這個底材做成的裝備），不能打造，不會出現在寶箱、商店、建角與 AI 生成的裝備裡</label>
         <label v-if="base.slot !== 'main_hand' && base.slot !== 'body'" class="check small">
           <input v-model="base.restraint" type="checkbox" :disabled="builtin" /> 束縛用（項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減，給「主人會強制裝備」的物品用
         </label>
@@ -193,10 +191,10 @@ function remove() {
           <Hint text="曝露度 0～3：上身、下身、內衣的曝露名聲用（docs/LEWD_STATS.md 第 3 節）。拘束：束縛用的底材平常是檢定減值，修了慾望流派、上了鎖時戰鬥中反轉成增益（第 7 節）。" />
         </div>
         <p v-if="builtin" class="small muted">內建底材不能改欄位與材料類型；改名只影響之後新打造或生成的裝備，目錄裡的制式裝備沿用原本的名稱。</p>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset v-if="base.slot === 'main_hand' && base.weaponDef">
-        <legend>武器</legend>
+      <FoldSet v-if="base.slot === 'main_hand' && base.weaponDef">
+        <template #legend>武器</template>
         <div class="grid">
           <label>傷害骰 <input v-model="base.weaponDef.dice" placeholder="1d8" /></label>
           <label>傷害類型
@@ -207,20 +205,20 @@ function remove() {
           </label>
         </div>
         <p v-if="builtin" class="small muted">內建底材的武器數值是共用的：同一種武器（職業的起始武器、NPC）會一起改。</p>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset v-if="base.slot === 'body' && base.armorDef">
-        <legend>防具</legend>
+      <FoldSet v-if="base.slot === 'body' && base.armorDef">
+        <template #legend>防具</template>
         <div class="grid">
           <label>迴避 <input v-model.number="base.armorDef.evade" type="number" /></label>
           <label>減傷 <input v-model.number="base.armorDef.dr" type="number" min="0" /></label>
         </div>
         <AffinityRows v-model="base.armorDef.resist" label="抗性" />
-      </fieldset>
+      </FoldSet>
 
-      <fieldset v-if="!base.restraint">
-        <legend>固定加成與材料成長</legend>
-        <p class="small muted">固定加成不論材料都有；材料成長：材料的加成（鐵 0、鋼 1、秘銀 2、精金 4、星隕鐵 6）依比例加到這一項。</p>
+      <FoldSet v-if="!base.restraint">
+        <template #legend>固定加成與材料成長</template>
+        <HelpText text="固定加成不論材料都有；材料成長：材料的加成（鐵 0、鋼 1、秘銀 2、精金 4、星隕鐵 6）依比例加到這一項。" />
         <div class="grid">
           <label v-for="(n, k) in MOD_NAME" :key="k">{{ n }}
             <span class="pair">
@@ -232,18 +230,18 @@ function remove() {
             </span>
           </label>
         </div>
-      </fieldset>
+      </FoldSet>
     </template>
 
     <template v-else>
-      <fieldset>
-        <legend>材料</legend>
+      <FoldSet>
+        <template #legend>材料</template>
         <div class="grid">
           <label>名稱 <input v-model="mat.name" maxlength="8" /></label>
           <label>類型
             <select v-model="mat.kind" :disabled="builtin"><option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option></select>
           </label>
-          <label><span>等級（1～5） <Hint text="決定打造的工錢與 DC。" /></span><input v-model.number="mat.tier" type="number" min="1" max="5" :disabled="builtin" :title="builtin ? '內建材料的等級不能改（隨機裝備依類型與等級找材料）' : ''" /></label>
+          <label><span>等級（1～7） <Hint text="決定打造的工錢與 DC。第 6、7 級是高等地下城的材料。" /></span><input v-model.number="mat.tier" type="number" min="1" max="7" :disabled="builtin" :title="builtin ? '內建材料的等級不能改（隨機裝備依類型與等級找材料）' : ''" /></label>
           <label>加成 <input v-model.number="mat.bonus" type="number" min="0" max="10" /></label>
           <label>稀有度
             <select v-model="mat.rarity"><option v-for="r in RARITY_ORDER" :key="r" :value="r">{{ rarityName(r) }}</option></select>
@@ -262,16 +260,16 @@ function remove() {
             <span class="small muted">依類型與等級自動決定，顏色依稀有度；暫時不能上傳。</span>
           </div>
         </div>
-      </fieldset>
+      </FoldSet>
     </template>
 
-    <fieldset>
-      <legend>制式裝備（{{ catalog.length }} 件）</legend>
+    <FoldSet>
+      <template #legend>制式裝備（{{ catalog.length }} 件）</template>
       <p class="small muted">自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備；儲存後更新。</p>
       <ul class="plain small list">
         <li v-for="i in catalog" :key="i.name"><b>{{ i.name }}</b>　{{ gearSummary(i.gear!) }}　{{ formatMoney(i.price_cc) }}</li>
       </ul>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

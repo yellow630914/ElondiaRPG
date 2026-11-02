@@ -52,9 +52,13 @@ describe('S9-2 拘束具', () => {
     expect(bindModifiers(pc, { context: 'action', attr: 'str' })).toEqual([])
     pc.perks = ['school_bondage']
     pc.gear![slotOf(state, '口球')]!.lock = 'white'
-    // 束縛派和口枷契合 ×1.2
-    expect(twoFaceCombat(pc)).toMatchObject({ mods: { save: 1, dr: 1 }, immune: ['taunted'] })
+    // 束縛派和口枷契合 ×1.2；免疫嘲諷只在程度 3（口球是程度 2）
+    expect(twoFaceCombat(pc)).toMatchObject({ mods: { save: 1, dr: 1 }, immune: [] })
     expect(lewdRules.schools.bondage!.fit).toContain('mouth')
+    addItem(state.inventory, '皮革面罩口枷', 1)
+    equipItem(state, '皮革面罩口枷', pc.id)
+    pc.gear![slotOf(state, '皮革面罩口枷')]!.lock = 'white'
+    expect(twoFaceCombat(pc).immune).toEqual(['taunted'])
   })
 
   it('口枷戴在頭部；要和眼罩一起戴，其中一件放進額外飾品欄', () => {

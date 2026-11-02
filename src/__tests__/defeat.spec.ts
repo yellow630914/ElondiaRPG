@@ -4,8 +4,9 @@ import worldbook from '../../data/worldbook/elondia.worldbook.json'
 import schema from '../../schemas/report.schema.json'
 import { buildActionPrompt } from '@/narrator/judge'
 import { prepareAction, resolveAction } from '@/engine/actions'
-import { finishCombat, startCombat } from '@/engine/combat'
+import { act, currentActor, finishCombat, startCombat } from '@/engine/combat'
 import { combatRules } from '@/engine/data'
+import { setDefeatAdult, setDefeatAlways } from '@/engine/content'
 import { climaxDcCut, defeatEventFoes, skipDefeatEvent, villainOf } from '@/engine/defeat'
 import { lewdOf } from '@/engine/lewd'
 import { afterCombat, currentArea, goOutskirts } from '@/engine/grid'
@@ -22,6 +23,8 @@ const dc = rules.check.dc
 
 afterEach(() => {
   rules.check.dc = dc
+  setDefeatAlways(false)
+  setDefeatAdult('all')
 })
 
 function game(): GameState {
@@ -122,6 +125,25 @@ describe('defeat event', () => {
     expect(defeatEventFoes(state, [{ ...foe(['rut']), hp: 0 }])).toHaveLength(0)
   })
 
+  it('always triggers with the「一定發生」setting, without a charisma roll', () => {
+    rules.check.dc = 999
+    setDefeatAlways(true)
+    const state = game()
+    const r = lose(state)
+    expect(state.pendingDefeat).toBeDefined()
+    const entry = r.timeline!.find((t) => t.action.includes('一定發生'))!
+    expect(entry.result).toBe('success')
+    expect(entry.roll).toBeUndefined()
+    // 還是要有會起意的敵人；戰敗色情事件關閉時也不發生
+    const plain = game()
+    lose(plain, ['merchant'])
+    expect(plain.pendingDefeat).toBeUndefined()
+    setDefeatAdult('off')
+    const off = game()
+    lose(off)
+    expect(off.pendingDefeat).toBeUndefined()
+  })
+
   it('can be skipped when the settings no longer allow it', () => {
     rules.check.dc = -100
     const state = game()
@@ -165,5 +187,46 @@ describe('戰敗事件的連動（S8）', () => {
     expect(lewdOf(pc).lewdness).toBeGreaterThanOrEqual(before.lewdness + 2)
     expect(lewdOf(pc).submission).toBeGreaterThanOrEqual(before.submission + 3)
     expect(pc.status).toContain('dazed')
+  })
+})
+
+describe('voluntary defeat (不幸／主動)', () => {
+  /** 和一個惡人開打，輪到隊員時按「戰敗」 */
+  function surrender(willing: boolean) {
+    const state = game()
+    const rec = withRng(state, (rng) => generateNpc(state, rng, { tags: ['villain'], level: 1, location: state.location }))
+    startCombat(state, [], { npcs: [rec.id] })
+    for (const c of state.combat!.combatants) if (c.side === 'party') c.hp = c.maxHp = 500
+    for (let i = 0; i < 20 && currentActor(state.combat!)?.side !== 'party'; i++) act(state, { type: 'end_turn' })
+    act(state, { type: 'surrender', willing })
+    expect(state.combat!.status).toBe('defeat')
+    const report = finishCombat(state)
+    afterCombat(state, report)
+    expect(validate(report), JSON.stringify(validate.errors)).toBe(true)
+    return { state, report }
+  }
+
+  it('ends the fight as a normal defeat; the choice only changes the text', () => {
+    const { report: unlucky } = surrender(false)
+    expect(unlucky.outcome.result).toBe('defeat')
+    expect(unlucky.party.find((p) => p.id === 'pc')!.hp![1]).toBe(1)
+    expect(unlucky.outcome.tags).not.toContain('主動認輸')
+    expect(unlucky.narration?.focus?.join()).toContain('不是主角願意的')
+
+    const { report: willing } = surrender(true)
+    expect(willing.outcome.result).toBe('defeat')
+    expect(willing.party.find((p) => p.id === 'pc')!.hp![1]).toBe(1)
+    expect(willing.outcome.tags).toContain('主動認輸')
+    expect(willing.narration?.focus?.join()).toContain('主動放棄抵抗')
+    expect(willing.timeline?.some((t) => t.action.startsWith('主動認輸'))).toBe(true)
+  })
+
+  it('tells the defeat event that the protagonist gave in', () => {
+    rules.check.dc = -100
+    const { state, report } = surrender(true)
+    expect(state.pendingDefeat?.willing).toBe(true)
+    expect(report.narration?.focus?.join()).toContain('放棄抵抗的主角')
+    prepareAction(state, { kind: 'defeat_event', target: 'opt:0', text: rules.options[0]!.label })
+    expect(buildActionPrompt(state, state.pendingAction!, '').user).toContain('主動認輸')
   })
 })

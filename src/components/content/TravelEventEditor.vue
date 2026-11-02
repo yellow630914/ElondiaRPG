@@ -1,19 +1,22 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, geography, type LocationType, type RouteMode } from '@/engine/data'
+import { geography, type LocationType, type RouteMode } from '@/engine/data'
 import { cellName, type CellKind } from '@/engine/grid'
 import { travelEvents, type RoadOption } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { parasiteRules } from '@/engine/parasites'
 import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, PARASITE_MOMENTS, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
-import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import type { DungeonTrigger, EventScope } from '@/engine/road'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
-import CondExtrasEditor from './CondExtrasEditor.vue'
-import FlagInput from './FlagInput.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
+import RequiresEditor from './RequiresEditor.vue'
+import CheckList from './CheckList.vue'
+import { BODY_OPTIONS, CONTENT_TAG_OPTIONS } from './checks'
+import FoldSet from './FoldSet.vue'
+import CheckRow from './CheckRow.vue'
 
 // 旅途事件、城鎮事件、地下城事件或寄生物的發作的編輯表單：在哪裡出現、檢定或選項、結果
 const props = defineProps<{ id: string }>()
@@ -44,7 +47,6 @@ const parasite = computed(() => draft.value.scope === 'parasite')
 // 發生在主角身上的事件（地下城事件、寄生物的發作）：只有選擇，主角自己擲
 const onPc = computed(() => dungeon.value || parasite.value)
 const parasiteIds = Object.keys(parasiteRules.parasites)
-const BODY_NAME = { fem: '女性形象', andro: '中性', masc: '男性形象' } as const
 function setScope(v: string) {
   const scope = (['town', 'dungeon', 'parasite'].includes(v) ? v : undefined) as EventScope | undefined
   draft.value.scope = scope
@@ -123,24 +125,18 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : '🧭' }} {{ draft.title || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="`${town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : '🧭'} ${draft.title || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <p class="small muted">
       id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : parasite ? '寄生物的發作：身上有這個寄生物（沒馴服、沒沉睡）時，走動、旅途或長休之後依 parasites.json 的機率（乘上存檔規則「寄生發作的機率」與階段的倍率）出現；選項的結果通常是侵蝕度的加減（效果「寄生物的侵蝕度」）。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
       {{ onPc ? '事件發生在主角身上：檢定由主角自己擲。' : '檢定由隊伍裡最擅長那個屬性的人來擲。' }}
     </p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>標題 <input v-model="draft.title" maxlength="20" /></label>
         <label>在哪裡
@@ -173,10 +169,10 @@ function remove() {
         <label v-if="dungeon">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.dungeon?.repeat_days ?? 3)" /></label>
       </div>
       <label class="block">描述（給玩家與 AI）<textarea v-model="draft.text" rows="3" maxlength="400" /></label>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="dungeon">
-      <legend>出現的地方 <Hint text="每一項沒勾時不限（觸發點至少勾一個）。" /></legend>
+    <FoldSet v-if="dungeon">
+      <template #legend>出現的地方 <Hint text="每一項沒勾時不限（觸發點至少勾一個）。" /></template>
       <div class="row small"><b>觸發點</b>
         <label v-for="(n, k) in DUNGEON_TRIGGERS" :key="k" class="check">
           <input type="checkbox" :checked="draft.triggers?.includes(k)" @change="toggle<DungeonTrigger>('triggers', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
@@ -197,9 +193,9 @@ function remove() {
           <input type="checkbox" :checked="draft.dungeons?.includes(l.id)" @change="toggle('dungeons', l.id, ($event.target as HTMLInputElement).checked)" /> {{ l.name }}
         </label>
       </div>
-    </fieldset>
-    <fieldset v-else-if="parasite">
-      <legend>哪一種寄生物 <Hint text="階段與時機沒勾時不限。" /></legend>
+    </FoldSet>
+    <FoldSet v-else-if="parasite">
+      <template #legend>哪一種寄生物 <Hint text="階段與時機沒勾時不限。" /></template>
       <div class="row small">
         <select v-model="draft.parasite">
           <option v-for="p in parasiteIds" :key="p" :value="p">{{ parasiteRules.parasites[p]!.name }}</option>
@@ -215,9 +211,9 @@ function remove() {
           <input type="checkbox" :checked="draft.moments?.includes(k)" @change="toggle('moments', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
         </label>
       </div>
-    </fieldset>
-    <fieldset v-else-if="!town">
-      <legend>路段 <Hint text="沒勾時任何路段都會出現。" /></legend>
+    </FoldSet>
+    <FoldSet v-else-if="!town">
+      <template #legend>路段 <Hint text="沒勾時任何路段都會出現。" /></template>
       <div class="row">
         <label v-for="m in ROUTE_MODES" :key="m" class="check small">
           <input type="checkbox" :checked="draft.modes?.includes(m)" @change="toggle<RouteMode>('modes', m, ($event.target as HTMLInputElement).checked)" /> {{ MODE_NAME[m] }}
@@ -228,9 +224,9 @@ function remove() {
           <input type="checkbox" :checked="draft.regions?.includes(r.id)" @change="toggle('regions', r.id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}
         </label>
       </div>
-    </fieldset>
-    <fieldset v-else>
-      <legend>出現的地方 <Hint text="每一項沒勾時不限。" /></legend>
+    </FoldSet>
+    <FoldSet v-else>
+      <template #legend>出現的地方 <Hint text="每一項沒勾時不限。" /></template>
       <div class="row small"><b>設施</b>
         <label v-for="c in townEventCells()" :key="c" class="check">
           <input type="checkbox" :checked="draft.cells?.includes(c)" @change="toggle('cells', c, ($event.target as HTMLInputElement).checked)" /> {{ cellLabel(c) }}
@@ -246,49 +242,37 @@ function remove() {
           <input type="checkbox" :checked="draft.locations?.includes(l.id)" @change="toggle('locations', l.id, ($event.target as HTMLInputElement).checked)" /> {{ l.name }}
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>內容 <Hint text="內容標籤：設定沒有開啟或關掉時這個事件不出現。親密場景：選項勾了「進入親密場景」時，敘事依這段描寫。" /></legend>
-      <div class="row small"><b>內容標籤</b>
-        <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
-          <input type="checkbox" :checked="draft.tags?.includes(t)" @change="toggle('tags', t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
-        </label>
-      </div>
-      <div class="row small"><b>只給這些主角</b>
-        <label v-for="(n, b) in BODY_NAME" :key="b" class="check">
-          <input type="checkbox" :checked="draft.pc_body?.includes(b)" @change="toggle('pc_body', b, ($event.target as HTMLInputElement).checked)" /> {{ n }}
-        </label>
-      </div>
+    <FoldSet>
+      <template #legend>內容 <Hint text="內容標籤：設定沒有開啟或關掉時這個事件不出現。親密場景：選項勾了「進入親密場景」時，敘事依這段描寫。" /></template>
+      <CheckList v-model="draft.tags" label="內容標籤" :options="CONTENT_TAG_OPTIONS" />
+      <CheckList v-model="draft.pc_body" label="只給這些主角" hint="依主角的體型；都不勾＝都可以。勾了女性形象、中性而沒勾男性形象時，設定打開「陽剛體型也能遇到『只給陰柔、中性』的成人內容」的玩家一樣會遇到。" :options="BODY_OPTIONS" />
       <label class="block">親密場景（成人向，可以空著）<textarea v-model="draft.scene" rows="2" maxlength="200" /></label>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>劇情條件</legend>
-      <div class="row small">需要旗標 <FlagInput v-model="requires.flags" placeholder="全部成立才出現" /></div>
-      <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
-      <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (draft.requires = v)" />
-    </fieldset>
+    <FoldSet>
+      <template #legend>劇情條件</template>
+      <RequiresEditor :model-value="requires" label="出現的條件" placeholder="全部成立才出現" @update:model-value="(v) => (draft.requires = v)" />
+    </FoldSet>
 
-    <fieldset v-if="draft.kind === 'check'">
-      <legend>檢定 <Hint v-if="draft.tier === 'advanced'" text="成功時接著出現下面的選項。" /></legend>
+    <FoldSet v-if="draft.kind === 'check'">
+      <template #legend>檢定 <Hint v-if="draft.tier === 'advanced'" text="成功時接著出現下面的選項。" /></template>
       <div class="row small">
-        <select v-model="draft.check!.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-        DC <input v-model.number="draft.check!.dc" type="number" min="1" max="40" class="num" />
+        <CheckRow :check="draft.check!" />
       </div>
       <OutcomeEditor v-model="draft.success" label="成功" optional event />
       <OutcomeEditor v-model="draft.fail" label="失敗" optional event />
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.kind === 'choice' || draft.tier === 'advanced'">
-      <legend>選項（最多 5 個）</legend>
+    <FoldSet v-if="draft.kind === 'choice' || draft.tier === 'advanced'">
+      <template #legend>選項（最多 5 個）</template>
       <div v-for="(o, i) in draft.options ?? []" :key="i" class="option">
         <div class="row small">
           <input v-model="o.label" maxlength="30" class="grow" />
           <label class="check"><input type="checkbox" :checked="!!o.check" @change="toggleCheck(o, ($event.target as HTMLInputElement).checked)" /> 要檢定</label>
           <template v-if="o.check">
-            <select v-model="o.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-            DC <input v-model.number="o.check.dc" type="number" min="1" max="40" class="num" />
+            <CheckRow :check="o.check" />
             <Hint v-if="onPc" :text="`14 是「普通」：實際 DC 依${parasite ? '主角等級與侵蝕度的階段' : '地下城的層'}調整，寫 12 就是比普通容易 2、寫 16 比普通難 2。`" />
           </template>
           <select v-if="draft.scene" v-model="o.adult_scene" class="small" title="這個選項進入親密場景">
@@ -297,17 +281,14 @@ function remove() {
             <option v-if="o.check" value="success">成功時進入</option>
             <option v-if="o.check" value="fail">失敗時進入</option>
           </select>
-          <button class="small" @click="draft.options!.splice(i, 1)">移除</button>
+          <button class="small" @click="draft.options!.splice(i, 1)" title="移除">✕</button>
         </div>
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" optional event />
         <OutcomeEditor v-if="o.check" v-model="o.fail" label="失敗" optional event />
       </div>
       <button class="small" :disabled="(draft.options?.length ?? 0) >= 5" @click="addOption">＋ 選項</button>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 
 <style scoped src="./editor.css"></style>
-<style scoped>
-.option { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; margin-bottom: 6px; }
-</style>

@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import GameIcon from './GameIcon.vue'
+import type { IconName } from './iconPaths'
 
 // 「?」說明：滑鼠移上去、聚焦或點一下時顯示羊皮紙小框。
 // 小框掛在 body 上（fixed 定位），不會被有捲軸的面板裁掉；用 popover 放進瀏覽器的最上層，
 // 才不會被 showModal() 開的對話框（也在最上層）蓋住。點「?」不會觸發外面的 label。
-const props = withDefaults(defineProps<{ text?: string; width?: number }>(), { text: '', width: 280 })
+// warn：改成三角形的警告圖示（提醒費用、風險；文字一樣移上去才顯示）。
+const props = withDefaults(defineProps<{ text?: string; width?: number; warn?: boolean }>(), { text: '', width: 280, warn: false })
+const icon = computed<IconName>(() => (props.warn ? 'caution' : 'question'))
 const open = ref(false)
 const pinned = ref(false)
 const btn = ref<HTMLElement | null>(null)
@@ -46,10 +49,10 @@ onBeforeUnmount(() => window.removeEventListener('click', onOutside))
 
 <template>
   <span
-    ref="btn" class="hint" role="button" tabindex="0" aria-label="說明"
+    ref="btn" class="hint" :class="{ warn }" role="button" tabindex="0" :aria-label="warn ? '注意' : '說明'"
     @mouseenter="show" @mouseleave="hide" @focus="show" @blur="hide" @click.stop="toggle" @keydown.enter.prevent="toggle()"
   >
-    <GameIcon name="question" :size="14" />
+    <GameIcon :name="icon" :size="14" />
   </span>
   <Teleport to="body">
     <div
@@ -65,6 +68,8 @@ onBeforeUnmount(() => window.removeEventListener('click', onOutside))
 <style scoped>
 .hint { display: inline-flex; color: var(--muted); cursor: help; vertical-align: middle; border-radius: 50%; }
 .hint:hover, .hint:focus-visible { color: var(--accent); outline: none; }
+.hint.warn { color: #d8a53a; border-radius: 0; }
+.hint.warn:hover, .hint.warn:focus-visible { color: var(--gold-hi); }
 .hint-pop {
   position: fixed; z-index: 1000; max-width: calc(100vw - 16px);
   padding: 10px 12px; font-size: var(--fs-sm); line-height: 1.7; white-space: pre-line;

@@ -18,6 +18,7 @@ import { condMet } from '@/engine/storyFlags'
 import { sanitizeEffects } from '@/engine/storyMods'
 import { baseReport } from '@/engine/town'
 import type { GameState, GearSlot } from '@/engine/types'
+import { buildActionPrompt } from '@/narrator/judge'
 
 function game(birthplace = 'rhineburg'): GameState {
   const state = newGame({ name: '莉雅', race: 'human', classId: 'fighter', seed: 6, birthplace })
@@ -88,6 +89,18 @@ describe('陷阱鎖', () => {
     expect(state.inventory.find((i) => i.name === '藍鋼鎖')?.qty).toBe(1)
   })
 
+  it('物品自帶比較好的鎖時用自帶的（符文枷不會變成白鐵鎖）', () => {
+    const state = game()
+    const pc = pcOf(state)
+    restrainPc(state, baseReport(state, 'event', 0), '囚徒的符文枷')
+    const slot = slotOf(state, '囚徒的符文枷')
+    expect(stuckRestraint(pc, slot)).toMatchObject({ lock: 'rune', trap: true })
+    expect(cutLockFee(pc, slot)).toBe(lewdRules.unbind.cut.fee_cc.rune)
+    // 事件寫的鎖比較好時照事件的
+    restrainPc(state, baseReport(state, 'event', 0), '獵奴人的鎖鏈', 'gold')
+    expect(stuckRestraint(pc, slotOf(state, '獵奴人的鎖鏈'))?.lock).toBe('gold')
+  })
+
   it('鐵匠剪鎖：只剪陷阱鎖，依鎖的等級收錢', () => {
     const state = game()
     const pc = pcOf(state)
@@ -101,6 +114,19 @@ describe('陷阱鎖', () => {
     expect(state.money_cc).toBe(10000 - fee)
     expect(stuckRestraint(pc, slot)).toBeUndefined()
     expect(state.inventory.some((i) => i.name === '符文鎖')).toBe(false)
+  })
+
+  it('AI 判定的提示詞列出拿不下來的拘束具，註明是陷阱還是主人', () => {
+    const state = game()
+    restrainPc(state, baseReport(state, 'event', 0), '皮手銬', 'blue')
+    const q = buildActionPrompt(state, prepareAction(state, { kind: 'free', text: '把手銬扯下來' }), '')
+    expect(q.system + q.user).toContain('皮手銬（手腕・陷阱鎖住・藍鋼鎖）')
+    const slave = game()
+    const [rec] = masterCandidates('rhineburg', 3)
+    startAsSlave(slave, { master: { type: 'candidate', rec: rec! }, mark: 'labor' })
+    forceEquip(slave, baseReport(slave, 'event', 0), rec!.id, '腕鐐')
+    const q2 = buildActionPrompt(slave, prepareAction(slave, { kind: 'free', text: '試試看' }), '')
+    expect(q2.system + q2.user).toMatch(/腕鐐（手腕・主人強制戴上/)
   })
 
   it('主人鎖上的不能剪', () => {

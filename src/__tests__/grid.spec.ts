@@ -4,6 +4,7 @@ import {
   afterCombat, ascend, canTravelHere, cellAt, crossLink, currentArea, currentCell, descend, enterLocation, getArea,
   goOutskirts, isRevealed, move, moveTo, position, questRunnableHere, returnToTown, type Area,
 } from '@/engine/grid'
+import { isMaterialQuest } from '@/engine/materialQuests'
 import { longRest } from '@/engine/rest'
 import { newGame } from '@/engine/state'
 import { acceptQuest, guildQuests } from '@/engine/town'
@@ -141,11 +142,11 @@ describe('outskirts', () => {
 
   it('places markers for accepted outskirts quests', () => {
     const state = game(5)
-    let quest = guildQuests(state).find((q) => q.area === 'outskirts')
+    let quest = guildQuests(state).find((q) => q.area === 'outskirts' && !isMaterialQuest(q))
     for (let d = 2; !quest && d < 30; d++) {
       state.quests = []
       state.time.day = d
-      quest = guildQuests(state).find((q) => q.area === 'outskirts')
+      quest = guildQuests(state).find((q) => q.area === 'outskirts' && !isMaterialQuest(q))
     }
     acceptQuest(state, quest!.id)
     goOutskirts(state)

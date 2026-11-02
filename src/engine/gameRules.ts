@@ -43,6 +43,7 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   eventDc: { label: '事件檢定的難度', hint: '地下城事件與寄生物發作的檢定 DC 加減（這兩種事件的 DC 本來就依層、主角等級與侵蝕度的階段調整）。負數比較容易。成人向內容。', default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
   lustMult: { label: '慾望戰鬥', hint: '戰鬥中所有慾望增加的倍率（慾望攻擊、媚毒、自己增加的慾望……）。慾望滿了會高潮：我方停止行動一回合、失去三分之一的生命（不會因此死亡，一場高潮三次倒下）；敵方受到三分之一生命的傷害。0 表示關閉：沒有慾望條，色情技能不能用，敵人也不用慾望攻擊。成人向內容。', default: 1, min: 0, max: 2, step: 0.25, unit: '倍', zero: '關閉' },
   skillLoadout: { label: '技能攜帶上限', hint: '每個角色戰鬥時最多帶幾個技能與法術（戲法不算）。學會的能力都留在技能庫，在角色詳情的「能力」頁勾選要帶哪些，戰鬥以外隨時可以換；超過上限時先帶最近學會的。0 表示不限，全部帶上。', default: 12, min: 0, max: 30, step: 1, unit: '個', zero: '不限' },
+  gatherMult: { label: '採集量', hint: '近郊、地下城與特殊地圖的採集點，每一格採到幾份材料（小數的部分是機率，例如 1.5 是一半的機會多 1 份）。古錢的金額不受影響（看「報酬與戰利品的錢」）。', default: 2, min: 1, max: 5, step: 0.5, unit: '份' },
   escapeDc: { label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
 }
 

@@ -58,7 +58,13 @@ function resetService() {
       </label>
       <label>服務網址 <input v-model="cfg.baseURL" /></label>
       <ComfySettings v-if="image.service === 'comfyui'" />
-      <label v-else>模型 <input v-model="cfg.model" /></label>
+      <label v-else>模型 <input v-model="cfg.model" :list="image.service === 'novelai' ? 'nai-models' : undefined" /></label>
+      <datalist id="nai-models">
+        <option value="nai-diffusion-4-5-full" />
+        <option value="nai-diffusion-4-5-curated" />
+        <option value="nai-diffusion-5-full" />
+        <option value="nai-diffusion-5-curated" />
+      </datalist>
       <div v-if="image.service !== 'comfyui'" class="grid">
         <label>尺寸
           <select v-model="sizeKey">
@@ -125,10 +131,27 @@ function resetService() {
       </fieldset>
 
       <fieldset class="pre">
+        <legend class="small"><GameIcon name="user" :size="16" />形象插圖</legend>
+        <label class="check">
+          <input v-model="image.portraitAuto" type="checkbox" /> 第一次和 NPC 產生關係時自動畫他的形象圖
+          <Hint warn :width="320" text="人際關係裡第一次出現這個人時（認識、雇用、入隊、AI 判定認識了新的人，交易的店主、俘虜也算……）畫一張形象圖，每個人只畫這一次；已經有形象圖（內建的或畫過的）就不畫。一次認識好幾個人時一張一張排隊畫。每一張都要花錢（選了預處理時另外花 token）；生圖服務沒設定好時不畫。開啟之前就認識的人不會補畫（在人際關係或角色詳情手動按「生成形象圖」）。" />
+        </label>
+        <p v-if="image.portraitAuto && !image.ready()" class="small warn-text">{{ info.name }} 還沒設定好：不會自動畫。</p>
+      </fieldset>
+
+      <fieldset class="pre">
         <legend class="small">
           <GameIcon name="notebook" :size="16" />日誌插圖
-          <Hint text="冒險日誌每則的「⋯」→「生成插圖」：先用「插圖提示詞預處理」的模型來源把日誌整理成分鏡（誰在畫面上、站在哪、在做什麼），再照上面選的生圖服務與預處理的寫法出圖，掛在那則日誌下面。NovelAI 的 V4 模型可以分開描述每個人與位置；ChatGPT 會把登場角色的形象圖當參考圖；ComfyUI 接成一段提示詞，三人以上容易混在一起。" />
+          <Hint text="冒險日誌每則底下的插圖按鈕（或下面的自動生成）：先用「插圖提示詞預處理」的模型來源把日誌整理成分鏡（誰在畫面上、站在哪、在做什麼），再照上面選的生圖服務與預處理的寫法出圖，掛在那則日誌下面。NovelAI 的 V4 模型可以分開描述每個人與位置；ChatGPT 會把登場角色的形象圖當參考圖；ComfyUI 接成一段提示詞，三人以上容易混在一起。" />
         </legend>
+        <label>
+          <span>自動生成 <Hint warn :width="320" text="每一張圖都要花錢：先用「插圖提示詞預處理」的模型整理分鏡（花 token），再送一次生圖（ChatGPT、NovelAI 依張數計費）。只在正文第一次寫完時畫；沒有正文的日誌不畫，重寫經過也不會重畫（要重畫按日誌底下的插圖按鈕）。生圖服務或預處理的模型來源沒設定好時不會自動畫。" /></span>
+          <select v-model="image.sceneAuto">
+            <option value="off">關閉</option>
+            <option value="adult">只畫成人場景</option>
+            <option value="all">每一則（有正文的日誌）</option>
+          </select>
+        </label>
         <label>成人場景改用
           <select v-model="image.sceneAdultService">
             <option value="">和一般場景一樣（{{ info.name }}）</option>
@@ -138,6 +161,7 @@ function resetService() {
         <p class="small muted">
           ChatGPT 不畫成人內容；日誌是成人場景（帶親密場景）時改用這裡選的服務（要先切到那個服務填好 key 與網址）。
           <span v-if="image.sceneAdultService && !image.ready(image.sceneAdultService)" class="warn-text">{{ imageServiceInfo(image.sceneAdultService).name }} 還沒設定好。</span>
+          <span v-else-if="image.sceneAuto !== 'off' && image.sceneService(true) === 'openai'" class="warn-text">成人場景不會自動畫：要先在這裡指定 NovelAI 或 ComfyUI。</span>
         </p>
       </fieldset>
 

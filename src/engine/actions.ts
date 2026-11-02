@@ -37,6 +37,7 @@ import { currentArea } from './grid'
 import { memberOrResident } from './homes'
 import type { AdultScene } from './content'
 import { applyDefeatResponse } from './defeat'
+import { rumorFrom } from './intel'
 import { applyStoryCheck, refreshStoryMarkers } from './story'
 import { applyPendingMove } from './road'
 import { gearRules, sanitizeGearSpec, shiftRarity } from './gear'
@@ -116,8 +117,14 @@ export interface Judgment {
   summary?: string
   /** AI 直接寫出的結果經過（作為報告的敘事） */
   narrative?: string
+  /** 打聽、詢問得到的具體內容（寫手要讓角色把它說出來） */
+  findings?: string
   /** AI 認為這次的經過包含親密場景：場景是什麼 */
   adult_scene?: string
+  /** AI 判為日常小事（只有 actions.json 標了 trivial 的行動）：結果至少是成功 */
+  trivial?: boolean
+  /** AI 依經過填的花費時間（小時，只有標了 hours_range 的行動），已夾在範圍內 */
+  hours?: number
   effects: RewardEffect[]
   relationship_updates: RelationshipUpdate[]
   /** 被程式截掉的數值（AI 提議的超過上限）：交給寫手，敘事照實際結算的數字寫 */
@@ -241,7 +248,7 @@ type JudgedEffect = RewardEffect['type'] | 'join'
 const EFFECT_OF: Partial<Record<JudgedEffect, EffectKind>> = {
   join: 'join', affinity: 'affinity', relationship_text: 'relationship_text', flag: 'flag', reputation: 'reputation',
   money: 'money', item: 'item', xp: 'xp', meet: 'meet', ability: 'ability', hp: 'hp', mark: 'mark',
-  free: 'release', change_master: 'change_master', gear: 'gear', lewd: 'lewd',
+  free: 'release', change_master: 'change_master', gear: 'gear', lewd: 'lewd', rumor: 'rumor',
 }
 
 /**
@@ -256,11 +263,18 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   const attr = (ATTR_IDS as string[]).includes(String(r.attr)) ? (r.attr as AttrId) : p.attr
   const dcRaw = num(r.dc)
   const dc = Number.isNaN(dcRaw) ? p.base_dc : clamp(Math.round(dcRaw), p.base_dc - adj, p.base_dc + adj)
+  const kindDef = actionRules.kinds[p.kind]
+  // 日常小事：結果至少是成功（骰值只決定過程順不順），效果的門檻也照成功看
+  const trivial = !!kindDef.trivial && r.difficulty === 'trivial'
   // AI 沒寫（或寫錯）成功程度時，用骰值對 DC 算出的參考結果（和結算時一樣），效果的門檻也照這個看
-  const degree = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
+  const judged = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
     ? (r.degree as Degree)
     : computeDegree(p.natural, p.natural + p.modifiers[attr] + situationalTotal(p), dc)
-  const allowed = new Set(actionRules.kinds[p.kind].effects)
+  const degree: Degree = trivial && judged !== 'critical' ? 'success' : judged
+  const hoursRaw = num(r.hours)
+  const range = kindDef.hours_range
+  const hours = range && !Number.isNaN(hoursRaw) ? Math.round(clamp(hoursRaw, range[0], range[1]) * 4) / 4 : undefined
+  const allowed = new Set(kindDef.effects)
   const pc = pcOf(state)
   const known = (id: string) => !!state.relationships?.[id]
   const effects: RewardEffect[] = []
@@ -274,6 +288,9 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   // 同一樣物品這次已經給出去、拿到的數量（AI 可能分兩筆寫同一樣東西）
   const given = new Map<string, number>()
   const got = new Map<string, number>()
+  // 這次有付錢（money 為負）：當成買來的東西，同一種可以拿到 item_qty_bought 個（白拿的照 item_qty）
+  const paying = (Array.isArray(r.effects) ? r.effects : []).some((e) => !!e && typeof e === 'object' && (e as Record<string, unknown>).type === 'money' && num((e as Record<string, unknown>).amount) < 0)
+  const itemQty = paying ? Math.max(caps.item_qty, caps.item_qty_bought ?? caps.item_qty) : caps.item_qty
   for (const e of Array.isArray(r.effects) ? r.effects : []) {
     if (!e || typeof e !== 'object') continue
     const x = e as Record<string, unknown>
@@ -346,7 +363,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         }
         let n: number
         if (q > 0) {
-          n = Math.min(q, Math.max(0, caps.item_qty - (got.get(name) ?? 0)))
+          n = Math.min(q, Math.max(0, itemQty - (got.get(name) ?? 0)))
           if (n < q) adjusted.push(`${name}只得到 ${n} 個（提議的 ${q} 個超過上限）`)
         } else {
           const have = (state.inventory.find((i) => i.name === name)?.qty ?? 0) - (given.get(name) ?? 0)
@@ -373,7 +390,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
       }
       case 'lewd': {
         // 慾望指標：每人每項一次，±caps.lewd；只在可能進入親密場景的行動
-        const target = String(x.target ?? 'pc')
+        // 隊友的戰敗事件：沒寫對象時是被圍住的那位隊友
+        const target = String(x.target ?? (p.kind === 'defeat_event' && p.actor ? p.actor : 'pc'))
         const who = target === 'pc' ? pc : state.party.find((m) => m.id === target)
         const stat = String(x.stat ?? '') as LewdKey
         const delta = num(x.delta)
@@ -452,6 +470,14 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
         effects.push({ type: 'meet', npc, spot: 'inn', ...(affinity ? { affinity } : {}), ...(str(x.to_player, caps.relationship_text_chars) ? { to_player: str(x.to_player, caps.relationship_text_chars)! } : {}) })
         break
       }
+      case 'rumor': {
+        // 每次最多一則；地點與怪物由程式驗證（intel.ts 的 rumorFrom）
+        if (effects.some((y) => y.type === 'rumor')) break
+        const informant = p.target ? npcRecord(state, p.target)?.name : undefined
+        const rumor = rumorFrom(state, x, degree, informant)
+        if (rumor) effects.push(rumor)
+        break
+      }
       case 'join':
         // 入隊在其他效果之後檢查（同一次判定的親密度變化要算進去）
         joinAsk ??= x
@@ -477,8 +503,11 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
     degree,
     ...(clipText(r.summary, caps.summary_chars) ? { summary: clipText(r.summary, caps.summary_chars) } : {}),
     ...(clipText(r.twist, 120) ? { twist: clipText(r.twist, 120) } : {}),
+    ...(clipText(r.findings, caps.findings_chars) ? { findings: clipText(r.findings, caps.findings_chars) } : {}),
     ...(clipText(r.narrative, caps.narrative_chars) ? { narrative: clipText(r.narrative, caps.narrative_chars) } : {}),
     ...(clipText(r.adult_scene, 40) ? { adult_scene: clipText(r.adult_scene, 40) } : {}),
+    ...(trivial ? { trivial } : {}),
+    ...(hours !== undefined ? { hours } : {}),
     ...(p.kind === 'invent' && r.invention && typeof r.invention === 'object' ? { invention: r.invention as Record<string, unknown> } : {}),
     ...(p.kind === 'perk_pitch' && r.perk && typeof r.perk === 'object' ? { perk: r.perk as Record<string, unknown> } : {}),
     effects,
@@ -543,7 +572,8 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
     party: state.party.map((m) => snapshot(m, undefined, pc)),
     outcome: { result: 'neutral' },
     changes: {},
-    narration: { pov: 'second_person', length: 'short', ...(p.text ? { player_intent: p.text } : {}) },
+    // 自由行動是玩家自己描述的事，預設寫中等篇幅
+    narration: { pov: 'second_person', length: p.kind === 'free' ? 'medium' : 'short', ...(p.text ? { player_intent: p.text } : {}) },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
 }
@@ -562,13 +592,16 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const degree = judgment?.degree ?? reference
   delete state.pendingAction
 
-  const report = actionReport(state, p, p.hours ?? kind.hours)
+  const report = actionReport(state, p, judgment?.hours ?? p.hours ?? kind.hours)
   const check: CheckInfo = {
     action: kind.name, attr, base_dc: p.base_dc, dc, natural: p.natural, modifier, ...(p.situational.length ? { situational: p.situational } : {}), total, degree,
-    ...(degree !== reference ? { reference_degree: reference } : {}),
+    ...(judgment?.trivial ? { trivial: true } : {}),
+    // 日常小事的骰值只決定過程順不順，不算「和骰值不同」
+    ...(degree !== reference && !judgment?.trivial ? { reference_degree: reference } : {}),
     source: judgment ? 'ai' : 'rules',
     ...(judgment?.rationale ? { rationale: judgment.rationale } : {}),
     ...(judgment?.twist ? { twist: judgment.twist } : {}),
+    ...(judgment?.findings ? { findings: judgment.findings } : {}),
   }
   report.check = check
   if (p.spent?.length) report.changes.resources = [...p.spent]
@@ -592,7 +625,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const others = targets.map((id) => state.relationships?.[id]).filter((rel) => !!rel && !report.party.some((x) => x.id === rel.id))
   if (others.length) report.others = others.map((rel) => ({ id: rel!.id, name: rel!.name }))
   report.timeline = [{
-    seq: 1, time: report.time.start, actor: 'pc', action: `${kind.name}（${attrName(attr)}${p.rolls ? `・優勢 ${p.rolls.join('、')}` : ''}）`,
+    seq: 1, time: report.time.start, actor: p.actor ?? 'pc', action: `${kind.name}（${attrName(attr)}${p.rolls ? `・優勢 ${p.rolls.join('、')}` : ''}）`,
     ...(p.target && !p.target.includes(':') ? { target: p.target } : {}),
     roll: { dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc },
     result: degree === 'fail' ? 'fail' : degree,
@@ -626,7 +659,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   report.outcome = {
     result: success ? 'success' : degree === 'partial' ? 'neutral' : 'failure',
     summary: [lead, mechanical, judgment?.summary ?? '', ...notes].filter(Boolean).join(''),
-    tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.twist ? ['出乎預料'] : [])],
+    tags: [kind.name, DEGREE_NAME[degree], ...(judgment?.trivial ? ['日常小事'] : []), ...(judgment?.twist ? ['出乎預料'] : [])],
   }
   const committed = commitReport(state, report)
   // 特殊任務的判定：解鎖或結束的任務點，更新地圖上的 ⭐

@@ -8,7 +8,7 @@
 
 import { maybeDungeonEvent } from './dungeonEvents'
 import { maybeParasiteEvent } from './parasiteEvents'
-import { checkBonus } from './perks'
+import { checkBonus, perksOf } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
 import { abilities, classDef, companionRules, homeRules, lewdRules, locationById, regionById, slaveryRules, specialMaps, wildEncounters, type DungeonLayerId } from './data'
@@ -93,12 +93,13 @@ export function waitText(minutes: number): string {
   return [h ? `${h} 小時` : '', m ? `${m} 分` : ''].filter(Boolean).join(' ') || '0 分'
 }
 
-/** 擋住休息（短休、長休）的事件：對峙、刻印、主人的要求、戰敗事件；沒有時回傳 null */
+/** 擋住休息（短休、長休）的事件：對峙、刻印、主人的要求、旅途與城鎮的選擇、戰敗事件；沒有時回傳 null */
 export function restEventBlock(state: GameState): string | null {
   if (state.standoff) return '先處理眼前的對峙'
   if (state.pendingMark) return '先完成契約印記的刻印'
   if (state.pendingMasterEvent) return '先回應主人的要求'
   if (state.dungeonEvent || state.parasiteEvent) return '先應付眼前的處境'
+  if (state.townEvent || state.roadEvent) return '先決定怎麼應付眼前的事'
   if (state.pendingDefeat) return '先應付眼前的處境'
   if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
   if (state.pendingJoins?.length) return '先決定要不要讓想入隊的人加入（騰出位子或放棄）'
@@ -107,12 +108,29 @@ export function restEventBlock(state: GameState): string | null {
   return null
 }
 
+/** 可以紮營長休的地方：近郊的野外、旅途的道路、旅途中的臨時地圖（城裡有旅店，地下城有安全房） */
+export const CAMP_AREAS = ['wild', 'road', 'side'] as const
+
+/** 隊伍裡有人會在野外紮營（特質的 camp，例如【星夜露宿】） */
+export function partyCamps(state: GameState): boolean {
+  return state.party.some((m) => perksOf(m).some((p) => p.camp))
+}
+
+/** 這裡能不能紮營長休（不看長休的間隔）：在野外或旅途上、隊伍裡有人會紮營 */
+export function canCampHere(state: GameState): boolean {
+  return (CAMP_AREAS as readonly string[]).includes(currentArea(state).kind) && partyCamps(state)
+}
+
 /** 不能長休的原因；可以時回傳 null */
 export function longRestBlocked(state: GameState, place: RestPlace): string | null {
   if (state.combat) return '戰鬥中'
   const event = restEventBlock(state)
   if (event) return event
   const cell = currentCell(state)
+  if (place === 'camp') {
+    if (!(CAMP_AREAS as readonly string[]).includes(currentArea(state).kind)) return '要在城外的野外或旅途上才能紮營'
+    if (!partyCamps(state)) return '隊伍裡要有人懂得在野外紮營（特質【星夜露宿】）'
+  }
   if (place === 'home') {
     const home = homeOfArea(state, currentArea(state))
     if (!home) return '要在自己的房子裡'
@@ -157,6 +175,13 @@ export function ambushChance(state: GameState): number {
   return area.kind !== 'settlement' && area.kind !== 'home' && bestTool(state, 'camp') ? base / 2 : base
 }
 
+/** 休息時襲擊的怪：地下城與洞窟類的臨時地圖用那一層的遭遇，其他用這個地區的野外遭遇 */
+function ambushGroup(state: GameState) {
+  const area = currentArea(state)
+  const layer = area.layer !== undefined ? (DUNGEON_LAYERS[area.layer]?.id as DungeonLayerId) : undefined
+  return withRng(state, (rng) => (layer ? encounterFor(state.location, rng, layer) : rng.pick(wildEncounters(locationById(state.location).region))))
+}
+
 /** 自動決定要花幾顆生命骰：還差半顆骰以上的傷就繼續花 */
 export function autoHitDice(c: Character): number {
   const avg = Math.floor(hitDie(c) / 2) + 1 + hitDieBonus(c)
@@ -179,11 +204,7 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
   if (event) throw new Error(event)
   const area = currentArea(state)
   const ambushed = withRng(state, (rng) => rng.chance(ambushChance(state)))
-  if (ambushed) {
-    const layer = area.layer !== undefined ? (DUNGEON_LAYERS[area.layer]?.id as DungeonLayerId) : undefined
-    const group = withRng(state, (rng) => (layer ? encounterFor(state.location, rng, layer) : rng.pick(wildEncounters(locationById(state.location).region))))
-    return startCombat(state, group, { scene: `${area.name}（短休時遭到襲擊）`, intent: '短休時遭到襲擊' })
-  }
+  if (ambushed) return startCombat(state, ambushGroup(state), { scene: `${area.name}（短休時遭到襲擊）`, intent: '短休時遭到襲擊' })
   const report = restReport(state, gameRule(state, 'shortRestHours'), `${area.name}・短休`)
   const lines: string[] = []
   withRng(state, (rng) => {
@@ -209,8 +230,25 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
 }
 
 /** 長休：旅店（付費，到隔天早上）或安全房（每人 1 份乾糧，8 小時）。 */
-/** 長休的地方：旅店、地下城的安全房、自己的房子（要有床） */
-export type RestPlace = 'inn' | 'safe' | 'home' | 'slave_room'
+/** 長休的地方：旅店、地下城的安全房、自己的房子（要有床）、奴房、野外紮營（要有會紮營的人，經過 campRest） */
+export type RestPlace = 'inn' | 'safe' | 'home' | 'slave_room' | 'camp'
+
+/**
+ * 在野外紮營長休：每人 1 份乾糧，照這裡的機率可能被襲擊（帶帳篷減半）。
+ * 被襲擊就開始戰鬥、這次沒睡成（乾糧不扣）；沒事就長休 longRestHours 小時。
+ */
+export function campRest(state: GameState): Report | CombatState {
+  const blocked = longRestBlocked(state, 'camp')
+  if (blocked) throw new Error(blocked)
+  const need = state.party.length
+  if ((state.inventory.find((i) => i.name === '乾糧')?.qty ?? 0) < need) throw new Error(`需要 ${need} 份乾糧`)
+  const area = currentArea(state)
+  if (withRng(state, (rng) => rng.chance(ambushChance(state)))) {
+    // 洞窟、遺跡類的臨時地圖：和短休一樣用那張地圖對應的地下城層
+    return startCombat(state, ambushGroup(state), { scene: `${area.name}（紮營時遭到襲擊）`, intent: '紮營過夜時遭到襲擊' })
+  }
+  return longRest(state, 'camp')
+}
 
 export function longRest(state: GameState, place: RestPlace): Report {
   const blocked = longRestBlocked(state, place)
@@ -232,11 +270,13 @@ export function longRest(state: GameState, place: RestPlace): Report {
     hours = Math.max(hours, (24 - state.time.hour + 8) % 24 || 24)
     scene = home.master ? `主人的家「${home.name}」` : `自己的房子「${home.name}」`
   } else {
+    // 安全房與野外紮營：每人 1 份乾糧
     const need = state.party.length
     const have = state.inventory.find((i) => i.name === '乾糧')?.qty ?? 0
     if (have < need) throw new Error(`需要 ${need} 份乾糧`)
     report.changes.items_lost = [{ name: '乾糧', qty: need }]
-    currentCell(state).done = true
+    if (place === 'safe') currentCell(state).done = true
+    else scene = `${area.name}的營地`
     costText = `，消耗乾糧 ${need} 份`
   }
   report.time.end = addHours(report.time.start, hours)
@@ -267,7 +307,7 @@ export function longRest(state: GameState, place: RestPlace): Report {
   report.outcome = {
     result: 'success',
     summary: [place === 'slave_room' ? `大家在${scene}過了一夜${costText}。` : `在${scene}好好睡了一覺${costText}。`, ...(rested ? ['家裡佈置得很舒服，大家都睡得很香甜。'] : []), ...room, ...checks].join(''),
-    tags: ['長休', ...(place === 'safe' ? ['安全房'] : place === 'home' ? ['在家'] : place === 'slave_room' ? ['奴房'] : [])],
+    tags: ['長休', ...(place === 'safe' ? ['安全房'] : place === 'home' ? ['在家'] : place === 'slave_room' ? ['奴房'] : place === 'camp' ? ['紮營'] : [])],
   }
   const committed = commitReport(state, report)
   // 安全房醒來之前：夜襲、淫夢（地下城事件）

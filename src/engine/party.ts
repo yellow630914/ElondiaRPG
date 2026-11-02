@@ -206,11 +206,13 @@ export function conditionModifiers(c: Character, attr?: AttrId): { label: string
  * 同一組（用餐）只留 rank 最高的；已經有了再獲得一次會變成 stacks_to（喝酒 → 微醺）；replaces 會拿掉的狀態。
  * 回傳實際得到的狀態（沒有變化時為 undefined）。
  */
-export function gainCondition(c: Character, id: string, report?: Report): string | undefined {
+export function gainCondition(c: Character, id: string, report?: Report, seen = new Set<string>()): string | undefined {
   const def = companionRules.conditions[id]
-  if (!def) return undefined
+  // seen：自訂內容把 stacks_to 接成一圈時不要無限遞迴
+  if (!def || seen.has(id)) return undefined
+  seen.add(id)
   if (def.stacks_to && (c.status.includes(id) || c.status.includes(def.stacks_to))) {
-    return id === def.stacks_to ? undefined : gainCondition(c, def.stacks_to, report)
+    return id === def.stacks_to ? undefined : gainCondition(c, def.stacks_to, report, seen)
   }
   if (c.status.includes(id)) return undefined
   if (def.group) {

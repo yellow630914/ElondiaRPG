@@ -7,6 +7,7 @@ import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import { counterValue } from '@/engine/storyFlags'
 import Hint from '../ui/Hint.vue'
+import HelpText from './HelpText.vue'
 
 // 劇情計數器：任務與事件的結果加減、條件要求範圍（說明見 docs/STORY_QUESTS.md 第 1.1 節）
 const content = useContent()
@@ -15,39 +16,45 @@ const msg = ref('')
 const newId = ref('')
 
 interface Row { id: string; draft: CounterMod; builtin: boolean; edited: boolean }
-const rows = ref<Row[]>([])
-function load() {
-  void content.version
-  rows.value = Object.entries(storyCounters).map(([id, c]) => ({
+function rowOf(id: string): Row {
+  return {
     id,
-    draft: { ...c },
+    draft: { ...storyCounters[id]! },
     builtin: !!builtinCounter(id),
     edited: !!content.mods.counters?.[id] && !content.mods.counters[id]!.custom,
-  }))
+  }
 }
-load()
+const rows = ref<Row[]>(Object.keys(storyCounters).map(rowOf))
 const usage = computed(() => {
   void content.version
   return Object.fromEntries(rows.value.map((r) => [r.id, counterUsage(r.id)]))
 })
 
-function run(fn: () => void, ok: string) {
+/** 只重新載入這一列（其他列還沒存的修改留著）；計數器不在了就拿掉這一列 */
+function reload(id: string) {
+  const i = rows.value.findIndex((r) => r.id === id)
+  if (!storyCounters[id]) {
+    if (i >= 0) rows.value.splice(i, 1)
+  } else if (i >= 0) rows.value[i] = rowOf(id)
+  else rows.value.push(rowOf(id))
+}
+function run(id: string, fn: () => void, ok: string) {
   try {
     fn()
     msg.value = ok
-    load()
+    reload(id)
   } catch (e) {
     msg.value = (e as Error).message
   }
 }
 function save(r: Row) {
-  run(() => content.saveCounter(r.id, r.draft), `已儲存「${r.draft.name}」`)
+  run(r.id, () => content.saveCounter(r.id, r.draft), `已儲存「${r.draft.name}」`)
 }
 function restore(r: Row) {
-  run(() => content.restoreCounter(r.id), `已恢復「${r.draft.name}」的預設`)
+  run(r.id, () => content.restoreCounter(r.id), `已恢復「${r.draft.name}」的預設`)
 }
 function remove(r: Row) {
-  run(() => content.deleteCounter(r.id), `已刪除「${r.draft.name}」`)
+  run(r.id, () => content.deleteCounter(r.id), `已刪除「${r.draft.name}」`)
 }
 function create() {
   const id = cleanCounterId(newId.value)
@@ -59,7 +66,7 @@ function create() {
     msg.value = '已經有這個 id 的計數器了'
     return
   }
-  run(() => content.saveCounter(id, newCounter()), `已新增計數器 ${id}`)
+  run(id, () => content.saveCounter(id, newCounter()), `已新增計數器 ${id}`)
   newId.value = ''
 }
 const num = (s: string): number | undefined => (s.trim() === '' || !Number.isFinite(Number(s)) ? undefined : Math.round(Number(s)))
@@ -68,10 +75,8 @@ const num = (s: string): number | undefined => (s.trim() === '' || !Number.isFin
 <template>
   <div class="editor">
     <h3>🔢 劇情計數器</h3>
-    <p class="small muted">
-      特殊任務、旅途與城鎮事件的結果可以加減計數器，任務的接取條件、任務點、選項、固定 NPC 的出現與事件的條件可以要求計數器在某個範圍內。
-      例如人類方的政治故事線各自讓「人類世界的走向」主和 +1、主戰 -1，最後的史詩線看它是正是負決定走和平或開戰。
-    </p>
+    <HelpText text="特殊任務、旅途與城鎮事件的結果可以加減計數器，任務的接取條件、任務點、選項、固定 NPC 的出現與事件的條件可以要求計數器在某個範圍內。
+      例如人類方的政治故事線各自讓「人類世界的走向」主和 +1、主戰 -1，最後的史詩線看它是正是負決定走和平或開戰。" />
     <div v-for="r in rows" :key="r.id" class="stage">
       <div class="row">
         <b>{{ r.draft.name }}</b> <code class="small muted">{{ r.id }}</code>

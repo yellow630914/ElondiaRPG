@@ -13,6 +13,11 @@ import { parasiteRules } from './parasites'
 import { travelEvents } from './road'
 import { notForSale } from './trade'
 
+/** 城鎮委託的標題裡的 {town}、{landmark} 是接委託時才填的：說明裡換成一般的說法 */
+function questTitle(t: string): string {
+  return t.replaceAll('{town}', '某座城').replaceAll('{landmark}', '某個地標')
+}
+
 export type SourceKind = 'item' | 'perk' | 'status' | 'enemy'
 
 type Index = Record<SourceKind, Map<string, string[]>>
@@ -91,7 +96,7 @@ function build(): Index {
     for (const e of masterEventPool(pool)) scanEffects(e.options, `${name}「${e.id}」`)
   }
   scanEffects(lewdRules.brothel.train.review, '娼館受訓的結業')
-  for (const t of Object.values(townQuestTemplates)) scanEffects(t.rewards, `城鎮委託「${t.title}」的報酬`)
+  for (const t of Object.values(townQuestTemplates)) scanEffects(t.rewards, `城鎮委託「${questTitle(t.title)}」的報酬`)
 
   // ---- 物品 ----
   const shopTypes = Object.values(shopRules.types)
@@ -197,8 +202,13 @@ function build(): Index {
   }
   for (const s of stories) for (const n of s.nodes) for (const e of groupIds(n.enemies)) add('enemy', e, `特殊任務「${s.title}」`)
   for (const r of Object.values(arena.rings)) for (const g of r.tiers) for (const e of groupIds(g)) add('enemy', e, `淫鬥場「${r.name}」`)
-  for (const t of Object.values(townQuestTemplates)) for (const e of groupIds(t.encounter)) add('enemy', e, `城鎮委託「${t.title}」`)
+  for (const t of Object.values(townQuestTemplates)) for (const e of groupIds(t.encounter)) add('enemy', e, `城鎮委託「${questTitle(t.title)}」`)
   for (const [layer, e] of Object.entries(lewdRules.park.mimics)) add('enemy', e, `緋夢樂園的擬態寶箱（第 ${layer} 層）`)
+  // 個別園區自己的擬態寶箱（禁斷花園、悅樂宮……）
+  for (const [loc, byLayer] of Object.entries(lewdRules.park.mimics_at ?? {})) {
+    const place = geography.locations.find((l) => l.id === loc)?.name ?? loc
+    for (const [layer, e] of Object.entries(byLayer)) add('enemy', e, `${place}的擬態寶箱（第 ${layer} 層）`)
+  }
 
   for (const [id, heads] of grouped) {
     const [kind, key] = id.split('\u0000') as [SourceKind, string]

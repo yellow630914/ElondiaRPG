@@ -18,6 +18,8 @@ import Hint from '../ui/Hint.vue'
 import ContentIcon from '../icons/ContentIcon.vue'
 import { perkRarity } from '../icons/perkArt'
 import { RARITY_ORDER, rarityName } from '@/engine/gear'
+import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
 
 // 特質的編輯表單：效果（檢定加值、戰鬥修正、抗性、增傷）、條件、互斥、訓練、NPC 的權重。
 // 種族特質只能改名稱、描述與效果（依種族自動擁有）。抗性可以是弱點；勾了「缺陷」的特質才能有負的檢定加值與戰鬥修正。
@@ -42,6 +44,10 @@ const draft = ref<PerkMod>(current())
 function setCategory(c: string) {
   if (c) draft.value.category = c
   else delete draft.value.category
+}
+function setCamp(on: boolean) {
+  if (on) draft.value.camp = true
+  else delete draft.value.camp
 }
 
 function setRarity(r: string) {
@@ -203,20 +209,12 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="race" class="tag">種族</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button
-        v-else class="small danger" :disabled="usage.length > 0"
-        :title="usage.length ? '還有地方用到這個特質，不能刪除' : ''" @click="remove"
-      >刪除</button>
-    </div>
+    <EditorHeader
+      :title="draft.name || '（未命名）'" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="discard" @restore="restore" @remove="remove"
+    >
+      <template #tags><span v-if="race" class="tag">種族</span></template>
+    </EditorHeader>
     <p class="small muted">id：{{ id }}・強度約 {{ perkPower(draft) }}</p>
     <p v-if="race" class="small muted">
       種族特質：{{ attributeRules.races[draft.race!]?.name }}的角色自動擁有（不寫進存檔），不能選、受訓或從書裡學，也不會失去；可以改名稱、描述與效果。
@@ -224,11 +222,12 @@ function remove() {
     <UsageNote :usage="usage" :deletable="!builtin" />
     <SourceNote kind="perk" :id="id" />
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="perkRules.custom.name_chars" /></label>
         <label v-if="!race" class="check"><input v-model="draft.flaw" type="checkbox" /> 缺陷 <Hint text="負的效果；不會出現在學特質的機會裡，事件直接給，受訓是克服它。" /></label>
+        <label class="check"><input :checked="!!draft.camp" type="checkbox" @change="setCamp(($event.target as HTMLInputElement).checked)" /> 能在野外紮營長休 <Hint text="隊伍裡有一個人有這個特質，就能在近郊的野外、旅途的道路與臨時地圖長休：每人 1 份乾糧，照那裡的機率可能被襲擊（帶帳篷減半）。效果可以留空。" /></label>
       </div>
       <label class="block"><span>描述 <Hint :text="`玩家與 AI 看到的；空白時依效果產生：${auto}`" /></span><textarea v-model="draft.desc" rows="2" :maxlength="perkRules.custom.desc_chars" /></label>
       <div class="grid">
@@ -252,10 +251,10 @@ function remove() {
           <span class="small muted">{{ draft.flaw ? '缺陷：裂開的徽章、向下的箭紋' : '徽章、向上的箭紋' }}，箭紋依強度（{{ perkPower(draft) }}），顏色依稀有度；暫時不能上傳。</span>
         </div>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>效果（最多 {{ limits.effects }} 個）</legend>
+    <FoldSet>
+      <template #legend>效果（最多 {{ limits.effects }} 個）</template>
       <p class="small muted">
         檢定加值 {{ limits.check_bonus[0] }}～{{ limits.check_bonus[1] }}、戰鬥修正 {{ limits.combat[0] }}～{{ limits.combat[1] }}（仇恨倍率 {{ limits.threat![0] }}～{{ limits.threat![1] }}）、
         抗性 {{ limits.resist[0] }}～+{{ limits.resist[1] }}（正的是弱點，可以用來平衡強項）、增傷 {{ limits.offense![0] }}～{{ limits.offense![1] }}。{{ draft.flaw ? '缺陷可以有負的檢定加值與戰鬥修正。' : '負的檢定加值與戰鬥修正要勾「缺陷」。' }}
@@ -264,7 +263,7 @@ function remove() {
         <div class="row">
           <b class="small">{{ { check: '檢定加值', combat: '戰鬥修正', resist: '抗性（受到的傷害倍率）', offense: '增傷（造成的傷害倍率）' }[kindOf(e)] }}</b>
           <span class="spacer" />
-          <button class="small" @click="draft.effects.splice(i, 1)">移除</button>
+          <button class="small" @click="draft.effects.splice(i, 1)" title="移除">✕</button>
         </div>
         <template v-if="'check' in e">
           <label class="small">加值 <input v-model.number="e.bonus" type="number" :min="limits.check_bonus[0]" :max="limits.check_bonus[1]" class="num" /></label>
@@ -297,7 +296,7 @@ function remove() {
             </select>
             倍率 {{ v >= 0 ? '+' : '' }}{{ v }}（×{{ 1 + v }}）
             <input type="number" step="0.25" :value="v" class="num" @input="setAffinity('resist' in e ? e.resist : e.offense, k, k, Number(($event.target as HTMLInputElement).value))" />
-            <button class="small" @click="delete ('resist' in e ? e.resist : e.offense)[k]">×</button>
+            <button class="small" @click="delete ('resist' in e ? e.resist : e.offense)[k]" title="移除">✕</button>
           </div>
           <button class="small" @click="setAffinity('resist' in e ? e.resist : e.offense, '', dmgTypes.find(([id]) => !(id in ('resist' in e ? e.resist : e.offense)))?.[0] ?? dmgTypes[0]![0], 'resist' in e ? -0.25 : 0.25)">＋ 傷害類型</button>
         </template>
@@ -308,11 +307,11 @@ function remove() {
         <button class="small" :disabled="draft.effects.length >= limits.effects" @click="addEffect('resist')">＋ 抗性</button>
         <button class="small" :disabled="draft.effects.length >= limits.effects" @click="addEffect('offense')">＋ 增傷</button>
       </div>
-    </fieldset>
+    </FoldSet>
 
     <template v-if="!race">
-      <fieldset>
-        <legend>條件與互斥</legend>
+      <FoldSet>
+        <template #legend>條件與互斥</template>
         <div class="row checks small">
           <span>只有這些種族可以學（不勾＝不限）：</span>
           <label v-for="[id, r] in races" :key="id" class="check">
@@ -337,10 +336,10 @@ function remove() {
             <input type="checkbox" :checked="draft.exclusive?.includes(p.id)" @change="setExclusive(p.id, ($event.target as HTMLInputElement).checked)" /> {{ p.name }}
           </label>
         </details>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset>
-        <legend>慾望流派 <Hint text="成人向（docs/LEWD_STATS.md 第 6 節）。流派特質不進升級的三選一；慾望效果在慾望戰鬥裡生效（存檔規則關閉時沒有作用）。隸從派沒有主人時一半效果。" /></legend>
+      <FoldSet>
+        <template #legend>慾望流派 <Hint text="成人向（docs/LEWD_STATS.md 第 6 節）。流派特質不進升級的三選一；慾望效果在慾望戰鬥裡生效（存檔規則關閉時沒有作用）。隸從派沒有主人時一半效果。" /></template>
         <label class="small">流派
           <select :value="draft.school ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.school = ($event.target as HTMLSelectElement).value) : delete draft.school">
             <option value="">（不是流派特質）</option>
@@ -367,10 +366,10 @@ function remove() {
             </label>
           </div>
         </details>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset>
-        <legend>訓練</legend>
+      <FoldSet>
+        <template #legend>訓練</template>
         <label class="check small"><input type="checkbox" :checked="!!draft.train" @change="setTrain(($event.target as HTMLInputElement).checked)" /> 可以在設施花錢學</label>
         <template v-if="draft.train">
           <div class="row checks small">
@@ -388,10 +387,10 @@ function remove() {
             <label>DC <input v-model.number="draft.train.dc" type="number" min="5" max="30" /></label>
           </div>
         </template>
-      </fieldset>
+      </FoldSet>
 
-      <fieldset>
-        <legend>NPC</legend>
+      <FoldSet>
+        <template #legend>NPC</template>
         <div class="grid">
           <label>NPC 抽到的權重（0＝不會抽到） <input type="number" min="0" max="10" :value="draft.npc?.weight ?? 0" @input="setNpcWeight(($event.target as HTMLInputElement).value)" /></label>
         </div>
@@ -409,7 +408,7 @@ function remove() {
             </label>
           </details>
         </template>
-      </fieldset>
+      </FoldSet>
     </template>
   </div>
 </template>

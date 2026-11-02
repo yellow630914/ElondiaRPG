@@ -38,7 +38,7 @@ function remove(id: string) {
         <option v-if="!counterIds.includes(id)" :value="id">{{ id }}（不存在）</option>
       </select>
       <input :value="d" type="number" min="-100" max="100" class="num" @change="setRow(id, id, Math.round(Number(($event.target as HTMLInputElement).value)) || 0)" />
-      <button class="small" @click="remove(id)">移除</button>
+      <button class="small" @click="remove(id)" title="移除">✕</button>
     </span>
     <button v-if="counterIds.length" class="small" @click="add">＋ 加減計數器</button>
   </div>

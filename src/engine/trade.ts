@@ -16,7 +16,7 @@ import {
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
 import { findKind } from './grid'
-import { gearName, gearPrice, gearRules, randomGear, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
+import { gearName, gearPrice, gearRules, gearSellCap, gearSpecOf, randomGear, registerGear, sanitizeGearSpec, shiftRarity } from './gear'
 import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
@@ -35,13 +35,18 @@ const CELL_SHOP: Record<string, ShopType> = {
  * 不在商店上架的物品：獨特物品、有屬性加減的裝備。主人強制裝備的東西沒有商店標籤（tags）時本來就不上架；
  * 有標籤的（例如口球）也在店裡賣
  */
-export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'>): boolean {
-  return !!i.gear?.unique || !!i.gear?.attrs
+export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'> & { tags?: string[] }): boolean {
+  return !!i.gear?.unique || !!i.gear?.attrs || !!i.tags?.includes('unique')
 }
 
-/** 獨特裝備（任務與寶箱給的、獨一無二的東西）：不能賣給商店，也不能拿去和人交換 */
+/**
+ * 獨特裝備（任務與寶箱給的、獨一無二的東西）：不能賣給商店，也不能拿去和人交換。
+ * 有獨特效果（gear.unique）的，或標了 unique 標籤的（例如只有屬性、慾望指標的獨特淫服）
+ */
 export function isUniqueItem(state: Pick<GameState, 'customItems'>, name: string): boolean {
-  return !!(itemDef(name)?.gear?.unique ?? state.customItems?.[name]?.gear?.unique)
+  const def = itemDef(name)
+  if (def) return !!def.gear?.unique || !!def.tags?.includes('unique')
+  return !!state.customItems?.[name]?.gear?.unique
 }
 
 export function shopTypeForCell(cellKind: string): ShopType | null {
@@ -218,7 +223,7 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
       const consumables = itemRules.items.filter((i) => i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length && !have.has(i.name) && locationRank(i.min_location ?? 'village') <= rank)
       for (const i of pickSome(consumables, r.consumables ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 3)))
       const cap = r.max_material_price?.[Math.min(rank, (r.max_material_price.length ?? 1) - 1)] ?? 300
-      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5)
+      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5 && !have.has(i.name))
       for (const i of pickSome(materials, r.materials ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 2), r.material_markup ?? 2))
     }
     // 流浪商人：幾件隨機的優良裝備
@@ -310,7 +315,14 @@ export function sellPrice(state: GameState, key: string, name: string): number |
   const value = itemValue(state, name)
   if (!cat || value === undefined || !shopDef(type).buys.includes(cat) || isUniqueItem(state, name)) return null
   const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
-  return Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
+  const price = Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
+  return capSale(state, name, price)
+}
+
+/** 裝備賣出（收購、拿來抵價、寄賣）最多拿到成本的 10 倍（gear.ts 的 gearCost）：打造品與高等地下城的掉落不會變成印鈔機 */
+export function capSale(state: GameState, name: string, price: number): number {
+  const cap = gearSellCap(gearSpecOf(state, name))
+  return cap === undefined ? price : Math.min(price, cap)
 }
 
 // ---- 交易 ----
@@ -557,7 +569,7 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
         const name = clip(x.name, 20)
         const qty = Math.max(1, Math.min(10, Math.round(num(x.qty) || 1)))
         gives.push({ type: 'item', name, qty })
-        itemsGiven += (itemValue(state, name) ?? 0) * itemRules.sell_ratio * qty
+        itemsGiven += capSale(state, name, (itemValue(state, name) ?? 0) * itemRules.sell_ratio) * qty
       } else if (x.type === 'hours') {
         const h = Math.max(0.5, Math.min(4, num(x.amount) || 1))
         gives.push({ type: 'hours', amount: h })

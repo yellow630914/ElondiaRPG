@@ -57,19 +57,23 @@ export function neighborRegions(region: string): string[] {
   return [...out]
 }
 
+/** 這個人還沒追上相鄰地區目標（那一區的一部分）的地區：這些地區當天不淡掉，才追得上 */
+export function chasingRegions(state: GameState, memberId: string): Set<string> {
+  const ratio = charmRules().spread.ratio
+  const map = state.exposure?.[memberId] ?? {}
+  const out = new Set<string>()
+  for (const [region, value] of Object.entries(map)) {
+    const target = Math.floor(value * ratio)
+    for (const n of neighborRegions(region)) if ((map[n] ?? 0) < target) out.add(n)
+  }
+  return out
+}
+
 /** 每天一次：每個人在每個地區的曝露名聲讓相鄰地區慢慢追上它的一部分（每天 +1） */
 export function spreadExposure(state: GameState) {
-  const ratio = charmRules().spread.ratio
   for (const m of state.party) {
-    const map = state.exposure?.[m.id]
-    if (!map) continue
-    const before = { ...map }
-    const raise = new Set<string>()
-    for (const [region, value] of Object.entries(before)) {
-      const target = Math.floor(value * ratio)
-      for (const n of neighborRegions(region)) if ((before[n] ?? 0) < target) raise.add(n)
-    }
-    for (const n of raise) addLewd(state, m, 'exposure', 1, undefined, n)
+    if (!state.exposure?.[m.id]) continue
+    for (const n of chasingRegions(state, m.id)) addLewd(state, m, 'exposure', 1, undefined, n)
   }
 }
 

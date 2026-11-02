@@ -6,18 +6,25 @@ import { useSettings } from '@/stores/settings'
 import { formatTokens } from '@/narrator/describe'
 import { ARCHIVE_USAGE, OTHER_USAGE, usageFeatureName, usageSourceLabel } from '@/stores/game'
 import { formatTime } from '@/engine/state'
+import { undoConfirmText, UNDO_STEPS } from '@/stores/undo'
+import ActionPanel from './ActionPanel.vue'
+import PendingActionCard from './PendingActionCard.vue'
 import ReportCard from './ReportCard.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import JudgeToggle from './JudgeToggle.vue'
 
 // 冒險頁中間的日誌：舊的在上、新的在下，有新紀錄時捲到最下面。
+// 最下面是等待判定的行動（判定完換成它的日誌），日誌底部是主動行動的輸入列。
 const PAGE = 30
 const game = useGame()
 const settings = useSettings()
 /** 開著 AI 細節描述，但「敘事正文」的模型來源還沒設定：提醒去設定 */
 const needsSource = computed(() => settings.aiNarration && !settings.ready('narration'))
 const emit = defineEmits<{ settings: [] }>()
+function undoLast() {
+  if (confirm(undoConfirmText(1))) game.undo()
+}
 const hideTrade = ref(false)
 const shown = ref(PAGE)
 const feed = ref<HTMLElement | null>(null)
@@ -75,6 +82,8 @@ async function toBottom(force = false) {
 }
 
 watch(latest, () => toBottom(true))
+// 擲完骰、等待判定的行動出現在最下面
+watch(() => !!game.state?.pendingAction || !!game.state?.pendingMark, (on) => { if (on) void toBottom(true) })
 // 串流敘事時，若玩家正在看最新的內容就跟著捲動
 watch(streamingText, () => toBottom())
 onMounted(() => toBottom(true))
@@ -85,9 +94,15 @@ onMounted(() => toBottom(true))
     <header class="row log-head">
       <h2><GameIcon name="book" :size="20" />冒險日誌</h2>
       <span class="spacer" />
+      <button v-if="game.undoReports.length" class="small ghost undo" aria-label="回退" :disabled="game.judging" :title="`回退最近一輪（還可以回退 ${game.undoReports.length} 步，最多 ${UNDO_STEPS} 步；重新整理或讀檔後就不能回退）`" @click="undoLast"><GameIcon name="undo" :size="14" /><span class="long">回退</span></button>
       <JudgeToggle show="narration" />
-      <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易紀錄</label>
+      <label class="small"><input v-model="hideTrade" type="checkbox" /> 隱藏交易<span class="long">紀錄</span></label>
     </header>
+    <p v-if="game.redoInput" class="redo small row">
+      <span>已回退。要用同樣的行動重擲嗎？<span class="muted">「{{ game.redoInput.text || '（沒有描述）' }}」</span></span>
+      <button class="small primary" :disabled="game.judging" @click="game.redo()"><GameIcon name="d20" :size="14" /> 重擲</button>
+      <button class="small ghost" title="不用了" @click="game.dismissRedo()"><GameIcon name="close" :size="14" /></button>
+    </p>
     <p v-if="needsSource" class="ai-missing small row">
       <GameIcon name="warning" :size="15" />
       <span>已開啟「AI 細節描述」，但還沒設定 AI 的模型來源：日誌只會顯示戰報與簡述。</span>
@@ -99,7 +114,7 @@ onMounted(() => toBottom(true))
       <summary>本局共用 {{ formatTokens(game.totalUsage.input + game.totalUsage.output) }} tokens・{{ game.totalUsage.calls }} 次呼叫</summary>
       <p class="detail">
         輸入 {{ formatTokens(game.totalUsage.input) }}<template v-if="game.totalUsage.cached">，其中快取 {{ formatTokens(game.totalUsage.cached) }}</template>・輸出 {{ formatTokens(game.totalUsage.output) }}
-        <br />其中 日誌 {{ formatTokens(usageSplit.log) }}<template v-if="usageSplit.archive">・已封存的日誌 {{ formatTokens(usageSplit.archive) }}</template><template v-if="usageSplit.other">・其他 <Hint text="酒館候選人、商店清單、談判方式等。" /> {{ formatTokens(usageSplit.other) }}</template>
+        <br />其中 日誌 {{ formatTokens(usageSplit.log) }}<template v-if="usageSplit.archive">・已封存的日誌 {{ formatTokens(usageSplit.archive) }}</template><template v-if="usageSplit.other">・其他 <Hint text="酒館候選人、商店清單、談判方式、回退掉的日誌等。" /> {{ formatTokens(usageSplit.other) }}</template>
       </p>
       <ul v-if="game.usageBySource.length" class="sources" title="依模型來源（服務與模型）分開的用量">
         <li v-for="(u, i) in game.usageBySource" :key="i">
@@ -124,7 +139,9 @@ onMounted(() => toBottom(true))
       </template>
       <p v-if="reports.length === 0" class="muted empty">還沒有任何紀錄。從地圖上走到酒館、公會或城門，開始你的冒險吧。</p>
       <ReportCard v-for="r in reports" :key="r.report_id" :report="r" />
+      <PendingActionCard />
     </div>
+    <ActionPanel />
   </section>
 </template>
 
@@ -136,6 +153,9 @@ onMounted(() => toBottom(true))
 .log-head h2 :deep(.game-icon) { color: var(--accent); }
 .ai-missing { gap: 8px; margin: 8px 0 0; padding: 6px 10px; border: 1px solid var(--gold-lo, var(--border)); border-radius: 4px; background: #3a2a1033; color: var(--accent); flex-wrap: wrap; }
 .ai-missing span { flex: 1; min-width: 12em; color: var(--text); }
+.undo { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.redo { gap: 8px; margin: 8px 0 0; padding: 6px 10px; border: 1px solid var(--gold-lo, var(--border)); border-radius: 4px; background: #3a2a1033; flex-wrap: wrap; }
+.redo > span { flex: 1; min-width: 12em; }
 .log-head label { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
 .usage { margin: 6px 0 0; }
 .usage summary { cursor: pointer; }
@@ -144,7 +164,7 @@ onMounted(() => toBottom(true))
 .spacer { flex: 1; }
 .feed {
   overflow-y: auto;
-  height: calc(100vh - 250px);
+  height: calc(100vh - 300px);
   min-height: 420px;
   padding: 10px 4px 0 0;
   display: flex;
@@ -155,6 +175,16 @@ onMounted(() => toBottom(true))
 .archived { display: grid; gap: 2px; padding: 6px 8px; margin-bottom: 6px; border-left: 2px solid var(--border); }
 .archived .story { white-space: pre-wrap; margin: 4px 0 0; }
 .empty { text-align: center; margin-top: 40px; }
+/* 手機：標題、AI 開關、隱藏交易排成一排 */
+@media (max-width: 720px) {
+  .log-head { gap: 8px; flex-wrap: nowrap; padding-bottom: 6px; }
+  .log-head h2 { font-size: var(--fs-md); white-space: nowrap; }
+  .log-head label { white-space: nowrap; }
+  /* 有「回退」時擠一點，不要超出畫面 */
+  .log-head:has(.undo) { gap: 4px; }
+  .undo { padding: 2px 4px; }
+  .long { display: none; }
+}
 @media (max-width: 900px) {
   .feed { height: auto; max-height: 80vh; }
 }

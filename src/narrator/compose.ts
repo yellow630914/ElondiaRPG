@@ -9,9 +9,13 @@ import * as social from '@/engine/social'
 import type { GameState, Report } from '@/engine/types'
 import { actionLoreText, buildActionPrompt, partyLewd } from './judge'
 import { loreForReport, pickLore, type LoreItem, type LoreSelection } from './lore'
-import { adultSceneOf, buildPrompt, type Prompt } from './prompt'
+import { adultSceneOf, buildPrompt, mascBodyNote, varietyHint, type Prompt } from './prompt'
+import { mascBodyContentOn } from '@/engine/content'
+import { characterBody } from '@/engine/look'
+import { continuityBefore, continuityForReport, type NarrationLike } from './continuity'
 import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
 import { toOutputScript } from './script'
+import { girlSeed, monsterGirlsIn, monstersText, reportFocus, reportGirlSeed, reportMonsters } from './monsters'
 
 export interface ComposeOptions {
   config: PromptConfig
@@ -56,8 +60,16 @@ export function narrationTarget(report: Report): Extract<PromptTarget, 'narratio
   return adultSceneOf(report) ? 'adult' : 'narration'
 }
 
-export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions): Composed {
+/** narrations：日誌的敘事（前後銜接用；沒有時不帶） */
+/** 設定讓陽剛體型也能遇到限定陰柔、中性的成人內容，而主角是陽剛體型：提醒 AI 照主角的身體寫（成人場景才附） */
+function bodyNoteFor(state: GameState | null, name: string): string | undefined {
+  const pc = state?.party.find((m) => m.isPlayer)
+  return pc && mascBodyContentOn() && characterBody(pc) === 'masc' ? mascBodyNote(name) : undefined
+}
+
+export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions, narrations?: Record<string, NarrationLike>): Composed {
   const name = playerName(state)
+  const bodyNote = bodyNoteFor(state, name)
   // 分流：帶親密場景的日誌才送成人向的條目（世界書、文風、其他提示詞）
   const adult = !!adultSceneOf(report)
   const lore = loreForReport(o.lore, report, { adult, budgetChars: o.budgetChars, playerName: name })
@@ -66,6 +78,8 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
   const context = narrationContext(state, report)
   // 成人場景的敘事用套用到「成人場景」的條目
   const target = narrationTarget(report)
+  // 登場的怪物：外觀與習性（魔物娘的設定打開、這段經過的主角符合時換成魔物娘）
+  const monsters = monstersText(reportMonsters(report), monsterGirlsIn(state, reportFocus(report)), reportGirlSeed(state, report))
   const prompt = buildPrompt(report, lore, {
     playerName: name,
     language: o.language,
@@ -77,17 +91,27 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     ...(o.config.narrationRules ? { rules: o.config.narrationRules } : {}),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
+    ...(bodyNote ? { bodyNote } : {}),
+    ...(monsters ? { monsters } : {}),
+    lengthScale: o.config.lengthScale,
+    ...(state && narrations && o.config.continuity ? { continuity: continuityForReport(state, narrations, report) } : {}),
+    ...(o.config.variety ? { variety: varietyHint(report.report_id, report.narration?.mode === 'defeat_cliffhanger') } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), lore }
 }
 
-export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptions): Composed {
+export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptions, narrations?: Record<string, NarrationLike>): Composed {
   const name = playerName(state)
+  const bodyNote = bodyNoteFor(state, name)
   // 分流：行動可能進入親密場景（娼館、主人的要求、戰敗事件……）時才送成人向的條目
   const adult = !!p.adultScene
   const lore = o.config.loreInJudge
     ? pickLore(o.lore, { text: actionLoreText(state, p), travel: false }, { adult, budgetChars: o.budgetChars, playerName: name })
     : undefined
+  // 戰敗事件的回應：圍上來的怪物的外觀（魔物娘的設定看被圍住的人）
+  const monsters = p.kind === 'defeat_event'
+    ? monstersText([...new Set((state.pendingDefeat?.foes ?? []).map((f) => f.monster).filter((m): m is string => !!m))], monsterGirlsIn(state, p.actor), girlSeed(state, state.pendingDefeat?.day ?? state.time.day))
+    : ''
   const prompt = buildActionPrompt(state, p, judgeContext(state, p), {
     language: o.language,
     narrative: !o.splitNarrative,
@@ -96,7 +120,12 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     endNotes: activeEntries(o.config.custom, 'judge', name, { position: 'end', adult }),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
+    ...(bodyNote ? { bodyNote } : {}),
+    ...(monsters ? { monsters } : {}),
     ...(lore ? { lore } : {}),
+    lengthScale: o.config.lengthScale,
+    ...(narrations && o.config.continuity ? { continuity: continuityBefore(state, narrations, state.reports.length, p.time, adult) } : {}),
+    ...(o.config.variety && !o.splitNarrative ? { variety: varietyHint(p.id) } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), ...(lore ? { lore } : {}) }
 }

@@ -6,6 +6,9 @@ import { currentMarkRules, type MarkRulesMod } from '@/engine/tattooMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 印記的用途與權重：預設印記、老鴇的印記、刻印檢定的輕重順序、奴隸市場與自賣的權重
 const content = useContent()
@@ -58,17 +61,12 @@ function restore() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>⚙️ 印記設定</h3>
-      <span class="tag">{{ edited ? '已修改' : '內建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="draft = current()">放棄修改</button>
-      <button class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-    </div>
-    <fieldset>
-      <legend>用途</legend>
+    <EditorHeader
+      :title="'⚙️ 印記設定'" :kind="'rules'" :edited="edited" :dirty="dirty"
+      @save="save" @discard="draft = current()" @restore="restore"
+    />
+    <FoldSet>
+      <template #legend>用途</template>
       <div class="grid">
         <label><span>預設的印記 <Hint text="買奴隸、AI 交易清單、劇情沒指定時用的印記。" /></span>
           <select v-model="draft.roles.default"><option v-for="id in ids" :key="id" :value="id">{{ name(id) }}</option></select>
@@ -77,25 +75,25 @@ function restore() {
           <select v-model="draft.roles.madam"><option v-for="id in ids" :key="id" :value="id">{{ name(id) }}</option></select>
         </label>
       </div>
-    </fieldset>
-    <fieldset>
-      <legend>刻印檢定的輕重順序（由輕到重）</legend>
-      <p class="small muted">成為奴隸時的刻印檢定：成功可以選主人打算的或更輕的，失敗加重一級，大失敗最重。不在清單裡的印記只會從事件、市場或自訂出現。</p>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>刻印檢定的輕重順序（由輕到重）</template>
+      <HelpText text="成為奴隸時的刻印檢定：成功可以選主人打算的或更輕的，失敗加重一級，大失敗最重。不在清單裡的印記只會從事件、市場或自訂出現。" />
       <ol class="small">
         <li v-for="(id, i) in draft.severity" :key="id">
           {{ name(id) }}
           <button class="small" :disabled="i === 0" @click="move(i, -1)">↑</button>
           <button class="small" :disabled="i === draft.severity.length - 1" @click="move(i, 1)">↓</button>
-          <button class="small" :disabled="draft.severity.length <= 1" @click="draft.severity.splice(i, 1)">移除</button>
+          <button class="small" :disabled="draft.severity.length <= 1" @click="draft.severity.splice(i, 1)" title="移除">✕</button>
         </li>
       </ol>
       <select class="small" :value="''" @change="draft.severity.push(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
         <option value="">＋ 加入…</option>
         <option v-for="id in ids.filter((x) => !draft.severity.includes(x))" :key="id" :value="id">{{ name(id) }}</option>
       </select>
-    </fieldset>
-    <fieldset>
-      <legend>權重（0 = 不出現）</legend>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>權重（0 = 不出現）</template>
       <table class="small">
         <thead><tr><th></th><th v-for="w in WEIGHTS" :key="w.key">{{ w.label }}</th></tr></thead>
         <tbody>
@@ -107,7 +105,7 @@ function restore() {
         </tr>
         </tbody>
       </table>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

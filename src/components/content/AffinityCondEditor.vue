@@ -31,7 +31,7 @@ function remove(id: string) {
         <option v-for="n in namedNpcs" :key="n.id" :value="n.id" :disabled="n.id !== id && n.id in (cond.affinity ?? {})">{{ n.name }}</option>
       </select>
       的好感 ≥ <input :value="min" type="number" min="-100" max="100" class="num" @change="set(id, id, Number(($event.target as HTMLInputElement).value) || 0)" />
-      <button class="small" @click="remove(id)">移除</button>
+      <button class="small" @click="remove(id)" title="移除">✕</button>
     </span>
     <button class="small" @click="add">＋ 好感條件</button>
   </div>

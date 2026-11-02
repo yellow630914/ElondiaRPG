@@ -4,6 +4,7 @@ import { startCombat } from '@/engine/combat'
 import { itemDef, lewdRules, npcs } from '@/engine/data'
 import { enterLocation, standOn } from '@/engine/grid'
 import { useItem } from '@/engine/inventory'
+import { sanitizeItem, sanitizeNpc } from '@/engine/mods'
 import { lewdOf, lewdTitles } from '@/engine/lewd'
 import { attachParasite, changeCorruption, parasiteTwoFace, tameParasite } from '@/engine/parasites'
 import { pcOf } from '@/engine/party'
@@ -55,6 +56,17 @@ describe('S10-1 流派的老師', () => {
 
     grantPerk(pcOf(state), 'school_bondage')
     expect(trainOptions(state).find((o) => o.def.id === 'rope_strength')?.mentor?.id).toBe(ROPE)
+  })
+
+  it('內容編輯器整理時保留老師與秘法書的資料', () => {
+    for (const n of npcs.filter((x) => x.mentor)) {
+      const out = sanitizeNpc(n.id, JSON.parse(JSON.stringify(n)), false)
+      expect(out).toMatchObject({ mentor: n.mentor, perks: n.perks, landmark: n.landmark, lewd: n.lewd })
+    }
+    expect(sanitizeNpc('x', { ...npcs[0]!, mentor: { perks: ['school_bondage', 'flaw_greedy', 'race_elf', 'nope'], affinity: 500, price_mult: 9 } }, true).mentor)
+      .toEqual({ perks: ['school_bondage'], affinity: 100, price_mult: 3 })
+    const tome = itemDef('《結繩圖譜》')!
+    expect(sanitizeItem(tome.name, JSON.parse(JSON.stringify(tome)), false)).toMatchObject({ use: tome.use, charm_min: 3, tags: tome.tags })
   })
 
   it('老師不在身邊就學不到', () => {

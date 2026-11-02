@@ -10,7 +10,7 @@ import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, typ
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
-  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinTattoo, builtinMark, builtinMarkRules,
+  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinCondition, sanitizeCondition, conditionUsage, type ConditionMod, builtinTattoo, builtinMark, builtinMarkRules,
 } from '@/engine/mods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { itemRules, perkRules, shopRules, slaveryRules, type ItemCategory, type ShopType } from '@/engine/data'
@@ -37,6 +37,12 @@ import { pruneAbilities, prunePerks, pruneStatuses } from '@/engine/state'
 import { pruneStories } from '@/engine/story'
 import { enemyUsage, gearUsage, itemUsage, npcUsage, perkUsage, renameItemInState, storyUsage } from '@/engine/usage'
 import { useGame } from './game'
+import { storyReach } from '@/engine/storyReach'
+import { GEN_KINDS, genFlagPrefix, type GenKind } from '@/engine/questGen'
+import { buildRefs, closure, contentKeys, fingerprint, pickMods, REF_SECTIONS, splitKey, type RefGraph, type RefKey } from '@/engine/contentRefs'
+import { buildPackage, compareRows, type ImportChoice, type ImportPackage, type ImportRow } from '@/engine/contentImport'
+import { buildBuiltinWorldZip, builtinWorldEntries, diffBuiltinWorld, hasChanges, importReport, readBuiltinWorldZip, type BuiltinImportReport, type BuiltinWorldDiff } from '@/engine/builtinWorld'
+import { builtinWorldReadme } from '@/engine/builtinWorldReadme'
 
 /** 舊版只有一套自訂內容 */
 const LEGACY_KEY = 'elondia.content'
@@ -44,6 +50,8 @@ const WORLDS_KEY = 'elondia.worlds'
 /** 原版世界：沒有任何自訂內容，不能修改 */
 export const VANILLA = 'vanilla'
 export const VANILLA_NAME = '原版世界'
+/** 在原版世界修改內容時，自動建立的世界的名字 */
+export const FORK_NAME = '我的世界'
 
 export interface World {
   id: string
@@ -53,6 +61,10 @@ export interface World {
   updated: number
   /** 綁定的提示詞組：切換到這個世界時一起切換（世界包匯入時綁定，也可以在世界管理改） */
   promptSet?: string
+  /** 局部匯入的紀錄：每一項匯入時的指紋（之後再匯入同一項時，看得出是不是新版本、這裡有沒有改過） */
+  imported?: Record<string, string>
+  /** 從「匯入內建世界」建立的：當時的匯入結果（世界管理可以再看一次） */
+  importReport?: BuiltinImportReport
 }
 
 interface WorldsFile {
@@ -64,9 +76,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
+const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器',
+  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器',
 }
 
 export interface ModsDiffEntry {
@@ -83,7 +95,7 @@ export interface ModsDiff {
   same: number
 }
 
-function modLabel(section: Section, id: string, v: unknown): string {
+export function modLabel(section: Section, id: string, v: unknown): string {
   const o = v as { name?: string; title?: string }
   if (section === 'markRules' || section === 'eventRules' || section === 'bindRules') return MOD_SECTION_NAMES[section]
   if (section === 'categoryIcons') return `${MOD_SECTION_NAMES[section]}「${itemRules.categories[id as ItemCategory] ?? id}」`
@@ -100,7 +112,13 @@ function loadWorlds(): WorldsFile {
       const f = JSON.parse(raw) as Partial<WorldsFile>
       const worlds = (Array.isArray(f.worlds) ? f.worlds : [])
         .filter((w): w is World => !!w && typeof w.id === 'string' && w.id !== VANILLA)
-        .map((w) => ({ id: w.id, name: String(w.name || '未命名的世界').slice(0, 30), mods: normalizeMods(w.mods), updated: Number(w.updated) || 0 }))
+        .map((w) => ({
+          id: w.id, name: String(w.name || '未命名的世界').slice(0, 30), mods: normalizeMods(w.mods), updated: Number(w.updated) || 0,
+          // 綁定的提示詞組與匯入紀錄（以前讀回來時漏掉 promptSet：重新整理後綁定就不見了）
+          ...(typeof w.promptSet === 'string' ? { promptSet: w.promptSet } : {}),
+          ...(w.imported && typeof w.imported === 'object' ? { imported: w.imported } : {}),
+          ...(w.importReport && typeof w.importReport === 'object' && Array.isArray(w.importReport.lines) ? { importReport: w.importReport } : {}),
+        }))
       return { active: worlds.some((w) => w.id === f.active) ? f.active! : VANILLA, worlds }
     }
     const legacy = localStorage.getItem(LEGACY_KEY)
@@ -160,12 +178,33 @@ export const useContent = defineStore('content', () => {
     version.value++
   }
 
+  /** 自動建立的世界的名字：「我的世界」，同名時加數字 */
+  function forkName(): string {
+    const names = new Set(worlds.value.map((w) => w.name))
+    if (!names.has(FORK_NAME)) return FORK_NAME
+    for (let i = 2; ; i++) if (!names.has(`${FORK_NAME} ${i}`)) return `${FORK_NAME} ${i}`
+  }
+
+  /**
+   * 原版世界不能直接修改：把這次的修改存成一個新的世界（原版的複本加上這次的修改）並切換過去。
+   * 進行中的遊戲也改用這個世界（除了這次的修改，內容和原版一樣），之後的存檔記住它；原版世界的其他存檔不受影響。
+   */
+  function forkVanilla() {
+    const id = createWorld(forkName(), undefined, mods.value)
+    useWorld(id)
+    const game = useGame()
+    if (game.state) game.state.world = { id, name: worldName(id) }
+    game.flash(`原版世界不能直接修改：已自動建立「${worldName(id)}」並切換過去，這次的修改存在那裡${game.state ? '（進行中的遊戲也改用它）' : ''}。`)
+  }
+
   function save() {
-    // 原版世界不能改：丟掉這次的修改
+    // 原版世界不能直接改：有修改時自動複製成新的世界（沒有修改就什麼都不做）
     if (readOnly.value) {
-      mods.value = emptyMods()
-      apply()
-      throw new Error('原版世界不能修改：先在世界管理建立一個新的世界')
+      if (!modTotal(mods.value)) {
+        apply()
+        return
+      }
+      forkVanilla()
     }
     const w = worlds.value.find((x) => x.id === active.value)
     if (w) {
@@ -322,7 +361,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'condition' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -336,6 +375,7 @@ export const useContent = defineStore('content', () => {
       case 'ability': return abilityUsage(key, state)
       case 'perk': return perkUsage(key, state)
       case 'status': return statusUsage(key, state)
+      case 'condition': return conditionUsage(key, state)
       case 'tattoo': return tattooUsage(key)
       case 'mark': return markUsage(key)
       case 'shop': return shopUsage(key)
@@ -494,7 +534,7 @@ export const useContent = defineStore('content', () => {
 
   /** 把存檔裡生成的人存成固定 NPC（同一個 id，關係與記憶延續；存檔的紀錄由呼叫的地方改，見 game.promoteNpc） */
   function promoteNpc(state: GameState, id: string) {
-    if (readOnly.value) throw new Error(`${VANILLA_NAME}不能修改：請先在內容頁籤建立自己的世界，再用那個世界開始遊戲`)
+    // 原版世界時 save() 會自動建立自己的世界（進行中的遊戲跟著改用它）
     mods.value.npcs[id] = npcModFromState(state, id)
     save()
   }
@@ -574,6 +614,28 @@ export const useContent = defineStore('content', () => {
   }
   function restoreStatus(id: string) {
     if (!mods.value.statuses[id]?.custom) delete mods.value.statuses[id]
+    save()
+  }
+
+  // ---- 非戰鬥狀態（用餐、喝酒……）：內建的改回跟內建一樣時不留紀錄 ----
+
+  function saveCondition(id: string, draft: Partial<ConditionMod>) {
+    const base = builtinCondition(id)
+    const m = sanitizeCondition(id, draft, !base)
+    mods.value.conditions ??= {}
+    if (base && JSON.stringify(m) === JSON.stringify(sanitizeCondition(id, base))) delete mods.value.conditions[id]
+    else mods.value.conditions[id] = m
+    save()
+  }
+  /** 自建、而且沒有被任何地方用到的非戰鬥狀態才能刪 */
+  function deleteCondition(id: string) {
+    if (!mods.value.conditions?.[id]?.custom) throw new Error('內建的狀態不能刪除')
+    assertUnused('condition', id)
+    delete mods.value.conditions[id]
+    save()
+  }
+  function restoreCondition(id: string) {
+    if (!mods.value.conditions?.[id]?.custom) delete mods.value.conditions?.[id]
     save()
   }
 
@@ -864,6 +926,50 @@ export const useContent = defineStore('content', () => {
     return JSON.stringify({ type: 'elondia-content', ...mods.value }, null, 2)
   }
 
+  // ---- 匯出、匯入內建世界（engine/builtinWorld.ts） ----
+
+  /** 匯出內建世界：原版的全部可編輯內容，一種一個 JSON 檔，附 README，包成 zip */
+  function exportBuiltinWorld(date = new Date()): Uint8Array {
+    try {
+      applyContent(emptyMods())
+      const entries = builtinWorldEntries()
+      const day = date.toISOString().slice(0, 10)
+      return buildBuiltinWorldZip(entries, builtinWorldReadme(entries, day), date)
+    } finally {
+      apply()
+    }
+  }
+
+  /**
+   * 匯入內建世界：和內建比較，只留改過的與新增的，建立成新的世界（不動原版與其他世界）。
+   * 回傳新世界的 id 與匯入結果（改了哪些、新增哪些、被調整的欄位、整筆略過的、有錯誤沒匯入的特殊任務）；
+   * 匯入結果也記在新世界上。什麼都沒改時（或 dryRun）不建立世界（id 是 undefined）
+   */
+  function importBuiltinWorld(bytes: Uint8Array, name: string, file = '', o: { dryRun?: boolean } = {}): { id?: string; diff: BuiltinWorldDiff; report: BuiltinImportReport } {
+    const read = readBuiltinWorldZip(bytes)
+    let diff: BuiltinWorldDiff
+    let incoming: ContentMods
+    let found: string[]
+    try {
+      applyContent(emptyMods())
+      diff = diffBuiltinWorld(read.content, builtinWorldEntries())
+      incoming = normalizeMods(diff.mods)
+      // 有錯誤的特殊任務不匯入（和其他匯入一樣）；套用一次，看看還有什麼問題（引用不存在的東西……）
+      found = [...dropBrokenStories(incoming), ...applyContent(incoming)]
+    } finally {
+      // 整理時自建的狀態、特質會暫時登錄進遊戲資料：恢復成目前的世界
+      apply()
+    }
+    const report = importReport(file, diff, read.errors, [...new Set(found)])
+    // dryRun：只檢查（匯入前先看有沒有改動，有才問世界的名字），不建立世界
+    if (!hasChanges(diff) || o.dryRun) return { diff, report }
+    const id = createWorld(name.trim() || '匯入的內建世界', undefined, incoming)
+    const w = worlds.value.find((x) => x.id === id)!
+    w.importReport = report
+    persist()
+    return { id, diff, report }
+  }
+
   /** 匯入內容檔：asNew 時建立成新的世界，否則取代目前世界的內容 */
   function importMods(text: string, asNew?: string): string | undefined {
     // 世界包也收：只取內容（提示詞要用「匯入世界包」）
@@ -928,6 +1034,150 @@ export const useContent = defineStore('content', () => {
     return n
   }
 
+  // ---- 局部匯入、匯出（docs/plan/WORLD_EDITOR_PLAN.md E1、E2） ----
+
+  /** 讀局部匯入的來源：內容檔、世界包（只取內容），或這個瀏覽器的另一個世界 */
+  function importSource(from: { text: string } | { world: string }): { name: string; mods: ContentMods; picked: RefKey[] } {
+    if ('world' in from) {
+      const w = worlds.value.find((x) => x.id === from.world)
+      if (!w) throw new Error('找不到那個世界')
+      return { name: w.name, mods: normalizeMods(JSON.parse(JSON.stringify(w.mods))), picked: [] }
+    }
+    const raw = JSON.parse(from.text) as { meta?: { picked?: unknown } }
+    const file = parseWorldFile(raw)
+    const { meta, ...content } = file.content as Partial<ContentMods> & { meta?: { picked?: unknown } }
+    const picked = Array.isArray(meta?.picked) ? meta!.picked.filter((k): k is string => typeof k === 'string') : []
+    const out = { name: file.name ?? '檔案', mods: normalizeMods(content), picked }
+    // normalizeMods 會先登錄自建的內容：恢復成目前的世界
+    apply()
+    return out
+  }
+
+  /** 來源的關聯（制式裝備的名稱要用來源的內容查：先在沙盒裡套用來源，算完恢復） */
+  function analyzeSource(source: ContentMods): RefGraph {
+    try {
+      applyContent(source)
+      return buildRefs(source)
+    } finally {
+      apply()
+    }
+  }
+
+  /** 和目前的世界比較：新增、一樣、衝突（含是不是上次匯入之後沒改過的新版本） */
+  function compareImport(source: ContentMods, keys: Iterable<RefKey>): ImportRow[] {
+    const w = worlds.value.find((x) => x.id === active.value)
+    return compareRows(mods.value, source, keys, w?.imported ?? {})
+  }
+
+  function packageFor(source: ContentMods, rows: ImportRow[], choices: Record<RefKey, ImportChoice>): ImportPackage {
+    return buildPackage(mods.value, source, rows, choices)
+  }
+
+  /** 把包裡的項目疊到一份內容上（不改傳進來的） */
+  function withPackage(base: ContentMods, pkg: ImportPackage): ContentMods {
+    const out = JSON.parse(JSON.stringify(base)) as ContentMods
+    for (const section of REF_SECTIONS) {
+      const add = pkg.mods[section] as Record<string, unknown> | undefined
+      if (add) Object.assign(((out as unknown as Record<string, Record<string, unknown>>)[section] ??= {}), JSON.parse(JSON.stringify(add)))
+    }
+    return out
+  }
+
+  /**
+   * 預檢查（沙盒，不改目前的世界）：
+   * - changed：整理之後和包裡不一樣的項目（多半是引用拿不到被拿掉：照理不會有，有就是關聯漏了）
+   * - errors：有錯誤的特殊任務（整包不能匯入）
+   * - problems：套用時新出現的問題（例如地標、商店擺不上去）
+   */
+  function precheckImport(pkg: ImportPackage): { changed: RefKey[]; errors: string[]; problems: string[] } {
+    try {
+      const before = new Set(applyContent(mods.value))
+      const merged = normalizeMods(withPackage(mods.value, pkg))
+      const keys = contentKeys(pkg.mods as ContentMods)
+      const changed = keys.filter((k) => {
+        const [section, id] = splitKey(k)
+        const a = (merged[section] as Record<string, unknown> | undefined)?.[id]
+        const b = (pkg.mods[section] as Record<string, unknown> | undefined)?.[id]
+        return JSON.stringify(a) !== JSON.stringify(b)
+      })
+      const storyIds = new Set(Object.keys(pkg.mods.stories ?? {}))
+      const errors = storyIds.size ? dropBrokenStories(merged, storyIds) : []
+      const problems = applyContent(merged).filter((p) => !before.has(p))
+      return { changed, errors, problems }
+    } finally {
+      apply()
+    }
+  }
+
+  /**
+   * 特殊任務生成器（E4）的檢查（沙盒，不改目前的世界）：整理後疊到目前的世界上，跑任務檢查與可達性。
+   * - mods：整理過的內容（之後照這份寫入）
+   * - errors：要交回 AI 修的（任務檢查的錯誤、到不了的任務點、走不到完成、整理時不見的項目）
+   * - warnings：只提醒的（任務檢查的提醒、可能卡住的結果、套用時的問題）
+   */
+  function checkGenerated(pkgMods: Partial<ContentMods>, storyId: string): { mods: Partial<ContentMods>; errors: string[]; warnings: string[] } {
+    try {
+      const before = new Set(applyContent(mods.value))
+      const merged = normalizeMods(withPackage(mods.value, { mods: pkgMods, renamed: [], skipped: [], fingerprints: {} }))
+      const problems = applyContent(merged).filter((p) => !before.has(p))
+      const errors: string[] = []
+      const warnings: string[] = []
+      const keys = contentKeys(pkgMods as ContentMods)
+      for (const k of keys) {
+        const [section, id] = splitKey(k)
+        if (!(merged[section] as Record<string, unknown> | undefined)?.[id]) errors.push(`${GEN_KINDS[section as GenKind] ?? section} ${id} 整理後不見了（id、位置或必填的欄位不對）`)
+      }
+      const def = stories.find((s) => s.id === storyId)
+      if (!def) errors.push('任務整理後不見了')
+      else {
+        const c = storyCheck(def)
+        errors.push(...c.errors)
+        // 可達性的前兩項（到不了、走不到完成）對生成的任務算錯誤：一定要修
+        const reach = storyReach(def)
+        for (const id of reach.unreachable) errors.push(`任務點「${def.nodes.find((n) => n.id === id)?.title ?? id}」（${id}）不會解鎖：需要的旗標在這個任務裡怎麼走都設定不到`)
+        if (!reach.canComplete) errors.push('沒有任何一條路走得到「完成任務」')
+        // 這個任務自己的旗標（程式加了前綴的）沒有地方設定：AI 寫錯了名字或漏了設定
+        const own = genFlagPrefix(storyId)
+        for (const u of flagUsage(def)) if (u.flag.startsWith(own) && u.requiredBy.length && !u.setBy.length) errors.push(`旗標 🚩${u.flag} 沒有任何結果設定，需要它的「${u.requiredBy.join('」「')}」不會出現`)
+        warnings.push(...c.warnings.filter((w) => !w.includes('不會解鎖：') && !w.startsWith('沒有任何一條路')), ...problems)
+      }
+      const out = pickMods(merged, new Set(keys.filter((k) => {
+        const [section, id] = splitKey(k)
+        return !!(merged[section] as Record<string, unknown> | undefined)?.[id]
+      })))
+      return { mods: out, errors, warnings }
+    } finally {
+      apply()
+    }
+  }
+
+  /** 寫進目前的世界（原版世界時 save() 自動建立自己的世界），記下匯入紀錄 */
+  function importPackage(pkg: ImportPackage): number {
+    const keys = contentKeys(pkg.mods as ContentMods)
+    if (!keys.length) return 0
+    mods.value = withPackage(mods.value, pkg)
+    save()
+    const w = worlds.value.find((x) => x.id === active.value)
+    if (w) {
+      w.imported = { ...(w.imported ?? {}), ...pkg.fingerprints }
+      persist()
+    }
+    return keys.length
+  }
+
+  /** 局部匯出：選的項目加上它們用到的全部（目前的世界），存成一般的內容檔 */
+  function exportPicked(picked: RefKey[]): { text: string; count: number } {
+    const graph = buildRefs(mods.value)
+    const keys = closure(graph, picked)
+    const content = pickMods(mods.value, keys)
+    const fingerprints = Object.fromEntries([...keys].map((k) => [k, fingerprint(entryOfMods(k))]))
+    return { text: JSON.stringify({ type: 'elondia-content', meta: { picked, fingerprints }, ...content }, null, 2), count: keys.size }
+  }
+  function entryOfMods(k: RefKey) {
+    const [section, id] = splitKey(k)
+    return (mods.value[section] as Record<string, unknown> | undefined)?.[id]
+  }
+
   function resetAll() {
     mods.value = emptyMods()
     save()
@@ -935,14 +1185,15 @@ export const useContent = defineStore('content', () => {
 
   return {
     mods, problems, version, usageOf,
-    worlds, active, activeName, readOnly, worldName, switchWorld, createWorld, linkPromptSet, importWorld, exportWorld, renameWorld, deleteWorld, enterWorld, worldForImport,
+    worlds, active, activeName, readOnly, forkName, worldName, switchWorld, createWorld, linkPromptSet, importWorld, exportWorld, renameWorld, deleteWorld, enterWorld, worldForImport,
     saveEnemy, deleteEnemy, restoreEnemy,
     saveItem, deleteItem, restoreItem, setItemDrops,
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
-    saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus,
+    saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, deleteCondition, restoreCondition,
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
-    exportMods, importMods, resetAll, diffMods, mergeMods,
+    exportMods, importMods, resetAll, diffMods, mergeMods, exportBuiltinWorld, importBuiltinWorld,
+    importSource, analyzeSource, compareImport, packageFor, precheckImport, checkGenerated, importPackage, exportPicked,
   }
 })

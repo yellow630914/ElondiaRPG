@@ -1,20 +1,22 @@
 <script setup lang="ts">
-import { CONTENT_TAG_IDS, CONTENT_TAGS } from '@/engine/content'
 import { computed } from 'vue'
-import { ATTR_IDS, attrName, enemies, geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
+import { geography, landmarksIn, npcs as namedNpcs, shopRules, specialMaps, type StoryNode, type StoryOption } from '@/engine/data'
 import { wearChoices } from '@/engine/gear'
-import { CELL_ICON, cellName, type CellKind } from '@/engine/grid'
+import { cellName, type CellKind } from '@/engine/grid'
 import { specialPreview, storySpotProblem } from '@/engine/specialMapMods'
 import { LAYER_NAME, NODE_KINDS, SIDE_MAPS, STORY_CELLS, STORY_LAYERS, WHERE_NAME } from '@/engine/storyMods'
 import { travelEvents } from '@/engine/road'
-import FlagInput from './FlagInput.vue'
 import NameListInput from './NameListInput.vue'
 import NpcPicker from './NpcPicker.vue'
 import OutcomeEditor from './OutcomeEditor.vue'
-import CondExtrasEditor from './CondExtrasEditor.vue'
-import AffinityCondEditor from './AffinityCondEditor.vue'
 import StoryAffinityEditor from './StoryAffinityEditor.vue'
 import Hint from '../ui/Hint.vue'
+import RequiresEditor from './RequiresEditor.vue'
+import CheckList from './CheckList.vue'
+import { CONTENT_TAG_OPTIONS } from './checks'
+import CellGrid from './CellGrid.vue'
+import MonsterPick from './MonsterPick.vue'
+import CheckRow from './CheckRow.vue'
 
 // 一個任務點：在哪裡、解鎖的條件、種類（劇情、判定、戰鬥、選擇）、結果
 const node = defineModel<StoryNode>({ required: true })
@@ -31,13 +33,16 @@ const cellOptions = computed(() => [
   ...landmarksIn(node.value.at.location ?? '').map((l) => l.id as CellKind),
 ])
 const wearOptions = computed(() => wearChoices())
-const enemyList = computed(() => Object.values(enemies).sort((a, b) => a.level - b.level))
 
 function setKind(kind: StoryNode['kind']) {
   node.value.kind = kind
   if (kind === 'check') node.value.check ??= { attr: 'int', dc: 12 }
   if (kind === 'choice') node.value.options ??= [{ label: '選項一', success: {} }, { label: '選項二', success: {} }]
   if (kind === 'combat') node.value.enemies ??= [['bandit', 1]]
+}
+function setHours(v: string) {
+  if (v === 'day' || v === 'night') node.value.hours = v
+  else delete node.value.hours
 }
 function setWhere(w: StoryNode['at']['where']) {
   node.value.at = { ...node.value.at, where: w }
@@ -80,11 +85,6 @@ function toggleCheck(o: StoryOption, on: boolean) {
     delete o.fail
   }
 }
-function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
-  const next = on ? [...new Set([...(o.tags ?? []), t])] : (o.tags ?? []).filter((x) => x !== t)
-  if (next.length) o.tags = next
-  else delete o.tags
-}
 </script>
 
 <template>
@@ -101,6 +101,13 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
     <label class="block"><span>事件描述 <Hint text="觸發時看到的，也會交給 AI。" /></span><textarea v-model="node.text" rows="3" maxlength="600" /></label>
     <label class="check"><input type="checkbox" :checked="!!node.urgent" @change="($event.target as HTMLInputElement).checked ? (node.urgent = true) : delete node.urgent" /> 緊急
       <Hint text="走到任務點時要先處理，不能移動或休息。不緊急（預設）：多一個「稍候」，這次先略過、不記日誌，離開這裡之後再來還會遇到。緊急：只能處理或「放棄」，選了任務線就中斷（適合旅途上、臨時地圖裡這種過了就沒有的場面）。" /></label>
+    <label v-if="where !== 'road' && where !== 'side'" class="check">時段
+      <select :value="node.hours ?? ''" @change="setHours(($event.target as HTMLSelectElement).value)">
+        <option value="">不限</option>
+        <option value="day">只在白天（6～18 點）</option>
+        <option value="night">只在夜裡（18～6 點）</option>
+      </select>
+      <Hint text="時段不對時不算在任務點上：不會跳出來、不擋路，⭐ 照樣在地圖上。站在任務點上時，地點面板會提醒要等，也可以在原地等到那個時段。適合月下、深夜、清晨這類場景。" /></label>
 
     <div class="grid">
       <label>在哪裡
@@ -148,19 +155,11 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
           <button v-if="spotPicked >= 0" class="small" @click="clearSpot">改回隨機</button>
         </p>
         <p v-if="spotProblem" class="small warn-text">那一格：{{ spotProblem }}，遊戲裡會隨機放在一格空地。</p>
-        <div class="cells" :style="{ gridTemplateColumns: `repeat(${spotMap.width}, 22px)` }">
-          <button
-            v-for="(c, i) in spotMap.cells" :key="i" class="cell" :class="[c.kind, { picked: i === spotPicked, off: !spotOk(i) }]"
-            :title="cellName(c.kind)" @click="pickSpot(i)"
-          >{{ i === spotPicked ? '⭐' : CELL_ICON[c.kind] ?? '' }}</button>
-        </div>
+        <CellGrid :kinds="spotMap.cells.map((c) => c.kind)" :width="spotMap.width" :picked="spotPicked" :is-off="(i) => !spotOk(i)" @pick="pickSpot" />
       </template>
       <p v-else class="small muted">隨機地圖：⭐ 隨機放在一格空地（不能指定格子）。</p>
     </template>
-    <div class="row small">解鎖需要旗標 <FlagInput v-model="requires.flags" placeholder="全部成立才解鎖" /></div>
-    <div class="row small">這些旗標成立時不出現 <FlagInput v-model="requires.flags_none" /></div>
-    <CondExtrasEditor :model-value="requires" @update:model-value="(v) => (node.requires = v)" />
-    <AffinityCondEditor :model-value="requires" label="解鎖需要好感" @update:model-value="(v) => (node.requires = v)" />
+    <RequiresEditor :model-value="requires" label="解鎖條件" placeholder="全部成立才解鎖" affinity @update:model-value="(v) => (node.requires = v)" />
     <div class="row small">限定穿著 <Hint text="主角要穿著這些才能進行（任務點照樣出現，按鈕停用並說明）。寫底材（例如 bunny_suit）時任何一件兔女郎裝都算，寫物品名稱時要那一件。" /> <NameListInput v-model="node.wear" :options="wearOptions" placeholder="底材或物品名稱" /></div>
     <NpcPicker v-model="node.allies" label="在場的友方固定 NPC：" :exclude="node.foes" />
     <p v-if="node.allies?.length" class="small muted">
@@ -170,8 +169,7 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
     <template v-if="node.kind === 'check' && node.check">
       <div class="row small">
         檢定
-        <select v-model="node.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-        DC <input v-model.number="node.check.dc" type="number" min="1" max="40" class="num" />
+        <CheckRow :check="node.check" />
         <Hint text="可以描述做法交給 AI 判定；大成功、成功、部分成功都算成功。" />
       </div>
       <StoryAffinityEditor v-model="node.check" />
@@ -181,13 +179,10 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
 
     <template v-else-if="node.kind === 'combat'">
       <div v-for="(g, i) in node.enemies ?? []" :key="i" class="row small">
-        <select v-model="g[0]" class="grow">
-          <option v-for="e in enemyList" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option>
-        </select>
-        ×<input v-model.number="g[1]" type="number" min="1" max="6" class="num" />
-        <button class="small" @click="node.enemies!.splice(i, 1)">移除</button>
+        <MonsterPick :entry="g" @remove="node.enemies!.splice(i, 1)" />
       </div>
       <button class="small" @click="(node.enemies ??= []).push(['bandit', 1])">＋ 怪物</button>
+      <label class="check small"><input type="checkbox" :checked="!!node.rut" @change="($event.target as HTMLInputElement).checked ? (node.rut = true) : delete node.rut" /> 怪物也可能發情（只在野外發情的怪物）</label>
       <NpcPicker v-model="node.foes" label="敵對的固定 NPC：" :exclude="node.allies" />
       <OutcomeEditor v-model="node.success" label="勝利" />
       <OutcomeEditor v-model="node.fail" label="落敗或撤退" optional />
@@ -199,20 +194,13 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
           選項 <input v-model="o.label" maxlength="30" />
           <label class="check"><input type="checkbox" :checked="!!o.check" @change="toggleCheck(o, ($event.target as HTMLInputElement).checked)" /> 要檢定</label>
           <template v-if="o.check">
-            <select v-model="o.check.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a) }}</option></select>
-            DC <input v-model.number="o.check.dc" type="number" min="1" max="40" class="num" />
+            <CheckRow :check="o.check" />
           </template>
-          <button class="small" @click="node.options!.splice(i, 1)">移除選項</button>
+          <button class="small" @click="node.options!.splice(i, 1)" title="移除這個選項">✕</button>
         </div>
-        <div class="row checks small">
-          <span>選項的內容標籤 <Hint text="設定裡關掉的標籤，這個選項不會出現（例如 NTR 分支）。" /></span>
-          <label v-for="t in CONTENT_TAG_IDS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
-            <input type="checkbox" :checked="o.tags?.includes(t)" @change="setOptionTag(o, t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}
-          </label>
-        </div>
+        <CheckList v-model="o.tags" label="選項的內容標籤" hint="設定裡關掉的標籤，這個選項不會出現（例如 NTR 分支）。" :options="CONTENT_TAG_OPTIONS" />
         <StoryAffinityEditor v-if="o.check" v-model="o.check" />
-        <AffinityCondEditor :model-value="o.requires ?? {}" label="這個選項出現需要" @update:model-value="(v) => (o.requires = v)" />
-        <CondExtrasEditor :model-value="o.requires ?? {}" @update:model-value="(v) => (o.requires = v)" />
+        <RequiresEditor :model-value="o.requires ?? {}" label="這個選項出現的條件" placeholder="全部成立才出現" affinity @update:model-value="(v) => (o.requires = v)" />
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" />
         <OutcomeEditor v-if="o.check" v-model="o.fail" label="失敗" optional />
       </div>
@@ -226,11 +214,4 @@ function setOptionTag(o: { tags?: string[] }, t: string, on: boolean) {
 <style scoped src="./editor.css"></style>
 <style scoped>
 .node { display: grid; gap: 6px; }
-.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; }
-.cell { width: 22px; height: 22px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
-.cell.wall { background: var(--border); }
-.cell.water { background: #2a4a6a; }
-.cell.off { cursor: default; opacity: 0.6; }
-.cell.picked { outline: 2px solid var(--accent); opacity: 1; }
-.option { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 </style>

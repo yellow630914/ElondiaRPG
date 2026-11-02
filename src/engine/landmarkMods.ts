@@ -50,7 +50,7 @@ export function builtinLandmark(id: string): LandmarkDef | undefined {
 }
 
 export function newLandmarkId(): string {
-  return `lm_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`
+  return `lm_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10).padEnd(8, '0')}`
 }
 
 /** 新地標：擺在這個聚落第一格空地（道路）上（之後在表單上改） */

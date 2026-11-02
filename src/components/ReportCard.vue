@@ -9,6 +9,7 @@ import type { Report } from '@/engine/types'
 import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
 import { visibleNarration } from '@/narrator/judge'
 import { usageFeatureName, usageSourceLabel, useGame } from '@/stores/game'
+import { undoConfirmText } from '@/stores/undo'
 import { inventedIn } from '@/engine/invention'
 import { useSettings } from '@/stores/settings'
 import { useImageSettings } from '@/stores/image'
@@ -21,6 +22,15 @@ import type { IconName } from './ui/iconPaths'
 const props = defineProps<{ report: Report }>()
 const game = useGame()
 const settings = useSettings()
+
+// 回退（stores/undo.ts）：最近幾輪的日誌可以撤銷，連同之後的日誌
+const undoSteps = computed(() => {
+  const i = game.undoReports.indexOf(props.report.report_id)
+  return i < 0 ? 0 : game.undoReports.length - i
+})
+function undoHere() {
+  if (confirm(undoConfirmText(undoSteps.value))) game.undo(props.report.report_id)
+}
 
 const KIND: Record<Report['kind'], { name: string; icon: IconName }> = {
   travel: { name: '旅行', icon: 'road' }, combat: { name: '戰鬥', icon: 'sword' }, action: { name: '行動', icon: 'd20' },
@@ -101,14 +111,16 @@ const chips = computed(() => changes.value.map((text) => {
 const showRaw = ref(false)
 const copied = ref(false)
 
-// 日誌插圖：一鍵整理分鏡、生圖，掛在這則日誌下面（SceneImage）
+// 日誌插圖：日誌底下的按鈕一鍵整理分鏡、生圖，掛在這則日誌下面（SceneImage）；設定了自動生成時正文寫完自己畫
 const image = useImageSettings()
 const scenes = useScenes()
-const hasScene = computed(() => !!game.state && !!scenes.urls[sceneKey(game.state, props.report.report_id)])
-function illustrate(e: Event) {
-  ;(e.target as HTMLElement).closest('details')?.removeAttribute('open')
+const scene = computed(() => (game.state ? sceneKey(game.state, props.report.report_id) : ''))
+const hasScene = computed(() => !!scenes.urls[scene.value])
+/** 正在整理分鏡或生圖（出錯的不算） */
+const sceneBusy = computed(() => !!scenes.jobs[scene.value] && scenes.jobs[scene.value]!.stage !== 'error')
+function illustrate() {
   if (!game.state) return
-  scenes.clearError(sceneKey(game.state, props.report.report_id))
+  scenes.clearError(scene.value)
   void scenes.generate(game.state, props.report)
 }
 
@@ -127,19 +139,11 @@ async function copyPrompt() {
       <strong class="where">{{ locationById(report.location.at).name }}<template v-if="report.location.to"> → {{ locationById(report.location.to).name }}</template></strong>
       <span class="when">{{ formatTime(report.time.start) }}</span>
       <details class="menu">
-        <summary class="menu-btn" title="更多：重寫經過、複製提示詞、報告 JSON" aria-label="更多"><GameIcon name="more" :size="18" /></summary>
+        <summary class="menu-btn" title="更多：複製提示詞、報告 JSON" aria-label="更多"><GameIcon name="more" :size="18" /></summary>
         <div class="menu-list">
-          <template v-if="settings.ready('narration')">
-            <button v-if="narration?.status !== 'streaming'" class="small ghost" title="用「敘事正文」的模型寫出這則日誌的經過" @click="game.narrate(report, { manual: !settings.aiNarration })">
-              <GameIcon name="edit" :size="14" /> {{ showStory ? '重新寫出經過' : '寫出經過' }}
-            </button>
-          </template>
-          <span v-else-if="settings.aiNarration" class="small muted">「敘事正文」的模型來源尚未設定，請到「設定」填寫</span>
-          <button class="small ghost" :disabled="!image.ready()" :title="image.ready() ? '依這則日誌畫一張插圖（AI 先整理分鏡，再送給生圖服務）' : '先到「設定 → 插圖生成」設定生圖服務'" @click="illustrate">
-            <GameIcon name="image" :size="14" /> {{ hasScene ? '重新生成插圖' : '生成插圖' }}
-          </button>
           <button class="small ghost" @click="copyPrompt"><GameIcon name="copy" :size="14" /> {{ copied ? '已複製' : '複製提示詞' }}</button>
           <button class="small ghost" @click="showRaw = !showRaw"><GameIcon name="code" :size="14" /> {{ showRaw ? '隱藏' : '顯示' }}報告 JSON</button>
+          <button v-if="undoSteps" class="small ghost" :disabled="game.judging" @click="undoHere"><GameIcon name="undo" :size="14" /> 回退到這則之前（{{ undoSteps }} 步）</button>
         </div>
       </details>
     </header>
@@ -154,12 +158,15 @@ async function copyPrompt() {
       <span class="muted">對 DC {{ roll.dc }}<template v-if="roll.dc !== roll.base_dc">（參考 {{ roll.base_dc }}）</template></span>
       <span v-show="!rolling" class="verdict" :class="roll.degree">{{ DEGREE[roll.degree] }}</span>
       <span v-if="roll.reference_degree" class="muted">（骰值參考：{{ DEGREE[roll.reference_degree] }}）</span>
+      <span v-if="roll.trivial" class="tag" title="AI 判為日常小事：結果至少是成功，骰值只決定過程順不順">日常小事</span>
       <span v-if="roll.source === 'ai'" class="tag">AI 判定</span>
     </div>
     <p v-if="report.check?.twist || report.check?.rationale" class="small reason">
       <template v-if="report.check?.twist"><span class="twist"><GameIcon name="sparkles" :size="13" /> 出乎預料：{{ report.check.twist }}</span><br v-if="report.check?.rationale" /></template>
       <span v-if="report.check?.rationale" class="muted">判定理由：{{ report.check.rationale }}</span>
     </p>
+    <!-- 打聽到的具體內容（AI 判定的 findings）：不用讀完正文也看得到 -->
+    <div v-if="report.check?.findings" class="small findings"><b><GameIcon name="eye" :size="13" /> 得知</b><div>{{ report.check.findings }}</div></div>
     <div v-if="narration?.status === 'streaming' && !showStory" class="small muted"><button class="small" @click="game.cancelNarration(report.report_id)">停止</button></div>
 
     <details v-if="thinking.length" class="thinking small">
@@ -194,6 +201,19 @@ async function copyPrompt() {
       <span v-for="(c, i) in chips" :key="c.text" class="tag" :class="c.cls" :style="{ '--i': i }">{{ c.text }}</span>
     </div>
 
+    <!-- 寫出經過、生成插圖：放在日誌底下（讀完正文不用捲回最上面），插圖也掛在這下面 -->
+    <div class="tools">
+      <button
+        v-if="settings.ready('narration') && narration?.status !== 'streaming'" class="small ghost tool"
+        :title="showStory ? '重新寫出經過（用「敘事正文」的模型）' : '寫出經過（用「敘事正文」的模型）'" :aria-label="showStory ? '重新寫出經過' : '寫出經過'"
+        @click="game.narrate(report, { manual: !settings.aiNarration })"
+      ><GameIcon name="edit" :size="15" /></button>
+      <button
+        class="small ghost tool" :disabled="!image.ready() || sceneBusy" :aria-label="hasScene ? '重新生成插圖' : '生成插圖'"
+        :title="!image.ready() ? '先到「設定 → 插圖生成」設定生圖服務' : hasScene ? '重新生成插圖（重新整理分鏡、重畫一張）' : '依這則日誌畫一張插圖（AI 先整理分鏡，再送給生圖服務）'"
+        @click="illustrate"
+      ><GameIcon name="image" :size="15" /></button>
+    </div>
     <SceneImage v-if="game.state" :report="report" />
 
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
@@ -231,6 +251,9 @@ async function copyPrompt() {
   background: var(--panel); border: 1px solid var(--gold-lo); border-radius: 3px; box-shadow: 0 8px 20px #000a;
 }
 .menu-list button { justify-content: flex-start; text-align: left; display: flex; align-items: center; gap: 6px; color: var(--text); }
+.tools { display: flex; justify-content: flex-end; gap: 2px; margin-top: 4px; }
+.tool { display: grid; place-items: center; width: 28px; height: 26px; padding: 0; color: var(--muted); }
+.tool:hover:not(:disabled) { color: var(--accent); }
 
 .check { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
 .d20 {
@@ -245,6 +268,8 @@ async function copyPrompt() {
 .verdict.fumble { color: #ff6a50; text-shadow: 0 0 8px #ff6a5066; }
 .reason { margin: 0 0 8px; }
 .twist { color: var(--accent-2); }
+.findings { margin: 0 0 8px; padding: 6px 10px; border-left: 2px solid var(--gold-lo); background: #0003; white-space: pre-line; }
+.findings b { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 600; }
 
 .story { margin: 8px 0; }
 .story .err { color: var(--danger); }

@@ -5,11 +5,12 @@ import { affinityStage } from '@/engine/character'
 import { askingFor, proposeDc, squadOptions } from '@/engine/companions'
 import { actionRules, genderName, raceName, tagDef } from '@/engine/data'
 import { isBound, partyMax, partyRoom } from '@/engine/party'
-import { cellAt, CELL_NAME, cellName, currentArea, position } from '@/engine/grid'
+import { cellAt, CELL_NAME, cellName, position } from '@/engine/grid'
 import { affinityTable, itemValue, type InteractionKind } from '@/engine/interactions'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { npcRecord, npcTitle } from '@/engine/npcs'
-import { isGuarded, isHostile, peopleHere, type PresentNpc } from '@/engine/population'
+import { isGuarded, isHostile, type PresentNpc } from '@/engine/population'
+import { npcActivity } from '@/engine/activities'
 import { inActiveSquad } from '@/engine/squads'
 import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
@@ -21,11 +22,12 @@ import FoldMenu from './ui/FoldMenu.vue'
 import NameTag from './NameTag.vue'
 import Avatar from './ui/Avatar.vue'
 import GameIcon from './ui/GameIcon.vue'
+import { isMobile, OPEN_ACTION_EVENT } from './mobile/mobile'
 
 // 這裡的人：和主角同一個地點、同一個地區的 NPC（見 docs/NPC_SYSTEM.md 第 7 節）
 const game = useGame()
 const s = computed(() => game.state!)
-const people = computed(() => peopleHere(s.value))
+const people = computed(() => game.here)
 const groups = computed(() => ([
   { key: 'staff', title: '店主與職員', icon: 'store', items: people.value.filter((p) => p.staff) },
   { key: 'adventurer', title: '冒險者', icon: 'sword', items: people.value.filter((p) => !p.staff && p.kind === 'adventurer') },
@@ -34,7 +36,7 @@ const groups = computed(() => ([
   const near = g.items.filter((p) => p.dist <= 1).length
   return { ...g, near, detail: near ? `身邊 ${near} 人` : '都不在身邊（要先走近）' }
 }))
-const where = computed(() => currentArea(s.value).name)
+const where = computed(() => game.area.name)
 // 身邊（同一格或相鄰）的人才能互動：沒有時自動收起，有人走近時自動打開；也可以點標題手動切換。
 // 店主與職員、冒險者、普通人三組也一樣：那一組身邊有人才展開
 const nearCount = computed(() => people.value.filter((p) => p.dist <= 1).length)
@@ -72,6 +74,9 @@ function rel(id: string) {
   return s.value.relationships?.[id]
 }
 
+/** 每個人正在做什麼（固定亂數，依時段記住；不用 AI） */
+const doing = computed(() => Object.fromEntries(people.value.map((p) => [p.rec.id, npcActivity(s.value, p, game.area)])))
+
 function hostile(p: PresentNpc): boolean {
   return isHostile(s.value, p.rec)
 }
@@ -87,7 +92,7 @@ function whereIs(p: PresentNpc): string {
   const dx = p.x - me.x
   const dy = p.y - me.y
   const dir = `${dx < 0 ? '西' : dx > 0 ? '東' : ''}${dy < 0 ? '北' : dy > 0 ? '南' : ''}`
-  const cell = cellAt(currentArea(s.value), p.x, p.y)
+  const cell = cellAt(game.area, p.x, p.y)
   return `在${dir ? `${dir}方` : '這裡'}的${cell ? cellName(cell.kind) : '某處'}（${p.dist} 格）`
 }
 
@@ -95,15 +100,17 @@ function attack(p: PresentNpc) {
   if (confirm(`偷襲${p.rec.name}？被人看到的話，這裡與${p.rec.name}常去的地方都會提高警戒、降低聲望。`)) interact('attack', p)
 }
 
-/** 帶到「主動行動」：加進對象（還沒選人時就是主要對象），捲到主動行動面板 */
+/** 帶到「主動行動」：加進對象（還沒選人時就是主要對象），捲到日誌底部的主動行動列 */
 function toAction(p: PresentNpc) {
   const max = actionRules.kinds.free.max_targets ?? 1
   if (!game.actionTargets.includes(p.rec.id)) {
     if (game.actionTargets.length >= max) game.flash(`主動行動最多 ${max} 個對象，先移掉一位`)
     else game.actionTargets = [...game.actionTargets, p.rec.id]
   }
-  document.querySelector('.action-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  document.querySelector<HTMLTextAreaElement>('.action-panel textarea:last-of-type')?.focus({ preventScroll: true })
+  // 手機版：關掉「這裡」面板、展開日誌底部的主動行動列（MobileGame、ActionPanel 都聽這個事件）
+  if (isMobile.value) return void window.dispatchEvent(new Event(OPEN_ACTION_EVENT))
+  document.querySelector('.action-bar')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  document.querySelector<HTMLTextAreaElement>('.action-bar textarea.free')?.focus({ preventScroll: true })
 }
 
 // 一國之主這類人：不能偷襲、偷竊（內容頁籤的設定）
@@ -230,6 +237,7 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
             <span v-for="t in tagsOf(p.rec)" :key="t.name" class="tag small" :title="t.ai_hint">{{ t.emoji }}{{ t.name }}</span>
             <span v-if="rel(p.rec.id)" class="tag known" :title="`親密度 ${rel(p.rec.id)!.affinity}`"><GameIcon name="heart" :size="11" />{{ affinityStage(rel(p.rec.id)!.affinity) }}</span>
           </div>
+          <div v-if="doing[p.rec.id] && !captive(p)" class="doing small muted" :title="doing[p.rec.id]" @click="open = open === p.rec.id ? null : p.rec.id">{{ doing[p.rec.id] }}</div>
 
           <div v-if="open === p.rec.id" class="detail small">
             <div class="muted">{{ genderName(p.rec.gender) }}・{{ raceName(p.rec.race) }}<template v-if="p.rec.lineage">（{{ p.rec.lineage }}）</template>・{{ npcTitle(p.rec) }} Lv.{{ p.rec.level }}</div>
@@ -341,7 +349,9 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
 .known { color: var(--accent); border-color: var(--gold-lo); }
 .why { margin: 0; }
 .bad { color: var(--danger); border-color: var(--danger); }
-li.far .line { opacity: 0.7; }
+li.far .line, li.far .doing { opacity: 0.7; }
+/* 正在做什麼：名字下面一行，對齊頭像右邊 */
+.doing { padding-left: 34px; margin-top: -2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 li.open { background: #c99a4510; outline: 1px solid var(--gold-lo); border-radius: 3px; padding: 6px; }
 .detail { display: grid; gap: 4px; margin-top: 4px; grid-template-columns: minmax(0, 1fr); }
 .detail input, .detail select { min-width: 0; }

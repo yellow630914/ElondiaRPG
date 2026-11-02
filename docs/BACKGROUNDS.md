@@ -7,6 +7,7 @@
 - 整頁背景放在背景氛圍（晝夜色調、地城灰塵、野外飄落物）底下；換地點、時段或地下城的層時，舊圖淡出、新圖淡入。
 - 有背景圖時面板變透明（`html[data-bg]` 把 `--frame-bg` 換成不透明度 `--panel-alpha` 的顏色），四周壓暗，和介面的深咖啡色接起來。
 - 「⚙️ 設定 → 畫面」：背景圖開關、亮度（20～100%，預設 60%）、面板不透明度（40～100%，預設 80%）。
+- 手機版（寬 720px 以下，[MOBILE_UI](MOBILE_UI.md)）：遊戲中的提示詞、世界頁，以及首頁進去的世界管理、提示詞管理，在背景圖上再蓋一層暗色（`App.vue` 的 `m-dim`），說明文字才讀得清楚。
 
 ## 2. 挑哪一張
 
@@ -24,10 +25,15 @@
 
 ## 3. 目前有的圖
 
-48 張基本版：6 個地區、26 個城鎮、16 座地下城都有（webp，1536×864，共約 8.5 MB）。時段版（`-dawn`、`-day`、`-dusk`、`-night`）與地下城的分層版（`-shallow`……）還沒有，放進來就會自動用上。特殊地圖用所屬地點的圖。
+64 張（webp，1536×864，共約 10.8 MB）：
+
+- 48 張基本版：6 個地區、26 個城鎮、16 座地下城（約 8.5 MB）。
+- 緋夢樂園（[LUST_PARK](LUST_PARK.md)）16 張：入口廣場 `special-sm_lust_park`，五個園區的淺層、中層、深層（`park_beast-shallow` 這類；園區沒有周邊，也沒有不分層的版本）。
+
+時段版（`-dawn`、`-day`、`-dusk`、`-night`）與一般地下城的分層版目前沒有圖，放進來就會自動用上。其他特殊地圖用所屬地點的圖。
 
 ## 4. 生圖
 
 48 個場景（6 地區、26 城鎮、16 地下城）的提示詞與 OpenRouter 生圖腳本另外整理（共用畫風：史詩奇幻概念畫、帶一點油畫筆觸、主體偏一側、中間低對比）。生好之後挑一張、照第 2 節的檔名轉成 webp 放進 `src/assets/backgrounds/`。
 
-緋夢樂園（[LUST_PARK](LUST_PARK.md)）的 16 個場景（入口廣場 `special-sm_lust_park`、五個園區的淺層、中層、深層 `park_*-shallow` 這類）的提示詞與腳本在 `tools/backgrounds/`（見那裡的 README.md）：ComfyUI（Checkpoint、UNet、自訂工作流程，和遊戲的 ComfyUI 設定組合同一套）、NovelAI、ChatGPT（不含成人內容）三個生圖腳本，以及裁成 1536×864 webp 的 `finalize.py`。16 張都已經生成並放進 `src/assets/backgrounds/`（2026-10-30，GPT 圖片）。
+緋夢樂園（[LUST_PARK](LUST_PARK.md)）的 16 個場景（入口廣場 `special-sm_lust_park`、五個園區的淺層、中層、深層 `park_*-shallow` 這類）的提示詞與腳本在 `tools/backgrounds/`（見那裡的 README.md）：ComfyUI（Checkpoint、UNet、自訂工作流程，和遊戲的 ComfyUI 設定組合同一套）、NovelAI、ChatGPT（不含成人內容）三個生圖腳本，以及裁成 1536×864 webp 的 `finalize.py`。16 張都已經放進 `src/assets/backgrounds/`。

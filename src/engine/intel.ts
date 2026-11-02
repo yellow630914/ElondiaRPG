@@ -5,7 +5,7 @@
 
 import {
   damageTypeName, dungeonEncounters, enemies, geography, locationById, stories, wildEncounters,
-  type DungeonLayerId, type EncounterGroup, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
+  type Degree, type DungeonLayerId, type EncounterGroup, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
 } from './data'
 import type { RewardEffect } from './effects'
 import { DUNGEON_LAYERS, type Area } from './grid'
@@ -13,7 +13,8 @@ import { pcOf } from './party'
 import type { Rng } from './rng'
 import { canStart } from './story'
 import type { GameState, Intel } from './types'
-import { shortestPath } from './world'
+import { openFor } from './storyFlags'
+import { shortestPath, type LocationOpen } from './world'
 
 const LAYER_NAME = DUNGEON_LAYER_NAME
 const LAYERS = DUNGEON_LAYER_IDS
@@ -100,11 +101,11 @@ export interface IntelOffer {
 }
 
 /** 附近的地點：這座城鎮的近郊，加上 7 天內可以到的地下城 */
-function nearbyDungeons(from: string): string[] {
+function nearbyDungeons(from: string, open?: LocationOpen): string[] {
   return geography.locations
     .filter((l) => l.type === 'dungeon' && dungeonEncounters[l.id])
     .filter((l) => {
-      const p = shortestPath(from, l.id)
+      const p = shortestPath(from, l.id, open)
       return p !== null && p.days[1] <= 7
     })
     .map((l) => l.id)
@@ -118,11 +119,11 @@ function strongest(table: EncounterGroup[]): EncounterGroup {
 export interface PointPlace { location: string; layer?: DungeonLayerId; table: EncounterGroup[]; tier: number }
 
 /** 附近可以放事件點的地方：這座城鎮的近郊，加上 7 天內可以到的地下城的每一層 */
-export function nearbyPlaces(from: string): PointPlace[] {
+export function nearbyPlaces(from: string, open?: LocationOpen): PointPlace[] {
   const here = locationById(from)
   const places: PointPlace[] = []
   if (here.type !== 'dungeon') places.push({ location: here.id, table: wildEncounters(here.region), tier: 0 })
-  for (const d of [...new Set([...(here.type === 'dungeon' ? [here.id] : []), ...nearbyDungeons(from)])]) places.push(...dungeonPlaces(d))
+  for (const d of [...new Set([...(here.type === 'dungeon' ? [here.id] : []), ...nearbyDungeons(from, open)])]) places.push(...dungeonPlaces(d))
   return places
 }
 
@@ -178,7 +179,7 @@ export function makePoint(state: GameState, p: PointPlace, event: PointEvent, va
  * prices 依層數（近郊、周邊、淺層、中層、深層），mult 是地點的價格倍率。
  */
 export function pointOffers(state: GameState, rng: Rng, n: number, prices: number[], validDays: number, mult: number): IntelOffer[] {
-  const places = nearbyPlaces(state.location)
+  const places = nearbyPlaces(state.location, openFor(state))
   const out: IntelOffer[] = []
   for (let k = 0; k < n && places.length; k++) {
     const p = places.splice(rng.int(0, places.length - 1), 1)[0]!
@@ -206,4 +207,35 @@ export function storyOffers(state: GameState, mult: number): IntelOffer[] {
       price: Math.round((def.start.price ?? 100) * mult),
       gets: [{ type: 'start_story', story: def.id }],
     }))
+}
+
+// ---- 向人打聽到的傳聞（AI 判定的 rumor 效果） ----
+
+/** 傳聞變成的事件點有效幾天 */
+export const RUMOR_POINT_DAYS = 7
+
+const clip = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
+
+/**
+ * 驗證 AI 寫的傳聞：地點、怪物要真的存在（不存在的 id 拿掉，不會出現編造的地名）。
+ * 成功以上、地點在附近（7 天內）、而且那種怪物真的在那裡出沒時，傳聞變成地圖上的事件點（盤踞的強敵）；
+ * 其他情況只是一則記在情報頁的傳聞。有提到怪物時點亮圖鑑。
+ */
+export function rumorFrom(state: GameState, x: Record<string, unknown>, degree: Degree, npc?: string): RewardEffect | undefined {
+  const title = clip(x.title, 20)
+  const text = clip(x.text, 160)
+  if (!title && !text) return undefined
+  const location = typeof x.location === 'string' && geography.locations.some((l) => l.id === x.location) ? x.location : undefined
+  const monster = typeof x.monster === 'string' && enemies[x.monster] ? x.monster : undefined
+  const layer = (DUNGEON_LAYER_IDS as string[]).includes(String(x.layer)) ? (x.layer as DungeonLayerId) : undefined
+  let point: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> | undefined
+  if (location && monster && (degree === 'success' || degree === 'critical') && nearbyPlaces(state.location, openFor(state)).some((p) => p.location === location)) {
+    const lives = (g: EncounterGroup) => g.some(([m]) => m === monster)
+    const place = placesAt(location, layer).find((p) => p.table.some(lives)) ?? placesAt(location).find((p) => p.table.some(lives))
+    if (place) point = makePoint(state, { ...place, table: place.table.filter(lives) }, 'combat', RUMOR_POINT_DAYS)
+  }
+  return {
+    type: 'rumor', title: title || point?.title || '傳聞', text: text || point?.text || '',
+    ...(npc ? { npc } : {}), ...(location ? { location } : {}), ...(monster ? { monster } : {}), ...(point ? { point } : {}),
+  }
 }

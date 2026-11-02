@@ -12,6 +12,7 @@ import {
 } from './data'
 import type { Rng } from './rng'
 import type { GameState, GuildRank, Quest } from './types'
+import { gameRule } from './gameRules'
 import mapsJson from '@data/world/maps.json'
 
 export const RANK_ORDER: GuildRank[] = ['F', 'E', 'D', 'C', 'B', 'A', 'S']
@@ -277,7 +278,9 @@ export function questTargets(state: GameState, location: string, layer?: Dungeon
     if (have >= questMax(q)) continue
     const need = Math.max(1, q.goal - have)
     if (q.kind === 'gather_wild' || q.kind === 'gather_dungeon') {
-      out.push({ quest: q.id, item: q.item, cells: Math.min(r.max_cells, need) })
+      // 每格採到的份數照存檔規則的採集量（小數的部分不算進去）
+      const per = Math.max(1, Math.floor(gameRule(state, 'gatherMult')))
+      out.push({ quest: q.id, item: q.item, cells: Math.min(r.max_cells, Math.ceil(need / per)) })
     } else if (q.monster) {
       // 掉落：依掉落機率估算要打幾隻
       const loot = enemies[q.monster]?.loot?.find((l) => l.item === q.item)

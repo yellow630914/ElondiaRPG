@@ -26,7 +26,7 @@
 
 ```
 城鎮（公會 / 商店 / 旅店 / 酒館 / 工作 / 自己的房子）
-  ├─ 接取委託 ──▶ 旅行（旅途地圖）──▶ 冒險區域（近郊 / 地下城四層）──▶ 返回交付
+  ├─ 接取委託 ──▶ 旅行（旅途地圖）──▶ 冒險區域（近郊 / 地下城的周邊與四層）──▶ 返回交付
   ├─ 購物、打造、休息、學習技能
   └─ 與 NPC 互動、招募夥伴（影響親密值與人際關係）
 ```
@@ -38,6 +38,7 @@
 | 系統 | 文件 | 主要程式 |
 |---|---|---|
 | 屬性、資源、戰鬥、能力、狀態、敵人 AI、戰敗 | [COMBAT_SYSTEM](COMBAT_SYSTEM.md) | `character.ts`、`combat.ts`、`defeat.ts` |
+| 怪物一覽 | [MONSTERS](MONSTERS.md) | `data/rules/enemies.json` |
 | 特質（被動，影響所有檢定與戰鬥） | [PERKS](PERKS.md) | `perks.ts`、`perkActions.ts` |
 | 效果（報酬／後果模板） | [EFFECTS](EFFECTS.md) | `effects.ts` |
 | 主動行動（擲骰 → AI 判定） | [ACTIONS](ACTIONS.md) | `actions.ts`、`checks.ts`、`narrator/judge.ts` |
@@ -58,8 +59,14 @@
 | 夥伴、休息、奴隸契約、主人的家 | [COMPANIONS](COMPANIONS.md) | `companions.ts`、`party.ts`、`rest.ts`、`slavery.ts`、`masterHome.ts` |
 | 人際關係與共同記憶 | [RELATIONSHIP_MEMORY](RELATIONSHIP_MEMORY.md) | `social.ts` |
 | 事件視窗 | [EVENTS](EVENTS.md) | `components/events/` |
+| 地下城的色情事件、寄生物（成人向） | [ADULT_EVENTS](ADULT_EVENTS.md) | `dungeonEvents.ts`、`parasites.ts`、`parasiteEvents.ts` |
+| 慾望指標、流派、雙面效應、主人工具人（成人向） | [LEWD_STATS](LEWD_STATS.md) | `lewd.ts`、`schools.ts`、`masterTool.ts` |
+| 魅魔的遊樂園「緋夢樂園」（成人向） | [LUST_PARK](LUST_PARK.md) | `park.ts` |
 | AI 服務與提示詞 | [PROMPTS](PROMPTS.md) | `narrator/` |
-| 角色形象插圖 | [PORTRAITS](PORTRAITS.md) | `narrator/image*.ts`、`narrator/comfy.ts` |
+| 角色形象插圖、日誌插圖 | [PORTRAITS](PORTRAITS.md) | `narrator/image*.ts`、`narrator/comfy.ts`、`stores/portraits.ts`、`stores/scenes.ts` |
+| 介面語言與提示詞的繁簡轉換 | [I18N](I18N.md) | `i18n/uiScript.ts`、`narrator/script.ts` |
+| 背景圖 | [BACKGROUNDS](BACKGROUNDS.md) | `components/fx/backgrounds.ts` |
+| 手機版畫面（寬 720px 以下） | [MOBILE_UI](MOBILE_UI.md) | `components/mobile/` |
 | 自訂內容與世界 | [CONTENT_EDITOR](CONTENT_EDITOR.md)、[CONTENT_DEPENDENCIES](CONTENT_DEPENDENCIES.md) | `mods.ts`、`usage.ts`、`stores/content.ts` |
 | 存檔 | [SAVES](SAVES.md) | `stores/saves.ts`、`stores/game.ts`、`state.ts` |
 
@@ -71,7 +78,7 @@
 | 力量體系／等級成長規則 | 等級 1–20、五個生命層級、魔法環階／武技境界／信仰階位 | `data/rules/progression.json` |
 | 冒險者公會等級制度 | 公會階級 F–S、接任務限制、功績與晉升考核（[GUILD](GUILD.md)） | 同上 |
 | 技能規則／技能獲取 | 技能品質上限受生命層級限制；升級三選一 | 同上 |
-| 職業體系規則 | 10 個職業及其力量來源 | `data/rules/classes.json` |
+| 職業體系規則 | 10 個職業及其力量來源（另有給普通人的非戰鬥職業 `noncombatant`） | `data/rules/classes.json` |
 | 分階段親密值規則 | 每個 NPC 一個 -100～100 的隱藏數值，引擎計算、AI 只呈現態度 | `progression.json` |
 | 角色扮演指導（四層判斷） | 引擎先算出「實力差（生命層級差）→ 立場」，寫進報告的 `attitude`；性格與親密值交給 AI 演繹 | `progression.json` 的 `power_gap_attitude` |
 | 價格參考-貨幣／食宿／任務報酬 | 價格表（全大陸統一使用阿爾貝納發行的白鸛幣，1 白鸛 = 世界書的 1 銅幣）；委託報酬在各階級的範圍內擲出 | `data/rules/economy.json` |
@@ -90,9 +97,11 @@
 | `location` | 地點 id、目的地、細部場景、天氣 |
 | `party` / `others` | 事件前後的角色快照（HP 為 `[前, 後, 上限]`）、NPC 性格與態度 |
 | `timeline` | 依序的關鍵節拍：誰、做了什麼、擲骰、結果、效果 |
+| `quest` / `story` | 相關的公會委託／特殊任務與任務點 |
 | `outcome` | 總結果＋一句話摘要 |
 | `changes` | 所有狀態變化：金錢、經驗、升級、技能、物品、親密值、聲望、劇情旗標、功績…… |
-| `narration` | 給 AI 的敘事指示：視角、長度、語氣、重點、玩家意圖、成人場景 |
+| `check` | 主動行動的判定：屬性、參考 DC 與實際 DC、自然骰與總值、成功程度、AI 或規則、理由、出乎預料、日常小事（[ACTIONS](ACTIONS.md)） |
+| `narration` | 給 AI 的敘事指示：視角、長度、語氣、重點、玩家意圖、戰敗事件的前後半段（`mode`）、成人場景（`adult_scene`，以及不是主角本人時的 `adult_actor`） |
 | `lore_keys` | 用來挑選世界書條目的關鍵字 |
 
 ## 5. AI 敘事管線
@@ -101,9 +110,10 @@
 報告 JSON
   ├─ 1. 挑選世界書條目：常駐條目＋關鍵字命中（繁簡兩種寫法都比）的條目，依 order 排序並裁切到字數上限
   ├─ 2. 組合提示詞：不太變動的放前面（可快取），每次不同的放後面
-  │     system：規則（文風是最後一條）、常駐世界書、其他提示詞（前段）
-  │     user：主角、觸發的世界書、人際關係與記憶、報告、其他提示詞（後段）、本次要求
-  └─ 3. 呼叫模型（串流顯示）
+  │     system：規則（文風是最後一條）、常駐世界書、其他提示詞（前段）；成人場景另外加上成人向的常駐世界書與成人場景規則
+  │     user：主角、觸發的世界書、人際關係與記憶、上一段正文的結尾與幕間（前後銜接）、報告、其他提示詞（後段）、本次要求
+  ├─ 3. 依「AI 的輸出語言」轉換繁簡寫法（I18N 第 4 節）
+  └─ 4. 呼叫模型（串流顯示）：帶親密場景的日誌交給「成人場景正文」的模型來源，其他交給「敘事正文」
 ```
 
 - 敘事的硬性規則：報告的結果、數值、物品、傷亡不可更改或新增；親密值、擲骰與 DC 不寫數字；只輸出正文，不輸出世界書原本要求的 `<thinking>`、狀態欄等聊天用模組。全文與可修改的地方見 [PROMPTS](PROMPTS.md) 第 3 節。
@@ -123,6 +133,10 @@ docs/                 設計文件（文件地圖見 docs/README.md）
 src/engine/           遊戲引擎（純 TypeScript，不依賴 Vue），每個系統一到數個模組（見第 3 節）
 src/narrator/         世界書挑選、提示詞、AI 服務、插圖
 src/stores/           Pinia：遊戲狀態與存檔、設定、自訂內容、提示詞、插圖
-src/components/       Vue 介面
+src/components/       Vue 介面（手機版在 src/components/mobile/）
+src/i18n/             介面的繁簡轉換
+src/assets/           內建的背景圖（backgrounds/）與固定 NPC 的形象圖（portraits/）
 src/__tests__/        Vitest 測試（含報告格式驗證）
+worldgen/             生成世界內容的指南、模板與腳本（給 Agent）
+tools/                素材管線：背景圖與形象圖的生圖與轉檔、像素素材、GitHub Wiki 產生器
 ```

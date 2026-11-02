@@ -9,7 +9,7 @@ import { actionRules, DUNGEON_LAYER_NAME, lewdRules, LOCK_GRADES, npcTags, perkR
 import { LEWD_STATS, lewdName } from '@/engine/lewd'
 import type { LewdStat } from '@/engine/types'
 import { intelSummary, useSummary } from '@/engine/inventory'
-import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod } from '@/engine/mods'
+import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod, SYSTEM_CONDITIONS } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
 import { choosablePerks, CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
@@ -23,6 +23,9 @@ import ContentIcon from '../icons/ContentIcon.vue'
 import UsageNote from './UsageNote.vue'
 import SourceNote from './SourceNote.vue'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 物品的編輯表單：基本資料、出現的地方（商店、掉落、寶箱、採集、事件）、消耗品效果、裝備組成
 const props = defineProps<{ name: string }>()
@@ -96,10 +99,13 @@ const materials = computed(() => {
 
 // ---- 欄位 ----
 const use = computed(() => (draft.value.use ??= {}) as ItemUse)
-// 吃喝可以給的狀態：到下次長休就解除的那些（用餐、喝酒、磨利……）
-const conditionList = Object.entries(companionRules.conditions)
-  .filter(([id, c]) => !id.startsWith('$') && c.clears === 'long_rest')
-  .map(([id, c]) => ({ id, name: `${c.name}：${c.desc}` }))
+// 吃喝可以給的非戰鬥狀態（用餐、喝酒、磨利、自建的……；奴隸印記這類由規則加上的除外）
+const conditionList = computed(() => {
+  void content.version
+  return Object.entries(companionRules.conditions)
+    .filter(([id]) => !id.startsWith('$') && !SYSTEM_CONDITIONS.includes(id))
+    .map(([id, c]) => ({ id, name: `${c.name}：${c.desc}` }))
+})
 function setTool(kind: string) {
   if (!kind) delete draft.value.tool
   else draft.value.tool = {
@@ -333,21 +339,15 @@ function setFuel(v: string) {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ name }}</h3>
-      <span class="tag">{{ custom ? '自建' : edited ? '內建・已修改' : '內建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="!custom" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="name" :kind="custom ? 'custom' : 'builtin'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <UsageNote :usage="usage" :deletable="custom" />
     <SourceNote kind="item" :id="name" />
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱
           <input v-if="custom" v-model="newName" maxlength="20" />
@@ -364,10 +364,10 @@ function setFuel(v: string) {
       <label class="check small"><input type="checkbox" :checked="!!draft.adult" @change="draft.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向（內容編輯器的篩選用）</label>
       <div class="block icon-row"><span>圖示</span><IconField v-model="draft.icon" :fallback="iconFallback" /></div>
       <p v-if="draft.category === 'material'" class="small muted">材料的價格是商人的收購價（全額收購）；其他物品賣出時是一半。</p>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>在哪裡出現</legend>
+    <FoldSet>
+      <template #legend>在哪裡出現</template>
       <div class="row checks">
         <span class="small">商店：</span>
         <label v-for="(n, t) in SHOPS" :key="t" class="check small"><input type="checkbox" :checked="draft.tags.includes(String(t))" @change="setTag(String(t), ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
@@ -402,15 +402,15 @@ function setFuel(v: string) {
           </select>
           <label class="small">機率 <input class="num" type="number" min="1" max="100" :value="Math.round(d.chance * 100)" @input="d.chance = Number(($event.target as HTMLInputElement).value) / 100" />%</label>
           <label class="small">數量 <input v-model.number="d.qty" class="num" type="number" min="1" /></label>
-          <button class="small" @click="drops.splice(i, 1)">移除</button>
+          <button class="small" @click="drops.splice(i, 1)" title="移除">✕</button>
         </div>
         <button class="small" @click="addDrop">＋ 掉落的怪物</button>
         <p class="small muted">掉落設定存在怪物身上（和怪物編輯頁的掉落物是同一份）。</p>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.category === 'consumable' || draft.category === 'food' || draft.category === 'scroll'">
-      <legend>使用效果（{{ useText || '無' }}）</legend>
+    <FoldSet v-if="draft.category === 'consumable' || draft.category === 'food' || draft.category === 'scroll'">
+      <template #legend>使用效果（{{ useText || '無' }}）</template>
       <div class="grid">
         <label>吃喝後的狀態（到下次長休）
           <select :value="use.condition ?? ''" @change="use.condition = ($event.target as HTMLSelectElement).value || undefined">
@@ -474,10 +474,10 @@ function setFuel(v: string) {
       </div>
       <label class="check small"><input v-model="use.escape" type="checkbox" /> 傳送：全隊立刻脫離戰鬥</label>
       <label class="check small"><input v-model="use.combat_only" type="checkbox" /> 只能在戰鬥中使用 <Hint text="回復生命、法術環以外的效果一律只能在戰鬥中用。" /></label>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.category === 'gear'">
-      <legend>工具模板（{{ toolText || '無：交給 AI 判斷' }}）</legend>
+    <FoldSet v-if="draft.category === 'gear'">
+      <template #legend>工具模板（{{ toolText || '無：交給 AI 判斷' }}）</template>
       <div class="grid">
         <label>模板
           <select :value="draft.tool?.kind ?? ''" @change="setTool(($event.target as HTMLSelectElement).value)">
@@ -512,7 +512,7 @@ function setFuel(v: string) {
           <input v-model.number="draft.burns" type="number" min="0" max="999" />
         </label>
       </div>
-      <p class="small muted">照明：在黑暗的地方每走一格燒掉一點。「燒什麼」填燃料物品的名稱（例如油燈燒燈油，燈油本身要填能照亮幾格）；空白而且有「能照亮幾格」時燒掉工具本身（火把）；都沒有時不會燒掉（魔法照明石）。</p>
+      <HelpText text="照明：在黑暗的地方每走一格燒掉一點。「燒什麼」填燃料物品的名稱（例如油燈燒燈油，燈油本身要填能照亮幾格）；空白而且有「能照亮幾格」時燒掉工具本身（火把）；都沒有時不會燒掉（魔法照明石）。" />
       <div class="row small">
         <label>鎖
           <select :value="draft.lock ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.lock = ($event.target as HTMLSelectElement).value as LockGrade) : delete draft.lock">
@@ -529,11 +529,11 @@ function setFuel(v: string) {
         </label>
         <Hint text="成人向（docs/LEWD_STATS.md 第 16 節）：打開別人鎖在身上的拘束具（主人強制戴上的），用一次就沒了，鎖歸自己。" />
       </div>
-      <p class="small muted">行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。</p>
-    </fieldset>
+      <HelpText text="行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。" />
+    </FoldSet>
 
-    <fieldset v-if="draft.category === 'furniture'">
-      <legend>家具</legend>
+    <FoldSet v-if="draft.category === 'furniture'">
+      <template #legend>家具</template>
       <div class="grid">
         <label>功能
           <select :value="furn.function ?? ''" @change="setFurnFunction(($event.target as HTMLSelectElement).value)">
@@ -560,10 +560,10 @@ function setFuel(v: string) {
         </label>
       </div>
       <p class="small muted">家具擺在自己房子的格子上。床讓你在家長休；舒適度加總達到 {{ homeRules.comfort_rested }} 時，在家長休後睡得香甜；高階工作台讓這種工藝能處理第四、五級的材料；苗圃可以種下種子（種子的「能種在」要和苗圃擺的地方一樣）。</p>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.category !== 'equipment'">
-      <legend><label class="check"><input type="checkbox" :checked="!!draft.recipe" @change="toggleRecipe(($event.target as HTMLInputElement).checked)" /> 配方：可以自己做出來</label></legend>
+    <FoldSet v-if="draft.category !== 'equipment'">
+      <template #legend><label class="check"><input type="checkbox" :checked="!!draft.recipe" @change="toggleRecipe(($event.target as HTMLInputElement).checked)" /> 配方：可以自己做出來</label></template>
       <template v-if="draft.recipe">
         <div class="grid">
           <label>工藝
@@ -579,15 +579,15 @@ function setFuel(v: string) {
         <div v-for="(x, i) in draft.recipe.inputs" :key="i" class="row">
           <input v-model="x.name" list="recipe-items" placeholder="材料名稱" />
           ×<input v-model.number="x.qty" type="number" min="1" max="99" class="qty" />
-          <button class="small" :disabled="draft.recipe.inputs.length <= 1" @click="draft.recipe.inputs.splice(i, 1)">刪除</button>
+          <button class="small" :disabled="draft.recipe.inputs.length <= 1" @click="draft.recipe.inputs.splice(i, 1)" title="刪除這一項">✕</button>
         </div>
         <button v-if="draft.recipe.inputs.length < 6" class="small" @click="draft.recipe.inputs.push({ name: '', qty: 1 })">＋ 材料</button>
         <p class="small muted">做的人擲{{ craftRules.skills[draft.recipe.craft].name }}的屬性檢定，加工藝等級；DC {{ craftRules.recipe.dc[(draft.recipe.level || 1) - 1] }}，工具要{{ craftRules.tool_tier_names[craftRules.tool_tier[(draft.recipe.level || 1) - 1]! - 1] }}。材料最多 6 種；沒填名稱的材料不會存。</p>
       </template>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.category === 'material'">
-      <legend><label class="check"><input type="checkbox" :checked="!!draft.seed" @change="toggleSeed(($event.target as HTMLInputElement).checked)" /> 種子：可以種在苗圃</label></legend>
+    <FoldSet v-if="draft.category === 'material'">
+      <template #legend><label class="check"><input type="checkbox" :checked="!!draft.seed" @change="toggleSeed(($event.target as HTMLInputElement).checked)" /> 種子：可以種在苗圃</label></template>
       <template v-if="draft.seed">
         <div class="grid">
           <label>能種在
@@ -601,16 +601,16 @@ function setFuel(v: string) {
         </div>
         <div v-for="(_, i) in draft.seed.yields" :key="i" class="row">
           <input v-model="draft.seed.yields[i]" list="recipe-items" placeholder="長出的物品" />
-          <button class="small" :disabled="draft.seed.yields.length <= 1" @click="draft.seed.yields.splice(i, 1)">刪除</button>
+          <button class="small" :disabled="draft.seed.yields.length <= 1" @click="draft.seed.yields.splice(i, 1)" title="刪除這一項">✕</button>
         </div>
         <button v-if="draft.seed.yields.length < 5" class="small" @click="draft.seed.yields.push('')">＋ 作物</button>
         <p class="small muted">有好幾種作物時，收成時隨機長出其中一種。</p>
       </template>
-    </fieldset>
+    </FoldSet>
     <datalist id="recipe-items"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
 
-    <fieldset v-if="draft.category === 'info'">
-      <legend>情報內容（{{ intelText }}）</legend>
+    <FoldSet v-if="draft.category === 'info'">
+      <template #legend>情報內容（{{ intelText }}）</template>
       <div class="grid">
         <label>解讀後得到
           <select :value="intel.kind" @change="setIntelKind(($event.target as HTMLSelectElement).value as ItemIntel['kind'])">
@@ -648,11 +648,11 @@ function setFuel(v: string) {
           </select>
         </label>
       </div>
-      <p class="small muted">在行囊按「🔍 解讀」：和向情報商買情報一樣記進冒險筆記，用掉這件物品。AI 自創的情報物品是解讀地點附近隨機的事件點。</p>
-    </fieldset>
+      <HelpText text="在行囊按「🔍 解讀」：和向情報商買情報一樣記進冒險筆記，用掉這件物品。AI 自創的情報物品是解讀地點附近隨機的事件點。" />
+    </FoldSet>
 
-    <fieldset v-if="draft.category === 'equipment'">
-      <legend>裝備組成</legend>
+    <FoldSet v-if="draft.category === 'equipment'">
+      <template #legend>裝備組成</template>
       <div v-if="draft.gear" class="grid">
         <label>底材
           <select :value="draft.gear.base" @change="setBase(($event.target as HTMLSelectElement).value)">
@@ -748,17 +748,17 @@ function setFuel(v: string) {
         <p v-if="draft.gear.attrs" class="small muted">有屬性加減的東西不在商店上架、AI 交易也不會賣。</p>
         <p v-else-if="draft.master_force" class="small muted">主人會強制裝備的東西沒有勾商店時不上架；勾了照樣在那種店賣。</p>
       </template>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.category === 'material'">
-      <legend>打造材料</legend>
+    <FoldSet v-if="draft.category === 'material'">
+      <template #legend>打造材料</template>
       <div class="row checks">
         <label v-for="(m, id) in gearRules.materials" :key="id" class="check small">
           <input type="checkbox" :checked="draft.forge?.materials.includes(String(id))" @change="setForge(String(id), ($event.target as HTMLInputElement).checked)" /> <ContentIcon kind="material" :def="m" :size="14" /> {{ m.name }}（{{ m.tier }} 級）
         </label>
       </div>
       <p class="small muted">勾選後可以在鐵匠鋪、裁縫店或珠寶店拿它委託打造對應材料的裝備（第 2 級以上）。</p>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 

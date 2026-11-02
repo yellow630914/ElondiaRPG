@@ -8,7 +8,7 @@ import { gearRules } from '@/engine/gear'
 import type { StepPlace } from '@/engine/grid'
 import mapsJson from '@data/world/maps.json'
 import { useGame } from '@/stores/game'
-import { AI_FEATURES, useSettings } from '@/stores/settings'
+import { AI_FEATURES, NPC_LIFE_AI, SOURCE_MAX, useSettings } from '@/stores/settings'
 import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
@@ -26,6 +26,19 @@ const game = useGame()
 const saveRules = computed(() => Object.fromEntries((Object.keys(RULE_DEFS) as NumericRule[])
   .filter((k) => game.state?.options?.[k] !== undefined).map((k) => [k, game.state!.options![k]!])) as Partial<Record<NumericRule, number>>)
 const source = ref(0)
+function addSource() {
+  const i = settings.addSource()
+  if (i >= 0) source.value = i
+}
+function removeSource() {
+  const s = settings.sources[source.value]
+  if (!s) return
+  const used = AI_FEATURES.filter((f) => settings.routes[f.id] === source.value).map((f) => f.name)
+  const first = settings.sources[source.value === 0 ? 1 : 0]!.name
+  if (!confirm(`刪除「${s.name}」？${used.length ? `用它的功能（${used.join('、')}）會改用「${first}」。` : ''}`)) return
+  settings.removeSource(source.value)
+  source.value = Math.min(source.value, settings.sources.length - 1)
+}
 // 設定分成幾個頁籤（記住上次看的那一頁）
 const PAGES = [
   { id: 'models', label: '模型', icon: 'settings' },
@@ -68,14 +81,18 @@ function doReset() {
   <template v-if="page === 'models'">
     <section class="panel">
       <h2 class="head"><GameIcon name="settings" :size="20" />模型來源
-        <Hint text="可以設定三個模型來源（例如一個擅長寫作的模型、一個便宜的模型），再在下方指定每個功能用哪一個。API key 只會存在這個瀏覽器的 localStorage，請求直接從瀏覽器送往你選擇的服務。請勿在共用電腦上保存 key。" />
+        <Hint text="可以設定多個模型來源（預設三個，最多八個；例如一個擅長寫作的模型、一個便宜的模型），再在下方指定每個功能用哪一個。API key 只會存在這個瀏覽器的 localStorage，請求直接從瀏覽器送往你選擇的服務。請勿在共用電腦上保存 key。" />
       </h2>
       <nav class="row tabs">
         <button v-for="(s, i) in settings.sources" :key="i" :class="{ active: source === i }" @click="source = i">
           <span class="dot" :class="{ ready: settings.sourceReady(i) }" :title="settings.sourceReady(i) ? '已設定' : '未設定'" />{{ s.name }}
         </button>
+        <button v-if="settings.sources.length < SOURCE_MAX" class="ghost" title="新增一個來源（先複製來源 1 的服務與 key）" @click="addSource">＋ 新增來源</button>
       </nav>
-      <ModelSourceEditor :key="source" :index="source" />
+      <ModelSourceEditor :key="`${source}-${settings.sources.length}`" :index="source" />
+      <div v-if="settings.sources.length > 1" class="row">
+        <button class="ghost small danger" @click="removeSource">🗑️ 刪除「{{ settings.sources[source]?.name }}」</button>
+      </div>
     </section>
 
     <section class="panel">
@@ -156,6 +173,35 @@ function doReset() {
             <option value="off">關閉</option>
           </select>
         </label>
+        <label>
+          <span class="lab">隊友的戰敗色情事件 <Hint text="主角不會遇到戰敗色情事件時（上面設成關閉或「男性形象的主角不發生」、或關閉了「主角非自願」），改由還在場的隊友遇到：符合這裡設定的隊友裡魅力最高的那位。玩家替那位隊友選擇反應（虛與委蛇、掙扎、咬牙撐過，或自己描述），由隊友擲骰，結果也記在隊友身上。無法戰鬥的隊員戰敗時已經跑開了，不算。主角會遇到時照舊是主角。" /></span>
+          <select v-model="settings.defeatCompanion">
+            <option value="all">開啟</option>
+            <option value="not_masc">男性形象的隊友不發生</option>
+            <option value="off">關閉</option>
+          </select>
+        </label>
+        <label class="check">
+          <input v-model="settings.mascBodyContent" type="checkbox" /> 陽剛體型也能遇到「只給陰柔、中性」的成人內容
+          <Hint text="有一部分成人向內容限定陰柔、中性體型的主角：17 條打工、儀式的特殊任務線，地下城事件（全部），部分城鎮、旅途事件與地標的場景；連帶兩種主要的寄生物也只能從那裡得到。勾選後陽剛體型的主角也會遇到。看的是體型（陽剛、陰柔、中性），不是性別；體型在建立角色或角色設定裡可以改。" />
+        </label>
+        <p v-if="settings.mascBodyContent" class="small body-warn"><GameIcon name="caution" :size="16" class="warn-icon" />這些內容是照陰柔、中性的主角寫的：角色的身分不會變（陽剛體型的主角一樣會當兔女郎、女僕、新娘），固定的事件文字也可能寫到不符合主角身體的部位。AI 寫經過時會照主角的身體改寫，但不保證每次都自然。</p>
+        <label>
+          <span class="lab">魔物娘 <Hint text="交給 AI 的怪物換成魔物娘的樣子：成年女性的身體，保留原本種族的耳朵、尾巴、鱗片、觸手這些特徵（每種怪物各有一段描述，怪物編輯器裡可以改）。戰鬥、戰敗事件與插圖的分鏡都套用；畫面上的名字、圖鑑不變。「只在陽剛體型時」看的是這段經過的主角：戰敗時被圍住的人、親密場景的主角，其他時候是主角。沒有魔物娘形態的怪物（不死、節肢、群體、幼體、沒有形體的……）照原本的樣子。主題園區的怪物不套用。" /></span>
+          <select v-model="settings.monsterGirl">
+            <option value="off">關閉</option>
+            <option value="masc">只在陽剛體型時</option>
+            <option value="all">一律</option>
+          </select>
+        </label>
+        <label v-if="settings.monsterGirl !== 'off'">
+          <span class="lab">魔物娘出現機率 <Hint text="不是每隻怪物都要是魔物娘時調低。每種怪物每天擲一次：同一天的戰鬥、戰敗事件、重寫經過與插圖都一樣，同一場的同一種怪物一起是或一起不是。怪物編輯器可以替個別怪物另外設定（例如巨鼠設 0，一定照原本的樣子）。" /></span>
+          <input v-model.number="settings.monsterGirlChance" type="range" min="0" max="100" step="5" />
+          <span class="small">{{ settings.monsterGirlChance }}%</span>
+        </label>
+        <label v-if="settings.defeatAdult !== 'off' || settings.defeatCompanion !== 'off'" class="check">
+          <input v-model="settings.defeatAlways" type="checkbox" /> 戰敗色情事件一定發生 <Hint text="不擲「敵人起意」的魅力檢定：戰敗、沒有救兵，而且還站著的敵人裡有會起意的（惡人、發情的怪物……），就一定進入戰敗事件。不死這類不會發情的怪物照樣不會。" />
+        </label>
       </div>
     </section>
 
@@ -232,6 +278,22 @@ function doReset() {
           <span class="lab">建角時挑裝備的預算（材料等級點數） <Hint :text="`0～${gearRules.creation.max_budget}，預設 ${gearRules.creation.default_budget}。職業的基本配備免費；把模板裝備換成更好的材料每升一級花 1 點，另外加的裝備花它的材料等級（第 ${gearRules.creation.max_tier} 級以內）。只影響之後建立的角色。`" /></span>
           <input v-model.number="settings.creationGearBudget" type="number" min="0" :max="gearRules.creation.max_budget" style="width: 100px" />
         </label>
+        <label class="check">
+          <input v-model="settings.npcLife" type="checkbox" /> NPC 會自己成長
+          <Hint text="你在乎的冒險者不在你身邊時也會過自己的日子：你在人際關係裡「關注」的人、留在家裡或寄放在酒館的夥伴、離隊的夥伴，以及親密度 30 以上的冒險者。每隔幾天擲一次：去了哪裡做什麼、升級（最多到主角的等級，落後越多越容易升；固定 NPC 不升級；夥伴的能力與屬性點留給你選）、換一件比較好的武器或護甲（上鎖的、獨特的不換；夥伴換下的寄回行囊；固定 NPC 不換）、受了點傷去休養（只是近況，隨時可以找他）。近況記在人際關係裡，AI 寫重逢的經過時也會知道。" />
+        </label>
+        <template v-if="settings.npcLife">
+          <label>
+            <span class="lab">每幾天擲一次 <Hint text="1～30，預設 3。間隔越長，每次的變化越多（升級、換裝的機率跟著提高）。" /></span>
+            <input v-model.number="settings.npcLifeDays" type="number" min="1" max="30" style="width: 100px" />
+          </label>
+          <label>
+            <span class="lab">近況交給 AI 寫 <Hint text="AI 依角色的性格、經歷與和你的共同記憶，把擲出來的近況寫成一段（數值照擲出來的，不會改）。每次擲骰時：一次寫完這次有變化的人；重逢時：見到他（或他回到隊上）時才寫，比較省；不用 AI：只有簡短的近況。用的是「模型」頁的「NPC 近況」來源。" /></span>
+            <select v-model="settings.npcLifeAi">
+              <option v-for="o in NPC_LIFE_AI" :key="o.id" :value="o.id">{{ o.name }}</option>
+            </select>
+          </label>
+        </template>
       </div>
     </section>
 
@@ -245,6 +307,10 @@ function doReset() {
       <button class="danger" @click="doReset">放棄目前的進度並回到開始畫面</button>
     </div>
     <p class="small muted">存檔欄位裡的存檔不會被刪除。</p>
+    <label class="check">
+      <input v-model="settings.backupBeforeSwitch" type="checkbox" /> 讀檔、開新遊戲前先備份到自動存檔
+      <Hint text="開著時，讀檔前會把目前的進度存一份；在首頁開新遊戲或讀檔、蓋掉還沒繼續的遊戲前，也會先把它存一份。都存進自動存檔欄位（和長休、抵達目的地的自動存檔輪流用最近 3 格）。關掉時不存，自動存檔欄位只留長休、抵達的存檔，但誤讀或誤開新遊戲就找不回原本的進度。" />
+    </label>
     <h3 class="head"><GameIcon name="book" :size="17" />日誌瘦身</h3>
     <div class="form">
       <label>
@@ -257,6 +323,8 @@ function doReset() {
 </template>
 
 <style scoped>
+.body-warn { display: flex; gap: 6px; align-items: flex-start; margin: 0; line-height: 1.6; }
+.body-warn .warn-icon { color: var(--danger); flex: none; margin-top: 2px; }
 .form { display: grid; gap: 12px; max-width: 560px; }
 .warn-line { margin: -4px 0 0; color: var(--accent); }
 .tabs { gap: 6px; margin-bottom: 10px; }
@@ -273,6 +341,14 @@ function doReset() {
 .routes { border-collapse: collapse; width: 100%; }
 .routes td { border-bottom: 1px solid var(--border); padding: 6px 8px 6px 0; vertical-align: top; }
 .routes .name { white-space: nowrap; font-weight: 600; }
+/* 手機：用途名稱和來源一排，說明換到下一排佔滿寬度 */
+@media (max-width: 720px) {
+  .routes, .routes tbody { display: block; }
+  .routes tr { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 8px; align-items: center; border-bottom: 1px solid var(--border); padding: 6px 0; }
+  .routes td { border-bottom: none; padding: 0; }
+  .routes td select { width: 100%; }
+  .routes td.muted { grid-column: 1 / -1; padding-top: 4px; }
+}
 .note { color: var(--accent-2); }
 .form label, .form .field { display: grid; gap: 4px; }
 .form label.check { display: flex; gap: 6px; align-items: center; }

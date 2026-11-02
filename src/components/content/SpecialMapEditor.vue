@@ -10,7 +10,12 @@ import { useGame } from '@/stores/game'
 import CellPicker from './CellPicker.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
-import FlagInput from './FlagInput.vue'
+import EditorHeader from './EditorHeader.vue'
+import RequiresEditor from './RequiresEditor.vue'
+import FoldSet from './FoldSet.vue'
+import CellGrid from './CellGrid.vue'
+import MonsterPick from './MonsterPick.vue'
+import HelpText from './HelpText.vue'
 
 // 特殊地圖的編輯表單：基本資料（所屬地點、給 AI 的描述、光線、刷新）、版面（畫格子或隨機挖）、
 // 額外的隨機內容、遭遇表與採集物、通道（接到城鎮區塊的牆或別張特殊地圖）。內建的不能刪除
@@ -81,6 +86,11 @@ function resize(w: number, h: number) {
 function charAt(x: number, y: number) {
   return draft.value.grid?.[y]?.[x] ?? '#'
 }
+/** 畫筆用的格子種類（一排一排攤平） */
+const paintKinds = computed(() => Array.from({ length: size.value[0] * size.value[1] }, (_, i) => legend[charAt(i % size.value[0], Math.floor(i / size.value[0]))]))
+/** 另一張地圖的格子（通道的另一頭）：每一排可能不一樣長，照最長的攤平 */
+const gridWidth = (rows: string[]) => Math.max(...rows.map((r) => r.length))
+const gridKinds = (rows: string[]) => rows.flatMap((r) => [...r.padEnd(gridWidth(rows), '#')].map((ch) => legend[ch]))
 function paint(x: number, y: number) {
   const t = tool.value
   if (t === 'entry') {
@@ -290,24 +300,18 @@ function remove() {
 
 <template>
   <div class="editor" @mouseup="painting = false" @mouseleave="painting = false">
-    <div class="row head">
-      <h3>🗺️ {{ draft.name }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="reset">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small warn" :disabled="usage.length > 0" @click="remove">🗑️ 刪除</button>
-    </div>
+    <EditorHeader
+      :title="`🗺️ ${draft.name}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="reset" @restore="restore" @remove="remove"
+    />
     <p class="small muted">
       id：{{ id }}。特殊地圖可以被特殊任務的事件傳送進來、放任務點，或用通道接到城鎮區塊的牆、別張特殊地圖。
       裡面只能在安全點（或旅店格）長休，不能直接出發旅行；從出口離開回到進來前的地方，倒下時被送回所屬地點。改了版面或內容的設定，存檔裡的這張地圖會重新生成。
     </p>
     <UsageNote :usage="usage" :deletable="!builtin" />
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="L.name_chars" /></label>
         <label>所屬地點
@@ -332,10 +336,10 @@ function remove() {
         </ul>
         <span v-else class="muted">還沒有任何場景。</span>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>版面</legend>
+    <FoldSet>
+      <template #legend>版面</template>
       <div class="row small">
         <label class="check"><input type="radio" :checked="draft.mode === 'fixed'" @change="setMode('fixed')" /> 固定地圖（自己畫）</label>
         <label class="check"><input type="radio" :checked="draft.mode === 'random'" @change="setMode('random')" /> 隨機地圖 <Hint text="從下方中央的出口挖出通道。" /></label>
@@ -348,23 +352,20 @@ function remove() {
           <button v-for="p in palette" :key="p.ch" class="small" :class="{ primary: tool === p.ch }" :title="p.name" @click="tool = p.ch">{{ p.icon || p.ch }} {{ p.name }}</button>
           <button class="small" :class="{ primary: tool === 'entry' }" title="被事件傳送進來時站的位置" @click="tool = 'entry'">📍 入口</button>
         </div>
-        <p v-if="tool.startsWith('conn:')" class="small warn-text">點地圖上的一格，當作通道 {{ Number(tool.slice(5)) + 1 }} 在這張地圖的位置。</p>
-        <p v-if="tool.startsWith('shop:')" class="small warn-text">點地圖上的一格擺這家店。</p>
-        <div class="cells" :style="{ gridTemplateColumns: `repeat(${size[0]}, 24px)` }">
-          <template v-for="y in size[1]" :key="y">
-            <button
-              v-for="x in size[0]" :key="`${x}-${y}`" class="cell" :class="legend[charAt(x - 1, y - 1)]"
-              :title="`(${x - 1}, ${y - 1}) ${cellName(legend[charAt(x - 1, y - 1)] ?? 'wall')}`"
-              @mousedown.prevent="down(x - 1, y - 1)" @mouseenter="enter(x - 1, y - 1)"
-            >{{ markerAt(x - 1, y - 1) || CELL_ICON[legend[charAt(x - 1, y - 1)] ?? 'wall'] || '' }}</button>
-          </template>
-        </div>
-        <p class="small muted">選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；BOSS 格的怪物在下方「BOSS 格」指定；沒有出口時只能從通道進出。</p>
+        <p v-if="tool.startsWith('conn:')" class="small tip">點地圖上的一格，當作通道 {{ Number(tool.slice(5)) + 1 }} 在這張地圖的位置。</p>
+        <p v-if="tool.startsWith('shop:')" class="small tip">點地圖上的一格擺這家店。</p>
+        <CellGrid
+          :kinds="paintKinds" :width="size[0]" :size="24" paint
+          :icon="(i) => markerAt(i % size[0], Math.floor(i / size[0])) || undefined"
+          :title-of="(i) => `(${i % size[0]}, ${Math.floor(i / size[0])}) ${cellName(paintKinds[i] ?? 'wall')}`"
+          @down="(i) => down(i % size[0], Math.floor(i / size[0]))" @enter="(i) => enter(i % size[0], Math.floor(i / size[0]))"
+        />
+        <HelpText text="選上面的格子種類，在地圖上點或拖曳來畫。遭遇、強敵、資源、寶箱、陷阱畫在地圖上是固定位置（內容在生成時擲）；BOSS 格的怪物在下方「BOSS 格」指定；沒有出口時只能從通道進出。" />
       </template>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>額外的隨機內容（最少～最多） <Hint text="撒在空地上。" /></legend>
+    <FoldSet>
+      <template #legend>額外的隨機內容（最少～最多） <Hint text="撒在空地上。" /></template>
       <div class="grid">
         <label v-for="[k, n] in ([['encounters', '遭遇'], ['traps', '陷阱'], ['resources', '資源'], ['chests', '寶箱']] as const)" :key="k">{{ n }}
           <span class="row">
@@ -374,58 +375,49 @@ function remove() {
         </label>
         <label>強敵 <input v-model.number="draft.elites" type="number" min="0" :max="L.elites[1]" /></label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>遭遇表（選填）</legend>
-      <p class="small muted">空白時：所屬地點是地下城就用「陷阱、寶箱比照」那一層的遭遇，其他用地區的城郊遭遇表。強敵是最強的一組再多一隻。</p>
+    <FoldSet>
+      <template #legend>遭遇表（選填）</template>
+      <HelpText text="空白時：所屬地點是地下城就用「陷阱、寶箱比照」那一層的遭遇，其他用地區的城郊遭遇表。強敵是最強的一組再多一隻。" />
       <div v-for="(g, gi) in draft.table ?? []" :key="gi" class="row small">
         <span>第 {{ gi + 1 }} 組：</span>
-        <span v-for="(m, mi) in g" :key="mi" class="row">
-          <select v-model="m[0]"><option v-for="e in monsterList" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option></select>
-          ×<input v-model.number="m[1]" type="number" :min="L.group_count[0]" :max="L.group_count[1]" style="width: 3.5em" />
-          <button class="x" @click="g.splice(mi, 1); if (!g.length) removeGroup(gi)">×</button>
-        </span>
+        <MonsterPick v-for="(m, mi) in g" :key="mi" :entry="m" :min="L.group_count[0]" :max="L.group_count[1]" @remove="g.splice(mi, 1); if (!g.length) removeGroup(gi)" />
         <button class="small" :disabled="g.length >= L.group_types" @click="addMonster(g)">＋ 怪物</button>
-        <button class="small warn" @click="removeGroup(gi)">刪除這組</button>
+        <button class="small" title="刪除這一組" @click="removeGroup(gi)">✕ 這一組</button>
       </div>
       <button class="small" :disabled="(draft.table?.length ?? 0) >= L.table" @click="addGroup">＋ 新增一組</button>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset v-if="draft.mode === 'fixed'">
-      <legend>BOSS 格 <Hint text="在版面用「BOSS」畫上的格子，每一格各自指定守在那裡的怪物（一組，最多 4 種）與名字。名字顯示在地圖與戰鬥的場景；沒指定怪物時照強敵的規則（遭遇表最大的一組再多一隻）。打倒之後不再出現（會刷新的地圖再進來時重來）。" /></legend>
+    <FoldSet v-if="draft.mode === 'fixed'">
+      <template #legend>BOSS 格 <Hint text="在版面用「BOSS」畫上的格子，每一格各自指定守在那裡的怪物（一組，最多 4 種）與名字。名字顯示在地圖與戰鬥的場景；沒指定怪物時照強敵的規則（遭遇表最大的一組再多一隻）。打倒之後不再出現（會刷新的地圖再進來時重來）。" /></template>
       <p v-if="!bossCells.length" class="small muted">版面上還沒有 BOSS 格。選上面的「👑 BOSS」在地圖上畫一格。</p>
       <div v-for="(c, bi) in bossCells" :key="`${c.x},${c.y}`" class="row small boss">
         <strong>👑{{ bi + 1 }}</strong>
         <span class="muted">（{{ c.x }}, {{ c.y }}）</span>
         <input :value="bossAt(c.x, c.y)?.name ?? ''" :maxlength="L.boss_name_chars" placeholder="名字（選填，例如 下水道之王）" style="width: 13em" @change="setBossName(c.x, c.y, ($event.target as HTMLInputElement).value)" />
         <template v-if="bossAt(c.x, c.y)?.group.length">
-          <span v-for="(m, mi) in bossAt(c.x, c.y)!.group" :key="mi" class="row">
-            <select v-model="m[0]"><option v-for="e in monsterList" :key="e.id" :value="e.id">{{ e.name }}（{{ e.level }} 級）</option></select>
-            ×<input v-model.number="m[1]" type="number" :min="L.group_count[0]" :max="L.group_count[1]" style="width: 3.5em" />
-            <button class="x" @click="removeBossMonster(c.x, c.y, mi)">×</button>
-          </span>
+          <MonsterPick v-for="(m, mi) in bossAt(c.x, c.y)!.group" :key="mi" :entry="m" :min="L.group_count[0]" :max="L.group_count[1]" @remove="removeBossMonster(c.x, c.y, mi)" />
         </template>
-        <span v-else class="warn-text">沒指定怪物：照強敵的規則</span>
+        <span v-else class="tip">沒指定怪物：照強敵的規則</span>
         <button class="small" :disabled="(bossAt(c.x, c.y)?.group.length ?? 0) >= L.group_types" @click="addBossMonster(c.x, c.y)">＋ 怪物</button>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>採集物（選填）</legend>
+    <FoldSet>
+      <template #legend>採集物（選填）</template>
       <div class="chips">
-        <span v-for="(n, i) in draft.resource_items ?? []" :key="n" class="tag chip">{{ n }} <button class="x" @click="draft.resource_items!.splice(i, 1)">×</button></span>
+        <span v-for="(n, i) in draft.resource_items ?? []" :key="n" class="tag chip">{{ n }} <button class="x" @click="draft.resource_items!.splice(i, 1)" title="移除">✕</button></span>
         <span v-if="!draft.resource_items?.length" class="small muted">（沒有時用地下城的採集表）</span>
       </div>
       <div class="row">
-        <input v-model="pickItem" list="sm-items" placeholder="物品名稱" @keydown.enter="addItem" />
-        <datalist id="sm-items"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
+        <input v-model="pickItem" list="cv-item-names" placeholder="物品名稱" @keydown.enter="addItem" />
         <button class="small" @click="addItem">＋ 加入</button>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>商店</legend>
+    <FoldSet>
+      <template #legend>商店</template>
       <p v-if="draft.mode !== 'fixed'" class="small muted">只有固定地圖可以擺商店。</p>
       <template v-else>
         <p class="small muted">擺在這張地圖上的店（內建店種或自建的店），站上去就能交易；物價與貨色照所屬地點。</p>
@@ -433,17 +425,17 @@ function remove() {
           <select v-model="s.shop"><option v-for="o in shopList" :key="o.id" :value="o.id">{{ o.name }}</option></select>
           <span>在（{{ s.x }}, {{ s.y }}）</span>
           <button class="small" :class="{ primary: tool === `shop:${si}` }" @click="tool = `shop:${si}`">在地圖上選</button>
-          <button class="small warn" @click="removeShop(si)">刪除</button>
+          <button class="small warn" @click="removeShop(si)" title="刪除這一項">✕</button>
         </div>
         <button class="small" :disabled="(draft.shops?.length ?? 0) >= L.shops" @click="addShop">＋ 擺一家店</button>
       </template>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>通道</legend>
+    <FoldSet>
+      <template #legend>通道</template>
       <p v-if="draft.mode !== 'fixed'" class="small muted">只有固定地圖可以設定通道；隨機地圖只能由事件傳送進來。</p>
       <template v-else>
-        <p class="small muted">通道把這張地圖的一格和另一張地圖（城鎮區塊的牆或水、或別張特殊地圖的任一格）接起來，打開時兩頭都變成通道、互相走得過去。寫了旗標的話，旗標成立才打開。</p>
+        <HelpText text="通道把這張地圖的一格和另一張地圖（城鎮區塊的牆或水、或別張特殊地圖的任一格）接起來，打開時兩頭都變成通道、互相走得過去。寫了旗標的話，旗標成立才打開。" />
         <div v-for="(c, ci) in draft.conns" :key="ci" class="conn">
           <div class="row small">
             <strong>通道 {{ ci + 1 }}</strong>
@@ -454,7 +446,7 @@ function remove() {
             <label class="check"><input type="radio" :checked="connKind(c) === 'map'" :disabled="!otherMaps.length" @change="setConnKind(c, 'map')" /> 特殊地圖</label>
             <label v-if="parks.length" class="check" title="以這張地圖為入口廣場的園區（主題地下城）：走上去等於從入口進那座地下城"><input type="radio" :checked="connKind(c) === 'park'" @change="setConnKind(c, 'park')" /> 園區</label>
             <span class="spacer" />
-            <button class="small warn" @click="draft.conns.splice(ci, 1); tool = '#'">刪除</button>
+            <button class="small warn" @click="draft.conns.splice(ci, 1); tool = '#'" title="刪除這一項">✕</button>
           </div>
           <template v-if="connKind(c) === 'town'">
             <p class="small">城鎮那一頭：{{ townText(c) }}</p>
@@ -467,39 +459,29 @@ function remove() {
             <label class="small">地圖
               <select v-model="c.to.area"><option v-for="m in otherMaps" :key="m.id" :value="`sm/${m.id}`">{{ m.name }}</option></select>
             </label>
-            <div v-if="targetGrid(c).length" class="cells small-cells" :style="{ gridTemplateColumns: `repeat(${Math.max(...targetGrid(c).map((r) => r.length))}, 18px)` }">
-              <template v-for="(row, ty) in targetGrid(c)" :key="ty">
-                <button
-                  v-for="(ch, tx) in [...row]" :key="`${tx}-${ty}`" class="cell" :class="[legend[ch], { picked: c.to.x === tx && c.to.y === ty }]"
-                  @click="c.to.x = tx; c.to.y = ty"
-                >{{ c.to.x === tx && c.to.y === ty ? '🔗' : CELL_ICON[legend[ch] ?? 'wall'] || '' }}</button>
-              </template>
-            </div>
+            <CellGrid
+              v-if="targetGrid(c).length" :kinds="gridKinds(targetGrid(c))" :width="gridWidth(targetGrid(c))" :size="18" marker="🔗"
+              :picked="c.to.y * gridWidth(targetGrid(c)) + c.to.x" @pick="(i) => { c.to.x = i % gridWidth(targetGrid(c)); c.to.y = Math.floor(i / gridWidth(targetGrid(c))) }"
+            />
             <p v-else class="small muted">那張是隨機地圖，沒辦法接通道。</p>
           </template>
-          <div class="grid small">
-            <label>要有這些旗標才打開 <FlagInput :model-value="splitFlags(c.flagsText)" placeholder="旗標（可以不填）" @update:model-value="c.flagsText = ($event ?? []).join('、')" /></label>
-            <label>有這些旗標時關閉 <FlagInput :model-value="splitFlags(c.flagsNoneText)" placeholder="旗標（可以不填）" @update:model-value="c.flagsNoneText = ($event ?? []).join('、')" /></label>
-          </div>
+          <RequiresEditor
+            :model-value="{ flags: splitFlags(c.flagsText), flags_none: splitFlags(c.flagsNoneText) }" label="通道打開的條件" placeholder="可以不填" :extras="false"
+            @update:model-value="(v) => { c.flagsText = (v.flags ?? []).join('、'); c.flagsNoneText = (v.flags_none ?? []).join('、') }"
+          />
         </div>
         <button class="small" :disabled="draft.conns.length >= L.connections" @click="addConn">＋ 新增通道</button>
       </template>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 
-<style scoped src="./editor.css">.interior-note { border-left: 3px solid var(--accent); padding-left: 8px; margin-top: 4px; }
-.interior-note ul { margin: 2px 0 0; padding-left: 18px; }
-</style>
+<style scoped src="./editor.css"></style>
 <style scoped>
-.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; user-select: none; }
-.cell { width: 24px; height: 24px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
-.small-cells .cell { width: 18px; height: 18px; font-size: 10px; }
-.cell.wall { background: var(--border); }
-.cell.water { background: #2a4a6a; }
-.cell.picked { outline: 2px solid var(--accent); }
+.interior-note { border-left: 3px solid var(--accent); padding-left: 8px; margin-top: 4px; }
+.interior-note ul { margin: 2px 0 0; padding-left: 18px; }
 .palette { flex-wrap: wrap; gap: 4px; }
 .conn { border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 6px; display: grid; gap: 6px; }
-.warn-text { color: var(--accent); }
+.tip { color: var(--accent); }
 .boss { flex-wrap: wrap; align-items: center; gap: 4px 6px; border-top: 1px dashed var(--border); padding-top: 4px; }
 </style>

@@ -1,4 +1,4 @@
-# 慾望戰鬥 S9 的資料（docs/plan/LUST_COMBAT_PLAN.md 第 19 節；規則寫在 docs/LEWD_STATS.md）：
+# 慾望戰鬥 S9 的資料（規則寫在 docs/LEWD_STATS.md）：
 #   S9-2 新的拘束種類「封住嘴巴」（lewd.json 的 two_face.kinds.mouth、流派的契合）、16 件拘束具（gear.json 的底材、items.json 的物品）、
 #        取得方式：商店（物品的 tags）、地下城寶箱（gear.json 的 chests）、園區寶箱（lewd.json 的 park.chest_items）、
 #        商店每天另外上架的拘束具（shops.json 的 restraints）、拍賣會（auction.pool）、拘束戰鬥場的稀有獎品（arena.rings.bound.rare）、捕奴隊隊長的掉落（enemies.json）、主人的池子（master_force）
@@ -213,6 +213,9 @@ def write_s9_2():
 # ---------------- S9-3 地下城事件 ----------------
 UNWILLING = ['adult', 'pc_unwilling']
 WILLING = ['adult']
+# 對象是人形的男性（幽靈新郎、神父、祭司）：標男性對象
+UNWILLING_MEN = ['adult', 'pc_unwilling', 'male_partner']
+WILLING_MEN = ['adult', 'male_partner']
 BODY = ['fem', 'andro']
 
 
@@ -382,7 +385,7 @@ DUNGEON_EVENTS = [
                ('fai', 15), out('古神聽到了，但祂想要的不是禱詞。', cond('aroused'), lewd('submission', 1)), scene='fail'),
            opt('當祂的祭品', out('你閉上眼睛，任由沙和祭司的手把你獻給古神。結束時，你的小腹上多了一個金色的紋樣。',
                               {"type": "tattoo", "template": "lewd_wings"}, cond('afterglow'), lewd('submission', 1)), scene='always'),
-       ], layers=[1, 2, 3, 4], dungeons=WEST,
+       ], layers=[1, 2, 3, 4], dungeons=WEST, tags=UNWILLING_MEN,
        scene='主角被流沙埋到胸口動彈不得，戴胡狼面具的祭司幻影從沙裡伸出手，把主角當成祭品一寸寸地檢查、獻給古神'),
     ev('dg_mummy_wrap', '木乃伊的拘束布',
        '石棺裡伸出泛黃的布條，一圈一圈地纏上你的身體，從腳踝纏到脖子，越纏越緊——像要把你也做成一具木乃伊。',
@@ -447,7 +450,7 @@ DUNGEON_EVENTS = [
                ('cha', 14), out('他聽不見。儀式繼續進行。', cond('afterglow'), lewd('submission', 1)), scene='fail'),
            opt('陪他走完儀式', out('你陪他走完了婚禮，也陪他過了洞房。天亮時他安心地消失了，留下一盒嫁妝。',
                                 money(250), cond('afterglow'), lewd('lewdness', 1)), scene='always'),
-       ], layers=[1, 2, 3, 4], dungeons=CRYPT,
+       ], layers=[1, 2, 3, 4], dungeons=CRYPT, tags=UNWILLING_MEN,
        scene='幽靈新郎把主角當成新娘，在燭火搖曳的墓穴婚床上完成三百年前沒完成的洞房，冰冷的手撫過主角全身'),
     ev('dg_abbey_confession', '懺悔室',
        '廢墟裡的懺悔室還亮著燈。隔板後面傳來一個溫和的聲音：「孩子，你有什麼要懺悔的嗎？」',
@@ -458,7 +461,7 @@ DUNGEON_EVENTS = [
                                   {"type": "condition", "target": "pc", "condition": "blessed", "add": True}, lewd('submission', 2), lewd('endurance', 1)), scene='always'),
            opt('掀開隔板看是誰', out('隔板後面什麼也沒有，只有一本攤開的祈禱書。', xp(25)),
                ('str', 13), out('隔板後面伸出一隻手，把你拉進了黑暗裡。', cond('shaken'), cond('disheveled'))),
-       ], layers=[1, 2, 3, 4], dungeons=CRYPT, tags=WILLING,
+       ], layers=[1, 2, 3, 4], dungeons=CRYPT, tags=WILLING_MEN,
        scene='主角在廢墟的懺悔室裡自願伏在跪凳上，接受隔板後面看不見的神父一下一下的懺悔鞭刑'),
     # ---- 深層的事件（只在深層、底層；地下城事件的 tier 一律是 normal，高階只對旅途事件有意義） ----
     ev('dg_adv_lust_altar', '淫神的祭壇',
@@ -994,7 +997,7 @@ OUTFIT_SOURCES = {
     "park": [["潮汐港的微比基尼", 0.02]],
     "auction": [["緋夢夫人的晚禮服", 2]],
     "arena": {"ring": "lust", "rare": {"tier": 5, "chance": 0.25, "items": ["黑薔薇的乳膠手套"]}},
-    "loot": {"enemy": "incubus_enforcer", "item": "夢魔氏族的角冠", "chance": 0.2},
+    "loot": {"enemy": "incubus_enforcer", "item": "夢魔氏族的角冠", "chance": 0.65},
 }
 
 
@@ -1020,7 +1023,9 @@ def write_s9_6():
         for mat in TIERS[b['kind']]:
             assert materials[mat]['kind'] == b['kind'], (base, mat)
             std.append({"name": std_name(materials, base, mat), "category": "equipment", "price_cc": round(b['price'] * materials[mat]['price']),
-                        "tags": [SHOP_OF[b['kind']]], **({"charm_min": 3} if base in CHARM_ONLY else {}), "gear": {"base": base, "material": mat}})
+                        "tags": [SHOP_OF[b['kind']]], **({"charm_min": 3} if base in CHARM_ONLY else {}), "gear": {"base": base, "material": mat},
+                        # 第三級材料和其他制式品一樣要城市以上才賣
+                        **({"min_location": "city"} if materials[mat]['tier'] == 3 else {})})
     new_items = std + OUTFIT_UNIQUES
     p = 'data/rules/items.json'
     t = open(p).read()

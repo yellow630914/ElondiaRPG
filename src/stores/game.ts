@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { toSimplifiedText } from '@/engine/script'
 import { consign, placeBid } from '@/engine/auction'
 import { orderOutfit } from '@/engine/outfitTailor'
 import { fuseGear, splitGear } from '@/engine/fusion'
@@ -15,6 +16,7 @@ import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as deadlines from '@/engine/deadlines'
 import * as restraints from '@/engine/restraints'
 import { pitchTarget } from '@/engine/perks'
+import { noteBystanders } from '@/engine/activities'
 import { computed, ref, toRaw, watch } from 'vue'
 import * as actions from '@/engine/actions'
 import * as combat from '@/engine/combat'
@@ -41,6 +43,7 @@ import * as slavery from '@/engine/slavery'
 import * as defeat from '@/engine/defeat'
 import * as social from '@/engine/social'
 import * as story from '@/engine/story'
+import * as npcLife from '@/engine/npcLife'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
@@ -55,7 +58,7 @@ import * as garden from '@/engine/garden'
 import * as invention from '@/engine/invention'
 import type { DefeatLoot, Difficulty, GameState, GearSlot, LewdStat, Report, TattooPlace } from '@/engine/types'
 import {
-  buildNegotiationPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
+  buildNegotiationPrompt, buildNewsPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
 import { providerInfo, type ProviderId, type TokenUsage } from '@/narrator/providerInfo'
@@ -63,8 +66,10 @@ import type { ContentMods } from '@/engine/mods'
 import { useContent, VANILLA, VANILLA_NAME, type WorldRef } from './content'
 import { usePortraits } from './portraits'
 import { usePrompts } from './prompts'
+import { useScenes } from './scenes'
 import { AI_FEATURES, useSettings, type AiFeature } from './settings'
-import { archiveOldReports } from './logArchive'
+import { archiveOldReports, mergeUsage } from './logArchive'
+import { actionInputOf, firstNewReport, midTurn, restoreTurn, UNDO_STEPS, type UndoStep } from './undo'
 import { withoutIcons } from '@/engine/itemIcons'
 import {
   AUTO_SLOTS, currentStore, parseSaveFile, QUICK_SLOT, saveFileName, slotMeta, slotStore, slotTitle, takePreloaded,
@@ -73,7 +78,7 @@ import {
 
 export { ARCHIVE_USAGE } from './logArchive'
 
-/** 不屬於任何一則日誌的 AI 呼叫（酒館候選人、商店清單、談判方式、失敗的判定） */
+/** 不屬於任何一則日誌的 AI 呼叫（酒館候選人、商店清單、談判方式、失敗的判定、回退掉的日誌） */
 export const OTHER_USAGE = '_other'
 
 export interface UsageEntry {
@@ -265,6 +270,11 @@ export const useGame = defineStore('game', () => {
   const controllers = new Map<string, AbortController>()
 
   const pc = computed(() => (state.value ? player(state.value) : null))
+  // 畫面共用的「現在所在的地方」：同一個狀態下只算一次，各面板不用各自重算（Vue 的 computed 會記住，相關的狀態改了才重算）。
+  // 只在遊戲畫面（有進行中的遊戲）讀
+  const here = computed(() => population.peopleHere(state.value!))
+  const area = computed(() => grid.currentArea(state.value!))
+  const cell = computed(() => grid.currentCell(state.value!))
 
   // 自動保存：每次動作後把整份遊戲寫進 IndexedDB。寫入是非同步的，寫到一半又有新的動作時，
   // 只保留最新的一份，等這次寫完再寫
@@ -348,17 +358,29 @@ export const useGame = defineStore('game', () => {
     error.value = null
     // 動作中途出錯時還原成動作之前的狀態（不會留下改到一半的存檔）
     const before = snapshotState(state.value)
+    const lastReport = state.value.reports.at(-1)?.report_id
     try {
       const result = fn(state.value)
       // 期限：逾期的委託與特殊任務（各自產生報告）
       deadlines.expireDeadlines(state.value)
+      // NPC 自己的日子：每 X 天替在乎的冒險者擲一次（npcLife.ts）
+      const lived = npcLife.tickNpcLife(state.value)
       // 離開了按過「稍候」的任務點：之後再來會再觸發
       story.forgetStoryWaits(state.value)
       // 日誌太長時把舊的封存（token 用量另外合計，見 logArchive.ts）
       archiveOldReports(state.value, useSettings().logKeepLimit(), narrations.value, usage.value)
+      recordTurn(before, lastReport)
       saveSoon()
       const settings = useSettings()
+      // 第一次產生關係的人：插圖設定開了自動畫時，排隊畫他的形象圖（已經有的不畫）
+      const met = Object.keys(state.value.relationships ?? {}).filter((id) => !before.relationships?.[id])
+      if (met.length) usePortraits().autoPortraits(state.value, met)
+      // 近況交給 AI 寫：每次擲骰時（這次有變化的人），或重逢時（身邊有還沒寫的人）
+      if (settings.npcLife && settings.npcLifeAi === 'roll' && lived.length) void polishNews(lived)
+      else if (settings.npcLife && settings.npcLifeAi === 'reunion') polishReunions()
       const report = isReport(result) ? result : hasReport(result) ? result.report : undefined
+      // 旁邊的人在做什麼：交給敘事當背景（不用 AI，見 activities.ts）
+      if (report) noteBystanders(state.value, report)
       // 自動存檔：長休、抵達目的地
       if (report?.kind === 'rest' && report.outcome.tags?.includes('長休')) void autoSave('長休')
       if (report?.kind === 'travel' && report.outcome.result === 'arrived') void autoSave('抵達')
@@ -375,6 +397,121 @@ export const useGame = defineStore('game', () => {
     }
   }
 
+  // ---- 回退（undo.ts）：最近 UNDO_STEPS 輪開始前的狀態，只放在記憶體 ----
+  let undoStack: UndoStep[] = []
+  /** 進行中這一輪開始前的狀態（產生日誌時記進 undoStack） */
+  let turnStart: GameState | null = null
+  /** 畫面用：可以回退到哪幾則日誌之前（舊的在前） */
+  const undoReports = ref<string[]>([])
+  /** 剛回退掉的是主動行動：可以用同樣的行動重擲 */
+  const redoInput = ref<actions.ActionInput | null>(null)
+
+  function syncUndo() {
+    undoReports.value = undoStack.map((u) => u.report)
+  }
+
+  function clearUndo() {
+    undoStack = []
+    turnStart = null
+    redoInput.value = null
+    syncUndo()
+  }
+
+  /** 動作成功之後：記下這一輪開始前的狀態；產生了新的日誌就算一輪 */
+  function recordTurn(before: GameState, lastReport: string | undefined) {
+    if (!turnStart || !midTurn(before)) turnStart = before
+    const report = firstNewReport(state.value!, lastReport)
+    if (!report) return
+    undoStack.push({ state: turnStart, report, ...(before.pendingAction ? { redo: actionInputOf(before.pendingAction) } : {}) })
+    if (undoStack.length > UNDO_STEPS) undoStack.shift()
+    turnStart = null
+    redoInput.value = null
+    syncUndo()
+  }
+
+  /** 回退：撤銷到 report 那一則日誌之前（不給時撤銷最近一輪）。被撤銷的日誌的敘事一起刪掉，token 用量算在「其他」 */
+  function undo(report?: string): boolean {
+    const s = state.value
+    if (!s || judging.value || !undoStack.length) return false
+    const i = report ? undoStack.findIndex((u) => u.report === report) : undoStack.length - 1
+    if (i < 0) return false
+    const step = undoStack[i]!
+    const steps = undoStack.length - i
+    undoStack = undoStack.slice(0, i)
+    turnStart = null
+    const { state: restored, removed } = restoreTurn(toRaw(s), step.state)
+    for (const id of removed) {
+      controllers.get(id)?.abort()
+      delete narrations.value[id]
+      const u = usage.value[id]
+      if (u) {
+        mergeUsage((usage.value[OTHER_USAGE] ??= { input: 0, output: 0, calls: 0 }), u)
+        delete usage.value[id]
+      }
+    }
+    state.value = restored
+    error.value = null
+    redoInput.value = step.redo ?? null
+    syncUndo()
+    save()
+    flash(`↶ 已回退 ${steps} 步`)
+    return true
+  }
+
+  /** 回退之後用同樣的行動重擲 */
+  async function redo() {
+    const input = redoInput.value
+    if (!input) return
+    redoInput.value = null
+    await perform(input)
+  }
+
+  // ---- NPC 自己的日子（npcLife.ts）：近況交給 AI 寫 ----
+  const polishing = new Set<string>()
+
+  /** 請 AI 把這些人還沒寫的近況寫成一段（失敗時保留規則寫的短句） */
+  async function polishNews(ids: string[]) {
+    const s = state.value
+    const settings = useSettings()
+    if (!s || !settings.ready('life')) return
+    const items = ids.filter((id) => !polishing.has(id))
+      .map((id) => ({ id, news: npcLife.newsOf(s, id).filter((n) => !n.story) }))
+      .filter((x) => x.news.length)
+    const built = buildNewsPrompt(s, items)
+    if (!built) return
+    // 近況是給玩家看的正文：輸出簡體時整份提示詞轉成簡體（和敘事一樣，docs/I18N.md 第 4 節）
+    const prompt = settings.language === 'zh-Hans' ? { system: toSimplifiedText(built.system), user: toSimplifiedText(built.user) } : built
+    for (const x of items) polishing.add(x.id)
+    const src = settings.sourceFor('life')
+    try {
+      const { completeText } = await import('@/narrator/providers')
+      const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(OTHER_USAGE, u, originOf('life', src)))) as { news?: { id: string; day: number; story: string }[] }
+      // 等 AI 的時候讀了別的檔：不要寫進去
+      if (state.value !== s) return
+      npcLife.applyNewsStories(s, Array.isArray(raw.news) ? raw.news : [])
+      save()
+    } catch (e) {
+      error.value = `AI 寫 NPC 近況失敗：${e instanceof Error ? e.message : String(e)}（先用簡短的近況）`
+    } finally {
+      for (const x of items) polishing.delete(x.id)
+    }
+  }
+
+  /** 這次重逢已經請 AI 寫過的人（失敗或漏寫也不再送）：離開身邊之後再見面才會再寫 */
+  const reunited = new Set<string>()
+
+  /** 重逢時才寫：身邊（含隊上）有還沒寫近況的人，同一個人這次重逢只送一次 */
+  function polishReunions() {
+    const s = state.value
+    if (!s?.npcLife) return
+    const near = new Set([...s.party.map((m) => m.id), ...population.nearbyPeople(s).map((p) => p.rec.id)])
+    for (const id of reunited) if (!near.has(id)) reunited.delete(id)
+    if (!Object.values(s.npcLife.news).some((list) => list.some((n) => !n.story))) return
+    const ids = Object.keys(s.npcLife.news).filter((id) => near.has(id) && !reunited.has(id) && npcLife.newsOf(s, id).some((n) => !n.story))
+    for (const id of ids) reunited.add(id)
+    if (ids.length) void polishNews(ids)
+  }
+
   /** 動作前的一份複本（裡面混進響應式物件時改用 JSON） */
   function snapshotState(s: GameState): GameState {
     // 日誌與封存只會在動作中加在後面（不改舊的），複製陣列就夠了：存檔大的時候整份深複製要好幾毫秒
@@ -388,6 +525,61 @@ export const useGame = defineStore('game', () => {
     copy.reports = [...reports]
     if (logArchive) copy.logArchive = [...logArchive]
     return copy
+  }
+
+  /** 走一格（方向鍵、點旁邊的格子、點遠處時一格一格走）。撞牆不算錯誤：地圖上輕輕晃一下就好；規則不讓走的也一樣 */
+  function move(dx: number, dy: number) {
+    const blocked = state.value && !state.value.combat ? grid.blockedMove(state.value, dx, dy) : null
+    if (blocked) {
+      blockedOnMap(blocked)
+      return undefined
+    }
+    return run((s) => afterMove(s, grid.move(s, dx, dy)), { onMap: true })
+  }
+
+  // ---- 點地圖上的格子走過去（grid.pathTo）：一格一格走（和方向鍵一樣的規則），路上有事就停 ----
+  /** 正在走去的格子（地圖標出來） */
+  const walkTarget = ref<{ x: number; y: number } | null>(null)
+  let walkTimer: ReturnType<typeof setTimeout> | undefined
+  /** 每一步的間隔：和地圖上角色滑過一格的動畫差不多 */
+  const WALK_STEP_MS = 140
+
+  function stopWalk() {
+    clearTimeout(walkTimer)
+    walkTimer = undefined
+    walkTarget.value = null
+  }
+
+  /** 走完這一步之後有要先處理的事（戰鬥、事件、等待判定、擋路的任務點……）：停下來 */
+  function mustStop(s: GameState): boolean {
+    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || story.blockingNode(s))
+  }
+
+  function walkTo(x: number, y: number) {
+    stopWalk()
+    const s = state.value
+    if (!s || s.combat) return
+    const path = grid.pathTo(s, x, y)
+    if (!path) {
+      blockedOnMap('到不了那裡：只能走已經探索過、沒有東西擋路的地方')
+      return
+    }
+    walkTarget.value = { x, y }
+    const areaKey = grid.currentArea(s).key
+    const stepAt = (i: number) => {
+      walkTimer = undefined
+      const now = state.value
+      const t = path[i]
+      if (!now || !t || grid.currentArea(now).key !== areaKey) return stopWalk()
+      const p = grid.position(now)
+      const r = move(t.x - p.x, t.y - p.y)
+      const after = state.value
+      const there = after && grid.position(after)
+      // 沒走成、發生了事、或到了終點：停
+      if (!r || r.combat || r.report || !after || mustStop(after) || there?.x !== t.x || there.y !== t.y || i + 1 >= path.length) return stopWalk()
+      walkTimer = setTimeout(() => stepAt(i + 1), WALK_STEP_MS)
+    }
+    stepAt(0)
   }
 
   /** 地圖上的提示：主角那一格晃一下，地圖角落顯示原因 */
@@ -544,11 +736,11 @@ export const useGame = defineStore('game', () => {
     }
   }
 
-  /** 還沒按「繼續」的遊戲要被蓋掉前：先存進自動存檔欄位（不用載入） */
+  /** 還沒按「繼續」的遊戲要被蓋掉前：先存進自動存檔欄位（不用載入）；設定關掉備份時直接放掉 */
   async function backupResume(reason: string) {
     const r = resume.value
     resume.value = null
-    if (!r?.state) return
+    if (!r?.state || !useSettings().backupBeforeSwitch) return
     try {
       await autoSave(reason, { state: JSON.parse(r.state) as GameState, narrations: parseJson(r.narrations) ?? {}, usage: parseJson(r.usage) ?? {} })
     } catch {
@@ -559,6 +751,8 @@ export const useGame = defineStore('game', () => {
   /** 載入一份遊戲：先切到它的世界，再補上新欄位 */
   function enter(data: SaveData) {
     for (const c of controllers.values()) c.abort()
+    clearUndo()
+    stopWalk()
     const world = useContent().enterWorld(data.state.world, data.content)
     state.value = load(data.state)
     state.value.world = { id: world.id, name: world.name }
@@ -593,6 +787,8 @@ export const useGame = defineStore('game', () => {
   async function toHome() {
     if (!state.value) return
     for (const c of controllers.values()) c.abort()
+    clearUndo()
+    stopWalk()
     save()
     await flushed()
     const finished = Object.fromEntries(Object.entries(narrations.value).filter(([, n]) => n.status === 'done'))
@@ -603,12 +799,12 @@ export const useGame = defineStore('game', () => {
     error.value = null
   }
 
-  /** 讀檔：先把目前的進度自動存一份，免得誤讀 */
+  /** 讀檔：先把目前的進度自動存一份，免得誤讀（設定可以關掉） */
   async function loadSlot(id: string) {
     try {
       const data = await slotStore().get(id)
       if (!data) throw new Error('找不到這個存檔')
-      if (state.value) await autoSave('讀檔前')
+      if (state.value && useSettings().backupBeforeSwitch) await autoSave('讀檔前')
       await backupResume('讀檔前')
       applySnapshot(data)
       flash('📂 已讀取存檔')
@@ -731,8 +927,10 @@ export const useGame = defineStore('game', () => {
   function start(name: string, race: string, classId: string, bonus?: Partial<Attrs>, profile: Omit<NewGameOptions, 'name' | 'race' | 'classId' | 'bonus' | 'seed'> = {}, world?: string) {
     const content = useContent()
     if (world !== undefined && world !== content.active) content.switchWorld(world)
-    // 還沒繼續的遊戲會被蓋掉：先備份
+    // 還沒繼續的遊戲會被蓋掉：先備份（設定關掉時不備份）
     void backupResume('開新遊戲前')
+    clearUndo()
+    stopWalk()
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
     state.value.world = { id: content.active, name: content.activeName }
     grid.enterLocation(state.value)
@@ -748,6 +946,8 @@ export const useGame = defineStore('game', () => {
 
   function reset() {
     for (const c of controllers.values()) c.abort()
+    clearUndo()
+    stopWalk()
     state.value = null
     resume.value = null
     narrations.value = {}
@@ -769,7 +969,7 @@ export const useGame = defineStore('game', () => {
   // 世界書、繁簡轉換字典與各家 SDK 都很大，用到時才載入
   async function composeFor(report: Report) {
     const [{ composeNarration }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
-    return composeNarration(state.value, report, opts)
+    return composeNarration(state.value, report, opts, narrations.value)
   }
 
   async function promptFor(report: Report): Promise<Prompt> {
@@ -792,7 +992,7 @@ export const useGame = defineStore('game', () => {
       }
     }
     const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
-    return { ...composeJudge(st, pending, opts), sample: !s.pendingAction }
+    return { ...composeJudge(st, pending, opts, narrations.value), sample: !s.pendingAction }
   }
 
   /** 請「敘事正文」（帶親密場景時是「成人場景正文」）的模型寫出這則日誌的經過。manual：玩家在日誌上手動要求（AI 細節描述關閉時也顯示） */
@@ -802,7 +1002,10 @@ export const useGame = defineStore('game', () => {
     const controller = new AbortController()
     controllers.set(report.report_id, controller)
     // 判定時的思考過程留著
-    const judgeThinking = narrations.value[report.report_id]?.judgeThinking
+    const before = narrations.value[report.report_id]
+    const judgeThinking = before?.judgeThinking
+    // 重寫已經寫好的經過：不自動重畫插圖（要重畫用日誌底下的按鈕）
+    const rewrite = before?.status === 'done' && !before.placeholder && !!before.text.trim()
     narrations.value[report.report_id] = { text: '', status: 'streaming', ...(opts.manual ? { manual: true } : {}), ...(judgeThinking ? { judgeThinking } : {}) }
     const entry = narrations.value[report.report_id]!
     try {
@@ -821,6 +1024,7 @@ export const useGame = defineStore('game', () => {
       if (state.value && updates.length) social.addSuggestions(state.value, updates, report.report_id)
       entry.status = 'done'
       save()
+      if (!rewrite && text.trim() && state.value) void useScenes().auto(state.value, report)
     } catch (e) {
       entry.status = 'error'
       entry.error = controller.signal.aborted ? '已取消' : e instanceof Error ? e.message : String(e)
@@ -859,7 +1063,7 @@ export const useGame = defineStore('game', () => {
       const { completeText } = await import('@/narrator/providers')
       const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
       let thinking = ''
-      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts).prompt, undefined, collector.onUsage, (t) => { thinking += t })
+      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts, narrations.value).prompt, undefined, collector.onUsage, (t) => { thinking += t })
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型；
       // 數值被程式截掉時也不採用（判定寫的是截掉前的數字），交給寫手照實際結算的數字重寫
@@ -872,7 +1076,10 @@ export const useGame = defineStore('game', () => {
       const rewrite = !!report && !!judgment.narrative && settings.narrationFeature(report) === 'adult' && settings.sourceIndex('adult') !== settings.sourceIndex('judge')
       if (report && rewrite) {
         if (settings.autoNarrates(report) && settings.ready('adult')) void narrate(report)
-      } else if (report && judgment.narrative) narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+      } else if (report && judgment.narrative) {
+        narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
+        if (judgment.narrative.trim()) void useScenes().auto(s, report)
+      }
       // 判定的思考過程：記在這則日誌（還沒有敘事時先放一個空的）
       if (report && thinking.trim()) {
         const entry = narrations.value[report.report_id]
@@ -966,7 +1173,8 @@ export const useGame = defineStore('game', () => {
   return {
     /** 在動作的保護下改狀態：出錯時還原、顯示訊息（測試與少數元件用） */
     runAction: run,
-    state, narrations, error, saveWarning, flushed, pc, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTargets, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText, makeRoom, requireRoom,
+    undoReports, redoInput, undo, redo, dismissRedo: () => (redoInput.value = null),
+    state, narrations, error, saveWarning, flushed, pc, here, area, cell, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTargets, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText, makeRoom, requireRoom,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
@@ -1031,8 +1239,9 @@ export const useGame = defineStore('game', () => {
     longRest: async (place: rest.RestPlace, talk?: { text: string; target?: string }) => {
       const withTalk = !!talk?.text.trim()
       // 有互動時，長休本身不另外寫敘事：和互動合成一段（互動的報告會帶上長休的經過）
-      const report = run((s) => rest.longRest(s, place), { narrate: !withTalk })
-      if (report && withTalk) await perform({ kind: 'rest_talk', text: talk!.text, ...(talk!.target ? { target: talk!.target } : {}) })
+      // 野外紮營可能被襲擊（回傳戰鬥）：被襲擊時不做長休時的互動
+      const report = run((s) => (place === 'camp' ? rest.campRest(s) : rest.longRest(s, place)), { narrate: !withTalk })
+      if (report && 'report_id' in report && withTalk) await perform({ kind: 'rest_talk', text: talk!.text, ...(talk!.target ? { target: talk!.target } : {}) })
       return report
     },
     abandonQuest: (id: string) => run((s) => town.abandonQuest(s, id)),
@@ -1076,6 +1285,8 @@ export const useGame = defineStore('game', () => {
     abandonStory: (id: string) => run((s) => story.abandonStory(s, id)),
     // 走到不緊急的任務點：這次先略過（不記事件），離開這裡之後再來還會觸發
     waitStory: (ref: string) => run((s) => story.waitStory(s, ref)),
+    // 只在白天或夜裡的任務點：在原地等到那個時段
+    waitForStoryNode: (ref: string) => run((s) => story.waitForNode(s, ref)),
     act: (action: combat.CombatAction) => run((s) => combat.act(s, action)),
     finishCombat: () =>
       run((s) => {
@@ -1089,14 +1300,13 @@ export const useGame = defineStore('game', () => {
     // 走過腳下的出入口（城鎮各區、房子的門、特殊地圖的通道）：按 E 或格子資訊的按鈕
     crossLink: () => run((s) => afterMove(s, grid.crossLink(s)), { onMap: true }),
     move: (dx: number, dy: number) => {
-      // 撞牆不算錯誤：地圖上輕輕晃一下就好（不跳出錯誤訊息、不推動版面）；規則不讓走的也一樣
-      const blocked = state.value && !state.value.combat ? grid.blockedMove(state.value, dx, dy) : null
-      if (blocked) {
-        blockedOnMap(blocked)
-        return undefined
-      }
-      return run((s) => afterMove(s, grid.move(s, dx, dy)), { onMap: true })
+      stopWalk()
+      return move(dx, dy)
     },
+    walkTo, stopWalk, walkTarget,
+    // NPC 自己的日子：關注、手動請 AI 寫近況
+    setFollowed: (id: string, on: boolean) => run((s) => npcLife.setFollowed(s, id, on)),
+    polishNews,
     goOutskirts: () => run((s) => grid.goOutskirts(s) ?? encounters.checkHostiles(s), { onMap: true }),
     returnToTown: () => run(grid.returnToTown, { onMap: true }),
     // 房子（homes.ts）

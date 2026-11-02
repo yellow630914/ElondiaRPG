@@ -12,7 +12,6 @@ import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import { useContent } from '@/stores/content'
 import HomeView from '@/components/HomeView.vue'
-import ActionPanel from '@/components/ActionPanel.vue'
 import AppDialog from '@/components/AppDialog.vue'
 import NotebookView from '@/components/NotebookView.vue'
 import CraftDialog from '@/components/CraftDialog.vue'
@@ -36,7 +35,11 @@ import RestPanel from '@/components/RestPanel.vue'
 import SaveDialog from '@/components/SaveDialog.vue'
 import SettingsView from '@/components/SettingsView.vue'
 import EventCenter from '@/components/events/EventCenter.vue'
+import UnsavedDialog from '@/components/content/UnsavedDialog.vue'
 import PartyStrip from '@/components/PartyStrip.vue'
+import MobileGame, { type MobileOpen } from '@/components/mobile/MobileGame.vue'
+import { isMobile } from '@/components/mobile/mobile'
+import SwipeTabs from '@/components/mobile/SwipeTabs.vue'
 import GameIcon from '@/components/ui/GameIcon.vue'
 import AmbientLayer from '@/components/fx/AmbientLayer.vue'
 import BackgroundLayer from '@/components/fx/BackgroundLayer.vue'
@@ -44,6 +47,7 @@ import { edgePulse, floatText, placeCard, tween } from '@/fx/fx'
 import { stateKey } from '@/fx/seen'
 import type { IconName } from '@/components/ui/iconPaths'
 import { activeEvents, eventDialogOpen, pendingEvents } from '@/components/events/eventQueue'
+import { confirmDiscard, unsavedEdits } from '@/components/content/unsaved'
 
 // 提示詞頁籤會載入整本世界書，切過去時才載入
 const PromptsView = defineAsyncComponent(() => import('@/components/PromptsView.vue'))
@@ -109,10 +113,19 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: 'content', label: '世界', icon: 'world' },
 ]
 const tab = ref<Tab>('adventure')
+/** 換頁籤：離開世界頁時，世界編輯器有未儲存的修改先問一次 */
+async function setTab(t: Tab) {
+  if (tab.value === 'content' && t !== 'content' && !(await confirmDiscard())) return
+  tab.value = t
+}
 
 // 沒有載入遊戲時：首頁與它的幾個畫面（開新遊戲、世界管理、提示詞管理）
 type Screen = 'home' | 'new' | 'worlds' | 'prompts'
 const screen = ref<Screen>('home')
+async function setScreen(s: Screen) {
+  if (screen.value === 'worlds' && s !== 'worlds' && !(await confirmDiscard())) return
+  screen.value = s
+}
 const content = useContent()
 // 進入遊戲時切到冒險頁；回到首頁時從首頁開始
 watch(() => !!game.state, (inGame) => {
@@ -122,6 +135,7 @@ watch(() => !!game.state, (inGame) => {
   } else screen.value = 'home'
 })
 async function goHome() {
+  if (!(await confirmDiscard())) return
   closeDialogs()
   await game.toHome()
 }
@@ -189,6 +203,34 @@ const showLeft = computed(() => !narrow.value || inCombat.value || sideTab.value
 const showRight = computed(() => !inCombat.value && (!narrow.value || sideTab.value === 'here'))
 const onNarrow = (e: MediaQueryListEvent) => { narrow.value = e.matches }
 
+// ── 手機版（720px 以下）：冒險頁換成 MobileGame，對話框變成全螢幕頁面（AppDialog）
+const mobileGame = computed(() => isMobile.value && !!game.state && tab.value === 'adventure')
+const mobileDim = computed(() => isMobile.value && (game.state ? tab.value !== 'adventure' : screen.value === 'worlds' || screen.value === 'prompts'))
+const mobileHud = computed(() => {
+  const st = game.state!
+  return { day: st.time.day, clock: clock.value ?? '', daytime: daytime.value, place: locationById(st.location).name, money: formatMoney(moneyShown.value), crime: crime.value }
+})
+const mobileBadges = computed(() => ({ party: pendingSkills.value, relations: suggestionCount.value, notebook: readyQuests.value, contract: canAskMaster.value }))
+// 隊伍頁：手機上隊伍與行囊是同一頁的兩個分頁
+const partyPage = ref('party')
+const PARTY_PAGES = [{ id: 'party', label: '隊伍' }, { id: 'bag', label: '行囊' }]
+function onMobileOpen(what: MobileOpen) {
+  switch (what) {
+    case 'party': partyPage.value = 'party'; showParty.value = true; break
+    case 'relations': showRelations.value = true; break
+    case 'notebook': showNotebook.value = true; break
+    case 'craft': showCraft.value = true; break
+    case 'contract': showContract.value = true; break
+    case 'saves': showSaves.value = true; break
+    case 'settings': showSettings.value = true; break
+    case 'logsettings': openSettings('models'); break
+    case 'prompts': setTab('prompts'); break
+    case 'content': tab.value = 'content'; break
+    case 'home': void goHome(); break
+    case 'quickload': askQuickLoad(); break
+  }
+}
+
 function askQuickLoad() {
   if (!game.state || confirm('讀取快速存檔？目前的進度會先自動存一份。')) void game.quickLoad()
 }
@@ -206,7 +248,8 @@ function onKey(e: KeyboardEvent) {
 }
 // 自動保存失敗時，離開頁面前提醒一下
 function onLeave(e: BeforeUnloadEvent) {
-  if (!game.saveWarning) return
+  // 世界編輯器有未儲存的修改時也提醒
+  if (!game.saveWarning && !unsavedEdits.value) return
   e.preventDefault()
   e.returnValue = ''
 }
@@ -223,13 +266,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <header class="top">
+  <header v-if="!(isMobile && game.state)" class="top">
     <div class="logo"><GameIcon name="sword" :size="24" /><h1>埃隆迪亞大陸</h1></div>
     <nav v-if="game.state" class="tabs">
-      <button v-for="t in TABS" :key="t.id" :class="{ active: tab === t.id }" @click="tab = t.id"><GameIcon :name="t.icon" :size="15" />{{ t.label }}</button>
+      <button v-for="t in TABS" :key="t.id" :class="{ active: tab === t.id }" @click="setTab(t.id)"><GameIcon :name="t.icon" :size="15" />{{ t.label }}</button>
     </nav>
     <nav v-else-if="screen !== 'home'" class="tabs">
-      <button @click="screen = 'home'"><GameIcon name="home" :size="15" />首頁</button>
+      <button @click="setScreen('home')"><GameIcon name="home" :size="15" />首頁</button>
     </nav>
     <div v-if="game.state" class="hud">
       <span class="cell" title="遊戲時間"><GameIcon name="calendar" :size="15" /><span class="label">第</span><b>{{ game.state.time.day }}</b><span class="label">天</span><b>{{ clock }}</b><GameIcon :name="daytime ? 'sun' : 'moon'" :size="15" :class="daytime ? 'sun' : 'night'" /></span>
@@ -255,6 +298,8 @@ onBeforeUnmount(() => {
     </div>
   </header>
   <BackgroundLayer />
+  <!-- 手機版的提示詞、世界頁：說明文字直接壓在背景圖上，背景亮的地方讀不清楚，蓋一層暗色 -->
+  <div v-if="mobileDim" class="m-dim" aria-hidden="true" />
   <AmbientLayer v-if="game.state" />
   <Transition name="notice">
     <div v-if="game.notice" class="notice">{{ game.notice }}</div>
@@ -281,10 +326,19 @@ onBeforeUnmount(() => {
     <PromptsView v-else-if="screen === 'prompts'" />
   </template>
 
+  <!-- 手機版：提示詞、世界頁的上方只有一條「回到冒險」 -->
+  <nav v-if="isMobile && game.state && tab !== 'adventure'" class="m-back">
+    <button class="ghost" @click="setTab('adventure')"><GameIcon name="right" :size="16" class="flip" />回到冒險</button>
+  </nav>
+  <MobileGame
+    v-if="mobileGame"
+    :hud="mobileHud" :events="eventCount" :blocking-event="blockingEvent" :badges="mobileBadges" :enslaved="enslaved"
+    @open="onMobileOpen"
+  />
   <PromptsView v-if="game.state && tab === 'prompts'" />
   <ContentView v-if="game.state && tab === 'content'" />
 
-  <main v-if="game.state" v-show="tab === 'adventure'" class="game" :class="{ combat: inCombat }">
+  <main v-if="game.state && !isMobile" v-show="tab === 'adventure'" class="game" :class="{ combat: inCombat }">
     <nav v-if="narrow && !inCombat" class="panel side-tabs">
       <button :class="{ active: sideTab === 'map' }" @click="sideTab = 'map'"><GameIcon name="map" :size="15" />地圖／隊伍</button>
       <button :class="{ active: sideTab === 'here' }" @click="sideTab = 'here'"><GameIcon name="users" :size="15" />這裡／地點</button>
@@ -295,7 +349,6 @@ onBeforeUnmount(() => {
       <RoadPanel v-if="game.state.road && !inCombat" />
       <template v-if="!inCombat">
         <RestPanel />
-        <ActionPanel />
         <IntentPanel />
       </template>
     </aside>
@@ -320,7 +373,14 @@ onBeforeUnmount(() => {
   </main>
 
   <AppDialog :open="showParty" title="隊伍" icon="users" width="1200px" @close="showParty = false">
-    <PartyCards @detail="openCharacter" />
+    <!-- 手機版：隊伍與行囊是同一頁的兩個分頁，可以左右滑 -->
+    <SwipeTabs v-if="isMobile" v-model="partyPage" :tabs="PARTY_PAGES" swipe bar>
+      <template #default="{ id }">
+        <InventoryView v-if="id === 'bag'" />
+        <PartyCards v-else @detail="openCharacter" />
+      </template>
+    </SwipeTabs>
+    <PartyCards v-else @detail="openCharacter" />
   </AppDialog>
   <CharacterDialog v-if="game.state" v-model:member="charMember" v-model:tab="charTab" :open="charOpen" @close="charOpen = false" />
   <AppDialog :open="showInventory" title="行囊" icon="backpack" width="1000px" @close="showInventory = false">
@@ -346,6 +406,7 @@ onBeforeUnmount(() => {
   </AppDialog>
 
   <MakeRoomDialog />
+  <UnsavedDialog />
   <EventCenter v-if="game.state" @open-party="onOpenParty" @open-relations="tab = 'adventure'; showRelations = true" />
 </template>
 
@@ -414,9 +475,10 @@ onBeforeUnmount(() => {
 }
 .left { grid-area: left; }
 .center { grid-area: center; min-width: 0; }
-/* 右欄固定在畫面上、自己捲動：捲右欄不會把地圖和日誌捲走 */
+/* 右欄固定在畫面上、自己捲動：捲右欄不會把地圖和日誌捲走。
+   高度扣掉上方的標題列（約 94px），底部和中間欄對齊（LogView 的 100vh - 300px），內容再多也不會把整頁撐高 */
 .right {
-  grid-area: right; position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto;
+  grid-area: right; position: sticky; top: 12px; max-height: calc(100vh - 118px); overflow-y: auto;
   overscroll-behavior: contain; scrollbar-width: thin; padding-right: 2px;
 }
 .game.combat { grid-template-areas: 'left center center'; }
@@ -437,6 +499,21 @@ onBeforeUnmount(() => {
 .toolbar button :deep(.game-icon) { color: var(--accent); }
 .toolbar button:hover:not(:disabled) { background: #c99a4512; color: var(--gold-hi); }
 .toolbar .note { font-size: var(--fs-xs); line-height: 16px; padding: 0 4px; border-radius: 2px; background: var(--accent); color: #1a1008; font-weight: 700; }
+
+/* 手機版 */
+.m-dim { position: fixed; inset: 0; z-index: -1; background: #0f0b08d9; pointer-events: none; }
+/* 上方列擠成一排：標題縮小，右邊的按鈕只留圖示（語言的下拉選單照舊） */
+@media (max-width: 720px) {
+  .top { flex-wrap: nowrap; gap: 8px; padding-bottom: 8px; margin-bottom: 10px; }
+  .logo { gap: 6px; min-width: 0; }
+  .logo h1 { font-size: 1.1rem; letter-spacing: 0.12em; white-space: nowrap; }
+  .tabs button { padding: 6px 8px; white-space: nowrap; }
+  .top-buttons .icon { min-width: 40px; }
+  .top-buttons .icon > span { display: none; }
+}
+.m-back { display: flex; margin: -6px -10px 8px; }
+.m-back button { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); }
+.m-back .flip, .m-back :deep(.flip) { transform: scaleX(-1); }
 
 @media (max-width: 1380px) {
   .game { grid-template-columns: 320px minmax(0, 1fr) 320px; }

@@ -3,6 +3,7 @@ import type { CombatState } from './combat'
 import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
+import type { BestiaryEntry } from './bestiary'
 import type { Memory, Relationship } from './social'
 
 // 報告型別對應 schemas/report.schema.json，修改時兩邊要同步。
@@ -36,6 +37,8 @@ export interface ActorState {
   personality?: string
   attitude?: string
   gender?: string
+  /** 怪物資料的 id（只有怪物有）：敘事附上這種怪物的外觀（narrator/monsters.ts），送出的報告裡拿掉 */
+  monster?: string
 }
 
 export interface Effect {
@@ -140,12 +143,16 @@ export interface CheckInfo {
   total: number
   /** 實際的成功程度（AI 判定時由 AI 決定） */
   degree: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
+  /** AI 判為日常小事：結果至少是成功，骰值只決定過程順不順 */
+  trivial?: boolean
   /** 骰值對 DC 算出的參考成功程度；只在與實際結果不同時記錄 */
   reference_degree?: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
   source: 'ai' | 'rules'
   rationale?: string
   /** AI 讓結果出乎預料時的說明 */
   twist?: string
+  /** 打聽、詢問得到的具體內容（AI 判定的 findings）：寫手要讓角色把它說出來 */
+  findings?: string
 }
 
 export interface Report {
@@ -156,6 +163,8 @@ export interface Report {
   location: { at: string; to?: string; region?: string; scene?: string; weather?: string }
   party: ActorState[]
   others?: ActorState[]
+  /** 旁邊的人（不參與這次事件）：名字、身分與正在做什麼，交給敘事當背景（activities.ts 的 noteBystanders） */
+  bystanders?: { id: string; name: string; role: string; doing: string }[]
   quest?: { id?: string; title?: string; rank?: GuildRank; status?: 'accepted' | 'progress' | 'completed' | 'failed' | 'abandoned' | 'expired' }
   /** 特殊任務：哪個任務、哪個任務點 */
   story?: { id: string; title: string; node?: string; status: 'started' | 'progress' | 'completed' | 'failed' }
@@ -171,10 +180,18 @@ export interface Report {
     player_intent?: string
     /** 戰敗事件：前半段停在對方動手前（defeat_cliffhanger），後半段是玩家回應之後（defeat_event） */
     mode?: 'defeat_cliffhanger' | 'defeat_event'
+    /** 戰敗事件被圍住的是隊友：那位隊員的 id（沒有時是主角） */
+    defeat_victim?: string
+    /** 擲魔物娘用的日子（戰敗事件的回應：照那場戰鬥開始的日子，和戰敗前情一致）；沒有時看報告開始的日子 */
+    girl_day?: number
     /** 成人向的親密場景：這段經過是什麼，敘事會附上成人場景規則、在正文詳細描寫 */
     adult_scene?: string
+    /** 這段經過來自限定陰柔、中性主角的內容（特殊任務、事件、地標場景的 pc_body）：陽剛體型的主角玩到時，敘事附上照主角身體寫的說明（narrator 的 mascBodyNote） */
+    body_limited?: boolean
     /** 親密場景的主角不是主角本人時（派奴隸去娼館接客）：那個人的 id（慾望指標記在他身上） */
     adult_actor?: string
+    /** 戰鬥中只有挑逗、剝衣（沒有人高潮或屈服）時的成人場景：一樣交給成人場景的寫手，但不算親密場景（淫亂不因此成長）。adult_scene 被別的場景換掉時就不再相同 */
+    tease?: string
   }
   lore_keys?: string[]
 }
@@ -465,7 +482,8 @@ export interface PendingJoin {
 /** 情報（冒險筆記）：事件點（在近郊或地下城的某一層放一個事件）或特殊任務的消息 */
 export interface Intel {
   id: string
-  kind: 'point' | 'story'
+  /** point：事件點；story：特殊任務的消息；rumor：向人打聽到的傳聞（只有文字，記在情報頁） */
+  kind: 'point' | 'story' | 'rumor'
   title: string
   text: string
   /** 從哪座城鎮的情報商買到、什麼時候 */
@@ -484,6 +502,10 @@ export interface Intel {
   story?: string
   /** 解讀情報物品得到的：物品名稱（沒有時是向情報商買的） */
   source?: string
+  /** 向人打聽到的：告訴主角的人（名字） */
+  npc?: string
+  /** 傳聞提到的怪物（enemies 的 id，點亮圖鑑） */
+  monster?: string
   status: 'active' | 'done' | 'expired'
 }
 
@@ -517,8 +539,8 @@ export interface StoryProgress {
 }
 
 export interface PendingDefeat {
-  /** 圍上來的敵人（名字與 NPC id） */
-  foes: { name: string; npc?: string }[]
+  /** 圍上來的敵人（名字與 NPC id；怪物是怪物資料的 id） */
+  foes: { name: string; npc?: string; monster?: string }[]
   /** 戰敗的地點與場景 */
   location: string
   scene: string
@@ -526,6 +548,12 @@ export interface PendingDefeat {
   report: string
   /** 敵人的類型（combat.json 的 defeat_event.villains；怪物沒有） */
   villain?: string
+  /** 玩家按「戰敗」時選了主動：主角是自願認輸的（只影響文字） */
+  willing?: boolean
+  /** 被圍住的是隊友（隊員 id）：主角不會遇到戰敗事件時改由隊友遇到，玩家替這位隊友選擇反應；沒有時是主角 */
+  victim?: string
+  /** 那場戰鬥開始的日子：戰敗事件擲魔物娘照這天（和戰敗前情一致；舊存檔沒有時看現在） */
+  day?: number
 }
 
 export interface PendingMasterEvent {
@@ -738,6 +766,8 @@ export interface GameOptions {
   shortRestHours?: number
   longRestHours?: number
   alertDecayDays?: number
+  /** 每個採集點採到幾份（小數是機率） */
+  gatherMult?: number
   /** 戰鬥撤退與地下城緊急撤退的 DC 加減 */
   escapeDc?: number
   /** 黑市每天刷新幾件珍品（獨特裝備） */
@@ -816,6 +846,8 @@ export interface GameState {
   combat?: CombatState
   /** 在格子地圖上的位置 */
   position?: Position
+  /** 最近走過的地方（區域與設施，換了地方才記；交給 AI 銜接正文用，只留最近幾筆） */
+  trail?: { time: GameTime; location: string; spot: string }[]
   /** 隨機生成的區域（近郊、冒險區域各層） */
   areas?: Record<string, Area>
   /** 人際關係：角色 id → 條目 */
@@ -907,6 +939,10 @@ export interface GameState {
   special?: { back?: { area: string; x: number; y: number }; location: string; visited: string[] }
   /** 冒險筆記的情報 */
   intel?: Intel[]
+  /** 怪物圖鑑：怪物 id → 聽說、遭遇、擊敗（bestiary.ts） */
+  bestiary?: Record<string, BestiaryEntry>
+  /** NPC 自己的日子：上次擲骰的日子、近況、玩家關注的人（npcLife.ts） */
+  npcLife?: NpcLifeState
   /** 事件結果要求的移動（進入臨時地圖、改去別的地點），在報告提交之後執行 */
   pendingMove?: { side_map?: string; special_map?: string; travel_to?: string; /** 特殊任務的結果帶進臨時地圖 */ story?: string }
   /** 特殊任務按了「稍候」的任務點：任務點 → 當時的地方（離開那裡之後再來會再觸發） */
@@ -1005,4 +1041,30 @@ export interface Negotiation {
   result?: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
   /** 談判方式由 AI 生成 */
   ai?: boolean
+}
+
+/** NPC 自己的日子（npcLife.ts）：一則近況 */
+export interface NpcNews {
+  /** 擲骰的那一天 */
+  day: number
+  /** 規則寫的近況（一定有） */
+  text: string
+  /** AI 潤飾過的近況（有時優先顯示、交給 AI） */
+  story?: string
+  /** 這次升到的等級、換上的裝備、休養的地方（AI 潤飾時參考） */
+  level?: number
+  gear?: string
+  rest?: string
+  /** 夥伴換下、寄回行囊的裝備 */
+  returned?: string
+  place?: string
+}
+
+export interface NpcLifeState {
+  /** 上一次擲骰的日子 */
+  last: number
+  /** 角色 id → 近況（新的在後） */
+  news: Record<string, NpcNews[]>
+  /** 玩家關注的人 */
+  followed?: string[]
 }

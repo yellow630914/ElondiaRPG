@@ -4,7 +4,7 @@ import PromptSetBar from './PromptSetBar.vue'
 import type { Composed } from '@/narrator/compose'
 import { LORE_STATUS_NAME, type LoreItem, type LoreMode, type LoreSelection } from '@/narrator/lore'
 import { estimateTokens } from '@/narrator/promptConfig'
-import { DEFAULT_DEFEAT_RULES, DEFAULT_NARRATION_RULES, DEFAULT_SCENE_RULES, type PromptSection } from '@/narrator/prompt'
+import { DEFAULT_DEFEAT_RULES, DEFAULT_NARRATION_RULES, DEFAULT_SCENE_RULES, LENGTH_SCALE_NAME, LENGTH_SCALES, type PromptSection } from '@/narrator/prompt'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { useSettings } from '@/stores/settings'
@@ -285,6 +285,18 @@ function resetAll() {
         視角與篇幅每次由程式寫在最後的「本次要求」，規則裡不要寫死。<br />
         ⚠ 預設第 10 條的 <code>&lt;relationship_updates&gt;</code> 格式是遊戲用來讀取人際關係更新的，刪掉或改格式會讓這個功能失效；清空內容等於恢復預設。
       </p>
+      <div class="row settings small">
+        <label>正文篇幅
+          <select v-model="prompts.config.lengthScale">
+            <option v-for="s in LENGTH_SCALES" :key="s" :value="s">{{ LENGTH_SCALE_NAME[s] }}</option>
+          </select>
+        </label>
+        <Hint text="整體調整「本次要求」的篇幅字數。短篇、中篇、長篇分別是：偏短約 150～300／400～700／800～1200 字，標準約 200～400／500～900／1000～1500 字，偏長約 400～700／900～1400／1500～2200 字。自由行動是中篇，其他多數是短篇。判定時順便寫的經過也照這個。字數變多時，模型來源的「最大輸出 tokens」要夠大。" />
+        <label class="check"><input v-model="prompts.config.continuity" type="checkbox" /> 前後銜接</label>
+        <Hint text="敘事與判定帶上一段正文的結尾（約 300 字），以及之後沒有寫成正文的事（移動、交易、沒有寫經過的日誌），要 AI 在開頭自然帶過、接著寫。放在後段，不影響快取，每次多送幾百字。" />
+        <label class="check"><input v-model="prompts.config.variety" type="checkbox" /> 變化正文的寫法</label>
+        <Hint text="每次在「本次要求」指定不同的開場與收尾（從對白開場、從動作中途切入、停在一個畫面上……），連續兩則不會一樣，避免每次結構都相同。文風已經規定結構時可以關掉。" />
+      </div>
       <textarea v-model="rulesText" class="rules" rows="22" spellcheck="false" />
       <p class="small muted">{{ rulesText.length }} 字・約 {{ estimateTokens(rulesText) }} tokens。規則放在前段（可以被快取），改動後第一次請求會重新建立快取。</p>
 

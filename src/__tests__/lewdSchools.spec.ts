@@ -112,7 +112,7 @@ describe('雙面效應與鎖', () => {
     expect(twoFaceCombat(pc).mods.dr).toBe(Math.round(3 * 1.3 * 1.2))
   })
 
-  it('上鎖用掉行囊裡的鎖，打開或卸下時放回來；戰鬥中免疫繳械', () => {
+  it('上鎖用掉行囊裡的鎖，打開或卸下時放回來；程度 2 的眼罩不免疫致盲', () => {
     const state = game()
     const pc = pcOf(state)
     pc.perks = ['school_bondage']
@@ -122,7 +122,7 @@ describe('雙面效應與鎖', () => {
     expect(pc.gear!.head!.lock).toBe('white')
     expect(state.inventory.find((i) => i.name === '白鐵鎖')?.qty).toBe(1)
     const me = startCombat(state, [['goblin', 1]]).combatants.find((c) => c.id === pc.id)!
-    expect(me.immune).toContain('blinded')
+    expect(me.immune ?? []).not.toContain('blinded')
     state.combat = undefined
     unlockGear(state, pc.id, 'head')
     expect(pc.gear!.head!.lock).toBeUndefined()

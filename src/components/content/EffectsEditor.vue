@@ -28,13 +28,13 @@ const restraintItems = computed(() => {
   void content.version
   return itemRules.items.filter((i) => i.gear && gearRules.bases[i.gear.base]?.bind).map((i) => i.name)
 })
-const conditionList = EFFECT_CONDITIONS().map((k) => [k, conditionName(k)] as const)
 const content = useContent()
-const list = computed(() => model.value ?? [])
-const items = computed(() => {
+// 可以給的非戰鬥狀態（含自建的）
+const conditionList = computed(() => {
   void content.version
-  return itemRules.items.map((i) => i.name)
+  return EFFECT_CONDITIONS().map((k) => [k, conditionName(k)] as const)
 })
+const list = computed(() => model.value ?? [])
 const storyList = computed(() => {
   void content.version
   return [...stories].sort((a, b) => Number(b.start.kind === 'manual') - Number(a.start.kind === 'manual'))
@@ -159,12 +159,11 @@ function setBase(r: Row, base: string) {
 
 <template>
   <div class="effects">
-    <datalist id="effect-items"><option v-for="n in items" :key="n" :value="n" /></datalist>
     <div v-for="(r, i) in rows" :key="i" class="row">
       <span class="tag">{{ ALL_LABELS[r.type] ?? r.type }}</span>
       <template v-if="r.type === 'money'"><input v-model.number="r.amount" type="number" class="num" />白鸛幣（負數為花費）</template>
       <template v-else-if="r.type === 'item'">
-        <input v-model="r.name" list="effect-items" class="grow" placeholder="物品名稱" />
+        <input v-model="r.name" list="cv-item-names" class="grow" placeholder="物品名稱" />
         ×<input v-model.number="r.qty" type="number" class="num" title="負數為交出" />
       </template>
       <template v-else-if="r.type === 'gear'">
@@ -338,7 +337,7 @@ function setBase(r: Row, base: string) {
           <option value="amount">點數</option>
         </select>
       </template>
-      <button class="small x" @click="remove(i)">×</button>
+      <button class="small x" @click="remove(i)" title="移除">✕</button>
     </div>
     <select class="small" :value="''" @change="add(($event.target as HTMLSelectElement).value as RewardEffect['type']); ($event.target as HTMLSelectElement).value = ''">
       <option value="">＋ 效果…</option>

@@ -13,6 +13,9 @@ import IconField from './IconField.vue'
 import { MONSTER_BAND_COLOR, MONSTER_BAND_LEVELS, monsterArtPath, monsterBand } from '../icons/monsterArt'
 import type { DrawSource } from '../items/itemIcon'
 import Hint from '../ui/Hint.vue'
+import EditorHeader from './EditorHeader.vue'
+import FoldSet from './FoldSet.vue'
+import HelpText from './HelpText.vue'
 
 // 怪物的編輯表單：存檔前是草稿，按「儲存」才套用
 const props = defineProps<{ id: string }>()
@@ -35,6 +38,32 @@ const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
 const iconFallback = computed<DrawSource>(() => {
   const band = monsterBand(draft.value.level)
   return { kind: 'path', path: monsterArtPath(draft.value.kind, band), color: MONSTER_BAND_COLOR[band] }
+})
+// 發情：不會、在哪裡都可能、只在近郊・旅途・地下城
+const rutMode = computed<'' | 'any' | 'field'>({
+  get: () => (draft.value.rut === 'field' ? 'field' : draft.value.rut ? 'any' : ''),
+  set: (v) => {
+    if (v === 'field') draft.value.rut = 'field'
+    else if (v === 'any') draft.value.rut = true
+    else delete draft.value.rut
+  },
+})
+// 魔物娘：名字與外觀都寫了才算（儲存時其中一欄空白就拿掉）；性情、習性、機率可以不寫
+function setGirl(k: 'name' | 'desc' | 'personality' | 'habits', v: string) {
+  const g: NonNullable<typeof draft.value.girl> = { ...draft.value.girl, name: draft.value.girl?.name ?? '', desc: draft.value.girl?.desc ?? '', [k]: v }
+  if (!v && (k === 'personality' || k === 'habits')) delete g[k]
+  if (!g.name && !g.desc && !g.personality && !g.habits && g.chance === undefined) delete draft.value.girl
+  else draft.value.girl = g
+}
+// 魔物娘出現機率：空白照設定
+const girlChance = computed<number | ''>({
+  get: () => draft.value.girl?.chance ?? '',
+  set: (v) => {
+    const g = { ...draft.value.girl, name: draft.value.girl?.name ?? '', desc: draft.value.girl?.desc ?? '' }
+    if (v === '' || v === null || !Number.isFinite(Number(v))) delete g.chance
+    else g.chance = Math.max(0, Math.min(100, Math.round(Number(v))))
+    draft.value.girl = g
+  },
 })
 const builtin = computed(() => !!builtinEnemy(props.id))
 const edited = computed(() => builtin.value && !!content.mods.enemies[props.id])
@@ -156,22 +185,16 @@ function remove() {
 
 <template>
   <div class="editor">
-    <div class="row head">
-      <h3>{{ draft.name || '（未命名）' }}</h3>
-      <span class="tag">{{ builtin ? (edited ? '內建・已修改' : '內建') : '自建' }}</span>
-      <span v-if="dirty" class="tag warn">未儲存</span>
-      <span class="spacer" />
-      <button class="small primary" :disabled="!dirty" @click="save">💾 儲存</button>
-      <button class="small" :disabled="!dirty" @click="discard">放棄修改</button>
-      <button v-if="builtin" class="small" :disabled="!edited" @click="restore">↩️ 恢復預設</button>
-      <button v-else class="small danger" :disabled="usage.length > 0" :title="usage.length ? '還有地方用到，不能刪除' : ''" @click="remove">刪除</button>
-    </div>
+    <EditorHeader
+      :title="draft.name || '（未命名）'" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty" :usage="usage"
+      @save="save" @discard="discard" @restore="restore" @remove="remove"
+    />
     <UsageNote :usage="usage" :deletable="!builtin" />
     <SourceNote kind="enemy" :id="id" />
     <p class="small muted">id：{{ id }}</p>
 
-    <fieldset>
-      <legend>基本</legend>
+    <FoldSet>
+      <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" maxlength="20" /></label>
         <label>等級 <input v-model.number="draft.level" type="number" min="1" max="30" /></label>
@@ -195,13 +218,34 @@ function remove() {
       </div>
       <div class="row checks">
         <label class="check"><input v-model="draft.armed" type="checkbox" /> 持有裝備 <Hint text="打倒時可能掉裝備。" /></label>
-        <label class="check"><input v-model="draft.rut" type="checkbox" /> 可能擲到「發情」</label>
+        <label>發情 <Hint text="開戰時可能擲到「發情」特徵：比較想用慾望攻擊，戰敗後可能起意（戰敗事件）。「只在野外」是只在近郊、旅途與地下城的遭遇擲；特殊任務的戰鬥要那個任務點勾選才擲，淫鬥場不擲。會發情的怪物最好寫好魔物娘的樣子。" />
+          <select v-model="rutMode">
+            <option value="">不會</option>
+            <option value="any">在哪裡都可能</option>
+            <option value="field">只在野外（近郊、旅途、地下城）</option>
+          </select>
+        </label>
       </div>
-      <label class="block"><span>描述 <Hint text="給 AI 的外觀與習性。" /></span><textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
-    </fieldset>
+      <label class="block"><span>描述 <Hint text="給 AI 的外觀與習性。戰鬥與戰敗事件的敘事會附上。" /></span><textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
+      <label class="block"><span>魔物娘的名字 <Hint text="設定「魔物娘」打開時，交給 AI 的稱呼（例如「狼娘」）。畫面上的名字不變。名字和外觀都寫了才算；都不寫就沒有魔物娘形態，照原本的樣子。" /></span>
+        <input class="girl-name" :value="draft.girl?.name ?? ''" maxlength="20" @input="setGirl('name', ($event.target as HTMLInputElement).value)" />
+      </label>
+      <label class="block"><span>魔物娘的外觀 <Hint text="成年女性的身體，保留原本種族的特徵（耳朵、尾巴、鱗片、觸手……）。不要寫成未成年的樣子。插圖的分鏡只用這一欄。" /></span>
+        <textarea :value="draft.girl?.desc ?? ''" rows="2" maxlength="300" @input="setGirl('desc', ($event.target as HTMLTextAreaElement).value)" />
+      </label>
+      <label class="block"><span>魔物娘的性情 <Hint text="可以不寫。她的個性與待人的態度（例如「好奇又膽小，被盯著看就躲」）。戰鬥、戰敗事件的敘事會附上；插圖不用。" /></span>
+        <textarea :value="draft.girl?.personality ?? ''" rows="2" maxlength="200" @input="setGirl('personality', ($event.target as HTMLTextAreaElement).value)" />
+      </label>
+      <label class="block"><span>魔物娘的習性 <Hint text="可以不寫。她怎麼生活、怎麼狩獵或求偶、對人類的興趣。戰鬥、戰敗事件的敘事會附上；插圖不用。" /></span>
+        <textarea :value="draft.girl?.habits ?? ''" rows="2" maxlength="200" @input="setGirl('habits', ($event.target as HTMLTextAreaElement).value)" />
+      </label>
+      <label><span>魔物娘出現機率 <Hint text="0～100。空白時照「⚙️ 設定 → 敘事與判定」的魔物娘出現機率；寫 0 就一定照原本的樣子，100 就一定是魔物娘（設定打開、主角符合時）。" /></span>
+        <input v-model="girlChance" type="number" min="0" max="100" placeholder="照設定" class="girl-chance" />
+      </label>
+    </FoldSet>
 
-    <fieldset>
-      <legend>屬性與普通攻擊</legend>
+    <FoldSet>
+      <template #legend>屬性與普通攻擊</template>
       <div class="grid">
         <label v-for="a in ATTR_IDS" :key="a">{{ attrName(a) }} <input v-model.number="draft.attrs[a]" type="number" min="1" max="30" /></label>
       </div>
@@ -224,17 +268,17 @@ function remove() {
           </select>
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>抗性與攻擊加成</legend>
-      <p class="small muted">受到的傷害倍率：-1 免疫、-0.5 減半、+0.5 弱點（×1.5）。攻擊加成是造成傷害的倍率加減。</p>
+    <FoldSet>
+      <template #legend>抗性與攻擊加成</template>
+      <HelpText text="受到的傷害倍率：-1 免疫、-0.5 減半、+0.5 弱點（×1.5）。攻擊加成是造成傷害的倍率加減。" />
       <AffinityRows v-model="draft.resist" label="抗性" />
       <AffinityRows v-model="draft.offense" label="攻擊加成" :max="7" />
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>技能</legend>
+    <FoldSet>
+      <template #legend>技能</template>
       <div class="chips">
         <span v-for="a in draft.abilities ?? []" :key="a" class="tag chip" :title="abilities[a]?.desc">
           {{ abilities[a]?.name ?? a }}
@@ -245,7 +289,7 @@ function remove() {
               @change="setGate(a, ($event.target as HTMLInputElement).value)"
             />%
           </label>
-          <button class="x" @click="removeAbility(a)">×</button>
+          <button class="x" @click="removeAbility(a)" title="移除">✕</button>
         </span>
         <span v-if="!draft.abilities?.length" class="small muted">（只用普通攻擊）</span>
       </div>
@@ -261,30 +305,29 @@ function remove() {
         </select>
         <button class="small" :disabled="!pickAbility" @click="addAbility">＋ 加入</button>
       </div>
-      <p class="small muted">怪物沒有法術環，所以不能用法術。「生命 ≤ X%」填了的技能要等生命降到那裡才能用（狂暴、垂死反撲），解開後 AI 會比較想用；空白是隨時能用。</p>
+      <HelpText text="怪物沒有法術環，所以不能用法術。「生命 ≤ X%」填了的技能要等生命降到那裡才能用（狂暴、垂死反撲），解開後 AI 會比較想用；空白是隨時能用。" />
       <div class="row checks">
         <span class="small">固定特徵：</span>
         <label v-for="(t, id) in monsterTraits.traits" :key="id" class="check small" :title="t.desc">
           <input type="checkbox" :checked="draft.traits?.includes(String(id))" @change="toggleTrait(String(id), ($event.target as HTMLInputElement).checked)" /> {{ t.name }}
         </label>
       </div>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>掉落物</legend>
-      <datalist id="item-names"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
+    <FoldSet>
+      <template #legend>掉落物</template>
       <div v-for="(l, i) in draft.loot ?? []" :key="i" class="row">
-        <input v-model="l.item" list="item-names" placeholder="物品名稱" class="grow" />
+        <input v-model="l.item" list="cv-item-names" placeholder="物品名稱" class="grow" />
         <label class="small">機率 <input class="num" type="number" min="1" max="100" :value="percent(l.chance)" @input="l.chance = Number(($event.target as HTMLInputElement).value) / 100" />%</label>
         <label class="small">數量 <input v-model.number="l.qty" class="num" type="number" min="1" placeholder="1" /></label>
-        <button class="small" @click="draft.loot!.splice(i, 1)">移除</button>
+        <button class="small" @click="draft.loot!.splice(i, 1)" title="移除">✕</button>
         <span v-if="l.item && !itemNames.includes(l.item)" class="small warn-text">目錄裡沒有這個物品</span>
       </div>
       <button class="small" @click="addLoot">＋ 掉落物</button>
-    </fieldset>
+    </FoldSet>
 
-    <fieldset>
-      <legend>出現地點</legend>
+    <FoldSet :filled="nowPlaces.length > 0">
+      <template #legend>出現地點</template>
       <p class="small">目前出現在：{{ nowPlaces.map((p) => `${p.label}${p.groups > 1 ? `（${p.groups} 組）` : ''}`).join('、') || '（沒有，不會遇到）' }}</p>
       <template v-if="builtinPlaces.length">
         <p class="small muted">內建的遭遇表 <Hint text="勾選就從那裡移除；遭遇表不會被清空。" />：</p>
@@ -294,7 +337,7 @@ function remove() {
           </label>
         </div>
       </template>
-      <p class="small muted">另外加入：每一組是遭遇表裡的一個選項（遭遇時從所有選項平均抽一個），權重是放幾組。層主會取代原本的層主（包括原本的護衛）；要護衛時另外選。</p>
+      <HelpText text="另外加入：每一組是遭遇表裡的一個選項（遭遇時從所有選項平均抽一個），權重是放幾組。層主會取代原本的層主（包括原本的護衛）；要護衛時另外選。" />
       <div v-for="(s, i) in draft.spawns ?? []" :key="i" class="row">
         <select v-model="s.table" class="grow">
           <option v-for="t in tables" :key="t.key" :value="t.key">{{ t.label }}</option>
@@ -310,11 +353,15 @@ function remove() {
           </label>
           <label v-if="s.guards?.length" class="small"><input v-model.number="s.guards[0]![1]" class="num" type="number" min="1" max="4" /> 隻</label>
         </template>
-        <button class="small" @click="draft.spawns!.splice(i, 1)">移除</button>
+        <button class="small" @click="draft.spawns!.splice(i, 1)" title="移除">✕</button>
       </div>
       <button class="small" @click="addSpawn">＋ 出現地點</button>
-    </fieldset>
+    </FoldSet>
   </div>
 </template>
 
 <style scoped src="./editor.css"></style>
+<style scoped>
+label.block input.girl-name { width: min(100%, 16em); }
+input.girl-chance { width: 6em; }
+</style>

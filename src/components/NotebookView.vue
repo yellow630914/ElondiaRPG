@@ -6,23 +6,25 @@ import { enemies, locationById, stories } from '@/engine/data'
 import { expireIntel, intelPlace } from '@/engine/intel'
 import { canTurnIn, isMaterialQuest, layerName, questProgressText } from '@/engine/materialQuests'
 import { formatMoney } from '@/engine/money'
+import { examsFirst } from '@/engine/guild'
 import { formatTime } from '@/engine/state'
-import { activeNodes, placeText, storyPaused } from '@/engine/story'
+import { activeNodes, nodesWaitingForDays, placeText, storyPauseReason } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
 import type { Quest } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import BestiaryPanel from './BestiaryPanel.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 
-// 冒險筆記：一般委託、特殊任務（目前的目標與經過）、情報
+// 冒險筆記：一般委託、特殊任務（目前的目標與經過）、情報（買到的與打聽到的傳聞）、怪物圖鑑
 const game = useGame()
 const s = computed(() => game.state!)
-type Tab = 'quests' | 'stories' | 'intel'
+type Tab = 'quests' | 'stories' | 'intel' | 'bestiary'
 const tab = ref<Tab>('quests')
 
 // ---- 一般委託 ----
 const AREA: Record<Quest['area'], string> = { town: '城內', outskirts: '近郊', dungeon: '冒險區域' }
-const active = computed(() => s.value.quests.filter((q) => q.status === 'accepted' || q.status === 'ready'))
+const active = computed(() => examsFirst(s.value.quests.filter((q) => q.status === 'accepted' || q.status === 'ready')))
 const finished = computed(() => s.value.quests.filter((q) => q.status === 'completed').slice(-20).reverse())
 function where(q: Quest): string {
   if (q.area === 'dungeon') return `${locationById(q.target).name}${q.layer ? `・${layerName(q.layer)}` : ''}`
@@ -39,8 +41,10 @@ const myStories = computed(() => {
   void s.value.time.minute
   void s.value.flags
   const nodes = activeNodes(s.value)
+  // 只差「幾天之後」的任務點：寫出第幾天以後再來
+  const later = nodesWaitingForDays(s.value)
   return Object.values(s.value.stories ?? {})
-    .map((p) => ({ p, def: stories.find((d) => d.id === p.id), goals: nodes.filter((n) => n.def.id === p.id) }))
+    .map((p) => ({ p, def: stories.find((d) => d.id === p.id), goals: nodes.filter((n) => n.def.id === p.id), later: later.filter((n) => n.def.id === p.id) }))
     .filter((x) => x.def)
     .sort((a, b) => Number(a.p.status !== 'active') - Number(b.p.status !== 'active'))
 })
@@ -70,6 +74,7 @@ const counts = computed(() => ({
       <button :class="{ active: tab === 'quests' }" @click="tab = 'quests'"><GameIcon name="scroll" :size="15" />一般委託 <span v-if="counts.quests" class="tag">{{ counts.quests }}</span></button>
       <button :class="{ active: tab === 'stories' }" @click="tab = 'stories'"><GameIcon name="star" :size="15" />特殊任務 <span v-if="counts.stories" class="tag">{{ counts.stories }}</span></button>
       <button :class="{ active: tab === 'intel' }" @click="tab = 'intel'"><GameIcon name="eye" :size="15" />情報 <span v-if="counts.intel" class="tag">{{ counts.intel }}</span></button>
+      <button :class="{ active: tab === 'bestiary' }" @click="tab = 'bestiary'"><GameIcon name="skull" :size="15" />圖鑑</button>
     </nav>
 
     <template v-if="tab === 'quests'">
@@ -96,7 +101,7 @@ const counts = computed(() => ({
 
     <template v-else-if="tab === 'stories'">
       <p v-if="!myStories.length" class="muted">還沒有特殊任務。固定的人物、公會、旅途上的事件或情報商都可能帶來特別的委託。</p>
-      <div v-for="{ p, def, goals } in myStories" :key="p.id" class="card" :class="p.status">
+      <div v-for="{ p, def, goals, later } in myStories" :key="p.id" class="card" :class="p.status">
         <div class="row">
           <span v-if="def!.rank" class="tag">{{ def!.rank }}</span>
           <b class="grow">{{ def!.title }} <ContentTagChips :tags="def!.tags" /></b>
@@ -109,8 +114,10 @@ const counts = computed(() => ({
           <b>目前的目標</b>
           <ul class="plain goals">
             <li v-for="g in goals" :key="g.ref"><GameIcon name="target" :size="12" /> {{ g.node.title }} <span class="muted">（{{ placeText(g.node, s) }}）</span></li>
-            <li v-if="storyPaused(def!)" class="muted">（設定的內容篩選關掉了這個任務的標籤，任務暫停中；重新開啟後接著進行）</li>
-            <li v-else-if="!goals.length" class="muted">（現在沒有可以進行的目標）</li>
+            <li v-for="g in later" :key="g.ref" class="muted"><GameIcon name="hourglass" :size="12" /> {{ g.node.title }}（{{ placeText(g.node, s) }}・{{ formatTime(g.from) }} 以後）</li>
+            <li v-if="storyPauseReason(s, def!) === 'tags'" class="muted">（設定的內容篩選關掉了這個任務的標籤，任務暫停中；重新開啟後接著進行）</li>
+            <li v-else-if="storyPauseReason(s, def!) === 'body'" class="muted">（這個任務只給陰柔、中性體型的主角，任務暫停中；打開設定「陽剛體型也能遇到『只給陰柔、中性』的成人內容」或改回體型後接著進行）</li>
+            <li v-else-if="!goals.length && !later.length" class="muted">（現在沒有可以進行的目標）</li>
           </ul>
         </div>
         <FoldMenu class="history" icon="notes" label="經過" :detail="p.log.length ? `最近：${p.log.at(-1)!.text.slice(0, 24)}${p.log.at(-1)!.text.length > 24 ? '…' : ''}` : ''" :badge="p.log.length" :open="p.status === 'active'">
@@ -121,18 +128,23 @@ const counts = computed(() => ({
       </div>
     </template>
 
+    <BestiaryPanel v-else-if="tab === 'bestiary'" />
+
     <template v-else>
-      <p v-if="!intel.length" class="muted">還沒有買過情報。情報商賣附近的事件點與特殊任務的消息。</p>
+      <p v-if="!intel.length" class="muted">還沒有情報。情報商賣附近的事件點與特殊任務的消息；向人打聽到的傳聞也記在這裡。</p>
       <div v-for="it in intel" :key="it.id" class="card" :class="it.status">
         <div class="row">
-          <b class="grow"><GameIcon v-if="it.kind === 'story'" name="star" :size="13" /> {{ it.title }}</b>
+          <b class="grow"><GameIcon v-if="it.kind === 'story'" name="star" :size="13" /><GameIcon v-else-if="it.kind === 'rumor'" name="message" :size="13" /> {{ it.title }}</b>
           <span v-if="it.event" class="tag">{{ EVENT[it.event] }}</span>
-          <span class="tag" :class="{ ok: it.status === 'active' }">{{ STATUS[it.status] }}</span>
+          <span v-if="it.kind === 'rumor'" class="tag">傳聞</span>
+          <span v-else class="tag" :class="{ ok: it.status === 'active' }">{{ STATUS[it.status] }}</span>
         </div>
         <p v-if="it.text" class="small">{{ it.text }}</p>
         <div class="small muted">
           <template v-if="it.kind === 'point'">地點：{{ intelPlace(it) }}・第 {{ it.until }} 天前有效・</template>
-          {{ formatTime(it.time) }}{{ it.source ? `在${locationById(it.from).name}解讀「${it.source}」得到` : `在${locationById(it.from).name}的情報商買到` }}
+          <template v-else-if="it.location">地點：{{ locationById(it.location).name }}・</template>
+          <template v-if="it.monster && enemies[it.monster]">怪物：{{ enemies[it.monster]!.name }}・</template>
+          {{ formatTime(it.time) }}{{ it.npc ? `在${locationById(it.from).name}聽${it.npc}說的` : it.source ? `在${locationById(it.from).name}解讀「${it.source}」得到` : `在${locationById(it.from).name}的情報商買到` }}
         </div>
       </div>
     </template>

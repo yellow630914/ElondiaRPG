@@ -11,13 +11,13 @@ import { parasiteDef, parasiteRules } from './parasites'
 import { travelEvents } from './road'
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, bumpContentRevision, MASTER_EVENT_POOLS, masterEventPool, type MasterEventPool, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
-  type Control, type LuckRoll, type StatusDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId, BIND_KINDS, type BindKind, LOCK_GRADES, MASTER_EVENT_POOLS, masterEventPool, type MasterEventPool,
+  type Control, type LuckRoll, type StatusDef, type ConditionDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId, BIND_KINDS, type BindKind, LOCK_GRADES,
 } from './data'
-import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS } from './gear'
+import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS, MAX_TIER } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
@@ -29,7 +29,7 @@ import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
 import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type CounterMod } from './counterMods'
-import { applyMasterEvent, builtinMasterEvent, restoreMasterEvents, sanitizeMasterEvent, type MasterEventMod } from './masterEventMods'
+import { allMasterEvents, applyMasterEvent, builtinMasterEvent, restoreMasterEvents, sanitizeMasterEvent, type MasterEventMod } from './masterEventMods'
 import { applyBindRules, restoreBindRules, sanitizeBindRules, type BindRulesMod } from './bindRulesMods'
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
@@ -97,6 +97,11 @@ export interface StatusMod extends StatusDef {
   custom?: boolean
 }
 
+/** 非戰鬥狀態（companions.json 的 conditions：用餐、喝酒、受罰、祝福……）：內建的可以修改，自建的沒有被使用時可以刪除 */
+export interface ConditionMod extends ConditionDef {
+  custom?: boolean
+}
+
 export interface ContentMods {
   version: 1
   enemies: Record<string, EnemyMod>
@@ -109,6 +114,8 @@ export interface ContentMods {
   perks: Record<string, PerkMod>
   /** 舊的自訂內容沒有這一欄（讀取時補上） */
   statuses: Record<string, StatusMod>
+  /** 非戰鬥狀態（舊的自訂內容沒有這一欄，讀取時補上） */
+  conditions: Record<string, ConditionMod>
   /** 刺青圖樣（普通刺青、誓約印記） */
   tattoos: Record<string, TattooMod>
   /** 奴隸印記的模板 */
@@ -139,7 +146,7 @@ export interface CategoryIconMod {
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -162,6 +169,7 @@ const snapshot = {
   abilities: clone(abilities),
   perks: clone(perkRules.perks),
   statuses: clone(statuses),
+  conditions: clone(companionRules.conditions),
   tattoos: clone(tattooRules.templates),
   marks: clone(slaveryRules.contracts),
   markRules: clone(currentMarkRules()),
@@ -183,6 +191,18 @@ export function builtinMarkRules(): MarkRulesMod {
 export function builtinStatus(id: string): StatusDef | undefined {
   return snapshot.statuses[id] ? clone(snapshot.statuses[id]!) : undefined
 }
+
+export function builtinCondition(id: string): ConditionDef | undefined {
+  return !id.startsWith('$') && snapshot.conditions[id] ? clone(snapshot.conditions[id]!) : undefined
+}
+
+/** 目前的非戰鬥狀態的 id（內建與自建，不含 $comment） */
+export function conditionIds(): string[] {
+  return Object.keys(companionRules.conditions).filter((k) => !k.startsWith('$'))
+}
+
+/** 由程式加上與解除的非戰鬥狀態（奴隸印記、逃亡、暫時離隊）：解除時機、同組與疊加不能改 */
+export const SYSTEM_CONDITIONS = ['slave_mark', 'fugitive', 'away']
 
 export function builtinPerk(id: string): PerkDef | undefined {
   const p = snapshot.perks.find((x) => x.id === id)
@@ -219,6 +239,7 @@ function replaceRecord<T>(target: Record<string, T>, source: Record<string, T>) 
 
 /** 把遊戲資料還原成內建的樣子 */
 function restore() {
+  bumpContentRevision()
   replaceRecord(enemies, snapshot.enemies)
   replaceRecord(dungeonEncounters as Record<string, DungeonEncounters>, snapshot.dungeon)
   replaceRecord(wildEncounterTables as Record<string, unknown>, snapshot.wild as Record<string, unknown>)
@@ -232,6 +253,7 @@ function restore() {
   maps.generation.dungeon.resource_items.splice(0, Infinity, ...snapshot.gather.dungeon)
   namedNpcs.splice(0, namedNpcs.length, ...clone(snapshot.npcs))
   replaceRecord(statuses, snapshot.statuses)
+  replaceRecord(companionRules.conditions, snapshot.conditions)
   replaceRecord(tattooRules.templates, snapshot.tattoos)
   replaceRecord(slaveryRules.contracts, snapshot.marks)
   applyMarkRules(clone(snapshot.markRules))
@@ -469,6 +491,11 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('狀態', mods.statuses ?? {}, (id, m) => {
     statuses[id] = strip(m, ['custom'])
   })
+  // 非戰鬥狀態（用餐、喝酒……）：物品、事件、休息會用到。自建的彼此可以互相引用（再獲得一次變成、獲得時拿掉）
+  const knownConditions = new Set([...conditionIds(), ...Object.keys(mods.conditions ?? {})])
+  tryEach('非戰鬥狀態', mods.conditions ?? {}, (id, m) => {
+    companionRules.conditions[id] = strip(sanitizeCondition(id, m, !!m.custom || !builtinCondition(id), knownConditions), ['custom'])
+  })
   // 刺青與奴隸印記：事件、特殊任務會用到
   tryEach('刺青圖樣', mods.tattoos ?? {}, (id, m) => {
     tattooRules.templates[id] = strip(m, ['custom'])
@@ -577,6 +604,8 @@ export function applyContent(mods: ContentMods): string[] {
     Object.entries(mods.bases).filter(([id, b]) => b.custom && gearRules.bases[id]).map(([id]) => id),
     Object.entries(mods.items).filter(([n, m]) => m.custom && itemDef(n)?.gear).map(([n]) => n),
   )
+  // 套用完再加一次：套用途中有快取被重算的話，套用後一定重算
+  bumpContentRevision()
   return problems
 }
 
@@ -699,7 +728,8 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   }
   const res = affinity(raw.resist)
   if (res) out.resist = res
-  const off = affinity(raw.offense, 7)
+  // 層主、強敵的全傷害倍率可以到 7 以上（例如血祭司 7.26、十字軍審判官 10.01）
+  const off = affinity(raw.offense, 20)
   if (off) out.offense = off
   // 怪物沒有法術環：只能用技能與戲法
   const abil = (raw.abilities ?? []).filter((a) => !!abilities[a] && abilities[a]!.type !== 'spell')
@@ -713,7 +743,19 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   if (loot.length) out.loot = loot
   if (raw.kind && ENEMY_KINDS[raw.kind]) out.kind = raw.kind
   if (raw.armed) out.armed = true
-  if (raw.rut) out.rut = true
+  if (raw.rut) out.rut = raw.rut === 'field' ? 'field' : true
+  const girlName = str(raw.girl?.name, 20)
+  const girlDesc = str(raw.girl?.desc, 300)
+  if (girlName && girlDesc) {
+    out.girl = { name: girlName, desc: girlDesc }
+    const personality = str(raw.girl?.personality, 200)
+    const habits = str(raw.girl?.habits, 200)
+    if (personality) out.girl.personality = personality
+    if (habits) out.girl.habits = habits
+    // 機率沒寫（空白）時照設定；寫了就是 0～100 的整數
+    const chance = raw.girl?.chance as unknown
+    if (chance !== undefined && chance !== null && chance !== '' && Number.isFinite(Number(chance))) out.girl.chance = int(chance, 0, 100, 100)
+  }
   const traits = (raw.traits ?? []).filter((t) => !!monsterTraits.traits[t])
   if (traits.length) out.traits = traits
   if (str(raw.desc, 200)) out.desc = str(raw.desc, 200)
@@ -819,7 +861,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     name: cleanItemName(name) || '未命名的物品',
     category,
     price_cc: int(raw.price_cc, 0, 1e8, 10),
-    tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t)),
+    // unique：獨特物品（不會在商店、黑市與 NPC 的換裝出現；沒有勾選框，照原樣留著）
+    tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t) || t === 'unique'),
   }
   if (str(raw.desc, 200)) out.desc = str(raw.desc, 200)
   const icon = sanitizeIcon(raw.icon)
@@ -1000,6 +1043,8 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
     out.bind = int(raw.bind, 1, 3, 1)
     out.bind_kind = raw.bind_kind
   }
+  // 地下城專屬的底材：內建的照原本，自建的可以勾
+  if (builtin ? builtin.exclusive : raw.exclusive) out.exclusive = true
   // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
   const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body'
   if (restraint) {
@@ -1012,7 +1057,7 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
 export function sanitizeMaterial(raw: Partial<MaterialMod>, custom: boolean, id?: string): MaterialMod {
   const kind = (['metal', 'leather', 'cloth', 'wood', 'jewel'] as const).includes(raw.kind as 'metal') ? raw.kind! : 'metal'
   const out: MaterialMod = {
-    kind, name: str(raw.name, 8) || '未命名', tier: int(raw.tier, 1, 5, 1), bonus: int(raw.bonus, 0, 10, 0),
+    kind, name: str(raw.name, 8) || '未命名', tier: int(raw.tier, 1, MAX_TIER, 1), bonus: int(raw.bonus, 0, 12, 0),
     rarity: RARITY_ORDER.includes(raw.rarity as string) ? raw.rarity! : 'common', level: int(raw.level, 1, 30, 1), price: Math.max(0.1, num(raw.price, 0.1, 1e5, 1)),
   }
   const armor = mods(raw.armor, -5, 5)
@@ -1020,6 +1065,7 @@ export function sanitizeMaterial(raw: Partial<MaterialMod>, custom: boolean, id?
   const res = affinity(raw.resist)
   if (res) out.resist = res
   if (str(raw.desc, 120)) out.desc = str(raw.desc, 120)
+  if (str(raw.series, 16)) out.series = str(raw.series, 16)
   if (custom) out.custom = true
   // 內建材料的類型與等級不能改：隨機裝備、起始裝備與 NPC 的配備依「類型 × 等級」找材料
   const builtin = !custom && id ? snapshot.materials[id] : undefined
@@ -1039,6 +1085,11 @@ export function normalizeMods(raw: unknown): ContentMods {
   const statusIds = new Set([...Object.keys(statuses), ...Object.keys(r.statuses ?? {})])
   for (const [id, v] of Object.entries(r.statuses ?? {})) out.statuses[id] = sanitizeStatus(id, v, !!v.custom || !snapshot.statuses[id], statusIds)
   for (const [id, s] of Object.entries(out.statuses)) if (s.custom && !statuses[id]) statuses[id] = strip(s, ['custom'])
+  // 非戰鬥狀態：任務、事件、地標的效果與物品會檢查存不存在，先登錄自建的（id 不對的略過）
+  const conditionRaw = Object.entries(r.conditions ?? {}).filter(([id, v]) => !!v && typeof v === 'object' && (!!builtinCondition(id) || CONDITION_ID.test(id)))
+  const knownConditions = new Set([...conditionIds(), ...conditionRaw.map(([id]) => id)])
+  for (const [id, v] of conditionRaw) out.conditions[id] = sanitizeCondition(id, v, !!v.custom || !builtinCondition(id), knownConditions)
+  for (const [id, c] of Object.entries(out.conditions)) if (c.custom && !companionRules.conditions[id]) companionRules.conditions[id] = strip(c, ['custom'])
   // 劇情計數器：任務與事件的檢查會看計數器存不存在，先登錄自建的
   for (const [id, v] of Object.entries(r.counters ?? {})) {
     const key = cleanCounterId(id)
@@ -1136,7 +1187,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown; after?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1192,8 +1243,13 @@ function cond(v: unknown): NpcDef['requires'] {
   const hasWear = Object.keys(wearing).length > 0
   // 主角的身分標籤（至少一個）：只收存在的標籤
   const pcTags = [...new Set((Array.isArray(r.pc_tags) ? r.pc_tags : []).filter((t): t is string => typeof t === 'string' && !!npcTags.tags[t]))]
-  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}) }
+  // 某個特殊任務（或任務點）結束後幾天（1～60 天；任務不存在由 storyCheck 提醒）
+  const ao = r.after && typeof r.after === 'object' ? r.after as { story?: unknown; node?: unknown; days?: unknown } : {}
+  const afterStory = typeof ao.story === 'string' ? ao.story.trim().slice(0, 60) : ''
+  const afterDays = typeof ao.days === 'number' && Number.isFinite(ao.days) ? Math.max(1, Math.min(60, Math.round(ao.days))) : 1
+  const after = afterStory ? { story: afterStory, ...(typeof ao.node === 'string' && ao.node.trim() ? { node: ao.node.trim().slice(0, 40) } : {}), days: afterDays } : undefined
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length || after
+    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}), ...(after ? { after } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }
@@ -1374,7 +1430,8 @@ function applyDef(v: unknown): ApplyDef | undefined {
   if (!v || typeof v !== 'object') return undefined
   const a = v as ApplyDef
   if (!a.status || !statuses[a.status]) return undefined
-  const out: ApplyDef = { status: a.status, turns: int(a.turns, 1, 20, 2) }
+  // 1～20 回合，或 99＝整場戰鬥（內建的熱泉的耐性）
+  const out: ApplyDef = { status: a.status, turns: Number(a.turns) === 99 ? 99 : int(a.turns, 1, 20, 2) }
   if (a.to && ['target', 'self', 'allies', 'enemies'].includes(a.to)) out.to = a.to
   if (a.on && ['hit', 'fail', 'always'].includes(a.on)) out.on = a.on
   if (a.save && ATTR_IDS.includes(a.save)) out.save = a.save
@@ -1449,6 +1506,24 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.lifesteal) out.lifesteal = Math.round(num(raw.lifesteal, 0.05, 1, 0.5) * 100) / 100
   if (raw.vs_slave && raw.vs_slave !== 1) out.vs_slave = Math.round(num(raw.vs_slave, 0.25, 4, 2) * 100) / 100
   if (raw.hp_limit) out.hp_limit = int(raw.hp_limit, 1, 9999, 30)
+  // 升環（只有法術；upcast.ts）
+  if (type === 'spell' && raw.upcast && typeof raw.upcast === 'object') {
+    const r = raw.upcast
+    const dice = (v: unknown) => (v && DICE.test(String(v).replace(/\s+/g, '')) ? String(v).replace(/\s+/g, '') : undefined)
+    const u: NonNullable<AbilityDef['upcast']> = {}
+    if (dice(r.dice) && out.damage?.length) {
+      u.dice = dice(r.dice)
+      const part = int(r.part, 0, out.damage.length - 1, 0)
+      if (part > 0) u.part = part
+    }
+    if (dice(r.heal) && out.heal) u.heal = dice(r.heal)
+    if (r.heal_flat && out.heal) u.heal_flat = int(r.heal_flat, 1, 999, 10)
+    if (r.count && target === 'random_enemies') u.count = int(r.count, 1, 5, 1)
+    if (r.hits) u.hits = int(r.hits, 1, 5, 1)
+    if (r.shield && out.shield) u.shield = int(r.shield, 1, 999, 5)
+    if (dice(r.status_dice) && out.apply?.length) u.status_dice = dice(r.status_dice)
+    if (Object.keys(u).length) out.upcast = u
+  }
   if (raw.threat) out.threat = int(raw.threat, -50, 50, 0)
   // 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）
   if (raw.lust_gain?.flat) out.lust_gain = { flat: int(raw.lust_gain.flat, 1, 200, 10) }
@@ -1557,6 +1632,71 @@ export function sanitizeStatus(id: string, raw: Partial<StatusMod>, custom: bool
     out.on_release = { amount: int(raw.on_release.amount, 0, 200, 6), type: String(raw.on_release.type), ...(raw.on_release.level ? { level: true } : {}) }
   }
   if (custom) out.custom = true
+  return out
+}
+
+/**
+ * 整理非戰鬥狀態：名稱、說明、檢定加減（check_penalty，負數是加值）與作用的屬性、每場戰鬥的加減與暫時生命、
+ * 長休解除、同組（rank 高的取代低的）、再獲得一次變成另一個狀態、獲得時拿掉的狀態。只能改內建的。
+ */
+export function sanitizeCondition(id: string, raw: Partial<ConditionMod>, custom = false, known?: Set<string>): ConditionMod {
+  const base = custom ? undefined : builtinCondition(id)
+  if (!custom && !base) throw new Error('沒有這個非戰鬥狀態')
+  if (custom && (builtinCondition(id) || !CONDITION_ID.test(id))) throw new Error('自建狀態的 id 不對')
+  const out: ConditionMod = { name: str(raw.name, 10) || base?.name || '新的狀態', desc: str(raw.desc, 160) || base?.desc || '' }
+  const pen = int(raw.check_penalty, -5, 5, 0)
+  if (pen) out.check_penalty = pen
+  const attrs = Array.isArray(raw.check_attrs) ? ATTR_IDS.filter((a) => raw.check_attrs!.includes(a)) : []
+  if (pen && attrs.length && attrs.length < ATTR_IDS.length) out.check_attrs = attrs
+  const m = mods(raw.combat_mods, -5, 5)
+  if (m) out.combat_mods = m
+  const hp = int(raw.combat_temp_hp, 0, 50, 0)
+  if (hp) out.combat_temp_hp = hp
+  // 慾望上限倍率加減（壯陽料理 0.2 = +20%）
+  const lustMax = Math.round(num(raw.combat_lust_max, -0.9, 2, 0) * 100) / 100
+  if (lustMax) out.combat_lust_max = lustMax
+  // 系統狀態：照內建的
+  const src = base && SYSTEM_CONDITIONS.includes(id) ? base : raw
+  if (src.clears === 'long_rest') out.clears = 'long_rest'
+  const group = str(src.group, 16)
+  if (/^[a-z][a-z0-9_]*$/.test(group)) {
+    out.group = group
+    out.rank = int(src.rank, 1, 9, 1)
+  }
+  const others = [...(known ?? conditionIds())].filter((k) => k !== id && !k.startsWith('$') && !SYSTEM_CONDITIONS.includes(k))
+  if (typeof src.stacks_to === 'string' && others.includes(src.stacks_to)) out.stacks_to = src.stacks_to
+  const rep = Array.isArray(src.replaces) ? others.filter((k) => src.replaces!.includes(k)) : []
+  if (rep.length) out.replaces = rep
+  if (custom) out.custom = true
+  return out
+}
+
+/** 自建的非戰鬥狀態的 id（newModId('cond') 產生的；匯入時也只收這種） */
+const CONDITION_ID = /^mod_cond_[a-z0-9]{1,24}$/
+
+/** 新的非戰鬥狀態：下次長休時解除、所有檢定 +1 */
+export function newCondition(): ConditionMod {
+  return { name: '新的狀態', desc: '下次長休前所有檢定 +1。', check_penalty: -1, clears: 'long_rest', custom: true }
+}
+
+/** 哪些地方會給或拿掉這個非戰鬥狀態（編輯畫面參考用）：酒館菜單、物品與工具、特殊任務、事件、地標、奴隸生活，以及目前存檔裡有這個狀態的角色 */
+export function conditionUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  const has = (v: unknown) => JSON.stringify(v ?? null).replace(/\s+/g, '').includes(`"condition":"${id}"`)
+  for (const m of itemRules.meals.menu) if (m.condition === id) out.push(`酒館菜單「${m.name}」`)
+  for (const i of itemRules.items) if (i.use?.condition === id) out.push(`物品「${i.name}」`)
+  for (const t of Object.values(itemRules.tools)) if (t.condition === id) out.push(`工具「${t.name}」`)
+  for (const st of stories) if (has(st)) out.push(`特殊任務「${st.title}」`)
+  for (const t of travelEvents.templates) if (has(t)) out.push(`事件「${t.title}」`)
+  for (const l of Object.values(landmarks)) if (has(l)) out.push(`地標「${l.name}」`)
+  if (has(slaveryRules)) out.push('奴隸生活的事件')
+  for (const c of state?.party ?? []) if (c.status.includes(id)) out.push(`目前存檔的「${c.name}」`)
+  for (const r of Object.values(state?.npcs ?? {})) {
+    if (r.character?.status?.includes(id) && !state!.party.some((c) => c.id === r.character!.id)) out.push(`目前存檔的「${r.character.name}」`)
+  }
+  for (const [k, c] of Object.entries(companionRules.conditions)) {
+    if (k !== id && !k.startsWith('$') && (c.stacks_to === id || c.replaces?.includes(id))) out.push(`非戰鬥狀態「${c.name}」`)
+  }
   return out
 }
 
@@ -1695,13 +1835,16 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
     }
   }
   if (!race && raw.npc) {
-    const weight = Math.round(num(raw.npc.weight, 0, 10, 0))
+    // 權重可以是小數（例如【幸運】0.5：比一般特質少見）
+    const weight = Math.round(num(raw.npc.weight, 0, 10, 0) * 10) / 10
     const tags = (raw.npc.tags ?? []).filter((t) => !!npcTags.tags[t])
     const ncls = (raw.npc.classes ?? []).filter((k) => !!classes[k])
     if (weight > 0) out.npc = { weight, ...(tags.length ? { tags } : {}), ...(ncls.length ? { classes: ncls } : {}) }
   }
   if (raw.rarity && RARITY_ORDER.includes(raw.rarity)) out.rarity = raw.rarity
   if (raw.category && PERK_CATEGORIES[raw.category]) out.category = raw.category
+  // 能在野外紮營長休（種族特質也可以，例如自訂一個親近自然的種族）
+  if (raw.camp === true) out.camp = true
   // 慾望流派：流派與慾望效果（表單還沒有這兩個欄位，整理時保留）
   if (!race && raw.school && schoolDef(raw.school)) out.school = raw.school
   const lust = race ? undefined : sanitizeLustPerk(raw.lust)
@@ -1723,7 +1866,7 @@ export function newNpc(id: string): NpcMod {
 
 /** 新的 id（自建項目） */
 export function newModId(prefix: string): string {
-  return `mod_${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`
+  return `mod_${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10).padEnd(8, '0')}`
 }
 
 /** 新怪物的預設值 */

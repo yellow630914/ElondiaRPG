@@ -11,6 +11,7 @@ import { commitReport, withRng } from './state'
 import { flagKey } from './storyFlags'
 import { baseReport } from './town'
 import { itemValue } from './interactions'
+import { capSale, isUniqueItem } from './trade'
 import type { GameState, Report } from './types'
 
 export const auctionRules = () => lewdRules.auction
@@ -90,7 +91,8 @@ export function placeBid(state: GameState, index: number, amount: number): Repor
 export function consignable(state: GameState): string[] {
   return state.inventory.filter((i) => {
     const d = itemDef(i.name)
-    if (!d || i.qty <= 0 || !d.price_cc) return false
+    // 獨特裝備和商店一樣不收
+    if (!d || i.qty <= 0 || !d.price_cc || isUniqueItem(state, i.name)) return false
     return !!d.adult || !!d.use?.abilities?.some((id) => abilities[id]?.classes.includes('lewd'))
   }).map((i) => i.name)
 }
@@ -101,7 +103,7 @@ export function consign(state: GameState, name: string): Report {
   if (why) throw new Error(why)
   if (!consignable(state).includes(name)) throw new Error(`拍賣會不收「${name}」`)
   const r = auctionRules()
-  const price = itemValue(state, name)
+  const price = capSale(state, name, itemValue(state, name))
   const sold = withRng(state, (rng) => Math.round(price * (r.consign_ratio[0] + rng.next() * (r.consign_ratio[1] - r.consign_ratio[0]))))
   const fee = Math.round(sold * r.consign_fee)
   const report = baseReport(state, 'trade', 1)

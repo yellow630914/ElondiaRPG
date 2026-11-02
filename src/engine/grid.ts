@@ -13,12 +13,12 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
+  attrName, contentRevision, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } from './gear'
-import { questTargets } from './materialQuests'
+import { isMaterialQuest, questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers, sideNodesOpen, storyNeedsLandmark } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
 import { ensureIntelPoints, finishIntel } from './intel'
@@ -35,8 +35,8 @@ import { homeById, overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
 import { bestTool } from './tools'
 import { addHours, advanceTime, commitReport, newReportId, player, withRng } from './state'
-import type { Character, GameState, GameTime, Report } from './types'
-import { rewardMoney } from './gameRules'
+import type { Character, GameState, GameTime, Quest, Report } from './types'
+import { gameRule, rewardMoney } from './gameRules'
 
 export type CellKind =
   | 'floor' | 'wall' | 'water'
@@ -211,11 +211,12 @@ let cellOverrides: Record<string, Record<number, CellKind>> = {}
 
 export function setCellOverrides(map: Record<string, Record<number, CellKind>>) {
   cellOverrides = map
-  blockKinds.clear()
+  invalidateBlocks()
 }
-/** 地標改了位置或增減時：清掉各區塊設施的快取 */
+/** 地標改了位置或增減時：清掉各區塊設施與基底地圖的快取 */
 export function invalidateBlocks() {
   blockKinds.clear()
+  baseBlocks.clear()
 }
 /** 各聚落區塊有哪些設施（settlementBlocks 用；換位置時清掉） */
 const blockKinds = new Map<string, Set<CellKind>>()
@@ -288,7 +289,25 @@ export function layerKey(locationId: string, layer: number) {
   return `${locationId}/L${layer}`
 }
 
-/** 固定地圖的區塊（每次由資料建立，不存檔）；overlay 為 false 時不疊世界設定擺的商店 */
+/**
+ * 聚落區塊的基底地圖：只依遊戲資料（地圖、世界設定擺的商店與地標），不依存檔，建一次就記住。
+ * 房子、通道、隱藏的地標每次另外疊上去（都是換掉整格），所以每次給一份新的格子陣列，快取不會被改到。
+ * 內容改了（contentRevision）或地標、商店換位置（invalidateBlocks）時重建。
+ */
+const baseBlocks = new Map<string, Area>()
+let baseBlocksRev = -1
+function baseBlock(loc: Location, block: BlockDef): Area {
+  if (baseBlocksRev !== contentRevision()) {
+    baseBlocks.clear()
+    baseBlocksRev = contentRevision()
+  }
+  const key = settlementKey(loc.id, block.id)
+  let base = baseBlocks.get(key)
+  if (!base) baseBlocks.set(key, (base = buildBlock(loc, block)))
+  return { ...base, cells: base.cells.slice() }
+}
+
+/** 固定地圖的區塊（由資料建立，不存檔）；overlay 為 false 時不疊世界設定擺的商店 */
 function buildBlock(loc: Location, block: BlockDef, overlay = true): Area {
   const width = block.grid[0]!.length
   const height = block.grid.length
@@ -350,7 +369,7 @@ export function getArea(state: GameState, key: string): Area {
   const block = blocksFor(loc).find((b) => b.id === blockId)
   if (!block) throw new Error(`unknown area: ${key}`)
   // 待售的空地與買下的房子（依存檔，疊在固定地圖上）；特殊地圖的通道（依旗標）
-  return hideLandmarks(state, overlayConnections(state, overlayLots(state, buildBlock(loc, block))))
+  return hideLandmarks(state, overlayConnections(state, overlayLots(state, baseBlock(loc, block))))
 }
 
 /**
@@ -475,6 +494,29 @@ export function standOn(state: GameState, kind: CellKind): boolean {
 export function placeAt(state: GameState, area: Area, x: number, y: number) {
   state.position = { area: area.key, x, y }
   reveal(area, x, y, sight(state, area))
+  noteSpot(state, area, cellAt(area, x, y))
+}
+
+// ---- 走過的地方（交給 AI 的前後銜接，見 narrator/continuity.ts） ----
+
+const SPOT_KINDS = new Set<string>(['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver', 'lot', 'manor', 'merchant'])
+const TRAIL_MAX = 12
+
+/** 站的地方叫什麼：區域名稱，站在設施或地標上時加上它的名字 */
+export function spotName(area: Area, cell?: Cell): string {
+  const kind = cell?.kind
+  const named = kind && (SPOT_KINDS.has(kind) || shopRules.types[kind as ShopType]?.custom || landmarkDef(kind)) ? cellName(kind) : ''
+  return named ? `${area.name}・${named}` : area.name
+}
+
+/** 換了地方時記一筆（只留最近幾筆） */
+function noteSpot(state: GameState, area: Area, cell?: Cell) {
+  if (area.kind === 'road') return
+  const spot = spotName(area, cell)
+  const trail = (state.trail ??= [])
+  if (trail.at(-1)?.spot === spot) return
+  trail.push({ time: { ...state.time }, location: area.location, spot })
+  if (trail.length > TRAIL_MAX) trail.splice(0, trail.length - TRAIL_MAX)
 }
 
 /** 寶箱有沒有上鎖（依這一層的 chest_lock） */
@@ -579,11 +621,21 @@ export function ensureQuestTargets(state: GameState, area: Area, rng: Rng, table
   }
 }
 
+/** 要站在 ❗ 上執行的近郊委託（城鎮委託範本的近郊委託）。材料委託也在近郊，但是靠採集點與戰鬥點（ensureQuestTargets），沒有 ❗ */
+function hasQuestMarker(q: Pick<Quest, 'area' | 'kind' | 'status'>): boolean {
+  return q.area === 'outskirts' && q.status === 'accepted' && !isMaterialQuest(q)
+}
+
 /** 在近郊標出已接取的近郊委託地點（接委託時近郊已經生成過也會補上）。 */
 function ensureQuestMarkers(state: GameState, area: Area, rng: Rng) {
+  // 舊版會替材料委託放 ❗，站上去按「執行委託」會出現「找不到這個委託」：順便拿掉
+  const material = new Set(state.quests.filter(isMaterialQuest).map((q) => q.id))
+  area.cells.forEach((c, i) => {
+    if (c.kind === 'quest' && !c.storyNode && c.questId && material.has(c.questId)) area.cells[i] = { kind: 'floor' }
+  })
   const marked = new Set(area.cells.map((c) => c.questId).filter(Boolean))
   for (const q of state.quests) {
-    if (q.giver !== area.location || q.area !== 'outskirts' || q.status !== 'accepted' || marked.has(q.id)) continue
+    if (q.giver !== area.location || !hasQuestMarker(q) || marked.has(q.id)) continue
     const [i] = randomCells(rng, area, 1, new Set([area.cells.findIndex((c) => c.kind === 'exit')]))
     if (i === undefined) return
     area.cells[i] = { kind: 'quest', questId: q.id }
@@ -592,7 +644,7 @@ function ensureQuestMarkers(state: GameState, area: Area, rng: Rng) {
 
 /** 已完成（或不再進行中）的委託，把近郊的委託地點標記拿掉。 */
 export function clearQuestMarkers(state: GameState) {
-  const active = new Set(state.quests.filter((q) => q.status === 'accepted').map((q) => q.id))
+  const active = new Set(state.quests.filter(hasQuestMarker).map((q) => q.id))
   for (const area of Object.values(state.areas ?? {})) {
     area.cells.forEach((c, i) => {
       // 特殊任務的任務點由 story.ts 管理
@@ -764,8 +816,21 @@ export function generateSide(state: GameState, key: string, template: string, de
 
 // ---- 特殊地圖（special_maps.json，docs/SPECIAL_MAPS.md） ----
 
-/** 地圖定義的版本：版面與內容的設定改過時，存檔裡的地圖重新生成 */
+/**
+ * 地圖定義的版本：版面與內容的設定改過時，存檔裡的地圖重新生成。
+ * 站在特殊地圖裡時每次取得區域都要比一次，整份定義轉成文字很花時間：同一份定義在內容沒改過（contentRevision）時記住結果
+ */
+let versionCache: { rev: number; map: WeakMap<SpecialMapDef, string> } | undefined
 export function specialVersion(def: SpecialMapDef): string {
+  if (versionCache?.rev !== contentRevision()) versionCache = { rev: contentRevision(), map: new WeakMap() }
+  const known = versionCache.map.get(def)
+  if (known !== undefined) return known
+  const v = computeSpecialVersion(def)
+  versionCache.map.set(def, v)
+  return v
+}
+
+function computeSpecialVersion(def: SpecialMapDef): string {
   const { name: _n, desc: _d, location: _l, connections: _c, entry: _e, refresh: _r, ...layout } = def
   const text = JSON.stringify(layout)
   let h = 5381
@@ -962,6 +1027,7 @@ export function move(state: GameState, dx: number, dy: number): StepResult {
   // 園區：魅氣慢慢增加
   stepParkLust(state, area)
   reveal(area, nx, ny, sight(state, area))
+  noteSpot(state, area, cell)
   return enterCell(state, area, nx, ny, cell!)
 }
 
@@ -1065,6 +1131,56 @@ export function crossLink(state: GameState): StepResult {
 }
 
 /** 移動到指定格子（只能是相鄰格）。 */
+// ---- 點地圖上的格子走過去（畫面一格一格走，路上有事就停；game.ts 的 walkTo） ----
+
+/** 走在路上不會發生事情的格子：空地、安全房，以及處理過的（打過的遭遇、採過的、開過的、觸發過的）。沒發現的陷阱在玩家看來就是空地 */
+const QUIET_DONE: CellKind[] = ['encounter', 'elite', 'boss', 'resource', 'chest', 'trap']
+function quietCell(c: Cell): boolean {
+  return c.kind === 'floor' || c.kind === 'safe' || c.kind === 'yard' || (c.kind === 'trap' && !c.done) || (QUIET_DONE.includes(c.kind) && !!c.done)
+}
+/** 找不到安靜的路時，聚落裡可以穿過設施（可能遇到城鎮事件）；遭遇、寶箱、任務點、出入口、樓梯照樣不經過 */
+const NEVER_THROUGH: CellKind[] = ['encounter', 'elite', 'boss', 'resource', 'chest', 'quest', 'link', 'exit', 'stairs_down', 'stairs_up', 'event']
+
+/**
+ * 從現在的位置走到 (x, y) 的路（不含起點；終點可以是任何走得過去的格子）。只走已經揭開的格子；
+ * 路上先只走安靜的格子，走不到時聚落裡才穿過設施。旅途上（一格一天）、走不到、或就在原地時回傳 null
+ */
+export function pathTo(state: GameState, x: number, y: number): { x: number; y: number }[] | null {
+  if (state.combat) return null
+  const area = currentArea(state)
+  if (area.kind === 'road') return null
+  const from = position(state)
+  const goal = cellAt(area, x, y)
+  if ((from.x === x && from.y === y) || !walkable(goal) || !isRevealed(area, x, y)) return null
+  const search = (through: (c: Cell) => boolean) => {
+    const key = (cx: number, cy: number) => cy * area.width + cx
+    const prev = new Map<number, number>([[key(from.x, from.y), -1]])
+    const queue = [key(from.x, from.y)]
+    for (let qi = 0; qi < queue.length; qi++) {
+      const k = queue[qi]!
+      const cx = k % area.width
+      const cy = Math.floor(k / area.width)
+      if (cx === x && cy === y) {
+        const out: { x: number; y: number }[] = []
+        for (let c = k; c !== key(from.x, from.y); c = prev.get(c)!) out.unshift({ x: c % area.width, y: Math.floor(c / area.width) })
+        return out
+      }
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const nx = cx + dx
+        const ny = cy + dy
+        const nk = key(nx, ny)
+        const c = cellAt(area, nx, ny)
+        if (!c || prev.has(nk) || !walkable(c) || !isRevealed(area, nx, ny)) continue
+        if (!(nx === x && ny === y) && !through(c)) continue
+        prev.set(nk, k)
+        queue.push(nk)
+      }
+    }
+    return null
+  }
+  return search(quietCell) ?? (area.kind === 'settlement' || area.kind === 'home' ? search((c) => !NEVER_THROUGH.includes(c.kind)) : null)
+}
+
 export function moveTo(state: GameState, x: number, y: number): StepResult {
   const p = position(state)
   return move(state, x - p.x, y - p.y)
@@ -1203,16 +1319,25 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   return commitReport(state, report)
 }
 
+/** 一個採集點採到幾份：存檔規則的採集量，小數的部分是機率 */
+export function gatherQty(state: GameState): number {
+  const mult = gameRule(state, 'gatherMult')
+  const base = Math.floor(mult)
+  const extra = mult - base
+  return Math.max(1, base + (extra > 0 && withRng(state, (rng) => rng.chance(extra)) ? 1 : 0))
+}
+
 function gather(state: GameState, area: Area, item: string): Report {
   const report = eventReport(state, area, 10)
   report.kind = 'action'
   if (item === '古錢') {
     const money = rewardMoney(state, withRng(state, (rng) => rng.int(10, 60)))
     report.changes.money_cc = money
-    report.outcome = { result: 'success', summary: `在${area.name}找到一些古錢。` }
+    report.outcome = { result: 'success', summary: `在${area.name}找到一些古錢。`, tags: ['採集'] }
   } else {
-    report.changes.items_gained = [{ name: item, qty: 1, owner: 'pc' }]
-    report.outcome = { result: 'success', summary: `在${area.name}採集到${item}。` }
+    const qty = gatherQty(state)
+    report.changes.items_gained = [{ name: item, qty, owner: 'pc' }]
+    report.outcome = { result: 'success', summary: `在${area.name}採集到${item}${qty > 1 ? ` ×${qty}` : ''}。`, tags: ['採集'] }
   }
   return commitReport(state, report)
 }
@@ -1295,13 +1420,15 @@ function openChest(state: GameState, area: Area, level: number): Report {
     else items.push({ name, qty: 1, owner: 'pc' })
   }
   const extra = parkPlaza(area.location) ? parkRules().chest_items : []
+  // 地點指定的材料系列（緋夢樂園底下的遺跡開歡愉系列）
+  const series = geography.locations.find((l) => l.id === area.location)?.material_series
   const money = withRng(state, (rng) => {
     for (const [name, p] of [...t.items, ...extra]) if (itemDef(name) && rng.chance(p)) add(name)
-    if (rng.chance(t.gear)) add(registerGear(state, randomGear(rng, level)))
-    if (t.gear_extra && rng.chance(t.gear_extra)) add(registerGear(state, randomGear(rng, level)))
+    if (rng.chance(t.gear)) add(registerGear(state, randomGear(rng, level, undefined, series)))
+    if (t.gear_extra && rng.chance(t.gear_extra)) add(registerGear(state, randomGear(rng, level, undefined, series)))
     for (const [tier, p] of t.forge) {
       if (!rng.chance(p)) continue
-      const name = forgeItemFor(rng.pick(MATERIAL_KINDS), tier)
+      const name = forgeItemFor(rng.pick(MATERIAL_KINDS), tier, series)
       if (name) add(name)
     }
     return rng.int(t.money[0], t.money[1]) * level

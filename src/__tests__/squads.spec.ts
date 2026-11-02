@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { invitable, joinableSquads, squadOptions, validateInvite } from '@/engine/companions'
 import { applyEffects } from '@/engine/effects'
-import { npcs } from '@/engine/data'
+import { bumpContentRevision, npcs } from '@/engine/data'
 import { enterLocation, settlementArea } from '@/engine/grid'
 import { sanitizeNpc } from '@/engine/mods'
 import { npcRecord } from '@/engine/npcs'
@@ -126,6 +126,8 @@ describe('fixed NPC squads', () => {
     const def = npcs.find((n) => n.id === 'npc_mira')!
     const before = def.squad!.requires
     def.squad!.requires = { flags: ['squad_formed'] }
+    // 直接改資料（不經過 applyContent）：小隊表是快取，要讓它知道內容改了
+    bumpContentRevision()
     try {
       expect(inActiveSquad(state, 'npc_ael')).toBeUndefined()
       expect(followsLeader(state, { id: 'npc_ael' })).toBeUndefined()
@@ -134,6 +136,7 @@ describe('fixed NPC squads', () => {
     } finally {
       if (before) def.squad!.requires = before
       else delete def.squad!.requires
+      bumpContentRevision()
     }
   })
 

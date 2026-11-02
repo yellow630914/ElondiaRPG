@@ -1,5 +1,6 @@
 // 特殊任務的編輯：整理（儲存、匯入時）、套用到任務清單、檢查任務鏈的問題（內容頁籤「⭐ 特殊任務」）。
 
+import { storyReach } from './storyReach'
 import { parasiteDef } from './parasites'
 import { LEWD_KEYS } from './lewd'
 import { LOCK_GRADES, type LewdKey, type LockGrade, type MasterEventPool } from './data'
@@ -18,6 +19,7 @@ import type { GameState } from './types'
 import { travelEvents } from './road'
 import { isTattooPlace, oathError, tattooTemplate } from './tattoos'
 import { mapSize, storySpotProblem } from './specialMapMods'
+import { MAX_JUMP_HOURS } from './timeOfDay'
 
 export interface StoryMod extends StoryDef {
   custom?: boolean
@@ -302,7 +304,20 @@ function outcome(v: unknown): StoryOutcome | undefined {
   if (typeof o.side_map === 'string' && SIDE_MAPS().includes(o.side_map)) out.side_map = o.side_map
   if (typeof o.special_map === 'string' && specialMaps[o.special_map]) out.special_map = o.special_map
   if (isLoc(o.travel_to)) out.travel_to = o.travel_to
+  const time = timeJump(o.time)
+  if (time) out.time = time
   return out
+}
+
+/** 結果的時間：經過的小時（整數，最多十天）與推到夜裡或早上 */
+function timeJump(v: unknown): StoryOutcome['time'] {
+  if (!v || typeof v !== 'object') return undefined
+  const t = v as NonNullable<StoryOutcome['time']>
+  const out: NonNullable<StoryOutcome['time']> = {}
+  const hours = Math.round(Number(t.hours))
+  if (Number.isFinite(hours) && hours > 0) out.hours = Math.min(MAX_JUMP_HOURS, hours)
+  if (t.until === 'night' || t.until === 'morning') out.until = t.until
+  return out.hours || out.until ? out : undefined
 }
 
 /** 臨時地圖的種類（travel_events.json 的 side_maps） */
@@ -353,10 +368,13 @@ function node(v: unknown, i: number, used: Set<string>): StoryNode {
   const allies = (n.allies ?? []).map((a) => str(a, 60)).filter(Boolean)
   if (allies.length) out.allies = [...new Set(allies)]
   if (n.urgent) out.urgent = true
+  // 旅途上與臨時地圖裡的任務點不限時段（旅途不能停下來等、離開臨時地圖等於放棄）
+  if ((n.hours === 'day' || n.hours === 'night') && out.at.where !== 'road' && out.at.where !== 'side') out.hours = n.hours
   if (kind === 'check') out.check = check(n.check) ?? { attr: 'int', dc: 12 }
   if (kind === 'combat') {
     const g = group(n.enemies)
     if (g) out.enemies = g
+    if (g && n.rut === true) out.rut = true
     const foes = (n.foes ?? []).map((f) => str(f, 60)).filter(Boolean)
     if (foes.length) out.foes = [...new Set(foes)]
   }
@@ -487,7 +505,8 @@ export function flagUsage(def: StoryDef): FlagUse[] {
 }
 
 /** 這個聚落有沒有這種設施 */
-function hasFacility(location: string, kind: CellKind): boolean {
+/** 聚落有沒有這種設施（任何一個區塊） */
+export function hasFacility(location: string, kind: CellKind): boolean {
   return blockKeys(location).some((k) => settlementArea(k)?.cells.some((c) => c.kind === kind))
 }
 
@@ -544,6 +563,13 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     if (e.type === 'perk') for (const id of [e.perk, ...(e.options ?? [])]) if (id && !perkDef(id)) err.push(`效果裡的特質 ${id} 不存在`)
     if (e.type === 'start_story' && e.story === def.id) err.push('效果要開始的是這個任務自己')
   }
+  // 「某個任務（任務點）結束後幾天」：那個任務、任務點要存在
+  const conds = [def.start.requires, ...def.nodes.flatMap((n) => [n.requires, ...(n.options ?? []).map((o) => o.requires)])]
+  for (const a of conds.map((c) => c?.after).filter((x): x is NonNullable<StoryCond['after']> => !!x)) {
+    const target = a.story === def.id ? def : others.find((x) => x.id === a.story)
+    if (!target) err.push(`條件「${a.story} 結束後 ${a.days} 天」的特殊任務不存在`)
+    else if (a.node && !target.nodes.some((n) => n.id === a.node)) err.push(`條件「${target.title}的 ${a.node} 結束後 ${a.days} 天」的任務點不存在`)
+  }
   for (const name of def.start.items ?? []) if (!itemDef(name)) err.push(`接下任務時拿到的物品「${name}」不存在`)
   for (const n of def.nodes) for (const w of n.wear ?? []) {
     if (!itemDef(w) && !gearRules.bases[w]) err.push(`任務點「${n.title}」限定的穿著「${w}」不是物品，也不是裝備底材`)
@@ -593,6 +619,12 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
       err.push(`${t}：${geography.locations.find((l) => l.id === n.at.location)?.name ?? n.at.location}沒有${CELL_NAME[n.at.cell as CellKind] ?? n.at.cell}`)
     }
   }
+  // 可達性（storyReach.ts）：到不了的任務點、走不到完成、選了會卡住的結果（寬鬆的估計，只提醒）
+  const reach = storyReach(def)
+  const title = (id: string) => def.nodes.find((n) => n.id === id)?.title ?? id
+  for (const id of reach.unreachable) warn.push(`任務點「${title(id)}」不會解鎖：需要的旗標在這個任務裡怎麼走都設定不到`)
+  if (!reach.canComplete && def.nodes.some((n) => outcomesOf(n).some(({ o }) => o.complete))) warn.push('沒有任何一條路走得到「完成任務」：會完成任務的任務點都不會解鎖')
+  for (const x of reach.stuck) warn.push(`任務點「${title(x.node)}」${x.label.startsWith('「') ? `選${x.label}` : `的結果「${x.label}」`}之後，可能沒有任務點可以進行（任務沒完成也沒失敗，只能放棄）`)
   return { errors: err, warnings: warn }
 }
 

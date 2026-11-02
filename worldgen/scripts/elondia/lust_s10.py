@@ -1,4 +1,4 @@
-# 慾望戰鬥 S10 的資料（docs/plan/LUST_COMBAT_PLAN.md 第 20 節；規則寫在 docs/LEWD_STATS.md）：
+# 慾望戰鬥 S10 的資料（docs/plan/roadmap/COMPLETED.md；規則寫在 docs/LEWD_STATS.md 第 6.1、14.1、28 節）：
 #   S10-1 流派的老師：8 位固定 NPC（npcs.json，mentor 欄位、待在各自的地標），perks.json 的 mentor 預設；
 #         秘法書：8 本特質書（items.json，每本是一個流派的入門與進階），商店（tags、charm_min）、拍賣會、園區寶箱
 #   S10-2 寄生類的雙面效應（lewd.json 的 parasite_two_face）

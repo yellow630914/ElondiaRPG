@@ -2,7 +2,7 @@
 // 免費給主角裝上並鎖住；契約還在時不能卸下，也不能在那個欄位換別的（inventory.ts 的 lockedGear）。
 // 陷阱鎖（docs/LEWD_STATS.md 第 27 節）：事件的 restrain 把拘束具鎖在主角身上，不綁契約；脫縛、鑰匙或鐵匠剪鎖才拿得下。
 
-import { itemRules, lewdRules, TRAP_LOCK, type LockGrade } from './data'
+import { itemRules, lewdRules, LOCK_GRADES, TRAP_LOCK, type LockGrade } from './data'
 import { tagsAllowed } from './content'
 import { EXTRA_SLOT, gearKnown, gearRules, slotName } from './gear'
 import { freeSlotsFor, putOn } from './inventory'
@@ -42,7 +42,7 @@ export function forceEquip(state: GameState, report: Report, master: string, ite
 
 /**
  * 陷阱鎖：把 item（拘束具）戴到主角身上、用 lock 等級的鎖鎖住（鎖的主人是陷阱，契約之外也拿不下）。
- * 優先放原本的部位（空的優先），都被鎖住時放額外飾品欄；換下來的放回行囊。
+ * 優先放原本的部位（空的優先），都被鎖住時放額外飾品欄；換下來的放回行囊。物品自帶比較好的鎖時用自帶的。
  * 內容篩選關掉「主角非自願」、不是拘束具、沒有地方戴時不生效。回傳日誌的說明（沒生效時為空字串）
  */
 export function restrainPc(state: GameState, report: Report, item: string, lock: LockGrade = 'white'): string {
@@ -54,7 +54,9 @@ export function restrainPc(state: GameState, report: Report, item: string, lock:
   const native = options.filter((x) => x !== EXTRA_SLOT)
   const slot = native.find((x) => !pc.gear?.[x]) ?? native[0] ?? (options.includes(EXTRA_SLOT) ? EXTRA_SLOT : undefined)
   if (!slot) return `${item}沒有地方戴（那些部位都被鎖住了）`
-  const grade = lewdRules.locks.grades[lock] ? lock : 'white'
+  // 事件寫的鎖和物品自帶的鎖取比較好的一把（自帶符文鎖的枷不會被陷阱的白鐵鎖換掉）
+  const given: LockGrade = lewdRules.locks.grades[lock] ? lock : 'white'
+  const grade = spec.lock && LOCK_GRADES.indexOf(spec.lock) > LOCK_GRADES.indexOf(given) ? spec.lock : given
   const { target, back } = putOn(pc, item, spec, slot, `${TRAP_LOCK}${item}`)
   pc.gear![target]!.lock = grade
   if (back.length) (report.changes.items_gained ??= []).push(...back.map((n) => ({ name: n, qty: 1, owner: 'pc' })))

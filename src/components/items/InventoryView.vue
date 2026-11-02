@@ -120,7 +120,7 @@ const target = reactive<Record<string, string>>({})
 <style scoped>
 .money { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 .money :deep(.game-icon) { color: var(--accent); }
-.inventory { display: grid; gap: 8px; }
+.inventory { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .head { justify-content: space-between; }
 .tabs { gap: 4px; }
@@ -145,4 +145,12 @@ const target = reactive<Record<string, string>>({})
 .btns { display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; min-width: 0; }
 .btns select { height: 28px; padding: 2px 6px; max-width: 9em; }
 .item-row .more { display: grid; gap: 2px; padding: 0 10px 6px 46px; }
+/* 手機：圖示、名稱、數量一排，估價收起，按鈕換到下一排（不然名稱被擠到看不見） */
+@media (max-width: 720px) {
+  .item-row .line { grid-template-columns: 30px minmax(0, 1fr) auto; row-gap: 2px; }
+  .val { display: none; }
+  .btns { grid-column: 2 / -1; flex-wrap: wrap; }
+  .btns:empty { display: none; }
+  .item-row .more { padding-left: 10px; }
+}
 </style>

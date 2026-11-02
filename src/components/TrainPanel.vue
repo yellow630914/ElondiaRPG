@@ -12,8 +12,8 @@ const game = useGame()
 const s = computed(() => game.state!)
 // 身上的缺陷可以在這裡克服的，排在前面；老師會教的接在後面
 const list = computed(() => {
+  void game.cell
   void s.value.time.minute
-  void s.value.position
   return trainOptions(s.value)
 })
 const text = ref('')

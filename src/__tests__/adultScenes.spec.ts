@@ -54,6 +54,8 @@ describe('intimate scenes in special quests', () => {
       const sea = def.nodes.find((n) => n.id === 'sea')!
       for (const f of sea.requires?.flags ?? []) setFlag(state, f)
       joinParty(state, npcRecord(state, 'npc_ren')!, 'guest')
+      // 這個任務點只在夜裡（docs/STORY_QUESTS.md「時段」）
+      state.time = { ...state.time, hour: 22, minute: 0 }
       return playNode(state, 'ren_tide_home:sea', 0) as Report
     }
     expect(play().narration?.adult_scene).toBe(story('ren_tide_home').nodes.find((n) => n.id === 'sea')!.options![0]!.success!.scene)

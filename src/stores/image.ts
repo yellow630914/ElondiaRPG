@@ -14,6 +14,9 @@ import {
 
 const KEY = 'elondia.image'
 
+export const SCENE_AUTO = ['off', 'adult', 'all'] as const
+export type SceneAuto = (typeof SCENE_AUTO)[number]
+
 interface SavedImageSettings {
   service: ImageServiceId
   configs: Record<ImageServiceId, ImageServiceConfig>
@@ -30,6 +33,10 @@ interface SavedImageSettings {
   comfyActive: string
   /** 日誌插圖：成人場景改用哪個服務（空字串是和一般場景一樣用目前的服務） */
   sceneAdultService: ImageServiceId | ''
+  /** 日誌插圖的自動生成：關閉、只畫成人場景、每一則寫出正文的日誌 */
+  sceneAuto: SceneAuto
+  /** 第一次和 NPC 產生關係（人際關係多了這個人）時，自動畫他的形象圖（他已經有形象圖時不畫） */
+  portraitAuto: boolean
 }
 
 function defaultConfigs(): Record<ImageServiceId, ImageServiceConfig> {
@@ -47,6 +54,8 @@ function defaults(): SavedImageSettings {
     comfyPresets: [],
     comfyActive: '',
     sceneAdultService: '',
+    sceneAuto: 'off',
+    portraitAuto: false,
   }
 }
 
@@ -76,6 +85,8 @@ function load(): SavedImageSettings {
       ...base, ...saved,
       service: IMAGE_SERVICES.some((s) => s.id === saved.service) ? saved.service! : base.service,
       sceneAdultService: IMAGE_SERVICES.some((s) => s.id === saved.sceneAdultService) ? saved.sceneAdultService! : '',
+      sceneAuto: SCENE_AUTO.includes(saved.sceneAuto as SceneAuto) ? saved.sceneAuto! : 'off',
+      portraitAuto: saved.portraitAuto === true,
       // 沒改過的舊預設模板（構圖寫死 upper body）：換成新的預設
       template: typeof saved.template === 'string' && !LEGACY_PORTRAIT_TEMPLATES.includes(saved.template) ? saved.template : base.template,
       configs,
@@ -142,16 +153,19 @@ export const useImageSettings = defineStore('image', () => {
   const comfyPresets = ref<ComfyPreset[]>(initial.comfyPresets)
   const comfyActive = ref(initial.comfyActive)
   const sceneAdultService = ref<ImageServiceId | ''>(initial.sceneAdultService)
+  const sceneAuto = ref<SceneAuto>(initial.sceneAuto)
+  const portraitAuto = ref(initial.portraitAuto)
   /** 從 ComfyUI 讀到的清單（不保存，每次開啟設定時再讀） */
   const comfyOptions = ref<ComfyOptions | null>(null)
   const comfyLoading = ref(false)
   const comfyError = ref<string | null>(null)
 
-  watch([service, configs, preprocess, preprocessors, template, style, comfyPresets, comfyActive, sceneAdultService], () => {
+  watch([service, configs, preprocess, preprocessors, template, style, comfyPresets, comfyActive, sceneAdultService, sceneAuto, portraitAuto], () => {
     const data: SavedImageSettings = {
       service: service.value, configs: configs.value, preprocess: preprocess.value, preprocessors: preprocessors.value,
       template: template.value, style: style.value,
-      comfyPresets: comfyPresets.value, comfyActive: comfyActive.value, sceneAdultService: sceneAdultService.value,
+      comfyPresets: comfyPresets.value, comfyActive: comfyActive.value, sceneAdultService: sceneAdultService.value, sceneAuto: sceneAuto.value,
+      portraitAuto: portraitAuto.value,
     }
     try {
       localStorage.setItem(KEY, JSON.stringify(data))
@@ -296,7 +310,7 @@ export const useImageSettings = defineStore('image', () => {
 
   return {
     service, configs, preprocess, preprocessors, template, style, config, ready, resetService, sizeFor, negativeFor,
-    sceneAdultService, sceneService,
+    sceneAdultService, sceneService, sceneAuto, portraitAuto,
     allPreprocessors, preprocessorFor, addPreprocessor, removePreprocessor,
     comfyPresets, comfyActive, comfyOptions, comfyLoading, comfyError,
     preset, addPreset, duplicatePreset, removePreset, importPreset, loadComfyOptions,

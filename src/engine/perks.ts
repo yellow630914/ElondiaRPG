@@ -25,6 +25,8 @@ export type PerkHolder = Pick<Character, 'perks' | 'customPerks'> & { race?: str
 /** 這次檢定是什麼：情境、主動行動的種類、屬性、對象的標籤 */
 export interface CheckCtx {
   context: CheckContext
+  /** 這次檢定也算這些情境（旅途事件同時是 road 與 travel）；一個條件只算一次 */
+  also?: CheckContext[]
   kind?: ActionKind
   attr?: AttrId
   vsTags?: string[]
@@ -47,7 +49,7 @@ export function hasPerk(c: PerkHolder, id: string): boolean {
 
 export function matches(f: CheckFilter, ctx: CheckCtx): boolean {
   if (f.attrs?.length && (!ctx.attr || !f.attrs.includes(ctx.attr))) return false
-  if (f.contexts?.length && !f.contexts.includes(ctx.context)) return false
+  if (f.contexts?.length && !f.contexts.includes(ctx.context) && !ctx.also?.some((x) => f.contexts!.includes(x))) return false
   // 誘惑也吃獻媚的加值（特質、獨特裝備）
   if (f.kinds?.length && (!ctx.kind || !(f.kinds.includes(ctx.kind) || (ctx.kind === 'seduce' && f.kinds.includes('flatter'))))) return false
   if (f.vs_tags?.length && !f.vs_tags.some((t) => ctx.vsTags?.includes(t))) return false
@@ -149,8 +151,11 @@ function lustPower(l: LustPerk | undefined): number {
 }
 
 /** 特質的強度（約略）：比較用；缺陷是負的（大約抵銷一個一般特質） */
-export function perkPower(p: Pick<PerkDef, 'effects'> & Partial<Pick<PerkDef, 'lust'>>): number {
-  return Math.round((p.effects.reduce((s, e) => s + effectPower(e), 0) + lustPower(p.lust)) * 2) / 2
+/** 能在野外紮營長休（camp）算的強度：省下旅店的錢、不用回城就能補滿 */
+const CAMP_POWER = 3
+
+export function perkPower(p: Pick<PerkDef, 'effects'> & Partial<Pick<PerkDef, 'lust' | 'camp'>>): number {
+  return Math.round((p.effects.reduce((s, e) => s + effectPower(e), 0) + lustPower(p.lust) + (p.camp ? CAMP_POWER : 0)) * 2) / 2
 }
 
 // ---- 自訂特質 ----
@@ -182,7 +187,8 @@ export interface PerkLimits {
 /** 整理特質的效果：未知的欄位拿掉，數值夾在範圍內；檢定加值與戰鬥修正的正負號不在範圍內的拿掉（不翻成另一邊），0 也拿掉 */
 export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
   const effects: PerkEffect[] = []
-  const quarter = (v: unknown, [lo, hi]: [number, number]) => Math.round(Math.max(lo, Math.min(hi, Number(v) || 0)) * 4) / 4
+  // 抗性、加成以 0.05 為單位（內建的種族特質有 -0.1 這種值）
+  const quarter = (v: unknown, [lo, hi]: [number, number]) => Math.round(Math.max(lo, Math.min(hi, Number(v) || 0)) * 20) / 20
   for (const e of (Array.isArray(raw) ? raw : []) as Record<string, unknown>[]) {
     if (effects.length >= c.effects || !e || typeof e !== 'object') continue
     if (e.check && typeof e.check === 'object') {
@@ -219,7 +225,8 @@ export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
       const resist: AffinityMap = {}
       for (const [k, v] of Object.entries(e.resist as Record<string, unknown>).slice(0, 4)) {
         const n = quarter(v, c.resist)
-        if (n && damageTypeName(k) !== k) resist[k] = n
+        // 慾望（lust）不是傷害類型，但可以抗（例如精靈的種族特質）
+        if (n && (damageTypeName(k) !== k || k === 'lust')) resist[k] = n
       }
       if (Object.keys(resist).length) effects.push({ resist })
     } else if (c.offense && e.offense && typeof e.offense === 'object') {

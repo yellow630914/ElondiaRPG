@@ -3,7 +3,7 @@
 // 內建的事件可以改、不能刪；自建的事件隨時可以刪（等待回應中的事件作廢）。id 在所有事件庫裡不能重複。
 
 import {
-  abilities, ATTR_IDS, MASTER_EVENT_POOLS, masterEventPool, slaveryRules, type AttrId, type MasterEventDef, type MasterEventOption, type MasterEventPool,
+  abilities, ATTR_IDS, lewdRules, MASTER_EVENT_POOLS, masterEventPool, slaveryRules, type AttrId, type MasterEventDef, type MasterEventOption, type MasterEventPool,
 } from './data'
 import { sanitizeEffects } from './storyMods'
 
@@ -73,7 +73,7 @@ function option(raw: Partial<MasterEventOption> | undefined, scene: boolean): Ma
   }
   const e = sanitizeEffects(raw?.effects)
   if (e.length) o.effects = e
-  if (has(raw?.hours)) o.hours = num(raw?.hours, 0.25, 24, 1)
+  if (has(raw?.hours)) o.hours = num(raw?.hours, 0.1, 24, 1)
   if (raw?.learn) o.learn = true
   const a = raw?.adult_scene
   if (scene && (a === 'always' || (o.check && (a === 'success' || a === 'fail')))) o.adult_scene = a
@@ -88,7 +88,7 @@ export function sanitizeMasterEvent(id: string, raw: Partial<MasterEventMod>, cu
     id, pool,
     weight: num(raw.weight, 0, 20, 1, 1),
     text: str(raw.text, L.text_chars),
-    hours: num(raw.hours, 0.25, 24, 1),
+    hours: num(raw.hours, 0.1, 24, 1),
     options: [],
   }
   const scene = str(raw.scene, L.scene_chars)
@@ -157,6 +157,7 @@ export function masterEventWarnings(m: MasterEventMod): string[] {
   if (!m.weight && !m.cell && !m.overdue) out.push('權重是 0：不會被抽到')
   if (m.options.some((o) => o.adult_scene) && !m.adult) out.push('有親密場景的回應，事件最好勾「成人向」（主角非自願關掉時不發生）')
   if ((m.pool === 'brothel_work' || m.pool === 'brothel_train') && !m.teaches?.length) out.push('娼館的事件沒有掛技能')
-  if (m.pool !== 'master') out.push(`${MASTER_EVENT_POOLS[m.pool]}要到之後的版本（S5）才會發生`)
+  if (m.pool === 'owner' && !m.course) out.push('調教事件沒有選課程：不會被抽到')
+  else if (m.pool === 'owner' && !lewdRules.training.courses[m.course!]) out.push(`沒有「${m.course}」這個課程：不會被抽到`)
   return out
 }

@@ -1,0 +1,155 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`world editor round trip > events: opening and saving without changes keeps the data 1`] = `
+{
+  "collapsed_tunnel": "575bb36ee0a8",
+  "dg_adv_prisoner": "575bb36ee0a8",
+  "dg_blood_altar": "575bb36ee0a8",
+  "dg_cursed_lingerie": "575bb36ee0a8",
+  "dg_ghost_touch": "575bb36ee0a8",
+  "dg_glow_spores": "575bb36ee0a8",
+  "dg_park_garden_pollen": "575bb36ee0a8",
+  "dg_pink_mist": "575bb36ee0a8",
+  "dg_rune_room": "575bb36ee0a8",
+  "dg_tide_mermaid": "575bb36ee0a8",
+  "dg_trap_gag": "575bb36ee0a8",
+  "guild_novice": "575bb36ee0a8",
+  "herb_patch": "575bb36ee0a8",
+  "informant_freebie": "575bb36ee0a8",
+  "night_howls": "575bb36ee0a8",
+  "pe_lin_hungry": "575bb36ee0a8",
+  "pe_lin_symbiosis": "575bb36ee0a8",
+  "pe_mark_other_half": "575bb36ee0a8",
+  "pe_mark_thirst": "575bb36ee0a8",
+  "pe_seed_sap": "575bb36ee0a8",
+  "rd_hot_spring": "575bb36ee0a8",
+  "shop_bulk_sale": "575bb36ee0a8",
+  "stuck_wagon": "575bb36ee0a8",
+  "tn_drinker_wager": "575bb36ee0a8",
+  "tn_guild_bound_escort": "575bb36ee0a8",
+  "tn_mistaken_slave": "575bb36ee0a8",
+  "tn_tailor_model": "575bb36ee0a8",
+  "town_fan": "575bb36ee0a8",
+  "town_grope": "575bb36ee0a8",
+  "waystation": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > landmarks: opening and saving without changes keeps the data 1`] = `
+{
+  "lm_abyss_exchange": "575bb36ee0a8",
+  "lm_bed_school": "575bb36ee0a8",
+  "lm_blood_oath_valley": "575bb36ee0a8",
+  "lm_blood_trial_ground": "575bb36ee0a8",
+  "lm_dawn_sanctum": "575bb36ee0a8",
+  "lm_deep_tide_pier": "575bb36ee0a8",
+  "lm_ebony_night": "575bb36ee0a8",
+  "lm_everlit_beacon": "575bb36ee0a8",
+  "lm_golem_arena": "575bb36ee0a8",
+  "lm_granite_rampart": "575bb36ee0a8",
+  "lm_idol_backstage": "575bb36ee0a8",
+  "lm_judgment_cloister": "575bb36ee0a8",
+  "lm_knight_academy": "575bb36ee0a8",
+  "lm_krause_manor": "575bb36ee0a8",
+  "lm_lower_massage": "575bb36ee0a8",
+  "lm_mire_herb_beds": "575bb36ee0a8",
+  "lm_nightmare_maze": "575bb36ee0a8",
+  "lm_old_stone_bridge": "575bb36ee0a8",
+  "lm_pilgrim_bath": "575bb36ee0a8",
+  "lm_redmane_council": "575bb36ee0a8",
+  "lm_reef_light_pillar": "575bb36ee0a8",
+  "lm_sandcastle_keep": "575bb36ee0a8",
+  "lm_spring_of_life": "575bb36ee0a8",
+  "lm_star_platform": "575bb36ee0a8",
+  "lm_windoath_tower": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > masterEvents: opening and saving without changes keeps the data 1`] = `
+{
+  "bt_body": "575bb36ee0a8",
+  "bt_calm": "575bb36ee0a8",
+  "bw_mercenary": "575bb36ee0a8",
+  "bw_rival": "575bb36ee0a8",
+  "chained_night": "575bb36ee0a8",
+  "errand": "575bb36ee0a8",
+  "force_gear": "575bb36ee0a8",
+  "good_freedom_talk": "575bb36ee0a8",
+  "home_rest_day": "575bb36ee0a8",
+  "home_restraint_bed": "575bb36ee0a8",
+  "lend_out": "575bb36ee0a8",
+  "noble_etiquette": "575bb36ee0a8",
+  "own_charm_kiss": "575bb36ee0a8",
+  "own_exposure_walk": "575bb36ee0a8",
+  "own_pain_whip": "575bb36ee0a8",
+  "own_serve_tea": "575bb36ee0a8",
+  "proposition": "575bb36ee0a8",
+  "reward": "575bb36ee0a8",
+  "teach": "575bb36ee0a8",
+  "traveler_map": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > npcs: opening and saving without changes keeps the data 1`] = `
+{
+  "npc_ael": "1414c6a7d4b4",
+  "npc_borin": "cc31d9864ac0",
+  "npc_captain_hagen": "0d1b9e1006ab",
+  "npc_count_krause": "29b0a4213ae8",
+  "npc_eileen": "71ac3fe73d79",
+  "npc_eleanor_dawn": "efea879eb630",
+  "npc_eve": "475ef2e29c0c",
+  "npc_finia_silverleaf": "fcd994ec2c6a",
+  "npc_grum_kettle": "213c6d54cc16",
+  "npc_helen_lighthouse": "9ca3fbb1fe07",
+  "npc_ilania": "40273b07632f",
+  "npc_kara_redmane": "781eb150f12e",
+  "npc_lana": "78fcfee11e02",
+  "npc_liandra_spring": "22e863e8889c",
+  "npc_lilian": "3f9156e8e32f",
+  "npc_lina": "4f1c7eb4d2b7",
+  "npc_lisar": "866744d3c977",
+  "npc_lulu": "7d5851b5f47b",
+  "npc_magda_ironforge": "c2f50db6dd67",
+  "npc_mentor_bondage": "4f2e4b3ffb6e",
+  "npc_pope_gregory": "a2d8d2d366ab",
+  "npc_rosalind": "12643682a6bb",
+  "npc_saff_nightclaw": "c31e4046bb4e",
+  "npc_sakurashio": "5a4a8b91e848",
+  "npc_ser_mistone": "6484ac634d85",
+  "npc_seraphina_weiss": "bdc82e673c6e",
+  "npc_shion_envoy": "59b42a6fd6a3",
+  "npc_sister_agathe": "dedd07981403",
+  "npc_ulma_bloodtrial": "4bae6cc5ec40",
+  "npc_zero": "924857e2cf04",
+}
+`;
+
+exports[`world editor round trip > shops: opening and saving without changes keeps the data 1`] = `
+{
+  "general": "575bb36ee0a8",
+  "informant": "575bb36ee0a8",
+  "jeweler": "575bb36ee0a8",
+  "magic": "575bb36ee0a8",
+  "smithy": "575bb36ee0a8",
+  "tailor": "575bb36ee0a8",
+  "tavern": "575bb36ee0a8",
+  "temple": "575bb36ee0a8",
+  "wanderer": "575bb36ee0a8",
+}
+`;
+
+exports[`world editor round trip > specialMaps: opening and saving without changes keeps the data 1`] = `
+{
+  "sm_acheron_echo": "575bb36ee0a8",
+  "sm_honor_hole": "575bb36ee0a8",
+  "sm_kagni_heart": "575bb36ee0a8",
+  "sm_maid_cafe": "575bb36ee0a8",
+  "sm_rhineburg_cistern": "575bb36ee0a8",
+  "sm_rhineburg_ramparts": "575bb36ee0a8",
+  "sm_rhineburg_sewer": "575bb36ee0a8",
+  "sm_sorian_dream": "575bb36ee0a8",
+  "sm_soriel_belltower": "575bb36ee0a8",
+  "sm_succubus_banquet": "575bb36ee0a8",
+}
+`;

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { geography, locationById } from '@/engine/data'
-import { blockKeys, CELL_ICON, cellName, settlementArea, type CellKind } from '@/engine/grid'
+import { blockKeys, settlementArea, type CellKind } from '@/engine/grid'
 import type { CellRef } from '@/engine/shopMods'
 import { useContent } from '@/stores/content'
+import CellGrid from './CellGrid.vue'
 
 // 在聚落的小地圖上選一格（擺商店用）：只能選空地（道路），或這家店自己現在佔的格子；walls 時改成選牆或水（特殊地圖的通道）
 const props = defineProps<{ modelValue: CellRef | null; location?: string; lockLocation?: boolean; marker: string; self?: string; walls?: boolean }>()
@@ -43,22 +44,11 @@ function pick(i: number) {
       </label>
       <span class="muted">{{ walls ? '點一格牆或水（通道的入口）' : '點一格空地（道路）' }}</span>
     </div>
-    <div v-if="area" class="cells" :style="{ gridTemplateColumns: `repeat(${area.width}, 22px)` }">
-      <button
-        v-for="(c, i) in area.cells" :key="i" class="cell" :class="[c.kind, { picked: i === picked, off: !pickable(c.kind) }]"
-        :title="cellName(c.kind)" @click="pick(i)"
-      >{{ i === picked ? marker : CELL_ICON[c.kind] ?? '' }}</button>
-    </div>
+    <CellGrid v-if="area" :kinds="area.cells.map((c) => c.kind)" :width="area.width" :picked="picked" :marker="marker" :is-off="(i) => !pickable(area!.cells[i]!.kind)" @pick="pick" />
   </div>
 </template>
 
 <style scoped src="./editor.css"></style>
 <style scoped>
 .picker { display: grid; gap: 6px; }
-.cells { display: grid; gap: 1px; width: max-content; max-width: 100%; overflow: auto; }
-.cell { width: 22px; height: 22px; padding: 0; font-size: 12px; line-height: 1; border-radius: 2px; background: var(--panel-2); border: 1px solid var(--border); }
-.cell.off { cursor: default; opacity: 0.75; }
-.cell.wall { background: var(--border); }
-.cell.water { background: #2a4a6a; }
-.cell.picked { outline: 2px solid var(--accent); opacity: 1; }
 </style>

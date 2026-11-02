@@ -1,9 +1,10 @@
-// 資料整理型文件的產生器（docs/plan/ROADMAP.md R7）：MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節裡照資料檔整理的表格。
+// 資料整理型文件的產生器（docs/README.md 第 6 節；做成時的紀錄見 docs/plan/roadmap/COMPLETED.md 的 R7）：MONSTERS、ITEMS、COMBAT_SYSTEM 第 9 節裡照資料檔整理的表格。
 // 文件裡用 <!-- gen:名稱 --> 和 <!-- /gen:名稱 --> 包住產生的部分，中間的內容每次重新產生；其他文字照常手寫。
 // `npm run docs:gen` 重寫文件，docTables.spec.ts 檢查文件和資料檔一致（改了資料忘記重跑就會失敗）。
 import { abilityApCost } from '@/engine/combat'
 import { castingAttr } from '@/engine/character'
 import { formatMoney } from '@/engine/money'
+import { cellName, type CellKind } from '@/engine/grid'
 import { baseSlots, gearRules, gearSummary, MOD_NAME, slotName } from '@/engine/gear'
 import type { GearSlot } from '@/engine/types'
 import { notForSale } from '@/engine/trade'
@@ -68,7 +69,7 @@ function lewdSchoolTable(): string {
   return table(['流派', '偏向', '定位', '入門', '進階', '受訓（設施、學費）'], schoolIds().map((id) => {
     const d = schoolDef(id)!
     const p = (x: string) => perkDef(x)
-    const where = (x: string) => { const t = p(x)?.train; return t ? `${t.cells.join('、')} ${formatMoney(t.price_cc)}` : '—' }
+    const where = (x: string) => { const t = p(x)?.train; return t ? `${t.cells.map((c) => cellName(c as CellKind) || c).join('、')} ${formatMoney(t.price_cc)}` : '—' }
     return [d.name, d.group, d.role, `**${p(d.entry)?.name}**：${p(d.entry)?.desc}`, `**${p(d.advanced)?.name}**：${p(d.advanced)?.desc}`, `${where(d.entry)}／${where(d.advanced)}`]
   }))
 }
@@ -134,10 +135,10 @@ function monsterRow(m: EnemyDef, where: string): (string | number)[] {
     return `${abilities[id]?.name ?? id}${below !== undefined ? `（生命 ≤${below}%）` : ''}`
   }).join('、') || '—'
   const loot = [...new Set((m.loot ?? []).map((l) => `${l.item}${l.qty && l.qty > 1 ? `×${l.qty}` : ''}`))].join('、') || '—'
-  return [m.name, where, m.level, m.hp, attack, skills, resistText(m.resist), m.rut ? '✓' : '', `${loot}${m.armed ? '；可能掉裝備' : ''}`, m.desc ?? '']
+  return [m.name, where, m.level, m.hp, attack, skills, resistText(m.resist), m.rut === 'field' ? '野外' : m.rut ? '✓' : '', m.girl?.name ?? '', `${loot}${m.armed ? '；可能掉裝備' : ''}`, m.desc ?? '']
 }
 
-const MONSTER_HEAD = ['怪物', '位置', '等級', '生命', '普通攻擊', '技能', '抗性', '發情', '掉落', '描述']
+const MONSTER_HEAD = ['怪物', '位置', '等級', '生命', '普通攻擊', '技能', '抗性', '發情', '魔物娘', '掉落', '描述']
 const LAYERS = ['outskirts', 'shallow', 'middle', 'deep', 'abyss'] as const
 const BOSS_LAYERS = ['shallow', 'middle', 'deep', 'abyss'] as const
 const LAYER_NAME: Record<string, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層', abyss: '底層' }

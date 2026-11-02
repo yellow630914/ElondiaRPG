@@ -5,7 +5,7 @@ import { pcTagMult } from './pcTags'
 import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
 import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey, type LewdTitleDef } from './data'
-import { charmExposureMult, spreadExposure } from './charm'
+import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
 import { gearLewdOf, gearRules } from './gear'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
 import { contractOf } from './tattoos'
@@ -196,6 +196,8 @@ export function growLewd(state: GameState, c: Character, kind: keyof typeof lewd
 /** 親密場景：報告帶成人場景時，場景的主角（通常是主角本人）淫亂成長，並記下日子（太久沒有親密場景會慢慢降） */
 export function noteAdultScene(state: GameState, report: Report) {
   if (!report.narration?.adult_scene) return
+  // 戰鬥中只有挑逗、剝衣：交給成人場景的寫手，但不算親密場景（後來換成別的場景時照算）
+  if (report.narration.tease === report.narration.adult_scene) return
   const who = report.narration.adult_actor
   const m = who ? state.party.find((x) => x.id === who) : state.party.find((x) => x.isPlayer)
   if (!m) return
@@ -223,7 +225,9 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
     const day = fromDay + i
     for (const m of state.party) {
       const map = state.exposure?.[m.id]
-      if (map) for (const r of Object.keys(map)) addLewd(state, m, 'exposure', -d.exposure_decay, undefined, r)
+      // 還在追相鄰地區目標的地區這一天不淡掉（charm.ts 的 spreadExposure）
+      const chasing = map ? chasingRegions(state, m.id) : undefined
+      if (map) for (const r of Object.keys(map)) if (!chasing!.has(r)) addLewd(state, m, 'exposure', -d.exposure_decay, undefined, r)
       const level = exposureLevel(m)
       // 魅氣濃度越高累積得越快（charm.ts）
       if (inTown && level > 0) addLewd(state, m, 'exposure', Math.round(level * d.exposure_per_level * charmExposureMult(loc.id)), undefined, loc.region)

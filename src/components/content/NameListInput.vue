@@ -23,7 +23,7 @@ function remove(v: string) {
 
 <template>
   <span class="name-input">
-    <span v-for="v in model ?? []" :key="v" class="tag chip">{{ label(v) }} <button class="x" @click="remove(v)">×</button></span>
+    <span v-for="v in model ?? []" :key="v" class="tag chip">{{ label(v) }} <button class="x" @click="remove(v)" title="移除">✕</button></span>
     <input v-model="text" :list="listId" :placeholder="placeholder ?? '名稱'" class="name-text" @keydown.enter.prevent="add" @change="add" />
     <datalist :id="listId"><option v-for="[v, l] in options" :key="v" :value="v">{{ l }}</option></datalist>
   </span>

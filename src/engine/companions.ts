@@ -442,7 +442,7 @@ export function marketStock(state: GameState, kind: MarketKind): SlaveListing[] 
       let race = weightedPick(rng, def.races)
       if (kind === 'public' && slaveryRules.black_market_only.includes(race)) race = 'human'
       const level = Math.max(1, Math.min(20, pc.level + rng.int(-2, 1)))
-      const rec = generateNpc(state, rng, { race, level, background: rng.pick(npcPool.slave_backgrounds) }, 'slv')
+      const rec = generateNpc(state, rng, { race, level, tags: ['slave'], background: rng.pick(npcPool.slave_backgrounds) }, 'slv')
       const contract = contractKind(weightedPick(rng, slaveryRules.market_contracts[kind]))
       return { npc: rec.id, price_cc: slavePrice(rec, def.price_mult, rng, slaveValueMult(npcLewd(rec), 0)), contract }
     })
