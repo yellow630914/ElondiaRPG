@@ -6,7 +6,7 @@
 // 規則與定義在 data/rules/parasites.json；發作事件在 travel_events.json（scope: parasite）。
 
 import parasitesJson from '@data/rules/parasites.json'
-import { itemDef, type AttrId, type CheckFilter } from './data'
+import { itemDef, lewdRules, type AttrId, type CheckFilter, type Mods } from './data'
 import { addLewdStat } from './lewd'
 import { schoolsOf } from './schools'
 import { placeName, tattooAt, tattoosOf } from './tattoos'
@@ -155,6 +155,34 @@ export function parasiteAbilities(c: Character): string[] {
     } else out.push(...(def.stage_abilities?.[stageOf(p.corruption)] ?? []))
   }
   return [...new Set(out)].filter((id) => !c.abilities.includes(id))
+}
+
+/**
+ * 寄生類的雙面效應（docs/LEWD_STATS.md 第 14.1 節）：平常是各階段的檢定減值（stage_effects）；戰鬥中，修了任何流派的人，
+ * 還沒馴服、沒有沉睡的寄生物依階段給修正，修了獸蟲派（fit_school）的人 × fit。active 是有效果的寄生物（角色詳情用）
+ */
+export function parasiteTwoFace(c: Character): { mods: Mods; lustBonus: number; active: { name: string; stage: string; mult: number }[] } {
+  const out = { mods: {} as Mods, lustBonus: 0, active: [] as { name: string; stage: string; mult: number }[] }
+  const r = lewdRules.parasite_two_face
+  const schools = schoolsOf(c)
+  if (!r || !schools.length) return out
+  const mult = schools.includes(r.fit_school) ? r.fit : 1
+  for (const p of parasitesOf(c)) {
+    if (p.tamed || p.dormant) continue
+    const stage = stageOf(p.corruption)
+    const row = r.parasites[p.id]?.[stage]
+    if (!row) continue
+    let any = false
+    for (const [k, v] of Object.entries(row)) {
+      const n = Math.round((v ?? 0) * mult)
+      if (!n) continue
+      any = true
+      if (k === 'lust_bonus') out.lustBonus += n
+      else out.mods[k as keyof Mods] = (out.mods[k as keyof Mods] ?? 0) + n
+    }
+    if (any) out.active.push({ name: parasiteDef(p.id)?.name ?? p.id, stage: parasiteRules.stages[stage]?.name ?? '', mult })
+  }
+  return out
 }
 
 /** 失控：還沒馴服的寄生物在高的階段，開戰時帶著慾望（慾望上限的比例） */

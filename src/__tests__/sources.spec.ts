@@ -24,7 +24,7 @@ describe('內容的來源（怎麼拿到）', () => {
     expect(sourcesOf('item', '奴隸項圈')).toEqual(['主人強制裝上'])
     expect(sourcesOf('item', '星隕鐵長劍')[0]).toContain('依等級隨機生成')
     expect(sourcesOf('item', '魅魔的香精')).toContain('慾望勝利的征服掉落：魔族')
-    expect(sourcesOf('perk', 'school_beast')).toEqual(['受訓：魔法物品店、情報商'])
+    expect(sourcesOf('perk', 'school_beast')).toContain('受訓：魔法物品店、情報商')
     expect(sourcesOf('perk', 'race_elf')[0]).toContain('天生')
     expect(sourcesOf('status', 'defending')).toEqual(['戰鬥中選「防禦」'])
     expect(sourcesOf('status', 'tide_bride')[0]).toContain('潮之新娘')

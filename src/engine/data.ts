@@ -121,6 +121,11 @@ export interface NpcDef {
   lewd?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
   /** 娼婦：光顧時可能教主角的色情技能（docs/LEWD_STATS.md 第 10 節；沒寫時用 lewd.json 的 brothel.patron.default） */
   teaches?: string[]
+  /**
+   * 老師（docs/LEWD_STATS.md 第 6.1 節）：在身邊時（隊友，或同一格、相鄰）可以向他受訓這些特質。好感至少 affinity
+   * （沒寫用 perks.json 的 mentor.affinity）；學費 × price_mult、難度 + dc_delta（沒寫用 mentor 的預設）
+   */
+  mentor?: NpcMentor
   /** 初始裝備（取代依等級隨機生成的裝備；沒寫的欄位空著） */
   gear?: Partial<Record<GearSlot, GearSpec>>
   /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
@@ -136,6 +141,17 @@ export interface NpcDef {
   /** 這個人帶著的小隊（寫在隊長身上，見 engine/squads.ts）：隊員跟著隊長出沒，只能整隊邀請或請他們帶主角同行 */
   squad?: NpcSquad
 }
+
+/** 慾望稱號：五項慾望指標的範圍（曝露名聲看所在地區）、至少有一個身分標籤、所在地勢力的聲望範圍，全部符合才有 */
+export interface LewdTitleDef {
+  id: string
+  name: string
+  desc: string
+  requires: { stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>; pc_tags?: string[]; reputation?: CounterRange }
+}
+
+/** 老師會教的特質與條件 */
+export interface NpcMentor { perks: string[]; affinity?: number; price_mult?: number }
 
 /** 固定 NPC 的小隊（2–4 人，含隊長） */
 export interface NpcSquad {
@@ -2060,6 +2076,8 @@ export const perkRules = perksJson as unknown as {
   npc: { chances: number[]; flaw_chance: number; tag_mult: number; class_mult: number }
   creation: { slots: number; max_flaws: number; slots_per_flaw: number }
   pitch: { attr: AttrId; dc: number; hours: number; power_delta: Partial<Record<Degree, number>> }
+  /** 老師（固定 NPC 的 mentor）：預設的好感門檻、學費倍率、難度加減；特質沒有 train 時用 default_train */
+  mentor: { affinity: number; price_mult: number; dc_delta: number; default_train: { price_cc: number; hours: number; attr: AttrId; dc: number } }
   custom: {
     name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number]
     flaw: { check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }
@@ -2129,6 +2147,10 @@ export const lewdRules = lewdJson as unknown as {
   }
   schools: Record<string, LewdSchool>
   servitude: { no_master: number }
+  /** 寄生類的雙面效應（docs/LEWD_STATS.md 第 14.1 節）：寄生物 id → 各階段的戰鬥修正（lust_bonus 是造成的慾望 +N） */
+  parasite_two_face?: { fit_school: string; fit: number; parasites: Record<string, (Mods & { lust_bonus?: number })[]> }
+  /** 慾望稱號（docs/LEWD_STATS.md 第 28 節）：只顯示，沒有效果 */
+  titles?: { max: number; list: LewdTitleDef[] }
   outfit_two_face: {
     penalty_tags: string[]; penalty_kinds: string[]; penalty_per: number; penalty_max: number; endurance_per: number; max_pieces: number
     schools: Record<string, { lust_bonus?: number; evade?: number; save?: number }>

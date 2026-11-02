@@ -35,6 +35,7 @@
 | `adult_appearance` | 固定 NPC：成人向的外貌細節（私密部位、性徵）。接在外貌後面，交給 AI（行動判定的對象、人際關係）與形象圖；跟著內容頁籤的設定走，不存進存檔（`npcs.ts` 的 `appearanceOf`） |
 | `character` | 戰鬥資料（入隊過、或戰鬥時才產生） |
 | `lineage` | 血統、部族、氏族（見第 13 節） |
+| `mentor` | 固定 NPC：老師，會教的特質（`perks`，可以另外寫 `affinity`、`price_mult`）。在主角身邊時受訓面板多出這些特質，見 [PERKS](PERKS.md) 第 4.2 節、[LEWD_STATS](LEWD_STATS.md) 第 6.1 節 |
 
 - **普通人不能被攻擊**，所以沒有戰鬥資料。
 - 店主、公會職員、旅店老闆是「職員」：普通人，有 `spot`，不算在名單人數裡，不會移動。

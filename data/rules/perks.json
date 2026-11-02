@@ -1,6 +1,7 @@
 {
   "$comment": "特質（被動）：一直生效的能力，影響檢定與戰鬥。說明見 docs/PERKS.md。effects：check 檢定加值（filter 寫在 check：attrs 屬性、contexts 檢定的情境、kinds 主動行動的種類、vs_tags 對象的標籤；同一欄位是「或」，不同欄位是「且」；沒寫的欄位不限）、combat 戰鬥修正（hit、evade、save、damage、dr、ap_regen、crit、threat）、resist 受到的傷害倍率加減（負數是抗性）、offense 造成的傷害倍率加減。flaw：缺陷（保留，目前沒有）。category：分類（social 社交與交易、explore 探索與潛行、combat 戰鬥、body 體質、craft 學識與技藝、bond 主從與束縛；建角時依分類折疊，不寫時依效果推斷）。requires：只有這些種族或職業可以選（perks：要先有這些特質）。school、lust：慾望流派的特質（分類 lewd；docs/LEWD_STATS.md 第 6 節），lust 是慾望效果（慾望戰鬥關閉時不生效），流派特質不進升級的選項。race：種族特質（原本的種族天賦），這個種族的角色自動擁有，不寫進存檔；不能在建角、升級時選，不能受訓、從書裡學，也不會失去。train：可以在這些設施花錢學（price_cc、hours、attr、dc）。npc：NPC 生成時抽到的權重（weight）與更容易抽到的標籤或職業（tags、classes）。",
   "version": 1,
+  "mentor": {"$comment": "老師（固定 NPC 的 mentor，docs/LEWD_STATS.md 第 6.1 節）：老師在身邊時（隊友，或同一格、相鄰）可以向他受訓他會教的特質。好感至少 affinity；學費是特質的 train.price_cc × price_mult、難度 + dc_delta（至少 5）、時數與屬性照特質的 train；特質沒有 train 時用 default_train。老師自己可以另外寫 affinity、price_mult。", "affinity": 10, "price_mult": 0.8, "dc_delta": -2, "default_train": {"price_cc": 500, "hours": 8, "attr": "cha", "dc": 12}},
   "contexts": {
     "action": "主動行動",
     "negotiation": "談判（委託報酬、交易條件）",

@@ -60,6 +60,20 @@ function toggleTeach(id: string, on: boolean) {
   if (set.size) draft.value.teaches = [...set]
   else delete draft.value.teaches
 }
+// 老師會教的特質（docs/LEWD_STATS.md 第 6.1 節）：勾了才有 mentor
+const mentorPerks = computed(() => choosablePerks().filter((p) => !p.flaw))
+function toggleMentor(id: string, on: boolean) {
+  const set = new Set(draft.value.mentor?.perks ?? [])
+  if (on) set.add(id)
+  else set.delete(id)
+  if (set.size) draft.value.mentor = { ...draft.value.mentor, perks: [...set] }
+  else delete draft.value.mentor
+}
+function setMentorNum(key: 'affinity' | 'price_mult', v: string) {
+  if (!draft.value.mentor) return
+  if (v === '') delete draft.value.mentor[key]
+  else draft.value.mentor[key] = Number(v)
+}
 // 比較時略過空的條件（表單會先建立空的 requires 物件）
 const emptyCond = (x: { flags?: string[]; flags_none?: string[]; affinity?: Record<string, number> } | undefined) => !!x && !x.flags?.length && !x.flags_none?.length && !Object.keys(x.affinity ?? {}).length
 const snap = (v: unknown) => JSON.stringify(v, (k, x) => (k === 'requires' && emptyCond(x) ? undefined : x))
@@ -464,6 +478,14 @@ const occupations = computed(() => {
       <details v-if="draft.tags?.includes('prostitute')" class="small">
         <summary>光顧時會教的技能（{{ draft.teaches?.length ?? 0 }}） <Hint text="成人向（docs/LEWD_STATS.md 第 10 節）。親密度 40 以上、光顧成功時有機會教主角一個；她的淫亂決定能教到幾級。沒勾時用預設的清單。" /></summary>
         <label v-for="a in lewdAbilities" :key="a.id" class="check"><input type="checkbox" :checked="draft.teaches?.includes(a.id)" @change="toggleTeach(a.id, ($event.target as HTMLInputElement).checked)" /> {{ a.name }}</label>
+      </details>
+      <details class="small">
+        <summary>老師：會教的特質（{{ draft.mentor?.perks.length ?? 0 }}） <Hint text="在身邊時（隊友，或同一格、相鄰）可以向他受訓這些特質（受訓面板多一項）。好感要夠；學費和難度依特質本身的受訓設定，再打折。空著時用 perks.json 的 mentor 預設。" /></summary>
+        <div v-if="draft.mentor" class="row">
+          <label class="small">好感至少 <input class="num" type="number" min="0" max="100" :value="draft.mentor.affinity ?? ''" placeholder="預設" @change="setMentorNum('affinity', ($event.target as HTMLInputElement).value)" /></label>
+          <label class="small">學費倍率 <input class="num" type="number" min="0" max="3" step="0.1" :value="draft.mentor.price_mult ?? ''" placeholder="預設" @change="setMentorNum('price_mult', ($event.target as HTMLInputElement).value)" /></label>
+        </div>
+        <label v-for="p in mentorPerks" :key="p.id" class="check"><input type="checkbox" :checked="draft.mentor?.perks.includes(p.id)" @change="toggleMentor(p.id, ($event.target as HTMLInputElement).checked)" /> {{ p.name }}</label>
       </details>
       <label class="check small"><input v-model="customGear" type="checkbox" /> 指定初始裝備 <Hint text="不勾時依等級隨機生成。" /></label>
       <template v-if="draft.gear">

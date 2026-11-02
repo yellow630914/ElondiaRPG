@@ -6,7 +6,7 @@
 import mapsJson from '@data/world/maps.json'
 import {
   abilities, attributeRules, geography, craftRules, dungeonEncounters, enemies, itemRules, landmarks, lewdRules, MASTER_EVENT_POOLS, masterEventPool,
-  npcTags, perkRules, shopRules, specialMaps, statuses, stories, townQuestTemplates, wildEncounterTables, type EncounterGroup, type MasterEventPool,
+  npcs, npcTags, perkRules, shopRules, specialMaps, statuses, stories, townQuestTemplates, wildEncounterTables, type EncounterGroup, type MasterEventPool,
 } from './data'
 import { forgeItemFor, gearName, gearRules, MATERIAL_KINDS } from './gear'
 import { parasiteRules } from './parasites'
@@ -160,6 +160,9 @@ function build(): Index {
     if (p.npc?.weight) add('perk', p.id, `隨機的 NPC 可能有${p.flaw ? '這個缺陷' : ''}`)
   }
   for (const i of itemRules.items) for (const p of i.use?.perks ?? []) add('perk', p, `書籍「${i.name}」`)
+  for (const n of npcs) {
+    for (const p of n.mentor?.perks ?? []) add('perk', p, `老師：${n.name}（${n.landmark && landmarks[n.landmark] ? `${locName(n.location)}的${landmarks[n.landmark]!.name}` : locName(n.location)}）`)
+  }
   for (const [tag, t] of Object.entries(lewdRules.npc_schools.tags)) for (const p of t.schools) add('perk', p, `${npcTags.tags[tag]?.name ?? tag}身分的 NPC 可能有`)
 
   // ---- 狀態 ----
