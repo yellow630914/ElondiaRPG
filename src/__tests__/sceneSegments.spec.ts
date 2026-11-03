@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { newGame } from '@/engine/state'
 import type { Report } from '@/engine/types'
 import { anchorMatches, narrationParagraphs, paragraphAnchor } from '@/narrator/paragraphs'
-import { autoSceneCount, parseScenePlans, sceneCast, scenePrompt, type SceneSegments } from '@/narrator/sceneInfo'
+import { autoSceneCount, extractSceneJson, parseScenePlans, sceneCast, scenePrompt, type SceneSegments } from '@/narrator/sceneInfo'
 
 const TEXT = '你推開酒館的門。\n\n莉娜朝你揮手。\n　\n你們聊到深夜。\n\n天亮了，你們一起出發。\n<relationship_updates>[]</relationship_updates>'
 
@@ -78,5 +78,23 @@ describe('segment plans', () => {
     expect(() => parseScenePlans({ images: [img(9)] }, cast, false, auto)).toThrow('scene')
     // 一般日誌的分級一律 general
     expect(parseScenePlans({ images: [{ ...img(1), rating: 'explicit' }] }, cast, false, auto)[0]!.plan.rating).toBe('general')
+  })
+})
+
+describe('reading a messy storyboard reply', () => {
+  it('pulls the paragraph number out of a broken after', () => {
+    const raw = extractSceneJson('{"images": [{"after": Der 7, "rating": "general", "scene": "a", "characters": []}, {"after": "第3段", "scene": "b"}, {"after": "2", "scene": "c",},]}') as { images: { after: number }[] }
+    expect(raw.images.map((x) => x.after)).toEqual([7, 3, 2])
+  })
+
+  it('keeps the finished images of a cut-off reply', () => {
+    const raw = extractSceneJson('```json\n{"images": [{"after": 1, "scene": "a, {b}", "characters": []}, {"after": 4, "scene": "c", "charac') as { images: { after: number }[] }
+    expect(raw.images).toEqual([{ after: 1, scene: 'a, {b}', characters: [] }])
+  })
+
+  it('says what came back when there is no JSON', () => {
+    expect(() => extractSceneJson('  ')).toThrow('回覆是空的')
+    expect(() => extractSceneJson('抱歉，我不能協助')).toThrow('抱歉，我不能協助')
+    expect(() => extractSceneJson('{"images": [{"after": 1, "sce')).toThrow('截斷')
   })
 })

@@ -112,7 +112,8 @@ export function scenePrompt(
             : `挑出 1～${seg.count} 個畫面差別最大的時刻（例如進場、衝突的高潮、收尾），每個時刻一張，依時間順序，插在那一刻所在的段落之後（after 是那個段落的編號）。不要兩張畫同一件事；正文短、場面單純時少畫幾張。`,
         '同一個角色在每一張的外貌寫法（髮色、眼睛、種族特徵、體型）要一字不差，服裝、表情、動作照那一刻寫。',
         '只輸出一個 JSON 物件，不要任何說明或程式碼框：',
-        '{"images": [{"after": 段落編號, "rating": "general | suggestive | explicit", "scene": "整體畫面", "characters": [{"id": "登場角色的 id", "position": "left | center | right", "prompt": "這個角色"}]}, ...]}',
+        '{"images": [{"after": 3, "rating": "general | suggestive | explicit", "scene": "整體畫面", "characters": [{"id": "登場角色的 id", "position": "left | center | right", "prompt": "這個角色"}]}, ...]}',
+        'after 只寫段落編號的阿拉伯數字（例如 3），不要加引號或任何字。',
       ]
   const system = [
     ...head,
@@ -186,6 +187,66 @@ export function parseScenePlan(raw: unknown, cast: SceneCastMember[], adult: boo
   }
   const rating: SceneRating = !adult ? 'general' : (['general', 'suggestive', 'explicit'] as const).find((x) => x === r.rating) ?? 'general'
   return { rating, scene, characters }
+}
+
+/** 從 start 起找配對的右括號（略過字串裡的括號）；找不到回傳 -1 */
+function closingBrace(text: string, start: number): number {
+  let depth = 0
+  let inStr = false
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i]!
+    if (inStr) {
+      if (ch === '\\') i++
+      else if (ch === '"') inStr = false
+    } else if (ch === '"') inStr = true
+    else if (ch === '{' || ch === '[') depth++
+    else if (ch === '}' || ch === ']') {
+      depth--
+      if (depth === 0) return i
+    }
+  }
+  return -1
+}
+
+/**
+ * 讀分鏡的回覆（比一般的 JSON 寬鬆）：容忍 ```json 區塊、前後的說明、after 寫成「Der 7」「第 7 段」「"7"」、
+ * 多餘的逗號；回覆被截斷（輸出額度用完）時留下寫完的那幾張。都讀不出來時說明回覆是空的還是寫了什麼
+ */
+export function extractSceneJson(text: string): unknown {
+  const fenced = /```(?:json)?\s*([\s\S]*?)(?:```|$)/.exec(text)
+  let body = (fenced ? fenced[1]! : text).trim()
+  const start = body.indexOf('{')
+  if (start < 0) {
+    if (!text.trim()) throw new Error('整理分鏡的 AI 回覆是空的：可能被模型拒絕（成人內容）或輸出額度被思考用完。可以到「⚙️ 設定」換「插圖提示詞預處理」的模型來源，或調高它的輸出上限')
+    throw new Error(`整理分鏡的 AI 沒有回傳 JSON：「${text.trim().slice(0, 80)}${text.trim().length > 80 ? '…' : ''}」`)
+  }
+  body = body.slice(start)
+    // after 只要數字："after": Der 7、"after": 第7段、"after": "7" → "after": 7
+    .replace(/"after"\s*:\s*("?)[^\d\-",}\n]*?(-?\d+)[^,}\n]*?\1(?=\s*[,}\n])/g, '"after": $2')
+    // 多餘的逗號
+    .replace(/,(\s*[}\]])/g, '$1')
+  const end = closingBrace(body, 0)
+  if (end >= 0) return JSON.parse(body.slice(0, end + 1))
+  // 被截斷：留下 images 裡寫完的幾張
+  const list = /"images"\s*:\s*\[/.exec(body)
+  if (list) {
+    const images: unknown[] = []
+    let i = list.index + list[0].length
+    for (;;) {
+      const open = body.indexOf('{', i)
+      if (open < 0) break
+      const close = closingBrace(body, open)
+      if (close < 0) break
+      try {
+        images.push(JSON.parse(body.slice(open, close + 1)))
+      } catch {
+        break
+      }
+      i = close + 1
+    }
+    if (images.length) return { images }
+  }
+  throw new Error('整理分鏡的 AI 回覆被截斷了（輸出額度不夠）：可以調高「插圖提示詞預處理」模型來源的輸出上限，或少畫幾張')
 }
 
 /**

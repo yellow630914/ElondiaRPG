@@ -8,10 +8,9 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { GameState, Report } from '@/engine/types'
 import type { SceneCharacter } from '@/narrator/imageProviders'
-import { extractJson } from '@/narrator/judge'
 import { anchorMatches, narrationParagraphs, paragraphAnchor } from '@/narrator/paragraphs'
 import {
-  autoSceneCount, composeScene, GIRL_SCENE_NEGATIVE, parseScenePlan, parseScenePlans, sceneCast, sceneHasGirls, sceneMulti, scenePrompt,
+  autoSceneCount, composeScene, extractSceneJson, GIRL_SCENE_NEGATIVE, parseScenePlan, parseScenePlans, sceneCast, sceneHasGirls, sceneMulti, scenePrompt,
   type ScenePlan, type SceneSegments, type SegmentPlan,
 } from '@/narrator/sceneInfo'
 import { useGame } from './game'
@@ -212,7 +211,7 @@ export const useScenes = defineStore('scenes', () => {
           ...(segments ? { segments } : {}),
         }), controller.signal, collector.onUsage)
         collector.flush(report.report_id)
-        const raw = extractJson(text)
+        const raw = extractSceneJson(text)
         // 沒有正文：以前的整則插圖（after 用 -1 表示放最後）
         return segments ? parseScenePlans(raw, cast, adult, segments) : [{ after: -1, plan: parseScenePlan(raw, cast, adult) }]
       }
