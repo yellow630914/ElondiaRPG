@@ -79,8 +79,32 @@ export const GIRL_RULES = [
   '魔物娘的寫法：',
   '- 正文一律用 → 右邊的稱呼（例如「鼠娘」），不要寫回原本動物的稱呼（例如「巨鼠」「巨大老鼠」）。',
   '- 從魔物娘那裡得到的東西（報告的戰利品）寫成她們身上帶著或掉下來的：腰包、散落的皮料、斷掉的牙、遺落的飾品……；不要寫剝皮、拔牙、割取這類處理她們身體的動作。',
+  '- 戰利品是心臟、眼睛、血、毒囊、腺體這類器官時，那是「原種魔物」（沒有化成人形、還是野獸模樣的同類）的東西：寫成她們隨身帶著的獵物、收藏，或巢穴附近原種魔物留下的；不要寫成從她們身上取下來的。',
   '- 被打倒的魔物娘是受傷倒地、狼狽逃跑，不是被殺死；不要寫她們死去、屍體或血腥的場面。',
 ].join('\n')
+
+/** 這段經過裡以魔物娘出現的怪物（怪物資料的 id） */
+export function girlMonsterIds(ids: string[], girls: boolean, seed?: string): Set<string> {
+  if (!girls) return new Set()
+  return new Set(ids.filter((id) => !!enemies[id]?.girl && girlRolled(id, seed ?? '')))
+}
+
+/**
+ * 交給 AI 的報告：以魔物娘出現、被打倒的怪物，狀態從「死亡」改成「倒下」（其他人與戰鬥紀錄都改），
+ * 免得和「被打倒的魔物娘不是被殺死」互相矛盾。畫面上的戰報不變。沒有要改的時候回傳原本的報告
+ */
+export function girlsDownNotDead(report: Report, girlIds: Set<string>): Report {
+  if (!girlIds.size) return report
+  const down = new Set((report.others ?? []).filter((o) => o.monster && girlIds.has(o.monster) && o.status?.includes('死亡')).map((o) => o.id))
+  if (!down.size) return report
+  return {
+    ...report,
+    others: report.others!.map((o) => (down.has(o.id) ? { ...o, status: o.status!.map((x) => (x === '死亡' ? '倒下' : x)) } : o)),
+    ...(report.timeline ? { timeline: report.timeline.map((t) => (t.effects?.some((e) => e.type === 'status_add' && e.status === '死亡' && !!e.target && down.has(e.target))
+      ? { ...t, effects: t.effects.map((e) => (e.type === 'status_add' && e.status === '死亡' && !!e.target && down.has(e.target) ? { ...e, status: '倒下' } : e)) }
+      : t)) } : {}),
+  }
+}
 
 /** <monsters> 區塊（敘事、戰敗事件用：魔物娘附上性情與習性）；沒有怪物（或都沒有描述）時是空字串 */
 export function monstersText(ids: string[], girls: boolean, seed?: string): string {

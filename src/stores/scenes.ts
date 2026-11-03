@@ -11,7 +11,7 @@ import type { SceneCharacter } from '@/narrator/imageProviders'
 import { extractJson } from '@/narrator/judge'
 import { anchorMatches, narrationParagraphs, paragraphAnchor } from '@/narrator/paragraphs'
 import {
-  autoSceneCount, composeScene, parseScenePlan, parseScenePlans, sceneCast, sceneMulti, scenePrompt,
+  autoSceneCount, composeScene, GIRL_SCENE_NEGATIVE, parseScenePlan, parseScenePlans, sceneCast, sceneHasGirls, sceneMulti, scenePrompt,
   type ScenePlan, type SceneSegments, type SegmentPlan,
 } from '@/narrator/sceneInfo'
 import { useGame } from './game'
@@ -27,11 +27,15 @@ export interface SceneRecord extends PortraitRecord {
   anchor?: string
   /** NovelAI 的多角色提示（重畫這一張時照用） */
   characters?: SceneCharacter[]
+  /** 有魔物娘登場：負面提示詞補上 GIRL_SCENE_NEGATIVE（重畫這一張時照用） */
+  girls?: boolean
 }
 
 export interface SceneJob {
   stage: 'plan' | 'image' | 'error'
   error?: string
+  /** stage 是 error 時：只是提醒（例如手動分段有位置沒畫出來），不是失敗 */
+  notice?: boolean
   /** 生圖的進度：畫好幾張、共幾張 */
   done?: number
   total?: number
@@ -138,21 +142,23 @@ export const useScenes = defineStore('scenes', () => {
   }
 
   /** 畫一張、存起來 */
-  async function renderOne(state: GameState, key: string, service: ImageServiceId, plan: ScenePlan, spot: { after: number; anchor: string } | undefined, signal: AbortSignal) {
+  async function renderOne(state: GameState, key: string, service: ImageServiceId, plan: ScenePlan, spot: { after: number; anchor: string } | undefined, girls: boolean, signal: AbortSignal) {
     const image = useImageSettings()
     const portraits = usePortraits()
     const tags = image.preprocessorFor(service)?.output === 'tags'
     const composed = composeScene(plan, service, tags, sceneMulti(service, image.configs[service].model), image.style)
     const references = await referencesFor(state, service, plan)
+    // 有魔物娘登場時，負面提示詞補上血腥、屍體（分鏡不寫否定句）
+    const negative = girls ? [image.negativeFor(service), GIRL_SCENE_NEGATIVE].filter((x) => x?.trim()).join(', ') : undefined
     const prompt = references.length
       ? `${composed.prompt}\n\nUse the reference images for the characters' faces, hair and outfits, in this order: ${plan.characters.map((c) => c.position).join(', ')}.`
       : composed.prompt
     const out = await portraits.render(service, {
-      prompt, signal, ...image.sizeFor(service, true),
+      prompt, signal, ...image.sizeFor(service, true), ...(negative ? { negative } : {}),
       ...(composed.characters ? { characters: composed.characters } : {}), ...(references.length ? { references } : {}),
     })
     const rec: SceneRecord = {
-      blob: out.blob, prompt, service, plan, ...(spot ?? {}), ...(composed.characters ? { characters: composed.characters } : {}),
+      blob: out.blob, prompt, service, plan, ...(spot ?? {}), ...(composed.characters ? { characters: composed.characters } : {}), ...(girls ? { girls } : {}),
       ...(out.seed !== undefined ? { seed: out.seed } : {}), from: 'generate', time: Date.now(),
     }
     await idbPut(key, rec)
@@ -165,9 +171,14 @@ export const useScenes = defineStore('scenes', () => {
    *   after：手動分段（段落索引）：已經在那些位置、對得上的插圖留著，只畫新的位置；取消勾選的位置的插圖刪掉
    * 沒有正文時照以前畫一張整則插圖。
    */
+  /** 這則日誌（或其中一張）有插圖工作在跑 */
+  function busy(base: string): boolean {
+    return [base, ...keysOf(base)].some((k) => !!jobs.value[k] && jobs.value[k]!.stage !== 'error')
+  }
+
   async function generate(state: GameState, report: Report, opts: { after?: number[] } = {}) {
     const base = sceneKey(state, report.report_id)
-    if (jobs.value[base] && jobs.value[base]!.stage !== 'error') return
+    if (busy(base)) return
     const image = useImageSettings()
     const settings = useSettings()
     const game = useGame()
@@ -190,7 +201,7 @@ export const useScenes = defineStore('scenes', () => {
       const todo = manual?.filter((a) => !keep.has(a))
       const segments: SceneSegments | undefined = !paragraphs.length
         ? undefined
-        : manual ? { paragraphs, after: todo! } : { paragraphs, count: autoSceneCount(image.sceneCount, paragraphs) }
+        : manual ? { paragraphs, after: todo!, kept: [...keep.keys()].filter((a) => manual.includes(a)).sort((a, b) => a - b) } : { paragraphs, count: autoSceneCount(image.sceneCount, paragraphs) }
 
       /** 用這個服務的寫法請 AI 整理分鏡；用量記在這則日誌 */
       const plan = async (service: typeof image.service): Promise<SegmentPlan[]> => {
@@ -224,15 +235,19 @@ export const useScenes = defineStore('scenes', () => {
       const drop = manual ? [...keep].filter(([a]) => !manual.includes(a)).map(([, k]) => k) : keysOf(base)
       for (const k of drop) await remove(k)
 
+      const girls = sceneHasGirls(state, report)
       // 依序畫（NovelAI 有頻率限制、ComfyUI 是排隊的）；畫好一張就先顯示一張
       let n = Math.max(0, ...keysOf(base).map((k) => (k === base ? 0 : Number(k.slice(base.length + 1)) || 0)))
       jobs.value[base] = { stage: 'image', done: 0, total: plans.length }
       for (const p of plans) {
         const spot = p.after >= 0 ? { after: p.after, anchor: paragraphAnchor(paragraphs[p.after]!) } : undefined
-        await renderOne(state, spot ? segmentKey(state, report.report_id, ++n) : base, service, p.plan, spot, controller.signal)
+        await renderOne(state, spot ? segmentKey(state, report.report_id, ++n) : base, service, p.plan, spot, girls, controller.signal)
         jobs.value[base] = { stage: 'image', done: (jobs.value[base]?.done ?? 0) + 1, total: plans.length }
       }
-      delete jobs.value[base]
+      // 手動分段：AI 漏掉的位置
+      const missing = todo?.filter((a) => !plans.some((p) => p.after === a)) ?? []
+      if (missing.length) jobs.value[base] = { stage: 'error', notice: true, error: `有 ${missing.length} 個位置 AI 沒有畫出來（${missing.map((a) => `第 ${a + 1} 段之後`).join('、')}），可以再用手動分段補畫` }
+      else delete jobs.value[base]
     } catch (e) {
       if (controller.signal.aborted) delete jobs.value[base]
       else jobs.value[base] = { stage: 'error', error: e instanceof Error ? e.message : String(e) }
@@ -244,6 +259,9 @@ export const useScenes = defineStore('scenes', () => {
   /** 重畫這一張：分鏡照舊（不再請 AI 整理），換一個種子 */
   async function redraw(state: GameState, key: string) {
     if (jobs.value[key] && jobs.value[key]!.stage !== 'error') return
+    // 整則的插圖正在生成時不重畫單張（整則的工作會換掉這些圖）
+    const base = key.split('#')[0]!
+    if (base !== key && jobs.value[base] && jobs.value[base]!.stage !== 'error') return
     const controller = new AbortController()
     controllers.set(key, controller)
     jobs.value[key] = { stage: 'image' }
@@ -253,7 +271,7 @@ export const useScenes = defineStore('scenes', () => {
       const service = rec.service as ImageServiceId
       if (!useImageSettings().ready(service)) throw new Error('插圖生成還沒設定好（⚙️ 設定 → 🎨 插圖生成）')
       const spot = rec.after !== undefined && rec.anchor !== undefined ? { after: rec.after, anchor: rec.anchor } : undefined
-      await renderOne(state, key, service, rec.plan, spot, controller.signal)
+      await renderOne(state, key, service, rec.plan, spot, !!rec.girls, controller.signal)
       delete jobs.value[key]
     } catch (e) {
       if (controller.signal.aborted) delete jobs.value[key]
@@ -283,5 +301,5 @@ export const useScenes = defineStore('scenes', () => {
     await generate(state, report)
   }
 
-  return { urls, plans, spots, jobs, scan, keysOf, layout, validSpots, generate, redraw, auto, remove, cancel, clearError }
+  return { urls, plans, spots, jobs, busy, scan, keysOf, layout, validSpots, generate, redraw, auto, remove, cancel, clearError }
 })

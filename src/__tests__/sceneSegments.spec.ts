@@ -52,6 +52,10 @@ describe('segment plans', () => {
     expect(one.system).toContain('挑出最能代表這段經過的一刻')
     const manual = scenePrompt(state, report, cast, { multi: false, segments: { paragraphs, after: [1, 3] } })
     expect(manual.system).toContain('第 2 段之後、第 4 段之後')
+    expect(manual.system).not.toContain('已經有插圖')
+    // 留著的位置也當作分界
+    const kept = scenePrompt(state, report, cast, { multi: false, segments: { paragraphs, after: [3], kept: [1] } })
+    expect(kept.system).toContain('第 2 段之後已經有插圖')
     // 沒有分段時照舊是一張
     expect(scenePrompt(state, report, cast, { multi: false }).system).not.toContain('"images"')
   })
@@ -69,6 +73,8 @@ describe('segment plans', () => {
     expect(parseScenePlans({ images: [img(2), img(3), img(4)] }, cast, false, manual).map((g) => g.after)).toEqual([1, 3])
     // 只回了一張（沒有 images）：插在最後一段之後
     expect(parseScenePlans({ rating: 'general', scene: 'tavern', characters: [] }, cast, false, auto).map((g) => g.after)).toEqual([3])
+    // 手動只選一個位置：單一物件插在那裡
+    expect(parseScenePlans({ rating: 'general', scene: 'tavern', characters: [] }, cast, false, { paragraphs, after: [1] }).map((g) => g.after)).toEqual([1])
     expect(() => parseScenePlans({ images: [img(9)] }, cast, false, auto)).toThrow('scene')
     // 一般日誌的分級一律 general
     expect(parseScenePlans({ images: [{ ...img(1), rating: 'explicit' }] }, cast, false, auto)[0]!.plan.rating).toBe('general')

@@ -12,6 +12,11 @@ const scenes = useScenes()
 const url = computed(() => scenes.urls[props.imageKey])
 const job = computed(() => scenes.jobs[props.imageKey])
 const plan = computed(() => scenes.plans[props.imageKey])
+/** 這則日誌正在整理分鏡或畫插圖：先不能重畫或刪除單張（整則的工作會換掉這些圖） */
+const logBusy = computed(() => {
+  const j = scenes.jobs[props.imageKey.split('#')[0]!]
+  return !!j && j.stage !== 'error'
+})
 const zoom = ref(false)
 
 function redraw() {
@@ -40,8 +45,8 @@ const RATING = { general: '一般', suggestive: '暗示', explicit: '成人' }
     <div v-if="!job || job.stage === 'error'" class="row small scene-actions">
       <span v-if="plan" class="muted">{{ plan.characters.map((c) => c.name).join('、') || '沒有角色' }}・{{ RATING[plan.rating] }}</span>
       <span class="grow" />
-      <button class="small ghost" title="分鏡照舊，換一個種子重畫這一張" @click="redraw"><GameIcon name="refresh" :size="13" /> 重畫這張</button>
-      <button class="small ghost" title="刪除這張插圖" aria-label="刪除插圖" @click="remove"><GameIcon name="trash" :size="13" /></button>
+      <button class="small ghost" :disabled="logBusy" :title="logBusy ? '這則日誌的插圖正在生成，完成後才能重畫' : '分鏡照舊，換一個種子重畫這一張'" @click="redraw"><GameIcon name="refresh" :size="13" /> 重畫這張</button>
+      <button class="small ghost" :disabled="logBusy" :title="logBusy ? '這則日誌的插圖正在生成，完成後才能刪除' : '刪除這張插圖'" aria-label="刪除插圖" @click="remove"><GameIcon name="trash" :size="13" /></button>
     </div>
     <div v-if="zoom" class="zoom" @click="zoom = false"><img :src="url" alt="日誌插圖" /></div>
   </div>

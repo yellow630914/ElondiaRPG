@@ -21,7 +21,7 @@ const label = computed(() => {
       <GameIcon name="hourglass" :size="13" /> {{ label }}
       <button class="small" @click="scenes.cancel(sceneKey)">取消</button>
     </div>
-    <p v-else class="err row">
+    <p v-else class="row" :class="job.notice ? 'muted' : 'err'">
       <GameIcon name="warning" :size="13" /> {{ job.error }}
       <button class="small ghost" @click="scenes.clearError(sceneKey)">知道了</button>
     </p>

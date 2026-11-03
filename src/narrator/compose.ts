@@ -15,7 +15,7 @@ import { characterBody } from '@/engine/look'
 import { continuityBefore, continuityForReport, type NarrationLike } from './continuity'
 import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
 import { toOutputScript } from './script'
-import { girlSeed, monsterGirlsIn, monstersText, reportFocus, reportGirlSeed, reportMonsters } from './monsters'
+import { girlMonsterIds, girlSeed, girlsDownNotDead, monsterGirlsIn, monstersText, reportFocus, reportGirlSeed, reportMonsters } from './monsters'
 
 export interface ComposeOptions {
   config: PromptConfig
@@ -80,8 +80,11 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
   // 成人場景的敘事用套用到「成人場景」的條目
   const target = narrationTarget(report)
   // 登場的怪物：外觀與習性（魔物娘的設定打開、這段經過的主角符合時換成魔物娘）
-  const monsters = monstersText(reportMonsters(report), monsterGirlsIn(state, reportFocus(report)), reportGirlSeed(state, report))
-  const prompt = buildPrompt(report, lore, {
+  const girls = monsterGirlsIn(state, reportFocus(report))
+  const monsters = monstersText(reportMonsters(report), girls, reportGirlSeed(state, report))
+  // 被打倒的魔物娘在報告裡是「倒下」，不是「死亡」
+  const sent = girlsDownNotDead(report, girlMonsterIds(reportMonsters(report), girls, reportGirlSeed(state, report)))
+  const prompt = buildPrompt(sent, lore, {
     playerName: name,
     language: o.language,
     ...(protagonist ? { protagonist } : {}),

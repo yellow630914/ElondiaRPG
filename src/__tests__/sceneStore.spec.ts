@@ -8,6 +8,8 @@ import { useGame } from '@/stores/game'
 import { useImageSettings } from '@/stores/image'
 import { sceneKey, useScenes } from '@/stores/scenes'
 import { useSettings } from '@/stores/settings'
+import { renderImage } from '@/narrator/imageProviders'
+import { setMonsterGirl } from '@/engine/content'
 
 // fake-indexeddb 用 Node 的 structuredClone：改用 Node 的 Blob
 globalThis.Blob = NodeBlob as unknown as typeof Blob
@@ -86,7 +88,8 @@ describe('segmented illustrations', () => {
     replies.push(JSON.stringify({ images: [img(2, 'wave')] }))
     await t.scenes.generate(t.game.state!, t.report, { after: [0, 1] })
     expect(prompts[1]!.system).toContain('第 2 段之後')
-    expect(prompts[1]!.system).not.toContain('第 1 段之後')
+    expect(prompts[1]!.system).toContain('指定了 1 個位置：第 2 段之後。')
+    expect(prompts[1]!.system).toContain('第 1 段之後已經有插圖')
     const layout = t.scenes.layout(t.base, paragraphs())
     expect(layout.inline[0]).toEqual([door])
     expect(t.scenes.plans[layout.inline[1]![0]!]?.scene).toBe('wave')
@@ -117,6 +120,56 @@ describe('segmented illustrations', () => {
     expect(after.tail).toEqual([])
     expect(after.inline[0]).toHaveLength(1)
     expect(t.scenes.keysOf(t.base)).toHaveLength(1)
+  })
+
+  it('tells which picked positions the AI left out, and lists kept positions as boundaries', async () => {
+    const t = setup()
+    replies.push(JSON.stringify({ images: [img(1, 'door')] }))
+    await t.scenes.generate(t.game.state!, t.report)
+    replies.push(JSON.stringify({ images: [img(3, 'night')] }))
+    await t.scenes.generate(t.game.state!, t.report, { after: [0, 1, 2] })
+    expect(prompts[1]!.system).toContain('第 1 段之後已經有插圖')
+    const job = t.scenes.jobs[t.base]
+    expect(job?.notice).toBe(true)
+    expect(job?.error).toContain('有 1 個位置 AI 沒有畫出來（第 2 段之後）')
+    expect(t.scenes.busy(t.base)).toBe(false)
+    expect(t.scenes.keysOf(t.base)).toHaveLength(2)
+  })
+
+  it('does not redraw a single image while the whole log is being illustrated', async () => {
+    const t = setup()
+    replies.push(JSON.stringify({ images: [img(1, 'door')] }))
+    await t.scenes.generate(t.game.state!, t.report)
+    const key = t.scenes.keysOf(t.base)[0]!
+    t.scenes.jobs[t.base] = { stage: 'plan' }
+    await t.scenes.redraw(t.game.state!, key)
+    expect(renders).toBe(1)
+    expect(t.scenes.busy(t.base)).toBe(true)
+    delete t.scenes.jobs[t.base]
+    // 單張在重畫時，整則也算忙
+    t.scenes.jobs[key] = { stage: 'image' }
+    expect(t.scenes.busy(t.base)).toBe(true)
+  })
+
+  it('adds blood, corpse, guro to the negative prompt when monster girls are in the picture (also on redraw)', async () => {
+    const t = setup()
+    t.image.configs.novelai.negative = 'lowres'
+    const negatives = () => vi.mocked(renderImage).mock.calls.map((c) => c[2].negative)
+    vi.mocked(renderImage).mockClear()
+    replies.push(JSON.stringify({ images: [img(1, 'door')] }))
+    await t.scenes.generate(t.game.state!, t.report)
+    expect(negatives()).toEqual([undefined])
+    t.report.others = [{ id: 'e1', name: '哥布林', monster: 'goblin', status: ['死亡'] }]
+    setMonsterGirl('all')
+    try {
+      replies.push(JSON.stringify({ images: [img(2, 'fight')] }))
+      await t.scenes.generate(t.game.state!, t.report)
+      expect(prompts[1]!.user).toContain('不要寫 no blood')
+      await t.scenes.redraw(t.game.state!, t.scenes.keysOf(t.base)[0]!)
+      expect(negatives().slice(1)).toEqual(['lowres, blood, corpse, guro', 'lowres, blood, corpse, guro'])
+    } finally {
+      setMonsterGirl('off')
+    }
   })
 
   it('redraws one image with the same plan and a new seed, without asking the AI again', async () => {

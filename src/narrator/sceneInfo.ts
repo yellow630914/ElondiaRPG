@@ -38,7 +38,8 @@ export const SCENE_MAX_MANUAL = 6
  *   auto：交給 AI 挑最多 count 個時刻（每張插在它挑的段落之後）
  *   manual：玩家在對話框選好的位置（段落的索引，從 0 起算），每個位置一張
  */
-export type SceneSegments = { paragraphs: string[]; count: number; after?: undefined } | { paragraphs: string[]; after: number[]; count?: undefined }
+export type SceneSegments = { paragraphs: string[]; count: number; after?: undefined; kept?: undefined }
+  | { paragraphs: string[]; after: number[]; count?: undefined; kept?: number[] }
 
 /** 一張分段插圖：插在第 after 段之後（從 0 起算） */
 export interface SegmentPlan {
@@ -105,7 +106,7 @@ export function scenePrompt(
     : [
         `你是遊戲插圖的分鏡師。使用者給的冒險日誌正文已經分段、標上編號；依正文設計插在段落之間的插圖，交給 AI 生圖。`,
         seg.after
-          ? `玩家指定了 ${seg.after.length} 個位置：${seg.after.map((a) => `第 ${a + 1} 段之後`).join('、')}。每個位置畫一張，after 照寫那個段落的編號；每張畫「上一張之後到這一段為止」的內容裡最有代表性的瞬間。`
+          ? `玩家指定了 ${seg.after.length} 個位置：${seg.after.map((a) => `第 ${a + 1} 段之後`).join('、')}。每個位置畫一張，after 照寫那個段落的編號；每張畫「上一張之後到這一段為止」的內容裡最有代表性的瞬間。${seg.kept?.length ? `${seg.kept.map((a) => `第 ${a + 1} 段之後`).join('、')}已經有插圖（不用畫），也算「上一張」：不要再畫那些插圖之前的內容。` : ''}`
           : seg.count === 1
             ? '挑出最能代表這段經過的一刻，畫一張，插在那一刻所在的段落之後（after 是那個段落的編號）。'
             : `挑出 1～${seg.count} 個畫面差別最大的時刻（例如進場、衝突的高潮、收尾），每個時刻一張，依時間順序，插在那一刻所在的段落之後（after 是那個段落的編號）。不要兩張畫同一件事；正文短、場面單純時少畫幾張。`,
@@ -145,12 +146,20 @@ export function scenePrompt(
 }
 
 /** 登場的怪物（寫在 scene 裡）：外觀；魔物娘的設定打開時，標了「→」的畫成魔物娘（成年女性） */
+/** 有魔物娘登場時，插圖的負面提示詞另外補上的詞（分鏡不寫否定句，避開的東西放這裡） */
+export const GIRL_SCENE_NEGATIVE = 'blood, corpse, guro'
+
+/** 這則日誌的插圖有沒有魔物娘登場 */
+export function sceneHasGirls(state: GameState, report: Report): boolean {
+  return monsterLines(reportMonsters(report), monsterGirlsIn(state, reportFocus(report)), { seed: reportGirlSeed(state, report) }).some((l) => l.includes(' → '))
+}
+
 function monsterScene(state: GameState, report: Report): string[] {
   const girls = monsterGirlsIn(state, reportFocus(report))
   // 插圖只要外觀（性情、習性畫不出來，只會讓分鏡變長）
   const lines = monsterLines(reportMonsters(report), girls, { seed: reportGirlSeed(state, report) })
   if (!lines.length) return []
-  const note = lines.some((l) => l.includes(' → ')) ? '（標了「→」的畫成右邊的魔物娘：成年女性，保留原本種族的特徵；被打倒的是倒地或逃跑的樣子，不要畫成屍體、血腥或被剝皮的樣子）' : ''
+  const note = lines.some((l) => l.includes(' → ')) ? '（標了「→」的畫成右邊的魔物娘：成年女性，保留原本種族的特徵；被打倒的是倒地或逃跑的樣子，畫成正面的描述（例如 lying on the ground, limping away）；scene 不要寫 no blood 這類否定句，血腥、屍體由程式另外放進負面提示詞）' : ''
   return [`\n登場的怪物（寫在 scene 裡）${note}：`, ...lines]
 }
 
@@ -185,8 +194,9 @@ export function parseScenePlan(raw: unknown, cast: SceneCastMember[], adult: boo
  */
 export function parseScenePlans(raw: unknown, cast: SceneCastMember[], adult: boolean, seg: SceneSegments): SegmentPlan[] {
   const r = (raw ?? {}) as { images?: unknown }
-  // 只回了一張（沒有 images）：當作插在最後一段之後
-  const list = Array.isArray(r.images) ? r.images : raw && typeof raw === 'object' && 'scene' in (raw as object) ? [{ ...(raw as object), after: seg.paragraphs.length }] : []
+  // 只回了一張（沒有 images）：手動分段只選一個位置時插在那裡，其他時候當作插在最後一段之後
+  const single = seg.after?.length === 1 ? seg.after[0]! + 1 : seg.paragraphs.length
+  const list = Array.isArray(r.images) ? r.images : raw && typeof raw === 'object' && 'scene' in (raw as object) ? [{ ...(raw as object), after: single }] : []
   const allowed = seg.after ? new Set(seg.after) : undefined
   const max = seg.after ? seg.after.length : seg.count
   const out: SegmentPlan[] = []

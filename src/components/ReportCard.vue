@@ -132,7 +132,9 @@ const storyParagraphs = computed(() => (showStory.value && narration.value ? nar
 const sceneLayout = computed(() => scenes.layout(scene.value, storyParagraphs.value, storyParagraphs.value.length > 0))
 const hasScene = computed(() => scenes.keysOf(scene.value).length > 0)
 /** 正在整理分鏡或生圖（出錯的不算） */
-const sceneBusy = computed(() => !!scenes.jobs[scene.value] && scenes.jobs[scene.value]!.stage !== 'error')
+const sceneBusy = computed(() => scenes.busy(scene.value))
+/** 正文還沒寫完（串流中、續寫中、重寫中）：這時分段會拿到寫到一半的正文，先不給畫 */
+const storyPending = computed(() => !!narration.value && narration.value.status !== 'done')
 function illustrate() {
   if (!game.state) return
   const n = scenes.keysOf(scene.value).length
@@ -245,8 +247,8 @@ async function copyPrompt() {
         @click="continuing = !continuing"
       ><GameIcon name="feather" :size="15" /></button>
       <button
-        class="small ghost tool" :disabled="!image.ready() || sceneBusy" :aria-label="hasScene ? '重新生成插圖' : '生成插圖'"
-        :title="!image.ready() ? '先到「設定 → 插圖生成」設定生圖服務' : hasScene ? '重新生成插圖（交給 AI 重新分段、全部重畫）' : '依這則日誌畫插圖（AI 挑段落、整理分鏡，張數照設定，再送給生圖服務）'"
+        class="small ghost tool" :disabled="!image.ready() || sceneBusy || storyPending" :aria-label="hasScene ? '重新生成插圖' : '生成插圖'"
+        :title="!image.ready() ? '先到「設定 → 插圖生成」設定生圖服務' : storyPending ? '正文寫完之後才能畫插圖' : hasScene ? '重新生成插圖（交給 AI 重新分段、全部重畫）' : '依這則日誌畫插圖（AI 挑段落、整理分鏡，張數照設定，再送給生圖服務）'"
         @click="illustrate"
       ><GameIcon name="image" :size="15" /></button>
       <button

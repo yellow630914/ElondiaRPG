@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import worldbook from '../../data/worldbook/elondia.worldbook.json'
 import { finishCombat, startCombat } from '@/engine/combat'
+import { fightToEnd } from './helpers/fight'
 import { combatRules, enemies } from '@/engine/data'
 import { setDefeatAlways, setMonsterGirl, setMonsterGirlChance } from '@/engine/content'
 import { afterCombat, goOutskirts } from '@/engine/grid'
@@ -151,6 +152,39 @@ describe('monster appearance in prompts', () => {
     expect(text).toContain(`哥布林 → ${enemies.goblin!.girl!.name}`)
     expect(enemies.skeleton!.girl).toBeUndefined()
     expect(monstersText([], true)).toBe('')
+  })
+})
+
+describe('defeated monster girls in the report', () => {
+  /** 和兩隻哥布林打贏（引擎實際打完，戰鬥紀錄有「死亡」） */
+  function win(state: GameState) {
+    startCombat(state, [['goblin', 2]])
+    for (const c of state.combat!.combatants) if (c.side === 'party') { c.hp = 999; c.maxHp = 999 } else c.hp = Math.min(c.hp, 3)
+    const report = fightToEnd(state)
+    afterCombat(state, report)
+    return report
+  }
+  const reportBlock = (user: string) => user.slice(user.indexOf('<report>'), user.indexOf('</report>'))
+
+  it('sends them as 倒下, not 死亡; the log on screen and monsters without the girl form stay as they are', () => {
+    const state = game('masc')
+    const report = win(state)
+    expect(report.others?.every((o) => o.status?.includes('死亡'))).toBe(true)
+    expect(reportBlock(composeNarration(state, report, options()).prompt.user)).toContain('死亡')
+    setMonsterGirl('all')
+    const sent = reportBlock(composeNarration(state, report, options()).prompt.user)
+    expect(sent).not.toContain('死亡')
+    expect(sent).toContain('倒下')
+    // 畫面上的戰報不變
+    expect(report.others?.every((o) => o.status?.includes('死亡'))).toBe(true)
+    // 出現機率 0：照原本的樣子，仍是死亡
+    setMonsterGirlChance(0)
+    expect(reportBlock(composeNarration(state, report, options()).prompt.user)).toContain('死亡')
+  })
+
+  it('tells the AI organ loot belongs to the original monsters', () => {
+    expect(monstersText(['goblin'], true)).toContain('原種魔物')
+    expect(monstersText(['goblin'], false)).not.toContain('原種魔物')
   })
 })
 
