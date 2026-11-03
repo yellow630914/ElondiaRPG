@@ -56,6 +56,8 @@ export interface PromptConfig {
   defeatRules?: string
   /** 玩家修改過的成人場景規則；沒有時用預設（DEFAULT_SCENE_RULES） */
   sceneRules?: string
+  /** 玩家修改過的成人內容情境；沒有時用預設（DEFAULT_ADULT_FRAME，設定開著才送） */
+  adultFrame?: string
 }
 
 export const TARGET_NAME: Record<PromptTarget, string> = { narration: '敘事', adult: '成人場景', judge: '判定' }
@@ -307,6 +309,7 @@ export function normalizeConfig(raw: unknown): PromptConfig {
     ...(typeof r.narrationRules === 'string' && r.narrationRules.trim() ? { narrationRules: r.narrationRules } : {}),
     ...(typeof r.defeatRules === 'string' && r.defeatRules.trim() ? { defeatRules: r.defeatRules } : {}),
     ...(typeof r.sceneRules === 'string' && r.sceneRules.trim() ? { sceneRules: r.sceneRules } : {}),
+    ...(typeof r.adultFrame === 'string' && r.adultFrame.trim() ? { adultFrame: r.adultFrame } : {}),
   }
 }
 

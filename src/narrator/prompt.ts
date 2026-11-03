@@ -37,6 +37,8 @@ export interface PromptOptions {
   defeatRules?: string
   /** 玩家修改過的成人場景規則（沒有時用預設） */
   sceneRules?: string
+  /** 成人內容情境（設定開著才有，已經填好主角名；adultFrame.ts）：只附在成人向的段落 */
+  adultFrame?: string
   /** 陽剛體型的主角玩照陰柔、中性主角寫的成人內容時：接在成人場景規則後面的說明（mascBodyNote） */
   bodyNote?: string
   /** 正文篇幅：整體偏短、標準、偏長（沒有時是標準） */
@@ -351,6 +353,8 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
     ...(inline ? [] : [style]),
     ...sharedSystemSections({ instructions: opts.instructions, constantLore: constant }),
     // 只有部分日誌才有的規則放在 system 的最後：前面的規則、文風、常駐世界書和一般日誌一樣，可以共用快取
+    // 成人內容情境（設定開著時）：只在成人向的段落（戰敗事件、親密場景）
+    { key: 'adult_frame', title: '成人內容情境', part: 'system', text: (report.narration?.mode || scene) && opts.adultFrame ? opts.adultFrame : '' },
     // 成人向的戰敗事件：另外一套規則
     { key: 'defeat', title: '戰敗事件規則', part: 'system', text: report.narration?.mode ? fillDefeatRules(opts.defeatRules, opts.playerName, victim) : '' },
     // 成人向的親密場景：要求在正文詳細描寫經過

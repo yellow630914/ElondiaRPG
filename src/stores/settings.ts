@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { setNpcLife } from '@/engine/npcLife'
+import { setAdultFrame } from '@/narrator/adultFrame'
 import { setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, setMascBodyContent, setMonsterGirl, setMonsterGirlChance, type DefeatAdultMode, type MonsterGirlMode, type FilterTag } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
@@ -133,6 +134,8 @@ interface SavedSettings {
   defeatCompanion: DefeatAdultMode
   /** 陽剛體型也能遇到「只給陰柔、中性」的成人內容（預設關） */
   mascBodyContent: boolean
+  /** 成人內容情境：成人向段落的提示詞多一段情境說明（預設關；narrator/adultFrame.ts） */
+  adultFrame: boolean
   /** NPC 會自己成長（npcLife.ts）：開關、每幾天擲一次、近況什麼時候交給 AI 寫 */
   npcLife: boolean
   npcLifeDays: number
@@ -196,6 +199,7 @@ function defaults(): SavedSettings {
     defeatAdult: 'all',
     defeatCompanion: 'not_masc',
     mascBodyContent: false,
+    adultFrame: false,
     npcLife: true,
     npcLifeDays: 3,
     npcLifeAi: 'roll',
@@ -278,6 +282,8 @@ export const useSettings = defineStore('settings', () => {
   watch(defeatCompanion, setDefeatCompanion, { immediate: true })
   const mascBodyContent = ref(initial.mascBodyContent === true)
   watch(mascBodyContent, setMascBodyContent, { immediate: true })
+  const adultFrame = ref(initial.adultFrame === true)
+  watch(adultFrame, setAdultFrame, { immediate: true })
   const npcLife = ref(initial.npcLife !== false)
   const npcLifeDays = ref(Number(initial.npcLifeDays) || 3)
   watch([npcLife, npcLifeDays], ([on, days]) => setNpcLife({ on, days: Number(days) || 3 }), { immediate: true })
@@ -305,7 +311,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, adultFrame, npcLife, npcLifeDays, npcLifeAi, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -329,6 +335,7 @@ export const useSettings = defineStore('settings', () => {
         defeatAdult: defeatAdult.value,
         defeatCompanion: defeatCompanion.value,
         mascBodyContent: mascBodyContent.value,
+        adultFrame: adultFrame.value,
         npcLife: npcLife.value,
         npcLifeDays: Number(npcLifeDays.value) || 3,
         npcLifeAi: npcLifeAi.value,
@@ -437,7 +444,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, adultFrame, npcLife, npcLifeDays, npcLifeAi, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })
