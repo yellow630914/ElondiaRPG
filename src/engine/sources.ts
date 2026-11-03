@@ -5,7 +5,7 @@
 
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, geography, craftRules, dungeonEncounters, enemies, itemRules, landmarks, lewdRules, MASTER_EVENT_POOLS, masterEventPool,
+  abilities, attributeRules, DUNGEON_LAYER_NAME, geography, craftRules, dungeonEncounters, enemies, itemRules, landmarks, lewdRules, MASTER_EVENT_POOLS, masterEventPool,
   npcTags, perkRules, shopRules, specialMaps, statuses, stories, townQuestTemplates, wildEncounterTables, type EncounterGroup, type MasterEventPool,
 } from './data'
 import { forgeItemFor, gearName, gearRules, MATERIAL_KINDS } from './gear'
@@ -20,7 +20,14 @@ function questTitle(t: string): string {
 
 export type SourceKind = 'item' | 'perk' | 'status' | 'enemy'
 
-type Index = Record<SourceKind, Map<string, string[]>>
+/** 物品的取得方式（內容清單的篩選）；lose 是「交出」：列在「跟誰有關」，但不算拿得到 */
+export const ITEM_SOURCE_NAME = {
+  shop: '商店', craft: '製作與種植', gear: '隨機生成的制式裝備', chest: '寶箱', gather: '資源格', drop: '怪物掉落',
+  quest: '特殊任務與委託', event: '事件與地標', venue: '拍賣會與淫鬥場', forced: '強制裝上、寄生物', none: '沒有取得方式',
+} as const
+export type ItemSourceKind = keyof typeof ITEM_SOURCE_NAME | 'lose'
+
+type Index = Record<SourceKind, Map<string, string[]>> & { itemKinds: Map<string, Set<ItemSourceKind>> }
 let cache: Index | undefined
 
 /** 內容改了：下次查詢時重建索引 */
@@ -33,7 +40,24 @@ export function sourcesOf(kind: SourceKind, key: string): string[] {
   return (cache ??= build())[kind].get(key) ?? []
 }
 
-const LAYER_NAME: Record<string, string> = { outskirts: '周邊', shallow: '淺層', middle: '中層', deep: '深層', abyss: '深淵' }
+/** 這件物品拿得到嗎（「交出」不算） */
+export function itemObtainable(name: string): boolean {
+  return [...((cache ??= build()).itemKinds.get(name) ?? [])].some((k) => k !== 'lose')
+}
+
+/** 每件物品的取得方式（ITEM_SOURCE_NAME 的 key；一個都沒有的是 none） */
+export function itemSourceIndex(): Map<string, Set<ItemSourceKind>> {
+  const idx = (cache ??= build()).itemKinds
+  const out = new Map<string, Set<ItemSourceKind>>()
+  for (const i of itemRules.items) {
+    const set = new Set([...(idx.get(i.name) ?? [])].filter((k) => k !== 'lose'))
+    if (!set.size) set.add('none')
+    out.set(i.name, set)
+  }
+  return out
+}
+
+const LAYER_NAME: Record<string, string> = DUNGEON_LAYER_NAME
 const KIND_NAME: Record<string, string> = {
   beast: '野獸', humanoid: '人形', undead: '不死', spirit: '靈體', construct: '構裝', plant: '植物', demon: '魔族', elemental: '元素', fey: '妖精',
 }
@@ -51,17 +75,25 @@ const LIST_MAX = 4
 const maps = mapsJson as unknown as { generation: { wild: { resource_items: string[] }; dungeon: { resource_items: string[] } } }
 
 function build(): Index {
-  const idx: Index = { item: new Map(), perk: new Map(), status: new Map(), enemy: new Map() }
-  const add = (kind: SourceKind, key: string | undefined, label: string) => {
+  const idx: Index = { item: new Map(), perk: new Map(), status: new Map(), enemy: new Map(), itemKinds: new Map() }
+  /** cat：物品的取得方式（篩選用） */
+  const add = (kind: SourceKind, key: string | undefined, label: string, cat?: ItemSourceKind) => {
     if (!key) return
+    if (kind === 'item' && cat) {
+      const k = idx.itemKinds.get(key)
+      if (!k) idx.itemKinds.set(key, new Set([cat]))
+      else k.add(cat)
+    }
+    if (!label) return
     const list = idx[kind].get(key)
     if (!list) idx[kind].set(key, [label])
     else if (!list.includes(label)) list.push(label)
   }
   /** 同一種來源的許多地方合成一行：「怪物掉落：甲、乙、丙 等 5 種」 */
   const grouped = new Map<string, Map<string, string[]>>()
-  const group = (kind: SourceKind, key: string | undefined, head: string, name: string) => {
+  const group = (kind: SourceKind, key: string | undefined, head: string, name: string, cat?: ItemSourceKind) => {
     if (!key) return
+    if (kind === 'item' && cat) add('item', key, '', cat)
     const id = `${kind}\u0000${key}`
     let g = grouped.get(id)
     if (!g) grouped.set(id, (g = new Map()))
@@ -71,80 +103,84 @@ function build(): Index {
   }
 
   // ---- 事件與任務的效果（任何深度）：給物品、戴上拘束具、學特質 ----
-  const scanEffects = (node: unknown, label: string) => {
+  const scanEffects = (node: unknown, label: string, cat: ItemSourceKind) => {
     if (!node || typeof node !== 'object') return
     if (Array.isArray(node)) {
-      for (const x of node) scanEffects(x, label)
+      for (const x of node) scanEffects(x, label, cat)
       return
     }
     const o = node as Record<string, unknown>
-    if (o.type === 'item' && typeof o.name === 'string') add('item', o.name, label)
-    if (o.type === 'restrain' && typeof o.item === 'string') add('item', o.item, `${label}（強制戴上）`)
+    // 數量是負的：交出這件物品（列出來，但不算拿得到）
+    if (o.type === 'item' && typeof o.name === 'string') {
+      if (typeof o.qty === 'number' && o.qty < 0) add('item', o.name, `${label}（交出）`, 'lose')
+      else add('item', o.name, label, cat)
+    }
+    if (o.type === 'restrain' && typeof o.item === 'string') add('item', o.item, `${label}（強制戴上）`, 'forced')
     if (o.type === 'perk') {
       if (typeof o.perk === 'string') add('perk', o.perk, label)
       if (Array.isArray(o.options)) for (const p of o.options) if (typeof p === 'string') add('perk', p, `${label}（選一個）`)
     }
-    for (const v of Object.values(o)) if (v && typeof v === 'object') scanEffects(v, label)
+    for (const v of Object.values(o)) if (v && typeof v === 'object') scanEffects(v, label, cat)
   }
   for (const s of stories) {
-    scanEffects([s.rewards, s.nodes], `特殊任務「${s.title}」`)
-    for (const n of s.start.items ?? []) add('item', n, `接下特殊任務「${s.title}」時拿到`)
+    scanEffects([s.rewards, s.nodes], `特殊任務「${s.title}」`, 'quest')
+    for (const n of s.start.items ?? []) add('item', n, `接下特殊任務「${s.title}」時拿到`, 'quest')
   }
-  for (const t of travelEvents.templates) scanEffects([t.success, t.fail, t.options], `${EVENT_SCOPE[t.scope ?? ''] ?? '旅途事件'}「${t.title}」`)
-  for (const l of Object.values(landmarks)) scanEffects(l, `地標「${l.name}」`)
+  for (const t of travelEvents.templates) scanEffects([t.success, t.fail, t.options], `${EVENT_SCOPE[t.scope ?? ''] ?? '旅途事件'}「${t.title}」`, 'event')
+  for (const l of Object.values(landmarks)) scanEffects(l, `地標「${l.name}」`, 'event')
   for (const [pool, name] of Object.entries(MASTER_EVENT_POOLS) as [MasterEventPool, string][]) {
-    for (const e of masterEventPool(pool)) scanEffects(e.options, `${name}「${e.id}」`)
+    for (const e of masterEventPool(pool)) scanEffects(e.options, `${name}「${e.id}」`, 'event')
   }
-  scanEffects(lewdRules.brothel.train.review, '娼館受訓的結業')
-  for (const t of Object.values(townQuestTemplates)) scanEffects(t.rewards, `城鎮委託「${questTitle(t.title)}」的報酬`)
+  scanEffects(lewdRules.brothel.train.review, '娼館受訓的結業', 'event')
+  for (const t of Object.values(townQuestTemplates)) scanEffects(t.rewards, `城鎮委託「${questTitle(t.title)}」的報酬`, 'quest')
 
   // ---- 物品 ----
   const shopTypes = Object.values(shopRules.types)
   for (const i of itemRules.items) {
     const sold = notForSale(i) ? [] : shopTypes.filter((t) => i.tags.includes(t.catalog_tag)).map((t) => t.name)
-    if (sold.length) add('item', i.name, `商店：${[...new Set(sold)].join('、')}${i.charm_min ? `（魅氣 ${i.charm_min} 以上的聚落）` : ''}`)
-    for (const t of shopTypes) if (t.fixed?.some((f) => f.item === i.name)) add('item', i.name, `商店「${t.name}」的固定清單`)
-    if (i.recipe) add('item', i.name, `製作：${craftRules.skills[i.recipe.craft]?.name ?? i.recipe.craft} ${i.recipe.level} 級`)
-    for (const y of i.seed?.yields ?? []) add('item', y, `種「${i.name}」收成`)
-    if (i.black_market && i.gear?.unique) add('item', i.name, '黑市每天的珍品')
-    if (i.master_force) add('item', i.name, `主人強制裝上${i.master_force.tags?.length ? `（${i.master_force.tags.map((t) => npcTags.tags[t]?.name ?? t).join('、')}的主人）` : ''}`)
-    if (i.event) add('item', i.name, '主動行動的報酬（AI 判定時可能給）')
+    if (sold.length) add('item', i.name, `商店：${[...new Set(sold)].join('、')}${i.charm_min ? `（魅氣 ${i.charm_min} 以上的聚落）` : ''}`, 'shop')
+    for (const t of shopTypes) if (t.fixed?.some((f) => f.item === i.name)) add('item', i.name, `商店「${t.name}」的固定清單`, 'shop')
+    if (i.recipe) add('item', i.name, `製作：${craftRules.skills[i.recipe.craft]?.name ?? i.recipe.craft} ${i.recipe.level} 級`, 'craft')
+    for (const y of i.seed?.yields ?? []) add('item', y, `種「${i.name}」收成`, 'craft')
+    if (i.black_market && i.gear?.unique) add('item', i.name, '黑市每天的珍品', 'shop')
+    if (i.master_force) add('item', i.name, `主人強制裝上${i.master_force.tags?.length ? `（${i.master_force.tags.map((t) => npcTags.tags[t]?.name ?? t).join('、')}的主人）` : ''}`, 'forced')
+    if (i.event) add('item', i.name, '主動行動的報酬（AI 判定時可能給）', 'event')
     // 制式裝備：寶箱、人形怪物的掉落、流浪商人依等級隨機生成，也可以打造
     if (i.gear && !i.gear.attrs && !i.gear.unique && !i.gear.enchants && !i.gear.rarity && gearName(i.gear) === i.name) {
-      add('item', i.name, '依等級隨機生成的裝備（寶箱、人形怪物的掉落、流浪商人）與打造')
+      add('item', i.name, '依等級隨機生成的裝備（寶箱、人形怪物的掉落、流浪商人）與打造', 'gear')
     }
     if (i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length) {
       const randomShops = shopTypes.filter((t) => t.random?.consumables).map((t) => t.name)
-      if (randomShops.length) add('item', i.name, `${randomShops.join('、')}每天隨機上架`)
+      if (randomShops.length) add('item', i.name, `${randomShops.join('、')}每天隨機上架`, 'shop')
     }
     if (i.category === 'material' && i.price_cc >= 5) {
       const randomShops = shopTypes.filter((t) => t.random?.materials && i.price_cc <= Math.max(...(t.random.max_material_price ?? [300])))
-      if (randomShops.length) add('item', i.name, `${randomShops.map((t) => t.name).join('、')}每天隨機上架的材料`)
+      if (randomShops.length) add('item', i.name, `${randomShops.map((t) => t.name).join('、')}每天隨機上架的材料`, 'shop')
     }
   }
-  for (const e of Object.values(enemies)) for (const l of e.loot ?? []) group('item', l.item, '怪物掉落', e.name)
+  for (const e of Object.values(enemies)) for (const l of e.loot ?? []) group('item', l.item, '怪物掉落', e.name, 'drop')
   for (const [layer, c] of Object.entries(gearRules.chests)) {
     if (!Array.isArray(c?.items)) continue
-    for (const [n] of c.items) group('item', n, '地下城的寶箱', LAYER_NAME[layer] ?? layer)
+    for (const [n] of c.items) group('item', n, '地下城的寶箱', LAYER_NAME[layer] ?? layer, 'chest')
     // 打造材料：每一級挑最便宜的那一種（gear.ts 的 forgeItemFor）
-    for (const [tier] of c.forge ?? []) for (const k of MATERIAL_KINDS) group('item', forgeItemFor(k, tier), '地下城的寶箱（打造材料）', LAYER_NAME[layer] ?? layer)
+    for (const [tier] of c.forge ?? []) for (const k of MATERIAL_KINDS) group('item', forgeItemFor(k, tier), '地下城的寶箱（打造材料）', LAYER_NAME[layer] ?? layer, 'chest')
   }
-  for (const [n] of lewdRules.park.chest_items) add('item', n, '緋夢樂園的寶箱')
-  for (const [n] of lewdRules.auction.pool) add('item', n, '拍賣會')
+  for (const [n] of lewdRules.park.chest_items) add('item', n, '緋夢樂園的寶箱', 'chest')
+  for (const [n] of lewdRules.auction.pool) add('item', n, '拍賣會', 'venue')
   const arena = lewdRules.arena
-  for (const n of arena.items) add('item', n, '淫鬥場的獎品')
-  for (const n of arena.books) add('item', n, '淫鬥場的獎品（技能書）')
-  for (const r of Object.values(arena.rings)) for (const n of r.rare?.items ?? []) add('item', n, `淫鬥場「${r.name}」的稀有獎品`)
-  for (const [kind, n] of Object.entries(lewdRules.conquest.kinds)) group('item', n, '慾望勝利的征服掉落', KIND_NAME[kind] ?? kind)
-  add('item', lewdRules.charm.gate.item, '魅氣濃的城門（強制戴上）')
-  for (const n of maps.generation.wild.resource_items) add('item', n, '野外採集')
-  for (const n of maps.generation.dungeon.resource_items) add('item', n, '地下城採集')
-  for (const m of Object.values(specialMaps)) for (const n of m.resource_items ?? []) add('item', n, `特殊地圖「${m.name}」的採集`)
+  for (const n of arena.items) add('item', n, '淫鬥場的獎品', 'venue')
+  for (const n of arena.books) add('item', n, '淫鬥場的獎品（技能書）', 'venue')
+  for (const r of Object.values(arena.rings)) for (const n of r.rare?.items ?? []) add('item', n, `淫鬥場「${r.name}」的稀有獎品`, 'venue')
+  for (const [kind, n] of Object.entries(lewdRules.conquest.kinds)) group('item', n, '慾望勝利的征服掉落', KIND_NAME[kind] ?? kind, 'drop')
+  add('item', lewdRules.charm.gate.item, '魅氣濃的城門（強制戴上）', 'forced')
+  for (const n of maps.generation.wild.resource_items) add('item', n, '近郊的資源格', 'gather')
+  for (const n of maps.generation.dungeon.resource_items) add('item', n, '地下城的資源格', 'gather')
+  for (const m of Object.values(specialMaps)) for (const n of m.resource_items ?? []) add('item', n, `特殊地圖「${m.name}」的資源格`, 'gather')
   for (const [pid, p] of Object.entries(parasiteRules.parasites)) {
-    add('item', p.item, `寄生物「${p.name ?? pid}」`)
-    add('item', p.tamed?.item, `寄生物「${p.name ?? pid}」（馴服之後）`)
+    add('item', p.item, `寄生物「${p.name ?? pid}」`, 'forced')
+    add('item', p.tamed?.item, `寄生物「${p.name ?? pid}」（馴服之後）`, 'forced')
   }
-  for (const m of itemRules.meals?.menu ?? []) add('item', m.name, '用餐')
+  for (const m of itemRules.meals?.menu ?? []) add('item', m.name, '用餐', 'shop')
 
   // ---- 特質 ----
   const levels = perkRules.levelup.levels

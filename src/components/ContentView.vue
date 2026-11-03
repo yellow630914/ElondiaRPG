@@ -10,10 +10,11 @@ import { oathText, placeName, tattooRules } from '@/engine/tattoos'
 import { perkCategory, perkPower, PERK_CATEGORIES } from '@/engine/perks'
 import { baseSlots, gearRules } from '@/engine/gear'
 import { CONTENT_TAGS } from '@/engine/content'
+import { ITEM_SOURCE_NAME, itemSourceIndex, type ItemSourceKind } from '@/engine/sources'
 import { BODY_LABEL } from './content/checks'
 import {
   ABILITY_TYPES, abilityClasses, builtinAbility, builtinBase, builtinEnemy, builtinMaterial, builtinNpc, builtinPerk, ENEMY_KINDS, enemyPlaceIndex, enemyPlaceOptions,
-  ITEM_SOURCE_NAME, itemSourceIndex, newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk, builtinStatus, newStatus, newCondition,
+  newAbility, newBase, newEnemy, newItem, newMaterial, newModId, newNpc, newPerk, builtinStatus, newStatus, newCondition,
   builtinMark, builtinTattoo, conditionIds,
 } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -398,7 +399,7 @@ const rows = computed<Row[]>(() => {
   } else if (sub.value === 'items') {
     list = itemRules.items
       .filter((i) => !category.value || i.category === category.value)
-      .filter((i) => !itemSource.value || !!sources.value.get(i.name)?.has(itemSource.value))
+      .filter((i) => !itemSource.value || !!sources.value.get(i.name)?.has(itemSource.value as ItemSourceKind))
       .filter((i) => adultMatch(!!i.adult))
       .filter((i) => category.value !== 'equipment' || ((!gearSlot.value || gearRules.bases[i.gear?.base ?? '']?.slot === gearSlot.value)
         && (!matKind.value || gearRules.materials[i.gear?.material ?? '']?.kind === matKind.value)))

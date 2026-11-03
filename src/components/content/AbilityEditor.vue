@@ -158,7 +158,8 @@ function remove() {
     />
     <p class="small muted">id：{{ id }}</p>
     <UsageNote :usage="usage" :deletable="!builtin" label="怎麼拿到、哪裡用到" open />
-    <p v-if="!usage.length" class="small muted">{{ ownClasses.length ? `照職業與等級學（${ownClasses.join('、')}）；目前沒有其他地方給這個能力。` : '目前沒有任何地方給這個能力：職業、怪物、事件、技能書都沒有用到，遊戲裡拿不到。' }}</p>
+    <p v-if="ownClasses.length" class="small muted">📈 照職業與等級學（{{ ownClasses.join('、') }}）{{ usage.length ? '' : '；目前沒有其他地方給這個能力。' }}</p>
+    <p v-else-if="!usage.length" class="small muted">目前沒有任何地方給這個能力：職業、怪物、事件、技能書都沒有用到，遊戲裡拿不到。</p>
 
     <FoldSet>
       <template #legend>基本</template>
