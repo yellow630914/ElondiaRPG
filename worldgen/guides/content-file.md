@@ -12,10 +12,10 @@
   "name": "艾隆迪亞擴充",
   "desc": "給玩家看的一段說明：這個世界多了什麼。",
   "content": {
-    "statuses": {}, "tattoos": {}, "marks": {}, "markRules": {},
+    "statuses": {}, "conditions": {}, "tattoos": {}, "marks": {}, "markRules": {},
     "dungeons": {}, "landmarks": {}, "specialMaps": {}, "shops": {},
     "abilities": {}, "perks": {}, "materials": {}, "bases": {}, "items": {},
-    "enemies": {}, "npcs": {}, "stories": {}, "travelEvents": {}, "eventRules": {}, "categoryIcons": {}, "counters": {}
+    "enemies": {}, "npcs": {}, "stories": {}, "travelEvents": {}, "eventRules": {}, "bindRules": {}, "masterEvents": {}, "categoryIcons": {}, "counters": {}
   },
   "prompts": { "lore": {}, "customLore": [] }
 }
@@ -32,17 +32,18 @@
 
 只有 `content` 的檔案（`{ "type": "elondia-content", "npcs": {…}, … }`，遊戲「📤 匯出自訂內容」的格式）也能匯入，只是沒有提示詞。
 
-**改內建的內容**：遊戲「🌍 世界 → 📤 匯出內建世界」會把原版的全部內容匯出成 zip（`content/<區塊>.json` 一個區塊一個檔，格式和上面 `content` 的區塊一樣，附 README）。直接改那些檔案再「📥 匯入內建世界」，遊戲只會記下改過與新增的項目，建立成新的世界（[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 第 0 節）。也適合拿來查內建項目的完整寫法。
+**改內建的內容**：遊戲「🌍 世界 → 📤 匯出內建世界」會把原版的全部內容匯出成 zip（`content/<區塊>.json` 一個區塊一個檔，格式和上面 `content` 的區塊一樣，附 README；zip 最上層的 `world.json` 不要刪，匯入時靠它找檔案；內建地下城與類別圖示不在裡面）。直接改那些檔案再「📥 匯入內建世界」，遊戲只會記下改過與新增的項目，建立成新的世界（[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 第 0 節）。也適合拿來查內建項目的完整寫法。
 
 ## 2. 內容的區塊與 id
 
 | 區塊 | 內容 | key（id） | 指南 |
 |---|---|---|---|
 | `statuses` | 狀態（增益、減益） | `mod_status_<英文>` | [statuses-perks-tattoos](statuses-perks-tattoos.md) |
+| `conditions` | 非戰鬥狀態（用餐、喝酒、受罰、祝福……，`data/rules/companions.json` 的 `conditions`） | 內建的 id，或 `mod_cond_<英文數字>`（`/^mod_cond_[a-z0-9]{1,24}$/`，前綴之後不能有底線） | [statuses-perks-tattoos](statuses-perks-tattoos.md) |
 | `tattoos` | 刺青圖樣、誓約印記 | `mod_tattoo_<英文>` | 同上 |
 | `marks` | 奴隸印記的模板 | `mod_mark_<英文>` | 同上 |
 | `markRules` | 印記的用途與權重（只有一筆，key 是 `rules`） | `rules` | 同上 |
-| `dungeons` | 自建的地下城（第 3.1 節） | `loc_<英文>`（`/^loc_[a-z0-9_]+$/`） | [dungeons](dungeons.md) |
+| `dungeons` | 自建的地下城（第 3.1 節） | `loc_<英文>`（`/^loc_[a-z0-9_]{1,40}$/`） | [dungeons](dungeons.md) |
 | `landmarks` | 地標 | `lm_<英文>`（`/^lm_[a-z0-9_]+$/`） | [landmarks](landmarks.md) |
 | `specialMaps` | 特殊地圖 | `sm_<英文>`（`/^sm_[a-z0-9_]+$/`） | [special-maps](special-maps.md) |
 | `shops` | 商店（內建店種的修改、自建的店） | 內建的店種 id，或 `shop_<英文數字>`（`/^shop_[a-z0-9]+$/`，前綴之後不能有底線） | [shops](shops.md) |
@@ -56,6 +57,8 @@
 | `stories` | 特殊任務 | `mod_story_<英文>` | [stories](stories.md) |
 | `travelEvents` | 旅途與城鎮事件 | `mod_event_<英文>` | [events](events.md) |
 | `eventRules` | 事件的機率與冷卻（只有一筆，key 是 `rules`） | `rules` | 同上 |
+| `bindRules` | 雙面效應的設定（只有一筆，key 是 `rules`） | `rules` | [docs/LEWD_STATS](../../docs/LEWD_STATS.md) 第 7 節 |
+| `masterEvents` | 主奴與娼館的事件（主人的突發事件、調教、娼館） | 內建的 id，或新的 id（最多 60 字） | [CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.98 節 |
 | `categoryIcons` | 物品類別的圖示（取代內建的類別圖）：`{ "<類別>": { "icon": "<data URL>" } }` | 類別 id（`food`、`consumable`……，見 `data/rules/items.json` 的 `categories`） | [items-gear](items-gear.md) 2.11 節 |
 | `counters` | 劇情計數器：`{ "<id>": { "name": "…", "desc": "…", "initial": 0, "min": -5, "max": 5, "custom": true } }`（內建的不寫 `custom`，只改名稱、說明、初始值與上下限） | 小寫英文、數字、底線 | [docs/STORY_QUESTS](../../docs/STORY_QUESTS.md) 1.1 節 |
 
@@ -68,12 +71,12 @@
 內容會互相引用：怪物用到技能與物品（掉落），物品用到狀態、底材與材料，固定 NPC 用到地點、地標、技能、特質、裝備，特殊任務用到固定 NPC、怪物、物品、特殊地圖……完整的對照見 [CONTENT_DEPENDENCIES](../../docs/CONTENT_DEPENDENCIES.md) 第 1 節。
 
 - **被引用的要存在**：可以是內建的，或同一個檔案裡新增的。引用到不存在的東西，匯入時會被默默拿掉（或整筆不收），世界檢查會列出來。
-- **套用的順序**（`applyContent`）：狀態 → 刺青與印記 → 自建地下城 → 地標 → 商店 → 特殊地圖 → 技能 → 特質 → 材料 → 底材 → 物品 → 怪物 → 固定 NPC → 特殊任務 → 事件。生成時也照這個順序寫：先寫被引用的，再寫引用別人的。
+- **套用的順序**（`applyContent`）：狀態 → 非戰鬥狀態 → 刺青與印記 → 自建地下城 → 地標 → 商店 → 特殊地圖 → 技能 → 特質 → 材料 → 底材 → 物品 → 怪物 → 劇情計數器 → 固定 NPC → 特殊任務 → 事件 → 雙面效應設定、主奴與娼館的事件。生成時也照這個順序寫：先寫被引用的，再寫引用別人的。
 - **聚落是固定的**：地點 id 查 `data/world/geography.json`；城鎮區塊與格子查 `data/world/maps.json`（見 [landmarks](landmarks.md)）。不能新增聚落、地區與路線；**可以新增地下城**（下一節）。
 
 ### 3.1 自建的地下城（`dungeons`）
 
-經由旅途到達的地下城，功能和內建的一樣（分層、遭遇、層主、寶箱、公會委託、情報）。世界頁籤的「🕳️ 地下城」可以直接編輯（[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.96 節）；內容檔的格式：
+經由旅途到達的地下城，功能和內建的一樣（分層、遭遇、層主、寶箱、公會委託、情報）。「🌍 世界 → 🗺️ 地點 → 🕳️ 地下城」可以直接編輯（[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.96 節）；內容檔的格式：
 
 ```json
 "dungeons": {
@@ -98,7 +101,7 @@
 | `region` | 現有的地區（`central`、`north`、`south`、`forest`、`east_sea`、`west`）；沒放怪物的層用這個地區的城郊遭遇表 |
 | `routes` | 1～6 條，**只能接內建的聚落**；`days` 是 `[最少, 最多]`（以半天為單位，0.5～30），`mode` 是 `road`、`trail`、`wild`、`sea`、`dive`、`underground`，`fare` 選填（每人的船資）。7 天內的公會會發這座的委託 |
 | `layers` | 周邊、淺層、中層、深層（`abyss: true` 時多一層底層）：每層幾組遭遇，每組 1～4 種怪物、每種 1～6 隻，最多 12 組；要提高某一組的機率就多放幾組 |
-| `bosses` | 淺層、中層、深層（與底層）的層主：第一種是層主，其他是護衛（最多 3 種）；沒寫的層照強敵的規則 |
+| `bosses` | 淺層、中層、深層（與底層）的層主：第一種是層主，其他是護衛（連層主最多 3 種）；沒寫的層照強敵的規則 |
 | `lighting` | 選填：各層的光線（`lit`、`daylight`、`dark`，從周邊起算） |
 | `requires` | 選填：劇情條件，成立才找得到、才能前往 |
 | `material_series` | 選填：寶箱與人形怪掉的裝備優先用的材料系列 |

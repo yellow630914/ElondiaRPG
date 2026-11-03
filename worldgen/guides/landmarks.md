@@ -53,6 +53,7 @@
 | `work.desc` | 字串 | ≤ 200 字 | 沒寫時「在這裡幫忙。」；打工的名稱固定是「<地標名稱>的雜務」 |
 | `scenes` | 場景陣列 | 最多 8 個，見 2.3 | 條件成立時可以選的固定場景（例如解鎖的特殊區域） |
 | `interior` | 特殊地圖 id | 同一個聚落的**固定**特殊地圖 | 內部：地標格變成入口，從出口離開回到地標格；場景可以用 `spot` 指定在裡面的哪一格。不合的會被拿掉 |
+| `auction` | `true` | | 拍賣會（成人向）：這裡每天有拍品可以出價、也收寄賣（規則在 `data/rules/lewd.json` 的 `auction`） |
 
 地標的類型（`data/world/landmarks.json` 的 `types`）：
 
@@ -174,7 +175,7 @@ for (const b of blocks) {
 | `ability` | `ability`（能力 id）或 `choices` | choices 1～5（「N 選一」） |
 | `hp` | `ratio` | −0.9～1（比例）；`target` 一律是主角 |
 | `perk` | `perk`、`options`、`direct` | 可以選的特質 id |
-| `condition` | `condition`、`add` | `blessed` `cheered` `honed` `relaxed` `well_rested` `tipsy` `shaken` `punished` `fed_light` `fed_fine` `fed_well` `fed_feast` `fed_legend`；`add: false` 是拿掉 |
+| `condition` | `condition`、`add` | `data/rules/companions.json` 的非戰鬥狀態（`slave_mark`、`fugitive`、`away` 除外）：`blessed` `cheered` `honed` `relaxed` `well_rested` `tipsy` `shaken` `punished` `fed_light` `fed_fine` `fed_well` `fed_feast` `fed_legend`，成人向的 `aroused` `sensitive` `afterglow` `virile` `dazed` `drained` `disheveled` `parasite_glow`，或同一個包裡的 `mod_cond_…`（[statuses-perks-tattoos.md](statuses-perks-tattoos.md) 第四部分）；`add: false` 是拿掉 |
 | `tattoo` | `template`（圖樣 id）或自己描述 | 見 [statuses-perks-tattoos.md](statuses-perks-tattoos.md) |
 
 ### 2.3 場景（`scenes`）
@@ -186,7 +187,7 @@ for (const b of blocks) {
 | `title` | 字串 | 1～16 字 | **必填**：按鈕的名稱；同一個地標裡不要重複 |
 | `scene` | 字串 | 1～400 字 | **必填**：交給 AI 的經過。`{cast}` 換成在場的人 |
 | `desc` | 字串 | ≤ 200 字 | 地點面板的說明（給玩家看） |
-| `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling` | 內容標籤：設定關掉的標籤不出現；`adult` 的場景交給 AI 時標成成人場景 |
+| `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling`、`male_partner` | 內容標籤：設定關掉的標籤不出現；`adult` 的場景交給 AI 時標成成人場景 |
 | `requires.flags`、`requires.flags_none`、`requires.flags_any` | 字串陣列 | 各最多 4 個 | 劇情旗標：成立／不成立／任一個成立時才出現 |
 | `pc_body` | 字串陣列 | `masc`、`fem`、`andro` | 只給這些體型的主角；三個都寫或都不寫＝都可以 |
 | `wear` | 字串陣列 | 物品名稱或裝備底材 id | 限定穿著：主角都穿在身上才能選（底材時任何一件同種的服裝都算），例如打工的制服 |
@@ -229,6 +230,7 @@ for (const b of blocks) {
     "silver_tongue": {
       "id": "silver_tongue",
       "name": "能言善道",
+      "category": "social",
       "desc": "魅力檢定 +1；殺價、交涉價格與談判再 +1。",
       "effects": [
         { "check": { "attrs": ["cha"] }, "bonus": 1 },
@@ -256,7 +258,7 @@ for (const b of blocks) {
       "name": "老井廣場",
       "emoji": "🪣",
       "location": "rhineburg",
-      "at": { "area": "rhineburg/lower", "x": 3, "y": 3 },
+      "at": { "area": "rhineburg/lower", "x": 2, "y": 3 },
       "desc": "下城區居民打水、閒聊的小廣場，井邊的石欄被磨得發亮。",
       "types": ["market"],
       "custom": true

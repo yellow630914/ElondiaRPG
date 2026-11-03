@@ -20,7 +20,7 @@
 規則在 `character.ts` 的 `learnable`、COMBAT_SYSTEM 第 7 節：
 
 - 每次升級從「這個職業可以學、還沒學會」的能力隨機抽 3 個讓玩家選一個（NPC 自動挑第一個）。
-- `classes` 裡有這個職業才會出現。可以寫的職業：`fighter` 戰士、`barbarian` 野蠻人、`paladin` 聖騎士、`ranger` 遊俠、`rogue` 遊蕩者、`monk` 武僧、`bard` 吟遊詩人、`cleric` 牧師、`druid` 德魯伊、`wizard` 法師，加上 `monster`。
+- `classes` 裡有這個職業才會出現。可以寫的職業：`fighter` 戰士、`barbarian` 野蠻人、`paladin` 聖騎士、`ranger` 遊俠、`rogue` 遊蕩者、`monk` 武僧、`bard` 吟遊詩人、`cleric` 牧師、`druid` 德魯伊、`wizard` 法師，加上 `monster`、`lewd`（色情技能：不分職業、不進升級的三選一，從技能書與事件學，COMBAT_SYSTEM 8.5 節）。
 - **技能**：`unlock` ≤ 角色等級。品質依 `unlock`（1-4 普通、5-8 優良、9-12 稀有、13-16 史詩、17-20 傳說），也不能超過角色生命層級的上限，兩者剛好對齊，所以實際上就是到了等級就能抽到。
 - **法術**：角色要有 `circle` 環的法術環。全施法者（吟遊詩人、牧師、德魯伊、法師）1 環 1 級、2 環 3 級、3 環 5 級、4 環 7 級、5 環 10 級、6 環 12 級、7 環 15 級、8 環 17 級、9 環 20 級起（`combat.json` 的 `spell_slots`）；半施法者（聖騎士、遊俠）用一半的等級查同一張表，最多 5 環（1 環 1 級、2 環 5 級、3 環 9 級、4 環 13 級、5 環 19 級）；戰士、野蠻人、遊蕩者、武僧沒有法術環，**給他們的法術永遠抽不到**。
 - **戲法**：可學數量 = 2 + floor(等級 ÷ 4)，已經學滿就不會再抽到。
@@ -35,7 +35,7 @@
 |---|---|---|---|
 | `name` | 字串 | 最多 16 字 | 顯示的名字。空白時變成「新的能力」 |
 | `type` | 字串 | `skill`、`spell`、`cantrip`（其他值變 `skill`） | 種類，見 1.1 節 |
-| `classes` | 字串陣列 | 1.1 節的職業 id 與 `monster` | 誰可以學。`noncombatant` 與不認得的拿掉。只寫 `monster` 的玩家學不到 |
+| `classes` | 字串陣列 | 1.1 節的職業 id、`monster` 與 `lewd` | 誰可以學。`noncombatant` 與不認得的拿掉。只寫 `monster` 的玩家學不到 |
 | `unlock` | 整數 | 1～20（預設 1） | 只有 `skill` 有：幾級可以學。其他種類寫了會被拿掉 |
 | `circle` | 整數 | 1～9（預設 1） | 只有 `spell` 有：環數。其他種類寫了會被拿掉 |
 | `ap` | 整數 | 0～12 | 行動點。沒寫時：技能 2、法術依環數（1-2 環 2、3-5 環 3、6-8 環 4、9 環 5）、戲法 0 |
@@ -82,6 +82,8 @@
 
 升環不多花行動點。條件不合的欄位（沒有傷害卻寫 `dice`、不是 `random_enemies` 卻寫 `count`……）整理時拿掉，不是法術的整個 `upcast` 拿掉。
 
+慾望戰鬥的欄位（`lust_gain`、`lust_relief`、`lust_cost`、`requires_lust`、`ap_give`、`exposure`、`lust_transfer`、`gamble`、`burst`、`vs_slave`，`damage[].pierce`，`apply[]` 的 `if_lust`、`if_slave`、`if_weaker`）見 COMBAT_SYSTEM 8.5 節。
+
 布林欄位（`adv`、`concentration`、`cleanse`、`recover_slot`、`kill`、`heal.mod` 這類）只寫 `true`；數字欄位的 0 與預設值（`mult: 1`、`hits: 1`、`hit: 0`）不要寫：會被拿掉（`false`、0、空陣列等於沒寫，報告不會列；`mult: 1` 這類會列在報告裡）。
 
 ### 2.1 目標（`target`）
@@ -106,7 +108,7 @@
 |---|---|---|
 | `weapon` | `true` | 用武器傷害：武器骰 + 武器屬性的調整值 + 狀態的傷害加值，屬性是武器的（這一段的 `type`、`mod` 沒有作用） |
 | `dice` | `XdY`、`XdY+Z`、`XdY-Z`（X 最多 2 位、Y 最多 3 位） | 骰子。和 `weapon` 二選一，兩個都沒有的整段拿掉 |
-| `type` | 13 種傷害屬性的 id | 傷害屬性（見 [monsters](monsters.md) 第 2 節的列表）。沒寫時沿用武器的屬性 |
+| `type` | 14 種傷害屬性的 id | 傷害屬性（見 [monsters](monsters.md) 第 2 節的列表，含慾望戰鬥的 `lust`）。沒寫時沿用武器的屬性 |
 | `mod` | `true` | 加 `attr` 屬性的調整值 |
 | `scale` | `{ dice, per }`：per 整數 1～20（預設 4） | 隨等級多加骰子：多 floor((等級 − 1) ÷ per) 組 `dice`。例 per 4：5、9、13、17 級各多一組 |
 
@@ -136,7 +138,7 @@
 | 欄位 | 範圍 | 說明 |
 |---|---|---|
 | `status` | 狀態 id | 內建（`data/rules/statuses.json`）或同一個檔案 `statuses` 裡的。不存在的整項拿掉 |
-| `turns` | 整數 1～20（預設 2） | 持續回合（在擁有者的回合開始時 -1） |
+| `turns` | 整數 1～20（預設 2），或 99＝整場戰鬥 | 持續回合（在擁有者的回合開始時 -1） |
 | `to` | `target`（預設）、`self`、`allies`、`enemies` | 給誰。`allies` 包括自己。同一個狀態不疊加：再套一次只是取較長的回合 |
 | `on` | `hit`、`fail`、`always` | 什麼時候。沒寫時依 `resolve`：`attack` 命中時、`save` 豁免失敗時、`auto` 一定。`attack`、`save` 的能力寫 `always` 時沒命中也會套上 |
 | `save` | 五種屬性 | 套上之前目標再豁免一次（DC 同上），成功就不套。常用在「命中後力量豁免失敗則暈眩」 |
@@ -279,7 +281,7 @@
 | 骰子有空白（`"2d6 + 1"`） | 去掉空白（列在報告裡）；`heal.dice`、`scale.dice`、`apply[].value.dice` 有空白時整個拿掉 |
 | 骰子格式不對（`2d6+1d4`、`d100+1000`） | 那一段傷害整段拿掉 |
 | `apply` 的 `status` 不存在 | 整項拿掉；`to`、`on` 拼錯的拿掉（用預設） |
-| `turns` 大於 20、`uses` 大於 10、`hits` 大於 6、`mult` 大於 5、`lifesteal` 大於 1、`shield.level` 大於 10 | 夾到上限 |
+| `turns` 大於 20（99 例外：整場戰鬥）、`uses` 大於 10、`hits` 大於 6、`mult` 大於 5、`lifesteal` 大於 1、`shield.level` 大於 10 | 夾到上限 |
 | `mult: 1`、`hits: 1`、`hit: 0`、`crit: 0`、`uses.per_turn: 0`、`adv: false` | 拿掉（不要寫預設值） |
 | `heal`、`shield`、`cleanse`、`recover_slot`、`kill` 寫在 `resolve: attack` 或 `save` 的能力上 | 拿掉（只能用在 `auto`） |
 | 超過 4 段傷害、4 個狀態 | 多的拿掉 |

@@ -23,7 +23,7 @@
 | `custom` | 布林 | 新的任務一律 `true` | |
 | `title` | 字串 | 最多 **30** 字；空的變「新的特殊任務」 | 名稱 |
 | `summary` | 字串 | 最多 300 字 | 冒險筆記上的簡介；開頭沒寫 `text` 時也用它 |
-| `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling` | 內容標籤：接任務時顯示警示；成人向只是警示，其他標籤玩家可以在設定裡關閉。選項也可以有 `tags`（只有那個分支的內容） |
+| `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling`、`male_partner` | 內容標籤：接任務時顯示警示；成人向只是警示，其他標籤玩家可以在設定裡關閉。選項也可以有 `tags`（只有那個分支的內容） |
 | `rank` | 字串 | `F`、`E`、`D`、`C`、`B`、`A`、`S` | 建議的公會階級：主角的階級同級或更高才接得到（組隊 2 人以上可以低一級）。不寫＝不限 |
 | `merit` | 整數 | 0～100；不寫＝5 | 完成時的公會功績 |
 | `time_limit` | 整數 | 1～365 天；0 或不寫＝不限 | 開始後幾天內要完成，過了就失敗 |
@@ -44,9 +44,10 @@
 | `regions` | `travel` | `central`、`north`、`south`、`forest`、`east_sea`、`west` | 只在前往這些地區時；不寫＝任何地區。不存在的拿掉 |
 | `price` | `informant` | 0～10000000；不寫＝100 | 情報的價格（白鸛幣） |
 | `min_level` | 全部 | 1～20 | 主角至少幾級 |
-| `requires` | 全部 | `{ "flags": [...], "flags_none": [...], "flags_any": [...], "counters": { "<計數器 id>": { "min": 1 } }, "affinity": { "<固定 NPC id>": 最低好感 } }` | 接取條件（和任務點的 `requires` 同一種寫法） |
+| `requires` | 全部 | `{ "flags": [...], "flags_none": [...], "flags_any": [...], "counters": { "<計數器 id>": { "min": 1 } }, "affinity": { "<固定 NPC id>": 最低好感 } }` | 接取條件（和任務點的 `requires` 同一種寫法；還可以寫 `parasites`、`stats`、`charm`、`wearing`、`pc_tags`、`after`，見 [STORY_QUESTS](../../docs/STORY_QUESTS.md) 1.1 節） |
 | `pc_body` | 全部 | `["fem"]` | 只給這些體型的主角（`masc`、`fem`、`andro`） |
 | `text` | 全部 | 最多 400 字 | 開頭的事件描述 |
+| `items` | 全部 | 物品名稱，最多 6 件 | 接下任務時拿到的物品（各一件，例如打工的制服）。物品不存在是錯誤 |
 
 - `manual` 的任務要靠別的任務的效果 `{ "type": "start_story", "story": "<id>" }` 開始；沒有人開啟時檢查會提醒。
 - `travel` 開頭的任務，第一個任務點通常是 `at.where: "road"`（開頭的那段路上）。
@@ -66,7 +67,10 @@
 | `foes` | id 陣列 | 固定 NPC 的 id | 只有 `combat` 用：敵對的固定 NPC。`enemies`、`foes` 至少要有一種 |
 | `allies` | id 陣列 | 固定 NPC 的 id | 任何種類都可以：在場的友方，解鎖後站在 ⭐ 旁邊（或站在設施上），戰鬥時站在你這邊，不看他平常的出沒與 `requires`。已經死了或被制伏的不會出現 |
 | `urgent` | 布林 | `true` 或不寫 | 走到任務點時一定要先處理（不能移動、休息），事件視窗另外多一個按鈕：**不寫**（不緊急，預設）多「稍候」，這次先略過、離開再來還會遇到；**`true`**（緊急）只能處理或「放棄任務」。緊急只給過了就沒有的場面（旅途上、臨時地圖裡），見 6.4 節 |
-| `options` | 陣列 | 最多 6 個 | 只有 `choice` 用，每個選項見下表。至少要有一個 |
+| `hours` | 字串 | `day`、`night` 或不寫 | 只在白天（6～18 時）或只在夜裡才算在任務點上；`road`、`side` 的任務點寫了會被拿掉（[STORY_QUESTS](../../docs/STORY_QUESTS.md)「時段」） |
+| `wear` | 陣列 | 物品名稱或裝備底材 id，最多 6 個 | 限定穿著：主角全部穿在身上才能進行。不是裝備是錯誤 |
+| `rut` | 布林 | `true` 或不寫 | 只有有 `enemies` 的 `combat` 用：「只在野外發情」的怪物也可以擲到發情 |
+| `options` | 陣列 | 最多 10 個 | 只有 `choice` 用，每個選項見下表。至少要有一個 |
 | `success` | 結果 | 見 2.5 | `story`：發生的事；`check`：成功；`combat`：勝利。`choice` 不用（寫在選項裡） |
 | `fail` | 結果 | 見 2.5 | 只有 `check`、`combat` 用：失敗、落敗或撤退。不寫時失敗可以再試 |
 
@@ -75,6 +79,7 @@
 | 欄位 | 範圍 | 說明 |
 |---|---|---|
 | `label` | 最多 30 字；空的變「選項」 | 按鈕上的字 |
+| `tags` | 同任務的 `tags` | 選填：只有這個分支的內容標籤；玩家在設定關掉那個標籤時，這個選項不出現 |
 | `requires` | 同任務點的 `requires` | 選填：選項出現的條件（例如 `{ "affinity": { "npc_selene": 10 } }`），不成立時選項不出現 |
 | `check` | 同任務點的 `check` | 選填：有檢定的選項（也可以參考好感） |
 | `success` | 結果 | 沒有檢定時選了就發生；有檢定時是成功 |
@@ -93,7 +98,7 @@
 | `dungeon` | `location`（地下城，必填）、`layer` | 地下城某一層的一格 ⭐。`layer` 是 `outskirts` 周邊、`shallow` 淺層、`middle` 中層、`deep` 深層、`abyss` 底層；寫錯或沒寫變 `outskirts` |
 | `road` | — | 旅途上：解鎖之後，**任何一段**旅途的路上都會觸發（不限開頭的那段路，見 6.4 節） |
 | `side` | `side_map`（選填） | 臨時地圖裡的 ⭐：`cave` 神秘洞窟、`ruins` 遺跡廢墟、`waystation` 驛站；不寫＝任何一種。**只放在這個任務自己的結果（`side_map`）帶進去的那張地圖**，旅途事件或別的任務帶進去的洞窟裡不會有；任務點沒完成就離開等於放棄任務 |
-| `special` | `special_map`（必填）、`x`、`y`（選填） | 特殊地圖裡的 ⭐。`special_map` 是 `sm_` 開頭的 id（內建 `sm_rhineburg_sewer` 萊茵堡下水道、`sm_rhineburg_cistern` 萊茵堡古蓄水池，或同一個包的 `specialMaps`；寫錯或沒寫時整條任務不匯入，6.2 節）。只有固定地圖能寫 `x`、`y` 指定格子 |
+| `special` | `special_map`（必填）、`x`、`y`（選填） | 特殊地圖裡的 ⭐。`special_map` 是 `sm_` 開頭的 id（內建的查 `data/world/special_maps.json` 的 `maps`，例如 `sm_rhineburg_sewer` 萊茵堡下水道、`sm_rhineburg_cistern` 萊茵堡古蓄水池；或同一個包的 `specialMaps`；寫錯或沒寫時整條任務不匯入，6.2 節）。只有固定地圖能寫 `x`、`y` 指定格子 |
 
 - `road`、`side`、`special` 寫了 `location` 會被拿掉。
 - **特殊地圖的確切格子**：`x` 是第幾欄、`y` 是第幾列（從 0 開始，對照 `data/world/special_maps.json` 的 `grid`）。可以選 `.` 道路，或畫在地圖上的 `M` 遭遇、`X` 強敵、`R` 資源、`C` 寶箱、`T` 陷阱（⭐ 取代那一格）；**不能**選入口（`entry`）、通道的端點（這張地圖的 `connections[].at`，和別張地圖接過來的 `to`）、牆、水、出口、安全房、商店。超出地圖的整理時拿掉；格子不行時檢查會提醒，遊戲裡隨機放一格空地。
@@ -115,34 +120,41 @@
 | `side_map` | 字串 | `cave`、`ruins`、`waystation` | 進入臨時地圖，出口回到原本的地方 |
 | `special_map` | 特殊地圖 id | 存在的 `sm_` id | 傳送到那張地圖的入口 |
 | `travel_to` | 地點 id | 任何地點 | 改去別的地點（旅途中直接抵達，不在旅途時被帶過去；在臨時地圖或特殊地圖裡時先離開） |
-| `deaths` | id 陣列 | 固定 NPC 的 id | 故事裡的死亡：這些角色在這裡死去，之後不再出現；需要他的其他任務失敗。要和他戰鬥時用代替他的怪物（`enemies`），不要用 `foes` |
+| `deaths` | id 陣列 | 固定 NPC 的 id | 故事裡的死亡：這些角色在這裡死去，之後不再出現；需要他的其他任務失敗。要和他戰鬥時用代替他的怪物（`enemies`），不要用 `foes`。角色不存在是錯誤 |
+| `scene` | 字串 | 最多 300 字 | 親密場景：這段經過交給成人場景正文。只有標了 `adult` 的任務能寫（沒標是錯誤） |
+| `time` | 物件 | `{ "until": "night"／"morning", "hours": 4 }`，`hours` 最多 240 | 結束時把時間往前推（[STORY_QUESTS](../../docs/STORY_QUESTS.md)「時段」） |
 
-**效果**（`effects` 與 `rewards` 共用）：特殊任務只收下表這幾種，[EFFECTS](../../docs/EFFECTS.md) 的其他種類（`flag`、`meet`、`intel`、`leave`、`join_party`……）整項拿掉，世界檢查會提醒並寫出替代的寫法：旗標用 `set_flags`／`clear_flags`；認識 NPC 用 `affinity` 或 `npc` 任務點；情報用情報商（`start.kind: informant`）或旅途開頭；同行用 `join`／`leave`，結束後要正式入隊用 `companion`。
+**效果**（`effects` 與 `rewards` 共用）：特殊任務的效果是下表這幾種（`storyMods.ts` 的 `STORY_EFFECTS`），[EFFECTS](../../docs/EFFECTS.md) 的其他種類（`meet`、`intel`、`leave`、`join_party`……）整項拿掉，世界檢查會提醒並寫出替代的寫法：旗標用 `set_flags`／`clear_flags`；認識 NPC 用 `affinity` 或 `npc` 任務點；情報用情報商（`start.kind: informant`）或旅途開頭；同行用 `join`／`leave`，結束後要正式入隊用 `companion`。`flag` 效果（主人事件用的）寫了 `key` 時整理會留下，世界檢查卻仍提醒「拿掉了」：特殊任務不要用它，劇情旗標一律寫 `set_flags`。
 
 | `type` | 欄位與範圍 | 說明 |
 |---|---|---|
 | `money` | `amount`：整數，±100000000，0 不收 | 金錢（白鸛幣），負數為花費 |
 | `item` | `name`：物品名稱（最多 30 字）、`qty`：−99～99，0 不收，不寫＝1 | 得到時物品要存在（`data/rules/items.json` 的 `name`，或同一個包的 `items`） |
 | `gear` | `spec`：裝備規格（同 [npcs](npcs.md) 2.2 節）、`name`（最多 20 字）、`desc`（最多 80 字） | 規格不合整項拿掉 |
-| `xp` | `amount`：0～1000000 | 全隊的經驗值（不能指定成員，`target` 會被拿掉） |
+| `xp` | `amount`：0～1000000；`target`：`pc` 或不寫 | 經驗值：不寫＝全隊，`"target": "pc"` 只給主角（其他值拿掉） |
 | `reputation` | `faction`：勢力 id（不檢查，查 `geography.json` 的 `factions`），或 `local`（所在地的勢力，沒有時算冒險者公會）；`delta`：−20～20 | 聲望 |
 | `affinity` | `npc`：固定 NPC 的 id、`delta`：−50～50、`reason`（最多 40 字） | 親密度 |
 | `memory` | `summary`（最多 200 字）、`importance`：1～3，不寫＝2 | 共同記憶 |
 | `ability` | `ability`：能力 id；或 `choices`：1～5 | 學會這項能力：是主角職業的能力（法術要環階夠）時直接學會，不受等級的品質與解鎖限制；已經會了只提示；不是這個職業的或環階不夠時，改成一次三選一並說明原因。不寫或不存在時變成一次「N 選一」（不寫 `choices`＝3）。對象一律是主角 |
 | `companion` | `npc`：固定 NPC 的 id、`mode`：`voluntary` 或 `hired` | 正式入隊。**只能指定固定 NPC**（不能寫一份規格），其他 `mode`（`slave`）變 `voluntary`。對方死了或被制伏時不會入隊。隊伍放不下時不會丟掉：事件視窗出現「想加入隊伍」，玩家騰出位子（送回房子、寄放酒館、請離）或放棄，決定前不能移動、休息。指定**小隊**（[npcs](npcs.md) 的 `squad`）的人時整隊一起入隊，不會只進來一部分 |
-| `condition` | `condition`：`punished`、`blessed`、`shaken`、`fed_light`、`well_rested`、`fed_well`、`fed_fine`、`fed_feast`、`fed_legend`、`cheered`、`tipsy`、`honed`、`relaxed`；`add`：`false` 時拿掉 | 主角的非戰鬥狀態 |
-| `hp` | `ratio`：−0.9～1 | 主角生命值的比例（`amount` 不收） |
+| `condition` | `condition`：`data/rules/companions.json` 的 `conditions`（`slave_mark`、`fugitive`、`away` 除外；例如 `blessed`、`shaken`、`well_rested`、`tipsy`、`aroused`），或同一個包的 `conditions`（`mod_cond_…`）；`add`：`false` 時拿掉 | 主角的非戰鬥狀態 |
+| `hp` | `ratio`：−0.9～1；或 `amount`：−999～999（沒寫 `ratio` 時） | 主角的生命值：比例或固定的點數 |
 | `start_story` | `story`：特殊任務 id | 開始另一個特殊任務（要存在，不能是自己） |
 | `perk` | `perk`、`options`：特質 id（最多 6 個）、`direct`：`true` 直接學會 | 給一次學特質的機會；種族特質與不存在的拿掉 |
 | `lose_perk` | `perk`：特質 id | 失去特質 |
 | `tattoo` | `template`：刺青圖樣 id（可加 `place`、`by`）；或 `kind`（`plain`／`oath`）、`name`（最多 20 字）、`text`（最多 160 字）、`attrs`（誓約的加減） | 誓約的加減不合規則整項拿掉（[TATTOOS](../../docs/TATTOOS.md) 第 5 節） |
 | `remove_tattoo` | `place`：部位；或 `kind`：`plain`／`oath` | 洗掉刺青 |
 | `enslave_player` | `master`：固定 NPC 的 id；或 `random`：`{ "tag": "<身分標籤>" }`；`contract`：`labor`、`combat`、`arcane`、`brothel`（不寫＝`labor`） | 主角淪為奴隸（[STORY_QUESTS](../../docs/STORY_QUESTS.md) 第 2 節） |
+| `parasite` | `parasite`：寄生物 id（`data/rules/parasites.json`）、`op`：`add` 寄生、`tame` 馴服、`remove` 拿掉 | 主角的寄生物；寄生物不存在或 `op` 寫錯整項拿掉 |
+| `corruption` | `parasite`：寄生物 id、`delta`：−100～100 | 寄生物的侵蝕度加減 |
+| `lewd` | `stat`：`lewdness`、`sensitivity`、`endurance`、`submission`、`exposure`；`delta`：−100～100；`target`（選填，預設主角） | 慾望指標的加減 |
+| `ability_pool` | `pool`：`master`、`owner`、`brothel_work`、`brothel_train`（寫錯變 `master`）；`target`、`fallback`（選填） | 學會事件庫掛的一個色情技能；都學過時套用 `fallback`（[EFFECTS](../../docs/EFFECTS.md)） |
+| `restrain` | `item`：拘束具的物品名稱、`lock`：`white`、`blue`、`rune`、`gold`（不寫＝白鐵） | 陷阱鎖：把拘束具鎖在主角身上 |
 
 ### 2.6 旗標
 
 - **名稱**：英文小寫與底線，前面加這條任務的簡稱，避免和別的任務撞名（`sewer_app_started`、`sewer_app_lead`）。最多 40 字；空白會換成 `_`，`story:` 前綴會被去掉。
-- **開頭旗標**（`start_flags`）不能和任何任務一樣，內建的查 `data/rules/stories.json` 的 `start_flags`（例如 `relic_started`、`wagon_found`、`ledger_rumor`）；內建任務的旗標用了 `dthr_`、`whcr_`、`lil_`、`rwar_`、`mabb_`、`isa_`、`doct_`、`snk_`、`aya_`、`rv_`、`epic_`、`ser_`、`port_`、`spr_`、`ame_`、`cw_`、`cave_`、`wl_`、`annex_`、`spy_`、`def_`、`lena_`、`val_`、`eve_`、`vsec_`、`lis_`、`valk_`、`ign_`、`noc_`、`mor_`、`law_`、`trl_`、`god_`、`lila_`、`rot_`、`hm_`、`era_`、`kag_`、`ore_`、`brew_`、`smith_`、`wt_`、`wat_`、`smg_`、`sin_`、`acc_`、`shd_`、`fog_`、`vault_`、`reef_`、`nip_`、`scs_`、`rite_`、`bab_`、`pit_`、`echo_`、`gnt_`、`emb_`、`brc_`、`ghs_`、`msr_`、`thc_`、`vh_`、`tfc_`、`skl_`、`ecc_`、`qst_`、`luc_`、`cas_`、`twin_`、`noel_`、`zero_`、`kar_`、`oboro_`、`belv_`、`eil_`、`pru_`、`ila_`、`mimi_`、`stella_`、`noir_`、`pom_`、`marg_`、`liese_`、`clara_`、`isab_`、`brun_`、`kara_`、`ren_`、`mat_`、`ith_`、`ana_`、`ele_`、`lisr_`、`sak_`、`group_`、`pol_`、`drg_` 這些簡稱，自建的不要用同樣的前綴。
+- **開頭旗標**（`start_flags`）不能和任何任務一樣，內建的查 `data/rules/stories.json` 的 `start_flags`（例如 `relic_started`、`wagon_found`、`ledger_rumor`）；內建任務的旗標用了很多簡稱（`dthr_`、`whcr_`、`lil_`、`epic_`、`park_`……，完整的查 `stories.json` 的 `start_flags`），自建的一律用世界代號或 `mod_` 開頭的簡稱，不要和內建的前綴撞到。
 - 旗標是**全域**的：其他任務的 `requires`、固定 NPC 的 `requires` 與 `stages` 都讀同一個旗標，所以可以用來串接任務、讓角色搬家或消失（見 [npcs](npcs.md) 2.3 節）。
 - `ai:` 開頭的名稱讀 AI 判定寫下的旗標（`ai:答應幫忙`），不算「沒有地方設定」。
 - 任務點只在任務進行中才會出現；沒有 `requires` 的任務點任務一開始就解鎖。習慣上第一個任務點需要開頭旗標，之後每個任務點需要前一個設定的旗標。
@@ -153,7 +165,7 @@
 
 | 引用 | 欄位 | 去哪裡查 |
 |---|---|---|
-| 地點 | `start.location`、`at.location`、`travel_to` | `data/world/geography.json` 的 `locations`（`type` 是 `dungeon` 的是地下城） |
+| 地點 | `start.location`、`at.location`、`travel_to` | `data/world/geography.json` 的 `locations`（`type` 是 `dungeon` 的是地下城），或同一個包的 `dungeons`（`loc_…`，自建的地下城） |
 | 設施 | `at.cell` | [npcs](npcs.md) 第 3.2 節的表；`data/world/maps.json` |
 | 地標 | `at.cell` | `data/world/landmarks.json`（要和 `at.location` 同一個地點） |
 | 固定 NPC | `start.npc`、`at.npc`、`allies`、`foes`、`join`、`leave`、效果的 `npc`、`master` | `data/world/npcs.json`，或同一個包的 `npcs`（[npcs](npcs.md)） |
@@ -344,8 +356,8 @@
 | `road`、`side`、`special` 寫了 `at.location` | 拿掉 |
 | 結果同時寫 `complete` 與 `fail_quest` | 只留 `complete` |
 | 結果的 `side_map`、`special_map`、`travel_to` 不存在 | 拿掉 |
-| 效果的 `type` 不在 2.5 節的表裡（`flag`、`meet`、`intel`……） | 整項拿掉（`flag`、`meet`、`intel`、`join_party` 會另外提醒替代的寫法） |
-| 效果 `xp` 寫 `target`；`hp` 寫 `amount`；`companion` 的 `npc` 是一份規格、`mode` 是 `slave` | `target` 拿掉；`hp` 整項拿掉；`companion` 整項拿掉、`slave` 變 `voluntary` |
+| 效果的 `type` 不在 2.5 節的表裡（`meet`、`intel`……） | 整項拿掉（`flag`、`meet`、`intel`、`join_party` 會另外提醒替代的寫法） |
+| 效果 `xp` 的 `target` 不是 `pc`；`hp` 同時寫 `ratio` 與 `amount`；`companion` 的 `npc` 是一份規格、`mode` 是 `slave` | `target` 拿掉（全隊）；只留 `ratio`；`companion` 整項拿掉、`slave` 變 `voluntary` |
 | 效果 `ability` 的能力不存在；寫了 `chance` | 變成三選一；`chance` 拿掉 |
 | 效果的數值超出範圍（`affinity` ±50、`reputation` ±20、`hp` −0.9～1……） | 夾住；數值是 0 的整項拿掉 |
 
@@ -368,12 +380,19 @@
 - `allies` 的角色不存在；同一個角色同時在 `allies` 與 `foes`。
 - `choice` 沒有選項。
 - `join`、`leave` 的角色不存在。
+- 有結果寫了親密場景（`scene`），但任務沒有標 `adult`。
+- 用到的劇情計數器不存在（要先在 `counters` 新增）。
+- `deaths` 的角色不存在；條件 `after` 指到的任務或任務點不存在。
+- `start.items` 的物品不存在；任務點的 `wear` 不是物品也不是底材，或那件物品不是裝備。
 
 ### 6.3 提醒：會匯入，但要確認
 
 - 旗標 🚩X 在任務裡沒有地方設定：別的任務也沒有設定它、也不是 `ai:` 開頭時，需要它的任務點永遠不會出現。真的由別的任務設定時，那條任務要在同一個世界裡。
 - `manual` 開頭，但沒有任何任務用 `start_story` 開啟它。
 - 特殊地圖指定的格子不行（入口、通道端點、牆、水、出口、安全房、商店），遊戲裡會隨機放。
+- 走不通的地方：任務點怎麼走都不會解鎖、沒有任何一條路走得到「完成任務」、選了某個結果之後沒有任務點可以進行（只能放棄）。
+- `choice` 的每個選項都帶了任務本身沒有的內容標籤：玩家關掉那些標籤時沒有選項可選（留一個沒有標籤的選項）。
+- 同一個結果同時寫 `join` 與 `complete`：任務完成時同行的角色會馬上離開（要留在隊上用 `companion`）。
 
 整理與檢查都不管、要自己對的：`reputation` 的 `faction` 是不是勢力 id；戰鬥任務點的 `allies` 與 `foes` 用冒險者（普通人不是戰鬥用的角色，見 [NPC_SYSTEM](../../docs/NPC_SYSTEM.md) 第 3 節）；`side` 任務點要有**同一個任務**的結果先用 `side_map` 帶玩家進去。其他執行時才會出事的寫法見 6.4 節。
 

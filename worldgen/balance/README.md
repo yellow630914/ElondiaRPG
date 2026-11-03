@@ -36,6 +36,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 狀態、特質、刺青 | 特質強度不超過內建最強；誓約刺青加總為 0（整理時檢查） | 狀態的數值、持續回合；特質的取得條件 | [statuses-perks-tattoos](statuses-perks-tattoos.md) |
 | 經濟 | 特殊任務的完成報酬對照階級 | 事件的金錢與物品、商店的價格與交易 | [economy](economy.md) |
 | 特殊任務 | 有錯誤的任務（匯入時不收）與提醒（旗標沒有地方設定……） | 難度對階級、節奏、報酬 | [stories](stories.md) |
+| 地下城（自建） | 沒有路線（錯誤）、7 天內沒有公會（說明）、沒有給 AI 的描述、各層的提醒、和其他地點同名；自建地下城的層主戰勝率 | 各層的等級與地區、遭遇的組成 | [guides/dungeons](../guides/dungeons.md)、[monsters](monsters.md) |
 
 ## 4. 工具沒有測到的
 
