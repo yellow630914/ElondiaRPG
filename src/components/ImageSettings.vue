@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { DEFAULT_PORTRAIT_TEMPLATE, DEFAULT_STYLE, IMAGE_SERVICES, imageServiceInfo } from '@/narrator/imageInfo'
+import { SCENE_COUNT_NAME, SCENE_COUNTS, SCENE_MAX_MANUAL } from '@/narrator/sceneInfo'
 import { useImageSettings } from '@/stores/image'
 import { useSettings } from '@/stores/settings'
 import ComfySettings from './ComfySettings.vue'
@@ -142,7 +143,7 @@ function resetService() {
       <fieldset class="pre">
         <legend class="small">
           <GameIcon name="notebook" :size="16" />日誌插圖
-          <Hint text="冒險日誌每則底下的插圖按鈕（或下面的自動生成）：先用「插圖提示詞預處理」的模型來源把日誌整理成分鏡（誰在畫面上、站在哪、在做什麼），再照上面選的生圖服務與預處理的寫法出圖，掛在那則日誌下面。NovelAI 的 V4 模型可以分開描述每個人與位置；ChatGPT 會把登場角色的形象圖當參考圖；ComfyUI 接成一段提示詞，三人以上容易混在一起。" />
+          <Hint text="冒險日誌每則底下的插圖按鈕（或下面的自動生成）：先用「插圖提示詞預處理」的模型來源把日誌整理成分鏡（誰在畫面上、站在哪、在做什麼），再照上面選的生圖服務與預處理的寫法出圖，插在正文的段落之間。NovelAI 的 V4 模型可以分開描述每個人與位置；ChatGPT 會把登場角色的形象圖當參考圖；ComfyUI 接成一段提示詞，三人以上容易混在一起。" />
         </legend>
         <label>
           <span>自動生成 <Hint warn :width="320" text="每一張圖都要花錢：先用「插圖提示詞預處理」的模型整理分鏡（花 token），再送一次生圖（ChatGPT、NovelAI 依張數計費）。只在正文第一次寫完時畫；沒有正文的日誌不畫，重寫經過也不會重畫（要重畫按日誌底下的插圖按鈕）。生圖服務或預處理的模型來源沒設定好時不會自動畫。" /></span>
@@ -150,6 +151,12 @@ function resetService() {
             <option value="off">關閉</option>
             <option value="adult">只畫成人場景</option>
             <option value="all">每一則（有正文的日誌）</option>
+          </select>
+        </label>
+        <label>
+          <span>自動分段的張數 <Hint warn :width="340" :text="`日誌底下的插圖按鈕與自動生成：交給 AI 挑出畫面差別最大的幾個時刻，每張插在那一刻所在的段落之後（整理分鏡只花一次 token，生圖是張數的幾倍：ChatGPT、NovelAI 依張數計費）。依長度：約每 400 字一張，最多 4 張。正文短、場面單純時 AI 會少畫幾張。另一個按鈕「手動分段插圖」可以自己選位置（最多 ${SCENE_MAX_MANUAL} 張），不看這個設定。`" /></span>
+          <select v-model="image.sceneCount">
+            <option v-for="c in SCENE_COUNTS" :key="c" :value="c">{{ SCENE_COUNT_NAME[c] }}</option>
           </select>
         </label>
         <label>成人場景改用

@@ -7,7 +7,7 @@ import { locationName } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import type { Report } from '@/engine/types'
 import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
-import { visibleNarration } from '@/narrator/judge'
+import { narrationParagraphs } from '@/narrator/paragraphs'
 import { usageFeatureName, usageSourceLabel, useGame } from '@/stores/game'
 import { undoConfirmText } from '@/stores/undo'
 import { inventedIn } from '@/engine/invention'
@@ -16,6 +16,8 @@ import { useImageSettings } from '@/stores/image'
 import { sceneKey, useScenes } from '@/stores/scenes'
 import { attrName } from '@/engine/data'
 import SceneImage from './SceneImage.vue'
+import SceneSplitDialog from './SceneSplitDialog.vue'
+import SceneStatus from './SceneStatus.vue'
 import GameIcon from './ui/GameIcon.vue'
 import type { IconName } from './ui/iconPaths'
 
@@ -50,7 +52,7 @@ const thinking = computed(() => [
 // AI 判定的主動行動：AI 直接寫出的經過一律顯示
 // 敘事依空行分段（段距比整行空白小）
 const paragraphs = computed(() => {
-  const list = visibleNarration(narration.value?.text ?? '').split(/\n[ \t\u3000]*\n+/).map((x) => x.replace(/^\n+|\n+$/g, '')).filter(Boolean)
+  const list = narrationParagraphs(narration.value?.text ?? '')
   return list.length ? list : ['']
 })
 const showStory = computed(() => !!narration.value && (settings.aiNarration || !!narration.value.manual || props.report.check?.source === 'ai'))
@@ -120,18 +122,35 @@ const chips = computed(() => changes.value.map((text) => {
 const showRaw = ref(false)
 const copied = ref(false)
 
-// 日誌插圖：日誌底下的按鈕一鍵整理分鏡、生圖，掛在這則日誌下面（SceneImage）；設定了自動生成時正文寫完自己畫
+// 日誌插圖：日誌底下的按鈕一鍵整理分鏡、生圖（交給 AI 自動分段，張數照設定），或打開對話框手動選位置；
+// 插圖插在正文的段落之間（SceneImage）；以前的整則插圖、正文改過對不上的放在最後。設定了自動生成時正文寫完自己畫
 const image = useImageSettings()
 const scenes = useScenes()
 const scene = computed(() => (game.state ? sceneKey(game.state, props.report.report_id) : ''))
-const hasScene = computed(() => !!scenes.urls[scene.value])
+/** 正文的段落（插圖的位置照這個算；沒有正文時是空的） */
+const storyParagraphs = computed(() => (showStory.value && narration.value ? narrationParagraphs(narration.value.text) : []))
+const sceneLayout = computed(() => scenes.layout(scene.value, storyParagraphs.value, storyParagraphs.value.length > 0))
+const hasScene = computed(() => scenes.keysOf(scene.value).length > 0)
 /** 正在整理分鏡或生圖（出錯的不算） */
 const sceneBusy = computed(() => !!scenes.jobs[scene.value] && scenes.jobs[scene.value]!.stage !== 'error')
 function illustrate() {
   if (!game.state) return
+  const n = scenes.keysOf(scene.value).length
+  if (n > 1 && !confirm(`重新交給 AI 分段，會換掉這則日誌的 ${n} 張插圖。要繼續嗎？`)) return
   scenes.clearError(scene.value)
   void scenes.generate(game.state, props.report)
 }
+// 手動分段：選位置的對話框（已經有、對得上的位置預先勾好）
+const splitOpen = ref(false)
+const splitExisting = computed(() => [...scenes.validSpots(scene.value, storyParagraphs.value).keys()].sort((a, b) => a - b))
+function splitDraw(after: number[]) {
+  if (!game.state) return
+  scenes.clearError(scene.value)
+  void scenes.generate(game.state, props.report, { after })
+}
+onMounted(() => {
+  if (game.state) void scenes.scan(game.state.seed)
+})
 
 async function copyPrompt() {
   const p = await game.promptFor(props.report)
@@ -188,7 +207,10 @@ async function copyPrompt() {
 
     <div v-if="showStory && narration" class="story story-paper">
       <div class="narration" data-no-convert>
-        <p v-for="(para, i) in paragraphs" :key="i">{{ para }}<span v-if="narration.status === 'streaming' && i === paragraphs.length - 1" class="cursor">▌</span></p>
+        <template v-for="(para, i) in paragraphs" :key="i">
+          <p>{{ para }}<span v-if="narration.status === 'streaming' && i === paragraphs.length - 1" class="cursor">▌</span></p>
+          <SceneImage v-for="k in sceneLayout.inline[i] ?? []" :key="k" :image-key="k" />
+        </template>
       </div>
       <p v-if="narration.status === 'error'" class="small err">{{ narration.error }}</p>
       <button v-if="narration.status === 'streaming'" class="small stop" @click="game.cancelNarration(report.report_id)">停止</button>
@@ -224,9 +246,14 @@ async function copyPrompt() {
       ><GameIcon name="feather" :size="15" /></button>
       <button
         class="small ghost tool" :disabled="!image.ready() || sceneBusy" :aria-label="hasScene ? '重新生成插圖' : '生成插圖'"
-        :title="!image.ready() ? '先到「設定 → 插圖生成」設定生圖服務' : hasScene ? '重新生成插圖（重新整理分鏡、重畫一張）' : '依這則日誌畫一張插圖（AI 先整理分鏡，再送給生圖服務）'"
+        :title="!image.ready() ? '先到「設定 → 插圖生成」設定生圖服務' : hasScene ? '重新生成插圖（交給 AI 重新分段、全部重畫）' : '依這則日誌畫插圖（AI 挑段落、整理分鏡，張數照設定，再送給生圖服務）'"
         @click="illustrate"
       ><GameIcon name="image" :size="15" /></button>
+      <button
+        v-if="storyParagraphs.length && narration?.status === 'done'" class="small ghost tool" :disabled="!image.ready() || sceneBusy" aria-label="手動分段插圖"
+        :title="!image.ready() ? '先到「設定 → 插圖生成」設定生圖服務' : '手動分段插圖：自己選要在哪幾段後面插圖'"
+        @click="splitOpen = true"
+      ><GameIcon name="sliders" :size="15" /></button>
     </div>
     <form v-if="continuing && canContinue" class="continue small" @submit.prevent="startContinue">
       <label>續寫：想多寫什麼？（可以不填）
@@ -238,7 +265,11 @@ async function copyPrompt() {
         <span class="muted">接在這段經過後面，只是文字：結果、得到的東西、時間都不變。每次續寫是一次 AI 呼叫。</span>
       </div>
     </form>
-    <SceneImage v-if="game.state" :report="report" />
+    <template v-if="game.state">
+      <SceneImage v-for="t in sceneLayout.tail" :key="t.key" :image-key="t.key" :stale="t.stale" />
+      <SceneStatus :scene-key="scene" />
+      <SceneSplitDialog :open="splitOpen" :paragraphs="storyParagraphs" :existing="splitExisting" @close="splitOpen = false" @draw="splitDraw" />
+    </template>
 
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
     <!-- 這則日誌用掉的 token：平常只顯示總數，點開看輸入、輸出、快取與各次呼叫 -->
