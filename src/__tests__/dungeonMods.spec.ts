@@ -254,7 +254,7 @@ describe('custom dungeons: editor preview and quick start', () => {
     expect(p[0]!.rank).toBeUndefined()
     expect(p[1]!.levels).toEqual([1, 2])
     expect(p[1]!.rank).toBeTruthy()
-    expect(p[2]!.warnings[0]).toContain('還沒有怪物')
+    expect(p[2]!.warnings[0]).toContain('這一層沒有怪物')
     expect(p[3]!.warnings).toContain('比上一層弱')
     expect(p[3]!.boss?.name).toBe(enemies.reef_crab!.name)
   })
@@ -388,5 +388,72 @@ describe('custom dungeons: uploaded image', () => {
     applyContent(emptyMods())
     const { dungeonImages } = await import('@/engine/dungeonMods')
     expect(dungeonImages[ID]).toBeUndefined()
+  })
+})
+
+describe('custom dungeons: empty layers and missing bosses', () => {
+  const allCells = async (state: ReturnType<typeof newGame>, layer: number) => {
+    const { generateLayer } = await import('@/engine/grid')
+    const { Rng } = await import('@/engine/rng')
+    return generateLayer(state, locationById(ID), layer, new Rng(layer * 7 + 1)).cells
+  }
+
+  it('spawn no monsters on an empty layer, and post no quests for it', async () => {
+    const { guildQuests } = await import('@/engine/town')
+    applyContent(normalizeMods({ ...emptyMods(), dungeons: { [ID]: cave({ layers: { outskirts: [], shallow: [], middle: [[['reef_crab', 2]]], deep: [] }, bosses: {} }) } }))
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: 'rivervale' })
+    state.location = ID
+    enterLocation(state)
+    for (const layer of [0, 1, 3]) {
+      const cells = await allCells(state, layer)
+      expect(cells.some((c) => ['encounter', 'elite', 'boss'].includes(c.kind))).toBe(false)
+      expect(cells.some((c) => c.kind === 'stairs_down' || c.kind === 'exit' || c.kind === 'stairs_up')).toBe(true)
+    }
+    // 有怪物、沒設層主的中層：照強敵的規則守著樓梯
+    const middle = await allCells(state, 2)
+    expect(middle.find((c) => c.kind === 'boss')?.group).toEqual([['reef_crab', 3]])
+    // 委託：只有中層
+    const town = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: 'rivervale' })
+    const mine: string[] = []
+    for (let d = 0; d < 20; d++) {
+      town.time.day += 8
+      for (const q of guildQuests(town)) if (q.target === ID) mine.push(`${q.kind}:${q.layer}`)
+    }
+    expect(mine.length).toBeGreaterThan(0)
+    expect(mine.every((k) => k.endsWith(':middle'))).toBe(true)
+  })
+
+  it('give the deepest layer a boss by the elite rule when none is set', async () => {
+    applyContent(normalizeMods({ ...emptyMods(), dungeons: { [ID]: cave({ bosses: {} }) } }))
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: 'rivervale' })
+    const deep = await allCells(state, 3)
+    expect(deep.find((c) => c.kind === 'boss')?.group).toEqual([['reef_crab', 4]])
+  })
+
+  it('auto-fill copies built-in layer bosses and skips story-only enemies', async () => {
+    const { autoFillLayers, storyOnlyMonsters } = await import('@/engine/dungeonPreview')
+    const builtinBosses = new Set(Object.values(dungeonEncounters).flatMap((t) => Object.values(t.bosses ?? {}).map((g) => JSON.stringify(g))))
+    const storyOnly = storyOnlyMonsters()
+    expect(storyOnly.size).toBeGreaterThan(0)
+    let seed = 1
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+    for (const region of geography.regions) {
+      const f = autoFillLayers(region.id, true, { outskirts: [2, 4], shallow: [6, 9], middle: [10, 13], deep: [14, 17], abyss: [17, 20] }, random)
+      for (const g of Object.values(f.bosses ?? {})) expect(builtinBosses.has(JSON.stringify(g))).toBe(true)
+      for (const g of Object.values(f.layers).flat()) for (const [e] of g ?? []) expect(storyOnly.has(e)).toBe(false)
+    }
+  })
+
+  it('tell the player why they were moved when the dungeon is gone', async () => {
+    const { migrate } = await import('@/engine/state')
+    const { takeLocationNotice } = await import('@/engine/pruneLocations')
+    applyContent(normalizeMods({ ...emptyMods(), dungeons: { [ID]: cave() } }))
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: 'rivervale' })
+    state.location = ID
+    enterLocation(state)
+    applyContent(emptyMods())
+    migrate(state)
+    expect(takeLocationNotice()).toBe(`「測試洞窟」已經不在這個世界，你回到了${locationById('rivervale').name}。`)
+    expect(takeLocationNotice()).toBeNull()
   })
 })

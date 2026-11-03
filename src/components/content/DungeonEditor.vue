@@ -211,7 +211,7 @@ function remove() {
       <template #legend>基本</template>
       <div class="grid">
         <label>名稱 <input v-model="draft.name" :maxlength="L.name_chars" /></label>
-        <label>地區 <Hint text="沒放怪物的層用這個地區的城郊遭遇表；地下城事件的地區篩選、背景圖也照這裡。" />
+        <label>地區 <Hint text="地下城事件的地區篩選、背景圖照這裡；自動填與等級提醒也比照這個地區的內建地下城。" />
           <select v-model="draft.region">
             <option v-for="r in geography.regions" :key="r.id" :value="r.id">{{ r.name }}</option>
           </select>
@@ -267,7 +267,7 @@ function remove() {
         </span>
         <button class="small" @click="doFill">自動填</button>
       </div>
-      <HelpText text="預設的等級照同一地區的內建地下城。自動填從這個地區出現過的怪物挑（不夠時放寬到所有內建地下城的怪物），之後可以再自己換。" />
+      <HelpText text="預設的等級照同一地區的內建地下城。自動填從這個地區出現過的怪物挑（不夠時放寬到所有怪物，只在特殊任務出現的劇情敵人除外）；層主照抄內建地下城同一層的層主組合（等級最接近這一層上限 +1 的，同一地區優先）。之後可以再自己換。" />
     </FoldSet>
 
     <label class="check small"><input type="checkbox" :checked="!!draft.abyss" @change="setAbyss(($event.target as HTMLInputElement).checked)" /> 有底層（五層）<Hint text="底層要有怪物才算；深層的層主改成守著往下的階梯，底層的層主是最終層主。" /></label>
@@ -291,7 +291,7 @@ function remove() {
         <button class="small" title="刪除這一組" @click="draft.layers[layer]!.splice(gi, 1)">✕ 這一組</button>
       </div>
       <button class="small" :disabled="(draft.layers[layer]?.length ?? 0) >= L.groups" @click="addGroup(layer)">＋ 新增一組</button>
-      <HelpText text="遭遇時從所有組平均抽一組；要提高某一組的機率就多放幾組。強敵是最強的一組再多一隻。" />
+      <HelpText text="遭遇時從所有組平均抽一組；要提高某一組的機率就多放幾組。強敵是最強的一組再多一隻。一組都沒有時這一層不會遇到怪物（可以當作休息或獎勵的樓層），公會也不發這一層的委託。" />
       <div v-if="isBossLayer(layer)" class="row small boss">
         <strong>👑 層主</strong>
         <template v-if="bossOf(layer)?.length">

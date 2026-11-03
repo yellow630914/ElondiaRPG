@@ -20,7 +20,7 @@ import { builtinLandmark, landmarkSpotProblem, landmarkUsage, sanitizeLandmarkMo
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import { dungeonUsage, enemyInDungeons, sanitizeDungeonMod, withoutEnemy, type DungeonMod } from '@/engine/dungeonMods'
 import { pruneSpecialMaps } from '@/engine/specialMaps'
-import { pruneLocations } from '@/engine/pruneLocations'
+import { pruneLocations, takeLocationNotice } from '@/engine/pruneLocations'
 import { pruneRoadEvent } from '@/engine/road'
 import { makeWorldPackage, parseWorldFile } from '@/engine/worldPackage'
 import { usePrompts } from './prompts'
@@ -223,7 +223,11 @@ export const useContent = defineStore('content', () => {
       pruneStories(game.state)
       pruneSpecialMaps(game.state)
       // 拿掉的自建地下城（匯入、全部恢復預設）：人在裡面時送回聚落
-      if (pruneLocations(game.state)) enterLocation(game.state)
+      if (pruneLocations(game.state)) {
+        enterLocation(game.state)
+        const moved = takeLocationNotice()
+        if (moved) game.flash(moved, 8000)
+      }
       pruneRoadEvent(game.state)
       pruneTownEvent(game.state)
       pruneDungeonEvent(game.state)

@@ -35,7 +35,7 @@ describe('world check tool', () => {
     const text = r.findings.map((f) => `${f.level}:${f.section}:${f.text}`).join('\n')
     expect(text).toContain('error:地下城:「檢查洞窟」沒有路線：到不了')
     expect(text).toContain('warn:地下城:「檢查洞窟」沒有給 AI 的描述')
-    expect(text).toContain('warn:地下城:「檢查洞窟」的淺層：這一層還沒有怪物')
+    expect(text).toContain('warn:地下城:「檢查洞窟」的淺層：這一層沒有怪物')
     expect(text).not.toContain('整筆被拿掉')
   })
 
