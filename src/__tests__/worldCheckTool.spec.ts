@@ -22,6 +22,23 @@ describe('world check tool', () => {
     expect(text).not.toContain('`kind`')
   })
 
+  it('checks custom dungeons: routes, description and the layers', () => {
+    const r = checkWorld({
+      type: 'elondia-content',
+      dungeons: {
+        loc_check_cave: {
+          id: 'loc_check_cave', name: '檢查洞窟', region: 'central', custom: true, routes: [],
+          layers: { outskirts: [[['slime', 1]]], shallow: [], middle: [[['slime', 1]]], deep: [[['slime', 1]]] },
+        },
+      },
+    })
+    const text = r.findings.map((f) => `${f.level}:${f.section}:${f.text}`).join('\n')
+    expect(text).toContain('error:地下城:「檢查洞窟」沒有路線：到不了')
+    expect(text).toContain('warn:地下城:「檢查洞窟」沒有給 AI 的描述')
+    expect(text).toContain('warn:地下城:「檢查洞窟」的淺層：這一層還沒有怪物')
+    expect(text).not.toContain('整筆被拿掉')
+  })
+
   it('estimates dice and ability damage', () => {
     expect(diceAvg('2d6+1')).toBe(8)
     expect(diceAvg('1d8')).toBe(4.5)

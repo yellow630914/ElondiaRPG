@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// 地下城編輯器（docs/plan/roadmap/LOCATION_EDITOR_PLAN.md 第 3、4 節）：打開不改就存不會改到資料；
+// 地下城編輯器（docs/CONTENT_EDITOR.md 3.96 節）：打開不改就存不會改到資料；
 // 在編輯器加怪物、在怪物編輯器把怪物放進地下城，改的是同一份遭遇表。
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'

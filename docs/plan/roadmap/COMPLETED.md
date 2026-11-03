@@ -2,6 +2,15 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-03 自建地下城（R16 的 D1～D3）
+
+- 起因：想先把「地點編輯器」做出來（東大陸之類的新區域的前一步）。盤點世界內容的依賴關係之後，決定先只做**地下城**：聚落牽涉區塊、設施、居民、勢力、房子，自建地區牽涉更多（盤點留在 [LOCATION_EDITOR_PLAN](LOCATION_EDITOR_PLAN.md)）。
+- 和玩家一起定的：地下城經由旅途到達、路線**只能接聚落**；各層的遭遇記在**地下城上**，怪物編輯器改的是同一份；有自建地下城用到的自建怪物不能刪（附「從所有自建地下城拿掉」）；其他存檔人在被刪掉的地下城裡時送回聚落。
+- D1 骨架：`engine/dungeonMods.ts`（格式、整理、套用與還原、`dungeonUsage`）、`engine/pruneLocations.ts`（讀檔與改內容後清掉指到不存在的地下城的資料）、`data.ts` 的 `reindexLocations`／`findLocation`／`locationName`、`world.ts` 的 `rebuildRoutes`；局部匯入匯出。
+- D2 編輯器：`content/DungeonEditor.vue`、`engine/dungeonPreview.ts`（各層的等級、建議階級、寶箱等級與提醒，7 天內的公會，照內建地下城複製、依等級自動填）、怪物編輯器的「自建地下城」一段；旅行不會穿過地下城（不會變成捷徑）；日誌的場景帶上給 AI 的描述。
+- D3 連動與收尾：特殊任務、地下城事件、特殊地圖、情報物品引用自建地下城的測試；世界檢查（`__tests__/worldCheck.ts`）認得地下城並跑自建地下城的層主戰；AI 編排特殊任務的地點清單附上描述；`worldgen/guides/dungeons.md`。
+- 規則寫在 [CONTENT_EDITOR](../../CONTENT_EDITOR.md) 3.96 節、[CONTENT_DEPENDENCIES](../../CONTENT_DEPENDENCIES.md) 第 1、2 節、[WORLD](../../WORLD.md) 第 1 節、[DUNGEON_DESIGN](../../DUNGEON_DESIGN.md) 第 2 節、[MONSTERS](../../MONSTERS.md)、[worldgen/guides/dungeons](../../../worldgen/guides/dungeons.md)。測試：`dungeonMods.spec.ts`、`dungeonEditor.spec.ts`、`worldCheckTool.spec.ts`。
+
 ### 2026-11-01 魔物娘與擴大發情（R14）
 
 - 目的：補足陽剛體型主角的成人內容。調查時發現兩個原因：會在戰敗後起意的怪物只有標了 `rut` 的 54 隻（48 隻是野獸），而且怪物的 `desc` 根本沒有送給 AI（只在圖鑑顯示，敘事只拿到名字）。

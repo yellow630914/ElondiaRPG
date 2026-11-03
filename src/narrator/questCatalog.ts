@@ -49,7 +49,8 @@ export function questCatalog(input: GenInput): string {
   for (const l of geography.locations) {
     const region = geography.regions.find((r) => r.id === l.region)?.name ?? l.region
     const cells = l.type === 'dungeon' ? '' : `：${STORY_CELLS.filter((c) => hasFacility(l.id, c)).map((c) => CELL_NAME[c]).join('、')}`
-    out.push(`- ${l.id} ${l.name}（${region}・${TYPE_NAME[l.type] ?? l.type}）${cells}`)
+    // 自建的地下城附上給 AI 的描述（內建地點的設定在世界書）
+    out.push(`- ${l.id} ${l.name}（${region}・${TYPE_NAME[l.type] ?? l.type}）${cells}${l.desc ? ` ${short(l.desc, 40)}` : ''}`)
   }
   out.push('', `## 地區\n${geography.regions.map((r) => `${r.id} ${r.name}`).join('、')}`)
   out.push('', `## 勢力（reputation 的 faction）\n${geography.factions.map((f) => `${f.id} ${f.name}`).join('、')}`)

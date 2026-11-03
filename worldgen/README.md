@@ -38,6 +38,7 @@
 | 特殊任務 | [stories.md](guides/stories.md) |
 | 地標 | [landmarks.md](guides/landmarks.md) |
 | 特殊地圖 | [special-maps.md](guides/special-maps.md) |
+| 自建的地下城 | [dungeons.md](guides/dungeons.md) |
 | 商店 | [shops.md](guides/shops.md) |
 | 旅途與城鎮事件 | [events.md](guides/events.md) |
 

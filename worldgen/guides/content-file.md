@@ -40,7 +40,7 @@
 | `tattoos` | 刺青圖樣、誓約印記 | `mod_tattoo_<英文>` | 同上 |
 | `marks` | 奴隸印記的模板 | `mod_mark_<英文>` | 同上 |
 | `markRules` | 印記的用途與權重（只有一筆，key 是 `rules`） | `rules` | 同上 |
-| `dungeons` | 自建的地下城（第 3.1 節） | `loc_<英文>`（`/^loc_[a-z0-9_]+$/`） | 第 3.1 節 |
+| `dungeons` | 自建的地下城（第 3.1 節） | `loc_<英文>`（`/^loc_[a-z0-9_]+$/`） | [dungeons](dungeons.md) |
 | `landmarks` | 地標 | `lm_<英文>`（`/^lm_[a-z0-9_]+$/`） | [landmarks](landmarks.md) |
 | `specialMaps` | 特殊地圖 | `sm_<英文>`（`/^sm_[a-z0-9_]+$/`） | [special-maps](special-maps.md) |
 | `shops` | 商店（內建店種的修改、自建的店） | 內建的店種 id，或 `shop_<英文數字>`（`/^shop_[a-z0-9]+$/`，前綴之後不能有底線） | [shops](shops.md) |

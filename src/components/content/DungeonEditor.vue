@@ -17,7 +17,7 @@ import RequiresEditor from './RequiresEditor.vue'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 
-// 自建地下城的編輯表單（docs/plan/roadmap/LOCATION_EDITOR_PLAN.md 第 3 節）：基本、路線、各層的遭遇與層主、快速開始。
+// 自建地下城的編輯表單（docs/CONTENT_EDITOR.md 3.96 節）：基本、路線、各層的遭遇與層主、快速開始。
 // 遭遇表記在地下城上（怪物編輯器的「出現地點」改的是同一份）。只有自建的，沒有內建的地下城可以在這裡改。
 const props = defineProps<{ id: string }>()
 const emit = defineEmits<{ deleted: [] }>()

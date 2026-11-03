@@ -1,5 +1,5 @@
 // 存檔裡指向已經不存在的自建地點（自建地下城，id 是 loc_ 開頭）的資料：讀檔時與自訂內容改變之後清掉
-// （docs/CONTENT_DEPENDENCIES.md 第 2 節、docs/plan/roadmap/LOCATION_EDITOR_PLAN.md 第 5.3 節）。
+// （docs/CONTENT_DEPENDENCIES.md 第 2 節）。
 // 內建的地點不會不見，所以只看 loc_ 開頭的 id；目前的存檔用到的地下城本來就不能刪，這裡處理的是其他存檔與匯入。
 
 import { findLocation, isSettlement } from './data'

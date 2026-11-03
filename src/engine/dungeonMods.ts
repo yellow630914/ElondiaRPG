@@ -1,4 +1,4 @@
-// 自建地下城的自訂內容（docs/plan/roadmap/LOCATION_EDITOR_PLAN.md、docs/CONTENT_DEPENDENCIES.md）。
+// 自建地下城的自訂內容（docs/CONTENT_EDITOR.md 3.96 節、docs/CONTENT_DEPENDENCIES.md、worldgen/guides/dungeons.md）。
 // 自建的地下城是世界上的一個地點：經由路線旅行到達，只能接內建的聚落；各層的遭遇與層主記在地下城上（地下城 → 怪物），
 // 刪掉地下城時遭遇表一起拿掉；有自建地下城用到的自建怪物不能刪。內建的地點、路線、地區都不能改。
 

@@ -296,3 +296,42 @@ describe('custom dungeons: the AI sees the description', () => {
     expect(out.location.scene).toBe('測試洞窟（石灰岩洞，洞口垂著蝙蝠。）')
   })
 })
+
+describe('custom dungeons: other content can point at them', () => {
+  it('keeps story spots, dungeon events and intel items that use the dungeon, and reports them as usage', async () => {
+    const { storyCheck } = await import('@/engine/storyMods')
+    const { stories, itemDef } = await import('@/engine/data')
+    const { travelEvents } = await import('@/engine/road')
+    const mods = normalizeMods({
+      ...emptyMods(),
+      dungeons: { [ID]: cave() },
+      stories: {
+        mod_story_cave: {
+          title: '洞窟的委託', summary: '', rank: 'E', custom: true,
+          start: { kind: 'guild', location: 'rivervale', text: '公會的人說洞窟裡有東西。' },
+          nodes: [{ id: 'n1', title: '洞窟深處', at: { where: 'dungeon', location: ID, layer: 'shallow' }, kind: 'combat', enemies: [['slime', 1]], success: { text: '打倒了。', complete: true }, fail: { text: '退回去了。' } }],
+        } as never,
+      },
+      travelEvents: {
+        mod_event_cave: {
+          scope: 'dungeon', tier: 'normal', kind: 'choice', triggers: ['chest'], dungeons: [ID], custom: true,
+          title: '洞窟的寶箱', text: '寶箱上刻著字。', options: [{ label: '打開', success: { text: '裡面是空的。' } }],
+        } as never,
+      },
+      items: { 洞窟的地圖: { name: '洞窟的地圖', category: 'info', price_cc: 30, tags: ['tavern'], custom: true, intel: { kind: 'point', event: 'chest', location: ID, layer: 'middle' } } as never },
+    })
+    expect(mods.stories.mod_story_cave!.nodes[0]!.at).toMatchObject({ where: 'dungeon', location: ID, layer: 'shallow' })
+    expect(mods.travelEvents.mod_event_cave!.dungeons).toEqual([ID])
+    expect(mods.items['洞窟的地圖']!.intel).toMatchObject({ location: ID, layer: 'middle' })
+
+    applyContent(mods)
+    expect(storyCheck(stories.find((s) => s.id === 'mod_story_cave')!).errors).toEqual([])
+    expect(travelEvents.templates.find((t) => t.id === 'mod_event_cave')?.dungeons).toEqual([ID])
+    expect(itemDef('洞窟的地圖')?.intel?.location).toBe(ID)
+    expect(dungeonUsage(ID).sort()).toEqual([
+      '地下城事件「洞窟的寶箱」',
+      '情報物品「洞窟的地圖」',
+      '特殊任務「洞窟的委託」的任務點「洞窟深處」',
+    ].sort())
+  })
+})
