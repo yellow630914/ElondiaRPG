@@ -2,6 +2,7 @@
 // API key 由玩家自行輸入，只存在瀏覽器的 localStorage，請求直接從瀏覽器送到各服務。
 
 // 各家 SDK 在用到時才載入，只會下載玩家選用的那一家
+import { explainConnection } from './connectionHint'
 import type { Prompt } from './prompt'
 import { listVertexModels, parseServiceAccount, streamVertexService, vertexBody } from './vertexAuth'
 import { anthropicThinking, cacheMarkFor, geminiThinking, openAIReasoningBody, type ProviderConfig, type ProviderId, type TokenUsage } from './providerInfo'
@@ -31,18 +32,23 @@ export async function* streamNarration(
   onThinking?: ThinkingCallback,
 ): AsyncGenerator<string> {
   if (!config.model) throw new Error('請先在設定中選擇模型')
-  switch (provider) {
-    case 'anthropic':
-      yield* streamAnthropic(config, prompt, signal, onUsage, onThinking)
-      return
-    case 'openai':
-    case 'openai_compatible':
-      yield* streamOpenAI(provider, config, prompt, signal, onUsage, onThinking)
-      return
-    case 'gemini':
-    case 'vertex':
-      yield* streamGemini(provider, config, prompt, signal, onUsage, onThinking)
-      return
+  try {
+    switch (provider) {
+      case 'anthropic':
+        yield* streamAnthropic(config, prompt, signal, onUsage, onThinking)
+        return
+      case 'openai':
+      case 'openai_compatible':
+        yield* streamOpenAI(provider, config, prompt, signal, onUsage, onThinking)
+        return
+      case 'gemini':
+      case 'vertex':
+        yield* streamGemini(provider, config, prompt, signal, onUsage, onThinking)
+        return
+    }
+  } catch (e) {
+    // 連不上服務：補上可能的原因（服務沒開、網址錯、跨域被擋……）；取消的不改
+    throw signal?.aborted ? e : explainConnection(e, provider, config)
   }
 }
 
@@ -193,6 +199,14 @@ async function* streamGemini(provider: 'gemini' | 'vertex', config: ProviderConf
 
 /** 向服務查詢可用的模型清單。 */
 export async function listModels(provider: ProviderId, config: ProviderConfig): Promise<string[]> {
+  try {
+    return await listModelsRaw(provider, config)
+  } catch (e) {
+    throw explainConnection(e, provider, config)
+  }
+}
+
+async function listModelsRaw(provider: ProviderId, config: ProviderConfig): Promise<string[]> {
   const ids: string[] = []
   switch (provider) {
     case 'anthropic': {
