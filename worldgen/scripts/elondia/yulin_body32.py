@@ -29,6 +29,14 @@ EDITS = [
     ('data/world/npc_traits.json',
      '{"t": "化形後的雙腿上隱約留著玉色鱗紋"}',
      '{"t": "腰後一條像鯨尾般肥厚的鱗尾，尾端是寬大的尾鰭，雙腿上隱約留著玉色鱗紋"}'),
+    # 足部：生來就有腿，不是化形後才學走路
+    ('data/world/npc_traits.json',
+     '{"t": "在陸上走路還有點不穩"}',
+     '{"t": "走起路來腰後的尾巴跟著一搖一擺"}'),
+    # 魚尾是玉璘族一定有的：血統（冬璃宮的雪玉璜環）擲到特徵時也照樣附上種族特徵
+    ('data/world/npc_traits.json',
+     '"exclude": ["beard", "bald", "weathered"],\n      "features": [\n        {"t": "耳後與頸側有細密的鰓裂，腰後拖著一條粗圓的玉色鱗尾"}',
+     '"exclude": ["beard", "bald", "weathered"],\n      "always_feature": true,\n      "features": [\n        {"t": "耳後與頸側有細密的鰓裂，腰後拖著一條粗圓的玉色鱗尾"}'),
 ]
 
 # 特殊任務：產生的 stories.json 與產生它的腳本一起改
@@ -36,6 +44,13 @@ STORY_EDITS = [
     ('story_batch16.py', '她的尾巴——化形之後藏在忍裝下的那一截——在輕輕地擺', '她的尾巴——平常藏在忍裝下的那一截——在輕輕地擺'),
     ('story_batch16.py', '朧坐在防波堤上，雙腳化回了魚尾，泡在海裡', '朧坐在防波堤上，把雙腳和尾巴一起泡在海裡'),
     ('story_batch18.py', '漣脫下了陸地洋裝，雙腿化回了魚尾，泡在淺灘上', '漣脫下了陸地洋裝，放開了平常盤在裙子裡的魚尾，泡在淺灘上'),
+]
+
+# 較早的產生腳本（固定 NPC 的外貌後來由 npc_looks27.json 蓋過，這裡只讓舊腳本的說法一致）
+SCRIPT_EDITS = [
+    ('gen_npcs.py', '化形上岸的玉璘族少女，幽藍長髮，', '腰後拖著幽藍鱗尾的玉璘族少女，幽藍長髮，'),
+    ('add_part2.py', '化形上岸時雙腿修長，耳後有細小的鰓；', '雙腿修長，腰後一條深藍色的粗短鱗尾，耳後有細小的鰓；'),
+    ('add_part2.py', '化形上岸後雙腿修長，D 罩杯，穿著藍白色女僕裝，裙擺下偶爾露出幾片鱗。', '雙腿修長，腰後一條圓潤的淡藍鱗尾，D 罩杯，穿著藍白色女僕裝，裙擺下偶爾露出尾鰭和幾片鱗。'),
 ]
 
 
@@ -58,4 +73,6 @@ if __name__ == '__main__':
     for script, old, new in STORY_EDITS:
         apply(os.path.join(HERE, script), old, new, 1)
         apply('data/rules/stories.json', old, new, 1)
-    print('yulin body', len(EDITS) + len(STORY_EDITS))
+    for script, old, new in SCRIPT_EDITS:
+        apply(os.path.join(HERE, script), old, new, 1)
+    print('yulin body', len(EDITS) + len(STORY_EDITS) + len(SCRIPT_EDITS))

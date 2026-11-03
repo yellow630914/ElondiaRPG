@@ -372,7 +372,7 @@ regions['east']=[
   tags=['villain','merchant'], relations={'beatrice_whitewhale':'老對手，他尊敬她'}),
  npc('shion_envoy','汐音','female','yulin','bard',6,'tidehaven','D',H(('tidehaven','town',3),('coral_bay','town',1)),
   '天真、迷糊，迷路是日常；對陸地的一切都充滿好奇。',
-  '化形上岸的玉璘族少女，幽藍長髮，穿著繡著櫻花的廣袖短衫，耳後的鰓在陽光下閃閃發亮。',
+  '腰後拖著幽藍鱗尾的玉璘族少女，幽藍長髮，穿著繡著櫻花的廣袖短衫，耳後的鰓在陽光下閃閃發亮。',
   '派駐潮汐港的玉璘族使者，負責和深潮席聯絡。她已經在港口迷路了一百多次。',
   '玉璘四時殿', lineage='春潮閣', relations={'sakurashio':'姊姊','reno_deeptide':'總是找到她的人'}),
  npc('coral_miko','珊瑚巫女','female','human','druid',7,'coral_bay','C',L('lm_sea_spirit_shrine'),
