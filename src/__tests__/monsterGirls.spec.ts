@@ -124,6 +124,12 @@ describe('monster appearance in prompts', () => {
     const girl = composeNarration(state, report, options()).prompt.user
     expect(girl).toContain(`哥布林 → ${enemies.goblin!.girl!.name}`)
     expect(girl).toContain(enemies.goblin!.girl!.desc)
+    // 魔物娘的寫法：不寫回動物的稱呼、戰利品是身上帶著或掉下來的、被打倒的是逃跑
+    expect(girl).toContain('不要寫回原本動物的稱呼')
+    expect(girl).toContain('不要寫剝皮、拔牙、割取')
+    expect(girl).toContain('不是被殺死')
+    // 沒有魔物娘時不附
+    expect(plain).not.toContain('魔物娘的寫法')
 
     // 戰敗事件的回應：判定也看得到圍上來的魔物娘
     expect(state.pendingDefeat?.foes[0]?.monster).toBe('goblin')

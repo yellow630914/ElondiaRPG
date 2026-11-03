@@ -99,7 +99,7 @@ function monsterScene(state: GameState, report: Report): string[] {
   // 插圖只要外觀（性情、習性畫不出來，只會讓分鏡變長）
   const lines = monsterLines(reportMonsters(report), girls, { seed: reportGirlSeed(state, report) })
   if (!lines.length) return []
-  const note = lines.some((l) => l.includes(' → ')) ? '（標了「→」的畫成右邊的魔物娘：成年女性，保留原本種族的特徵）' : ''
+  const note = lines.some((l) => l.includes(' → ')) ? '（標了「→」的畫成右邊的魔物娘：成年女性，保留原本種族的特徵；被打倒的是倒地或逃跑的樣子，不要畫成屍體、血腥或被剝皮的樣子）' : ''
   return [`\n登場的怪物（寫在 scene 裡）${note}：`, ...lines]
 }
 

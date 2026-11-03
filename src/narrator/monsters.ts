@@ -71,13 +71,24 @@ export function monsterLines(ids: string[], girls: boolean, o: MonsterLineOption
   })
 }
 
+/**
+ * 魔物娘的寫法（有魔物娘登場時接在 <monsters> 的說明後面）：不寫回動物的稱呼；
+ * 戰利品是她們身上帶著或掉下來的，不寫剝皮、拔牙這類處理身體的動作；被打倒的是逃跑，不是被殺死
+ */
+export const GIRL_RULES = [
+  '魔物娘的寫法：',
+  '- 正文一律用 → 右邊的稱呼（例如「鼠娘」），不要寫回原本動物的稱呼（例如「巨鼠」「巨大老鼠」）。',
+  '- 從魔物娘那裡得到的東西（報告的戰利品）寫成她們身上帶著或掉下來的：腰包、散落的皮料、斷掉的牙、遺落的飾品……；不要寫剝皮、拔牙、割取這類處理她們身體的動作。',
+  '- 被打倒的魔物娘是受傷倒地、狼狽逃跑，不是被殺死；不要寫她們死去、屍體或血腥的場面。',
+].join('\n')
+
 /** <monsters> 區塊（敘事、戰敗事件用：魔物娘附上性情與習性）；沒有怪物（或都沒有描述）時是空字串 */
 export function monstersText(ids: string[], girls: boolean, seed?: string): string {
   const lines = monsterLines(ids, girls, { seed, traits: true })
   if (!lines.length) return ''
   const anyGirl = lines.some((l) => l.includes(' → '))
   const head = anyGirl
-    ? '登場的怪物。標了「→」的以魔物娘的樣子出現：成年女性的身體，保留原本種族的特徵（耳朵、尾巴、鱗片、翅膀、觸手……）。報告與戰鬥紀錄用的是原本的名字（→ 左邊），正文照右邊的稱呼與外觀寫；招式的名稱照舊，動作改成符合她們身體的寫法。沒有標「→」的照原本的樣子寫。'
+    ? `登場的怪物。標了「→」的以魔物娘的樣子出現：成年女性的身體，保留原本種族的特徵（耳朵、尾巴、鱗片、翅膀、觸手……）。報告與戰鬥紀錄用的是原本的名字（→ 左邊），正文照右邊的稱呼與外觀寫；招式的名稱照舊，動作改成符合她們身體的寫法。沒有標「→」的照原本的樣子寫。\n${GIRL_RULES}`
     : '登場的怪物（外觀與習性）：'
   return `<monsters>\n${head}\n${lines.join('\n')}\n</monsters>`
 }
