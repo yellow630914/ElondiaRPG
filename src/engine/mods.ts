@@ -24,6 +24,7 @@ import { TOOL_KINDS } from './tools'
 import { cleanPerkEffects, describeEffects, PERK_CATEGORIES, type PerkLimits } from './perks'
 import { sanitizeLustPerk, schoolDef } from './schools'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
+import { applyParasiteMod, restoreParasites, sanitizeParasiteMod, type ParasiteMod } from './parasiteMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod, type LandmarkPack } from './landmarkMods'
@@ -119,6 +120,8 @@ export interface ContentMods {
   conditions: Record<string, ConditionMod>
   /** 刺青圖樣（普通刺青、誓約印記） */
   tattoos: Record<string, TattooMod>
+  /** 寄生物（內建的改過的、自建的 mod_par_…；舊的自訂內容沒有這一欄，讀取時補上） */
+  parasites: Record<string, ParasiteMod>
   /** 奴隸印記的模板 */
   marks: Record<string, MarkMod>
   /** 印記的用途與權重（只有 rules 一筆） */
@@ -149,7 +152,7 @@ export interface CategoryIconMod {
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {}, dungeons: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {}, dungeons: {}, parasites: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -260,6 +263,7 @@ function restore() {
   replaceRecord(statuses, snapshot.statuses)
   replaceRecord(companionRules.conditions, snapshot.conditions)
   replaceRecord(tattooRules.templates, snapshot.tattoos)
+  restoreParasites()
   replaceRecord(slaveryRules.contracts, snapshot.marks)
   applyMarkRules(clone(snapshot.markRules))
   restoreShops()
@@ -580,6 +584,11 @@ export function applyContent(mods: ContentMods): string[] {
     }
   })
   reindexItems()
+  // 寄生物（物品、技能、非戰鬥狀態之後；特殊任務與事件之前：它們的寄生效果、發作事件會檢查寄生物存不存在）
+  tryEach('寄生物', mods.parasites ?? {}, (id, m) => applyParasiteMod(id, sanitizeParasiteMod(id, m, {
+    condition: (x) => !!companionRules.conditions[x],
+    story: (x) => stories.some((s) => s.id === x) || !!mods.stories[x],
+  })))
   tryEach('怪物', mods.enemies, (id, m) => {
     enemies[id] = { ...strip(m, ['custom', 'spawns', 'exclude']), id }
   })
@@ -1138,6 +1147,20 @@ export function normalizeMods(raw: unknown): ContentMods {
     const name = cleanItemName(raw)
     if (name) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
   }
+  // 寄生物：特殊任務的寄生效果與條件、發作事件會檢查存不存在，先登錄自建的（物品、技能、非戰鬥狀態、任務可以是同一包裡的）
+  for (const [id, v] of Object.entries(r.parasites ?? {})) {
+    try {
+      out.parasites[id] = sanitizeParasiteMod(id, v, {
+        item: (n) => !!itemDef(n) || !!out.items[n],
+        ability: (x) => !!abilities[x] || !!r.abilities?.[x],
+        condition: (x) => !!companionRules.conditions[x] || !!r.conditions?.[x],
+        story: (x) => stories.some((s) => s.id === x) || !!r.stories?.[x],
+      })
+    } catch {
+      // id 不對、寄生裝備沒有物品或欄位：略過
+    }
+  }
+  for (const [id, p] of Object.entries(out.parasites)) if (p.custom && !parasiteDef(id)) applyParasiteMod(id, p)
   // 地標：固定 NPC 與特殊任務的任務點會檢查存不存在，先登錄自建的
   for (const [id, v] of Object.entries(r.landmarks ?? {})) {
     try {
@@ -1710,6 +1733,21 @@ export function conditionUsage(id: string, state?: GameState | null): string[] {
   for (const [k, c] of Object.entries(companionRules.conditions)) {
     if (k !== id && !k.startsWith('$') && (c.stacks_to === id || c.replaces?.includes(id))) out.push(`非戰鬥狀態「${c.name}」`)
   }
+  return out
+}
+
+/** 哪些地方用到這種寄生物（刪除前檢查）：特殊任務與事件的寄生效果與條件、發作事件、地標的場景、奴隸生活的事件、目前存檔的主角 */
+export function parasiteUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  const has = (v: unknown) => {
+    const s = JSON.stringify(v ?? null).replace(/\s+/g, '')
+    return s.includes(`"parasite":"${id}"`) || (s.includes('"parasites":{') && s.includes(`"${id}":{`))
+  }
+  for (const st of stories) if (has(st)) out.push(`特殊任務「${st.title}」`)
+  for (const t of travelEvents.templates) if (has(t)) out.push(t.scope === 'parasite' ? `發作事件「${t.title}」` : `事件「${t.title}」`)
+  for (const l of Object.values(landmarks)) if (has(l)) out.push(`地標「${l.name}」`)
+  if (has(slaveryRules)) out.push('奴隸生活的事件')
+  for (const c of state?.party ?? []) if (c.parasites?.some((p) => p.id === id)) out.push(`目前存檔的「${c.name}」身上`)
   return out
 }
 

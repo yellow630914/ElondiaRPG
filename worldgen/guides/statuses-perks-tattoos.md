@@ -1,8 +1,8 @@
 # 狀態、特質、刺青與奴隸印記
 
-> 這份指南講這幾種內容怎麼寫：戰鬥中的狀態（`statuses`）、特質與缺陷（`perks`）、刺青圖樣（`tattoos`）、奴隸印記與印記設定（`marks`、`markRules`），以及記在角色身上的非戰鬥狀態（`conditions`，第四部分）。檔案的外層、id 規則、套用順序見 [content-file](content-file.md)；數值該定多少見 [balance/statuses-perks-tattoos](../balance/statuses-perks-tattoos.md)。
+> 這份指南講這幾種內容怎麼寫：戰鬥中的狀態（`statuses`）、特質與缺陷（`perks`）、刺青圖樣（`tattoos`）、奴隸印記與印記設定（`marks`、`markRules`），記在角色身上的非戰鬥狀態（`conditions`，第四部分），以及寄生物（`parasites`，第五部分）。檔案的外層、id 規則、套用順序見 [content-file](content-file.md)；數值該定多少見 [balance/statuses-perks-tattoos](../balance/statuses-perks-tattoos.md)。
 > 系統文件：[COMBAT_SYSTEM](../../docs/COMBAT_SYSTEM.md) 第 8 節（狀態怎麼運作）、[PERKS](../../docs/PERKS.md)、[TATTOOS](../../docs/TATTOOS.md)、[COMPANIONS](../../docs/COMPANIONS.md) 第 4 節（奴隸印記的條款）。
-> 程式：`src/engine/mods.ts`（`sanitizeStatus`、`sanitizePerkMod`、`perkEditorLimits`）、`src/engine/perks.ts`（`cleanPerkEffects`、`perkPower`）、`src/engine/tattooMods.ts`（`sanitizeTattooMod`、`sanitizeMarkMod`、`sanitizeMarkRules`）。
+> 程式：`src/engine/mods.ts`（`sanitizeStatus`、`sanitizePerkMod`、`perkEditorLimits`）、`src/engine/perks.ts`（`cleanPerkEffects`、`perkPower`）、`src/engine/tattooMods.ts`（`sanitizeTattooMod`、`sanitizeMarkMod`、`sanitizeMarkRules`）、`src/engine/parasiteMods.ts`（`sanitizeParasiteMod`、`PARASITE_LIMITS`）。
 
 共通的規則：
 
@@ -618,3 +618,71 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | `clears` 寫 `"short_rest"`、`"day"` | 拿掉（只有 `long_rest`） |
 
 系統文件：[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.55 節的「非戰鬥狀態」、[COMPANIONS](../../docs/COMPANIONS.md) 第 4 節的最後一段。
+
+---
+
+## 第五部分：寄生物（`parasites`）
+
+### 5.1 用途與放在哪裡
+
+寄生在主角身上的東西：脫不下來的裝備（`gear`）、小腹的詛咒印記（`mark`，淫紋）、體內的種子（`seed`）。侵蝕度 0～100 分四個階段（潛伏 0+、發作 30+、共生 60+、支配 90+），階段決定被動效果與能出現的發作事件。系統見 [ADULT_EVENTS](../../docs/ADULT_EVENTS.md) 第 6 節，編輯器見 [CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.75 節。
+
+分兩類（`category`）：
+
+- `tameable`（可馴服）：配一條任務線，最後用 `{ "type": "parasite", "parasite": "<id>", "op": "tame" }` 馴服，換成 `tamed` 寫的物品、印記、增益與技能。
+- `short`（短期寄生）：沒有馴服。結局寫在它自己的發作事件裡（高階段的事件用 `"op": "remove"` 拿掉），或靠解咒。
+
+寄生物本身不會出現：要有事件、任務或地標用 `"op": "add"` 寄生它，還要有它的發作事件（`travelEvents` 裡 `"scope": "parasite"`、`"parasite": "<id>"`，可以用 `"stages": [1, 2]` 限定階段，[events](events.md)）。
+
+### 5.2 欄位一覽
+
+| 欄位 | 說明 |
+|---|---|
+| `name`、`desc` | 名稱（16 字）、描述（200 字） |
+| `kind` | `gear`、`mark`、`seed`（沒寫是 `seed`）；內建的不能改 |
+| `category` | `tameable` 或 `short`；沒寫時有 `tamed` 的算可馴服 |
+| `item`、`slot` | 只有 `gear`：鎖住的裝備（物品名稱，要存在）與欄位（例如 `underwear_top`），兩個都要寫 |
+| `place`、`mark` | 只有 `mark`：部位（沒寫是 `belly`）、`{ "name", "desc" }` 印記的名稱與外觀 |
+| `grow_per_day` | 每天侵蝕度增加（0～50） |
+| `stage_effects` | 四個階段各一個陣列：`{ "check": { "attrs": [...], "kinds": [...] }, "bonus": -1 }`（每階段最多 4 項，±5，0 拿掉） |
+| `stage_abilities` | 四個階段各一個技能 id 的陣列（最多 3 個）：還沒馴服時戰鬥中可以用 |
+| `stage_lust` | 四個數字：開戰時帶著的慾望（慾望上限的比例，0～1） |
+| `two_face` | 四個物件：修了流派的人在戰鬥中的修正，`hit`、`evade`、`save`、`damage`、`dr`、`lust_bonus`（整數 ±5） |
+| `remove` | `{ "dc": 8～30, "price": 0～100000 }`：神殿或刻印師解咒的基準；沒寫不能解咒 |
+| `reink_price` | 只對 `mark` 有用：刻印師紋回來的價錢（沒寫是 500） |
+| `stories`、`flag_prefix` | 它的任務線（解咒時中止，最多 12 個）與旗標前綴（`xxx_` 結尾，解咒時清掉） |
+| `tamed` | 只有可馴服的：`scene`（馴服的場景，400 字）與 `text`（一句話，200 字）都要寫才收；`item`（`gear` 換成的物品）、`mark`（`mark` 換成的印記：`name`、`desc`、`attrs` 每項 ±3、`check` 與 `bonus` 0～5）、`buff`（主動喚醒給的非戰鬥狀態）、`ability`（獸蟲派可用的技能） |
+
+### 5.3 最小範例（短期寄生）
+
+```json
+{
+  "type": "elondia-content",
+  "parasites": {
+    "mod_par_spores": {
+      "name": "夜光蘑菇的孢子", "kind": "seed", "category": "short",
+      "desc": "吸進肺裡的孢子，會在體內發光。",
+      "grow_per_day": 25,
+      "stage_effects": [[], [{ "check": { "attrs": ["int"] }, "bonus": -1 }], [{ "check": { "attrs": ["int"] }, "bonus": -1 }], [{ "check": { "attrs": ["int"] }, "bonus": -2 }]],
+      "two_face": [{}, { "dr": 1 }, { "dr": 1 }, { "dr": 2, "save": 1 }],
+      "remove": { "dc": 12, "price": 300 },
+      "custom": true
+    }
+  }
+}
+```
+
+再寫一件會寄生它的事件（`"op": "add"`）與幾件它的發作事件，支配階段的那件用 `"op": "remove"` 讓孢子散掉。
+
+### 5.4 常見錯誤
+
+| 寫法 | 結果 |
+|---|---|
+| 自建的 id 不是 `mod_par_` 開頭 | 整筆不收 |
+| `gear` 沒寫 `item`、`slot`，或物品不存在 | 整筆不收 |
+| 短期寄生寫了 `tamed`，或 `tamed` 少了 `scene`、`text` | `tamed` 拿掉 |
+| 階段的陣列不是四個 | 補成四個（缺的是空的）、多的拿掉 |
+| 技能、物品、任務 id 不存在 | 拿掉 |
+| 沒有任何東西寄生它、沒有發作事件 | 收下，但遊戲裡不會出現或不會發作（編輯器會提醒） |
+| 把雙面效應寫在 `lewd.json` 的 `parasite_two_face` | 內容檔沒有這個區塊：寫在寄生物的 `two_face` |
+

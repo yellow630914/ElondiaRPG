@@ -16,11 +16,13 @@ import { POOL_IDS } from './masterEventMods'
 import { travelEvents } from './road'
 import { builtinJob } from './shopMods'
 import { tattooRules } from './tattoos'
+import { parasiteRules } from './parasites'
+import { currentParasite } from './parasiteMods'
 import { currentMarkRules } from './tattooMods'
 import { builtinEventRules } from './travelEventMods'
 
 export type BuiltinSection =
-  | 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'perks' | 'statuses' | 'conditions' | 'tattoos' | 'marks' | 'markRules'
+  | 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'perks' | 'statuses' | 'conditions' | 'tattoos' | 'marks' | 'markRules' | 'parasites'
   | 'npcs' | 'stories' | 'landmarks' | 'specialMaps' | 'shops' | 'travelEvents' | 'eventRules' | 'bindRules' | 'masterEvents' | 'counters'
 
 export interface SectionInfo {
@@ -46,6 +48,7 @@ export const BUILTIN_SECTIONS: SectionInfo[] = [
   { key: 'tattoos', name: '刺青圖樣', guide: '狀態、特質、刺青與奴隸印記（製作指南）' },
   { key: 'marks', name: '奴隸印記', guide: '狀態、特質、刺青與奴隸印記（製作指南）' },
   { key: 'markRules', name: '印記設定', single: true },
+  { key: 'parasites', name: '寄生物', guide: '狀態、特質、刺青與奴隸印記（製作指南）' },
   { key: 'npcs', name: '固定 NPC', guide: '固定 NPC（製作指南）' },
   { key: 'stories', name: '特殊任務', guide: '特殊任務（製作指南）' },
   { key: 'landmarks', name: '地標', guide: '地標（製作指南）' },
@@ -84,6 +87,7 @@ function rawEntries(): SectionEntries {
     perks: Object.fromEntries(perkRules.perks.map((p) => [p.id, p])),
     conditions: Object.fromEntries(Object.entries(companionRules.conditions).filter(([k]) => !k.startsWith('$'))),
     tattoos: tattooRules.templates, marks: slaveryRules.contracts, markRules: { rules: currentMarkRules() },
+    parasites: Object.fromEntries(Object.keys(parasiteRules.parasites).map((id) => [id, currentParasite(id)])),
     npcs: Object.fromEntries(npcs.map((n) => [n.id, n])),
     stories: Object.fromEntries(stories.map((s) => [s.id, s])),
     landmarks, specialMaps,

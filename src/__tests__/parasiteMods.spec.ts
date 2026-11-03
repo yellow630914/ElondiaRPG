@@ -1,0 +1,107 @@
+// 寄生物的自訂內容（engine/parasiteMods.ts）：整理、分類、套用與還原、同一包的任務引用、存檔裡不存在的寄生物
+import { afterEach, describe, expect, it } from 'vitest'
+import { lewdRules } from '@/engine/data'
+import { applyContent, emptyMods, normalizeMods, parasiteUsage } from '@/engine/mods'
+import { builtinParasite, currentParasite, parasiteCategory, sanitizeParasiteMod } from '@/engine/parasiteMods'
+import { attachParasite, parasiteDef, parasiteRules, pruneParasites } from '@/engine/parasites'
+import { newGame } from '@/engine/state'
+
+afterEach(() => applyContent(emptyMods()))
+
+const seedLike = (extra: Record<string, unknown> = {}): never => ({
+  name: '夜光蘑菇的孢子', kind: 'seed', category: 'short', desc: '吸進肺裡的孢子，會在體內發光。', grow_per_day: 25,
+  stage_effects: [[], [{ check: { attrs: ['int'] }, bonus: -1 }], [], [{ check: { attrs: ['int'] }, bonus: -2 }]],
+  remove: { dc: 12, price: 300 }, ...extra,
+}) as never
+
+describe('parasite mods', () => {
+  it('keeps the built-in ones as they are, and sorts them into tameable and short-term', () => {
+    for (const id of Object.keys(parasiteRules.parasites)) {
+      expect(sanitizeParasiteMod(id, builtinParasite(id)!), id).toEqual(builtinParasite(id))
+    }
+    expect(parasiteCategory(parasiteDef('hungry_lingerie')!)).toBe('tameable')
+    expect(parasiteCategory(parasiteDef('succubus_mark')!)).toBe('tameable')
+    expect(parasiteCategory(parasiteDef('parasite_seed')!)).toBe('short')
+    // 雙面效應跟著寄生物一起
+    expect(builtinParasite('parasite_seed')!.two_face).toEqual(lewdRules.parasite_two_face!.parasites.parasite_seed)
+  })
+
+  it('checks ids, required parts and limits; short-term ones have no taming', () => {
+    expect(() => sanitizeParasiteMod('spores', seedLike())).toThrow('mod_par_')
+    expect(() => sanitizeParasiteMod('mod_par_cloth', { name: '活的披風', kind: 'gear', category: 'tameable', desc: '' })).toThrow('裝備')
+    const p = sanitizeParasiteMod('mod_par_spores', seedLike({
+      grow_per_day: 999, stage_lust: [0, 0, 0.5, 9], stage_abilities: [[], ['ghost_ability'], [], []],
+      tamed: { scene: '不會留下', text: '不會留下' }, two_face: [{}, { dr: 1, foo: 3 }, {}, { save: 9 }],
+    }))
+    expect(p).toMatchObject({ kind: 'seed', category: 'short', grow_per_day: 50, stage_lust: [0, 0, 0.5, 1], custom: true })
+    expect(p.tamed).toBeUndefined()
+    expect(p.stage_abilities).toBeUndefined()
+    expect(p.two_face).toEqual([{}, { dr: 1 }, {}, { save: 5 }])
+    // 內建的不能改種類
+    expect(sanitizeParasiteMod('parasite_seed', { ...builtinParasite('parasite_seed')!, kind: 'mark' }).kind).toBe('seed')
+  })
+
+  it('applies custom and edited ones (with their two-face rows), and restores the built-in ones', () => {
+    const mods = normalizeMods({
+      ...emptyMods(),
+      parasites: {
+        mod_par_spores: seedLike({ two_face: [{}, { dr: 1 }, { dr: 1 }, { dr: 2 }] }) as never,
+        parasite_seed: { ...builtinParasite('parasite_seed')!, grow_per_day: 20 },
+      },
+    })
+    applyContent(mods)
+    expect(parasiteDef('mod_par_spores')?.name).toBe('夜光蘑菇的孢子')
+    expect(lewdRules.parasite_two_face!.parasites.mod_par_spores?.[3]).toEqual({ dr: 2 })
+    expect(parasiteDef('parasite_seed')?.grow_per_day).toBe(20)
+    expect(currentParasite('mod_par_spores')?.custom).toBe(true)
+    applyContent(emptyMods())
+    expect(parasiteDef('mod_par_spores')).toBeUndefined()
+    expect(lewdRules.parasite_two_face!.parasites.mod_par_spores).toBeUndefined()
+    expect(parasiteDef('parasite_seed')?.grow_per_day).toBe(30)
+  })
+
+  it('lets a story in the same pack infect with a new parasite', () => {
+    const mods = normalizeMods({
+      ...emptyMods(),
+      parasites: { mod_par_spores: seedLike() as never },
+      stories: {
+        mod_story_spores: {
+          title: '洞窟的孢子', summary: '', rank: 'E', level: 1, giver: 'npc_mira',
+          nodes: [{ id: 'a', title: '吸進孢子', kind: 'choice', at: { type: 'settlement', location: 'soriel' }, text: '……',
+            options: [{ label: '深呼吸', success: { text: '你吸進了孢子。', effects: [{ type: 'parasite', parasite: 'mod_par_spores', op: 'add' }], complete: true } }] }],
+        } as never,
+      },
+    })
+    const effects = JSON.stringify(mods.stories.mod_story_spores)
+    expect(effects).toContain('"parasite":"mod_par_spores"')
+  })
+
+  it('cleans saves that still carry a parasite this world no longer has', () => {
+    applyContent(normalizeMods({
+      ...emptyMods(),
+      items: { 黏人的披風: { category: 'gear', price_cc: 100, gear: { base: 'cloak', material: 'cloth' }, custom: true } as never },
+    }))
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 3, birthplace: 'soriel' })
+    const pc = state.party[0]!
+    attachParasite(pc, 'hungry_lingerie', state.time)
+    expect(pc.gear?.underwear_top?.locked).toBe('parasite:hungry_lingerie')
+    // 假裝這種寄生物不在這個世界了
+    const def = parasiteRules.parasites.hungry_lingerie!
+    delete parasiteRules.parasites.hungry_lingerie
+    try {
+      expect(pruneParasites(state.party)).toBe(1)
+      expect(pc.parasites ?? []).toEqual([])
+      expect(pc.gear?.underwear_top?.name).toBe('渴求的魔導衣')
+      expect(pc.gear?.underwear_top?.locked).toBeUndefined()
+    } finally {
+      parasiteRules.parasites.hungry_lingerie = def
+    }
+  })
+
+  it('lists where a parasite is used before it can be deleted', () => {
+    const used = parasiteUsage('parasite_seed')
+    expect(used.some((u) => u.startsWith('發作事件'))).toBe(true)
+    expect(used.some((u) => u.startsWith('事件'))).toBe(true)
+    expect(parasiteUsage('mod_par_nobody')).toEqual([])
+  })
+})

@@ -22,6 +22,8 @@ export interface ParasiteStage {
 export interface ParasiteDef {
   name: string
   kind: 'gear' | 'mark' | 'seed'
+  /** 分類：可馴服（任務線把它馴服）、短期寄生（長到最後由發作事件拿掉）；沒寫時有 tamed 是可馴服（parasiteMods.ts 的 parasiteCategory） */
+  category?: 'tameable' | 'short'
   desc: string
   /** 寄生裝備：寄生的物品（items.json）與鎖住的欄位 */
   item?: string
@@ -338,6 +340,32 @@ export function removalTerms(p: ParasiteState): { dc: number; price: number } | 
   const r = parasiteDef(p.id)?.remove
   if (!r) return undefined
   return { dc: r.dc + Math.floor(p.corruption / 10), price: Math.round(r.price * (1 + p.corruption / 100)) }
+}
+
+/**
+ * 這個世界沒有的寄生物（自建的被刪掉、換了世界）：從角色身上拿掉，寄生裝備的鎖解開（裝備留著）、
+ * 淫紋留下來當普通的刺青、記著的沉睡淫紋與被蓋掉的刺青也一起清掉。回傳拿掉了幾個
+ */
+export function pruneParasites(chars: Character[]): number {
+  let n = 0
+  for (const c of chars) {
+    const gone = parasitesOf(c).filter((p) => !parasiteDef(p.id)).map((p) => p.id)
+    for (const [slot, g] of Object.entries(c.gear ?? {})) {
+      const id = g?.locked?.startsWith(PARASITE_LOCK) ? g.locked.slice(PARASITE_LOCK.length) : undefined
+      if (id && !parasiteDef(id)) delete c.gear![slot as GearSlot]!.locked
+    }
+    for (const t of tattoosOf(c)) {
+      if (t.kind === 'curse' && t.parasite && !parasiteDef(t.parasite)) {
+        t.kind = 'plain'
+        delete t.parasite
+      }
+    }
+    if (c.coveredTattoos) c.coveredTattoos = c.coveredTattoos.filter((k) => parasiteDef(k.parasite))
+    if (!gone.length) continue
+    c.parasites = parasitesOf(c).filter((p) => !gone.includes(p.id))
+    n += gone.length
+  }
+  return n
 }
 
 /** 給 AI 的寄生物清單（沒有時為空字串） */

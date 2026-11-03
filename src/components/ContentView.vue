@@ -38,6 +38,9 @@ import LandmarkEditor from './content/LandmarkEditor.vue'
 import SpecialMapEditor from './content/SpecialMapEditor.vue'
 import DungeonEditor from './content/DungeonEditor.vue'
 import MarkEditor from './content/MarkEditor.vue'
+import ParasiteEditor from './content/ParasiteEditor.vue'
+import { builtinParasite, currentParasite, newParasite, parasiteCategory, PARASITE_CATEGORY_NAME, PARASITE_KIND_NAME } from '@/engine/parasiteMods'
+import { parasiteRules } from '@/engine/parasites'
 import MarkRulesEditor from './content/MarkRulesEditor.vue'
 import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
 import TravelEventEditor from './content/TravelEventEditor.vue'
@@ -55,14 +58,13 @@ import ContentIcon from './icons/ContentIcon.vue'
 import { travelEvents } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { builtinTravelEvent, DUNGEON_TRIGGERS, newTravelEvent } from '@/engine/travelEventMods'
-import { parasiteRules } from '@/engine/parasites'
 import { isMobile, pushLayer } from './mobile/mobile'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import { confirmDiscard, unsavedEdits } from './content/unsaved'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'dungeons' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
+type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'parasites' | 'landmarks' | 'specialMaps' | 'dungeons' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
   { id: 'items', label: '🎒 物品' },
@@ -72,6 +74,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'statuses', label: '🌀 狀態' },
   { id: 'perks', label: '🌟 特質' },
   { id: 'tattoos', label: '🖋️ 刺青與印記' },
+  { id: 'parasites', label: '🐛 寄生物' },
   { id: 'landmarks', label: '🏛️ 地標' },
   { id: 'specialMaps', label: '🗺️ 特殊地圖' },
   { id: 'dungeons', label: '🕳️ 地下城' },
@@ -85,7 +88,7 @@ const SUBS: { id: Sub; label: string }[] = [
 type Tab = Sub | 'icons'
 const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
   { id: 'combat', label: '⚔️ 戰鬥', tabs: ['enemies', 'abilities', 'statuses'] },
-  { id: 'people', label: '🧬 角色', tabs: ['npcs', 'perks', 'tattoos'] },
+  { id: 'people', label: '🧬 角色', tabs: ['npcs', 'perks', 'tattoos', 'parasites'] },
   { id: 'items', label: '🎒 物品', tabs: ['items', 'bases', 'materials', 'icons'] },
   { id: 'places', label: '🗺️ 地點', tabs: ['landmarks', 'specialMaps', 'dungeons', 'shops'] },
   { id: 'story', label: '⭐ 劇情', tabs: ['stories', 'events', 'masterEvents'] },
@@ -138,7 +141,7 @@ function resetFilters() {
   for (const m of ALL_FILTER_MODELS) m.value = ''
   pickStatusType.value = false
 }
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', dungeons: '', shops: '', events: '', masterEvents: '', npcs: '', stories: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', dungeons: '', shops: '', events: '', masterEvents: '', npcs: '', stories: '', parasites: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
 const tattooKind = ref('')
 // 狀態：增益、減益、非戰鬥狀態（列表的 key：戰鬥狀態是 id，非戰鬥狀態是 c:<id>）
@@ -169,6 +172,8 @@ const BASE_SLOTS = baseSlots()
 const gearSlot = ref('')
 const matKind = ref('')
 const perkCat = ref('')
+// 寄生物：可馴服、短期寄生
+const parasiteCat = ref('')
 // 地標、事件、固定 NPC、特殊任務共用：地點、成人向、內容標籤、主角形象、旗標
 const placeFilter = ref('')
 const adultFilter = ref('')
@@ -305,6 +310,7 @@ const FILTERS: Record<Sub, FilterDef[]> = {
   ],
   statuses: [{ model: statusKind, name: '種類', all: '所有狀態', options: () => [['buff', '🟢 增益（BUFF）'], ['debuff', '🔴 減益（DEBUFF）'], ['cond', '🏕️ 非戰鬥狀態（用餐、喝酒……）']] }],
   perks: [{ model: perkCat, name: '分類', all: '所有分類', options: () => [...entries(PERK_CATEGORIES), ['race', '種族天賦']] }],
+  parasites: [{ model: parasiteCat, name: '分類', all: '所有寄生物', options: () => entries(PARASITE_CATEGORY_NAME) }],
   tattoos: [{ model: tattooKind, name: '種類', all: '所有刺青與印記', options: () => [['plain', '🖋️ 普通刺青'], ['oath', '📜 誓約印記'], ['slave', '⛓️ 奴隸印記']] }],
   landmarks: [placeDef(), adultDef, flagDef],
   specialMaps: [],
@@ -445,6 +451,12 @@ const rows = computed<Row[]>(() => {
       ? Object.keys(slaveryRules.contracts).map((id) => ({ key: `m:${id}`, name: `⛓️ ${contractDef(id).name}`, note: placeName(contractDef(id).place), status: st(!!m.marks?.[id], !builtinMark(id)), sort: 2 }))
       : []
     list = [...tats, ...marks].sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+  } else if (sub.value === 'parasites') {
+    const KIND_EMOJI = { gear: '👙', mark: '💗', seed: '🌱' } as const
+    list = Object.entries(parasiteRules.parasites)
+      .filter(([, p]) => !parasiteCat.value || parasiteCategory(p) === parasiteCat.value)
+      .map(([id, p]) => ({ key: id, name: `${KIND_EMOJI[p.kind]} ${p.name}`, note: `${PARASITE_KIND_NAME[p.kind]}・${PARASITE_CATEGORY_NAME[parasiteCategory(p)]}・每天 +${p.grow_per_day ?? 0}`, status: st(!!m.parasites?.[id], !builtinParasite(id)) }))
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'landmarks') {
     list = Object.values(landmarks)
       .filter((l) => !placeFilter.value || l.location === placeFilter.value)
@@ -543,7 +555,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), dungeons: n(m.dungeons ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), masterEvents: n(m.masterEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), dungeons: n(m.dungeons ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), masterEvents: n(m.masterEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories), parasites: n(m.parasites ?? {}) }
 })
 
 const current = computed(() => {
@@ -559,6 +571,7 @@ const current = computed(() => {
     : sub.value === 'dungeons' ? !!content.mods.dungeons?.[key]
     : sub.value === 'events' ? key === 'rules' || travelEvents.templates.some((t) => t.id === key)
     : sub.value === 'masterEvents' ? !!masterEventById(key)
+    : sub.value === 'parasites' ? !!parasiteRules.parasites[key]
     : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
     : !!gearRules.materials[key]
   return exists ? key : ''
@@ -639,6 +652,10 @@ function create() {
         content.saveTattoo(id, newTattooTemplate(tattooKind.value === 'oath' ? 'oath' : 'plain'))
         select(`t:${id}`)
       }
+    } else if (sub.value === 'parasites') {
+      const id = newModId('par')
+      content.saveParasite(id, newParasite())
+      select(id)
     } else if (sub.value === 'landmarks') {
       const id = newLandmarkId()
       content.saveLandmark(id, newLandmark(id, game.state && locationById(game.state.location).type !== 'dungeon' ? game.state.location : undefined))
@@ -780,6 +797,11 @@ function duplicateKey(key: string) {
       content.saveMark(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
       select(`m:${id}`)
     }
+  } else if (sub.value === 'parasites') {
+    const id = newModId('par')
+    const src = JSON.parse(JSON.stringify(content.mods.parasites?.[key] ?? currentParasite(key)))
+    content.saveParasite(id, { ...src, name: `${src.name}2`.slice(0, 16), custom: true })
+    select(id)
   } else if (sub.value === 'statuses' && key.startsWith('c:')) {
     const id = newModId('cond')
     const src = JSON.parse(JSON.stringify(companionRules.conditions[key.slice(2)]))
@@ -815,7 +837,7 @@ function duplicateKey(key: string) {
 
 /** 有未儲存的修改時不能新增或複製（新的項目會先存進世界） */
 const UNSAVED_HINT = '這一項還有未儲存的修改：先儲存或放棄修改，才能新增或複製'
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', dungeons: '＋ 新增地下城', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', dungeons: '＋ 新增地下城', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務', parasites: '＋ 新增寄生物' }
 
 // ---- 局部匯入、匯出（E2） ----
 const showImport = ref(false)
@@ -1024,6 +1046,7 @@ function resetAll() {
           <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />
           <MarkEditor v-else :id="current.slice(2)" :key="current" @deleted="select('')" />
         </template>
+        <ParasiteEditor v-else-if="sub === 'parasites'" :id="current" :key="`par-${current}`" @deleted="select('')" />
         <template v-else-if="sub === 'events'">
           <EventRulesEditor v-if="current === 'rules'" key="ev-rules" />
           <TravelEventEditor v-else :id="current" :key="`ev-${current}`" @deleted="select('')" />

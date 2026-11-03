@@ -10,8 +10,9 @@ import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, typ
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
-  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinCondition, sanitizeCondition, conditionUsage, type ConditionMod, builtinTattoo, builtinMark, builtinMarkRules,
+  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinCondition, sanitizeCondition, conditionUsage, parasiteUsage, type ConditionMod, builtinTattoo, builtinMark, builtinMarkRules,
 } from '@/engine/mods'
+import { builtinParasite, sanitizeParasiteMod, type ParasiteMod } from '@/engine/parasiteMods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { itemRules, perkRules, shopRules, slaveryRules, type ItemCategory, type ShopType } from '@/engine/data'
 import { sanitizeIcon, withoutIcons } from '@/engine/itemIcons'
@@ -20,6 +21,7 @@ import { builtinLandmark, landmarkSpotProblem, landmarkUsage, sanitizeLandmarkMo
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import { dungeonUsage, enemyInDungeons, sanitizeDungeonMod, withoutEnemy, type DungeonMod } from '@/engine/dungeonMods'
 import { pruneSpecialMaps } from '@/engine/specialMaps'
+import { pruneParasites } from '@/engine/parasites'
 import { pruneLocations, takeLocationNotice } from '@/engine/pruneLocations'
 import { pruneRoadEvent } from '@/engine/road'
 import { makeWorldPackage, parseWorldFile } from '@/engine/worldPackage'
@@ -78,9 +80,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
+const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'parasites', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器', dungeons: '地下城',
+  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', parasites: '寄生物', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器', dungeons: '地下城',
 }
 
 export interface ModsDiffEntry {
@@ -222,6 +224,7 @@ export const useContent = defineStore('content', () => {
       prunePerks(game.state)
       pruneStories(game.state)
       pruneSpecialMaps(game.state)
+      pruneParasites(game.state.party)
       // 拿掉的自建地下城（匯入、全部恢復預設）：人在裡面時送回聚落
       if (pruneLocations(game.state)) {
         enterLocation(game.state)
@@ -370,7 +373,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'condition' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap' | 'dungeon'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'condition' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap' | 'dungeon' | 'parasite'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -392,6 +395,7 @@ export const useContent = defineStore('content', () => {
       case 'landmark': return landmarkUsage(key)
       case 'specialMap': return specialMapUsage(key)
       case 'dungeon': return dungeonUsage(key, state)
+      case 'parasite': return parasiteUsage(key, state)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -693,6 +697,28 @@ export const useContent = defineStore('content', () => {
     if (!mods.value.tattoos?.[id]?.custom) delete mods.value.tattoos?.[id]
     save()
   }
+  // ---- 寄生物 ----
+
+  /** 存一種寄生物：內建的照內建的種類；寄生裝備沒有物品或欄位時丟出錯誤 */
+  function saveParasite(id: string, draft: Partial<ParasiteMod>) {
+    const p = sanitizeParasiteMod(id, draft)
+    const base = builtinParasite(id)
+    // 和內建一模一樣：不記（之後遊戲更新時跟著更新）
+    if (base && JSON.stringify(sanitizeParasiteMod(id, base)) === JSON.stringify(p)) delete mods.value.parasites?.[id]
+    else (mods.value.parasites ??= {})[id] = p
+    save()
+  }
+  function deleteParasite(id: string) {
+    if (!mods.value.parasites?.[id]?.custom) throw new Error('內建的寄生物不能刪除')
+    assertUnused('parasite', id)
+    delete mods.value.parasites[id]
+    save()
+  }
+  function restoreParasite(id: string) {
+    if (!mods.value.parasites?.[id]?.custom) delete mods.value.parasites?.[id]
+    save()
+  }
+
   function saveMark(id: string, draft: Partial<MarkMod>) {
     ;(mods.value.marks ??= {})[id] = sanitizeMarkMod(draft, !builtinMark(id))
     save()
@@ -1266,7 +1292,7 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, deleteCondition, restoreCondition,
-    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveDungeon, deleteDungeon, removeEnemyFromDungeons, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveDungeon, deleteDungeon, removeEnemyFromDungeons, saveTattoo, deleteTattoo, restoreTattoo, saveParasite, deleteParasite, restoreParasite, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods, exportBuiltinWorld, importBuiltinWorld,
     importSource, analyzeSource, compareImport, packageFor, precheckImport, checkGenerated, importPackage, exportPicked,
