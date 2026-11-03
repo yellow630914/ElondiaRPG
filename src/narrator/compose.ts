@@ -67,7 +67,8 @@ function bodyNoteFor(state: GameState | null, name: string): string | undefined 
   return pc && mascBodyContentOn() && characterBody(pc) === 'masc' ? mascBodyNote(name) : undefined
 }
 
-export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions, narrations?: Record<string, NarrationLike>): Composed {
+/** extra.continuation：續寫（見 PromptOptions.continuation） */
+export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions, narrations?: Record<string, NarrationLike>, extra: { continuation?: { written: string; hint?: string } } = {}): Composed {
   const name = playerName(state)
   const bodyNote = bodyNoteFor(state, name)
   // 分流：帶親密場景的日誌才送成人向的條目（世界書、文風、其他提示詞）
@@ -96,6 +97,7 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     lengthScale: o.config.lengthScale,
     ...(state && narrations && o.config.continuity ? { continuity: continuityForReport(state, narrations, report) } : {}),
     ...(o.config.variety ? { variety: varietyHint(report.report_id, report.narration?.mode === 'defeat_cliffhanger') } : {}),
+    ...(extra.continuation ? { continuation: extra.continuation } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), lore }
 }

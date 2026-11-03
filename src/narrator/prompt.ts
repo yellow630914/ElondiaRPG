@@ -45,6 +45,11 @@ export interface PromptOptions {
   continuity?: Continuity
   /** 開啟「變化正文的寫法」時：這次的切入方式與收尾（見 varietyHint） */
   variety?: string
+  /**
+   * 續寫：這則日誌已經寫好的正文，請 AI 從最後一句接著往下寫（只把這一幕寫得更完整，不改結果、不推進到下一件事）。
+   * hint 是玩家希望多寫的方向（可以不給）
+   */
+  continuation?: { written: string; hint?: string }
   /** 登場的怪物的外觀（<monsters>，narrator/monsters.ts 組好的；魔物娘的設定打開時是魔物娘） */
   monsters?: string
 }
@@ -360,12 +365,27 @@ export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreL
     { key: 'monsters', title: '登場的怪物', part: 'user', text: opts.monsters ?? '' },
     { key: 'report', title: '報告', part: 'user', text: `<report>\n${JSON.stringify(humanizeReport(report), null, 2)}\n</report>` },
     endNotesSection(opts.endNotes),
+    // 續寫：已經寫好的正文放在本次要求前面，本次要求改成接著寫
+    { key: 'written', title: '已經寫好的正文', part: 'user', text: opts.continuation ? `<written>\n${opts.continuation.written.trim()}\n</written>` : '' },
     {
       key: 'request', title: '本次要求', part: 'user',
-      text: `本次要求：
+      text: opts.continuation
+        ? continuationRequest(pov, length, `${defeat}${sceneLine}${intent}${focus}`, opts.continuation.hint)
+        : `本次要求：
 - 視角：${pov}
 - 篇幅：${length}${defeat}${sceneLine}${variety}${findings}${bystanders}${continuity.narrationNote}${intent}${focus}
 請依照上述報告寫出這次事件的詳細經過。`,
     },
   ])
+}
+
+/** 續寫的本次要求：從 <written> 的最後一句接下去，只把這一幕寫得更完整 */
+function continuationRequest(pov: string, length: string, extra: string, hint?: string): string {
+  const want = hint?.trim() ? `\n- 玩家希望多寫的方向：${hint.trim().slice(0, 200)}` : ''
+  return `本次要求（續寫）：
+- <written> 是這則日誌已經寫好的正文。從它的最後一句直接接下去寫，像同一篇文章的下一段：不要重複、改寫或摘要已經寫好的內容，不要重新開場，也不要另起標題。
+- 只把這一幕寫得更完整：多寫對話、互動、動作、感受與細節，讓場景慢下來。結果、數值、得到與失去的東西都照報告，不能更改；不要寫出報告之後才發生的事（下一個行動、離開這裡、隔天），也不要替主角做新的決定。
+- 視角：${pov}
+- 篇幅：${length}${extra}${want}
+請只輸出接下去的正文。`
 }

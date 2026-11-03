@@ -148,6 +148,8 @@ export interface NarrationState {
   judgeThinking?: string
   /** 只是為了存判定的思考過程，還沒有敘事 */
   placeholder?: boolean
+  /** 續寫過幾次（重新寫出經過時歸零） */
+  continued?: number
 }
 
 export interface ImportPreview {
@@ -1033,6 +1035,72 @@ export const useGame = defineStore('game', () => {
     }
   }
 
+  /**
+   * 續寫：請 AI 從這則日誌已經寫好的正文最後一句接著往下寫，接在同一則日誌後面（只是文字：不擲骰、不改結果、不過時間）。
+   * 只能續寫最新一則有正文的日誌（較舊的續寫會和之後已經寫好的經過對不起來）。hint 是玩家希望多寫的方向
+   */
+  async function continueNarration(report: Report, hint = '') {
+    const why = continueBlock(report)
+    if (why) {
+      error.value = why
+      return
+    }
+    const settings = useSettings()
+    const entry = narrations.value[report.report_id]!
+    const base = entry.text.trimEnd()
+    const controller = new AbortController()
+    controllers.set(report.report_id, controller)
+    entry.status = 'streaming'
+    delete entry.error
+    let added = ''
+    try {
+      const [{ composeNarration }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
+      const prompt = composeNarration(state.value, report, opts, narrations.value, { continuation: { written: base, hint } }).prompt
+      const { streamNarration } = await import('@/narrator/providers')
+      const feature = settings.narrationFeature(report)
+      const src = settings.sourceFor(feature)
+      const onUsage = (u: TokenUsage) => addUsage(report.report_id, u, originOf(feature, src))
+      const onThinking = (t: string) => { entry.thinking = (entry.thinking ?? '') + t }
+      for await (const chunk of streamNarration(src.provider, src.config, prompt, controller.signal, onUsage, onThinking)) {
+        added += chunk
+        entry.text = `${base}\n\n${added.trimStart()}`
+      }
+      const { text, updates } = splitSuggestions(added)
+      if (state.value && updates.length) social.addSuggestions(state.value, updates, report.report_id)
+      entry.text = text.trim() ? `${base}\n\n${text.trim()}` : base
+      if (text.trim()) entry.continued = (entry.continued ?? 0) + 1
+    } catch (e) {
+      // 按了停止：留下已經寫出來的；其他錯誤：恢復成續寫前的正文
+      if (controller.signal.aborted && added.trim()) {
+        entry.text = `${base}\n\n${added.trim()}`
+        entry.continued = (entry.continued ?? 0) + 1
+      } else {
+        entry.text = base
+        if (!controller.signal.aborted) error.value = `續寫失敗：${e instanceof Error ? e.message : String(e)}`
+      }
+    } finally {
+      entry.status = 'done'
+      controllers.delete(report.report_id)
+      save()
+    }
+  }
+
+  /** 這則日誌現在不能續寫的原因（可以時是空字串） */
+  function continueBlock(report: Report): string {
+    const s = state.value
+    const entry = narrations.value[report.report_id]
+    if (!s || !entry || entry.placeholder || entry.status !== 'done' || !entry.text.trim()) return '這則日誌還沒有寫好的經過'
+    if (judging.value) return '等判定完成再續寫'
+    // 之後的日誌已經寫了經過（或正在寫）：續寫會和它對不起來
+    const i = s.reports.findIndex((r) => r.report_id === report.report_id)
+    if (i < 0) return '這則日誌已經封存'
+    const later = s.reports.slice(i + 1).some((r) => {
+      const n = narrations.value[r.report_id]
+      return !!n && !n.placeholder && (n.status === 'streaming' || !!n.text.trim())
+    })
+    return later ? '只能續寫最新一則有經過的日誌' : ''
+  }
+
   function cancelNarration(reportId: string) {
     controllers.get(reportId)?.abort()
   }
@@ -1177,7 +1245,7 @@ export const useGame = defineStore('game', () => {
     state, narrations, error, saveWarning, flushed, pc, here, area, cell, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTargets, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText, makeRoom, requireRoom,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
-    start, reset, promptFor, composeFor, composeJudgePreview, narrate, cancelNarration,
+    start, reset, promptFor, composeFor, composeJudgePreview, narrate, continueNarration, continueBlock, cancelNarration,
     perform, judge, flavorRoster, hire, flavorShop, startNegotiation, negotiationFocus,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),

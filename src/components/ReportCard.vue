@@ -54,6 +54,15 @@ const paragraphs = computed(() => {
   return list.length ? list : ['']
 })
 const showStory = computed(() => !!narration.value && (settings.aiNarration || !!narration.value.manual || props.report.check?.source === 'ai'))
+// 續寫：只有最新一則有經過的日誌、模型來源設好時才有按鈕；按了先問想多寫什麼（可以不填）
+const canContinue = computed(() => showStory.value && narration.value?.status === 'done' && settings.ready(settings.narrationFeature(props.report)) && !game.continueBlock(props.report))
+const continuing = ref(false)
+const continueHint = ref('')
+function startContinue() {
+  continuing.value = false
+  void game.continueNarration(props.report, continueHint.value)
+  continueHint.value = ''
+}
 const showBattleReport = computed(() => props.report.kind === 'combat' && !showStory.value && !!props.report.timeline?.length)
 const names = computed(() => actorNames(props.report))
 const changes = computed(() => describeChanges(props.report))
@@ -209,11 +218,26 @@ async function copyPrompt() {
         @click="game.narrate(report, { manual: !settings.aiNarration })"
       ><GameIcon name="edit" :size="15" /></button>
       <button
+        v-if="canContinue" class="small ghost tool" :class="{ active: continuing }" aria-label="續寫"
+        title="續寫：接著這段經過往下寫，把這一幕寫得更完整（只是文字，不擲骰、不改結果、不過時間）"
+        @click="continuing = !continuing"
+      ><GameIcon name="feather" :size="15" /></button>
+      <button
         class="small ghost tool" :disabled="!image.ready() || sceneBusy" :aria-label="hasScene ? '重新生成插圖' : '生成插圖'"
         :title="!image.ready() ? '先到「設定 → 插圖生成」設定生圖服務' : hasScene ? '重新生成插圖（重新整理分鏡、重畫一張）' : '依這則日誌畫一張插圖（AI 先整理分鏡，再送給生圖服務）'"
         @click="illustrate"
       ><GameIcon name="image" :size="15" /></button>
     </div>
+    <form v-if="continuing && canContinue" class="continue small" @submit.prevent="startContinue">
+      <label>續寫：想多寫什麼？（可以不填）
+        <input v-model="continueHint" maxlength="200" placeholder="例如：多寫兩人的對話、把親密的過程寫細一點" />
+      </label>
+      <div class="row">
+        <button type="submit" class="small primary"><GameIcon name="feather" :size="14" /> 開始續寫</button>
+        <button type="button" class="small ghost" @click="continuing = false">取消</button>
+        <span class="muted">接在這段經過後面，只是文字：結果、得到的東西、時間都不變。每次續寫是一次 AI 呼叫。</span>
+      </div>
+    </form>
     <SceneImage v-if="game.state" :report="report" />
 
     <pre v-if="showRaw" class="raw small">{{ JSON.stringify(report, null, 2) }}</pre>
@@ -314,4 +338,7 @@ details.steps summary, details.thinking summary { cursor: pointer; color: var(--
 .tokens { margin: 6px 0 0; text-align: right; }
 .tokens summary { cursor: pointer; list-style-position: inside; color: var(--muted); }
 .tokens .origin { opacity: .85; }
+.continue { display: grid; gap: 6px; margin: 4px 0 6px; padding: 8px; border: 1px dashed var(--border); border-radius: 6px; }
+.continue label { display: grid; gap: 4px; }
+.continue .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 </style>
