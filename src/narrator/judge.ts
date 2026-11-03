@@ -188,8 +188,6 @@ export interface JudgePromptOptions {
   defeatRules?: string
   /** 玩家修改過的成人場景規則 */
   sceneRules?: string
-  /** 成人內容情境（設定開著才有；adultFrame.ts）：寫 narrative 而且可能是成人向（戰敗事件、可能進入親密場景）時附上 */
-  adultFrame?: string
   /** 陽剛體型的主角玩照陰柔、中性主角寫的成人內容時的說明（prompt.ts 的 mascBodyNote） */
   bodyNote?: string
   /** 登場的怪物的外觀（<monsters>；戰敗事件的回應時是圍上來的怪物） */
@@ -416,7 +414,6 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
     { key: 'format', title: '輸出格式', part: 'system', text: judgeFormat() },
     ...sharedSystemSections({ instructions: opts.instructions, constantLore: opts.lore?.constant }),
     // 只有部分判定才有的規則放在 system 的最後（和敘事請求一樣），前面的規則、文風、常駐世界書、前段提示詞可以共用快取。
-    { key: 'adult_frame', title: '成人內容情境', part: 'system', text: narrative && (p.kind === 'defeat_event' || p.adultScene) && opts.adultFrame ? opts.adultFrame : '' },
     // 成人向的戰敗事件：回應時另外附上戰敗事件規則（narrative 是後半段）
     { key: 'defeat', title: '戰敗事件規則', part: 'system', text: p.kind === 'defeat_event' && narrative ? `${fillDefeatRules(opts.defeatRules, pc.name, defeatMate?.name)}\n這次的 narrative 是戰敗事件的後半段。` : '' },
     { key: 'scene', title: '成人場景規則', part: 'system', text: sceneSection(opts, pc.name, narrative) },

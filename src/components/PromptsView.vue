@@ -4,7 +4,6 @@ import PromptSetBar from './PromptSetBar.vue'
 import type { Composed } from '@/narrator/compose'
 import { LORE_STATUS_NAME, type LoreItem, type LoreMode, type LoreSelection } from '@/narrator/lore'
 import { estimateTokens } from '@/narrator/promptConfig'
-import { DEFAULT_ADULT_FRAME } from '@/narrator/adultFrame'
 import { DEFAULT_DEFEAT_RULES, DEFAULT_NARRATION_RULES, DEFAULT_SCENE_RULES, LENGTH_SCALE_NAME, LENGTH_SCALES, type PromptSection } from '@/narrator/prompt'
 import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
@@ -105,19 +104,6 @@ const sceneText = computed({
 const sceneEdited = computed(() => prompts.config.sceneRules !== undefined)
 function restoreScene() {
   if (confirm('把成人場景規則恢復成預設？你的修改會消失。')) delete prompts.config.sceneRules
-}
-
-// 成人內容情境：設定開著時才送（成人向的段落）；同樣可以修改、恢復預設
-const frameText = computed({
-  get: () => prompts.config.adultFrame ?? DEFAULT_ADULT_FRAME,
-  set: (v: string) => {
-    if (v === DEFAULT_ADULT_FRAME) delete prompts.config.adultFrame
-    else prompts.config.adultFrame = v
-  },
-})
-const frameEdited = computed(() => prompts.config.adultFrame !== undefined)
-function restoreFrame() {
-  if (confirm('把成人內容情境恢復成預設？你的修改會消失。')) delete prompts.config.adultFrame
 }
 
 function restoreRules() {
@@ -336,18 +322,6 @@ function resetAll() {
         判定請求也會附上（只在 AI 標出 adult_scene 時適用）。可用的代換：<code v-pre>{{player}}</code> 主角名。
       </p>
       <textarea v-model="sceneText" class="rules" rows="9" spellcheck="false" />
-      <div class="row defeat-head">
-        <h3>成人內容情境（成人向）</h3>
-        <span v-if="frameEdited" class="tag">已修改</span>
-        <span v-if="!settings.adultFrame" class="tag">設定裡沒有開啟</span>
-        <span class="spacer" />
-        <button class="small" :disabled="!frameEdited" @click="restoreFrame">↩️ 恢復預設</button>
-      </div>
-      <p class="small muted">
-        「設定 → 敘事與判定」打開「成人內容情境」時，才附加在戰敗事件、成人場景規則的前面（判定請求寫經過、而且可能是成人向時也會附上）：把情境照實講清楚——玩家是自己開啟成人內容的成年人、故事是虛構的、所有角色都是成年人、敘事者是照結果呈現這一幕的主持人。
-        它不會繞過 AI 服務的安全機制，服務本身不提供成人內容時沒有作用。可用的代換：<code v-pre>{{player}}</code> 主角名。
-      </p>
-      <textarea v-model="frameText" class="rules" rows="9" spellcheck="false" />
     </section>
 
     <!-- 文風 -->

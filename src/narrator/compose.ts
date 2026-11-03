@@ -15,7 +15,6 @@ import { characterBody } from '@/engine/look'
 import { continuityBefore, continuityForReport, type NarrationLike } from './continuity'
 import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
 import { toOutputScript } from './script'
-import { adultFrameFor } from './adultFrame'
 import { girlSeed, monsterGirlsIn, monstersText, reportFocus, reportGirlSeed, reportMonsters } from './monsters'
 
 export interface ComposeOptions {
@@ -61,12 +60,6 @@ export function narrationTarget(report: Report): Extract<PromptTarget, 'narratio
   return adultSceneOf(report) ? 'adult' : 'narration'
 }
 
-/** 成人內容情境（設定開著才有；prompt.ts、judge.ts 只在成人向的段落附上） */
-function adultFrameOpt(o: ComposeOptions, name: string): { adultFrame?: string } {
-  const t = adultFrameFor(o.config.adultFrame, name)
-  return t ? { adultFrame: t } : {}
-}
-
 /** narrations：日誌的敘事（前後銜接用；沒有時不帶） */
 /** 設定讓陽剛體型也能遇到限定陰柔、中性的成人內容，而主角是陽剛體型：提醒 AI 照主角的身體寫（成人場景才附） */
 function bodyNoteFor(state: GameState | null, name: string): string | undefined {
@@ -99,7 +92,6 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     ...(o.config.narrationRules ? { rules: o.config.narrationRules } : {}),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
-    ...adultFrameOpt(o, name),
     ...(bodyNote ? { bodyNote } : {}),
     ...(monsters ? { monsters } : {}),
     lengthScale: o.config.lengthScale,
@@ -130,7 +122,6 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     endNotes: activeEntries(o.config.custom, 'judge', name, { position: 'end', adult }),
     ...(o.config.defeatRules ? { defeatRules: o.config.defeatRules } : {}),
     ...(o.config.sceneRules ? { sceneRules: o.config.sceneRules } : {}),
-    ...adultFrameOpt(o, name),
     ...(bodyNote ? { bodyNote } : {}),
     ...(monsters ? { monsters } : {}),
     ...(lore ? { lore } : {}),
