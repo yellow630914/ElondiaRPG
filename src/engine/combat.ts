@@ -29,7 +29,7 @@ import { rollDefeatEvent } from './defeat'
 import { inPark, parkDefeat, parkLust, parkStamps, saveParkLust } from './park'
 import { charmRutMult } from './charm'
 import { upcastAbility, upcastLevels, upcastStatusDice } from './upcast'
-import { parasiteAbilities, parasiteStartLust } from './parasites'
+import { parasiteAbilities, parasiteStartLust, parasiteTwoFace } from './parasites'
 import { addCondition, isNoncombatant, pcOf } from './party'
 import { contractTerms } from './slavery'
 import { advanceBossHunts, clearCounts, LAYER_IDS } from './materialQuests'
@@ -469,6 +469,10 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const of = outfitCombat(ch)
     addMods(of.mods)
     f.lustMods.bonus += of.lustBonus
+    // 寄生類的雙面效應：修了流派的人，還沒馴服的寄生物依階段有加成
+    const pt = parasiteTwoFace(ch)
+    addMods(pt.mods)
+    f.lustMods.bonus += pt.lustBonus
     f.initiative += tf.initiative
     if (tf.immune.length) f.immune = tf.immune
     const faith = mod(f.attrs.fai) * L.faith_resist

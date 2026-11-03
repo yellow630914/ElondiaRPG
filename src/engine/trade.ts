@@ -223,7 +223,7 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
       const consumables = itemRules.items.filter((i) => i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length && !have.has(i.name) && locationRank(i.min_location ?? 'village') <= rank)
       for (const i of pickSome(consumables, r.consumables ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 3)))
       const cap = r.max_material_price?.[Math.min(rank, (r.max_material_price.length ?? 1) - 1)] ?? 300
-      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5)
+      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5 && !have.has(i.name))
       for (const i of pickSome(materials, r.materials ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 2), r.material_markup ?? 2))
     }
     // 流浪商人：幾件隨機的優良裝備
