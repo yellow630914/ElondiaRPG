@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
+import { abilities, className, geography, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { builtinSpecialMap, newSpecialMap, newSpecialMapId } from '@/engine/specialMapMods'
+import { newDungeon, newDungeonId } from '@/engine/dungeonMods'
 import { newMark, newTattooTemplate } from '@/engine/tattooMods'
 import { oathText, placeName, tattooRules } from '@/engine/tattoos'
 import { perkCategory, perkPower, PERK_CATEGORIES } from '@/engine/perks'
@@ -35,6 +36,7 @@ import TattooEditor from './content/TattooEditor.vue'
 import ShopEditor from './content/ShopEditor.vue'
 import LandmarkEditor from './content/LandmarkEditor.vue'
 import SpecialMapEditor from './content/SpecialMapEditor.vue'
+import DungeonEditor from './content/DungeonEditor.vue'
 import MarkEditor from './content/MarkEditor.vue'
 import MarkRulesEditor from './content/MarkRulesEditor.vue'
 import { builtinStory, copyStory, newStory, START_KINDS } from '@/engine/storyMods'
@@ -56,10 +58,11 @@ import { builtinTravelEvent, DUNGEON_TRIGGERS, newTravelEvent } from '@/engine/t
 import { parasiteRules } from '@/engine/parasites'
 import { isMobile, pushLayer } from './mobile/mobile'
 import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 import { confirmDiscard, unsavedEdits } from './content/unsaved'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
+type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'tattoos' | 'landmarks' | 'specialMaps' | 'dungeons' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
   { id: 'items', label: '🎒 物品' },
@@ -71,6 +74,7 @@ const SUBS: { id: Sub; label: string }[] = [
   { id: 'tattoos', label: '🖋️ 刺青與印記' },
   { id: 'landmarks', label: '🏛️ 地標' },
   { id: 'specialMaps', label: '🗺️ 特殊地圖' },
+  { id: 'dungeons', label: '🕳️ 地下城' },
   { id: 'shops', label: '🏪 商店' },
   { id: 'events', label: '🎲 事件' },
   { id: 'masterEvents', label: '⛓️ 主奴與娼館' },
@@ -83,7 +87,7 @@ const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
   { id: 'combat', label: '⚔️ 戰鬥', tabs: ['enemies', 'abilities', 'statuses'] },
   { id: 'people', label: '🧬 角色', tabs: ['npcs', 'perks', 'tattoos'] },
   { id: 'items', label: '🎒 物品', tabs: ['items', 'bases', 'materials', 'icons'] },
-  { id: 'places', label: '🗺️ 地點', tabs: ['landmarks', 'specialMaps', 'shops'] },
+  { id: 'places', label: '🗺️ 地點', tabs: ['landmarks', 'specialMaps', 'dungeons', 'shops'] },
   { id: 'story', label: '⭐ 劇情', tabs: ['stories', 'events', 'masterEvents'] },
 ]
 const tabLabel = (t: Tab) => (t === 'icons' ? '🖼️ 類別圖示' : SUBS.find((x) => x.id === t)!.label)
@@ -122,7 +126,6 @@ const enemyRut = ref('')
 const enemyGirl = ref('')
 const itemSource = ref('')
 const LEVEL_BANDS: Record<string, [number, number]> = { '1-2': [1, 2], '3-4': [3, 4], '5-6': [5, 6], '7-8': [7, 8], '9-10': [9, 10], '11+': [11, 99] }
-const placeOptions = enemyPlaceOptions()
 const places = computed(() => {
   void content.version
   return enemyPlaceIndex()
@@ -135,7 +138,7 @@ function resetFilters() {
   for (const m of ALL_FILTER_MODELS) m.value = ''
   pickStatusType.value = false
 }
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', shops: '', events: '', masterEvents: '', npcs: '', stories: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', tattoos: '', landmarks: '', specialMaps: '', dungeons: '', shops: '', events: '', masterEvents: '', npcs: '', stories: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
 const tattooKind = ref('')
 // 狀態：增益、減益、非戰鬥狀態（列表的 key：戰鬥狀態是 id，非戰鬥狀態是 c:<id>）
@@ -283,7 +286,7 @@ const FILTERS: Record<Sub, FilterDef[]> = {
   enemies: [
     { model: enemyKind, name: '種類', all: '所有種類', options: () => entries(ENEMY_KINDS) },
     { model: enemyLevel, name: '等級', all: '所有等級', options: () => Object.keys(LEVEL_BANDS).map((k) => [k, `${k} 級`]) },
-    { model: enemyPlace, name: '出現地點', all: '所有出現地點', options: () => [...placeOptions.map((p) => [p.key, p.label] as Opt), ['none', '沒有出現地點']] },
+    { model: enemyPlace, name: '出現地點', all: '所有出現地點', options: () => [...enemyPlaceOptions().map((p) => [p.key, p.label] as Opt), ['none', '沒有出現地點']] },
     { model: enemyRut, name: '發情', all: '發情（不限）', options: () => [['yes', '會發情'], ['any', '在哪裡都可能'], ['field', '只在野外'], ['no', '不會發情']] },
     { model: enemyGirl, name: '魔物娘', all: '魔物娘（不限）', options: () => [['yes', '有魔物娘形態'], ['no', '沒有魔物娘形態']] },
   ],
@@ -305,6 +308,7 @@ const FILTERS: Record<Sub, FilterDef[]> = {
   tattoos: [{ model: tattooKind, name: '種類', all: '所有刺青與印記', options: () => [['plain', '🖋️ 普通刺青'], ['oath', '📜 誓約印記'], ['slave', '⛓️ 奴隸印記']] }],
   landmarks: [placeDef(), adultDef, flagDef],
   specialMaps: [],
+  dungeons: [],
   shops: [],
   events: [
     { model: eventScope, name: '種類', all: '所有事件', options: () => [['road', '🧭 旅途事件'], ['town', '🏘️ 城鎮事件'], ['dungeon', '⚠️ 地下城事件'], ['parasite', '💗 寄生物的發作']] },
@@ -452,6 +456,10 @@ const rows = computed<Row[]>(() => {
     list = Object.values(specialMaps)
       .map((d) => ({ key: d.id, name: `🗺️ ${d.name}`, note: `${locationById(d.location).name}・${d.grid?.length ? '固定' : '隨機'}${d.refresh ? '・會刷新' : ''}`, status: st(!!m.specialMaps?.[d.id], !builtinSpecialMap(d.id)) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
+  } else if (sub.value === 'dungeons') {
+    // 自建的地下城（內建的地下城不在這裡改；怪物編輯器的「出現地點」可以改內建地下城的遭遇表）
+    list = Object.values(m.dungeons ?? {})
+      .map((d) => ({ key: d.id, name: `🕳️ ${d.name}`, note: `${regionById(d.region).name}・${d.routes.map((r) => locationById(r.to).name).join('、') || '沒有路線'}`, status: st(true, true) }))
   } else if (sub.value === 'shops') {
     list = Object.entries(shopRules.types)
       .map(([id, d]) => ({ key: id, name: `${d.emoji} ${d.name}`, note: d.custom ? `${m.shops?.[id]?.places?.length ?? 0} 處・${d.keeper.title}` : d.keeper.title, status: st(!!m.shops?.[id], !!d.custom) }))
@@ -535,7 +543,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), masterEvents: n(m.masterEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
+  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), dungeons: n(m.dungeons ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), masterEvents: n(m.masterEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories) }
 })
 
 const current = computed(() => {
@@ -548,6 +556,7 @@ const current = computed(() => {
     : sub.value === 'shops' ? !!shopRules.types[key as ShopType]
     : sub.value === 'landmarks' ? !!landmarks[key]
     : sub.value === 'specialMaps' ? !!specialMaps[key]
+    : sub.value === 'dungeons' ? !!content.mods.dungeons?.[key]
     : sub.value === 'events' ? key === 'rules' || travelEvents.templates.some((t) => t.id === key)
     : sub.value === 'masterEvents' ? !!masterEventById(key)
     : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
@@ -638,6 +647,10 @@ function create() {
       const id = newSpecialMapId()
       content.saveSpecialMap(id, newSpecialMap(id, game.state?.location))
       select(id)
+    } else if (sub.value === 'dungeons') {
+      const id = newDungeonId()
+      content.saveDungeon(id, { ...newDungeon(id), name: freeLocationName('新的地下城') })
+      select(id)
     } else if (sub.value === 'shops') {
       const id = newShopId()
       content.saveShop(id, newShop())
@@ -667,6 +680,16 @@ function create() {
     clearFilters()
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
+  }
+}
+
+/** 還沒有地點用的名字：名稱、名稱2、名稱3……（地點的名稱不能重複，最多 16 字） */
+function freeLocationName(base: string): string {
+  const taken = new Set(geography.locations.map((l) => l.name))
+  if (!taken.has(base)) return base
+  for (let i = 2; ; i++) {
+    const n = `${base.slice(0, 16 - String(i).length)}${i}`
+    if (!taken.has(n)) return n
   }
 }
 
@@ -709,6 +732,11 @@ function duplicateKey(key: string) {
     const src = JSON.parse(JSON.stringify(specialMaps[key]))
     delete src.connections
     content.saveSpecialMap(id, { ...src, id, name: `${src.name}2`.slice(0, 16), custom: true })
+    select(id)
+  } else if (sub.value === 'dungeons') {
+    const id = newDungeonId()
+    const src = JSON.parse(JSON.stringify(content.mods.dungeons[key]))
+    content.saveDungeon(id, { ...src, id, name: freeLocationName(src.name) })
     select(id)
   } else if (sub.value === 'shops') {
     // 複製內建的店不會帶走專屬功能與位置
@@ -787,7 +815,7 @@ function duplicateKey(key: string) {
 
 /** 有未儲存的修改時不能新增或複製（新的項目會先存進世界） */
 const UNSAVED_HINT = '這一項還有未儲存的修改：先儲存或放棄修改，才能新增或複製'
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', dungeons: '＋ 新增地下城', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務' }
 
 // ---- 局部匯入、匯出（E2） ----
 const showImport = ref(false)
@@ -990,6 +1018,7 @@ function resetAll() {
         <ShopEditor v-else-if="sub === 'shops'" :id="current" :key="`shop-${current}`" @deleted="select('')" />
         <LandmarkEditor v-else-if="sub === 'landmarks'" :id="current" :key="`lm-${current}`" @deleted="select('')" />
         <SpecialMapEditor v-else-if="sub === 'specialMaps'" :id="current" :key="`sm-${current}`" @deleted="select('')" />
+        <DungeonEditor v-else-if="sub === 'dungeons'" :id="current" :key="`dg-${current}`" @deleted="select('')" />
         <template v-else-if="sub === 'tattoos'">
           <MarkRulesEditor v-if="current === 'rules'" key="rules" />
           <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />
@@ -1018,7 +1047,10 @@ function resetAll() {
         <div class="menu" @click="($event.currentTarget as HTMLElement).closest('details')!.open = false">
           <button class="small" @click="showImport = true">📥 從檔案或其他世界帶入幾項…</button>
           <button class="small" :disabled="content.readOnly" @click="exportAll">📤 匯出自訂內容（內容檔）</button>
-          <button class="small" title="會取代這個世界目前所有的自訂內容（原版世界時存成新的世界）" @click="fileInput?.click()">📥 匯入內容檔，取代全部內容…</button>
+          <span class="row replace-row">
+            <button class="small" title="會取代這個世界目前所有的自訂內容（原版世界時存成新的世界）" @click="fileInput?.click()">📥 匯入內容檔，取代全部內容…</button>
+            <span @click.stop><Hint warn :width="320" text="新的內容裡沒有的自建地下城會一起拿掉：用到它的特殊任務不匯入，地下城事件與情報物品的引用拿掉，屬於它的特殊地圖改到別的地點（匯入後列在頁面上方）。存檔不會壞：人在裡面或在往返路上的，讀檔時送回聚落；以它為目標的委託、情報清掉。" /></span>
+          </span>
           <button class="small danger" :disabled="content.readOnly" @click="resetAll">↩️ 全部恢復預設…</button>
         </div>
       </details>
@@ -1045,6 +1077,8 @@ function resetAll() {
 .pick-bar { padding: 4px 6px; border: 1px dashed var(--gold-lo); border-radius: var(--radius); }
 .world-menu { position: relative; }
 .world-menu summary { cursor: pointer; list-style: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.replace-row { flex-wrap: nowrap; gap: 4px; }
+.replace-row > button { flex: 1; }
 .world-menu .menu { position: absolute; right: 0; bottom: calc(100% + 4px); z-index: 5; display: grid; gap: 4px; padding: 6px; min-width: 240px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 6px 16px #000a; }
 .spacer { flex: 1; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

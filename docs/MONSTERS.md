@@ -56,6 +56,10 @@
 
 <!-- /gen:monsters-common -->
 
+## 自建的地下城
+
+世界頁籤可以新增地下城（[CONTENT_EDITOR](CONTENT_EDITOR.md) 3.96 節）。它的各層遭遇與層主記在地下城上；怪物編輯器的「出現地點」另外有一段「自建地下城」，改的是同一份。用到的自建怪物在地下城還用到時不能刪。等級怎麼排見 [worldgen/guides/dungeons](../worldgen/guides/dungeons.md) 第 3 節。
+
 ## 城郊
 
 城郊遭遇表（`enemies.json` 的 `wild_encounters`）每個地區除了單一種怪的組，也有混編的組（例如哥布林帶巨鼠、盜賊帶灰狼、樹蔭毒蛛配迷霧林精）；遭遇時從所有組平均抽一組。

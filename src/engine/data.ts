@@ -59,6 +59,8 @@ export interface Location {
   requires?: StoryCond
   /** 這裡的寶箱與人形怪物掉的隨機裝備優先用這一套材料（gear.json 材料的 series；例如緋夢樂園底下的遺跡是 pleasure） */
   material_series?: string
+  /** 給 AI 的描述（自建的地下城才有；內建地點的設定寫在世界書） */
+  desc?: string
 }
 export interface Route {
   a: string
@@ -2055,6 +2057,24 @@ export function classEmoji(id: string): string {
 
 const locationIndex = new Map(geography.locations.map((l) => [l.id, l]))
 const regionIndex = new Map(geography.regions.map((r) => [r.id, r]))
+
+/** 地點或地區改了之後（自建地下城的套用與還原）重建索引 */
+export function reindexLocations() {
+  locationIndex.clear()
+  for (const l of geography.locations) locationIndex.set(l.id, l)
+  regionIndex.clear()
+  for (const r of geography.regions) regionIndex.set(r.id, r)
+}
+
+/** 找地點，不存在時回傳 undefined（存檔裡可能留著已經刪掉的自建地點） */
+export function findLocation(id: string | undefined | null): Location | undefined {
+  return id ? locationIndex.get(id) : undefined
+}
+
+/** 地點的名稱；不存在時（已經刪掉的自建地點）顯示「（已消失的地點）」 */
+export function locationName(id: string | undefined | null): string {
+  return findLocation(id)?.name ?? '（已消失的地點）'
+}
 
 export function locationById(id: string): Location {
   const loc = locationIndex.get(id)

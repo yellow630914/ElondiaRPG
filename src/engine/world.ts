@@ -1,6 +1,6 @@
 // 地點圖與路徑規劃。
 
-import { geography, type Route, type RouteMode } from './data'
+import { findLocation, geography, type Route, type RouteMode } from './data'
 
 export interface Leg {
   from: string
@@ -21,14 +21,20 @@ interface Edge {
 }
 
 const adjacency = new Map<string, Edge[]>()
-for (const route of geography.routes) {
-  if (!route.days) continue
-  const r = route as Route & { days: [number, number] }
-  for (const [x, y] of [[r.a, r.b], [r.b, r.a]] as const) {
-    if (!adjacency.has(x)) adjacency.set(x, [])
-    adjacency.get(x)!.push({ to: y, route: r })
+
+/** 依 geography.routes 重建路線圖（自建地下城的路線套用或還原之後呼叫） */
+export function rebuildRoutes() {
+  adjacency.clear()
+  for (const route of geography.routes) {
+    if (!route.days) continue
+    const r = route as Route & { days: [number, number] }
+    for (const [x, y] of [[r.a, r.b], [r.b, r.a]] as const) {
+      if (!adjacency.has(x)) adjacency.set(x, [])
+      adjacency.get(x)!.push({ to: y, route: r })
+    }
   }
 }
+rebuildRoutes()
 
 export function neighbors(id: string): Edge[] {
   return adjacency.get(id) ?? []
@@ -49,6 +55,8 @@ export function shortestPath(from: string, to: string, open?: LocationOpen): Pat
     const [dist, node] = queue.shift()!
     if (node === to) break
     if (dist > (best.get(node) ?? Infinity)) continue
+    // 地下城只能是起點或終點，不能穿過（自建地下城可以接好幾個聚落，不能變成兩座城之間的捷徑）
+    if (node !== from && findLocation(node)?.type === 'dungeon') continue
     for (const edge of neighbors(node)) {
       if (open && !open(edge.to)) continue
       const next = dist + edge.route.days[0]

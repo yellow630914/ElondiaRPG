@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { flash, floatText, sparks } from '@/fx/fx'
 import { isFreshReport } from '@/fx/seen'
 import { itemRarity } from './items/itemInfo'
-import { locationById } from '@/engine/data'
+import { locationName } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import type { Report } from '@/engine/types'
 import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
@@ -145,7 +145,7 @@ async function copyPrompt() {
   <article class="report" :class="[report.kind, { fresh }]">
     <header class="head">
       <span class="kind"><GameIcon :name="KIND[report.kind].icon" :size="14" />{{ KIND[report.kind].name }}</span>
-      <strong class="where">{{ locationById(report.location.at).name }}<template v-if="report.location.to"> → {{ locationById(report.location.to).name }}</template></strong>
+      <strong class="where">{{ locationName(report.location.at) }}<template v-if="report.location.to"> → {{ locationName(report.location.to) }}</template></strong>
       <span class="when">{{ formatTime(report.time.start) }}</span>
       <details class="menu">
         <summary class="menu-btn" title="更多：複製提示詞、報告 JSON" aria-label="更多"><GameIcon name="more" :size="18" /></summary>

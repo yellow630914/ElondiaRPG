@@ -31,3 +31,4 @@
 | I17 | 日常小事不擲骰 | AI、玩法 | [player-feedback](player-feedback.md#i17) |
 | I19 | 模組化像素立繪 | 介面、美術 | [early-design](early-design.md#i19) |
 | I20 | 地圖格改用生成的 tileset | 介面、美術 | [early-design](early-design.md#i20) |
+| I23 | 自建聚落與自建地區（自建地下城之後） | 自訂內容 | [dev-discussion](dev-discussion.md#i23) |

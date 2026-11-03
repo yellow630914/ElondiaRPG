@@ -13,7 +13,7 @@
   "desc": "給玩家看的一段說明：這個世界多了什麼。",
   "content": {
     "statuses": {}, "tattoos": {}, "marks": {}, "markRules": {},
-    "landmarks": {}, "specialMaps": {}, "shops": {},
+    "dungeons": {}, "landmarks": {}, "specialMaps": {}, "shops": {},
     "abilities": {}, "perks": {}, "materials": {}, "bases": {}, "items": {},
     "enemies": {}, "npcs": {}, "stories": {}, "travelEvents": {}, "eventRules": {}, "categoryIcons": {}, "counters": {}
   },
@@ -42,6 +42,7 @@
 | `tattoos` | 刺青圖樣、誓約印記 | `mod_tattoo_<英文>` | 同上 |
 | `marks` | 奴隸印記的模板 | `mod_mark_<英文>` | 同上 |
 | `markRules` | 印記的用途與權重（只有一筆，key 是 `rules`） | `rules` | 同上 |
+| `dungeons` | 自建的地下城（第 3.1 節） | `loc_<英文>`（`/^loc_[a-z0-9_]+$/`） | [dungeons](dungeons.md) |
 | `landmarks` | 地標 | `lm_<英文>`（`/^lm_[a-z0-9_]+$/`） | [landmarks](landmarks.md) |
 | `specialMaps` | 特殊地圖 | `sm_<英文>`（`/^sm_[a-z0-9_]+$/`） | [special-maps](special-maps.md) |
 | `shops` | 商店（內建店種的修改、自建的店） | 內建的店種 id，或 `shop_<英文數字>`（`/^shop_[a-z0-9]+$/`，前綴之後不能有底線） | [shops](shops.md) |
@@ -67,8 +68,44 @@
 內容會互相引用：怪物用到技能與物品（掉落），物品用到狀態、底材與材料，固定 NPC 用到地點、地標、技能、特質、裝備，特殊任務用到固定 NPC、怪物、物品、特殊地圖……完整的對照見 [CONTENT_DEPENDENCIES](../../docs/CONTENT_DEPENDENCIES.md) 第 1 節。
 
 - **被引用的要存在**：可以是內建的，或同一個檔案裡新增的。引用到不存在的東西，匯入時會被默默拿掉（或整筆不收），世界檢查會列出來。
-- **套用的順序**（`applyContent`）：狀態 → 刺青與印記 → 地標 → 商店 → 特殊地圖 → 技能 → 特質 → 材料 → 底材 → 物品 → 怪物 → 固定 NPC → 特殊任務 → 事件。生成時也照這個順序寫：先寫被引用的，再寫引用別人的。
-- **地點是固定的**：地點 id 查 `data/world/geography.json`；城鎮區塊與格子查 `data/world/maps.json`（見 [landmarks](landmarks.md)）。不能新增地點。
+- **套用的順序**（`applyContent`）：狀態 → 刺青與印記 → 自建地下城 → 地標 → 商店 → 特殊地圖 → 技能 → 特質 → 材料 → 底材 → 物品 → 怪物 → 固定 NPC → 特殊任務 → 事件。生成時也照這個順序寫：先寫被引用的，再寫引用別人的。
+- **聚落是固定的**：地點 id 查 `data/world/geography.json`；城鎮區塊與格子查 `data/world/maps.json`（見 [landmarks](landmarks.md)）。不能新增聚落、地區與路線；**可以新增地下城**（下一節）。
+
+### 3.1 自建的地下城（`dungeons`）
+
+經由旅途到達的地下城，功能和內建的一樣（分層、遭遇、層主、寶箱、公會委託、情報）。世界頁籤的「🕳️ 地下城」可以直接編輯（[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.96 節）；內容檔的格式：
+
+```json
+"dungeons": {
+  "loc_bat_cave": {
+    "id": "loc_bat_cave", "name": "蝙蝠洞", "region": "central", "custom": true,
+    "desc": "河谷鎮北邊山腰的石灰岩洞，洞口終年垂著蝙蝠。（給 AI 的描述，最多 300 字）",
+    "routes": [{ "to": "rivervale", "days": [1, 1], "mode": "trail" }],
+    "layers": {
+      "outskirts": [[["slime", 2]]],
+      "shallow": [[["cave_bat", 3]], [["slime", 1], ["cave_bat", 1]]],
+      "middle": [[["cave_bat", 4]]],
+      "deep": [[["cave_bat", 2], ["rock_spider", 1]]]
+    },
+    "bosses": { "deep": [["rock_spider", 1], ["cave_bat", 2]] }
+  }
+}
+```
+
+| 欄位 | 說明 |
+|---|---|
+| `name` | 最多 16 字，不能和其他地點同名 |
+| `region` | 現有的地區（`central`、`north`、`south`、`forest`、`east_sea`、`west`）；沒放怪物的層用這個地區的城郊遭遇表 |
+| `routes` | 1～6 條，**只能接內建的聚落**；`days` 是 `[最少, 最多]`（以半天為單位，0.5～30），`mode` 是 `road`、`trail`、`wild`、`sea`、`dive`、`underground`，`fare` 選填（每人的船資）。7 天內的公會會發這座的委託 |
+| `layers` | 周邊、淺層、中層、深層（`abyss: true` 時多一層底層）：每層幾組遭遇，每組 1～4 種怪物、每種 1～6 隻，最多 12 組；要提高某一組的機率就多放幾組 |
+| `bosses` | 淺層、中層、深層（與底層）的層主：第一種是層主，其他是護衛（最多 3 種）；沒寫的層照強敵的規則 |
+| `lighting` | 選填：各層的光線（`lit`、`daylight`、`dark`，從周邊起算） |
+| `requires` | 選填：劇情條件，成立才找得到、才能前往 |
+| `material_series` | 選填：寶箱與人形怪掉的裝備優先用的材料系列 |
+| `image` | 選填：圖片的 data URL（PNG／WebP／JPEG，≤ 400,000 字），在裡面當整頁背景 |
+
+- 遭遇表記在地下城上：怪物的 `spawns` 不能指到自建的地下城（整理時拿掉）。用到的自建怪物，在地下城還用到時不能刪。
+- 特殊任務、地下城事件、特殊地圖、情報物品可以引用這個 id；建議階級、委託的等級都照各層怪物的等級算。
 
 ## 4. 檢查
 

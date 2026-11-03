@@ -3,7 +3,8 @@
 import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
 import { pruneSpecialMaps } from './specialMaps'
-import { abilities, attributeRules, classDef, companionRules, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
+import { pruneLocations } from './pruneLocations'
+import { abilities, attributeRules, classDef, companionRules, findLocation, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
@@ -378,6 +379,8 @@ export function migrate(state: GameState): GameState {
   setSaveItems(Object.values(state.inventions ?? {}))
   // 這個世界沒有的特殊地圖
   pruneSpecialMaps(state)
+  // 這個世界沒有的自建地下城：人在裡面時送回聚落（格子位置清掉，load 會重新進入地點）
+  pruneLocations(state)
   return state
 }
 
@@ -505,6 +508,13 @@ export function commitReport(state: GameState, report: Report): Report {
   if (special && report.kind !== 'travel' && !(report.location.scene ?? '').includes(special.desc.slice(0, 20))) {
     const scene = report.location.scene && !report.location.scene.includes(special.name) ? `${report.location.scene}・` : ''
     report.location.scene = `${scene}${special.name}（${special.desc.slice(0, 120)}）`
+  } else {
+    // 自建的地下城：場景帶上給 AI 的描述（內建地點的設定在世界書）
+    const loc = findLocation(report.location.at)
+    if (loc?.desc && report.kind !== 'travel' && !(report.location.scene ?? '').includes(loc.desc.slice(0, 20))) {
+      const scene = report.location.scene ? `${report.location.scene}・` : ''
+      report.location.scene = `${scene}${loc.name}（${loc.desc.slice(0, 120)}）`
+    }
   }
   const prevDay = state.time.day
   state.time = { day: report.time.end.day, hour: report.time.end.hour ?? 0, minute: report.time.end.minute ?? 0 }

@@ -4,6 +4,8 @@ import { abilities, ATTR_IDS, attrName, damageTypeName, damageTypes, enemies, it
 import {
   builtinEnemy, builtinPlacementsOf, ENEMY_KINDS, formatDice, parseDice, placementsOf, tableOptions, type DiceParts, type EnemyMod, type Placement,
 } from '@/engine/mods'
+import { BOSS_LAYER_IDS, DUNGEON_LAYER_NAME, type BossLayerId, type DungeonLayerId } from '@/engine/data'
+import { dungeonLayersOf, enemyInDungeons, isCustomDungeon, type DungeonMod } from '@/engine/dungeonMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
@@ -33,7 +35,16 @@ watch(() => props.id, () => {
   draft.value = current()
   saved.value = JSON.stringify(draft.value)
 })
-const dirty = computed(() => JSON.stringify(draft.value) !== saved.value)
+// 自建地下城的遭遇表記在地下城上：在這裡放進去的是那份資料的草稿，按「儲存」時和怪物一起存
+const dungeonsNow = () => clone(content.mods.dungeons ?? {}) as Record<string, DungeonMod>
+const dungeonDraft = ref<Record<string, DungeonMod>>(dungeonsNow())
+const dungeonSaved = ref(JSON.stringify(dungeonDraft.value))
+function resetDungeons() {
+  dungeonDraft.value = dungeonsNow()
+  dungeonSaved.value = JSON.stringify(dungeonDraft.value)
+}
+watch(() => props.id, resetDungeons)
+const dirty = computed(() => JSON.stringify(draft.value) !== saved.value || JSON.stringify(dungeonDraft.value) !== dungeonSaved.value)
 // 沒有上傳時的內建圖（依草稿的種類與等級）
 const iconFallback = computed<DrawSource>(() => {
   const band = monsterBand(draft.value.level)
@@ -76,7 +87,8 @@ const itemNames = computed(() => {
   void content.version
   return itemRules.items.map((i) => i.name)
 })
-const tables = tableOptions()
+// 自建地下城不放在這裡（記在地下城上，見下面的「自建地下城」）
+const tables = tableOptions().filter((t) => !isCustomDungeon(t.key.split(':')[1] ?? ''))
 // 層主的護衛（預設沒有：層主單獨出場，平衡也是這樣算的）
 const guardOptions = computed(() => Object.values(enemies).filter((e) => e.id !== props.id).sort((a, b) => a.level - b.level))
 function setGuard(s: Placement, id: string) {
@@ -84,6 +96,58 @@ function setGuard(s: Placement, id: string) {
   else delete s.guards
 }
 const builtinPlaces = computed(() => builtinPlacementsOf(props.id))
+
+// ---- 自建地下城 ----
+interface DungeonSpot { dungeon: string; place: string; label: string }
+/** 選單的 place：layer:<層> 或 boss:<層> */
+const dungeonSpots = computed(() => Object.values(dungeonDraft.value).flatMap((d) => [
+  ...dungeonLayersOf(d).map((l) => ({ dungeon: d.id, place: `layer:${l}`, label: `${d.name}・${DUNGEON_LAYER_NAME[l]}` })),
+  ...BOSS_LAYER_IDS.filter((l) => l !== 'abyss' || d.abyss).map((l) => ({ dungeon: d.id, place: `boss:${l}`, label: `${d.name}・${DUNGEON_LAYER_NAME[l]}層主` })),
+]))
+/** 這隻怪物目前在自建地下城的哪裡（草稿） */
+const inDungeons = computed<(DungeonSpot & { groups: number })[]>(() => dungeonSpots.value.flatMap((sp) => {
+  const d = dungeonDraft.value[sp.dungeon]!
+  const [kind, layer] = sp.place.split(':') as ['layer' | 'boss', DungeonLayerId]
+  const groups = kind === 'layer'
+    ? (d.layers[layer] ?? []).filter((g) => g.some(([e]) => e === props.id)).length
+    : d.bosses?.[layer as BossLayerId]?.some(([e]) => e === props.id) ? 1 : 0
+  return groups ? [{ ...sp, groups }] : []
+}))
+const addSpot = ref({ key: '', count: 1 })
+function addToDungeon() {
+  const sp = dungeonSpots.value.find((x) => `${x.dungeon}|${x.place}` === addSpot.value.key)
+  if (!sp) return
+  const d = dungeonDraft.value[sp.dungeon]!
+  const [kind, layer] = sp.place.split(':') as ['layer' | 'boss', DungeonLayerId]
+  const count = Math.max(1, Math.min(6, Math.round(addSpot.value.count) || 1))
+  if (kind === 'layer') (d.layers[layer] ??= []).push([[props.id, count]])
+  else {
+    // 層主：這隻當層主，原本的護衛留著（原本的層主拿掉）
+    const bosses = (d.bosses ??= {})
+    const old = bosses[layer as BossLayerId] ?? []
+    bosses[layer as BossLayerId] = [[props.id, count], ...old.slice(1).filter(([e]) => e !== props.id)]
+  }
+}
+function removeFromSpot(sp: DungeonSpot) {
+  const d = dungeonDraft.value[sp.dungeon]!
+  const [kind, layer] = sp.place.split(':') as ['layer' | 'boss', DungeonLayerId]
+  if (kind === 'layer') d.layers[layer] = (d.layers[layer] ?? []).map((g) => g.filter(([e]) => e !== props.id)).filter((g) => g.length)
+  else {
+    const g = (d.bosses?.[layer as BossLayerId] ?? []).filter(([e]) => e !== props.id)
+    if (g.length) d.bosses![layer as BossLayerId] = g
+    else delete d.bosses?.[layer as BossLayerId]
+  }
+}
+/** 刪除被擋下時：從所有自建地下城拿掉（立刻儲存那些地下城） */
+const usedByDungeons = computed(() => {
+  void content.version
+  return enemyInDungeons(props.id, content.mods.dungeons ?? {}).length > 0
+})
+function removeFromAllDungeons() {
+  if (!confirm(`把「${draft.value.name}」從所有自建地下城的遭遇與層主拿掉？那些地下城會立刻儲存。`)) return
+  content.removeEnemyFromDungeons(props.id)
+  resetDungeons()
+}
 const nowPlaces = computed(() => {
   void content.version
   return placementsOf(props.id)
@@ -149,8 +213,13 @@ function setDice(k: keyof DiceParts, e: Event) {
 function save() {
   try {
     content.saveEnemy(props.id, draft.value)
+    // 在這裡改過的自建地下城（怪物先存，地下城的整理才認得新的怪物）
+    for (const [id, d] of Object.entries(dungeonDraft.value)) {
+      if (JSON.stringify(d) !== JSON.stringify(content.mods.dungeons?.[id])) content.saveDungeon(id, d)
+    }
     draft.value = current()
     saved.value = JSON.stringify(draft.value)
+    resetDungeons()
     game.flash(`已儲存「${draft.value.name}」`)
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
@@ -158,6 +227,7 @@ function save() {
 }
 function discard() {
   draft.value = current()
+  resetDungeons()
 }
 function restore() {
   if (!confirm(`把「${draft.value.name}」恢復成內建的樣子？`)) return
@@ -191,6 +261,7 @@ function remove() {
     />
     <UsageNote :usage="usage" :deletable="!builtin" />
     <SourceNote kind="enemy" :id="id" />
+    <p v-if="!builtin && usedByDungeons" class="small"><button class="small" @click="removeFromAllDungeons">從所有自建地下城拿掉</button></p>
     <p class="small muted">id：{{ id }}</p>
 
     <FoldSet>
@@ -356,6 +427,21 @@ function remove() {
         <button class="small" @click="draft.spawns!.splice(i, 1)" title="移除">✕</button>
       </div>
       <button class="small" @click="addSpawn">＋ 出現地點</button>
+      <template v-if="dungeonSpots.length">
+        <p class="small muted">自建地下城 <Hint text="記在地下城上（和地下城編輯器的各層是同一份），按「儲存」時一起存。層主會取代那一層原本的層主，原本的護衛留著。" />：</p>
+        <div v-for="sp in inDungeons" :key="`${sp.dungeon}|${sp.place}`" class="row small">
+          <span class="grow">{{ sp.label }}{{ sp.groups > 1 ? `（${sp.groups} 組）` : '' }}</span>
+          <button class="small" title="從這裡拿掉" @click="removeFromSpot(sp)">✕</button>
+        </div>
+        <div class="row small">
+          <select v-model="addSpot.key" class="grow">
+            <option value="">（選一座自建地下城的一層）</option>
+            <option v-for="sp in dungeonSpots" :key="`${sp.dungeon}|${sp.place}`" :value="`${sp.dungeon}|${sp.place}`">{{ sp.label }}</option>
+          </select>
+          <label class="small">一組 <input v-model.number="addSpot.count" class="num" type="number" min="1" max="6" /> 隻</label>
+          <button class="small" :disabled="!addSpot.key" @click="addToDungeon">＋ 放進去</button>
+        </div>
+      </template>
     </FoldSet>
   </div>
 </template>

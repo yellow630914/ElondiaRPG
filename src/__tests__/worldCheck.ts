@@ -6,7 +6,7 @@
 // 3. 一致性：名稱重複、沒有出現地點的怪物、沒有出沒地點的固定 NPC……
 // 4. 平衡：怪物的耐打度與戰鬥模擬、技能的傷害、物品的價格、特質強度、特殊任務的報酬。
 // 5. 提示詞：世界書的修改與新增條目。
-import { abilities, dungeonEncounters, enemies, specialMaps, isLayerBoss, itemDef, itemRules, locationById, npcs as namedNpcs, perkRules, stories, type AbilityDef, type DamagePart, type ItemDef } from '@/engine/data'
+import { abilities, DUNGEON_LAYER_NAME, dungeonEncounters, enemies, geography, specialMaps, isLayerBoss, itemDef, itemRules, locationById, npcs as namedNpcs, perkRules, stories, type AbilityDef, type DamagePart, type ItemDef } from '@/engine/data'
 import { blockKeys, settlementArea } from '@/engine/grid'
 import { rewardRange } from '@/engine/materialQuests'
 import type { GuildRank } from '@/engine/types'
@@ -16,6 +16,7 @@ import { perkPower } from '@/engine/perks'
 import { abilityApCost } from '@/engine/combat'
 import { storyCheck } from '@/engine/storyMods'
 import { parseWorldFile } from '@/engine/worldPackage'
+import { layerPreview, routePreview } from '@/engine/dungeonPreview'
 import { bossFights, bossIds, durability, minionArea, minionFight, type MinionArea } from './balanceSim'
 
 export type Level = 'error' | 'warn' | 'info'
@@ -23,9 +24,9 @@ export interface Finding { level: Level; section: string; text: string }
 export interface WorldCheckResult { name: string; findings: Finding[]; tables: { title: string; rows: string[][]; head: string[] }[] }
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
-const SECTIONS = ['statuses', 'tattoos', 'marks', 'markRules', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'categoryIcons'] as const
+const SECTIONS = ['statuses', 'tattoos', 'marks', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'categoryIcons'] as const
 const SECTION_NAME: Record<string, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能',
+  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', dungeons: '地下城', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能',
   perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', categoryIcons: '類別圖示',
 }
 
@@ -207,6 +208,16 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
     if (e.custom && !e.spawns?.length && !storyFoes.has(id) && !placed.has(id)) add('warn', '怪物', `「${e.name}」沒有出現地點，也沒有特殊任務用到：遊戲裡遇不到`)
   }
 
+  // 自建的地下城：路線、公會、描述、各層的等級（docs/CONTENT_EDITOR.md 3.96 節）
+  const builtinLocationNames = new Set(geography.locations.filter((l) => !mods.dungeons[l.id]).map((l) => l.name))
+  for (const d of Object.values(mods.dungeons ?? {})) {
+    if (builtinLocationNames.has(d.name)) add('warn', '地下城', `「${d.name}」和其他地點同名`)
+    if (!d.routes.length) add('error', '地下城', `「${d.name}」沒有路線：到不了`)
+    else if (!routePreview(d).guilds.length) add('info', '地下城', `「${d.name}」7 天內沒有公會：不會有清剿、材料委託與情報`)
+    if (!d.desc) add('warn', '地下城', `「${d.name}」沒有給 AI 的描述（內建地點的設定在世界書，自建的要靠這一欄）`)
+    for (const l of layerPreview(d)) for (const w of l.warnings) add('warn', '地下城', `「${d.name}」的${DUNGEON_LAYER_NAME[l.layer]}：${w}`)
+  }
+
   // 引用的物品與商店（整理時不拿掉，以免之後的版本新增的東西被誤刪；這裡套用之後檢查，同一包的新物品算數）
   for (const id of Object.keys(mods.enemies)) {
     for (const l of enemies[id]?.loot ?? []) if (!itemDef(l.item)) add('warn', '怪物', `「${enemies[id]!.name}」的掉落「${l.item}」不存在：打贏後會拿到沒有定義的物品`)
@@ -251,7 +262,8 @@ export function checkWorld(raw: unknown, opts: { trials?: number } = {}): WorldC
   for (const [dungeon, enc] of Object.entries(dungeonEncounters)) {
     for (const [layer, group] of Object.entries(enc.bosses ?? {})) {
       const boss = group?.[0]?.[0]
-      if (!boss || !mods.enemies[boss]) continue
+      // 新增或改過的層主，以及自建地下城的所有層主（那一層的組成是新的）
+      if (!boss || (!mods.enemies[boss] && !mods.dungeons?.[dungeon])) continue
       // 勝率的雜訊大（20 場的標準誤差約 9%）：至少跑 40 場；快速模式（場數少於 20）只提醒、不算錯誤
       const rows = bossFightRows(dungeon, layer, Math.max(trials, BOSS_TRIALS))
       for (const r of rows) {

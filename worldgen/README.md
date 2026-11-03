@@ -9,7 +9,7 @@
 2. **一律做成新的世界**：產出的是「世界包」（見 [guides/content-file.md](guides/content-file.md)），玩家在遊戲裡用「🌍 世界 → 📥 匯入成新的世界」載入。內建的原版世界與玩家其他的世界不會被動到；玩壞了刪掉那個世界就好。
 3. **每改一次就檢查一次**：`WORLD=worldgen/worlds/<代號>/world.json npx vitest run src/__tests__/worldCheck.spec.ts`，看同一個資料夾的 `check-report.md`。**錯誤要修到 0**；「整理時改了」的提醒也要處理（那代表寫錯了，匯入時被默默改掉）。流程見 [balance/README.md](balance/README.md)。
 4. **新內容一律 `"custom": true`**，id 照各指南的規則（`mod_<種類>_<英文小寫>`、地標 `lm_`、特殊地圖 `sm_`、商店 `shop_`）。改內建的項目時用原本的 id、不加 `custom`；能新增就不要改內建的。
-5. **地圖是固定的**：地點、路線、地區、城鎮區塊、職業與種族目前不能新增或修改（[PLAN](PLAN.md) 決定 1）。所有內容都要放在現有的地點上；地點 id 查 `data/world/geography.json`。
+5. **地圖是固定的**：聚落、路線、地區、城鎮區塊、職業與種族目前不能新增或修改（[PLAN](PLAN.md) 決定 1）。所有內容都要放在現有的地點上；地點 id 查 `data/world/geography.json`。例外是**自建的地下城**：可以新增，路線只能接內建的聚落（[guides/content-file](guides/content-file.md) 3.1 節）。
 6. **世界書是設定的來源**：動筆前先讀 `data/worldbook/elondia.worldbook.json` 相關的條目（地區、種族、勢力、神祇），內容不能和它矛盾；新增的設定最後要寫回世界書（[design/worldbook-and-prompts.md](design/worldbook-and-prompts.md)）。
 
 ## 1. 閱讀順序
@@ -38,6 +38,7 @@
 | 特殊任務 | [stories.md](guides/stories.md) |
 | 地標 | [landmarks.md](guides/landmarks.md) |
 | 特殊地圖 | [special-maps.md](guides/special-maps.md) |
+| 自建的地下城 | [dungeons.md](guides/dungeons.md) |
 | 商店 | [shops.md](guides/shops.md) |
 | 旅途與城鎮事件 | [events.md](guides/events.md) |
 
