@@ -24,9 +24,9 @@ export interface Finding { level: Level; section: string; text: string }
 export interface WorldCheckResult { name: string; findings: Finding[]; tables: { title: string; rows: string[][]; head: string[] }[] }
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
-const SECTIONS = ['statuses', 'tattoos', 'marks', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'categoryIcons'] as const
+const SECTIONS = ['statuses', 'conditions', 'tattoos', 'marks', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'counters', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons'] as const
 const SECTION_NAME: Record<string, string> = {
-  statuses: '狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', dungeons: '地下城', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能',
+  statuses: '狀態', conditions: '非戰鬥狀態', counters: '劇情計數器', bindRules: '雙面效應設定', masterEvents: '主奴事件', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', dungeons: '地下城', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能',
   perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', categoryIcons: '類別圖示',
 }
 

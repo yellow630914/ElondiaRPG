@@ -66,7 +66,22 @@ export function newLandmark(id: string, location = geography.locations.find((l) 
 }
 
 /** 整理地標：內建的不能換聚落；位置要是那個聚落的一個區塊（是不是空地在存的時候檢查） */
-export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>): LandmarkMod {
+/** 同一個內容包裡新增的特殊地圖與固定 NPC（還沒登錄也算：地標比它們先整理、先套用） */
+export interface LandmarkPack {
+  maps?: Record<string, { grid?: unknown; location?: unknown; legend?: Record<string, string> } | undefined>
+  npcs?: Iterable<string>
+}
+
+type MapLike = { grid?: string[]; location?: string; legend?: Record<string, string> }
+
+/** 內部用的地圖：已載入的，或同一個包裡的（格子要是文字陣列） */
+function mapOf(id: string, pack?: LandmarkPack): MapLike | undefined {
+  const m = specialMaps[id] ?? pack?.maps?.[id]
+  if (!m || !Array.isArray(m.grid) || !m.grid.every((r) => typeof r === 'string')) return undefined
+  return { grid: m.grid as string[], location: typeof m.location === 'string' ? m.location : undefined, legend: m.legend }
+}
+
+export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>, pack?: LandmarkPack): LandmarkMod {
   if (!isLandmarkId(id)) throw new Error('地標的 id 要是 lm_ 開頭')
   const base = builtinLandmark(id)
   const L = LANDMARK_LIMITS
@@ -142,19 +157,19 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>): Land
     }
   }
   // 內部：同一個聚落的固定特殊地圖
-  const inner = typeof raw.interior === 'string' ? specialMaps[raw.interior] : undefined
-  if (inner?.grid?.length && inner.location === location) out.interior = inner.id
+  const inner = typeof raw.interior === 'string' ? mapOf(raw.interior, pack) : undefined
+  if (inner?.grid?.length && inner.location === location) out.interior = raw.interior
   // 拍賣會（成人向，auction.ts）
   if (raw.auction) out.auction = true
   // 場景：要有名稱與經過；內部的格子要在地圖裡、走得進去
-  const scenes = (Array.isArray(raw.scenes) ? raw.scenes : []).map((x) => sanitizeScene(x, out.interior)).filter((x): x is LandmarkScene => !!x).slice(0, L.scenes)
+  const scenes = (Array.isArray(raw.scenes) ? raw.scenes : []).map((x) => sanitizeScene(x, out.interior, pack)).filter((x): x is LandmarkScene => !!x).slice(0, L.scenes)
   if (scenes.length) out.scenes = scenes
   if (!base) out.custom = true
   return out
 }
 
 /** 整理一個場景（docs/LANDMARKS.md 第 6 節）；沒有名稱或經過時丟掉 */
-export function sanitizeScene(raw: Partial<LandmarkScene> | undefined, interior?: string): LandmarkScene | undefined {
+export function sanitizeScene(raw: Partial<LandmarkScene> | undefined, interior?: string, pack?: LandmarkPack): LandmarkScene | undefined {
   const L = LANDMARK_LIMITS
   const title = str(raw?.title, L.title_chars)
   const scene = str(raw?.scene, L.scene_text_chars)
@@ -173,7 +188,7 @@ export function sanitizeScene(raw: Partial<LandmarkScene> | undefined, interior?
   if (bodies.length && bodies.length < BODIES.length) out.pc_body = bodies
   const wear = [...new Set((Array.isArray(raw.wear) ? raw.wear : []).map((w) => str(w, 60)).filter(Boolean))].slice(0, 6)
   if (wear.length) out.wear = wear
-  const ids = new Set(namedNpcs.map((n) => n.id))
+  const ids = new Set([...namedNpcs.map((n) => n.id), ...(pack?.npcs ?? [])])
   const cast = (Array.isArray(raw.cast) ? raw.cast : []).filter((c) => c && ids.has(c.npc))
     .map((c) => ({ npc: c.npc, ...(flags(c.flags).length ? { flags: flags(c.flags) } : {}) }))
   const seen = new Set<string>()
@@ -190,7 +205,7 @@ export function sanitizeScene(raw: Partial<LandmarkScene> | undefined, interior?
   const cd = num(raw.cooldown_days, L.cooldown, 3)
   if (cd !== 3) out.cooldown_days = cd
   if (raw.own_cooldown) out.own_cooldown = true
-  const map = interior ? specialMaps[interior] : undefined
+  const map = interior ? mapOf(interior, pack) : undefined
   const sp = raw.spot
   const ch = map?.grid && sp && Number.isInteger(sp.x) && Number.isInteger(sp.y) ? map.grid[sp.y]?.[sp.x] : undefined
   const kind = ch === undefined ? undefined : ({ ...specialMapLegend, ...(map?.legend ?? {}) }[ch] ?? 'wall')

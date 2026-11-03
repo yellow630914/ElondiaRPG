@@ -244,6 +244,26 @@ describe('special-area interiors', () => {
     expect(sanitizeLandmarkMod('lm_honor_hole', { ...l, interior: 'sm_maid_cafe' } as never).interior).toBeUndefined()
     expect(sanitizeLandmarkMod('lm_honor_hole', { ...l, interior: 'sm_maid_cafe' } as never).scenes!.every((x) => !x.spot)).toBe(true)
   })
+
+  it('recognises an interior map and a cast member added in the same content pack', () => {
+    const l = JSON.parse(JSON.stringify(landmarks.lm_honor_hole)) as never as Record<string, unknown> & { scenes: Record<string, unknown>[] }
+    const room = { name: '新的小房間', location: l.location, desc: '', lighting: 'lit', grid: ['#####', '#...#', '##E##'] }
+    l.interior = 'sm_mod_room'
+    l.scenes[0] = { ...l.scenes[0], spot: { x: 2, y: 1 }, cast: [{ npc: 'npc_mod_hostess' }] }
+    // 包裡沒有它們：拿掉
+    const alone = sanitizeLandmarkMod('lm_honor_hole', l as never)
+    expect(alone.interior).toBeUndefined()
+    expect(alone.scenes![0]!.cast).toBeUndefined()
+    // 同一個包裡新增的：認得（地標比特殊地圖、固定 NPC 先整理）
+    const pack = sanitizeLandmarkMod('lm_honor_hole', l as never, { maps: { sm_mod_room: room }, npcs: ['npc_mod_hostess'] })
+    expect(pack.interior).toBe('sm_mod_room')
+    expect(pack.scenes![0]).toMatchObject({ spot: { x: 2, y: 1 }, cast: [{ npc: 'npc_mod_hostess' }] })
+    // 別的聚落的地圖照樣不收
+    expect(sanitizeLandmarkMod('lm_honor_hole', l as never, { maps: { sm_mod_room: { ...room, location: 'soriel_x' } } }).interior).toBeUndefined()
+    // 讀世界時一起整理：同一包的地圖留著
+    const mods = normalizeMods({ ...emptyMods(), landmarks: { lm_honor_hole: l as never }, specialMaps: { sm_mod_room: room as never } })
+    expect(mods.landmarks.lm_honor_hole?.interior).toBe('sm_mod_room')
+  })
 })
 
 describe('special areas after the play test', () => {

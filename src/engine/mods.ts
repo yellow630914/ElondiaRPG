@@ -26,7 +26,7 @@ import { sanitizeLustPerk, schoolDef } from './schools'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
-import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
+import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod, type LandmarkPack } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
 import { applyDungeonMod, isCustomDungeon, restoreDungeons, sanitizeDungeonMod, type DungeonMod } from './dungeonMods'
 import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type CounterMod } from './counterMods'
@@ -421,7 +421,8 @@ function generatedGear(mods: Pick<ContentMods, 'bases' | 'materials'>): [string,
   const out: [string, GearSpec][] = []
   for (const [bid, b] of Object.entries(gearRules.bases)) {
     for (const [mid, m] of Object.entries(gearRules.materials)) {
-      if (b.restraint || m.kind !== b.kind || (!mods.bases[bid]?.custom && !mods.materials[mid]?.custom)) continue
+      // 拘束具、地下城專屬（只靠層主掉落）的底材不產生制式裝備
+      if (b.restraint || b.exclusive || m.kind !== b.kind || (!mods.bases[bid]?.custom && !mods.materials[mid]?.custom)) continue
       const spec: GearSpec = { base: bid, material: mid }
       out.push([gearName(spec), spec])
     }
@@ -504,7 +505,7 @@ export function applyContent(mods: ContentMods): string[] {
   // 自建地下城（地點、路線、遭遇表）最先：特殊地圖、任務、事件、情報物品與怪物的出現地點都會檢查地點存不存在
   tryEach('地下城', mods.dungeons ?? {}, (_id, m) => applyDungeonMod(m))
   tryEach('地標', mods.landmarks ?? {}, (id, m) => {
-    const l = sanitizeLandmarkMod(id, m)
+    const l = sanitizeLandmarkMod(id, m, { maps: mods.specialMaps as LandmarkPack['maps'], npcs: Object.keys(mods.npcs ?? {}) })
     applyLandmarkMod(id, l)
     // 擺不上去的照樣套用（引用它的 NPC、任務才不會失效），但要讓作者知道
     const why = landmarkSpotProblem(id, l.at)
@@ -1140,7 +1141,7 @@ export function normalizeMods(raw: unknown): ContentMods {
   // 地標：固定 NPC 與特殊任務的任務點會檢查存不存在，先登錄自建的
   for (const [id, v] of Object.entries(r.landmarks ?? {})) {
     try {
-      out.landmarks[id] = sanitizeLandmarkMod(id, v)
+      out.landmarks[id] = sanitizeLandmarkMod(id, v, { maps: r.specialMaps as LandmarkPack['maps'], npcs: Object.keys(r.npcs ?? {}) })
     } catch {
       // 位置或 id 不對的：略過
     }

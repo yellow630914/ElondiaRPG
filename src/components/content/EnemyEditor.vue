@@ -345,7 +345,7 @@ function remove() {
       <template #legend>抗性與攻擊加成</template>
       <HelpText text="受到的傷害倍率：-1 免疫、-0.5 減半、+0.5 弱點（×1.5）。攻擊加成是造成傷害的倍率加減。" />
       <AffinityRows v-model="draft.resist" label="抗性" />
-      <AffinityRows v-model="draft.offense" label="攻擊加成" :max="7" />
+      <AffinityRows v-model="draft.offense" label="攻擊加成" :max="20" />
     </FoldSet>
 
     <FoldSet>
